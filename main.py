@@ -1907,6 +1907,11 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif
 .container { max-width:1050px; margin:0 auto; }
 .nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:24px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
 .nav a { color:var(--primary); text-decoration:none; font-weight:bold; font-size:14px; margin-left:15px; }
+.nav-links { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.nav-link { display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px; font-weight:700;
+            text-decoration:none; color:var(--primary); background:#eef4ff; white-space:nowrap; }
+.nav-link:hover { background:#dbe7ff; }
+.nav-current { background:#0f62fe; color:#fff; cursor:default; }
 .brand { display:flex; align-items:center; gap:10px; min-width:0; }
 .brand-logo { width:34px; height:34px; flex-shrink:0; }
 .brand-logo svg { width:100%; height:100%; display:block; }
@@ -1966,6 +1971,26 @@ CHART_SCRIPT = """
 })();
 </script>
 """
+
+
+# 每一頁頁頂都有同一組連結，current 那一項不做連結
+PAGE_LINKS = [
+    ("welcome", "🏠 首頁"),
+    ("info", "📄 投資人日誌"),
+    ("gates_app", "🎛️ 關卡開關"),
+    ("order_app", "🧾 送單參數"),
+    ("dashboard", "⚙️ 控制台"),
+]
+
+
+def page_nav(current, extra=()):
+    items = "".join(
+        f"<span class='nav-link nav-current'>{label}</span>" if view == current
+        else f"<a class='nav-link' href='?view={view}'>{label}</a>"
+        for view, label in PAGE_LINKS
+    )
+    items += "".join(f"<a class='nav-link' href='{href}'>{esc(label)}</a>" for href, label in extra)
+    return f"<nav class='nav-links' aria-label='頁面導覽'>{items}</nav>"
 
 
 def html_page(title, body, head_extra=""):
@@ -2046,6 +2071,7 @@ WELCOME_CSS = """
   .hub-word { background:linear-gradient(95deg,#0f62fe 10%,#0aa06e 90%); -webkit-background-clip:text; background-clip:text; color:transparent; }
 }
 .hub-sub { font-size:12px; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+.hub .nav-links { justify-content:center; margin-bottom:22px; }
 .tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
 .tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
         padding:26px 14px 22px; min-height:186px; background:var(--card); border-radius:24px;
@@ -2131,6 +2157,7 @@ def render_welcome_page():
           <div class='hub-sub'>AI 量化風控樞紐 v12</div>
         </div>
       </div>
+      {page_nav("welcome")}
       <div class='tiles'>{tiles}</div>
       <div class='hub-foot'>&copy; 2026 AI Trading Lab</div>
     </div>"""
@@ -2168,8 +2195,8 @@ def build_dashboard_page(msg):
     recent = stats.get("recent", {})
 
     body = f"""
-    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>⚙️ 智能諸葛亮核心控制台 (Admin)</h1></div>
-      <div><a href='?view=welcome'>🏠 返回首頁</a><a href='?view=gates'>🎛️ 關卡開關</a><a href='?view=info'>📄 投資人日誌 ➔</a></div></div>
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>⚙️ 核心控制台</h1></div>
+      {page_nav("dashboard")}</div>
     {banner}{gates_warning}
     <div class='section-header'>🧠 M1 動能雷達（{bars_count} 根連續 K 線，需 {MIN_M1_BARS}）</div>
     <div class='log-box mono' style='color:#3730a3; font-weight:600; max-height:200px;'>{esc(verdict_log)}</div>
@@ -2331,7 +2358,7 @@ def build_info_page():
                         .replace("__DATA__", json.dumps(series))
 
     body = f"""
-    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>📊 投資人數據中心 (Investor Transparency Hub)</h1></div><a href='?view=welcome'>← 返回首頁</a></div>
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>📊 投資人數據中心</h1></div>{page_nav("info")}</div>
     <div class='grid'>
       <div class='card'><div class='card-title'>累計已實現損益 ({esc(ACCOUNT_CURRENCY_DEFAULT)})</div>
         <div class='card-value {pnl_class(cumulative)}'>{cumulative:+,.2f}</div><div class='card-desc'>全部已結算交易{history_note}</div></div>
@@ -2916,8 +2943,8 @@ def build_gates_page(msg):
         "<button type='submit' class='mode-btn' style='background:#d97706; width:auto; padding:12px 18px; font-size:14px;'>跳到這一關</button></form>"
     )
     body = f"""
-    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>🎛️ 關卡開關頁面</h1></div>
-      <div><a href='?view=welcome'>🏠 首頁</a><a href='?view=gates_app'>🆕 獨立版</a><a href='?view=dashboard'>⚙️ 控制台</a><a href='?view=info'>📄 投資人日誌</a></div></div>
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>🎛️ 關卡開關（內建版）</h1></div>
+      {page_nav("gates_app", extra=[("?view=gates_app", "🆕 獨立版")])}</div>
     {banner}
     <div class='section' style='text-align:center;'>
       <div class='muted' style='font-weight:600;'>目前模式</div>

@@ -11,6 +11,12 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans
 .container { max-width:1050px; margin:0 auto; }
 .nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
 .page-title { font-size:18px; font-weight:bold; margin:0; }
+.nav-links { display:flex; flex-wrap:wrap; gap:8px; align-items:center; flex-basis:100%; }
+.nav-link { display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px; font-weight:700;
+            text-decoration:none; color:var(--primary); background:#eef4ff; white-space:nowrap; }
+.nav-link:hover { background:#dbe7ff; }
+.nav-current { background:#0f62fe; color:#fff; cursor:default; }
+.nav-disabled { background:#f1f3f5; color:#adb5bd; cursor:not-allowed; }
 .brand { display:flex; align-items:center; gap:10px; min-width:0; }
 .brand-logo { width:34px; height:34px; flex-shrink:0; }
 .brand-logo svg { width:100%; height:100%; display:block; }
@@ -93,6 +99,7 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
       <span id="connChip" class="chip idle">尚未連線</span>
       <button id="refreshBtn" class="btn btn-grey" type="button">🔄 重新讀取</button>
     </div>
+    <nav class="nav-links" id="pageNav" aria-label="頁面導覽"></nav>
   </div>
 
   <div id="banner" class="banner" style="display:none;"></div>
@@ -168,6 +175,8 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
   ];
   // saved = 伺服器上真正存著的值（預覽回應不會動它，否則改動會被誤判為已儲存）
   var state = { data: null, saved: null, edits: {}, busy: false, previewTimer: null };
+
+  var CURRENT_VIEW = "order_app";
 
   function el(id) { return document.getElementById(id); }
   function store(key, value) {
@@ -493,6 +502,44 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
     }).then(function () { setBusy(false); });
   }
 
+
+  // ---- 頁頂導覽：連結指向使用者填的 Cloud Function 網址 ----
+  var PAGE_LINKS = [["welcome", "🏠 首頁"], ["info", "📄 投資人日誌"], ["gates_app", "🎛️ 關卡開關"],
+                    ["order_app", "🧾 送單參數"], ["dashboard", "⚙️ 控制台"]];
+
+  function navBase() {
+    var raw = el("endpoint").value.trim();
+    if (!raw) { return ""; }
+    try {
+      var url = new URL(raw, location.href);
+      url.search = ""; url.hash = "";
+      return url.toString();
+    } catch (e) { return ""; }
+  }
+
+  function renderNav() {
+    var host = el("pageNav");
+    if (!host) { return; }
+    var base = navBase();
+    host.textContent = "";
+    PAGE_LINKS.forEach(function (item) {
+      var view = item[0], label = item[1];
+      if (view === CURRENT_VIEW) { host.appendChild(node("span", "nav-link nav-current", label)); return; }
+      if (!base) {
+        var dead = node("span", "nav-link nav-disabled", label);
+        dead.title = "請先填入 Cloud Function 網址";
+        host.appendChild(dead);
+        return;
+      }
+      var link = document.createElement("a");
+      link.className = "nav-link";
+      link.textContent = label;
+      link.href = base + "?view=" + view;
+      host.appendChild(link);
+    });
+  }
+
+
   el("connectBtn").addEventListener("click", function () { refresh(false); });
   el("refreshBtn").addEventListener("click", function () { refresh(false); });
   el("saveBtn").addEventListener("click", save);
@@ -505,6 +552,7 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
     banner("warn", "已放棄修改，顯示伺服器目前設定。");
   });
   el("remember").addEventListener("change", rememberSettings);
+  el("endpoint").addEventListener("input", renderNav);
   window.addEventListener("beforeunload", function (event) {
     if (state.data && changedKeys().length) { event.preventDefault(); event.returnValue = ""; }
   });
@@ -512,6 +560,7 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
   el("remember").checked = load(LS_REMEMBER) !== "0";
   el("endpoint").value = load(LS_ENDPOINT) || defaultEndpoint();
   el("token").value = load(LS_TOKEN) || "";
+  renderNav();
   if (el("endpoint").value) { refresh(true); } else { banner("warn", "請先填入 Cloud Function 網址，再按「連線」。"); }
 })();
 </script>
