@@ -168,10 +168,11 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
 
   var LS_ENDPOINT = "zhuge_gates_endpoint", LS_TOKEN = "zhuge_gates_token", LS_REMEMBER = "zhuge_gates_remember";
   var GROUPS = [
-    { title: "🏦 券商連線", keys: ["username", "api_key", "broker", "account_type"] },
+    { title: "🏦 券商連線", keys: ["username", "api_key", "broker", "account_type", "account"] },
     { title: "📈 商品與手數", keys: ["symbol", "size", "strategy", "comment"] },
     { title: "🛡️ 止損與止盈（決定 sl_distance_price / tp_distance_price）", keys: ["sl_atr_mult", "min_sl_distance", "target_rrr"] },
-    { title: "🏃 移動止損與保本", keys: ["ts_activation_price", "ts_distance_price", "breakeven_distance_price", "breakeven_profit"] }
+    { title: "🏃 移動止損與保本", keys: ["ts_activation_price", "ts_distance_price", "breakeven_distance_price", "breakeven_profit"] },
+    { title: "📐 距離單位（送出前的換算）", keys: ["distance_unit"] }
   ];
   // saved = 伺服器上真正存著的值（預覽回應不會動它，否則改動會被誤判為已儲存）
   var state = { data: null, saved: null, edits: {}, busy: false, previewTimer: null };

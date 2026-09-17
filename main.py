@@ -82,6 +82,10 @@ ORDER_SIZE = _env_float("ORDER_SIZE", 0.01)
 BROKER_API_URL = "https://webhooktrade.com/signals/v1/webhook_receptions.php?t=e66cdac4abb48f1a"
 BROKER_TIMEOUT_SEC = _env_int("BROKER_TIMEOUT_SEC", 8)            # keep total request < EA WebRequest timeout
 ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD")                    # symbol sent to webhooktrade
+ORDER_ACCOUNT = _env_str("ORDER_ACCOUNT", "1")                       # webhooktrade 範本的 account 欄位
+# 距離欄位的單位：price＝直接送美元；points＝乘以 POINTS_PER_UNIT。webhooktrade 的定義未確認。
+DISTANCE_UNIT = _env_str("DISTANCE_UNIT", "price").lower()
+POINTS_PER_UNIT = _env_float("POINTS_PER_UNIT", 100.0)               # XAUUSD 兩位小數：1 美元 = 100 點
 ORDER_SETTLE_SEC = _env_int("ORDER_SETTLE_SEC", 180)                  # [R12c R25]
 LOCKED_HTTP_STATUS = _env_int("LOCKED_HTTP_STATUS", 403)              # [R63] 403 kept for EA compatibility
 
@@ -258,6 +262,8 @@ def _startup_warnings():
     if activation is not None and distance is not None and distance > activation:
         print(f"⚠️ [出場參數] TS_DISTANCE ({distance}) > TS_ACTIVATION ({activation})：啟動移動止損時止損可能仍在進場價之下，"
               f"請確認 webhooktrade 語義。[R33]", flush=True)
+    print(f"ℹ️ [送單欄位] 依 webhooktrade 範本送出 sl_distance / tp_distance / ts_activation / ts_distance / "
+          f"breakeven_distance｜距離單位={DISTANCE_UNIT}（未確認語義，請用測試單核對 MT5 上的實際止損）", flush=True)
     if FIRST_ENTRY_MODE not in ("BREAKOUT", "MID"):
         print(f"⚠️ [設定] FIRST_ENTRY_MODE={FIRST_ENTRY_MODE} 無效，將視為 BREAKOUT。", flush=True)
 
@@ -1372,6 +1378,7 @@ ORDER_PARAM_DEFS = [
     ("api_key", "webhooktrade API Key", "secret", "封包的 api_key 欄位；讀取時一律遮蔽，留空代表不修改。", {"max_len": 128}),
     ("broker", "券商橋接", "text", "封包的 broker 欄位（例如 metatrader）。", {"max_len": 32}),
     ("account_type", "帳戶類型", "choice", "real＝實盤下單，demo＝模擬帳戶。", {"choices": ["real", "demo"]}),
+    ("account", "券商帳戶編號", "text", "封包的 account 欄位（webhooktrade 範本為 \"1\"）。", {"max_len": 16}),
     ("symbol", "商品代號", "text", "送單用的 symbol；EA 無持倉時回報 NONE，所以這裡固定由本頁決定。", {"max_len": 20}),
     ("size", "每張單手數", "number", "封包的 size；也是加單時每次增加的手數。", {"min": 0.01, "max": HARD_MAX_LOTS, "step": 0.01}),
     ("strategy", "策略標籤", "text", "封包的 strategy 欄位。", {"max_len": 32}),
@@ -1383,6 +1390,10 @@ ORDER_PARAM_DEFS = [
     ("ts_distance_price", "移動止損距離", "number", "封包的 ts_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
     ("breakeven_distance_price", "保本啟動距離", "number", "封包的 breakeven_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
     ("breakeven_profit", "保本鎖利", "number", "封包的 breakeven_profit。", {"min": 0.0, "max": 100000.0, "step": 1.0}),
+    ("distance_unit", "距離單位", "choice",
+     "所有距離欄位送出時的單位。price＝直接送美元（13.00）；points＝乘以 POINTS_PER_UNIT 後送點數（1300）。"
+     "webhooktrade 的定義未確認，請先用一張最小手數的測試單核對 MT5 上的止損距離。",
+     {"choices": ["price", "points"]}),
 ]
 ORDER_PARAM_KEYS = [d[0] for d in ORDER_PARAM_DEFS]
 ORDER_PARAM_KINDS = {d[0]: d[2] for d in ORDER_PARAM_DEFS}
@@ -1390,8 +1401,8 @@ ORDER_PARAM_LIMITS = {d[0]: d[4] for d in ORDER_PARAM_DEFS}
 # 這幾個欄位是每次訊號現算的，不能直接輸入
 ORDER_COMPUTED_FIELDS = {
     "action": "由電閘趨勢方向決定（BUY／SELL）。",
-    "sl_distance_price": "max(最小止損距離, ATR(M15) × 止損倍數)。",
-    "tp_distance_price": "止損距離 × 止盈倍數。",
+    "sl_distance": "max(最小止損距離, ATR(M15) × 止損倍數)。",
+    "tp_distance": "止損距離 × 止盈倍數。",
 }
 
 
@@ -1408,6 +1419,7 @@ def default_order_params():
         "api_key": ORDER_TEMPLATE["api_key"],
         "broker": ORDER_TEMPLATE["broker"],
         "account_type": ORDER_TEMPLATE["account_type"],
+        "account": ORDER_ACCOUNT,
         "symbol": ORDER_SYMBOL,
         "size": round(ORDER_SIZE, 2),
         "strategy": ORDER_TEMPLATE["strategy"],
@@ -1419,6 +1431,7 @@ def default_order_params():
         "ts_distance_price": to_float(TS_DISTANCE_PRICE, 0.0),
         "breakeven_distance_price": to_float(BREAKEVEN_DISTANCE_PRICE, 0.0),
         "breakeven_profit": to_float(BREAKEVEN_PROFIT, 0.0),
+        "distance_unit": DISTANCE_UNIT,
     }
 
 
@@ -1679,30 +1692,38 @@ pure_gcp_session = PureGCPPyramidingSession()
 # =============================================================================
 # 🚀 Execution: news → AI → broker → commit state  [R1 R1b R3 R24f R64 R65]
 # =============================================================================
+def format_distance(value, params):
+    """距離欄位的輸出格式。points 模式會乘上 POINTS_PER_UNIT（XAUUSD 兩位小數：1 美元 = 100 點）。"""
+    if params.get("distance_unit") == "points":
+        return f"{round(value * POINTS_PER_UNIT):d}"
+    return f"{value:.2f}"
+
+
 def build_order(candidate, params=None):
-    """送給 webhooktrade 的封包。欄位順序即送單參數頁顯示的順序。"""
+    """送給 webhooktrade 的封包。欄位名稱依 webhooktrade 官方範本（不是 *_price）。"""
     params = params or read_order_params()[0]
     sl = candidate["sl_distance"]
 
-    def num(key):
-        return f"{params[key]:g}"
+    def dist(key):
+        return format_distance(params[key], params)
 
     return {
         "username": params["username"],
         "api_key": params["api_key"],
         "broker": params["broker"],
         "account_type": params["account_type"],
+        "account": params["account"],
         "symbol": candidate["ticker"],
         "action": candidate["signal"],
         "size": f"{params['size']:.2f}",
         "strategy": params["strategy"],
         "comment": params["comment"],
-        "sl_distance_price": f"{sl:.2f}",
-        "tp_distance_price": f"{round(sl * params['target_rrr'], 2):.2f}",
-        "ts_activation_price": num("ts_activation_price"),
-        "ts_distance_price": num("ts_distance_price"),
-        "breakeven_distance_price": num("breakeven_distance_price"),
-        "breakeven_profit": num("breakeven_profit"),
+        "sl_distance": format_distance(sl, params),
+        "tp_distance": format_distance(round(sl * params["target_rrr"], 2), params),
+        "ts_activation": dist("ts_activation_price"),
+        "ts_distance": dist("ts_distance_price"),
+        "breakeven_distance": dist("breakeven_distance_price"),
+        "breakeven_profit": f"{params['breakeven_profit']:g}",
     }
 
 
