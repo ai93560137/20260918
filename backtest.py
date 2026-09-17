@@ -361,11 +361,18 @@ class Backtest:
                for p, c in zip(self.m15, self.m15[1:])][-period:]
         return round(sum(trs) / len(trs), 2) if trs else None
 
-    def run(self, noise_k, bypass):
+    def run(self, noise_k, bypass, target_rrr=None, sl_atr_mult=None):
         m = self.m
         m.NOISE_K = noise_k
         self.store.clear()
         m.write_gate_bypass(frozenset(bypass), "backtest")
+        if target_rrr is not None or sl_atr_mult is not None:
+            params = m.default_order_params()
+            if target_rrr is not None:
+                params["target_rrr"] = target_rrr
+            if sl_atr_mult is not None:
+                params["sl_atr_mult"] = sl_atr_mult
+            m.write_order_params(params)
         clock = {"t": 0.0}
         m.now_ts = lambda: clock["t"]
         history, equity_curve = [], []
@@ -518,6 +525,10 @@ def main():
     parser.add_argument("--be-trigger", type=float, help="覆寫保本啟動距離（美元獲利）")
     parser.add_argument("--ignore-hours", action="store_true", help="忽略黃金休市時段")
     parser.add_argument("--trades", help="把每筆交易寫成 CSV")
+    parser.add_argument("--by-month", action="store_true", help="逐月拆解（檢查不同市況下是否穩定）")
+    parser.add_argument("--target-rrr", type=float, help="覆寫止盈倍數（預設讀 main.py 的 TARGET_RRR）")
+    parser.add_argument("--sl-atr-mult", type=float, help="覆寫止損的 ATR 倍數")
+    parser.add_argument("--sweep-rrr", help="掃描止盈倍數，例如 1.0,1.5,2.0,3.0")
     args = parser.parse_args()
 
     m = load_main()
@@ -545,15 +556,18 @@ def main():
     mode_bypass = {"strict": [], "relaxed": sorted(m.GATE_MODES["relaxed"][1]),
                    "aggressive": sorted(m.GATE_MODES["aggressive"][1]), "all-off": m.GATE_SWITCH_KEYS}
 
+    rrrs = [float(x) for x in args.sweep_rrr.split(",")] if args.sweep_rrr else [args.target_rrr]
     rows, all_trades = [], []
     for mode in modes:
         for k in ks:
-            result = Backtest(m, bars, args).run(k, mode_bypass[mode])
-            summary = summarise(result, args)
-            rows.append([mode, f"{k:.2f}"] + [summary[h] for h in summary])
-            for trade in result["closed"]:
-                all_trades.append({"mode": mode, "noise_k": k, **trade})
-            if len(modes) * len(ks) == 1:
+            for rrr in rrrs:
+                result = Backtest(m, bars, args).run(k, mode_bypass[mode], rrr, args.sl_atr_mult)
+                summary = summarise(result, args)
+                label = f"{mode}" + (f" TP={rrr:g}R" if rrr else "")
+                rows.append([label, f"{k:.2f}"] + [summary[h] for h in summary])
+                for trade in result["closed"]:
+                    all_trades.append({"mode": label, "noise_k": k, **trade})
+            if len(modes) * len(ks) * len(rrrs) == 1:
                 print()
                 for key, value in summary.items():
                     print(f"  {key:<16}{value}")
@@ -570,6 +584,35 @@ def main():
         headers = ["模式", "K"] + list(summarise(result, args).keys())
         print()
         print_table(rows, headers)
+
+    if args.by_month and all_trades:
+        from collections import defaultdict
+        buckets = defaultdict(list)
+        for trade in all_trades:
+            key = (trade["mode"], trade["noise_k"],
+                   datetime.fromtimestamp(trade["closed_at"], timezone.utc).strftime("%Y-%m"))
+            buckets[key].append(trade)
+        print()
+        print("逐月拆解（已實現損益，USD）")
+        monthly = []
+        for (mode, k, month), group in sorted(buckets.items()):
+            wins = [t for t in group if t["profit_usd"] > 0]
+            lost = abs(sum(t["profit_usd"] for t in group if t["profit_usd"] < 0))
+            won = sum(t["profit_usd"] for t in wins)
+            monthly.append([f"{mode} K={k}", month, len(group),
+                            f"{len(wins) / len(group) * 100:.0f}%",
+                            round(won / lost, 2) if lost else "—",
+                            round(sum(t["profit_usd"] for t in group), 2)])
+        print_table(monthly, ["設定", "月份", "交易", "勝率", "獲利因子", "損益USD"])
+        print()
+        by_config = defaultdict(list)
+        for row in monthly:
+            by_config[row[0]].append(row[5])
+        print("各設定的月度穩定度")
+        rows = [[config, len(values), sum(1 for v in values if v > 0),
+                 round(sum(values), 2), round(min(values), 2), round(max(values), 2)]
+                for config, values in sorted(by_config.items())]
+        print_table(rows, ["設定", "月數", "獲利月數", "合計USD", "最差月", "最好月"])
 
     if args.trades and all_trades:
         with open(args.trades, "w", newline="", encoding="utf-8-sig") as handle:
