@@ -61,27 +61,33 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
     <div class="brand"><div class="brand-logo"><svg viewBox='0 0 64 64' role='img' aria-label='智能諸葛亮' focusable='false'>
   <defs>
     <linearGradient id='zgBadge' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0%' stop-color='#4f8bff'/><stop offset='48%' stop-color='#0f62fe'/>
+      <stop offset='0%' stop-color='#6aa9ff'/><stop offset='46%' stop-color='#0f62fe'/>
       <stop offset='100%' stop-color='#0aa06e'/>
     </linearGradient>
-    <linearGradient id='zgFan' x1='0' y1='1' x2='0' y2='0'>
-      <stop offset='0%' stop-color='#ffffff' stop-opacity='.82'/><stop offset='100%' stop-color='#ffffff'/>
+    <linearGradient id='zgVisor' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#17356f'/><stop offset='100%' stop-color='#0b1f45'/>
     </linearGradient>
-    <linearGradient id='zgTrend' x1='0' y1='1' x2='1' y2='0'>
+    <linearGradient id='zgSpark' x1='0' y1='1' x2='1' y2='0'>
       <stop offset='0%' stop-color='#ffd166'/><stop offset='100%' stop-color='#ff8c1a'/>
     </linearGradient>
   </defs>
   <rect x='2' y='2' width='60' height='60' rx='18' fill='url(#zgBadge)'/>
   <rect x='2' y='2' width='60' height='60' rx='18' fill='none' stroke='#ffffff' stroke-opacity='.22' stroke-width='1.5'/>
-  <path d='M13 39a19 19 0 0 1 38 0z' fill='url(#zgFan)'/>
-  <path d='M32 39V20M32 39L18.6 25.6M32 39l13.4-13.4M32 39l-17.6-7.3M32 39l17.6-7.3'
-        stroke='#0f62fe' stroke-opacity='.28' stroke-width='1.5' stroke-linecap='round'/>
-  <rect x='30.4' y='38' width='3.2' height='13' rx='1.6' fill='#ffffff'/>
-  <circle cx='32' cy='39' r='2.6' fill='#ffffff'/><circle cx='32' cy='39' r='1.2' fill='#0f62fe' fill-opacity='.5'/>
-  <path d='M18.5 34.5l7-7 5 5 9.5-9.5' fill='none' stroke='url(#zgTrend)' stroke-width='3.4'
-        stroke-linecap='round' stroke-linejoin='round'/>
-  <path d='M40 23h-5.4M40 23v5.4' fill='none' stroke='url(#zgTrend)' stroke-width='3.4'
-        stroke-linecap='round' stroke-linejoin='round'/>
+  <path d='M32 16.5v-4' stroke='#ffffff' stroke-width='2.6' stroke-linecap='round'/>
+  <circle cx='32' cy='9.5' r='4.6' fill='#ffffff' fill-opacity='.28'/>
+  <circle cx='32' cy='9.5' r='3' fill='url(#zgSpark)'/>
+  <path d='M22 48h20a7 7 0 0 1 7 7v3H15v-3a7 7 0 0 1 7-7z' fill='#ffffff' fill-opacity='.72'/>
+  <rect x='8.5' y='26' width='5.5' height='11' rx='2.75' fill='#ffffff' fill-opacity='.8'/>
+  <rect x='50' y='26' width='5.5' height='11' rx='2.75' fill='#ffffff' fill-opacity='.8'/>
+  <rect x='13' y='16' width='38' height='33' rx='13' fill='#ffffff'/>
+  <rect x='18.5' y='21.5' width='27' height='18' rx='9' fill='url(#zgVisor)'/>
+  <circle cx='26.5' cy='28.8' r='3.5' fill='#8fe3ff'/><circle cx='25.4' cy='27.6' r='1.25' fill='#ffffff'/>
+  <circle cx='37.5' cy='28.8' r='3.5' fill='#8fe3ff'/><circle cx='36.4' cy='27.6' r='1.25' fill='#ffffff'/>
+  <path d='M27.6 34.4q4.4 3.4 8.8 0' fill='none' stroke='#8fe3ff' stroke-width='2.1' stroke-linecap='round'/>
+  <circle cx='16.6' cy='34.5' r='2.1' fill='#ff8c1a' fill-opacity='.5'/>
+  <circle cx='47.4' cy='34.5' r='2.1' fill='#ff8c1a' fill-opacity='.5'/>
+  <circle cx='24.6' cy='55' r='1.9' fill='#0aa06e' fill-opacity='.75'/>
+  <path d='M29.6 55h12' stroke='#0f62fe' stroke-opacity='.32' stroke-width='2.4' stroke-linecap='round'/>
 </svg></div><h1 class="page-title">🧾 送單參數頁面（webhook 封包）</h1></div>
     <div class="row-inline">
       <span id="connChip" class="chip idle">尚未連線</span>
