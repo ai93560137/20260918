@@ -2461,23 +2461,32 @@ GATE_ALWAYS_ON_NOTES = [
     "硬鎖、券商回應失敗",
 ]
 
+# 依 2026-01→09（251,006 根 M1）的回測：關掉這兩關在樣本內（+22.7%）與樣本外
+# （+17.4%、回撤僅 4.5%）都最穩定。其餘七關維持開啟。
+DEFAULT_BYPASS = frozenset({"setup_trigger", "structure"})
+
 GATE_MODES = {
-    "strict": ("🛡️ 恢復嚴格", frozenset()),
+    "recommended": ("📊 回測建議（預設）", DEFAULT_BYPASS),
+    "strict": ("🛡️ 全部關卡開啟", frozenset()),
     "relaxed": ("🟡 寬鬆模式", frozenset({"setup_trigger", "structure", "candle", "risk_cap"})),
     "aggressive": ("🔥 激進模式", frozenset({"setup_trigger", "structure", "candle", "risk_cap", "rsi", "news", "ai"})),
 }
 
 
 def read_gate_bypass():
-    """Set of switched-off gates. Fails safe: unreadable file = every gate checks normally."""
+    """Set of switched-off gates.
+
+    還沒有設定檔時採用 DEFAULT_BYPASS（回測建議值）；
+    讀取失敗時退回「全部關卡照常檢查」，這是比較安全的一邊。
+    """
     try:
         doc = gcs_read_json(GATE_SWITCHES_FILE, {})
     except StorageError as exc:
         print(f"⚠️ [關卡開關讀取失敗 → 全部關卡照常檢查] {exc}", flush=True)
         return frozenset()
     bypass = doc.get("bypass") if isinstance(doc, dict) else None
-    if not isinstance(bypass, list):
-        return frozenset()
+    if not isinstance(bypass, list):                 # 尚未在頁面存過任何設定
+        return DEFAULT_BYPASS
     return frozenset(k for k in bypass if k in GATE_SWITCH_KEYS)
 
 
@@ -2899,8 +2908,12 @@ def build_gates_page(msg):
     relaxed_names = "、".join(GATE_SWITCH_NAMES[k] for k in GATE_SWITCH_KEYS if k in GATE_MODES["relaxed"][1])
     aggressive_extra = "、".join(GATE_SWITCH_NAMES[k] for k in GATE_SWITCH_KEYS
                                  if k in GATE_MODES["aggressive"][1] and k not in GATE_MODES["relaxed"][1])
+    recommended_names = "、".join(GATE_SWITCH_NAMES[k] for k in GATE_SWITCH_KEYS if k in DEFAULT_BYPASS)
     modes = (
         "<div class='mode-grid'>"
+        + mode_card("recommended", "#0f62fe",
+                    f"略過：{esc(recommended_names)}。依 8.5 個月回測，樣本內外都最穩定。",
+                    "套用回測建議的預設狀態？")
         + mode_card("relaxed", "#d97706", f"略過：{esc(relaxed_names)}。", "確認套用寬鬆模式？")
         + mode_card("aggressive", "#dc3545", f"寬鬆模式再加上略過：{esc(aggressive_extra)}。",
                     "激進模式會同時略過倉位上限、新聞風控與 AI 覆核，實盤風險很高。確認套用？")
