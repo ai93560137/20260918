@@ -1905,6 +1905,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif
 .container { max-width:1050px; margin:0 auto; }
 .nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:24px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
 .nav a { color:var(--primary); text-decoration:none; font-weight:bold; font-size:14px; margin-left:15px; }
+.brand { display:flex; align-items:center; gap:10px; min-width:0; }
+.brand-logo { width:34px; height:34px; flex-shrink:0; }
+.brand-logo svg { width:100%; height:100%; display:block; }
 .page-title { font-size:18px; font-weight:bold; margin:0; }
 .grid { display:grid; gap:16px; margin-bottom:24px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
 .card { background:var(--card); padding:20px; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); }
@@ -1991,37 +1994,79 @@ def gate_summary(state):
     return "muted", f"⏸️ 等待趨勢確認（{regime_text}）"
 
 
+# =============================================================================
+# 🪶 品牌 Logo（彩色）：羽扇（諸葛亮）＋ 上升走勢，藍→綠漸層徽章
+#   - 純內嵌 SVG，不依賴字型或外部圖檔；同一頁只出現一次，漸層 id 不會相撞
+# =============================================================================
+BRAND_LOGO_SVG = """
+<svg viewBox='0 0 64 64' role='img' aria-label='智能諸葛亮' focusable='false'>
+  <defs>
+    <linearGradient id='zgBadge' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#4f8bff'/><stop offset='48%' stop-color='#0f62fe'/>
+      <stop offset='100%' stop-color='#0aa06e'/>
+    </linearGradient>
+    <linearGradient id='zgFan' x1='0' y1='1' x2='0' y2='0'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='.82'/><stop offset='100%' stop-color='#ffffff'/>
+    </linearGradient>
+    <linearGradient id='zgTrend' x1='0' y1='1' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#ffd166'/><stop offset='100%' stop-color='#ff8c1a'/>
+    </linearGradient>
+  </defs>
+  <rect x='2' y='2' width='60' height='60' rx='18' fill='url(#zgBadge)'/>
+  <rect x='2' y='2' width='60' height='60' rx='18' fill='none' stroke='#ffffff' stroke-opacity='.22' stroke-width='1.5'/>
+  <path d='M13 39a19 19 0 0 1 38 0z' fill='url(#zgFan)'/>
+  <path d='M32 39V20M32 39L18.6 25.6M32 39l13.4-13.4M32 39l-17.6-7.3M32 39l17.6-7.3'
+        stroke='#0f62fe' stroke-opacity='.28' stroke-width='1.5' stroke-linecap='round'/>
+  <rect x='30.4' y='38' width='3.2' height='13' rx='1.6' fill='#ffffff'/>
+  <circle cx='32' cy='39' r='2.6' fill='#ffffff'/><circle cx='32' cy='39' r='1.2' fill='#0f62fe' fill-opacity='.5'/>
+  <path d='M18.5 34.5l7-7 5 5 9.5-9.5' fill='none' stroke='url(#zgTrend)' stroke-width='3.4'
+        stroke-linecap='round' stroke-linejoin='round'/>
+  <path d='M40 23h-5.4M40 23v5.4' fill='none' stroke='url(#zgTrend)' stroke-width='3.4'
+        stroke-linecap='round' stroke-linejoin='round'/>
+</svg>
+"""
+
 WELCOME_CSS = """
 <style>
-.hub { max-width:820px; margin:40px auto 0; }
-.hub-head { text-align:center; margin-bottom:28px; }
-.hub-mark { width:74px; height:74px; margin:0 auto 14px; color:var(--primary); }
-.hub-mark svg { width:100%; height:100%; }
-.hub-title { font-size:26px; font-weight:800; margin:0; color:#0d6efd; letter-spacing:1px; }
+.hub { max-width:840px; margin:36px auto 0; }
+.hub-head { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:30px; }
+.hub-logo { width:76px; height:76px; flex-shrink:0; filter:drop-shadow(0 6px 14px rgba(15,98,254,.28)); }
+.hub-logo svg { width:100%; height:100%; display:block; }
+.hub-names { text-align:left; }
+.hub-word { font-size:30px; font-weight:900; letter-spacing:3px; margin:0; color:#0f62fe; line-height:1.15; }
+@supports ((background-clip:text) or (-webkit-background-clip:text)) {
+  .hub-word { background:linear-gradient(95deg,#0f62fe 10%,#0aa06e 90%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+}
+.hub-sub { font-size:12px; color:var(--muted); letter-spacing:2px; margin-top:4px; }
 .tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
-.tile { display:flex; align-items:center; justify-content:center; aspect-ratio:1/1;
-        background:var(--card); border-radius:24px; box-shadow:0 6px 18px rgba(0,0,0,.06);
-        text-decoration:none; border:2px solid transparent; transition:transform .12s ease, box-shadow .12s ease; }
-.tile svg { width:58%; height:58%; max-width:132px; }
+.tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+        padding:26px 14px 22px; min-height:186px; background:var(--card); border-radius:24px;
+        box-shadow:0 6px 18px rgba(0,0,0,.06); text-decoration:none; border:2px solid transparent;
+        transition:transform .12s ease, box-shadow .12s ease; }
+.tile svg { width:74px; height:74px; flex-shrink:0; }
+.tile-text { text-align:center; }
+.tile-label { font-size:16px; font-weight:800; color:var(--text); letter-spacing:.5px; }
+.tile-sub { font-size:11px; color:var(--muted); margin-top:3px; letter-spacing:.5px; }
 .tile:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.12); }
 .tile:active { transform:scale(.97); }
 .tile:focus-visible { outline:none; border-color:currentColor; box-shadow:0 0 0 4px rgba(15,98,254,.25); }
-.hub-foot { text-align:center; font-size:11px; color:#c7ccd1; margin:34px 0 10px; letter-spacing:.5px; }
+.hub-foot { text-align:center; font-size:11px; color:#c7ccd1; margin:32px 0 10px; letter-spacing:.5px; }
 @media (max-width:640px) {
-  .hub { margin-top:18px; }
-  .tiles { grid-template-columns:repeat(2,1fr); gap:14px; }
-  .tile { border-radius:20px; }
-  .tiles a:last-child:nth-child(odd) { grid-column:span 2; aspect-ratio:2.4/1; }
-  .tiles a:last-child:nth-child(odd) svg { width:auto; height:70%; }
-  .tile svg { width:62%; height:62%; }
-  .hub-title { font-size:21px; }
-  .hub-mark { width:58px; height:58px; }
+  .hub { margin-top:16px; }
+  .hub-head { gap:12px; margin-bottom:20px; }
+  .hub-logo { width:58px; height:58px; }
+  .hub-word { font-size:23px; letter-spacing:2px; }
+  .tiles { grid-template-columns:repeat(2,1fr); gap:13px; }
+  .tile { min-height:150px; padding:18px 10px 16px; gap:9px; border-radius:20px; }
+  .tile svg { width:58px; height:58px; }
+  .tile-label { font-size:14px; }
+  .tiles a:last-child:nth-child(odd) { grid-column:span 2; flex-direction:row; min-height:92px; gap:16px; }
+  .tiles a:last-child:nth-child(odd) .tile-text { text-align:left; }
 }
 @media (prefers-reduced-motion:reduce) { .tile { transition:none; } .tile:hover, .tile:active { transform:none; } }
 </style>
 """
 
-# 首頁導覽只用圖像：每一頁一個可辨識的線條圖示（aria-label / title 供輔助工具與滑鼠提示）
 SVG_OPEN = ("<svg viewBox='0 0 48 48' fill='none' stroke='currentColor' stroke-width='2.6' "
             "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true' focusable='false'>")
 
@@ -2052,33 +2097,35 @@ HUB_ICONS = {
                              "<path d='M24 13v3M12.6 18.6l2.1 2.1M35.4 18.6l-2.1 2.1M8 35h3M37 35h3'/></svg>"),
 }
 
-# 首頁標題上方的識別圖示（盾牌＋走勢＝風控樞紐），刻意與任何頁面圖示不同
-HUB_MARK = SVG_OPEN + ("<path d='M24 5l15 5.5v12.8C39 33 32.6 40.2 24 43.5 15.4 40.2 9 33 9 23.3V10.5z'/>"
-                       "<path d='M16 27.5l5.5-5.5 4.5 4.5 7.5-8'/><path d='M33.5 18.5h-4.6M33.5 18.5v4.6'/></svg>")
-
+# href, 圖示, 標籤, 副標, 圖示顏色
 HUB_TILES = [
-    ("?view=info", "info", "投資人日誌：實盤績效與 GCP 決策", "#0f62fe"),
-    ("?view=gates_app", "gates_app", "關卡開關頁面（獨立版）", "#d97706"),
-    ("?view=gates", "gates", "關卡開關頁面（內建版）", "#b45309"),
-    ("?view=order_app", "order_app", "送單參數頁面（webhook 封包）", "#0aa06e"),
-    ("?view=dashboard", "dashboard", "系統控制台（管理員）", "#212529"),
+    ("?view=info", "info", "投資人日誌", "實盤績效與 GCP 決策", "#0f62fe"),
+    ("?view=gates_app", "gates_app", "關卡開關", "獨立版・可遠端控制", "#d97706"),
+    ("?view=gates", "gates", "關卡開關（內建）", "由 Cloud Function 產生", "#b45309"),
+    ("?view=order_app", "order_app", "送單參數", "webhook 封包欄位", "#0aa06e"),
+    ("?view=dashboard", "dashboard", "系統控制台", "管理員・電閘與帳戶", "#212529"),
 ]
 
 
 def render_welcome_page():
     tiles = "".join(
-        f"<a class='tile' href='{href}' style='color:{color};' title='{esc(label)}' aria-label='{esc(label)}'>"
-        f"{HUB_ICONS[icon]}</a>"
-        for href, icon, label, color in HUB_TILES
+        f"<a class='tile' href='{href}' title='{esc(label)}（{esc(sub)}）' aria-label='{esc(label)}，{esc(sub)}'>"
+        f"<span style='color:{color}; display:flex;'>{HUB_ICONS[icon]}</span>"
+        f"<span class='tile-text'><div class='tile-label'>{esc(label)}</div>"
+        f"<div class='tile-sub'>{esc(sub)}</div></span></a>"
+        for href, icon, label, sub, color in HUB_TILES
     )
     body = f"""
     <div class='hub'>
       <div class='hub-head'>
-        <div class='hub-mark'>{HUB_MARK}</div>
-        <h1 class='hub-title'>智能諸葛亮</h1>
+        <div class='hub-logo'>{BRAND_LOGO_SVG}</div>
+        <div class='hub-names'>
+          <h1 class='hub-word'>智能諸葛亮</h1>
+          <div class='hub-sub'>AI 量化風控樞紐 v12</div>
+        </div>
       </div>
       <div class='tiles'>{tiles}</div>
-      <div class='hub-foot'>v12 &copy; 2026 AI Trading Lab</div>
+      <div class='hub-foot'>&copy; 2026 AI Trading Lab</div>
     </div>"""
     return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
 
@@ -2114,7 +2161,7 @@ def build_dashboard_page(msg):
     recent = stats.get("recent", {})
 
     body = f"""
-    <div class='nav'><h1 class='page-title'>⚙️ 智能諸葛亮核心控制台 (Admin)</h1>
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>⚙️ 智能諸葛亮核心控制台 (Admin)</h1></div>
       <div><a href='?view=welcome'>🏠 返回首頁</a><a href='?view=gates'>🎛️ 關卡開關</a><a href='?view=info'>📄 投資人日誌 ➔</a></div></div>
     {banner}{gates_warning}
     <div class='section-header'>🧠 M1 動能雷達（{bars_count} 根連續 K 線，需 {MIN_M1_BARS}）</div>
@@ -2277,7 +2324,7 @@ def build_info_page():
                         .replace("__DATA__", json.dumps(series))
 
     body = f"""
-    <div class='nav'><h1 class='page-title'>📊 投資人數據中心 (Investor Transparency Hub)</h1><a href='?view=welcome'>← 返回首頁</a></div>
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>📊 投資人數據中心 (Investor Transparency Hub)</h1></div><a href='?view=welcome'>← 返回首頁</a></div>
     <div class='grid'>
       <div class='card'><div class='card-title'>累計已實現損益 ({esc(ACCOUNT_CURRENCY_DEFAULT)})</div>
         <div class='card-value {pnl_class(cumulative)}'>{cumulative:+,.2f}</div><div class='card-desc'>全部已結算交易{history_note}</div></div>
@@ -2862,7 +2909,7 @@ def build_gates_page(msg):
         "<button type='submit' class='mode-btn' style='background:#d97706; width:auto; padding:12px 18px; font-size:14px;'>跳到這一關</button></form>"
     )
     body = f"""
-    <div class='nav'><h1 class='page-title'>🎛️ 關卡開關頁面</h1>
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>🎛️ 關卡開關頁面</h1></div>
       <div><a href='?view=welcome'>🏠 首頁</a><a href='?view=gates_app'>🆕 獨立版</a><a href='?view=dashboard'>⚙️ 控制台</a><a href='?view=info'>📄 投資人日誌</a></div></div>
     {banner}
     <div class='section' style='text-align:center;'>
