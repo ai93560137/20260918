@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>關卡開關頁面 - 智能諸葛亮</title>
+<style>
+:root { --primary:#0f62fe; --success:#198754; --danger:#dc3545; --warning:#d97706; --bg:#f4f7fb; --card:#fff; --text:#161616; --muted:#6c757d; }
+* { box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif; background:var(--bg); color:var(--text); padding:20px 15px; margin:0; }
+.container { max-width:1050px; margin:0 auto; }
+.nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
+.page-title { font-size:18px; font-weight:bold; margin:0; }
+.nav a { color:var(--primary); text-decoration:none; font-weight:bold; font-size:14px; margin-left:15px; }
+.section { background:var(--card); padding:22px; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); margin-bottom:20px; }
+h2 { font-size:17px; margin:0 0 14px; }
+.muted { color:var(--muted); }
+.pos { color:var(--success); } .neg { color:var(--danger); }
+.banner { padding:12px 16px; margin-bottom:18px; border-radius:8px; font-weight:bold; font-size:14px; }
+.banner.ok { background:#d4edda; color:#155724; } .banner.err { background:#f8d7da; color:#721c24; } .banner.warn { background:#fff3cd; color:#8a4b00; }
+.conn { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; align-items:end; }
+.field { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.field label { font-size:12px; font-weight:600; color:var(--muted); }
+.field input[type=text], .field input[type=password] { padding:10px 12px; border:1px solid #dee2e6; border-radius:8px; font-size:14px; width:100%; font-family:inherit; }
+.row-inline { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.btn { border:none; border-radius:8px; padding:12px 18px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-primary { background:var(--primary); } .btn-grey { background:#6c757d; }
+.chip { display:inline-block; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+.chip.on { background:#d1e7dd; color:#146c43; } .chip.off { background:#f8d7da; color:#721c24; } .chip.idle { background:#e9ecef; color:#495057; }
+.status-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+.status-box { background:#f8f9fa; border-radius:10px; padding:14px 16px; }
+.status-box .k { font-size:12px; color:var(--muted); font-weight:600; margin-bottom:6px; }
+.status-box .v { font-size:18px; font-weight:800; word-break:break-word; }
+.status-note { font-size:13px; color:#495057; margin-top:12px; line-height:1.6; }
+.mode-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.mode-btn { width:100%; border:none; border-radius:10px; padding:16px; font-size:16px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; }
+.mode-desc { font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5; }
+.mode-current { outline:3px solid #0f62fe; outline-offset:2px; border-radius:10px; }
+.gate-row { display:flex; gap:14px; align-items:flex-start; padding:16px; border-radius:12px; margin-bottom:12px; background:#f8f9fa; border-left:5px solid var(--success); }
+.gate-row.off { background:#fff4e5; border-left-color:var(--warning); }
+.gate-row.dirty { box-shadow:0 0 0 2px rgba(15,98,254,.35); }
+.gate-body { flex:1; min-width:0; }
+.gate-title { font-weight:700; font-size:15px; margin-bottom:4px; }
+.gate-state { font-size:12px; font-weight:700; padding:2px 8px; border-radius:10px; margin-left:6px; white-space:nowrap; }
+.gate-state.on { background:#d1e7dd; color:#146c43; } .gate-state.off { background:#ffe5b4; color:#8a4b00; }
+.gate-text { font-size:13px; color:#495057; line-height:1.55; margin-top:4px; }
+.gate-risk { font-size:12px; color:#b45309; margin-top:4px; }
+.gate-extra { font-size:13px; color:#3730a3; background:#eef2ff; border-radius:8px; padding:10px 12px; margin-top:8px; line-height:1.55; }
+.switch { position:relative; display:inline-block; width:52px; height:30px; flex-shrink:0; margin-top:2px; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; inset:0; background:var(--warning); border-radius:30px; transition:.2s; }
+.slider:before { content:""; position:absolute; height:24px; width:24px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+.switch input:checked + .slider { background:var(--success); }
+.switch input:checked + .slider:before { transform:translateX(22px); }
+.switch input:disabled + .slider { opacity:.45; cursor:not-allowed; }
+.switch input:focus-visible + .slider { outline:3px solid rgba(15,98,254,.55); outline-offset:2px; }
+.save-bar { position:sticky; bottom:0; background:rgba(244,247,251,.96); padding:12px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; padding-left:20px; }
+.footer { text-align:center; font-size:12px; color:#adb5bd; margin:24px 0 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="nav">
+    <h1 class="page-title">🎛️ 關卡開關頁面（獨立版）</h1>
+    <div class="row-inline">
+      <span id="connChip" class="chip idle">尚未連線</span>
+      <button id="refreshBtn" class="btn btn-grey" type="button">🔄 重新整理</button>
+    </div>
+  </div>
+
+  <div id="banner" class="banner" style="display:none;"></div>
+
+  <div class="section">
+    <h2>🔗 連線設定</h2>
+    <p class="muted" style="font-size:12px; margin:0 0 14px;">
+      填入 Cloud Function 的網址（例如 https://REGION-PROJECT.cloudfunctions.net/FUNCTION_NAME）。
+      本頁只透過該網址讀寫關卡設定，資料不會送到任何第三方。權杖僅存在這台裝置的瀏覽器中。
+    </p>
+    <div class="conn">
+      <div class="field">
+        <label for="endpoint">Cloud Function 網址</label>
+        <input id="endpoint" type="text" placeholder="https://.../receive_tradingview_signal" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="token">管理權杖 (WEBHOOK_SECRET_TOKEN)</label>
+        <input id="token" type="password" placeholder="儲存設定時需要" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="row-inline">
+          <button id="connectBtn" class="btn btn-primary" type="button">連線</button>
+          <label class="muted" style="font-size:12px;"><input id="remember" type="checkbox" checked> 記住設定</label>
+        </div>
+      </div>
+    </div>
+    <div class="row-inline" style="margin-top:12px;">
+      <label class="muted" style="font-size:12px;"><input id="autoRefresh" type="checkbox" checked> 每 60 秒自動更新（有未儲存變更時暫停）</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 目前狀態</h2>
+    <div class="status-grid">
+      <div class="status-box"><div class="k">目前模式</div><div class="v" id="modeValue">—</div></div>
+      <div class="status-box"><div class="k">略過的關卡</div><div class="v" id="bypassValue">—</div></div>
+      <div class="status-box"><div class="k">電閘</div><div class="v" id="gateValue">—</div></div>
+      <div class="status-box"><div class="k">最後更新</div><div class="v" id="updatedValue" style="font-size:14px;">—</div></div>
+    </div>
+    <div class="status-note" id="gateNote">連線後顯示電閘與趨勢狀態。</div>
+    <div class="status-note muted" style="font-size:12px;">硬鎖（TARGET_HIT、RISK_HIT、緊急鎖死）不受本頁影響，請到控制台解除。</div>
+  </div>
+
+  <div class="section">
+    <h2>⚡ 一鍵模式</h2>
+    <div class="mode-grid" id="modeGrid"><div class="muted" style="font-size:13px;">等待連線…</div></div>
+  </div>
+
+  <div class="section">
+    <h2>🔧 逐關調整</h2>
+    <p class="muted" style="font-size:12px;">綠色＝該關卡照常檢查；橙色＝略過。調整後按下方「儲存」才會生效。</p>
+    <div id="gateList"><div class="muted" style="font-size:13px;">等待連線…</div></div>
+    <div class="save-bar">
+      <button id="saveBtn" class="btn btn-primary" type="button" disabled>💾 儲存逐關設定</button>
+      <button id="revertBtn" class="btn btn-grey" type="button" disabled>↩️ 還原</button>
+      <span id="dirtyNote" class="muted" style="font-size:13px;">尚無變更</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🔒 本頁無法略過的檢查</h2>
+    <div class="gate-text">以下是資料或安全前提，略過後系統無法正確計算方向、止損或持倉，因此不提供開關：</div>
+    <ul class="notes" id="alwaysOn"><li class="muted">等待連線…</li></ul>
+  </div>
+
+  <div class="footer">智能諸葛亮 AI 量化交易系統 v12 ｜ 關卡開關獨立頁</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_ENDPOINT = "zhuge_gates_endpoint", LS_TOKEN = "zhuge_gates_token", LS_REMEMBER = "zhuge_gates_remember";
+  var state = { data: null, pending: null, busy: false, timer: null };
+
+  var el = function (id) { return document.getElementById(id); };
+
+  function store(key, value) {
+    try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch (e) { /* private mode */ }
+  }
+  function load(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function defaultEndpoint() {
+    if (location.protocol === "http:" || location.protocol === "https:") {
+      return location.origin + location.pathname;   // served by the Cloud Function itself
+    }
+    return "";
+  }
+
+  function apiUrl() {
+    var base = el("endpoint").value.trim();
+    if (!base) { throw new Error("請先填入 Cloud Function 網址。"); }
+    var url = new URL(base, location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("view", "gates");
+    url.searchParams.set("format", "json");
+    return url.toString();
+  }
+
+  function banner(kind, text) {
+    var node = el("banner");
+    if (!text) { node.style.display = "none"; return; }
+    node.className = "banner " + kind;
+    node.textContent = text;
+    node.style.display = "block";
+  }
+
+  function setChip(kind, text) {
+    var chip = el("connChip");
+    chip.className = "chip " + kind;
+    chip.textContent = text;
+  }
+
+  function setBusy(busy) {
+    state.busy = busy;
+    el("refreshBtn").disabled = busy;
+    el("connectBtn").disabled = busy;
+    var controls = document.querySelectorAll("#gateList input[type=checkbox], #modeGrid button");
+    for (var i = 0; i < controls.length; i++) { controls[i].disabled = busy; }
+    updateDirty();
+  }
+
+  function rememberSettings() {
+    if (el("remember").checked) {
+      store(LS_REMEMBER, "1");
+      store(LS_ENDPOINT, el("endpoint").value.trim());
+      store(LS_TOKEN, el("token").value);
+    } else {
+      store(LS_REMEMBER, "0"); store(LS_ENDPOINT, null); store(LS_TOKEN, null);
+    }
+  }
+
+  function request(method, body) {
+    var url = apiUrl();
+    var options = { method: method, mode: "cors", cache: "no-store" };
+    if (body) {
+      options.headers = { "Content-Type": "application/json" };
+      var token = el("token").value.trim();
+      if (token) { options.headers["X-Gate-Token"] = token; }
+      options.body = JSON.stringify(body);
+    }
+    return fetch(url, options).then(function (response) {
+      return response.json().catch(function () { return null; }).then(function (payload) {
+        if (!response.ok || !payload || payload.status !== "ok") {
+          var message = (payload && payload.message) || ("HTTP " + response.status);
+          throw new Error(message);
+        }
+        return payload;
+      });
+    });
+  }
+
+  function refresh(quiet) {
+    if (state.busy) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("GET", null); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      state.data = payload;
+      state.pending = null;
+      render();
+      setChip("on", "已連線");
+      if (!quiet) { banner("ok", "已讀取最新關卡設定。"); }
+      rememberSettings();
+    }).catch(function (error) {
+      setChip("off", "連線失敗");
+      banner("err", "讀取失敗：" + error.message + "（請確認網址正確、函式已部署，且 GATES_CORS_ORIGIN 允許本頁來源）");
+    }).then(function () { setBusy(false); });
+  }
+
+  function applyMode(mode, label, confirmText) {
+    if (confirmText && !window.confirm(confirmText)) { return; }
+    if (state.busy) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("POST", { op: "mode", mode: mode }); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      state.data = payload;
+      state.pending = null;
+      render();
+      banner("ok", "✅ 已套用「" + label + "」：" + (payload.message || "設定已儲存。"));
+      rememberSettings();
+    }).catch(function (error) {
+      banner("err", "套用失敗：" + error.message);
+    }).then(function () { setBusy(false); });
+  }
+
+  function save() {
+    if (state.busy || !state.pending) { return; }
+    var bypass = currentPending();
+    if (!window.confirm("確認儲存？略過 " + bypass.length + " 個關卡，下一根 M1 K 線生效。")) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("POST", { op: "save", bypass: bypass }); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      state.data = payload;
+      state.pending = null;
+      render();
+      banner("ok", "✅ " + (payload.message || "設定已儲存。"));
+      rememberSettings();
+    }).catch(function (error) {
+      banner("err", "儲存失敗：" + error.message);
+    }).then(function () { setBusy(false); });
+  }
+
+  function currentPending() {
+    if (state.pending) { return state.pending.slice(); }
+    return state.data ? state.data.switches.bypass.slice() : [];
+  }
+
+  function isDirty() {
+    if (!state.pending || !state.data) { return false; }
+    var a = state.pending.slice().sort().join(","), b = state.data.switches.bypass.slice().sort().join(",");
+    return a !== b;
+  }
+
+  function updateDirty() {
+    var dirty = isDirty();
+    el("saveBtn").disabled = !dirty || state.busy;
+    el("revertBtn").disabled = !dirty || state.busy;
+    el("dirtyNote").textContent = dirty
+      ? "有未儲存的變更：略過 " + currentPending().length + " 個關卡"
+      : (state.data ? "尚無變更" : "尚未連線");
+  }
+
+  function toggleGate(key, enabled) {
+    var pending = currentPending().filter(function (k) { return k !== key; });
+    if (!enabled) { pending.push(key); }
+    state.pending = pending;
+    renderGates();
+    updateDirty();
+  }
+
+  function node(tag, className, text) {
+    var element = document.createElement(tag);
+    if (className) { element.className = className; }
+    if (text !== undefined && text !== null) { element.textContent = text; }
+    return element;
+  }
+
+  function renderStatus() {
+    var data = state.data;
+    var gate = data.gate, switches = data.switches;
+    el("modeValue").textContent = switches.mode || "—";
+    el("bypassValue").textContent = switches.bypass.length + " / " + switches.gates.length + " 個";
+    el("gateValue").textContent = gate.status;
+    el("gateValue").className = "v " + (gate.status === "OPEN" ? "pos" : "neg");
+    el("updatedValue").textContent = (switches.updated_utc || "—") + " UTC";
+
+    var note = el("gateNote");
+    note.textContent = "";
+    note.appendChild(node("div", gate.summary_class === "pos" ? "pos" : (gate.summary_class === "neg" ? "neg" : "muted"), gate.summary || ""));
+    var detail = "趨勢狀態：" + (gate.regime || "—") + " / " + (gate.dir_word || "—") + " / 武裝：" + (gate.armed ? "是" : "否");
+    if (gate.last_reason) { detail += "｜" + gate.last_reason; }
+    note.appendChild(node("div", "muted", detail));
+    if (gate.hard_lock) {
+      var lockText = "🛑 硬鎖：" + gate.hard_lock.reason + (gate.hard_lock.until_text ? "（至 " + gate.hard_lock.until_text + "）" : "（需手動解除）");
+      note.appendChild(node("div", "neg", lockText));
+    }
+    if (data.auth_required) {
+      note.appendChild(node("div", "muted", "🔑 本函式要求權杖才能寫入關卡設定。"));
+    }
+  }
+
+  function renderModes() {
+    var grid = el("modeGrid");
+    grid.textContent = "";
+    var colors = { strict: "#198754", relaxed: "#d97706", aggressive: "#dc3545" };
+    var order = ["relaxed", "aggressive", "strict"];
+    var names = {};
+    state.data.switches.gates.forEach(function (gate) { names[gate.key] = gate.title; });
+    var byKey = {};
+    state.data.modes.forEach(function (mode) { byKey[mode.key] = mode; });
+
+    order.forEach(function (key) {
+      var mode = byKey[key];
+      if (!mode) { return; }
+      var wrapper = document.createElement("div");
+      var button = node("button", "mode-btn", mode.label);
+      button.type = "button";
+      button.style.background = colors[key] || "#0f62fe";
+      var confirmText = key === "aggressive"
+        ? "激進模式會同時略過倉位上限、新聞風控與 AI 覆核，實盤風險很高。確認套用？"
+        : (key === "relaxed" ? "確認套用寬鬆模式？" : "");
+      button.addEventListener("click", function () { applyMode(key, mode.label, confirmText); });
+      wrapper.appendChild(button);
+      var desc = mode.bypass.length
+        ? "略過：" + mode.bypass.map(function (k) { return names[k] || k; }).join("、") + "。"
+        : "全部關卡恢復檢查（預設）。";
+      wrapper.appendChild(node("div", "mode-desc", desc));
+      if (mode.label === state.data.switches.mode) { wrapper.className = "mode-current"; }
+      grid.appendChild(wrapper);
+    });
+  }
+
+  function renderGates() {
+    var list = el("gateList");
+    list.textContent = "";
+    var pending = currentPending();
+    var saved = state.data.switches.bypass;
+
+    state.data.switches.gates.forEach(function (gate) {
+      var on = pending.indexOf(gate.key) === -1;
+      var changed = (saved.indexOf(gate.key) === -1) !== on;
+      var row = node("div", "gate-row" + (on ? "" : " off") + (changed ? " dirty" : ""));
+
+      var label = node("label", "switch");
+      var input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = on;
+      input.disabled = state.busy;
+      input.setAttribute("aria-label", gate.title);
+      input.addEventListener("change", function () { toggleGate(gate.key, input.checked); });
+      label.appendChild(input);
+      label.appendChild(node("span", "slider"));
+      row.appendChild(label);
+
+      var body = node("div", "gate-body");
+      var title = node("div", "gate-title", gate.title);
+      title.appendChild(node("span", "gate-state " + (on ? "on" : "off"), on ? "✅ 檢查中" : "⚠️ 已略過"));
+      if (changed) { title.appendChild(node("span", "gate-state on", "● 未儲存")); }
+      body.appendChild(title);
+
+      var normal = node("div", "gate-text");
+      normal.appendChild(node("b", null, "啟用："));
+      normal.appendChild(document.createTextNode(gate.normal));
+      body.appendChild(normal);
+
+      var skipped = node("div", "gate-text");
+      skipped.appendChild(node("b", null, "略過："));
+      skipped.appendChild(document.createTextNode(gate.skipped));
+      body.appendChild(skipped);
+
+      body.appendChild(node("div", "gate-risk", gate.risk));
+      if (gate.key === "risk_cap" && state.data.risk_preview) {
+        body.appendChild(node("div", "gate-extra", state.data.risk_preview));
+      }
+      row.appendChild(body);
+      list.appendChild(row);
+    });
+  }
+
+  function renderAlwaysOn() {
+    var list = el("alwaysOn");
+    list.textContent = "";
+    (state.data.always_on || []).forEach(function (note) { list.appendChild(node("li", null, note)); });
+  }
+
+  function render() {
+    if (!state.data) { return; }
+    renderStatus();
+    renderModes();
+    renderGates();
+    renderAlwaysOn();
+    updateDirty();
+  }
+
+  function scheduleAutoRefresh() {
+    if (state.timer) { clearInterval(state.timer); }
+    state.timer = setInterval(function () {
+      if (el("autoRefresh").checked && state.data && !isDirty() && !state.busy) { refresh(true); }
+    }, 60000);
+  }
+
+  el("connectBtn").addEventListener("click", function () { refresh(false); });
+  el("refreshBtn").addEventListener("click", function () { refresh(false); });
+  el("saveBtn").addEventListener("click", save);
+  el("revertBtn").addEventListener("click", function () {
+    state.pending = null;
+    render();
+    banner("warn", "已還原為伺服器上的設定。");
+  });
+  el("remember").addEventListener("change", rememberSettings);
+  window.addEventListener("beforeunload", function (event) {
+    if (isDirty()) { event.preventDefault(); event.returnValue = ""; }
+  });
+
+  el("remember").checked = load(LS_REMEMBER) !== "0";
+  el("endpoint").value = load(LS_ENDPOINT) || defaultEndpoint();
+  el("token").value = load(LS_TOKEN) || "";
+  scheduleAutoRefresh();
+  if (el("endpoint").value) { refresh(true); } else { banner("warn", "請先填入 Cloud Function 網址，再按「連線」。"); }
+})();
+</script>
+</body>
+</html>

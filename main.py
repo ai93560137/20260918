@@ -1823,7 +1823,8 @@ def render_welcome_page():
       <p style='color:#6c757d; font-size:16px; margin-bottom:40px; line-height:1.6;'>純 GCP 自動決策版本 (v12)<br>趨勢狀態機、風險倉位與 ATR 加單。</p>
       <div style='display:flex; flex-direction:column; gap:15px; max-width:400px; margin:0 auto;'>
         <a href='?view=info' class='btn btn-primary'>📄 投資人日誌 (實盤績效與 GCP 決策)</a>
-        <a href='?view=gates' class='btn' style='background:#d97706;'>🎛️ 關卡開關頁面</a>
+        <a href='?view=gates_app' class='btn' style='background:#d97706;'>🎛️ 關卡開關頁面 (獨立版)</a>
+        <a href='?view=gates' class='btn' style='background:#b45309;'>🎛️ 關卡開關頁面 (內建版)</a>
         <a href='?view=dashboard' class='btn btn-dark'>🎛️ 系統控制台 (管理員)</a>
       </div>
       <div style='margin-top:40px; font-size:12px; color:#adb5bd;'>&copy; 2026 AI Trading Lab. All rights reserved.</div>
@@ -2118,6 +2119,16 @@ GATE_SWITCH_DEFS = [
 GATE_SWITCH_KEYS = [d[0] for d in GATE_SWITCH_DEFS]
 GATE_SWITCH_NAMES = {d[0]: d[1] for d in GATE_SWITCH_DEFS}
 
+# Data / safety preconditions: no switch is offered for these.
+GATE_ALWAYS_ON_NOTES = [
+    "M1 數據累積（約 65 根）與 M15 布林帶、ATR(M15) 資料就緒",
+    "封包缺少 equity / buy_lots / sell_lots",
+    "多空對沖持倉、持倉方向與趨勢相反",
+    "上一張訂單送出後等待成交回報（防重複下單）",
+    "加單基準價不存在時先記錄基準、本根不加單",
+    "硬鎖、券商回應失敗",
+]
+
 GATE_MODES = {
     "strict": ("🛡️ 恢復嚴格", frozenset()),
     "relaxed": ("🟡 寬鬆模式", frozenset({"setup_trigger", "structure", "candle", "risk_cap"})),
@@ -2211,9 +2222,136 @@ def _risk_cap_preview():
     loss_normal = normal * sl * CONTRACT_SIZE / rate
     loss_loose = loose * sl * CONTRACT_SIZE / rate
     pct_loose = loss_loose / equity * 100 if equity else 0
-    return (f"以最新快照試算（淨值 {equity:,.0f} {esc(currency)}、止損 {sl:.2f} 美元）："
-            f"啟用時上限 {normal:.2f} 手，整組止損約 {loss_normal:,.0f} {esc(currency)}；"
-            f"停用後上限 {loose:.2f} 手，整組止損約 {loss_loose:,.0f} {esc(currency)}（淨值的 {pct_loose:.0f}%）。")
+    return (f"以最新快照試算（淨值 {equity:,.0f} {currency}、止損 {sl:.2f} 美元）："
+            f"啟用時上限 {normal:.2f} 手，整組止損約 {loss_normal:,.0f} {currency}；"
+            f"停用後上限 {loose:.2f} 手，整組止損約 {loss_loose:,.0f} {currency}（淨值的 {pct_loose:.0f}%）。")
+
+
+# -----------------------------------------------------------------------------
+# 🔌 JSON API for the standalone gates.html  (GET/POST ?view=gates&format=json)
+# -----------------------------------------------------------------------------
+GATES_API_REQUIRE_TOKEN = _env_bool("GATES_API_REQUIRE_TOKEN", True)   # writes need the webhook token
+GATES_CORS_ORIGIN = _env_str("GATES_CORS_ORIGIN", "*")                 # set to your page origin to narrow it
+GATES_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gates.html")
+
+
+def _cors_headers():
+    return {
+        "Access-Control-Allow-Origin": GATES_CORS_ORIGIN,
+        "Access-Control-Allow-Headers": "Content-Type, X-Gate-Token",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Max-Age": "3600",
+        "Vary": "Origin",
+    }
+
+
+def _json_response(payload, status=200):
+    response = jsonify(payload)
+    for key, value in _cors_headers().items():
+        response.headers[key] = value
+    return response, status
+
+
+def cors_preflight():
+    return _json_response({"status": "ok"})
+
+
+def gates_state_payload(message=None):
+    """Everything the standalone page needs, so the page holds no rule text of its own."""
+    bypass = read_gate_bypass()
+    doc = read_gate_switch_doc()
+    state = read_gate_state()
+    summary_class, summary_text = gate_summary(state)
+    lock = state.get("hard_lock") if hard_lock_active(state) else None
+    until = to_float(lock.get("until_ts")) if isinstance(lock, dict) else None
+    return {
+        "status": "ok",
+        "message": message,
+        "server_utc": fmt_utc(),
+        "gate": {
+            "status": gate_status(state),
+            "regime": state.get("regime"),
+            "dir": state.get("dir"),
+            "dir_word": DIR_WORD.get(state.get("dir")),
+            "armed": bool(state.get("armed")),
+            "news_lock": bool(state.get("news_lock")),
+            "last_reason": state.get("last_reason"),
+            "summary": summary_text,
+            "summary_class": summary_class,
+            "hard_lock": ({"reason": lock.get("reason"), "since_utc": lock.get("since_utc"),
+                           "until_ts": until, "until_text": fmt_ny(until) if until else None}
+                          if isinstance(lock, dict) else None),
+        },
+        "switches": {
+            "mode": detect_gate_mode(bypass),
+            "bypass": sorted(bypass),
+            "updated_utc": doc.get("updated_utc"),
+            "gates": [{"key": key, "title": title, "normal": normal, "skipped": skipped,
+                       "risk": risk, "enabled": key not in bypass}
+                      for key, title, normal, skipped, risk in GATE_SWITCH_DEFS],
+        },
+        "modes": [{"key": key, "label": label, "bypass": sorted(keys)} for key, (label, keys) in GATE_MODES.items()],
+        "risk_preview": _risk_cap_preview(),
+        "always_on": GATE_ALWAYS_ON_NOTES,
+        "auth_required": GATES_API_REQUIRE_TOKEN,
+    }
+
+
+def handle_gates_api_get():
+    return _json_response(gates_state_payload())
+
+
+def _gates_token_ok(req, body):
+    """Reads are open (like the other pages); writes need the token unless disabled."""
+    if not GATES_API_REQUIRE_TOKEN:
+        return True
+    token = req.headers.get("X-Gate-Token") or (body or {}).get("token") or req.args.get("token")
+    return isinstance(token, str) and token.strip() == GCP_SECRET_TOKEN.strip()
+
+
+def handle_gates_api_post(req):
+    body = req.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _json_response({"status": "error", "message": "請求內容不是 JSON 物件"}, 400)
+    if not _gates_token_ok(req, body):
+        return _json_response({"status": "error", "message": "Unauthorized token"}, 403)
+
+    op = body.get("op")
+    try:
+        if op == "mode":
+            mode = body.get("mode")
+            if mode not in GATE_MODES:
+                return _json_response({"status": "error", "message": f"未知模式：{mode}"}, 400)
+            label, new_bypass = GATE_MODES[mode]
+            write_gate_bypass(new_bypass, label)
+        elif op == "save":
+            requested = body.get("bypass")
+            if not isinstance(requested, list) or not all(isinstance(k, str) for k in requested):
+                return _json_response({"status": "error", "message": "bypass 必須是關卡代號字串陣列"}, 400)
+            unknown = sorted(set(requested) - set(GATE_SWITCH_KEYS))
+            if unknown:
+                return _json_response({"status": "error", "message": f"未知的關卡代號：{'、'.join(unknown)}"}, 400)
+            new_bypass = frozenset(requested)
+            write_gate_bypass(new_bypass, detect_gate_mode(new_bypass))
+        else:
+            return _json_response({"status": "error", "message": "op 必須是 'mode' 或 'save'"}, 400)
+    except StorageError as exc:
+        print(f"⚠️ [關卡開關 API 寫入失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "儲存失敗，設定未改變，請查看 Cloud Logging。"}, 500)
+
+    names = "、".join(GATE_SWITCH_NAMES[k] for k in GATE_SWITCH_KEYS if k in new_bypass) or "無"
+    log_decision(f"🎛️ [關卡開關·獨立頁] {detect_gate_mode(new_bypass)}｜略過：{names}", key="admin")
+    return _json_response(gates_state_payload("設定已儲存，下一根 M1 K 線生效。"))
+
+
+def serve_gates_app():
+    """Serves the standalone page from the deployed source, so one file covers both uses."""
+    try:
+        with open(GATES_APP_FILE, encoding="utf-8") as handle:
+            return handle.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
+    except OSError as exc:
+        print(f"⚠️ [關卡開關獨立頁讀取失敗 → 改用內建頁面] {exc}", flush=True)
+        return build_gates_page(None)
 
 
 def build_gates_page(msg):
@@ -2237,7 +2375,7 @@ def build_gates_page(msg):
     rows = ""
     for key, title, normal, skipped, risk in GATE_SWITCH_DEFS:
         is_on = key not in bypass
-        extra = f"<div class='gate-text'>{_risk_cap_preview()}</div>" if key == "risk_cap" else ""
+        extra = f"<div class='gate-text'>{esc(_risk_cap_preview())}</div>" if key == "risk_cap" else ""
         rows += (
             f"<div class='gate-row {'' if is_on else 'off'}'>"
             f"<label class='switch'><input type='checkbox' name='on_{key}' value='1' {'checked' if is_on else ''}>"
@@ -2270,9 +2408,10 @@ def build_gates_page(msg):
     )
 
     updated = esc(doc.get("updated_utc") or "—")
+    always_on = "".join(f"<li>{esc(note)}</li>" for note in GATE_ALWAYS_ON_NOTES)
     body = f"""
     <div class='nav'><h1 class='page-title'>🎛️ 關卡開關頁面</h1>
-      <div><a href='?view=welcome'>🏠 首頁</a><a href='?view=dashboard'>⚙️ 控制台</a><a href='?view=info'>📄 投資人日誌</a></div></div>
+      <div><a href='?view=welcome'>🏠 首頁</a><a href='?view=gates_app'>🆕 獨立版</a><a href='?view=dashboard'>⚙️ 控制台</a><a href='?view=info'>📄 投資人日誌</a></div></div>
     {banner}
     <div class='section' style='text-align:center;'>
       <div class='muted' style='font-weight:600;'>目前模式</div>
@@ -2295,14 +2434,7 @@ def build_gates_page(msg):
 
     <div class='section'><h2>🔒 本頁無法略過的檢查</h2>
       <div class='gate-text'>以下是資料或安全前提，略過後系統無法正確計算方向、止損或持倉，因此不提供開關：</div>
-      <ul class='gate-text'>
-        <li>M1 數據累積（約 65 根）與 M15 布林帶、ATR(M15) 資料就緒</li>
-        <li>封包缺少 equity / buy_lots / sell_lots</li>
-        <li>多空對沖持倉、持倉方向與趨勢相反</li>
-        <li>上一張訂單送出後等待成交回報（防重複下單）</li>
-        <li>加單基準價不存在時先記錄基準、本根不加單</li>
-        <li>硬鎖、券商回應失敗</li>
-      </ul>
+      <ul class='gate-text'>{always_on}</ul>
     </div>
     """
     return html_page("關卡開關頁面 - 智能諸葛亮", body, head_extra=GATES_CSS)
@@ -2334,6 +2466,10 @@ def handle_gates_post(req):
 def handle_get(req):
     view = req.args.get("view", "welcome")
     action = req.args.get("action")
+    if view == "gates" and req.args.get("format") == "json":     # standalone gates.html reads state
+        return handle_gates_api_get()
+    if view == "gates_app":                                      # standalone gates.html, served here
+        return serve_gates_app()
     if view == "info":
         return build_info_page()
     if view == "gates":
@@ -2412,9 +2548,13 @@ def _dispatch_post(payload):
 
 @functions_framework.http
 def receive_tradingview_signal(request):
+    if request.method == "OPTIONS":                  # CORS preflight from the standalone page
+        return cors_preflight()
     if request.method == "GET":
         return handle_get(request)
-    if request.args.get("view") == "gates":          # form posts from the gate switch page
+    if request.args.get("view") == "gates":          # posts from the gate switch pages
+        if request.args.get("format") == "json" or (request.content_type or "").startswith("application/json"):
+            return handle_gates_api_post(request)
         return handle_gates_post(request)
 
     payload = parse_payload(request)
