@@ -1991,22 +1991,96 @@ def gate_summary(state):
     return "muted", f"⏸️ 等待趨勢確認（{regime_text}）"
 
 
+WELCOME_CSS = """
+<style>
+.hub { max-width:820px; margin:40px auto 0; }
+.hub-head { text-align:center; margin-bottom:28px; }
+.hub-mark { width:74px; height:74px; margin:0 auto 14px; color:var(--primary); }
+.hub-mark svg { width:100%; height:100%; }
+.hub-title { font-size:26px; font-weight:800; margin:0; color:#0d6efd; letter-spacing:1px; }
+.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+.tile { display:flex; align-items:center; justify-content:center; aspect-ratio:1/1;
+        background:var(--card); border-radius:24px; box-shadow:0 6px 18px rgba(0,0,0,.06);
+        text-decoration:none; border:2px solid transparent; transition:transform .12s ease, box-shadow .12s ease; }
+.tile svg { width:58%; height:58%; max-width:132px; }
+.tile:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.12); }
+.tile:active { transform:scale(.97); }
+.tile:focus-visible { outline:none; border-color:currentColor; box-shadow:0 0 0 4px rgba(15,98,254,.25); }
+.hub-foot { text-align:center; font-size:11px; color:#c7ccd1; margin:34px 0 10px; letter-spacing:.5px; }
+@media (max-width:640px) {
+  .hub { margin-top:18px; }
+  .tiles { grid-template-columns:repeat(2,1fr); gap:14px; }
+  .tile { border-radius:20px; }
+  .tiles a:last-child:nth-child(odd) { grid-column:span 2; aspect-ratio:2.4/1; }
+  .tiles a:last-child:nth-child(odd) svg { width:auto; height:70%; }
+  .tile svg { width:62%; height:62%; }
+  .hub-title { font-size:21px; }
+  .hub-mark { width:58px; height:58px; }
+}
+@media (prefers-reduced-motion:reduce) { .tile { transition:none; } .tile:hover, .tile:active { transform:none; } }
+</style>
+"""
+
+# 首頁導覽只用圖像：每一頁一個可辨識的線條圖示（aria-label / title 供輔助工具與滑鼠提示）
+SVG_OPEN = ("<svg viewBox='0 0 48 48' fill='none' stroke='currentColor' stroke-width='2.6' "
+            "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true' focusable='false'>")
+
+HUB_ICONS = {
+    # 投資人日誌：K 線走勢圖
+    "info": SVG_OPEN + ("<path d='M7 6v36h34'/>"
+                        "<rect x='13' y='21' width='9' height='14' rx='2.5'/><path d='M17.5 14v7M17.5 35v5'/>"
+                        "<rect x='29' y='12' width='9' height='13' rx='2.5'/><path d='M33.5 7v5M33.5 25v6'/>"
+                        "</svg>"),
+    # 關卡開關（獨立版）：視窗裡的開關
+    "gates_app": SVG_OPEN + ("<rect x='5' y='8' width='38' height='32' rx='5'/><path d='M5 17h38'/>"
+                             "<path d='M10 12.5h.02M14 12.5h.02'/>"
+                             "<rect x='11' y='21' width='16' height='8' rx='4'/><circle cx='23' cy='25' r='2.2'/>"
+                             "<rect x='11' y='31.5' width='16' height='8' rx='4'/><circle cx='15' cy='35.5' r='2.2'/>"
+                             "<path d='M31 25h6M31 35.5h6'/></svg>"),
+    # 關卡開關（內建版）：雲端（函式內建）＋下方的開關
+    "gates": SVG_OPEN + ("<path d='M15 27h17a8.5 8.5 0 0 0 1.4-16.9A11.5 11.5 0 0 0 11.6 11 7.5 7.5 0 0 0 13 27h2'/>"
+                         "<rect x='13' y='32' width='22' height='11' rx='5.5'/>"
+                         "<circle cx='29.5' cy='37.5' r='3'/></svg>"),
+    # 送單參數：JSON 封包送出
+    "order_app": SVG_OPEN + ("<path d='M11 7h20l7 7v27a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z'/>"
+                             "<path d='M30 7v8h8'/>"
+                             "<path d='M19 23c-2 0-3 1-3 2.8v1.6c0 1.3-.9 1.8-1.8 1.8.9 0 1.8.5 1.8 1.8v1.6c0 1.8 1 2.8 3 2.8'/>"
+                             "<path d='M28 23c2 0 3 1 3 2.8v1.6c0 1.3.9 1.8 1.8 1.8-.9 0-1.8.5-1.8 1.8v1.6c0 1.8-1 2.8-3 2.8'/>"
+                             "</svg>"),
+    # 系統控制台：儀表板指針
+    "dashboard": SVG_OPEN + ("<path d='M8 35a16 16 0 1 1 32 0'/><path d='M24 35l9-9'/><circle cx='24' cy='35' r='3'/>"
+                             "<path d='M24 13v3M12.6 18.6l2.1 2.1M35.4 18.6l-2.1 2.1M8 35h3M37 35h3'/></svg>"),
+}
+
+# 首頁標題上方的識別圖示（盾牌＋走勢＝風控樞紐），刻意與任何頁面圖示不同
+HUB_MARK = SVG_OPEN + ("<path d='M24 5l15 5.5v12.8C39 33 32.6 40.2 24 43.5 15.4 40.2 9 33 9 23.3V10.5z'/>"
+                       "<path d='M16 27.5l5.5-5.5 4.5 4.5 7.5-8'/><path d='M33.5 18.5h-4.6M33.5 18.5v4.6'/></svg>")
+
+HUB_TILES = [
+    ("?view=info", "info", "投資人日誌：實盤績效與 GCP 決策", "#0f62fe"),
+    ("?view=gates_app", "gates_app", "關卡開關頁面（獨立版）", "#d97706"),
+    ("?view=gates", "gates", "關卡開關頁面（內建版）", "#b45309"),
+    ("?view=order_app", "order_app", "送單參數頁面（webhook 封包）", "#0aa06e"),
+    ("?view=dashboard", "dashboard", "系統控制台（管理員）", "#212529"),
+]
+
+
 def render_welcome_page():
-    body = """
-    <div class='section' style='text-align:center; max-width:700px; margin:60px auto; padding:50px 40px;'>
-      <div style='font-size:60px; margin-bottom:20px;'>🤖⚡</div>
-      <h1 style='color:#0d6efd; margin-bottom:10px; font-size:32px;'>智能諸葛亮 AI 量化風控樞紐</h1>
-      <p style='color:#6c757d; font-size:16px; margin-bottom:40px; line-height:1.6;'>純 GCP 自動決策版本 (v12)<br>趨勢狀態機、風險倉位與 ATR 加單。</p>
-      <div style='display:flex; flex-direction:column; gap:15px; max-width:400px; margin:0 auto;'>
-        <a href='?view=info' class='btn btn-primary'>📄 投資人日誌 (實盤績效與 GCP 決策)</a>
-        <a href='?view=gates_app' class='btn' style='background:#d97706;'>🎛️ 關卡開關頁面 (獨立版)</a>
-        <a href='?view=gates' class='btn' style='background:#b45309;'>🎛️ 關卡開關頁面 (內建版)</a>
-        <a href='?view=order_app' class='btn' style='background:#0f62fe;'>🧾 送單參數頁面 (webhook 封包)</a>
-        <a href='?view=dashboard' class='btn btn-dark'>🎛️ 系統控制台 (管理員)</a>
+    tiles = "".join(
+        f"<a class='tile' href='{href}' style='color:{color};' title='{esc(label)}' aria-label='{esc(label)}'>"
+        f"{HUB_ICONS[icon]}</a>"
+        for href, icon, label, color in HUB_TILES
+    )
+    body = f"""
+    <div class='hub'>
+      <div class='hub-head'>
+        <div class='hub-mark'>{HUB_MARK}</div>
+        <h1 class='hub-title'>智能諸葛亮</h1>
       </div>
-      <div style='margin-top:40px; font-size:12px; color:#adb5bd;'>&copy; 2026 AI Trading Lab. All rights reserved.</div>
+      <div class='tiles'>{tiles}</div>
+      <div class='hub-foot'>v12 &copy; 2026 AI Trading Lab</div>
     </div>"""
-    return html_page("智能諸葛亮 AI 量化交易系統", body)
+    return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
 
 
 def build_dashboard_page(msg):
