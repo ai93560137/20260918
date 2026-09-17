@@ -2167,10 +2167,36 @@ def write_gate_bypass(bypass, mode_label):
     return doc
 
 
+def solo_test_status(bypass):
+    """逐關測試：剛好只略過一個關卡時，回報目前測到第幾關。"""
+    keys = list(bypass)
+    total = len(GATE_SWITCH_KEYS)
+    if len(keys) != 1 or keys[0] not in GATE_SWITCH_KEYS:
+        return {"active": False, "index": None, "key": None, "title": None, "total": total}
+    index = GATE_SWITCH_KEYS.index(keys[0])
+    return {"active": True, "index": index + 1, "key": keys[0],
+            "title": GATE_SWITCH_NAMES[keys[0]], "total": total}
+
+
+def next_solo_bypass(bypass, step):
+    """start / next / prev / stop -> 下一組 bypass（一次只略過一個關卡，走到底會繞回第一關）。"""
+    total = len(GATE_SWITCH_KEYS)
+    status = solo_test_status(bypass)
+    if step == "stop":
+        return frozenset()
+    if step == "start" or not status["active"]:
+        return frozenset({GATE_SWITCH_KEYS[0]})
+    offset = 1 if step == "next" else (-1 if step == "prev" else 0)
+    return frozenset({GATE_SWITCH_KEYS[(status["index"] - 1 + offset) % total]})
+
+
 def detect_gate_mode(bypass):
     for key, (label, keys) in GATE_MODES.items():
         if bypass == keys:
             return label
+    status = solo_test_status(bypass)
+    if status["active"]:
+        return f"🧪 逐關測試 {status['index']}/{status['total']}：{status['title']}"
     return "✏️ 自訂"
 
 
@@ -2291,6 +2317,7 @@ def gates_state_payload(message=None):
                       for key, title, normal, skipped, risk in GATE_SWITCH_DEFS],
         },
         "modes": [{"key": key, "label": label, "bypass": sorted(keys)} for key, (label, keys) in GATE_MODES.items()],
+        "test": solo_test_status(bypass),
         "risk_preview": _risk_cap_preview(),
         "always_on": GATE_ALWAYS_ON_NOTES,
         "auth_required": GATES_API_REQUIRE_TOKEN,
@@ -2324,6 +2351,17 @@ def handle_gates_api_post(req):
                 return _json_response({"status": "error", "message": f"未知模式：{mode}"}, 400)
             label, new_bypass = GATE_MODES[mode]
             write_gate_bypass(new_bypass, label)
+        elif op == "solo":                               # 逐關測試：一次只略過一個關卡
+            key, step = body.get("key"), body.get("step")
+            if key is not None:
+                if key not in GATE_SWITCH_KEYS:
+                    return _json_response({"status": "error", "message": f"未知的關卡代號：{key}"}, 400)
+                new_bypass = frozenset({key})
+            elif step in ("start", "next", "prev", "stop"):
+                new_bypass = next_solo_bypass(read_gate_bypass(), step)
+            else:
+                return _json_response({"status": "error", "message": "solo 需要 key，或 step=start/next/prev/stop"}, 400)
+            write_gate_bypass(new_bypass, detect_gate_mode(new_bypass))
         elif op == "save":
             requested = body.get("bypass")
             if not isinstance(requested, list) or not all(isinstance(k, str) for k in requested):
@@ -2334,7 +2372,7 @@ def handle_gates_api_post(req):
             new_bypass = frozenset(requested)
             write_gate_bypass(new_bypass, detect_gate_mode(new_bypass))
         else:
-            return _json_response({"status": "error", "message": "op 必須是 'mode' 或 'save'"}, 400)
+            return _json_response({"status": "error", "message": "op 必須是 'mode'、'solo' 或 'save'"}, 400)
     except StorageError as exc:
         print(f"⚠️ [關卡開關 API 寫入失敗] {exc}", flush=True)
         return _json_response({"status": "error", "message": "儲存失敗，設定未改變，請查看 Cloud Logging。"}, 500)
@@ -2365,6 +2403,7 @@ def build_gates_page(msg):
     banners = {
         "saved": ("#d4edda", "#155724", "✅ 設定已儲存，下一根 M1 K 線生效。"),
         "mode": ("#d4edda", "#155724", "✅ 模式已套用，下一根 M1 K 線生效。"),
+        "test": ("#e7f1ff", "#084298", "🧪 逐關測試已更新，下一根 M1 K 線生效。"),
         "error": ("#f8d7da", "#721c24", "❌ 儲存失敗，設定未改變，請查看 Cloud Logging。"),
     }
     banner = ""
@@ -2409,6 +2448,38 @@ def build_gates_page(msg):
 
     updated = esc(doc.get("updated_utc") or "—")
     always_on = "".join(f"<li>{esc(note)}</li>" for note in GATE_ALWAYS_ON_NOTES)
+
+    test = solo_test_status(bypass)
+    test_line = (f"目前測試第 {test['index']} / {test['total']} 關：{esc(test['title'])}"
+                 f"（其餘 {test['total'] - 1} 關維持檢查）"
+                 if test["active"] else "目前不在逐關測試（略過的關卡不是剛好一個）")
+
+    def solo_form(fields, label, color, confirm=""):
+        hidden = "".join(f"<input type='hidden' name='{k}' value='{v}'>" for k, v in fields.items())
+        onsubmit = f" onsubmit=\"return confirm('{confirm}');\"" if confirm else ""
+        return (f"<form method='POST' action='?view=gates' style='display:inline-block; margin:4px;'{onsubmit}>"
+                f"<input type='hidden' name='op' value='solo'>{hidden}"
+                f"<button type='submit' class='mode-btn' style='background:{color}; width:auto; padding:12px 18px; "
+                f"font-size:14px;'>{label}</button></form>")
+
+    first_name = esc(GATE_SWITCH_NAMES[GATE_SWITCH_KEYS[0]])
+    test_buttons = (
+        solo_form({"step": "start"}, f"▶️ 開始測試（只略過「{first_name}」）", "#0f62fe",
+                  f"開始逐關測試：只略過「{first_name}」，其餘關卡維持檢查。確認？")
+        + solo_form({"step": "prev"}, "⬅️ 上一關", "#6c757d")
+        + solo_form({"step": "next"}, "➡️ 下一關", "#0f62fe")
+        + solo_form({"step": "stop"}, "⏹️ 結束測試（全部恢復檢查）", "#198754")
+    )
+    jump_options = "".join(
+        f"<option value='{key}'{' selected' if test['key'] == key else ''}>{i}. {esc(GATE_SWITCH_NAMES[key])}</option>"
+        for i, key in enumerate(GATE_SWITCH_KEYS, 1))
+    test_jump = (
+        "<form method='POST' action='?view=gates' style='display:inline-block; margin:4px;' "
+        "onsubmit=\"return confirm('直接跳到這一關？該關卡會被略過，其餘維持檢查。');\">"
+        "<input type='hidden' name='op' value='solo'>"
+        f"<select name='key' style='padding:11px 12px; border:1px solid #dee2e6; border-radius:8px; font-size:14px;'>{jump_options}</select> "
+        "<button type='submit' class='mode-btn' style='background:#d97706; width:auto; padding:12px 18px; font-size:14px;'>跳到這一關</button></form>"
+    )
     body = f"""
     <div class='nav'><h1 class='page-title'>🎛️ 關卡開關頁面</h1>
       <div><a href='?view=welcome'>🏠 首頁</a><a href='?view=gates_app'>🆕 獨立版</a><a href='?view=dashboard'>⚙️ 控制台</a><a href='?view=info'>📄 投資人日誌</a></div></div>
@@ -2422,6 +2493,17 @@ def build_gates_page(msg):
     </div>
 
     <div class='section'><h2>⚡ 一鍵模式</h2>{modes}</div>
+
+    <div class='section'><h2>🧪 逐關測試模式</h2>
+      <p class='muted' style='font-size:12px;'>從「全部檢查中」出發，一次只略過一個關卡、其餘維持檢查，逐關往下走，
+      用來確認是哪一關擋住訊號。走到最後一關後會繞回第一關。</p>
+      <div class='gate-row' style='border-left-color:#0f62fe;'><div class='gate-body'>
+        <div class='gate-title'>{test_line}</div>
+        <div class='gate-risk'>⚠️ 這是實盤：被略過的那一關在測試期間不會保護你，請測完按「結束測試」。</div>
+      </div></div>
+      <div>{test_buttons}</div>
+      <div style='margin-top:8px;'>{test_jump}</div>
+    </div>
 
     <div class='section'><h2>🔧 逐關調整</h2>
       <p class='muted' style='font-size:12px;'>綠色＝該關卡照常檢查；橙色＝略過。調整後按最下方「儲存」。</p>
@@ -2448,6 +2530,16 @@ def handle_gates_post(req):
             label, keys = GATE_MODES[form.get("mode")]
             write_gate_bypass(keys, label)
             new_bypass, msg = keys, "mode"
+        elif op == "solo":                               # 逐關測試：一次只略過一個關卡
+            key, step = form.get("key"), form.get("step")
+            if key in GATE_SWITCH_KEYS:
+                new_bypass = frozenset({key})
+            elif step in ("start", "next", "prev", "stop"):
+                new_bypass = next_solo_bypass(read_gate_bypass(), step)
+            else:
+                return redirect("?view=gates")
+            write_gate_bypass(new_bypass, detect_gate_mode(new_bypass))
+            msg = "test"
         elif op == "save":
             new_bypass = frozenset(k for k in GATE_SWITCH_KEYS if form.get(f"on_{k}") != "1")
             write_gate_bypass(new_bypass, detect_gate_mode(new_bypass))

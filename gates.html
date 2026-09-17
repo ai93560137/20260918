@@ -118,6 +118,29 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     <div class="mode-grid" id="modeGrid"><div class="muted" style="font-size:13px;">等待連線…</div></div>
   </div>
 
+  <div class="section" id="testControls">
+    <h2>🧪 逐關測試模式</h2>
+    <p class="muted" style="font-size:12px;">
+      從「全部檢查中」出發，一次只略過一個關卡、其餘維持檢查，逐關往下走，用來確認是哪一關擋住訊號。
+      走到最後一關後會繞回第一關。
+    </p>
+    <div class="status-box" style="border-left:5px solid var(--primary);">
+      <div class="k">目前進度</div>
+      <div class="v" id="testStatus" style="font-size:16px;">—</div>
+      <div class="gate-risk" style="margin-top:6px;">⚠️ 這是實盤：被略過的那一關在測試期間不會保護你，測完請按「結束測試」。</div>
+    </div>
+    <div class="row-inline" style="margin-top:14px;">
+      <button id="testStart" class="btn btn-primary" type="button">▶️ 開始測試</button>
+      <button id="testPrev" class="btn btn-grey" type="button">⬅️ 上一關</button>
+      <button id="testNext" class="btn btn-primary" type="button">➡️ 下一關</button>
+      <button id="testStop" class="btn" type="button" style="background:var(--success);">⏹️ 結束測試（全部恢復檢查）</button>
+    </div>
+    <div class="row-inline" style="margin-top:10px;">
+      <select id="testJump" class="field" style="padding:11px 12px; border:1px solid #dee2e6; border-radius:8px; font-size:14px; font-family:inherit;"></select>
+      <button id="testJumpBtn" class="btn" type="button" style="background:var(--warning);">跳到這一關</button>
+    </div>
+  </div>
+
   <div class="section">
     <h2>🔧 逐關調整</h2>
     <p class="muted" style="font-size:12px;">綠色＝該關卡照常檢查；橙色＝略過。調整後按下方「儲存」才會生效。</p>
@@ -190,7 +213,7 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     state.busy = busy;
     el("refreshBtn").disabled = busy;
     el("connectBtn").disabled = busy;
-    var controls = document.querySelectorAll("#gateList input[type=checkbox], #modeGrid button");
+    var controls = document.querySelectorAll("#gateList input[type=checkbox], #modeGrid button, #testControls button, #testControls select");
     for (var i = 0; i < controls.length; i++) { controls[i].disabled = busy; }
     updateDirty();
   }
@@ -276,6 +299,80 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     }).catch(function (error) {
       banner("err", "儲存失敗：" + error.message);
     }).then(function () { setBusy(false); });
+  }
+
+  function gateKeys() {
+    return state.data ? state.data.switches.gates.map(function (gate) { return gate.key; }) : [];
+  }
+
+  function gateTitle(key) {
+    var found = (state.data ? state.data.switches.gates : []).filter(function (gate) { return gate.key === key; });
+    return found.length ? found[0].title : key;
+  }
+
+  function soloTarget(step) {
+    var keys = gateKeys(), test = state.data.test;
+    if (!keys.length) { return null; }
+    if (step === "start" || !test.active) { return keys[0]; }
+    var offset = step === "next" ? 1 : (step === "prev" ? -1 : 0);
+    return keys[((test.index - 1 + offset) % keys.length + keys.length) % keys.length];
+  }
+
+  function sendSolo(body, successText) {
+    if (state.busy) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("POST", body); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      state.data = payload;
+      state.pending = null;
+      render();
+      banner("ok", successText);
+      rememberSettings();
+    }).catch(function (error) {
+      banner("err", "逐關測試切換失敗：" + error.message);
+    }).then(function () { setBusy(false); });
+  }
+
+  function stepTest(step) {
+    if (!state.data) { banner("err", "請先連線。"); return; }
+    if (step === "stop") {
+      if (!window.confirm("結束逐關測試？全部關卡會恢復檢查。")) { return; }
+      sendSolo({ op: "solo", step: "stop" }, "✅ 已結束逐關測試，全部關卡恢復檢查。");
+      return;
+    }
+    var key = soloTarget(step);
+    if (!key) { return; }
+    jumpTest(key, gateKeys().indexOf(key) + 1);
+  }
+
+  function jumpTest(key, position) {
+    var title = gateTitle(key);
+    var total = gateKeys().length;
+    if (!window.confirm("測試第 " + position + " / " + total + " 關：只略過「" + title + "」，其餘 " + (total - 1) + " 關維持檢查。確認？")) { return; }
+    sendSolo({ op: "solo", key: key }, "🧪 逐關測試 " + position + "/" + total + "：目前只略過「" + title + "」。");
+  }
+
+  function renderTest() {
+    var select = el("testJump");
+    var test = state.data.test;                     // 舊版函式沒有這個欄位
+    if (!test) {
+      el("testControls").style.display = "none";
+      return;
+    }
+    el("testControls").style.display = "";
+    el("testStatus").textContent = test.active
+      ? "第 " + test.index + " / " + test.total + " 關：" + test.title + "（其餘 " + (test.total - 1) + " 關維持檢查）"
+      : "未在逐關測試（略過的關卡不是剛好一個）";
+    el("testStart").textContent = "▶️ 開始測試（只略過「" + gateTitle(gateKeys()[0]) + "」）";
+    select.textContent = "";
+    state.data.switches.gates.forEach(function (gate, index) {
+      var option = document.createElement("option");
+      option.value = gate.key;
+      option.textContent = (index + 1) + ". " + gate.title;
+      if (test.key === gate.key) { option.selected = true; }
+      select.appendChild(option);
+    });
   }
 
   function currentPending() {
@@ -425,6 +522,7 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     if (!state.data) { return; }
     renderStatus();
     renderModes();
+    renderTest();
     renderGates();
     renderAlwaysOn();
     updateDirty();
@@ -437,6 +535,15 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     }, 60000);
   }
 
+  el("testStart").addEventListener("click", function () { stepTest("start"); });
+  el("testPrev").addEventListener("click", function () { stepTest("prev"); });
+  el("testNext").addEventListener("click", function () { stepTest("next"); });
+  el("testStop").addEventListener("click", function () { stepTest("stop"); });
+  el("testJumpBtn").addEventListener("click", function () {
+    if (!state.data) { banner("err", "請先連線。"); return; }
+    var select = el("testJump");
+    jumpTest(select.value, select.selectedIndex + 1);
+  });
   el("connectBtn").addEventListener("click", function () { refresh(false); });
   el("refreshBtn").addEventListener("click", function () { refresh(false); });
   el("saveBtn").addEventListener("click", save);
