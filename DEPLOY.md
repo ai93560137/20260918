@@ -127,7 +127,7 @@ GATES_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gates
 | `ADMIN_CORS_ORIGIN` | 你的頁面網址 | 預設 `*` 代表任何網站都能打這兩個管理 API |
 | `AI_REVIEW_ENABLED` | `1` 或 `0` | 不想用 Gemini 就填 `0`，可省 Vertex AI 權限 |
 | `TARGET_RRR` | `3`（程式預設值已是 3） | 止盈 = 止損 × 幾倍。依 8.5 個月回測從 2 改為 3 |
-| `DISTANCE_UNIT` | `price` 或 `points` | 距離欄位送出的單位，**部署後務必用測試單核對**（見下） |
+| `DISTANCE_UNIT` | `price`（預設）或 `points` | 選用哪一組距離欄位，見第 8b 步 |
 | `ORDER_ACCOUNT` | `1` | webhooktrade 範本的 account 欄位 |
 
 改完要重新部署才生效。**送單參數（手數、商品、止損止盈）不用設環境變數**，部署後直接在送單參數頁改。
@@ -165,19 +165,23 @@ https://asia-east1-你的專案.cloudfunctions.net/receive_tradingview_signal
 在關卡開關頁與送單參數頁，把 **管理權杖** 欄位填成你的 `WEBHOOK_SECRET_TOKEN`，
 勾「記住設定」，之後這台裝置就不用再填。
 
-## 第 8b 步：用一張測試單核對送單欄位 ⚠️
+## 第 8b 步：確認距離欄位用哪一組
 
-送單欄位的名稱已對齊 webhooktrade 官方範本
-（`sl_distance`、`tp_distance`、`ts_activation`、`ts_distance`、`breakeven_distance`），
-但**距離的單位（美元還是點數）仍未確認**。第一次部署後請這樣核對：
+webhooktrade 有兩組距離欄位，單位不同，**只能擇一送出**：
 
-1. 送單參數頁把手數設成最小（0.01），關卡頁按「🛡️ 全部關卡開啟」以外的任何模式都可以。
-2. 等系統送出第一張單（或在測試時間自行觸發），到 MT5 看那張單的止損距離。
-3. 對照送單參數頁「最後一次實際送出的封包」裡的 `sl_distance`：
-   - MT5 上的止損距離 ≈ 該數字（例如 13 美元）→ 單位是 **price**，維持預設。
-   - MT5 上的止損距離只有該數字的 1/100（例如 0.13 美元）→ 單位是 **points**，
-     到送單參數頁把「距離單位」改成 `points`（不需重新部署）。
-   - **MT5 上根本沒有止損** → 欄位仍不被接受，請把封包內容拿去問 webhooktrade 客服。
+| 欄位組 | 欄位名稱 | 值的單位 | 系統送出的範例 |
+|---|---|---|---|
+| **price（預設）** | `sl_distance_price`、`tp_distance_price`、`ts_activation_price`… | 美元 | `"13.00"` |
+| points | `sl_distance`、`tp_distance`、`ts_activation`… | 點數 | `"1300"` |
+
+XAUUSD 兩位小數：1 美元 = 100 點，所以同一個止損距離在兩組的數字差 100 倍。
+
+系統預設用 **price（美元）**，因為止損距離是由 ATR 算出來的美元金額，直接送最直覺。
+要改成點數就到送單參數頁把「距離單位（欄位組）」改成 `points`（不需重新部署），
+或設環境變數 `DISTANCE_UNIT=points`。
+
+第一次部署後仍建議用一張最小手數的單核對：到 MT5 看止損距離，對照送單參數頁
+「最後一次實際送出的封包」——止損應該 ≈ `sl_distance_price` 的美元數字。
 
 ## 第 9 步：把網址給 MT5 EA
 

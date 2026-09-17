@@ -83,9 +83,22 @@ BROKER_API_URL = "https://webhooktrade.com/signals/v1/webhook_receptions.php?t=e
 BROKER_TIMEOUT_SEC = _env_int("BROKER_TIMEOUT_SEC", 8)            # keep total request < EA WebRequest timeout
 ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD")                    # symbol sent to webhooktrade
 ORDER_ACCOUNT = _env_str("ORDER_ACCOUNT", "1")                       # webhooktrade 範本的 account 欄位
-# 距離欄位的單位：price＝直接送美元；points＝乘以 POINTS_PER_UNIT。webhooktrade 的定義未確認。
+# webhooktrade 有兩組距離欄位，單位不同，只能擇一送出：
+#   price  → sl_distance_price / tp_distance_price / ts_activation_price / …   值＝美元（13.00）
+#   points → sl_distance       / tp_distance       / ts_activation       / …   值＝點數（1300）
 DISTANCE_UNIT = _env_str("DISTANCE_UNIT", "price").lower()
 POINTS_PER_UNIT = _env_float("POINTS_PER_UNIT", 100.0)               # XAUUSD 兩位小數：1 美元 = 100 點
+
+DISTANCE_FIELDS = {
+    "price": {"sl": "sl_distance_price", "tp": "tp_distance_price", "ts_activation": "ts_activation_price",
+              "ts_distance": "ts_distance_price", "breakeven": "breakeven_distance_price"},
+    "points": {"sl": "sl_distance", "tp": "tp_distance", "ts_activation": "ts_activation",
+               "ts_distance": "ts_distance", "breakeven": "breakeven_distance"},
+}
+
+
+def distance_fields(params):
+    return DISTANCE_FIELDS.get(params.get("distance_unit"), DISTANCE_FIELDS["price"])
 ORDER_SETTLE_SEC = _env_int("ORDER_SETTLE_SEC", 180)                  # [R12c R25]
 LOCKED_HTTP_STATUS = _env_int("LOCKED_HTTP_STATUS", 403)              # [R63] 403 kept for EA compatibility
 
@@ -262,8 +275,9 @@ def _startup_warnings():
     if activation is not None and distance is not None and distance > activation:
         print(f"⚠️ [出場參數] TS_DISTANCE ({distance}) > TS_ACTIVATION ({activation})：啟動移動止損時止損可能仍在進場價之下，"
               f"請確認 webhooktrade 語義。[R33]", flush=True)
-    print(f"ℹ️ [送單欄位] 依 webhooktrade 範本送出 sl_distance / tp_distance / ts_activation / ts_distance / "
-          f"breakeven_distance｜距離單位={DISTANCE_UNIT}（未確認語義，請用測試單核對 MT5 上的實際止損）", flush=True)
+    _fields = DISTANCE_FIELDS.get(DISTANCE_UNIT, DISTANCE_FIELDS["price"])
+    print(f"ℹ️ [送單欄位] 距離單位={DISTANCE_UNIT} → 送出 {_fields['sl']} / {_fields['tp']} 等欄位"
+          f"（{'美元' if DISTANCE_UNIT != 'points' else '點數'}）", flush=True)
     if FIRST_ENTRY_MODE not in ("BREAKOUT", "MID"):
         print(f"⚠️ [設定] FIRST_ENTRY_MODE={FIRST_ENTRY_MODE} 無效，將視為 BREAKOUT。", flush=True)
 
@@ -1390,20 +1404,23 @@ ORDER_PARAM_DEFS = [
     ("ts_distance_price", "移動止損距離", "number", "封包的 ts_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
     ("breakeven_distance_price", "保本啟動距離", "number", "封包的 breakeven_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
     ("breakeven_profit", "保本鎖利", "number", "封包的 breakeven_profit。", {"min": 0.0, "max": 100000.0, "step": 1.0}),
-    ("distance_unit", "距離單位", "choice",
-     "所有距離欄位送出時的單位。price＝直接送美元（13.00）；points＝乘以 POINTS_PER_UNIT 後送點數（1300）。"
-     "webhooktrade 的定義未確認，請先用一張最小手數的測試單核對 MT5 上的止損距離。",
+    ("distance_unit", "距離單位（欄位組）", "choice",
+     "price＝送 sl_distance_price 等欄位，值是美元（13.00）；"
+     "points＝送 sl_distance 等欄位，值是點數（1300，XAUUSD 1 美元 = 100 點）。兩組只能擇一。",
      {"choices": ["price", "points"]}),
 ]
 ORDER_PARAM_KEYS = [d[0] for d in ORDER_PARAM_DEFS]
 ORDER_PARAM_KINDS = {d[0]: d[2] for d in ORDER_PARAM_DEFS}
 ORDER_PARAM_LIMITS = {d[0]: d[4] for d in ORDER_PARAM_DEFS}
 # 這幾個欄位是每次訊號現算的，不能直接輸入
-ORDER_COMPUTED_FIELDS = {
-    "action": "由電閘趨勢方向決定（BUY／SELL）。",
-    "sl_distance": "max(最小止損距離, ATR(M15) × 止損倍數)。",
-    "tp_distance": "止損距離 × 止盈倍數。",
-}
+def computed_fields(params):
+    """每次訊號現算、不能直接輸入的欄位（名稱隨 distance_unit 變動）。"""
+    field = distance_fields(params)
+    return {
+        "action": "由電閘趨勢方向決定（BUY／SELL）。",
+        field["sl"]: "max(最小止損距離, ATR(M15) × 止損倍數)。",
+        field["tp"]: "止損距離 × 止盈倍數。",
+    }
 
 
 def mask_secret(value):
@@ -1693,21 +1710,19 @@ pure_gcp_session = PureGCPPyramidingSession()
 # 🚀 Execution: news → AI → broker → commit state  [R1 R1b R3 R24f R64 R65]
 # =============================================================================
 def format_distance(value, params):
-    """距離欄位的輸出格式。points 模式會乘上 POINTS_PER_UNIT（XAUUSD 兩位小數：1 美元 = 100 點）。"""
+    """price 模式送美元（13.00）；points 模式送點數（1300）。欄位名稱也會跟著換。"""
     if params.get("distance_unit") == "points":
         return f"{round(value * POINTS_PER_UNIT):d}"
     return f"{value:.2f}"
 
 
 def build_order(candidate, params=None):
-    """送給 webhooktrade 的封包。欄位名稱依 webhooktrade 官方範本（不是 *_price）。"""
+    """送給 webhooktrade 的封包。距離欄位依 distance_unit 選用 *_price（美元）或無後綴（點數）。"""
     params = params or read_order_params()[0]
     sl = candidate["sl_distance"]
+    field = distance_fields(params)
 
-    def dist(key):
-        return format_distance(params[key], params)
-
-    return {
+    order = {
         "username": params["username"],
         "api_key": params["api_key"],
         "broker": params["broker"],
@@ -1718,13 +1733,14 @@ def build_order(candidate, params=None):
         "size": f"{params['size']:.2f}",
         "strategy": params["strategy"],
         "comment": params["comment"],
-        "sl_distance": format_distance(sl, params),
-        "tp_distance": format_distance(round(sl * params["target_rrr"], 2), params),
-        "ts_activation": dist("ts_activation_price"),
-        "ts_distance": dist("ts_distance_price"),
-        "breakeven_distance": dist("breakeven_distance_price"),
-        "breakeven_profit": f"{params['breakeven_profit']:g}",
     }
+    order[field["sl"]] = format_distance(sl, params)
+    order[field["tp"]] = format_distance(round(sl * params["target_rrr"], 2), params)
+    order[field["ts_activation"]] = format_distance(params["ts_activation_price"], params)
+    order[field["ts_distance"]] = format_distance(params["ts_distance_price"], params)
+    order[field["breakeven"]] = format_distance(params["breakeven_distance_price"], params)
+    order["breakeven_profit"] = f"{params['breakeven_profit']:g}"
+    return order
 
 
 def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset(), params=None):
@@ -2801,7 +2817,7 @@ def order_state_payload(params=None, meta=None, message=None, errors=None):
         "defaults": visible_defaults,
         "fields": [{"key": key, "label": label, "kind": kind, "description": description, **limits}
                    for key, label, kind, description, limits in ORDER_PARAM_DEFS],
-        "computed": ORDER_COMPUTED_FIELDS,
+        "computed": computed_fields(params),
         "broker_url": BROKER_API_URL.split("?")[0] + "?…",
         "preview": order_preview(params),
         "last_sent": read_last_order(),
