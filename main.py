@@ -2519,6 +2519,107 @@ GATE_MODES = {
 }
 
 
+# -----------------------------------------------------------------------------
+# 🔢 關卡實際使用的門檻值（關卡頁顯示用）
+#    env  = 環境變數，改了要重新部署；order = 送單參數頁可即時修改
+# -----------------------------------------------------------------------------
+def _pv(name, value, note="", source="env"):
+    return {"name": name, "value": str(value), "note": note, "source": source}
+
+
+def gate_parameter_values(params=None):
+    """每個關卡判斷時實際用到的數值。"""
+    params = params or read_order_params()[0]
+    return {
+        "setup_trigger": [
+            _pv("NOISE_K", f"{NOISE_K:g}", "門檻 = K × σ × √分鐘；σ 取最近 60 分鐘每分鐘變化的標準差"),
+            _pv("MIN_M1_BARS", MIN_M1_BARS, "要累積這麼多根連續 M1 才開始判定"),
+            _pv("時間窗", "60 / 24 / 4 分鐘", "M15 / M5 / M1 三個窗口，需同方向越過門檻"),
+        ],
+        "structure": [
+            _pv("FIRST_ENTRY_MODE", FIRST_ENTRY_MODE, "BREAKOUT＝突破布林帶；MID＝站上中軌"),
+            _pv("M15_CLOSE_POSITION_MIN", f"{M15_CLOSE_POSITION_MIN:g}",
+                f"多單收盤位置需 ≥ {M15_CLOSE_POSITION_MIN:g}，空單需 ≤ {1 - M15_CLOSE_POSITION_MIN:g}"),
+            _pv("布林帶", f"{MTFDynamicLevelsSession.bb_period} 根 ± {MTFDynamicLevelsSession.bb_std_dev:g}σ",
+                "M15 週期與標準差倍數"),
+        ],
+        "candle": [
+            _pv("（無數值門檻）", "收陽 / 收陰", "只看當根 M1 的 close 與 open 相對位置"),
+        ],
+        "risk_cap": [
+            _pv("RISK_PCT", f"{RISK_PCT:g}", f"整組倉位打到止損時最多虧損淨值的 {RISK_PCT * 100:g}%"),
+            _pv("MAX_MARGIN_PCT", f"{MAX_MARGIN_PCT:g}", f"保證金佔用上限 {MAX_MARGIN_PCT * 100:g}%"),
+            _pv("HARD_MAX_LOTS", f"{HARD_MAX_LOTS:g}", "手數硬上限，任何模式都不會超過"),
+            _pv("BROKER_LEVERAGE", f"{BROKER_LEVERAGE:g}", "算保證金用，請與券商實際槓桿一致"),
+            _pv("CONTRACT_SIZE", f"{CONTRACT_SIZE:g}", "XAUUSD：1 手 = 100 盎司"),
+        ],
+        "rsi": [
+            _pv("RSI_BUY_MAX", f"{RSI_BUY_MAX:g}", "RSI 高於此值不追多"),
+            _pv("RSI_SELL_MIN", f"{RSI_SELL_MIN:g}", "RSI 低於此值不追空"),
+            _pv("RSI 週期", "14（M1，Wilder）", ""),
+        ],
+        "news": [
+            _pv("NEWS_LOCK_BEFORE_MIN", NEWS_LOCK_BEFORE_MIN, "事件前鎖閘分鐘數"),
+            _pv("NEWS_LOCK_AFTER_MIN", NEWS_LOCK_AFTER_MIN, "事件後鎖閘分鐘數"),
+            _pv("NEWS_LOCK_IMPACTS", "/".join(sorted(NEWS_LOCK_IMPACTS)), "哪些影響等級會鎖閘（USD 事件）"),
+            _pv("NEWS_FAIL_CLOSED", "是" if NEWS_FAIL_CLOSED else "否", "日曆載不到時是否禁止新倉"),
+        ],
+        "ai": [
+            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 Gemini"),
+            _pv("AI_MODEL", AI_MODEL, ""),
+            _pv("AI_FAIL_OPEN", "放行" if AI_FAIL_OPEN else "拒絕", "AI 出錯或格式錯誤時怎麼處理"),
+        ],
+        "cooldown": [
+            _pv("REENTRY_COOLDOWN_SEC", REENTRY_COOLDOWN_SEC,
+                f"平倉後要等 {REENTRY_COOLDOWN_SEC // 60} 分 {REENTRY_COOLDOWN_SEC % 60} 秒才開新首單"),
+        ],
+        "add_spacing": [
+            _pv("ADD_SPACING_ATR", f"{ADD_SPACING_ATR:g}", "加單需比上次進場價多走 ATR(M15) × 此倍數"),
+        ],
+    }
+
+
+def system_parameter_values(params=None):
+    """不屬於任何單一關卡、但會影響下單的其餘數值。"""
+    params = params or read_order_params()[0]
+    currencies = "、".join(f"{k}→{v:.4f}" for k, v in FX_TO_USD.items())
+    return [
+        {"group": "🧾 送單（送單參數頁可即時修改）", "items": [
+            _pv("size", f"{params['size']:.2f} 手", "每張單的手數", "order"),
+            _pv("symbol", params["symbol"], "送單用的商品代號", "order"),
+            _pv("target_rrr", f"{params['target_rrr']:g}R", "止盈 = 止損 × 此倍數", "order"),
+            _pv("sl_atr_mult", f"{params['sl_atr_mult']:g}", "止損 = ATR(M15) × 此倍數", "order"),
+            _pv("min_sl_distance", f"{params['min_sl_distance']:g} 美元", "止損距離下限", "order"),
+            _pv("distance_unit", params["distance_unit"],
+                "price＝送 *_price 欄位（美元）；points＝送點數", "order"),
+            _pv("移動止損", ("停用" if params["ts_activation_price"] <= 0 or params["ts_distance_price"] <= 0
+                         else f"啟動 {params['ts_activation_price']:g} / 跟隨 {params['ts_distance_price']:g}"),
+                "0 代表整個欄位不送出", "order"),
+            _pv("保本", ("停用" if params["breakeven_distance_price"] <= 0
+                       else f"啟動 {params['breakeven_distance_price']:g} / 鎖利 {params['breakeven_profit']:g}"),
+                "0 代表整個欄位不送出", "order"),
+        ]},
+        {"group": "💰 帳戶與匯率", "items": [
+            _pv("ACCOUNT_CURRENCY", ACCOUNT_CURRENCY_DEFAULT, "EA 未回報幣別時的預設值"),
+            _pv("FX_TO_USD", currencies, "內建匯率"),
+            _pv("ACCOUNT_TO_USD_RATE", f"{ACCOUNT_TO_USD_RATE:g}", "其他幣別要自行設定，0＝未設定"),
+        ]},
+        {"group": "⏱️ 資料與時間", "items": [
+            _pv("M1_HISTORY_MAX", M1_HISTORY_MAX, "M1 歷史最多保留幾根"),
+            _pv("M1_GAP_RESET_SEC", f"{M1_GAP_RESET_SEC}（{M1_GAP_RESET_SEC // 60} 分鐘）",
+                "超過此缺口就清空 M1 歷史重新累積"),
+            _pv("ORDER_SETTLE_SEC", f"{ORDER_SETTLE_SEC}（{ORDER_SETTLE_SEC // 60} 分鐘）",
+                "送單後持倉未變動前，暫停決策的時間"),
+            _pv("BROKER_TIMEOUT_SEC", BROKER_TIMEOUT_SEC, "送單 HTTP 逾時"),
+            _pv("BROKER_UTC_OFFSET_HOURS", f"{BROKER_UTC_OFFSET_HOURS:g}", "成交紀錄配對用的券商時差"),
+        ]},
+        {"group": "📈 統計", "items": [
+            _pv("STATS_WINDOW", STATS_WINDOW, "控制台「近 N 筆」的 N"),
+            _pv("BREAKEVEN_EPS", f"{BREAKEVEN_EPS:g}", "損益絕對值小於此值視為保本，不計入勝負"),
+        ]},
+    ]
+
+
 def read_gate_bypass():
     """Set of switched-off gates.
 
@@ -2604,6 +2705,11 @@ GATES_CSS = """
 .gate-state.on { background:#d1e7dd; color:#146c43; } .gate-state.off { background:#ffe5b4; color:#8a4b00; }
 .gate-text { font-size:13px; color:#495057; line-height:1.55; margin-top:4px; }
 .gate-risk { font-size:12px; color:#b45309; margin-top:4px; }
+.param-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.param-chip { background:#eef2ff; border-radius:8px; padding:6px 10px; font-size:12px; color:#3730a3;
+              line-height:1.45; max-width:100%; overflow-wrap:anywhere; }
+.param-chip b { font-family:"Courier New",monospace; font-weight:700; }
+.param-chip em { display:block; font-style:normal; color:#6c757d; font-size:11px; margin-top:2px; }
 .switch { position:relative; display:inline-block; width:52px; height:30px; flex-shrink:0; margin-top:2px; }
 .switch input { opacity:0; width:0; height:0; }
 .slider { position:absolute; cursor:pointer; inset:0; background:#d97706; border-radius:30px; transition:.2s; }
@@ -2676,6 +2782,8 @@ def gates_state_payload(message=None):
     bypass = read_gate_bypass()
     doc = read_gate_switch_doc()
     state = read_gate_state()
+    order_params = read_order_params()[0]
+    gate_values = gate_parameter_values(order_params)
     summary_class, summary_text = gate_summary(state)
     lock = state.get("hard_lock") if hard_lock_active(state) else None
     until = to_float(lock.get("until_ts")) if isinstance(lock, dict) else None
@@ -2702,13 +2810,14 @@ def gates_state_payload(message=None):
             "bypass": sorted(bypass),
             "updated_utc": doc.get("updated_utc"),
             "gates": [{"key": key, "title": title, "normal": normal, "skipped": skipped,
-                       "risk": risk, "enabled": key not in bypass}
+                       "risk": risk, "enabled": key not in bypass, "params": gate_values.get(key, [])}
                       for key, title, normal, skipped, risk in GATE_SWITCH_DEFS],
         },
         "modes": [{"key": key, "label": label, "bypass": sorted(keys)} for key, (label, keys) in GATE_MODES.items()],
         "test": solo_test_status(bypass),
         "risk_preview": _risk_cap_preview(),
         "always_on": GATE_ALWAYS_ON_NOTES,
+        "system_params": system_parameter_values(order_params),
         "auth_required": ADMIN_API_REQUIRE_TOKEN,
     }
 
@@ -2928,10 +3037,24 @@ def build_gates_page(msg):
         bg, fg, text = banners[msg]
         banner = f"<div class='banner' style='background:{bg}; color:{fg};'>{text}</div>"
 
+    order_params = read_order_params()[0]
+    gate_values = gate_parameter_values(order_params)
+
+    def param_chips(items):
+        if not items:
+            return ""
+        chips = "".join(
+            f"<span class='param-chip'><b>{esc(i['name'])}</b> = {esc(i['value'])}"
+            + (f"<em>{esc(i['note'])}</em>" if i["note"] else "") + "</span>"
+            for i in items)
+        return f"<div class='param-chips'>{chips}</div>"
+
     rows = ""
     for key, title, normal, skipped, risk in GATE_SWITCH_DEFS:
         is_on = key not in bypass
-        extra = f"<div class='gate-text'>{esc(_risk_cap_preview())}</div>" if key == "risk_cap" else ""
+        extra = param_chips(gate_values.get(key, []))
+        if key == "risk_cap":
+            extra += f"<div class='gate-text'>{esc(_risk_cap_preview())}</div>"
         rows += (
             f"<div class='gate-row {'' if is_on else 'off'}'>"
             f"<label class='switch'><input type='checkbox' name='on_{key}' value='1' {'checked' if is_on else ''}>"
@@ -2969,6 +3092,11 @@ def build_gates_page(msg):
 
     updated = esc(doc.get("updated_utc") or "—")
     always_on = "".join(f"<li>{esc(note)}</li>" for note in GATE_ALWAYS_ON_NOTES)
+
+    system_blocks = "".join(
+        f"<h3 style='font-size:14px; margin:18px 0 8px; color:var(--muted);'>{esc(group['group'])}</h3>"
+        + param_chips(group["items"])
+        for group in system_parameter_values(order_params))
 
     test = solo_test_status(bypass)
     test_line = (f"目前測試第 {test['index']} / {test['total']} 關：{esc(test['title'])}"
@@ -3033,6 +3161,12 @@ def build_gates_page(msg):
         {rows}
         <div class='save-bar'><button type='submit' class='mode-btn' style='background:#0f62fe;'>💾 儲存逐關設定</button></div>
       </form>
+    </div>
+
+    <div class='section'><h2>⚙️ 其餘系統參數</h2>
+      <p class='muted' style='font-size:12px;'>這些不屬於單一關卡，但會影響下單。標「送單參數頁」的可即時修改，
+      其餘是環境變數，改了要重新部署。</p>
+      {system_blocks}
     </div>
 
     <div class='section'><h2>🔒 本頁無法略過的檢查</h2>

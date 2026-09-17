@@ -55,6 +55,11 @@ h2 { font-size:17px; margin:0 0 14px; }
 .gate-state.on { background:#d1e7dd; color:#146c43; } .gate-state.off { background:#ffe5b4; color:#8a4b00; }
 .gate-text { font-size:13px; color:#495057; line-height:1.55; margin-top:4px; }
 .gate-risk { font-size:12px; color:#b45309; margin-top:4px; }
+.param-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.param-chip { background:#eef2ff; border-radius:8px; padding:6px 10px; font-size:12px; color:#3730a3;
+              line-height:1.45; max-width:100%; overflow-wrap:anywhere; }
+.param-chip b { font-family:"Courier New",monospace; font-weight:700; }
+.param-chip em { display:block; font-style:normal; color:#6c757d; font-size:11px; margin-top:2px; }
 .gate-extra { font-size:13px; color:#3730a3; background:#eef2ff; border-radius:8px; padding:10px 12px; margin-top:8px; line-height:1.55; }
 .switch { position:relative; display:inline-block; width:52px; height:30px; flex-shrink:0; margin-top:2px; }
 .switch input { opacity:0; width:0; height:0; }
@@ -190,6 +195,13 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
       <button id="revertBtn" class="btn btn-grey" type="button" disabled>↩️ 還原</button>
       <span id="dirtyNote" class="muted" style="font-size:13px;">尚無變更</span>
     </div>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 其餘系統參數</h2>
+    <p class="muted" style="font-size:12px;">這些不屬於單一關卡，但會影響下單。標「送單參數頁」的可即時修改，
+    其餘是環境變數，改了要重新部署。</p>
+    <div id="systemParams"><div class="muted" style="font-size:13px;">等待連線…</div></div>
   </div>
 
   <div class="section">
@@ -546,11 +558,37 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
       body.appendChild(skipped);
 
       body.appendChild(node("div", "gate-risk", gate.risk));
+      if (gate.params && gate.params.length) { body.appendChild(paramChips(gate.params)); }
       if (gate.key === "risk_cap" && state.data.risk_preview) {
         body.appendChild(node("div", "gate-extra", state.data.risk_preview));
       }
       row.appendChild(body);
       list.appendChild(row);
+    });
+  }
+
+  function paramChips(items) {
+    var box = node("div", "param-chips");
+    (items || []).forEach(function (item) {
+      var chip = node("div", "param-chip");
+      chip.appendChild(node("b", null, item.name));
+      chip.appendChild(document.createTextNode(" = " + item.value));
+      if (item.note) { chip.appendChild(node("em", null, item.note)); }
+      if (item.source === "order") { chip.title = "可在送單參數頁即時修改"; }
+      box.appendChild(chip);
+    });
+    return box;
+  }
+
+  function renderSystemParams() {
+    var host = el("systemParams");
+    if (!host) { return; }
+    host.textContent = "";
+    (state.data.system_params || []).forEach(function (group) {
+      var title = node("h3", null, group.group);
+      title.style.cssText = "font-size:14px; margin:18px 0 8px; color:var(--muted);";
+      host.appendChild(title);
+      host.appendChild(paramChips(group.items));
     });
   }
 
@@ -566,6 +604,7 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     renderModes();
     renderTest();
     renderGates();
+    renderSystemParams();
     renderAlwaysOn();
     updateDirty();
   }
