@@ -115,7 +115,9 @@ MAX_MARGIN_PCT = _env_float("MAX_MARGIN_PCT", 0.20)
 HARD_MAX_LOTS = _env_float("HARD_MAX_LOTS", 1.00)
 MIN_SL_DISTANCE = _env_float("MIN_SL_DISTANCE", 6.0)
 SL_ATR_MULT = _env_float("SL_ATR_MULT", 1.5)
-TARGET_RRR = _env_float("TARGET_RRR", 2.0)                            # [R15] fixed, no feedback loop
+# 2026-01→09 的 8.5 個月 M1 回測顯示 3R 在樣本內外都優於 2R（勝率低、獲利來自少數大單）。
+# 可用環境變數覆寫，或在送單參數頁即時調整（覆寫檔優先於這個預設值）。
+TARGET_RRR = _env_float("TARGET_RRR", 3.0)                            # [R15] fixed, no feedback loop
 ADD_SPACING_ATR = _env_float("ADD_SPACING_ATR", 0.5)
 REENTRY_COOLDOWN_SEC = _env_int("REENTRY_COOLDOWN_SEC", 300)          # [R25b]
 FIRST_ENTRY_MODE = _env_str("FIRST_ENTRY_MODE", "BREAKOUT").upper()   # BREAKOUT | MID   [R5]

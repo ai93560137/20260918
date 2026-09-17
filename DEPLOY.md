@@ -126,6 +126,7 @@ GATES_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gates
 | `ACCOUNT_TO_USD_RATE` | 帳戶非 USD/HKD 時才填 | 例如帳戶是 TWD 就填 `0.031` |
 | `ADMIN_CORS_ORIGIN` | 你的頁面網址 | 預設 `*` 代表任何網站都能打這兩個管理 API |
 | `AI_REVIEW_ENABLED` | `1` 或 `0` | 不想用 Gemini 就填 `0`，可省 Vertex AI 權限 |
+| `TARGET_RRR` | `3`（程式預設值已是 3） | 止盈 = 止損 × 幾倍。依 8.5 個月回測從 2 改為 3 |
 
 改完要重新部署才生效。**送單參數（手數、商品、止損止盈）不用設環境變數**，部署後直接在送單參數頁改。
 
