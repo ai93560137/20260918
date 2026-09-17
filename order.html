@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>送單參數頁面 - 智能諸葛亮</title>
+<style>
+:root { --primary:#0f62fe; --success:#198754; --danger:#dc3545; --warning:#d97706; --bg:#f4f7fb; --card:#fff; --text:#161616; --muted:#6c757d; }
+* { box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif; background:var(--bg); color:var(--text); padding:20px 15px; margin:0; }
+.container { max-width:1050px; margin:0 auto; }
+.nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
+.page-title { font-size:18px; font-weight:bold; margin:0; }
+.section { background:var(--card); padding:22px; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); margin-bottom:20px; }
+h2 { font-size:17px; margin:0 0 14px; }
+h3 { font-size:14px; margin:20px 0 10px; color:var(--muted); border-bottom:1px solid #e9ecef; padding-bottom:6px; }
+.muted { color:var(--muted); }
+.pos { color:var(--success); } .neg { color:var(--danger); }
+.banner { padding:12px 16px; margin-bottom:18px; border-radius:8px; font-weight:bold; font-size:14px; }
+.banner.ok { background:#d4edda; color:#155724; } .banner.err { background:#f8d7da; color:#721c24; } .banner.warn { background:#fff3cd; color:#8a4b00; }
+.conn { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; align-items:end; }
+.field { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.field label { font-size:12px; font-weight:600; color:var(--muted); }
+input[type=text], input[type=password], input[type=number], select { padding:10px 12px; border:1px solid #dee2e6; border-radius:8px; font-size:14px; width:100%; font-family:inherit; background:#fff; color:var(--text); }
+input.changed { border-color:var(--primary); box-shadow:0 0 0 2px rgba(15,98,254,.18); }
+input.invalid, select.invalid { border-color:var(--danger); box-shadow:0 0 0 2px rgba(220,53,69,.18); }
+.row-inline { display:flex; gap:10px; flex-wrap:wrap; align-items:center; min-width:0; }
+.row-inline > span { min-width:0; overflow-wrap:anywhere; }
+.btn { border:none; border-radius:8px; padding:12px 18px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-primary { background:var(--primary); } .btn-grey { background:#6c757d; } .btn-warn { background:var(--warning); } .btn-danger { background:var(--danger); }
+.chip { display:inline-block; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+.chip.on { background:#d1e7dd; color:#146c43; } .chip.off { background:#f8d7da; color:#721c24; } .chip.idle { background:#e9ecef; color:#495057; }
+.param-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+.param { background:#f8f9fa; border-radius:10px; padding:14px 16px; border-left:4px solid #dee2e6; }
+.param.changed { border-left-color:var(--primary); background:#eef4ff; }
+.param.invalid { border-left-color:var(--danger); background:#fdf1f2; }
+.param-label { font-size:13px; font-weight:700; margin-bottom:8px; }
+.param-key { font-family:"Courier New",monospace; font-size:11px; color:var(--muted); font-weight:400; }
+.param-desc { font-size:12px; color:#495057; margin-top:6px; line-height:1.5; }
+.param-default { font-size:11px; color:var(--muted); margin-top:4px; }
+.param-error { font-size:12px; color:var(--danger); font-weight:700; margin-top:6px; }
+.json { background:#1e1e1e; color:#d4d4d4; border-radius:10px; padding:16px 18px; font-family:"Courier New",Courier,monospace; font-size:13px; white-space:pre-wrap; word-break:break-word; overflow:auto; max-height:420px; line-height:1.6; }
+.json .computed { color:#ffd479; } .json .key { color:#9cdcfe; }
+.note-box { background:#eef2ff; border-radius:8px; padding:12px 16px; font-size:13px; color:#3730a3; line-height:1.6; margin-top:12px; }
+.warn-box { background:#fff4e5; border-radius:8px; padding:12px 16px; font-size:13px; color:#8a4b00; line-height:1.6; margin-top:12px; }
+.save-bar { position:sticky; bottom:0; background:rgba(244,247,251,.96); padding:12px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { padding:8px 10px; text-align:left; border-bottom:1px solid #f1f3f5; }
+th { color:var(--muted); font-weight:600; background:#f8f9fa; }
+.footer { text-align:center; font-size:12px; color:#adb5bd; margin:24px 0 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="nav">
+    <h1 class="page-title">🧾 送單參數頁面（webhook 封包）</h1>
+    <div class="row-inline">
+      <span id="connChip" class="chip idle">尚未連線</span>
+      <button id="refreshBtn" class="btn btn-grey" type="button">🔄 重新讀取</button>
+    </div>
+  </div>
+
+  <div id="banner" class="banner" style="display:none;"></div>
+
+  <div class="section">
+    <h2>🔗 連線設定</h2>
+    <p class="muted" style="font-size:12px; margin:0 0 14px;">
+      填入 Cloud Function 的網址。權杖只存在這台裝置的瀏覽器，儲存參數時才會送出。
+      API Key 讀取時一律遮蔽顯示，留空代表不修改。
+    </p>
+    <div class="conn">
+      <div class="field">
+        <label for="endpoint">Cloud Function 網址</label>
+        <input id="endpoint" type="text" placeholder="https://.../receive_tradingview_signal" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="token">管理權杖 (WEBHOOK_SECRET_TOKEN)</label>
+        <input id="token" type="password" placeholder="儲存時需要" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="row-inline">
+          <button id="connectBtn" class="btn btn-primary" type="button">連線</button>
+          <label class="muted" style="font-size:12px;"><input id="remember" type="checkbox" checked> 記住設定</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 封包參數</h2>
+    <div class="row-inline" style="font-size:13px;">
+      <span>目前來源：<b id="sourceValue">—</b></span>
+      <span class="muted">最後更新：<span id="updatedValue">—</span> UTC</span>
+      <span class="muted">送往：<span id="brokerUrl">—</span></span>
+    </div>
+    <div id="paramSections"><div class="muted" style="font-size:13px; margin-top:14px;">等待連線…</div></div>
+    <div class="save-bar">
+      <button id="saveBtn" class="btn btn-primary" type="button" disabled>💾 儲存並套用</button>
+      <button id="revertBtn" class="btn btn-grey" type="button" disabled>↩️ 放棄修改</button>
+      <button id="resetBtn" class="btn btn-danger" type="button">🧹 還原為環境變數預設</button>
+      <span id="dirtyNote" class="muted" style="font-size:13px;">尚未連線</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📦 送出封包預覽</h2>
+    <p class="muted" style="font-size:12px;" id="previewNote">連線後顯示實際會送給 webhooktrade 的 JSON。</p>
+    <div class="json" id="previewJson">—</div>
+    <div class="note-box" id="computedNote">—</div>
+  </div>
+
+  <div class="section">
+    <h2>📮 最後一次實際送出的封包</h2>
+    <p class="muted" style="font-size:12px;">系統每次下單都會留一份（API Key 已遮蔽），可用來核對券商收到的內容。</p>
+    <div id="lastSentMeta" class="muted" style="font-size:13px; margin-bottom:10px;">—</div>
+    <div class="json" id="lastSentJson">尚無紀錄。</div>
+  </div>
+
+  <div class="footer">智能諸葛亮 AI 量化交易系統 v12 ｜ 送單參數頁</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_ENDPOINT = "zhuge_gates_endpoint", LS_TOKEN = "zhuge_gates_token", LS_REMEMBER = "zhuge_gates_remember";
+  var GROUPS = [
+    { title: "🏦 券商連線", keys: ["username", "api_key", "broker", "account_type"] },
+    { title: "📈 商品與手數", keys: ["symbol", "size", "strategy", "comment"] },
+    { title: "🛡️ 止損與止盈（決定 sl_distance_price / tp_distance_price）", keys: ["sl_atr_mult", "min_sl_distance", "target_rrr"] },
+    { title: "🏃 移動止損與保本", keys: ["ts_activation_price", "ts_distance_price", "breakeven_distance_price", "breakeven_profit"] }
+  ];
+  // saved = 伺服器上真正存著的值（預覽回應不會動它，否則改動會被誤判為已儲存）
+  var state = { data: null, saved: null, edits: {}, busy: false, previewTimer: null };
+
+  function el(id) { return document.getElementById(id); }
+  function store(key, value) {
+    try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch (e) { /* ignore */ }
+  }
+  function load(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function defaultEndpoint() {
+    return (location.protocol === "http:" || location.protocol === "https:") ? location.origin + location.pathname : "";
+  }
+
+  function apiUrl() {
+    var base = el("endpoint").value.trim();
+    if (!base) { throw new Error("請先填入 Cloud Function 網址。"); }
+    var url = new URL(base, location.href);
+    url.search = ""; url.hash = "";
+    url.searchParams.set("view", "order");
+    url.searchParams.set("format", "json");
+    return url.toString();
+  }
+
+  function banner(kind, text) {
+    var node = el("banner");
+    if (!text) { node.style.display = "none"; return; }
+    node.className = "banner " + kind;
+    node.textContent = text;
+    node.style.display = "block";
+  }
+
+  function setChip(kind, text) {
+    el("connChip").className = "chip " + kind;
+    el("connChip").textContent = text;
+  }
+
+  function setBusy(busy) {
+    state.busy = busy;
+    el("refreshBtn").disabled = busy;
+    el("connectBtn").disabled = busy;
+    el("resetBtn").disabled = busy;
+    var inputs = document.querySelectorAll("#paramSections input, #paramSections select");
+    for (var i = 0; i < inputs.length; i++) { inputs[i].disabled = busy; }
+    updateDirty();
+  }
+
+  function rememberSettings() {
+    if (el("remember").checked) {
+      store(LS_REMEMBER, "1");
+      store(LS_ENDPOINT, el("endpoint").value.trim());
+      store(LS_TOKEN, el("token").value);
+    } else {
+      store(LS_REMEMBER, "0"); store(LS_ENDPOINT, null); store(LS_TOKEN, null);
+    }
+  }
+
+  function request(method, body) {
+    var url = apiUrl();
+    var options = { method: method, mode: "cors", cache: "no-store" };
+    if (body) {
+      options.headers = { "Content-Type": "application/json" };
+      var token = el("token").value.trim();
+      if (token) { options.headers["X-Gate-Token"] = token; }
+      options.body = JSON.stringify(body);
+    }
+    return fetch(url, options).then(function (response) {
+      return response.json().catch(function () { return null; }).then(function (payload) {
+        if (!response.ok || !payload || payload.status !== "ok") {
+          var error = new Error((payload && payload.message) || ("HTTP " + response.status));
+          error.fieldErrors = payload && payload.errors;
+          throw error;
+        }
+        return payload;
+      });
+    });
+  }
+
+  function fieldDef(key) {
+    var found = state.data.fields.filter(function (f) { return f.key === key; });
+    return found.length ? found[0] : null;
+  }
+
+  function currentValue(key) {
+    return Object.prototype.hasOwnProperty.call(state.edits, key) ? state.edits[key] : state.saved[key];
+  }
+
+  function isChanged(key) {
+    if (!Object.prototype.hasOwnProperty.call(state.edits, key)) { return false; }
+    if (fieldDef(key).kind === "secret") { return String(state.edits[key]).trim() !== ""; }
+    return String(state.edits[key]) !== String(state.saved[key]);
+  }
+
+  function changedKeys() {
+    return state.data ? state.data.fields.map(function (f) { return f.key; }).filter(isChanged) : [];
+  }
+
+  function editedParams() {
+    var out = {};
+    changedKeys().forEach(function (key) { out[key] = state.edits[key]; });
+    return out;
+  }
+
+  function updateDirty() {
+    var dirty = state.data && changedKeys().length > 0;
+    el("saveBtn").disabled = !dirty || state.busy;
+    el("revertBtn").disabled = !dirty || state.busy;
+    el("dirtyNote").textContent = !state.data ? "尚未連線"
+      : (dirty ? "有 " + changedKeys().length + " 個欄位尚未儲存" : "與伺服器一致");
+  }
+
+  function node(tag, className, text) {
+    var element = document.createElement(tag);
+    if (className) { element.className = className; }
+    if (text !== undefined && text !== null) { element.textContent = text; }
+    return element;
+  }
+
+  function buildInput(field) {
+    var input;
+    if (field.kind === "choice") {
+      input = document.createElement("select");
+      field.choices.forEach(function (choice) {
+        var option = document.createElement("option");
+        option.value = choice;
+        option.textContent = choice + (choice === "real" ? "（實盤）" : (choice === "demo" ? "（模擬）" : ""));
+        input.appendChild(option);
+      });
+      input.value = currentValue(field.key);
+    } else if (field.kind === "number") {
+      input = document.createElement("input");
+      input.type = "number";
+      input.step = String(field.step);
+      input.min = String(field.min);
+      input.max = String(field.max);
+      input.value = currentValue(field.key);
+    } else {
+      input = document.createElement("input");
+      input.type = field.kind === "secret" ? "password" : "text";
+      input.maxLength = field.max_len;
+      input.value = field.kind === "secret" ? "" : currentValue(field.key);
+      if (field.kind === "secret") { input.placeholder = "目前：" + state.saved[field.key] + "（留空＝不修改）"; }
+    }
+    input.id = "f_" + field.key;
+    input.setAttribute("aria-label", field.label);
+    input.disabled = state.busy;
+    input.addEventListener("input", function () { onEdit(field.key, input.value); });
+    input.addEventListener("change", function () { onEdit(field.key, input.value); });
+    return input;
+  }
+
+  function onEdit(key, value) {
+    state.edits[key] = value;
+    renderParams();
+    updateDirty();
+    schedulePreview();
+  }
+
+  function renderParams() {
+    var host = el("paramSections");
+    var focused = document.activeElement ? document.activeElement.id : null;
+    var caret = null;
+    if (focused && document.activeElement.setSelectionRange && document.activeElement.type !== "number") {
+      try { caret = document.activeElement.selectionStart; } catch (e) { caret = null; }
+    }
+    host.textContent = "";
+
+    GROUPS.forEach(function (group) {
+      host.appendChild(node("h3", null, group.title));
+      var grid = node("div", "param-grid");
+      group.keys.forEach(function (key) {
+        var field = fieldDef(key);
+        if (!field) { return; }
+        var error = state.data.errors ? state.data.errors[key] : null;
+        var box = node("div", "param" + (isChanged(key) ? " changed" : "") + (error ? " invalid" : ""));
+        var label = node("div", "param-label", field.label + " ");
+        label.appendChild(node("span", "param-key", "(" + field.key + ")"));
+        box.appendChild(label);
+        var input = buildInput(field);
+        if (isChanged(key)) { input.className = "changed"; }
+        if (error) { input.className = "invalid"; }
+        box.appendChild(input);
+        box.appendChild(node("div", "param-desc", field.description));
+        box.appendChild(node("div", "param-default", "環境變數預設：" + state.data.defaults[key]));
+        if (error) { box.appendChild(node("div", "param-error", "⚠️ " + error)); }
+        grid.appendChild(box);
+      });
+      host.appendChild(grid);
+    });
+
+    if (focused) {
+      var again = document.getElementById(focused);
+      if (again) {
+        again.focus();
+        if (caret !== null && again.setSelectionRange) {
+          try { again.setSelectionRange(caret, caret); } catch (e) { /* ignore */ }
+        }
+      }
+    }
+  }
+
+  function renderPreview() {
+    var preview = state.data.preview;
+    el("previewNote").textContent = preview.note + "：價格 " + preview.price + "、ATR(M15) " + preview.atr_m15
+      + " → 止損 " + preview.sl_distance + "（" + (state.data.meta.source === "preview" ? "尚未儲存的設定" : "伺服器目前設定") + "）";
+    var host = el("previewJson");
+    host.textContent = "";
+    var keys = Object.keys(preview.order);
+    host.appendChild(document.createTextNode("{\n"));
+    keys.forEach(function (key, index) {
+      var line = node("span", state.data.computed[key] ? "computed" : null,
+        '  "' + key + '": "' + preview.order[key] + '"' + (index < keys.length - 1 ? "," : ""));
+      host.appendChild(line);
+      host.appendChild(document.createTextNode("\n"));
+    });
+    host.appendChild(document.createTextNode("}"));
+
+    var note = el("computedNote");
+    note.textContent = "";
+    note.appendChild(node("div", null, "黃色欄位是每次訊號現算的，無法直接輸入："));
+    Object.keys(state.data.computed).forEach(function (key) {
+      note.appendChild(node("div", null, "• " + key + "：" + state.data.computed[key]));
+    });
+  }
+
+  function renderLastSent() {
+    var last = state.data.last_sent;
+    if (!last) {
+      el("lastSentMeta").textContent = "—";
+      el("lastSentJson").textContent = "尚無紀錄（系統還沒送出過訂單）。";
+      return;
+    }
+    var result = last.result || {};
+    var bits = ["送出時間：" + last.sent_utc + " UTC", "結果：" + (result.status || "—")];
+    if (result.http_status) { bits.push("HTTP " + result.http_status); }
+    if (result.body) { bits.push("券商回應：" + result.body); }
+    if (result.reason) { bits.push("原因：" + result.reason); }
+    el("lastSentMeta").textContent = bits.join("｜");
+    el("lastSentJson").textContent = JSON.stringify(last.order, null, 2);
+  }
+
+  function render() {
+    if (!state.data) { return; }
+    el("sourceValue").textContent = state.data.meta.source === "override" ? "GCS 覆寫檔（order_params.json）"
+      : (state.data.meta.source === "preview" ? "預覽（尚未儲存）" : "環境變數預設");
+    el("updatedValue").textContent = state.data.meta.updated_utc || "—";
+    el("brokerUrl").textContent = state.data.broker_url;
+    renderParams();
+    renderPreview();
+    renderLastSent();
+    updateDirty();
+  }
+
+  function applyPayload(payload, keepEdits) {
+    state.data = payload;
+    if (!keepEdits) {                       // GET / save / reset：這才是伺服器上的真實值
+      state.edits = {};
+      state.saved = payload.params;
+    }
+    render();
+  }
+
+  function refresh(quiet) {
+    if (state.busy) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("GET", null); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      applyPayload(payload, false);
+      setChip("on", "已連線");
+      if (!quiet) { banner("ok", "已讀取目前送單參數。"); }
+      rememberSettings();
+    }).catch(function (error) {
+      setChip("off", "連線失敗");
+      banner("err", "讀取失敗：" + error.message + "（請確認網址與 CORS 設定）");
+    }).then(function () { setBusy(false); });
+  }
+
+  function schedulePreview() {
+    if (state.previewTimer) { clearTimeout(state.previewTimer); }
+    state.previewTimer = setTimeout(function () {
+      if (!state.data || state.busy) { return; }
+      var promise;
+      try { promise = request("POST", { op: "preview", params: editedParams() }); } catch (e) { return; }
+      promise.then(function (payload) {
+        applyPayload(payload, true);          // 預覽不清掉編輯中的內容
+      }).catch(function (error) {
+        banner("warn", "預覽失敗：" + error.message);
+      });
+    }, 400);
+  }
+
+  function save() {
+    if (state.busy || !changedKeys().length) { return; }
+    var summary = changedKeys().map(function (key) { return fieldDef(key).label; }).join("、");
+    if (!window.confirm("確認儲存以下欄位並套用到之後每一張訂單？\n\n" + summary)) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("POST", { op: "save", params: editedParams() }); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      applyPayload(payload, false);
+      banner("ok", "✅ " + (payload.message || "已儲存。"));
+      rememberSettings();
+    }).catch(function (error) {
+      if (error.fieldErrors) {
+        state.data.errors = error.fieldErrors;
+        render();
+      }
+      banner("err", "儲存失敗：" + error.message);
+    }).then(function () { setBusy(false); });
+  }
+
+  function reset() {
+    if (state.busy) { return; }
+    if (!window.confirm("還原為環境變數預設？所有在本頁做過的修改都會被清掉。")) { return; }
+    setBusy(true);
+    var promise;
+    try { promise = request("POST", { op: "reset" }); } catch (e) { setBusy(false); banner("err", e.message); return; }
+    promise.then(function (payload) {
+      applyPayload(payload, false);
+      banner("ok", "✅ " + (payload.message || "已還原為預設。"));
+    }).catch(function (error) {
+      banner("err", "還原失敗：" + error.message);
+    }).then(function () { setBusy(false); });
+  }
+
+  el("connectBtn").addEventListener("click", function () { refresh(false); });
+  el("refreshBtn").addEventListener("click", function () { refresh(false); });
+  el("saveBtn").addEventListener("click", save);
+  el("resetBtn").addEventListener("click", reset);
+  el("revertBtn").addEventListener("click", function () {
+    state.edits = {};
+    if (state.data) { state.data.errors = {}; }
+    render();
+    schedulePreview();
+    banner("warn", "已放棄修改，顯示伺服器目前設定。");
+  });
+  el("remember").addEventListener("change", rememberSettings);
+  window.addEventListener("beforeunload", function (event) {
+    if (state.data && changedKeys().length) { event.preventDefault(); event.returnValue = ""; }
+  });
+
+  el("remember").checked = load(LS_REMEMBER) !== "0";
+  el("endpoint").value = load(LS_ENDPOINT) || defaultEndpoint();
+  el("token").value = load(LS_TOKEN) || "";
+  if (el("endpoint").value) { refresh(true); } else { banner("warn", "請先填入 Cloud Function 網址，再按「連線」。"); }
+})();
+</script>
+</body>
+</html>

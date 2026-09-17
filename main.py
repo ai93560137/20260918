@@ -980,14 +980,14 @@ class RiskManagerSession:
         }
 
     def calculate_stats(self, trades):
-        """TP ratio is fixed (TARGET_RRR); stats are reported, not fed back.  [R15]
+        """TP ratio is a configured setting (送單參數頁), never derived from the stats.  [R15]
         Break-even exits are counted separately from wins and losses.  [R24c]"""
         profits = [to_float(t.get("profit"), 0.0) for t in trades]
         all_time = self._summarize(profits)
         recent = self._summarize(profits[-STATS_WINDOW:])
         return {
             "win_rate": all_time["win_rate"],
-            "recommended_rrr": TARGET_RRR,
+            "recommended_rrr": current_target_rrr(),
             "total_trades": all_time["trades"],
             "all_time": all_time,
             "recent": recent,
@@ -1359,6 +1359,161 @@ ai_review_session = AIReviewSession()
 
 
 # =============================================================================
+# 🧾 送單參數（環境變數為預設值，GCS 覆寫檔為現行值）
+# =============================================================================
+ORDER_PARAMS_FILE = "order_params.json"
+LAST_ORDER_FILE = "logs/last_order_sent.json"
+
+# key, 中文標籤, 型別, 說明, 限制
+ORDER_PARAM_DEFS = [
+    ("username", "webhooktrade 帳號", "text", "封包的 username 欄位。", {"max_len": 64}),
+    ("api_key", "webhooktrade API Key", "secret", "封包的 api_key 欄位；讀取時一律遮蔽，留空代表不修改。", {"max_len": 128}),
+    ("broker", "券商橋接", "text", "封包的 broker 欄位（例如 metatrader）。", {"max_len": 32}),
+    ("account_type", "帳戶類型", "choice", "real＝實盤下單，demo＝模擬帳戶。", {"choices": ["real", "demo"]}),
+    ("symbol", "商品代號", "text", "送單用的 symbol；EA 無持倉時回報 NONE，所以這裡固定由本頁決定。", {"max_len": 20}),
+    ("size", "每張單手數", "number", "封包的 size；也是加單時每次增加的手數。", {"min": 0.01, "max": HARD_MAX_LOTS, "step": 0.01}),
+    ("strategy", "策略標籤", "text", "封包的 strategy 欄位。", {"max_len": 32}),
+    ("comment", "訂單註解", "text", "封包的 comment 欄位，會出現在 MT5 訂單註解。", {"max_len": 64}),
+    ("sl_atr_mult", "止損 = ATR(M15) ×", "number", "決定 sl_distance_price：ATR(M15) 乘上這個倍數。", {"min": 0.1, "max": 10.0, "step": 0.1}),
+    ("min_sl_distance", "最小止損距離（美元）", "number", "sl_distance_price 的下限，避免 ATR 過小時止損太貼。", {"min": 0.5, "max": 200.0, "step": 0.5}),
+    ("target_rrr", "止盈 = 止損 ×", "number", "決定 tp_distance_price：止損距離乘上這個倍數。", {"min": 0.2, "max": 20.0, "step": 0.1}),
+    ("ts_activation_price", "移動止損啟動距離", "number", "封包的 ts_activation_price，語義依 webhooktrade 定義。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
+    ("ts_distance_price", "移動止損距離", "number", "封包的 ts_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
+    ("breakeven_distance_price", "保本啟動距離", "number", "封包的 breakeven_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
+    ("breakeven_profit", "保本鎖利", "number", "封包的 breakeven_profit。", {"min": 0.0, "max": 100000.0, "step": 1.0}),
+]
+ORDER_PARAM_KEYS = [d[0] for d in ORDER_PARAM_DEFS]
+ORDER_PARAM_KINDS = {d[0]: d[2] for d in ORDER_PARAM_DEFS}
+ORDER_PARAM_LIMITS = {d[0]: d[4] for d in ORDER_PARAM_DEFS}
+# 這幾個欄位是每次訊號現算的，不能直接輸入
+ORDER_COMPUTED_FIELDS = {
+    "action": "由電閘趨勢方向決定（BUY／SELL）。",
+    "sl_distance_price": "max(最小止損距離, ATR(M15) × 止損倍數)。",
+    "tp_distance_price": "止損距離 × 止盈倍數。",
+}
+
+
+def mask_secret(value):
+    text = str(value or "")
+    if not text:
+        return "（未設定）"
+    return (text[:4] + "…" + text[-3:]) if len(text) > 10 else "（已設定）"
+
+
+def default_order_params():
+    return {
+        "username": ORDER_TEMPLATE["username"],
+        "api_key": ORDER_TEMPLATE["api_key"],
+        "broker": ORDER_TEMPLATE["broker"],
+        "account_type": ORDER_TEMPLATE["account_type"],
+        "symbol": ORDER_SYMBOL,
+        "size": round(ORDER_SIZE, 2),
+        "strategy": ORDER_TEMPLATE["strategy"],
+        "comment": ORDER_TEMPLATE["comment"],
+        "sl_atr_mult": SL_ATR_MULT,
+        "min_sl_distance": MIN_SL_DISTANCE,
+        "target_rrr": TARGET_RRR,
+        "ts_activation_price": to_float(TS_ACTIVATION_PRICE, 0.0),
+        "ts_distance_price": to_float(TS_DISTANCE_PRICE, 0.0),
+        "breakeven_distance_price": to_float(BREAKEVEN_DISTANCE_PRICE, 0.0),
+        "breakeven_profit": to_float(BREAKEVEN_PROFIT, 0.0),
+    }
+
+
+def validate_order_params(raw):
+    """回傳 (clean, errors)。無效欄位會退回預設值，並在 errors 中說明。"""
+    defaults = default_order_params()
+    clean, errors = {}, {}
+    for key in ORDER_PARAM_KEYS:
+        kind, limits, value = ORDER_PARAM_KINDS[key], ORDER_PARAM_LIMITS[key], raw.get(key)
+        if value is None:
+            clean[key] = defaults[key]
+            continue
+        if kind == "number":
+            number = to_float(value)
+            if number is None:
+                errors[key] = "必須是數字"
+            elif number < limits["min"] or number > limits["max"]:
+                errors[key] = f"必須介於 {limits['min']} 與 {limits['max']} 之間"
+            else:
+                clean[key] = round(number, 2)
+                continue
+        elif kind == "choice":
+            if value not in limits["choices"]:
+                errors[key] = "必須是 " + " 或 ".join(limits["choices"])
+            else:
+                clean[key] = value
+                continue
+        else:                                              # text / secret
+            text = str(value).strip()
+            if any(ord(ch) < 32 for ch in text):
+                errors[key] = "不可含控制字元"
+            elif not text:
+                errors[key] = "不可留空"
+            elif len(text) > limits["max_len"]:
+                errors[key] = f"最長 {limits['max_len']} 個字元"
+            else:
+                clean[key] = text
+                continue
+        clean[key] = defaults[key]
+    return clean, errors
+
+
+def read_order_params():
+    """回傳 (params, meta)。覆寫檔讀不到或欄位無效時，該欄位退回環境變數預設。"""
+    defaults = default_order_params()
+    try:
+        doc = gcs_read_json(ORDER_PARAMS_FILE, None)
+    except StorageError as exc:
+        print(f"⚠️ [送單參數讀取失敗 → 使用環境變數預設] {exc}", flush=True)
+        return defaults, {"source": "default", "updated_utc": None, "error": str(exc)[:200]}
+    if not isinstance(doc, dict) or not isinstance(doc.get("params"), dict) or not doc["params"]:
+        # 沒有覆寫檔，或覆寫檔已被清空（還原預設）
+        updated = doc.get("updated_utc") if isinstance(doc, dict) else None
+        return defaults, {"source": "default", "updated_utc": updated, "error": None}
+    clean, errors = validate_order_params({**defaults, **doc["params"]})
+    if errors:
+        print(f"⚠️ [送單參數] 覆寫檔欄位無效，改用預設：{errors}", flush=True)
+    return clean, {"source": "override", "updated_utc": doc.get("updated_utc"),
+                   "error": None, "invalid_fields": errors or None}
+
+
+def write_order_params(params):
+    doc = {"params": params, "updated_utc": fmt_utc()}
+    gcs_write_text(ORDER_PARAMS_FILE, json.dumps(doc, ensure_ascii=False))
+    return doc
+
+
+def clear_order_params():
+    gcs_write_text(ORDER_PARAMS_FILE, json.dumps({"params": {}, "updated_utc": fmt_utc()}, ensure_ascii=False))
+
+
+def current_target_rrr():
+    try:
+        return read_order_params()[0]["target_rrr"]
+    except Exception:
+        return TARGET_RRR
+
+
+def save_last_order(order, result):
+    """把真的送出去的封包留一份（API Key 遮蔽），送單參數頁會顯示。"""
+    doc = {"sent_utc": fmt_utc(), "order": {**order, "api_key": mask_secret(order.get("api_key"))},
+           "result": result}
+    try:
+        gcs_write_text(LAST_ORDER_FILE, json.dumps(doc, ensure_ascii=False, indent=2))
+    except StorageError as exc:
+        print(f"⚠️ [最後送出封包紀錄失敗] {exc}", flush=True)
+
+
+def read_last_order():
+    try:
+        doc = gcs_read_json(LAST_ORDER_FILE, None)
+        return doc if isinstance(doc, dict) else None
+    except StorageError:
+        return None
+
+
+# =============================================================================
 # 🎯 Deterministic entry / pyramiding engine  [R3 R4 R5 R11 R12 R13 R25]
 # =============================================================================
 class PureGCPPyramidingSession:
@@ -1399,15 +1554,18 @@ class PureGCPPyramidingSession:
             return False, f"M15 收盤位置 {position:.2f} 未靠近低點（需 ≤ {1 - M15_CLOSE_POSITION_MIN:.2f}）"
         return True, ""
 
-    def evaluate_and_trigger(self, payload, gate_state, m15_levels, bar, rsi, now=None, bypass=frozenset()):
+    def evaluate_and_trigger(self, payload, gate_state, m15_levels, bar, rsi, now=None, bypass=frozenset(),
+                             params=None):
         """Returns a candidate dict or None. Nothing here sends orders or moves the
         pyramid base price (except re-anchoring when no base exists)."""
         now = now_ts() if now is None else now
+        params = params or read_order_params()[0]
+        order_size = params["size"]
         direction = gate_state.get("dir")
         if gate_status(gate_state, now) != "OPEN" or direction not in ("UP", "DOWN"):
             return None
         side = "BUY" if direction == "UP" else "SELL"
-        symbol = ORDER_SYMBOL   # EA sends symbol "NONE" when flat, so never trust payload symbol for orders
+        symbol = params["symbol"]   # EA sends symbol "NONE" when flat, so never trust payload symbol for orders
 
         buy_lots, sell_lots = to_float(payload.get("buy_lots")), to_float(payload.get("sell_lots"))
         equity = to_float(payload.get("equity"))
@@ -1429,7 +1587,7 @@ class PureGCPPyramidingSession:
             return None
 
         close, open_price = bar["close"], bar["open"]
-        sl_distance = max(MIN_SL_DISTANCE, round(atr * SL_ATR_MULT, 2))
+        sl_distance = max(params["min_sl_distance"], round(atr * params["sl_atr_mult"], 2))
         currency = str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT)
         max_lots, sizing_note = self.calculate_max_lots(equity, currency, close, sl_distance,
                                                         ignore_risk="risk_cap" in bypass)
@@ -1472,8 +1630,8 @@ class PureGCPPyramidingSession:
             if not ok:
                 log_decision(f"⏳ [首單過濾] {word}趨勢：{why}。", key="filter")
                 return None
-            if max_lots + 1e-9 < ORDER_SIZE:
-                log_decision(f"🛑 [資金控管] 風險上限 {max_lots:.2f} 手 < 單筆 {ORDER_SIZE:.2f} 手（{sizing_note}），不開首單。", key="risk")
+            if max_lots + 1e-9 < order_size:
+                log_decision(f"🛑 [資金控管] 風險上限 {max_lots:.2f} 手 < 單筆 {order_size:.2f} 手（{sizing_note}），不開首單。", key="risk")
                 return None
             log_decision(f"🎯 [首單候選] {side} @ {close:.2f}（{word}趨勢，上限 {max_lots:.2f} 手），送交新聞與 AI 覆核。{bypass_note(bypass)}", key="candidate")
             return {**base, "kind": "FIRST"}
@@ -1483,8 +1641,8 @@ class PureGCPPyramidingSession:
         if exposure_dir != direction:
             log_decision(f"🛑 [方向衝突] 持倉為{DIR_WORD[exposure_dir]}，但電閘趨勢為{word}，不加碼。", key="risk")
             return None
-        if gross + ORDER_SIZE > max_lots + 1e-9:
-            log_decision(f"🛑 [資金控管] 持倉 {gross:.2f} + {ORDER_SIZE:.2f} 將超過風險上限 {max_lots:.2f} 手（{sizing_note}），停止加單。", key="risk")
+        if gross + order_size > max_lots + 1e-9:
+            log_decision(f"🛑 [資金控管] 持倉 {gross:.2f} + {order_size:.2f} 將超過風險上限 {max_lots:.2f} 手（{sizing_note}），停止加單。", key="risk")
             return None                                                                  # [R11e] never reduces
         if not candle_ok and "candle" not in bypass:
             log_decision(f"⏳ [動能過濾] 持{word}倉，但 M1 {CANDLE_WORD[candle]}，本根不加單。", key="filter")
@@ -1519,21 +1677,34 @@ pure_gcp_session = PureGCPPyramidingSession()
 # =============================================================================
 # 🚀 Execution: news → AI → broker → commit state  [R1 R1b R3 R24f R64 R65]
 # =============================================================================
-def build_order(candidate):
-    order = ORDER_TEMPLATE.copy()
-    order["action"] = candidate["signal"]
-    order["symbol"] = candidate["ticker"]
+def build_order(candidate, params=None):
+    """送給 webhooktrade 的封包。欄位順序即送單參數頁顯示的順序。"""
+    params = params or read_order_params()[0]
     sl = candidate["sl_distance"]
-    order["sl_distance_price"] = f"{sl:.2f}"
-    order["tp_distance_price"] = f"{round(sl * TARGET_RRR, 2):.2f}"
-    order["ts_activation_price"] = TS_ACTIVATION_PRICE
-    order["ts_distance_price"] = TS_DISTANCE_PRICE
-    order["breakeven_distance_price"] = BREAKEVEN_DISTANCE_PRICE
-    order["breakeven_profit"] = BREAKEVEN_PROFIT
-    return order
+
+    def num(key):
+        return f"{params[key]:g}"
+
+    return {
+        "username": params["username"],
+        "api_key": params["api_key"],
+        "broker": params["broker"],
+        "account_type": params["account_type"],
+        "symbol": candidate["ticker"],
+        "action": candidate["signal"],
+        "size": f"{params['size']:.2f}",
+        "strategy": params["strategy"],
+        "comment": params["comment"],
+        "sl_distance_price": f"{sl:.2f}",
+        "tp_distance_price": f"{round(sl * params['target_rrr'], 2):.2f}",
+        "ts_activation_price": num("ts_activation_price"),
+        "ts_distance_price": num("ts_distance_price"),
+        "breakeven_distance_price": num("breakeven_distance_price"),
+        "breakeven_profit": num("breakeven_profit"),
+    }
 
 
-def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()):
+def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset(), params=None):
     signal, price = candidate["signal"], candidate["price"]
     label = "首單" if candidate["kind"] == "FIRST" else "加單"
     m15_ohlc = payload.get("m15_ohlc") if isinstance(payload.get("m15_ohlc"), dict) else {}
@@ -1549,7 +1720,7 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_reason}", key="ai_reject")
         return {"status": "ai_rejected", "reason": ai_reason}
 
-    order = build_order(candidate)
+    order = build_order(candidate, params)
     summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{order['sl_distance_price']} "
                f"TP:{order['tp_distance_price']} | 持倉 {candidate['exposure']:.2f}/{candidate['max_lots']:.2f} 手")
 
@@ -1565,14 +1736,18 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
             update_pyramid_state(**commit, last_order_status="UNKNOWN")
         except StorageError as exc:
             print(f"⚠️ [狀態寫入失敗] {exc}", flush=True)
+        save_last_order(order, {"status": "broker_timeout"})
         log_decision(f"⚠️ [下單逾時] {summary}：訂單可能已成交，暫停 {ORDER_SETTLE_SEC} 秒等待持倉回報。", key="broker_error")
         return {"status": "broker_timeout", "executed_signal": signal}
     except requests.RequestException as exc:
+        save_last_order(order, {"status": "broker_error", "reason": str(exc)[:150]})
         log_decision(f"❌ [下單失敗] {summary}：{str(exc)[:150]}", key="broker_error")
         return {"status": "broker_error", "reason": str(exc)[:150]}
 
     body = (response.text or "")[:300]
     print(f"📨 [券商回應] HTTP {response.status_code}: {body}", flush=True)
+    save_last_order(order, {"status": "sent" if response.ok else "broker_error",
+                            "http_status": response.status_code, "body": body[:200]})
     if not response.ok:
         log_decision(f"❌ [下單失敗] {summary}：HTTP {response.status_code} {body[:120]}", key="broker_error")
         return {"status": "broker_error", "http_status": response.status_code}
@@ -1712,11 +1887,12 @@ def handle_heartbeat(payload, can_trade):
         return jsonify({"status": "monitoring", "message": "No new M1 bar to evaluate", "current_gate": "OPEN"}), 200
 
     # 5) Engine → execution.
+    order_params = read_order_params()[0]
     candidate = pure_gcp_session.evaluate_and_trigger(payload, gate_state, m15_levels, bar, m1_result["rsi"], now,
-                                                      bypass=bypass)
+                                                      bypass=bypass, params=order_params)
     if not candidate:
         return jsonify({"status": "monitoring", "message": "Waiting for pure GCP criteria", "current_gate": "OPEN"}), 200
-    return jsonify(execute_signal(candidate, payload, m15_levels, m1_result["rsi"], news, bypass)), 200
+    return jsonify(execute_signal(candidate, payload, m15_levels, m1_result["rsi"], news, bypass, order_params)), 200
 
 
 # =============================================================================
@@ -1825,6 +2001,7 @@ def render_welcome_page():
         <a href='?view=info' class='btn btn-primary'>📄 投資人日誌 (實盤績效與 GCP 決策)</a>
         <a href='?view=gates_app' class='btn' style='background:#d97706;'>🎛️ 關卡開關頁面 (獨立版)</a>
         <a href='?view=gates' class='btn' style='background:#b45309;'>🎛️ 關卡開關頁面 (內建版)</a>
+        <a href='?view=order_app' class='btn' style='background:#0f62fe;'>🧾 送單參數頁面 (webhook 封包)</a>
         <a href='?view=dashboard' class='btn btn-dark'>🎛️ 系統控制台 (管理員)</a>
       </div>
       <div style='margin-top:40px; font-size:12px; color:#adb5bd;'>&copy; 2026 AI Trading Lab. All rights reserved.</div>
@@ -1901,7 +2078,7 @@ def build_dashboard_page(msg):
       <div class='card'><div class='card-title'>勝率（不含保本）</div><div class='card-small'>{recent.get('win_rate', 0):.1f}%</div><div class='card-desc'>{recent.get('wins', 0)} 勝 / {recent.get('losses', 0)} 負 / {recent.get('breakeven', 0)} 保本</div></div>
       <div class='card'><div class='card-title'>平均獲利 / 平均虧損</div><div class='card-small'>{recent.get('avg_win', 0):,.2f} / {recent.get('avg_loss', 0):,.2f}</div></div>
       <div class='card'><div class='card-title'>每筆期望值</div><div class='card-small {pnl_class(recent.get('expectancy'))}'>{recent.get('expectancy', 0):+,.2f}</div></div>
-      <div class='card'><div class='card-title'>TP 倍數 (固定)</div><div class='card-small'>{TARGET_RRR:.2f}R</div></div>
+      <div class='card'><div class='card-title'>TP 倍數</div><div class='card-small'>{stats['recommended_rrr']:.2f}R</div></div>
     </div>
 
     <div class='section-header'>📦 最新接收封包 (Raw Payload)</div>
@@ -2034,7 +2211,7 @@ def build_info_page():
         <div class='card-value {pnl_class(daily_pnl)}'>{fmt_num(daily_pnl, '{:+,.2f}')}</div><div class='card-desc'>MT5 心跳同步</div></div>
       <div class='card'><div class='card-title'>實盤勝率（不含保本）</div>
         <div class='card-value'>{all_time['win_rate']:.1f}%</div>
-        <div class='card-desc'>{all_time['trades']} 筆｜期望值 {all_time['expectancy']:+,.2f}｜TP {TARGET_RRR:.1f}R</div></div>
+        <div class='card-desc'>{all_time['trades']} 筆｜期望值 {all_time['expectancy']:+,.2f}｜TP {stats['recommended_rrr']:.1f}R</div></div>
       <div class='card'><div class='card-title'>諸葛亮電閘</div>
         <div class='card-small {gate_class}' style='padding-top:6px;'>{esc(gate_text)}</div><div class='card-desc'>趨勢狀態機 + 硬鎖 + 新聞風控</div></div>
       <div class='card'><div class='card-title'>ForexFactory 連線狀態</div>
@@ -2239,7 +2416,8 @@ def _risk_cap_preview():
     currency = str(snap.get("currency") or ACCOUNT_CURRENCY_DEFAULT)
     if not equity or not price or not atr:
         return "（尚無足夠的帳戶與 ATR 資料可試算）"
-    sl = max(MIN_SL_DISTANCE, round(atr * SL_ATR_MULT, 2))
+    order_params = read_order_params()[0]
+    sl = max(order_params["min_sl_distance"], round(atr * order_params["sl_atr_mult"], 2))
     normal, _ = PureGCPPyramidingSession.calculate_max_lots(equity, currency, price, sl)
     loose, _ = PureGCPPyramidingSession.calculate_max_lots(equity, currency, price, sl, ignore_risk=True)
     rate = FX_TO_USD.get(currency.upper()) or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
@@ -2256,14 +2434,15 @@ def _risk_cap_preview():
 # -----------------------------------------------------------------------------
 # 🔌 JSON API for the standalone gates.html  (GET/POST ?view=gates&format=json)
 # -----------------------------------------------------------------------------
-GATES_API_REQUIRE_TOKEN = _env_bool("GATES_API_REQUIRE_TOKEN", True)   # writes need the webhook token
-GATES_CORS_ORIGIN = _env_str("GATES_CORS_ORIGIN", "*")                 # set to your page origin to narrow it
+ADMIN_API_REQUIRE_TOKEN = _env_bool("ADMIN_API_REQUIRE_TOKEN",
+                                    _env_bool("GATES_API_REQUIRE_TOKEN", True))   # writes need the webhook token
+ADMIN_CORS_ORIGIN = _env_str("ADMIN_CORS_ORIGIN", _env_str("GATES_CORS_ORIGIN", "*"))  # narrow to your page origin
 GATES_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gates.html")
 
 
 def _cors_headers():
     return {
-        "Access-Control-Allow-Origin": GATES_CORS_ORIGIN,
+        "Access-Control-Allow-Origin": ADMIN_CORS_ORIGIN,
         "Access-Control-Allow-Headers": "Content-Type, X-Gate-Token",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Max-Age": "3600",
@@ -2320,7 +2499,7 @@ def gates_state_payload(message=None):
         "test": solo_test_status(bypass),
         "risk_preview": _risk_cap_preview(),
         "always_on": GATE_ALWAYS_ON_NOTES,
-        "auth_required": GATES_API_REQUIRE_TOKEN,
+        "auth_required": ADMIN_API_REQUIRE_TOKEN,
     }
 
 
@@ -2328,9 +2507,9 @@ def handle_gates_api_get():
     return _json_response(gates_state_payload())
 
 
-def _gates_token_ok(req, body):
+def _admin_token_ok(req, body):
     """Reads are open (like the other pages); writes need the token unless disabled."""
-    if not GATES_API_REQUIRE_TOKEN:
+    if not ADMIN_API_REQUIRE_TOKEN:
         return True
     token = req.headers.get("X-Gate-Token") or (body or {}).get("token") or req.args.get("token")
     return isinstance(token, str) and token.strip() == GCP_SECRET_TOKEN.strip()
@@ -2340,7 +2519,7 @@ def handle_gates_api_post(req):
     body = req.get_json(silent=True)
     if not isinstance(body, dict):
         return _json_response({"status": "error", "message": "請求內容不是 JSON 物件"}, 400)
-    if not _gates_token_ok(req, body):
+    if not _admin_token_ok(req, body):
         return _json_response({"status": "error", "message": "Unauthorized token"}, 403)
 
     op = body.get("op")
@@ -2390,6 +2569,134 @@ def serve_gates_app():
     except OSError as exc:
         print(f"⚠️ [關卡開關獨立頁讀取失敗 → 改用內建頁面] {exc}", flush=True)
         return build_gates_page(None)
+
+
+
+# -----------------------------------------------------------------------------
+# 🔌 JSON API for order.html  (GET/POST ?view=order&format=json)
+# -----------------------------------------------------------------------------
+def order_preview(params):
+    """用最新的 M15 快照試算一張 BUY 首單，顯示實際會送出的封包。"""
+    snapshot = read_account_snapshot()
+    m15 = snapshot.get("m15_ohlc") if isinstance(snapshot.get("m15_ohlc"), dict) else {}
+    price, atr = to_float(m15.get("close")), to_float(m15.get("atr_m15"))
+    live = price is not None and price > 0 and atr is not None and atr > 0
+    if not live:
+        price, atr = 2000.00, 6.00
+    sl = max(params["min_sl_distance"], round(atr * params["sl_atr_mult"], 2))
+    candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+                 "sl_distance": sl, "atr_m15": atr, "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST"}
+    order = build_order(candidate, params)
+    order["api_key"] = mask_secret(order["api_key"])
+    return {
+        "order": order,
+        "live": live,
+        "price": price,
+        "atr_m15": atr,
+        "sl_distance": sl,
+        "note": ("以最新 M15 快照試算（BUY 首單）" if live else "尚未收到 M15 快照，以 價格 2000 / ATR 6 示範"),
+    }
+
+
+def order_state_payload(params=None, meta=None, message=None, errors=None):
+    if params is None:
+        params, meta = read_order_params()
+    defaults = default_order_params()
+    visible = {key: (mask_secret(value) if ORDER_PARAM_KINDS[key] == "secret" else value)
+               for key, value in params.items()}
+    visible_defaults = {key: (mask_secret(value) if ORDER_PARAM_KINDS[key] == "secret" else value)
+                        for key, value in defaults.items()}
+    return {
+        "status": "ok",
+        "message": message,
+        "errors": errors or {},
+        "server_utc": fmt_utc(),
+        "meta": meta or {},
+        "params": visible,
+        "defaults": visible_defaults,
+        "fields": [{"key": key, "label": label, "kind": kind, "description": description, **limits}
+                   for key, label, kind, description, limits in ORDER_PARAM_DEFS],
+        "computed": ORDER_COMPUTED_FIELDS,
+        "broker_url": BROKER_API_URL.split("?")[0] + "?…",
+        "preview": order_preview(params),
+        "last_sent": read_last_order(),
+        "auth_required": ADMIN_API_REQUIRE_TOKEN,
+    }
+
+
+def handle_order_api_get():
+    return _json_response(order_state_payload())
+
+
+def _merge_submitted_params(submitted):
+    """空字串的 secret 欄位代表『不修改』，其餘欄位照收。"""
+    current = read_order_params()[0]
+    merged = dict(current)
+    for key in ORDER_PARAM_KEYS:
+        if key not in submitted:
+            continue
+        value = submitted[key]
+        if ORDER_PARAM_KINDS[key] == "secret" and (value is None or str(value).strip() == ""):
+            continue
+        merged[key] = value
+    return merged
+
+
+def handle_order_api_post(req):
+    body = req.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _json_response({"status": "error", "message": "請求內容不是 JSON 物件"}, 400)
+    op = body.get("op")
+
+    if op == "preview":                                   # 唯讀試算，不寫入、不需要權杖
+        submitted = body.get("params")
+        if not isinstance(submitted, dict):
+            return _json_response({"status": "error", "message": "params 必須是物件"}, 400)
+        clean, errors = validate_order_params(_merge_submitted_params(submitted))
+        return _json_response(order_state_payload(clean, {"source": "preview", "updated_utc": None},
+                                                  "預覽（尚未儲存）", errors))
+
+    if not _admin_token_ok(req, body):
+        return _json_response({"status": "error", "message": "Unauthorized token"}, 403)
+
+    try:
+        if op == "save":
+            submitted = body.get("params")
+            if not isinstance(submitted, dict):
+                return _json_response({"status": "error", "message": "params 必須是物件"}, 400)
+            clean, errors = validate_order_params(_merge_submitted_params(submitted))
+            if errors:                                     # 有任何欄位無效就整批不寫入
+                return _json_response({"status": "error", "message": "欄位有誤，設定未變更。",
+                                       "errors": errors}, 400)
+            write_order_params(clean)
+        elif op == "reset":
+            clear_order_params()
+            clean = default_order_params()
+        else:
+            return _json_response({"status": "error", "message": "op 必須是 'preview'、'save' 或 'reset'"}, 400)
+    except StorageError as exc:
+        print(f"⚠️ [送單參數寫入失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "儲存失敗，設定未變更，請查看 Cloud Logging。"}, 500)
+
+    log_decision(f"🧾 [送單參數] {'還原為環境變數預設' if op == 'reset' else '已更新'}｜"
+                 f"{clean['symbol']} {clean['size']:.2f} 手｜{clean['account_type']}｜"
+                 f"SL=ATR×{clean['sl_atr_mult']}（最小 {clean['min_sl_distance']}）｜TP={clean['target_rrr']}R",
+                 key="admin")
+    params, meta = read_order_params()
+    return _json_response(order_state_payload(params, meta,
+                                              "已還原為環境變數預設。" if op == "reset" else "已儲存，下一張訂單生效。"))
+
+
+ORDER_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "order.html")
+
+
+def serve_order_app():
+    try:
+        with open(ORDER_APP_FILE, encoding="utf-8") as handle:
+            return handle.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
+    except OSError as exc:
+        print(f"⚠️ [送單參數頁讀取失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "order.html 不存在於部署內容中"}, 500)
 
 
 def build_gates_page(msg):
@@ -2562,6 +2869,10 @@ def handle_get(req):
         return handle_gates_api_get()
     if view == "gates_app":                                      # standalone gates.html, served here
         return serve_gates_app()
+    if view == "order" and req.args.get("format") == "json":     # standalone order.html reads params
+        return handle_order_api_get()
+    if view == "order_app":                                      # standalone order.html, served here
+        return serve_order_app()
     if view == "info":
         return build_info_page()
     if view == "gates":
@@ -2648,6 +2959,8 @@ def receive_tradingview_signal(request):
         if request.args.get("format") == "json" or (request.content_type or "").startswith("application/json"):
             return handle_gates_api_post(request)
         return handle_gates_post(request)
+    if request.args.get("view") == "order":          # posts from the order parameter page
+        return handle_order_api_post(request)
 
     payload = parse_payload(request)
     if payload is None:
