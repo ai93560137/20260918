@@ -116,9 +116,11 @@ ORDER_TEMPLATE = {
 
 # Exit parameters are passed to the bridge as-is. Units/semantics depend on
 # webhooktrade — verify them against its documentation before going live. [R33]
-TS_ACTIVATION_PRICE = _env_str("TS_ACTIVATION_PRICE", "2")
-TS_DISTANCE_PRICE = _env_str("TS_DISTANCE_PRICE", "4")
-BREAKEVEN_DISTANCE_PRICE = _env_str("BREAKEVEN_DISTANCE_PRICE", "3")
+# 2026-01→09 的回測：任何一組移動止損設定都把獲利因子從 1.31 壓到 0.58–0.89
+# （勝率上升但大單被提前砍掉）。預設關閉；設成大於 0 才會送出對應欄位。
+TS_ACTIVATION_PRICE = _env_str("TS_ACTIVATION_PRICE", "0")
+TS_DISTANCE_PRICE = _env_str("TS_DISTANCE_PRICE", "0")
+BREAKEVEN_DISTANCE_PRICE = _env_str("BREAKEVEN_DISTANCE_PRICE", "0")
 BREAKEVEN_PROFIT = _env_str("BREAKEVEN_PROFIT", "30")
 
 # --- Risk -----------------------------------------------------------------------
@@ -271,8 +273,10 @@ def next_ny_rollover_ts(now=None):
 def _startup_warnings():
     print(f"⚙️ [啟動] 🔴 實盤下單模式 (account_type={ORDER_TEMPLATE['account_type']}) | "
           f"RISK_PCT={RISK_PCT} | LEVERAGE={BROKER_LEVERAGE} | FIRST_ENTRY_MODE={FIRST_ENTRY_MODE}", flush=True)
-    activation, distance = to_float(TS_ACTIVATION_PRICE), to_float(TS_DISTANCE_PRICE)
-    if activation is not None and distance is not None and distance > activation:
+    activation, distance = to_float(TS_ACTIVATION_PRICE, 0.0), to_float(TS_DISTANCE_PRICE, 0.0)
+    if activation <= 0 or distance <= 0:
+        print("ℹ️ [出場參數] 移動止損已停用（TS_ACTIVATION / TS_DISTANCE = 0，封包不會帶這兩個欄位）", flush=True)
+    if activation > 0 and distance > 0 and distance > activation:
         print(f"⚠️ [出場參數] TS_DISTANCE ({distance}) > TS_ACTIVATION ({activation})：啟動移動止損時止損可能仍在進場價之下，"
               f"請確認 webhooktrade 語義。[R33]", flush=True)
     _fields = DISTANCE_FIELDS.get(DISTANCE_UNIT, DISTANCE_FIELDS["price"])
@@ -1400,10 +1404,10 @@ ORDER_PARAM_DEFS = [
     ("sl_atr_mult", "止損 = ATR(M15) ×", "number", "決定 sl_distance_price：ATR(M15) 乘上這個倍數。", {"min": 0.1, "max": 10.0, "step": 0.1}),
     ("min_sl_distance", "最小止損距離（美元）", "number", "sl_distance_price 的下限，避免 ATR 過小時止損太貼。", {"min": 0.5, "max": 200.0, "step": 0.5}),
     ("target_rrr", "止盈 = 止損 ×", "number", "決定 tp_distance_price：止損距離乘上這個倍數。", {"min": 0.2, "max": 20.0, "step": 0.1}),
-    ("ts_activation_price", "移動止損啟動距離", "number", "封包的 ts_activation_price，語義依 webhooktrade 定義。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
-    ("ts_distance_price", "移動止損距離", "number", "封包的 ts_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
-    ("breakeven_distance_price", "保本啟動距離", "number", "封包的 breakeven_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
-    ("breakeven_profit", "保本鎖利", "number", "封包的 breakeven_profit。", {"min": 0.0, "max": 100000.0, "step": 1.0}),
+    ("ts_activation_price", "移動止損啟動距離（0＝停用）", "number", "0 代表整個欄位不送出（停用）。封包的 ts_activation_price，語義依 webhooktrade 定義。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
+    ("ts_distance_price", "移動止損距離（0＝停用）", "number", "0 代表整個欄位不送出（停用）。封包的 ts_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
+    ("breakeven_distance_price", "保本啟動距離（0＝停用）", "number", "0 代表整個欄位不送出（停用）。封包的 breakeven_distance_price。", {"min": 0.0, "max": 10000.0, "step": 0.1}),
+    ("breakeven_profit", "保本鎖利", "number", "只有在「保本啟動距離」大於 0 時才會送出。封包的 breakeven_profit。", {"min": 0.0, "max": 100000.0, "step": 1.0}),
     ("distance_unit", "距離單位（欄位組）", "choice",
      "price＝送 sl_distance_price 等欄位，值是美元（13.00）；"
      "points＝送 sl_distance 等欄位，值是點數（1300，XAUUSD 1 美元 = 100 點）。兩組只能擇一。",
@@ -1736,10 +1740,15 @@ def build_order(candidate, params=None):
     }
     order[field["sl"]] = format_distance(sl, params)
     order[field["tp"]] = format_distance(round(sl * params["target_rrr"], 2), params)
-    order[field["ts_activation"]] = format_distance(params["ts_activation_price"], params)
-    order[field["ts_distance"]] = format_distance(params["ts_distance_price"], params)
-    order[field["breakeven"]] = format_distance(params["breakeven_distance_price"], params)
-    order["breakeven_profit"] = f"{params['breakeven_profit']:g}"
+
+    # 移動止損與保本：設成 0 代表停用，此時整個欄位不送出。
+    # 送 "0.00" 有被解讀成「距離 0」的風險（止損貼著現價），不送最保險。
+    if params["ts_activation_price"] > 0 and params["ts_distance_price"] > 0:
+        order[field["ts_activation"]] = format_distance(params["ts_activation_price"], params)
+        order[field["ts_distance"]] = format_distance(params["ts_distance_price"], params)
+    if params["breakeven_distance_price"] > 0:
+        order[field["breakeven"]] = format_distance(params["breakeven_distance_price"], params)
+        order["breakeven_profit"] = f"{params['breakeven_profit']:g}"
     return order
 
 
