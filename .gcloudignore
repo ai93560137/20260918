@@ -1,0 +1,9 @@
+.git/
+.gitignore
+.gcloudignore
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+DEPLOY.md
+*.md
