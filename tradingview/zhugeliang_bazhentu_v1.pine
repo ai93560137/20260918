@@ -17,12 +17,13 @@
 // 假突破 = 確認後 M 根內收盤又跌回區間內（事後標記，用來算準確率）
 //
 // 週期預設（「跟圖表設定」= 依當前圖表週期自動挑一組）
-//   週期    迴歸長度  R²    斜率   區間長度  區間上限  最少根數  區間失效  突破緩衝
-//   日線      40     0.50  0.030    12      2.5 ATR     6        15      0.20 ATR
-//   4 小時    45     0.52  0.028    14      2.8 ATR     7        20      0.22 ATR
-//   1 小時    50     0.55  0.025    16      3.0 ATR     8        25      0.25 ATR
-//   15 分鐘   60     0.55  0.025    20      3.0 ATR     8        30      0.25 ATR
-//   5 分鐘    60     0.60  0.030    20      3.5 ATR     8        40      0.30 ATR
+//   週期    迴歸長度  R²    斜率   區間長度  區間上限  區間失效  突破緩衝  站穩根數
+//   日線      40     0.45  0.030    12      3.2 ATR     20      0.35 ATR     2
+//   4 小時    45     0.52  0.028    14      2.8 ATR     20      0.28 ATR     1
+//   1 小時    50     0.55  0.025    16      3.0 ATR     25      0.25 ATR     1
+//   15 分鐘   60     0.48  0.025    20      3.8 ATR     30      0.25 ATR     1
+//   5 分鐘    60     0.58  0.030    20      3.8 ATR     40      0.30 ATR     1
+//   自動配對的高週期：5 分→1 小時、15 分→4 小時、1 小時→日線、4 小時與日線→週線
 // 選「自訂」才會改用設定頁 ①②③ 的數值。
 //
 // 防未來函數：高週期一律取「已收盤」的值（lookahead_on + [1] 的標準寫法）；
@@ -68,7 +69,7 @@ inBoxMaxAge    = input.int(50,   "區間失效根數",              minval = 5, 
 // ── ③ 突破 ───────────────────────────────────────────────────────────────────
 inBufATR      = input.float(0.25, "突破緩衝（ATR 倍數）", minval = 0.0, step = 0.05, group = G_B,
      tooltip = "收盤要越過區間邊緣再加這麼多 ATR 才算數，過濾貼邊的假動作。僅「自訂」模式生效。")
-confirmBars = input.int(1,      "站穩幾根才算確認",     minval = 1, maxval = 5, group = G_B)
+inConfirmBars = input.int(1,      "站穩幾根才算確認",     minval = 1, maxval = 5, group = G_B)
 useVol      = input.bool(true,  "需要量能配合",         group = G_B)
 volMult     = input.float(1.5,  "量能 ≥ 均量 ×",        minval = 1.0, step = 0.1, group = G_B)
 volLen      = input.int(20,     "均量長度",             minval = 5, group = G_B)
@@ -80,9 +81,12 @@ htfSel = input.string("自動", "高週期",            group = G_H,
      options = ["自動", "5", "15", "30", "60", "120", "240", "D", "W"])
 
 // ── ⑤ 時段（美股） ───────────────────────────────────────────────────────────
-useSess = input.bool(true,       "只在指定時段發訊號", group = G_S)
-sessStr = input.session("0945-1545", "可發訊號時段",   group = G_S,
-     tooltip = "預設避開開盤與收盤各 15 分鐘的亂流。24 小時商品請設 0000-2400 或關閉此項。")
+sessMode = input.string("商品常規時段", "時段模式", group = G_S,
+     options = ["商品常規時段", "自訂時段", "不過濾"],
+     tooltip = "商品常規時段＝跟著該商品交易所的正規盤（恒指、美股、外匯各自正確，不必手動設）。" +
+               "自訂時段＝用下方的時間字串，可避開開收盤亂流。不過濾＝24 小時都能發訊號。")
+sessStr = input.session("0945-1545", "自訂時段",   group = G_S,
+     tooltip = "只有「自訂時段」模式會用到。美股避開開收盤各 15 分鐘＝0945-1545（紐約時間）。")
 sessTZ  = input.string("America/New_York", "時區", group = G_S,
      options = ["America/New_York", "America/Chicago", "Asia/Hong_Kong", "Asia/Tokyo", "Europe/London", "UTC"])
 
@@ -135,13 +139,14 @@ pk      = preset == "跟圖表設定" ? autoKey : preset == "日線" ? "D" : pre
 
 //                            日線    4 小時   1 小時   15 分    5 分
 lenTrend     = pk == "CUSTOM" ? inLenTrend     : pk == "D" ? 40   : pk == "H4" ? 45   : pk == "H1" ? 50   : 60
-r2Min        = pk == "CUSTOM" ? inR2Min        : pk == "D" ? 0.50 : pk == "H4" ? 0.52 : pk == "M5" ? 0.60 : 0.55
+r2Min        = pk == "CUSTOM" ? inR2Min        : pk == "D" ? 0.45 : pk == "H4" ? 0.52 : pk == "M5" ? 0.58 : pk == "M15" ? 0.48 : 0.55
 slopeMin     = pk == "CUSTOM" ? inSlopeMin     : pk == "D" ? 0.030 : pk == "H4" ? 0.028 : pk == "M5" ? 0.030 : 0.025
 lenRange     = pk == "CUSTOM" ? inLenRange     : pk == "D" ? 12   : pk == "H4" ? 14   : pk == "H1" ? 16   : 20
-rangeMaxATR  = pk == "CUSTOM" ? inRangeMaxATR  : pk == "D" ? 2.5  : pk == "H4" ? 2.8  : pk == "M5" ? 3.5  : 3.0
+rangeMaxATR  = pk == "CUSTOM" ? inRangeMaxATR  : pk == "D" ? 3.2  : pk == "H4" ? 2.8  : pk == "M5" ? 3.8  : pk == "M15" ? 3.8 : 3.0
 rangeMinBars = pk == "CUSTOM" ? inRangeMinBars : pk == "D" ? 6    : pk == "H4" ? 7    : 8
-boxMaxAge    = pk == "CUSTOM" ? inBoxMaxAge    : pk == "D" ? 15   : pk == "H4" ? 20   : pk == "H1" ? 25   : pk == "M15" ? 30 : 40
-bufATR       = pk == "CUSTOM" ? inBufATR       : pk == "D" ? 0.20 : pk == "H4" ? 0.22 : pk == "M5" ? 0.30 : 0.25
+boxMaxAge    = pk == "CUSTOM" ? inBoxMaxAge    : pk == "D" ? 20   : pk == "H4" ? 20   : pk == "H1" ? 25   : pk == "M15" ? 30 : 40
+bufATR       = pk == "CUSTOM" ? inBufATR       : pk == "D" ? 0.35 : pk == "H4" ? 0.28 : pk == "M5" ? 0.30 : 0.25
+confirmBars  = pk == "CUSTOM" ? inConfirmBars  : pk == "D" ? 2    : 1
 
 pkName = pk == "D" ? "日線" : pk == "H4" ? "4 小時" : pk == "H1" ? "1 小時" :
          pk == "M15" ? "15 分鐘" : pk == "M5" ? "5 分鐘" : "自訂"
@@ -174,7 +179,7 @@ f_htf() =>
     [_st, _sN, _r2, _w, _hi, _lo, _lr, _atr, _rd] = f_state()
     [_st[1], _sN[1], _r2[1]]
 
-autoTF = secs <= 300 ? "60" : secs <= 900 ? "240" : secs <= 3600 ? "D" : secs <= 14400 ? "W" : "M"
+autoTF = secs <= 300 ? "60" : secs <= 900 ? "240" : secs <= 3600 ? "D" : secs <= 86400 ? "W" : "M"
 htfTF  = htfSel == "自動" ? autoTF : htfSel
 
 [htfSt, htfSlope, htfR2] = request.security(syminfo.tickerid, htfTF, f_htf(),
@@ -217,7 +222,9 @@ volAvg   = ta.sma(volume, volLen)
 volValid = not na(volume) and volume > 0 and not na(volAvg) and volAvg > 0
 volOK    = not useVol or not volValid or volume >= volAvg * volMult   // 無量資料的商品自動略過此關
 
-inSess = (timeframe.isdwm or not useSess) ? true : not na(time(timeframe.period, sessStr, sessTZ))
+inSess = timeframe.isdwm or sessMode == "不過濾" ? true :
+         sessMode == "商品常規時段" ? session.ismarket :
+         not na(time(timeframe.period, sessStr, sessTZ))
 
 rawUp = boxLive and not na(upLevel) and close > upLevel and volOK and inSess and htfUpOK
 rawDn = boxLive and not na(dnLevel) and close < dnLevel and volOK and inSess and htfDnOK
