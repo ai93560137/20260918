@@ -559,7 +559,7 @@ def next_trend_state(state, verdict, skip_setup=False):
     word = DIR_WORD.get(v_dir, "")
 
     if v_regime in (REGIME_RANGE, REGIME_NODATA):
-        return REGIME_RANGE, None, False, "橫行或數據不足，解除武裝"
+        return REGIME_RANGE, None, False, "橫行或數據不足，取消確認"
     if v_regime == REGIME_PAUSE:
         if regime == REGIME_TREND and cur_dir == v_dir:
             return regime, cur_dir, armed, f"{word}趨勢中 M1 短暫停頓，維持原狀態"
@@ -580,14 +580,14 @@ def next_trend_state(state, verdict, skip_setup=False):
         if skip_setup:
             return REGIME_TREND, v_dir, True, f"{word}趨勢出現，Setup 確認關卡已略過 → 直接開閘"
         return REGIME_TREND, v_dir, False, f"缺乏同向 Setup 的突發{word}趨勢，拒絕開閘"
-    return REGIME_RANGE, None, False, f"未知判定 {v_regime}，解除武裝"
+    return REGIME_RANGE, None, False, f"未知判定 {v_regime}，取消確認"
 
 
 def _state_label(state_tuple):
     regime, direction, armed = state_tuple
     name = {REGIME_RANGE: "橫行", REGIME_SETUP: "Setup", REGIME_TREND: "趨勢"}.get(regime, str(regime))
     word = DIR_WORD.get(direction, "")
-    return f"{word}{name}" + ("（已武裝）" if armed else "")
+    return f"{word}{name}" + ("（已確認）" if armed else "")
 
 
 def apply_verdict_to_gate(verdict, news_locked, skip_setup=False):
@@ -598,7 +598,7 @@ def apply_verdict_to_gate(verdict, news_locked, skip_setup=False):
         if news_locked and armed:
             # Disarm during news: a fresh Setup→Trigger is required after the event.  [R49]
             armed = False
-            reason += "｜新聞風控期間解除武裝，事件後需重新 Setup→Trigger"
+            reason += "｜新聞風控期間取消確認，事件後需重新 Setup→Trigger"
         state.update(regime=regime, dir=direction, armed=armed, news_lock=bool(news_locked), last_reason=reason)
         return True, {"before": before, "after": gate_status(state), "reason": reason,
                       "prev": prev, "now": (regime, direction, armed)}
@@ -659,7 +659,7 @@ def disarm_gate(reason):
     try:
         update_gate_state(fn)
     except StorageError as exc:
-        print(f"⚠️ [解除武裝寫入失敗] {exc}", flush=True)
+        print(f"⚠️ [取消確認寫入失敗] {exc}", flush=True)
 
 
 # =============================================================================
@@ -1898,7 +1898,7 @@ def handle_heartbeat(payload, can_trade):
             print(f"🚨 [嚴重] TARGET_HIT 硬鎖寫入失敗：{exc}", flush=True)
         log_decision(f"🛑 [{lock_reason}] 電閘硬鎖至 {fmt_ny(until)}，重置加單基準價。", key="target_hit")
     elif action == "close_gate":
-        disarm_gate("EA 要求 close_gate：解除武裝，需重新 Setup→Trigger")                  # [R19]
+        disarm_gate("EA 要求 close_gate：取消確認，需重新 Setup→Trigger")                  # [R19]
 
     # 2) M15 levels (writer path) and account snapshot.
     m15_levels = mtf_levels_session.ingest(m15_ohlc) if m15_ohlc else mtf_levels_session.read_levels()
@@ -2251,7 +2251,7 @@ def build_dashboard_page(msg):
       <div class='muted' style='font-weight:600;'>雲端風控電閘狀態 (Gate Status)</div>
       <div style='display:inline-block; background:{gate_bg}; color:{gate_color}; padding:8px 20px; border-radius:30px; font-weight:800; font-size:24px; margin:15px 0;'>【 {status} 】</div>
       <div class='{summary_class}' style='font-weight:600; margin-bottom:6px;'>{esc(summary_text)}</div>
-      <div class='muted' style='font-size:13px;'>趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / 武裝：{'是' if state.get('armed') else '否'}｜{esc(state.get('last_reason'))}</div>
+      <div class='muted' style='font-size:13px;'>趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / 已確認：{'是' if state.get('armed') else '否'}｜{esc(state.get('last_reason'))}</div>
       <div style='margin-top:15px;'>
         <a href='?view=dashboard&action=auto' class='btn btn-open'>🟢 解除硬鎖・恢復自動</a>
         <a href='?view=dashboard&action=lock' class='btn btn-lock'>🔴 緊急硬鎖 (LOCK)</a>
