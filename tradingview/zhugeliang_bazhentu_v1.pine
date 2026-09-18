@@ -73,7 +73,9 @@ inConfirmBars = input.int(1,      "站穩幾根才算確認",     minval = 1, ma
 useVol      = input.bool(true,  "需要量能配合",         group = G_B)
 volMult     = input.float(1.5,  "量能 ≥ 均量 ×",        minval = 1.0, step = 0.1, group = G_B)
 volLen      = input.int(20,     "均量長度",             minval = 5, group = G_B)
-failBars    = input.int(10,     "幾根內跌回區間視為假突破", minval = 1, group = G_B)
+failBars    = input.int(10,     "突破後追蹤根數", minval = 1, group = G_B,
+     tooltip = "兩個用途：① 這幾根內收盤跌回區間 = 假突破；② 面板「突破後 N 根」的順向／逆向幅度也用這個窗口。" +
+               "調長會讓假突破率上升、順逆幅度都變大。")
 
 // ── ④ 高週期 ─────────────────────────────────────────────────────────────────
 useHTF = input.bool(true,   "高週期方向必須一致", group = G_H)
@@ -239,6 +241,17 @@ var float brkTop   = na
 var float brkBot   = na
 var bool  brkOpen  = false
 
+var float sumMFE = 0.0      // 突破後順向最大幅度（ATR）累計
+var float sumMAE = 0.0      // 突破後逆向最大幅度（ATR）累計
+var int   nExc   = 0
+var float curMFE = 0.0
+var float curMAE = 0.0
+var float excPx  = na
+var float excAtr = na
+var int   excBar = na
+var int   excDir = 0
+var bool  excOpen = false
+
 var int cntUp   = 0
 var int cntDn   = 0
 var int cntFail = 0
@@ -293,6 +306,13 @@ if confirmed
         brkTop  := boxTop
         brkBot  := boxBot
         brkOpen := true
+        excOpen := true                   // 開始追蹤突破後的順向／逆向幅度
+        excDir  := pendDir
+        excPx   := close
+        excAtr  := atr
+        excBar  := bar_index
+        curMFE  := 0.0
+        curMAE  := 0.0
         boxLive := false                  // 這個區間用掉了
         pendDir := 0
         pendCnt := 0
@@ -310,6 +330,19 @@ if confirmed
         else if bar_index - brkBar >= failBars
             cntHold += 1
             brkOpen := false
+
+    // 突破後的實際走勢：順向最大幅度 MFE、逆向最大幅度 MAE（單位 ATR）
+    // 不管突破成敗都追滿整個窗口，這樣平均值才是可用來設止盈止損的期望值
+    if excOpen and not na(excBar) and not na(excAtr) and excAtr > 0 and bar_index > excBar
+        fav = excDir == 1 ? (high - excPx) / excAtr : (excPx - low) / excAtr
+        adv = excDir == 1 ? (excPx - low) / excAtr : (high - excPx) / excAtr
+        curMFE := math.max(curMFE, fav)
+        curMAE := math.max(curMAE, adv)
+        if bar_index - excBar >= failBars
+            sumMFE += curMFE
+            sumMAE += curMAE
+            nExc   += 1
+            excOpen := false
 
 // =============================================================================
 // 畫圖
@@ -375,7 +408,7 @@ posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? pos
           panelPos == "左中" ? position.middle_left : position.bottom_left
 dimTxt  = color.new(panelTxt, 45)
 
-var table tb = table.new(posC, 2, 12, border_width = 1)
+var table tb = table.new(posC, 2, 14, border_width = 1)
 
 // 左欄（欄位名稱）與右欄（數值）的統一樣式
 cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
@@ -437,8 +470,20 @@ if showPanel and barstate.islast
          str.tostring(resolved) + ")" : "資料不足",
          na(failPct) ? dimTxt : failPct > 50 ? colDn : colUp)
 
-    cellK(11, "參數預設")
-    cellV(11, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
+    avgMFE = nExc > 0 ? sumMFE / nExc : na
+    avgMAE = nExc > 0 ? sumMAE / nExc : na
+    rr     = nExc > 0 and avgMAE > 0 ? avgMFE / avgMAE : na
+
+    cellK(11, "突破後 " + str.tostring(failBars) + " 根")
+    cellV(11, nExc > 0 ? "順向 +" + str.tostring(avgMFE, "#.##") + "  逆向 -" + str.tostring(avgMAE, "#.##") +
+         " ATR  (" + str.tostring(nExc) + ")" : "資料不足", nExc > 0 ? panelTxt : dimTxt)
+
+    cellK(12, "順逆比 (MFE/MAE)")
+    cellV(12, na(rr) ? "—" : str.tostring(rr, "#.##") + (rr >= 1.5 ? "  可做" : rr >= 1.0 ? "  勉強" : "  不利"),
+         na(rr) ? dimTxt : rr >= 1.5 ? colUp : rr >= 1.0 ? colRg : colDn)
+
+    cellK(13, "參數預設")
+    cellV(13, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
 
 // =============================================================================
 // 警報（TradingView 建立警報時請選 Once Per Bar Close）
