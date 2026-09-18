@@ -170,6 +170,7 @@ NEWS_FAIL_CLOSED = _env_bool("NEWS_FAIL_CLOSED", True)                # [R13e]
 AI_REVIEW_ENABLED = _env_bool("AI_REVIEW_ENABLED", True)
 AI_FAIL_OPEN = _env_bool("AI_FAIL_OPEN", False)                       # [R2 R13f R13g] one policy
 AI_SHADOW_MODE = _env_bool("AI_SHADOW_MODE", False)                   # 覆核照跑、判斷照記，但不否決訊號
+FEW_SHOT_LIMIT = _env_int("FEW_SHOT_LIMIT", 3)                        # [R6] 動態 few-shot 取幾條虧損教訓
 AI_MODEL = _env_str("AI_MODEL", "gemini-2.5-flash")
 AI_LOCATION = _env_str("AI_LOCATION", "us-central1")
 AI_THINKING_BUDGET = _env_int("AI_THINKING_BUDGET", 0)                # [R14] 0 = no thinking (Flash only)
@@ -1088,7 +1089,7 @@ class SFTDataPipeline:
         return "【自我反思與進化規則庫】\n" + body
 
     @staticmethod
-    def get_dynamic_few_shot(limit=3):
+    def get_dynamic_few_shot(limit=FEW_SHOT_LIMIT):
         """Last losing signals as compact one-liners WITH their outcome.  [R6 R6b]
         Legacy rows (without 'meta') are ignored, so old nested prompts never re-enter."""
         try:
@@ -1318,6 +1319,21 @@ def news_blocks_entries(news):
     return bool(news.get("locked")) or (not news.get("known") and NEWS_FAIL_CLOSED)
 
 
+def ai_prompt_diagnostics(rules_text, few_shot, prompt=""):
+    """量化「AI 手上到底有多少材料」——投資人日誌與雲端日誌共用這組數字。
+
+    build_prompt() 要 AI「參考規則庫與歷史虧損教訓，判斷是否與過去虧損情境相似」。
+    若這兩樣都是空的，那句指令就是空轉，AI 只能靠通用直覺猜。"""
+    body = (rules_text or "").split("\n", 1)[-1].strip()
+    return {
+        "ai_model": AI_MODEL,
+        "ai_mode": "shadow" if AI_SHADOW_MODE else "enforce",
+        "prompt_chars": len(prompt),
+        "rules_chars": 0 if body in ("", "目前無額外規則。") else len(body),
+        "few_shot_lessons": sum(1 for line in (few_shot or "").splitlines() if line.startswith("- ")),
+    }
+
+
 # =============================================================================
 # 🤖 Optional LLM reviewer — one consistent fail policy  [R2 R5 R13f R13g R14 R66]
 # =============================================================================
@@ -1366,14 +1382,37 @@ class AIReviewSession:
             return True, "AI 覆核已停用 (AI_REVIEW_ENABLED=0)"
         if self.client is None:
             return self._fallback("Vertex AI 未初始化")
-        prompt = self.build_prompt(meta, sft_pipeline_session.get_trading_rules(),
-                                   sft_pipeline_session.get_dynamic_few_shot())
+        rules_text = sft_pipeline_session.get_trading_rules()
+        few_shot = sft_pipeline_session.get_dynamic_few_shot()
+        prompt = self.build_prompt(meta, rules_text, few_shot)
+        diag = ai_prompt_diagnostics(rules_text, few_shot, prompt)
+
+        # 這幾個數字決定了 AI 判斷的品質上限：prompt 叫它「比對過去虧損情境」，
+        # 但若動態 few-shot 是空的，它手上根本沒有可比對的東西。
+        log_event(f"🤖 [AI 送出覆核] {AI_MODEL}｜{'影子' if AI_SHADOW_MODE else '強制'}模式｜"
+                  f"prompt {diag['prompt_chars']} 字元｜規則庫 {diag['rules_chars']} 字元｜"
+                  f"虧損教訓 {diag['few_shot_lessons']} 條", component="ai", **diag)
+        if diag["few_shot_lessons"] == 0:
+            log_event("⚠️ [AI 知識庫] 動態 few-shot 是空的：SFT 資料集沒有可用的歷史虧損，"
+                      "AI 無法執行「與過去虧損比對」，只能靠通用直覺判斷。",
+                      severity="WARNING", component="ai", **diag)
+        if diag["rules_chars"] == 0:
+            log_event("⚠️ [AI 知識庫] 規則庫是空的：ai_training/trading_rules.txt 沒有內容。",
+                      severity="WARNING", component="ai", **diag)
+
+        started = time.time()
         try:
             response = self.client.models.generate_content(model=AI_MODEL, contents=prompt, config=self._config())
             text = (response.text or "").strip()
         except Exception as exc:
+            log_event(f"💥 [AI 呼叫失敗] {str(exc)[:200]}（{int((time.time() - started) * 1000)} ms）",
+                      severity="ERROR", component="ai",
+                      latency_ms=int((time.time() - started) * 1000), **diag)
             return self._fallback(f"AI API 錯誤：{str(exc)[:150]}")
-        print(f"🔍 [Vertex AI 原始回應] {text[:300]}", flush=True)
+
+        elapsed_ms = int((time.time() - started) * 1000)
+        log_event(f"🔍 [AI 原始回應] {text[:300] or '（空回應）'}", component="ai",
+                  latency_ms=elapsed_ms, raw_response=text[:500], **diag)
         if not text:
             return self._fallback("AI 空回應")
 
@@ -1383,10 +1422,12 @@ class AIReviewSession:
         reason = reason.strip() or "（無理由）"
         if not separator:
             return self._fallback(f"AI 回應格式錯誤：{first_line[:80]}")
-        if decision == "APPROVE":
-            return True, reason
-        if decision == "REJECT":
-            return False, reason
+        if decision in ("APPROVE", "REJECT"):
+            # 投資人日誌看得到的一行：AI 說了什麼、根據多少材料、花了多久。
+            log_decision(f"{'👍' if decision == 'APPROVE' else '🚫'} [AI 覆核] {decision}"
+                         f"｜{AI_MODEL}｜教訓 {diag['few_shot_lessons']} 條・規則 {diag['rules_chars']} 字"
+                         f"・{elapsed_ms} ms｜理由：{reason[:70]}", key="ai_review")
+            return decision == "APPROVE", reason
         return self._fallback(f"AI 回應無法辨識：{first_line[:80]}")
 
 
@@ -1784,12 +1825,23 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
 
     # ⚠️ review() 在 API 出錯時會依 AI_FAIL_OPEN 回傳拒絕（預設 False）。那是「錯誤」
     #    不是「判斷」，影子模式下必須照樣放行，否則會變成「影子模式反而擋單」。
+    log_event(f"⚖️ [AI 判決] {label} {signal} @ {price:.2f} → "
+              f"{'APPROVE' if ai_verdict['approved'] else 'REJECT'}"
+              f"（{ai_verdict['mode']}，{'擋單' if not ai_verdict['approved'] and ai_verdict['enforced'] else '放行'}）"
+              f"｜{ai_verdict['reason'][:120]}",
+              component="ai", direction="verdict", ai_approved=ai_verdict["approved"],
+              ai_mode=ai_verdict["mode"], ai_enforced=ai_verdict["enforced"],
+              ai_reason=ai_verdict["reason"][:200], kind=candidate["kind"], signal=signal, price=price)
+
     if not ai_verdict["approved"]:
         if ai_verdict["enforced"]:
             log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_verdict['reason']}", key="ai_reject")
             return {"status": "ai_rejected", "reason": ai_verdict["reason"]}
         log_decision(f"👁️ [AI 影子攔截] {label} {signal} @ {price:.2f} 仍照常送出，僅記錄供事後對帳。"
                      f"理由：{ai_verdict['reason']}", key="ai_shadow")
+        log_event(f"👁️ [影子模式] 這筆若在強制執行模式下會被擋掉，現在照常送出以取得實際損益。",
+                  severity="WARNING", component="ai", direction="shadow_pass",
+                  signal=signal, price=price, ai_reason=ai_verdict["reason"][:200])
 
     order = build_order(candidate, params)
     summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{order['sl_distance_price']} "
@@ -2020,6 +2072,7 @@ LOG_KEY_COLORS = {
     "wait": "#6c757d", "filter": "#6c757d", "settle": "#6c757d", "anchor": "#6c757d",
     "data": "#d97706", "risk": "#dc3545", "structure": "#dc3545", "ai_reject": "#dc3545",
     "news_reject": "#dc3545", "broker_error": "#dc3545", "target_hit": "#dc3545",
+    "ai_review": "#7c3aed", "ai_shadow": "#d97706",
 }
 
 CHART_SCRIPT = """
@@ -2311,6 +2364,57 @@ def build_dashboard_page(msg):
     return html_page("智能諸葛亮量化儀表板 - 核心控制台", body)
 
 
+def _ai_status_html():
+    """投資人日誌上的「AI 覆核」面板：這道關卡現在到底在做什麼、手上有什麼材料。"""
+    if not AI_REVIEW_ENABLED:
+        return ("<div class='muted'>AI 覆核已停用（<code>AI_REVIEW_ENABLED=0</code>）——"
+                "所有訊號都不會經過 LLM。</div>")
+
+    try:
+        rules_text = sft_pipeline_session.get_trading_rules()
+        few_shot = sft_pipeline_session.get_dynamic_few_shot()
+    except Exception as exc:                                  # 這個面板壞掉不該影響整頁
+        return f"<div class='muted'>AI 知識庫讀取失敗：{esc(str(exc)[:120])}</div>"
+    diag = ai_prompt_diagnostics(rules_text, few_shot)
+
+    if AI_SHADOW_MODE:
+        mode_html = ("<span style='color:#d97706; font-weight:700;'>👁️ 影子模式</span>"
+                     "<div class='card-desc'>AI 照常判斷並記錄，但<b>不會擋單</b>；"
+                     "事後可用 ai_eval.py 對帳，算出它擋對還是擋錯。</div>")
+    else:
+        mode_html = ("<span style='color:#dc3545; font-weight:700;'>🚫 強制執行</span>"
+                     "<div class='card-desc'>AI 說 REJECT 就真的不下單。被擋掉的訊號沒有損益，"
+                     "所以<b>無法驗證它擋得對不對</b>。</div>")
+
+    lessons, rules_chars = diag["few_shot_lessons"], diag["rules_chars"]
+    warn = ""
+    if lessons == 0:
+        warn += ("<div class='log-line' style='color:#d97706;'>⚠️ 動態 few-shot 是空的："
+                 "SFT 資料集沒有可用的歷史虧損，prompt 裡會寫「目前無」。"
+                 "AI 無法執行「與過去虧損比對」，只能靠通用直覺判斷。</div>")
+    if rules_chars == 0:
+        warn += ("<div class='log-line' style='color:#d97706;'>⚠️ 規則庫是空的："
+                 "<code>ai_training/trading_rules.txt</code> 沒有內容。</div>")
+    if not warn:
+        warn = ("<div class='log-line' style='color:#198754;'>✅ AI 手上有規則庫與歷史教訓，"
+                "「與過去虧損比對」這件事是有材料可做的。</div>")
+
+    return f"""
+      <div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:10px;'>
+        <div class='level-box'><div class='card-title'>執行模式</div><div class='card-small'>{mode_html}</div></div>
+        <div class='level-box'><div class='card-title'>模型</div>
+          <div class='card-small' style='font-size:14px;'>{esc(AI_MODEL)}</div>
+          <div class='card-desc'>出錯時{'放行' if AI_FAIL_OPEN else '拒絕'}（AI_FAIL_OPEN）</div></div>
+        <div class='level-box'><div class='card-title'>歷史虧損教訓</div>
+          <div class='card-small {'neg' if lessons == 0 else 'pos'}'>{lessons} 條</div>
+          <div class='card-desc'>取最近 {FEW_SHOT_LIMIT} 筆已平倉的虧損單</div></div>
+        <div class='level-box'><div class='card-title'>規則庫</div>
+          <div class='card-small {'neg' if rules_chars == 0 else 'pos'}'>{rules_chars} 字元</div>
+          <div class='card-desc'>trading_rules.txt，上限 4000</div></div>
+      </div>
+      <div class='log-box' style='max-height:160px;'>{warn}</div>"""
+
+
 def _legacy_decision_log_html():
     """Shown only while the v12 log is still empty: last lines of the v11 text log."""
     try:
@@ -2442,8 +2546,13 @@ def build_info_page():
         <div style='font-size:14px; font-weight:bold; padding-top:6px;'>{calendar_html}</div><div class='card-desc'>重大財經數據監控引擎</div></div>
     </div>
 
+    <div class='section'><h2>🧠 AI 覆核關卡現況</h2>
+      <p class='muted' style='font-size:12px;'>這道關卡只能否決、不能加分，所以「它手上有多少材料」決定了它的判斷品質上限。</p>
+      {_ai_status_html()}</div>
+
     <div class='section'><h2>🤖 純 GCP 交易大腦即時決策還原</h2>
-      <p class='muted' style='font-size:12px;'>每一次候選訊號、覆核結果與實際送單都會記錄於此。</p>
+      <p class='muted' style='font-size:12px;'>每一次候選訊號、覆核結果與實際送單都會記錄於此。
+      紫色是 AI 的判斷、橘色是影子模式下「本來會被擋、但仍照常送出」的訊號。</p>
       <div class='log-box'>{log_lines}</div></div>
 
     <div class='section'><h2>🎯 核心決策水位與指標基準</h2>
