@@ -194,6 +194,97 @@ def load_rules(path):
 
 
 # =============================================================================
+# 2b. 資料集體檢：「0 筆可評分」有好幾種原因，這裡精確指出是哪一種
+# =============================================================================
+def inspect_dataset(path):
+    """逐層拆解資料集，指出卡在哪一關。不需要任何雲端權限。"""
+    stats = {"lines": 0, "blank": 0, "bad_json": 0, "not_dict": 0,
+             "has_meta": 0, "has_outcome": 0, "numeric_profit": 0,
+             "has_time_utc": 0, "parsed_time": 0}
+    key_counter, bad_times, sample = {}, [], None
+
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            stats["lines"] += 1
+            line = line.strip()
+            if not line:
+                stats["blank"] += 1
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                stats["bad_json"] += 1
+                continue
+            if not isinstance(row, dict):
+                stats["not_dict"] += 1
+                continue
+            for key in row:
+                key_counter[key] = key_counter.get(key, 0) + 1
+            if sample is None:
+                sample = row
+
+            meta, outcome = row.get("meta"), row.get("outcome")
+            if not isinstance(meta, dict):
+                continue
+            stats["has_meta"] += 1
+            if not isinstance(outcome, dict):
+                continue
+            stats["has_outcome"] += 1
+            if isinstance(outcome.get("profit"), (int, float)):
+                stats["numeric_profit"] += 1
+            raw_time = meta.get("time_utc")
+            if raw_time:
+                stats["has_time_utc"] += 1
+                if parse_utc(raw_time) is not None:
+                    stats["parsed_time"] += 1
+                elif len(bad_times) < 5:
+                    bad_times.append(repr(raw_time))
+
+    print("\n" + "=" * 70)
+    print("🔬 資料集體檢")
+    print("=" * 70)
+    print(f"檔案：{path}")
+    print(f"\n總行數 {stats['lines']}｜空行 {stats['blank']}｜非 JSON {stats['bad_json']}｜非物件 {stats['not_dict']}")
+    print("\n逐層過濾（每一層都是前一層的子集）：")
+    for label, key in [("有 meta 欄位", "has_meta"), ("＋有 outcome 欄位", "has_outcome"),
+                       ("＋profit 是數字", "numeric_profit"), ("＋meta.time_utc 存在", "has_time_utc"),
+                       ("＋time_utc 可解析", "parsed_time")]:
+        print(f"  {label:<22} {stats[key]:>6}")
+
+    if key_counter:
+        print("\n實際出現的頂層欄位：")
+        for key, count in sorted(key_counter.items(), key=lambda kv: -kv[1]):
+            print(f"  {key:<20} {count:>6} 列")
+
+    # --- 定位 ---------------------------------------------------------------
+    print("\n【診斷】")
+    if stats["lines"] == 0:
+        print("  ❌ 檔案是空的。")
+        print("     代表 pair_trade_result() 從來沒有成功配對過任何一筆交易。")
+    elif stats["has_meta"] == 0:
+        print("  ❌ 沒有任何一列帶 meta 欄位——全是舊格式。")
+        print("     main.py:1100 也會忽略這些列，所以連實盤的 few-shot 都是空的。")
+        print("     代表這些列是舊版程式寫的，之後就沒有新資料進來過。")
+    elif stats["has_outcome"] == 0:
+        print("  ❌ 有 meta 但沒有 outcome——配對流程寫到一半。")
+    elif stats["numeric_profit"] == 0:
+        print("  ❌ outcome.profit 不是數字。")
+    elif stats["parsed_time"] == 0:
+        print("  ❌ meta.time_utc 無法解析。實際值範例：")
+        for text in bad_times:
+            print(f"       {text}")
+        print("     這個可以修——告訴我格式，我調整 parse_utc()。")
+    else:
+        print(f"  ✅ 有 {stats['parsed_time']} 列可評分。")
+
+    if sample:
+        print("\n第一列樣本（截斷）：")
+        print("  " + json.dumps(sample, ensure_ascii=False)[:400])
+    print("=" * 70)
+    return stats
+
+
+# =============================================================================
 # 3. Look-ahead 防護：只用「當時已經知道」的虧損教訓
 # =============================================================================
 def build_few_shot(m, rows, index):
@@ -544,6 +635,8 @@ def main():
     parser.add_argument("--verbose", action="store_true", help="逐筆列印")
     parser.add_argument("--self-test", action="store_true",
                         help="只驗證 look-ahead 防護，不評分、不打 API")
+    parser.add_argument("--inspect", action="store_true",
+                        help="資料集體檢：指出「0 筆可評分」卡在哪一關，不打 API")
     parser.add_argument("--yes", action="store_true", help="跳過花費確認")
     # Claude
     parser.add_argument("--effort", default="low", choices=["low", "medium", "high", "xhigh", "max"],
@@ -558,10 +651,15 @@ def main():
                         help="random 後端的放行率（預設 0.7）")
     args = parser.parse_args()
 
+    if args.inspect:
+        inspect_dataset(args.dataset)
+        return 0
+
     rows, skipped = load_rows(args.dataset)
     if not rows:
         print("❌ 資料集裡沒有任何「meta + outcome + 進場時間」齊全的列。", file=sys.stderr)
-        print("   舊格式（沒有 meta）的列無法評分，這與 main.py 的行為一致。", file=sys.stderr)
+        print("   用 --inspect 可以看出卡在哪一關：", file=sys.stderr)
+        print(f"     python3 ai_eval.py {args.dataset} --inspect", file=sys.stderr)
         return 1
     score_from = max(0, len(rows) - args.limit) if args.limit else 0
 
