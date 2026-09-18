@@ -109,10 +109,12 @@ sessTZ  = input.string("America/New_York", "時區", group = G_S,
 
 // ── ⑦ 交易設定 ───────────────────────────────────────────────────────────────
 tradeDir  = input.string("雙向", "交易方向", options = ["雙向", "只做多", "只做空"], group = G_X)
-entryMode = input.string("追價", "進場方式", options = ["追價", "等回踩"], group = G_X,
-     tooltip = "追價＝突破確認當根收盤市價進場。等回踩＝在箱子邊緣掛限價單，等價格回來才成交，" +
-               "等不到就取消（會錯過部分訊號）。")
+entryMode = input.string("追價", "進場方式", options = ["追價", "等回踩", "軌道回檔"], group = G_X,
+     tooltip = "追價＝突破確認當根收盤市價進場。等回踩＝在箱子邊緣掛限價單。" +
+               "軌道回檔＝不看突破，只要在乾淨軌道中就在通道緣掛限價單等回檔（日線多方量到的順逆比最高）。")
 rtWaitBars = input.int(5, "回踩等待根數", minval = 1, group = G_X)
+pbDepth = input.float(1.0, "軌道回檔深度（1 = 通道緣）", minval = 0.2, maxval = 1.5, step = 0.1, group = G_X,
+     tooltip = "只有「軌道回檔」模式會用到。掛單價 = 迴歸中線 ∓ 此值 × 通道寬度。")
 
 sizeMode = input.string("風險比例", "部位大小", options = ["風險比例", "固定數量"], group = G_X)
 riskPct  = input.float(1.0, "每筆風險 %（權益）", minval = 0.1, maxval = 10, step = 0.1, group = G_X,
@@ -536,7 +538,19 @@ var int   pendDirEntry = 0
 var float pendLevel   = na
 var int   nEntryCalls = 0        // 呼叫過幾次 strategy.entry（用來分辨「沒下單」還是「下了沒成交」）
 
-if confirmUp and allowLong and flat and tradeQty > 0
+// 軌道回檔模式：與突破訊號無關，只看狀態與武裝狀況
+if entryMode == "軌道回檔" and tradeQty > 0
+    if flat and pbArmed and st == 1 and allowLong
+        strategy.entry("多", strategy.long, qty = tradeQty, limit = pbLvlUp)
+        nEntryCalls += 1
+    else if flat and pbArmed and st == -1 and allowShort
+        strategy.entry("空", strategy.short, qty = tradeQty, limit = pbLvlDn)
+        nEntryCalls += 1
+    else
+        strategy.cancel("多")
+        strategy.cancel("空")
+
+if entryMode != "軌道回檔" and confirmUp and allowLong and flat and tradeQty > 0
     if entryMode == "追價"
         strategy.entry("多", strategy.long, qty = tradeQty)
         nEntryCalls += 1
@@ -545,7 +559,7 @@ if confirmUp and allowLong and flat and tradeQty > 0
         pendDirEntry := 1
         pendLevel    := brkTop
 
-if confirmDn and allowShort and flat and tradeQty > 0
+if entryMode != "軌道回檔" and confirmDn and allowShort and flat and tradeQty > 0
     if entryMode == "追價"
         strategy.entry("空", strategy.short, qty = tradeQty)
         nEntryCalls += 1
@@ -573,6 +587,7 @@ if not flat
     pendSince    := na
     pendDirEntry := 0
     pendLevel    := na
+    pbArmed      := false            // 進場後解除武裝，等回到中軌另一側再說
 
 // ── 出場：初始止損止盈 + 移動止損 + 保本 ─────────────────────────────────────
 var float entryPx  = na
