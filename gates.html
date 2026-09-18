@@ -475,7 +475,7 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     var note = el("gateNote");
     note.textContent = "";
     note.appendChild(node("div", gate.summary_class === "pos" ? "pos" : (gate.summary_class === "neg" ? "neg" : "muted"), gate.summary || ""));
-    var detail = "趨勢狀態：" + (gate.regime || "—") + " / " + (gate.dir_word || "—") + " / 已確認：" + (gate.armed ? "是" : "否");
+    var detail = "趨勢狀態：" + (gate.regime || "—") + " / " + (gate.dir_word || "—") + " / " + (gate.armed ? "🟢 開閘：是" : "🔒 開閘：否");
     if (gate.last_reason) { detail += "｜" + gate.last_reason; }
     note.appendChild(node("div", "muted", detail));
     if (gate.hard_lock) {
