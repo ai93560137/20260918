@@ -3365,7 +3365,9 @@ RESET_GROUPS = [
      "下次需要時會自動重抓。"),
     ("trades", "交易績效紀錄", [TRADE_HISTORY_FILE], True,
      "⚠️ 累計已實現損益、實盤勝率、期望值會全部歸零，且<b>無法復原</b>。"
-     "MT5 那邊的歷史不受影響，但這個系統算出來的績效統計會從零開始。"),
+     "MT5 那邊的歷史不受影響，但這個系統算出來的績效統計會從零開始。"
+     "<br>✅ 從 DEMO 換到實盤時<b>應該清</b>——模擬單的損益混進實盤統計會讓勝率與期望值失真，"
+     "而期望值會回頭影響建議的 TP 倍數。"),
     ("market", "M1／M15 行情快取", [M1_HISTORY_FILE, M15_HISTORY_FILE], True,
      f"⚠️ 清掉後要重新累積約 {MIN_M1_BARS} 根 M1 K 線（<b>約一小時</b>）才能再次開閘交易。"),
     ("state", "執行狀態", [GATE_STATE_FILE, PYRAMID_STATE_FILE, ACCOUNT_FILE], True,
@@ -3375,6 +3377,16 @@ RESET_GROUPS = [
 RESET_GROUP_MAP = {key: (label, files, danger, desc) for key, label, files, danger, desc in RESET_GROUPS}
 RESET_KEEPS = [("送單參數", ORDER_PARAMS_FILE), ("關卡開關設定", GATE_SWITCHES_FILE)]
 RESET_CONFIRM_WORD = "RESET"
+
+# 常見情境的預設勾選組合，避免手動勾錯——特別是誤勾行情快取會白等一小時。
+RESET_PRESETS = {
+    "live": ("🔁 DEMO → 實盤", {"ai", "trades", "logs", "state"},
+             "換帳戶用。demo 的損益、訊號與狀態全部清掉，實盤統計從零開始。"
+             f"<b>不含行情快取</b>——K 線是商品行情，demo 與實盤看到的 XAUUSD 是同一份，"
+             f"清掉只會白等 {MIN_M1_BARS} 分鐘重新累積。"),
+    "ai": ("🧠 只重置 AI 訓練資料", {"ai", "logs"},
+           "保留交易績效，只把 AI 的教訓與日誌歸零。舊版格式的 SFT 資料無法使用時用這個。"),
+}
 
 
 def perform_reset(keys):
@@ -3401,25 +3413,53 @@ def perform_reset(keys):
     return cleared, failed
 
 
-def build_reset_page(msg=None, error=None):
+def build_reset_page(msg=None, error=None, preset=None):
     banner = ""
     if msg:
         banner = f"<div class='level-box' style='border-left:4px solid #198754;'>{esc(msg)}</div>"
     elif error:
         banner = f"<div class='level-box' style='border-left:4px solid #dc3545;'>{esc(error)}</div>"
 
+    preselected = RESET_PRESETS.get(preset, (None, set(), ""))[1]
+    preset_html = "".join(
+        f"<a href='?view=reset&preset={esc(key)}' class='level-box' "
+        f"style='display:block; margin-bottom:8px; text-decoration:none; "
+        f"border-left:4px solid {'#0f62fe' if preset == key else '#c7ccd1'};'>"
+        f"<b>{label}</b>{' ✔️ 已套用' if preset == key else ''}"
+        f"<div class='card-desc' style='margin-top:4px;'>{desc}</div></a>"
+        for key, (label, _keys, desc) in RESET_PRESETS.items())
+
     rows = ""
     danger_tag = " <span style='color:#dc3545; font-weight:700;'>（高風險）</span>"
     for key, label, files, danger, desc in RESET_GROUPS:
         colour = "#dc3545" if danger else "#6c757d"
         file_list = "、".join(f"<code>{esc(f)}</code>" for f in files)
+        checked = " checked" if key in preselected else ""
         rows += (f"<div class='level-box' style='border-left:4px solid {colour}; margin-bottom:8px;'>"
                  f"<label style='display:flex; gap:10px; align-items:flex-start; cursor:pointer;'>"
-                 f"<input type='checkbox' name='g_{esc(key)}' value='1' style='margin-top:4px;'>"
+                 f"<input type='checkbox' name='g_{esc(key)}' value='1' style='margin-top:4px;'{checked}>"
                  f"<span><b>{esc(label)}</b>{danger_tag if danger else ''}"
                  f"<div class='card-desc' style='margin-top:4px;'>{desc}</div>"
                  f"<div class='card-desc' style='margin-top:4px;'>{file_list}</div>"
                  f"</span></label></div>")
+
+    # 先告訴你「即將刪掉什麼」——盲按按鈕是這種頁面最容易出事的地方。
+    try:
+        trade_count = len(risk_manager_session.read_trades())
+        realised = sum(to_float(t.get("profit"), 0.0) for t in risk_manager_session.read_trades())
+        trades_note = (f"目前有 <b>{trade_count}</b> 筆已結算交易，"
+                       f"累計 <b>{realised:+,.2f} {esc(ACCOUNT_CURRENCY_DEFAULT)}</b>")
+    except Exception as exc:
+        trades_note = f"交易紀錄讀取失敗：{esc(str(exc)[:80])}"
+    try:
+        account_type = str(read_order_params()[0].get("account_type") or "?")
+    except Exception:
+        account_type = "?"
+    account_html = (f"<span style='color:#dc3545; font-weight:700;'>🔴 real（實盤）</span>"
+                    if account_type == "real" else
+                    f"<span style='color:#d97706; font-weight:700;'>🟡 {esc(account_type)}</span>"
+                    + ("　⚠️ 送單參數仍是 demo，換實盤前記得到送單參數頁改成 real。"
+                       if account_type == "demo" else ""))
 
     keeps = "、".join(f"<code>{esc(f)}</code>（{esc(name)}）" for name, f in RESET_KEEPS)
     body = f"""
@@ -3430,6 +3470,10 @@ def build_reset_page(msg=None, error=None):
       <p class='muted' style='font-size:13px;'>
         用這個版本重新開始：勾選要清空的紀錄。<b>這個動作無法復原</b>，請先確認沒有正在等待配對的交易。
       </p>
+      <div class='level-box' style='border-left:4px solid #0f62fe; margin-bottom:12px;'>
+        <div class='card-title'>目前狀態</div>
+        <div style='margin-top:4px;'>{trades_note}<br>下單模式：{account_html}</div>
+      </div>
       <div class='level-box' style='border-left:4px solid #198754; margin-bottom:12px;'>
         ✅ <b>不會被清掉的東西</b>：{keeps}。你調好的設定會原封不動保留。
         <div class='card-desc' style='margin-top:6px;'>
@@ -3437,7 +3481,10 @@ def build_reset_page(msg=None, error=None):
           不會讓破壞性操作沒有痕跡。
         </div>
       </div>
+      <div class='card-title' style='margin-bottom:6px;'>常見情境（點一下自動勾好）</div>
+      {preset_html}
       <form method='POST' action='?view=reset'>
+        <div class='card-title' style='margin:14px 0 6px;'>逐項確認</div>
         {rows}
         <div class='level-box' style='margin-top:12px;'>
           <div class='card-title'>管理權杖</div>
@@ -3494,7 +3541,7 @@ def handle_get(req):
     if view == "info":
         return build_info_page()
     if view == "reset":
-        return build_reset_page()
+        return build_reset_page(preset=req.args.get("preset"))
     if view == "gates":
         return build_gates_page(req.args.get("msg"))
     if view == "dashboard":
