@@ -82,6 +82,13 @@ showBox   = input.bool(true, "區間邊緣",     group = G_D, inline = "d1")
 showMarks = input.bool(true, "突破標記",     group = G_D, inline = "d1")
 colFail   = input.color(#E040FB, "假突破標記顏色", group = G_D)
 
+showArrow = input.bool(true, "順勢 K 線箭頭", group = G_D, inline = "ar",
+     tooltip = "上升軌道中的每根陽線（收 > 開）在下方標向上箭頭；下降軌道中的每根陰線標向下箭頭。" +
+               "只在軌道狀態出現，橫行與過渡不標。")
+arrowSize = input.string("tiny", "大小", options = ["tiny", "small", "normal"], group = G_D, inline = "ar")
+arrowBody = input.float(0.0, "實體佔全長 ≥", minval = 0.0, maxval = 0.9, step = 0.05, group = G_D,
+     tooltip = "0 = 所有同向 K 線都標。調高可只標實體夠長的 K 線（例如 0.5 = 實體至少佔整根的一半），畫面比較乾淨。")
+
 showPanel = input.bool(true, "狀態面板", group = G_D, inline = "p0")
 panelPos  = input.string("右上", "位置", group = G_D, inline = "p0",
      options = ["右上", "右中", "右下", "左上", "左中", "左下"])
@@ -273,6 +280,16 @@ plotshape(showMarks and confirmDn, "向下突破", shape.triangledown, location.
      color.new(colDn, 0), size = size.small, text = "跌破", textcolor = color.new(colDn, 0))
 plotshape(showMarks and failMark,  "假突破",   shape.xcross,       location.top,
      color.new(colFail, 0), size = size.tiny)
+
+// ── 順勢 K 線箭頭：上升軌道的陽線 ↑、下降軌道的陰線 ↓ ────────────────────────
+barRange = high - low
+bodyPct  = barRange > 0 ? math.abs(close - open) / barRange : 0.0
+bodyOK   = bodyPct >= arrowBody
+arwSize  = arrowSize == "small" ? size.small : arrowSize == "normal" ? size.normal : size.tiny
+arrowUp  = showArrow and st ==  1 and close > open and bodyOK
+arrowDn  = showArrow and st == -1 and close < open and bodyOK
+plotshape(arrowUp, "順勢陽線 ↑", shape.arrowup,   location.belowbar, color.new(colUp, 0), size = arwSize)
+plotshape(arrowDn, "順勢陰線 ↓", shape.arrowdown, location.abovebar, color.new(colDn, 0), size = arwSize)
 
 // ── 狀態面板 ─────────────────────────────────────────────────────────────────
 stName(v) => v == 1 ? "上升軌道 ▲" : v == -1 ? "下降軌道 ▼" : v == 0 ? "橫行 ▬" : "過渡 ～"
