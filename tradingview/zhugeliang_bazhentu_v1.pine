@@ -290,16 +290,31 @@ plotshape(showMarks and failMark,  "假突破",   shape.xcross,       location.t
 barRange = high - low
 bodyPct  = barRange > 0 ? math.abs(close - open) / barRange : 0.0
 bodyOK   = bodyPct >= arrowBody
-arwSize  = arrowSize == "small" ? size.small : arrowSize == "normal" ? size.normal : size.tiny
 arrowUp  = showArrow and st ==  1 and close > open and bodyOK
 arrowDn  = showArrow and st == -1 and close < open and bodyOK
-plotshape(arrowUp, "順勢陽線 ↑", shape.arrowup,   location.belowbar, color.new(colUp, 0), size = arwSize)
-plotshape(arrowDn, "順勢陰線 ↓", shape.arrowdown, location.abovebar, color.new(colDn, 0), size = arwSize)
+
+// plotshape 的 size 只接受常數，因此三種大小各畫一次，由輸入決定哪一組顯示 [CE10123]
+plotshape(arrowUp and arrowSize == "tiny",   "順勢陽線 ↑ 小", shape.arrowup, location.belowbar,
+     color.new(colUp, 0), size = size.tiny)
+plotshape(arrowUp and arrowSize == "small",  "順勢陽線 ↑ 中", shape.arrowup, location.belowbar,
+     color.new(colUp, 0), size = size.small)
+plotshape(arrowUp and arrowSize == "normal", "順勢陽線 ↑ 大", shape.arrowup, location.belowbar,
+     color.new(colUp, 0), size = size.normal)
+plotshape(arrowDn and arrowSize == "tiny",   "順勢陰線 ↓ 小", shape.arrowdown, location.abovebar,
+     color.new(colDn, 0), size = size.tiny)
+plotshape(arrowDn and arrowSize == "small",  "順勢陰線 ↓ 中", shape.arrowdown, location.abovebar,
+     color.new(colDn, 0), size = size.small)
+plotshape(arrowDn and arrowSize == "normal", "順勢陰線 ↓ 大", shape.arrowdown, location.abovebar,
+     color.new(colDn, 0), size = size.normal)
 
 // ── 橫行標記：每根橫行 K 線下方一個 ✗（此處不做方向單） ──────────────────────
-rxSize = rangeXSize == "small" ? size.small : rangeXSize == "normal" ? size.normal : size.tiny
-plotshape(showRangeX and st == 0, "橫行 ✗", shape.xcross, location.belowbar,
-     color.new(colRangeX, 0), size = rxSize)
+rangeX = showRangeX and st == 0
+plotshape(rangeX and rangeXSize == "tiny",   "橫行 ✗ 小", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = size.tiny)
+plotshape(rangeX and rangeXSize == "small",  "橫行 ✗ 中", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = size.small)
+plotshape(rangeX and rangeXSize == "normal", "橫行 ✗ 大", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = size.normal)
 
 // ── 狀態面板 ─────────────────────────────────────────────────────────────────
 stName(v) => v == 1 ? "上升軌道 ▲" : v == -1 ? "下降軌道 ▼" : v == 0 ? "橫行 ▬" : "過渡 ～"
