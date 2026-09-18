@@ -7,3 +7,7 @@ __pycache__/
 venv/
 DEPLOY.md
 *.md
+
+# 離線分析工具，不需要部署到 Cloud Run function
+backtest.py
+ai_eval.py
