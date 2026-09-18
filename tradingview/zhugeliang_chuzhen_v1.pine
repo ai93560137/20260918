@@ -1,0 +1,607 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 出陣 v1 — 八陣圖的策略版
+//
+// 「智能諸葛亮」= 整套系統的總名；「八陣圖」= 盤勢形態辨識（指標版）；
+// 「出陣」= 在八陣圖的判定之上加進出場與部位管理，可在 Strategy Tester 回測。
+//
+// 判定邏輯與八陣圖 v1 完全相同（狀態、區間、突破、確認、週期預設都是同一份程式碼），
+// 差別只在這裡會真的下單。要改判定請兩邊一起改，否則回測與看盤會走樣。
+//
+// 三個狀態的定義
+//   軌道(TREND)：線性迴歸斜率夠大（以 ATR 標準化）且 R² 夠高（價格貼著軌道走）
+//   橫行(RANGE)：非軌道，且最近 N 根的高低區間高度 ≤ ATR × 門檻，並維持一定根數
+//   過渡(NEUTRAL)：兩者都不是，不發訊號
+//
+// 突破 = 橫行區間成立 → 收盤越過區間邊緣 + ATR 緩衝 → 站穩 N 根確認
+// 假突破 = 確認後 M 根內收盤又跌回區間內（事後標記，用來算準確率）
+//
+// 週期預設（「跟圖表設定」= 依當前圖表週期自動挑一組）
+//   週期    迴歸長度  R²    斜率   區間長度  區間上限  區間失效  突破緩衝  站穩根數
+//   日線      40     0.45  0.030    12      3.2 ATR     20      0.35 ATR     2
+//   4 小時    45     0.52  0.028    14      2.8 ATR     20      0.28 ATR     1
+//   1 小時    50     0.55  0.025    16      3.0 ATR     25      0.25 ATR     1
+//   15 分鐘   60     0.48  0.025    20      3.8 ATR     30      0.25 ATR     1
+//   5 分鐘    60     0.58  0.030    20      3.8 ATR     40      0.30 ATR     1
+//   自動配對的高週期：5 分→1 小時、15 分→4 小時、1 小時→日線、4 小時與日線→週線
+// 選「自訂」才會改用設定頁 ①②③ 的數值。
+//
+// 防未來函數：高週期一律取「已收盤」的值（lookahead_on + [1] 的標準寫法）；
+// 所有狀態機只在 K 線收盤時推進（barstate.isconfirmed），與實盤警報一致。
+// 警報請務必選「Once Per Bar Close」。
+// =============================================================================
+strategy("智能諸葛亮 · 出陣 v1｜八陣圖策略", "出陣 v1", overlay = true,
+     pyramiding = 0, initial_capital = 100000,
+     default_qty_type = strategy.fixed, default_qty_value = 1,
+     calc_on_every_tick = false, process_orders_on_close = true,
+     slippage = 2, commission_type = strategy.commission.cash_per_contract, commission_value = 2.0,
+     max_labels_count = 500)
+// ⚠️ 點差／手續費／滑價預設是期貨的概念（每口 $2 + 2 tick）。
+//    換成股票或 CFD 請到「屬性」分頁改，否則回測結果會失真。
+
+const string G_X = "⑦ 交易設定"
+const string G_P = "⓪ 週期預設"
+const string G_T = "① 軌道（趨勢）判定（僅「自訂」模式生效）"
+const string G_R = "② 橫行判定（僅「自訂」模式生效）"
+const string G_B = "③ 突破判定"
+const string G_H = "④ 高週期過濾"
+const string G_S = "⑤ 時段過濾（美股）"
+const string G_D = "⑥ 顯示"
+
+// ── ⓪ 週期預設 ───────────────────────────────────────────────────────────────
+// 不同週期的雜訊尺度差很多，同一組門檻搬過去就會失準。
+// 「跟圖表設定」會依當前圖表週期自動挑一組；要自己調就選「自訂」。
+preset = input.string("跟圖表設定", "參數預設", group = G_P,
+     options = ["跟圖表設定", "日線", "4 小時", "1 小時", "15 分鐘", "5 分鐘", "自訂"],
+     tooltip = "選「自訂」才會使用下方 ①② 兩組與「突破緩衝」的數值；其餘選項一律套用內建預設，" +
+               "改下方數字不會有反應。高週期方向過濾也會自動套用該高週期對應的那一組。")
+
+// ── ① 軌道 ───────────────────────────────────────────────────────────────────
+inLenTrend = input.int(60,    "迴歸長度（根）",          minval = 10, group = G_T,
+     tooltip = "用最近這麼多根做線性迴歸。60 根 ≈ 5 分鐘圖的 5 小時。")
+inR2Min    = input.float(0.60, "R² 門檻（軌道乾淨度）",   minval = 0.0, maxval = 1.0, step = 0.05, group = G_T,
+     tooltip = "R² 就是肉眼講的『這條軌道漂不漂亮』。0.6 起跳算明顯，0.8 以上是教科書級。")
+inSlopeMin = input.float(0.03, "斜率門檻（ATR/根）",      minval = 0.0, step = 0.01, group = G_T,
+     tooltip = "每根 K 線平均走多少個 ATR 才算有方向。用 ATR 標準化，換標的不必重調。")
+chanMult = input.float(2.0,  "通道寬度（殘差 σ 倍數）", minval = 0.5, step = 0.5, group = G_T)
+atrLen   = input.int(14,     "ATR 長度",                minval = 2,  group = G_T)
+
+// ── ② 橫行 ───────────────────────────────────────────────────────────────────
+inLenRange     = input.int(20,   "區間觀察長度（根）",        minval = 5, group = G_R)
+inRangeMaxATR  = input.float(4.0, "區間高度上限（ATR 倍數）", minval = 0.5, step = 0.5, group = G_R,
+     tooltip = "最近 N 根的最高減最低，若小於 ATR × 此值，視為被壓縮的橫行。")
+inRangeMinBars = input.int(8,    "至少維持幾根才算有效區間",  minval = 1, group = G_R)
+inBoxMaxAge    = input.int(50,   "區間失效根數",              minval = 5, group = G_R,
+     tooltip = "橫行結束後，這個區間還能當突破基準多久。超過就作廢。")
+
+// ── ③ 突破 ───────────────────────────────────────────────────────────────────
+inBufATR      = input.float(0.25, "突破緩衝（ATR 倍數）", minval = 0.0, step = 0.05, group = G_B,
+     tooltip = "收盤要越過區間邊緣再加這麼多 ATR 才算數，過濾貼邊的假動作。僅「自訂」模式生效。")
+inConfirmBars = input.int(1,      "站穩幾根才算確認",     minval = 1, maxval = 5, group = G_B)
+useVol      = input.bool(true,  "需要量能配合",         group = G_B)
+volMult     = input.float(1.5,  "量能 ≥ 均量 ×",        minval = 1.0, step = 0.1, group = G_B)
+volLen      = input.int(20,     "均量長度",             minval = 5, group = G_B)
+failBars    = input.int(10,     "突破後追蹤根數", minval = 1, group = G_B,
+     tooltip = "兩個用途：① 這幾根內收盤跌回區間 = 假突破；② 面板「突破後 N 根」的順向／逆向幅度也用這個窗口。" +
+               "調長會讓假突破率上升、順逆幅度都變大。")
+
+// ── ④ 高週期 ─────────────────────────────────────────────────────────────────
+htfMode = input.string("必須同向", "高週期過濾", group = G_H,
+     options = ["必須同向", "只擋反向", "不過濾"],
+     tooltip = "必須同向＝高週期也要是同方向軌道才發訊號（最嚴，高週期處於橫行／過渡時完全沒訊號）。" +
+               "只擋反向＝只有高週期是反方向軌道才擋，橫行與過渡照發（訊號量通常多一倍）。" +
+               "不過濾＝完全不看高週期。")
+htfSel = input.string("自動", "高週期",            group = G_H,
+     options = ["自動", "5", "15", "30", "60", "120", "240", "D", "W"])
+
+// ── ⑤ 時段（美股） ───────────────────────────────────────────────────────────
+sessMode = input.string("商品常規時段", "時段模式", group = G_S,
+     options = ["商品常規時段", "自訂時段", "不過濾"],
+     tooltip = "商品常規時段＝跟著該商品交易所的正規盤（恒指、美股、外匯各自正確，不必手動設）。" +
+               "自訂時段＝用下方的時間字串，可避開開收盤亂流。不過濾＝24 小時都能發訊號。")
+sessStr = input.session("0945-1545", "自訂時段",   group = G_S,
+     tooltip = "只有「自訂時段」模式會用到。美股避開開收盤各 15 分鐘＝0945-1545（紐約時間）。")
+sessTZ  = input.string("America/New_York", "時區", group = G_S,
+     options = ["America/New_York", "America/Chicago", "Asia/Hong_Kong", "Asia/Tokyo", "Europe/London", "UTC"])
+
+// ── ⑦ 交易設定 ───────────────────────────────────────────────────────────────
+tradeDir  = input.string("雙向", "交易方向", options = ["雙向", "只做多", "只做空"], group = G_X)
+entryMode = input.string("追價", "進場方式", options = ["追價", "等回踩"], group = G_X,
+     tooltip = "追價＝突破確認當根收盤市價進場。等回踩＝在箱子邊緣掛限價單，等價格回來才成交，" +
+               "等不到就取消（會錯過部分訊號）。")
+rtWaitBars = input.int(5, "回踩等待根數", minval = 1, group = G_X)
+
+sizeMode = input.string("風險比例", "部位大小", options = ["風險比例", "固定數量"], group = G_X)
+riskPct  = input.float(1.0, "每筆風險 %（權益）", minval = 0.1, maxval = 10, step = 0.1, group = G_X,
+     tooltip = "以止損距離反推數量：風險金額 = 權益 × 此百分比。期貨會取整數口，最少 1 口。")
+fixedQty = input.float(1, "固定數量", minval = 0.01, step = 0.01, group = G_X)
+
+slATR = input.float(2.0, "止損 ATR 倍數", minval = 0.5, step = 0.1, group = G_X,
+     tooltip = "八陣圖統計顯示突破後逆向平均 1.8–2.3 ATR，設低於 2.0 很容易被正常波動掃掉。")
+tpR   = input.float(1.5, "止盈 R 倍數", minval = 0.5, step = 0.1, group = G_X,
+     tooltip = "止盈距離 = 止損距離 × 此值。順向平均上限約 2.5–3.0 ATR，止損 2 ATR 時 R 設 1.5 上下較實際。")
+
+useTrail   = input.bool(false, "移動止損", group = G_X, inline = "tr")
+trailStart = input.float(1.0, "啟動 R", minval = 0.1, step = 0.1, group = G_X, inline = "tr")
+trailATR   = input.float(1.5, "跟隨 ATR", minval = 0.2, step = 0.1, group = G_X, inline = "tr")
+useBE   = input.bool(false, "保本", group = G_X, inline = "be")
+beStart = input.float(1.0, "啟動 R", minval = 0.1, step = 0.1, group = G_X, inline = "be")
+beLock  = input.float(0.1, "鎖利 R", minval = 0.0, step = 0.05, group = G_X, inline = "be")
+
+maxBars     = input.int(0, "最長持倉根數（0 = 不限）", minval = 0, group = G_X)
+exitOffSess = input.bool(false, "時段外強制平倉", group = G_X)
+showLevels  = input.bool(true, "畫出止損／止盈線", group = G_X)
+
+// ── ⑥ 顯示：顏色與字體 ───────────────────────────────────────────────────────
+showBg    = input.bool(true, "狀態背景色", group = G_D, inline = "bg")
+bgOpacity = input.int(70, "透明度", minval = 0, maxval = 95, step = 5, group = G_D, inline = "bg",
+     tooltip = "數字越小顏色越重。0＝實心、95＝幾乎看不見。淺色主題建議 60–75，深色主題建議 75–85。")
+colUp = input.color(#00B4A0, "上升", group = G_D, inline = "cs")
+colDn = input.color(#FF5252, "下降", group = G_D, inline = "cs")
+colRg = input.color(#FFA726, "橫行", group = G_D, inline = "cs",
+     tooltip = "三個狀態的主色，背景、通道、區間線、突破標記全部跟著這裡走。")
+
+showChan  = input.bool(true, "迴歸通道",     group = G_D, inline = "d1")
+showBox   = input.bool(true, "區間邊緣",     group = G_D, inline = "d1")
+showMarks = input.bool(true, "突破標記",     group = G_D, inline = "d1")
+colFail   = input.color(#E040FB, "假突破標記顏色", group = G_D)
+brkTxtSize = input.string("large", "突破文字大小", options = ["small", "normal", "large", "huge"],
+     group = G_D, inline = "bt")
+brkTxtCol  = input.color(#0F1114, "文字色", group = G_D, inline = "bt",
+     tooltip = "文字畫在彩色標籤上，所以深色字最清楚；若把標籤底色改成深色，這裡要改成淺色。")
+
+showArrow = input.bool(true, "順勢 K 線箭頭", group = G_D, inline = "ar",
+     tooltip = "上升軌道中的每根陽線（收 > 開）在下方標向上箭頭；下降軌道中的每根陰線標向下箭頭。" +
+               "只在軌道狀態出現，橫行與過渡不標。")
+arrowSize = input.string("tiny", "大小", options = ["tiny", "small", "normal"], group = G_D, inline = "ar")
+arrowBody = input.float(0.0, "實體佔全長 ≥", minval = 0.0, maxval = 0.9, step = 0.05, group = G_D,
+     tooltip = "0 = 所有同向 K 線都標。調高可只標實體夠長的 K 線（例如 0.5 = 實體至少佔整根的一半），畫面比較乾淨。")
+
+showRangeX = input.bool(true, "橫行 K 線標記 ✗", group = G_D, inline = "rx",
+     tooltip = "橫行狀態的每一根 K 線下方畫一個 ✗，代表這一段不該做方向單。範圍與灰色背景完全一致。")
+rangeXSize = input.string("tiny", "大小", options = ["tiny", "small", "normal"], group = G_D, inline = "rx")
+colRangeX  = input.color(#FF3B30, "顏色", group = G_D, inline = "rx")
+
+showPanel = input.bool(true, "狀態面板", group = G_D, inline = "p0")
+panelPos  = input.string("右上", "位置", group = G_D, inline = "p0",
+     options = ["右上", "右中", "右下", "左上", "左中", "左下"])
+panelTxt  = input.color(#E8EAED, "面板文字", group = G_D, inline = "p1")
+panelBg   = input.color(color.new(#0F1114, 15), "面板背景", group = G_D, inline = "p1")
+panelHead = input.color(color.new(#1E88E5, 10), "標題底色", group = G_D, inline = "p2")
+panelSize = input.string("normal", "字體大小", options = ["tiny", "small", "normal", "large", "huge"],
+     group = G_D, inline = "p2",
+     tooltip = "淺色主題請把「面板文字」改成深色（例如 #1A1A1A）、「面板背景」改成淺色。")
+
+// =============================================================================
+// 週期預設 → 實際使用的門檻
+// 這一段在 request.security 內會用「高週期自己的週期」重算，
+// 所以高週期方向判定也會自動套用該週期對應的那一組門檻。
+// =============================================================================
+secs = timeframe.in_seconds(timeframe.period)
+
+autoKey = secs >= 86400 ? "D" : secs >= 14400 ? "H4" : secs >= 3600 ? "H1" : secs >= 900 ? "M15" : "M5"
+pk      = preset == "跟圖表設定" ? autoKey : preset == "日線" ? "D" : preset == "4 小時" ? "H4" :
+          preset == "1 小時" ? "H1" : preset == "15 分鐘" ? "M15" : preset == "5 分鐘" ? "M5" : "CUSTOM"
+
+//                            日線    4 小時   1 小時   15 分    5 分
+lenTrend     = pk == "CUSTOM" ? inLenTrend     : pk == "D" ? 40   : pk == "H4" ? 45   : pk == "H1" ? 50   : 60
+r2Min        = pk == "CUSTOM" ? inR2Min        : pk == "D" ? 0.45 : pk == "H4" ? 0.52 : pk == "M5" ? 0.58 : pk == "M15" ? 0.48 : 0.55
+slopeMin     = pk == "CUSTOM" ? inSlopeMin     : pk == "D" ? 0.030 : pk == "H4" ? 0.028 : pk == "M5" ? 0.030 : 0.025
+lenRange     = pk == "CUSTOM" ? inLenRange     : pk == "D" ? 12   : pk == "H4" ? 14   : pk == "H1" ? 16   : 20
+rangeMaxATR  = pk == "CUSTOM" ? inRangeMaxATR  : pk == "D" ? 3.2  : pk == "H4" ? 2.8  : pk == "M5" ? 3.8  : pk == "M15" ? 3.8 : 3.0
+rangeMinBars = pk == "CUSTOM" ? inRangeMinBars : pk == "D" ? 6    : pk == "H4" ? 7    : 8
+boxMaxAge    = pk == "CUSTOM" ? inBoxMaxAge    : pk == "D" ? 20   : pk == "H4" ? 20   : pk == "H1" ? 25   : pk == "M15" ? 30 : 40
+bufATR       = pk == "CUSTOM" ? inBufATR       : pk == "D" ? 0.35 : pk == "H4" ? 0.28 : pk == "M5" ? 0.30 : 0.25
+confirmBars  = pk == "CUSTOM" ? inConfirmBars  : pk == "D" ? 2    : 1
+
+pkName = pk == "D" ? "日線" : pk == "H4" ? "4 小時" : pk == "H1" ? "1 小時" :
+         pk == "M15" ? "15 分鐘" : pk == "M5" ? "5 分鐘" : "自訂"
+
+// =============================================================================
+// 核心：狀態計算（同一份程式碼給本週期與高週期共用）
+// =============================================================================
+f_state() =>
+    _atr   = ta.atr(atrLen)
+    _lr    = ta.linreg(close, lenTrend, 0)
+    _slope = _lr - ta.linreg(close, lenTrend, 1)
+    _corr  = ta.correlation(close, bar_index, lenTrend)
+    _r2    = na(_corr) ? 0.0 : _corr * _corr
+    _sN    = _atr > 0 ? _slope / _atr : 0.0          // 斜率標準化成「ATR/根」
+    _hi    = ta.highest(high, lenRange)
+    _lo    = ta.lowest(low,  lenRange)
+    _wATR  = _atr > 0 ? (_hi - _lo) / _atr : na      // 區間高度，單位 ATR
+    _sd    = ta.stdev(close, lenTrend)
+    _resid = _sd * math.sqrt(math.max(0.0, 1.0 - _r2))   // 迴歸殘差 σ（通道半寬用）
+    _up    = _r2 >= r2Min and _sN >=  slopeMin
+    _dn    = _r2 >= r2Min and _sN <= -slopeMin
+    _rng   = not _up and not _dn and _wATR <= rangeMaxATR
+    _st    = _up ? 1 : _dn ? -1 : _rng ? 0 : 2       // 1 上升軌道 / -1 下降軌道 / 0 橫行 / 2 過渡
+    [_st, _sN, _r2, _wATR, _hi, _lo, _lr, _atr, _resid]
+
+[st, slopeN, r2, wATR, hiN, loN, lrVal, atr, resid] = f_state()
+
+// 高週期：只取已收盤的值 → 不會隨盤中價格跳動（非重繪）
+f_htf() =>
+    [_st, _sN, _r2, _w, _hi, _lo, _lr, _atr, _rd] = f_state()
+    [_st[1], _sN[1], _r2[1]]
+
+autoTF = secs <= 300 ? "60" : secs <= 900 ? "240" : secs <= 3600 ? "D" : secs <= 86400 ? "W" : "M"
+htfTF  = htfSel == "自動" ? autoTF : htfSel
+
+[htfSt, htfSlope, htfR2] = request.security(syminfo.tickerid, htfTF, f_htf(),
+     gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_on)
+
+htfTooSmall = timeframe.in_seconds(htfTF) < secs
+htfUpOK = htfMode == "不過濾" ? true : htfMode == "只擋反向" ? htfSt != -1 : htfSt ==  1
+htfDnOK = htfMode == "不過濾" ? true : htfMode == "只擋反向" ? htfSt !=  1 : htfSt == -1
+
+// =============================================================================
+// 橫行區間鎖存：成立時跟著更新，結束後凍結，當作突破的基準線
+// =============================================================================
+rangeRaw  = st == 0
+rangeHold = nz(ta.barssince(not rangeRaw), bar_index)
+rangeOK   = rangeRaw and rangeHold >= rangeMinBars
+
+var float boxTop  = na
+var float boxBot  = na
+var bool  boxLive = false
+var int   lastRangeBar = na
+
+confirmed = barstate.isconfirmed          // 狀態機只在收盤推進
+
+if confirmed
+    if rangeOK
+        boxTop  := hiN[1]                 // 用前一根為止的極值，突破當根才不會自己把箱子撐大
+        boxBot  := loN[1]
+        boxLive := true
+        lastRangeBar := bar_index
+    else if boxLive and not na(lastRangeBar) and bar_index - lastRangeBar > boxMaxAge
+        boxLive := false                  // 區間放太久失去意義
+
+// =============================================================================
+// 突破：觸發 → 站穩確認 → 事後判定真假
+// =============================================================================
+upLevel = boxLive ? boxTop + bufATR * atr : na
+dnLevel = boxLive ? boxBot - bufATR * atr : na
+
+volAvg   = ta.sma(volume, volLen)
+volValid = not na(volume) and volume > 0 and not na(volAvg) and volAvg > 0
+volOK    = not useVol or not volValid or volume >= volAvg * volMult   // 無量資料的商品自動略過此關
+
+inSess = timeframe.isdwm or sessMode == "不過濾" ? true :
+         sessMode == "商品常規時段" ? session.ismarket :
+         not na(time(timeframe.period, sessStr, sessTZ))
+
+rawUp = boxLive and not na(upLevel) and close > upLevel and volOK and inSess and htfUpOK
+rawDn = boxLive and not na(dnLevel) and close < dnLevel and volOK and inSess and htfDnOK
+
+var int   pendDir = 0
+var float pendLvl = na
+var int   pendCnt = 0
+
+var int   brkDir   = 0
+var int   brkBar   = na
+var float brkTop   = na
+var float brkBot   = na
+var bool  brkOpen  = false
+
+var int cntUp   = 0
+var int cntDn   = 0
+var int cntFail = 0
+var int cntHold = 0
+var int barsUp  = 0
+var int barsDn  = 0
+var int barsRg  = 0
+var int barsNt  = 0
+
+bool confirmUp = false
+bool confirmDn = false
+bool failMark  = false
+
+if confirmed
+    // 狀態佔比統計（門檻是否合理的第一個檢查點）
+    barsUp += st ==  1 ? 1 : 0
+    barsDn += st == -1 ? 1 : 0
+    barsRg += st ==  0 ? 1 : 0
+    barsNt += st ==  2 ? 1 : 0
+
+    // 待確認的突破
+    if pendDir == 0
+        if rawUp
+            pendDir := 1
+            pendLvl := upLevel
+            pendCnt := 1
+        else if rawDn
+            pendDir := -1
+            pendLvl := dnLevel
+            pendCnt := 1
+    else if pendDir == 1
+        if close > pendLvl
+            pendCnt += 1
+        else
+            pendDir := 0                  // 沒站住，作廢重來
+    else if pendDir == -1
+        if close < pendLvl
+            pendCnt += 1
+        else
+            pendDir := 0
+
+    // 確認
+    if pendDir != 0 and pendCnt >= confirmBars
+        if pendDir == 1
+            confirmUp := true
+            cntUp += 1
+        else
+            confirmDn := true
+            cntDn += 1
+        brkDir  := pendDir
+        brkBar  := bar_index
+        brkTop  := boxTop
+        brkBot  := boxBot
+        brkOpen := true
+        boxLive := false                  // 這個區間用掉了
+        pendDir := 0
+        pendCnt := 0
+
+    // 事後判定真假突破
+    if brkOpen and not na(brkBar) and bar_index > brkBar
+        if brkDir == 1 and close < brkTop
+            cntFail += 1
+            failMark := true
+            brkOpen  := false
+        else if brkDir == -1 and close > brkBot
+            cntFail += 1
+            failMark := true
+            brkOpen  := false
+        else if bar_index - brkBar >= failBars
+            cntHold += 1
+            brkOpen := false
+
+// =============================================================================
+// 畫圖
+// =============================================================================
+bgcolor(showBg ? (st == 1 ? color.new(colUp, bgOpacity) :
+                  st == -1 ? color.new(colDn, bgOpacity) :
+                  st == 0 ? color.new(colRg, math.min(95, bgOpacity + 5)) : na) : na, title = "狀態背景")
+
+chanCol = st == 1 ? colUp : colDn
+showCh  = showChan and (st == 1 or st == -1)
+plot(showCh ? lrVal : na,                    "迴歸中線", color.new(chanCol, 0),  2, plot.style_linebr)
+plot(showCh ? lrVal + chanMult * resid : na, "通道上緣", color.new(chanCol, 45), 1, plot.style_linebr)
+plot(showCh ? lrVal - chanMult * resid : na, "通道下緣", color.new(chanCol, 45), 1, plot.style_linebr)
+
+plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(colRg, 10), 1, plot.style_linebr)
+plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(colRg, 10), 1, plot.style_linebr)
+
+plotshape(showMarks and confirmUp, "向上突破", shape.triangleup,   location.belowbar,
+     color.new(colUp, 0), size = size.small)
+plotshape(showMarks and confirmDn, "向下突破", shape.triangledown, location.abovebar,
+     color.new(colDn, 0), size = size.small)
+
+// 突破文字用 label：字級與顏色都可調，深色字配彩色底最清楚
+brkSize = brkTxtSize == "small" ? size.small : brkTxtSize == "normal" ? size.normal :
+          brkTxtSize == "huge" ? size.huge : size.large
+if showMarks and confirmUp
+    label.new(bar_index, low, "突破", yloc = yloc.belowbar, style = label.style_label_up,
+         color = color.new(colUp, 0), textcolor = brkTxtCol, size = brkSize)
+if showMarks and confirmDn
+    label.new(bar_index, high, "跌破", yloc = yloc.abovebar, style = label.style_label_down,
+         color = color.new(colDn, 0), textcolor = brkTxtCol, size = brkSize)
+plotshape(showMarks and failMark,  "假突破",   shape.xcross,       location.top,
+     color.new(colFail, 0), size = size.tiny)
+
+// ── 順勢 K 線箭頭：上升軌道的陽線 ↑、下降軌道的陰線 ↓ ────────────────────────
+barRange = high - low
+bodyPct  = barRange > 0 ? math.abs(close - open) / barRange : 0.0
+bodyOK   = bodyPct >= arrowBody
+arrowUp  = showArrow and st ==  1 and close > open and bodyOK
+arrowDn  = showArrow and st == -1 and close < open and bodyOK
+
+// plotshape 的 size 只接受常數，因此三種大小各畫一次，由輸入決定哪一組顯示 [CE10123]
+plotshape(arrowUp and arrowSize == "tiny",   "順勢陽線 ↑ 小", shape.arrowup, location.belowbar,
+     color.new(colUp, 0), size = size.tiny)
+plotshape(arrowUp and arrowSize == "small",  "順勢陽線 ↑ 中", shape.arrowup, location.belowbar,
+     color.new(colUp, 0), size = size.small)
+plotshape(arrowUp and arrowSize == "normal", "順勢陽線 ↑ 大", shape.arrowup, location.belowbar,
+     color.new(colUp, 0), size = size.normal)
+plotshape(arrowDn and arrowSize == "tiny",   "順勢陰線 ↓ 小", shape.arrowdown, location.abovebar,
+     color.new(colDn, 0), size = size.tiny)
+plotshape(arrowDn and arrowSize == "small",  "順勢陰線 ↓ 中", shape.arrowdown, location.abovebar,
+     color.new(colDn, 0), size = size.small)
+plotshape(arrowDn and arrowSize == "normal", "順勢陰線 ↓ 大", shape.arrowdown, location.abovebar,
+     color.new(colDn, 0), size = size.normal)
+
+// ── 橫行標記：每根橫行 K 線下方一個 ✗（此處不做方向單） ──────────────────────
+rangeX = showRangeX and st == 0
+plotshape(rangeX and rangeXSize == "tiny",   "橫行 ✗ 小", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = size.tiny)
+plotshape(rangeX and rangeXSize == "small",  "橫行 ✗ 中", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = size.small)
+plotshape(rangeX and rangeXSize == "normal", "橫行 ✗ 大", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = size.normal)
+
+// ── 狀態面板 ─────────────────────────────────────────────────────────────────
+stName(v) => v == 1 ? "上升軌道 ▲" : v == -1 ? "下降軌道 ▼" : v == 0 ? "橫行 ▬" : "過渡 ～"
+stCol(v)  => v == 1 ? colUp : v == -1 ? colDn : v == 0 ? colRg : color.new(panelTxt, 45)
+
+txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
+          panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
+posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? position.middle_right :
+          panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left :
+          panelPos == "左中" ? position.middle_left : position.bottom_left
+dimTxt  = color.new(panelTxt, 45)
+
+var table tb = table.new(posC, 2, 12, border_width = 1)
+
+// 左欄（欄位名稱）與右欄（數值）的統一樣式
+cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
+     text_size = txtSize, text_halign = text.align_left)
+cellV(row, txt, col) => table.cell(tb, 1, row, txt, bgcolor = panelBg, text_color = col,
+     text_size = txtSize, text_halign = text.align_right)
+
+if showPanel and barstate.islast
+    totalBars = math.max(1, barsUp + barsDn + barsRg + barsNt)
+    brkAll    = cntUp + cntDn
+    resolved  = cntFail + cntHold
+    failPct   = resolved > 0 ? cntFail / resolved * 100 : na
+    distUp    = boxLive and not na(upLevel) ? (upLevel - close) / atr : na
+    distDn    = boxLive and not na(dnLevel) ? (close - dnLevel) / atr : na
+
+    table.cell(tb, 0, 0, "八陣圖 v1", bgcolor = panelHead, text_color = panelTxt, text_size = txtSize)
+    table.cell(tb, 1, 0, syminfo.ticker + " · " + timeframe.period,
+         bgcolor = panelHead, text_color = panelTxt, text_size = txtSize)
+
+    cellK(1, "本週期")
+    cellV(1, stName(st), stCol(st))
+
+    cellK(2, "高週期 " + htfTF + "｜" + htfMode + (htfTooSmall ? " ⚠" : ""))
+    cellV(2, htfMode == "不過濾" ? "（未啟用）" : stName(htfSt) + "  R²=" + str.tostring(htfR2, "#.##") +
+         "  斜率=" + str.tostring(htfSlope, "#.###"),
+         htfMode == "不過濾" ? dimTxt : stCol(htfSt))
+
+    cellK(3, "斜率 ATR/根")
+    cellV(3, str.tostring(slopeN, "#.###") + "  (門檻 ±" + str.tostring(slopeMin, "#.##") + ")",
+         math.abs(slopeN) >= slopeMin ? panelTxt : dimTxt)
+
+    cellK(4, "R²")
+    cellV(4, str.tostring(r2, "#.##") + "  (門檻 " + str.tostring(r2Min, "#.##") + ")",
+         r2 >= r2Min ? panelTxt : dimTxt)
+
+    cellK(5, "區間高度 ATR")
+    cellV(5, str.tostring(wATR, "#.#") + "  (上限 " + str.tostring(rangeMaxATR, "#.#") + ")",
+         wATR <= rangeMaxATR ? panelTxt : dimTxt)
+
+    cellK(6, "有效區間")
+    cellV(6, boxLive ? str.tostring(boxBot, format.mintick) + " ~ " + str.tostring(boxTop, format.mintick) : "無",
+         boxLive ? colRg : dimTxt)
+
+    cellK(7, "距突破 (ATR)")
+    cellV(7, boxLive ? "↑" + str.tostring(distUp, "#.##") + "  ↓" + str.tostring(distDn, "#.##") : "—",
+         boxLive ? panelTxt : dimTxt)
+
+    cellK(8, "狀態佔比")
+    cellV(8, "▲" + str.tostring(barsUp * 100.0 / totalBars, "#") + "%  ▼" +
+         str.tostring(barsDn * 100.0 / totalBars, "#") + "%  ▬" +
+         str.tostring(barsRg * 100.0 / totalBars, "#") + "%  ～" +
+         str.tostring(barsNt * 100.0 / totalBars, "#") + "%", panelTxt)
+
+    cellK(9, "突破次數")
+    cellV(9, "↑" + str.tostring(cntUp) + "  ↓" + str.tostring(cntDn) + "  共" + str.tostring(brkAll), panelTxt)
+
+    cellK(10, "假突破率")
+    cellV(10, resolved > 0 ? str.tostring(failPct, "#") + "%  (" + str.tostring(cntFail) + "/" +
+         str.tostring(resolved) + ")" : "資料不足",
+         na(failPct) ? dimTxt : failPct > 50 ? colDn : colUp)
+
+    cellK(11, "參數預設")
+    cellV(11, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
+
+// =============================================================================
+// 警報（TradingView 建立警報時請選 Once Per Bar Close）
+// =============================================================================
+if confirmUp or confirmDn
+    alert(str.format("{0} {1} {2} @ {3}｜R²={4,number,#.##} 斜率={5,number,#.###} 高週期={6}",
+         syminfo.ticker, timeframe.period, confirmUp ? "向上突破" : "向下跌破",
+         str.tostring(close, format.mintick), r2, slopeN, stName(htfSt)), alert.freq_once_per_bar_close)
+
+
+// =============================================================================
+// 💰 交易：部位大小 → 進場 → 出場
+//    判定完全沿用上面的 confirmUp / confirmDn，這一段只負責下單與風控
+// =============================================================================
+riskPerUnit = slATR * atr                         // 每單位商品的價格風險
+pointValue  = syminfo.pointvalue
+rawQty      = sizeMode == "固定數量" or riskPerUnit <= 0 or pointValue <= 0 ? fixedQty :
+              strategy.equity * riskPct / 100.0 / (riskPerUnit * pointValue)
+isFutures   = str.contains(syminfo.type, "futures")
+tradeQty    = isFutures ? math.max(1, math.round(rawQty)) : math.max(0.0, rawQty)
+
+allowLong  = tradeDir != "只做空"
+allowShort = tradeDir != "只做多"
+flat       = strategy.position_size == 0
+
+// ── 進場 ─────────────────────────────────────────────────────────────────────
+// 追價：突破確認當根收盤市價進場。
+// 等回踩：限價單從「下一根」才開始掛 —— 突破當根的低點是突破前形成的，
+//         在那根就掛單會被回測引擎當成已成交，等於偷看過去。[避免前視偏差]
+var int   pendSince   = na
+var int   pendDirEntry = 0
+var float pendLevel   = na
+
+if confirmUp and allowLong and flat and tradeQty > 0
+    if entryMode == "追價"
+        strategy.entry("多", strategy.long, qty = tradeQty)
+    else
+        pendSince    := bar_index
+        pendDirEntry := 1
+        pendLevel    := brkTop
+
+if confirmDn and allowShort and flat and tradeQty > 0
+    if entryMode == "追價"
+        strategy.entry("空", strategy.short, qty = tradeQty)
+    else
+        pendSince    := bar_index
+        pendDirEntry := -1
+        pendLevel    := brkBot
+
+// 掛單期間每根更新限價單；等不到回踩就取消
+if not na(pendSince) and flat and not na(pendLevel)
+    if bar_index > pendSince and bar_index - pendSince <= rtWaitBars
+        if pendDirEntry == 1
+            strategy.entry("多", strategy.long, qty = tradeQty, limit = pendLevel)
+        else
+            strategy.entry("空", strategy.short, qty = tradeQty, limit = pendLevel)
+    else if bar_index - pendSince > rtWaitBars
+        strategy.cancel("多")
+        strategy.cancel("空")
+        pendSince    := na
+        pendDirEntry := 0
+        pendLevel    := na
+
+if not flat
+    pendSince    := na
+    pendDirEntry := 0
+    pendLevel    := na
+
+// ── 出場：初始止損止盈 + 移動止損 + 保本 ─────────────────────────────────────
+var float entryPx  = na
+var float riskPx   = na
+var float stopPx   = na
+var float tpPx     = na
+var int   entryBar = na
+
+longPos    = strategy.position_size > 0
+justOpened = strategy.position_size != 0 and strategy.position_size[1] == 0
+
+if justOpened
+    entryPx  := strategy.position_avg_price
+    riskPx   := riskPerUnit > 0 ? riskPerUnit : atr
+    entryBar := bar_index
+    stopPx   := longPos ? entryPx - riskPx : entryPx + riskPx
+    tpPx     := longPos ? entryPx + riskPx * tpR : entryPx - riskPx * tpR
+
+if strategy.position_size != 0 and not na(entryPx) and riskPx > 0
+    profitR = (longPos ? close - entryPx : entryPx - close) / riskPx
+    if useBE and profitR >= beStart
+        beLevel = longPos ? entryPx + beLock * riskPx : entryPx - beLock * riskPx
+        stopPx := longPos ? math.max(stopPx, beLevel) : math.min(stopPx, beLevel)
+    if useTrail and profitR >= trailStart
+        trailLevel = longPos ? close - trailATR * atr : close + trailATR * atr
+        stopPx := longPos ? math.max(stopPx, trailLevel) : math.min(stopPx, trailLevel)
+    strategy.exit("出場", from_entry = longPos ? "多" : "空", stop = stopPx, limit = tpPx)
+    if maxBars > 0 and not na(entryBar) and bar_index - entryBar >= maxBars
+        strategy.close_all("持倉時間到")
+    if exitOffSess and not inSess
+        strategy.close_all("時段外平倉")
+
+if strategy.position_size == 0 and strategy.position_size[1] != 0
+    entryPx  := na
+    riskPx   := na
+    stopPx   := na
+    tpPx     := na
+    entryBar := na
+
+plot(showLevels and strategy.position_size != 0 ? stopPx : na, "止損線",
+     color.new(colDn, 0), 1, plot.style_linebr)
+plot(showLevels and strategy.position_size != 0 ? tpPx : na, "止盈線",
+     color.new(colUp, 0), 1, plot.style_linebr)
