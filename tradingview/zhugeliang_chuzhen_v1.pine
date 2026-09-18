@@ -509,12 +509,16 @@ if confirmUp or confirmDn
 // 💰 交易：部位大小 → 進場 → 出場
 //    判定完全沿用上面的 confirmUp / confirmDn，這一段只負責下單與風控
 // =============================================================================
-riskPerUnit = slATR * atr                         // 每單位商品的價格風險
-pointValue  = syminfo.pointvalue
-rawQty      = sizeMode == "固定數量" or riskPerUnit <= 0 or pointValue <= 0 ? fixedQty :
-              strategy.equity * riskPct / 100.0 / (riskPerUnit * pointValue)
-isFutures   = str.contains(syminfo.type, "futures")
-tradeQty    = isFutures ? math.max(1, math.round(rawQty)) : math.max(0.0, rawQty)
+// ⚠️ 數量只要算出 na，下面「confirmUp and ... and tradeQty > 0」就整條變成 false，
+//    訊號照出但永遠不下單，而且不會報錯。syminfo.pointvalue 在連續期貨合約與部分
+//    CFD／指數上會是 na，所以每一步都要防呆，最後再兜一層底。
+riskPerUnit = slATR * atr
+pointValue  = nz(syminfo.pointvalue, 1.0)
+sizeBad     = sizeMode == "固定數量" or na(riskPerUnit) or riskPerUnit <= 0 or pointValue <= 0
+rawQty      = sizeBad ? fixedQty : strategy.equity * riskPct / 100.0 / (riskPerUnit * pointValue)
+isFutures   = syminfo.type == "futures"
+qtyRounded  = isFutures ? math.max(1.0, math.round(rawQty)) : rawQty
+tradeQty    = na(qtyRounded) or qtyRounded <= 0 ? math.max(fixedQty, isFutures ? 1.0 : 0.01) : qtyRounded
 
 allowLong  = tradeDir != "只做空"
 allowShort = tradeDir != "只做多"
@@ -636,7 +640,8 @@ if showDiag and barstate.islast
 
     dgK(3, "③ 每單數量 qty")
     dgV(3, str.tostring(tradeQty, "#.##") + (isFutures ? " 口" : " 單位") +
-         "　權益 " + str.tostring(strategy.equity, "#"), tradeQty > 0 ? panelTxt : colDn)
+         "　pv=" + str.tostring(pointValue, "#.##") + (sizeBad ? "（固定）" : ""),
+         na(tradeQty) or tradeQty <= 0 ? colDn : panelTxt)
 
     dgK(4, "④ 目前部位")
     dgV(4, strategy.position_size == 0 ? "空手" :
