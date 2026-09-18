@@ -38,6 +38,7 @@ const string G_R = "② 橫行判定（僅「自訂」模式生效）"
 const string G_B = "③ 突破判定"
 const string G_H = "④ 高週期過濾"
 const string G_S = "⑤ 時段過濾（美股）"
+const string G_PB = "⑧ 軌道回檔量測"
 const string G_D = "⑥ 顯示"
 
 // ── ⓪ 週期預設 ───────────────────────────────────────────────────────────────
@@ -98,6 +99,16 @@ sessStr = input.session("0945-1545", "自訂時段",   group = G_S,
      tooltip = "只有「自訂時段」模式會用到。美股避開開收盤各 15 分鐘＝0945-1545（紐約時間）。")
 sessTZ  = input.string("America/New_York", "時區", group = G_S,
      options = ["America/New_York", "America/Chicago", "Asia/Hong_Kong", "Asia/Tokyo", "Europe/London", "UTC"])
+
+// ── ⑧ 軌道回檔量測 ───────────────────────────────────────────────────────────
+// 突破進場的逆向成本是結構性的（進在延伸位置）。這一組量另一種進場點：
+// 已在乾淨軌道中 → 等回檔到通道緣 → 從那裡算 MFE/MAE，與突破進場對照。
+pbOn    = input.bool(true, "啟用軌道回檔量測", group = G_PB)
+pbDepth = input.float(1.0, "回檔深度（1 = 通道緣、0.5 = 中軌與通道緣之間）",
+     minval = 0.2, maxval = 1.5, step = 0.1, group = G_PB,
+     tooltip = "數字越小＝越早進場（回檔較淺），訊號多但逆向風險大；越大＝等更深的回檔，訊號少但進場價好。")
+pbR2    = input.float(0.0, "額外 R² 門檻（0 = 沿用軌道判定）", minval = 0.0, maxval = 1.0, step = 0.05,
+     group = G_PB, tooltip = "只在特別乾淨的軌道才量。例如設 0.7，只有 R² ≥ 0.7 的軌道才計入。")
 
 // ── ⑥ 顯示：顏色與字體 ───────────────────────────────────────────────────────
 showBg    = input.bool(true, "狀態背景色", group = G_D, inline = "bg")
@@ -286,6 +297,24 @@ var int   excBar = na
 var int   excDir = 0
 var bool  excOpen = false
 
+var bool  pbArmed  = true
+var bool  pbOpen   = false
+var int   pbBar    = na
+var float pbPx     = na
+var float pbAtr    = na
+var int   pbDir    = 0
+var float pbMFE    = 0.0
+var float pbMAE    = 0.0
+var float sumPbF   = 0.0
+var float sumPbA   = 0.0
+var int   nPb      = 0
+var float sumPbFUp = 0.0
+var float sumPbAUp = 0.0
+var int   nPbUp    = 0
+var float sumPbFDn = 0.0
+var float sumPbADn = 0.0
+var int   nPbDn    = 0
+
 var int cntUp   = 0
 var int cntDn   = 0
 var int cntFail = 0
@@ -298,6 +327,7 @@ var int barsNt  = 0
 bool confirmUp = false
 bool confirmDn = false
 bool failMark  = false
+bool pbMark    = false
 
 if confirmed
     // 狀態佔比統計（門檻是否合理的第一個檢查點）
@@ -418,6 +448,60 @@ if confirmed
             nRt      += 1
             rtOpen   := false
 
+    // ── 軌道回檔：在乾淨軌道中等價格退回通道緣，從那個價位起算 ──
+    pbLvlUp = lrVal - pbDepth * chanMult * resid
+    pbLvlDn = lrVal + pbDepth * chanMult * resid
+    pbPass  = pbOn and (pbR2 <= 0 or r2 >= pbR2)
+
+    // 重新武裝：價格回到中軌另一側，才算下一段回檔（避免沿著通道緣連續觸發）
+    if st != 1 and st != -1
+        pbArmed := true
+    else if st == 1 and close > lrVal
+        pbArmed := true
+    else if st == -1 and close < lrVal
+        pbArmed := true
+
+    if pbPass and pbArmed and not pbOpen and atr > 0
+        if st == 1 and low <= pbLvlUp
+            pbOpen  := true
+            pbDir   := 1
+            pbPx    := pbLvlUp
+            pbAtr   := atr
+            pbBar   := bar_index
+            pbMFE   := 0.0
+            pbMAE   := 0.0
+            pbArmed := false
+            pbMark  := true
+        else if st == -1 and high >= pbLvlDn
+            pbOpen  := true
+            pbDir   := -1
+            pbPx    := pbLvlDn
+            pbAtr   := atr
+            pbBar   := bar_index
+            pbMFE   := 0.0
+            pbMAE   := 0.0
+            pbArmed := false
+            pbMark  := true
+
+    if pbOpen and not na(pbBar) and not na(pbAtr) and pbAtr > 0 and bar_index > pbBar
+        pFav = pbDir == 1 ? (high - pbPx) / pbAtr : (pbPx - low) / pbAtr
+        pAdv = pbDir == 1 ? (pbPx - low) / pbAtr : (high - pbPx) / pbAtr
+        pbMFE := math.max(pbMFE, pFav)
+        pbMAE := math.max(pbMAE, pAdv)
+        if bar_index - pbBar >= failBars
+            sumPbF += pbMFE
+            sumPbA += pbMAE
+            nPb    += 1
+            if pbDir == 1
+                sumPbFUp += pbMFE
+                sumPbAUp += pbMAE
+                nPbUp    += 1
+            else
+                sumPbFDn += pbMFE
+                sumPbADn += pbMAE
+                nPbDn    += 1
+            pbOpen := false
+
 // =============================================================================
 // 畫圖
 // =============================================================================
@@ -450,6 +534,12 @@ if showMarks and confirmDn
          color = color.new(colDn, 0), textcolor = brkTxtCol, size = brkSize)
 plotshape(showMarks and failMark,  "假突破",   shape.xcross,       location.top,
      color.new(colFail, 0), size = size.tiny)
+
+// ── 軌道回檔進場點 ───────────────────────────────────────────────────────────
+plotshape(pbMark and st ==  1, "軌道回檔 ↑", shape.circle, location.belowbar,
+     color.new(colUp, 0), size = size.small)
+plotshape(pbMark and st == -1, "軌道回檔 ↓", shape.circle, location.abovebar,
+     color.new(colDn, 0), size = size.small)
 
 // ── 順勢 K 線箭頭：上升軌道的陽線 ↑、下降軌道的陰線 ↓ ────────────────────────
 barRange = high - low
@@ -492,7 +582,7 @@ posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? pos
           panelPos == "左中" ? position.middle_left : position.bottom_left
 dimTxt  = color.new(panelTxt, 45)
 
-var table tb = table.new(posC, 2, 17, border_width = 1)
+var table tb = table.new(posC, 2, 20, border_width = 1)
 
 // 左欄（欄位名稱）與右欄（數值）的統一樣式
 cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
@@ -589,8 +679,26 @@ if showPanel and barstate.islast
          str.tostring(nRtSeen) + ")　等 " + str.tostring(retestBars) + " 根",
          na(rtPct) ? dimTxt : panelTxt)
 
-    cellK(16, "參數預設")
-    cellV(16, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
+    avgPbF = nPb > 0 ? sumPbF / nPb : na
+    avgPbA = nPb > 0 ? sumPbA / nPb : na
+    rrPb   = nPb > 0 and avgPbA > 0 ? avgPbF / avgPbA : na
+    rrPbUp = nPbUp > 0 and sumPbAUp > 0 ? sumPbFUp / sumPbAUp : na
+    rrPbDn = nPbDn > 0 and sumPbADn > 0 ? sumPbFDn / sumPbADn : na
+
+    cellK(16, "軌道回檔進場")
+    cellV(16, nPb > 0 ? "+" + str.tostring(avgPbF, "#.##") + " / -" + str.tostring(avgPbA, "#.##") +
+         " ATR  比 " + str.tostring(rrPb, "#.##") + "  (" + str.tostring(nPb) + ")" : "資料不足", rrCol(rrPb))
+
+    cellK(17, "　├ ↑ 多方")
+    cellV(17, nPbUp > 0 ? "+" + str.tostring(sumPbFUp / nPbUp, "#.##") + " / -" + str.tostring(sumPbAUp / nPbUp, "#.##") +
+         "  比 " + str.tostring(rrPbUp, "#.##") + "  (" + str.tostring(nPbUp) + ")" : "資料不足", rrCol(rrPbUp))
+
+    cellK(18, "　└ ↓ 空方")
+    cellV(18, nPbDn > 0 ? "+" + str.tostring(sumPbFDn / nPbDn, "#.##") + " / -" + str.tostring(sumPbADn / nPbDn, "#.##") +
+         "  比 " + str.tostring(rrPbDn, "#.##") + "  (" + str.tostring(nPbDn) + ")" : "資料不足", rrCol(rrPbDn))
+
+    cellK(19, "參數預設")
+    cellV(19, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
 
 // =============================================================================
 // 警報（TradingView 建立警報時請選 Once Per Bar Close）
