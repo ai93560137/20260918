@@ -73,6 +73,9 @@ inConfirmBars = input.int(1,      "站穩幾根才算確認",     minval = 1, ma
 useVol      = input.bool(true,  "需要量能配合",         group = G_B)
 volMult     = input.float(1.5,  "量能 ≥ 均量 ×",        minval = 1.0, step = 0.1, group = G_B)
 volLen      = input.int(20,     "均量長度",             minval = 5, group = G_B)
+retestBars  = input.int(5,      "回踩等待根數", minval = 1, group = G_B,
+     tooltip = "突破確認後，等這麼多根看價格會不會回到箱子邊緣。回到了就用該價位當『回踩進場』的假想成交價，" +
+               "重新算一次順向／逆向幅度，與追價進場做對照。等不到就算錯過。")
 failBars    = input.int(10,     "突破後追蹤根數", minval = 1, group = G_B,
      tooltip = "兩個用途：① 這幾根內收盤跌回區間 = 假突破；② 面板「突破後 N 根」的順向／逆向幅度也用這個窗口。" +
                "調長會讓假突破率上升、順逆幅度都變大。")
@@ -245,6 +248,29 @@ var float brkTop   = na
 var float brkBot   = na
 var bool  brkOpen  = false
 
+var float sumMFEUp = 0.0    // 分方向：多方追價進場
+var float sumMAEUp = 0.0
+var int   nUp      = 0
+var float sumMFEDn = 0.0    // 分方向：空方追價進場
+var float sumMAEDn = 0.0
+var int   nDn      = 0
+
+var bool  rtWait   = false  // 回踩對照組：等待回到箱子邊緣
+var int   rtWaitBar = na
+var float rtLevel  = na
+var int   rtDir    = 0
+var float rtAtr    = na
+var bool  rtOpen   = false  // 已在回踩價「進場」，追蹤中
+var int   rtBar    = na
+var float rtPx     = na
+var float rtMFE    = 0.0
+var float rtMAE    = 0.0
+var float sumRtMFE = 0.0
+var float sumRtMAE = 0.0
+var int   nRt      = 0      // 完成追蹤的回踩樣本
+var int   nRtHit   = 0      // 有回踩機會的次數
+var int   nRtSeen  = 0      // 已判定有無回踩的突破數（分母）
+
 var float sumMFE = 0.0      // 突破後順向最大幅度（ATR）累計
 var float sumMAE = 0.0      // 突破後逆向最大幅度（ATR）累計
 var int   nExc   = 0
@@ -317,6 +343,11 @@ if confirmed
         excBar  := bar_index
         curMFE  := 0.0
         curMAE  := 0.0
+        rtWait    := true                 // 開始等回踩
+        rtWaitBar := bar_index
+        rtLevel   := pendDir == 1 ? boxTop : boxBot
+        rtDir     := pendDir
+        rtAtr     := atr
         boxLive := false                  // 這個區間用掉了
         pendDir := 0
         pendCnt := 0
@@ -346,7 +377,42 @@ if confirmed
             sumMFE += curMFE
             sumMAE += curMAE
             nExc   += 1
+            if excDir == 1
+                sumMFEUp += curMFE
+                sumMAEUp += curMAE
+                nUp      += 1
+            else
+                sumMFEDn += curMFE
+                sumMAEDn += curMAE
+                nDn      += 1
             excOpen := false
+
+    // 對照組：等價格回到箱子邊緣，用該價位當假想進場價
+    if rtWait and not na(rtWaitBar) and bar_index > rtWaitBar
+        touched = rtDir == 1 ? low <= rtLevel : high >= rtLevel
+        if touched
+            rtOpen  := true
+            rtPx    := rtLevel
+            rtBar   := bar_index
+            rtMFE   := 0.0
+            rtMAE   := 0.0
+            nRtHit  += 1
+            nRtSeen += 1
+            rtWait  := false
+        else if bar_index - rtWaitBar >= retestBars
+            nRtSeen += 1                  // 等不到回踩＝錯過
+            rtWait  := false
+
+    if rtOpen and not na(rtBar) and not na(rtAtr) and rtAtr > 0 and bar_index > rtBar
+        rFav = rtDir == 1 ? (high - rtPx) / rtAtr : (rtPx - low) / rtAtr
+        rAdv = rtDir == 1 ? (rtPx - low) / rtAtr : (high - rtPx) / rtAtr
+        rtMFE := math.max(rtMFE, rFav)
+        rtMAE := math.max(rtMAE, rAdv)
+        if bar_index - rtBar >= failBars
+            sumRtMFE += rtMFE
+            sumRtMAE += rtMAE
+            nRt      += 1
+            rtOpen   := false
 
 // =============================================================================
 // 畫圖
@@ -422,13 +488,16 @@ posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? pos
           panelPos == "左中" ? position.middle_left : position.bottom_left
 dimTxt  = color.new(panelTxt, 45)
 
-var table tb = table.new(posC, 2, 14, border_width = 1)
+var table tb = table.new(posC, 2, 17, border_width = 1)
 
 // 左欄（欄位名稱）與右欄（數值）的統一樣式
 cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
      text_size = txtSize, text_halign = text.align_left)
 cellV(row, txt, col) => table.cell(tb, 1, row, txt, bgcolor = panelBg, text_color = col,
      text_size = txtSize, text_halign = text.align_right)
+
+// 順逆比的配色：≥1.5 可做、≥1.0 勉強、<1.0 不利
+rrCol(x) => na(x) ? dimTxt : x >= 1.5 ? colUp : x >= 1.0 ? colRg : colDn
 
 if showPanel and barstate.islast
     totalBars = math.max(1, barsUp + barsDn + barsRg + barsNt)
@@ -487,17 +556,37 @@ if showPanel and barstate.islast
     avgMFE = nExc > 0 ? sumMFE / nExc : na
     avgMAE = nExc > 0 ? sumMAE / nExc : na
     rr     = nExc > 0 and avgMAE > 0 ? avgMFE / avgMAE : na
+    rrUp   = nUp  > 0 and sumMAEUp > 0 ? sumMFEUp / sumMAEUp : na
+    rrDn   = nDn  > 0 and sumMAEDn > 0 ? sumMFEDn / sumMAEDn : na
+    rtF    = nRt > 0 ? sumRtMFE / nRt : na
+    rtA    = nRt > 0 ? sumRtMAE / nRt : na
+    rrRt   = nRt > 0 and rtA > 0 ? rtF / rtA : na
+    rtPct  = nRtSeen > 0 ? nRtHit * 100.0 / nRtSeen : na
 
-    cellK(11, "突破後 " + str.tostring(failBars) + " 根")
-    cellV(11, nExc > 0 ? "順向 +" + str.tostring(avgMFE, "#.##") + "  逆向 -" + str.tostring(avgMAE, "#.##") +
-         " ATR  (" + str.tostring(nExc) + ")" : "資料不足", nExc > 0 ? panelTxt : dimTxt)
+    cellK(11, "追價進場 " + str.tostring(failBars) + " 根")
+    cellV(11, nExc > 0 ? "+" + str.tostring(avgMFE, "#.##") + " / -" + str.tostring(avgMAE, "#.##") +
+         " ATR  比 " + str.tostring(rr, "#.##") + "  (" + str.tostring(nExc) + ")" : "資料不足",
+         rrCol(rr))
 
-    cellK(12, "順逆比 (MFE/MAE)")
-    cellV(12, na(rr) ? "—" : str.tostring(rr, "#.##") + (rr >= 1.5 ? "  可做" : rr >= 1.0 ? "  勉強" : "  不利"),
-         na(rr) ? dimTxt : rr >= 1.5 ? colUp : rr >= 1.0 ? colRg : colDn)
+    cellK(12, "　├ ↑ 多方")
+    cellV(12, nUp > 0 ? "+" + str.tostring(sumMFEUp / nUp, "#.##") + " / -" + str.tostring(sumMAEUp / nUp, "#.##") +
+         "  比 " + str.tostring(rrUp, "#.##") + "  (" + str.tostring(nUp) + ")" : "資料不足", rrCol(rrUp))
 
-    cellK(13, "參數預設")
-    cellV(13, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
+    cellK(13, "　└ ↓ 空方")
+    cellV(13, nDn > 0 ? "+" + str.tostring(sumMFEDn / nDn, "#.##") + " / -" + str.tostring(sumMAEDn / nDn, "#.##") +
+         "  比 " + str.tostring(rrDn, "#.##") + "  (" + str.tostring(nDn) + ")" : "資料不足", rrCol(rrDn))
+
+    cellK(14, "回踩進場")
+    cellV(14, nRt > 0 ? "+" + str.tostring(rtF, "#.##") + " / -" + str.tostring(rtA, "#.##") +
+         " ATR  比 " + str.tostring(rrRt, "#.##") + "  (" + str.tostring(nRt) + ")" : "資料不足", rrCol(rrRt))
+
+    cellK(15, "回踩機率")
+    cellV(15, na(rtPct) ? "—" : str.tostring(rtPct, "#") + "%  (" + str.tostring(nRtHit) + "/" +
+         str.tostring(nRtSeen) + ")　等 " + str.tostring(retestBars) + " 根",
+         na(rtPct) ? dimTxt : panelTxt)
+
+    cellK(16, "參數預設")
+    cellV(16, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
 
 // =============================================================================
 // 警報（TradingView 建立警報時請選 Once Per Bar Close）
