@@ -105,6 +105,10 @@ showChan  = input.bool(true, "迴歸通道",     group = G_D, inline = "d1")
 showBox   = input.bool(true, "區間邊緣",     group = G_D, inline = "d1")
 showMarks = input.bool(true, "突破標記",     group = G_D, inline = "d1")
 colFail   = input.color(#E040FB, "假突破標記顏色", group = G_D)
+brkTxtSize = input.string("large", "突破文字大小", options = ["small", "normal", "large", "huge"],
+     group = G_D, inline = "bt")
+brkTxtCol  = input.color(#0F1114, "文字色", group = G_D, inline = "bt",
+     tooltip = "文字畫在彩色標籤上，所以深色字最清楚；若把標籤底色改成深色，這裡要改成淺色。")
 
 showArrow = input.bool(true, "順勢 K 線箭頭", group = G_D, inline = "ar",
      tooltip = "上升軌道中的每根陽線（收 > 開）在下方標向上箭頭；下降軌道中的每根陰線標向下箭頭。" +
@@ -361,9 +365,19 @@ plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(colRg, 10), 1,
 plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(colRg, 10), 1, plot.style_linebr)
 
 plotshape(showMarks and confirmUp, "向上突破", shape.triangleup,   location.belowbar,
-     color.new(colUp, 0), size = size.small, text = "突破", textcolor = color.new(colUp, 0))
+     color.new(colUp, 0), size = size.small)
 plotshape(showMarks and confirmDn, "向下突破", shape.triangledown, location.abovebar,
-     color.new(colDn, 0), size = size.small, text = "跌破", textcolor = color.new(colDn, 0))
+     color.new(colDn, 0), size = size.small)
+
+// 突破文字用 label：字級與顏色都可調，深色字配彩色底最清楚
+brkSize = brkTxtSize == "small" ? size.small : brkTxtSize == "normal" ? size.normal :
+          brkTxtSize == "huge" ? size.huge : size.large
+if showMarks and confirmUp
+    label.new(bar_index, low, "突破", yloc = yloc.belowbar, style = label.style_label_up,
+         color = color.new(colUp, 0), textcolor = brkTxtCol, size = brkSize)
+if showMarks and confirmDn
+    label.new(bar_index, high, "跌破", yloc = yloc.abovebar, style = label.style_label_down,
+         color = color.new(colDn, 0), textcolor = brkTxtCol, size = brkSize)
 plotshape(showMarks and failMark,  "假突破",   shape.xcross,       location.top,
      color.new(colFail, 0), size = size.tiny)
 
