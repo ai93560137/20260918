@@ -1,6 +1,9 @@
 //@version=6
 // =============================================================================
-// 狀態判定 v1 — 橫行 / 突破 / 上升（下降）軌道
+// 智能諸葛亮 · 八陣圖 v1 — 橫行 / 突破 / 上升（下降）軌道
+//
+// 「智能諸葛亮」= 整套系統的總名；「八陣圖」= 盤勢形態辨識模組（本檔）。
+// 之後的進出場、回測、掃描模組另以「智能諸葛亮 · ○○」命名，共用同一套狀態定義。
 //
 // 目的：把「肉眼看圖」的三種判斷寫成可調門檻的數字，畫在圖上供人工校準。
 // 這支腳本只畫圖與發警報，不下單、不做回測。
@@ -17,7 +20,7 @@
 // 所有狀態機只在 K 線收盤時推進（barstate.isconfirmed），與實盤警報一致。
 // 警報請務必選「Once Per Bar Close」。
 // =============================================================================
-indicator("狀態判定 v1｜橫行 · 突破 · 軌道", "狀態 v1", overlay = true, max_labels_count = 500)
+indicator("智能諸葛亮 · 八陣圖 v1｜橫行 · 突破 · 軌道", "八陣圖 v1", overlay = true, max_labels_count = 500)
 
 const string G_T = "① 軌道（趨勢）判定"
 const string G_R = "② 橫行判定"
@@ -268,7 +271,7 @@ if showPanel and barstate.islast
     distUp    = boxLive and not na(upLevel) ? (upLevel - close) / atr : na
     distDn    = boxLive and not na(dnLevel) ? (close - dnLevel) / atr : na
 
-    table.cell(tb, 0, 0, "狀態判定 v1", bgcolor = color.new(color.blue, 80), text_color = color.white)
+    table.cell(tb, 0, 0, "八陣圖 v1", bgcolor = color.new(color.blue, 80), text_color = color.white)
     table.cell(tb, 1, 0, syminfo.ticker + " · " + timeframe.period,
          bgcolor = color.new(color.blue, 80), text_color = color.white)
 
