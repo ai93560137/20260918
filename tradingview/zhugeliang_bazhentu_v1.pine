@@ -16,40 +16,58 @@
 // 突破 = 橫行區間成立 → 收盤越過區間邊緣 + ATR 緩衝 → 站穩 N 根確認
 // 假突破 = 確認後 M 根內收盤又跌回區間內（事後標記，用來算準確率）
 //
+// 週期預設（「跟圖表設定」= 依當前圖表週期自動挑一組）
+//   週期    迴歸長度  R²    斜率   區間長度  區間上限  最少根數  區間失效  突破緩衝
+//   日線      40     0.50  0.030    12      2.5 ATR     6        15      0.20 ATR
+//   4 小時    45     0.52  0.028    14      2.8 ATR     7        20      0.22 ATR
+//   1 小時    50     0.55  0.025    16      3.0 ATR     8        25      0.25 ATR
+//   15 分鐘   60     0.55  0.025    20      3.0 ATR     8        30      0.25 ATR
+//   5 分鐘    60     0.60  0.030    20      3.5 ATR     8        40      0.30 ATR
+// 選「自訂」才會改用設定頁 ①②③ 的數值。
+//
 // 防未來函數：高週期一律取「已收盤」的值（lookahead_on + [1] 的標準寫法）；
 // 所有狀態機只在 K 線收盤時推進（barstate.isconfirmed），與實盤警報一致。
 // 警報請務必選「Once Per Bar Close」。
 // =============================================================================
 indicator("智能諸葛亮 · 八陣圖 v1｜橫行 · 突破 · 軌道", "八陣圖 v1", overlay = true, max_labels_count = 500)
 
-const string G_T = "① 軌道（趨勢）判定"
-const string G_R = "② 橫行判定"
+const string G_P = "⓪ 週期預設"
+const string G_T = "① 軌道（趨勢）判定（僅「自訂」模式生效）"
+const string G_R = "② 橫行判定（僅「自訂」模式生效）"
 const string G_B = "③ 突破判定"
 const string G_H = "④ 高週期過濾"
 const string G_S = "⑤ 時段過濾（美股）"
 const string G_D = "⑥ 顯示"
 
+// ── ⓪ 週期預設 ───────────────────────────────────────────────────────────────
+// 不同週期的雜訊尺度差很多，同一組門檻搬過去就會失準。
+// 「跟圖表設定」會依當前圖表週期自動挑一組；要自己調就選「自訂」。
+preset = input.string("跟圖表設定", "參數預設", group = G_P,
+     options = ["跟圖表設定", "日線", "4 小時", "1 小時", "15 分鐘", "5 分鐘", "自訂"],
+     tooltip = "選「自訂」才會使用下方 ①② 兩組與「突破緩衝」的數值；其餘選項一律套用內建預設，" +
+               "改下方數字不會有反應。高週期方向過濾也會自動套用該高週期對應的那一組。")
+
 // ── ① 軌道 ───────────────────────────────────────────────────────────────────
-lenTrend = input.int(60,    "迴歸長度（根）",          minval = 10, group = G_T,
+inLenTrend = input.int(60,    "迴歸長度（根）",          minval = 10, group = G_T,
      tooltip = "用最近這麼多根做線性迴歸。60 根 ≈ 5 分鐘圖的 5 小時。")
-r2Min    = input.float(0.60, "R² 門檻（軌道乾淨度）",   minval = 0.0, maxval = 1.0, step = 0.05, group = G_T,
+inR2Min    = input.float(0.60, "R² 門檻（軌道乾淨度）",   minval = 0.0, maxval = 1.0, step = 0.05, group = G_T,
      tooltip = "R² 就是肉眼講的『這條軌道漂不漂亮』。0.6 起跳算明顯，0.8 以上是教科書級。")
-slopeMin = input.float(0.03, "斜率門檻（ATR/根）",      minval = 0.0, step = 0.01, group = G_T,
+inSlopeMin = input.float(0.03, "斜率門檻（ATR/根）",      minval = 0.0, step = 0.01, group = G_T,
      tooltip = "每根 K 線平均走多少個 ATR 才算有方向。用 ATR 標準化，換標的不必重調。")
 chanMult = input.float(2.0,  "通道寬度（殘差 σ 倍數）", minval = 0.5, step = 0.5, group = G_T)
 atrLen   = input.int(14,     "ATR 長度",                minval = 2,  group = G_T)
 
 // ── ② 橫行 ───────────────────────────────────────────────────────────────────
-lenRange     = input.int(20,   "區間觀察長度（根）",        minval = 5, group = G_R)
-rangeMaxATR  = input.float(4.0, "區間高度上限（ATR 倍數）", minval = 0.5, step = 0.5, group = G_R,
+inLenRange     = input.int(20,   "區間觀察長度（根）",        minval = 5, group = G_R)
+inRangeMaxATR  = input.float(4.0, "區間高度上限（ATR 倍數）", minval = 0.5, step = 0.5, group = G_R,
      tooltip = "最近 N 根的最高減最低，若小於 ATR × 此值，視為被壓縮的橫行。")
-rangeMinBars = input.int(8,    "至少維持幾根才算有效區間",  minval = 1, group = G_R)
-boxMaxAge    = input.int(50,   "區間失效根數",              minval = 5, group = G_R,
+inRangeMinBars = input.int(8,    "至少維持幾根才算有效區間",  minval = 1, group = G_R)
+inBoxMaxAge    = input.int(50,   "區間失效根數",              minval = 5, group = G_R,
      tooltip = "橫行結束後，這個區間還能當突破基準多久。超過就作廢。")
 
 // ── ③ 突破 ───────────────────────────────────────────────────────────────────
-bufATR      = input.float(0.25, "突破緩衝（ATR 倍數）", minval = 0.0, step = 0.05, group = G_B,
-     tooltip = "收盤要越過區間邊緣再加這麼多 ATR 才算數，過濾貼邊的假動作。")
+inBufATR      = input.float(0.25, "突破緩衝（ATR 倍數）", minval = 0.0, step = 0.05, group = G_B,
+     tooltip = "收盤要越過區間邊緣再加這麼多 ATR 才算數，過濾貼邊的假動作。僅「自訂」模式生效。")
 confirmBars = input.int(1,      "站穩幾根才算確認",     minval = 1, maxval = 5, group = G_B)
 useVol      = input.bool(true,  "需要量能配合",         group = G_B)
 volMult     = input.float(1.5,  "量能 ≥ 均量 ×",        minval = 1.0, step = 0.1, group = G_B)
@@ -105,6 +123,30 @@ panelSize = input.string("normal", "字體大小", options = ["tiny", "small", "
      tooltip = "淺色主題請把「面板文字」改成深色（例如 #1A1A1A）、「面板背景」改成淺色。")
 
 // =============================================================================
+// 週期預設 → 實際使用的門檻
+// 這一段在 request.security 內會用「高週期自己的週期」重算，
+// 所以高週期方向判定也會自動套用該週期對應的那一組門檻。
+// =============================================================================
+secs = timeframe.in_seconds(timeframe.period)
+
+autoKey = secs >= 86400 ? "D" : secs >= 14400 ? "H4" : secs >= 3600 ? "H1" : secs >= 900 ? "M15" : "M5"
+pk      = preset == "跟圖表設定" ? autoKey : preset == "日線" ? "D" : preset == "4 小時" ? "H4" :
+          preset == "1 小時" ? "H1" : preset == "15 分鐘" ? "M15" : preset == "5 分鐘" ? "M5" : "CUSTOM"
+
+//                            日線    4 小時   1 小時   15 分    5 分
+lenTrend     = pk == "CUSTOM" ? inLenTrend     : pk == "D" ? 40   : pk == "H4" ? 45   : pk == "H1" ? 50   : 60
+r2Min        = pk == "CUSTOM" ? inR2Min        : pk == "D" ? 0.50 : pk == "H4" ? 0.52 : pk == "M5" ? 0.60 : 0.55
+slopeMin     = pk == "CUSTOM" ? inSlopeMin     : pk == "D" ? 0.030 : pk == "H4" ? 0.028 : pk == "M5" ? 0.030 : 0.025
+lenRange     = pk == "CUSTOM" ? inLenRange     : pk == "D" ? 12   : pk == "H4" ? 14   : pk == "H1" ? 16   : 20
+rangeMaxATR  = pk == "CUSTOM" ? inRangeMaxATR  : pk == "D" ? 2.5  : pk == "H4" ? 2.8  : pk == "M5" ? 3.5  : 3.0
+rangeMinBars = pk == "CUSTOM" ? inRangeMinBars : pk == "D" ? 6    : pk == "H4" ? 7    : 8
+boxMaxAge    = pk == "CUSTOM" ? inBoxMaxAge    : pk == "D" ? 15   : pk == "H4" ? 20   : pk == "H1" ? 25   : pk == "M15" ? 30 : 40
+bufATR       = pk == "CUSTOM" ? inBufATR       : pk == "D" ? 0.20 : pk == "H4" ? 0.22 : pk == "M5" ? 0.30 : 0.25
+
+pkName = pk == "D" ? "日線" : pk == "H4" ? "4 小時" : pk == "H1" ? "1 小時" :
+         pk == "M15" ? "15 分鐘" : pk == "M5" ? "5 分鐘" : "自訂"
+
+// =============================================================================
 // 核心：狀態計算（同一份程式碼給本週期與高週期共用）
 // =============================================================================
 f_state() =>
@@ -132,7 +174,6 @@ f_htf() =>
     [_st, _sN, _r2, _w, _hi, _lo, _lr, _atr, _rd] = f_state()
     [_st[1], _sN[1], _r2[1]]
 
-secs   = timeframe.in_seconds(timeframe.period)
 autoTF = secs <= 300 ? "60" : secs <= 900 ? "240" : secs <= 3600 ? "D" : secs <= 14400 ? "W" : "M"
 htfTF  = htfSel == "自動" ? autoTF : htfSel
 
@@ -327,7 +368,7 @@ posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? pos
           panelPos == "左中" ? position.middle_left : position.bottom_left
 dimTxt  = color.new(panelTxt, 45)
 
-var table tb = table.new(posC, 2, 11, border_width = 1)
+var table tb = table.new(posC, 2, 12, border_width = 1)
 
 // 左欄（欄位名稱）與右欄（數值）的統一樣式
 cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
@@ -388,6 +429,9 @@ if showPanel and barstate.islast
     cellV(10, resolved > 0 ? str.tostring(failPct, "#") + "%  (" + str.tostring(cntFail) + "/" +
          str.tostring(resolved) + ")" : "資料不足",
          na(failPct) ? dimTxt : failPct > 50 ? colDn : colUp)
+
+    cellK(11, "參數預設")
+    cellV(11, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
 
 // =============================================================================
 // 警報（TradingView 建立警報時請選 Once Per Bar Close）
