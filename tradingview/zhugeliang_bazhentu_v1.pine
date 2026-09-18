@@ -81,7 +81,11 @@ failBars    = input.int(10,     "突破後追蹤根數", minval = 1, group = G_B
                "調長會讓假突破率上升、順逆幅度都變大。")
 
 // ── ④ 高週期 ─────────────────────────────────────────────────────────────────
-useHTF = input.bool(true,   "高週期方向必須一致", group = G_H)
+htfMode = input.string("必須同向", "高週期過濾", group = G_H,
+     options = ["必須同向", "只擋反向", "不過濾"],
+     tooltip = "必須同向＝高週期也要是同方向軌道才發訊號（最嚴，高週期處於橫行／過渡時完全沒訊號）。" +
+               "只擋反向＝只有高週期是反方向軌道才擋，橫行與過渡照發（訊號量通常多一倍）。" +
+               "不過濾＝完全不看高週期。")
 htfSel = input.string("自動", "高週期",            group = G_H,
      options = ["自動", "5", "15", "30", "60", "120", "240", "D", "W"])
 
@@ -195,8 +199,8 @@ htfTF  = htfSel == "自動" ? autoTF : htfSel
      gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_on)
 
 htfTooSmall = timeframe.in_seconds(htfTF) < secs
-htfUpOK = not useHTF or htfSt ==  1
-htfDnOK = not useHTF or htfSt == -1
+htfUpOK = htfMode == "不過濾" ? true : htfMode == "只擋反向" ? htfSt != -1 : htfSt ==  1
+htfDnOK = htfMode == "不過濾" ? true : htfMode == "只擋反向" ? htfSt !=  1 : htfSt == -1
 
 // =============================================================================
 // 橫行區間鎖存：成立時跟著更新，結束後凍結，當作突破的基準線
@@ -514,10 +518,10 @@ if showPanel and barstate.islast
     cellK(1, "本週期")
     cellV(1, stName(st), stCol(st))
 
-    cellK(2, "高週期 " + htfTF + (htfTooSmall ? " ⚠" : ""))
-    cellV(2, useHTF ? stName(htfSt) + "  R²=" + str.tostring(htfR2, "#.##") +
-         "  斜率=" + str.tostring(htfSlope, "#.###") : "（未啟用）",
-         useHTF ? stCol(htfSt) : dimTxt)
+    cellK(2, "高週期 " + htfTF + "｜" + htfMode + (htfTooSmall ? " ⚠" : ""))
+    cellV(2, htfMode == "不過濾" ? "（未啟用）" : stName(htfSt) + "  R²=" + str.tostring(htfR2, "#.##") +
+         "  斜率=" + str.tostring(htfSlope, "#.###"),
+         htfMode == "不過濾" ? dimTxt : stCol(htfSt))
 
     cellK(3, "斜率 ATR/根")
     cellV(3, str.tostring(slopeN, "#.###") + "  (門檻 ±" + str.tostring(slopeMin, "#.##") + ")",
