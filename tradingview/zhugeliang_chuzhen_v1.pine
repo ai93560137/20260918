@@ -35,7 +35,10 @@ strategy("智能諸葛亮 · 出陣 v1｜八陣圖策略", "出陣 v1", overlay 
      default_qty_type = strategy.fixed, default_qty_value = 1,
      calc_on_every_tick = false, process_orders_on_close = true,
      slippage = 2, commission_type = strategy.commission.cash_per_contract, commission_value = 2.0,
-     max_labels_count = 500)
+     margin_long = 0, margin_short = 0, max_labels_count = 500)
+// ⚠️ margin_long/short = 0：不檢查保證金。期貨一口名目價值動輒數十萬，
+//    若沿用預設保證金要求，10 萬資金的帳戶會讓「每一張單都被靜默拒絕」，
+//    回測結果就是 0 筆交易且不報錯。風險改由腳本的部位計算控制。
 // ⚠️ 點差／手續費／滑價預設是期貨的概念（每口 $2 + 2 tick）。
 //    換成股票或 CFD 請到「屬性」分頁改，否則回測結果會失真。
 
@@ -531,10 +534,12 @@ flat       = strategy.position_size == 0
 var int   pendSince   = na
 var int   pendDirEntry = 0
 var float pendLevel   = na
+var int   nEntryCalls = 0        // 呼叫過幾次 strategy.entry（用來分辨「沒下單」還是「下了沒成交」）
 
 if confirmUp and allowLong and flat and tradeQty > 0
     if entryMode == "追價"
         strategy.entry("多", strategy.long, qty = tradeQty)
+        nEntryCalls += 1
     else
         pendSince    := bar_index
         pendDirEntry := 1
@@ -543,6 +548,7 @@ if confirmUp and allowLong and flat and tradeQty > 0
 if confirmDn and allowShort and flat and tradeQty > 0
     if entryMode == "追價"
         strategy.entry("空", strategy.short, qty = tradeQty)
+        nEntryCalls += 1
     else
         pendSince    := bar_index
         pendDirEntry := -1
@@ -551,6 +557,7 @@ if confirmDn and allowShort and flat and tradeQty > 0
 // 掛單期間每根更新限價單；等不到回踩就取消
 if not na(pendSince) and flat and not na(pendLevel)
     if bar_index > pendSince and bar_index - pendSince <= rtWaitBars
+        nEntryCalls += 1
         if pendDirEntry == 1
             strategy.entry("多", strategy.long, qty = tradeQty, limit = pendLevel)
         else
@@ -634,9 +641,9 @@ if showDiag and barstate.islast
     dgV(1, "↑" + str.tostring(cntUp) + "  ↓" + str.tostring(cntDn) + "  共 " + str.tostring(sigTotal),
          sigTotal > 0 ? colUp : colDn)
 
-    dgK(2, "② 回測成交筆數")
-    dgV(2, str.tostring(doneTr) + " 筆（平倉 " + str.tostring(strategy.closedtrades) + "）",
-         doneTr > 0 ? colUp : colDn)
+    dgK(2, "② 下單呼叫 / 成交")
+    dgV(2, str.tostring(nEntryCalls) + " 次 → " + str.tostring(doneTr) + " 筆成交",
+         doneTr > 0 ? colUp : nEntryCalls > 0 ? colRg : colDn)
 
     dgK(3, "③ 每單數量 qty")
     dgV(3, str.tostring(tradeQty, "#.##") + (isFutures ? " 口" : " 單位") +
