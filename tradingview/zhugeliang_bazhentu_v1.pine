@@ -89,6 +89,11 @@ arrowSize = input.string("tiny", "大小", options = ["tiny", "small", "normal"]
 arrowBody = input.float(0.0, "實體佔全長 ≥", minval = 0.0, maxval = 0.9, step = 0.05, group = G_D,
      tooltip = "0 = 所有同向 K 線都標。調高可只標實體夠長的 K 線（例如 0.5 = 實體至少佔整根的一半），畫面比較乾淨。")
 
+showRangeX = input.bool(true, "橫行 K 線標記 ✗", group = G_D, inline = "rx",
+     tooltip = "橫行狀態的每一根 K 線下方畫一個 ✗，代表這一段不該做方向單。範圍與灰色背景完全一致。")
+rangeXSize = input.string("tiny", "大小", options = ["tiny", "small", "normal"], group = G_D, inline = "rx")
+colRangeX  = input.color(#FF3B30, "顏色", group = G_D, inline = "rx")
+
 showPanel = input.bool(true, "狀態面板", group = G_D, inline = "p0")
 panelPos  = input.string("右上", "位置", group = G_D, inline = "p0",
      options = ["右上", "右中", "右下", "左上", "左中", "左下"])
@@ -290,6 +295,11 @@ arrowUp  = showArrow and st ==  1 and close > open and bodyOK
 arrowDn  = showArrow and st == -1 and close < open and bodyOK
 plotshape(arrowUp, "順勢陽線 ↑", shape.arrowup,   location.belowbar, color.new(colUp, 0), size = arwSize)
 plotshape(arrowDn, "順勢陰線 ↓", shape.arrowdown, location.abovebar, color.new(colDn, 0), size = arwSize)
+
+// ── 橫行標記：每根橫行 K 線下方一個 ✗（此處不做方向單） ──────────────────────
+rxSize = rangeXSize == "small" ? size.small : rangeXSize == "normal" ? size.normal : size.tiny
+plotshape(showRangeX and st == 0, "橫行 ✗", shape.xcross, location.belowbar,
+     color.new(colRangeX, 0), size = rxSize)
 
 // ── 狀態面板 ─────────────────────────────────────────────────────────────────
 stName(v) => v == 1 ? "上升軌道 ▲" : v == -1 ? "下降軌道 ▼" : v == 0 ? "橫行 ▬" : "過渡 ～"
