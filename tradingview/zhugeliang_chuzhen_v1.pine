@@ -529,6 +529,21 @@ allowLong  = tradeDir != "只做空"
 allowShort = tradeDir != "只做多"
 flat       = strategy.position_size == 0
 
+// ── 軌道回檔：在乾淨軌道中，於通道緣掛限價單等回檔 ───────────────────────────
+// 限價單在價格碰到之前就掛著，成交價就是掛單價，沒有前視偏差。
+// 重新武裝：進場後要等價格回到中軌另一側，才會等下一段回檔。
+var bool pbArmed = true
+pbLvlUp = lrVal - pbDepth * chanMult * resid
+pbLvlDn = lrVal + pbDepth * chanMult * resid
+
+if confirmed
+    if st != 1 and st != -1
+        pbArmed := true
+    else if st == 1 and close > lrVal
+        pbArmed := true
+    else if st == -1 and close < lrVal
+        pbArmed := true
+
 // ── 進場 ─────────────────────────────────────────────────────────────────────
 // 追價：突破確認當根收盤市價進場。
 // 等回踩：限價單從「下一根」才開始掛 —— 突破當根的低點是突破前形成的，
