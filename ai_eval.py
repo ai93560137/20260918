@@ -516,7 +516,8 @@ def row_key(row, index):
     return row["ticket"] or f"idx-{index}-{int(row['entry_ts'])}"
 
 
-def score_rows(m, rows, backend, rules_text, cache, out_path, score_from=0, verbose=False):
+def score_rows(m, rows, backend, rules_text, cache, out_path, score_from=0, verbose=False,
+               args_currency="HKD"):
     """rows 一律傳「完整」資料集，score_from 之後的才評分。
 
     --limit 只縮評分範圍、不縮 few-shot 歷史池：否則被限制掉的早期訊號
@@ -536,11 +537,16 @@ def score_rows(m, rows, backend, rules_text, cache, out_path, score_from=0, verb
             if replay:
                 recorded = row.get("recorded")
                 if isinstance(recorded, dict) and recorded.get("mode") != "bypass":
-                    results.append({**row, "key": key, "approved": bool(recorded.get("approved")),
-                                    "reason": str(recorded.get("reason") or ""), "error": False})
+                    entry = {**row, "key": key, "approved": bool(recorded.get("approved")),
+                             "reason": str(recorded.get("reason") or ""), "error": False}
                 else:
-                    results.append({**row, "key": key, "approved": None,
-                                    "reason": "此列沒有影子模式的判斷紀錄", "error": True})
+                    entry = {**row, "key": key, "approved": None,
+                             "reason": "此列沒有影子模式的判斷紀錄", "error": True}
+                results.append(entry)
+                if verbose:
+                    mark = "⚠️" if entry["error"] else ("✅" if entry["approved"] else "❌")
+                    print(f"  {mark} [{index + 1}/{len(rows)}] {m.format_signal_meta(row['meta'])[:60]} "
+                          f"→ 實際 {row['profit']:+.2f} {args_currency} | {entry['reason'][:60]}", flush=True)
                 continue
 
             if key in cache:
@@ -572,7 +578,7 @@ def score_rows(m, rows, backend, rules_text, cache, out_path, score_from=0, verb
             if verbose:
                 mark = "⚠️" if error else ("✅" if approved else "❌")
                 print(f"  {mark} [{index + 1}/{len(rows)}] {m.format_signal_meta(row['meta'])[:60]} "
-                      f"→ 實際 {row['profit']:+.2f} | {reason[:60]}", flush=True)
+                      f"→ 實際 {row['profit']:+.2f} {args_currency} | {reason[:60]}", flush=True)
             elif (index - score_from + 1) % 25 == 0:
                 print(f"  …已評分 {index - score_from + 1}/{len(targets)}", flush=True)
     finally:
@@ -620,15 +626,19 @@ def report(results, args):
     pass_win = bucket(approved, True)    # AI 准 × 實際賺 → 正確放行
     pass_loss = bucket(approved, False)  # AI 准 × 實際虧 → 漏放
 
+    # 金額一律是「帳戶幣別」——MT5 的 deal profit 就是用帳戶幣別結算的，
+    # 本帳戶為港元。獲利因子與各項百分比都是比值，幣別會相消，不受影響。
+    cur = args.currency
+
     print(f"\n【混淆矩陣】  拒絕率 {len(rejected) / len(scored) * 100:.1f}%")
-    print(f"  ✅ 正確攔截（拒×虧）  {len(hit):4d} 筆   避開虧損 {-sum(r['profit'] for r in hit):10.2f}")
-    print(f"  ❌ 誤殺（拒×賺）      {len(miss_kill):4d} 筆   放棄獲利 {sum(r['profit'] for r in miss_kill):10.2f}")
+    print(f"  ✅ 正確攔截（拒×虧）  {len(hit):4d} 筆   避開虧損 {-sum(r['profit'] for r in hit):10.2f} {cur}")
+    print(f"  ❌ 誤殺（拒×賺）      {len(miss_kill):4d} 筆   放棄獲利 {sum(r['profit'] for r in miss_kill):10.2f} {cur}")
     print(f"  ⬜ 正確放行（准×賺）  {len(pass_win):4d} 筆")
     print(f"  ⬜ 漏放（准×虧）      {len(pass_loss):4d} 筆")
 
     # --- 頭號指標：攔掉的單總共是賺是賠 -----------------------------------
     rejected_pnl = sum(r["profit"] for r in rejected)
-    print(f"\n【頭號指標】AI 攔掉的 {len(rejected)} 筆，實際結算合計 {rejected_pnl:+.2f}")
+    print(f"\n【頭號指標】AI 攔掉的 {len(rejected)} 筆，實際結算合計 {rejected_pnl:+.2f} {cur}")
     if rejected_pnl > 0:
         print("  🔴 這些單原本是賺錢的 → AI 覆核正在虧你的錢。")
     elif rejected_pnl < 0:
@@ -643,6 +653,7 @@ def report(results, args):
     if pf_all not in (0.0, float("inf")) and pf_approved != float("inf"):
         delta = f"{(pf_approved - pf_all) / pf_all * 100:+.1f}%"
     print(f"\n【獲利因子】全體 {fmt_pf(pf_all)} → AI 放行後 {fmt_pf(pf_approved)}  ({delta})")
+    print("  （獲利因子是毛利÷毛損的比值，幣別相消，不受帳戶用港元影響）")
 
     # --- 誤殺佔毛利比重：對照 PF 1.15 的 13% 生死線 -----------------------
     gross_profit = sum(r["profit"] for r in scored if r["profit"] > 0)
@@ -651,7 +662,7 @@ def report(results, args):
         share = killed / gross_profit * 100
         # PF 1.15 代表毛利/毛損=115/100，淨利 15；砍掉 15/115≈13% 的毛利就歸零。
         breakeven = (1 - 1 / pf_all) * 100 if pf_all > 1 else 0.0
-        print(f"\n【誤殺佔毛利】{killed:.2f} / {gross_profit:.2f} = {share:.1f}%")
+        print(f"\n【誤殺佔毛利】{killed:.2f} / {gross_profit:.2f} {cur} = {share:.1f}%")
         print(f"  以全體 PF {fmt_pf(pf_all)} 計算，砍掉 {breakeven:.1f}% 的毛利就會讓 PF 掉到 1.00。")
         if pf_all > 1 and share >= breakeven:
             print("  🔴 誤殺已經超過生死線——這道關卡正在吃掉整個優勢。")
@@ -680,6 +691,9 @@ def main():
     parser.add_argument("--model", help="模型 ID（gemini 預設 gemini-2.5-flash；claude 預設 claude-opus-5）")
     parser.add_argument("--limit", type=int, help="只評分最近 N 筆")
     parser.add_argument("--out", help="verdict 快取檔（可中斷續跑，避免重複付費）")
+    parser.add_argument("--currency", default="HKD",
+                        help="帳戶幣別，只用於報表標示（MT5 的 profit 就是用帳戶幣別結算）。"
+                             "對齊 main.py 的 ACCOUNT_CURRENCY 預設值 HKD")
     parser.add_argument("--verbose", action="store_true", help="逐筆列印")
     parser.add_argument("--self-test", action="store_true",
                         help="只驗證 look-ahead 防護，不評分、不打 API")
@@ -745,7 +759,7 @@ def main():
           + (f"（{backend.model}）" if hasattr(backend, "model") else "") + "\n")
 
     results = score_rows(m, rows, backend, rules_text, cache, args.out,
-                         score_from=score_from, verbose=args.verbose)
+                         score_from=score_from, verbose=args.verbose, args_currency=args.currency)
     report(results, args)
     return 0
 
