@@ -80,6 +80,53 @@ def attach_reviewer(m, backend, rules_text, few_shot_getter):
 
 
 # =============================================================================
+# 1b. 搶救真的 google 套件
+#     install_stubs() 會把 google.* 換成假模組——main.py import 時需要這些假貨，
+#     但真的要打 Vertex（gemini 後端、或 Claude --vertex 的 ADC 認證）時需要真貨。
+#     main.py 只在 import 當下讀 sys.modules，import 完就持有自己的綁定，
+#     所以這裡先把真的載進來快照，load_main() 之後再還原回去。
+# =============================================================================
+def preimport_google(provider, vertex):
+    """回傳快照；provider 不需要真 google 時回傳 None。"""
+    wanted = []
+    if provider == "gemini":
+        wanted += ["google.genai", "google.genai.types", "google.auth"]
+    elif provider == "claude" and vertex:
+        wanted += ["google.auth"]          # AnthropicVertex 走 ADC
+    if not wanted:
+        return None
+
+    import importlib
+    loaded = False
+    for name in wanted:
+        try:
+            importlib.import_module(name)
+            loaded = True
+        except ImportError:
+            pass
+    if not loaded:
+        return None
+    google = sys.modules.get("google")
+    return ({k: v for k, v in sys.modules.items() if k == "google" or k.startswith("google.")},
+            dict(vars(google)) if google else None)
+
+
+def restore_google(snapshot):
+    """把 install_stubs() 蓋掉的 google.* 換回真貨。"""
+    if not snapshot:
+        return
+    real_modules, google_vars = snapshot
+    for key in [k for k in sys.modules if k == "google" or k.startswith("google.")]:
+        if key not in real_modules:
+            del sys.modules[key]
+    sys.modules.update(real_modules)
+    if google_vars is not None and "google" in sys.modules:
+        namespace = vars(sys.modules["google"])
+        namespace.clear()
+        namespace.update(google_vars)       # 含 __path__，少了它 google.auth 會找不到
+
+
+# =============================================================================
 # 2. 讀 SFT 資料集
 # =============================================================================
 def parse_utc(text):
@@ -537,7 +584,9 @@ def main():
             print("已取消。")
             return 0
 
+    snapshot = preimport_google(args.provider, args.vertex)
     m = load_main()
+    restore_google(snapshot)
 
     if args.self_test:
         return 0 if self_test(m, rows) else 1
