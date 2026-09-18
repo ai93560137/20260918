@@ -2331,6 +2331,7 @@ def build_dashboard_page(msg):
       <div style='margin-top:15px;'>
         <a href='?view=dashboard&action=auto' class='btn btn-open'>🟢 解除硬鎖・恢復自動</a>
         <a href='?view=dashboard&action=lock' class='btn btn-lock'>🔴 緊急硬鎖 (LOCK)</a>
+        <a href='?view=reset' class='btn' style='background:#6c757d; color:#fff;'>🧹 重置歷史紀錄</a>
       </div>
       <div class='muted' style='font-size:12px; margin-top:6px;'>恢復自動後，電閘仍需完成 Setup→Trigger 才會開啟。🔴 實盤下單模式</div>
     </div>
@@ -2547,7 +2548,8 @@ def build_info_page():
     </div>
 
     <div class='section'><h2>🧠 AI 覆核關卡現況</h2>
-      <p class='muted' style='font-size:12px;'>這道關卡只能否決、不能加分，所以「它手上有多少材料」決定了它的判斷品質上限。</p>
+      <p class='muted' style='font-size:12px;'>這道關卡只能否決、不能加分，所以「它手上有多少材料」決定了它的判斷品質上限。
+        舊版格式的訓練資料無法使用，可到 <a href='?view=reset'>🧹 重置歷史紀錄</a> 清空後從乾淨的基準重新累積。</p>
       {_ai_status_html()}</div>
 
     <div class='section'><h2>🤖 純 GCP 交易大腦即時決策還原</h2>
@@ -3345,6 +3347,139 @@ def handle_gates_post(req):
     return redirect(f"?view=gates&msg={msg}")
 
 
+# =============================================================================
+# 🧹 重置：把歷史紀錄清空，用這個版本重新開始
+# -----------------------------------------------------------------------------
+# 刻意「分組」而不是一鍵全清——不同紀錄清掉的後果差很多，有些會讓系統停擺一小時。
+# 設定檔（送單參數、關卡開關）不在任何一組裡，重置不會動到你調好的設定。
+# =============================================================================
+RESET_GROUPS = [
+    ("ai", "AI 訓練資料", [SFT_DATASET_FILE, PENDING_SIGNALS_FILE], False,
+     "歷史虧損教訓與待配對訊號。清掉後 AI 的 few-shot 會是空的，要重新累積。"
+     "舊版格式的資料本來就無法使用，清掉可讓「教訓 N 條」這個數字從乾淨的基準開始。"),
+    ("rules", "AI 規則庫", [TRADING_RULES_FILE], False,
+     "trading_rules.txt 的內容。"),
+    ("logs", "決策日誌與封包紀錄", [DECISION_LOG_FILE, M1_VERDICT_LOG_FILE, WEBHOOK_LOG_FILE, LAST_ORDER_FILE], False,
+     "只是顯示用的紀錄，清掉不影響交易邏輯。"),
+    ("cache", "新聞日曆快取", [NEWS_CACHE_FILE], False,
+     "下次需要時會自動重抓。"),
+    ("trades", "交易績效紀錄", [TRADE_HISTORY_FILE], True,
+     "⚠️ 累計已實現損益、實盤勝率、期望值會全部歸零，且<b>無法復原</b>。"
+     "MT5 那邊的歷史不受影響，但這個系統算出來的績效統計會從零開始。"),
+    ("market", "M1／M15 行情快取", [M1_HISTORY_FILE, M15_HISTORY_FILE], True,
+     f"⚠️ 清掉後要重新累積約 {MIN_M1_BARS} 根 M1 K 線（<b>約一小時</b>）才能再次開閘交易。"),
+    ("state", "執行狀態", [GATE_STATE_FILE, PYRAMID_STATE_FILE, ACCOUNT_FILE], True,
+     "⚠️ 電閘回到 LOCK、加單基準價清空、帳戶快照清除"
+     "（EA 下次心跳會重建）。若此刻有未平倉部位，加單基準會遺失。"),
+]
+RESET_GROUP_MAP = {key: (label, files, danger, desc) for key, label, files, danger, desc in RESET_GROUPS}
+RESET_KEEPS = [("送單參數", ORDER_PARAMS_FILE), ("關卡開關設定", GATE_SWITCHES_FILE)]
+RESET_CONFIRM_WORD = "RESET"
+
+
+def perform_reset(keys):
+    """把選到的檔案寫成空字串——所有讀取端都把「空」當成預設值，等同清除。
+
+    用覆寫而不是刪除：少一種權限與 generation 的失敗模式，行為也比較好預期。"""
+    cleared, failed = [], []
+    for key in keys:
+        label, files, _danger, _desc = RESET_GROUP_MAP[key]
+        for name in files:
+            try:
+                gcs_write_text(name, "")
+                cleared.append(name)
+            except StorageError as exc:
+                print(f"⚠️ [重置失敗] {name}：{exc}", flush=True)
+                failed.append(name)
+    labels = "、".join(RESET_GROUP_MAP[k][0] for k in keys)
+    log_event(f"🧹 [重置] 已清空：{labels}｜檔案 {len(cleared)} 個"
+              + (f"｜失敗 {len(failed)} 個" if failed else ""),
+              severity="WARNING" if failed else "INFO", component="admin",
+              reset_groups=list(keys), cleared=cleared, failed=failed)
+    log_decision(f"🧹 [管理員重置] 已清空：{labels}"
+                 + (f"（{len(failed)} 個檔案失敗）" if failed else ""), key="admin")
+    return cleared, failed
+
+
+def build_reset_page(msg=None, error=None):
+    banner = ""
+    if msg:
+        banner = f"<div class='level-box' style='border-left:4px solid #198754;'>{esc(msg)}</div>"
+    elif error:
+        banner = f"<div class='level-box' style='border-left:4px solid #dc3545;'>{esc(error)}</div>"
+
+    rows = ""
+    danger_tag = " <span style='color:#dc3545; font-weight:700;'>（高風險）</span>"
+    for key, label, files, danger, desc in RESET_GROUPS:
+        colour = "#dc3545" if danger else "#6c757d"
+        file_list = "、".join(f"<code>{esc(f)}</code>" for f in files)
+        rows += (f"<div class='level-box' style='border-left:4px solid {colour}; margin-bottom:8px;'>"
+                 f"<label style='display:flex; gap:10px; align-items:flex-start; cursor:pointer;'>"
+                 f"<input type='checkbox' name='g_{esc(key)}' value='1' style='margin-top:4px;'>"
+                 f"<span><b>{esc(label)}</b>{danger_tag if danger else ''}"
+                 f"<div class='card-desc' style='margin-top:4px;'>{desc}</div>"
+                 f"<div class='card-desc' style='margin-top:4px;'>{file_list}</div>"
+                 f"</span></label></div>")
+
+    keeps = "、".join(f"<code>{esc(f)}</code>（{esc(name)}）" for name, f in RESET_KEEPS)
+    body = f"""
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>
+      <h1 class='page-title'>🧹 重置歷史紀錄</h1></div>{page_nav("reset")}</div>
+    {banner}
+    <div class='section'>
+      <p class='muted' style='font-size:13px;'>
+        用這個版本重新開始：勾選要清空的紀錄。<b>這個動作無法復原</b>，請先確認沒有正在等待配對的交易。
+      </p>
+      <div class='level-box' style='border-left:4px solid #198754; margin-bottom:12px;'>
+        ✅ <b>不會被清掉的東西</b>：{keeps}。你調好的設定會原封不動保留。
+        <div class='card-desc' style='margin-top:6px;'>
+          另外，重置這個動作本身一定會留下一筆稽核紀錄（即使你清掉決策日誌），
+          不會讓破壞性操作沒有痕跡。
+        </div>
+      </div>
+      <form method='POST' action='?view=reset'>
+        {rows}
+        <div class='level-box' style='margin-top:12px;'>
+          <div class='card-title'>管理權杖</div>
+          <input type='password' name='token' placeholder='WEBHOOK_SECRET_TOKEN'
+                 style='width:100%; padding:8px; margin-top:4px;' autocomplete='off'>
+        </div>
+        <div class='level-box' style='margin-top:8px; border-left:4px solid #dc3545;'>
+          <div class='card-title'>輸入 <code>{RESET_CONFIRM_WORD}</code> 以確認</div>
+          <input type='text' name='confirm' placeholder='{RESET_CONFIRM_WORD}'
+                 style='width:100%; padding:8px; margin-top:4px;' autocomplete='off'>
+        </div>
+        <button type='submit' style='margin-top:12px; padding:10px 18px; font-weight:700;
+                background:#dc3545; color:#fff; border:none; border-radius:6px; cursor:pointer;'>
+          🧹 清空勾選的紀錄
+        </button>
+      </form>
+    </div>"""
+    return html_page("重置歷史紀錄 - 智能諸葛亮", body)
+
+
+def handle_reset_post(req):
+    form = req.form
+    if ADMIN_API_REQUIRE_TOKEN:
+        token = form.get("token")
+        if not (isinstance(token, str) and token.strip() == GCP_SECRET_TOKEN.strip()):
+            return build_reset_page(error="管理權杖不正確，沒有清除任何東西。")
+    if (form.get("confirm") or "").strip().upper() != RESET_CONFIRM_WORD:
+        return build_reset_page(error=f"請在確認欄輸入 {RESET_CONFIRM_WORD}，沒有清除任何東西。")
+
+    keys = [key for key, *_ in RESET_GROUPS if form.get(f"g_{key}") == "1"]
+    if not keys:
+        return build_reset_page(error="沒有勾選任何項目，沒有清除任何東西。")
+
+    cleared, failed = perform_reset(keys)
+    labels = "、".join(RESET_GROUP_MAP[k][0] for k in keys)
+    if failed:
+        return build_reset_page(error=f"已清空 {len(cleared)} 個檔案，但有 {len(failed)} 個失敗："
+                                      f"{'、'.join(failed)}。請查看 Cloud Logging。")
+    note = "　接下來要等 M1 K 線重新累積才能開閘。" if "market" in keys else ""
+    return build_reset_page(msg=f"✅ 已清空「{labels}」，共 {len(cleared)} 個檔案。{note}")
+
+
 def handle_get(req):
     view = req.args.get("view", "welcome")
     action = req.args.get("action")
@@ -3358,6 +3493,8 @@ def handle_get(req):
         return serve_order_app()
     if view == "info":
         return build_info_page()
+    if view == "reset":
+        return build_reset_page()
     if view == "gates":
         return build_gates_page(req.args.get("msg"))
     if view == "dashboard":
@@ -3444,6 +3581,8 @@ def receive_tradingview_signal(request):
         return handle_gates_post(request)
     if request.args.get("view") == "order":          # posts from the order parameter page
         return handle_order_api_post(request)
+    if request.args.get("view") == "reset":          # 重置頁的表單（需權杖＋確認字串）
+        return handle_reset_post(request)
 
     payload = parse_payload(request)
     if payload is None:
