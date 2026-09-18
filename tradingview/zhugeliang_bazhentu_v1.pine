@@ -68,12 +68,29 @@ sessStr = input.session("0945-1545", "可發訊號時段",   group = G_S,
 sessTZ  = input.string("America/New_York", "時區", group = G_S,
      options = ["America/New_York", "America/Chicago", "Asia/Hong_Kong", "Asia/Tokyo", "Europe/London", "UTC"])
 
-// ── ⑥ 顯示 ───────────────────────────────────────────────────────────────────
-showBg    = input.bool(true, "狀態背景色",   group = G_D)
-showChan  = input.bool(true, "迴歸通道",     group = G_D)
-showBox   = input.bool(true, "橫行區間邊緣", group = G_D)
-showMarks = input.bool(true, "突破標記",     group = G_D)
-showPanel = input.bool(true, "右上角狀態面板", group = G_D)
+// ── ⑥ 顯示：顏色與字體 ───────────────────────────────────────────────────────
+showBg    = input.bool(true, "狀態背景色", group = G_D, inline = "bg")
+bgOpacity = input.int(70, "透明度", minval = 0, maxval = 95, step = 5, group = G_D, inline = "bg",
+     tooltip = "數字越小顏色越重。0＝實心、95＝幾乎看不見。淺色主題建議 60–75，深色主題建議 75–85。")
+colUp = input.color(#00B4A0, "上升", group = G_D, inline = "cs")
+colDn = input.color(#FF5252, "下降", group = G_D, inline = "cs")
+colRg = input.color(#FFA726, "橫行", group = G_D, inline = "cs",
+     tooltip = "三個狀態的主色，背景、通道、區間線、突破標記全部跟著這裡走。")
+
+showChan  = input.bool(true, "迴歸通道",     group = G_D, inline = "d1")
+showBox   = input.bool(true, "區間邊緣",     group = G_D, inline = "d1")
+showMarks = input.bool(true, "突破標記",     group = G_D, inline = "d1")
+colFail   = input.color(#E040FB, "假突破標記顏色", group = G_D)
+
+showPanel = input.bool(true, "狀態面板", group = G_D, inline = "p0")
+panelPos  = input.string("右上", "位置", group = G_D, inline = "p0",
+     options = ["右上", "右中", "右下", "左上", "左中", "左下"])
+panelTxt  = input.color(#E8EAED, "面板文字", group = G_D, inline = "p1")
+panelBg   = input.color(color.new(#0F1114, 15), "面板背景", group = G_D, inline = "p1")
+panelHead = input.color(color.new(#1E88E5, 10), "標題底色", group = G_D, inline = "p2")
+panelSize = input.string("normal", "字體大小", options = ["tiny", "small", "normal", "large", "huge"],
+     group = G_D, inline = "p2",
+     tooltip = "淺色主題請把「面板文字」改成深色（例如 #1A1A1A）、「面板背景」改成淺色。")
 
 // =============================================================================
 // 核心：狀態計算（同一份程式碼給本週期與高週期共用）
@@ -237,33 +254,46 @@ if confirmed
 // =============================================================================
 // 畫圖
 // =============================================================================
-cUp  = color.new(color.teal,   85)
-cDn  = color.new(color.red,    85)
-cRg  = color.new(color.gray,   88)
-bgcolor(showBg ? (st == 1 ? cUp : st == -1 ? cDn : st == 0 ? cRg : na) : na, title = "狀態背景")
+bgcolor(showBg ? (st == 1 ? color.new(colUp, bgOpacity) :
+                  st == -1 ? color.new(colDn, bgOpacity) :
+                  st == 0 ? color.new(colRg, math.min(95, bgOpacity + 5)) : na) : na, title = "狀態背景")
 
-chanCol = st == 1 ? color.teal : st == -1 ? color.red : color.new(color.gray, 40)
+chanCol = st == 1 ? colUp : colDn
 showCh  = showChan and (st == 1 or st == -1)
-plot(showCh ? lrVal : na,                      "迴歸中線", chanCol,                     2, plot.style_linebr)
-plot(showCh ? lrVal + chanMult * resid : na,   "通道上緣", color.new(chanCol, 45), 1, plot.style_linebr)
-plot(showCh ? lrVal - chanMult * resid : na,   "通道下緣", color.new(chanCol, 45), 1, plot.style_linebr)
+plot(showCh ? lrVal : na,                    "迴歸中線", color.new(chanCol, 0),  2, plot.style_linebr)
+plot(showCh ? lrVal + chanMult * resid : na, "通道上緣", color.new(chanCol, 45), 1, plot.style_linebr)
+plot(showCh ? lrVal - chanMult * resid : na, "通道下緣", color.new(chanCol, 45), 1, plot.style_linebr)
 
-plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(color.orange, 20), 1, plot.style_linebr)
-plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(color.orange, 20), 1, plot.style_linebr)
+plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(colRg, 10), 1, plot.style_linebr)
+plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(colRg, 10), 1, plot.style_linebr)
 
 plotshape(showMarks and confirmUp, "向上突破", shape.triangleup,   location.belowbar,
-     color.new(color.teal, 0), size = size.small, text = "突破")
+     color.new(colUp, 0), size = size.small, text = "突破", textcolor = color.new(colUp, 0))
 plotshape(showMarks and confirmDn, "向下突破", shape.triangledown, location.abovebar,
-     color.new(color.red, 0),  size = size.small, text = "跌破")
+     color.new(colDn, 0), size = size.small, text = "跌破", textcolor = color.new(colDn, 0))
 plotshape(showMarks and failMark,  "假突破",   shape.xcross,       location.top,
-     color.new(color.fuchsia, 0), size = size.tiny)
+     color.new(colFail, 0), size = size.tiny)
 
 // ── 狀態面板 ─────────────────────────────────────────────────────────────────
 stName(v) => v == 1 ? "上升軌道 ▲" : v == -1 ? "下降軌道 ▼" : v == 0 ? "橫行 ▬" : "過渡 ～"
-stCol(v)  => v == 1 ? color.teal : v == -1 ? color.red : v == 0 ? color.orange : color.gray
+stCol(v)  => v == 1 ? colUp : v == -1 ? colDn : v == 0 ? colRg : color.new(panelTxt, 45)
+
+txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
+          panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
+posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? position.middle_right :
+          panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left :
+          panelPos == "左中" ? position.middle_left : position.bottom_left
+dimTxt  = color.new(panelTxt, 45)
+
+var table tb = table.new(posC, 2, 11, border_width = 1)
+
+// 左欄（欄位名稱）與右欄（數值）的統一樣式
+cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
+     text_size = txtSize, text_halign = text.align_left)
+cellV(row, txt, col) => table.cell(tb, 1, row, txt, bgcolor = panelBg, text_color = col,
+     text_size = txtSize, text_halign = text.align_right)
 
 if showPanel and barstate.islast
-    var table tb = table.new(position.top_right, 2, 11, border_width = 1)
     totalBars = math.max(1, barsUp + barsDn + barsRg + barsNt)
     brkAll    = cntUp + cntDn
     resolved  = cntFail + cntHold
@@ -271,48 +301,51 @@ if showPanel and barstate.islast
     distUp    = boxLive and not na(upLevel) ? (upLevel - close) / atr : na
     distDn    = boxLive and not na(dnLevel) ? (close - dnLevel) / atr : na
 
-    table.cell(tb, 0, 0, "八陣圖 v1", bgcolor = color.new(color.blue, 80), text_color = color.white)
+    table.cell(tb, 0, 0, "八陣圖 v1", bgcolor = panelHead, text_color = panelTxt, text_size = txtSize)
     table.cell(tb, 1, 0, syminfo.ticker + " · " + timeframe.period,
-         bgcolor = color.new(color.blue, 80), text_color = color.white)
+         bgcolor = panelHead, text_color = panelTxt, text_size = txtSize)
 
-    table.cell(tb, 0, 1, "本週期")
-    table.cell(tb, 1, 1, stName(st), text_color = stCol(st))
+    cellK(1, "本週期")
+    cellV(1, stName(st), stCol(st))
 
-    table.cell(tb, 0, 2, "高週期 " + htfTF + (htfTooSmall ? " ⚠" : ""))
-    table.cell(tb, 1, 2, useHTF ? stName(htfSt) + "  R²=" + str.tostring(htfR2, "#.##") +
+    cellK(2, "高週期 " + htfTF + (htfTooSmall ? " ⚠" : ""))
+    cellV(2, useHTF ? stName(htfSt) + "  R²=" + str.tostring(htfR2, "#.##") +
          "  斜率=" + str.tostring(htfSlope, "#.###") : "（未啟用）",
-         text_color = useHTF ? stCol(htfSt) : color.gray)
+         useHTF ? stCol(htfSt) : dimTxt)
 
-    table.cell(tb, 0, 3, "斜率 ATR/根")
-    table.cell(tb, 1, 3, str.tostring(slopeN, "#.###") + "  (門檻 ±" + str.tostring(slopeMin, "#.##") + ")")
+    cellK(3, "斜率 ATR/根")
+    cellV(3, str.tostring(slopeN, "#.###") + "  (門檻 ±" + str.tostring(slopeMin, "#.##") + ")",
+         math.abs(slopeN) >= slopeMin ? panelTxt : dimTxt)
 
-    table.cell(tb, 0, 4, "R²")
-    table.cell(tb, 1, 4, str.tostring(r2, "#.##") + "  (門檻 " + str.tostring(r2Min, "#.##") + ")",
-         text_color = r2 >= r2Min ? color.teal : color.gray)
+    cellK(4, "R²")
+    cellV(4, str.tostring(r2, "#.##") + "  (門檻 " + str.tostring(r2Min, "#.##") + ")",
+         r2 >= r2Min ? panelTxt : dimTxt)
 
-    table.cell(tb, 0, 5, "區間高度 ATR")
-    table.cell(tb, 1, 5, str.tostring(wATR, "#.#") + "  (上限 " + str.tostring(rangeMaxATR, "#.#") + ")")
+    cellK(5, "區間高度 ATR")
+    cellV(5, str.tostring(wATR, "#.#") + "  (上限 " + str.tostring(rangeMaxATR, "#.#") + ")",
+         wATR <= rangeMaxATR ? panelTxt : dimTxt)
 
-    table.cell(tb, 0, 6, "有效區間")
-    table.cell(tb, 1, 6, boxLive ? str.tostring(boxBot, format.mintick) + " ~ " + str.tostring(boxTop, format.mintick) : "無",
-         text_color = boxLive ? color.orange : color.gray)
+    cellK(6, "有效區間")
+    cellV(6, boxLive ? str.tostring(boxBot, format.mintick) + " ~ " + str.tostring(boxTop, format.mintick) : "無",
+         boxLive ? colRg : dimTxt)
 
-    table.cell(tb, 0, 7, "距突破 (ATR)")
-    table.cell(tb, 1, 7, boxLive ? "↑" + str.tostring(distUp, "#.##") + "  ↓" + str.tostring(distDn, "#.##") : "—")
+    cellK(7, "距突破 (ATR)")
+    cellV(7, boxLive ? "↑" + str.tostring(distUp, "#.##") + "  ↓" + str.tostring(distDn, "#.##") : "—",
+         boxLive ? panelTxt : dimTxt)
 
-    table.cell(tb, 0, 8, "狀態佔比")
-    table.cell(tb, 1, 8, "▲" + str.tostring(barsUp * 100.0 / totalBars, "#") + "%  ▼" +
+    cellK(8, "狀態佔比")
+    cellV(8, "▲" + str.tostring(barsUp * 100.0 / totalBars, "#") + "%  ▼" +
          str.tostring(barsDn * 100.0 / totalBars, "#") + "%  ▬" +
          str.tostring(barsRg * 100.0 / totalBars, "#") + "%  ～" +
-         str.tostring(barsNt * 100.0 / totalBars, "#") + "%")
+         str.tostring(barsNt * 100.0 / totalBars, "#") + "%", panelTxt)
 
-    table.cell(tb, 0, 9, "突破次數")
-    table.cell(tb, 1, 9, "↑" + str.tostring(cntUp) + "  ↓" + str.tostring(cntDn) + "  共" + str.tostring(brkAll))
+    cellK(9, "突破次數")
+    cellV(9, "↑" + str.tostring(cntUp) + "  ↓" + str.tostring(cntDn) + "  共" + str.tostring(brkAll), panelTxt)
 
-    table.cell(tb, 0, 10, "假突破率")
-    table.cell(tb, 1, 10, resolved > 0 ? str.tostring(failPct, "#") + "%  (" + str.tostring(cntFail) + "/" +
+    cellK(10, "假突破率")
+    cellV(10, resolved > 0 ? str.tostring(failPct, "#") + "%  (" + str.tostring(cntFail) + "/" +
          str.tostring(resolved) + ")" : "資料不足",
-         text_color = na(failPct) ? color.gray : failPct > 50 ? color.red : color.teal)
+         na(failPct) ? dimTxt : failPct > 50 ? colDn : colUp)
 
 // =============================================================================
 // 警報（TradingView 建立警報時請選 Once Per Bar Close）
