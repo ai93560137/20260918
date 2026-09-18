@@ -171,6 +171,7 @@ def load_rows(path):
             if entry_ts is None:
                 skipped += 1           # 沒有進場時間就無法做 look-ahead 防護
                 continue
+            recorded = row.get("ai_verdict")
             rows.append({
                 "meta": meta,
                 "profit": float(profit),
@@ -178,6 +179,8 @@ def load_rows(path):
                 "ticket": str(outcome.get("ticket") or ""),
                 "entry_ts": entry_ts,
                 "closed_ts": closed_ts if closed_ts is not None else entry_ts,
+                # 影子模式寫入的「AI 當時說了什麼」；--provider recorded 直接用它
+                "recorded": recorded if isinstance(recorded, dict) else None,
             })
     rows.sort(key=lambda r: r["entry_ts"])
     return rows, skipped
@@ -200,7 +203,7 @@ def inspect_dataset(path):
     """逐層拆解資料集，指出卡在哪一關。不需要任何雲端權限。"""
     stats = {"lines": 0, "blank": 0, "bad_json": 0, "not_dict": 0,
              "has_meta": 0, "has_outcome": 0, "numeric_profit": 0,
-             "has_time_utc": 0, "parsed_time": 0}
+             "has_time_utc": 0, "parsed_time": 0, "has_verdict": 0, "shadow_verdict": 0}
     key_counter, bad_times, sample = {}, [], None
 
     with open(path, encoding="utf-8") as handle:
@@ -239,6 +242,11 @@ def inspect_dataset(path):
                     stats["parsed_time"] += 1
                 elif len(bad_times) < 5:
                     bad_times.append(repr(raw_time))
+            verdict = row.get("ai_verdict")
+            if isinstance(verdict, dict):
+                stats["has_verdict"] += 1
+                if verdict.get("mode") == "shadow":
+                    stats["shadow_verdict"] += 1
 
     print("\n" + "=" * 70)
     print("🔬 資料集體檢")
@@ -276,6 +284,13 @@ def inspect_dataset(path):
         print("     這個可以修——告訴我格式，我調整 parse_utc()。")
     else:
         print(f"  ✅ 有 {stats['parsed_time']} 列可評分。")
+        if stats["has_verdict"]:
+            print(f"  ✅ 其中 {stats['has_verdict']} 列帶 AI 判斷紀錄"
+                  f"（影子模式 {stats['shadow_verdict']} 列）"
+                  f" → 可用 --provider recorded，免費且最準確。")
+        else:
+            print("  ℹ️ 沒有任何 AI 判斷紀錄（影子模式尚未部署或尚未產生資料）；")
+            print("     目前只能用 --provider gemini/claude 離線重新評分。")
 
     if sample:
         print("\n第一列樣本（截斷）：")
@@ -395,6 +410,20 @@ class RandomBackend:
         return _Reply(f"{verdict} | 隨機基準線 score={score:.3f}")
 
 
+RECORDED = "recorded"      # 哨兵：不呼叫任何模型，直接讀影子模式寫下的判斷
+
+
+class RecordedBackend:
+    """讀 main.py 影子模式寫進 SFT 列的 ai_verdict，完全不打 API。
+
+    這是最準確也最便宜的一種：它就是 AI 在訊號當下真正說的話，用的是當時
+    真正的 few-shot 與規則庫，沒有重建誤差、沒有 look-ahead 疑慮、零成本。
+    有影子資料時一律優先用這個，離線重新評分只用在「還沒有影子資料」或
+    「想比較換模型後的差異」兩種情況。"""
+
+    kind = RECORDED
+
+
 class GeminiBackend:
     """現行的 Vertex AI Gemini。設定對齊 main.py _config()。"""
 
@@ -454,6 +483,8 @@ class ClaudeBackend:
 
 
 def build_backend(args):
+    if args.provider == "recorded":
+        return RecordedBackend()
     if args.provider == "random":
         return RandomBackend(approve_rate=args.random_approve_rate)
     if args.provider == "gemini":
@@ -491,13 +522,27 @@ def score_rows(m, rows, backend, rules_text, cache, out_path, score_from=0, verb
     --limit 只縮評分範圍、不縮 few-shot 歷史池：否則被限制掉的早期訊號
     會連帶讓 few-shot 變空，prompt 就跟實盤長得不一樣了。"""
     results, pending = [], {"few_shot": ""}
-    attach_reviewer(m, backend, rules_text, lambda: pending["few_shot"])
+    replay = getattr(backend, "kind", None) == RECORDED
+    if not replay:
+        attach_reviewer(m, backend, rules_text, lambda: pending["few_shot"])
     handle = open(out_path, "a", encoding="utf-8") if out_path else None
     targets = list(enumerate(rows))[score_from:]
 
     try:
         for index, row in targets:
             key = row_key(row, index)
+
+            # 影子模式已經把當時的判斷寫進資料列了，不必也不該重新評分。
+            if replay:
+                recorded = row.get("recorded")
+                if isinstance(recorded, dict) and recorded.get("mode") != "bypass":
+                    results.append({**row, "key": key, "approved": bool(recorded.get("approved")),
+                                    "reason": str(recorded.get("reason") or ""), "error": False})
+                else:
+                    results.append({**row, "key": key, "approved": None,
+                                    "reason": "此列沒有影子模式的判斷紀錄", "error": True})
+                continue
+
             if key in cache:
                 results.append({**row, **cache[key]})
                 continue
@@ -615,6 +660,8 @@ def report(results, args):
           f"{datetime.fromtimestamp(scored[-1]['entry_ts'], timezone.utc):%Y-%m-%d}")
     if args.provider == "random":
         print("\n⚠️ 這是隨機基準線，不是真實模型。真實模型必須明顯優於這組數字才算有判別力。")
+    elif args.provider == "recorded":
+        print("\n✅ 以上是 AI 在訊號當下真正說過的話（影子模式紀錄），非事後重建。")
     print("=" * 70)
 
 
@@ -627,8 +674,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("dataset", help="sft_dataset.jsonl 的路徑")
     parser.add_argument("--rules", help="trading_rules.txt 的路徑（不給則用「目前無額外規則。」）")
-    parser.add_argument("--provider", choices=["random", "gemini", "claude"], default="random",
-                        help="random＝不打 API 的對照組（預設）")
+    parser.add_argument("--provider", choices=["recorded", "random", "gemini", "claude"], default="random",
+                        help="recorded＝讀影子模式記下的判斷（免費、最準，有影子資料時優先用）；"
+                             "random＝不打 API 的對照組（預設）")
     parser.add_argument("--model", help="模型 ID（gemini 預設 gemini-2.5-flash；claude 預設 claude-opus-5）")
     parser.add_argument("--limit", type=int, help="只評分最近 N 筆")
     parser.add_argument("--out", help="verdict 快取檔（可中斷續跑，避免重複付費）")
@@ -676,7 +724,7 @@ def main():
     if cache:
         print(f"♻️  快取命中 {len(scoring) - todo} 筆，本次需呼叫 {todo} 次")
 
-    if args.provider != "random" and todo and not args.yes and not args.self_test:
+    if args.provider in ("gemini", "claude") and todo and not args.yes and not args.self_test:
         print(f"\n💰 將對 {args.provider} 發出 {todo} 次 API 呼叫（每次約 2.5–3.5K input tokens）。")
         if input("   繼續？[y/N] ").strip().lower() != "y":
             print("已取消。")

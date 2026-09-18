@@ -145,7 +145,10 @@ RSI_BUY_MAX = _env_float("RSI_BUY_MAX", 85.0)
 RSI_SELL_MIN = _env_float("RSI_SELL_MIN", 15.0)
 BREAKEVEN_EPS = _env_float("BREAKEVEN_EPS", 1.0)                      # [R24c] |profit| <= this = break-even
 STATS_WINDOW = _env_int("STATS_WINDOW", 100)
-BROKER_UTC_OFFSET_HOURS = _env_float("BROKER_UTC_OFFSET_HOURS", 0.0)  # [R42] MT5 server time - UTC
+# [R42] MT5 伺服器時間 − UTC。BACKTEST.md 實測本券商為 UTC+3（夏令），回測指令
+# 一路用 --broker-offset 3；設錯會讓 pair_trade_result() 配到錯的進場訊號。
+# 夏令時結束後券商可能變 UTC+2，屆時用環境變數覆寫。
+BROKER_UTC_OFFSET_HOURS = _env_float("BROKER_UTC_OFFSET_HOURS", 3.0)
 
 # --- M1 regime radar -----------------------------------------------------------
 MIN_M1_BARS = _env_int("MIN_M1_BARS", 65)                             # [R47] 60-min window + margin
@@ -166,6 +169,7 @@ NEWS_FAIL_CLOSED = _env_bool("NEWS_FAIL_CLOSED", True)                # [R13e]
 # --- AI reviewer ---------------------------------------------------------------
 AI_REVIEW_ENABLED = _env_bool("AI_REVIEW_ENABLED", True)
 AI_FAIL_OPEN = _env_bool("AI_FAIL_OPEN", False)                       # [R2 R13f R13g] one policy
+AI_SHADOW_MODE = _env_bool("AI_SHADOW_MODE", False)                   # 覆核照跑、判斷照記，但不否決訊號
 AI_MODEL = _env_str("AI_MODEL", "gemini-2.5-flash")
 AI_LOCATION = _env_str("AI_LOCATION", "us-central1")
 AI_THINKING_BUDGET = _env_int("AI_THINKING_BUDGET", 0)                # [R14] 0 = no thinking (Flash only)
@@ -1105,8 +1109,10 @@ class SFTDataPipeline:
         return ("【歷史虧損教訓 (Dynamic Few-Shot)】\n" + "\n".join(lessons)) if lessons else ""
 
     @staticmethod
-    def save_pending_signal(meta):
+    def save_pending_signal(meta, ai_verdict=None):
         item = {"id": uuid.uuid4().hex, "symbol": normalize_symbol(meta.get("symbol")), "ts": now_ts(), "meta": meta}
+        if isinstance(ai_verdict, dict):
+            item["ai_verdict"] = ai_verdict        # 平倉配對時一併寫進 SFT 資料集
 
         def mutate(queue):
             queue = queue if isinstance(queue, list) else []
@@ -1159,6 +1165,9 @@ class SFTDataPipeline:
             "meta": item["meta"],
             "outcome": {"label": label, "profit": profit, "ticket": ticket, "closed_utc": fmt_utc()},
         }
+        if isinstance(item.get("ai_verdict"), dict):
+            # 「AI 當時說了什麼」＋「實際賺賠」配成一對——ai_eval.py 算判別力就靠這個。
+            example["ai_verdict"] = item["ai_verdict"]
 
         def append(rows):
             rows.append(example)
@@ -1763,10 +1772,24 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         log_decision(f"📰 [新聞攔截] {label} {signal} @ {price:.2f} 取消：{reason}", key="news_reject")
         return {"status": "news_rejected", "reason": reason}
 
-    approved, ai_reason = (True, "AI 覆核關卡已略過") if "ai" in bypass else ai_review_session.review(meta)
-    if not approved:
-        log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_reason}", key="ai_reject")
-        return {"status": "ai_rejected", "reason": ai_reason}
+    # 判斷與執行分家：影子模式要「照跑、照記、但不否決」。被 AI 反對的訊號若真的
+    # 被擋掉，那筆交易就不存在，也就永遠沒有實際損益可以回頭驗證它判斷得對不對。
+    if "ai" in bypass:
+        ai_verdict = {"approved": True, "reason": "AI 覆核關卡已略過", "mode": "bypass", "enforced": False}
+    else:
+        approved, ai_reason = ai_review_session.review(meta)
+        ai_verdict = {"approved": bool(approved), "reason": ai_reason,
+                      "mode": "shadow" if AI_SHADOW_MODE else "enforce",
+                      "enforced": not AI_SHADOW_MODE}
+
+    # ⚠️ review() 在 API 出錯時會依 AI_FAIL_OPEN 回傳拒絕（預設 False）。那是「錯誤」
+    #    不是「判斷」，影子模式下必須照樣放行，否則會變成「影子模式反而擋單」。
+    if not ai_verdict["approved"]:
+        if ai_verdict["enforced"]:
+            log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_verdict['reason']}", key="ai_reject")
+            return {"status": "ai_rejected", "reason": ai_verdict["reason"]}
+        log_decision(f"👁️ [AI 影子攔截] {label} {signal} @ {price:.2f} 仍照常送出，僅記錄供事後對帳。"
+                     f"理由：{ai_verdict['reason']}", key="ai_shadow")
 
     order = build_order(candidate, params)
     summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{order['sl_distance_price']} "
@@ -1805,7 +1828,7 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         update_pyramid_state(**commit, last_order_status="SENT")
     except StorageError as exc:
         print(f"🚨 [嚴重] 訂單已送出但加單狀態寫入失敗：{exc}", flush=True)
-    sft_pipeline_session.save_pending_signal(meta)
+    sft_pipeline_session.save_pending_signal(meta, ai_verdict)
     log_decision(f"✅ [已送出] {summary}", key="entry_sent")
     return {"status": "success", "executed_signal": signal}
 
@@ -2482,8 +2505,9 @@ GATE_SWITCH_DEFS = [
      "數據公布期間照常交易，日曆失效也照常交易。",
      "⚠️ 數據行情跳空與滑價可能遠超止損距離。"),
     ("ai", "AI 覆核",
-     "Gemini 須回覆 APPROVE；出錯或格式錯誤時拒絕。",
-     "不呼叫 Gemini，直接放行。",
+     "LLM 須回覆 APPROVE；出錯或格式錯誤時依 AI_FAIL_OPEN 處理。"
+     "AI_SHADOW_MODE=1 時照樣呼叫並記錄判斷，但不否決訊號。",
+     "不呼叫 LLM，直接放行，連判斷紀錄都不會留下。",
      "少一層定性過濾。"),
     ("cooldown", "平倉後冷卻",
      "平倉後須等 REENTRY_COOLDOWN_SEC 秒才開新首單。",
@@ -2565,9 +2589,11 @@ def gate_parameter_values(params=None):
             _pv("NEWS_FAIL_CLOSED", "是" if NEWS_FAIL_CLOSED else "否", "日曆載不到時是否禁止新倉"),
         ],
         "ai": [
-            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 Gemini"),
+            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 LLM"),
             _pv("AI_MODEL", AI_MODEL, ""),
             _pv("AI_FAIL_OPEN", "放行" if AI_FAIL_OPEN else "拒絕", "AI 出錯或格式錯誤時怎麼處理"),
+            _pv("AI_SHADOW_MODE", "👁️ 影子（記錄但不否決）" if AI_SHADOW_MODE else "強制執行",
+                "影子模式下 AI 的反對不擋單，但會寫進 SFT 資料集供事後對帳"),
         ],
         "cooldown": [
             _pv("REENTRY_COOLDOWN_SEC", REENTRY_COOLDOWN_SEC,

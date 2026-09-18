@@ -125,12 +125,36 @@ GATES_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gates
 | `BROKER_LEVERAGE` | 你真實的槓桿，例如 `500` | 算保證金上限用，填錯會算錯倉位 |
 | `ACCOUNT_TO_USD_RATE` | 帳戶非 USD/HKD 時才填 | 例如帳戶是 TWD 就填 `0.031` |
 | `ADMIN_CORS_ORIGIN` | 你的頁面網址 | 預設 `*` 代表任何網站都能打這兩個管理 API |
-| `AI_REVIEW_ENABLED` | `1` 或 `0` | 不想用 Gemini 就填 `0`，可省 Vertex AI 權限 |
+| `AI_REVIEW_ENABLED` | `1` 或 `0` | 不想用 LLM 覆核就填 `0`，可省 Vertex AI 權限 |
+| `AI_SHADOW_MODE` | `1`（建議先開） | 見下方說明。AI 照樣判斷並記錄，但**不否決訊號** |
+| `BROKER_UTC_OFFSET_HOURS` | `3`（程式預設值已是 3） | MT5 伺服器時間 − UTC。夏令結束後可能要改 `2` |
 | `TARGET_RRR` | `3`（程式預設值已是 3） | 止盈 = 止損 × 幾倍。依 8.5 個月回測從 2 改為 3 |
 | `DISTANCE_UNIT` | `price`（預設）或 `points` | 選用哪一組距離欄位，見第 8b 步 |
 | `ORDER_ACCOUNT` | `1` | webhooktrade 範本的 account 欄位 |
 
 改完要重新部署才生效。**送單參數（手數、商品、止損止盈）不用設環境變數**，部署後直接在送單參數頁改。
+
+### 關於 `AI_SHADOW_MODE`
+
+AI 覆核是一道**只能否決、不能加分**的關卡，而它對獲利因子的貢獻**從來沒有被量測過**
+（`BACKTEST.md` 的所有數字都是在 AI 覆核關閉下跑出來的）。
+
+問題在於：被 AI 擋掉的訊號不會下單，也就沒有實際損益，所以在強制執行模式下，
+**永遠無法驗證它擋得對不對**。
+
+`AI_SHADOW_MODE=1` 讓 AI 照常判斷並把結論寫進 `ai_training/sft_dataset.jsonl`，
+但不否決訊號。等累積夠多已平倉的樣本後，用 `ai_eval.py` 對帳：
+
+```bash
+gsutil cp gs://zhuge-risk-manager-bucket/ai_training/sft_dataset.jsonl .
+python3 ai_eval.py sft_dataset.jsonl --provider recorded
+```
+
+報表會直接回答「AI 攔掉的單，實際結算是賺還是賠」。如果是賺的，代表這道關卡
+正在侵蝕獲利，應該把 `ai` 加進 `DEFAULT_BYPASS`。
+
+> ⚠️ 影子模式期間 AI 不再擋單，等於少一層過濾，其餘八道關卡照常運作。
+> 要恢復強制執行就把這個變數設回 `0`。
 
 ## 第 7 步：給服務帳號權限
 
@@ -138,7 +162,7 @@ GATES_APP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gates
 2. 找函式用的服務帳號（預設是 `專案編號-compute@developer.gserviceaccount.com`）。
 3. 按編輯（鉛筆）→ 新增角色：
    - **Storage 物件管理員**（`roles/storage.objectAdmin`）— 讀寫 bucket，必須有。
-   - **Vertex AI 使用者**（`roles/aiplatform.user`）— 只有 `AI_REVIEW_ENABLED=1` 時需要。
+   - **Vertex AI 使用者**（`roles/aiplatform.user`）— 只有 `AI_REVIEW_ENABLED=1` 時需要（影子模式也會呼叫 AI，同樣需要）。
 4. 儲存。
 
 > 少了 Storage 權限，網頁打得開但所有狀態都讀不到，日誌會一直出現
@@ -236,7 +260,7 @@ gcloud functions deploy receive_tradingview_signal \
   --allow-unauthenticated \
   --memory=512Mi \
   --timeout=60s \
-  --set-env-vars=WEBHOOK_SECRET_TOKEN=你的權杖,BROKER_LEVERAGE=500
+  --set-env-vars=WEBHOOK_SECRET_TOKEN=你的權杖,BROKER_LEVERAGE=500,AI_SHADOW_MODE=1,BROKER_UTC_OFFSET_HOURS=3
 ```
 
 以後不管加幾個檔案，都是同一行指令（`--source=.` 會打包整個資料夾）。
