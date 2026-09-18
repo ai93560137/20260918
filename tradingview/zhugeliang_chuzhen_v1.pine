@@ -605,3 +605,48 @@ plot(showLevels and strategy.position_size != 0 ? stopPx : na, "止損線",
      color.new(colDn, 0), 1, plot.style_linebr)
 plot(showLevels and strategy.position_size != 0 ? tpPx : na, "止盈線",
      color.new(colUp, 0), 1, plot.style_linebr)
+
+
+// =============================================================================
+// 🩺 診斷面板：訊號有沒有出？單有沒有成交？卡在哪一層？
+// =============================================================================
+showDiag = input.bool(true, "診斷面板（左下）", group = G_X)
+
+var table dg = table.new(position.bottom_left, 2, 7, border_width = 1)
+dgK(row, txt) => table.cell(dg, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
+     text_size = size.small, text_halign = text.align_left)
+dgV(row, txt, col) => table.cell(dg, 1, row, txt, bgcolor = panelBg, text_color = col,
+     text_size = size.small, text_halign = text.align_right)
+
+if showDiag and barstate.islast
+    sigTotal = cntUp + cntDn
+    doneTr   = strategy.closedtrades + strategy.opentrades
+
+    table.cell(dg, 0, 0, "出陣 v1 診斷", bgcolor = panelHead, text_color = panelTxt, text_size = size.small)
+    table.cell(dg, 1, 0, syminfo.type + " · " + timeframe.period,
+         bgcolor = panelHead, text_color = panelTxt, text_size = size.small)
+
+    dgK(1, "① 突破訊號累計")
+    dgV(1, "↑" + str.tostring(cntUp) + "  ↓" + str.tostring(cntDn) + "  共 " + str.tostring(sigTotal),
+         sigTotal > 0 ? colUp : colDn)
+
+    dgK(2, "② 回測成交筆數")
+    dgV(2, str.tostring(doneTr) + " 筆（平倉 " + str.tostring(strategy.closedtrades) + "）",
+         doneTr > 0 ? colUp : colDn)
+
+    dgK(3, "③ 每單數量 qty")
+    dgV(3, str.tostring(tradeQty, "#.##") + (isFutures ? " 口" : " 單位") +
+         "　權益 " + str.tostring(strategy.equity, "#"), tradeQty > 0 ? panelTxt : colDn)
+
+    dgK(4, "④ 目前部位")
+    dgV(4, strategy.position_size == 0 ? "空手" :
+         str.tostring(strategy.position_size, "#.##") + " @ " + str.tostring(strategy.position_avg_price, format.mintick),
+         strategy.position_size == 0 ? dimTxt : colUp)
+
+    dgK(5, "⑤ 時段 / 高週期")
+    dgV(5, (inSess ? "時段內" : "時段外") + " / " + htfMode + " " + stName(htfSt),
+         inSess ? panelTxt : colDn)
+
+    dgK(6, "⑥ 方向 / 進場")
+    dgV(6, tradeDir + " / " + entryMode + (entryMode == "等回踩" ? "（等 " + str.tostring(rtWaitBars) + " 根）" : ""),
+         panelTxt)
