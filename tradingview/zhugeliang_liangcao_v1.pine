@@ -206,8 +206,8 @@ unitDiv = unitSel == "萬" ? 10000.0 : unitSel == "百萬" ? 1000000.0 : 1.0
 unitTag = unitSel == "元" ? "" : unitSel
 fm(x) => na(x) ? "—" : str.tostring(x / unitDiv, "#,###.##") + unitTag
 
-posOf(s) => s == "右上" ? position.top_right : s == "右下" ? position.bottom_right :
-            s == "左上" ? position.top_left : position.bottom_left
+posMain = panelPos == "右上" ? position.top_right : panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left : position.bottom_left
+posYear = yearPos == "右上" ? position.top_right : yearPos == "右下" ? position.bottom_right : yearPos == "左上" ? position.top_left : position.bottom_left
 dimTxt  = color.new(panelTxt, 45)
 txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
           panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
@@ -229,7 +229,7 @@ susV = needV > 0 ? principal * monthly / needV : na
 // =============================================================================
 // 主面板
 // =============================================================================
-var table tb = table.new(posOf(panelPos), 3, 12, border_width = 1)
+var table tb = table.new(posMain, 3, 12, border_width = 1)
 cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
      text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
 head(c, txt, txtCol) => table.cell(tb, c, 0, txt, bgcolor = color.new(#1E88E5, 10),
@@ -289,7 +289,7 @@ if showPanel and barstate.islast
 // =============================================================================
 // 逐年起始表：從每一年開始退休，結果如何
 // =============================================================================
-var table ty = table.new(posOf(yearPos), 7, 48, border_width = 1)
+var table ty = table.new(posYear, 7, 48, border_width = 1)
 ycell(c, row, txt, txtCol) => table.cell(ty, c, row, txt, bgcolor = panelBg, text_color = txtCol,
      text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
 yhead(c, txt, txtCol) => table.cell(ty, c, 0, txt, bgcolor = color.new(#1E88E5, 10),
@@ -335,8 +335,8 @@ if showYears and barstate.islast and array.size(yrArr) > 0
             nV = enough ? gVi * (hVj - hVi) : na
             eB = enough ? gBj * (principal / gBi - (hBj - hBi)) : na
             eV = enough ? gVj * (principal / gVi - (hVj - hVi)) : na
-            liveB = enough and eB > 0
-            liveV = enough and eV > 0
+            liveB = enough and nz(eB, -1.0) > 0
+            liveV = enough and nz(eV, -1.0) > 0
 
             row += 1
             if enough
