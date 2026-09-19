@@ -1,0 +1,187 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 夜觀天象 v1 — 隔夜 vs 盤中報酬拆解
+//
+// 問題：長期報酬到底發生在什麼時候？
+//   隔夜（收盤 → 次日開盤）還是盤中（開盤 → 收盤）？
+//
+// 美股指數有個被反覆驗證的現象：幾乎全部的長期報酬都發生在隔夜，
+// 盤中時段的累積報酬接近零甚至為負。若在你的標的上成立，
+// 「收盤買、開盤賣」就是一個與圖形判讀無關的結構性優勢。
+//
+// 這支腳本只做量測，不下單、不發訊號。
+// 用日線圖執行（其他週期的「隔夜」定義沒有意義）。
+//
+// ⚠️ 關鍵在成本：隔夜策略每天一次來回，252 個交易日就是 252 次來回。
+//    單邊 1bp 看起來很小，一年就是 5%——面板同時顯示扣成本後的結果。
+// =============================================================================
+indicator("智能諸葛亮 · 夜觀天象 v1｜隔夜 vs 盤中", "夜觀天象 v1", overlay = false)
+
+const string G_S = "① 統計設定"
+const string G_D = "② 顯示"
+
+startTime = input.time(timestamp("01 Jan 2000 00:00 +0000"), "起算日期", group = G_S,
+     tooltip = "從這一天開始累積統計。改這個值統計會自動重算。")
+costBps   = input.float(1.0, "單邊成本（bp，1bp = 0.01%）", minval = 0.0, step = 0.5, group = G_S,
+     tooltip = "手續費＋點差＋滑價的單邊總和。隔夜策略每天一次來回＝兩個單邊成本。" +
+               "美股 ETF 約 1–2bp，個股約 2–5bp。")
+barsPerYear = input.int(252, "每年交易日數", minval = 1, group = G_S)
+
+showON   = input.bool(true, "隔夜曲線",   group = G_D, inline = "c")
+showID   = input.bool(true, "盤中曲線",   group = G_D, inline = "c")
+showBH   = input.bool(true, "買入持有",   group = G_D, inline = "c")
+showNet  = input.bool(true, "隔夜（扣成本）", group = G_D)
+colON    = input.color(#00B4A0, "隔夜", group = G_D, inline = "k")
+colID    = input.color(#FF5252, "盤中", group = G_D, inline = "k")
+colBH    = input.color(#9E9E9E, "持有", group = G_D, inline = "k")
+showPanel = input.bool(true, "統計面板", group = G_D, inline = "p")
+panelPos  = input.string("右上", "位置", options = ["右上", "右下", "左上", "左下"], group = G_D, inline = "p")
+panelTxt  = input.color(#E8EAED, "文字", group = G_D, inline = "p2")
+panelBg   = input.color(color.new(#0F1114, 15), "底色", group = G_D, inline = "p2")
+
+// =============================================================================
+// 報酬拆解
+// =============================================================================
+// 隔夜 = 前一根收盤 → 這一根開盤；盤中 = 這一根開盤 → 收盤
+// 兩者相乘等於買入持有：(1+隔夜)(1+盤中) = close / close[1]
+rON = na(close[1]) or close[1] <= 0 ? na : open / close[1] - 1.0
+rID = open > 0 ? close / open - 1.0 : na
+rBH = na(close[1]) or close[1] <= 0 ? na : close / close[1] - 1.0
+
+cost   = costBps / 10000.0
+rONnet = na(rON) ? na : rON - 2.0 * cost     // 收盤買、開盤賣 = 一次來回 = 兩個單邊
+
+inRange = time >= startTime
+ok      = inRange and not na(rON) and not na(rID) and barstate.isconfirmed
+
+// =============================================================================
+// 累積與統計
+// =============================================================================
+var float eON  = 100.0
+var float eID  = 100.0
+var float eBH  = 100.0
+var float eNet = 100.0
+
+var float pkON  = 100.0
+var float pkID  = 100.0
+var float pkBH  = 100.0
+var float ddON  = 0.0
+var float ddID  = 0.0
+var float ddBH  = 0.0
+
+var float sON  = 0.0
+var float sON2 = 0.0
+var float sID  = 0.0
+var float sID2 = 0.0
+var float sBH  = 0.0
+var float sBH2 = 0.0
+var int   winON = 0
+var int   winID = 0
+var int   nObs  = 0
+
+if ok
+    eON  := eON  * (1.0 + rON)
+    eID  := eID  * (1.0 + rID)
+    eBH  := eBH  * (1.0 + rBH)
+    eNet := eNet * (1.0 + rONnet)
+
+    pkON := math.max(pkON, eON)
+    pkID := math.max(pkID, eID)
+    pkBH := math.max(pkBH, eBH)
+    ddON := math.max(ddON, pkON > 0 ? (pkON - eON) / pkON * 100.0 : 0.0)
+    ddID := math.max(ddID, pkID > 0 ? (pkID - eID) / pkID * 100.0 : 0.0)
+    ddBH := math.max(ddBH, pkBH > 0 ? (pkBH - eBH) / pkBH * 100.0 : 0.0)
+
+    sON  += rON
+    sON2 += rON * rON
+    sID  += rID
+    sID2 += rID * rID
+    sBH  += rBH
+    sBH2 += rBH * rBH
+    winON += rON > 0 ? 1 : 0
+    winID += rID > 0 ? 1 : 0
+    nObs  += 1
+
+// =============================================================================
+// 畫圖：三條權益曲線（起點 100）
+// =============================================================================
+plot(showON  and nObs > 0 ? eON  : na, "隔夜",       color.new(colON, 0), 2)
+plot(showID  and nObs > 0 ? eID  : na, "盤中",       color.new(colID, 0), 2)
+plot(showBH  and nObs > 0 ? eBH  : na, "買入持有",   color.new(colBH, 0), 1)
+plot(showNet and nObs > 0 ? eNet : na, "隔夜（扣成本）", color.new(colON, 55), 2, plot.style_line)
+hline(100.0, "起點", color.new(color.gray, 60), hline.style_dotted)
+
+// =============================================================================
+// 統計面板
+// =============================================================================
+posC = panelPos == "右上" ? position.top_right : panelPos == "右下" ? position.bottom_right :
+       panelPos == "左上" ? position.top_left : position.bottom_left
+dimTxt = color.new(panelTxt, 45)
+
+var table tb = table.new(posC, 4, 10, border_width = 1)
+cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
+     text_size = size.small, text_halign = c == 0 ? text.align_left : text.align_right)
+
+pct(x)  => str.tostring(x, "#.##") + "%"
+cagr(eq, n) => n > 0 ? (math.pow(eq / 100.0, barsPerYear / math.max(1.0, n)) - 1.0) * 100.0 : na
+sharpe(s, s2, n) =>
+    m  = n > 0 ? s / n : na
+    v  = n > 1 ? math.max(0.0, s2 / n - m * m) : na
+    sd = math.sqrt(v)
+    sd > 0 ? m / sd * math.sqrt(barsPerYear) : na
+
+if showPanel and barstate.islast
+    yrs   = nObs / math.max(1.0, barsPerYear * 1.0)
+    mON   = nObs > 0 ? sON / nObs * 10000.0 : na      // 日均，單位 bp
+    mID   = nObs > 0 ? sID / nObs * 10000.0 : na
+    mBH   = nObs > 0 ? sBH / nObs * 10000.0 : na
+
+    table.cell(tb, 0, 0, "夜觀天象 v1", bgcolor = color.new(#1E88E5, 10), text_color = panelTxt, text_size = size.small)
+    table.cell(tb, 1, 0, "隔夜", bgcolor = color.new(#1E88E5, 10), text_color = colON, text_size = size.small)
+    table.cell(tb, 2, 0, "盤中", bgcolor = color.new(#1E88E5, 10), text_color = colID, text_size = size.small)
+    table.cell(tb, 3, 0, "持有", bgcolor = color.new(#1E88E5, 10), text_color = colBH, text_size = size.small)
+
+    cell(0, 1, syminfo.ticker + " · " + timeframe.period + (timeframe.isdaily ? "" : " ⚠ 非日線"), dimTxt)
+    cell(1, 1, str.tostring(nObs) + " 根", dimTxt)
+    cell(2, 1, str.tostring(yrs, "#.#") + " 年", dimTxt)
+    cell(3, 1, "成本 " + str.tostring(costBps, "#.#") + "bp", dimTxt)
+
+    cell(0, 2, "累積報酬", dimTxt)
+    cell(1, 2, pct(eON - 100.0), eON >= 100 ? colON : colID)
+    cell(2, 2, pct(eID - 100.0), eID >= 100 ? colON : colID)
+    cell(3, 2, pct(eBH - 100.0), panelTxt)
+
+    cell(0, 3, "年化報酬", dimTxt)
+    cell(1, 3, pct(cagr(eON, nObs)), panelTxt)
+    cell(2, 3, pct(cagr(eID, nObs)), panelTxt)
+    cell(3, 3, pct(cagr(eBH, nObs)), panelTxt)
+
+    cell(0, 4, "夏普（年化）", dimTxt)
+    cell(1, 4, str.tostring(sharpe(sON, sON2, nObs), "#.##"), panelTxt)
+    cell(2, 4, str.tostring(sharpe(sID, sID2, nObs), "#.##"), panelTxt)
+    cell(3, 4, str.tostring(sharpe(sBH, sBH2, nObs), "#.##"), panelTxt)
+
+    cell(0, 5, "最大回撤", dimTxt)
+    cell(1, 5, pct(ddON), panelTxt)
+    cell(2, 5, pct(ddID), panelTxt)
+    cell(3, 5, pct(ddBH), panelTxt)
+
+    cell(0, 6, "日均（bp）", dimTxt)
+    cell(1, 6, str.tostring(mON, "#.##"), panelTxt)
+    cell(2, 6, str.tostring(mID, "#.##"), panelTxt)
+    cell(3, 6, str.tostring(mBH, "#.##"), panelTxt)
+
+    cell(0, 7, "上漲天數", dimTxt)
+    cell(1, 7, nObs > 0 ? pct(winON * 100.0 / nObs) : "—", panelTxt)
+    cell(2, 7, nObs > 0 ? pct(winID * 100.0 / nObs) : "—", panelTxt)
+    cell(3, 7, "—", dimTxt)
+
+    cell(0, 8, "扣成本後年化", dimTxt)
+    cell(1, 8, pct(cagr(eNet, nObs)), cagr(eNet, nObs) > 0 ? colON : colID)
+    cell(2, 8, "—", dimTxt)
+    cell(3, 8, "—", dimTxt)
+
+    cell(0, 9, "每年成本", dimTxt)
+    cell(1, 9, pct(2.0 * costBps / 10000.0 * barsPerYear * 100.0), colID)
+    cell(2, 9, "每天一次來回", dimTxt)
+    cell(3, 9, "", dimTxt)
