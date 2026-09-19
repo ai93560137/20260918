@@ -63,6 +63,14 @@ def weights(r, a):
     return pd.Series(w, index=r.index), pd.Series(turn, index=r.index)
 
 
+PERIOD = {"monthly": ("M", 1), "quarterly": ("Q", 3), "annual": ("Y", 12)}
+
+
+def is_start(idx, i, i0, code):
+    """這一根是不是提領期間的第一根。"""
+    return i == i0 or idx[i].to_period(code) != idx[i - 1].to_period(code)
+
+
 def sim(r, w, turn, a, i0, i1, principal):
     """逐根模擬真實餘額。
 
@@ -70,6 +78,7 @@ def sim(r, w, turn, a, i0, i1, principal):
     比例提領模式下線性不成立（提領金額取決於餘額），只能這樣逐根跑。
     """
     idx = r.index
+    code, mult = PERIOD[a.freq]
     bal = principal
     wd_fixed = a.monthly
     rate_cash = a.cash_rate / 100.0 / a.bars_per_year
@@ -87,13 +96,14 @@ def sim(r, w, turn, a, i0, i1, principal):
         r_port = wi * r.iloc[i] - excess * (rate_brw if excess > 0 else rate_cash)
         bal *= 1.0 + r_port
 
-        if i == i0 or idx[i].to_period("M") != idx[i - 1].to_period("M"):
-            amt = wd_fixed if a.mode == "fixed" else bal * a.pct / 100.0 / 12.0
+        if is_start(idx, i, i0, code):
+            amt = wd_fixed * mult if a.mode == "fixed" else bal * a.pct / 100.0 * mult / 12.0
             if a.mode == "pct" and a.floor > 0:
-                amt = max(amt, a.floor)
-            amt = max(0.0, min(amt, bal))          # 提不出比餘額多的錢
-            bal -= amt
-            incomes.append(amt)
+                amt = max(amt, a.floor * mult)
+            take = min(amt + a.trade_fee, max(0.0, bal))   # 手續費也要賣股票來付
+            amt = max(0.0, take - a.trade_fee)
+            bal -= take
+            incomes.append(amt / mult)                     # 一律換算成「每月等值」才能比較
             inc_year.append(idx[i].year)
 
         if turn.iloc[i] > 0:
@@ -116,6 +126,7 @@ def sim(r, w, turn, a, i0, i1, principal):
 def linear_need(r, w, turn, a, i0, i1):
     """固定提領的『所需本金』= 提領流在這條報酬路徑上的現值（見 README 10.1）。"""
     idx = r.index
+    code, mult = PERIOD[a.freq]
     rate_cash = a.cash_rate / 100.0 / a.bars_per_year
     rate_brw = (a.cash_rate + a.borrow_spread) / 100.0 / a.bars_per_year
     g, h, wd = 1.0, 0.0, a.monthly
@@ -125,8 +136,8 @@ def linear_need(r, w, turn, a, i0, i1):
         wi = w.iloc[i]
         excess = wi - 1.0
         g *= 1.0 + wi * r.iloc[i] - excess * (rate_brw if excess > 0 else rate_cash)
-        if i == i0 or idx[i].to_period("M") != idx[i - 1].to_period("M"):
-            h += wd / g
+        if is_start(idx, i, i0, code):
+            h += (wd * mult + a.trade_fee) / g
         if turn.iloc[i] > 0:
             g *= 1.0 - turn.iloc[i] * a.cost_bps / 10000.0
     return h
@@ -155,6 +166,12 @@ def main():
     p.add_argument("--principal", type=float, default=15_000_000)
     p.add_argument("--monthly", type=float, default=50_000, help="fixed 模式的每月提領")
     p.add_argument("--mode", choices=["fixed", "pct", "both"], default="fixed")
+    p.add_argument("--freq", choices=["monthly", "quarterly", "annual"], default="monthly",
+                   help="提領頻率。--monthly 永遠是『每月等值金額』，季提=×3、年提=×12，"
+                        "所以三種頻率的年提領總額相同，可以直接比較。")
+    p.add_argument("--trade-fee", type=float, default=0.0,
+                   help="每一筆提領的固定交易成本（元）。小額本金的關鍵變數："
+                        "月提一年 12 筆、年提一年 1 筆。")
     p.add_argument("--pct", type=float, default=4.0, help="pct 模式：每年提當時餘額的百分之幾")
     p.add_argument("--floor", type=float, default=0.0, help="pct 模式：每月最低提領（會恢復破產風險）")
     p.add_argument("--infl", type=float, default=0.0, help="提領年增率 %%（0 = 不做通膨調整）")
@@ -185,8 +202,11 @@ def main():
     flag = "" if -0.20 < cagr < 0.30 else "   ⚠ 異常，別信下面任何數字"
 
     print(f"\n{a.symbol}  {idx[0].date()} → {idx[-1].date()}  ({n/a.bars_per_year:.1f} 年)")
+    freq_zh = {"monthly": "月提", "quarterly": "季提", "annual": "年提"}[a.freq]
     print(f"本金 {money(a.principal)}   通膨 {a.infl}%   股息稅 {a.div_tax:.0%}"
           f"   調兵目標波動 {a.target_vol}%")
+    print(f"提領頻率 {freq_zh}（每筆 {money(a.monthly*PERIOD[a.freq][1])}）"
+          f"   每筆手續費 {a.trade_fee:,.0f}   現金利率 {a.cash_rate}%   換手成本 {a.cost_bps}bp")
     print(f"年化報酬（檢查）買入持有 {cagr:.2%}{flag}")
     print("=" * 78)
 
@@ -200,7 +220,8 @@ def main():
     modes = ["fixed", "pct"] if a.mode == "both" else [a.mode]
     for m in modes:
         a.mode = m
-        label = f"固定提領 {money(a.monthly)}/月" if m == "fixed" else f"比例提領 {a.pct}%/年"
+        label = (f"固定提領 {money(a.monthly)}/月等值" if m == "fixed"
+                 else f"比例提領 {a.pct}%/年")
         print(f"\n【{label}】")
         print(f"{'':22}{'期末餘額':>14}{'是否破產' if m=='fixed' else '最低月提領':>12}"
               f"{'平均月提領':>12}{'最大回撤':>10}{'平均曝險':>10}")
