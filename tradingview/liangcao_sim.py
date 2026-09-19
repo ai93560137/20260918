@@ -212,6 +212,11 @@ def main():
     p.add_argument("--borrow-spread", type=float, default=1.0)
     p.add_argument("--div-tax", type=float, default=0.30)
     p.add_argument("--bars-per-year", type=int, default=252)
+    p.add_argument("--trend", type=int, default=0,
+                   help="加一組趨勢濾網對照（例如 200 = 200 日均線）：價格在均線之上滿倉、"
+                        "之下空手（資金收現金利息）。訊號用前一根收盤決定，不偷看未來。"
+                        "調兵量的是『波動』，趨勢濾網量的是『方向』——日本式陰跌正好是"
+                        "波動不高但方向向下，這一組是專門用來檢驗那個缺口的。")
     p.add_argument("--static-w", type=float, default=0.0,
                    help="對照組：固定曝險倍數（例如 0.6）。設 -1 = 自動用調兵的平均曝險。"
                         "這是檢驗『調兵的好處是不是只因為股票買得少』的關鍵對照組。")
@@ -262,6 +267,11 @@ def main():
     if a.static_w != 0.0:
         sw = w.mean() if a.static_w < 0 else a.static_w
         strat.append((f"固定曝險 {sw:.2f}x", pd.Series(sw, index=idx), zeros))
+    if a.trend > 0:
+        px = (1.0 + r).cumprod()                       # 合成價格指數（混合組合也適用）
+        sig = (px > px.rolling(a.trend).mean()).shift(1).fillna(False)
+        tw = sig.astype(float)
+        strat.append((f"趨勢濾網 {a.trend}日", tw, tw.diff().abs().fillna(0.0)))
 
     modes = ["fixed", "pct"] if a.mode == "both" else [a.mode]
     for m in modes:
