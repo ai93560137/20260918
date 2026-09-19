@@ -24,7 +24,7 @@ import pandas as pd
 W = 10_000.0  # 顯示單位：萬
 
 
-def load(symbol, start, end):
+def load_one(symbol, start, end):
     import yfinance as yf
     df = yf.download(symbol, start=start, end=end, auto_adjust=False, progress=False)
     if df.empty:
@@ -32,6 +32,26 @@ def load(symbol, start, end):
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
     return df[["Close", "Adj Close"]].dropna()
+
+
+def blend(rets, wts, code):
+    """多標的定期再平衡的組合報酬。
+
+    再平衡之間讓權重自然漂移，期初才拉回目標——這才是真實做法。
+    每天強制拉回會產生虛假的再平衡紅利。
+    """
+    idx = rets.index
+    cur = np.array(wts, dtype=float)
+    out = np.zeros(len(idx))
+    for i in range(len(idx)):
+        if i == 0 or idx[i].to_period(code) != idx[i - 1].to_period(code):
+            cur = np.array(wts, dtype=float)
+        row = rets.iloc[i].values
+        rp = float((cur * row).sum())
+        out[i] = rp
+        g = 1.0 + rp
+        cur = cur * (1.0 + row) / g if g > 0 else cur
+    return pd.Series(out, index=idx)
 
 
 def build_returns(df, div_tax):
@@ -160,7 +180,13 @@ def report(tag, res, a):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--symbol", default="SPY")
+    p.add_argument("--symbol", default="SPY",
+                   help="單一標的，或以逗號分隔的多標的（例如 SPY,EWJ,EFA）。"
+                        "多標的會取日期交集——結果會被歷史最短的那一支截斷。")
+    p.add_argument("--weights", default="",
+                   help="多標的的權重，逗號分隔（例如 0.4,0.2,0.4）。省略 = 等權。自動正規化。")
+    p.add_argument("--blend-rebal", choices=["monthly", "quarterly", "annual"], default="annual",
+                   help="多標的之間的再平衡頻率。預設年度——再平衡之間讓權重自然漂移。")
     p.add_argument("--start", default="1993-01-01")
     p.add_argument("--end", default=None)
     p.add_argument("--principal", type=float, default=15_000_000)
@@ -191,8 +217,26 @@ def main():
                         "這是檢驗『調兵的好處是不是只因為股票買得少』的關鍵對照組。")
     a = p.parse_args()
 
-    df = load(a.symbol, a.start, a.end)
-    r = build_returns(df, a.div_tax)
+    syms = [x.strip() for x in a.symbol.split(",") if x.strip()]
+    if a.weights:
+        wts = [float(x) for x in a.weights.split(",")]
+        if len(wts) != len(syms):
+            raise SystemExit(f"標的 {len(syms)} 個，權重 {len(wts)} 個，對不上")
+    else:
+        wts = [1.0 / len(syms)] * len(syms)
+    tot_w = sum(wts)
+    wts = [x / tot_w for x in wts]
+
+    if len(syms) == 1:
+        r = build_returns(load_one(syms[0], a.start, a.end), a.div_tax)
+    else:
+        cols = {}
+        for sym in syms:
+            cols[sym] = build_returns(load_one(sym, a.start, a.end), a.div_tax)
+        rets = pd.DataFrame(cols).dropna()          # 交集日期：被最短的那一支截斷
+        if rets.empty:
+            raise SystemExit("各標的的日期沒有交集")
+        r = blend(rets, wts, PERIOD[a.blend_rebal][0])
     w, turn = weights(r, a)
     idx = r.index
     n = len(r)
@@ -201,7 +245,9 @@ def main():
     cagr = g_bh ** (a.bars_per_year / n) - 1
     flag = "" if -0.20 < cagr < 0.30 else "   ⚠ 異常，別信下面任何數字"
 
-    print(f"\n{a.symbol}  {idx[0].date()} → {idx[-1].date()}  ({n/a.bars_per_year:.1f} 年)")
+    head = a.symbol if len(syms) == 1 else \
+        " + ".join(f"{sy} {wt:.0%}" for sy, wt in zip(syms, wts)) + f"（{a.blend_rebal} 再平衡）"
+    print(f"\n{head}  {idx[0].date()} → {idx[-1].date()}  ({n/a.bars_per_year:.1f} 年)")
     freq_zh = {"monthly": "月提", "quarterly": "季提", "annual": "年提"}[a.freq]
     print(f"本金 {money(a.principal)}   通膨 {a.infl}%   股息稅 {a.div_tax:.0%}"
           f"   調兵目標波動 {a.target_vol}%")
