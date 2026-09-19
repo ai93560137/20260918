@@ -24,10 +24,23 @@ import argparse, sys
 import numpy as np
 import pandas as pd
 
-# ── 八陣圖的日線預設（原樣抄自 .pine 第 165–172 行）────────────────────────
-PRESET_D = dict(lenTrend=40, r2Min=0.45, slopeMin=0.030, lenRange=12,
-                rangeMaxATR=3.2, rangeMinBars=6, boxMaxAge=20,
-                bufATR=0.35, confirmBars=2, atrLen=14, failBars=10)
+# ── 八陣圖的各週期預設（原樣抄自 .pine 第 165–172 行）──────────────────────
+PRESETS = {
+ 'D':  dict(lenTrend=40, r2Min=0.45, slopeMin=0.030, lenRange=12, rangeMaxATR=3.2,
+            rangeMinBars=6, boxMaxAge=20, bufATR=0.35, confirmBars=2),
+ 'H4': dict(lenTrend=45, r2Min=0.52, slopeMin=0.028, lenRange=14, rangeMaxATR=2.8,
+            rangeMinBars=7, boxMaxAge=20, bufATR=0.28, confirmBars=1),
+ 'H1': dict(lenTrend=50, r2Min=0.55, slopeMin=0.025, lenRange=16, rangeMaxATR=3.0,
+            rangeMinBars=8, boxMaxAge=25, bufATR=0.25, confirmBars=1),
+ 'M15':dict(lenTrend=60, r2Min=0.48, slopeMin=0.025, lenRange=20, rangeMaxATR=3.8,
+            rangeMinBars=8, boxMaxAge=30, bufATR=0.25, confirmBars=1),
+ 'M5': dict(lenTrend=60, r2Min=0.58, slopeMin=0.030, lenRange=20, rangeMaxATR=3.8,
+            rangeMinBars=8, boxMaxAge=40, bufATR=0.30, confirmBars=1),
+}
+for _k in PRESETS:
+    PRESETS[_k].update(atrLen=14, failBars=10)
+PRESET_D = PRESETS['D']
+RESAMPLE = {'M5': '5min', 'M15': '15min', 'H1': '1h', 'H4': '4h', 'D': '1D'}
 
 
 # ── Pine 內建函數的等價實作 ────────────────────────────────────────────────
@@ -43,22 +56,34 @@ def atr(df, n):
 
 
 def linreg_slope_r2(close, n):
-    """ta.linreg(close,n,0) - ta.linreg(close,n,1) 等於 OLS 斜率；r2 = corr(close,bar_index)^2"""
+    """ta.linreg(close,n,0) - ta.linreg(close,n,1) 等於 OLS 斜率；r2 = corr(close,bar_index)^2
+    向量化版本 —— M1 資料動輒 25 萬根，純 Python 迴圈跑不動。"""
+    from numpy.lib.stride_tricks import sliding_window_view
     x = np.arange(n, dtype=float)
     xm = x.mean()
     sxx = ((x - xm) ** 2).sum()
-    v = close.values
+    w = x - xm
+    v = close.values.astype(float)
     slope = np.full(len(v), np.nan)
     r2 = np.full(len(v), np.nan)
-    for i in range(n - 1, len(v)):
-        y = v[i - n + 1:i + 1]
-        ym = y.mean()
-        sxy = ((x - xm) * (y - ym)).sum()
-        syy = ((y - ym) ** 2).sum()
-        b = sxy / sxx
-        slope[i] = b
-        r2[i] = 0.0 if syy <= 0 else (sxy * sxy) / (sxx * syy)
+    if len(v) >= n:
+        W = sliding_window_view(v, n)
+        sxy = (W * w).sum(1)
+        syy = ((W - W.mean(1)[:, None]) ** 2).sum(1)
+        slope[n - 1:] = sxy / sxx
+        with np.errstate(divide='ignore', invalid='ignore'):
+            r2[n - 1:] = np.where(syy > 0, (sxy * sxy) / (sxx * syy), 0.0)
     return pd.Series(slope, index=close.index), pd.Series(r2, index=close.index)
+
+
+def resample(df, tf):
+    """M1 原始資料 → 目標週期。週末的空 bar 會被丟掉。"""
+    if tf == 'M1':
+        return df
+    agg = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'}
+    if 'Volume' in df.columns:
+        agg['Volume'] = 'sum'
+    return df.resample(RESAMPLE[tf]).agg(agg).dropna(subset=['Close'])
 
 
 # ── 狀態機：1 上升軌道 / -1 下降軌道 / 0 橫行 / 2 過渡 ──────────────────────
@@ -133,6 +158,77 @@ def breakouts(df, s, p):
             pendDir, pendCnt = 0, 0
 
     return pd.DataFrame(out), boxLives
+
+
+def trades(df, s, p, stopATR=None, tpATR=None, maxBars=10):
+    """突破確認後進場，逐根用 High/Low 檢查停損停利（停損優先），到期用時間出場。
+    stopATR=None 表示不設價格停損 —— 此時 maxBars 就是停損：最多抱這麼多根。"""
+    st, hi, lo, a = s.st.values, s.hi.values, s.lo.values, s.atr.values
+    C, H, L = df.Close.values, df.High.values, df.Low.values
+    n = len(df)
+    boxTop = boxBot = np.nan
+    live, lastR, run, pdir, pc = False, -1, 0, 0, 0
+    out = []
+    for i in range(1, n):
+        run = run + 1 if st[i] == 0 else 0
+        if st[i] == 0 and run >= p['rangeMinBars']:
+            boxTop, boxBot, live, lastR = hi[i - 1], lo[i - 1], True, i
+        elif live and i - lastR > p['boxMaxAge']:
+            live = False
+        if not live or np.isnan(a[i]):
+            pdir, pc = 0, 0
+            continue
+        raw = 1 if C[i] > boxTop + p['bufATR'] * a[i] else (-1 if C[i] < boxBot - p['bufATR'] * a[i] else 0)
+        if raw != 0 and raw == pdir:
+            pc += 1
+        elif raw != 0:
+            pdir, pc = raw, 1
+        else:
+            pdir, pc = 0, 0
+        if pdir != 0 and pc == p['confirmBars']:
+            px, av, dr, ex = C[i], a[i], pdir, None
+            sp = px - dr * stopATR * av if stopATR else None
+            tp = px + dr * tpATR * av if tpATR else None
+            for j in range(i + 1, min(i + 1 + maxBars, n)):
+                if sp is not None and ((dr > 0 and L[j] <= sp) or (dr < 0 and H[j] >= sp)):
+                    ex = (sp, j, 'stop'); break
+                if tp is not None and ((dr > 0 and H[j] >= tp) or (dr < 0 and L[j] <= tp)):
+                    ex = (tp, j, 'tp'); break
+            if ex is None:
+                j = min(i + maxBars, n - 1)
+                ex = (C[j], j, 'time')
+            out.append(dict(t=df.index[i], dir=dr, ret=(ex[0] / px - 1) * dr * 100,
+                            how=ex[2], bars=ex[1] - i))
+            live, pdir, pc = False, 0, 0
+    return pd.DataFrame(out)
+
+
+def trade_report(name, df, p, stopATR, tpATR, maxBars, aum, exposure):
+    s = states(df, p)
+    tr = trades(df, s, p, stopATR, tpATR, maxBars)
+    if len(tr) < 10:
+        print(f"\n{name}: 交易數 {len(tr)}，不足以下結論。")
+        return
+    t = tr.ret.mean() / (tr.ret.std() / np.sqrt(len(tr)))
+    print(f"\n{'='*66}\n{name} 進出場模擬  停損={stopATR or '無（改用時間出場）'} "
+          f"停利={tpATR or '無'} 最長持有={maxBars} 根\n{'='*66}")
+    print(f"  {len(tr)} 筆  平均 {tr.ret.mean():+.3f}%  勝率 {(tr.ret>0).mean()*100:.1f}%  t={t:+.2f}")
+    print(f"  單筆最壞 {tr.ret.min():+.3f}%  最好 {tr.ret.max():+.3f}%  平均持有 {tr.bars.mean():.1f} 根")
+    print(f"  出場方式：" + "  ".join(f"{k} {v}" for k, v in tr.how.value_counts().items()))
+    eq = (1 + tr.ret / 100).cumprod()
+    mdd = (eq / eq.cummax() - 1).min() * 100
+    print(f"  訊號序列最大回撤（名義）{mdd:.2f}%  → 曝險 {exposure}x 時對 NAV 約 {mdd*exposure:.2f}%")
+    tr = tr.assign(m=pd.to_datetime(tr.t).dt.to_period('M'))
+    mo = tr.groupby('m').ret.agg(['count', 'sum'])
+    print(f"\n  逐月（名義 %）：")
+    for k, v in mo.iterrows():
+        print(f"    {k}  {int(v['count']):>3} 筆  {v['sum']:+7.3f}%")
+    print(f"  {(mo['sum']>0).sum()} 個月正 / {(mo['sum']<=0).sum()} 個月負   "
+          f"月均 {mo['sum'].mean():+.3f}%  標準差 {mo['sum'].std():.3f}%")
+    notional = aum * exposure
+    mm = mo['sum'] / 100 * notional
+    print(f"\n  AUM {aum:,.0f} × 曝險 {exposure}x = 名義 {notional:,.0f}")
+    print(f"  月均 {mm.mean():+,.0f}   標準差 {mm.std():,.0f}   最壞月 {mm.min():+,.0f}")
 
 
 def report(name, df, p, fwd_h=10, seed=0):
@@ -216,14 +312,19 @@ def sweep(name, df, base):
 
 def load(a):
     if a.csv:
-        df = pd.read_csv(a.csv, parse_dates=['Date']).set_index('Date').sort_index()
+        raw = pd.read_csv(a.csv)
+        tcol = 'Date' if 'Date' in raw.columns else 'Time'
+        raw[tcol] = pd.to_datetime(raw[tcol], format='mixed', dayfirst=False)
+        df = raw.set_index(tcol).sort_index()
+        df.index.name = 'Date'
     else:
         import yfinance as yf
         df = yf.download(a.symbol, period=f"{a.years}y", interval="1d",
                          auto_adjust=False, progress=False)
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
-    df = df[['Open', 'High', 'Low', 'Close']].dropna().astype(float)
+    keep = [c for c in ['Open', 'High', 'Low', 'Close', 'Volume'] if c in df.columns]
+    df = df[keep].dropna(subset=['Close']).astype(float)
     if len(df) < 200:
         sys.exit("資料太少，拿不到結論。")
     return df
@@ -237,15 +338,29 @@ if __name__ == "__main__":
     ap.add_argument("--fwd", type=int, default=10, help="前瞻報酬的根數")
     ap.add_argument("--split", action="store_true", help="前後各半分開跑，看門檻撐不撐得住")
     ap.add_argument("--sweep", action="store_true")
+    ap.add_argument("--tf", default="D", choices=list(RESAMPLE) + ["M1"],
+                    help="把資料重取樣到這個週期，並自動套用八陣圖該週期的預設門檻")
+    ap.add_argument("--trades", action="store_true", help="跑進出場模擬並換算成錢")
+    ap.add_argument("--stop", type=float, default=None, help="停損 ATR 倍數；不給 = 只用時間出場")
+    ap.add_argument("--tp", type=float, default=None, help="停利 ATR 倍數")
+    ap.add_argument("--hold", type=int, default=10, help="最長持有根數（時間出場）")
+    ap.add_argument("--aum", type=float, default=24_000_000.0)
+    ap.add_argument("--exposure", type=float, default=0.3)
     a = ap.parse_args()
 
-    df = load(a)
-    name = a.csv or a.symbol
+    df = resample(load(a), a.tf)
+    PRESET = PRESETS.get(a.tf, PRESET_D)
+    name = f"{a.csv or a.symbol}  [{a.tf}]"
     if a.split:
         h = len(df) // 2
-        report(name + "（前半）", df.iloc[:h], PRESET_D, a.fwd)
-        report(name + "（後半）", df.iloc[h:], PRESET_D, a.fwd)
+        report(name + "（前半）", df.iloc[:h], PRESET, a.fwd)
+        report(name + "（後半）", df.iloc[h:], PRESET, a.fwd)
+        if a.trades:
+            trade_report(name + "（前半）", df.iloc[:h], PRESET, a.stop, a.tp, a.hold, a.aum, a.exposure)
+            trade_report(name + "（後半）", df.iloc[h:], PRESET, a.stop, a.tp, a.hold, a.aum, a.exposure)
     else:
-        report(name, df, PRESET_D, a.fwd)
+        report(name, df, PRESET, a.fwd)
+        if a.trades:
+            trade_report(name, df, PRESET, a.stop, a.tp, a.hold, a.aum, a.exposure)
     if a.sweep:
-        sweep(name, df, PRESET_D)
+        sweep(name, df, PRESET)
