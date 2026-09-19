@@ -4,3 +4,6 @@ __pycache__/
 venv/
 *.egg-info/
 .env
+
+# 個人財務資料 — 不進版本庫
+personal/
