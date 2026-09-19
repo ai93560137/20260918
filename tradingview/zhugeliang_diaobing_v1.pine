@@ -80,7 +80,9 @@ panelSize  = input.string("small", "字體", options = ["tiny", "small", "normal
 // 報酬與波動率
 // =============================================================================
 // 股息：除息當根的每股配息，除以前一根收盤 = 當日股息報酬率
-divAmt = nz(request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_off, barmerge.lookahead_off), 0.0)
+// ⚠ 必須用 gaps_on：gaps_off 會把上一次的配息重複填到「每一根」K 線，
+//   季配息就會被重複計入約 63 倍，累積報酬會離譜地膨脹。
+divAmt = nz(request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_on, barmerge.lookahead_off), 0.0)
 divRet = useDiv and not na(close[1]) and close[1] > 0 ? divAmt / close[1] : 0.0
 
 // 總報酬 = 價格報酬 + 股息報酬

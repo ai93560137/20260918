@@ -90,7 +90,9 @@ panelSize  = input.string("small", "字體", options = ["tiny", "small", "normal
 // =============================================================================
 // 報酬（含稅後股息）與波動率
 // =============================================================================
-divAmt = nz(request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_off, barmerge.lookahead_off), 0.0)
+// ⚠ 必須用 gaps_on：gaps_off 會把上一次的配息重複填到「每一根」K 線，
+//   季配息就會被重複計入約 63 倍，累積報酬會離譜地膨脹。
+divAmt = nz(request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_on, barmerge.lookahead_off), 0.0)
 divNet = divAmt * (1.0 - divTaxPct / 100.0)
 divRet = useDiv and not na(close[1]) and close[1] > 0 ? divNet / close[1] : 0.0
 
@@ -229,7 +231,7 @@ susV = needV > 0 ? principal * monthly / needV : na
 // =============================================================================
 // 主面板
 // =============================================================================
-var table tb = table.new(posMain, 3, 12, border_width = 1)
+var table tb = table.new(posMain, 3, 13, border_width = 1)
 cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
      text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
 head(c, txt, txtCol) => table.cell(tb, c, 0, txt, bgcolor = color.new(#1E88E5, 10),
@@ -286,6 +288,15 @@ if showPanel and barstate.islast
          str.tostring(yrsRun > 0 ? nReb / yrsRun : na, "#.#") + " 次", dimTxt)
     cell(2, 11, "1.00x / 0 次", dimTxt)
 
+    // 金絲雀：這一列若偏離常識（股票長期約 5–12%），就是資料或設定出問題，
+    // 不要相信上面任何數字。股息被重複計入時，這裡會跳到三位數。
+    cagrV = nObs > 0 ? (math.pow(gVe, barsPerYear / math.max(1.0, nObs * 1.0)) - 1.0) * 100.0 : na
+    cagrB = nObs > 0 ? (math.pow(gBe, barsPerYear / math.max(1.0, nObs * 1.0)) - 1.0) * 100.0 : na
+    sane  = not na(cagrB) and cagrB > -20.0 and cagrB < 30.0
+    cell(0, 12, sane ? "年化報酬（檢查）" : "⚠ 年化報酬異常", sane ? dimTxt : colBad)
+    cell(1, 12, str.tostring(cagrV, "#.##") + "%", sane ? panelTxt : colBad)
+    cell(2, 12, str.tostring(cagrB, "#.##") + "%", sane ? panelTxt : colBad)
+
 // =============================================================================
 // 逐年起始表：從每一年開始退休，結果如何
 // =============================================================================
@@ -311,6 +322,7 @@ if showYears and barstate.islast and array.size(yrArr) > 0
     int okV = 0
     int okB = 0
     int nRows = 0
+    int nSkip = 0
 
     for i = 0 to nY - 1
         y0 = array.get(yrArr, i)
@@ -338,25 +350,27 @@ if showYears and barstate.islast and array.size(yrArr) > 0
             liveB = enough and nz(eB, -1.0) > 0
             liveV = enough and nz(eV, -1.0) > 0
 
-            row += 1
-            if enough
+            // 年期放不下的起始年直接略過，不佔版面（只在最後一列報略過幾個）
+            if not enough
+                nSkip += 1
+            else
+                row += 1
                 nRows += 1
                 okB += liveB ? 1 : 0
                 okV += liveV ? 1 : 0
-
-            span = horizonYr == 0 ? yEnd - y0 : horizonYr
-            ycell(0, row, str.tostring(y0), panelTxt)
-            ycell(1, row, enough ? str.tostring(span) + " 年" : "資料不足", enough ? dimTxt : colBad)
-            ycell(2, row, fm(nV), enough and nV <= principal ? colVT : colBad)
-            ycell(3, row, fm(nB), enough and nB <= principal ? panelTxt : colBad)
-            ycell(4, row, enough ? fm(math.max(0.0, eV)) : "—", liveV ? colVT : colBad)
-            ycell(5, row, enough ? fm(math.max(0.0, eB)) : "—", liveB ? panelTxt : colBad)
-            ycell(6, row, not enough ? "—" : (liveV ? "調✔" : "調✘") + " " + (liveB ? "持✔" : "持✘"),
-                 liveV and liveB ? colVT : liveV or liveB ? panelTxt : colBad)
+                span = horizonYr == 0 ? yEnd - y0 : horizonYr
+                ycell(0, row, str.tostring(y0), panelTxt)
+                ycell(1, row, str.tostring(span) + " 年", dimTxt)
+                ycell(2, row, fm(nV), nV <= principal ? colVT : colBad)
+                ycell(3, row, fm(nB), nB <= principal ? panelTxt : colBad)
+                ycell(4, row, fm(math.max(0.0, eV)), liveV ? colVT : colBad)
+                ycell(5, row, fm(math.max(0.0, eB)), liveB ? panelTxt : colBad)
+                ycell(6, row, (liveV ? "調✔" : "調✘") + " " + (liveB ? "持✔" : "持✘"),
+                     liveV and liveB ? colVT : liveV or liveB ? panelTxt : colBad)
 
     if row < 47
         ycell(0, row + 1, "存活率", panelTxt)
-        ycell(1, row + 1, str.tostring(nRows) + " 組", dimTxt)
+        ycell(1, row + 1, str.tostring(nRows) + " 組" + (nSkip > 0 ? " +略過" + str.tostring(nSkip) : ""), dimTxt)
         ycell(2, row + 1, "調兵", colVT)
         ycell(3, row + 1, nRows > 0 ? str.tostring(okV * 100.0 / nRows, "#.#") + "%" : "—",
              okV == nRows ? colVT : colBad)
