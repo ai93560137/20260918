@@ -582,7 +582,7 @@ posC    = panelPos == "右上" ? position.top_right : panelPos == "右中" ? pos
           panelPos == "左中" ? position.middle_left : position.bottom_left
 dimTxt  = color.new(panelTxt, 45)
 
-var table tb = table.new(posC, 2, 20, border_width = 1)
+var table tb = table.new(posC, 2, 22, border_width = 1)
 
 // 左欄（欄位名稱）與右欄（數值）的統一樣式
 cellK(row, txt) => table.cell(tb, 0, row, txt, bgcolor = panelBg, text_color = dimTxt,
@@ -699,6 +699,20 @@ if showPanel and barstate.islast
 
     cellK(19, "參數預設")
     cellV(19, pkName + (preset == "跟圖表設定" ? "（跟圖表）" : ""), dimTxt)
+
+    // ── 資料體檢：哪些關卡在這個商品上其實是關著的 ──
+    //    XAUUSD / 現貨外匯沒有有效成交量，量能關卡會自動略過；
+    //    24 小時商品的 session.ismarket 幾乎整天為真，時段過濾等於沒開。
+    //    這兩件事本來是靜默發生的——靜默失效比明著報錯危險得多。
+    volLive  = useVol and volValid
+    sessLive = not timeframe.isdwm and sessMode != "不過濾"
+    cellK(20, "量能關卡")
+    cellV(20, not useVol ? "未啟用" : volValid ? "生效中 ✓" : "⚠ 此商品無量能資料，自動略過",
+         not useVol ? dimTxt : volLive ? colUp : colDn)
+    cellK(21, "時段過濾")
+    cellV(21, timeframe.isdwm ? "日線以上不適用" : sessMode == "不過濾" ? "未啟用" :
+         sessMode == "商品常規時段" ? (session.ismarket ? "常規時段內" : "常規時段外") : "自訂時段",
+         sessLive ? colUp : dimTxt)
 
 // =============================================================================
 // 警報（TradingView 建立警報時請選 Once Per Bar Close）
