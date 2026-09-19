@@ -33,6 +33,8 @@ sessTZ  = input.string("America/New_York", "時區", group = G_S,
      options = ["America/New_York", "America/Chicago", "Asia/Hong_Kong", "Asia/Tokyo", "Europe/London", "UTC"])
 startTime = input.time(timestamp("01 Jan 2000 00:00 +0000"), "起算日期", group = G_S,
      tooltip = "從這一天開始累積統計。改這個值統計會自動重算。")
+endTime   = input.time(timestamp("01 Jan 2100 00:00 +0000"), "結束日期", group = G_S,
+     tooltip = "只統計到這一天為止。與起算日期搭配可把歷史切成前後兩段，檢驗優勢是否隨時間衰減。")
 costBps   = input.float(1.0, "單邊成本（bp，1bp = 0.01%）", minval = 0.0, step = 0.5, group = G_S,
      tooltip = "手續費＋點差＋滑價的單邊總和。隔夜策略每天一次來回＝兩個單邊成本。" +
                "美股 ETF 約 1–2bp，個股約 2–5bp。")
@@ -87,7 +89,7 @@ rBH = na(rON) or na(rID) ? na : (1.0 + rON) * (1.0 + rID) - 1.0
 cost   = costBps / 10000.0
 rONnet = na(rON) ? na : rON - 2.0 * cost     // 收盤買、開盤賣 = 一次來回 = 兩個單邊
 
-inRange = time >= startTime
+inRange = time >= startTime and time <= endTime
 ok      = inRange and not na(rON) and not na(rID)
 
 // =============================================================================
