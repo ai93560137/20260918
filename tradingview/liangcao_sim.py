@@ -63,7 +63,7 @@ def weights(r, a):
     return pd.Series(w, index=r.index), pd.Series(turn, index=r.index)
 
 
-def sim(r, w, turn, a, i0, i1, principal, vol_target):
+def sim(r, w, turn, a, i0, i1, principal):
     """逐根模擬真實餘額。
 
     固定提領模式下，結果必須與 10.1 的線性公式一致——這是內建的自我檢查。
@@ -82,7 +82,7 @@ def sim(r, w, turn, a, i0, i1, principal, vol_target):
         if i > i0 and idx[i].year != idx[i - 1].year:
             wd_fixed *= 1.0 + a.infl / 100.0
 
-        wi = w.iloc[i] if vol_target else 1.0
+        wi = w.iloc[i]
         excess = wi - 1.0
         r_port = wi * r.iloc[i] - excess * (rate_brw if excess > 0 else rate_cash)
         bal *= 1.0 + r_port
@@ -96,7 +96,7 @@ def sim(r, w, turn, a, i0, i1, principal, vol_target):
             incomes.append(amt)
             inc_year.append(idx[i].year)
 
-        if vol_target and turn.iloc[i] > 0:
+        if turn.iloc[i] > 0:
             bal *= 1.0 - turn.iloc[i] * a.cost_bps / 10000.0
 
         peak = max(peak, bal)
@@ -109,7 +109,7 @@ def sim(r, w, turn, a, i0, i1, principal, vol_target):
     return {
         "end": bal, "min": min(bals) if bals else np.nan, "dd": dd, "busted": busted,
         "inc": inc, "inc_year": inc_year, "total": inc.sum(),
-        "n": i1 - i0,
+        "n": i1 - i0, "avg_w": w.iloc[i0:i1].mean(),
     }
 
 
@@ -118,21 +118,18 @@ def linear_need(r, w, turn, a, i0, i1):
     idx = r.index
     rate_cash = a.cash_rate / 100.0 / a.bars_per_year
     rate_brw = (a.cash_rate + a.borrow_spread) / 100.0 / a.bars_per_year
-    out = {}
-    for vt in (True, False):
-        g, h, wd = 1.0, 0.0, a.monthly
-        for i in range(i0, i1):
-            if i > i0 and idx[i].year != idx[i - 1].year:
-                wd *= 1.0 + a.infl / 100.0
-            wi = w.iloc[i] if vt else 1.0
-            excess = wi - 1.0
-            g *= 1.0 + wi * r.iloc[i] - excess * (rate_brw if excess > 0 else rate_cash)
-            if i == i0 or idx[i].to_period("M") != idx[i - 1].to_period("M"):
-                h += wd / g
-            if vt and turn.iloc[i] > 0:
-                g *= 1.0 - turn.iloc[i] * a.cost_bps / 10000.0
-        out["vt" if vt else "bh"] = (g, h)
-    return out
+    g, h, wd = 1.0, 0.0, a.monthly
+    for i in range(i0, i1):
+        if i > i0 and idx[i].year != idx[i - 1].year:
+            wd *= 1.0 + a.infl / 100.0
+        wi = w.iloc[i]
+        excess = wi - 1.0
+        g *= 1.0 + wi * r.iloc[i] - excess * (rate_brw if excess > 0 else rate_cash)
+        if i == i0 or idx[i].to_period("M") != idx[i - 1].to_period("M"):
+            h += wd / g
+        if turn.iloc[i] > 0:
+            g *= 1.0 - turn.iloc[i] * a.cost_bps / 10000.0
+    return h
 
 
 def money(x):
@@ -147,7 +144,7 @@ def report(tag, res, a):
         print(f"{'破產 '+str(res['busted']) if res['busted'] else '撐住':>12}", end="")
     else:
         print(f"{money(inc.min()):>12}", end="")
-    print(f"{money(inc.mean()):>12}{res['dd']:>10.1%}")
+    print(f"{money(inc.mean()):>12}{res['dd']:>10.1%}{res['avg_w']:>9.2f}x")
 
 
 def main():
@@ -172,6 +169,9 @@ def main():
     p.add_argument("--borrow-spread", type=float, default=1.0)
     p.add_argument("--div-tax", type=float, default=0.30)
     p.add_argument("--bars-per-year", type=int, default=252)
+    p.add_argument("--static-w", type=float, default=0.0,
+                   help="對照組：固定曝險倍數（例如 0.6）。設 -1 = 自動用調兵的平均曝險。"
+                        "這是檢驗『調兵的好處是不是只因為股票買得少』的關鍵對照組。")
     a = p.parse_args()
 
     df = load(a.symbol, a.start, a.end)
@@ -190,51 +190,59 @@ def main():
     print(f"年化報酬（檢查）買入持有 {cagr:.2%}{flag}")
     print("=" * 78)
 
+    ones = pd.Series(1.0, index=idx)
+    zeros = pd.Series(0.0, index=idx)
+    strat = [("調兵", w, turn), ("買入持有", ones, zeros)]
+    if a.static_w != 0.0:
+        sw = w.mean() if a.static_w < 0 else a.static_w
+        strat.append((f"固定曝險 {sw:.2f}x", pd.Series(sw, index=idx), zeros))
+
     modes = ["fixed", "pct"] if a.mode == "both" else [a.mode]
-    hdr2 = "是否破產" if modes[0] == "fixed" else "最低月提領"
     for m in modes:
         a.mode = m
         label = f"固定提領 {money(a.monthly)}/月" if m == "fixed" else f"比例提領 {a.pct}%/年"
         print(f"\n【{label}】")
-        print(f"{'':22}{'期末餘額':>14}{hdr2 if m=='fixed' else '最低月提領':>12}"
-              f"{'平均月提領':>12}{'最大回撤':>10}")
-        for vt, tag in ((True, "調兵"), (False, "買入持有")):
-            report(tag, sim(r, w, turn, a, 0, n, a.principal, vt), a)
+        print(f"{'':22}{'期末餘額':>14}{'是否破產' if m=='fixed' else '最低月提領':>12}"
+              f"{'平均月提領':>12}{'最大回撤':>10}{'平均曝險':>10}")
+        for tag, ws, ts in strat:
+            report(tag, sim(r, ws, ts, a, 0, n, a.principal), a)
 
     # ── 逐年起始 ──
     a.mode = modes[0]
     starts = [i for i in range(n) if i == 0 or idx[i].year != idx[i - 1].year]
     print(f"\n逐年起始（年期 {a.horizon} 年，模式 {a.mode}）")
     print("-" * 78)
-    if a.mode == "fixed":
-        print(f"{'起始年':>6}{'調·所需本金':>14}{'持·所需本金':>14}{'調·期末':>13}{'持·期末':>13}  結果")
-    else:
-        print(f"{'起始年':>6}{'調·最低月提':>14}{'持·最低月提':>14}{'調·期末':>13}{'持·期末':>13}")
-    okV = okB = tot = 0
+    col = "所需本金" if a.mode == "fixed" else "最低月提"
+    print(f"{'起始年':>6}" + "".join(f"{t+'·'+col:>15}" for t, _, _ in strat))
+    ok = [0] * len(strat)
+    tot = 0
+    worst = [0.0] * len(strat)
     for i0 in starts:
         y0 = idx[i0].year
         end = [i for i in starts if idx[i].year == y0 + a.horizon] if a.horizon else [n]
         if not end:
             continue
         i1 = end[0]
-        sV = sim(r, w, turn, a, i0, i1, a.principal, True)
-        sB = sim(r, w, turn, a, i0, i1, a.principal, False)
         tot += 1
-        okV += sV["end"] > 0
-        okB += sB["end"] > 0
-        if a.mode == "fixed":
-            nd = linear_need(r, w, turn, a, i0, i1)
-            needV = nd["vt"][1]
-            needB = nd["bh"][1]
-            print(f"{y0:>6}{money(needV):>14}{money(needB):>14}"
-                  f"{money(max(0,sV['end'])):>13}{money(max(0,sB['end'])):>13}"
-                  f"  {'調✔' if sV['end']>0 else '調✘'} {'持✔' if sB['end']>0 else '持✘'}")
-        else:
-            print(f"{y0:>6}{money(sV['inc'].min()):>14}{money(sB['inc'].min()):>14}"
-                  f"{money(max(0,sV['end'])):>13}{money(max(0,sB['end'])):>13}")
-    if tot and a.mode == "fixed":
+        cells = []
+        for k, (t, ws, ts) in enumerate(strat):
+            res = sim(r, ws, ts, a, i0, i1, a.principal)
+            ok[k] += res["end"] > 0
+            if a.mode == "fixed":
+                v = linear_need(r, ws, ts, a, i0, i1)
+                worst[k] = max(worst[k], v)
+                cells.append(f"{money(v)}{'✔' if res['end']>0 else '✘'}")
+            else:
+                worst[k] = max(worst[k], -res["inc"].min())
+                cells.append(money(res["inc"].min()))
+        print(f"{y0:>6}" + "".join(f"{c:>15}" for c in cells))
+    if tot:
         print("-" * 78)
-        print(f"存活率（{tot} 組）   調兵 {okV/tot:.0%}   買入持有 {okB/tot:.0%}")
+        print(f"{'存活率':>6}" + "".join(f"{f'{ok[k]/tot:.0%}':>15}" for k in range(len(strat))))
+        if a.mode == "fixed":
+            print(f"{'最糟':>6}" + "".join(f"{money(worst[k]):>15}" for k in range(len(strat))))
+            print(f"{'→月提上限':>6}" +
+                  "".join(f"{money(a.monthly*a.principal/worst[k]):>15}" for k in range(len(strat))))
 
 
 if __name__ == "__main__":
