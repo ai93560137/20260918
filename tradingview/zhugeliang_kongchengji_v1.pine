@@ -1,40 +1,56 @@
 //@version=6
 // =============================================================================
-// 智能諸葛亮 · 空城計 v1 — 一個只會叫你「不要動」的指標
+// 智能諸葛亮 · 空城計 v2 — 一個只會叫你「不要動」的指標
 //
 // 諸葛亮面對十五萬大軍，城中無兵。他開城門、焚香撫琴，什麼都不做——因此贏了。
 //
 // 這支指標刻意沒有「買進」訊號，也沒有「賣出」訊號。
-// **它唯一的輸出是：現在可不可以動。**
+// **它唯一的輸出是：現在可不可以動、最多可以有幾手。**
 //
 // 為什麼這樣設計：
 //   本專案測過七個「該做什麼」的假設，六個死掉。
 //   但有一件事在每一次測試裡都成立：**在最壞的時刻做出的決定，幾乎都是錯的。**
 //   爆掉的人不是平時爆的，是在「這次我很有把握」那一次爆的。
 //
-// 所以這支工具的價值不在於它告訴你什麼，
-// 在於它在你最想破例的那一天，擋在你和鍵盤之間。
+// v2 改動（依 521 天實單紀錄校準）：
+//   實測「連贏 k 天之後第一根下跌日」的損失是 0.93x → 1.01x → 1.12x → 1.10x → 1.27x，
+//   不是 1x → 2x → 3x → 4x → 5x。也就是說：**順勢加碼的金字塔從來沒有真的變大。**
+//   過去 521 天安全，是因為曝險一直在 0.5–0.7x。紀錄證明不了 3x 或 5x 會怎樣。
+//   所以 v2 把「上限」從一個手打的數字，換成一條會隨回撤自己收緊的公式：
+//
+//       可用曝險 = (可承受回撤 − 目前回撤) ÷ 最壞跳空
+//
+//   在高水位時它最寬（20% ÷ 12% = 1.67x）；每跌 1%，它就收緊一點；
+//   跌到容忍線時它是 0。你永遠不會在已經受傷的時候被允許加到最大。
 //
 // ⚠️ 它不能被用來合理化任何行動。它沒有那個狀態。
 //
 // 用法：掛在你交易的期貨圖表上（ES / NQ / HSI 日線或小時線）。
 //       每天開盤前看一眼。紅色就關掉電腦。
 // =============================================================================
-indicator("智能諸葛亮 · 空城計 v1｜最壞情況下什麼都不做", "空城計", overlay = true)
+indicator("智能諸葛亮 · 空城計 v2｜最壞情況下什麼都不做", "空城計", overlay = true)
 
 const string G_P = "① 你的處境（手動更新）"
-const string G_M = "② 市場條件"
-const string G_D = "③ 顯示"
+const string G_R = "② 風險預算"
+const string G_M = "③ 市場條件"
+const string G_D = "④ 顯示"
 
 // ── 你的處境：這幾個數字每週更新一次就夠 ──
-expNow   = input.float(0.53, "目前名義曝險（倍）", minval = 0.0, step = 0.1, group = G_P,
-     tooltip = "進場時的名義曝險 ÷ 權益。不是平均值，是現在這一刻。")
-expMax   = input.float(1.70, "名義曝險上限（永不破例）", minval = 0.1, step = 0.1, group = G_P,
-     tooltip = "由『可承受跌幅 ÷ 最壞跳空』決定。NQ 最壞估 12%、容忍 20% → 1.7")
-ddNow    = input.float(0.0, "目前距高水位（%，正數）", minval = 0.0, step = 1.0, group = G_P)
-ddTol    = input.float(20.0, "可承受回撤（%）", minval = 1.0, step = 1.0, group = G_P)
+equity   = input.float(24000000, "基金權益（元）", minval = 1, step = 100000, group = G_P)
+lotVal   = input.float(3900000, "每手名義值（元）", minval = 1, step = 100000, group = G_P,
+     tooltip = "NQ = 20 × 指數 × 匯率；ES = 50 × 指數 × 匯率；HSI = 50 × 指數。填你最常做的那一種。")
+lots     = input.int(3, "目前手數", minval = 0, group = G_P,
+     tooltip = "金字塔加到第幾手就填幾手。同一手數加碼時，這個數字就是層數。")
+ddNow    = input.float(0.0, "目前距高水位（%，正數）", minval = 0.0, step = 0.5, group = G_P)
 runway   = input.float(29.0, "現金跑道（月）", minval = 0.0, step = 1.0, group = G_P)
-runwayMin= input.float(12.0, "跑道警戒線（月）", minval = 0.0, step = 1.0, group = G_P)
+
+// ── 風險預算：這三個數字決定一切，訂了就不要改 ──
+ddTol    = input.float(20.0, "可承受回撤（%）", minval = 1.0, step = 1.0, group = G_R)
+gapWorst = input.float(12.0, "最壞隔夜跳空（%）", minval = 0.5, step = 0.5, group = G_R,
+     tooltip = "NQ 2020-03-16 約 −11%；ES 約 −9.5%；HSI 2008-10-27 約 −12.7%。100% 過夜的話這是每天都在的風險，不是偶爾。")
+expHard  = input.float(1.70, "名義曝險硬上限（倍）", minval = 0.1, step = 0.1, group = G_R,
+     tooltip = "無論回撤多小都不能破。預設 = 容忍 20% ÷ 最壞跳空 12%。")
+runwayMin= input.float(12.0, "跑道警戒線（月）", minval = 0.0, step = 1.0, group = G_R)
 
 // ── 市場條件：自動計算 ──
 volLen   = input.int(20, "短期波動回看", minval = 5, group = G_M)
@@ -61,10 +77,17 @@ gapSize = math.abs(open / close[1] - 1.0) * 100.0
 var int downRun = 0
 downRun := close < close[1] ? nz(downRun[1]) + 1 : 0
 
+// ── 曝險與上限 ──
+expNow  = equity > 0 ? lots * lotVal / equity : 0.0
+capDyn  = gapWorst > 0 ? math.max(0.0, (ddTol - ddNow) / gapWorst) : 0.0   // 隨回撤收緊
+capEff  = math.min(expHard, capDyn)                                       // 兩者取嚴
+lotMax  = lotVal > 0 ? math.floor(capEff * equity / lotVal) : 0.0
+navHit  = expNow * gapWorst                                               // 今晚跳空的話 NAV 掉多少
+
 // ── 六個條件，每一個都只會讓你更保守，不會讓你更積極 ──
-c1 = expNow > expMax                       // 曝險超過自己設的上限
-c2 = volRat > volMult                      // 市場波動異常
-c3 = ddNow > ddTol * 0.75                  // 回撤接近容忍線
+c1 = expNow > capEff                        // 曝險超過當下可用上限
+c2 = volRat > volMult                       // 市場波動異常
+c3 = ddNow > ddTol * 0.75                   // 回撤接近容忍線
 c4 = gapSize > gapPct                       // 今天有跳空
 c5 = downRun >= lossRun                     // 連續下跌
 c6 = runway < runwayMin                     // 個人跑道吃緊
@@ -90,7 +113,7 @@ bgcolor(showBg and state >= 2 ? color.new(stCol, 85) : na)
 posC = panelPos == "右上" ? position.top_right : panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left : position.bottom_left
 tSize = panelSize == "small" ? size.small : panelSize == "normal" ? size.normal : panelSize == "huge" ? size.huge : size.large
 
-var table tb = table.new(posC, 2, 10, border_width = 2)
+var table tb = table.new(posC, 2, 12, border_width = 2)
 row(i, a, b, ca, cb) =>
     table.cell(tb, 0, i, a, bgcolor = color.new(#12141A, 10), text_color = ca,
          text_size = size.normal, text_halign = text.align_left)
@@ -107,21 +130,25 @@ if barstate.islast
     ok  = color.new(#4CAF50, 0)
     bad = color.new(#FF5252, 0)
 
-    row(1, "① 曝險 " + str.tostring(expNow, "#.##") + "x / 上限 " + str.tostring(expMax, "#.##") + "x",
+    row(1, "今天最多幾手", str.tostring(lotMax, "#") + " 手（現在 " + str.tostring(lots) + " 手）",
+         dim, c1 ? bad : ok)
+    row(2, "① 曝險 " + str.tostring(expNow, "#.##") + "x / 可用 " + str.tostring(capEff, "#.##") + "x",
          c1 ? "超限 ✗" : "在線內 ✓", dim, c1 ? bad : ok)
-    row(2, "② 波動 " + str.tostring(volS, "#.#") + "% / 基準 " + str.tostring(volL, "#.#") + "%",
+    row(3, "　 今晚跳空 −" + str.tostring(gapWorst, "#.#") + "% → NAV −" + str.tostring(navHit, "#.#") + "%",
+         navHit > ddTol ? "會爆線 ✗" : "撐得住 ✓", dim, navHit > ddTol ? bad : ok)
+    row(4, "② 波動 " + str.tostring(volS, "#.#") + "% / 基準 " + str.tostring(volL, "#.#") + "%",
          c2 ? str.tostring(volRat, "#.#") + "x 異常 ✗" : str.tostring(volRat, "#.#") + "x 正常 ✓", dim, c2 ? bad : ok)
-    row(3, "③ 距高水位 " + str.tostring(ddNow, "#.#") + "% / 容忍 " + str.tostring(ddTol, "#.#") + "%",
+    row(5, "③ 距高水位 " + str.tostring(ddNow, "#.#") + "% / 容忍 " + str.tostring(ddTol, "#.#") + "%",
          c3 ? "接近 ✗" : "有餘裕 ✓", dim, c3 ? bad : ok)
-    row(4, "④ 今日跳空 " + str.tostring(gapSize, "#.##") + "%",
+    row(6, "④ 今日跳空 " + str.tostring(gapSize, "#.##") + "%",
          c4 ? "過大 ✗" : "正常 ✓", dim, c4 ? bad : ok)
-    row(5, "⑤ 連續下跌 " + str.tostring(downRun) + " 根",
+    row(7, "⑤ 連續下跌 " + str.tostring(downRun) + " 根",
          c5 ? "過長 ✗" : "正常 ✓", dim, c5 ? bad : ok)
-    row(6, "⑥ 現金跑道 " + str.tostring(runway, "#.#") + " 月 / 警戒 " + str.tostring(runwayMin, "#.#"),
+    row(8, "⑥ 現金跑道 " + str.tostring(runway, "#.#") + " 月 / 警戒 " + str.tostring(runwayMin, "#.#"),
          c6 ? "吃緊 ✗" : "充足 ✓", dim, c6 ? bad : ok)
-    row(7, "觸發條件數", str.tostring(nFire) + " / 6", dim, nFire >= 2 ? bad : ok)
-    row(8, "———————————————", "———————————", dim, dim)
-    row(9, "這支指標不會叫你買，也不會叫你賣。", "它只會叫你不要動。", dim, dim)
+    row(9, "觸發條件數", str.tostring(nFire) + " / 6", dim, nFire >= 2 ? bad : ok)
+    row(10, "———————————————", "———————————", dim, dim)
+    row(11, "這支指標不會叫你買，也不會叫你賣。", "它只會叫你不要動。", dim, dim)
 
 plotshape(state == 3 and barstate.isconfirmed, "空城", shape.xcross, location.abovebar,
      color.new(#D32F2F, 0), size = size.large)
@@ -129,6 +156,9 @@ plotshape(state == 2 and barstate.isconfirmed, "停止", shape.circle, location.
      color.new(#F57C00, 0), size = size.small)
 
 plot(state, "狀態（0–3）", display = display.data_window)
+plot(expNow, "目前曝險", display = display.data_window)
+plot(capEff, "可用上限", display = display.data_window)
+plot(lotMax, "上限手數", display = display.data_window)
 
 alertcondition(state == 3, "空城：完全不動", "空城計：今天什麼都不做")
 alertcondition(state >= 2, "停止：不開新倉", "空城計：不開新倉、不加碼")
