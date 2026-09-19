@@ -1,0 +1,211 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 調兵 v1 — 波動率目標曝險
+//
+// 不擇時、不判斷方向，只調整部位大小：
+//   權重 w = 目標波動率 ÷ 實際波動率（上限可設）
+//   波動低 → 加碼；波動高 → 減碼
+//
+// 為什麼是這個方向：
+//   本專案先後證明了日內幾何規則沒有優勢（順逆比 = 1.0）、
+//   軌道回檔的優勢來自漂移且正在衰減、隔夜溢價的優勢已被市場消化。
+//   既然漂移是唯一真實的東西，正確做法就不是擇時進出，
+//   而是「一直持有，但用更聰明的大小持有」。
+//
+// 目標不是打敗買入持有的報酬，而是提高風險調整後報酬（夏普）與降低回撤。
+//
+// ⚠️ 三個誠實的細節，缺一個結果就會虛高：
+//   1. 權重用「前一根收盤」決定，當根才生效——不偷看未來
+//   2. 換手成本按 |Δw| × 成本計算，不是每天固定扣
+//   3. 減碼時閒置資金有利息收入、加碼時借款要付利息，兩者都計入
+//
+// 這支只做量測，不下單。用日線圖執行。
+// =============================================================================
+indicator("智能諸葛亮 · 調兵 v1｜波動率目標曝險", "調兵 v1", overlay = false)
+
+const string G_V = "① 波動率目標"
+const string G_C = "② 成本與利率"
+const string G_S = "③ 統計區間"
+const string G_D = "④ 顯示"
+
+targetVol = input.float(15.0, "目標年化波動率 %", minval = 1.0, step = 1.0, group = G_V,
+     tooltip = "常見設定 10–20%。設得比標的長期波動低＝平均減碼，高＝平均加碼。")
+volLen    = input.int(20, "波動率回看根數", minval = 5, group = G_V,
+     tooltip = "20 根約一個月。太短會頻繁換手，太長反應不及。")
+maxW      = input.float(1.5, "最大曝險倍數", minval = 0.1, maxval = 3.0, step = 0.1, group = G_V,
+     tooltip = "1.0 = 只能減碼不能加槓桿；1.5 = 波動很低時可到 1.5 倍。")
+minW      = input.float(0.0, "最小曝險倍數", minval = 0.0, maxval = 1.0, step = 0.1, group = G_V)
+band      = input.float(0.10, "再平衡門檻（權重變動）", minval = 0.0, maxval = 1.0, step = 0.05, group = G_V,
+     tooltip = "權重變動超過這個幅度才調整。設 0 = 每天調，換手與成本最高。")
+
+costBps      = input.float(1.0, "單邊成本（bp）", minval = 0.0, step = 0.5, group = G_C,
+     tooltip = "成本 = |權重變動| × 此值。權重從 1.0 調到 0.8 = 0.2 的換手。")
+cashRate     = input.float(2.0, "閒置資金年利率 %", minval = 0.0, step = 0.5, group = G_C,
+     tooltip = "減碼時未投資的部分能賺到的利息。長期平均約 2–3%。")
+borrowSpread = input.float(1.0, "借款利差 %", minval = 0.0, step = 0.5, group = G_C,
+     tooltip = "加槓桿時的借款成本 = 閒置資金利率 + 此利差。")
+
+startTime   = input.time(timestamp("01 Jan 2000 00:00 +0000"), "起算日期", group = G_S)
+endTime     = input.time(timestamp("01 Jan 2100 00:00 +0000"), "結束日期", group = G_S)
+barsPerYear = input.int(252, "每年交易日數", minval = 1, group = G_S)
+
+showVT    = input.bool(true, "調兵曲線", group = G_D, inline = "c")
+showBH    = input.bool(true, "買入持有", group = G_D, inline = "c")
+showWeight = input.bool(true, "曝險權重（右軸 ×100）", group = G_D)
+colVT     = input.color(#00B4A0, "調兵", group = G_D, inline = "k")
+colBH     = input.color(#9E9E9E, "持有", group = G_D, inline = "k")
+colBad    = input.color(#FF5252, "警示", group = G_D, inline = "k")
+showPanel = input.bool(true, "統計面板", group = G_D, inline = "p")
+panelPos  = input.string("右上", "位置", options = ["右上", "右下", "左上", "左下"], group = G_D, inline = "p")
+panelTxt  = input.color(#E8EAED, "文字", group = G_D, inline = "p2")
+panelBg   = input.color(color.new(#0F1114, 15), "底色", group = G_D, inline = "p2")
+panelSize = input.string("normal", "字體", options = ["tiny", "small", "normal", "large", "huge"],
+     group = G_D, inline = "p2")
+
+// =============================================================================
+// 報酬與波動率
+// =============================================================================
+r      = na(close[1]) or close[1] <= 0 ? na : close / close[1] - 1.0
+volAnn = ta.stdev(r, volLen) * math.sqrt(barsPerYear) * 100.0    // 年化波動率 %
+
+inRange = time >= startTime and time <= endTime
+ok      = inRange and not na(r) and not na(volAnn) and volAnn > 0 and barstate.isconfirmed
+
+// =============================================================================
+// 權重與權益累積
+// =============================================================================
+var float w    = 1.0        // 目前曝險權重（在前一根收盤就決定好）
+var float eVT  = 100.0
+var float eBH  = 100.0
+var float pkVT = 100.0
+var float pkBH = 100.0
+var float ddVT = 0.0
+var float ddBH = 0.0
+
+var float sVT   = 0.0
+var float sVT2  = 0.0
+var float sBH   = 0.0
+var float sBH2  = 0.0
+var float sumW  = 0.0
+var float sumTO = 0.0       // 累積換手
+var int   nReb  = 0
+var int   nObs  = 0
+
+cashD = cashRate / 100.0 / barsPerYear
+
+if ok
+    // ── 1) 用「既有權重」吃這一根的報酬（權重是前一根收盤決定的，不偷看未來）──
+    excess = w - 1.0
+    rateD  = excess > 0 ? (cashRate + borrowSpread) / 100.0 / barsPerYear : cashD
+    rPort  = w * r - excess * rateD
+
+    eVT := eVT * (1.0 + rPort)
+    eBH := eBH * (1.0 + r)
+
+    pkVT := math.max(pkVT, eVT)
+    pkBH := math.max(pkBH, eBH)
+    ddVT := math.max(ddVT, pkVT > 0 ? (pkVT - eVT) / pkVT * 100.0 : 0.0)
+    ddBH := math.max(ddBH, pkBH > 0 ? (pkBH - eBH) / pkBH * 100.0 : 0.0)
+
+    sVT  += rPort
+    sVT2 += rPort * rPort
+    sBH  += r
+    sBH2 += r * r
+    sumW += w
+    nObs += 1
+
+    // ── 2) 收盤後才重新計算權重，供下一根使用 ──
+    wNew = math.min(maxW, math.max(minW, targetVol / volAnn))
+    if math.abs(wNew - w) > band
+        turn = math.abs(wNew - w)
+        eVT  := eVT * (1.0 - turn * costBps / 10000.0)   // 成本按實際換手計
+        sumTO += turn
+        nReb  += 1
+        w := wNew
+
+// =============================================================================
+// 畫圖
+// =============================================================================
+plot(showVT and nObs > 0 ? eVT : na, "調兵",     color.new(colVT, 0), 2)
+plot(showBH and nObs > 0 ? eBH : na, "買入持有", color.new(colBH, 0), 1)
+plot(showWeight and nObs > 0 ? w * 100.0 : na, "曝險權重 ×100",
+     color.new(colVT, 70), 1, plot.style_stepline)
+hline(100.0, "起點／權重 1.0", color.new(color.gray, 60), hline.style_dotted)
+
+// =============================================================================
+// 統計面板
+// =============================================================================
+posC = panelPos == "右上" ? position.top_right : panelPos == "右下" ? position.bottom_right :
+       panelPos == "左上" ? position.top_left : position.bottom_left
+dimTxt  = color.new(panelTxt, 45)
+txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
+          panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
+
+var table tb = table.new(posC, 3, 10, border_width = 1)
+cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
+     text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
+
+pct(x) => str.tostring(x, "#.##") + "%"
+cagr(eq, n) => n > 0 ? (math.pow(eq / 100.0, barsPerYear / math.max(1.0, n)) - 1.0) * 100.0 : na
+sharpe(s, s2, n) =>
+    m  = n > 0 ? s / n : na
+    v  = n > 1 ? math.max(0.0, s2 / n - m * m) : na
+    sd = math.sqrt(v)
+    sd > 0 ? m / sd * math.sqrt(barsPerYear) : na
+volOf(s, s2, n) =>
+    m = n > 0 ? s / n : na
+    v = n > 1 ? math.max(0.0, s2 / n - m * m) : na
+    math.sqrt(v) * math.sqrt(barsPerYear) * 100.0
+
+if showPanel and barstate.islast
+    yrs    = nObs / math.max(1.0, barsPerYear * 1.0)
+    cVT    = cagr(eVT, nObs)
+    cBH    = cagr(eBH, nObs)
+    shVT   = sharpe(sVT, sVT2, nObs)
+    shBH   = sharpe(sBH, sBH2, nObs)
+    calVT  = ddVT > 0 ? cVT / ddVT : na
+    calBH  = ddBH > 0 ? cBH / ddBH : na
+    avgW   = nObs > 0 ? sumW / nObs : na
+    rebYr  = yrs > 0 ? nReb / yrs : na
+    costYr = yrs > 0 ? sumTO / yrs * costBps / 100.0 : na   // 年成本 %
+
+    table.cell(tb, 0, 0, "調兵 v1", bgcolor = color.new(#1E88E5, 10), text_color = panelTxt, text_size = txtSize)
+    table.cell(tb, 1, 0, "調兵",     bgcolor = color.new(#1E88E5, 10), text_color = colVT, text_size = txtSize)
+    table.cell(tb, 2, 0, "買入持有", bgcolor = color.new(#1E88E5, 10), text_color = colBH, text_size = txtSize)
+
+    cell(0, 1, syminfo.ticker + " · " + timeframe.period + (timeframe.isdaily ? "" : " ⚠ 非日線"),
+         timeframe.isdaily ? dimTxt : colBad)
+    cell(1, 1, str.tostring(nObs) + " 根", dimTxt)
+    cell(2, 1, str.tostring(yrs, "#.#") + " 年", dimTxt)
+
+    cell(0, 2, "累積報酬", dimTxt)
+    cell(1, 2, pct(eVT - 100.0), panelTxt)
+    cell(2, 2, pct(eBH - 100.0), panelTxt)
+
+    cell(0, 3, "年化報酬", dimTxt)
+    cell(1, 3, pct(cVT), cVT >= cBH ? colVT : panelTxt)
+    cell(2, 3, pct(cBH), panelTxt)
+
+    cell(0, 4, "年化波動", dimTxt)
+    cell(1, 4, pct(volOf(sVT, sVT2, nObs)), panelTxt)
+    cell(2, 4, pct(volOf(sBH, sBH2, nObs)), panelTxt)
+
+    cell(0, 5, "夏普（年化）", dimTxt)
+    cell(1, 5, str.tostring(shVT, "#.##"), shVT >= shBH ? colVT : colBad)
+    cell(2, 5, str.tostring(shBH, "#.##"), panelTxt)
+
+    cell(0, 6, "最大回撤", dimTxt)
+    cell(1, 6, pct(ddVT), ddVT <= ddBH ? colVT : colBad)
+    cell(2, 6, pct(ddBH), panelTxt)
+
+    cell(0, 7, "年化 ÷ 回撤", dimTxt)
+    cell(1, 7, str.tostring(calVT, "#.##"), calVT >= calBH ? colVT : colBad)
+    cell(2, 7, str.tostring(calBH, "#.##"), panelTxt)
+
+    cell(0, 8, "平均曝險", dimTxt)
+    cell(1, 8, str.tostring(avgW, "#.##") + " 倍", panelTxt)
+    cell(2, 8, "1.00 倍", dimTxt)
+
+    cell(0, 9, "年換手 / 成本", dimTxt)
+    cell(1, 9, str.tostring(rebYr, "#.#") + " 次　" + pct(costYr), panelTxt)
+    cell(2, 9, "0 次", dimTxt)
