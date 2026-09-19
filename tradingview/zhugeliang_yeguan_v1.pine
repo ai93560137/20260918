@@ -1,6 +1,6 @@
 //@version=6
 // =============================================================================
-// 智能諸葛亮 · 夜觀天象 v1 — 隔夜 vs 盤中報酬拆解
+// 智能諸葛亮 · 夜觀天象 v2 — 隔夜 vs 盤中報酬拆解
 //
 // 問題：長期報酬到底發生在什麼時候？
 //   隔夜（收盤 → 次日開盤）還是盤中（開盤 → 收盤）？
@@ -9,17 +9,28 @@
 // 盤中時段的累積報酬接近零甚至為負。若在你的標的上成立，
 // 「收盤買、開盤賣」就是一個與圖形判讀無關的結構性優勢。
 //
+// ⚠️ v2 新增「自訂時段」模式，因為兩種商品的日線切點完全不同：
+//      QQQ 等 ETF：日線 09:30 → 16:00，「隔夜」= 17.5 小時休市 ✅
+//      NQ 等期貨：日線 18:00 → 17:00（近 24 小時），「隔夜」只剩 1 小時維護時段 ❌
+//    期貨的真正隔夜被包在日線的「盤中」裡，用日線模式量會得到相反的結論。
+//    期貨、外匯、加密一律改用「自訂時段」模式，在盤中圖（5–15 分）上執行。
+//
 // 這支腳本只做量測，不下單、不發訊號。
-// 用日線圖執行（其他週期的「隔夜」定義沒有意義）。
 //
 // ⚠️ 關鍵在成本：隔夜策略每天一次來回，252 個交易日就是 252 次來回。
 //    單邊 1bp 看起來很小，一年就是 5%——面板同時顯示扣成本後的結果。
 // =============================================================================
-indicator("智能諸葛亮 · 夜觀天象 v1｜隔夜 vs 盤中", "夜觀天象 v1", overlay = false)
+indicator("智能諸葛亮 · 夜觀天象 v2｜隔夜 vs 盤中", "夜觀天象 v2", overlay = false)
 
 const string G_S = "① 統計設定"
 const string G_D = "② 顯示"
 
+mode    = input.string("日線開收盤", "拆解方式", options = ["日線開收盤", "自訂時段（盤中圖）"], group = G_S,
+     tooltip = "日線開收盤＝用日線 K 線的開盤與收盤切，適合美股現貨與 ETF。" +
+               "自訂時段＝用時鐘時間切，需在盤中圖（5–15 分）執行，期貨／外匯／加密必須用這個。")
+sessRTH = input.session("0930-1600", "日盤時段（自訂時段模式）", group = G_S)
+sessTZ  = input.string("America/New_York", "時區", group = G_S,
+     options = ["America/New_York", "America/Chicago", "Asia/Hong_Kong", "Asia/Tokyo", "Europe/London", "UTC"])
 startTime = input.time(timestamp("01 Jan 2000 00:00 +0000"), "起算日期", group = G_S,
      tooltip = "從這一天開始累積統計。改這個值統計會自動重算。")
 costBps   = input.float(1.0, "單邊成本（bp，1bp = 0.01%）", minval = 0.0, step = 0.5, group = G_S,
@@ -46,15 +57,38 @@ panelSize = input.string("normal", "字體大小", options = ["tiny", "small", "
 // =============================================================================
 // 隔夜 = 前一根收盤 → 這一根開盤；盤中 = 這一根開盤 → 收盤
 // 兩者相乘等於買入持有：(1+隔夜)(1+盤中) = close / close[1]
-rON = na(close[1]) or close[1] <= 0 ? na : open / close[1] - 1.0
-rID = open > 0 ? close / open - 1.0 : na
-rBH = na(close[1]) or close[1] <= 0 ? na : close / close[1] - 1.0
+// 兩種模式都產出同一組 rON / rID，後面的統計完全共用
+inSess  = not na(time(timeframe.period, sessRTH, sessTZ))
+newSess = inSess and not inSess[1]
+endSess = not inSess and inSess[1]
+
+var float prevClose = na     // 上一個日盤的收盤
+var float sOpen     = na     // 這個日盤的開盤
+
+float rON = na
+float rID = na
+
+if mode == "日線開收盤"
+    if barstate.isconfirmed and not na(close[1]) and close[1] > 0 and open > 0
+        rON := open / close[1] - 1.0
+        rID := close / open - 1.0
+else
+    if newSess
+        sOpen := open
+    if endSess and barstate.isconfirmed
+        sClose = close[1]
+        if not na(prevClose) and not na(sOpen) and prevClose > 0 and sOpen > 0
+            rON := sOpen / prevClose - 1.0      // 前一個日盤收盤 → 這個日盤開盤
+            rID := sClose / sOpen - 1.0         // 這個日盤開盤 → 收盤
+        prevClose := sClose
+
+rBH = na(rON) or na(rID) ? na : (1.0 + rON) * (1.0 + rID) - 1.0
 
 cost   = costBps / 10000.0
 rONnet = na(rON) ? na : rON - 2.0 * cost     // 收盤買、開盤賣 = 一次來回 = 兩個單邊
 
 inRange = time >= startTime
-ok      = inRange and not na(rON) and not na(rID) and barstate.isconfirmed
+ok      = inRange and not na(rON) and not na(rID)
 
 // =============================================================================
 // 累積與統計
@@ -122,7 +156,7 @@ dimTxt = color.new(panelTxt, 45)
 txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
           panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
 
-var table tb = table.new(posC, 4, 10, border_width = 1)
+var table tb = table.new(posC, 4, 11, border_width = 1)
 cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
      text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
 
@@ -145,10 +179,16 @@ if showPanel and barstate.islast
     table.cell(tb, 2, 0, "盤中", bgcolor = color.new(#1E88E5, 10), text_color = colID, text_size = txtSize)
     table.cell(tb, 3, 0, "持有", bgcolor = color.new(#1E88E5, 10), text_color = colBH, text_size = txtSize)
 
-    cell(0, 1, syminfo.ticker + " · " + timeframe.period + (timeframe.isdaily ? "" : " ⚠ 非日線"), dimTxt)
+    modeBad = (mode == "日線開收盤" and not timeframe.isdaily) or (mode == "自訂時段（盤中圖）" and timeframe.isdwm)
+    cell(0, 1, syminfo.ticker + " · " + timeframe.period + (modeBad ? " ⚠ 週期不符" : ""), modeBad ? colID : dimTxt)
     cell(1, 1, str.tostring(nObs) + " 根", dimTxt)
     cell(2, 1, str.tostring(yrs, "#.#") + " 年", dimTxt)
     cell(3, 1, "成本 " + str.tostring(costBps, "#.#") + "bp", dimTxt)
+
+    cell(0, 10, "拆解方式", dimTxt)
+    cell(1, 10, mode == "日線開收盤" ? "日線開收盤" : sessRTH, panelTxt)
+    cell(2, 10, mode == "日線開收盤" ? "K 線開收盤切" : sessTZ, dimTxt)
+    cell(3, 10, "", dimTxt)
 
     cell(0, 2, "累積報酬", dimTxt)
     cell(1, 2, pct(eON - 100.0), eON >= 100 ? colON : colID)
