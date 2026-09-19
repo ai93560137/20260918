@@ -174,7 +174,7 @@ if showPanel and barstate.islast
     mID   = nObs > 0 ? sID / nObs * 10000.0 : na
     mBH   = nObs > 0 ? sBH / nObs * 10000.0 : na
 
-    table.cell(tb, 0, 0, "夜觀天象 v1", bgcolor = color.new(#1E88E5, 10), text_color = panelTxt, text_size = txtSize)
+    table.cell(tb, 0, 0, "夜觀天象 v2", bgcolor = color.new(#1E88E5, 10), text_color = panelTxt, text_size = txtSize)
     table.cell(tb, 1, 0, "隔夜", bgcolor = color.new(#1E88E5, 10), text_color = colON, text_size = txtSize)
     table.cell(tb, 2, 0, "盤中", bgcolor = color.new(#1E88E5, 10), text_color = colID, text_size = txtSize)
     table.cell(tb, 3, 0, "持有", bgcolor = color.new(#1E88E5, 10), text_color = colBH, text_size = txtSize)
