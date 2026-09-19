@@ -38,6 +38,8 @@ showPanel = input.bool(true, "統計面板", group = G_D, inline = "p")
 panelPos  = input.string("右上", "位置", options = ["右上", "右下", "左上", "左下"], group = G_D, inline = "p")
 panelTxt  = input.color(#E8EAED, "文字", group = G_D, inline = "p2")
 panelBg   = input.color(color.new(#0F1114, 15), "底色", group = G_D, inline = "p2")
+panelSize = input.string("normal", "字體大小", options = ["tiny", "small", "normal", "large", "huge"],
+     group = G_D, inline = "p2")
 
 // =============================================================================
 // 報酬拆解
@@ -117,10 +119,12 @@ hline(100.0, "起點", color.new(color.gray, 60), hline.style_dotted)
 posC = panelPos == "右上" ? position.top_right : panelPos == "右下" ? position.bottom_right :
        panelPos == "左上" ? position.top_left : position.bottom_left
 dimTxt = color.new(panelTxt, 45)
+txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
+          panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
 
 var table tb = table.new(posC, 4, 10, border_width = 1)
 cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
-     text_size = size.small, text_halign = c == 0 ? text.align_left : text.align_right)
+     text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
 
 pct(x)  => str.tostring(x, "#.##") + "%"
 cagr(eq, n) => n > 0 ? (math.pow(eq / 100.0, barsPerYear / math.max(1.0, n)) - 1.0) * 100.0 : na
@@ -136,10 +140,10 @@ if showPanel and barstate.islast
     mID   = nObs > 0 ? sID / nObs * 10000.0 : na
     mBH   = nObs > 0 ? sBH / nObs * 10000.0 : na
 
-    table.cell(tb, 0, 0, "夜觀天象 v1", bgcolor = color.new(#1E88E5, 10), text_color = panelTxt, text_size = size.small)
-    table.cell(tb, 1, 0, "隔夜", bgcolor = color.new(#1E88E5, 10), text_color = colON, text_size = size.small)
-    table.cell(tb, 2, 0, "盤中", bgcolor = color.new(#1E88E5, 10), text_color = colID, text_size = size.small)
-    table.cell(tb, 3, 0, "持有", bgcolor = color.new(#1E88E5, 10), text_color = colBH, text_size = size.small)
+    table.cell(tb, 0, 0, "夜觀天象 v1", bgcolor = color.new(#1E88E5, 10), text_color = panelTxt, text_size = txtSize)
+    table.cell(tb, 1, 0, "隔夜", bgcolor = color.new(#1E88E5, 10), text_color = colON, text_size = txtSize)
+    table.cell(tb, 2, 0, "盤中", bgcolor = color.new(#1E88E5, 10), text_color = colID, text_size = txtSize)
+    table.cell(tb, 3, 0, "持有", bgcolor = color.new(#1E88E5, 10), text_color = colBH, text_size = txtSize)
 
     cell(0, 1, syminfo.ticker + " · " + timeframe.period + (timeframe.isdaily ? "" : " ⚠ 非日線"), dimTxt)
     cell(1, 1, str.tostring(nObs) + " 根", dimTxt)
