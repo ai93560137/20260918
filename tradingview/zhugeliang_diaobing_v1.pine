@@ -49,6 +49,9 @@ costBps      = input.float(1.0, "單邊成本（bp）", minval = 0.0, step = 0.5
 cashRate     = input.float(2.0, "閒置資金年利率 %", minval = 0.0, step = 0.5, group = G_C)
 borrowSpread = input.float(1.0, "借款利差 %", minval = 0.0, step = 0.5, group = G_C,
      tooltip = "加槓桿時的借款成本 = 閒置資金利率 + 此利差。上限設 1.0 時用不到。")
+excessSharpe = input.bool(true, "夏普用超額報酬計算（扣無風險利率）", group = G_C,
+     tooltip = "比較兩個曝險不同的組合時，這才是公平的算法：調兵有部分資金在現金、" +
+               "買入持有全額投資，不扣無風險利率會高估調兵。無風險利率沿用上面的閒置資金年利率。")
 
 startTime   = input.time(timestamp("01 Jan 2000 00:00 +0000"), "起算日期", group = G_S)
 splitTime   = input.time(timestamp("01 Jan 2013 00:00 +0000"), "分段日期", group = G_S,
@@ -174,7 +177,9 @@ shOf(i, sa, sa2) =>
     m  = n > 0 ? array.get(sa, i) / n : na
     v  = n > 1 ? math.max(0.0, array.get(sa2, i) / n - m * m) : na
     sd = math.sqrt(v)
-    sd > 0 ? m / sd * math.sqrt(barsPerYear) : na
+    // 超額報酬夏普：兩邊都扣掉同一個無風險利率，曝險不同的組合才能公平比較
+    rf = excessSharpe ? cashRate / 100.0 / barsPerYear : 0.0
+    sd > 0 ? (m - rf) / sd * math.sqrt(barsPerYear) : na
 volOf(i, sa, sa2) =>
     n = array.get(nObs, i)
     m = n > 0 ? array.get(sa, i) / n : na
@@ -199,7 +204,7 @@ if showPanel and barstate.islast
 
     cell(0, 2, "年化報酬", dimTxt)
     cell(0, 3, "年化波動", dimTxt)
-    cell(0, 4, "夏普", dimTxt)
+    cell(0, 4, excessSharpe ? "夏普(超額)" : "夏普(原始)", dimTxt)
     cell(0, 5, "最大回撤", dimTxt)
     cell(0, 6, "年化÷回撤", dimTxt)
     cell(0, 7, "平均曝險", dimTxt)
