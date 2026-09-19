@@ -1,0 +1,165 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 錦囊 v1 — XAUUSD M15 突破（定稿規則，不要再調參數）
+//
+// 「三個錦囊，依序拆開，照做就是。」——這支腳本的用法就是這樣：不要自己加東西。
+//
+// 這是本專案十八節、七個假設裡唯一活下來的一條方向性規則。
+// 它活下來是因為「什麼都沒加」：不挑訊號、不挑時段、不挑波動、不設價格停損。
+//
+// 【已驗證】XAUUSD M15，2022-09 → 2026-09，750 筆，以「下一根 M1 開盤價」成交：
+//     每筆毛利 +0.0459%   滑價 −0.0001%（黃金 24 小時連續，執行不吃虧）
+//     點差 $0.40 → 每筆淨 +0.0299%，t=+2.10，年化名義 +5.55%
+//     49 個月：30 正 / 19 負（61%）   最壞月 −2.80%   單筆最壞 −1.15%
+//     逐年 +0.95 / +5.86 / −3.93 / +5.51 / +14.06 %
+//
+// 【四個已否決的過濾器 —— 加上去只會變差，已經各測過一次】
+//     ① 高週期（H4）方向：同向 t=+0.99、反向 t=+0.83，沒有資訊量
+//     ② 波動閘門：四年合計從 +25.5% 掉到 +18.6%
+//     ③ 時段：重疊時段每筆賺三倍，但只做那段年化從 +6.24% 掉到 +3.44%
+//     ④ 價格停損：1.0~3.0 ATR 全部讓期望值下降（真突破 MAE 0.80、假突破 2.50，切不開）
+//
+// 【生死線】95% 信賴下緣歸零的點差 = $0.39。
+//     點差 $0.40 → 點估計 +5.55%/年，但 95% 下緣是 −0.30%/年。
+//     點差每多 $0.10，年化少約 0.74%。$1.15 以上連點估計都歸零。
+//     ⚠ 先去確認你的實際成交點差（含滑價），這比任何參數都重要。
+//
+// 【它不能做什麼】補不了每月缺口。曝險 0.3x（名義 720 萬 ≈ 2.1 手）月均約
+//     HK$33,000，而最壞月 −201,000。它是配菜，不是主食。
+// =============================================================================
+strategy("智能諸葛亮 · 錦囊 v1｜XAUUSD M15 突破", "錦囊",
+     overlay = true,
+     pyramiding = 0,
+     default_qty_type = strategy.fixed,
+     default_qty_value = 100,                    // 100 盎司 = 1 手
+     commission_type = strategy.commission.cash_per_contract,
+     commission_value = 0.20,                    // 單邊 $0.20/盎司 → 來回 $0.40 點差
+     initial_capital = 100000,
+     calc_on_every_tick = false,
+     process_orders_on_close = false)            // 訊號確認後、下一根開盤成交
+
+const string G_R = "① 規則（原廠值，改了就不是驗證過的那條規則）"
+const string G_D = "② 顯示"
+
+// ── 八陣圖 M15 原廠門檻 ──
+lenTrend    = input.int(60,    "迴歸長度（根）",        minval = 10, group = G_R)
+r2Min       = input.float(0.48, "R² 門檻",              minval = 0.0, maxval = 1.0, step = 0.01, group = G_R)
+slopeMin    = input.float(0.025, "斜率門檻（ATR/根）",   minval = 0.0, step = 0.005, group = G_R)
+lenRange    = input.int(20,    "區間觀察長度",          minval = 5,  group = G_R)
+rangeMaxATR = input.float(3.8, "區間高度上限（ATR）",   minval = 0.5, step = 0.1, group = G_R)
+rangeMinBars= input.int(8,     "至少維持幾根才算區間",  minval = 1,  group = G_R)
+boxMaxAge   = input.int(30,    "區間失效根數",          minval = 5,  group = G_R)
+bufATR      = input.float(0.25, "突破緩衝（ATR）",       minval = 0.0, step = 0.05, group = G_R)
+confirmBars = input.int(1,     "站穩幾根才確認",        minval = 1, maxval = 5, group = G_R)
+atrLen      = input.int(14,    "ATR 長度",              minval = 2,  group = G_R)
+holdBars    = input.int(10,    "持有幾根後無條件出場",  minval = 1,  group = G_R,
+     tooltip = "10 根 M15 = 2.5 小時。這就是停損 —— 不要再加價格停損，測過四次都變差。")
+
+showPanel = input.bool(true, "顯示面板", group = G_D)
+showBox   = input.bool(true, "畫出橫行區間", group = G_D)
+
+// =============================================================================
+// 狀態（與八陣圖同一套判定，只保留這條規則用得到的部分）
+// =============================================================================
+atrV  = ta.atr(atrLen)
+lr    = ta.linreg(close, lenTrend, 0)
+slope = lr - ta.linreg(close, lenTrend, 1)
+corr  = ta.correlation(close, bar_index, lenTrend)
+r2    = na(corr) ? 0.0 : corr * corr
+sN    = atrV > 0 ? slope / atrV : 0.0
+hiN   = ta.highest(high, lenRange)
+loN   = ta.lowest(low,  lenRange)
+wATR  = atrV > 0 ? (hiN - loN) / atrV : na
+
+isUp  = r2 >= r2Min and sN >=  slopeMin
+isDn  = r2 >= r2Min and sN <= -slopeMin
+isRng = not isUp and not isDn and wATR <= rangeMaxATR
+st    = isUp ? 1 : isDn ? -1 : isRng ? 0 : 2      // 1 上升 / -1 下降 / 0 橫行 / 2 過渡
+
+// ── 橫行區間鎖存 ──
+rangeHold = nz(ta.barssince(st != 0), bar_index)
+rangeOK   = st == 0 and rangeHold >= rangeMinBars
+
+var float boxTop = na
+var float boxBot = na
+var bool  boxLive = false
+var int   lastRangeBar = na
+
+if barstate.isconfirmed
+    if rangeOK
+        boxTop := hiN[1]                          // 用前一根為止的極值
+        boxBot := loN[1]
+        boxLive := true
+        lastRangeBar := bar_index
+    else if boxLive and not na(lastRangeBar) and bar_index - lastRangeBar > boxMaxAge
+        boxLive := false
+
+upLevel = boxLive ? boxTop + bufATR * atrV : na
+dnLevel = boxLive ? boxBot - bufATR * atrV : na
+
+rawUp = boxLive and not na(upLevel) and close > upLevel
+rawDn = boxLive and not na(dnLevel) and close < dnLevel
+
+var int pendDir = 0
+var int pendCnt = 0
+if barstate.isconfirmed
+    d = rawUp ? 1 : rawDn ? -1 : 0
+    pendCnt := d != 0 and d == pendDir ? pendCnt + 1 : d != 0 ? 1 : 0
+    pendDir := d
+
+confirmUp = barstate.isconfirmed and pendDir ==  1 and pendCnt == confirmBars
+confirmDn = barstate.isconfirmed and pendDir == -1 and pendCnt == confirmBars
+
+// =============================================================================
+// 進出場 —— 訊號在收盤確認，strategy.entry 於下一根開盤成交（與回測一致）
+// =============================================================================
+var int barsIn = 0
+barsIn := strategy.position_size != 0 ? nz(barsIn[1]) + 1 : 0
+
+if confirmUp and strategy.position_size == 0
+    strategy.entry("多", strategy.long)
+    boxLive := false
+if confirmDn and strategy.position_size == 0
+    strategy.entry("空", strategy.short)
+    boxLive := false
+
+// 唯一的出場條件：時間。不設價格停損，不設停利。
+if strategy.position_size != 0 and barsIn >= holdBars
+    strategy.close_all("時間到")
+
+// =============================================================================
+// 顯示
+// =============================================================================
+pUp = plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(#26A69A, 30), 1, plot.style_linebr)
+pDn = plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(#EF5350, 30), 1, plot.style_linebr)
+fill(pUp, pDn, showBox and boxLive ? color.new(#78909C, 92) : na)
+
+plotshape(confirmUp, "向上突破", shape.triangleup,   location.belowbar, color.new(#26A69A, 0), size = size.tiny)
+plotshape(confirmDn, "向下跌破", shape.triangledown, location.abovebar, color.new(#EF5350, 0), size = size.tiny)
+
+var table tb = table.new(position.top_right, 2, 8, border_width = 1)
+bgC  = color.new(#12141A, 10)
+dimC = color.new(#9AA0A6, 30)
+valC = color.new(#E8EAED, 0)
+
+// Pine 的函數必須宣告在全域，不能放進 if 區塊裡
+row(i, k, v, c) =>
+    table.cell(tb, 0, i, k, bgcolor = bgC, text_color = dimC, text_halign = text.align_left)
+    table.cell(tb, 1, i, v, bgcolor = bgC, text_color = c,    text_halign = text.align_right)
+
+if showPanel and barstate.islast
+    stTxt = st == 1 ? "上升軌道" : st == -1 ? "下降軌道" : st == 0 ? "橫行" : "過渡"
+    posTxt = strategy.position_size > 0 ? "多 " + str.tostring(holdBars - barsIn) + " 根後出" :
+             strategy.position_size < 0 ? "空 " + str.tostring(holdBars - barsIn) + " 根後出" : "空手"
+    row(0, "錦囊 · XAUUSD M15", posTxt, strategy.position_size != 0 ? color.new(#FBC02D, 0) : dimC)
+    row(1, "狀態", stTxt + "  R²=" + str.tostring(r2, "#.##"), valC)
+    row(2, "區間", boxLive ? str.tostring(boxBot, format.mintick) + " – " + str.tostring(boxTop, format.mintick) : "未成立", boxLive ? valC : dimC)
+    row(3, "交易數 / 勝率", str.tostring(strategy.closedtrades) + " / " +
+         (strategy.closedtrades > 0 ? str.tostring(strategy.wintrades / strategy.closedtrades * 100, "#.#") + "%" : "—"), valC)
+    row(4, "淨利", str.tostring(strategy.netprofit, "#"), strategy.netprofit >= 0 ? color.new(#26A69A, 0) : color.new(#EF5350, 0))
+    row(5, "最大回撤", str.tostring(strategy.max_drawdown, "#"), valC)
+    row(6, "———————————", "———————————", dimC)
+    row(7, "不要加停損、不要挑時段。", "測過四次，四次都更差。", dimC)
+
+alertcondition(confirmUp, "錦囊：向上突破", "XAUUSD M15 向上突破確認，下一根開盤做多，持有 10 根")
+alertcondition(confirmDn, "錦囊：向下跌破", "XAUUSD M15 向下跌破確認，下一根開盤做空，持有 10 根")
