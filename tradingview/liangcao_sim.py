@@ -66,21 +66,45 @@ def build_returns(df, div_tax):
     return (r_price + r_div * (1.0 - div_tax)).dropna()
 
 
-def weights(r, a):
-    """調兵的曝險權重：用『前一根收盤』算出的波動率決定，當根才生效。"""
-    vol = r.rolling(a.vol_len).std() * np.sqrt(a.bars_per_year) * 100.0
-    w = np.full(len(r), 1.0)
-    turn = np.zeros(len(r))
+def realized_vol(r, a):
+    """年化實際波動率（%），用『到前一根為止』的資料。"""
+    return r.rolling(a.vol_len).std() * np.sqrt(a.bars_per_year) * 100.0
+
+
+def bandify(raw, a):
+    """把目標權重序列套上上下限與再平衡門檻，回傳實際權重與換手。
+
+    權重一律用『前一根收盤』定下、當根才生效——不偷看未來。
+    """
+    w = np.full(len(raw), 1.0)
+    turn = np.zeros(len(raw))
     cur = 1.0
-    for i in range(len(r)):
-        w[i] = cur                       # 這一根用的是上一根收盤定下的權重
-        v = vol.iloc[i]
-        if np.isfinite(v) and v > 0:
-            new = min(a.max_w, max(a.min_w, a.target_vol / v))
+    for i in range(len(raw)):
+        w[i] = cur
+        v = raw.iloc[i]
+        if np.isfinite(v):
+            new = min(a.max_w, max(a.min_w, v))
             if abs(new - cur) > a.band:
-                turn[i] = abs(new - cur)  # 換手成本在收盤後扣
+                turn[i] = abs(new - cur)   # 換手成本在收盤後扣
                 cur = new
-    return pd.Series(w, index=r.index), pd.Series(turn, index=r.index)
+    return pd.Series(w, index=raw.index), pd.Series(turn, index=raw.index)
+
+
+def weights(r, a):
+    """調兵：w ∝ 目標波動 ÷ 實際波動（= 假設夏普不變的凱利）。"""
+    vol = realized_vol(r, a)
+    return bandify(a.target_vol / vol.where(vol > 0), a)
+
+
+def kelly_weights(r, a):
+    """凱利：w = 下注比例 × μ ÷ σ²。
+
+    與調兵的差別在分母是 σ² 而不是 σ。兩者相等的條件是 μ ∝ σ（夏普不變），
+    那是一個假設，不是事實——所以值得並排跑，看資料站在哪一邊。
+    """
+    vol = realized_vol(r, a) / 100.0
+    raw = a.kelly_frac * (a.kelly_mu / 100.0) / (vol.where(vol > 0) ** 2)
+    return bandify(raw, a)
 
 
 PERIOD = {"monthly": ("M", 1), "quarterly": ("Q", 3), "annual": ("Y", 12)}
@@ -212,6 +236,12 @@ def main():
     p.add_argument("--borrow-spread", type=float, default=1.0)
     p.add_argument("--div-tax", type=float, default=0.30)
     p.add_argument("--bars-per-year", type=int, default=252)
+    p.add_argument("--kelly-mu", type=float, default=0.0,
+                   help="加一組凱利對照：假設的年化超額算術報酬 %%（SPY 約 6.7）。0 = 不跑。"
+                        "凱利 w = 下注比例 × μ/σ²，調兵 w = 目標σ/σ——差在分母的次方。")
+    p.add_argument("--kelly-frac", type=float, default=0.5,
+                   help="下注滿凱利的幾倍。預設 0.5（半凱利）。滿凱利的『跌到剩一半』機率是 50%%，"
+                        "半凱利只有 12.5%%，而成長率仍有滿凱利的 75%%。")
     p.add_argument("--trend", type=int, default=0,
                    help="加一組趨勢濾網對照（例如 200 = 200 日均線）：價格在均線之上滿倉、"
                         "之下空手（資金收現金利息）。訊號用前一根收盤決定，不偷看未來。"
@@ -267,6 +297,9 @@ def main():
     if a.static_w != 0.0:
         sw = w.mean() if a.static_w < 0 else a.static_w
         strat.append((f"固定曝險 {sw:.2f}x", pd.Series(sw, index=idx), zeros))
+    if a.kelly_mu > 0:
+        kw, kt = kelly_weights(r, a)
+        strat.append((f"凱利 {a.kelly_frac:g}× (μ={a.kelly_mu:g}%)", kw, kt))
     if a.trend > 0:
         px = (1.0 + r).cumprod()                       # 合成價格指數（混合組合也適用）
         sig = (px > px.rolling(a.trend).mean()).shift(1).fillna(False)
