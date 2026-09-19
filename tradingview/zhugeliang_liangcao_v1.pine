@@ -1,0 +1,366 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 糧草 v1 — 提領模擬器（退休提領 / 吃老本壓力測試）
+//
+// 回答一個具體問題：「本金 X，每月提領 Y，錢會不會用完？」
+// 用真實歷史價格逐月扣款，同時跑兩種曝險方式：
+//   ① 買入持有（全額投資）
+//   ② 調兵（波動率目標曝險 — 本專案唯一存活的發現）
+//
+// 預設不做通膨調整：提領金額固定不變（今天的 50,000 = 20 年後的 50,000）。
+// 若要通膨調整，把「提領年增率」調到 2–3%。
+//
+// ── 核心數學（為什麼這支能一次算出所有起始年份）──
+//   固定提領的餘額路徑對本金是線性的：
+//       餘額_t = G_t × ( 本金 − Σ_{u≤t} 提領_u / G_u )
+//   其中 G_t 是 $1 從起算日投資到 t 的累積成長。
+//   令 H_t = Σ 提領_u / G_u（提領流的現值），則：
+//       破產 ⟺ 本金 < H_t（H 單調遞增，所以臨界點在期末）
+//       所需本金（從 y 活到 T）= G_y × (H_T − H_y)
+//       期末餘額 = G_T × (本金 / G_y − (H_T − H_y))
+//   所以只要在每個年度邊界記下 G 與 H，最後一根就能算出
+//   「從任何一年開始、任何年期」的結果——不必重跑。
+//
+// ── 誠實聲明（這支不會給你安慰）──
+//   1. 只有一條歷史路徑，不是蒙地卡羅。未來不保證重演。
+//   2. 單一標的。真實退休組合會有債券／現金，波動較低、報酬也較低。
+//   3. 股息預設扣 30% 美股預扣稅（香港稅務居民）。香港無資本利得稅。
+//   4. 提領於每月第一根 K 線收盤扣款，扣款後才算下一段報酬。
+//   5. 假設提領貨幣與標的貨幣同步（港元掛鉤美元）。脫鉤風險未計入。
+//   6. 「所需本金」是事後最佳解——它只保證撐過這一段歷史，不是安全邊際。
+//
+// 用日線圖執行。標的建議：QQQ、SPY、VT、0050 等長期有資料的 ETF。
+// =============================================================================
+indicator("智能諸葛亮 · 糧草 v1｜提領模擬器", "糧草 v1", overlay = false)
+
+const string G_W = "① 提領設定"
+const string G_V = "② 曝險模式（調兵）"
+const string G_C = "③ 成本、股息與稅"
+const string G_S = "④ 統計區間"
+const string G_D = "⑤ 顯示"
+
+principal  = input.float(15000000.0, "起始本金", minval = 0.0, step = 100000.0, group = G_W,
+     tooltip = "與提領金額同幣別即可（例如都用港元）。報酬率本身沒有幣別。")
+monthly    = input.float(50000.0, "每月提領金額", minval = 0.0, step = 1000.0, group = G_W,
+     tooltip = "每月第一根 K 線收盤扣款。50,000 × 12 = 每年 600,000。")
+inflPct    = input.float(0.0, "提領年增率 %（通膨調整）", minval = 0.0, maxval = 20.0, step = 0.5, group = G_W,
+     tooltip = "預設 0 = 提領金額固定不變，不做通膨調整。要維持購買力就設 2–3%，" +
+               "所需本金會明顯上升。")
+horizonYr  = input.int(20, "年期（0 = 一路算到結束日期）", minval = 0, maxval = 60, group = G_W,
+     tooltip = "逐年表用的年期。設 20 = 每個起始年都模擬 20 年；設 0 = 都算到結束日期為止。" +
+               "設定值不能超過資料長度，否則整張表都是「資料不足」——" +
+               "QQQ 自 1999 年、SPY 自 1993 年，要跑 30 年請用 SPY。")
+
+targetVol = input.float(15.0, "目標年化波動率 %", minval = 1.0, step = 1.0, group = G_V,
+     tooltip = "設在標的長期實際波動率的 0.6–0.75 倍。QQQ 約 13–15%、SPY 約 10–13%。")
+volLen    = input.int(60, "波動率回看根數", minval = 5, group = G_V)
+maxW      = input.float(1.0, "最大曝險倍數", minval = 0.1, maxval = 3.0, step = 0.1, group = G_V,
+     tooltip = "1.0 = 只減碼不加槓桿。提領情境下更該守住 1.0——槓桿會放大序列風險。")
+minW      = input.float(0.0, "最小曝險倍數", minval = 0.0, maxval = 1.0, step = 0.1, group = G_V)
+band      = input.float(0.10, "再平衡門檻（權重變動）", minval = 0.0, maxval = 1.0, step = 0.05, group = G_V)
+
+costBps      = input.float(1.0, "單邊成本（bp）", minval = 0.0, step = 0.5, group = G_C)
+cashRate     = input.float(2.0, "閒置資金年利率 %", minval = 0.0, step = 0.5, group = G_C)
+borrowSpread = input.float(1.0, "借款利差 %", minval = 0.0, step = 0.5, group = G_C)
+useDiv       = input.bool(true, "股息計入總報酬", group = G_C,
+     tooltip = "退休提領情境下股息是主要現金流來源，不計會嚴重低估兩邊的存活率。")
+divTaxPct    = input.float(30.0, "股息預扣稅 %", minval = 0.0, maxval = 50.0, step = 5.0, group = G_C,
+     tooltip = "香港稅務居民持有美股 ETF：美國預扣 30% 股息稅。愛爾蘭註冊 ETF 約 15%。" +
+               "港股／台股標的請設 0。")
+
+startTime   = input.time(timestamp("01 Jan 2000 00:00 +0000"), "起算日期", group = G_S)
+endTime     = input.time(timestamp("01 Jan 2100 00:00 +0000"), "結束日期", group = G_S)
+barsPerYear = input.int(252, "每年交易日數", minval = 1, group = G_S)
+
+showCurve  = input.bool(true, "餘額曲線", group = G_D, inline = "c")
+unitSel    = input.string("萬", "顯示單位", options = ["元", "萬", "百萬"], group = G_D)
+colVT      = input.color(#00B4A0, "調兵", group = G_D, inline = "k")
+colBH      = input.color(#9E9E9E, "持有", group = G_D, inline = "k")
+colBad     = input.color(#FF5252, "破產", group = G_D, inline = "k")
+showPanel  = input.bool(true, "主面板", group = G_D, inline = "p")
+panelPos   = input.string("右上", "位置", options = ["右上", "右下", "左上", "左下"], group = G_D, inline = "p")
+showYears  = input.bool(true, "逐年起始表", group = G_D, inline = "y")
+yearPos    = input.string("左上", "位置", options = ["右上", "右下", "左上", "左下"], group = G_D, inline = "y")
+yearStep   = input.int(1, "每隔幾年一列", minval = 1, maxval = 10, group = G_D, inline = "y")
+panelTxt   = input.color(#E8EAED, "文字", group = G_D, inline = "p2")
+panelBg    = input.color(color.new(#0F1114, 15), "底色", group = G_D, inline = "p2")
+panelSize  = input.string("small", "字體", options = ["tiny", "small", "normal", "large", "huge"],
+     group = G_D, inline = "p2")
+
+// =============================================================================
+// 報酬（含稅後股息）與波動率
+// =============================================================================
+divAmt = nz(request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_off, barmerge.lookahead_off), 0.0)
+divNet = divAmt * (1.0 - divTaxPct / 100.0)
+divRet = useDiv and not na(close[1]) and close[1] > 0 ? divNet / close[1] : 0.0
+
+r      = na(close[1]) or close[1] <= 0 ? na : close / close[1] - 1.0 + divRet
+volAnn = ta.stdev(r, volLen) * math.sqrt(barsPerYear) * 100.0
+
+newMonth = timeframe.change("M")
+
+okBase = not na(r) and not na(volAnn) and volAnn > 0 and barstate.isconfirmed and
+         time >= startTime and time <= endTime
+
+// =============================================================================
+// 狀態：兩條 $1 成長曲線 + 兩條提領現值
+// =============================================================================
+var float gB = 1.0      // 買入持有：$1 累積成長
+var float gV = 1.0      // 調兵：$1 累積成長（已扣換手成本）
+var float hB = 0.0      // 提領流以買入持有路徑折現的現值（金額單位）
+var float hV = 0.0      // 提領流以調兵路徑折現的現值
+var float w  = 1.0      // 當前曝險權重（前一根收盤決定）
+var float wdNow = na    // 當期每月提領額（通膨調整後）
+
+var int   nWd   = 0
+var float totWd = 0.0
+var int   nReb  = 0
+var float sumW  = 0.0
+var int   nObs  = 0
+var int   yrPrev = na
+
+var float minB = na     // 買入持有最低餘額
+var float minV = na     // 調兵最低餘額
+var int   bustB = na    // 買入持有破產年份
+var int   bustV = na
+var float pkB = na
+var float pkV = na
+var float ddB = 0.0
+var float ddV = 0.0
+
+// 年度邊界快照（用來一次算出所有起始年份）
+var yrArr = array.new_int(0)
+var gBArr = array.new_float(0)
+var hBArr = array.new_float(0)
+var gVArr = array.new_float(0)
+var hVArr = array.new_float(0)
+
+if okBase
+    if na(wdNow)
+        wdNow := monthly
+
+    // ── 年度邊界：先記錄「這一年開始時」的狀態，再吃這一根的報酬 ──
+    if na(yrPrev) or year != yrPrev
+        if not na(yrPrev)
+            wdNow := wdNow * (1.0 + inflPct / 100.0)
+        array.push(yrArr, year)
+        array.push(gBArr, gB)
+        array.push(hBArr, hB)
+        array.push(gVArr, gV)
+        array.push(hVArr, hV)
+        yrPrev := year
+
+    // ── 1) 用既有權重吃這一根的報酬（權重是前一根收盤決定的，不偷看未來）──
+    excess = w - 1.0
+    rateD  = excess > 0 ? (cashRate + borrowSpread) / 100.0 / barsPerYear : cashRate / 100.0 / barsPerYear
+    rPort  = w * r - excess * rateD
+
+    gB := gB * (1.0 + r)
+    gV := gV * (1.0 + rPort)
+    sumW += w
+    nObs += 1
+
+    // ── 2) 每月扣款（扣款後才進入下一段報酬）──
+    if newMonth and wdNow > 0
+        hB := hB + wdNow / gB
+        hV := hV + wdNow / gV
+        totWd += wdNow
+        nWd += 1
+
+    // ── 3) 收盤後才重算權重，供下一根使用 ──
+    wNew = math.min(maxW, math.max(minW, targetVol / volAnn))
+    if math.abs(wNew - w) > band
+        turn = math.abs(wNew - w)
+        gV := gV * (1.0 - turn * costBps / 10000.0)
+        w  := wNew
+        nReb += 1
+
+    // ── 4) 餘額（線性公式，不需要另外維護狀態）──
+    bB = gB * (principal - hB)
+    bV = gV * (principal - hV)
+    minB := na(minB) ? bB : math.min(minB, bB)
+    minV := na(minV) ? bV : math.min(minV, bV)
+    if bB <= 0 and na(bustB)
+        bustB := year
+    if bV <= 0 and na(bustV)
+        bustV := year
+    pkB := na(pkB) ? bB : math.max(pkB, bB)
+    pkV := na(pkV) ? bV : math.max(pkV, bV)
+    ddB := math.max(ddB, pkB > 0 ? (pkB - bB) / pkB * 100.0 : 0.0)
+    ddV := math.max(ddV, pkV > 0 ? (pkV - bV) / pkV * 100.0 : 0.0)
+
+balB = nObs > 0 ? math.max(0.0, gB * (principal - hB)) : na
+balV = nObs > 0 ? math.max(0.0, gV * (principal - hV)) : na
+
+// =============================================================================
+// 畫圖
+// =============================================================================
+plot(showCurve ? balV : na, "調兵餘額",     color.new(colVT, 0), 2)
+plot(showCurve ? balB : na, "買入持有餘額", color.new(colBH, 0), 2)
+hline(0.0, "破產線（歸零）", color.new(color.red, 25), hline.style_dotted)
+
+// =============================================================================
+// 顯示工具
+// =============================================================================
+unitDiv = unitSel == "萬" ? 10000.0 : unitSel == "百萬" ? 1000000.0 : 1.0
+unitTag = unitSel == "元" ? "" : unitSel
+fm(x) => na(x) ? "—" : str.tostring(x / unitDiv, "#,###.##") + unitTag
+
+posOf(s) => s == "右上" ? position.top_right : s == "右下" ? position.bottom_right :
+            s == "左上" ? position.top_left : position.bottom_left
+dimTxt  = color.new(panelTxt, 45)
+txtSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
+          panelSize == "large" ? size.large : panelSize == "huge" ? size.huge : size.normal
+
+// 期末快照
+gBe = gB
+gVe = gV
+hBe = hB
+hVe = hV
+yrsRun = nObs / math.max(1.0, barsPerYear * 1.0)
+
+// 所需本金 = 提領流的現值（起算日起算）
+needB = hBe
+needV = hVe
+// 可持續月提領 = 本金 ÷（提領流現值 ÷ 每月提領）
+susB = needB > 0 ? principal * monthly / needB : na
+susV = needV > 0 ? principal * monthly / needV : na
+
+// =============================================================================
+// 主面板
+// =============================================================================
+var table tb = table.new(posOf(panelPos), 3, 12, border_width = 1)
+cell(c, row, txt, txtCol) => table.cell(tb, c, row, txt, bgcolor = panelBg, text_color = txtCol,
+     text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
+head(c, txt, txtCol) => table.cell(tb, c, 0, txt, bgcolor = color.new(#1E88E5, 10),
+     text_color = txtCol, text_size = txtSize)
+
+if showPanel and barstate.islast
+    head(0, "糧草 v1", panelTxt)
+    head(1, "調兵", colVT)
+    head(2, "買入持有", colBH)
+
+    cell(0, 1, syminfo.ticker + " · " + timeframe.period + (timeframe.isdaily ? "" : " ⚠ 非日線"),
+         timeframe.isdaily ? dimTxt : colBad)
+    cell(1, 1, str.tostring(yrsRun, "#.#") + " 年", dimTxt)
+    cell(2, 1, str.tostring(nWd) + " 次提領", dimTxt)
+
+    cell(0, 2, "起始本金", dimTxt)
+    cell(1, 2, fm(principal), dimTxt)
+    cell(2, 2, fm(principal), dimTxt)
+
+    cell(0, 3, "每月提領", dimTxt)
+    cell(1, 3, fm(wdNow) + (inflPct > 0 ? " (期末)" : ""), dimTxt)
+    cell(2, 3, fm(wdNow) + (inflPct > 0 ? " (期末)" : ""), dimTxt)
+
+    cell(0, 4, "期末餘額", dimTxt)
+    cell(1, 4, fm(balV), na(balV) or balV <= 0 ? colBad : colVT)
+    cell(2, 4, fm(balB), na(balB) or balB <= 0 ? colBad : panelTxt)
+
+    cell(0, 5, "是否破產", dimTxt)
+    cell(1, 5, na(bustV) ? "撐住" : "破產 " + str.tostring(bustV), na(bustV) ? colVT : colBad)
+    cell(2, 5, na(bustB) ? "撐住" : "破產 " + str.tostring(bustB), na(bustB) ? panelTxt : colBad)
+
+    cell(0, 6, "最低餘額", dimTxt)
+    cell(1, 6, fm(math.max(0.0, nz(minV, 0.0))), minV > 0 ? panelTxt : colBad)
+    cell(2, 6, fm(math.max(0.0, nz(minB, 0.0))), minB > 0 ? panelTxt : colBad)
+
+    cell(0, 7, "餘額最大回撤", dimTxt)
+    cell(1, 7, str.tostring(ddV, "#.#") + "%", ddV <= ddB ? colVT : colBad)
+    cell(2, 7, str.tostring(ddB, "#.#") + "%", panelTxt)
+
+    cell(0, 8, "撐完全程所需本金", dimTxt)
+    cell(1, 8, fm(needV), needV <= principal ? colVT : colBad)
+    cell(2, 8, fm(needB), needB <= principal ? panelTxt : colBad)
+
+    cell(0, 9, "可持續月提領", dimTxt)
+    cell(1, 9, fm(susV), susV >= monthly ? colVT : colBad)
+    cell(2, 9, fm(susB), susB >= monthly ? panelTxt : colBad)
+
+    cell(0, 10, "累計提領", dimTxt)
+    cell(1, 10, fm(totWd), dimTxt)
+    cell(2, 10, fm(totWd), dimTxt)
+
+    cell(0, 11, "平均曝險 / 年換手", dimTxt)
+    cell(1, 11, str.tostring(nObs > 0 ? sumW / nObs : na, "#.##") + "x / " +
+         str.tostring(yrsRun > 0 ? nReb / yrsRun : na, "#.#") + " 次", dimTxt)
+    cell(2, 11, "1.00x / 0 次", dimTxt)
+
+// =============================================================================
+// 逐年起始表：從每一年開始退休，結果如何
+// =============================================================================
+var table ty = table.new(posOf(yearPos), 7, 48, border_width = 1)
+ycell(c, row, txt, txtCol) => table.cell(ty, c, row, txt, bgcolor = panelBg, text_color = txtCol,
+     text_size = txtSize, text_halign = c == 0 ? text.align_left : text.align_right)
+yhead(c, txt, txtCol) => table.cell(ty, c, 0, txt, bgcolor = color.new(#1E88E5, 10),
+     text_color = txtCol, text_size = txtSize)
+
+if showYears and barstate.islast and array.size(yrArr) > 0
+    nY = array.size(yrArr)
+    yEnd = array.get(yrArr, nY - 1)
+
+    yhead(0, "起始年", panelTxt)
+    yhead(1, "年期", panelTxt)
+    yhead(2, "調·所需本金", colVT)
+    yhead(3, "持·所需本金", colBH)
+    yhead(4, "調·期末", colVT)
+    yhead(5, "持·期末", colBH)
+    yhead(6, "結果", panelTxt)
+
+    int row = 0
+    int okV = 0
+    int okB = 0
+    int nRows = 0
+
+    for i = 0 to nY - 1
+        y0 = array.get(yrArr, i)
+        if (y0 - array.get(yrArr, 0)) % yearStep == 0 and row < 46
+            // 找期末索引：horizonYr = 0 → 用期末快照；否則找 y0 + horizonYr 那一年的邊界
+            int j = -1
+            if horizonYr > 0 and i + 1 <= nY - 1
+                for k = i + 1 to nY - 1
+                    if j < 0 and array.get(yrArr, k) == y0 + horizonYr
+                        j := k
+            enough = horizonYr == 0 or j >= 0
+            gBi = array.get(gBArr, i)
+            hBi = array.get(hBArr, i)
+            gVi = array.get(gVArr, i)
+            hVi = array.get(hVArr, i)
+            gBj = horizonYr == 0 ? gBe : (j >= 0 ? array.get(gBArr, j) : na)
+            hBj = horizonYr == 0 ? hBe : (j >= 0 ? array.get(hBArr, j) : na)
+            gVj = horizonYr == 0 ? gVe : (j >= 0 ? array.get(gVArr, j) : na)
+            hVj = horizonYr == 0 ? hVe : (j >= 0 ? array.get(hVArr, j) : na)
+
+            nB = enough ? gBi * (hBj - hBi) : na
+            nV = enough ? gVi * (hVj - hVi) : na
+            eB = enough ? gBj * (principal / gBi - (hBj - hBi)) : na
+            eV = enough ? gVj * (principal / gVi - (hVj - hVi)) : na
+            liveB = enough and eB > 0
+            liveV = enough and eV > 0
+
+            row += 1
+            if enough
+                nRows += 1
+                okB += liveB ? 1 : 0
+                okV += liveV ? 1 : 0
+
+            span = horizonYr == 0 ? yEnd - y0 : horizonYr
+            ycell(0, row, str.tostring(y0), panelTxt)
+            ycell(1, row, enough ? str.tostring(span) + " 年" : "資料不足", enough ? dimTxt : colBad)
+            ycell(2, row, fm(nV), enough and nV <= principal ? colVT : colBad)
+            ycell(3, row, fm(nB), enough and nB <= principal ? panelTxt : colBad)
+            ycell(4, row, enough ? fm(math.max(0.0, eV)) : "—", liveV ? colVT : colBad)
+            ycell(5, row, enough ? fm(math.max(0.0, eB)) : "—", liveB ? panelTxt : colBad)
+            ycell(6, row, not enough ? "—" : (liveV ? "調✔" : "調✘") + " " + (liveB ? "持✔" : "持✘"),
+                 liveV and liveB ? colVT : liveV or liveB ? panelTxt : colBad)
+
+    if row < 47
+        ycell(0, row + 1, "存活率", panelTxt)
+        ycell(1, row + 1, str.tostring(nRows) + " 組", dimTxt)
+        ycell(2, row + 1, "調兵", colVT)
+        ycell(3, row + 1, nRows > 0 ? str.tostring(okV * 100.0 / nRows, "#.#") + "%" : "—",
+             okV == nRows ? colVT : colBad)
+        ycell(4, row + 1, "持有", colBH)
+        ycell(5, row + 1, nRows > 0 ? str.tostring(okB * 100.0 / nRows, "#.#") + "%" : "—",
+             okB == nRows ? panelTxt : colBad)
+        ycell(6, row + 1, fm(principal) + " / " + fm(monthly) + "月", dimTxt)
