@@ -49,6 +49,10 @@ costBps      = input.float(1.0, "單邊成本（bp）", minval = 0.0, step = 0.5
 cashRate     = input.float(2.0, "閒置資金年利率 %", minval = 0.0, step = 0.5, group = G_C)
 borrowSpread = input.float(1.0, "借款利差 %", minval = 0.0, step = 0.5, group = G_C,
      tooltip = "加槓桿時的借款成本 = 閒置資金利率 + 此利差。上限設 1.0 時用不到。")
+useDiv       = input.bool(true, "股息計入總報酬", group = G_C,
+     tooltip = "用 request.dividends() 直接抓除息金額加回報酬，不依賴圖表的『調整股息』設定。" +
+               "這對買入持有較有利（它拿 100% 股息，調兵只拿權重比例），不加會高估調兵。" +
+               "無股息資料的商品（期貨、加密）自動視為 0。")
 excessSharpe = input.bool(true, "夏普用超額報酬計算（扣無風險利率）", group = G_C,
      tooltip = "比較兩個曝險不同的組合時，這才是公平的算法：調兵有部分資金在現金、" +
                "買入持有全額投資，不扣無風險利率會高估調兵。無風險利率沿用上面的閒置資金年利率。")
@@ -75,7 +79,12 @@ panelSize  = input.string("small", "字體", options = ["tiny", "small", "normal
 // =============================================================================
 // 報酬與波動率
 // =============================================================================
-r      = na(close[1]) or close[1] <= 0 ? na : close / close[1] - 1.0
+// 股息：除息當根的每股配息，除以前一根收盤 = 當日股息報酬率
+divAmt = nz(request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_off, barmerge.lookahead_off), 0.0)
+divRet = useDiv and not na(close[1]) and close[1] > 0 ? divAmt / close[1] : 0.0
+
+// 總報酬 = 價格報酬 + 股息報酬
+r      = na(close[1]) or close[1] <= 0 ? na : close / close[1] - 1.0 + divRet
 volAnn = ta.stdev(r, volLen) * math.sqrt(barsPerYear) * 100.0    // 年化波動率 %
 
 okBase = not na(r) and not na(volAnn) and volAnn > 0 and barstate.isconfirmed and
@@ -198,9 +207,10 @@ if showPanel and barstate.islast
     cell(0, 1, syminfo.ticker + " · " + timeframe.period + (timeframe.isdaily ? "" : " ⚠ 非日線"),
          timeframe.isdaily ? dimTxt : colBad)
     for i = 0 to 2
-        yrs = array.get(nObs, i) / math.max(1.0, barsPerYear * 1.0)
-        cell(1 + i * 2, 1, str.tostring(yrs, "#.#") + " 年", dimTxt)
-        cell(2 + i * 2, 1, str.tostring(array.get(nObs, i)) + " 根", dimTxt)
+        n0  = array.get(nObs, i)
+        yrs = n0 / math.max(1.0, barsPerYear * 1.0)
+        cell(1 + i * 2, 1, n0 > 0 ? str.tostring(yrs, "#.#") + " 年" : "無資料", n0 > 0 ? dimTxt : colBad)
+        cell(2 + i * 2, 1, n0 > 0 ? str.tostring(n0) + " 根" : "—", dimTxt)
 
     cell(0, 2, "年化報酬", dimTxt)
     cell(0, 3, "年化波動", dimTxt)
@@ -225,19 +235,19 @@ if showPanel and barstate.islast
         cA = 1 + i * 2      // 調兵欄
         cB = 2 + i * 2      // 持有欄
 
-        cell(cA, 2, pct(cVT), cVT >= cBH ? colVT : panelTxt)
-        cell(cB, 2, pct(cBH), panelTxt)
-        cell(cA, 3, pct(volOf(i, sVT, sVT2)), panelTxt)
-        cell(cB, 3, pct(volOf(i, sBH, sBH2)), panelTxt)
-        cell(cA, 4, str.tostring(sh1, "#.##"), sh1 >= sh2 ? colVT : colBad)
-        cell(cB, 4, str.tostring(sh2, "#.##"), panelTxt)
-        cell(cA, 5, pct(d1), d1 <= d2 ? colVT : colBad)
-        cell(cB, 5, pct(d2), panelTxt)
-        cell(cA, 6, str.tostring(k1, "#.##"), k1 >= k2 ? colVT : colBad)
-        cell(cB, 6, str.tostring(k2, "#.##"), panelTxt)
-        cell(cA, 7, str.tostring(n > 0 ? array.get(sumW, i) / n : na, "#.##") + "x", panelTxt)
+        cell(cA, 2, n < 1 ? "—" : pct(cVT), cVT >= cBH ? colVT : panelTxt)
+        cell(cB, 2, n < 1 ? "—" : pct(cBH), panelTxt)
+        cell(cA, 3, n < 1 ? "—" : pct(volOf(i, sVT, sVT2)), panelTxt)
+        cell(cB, 3, n < 1 ? "—" : pct(volOf(i, sBH, sBH2)), panelTxt)
+        cell(cA, 4, n < 1 ? "—" : str.tostring(sh1, "#.##"), sh1 >= sh2 ? colVT : colBad)
+        cell(cB, 4, n < 1 ? "—" : str.tostring(sh2, "#.##"), panelTxt)
+        cell(cA, 5, n < 1 ? "—" : pct(d1), d1 <= d2 ? colVT : colBad)
+        cell(cB, 5, n < 1 ? "—" : pct(d2), panelTxt)
+        cell(cA, 6, n < 1 ? "—" : str.tostring(k1, "#.##"), k1 >= k2 ? colVT : colBad)
+        cell(cB, 6, n < 1 ? "—" : str.tostring(k2, "#.##"), panelTxt)
+        cell(cA, 7, n < 1 ? "—" : str.tostring(array.get(sumW, i) / n, "#.##") + "x", panelTxt)
         cell(cB, 7, "1.00x", dimTxt)
-        cell(cA, 8, str.tostring(yrs > 0 ? array.get(nReb, i) / yrs : na, "#.#") + " 次", panelTxt)
+        cell(cA, 8, n < 1 ? "—" : str.tostring(array.get(nReb, i) / yrs, "#.#") + " 次", panelTxt)
         cell(cB, 8, "0 次", dimTxt)
-        cell(cA, 9, pct(yrs > 0 ? array.get(sumTO, i) / yrs * costBps / 100.0 : na), panelTxt)
+        cell(cA, 9, n < 1 ? "—" : pct(array.get(sumTO, i) / yrs * costBps / 100.0), panelTxt)
         cell(cB, 9, "—", dimTxt)
