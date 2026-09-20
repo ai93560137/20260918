@@ -134,6 +134,74 @@ if alertOn and posState != posState[1]
     alert("【成交確認】" + syminfo.ticker + "｜" + stateTxt + "｜現價 " + fmt(close) +
          "，請核對富途實際倉位", alert.freq_once_per_bar)
 
+// ---- 圖上回測統計面板 ---------------------------------------------------------
+// 數字直接取自 strategy.* 內建變數（與「績效摘要」同一計算來源），
+// 面板與 Strategy Tester 應完全一致——不一致即代表邏輯有誤，這就是求證機制。
+// 按年損益以「平倉當年」歸屬（同交易清單分析）。
+showPanel = input.bool(true, "顯示回測統計面板")
+
+var int[]   pnlYear   = array.new_int()     // 出現過的年份
+var float[] pnlStart  = array.new_float()   // 該年開始時的累計淨利
+var int[]   trdStart  = array.new_int()     // 該年開始時的累計平倉筆數
+var int[]   winStart  = array.new_int()     // 該年開始時的累計獲利筆數
+curYr = year(time)
+if array.size(pnlYear) == 0 or array.get(pnlYear, array.size(pnlYear) - 1) != curYr
+    array.push(pnlYear, curYr)
+    array.push(pnlStart, strategy.netprofit)
+    array.push(trdStart, strategy.closedtrades)
+    array.push(winStart, strategy.wintrades)
+
+money(x) =>
+    str.tostring(x, "#,###")
+pct(x) =>
+    str.tostring(x, "#.##") + "%"
+
+var table tbl = na
+if showPanel and barstate.islast
+    nYears = array.size(pnlYear)
+    if na(tbl)
+        tbl := table.new(position.top_right, 4, 40, bgcolor = color.new(color.white, 10),
+             border_width = 1, border_color = color.new(color.gray, 70),
+             frame_width = 1, frame_color = color.gray)
+    cap = strategy.initial_capital
+    pf  = strategy.grossloss > 0 ? strategy.grossprofit / strategy.grossloss : na
+    wr  = strategy.closedtrades > 0 ? 100.0 * strategy.wintrades / strategy.closedtrades : na
+    hdr = color.new(color.gray, 60)
+    txt = color.black
+    table.cell(tbl, 0, 0, "回測統計（與績效摘要同源）", text_color = txt, text_size = size.small, bgcolor = hdr)
+    table.merge_cells(tbl, 0, 0, 3, 0)
+    table.cell(tbl, 0, 1, "淨利",     text_color = txt, text_size = size.small)
+    table.cell(tbl, 1, 1, money(strategy.netprofit) + "（" + pct(100 * strategy.netprofit / cap) + "）",
+         text_color = strategy.netprofit >= 0 ? color.teal : color.red, text_size = size.small)
+    table.cell(tbl, 2, 1, "最大回撤", text_color = txt, text_size = size.small)
+    table.cell(tbl, 3, 1, money(strategy.max_drawdown), text_color = color.red, text_size = size.small)
+    table.cell(tbl, 0, 2, "平倉筆數", text_color = txt, text_size = size.small)
+    table.cell(tbl, 1, 2, str.tostring(strategy.closedtrades), text_color = txt, text_size = size.small)
+    table.cell(tbl, 2, 2, "勝率",     text_color = txt, text_size = size.small)
+    table.cell(tbl, 3, 2, pct(wr), text_color = txt, text_size = size.small)
+    table.cell(tbl, 0, 3, "獲利因子", text_color = txt, text_size = size.small)
+    table.cell(tbl, 1, 3, str.tostring(pf, "#.###"), text_color = txt, text_size = size.small)
+    table.cell(tbl, 2, 3, "期望值/筆", text_color = txt, text_size = size.small)
+    table.cell(tbl, 3, 3, strategy.closedtrades > 0 ? money(strategy.netprofit / strategy.closedtrades) : "-",
+         text_color = txt, text_size = size.small)
+    table.cell(tbl, 0, 4, "年份", text_color = txt, text_size = size.small, bgcolor = hdr)
+    table.cell(tbl, 1, 4, "損益", text_color = txt, text_size = size.small, bgcolor = hdr)
+    table.cell(tbl, 2, 4, "筆數", text_color = txt, text_size = size.small, bgcolor = hdr)
+    table.cell(tbl, 3, 4, "勝率", text_color = txt, text_size = size.small, bgcolor = hdr)
+    for i = 0 to nYears - 1
+        endP = i + 1 < nYears ? array.get(pnlStart, i + 1) : strategy.netprofit
+        endT = i + 1 < nYears ? array.get(trdStart, i + 1) : strategy.closedtrades
+        endW = i + 1 < nYears ? array.get(winStart, i + 1) : strategy.wintrades
+        yP = endP - array.get(pnlStart, i)
+        yT = endT - array.get(trdStart, i)
+        yW = endW - array.get(winStart, i)
+        row = 5 + i
+        if row < 40
+            table.cell(tbl, 0, row, str.tostring(array.get(pnlYear, i)), text_color = txt, text_size = size.small)
+            table.cell(tbl, 1, row, money(yP), text_color = yP >= 0 ? color.teal : color.red, text_size = size.small)
+            table.cell(tbl, 2, row, str.tostring(yT), text_color = txt, text_size = size.small)
+            table.cell(tbl, 3, row, yT > 0 ? pct(100.0 * yW / yT) : "-", text_color = txt, text_size = size.small)
+
 // ---- 畫圖 --------------------------------------------------------------------
 plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
 plot(loLevel, "前N日最低", color = color.new(color.red, 0),  linewidth = 2, style = plot.style_linebr)
