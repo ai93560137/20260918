@@ -1,6 +1,9 @@
 yfinance ^HSIL: 5731 rows
-SAVED 5731 rows from yfinance ^HSIL: 2003-06-19 00:00:00 -> 2026-09-18 00:00:00
-HKEX hsio250918: HTTP 404, 2908 bytes
-HKEX hsio250102: HTTP 404, 2908 bytes
-HKEX hsio240103: HTTP 404, 2908 bytes
-HKEX hsio220805: HTTP 404, 2908 bytes
+SAVED vhsi_daily.csv: 5731 rows from yfinance ^HSIL: 2003-06-19 00:00:00 -> 2026-09-18 00:00:00
+yfinance ^HSI: 9802 rows
+SAVED hsi_daily.csv: 9802 rows from yfinance ^HSI: 1986-12-31 00:00:00 -> 2026-09-18 00:00:00
+HKEX index page: HTTP 404, matched links: []
+https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/hsio250917.htm -> HTTP 404, 2908 bytes
+https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/hsio250917.zip -> HTTP 404, 2756 bytes
+https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/dqe250917.htm -> HTTP 404, 2908 bytes
+https://www.hkex.com.hk/chi/stat/dmstat/dayrpt/hsio250917c.htm -> HTTP 404, 2908 bytes
