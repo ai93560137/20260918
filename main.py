@@ -1254,12 +1254,28 @@ class MTFDynamicLevelsSession:
             if history and bar["time"] == history[-1]["time"]:
                 if history[-1] == bar:
                     return None, history
-                # [R80] 同一根時間、但 OHLC 變了 = EA 送的是【正在形成】的 K 線。
-                #       這跟 JN_M15_LAST_CLOSED=1 的假設相反，會拿半根 K 線去判訊號。
-                if JN_M15_LAST_CLOSED and ENTRY_ENGINE == "JINNANG":
-                    print(f"⚠️ [M15] 偵測到同一根 K 線（{bar['time']}）的 OHLC 被更新 —— "
-                          f"你的 EA 送的是【正在形成】的 K 線，但 JN_M15_LAST_CLOSED=1。"
-                          f"請把它設成 0，否則錦囊會用半根 K 線判訊號。[R80]", flush=True)
+                # [R80] 同一根時間、但 OHLC 變了。只有當這根就是【當下】那一根時，
+                #       才代表 EA 送的是正在形成的 K 線。舊 K 線被改寫是另一回事
+                #       （券商重新同步歷史，或歷史檔混進了別的商品），不能叫人改設定。[R85]
+                if ENTRY_ENGINE == "JINNANG":
+                    prev = history[-1]
+                    age = now_ts() - (bar["time"] - BROKER_UTC_OFFSET_HOURS * 3600)
+                    moved = ", ".join(
+                        f"{k} {prev.get(k)}→{bar.get(k)}"
+                        for k in ("open", "high", "low", "close")
+                        if prev.get(k) != bar.get(k))
+                    if age < 2 * 900:
+                        if JN_M15_LAST_CLOSED:
+                            print(f"⚠️ [M15] 當下這根 K 線（{bar['time']}）的 OHLC 被更新 —— "
+                                  f"你的 EA 送的是【正在形成】的 K 線，但 JN_M15_LAST_CLOSED=1。"
+                                  f"請把它設成 0，否則錦囊會用半根 K 線判訊號。"
+                                  f"（{moved}）[R80]", flush=True)
+                    else:
+                        print(f"⚠️ [M15] 已收盤 {age / 3600:.1f} 小時的 K 線（{bar['time']}）"
+                              f"被改寫。這不是「正在形成」，別動 JN_M15_LAST_CLOSED。"
+                              f"一次性多半是券商重新同步歷史；反覆出現要查歷史檔是不是"
+                              f"混了兩個商品（XAUUSD / XAUUSD+ 報價不同）。"
+                              f"（{moved}）[R85]", flush=True)
                 history[-1] = bar
             else:
                 history.append(bar)
