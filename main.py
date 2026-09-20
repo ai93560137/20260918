@@ -2101,6 +2101,8 @@ PAGE_LINKS = [
     ("info", "📄 投資人日誌"),
     ("gates_app", "🎛️ 關卡開關"),
     ("order_app", "🧾 送單參數"),
+    ("jinnang_sheet", "🗒️ 錦囊執行單"),
+    ("jinnang_tracker", "✅ 錦囊九十筆"),
     ("dashboard", "⚙️ 控制台"),
 ]
 
@@ -2248,6 +2250,22 @@ HUB_ICONS = {
                              "<path d='M19 23c-2 0-3 1-3 2.8v1.6c0 1.3-.9 1.8-1.8 1.8.9 0 1.8.5 1.8 1.8v1.6c0 1.8 1 2.8 3 2.8'/>"
                              "<path d='M28 23c2 0 3 1 3 2.8v1.6c0 1.3.9 1.8 1.8 1.8-.9 0-1.8.5-1.8 1.8v1.6c0 1.8-1 2.8-3 2.8'/>"
                              "</svg>"),
+    # 錦囊執行單：夾板上的單據與打勾
+    "jinnang_sheet": SVG_OPEN + ("<path d='M16 8H12a2 2 0 0 0-2 2v30a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-4'/>"
+                                 "<rect x='17' y='5' width='14' height='7' rx='2.2'/>"
+                                 "<path d='M16 22h16M16 29h16'/>"
+                                 "<path d='M16 35.5l2.6 2.6L23 33.5'/></svg>"),
+    # 錦囊九十筆：九宮格，最後一格打勾
+    "jinnang_tracker": SVG_OPEN + ("<rect x='7' y='7' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='19' y='7' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='31' y='7' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='7' y='19' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='19' y='19' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='31' y='19' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='7' y='31' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='19' y='31' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='31' y='31' width='10' height='10' rx='2.2'/>"
+                                   "<path d='M33.4 36l2.1 2.1L39 34.6'/></svg>"),
     # 系統控制台：儀表板指針
     "dashboard": SVG_OPEN + ("<path d='M8 35a16 16 0 1 1 32 0'/><path d='M24 35l9-9'/><circle cx='24' cy='35' r='3'/>"
                              "<path d='M24 13v3M12.6 18.6l2.1 2.1M35.4 18.6l-2.1 2.1M8 35h3M37 35h3'/></svg>"),
@@ -2258,6 +2276,8 @@ HUB_TILES = [
     ("?view=info", "info", "投資人日誌", "實盤績效與 GCP 決策", "#0f62fe"),
     ("?view=gates_app", "gates_app", "關卡開關", "逐關開關與逐關測試", "#d97706"),
     ("?view=order_app", "order_app", "送單參數", "webhook 封包欄位", "#0aa06e"),
+    ("?view=jinnang_sheet", "jinnang_sheet", "錦囊執行單", "思考流程與單筆執行單", "#2c6b7a"),
+    ("?view=jinnang_tracker", "jinnang_tracker", "錦囊九十筆", "人手下單的合規訓練", "#6d5bd0"),
     ("?view=dashboard", "dashboard", "系統控制台", "管理員・電閘與帳戶", "#212529"),
 ]
 
