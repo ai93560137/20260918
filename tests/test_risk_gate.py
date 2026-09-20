@@ -278,6 +278,40 @@ o2 = main.build_order({"signal":"BUY","ticker":"XAUUSD","price":4300.0,"sl_dista
                       main.default_order_params())
 check("舊引擎照常有 TP 欄位", tpf in o2, list(o2))
 
+print("\n=== 10c. 兩頁的資料來源跟著引擎走 ===")
+pl = json.loads(body_of(get("?view=gates&format=json")))
+gates = pl["switches"]["gates"]
+na = [g["key"] for g in gates if not g["applies"]]
+ap = [g["key"] for g in gates if g["applies"]]
+check("gates JSON 每個關卡都有 applies", all("applies" in g for g in gates))
+check(f"錦囊只用 risk_cap/news/ai（得到 {sorted(ap)}）",
+      set(ap) == {"risk_cap", "news", "ai"}, sorted(ap))
+check(f"其餘 {len(na)} 個標成不適用且帶說明",
+      len(na) > 0 and all(g["na_note"] for g in gates if not g["applies"]), na)
+check("switches 帶 engine", pl["switches"]["engine"] == "JINNANG", pl["switches"].get("engine"))
+
+op = json.loads(body_of(get("?view=order&format=json")))
+pv = op["preview"]
+check("order 預覽標明引擎", pv.get("engine") == "JINNANG", pv.get("engine"))
+check("order 預覽說明不送 TP", "不送 TP" in (pv.get("engine_note") or ""), pv.get("engine_note"))
+tpf = main.distance_fields(main.default_order_params())["tp"]
+check("order 預覽封包真的沒有 TP 欄位", tpf not in pv["order"], list(pv["order"]))
+check("order 預覽止損 = ATR × JN_DISASTER_SL_ATR",
+      abs(pv["sl_distance"] - max(main.MIN_SL_DISTANCE,
+          round(pv["atr_m15"] * main.JN_DISASTER_SL_ATR, 2))) < 1e-9, pv["sl_distance"])
+
+_e = main.ENTRY_ENGINE
+main.ENTRY_ENGINE = "PYRAMID"
+pv2 = main.order_preview(main.default_order_params())
+check("回退 PYRAMID 後預覽又有 TP", tpf in pv2["order"], list(pv2["order"]))
+main.ENTRY_ENGINE = _e
+
+for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "目前引擎不使用"]),
+                ("order.html", ["engine_note", "param-na", "不讀這個值"])):
+    txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
+    for m in must:
+        check(f"{f} 含「{m}」", m in txt)
+
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
 s = main.default_gate_state(); s["armed"] = True; s["regime"] = main.REGIME_TREND; s["dir"] = "UP"

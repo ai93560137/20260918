@@ -53,6 +53,9 @@ h2 { font-size:17px; margin:0 0 14px; }
 .gate-title { font-weight:700; font-size:15px; margin-bottom:4px; }
 .gate-state { font-size:12px; font-weight:700; padding:2px 8px; border-radius:10px; margin-left:6px; white-space:nowrap; }
 .gate-state.on { background:#d1e7dd; color:#146c43; } .gate-state.off { background:#ffe5b4; color:#8a4b00; }
+.gate-state.na { background:#e9ecef; color:#6c757d; }
+.gate-row.na { opacity:.55; border-left-color:#adb5bd; }
+.gate-na { font-size:12px; color:#6c757d; margin-top:4px; font-style:italic; }
 .gate-text { font-size:13px; color:#495057; line-height:1.55; margin-top:4px; }
 .gate-risk { font-size:12px; color:#b45309; margin-top:4px; }
 .param-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
@@ -188,7 +191,8 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
 
   <div class="section">
     <h2>🔧 逐關調整</h2>
-    <p class="muted" style="font-size:12px;">綠色＝該關卡照常檢查；橙色＝略過。調整後按下方「儲存」才會生效。</p>
+    <p class="muted" style="font-size:12px;">綠色＝該關卡照常檢查；橙色＝略過。調整後按下方「儲存」才會生效。<br>
+    <b>灰色＝目前的進場引擎根本不讀這個關卡</b>（設定仍會存著，換回舊引擎就恢復）。</p>
     <div id="gateList"><div class="muted" style="font-size:13px;">等待連線…</div></div>
     <div class="save-bar">
       <button id="saveBtn" class="btn btn-primary" type="button" disabled>💾 儲存逐關設定</button>
@@ -475,9 +479,42 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     var note = el("gateNote");
     note.textContent = "";
     note.appendChild(node("div", gate.summary_class === "pos" ? "pos" : (gate.summary_class === "neg" ? "neg" : "muted"), gate.summary || ""));
-    var detail = "趨勢狀態：" + (gate.regime || "—") + " / " + (gate.dir_word || "—") + " / " + (gate.armed ? "🟢 開閘：是" : "❌ 開閘：否");
+    var detail;
+    if (gate.driver === "RISK") {
+      var checks = (gate.risk && gate.risk.checks) || [];
+      var passed = checks.filter(function (c) { return c.ok; }).length;
+      detail = "風控關卡：" + passed + " / " + (checks.length || 5) + " 通過｜"
+             + (gate.armed ? "🟢 開閘：是" : "❌ 開閘：否");
+    } else {
+      detail = "趨勢狀態：" + (gate.regime || "—") + " / " + (gate.dir_word || "—") + " / "
+             + (gate.armed ? "🟢 開閘：是" : "❌ 開閘：否");
+    }
     if (gate.last_reason) { detail += "｜" + gate.last_reason; }
     note.appendChild(node("div", "muted", detail));
+
+    // 進場引擎與只做多，一眼看得到目前系統在跑什麼
+    if (gate.entry_engine) {
+      var engineText = gate.entry_engine === "JINNANG"
+        ? "🎯 進場引擎：錦囊 v4（M15 區間突破・只做多・抱 10 根・無價格停損，出場由 EA 定時 150 分鐘）"
+        : "🎯 進場引擎：舊加單引擎 PYRAMID（README §28：從未通過異常值檢驗）";
+      note.appendChild(node("div", "muted", engineText));
+    }
+    if (gate.long_only) { note.appendChild(node("div", "muted", "↗️ 只做多（空單一律擋掉）")); }
+    if (typeof gate.trades_today === "number") {
+      note.appendChild(node("div", "muted", "📆 今日已下單 " + gate.trades_today
+        + (gate.trades_max_per_day > 0 ? " / " + gate.trades_max_per_day + " 筆" : " 筆（不限）")));
+    }
+
+    // 五道風控關卡逐條顯示
+    if (gate.driver === "RISK" && gate.risk && gate.risk.checks && gate.risk.checks.length) {
+      var box = node("div", "gate-extra");
+      gate.risk.checks.forEach(function (c) {
+        var line = node("div", null, (c.ok ? "✅ " : "⛔ ") + c.name + "：" + c.detail);
+        if (!c.ok) { line.style.cssText = "color:#b02a37; font-weight:700;"; }
+        box.appendChild(line);
+      });
+      note.appendChild(box);
+    }
     if (gate.hard_lock) {
       var lockText = "🛑 硬鎖：" + gate.hard_lock.reason + (gate.hard_lock.until_text ? "（至 " + gate.hard_lock.until_text + "）" : "（需手動解除）");
       note.appendChild(node("div", "neg", lockText));
@@ -528,7 +565,8 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
     state.data.switches.gates.forEach(function (gate) {
       var on = pending.indexOf(gate.key) === -1;
       var changed = (saved.indexOf(gate.key) === -1) !== on;
-      var row = node("div", "gate-row" + (on ? "" : " off") + (changed ? " dirty" : ""));
+      var na = gate.applies === false;
+      var row = node("div", "gate-row" + (on ? "" : " off") + (changed ? " dirty" : "") + (na ? " na" : ""));
 
       var label = node("label", "switch");
       var input = document.createElement("input");
@@ -543,9 +581,14 @@ ul.notes { font-size:13px; color:#495057; line-height:1.7; margin:8px 0 0; paddi
 
       var body = node("div", "gate-body");
       var title = node("div", "gate-title", gate.title);
-      title.appendChild(node("span", "gate-state " + (on ? "on" : "off"), on ? "✅ 檢查中" : "⚠️ 已略過"));
+      if (na) {
+        title.appendChild(node("span", "gate-state na", "⊘ 目前引擎不使用"));
+      } else {
+        title.appendChild(node("span", "gate-state " + (on ? "on" : "off"), on ? "✅ 檢查中" : "⚠️ 已略過"));
+      }
       if (changed) { title.appendChild(node("span", "gate-state on", "● 未儲存")); }
       body.appendChild(title);
+      if (na && gate.na_note) { body.appendChild(node("div", "gate-na", gate.na_note)); }
 
       var normal = node("div", "gate-text");
       normal.appendChild(node("b", null, "啟用："));

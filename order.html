@@ -170,7 +170,7 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
   var GROUPS = [
     { title: "🏦 券商連線", keys: ["username", "api_key", "broker", "account_type", "account"] },
     { title: "📈 商品與手數", keys: ["symbol", "size", "strategy", "comment"] },
-    { title: "🛡️ 止損與止盈（決定 sl_distance_price / tp_distance_price）", keys: ["sl_atr_mult", "min_sl_distance", "target_rrr"] },
+    { title: "🛡️ 止損與止盈", keys: ["sl_atr_mult", "min_sl_distance", "target_rrr"] },
     { title: "🏃 移動止損與保本", keys: ["ts_activation_price", "ts_distance_price", "breakeven_distance_price", "breakeven_profit"] },
     { title: "📐 距離單位（送出前的換算）", keys: ["distance_unit"] }
   ];
@@ -380,8 +380,22 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
 
   function renderPreview() {
     var preview = state.data.preview;
-    el("previewNote").textContent = preview.note + "：價格 " + preview.price + "、ATR(M15) " + preview.atr_m15
+    var line = preview.note + "：價格 " + preview.price + "、ATR(M15) " + preview.atr_m15
       + " → 止損 " + preview.sl_distance + "（" + (state.data.meta.source === "preview" ? "尚未儲存的設定" : "伺服器目前設定") + "）";
+    if (preview.engine_note) { line += "\n" + preview.engine_note; }
+    el("previewNote").style.whiteSpace = "pre-line";
+    el("previewNote").textContent = line;
+    // 錦囊不送 TP，sl_atr_mult / target_rrr 也不會被讀到 —— 在頁面上標示，不要讓人改了以為有用
+    var naKeys = preview.engine === "JINNANG" ? ["sl_atr_mult", "target_rrr"] : [];
+    document.querySelectorAll(".param-na").forEach(function (n) { n.remove(); });
+    naKeys.forEach(function (key) {
+      var input = document.getElementById("f_" + key);
+      if (!input || !input.parentNode) { return; }
+      var tag = node("div", "param-error param-na",
+        "⊘ 錦囊 v4 不讀這個值（止損用 JN_DISASTER_SL_ATR，且不送 TP）。ENTRY_ENGINE=PYRAMID 才會生效。");
+      tag.style.cssText = "color:#6c757d; font-weight:600;";
+      input.parentNode.appendChild(tag);
+    });
     var host = el("previewJson");
     host.textContent = "";
     var keys = Object.keys(preview.order);

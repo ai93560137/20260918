@@ -3418,6 +3418,15 @@ def system_parameter_values(params=None):
     ]
 
 
+# [R78] 目前的進場引擎實際會讀哪幾個 bypass key。
+#       錦囊只看 risk_cap（資金控管）、news（新聞）、ai（覆核）；
+#       其餘（setup_trigger / structure / candle / rsi / cooldown / add_spacing）
+#       是舊 PureGCPPyramidingSession 專用的，換成錦囊後不會被讀到。
+JINNANG_BYPASS_KEYS = frozenset({"risk_cap", "news", "ai"})
+ACTIVE_BYPASS_KEYS = (JINNANG_BYPASS_KEYS if ENTRY_ENGINE == "JINNANG"
+                      else frozenset(key for key, *_ in GATE_SWITCH_DEFS))
+
+
 def read_gate_bypass():
     """Set of switched-off gates.
 
@@ -3610,11 +3619,18 @@ def gates_state_payload(message=None):
                           if isinstance(lock, dict) else None),
         },
         "switches": {
+            "engine": ENTRY_ENGINE,
             "mode": detect_gate_mode(bypass),
             "bypass": sorted(bypass),
             "updated_utc": doc.get("updated_utc"),
+            # [R78] applies=False 的關卡在目前的進場引擎下【根本不會被讀到】，
+            #       開關仍然存著（換回舊引擎就恢復），但頁面要標示清楚。
             "gates": [{"key": key, "title": title, "normal": normal, "skipped": skipped,
-                       "risk": risk, "enabled": key not in bypass, "params": gate_values.get(key, [])}
+                       "risk": risk, "enabled": key not in bypass, "params": gate_values.get(key, []),
+                       "applies": key in ACTIVE_BYPASS_KEYS,
+                       "na_note": (None if key in ACTIVE_BYPASS_KEYS else
+                                   f"錦囊 v4 不讀這個關卡（它屬於舊的加單引擎）。"
+                                   f"ENTRY_ENGINE=PYRAMID 才會生效。")}
                       for key, title, normal, skipped, risk in GATE_SWITCH_DEFS],
         },
         "modes": [{"key": key, "label": label, "bypass": sorted(keys)} for key, (label, keys) in GATE_MODES.items()],
@@ -3706,9 +3722,20 @@ def order_preview(params):
     live = price is not None and price > 0 and atr is not None and atr > 0
     if not live:
         price, atr = 2000.00, 6.00
-    sl = max(params["min_sl_distance"], round(atr * params["sl_atr_mult"], 2))
-    candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
-                 "sl_distance": sl, "atr_m15": atr, "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST"}
+    # [R78] 預覽必須跟著【實際在跑的引擎】走，否則這一頁會顯示一張不會被送出的封包。
+    if ENTRY_ENGINE == "JINNANG":
+        sl = max(params["min_sl_distance"], round(atr * JN_DISASTER_SL_ATR, 2))
+        candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+                     "sl_distance": sl, "tp_distance": None, "atr_m15": atr,
+                     "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST", "engine": "JINNANG"}
+        engine_note = (f"錦囊 v4：止損 = ATR × {JN_DISASTER_SL_ATR:g}（災難停損，正常碰不到）；"
+                       f"【不送 TP】—— 出場是 EA 的 {JN_HOLD_BARS * 15} 分鐘定時全平")
+    else:
+        sl = max(params["min_sl_distance"], round(atr * params["sl_atr_mult"], 2))
+        candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+                     "sl_distance": sl, "atr_m15": atr, "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST"}
+        engine_note = (f"舊加單引擎：止損 = ATR × {params['sl_atr_mult']:g}，"
+                       f"止盈 = 止損 × {params['target_rrr']:g}")
     order = build_order(candidate, params)
     order["api_key"] = mask_secret(order["api_key"])
     return {
@@ -3717,6 +3744,8 @@ def order_preview(params):
         "price": price,
         "atr_m15": atr,
         "sl_distance": sl,
+        "engine": ENTRY_ENGINE,
+        "engine_note": engine_note,
         "note": ("以最新 M15 快照試算（BUY 首單）" if live else "尚未收到 M15 快照，以 價格 2000 / ATR 6 示範"),
     }
 
