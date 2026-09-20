@@ -231,6 +231,12 @@ JN_DISASTER_SL_ATR = _env_float("JN_DISASTER_SL_ATR", 8.0)
 #       （最大逆行 MAE 最壞 1.638%，但那沒有造成虧損：沒有停損就不會被掃掉。）
 JN_SIZING_ADVERSE_PCT = _env_float("JN_SIZING_ADVERSE_PCT", 1.10)
 JN_MIN_BARS       = _env_int("JN_MIN_BARS", 100)                      # 判定前要累積多少根已收盤 M15
+# [R80] EA 送的 m15_ohlc 是「已收盤」還是「正在形成」的那一根？
+#       RiskManager V22/V23 用的是 CopyRates(symbol, PERIOD_M15, 1, 1, ...) —— shift=1，
+#       也就是【最後一根已收盤】的 K 線。所以整份 M15 歷史都是收盤資料，
+#       判定時要用 history 全部，不能再砍掉最後一根（砍了會晚 15 分鐘進場）。
+#       若之後換成會送 shift=0（正在形成）的 EA，把這個設成 0，程式會自動丟掉最後一根。
+JN_M15_LAST_CLOSED = _env_bool("JN_M15_LAST_CLOSED", True)
 
 # --- News -----------------------------------------------------------------------
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"  # [R17] ISO dates with UTC offset
@@ -1190,6 +1196,12 @@ class MTFDynamicLevelsSession:
             if history and bar["time"] == history[-1]["time"]:
                 if history[-1] == bar:
                     return None, history
+                # [R80] 同一根時間、但 OHLC 變了 = EA 送的是【正在形成】的 K 線。
+                #       這跟 JN_M15_LAST_CLOSED=1 的假設相反，會拿半根 K 線去判訊號。
+                if JN_M15_LAST_CLOSED and ENTRY_ENGINE == "JINNANG":
+                    print(f"⚠️ [M15] 偵測到同一根 K 線（{bar['time']}）的 OHLC 被更新 —— "
+                          f"你的 EA 送的是【正在形成】的 K 線，但 JN_M15_LAST_CLOSED=1。"
+                          f"請把它設成 0，否則錦囊會用半根 K 線判訊號。[R80]", flush=True)
                 history[-1] = bar
             else:
                 history.append(bar)
@@ -2443,8 +2455,11 @@ def jinnang_entry(payload, now, bypass, params):
     if len(history) < 2:
         return f"M15 歷史只有 {len(history)} 根"
 
-    # history[-1] 是【正在形成】的那一根（ingest 會就地更新它），所以只用到 [-2]。
-    closed = history[:-1]
+    # [R80] EA（V22/V23）送的是 shift=1 的 K 線，整份歷史都已收盤 → 全部拿來用。
+    #       JN_M15_LAST_CLOSED=0 時才丟掉最後一根（會送正在形成那根的 EA）。
+    closed = history if JN_M15_LAST_CLOSED else history[:-1]
+    if len(closed) < 2:
+        return f"已收盤的 M15 只有 {len(closed)} 根"
     last_closed = closed[-1]
     if not claim_m15_bar(int(last_closed["time"])):
         return "這根 M15 已經評估過了"

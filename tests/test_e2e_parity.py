@@ -88,9 +88,11 @@ FAKE.clear()
 main.GoldIndicatorSession.is_gold_market_open = staticmethod(lambda now=None: True)
 # 用一個真實的進場點，把它前面 200 根 M15 灌進 GCP 的歷史
 i0 = entry_idx[-1]
+# [R80] EA（V22/V23）用 CopyRates(..., PERIOD_M15, 1, 1, ...) —— 送的是
+#       【已收盤】的那一根。所以歷史的最後一根就是突破根，不再另外補「正在形成」的。
 hist = bars[max(0, i0 + 1 - WIN):i0 + 1]
-forming = dict(hist[-1]); forming["time"] += 900          # 再加一根「正在形成」的
-main.gcs_write_text(main.M15_HISTORY_FILE, json.dumps(hist + [forming]))
+main.gcs_write_text(main.M15_HISTORY_FILE, json.dumps(hist))
+forming = hist[-1]
 px = hist[-1]["close"]
 atr = main.JinnangSession._atr_series(hist, main.JN_ATR_LEN)[-1]
 payload = {"action": "check_gate", "token": "tok", "equity": 20000.0, "balance": 20000.0,

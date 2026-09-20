@@ -406,10 +406,10 @@ for i in range(210):
     bars2.append(dict(time=1700000000 + i * 900, open=px, high=px + 3.0, low=px - 3.0, close=px))
 v = main.JinnangSession.evaluate(bars2)
 brk = v["box_top"] + 40.0
+# [R80] EA 送已收盤的 K 線 → 突破根就是歷史的最後一根
 bars2.append(dict(time=1700000000 + 210 * 900, open=4300.0, high=brk + 2, low=4299.0, close=brk))
-bars2.append(dict(time=1700000000 + 211 * 900, open=brk, high=brk + 1, low=brk - 1, close=brk))
 main.gcs_write_text(main.M15_HISTORY_FILE, json.dumps(bars2))
-vv = main.JinnangSession.evaluate(bars2[:-1])
+vv = main.JinnangSession.evaluate(bars2)
 pay = dict(good, buy_lots=0.0, sell_lots=0.0, net_lots=0.0,
            m15_ohlc={"close": brk, "atr_m15": vv["atr"]})
 cand = main.jinnang_entry(pay, main.now_ts(), frozenset(), main.default_order_params())
@@ -421,6 +421,36 @@ if isinstance(cand, dict):
     tpf = main.distance_fields(main.default_order_params())["tp"]
     check("封包沒有 TP", tpf not in o, list(o))
 main.GoldIndicatorSession.is_gold_market_open = _ro
+
+print("\n=== 10f. R80：EA 送的是已收盤的 M15 ===")
+check("JN_M15_LAST_CLOSED 預設 True（配合 V22/V23 的 CopyRates shift=1）",
+      main.JN_M15_LAST_CLOSED is True, main.JN_M15_LAST_CLOSED)
+FAKE.clear()
+_ro2 = main.GoldIndicatorSession.is_gold_market_open
+main.GoldIndicatorSession.is_gold_market_open = staticmethod(lambda now=None: True)
+b3 = []
+for i in range(210):
+    px = 4300.0 + (0.6 if i % 2 else -0.6)
+    b3.append(dict(time=1700000000 + i * 900, open=px, high=px + 3.0, low=px - 3.0, close=px))
+vv = main.JinnangSession.evaluate(b3)
+brk = vv["box_top"] + 40.0
+b3.append(dict(time=1700000000 + 210 * 900, open=4300.0, high=brk + 2, low=4299.0, close=brk))
+# 歷史的【最後一根】就是突破根（EA 送已收盤的，所以它就在最後）
+main.gcs_write_text(main.M15_HISTORY_FILE, json.dumps(b3))
+pay3 = dict(good, buy_lots=0.0, sell_lots=0.0, net_lots=0.0,
+            m15_ohlc={"close": brk, "atr_m15": vv["atr"]})
+c3 = main.jinnang_entry(pay3, main.now_ts(), frozenset(), main.default_order_params())
+check("突破根在歷史最後一根時，同一次心跳就進場（不晚 15 分鐘）",
+      isinstance(c3, dict), c3)
+# 切成 False 時要丟掉最後一根 → 同一份資料就不該出訊號
+_f = main.JN_M15_LAST_CLOSED
+main.JN_M15_LAST_CLOSED = False
+FAKE.clear(); main.gcs_write_text(main.M15_HISTORY_FILE, json.dumps(b3))
+c4 = main.jinnang_entry(pay3, main.now_ts(), frozenset(), main.default_order_params())
+check("JN_M15_LAST_CLOSED=0 時會丟掉最後一根（同一份資料不出訊號）",
+      not isinstance(c4, dict), c4)
+main.JN_M15_LAST_CLOSED = _f
+main.GoldIndicatorSession.is_gold_market_open = _ro2
 
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
