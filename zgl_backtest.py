@@ -41,6 +41,24 @@ except Exception:                            # pragma: no cover - 獨立使用�
     load_bars = None
 
 
+def load_any(path, broker_offset_hours=0.0):
+    """同 load_bars，另外支援 .gz 壓縮檔（repo 的 data/ 目錄以 .csv.gz 存放）。"""
+    if not path.endswith(".gz"):
+        return load_bars(path, broker_offset_hours)
+    import gzip
+    import os
+    import shutil
+    import tempfile
+    suffix = os.path.splitext(path[:-3])[1] or ".csv"
+    with gzip.open(path, "rb") as src, \
+            tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        shutil.copyfileobj(src, tmp)
+    try:
+        return load_bars(tmp.name, broker_offset_hours)
+    finally:
+        os.unlink(tmp.name)
+
+
 # =============================================================================
 # 1. Pine 內建函式的逐一對應（ta.ema / ta.wma / ta.stdev / ta.highest / ta.lowest）
 # =============================================================================
@@ -399,7 +417,7 @@ def main():
     elif args.data:
         if load_bars is None:
             raise SystemExit("找不到 backtest.py 的 load_bars，請在 repo 根目錄執行")
-        bars = load_bars(args.data, args.broker_offset)
+        bars = load_any(args.data, args.broker_offset)
         print(f"📊 載入 {len(bars)} 根 K 線")
     else:
         ap.error("請提供資料檔，或使用 --selftest / --synthetic")
