@@ -263,11 +263,10 @@ fill(pU, pD, showBox and boxLive ? color.new(#78909C, 92) : na)
 plotshape(confirmUp, "向上突破", shape.triangleup,   location.belowbar, color.new(#26A69A, 0), size = size.tiny)
 plotshape(confirmDn, "向下跌破", shape.triangledown, location.abovebar, color.new(#EF5350, 0), size = size.tiny)
 
-tbPos = panelPos == "右上" ? position.top_right : panelPos == "右中" ? position.middle_right :
-        panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left :
-        panelPos == "左中" ? position.middle_left : position.bottom_left
-tbSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
-         panelSize == "large" ? size.large : size.normal
+// ⚠ Pine 續行規則：換行後的縮排【不能是 4 的倍數】，否則會被當成新區塊（CE10156）。
+//    這兩行故意不換行，最保險。
+tbPos = panelPos == "右上" ? position.top_right : panelPos == "右中" ? position.middle_right : panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left : panelPos == "左中" ? position.middle_left : position.bottom_left
+tbSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small : panelSize == "large" ? size.large : size.normal
 var table tb = table.new(tbPos, 2, 12, border_width = 1)
 bgC  = color.new(#12141A, 8)
 dimC = color.new(#9AA0A6, 25)
