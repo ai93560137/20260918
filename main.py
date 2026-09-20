@@ -107,10 +107,11 @@ ORDER_SIZE = _env_float("ORDER_SIZE", 0.01)
 #       原本寫死在這裡，而這個 repo 是【公開】的。改成環境變數，沒設就不送單。
 BROKER_API_URL = _env_str("BROKER_API_URL", "")
 BROKER_TIMEOUT_SEC = _env_int("BROKER_TIMEOUT_SEC", 8)            # keep total request < EA WebRequest timeout
-# [R83] 券商的商品名要一字不差。UltimaMarkets 用的是 "XAUUSD+"（有加號），
-#       TradingView 那張快訊封包送的也是 "XAUUSD+"。送錯名字會被拒單，
-#       或更糟 —— 成交在另一個商品上。這裡跟券商對齊，不要用「通用」的寫法。
-ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD+")                   # 必須與券商商品列表完全一致
+# [R83] 券商的商品名要一字不差（UltimaMarkets 可能是 XAUUSD 或 XAUUSD+）。
+#       送錯名字會被拒單，或更糟 —— 成交在另一個商品上。
+#       不靠人記：EA 的心跳裡帶著圖表商品名（m1_ohlc.symbol），
+#       GCP 會拿它跟這個值比對，不一樣就在 Log 與儀表板上示警。見 broker_symbol_mismatch()。
+ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD")                    # 必須與券商商品列表完全一致
 ORDER_ACCOUNT = _env_str("ORDER_ACCOUNT", "1")                       # webhooktrade 範本的 account 欄位
 # webhooktrade 有兩組距離欄位，單位不同，只能擇一送出：
 #   price  → sl_distance_price / tp_distance_price / ts_activation_price / …   值＝美元（13.00）
@@ -558,9 +559,17 @@ def read_decision_logs():
 # =============================================================================
 def save_account_snapshot(payload, m15_ohlc, m15_levels):
     # Missing numbers are stored as None (shown as "—"), never as fake defaults.  [R61]
+    # [R83] EA 無持倉時 symbol 回報 "NONE"，但 m1_ohlc.symbol 一定是圖表商品名
+    #       ——那就是券商商品列表裡的真名。拿它來對照 ORDER_SYMBOL。
+    m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
+    broker_symbol = str(m1.get("symbol") or "").strip()
+    if not broker_symbol:
+        held = str(payload.get("symbol") or "").strip()
+        broker_symbol = held if held and held != "NONE" else ""
     snapshot = {
         "status": str(payload.get("status") or "").strip().upper(),
         "symbol": str(payload.get("symbol") or "NONE"),
+        "broker_symbol": broker_symbol or (read_account_snapshot().get("broker_symbol") or ""),
         "currency": str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT),
         "net_lots": to_float(payload.get("net_lots")),
         "buy_lots": to_float(payload.get("buy_lots")),
@@ -578,6 +587,24 @@ def save_account_snapshot(payload, m15_ohlc, m15_levels):
     except StorageError as exc:
         print(f"⚠️ [戶口快照寫入失敗] {exc}", flush=True)
     return snapshot
+
+
+def broker_symbol_mismatch(snapshot=None):
+    """[R83] ORDER_SYMBOL 與 EA 回報的券商商品名不一致時回一句話，否則 None。
+
+    EA 的 m1_ohlc.symbol 是圖表商品，也就是券商商品列表裡的真名。
+    人會記錯 XAUUSD / XAUUSD+，程式不會。
+    """
+    snap = snapshot if isinstance(snapshot, dict) else read_account_snapshot()
+    seen = str(snap.get("broker_symbol") or "").strip()
+    if not seen:
+        return None
+    ours = str(read_order_params()[0].get("symbol") or ORDER_SYMBOL).strip()
+    if seen == ours:
+        return None
+    return (f"送單用的商品名是「{ours}」，但 EA 回報券商上的是「{seen}」。"
+            f"不一致會被拒單，或成交在另一個商品上。"
+            f"請到送單參數頁把 symbol 改成「{seen}」。")
 
 
 def read_account_snapshot():
@@ -2555,6 +2582,11 @@ def handle_heartbeat(payload, can_trade):
     m15_levels = mtf_levels_session.ingest(m15_ohlc) if m15_ohlc else mtf_levels_session.read_levels()
     snapshot = save_account_snapshot(payload, m15_ohlc, m15_levels)
 
+    warn = broker_symbol_mismatch(snapshot)                                              # [R83]
+    if warn:
+        print(f"🚨 [商品名不一致] {warn}", flush=True)
+        log_decision(f"🚨 [商品名不一致] {warn}", key="symbol_mismatch")
+
     # 2b) 🛡️ 風控電閘：每一次心跳都重評，這是 armed 的唯一來源。  [R70]
     m1_result, bar, news = None, None, None
     bypass = read_gate_bypass()
@@ -2938,6 +2970,9 @@ def _jinnang_html():
     sig = v.get("signal")
     color = "#0f7b3f" if sig == "BUY" else "#5b6470"
     rows = [("判定", v.get("text", "—"))]
+    warn = broker_symbol_mismatch()
+    if warn:
+        rows.append(("🚨 商品名不一致", warn))
     if v.get("ready"):
         rows += [
             ("波動水位", (f"ATR(14)÷價格 = {v['atr_pct']:.4f}%　門檻 {VOL_FLOOR_ATR_PCT:g}%"
@@ -3735,6 +3770,7 @@ def gates_state_payload(message=None):
         "modes": [{"key": key, "label": label, "bypass": sorted(keys)} for key, (label, keys) in GATE_MODES.items()],
         "test": solo_test_status(bypass),
         "risk_preview": _risk_cap_preview(),
+        "symbol_mismatch": broker_symbol_mismatch(),
         "always_on": GATE_ALWAYS_ON_NOTES,
         "system_params": system_parameter_values(order_params),
         "auth_required": ADMIN_API_REQUIRE_TOKEN,

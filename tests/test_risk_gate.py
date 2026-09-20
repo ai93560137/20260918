@@ -514,13 +514,32 @@ check("BROKER_API_URL 沒有把權杖寫進原始碼", not _url, _url[:2])
 check("BROKER_API_URL 改成環境變數", '_env_str("BROKER_API_URL", "")' in src)
 
 print("\n=== 10i. R83：商品代號要跟券商一致 ===")
-check('ORDER_SYMBOL 預設 "XAUUSD+"（UltimaMarkets 的名字）',
-      main.ORDER_SYMBOL == "XAUUSD+", main.ORDER_SYMBOL)
-_o = main.build_order({"signal": "BUY", "ticker": main.read_order_params()[0]["symbol"],
-                       "price": 4378.0, "sl_distance": 60.0, "tp_distance": None},
-                      main.read_order_params()[0])
-check("送出的封包 symbol 與 TradingView 那張一致（XAUUSD+）",
-      _o["symbol"] == "XAUUSD+", _o["symbol"])
+# 不靠人記 XAUUSD / XAUUSD+：拿 EA 回報的圖表商品名自動比對
+FAKE.clear()
+main.save_account_snapshot(dict(good, symbol="NONE",
+                                m1_ohlc={"symbol": main.ORDER_SYMBOL, "time": 1, "open": 1,
+                                         "high": 1, "low": 1, "close": 1}), {}, {})
+check("名字一樣時不示警", main.broker_symbol_mismatch() is None, main.broker_symbol_mismatch())
+FAKE.clear()
+main.save_account_snapshot(dict(good, symbol="NONE",
+                                m1_ohlc={"symbol": "XAUUSD+", "time": 1, "open": 1,
+                                         "high": 1, "low": 1, "close": 1}), {}, {})
+w = main.broker_symbol_mismatch()
+check("EA 回報 XAUUSD+ 而設定是 XAUUSD → 示警", w is not None and "XAUUSD+" in w, w)
+check("示警訊息告訴你要改成哪一個", w and "改成「XAUUSD+」" in w, w)
+FAKE.clear()
+main.save_account_snapshot(dict(good, symbol="NONE"), {}, {})
+check("EA 還沒回報商品名時不亂示警", main.broker_symbol_mismatch() is None)
+# 心跳端到端：不一致時 Log 會記一筆
+FAKE.clear()
+post({"action": "check_gate", "token": "tok", **dict(good, symbol="NONE",
+      m1_ohlc={"symbol": "XAUUSD+", "time": 1, "open": 1, "high": 1, "low": 1, "close": 1})})
+logs = main.read_decision_logs()
+check("心跳會把不一致寫進決策日誌",
+      any("商品名不一致" in str(x) for x in logs), str(logs)[:80])
+pl2 = json.loads(body_of(get("?view=gates&format=json")))
+check("gates JSON 帶 symbol_mismatch", pl2.get("symbol_mismatch") is not None,
+      pl2.get("symbol_mismatch"))
 
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
