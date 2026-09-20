@@ -607,6 +607,20 @@ def broker_symbol_mismatch(snapshot=None):
             f"請到送單參數頁把 symbol 改成「{seen}」。")
 
 
+def broker_symbol_unverified(snapshot=None):
+    """[R86] 還沒從 EA 看過券商商品名時，要說「沒核對過」，不要沉默。
+
+    m1_ohlc.symbol 只在新的 M1 K 線才會帶（EA 第 706-717 行），所以休市期間
+    一直收不到。沉默會讓儀表板看起來像「核對過、沒問題」，其實是從沒對過。
+    """
+    snap = snapshot if isinstance(snapshot, dict) else read_account_snapshot()
+    if str(snap.get("broker_symbol") or "").strip():
+        return None
+    ours = str(read_order_params()[0].get("symbol") or ORDER_SYMBOL).strip()
+    return (f"還沒從 EA 收到券商上的商品名，所以送單用的「{ours}」**沒有被核對過**。"
+            f"EA 只在新的 M1 K 線才會帶商品名，開市後第一根 M1 收盤就會自動補上。")
+
+
 def read_account_snapshot():
     try:
         data = gcs_read_json(ACCOUNT_FILE, {})
@@ -2648,6 +2662,14 @@ def handle_heartbeat(payload, can_trade):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     order_params = read_order_params()[0]
 
+    # 4b) [R86] 商品名確定不一致就不送單。只有兩邊都知道、而且不同時才會擋，
+    #     所以不會因為「還沒核對過」把自己鎖死。回 monitoring，EA 收到就是不動作。
+    sym_warn = broker_symbol_mismatch(snapshot)
+    if sym_warn:
+        log_decision(f"🚨 [商品名不一致・已擋單] {sym_warn}", key="symbol_mismatch_block")
+        return jsonify({"status": "monitoring", "current_gate": "OPEN",
+                        "message": f"商品名不一致，拒絕送單。{sym_warn}"}), 200
+
     # 5) 進場引擎 → 執行。
     if ENTRY_ENGINE == "JINNANG":                                                        # [R78]
         candidate = jinnang_entry(payload, now, bypass, order_params)
@@ -2997,6 +3019,10 @@ def _jinnang_html():
     warn = broker_symbol_mismatch()
     if warn:
         rows.append(("🚨 商品名不一致", warn))
+    else:
+        unverified = broker_symbol_unverified()                                          # [R86]
+        if unverified:
+            rows.append(("⚠️ 商品名未核對", unverified))
     if v.get("ready"):
         rows += [
             ("波動水位", (f"ATR(14)÷價格 = {v['atr_pct']:.4f}%　門檻 {VOL_FLOOR_ATR_PCT:g}%"
