@@ -123,19 +123,27 @@ button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); font-size:12.5px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-.nav{display:flex; gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:-8px}
-.nav a{flex:1; text-align:center; padding:9px 12px; background:var(--field); color:var(--muted);
-  text-decoration:none; font-size:14px; font-weight:500; letter-spacing:.02em}
+.nav{display:flex; flex-wrap:wrap; gap:1px; background:var(--line);
+  border:1px solid var(--line); margin-bottom:-8px}
+.nav a, .nav span.on{flex:1 1 auto; min-width:104px; text-align:center; padding:9px 10px;
+  background:var(--field); color:var(--muted); text-decoration:none; font-size:13px;
+  font-weight:500; letter-spacing:.02em; white-space:nowrap}
 .nav a:hover{color:var(--ink)}
-.nav a.on{background:var(--accent-soft); color:var(--accent); font-weight:700;
+.nav .on{background:var(--accent-soft); color:var(--accent); font-weight:700;
   box-shadow:inset 0 -3px 0 var(--accent)}
 .nav a:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+@media (max-width:640px){ .nav a, .nav span.on{font-size:12px; min-width:84px; padding:8px 6px} }
 </style>
 
 <div class="wrap">
-<nav class="nav">
-  <a href="?view=jinnang_sheet">錦囊執行單</a>
-  <a href="?view=jinnang_tracker" class="on">錦囊九十筆</a>
+<nav class="nav" aria-label="頁面導覽">
+  <a href="?view=welcome">🏠 首頁</a>
+  <a href="?view=info">📄 投資人日誌</a>
+  <a href="?view=gates_app">🎛️ 關卡開關</a>
+  <a href="?view=order_app">🧾 送單參數</a>
+  <a href="?view=jinnang_sheet">🗒️ 錦囊執行單</a>
+  <span class="on" aria-current="page">✅ 錦囊九十筆</span>
+  <a href="?view=dashboard">⚙️ 控制台</a>
 </nav>
 
 <div class="hero">

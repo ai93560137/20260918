@@ -312,6 +312,27 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
     for m in must:
         check(f"{f} 含「{m}」", m in txt)
 
+print("\n=== 10d. 七頁導覽列一致 ===")
+VIEWS = [v for v, _ in main.PAGE_LINKS]
+check(f"main.py 的 PAGE_LINKS 有 7 頁（{len(VIEWS)}）", len(VIEWS) == 7, VIEWS)
+for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html"):
+    txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
+    self_view = f[:-5] if f.startswith("jinnang") else f[:-5] + "_app"
+    # 當前頁不該連到自己（下面另有一項專門檢查），所以從必須出現的清單裡排除
+    miss = [v for v in VIEWS if v != self_view and v not in txt]
+    check(f"{f} 連到其餘 6 頁", not miss, f"缺 {miss}")
+for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html", "錦囊九十筆")):
+    txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
+    check(f"{f} 自己那格標成 current",
+          f'<span class="on" aria-current="page">✅ {cur}</span>' in txt
+          or f'<span class="on" aria-current="page">🗒️ {cur}</span>' in txt)
+    check(f"{f} 沒有連到自己", f'href="?view={f[:-5]}"' not in txt)
+# 兩頁實際 serve 出來要含全部連結
+for v in ("jinnang_sheet", "jinnang_tracker"):
+    html = body_of(get("?view=" + v))
+    miss = [x for x in VIEWS if x != v and ("?view=" + x) not in html]
+    check(f"?view={v} 實際輸出含其餘 6 個連結", not miss, f"缺 {miss}")
+
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
 s = main.default_gate_state(); s["armed"] = True; s["regime"] = main.REGIME_TREND; s["dir"] = "UP"
