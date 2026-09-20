@@ -379,8 +379,23 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
 
 print("\n=== 10e. R79：倉位大小、最壞跳空、下單後曝險 ===")
 import math as _m
-check("WORST_GAP_PCT 改為 10（150 分鐘持倉的實測最壞是 7.55%）",
-      main.WORST_GAP_PCT == 10.0, main.WORST_GAP_PCT)
+check("WORST_GAP_PCT = 7.6（150 分鐘持倉的實測最壞逆行 7.55%）",
+      abs(main.WORST_GAP_PCT - 7.6) < 1e-9, main.WORST_GAP_PCT)
+# R81：不能一開始就鎖死。1 盎司 × 最壞跳空 必須留得下回撤空間。
+_expo = main.ORDER_SIZE * main.CONTRACT_SIZE * 4378.0 / (20000.0 * main.FX_TO_USD["HKD"])
+_stop = main.DD_TOLERANCE_PCT - _expo * main.WORST_GAP_PCT
+check(f"HK$20,000 / 金價 4,378 不會一開始就鎖死（回撤 {_stop:.1f}% 才停）",
+      _stop > 3.0, f"{_stop:.2f}%")
+# 空手卻超標時，訊息要說清楚是死鎖
+_g = main.WORST_GAP_PCT
+main.WORST_GAP_PCT = 40.0
+rr = main.evaluate_risk_gate(dict(good, net_lots=0.0, equity=20000.0, balance=20000.0),
+                             main.default_gate_state())
+_ex = [c for c in rr["checks"] if c["key"] == "exposure"][0]
+check("空手就超標時寫明『等下去沒有用』", not _ex["ok"] and "等下去沒有用" in _ex["detail"],
+      _ex["detail"][:60])
+check("並給出需要多少本金", "本金要 ≥" in _ex["detail"], _ex["detail"][-40:])
+main.WORST_GAP_PCT = _g
 check("JN_SIZING_ADVERSE_PCT = 1.10（實測最壞單筆虧損 1.097%）",
       abs(main.JN_SIZING_ADVERSE_PCT - 1.10) < 1e-9, main.JN_SIZING_ADVERSE_PCT)
 # 曝險要看下單之後

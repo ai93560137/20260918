@@ -188,12 +188,17 @@ NOISE_K = _env_float("NOISE_K", 1.0)                                  # [R31] th
 GATE_DRIVER = _env_str("GATE_DRIVER", "RISK").upper()                 # RISK | REGIME（舊行為，僅供回退）
 LONG_ONLY = _env_bool("LONG_ONLY", True)                              # [R71] 全期 671 筆空單 t=−0.25
 DD_TOLERANCE_PCT = _env_float("DD_TOLERANCE_PCT", 20.0)               # 可承受回撤（空城計基準）
-# [R79] 14% 是黃金最壞【整個交易日】的日內振幅。錦囊只抱 10 根 M15＝150 分鐘：
-#       全歷史 13,696 個 10 根窗口，最壞逆行是 7.55%、99.9 百分位 3.79%。
-#       用 14% 會讓可用曝險變成 1.43x，而 1 盎司在 HK$20,000 上是 1.68x —— 永遠過不了。
-#       取 10.0（錦囊 Pine 檔頭一直寫的基準，也是實測 7.55% 的 1.3 倍），不是為了讓
-#       交易過關才調鬆，是原本那個數字對這個持倉長度就不對。
-WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 10.0)
+# [R81] 這個數字要對應【持倉長度】，不是隨便抄一個「黃金最壞單日」。
+#       錦囊抱 10 根 M15 = 150 分鐘。全歷史 13,696 個 10 根窗口的實測逆行：
+#           最壞 7.55%　99.9 百分位 3.79%　（對照：最壞單日 9.60%、最壞日內 13.94%）
+#       取 7.6 = 實測最壞，不是估的。
+#       為什麼不能用 10 或 14：1 盎司在 HK$20,000、金價 4,378 是 1.68x 曝險，
+#       而 可用曝險 = (20% − 回撤) ÷ gap。代進去：
+#           gap=14% → 回撤 0.0% 就鎖死（一開始就不能下單）
+#           gap=10% → 回撤 2.5%（HK$500 ＝ 1.4 次最壞虧損）就鎖死
+#           gap=7.6%→ 回撤 6.2%（HK$1,240 ＝ 3.4 次最壞虧損）才鎖死
+#       用 TradingView 全期 513 筆重播：gap=10 擋掉 6 筆，gap=7.6 一筆都不擋。
+WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 7.6)
 EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)              # 曝險硬上限（名目 ÷ 淨值）
 DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日虧損上限（佔淨值）
 # [R72] 波動門檻用 EA 已經在傳的 atr_m15。校準見 README §24：只做多、抱 10 根、
@@ -772,10 +777,20 @@ def evaluate_risk_gate(snapshot, state, now=None):
         if price and equity_usd and equity_usd > 0:
             exp_now = notional / equity_usd
             ok = exp_now <= cap_eff
-            add("exposure", "曝險上限", ok,
-                f"下單後 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
-                f"（高水位 {peak:,.0f} → 回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，"
-                f"最壞跳空 {WORST_GAP_PCT:.0f}%）")
+            detail = (f"下單後 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
+                      f"（高水位 {peak:,.0f} → 回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，"
+                      f"最壞跳空 {WORST_GAP_PCT:g}%）")
+            # [R81] 分清楚兩種擋法。空手卻還是超標 = 戶口對這個最小手數來說太小，
+            #       而且【停了就回不來】：不能交易 → 權益不變 → 回撤不會縮小。
+            #       這是要人介入的狀態，不是等一等就會好，所以訊息要講清楚。
+            if not ok and lots <= 0:
+                need_eq = (pending * CONTRACT_SIZE * price / cap_eff / rate) if cap_eff > 0 else None
+                detail += ("　🔒 空手就已超標 = 這個戶口做不了 "
+                           f"{pending:g} 手。停了之後權益不會再變，回撤也不會縮小 —— "
+                           "要加本金或縮小手數，等下去沒有用。")
+                if need_eq:
+                    detail += f"（本金要 ≥ {need_eq:,.0f}）"
+            add("exposure", "曝險上限", ok, detail)
         else:
             add("exposure", "曝險上限", False, "缺價格或匯率，無法試算曝險")
 
@@ -2919,6 +2934,14 @@ def _jinnang_html():
         snap = read_account_snapshot()
         eq = to_float(snap.get("equity"))
         ceil_px = jinnang_price_ceiling(eq, snap.get("currency"))
+        if eq and eq > 0 and v.get("price") and WORST_GAP_PCT > 0:
+            # 曝險 × 最壞跳空 ≤ 容忍 − 回撤 → 解出會停止下單的回撤水準
+            expo = ORDER_SIZE * CONTRACT_SIZE * v["price"] / (eq * FX_TO_USD.get(
+                str(snap.get("currency") or ACCOUNT_CURRENCY_DEFAULT).upper(), FX_TO_USD["HKD"]))
+            stop_dd = DD_TOLERANCE_PCT - expo * WORST_GAP_PCT
+            rows.append(("回撤多少會停",
+                         f"{max(0.0, stop_dd):.1f}%（約 {eq * max(0.0, stop_dd) / 100:,.0f}）"
+                         f"　停了之後權益不會變，要加本金才解得開"))
         if ceil_px and v.get("price"):
             head = min(100.0, (ceil_px / v["price"] - 1) * 100)
             rows.append(("可做到的金價上限",
