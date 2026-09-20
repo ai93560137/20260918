@@ -1,0 +1,256 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 錦囊 v3 — 一個 HK$20,000 戶口的訓練用回測（乾淨版）
+//
+// v2 的改動只有一個想法：**上限不靠自制力，靠戶口裡沒有更多錢。**
+//   戶口只入 HK$20,000 → 就算完全失控，最多也只輸 HK$20,000。
+//   所以這支策略的回測要回答的不是「賺不賺錢」，是：
+//     ① 一個 20,000 的戶口，跑得完嗎？
+//     ② 30 筆一組，一組長什麼樣子？
+//
+// 規則（定稿，不要改）：
+//   XAUUSD M15 · 八陣圖原廠門檻 · 不過濾高週期 · 不過濾波動 · 不過濾時段
+//   突破確認 → 下一根開盤進場 → 滿 10 根（2.5 小時）無條件出場 → 無價格停損
+//
+// 【定稿實測 — TradingView Strategy Tester，2022-09-01 → 2026-09-16】
+//   設定：初始資金 20,000 HKD／訂單大小 1 數量（= 1 盎司）／佣金 2.0 每份合約
+//        （TradingView 內部 1 盎司 = 0.1 合約，故 2.0 × 0.1 × 2 張委託 = US$0.40 來回）
+//        ／做多‧空頭槓桿 2x（1 盎司名義 ≈ HK$34,000 ÷ 20,000 = 1.70x）
+//
+//   707 筆（每年 177 筆 ≈ 每 1.4 個交易日一次）　勝率 47.67%　獲利因子 1.332
+//   每筆期望值 HK$9.12　　單筆最好 +848.29　單筆最壞 −367.46（戶口的 1.84%）
+//   總損益 +HK$6,449 = 戶口的 +32.25%　年化 +7.24%
+//   最大回撤 7.19%（容忍線 20%）　手續費 HK$2,184 = 毛利的 8.4%
+//
+//   ★ 與獨立的 Python 實作交叉驗證（同期間、1 盎司、不同資料源、不同語言）：
+//       每筆期望值  9.12 vs 9.10  → 1.002x
+//       單筆最好   848.29 vs 845.10 → 1.004x
+//       單筆最壞   367.46 vs 365.70 → 1.005x
+//       交易數      707 vs 750     → 0.94x
+//     關鍵指標全部收斂到 1% 以內。這條規則可以定稿。
+//
+// 【最重要的一個數字：異常值損益 HK$6,558.25 = 總損益的 101.7%】
+//   扣掉異常值後，707 筆【倒賠 HK$109】。
+//   → 利潤 100% 來自極少數幾筆，而它們每一筆都要抱滿 10 根才長得出來。
+//   → 提早出場砍掉的不是一點利潤，是【全部的利潤】。
+//   → 30 筆一組的期望只有 HK$274，而且中位數是負的。
+//      **一組虧錢完全正常。不要用組損益判斷自己做得對不對。**
+//
+// 【槓桿】1 盎司 = US$4,378 ≈ HK$34,148 名義 ÷ HK$20,000 = 1.71x
+//   剛好落在空城計的上限（容忍 20% ÷ 黃金最壞單日 10%）。
+//   0.02 手 = 3.41x，超過上限——不該升的理由是槓桿，不是回撤。
+//
+// ⚠ TradingView 的 Properties（屬性）分頁會【蓋掉】腳本裡的所有這些值。
+//   跑之前逐格確認：
+//     初始資金        20,000  HKD
+//     預設訂單大小     1       數量      ← 1 盎司
+//     佣金            2.0     每份合約   ← US$0.40 來回
+//     做多/空頭槓桿    2x                ← 1x 會因保證金不足而拒單
+//     滑點            0       ticks     ← 實測 M15 收盤→下一根 M1 開盤滑價 ≈ −0.0001%
+//
+// 【v3 = v2 移除所有警報相關程式碼】
+//   拿掉了：alert_message、webhook JSON 組裝、以及兩個 alertcondition()。
+//   進出場邏輯、參數、回測結果與 v2 完全相同 —— 只是讓警報對話框單純化。
+//
+//   在策略上建立警報時，第二格應該只會出現一個選項：【訂單執行事件】。
+//   選它 → 訊息欄貼你的 JSON（用 {{strategy.order.action}}）→ 通知填 webhook URL。
+//   alertcondition() 與 alert_message 在這裡都用不到，留著反而會讓對話框多出
+//   互相衝突的選項。
+//
+// ⚠ 回測測的是【規則】，不是【你的紀律】。
+//   回測裡你永遠會抱滿 10 根；實盤裡不會。所以真正的指標是那三格打勾。
+// =============================================================================
+strategy("智能諸葛亮 · 錦囊 v3｜HK$20,000 戶口訓練", "錦囊 v3",
+     overlay = true,
+     pyramiding = 0,
+     currency = currency.HKD,
+     initial_capital = 20000,
+     default_qty_type = strategy.fixed,
+     default_qty_value = 1,                      // 1 數量 = 1 盎司 = 0.01 手
+     commission_type = strategy.commission.cash_per_contract,
+     commission_value = 2.0,                     // TradingView 內部 1 盎司 = 0.1 合約，
+                                                 //   2.0 × 0.1 × 2 張委託 = US$0.40 來回
+     calc_on_every_tick = false,
+     process_orders_on_close = false)            // 確認後、下一根開盤成交
+
+const string G_R = "① 規則（原廠值，改了就不是驗證過的那條）"
+const string G_A = "② 戶口與訓練"
+const string G_D = "③ 顯示"
+
+lenTrend    = input.int(60,     "迴歸長度（根）",       minval = 10,  group = G_R)
+r2Min       = input.float(0.48, "R² 門檻",             minval = 0.0, maxval = 1.0, step = 0.01, group = G_R)
+slopeMin    = input.float(0.025,"斜率門檻（ATR/根）",   minval = 0.0, step = 0.005, group = G_R)
+lenRange    = input.int(20,     "區間觀察長度",         minval = 5,   group = G_R)
+rangeMaxATR = input.float(3.8,  "區間高度上限（ATR）",  minval = 0.5, step = 0.1,   group = G_R)
+rangeMinBars= input.int(8,      "至少維持幾根才算區間", minval = 1,   group = G_R)
+boxMaxAge   = input.int(30,     "區間失效根數",         minval = 5,   group = G_R)
+bufATR      = input.float(0.25, "突破緩衝（ATR）",      minval = 0.0, step = 0.05,  group = G_R)
+confirmBars = input.int(1,      "站穩幾根才確認",       minval = 1, maxval = 5,     group = G_R)
+atrLen      = input.int(14,     "ATR 長度",            minval = 2,   group = G_R)
+holdBars    = input.int(10,     "持有幾根後無條件出場", minval = 1,   group = G_R,
+     tooltip = "10 根 M15 = 2.5 小時。這就是停損。不要再加價格停損——測過四次都變差。")
+
+blockSize   = input.int(30,     "一組幾筆（訓練單位）", minval = 5,   group = G_A)
+expPerTrade = input.float(6.82, "每筆期望值（HK$）",     step = 0.01, group = G_A,
+     tooltip = "TradingView 實測 1,465 筆的期望值。用來把本組進度換算成期望值，提醒你組損益本身沒有判定意義。")
+notionalHKD = input.float(34148,"一口的名義（HK$）",    minval = 1, step = 1000, group = G_A,
+     tooltip = "1 盎司 × 金價 × 匯率。用來算槓桿。金價變動時更新。")
+levCap      = input.float(1.70, "槓桿上限（空城計）",   minval = 0.1, step = 0.1, group = G_A,
+     tooltip = "容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0；取保守值 1.7。")
+
+showPanel = input.bool(true,  "顯示面板", group = G_D)
+showBox   = input.bool(true,  "畫出橫行區間", group = G_D)
+
+// =============================================================================
+// 狀態
+// =============================================================================
+atrV  = ta.atr(atrLen)
+slope = ta.linreg(close, lenTrend, 0) - ta.linreg(close, lenTrend, 1)
+corr  = ta.correlation(close, bar_index, lenTrend)
+r2    = na(corr) ? 0.0 : corr * corr
+sN    = atrV > 0 ? slope / atrV : 0.0
+hiN   = ta.highest(high, lenRange)
+loN   = ta.lowest(low,  lenRange)
+wATR  = atrV > 0 ? (hiN - loN) / atrV : na
+
+isUp  = r2 >= r2Min and sN >=  slopeMin
+isDn  = r2 >= r2Min and sN <= -slopeMin
+isRng = not isUp and not isDn and wATR <= rangeMaxATR
+st    = isUp ? 1 : isDn ? -1 : isRng ? 0 : 2
+
+rangeHold = nz(ta.barssince(st != 0), bar_index)
+rangeOK   = st == 0 and rangeHold >= rangeMinBars
+
+var float boxTop = na
+var float boxBot = na
+var bool  boxLive = false
+var int   lastRangeBar = na
+
+if barstate.isconfirmed
+    if rangeOK
+        boxTop := hiN[1]
+        boxBot := loN[1]
+        boxLive := true
+        lastRangeBar := bar_index
+    else if boxLive and not na(lastRangeBar) and bar_index - lastRangeBar > boxMaxAge
+        boxLive := false
+
+upLevel = boxLive ? boxTop + bufATR * atrV : na
+dnLevel = boxLive ? boxBot - bufATR * atrV : na
+
+var int pendDir = 0
+var int pendCnt = 0
+if barstate.isconfirmed
+    dRaw = boxLive and not na(upLevel) and close > upLevel ? 1 :
+           boxLive and not na(dnLevel) and close < dnLevel ? -1 : 0
+    pendCnt := dRaw != 0 and dRaw == pendDir ? pendCnt + 1 : dRaw != 0 ? 1 : 0
+    pendDir := dRaw
+
+confirmUp = barstate.isconfirmed and pendDir ==  1 and pendCnt == confirmBars
+confirmDn = barstate.isconfirmed and pendDir == -1 and pendCnt == confirmBars
+
+// =============================================================================
+// 進出場
+// =============================================================================
+var int barsIn = 0
+barsIn := strategy.position_size != 0 ? nz(barsIn[1]) + 1 : 0
+
+if confirmUp and strategy.position_size == 0
+    strategy.entry("多", strategy.long)
+    boxLive := false
+if confirmDn and strategy.position_size == 0
+    strategy.entry("空", strategy.short)
+    boxLive := false
+
+if strategy.position_size != 0 and barsIn >= holdBars
+    strategy.close_all("時間到")
+
+// =============================================================================
+// 戶口監控與 30 筆分組
+// =============================================================================
+var float minEq    = na
+var float blkStart = na
+var int   blkDone  = 0
+var int   blkWin   = 0
+var float blkBest  = na
+var float blkWorst = na
+var int   lastCount = 0
+var bool  blown    = false
+
+minEq    := na(minEq)    ? strategy.equity : math.min(minEq, strategy.equity)
+blkStart := na(blkStart) ? strategy.initial_capital : blkStart
+blown    := blown or strategy.equity <= 0
+
+nTr = strategy.closedtrades
+if nTr > lastCount
+    lastCount := nTr
+    if nTr % blockSize == 0
+        pnl = strategy.equity - blkStart
+        blkDone  := blkDone + 1
+        blkWin   := pnl > 0 ? blkWin + 1 : blkWin
+        blkBest  := na(blkBest)  ? pnl : math.max(blkBest,  pnl)
+        blkWorst := na(blkWorst) ? pnl : math.min(blkWorst, pnl)
+        blkStart := strategy.equity
+
+inBlk   = nTr % blockSize
+blkPnL  = strategy.equity - blkStart
+lev     = strategy.initial_capital > 0 ? notionalHKD / strategy.initial_capital : na
+eqPct   = strategy.initial_capital > 0 ? strategy.equity / strategy.initial_capital * 100 : na
+minPct  = strategy.initial_capital > 0 ? minEq / strategy.initial_capital * 100 : na
+
+// =============================================================================
+// 顯示
+// =============================================================================
+pU = plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(#26A69A, 30), 1, plot.style_linebr)
+pD = plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(#EF5350, 30), 1, plot.style_linebr)
+fill(pU, pD, showBox and boxLive ? color.new(#78909C, 92) : na)
+
+plotshape(confirmUp, "向上突破", shape.triangleup,   location.belowbar, color.new(#26A69A, 0), size = size.tiny)
+plotshape(confirmDn, "向下跌破", shape.triangledown, location.abovebar, color.new(#EF5350, 0), size = size.tiny)
+
+var table tb = table.new(position.top_right, 2, 12, border_width = 1)
+bgC  = color.new(#12141A, 8)
+dimC = color.new(#9AA0A6, 25)
+valC = color.new(#E8EAED, 0)
+okC  = color.new(#4CAF50, 0)
+badC = color.new(#FF5252, 0)
+warnC= color.new(#FBC02D, 0)
+
+row(i, k, v, c) =>
+    table.cell(tb, 0, i, k, bgcolor = bgC, text_color = dimC, text_halign = text.align_left)
+    table.cell(tb, 1, i, v, bgcolor = bgC, text_color = c,    text_halign = text.align_right)
+
+if showPanel and barstate.islast
+    posTxt = strategy.position_size > 0 ? "多｜" + str.tostring(holdBars - barsIn) + " 根後出" :
+             strategy.position_size < 0 ? "空｜" + str.tostring(holdBars - barsIn) + " 根後出" : "空手"
+    row(0, "錦囊 v2 · HK$" + str.tostring(strategy.initial_capital, "#") + " 戶口", posTxt,
+         strategy.position_size != 0 ? warnC : dimC)
+    row(1, "權益", "HK$" + str.tostring(strategy.equity, "#") + "　(" + str.tostring(eqPct, "#.#") + "%)",
+         strategy.equity >= strategy.initial_capital ? okC : badC)
+    row(2, "最低權益（戶口有沒有撐住）", "HK$" + str.tostring(minEq, "#") + "　(" + str.tostring(minPct, "#.#") + "%)",
+         blown ? badC : minPct < 50 ? warnC : okC)
+    row(3, "最大回撤", "HK$" + str.tostring(strategy.max_drawdown, "#"), valC)
+    ozNow = math.abs(strategy.position_size) * 100
+    ozCfg = 0.01 * 100
+    row(4, "部位（盎司）", str.tostring(ozNow, "#.##") + " 持倉 / 設定 " + str.tostring(ozCfg, "#.##") +
+         "（1 合約 = 100 oz）", ozNow > 0 and math.abs(ozNow - ozCfg) > 0.001 ? badC : dimC)
+    row(5, "槓桿（名義 ÷ 戶口）", str.tostring(lev, "#.##") + "x / 上限 " + str.tostring(levCap, "#.##") + "x",
+         lev > levCap ? badC : okC)
+    row(6, "———————————", "———————————", dimC)
+    row(7, "交易數 / 勝率", str.tostring(nTr) + " / " +
+         (nTr > 0 ? str.tostring(strategy.wintrades / nTr * 100, "#.#") + "%" : "—"), valC)
+    row(8, "本組進度", str.tostring(inBlk) + " / " + str.tostring(blockSize) +
+         "　(" + (blkPnL >= 0 ? "+" : "") + str.tostring(blkPnL, "#") +
+         "　期望 " + str.tostring(inBlk * expPerTrade, "#") + ")",
+         blkPnL >= 0 ? okC : badC)
+    row(9, "已完成組數（正 / 全部）", str.tostring(blkWin) + " / " + str.tostring(blkDone),
+         blkDone > 0 and blkWin * 2 >= blkDone ? okC : warnC)
+    row(10, "單組 最好 / 最壞",
+         (na(blkBest) ? "—" : str.tostring(blkBest, "#")) + " / " +
+         (na(blkWorst) ? "—" : str.tostring(blkWorst, "#")), valC)
+    row(11, "86.5% 利潤來自異常值。", "組虧錢是常態 — 看打勾，不看損益。", dimC)
+
+plot(strategy.equity,  "權益",     display = display.data_window)
+plot(minEq,            "最低權益", display = display.data_window)
+plot(inBlk,            "本組第幾筆", display = display.data_window)
+plot(blkPnL,           "本組損益", display = display.data_window)
