@@ -24,6 +24,15 @@
 #     → 進場規則本身仍然沒有任何回測支持。見 README §27。  [R77]
 #   * LONG_ONLY 預設開啟：全期 1,464 筆中 671 筆空單每筆 −HK$0.84、
 #     t = −0.25，八年半期望值為零，唯一作用是付點差。            [R71]
+#   * 2026-09-20 — 進場引擎換成【錦囊 v4】（ENTRY_ENGINE=JINNANG）。   [R78]
+#     舊的 PureGCPPyramidingSession 第一次被量度（README §28）：全期去掉最賺
+#     5% → −HK$16,945、最大回撤 23.4%，而三級共振給的方向在配對檢驗下
+#     t = +0.82（置換第 79.3 百分位）—— 不顯著。三級共振至此完全退場。
+#     錦囊 v4：M15 區間突破 · 只做多 · ATR(14)÷價格 ≥ 0.10% · 抱 10 根 ·
+#     無價格停損；出場由 EA 的 InpHoldMinutes = 150 分鐘定時全平。
+#     TradingView 全期 513 筆（2018-03 → 2026-09）：年化 +2.47%、
+#     最大回撤 5.72%。⚠️ 樣本外 −0.82%/年、異常值佔淨利 106% —— 未證實。
+#     ENTRY_ENGINE=PYRAMID 可回退成舊引擎，只為了能並排比對。
 #   * TARGET_HIT and manual LOCK are HARD locks that the state machine cannot
 #     reopen. The dashboard "OPEN" button became "release hard lock / resume
 #     auto"; the gate then reopens once the five risk checks pass.      [R10 R29]
@@ -187,6 +196,28 @@ DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日�
 #       之上、非最佳化值）。設 0 可停用。
 VOL_FLOOR_ATR_PCT = _env_float("VOL_FLOOR_ATR_PCT", 0.10)
 TRAINING_MAX_PER_DAY = _env_int("TRAINING_MAX_PER_DAY", 2)            # 90 筆訓練的節奏；0 = 不限
+
+# --- 🎯 進場引擎：錦囊 v4 ---------------------------------------------------
+# [R78] 2026-09-20：舊的 PureGCPPyramidingSession（結構／K 線／RSI／加單間距）
+#       第一次被量度（README §28）：全期去掉最賺 5% → −HK$16,945，最大回撤 23.4%，
+#       而三級共振給的方向在配對檢驗下 t = +0.82（置換第 79.3 百分位）—— 不顯著。
+#       錦囊 v4 至少有 8.46 年、513 筆的 TradingView 實測：年化 +2.47%、
+#       最大回撤 5.72%、樣本外 −0.82%/年。兩個都未證實，但後者量過、前者沒有。
+ENTRY_ENGINE = _env_str("ENTRY_ENGINE", "JINNANG").upper()            # JINNANG | PYRAMID（舊，保留回退）
+JN_LEN_TREND      = _env_int("JN_LEN_TREND", 60)                      # 八陣圖 M15 原廠值，以下同
+JN_R2_MIN         = _env_float("JN_R2_MIN", 0.48)
+JN_SLOPE_MIN      = _env_float("JN_SLOPE_MIN", 0.025)
+JN_LEN_RANGE      = _env_int("JN_LEN_RANGE", 20)
+JN_RANGE_MAX_ATR  = _env_float("JN_RANGE_MAX_ATR", 3.8)
+JN_RANGE_MIN_BARS = _env_int("JN_RANGE_MIN_BARS", 8)
+JN_BOX_MAX_AGE    = _env_int("JN_BOX_MAX_AGE", 30)
+JN_BUF_ATR        = _env_float("JN_BUF_ATR", 0.25)
+JN_CONFIRM_BARS   = _env_int("JN_CONFIRM_BARS", 1)
+JN_ATR_LEN        = _env_int("JN_ATR_LEN", 14)
+JN_HOLD_BARS      = _env_int("JN_HOLD_BARS", 10)                      # 10 根 M15 = 150 分鐘＝EA 的 InpHoldMinutes
+# 錦囊沒有價格停損 —— 出場是 EA 的定時。這裡送的是【災難停損】，正常碰不到。
+JN_DISASTER_SL_ATR = _env_float("JN_DISASTER_SL_ATR", 8.0)
+JN_MIN_BARS       = _env_int("JN_MIN_BARS", 100)                      # 判定前要累積多少根已收盤 M15
 
 # --- News -----------------------------------------------------------------------
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"  # [R17] ISO dates with UTC offset
@@ -532,6 +563,7 @@ def default_gate_state():
         "equity_peak": 0.0,       # [R74] 歷史淨值高水位，空城計的回撤基準
         "trades_today": {},       # {"ny_date": "YYYY-MM-DD", "count": n}  [R73]
         "last_m1_bar_time": 0,    # idempotency for M1 packets  [R25]
+        "last_m15_bar_time": 0,   # [R78] 錦囊：同一根已收盤 M15 只評估一次
         "last_reason": "",
         "updated_utc": None,
     }
@@ -806,6 +838,21 @@ def apply_verdict_to_gate(verdict, news_locked, skip_setup=False):
                       "prev": prev, "now": (regime, direction, armed)}
 
     return update_gate_state(fn)
+
+
+def claim_m15_bar(bar_time):
+    """True 只對第一個帶著這根 M15 時間的封包成立。  [R78]"""
+    def fn(state):
+        if bar_time <= int(to_float(state.get("last_m15_bar_time"), 0)):
+            return False, False
+        state["last_m15_bar_time"] = bar_time
+        return True, True
+
+    try:
+        return update_gate_state(fn)
+    except StorageError as exc:
+        print(f"⚠️ [M15 去重寫入失敗，本根略過] {exc}", flush=True)
+        return False
 
 
 def claim_m1_bar(bar_time):
@@ -1097,7 +1144,9 @@ gold_indicator_session = GoldIndicatorSession()
 class MTFDynamicLevelsSession:
     bb_period = 20
     bb_std_dev = 2.0
-    history_max = 30
+    # [R78] 錦囊 v4 需要 60 根迴歸 + 20 根區間 + 14 根 ATR + 30 根區間壽命，
+    #       而且要能重播區間狀態機，所以留 200 根（約 50 小時）。
+    history_max = _env_int("M15_HISTORY_MAX", 200)
 
     @staticmethod
     def parse_bar(m15_ohlc):
@@ -1167,6 +1216,169 @@ class MTFDynamicLevelsSession:
 
 
 mtf_levels_session = MTFDynamicLevelsSession()
+
+
+# =============================================================================
+# 🎯 錦囊 v4 進場引擎  [R78]
+#
+# 規則（TradingView `zhugeliang_jinnang_v4.pine` 的 Python 移植）：
+#   XAUUSD M15 · 八陣圖原廠門檻 · 只做多 · ATR(14)÷價格 ≥ VOL_FLOOR_ATR_PCT
+#   橫行區間確認 → 收盤突破上緣 + bufATR → 下一根進場 → 抱 10 根 → 無價格停損
+#
+# 出場【不在這裡】：EA 的 CheckTimeExit() 在 InpHoldMinutes = 150 分鐘時全平。
+# 這裡送出的 SL 是災難停損（JN_DISASTER_SL_ATR × ATR），正常情況碰不到。
+#
+# ⚠️ 與 TradingView 的已知差異：ATR(14) 的 RMA 在這裡只用最近 200 根 M15 起算，
+#    TradingView 從圖表最左邊起算。邊界訊號（剛好卡在門檻上）兩邊可能不同。
+#    2026-09-20 對數實測吻合 88.8%，詳見 README §29。
+# =============================================================================
+class JinnangSession:
+    @staticmethod
+    def _wilder_atr(bars, length):
+        """Wilder RMA 的 ATR。bars 必須是時間排序的已收盤 K 線。"""
+        if len(bars) < length + 1:
+            return None
+        trs = []
+        for i in range(1, len(bars)):
+            h, l, pc = bars[i]["high"], bars[i]["low"], bars[i - 1]["close"]
+            trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+        atr = sum(trs[:length]) / length
+        for tr in trs[length:]:
+            atr = (atr * (length - 1) + tr) / length
+        return atr
+
+    @staticmethod
+    def _slope_r2(closes):
+        """最小平方迴歸的斜率，以及 Pine `ta.correlation(close, bar_index, n)^2`。"""
+        n = len(closes)
+        if n < 3:
+            return 0.0, 0.0
+        xs = list(range(n))
+        mx, my = (n - 1) / 2.0, sum(closes) / n
+        sxy = sum((x - mx) * (y - my) for x, y in zip(xs, closes))
+        sxx = sum((x - mx) ** 2 for x in xs)
+        syy = sum((y - my) ** 2 for y in closes)
+        if sxx <= 0 or syy <= 0:
+            return 0.0, 0.0
+        slope = sxy / sxx
+        r = sxy / math.sqrt(sxx * syy)
+        return slope, r * r
+
+    @classmethod
+    def _atr_series(cls, bars, length):
+        """每根一個 ATR（Wilder RMA）。前 length 根是 None。"""
+        n = len(bars)
+        out = [None] * n
+        if n < length + 1:
+            return out
+        trs = [None]
+        for i in range(1, n):
+            h, l, pc = bars[i]["high"], bars[i]["low"], bars[i - 1]["close"]
+            trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+        atr = sum(trs[1:length + 1]) / length
+        out[length] = atr
+        for i in range(length + 1, n):
+            atr = (atr * (length - 1) + trs[i]) / length
+            out[i] = atr
+        return out
+
+    @classmethod
+    def evaluate(cls, history):
+        """history = 已收盤的 M15 K 線（時間排序）。最後一根 = 剛收盤那一根。
+
+        訊號成立時，下一根開盤進場（EA 收到 200 後自行下單）。
+        """
+        bars = [b for b in (history or []) if to_float(b.get("close"), 0.0) > 0]
+        need = max(JN_LEN_TREND, JN_LEN_RANGE, JN_ATR_LEN + 1, JN_MIN_BARS)
+        if len(bars) < need:
+            return {"ready": False, "signal": None,
+                    "text": f"【累積中⏳】已收盤 M15 {len(bars)}/{need} 根"}
+
+        n = len(bars)
+        closes = [b["close"] for b in bars]
+        highs = [b["high"] for b in bars]
+        lows = [b["low"] for b in bars]
+        atrs = cls._atr_series(bars, JN_ATR_LEN)
+
+        # 一次算完每根的 st（1 上升 / −1 下降 / 0 橫行 / 2 其他）
+        first = max(JN_LEN_TREND - 1, JN_LEN_RANGE - 1, JN_ATR_LEN)
+        st = [None] * n
+        for i in range(first, n):
+            atr = atrs[i]
+            if not atr or atr <= 0:
+                continue
+            slope, r2v = cls._slope_r2(closes[i - JN_LEN_TREND + 1:i + 1])
+            sn = slope / atr
+            w = (max(highs[i - JN_LEN_RANGE + 1:i + 1])
+                 - min(lows[i - JN_LEN_RANGE + 1:i + 1])) / atr
+            if r2v >= JN_R2_MIN and sn >= JN_SLOPE_MIN:
+                st[i] = 1
+            elif r2v >= JN_R2_MIN and sn <= -JN_SLOPE_MIN:
+                st[i] = -1
+            else:
+                st[i] = 0 if w <= JN_RANGE_MAX_ATR else 2
+
+        # 線性重播狀態機，與 Pine 的 barstate.isconfirmed 分支一一對應
+        box_top = box_bot = None
+        box_live = False
+        last_range_bar = -1
+        run = pend_dir = pend_cnt = 0
+        for i in range(first, n):
+            if st[i] is None:
+                continue
+            run = run + 1 if st[i] == 0 else 0
+            if st[i] == 0 and run >= JN_RANGE_MIN_BARS:
+                box_top = max(highs[i - JN_LEN_RANGE:i])
+                box_bot = min(lows[i - JN_LEN_RANGE:i])
+                box_live, last_range_bar = True, i
+            elif box_live and last_range_bar >= 0 and i - last_range_bar > JN_BOX_MAX_AGE:
+                box_live = False
+            if not box_live or not atrs[i]:
+                pend_dir = pend_cnt = 0
+                continue
+            up_level = box_top + JN_BUF_ATR * atrs[i]
+            dn_level = box_bot - JN_BUF_ATR * atrs[i]
+            raw = 1 if closes[i] > up_level else (-1 if closes[i] < dn_level else 0)
+            if raw != 0 and raw == pend_dir:
+                pend_cnt += 1
+            elif raw != 0:
+                pend_dir, pend_cnt = raw, 1
+            else:
+                pend_dir = pend_cnt = 0
+            # [R78] Pine 的 `boxLive := false` 在 `if takeUp ...` 區塊裡面：
+            #       只有【真的會下單】的訊號才消耗掉區間。被只做多或波動門檻擋掉
+            #       的不算。這一行讓重播和 Pine 一致，否則同一個區間會重複觸發。
+            if i < n - 1 and pend_dir == 1 and pend_cnt == JN_CONFIRM_BARS:
+                a = atrs[i]
+                pct_i = (a / closes[i] * 100) if a and closes[i] else None
+                if VOL_FLOOR_ATR_PCT <= 0 or (pct_i is not None and pct_i >= VOL_FLOOR_ATR_PCT):
+                    box_live = False
+
+        atr_now, price = atrs[-1], closes[-1]
+        atr_pct = (atr_now / price * 100) if atr_now and price else None
+        confirm_up = box_live and pend_dir == 1 and pend_cnt == JN_CONFIRM_BARS
+        vol_ok = VOL_FLOOR_ATR_PCT <= 0 or (atr_pct is not None and atr_pct >= VOL_FLOOR_ATR_PCT)
+        base = {"ready": True, "atr_pct": atr_pct, "atr": atr_now, "price": price,
+                "box_top": box_top, "box_bot": box_bot, "box_live": box_live,
+                "bar_time": bars[-1]["time"]}
+        pct = f"{atr_pct:.3f}%" if atr_pct is not None else "—"
+
+        if pend_dir == -1 and pend_cnt == JN_CONFIRM_BARS and box_live:
+            return {**base, "signal": None,
+                    "text": f"【略過·只做多】向下跌破 {box_bot:.2f}，v4 不做空"}
+        if not confirm_up:
+            why = "區間未成形" if not box_live else "未突破上緣"
+            return {**base, "signal": None, "text": f"【等待🔍】{why}（ATR {pct}）"}
+        if not vol_ok:
+            return {**base, "signal": None,
+                    "text": f"【略過·波動不足】突破成立但 ATR {pct} < 門檻 "
+                            f"{VOL_FLOOR_ATR_PCT:g}%（打平點 0.0837%）"}
+        return {**base, "signal": "BUY",
+                "text": f"【錦囊進場訊號✅】向上突破 {box_top:.2f} + {JN_BUF_ATR:g}ATR，"
+                        f"ATR {pct}（門檻 {VOL_FLOOR_ATR_PCT:g}%），抱 {JN_HOLD_BARS} 根"}
+
+
+jinnang_session = JinnangSession()
 
 
 def m15_close_position(m15_ohlc):
@@ -2004,7 +2216,12 @@ def build_order(candidate, params=None):
         "comment": params["comment"],
     }
     order[field["sl"]] = format_distance(sl, params)
-    order[field["tp"]] = format_distance(round(sl * params["target_rrr"], 2), params)
+    # [R78] 錦囊的出場是 EA 的定時，不是 TP。candidate 明確帶 tp_distance=None 時
+    #       整個 TP 欄位不送出 —— 送 0 有被解讀成「距離 0」的風險。
+    tp = candidate.get("tp_distance", round(sl * params["target_rrr"], 2)) \
+        if "tp_distance" in candidate else round(sl * params["target_rrr"], 2)
+    if tp is not None:
+        order[field["tp"]] = format_distance(tp, params)
 
     # 移動止損與保本：設成 0 代表停用，此時整個欄位不送出。
     # 送 "0.00" 有被解讀成「距離 0」的風險（止損貼著現價），不送最保險。
@@ -2188,6 +2405,63 @@ def handle_trade_result(payload):
                     "win_rate": stats["win_rate"], "recommended_rrr": stats["recommended_rrr"]}), 200
 
 
+def jinnang_entry(payload, now, bypass, params):
+    """錦囊 v4 的進場判定。回傳 candidate dict，或一句說明為什麼沒有下單。  [R78]
+
+    只在【一根 M15 剛收盤】時評估，同一根只評估一次。
+    錦囊沒有加碼（Pine 的 pyramiding = 0），所以有持倉就不再進場。
+    """
+    buy_lots, sell_lots = to_float(payload.get("buy_lots")), to_float(payload.get("sell_lots"))
+    equity = to_float(payload.get("equity"))
+    if buy_lots is None or sell_lots is None or equity is None or equity <= 0:
+        return "封包缺少 buy_lots / sell_lots / equity"
+    if round(buy_lots + sell_lots, 2) > 0:
+        return "已有持倉，錦囊不加碼（pyramiding = 0），等 EA 定時出場"
+
+    try:
+        history = gcs_read_json(M15_HISTORY_FILE, [])
+    except StorageError as exc:
+        print(f"⚠️ [M15 歷史讀取失敗] {exc}", flush=True)
+        return "M15 歷史不可用"
+    history = history if isinstance(history, list) else []
+    if len(history) < 2:
+        return f"M15 歷史只有 {len(history)} 根"
+
+    # history[-1] 是【正在形成】的那一根（ingest 會就地更新它），所以只用到 [-2]。
+    closed = history[:-1]
+    last_closed = closed[-1]
+    if not claim_m15_bar(int(last_closed["time"])):
+        return "這根 M15 已經評估過了"
+
+    v = jinnang_session.evaluate(closed)
+    print(f"🎯 [錦囊 v4] {v['text']}", flush=True)
+    if not v.get("ready"):
+        log_decision(f"⏳ [錦囊] {v['text']}", key="jinnang")
+        return v["text"]
+    if v.get("signal") != "BUY":
+        log_decision(f"📡 [錦囊] {v['text']}", key="jinnang")
+        return v["text"]
+
+    atr = v["atr"]
+    # 錦囊沒有價格停損 —— 真正的出場是 EA 的 InpHoldMinutes = 150 分鐘定時全平。
+    # 這裡送的是災難停損，正常碰不到；tp_distance = None 代表不送 TP 欄位。
+    sl_distance = max(params["min_sl_distance"], round(atr * JN_DISASTER_SL_ATR, 2))
+    price = to_float(payload.get("price")) or v["price"]
+    max_lots, note = PureGCPPyramidingSession.calculate_max_lots(
+        equity, str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT), price, sl_distance,
+        ignore_risk="risk_cap" in bypass)
+    if max_lots + 1e-9 < params["size"]:
+        msg = f"風險上限 {max_lots:.2f} 手 < 單筆 {params['size']:.2f} 手（{note}）"
+        log_decision(f"🛑 [錦囊·資金控管] {msg}", key="risk")
+        return msg
+
+    log_decision(f"🎯 [錦囊候選] BUY @ {price:.2f}｜{v['text']}｜抱 {JN_HOLD_BARS} 根後由 EA 定時出場",
+                 key="candidate")
+    return {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+            "sl_distance": sl_distance, "tp_distance": None, "atr_m15": atr,
+            "max_lots": max_lots, "exposure": 0.0, "kind": "FIRST", "engine": "JINNANG"}
+
+
 def handle_heartbeat(payload, can_trade):
     now = now_ts()
     action = payload.get("action")
@@ -2246,11 +2520,20 @@ def handle_heartbeat(payload, can_trade):
         return locked_response(gate_state)
     if not can_trade:                                                                    # [R18]
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
+    order_params = read_order_params()[0]
+
+    # 5) 進場引擎 → 執行。
+    if ENTRY_ENGINE == "JINNANG":                                                        # [R78]
+        candidate = jinnang_entry(payload, now, bypass, order_params)
+        if not isinstance(candidate, dict):
+            return jsonify({"status": "monitoring", "message": candidate or "Waiting for 錦囊 v4 signal",
+                            "current_gate": "OPEN"}), 200
+        rsi = m1_result["rsi"] if m1_result else None
+        news = news or macro_news_session.status(now)
+        return jsonify(execute_signal(candidate, payload, m15_levels, rsi, news, bypass, order_params)), 200
+
     if m1_result is None:
         return jsonify({"status": "monitoring", "message": "No new M1 bar to evaluate", "current_gate": "OPEN"}), 200
-
-    # 5) Engine → execution.
-    order_params = read_order_params()[0]
     candidate = pure_gcp_session.evaluate_and_trigger(payload, gate_state, m15_levels, bar, m1_result["rsi"], now,
                                                       bypass=bypass, params=order_params)
     if not candidate:
@@ -2558,6 +2841,40 @@ def render_welcome_page():
     return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
 
 
+def _jinnang_html():
+    """儀表板上的錦囊 v4 進場引擎狀態。  [R78]"""
+    if ENTRY_ENGINE != "JINNANG":
+        return ""
+    try:
+        history = gcs_read_json(M15_HISTORY_FILE, [])
+    except StorageError:
+        history = []
+    history = history if isinstance(history, list) else []
+    v = jinnang_session.evaluate(history[:-1]) if len(history) >= 2 else {
+        "ready": False, "text": f"【累積中⏳】M15 歷史 {len(history)} 根"}
+    sig = v.get("signal")
+    color = "#0f7b3f" if sig == "BUY" else "#5b6470"
+    rows = [("判定", v.get("text", "—"))]
+    if v.get("ready"):
+        rows += [
+            ("波動水位", (f"ATR(14)÷價格 = {v['atr_pct']:.4f}%　門檻 {VOL_FLOOR_ATR_PCT:g}%"
+                      f"　打平 0.0837%") if v.get("atr_pct") is not None else "—"),
+            ("橫行區間", (f"{v['box_bot']:.2f} ~ {v['box_top']:.2f}"
+                      f"（突破線 {v['box_top'] + JN_BUF_ATR * v['atr']:.2f}）")
+             if v.get("box_live") and v.get("box_top") else "尚未成形"),
+            ("現價", f"{v['price']:.2f}" if v.get("price") else "—"),
+        ]
+    body = "".join(f"<tr><td style='white-space:nowrap;font-weight:600;width:110px;'>{esc(k)}</td>"
+                   f"<td style='font-size:13px;'>{esc(str(val))}</td></tr>" for k, val in rows)
+    return (f"<div class='section-header'>🎯 錦囊 v4 進場引擎（只做多 · 抱 {JN_HOLD_BARS} 根 · 無價格停損）</div>"
+            f"<div class='section' style='border-left:4px solid {color};'>"
+            f"<table style='width:100%; border-collapse:collapse;'>{body}</table>"
+            f"<div class='muted' style='font-size:12px; margin-top:8px;'>"
+            f"出場不在這裡：EA 的 InpHoldMinutes = {JN_HOLD_BARS * 15} 分鐘定時全平。"
+            f"全期實測年化 +2.47%、最大回撤 5.72%，但<b>樣本外 −0.82%/年、異常值佔淨利 106%，"
+            f"優勢未被證實</b>。</div></div>")
+
+
 def _risk_gate_html(state):
     """儀表板上的風控電閘區塊。回傳 (五關表格, 雷達標籤, 雷達註解, 電閘細節, 恢復自動註解)。"""
     if GATE_DRIVER == "REGIME":
@@ -2626,6 +2943,7 @@ def build_dashboard_page(msg):
     summary_class, summary_text = gate_summary(state)
     recent = stats.get("recent", {})
     risk_html, radar_tag, radar_note, gate_detail, auto_note = _risk_gate_html(state)
+    risk_html = _jinnang_html() + risk_html
 
     body = f"""
     <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>⚙️ 核心控制台</h1></div>
@@ -3049,6 +3367,21 @@ def system_parameter_values(params=None):
             _pv("TRAINING_MAX_PER_DAY", TRAINING_MAX_PER_DAY if TRAINING_MAX_PER_DAY > 0 else "不限",
                 "90 筆訓練的節奏；以紐約日界線計算"),
         ]},
+        {"group": "🎯 進場引擎（錦囊 v4）", "items": [
+            _pv("ENTRY_ENGINE", ENTRY_ENGINE,
+                "JINNANG＝錦囊 v4（TradingView 全期 513 筆實測）；PYRAMID＝舊的加單引擎（從未回測，README §28）"),
+            _pv("規則", "M15 區間突破 → 只做多 → 抱 10 根 → 無價格停損",
+                "出場由 EA 的 InpHoldMinutes = 150 分鐘定時全平，不是 TP"),
+            _pv("JN_HOLD_BARS", f"{JN_HOLD_BARS} 根 M15（{JN_HOLD_BARS*15} 分鐘）",
+                "要和 EA 的 InpHoldMinutes 一致"),
+            _pv("VOL_FLOOR_ATR_PCT", f"{VOL_FLOOR_ATR_PCT:g}%", "ATR(14)÷價格；打平點實測 0.0837%"),
+            _pv("JN_DISASTER_SL_ATR", f"{JN_DISASTER_SL_ATR:g} × ATR",
+                "災難停損，正常碰不到。錦囊本身沒有價格停損，TP 欄位不送出"),
+            _pv("JN_MIN_BARS", f"{JN_MIN_BARS} 根",
+                f"判定前要累積這麼多根已收盤 M15（約 {JN_MIN_BARS*15//60} 小時）"),
+            _pv("全期實測", "513 筆／年化 +2.47%／最大回撤 5.72%",
+                "TradingView 2018-03 → 2026-09。⚠️ 樣本外 −0.82%/年，異常值佔淨利 106%，優勢未證實"),
+        ]},
         {"group": "🧾 送單（送單參數頁可即時修改）", "items": [
             _pv("size", f"{params['size']:.2f} 手", "每張單的手數", "order"),
             _pv("symbol", params["symbol"], "送單用的商品代號", "order"),
@@ -3263,6 +3596,7 @@ def gates_state_payload(message=None):
             "dir_word": DIR_WORD.get(state.get("dir")),
             "armed": bool(state.get("armed")),
             "driver": GATE_DRIVER,
+            "entry_engine": ENTRY_ENGINE,
             "risk": state.get("risk") if isinstance(state.get("risk"), dict) else {},
             "long_only": LONG_ONLY,
             "trades_today": trades_today_count(state),

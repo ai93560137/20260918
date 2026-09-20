@@ -213,16 +213,70 @@ for view, label in (("dashboard", "控制台"), ("gates", "電閘頁"), ("info",
     except Exception as e:
         check(f"{label}", False, f"{type(e).__name__}: {e}")
 
+html = body_of(get("?view=dashboard"))
+check("儀表板有錦囊區塊", "錦囊 v4 進場引擎" in html)
+check("儀表板寫明出場在 EA", "InpHoldMinutes" in html)
+check("儀表板寫明優勢未證實", "優勢未被證實" in html)
+
 r = get("?view=gates&format=json")
 payload = json.loads(body_of(r))
 check("gates JSON 帶 driver", payload["gate"]["driver"] == "RISK", payload["gate"].get("driver"))
 check("gates JSON 帶 long_only", payload["gate"]["long_only"] is True)
 check("gates JSON 帶 risk", isinstance(payload["gate"]["risk"], dict))
+check("gates JSON 帶 entry_engine", payload["gate"]["entry_engine"] == "JINNANG",
+      payload["gate"].get("entry_engine"))
+check("系統參數頁有錦囊一組",
+      any(g["group"].startswith("🎯") for g in payload["system_params"]))
 check("系統參數頁有風控電閘一組",
       any(g["group"].startswith("🛡️") for g in payload["system_params"]))
 
 r = get("?view=jinnang&format=json")
 check("錦囊 API 仍可讀", (r[1] if isinstance(r, tuple) else 200) == 200)
+
+print("\n=== 10b. 錦囊 v4 進場引擎接線 ===")
+check("ENTRY_ENGINE 預設是 JINNANG", main.ENTRY_ENGINE == "JINNANG", main.ENTRY_ENGINE)
+v = main.JinnangSession.evaluate([])
+check("沒有歷史時回『累積中』", v["ready"] is False and "累積中" in v["text"], v)
+# 造一段假的 M15：先橫行 120 根，再向上突破
+import math as _m
+bars=[]; t0=1700000000
+for i in range(150):
+    px = 4300.0 + (0.6 if i % 2 else -0.6)          # 窄幅橫行
+    bars.append(dict(time=t0+i*900, open=px, high=px+3.0, low=px-3.0, close=px))
+v = main.JinnangSession.evaluate(bars)
+check("橫行時不出訊號", v.get("signal") is None, v.get("text"))
+check("橫行時有區間", v.get("box_live") is True, v.get("box_live"))
+top = v.get("box_top")
+brk = top + 40.0
+bars.append(dict(time=t0+150*900, open=4300.0, high=brk+2, low=4299.0, close=brk))
+v2 = main.JinnangSession.evaluate(bars)
+check("向上突破 → BUY", v2.get("signal") == "BUY", v2.get("text"))
+check("訊號帶 ATR%", v2.get("atr_pct") is not None and v2["atr_pct"] > 0, v2.get("atr_pct"))
+_f = main.VOL_FLOOR_ATR_PCT
+main.VOL_FLOOR_ATR_PCT = 99.0
+v3 = main.JinnangSession.evaluate(bars)
+check("波動門檻擋掉突破", v3.get("signal") is None and "波動不足" in v3["text"], v3.get("text"))
+main.VOL_FLOOR_ATR_PCT = _f
+bars2 = bars[:-1] + [dict(time=t0+150*900, open=4300.0, high=4301.0,
+                          low=v.get("box_bot")-40.0, close=v.get("box_bot")-30.0)]
+v4 = main.JinnangSession.evaluate(bars2)
+check("向下跌破 → 不做（只做多）", v4.get("signal") is None and "只做多" in v4["text"], v4.get("text"))
+# 同一根只評估一次
+FAKE.clear()
+check("claim_m15_bar 第一次 True", main.claim_m15_bar(t0+150*900) is True)
+check("claim_m15_bar 第二次 False", main.claim_m15_bar(t0+150*900) is False)
+# 有持倉時不加碼
+r = main.jinnang_entry({"buy_lots":0.01,"sell_lots":0.0,"equity":20000.0}, main.now_ts(), frozenset(),
+                       main.default_order_params())
+check("有持倉 → 不加碼", isinstance(r, str) and "不加碼" in r, r)
+# build_order：tp_distance=None 不送 TP
+o = main.build_order({"signal":"BUY","ticker":"XAUUSD","price":4300.0,"sl_distance":50.0,
+                      "tp_distance":None}, main.default_order_params())
+tpf = main.distance_fields(main.default_order_params())["tp"]
+check("tp_distance=None → 封包不含 TP 欄位", tpf not in o, list(o))
+o2 = main.build_order({"signal":"BUY","ticker":"XAUUSD","price":4300.0,"sl_distance":50.0},
+                      main.default_order_params())
+check("舊引擎照常有 TP 欄位", tpf in o2, list(o2))
 
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
