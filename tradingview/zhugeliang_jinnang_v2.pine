@@ -78,15 +78,38 @@ notionalHKD = input.float(34148,"一口的名義（HK$）",    minval = 1, step 
 levCap      = input.float(1.70, "槓桿上限（空城計）",   minval = 0.1, step = 0.1, group = G_A,
      tooltip = "容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0；取保守值 1.7。")
 
-// ── Webhook ──
-// TradingView 的「訂單成交事件」警報會在每一次進出場自動送出 alert_message。
-// 建立警報時：條件選「錦囊 v2」→ 勾「訂單成交事件」→ 訊息填 {{strategy.order.alert_message}}
-//            → 通知分頁填你的 webhook URL。警報頻率用「每根 K 線收盤一次」。
-// 時間差：策略回測假設「下一根開盤」成交，webhook 會在「本根收盤」送出。
-//        黃金 24 小時連續，這兩個價差實測為 −0.0001%（≈0），可以忽略。
-whSym   = input.string("XAUUSD", "券商端商品代碼", group = G_W)
-whLots  = input.float(0.01, "下單手數", minval = 0.01, step = 0.01, group = G_W)
-whTag   = input.string("jinnang", "備註標籤", group = G_W)
+// ── Webhook（對沖 / Hedging 帳戶專用寫法）──
+//
+// ⚠ 為什麼不能沿用 {{strategy.order.action}}：
+//   平倉單的 action 是「反向」（多單平倉 → sell）。淨額帳戶會沖銷，對沖帳戶
+//   會【另開一張反向單】，部位永遠不平、無限累積。
+//   所以進場與平倉必須送出【不同的 action 值】，由 Pine 這邊決定。
+//
+// 設定方式：
+//   1. 憑證填在下面這些 input 裡（存在圖表設定，不會寫進原始碼）
+//   2. 「平倉的 action 值」要填你的橋接服務認得的那個字 —— 查它的文件，
+//      常見有 close / closelong+closeshort / exit / flat。填錯 = 平不掉。
+//   3. 建立警報：條件選「錦囊 v2」→ 勾「僅訂單執行」→ 週期 15 分
+//      → 訊息欄只填 {{strategy.order.alert_message}}（整串 JSON 由此帶出）
+//      → 通知填 webhook URL
+//
+// ⚠ 上線前一定要在【模擬倉】跑滿 3 天，確認每筆進場後 2.5 小時真的回到零持倉。
+whUser   = input.string("",           "username",     group = G_W)
+whAcct   = input.string("1",          "account",      group = G_W)
+whKey    = input.string("",           "api_key",      group = G_W,
+     tooltip = "填在這裡，不要寫進原始碼或截圖外流。外流過就立刻重置。")
+whBroker = input.string("metatrader", "broker",       group = G_W)
+whType   = input.string("demo",       "account_type", options = ["demo", "real"], group = G_W,
+     tooltip = "先 demo。確認平倉正常之後再改 real。")
+whSym    = input.string("XAUUSD",     "symbol",       group = G_W)
+whSize   = input.string("0.01",       "size（手）",    group = G_W,
+     tooltip = "0.01 手 = 1.71x 槓桿（20,000 戶口），剛好在空城計上限。0.02 = 3.41x，超標。")
+whStrat  = input.string("910",        "strategy",     group = G_W)
+whCmt    = input.string("jinnang M15","comment",      group = G_W)
+vBuy     = input.string("buy",        "做多進場的 action 值",  group = G_W)
+vSell    = input.string("sell",       "做空進場的 action 值",  group = G_W)
+vClose   = input.string("close",      "平倉的 action 值 ★",    group = G_W,
+     tooltip = "★ 對沖帳戶的成敗就在這一格。查你橋接服務的文件，不要用 sell / buy。")
 
 showPanel = input.bool(true,  "顯示面板", group = G_D)
 showBox   = input.bool(true,  "畫出橫行區間", group = G_D)
@@ -145,11 +168,18 @@ confirmDn = barstate.isconfirmed and pendDir == -1 and pendCnt == confirmBars
 var int barsIn = 0
 barsIn := strategy.position_size != 0 ? nz(barsIn[1]) + 1 : 0
 
-msgBase = "\"symbol\":\"" + whSym + "\",\"lots\":" + str.tostring(whLots) +
-          ",\"tag\":\"" + whTag + "\""
-msgLong  = "{\"action\":\"buy\","   + msgBase + "}"
-msgShort = "{\"action\":\"sell\","  + msgBase + "}"
-msgExit  = "{\"action\":\"close\","  + msgBase + "}"
+// JSON 組裝：所有值都以字串送出（與 Webhook8 一類橋接的格式一致）
+kv(k, v) => "\"" + k + "\": \"" + v + "\""
+mkMsg(act) =>
+    "{" + kv("username", whUser) + ", " + kv("account", whAcct) + ", " +
+     kv("api_key", whKey) + ", " + kv("broker", whBroker) + ", " +
+     kv("account_type", whType) + ", " + kv("symbol", whSym) + ", " +
+     kv("action", act) + ", " + kv("size", whSize) + ", " +
+     kv("strategy", whStrat) + ", " + kv("comment", whCmt) + "}"
+
+msgLong  = mkMsg(vBuy)
+msgShort = mkMsg(vSell)
+msgExit  = mkMsg(vClose)
 
 if confirmUp and strategy.position_size == 0
     strategy.entry("多", strategy.long, alert_message = msgLong)
