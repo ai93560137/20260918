@@ -108,8 +108,9 @@ print("\n=== 4. 曝險上限（空城計公式）===")
 dd = dict(good, equity=18000.0, balance=20000.0, net_lots=0.05)
 r = main.evaluate_risk_gate(dd, st)
 ex = [c for c in r["checks"] if c["key"] == "exposure"][0]
-check("回撤 10% 時可用曝險 ≈ 0.71x", abs(r["exposure_cap"] - (20.0-10.0)/14.0) < 1e-6,
-      r["exposure_cap"])
+check(f"回撤 10% 時可用曝險 = (20−10)/{main.WORST_GAP_PCT:g} = "
+      f"{(20.0-10.0)/main.WORST_GAP_PCT:.2f}x",
+      abs(r["exposure_cap"] - (20.0-10.0)/main.WORST_GAP_PCT) < 1e-6, r["exposure_cap"])
 # 回撤 20% → 可用 0
 dd2 = dict(good, equity=16000.0, balance=20000.0, net_lots=0.01)
 r2 = main.evaluate_risk_gate(dd2, st)
@@ -119,15 +120,17 @@ check("回撤到容忍上限 → 可用曝險 0、不開閘", r2["exposure_cap"]
 print("\n=== 4b. 曝險【數值】本身算得對（R74：之前只測了上限，沒測曝險）===")
 # 1 盎司 = 0.01 手 × 100 oz/手 × 4300 = US$4,300 名義
 # 戶口 HK$20,000 = US$2,564  →  曝險 1.677x
-ex_case = dict(good, net_lots=0.01, equity=20000.0, balance=20000.0)
+# [R79] 曝險算的是【下單之後】：持倉 + 即將下的那一張
+ex_case = dict(good, net_lots=0.0, equity=20000.0, balance=20000.0)
 r = main.evaluate_risk_gate(ex_case, main.default_gate_state())
-want = 0.01 * main.CONTRACT_SIZE * 4300.0 / (20000.0 * main.FX_TO_USD["HKD"])
-check(f"1 盎司在 HK$20,000 上 = {want:.3f}x", abs(r["exposure"] - want) < 1e-9,
+want = main.ORDER_SIZE * main.CONTRACT_SIZE * 4300.0 / (20000.0 * main.FX_TO_USD["HKD"])
+check(f"空手 → 下單後 1 盎司 = {want:.3f}x", abs(r["exposure"] - want) < 1e-9,
       f"得到 {r['exposure']}")
 check("這個數字落在 1.6~1.8（和錦囊面板的 1.71x 對得上）", 1.6 < r["exposure"] < 1.8, r["exposure"])
-check("超過上限時這一關不過（2 盎司 = 3.35x > 1.43x 可用）",
-      not [c for c in main.evaluate_risk_gate(dict(ex_case, net_lots=0.02),
-           main.default_gate_state())["checks"] if c["key"] == "exposure"][0]["ok"])
+r2 = main.evaluate_risk_gate(dict(ex_case, net_lots=0.01), main.default_gate_state())
+check(f"已有 1 盎司 → 下單後 2 盎司 = {2*want:.2f}x，超過可用 "
+      f"{min(main.EXPOSURE_HARD_CAP, 20.0/main.WORST_GAP_PCT):.2f}x → 這一關不過",
+      not [c for c in r2["checks"] if c["key"] == "exposure"][0]["ok"], r2["reason"])
 
 print("\n=== 4c. 回撤要對歷史高水位（R74）===")
 st_hw = main.default_gate_state(); st_hw["equity_peak"] = 25000.0
@@ -373,6 +376,51 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
         check(f"{f} 的 {blk} 區塊有收口且沒吃掉後面的規則",
               closed and ("*{box-sizing" in tail or "body{" in tail or ".nav-link" in tail),
               tail[:40].replace(chr(10), " "))
+
+print("\n=== 10e. R79：倉位大小、最壞跳空、下單後曝險 ===")
+import math as _m
+check("WORST_GAP_PCT 改為 10（150 分鐘持倉的實測最壞是 7.55%）",
+      main.WORST_GAP_PCT == 10.0, main.WORST_GAP_PCT)
+check("JN_SIZING_ADVERSE_PCT = 1.10（實測最壞單筆虧損 1.097%）",
+      abs(main.JN_SIZING_ADVERSE_PCT - 1.10) < 1e-9, main.JN_SIZING_ADVERSE_PCT)
+# 曝險要看下單之後
+r = main.evaluate_risk_gate(dict(good, net_lots=0.0, equity=20000.0, balance=20000.0),
+                            main.default_gate_state())
+want = (0.0 + main.ORDER_SIZE) * main.CONTRACT_SIZE * 4300.0 / (20000.0 * main.FX_TO_USD["HKD"])
+check(f"空手時曝險已計入即將下的那張（{want:.2f}x）",
+      abs(r["exposure"] - want) < 1e-9, r["exposure"])
+check("1 盎司在零回撤時過得了曝險關",
+      [c for c in r["checks"] if c["key"] == "exposure"][0]["ok"], r["reason"])
+# 金價上限
+c = main.jinnang_price_ceiling(20000.0, "HKD")
+check(f"HK$20,000 的金價上限 ≈ US$4,662（得到 {c:,.0f}）", 4600 < c < 4720, c)
+check("本金加倍，上限也加倍",
+      abs(main.jinnang_price_ceiling(40000.0, "HKD") - 2 * c) < 1e-6)
+# 端到端：一個真的訊號要下得了單
+FAKE.clear()
+_ro = main.GoldIndicatorSession.is_gold_market_open
+main.GoldIndicatorSession.is_gold_market_open = staticmethod(lambda now=None: True)
+bars2 = []
+for i in range(210):
+    px = 4300.0 + (0.6 if i % 2 else -0.6)
+    bars2.append(dict(time=1700000000 + i * 900, open=px, high=px + 3.0, low=px - 3.0, close=px))
+v = main.JinnangSession.evaluate(bars2)
+brk = v["box_top"] + 40.0
+bars2.append(dict(time=1700000000 + 210 * 900, open=4300.0, high=brk + 2, low=4299.0, close=brk))
+bars2.append(dict(time=1700000000 + 211 * 900, open=brk, high=brk + 1, low=brk - 1, close=brk))
+main.gcs_write_text(main.M15_HISTORY_FILE, json.dumps(bars2))
+vv = main.JinnangSession.evaluate(bars2[:-1])
+pay = dict(good, buy_lots=0.0, sell_lots=0.0, net_lots=0.0,
+           m15_ohlc={"close": brk, "atr_m15": vv["atr"]})
+cand = main.jinnang_entry(pay, main.now_ts(), frozenset(), main.default_order_params())
+check("訊號 → 真的產生候選單（不再被 0.00 手擋掉）", isinstance(cand, dict), cand)
+if isinstance(cand, dict):
+    o = main.build_order(cand, main.default_order_params())
+    check("封包 action = BUY", o["action"] == "BUY", o.get("action"))
+    check("封包 size = 0.01", float(o["size"]) == 0.01, o.get("size"))
+    tpf = main.distance_fields(main.default_order_params())["tp"]
+    check("封包沒有 TP", tpf not in o, list(o))
+main.GoldIndicatorSession.is_gold_market_open = _ro
 
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"

@@ -188,7 +188,12 @@ NOISE_K = _env_float("NOISE_K", 1.0)                                  # [R31] th
 GATE_DRIVER = _env_str("GATE_DRIVER", "RISK").upper()                 # RISK | REGIME（舊行為，僅供回退）
 LONG_ONLY = _env_bool("LONG_ONLY", True)                              # [R71] 全期 671 筆空單 t=−0.25
 DD_TOLERANCE_PCT = _env_float("DD_TOLERANCE_PCT", 20.0)               # 可承受回撤（空城計基準）
-WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 14.0)                     # 最壞日內跳空（實測 −13.94%）
+# [R79] 14% 是黃金最壞【整個交易日】的日內振幅。錦囊只抱 10 根 M15＝150 分鐘：
+#       全歷史 13,696 個 10 根窗口，最壞逆行是 7.55%、99.9 百分位 3.79%。
+#       用 14% 會讓可用曝險變成 1.43x，而 1 盎司在 HK$20,000 上是 1.68x —— 永遠過不了。
+#       取 10.0（錦囊 Pine 檔頭一直寫的基準，也是實測 7.55% 的 1.3 倍），不是為了讓
+#       交易過關才調鬆，是原本那個數字對這個持倉長度就不對。
+WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 10.0)
 EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)              # 曝險硬上限（名目 ÷ 淨值）
 DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日虧損上限（佔淨值）
 # [R72] 波動門檻用 EA 已經在傳的 atr_m15。校準見 README §24：只做多、抱 10 根、
@@ -217,6 +222,14 @@ JN_ATR_LEN        = _env_int("JN_ATR_LEN", 14)
 JN_HOLD_BARS      = _env_int("JN_HOLD_BARS", 10)                      # 10 根 M15 = 150 分鐘＝EA 的 InpHoldMinutes
 # 錦囊沒有價格停損 —— 出場是 EA 的定時。這裡送的是【災難停損】，正常碰不到。
 JN_DISASTER_SL_ATR = _env_float("JN_DISASTER_SL_ATR", 8.0)
+# [R79] 倉位大小不能照災難停損算。calculate_max_lots 的 2% 風險模型假設
+#       「止損就是出場點」，但錦囊是時間出場、根本沒有價格停損。
+#       用 ATR×8 去算，在金價 4,300 附近會算出 0.00 手 —— 系統會安靜地永遠不下單。
+#       正確的基準是【這條規則實測的最壞單筆虧損】：8.46 年 276 筆裡
+#       最壞的一筆是進場價的 −1.097%（US$46.45/oz = HK$362 = 戶口的 1.81%）。
+#       取 1.10% 當倉位計算距離 —— 意思是「最壞的一筆剛好等於 RISK_PCT」。
+#       （最大逆行 MAE 最壞 1.638%，但那沒有造成虧損：沒有停損就不會被掃掉。）
+JN_SIZING_ADVERSE_PCT = _env_float("JN_SIZING_ADVERSE_PCT", 1.10)
 JN_MIN_BARS       = _env_int("JN_MIN_BARS", 100)                      # 判定前要累積多少根已收盤 M15
 
 # --- News -----------------------------------------------------------------------
@@ -743,7 +756,10 @@ def evaluate_risk_gate(snapshot, state, now=None):
         dd_now = max(0.0, (peak - equity) / peak * 100) if peak > 0 else 0.0
         cap_dyn = max(0.0, (DD_TOLERANCE_PCT - dd_now) / WORST_GAP_PCT) if WORST_GAP_PCT > 0 else 0.0
         cap_eff = min(EXPOSURE_HARD_CAP, cap_dyn)
-        notional = lots * CONTRACT_SIZE * (price or 0.0)
+        # [R79] 要檢查的是【下單之後】的曝險。原本只看目前持倉，空手時永遠是 0，
+        #       等於第一張單完全不受上限管 —— 1 盎司（1.68x）可能已經超過可用曝險。
+        pending = ORDER_SIZE if ENTRY_ENGINE == "JINNANG" else 0.0
+        notional = (lots + pending) * CONTRACT_SIZE * (price or 0.0)
         rate = FX_TO_USD.get(str(snapshot.get("currency") or ACCOUNT_CURRENCY_DEFAULT).upper()) \
             or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
         equity_usd = equity * rate if rate else None          # 與 calculate_max_lots 同一個方向
@@ -751,7 +767,7 @@ def evaluate_risk_gate(snapshot, state, now=None):
             exp_now = notional / equity_usd
             ok = exp_now <= cap_eff
             add("exposure", "曝險上限", ok,
-                f"目前 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
+                f"下單後 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
                 f"（高水位 {peak:,.0f} → 回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，"
                 f"最壞跳空 {WORST_GAP_PCT:.0f}%）")
         else:
@@ -2447,11 +2463,19 @@ def jinnang_entry(payload, now, bypass, params):
     # 這裡送的是災難停損，正常碰不到；tp_distance = None 代表不送 TP 欄位。
     sl_distance = max(params["min_sl_distance"], round(atr * JN_DISASTER_SL_ATR, 2))
     price = to_float(payload.get("price")) or v["price"]
+    # [R79] 倉位大小用【實測最壞單筆虧損】當距離，不是用災難停損 —— 理由見常數區。
+    sizing_distance = max(params["min_sl_distance"],
+                          round(price * JN_SIZING_ADVERSE_PCT / 100.0, 2))
     max_lots, note = PureGCPPyramidingSession.calculate_max_lots(
-        equity, str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT), price, sl_distance,
+        equity, str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT), price, sizing_distance,
         ignore_risk="risk_cap" in bypass)
     if max_lots + 1e-9 < params["size"]:
-        msg = f"風險上限 {max_lots:.2f} 手 < 單筆 {params['size']:.2f} 手（{note}）"
+        ceil_px = jinnang_price_ceiling(equity, payload.get("currency"))
+        msg = (f"風險上限 {max_lots:.2f} 手 < 單筆 {params['size']:.2f} 手"
+               f"（以實測最壞虧損 {JN_SIZING_ADVERSE_PCT:g}% = US${sizing_distance:.2f} 計；{note}）")
+        if ceil_px:
+            msg += (f"。這個戶口在 RISK_PCT={RISK_PCT*100:g}% 之下最高只能做到金價 "
+                    f"US${ceil_px:,.0f}，目前 {price:,.0f} —— 要繼續做就得加本金，不是調鬆風控。")
         log_decision(f"🛑 [錦囊·資金控管] {msg}", key="risk")
         return msg
 
@@ -2841,6 +2865,19 @@ def render_welcome_page():
     return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
 
 
+def jinnang_price_ceiling(equity, currency=None):
+    """[R79] 這個戶口在 RISK_PCT 之下，最高能做到金價多少（1 張 ORDER_SIZE）。
+
+    倉位風險 = 價格 × JN_SIZING_ADVERSE_PCT% × CONTRACT_SIZE × ORDER_SIZE ≤ 淨值 × RISK_PCT
+    黃金越貴、1 盎司的名目越大，同一個戶口能承受的就越少。這是限制，不是故障。
+    """
+    rate = FX_TO_USD.get(str(currency or ACCOUNT_CURRENCY_DEFAULT).upper()) \
+        or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
+    if not rate or not equity or equity <= 0 or JN_SIZING_ADVERSE_PCT <= 0:
+        return None
+    return (equity * rate * RISK_PCT) / (ORDER_SIZE * CONTRACT_SIZE * JN_SIZING_ADVERSE_PCT / 100.0)
+
+
 def _jinnang_html():
     """儀表板上的錦囊 v4 進場引擎狀態。  [R78]"""
     if ENTRY_ENGINE != "JINNANG":
@@ -2864,6 +2901,14 @@ def _jinnang_html():
              if v.get("box_live") and v.get("box_top") else "尚未成形"),
             ("現價", f"{v['price']:.2f}" if v.get("price") else "—"),
         ]
+        snap = read_account_snapshot()
+        eq = to_float(snap.get("equity"))
+        ceil_px = jinnang_price_ceiling(eq, snap.get("currency"))
+        if ceil_px and v.get("price"):
+            head = min(100.0, (ceil_px / v["price"] - 1) * 100)
+            rows.append(("可做到的金價上限",
+                         f"US${ceil_px:,.0f}（現價 {v['price']:,.0f}，還有 {head:+.1f}% 空間）"
+                         + ("　⚠️ 超過就下不了單" if head < 10 else "")))
     body = "".join(f"<tr><td style='white-space:nowrap;font-weight:600;width:110px;'>{esc(k)}</td>"
                    f"<td style='font-size:13px;'>{esc(str(val))}</td></tr>" for k, val in rows)
     return (f"<div class='section-header'>🎯 錦囊 v4 進場引擎（只做多 · 抱 {JN_HOLD_BARS} 根 · 無價格停損）</div>"
