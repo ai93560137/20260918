@@ -107,26 +107,37 @@ if tradeDir == "short" and strategy.position_size < 0
 // 在 TradingView 建立警報：條件選本策略 →「alert() 函數呼叫」→ 通知勾 App 推播。
 // 每個新交易日第一根 K 推送「今天要掛的停損單」；倉位變化時推送成交確認。
 alertOn = input.bool(true, "開啟每日掛單／成交提醒")
+myQty   = input.int(1, "我的每次下單手數", minval = 1, tooltip = "實際在券商每次進場的張數；指示與提醒的數量按此換算")
+myPos   = input.int(0, "我目前實際持倉（+多 −空 0空手）", tooltip = "填富途目前淨持倉張數，面板會核對是否與策略同步")
 
 fmt(x) =>
     str.tostring(x, format.mintick)
 
+posTxt(int p) =>
+    p > 0 ? "+" + str.tostring(p) + " 張（多）" : p < 0 ? str.tostring(p) + " 張（空）" : "空手"
+
 posLong  = strategy.position_size > 0
 posShort = strategy.position_size < 0
 
-if alertOn and ready and newDay
-    string todo = na
+// 依「策略目前狀態 × 我的手數」生成今天該掛的單
+orderPlan(int qty) =>
+    string s = na
     if tradeDir == "both"
-        todo := posLong  ? "持多倉 → 掛 賣出停損 @ " + fmt(loLevel) + "（平倉＋反手，共2張）" :
-             posShort ? "持空倉 → 掛 買入停損 @ " + fmt(hiLevel) + "（平倉＋反手，共2張）" :
-             "空手 → 掛 買入停損 @ " + fmt(hiLevel) + " ＋ 賣出停損 @ " + fmt(loLevel) + "（各1張）"
+        s := posLong  ? "賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(2 * qty) + " 張（平倉＋反手）" :
+          posShort ? "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(2 * qty) + " 張（平倉＋反手）" :
+          "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(qty) + " 張 ＋ 賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(qty) + " 張"
     else if tradeDir == "long"
-        todo := posLong ? "持多倉 → 掛 賣出停損 @ " + fmt(loLevel) + "（平倉）" :
-             "空手 → 掛 買入停損 @ " + fmt(hiLevel) + "（開多）"
+        s := posLong ? "賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(qty) + " 張（平倉）" :
+          "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(qty) + " 張（開多）"
     else
-        todo := posShort ? "持空倉 → 掛 買入停損 @ " + fmt(hiLevel) + "（平倉）" :
-             "空手 → 掛 賣出停損 @ " + fmt(loLevel) + "（開空）"
-    alert("【每日掛單】" + syminfo.ticker + "｜" + todo, alert.freq_once_per_bar)
+        s := posShort ? "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(qty) + " 張（平倉）" :
+          "賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(qty) + " 張（開空）"
+    if exitMode == "eod"
+        s := s + "｜" + str.tostring(eodHour) + ":" + str.tostring(eodMinute, "00") + " 未觸發請撤單、持倉請平掉"
+    s
+
+if alertOn and ready and newDay
+    alert("【每日掛單】" + syminfo.ticker + "｜" + orderPlan(myQty), alert.freq_once_per_bar)
 
 posState = posLong ? 1 : posShort ? -1 : 0
 if alertOn and posState != posState[1]
@@ -145,7 +156,11 @@ var float[] pnlStart  = array.new_float()   // 該年開始時的累計淨利
 var int[]   trdStart  = array.new_int()     // 該年開始時的累計平倉筆數
 var int[]   winStart  = array.new_int()     // 該年開始時的累計獲利筆數
 curYr = year(time)
-if array.size(pnlYear) == 0 or array.get(pnlYear, array.size(pnlYear) - 1) != curYr
+// 注意：Pine 的 or／?: 不短路，array.get 必須放在真正的條件區塊內
+int lastYr = na
+if array.size(pnlYear) > 0
+    lastYr := array.get(pnlYear, array.size(pnlYear) - 1)
+if na(lastYr) or lastYr != curYr
     array.push(pnlYear, curYr)
     array.push(pnlStart, strategy.netprofit)
     array.push(trdStart, strategy.closedtrades)
@@ -189,9 +204,13 @@ if showPanel and barstate.islast
     table.cell(tbl, 2, 4, "筆數", text_color = txt, text_size = size.small, bgcolor = hdr)
     table.cell(tbl, 3, 4, "勝率", text_color = txt, text_size = size.small, bgcolor = hdr)
     for i = 0 to nYears - 1
-        endP = i + 1 < nYears ? array.get(pnlStart, i + 1) : strategy.netprofit
-        endT = i + 1 < nYears ? array.get(trdStart, i + 1) : strategy.closedtrades
-        endW = i + 1 < nYears ? array.get(winStart, i + 1) : strategy.wintrades
+        float endP = strategy.netprofit
+        int   endT = strategy.closedtrades
+        int   endW = strategy.wintrades
+        if i + 1 < nYears
+            endP := array.get(pnlStart, i + 1)
+            endT := array.get(trdStart, i + 1)
+            endW := array.get(winStart, i + 1)
         yP = endP - array.get(pnlStart, i)
         yT = endT - array.get(trdStart, i)
         yW = endW - array.get(winStart, i)
@@ -201,6 +220,35 @@ if showPanel and barstate.islast
             table.cell(tbl, 1, row, money(yP), text_color = yP >= 0 ? color.teal : color.red, text_size = size.small)
             table.cell(tbl, 2, row, str.tostring(yT), text_color = txt, text_size = size.small)
             table.cell(tbl, 3, row, yT > 0 ? pct(100.0 * yW / yT) : "-", text_color = txt, text_size = size.small)
+
+// ---- 今日操作指示面板（輸入手數/實倉，立即顯示答案） ---------------------------
+showGuide = input.bool(true, "顯示今日操作指示面板")
+
+var table guide = na
+if showGuide and barstate.islast
+    if na(guide)
+        guide := table.new(position.bottom_right, 2, 5, bgcolor = color.new(color.white, 5),
+             border_width = 1, border_color = color.new(color.gray, 70),
+             frame_width = 2, frame_color = color.gray)
+    targetPos = (posLong ? 1 : posShort ? -1 : 0) * myQty
+    synced = myPos == targetPos
+    tc = color.black
+    table.cell(guide, 0, 0, "📋 今日操作指示", text_color = tc, text_size = size.normal,
+         bgcolor = color.new(color.orange, 60))
+    table.merge_cells(guide, 0, 0, 1, 0)
+    table.cell(guide, 0, 1, "策略目標倉位", text_color = tc, text_size = size.small)
+    table.cell(guide, 1, 1, posTxt(targetPos), text_color = tc, text_size = size.small)
+    table.cell(guide, 0, 2, "你輸入的實倉", text_color = tc, text_size = size.small)
+    table.cell(guide, 1, 2, posTxt(myPos), text_color = tc, text_size = size.small)
+    table.cell(guide, 0, 3, "同步檢查", text_color = tc, text_size = size.small)
+    table.cell(guide, 1, 3,
+         synced ? "✅ 同步" : "⚠️ 不同步！先市價" + (targetPos > myPos ? "買入 " : "賣出 ") +
+         str.tostring(math.abs(targetPos - myPos)) + " 張調整到目標",
+         text_color = synced ? color.teal : color.red, text_size = size.small,
+         bgcolor = synced ? na : color.new(color.red, 85))
+    table.cell(guide, 0, 4, "今日掛單", text_color = tc, text_size = size.small)
+    table.cell(guide, 1, 4, ready ? orderPlan(myQty) : "暖機中（未滿 N 個完整交易日）",
+         text_color = color.new(color.blue, 0), text_size = size.small)
 
 // ---- 畫圖 --------------------------------------------------------------------
 plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
