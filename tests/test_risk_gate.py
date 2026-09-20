@@ -324,14 +324,27 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
 for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html", "錦囊九十筆")):
     txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
     check(f"{f} 自己那格標成 current",
-          f'<span class="on" aria-current="page">✅ {cur}</span>' in txt
-          or f'<span class="on" aria-current="page">🗒️ {cur}</span>' in txt)
+          f'class="nav-link nav-current" aria-current="page">✅ {cur}<' in txt
+          or f'class="nav-link nav-current" aria-current="page">🗒️ {cur}<' in txt)
     check(f"{f} 沒有連到自己", f'href="?view={f[:-5]}"' not in txt)
 # 兩頁實際 serve 出來要含全部連結
 for v in ("jinnang_sheet", "jinnang_tracker"):
     html = body_of(get("?view=" + v))
     miss = [x for x in VIEWS if x != v and ("?view=" + x) not in html]
     check(f"?view={v} 實際輸出含其餘 6 個連結", not miss, f"缺 {miss}")
+
+# 七頁的導覽列要用同一組 class（統一外觀）
+mainsrc = io.open("/home/user/20260918/main.py", encoding="utf-8").read()
+for cls in (".nav-links", ".nav-link", ".nav-current"):
+    check(f"main.py 定義 {cls}", cls + "{" in mainsrc or cls + " {" in mainsrc)
+for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html"):
+    txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
+    check(f"{f} 用 nav-link 膠囊樣式", 'class="nav-link' in txt or "'nav-link" in txt or "nav-link " in txt)
+    check(f"{f} 沒有殘留舊的方塊 nav", "\n.nav{display:flex" not in txt)
+for f in ("jinnang_sheet.html", "jinnang_tracker.html"):
+    txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
+    check(f"{f} 淺色值與 main.py 相同", "--nav-bg:#EEF4FF" in txt and "--nav-on-bg:#0F62FE" in txt)
+    check(f"{f} 深色模式有自己的導覽列配色", txt.count("--nav-bg:#1B2430") == 2, txt.count("--nav-bg:#1B2430"))
 
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"

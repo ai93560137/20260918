@@ -12,18 +12,21 @@
   --paper:#F6F7F8; --field:#FFFFFF; --ink:#16191D; --muted:#666E77;
   --line:#D6DBE0; --hair:#E6EAEE; --accent:#2C6B7A; --accent-soft:#E4EFF1;
   --stop:#A8382F; --stop-soft:#F6E6E4; --ok:#3A6E4E; --ok-soft:#E4EFE8;
+  --nav-bg:#EEF4FF; --nav-fg:#0F62FE; --nav-hover:#DBE7FF; --nav-on-bg:#0F62FE; --nav-on-fg:#FFFFFF;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --paper:#101317; --field:#171B20; --ink:#E7EAED; --muted:#8B939C;
     --line:#2A3038; --hair:#222830; --accent:#4E9CAE; --accent-soft:#16282D;
     --stop:#D2645A; --stop-soft:#2A1B19; --ok:#5C9E74; --ok-soft:#172420;
+    --nav-bg:#1B2430; --nav-fg:#8CB6FF; --nav-hover:#243244; --nav-on-bg:#2F6FE0; --nav-on-fg:#FFFFFF;
   }
 }
 :root[data-theme="dark"]{
   --paper:#101317; --field:#171B20; --ink:#E7EAED; --muted:#8B939C;
   --line:#2A3038; --hair:#222830; --accent:#4E9CAE; --accent-soft:#16282D;
   --stop:#D2645A; --stop-soft:#2A1B19; --ok:#5C9E74; --ok-soft:#172420;
+  --nav-bg:#1B2430; --nav-fg:#8CB6FF; --nav-hover:#243244; --nav-on-bg:#2F6FE0; --nav-on-fg:#FFFFFF;
 }
 *{box-sizing:border-box}
 body{
@@ -165,31 +168,30 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
   .wrap{padding-block:0; gap:26px; max-width:none}
   section{break-inside:avoid}
   .card{break-inside:avoid}
-  .noprint{display:none}
+  .noprint, .nav-links{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-.nav{display:flex; flex-wrap:wrap; gap:1px; background:var(--line);
-  border:1px solid var(--line); margin-bottom:-8px}
-.nav a, .nav span.on{flex:1 1 auto; min-width:104px; text-align:center; padding:9px 10px;
-  background:var(--field); color:var(--muted); text-decoration:none; font-size:13px;
-  font-weight:500; letter-spacing:.02em; white-space:nowrap}
-.nav a:hover{color:var(--ink)}
-.nav .on{background:var(--accent-soft); color:var(--accent); font-weight:700;
-  box-shadow:inset 0 -3px 0 var(--accent)}
-.nav a:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
-@media (max-width:640px){ .nav a, .nav span.on{font-size:12px; min-width:84px; padding:8px 6px} }
+/* 導覽列：與 main.py 的其餘五頁完全一致（.nav-links / .nav-link / .nav-current）。
+   顏色抽成變數，只為了深色模式能換掉 —— 淺色模式的值跟那五頁一模一樣。 */
+.nav-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:-28px}
+.nav-link{display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px;
+  font-weight:700; text-decoration:none; color:var(--nav-fg); background:var(--nav-bg);
+  white-space:nowrap}
+.nav-link:hover{background:var(--nav-hover)}
+.nav-current{background:var(--nav-on-bg); color:var(--nav-on-fg); cursor:default}
+.nav-link:focus-visible{outline:2px solid var(--nav-on-bg); outline-offset:2px}
 </style>
 
 <div class="wrap">
-<nav class="nav" aria-label="頁面導覽">
-  <a href="?view=welcome">🏠 首頁</a>
-  <a href="?view=info">📄 投資人日誌</a>
-  <a href="?view=gates_app">🎛️ 關卡開關</a>
-  <a href="?view=order_app">🧾 送單參數</a>
-  <span class="on" aria-current="page">🗒️ 錦囊執行單</span>
-  <a href="?view=jinnang_tracker">✅ 錦囊九十筆</a>
-  <a href="?view=dashboard">⚙️ 控制台</a>
+<nav class="nav-links" aria-label="頁面導覽">
+  <a class="nav-link" href="?view=welcome">🏠 首頁</a>
+  <a class="nav-link" href="?view=info">📄 投資人日誌</a>
+  <a class="nav-link" href="?view=gates_app">🎛️ 關卡開關</a>
+  <a class="nav-link" href="?view=order_app">🧾 送單參數</a>
+  <span class="nav-link nav-current" aria-current="page">🗒️ 錦囊執行單</span>
+  <a class="nav-link" href="?view=jinnang_tracker">✅ 錦囊九十筆</a>
+  <a class="nav-link" href="?view=dashboard">⚙️ 控制台</a>
 </nav>
 
 <header>
