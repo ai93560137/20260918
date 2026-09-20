@@ -12,14 +12,26 @@
 //   XAUUSD M15 · 八陣圖原廠門檻 · 不過濾高週期 · 不過濾波動 · 不過濾時段
 //   突破確認 → 下一根開盤進場 → 滿 10 根（2.5 小時）無條件出場 → 無價格停損
 //
-// 【Python 端跑出來的預期值，用來對帳】
-//   2022-09 → 2026-09，750 筆，1 盎司（0.01 手），點差 $0.40：
-//     期末權益 HK$26,825（+34.1%）   最低點 HK$19,795（剩 99%）
-//     最大回撤 −7.4%    單筆最壞 −HK$366（戶口的 1.8%）
-//     25 組（每組 30 筆）：17 組正 / 8 組負，平均 +273，最壞 −641（戶口的 3.2%）
-//     30 筆跑完爆倉機率：0%
-//   TradingView 的數字會有出入（資料源、點差模型、時區不同），
-//   但交易筆數與勝率應該接近。差太遠就是設定不對，不是規則有問題。
+// 【實測基準 — TradingView Strategy Tester，2018-03-08 → 2026-09-20】
+//   1,465 筆（每年 172 筆）  勝率 50.9%  獲利因子 1.361
+//   每筆期望值 HK$6.82    單筆最大獲利 HK$851.89   單筆最大虧損 HK$363.86
+//   總損益 HK$9,994（8.5 年）→ 一個 HK$20,000 戶口 = +50.0%，年化 +4.88%
+//   最大回撤 HK$1,698 = 戶口的 8.5%   單筆最壞 = 戶口的 1.8%
+//
+//   與獨立的 Python 實作交叉驗證（2022-09→2026-09，750 筆，不同資料源）：
+//     單筆最大獲利 845.1（差 0.8%）  單筆最大虧損 365.7（差 0.5%）
+//   兩邊對到 1% 以內 —— 規則與 $0.40 成本設定都正確。
+//   期望值由 Python 的 9.10 降到 6.82（−25%），是加入 2018–2022 樣本外後的正常衰減。
+//   ⚠ 用 6.82 規劃，不要用 9.10。
+//
+// 【最重要的一個數字：異常值損益 HK$8,644.99 = 總利潤的 86.5%】
+//   扣掉異常值後，1,465 筆只剩 HK$1,349（每年 HK$159、每筆 HK$0.92）。
+//   Python 端獨立算出同一件事：最賺的 5%（38/752 筆）佔總利潤 186%，
+//   其餘 714 筆合計 −HK$5,880。
+//   → 這套策略不是靠勝率累積，是靠極少數幾筆吃到大趨勢。
+//   → 那幾筆每一筆都要抱滿 10 根才長得出來。提早出場 = 砍掉唯一的利潤來源。
+//   → 30 筆一組的期望只有 HK$205，而且中位數是負的。
+//      **一組虧錢完全正常。不要用組損益判斷自己做得對不對。**
 //
 // 【槓桿】1 盎司 = US$4,378 ≈ HK$34,148 名義 ÷ HK$20,000 = 1.71x
 //   剛好落在空城計的上限（容忍 20% ÷ 黃金最壞單日 10%）。
@@ -42,7 +54,8 @@ strategy("智能諸葛亮 · 錦囊 v2｜HK$20,000 戶口訓練", "錦囊 v2",
 
 const string G_R = "① 規則（原廠值，改了就不是驗證過的那條）"
 const string G_A = "② 戶口與訓練"
-const string G_D = "③ 顯示"
+const string G_W = "③ Webhook 自動交易"
+const string G_D = "④ 顯示"
 
 lenTrend    = input.int(60,     "迴歸長度（根）",       minval = 10,  group = G_R)
 r2Min       = input.float(0.48, "R² 門檻",             minval = 0.0, maxval = 1.0, step = 0.01, group = G_R)
@@ -58,10 +71,22 @@ holdBars    = input.int(10,     "持有幾根後無條件出場", minval = 1,   
      tooltip = "10 根 M15 = 2.5 小時。這就是停損。不要再加價格停損——測過四次都變差。")
 
 blockSize   = input.int(30,     "一組幾筆（訓練單位）", minval = 5,   group = G_A)
+expPerTrade = input.float(6.82, "每筆期望值（HK$）",     step = 0.01, group = G_A,
+     tooltip = "TradingView 實測 1,465 筆的期望值。用來把本組進度換算成期望值，提醒你組損益本身沒有判定意義。")
 notionalHKD = input.float(34148,"一口的名義（HK$）",    minval = 1, step = 1000, group = G_A,
      tooltip = "1 盎司 × 金價 × 匯率。用來算槓桿。金價變動時更新。")
 levCap      = input.float(1.70, "槓桿上限（空城計）",   minval = 0.1, step = 0.1, group = G_A,
      tooltip = "容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0；取保守值 1.7。")
+
+// ── Webhook ──
+// TradingView 的「訂單成交事件」警報會在每一次進出場自動送出 alert_message。
+// 建立警報時：條件選「錦囊 v2」→ 勾「訂單成交事件」→ 訊息填 {{strategy.order.alert_message}}
+//            → 通知分頁填你的 webhook URL。警報頻率用「每根 K 線收盤一次」。
+// 時間差：策略回測假設「下一根開盤」成交，webhook 會在「本根收盤」送出。
+//        黃金 24 小時連續，這兩個價差實測為 −0.0001%（≈0），可以忽略。
+whSym   = input.string("XAUUSD", "券商端商品代碼", group = G_W)
+whLots  = input.float(0.01, "下單手數", minval = 0.01, step = 0.01, group = G_W)
+whTag   = input.string("jinnang", "備註標籤", group = G_W)
 
 showPanel = input.bool(true,  "顯示面板", group = G_D)
 showBox   = input.bool(true,  "畫出橫行區間", group = G_D)
@@ -120,15 +145,21 @@ confirmDn = barstate.isconfirmed and pendDir == -1 and pendCnt == confirmBars
 var int barsIn = 0
 barsIn := strategy.position_size != 0 ? nz(barsIn[1]) + 1 : 0
 
+msgBase = "\"symbol\":\"" + whSym + "\",\"lots\":" + str.tostring(whLots) +
+          ",\"tag\":\"" + whTag + "\""
+msgLong  = "{\"action\":\"buy\","   + msgBase + "}"
+msgShort = "{\"action\":\"sell\","  + msgBase + "}"
+msgExit  = "{\"action\":\"close\","  + msgBase + "}"
+
 if confirmUp and strategy.position_size == 0
-    strategy.entry("多", strategy.long)
+    strategy.entry("多", strategy.long, alert_message = msgLong)
     boxLive := false
 if confirmDn and strategy.position_size == 0
-    strategy.entry("空", strategy.short)
+    strategy.entry("空", strategy.short, alert_message = msgShort)
     boxLive := false
 
 if strategy.position_size != 0 and barsIn >= holdBars
-    strategy.close_all("時間到")
+    strategy.close_all("時間到", alert_message = msgExit)
 
 // =============================================================================
 // 戶口監控與 30 筆分組
@@ -201,14 +232,15 @@ if showPanel and barstate.islast
     row(6, "交易數 / 勝率", str.tostring(nTr) + " / " +
          (nTr > 0 ? str.tostring(strategy.wintrades / nTr * 100, "#.#") + "%" : "—"), valC)
     row(7, "本組進度", str.tostring(inBlk) + " / " + str.tostring(blockSize) +
-         "　(" + (blkPnL >= 0 ? "+" : "") + str.tostring(blkPnL, "#") + ")",
+         "　(" + (blkPnL >= 0 ? "+" : "") + str.tostring(blkPnL, "#") +
+         "　期望 " + str.tostring(inBlk * expPerTrade, "#") + ")",
          blkPnL >= 0 ? okC : badC)
     row(8, "已完成組數（正 / 全部）", str.tostring(blkWin) + " / " + str.tostring(blkDone),
          blkDone > 0 and blkWin * 2 >= blkDone ? okC : warnC)
     row(9, "單組 最好 / 最壞",
          (na(blkBest) ? "—" : str.tostring(blkBest, "#")) + " / " +
          (na(blkWorst) ? "—" : str.tostring(blkWorst, "#")), valC)
-    row(10, "回測測的是規則。", "紀律要靠那三格打勾。", dimC)
+    row(10, "86.5% 利潤來自異常值。", "組虧錢是常態 — 看打勾，不看損益。", dimC)
 
 plot(strategy.equity,  "權益",     display = display.data_window)
 plot(minEq,            "最低權益", display = display.data_window)

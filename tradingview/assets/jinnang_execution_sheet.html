@@ -172,13 +172,18 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
     <div class="eyebrow">ZHUGELIANG / JINNANG v1</div>
   </div>
   <dl class="specs">
+    <div class="spec"><dt>戶口</dt><dd>HK$20,000</dd></div>
+    <div class="spec"><dt>手數</dt><dd>0.01（1 盎司）</dd></div>
     <div class="spec"><dt>持有</dt><dd>10 根 · 2.5h</dd></div>
     <div class="spec"><dt>價格停損</dt><dd>無</dd></div>
     <div class="spec"><dt>加碼</dt><dd>無</dd></div>
-    <div class="spec"><dt>單筆最壞</dt><dd>−1.15%</dd></div>
-    <div class="spec"><dt>虧損筆數</dt><dd>52%</dd></div>
+    <div class="spec"><dt>每筆期望</dt><dd>+$6.82</dd></div>
+    <div class="spec"><dt>單筆最壞</dt><dd>−$364</dd></div>
     <div class="spec"><dt>週上限</dt><dd>4 筆</dd></div>
   </dl>
+  <p class="note" style="margin-top:14px">基準：TradingView Strategy Tester，XAUUSD M15，
+    2018-03-08 → 2026-09-20，<strong>1,465 筆</strong>，勝率 50.9%，獲利因子 1.361。
+    與獨立的 Python 實作交叉驗證，單筆最大獲利／虧損兩邊差距在 1% 以內。</p>
 </header>
 
 <section>
@@ -216,6 +221,8 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
 <section>
   <h2><span class="num">02</span>單筆執行單</h2>
   <p class="note">進場時<strong>先填到期時間</strong>。到點就出場——那一刻你只是在對時鐘，不是在做決定。</p>
+  <p class="note">每筆期望值 <strong>+HK$6.82</strong>，但單筆分佈極度偏斜：最大獲利 +851.89、最大虧損 −363.86，
+    而超過一半的交易是虧的。<strong>單筆賺賠完全不說明任何事。</strong></p>
 
   <div class="card">
     <div class="card-head"><span class="t">執行單 — 範例</span>
@@ -287,23 +294,44 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
 
 <section>
   <h2><span class="num">03</span>三十筆合規計數</h2>
-  <p class="note">升級的條件是<strong>連續遵守</strong>，不是賺錢。30 筆的盈虧是雜訊（月標準差 1.77%），
-    30 筆的遵守率是硬事實。這個設計順便擋住最危險的那條路——<strong>虧損不會讓你升級</strong>。</p>
+  <p class="note">升級的條件是<strong>連續遵守</strong>，不是賺錢。理由在下面那張表裡——
+    30 筆一組的期望只有 <strong>HK$205</strong>，而中位數是負的。<strong>一組虧錢完全正常。</strong></p>
   <div class="counter" id="counter"></div>
+
+  <h3 style="font-size:15px;margin:8px 0 0;font-weight:700">為什麼組損益不能當判定標準</h3>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>階段</th><th>手數</th><th>名義（HK$）</th><th>單筆最壞</th><th>升級條件</th></tr></thead>
+      <thead><tr><th>項目</th><th>金額（HK$）</th><th>說明</th></tr></thead>
       <tbody>
-        <tr class="now"><td>現在</td><td class="n">0.01</td><td class="n">34,148</td><td class="n">−366</td><td>連續 30 筆合規</td></tr>
-        <tr><td>2</td><td class="n">0.10</td><td class="n">341,484</td><td class="n">−3,657</td><td>連續 30 筆合規</td></tr>
-        <tr><td>3</td><td class="n">0.50</td><td class="n">1,707,420</td><td class="n">−18,285</td><td>連續 30 筆合規</td></tr>
-        <tr><td>4</td><td class="n">1.00</td><td class="n">3,414,840</td><td class="n">−36,570</td><td>連續 30 筆合規</td></tr>
-        <tr><td>上限</td><td class="n">2.10</td><td class="n">7,171,164</td><td class="n">−76,797</td><td>不再往上</td></tr>
+        <tr><td>1,465 筆總損益</td><td class="n">+9,994</td><td>8.5 年，一個 20,000 戶口 = +50%，年化 +4.88%</td></tr>
+        <tr class="now"><td>其中「異常值」貢獻</td><td class="n">+8,645</td><td><strong>佔總利潤 86.5%</strong></td></tr>
+        <tr><td>扣掉異常值後</td><td class="n">+1,349</td><td>每年 +159、每筆 +0.92 — 等於沒有</td></tr>
+        <tr><td>30 筆一組的期望</td><td class="n">+205</td><td>但多數組會落在 0 附近或小負</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="note">一手 XAUUSD = 100 盎司。名義按金價 4,378、匯率 7.8 計。
-    上限 2.10 手 = AUM 的 29.9%，對應空城計在零回撤時的曝險上限。</p>
+  <p class="note">這套規則不是靠勝率累積，是靠<strong>極少數幾筆吃到大趨勢</strong>——而那幾筆每一筆都要
+    抱滿 10 根才長得出來。所以「提早出場」砍掉的不是一點利潤，是<strong>唯一的利潤來源</strong>。
+    Python 端獨立驗證：最賺的 5%（38/752 筆）佔總利潤 186%，其餘 714 筆合計 −HK$5,880。</p>
+
+  <h3 style="font-size:15px;margin:14px 0 0;font-weight:700">階梯 — 升的不是手數，是輪次</h3>
+  <p class="note">原本那張「0.01 → 0.10 → 1.00 手」的階梯作廢：一個 20,000 的戶口做 0.01 手，
+    槓桿已經是 <strong>1.71x</strong>，剛好頂到空城計上限；0.02 手就是 3.41x，直接超標。
+    <strong>在單一戶口裡，手數沒有往上的空間。</strong>所以升級的方向改成累積連續合規筆數。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>輪次</th><th>戶口</th><th>手數</th><th>槓桿</th><th>通過條件</th><th>通過之後</th></tr></thead>
+      <tbody>
+        <tr class="now"><td>訓練 1</td><td class="n">20,000</td><td class="n">0.01</td><td class="n">1.71x</td><td>連續 30 筆合規</td><td>進入訓練 2</td></tr>
+        <tr><td>訓練 2</td><td class="n">20,000</td><td class="n">0.01</td><td class="n">1.71x</td><td>累計連續 60 筆</td><td>進入訓練 3</td></tr>
+        <tr><td>訓練 3</td><td class="n">20,000</td><td class="n">0.01</td><td class="n">1.71x</td><td>累計連續 90 筆</td><td><strong>資格取得</strong></td></tr>
+        <tr><td>主帳戶</td><td class="n">AUM</td><td>依空城計</td><td class="n">≤1.70x</td><td>—</td><td>直覺倉照常，曝險受空城計管</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">90 筆約等於半年（每年 172 筆）。<strong>違規一次，連續計數歸零，從 0 重數。</strong>
+    這個訓練戶口一年只賺約 HK$1,172——<strong>它永遠不會是收入，它是資格考。</strong>
+    真正要保護的是你那套 Sharpe 0.94 的直覺倉。</p>
 </section>
 
 <section>
@@ -315,16 +343,23 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
       <span>開始在<strong>訊號之外</strong>找理由下單，或想「這次加大一點」。替代動作變成入口了，停掉它。</span></div>
     <div class="halt-row"><span class="k">停 3</span>
       <span>在 0.01 手都<strong>抱不滿 10 根</strong>。那手數不是問題——先回到紙上單，直到你信這條規則。</span></div>
+    <div class="halt-row"><span class="k">停 4</span>
+      <span><strong>戶口歸零後當天補錢。</strong>這是整個設計唯一的支柱：戶口見底 = 這一輪結束，
+        停下來翻紀錄找出第一筆違規。要補，等固定的日子（例如下月 1 號），而且一次只補一份。</span></div>
   </div>
-  <p class="note">錦囊的產出不是錢（曝險 0.3x 下年化對 AUM 只有 1.67%，補不了缺口）。
+  <p class="note">錦囊的產出不是錢（一個戶口一年約 HK$1,172，補不了每月 186,385 的缺口）。
     它的產出是「這件事我已經做過了」——讓那股想動的能量，流進一個單筆最壞被鎖死的地方。
     你 521 天、Sharpe 0.94 的能力，要留給真正值得的時候。</p>
 </section>
 
 <footer>
-  <p><strong>為什麼不能提早走：</strong>752 筆裡，最賺的 5%（38 筆）合計 +HK$12,732，
-  其餘 714 筆合計 −HK$5,880。全部利潤來自那 38 筆，而它們每一筆都要抱滿 2.5 小時才長得出來。
-  「一賺就走」勝率 92.7%，年化 −2.94%（t=−5.15）。</p>
+  <p><strong>為什麼不能提早走，三個獨立的證據：</strong>
+  ① TradingView 1,465 筆：異常值貢獻 HK$8,645，佔總利潤 <strong>86.5%</strong>。
+  ② Python 752 筆：最賺的 5%（38 筆）合計 +HK$12,732，其餘 714 筆合計 −HK$5,880。
+  ③ 同一批訊號改成「一賺就走」：勝率升到 92.7%，年化 <strong>−2.94%</strong>（t=−5.15）——
+  比這條規則會賺錢更確定。</p>
+  <p><strong>戶口撐不撐得住：</strong>8.5 年最大回撤 HK$1,698 = 戶口的 8.5%，
+  單筆最壞 HK$364 = 1.8%。照規則做，這個戶口輸不掉。<strong>能讓它歸零的只有你自己。</strong></p>
 </footer>
 
 </div>
