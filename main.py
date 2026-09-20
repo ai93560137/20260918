@@ -575,6 +575,7 @@ def save_account_snapshot(payload, m15_ohlc, m15_levels):
         "buy_lots": to_float(payload.get("buy_lots")),
         "sell_lots": to_float(payload.get("sell_lots")),
         "equity": to_float(payload.get("equity")),
+        "credit": to_float(payload.get("credit")),                  # [R88] 券商的錢，不算進風控
         "balance": to_float(payload.get("balance")),
         "floating": to_float(payload.get("floating")),
         "daily_pnl": to_float(payload.get("daily_pnl")),
@@ -605,6 +606,31 @@ def broker_symbol_mismatch(snapshot=None):
     return (f"送單用的商品名是「{ours}」，但 EA 回報券商上的是「{seen}」。"
             f"不一致會被拒單，或成交在另一個商品上。"
             f"請到送單參數頁把 symbol 改成「{seen}」。")
+
+
+def risk_equity(src):
+    """[R88] 風控用的淨值 = 淨值 − 信用。只算自己的錢。
+
+    MT5：淨值 = 結餘 + 信用 + 浮動。信用是券商給的額度，隨時可收回，虧損時
+    通常第一個被扣 —— 拿它當安全邊際，等於把煞車借給別人踩。扣掉之後
+    RISK_PCT 的 2% 和 DD_TOLERANCE_PCT 的 20% 才真的是自己本金的 2% 和 20%，
+    而且入金出金會自動跟上，不需要任何換算係數。
+
+    舊版 EA 的封包沒有 credit 欄位，那就退回 min(淨值, 結餘)：結餘本來就不含
+    信用，所以有信用時這個值等於結餘，仍然是保守的。兩個都沒有才回 None。
+    """
+    if not isinstance(src, dict):
+        return None
+    eq = to_float(src.get("equity"))
+    credit = to_float(src.get("credit"))
+    if credit is not None:
+        if eq is None:
+            return None
+        return max(eq - max(credit, 0.0), 0.0)
+    bal = to_float(src.get("balance"))
+    if eq is None:
+        return bal
+    return min(eq, bal) if bal is not None else eq
 
 
 def broker_symbol_unverified(snapshot=None):
@@ -783,7 +809,7 @@ def evaluate_risk_gate(snapshot, state, now=None):
     now = now_ts() if now is None else now
     snapshot = snapshot if isinstance(snapshot, dict) else {}
     m15 = snapshot.get("m15_ohlc") if isinstance(snapshot.get("m15_ohlc"), dict) else {}
-    equity = to_float(snapshot.get("equity"))
+    equity = risk_equity(snapshot)                                   # [R88] 扣掉信用
     balance = to_float(snapshot.get("balance"))
     daily = to_float(snapshot.get("daily_pnl"))
     lots = abs(to_float(snapshot.get("net_lots"), 0.0) or 0.0)
@@ -2205,7 +2231,7 @@ class PureGCPPyramidingSession:
         symbol = params["symbol"]   # EA sends symbol "NONE" when flat, so never trust payload symbol for orders
 
         buy_lots, sell_lots = to_float(payload.get("buy_lots")), to_float(payload.get("sell_lots"))
-        equity = to_float(payload.get("equity"))
+        equity = risk_equity(payload)                                                  # [R88] 扣掉信用
         if buy_lots is None or sell_lots is None or equity is None or equity <= 0:      # [R13c]
             log_decision("⏸️ [資料不足] 封包缺少 buy_lots / sell_lots / equity，本根不交易。", key="data")
             return None
@@ -2536,7 +2562,7 @@ def jinnang_entry(payload, now, bypass, params):
     錦囊沒有加碼（Pine 的 pyramiding = 0），所以有持倉就不再進場。
     """
     buy_lots, sell_lots = to_float(payload.get("buy_lots")), to_float(payload.get("sell_lots"))
-    equity = to_float(payload.get("equity"))
+    equity = risk_equity(payload)                                                      # [R88] 扣掉信用
     if buy_lots is None or sell_lots is None or equity is None or equity <= 0:
         return "封包缺少 buy_lots / sell_lots / equity"
     if round(buy_lots + sell_lots, 2) > 0:
@@ -3033,7 +3059,7 @@ def _jinnang_html():
             ("現價", f"{v['price']:.2f}" if v.get("price") else "—"),
         ]
         snap = read_account_snapshot()
-        eq = to_float(snap.get("equity"))
+        eq = risk_equity(snap)                                                         # [R88] 扣掉信用
         ceil_px = jinnang_price_ceiling(eq, snap.get("currency"))
         if eq and eq > 0 and v.get("price") and WORST_GAP_PCT > 0:
             # 曝險 × 最壞跳空 ≤ 容忍 − 回撤 → 解出會停止下單的回撤水準
@@ -3719,7 +3745,8 @@ def _risk_cap_preview():
     """Uses the last account snapshot to show what switching off the 2% cap means."""
     snap = read_account_snapshot()
     m15 = snap.get("m15_ohlc") if isinstance(snap.get("m15_ohlc"), dict) else {}
-    equity, price, atr = to_float(snap.get("equity")), to_float(m15.get("close")), to_float(m15.get("atr_m15"))
+    equity = risk_equity(snap)                                                         # [R88] 扣掉信用
+    price, atr = to_float(m15.get("close")), to_float(m15.get("atr_m15"))
     currency = str(snap.get("currency") or ACCOUNT_CURRENCY_DEFAULT)
     if not equity or not price or not atr:
         return "（尚無足夠的帳戶與 ATR 資料可試算）"

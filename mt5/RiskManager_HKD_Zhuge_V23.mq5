@@ -143,6 +143,22 @@ void CheckAndSetSLTP();
 //+------------------------------------------------------------------+
 //| EA 初始化函數                                                    |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| [R88] 風控用的淨值：把券商的「信用」扣掉，只算自己的錢。          |
+//|                                                                  |
+//| MT5：淨值 = 結餘 + 信用 + 浮動。信用是券商給的額度，隨時可收回，  |
+//| 虧損時通常第一個被扣，拿它當安全邊際等於把煞車借給別人踩。        |
+//| 用它之後 InpMaxTotalDrawdown 的 20% 才真的是自己本金的 20%。      |
+//+------------------------------------------------------------------+
+double RiskEquity()
+{
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   double cr = AccountInfoDouble(ACCOUNT_CREDIT);
+   if(cr < 0) cr = 0;
+   double v = eq - cr;
+   return (v > 0) ? v : 0;
+}
+
 int OnInit()
 {
    LastDayReset = TimeCurrent() - (TimeCurrent() % 86400); 
@@ -153,7 +169,7 @@ int OnInit()
    
    DynamicTP_HKD = InpTakeProfitHKD; 
    
-   MaxHistoricalEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+   MaxHistoricalEquity = RiskEquity();
    DynamicMaxDrawdownHKD = MaxHistoricalEquity * (InpMaxTotalDrawdown / 100.0);
    
    // 🎯 在 EA 啟動時一次性建立常駐 ATR 指標
@@ -196,7 +212,7 @@ void OnTick()
       IsRiskTriggered = false;
       TotalResetCount++; 
       
-      MaxHistoricalEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      MaxHistoricalEquity = RiskEquity();
       DynamicMaxDrawdownHKD = MaxHistoricalEquity * (InpMaxTotalDrawdown / 100.0);
       
       string resetMessage = "🔄【EA 風控跨日重置通知】\n系統已成功完成跨日數據重置！\n今日新基準淨值：" + DoubleToString(MaxHistoricalEquity, 2) + " HKD";
@@ -214,7 +230,7 @@ void OnTick()
    double floating_pnl = AccountInfoDouble(ACCOUNT_PROFIT); 
    double total_daily_pnl = realized_pnl + floating_pnl;
 
-   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+   double equity = RiskEquity();          // [R88] 回撤只算自己的錢
    
    if(MaxHistoricalEquity <= 0 || equity > MaxHistoricalEquity)
    {
@@ -746,9 +762,9 @@ void CheckCloudGate()
    // 🎯 將 daily_pnl 與完整的 ATR 寫入封包傳給 GCP
    string check_body = StringFormat(
       "{\"action\":\"check_gate\",\"status\":\"MONITORING\",\"symbol\":\"%s\",\"currency\":\"%s\","
-      "\"balance\":%.2f,\"equity\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,"
+      "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,"
       "\"m1_ohlc\":%s,\"m15_ohlc\":%s}",
-      targetedSymbol, currency, balance, equity, floating, daily_pnl, buyLots, sellLots, netLots, ohlc_json, ohlc_json_m15
+      targetedSymbol, currency, balance, equity, AccountInfoDouble(ACCOUNT_CREDIT), floating, daily_pnl, buyLots, sellLots, netLots, ohlc_json, ohlc_json_m15
    );
 
    char post_data[], result_data[];
