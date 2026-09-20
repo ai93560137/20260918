@@ -116,6 +116,29 @@ r2 = main.evaluate_risk_gate(dd2, st)
 check("回撤到容忍上限 → 可用曝險 0、不開閘", r2["exposure_cap"] == 0.0 and not r2["open"],
       (r2["exposure_cap"], r2["reason"]))
 
+print("\n=== 4b. 曝險【數值】本身算得對（R74：之前只測了上限，沒測曝險）===")
+# 1 盎司 = 0.01 手 × 100 oz/手 × 4300 = US$4,300 名義
+# 戶口 HK$20,000 = US$2,564  →  曝險 1.677x
+ex_case = dict(good, net_lots=0.01, equity=20000.0, balance=20000.0)
+r = main.evaluate_risk_gate(ex_case, main.default_gate_state())
+want = 0.01 * main.CONTRACT_SIZE * 4300.0 / (20000.0 * main.FX_TO_USD["HKD"])
+check(f"1 盎司在 HK$20,000 上 = {want:.3f}x", abs(r["exposure"] - want) < 1e-9,
+      f"得到 {r['exposure']}")
+check("這個數字落在 1.6~1.8（和錦囊面板的 1.71x 對得上）", 1.6 < r["exposure"] < 1.8, r["exposure"])
+check("超過上限時這一關不過（2 盎司 = 3.35x > 1.43x 可用）",
+      not [c for c in main.evaluate_risk_gate(dict(ex_case, net_lots=0.02),
+           main.default_gate_state())["checks"] if c["key"] == "exposure"][0]["ok"])
+
+print("\n=== 4c. 回撤要對歷史高水位（R74）===")
+st_hw = main.default_gate_state(); st_hw["equity_peak"] = 25000.0
+# 虧損已實現 → balance 也跟著掉，max(equity,balance) 會讀成 0% 回撤
+r = main.evaluate_risk_gate(dict(good, equity=20000.0, balance=20000.0), st_hw)
+check("已實現虧損仍算得出 20% 回撤", abs(r["drawdown_pct"] - 20.0) < 1e-9, r["drawdown_pct"])
+check("回撤到容忍上限 → 可用曝險 0", r["exposure_cap"] == 0.0, r["exposure_cap"])
+r2 = main.evaluate_risk_gate(dict(good, equity=30000.0, balance=30000.0), st_hw)
+check("創新高後高水位跟上", abs(r2["equity_peak"] - 30000.0) < 1e-9, r2["equity_peak"])
+check("創新高時回撤 0", r2["drawdown_pct"] == 0.0, r2["drawdown_pct"])
+
 print("\n=== 5. 單日虧損上限 ===")
 bad = dict(good, daily_pnl=-700.0)    # 20000 * 3% = 600
 r = main.evaluate_risk_gate(bad, st)
@@ -132,6 +155,21 @@ check("今日額滿 → 鎖", not r["open"] and "訓練節奏" in r["reason"], r
 st3 = main.default_gate_state()
 st3["trades_today"] = {"ny_date": "1999-01-01", "count": 99}
 check("昨天的計數不算今天", main.trades_today_count(st3) == 0)
+
+print("\n=== 6b. 沒變動就不要寫 GCS（R75）===")
+FAKE.clear()
+_ro = main.GoldIndicatorSession.is_gold_market_open
+main.GoldIndicatorSession.is_gold_market_open = staticmethod(lambda now=None: True)
+post({"action": "check_gate", "token": "tok", **good})
+gen1 = FAKE.get(main.GATE_STATE_FILE, (None, 0))[1]
+for _ in range(5):
+    post({"action": "check_gate", "token": "tok", **good})
+gen2 = FAKE.get(main.GATE_STATE_FILE, (None, 0))[1]
+check(f"5 次相同心跳沒有再寫入（generation {gen1} → {gen2}）", gen1 == gen2, (gen1, gen2))
+post({"action": "check_gate", "token": "tok", **low})      # 波動掉下去 = 真的變了
+gen3 = FAKE.get(main.GATE_STATE_FILE, (None, 0))[1]
+check(f"狀態真的變了才寫（{gen2} → {gen3}）", gen3 > gen2, (gen2, gen3))
+main.GoldIndicatorSession.is_gold_market_open = _ro
 
 print("\n=== 7. gate_status 不再看 regime ===")
 s = main.default_gate_state(); s["armed"] = True; s["regime"] = main.REGIME_RANGE

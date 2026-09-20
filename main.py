@@ -522,6 +522,7 @@ def default_gate_state():
         "hard_lock": None,        # {"reason", "since_utc", "until_ts" (None = until manual release)}
         "news_lock": False,
         "risk": {},               # [R70] 風控電閘最近一次評估（開閘的真正依據）
+        "equity_peak": 0.0,       # [R74] 歷史淨值高水位，空城計的回撤基準
         "trades_today": {},       # {"ny_date": "YYYY-MM-DD", "count": n}  [R73]
         "last_m1_bar_time": 0,    # idempotency for M1 packets  [R25]
         "last_reason": "",
@@ -693,23 +694,27 @@ def evaluate_risk_gate(snapshot, state, now=None):
             f"（打平點 0.0837%）{'' if ok else ' → 波動不足以付點差'}")
 
     # ③ 空城計曝險上限：可用曝險 = (可承受回撤 − 目前回撤) ÷ 最壞跳空
+    #    [R74] 回撤要對「歷史高水位」量。max(equity, balance) 不是高水位：
+    #    虧損一旦實現就併進 balance，回撤會讀成 0，這一關等於沒有。
     exp_now = cap_eff = dd_now = None
     if not equity or equity <= 0:
         add("exposure", "曝險上限", False, "缺淨值，無法試算")
     else:
-        peak = max(equity, balance or 0.0)
+        peak = max(to_float(state.get("equity_peak"), 0.0) or 0.0, equity, balance or 0.0)
         dd_now = max(0.0, (peak - equity) / peak * 100) if peak > 0 else 0.0
         cap_dyn = max(0.0, (DD_TOLERANCE_PCT - dd_now) / WORST_GAP_PCT) if WORST_GAP_PCT > 0 else 0.0
         cap_eff = min(EXPOSURE_HARD_CAP, cap_dyn)
         notional = lots * CONTRACT_SIZE * (price or 0.0)
         rate = FX_TO_USD.get(str(snapshot.get("currency") or ACCOUNT_CURRENCY_DEFAULT).upper()) \
             or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
-        if price and rate:
-            exp_now = notional / (equity / rate) if equity else 0.0
+        equity_usd = equity * rate if rate else None          # 與 calculate_max_lots 同一個方向
+        if price and equity_usd and equity_usd > 0:
+            exp_now = notional / equity_usd
             ok = exp_now <= cap_eff
             add("exposure", "曝險上限", ok,
                 f"目前 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
-                f"（回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，最壞跳空 {WORST_GAP_PCT:.0f}%）")
+                f"（高水位 {peak:,.0f} → 回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，"
+                f"最壞跳空 {WORST_GAP_PCT:.0f}%）")
         else:
             add("exposure", "曝險上限", False, "缺價格或匯率，無法試算曝險")
 
@@ -737,6 +742,7 @@ def evaluate_risk_gate(snapshot, state, now=None):
         "checks": checks,
         "reason": "五關全過 → 開閘" if not failed else "｜".join(f"{c['name']}：{c['detail']}" for c in failed),
         "atr_pct": atr_pct, "exposure": exp_now, "exposure_cap": cap_eff, "drawdown_pct": dd_now,
+        "equity_peak": max(to_float(state.get("equity_peak"), 0.0) or 0.0, equity or 0.0, balance or 0.0),
         "trades_today": used, "evaluated_utc": fmt_utc(now),
     }
 
@@ -751,8 +757,19 @@ def apply_risk_to_gate(snapshot, news_locked):
         if news_locked and armed:
             armed = False
             reason = "❌ 新聞風控期間不開閘"
-        state.update(risk=risk, armed=armed, news_lock=bool(news_locked), last_reason=reason)
-        return True, {"before": before, "after": gate_status(state), "reason": reason, "risk": risk}
+        # [R75] 每 60 秒一次心跳 = 一天 1,440 次寫入。只有實際變動才寫。
+        #       evaluated_utc 每次都不同，比較時要排除它。
+        prev = state.get("risk") if isinstance(state.get("risk"), dict) else {}
+        def shape(r):
+            return (r.get("open"), r.get("reason"),
+                    tuple((c.get("key"), c.get("ok"), c.get("detail")) for c in r.get("checks", [])))
+        changed = (shape(prev) != shape(risk) or bool(state.get("armed")) != armed
+                   or bool(state.get("news_lock")) != bool(news_locked)
+                   or risk["equity_peak"] > (to_float(state.get("equity_peak"), 0.0) or 0.0) + 1e-9)
+        state.update(risk=risk, armed=armed, news_lock=bool(news_locked), last_reason=reason,
+                     equity_peak=risk["equity_peak"])
+        after = gate_status(state)
+        return changed, {"before": before, "after": after, "reason": reason, "risk": risk}
 
     try:
         return update_gate_state(fn)
@@ -2109,10 +2126,14 @@ def parse_payload(req):
 
 def locked_response(state):
     lock = state.get("hard_lock") if hard_lock_active(state) else None
+    risk = state.get("risk") if isinstance(state.get("risk"), dict) else {}
     return jsonify({
         "status": "forbidden", "message": "Gate is LOCK", "current_gate": "LOCK",
         "regime": state.get("regime"), "dir": state.get("dir"), "news_lock": state.get("news_lock"),
         "hard_lock": lock.get("reason") if lock else None,
+        # [R76] 讓 EA 的 log 看得出是哪一關擋的，不用再開網頁猜。
+        "failed_checks": [c.get("key") for c in (risk.get("checks") or []) if not c.get("ok")],
+        "reason": state.get("last_reason"),
     }), LOCKED_HTTP_STATUS
 
 
@@ -2189,7 +2210,7 @@ def handle_heartbeat(payload, can_trade):
     if GATE_DRIVER != "REGIME":
         news = macro_news_session.status(now)
         risk_result = apply_risk_to_gate(snapshot, news["locked"] and "news" not in bypass)
-        if risk_result and risk_result["before"] != risk_result["after"]:
+        if isinstance(risk_result, dict) and risk_result["before"] != risk_result["after"]:
             log_decision(f"{'🟢' if risk_result['after'] == 'OPEN' else '🔒'} "
                          f"[電閘 {risk_result['before']}→{risk_result['after']}] {risk_result['reason']}", key="gate")
 
