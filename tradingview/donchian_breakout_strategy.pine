@@ -103,6 +103,37 @@ if tradeDir == "long" and strategy.position_size > 0
 if tradeDir == "short" and strategy.position_size < 0
     strategy.exit("XS", from_entry = "S", stop = hiLevel)
 
+// ---- 手動下單提醒（富途等券商人手執行用） -------------------------------------
+// 在 TradingView 建立警報：條件選本策略 →「alert() 函數呼叫」→ 通知勾 App 推播。
+// 每個新交易日第一根 K 推送「今天要掛的停損單」；倉位變化時推送成交確認。
+alertOn = input.bool(true, "開啟每日掛單／成交提醒")
+
+fmt(x) =>
+    str.tostring(x, format.mintick)
+
+posLong  = strategy.position_size > 0
+posShort = strategy.position_size < 0
+
+if alertOn and ready and newDay
+    string todo = na
+    if tradeDir == "both"
+        todo := posLong  ? "持多倉 → 掛 賣出停損 @ " + fmt(loLevel) + "（平倉＋反手，共2張）" :
+             posShort ? "持空倉 → 掛 買入停損 @ " + fmt(hiLevel) + "（平倉＋反手，共2張）" :
+             "空手 → 掛 買入停損 @ " + fmt(hiLevel) + " ＋ 賣出停損 @ " + fmt(loLevel) + "（各1張）"
+    else if tradeDir == "long"
+        todo := posLong ? "持多倉 → 掛 賣出停損 @ " + fmt(loLevel) + "（平倉）" :
+             "空手 → 掛 買入停損 @ " + fmt(hiLevel) + "（開多）"
+    else
+        todo := posShort ? "持空倉 → 掛 買入停損 @ " + fmt(hiLevel) + "（平倉）" :
+             "空手 → 掛 賣出停損 @ " + fmt(loLevel) + "（開空）"
+    alert("【每日掛單】" + syminfo.ticker + "｜" + todo, alert.freq_once_per_bar)
+
+posState = posLong ? 1 : posShort ? -1 : 0
+if alertOn and posState != posState[1]
+    stateTxt = posState == 1 ? "翻多／開多" : posState == -1 ? "翻空／開空" : "平倉離場"
+    alert("【成交確認】" + syminfo.ticker + "｜" + stateTxt + "｜現價 " + fmt(close) +
+         "，請核對富途實際倉位", alert.freq_once_per_bar)
+
 // ---- 畫圖 --------------------------------------------------------------------
 plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
 plot(loLevel, "前N日最低", color = color.new(color.red, 0),  linewidth = 2, style = plot.style_linebr)
