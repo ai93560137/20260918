@@ -346,6 +346,34 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html"):
     check(f"{f} 淺色值與 main.py 相同", "--nav-bg:#EEF4FF" in txt and "--nav-on-bg:#0F62FE" in txt)
     check(f"{f} 深色模式有自己的導覽列配色", txt.count("--nav-bg:#1B2430") == 2, txt.count("--nav-bg:#1B2430"))
 
+# CSS 大括號配對 —— 上一次改導覽列時弄丟過 3 個，加進來擋住同一個錯
+import re as _re
+for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html"):
+    txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
+    css = "".join(_re.findall(r"<style>(.*?)</style>", txt, _re.S))
+    check(f"{f} CSS 大括號配對", css.count("{") == css.count("}"),
+          f'{css.count("{")}/{css.count("}")}')
+    # 每個 :root / @media 主題區塊都要自己收口，否則後面的規則會被吃進去。
+    # 算括號平衡，不看 } 在哪一行（執行單是多行格式，收口在下一行）。
+    for blk in ("prefers-color-scheme:dark", 'data-theme="dark"'):
+        i = css.find(blk)
+        if i < 0:
+            continue
+        depth, closed, j = 0, False, i
+        while j < len(css):
+            if css[j] == "{":
+                depth += 1
+            elif css[j] == "}":
+                depth -= 1
+                if depth <= 0:
+                    closed = True
+                    break
+            j += 1
+        tail = css[j + 1:j + 400]
+        check(f"{f} 的 {blk} 區塊有收口且沒吃掉後面的規則",
+              closed and ("*{box-sizing" in tail or "body{" in tail or ".nav-link" in tail),
+              tail[:40].replace(chr(10), " "))
+
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
 s = main.default_gate_state(); s["armed"] = True; s["regime"] = main.REGIME_TREND; s["dir"] = "UP"
