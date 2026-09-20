@@ -128,7 +128,11 @@ LOCKED_HTTP_STATUS = _env_int("LOCKED_HTTP_STATUS", 403)              # [R63] 40
 
 ORDER_TEMPLATE = {
     "username": "Webhook8",
-    "api_key": os.environ.get("WEBHOOK_API_KEY", "9dff998f1ed0a6cb"),
+    # [R82] 絕對不要在這裡放預設值 —— 這個 repo 是【公開】的。
+    #       原本寫死的那把金鑰已經在 GitHub 上公開過，必須視為外洩，請重新產生。
+    #       沒設 WEBHOOK_API_KEY 時留空，送單會被券商拒絕（fail-closed），
+    #       比帶著一把公開過的金鑰去下單安全。
+    "api_key": os.environ.get("WEBHOOK_API_KEY", ""),
     "broker": "metatrader",
     "account_type": "real",
     "symbol": ORDER_SYMBOL,
@@ -363,6 +367,10 @@ def next_ny_rollover_ts(now=None):
 
 
 def _startup_warnings():
+    if not str(ORDER_TEMPLATE.get("api_key") or "").strip():
+        print("🚨 [設定缺失] WEBHOOK_API_KEY 未設定 —— 送單一定會被券商拒絕。"
+              "請在 Cloud Function 的環境變數裡設好（不要寫進原始碼，這個 repo 是公開的）。[R82]",
+              flush=True)
     print(f"⚙️ [啟動] 🔴 實盤下單模式 (account_type={ORDER_TEMPLATE['account_type']}) | "
           f"RISK_PCT={RISK_PCT} | LEVERAGE={BROKER_LEVERAGE} | FIRST_ENTRY_MODE={FIRST_ENTRY_MODE}", flush=True)
     activation, distance = to_float(TS_ACTIVATION_PRICE, 0.0), to_float(TS_DISTANCE_PRICE, 0.0)

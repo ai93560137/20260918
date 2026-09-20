@@ -488,6 +488,14 @@ check("空戶口時 jinnang_entry 直接拒絕",
                                     main.default_order_params()), str))
 main.GoldIndicatorSession.is_gold_market_open = _ro3
 
+print("\n=== 10h. R82：金鑰不可以寫在原始碼裡（這個 repo 是公開的）===")
+src = io.open("/home/user/20260918/main.py", encoding="utf-8").read()
+check("main.py 的 api_key 沒有寫死的預設值",
+      'os.environ.get("WEBHOOK_API_KEY", "")' in src)
+import re as _r2
+hexes = set(_r2.findall(r'"[0-9a-f]{16}"', src))
+check(f"原始碼裡沒有 16 位 hex 的疑似金鑰（找到 {len(hexes)} 個）", not hexes, hexes)
+
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
 s = main.default_gate_state(); s["armed"] = True; s["regime"] = main.REGIME_TREND; s["dir"] = "UP"
