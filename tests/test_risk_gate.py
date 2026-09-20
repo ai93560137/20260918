@@ -467,6 +467,27 @@ check("JN_M15_LAST_CLOSED=0 時會丟掉最後一根（同一份資料不出訊�
 main.JN_M15_LAST_CLOSED = _f
 main.GoldIndicatorSession.is_gold_market_open = _ro2
 
+print("\n=== 10g. 空戶口（real 但沒錢）會鎖死，拿不到任何資料 ===")
+_ro3 = main.GoldIndicatorSession.is_gold_market_open
+main.GoldIndicatorSession.is_gold_market_open = staticmethod(lambda now=None: True)
+g2 = dict(good, m15_ohlc={"close": 4378.0, "atr_m15": 8.0})
+sz = max(main.MIN_SL_DISTANCE, round(4378.0 * main.JN_SIZING_ADVERSE_PCT / 100, 2))
+for eq, want_open in ((0.0, False), (100.0, False), (5000.0, False), (20000.0, True)):
+    st2 = main.default_gate_state()
+    rr = main.evaluate_risk_gate(dict(g2, equity=eq, balance=eq), st2)
+    lots, _ = main.PureGCPPyramidingSession.calculate_max_lots(eq, "HKD", 4378.0, sz)
+    tradable = rr["open"] and lots >= main.ORDER_SIZE
+    check(f"本金 {eq:,.0f} → {'下得了單' if want_open else '下不了單'}",
+          tradable is want_open, f"open={rr['open']} lots={lots}")
+# 空戶口的理由要寫明是「缺淨值」，不是別的
+r0 = main.evaluate_risk_gate(dict(g2, equity=0.0, balance=0.0), main.default_gate_state())
+check("空戶口的曝險關理由是『缺淨值』",
+      "缺淨值" in [c for c in r0["checks"] if c["key"] == "exposure"][0]["detail"])
+check("空戶口時 jinnang_entry 直接拒絕",
+      isinstance(main.jinnang_entry(dict(g2, equity=0.0), main.now_ts(), frozenset(),
+                                    main.default_order_params()), str))
+main.GoldIndicatorSession.is_gold_market_open = _ro3
+
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
 s = main.default_gate_state(); s["armed"] = True; s["regime"] = main.REGIME_TREND; s["dir"] = "UP"
