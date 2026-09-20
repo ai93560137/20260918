@@ -145,7 +145,10 @@ RSI_BUY_MAX = _env_float("RSI_BUY_MAX", 85.0)
 RSI_SELL_MIN = _env_float("RSI_SELL_MIN", 15.0)
 BREAKEVEN_EPS = _env_float("BREAKEVEN_EPS", 1.0)                      # [R24c] |profit| <= this = break-even
 STATS_WINDOW = _env_int("STATS_WINDOW", 100)
-BROKER_UTC_OFFSET_HOURS = _env_float("BROKER_UTC_OFFSET_HOURS", 0.0)  # [R42] MT5 server time - UTC
+# [R42] MT5 伺服器時間 − UTC。BACKTEST.md 實測本券商為 UTC+3（夏令），回測指令
+# 一路用 --broker-offset 3；設錯會讓 pair_trade_result() 配到錯的進場訊號。
+# 夏令時結束後券商可能變 UTC+2，屆時用環境變數覆寫。
+BROKER_UTC_OFFSET_HOURS = _env_float("BROKER_UTC_OFFSET_HOURS", 3.0)
 
 # --- M1 regime radar -----------------------------------------------------------
 MIN_M1_BARS = _env_int("MIN_M1_BARS", 65)                             # [R47] 60-min window + margin
@@ -166,6 +169,8 @@ NEWS_FAIL_CLOSED = _env_bool("NEWS_FAIL_CLOSED", True)                # [R13e]
 # --- AI reviewer ---------------------------------------------------------------
 AI_REVIEW_ENABLED = _env_bool("AI_REVIEW_ENABLED", True)
 AI_FAIL_OPEN = _env_bool("AI_FAIL_OPEN", False)                       # [R2 R13f R13g] one policy
+AI_SHADOW_MODE = _env_bool("AI_SHADOW_MODE", False)                   # 覆核照跑、判斷照記，但不否決訊號
+FEW_SHOT_LIMIT = _env_int("FEW_SHOT_LIMIT", 3)                        # [R6] 動態 few-shot 取幾條虧損教訓
 AI_MODEL = _env_str("AI_MODEL", "gemini-2.5-flash")
 AI_LOCATION = _env_str("AI_LOCATION", "us-central1")
 AI_THINKING_BUDGET = _env_int("AI_THINKING_BUDGET", 0)                # [R14] 0 = no thinking (Flash only)
@@ -1084,7 +1089,7 @@ class SFTDataPipeline:
         return "【自我反思與進化規則庫】\n" + body
 
     @staticmethod
-    def get_dynamic_few_shot(limit=3):
+    def get_dynamic_few_shot(limit=FEW_SHOT_LIMIT):
         """Last losing signals as compact one-liners WITH their outcome.  [R6 R6b]
         Legacy rows (without 'meta') are ignored, so old nested prompts never re-enter."""
         try:
@@ -1105,8 +1110,10 @@ class SFTDataPipeline:
         return ("【歷史虧損教訓 (Dynamic Few-Shot)】\n" + "\n".join(lessons)) if lessons else ""
 
     @staticmethod
-    def save_pending_signal(meta):
+    def save_pending_signal(meta, ai_verdict=None):
         item = {"id": uuid.uuid4().hex, "symbol": normalize_symbol(meta.get("symbol")), "ts": now_ts(), "meta": meta}
+        if isinstance(ai_verdict, dict):
+            item["ai_verdict"] = ai_verdict        # 平倉配對時一併寫進 SFT 資料集
 
         def mutate(queue):
             queue = queue if isinstance(queue, list) else []
@@ -1159,6 +1166,9 @@ class SFTDataPipeline:
             "meta": item["meta"],
             "outcome": {"label": label, "profit": profit, "ticket": ticket, "closed_utc": fmt_utc()},
         }
+        if isinstance(item.get("ai_verdict"), dict):
+            # 「AI 當時說了什麼」＋「實際賺賠」配成一對——ai_eval.py 算判別力就靠這個。
+            example["ai_verdict"] = item["ai_verdict"]
 
         def append(rows):
             rows.append(example)
@@ -1309,6 +1319,21 @@ def news_blocks_entries(news):
     return bool(news.get("locked")) or (not news.get("known") and NEWS_FAIL_CLOSED)
 
 
+def ai_prompt_diagnostics(rules_text, few_shot, prompt=""):
+    """量化「AI 手上到底有多少材料」——投資人日誌與雲端日誌共用這組數字。
+
+    build_prompt() 要 AI「參考規則庫與歷史虧損教訓，判斷是否與過去虧損情境相似」。
+    若這兩樣都是空的，那句指令就是空轉，AI 只能靠通用直覺猜。"""
+    body = (rules_text or "").split("\n", 1)[-1].strip()
+    return {
+        "ai_model": AI_MODEL,
+        "ai_mode": "shadow" if AI_SHADOW_MODE else "enforce",
+        "prompt_chars": len(prompt),
+        "rules_chars": 0 if body in ("", "目前無額外規則。") else len(body),
+        "few_shot_lessons": sum(1 for line in (few_shot or "").splitlines() if line.startswith("- ")),
+    }
+
+
 # =============================================================================
 # 🤖 Optional LLM reviewer — one consistent fail policy  [R2 R5 R13f R13g R14 R66]
 # =============================================================================
@@ -1357,14 +1382,37 @@ class AIReviewSession:
             return True, "AI 覆核已停用 (AI_REVIEW_ENABLED=0)"
         if self.client is None:
             return self._fallback("Vertex AI 未初始化")
-        prompt = self.build_prompt(meta, sft_pipeline_session.get_trading_rules(),
-                                   sft_pipeline_session.get_dynamic_few_shot())
+        rules_text = sft_pipeline_session.get_trading_rules()
+        few_shot = sft_pipeline_session.get_dynamic_few_shot()
+        prompt = self.build_prompt(meta, rules_text, few_shot)
+        diag = ai_prompt_diagnostics(rules_text, few_shot, prompt)
+
+        # 這幾個數字決定了 AI 判斷的品質上限：prompt 叫它「比對過去虧損情境」，
+        # 但若動態 few-shot 是空的，它手上根本沒有可比對的東西。
+        log_event(f"🤖 [AI 送出覆核] {AI_MODEL}｜{'影子' if AI_SHADOW_MODE else '強制'}模式｜"
+                  f"prompt {diag['prompt_chars']} 字元｜規則庫 {diag['rules_chars']} 字元｜"
+                  f"虧損教訓 {diag['few_shot_lessons']} 條", component="ai", **diag)
+        if diag["few_shot_lessons"] == 0:
+            log_event("⚠️ [AI 知識庫] 動態 few-shot 是空的：SFT 資料集沒有可用的歷史虧損，"
+                      "AI 無法執行「與過去虧損比對」，只能靠通用直覺判斷。",
+                      severity="WARNING", component="ai", **diag)
+        if diag["rules_chars"] == 0:
+            log_event("⚠️ [AI 知識庫] 規則庫是空的：ai_training/trading_rules.txt 沒有內容。",
+                      severity="WARNING", component="ai", **diag)
+
+        started = time.time()
         try:
             response = self.client.models.generate_content(model=AI_MODEL, contents=prompt, config=self._config())
             text = (response.text or "").strip()
         except Exception as exc:
+            log_event(f"💥 [AI 呼叫失敗] {str(exc)[:200]}（{int((time.time() - started) * 1000)} ms）",
+                      severity="ERROR", component="ai",
+                      latency_ms=int((time.time() - started) * 1000), **diag)
             return self._fallback(f"AI API 錯誤：{str(exc)[:150]}")
-        print(f"🔍 [Vertex AI 原始回應] {text[:300]}", flush=True)
+
+        elapsed_ms = int((time.time() - started) * 1000)
+        log_event(f"🔍 [AI 原始回應] {text[:300] or '（空回應）'}", component="ai",
+                  latency_ms=elapsed_ms, raw_response=text[:500], **diag)
         if not text:
             return self._fallback("AI 空回應")
 
@@ -1374,10 +1422,12 @@ class AIReviewSession:
         reason = reason.strip() or "（無理由）"
         if not separator:
             return self._fallback(f"AI 回應格式錯誤：{first_line[:80]}")
-        if decision == "APPROVE":
-            return True, reason
-        if decision == "REJECT":
-            return False, reason
+        if decision in ("APPROVE", "REJECT"):
+            # 投資人日誌看得到的一行：AI 說了什麼、根據多少材料、花了多久。
+            log_decision(f"{'👍' if decision == 'APPROVE' else '🚫'} [AI 覆核] {decision}"
+                         f"｜{AI_MODEL}｜教訓 {diag['few_shot_lessons']} 條・規則 {diag['rules_chars']} 字"
+                         f"・{elapsed_ms} ms｜理由：{reason[:70]}", key="ai_review")
+            return decision == "APPROVE", reason
         return self._fallback(f"AI 回應無法辨識：{first_line[:80]}")
 
 
@@ -1763,10 +1813,35 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         log_decision(f"📰 [新聞攔截] {label} {signal} @ {price:.2f} 取消：{reason}", key="news_reject")
         return {"status": "news_rejected", "reason": reason}
 
-    approved, ai_reason = (True, "AI 覆核關卡已略過") if "ai" in bypass else ai_review_session.review(meta)
-    if not approved:
-        log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_reason}", key="ai_reject")
-        return {"status": "ai_rejected", "reason": ai_reason}
+    # 判斷與執行分家：影子模式要「照跑、照記、但不否決」。被 AI 反對的訊號若真的
+    # 被擋掉，那筆交易就不存在，也就永遠沒有實際損益可以回頭驗證它判斷得對不對。
+    if "ai" in bypass:
+        ai_verdict = {"approved": True, "reason": "AI 覆核關卡已略過", "mode": "bypass", "enforced": False}
+    else:
+        approved, ai_reason = ai_review_session.review(meta)
+        ai_verdict = {"approved": bool(approved), "reason": ai_reason,
+                      "mode": "shadow" if AI_SHADOW_MODE else "enforce",
+                      "enforced": not AI_SHADOW_MODE}
+
+    # ⚠️ review() 在 API 出錯時會依 AI_FAIL_OPEN 回傳拒絕（預設 False）。那是「錯誤」
+    #    不是「判斷」，影子模式下必須照樣放行，否則會變成「影子模式反而擋單」。
+    log_event(f"⚖️ [AI 判決] {label} {signal} @ {price:.2f} → "
+              f"{'APPROVE' if ai_verdict['approved'] else 'REJECT'}"
+              f"（{ai_verdict['mode']}，{'擋單' if not ai_verdict['approved'] and ai_verdict['enforced'] else '放行'}）"
+              f"｜{ai_verdict['reason'][:120]}",
+              component="ai", direction="verdict", ai_approved=ai_verdict["approved"],
+              ai_mode=ai_verdict["mode"], ai_enforced=ai_verdict["enforced"],
+              ai_reason=ai_verdict["reason"][:200], kind=candidate["kind"], signal=signal, price=price)
+
+    if not ai_verdict["approved"]:
+        if ai_verdict["enforced"]:
+            log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_verdict['reason']}", key="ai_reject")
+            return {"status": "ai_rejected", "reason": ai_verdict["reason"]}
+        log_decision(f"👁️ [AI 影子攔截] {label} {signal} @ {price:.2f} 仍照常送出，僅記錄供事後對帳。"
+                     f"理由：{ai_verdict['reason']}", key="ai_shadow")
+        log_event(f"👁️ [影子模式] 這筆若在強制執行模式下會被擋掉，現在照常送出以取得實際損益。",
+                  severity="WARNING", component="ai", direction="shadow_pass",
+                  signal=signal, price=price, ai_reason=ai_verdict["reason"][:200])
 
     order = build_order(candidate, params)
     summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{order['sl_distance_price']} "
@@ -1805,7 +1880,7 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         update_pyramid_state(**commit, last_order_status="SENT")
     except StorageError as exc:
         print(f"🚨 [嚴重] 訂單已送出但加單狀態寫入失敗：{exc}", flush=True)
-    sft_pipeline_session.save_pending_signal(meta)
+    sft_pipeline_session.save_pending_signal(meta, ai_verdict)
     log_decision(f"✅ [已送出] {summary}", key="entry_sent")
     return {"status": "success", "executed_signal": signal}
 
@@ -1997,6 +2072,7 @@ LOG_KEY_COLORS = {
     "wait": "#6c757d", "filter": "#6c757d", "settle": "#6c757d", "anchor": "#6c757d",
     "data": "#d97706", "risk": "#dc3545", "structure": "#dc3545", "ai_reject": "#dc3545",
     "news_reject": "#dc3545", "broker_error": "#dc3545", "target_hit": "#dc3545",
+    "ai_review": "#7c3aed", "ai_shadow": "#d97706",
 }
 
 CHART_SCRIPT = """
@@ -2255,6 +2331,7 @@ def build_dashboard_page(msg):
       <div style='margin-top:15px;'>
         <a href='?view=dashboard&action=auto' class='btn btn-open'>🟢 解除硬鎖・恢復自動</a>
         <a href='?view=dashboard&action=lock' class='btn btn-lock'>🔴 緊急硬鎖 (LOCK)</a>
+        <a href='?view=reset' class='btn' style='background:#6c757d; color:#fff;'>🧹 重置歷史紀錄</a>
       </div>
       <div class='muted' style='font-size:12px; margin-top:6px;'>恢復自動後，電閘仍需完成 Setup→Trigger 才會開啟。🔴 實盤下單模式</div>
     </div>
@@ -2286,6 +2363,57 @@ def build_dashboard_page(msg):
     <div class='mono' style='background:#1e1e1e; color:#d4d4d4; border-left:4px solid var(--primary); padding:16px 20px; border-radius:0 8px 8px 0; font-size:13px; max-height:350px; overflow:auto;'>{esc(webhook_log_session.get_last_payload())}</div>
     """
     return html_page("智能諸葛亮量化儀表板 - 核心控制台", body)
+
+
+def _ai_status_html():
+    """投資人日誌上的「AI 覆核」面板：這道關卡現在到底在做什麼、手上有什麼材料。"""
+    if not AI_REVIEW_ENABLED:
+        return ("<div class='muted'>AI 覆核已停用（<code>AI_REVIEW_ENABLED=0</code>）——"
+                "所有訊號都不會經過 LLM。</div>")
+
+    try:
+        rules_text = sft_pipeline_session.get_trading_rules()
+        few_shot = sft_pipeline_session.get_dynamic_few_shot()
+    except Exception as exc:                                  # 這個面板壞掉不該影響整頁
+        return f"<div class='muted'>AI 知識庫讀取失敗：{esc(str(exc)[:120])}</div>"
+    diag = ai_prompt_diagnostics(rules_text, few_shot)
+
+    if AI_SHADOW_MODE:
+        mode_html = ("<span style='color:#d97706; font-weight:700;'>👁️ 影子模式</span>"
+                     "<div class='card-desc'>AI 照常判斷並記錄，但<b>不會擋單</b>；"
+                     "事後可用 ai_eval.py 對帳，算出它擋對還是擋錯。</div>")
+    else:
+        mode_html = ("<span style='color:#dc3545; font-weight:700;'>🚫 強制執行</span>"
+                     "<div class='card-desc'>AI 說 REJECT 就真的不下單。被擋掉的訊號沒有損益，"
+                     "所以<b>無法驗證它擋得對不對</b>。</div>")
+
+    lessons, rules_chars = diag["few_shot_lessons"], diag["rules_chars"]
+    warn = ""
+    if lessons == 0:
+        warn += ("<div class='log-line' style='color:#d97706;'>⚠️ 動態 few-shot 是空的："
+                 "SFT 資料集沒有可用的歷史虧損，prompt 裡會寫「目前無」。"
+                 "AI 無法執行「與過去虧損比對」，只能靠通用直覺判斷。</div>")
+    if rules_chars == 0:
+        warn += ("<div class='log-line' style='color:#d97706;'>⚠️ 規則庫是空的："
+                 "<code>ai_training/trading_rules.txt</code> 沒有內容。</div>")
+    if not warn:
+        warn = ("<div class='log-line' style='color:#198754;'>✅ AI 手上有規則庫與歷史教訓，"
+                "「與過去虧損比對」這件事是有材料可做的。</div>")
+
+    return f"""
+      <div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:10px;'>
+        <div class='level-box'><div class='card-title'>執行模式</div><div class='card-small'>{mode_html}</div></div>
+        <div class='level-box'><div class='card-title'>模型</div>
+          <div class='card-small' style='font-size:14px;'>{esc(AI_MODEL)}</div>
+          <div class='card-desc'>出錯時{'放行' if AI_FAIL_OPEN else '拒絕'}（AI_FAIL_OPEN）</div></div>
+        <div class='level-box'><div class='card-title'>歷史虧損教訓</div>
+          <div class='card-small {'neg' if lessons == 0 else 'pos'}'>{lessons} 條</div>
+          <div class='card-desc'>取最近 {FEW_SHOT_LIMIT} 筆已平倉的虧損單</div></div>
+        <div class='level-box'><div class='card-title'>規則庫</div>
+          <div class='card-small {'neg' if rules_chars == 0 else 'pos'}'>{rules_chars} 字元</div>
+          <div class='card-desc'>trading_rules.txt，上限 4000</div></div>
+      </div>
+      <div class='log-box' style='max-height:160px;'>{warn}</div>"""
 
 
 def _legacy_decision_log_html():
@@ -2419,8 +2547,14 @@ def build_info_page():
         <div style='font-size:14px; font-weight:bold; padding-top:6px;'>{calendar_html}</div><div class='card-desc'>重大財經數據監控引擎</div></div>
     </div>
 
+    <div class='section'><h2>🧠 AI 覆核關卡現況</h2>
+      <p class='muted' style='font-size:12px;'>這道關卡只能否決、不能加分，所以「它手上有多少材料」決定了它的判斷品質上限。
+        舊版格式的訓練資料無法使用，可到 <a href='?view=reset'>🧹 重置歷史紀錄</a> 清空後從乾淨的基準重新累積。</p>
+      {_ai_status_html()}</div>
+
     <div class='section'><h2>🤖 純 GCP 交易大腦即時決策還原</h2>
-      <p class='muted' style='font-size:12px;'>每一次候選訊號、覆核結果與實際送單都會記錄於此。</p>
+      <p class='muted' style='font-size:12px;'>每一次候選訊號、覆核結果與實際送單都會記錄於此。
+      紫色是 AI 的判斷、橘色是影子模式下「本來會被擋、但仍照常送出」的訊號。</p>
       <div class='log-box'>{log_lines}</div></div>
 
     <div class='section'><h2>🎯 核心決策水位與指標基準</h2>
@@ -2482,8 +2616,9 @@ GATE_SWITCH_DEFS = [
      "數據公布期間照常交易，日曆失效也照常交易。",
      "⚠️ 數據行情跳空與滑價可能遠超止損距離。"),
     ("ai", "AI 覆核",
-     "Gemini 須回覆 APPROVE；出錯或格式錯誤時拒絕。",
-     "不呼叫 Gemini，直接放行。",
+     "LLM 須回覆 APPROVE；出錯或格式錯誤時依 AI_FAIL_OPEN 處理。"
+     "AI_SHADOW_MODE=1 時照樣呼叫並記錄判斷，但不否決訊號。",
+     "不呼叫 LLM，直接放行，連判斷紀錄都不會留下。",
      "少一層定性過濾。"),
     ("cooldown", "平倉後冷卻",
      "平倉後須等 REENTRY_COOLDOWN_SEC 秒才開新首單。",
@@ -2565,9 +2700,11 @@ def gate_parameter_values(params=None):
             _pv("NEWS_FAIL_CLOSED", "是" if NEWS_FAIL_CLOSED else "否", "日曆載不到時是否禁止新倉"),
         ],
         "ai": [
-            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 Gemini"),
+            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 LLM"),
             _pv("AI_MODEL", AI_MODEL, ""),
             _pv("AI_FAIL_OPEN", "放行" if AI_FAIL_OPEN else "拒絕", "AI 出錯或格式錯誤時怎麼處理"),
+            _pv("AI_SHADOW_MODE", "👁️ 影子（記錄但不否決）" if AI_SHADOW_MODE else "強制執行",
+                "影子模式下 AI 的反對不擋單，但會寫進 SFT 資料集供事後對帳"),
         ],
         "cooldown": [
             _pv("REENTRY_COOLDOWN_SEC", REENTRY_COOLDOWN_SEC,
@@ -3017,6 +3154,87 @@ def serve_order_app():
         print(f"⚠️ [送單參數頁讀取失敗] {exc}", flush=True)
         return _json_response({"status": "error", "message": "order.html 不存在於部署內容中"}, 500)
 
+# -----------------------------------------------------------------------------
+# 🗒️ 錦囊：執行單 + 九十筆訓練進度表
+#     兩頁都是靜態 HTML；進度表的紀錄存在 GCS，換裝置／換瀏覽器也看得到。
+#         執行單      ?view=jinnang_sheet
+#         進度表      ?view=jinnang_tracker
+#         進度表資料  ?view=jinnang&format=json   （GET 讀、POST 寫）
+#     兩頁互相有連結，頁首的分頁列切換。
+# -----------------------------------------------------------------------------
+_JINNANG_DIR = os.path.dirname(os.path.abspath(__file__))
+JINNANG_SHEET_FILE = os.path.join(_JINNANG_DIR, "jinnang_sheet.html")
+JINNANG_TRACKER_FILE = os.path.join(_JINNANG_DIR, "jinnang_tracker.html")
+JINNANG_STATE_FILE = "jinnang_training.json"      # GCS 物件名
+JINNANG_SLOTS = 90
+
+
+def _serve_static_html(path, label):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
+    except OSError as exc:
+        print(f"⚠️ [{label}讀取失敗] {exc}", flush=True)
+        return _json_response({"status": "error",
+                               "message": f"{os.path.basename(path)} 不存在於部署內容中"}, 500)
+
+
+def serve_jinnang_sheet():
+    return _serve_static_html(JINNANG_SHEET_FILE, "錦囊執行單")
+
+
+def serve_jinnang_tracker():
+    return _serve_static_html(JINNANG_TRACKER_FILE, "錦囊進度表")
+
+
+def _jinnang_clean(raw):
+    """只收白名單欄位、長度固定 90；格式不對的那一格當成空的。"""
+    text_keys = ("date", "dir", "inTime", "outTime", "px", "pnl")
+    rows = raw if isinstance(raw, list) else []
+    out = []
+    for i in range(JINNANG_SLOTS):
+        row = rows[i] if i < len(rows) else None
+        if not isinstance(row, dict):
+            out.append(None)
+            continue
+        rec = {k: str(row.get(k, ""))[:32] for k in text_keys}
+        for k in ("c1", "c2", "c3"):
+            rec[k] = bool(row.get(k))
+        used = any(rec[k] for k in text_keys) or rec["c1"] or rec["c2"] or rec["c3"]
+        out.append(rec if used else None)
+    return out
+
+
+def handle_jinnang_api_get():
+    try:
+        doc = gcs_read_json(JINNANG_STATE_FILE, None)
+    except StorageError as exc:
+        print(f"⚠️ [錦囊紀錄讀取失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "讀取失敗"}, 500)
+    doc = doc if isinstance(doc, dict) else {}
+    return _json_response({"status": "ok",
+                           "trades": _jinnang_clean(doc.get("trades")),
+                           "updated_utc": doc.get("updated_utc")})
+
+
+def handle_jinnang_api_post(req):
+    body = req.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _json_response({"status": "error", "message": "請求內容不是 JSON 物件"}, 400)
+    trades = _jinnang_clean(body.get("trades"))
+    stamp = fmt_utc()
+    try:
+        gcs_write_text(JINNANG_STATE_FILE,
+                       json.dumps({"trades": trades, "updated_utc": stamp}, ensure_ascii=False))
+    except StorageError as exc:
+        print(f"⚠️ [錦囊紀錄寫入失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "寫入失敗"}, 500)
+    done = sum(1 for t in trades if t)
+    ok = sum(1 for t in trades if t and t["c1"] and t["c2"] and t["c3"])
+    print(f"🗒️ [錦囊] 已記 {done}/{JINNANG_SLOTS} 筆，其中合規 {ok}", flush=True)
+    return _json_response({"status": "ok", "trades": trades, "updated_utc": stamp})
+
+
 
 def build_gates_page(msg):
     bypass = read_gate_bypass()
@@ -3210,6 +3428,186 @@ def handle_gates_post(req):
     return redirect(f"?view=gates&msg={msg}")
 
 
+# =============================================================================
+# 🧹 重置：把歷史紀錄清空，用這個版本重新開始
+# -----------------------------------------------------------------------------
+# 刻意「分組」而不是一鍵全清——不同紀錄清掉的後果差很多，有些會讓系統停擺一小時。
+# 設定檔（送單參數、關卡開關）不在任何一組裡，重置不會動到你調好的設定。
+# =============================================================================
+RESET_GROUPS = [
+    ("ai", "AI 訓練資料", [SFT_DATASET_FILE, PENDING_SIGNALS_FILE], False,
+     "歷史虧損教訓與待配對訊號。清掉後 AI 的 few-shot 會是空的，要重新累積。"
+     "舊版格式的資料本來就無法使用，清掉可讓「教訓 N 條」這個數字從乾淨的基準開始。"),
+    ("rules", "AI 規則庫", [TRADING_RULES_FILE], False,
+     "trading_rules.txt 的內容。"),
+    ("logs", "決策日誌與封包紀錄", [DECISION_LOG_FILE, M1_VERDICT_LOG_FILE, WEBHOOK_LOG_FILE, LAST_ORDER_FILE], False,
+     "只是顯示用的紀錄，清掉不影響交易邏輯。"),
+    ("cache", "新聞日曆快取", [NEWS_CACHE_FILE], False,
+     "下次需要時會自動重抓。"),
+    ("trades", "交易績效紀錄", [TRADE_HISTORY_FILE], True,
+     "⚠️ 累計已實現損益、實盤勝率、期望值會全部歸零，且<b>無法復原</b>。"
+     "MT5 那邊的歷史不受影響，但這個系統算出來的績效統計會從零開始。"
+     "<br>✅ 從 DEMO 換到實盤時<b>應該清</b>——模擬單的損益混進實盤統計會讓勝率與期望值失真，"
+     "而期望值會回頭影響建議的 TP 倍數。"),
+    ("market", "M1／M15 行情快取", [M1_HISTORY_FILE, M15_HISTORY_FILE], True,
+     f"⚠️ 清掉後要重新累積約 {MIN_M1_BARS} 根 M1 K 線（<b>約一小時</b>）才能再次開閘交易。"),
+    ("state", "執行狀態", [GATE_STATE_FILE, PYRAMID_STATE_FILE, ACCOUNT_FILE], True,
+     "⚠️ 電閘回到 LOCK、加單基準價清空、帳戶快照清除"
+     "（EA 下次心跳會重建）。若此刻有未平倉部位，加單基準會遺失。"),
+]
+RESET_GROUP_MAP = {key: (label, files, danger, desc) for key, label, files, danger, desc in RESET_GROUPS}
+RESET_KEEPS = [("送單參數", ORDER_PARAMS_FILE), ("關卡開關設定", GATE_SWITCHES_FILE)]
+RESET_CONFIRM_WORD = "RESET"
+
+# 常見情境的預設勾選組合，避免手動勾錯——特別是誤勾行情快取會白等一小時。
+RESET_PRESETS = {
+    "live": ("🔁 DEMO → 實盤", {"ai", "trades", "logs", "state"},
+             "換帳戶用。demo 的損益、訊號與狀態全部清掉，實盤統計從零開始。"
+             f"<b>不含行情快取</b>——K 線是商品行情，demo 與實盤看到的 XAUUSD 是同一份，"
+             f"清掉只會白等 {MIN_M1_BARS} 分鐘重新累積。"),
+    "ai": ("🧠 只重置 AI 訓練資料", {"ai", "logs"},
+           "保留交易績效，只把 AI 的教訓與日誌歸零。舊版格式的 SFT 資料無法使用時用這個。"),
+}
+
+
+def perform_reset(keys):
+    """把選到的檔案寫成空字串——所有讀取端都把「空」當成預設值，等同清除。
+
+    用覆寫而不是刪除：少一種權限與 generation 的失敗模式，行為也比較好預期。"""
+    cleared, failed = [], []
+    for key in keys:
+        label, files, _danger, _desc = RESET_GROUP_MAP[key]
+        for name in files:
+            try:
+                gcs_write_text(name, "")
+                cleared.append(name)
+            except StorageError as exc:
+                print(f"⚠️ [重置失敗] {name}：{exc}", flush=True)
+                failed.append(name)
+    labels = "、".join(RESET_GROUP_MAP[k][0] for k in keys)
+    log_event(f"🧹 [重置] 已清空：{labels}｜檔案 {len(cleared)} 個"
+              + (f"｜失敗 {len(failed)} 個" if failed else ""),
+              severity="WARNING" if failed else "INFO", component="admin",
+              reset_groups=list(keys), cleared=cleared, failed=failed)
+    log_decision(f"🧹 [管理員重置] 已清空：{labels}"
+                 + (f"（{len(failed)} 個檔案失敗）" if failed else ""), key="admin")
+    return cleared, failed
+
+
+def build_reset_page(msg=None, error=None, preset=None):
+    banner = ""
+    if msg:
+        banner = f"<div class='level-box' style='border-left:4px solid #198754;'>{esc(msg)}</div>"
+    elif error:
+        banner = f"<div class='level-box' style='border-left:4px solid #dc3545;'>{esc(error)}</div>"
+
+    preselected = RESET_PRESETS.get(preset, (None, set(), ""))[1]
+    preset_html = "".join(
+        f"<a href='?view=reset&preset={esc(key)}' class='level-box' "
+        f"style='display:block; margin-bottom:8px; text-decoration:none; "
+        f"border-left:4px solid {'#0f62fe' if preset == key else '#c7ccd1'};'>"
+        f"<b>{label}</b>{' ✔️ 已套用' if preset == key else ''}"
+        f"<div class='card-desc' style='margin-top:4px;'>{desc}</div></a>"
+        for key, (label, _keys, desc) in RESET_PRESETS.items())
+
+    rows = ""
+    danger_tag = " <span style='color:#dc3545; font-weight:700;'>（高風險）</span>"
+    for key, label, files, danger, desc in RESET_GROUPS:
+        colour = "#dc3545" if danger else "#6c757d"
+        file_list = "、".join(f"<code>{esc(f)}</code>" for f in files)
+        checked = " checked" if key in preselected else ""
+        rows += (f"<div class='level-box' style='border-left:4px solid {colour}; margin-bottom:8px;'>"
+                 f"<label style='display:flex; gap:10px; align-items:flex-start; cursor:pointer;'>"
+                 f"<input type='checkbox' name='g_{esc(key)}' value='1' style='margin-top:4px;'{checked}>"
+                 f"<span><b>{esc(label)}</b>{danger_tag if danger else ''}"
+                 f"<div class='card-desc' style='margin-top:4px;'>{desc}</div>"
+                 f"<div class='card-desc' style='margin-top:4px;'>{file_list}</div>"
+                 f"</span></label></div>")
+
+    # 先告訴你「即將刪掉什麼」——盲按按鈕是這種頁面最容易出事的地方。
+    try:
+        trade_count = len(risk_manager_session.read_trades())
+        realised = sum(to_float(t.get("profit"), 0.0) for t in risk_manager_session.read_trades())
+        trades_note = (f"目前有 <b>{trade_count}</b> 筆已結算交易，"
+                       f"累計 <b>{realised:+,.2f} {esc(ACCOUNT_CURRENCY_DEFAULT)}</b>")
+    except Exception as exc:
+        trades_note = f"交易紀錄讀取失敗：{esc(str(exc)[:80])}"
+    try:
+        account_type = str(read_order_params()[0].get("account_type") or "?")
+    except Exception:
+        account_type = "?"
+    account_html = (f"<span style='color:#dc3545; font-weight:700;'>🔴 real（實盤）</span>"
+                    if account_type == "real" else
+                    f"<span style='color:#d97706; font-weight:700;'>🟡 {esc(account_type)}</span>"
+                    + ("　⚠️ 送單參數仍是 demo，換實盤前記得到送單參數頁改成 real。"
+                       if account_type == "demo" else ""))
+
+    keeps = "、".join(f"<code>{esc(f)}</code>（{esc(name)}）" for name, f in RESET_KEEPS)
+    body = f"""
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>
+      <h1 class='page-title'>🧹 重置歷史紀錄</h1></div>{page_nav("reset")}</div>
+    {banner}
+    <div class='section'>
+      <p class='muted' style='font-size:13px;'>
+        用這個版本重新開始：勾選要清空的紀錄。<b>這個動作無法復原</b>，請先確認沒有正在等待配對的交易。
+      </p>
+      <div class='level-box' style='border-left:4px solid #0f62fe; margin-bottom:12px;'>
+        <div class='card-title'>目前狀態</div>
+        <div style='margin-top:4px;'>{trades_note}<br>下單模式：{account_html}</div>
+      </div>
+      <div class='level-box' style='border-left:4px solid #198754; margin-bottom:12px;'>
+        ✅ <b>不會被清掉的東西</b>：{keeps}。你調好的設定會原封不動保留。
+        <div class='card-desc' style='margin-top:6px;'>
+          另外，重置這個動作本身一定會留下一筆稽核紀錄（即使你清掉決策日誌），
+          不會讓破壞性操作沒有痕跡。
+        </div>
+      </div>
+      <div class='card-title' style='margin-bottom:6px;'>常見情境（點一下自動勾好）</div>
+      {preset_html}
+      <form method='POST' action='?view=reset'>
+        <div class='card-title' style='margin:14px 0 6px;'>逐項確認</div>
+        {rows}
+        <div class='level-box' style='margin-top:12px;'>
+          <div class='card-title'>管理權杖</div>
+          <input type='password' name='token' placeholder='WEBHOOK_SECRET_TOKEN'
+                 style='width:100%; padding:8px; margin-top:4px;' autocomplete='off'>
+        </div>
+        <div class='level-box' style='margin-top:8px; border-left:4px solid #dc3545;'>
+          <div class='card-title'>輸入 <code>{RESET_CONFIRM_WORD}</code> 以確認</div>
+          <input type='text' name='confirm' placeholder='{RESET_CONFIRM_WORD}'
+                 style='width:100%; padding:8px; margin-top:4px;' autocomplete='off'>
+        </div>
+        <button type='submit' style='margin-top:12px; padding:10px 18px; font-weight:700;
+                background:#dc3545; color:#fff; border:none; border-radius:6px; cursor:pointer;'>
+          🧹 清空勾選的紀錄
+        </button>
+      </form>
+    </div>"""
+    return html_page("重置歷史紀錄 - 智能諸葛亮", body)
+
+
+def handle_reset_post(req):
+    form = req.form
+    if ADMIN_API_REQUIRE_TOKEN:
+        token = form.get("token")
+        if not (isinstance(token, str) and token.strip() == GCP_SECRET_TOKEN.strip()):
+            return build_reset_page(error="管理權杖不正確，沒有清除任何東西。")
+    if (form.get("confirm") or "").strip().upper() != RESET_CONFIRM_WORD:
+        return build_reset_page(error=f"請在確認欄輸入 {RESET_CONFIRM_WORD}，沒有清除任何東西。")
+
+    keys = [key for key, *_ in RESET_GROUPS if form.get(f"g_{key}") == "1"]
+    if not keys:
+        return build_reset_page(error="沒有勾選任何項目，沒有清除任何東西。")
+
+    cleared, failed = perform_reset(keys)
+    labels = "、".join(RESET_GROUP_MAP[k][0] for k in keys)
+    if failed:
+        return build_reset_page(error=f"已清空 {len(cleared)} 個檔案，但有 {len(failed)} 個失敗："
+                                      f"{'、'.join(failed)}。請查看 Cloud Logging。")
+    note = "　接下來要等 M1 K 線重新累積才能開閘。" if "market" in keys else ""
+    return build_reset_page(msg=f"✅ 已清空「{labels}」，共 {len(cleared)} 個檔案。{note}")
+
+
 def handle_get(req):
     view = req.args.get("view", "welcome")
     action = req.args.get("action")
@@ -3221,8 +3619,16 @@ def handle_get(req):
         return handle_order_api_get()
     if view == "order_app":                                      # standalone order.html, served here
         return serve_order_app()
+    if view == "jinnang" and req.args.get("format") == "json":   # 進度表讀取訓練紀錄
+        return handle_jinnang_api_get()
+    if view == "jinnang_sheet":                                  # 錦囊執行單
+        return serve_jinnang_sheet()
+    if view == "jinnang_tracker":                                # 錦囊九十筆進度表
+        return serve_jinnang_tracker()
     if view == "info":
         return build_info_page()
+    if view == "reset":
+        return build_reset_page(preset=req.args.get("preset"))
     if view == "gates":
         return build_gates_page(req.args.get("msg"))
     if view == "dashboard":
@@ -3309,6 +3715,10 @@ def receive_tradingview_signal(request):
         return handle_gates_post(request)
     if request.args.get("view") == "order":          # posts from the order parameter page
         return handle_order_api_post(request)
+    if request.args.get("view") == "jinnang":        # 錦囊進度表寫入訓練紀錄
+        return handle_jinnang_api_post(request)
+    if request.args.get("view") == "reset":          # 重置頁的表單（需權杖＋確認字串）
+        return handle_reset_post(request)
 
     payload = parse_payload(request)
     if payload is None:

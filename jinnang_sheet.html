@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>錦囊執行單</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --paper:#F6F7F8; --field:#FFFFFF; --ink:#16191D; --muted:#666E77;
+  --line:#D6DBE0; --hair:#E6EAEE; --accent:#2C6B7A; --accent-soft:#E4EFF1;
+  --stop:#A8382F; --stop-soft:#F6E6E4; --ok:#3A6E4E; --ok-soft:#E4EFE8;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#101317; --field:#171B20; --ink:#E7EAED; --muted:#8B939C;
+    --line:#2A3038; --hair:#222830; --accent:#4E9CAE; --accent-soft:#16282D;
+    --stop:#D2645A; --stop-soft:#2A1B19; --ok:#5C9E74; --ok-soft:#172420;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101317; --field:#171B20; --ink:#E7EAED; --muted:#8B939C;
+  --line:#2A3038; --hair:#222830; --accent:#4E9CAE; --accent-soft:#16282D;
+  --stop:#D2645A; --stop-soft:#2A1B19; --ok:#5C9E74; --ok-soft:#172420;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink); margin:0;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:15px; line-height:1.72; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:860px; margin:0 auto; padding-inline:16px; padding-block:40px 72px;
+  display:flex; flex-direction:column; gap:44px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-variant-numeric:tabular-nums}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--accent); font-weight:600}
+
+/* ── 表頭 ── */
+header{border-top:3px solid var(--ink); padding-top:18px}
+.masthead{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 16px;
+  justify-content:space-between}
+h1{font-size:30px; line-height:1.25; margin:0; font-weight:700; letter-spacing:.04em;
+  text-wrap:balance}
+h1 small{display:block; font-size:13px; font-weight:400; color:var(--muted);
+  letter-spacing:0; margin-top:4px}
+.specs{display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line); margin-top:20px}
+.spec{background:var(--field); padding:10px 12px}
+.spec dt{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em;
+  color:var(--muted); text-transform:uppercase; margin:0}
+.spec dd{margin:2px 0 0; font-size:17px; font-weight:500;
+  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+
+/* ── 區塊 ── */
+section{display:flex; flex-direction:column; gap:16px}
+h2{font-size:19px; margin:0; font-weight:700; letter-spacing:.03em;
+  padding-bottom:8px; border-bottom:1px solid var(--line)}
+h2 .num{font-family:"IBM Plex Mono",monospace; color:var(--accent);
+  font-size:13px; margin-inline-end:10px; font-weight:600}
+p{margin:0; max-width:62ch}
+.note{color:var(--muted); font-size:13.5px}
+
+/* ── 流程 ── */
+.flow{display:flex; flex-direction:column; gap:0}
+.node{background:var(--field); border:1px solid var(--line); padding:13px 16px;
+  font-weight:500}
+.node.q{border-left:3px solid var(--accent)}
+.node .sub{display:block; font-size:13px; color:var(--muted); font-weight:400; margin-top:2px}
+.stem{width:1px; height:18px; background:var(--line); margin-inline-start:24px}
+.branches{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px}
+@media (max-width:560px){.branches{grid-template-columns:1fr}}
+.branch{border:1px solid var(--line); background:var(--field); padding:12px 14px;
+  display:flex; flex-direction:column; gap:5px}
+.branch .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em;
+  font-weight:600; text-transform:uppercase}
+.branch.yes{border-top:3px solid var(--ok)} .branch.yes .tag{color:var(--ok)}
+.branch.no{border-top:3px solid var(--muted)} .branch.no .tag{color:var(--muted)}
+.branch.halt{border-top:3px solid var(--stop); background:var(--stop-soft)}
+.branch.halt .tag{color:var(--stop)}
+.branch b{font-weight:700}
+.branch .why{font-size:13px; color:var(--muted)}
+
+/* ── 執行單 ── */
+.card{border:1px solid var(--line); background:var(--field)}
+.card + .card{margin-top:16px}
+.card-head{display:flex; justify-content:space-between; align-items:center;
+  gap:12px; padding:9px 14px; border-bottom:1px solid var(--line);
+  background:var(--accent-soft)}
+.card-head .t{font-family:"IBM Plex Mono",monospace; font-size:11px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600}
+.sample{font-size:11px; font-family:"IBM Plex Mono",monospace; color:var(--muted);
+  border:1px solid var(--line); padding:1px 7px; border-radius:2px}
+.fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:1px; background:var(--hair)}
+.f{background:var(--field); padding:9px 12px 10px}
+.f label{display:block; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.f input{width:100%; border:0; border-bottom:1px solid var(--line); background:transparent;
+  color:var(--ink); font-family:"IBM Plex Mono",monospace; font-size:15px;
+  font-variant-numeric:tabular-nums; padding:3px 0 2px; margin-top:3px}
+.f input:focus{outline:none; border-bottom-color:var(--accent)}
+.f.key{background:var(--accent-soft)}
+.f.key label{color:var(--accent); font-weight:600}
+.f.key input{border-bottom-color:var(--accent); font-weight:600; font-size:17px}
+.f .static{font-family:"IBM Plex Mono",monospace; font-size:15px; margin-top:3px;
+  padding:3px 0 2px; border-bottom:1px solid var(--line)}
+
+.ticks{padding:14px; border-top:1px solid var(--line)}
+.ticks .cap{display:flex; justify-content:space-between; align-items:baseline;
+  flex-wrap:wrap; gap:6px; margin-bottom:9px}
+.ticks .cap span{font-family:"IBM Plex Mono",monospace; font-size:11px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.bars{display:grid; grid-template-columns:repeat(10,1fr); gap:5px}
+@media (max-width:480px){.bars{grid-template-columns:repeat(5,1fr)}}
+.bar{position:relative}
+.bar input{position:absolute; inset:0; opacity:0; cursor:pointer; margin:0}
+.bar span{display:flex; align-items:center; justify-content:center; height:40px;
+  border:1px solid var(--line); font-family:"IBM Plex Mono",monospace; font-size:13px;
+  color:var(--muted); background:var(--paper)}
+.bar input:checked + span{background:var(--ok-soft); border-color:var(--ok);
+  color:var(--ok); font-weight:600}
+.bar input:focus-visible + span{outline:2px solid var(--accent); outline-offset:2px}
+.bar:last-child span{border-width:1px 1px 1px 3px; border-left-color:var(--accent)}
+
+.checks{border-top:1px solid var(--line); padding:12px 14px;
+  display:flex; flex-direction:column; gap:7px}
+.chk{display:flex; align-items:flex-start; gap:9px; font-size:14px}
+.chk input{margin:5px 0 0; accent-color:var(--accent); flex:none}
+.verdict{border-top:1px solid var(--line); padding:10px 14px; font-size:13px;
+  color:var(--muted); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+
+/* ── 計數 ── */
+.counter{display:grid; grid-template-columns:repeat(15,1fr); gap:4px}
+@media (max-width:560px){.counter{grid-template-columns:repeat(10,1fr)}}
+.cell{aspect-ratio:1; border:1px solid var(--line); background:var(--field);
+  display:flex; align-items:center; justify-content:center;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--muted)}
+
+/* ── 表格 ── */
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse; width:100%; min-width:400px; font-size:14px}
+th,td{text-align:left; padding:8px 12px; border-bottom:1px solid var(--hair)}
+th{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); font-weight:500;
+  border-bottom:1px solid var(--line)}
+td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+tr.now td{background:var(--accent-soft); font-weight:600}
+
+/* ── 停止條件 ── */
+.halts{display:flex; flex-direction:column; gap:1px; background:var(--line);
+  border:1px solid var(--line)}
+.halt-row{background:var(--field); padding:12px 14px; display:flex; gap:12px}
+.halt-row .k{font-family:"IBM Plex Mono",monospace; color:var(--stop);
+  font-weight:600; flex:none}
+footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
+  font-size:12.5px}
+
+@media print{
+  :root{--paper:#fff; --field:#fff; --ink:#000; --muted:#555;
+    --line:#999; --hair:#ccc; --accent:#000; --accent-soft:#f2f2f2;
+    --stop:#000; --stop-soft:#f2f2f2; --ok:#000; --ok-soft:#fff}
+  .wrap{padding-block:0; gap:26px; max-width:none}
+  section{break-inside:avoid}
+  .card{break-inside:avoid}
+  .noprint{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.nav{display:flex; gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:-8px}
+.nav a{flex:1; text-align:center; padding:9px 12px; background:var(--field); color:var(--muted);
+  text-decoration:none; font-size:14px; font-weight:500; letter-spacing:.02em}
+.nav a:hover{color:var(--ink)}
+.nav a.on{background:var(--accent-soft); color:var(--accent); font-weight:700;
+  box-shadow:inset 0 -3px 0 var(--accent)}
+.nav a:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+</style>
+
+<div class="wrap">
+<nav class="nav">
+  <a href="?view=jinnang_sheet" class="on">錦囊執行單</a>
+  <a href="?view=jinnang_tracker">錦囊九十筆</a>
+</nav>
+
+<header>
+  <div class="masthead">
+    <h1>錦囊執行單
+      <small>XAUUSD M15 突破 · 進場、抱滿十根、出場。中間不碰。</small></h1>
+    <div class="eyebrow">ZHUGELIANG / JINNANG v1</div>
+  </div>
+  <dl class="specs">
+    <div class="spec"><dt>戶口</dt><dd>HK$20,000</dd></div>
+    <div class="spec"><dt>手數</dt><dd>0.01（1 盎司）</dd></div>
+    <div class="spec"><dt>持有</dt><dd>10 根 · 2.5h</dd></div>
+    <div class="spec"><dt>價格停損</dt><dd>無</dd></div>
+    <div class="spec"><dt>加碼</dt><dd>無</dd></div>
+    <div class="spec"><dt>每筆期望</dt><dd>+$3.01</dd></div>
+    <div class="spec"><dt>單筆最壞</dt><dd>−$367</dd></div>
+    <div class="spec"><dt>週上限</dt><dd>4 筆</dd></div>
+  </dl>
+  <p class="note" style="margin-top:14px">基準：TradingView Strategy Tester，XAUUSD M15，
+    <strong>2018-03-08 → 2026-09-20，1,464 筆</strong>，勝率 46.11%，獲利因子 1.145，
+    年化 <strong>+2.39%</strong>，最大回撤 10.09%。
+    ⚠️ <strong>優勢未被證實</strong>：年化 95% 區間 [−1.38%, +7.35%] 包含零，
+    九年裡只有三年賺錢，2026 一年（+4,767）超過全期總利潤（+4,408）。</p>
+</header>
+
+<section>
+  <h2><span class="num">01</span>想動的時候，照這個順序走</h2>
+  <div class="flow">
+    <div class="node q">衝動來了 —— 想下單、想加碼、想提早走
+      <span class="sub">先不要看盤。先回答下面兩個問題。</span></div>
+    <div class="stem"></div>
+    <div class="node q">① 錦囊現在有訊號嗎？
+      <span class="sub">訊號 = M15 收盤突破橫行區間並站穩。一年約 185 次，平均每 1.4 個交易日一次。</span></div>
+    <div class="branches">
+      <div class="branch yes"><span class="tag">有</span>
+        <b>做。階梯上那一格的手數。</b>
+        <span class="why">進場那一刻先把到期時間寫下來，然後填執行單。</span></div>
+      <div class="branch no"><span class="tag">沒有</span>
+        <b>那就是沒有。</b>
+        <span class="why">不是你在忍——是市場沒給。這是事實，不是意志力測驗。</span></div>
+    </div>
+    <div class="stem"></div>
+    <div class="node q">② 想做的是錦囊訊號以外的東西嗎？
+      <span class="sub">那就問這一句：<b>如果我這個月不缺錢，我還會做這一筆嗎？</b></span></div>
+    <div class="branches">
+      <div class="branch yes"><span class="tag">答案一樣</span>
+        <b>是直覺。做。</b>
+        <span class="why">直覺歸直覺倉，不記在這張單上。曝險仍受空城計上限管。</span></div>
+      <div class="branch halt"><span class="tag">答案不一樣</span>
+        <b>是壓力。不要做。</b>
+        <span class="why">直覺在講市場，壓力在講你自己。從裡面感覺一樣，後果不一樣。</span></div>
+    </div>
+  </div>
+  <p class="note">曝險上限（空城計）＝（可承受回撤 20% − 目前回撤）÷ 最壞跳空。
+    黃金填 10%（最壞單日 −9.60%），NQ 填 12%。高水位時最寬，受傷時自動收緊。</p>
+</section>
+
+<section>
+  <h2><span class="num">02</span>單筆執行單</h2>
+  <p class="note">進場時<strong>先填到期時間</strong>。到點就出場——那一刻你只是在對時鐘，不是在做決定。</p>
+  <p class="note">每筆期望值 <strong>+HK$3.01</strong>，但單筆分佈極度偏斜：最大獲利 +848.29、最大虧損 −367.46，
+    而超過一半的交易是虧的（勝率 46.11%）。<strong>單筆賺賠完全不說明任何事。</strong></p>
+
+  <div class="card">
+    <div class="card-head"><span class="t">執行單 — 範例</span>
+      <span class="sample">2026-03-19 實際訊號</span></div>
+    <div class="fields">
+      <div class="f"><label>日期</label><div class="static">2026-03-19</div></div>
+      <div class="f"><label>方向</label><div class="static">空 SHORT</div></div>
+      <div class="f"><label>進場時間</label><div class="static">09:00</div></div>
+      <div class="f"><label>進場價</label><div class="static">4827.52</div></div>
+      <div class="f"><label>手數</label><div class="static">0.01</div></div>
+      <div class="f key"><label>到期出場 ★</label><div class="static">11:30</div></div>
+    </div>
+    <div class="ticks">
+      <div class="cap"><span>每根收盤打一格 — 打勾只代表「我沒有碰它」</span>
+        <span>第 1 根浮虧 −HK$43</span></div>
+      <div class="bars">
+        <label class="bar"><input type="checkbox" id="ex1" checked><span>1</span></label>
+        <label class="bar"><input type="checkbox" id="ex2" checked><span>2</span></label>
+        <label class="bar"><input type="checkbox" id="ex3" checked><span>3</span></label>
+        <label class="bar"><input type="checkbox" id="ex4" checked><span>4</span></label>
+        <label class="bar"><input type="checkbox" id="ex5" checked><span>5</span></label>
+        <label class="bar"><input type="checkbox" id="ex6" checked><span>6</span></label>
+        <label class="bar"><input type="checkbox" id="ex7" checked><span>7</span></label>
+        <label class="bar"><input type="checkbox" id="ex8" checked><span>8</span></label>
+        <label class="bar"><input type="checkbox" id="ex9" checked><span>9</span></label>
+        <label class="bar"><input type="checkbox" id="ex10" checked><span>10</span></label>
+      </div>
+    </div>
+    <div class="verdict"><span>結果：淨 +HK$845（0.01 手）</span>
+      <span>若在第 2 根「一賺就走」：+HK$108，少了 HK$737</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="t">執行單</span>
+      <span class="sample noprint">填進場時間自動算到期</span></div>
+    <div class="fields">
+      <div class="f"><label>日期</label><input id="d1" type="date"></div>
+      <div class="f"><label>方向</label><input id="dir1" type="text" placeholder="多 / 空"></div>
+      <div class="f"><label>進場時間</label><input id="in1" type="time" step="900"></div>
+      <div class="f"><label>進場價</label><input id="px1" type="text" inputmode="decimal" placeholder="0000.00"></div>
+      <div class="f"><label>手數</label><input id="lot1" type="text" inputmode="decimal" placeholder="0.01"></div>
+      <div class="f key"><label>到期出場 ★</label><input id="out1" type="text" placeholder="--:--" readonly></div>
+    </div>
+    <div class="ticks">
+      <div class="cap"><span>每根收盤打一格 — 打勾只代表「我沒有碰它」</span>
+        <span>1 格 = 15 分鐘</span></div>
+      <div class="bars">
+        <label class="bar"><input type="checkbox" id="a1"><span>1</span></label>
+        <label class="bar"><input type="checkbox" id="a2"><span>2</span></label>
+        <label class="bar"><input type="checkbox" id="a3"><span>3</span></label>
+        <label class="bar"><input type="checkbox" id="a4"><span>4</span></label>
+        <label class="bar"><input type="checkbox" id="a5"><span>5</span></label>
+        <label class="bar"><input type="checkbox" id="a6"><span>6</span></label>
+        <label class="bar"><input type="checkbox" id="a7"><span>7</span></label>
+        <label class="bar"><input type="checkbox" id="a8"><span>8</span></label>
+        <label class="bar"><input type="checkbox" id="a9"><span>9</span></label>
+        <label class="bar"><input type="checkbox" id="a10"><span>10</span></label>
+      </div>
+    </div>
+    <div class="checks">
+      <label class="chk"><input type="checkbox" id="c1a"><span>訊號到了我有進場（漏掉 = 違規）</span></label>
+      <label class="chk"><input type="checkbox" id="c1b"><span>我抱滿了 10 根（提早出 = 違規）</span></label>
+      <label class="chk"><input type="checkbox" id="c1c"><span>我沒有加碼、沒有移動任何東西（有 = 違規）</span></label>
+    </div>
+    <div class="verdict"><span>三格全勾 = 這筆合規。盈虧不影響判定。</span>
+      <span>違規一次 → 階梯退一格，重數 30 筆</span></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">03</span>三十筆合規計數</h2>
+  <p class="note">升級的條件是<strong>連續遵守</strong>，不是賺錢。理由在下面那張表裡——
+    30 筆一組的期望只有 <strong>HK$205</strong>，而中位數是負的。<strong>一組虧錢完全正常。</strong></p>
+  <div class="counter" id="counter"></div>
+
+  <h3 style="font-size:15px;margin:8px 0 0;font-weight:700">為什麼組損益不能當判定標準</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>項目</th><th>金額（HK$）</th><th>說明</th></tr></thead>
+      <tbody>
+        <tr><td>1,464 筆總損益</td><td class="n">+4,408</td><td>8.4 年，HK$20,000 戶口 = +22.04%，年化 +2.39%</td></tr>
+        <tr class="now"><td>其中「異常值」貢獻</td><td class="n">+8,872</td><td><strong>佔總損益 201%</strong></td></tr>
+        <tr><td>扣掉異常值後</td><td class="n">−4,464</td><td><strong>倒賠</strong>。利潤全部來自那幾筆</td></tr>
+        <tr><td>最賺的 5%（73 筆）</td><td class="n">+17,828</td><td>其餘 1,391 筆合計 −13,420</td></tr>
+        <tr><td>30 筆一組</td><td class="n">+74</td><td>只有 <strong>48%</strong> 是正的，中位數 −18</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">這套規則不是靠勝率累積（勝率只有 46.11%），是靠<strong>極少數幾筆吃到大趨勢</strong>——
+    而那幾筆每一筆都要抱滿 10 根才長得出來。所以「提早出場」砍掉的不是一點利潤，
+    是<strong>全部的利潤</strong>。Python 端獨立驗證：最賺的 5%（38/752 筆）佔總利潤 186%，
+    其餘 714 筆合計 −HK$5,880。</p>
+
+  <h3 style="font-size:15px;margin:14px 0 0;font-weight:700">階梯 — 升的不是手數，是輪次</h3>
+  <p class="note">原本那張「0.01 → 0.10 → 1.00 手」的階梯作廢：一個 20,000 的戶口做 0.01 手，
+    槓桿已經是 <strong>1.71x</strong>，剛好頂到空城計上限；0.02 手就是 3.41x，直接超標。
+    <strong>在單一戶口裡，手數沒有往上的空間。</strong>所以升級的方向改成累積連續合規筆數。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>輪次</th><th>戶口</th><th>手數</th><th>槓桿</th><th>通過條件</th><th>通過之後</th></tr></thead>
+      <tbody>
+        <tr class="now"><td>訓練 1</td><td class="n">20,000</td><td class="n">0.01</td><td class="n">1.71x</td><td>連續 30 筆合規</td><td>進入訓練 2</td></tr>
+        <tr><td>訓練 2</td><td class="n">20,000</td><td class="n">0.01</td><td class="n">1.71x</td><td>累計連續 60 筆</td><td>進入訓練 3</td></tr>
+        <tr><td>訓練 3</td><td class="n">20,000</td><td class="n">0.01</td><td class="n">1.71x</td><td>累計連續 90 筆</td><td><strong>資格取得</strong></td></tr>
+        <tr><td>主帳戶</td><td class="n">AUM</td><td>依空城計</td><td class="n">≤1.70x</td><td>—</td><td>直覺倉照常，曝險受空城計管</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">90 筆約等於半年（每年 177 筆）。<strong>違規一次，連續計數歸零，從 0 重數。</strong>
+    這個訓練戶口一年只賺約 HK$520（而且優勢未被證實）——<strong>它永遠不會是收入，它是資格考。</strong>
+    真正要保護的是你那套 Sharpe 0.94 的直覺倉。</p>
+</section>
+
+<section>
+  <h2><span class="num">04</span>停止條件 — 失敗的時候你不會自己察覺，所以先寫下來</h2>
+  <div class="halts">
+    <div class="halt-row"><span class="k">停 1</span>
+      <span>某週做超過 <strong>4 筆</strong>。錦囊一週約 3–4 次訊號；做到 8 次代表你在用它當藉口。</span></div>
+    <div class="halt-row"><span class="k">停 2</span>
+      <span>開始在<strong>訊號之外</strong>找理由下單，或想「這次加大一點」。替代動作變成入口了，停掉它。</span></div>
+    <div class="halt-row"><span class="k">停 3</span>
+      <span>在 0.01 手都<strong>抱不滿 10 根</strong>。那手數不是問題——先回到紙上單，直到你信這條規則。</span></div>
+    <div class="halt-row"><span class="k">停 4</span>
+      <span><strong>戶口歸零後當天補錢。</strong>這是整個設計唯一的支柱：戶口見底 = 這一輪結束，
+        停下來翻紀錄找出第一筆違規。要補，等固定的日子（例如下月 1 號），而且一次只補一份。</span></div>
+  </div>
+  <p class="note">錦囊的產出不是錢（一個戶口一年約 HK$1,172，補不了每月 186,385 的缺口）。
+    它的產出是「這件事我已經做過了」——讓那股想動的能量，流進一個單筆最壞被鎖死的地方。
+    你 521 天、Sharpe 0.94 的能力，要留給真正值得的時候。</p>
+</section>
+
+<footer>
+  <p><strong>為什麼不能提早走，三個獨立的證據：</strong>
+  ① TradingView 1,464 筆全期：異常值貢獻 HK$8,872，佔總損益 <strong>201%</strong>——扣掉後倒賠 HK$4,464。
+  ② Python 752 筆：最賺的 5%（38 筆）合計 +HK$12,732，其餘 714 筆合計 −HK$5,880。
+  ③ 同一批訊號改成「一賺就走」：勝率升到 92.7%，年化 <strong>−2.94%</strong>（t=−5.15）——
+  比這條規則會賺錢更確定。</p>
+  <p><strong>戶口撐不撐得住：</strong>8.4 年最大回撤 10.09%，單筆最壞 HK$367 = 戶口的 1.84%，
+  而槓桿頂到空城計上限 1.70x。照規則做，這個戶口輸不掉。<strong>能讓它歸零的只有你自己。</strong></p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var c=document.getElementById('counter');
+  if(c){for(var i=1;i<=30;i++){var d=document.createElement('div');
+    d.className='cell'; d.textContent=i; c.appendChild(d);}}
+  var inEl=document.getElementById('in1'), outEl=document.getElementById('out1');
+  function calc(){
+    if(!inEl||!outEl) return;
+    var v=inEl.value;
+    if(!v){outEl.value=''; return;}
+    var p=v.split(':'), h=parseInt(p[0],10), m=parseInt(p[1],10);
+    if(isNaN(h)||isNaN(m)){outEl.value=''; return;}
+    var t=h*60+m+150;                       // 10 根 M15 = 150 分鐘
+    var nd=t>=1440?' 次日':'';
+    t=t%1440;
+    outEl.value=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')+nd;
+  }
+  if(inEl){inEl.addEventListener('input',calc); calc();}
+})();
+</script>
+
+</body>
+</html>
