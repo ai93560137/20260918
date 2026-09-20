@@ -4574,3 +4574,30 @@ def receive_tradingview_signal(request):
               severity="INFO" if code < 500 else "ERROR", component="webhook", direction="out",
               action=summary["action"], http_status=code, result=status)
     return response
+
+
+# ---------------------------------------------------------------------------
+# [R84] WSGI fallback so `gunicorn main:app` also works.
+#
+# GCP buildpacks pick the server by whether GOOGLE_FUNCTION_TARGET is set at
+# build time.  Set -> `functions-framework --target=...` (normal path, the
+# object below is never touched).  Unset -> `gunicorn main:app`, which used to
+# abort with "Failed to find attribute 'app' in 'main'" and return 503 to the
+# EA even though the module itself had imported cleanly.  Exposing `app` makes
+# the same source deploy correctly either way.
+# ---------------------------------------------------------------------------
+def _build_wsgi_app():
+    from flask import Flask, request as flask_request
+
+    wsgi = Flask(__name__)
+
+    def _entry(_path=""):
+        return receive_tradingview_signal(flask_request)
+
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+    wsgi.add_url_rule("/", "entry_root", _entry, methods=methods)
+    wsgi.add_url_rule("/<path:_path>", "entry_any", _entry, methods=methods)
+    return wsgi
+
+
+app = _build_wsgi_app()
