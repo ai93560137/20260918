@@ -128,9 +128,14 @@ def part_vrp(mrv, vxn_csv):
         m = common.year == y
         print(f"  {y}: VXN {vxm[m].mean():.1f}  RV {rv[m].mean():.1f}  "
               f"差 {prem[m].mean():+.1f}  正月率 {(prem[m]>0).mean()*100:.0f}%")
-    # 換算成 straddle 語言
-    print(f"\n以 B 段的公式換算：IV 每高於收支平衡 1 個波動點 ≈ "
-          f"月權金多 {STRADDLE_K*np.sqrt(1/12)*100:.2f}% 名義")
+    # 換算成 straddle 語言：1 個波動點 = 0.01，月權金 ≈ 0.01×0.7979×√(1/12)
+    per_pt = 0.01 * STRADDLE_K * np.sqrt(1 / 12) * 100
+    print(f"\n換算：IV−RV 每 1 個波動點 ≈ 月權金 {per_pt:.2f}% 名義"
+          f" → 平均 VRP ≈ {prem.mean()*per_pt:.2f}%/月、中位 ≈ {prem.median()*per_pt:.2f}%/月")
+    # 規矩 6 反向壓力：加進一次 2020-03（月初 VXN ~40、當月 RV ~80 → IV−RV ≈ −40）
+    stress = np.append(prem.values, -40.0)
+    ts = stress.mean() / (stress.std(ddof=1) / np.sqrt(len(stress)))
+    print(f"壓力測試（加一個 2020-03，IV−RV=−40）：平均 {stress.mean():+.1f} 點  t={ts:+.2f}")
 
 
 if __name__ == "__main__":
