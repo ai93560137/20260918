@@ -30,6 +30,22 @@ HK50 的否決結果寫在第十九節。方法論（順逆比、控制組、切
 格式：`Time,Open,High,Low,Close,Volume`，時間格式 `YYYY.MM.DD HH:MM:SS`。
 **有成交量資料**（與現貨黃金不同），但本專案的量能過濾器已被否決（見 §4）。
 
+**⚠ 檔案位置**：上表是原始上傳檔名，那些檔只存在於當時那個 session 的上傳目錄，
+新 session 拿不到。**D1 / H4 / H1 / M30 / M15 已壓縮後放進 repo**：
+
+```
+tradingview/data/HK50_D1.csv.gz    1,015 根
+tradingview/data/HK50_H4.csv.gz    5,366 根
+tradingview/data/HK50_H1.csv.gz   17,091 根
+tradingview/data/HK50_M30.csv.gz  33,172 根
+tradingview/data/HK50_M15.csv.gz  64,367 根
+```
+
+`pd.read_csv('data/HK50_D1.csv.gz')` 可直接讀，不用解壓。
+**M1（96 萬根）與 M5（19 萬根）沒有放進去** —— 因為 §2 的成本門檻已經排除了
+那兩個週期（點差 ÷ ATR 分別是 42% 與 23%），研究不需要它們。
+若真的要用，請重新上傳。
+
 **商品：HK50 CFD（非期貨）。實際點差 10 點（使用者回報）。**
 
 ---
