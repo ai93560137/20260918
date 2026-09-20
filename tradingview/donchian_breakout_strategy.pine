@@ -1,0 +1,108 @@
+//@version=5
+// =============================================================================
+// 前 N 日高低點突破策略（Donchian Breakout）
+//
+// 規則（與 repo 的 donchian_backtest.py 完全對應，XAUUSD 已用 2022-08→2026-09
+// 真實 M1 數據驗證，詳見 DONCHIAN_BACKTEST.md）：
+//   進場：價格升破「前 N 個完整交易日」最高點 → 做多（stop order）
+//         價格跌破「前 N 個完整交易日」最低點 → 做空（stop order）
+//   離場：sar 模式＝反向突破時平倉並反手（永遠在場）
+//         eod 模式＝當日截止時間強制平倉（不留隔夜），日內反向突破則反手
+//   每個交易日、每個方向最多進場一次。
+//
+// 建議設定（XAUUSD）：
+//   主版本：exitMode=sar, N=3   （全期 +2,659 點/oz，PF 1.78，回撤 3.6%）
+//   保守版：exitMode=eod, N=2   （五個年份全部非負，PF 1.19）
+// 用 M5～M30 圖皆可：進出場價都落在通道價位上，結果與時間框架無關
+// （M1/M5/M15/M30 回測結果逐筆一致）。
+//
+// 成本假設：commission = 每張每次成交 0.15（一買一賣合計 0.30，
+// 對應 XAUUSD 0.30 點差、1 張 = 1 oz = 0.01 手）。請按你的帳戶調整。
+// =============================================================================
+strategy("前N日高低突破 Donchian Breakout",
+     overlay = true,
+     initial_capital = 10000,
+     default_qty_type = strategy.fixed,
+     default_qty_value = 1,
+     commission_type = strategy.commission.cash_per_contract,
+     commission_value = 0.15,
+     pyramiding = 0,
+     margin_long = 0,
+     margin_short = 0)
+
+// ---- 參數 -------------------------------------------------------------------
+lookback  = input.int(3, "通道回看天數 N", minval = 1, maxval = 10)
+exitMode  = input.string("sar", "出場模式", options = ["sar", "eod"],
+     tooltip = "sar＝反向突破反手、永遠在場；eod＝每日截止時間平倉不留隔夜")
+tradeDir  = input.string("both", "交易方向", options = ["both", "long", "short"])
+eodHour   = input.int(23, "eod 平倉時間（交易所時區）－時", minval = 0, maxval = 23)
+eodMinute = input.int(50, "eod 平倉時間－分", minval = 0, maxval = 59)
+
+// ---- 前 N 個「完整交易日」的高低（手動聚合，無 security、無未來函數） ----------
+var float[] dayHighs = array.new_float()
+var float[] dayLows  = array.new_float()
+var float curHigh = na
+var float curLow  = na
+newDay = ta.change(time("D")) != 0
+
+if newDay
+    if not na(curHigh)
+        array.push(dayHighs, curHigh)
+        array.push(dayLows,  curLow)
+        if array.size(dayHighs) > lookback
+            array.shift(dayHighs)
+            array.shift(dayLows)
+    curHigh := high
+    curLow  := low
+else
+    curHigh := math.max(nz(curHigh, high), high)
+    curLow  := math.min(nz(curLow,  low),  low)
+
+ready   = array.size(dayHighs) == lookback
+hiLevel = ready ? array.max(dayHighs) : na
+loLevel = ready ? array.min(dayLows)  : na
+
+// ---- 每日每方向只進場一次 ----------------------------------------------------
+var bool longUsed  = false
+var bool shortUsed = false
+if newDay
+    longUsed  := false
+    shortUsed := false
+// 成交後（本根倉位方向翻轉）才視為用掉當日額度——同 Python 引擎
+if strategy.position_size > 0 and strategy.position_size[1] <= 0
+    longUsed := true
+if strategy.position_size < 0 and strategy.position_size[1] >= 0
+    shortUsed := true
+
+// ---- eod 模式：截止時間之後不再進場，並平掉所有倉位 ---------------------------
+minuteOfDay = hour(time, syminfo.timezone) * 60 + minute(time, syminfo.timezone)
+pastCutoff  = exitMode == "eod" and minuteOfDay >= eodHour * 60 + eodMinute
+if pastCutoff and strategy.position_size != 0
+    strategy.close_all(comment = "EOD")
+if exitMode == "eod" and newDay and strategy.position_size != 0   // 保險絲：漏平時新日開盤補平
+    strategy.close_all(comment = "EOD-gap")
+
+// ---- 進場（stop order 掛在通道價位；反向觸發時 pyramiding=0 會自動反手） -------
+allowLong  = ready and not pastCutoff and not longUsed  and tradeDir != "short"
+allowShort = ready and not pastCutoff and not shortUsed and tradeDir != "long"
+
+if allowLong
+    strategy.entry("L", strategy.long, stop = hiLevel)
+else
+    strategy.cancel("L")
+if allowShort
+    strategy.entry("S", strategy.short, stop = loLevel)
+else
+    strategy.cancel("S")
+
+// ---- 單邊模式的離場：對面通道只平倉不反手 -------------------------------------
+if tradeDir == "long" and strategy.position_size > 0
+    strategy.exit("XL", from_entry = "L", stop = loLevel)
+if tradeDir == "short" and strategy.position_size < 0
+    strategy.exit("XS", from_entry = "S", stop = hiLevel)
+
+// ---- 畫圖 --------------------------------------------------------------------
+plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
+plot(loLevel, "前N日最低", color = color.new(color.red, 0),  linewidth = 2, style = plot.style_linebr)
+bgcolor(strategy.position_size > 0 ? color.new(color.teal, 92) :
+     strategy.position_size < 0 ? color.new(color.red, 92) : na)
