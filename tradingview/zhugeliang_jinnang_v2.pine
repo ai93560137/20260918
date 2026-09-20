@@ -37,6 +37,10 @@
 //   剛好落在空城計的上限（容忍 20% ÷ 黃金最壞單日 10%）。
 //   0.02 手 = 3.41x，超過上限——不該升的理由是槓桿，不是回撤。
 //
+// ⚠ TradingView 的 Properties（屬性）分頁會【蓋掉】腳本裡的初始資金與訂單大小。
+//   跑之前一定確認：初始資金 = 20000 HKD、訂單大小 = 0.01 合約。
+//   訂單大小填 1 就是 1 標準手（100 盎司），是目標部位的 100 倍。
+//
 // ⚠ 回測測的是【規則】，不是【你的紀律】。
 //   回測裡你永遠會抱滿 10 根；實盤裡不會。所以真正的指標是那三格打勾。
 // =============================================================================
@@ -46,9 +50,11 @@ strategy("智能諸葛亮 · 錦囊 v2｜HK$20,000 戶口訓練", "錦囊 v2",
      currency = currency.HKD,
      initial_capital = 20000,
      default_qty_type = strategy.fixed,
-     default_qty_value = 1,                      // 1 盎司 = 0.01 手
+     default_qty_value = 0.01,                   // ⚠ 1 合約 = 100 盎司 = 1 標準手。
+                                                 //   0.01 合約 = 1 盎司 = 0.01 手。
      commission_type = strategy.commission.cash_per_contract,
-     commission_value = 0.20,                    // 單邊 $0.20/盎司 → 來回 $0.40
+     commission_value = 20.0,                    // 每合約(100oz)單邊 $20 = 每盎司 $0.20
+                                                 //   → 來回每盎司 $0.40（= 你的實際點差）
      calc_on_every_tick = false,
      process_orders_on_close = false)            // 確認後、下一根開盤成交
 
@@ -246,7 +252,7 @@ fill(pU, pD, showBox and boxLive ? color.new(#78909C, 92) : na)
 plotshape(confirmUp, "向上突破", shape.triangleup,   location.belowbar, color.new(#26A69A, 0), size = size.tiny)
 plotshape(confirmDn, "向下跌破", shape.triangledown, location.abovebar, color.new(#EF5350, 0), size = size.tiny)
 
-var table tb = table.new(position.top_right, 2, 11, border_width = 1)
+var table tb = table.new(position.top_right, 2, 12, border_width = 1)
 bgC  = color.new(#12141A, 8)
 dimC = color.new(#9AA0A6, 25)
 valC = color.new(#E8EAED, 0)
@@ -268,21 +274,25 @@ if showPanel and barstate.islast
     row(2, "最低權益（戶口有沒有撐住）", "HK$" + str.tostring(minEq, "#") + "　(" + str.tostring(minPct, "#.#") + "%)",
          blown ? badC : minPct < 50 ? warnC : okC)
     row(3, "最大回撤", "HK$" + str.tostring(strategy.max_drawdown, "#"), valC)
-    row(4, "槓桿（名義 ÷ 戶口）", str.tostring(lev, "#.##") + "x / 上限 " + str.tostring(levCap, "#.##") + "x",
+    ozNow = math.abs(strategy.position_size) * 100
+    ozCfg = 0.01 * 100
+    row(4, "部位（盎司）", str.tostring(ozNow, "#.##") + " 持倉 / 設定 " + str.tostring(ozCfg, "#.##") +
+         "（1 合約 = 100 oz）", ozNow > 0 and math.abs(ozNow - ozCfg) > 0.001 ? badC : dimC)
+    row(5, "槓桿（名義 ÷ 戶口）", str.tostring(lev, "#.##") + "x / 上限 " + str.tostring(levCap, "#.##") + "x",
          lev > levCap ? badC : okC)
-    row(5, "———————————", "———————————", dimC)
-    row(6, "交易數 / 勝率", str.tostring(nTr) + " / " +
+    row(6, "———————————", "———————————", dimC)
+    row(7, "交易數 / 勝率", str.tostring(nTr) + " / " +
          (nTr > 0 ? str.tostring(strategy.wintrades / nTr * 100, "#.#") + "%" : "—"), valC)
-    row(7, "本組進度", str.tostring(inBlk) + " / " + str.tostring(blockSize) +
+    row(8, "本組進度", str.tostring(inBlk) + " / " + str.tostring(blockSize) +
          "　(" + (blkPnL >= 0 ? "+" : "") + str.tostring(blkPnL, "#") +
          "　期望 " + str.tostring(inBlk * expPerTrade, "#") + ")",
          blkPnL >= 0 ? okC : badC)
-    row(8, "已完成組數（正 / 全部）", str.tostring(blkWin) + " / " + str.tostring(blkDone),
+    row(9, "已完成組數（正 / 全部）", str.tostring(blkWin) + " / " + str.tostring(blkDone),
          blkDone > 0 and blkWin * 2 >= blkDone ? okC : warnC)
-    row(9, "單組 最好 / 最壞",
+    row(10, "單組 最好 / 最壞",
          (na(blkBest) ? "—" : str.tostring(blkBest, "#")) + " / " +
          (na(blkWorst) ? "—" : str.tostring(blkWorst, "#")), valC)
-    row(10, "86.5% 利潤來自異常值。", "組虧錢是常態 — 看打勾，不看損益。", dimC)
+    row(11, "86.5% 利潤來自異常值。", "組虧錢是常態 — 看打勾，不看損益。", dimC)
 
 plot(strategy.equity,  "權益",     display = display.data_window)
 plot(minEq,            "最低權益", display = display.data_window)
