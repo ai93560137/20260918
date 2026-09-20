@@ -1,0 +1,36 @@
+{
+  "produced_from": "3564dfe6-XAUUSD_M15_MAX.csv",
+  "data_span": [
+    "2022-08-03 04:30:00",
+    "2026-09-18 23:45:00"
+  ],
+  "bars": 95881,
+  "years": 4.126,
+  "params": {
+    "preset": "M15",
+    "hold_bars": 10,
+    "long_only": true,
+    "vol_floor_atr_pct": 0.1,
+    "spread_usd_round_trip": 0.4,
+    "usd_hkd": 7.8,
+    "oz": 1.0,
+    "entry": "確認根收盤 (C[i])",
+    "exit": "第 i+10 根收盤"
+  },
+  "summary": {
+    "trades": 200,
+    "per_year": 48.5,
+    "win_rate_pct": 53.5,
+    "profit_factor": 1.89,
+    "total_hkd": 5897.91,
+    "mean_hkd": 29.49,
+    "t_stat": 2.785,
+    "annual_pct": 7.147,
+    "max_dd_hkd": -1281.46,
+    "max_dd_pct": -6.41,
+    "best_hkd": 802.85,
+    "worst_hkd": -365.43,
+    "ex_top5pct_hkd": 1119.8
+  },
+  "sha256": "0987e0cd4a222aaa"
+}
