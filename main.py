@@ -103,9 +103,14 @@ GCP_SECRET_TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "123456")
 
 # --- Execution ----------------------------------------------------------------
 ORDER_SIZE = _env_float("ORDER_SIZE", 0.01)
-BROKER_API_URL = "https://webhooktrade.com/signals/v1/webhook_receptions.php?t=e66cdac4abb48f1a"
+# [R82] 這個 URL 的 ?t=... 是你個人的接收端權杖 —— 跟 api_key 一樣算憑證，
+#       原本寫死在這裡，而這個 repo 是【公開】的。改成環境變數，沒設就不送單。
+BROKER_API_URL = _env_str("BROKER_API_URL", "")
 BROKER_TIMEOUT_SEC = _env_int("BROKER_TIMEOUT_SEC", 8)            # keep total request < EA WebRequest timeout
-ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD")                    # symbol sent to webhooktrade
+# [R83] 券商的商品名要一字不差。UltimaMarkets 用的是 "XAUUSD+"（有加號），
+#       TradingView 那張快訊封包送的也是 "XAUUSD+"。送錯名字會被拒單，
+#       或更糟 —— 成交在另一個商品上。這裡跟券商對齊，不要用「通用」的寫法。
+ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD+")                   # 必須與券商商品列表完全一致
 ORDER_ACCOUNT = _env_str("ORDER_ACCOUNT", "1")                       # webhooktrade 範本的 account 欄位
 # webhooktrade 有兩組距離欄位，單位不同，只能擇一送出：
 #   price  → sl_distance_price / tp_distance_price / ts_activation_price / …   值＝美元（13.00）
@@ -367,6 +372,9 @@ def next_ny_rollover_ts(now=None):
 
 
 def _startup_warnings():
+    if not str(BROKER_API_URL or "").strip():
+        print("🚨 [設定缺失] BROKER_API_URL 未設定 —— 不會送出任何訂單。"
+              "請在環境變數裡設好完整網址（含 ?t=... 權杖）。[R82]", flush=True)
     if not str(ORDER_TEMPLATE.get("api_key") or "").strip():
         print("🚨 [設定缺失] WEBHOOK_API_KEY 未設定 —— 送單一定會被券商拒絕。"
               "請在 Cloud Function 的環境變數裡設好（不要寫進原始碼，這個 repo 是公開的）。[R82]",

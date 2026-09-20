@@ -495,6 +495,32 @@ check("main.py 的 api_key 沒有寫死的預設值",
 import re as _r2
 hexes = set(_r2.findall(r'"[0-9a-f]{16}"', src))
 check(f"原始碼裡沒有 16 位 hex 的疑似金鑰（找到 {len(hexes)} 個）", not hexes, hexes)
+# 金鑰字面值不可出現在 repo 裡。只看 key/token/secret/api 附近的 hex，
+# 否則會誤抓 SHA 雜湊（基準檔的 sha256、去重用的 digest 等）。
+import glob as _gl, os as _os
+_hits = []
+_pat = _r2.compile(r'(?i)(api[_-]?key|token|secret|password)["\']?\s*[:=]\s*["\']([0-9a-f]{16,})["\']')
+for _f in _gl.glob("/home/user/20260918/**/*", recursive=True):
+    if _os.path.isdir(_f) or "/.git/" in _f or "/personal/" in _f: continue
+    if _os.path.splitext(_f)[1] not in (".py", ".md", ".html", ".pine", ".mq5", ".json"): continue
+    try: _t = io.open(_f, encoding="utf-8", errors="ignore").read()
+    except Exception: continue
+    for _m in _pat.finditer(_t):
+        _hits.append((_os.path.basename(_f), _m.group(1), _m.group(2)[:8] + "…"))
+check("repo 裡沒有任何寫死的金鑰／權杖", not _hits, _hits[:3])
+# URL 裡的 ?t=... 也是憑證
+_url = _r2.findall(r'https?://[^\s"\']*[?&](?:t|token|key)=([0-9a-zA-Z]{8,})', src)
+check("BROKER_API_URL 沒有把權杖寫進原始碼", not _url, _url[:2])
+check("BROKER_API_URL 改成環境變數", '_env_str("BROKER_API_URL", "")' in src)
+
+print("\n=== 10i. R83：商品代號要跟券商一致 ===")
+check('ORDER_SYMBOL 預設 "XAUUSD+"（UltimaMarkets 的名字）',
+      main.ORDER_SYMBOL == "XAUUSD+", main.ORDER_SYMBOL)
+_o = main.build_order({"signal": "BUY", "ticker": main.read_order_params()[0]["symbol"],
+                       "price": 4378.0, "sl_distance": 60.0, "tp_distance": None},
+                      main.read_order_params()[0])
+check("送出的封包 symbol 與 TradingView 那張一致（XAUUSD+）",
+      _o["symbol"] == "XAUUSD+", _o["symbol"])
 
 print("\n=== 11. GATE_DRIVER=REGIME 可回退 ===")
 main.GATE_DRIVER = "REGIME"
