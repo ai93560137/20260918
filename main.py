@@ -7,11 +7,19 @@
 # BEHAVIOUR CHANGES — read before deploying
 #   * No dry-run mode: every approved signal is sent LIVE to the real account.
 #   * Gate + trend state is ONE JSON document (regime, direction, armed,
-#     hard lock, news lock) updated with GCS generation checks. Entries are
-#     only taken in the confirmed trend direction.                   [R4 R9 R30 R35]
+#     hard lock, news lock) updated with GCS generation checks.      [R4 R9 R35]
+#   * 2026-09-20 — 開閘依據改寫。三級共振第一次被量度（README §22/§23）：
+#     修正 look-ahead 後 1~360 分鐘每個持倉長度的毛利 t 值都在 ±1.6 內，
+#     延後一分鐘進場由 t=+5.28 掉到 −2.18，而 EA 每 60 秒才輪詢一次。
+#     → 它退出開閘決策，只留在儀表板當雷達看。電閘改由五道風控關卡驅動：
+#       市場時段 / 波動水位 / 空城計曝險上限 / 單日虧損 / 訓練節奏。
+#       缺任何一項數據一律當成不過關（fail-closed）。   [R70 R72 R73]
+#     GATE_DRIVER=REGIME 可一鍵回退成舊行為，只為了能並排比對。
+#   * LONG_ONLY 預設開啟：全期 1,464 筆中 671 筆空單每筆 −HK$0.84、
+#     t = −0.25，八年半期望值為零，唯一作用是付點差。            [R71]
 #   * TARGET_HIT and manual LOCK are HARD locks that the state machine cannot
 #     reopen. The dashboard "OPEN" button became "release hard lock / resume
-#     auto"; the gate then opens on the next Setup→Trigger cycle.       [R10 R29]
+#     auto"; the gate then reopens once the five risk checks pass.      [R10 R29]
 #   * Position cap is risk-based: equity × RISK_PCT ÷ (SL distance × 100),
 #     also capped by margin and HARD_MAX_LOTS.                              [R11]
 #   * Entry rules are deterministic Python. The LLM is an optional reviewer
@@ -155,6 +163,23 @@ MIN_M1_BARS = _env_int("MIN_M1_BARS", 65)                             # [R47] 60
 M1_HISTORY_MAX = 200
 M1_GAP_RESET_SEC = _env_int("M1_GAP_RESET_SEC", 15 * 60)              # [R21]
 NOISE_K = _env_float("NOISE_K", 1.0)                                  # [R31] threshold = K·σ·√minutes
+
+# --- 🛡️ 風控電閘（取代三級共振做開閘決策）-------------------------------------
+# [R70] 2026-09-20：三級共振第一次被量度（README §22/§23）。修正 look-ahead 後，
+#       1~360 分鐘每個持倉長度的毛利 t 值都在 ±1.6 內，而且延後一分鐘進場就由
+#       +5.28 掉到 −2.18。EA 每 60 秒才輪詢一次，這個架構本來就接不住這種訊號。
+#       → 三級共振改為「僅供觀察」，不再參與開閘。電閘改由風控條件驅動。
+GATE_DRIVER = _env_str("GATE_DRIVER", "RISK").upper()                 # RISK | REGIME（舊行為，僅供回退）
+LONG_ONLY = _env_bool("LONG_ONLY", True)                              # [R71] 全期 671 筆空單 t=−0.25
+DD_TOLERANCE_PCT = _env_float("DD_TOLERANCE_PCT", 20.0)               # 可承受回撤（空城計基準）
+WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 14.0)                     # 最壞日內跳空（實測 −13.94%）
+EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)              # 曝險硬上限（名目 ÷ 淨值）
+DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日虧損上限（佔淨值）
+# [R72] 波動門檻用 EA 已經在傳的 atr_m15。校準見 README §24：只做多、抱 10 根、
+#       扣 US$0.40 來回時，打平點是 ATR(14)/價格 = 0.0837%。預設取 0.10%（打平點
+#       之上、非最佳化值）。設 0 可停用。
+VOL_FLOOR_ATR_PCT = _env_float("VOL_FLOOR_ATR_PCT", 0.10)
+TRAINING_MAX_PER_DAY = _env_int("TRAINING_MAX_PER_DAY", 2)            # 90 筆訓練的節奏；0 = 不限
 
 # --- News -----------------------------------------------------------------------
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"  # [R17] ISO dates with UTC offset
@@ -474,6 +499,7 @@ def save_account_snapshot(payload, m15_ohlc, m15_levels):
         gcs_write_text(ACCOUNT_FILE, json.dumps(snapshot, ensure_ascii=False))
     except StorageError as exc:
         print(f"⚠️ [戶口快照寫入失敗] {exc}", flush=True)
+    return snapshot
 
 
 def read_account_snapshot():
@@ -495,6 +521,8 @@ def default_gate_state():
         "armed": False,           # True only after SETUP -> same-direction TREND
         "hard_lock": None,        # {"reason", "since_utc", "until_ts" (None = until manual release)}
         "news_lock": False,
+        "risk": {},               # [R70] 風控電閘最近一次評估（開閘的真正依據）
+        "trades_today": {},       # {"ny_date": "YYYY-MM-DD", "count": n}  [R73]
         "last_m1_bar_time": 0,    # idempotency for M1 packets  [R25]
         "last_reason": "",
         "updated_utc": None,
@@ -517,11 +545,15 @@ def hard_lock_active(state, now=None):
 
 
 def gate_status(state, now=None):
+    """[R70] armed 由風控電閘決定（GATE_DRIVER=RISK），不再由三級共振決定。
+    GATE_DRIVER=REGIME 保留舊行為，只為了能一鍵回退比對。"""
     if hard_lock_active(state, now) or state.get("news_lock"):
         return "LOCK"
-    if state.get("armed") and state.get("regime") == REGIME_TREND and state.get("dir") in ("UP", "DOWN"):
-        return "OPEN"
-    return "LOCK"
+    if not state.get("armed"):
+        return "LOCK"
+    if GATE_DRIVER == "REGIME":
+        return "OPEN" if (state.get("regime") == REGIME_TREND and state.get("dir") in ("UP", "DOWN")) else "LOCK"
+    return "OPEN"
 
 
 def read_gate_state():
@@ -586,6 +618,147 @@ def next_trend_state(state, verdict, skip_setup=False):
             return REGIME_TREND, v_dir, True, f"{word}趨勢出現，Setup 確認關卡已略過 → 直接開閘"
         return REGIME_TREND, v_dir, False, f"缺乏同向 Setup 的突發{word}趨勢，拒絕開閘"
     return REGIME_RANGE, None, False, f"❌ 未知判定 {v_regime}，取消開閘"
+
+
+# -----------------------------------------------------------------------------
+# 🛡️ 風控電閘  [R70 R71 R72 R73]
+#
+# 舊版：三級共振說「趨勢中」→ 開閘。量度後證實那沒有優勢（README §22/§23）。
+# 新版：電閘不再預測方向，只回答一個問題——「現在讓你下單，最壞會怎樣？」
+#       五道關卡全過才開閘，任何一道不過就鎖死並寫明原因。
+# -----------------------------------------------------------------------------
+def _ny_date(now=None):
+    return datetime.fromtimestamp(now_ts() if now is None else now, NY_TZ).strftime("%Y-%m-%d")
+
+
+def trades_today_count(state, now=None):
+    box = state.get("trades_today")
+    if not isinstance(box, dict) or box.get("ny_date") != _ny_date(now):
+        return 0
+    return int(to_float(box.get("count"), 0) or 0)
+
+
+def bump_trades_today():
+    """交易日以紐約日界線為準，與 EA 的跨日重置同源。  [R73]"""
+    def fn(state):
+        today = _ny_date()
+        box = state.get("trades_today")
+        count = int(to_float(box.get("count"), 0) or 0) if isinstance(box, dict) and box.get("ny_date") == today else 0
+        state["trades_today"] = {"ny_date": today, "count": count + 1}
+        return True, count + 1
+
+    try:
+        return update_gate_state(fn)
+    except StorageError as exc:
+        print(f"⚠️ [當日交易計數寫入失敗] {exc}", flush=True)
+        return None
+
+
+def evaluate_risk_gate(snapshot, state, now=None):
+    """五道關卡。回傳 {"open": bool, "checks": [...], "reason": str, ...}。
+
+    缺數據一律當成不過關（fail-closed），與 read_gate_state 的失敗語意一致。 [R13a]
+    """
+    now = now_ts() if now is None else now
+    snapshot = snapshot if isinstance(snapshot, dict) else {}
+    m15 = snapshot.get("m15_ohlc") if isinstance(snapshot.get("m15_ohlc"), dict) else {}
+    equity = to_float(snapshot.get("equity"))
+    balance = to_float(snapshot.get("balance"))
+    daily = to_float(snapshot.get("daily_pnl"))
+    lots = abs(to_float(snapshot.get("net_lots"), 0.0) or 0.0)
+    price = to_float(m15.get("close"))
+    atr15 = to_float(m15.get("atr_m15"))
+    checks = []
+
+    def add(key, name, ok, detail):
+        checks.append({"key": key, "name": name, "ok": bool(ok), "detail": detail})
+        return bool(ok)
+
+    # ① 市場要開著
+    market = GoldIndicatorSession.is_gold_market_open(now)
+    add("market", "市場時段", market, "開市中" if market else "黃金休市")
+
+    # ② 波動要夠付點差  [R72]
+    if VOL_FLOOR_ATR_PCT <= 0:
+        add("vol", "波動水位", True, "已停用（VOL_FLOOR_ATR_PCT=0）")
+        atr_pct = None
+    elif not atr15 or not price:
+        atr_pct = None
+        add("vol", "波動水位", False, "缺 atr_m15 或價格，無法判定")
+    else:
+        atr_pct = atr15 / price * 100
+        ok = atr_pct >= VOL_FLOOR_ATR_PCT
+        add("vol", "波動水位", ok,
+            f"ATR(14)/價格 = {atr_pct:.4f}%，門檻 {VOL_FLOOR_ATR_PCT:.4f}%"
+            f"（打平點 0.0837%）{'' if ok else ' → 波動不足以付點差'}")
+
+    # ③ 空城計曝險上限：可用曝險 = (可承受回撤 − 目前回撤) ÷ 最壞跳空
+    exp_now = cap_eff = dd_now = None
+    if not equity or equity <= 0:
+        add("exposure", "曝險上限", False, "缺淨值，無法試算")
+    else:
+        peak = max(equity, balance or 0.0)
+        dd_now = max(0.0, (peak - equity) / peak * 100) if peak > 0 else 0.0
+        cap_dyn = max(0.0, (DD_TOLERANCE_PCT - dd_now) / WORST_GAP_PCT) if WORST_GAP_PCT > 0 else 0.0
+        cap_eff = min(EXPOSURE_HARD_CAP, cap_dyn)
+        notional = lots * CONTRACT_SIZE * (price or 0.0)
+        rate = FX_TO_USD.get(str(snapshot.get("currency") or ACCOUNT_CURRENCY_DEFAULT).upper()) \
+            or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
+        if price and rate:
+            exp_now = notional / (equity / rate) if equity else 0.0
+            ok = exp_now <= cap_eff
+            add("exposure", "曝險上限", ok,
+                f"目前 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
+                f"（回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，最壞跳空 {WORST_GAP_PCT:.0f}%）")
+        else:
+            add("exposure", "曝險上限", False, "缺價格或匯率，無法試算曝險")
+
+    # ④ 單日虧損上限
+    if daily is None or not equity or equity <= 0:
+        add("daily", "單日虧損", False, "缺當日損益或淨值，無法判定")
+    else:
+        limit = equity * DAILY_LOSS_LIMIT_PCT / 100
+        ok = daily > -limit
+        add("daily", "單日虧損", ok,
+            f"今日 {daily:,.0f} / 上限 −{limit:,.0f}（淨值的 {DAILY_LOSS_LIMIT_PCT:.1f}%）")
+
+    # ⑤ 訓練節奏  [R73]
+    used = trades_today_count(state, now)
+    if TRAINING_MAX_PER_DAY <= 0:
+        add("pace", "訓練節奏", True, f"不限筆數（今日已 {used} 筆）")
+    else:
+        ok = used < TRAINING_MAX_PER_DAY
+        add("pace", "訓練節奏", ok, f"今日 {used} / {TRAINING_MAX_PER_DAY} 筆"
+                                    f"{'' if ok else ' → 今日額滿，明天再來'}")
+
+    failed = [c for c in checks if not c["ok"]]
+    return {
+        "open": not failed,
+        "checks": checks,
+        "reason": "五關全過 → 開閘" if not failed else "｜".join(f"{c['name']}：{c['detail']}" for c in failed),
+        "atr_pct": atr_pct, "exposure": exp_now, "exposure_cap": cap_eff, "drawdown_pct": dd_now,
+        "trades_today": used, "evaluated_utc": fmt_utc(now),
+    }
+
+
+def apply_risk_to_gate(snapshot, news_locked):
+    """把風控評估寫進電閘。這是 GATE_DRIVER=RISK 下唯一設定 armed 的地方。"""
+    def fn(state):
+        before = gate_status(state)
+        risk = evaluate_risk_gate(snapshot, state)
+        armed = risk["open"]
+        reason = risk["reason"]
+        if news_locked and armed:
+            armed = False
+            reason = "❌ 新聞風控期間不開閘"
+        state.update(risk=risk, armed=armed, news_lock=bool(news_locked), last_reason=reason)
+        return True, {"before": before, "after": gate_status(state), "reason": reason, "risk": risk}
+
+    try:
+        return update_gate_state(fn)
+    except StorageError as exc:
+        print(f"⚠️ [風控電閘寫入失敗 → 維持原狀] {exc}", flush=True)
+        return None
 
 
 def _state_label(state_tuple):
@@ -853,11 +1026,29 @@ class GoldIndicatorSession:
             print(f"⚠️ [M1 判定日誌寫入失敗] {exc}", flush=True)
 
     def process_m1_bar(self, bar, news_locked, skip_setup=False):
+        """[R70] GATE_DRIVER=RISK 時本函式只更新雷達顯示，不碰 armed。
+        三級共振量度後已退出開閘決策（README §22/§23）；保留是因為看盤有用，
+        不是因為它有優勢。"""
         history = self.ingest_bar(bar)
         verdict = self.compute_verdict(history)
         rsi = wilder_rsi_last([b["close"] for b in history])
-        print(f"📊 [M1 盤勢監控] {verdict['text']}", flush=True)
+        print(f"📊 [M1 盤勢監控｜僅供觀察] {verdict['text']}", flush=True)
         self._append_verdict_log(verdict["text"])
+
+        if GATE_DRIVER != "REGIME":
+            def fn(state):
+                prev = (state.get("regime"), state.get("dir"))
+                state.update(regime=verdict["regime"] if verdict["regime"] in
+                             (REGIME_RANGE, REGIME_SETUP, REGIME_TREND) else REGIME_RANGE,
+                             dir=verdict.get("dir"))
+                return prev != (state.get("regime"), state.get("dir")), None
+            try:
+                update_gate_state(fn)
+            except StorageError as exc:
+                print(f"⚠️ [雷達顯示寫入失敗] {exc}", flush=True)
+            short = verdict["text"].split(" (")[0]
+            log_decision(f"📡 [盤勢雷達｜不參與開閘] {short}", key="monitor")
+            return {"verdict": verdict, "rsi": rsi, "bars": len(history)}
 
         result = apply_verdict_to_gate(verdict, news_locked, skip_setup)
         before, after, reason = result["before"], result["after"], result["reason"]
@@ -1805,6 +1996,15 @@ def build_order(candidate, params=None):
 def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset(), params=None):
     signal, price = candidate["signal"], candidate["price"]
     label = "首單" if candidate["kind"] == "FIRST" else "加單"
+
+    # [R71] 只做多。全期 1,464 筆裡 671 筆空單，每筆 −HK$0.84、t = −0.25：
+    #       八年半期望值是零，唯一作用是付點差。README §23。
+    if LONG_ONLY and str(signal).upper() not in ("BUY", "LONG"):
+        log_decision(f"🚫 [只做多] {label} {signal} @ {price:.2f} 取消："
+                     f"空單全期 671 筆 t=−0.25，已停用（LONG_ONLY=0 可恢復）", key="long_only")
+        return {"status": "long_only_rejected",
+                "reason": "LONG_ONLY=1：空單經 8.4 年量度期望值為零"}
+
     m15_ohlc = payload.get("m15_ohlc") if isinstance(payload.get("m15_ohlc"), dict) else {}
     meta = build_signal_meta(candidate, m15_levels, m15_ohlc, rsi)
 
@@ -1881,8 +2081,12 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
     except StorageError as exc:
         print(f"🚨 [嚴重] 訂單已送出但加單狀態寫入失敗：{exc}", flush=True)
     sft_pipeline_session.save_pending_signal(meta, ai_verdict)
-    log_decision(f"✅ [已送出] {summary}", key="entry_sent")
-    return {"status": "success", "executed_signal": signal}
+    used = bump_trades_today()                                                       # [R73] 訓練節奏
+    log_decision(f"✅ [已送出] {summary}"
+                 + (f"｜今日第 {used} 筆"
+                    + (f"／{TRAINING_MAX_PER_DAY}" if TRAINING_MAX_PER_DAY > 0 else "")
+                    if used else ""), key="entry_sent")
+    return {"status": "success", "executed_signal": signal, "trades_today": used}
 
 
 # =============================================================================
@@ -1977,11 +2181,19 @@ def handle_heartbeat(payload, can_trade):
 
     # 2) M15 levels (writer path) and account snapshot.
     m15_levels = mtf_levels_session.ingest(m15_ohlc) if m15_ohlc else mtf_levels_session.read_levels()
-    save_account_snapshot(payload, m15_ohlc, m15_levels)
+    snapshot = save_account_snapshot(payload, m15_ohlc, m15_levels)
 
-    # 3) M1 bar: validate, de-duplicate, update regime/gate.
+    # 2b) 🛡️ 風控電閘：每一次心跳都重評，這是 armed 的唯一來源。  [R70]
     m1_result, bar, news = None, None, None
     bypass = read_gate_bypass()
+    if GATE_DRIVER != "REGIME":
+        news = macro_news_session.status(now)
+        risk_result = apply_risk_to_gate(snapshot, news["locked"] and "news" not in bypass)
+        if risk_result and risk_result["before"] != risk_result["after"]:
+            log_decision(f"{'🟢' if risk_result['after'] == 'OPEN' else '🔒'} "
+                         f"[電閘 {risk_result['before']}→{risk_result['after']}] {risk_result['reason']}", key="gate")
+
+    # 3) M1 bar: validate, de-duplicate, update the radar (display only under RISK).
     m1_ohlc = payload.get("m1_ohlc")
     if isinstance(m1_ohlc, dict) and m1_ohlc.get("is_new_bar"):
         bar = gold_indicator_session.parse_bar(m1_ohlc)
@@ -1993,7 +2205,7 @@ def handle_heartbeat(payload, can_trade):
         elif not claim_m1_bar(bar["time"]):
             print(f"ℹ️ [M1] 重複的 K 線封包 {bar['time']}，略過。", flush=True)
         else:
-            news = macro_news_session.status(now)
+            news = news or macro_news_session.status(now)
             try:
                 m1_result = gold_indicator_session.process_m1_bar(
                     bar, news["locked"] and "news" not in bypass, skip_setup="setup_trigger" in bypass)
@@ -2139,10 +2351,22 @@ def gate_summary(state):
         return "neg", f"🛑 硬鎖：{lock.get('reason')}" + (f"（至 {fmt_ny(until)}）" if until else "（需手動解除）")
     if state.get("news_lock"):
         return "neg", "📰 新聞風控中"
+    if GATE_DRIVER == "REGIME":
+        if gate_status(state) == "OPEN":
+            return "pos", f"✅ 放行（{DIR_WORD.get(state.get('dir'), '')}趨勢）"
+        regime_text = {REGIME_RANGE: "橫行", REGIME_SETUP: "Setup 醞釀",
+                       REGIME_TREND: "趨勢未確認"}.get(state.get("regime"), "—")
+        return "muted", f"⏸️ 等待趨勢確認（{regime_text}）"
+    risk = state.get("risk") if isinstance(state.get("risk"), dict) else {}
     if gate_status(state) == "OPEN":
-        return "pos", f"✅ 放行（{DIR_WORD.get(state.get('dir'), '')}趨勢）"
-    regime_text = {REGIME_RANGE: "橫行", REGIME_SETUP: "Setup 醞釀", REGIME_TREND: "趨勢未確認"}.get(state.get("regime"), "—")
-    return "muted", f"⏸️ 等待趨勢確認（{regime_text}）"
+        bits = []
+        if risk.get("atr_pct") is not None:
+            bits.append(f"波動 {risk['atr_pct']:.3f}%")
+        if risk.get("exposure") is not None and risk.get("exposure_cap") is not None:
+            bits.append(f"曝險 {risk['exposure']:.2f}x/{risk['exposure_cap']:.2f}x")
+        return "pos", "✅ 放行" + (f"（{'、'.join(bits)}）" if bits else "")
+    failed = [c["name"] for c in risk.get("checks", []) if not c.get("ok")]
+    return "muted", "⏸️ " + ("、".join(failed) + " 未過關" if failed else "風控未評估")
 
 
 # =============================================================================
@@ -2306,6 +2530,44 @@ def render_welcome_page():
     return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
 
 
+def _risk_gate_html(state):
+    """儀表板上的風控電閘區塊。回傳 (五關表格, 雷達標籤, 雷達註解, 電閘細節, 恢復自動註解)。"""
+    if GATE_DRIVER == "REGIME":
+        detail = (f"趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / "
+                  f"{'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}")
+        return "", "", "", detail, "恢復自動後，電閘仍需完成 Setup→Trigger 才會開啟。"
+
+    tag = ("<span style='font-size:12px; font-weight:600; color:#8a6d3b; background:#fcf8e3; "
+           "border:1px solid #faebcc; border-radius:10px; padding:2px 8px; margin-left:8px;'>僅供觀察・不參與開閘</span>")
+    note = ("<div class='muted' style='font-size:12px; margin:-4px 0 10px;'>"
+            "三級共振已於 2026-09-20 量度（README §22/§23）：修正 look-ahead 後 1~360 分鐘每個持倉長度的"
+            "毛利 t 值都在 ±1.6 內，延後一分鐘進場由 +5.28 掉到 −2.18。它留在這裡是因為看盤有用，"
+            "不是因為它有優勢。開閘由下方五道風控關卡決定。</div>")
+
+    risk = state.get("risk") if isinstance(state.get("risk"), dict) else {}
+    checks = risk.get("checks") or []
+    if not checks:
+        rows = "<tr><td colspan='3' class='muted'>尚未收到心跳，風控電閘未評估（fail-closed：視為 LOCK）。</td></tr>"
+    else:
+        rows = "".join(
+            f"<tr><td style='width:34px; font-size:16px;'>{'✅' if c.get('ok') else '⛔'}</td>"
+            f"<td style='white-space:nowrap; font-weight:600;'>{esc(c.get('name'))}</td>"
+            f"<td class='{'muted' if c.get('ok') else ''}' style='font-size:13px;"
+            f"{'' if c.get('ok') else ' color:#b02a37; font-weight:600;'}'>{esc(c.get('detail'))}</td></tr>"
+            for c in checks)
+    block = (f"<div class='section-header'>🛡️ 風控電閘五關"
+             f"（{'只做多' if LONG_ONLY else '多空皆可'}）</div>"
+             f"<div class='section'><table style='width:100%; border-collapse:collapse;'>{rows}</table>"
+             f"<div class='muted' style='font-size:12px; margin-top:8px;'>"
+             f"五關全過才開閘。缺數據一律當成不過關。評估時間："
+             f"{esc(risk.get('evaluated_utc') or '—')} UTC</div></div>")
+
+    passed = sum(1 for c in checks if c.get("ok"))
+    detail = (f"風控關卡：{passed}/{len(checks) or 5} 通過 / "
+              f"{'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}")
+    return block, tag, note, detail, "恢復自動後，電閘仍需五道風控關卡全過才會開啟。"
+
+
 def build_dashboard_page(msg):
     state = read_gate_state()
     status = gate_status(state)
@@ -2335,25 +2597,29 @@ def build_dashboard_page(msg):
     gate_bg = "#d1e7dd" if status == "OPEN" else "#f8d7da"
     summary_class, summary_text = gate_summary(state)
     recent = stats.get("recent", {})
+    risk_html, radar_tag, radar_note, gate_detail, auto_note = _risk_gate_html(state)
 
     body = f"""
     <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>⚙️ 核心控制台</h1></div>
       {page_nav("dashboard")}</div>
     {banner}{gates_warning}
-    <div class='section-header'>🧠 M1 動能雷達（{bars_count} 根連續 K 線，需 {MIN_M1_BARS}）</div>
+    <div class='section-header'>🧠 M1 動能雷達（{bars_count} 根連續 K 線，需 {MIN_M1_BARS}）{radar_tag}</div>
+    {radar_note}
     <div class='log-box mono' style='color:#3730a3; font-weight:600; max-height:200px;'>{esc(verdict_log)}</div>
+
+    {risk_html}
 
     <div class='section' style='text-align:center; border-top:5px solid {gate_color}; margin-top:24px;'>
       <div class='muted' style='font-weight:600;'>雲端風控電閘狀態 (Gate Status)</div>
       <div style='display:inline-block; background:{gate_bg}; color:{gate_color}; padding:8px 20px; border-radius:30px; font-weight:800; font-size:24px; margin:15px 0;'>【 {status} 】</div>
       <div class='{summary_class}' style='font-weight:600; margin-bottom:6px;'>{esc(summary_text)}</div>
-      <div class='muted' style='font-size:13px;'>趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / {'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}｜{esc(state.get('last_reason'))}</div>
+      <div class='muted' style='font-size:13px;'>{gate_detail}｜{esc(state.get('last_reason'))}</div>
       <div style='margin-top:15px;'>
         <a href='?view=dashboard&action=auto' class='btn btn-open'>🟢 解除硬鎖・恢復自動</a>
         <a href='?view=dashboard&action=lock' class='btn btn-lock'>🔴 緊急硬鎖 (LOCK)</a>
         <a href='?view=reset' class='btn' style='background:#6c757d; color:#fff;'>🧹 重置歷史紀錄</a>
       </div>
-      <div class='muted' style='font-size:12px; margin-top:6px;'>恢復自動後，電閘仍需完成 Setup→Trigger 才會開啟。🔴 實盤下單模式</div>
+      <div class='muted' style='font-size:12px; margin-top:6px;'>{auto_note}🔴 實盤下單模式</div>
     </div>
 
     <div class='section-header'>💰 帳戶即時資金狀態 ({esc(currency)})｜更新：{esc(acc.get('received_utc', '—'))} UTC</div>
@@ -2741,6 +3007,20 @@ def system_parameter_values(params=None):
     params = params or read_order_params()[0]
     currencies = "、".join(f"{k}→{v:.4f}" for k, v in FX_TO_USD.items())
     return [
+        {"group": "🛡️ 風控電閘（開閘的真正依據）", "items": [
+            _pv("GATE_DRIVER", GATE_DRIVER,
+                "RISK＝風控五關決定開閘（現行）；REGIME＝舊的三級共振（已量度為無優勢，僅供回退比對）"),
+            _pv("LONG_ONLY", "只做多" if LONG_ONLY else "多空皆可",
+                "全期 1,464 筆中 671 筆空單，每筆 −HK$0.84、t=−0.25（README §23）"),
+            _pv("VOL_FLOOR_ATR_PCT", f"{VOL_FLOOR_ATR_PCT:g}%" if VOL_FLOOR_ATR_PCT > 0 else "停用",
+                "波動下限＝ATR(14)/價格。打平點實測 0.0837%，低於此點差吃掉全部毛利"),
+            _pv("DD_TOLERANCE_PCT", f"{DD_TOLERANCE_PCT:g}%", "空城計可承受回撤"),
+            _pv("WORST_GAP_PCT", f"{WORST_GAP_PCT:g}%", "最壞日內跳空（黃金實測 −13.94%）"),
+            _pv("EXPOSURE_HARD_CAP", f"{EXPOSURE_HARD_CAP:g}x", "曝險硬上限：名目 ÷ 淨值"),
+            _pv("DAILY_LOSS_LIMIT_PCT", f"{DAILY_LOSS_LIMIT_PCT:g}%", "單日虧損上限（佔淨值）"),
+            _pv("TRAINING_MAX_PER_DAY", TRAINING_MAX_PER_DAY if TRAINING_MAX_PER_DAY > 0 else "不限",
+                "90 筆訓練的節奏；以紐約日界線計算"),
+        ]},
         {"group": "🧾 送單（送單參數頁可即時修改）", "items": [
             _pv("size", f"{params['size']:.2f} 手", "每張單的手數", "order"),
             _pv("symbol", params["symbol"], "送單用的商品代號", "order"),
@@ -2954,6 +3234,11 @@ def gates_state_payload(message=None):
             "dir": state.get("dir"),
             "dir_word": DIR_WORD.get(state.get("dir")),
             "armed": bool(state.get("armed")),
+            "driver": GATE_DRIVER,
+            "risk": state.get("risk") if isinstance(state.get("risk"), dict) else {},
+            "long_only": LONG_ONLY,
+            "trades_today": trades_today_count(state),
+            "trades_max_per_day": TRAINING_MAX_PER_DAY,
             "news_lock": bool(state.get("news_lock")),
             "last_reason": state.get("last_reason"),
             "summary": summary_text,
