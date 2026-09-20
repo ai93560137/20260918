@@ -1,0 +1,354 @@
+<title>錦囊九十筆</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#F6F7F8; --field:#FFFFFF; --ink:#16191D; --muted:#666E77;
+  --line:#D6DBE0; --hair:#E6EAEE; --accent:#2C6B7A; --accent-soft:#E4EFF1;
+  --stop:#A8382F; --stop-soft:#F6E6E4; --ok:#3A6E4E; --ok-soft:#E4EFE8;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#101317; --field:#171B20; --ink:#E7EAED; --muted:#8B939C;
+  --line:#2A3038; --hair:#222830; --accent:#4E9CAE; --accent-soft:#16282D;
+  --stop:#D2645A; --stop-soft:#2A1B19; --ok:#5C9E74; --ok-soft:#172420;}}
+:root[data-theme="dark"]{
+  --paper:#101317; --field:#171B20; --ink:#E7EAED; --muted:#8B939C;
+  --line:#2A3038; --hair:#222830; --accent:#4E9CAE; --accent-soft:#16282D;
+  --stop:#D2645A; --stop-soft:#2A1B19; --ok:#5C9E74; --ok-soft:#172420;}
+*{box-sizing:border-box}
+body{background:var(--paper); color:var(--ink); margin:0; font-size:15px; line-height:1.7;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; -webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:880px; margin:0 auto; padding-inline:16px; padding-block:36px 72px;
+  display:flex; flex-direction:column; gap:32px}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--accent); font-weight:600}
+
+/* 主計數 */
+.hero{border-top:3px solid var(--ink); padding-top:20px;
+  display:grid; grid-template-columns:auto 1fr; gap:24px; align-items:end}
+@media (max-width:560px){.hero{grid-template-columns:1fr; gap:14px}}
+.count{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-size:76px; line-height:.9; font-weight:600; letter-spacing:-.03em}
+.count small{font-size:24px; color:var(--muted); font-weight:400; margin-inline-start:6px}
+.heroside{display:flex; flex-direction:column; gap:10px}
+h1{font-size:19px; margin:0; font-weight:700; letter-spacing:.03em}
+.sub{font-size:13.5px; color:var(--muted); margin:0}
+.bar{height:10px; background:var(--hair); display:flex; overflow:hidden; border:1px solid var(--line)}
+.bar i{display:block; background:var(--ok); transition:width .25s}
+.marks{display:flex; justify-content:space-between; font-family:"IBM Plex Mono",monospace;
+  font-size:10px; letter-spacing:.08em; color:var(--muted)}
+
+/* 一般區塊 */
+section{display:flex; flex-direction:column; gap:14px}
+h2{font-size:17px; margin:0; font-weight:700; letter-spacing:.03em;
+  padding-bottom:8px; border-bottom:1px solid var(--line)}
+h2 .num{font-family:"IBM Plex Mono",monospace; color:var(--accent); font-size:12px;
+  margin-inline-end:10px; font-weight:600}
+p{margin:0; max-width:64ch}
+.note{color:var(--muted); font-size:13.5px}
+
+/* 常態參照 */
+.norms{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line)}
+.norm{background:var(--field); padding:12px 14px}
+.norm dt{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted); margin:0}
+.norm dd{margin:3px 0 0; font-size:20px; font-weight:600;
+  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+.norm .cap{font-size:12px; color:var(--muted); font-weight:400; display:block; line-height:1.5}
+
+/* 輪次 */
+.round{border:1px solid var(--line); background:var(--field)}
+.round + .round{margin-top:14px}
+.rhead{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:9px 14px; border-bottom:1px solid var(--line); background:var(--accent-soft)}
+.rhead .t{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--accent); font-weight:600}
+.rhead .s{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted)}
+.grid{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; padding:12px}
+@media (max-width:620px){.grid{grid-template-columns:repeat(6,1fr)}}
+.slot{aspect-ratio:1; border:1px solid var(--line); background:var(--paper);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding:0}
+.slot:hover{border-color:var(--accent)}
+.slot:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.slot.ok{background:var(--ok-soft); border-color:var(--ok); color:var(--ok); font-weight:600}
+.slot.bad{background:var(--stop-soft); border-color:var(--stop); color:var(--stop); font-weight:600}
+.slot.cur{border-width:2px; border-color:var(--accent); color:var(--accent); font-weight:600}
+
+/* 編輯面板 */
+dialog{border:1px solid var(--line); background:var(--field); color:var(--ink);
+  padding:0; max-width:460px; width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dhead{display:flex; justify-content:space-between; align-items:center;
+  padding:10px 16px; border-bottom:1px solid var(--line); background:var(--accent-soft)}
+.dhead .t{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--accent); font-weight:600}
+.dbody{padding:14px 16px; display:flex; flex-direction:column; gap:12px}
+.frow{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+.f label{display:block; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.f input,.f select{width:100%; border:0; border-bottom:1px solid var(--line); background:transparent;
+  color:var(--ink); font-family:"IBM Plex Mono",monospace; font-size:15px; padding:4px 0 3px; margin-top:2px}
+.f input:focus,.f select:focus{outline:none; border-bottom-color:var(--accent)}
+.f.key label{color:var(--accent); font-weight:600}
+.f.key input{border-bottom-color:var(--accent); font-weight:600}
+.chks{display:flex; flex-direction:column; gap:8px; padding:11px 12px;
+  border:1px solid var(--line); background:var(--paper)}
+.chk{display:flex; align-items:flex-start; gap:9px; font-size:14px; cursor:pointer}
+.chk input{margin:5px 0 0; accent-color:var(--ok); flex:none; width:16px; height:16px}
+.verdict{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.06em;
+  padding:8px 12px; border:1px solid var(--line)}
+.verdict.ok{background:var(--ok-soft); border-color:var(--ok); color:var(--ok)}
+.verdict.bad{background:var(--stop-soft); border-color:var(--stop); color:var(--stop)}
+.dfoot{display:flex; justify-content:space-between; gap:10px; padding:12px 16px;
+  border-top:1px solid var(--line)}
+button{font-family:inherit; font-size:14px; padding:7px 16px; border:1px solid var(--line);
+  background:var(--paper); color:var(--ink); cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500}
+button.ghost{border-color:transparent; color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.banner{padding:10px 14px; border:1px solid var(--line); background:var(--field);
+  font-size:13px; color:var(--muted)}
+.banner.warn{border-color:var(--stop); background:var(--stop-soft); color:var(--stop)}
+footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); font-size:12.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<div class="hero">
+  <div>
+    <div class="eyebrow">連續合規</div>
+    <div class="count mono" id="streak">0<small>/ 90</small></div>
+  </div>
+  <div class="heroside">
+    <h1>錦囊九十筆 · 人手下單訓練</h1>
+    <p class="sub" id="status">還沒開始。第 1 筆訊號來的時候，點下面第一格。</p>
+    <div class="bar"><i id="barfill" style="width:0%"></i></div>
+    <div class="marks"><span>0</span><span>30</span><span>60</span><span>90</span></div>
+  </div>
+</div>
+
+<div class="banner" id="dbnote" hidden></div>
+
+<section>
+  <h2><span class="num">01</span>判定標準只有一個</h2>
+  <p>一筆交易「合規」＝ 三格全勾。<strong>盈虧完全不看。</strong>
+    違規一次，連續計數歸零重數。</p>
+  <div class="norms">
+    <div class="norm"><dt>訊號到了有進場</dt><dd>✓<span class="cap">漏掉 = 違規</span></dd></div>
+    <div class="norm"><dt>抱滿 10 根</dt><dd>2.5h<span class="cap">提早出 = 違規</span></dd></div>
+    <div class="norm"><dt>沒加碼沒移動</dt><dd>✓<span class="cap">動了 = 違規</span></dd></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">02</span>以下全部是正常的 —— 不要因為這些停手</h2>
+  <p class="note"><strong>1,464 筆全期實測</strong>（2018-03 → 2026-09，XAUUSD M15）。
+    你會遇到這些，而它們都發生過。</p>
+  <div class="norms">
+    <div class="norm"><dt>最長連虧</dt><dd>13 筆<span class="cap">一次都沒賺</span></dd></div>
+    <div class="norm"><dt>連虧 ≥5 筆</dt><dd>28 次<span class="cap">平均每 52 筆一次</span></dd></div>
+    <div class="norm"><dt>連續虧損組</dt><dd>5 組<span class="cap">150 筆 · 約 9 個月</span></dd></div>
+    <div class="norm"><dt>勝率</dt><dd>46.1%<span class="cap">不到一半是正常的</span></dd></div>
+    <div class="norm"><dt>30 筆組正比例</dt><dd>48%<span class="cap">中位數 −18，多數組小虧</span></dd></div>
+    <div class="norm"><dt>90 筆虧錢機率</dt><dd>53%<span class="cap">中位數 −31，最壞 −HK$1,075</span></dd></div>
+  </div>
+  <p class="note"><strong>跑完 90 筆，最可能的結果是打平或小虧 —— 有 53% 機率是虧的。</strong>
+    這不是規則壞了，這就是規則的樣子：利潤 201% 來自異常值（扣掉後 1,464 筆倒賠 HK$4,464），
+    最賺的 5%（73 筆）賺 +17,828、其餘 1,391 筆賠 −13,420。</p>
+  <p class="note">⚠️ <strong>這條規則的優勢並未被證實</strong>：全期年化 +2.39%，
+    95% 區間 [−1.38%, +7.35%] 包含零，九年裡只有三年賺錢。
+    所以更要記住 —— <strong>你在測的是自己能不能照做，不是這條規則能不能賺錢。</strong>
+    虧錢的時候最容易做的事，是改參數、加停損、開始挑訊號 ——
+    本專案測過六次，六次都讓結果更差。</p>
+</section>
+
+<section>
+  <h2><span class="num">03</span>九十筆</h2>
+  <p class="note">點任一格填寫。到期時間會自動算（進場時間 ＋ 2 小時 30 分）。</p>
+  <div id="rounds"></div>
+</section>
+
+<footer>
+  <p><strong>規則：</strong>XAUUSD M15 · 八陣圖原廠門檻 · 不過濾高週期／波動／時段 ·
+  突破確認後下一根開盤進場 · 滿 10 根無條件出場 · <strong>無價格停損</strong> · 0.01 手（1 盎司）。</p>
+  <p>基準：<strong>1,464 筆全期</strong>（2018-03 → 2026-09）· 勝率 46.11% · 每筆期望 +HK$3.01 ·
+  年化 +2.39% · 獲利因子 1.145 · 最大回撤 10.09% · 單筆最壞 −HK$367（戶口的 1.84%）。</p>
+</footer>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <div class="dhead"><span class="t" id="dtitle">第 1 筆</span>
+      <button class="ghost" value="cancel" type="submit">關閉</button></div>
+    <div class="dbody">
+      <div class="frow">
+        <div class="f"><label for="f_date">日期</label><input id="f_date" type="date"></div>
+        <div class="f"><label for="f_dir">方向</label>
+          <select id="f_dir"><option value="">—</option><option value="多">多</option><option value="空">空</option></select></div>
+        <div class="f"><label for="f_in">進場時間</label><input id="f_in" type="time" step="900"></div>
+        <div class="f key"><label for="f_out">到期出場 ★</label><input id="f_out" type="text" readonly placeholder="--:--"></div>
+        <div class="f"><label for="f_px">進場價</label><input id="f_px" type="text" inputmode="decimal" placeholder="0000.00"></div>
+        <div class="f"><label for="f_pnl">損益 HK$（不影響判定）</label><input id="f_pnl" type="text" inputmode="decimal" placeholder="選填"></div>
+      </div>
+      <div class="chks">
+        <label class="chk"><input type="checkbox" id="f_c1"><span>訊號到了我有進場</span></label>
+        <label class="chk"><input type="checkbox" id="f_c2"><span>我抱滿了 10 根</span></label>
+        <label class="chk"><input type="checkbox" id="f_c3"><span>我沒有加碼、沒有移動任何東西</span></label>
+      </div>
+      <div class="verdict" id="f_verdict">三格全勾才算合規</div>
+    </div>
+    <div class="dfoot">
+      <button class="ghost" id="f_clear" type="button">清除這筆</button>
+      <button class="primary" id="f_save" type="button">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  var N=90, BLK=30;
+  var trades=[]; for(var i=0;i<N;i++) trades.push(null);
+  var db=null, docRef=null, cur=0, writing=false;
+
+  var $=function(id){return document.getElementById(id);};
+  var dlg=$('dlg');
+
+  function expiry(v){
+    if(!v) return '';
+    var p=v.split(':'), h=parseInt(p[0],10), m=parseInt(p[1],10);
+    if(isNaN(h)||isNaN(m)) return '';
+    var t=h*60+m+150, nd=t>=1440?' 次日':''; t=t%1440;
+    return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')+nd;
+  }
+  function compliant(t){ return !!(t && t.c1 && t.c2 && t.c3); }
+  function filled(t){ return !!(t && (t.date||t.dir||t.inTime||t.c1||t.c2||t.c3)); }
+
+  // 連續合規：從最後一筆有紀錄的往回數，遇到違規就停
+  function streak(){
+    var last=-1;
+    for(var i=0;i<N;i++) if(filled(trades[i])) last=i;
+    if(last<0) return 0;
+    var n=0;
+    for(var j=last;j>=0;j--){
+      if(!filled(trades[j])) break;
+      if(compliant(trades[j])) n++; else break;
+    }
+    return n;
+  }
+  function nextIdx(){
+    for(var i=0;i<N;i++) if(!filled(trades[i])) return i;
+    return N-1;
+  }
+
+  function render(){
+    var s=streak();
+    $('streak').innerHTML=s+'<small>/ 90</small>';
+    $('barfill').style.width=Math.min(100,s/N*100)+'%';
+    var done=trades.filter(filled).length;
+    var bad=trades.filter(function(t){return filled(t)&&!compliant(t);}).length;
+    var msg;
+    if(done===0) msg='還沒開始。第 1 筆訊號來的時候，點下面第一格。';
+    else if(s>=N) msg='九十筆連續合規 —— 資格取得。';
+    else {
+      msg='已記錄 '+done+' 筆';
+      if(bad) msg+='，其中 '+bad+' 筆違規';
+      msg+='。連續合規 '+s+' 筆';
+      var mile=s<30?30:(s<60?60:90);
+      msg+='，距離 '+mile+' 還有 '+(mile-s)+' 筆。';
+      if(bad&&s===0) msg+=' 違規已歸零，從下一筆重新數。';
+    }
+    $('status').textContent=msg;
+
+    cur=nextIdx();
+    var html='';
+    for(var b=0;b<3;b++){
+      var st=b*BLK, en=st+BLK;
+      var seg=trades.slice(st,en), f=seg.filter(filled).length,
+          okn=seg.filter(compliant).length, badn=f-okn;
+      html+='<div class="round"><div class="rhead"><span class="t">輪次 '+(b+1)+
+            ' · 第 '+(st+1)+'–'+en+' 筆</span><span class="s">已記 '+f+'/'+BLK+
+            '　合規 '+okn+(badn?'　違規 '+badn:'')+'</span></div><div class="grid">';
+      for(var i=st;i<en;i++){
+        var t=trades[i], cls='slot';
+        if(filled(t)) cls+= compliant(t)?' ok':' bad';
+        else if(i===cur) cls+=' cur';
+        html+='<button class="'+cls+'" data-i="'+i+'" type="button" aria-label="第 '+(i+1)+' 筆">'+(i+1)+'</button>';
+      }
+      html+='</div></div>';
+    }
+    $('rounds').innerHTML=html;
+    Array.prototype.forEach.call(document.querySelectorAll('.slot'),function(el){
+      el.addEventListener('click',function(){ open(parseInt(el.dataset.i,10)); });
+    });
+  }
+
+  var editing=0;
+  function verdict(){
+    var ok=$('f_c1').checked&&$('f_c2').checked&&$('f_c3').checked;
+    var any=$('f_c1').checked||$('f_c2').checked||$('f_c3').checked;
+    var v=$('f_verdict');
+    v.className='verdict'+(ok?' ok':(any?' bad':''));
+    v.textContent=ok?'合規 ✓　這一筆算進連續計數':(any?'違規 ✗　連續計數會歸零':'三格全勾才算合規');
+  }
+  function open(i){
+    editing=i;
+    var t=trades[i]||{};
+    $('dtitle').textContent='第 '+(i+1)+' 筆';
+    $('f_date').value=t.date||''; $('f_dir').value=t.dir||'';
+    $('f_in').value=t.inTime||''; $('f_out').value=expiry(t.inTime||'');
+    $('f_px').value=t.px||''; $('f_pnl').value=t.pnl||'';
+    $('f_c1').checked=!!t.c1; $('f_c2').checked=!!t.c2; $('f_c3').checked=!!t.c3;
+    verdict(); dlg.showModal(); $('f_date').focus();
+  }
+  $('f_in').addEventListener('input',function(){ $('f_out').value=expiry(this.value); });
+  ['f_c1','f_c2','f_c3'].forEach(function(id){ $(id).addEventListener('change',verdict); });
+  $('f_save').addEventListener('click',function(){
+    trades[editing]={date:$('f_date').value, dir:$('f_dir').value, inTime:$('f_in').value,
+      outTime:$('f_out').value, px:$('f_px').value, pnl:$('f_pnl').value,
+      c1:$('f_c1').checked, c2:$('f_c2').checked, c3:$('f_c3').checked};
+    dlg.close(); render(); save();
+  });
+  $('f_clear').addEventListener('click',function(){
+    trades[editing]=null; dlg.close(); render(); save();
+  });
+
+  function save(){
+    if(!docRef||writing) return;
+    writing=true;
+    docRef.set({trades:trades, updatedAt:new Date().toISOString()})
+      .catch(function(e){
+        var n=$('dbnote'); n.hidden=false; n.className='banner warn';
+        n.textContent='儲存失敗（'+(e&&e.code||'unknown')+'）——這一筆可能沒存到，請重新整理確認。';
+      })
+      .then(function(){ writing=false; });
+  }
+
+  render();
+
+  if(window.claude&&window.claude.use){
+    window.claude.use('db').then(function(d){
+      if(!d){
+        var n=$('dbnote'); n.hidden=false;
+        n.textContent='此檢視無法連上儲存空間，填寫的內容不會被保留。';
+        return;
+      }
+      db=d; docRef=db.doc('training/jinnang');
+      docRef.onSnapshot(function(snap){
+        var data=snap.exists?snap.data():null;
+        if(data&&Array.isArray(data.trades)){
+          for(var i=0;i<N;i++) trades[i]=data.trades[i]||null;
+          if(!dlg.open) render();
+        }
+      }, function(e){
+        var n=$('dbnote'); n.hidden=false; n.className='banner warn';
+        n.textContent='與儲存空間的連線中斷（'+e.code+'）。重新整理頁面可恢復。';
+      });
+    });
+  }
+})();
+</script>
