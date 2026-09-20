@@ -100,6 +100,10 @@ levCap      = input.float(1.75, "槓桿上限（空城計）",   minval = 0.1, s
                "1 盎司在 HK$20,000 戶口上是 1.70–1.72x（隨金價浮動），設 1.70 會一直亮紅。")
 
 showPanel = input.bool(true,  "顯示面板", group = G_D)
+panelPos  = input.string("右上", "面板位置", group = G_D,
+     options = ["右上", "右中", "右下", "左上", "左中", "左下"],
+     tooltip = "被圖表上其他指標的標籤壓住時換一個位置。")
+panelSize = input.string("normal", "面板字體", options = ["tiny", "small", "normal", "large"], group = G_D)
 showBox   = input.bool(true,  "畫出橫行區間", group = G_D)
 
 // =============================================================================
@@ -209,7 +213,12 @@ fill(pU, pD, showBox and boxLive ? color.new(#78909C, 92) : na)
 plotshape(confirmUp, "向上突破", shape.triangleup,   location.belowbar, color.new(#26A69A, 0), size = size.tiny)
 plotshape(confirmDn, "向下跌破", shape.triangledown, location.abovebar, color.new(#EF5350, 0), size = size.tiny)
 
-var table tb = table.new(position.top_right, 2, 12, border_width = 1)
+tbPos = panelPos == "右上" ? position.top_right : panelPos == "右中" ? position.middle_right :
+        panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left :
+        panelPos == "左中" ? position.middle_left : position.bottom_left
+tbSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small :
+         panelSize == "large" ? size.large : size.normal
+var table tb = table.new(tbPos, 2, 12, border_width = 1)
 bgC  = color.new(#12141A, 8)
 dimC = color.new(#9AA0A6, 25)
 valC = color.new(#E8EAED, 0)
@@ -218,8 +227,8 @@ badC = color.new(#FF5252, 0)
 warnC= color.new(#FBC02D, 0)
 
 row(i, k, v, c) =>
-    table.cell(tb, 0, i, k, bgcolor = bgC, text_color = dimC, text_halign = text.align_left)
-    table.cell(tb, 1, i, v, bgcolor = bgC, text_color = c,    text_halign = text.align_right)
+    table.cell(tb, 0, i, k, bgcolor = bgC, text_color = dimC, text_size = tbSize, text_halign = text.align_left)
+    table.cell(tb, 1, i, v, bgcolor = bgC, text_color = c,    text_size = tbSize, text_halign = text.align_right)
 
 if showPanel and barstate.islast
     posTxt = strategy.position_size > 0 ? "多｜" + str.tostring(holdBars - barsIn) + " 根後出" :
