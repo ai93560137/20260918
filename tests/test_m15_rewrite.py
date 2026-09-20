@@ -81,5 +81,16 @@ print("\n=== R85：新的一根 → 不出警告 ===")
 out = ingest(bar_at(now_server + 900, 3009.0))
 check("新 K 線不出警告", "R80" not in out and "R85" not in out, out)
 
+print("\n=== R85：OHLC 相同但存檔多了欄位 → 要講明是格式問題 ===")
+FAKE.clear()
+import json as _json
+b = bar_at(now_server, 3005.0)
+FAKE[main.M15_HISTORY_FILE] = (_json.dumps([{**b, "volume": 123}]), 1)
+out = ingest(b)
+check("指出 OHLC 四個值相同", "OHLC 四個值完全相同" in out, out)
+check("明說別動 JN_M15_LAST_CLOSED", "別動 JN_M15_LAST_CLOSED" in out, out)
+check("列出舊存檔多了哪個欄位", "volume" in out, out)
+check("不叫人改設定", "設成 0" not in out, out)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

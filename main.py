@@ -1264,7 +1264,15 @@ class MTFDynamicLevelsSession:
                         f"{k} {prev.get(k)}→{bar.get(k)}"
                         for k in ("open", "high", "low", "close")
                         if prev.get(k) != bar.get(k))
-                    if age < 2 * 900:
+                    if not moved:
+                        # OHLC 四個值一樣卻判定為「變了」= 存檔的形狀跟現在不一樣
+                        # （多餘欄位、或 time 型別不同），不是行情在動，跟 K 線新舊
+                        # 無關，所以這條要先判，不能落到下面的「正在形成」。[R85]
+                        print(f"⚠️ [M15] K 線（{bar['time']}）的 OHLC 四個值完全相同，"
+                              f"卻被判定為有變動 —— 差異在存檔格式，不是行情在動。"
+                              f"別動 JN_M15_LAST_CLOSED。"
+                              f"舊={sorted(prev)} 新={sorted(bar)}  [R85]", flush=True)
+                    elif age < 2 * 900:
                         if JN_M15_LAST_CLOSED:
                             print(f"⚠️ [M15] 當下這根 K 線（{bar['time']}）的 OHLC 被更新 —— "
                                   f"你的 EA 送的是【正在形成】的 K 線，但 JN_M15_LAST_CLOSED=1。"
