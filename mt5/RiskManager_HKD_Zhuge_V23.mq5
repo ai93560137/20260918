@@ -45,6 +45,16 @@
 //    三級共振已被量度為沒有優勢（延後一分鐘進場 t 由 +5.28 掉到 −2.18），
 //    而本 EA 每 60 秒才輪詢一次，本來就接不住那種訊號。
 //
+// ⑤ ⚠️ 管轄範圍（V23 新增，這是最容易出事的一條）
+//    V22 的 CloseAllPositions / CheckAndSetSLTP 完全沒有過濾 —— 直接掃
+//    PositionsTotal()，帳戶上每一張單都會被動到。若這個戶口同時有你的
+//    手動單或直覺倉，EA 會幫它們掛 8000 點止損、並在 150 分鐘時平掉。
+//    你的手實測年化 11.67%，那不是 EA 該碰的東西。
+//    → V23 新增 InpMagicNumber（預設 920）、InpManageSymbolOnly、
+//      InpRiskClosesAll（預設 false）。定時出場與掛止損只動自己開的單。
+//    ⚠️ 前提：你的進場 EA 下單時要設同一個 magic number（920）。
+//      沒設的話 EA 會認不得自己的單，定時出場不會生效。
+//
 // ⚠ ZhugeOrderCheck() 在本 EA 內部沒有呼叫點 —— 它是給你的進場 EA 用的閘門。
 //   V23 的簽名變成 ZhugeOrderCheck(bool is_buy)，有預設值所以舊的呼叫仍能編譯，
 //   但那樣只做多就【不會生效】。請把呼叫改成：
@@ -66,6 +76,11 @@ input double   InpMaxDailyLossHKD  = 1200.0;     // 1. 當日最大虧損強平�
 input double   InpMaxTotalDrawdown = 20.0;       // 2. 帳戶最大淨值回撤比例 (%)  ← V22 是 90，與空城計的 20% 矛盾
 input double   InpTakeProfitHKD    = 0.0;        // 3. 浮盈全平門檻 (HKD)。0 = 停用 ← V22 的 500 經量度為結構性負期望
 input int      InpHoursOffset      = 0;          // 4. 手動時區微調 (小時，可正可負)
+
+input group "=== ⚠️ 管轄範圍（V23 新增，預設只碰自己開的單）==="
+input long     InpMagicNumber      = 920;         // 只管這個 magic 的持倉。0 = 管帳戶上全部（危險：會平掉你的手動單）
+input bool     InpManageSymbolOnly = true;        // 只管 EA 掛載的那個商品
+input bool     InpRiskClosesAll    = false;       // 風控觸發時是否連非管轄持倉一起平？預設否
 
 input group "=== 出場（V23：定時，不是 TP/SL）==="
 input int      InpHoldMinutes      = 150;        // 持倉滿幾分鐘無條件全平 (150 = 10 根 M15 = 2.5 小時)。0 = 停用
@@ -121,7 +136,8 @@ double GetDailyRealizedPnL();
 void CheckCloudGate();
 void SendTargetHitToCloud();
 bool ZhugeOrderCheck(bool is_buy = true);   // V23：多了方向參數，用來擋空單
-void CheckTimeExit();              
+void CheckTimeExit();
+bool IsManaged(ulong ticket);              
 void CheckAndSetSLTP();
 
 //+------------------------------------------------------------------+
@@ -253,7 +269,7 @@ void CheckAndSetSLTP()
    for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
       ulong ticket = PositionGetTicket(i);
-      if(ticket > 0)
+      if(ticket > 0 && IsManaged(ticket))          // V23：不碰手動單
       {
          double current_sl = PositionGetDouble(POSITION_SL);
          
@@ -381,18 +397,58 @@ void OnTimer()
    }
 }
 
-void CloseAllPositions()
+//+------------------------------------------------------------------+
+//| ⚠️ V23 新增：這張單歸不歸我管？                                   |
+//|                                                                  |
+//| V22 完全沒有過濾 —— CloseAllPositions / CheckAndSetSLTP 都是直接  |
+//| 掃 PositionsTotal()，等於帳戶上每一張單都會被動到。如果這個戶口   |
+//| 同時有你的手動單或直覺倉，EA 會：                                 |
+//|   · 幫它們掛上 8000 點的止損                                      |
+//|   · 在持倉滿 150 分鐘時把它們平掉                                 |
+//| 你的手實測年化 11.67% —— 那不是 EA 該碰的東西。                   |
+//+------------------------------------------------------------------+
+bool IsManaged(ulong ticket)
 {
+   if(!PositionSelectByTicket(ticket)) return(false);
+   if(InpManageSymbolOnly && PositionGetString(POSITION_SYMBOL) != _Symbol) return(false);
+   if(InpMagicNumber != 0 && PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) return(false);
+   return(true);
+}
+
+//+------------------------------------------------------------------+
+//| 平倉。all_including_unmanaged = true 時連不歸我管的也平           |
+//| （只有風控熔斷且 InpRiskClosesAll = true 才會這樣叫）             |
+//+------------------------------------------------------------------+
+void ClosePositions(bool all_including_unmanaged)
+{
+   int skipped = 0;
    for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
       ulong ticket = PositionGetTicket(i);
-      if(ticket > 0) trade.PositionClose(ticket);
+      if(ticket <= 0) continue;
+      if(!all_including_unmanaged && !IsManaged(ticket)) { skipped++; continue; }
+      trade.PositionClose(ticket);
    }
    for(int i = OrdersTotal() - 1; i >= 0; i--)
    {
       ulong ticket = OrderGetTicket(i);
-      if(ticket > 0) trade.OrderDelete(ticket);
+      if(ticket <= 0) continue;
+      if(!all_including_unmanaged)
+      {
+         if(!OrderSelect(ticket)) continue;
+         if(InpManageSymbolOnly && OrderGetString(ORDER_SYMBOL) != _Symbol) { skipped++; continue; }
+         if(InpMagicNumber != 0 && OrderGetInteger(ORDER_MAGIC) != InpMagicNumber) { skipped++; continue; }
+      }
+      trade.OrderDelete(ticket);
    }
+   if(skipped > 0)
+      PrintFormat("ℹ️ [管轄範圍] 略過 %d 張不歸本 EA 管的單（magic=%d, symbol=%s）",
+                  skipped, InpMagicNumber, InpManageSymbolOnly ? _Symbol : "全部");
+}
+
+void CloseAllPositions()
+{
+   ClosePositions(InpRiskClosesAll);
 }
 
 void AdjustPanelToCenter()
@@ -789,6 +845,7 @@ void CheckTimeExit()
    {
       ulong ticket = PositionGetTicket(i);
       if(ticket <= 0) continue;
+      if(!IsManaged(ticket)) continue;             // V23：定時出場只對自己開的單
       if(!PositionSelectByTicket(ticket)) continue;
 
       datetime opened = (datetime)PositionGetInteger(POSITION_TIME);
