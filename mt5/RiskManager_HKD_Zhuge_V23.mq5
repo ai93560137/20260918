@@ -510,7 +510,7 @@ void CreateDashboard()
    
    CreateLabel("Title", "港元日內風控與 AI 聯動系統 (全捕捉修正版)", 14, clrGold, true);
    
-   string leftTexts[] = {"當前持倉商品 :", "當前多單 / 空單 :", "當前對沖淨持倉 :", "預付款比率 :", "帳戶淨值 / 餘額  :", "今日已實現損益 :", "當下浮動盈虧 :", "今日總損益 (實+浮) :", "當前帳戶回撤 :", "DailyLoss:", "Drawdown:", "TakeProfit (動態):", "系統風控狀態 :", "諸葛亮電閘狀態 :", "已成功鎖死攔截 :", "雲端實時勝率 :"};
+   string leftTexts[] = {"當前持倉商品 :", "當前多單 / 空單 :", "當前對沖淨持倉 :", "預付款比率 :", "帳戶結餘 / 淨值  :", "今日已實現損益 :", "當下浮動盈虧 :", "今日總損益 (實+浮) :", "當前帳戶回撤 :", "DailyLoss:", "Drawdown:", "TakeProfit (動態):", "系統風控狀態 :", "諸葛亮電閘狀態 :", "已成功鎖死攔截 :", "雲端實時勝率 :"};
    string rightNames[] = {"Sym", "Positions", "Net", "MarginLevel", "Bal", "Real", "Float", "TotalPnL", "DD", "Param_Loss", "Param_DD", "Param_TP", "Status", "GCP_Gate", "RejectCount", "WinRate"};
    
    for(int i = 0; i < ArraySize(leftTexts); i++)
@@ -591,6 +591,8 @@ void UpdateDashboard()
 
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+   // [R87] 順序＝標籤順序：結餘(Balance) / 淨值(Equity)。用語跟 MT5「交易」分頁一致。
+   //       淨值 = 結餘 + 信用 + 浮動。有信用時兩者本來就不相等，不是異常。
    ObjectSetString(0, ObjPrefix + "D_Bal", OBJPROP_TEXT, DoubleToString(balance, 2) + " / " + DoubleToString(equity, 2));
 
    double realized_pnl = GetDailyRealizedPnL(); 
