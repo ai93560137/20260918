@@ -158,45 +158,57 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
   <p>一筆交易「合規」＝ 三格全勾。<strong>盈虧完全不看。</strong>
     違規一次，連續計數歸零重數。</p>
   <div class="norms">
-    <div class="norm"><dt>訊號到了有進場</dt><dd>✓<span class="cap">漏掉 = 違規</span></dd></div>
+    <div class="norm"><dt>合格訊號有進場</dt><dd>✓<span class="cap">向上＋ATR≥0.10%；漏掉 = 違規</span></dd></div>
     <div class="norm"><dt>抱滿 10 根</dt><dd>2.5h<span class="cap">提早出 = 違規</span></dd></div>
     <div class="norm"><dt>沒加碼沒移動</dt><dd>✓<span class="cap">動了 = 違規</span></dd></div>
   </div>
+  <p class="note"><strong>v4 的兩個減法：只做多、ATR(14)÷價格 ≥ 0.10%。</strong>
+    向下訊號、低波動訊號都<b>不算漏</b> —— 它們本來就不在名單上。
+    每年約 48 筆合格訊號，<b>90 筆要跑約 1.9 年</b>。這是功能不是問題：它強迫你等。</p>
 </section>
 
 <section>
   <h2><span class="num">02</span>以下全部是正常的 —— 不要因為這些停手</h2>
-  <p class="note"><strong>1,464 筆全期實測</strong>（2018-03 → 2026-09，XAUUSD M15）。
-    你會遇到這些，而它們都發生過。</p>
+  <p class="note">左欄 = v4 實測（XAUUSD M15，2022-08 → 2026-09，200 筆）。
+    右欄 = v3 多空版全期（1,464 筆，2018-03 → 2026-09）。
+    <strong>請以右欄的心理準備去做左欄的規則。</strong>理由在下面。</p>
   <div class="norms">
-    <div class="norm"><dt>最長連虧</dt><dd>13 筆<span class="cap">一次都沒賺</span></dd></div>
-    <div class="norm"><dt>連虧 ≥5 筆</dt><dd>28 次<span class="cap">平均每 52 筆一次</span></dd></div>
-    <div class="norm"><dt>連續虧損組</dt><dd>5 組<span class="cap">150 筆 · 約 9 個月</span></dd></div>
-    <div class="norm"><dt>勝率</dt><dd>46.1%<span class="cap">不到一半是正常的</span></dd></div>
-    <div class="norm"><dt>30 筆組正比例</dt><dd>48%<span class="cap">中位數 −18，多數組小虧</span></dd></div>
-    <div class="norm"><dt>90 筆虧錢機率</dt><dd>53%<span class="cap">中位數 −31，最壞 −HK$1,075</span></dd></div>
+    <div class="norm"><dt>最長連虧</dt><dd>11 筆<span class="cap">v4 實測（v3 全期：13 筆）</span></dd></div>
+    <div class="norm"><dt>連虧 ≥5 筆</dt><dd>3 次<span class="cap">平均每 67 筆一次</span></dd></div>
+    <div class="norm"><dt>最長連續虧損組</dt><dd>1 組<span class="cap">30 筆（v3 全期：5 組／150 筆）</span></dd></div>
+    <div class="norm"><dt>勝率</dt><dd>54.0%<span class="cap">仍有近一半是虧的</span></dd></div>
+    <div class="norm"><dt>30 筆組正比例</dt><dd>5／6<span class="cap">只有 6 組，樣本太小</span></dd></div>
+    <div class="norm"><dt>單筆最壞</dt><dd>−HK$365<span class="cap">戶口的 1.83%</span></dd></div>
   </div>
-  <p class="note"><strong>跑完 90 筆，最可能的結果是打平或小虧 —— 有 53% 機率是虧的。</strong>
-    這不是規則壞了，這就是規則的樣子：利潤 201% 來自異常值（扣掉後 1,464 筆倒賠 HK$4,464），
-    最賺的 5%（73 筆）賺 +17,828、其餘 1,391 筆賠 −13,420。</p>
-  <p class="note">⚠️ <strong>這條規則的優勢並未被證實</strong>：全期年化 +2.39%，
-    95% 區間 [−1.38%, +7.35%] 包含零，九年裡只有三年賺錢。
-    所以更要記住 —— <strong>你在測的是自己能不能照做，不是這條規則能不能賺錢。</strong>
+  <p class="note">⚠️ <strong>v4 的 90 筆滾動窗顯示「虧錢機率 0%、中位數 +1,777」——
+    這個數字不能用。</strong> 200 筆只能切出 111 個窗，而相鄰兩個窗共用 89 筆，
+    等於同一段歷史被數了一百次；再加上它是樣本內、而且落在 8.4 年裡波動最高的一段。
+    <b>我不會拿它當你的預期。</b>請用 v3 全期那個數字做心理準備：
+    <strong>90 筆有超過一半機率是虧的。</strong></p>
+  <p class="note">⚠️ <strong>這條規則的優勢仍未被證實。</strong>
+    樣本外（2018–2022）只做多是 −HK$739（t = −0.98）；加上波動門檻是
+    +HK$169（t = +0.46，51 筆）——<b>由虧轉平，不是轉贏。</b>
+    而現在的波動水位排在 8.4 年的<b>第 93 百分位</b>，你正站在這條規則最有利的環境裡。</p>
+  <p class="note">所以更要記住 —— <strong>你在測的是自己能不能照做，不是這條規則能不能賺錢。</strong>
     虧錢的時候最容易做的事，是改參數、加停損、開始挑訊號 ——
-    本專案測過六次，六次都讓結果更差。</p>
+    本專案測過六次，六次都讓結果更差。v4 這兩個改動是<b>拿掉東西</b>，不是加東西。</p>
 </section>
 
 <section>
   <h2><span class="num">03</span>九十筆</h2>
-  <p class="note">點任一格填寫。到期時間會自動算（進場時間 ＋ 2 小時 30 分）。</p>
+  <p class="note">點任一格填寫。到期時間會自動算（進場時間 ＋ 2 小時 30 分）。
+    v4 每年約 48 筆，<b>這 90 格大概要填 1.9 年</b>。</p>
   <div id="rounds"></div>
 </section>
 
 <footer>
-  <p><strong>規則：</strong>XAUUSD M15 · 八陣圖原廠門檻 · 不過濾高週期／波動／時段 ·
+  <p><strong>規則（v4）：</strong>XAUUSD M15 · 八陣圖原廠門檻 · <strong>只做多</strong> ·
+  <strong>ATR(14) ÷ 價格 ≥ 0.10%</strong>（打平點 0.0837%）· 不過濾高週期／時段 ·
   突破確認後下一根開盤進場 · 滿 10 根無條件出場 · <strong>無價格停損</strong> · 0.01 手（1 盎司）。</p>
-  <p>基準：<strong>1,464 筆全期</strong>（2018-03 → 2026-09）· 勝率 46.11% · 每筆期望 +HK$3.01 ·
-  年化 +2.39% · 獲利因子 1.145 · 最大回撤 10.09% · 單筆最壞 −HK$367（戶口的 1.84%）。</p>
+  <p>基準（樣本內，2022-08 → 2026-09，200 筆）：勝率 54.00% · 每筆期望 +HK$29.49 ·
+  年化 +7.15% · 獲利因子 1.890 · 最大回撤 HK$1,281（6.41%）· 單筆最壞 −HK$365（戶口的 1.83%）·
+  去掉最賺 5% 後仍 +HK$1,120。</p>
+  <p>⚠️ 樣本外（2018-04 → 2022-08）：51 筆 +HK$169，t = +0.46。<strong>優勢未被證實。</strong></p>
 </footer>
 </div>
 
@@ -208,14 +220,14 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
       <div class="frow">
         <div class="f"><label for="f_date">日期</label><input id="f_date" type="date"></div>
         <div class="f"><label for="f_dir">方向</label>
-          <select id="f_dir"><option value="">—</option><option value="多">多</option><option value="空">空</option></select></div>
+          <select id="f_dir"><option value="">—</option><option value="多">多</option><option value="空">空（v4 不做）</option></select></div>
         <div class="f"><label for="f_in">進場時間</label><input id="f_in" type="time" step="900"></div>
         <div class="f key"><label for="f_out">到期出場 ★</label><input id="f_out" type="text" readonly placeholder="--:--"></div>
         <div class="f"><label for="f_px">進場價</label><input id="f_px" type="text" inputmode="decimal" placeholder="0000.00"></div>
         <div class="f"><label for="f_pnl">損益 HK$（不影響判定）</label><input id="f_pnl" type="text" inputmode="decimal" placeholder="選填"></div>
       </div>
       <div class="chks">
-        <label class="chk"><input type="checkbox" id="f_c1"><span>訊號到了我有進場</span></label>
+        <label class="chk"><input type="checkbox" id="f_c1"><span>合格訊號（向上＋ATR≥0.10%）我有進場</span></label>
         <label class="chk"><input type="checkbox" id="f_c2"><span>我抱滿了 10 根</span></label>
         <label class="chk"><input type="checkbox" id="f_c3"><span>我沒有加碼、沒有移動任何東西</span></label>
       </div>

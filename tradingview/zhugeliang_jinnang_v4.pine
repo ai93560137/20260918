@@ -1,0 +1,316 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 錦囊 v4 — 只做多 ＋ 波動下限
+//
+// v3 → v4 只改兩件事，兩件都是「拿掉東西」，不是加東西：
+//   ① 不再做空
+//   ② 波動低於門檻就不進場
+//
+// 前面六個機制（高週期方向、波動關卡、時段過濾、價格停損、分批止盈、
+// 剔除星期一）全部是「加東西」，六個全部失敗。這是第一次靠減法。
+//
+// -----------------------------------------------------------------------------
+// ① 為什麼不做空 —— TradingView 全期成交明細，2018-04 → 2026-09，1,464 筆
+//
+//      只做多   793 筆   每筆 +HK$6.27   總 +HK$4,969   t = +2.14   勝率 48.5%
+//      只做空   671 筆   每筆 −HK$0.84   總   −HK$561   t = −0.25   勝率 43.2%
+//
+//   八年半、671 筆空單，期望值是零。它們唯一的作用是付點差。
+//   拿掉空單，全期 t 由 +1.37 升到 +2.14，而且少做 671 筆。
+//
+// -----------------------------------------------------------------------------
+// ② 為什麼設波動下限 —— 這條規則賭的不是方向，是幅度
+//
+//   逐年拆解（D1 資料可用的五年）：
+//      年     黃金報酬   年化波動   只做多損益
+//      2022    +3.4%     18.6%        −86
+//      2023   +13.1%     13.1%       +755
+//      2024   +27.2%     15.0%       −418   ← 黃金大漲卻虧錢
+//      2025   +64.6%     19.0%     +1,980
+//      2026    +1.4%     30.3%     +3,379   ← 黃金幾乎沒漲卻最賺
+//
+//      corr(年化波動, 損益) = +0.823      corr(黃金報酬, 損益) = +0.048
+//      損益 ≈ 1,059 + 2.9 × 黃金年報酬%    R² = 0.002
+//
+//   機制上完全說得通：突破後固定抱 10 根、不設價格停損 = 結構性 long gamma，
+//   靠區間擴張來付點差。波動不夠時，點差直接吃掉全部毛利。
+//
+//   打平點實測：ATR(14) ÷ 價格 = 0.0837%。本版預設取 0.10%
+//   （打平點之上的整數，不是最佳化值 —— 0.12% 的樣本內數字更好，沒有採用）。
+//
+// -----------------------------------------------------------------------------
+// 【量測 — XAUUSD M15，2022-08-03 → 2026-09-18，4.13 年，1 盎司 / HK$20,000】
+//
+//                        筆數   每筆     總計    年化    t     去掉最賺5%後
+//   v3 多空皆做           753  +9.00   +6,777  +8.21% +2.25   −5,804  ← 死
+//   只做多                410 +15.74   +6,454  +7.82% +2.92     −855  ← 差一點
+//   v4 只做多+ATR≥0.10%   200 +29.49   +5,898  +7.15% +2.78   +1,120  ← 活
+//
+//   v4 逐年：2022 +332　2023 +619　2024 −255　2025 +2,007　2026 +3,195
+//   v4 勝率 54.00%　PF 1.890　最大回撤 HK$1,281（戶口的 6.41%）
+//   v4 單筆最好 +802.85 / 最壞 −365.43（戶口的 1.83%）
+//   v4 每年約 48 筆 → 90 筆訓練要跑約 1.9 年
+//
+//   **去掉最賺 5% 之後仍然為正，這是整個專案裡第一次。**
+//   v3 拿掉異常值就倒賠 HK$5,804；v4 是 +HK$1,120。
+//
+// -----------------------------------------------------------------------------
+// ⚠⚠ 但優勢【仍然沒有被證實】。上面那張表是樣本內（2022-2026）。
+//
+//   樣本外（2018-04 → 2022-08，八年半明細裡我從沒看過的那半）：
+//      只做多            408 筆   −HK$739   t = −0.98
+//      只做多＋波動門檻   51 筆   +HK$169   t = +0.46   ← 由虧轉平，不是轉贏
+//
+//   2020 年 COVID 有 67 筆高波動交易，只賺 HK$395；
+//   2026 年 115 筆，賺 HK$4,479 —— 同樣的波動分組，結果差 11 倍。
+//
+//   所以講準一點：波動門檻是這個專案裡第一個**沒有讓樣本外變差**的機制，
+//   但那是 51 筆、t = +0.46。**不是證據，只是沒有反證。**
+//
+//   目前的波動水位排在 8.4 年的第 93 百分位 —— 你正站在這條規則最有利的
+//   環境裡。最近結果好看不代表規則好，代表環境好。**那是縮手的理由。**
+//
+// -----------------------------------------------------------------------------
+// 【槓桿】1 盎司 ≈ US$4,378 ≈ HK$34,148 名義 ÷ HK$20,000 = 1.71x
+//   空城計上限：容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0，取保守值 1.75。
+//   0.02 手 = 3.41x，超過上限 —— 不該升的理由是槓桿，不是回撤。
+//
+// ⚠ TradingView 的 Properties（屬性）分頁會【蓋掉】腳本裡所有這些值。跑之前逐格確認：
+//     初始資金        20,000  HKD
+//     預設訂單大小     1       數量      ← 1 盎司
+//     佣金            2.0     每份合約   ← US$0.40 來回
+//     做多/空頭槓桿    2x                ← 1x 會因保證金不足而拒單
+//     滑點            0       ticks
+//
+// ⚠ 回測測的是【規則】，不是【你的紀律】。
+//   回測裡你永遠會抱滿 10 根；實盤裡不會。所以真正的指標是那三格打勾。
+// =============================================================================
+strategy("智能諸葛亮 · 錦囊 v4｜只做多＋波動下限", "錦囊 v4",
+     overlay = true,
+     pyramiding = 0,
+     currency = currency.HKD,
+     initial_capital = 20000,
+     default_qty_type = strategy.fixed,
+     default_qty_value = 1,                      // 1 數量 = 1 盎司 = 0.01 手
+     commission_type = strategy.commission.cash_per_contract,
+     commission_value = 2.0,                     // TradingView 內部 1 盎司 = 0.1 合約，
+                                                 //   2.0 × 0.1 × 2 張委託 = US$0.40 來回
+     calc_on_every_tick = false,
+     process_orders_on_close = false)            // 確認後、下一根開盤成交
+
+const string G_R = "① 規則（原廠值，改了就不是量測過的那條）"
+const string G_F = "② v4 的兩個減法"
+const string G_A = "③ 戶口與訓練"
+const string G_D = "④ 顯示"
+
+lenTrend    = input.int(60,     "迴歸長度（根）",       minval = 10,  group = G_R)
+r2Min       = input.float(0.48, "R² 門檻",             minval = 0.0, maxval = 1.0, step = 0.01, group = G_R)
+slopeMin    = input.float(0.025,"斜率門檻（ATR/根）",   minval = 0.0, step = 0.005, group = G_R)
+lenRange    = input.int(20,     "區間觀察長度",         minval = 5,   group = G_R)
+rangeMaxATR = input.float(3.8,  "區間高度上限（ATR）",  minval = 0.5, step = 0.1,   group = G_R)
+rangeMinBars= input.int(8,      "至少維持幾根才算區間", minval = 1,   group = G_R)
+boxMaxAge   = input.int(30,     "區間失效根數",         minval = 5,   group = G_R)
+bufATR      = input.float(0.25, "突破緩衝（ATR）",      minval = 0.0, step = 0.05,  group = G_R)
+confirmBars = input.int(1,      "站穩幾根才確認",       minval = 1, maxval = 5,     group = G_R)
+atrLen      = input.int(14,     "ATR 長度",            minval = 2,   group = G_R)
+holdBars    = input.int(10,     "持有幾根後無條件出場", minval = 1,   group = G_R,
+     tooltip = "10 根 M15 = 2.5 小時。這就是停損。不要再加價格停損——測過四次都變差。")
+
+longOnly    = input.bool(true,  "只做多（v4）",        group = G_F,
+     tooltip = "全期 1,464 筆中 671 筆空單，每筆 −HK$0.84、t = −0.25。" +
+               "八年半期望值為零，唯一作用是付點差。關掉就退回 v3 的多空版。")
+volFloorPct = input.float(0.10, "波動下限 ATR(14)÷價格 %", minval = 0.0, step = 0.01, group = G_F,
+     tooltip = "打平點實測 0.0837%：低於此值，點差吃掉全部毛利。" +
+               "預設 0.10 是打平點之上的整數，不是最佳化值。設 0 可停用。" +
+               "這個數值與 GCP main.py 的 VOL_FLOOR_ATR_PCT 是同一條線。")
+
+blockSize   = input.int(30,     "一組幾筆（訓練單位）", minval = 5,   group = G_A)
+expPerTrade = input.float(29.49,"每筆期望值（HK$）",     step = 0.01, group = G_A,
+     tooltip = "v4 樣本內 200 筆的期望值。用來把本組進度換算成期望值，" +
+               "提醒你組損益本身沒有判定意義。")
+notionalHKD = input.float(34148,"一口的名義（HK$）",    minval = 1, step = 1000, group = G_A,
+     tooltip = "1 盎司 × 金價 × 匯率。用來算槓桿。金價變動時更新。")
+levCap      = input.float(1.75, "槓桿上限（空城計）",   minval = 0.1, step = 0.05, group = G_A,
+     tooltip = "容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0；取保守值 1.75。")
+
+showPanel = input.bool(true,  "顯示面板", group = G_D)
+panelPos  = input.string("右上", "面板位置", group = G_D,
+     options = ["右上", "右中", "右下", "左上", "左中", "左下"])
+panelSize = input.string("normal", "面板字體", options = ["tiny", "small", "normal", "large"], group = G_D)
+showBox   = input.bool(true,  "畫出橫行區間", group = G_D)
+showSkip  = input.bool(true,  "標出被略過的訊號", group = G_D,
+     tooltip = "灰色記號 = 規則觸發了但被 v4 的兩個減法擋掉。看得見才知道減了多少。")
+
+// =============================================================================
+// 狀態
+// =============================================================================
+atrV  = ta.atr(atrLen)
+slope = ta.linreg(close, lenTrend, 0) - ta.linreg(close, lenTrend, 1)
+corr  = ta.correlation(close, bar_index, lenTrend)
+r2    = na(corr) ? 0.0 : corr * corr
+sN    = atrV > 0 ? slope / atrV : 0.0
+hiN   = ta.highest(high, lenRange)
+loN   = ta.lowest(low,  lenRange)
+wATR  = atrV > 0 ? (hiN - loN) / atrV : na
+
+// v4：波動水位 —— 與 GCP 風控電閘用同一個量度
+atrPct  = close > 0 ? atrV / close * 100 : na
+volOK   = volFloorPct <= 0 or (not na(atrPct) and atrPct >= volFloorPct)
+
+isUp  = r2 >= r2Min and sN >=  slopeMin
+isDn  = r2 >= r2Min and sN <= -slopeMin
+isRng = not isUp and not isDn and wATR <= rangeMaxATR
+st    = isUp ? 1 : isDn ? -1 : isRng ? 0 : 2
+
+rangeHold = nz(ta.barssince(st != 0), bar_index)
+rangeOK   = st == 0 and rangeHold >= rangeMinBars
+
+var float boxTop = na
+var float boxBot = na
+var bool  boxLive = false
+var int   lastRangeBar = na
+
+if barstate.isconfirmed
+    if rangeOK
+        boxTop := hiN[1]
+        boxBot := loN[1]
+        boxLive := true
+        lastRangeBar := bar_index
+    else if boxLive and not na(lastRangeBar) and bar_index - lastRangeBar > boxMaxAge
+        boxLive := false
+
+upLevel = boxLive ? boxTop + bufATR * atrV : na
+dnLevel = boxLive ? boxBot - bufATR * atrV : na
+
+var int pendDir = 0
+var int pendCnt = 0
+if barstate.isconfirmed
+    dRaw = boxLive and not na(upLevel) and close > upLevel ? 1 :
+           boxLive and not na(dnLevel) and close < dnLevel ? -1 : 0
+    pendCnt := dRaw != 0 and dRaw == pendDir ? pendCnt + 1 : dRaw != 0 ? 1 : 0
+    pendDir := dRaw
+
+confirmUp = barstate.isconfirmed and pendDir ==  1 and pendCnt == confirmBars
+confirmDn = barstate.isconfirmed and pendDir == -1 and pendCnt == confirmBars
+
+// v4 的兩個減法在這裡生效。takeUp / takeDn = 真的會下單的訊號
+takeUp  = confirmUp and volOK
+takeDn  = confirmDn and volOK and not longOnly
+skipVol = (confirmUp or confirmDn) and not volOK
+skipDir = confirmDn and volOK and longOnly
+
+// =============================================================================
+// 進出場
+// =============================================================================
+var int barsIn = 0
+barsIn := strategy.position_size != 0 ? nz(barsIn[1]) + 1 : 0
+
+if takeUp and strategy.position_size == 0
+    strategy.entry("多", strategy.long)
+    boxLive := false
+if takeDn and strategy.position_size == 0
+    strategy.entry("空", strategy.short)
+    boxLive := false
+
+if strategy.position_size != 0 and barsIn >= holdBars
+    strategy.close_all("時間到")
+
+// =============================================================================
+// 戶口監控與 30 筆分組
+// =============================================================================
+var float minEq    = na
+var float blkStart = na
+var int   blkDone  = 0
+var int   blkWin   = 0
+var float blkBest  = na
+var float blkWorst = na
+var int   lastCount = 0
+var bool  blown    = false
+var int   nSkipVol = 0
+var int   nSkipDir = 0
+
+nSkipVol := nz(nSkipVol[1]) + (skipVol ? 1 : 0)
+nSkipDir := nz(nSkipDir[1]) + (skipDir ? 1 : 0)
+
+minEq    := na(minEq)    ? strategy.equity : math.min(minEq, strategy.equity)
+blkStart := na(blkStart) ? strategy.initial_capital : blkStart
+blown    := blown or strategy.equity <= 0
+
+nTr = strategy.closedtrades
+if nTr > lastCount
+    lastCount := nTr
+    if nTr % blockSize == 0
+        pnl = strategy.equity - blkStart
+        blkDone  := blkDone + 1
+        blkWin   := pnl > 0 ? blkWin + 1 : blkWin
+        blkBest  := na(blkBest)  ? pnl : math.max(blkBest,  pnl)
+        blkWorst := na(blkWorst) ? pnl : math.min(blkWorst, pnl)
+        blkStart := strategy.equity
+
+inBlk   = nTr % blockSize
+blkPnL  = strategy.equity - blkStart
+lev     = strategy.initial_capital > 0 ? notionalHKD / strategy.initial_capital : na
+eqPct   = strategy.initial_capital > 0 ? strategy.equity / strategy.initial_capital * 100 : na
+minPct  = strategy.initial_capital > 0 ? minEq / strategy.initial_capital * 100 : na
+
+// =============================================================================
+// 顯示
+// =============================================================================
+pU = plot(showBox and boxLive ? boxTop : na, "區間上緣", color.new(#26A69A, 30), 1, plot.style_linebr)
+pD = plot(showBox and boxLive ? boxBot : na, "區間下緣", color.new(#EF5350, 30), 1, plot.style_linebr)
+fill(pU, pD, showBox and boxLive ? color.new(#78909C, 92) : na)
+
+plotshape(takeUp,  "進場（多）", shape.triangleup,   location.belowbar, color.new(#26A69A, 0), size = size.tiny)
+plotshape(takeDn,  "進場（空）", shape.triangledown, location.abovebar, color.new(#EF5350, 0), size = size.tiny)
+plotshape(showSkip and skipVol and confirmUp, "略過·波動不足", shape.xcross, location.belowbar, color.new(#9AA0A6, 20), size = size.tiny)
+plotshape(showSkip and skipVol and confirmDn, "略過·波動不足", shape.xcross, location.abovebar, color.new(#9AA0A6, 20), size = size.tiny)
+plotshape(showSkip and skipDir, "略過·只做多", shape.circle, location.abovebar, color.new(#5C6BC0, 20), size = size.tiny)
+
+// ⚠ Pine 續行規則：換行後的縮排【不能是 4 的倍數】，否則會被當成新區塊（CE10156）。
+//    這兩行故意不換行，最保險。
+tbPos = panelPos == "右上" ? position.top_right : panelPos == "右中" ? position.middle_right : panelPos == "右下" ? position.bottom_right : panelPos == "左上" ? position.top_left : panelPos == "左中" ? position.middle_left : position.bottom_left
+tbSize = panelSize == "tiny" ? size.tiny : panelSize == "small" ? size.small : panelSize == "large" ? size.large : size.normal
+var table tb = table.new(tbPos, 2, 13, border_width = 1)
+bgC  = color.new(#12141A, 8)
+dimC = color.new(#9AA0A6, 25)
+valC = color.new(#E8EAED, 0)
+okC  = color.new(#4CAF50, 0)
+badC = color.new(#FF5252, 0)
+warnC= color.new(#FBC02D, 0)
+
+row(i, k, v, c) =>
+    table.cell(tb, 0, i, k, bgcolor = bgC, text_color = dimC, text_size = tbSize, text_halign = text.align_left)
+    table.cell(tb, 1, i, v, bgcolor = bgC, text_color = c,    text_size = tbSize, text_halign = text.align_right)
+
+if showPanel and barstate.islast
+    posTxt = strategy.position_size > 0 ? "多｜" + str.tostring(holdBars - barsIn) + " 根後出" : strategy.position_size < 0 ? "空｜" + str.tostring(holdBars - barsIn) + " 根後出" : "空手"
+    modeTxt = (longOnly ? "只做多" : "多空") + (volFloorPct > 0 ? "＋ATR≥" + str.tostring(volFloorPct, "#.##") + "%" : "")
+    row(0, "錦囊 v4 · " + modeTxt, posTxt, strategy.position_size != 0 ? warnC : dimC)
+    row(1, "權益", "HK$" + str.tostring(strategy.equity, "#") + "　(" + str.tostring(eqPct, "#.#") + "%)",
+         strategy.equity >= strategy.initial_capital ? okC : badC)
+    row(2, "最低權益（戶口有沒有撐住）", "HK$" + str.tostring(minEq, "#") + "　(" + str.tostring(minPct, "#.#") + "%)",
+         blown ? badC : minPct < 50 ? warnC : okC)
+    row(3, "最大回撤", "HK$" + str.tostring(strategy.max_drawdown, "#"), valC)
+    // TradingView 的 XAUUSD：1 數量 = 1 盎司（由回測極值反推確認，
+    // 最大虧損 367.46 HKD = US$47/oz，與獨立 Python 實作的 US$46.9 相符）
+    ozNow = math.abs(strategy.position_size)
+    row(4, "部位（盎司）", str.tostring(ozNow, "#.##") + " 持倉 / 設定 1.00（1 數量 = 1 oz）",
+         ozNow > 0 and math.abs(ozNow - 1.0) > 0.001 ? badC : dimC)
+    row(5, "槓桿（名義 ÷ 戶口）", str.tostring(lev, "#.##") + "x / 上限 " + str.tostring(levCap, "#.##") + "x",
+         lev > levCap ? badC : okC)
+    row(6, "現在的波動（ATR÷價）", (na(atrPct) ? "—" : str.tostring(atrPct, "#.###") + "%") + " / 門檻 " + (volFloorPct > 0 ? str.tostring(volFloorPct, "#.##") + "%" : "停用") + "　打平 0.084%",
+         volOK ? okC : warnC)
+    row(7, "———————————", "———————————", dimC)
+    row(8, "交易數 / 勝率", str.tostring(nTr) + " / " + (nTr > 0 ? str.tostring(strategy.wintrades / nTr * 100, "#.#") + "%" : "—"), valC)
+    row(9, "被減掉的訊號", "波動不足 " + str.tostring(nSkipVol) + "　只做多略過 " + str.tostring(nSkipDir), dimC)
+    row(10, "本組進度", str.tostring(inBlk) + " / " + str.tostring(blockSize) + "　(" + (blkPnL >= 0 ? "+" : "") + str.tostring(blkPnL, "#") + "　期望 " + str.tostring(inBlk * expPerTrade, "#") + ")",
+         blkPnL >= 0 ? okC : badC)
+    row(11, "已完成組數（正 / 全部）", str.tostring(blkWin) + " / " + str.tostring(blkDone),
+         blkDone > 0 and blkWin * 2 >= blkDone ? okC : warnC)
+    row(12, "樣本外只做到由虧轉平（t=+0.46）。", "優勢未證實 — 看打勾，不看損益。", dimC)
+
+plot(strategy.equity,  "權益",       display = display.data_window)
+plot(minEq,            "最低權益",   display = display.data_window)
+plot(atrPct,           "ATR%",       display = display.data_window)
+plot(inBlk,            "本組第幾筆", display = display.data_window)
+plot(blkPnL,           "本組損益",   display = display.data_window)
