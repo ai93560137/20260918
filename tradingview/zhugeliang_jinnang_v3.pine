@@ -95,8 +95,9 @@ expPerTrade = input.float(6.82, "每筆期望值（HK$）",     step = 0.01, gro
      tooltip = "TradingView 實測 1,465 筆的期望值。用來把本組進度換算成期望值，提醒你組損益本身沒有判定意義。")
 notionalHKD = input.float(34148,"一口的名義（HK$）",    minval = 1, step = 1000, group = G_A,
      tooltip = "1 盎司 × 金價 × 匯率。用來算槓桿。金價變動時更新。")
-levCap      = input.float(1.70, "槓桿上限（空城計）",   minval = 0.1, step = 0.1, group = G_A,
-     tooltip = "容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0；取保守值 1.7。")
+levCap      = input.float(1.75, "槓桿上限（空城計）",   minval = 0.1, step = 0.05, group = G_A,
+     tooltip = "容忍回撤 20% ÷ 黃金最壞單日 10% = 2.0；取保守值 1.75。" +
+               "1 盎司在 HK$20,000 戶口上是 1.70–1.72x（隨金價浮動），設 1.70 會一直亮紅。")
 
 showPanel = input.bool(true,  "顯示面板", group = G_D)
 showBox   = input.bool(true,  "畫出橫行區間", group = G_D)
@@ -230,10 +231,11 @@ if showPanel and barstate.islast
     row(2, "最低權益（戶口有沒有撐住）", "HK$" + str.tostring(minEq, "#") + "　(" + str.tostring(minPct, "#.#") + "%)",
          blown ? badC : minPct < 50 ? warnC : okC)
     row(3, "最大回撤", "HK$" + str.tostring(strategy.max_drawdown, "#"), valC)
-    ozNow = math.abs(strategy.position_size) * 100
-    ozCfg = 0.01 * 100
-    row(4, "部位（盎司）", str.tostring(ozNow, "#.##") + " 持倉 / 設定 " + str.tostring(ozCfg, "#.##") +
-         "（1 合約 = 100 oz）", ozNow > 0 and math.abs(ozNow - ozCfg) > 0.001 ? badC : dimC)
+    // TradingView 的 XAUUSD：1 數量 = 1 盎司（由回測極值反推確認，
+    // 最大虧損 367.46 HKD = US$47/oz，與獨立 Python 實作的 US$46.9 相符）
+    ozNow = math.abs(strategy.position_size)
+    row(4, "部位（盎司）", str.tostring(ozNow, "#.##") + " 持倉 / 設定 1.00（1 數量 = 1 oz）",
+         ozNow > 0 and math.abs(ozNow - 1.0) > 0.001 ? badC : dimC)
     row(5, "槓桿（名義 ÷ 戶口）", str.tostring(lev, "#.##") + "x / 上限 " + str.tostring(levCap, "#.##") + "x",
          lev > levCap ? badC : okC)
     row(6, "———————————", "———————————", dimC)
