@@ -81,7 +81,13 @@ def trades(df, long_only=LONG_ONLY, vol_floor=VOL_FLOOR):
                     gross_usd=round((C[j] - C[i]) * pdir * OZ, 4),
                     net_hkd=round(((C[j] - C[i]) * pdir * OZ - SPREAD_USD * OZ) * USD_HKD, 2),
                 ))
-            live, pdir, pc = False, 0, 0
+                # ⚠️ 只有【真的進場】才消耗掉區間。Pine 的 `boxLive := false` 在
+                #    `if takeUp and strategy.position_size == 0` 區塊【裡面】，
+                #    被方向或波動門檻擋掉時區間仍然活著，之後可以再觸發一次。
+                #    2026-09-20 對數時發現：原本無條件消耗，導致少做 29% 的交易。
+                live = False
+            # pendDir / pendCnt 不重置 —— Pine 讓它自然遞增，
+            # 所以價格要先跌回門檻之下、再突破一次，才會再出訊號。
     return pd.DataFrame(out)
 
 
