@@ -27,8 +27,10 @@ strategy("前N日高低突破 Donchian Breakout",
      commission_type = strategy.commission.cash_per_contract,
      commission_value = 0.15,
      pyramiding = 0,
-     margin_long = 0,
-     margin_short = 0)
+     // 保證金 10%（= 10 倍槓桿）：權益不足以維持部位時模擬強制平倉。
+     // 期貨（HSI1!/MHI1!）必須開著；XAUUSD 0.01 手倉位極小，開著也無影響。
+     margin_long = 10,
+     margin_short = 10)
 
 // ---- 參數 -------------------------------------------------------------------
 lookback  = input.int(3, "通道回看天數 N", minval = 1, maxval = 10)
