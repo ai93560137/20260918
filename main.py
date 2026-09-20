@@ -15,6 +15,13 @@
 #       市場時段 / 波動水位 / 空城計曝險上限 / 單日虧損 / 訓練節奏。
 #       缺任何一項數據一律當成不過關（fail-closed）。   [R70 R72 R73]
 #     GATE_DRIVER=REGIME 可一鍵回退成舊行為，只為了能並排比對。
+#   * ⚠️ 但三級共振【沒有完全退場】：PureGCPPyramidingSession.evaluate_and_trigger
+#     的第一行仍然讀 gate_state["dir"]，而那個 dir 是三級共振寫的。所以現在是：
+#         armed（准不准下單）← 風控五關    ✅ 已量度
+#         dir  （往哪個方向）← 三級共振    ❌ 未量度，且已證實無優勢
+#     RANGE 時 dir = None，引擎直接 return None → 實際上 87.3% 的時間不會下單。
+#     再加上 LONG_ONLY=1，等於「只在三級共振說 UP 的時候做多」。
+#     → 進場規則本身仍然沒有任何回測支持。見 README §27。  [R77]
 #   * LONG_ONLY 預設開啟：全期 1,464 筆中 671 筆空單每筆 −HK$0.84、
 #     t = −0.25，八年半期望值為零，唯一作用是付點差。            [R71]
 #   * TARGET_HIT and manual LOCK are HARD locks that the state machine cannot
