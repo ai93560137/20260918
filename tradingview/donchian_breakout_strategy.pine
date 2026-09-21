@@ -34,8 +34,10 @@ strategy("前N日高低突破 Donchian Breakout",
 
 // ---- 參數 -------------------------------------------------------------------
 lookback  = input.int(3, "通道回看天數 N", minval = 1, maxval = 10)
-exitMode  = input.string("sar", "出場模式", options = ["sar", "eod"],
-     tooltip = "sar＝反向突破反手、永遠在場；eod＝每日截止時間平倉不留隔夜")
+exitMode  = input.string("sar", "出場模式", options = ["sar", "eod", "ema"],
+     tooltip = "sar＝反向突破反手、永遠在場；eod＝每日截止時間平倉不留隔夜；" +
+         "ema＝價格回穿日收盤EMA先平倉（實驗模式，回測比較用）")
+emaLen    = input.int(50, "ema 出場：日收盤 EMA 週期", minval = 2)
 tradeDir  = input.string("both", "交易方向", options = ["both", "long", "short"])
 eodHour   = input.int(23, "eod 平倉時間（交易所時區）－時", minval = 0, maxval = 23)
 eodMinute = input.int(50, "eod 平倉時間－分", minval = 0, maxval = 59)
@@ -45,6 +47,9 @@ var float[] dayHighs = array.new_float()
 var float[] dayLows  = array.new_float()
 var float curHigh = na
 var float curLow  = na
+var float curClose = na    // 進行中交易日的最新收盤（日結時成為該日收盤價）
+var float dEma  = na       // 日收盤 EMA（ema 出場線，每日更新一次）
+var int   dEmaN = 0
 newDay = ta.change(time("D")) != 0
 
 if newDay
@@ -54,11 +59,15 @@ if newDay
         if array.size(dayHighs) > lookback
             array.shift(dayHighs)
             array.shift(dayLows)
+        dEma := na(dEma) ? curClose : dEma + 2.0 / (emaLen + 1) * (curClose - dEma)
+        dEmaN += 1
     curHigh := high
     curLow  := low
 else
     curHigh := math.max(nz(curHigh, high), high)
     curLow  := math.min(nz(curLow,  low),  low)
+curClose := close
+emaReady = dEmaN >= emaLen
 
 ready   = array.size(dayHighs) == lookback
 hiLevel = ready ? array.max(dayHighs) : na
@@ -85,8 +94,9 @@ if exitMode == "eod" and newDay and strategy.position_size != 0   // 保險絲�
     strategy.close_all(comment = "EOD-gap")
 
 // ---- 進場（stop order 掛在通道價位；反向觸發時 pyramiding=0 會自動反手） -------
-allowLong  = ready and not pastCutoff and not longUsed  and tradeDir != "short"
-allowShort = ready and not pastCutoff and not shortUsed and tradeDir != "long"
+emaOk = exitMode != "ema" or emaReady    // ema 模式等 EMA 暖機完成才進場
+allowLong  = ready and emaOk and not pastCutoff and not longUsed  and tradeDir != "short"
+allowShort = ready and emaOk and not pastCutoff and not shortUsed and tradeDir != "long"
 
 if allowLong
     strategy.entry("L", strategy.long, stop = hiLevel)
@@ -102,6 +112,12 @@ if tradeDir == "long" and strategy.position_size > 0
     strategy.exit("XL", from_entry = "L", stop = loLevel)
 if tradeDir == "short" and strategy.position_size < 0
     strategy.exit("XS", from_entry = "S", stop = hiLevel)
+
+// ---- ema 模式的離場：價格回穿日收盤 EMA 先平倉（反向突破單仍掛著會反手） -------
+if exitMode == "ema" and emaReady and strategy.position_size > 0
+    strategy.exit("XEL", from_entry = "L", stop = dEma)
+if exitMode == "ema" and emaReady and strategy.position_size < 0
+    strategy.exit("XES", from_entry = "S", stop = dEma)
 
 // ---- 手動下單提醒（富途等券商人手執行用） -------------------------------------
 // 在 TradingView 建立警報：條件選本策略 →「alert() 函數呼叫」→ 通知勾 App 推播。
@@ -143,6 +159,8 @@ orderPlan(int qty) =>
     note = exitMode == "eod" ?
          "條件單設「當日有效」；" + str.tostring(eodHour) + ":" + str.tostring(eodMinute, "00") +
          " 未觸發請撤單、持倉請市價平掉" :
+         exitMode == "ema" ?
+         "⚠ ema 為回測實驗模式：另有日EMA出場線（圖上橙線 " + fmt(dEma) + "），本指示未含該出場單" :
          "條件單設「當日有效」；未觸發則明日按新價位重掛"
     [s1, s2, note]
 
@@ -273,5 +291,7 @@ if showGuide and barstate.islast
 // ---- 畫圖 --------------------------------------------------------------------
 plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
 plot(loLevel, "前N日最低", color = color.new(color.red, 0),  linewidth = 2, style = plot.style_linebr)
+plot(exitMode == "ema" and emaReady ? dEma : na, "日EMA出場線",
+     color = color.new(color.orange, 0), linewidth = 2, style = plot.style_linebr)
 bgcolor(strategy.position_size > 0 ? color.new(color.teal, 92) :
      strategy.position_size < 0 ? color.new(color.red, 92) : na)
