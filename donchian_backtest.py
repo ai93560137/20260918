@@ -39,12 +39,15 @@ def day_key(ts):
 
 
 def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
-        atr_len=14, k_sl=2.0, k_tp=0.0, equity=10000.0, collect_trades=False):
+        atr_len=14, k_sl=2.0, k_tp=0.0, ema_len=20, equity=10000.0,
+        collect_trades=False):
     """單一設定回測。回傳統計 dict。"""
     days = []            # 已完成交易日 [{high, low, close}]
     cur_day = None       # 進行中的日 aggregates
     cur_key = None
     atr = None           # Wilder ATR（以完整日計）
+    ema = None           # 日收盤 EMA（mode="ema" 的出場線，每日更新一次）
+    ema_n = 0
 
     pos = 0              # +1 多 / -1 空 / 0 空手
     entry_price = None
@@ -61,7 +64,7 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
     trade_rows = []
 
     def finish_day():
-        nonlocal atr
+        nonlocal atr, ema, ema_n
         if cur_day is None:
             return
         days.append(dict(cur_day))
@@ -71,6 +74,9 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
                      abs(cur_day["high"] - prev_close),
                      abs(cur_day["low"] - prev_close))
             atr = tr if atr is None else (atr * (atr_len - 1) + tr) / atr_len
+        c = cur_day["close"]
+        ema = c if ema is None else ema + 2.0 / (ema_len + 1) * (c - ema)
+        ema_n += 1
 
     def close_pos(price, ts, reason):
         nonlocal pos, pnl, peak, max_dd, wins, losses, win_sum, loss_sum
@@ -117,7 +123,8 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
             cur_day["low"] = min(cur_day["low"], bar["low"])
             cur_day["close"] = bar["close"]
 
-        if len(days) < lookback or (mode == "atr" and atr is None):
+        if len(days) < lookback or (mode == "atr" and atr is None) \
+                or (mode == "ema" and ema_n < ema_len):
             continue
 
         hi_level = max(d["high"] for d in days[-lookback:])
@@ -134,6 +141,11 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
                 close_pos(max(bar["open"], tp), bar["time"], "TP")
             elif pos < 0 and tp is not None and bar["low"] <= tp:
                 close_pos(min(bar["open"], tp), bar["time"], "TP")
+            # EMA 出場：價格回穿日收盤 EMA（停損單語意，掛在 EMA 價位）
+            elif mode == "ema" and pos > 0 and bar["low"] <= ema:
+                close_pos(min(bar["open"], ema), bar["time"], "EMA")
+            elif mode == "ema" and pos < 0 and bar["high"] >= ema:
+                close_pos(max(bar["open"], ema), bar["time"], "EMA")
 
         # 2) 突破訊號
         long_sig = bar["high"] >= hi_level and not traded_today[1]
@@ -156,11 +168,11 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
 
         if pos > 0 and short_sig:                      # 反向突破
             close_pos(min(bar["open"], lo_level), bar["time"], "REV")
-            if mode in ("sar", "atr") and short_entry_allowed:
+            if mode in ("sar", "atr", "ema") and short_entry_allowed:
                 open_pos(-1, min(bar["open"], lo_level), bar["time"])
         elif pos < 0 and long_sig:
             close_pos(max(bar["open"], hi_level), bar["time"], "REV")
-            if mode in ("sar", "atr") and long_entry_allowed:
+            if mode in ("sar", "atr", "ema") and long_entry_allowed:
                 open_pos(1, max(bar["open"], hi_level), bar["time"])
         elif pos == 0:
             if long_sig and long_entry_allowed:
@@ -236,7 +248,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("data", nargs="?", help="M1 CSV / .csv.gz（MT5 匯出格式）")
     ap.add_argument("--lookback", type=int, default=2, help="通道回看天數（預設 2）")
-    ap.add_argument("--mode", choices=["sar", "channel", "atr", "eod"], default="sar")
+    ap.add_argument("--mode", choices=["sar", "channel", "atr", "eod", "ema"], default="sar")
+    ap.add_argument("--ema-len", type=int, default=20, help="ema 模式：日收盤 EMA 週期")
     ap.add_argument("--trade-mode", choices=["both", "long", "short"], default="both")
     ap.add_argument("--spread", type=float, default=0.30)
     ap.add_argument("--atr-len", type=int, default=14)
@@ -276,7 +289,8 @@ def main():
         return
 
     r = run(bars, lookback=args.lookback, mode=args.mode, trade_mode=args.trade_mode,
-            k_sl=args.k_sl, k_tp=args.k_tp, collect_trades=bool(args.trades), **base)
+            k_sl=args.k_sl, k_tp=args.k_tp, ema_len=args.ema_len,
+            collect_trades=bool(args.trades), **base)
     print(HEADER)
     print(fmt_row(f"{args.mode} N={args.lookback} {args.trade_mode}", r))
     print(f"平均獲利 {r['avg_win']:.2f} / 平均虧損 {r['avg_loss']:.2f}（報價單位）")
