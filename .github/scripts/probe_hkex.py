@@ -1,4 +1,4 @@
-"""HKEX API 探測第二輪：從頁面 JS 挖出真正的端點與參數格式，照抄呼叫。"""
+"""HKEX 探測第三輪：全 JS 掃描 + iframe + 日報新入口。"""
 import os
 import re
 import time
@@ -14,49 +14,44 @@ S.headers.update(H)
 
 page_url = ('https://www.hkex.com.hk/Market-Data/Futures-and-Options-Prices/Equity-Index/'
             'Hang-Seng-Index-Futures-and-Options?sc_lang=en')
-r = S.get(page_url, timeout=30)
-html = r.text
-log.append(f"page: HTTP {r.status_code}, {len(html)} chars")
+html = S.get(page_url, timeout=30).text
+token = (re.search(r'return\s*"(evLts[^"]+)"', html) or [None, None])[1] if re.search(r'return\s*"(evLts[^"]+)"', html) else None
 m = re.search(r'return\s*"(evLts[^"]+)"', html)
 token = m.group(1) if m else None
-log.append(f"token: {token[:25]}..." if token else "NO TOKEN")
+log.append(f"token: {'OK' if token else 'MISSING'}")
 
-# 1) 頁面裡所有 hkexwidget 端點與前後文
-for mm in re.finditer(r'.{120}hkexwidget[^"\'\s]{0,80}.{120}', html):
-    log.append("CTX: " + mm.group(0).replace('\n', ' ')[:320])
-# 2) 頁面引用的 JS 檔（widget 的呼叫邏輯多半在外部 JS）
+# iframe / www1 引用
+for mm in re.finditer(r'<iframe[^>]+src="([^"]+)"', html):
+    log.append("IFRAME: " + mm.group(1))
+for mm in re.finditer(r'.{80}www1\.hkex\.com\.hk[^"\'\s]{0,100}.{80}', html):
+    log.append("WWW1 CTX: " + mm.group(0).replace('\n', ' ')[:280])
+
+# 全部 JS 檔搜 hkexwidget / getderivatives / tokenget
 js_files = sorted(set(re.findall(r'src="([^"]+\.js[^"]*)"', html)))
-log.append("JS files: " + " | ".join(js_files[:20]))
-# 3) 抓最像 widget 的 JS，挖端點與參數
 for jf in js_files:
-    if not re.search(r'widget|derivat|quote|market', jf, re.I):
-        continue
     u = jf if jf.startswith('http') else ('https://www.hkex.com.hk' + jf)
     try:
-        jr = S.get(u, timeout=30)
-        hits = re.findall(r'[\w/]*hkexwidget/data/(\w+)', jr.text)
-        if hits:
-            log.append(f"JS {u[:80]}: endpoints {sorted(set(hits))}")
-            for ep in sorted(set(hits)):
-                for mm in re.finditer(r'.{60}data/' + ep + r'.{260}', jr.text):
-                    log.append(f"  {ep} CTX: " + mm.group(0).replace('\n', ' ')[:400])
-                    break
+        t = S.get(u, timeout=30).text
+        for pat in [r'hkexwidget/data/\w+', r'getderivatives\w*', r'dfutures\w*', r'doption\w*']:
+            hits = sorted(set(re.findall(pat, t)))
+            if hits:
+                log.append(f"{jf.split('?')[0]}: {pat} → {hits[:10]}")
+                for h_ in hits[:4]:
+                    mm = re.search(r'.{100}' + re.escape(h_) + r'.{300}', t)
+                    if mm:
+                        log.append("  CTX: " + mm.group(0).replace('\n', ' ')[:400])
     except Exception as e:
-        log.append(f"JS {u[:60]} ERR: {e!r}")
+        log.append(f"{jf[:50]} ERR: {e!r}")
 
-# 4) 用常見參數變體再試 futures 端點
-qid = str(int(time.time() * 1000))
-variants = [
-    f'https://www1.hkex.com.hk/hkexwidget/data/getderivativesfutures?lang=eng&token={token}&ati=HSI&type=0&qid={qid}&callback=jQuery{qid}',
-    f'https://www1.hkex.com.hk/hkexwidget/data/getderivativesfutures?lang=eng&token={token}&ati=HSI&qid={qid}&callback=jQuery{qid}',
-    f'https://www1.hkex.com.hk/hkexwidget/data/getderivativesfutures?lang=eng&token={token}&assetid=HSI&type=0&qid={qid}&callback=jQuery{qid}',
-]
-for u in variants:
+# 日報新入口
+for u in ['https://www.hkex.com.hk/Market-Data/Statistics/Consolidated-Reports/Daily-Market-Report?sc_lang=en',
+          'https://www.hkex.com.hk/Market-Data/Statistics/Consolidated-Reports?sc_lang=en']:
     try:
-        rr = S.get(u, timeout=20)
-        log.append(f"TRY {u[100:160]}: {rr.text[:200]}")
+        r = S.get(u, timeout=30)
+        links = sorted(set(re.findall(r'href="([^"]*(?:dayrpt|dqe|hsio|DMR|dmr)[^"]*)"', r.text, re.I)))
+        log.append(f"REPORT PAGE {u[60:110]}: HTTP {r.status_code}, links: {links[:10]}")
     except Exception as e:
-        log.append(f"TRY ERR: {e!r}")
+        log.append(f"REPORT ERR: {e!r}")
 
 with open(f'{OUT}/probe_log.txt', 'w') as f:
     f.write('\n'.join(log))
