@@ -558,6 +558,7 @@ bid/ask/IV/OI。**延遲 15 分鐘 → 只能監測，不能執行套利。**
 | `tradingview/hsi_scan.py` | 掃描：期貨曲線、ATM IV 與 IV−HV20（對照 23 年均值 +2.4）、無套利檢查、滾倉提醒 → `scan_report.md` |
 | `.github/workflows/fetch-quotes.yml` | 串起兩者；push `.github/trigger-scan` 或手動 dispatch 皆可觸發 |
 | Routine `HSI 期權每日掃描` | 週一至五 14:30 HKT 喚醒本 session：觸發 workflow → 讀報告 → 有警報才通知 |
+| 使用者側 Cloud Scheduler | 同時刻（14:30 HKT）觸發 Cloud Run 抓同一 API 推 `quotes_colab/`，供逐日嚴格管道比對 |
 
 **警報條件**：套利條件破壞、IV−HV20 < 0（保費消失，暫停新賣出）或 > 8（查事件風險）、
 距月度結算 ≤ 2 天（滾倉窗口）。無警報則靜默，快照自動累積成 skew/期限結構時間序列

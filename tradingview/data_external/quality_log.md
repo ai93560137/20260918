@@ -2,7 +2,8 @@
 
 三個來源：
 1. **Actions 快照**（quotes/，GitHub Actions 抓 HKEX API）
-2. **Colab 快照**（quotes_colab/，使用者的 Colab 定時抓同一 API — 見 colab_fetch.py）
+2. **Cloud Run 快照**（quotes_colab/，使用者的 GCP Cloud Scheduler「hkex-daily-trigger」
+   每交易日 14:30 HKT 觸發 Cloud Run 抓同一 API — 與 Actions 快照同分鐘，可嚴格比對）
 3. **富途截圖**（使用者提供，唯一的獨立資料源）
 
 比對邏輯：Actions vs Colab 同源 → 驗證抓取管道（應完全一致，不一致=管道 bug）；
