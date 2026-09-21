@@ -1,0 +1,26 @@
+name: fetch-quotes
+# 定時抓 HKEX 延遲行情（恒指期貨+期權鏈）。只跑 repo 內腳本、只裝 PyPI 的 requests。
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/scripts/fetch_hkex_quotes.py']
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip -q install requests
+          python .github/scripts/fetch_hkex_quotes.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tradingview/data_external/
+          git diff --cached --quiet || git commit -m "data: HKEX 行情快照（Actions 自動）"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
