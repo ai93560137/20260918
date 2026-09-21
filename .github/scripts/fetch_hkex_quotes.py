@@ -37,19 +37,19 @@ stamp = time.strftime('%Y%m%d_%H%M')
 fut = call('getderivativesfutures', ats='HSI', type=0)
 if fut:
     json.dump(fut, open(f'{OUT}/futures_{stamp}.json', 'w'), ensure_ascii=False)
-# 2) 合約資訊（拿期權到期月清單）
-info = call('getderivativesinfo', ats='HSI')
+# 2) 期權合約月份清單（conlist 的 id 才是 con 參數的合法值）
+cl = call('getoptioncontractlist', ats='HSI', type=0)
 cons = []
-if info:
-    json.dump(info, open(f'{OUT}/info_{stamp}.json', 'w'), ensure_ascii=False)
-    blob = json.dumps(info)
-    cons = sorted(set(re.findall(r'"con"\s*:\s*"([^"]+)"', blob)))[:6]
-    log.append(f"contracts found: {cons}")
-# 3) 期權鏈：前兩個月份
-for con in (cons[:2] if cons else ['OCT26', 'NOV26']):
-    opt = call('getderivativesoption', ats='HSI', con=con, fr='null', to='null', type=0)
+if cl:
+    conlist = cl.get('data', {}).get('conlist', []) or []
+    cons = [(c.get('id'), c.get('mon')) for c in conlist]
+    log.append(f"contracts: {cons[:8]}")
+# 3) 期權鏈：前三個月份
+for cid, mon in cons[:3]:
+    opt = call('getderivativesoption', ats='HSI', con=cid, fr='null', to='null', type=0)
     if opt and len(json.dumps(opt)) > 500:
-        json.dump(opt, open(f'{OUT}/options_{con}_{stamp}.json', 'w'), ensure_ascii=False)
+        safe = str(mon or cid).replace('/', '-').replace(' ', '')
+        json.dump(opt, open(f'{OUT}/options_{safe}_{stamp}.json', 'w'), ensure_ascii=False)
 
 with open('tradingview/data_external/probe_log.txt', 'w') as f:
     f.write('\n'.join(log))
