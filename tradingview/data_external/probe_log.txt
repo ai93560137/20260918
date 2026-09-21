@@ -1,7 +1,7 @@
-token OK (64)
-getderivativesfutures(ats=HSI&type=0): code=000, 2515 chars
+token OK (66)
+getderivativesfutures(ats=HSI&type=0): code=000, 2255 chars
 getoptioncontractlist(ats=HSI&type=0): code=000, 488 chars
 contracts: [('092026', 'Sep-26'), ('102026', 'Oct-26'), ('112026', 'Nov-26'), ('122026', 'Dec-26'), ('032027', 'Mar-27'), ('062027', 'Jun-27'), ('092027', 'Sep-27'), ('122027', 'Dec-27')]
-getderivativesoption(ats=HSI&con=092026&fr=null&to=null&type=): code=000, 1896 chars
-getderivativesoption(ats=HSI&con=102026&fr=null&to=null&type=): code=000, 1822 chars
-getderivativesoption(ats=HSI&con=112026&fr=null&to=null&type=): code=000, 1720 chars
+getderivativesoption(ats=HSI&con=092026&fr=null&to=null&type=): code=000, 1701 chars
+getderivativesoption(ats=HSI&con=102026&fr=null&to=null&type=): code=000, 1685 chars
+getderivativesoption(ats=HSI&con=112026&fr=null&to=null&type=): code=000, 1671 chars
