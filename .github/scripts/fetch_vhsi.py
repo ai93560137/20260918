@@ -23,7 +23,9 @@ def save(df, fname, src):
 
 
 import yfinance as yf
-for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv')]:
+for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
+                   ('^VIX', 'vix_daily.csv'), ('^GSPC', 'spx_daily.csv'),
+                   ('^VXN', 'vxn_daily.csv'), ('^NDX', 'ndx_daily.csv')]:
     try:
         d = yf.download(sym, period='max', interval='1d', progress=False, auto_adjust=False)
         if isinstance(d.columns, pd.MultiIndex):
