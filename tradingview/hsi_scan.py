@@ -114,6 +114,38 @@ def scan_options(hv):
                     ALERTS.append(f"{mon} {side} 垂直價差超上界 {K1:.0f}/{K2:.0f}")
 
 
+def scan_us():
+    """美股 VRP 監測：VIX − SPX HV20 對照長期平均 +4.1；有 MES 持倉時倒數到期。"""
+    fv = os.path.join(BASE, 'vix_daily.csv')
+    fs = os.path.join(BASE, 'spx_daily.csv')
+    if not (os.path.exists(fv) and os.path.exists(fs)):
+        return
+    vix = pd.read_csv(fv, parse_dates=['Date']).set_index('Date').Close
+    spx = pd.read_csv(fs, parse_dates=['Date']).set_index('Date').Close
+    hv = float(spx.pct_change().dropna().tail(20).std() * np.sqrt(252) * 100)
+    iv = float(vix.iloc[-1])
+    prem = iv - hv
+    asof = vix.index[-1].date()
+    LINES.append(f"\n## 美股（MES）  VIX {iv:.1f}  SPX HV20 {hv:.1f}"
+                 f"  溢價 {prem:+.1f}（37 年平均 +4.1）  截至 {asof}")
+    if (date.today() - asof).days > 5:
+        ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
+    if prem < 0:
+        ALERTS.append(f"美股 VIX−HV = {prem:+.1f} 為負：保費消失，暫停 MES 新賣出")
+    elif prem > 10:
+        ALERTS.append(f"美股 VIX−HV = {prem:+.1f} 異常厚：檢查事件風險（FOMC/CPI/財報季）")
+    pos = os.path.join(BASE, 'position_mes.json')
+    if os.path.exists(pos):
+        p = json.load(open(pos))
+        exp = datetime.strptime(p['expiry'], '%Y-%m-%d').date()
+        dd = (exp - date.today()).days
+        LINES.append(f"- 持倉：{p.get('qty', 1)} 組 MES {p.get('strike')} 跨式，"
+                     f"到期 {exp}（{dd:+d} 天）")
+        if 0 <= dd <= 2:
+            ALERTS.append(f"MES 滾倉窗口：{dd} 天後到期，"
+                          f"到期日美東 16:00 前平倉，次日賣 25–40 天窗口最近系列")
+
+
 def roll_check():
     # 月度到期 = 當月最後交易日的前一日（近似：月底倒數第二個工作日）
     today = date.today()
@@ -131,6 +163,7 @@ if __name__ == '__main__':
     front = scan_futures()
     scan_options(hv)
     roll_check()
+    scan_us()
     stamp = datetime.now().strftime('%Y-%m-%d %H:%M')
     head = [f"# HSI 掃描報告  {stamp}\n"]
     head.append("**⚠ 警報：**\n" + '\n'.join(f"- {a}" for a in ALERTS) + "\n" if ALERTS

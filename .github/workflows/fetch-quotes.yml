@@ -16,7 +16,8 @@ jobs:
           python-version: '3.11'
       - name: fetch and scan
         run: |
-          pip -q install requests pandas numpy
+          pip -q install requests pandas numpy yfinance
+          python .github/scripts/fetch_us_daily.py || echo "us daily refresh failed - scan uses last snapshot"
           python .github/scripts/fetch_hkex_quotes.py
           cd tradingview && python hsi_scan.py
       - name: telegram notify
