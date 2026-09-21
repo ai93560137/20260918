@@ -15,11 +15,64 @@ import re
 import sys
 from datetime import date, datetime
 
+import math
+
 import numpy as np
 import pandas as pd
 
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data_external')
 ALERTS, LINES, DIGEST = [], [], []
+FIRST_ATM = {}   # 最近月 ATM（scan_options 填入，delta 參考用）
+
+
+def straddle_delta(F, K, iv_pct, days):
+    """賣出跨式的組合 delta（Black-76，每組）= −(2·N(d1)−1)。"""
+    if not (F and K and iv_pct and days > 0):
+        return None
+    s, t = iv_pct / 100, days / 365
+    d1 = (math.log(F / K) + 0.5 * s * s * t) / (s * math.sqrt(t))
+    nd1 = 0.5 * (1 + math.erf(d1 / math.sqrt(2)))
+    return -(2 * nd1 - 1)
+
+
+def delta_report(front, hsi_expiry):
+    """兩市場跨式 delta：有持倉用持倉參數，否則用 ATM 參考。"""
+    today = date.today()
+    # HSI
+    pos_f = os.path.join(BASE, 'position.json')
+    if os.path.exists(pos_f):
+        p = json.load(open(pos_f))
+        K, tag, qty = p['strike'], '持倉', p.get('qty', 1)
+        exp = datetime.strptime(p['expiry'], '%Y-%m-%d').date() \
+            if 'expiry' in p else hsi_expiry
+    elif FIRST_ATM:
+        K, tag, qty, exp = FIRST_ATM['K'], '參考', 1, hsi_expiry
+    else:
+        K = None
+    if K and FIRST_ATM:
+        d = straddle_delta(front, K, FIRST_ATM['iv'], (exp - today).days)
+        if d is not None:
+            act = f" → 對沖 {abs(d * qty):.0f} 手" if abs(d * qty) > 0.5 else "（無動作）"
+            DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}")
+    # MES（期貨價取 ES=F 延遲價）
+    fq = os.path.join(BASE, 'us_futures_quote.json')
+    if not os.path.exists(fq):
+        return
+    es = json.load(open(fq)).get('ES=F', {}).get('price')
+    vixf = os.path.join(BASE, 'vix_daily.csv')
+    vix = float(pd.read_csv(vixf).Close.iloc[-1]) if os.path.exists(vixf) else None
+    pos_f = os.path.join(BASE, 'position_mes.json')
+    if os.path.exists(pos_f):
+        p = json.load(open(pos_f))
+        K, tag, qty = p['strike'], '持倉', p.get('qty', 1)
+        days = (datetime.strptime(p['expiry'], '%Y-%m-%d').date() - today).days
+        iv = p.get('entry_iv', vix)
+    else:
+        K, tag, qty, days, iv = round(es / 5) * 5 if es else None, '參考', 1, 25, vix
+    d = straddle_delta(es, K, iv, days)
+    if d is not None:
+        act = f" → 對沖 {abs(d * qty):.0f} 手 MES 期貨" if abs(d * qty) > 0.5 else "（無動作）"
+        DIGEST.append(f"MES 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}")
 
 
 def num(s):
@@ -102,6 +155,8 @@ def scan_options(hv, front=None):
         else:
             K, civ, piv = min(ivs, key=lambda x: abs(x[1] - x[2]))
         atm = (civ + piv) / 2
+        if not FIRST_ATM:
+            FIRST_ATM.update(mon=mon, K=K, iv=atm)
         LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
         if hv:
             prem = atm - hv
@@ -179,14 +234,16 @@ def roll_check():
     DIGEST.append(f"HSI 月度到期剩 {dd} 天")
     if 0 <= dd <= 2:
         ALERTS.append(f"滾倉窗口：{dd} 天後月度結算，準備次日賣下月 ATM 跨式（SOP §10.8）")
+    return expiry
 
 
 if __name__ == '__main__':
     hv = hv20()
     front = scan_futures()
     scan_options(hv, front)
-    roll_check()
+    hsi_expiry = roll_check()
     scan_us()
+    delta_report(front, hsi_expiry)
     stamp = datetime.now().strftime('%Y-%m-%d %H:%M')
     head = [f"# HSI 掃描報告  {stamp}\n"]
     head.append("**⚠ 警報：**\n" + '\n'.join(f"- {a}" for a in ALERTS) + "\n" if ALERTS
