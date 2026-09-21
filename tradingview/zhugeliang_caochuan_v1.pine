@@ -78,14 +78,18 @@ var table tb = table.new(position.top_right, 2, 7, border_width=1)
 if barstate.islast
     table.cell(tb, 0, 0, "草船借箭", text_color=color.white, bgcolor=color.new(color.black, 20))
     table.cell(tb, 1, 0, statusTxt, text_color=color.white, bgcolor=statusCol)
-    table.cell(tb, 0, 1, "隱含波動 IV"), table.cell(tb, 1, 1, str.tostring(iv, "#.##"))
-    table.cell(tb, 0, 2, "實際波動 HV" + str.tostring(hvLen)), table.cell(tb, 1, 2, str.tostring(hv, "#.##"))
-    table.cell(tb, 0, 3, "溢價 IV−HV"), table.cell(tb, 1, 3, str.tostring(spread, "#.##") + "（均值 " + str.tostring(vrpMean, "#.#") + "）",
-         text_color=spread > vrpMean ? color.green : spread < 0 ? color.red : color.gray)
-    table.cell(tb, 0, 4, "溢價一年百分位"), table.cell(tb, 1, 4, str.tostring(pctile, "#") + "%")
-    table.cell(tb, 0, 5, "合成收租 近12月"), table.cell(tb, 1, 5, (na(pnl12) ? "—" : str.tostring(pnl12, "#.##") + "%"),
-         text_color=na(pnl12) or pnl12 >= 0 ? color.green : color.red)
-    table.cell(tb, 0, 6, "合成收租 全期累計"), table.cell(tb, 1, 6, str.tostring(cumPnl, "#.#") + "%")
+    table.cell(tb, 0, 1, "隱含波動 IV")
+    table.cell(tb, 1, 1, str.tostring(iv, "#.##"))
+    table.cell(tb, 0, 2, "實際波動 HV" + str.tostring(hvLen))
+    table.cell(tb, 1, 2, str.tostring(hv, "#.##"))
+    table.cell(tb, 0, 3, "溢價 IV−HV")
+    table.cell(tb, 1, 3, str.tostring(spread, "#.##") + "（均值 " + str.tostring(vrpMean, "#.#") + "）", text_color=spread > vrpMean ? color.green : spread < 0 ? color.red : color.gray)
+    table.cell(tb, 0, 4, "溢價一年百分位")
+    table.cell(tb, 1, 4, str.tostring(pctile, "#") + "%")
+    table.cell(tb, 0, 5, "合成收租 近12月")
+    table.cell(tb, 1, 5, na(pnl12) ? "—" : str.tostring(pnl12, "#.##") + "%", text_color=na(pnl12) or pnl12 >= 0 ? color.green : color.red)
+    table.cell(tb, 0, 6, "合成收租 全期累計")
+    table.cell(tb, 1, 6, str.tostring(cumPnl, "#.#") + "%")
 
 // ── 警報 ─────────────────────────────────────────────────────────────────────
 alertcondition(ta.crossunder(spread, thNeg), "草船借箭：保費消失", "IV−HV 轉負：暫停新賣出，既有部位照抱")
