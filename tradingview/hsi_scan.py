@@ -71,7 +71,7 @@ def scan_futures():
     return front
 
 
-def scan_options(hv):
+def scan_options(hv, front=None):
     # 每個月份取時間戳最新的一份（檔名字母排序會讓 Sep 排最後，不能直接取尾三個）
     latest_by_mon = {}
     for f in glob.glob(os.path.join(BASE, 'quotes', 'options_*.json')):
@@ -91,12 +91,16 @@ def scan_options(hv):
         rows = d.get('optionlist', [])
         if not rows:
             continue
-        # ATM = put/call IV 都有、且兩者最接近的檔
+        # ATM = 最接近期貨價的檔（夜盤報價稀疏時用 IV 接近度找會漂移）；
+        # 無期貨價才退回 call/put IV 最接近的檔
         ivs = [(num(r['strike']), num(r['c'].get('iv')), num(r['p'].get('iv'))) for r in rows]
         ivs = [x for x in ivs if x[1] and x[2]]
         if not ivs:
             continue
-        K, civ, piv = min(ivs, key=lambda x: abs(x[1] - x[2]))
+        if front:
+            K, civ, piv = min(ivs, key=lambda x: abs(x[0] - front))
+        else:
+            K, civ, piv = min(ivs, key=lambda x: abs(x[1] - x[2]))
         atm = (civ + piv) / 2
         LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
         if hv:
@@ -173,7 +177,7 @@ def roll_check():
 if __name__ == '__main__':
     hv = hv20()
     front = scan_futures()
-    scan_options(hv)
+    scan_options(hv, front)
     roll_check()
     scan_us()
     stamp = datetime.now().strftime('%Y-%m-%d %H:%M')
