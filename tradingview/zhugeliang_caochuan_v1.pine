@@ -1,0 +1,93 @@
+//@version=6
+// =============================================================================
+// 智能諸葛亮 · 草船借箭 v1 — 波動溢價（VRP）監測儀表板
+//
+// 問題：現在賣波動，市場付的保費夠厚嗎？
+//
+// VRP = 波動率指數（市場的隱含波動） − 之後實現的實際波動。
+// 23 年驗證（HSI_HANDOFF.md §10）：HSI 平均 +2.4 點、ES +4.1、NQ +3.6，
+// 逐年為正比例 92%/97%/88%。這個指標把「保費現在厚不厚」放到圖上。
+//
+// 能與不能：
+//   ✅ IV vs HV、溢價 vs 歷史均值、百分位、合成收租曲線、三種警報
+//   ❌ Pine 碰不到期權鏈——實際下單看富途，警報看 Telegram，這裡只是儀表
+//
+// 用法：
+//   1. 圖表開 HSI（或 SPX / NDX），日線
+//   2. 掛上本指標，「波動率指數」按市場選：HSI:VHSI / CBOE:VIX / CBOE:VXN
+//   3. 「歷史平均溢價」對應填 2.4 / 4.1 / 3.6
+//   4. 右上表格看狀態；可對三個 alertcondition 設 TradingView 警報
+//
+// 狀態判讀（與每日自動掃描同一套門檻）：
+//   ✅ 正常收租：溢價為正且不極端 → 按 SOP 照常
+//   ⛔ 保費消失：IV − HV < 0 → 暫停新賣出，既有部位照抱
+//   ⚠ 異常厚：IV − HV > 8 → 查事件風險（政策日/選舉）再決定
+//   🔄 近月底：接近月度結算 → 準備滾倉（精確日期以 Telegram 提醒為準）
+// =============================================================================
+indicator("智能諸葛亮 · 草船借箭 v1 — 波動溢價監測", shorttitle="草船借箭", overlay=false)
+
+// ── 輸入 ─────────────────────────────────────────────────────────────────────
+volSym   = input.symbol("HSI:VHSI", "波動率指數（VHSI / VIX / VXN）")
+hvLen    = input.int(20, "實際波動回看（交易日）", minval=5)
+vrpMean  = input.float(2.4, "歷史平均溢價（HSI 2.4 / ES 4.1 / NQ 3.6）", step=0.1)
+thNeg    = input.float(0.0, "警報：保費消失門檻（低於）")
+thFat    = input.float(8.0, "警報：異常厚門檻（高於）")
+costPts  = input.float(0.12, "合成回測成本（波動點/月）", step=0.01)
+
+// ── 資料 ─────────────────────────────────────────────────────────────────────
+iv = request.security(volSym, "D", close)
+ret = math.log(close / close[1])
+hv  = ta.stdev(ret, hvLen) * math.sqrt(252) * 100
+spread = iv - hv
+
+// 溢價在過去一年內的百分位
+pctile = ta.percentrank(spread, 252)
+
+// ── 合成收租曲線：每 21 個交易日結一次帳（不重疊，同 §10.3 流程）──────────────
+var float cumPnl = 0.0
+var float pnl12  = na
+var float[] recent = array.new_float()
+VEGA = 0.8 * math.sqrt(21.0 / 252.0)   // 每 1 波動點 ≈ 名義的 0.231%
+rv21 = ta.stdev(ret, 21) * math.sqrt(252) * 100
+if bar_index > 42 and bar_index % 21 == 0 and not na(iv[21]) and not na(rv21)
+    monthPnl = (iv[21] - rv21 - costPts) * VEGA
+    cumPnl += monthPnl
+    array.push(recent, monthPnl)
+    if array.size(recent) > 12
+        array.shift(recent)
+pnl12 := array.size(recent) > 0 ? array.sum(recent) : na
+
+// ── 狀態 ─────────────────────────────────────────────────────────────────────
+nearRoll = (dayofmonth(time_close + 86400000 * 5) < dayofmonth) // 5 曆日內跨月 → 近月底
+stNeg = spread < thNeg
+stFat = spread > thFat
+statusTxt = stNeg ? "⛔ 保費消失：暫停新賣出" :
+     stFat ? "⚠ 異常厚：查事件風險" :
+     nearRoll ? "🔄 近月底：準備滾倉" : "✅ 正常收租"
+statusCol = stNeg ? color.red : stFat ? color.orange : nearRoll ? color.blue : color.green
+
+// ── 畫圖 ─────────────────────────────────────────────────────────────────────
+plot(iv, "隱含波動（波指）", color=color.orange, linewidth=2)
+plot(hv, "實際波動 HV", color=color.new(color.blue, 20), linewidth=2)
+plot(spread, "溢價 IV−HV", color=spread >= 0 ? color.new(color.green, 40) : color.new(color.red, 20), style=plot.style_columns)
+hline(0, "零", color=color.gray, linestyle=hline.style_dotted)
+hline(8, "異常厚", color=color.new(color.orange, 60), linestyle=hline.style_dashed)
+
+// ── 表格 ─────────────────────────────────────────────────────────────────────
+var table tb = table.new(position.top_right, 2, 7, border_width=1)
+if barstate.islast
+    table.cell(tb, 0, 0, "草船借箭", text_color=color.white, bgcolor=color.new(color.black, 20))
+    table.cell(tb, 1, 0, statusTxt, text_color=color.white, bgcolor=statusCol)
+    table.cell(tb, 0, 1, "隱含波動 IV"), table.cell(tb, 1, 1, str.tostring(iv, "#.##"))
+    table.cell(tb, 0, 2, "實際波動 HV" + str.tostring(hvLen)), table.cell(tb, 1, 2, str.tostring(hv, "#.##"))
+    table.cell(tb, 0, 3, "溢價 IV−HV"), table.cell(tb, 1, 3, str.tostring(spread, "#.##") + "（均值 " + str.tostring(vrpMean, "#.#") + "）",
+         text_color=spread > vrpMean ? color.green : spread < 0 ? color.red : color.gray)
+    table.cell(tb, 0, 4, "溢價一年百分位"), table.cell(tb, 1, 4, str.tostring(pctile, "#") + "%")
+    table.cell(tb, 0, 5, "合成收租 近12月"), table.cell(tb, 1, 5, (na(pnl12) ? "—" : str.tostring(pnl12, "#.##") + "%"),
+         text_color=na(pnl12) or pnl12 >= 0 ? color.green : color.red)
+    table.cell(tb, 0, 6, "合成收租 全期累計"), table.cell(tb, 1, 6, str.tostring(cumPnl, "#.#") + "%")
+
+// ── 警報 ─────────────────────────────────────────────────────────────────────
+alertcondition(ta.crossunder(spread, thNeg), "草船借箭：保費消失", "IV−HV 轉負：暫停新賣出，既有部位照抱")
+alertcondition(ta.crossover(spread, thFat), "草船借箭：溢價異常厚", "IV−HV 突破 8 點：查事件風險再決定")
+alertcondition(nearRoll and not nearRoll[1], "草船借箭：接近月底結算", "準備滾倉：結算翌日賣下月 ATM 跨式（精確日以 Telegram 為準）")
