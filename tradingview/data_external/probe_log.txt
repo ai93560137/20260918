@@ -1,1 +1,6 @@
-equity.js: HTTP 200, 103023 chars
+token OK (64)
+getderivativesfutures(ats=HSI&type=0): code=000, 2515 chars
+getderivativesinfo(ats=HSI): code=000, 187 chars
+contracts found: []
+getderivativesoption(ats=HSI&con=OCT26&fr=null&to=null&type=0): code=002, 86 chars
+getderivativesoption(ats=HSI&con=NOV26&fr=null&to=null&type=0): code=002, 86 chars
