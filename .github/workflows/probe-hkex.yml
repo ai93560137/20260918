@@ -1,0 +1,26 @@
+name: probe-hkex
+# 探測 HKEX 延遲報價 API。只跑 repo 內腳本、只裝 PyPI 的 requests。
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/scripts/probe_hkex.py']
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip -q install requests
+          python .github/scripts/probe_hkex.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tradingview/data_external/
+          git diff --cached --quiet || git commit -m "data: HKEX 報價 API 探測結果"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
