@@ -3,7 +3,7 @@ name: fetch-quotes
 on:
   workflow_dispatch:
   push:
-    paths: ['.github/scripts/fetch_hkex_quotes.py']
+    paths: ['.github/scripts/fetch_hkex_quotes.py', '.github/trigger-scan']
 permissions:
   contents: write
 jobs:
