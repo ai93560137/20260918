@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data_external')
-ALERTS, LINES = [], []
+ALERTS, LINES, DIGEST = [], [], []
 
 
 def num(s):
@@ -66,6 +66,8 @@ def scan_futures():
         if prev_se and se and se < prev_se - 60:
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
         prev_se = se
+    if front:
+        DIGEST.append(f"HSI 期貨(近月) {front:,.0f}")
     return front
 
 
@@ -95,6 +97,7 @@ def scan_options(hv):
         if hv:
             prem = atm - hv
             LINES.append(f"- IV − HV20 = {prem:+.1f} 點（23 年平均 +2.4）")
+            DIGEST.append(f"HSI {mon}: ATM {K:.0f} IV {atm:.1f} 溢價{prem:+.1f}")
             if prem < 0:
                 ALERTS.append(f"{mon} IV−HV = {prem:+.1f} 為負：保費消失，暫停新賣出")
             elif prem > 8:
@@ -129,6 +132,7 @@ def scan_us():
     asof = vix.index[-1].date()
     LINES.append(f"\n## 美股（MES）  VIX {iv:.1f}  SPX HV20 {hv:.1f}"
                  f"  溢價 {prem:+.1f}（37 年平均 +4.1）  截至 {asof}")
+    DIGEST.append(f"美股: VIX {iv:.1f} HV {hv:.1f} 溢價{prem:+.1f}")
     if (date.today() - asof).days > 5:
         ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
     if prem < 0:
@@ -142,6 +146,7 @@ def scan_us():
         dd = (exp - date.today()).days
         LINES.append(f"- 持倉：{p.get('qty', 1)} 組 MES {p.get('strike')} 跨式，"
                      f"到期 {exp}（{dd:+d} 天）")
+        DIGEST.append(f"MES 持倉 {p.get('strike')} 跨式 到期剩 {dd} 天")
         if 0 <= dd <= 2:
             ALERTS.append(f"MES 滾倉窗口：{dd} 天後到期，"
                           f"到期日美東 16:00 前平倉，次日賣 25–40 天窗口最近系列")
@@ -155,6 +160,7 @@ def roll_check():
     expiry = month_b[-2] if len(month_b) >= 2 else month_b[-1]
     dd = (expiry - today).days
     LINES.append(f"\n## 滾倉：本月到期日約 {expiry}（{dd:+d} 天）")
+    DIGEST.append(f"HSI 月度到期剩 {dd} 天")
     if 0 <= dd <= 2:
         ALERTS.append(f"滾倉窗口：{dd} 天後月度結算，準備次日賣下月 ATM 跨式（SOP §10.8）")
 
@@ -175,7 +181,18 @@ if __name__ == '__main__':
     alert_path = os.path.join(BASE, 'alert.txt')
     if ALERTS:
         with open(alert_path, 'w') as fp:
-            fp.write('HSI 警報 ' + stamp + '\n' + '\n'.join(f'- {a}' for a in ALERTS))
+            fp.write('⚠ 警報 ' + stamp + '\n' + '\n'.join(f'- {a}' for a in ALERTS))
     elif os.path.exists(alert_path):
         os.remove(alert_path)
+    # 每日摘要（無論有無警報都寫，workflow 每日發 Telegram）
+    from datetime import timedelta, timezone
+    hkt = datetime.now(timezone.utc) + timedelta(hours=8)
+    dig = [f"📊 HSI+MES 日報 {hkt.strftime('%m-%d %H:%M')} HKT"]
+    if ALERTS:
+        dig += [f'⚠ {a}' for a in ALERTS]
+    else:
+        dig.append('✅ 無警報')
+    dig += DIGEST
+    with open(os.path.join(BASE, 'digest.txt'), 'w') as fp:
+        fp.write('\n'.join(dig))
     print(report)

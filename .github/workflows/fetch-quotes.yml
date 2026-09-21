@@ -2,6 +2,10 @@ name: fetch-quotes
 # 定時抓 HKEX 延遲行情（恒指期貨+期權鏈）。只跑 repo 內腳本、只裝 PyPI 套件。
 on:
   workflow_dispatch:
+    inputs:
+      digest:
+        description: 'send daily digest to telegram (false = alerts only)'
+        default: 'true'
   push:
     paths: ['.github/scripts/fetch_hkex_quotes.py', '.github/trigger-scan']
 permissions:
@@ -25,18 +29,20 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          WANT_DIGEST: ${{ inputs.digest || 'true' }}
         run: |
-          if [ -s tradingview/data_external/alert.txt ] && [ -n "$TG_BOT_TOKEN" ]; then
-            if [ -z "$TG_CHAT_ID" ]; then
-              TG_CHAT_ID=$(curl -sS "https://api.telegram.org/bot${TG_BOT_TOKEN}/getUpdates" | jq -r '[.result[].message.chat.id] | first // empty')
-              echo "auto-detected chat_id: ${TG_CHAT_ID:-NONE - give the bot a message first}"
-            fi
-            if [ -n "$TG_CHAT_ID" ]; then
-              curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=$(cat tradingview/data_external/alert.txt)" > /dev/null
-              echo "telegram sent"
-            fi
+          # 有警報發警報；否則按 digest 開關發每日摘要（兩市場全報告）
+          MSG=""
+          if [ -s tradingview/data_external/alert.txt ]; then
+            MSG=tradingview/data_external/alert.txt
+          elif [ "$WANT_DIGEST" != "false" ] && [ -s tradingview/data_external/digest.txt ]; then
+            MSG=tradingview/data_external/digest.txt
+          fi
+          if [ -n "$MSG" ] && [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+            curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=$(cat $MSG)" > /dev/null
+            echo "telegram sent: $MSG"
           else
-            echo "no alert or no token - skip"
+            echo "nothing to send or no token - skip"
           fi
       - name: commit data back
         run: |
