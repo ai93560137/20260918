@@ -106,7 +106,7 @@ def scan_options(hv, front=None):
         if hv:
             prem = atm - hv
             LINES.append(f"- IV − HV20 = {prem:+.1f} 點（23 年平均 +2.4）")
-            DIGEST.append(f"HSI {mon}: ATM {K:.0f} IV {atm:.1f} 溢價{prem:+.1f}")
+            DIGEST.append(f"HSI {mon}: ATM {K:.0f} IV {atm:.1f} 溢價{prem:+.1f}（均+2.4）")
             if prem < 0:
                 ALERTS.append(f"{mon} IV−HV = {prem:+.1f} 為負：保費消失，暫停新賣出")
             elif prem > 8:
@@ -141,7 +141,14 @@ def scan_us():
     asof = vix.index[-1].date()
     LINES.append(f"\n## 美股（MES）  VIX {iv:.1f}  SPX HV20 {hv:.1f}"
                  f"  溢價 {prem:+.1f}（37 年平均 +4.1）  截至 {asof}")
-    DIGEST.append(f"美股: VIX {iv:.1f} HV {hv:.1f} 溢價{prem:+.1f}")
+    DIGEST.append(f"美股: VIX {iv:.1f} HV {hv:.1f} 溢價{prem:+.1f}（均+4.1）")
+    fq = os.path.join(BASE, 'us_futures_quote.json')
+    if os.path.exists(fq):
+        q = json.load(open(fq))
+        es = q.get('ES=F', {})
+        if es:
+            DIGEST.append(f"ES 期貨 {es['price']:,.0f}（MES 同價，"
+                          f"進場參考檔 {round(es['price'] / 5) * 5:,.0f}）")
     if (date.today() - asof).days > 5:
         ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
     if prem < 0:
