@@ -53,14 +53,15 @@ def scan_futures():
     LINES.append("|---|---:|---:|---:|---:|---:|")
     prev_se = None
     front = None
-    for row in d.get('futureslist', [])[:4]:
+    for i, row in enumerate(d.get('futureslist', [])[:4]):
         bd, as_, se = num(row['bd']), num(row['as']), num(row['se'])
         spr = as_ - bd if bd and as_ else None
         if front is None:
             front = se
         LINES.append(f"| {row['con']} | {row['bd']} | {row['as']} | "
                      f"{spr if spr is not None else '—'} | {row['se']} | {row['oi']} |")
-        if spr is not None and spr > 30:
+        # 只警報前兩個月：遠月（尤其夜盤）報價稀疏，價差寬是流動性現象不是機會
+        if spr is not None and spr > 30 and i < 2:
             ALERTS.append(f"期貨 {row['con']} 價差 {spr:.0f} 點（異常寬）")
         if prev_se and se and se < prev_se - 60:
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
