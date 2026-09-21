@@ -119,25 +119,38 @@ posTxt(int p) =>
 posLong  = strategy.position_size > 0
 posShort = strategy.position_size < 0
 
-// 依「策略目前狀態 × 我的手數」生成今天該掛的單
+// 依「策略目前狀態 × 我的手數」生成今天該掛的條件單（富途：條件單/觸價單）
+// 回傳 [掛單①, 掛單②, 備註]；沒有第二張單時掛單②為 na
 orderPlan(int qty) =>
-    string s = na
+    q  = str.tostring(qty)
+    q2 = str.tostring(2 * qty)
+    string s1 = na
+    string s2 = na
     if tradeDir == "both"
-        s := posLong  ? "賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(2 * qty) + " 張（平倉＋反手）" :
-          posShort ? "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(2 * qty) + " 張（平倉＋反手）" :
-          "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(qty) + " 張 ＋ 賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(qty) + " 張"
+        if posLong
+            s1 := "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q2 + " 張（" + q + " 張平多倉＋" + q + " 張開空倉）"
+        else if posShort
+            s1 := "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q2 + " 張（" + q + " 張平空倉＋" + q + " 張開多倉）"
+        else
+            s1 := "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q + " 張（開多倉）"
+            s2 := "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q + " 張（開空倉）"
     else if tradeDir == "long"
-        s := posLong ? "賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(qty) + " 張（平倉）" :
-          "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(qty) + " 張（開多）"
+        s1 := posLong ? "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q + " 張（平多倉，之後空手）" :
+          "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q + " 張（開多倉）"
     else
-        s := posShort ? "買入停損 @ " + fmt(hiLevel) + " × " + str.tostring(qty) + " 張（平倉）" :
-          "賣出停損 @ " + fmt(loLevel) + " × " + str.tostring(qty) + " 張（開空）"
-    if exitMode == "eod"
-        s := s + "｜" + str.tostring(eodHour) + ":" + str.tostring(eodMinute, "00") + " 未觸發請撤單、持倉請平掉"
-    s
+        s1 := posShort ? "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q + " 張（平空倉，之後空手）" :
+          "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q + " 張（開空倉）"
+    note = exitMode == "eod" ?
+         "條件單設「當日有效」；" + str.tostring(eodHour) + ":" + str.tostring(eodMinute, "00") +
+         " 未觸發請撤單、持倉請市價平掉" :
+         "條件單設「當日有效」；未觸發則明日按新價位重掛"
+    [s1, s2, note]
+
+[plan1, plan2, planNote] = orderPlan(myQty)
 
 if alertOn and ready and newDay
-    alert("【每日掛單】" + syminfo.ticker + "｜" + orderPlan(myQty), alert.freq_once_per_bar)
+    alert("【每日掛單】" + syminfo.ticker + "｜① " + plan1 +
+         (na(plan2) ? "" : "｜② " + plan2) + "｜" + planNote, alert.freq_once_per_bar)
 
 posState = posLong ? 1 : posShort ? -1 : 0
 if alertOn and posState != posState[1]
@@ -229,7 +242,7 @@ showGuide = input.bool(true, "顯示今日操作指示面板")
 var table guide = na
 if showGuide and barstate.islast
     if na(guide)
-        guide := table.new(position.bottom_right, 2, 5, bgcolor = color.new(color.white, 5),
+        guide := table.new(position.bottom_right, 2, 7, bgcolor = color.new(color.white, 5),
              border_width = 1, border_color = color.new(color.gray, 70),
              frame_width = 2, frame_color = color.gray)
     targetPos = (posLong ? 1 : posShort ? -1 : 0) * myQty
@@ -248,9 +261,14 @@ if showGuide and barstate.islast
          str.tostring(math.abs(targetPos - myPos)) + " 張調整到目標",
          text_color = synced ? color.teal : color.red, text_size = panelSize,
          bgcolor = synced ? na : color.new(color.red, 85))
-    table.cell(guide, 0, 4, "今日掛單", text_color = tc, text_size = panelSize)
-    table.cell(guide, 1, 4, ready ? orderPlan(myQty) : "暖機中（未滿 N 個完整交易日）",
+    table.cell(guide, 0, 4, "掛單 ①", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 4, ready ? plan1 : "暖機中（未滿 N 個完整交易日）",
          text_color = color.new(color.blue, 0), text_size = panelSize)
+    table.cell(guide, 0, 5, "掛單 ②", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 5, not ready ? "—" : na(plan2) ? "—（今天只需掛單①）" : plan2,
+         text_color = color.new(color.blue, 0), text_size = panelSize)
+    table.cell(guide, 0, 6, "備註", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 6, planNote, text_color = tc, text_size = panelSize)
 
 // ---- 畫圖 --------------------------------------------------------------------
 plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
