@@ -69,8 +69,16 @@ def scan_futures():
 
 
 def scan_options(hv):
-    for f in sorted(glob.glob(os.path.join(BASE, 'quotes', 'options_*.json')))[-3:]:
-        mon = re.search(r'options_([^_]+)_', os.path.basename(f)).group(1)
+    # 每個月份取時間戳最新的一份（檔名字母排序會讓 Sep 排最後，不能直接取尾三個）
+    latest_by_mon = {}
+    for f in glob.glob(os.path.join(BASE, 'quotes', 'options_*.json')):
+        m = re.search(r'options_([^_]+)_(\d{8}_\d{4})', os.path.basename(f))
+        if not m:
+            continue
+        mon, ts = m.group(1), m.group(2)
+        if mon not in latest_by_mon or ts > latest_by_mon[mon][0]:
+            latest_by_mon[mon] = (ts, f)
+    for mon, (_, f) in sorted(latest_by_mon.items(), key=lambda kv: kv[1][0]):
         d = json.load(open(f))['data']
         rows = d.get('optionlist', [])
         if not rows:
