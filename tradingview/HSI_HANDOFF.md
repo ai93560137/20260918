@@ -542,3 +542,26 @@ spread 要買保護腿，skew 正是把保護腿加價：ATM put spread 100/95 �
 
 **tenor 判定定案：月權。** 三個獨立理由同向：IV 比週權高 1 點、年度獨立樣本數最多、
 唯一有 23 年歷史驗證的週期。§10.8 SOP 不變。
+
+---
+
+## 11. 自動監測系統（2026-09-21 上線）
+
+**資料源**：HKEX 免費延遲行情（www1.hkex.com.hk 的 hkexwidget API，參數 `ats`/`con`
+逆向自官網 equity.js）。期貨全月份含 bid/ask/結算/OI；期權鏈逐檔含 put/call
+bid/ask/IV/OI。**延遲 15 分鐘 → 只能監測，不能執行套利。**
+
+**組件**：
+| 檔案 | 作用 |
+|---|---|
+| `.github/scripts/fetch_hkex_quotes.py` | 抓期貨 + 前三個月期權鏈，存 `data_external/quotes/*.json` |
+| `tradingview/hsi_scan.py` | 掃描：期貨曲線、ATM IV 與 IV−HV20（對照 23 年均值 +2.4）、無套利檢查、滾倉提醒 → `scan_report.md` |
+| `.github/workflows/fetch-quotes.yml` | 串起兩者；push `.github/trigger-scan` 或手動 dispatch 皆可觸發 |
+| Routine `HSI 期權每日掃描` | 週一至五 14:30 HKT 喚醒本 session：觸發 workflow → 讀報告 → 有警報才通知 |
+
+**警報條件**：套利條件破壞、IV−HV20 < 0（保費消失，暫停新賣出）或 > 8（查事件風險）、
+距月度結算 ≤ 2 天（滾倉窗口）。無警報則靜默，快照自動累積成 skew/期限結構時間序列
+（補 §10.7 的缺口）。
+
+已知限制：Routine 未攜帶 connector 授權，喚醒時若無 mcp__github__ 工具，
+改用 git 更新 `.github/trigger-scan` 觸發（備援路徑已建）。收市後 bid/ask 稀疏屬正常。
