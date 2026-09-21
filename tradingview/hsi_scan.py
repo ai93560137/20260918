@@ -130,4 +130,10 @@ if __name__ == '__main__':
     report = '\n'.join(head + LINES)
     with open(os.path.join(BASE, 'scan_report.md'), 'w') as fp:
         fp.write(report)
+    alert_path = os.path.join(BASE, 'alert.txt')
+    if ALERTS:
+        with open(alert_path, 'w') as fp:
+            fp.write('HSI 警報 ' + stamp + '\n' + '\n'.join(f'- {a}' for a in ALERTS))
+    elif os.path.exists(alert_path):
+        os.remove(alert_path)
     print(report)
