@@ -81,7 +81,12 @@ def scan_options(hv):
         mon, ts = m.group(1), m.group(2)
         if mon not in latest_by_mon or ts > latest_by_mon[mon][0]:
             latest_by_mon[mon] = (ts, f)
-    for mon, (_, f) in sorted(latest_by_mon.items(), key=lambda kv: kv[1][0]):
+    def mon_key(kv):
+        try:
+            return datetime.strptime(kv[0], '%b-%y')
+        except ValueError:
+            return datetime.max
+    for mon, (_, f) in sorted(latest_by_mon.items(), key=mon_key):
         d = json.load(open(f))['data']
         rows = d.get('optionlist', [])
         if not rows:
