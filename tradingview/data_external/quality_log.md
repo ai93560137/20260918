@@ -1,6 +1,12 @@
-# 資料品質日誌 — HKEX API 快照 vs 富途截圖
+# 資料品質日誌 — 三源比對
 
-方法：每天將使用者提供的富途期權鏈截圖與時間最接近的 HKEX 快照比對。
+三個來源：
+1. **Actions 快照**（quotes/，GitHub Actions 抓 HKEX API）
+2. **Colab 快照**（quotes_colab/，使用者的 Colab 定時抓同一 API — 見 colab_fetch.py）
+3. **富途截圖**（使用者提供，唯一的獨立資料源）
+
+比對邏輯：Actions vs Colab 同源 → 驗證抓取管道（應完全一致，不一致=管道 bug）；
+(Actions|Colab) vs 富途 → 驗證資料本身（容差內=品質良好）。
 比對項：期貨價、ATM±2 檔的 bid/ask/IV。
 容差（15 分鐘延遲可解釋範圍）：IV ≤0.5 點、價格 ≤0.3%。超出即記錄並告知。
 
