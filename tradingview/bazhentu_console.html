@@ -1,0 +1,250 @@
+<title>八陣圖指令台</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1B2327; --muted:#5D6B70;
+  --pos:#0B8A78; --neg:#C24B40; --line:#DFE5E3; --chip:#E9EEEC;
+  --order-bg:#EDF5F3; --warn:#B4433A; --warn-bg:#FBEEEC;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121619; --surface:#1D2429; --ink:#E7ECEA; --muted:#97A4A9;
+    --pos:#2AA093; --neg:#D45F53; --line:#323C42; --chip:#283238;
+    --order-bg:#213230; --warn:#D45F53; --warn-bg:#33231F;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121619; --surface:#1D2429; --ink:#E7ECEA; --muted:#97A4A9;
+  --pos:#2AA093; --neg:#D45F53; --line:#323C42; --chip:#283238;
+  --order-bg:#213230; --warn:#D45F53; --warn-bg:#33231F;
+}
+body{background:var(--bg); color:var(--ink); margin:0; padding-block:0 40px; padding-inline:16px;
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  font-size:14px; line-height:1.6;}
+.wrap{max-width:560px; margin:0 auto;}
+h1{font-family:'Noto Serif TC',serif; font-weight:900; font-size:22px; margin:26px 0 2px;}
+.sub{color:var(--muted); font-size:13px; margin:0 0 18px;}
+section{background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:16px; margin-top:14px;}
+h2{font-size:13px; color:var(--muted); font-weight:700; letter-spacing:.08em; margin:0 0 10px;}
+label{font-size:13px; color:var(--muted); display:block; margin-bottom:3px;}
+input,select{width:100%; box-sizing:border-box; font-size:15px; padding:8px 10px;
+  border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink);
+  font-variant-numeric:tabular-nums; font-family:inherit;}
+input:focus,select:focus{outline:2px solid var(--pos); border-color:transparent;}
+.row{display:flex; gap:10px;} .row>div{flex:1;}
+.dayrow{display:grid; grid-template-columns:100px 1fr 1fr; gap:8px; align-items:center; margin-top:8px;}
+.dayrow .tag{font-size:13px; color:var(--muted);}
+button{font-family:inherit; font-size:14px; padding:9px 14px; border-radius:8px;
+  border:1px solid var(--line); background:var(--chip); color:var(--ink); cursor:pointer;}
+button:focus-visible{outline:2px solid var(--pos);}
+.levels{display:flex; gap:10px; margin-top:12px;}
+.lv{flex:1; text-align:center; border-radius:8px; padding:8px 4px; background:var(--bg); border:1px solid var(--line);}
+.lv .v{font-size:17px; font-weight:700; font-variant-numeric:tabular-nums;}
+.lv .k{font-size:10.5px; color:var(--muted);}
+.order{background:var(--order-bg); border-radius:8px; padding:12px 14px; margin-top:10px;
+  font-size:14.5px; font-weight:500; line-height:1.55;}
+.order b{font-variant-numeric:tabular-nums;}
+.order .lab{display:block; font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.08em; margin-bottom:2px;}
+.alertbox{background:var(--warn-bg); color:var(--warn); border-radius:8px; padding:10px 14px;
+  margin-top:10px; font-weight:700;}
+.note{font-size:11.5px; color:var(--muted); margin-top:10px;}
+.statusline{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+.pill{background:var(--chip); border-radius:999px; padding:2px 10px; font-size:12px;}
+.pill b{font-variant-numeric:tabular-nums;}
+footer{font-size:11px; color:var(--muted); margin-top:22px; line-height:1.7;}
+</style>
+<div class="wrap">
+<h1>八陣圖指令台</h1>
+<p class="sub">輸入持倉與前 3 個完整交易日高低點 → 立即得到今天的掛單指令（不依賴 TradingView）</p>
+
+<section>
+  <h2>① 商品與倉位</h2>
+  <div class="row">
+    <div><label for="inst">商品</label>
+      <select id="inst">
+        <option value="hsi">大恒指 HSI（50/點）</option>
+        <!-- 暫時只做大恒指;需要時取消註釋還原
+        <option value="mhi">小恒指 MHI（10/點）</option>
+        <option value="mgc">微型金 MGC（10 oz）</option>
+        <option value="etf">黃金 ETF（只做多）</option>
+        <option value="other">其他</option>
+        -->
+      </select></div>
+    <div><label for="qty">每次下單手數</label><input id="qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+    <div><label for="pos">目前實倉（+多 −空 0空手）</label><input id="pos" type="number" step="1" value="0" inputmode="numeric"></div>
+  </div>
+</section>
+
+<section>
+  <h2>② 前 3 個完整交易日的最高／最低（富途日線圖讀數，今天未完的不算）</h2>
+  <div id="autoBadge" hidden style="margin-bottom:8px"></div>
+  <div class="dayrow"><span class="tag" style="font-weight:700">日期</span>
+    <span class="tag" style="font-weight:700">最高價</span>
+    <span class="tag" style="font-weight:700">最低價</span></div>
+  <div class="dayrow"><span class="tag" id="d1">最近一日</span>
+    <input id="h1" type="number" step="any" inputmode="decimal" aria-label="最近一日最高價">
+    <input id="l1" type="number" step="any" inputmode="decimal" aria-label="最近一日最低價"></div>
+  <div class="dayrow"><span class="tag" id="d2">前 2 日</span>
+    <input id="h2" type="number" step="any" inputmode="decimal" aria-label="前2日最高價">
+    <input id="l2" type="number" step="any" inputmode="decimal" aria-label="前2日最低價"></div>
+  <div class="dayrow"><span class="tag" id="d3">前 3 日</span>
+    <input id="h3" type="number" step="any" inputmode="decimal" aria-label="前3日最高價">
+    <input id="l3" type="number" step="any" inputmode="decimal" aria-label="前3日最低價"></div>
+</section>
+
+<section>
+  <h2>③ 今日指令</h2>
+  <div class="levels">
+    <div class="lv"><div class="v" id="hiLv" style="color:var(--pos)">—</div><div class="k" id="hiK">通道上軌（前3日最高）</div></div>
+    <div class="lv" id="pxTile" hidden><div class="v" id="pxLv">—</div><div class="k" id="pxK">現價</div></div>
+    <div class="lv"><div class="v" id="loLv" style="color:var(--neg)">—</div><div class="k" id="loK">通道下軌（前3日最低）</div></div>
+  </div>
+  <div class="note" id="quoteLine" hidden style="margin-top:8px"></div>
+  <div class="statusline">
+    <span class="pill">倉位狀態 <b id="posTxt">空手</b></span>
+    <span class="pill">方向 <b id="dirTxt">多空雙向</b></span>
+  </div>
+  <div id="orders"></div>
+</section>
+
+<footer>
+規則：升破上軌做多、跌破下軌做空；反向突破＝平倉＋反手（多空版掛雙倍數量）。每日每方向最多進場一次。
+ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉位不同步時，仍以 TradingView 面板核對一次。
+本頁含策略參數，請勿公開分享。手動輸入只保存在你這部裝置的瀏覽器；
+雲端數據由每日排程任務寫入並於每次打開頁面時自動套用（來源與更新時間標示在②上方）；手動修改僅在本次瀏覽有效，重新整理會被雲端數據覆蓋。
+</footer>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var ids = ["inst","qty","pos","h1","l1","h2","l2","h3","l3"];
+  var cloudQuote = null;   // 雲端延遲報價 {px,kind,asof}(由 db 載入)
+
+  function load(){
+    try{
+      var s = JSON.parse(localStorage.getItem("bzt") || "{}");
+      ids.forEach(function(k){ if(s[k] !== undefined && s[k] !== "") $(k).value = s[k]; });
+    }catch(e){}
+    if(!$("inst").value) $("inst").value = "hsi";   // 舊儲存值對應已下架選項時回退
+  }
+  function save(){
+    try{
+      var s = {};
+      ids.forEach(function(k){ s[k] = $(k).value; });
+      localStorage.setItem("bzt", JSON.stringify(s));
+    }catch(e){}
+  }
+  function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : null; }
+  function fmt(v){ return v === null ? "—" : v.toLocaleString("en-US", {maximumFractionDigits: 2}); }
+
+  function render(){
+    var hs = [num("h1"), num("h2"), num("h3")];
+    var ls = [num("l1"), num("l2"), num("l3")];
+    var ready = hs.every(function(v){ return v !== null; }) && ls.every(function(v){ return v !== null; });
+    var hi = ready ? Math.max.apply(null, hs) : null;
+    var lo = ready ? Math.min.apply(null, ls) : null;
+    $("hiLv").textContent = fmt(hi);
+    $("loLv").textContent = fmt(lo);
+    function dayTag(i){
+      var t = $(["d1","d2","d3"][i]).textContent || "";
+      var m = t.match(/(\d{2})-(\d{2})$/);
+      return m ? m[1] + "-" + m[2] : t;
+    }
+    $("hiK").textContent = "通道上軌（前3日最高" +
+      (hi !== null ? " · " + dayTag(hs.indexOf(hi)) : "") + "）";
+    $("loK").textContent = "通道下軌（前3日最低" +
+      (lo !== null ? " · " + dayTag(ls.indexOf(lo)) : "") + "）";
+
+    var ql = $("quoteLine"), pt = $("pxTile");
+    if(cloudQuote && cloudQuote.px != null){
+      $("pxLv").textContent = fmt(cloudQuote.px);
+      $("pxK").textContent = "現價 · " + (cloudQuote.kind || "") +
+        (cloudQuote.asof ? " · " + cloudQuote.asof : "");
+      pt.hidden = false;
+      if(hi !== null && lo !== null){
+        ql.textContent = "距上軌 " + fmt(hi - cloudQuote.px) + " 點 · 距下軌 " +
+          fmt(cloudQuote.px - lo) + " 點（報價延遲 ≥15 分鐘，成交以券商為準）";
+        ql.hidden = false;
+      } else { ql.hidden = true; }
+    } else {
+      pt.hidden = true; ql.hidden = true;
+    }
+
+    var qty = Math.max(1, Math.round(num("qty") || 1));
+    var pos = Math.round(num("pos") || 0);
+    var longOnly = $("inst").value === "etf";
+    $("dirTxt").textContent = longOnly ? "只做多（ETF）" : "多空雙向";
+    $("posTxt").textContent = pos > 0 ? "+" + pos + " 張（多）" : pos < 0 ? pos + " 張（空）" : "空手";
+
+    var out = "";
+    function order(label, txt){
+      out += '<div class="order"><span class="lab">' + label + '</span>' + txt + '</div>';
+    }
+    if(!ready){
+      out = "";
+    } else if(hi <= lo){
+      out = '<div class="alertbox">⚠️ 上軌 ≤ 下軌，數字大概填反了，請檢查 ②</div>';
+    } else if(longOnly){
+      if(pos > 0)
+        order("掛單 ①（離場）", "若最新價 <b>≤ " + fmt(lo) + "</b> → 市價<b>賣出 " + pos + " 張</b>（平多倉，之後空手）");
+      else
+        order("掛單 ①（進場）", "若最新價 <b>≥ " + fmt(hi) + "</b> → 市價<b>買入 " + qty + " 張</b>（開多倉）");
+      if(pos < 0) out = '<div class="alertbox">⚠️ ETF 模式不應持有空倉，請檢查「目前實倉」</div>' + out;
+    } else if(pos > 0){
+      order("掛單 ①（唯一一張）", "若最新價 <b>≤ " + fmt(lo) + "</b> → 市價<b>賣出 " + (pos + qty) + " 張</b>（" + pos + " 張平多倉＋" + qty + " 張開空倉）");
+    } else if(pos < 0){
+      order("掛單 ①（唯一一張）", "若最新價 <b>≥ " + fmt(hi) + "</b> → 市價<b>買入 " + (-pos + qty) + " 張</b>（" + (-pos) + " 張平空倉＋" + qty + " 張開多倉）");
+    } else {
+      order("掛單 ①", "若最新價 <b>≥ " + fmt(hi) + "</b> → 市價<b>買入 " + qty + " 張</b>（開多倉）");
+      order("掛單 ②", "若最新價 <b>≤ " + fmt(lo) + "</b> → 市價<b>賣出 " + qty + " 張</b>（開空倉）");
+    }
+    $("orders").innerHTML = out;
+    save();
+  }
+
+  ids.forEach(function(k){ $(k).addEventListener("input", render); });
+  load();
+  try{
+    var dd = JSON.parse(localStorage.getItem("bztDates") || "null");
+    if(dd && dd.length === 3) ["d1","d2","d3"].forEach(function(k,i){ $(k).textContent = dd[i]; });
+  }catch(e){}
+  render();
+
+  // ---- 自動數據（雲端 db；由每日排程任務寫入。無數據時保持手動，不影響使用） ----
+  (async function(){
+    var badge = $("autoBadge");
+    function info(msg){
+      badge.innerHTML = '<span style="font-size:12.5px;color:var(--muted)">' + msg + '</span>';
+      badge.hidden = false;
+    }
+    try{
+      var db = await (window.claude && window.claude.use ? window.claude.use("db") : Promise.resolve(null));
+      if(!db){ info("☁️ 雲端數據未連接（此環境不支援或未授權）—手動輸入照常可用"); return; }
+      async function pull(auto){
+        var inst = $("inst").value;
+        var key = inst === "mhi" ? "hsi" : inst;   // 大小恒指共用同一組通道
+        if(key === "etf") key = "mgc";             // 黃金 ETF 用金期貨通道
+        var snap;
+        try{ snap = await db.doc("levels/" + key).get(); }
+        catch(e){ info("☁️ 讀取雲端數據失敗：" + (e && e.code || e)); return; }
+        if(!snap || !snap.exists) { info("☁️ 此商品尚無雲端數據（每日 07:30 HKT 更新）"); return; }
+        var d = snap.data();
+        if(!d || d.h1 == null) { info("☁️ 此商品尚無雲端數據（每日 07:30 HKT 更新）"); cloudQuote = null; render(); return; }
+        cloudQuote = d.quote || null;
+        info('☁️ 已自動套用雲端數據 · ' + (d.source || '') + ' · ' + (d.asof || ''));
+        ["h1","l1","h2","l2","h3","l3"].forEach(function(k){ $(k).value = d[k]; });
+        if(d.dates && d.dates.length === 3){
+          ["d1","d2","d3"].forEach(function(k,i){ $(k).textContent = d.dates[i]; });
+          try{ localStorage.setItem("bztDates", JSON.stringify(d.dates)); }catch(e){}
+        }
+        render();
+      }
+      $("inst").addEventListener("change", function(){ pull(false); });
+      pull(true);
+    }catch(e){
+      info("☁️ 雲端數據初始化異常：" + e);
+    }
+  })();
+})();
+</script>

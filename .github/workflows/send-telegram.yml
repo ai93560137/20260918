@@ -1,0 +1,24 @@
+name: send-telegram
+# 通用 Telegram 發送通道：Claude 把訊息寫進 .github/tg_outbox.txt 並 push，
+# 這個 workflow 就把內容發到使用者手機（delta 對沖指令、月度報告、臨時提醒）。
+on:
+  push:
+    paths: ['.github/tg_outbox.txt']
+permissions:
+  contents: read
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: send
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -s .github/tg_outbox.txt ] && [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+            curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=$(cat .github/tg_outbox.txt)" > /dev/null
+            echo "telegram sent"
+          else
+            echo "empty outbox or no secrets - skip"
+          fi
