@@ -73,6 +73,38 @@ def hsi_levels():
         d = datetime.fromtimestamp(r[0] / 1000, tz=HKT).date()
         if d <= cutoff:                                    # 只要已完結的日
             days.append((d, float(r[2]), float(r[3])))     # (date, high, low)
+    # 傍晚補位:EOD 序列常晚半天才補當天的行。若 cutoff 日已完結但序列缺行,
+    # 用日內數據按 HKEX 交易日窗口(前一交易日 17:10 夜市起 → 當日 16:35)聚合。
+    agg_note = ''
+    if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
+        idata = None
+        for i, sp in [(4, 1), (4, 2), (3, 1), (5, 2), (2, 1)]:
+            try:
+                d2 = call('getchartdata2', hchart=1, span=sp, int=i, ric='HSIc1')
+                dl = (d2 or {}).get('data', {}).get('datalist') or []
+                cand = [r for r in dl if isinstance(r, list) and len(r) >= 5
+                        and r[2] and r[3] and 15000 < float(r[3]) <= float(r[2]) < 40000]
+                if len(cand) >= 100 and (cand[-1][0] - cand[-2][0]) / 3600000 < 20:
+                    idata = cand
+                    log.append(f'intraday int={i} span={sp}: {len(cand)} rows')
+                    break
+            except Exception as e:
+                log.append(f'intraday int={i} span={sp}: {e}')
+        if idata:
+            back = 3 if cutoff.weekday() == 0 else 1        # 週一的夜市始於上週五
+            w0 = datetime.combine(cutoff - timedelta(days=back),
+                                  datetime.min.time(), tzinfo=HKT) + timedelta(hours=17, minutes=10)
+            w1 = datetime.combine(cutoff, datetime.min.time(), tzinfo=HKT) + timedelta(hours=16, minutes=35)
+            seg = [r for r in idata
+                   if w0 <= datetime.fromtimestamp(r[0] / 1000, tz=HKT) < w1]
+            if len(seg) >= 30:
+                hi_d = max(float(r[2]) for r in seg)
+                lo_d = min(float(r[3]) for r in seg)
+                days.append((cutoff, hi_d, lo_d))
+                agg_note = '(當日由日內聚合)'
+                log.append(f'aggregated {cutoff}: h={hi_d} l={lo_d} from {len(seg)} bars')
+            else:
+                log.append(f'aggregate skip: only {len(seg)} bars in window')
     days = days[-3:]
     if len(days) < 3:
         raise RuntimeError(f'only {len(days)} completed days')
@@ -81,6 +113,29 @@ def hsi_levels():
     for n, (d, h, l) in enumerate(days, 1):
         out[f'h{n}'], out[f'l{n}'] = round(h), round(l)
     out['dates'] = [str(d) for d, _, _ in days]
+    out['agg'] = agg_note
+
+    # 延遲報價:近月買賣中間價;無雙邊報價退回昨結並標明(昨結≠現價!)
+    try:
+        q = call('getderivativesfutures', ats='HSI', type=0)
+        qd = (q or {}).get('data', {})
+        row = (qd.get('futureslist') or [{}])[0]
+
+        def num(x):
+            try:
+                return float(str(x).replace(',', ''))
+            except (TypeError, ValueError):
+                return None
+        bd, as_, se = num(row.get('bd')), num(row.get('as')), num(row.get('se'))
+        if bd and as_:
+            out['quote'] = {'px': round((bd + as_) / 2), 'kind': '中間價',
+                            'asof': qd.get('lastupd', '')}
+        elif se:
+            out['quote'] = {'px': round(se), 'kind': '昨結(非現價)',
+                            'asof': qd.get('lastupd', '')}
+        log.append(f"hsi quote: {out.get('quote')}")
+    except Exception as e:
+        log.append(f'hsi quote fail: {e}')
     return out
 
 
@@ -104,6 +159,15 @@ def gold_levels():
     for n, (d, h, l) in enumerate(rows, 1):
         out[f'h{n}'], out[f'l{n}'] = round(h, 1), round(l, 1)
     out['dates'] = [str(d) for d, _, _ in rows]
+    try:
+        hh = yf.download('GC=F', period='5d', interval='1h', progress=False, auto_adjust=False)
+        if hasattr(hh.columns, 'levels'):
+            hh.columns = hh.columns.get_level_values(0)
+        ts = hh.index[-1].tz_convert(HKT) if hh.index[-1].tzinfo else hh.index[-1].tz_localize('UTC').tz_convert(HKT)
+        out['quote'] = {'px': round(float(hh['Close'].iloc[-1]), 1), 'kind': '小時收盤',
+                        'asof': ts.strftime('%m-%d %H:%M HKT')}
+    except Exception as e:
+        pass
     return out
 
 
@@ -111,7 +175,7 @@ for key, fn, src in (('hsi', hsi_levels, 'HKEX 即月期貨 HSIc1(15分鐘延遲
                      ('mgc', gold_levels, 'Yahoo GC=F')):
     try:
         v = fn()
-        v['source'] = src
+        v['source'] = src + v.pop('agg', '')
         result[key] = v
         log.append(f'{key}: OK {v["dates"]}')
     except Exception as e:
