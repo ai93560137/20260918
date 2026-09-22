@@ -6,7 +6,9 @@
     "name": "CK Hutchison Holdings Limited"
    }
   ],
-  "name": "CK Hutchison Holdings Limited"
+  "industry": "Conglomerates",
+  "name": "CK Hutchison Holdings Limited",
+  "sector": "Industrials"
  },
  "0002.HK": {
   "history": [
@@ -15,7 +17,9 @@
     "name": "CLP Holdings Limited"
    }
   ],
-  "name": "CLP Holdings Limited"
+  "industry": "Utilities - Regulated Electric",
+  "name": "CLP Holdings Limited",
+  "sector": "Utilities"
  },
  "0003.HK": {
   "history": [
@@ -24,7 +28,9 @@
     "name": "The Hong Kong and China Gas Company Limited"
    }
   ],
-  "name": "The Hong Kong and China Gas Company Limited"
+  "industry": "Utilities - Regulated Gas",
+  "name": "The Hong Kong and China Gas Company Limited",
+  "sector": "Utilities"
  },
  "0004.HK": {
   "history": [
@@ -33,7 +39,9 @@
     "name": "The Wharf (Holdings) Limited"
    }
   ],
-  "name": "The Wharf (Holdings) Limited"
+  "industry": "Real Estate - Development",
+  "name": "The Wharf (Holdings) Limited",
+  "sector": "Real Estate"
  },
  "0005.HK": {
   "history": [
@@ -42,7 +50,9 @@
     "name": "HSBC Holdings plc"
    }
   ],
-  "name": "HSBC Holdings plc"
+  "industry": "Banks - Diversified",
+  "name": "HSBC Holdings plc",
+  "sector": "Financial Services"
  },
  "0006.HK": {
   "history": [
@@ -51,7 +61,9 @@
     "name": "Power Assets Holdings Limited"
    }
   ],
-  "name": "Power Assets Holdings Limited"
+  "industry": "Utilities - Independent Power Producers",
+  "name": "Power Assets Holdings Limited",
+  "sector": "Utilities"
  },
  "0012.HK": {
   "history": [
@@ -60,7 +72,9 @@
     "name": "Henderson Land Development Company Limited"
    }
   ],
-  "name": "Henderson Land Development Company Limited"
+  "industry": "Real Estate - Diversified",
+  "name": "Henderson Land Development Company Limited",
+  "sector": "Real Estate"
  },
  "0013.HK": {
   "history": [
@@ -69,7 +83,9 @@
     "name": "HUTCHMED (China) Limited"
    }
   ],
-  "name": "HUTCHMED (China) Limited"
+  "industry": "Drug Manufacturers - Specialty & Generic",
+  "name": "HUTCHMED (China) Limited",
+  "sector": "Healthcare"
  },
  "0016.HK": {
   "history": [
@@ -78,7 +94,9 @@
     "name": "Sun Hung Kai Properties Limited"
    }
   ],
-  "name": "Sun Hung Kai Properties Limited"
+  "industry": "Real Estate - Development",
+  "name": "Sun Hung Kai Properties Limited",
+  "sector": "Real Estate"
  },
  "0017.HK": {
   "history": [
@@ -87,7 +105,9 @@
     "name": "New World Development Company Limited"
    }
   ],
-  "name": "New World Development Company Limited"
+  "industry": "Real Estate - Diversified",
+  "name": "New World Development Company Limited",
+  "sector": "Real Estate"
  },
  "0019.HK": {
   "history": [
@@ -96,7 +116,9 @@
     "name": "Swire Pacific Limited"
    }
   ],
-  "name": "Swire Pacific Limited"
+  "industry": "Conglomerates",
+  "name": "Swire Pacific Limited",
+  "sector": "Industrials"
  },
  "0023.HK": {
   "history": [
@@ -105,7 +127,9 @@
     "name": "The Bank of East Asia, Limited"
    }
   ],
-  "name": "The Bank of East Asia, Limited"
+  "industry": "Banks - Regional",
+  "name": "The Bank of East Asia, Limited",
+  "sector": "Financial Services"
  },
  "0027.HK": {
   "history": [
@@ -114,7 +138,9 @@
     "name": "Galaxy Entertainment Group Limited"
    }
   ],
-  "name": "Galaxy Entertainment Group Limited"
+  "industry": "Resorts & Casinos",
+  "name": "Galaxy Entertainment Group Limited",
+  "sector": "Consumer Cyclical"
  },
  "0066.HK": {
   "history": [
@@ -123,7 +149,9 @@
     "name": "MTR Corporation Limited"
    }
   ],
-  "name": "MTR Corporation Limited"
+  "industry": "Railroads",
+  "name": "MTR Corporation Limited",
+  "sector": "Industrials"
  },
  "0083.HK": {
   "history": [
@@ -132,7 +160,9 @@
     "name": "Sino Land Company Limited"
    }
   ],
-  "name": "Sino Land Company Limited"
+  "industry": "Real Estate - Development",
+  "name": "Sino Land Company Limited",
+  "sector": "Real Estate"
  },
  "0101.HK": {
   "history": [
@@ -141,7 +171,9 @@
     "name": "Hang Lung Properties Limited"
    }
   ],
-  "name": "Hang Lung Properties Limited"
+  "industry": "Real Estate Services",
+  "name": "Hang Lung Properties Limited",
+  "sector": "Real Estate"
  },
  "0135.HK": {
   "history": [
@@ -150,7 +182,9 @@
     "name": "Kunlun Energy Company Limited"
    }
   ],
-  "name": "Kunlun Energy Company Limited"
+  "industry": "Oil & Gas Refining & Marketing",
+  "name": "Kunlun Energy Company Limited",
+  "sector": "Energy"
  },
  "0144.HK": {
   "history": [
@@ -159,7 +193,9 @@
     "name": "China Merchants Port Holdings Company Limited"
    }
   ],
-  "name": "China Merchants Port Holdings Company Limited"
+  "industry": "Marine Shipping",
+  "name": "China Merchants Port Holdings Company Limited",
+  "sector": "Industrials"
  },
  "0151.HK": {
   "history": [
@@ -168,7 +204,9 @@
     "name": "Want Want China Holdings Limited"
    }
   ],
-  "name": "Want Want China Holdings Limited"
+  "industry": "Packaged Foods",
+  "name": "Want Want China Holdings Limited",
+  "sector": "Consumer Defensive"
  },
  "0175.HK": {
   "history": [
@@ -177,7 +215,9 @@
     "name": "Geely Automobile Holdings Limited"
    }
   ],
-  "name": "Geely Automobile Holdings Limited"
+  "industry": "Auto Manufacturers",
+  "name": "Geely Automobile Holdings Limited",
+  "sector": "Consumer Cyclical"
  },
  "0241.HK": {
   "history": [
@@ -186,7 +226,9 @@
     "name": "Alibaba Health Information Technology Limited"
    }
   ],
-  "name": "Alibaba Health Information Technology Limited"
+  "industry": "Pharmaceutical Retailers",
+  "name": "Alibaba Health Information Technology Limited",
+  "sector": "Healthcare"
  },
  "0267.HK": {
   "history": [
@@ -195,7 +237,20 @@
     "name": "CITIC Limited"
    }
   ],
-  "name": "CITIC Limited"
+  "industry": "Conglomerates",
+  "name": "CITIC Limited",
+  "sector": "Industrials"
+ },
+ "0285.HK": {
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "BYD Electronic (International) Company Limited"
+   }
+  ],
+  "industry": "Electronic Components",
+  "name": "BYD Electronic (International) Company Limited",
+  "sector": "Technology"
  },
  "0288.HK": {
   "history": [
@@ -204,7 +259,9 @@
     "name": "WH Group Limited"
    }
   ],
-  "name": "WH Group Limited"
+  "industry": "Packaged Foods",
+  "name": "WH Group Limited",
+  "sector": "Consumer Defensive"
  },
  "0291.HK": {
   "history": [
@@ -213,7 +270,9 @@
     "name": "China Resources Beer (Holdings) Company Limited"
    }
   ],
-  "name": "China Resources Beer (Holdings) Company Limited"
+  "industry": "Beverages - Brewers",
+  "name": "China Resources Beer (Holdings) Company Limited",
+  "sector": "Consumer Defensive"
  },
  "0293.HK": {
   "history": [
@@ -222,7 +281,20 @@
     "name": "Cathay Pacific Airways Limited"
    }
   ],
-  "name": "Cathay Pacific Airways Limited"
+  "industry": "Airlines",
+  "name": "Cathay Pacific Airways Limited",
+  "sector": "Industrials"
+ },
+ "0300.HK": {
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Midea Group Co., Ltd."
+   }
+  ],
+  "industry": "Furnishings, Fixtures & Appliances",
+  "name": "Midea Group Co., Ltd.",
+  "sector": "Consumer Cyclical"
  },
  "0316.HK": {
   "history": [
@@ -231,7 +303,9 @@
     "name": "Orient Overseas (International) Limited"
    }
   ],
-  "name": "Orient Overseas (International) Limited"
+  "industry": "Marine Shipping",
+  "name": "Orient Overseas (International) Limited",
+  "sector": "Industrials"
  },
  "0322.HK": {
   "history": [
@@ -240,7 +314,9 @@
     "name": "Tingyi (Cayman Islands) Holding Corp."
    }
   ],
-  "name": "Tingyi (Cayman Islands) Holding Corp."
+  "industry": "Packaged Foods",
+  "name": "Tingyi (Cayman Islands) Holding Corp.",
+  "sector": "Consumer Defensive"
  },
  "0330.HK": {
   "history": [
@@ -249,7 +325,9 @@
     "name": "Esprit Holdings Limited"
    }
   ],
-  "name": "Esprit Holdings Limited"
+  "industry": "Apparel Retail",
+  "name": "Esprit Holdings Limited",
+  "sector": "Consumer Cyclical"
  },
  "0386.HK": {
   "history": [
@@ -258,7 +336,9 @@
     "name": "China Petroleum & Chemical Corporation"
    }
   ],
-  "name": "China Petroleum & Chemical Corporation"
+  "industry": "Oil & Gas Integrated",
+  "name": "China Petroleum & Chemical Corporation",
+  "sector": "Energy"
  },
  "0388.HK": {
   "history": [
@@ -267,7 +347,9 @@
     "name": "Hong Kong Exchanges and Clearing Limited"
    }
   ],
-  "name": "Hong Kong Exchanges and Clearing Limited"
+  "industry": "Financial Data & Stock Exchanges",
+  "name": "Hong Kong Exchanges and Clearing Limited",
+  "sector": "Financial Services"
  },
  "0669.HK": {
   "history": [
@@ -276,7 +358,9 @@
     "name": "Techtronic Industries Company Limited"
    }
   ],
-  "name": "Techtronic Industries Company Limited"
+  "industry": "Tools & Accessories",
+  "name": "Techtronic Industries Company Limited",
+  "sector": "Industrials"
  },
  "0688.HK": {
   "history": [
@@ -285,7 +369,9 @@
     "name": "China Overseas Land & Investment Limited"
    }
   ],
-  "name": "China Overseas Land & Investment Limited"
+  "industry": "Real Estate - Development",
+  "name": "China Overseas Land & Investment Limited",
+  "sector": "Real Estate"
  },
  "0700.HK": {
   "history": [
@@ -294,7 +380,9 @@
     "name": "Tencent Holdings Limited"
    }
   ],
-  "name": "Tencent Holdings Limited"
+  "industry": "Internet Content & Information",
+  "name": "Tencent Holdings Limited",
+  "sector": "Communication Services"
  },
  "0762.HK": {
   "history": [
@@ -303,7 +391,9 @@
     "name": "China Unicom (Hong Kong) Limited"
    }
   ],
-  "name": "China Unicom (Hong Kong) Limited"
+  "industry": "Telecom Services",
+  "name": "China Unicom (Hong Kong) Limited",
+  "sector": "Communication Services"
  },
  "0823.HK": {
   "history": [
@@ -312,7 +402,9 @@
     "name": "Link Real Estate Investment Trust"
    }
   ],
-  "name": "Link Real Estate Investment Trust"
+  "industry": "REIT - Retail",
+  "name": "Link Real Estate Investment Trust",
+  "sector": "Real Estate"
  },
  "0836.HK": {
   "history": [
@@ -321,7 +413,9 @@
     "name": "China Resources Power Holdings Company Limited"
    }
   ],
-  "name": "China Resources Power Holdings Company Limited"
+  "industry": "Utilities - Independent Power Producers",
+  "name": "China Resources Power Holdings Company Limited",
+  "sector": "Utilities"
  },
  "0857.HK": {
   "history": [
@@ -330,7 +424,9 @@
     "name": "PetroChina Company Limited"
    }
   ],
-  "name": "PetroChina Company Limited"
+  "industry": "Oil & Gas Integrated",
+  "name": "PetroChina Company Limited",
+  "sector": "Energy"
  },
  "0868.HK": {
   "history": [
@@ -339,7 +435,9 @@
     "name": "Xinyi Glass Holdings Limited"
    }
   ],
-  "name": "Xinyi Glass Holdings Limited"
+  "industry": "Building Materials",
+  "name": "Xinyi Glass Holdings Limited",
+  "sector": "Basic Materials"
  },
  "0881.HK": {
   "history": [
@@ -348,7 +446,9 @@
     "name": "Zhongsheng Group Holdings Limited"
    }
   ],
-  "name": "Zhongsheng Group Holdings Limited"
+  "industry": "Auto & Truck Dealerships",
+  "name": "Zhongsheng Group Holdings Limited",
+  "sector": "Consumer Cyclical"
  },
  "0883.HK": {
   "history": [
@@ -357,7 +457,9 @@
     "name": "CNOOC Limited"
    }
   ],
-  "name": "CNOOC Limited"
+  "industry": "Oil & Gas E&P",
+  "name": "CNOOC Limited",
+  "sector": "Energy"
  },
  "0939.HK": {
   "history": [
@@ -366,7 +468,9 @@
     "name": "China Construction Bank Corporation"
    }
   ],
-  "name": "China Construction Bank Corporation"
+  "industry": "Banks - Diversified",
+  "name": "China Construction Bank Corporation",
+  "sector": "Financial Services"
  },
  "0941.HK": {
   "history": [
@@ -375,7 +479,9 @@
     "name": "China Mobile Limited"
    }
   ],
-  "name": "China Mobile Limited"
+  "industry": "Telecom Services",
+  "name": "China Mobile Limited",
+  "sector": "Communication Services"
  },
  "0960.HK": {
   "history": [
@@ -384,7 +490,9 @@
     "name": "Longfor Group Holdings Limited"
    }
   ],
-  "name": "Longfor Group Holdings Limited"
+  "industry": "Real Estate - Development",
+  "name": "Longfor Group Holdings Limited",
+  "sector": "Real Estate"
  },
  "0968.HK": {
   "history": [
@@ -393,7 +501,9 @@
     "name": "Xinyi Solar Holdings Limited"
    }
   ],
-  "name": "Xinyi Solar Holdings Limited"
+  "industry": "Solar",
+  "name": "Xinyi Solar Holdings Limited",
+  "sector": "Technology"
  },
  "0981.HK": {
   "history": [
@@ -402,7 +512,9 @@
     "name": "Semiconductor Manufacturing International Corporation"
    }
   ],
-  "name": "Semiconductor Manufacturing International Corporation"
+  "industry": "Semiconductors",
+  "name": "Semiconductor Manufacturing International Corporation",
+  "sector": "Technology"
  },
  "0992.HK": {
   "history": [
@@ -411,7 +523,20 @@
     "name": "Lenovo Group Limited"
    }
   ],
-  "name": "Lenovo Group Limited"
+  "industry": "Computer Hardware",
+  "name": "Lenovo Group Limited",
+  "sector": "Technology"
+ },
+ "1024.HK": {
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Kuaishou Technology"
+   }
+  ],
+  "industry": "Internet Content & Information",
+  "name": "Kuaishou Technology",
+  "sector": "Communication Services"
  },
  "1038.HK": {
   "history": [
@@ -420,7 +545,9 @@
     "name": "CK Infrastructure Holdings Limited"
    }
   ],
-  "name": "CK Infrastructure Holdings Limited"
+  "industry": "Utilities - Regulated Electric",
+  "name": "CK Infrastructure Holdings Limited",
+  "sector": "Utilities"
  },
  "1044.HK": {
   "history": [
@@ -429,7 +556,9 @@
     "name": "Hengan International Group Company Limited"
    }
   ],
-  "name": "Hengan International Group Company Limited"
+  "industry": "Household & Personal Products",
+  "name": "Hengan International Group Company Limited",
+  "sector": "Consumer Defensive"
  },
  "1088.HK": {
   "history": [
@@ -438,7 +567,9 @@
     "name": "China Shenhua Energy Company Limited"
    }
   ],
-  "name": "China Shenhua Energy Company Limited"
+  "industry": "Thermal Coal",
+  "name": "China Shenhua Energy Company Limited",
+  "sector": "Energy"
  },
  "1093.HK": {
   "history": [
@@ -447,7 +578,9 @@
     "name": "CSPC Pharmaceutical Group Limited"
    }
   ],
-  "name": "CSPC Pharmaceutical Group Limited"
+  "industry": "Drug Manufacturers - General",
+  "name": "CSPC Pharmaceutical Group Limited",
+  "sector": "Healthcare"
  },
  "1099.HK": {
   "history": [
@@ -456,7 +589,9 @@
     "name": "Sinopharm Group Co. Ltd."
    }
   ],
-  "name": "Sinopharm Group Co. Ltd."
+  "industry": "Medical Distribution",
+  "name": "Sinopharm Group Co. Ltd.",
+  "sector": "Healthcare"
  },
  "1109.HK": {
   "history": [
@@ -465,7 +600,9 @@
     "name": "China Resources Land Limited"
    }
   ],
-  "name": "China Resources Land Limited"
+  "industry": "Real Estate - Development",
+  "name": "China Resources Land Limited",
+  "sector": "Real Estate"
  },
  "1113.HK": {
   "history": [
@@ -474,7 +611,9 @@
     "name": "CK Asset Holdings Limited"
    }
   ],
-  "name": "CK Asset Holdings Limited"
+  "industry": "Real Estate - Development",
+  "name": "CK Asset Holdings Limited",
+  "sector": "Real Estate"
  },
  "1177.HK": {
   "history": [
@@ -483,7 +622,9 @@
     "name": "Sino Biopharmaceutical Limited"
    }
   ],
-  "name": "Sino Biopharmaceutical Limited"
+  "industry": "Biotechnology",
+  "name": "Sino Biopharmaceutical Limited",
+  "sector": "Healthcare"
  },
  "1199.HK": {
   "history": [
@@ -492,7 +633,9 @@
     "name": "COSCO SHIPPING Ports Limited"
    }
   ],
-  "name": "COSCO SHIPPING Ports Limited"
+  "industry": "Marine Shipping",
+  "name": "COSCO SHIPPING Ports Limited",
+  "sector": "Industrials"
  },
  "1209.HK": {
   "history": [
@@ -501,7 +644,9 @@
     "name": "China Resources Mixc Lifestyle Services Limited"
    }
   ],
-  "name": "China Resources Mixc Lifestyle Services Limited"
+  "industry": "Real Estate Services",
+  "name": "China Resources Mixc Lifestyle Services Limited",
+  "sector": "Real Estate"
  },
  "1211.HK": {
   "history": [
@@ -510,7 +655,9 @@
     "name": "BYD Company Limited"
    }
   ],
-  "name": "BYD Company Limited"
+  "industry": "Auto Manufacturers",
+  "name": "BYD Company Limited",
+  "sector": "Consumer Cyclical"
  },
  "1288.HK": {
   "history": [
@@ -519,7 +666,9 @@
     "name": "Agricultural Bank of China Limited"
    }
   ],
-  "name": "Agricultural Bank of China Limited"
+  "industry": "Banks - Diversified",
+  "name": "Agricultural Bank of China Limited",
+  "sector": "Financial Services"
  },
  "1299.HK": {
   "history": [
@@ -528,7 +677,9 @@
     "name": "AIA Group Limited"
    }
   ],
-  "name": "AIA Group Limited"
+  "industry": "Insurance - Life",
+  "name": "AIA Group Limited",
+  "sector": "Financial Services"
  },
  "1339.HK": {
   "history": [
@@ -537,7 +688,9 @@
     "name": "The People's Insurance Company (Group) of China Limited"
    }
   ],
-  "name": "The People's Insurance Company (Group) of China Limited"
+  "industry": "Insurance - Property & Casualty",
+  "name": "The People's Insurance Company (Group) of China Limited",
+  "sector": "Financial Services"
  },
  "1378.HK": {
   "history": [
@@ -546,7 +699,9 @@
     "name": "China Hongqiao Group Limited"
    }
   ],
-  "name": "China Hongqiao Group Limited"
+  "industry": "Aluminum",
+  "name": "China Hongqiao Group Limited",
+  "sector": "Basic Materials"
  },
  "1398.HK": {
   "history": [
@@ -555,7 +710,9 @@
     "name": "Industrial and Commercial Bank of China Limited"
    }
   ],
-  "name": "Industrial and Commercial Bank of China Limited"
+  "industry": "Banks - Diversified",
+  "name": "Industrial and Commercial Bank of China Limited",
+  "sector": "Financial Services"
  },
  "1810.HK": {
   "history": [
@@ -564,7 +721,9 @@
     "name": "Xiaomi Corporation"
    }
   ],
-  "name": "Xiaomi Corporation"
+  "industry": "Consumer Electronics",
+  "name": "Xiaomi Corporation",
+  "sector": "Technology"
  },
  "1876.HK": {
   "history": [
@@ -573,7 +732,9 @@
     "name": "Budweiser Brewing Company APAC Limited"
    }
   ],
-  "name": "Budweiser Brewing Company APAC Limited"
+  "industry": "Beverages - Brewers",
+  "name": "Budweiser Brewing Company APAC Limited",
+  "sector": "Consumer Defensive"
  },
  "1880.HK": {
   "history": [
@@ -582,7 +743,9 @@
     "name": "China Tourism Group Duty Free Corporation Limited"
    }
   ],
-  "name": "China Tourism Group Duty Free Corporation Limited"
+  "industry": "Specialty Retail",
+  "name": "China Tourism Group Duty Free Corporation Limited",
+  "sector": "Consumer Cyclical"
  },
  "1898.HK": {
   "history": [
@@ -591,7 +754,9 @@
     "name": "China Coal Energy Company Limited"
    }
   ],
-  "name": "China Coal Energy Company Limited"
+  "industry": "Thermal Coal",
+  "name": "China Coal Energy Company Limited",
+  "sector": "Energy"
  },
  "1928.HK": {
   "history": [
@@ -600,7 +765,9 @@
     "name": "Sands China Ltd."
    }
   ],
-  "name": "Sands China Ltd."
+  "industry": "Resorts & Casinos",
+  "name": "Sands China Ltd.",
+  "sector": "Consumer Cyclical"
  },
  "1929.HK": {
   "history": [
@@ -609,7 +776,9 @@
     "name": "Chow Tai Fook Jewellery Group Limited"
    }
   ],
-  "name": "Chow Tai Fook Jewellery Group Limited"
+  "industry": "Luxury Goods",
+  "name": "Chow Tai Fook Jewellery Group Limited",
+  "sector": "Consumer Cyclical"
  },
  "1997.HK": {
   "history": [
@@ -618,7 +787,9 @@
     "name": "Wharf Real Estate Investment Company Limited"
    }
   ],
-  "name": "Wharf Real Estate Investment Company Limited"
+  "industry": "Real Estate Services",
+  "name": "Wharf Real Estate Investment Company Limited",
+  "sector": "Real Estate"
  },
  "2003.HK": {
   "history": [
@@ -627,7 +798,9 @@
     "name": "VCREDIT Holdings Limited"
    }
   ],
-  "name": "VCREDIT Holdings Limited"
+  "industry": "Credit Services",
+  "name": "VCREDIT Holdings Limited",
+  "sector": "Financial Services"
  },
  "2007.HK": {
   "history": [
@@ -636,7 +809,9 @@
     "name": "Country Garden Holdings Company Limited"
    }
   ],
-  "name": "Country Garden Holdings Company Limited"
+  "industry": "Real Estate - Development",
+  "name": "Country Garden Holdings Company Limited",
+  "sector": "Real Estate"
  },
  "2015.HK": {
   "history": [
@@ -645,7 +820,9 @@
     "name": "Li Auto Inc."
    }
   ],
-  "name": "Li Auto Inc."
+  "industry": "Auto Manufacturers",
+  "name": "Li Auto Inc.",
+  "sector": "Consumer Cyclical"
  },
  "2018.HK": {
   "history": [
@@ -654,7 +831,9 @@
     "name": "AAC Technologies Holdings Inc."
    }
   ],
-  "name": "AAC Technologies Holdings Inc."
+  "industry": "Communication Equipment",
+  "name": "AAC Technologies Holdings Inc.",
+  "sector": "Technology"
  },
  "2020.HK": {
   "history": [
@@ -663,7 +842,9 @@
     "name": "ANTA Sports Products Limited"
    }
   ],
-  "name": "ANTA Sports Products Limited"
+  "industry": "Leisure",
+  "name": "ANTA Sports Products Limited",
+  "sector": "Consumer Cyclical"
  },
  "2038.HK": {
   "history": [
@@ -672,7 +853,20 @@
     "name": "FIH Mobile Limited"
    }
   ],
-  "name": "FIH Mobile Limited"
+  "industry": "Consumer Electronics",
+  "name": "FIH Mobile Limited",
+  "sector": "Technology"
+ },
+ "2057.HK": {
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ZTO Express (Cayman) Inc."
+   }
+  ],
+  "industry": "Integrated Freight & Logistics",
+  "name": "ZTO Express (Cayman) Inc.",
+  "sector": "Industrials"
  },
  "2269.HK": {
   "history": [
@@ -681,7 +875,9 @@
     "name": "WuXi Biologics (Cayman) Inc."
    }
   ],
-  "name": "WuXi Biologics (Cayman) Inc."
+  "industry": "Biotechnology",
+  "name": "WuXi Biologics (Cayman) Inc.",
+  "sector": "Healthcare"
  },
  "2313.HK": {
   "history": [
@@ -690,7 +886,9 @@
     "name": "Shenzhou International Group Holdings Limited"
    }
   ],
-  "name": "Shenzhou International Group Holdings Limited"
+  "industry": "Textile Manufacturing",
+  "name": "Shenzhou International Group Holdings Limited",
+  "sector": "Consumer Cyclical"
  },
  "2318.HK": {
   "history": [
@@ -699,7 +897,9 @@
     "name": "Ping An Insurance (Group) Company of China, Ltd."
    }
   ],
-  "name": "Ping An Insurance (Group) Company of China, Ltd."
+  "industry": "Insurance - Life",
+  "name": "Ping An Insurance (Group) Company of China, Ltd.",
+  "sector": "Financial Services"
  },
  "2319.HK": {
   "history": [
@@ -708,7 +908,9 @@
     "name": "China Mengniu Dairy Company Limited"
    }
   ],
-  "name": "China Mengniu Dairy Company Limited"
+  "industry": "Packaged Foods",
+  "name": "China Mengniu Dairy Company Limited",
+  "sector": "Consumer Defensive"
  },
  "2331.HK": {
   "history": [
@@ -717,7 +919,9 @@
     "name": "Li Ning Company Limited"
    }
   ],
-  "name": "Li Ning Company Limited"
+  "industry": "Leisure",
+  "name": "Li Ning Company Limited",
+  "sector": "Consumer Cyclical"
  },
  "2359.HK": {
   "history": [
@@ -726,7 +930,9 @@
     "name": "WuXi AppTec Co., Ltd."
    }
   ],
-  "name": "WuXi AppTec Co., Ltd."
+  "industry": "Diagnostics & Research",
+  "name": "WuXi AppTec Co., Ltd.",
+  "sector": "Healthcare"
  },
  "2382.HK": {
   "history": [
@@ -735,7 +941,9 @@
     "name": "Sunny Optical Technology (Group) Company Limited"
    }
   ],
-  "name": "Sunny Optical Technology (Group) Company Limited"
+  "industry": "Electronic Components",
+  "name": "Sunny Optical Technology (Group) Company Limited",
+  "sector": "Technology"
  },
  "2388.HK": {
   "history": [
@@ -744,7 +952,9 @@
     "name": "BOC Hong Kong (Holdings) Limited"
    }
   ],
-  "name": "BOC Hong Kong (Holdings) Limited"
+  "industry": "Banks - Regional",
+  "name": "BOC Hong Kong (Holdings) Limited",
+  "sector": "Financial Services"
  },
  "2600.HK": {
   "history": [
@@ -753,7 +963,9 @@
     "name": "Aluminum Corporation of China Limited"
    }
   ],
-  "name": "Aluminum Corporation of China Limited"
+  "industry": "Aluminum",
+  "name": "Aluminum Corporation of China Limited",
+  "sector": "Basic Materials"
  },
  "2601.HK": {
   "history": [
@@ -762,7 +974,20 @@
     "name": "China Pacific Insurance (Group) Co., Ltd."
    }
   ],
-  "name": "China Pacific Insurance (Group) Co., Ltd."
+  "industry": "Insurance - Life",
+  "name": "China Pacific Insurance (Group) Co., Ltd.",
+  "sector": "Financial Services"
+ },
+ "2618.HK": {
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "JD Logistics, Inc."
+   }
+  ],
+  "industry": "Integrated Freight & Logistics",
+  "name": "JD Logistics, Inc.",
+  "sector": "Industrials"
  },
  "2628.HK": {
   "history": [
@@ -771,7 +996,9 @@
     "name": "China Life Insurance Company Limited"
    }
   ],
-  "name": "China Life Insurance Company Limited"
+  "industry": "Insurance - Life",
+  "name": "China Life Insurance Company Limited",
+  "sector": "Financial Services"
  },
  "2688.HK": {
   "history": [
@@ -780,7 +1007,9 @@
     "name": "ENN Energy Holdings Limited"
    }
   ],
-  "name": "ENN Energy Holdings Limited"
+  "industry": "Utilities - Regulated Gas",
+  "name": "ENN Energy Holdings Limited",
+  "sector": "Utilities"
  },
  "2800.HK": {
   "history": [
@@ -802,7 +1031,9 @@
     "name": "Zijin Mining Group Company Limited"
    }
   ],
-  "name": "Zijin Mining Group Company Limited"
+  "industry": "Gold",
+  "name": "Zijin Mining Group Company Limited",
+  "sector": "Basic Materials"
  },
  "3328.HK": {
   "history": [
@@ -811,7 +1042,9 @@
     "name": "Bank of Communications Co., Ltd."
    }
   ],
-  "name": "Bank of Communications Co., Ltd."
+  "industry": "Banks - Diversified",
+  "name": "Bank of Communications Co., Ltd.",
+  "sector": "Financial Services"
  },
  "3690.HK": {
   "history": [
@@ -820,7 +1053,9 @@
     "name": "Meituan"
    }
   ],
-  "name": "Meituan"
+  "industry": "Internet Retail",
+  "name": "Meituan",
+  "sector": "Consumer Cyclical"
  },
  "3692.HK": {
   "history": [
@@ -829,7 +1064,9 @@
     "name": "Hansoh Pharmaceutical Group Company Limited"
    }
   ],
-  "name": "Hansoh Pharmaceutical Group Company Limited"
+  "industry": "Drug Manufacturers - Specialty & Generic",
+  "name": "Hansoh Pharmaceutical Group Company Limited",
+  "sector": "Healthcare"
  },
  "3968.HK": {
   "history": [
@@ -838,7 +1075,9 @@
     "name": "China Merchants Bank Co., Ltd."
    }
   ],
-  "name": "China Merchants Bank Co., Ltd."
+  "industry": "Banks - Regional",
+  "name": "China Merchants Bank Co., Ltd.",
+  "sector": "Financial Services"
  },
  "3988.HK": {
   "history": [
@@ -847,7 +1086,9 @@
     "name": "Bank of China Limited"
    }
   ],
-  "name": "Bank of China Limited"
+  "industry": "Banks - Diversified",
+  "name": "Bank of China Limited",
+  "sector": "Financial Services"
  },
  "6030.HK": {
   "history": [
@@ -856,7 +1097,9 @@
     "name": "CITIC Securities Company Limited"
    }
   ],
-  "name": "CITIC Securities Company Limited"
+  "industry": "Capital Markets",
+  "name": "CITIC Securities Company Limited",
+  "sector": "Financial Services"
  },
  "6098.HK": {
   "history": [
@@ -865,7 +1108,9 @@
     "name": "Country Garden Services Holdings Company Limited"
    }
   ],
-  "name": "Country Garden Services Holdings Company Limited"
+  "industry": "Real Estate Services",
+  "name": "Country Garden Services Holdings Company Limited",
+  "sector": "Real Estate"
  },
  "6618.HK": {
   "history": [
@@ -874,7 +1119,9 @@
     "name": "JD Health International Inc."
    }
   ],
-  "name": "JD Health International Inc."
+  "industry": "Pharmaceutical Retailers",
+  "name": "JD Health International Inc.",
+  "sector": "Healthcare"
  },
  "6690.HK": {
   "history": [
@@ -883,7 +1130,9 @@
     "name": "Haier Smart Home Co., Ltd."
    }
   ],
-  "name": "Haier Smart Home Co., Ltd."
+  "industry": "Furnishings, Fixtures & Appliances",
+  "name": "Haier Smart Home Co., Ltd.",
+  "sector": "Consumer Cyclical"
  },
  "6862.HK": {
   "history": [
@@ -892,7 +1141,9 @@
     "name": "Haidilao International Holding Ltd."
    }
   ],
-  "name": "Haidilao International Holding Ltd."
+  "industry": "Restaurants",
+  "name": "Haidilao International Holding Ltd.",
+  "sector": "Consumer Cyclical"
  },
  "9618.HK": {
   "history": [
@@ -901,7 +1152,9 @@
     "name": "JD.com, Inc."
    }
   ],
-  "name": "JD.com, Inc."
+  "industry": "Internet Retail",
+  "name": "JD.com, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "9633.HK": {
   "history": [
@@ -910,7 +1163,9 @@
     "name": "Nongfu Spring Co., Ltd."
    }
   ],
-  "name": "Nongfu Spring Co., Ltd."
+  "industry": "Beverages - Non-Alcoholic",
+  "name": "Nongfu Spring Co., Ltd.",
+  "sector": "Consumer Defensive"
  },
  "9888.HK": {
   "history": [
@@ -919,7 +1174,9 @@
     "name": "Baidu, Inc."
    }
   ],
-  "name": "Baidu, Inc."
+  "industry": "Internet Content & Information",
+  "name": "Baidu, Inc.",
+  "sector": "Communication Services"
  },
  "9901.HK": {
   "history": [
@@ -928,7 +1185,9 @@
     "name": "New Oriental Education & Technology Group Inc."
    }
   ],
-  "name": "New Oriental Education & Technology Group Inc."
+  "industry": "Education & Training Services",
+  "name": "New Oriental Education & Technology Group Inc.",
+  "sector": "Consumer Defensive"
  },
  "9961.HK": {
   "history": [
@@ -937,7 +1196,9 @@
     "name": "Trip.com Group Limited"
    }
   ],
-  "name": "Trip.com Group Limited"
+  "industry": "Travel Services",
+  "name": "Trip.com Group Limited",
+  "sector": "Consumer Cyclical"
  },
  "9988.HK": {
   "history": [
@@ -946,7 +1207,20 @@
     "name": "Alibaba Group Holding Limited"
    }
   ],
-  "name": "Alibaba Group Holding Limited"
+  "industry": "Internet Retail",
+  "name": "Alibaba Group Holding Limited",
+  "sector": "Consumer Cyclical"
+ },
+ "9992.HK": {
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Pop Mart International Group Limited"
+   }
+  ],
+  "industry": "Leisure",
+  "name": "Pop Mart International Group Limited",
+  "sector": "Consumer Cyclical"
  },
  "9999.HK": {
   "history": [
@@ -955,6 +1229,8 @@
     "name": "NetEase, Inc."
    }
   ],
-  "name": "NetEase, Inc."
+  "industry": "Electronic Gaming & Multimedia",
+  "name": "NetEase, Inc.",
+  "sector": "Communication Services"
  }
 }

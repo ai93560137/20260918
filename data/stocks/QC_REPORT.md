@@ -1,16 +1,14 @@
 # 數據品質日報（2026-09-22）
 
-由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）7 份（最新 2026-09-22），公司名紀錄 106 檔。
+由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）119 檔，第二來源港交所官方快照（`data/stocks_hkex/`）7 份（最新 2026-09-22），公司名紀錄 112 檔。
 
-**🔴 嚴重 1 項 ｜ 🟡 注意 19 項 ｜ ✅ 已確認 19 項**
+**🔴 嚴重 0 項 ｜ 🟡 注意 26 項 ｜ ✅ 已確認 19 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
 ## 🔴 嚴重（會污染回測，先處理）
 
-| 代碼 | 檢查 | 說明 |
-|---|---|---|
-| 2800.HK | yf_name_changed | 上次「Tracker Fund of Hong Kong」→ 今天「Tracker Fund Of Hong Kong」（改名或代碼被重用） |
+（無）
 
 ## 🟡 注意
 
@@ -18,6 +16,7 @@
 |---|---|---|
 | 0011.HK | constituent_no_data | 2010-2025年是成分股（Hang Seng Bank Ltd），但主來源完全沒有價格（多半已下市/私有化——回測測不到它，倖存者偏差殘留） |
 | 0494.HK | constituent_no_data | 2010-2016年是成分股（Li & Fung Ltd），但主來源完全沒有價格（多半已下市/私有化——回測測不到它，倖存者偏差殘留） |
+| 0300.HK | gap | 1 段 > 14 天斷層，最近 2024-07-05 -> 2024-10-02 |
 | 0001.HK | hkex_vs_wiki_name | 港交所「CKH HOLDINGS」vs Wikipedia 2025年「CK Hutchison Holdings Limited」（相似度 0.40） |
 | 0013.HK | hkex_vs_wiki_name | 港交所「HUTCHMED」vs Wikipedia 2015年「Hutchison Whampoa Ltd」（相似度 0.48） |
 | 0016.HK | hkex_vs_wiki_name | 港交所「SHK PPT」vs Wikipedia 2025年「Sun Hung Kai Properties Limited」（相似度 0.47） |
@@ -32,6 +31,12 @@
 | 2038.HK | hkex_vs_wiki_name | 港交所「FIH」vs Wikipedia 2011年「Foxconn International Holdings Ltd」（相似度 0.17） |
 | 2600.HK | hkex_vs_wiki_name | 港交所「CHALCO」vs Wikipedia 2013年「Aluminum Corporation of China Limited (Chalco)」（相似度 0.40） |
 | 6098.HK | hkex_vs_wiki_name | 港交所「CG SERVICES」vs Wikipedia 2025年「Country Garden」（相似度 0.24） |
+| 0285.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
+| 0300.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
+| 1024.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
+| 2057.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
+| 2618.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
+| 9992.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
 | 0330.HK | ohlc_auction | 近30天 2 根開/收市價落在高低價外（多半是競價時段慣例）：2026-08-24, 2026-09-08 |
 | 0960.HK | wiki_name_varies | 最新記載「Longfor Properties」，但 2023年「The Link REIT」 |
 | 6098.HK | wiki_name_varies | 最新記載「Country Garden」，但 2023年「CG SERVICES」 |
@@ -88,8 +93,10 @@
 | 0175.HK |  | 7（2010-07-16） | 1（2011-04-04） |  |
 | 0241.HK |  | 4（2009-12-24） | 11（2017-03-06） | 6（2015-04-15） |
 | 0267.HK |  | 2（2010-01-19） | 6（2024-06-18） | 1（2008-10-21） |
+| 0285.HK |  | 2（2009-10-16） | 4（2023-05-16） | 1（2008-10-02） |
 | 0291.HK |  | 2（2010-02-04） | 6（2025-11-12） | 2（2015-09-18） |
 | 0293.HK |  | 2（2010-01-19） | 4（2026-04-10） |  |
+| 0300.HK |  |  |  | 1（2024-10-02） |
 | 0316.HK |  | 1（2009-12-31） | 31（2025-10-08） |  |
 | 0322.HK |  | 2（2010-02-04） | 8（2026-04-30） |  |
 | 0330.HK |  | 1（2010-01-15） | 10（2026-08-19） | 4（2025-08-22） |
@@ -136,6 +143,7 @@
 | 2018.HK |  | 1（2010-01-15） | 2（2015-07-27） |  |
 | 2020.HK |  | 4（2010-01-19） | 5（2016-10-24） |  |
 | 2038.HK |  | 2（2009-12-31） | 3（2026-08-03） |  |
+| 2057.HK |  |  | 5（2023-08-25） |  |
 | 2269.HK |  |  | 1（2017-07-04） |  |
 | 2313.HK |  | 8（2010-07-06） | 1（2016-07-06） |  |
 | 2318.HK |  | 1（2010-01-15） | 3（2011-10-07） |  |
