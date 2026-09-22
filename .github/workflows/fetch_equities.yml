@@ -55,11 +55,25 @@ jobs:
           if [[ ! "$M" =~ ^(us|jp)$ ]]; then echo "market 只能是 us/jp：$M"; exit 1; fi
           echo "market=$M" >> "$GITHUB_OUTPUT"
           if [ "$IN_SHARES" = "true" ] || [ "$(date -u +%u)" = "1" ]; then echo "shares=--shares" >> "$GITHUB_OUTPUT"; fi
+          # yfinance 公司名/行業：週一或還沒有名字檔時才抓（每天的改名偵測靠第二來源名字）
+          if [ "$(date -u +%u)" = "1" ] || [ ! -f "data/equities/$M/_names.json" ]; then echo "names=--fetch-names" >> "$GITHUB_OUTPUT"; fi
 
       - name: Fetch prices (yfinance)
         continue-on-error: true
         timeout-minutes: 75
         run: python3 scripts/fetch_equities.py ${{ steps.m.outputs.shares }} --budget-min 70 universes/${{ steps.m.outputs.market }}/fetch_list.txt
+
+      # 第二來源與品質報告是輔助，各自設時間上限，絕不能拖住主數據的 commit
+      - name: Second source（美股 Nasdaq.com）
+        if: steps.m.outputs.market == 'us'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python3 scripts/fetch_second_source.py --market us
+
+      - name: Data quality check
+        continue-on-error: true
+        timeout-minutes: 25
+        run: python3 scripts/check_equities_quality.py --market ${{ steps.m.outputs.market }} ${{ steps.m.outputs.names }}
 
       - name: Commit and push if changed
         env:
@@ -88,3 +102,19 @@ jobs:
             git commit -q -m "chore(data): 自動更新 $M 日線 $(date -u +%Y-%m-%d)"
           done
           echo "push 重試 5 次仍失敗" && exit 1
+
+      # Telegram 通道一：只有 🔴 才發（日報由港股管線負責，避免洗版）
+      - name: Telegram alert
+        if: always()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          M: ${{ steps.m.outputs.market }}
+        run: |
+          F="data/equities/$M/qc_alert.txt"
+          if [ ! -s "$F" ]; then echo "no alert"; exit 0; fi
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then echo "::warning::TG secrets 沒設"; exit 0; fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "text=$(cat "$F")" > /dev/null
+          echo "telegram sent: $F"
