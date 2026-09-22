@@ -1,0 +1,4 @@
+{
+ "_說明": "人工確認沒問題的 QC 項目（<TICKER>:<檢查> -> 理由）；check_equities_quality.py 會移到「已確認」區",
+ "EA:stale": "Electronic Arts 2026-08 私有化下市；Nasdaq-100 名單是 Wikipedia 年度快照（2026-06-29），尚未反映出榜——回測到 8 月初之後自然沒有它的價格"
+}

@@ -146,7 +146,9 @@ def main() -> None:
         cutoff = market_last - timedelta(days=RECENT_DAYS)
         prev = None
         for r in rows:
-            if r["Date"] >= cutoff:
+            # 近期髒值只檢查現任成分股：已出榜的代碼常被重新分配給別家公司（CPWR、SBNY），
+            # 那段新價格本來就被防代碼重用檢查擋在回測外，不用每天警報
+            if t in current and r["Date"] >= cutoff:
                 if r["Close"] <= 0 or (r["Low"] is not None and r["Low"] <= 0):
                     flag("🔴", t, "nonpositive", f"{r['Date']} 價格 <= 0")
                 if r["High"] is not None and r["Low"] is not None and r["High"] < r["Low"]:
