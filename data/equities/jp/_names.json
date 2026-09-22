@@ -3154,5 +3154,15 @@
   "industry": "Telecom Services",
   "name": "SoftBank Group Corp.",
   "sector": "Communication Services"
+ },
+ "^N225": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nikkei 225"
+   }
+  ],
+  "name": "Nikkei 225"
  }
 }

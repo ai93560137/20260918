@@ -34,7 +34,7 @@
  },
  "1334.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "1605.T": {
@@ -171,16 +171,16 @@
  },
  "2202.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "2261.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "2269.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -224,7 +224,7 @@
   "shares_rows": 497
  },
  "2501.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -291,7 +291,7 @@
  },
  "2779.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "2801.T": {
@@ -472,7 +472,7 @@
  },
  "3404.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "3405.T": {
@@ -498,7 +498,7 @@
   "shares_rows": 463
  },
  "3436.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -576,7 +576,7 @@
  },
  "3893.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "4004.T": {
@@ -701,7 +701,7 @@
   "shares_rows": 372
  },
  "4188.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -866,7 +866,7 @@
   "shares_rows": 366
  },
  "4578.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -910,7 +910,7 @@
   "shares_rows": 477
  },
  "4704.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -944,7 +944,7 @@
  },
  "4795.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "4901.T": {
@@ -982,12 +982,12 @@
  },
  "5001.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "5002.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "5016.T": {
@@ -1013,7 +1013,7 @@
   "shares_rows": 372
  },
  "5020.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1057,7 +1057,7 @@
   "shares_rows": 326
  },
  "5202.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1146,7 +1146,7 @@
  },
  "5405.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "5406.T": {
@@ -1162,7 +1162,7 @@
  },
  "5407.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "5411.T": {
@@ -1178,7 +1178,7 @@
  },
  "5413.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "543A.T": {
@@ -1193,7 +1193,7 @@
   "shares_rows": 2
  },
  "5541.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1216,7 +1216,7 @@
  },
  "5701.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "5703.T": {
@@ -1231,7 +1231,7 @@
   "shares_rows": 314
  },
  "5706.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1297,7 +1297,7 @@
   "shares_rows": 315
  },
  "5801.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1352,7 +1352,7 @@
   "shares_rows": 348
  },
  "6098.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1562,7 +1562,7 @@
  },
  "6502.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "6503.T": {
@@ -1654,7 +1654,7 @@
   "shares_rows": 353
  },
  "6674.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1731,7 +1731,7 @@
   "shares_rows": 449
  },
  "6753.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1765,12 +1765,12 @@
  },
  "6764.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "6767.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "6770.T": {
@@ -1786,12 +1786,12 @@
  },
  "6773.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "6796.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "6841.T": {
@@ -1928,7 +1928,7 @@
  },
  "6991.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "7003.T": {
@@ -2032,7 +2032,7 @@
  },
  "7205.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "7211.T": {
@@ -2058,7 +2058,7 @@
   "shares_rows": 273
  },
  "7261.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2301,7 +2301,7 @@
  },
  "8028.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8031.T": {
@@ -2361,7 +2361,7 @@
  },
  "8238.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8252.T": {
@@ -2399,7 +2399,7 @@
  },
  "8270.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8303.T": {
@@ -2425,7 +2425,7 @@
   "shares_rows": 368
  },
  "8306.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2481,7 +2481,7 @@
  },
  "8332.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8354.T": {
@@ -2497,21 +2497,21 @@
  },
  "8355.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8403.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8404.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8411.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2523,11 +2523,11 @@
  },
  "8583.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8591.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2550,7 +2550,7 @@
  },
  "8603.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8604.T": {
@@ -2566,7 +2566,7 @@
  },
  "8606.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8628.T": {
@@ -2637,12 +2637,12 @@
  },
  "8752.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8755.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8766.T": {
@@ -2713,7 +2713,7 @@
  },
  "8815.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "8830.T": {
@@ -2817,7 +2817,7 @@
  },
  "9062.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "9064.T": {
@@ -2832,7 +2832,7 @@
   "shares_rows": 362
  },
  "9101.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2899,7 +2899,7 @@
  },
  "9205.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "9301.T": {
@@ -2914,7 +2914,7 @@
   "shares_rows": 334
  },
  "9412.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2959,7 +2959,7 @@
  },
  "9437.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "9501.T": {
@@ -2974,7 +2974,7 @@
   "shares_rows": 475
  },
  "9502.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3030,12 +3030,12 @@
  },
  "9613.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "9681.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "9735.T": {
@@ -3051,7 +3051,7 @@
  },
  "9737.T": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "9766.T": {
@@ -3097,5 +3097,15 @@
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 372
+ },
+ "^N225": {
+  "adj_err_max": 0.0,
+  "error": null,
+  "fails": 0,
+  "fetched": "2026-09-22",
+  "files_changed": 33,
+  "first": "1995-01-04",
+  "last": "2026-09-18",
+  "rows": 7778
  }
 }
