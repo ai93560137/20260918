@@ -89,6 +89,8 @@
 | `ZGL_BACKTEST.md` | ZGL 死刑判決書 |
 | `journal/RULES.md` | 每日對帳、滑價證偽、雪球資金管理規則 |
 | `BACKTEST.md` | 更早的 v12 回測教訓（樣本長度、樣本內外）|
+| `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
+| `data/stocks/` | 股票/指數日線數據（格式見 `data/stocks/README.md`，與根目錄 MT5 M1 期貨數據分開）|
 
 ## 五、新 session 開工清單
 
