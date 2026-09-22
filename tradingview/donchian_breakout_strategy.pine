@@ -19,7 +19,7 @@
 // 成本假設：commission = 每張每次成交 0.15（一買一賣合計 0.30，
 // 對應 XAUUSD 0.30 點差、1 張 = 1 oz = 0.01 手）。請按你的帳戶調整。
 // =============================================================================
-strategy("智能諸葛亮 前N日高低突破",
+strategy("智能諸葛亮 八陣圖",
      overlay = true,
      initial_capital = 10000,
      default_qty_type = strategy.fixed,
