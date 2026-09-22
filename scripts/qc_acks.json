@@ -1,10 +1,21 @@
 {
  "0001.HK:wiki_name_varies": "真實重組：2015年長實(Cheung Kong)與和黃重組為長和(CK Hutchison)，沿用0001代碼。回測注意：同一代碼前後是不同業務結構的公司",
  "0006.HK:wiki_name_varies": "真實改名：香港電燈集團(HK Electric Holdings)2011年改名電能實業(Power Assets)，同一公司",
+ "0013.HK:code_reuse_suspected": "確認代碼重用：和記黃埔2015併入長和後0013由和黃醫藥(2021上市)使用。回測引擎以「價格須早於快照日」排除，無污染",
+ "0013.HK:name_mismatch": "同上，代碼重用（和黃->和黃醫藥），已由回測防護排除",
  "0101.HK:wiki_name_varies": "Wikipedia 2023年修訂版本本身名字錯位一列（已核對原始 wikitext：代碼正確、名字錯位，2024年已修正），非代碼重用",
+ "0322.HK:name_mismatch": "同一公司：康師傅，Wikipedia 只寫簡稱 Tingyi",
  "0322.HK:wiki_name_varies": "同一公司：康師傅 Tingyi (Cayman Islands) Holding Corp，後期 Wikipedia 只寫簡稱 Tingyi",
+ "0386.HK:name_mismatch": "同一公司：中國石化，Sinopec = China Petroleum & Chemical Corporation",
+ "0388.HK:name_mismatch": "同一公司：港交所，HKEx = Hong Kong Exchanges and Clearing",
  "0688.HK:wiki_name_varies": "Wikipedia 2023年修訂版本本身名字錯位一列（同0101），非代碼重用",
+ "0823.HK:name_mismatch": "同一公司：領展，Link REIT = Link Real Estate Investment Trust",
  "0823.HK:wiki_name_varies": "Wikipedia 2023年修訂版本本身名字錯位一列（同0101），非代碼重用",
+ "1199.HK:name_mismatch": "同一公司改名：中遠太平洋(COSCO Pacific) 2016年改名中遠海運港口(COSCO SHIPPING Ports)",
  "1299.HK:wiki_name_varies": "同一公司：友邦保險 AIA Group，早期 Wikipedia 用舊名 American International Assurance",
- "3968.HK:wiki_name_varies": "Wikipedia 2023年修訂版本本身名字錯位一列（金融分類，交通銀行3328於2023年剔除），非代碼重用"
+ "1880.HK:code_reuse_suspected": "確認代碼重用：百麗國際2017私有化後1880由中國中免H股(2022上市)使用。回測引擎已排除",
+ "1880.HK:name_mismatch": "同上，代碼重用（百麗->中免），已由回測防護排除",
+ "2038.HK:name_mismatch": "同一公司改名：富士康國際(Foxconn International) 改名富智康(FIH Mobile)",
+ "3968.HK:wiki_name_varies": "Wikipedia 2023年修訂版本本身名字錯位一列（金融分類，交通銀行3328於2023年剔除），非代碼重用",
+ "6690.HK:name_mismatch": "同一公司：海爾智家，Wikipedia 只寫簡稱 Haier"
 }

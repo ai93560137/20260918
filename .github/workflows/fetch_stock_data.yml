@@ -6,14 +6,26 @@ on:
     - cron: '0 9 * * 1-5'
     # 05:30 HKT 次日（21:30 UTC 前一日）：美股收盤後
     - cron: '30 21 * * 1-5'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: '手動觸發時是否發 Telegram 日報（有 🔴 警報一律照發）'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
 
+# 同一時間只跑一個抓取（手動觸發撞上排程時排隊，不重疊）——兩輪同時整檔覆寫
+# 同一批 .csv.gz，後推的那輪會在二進位檔上衝突而整輪失敗（2026-09-22 實際發生）
+concurrency:
+  group: fetch-stock-data
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,29 +42,71 @@ jobs:
         continue-on-error: true  # 有些代碼(已下市/合併)預期會抓不到，不該擋住其他成功的 commit
         run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
-      - name: Fetch second source (Stooq)
+      # 第二來源與品質日報都是輔助，各自設時間上限，絕不能拖住主數據的 commit
+      - name: Fetch second source (HKEX official quotes)
         continue-on-error: true
-        run: python3 scripts/fetch_stooq.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
+        timeout-minutes: 8
+        run: python3 scripts/fetch_hkex_equity.py scripts/universe_hk.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
       - name: Data quality check
         continue-on-error: true
+        timeout-minutes: 10
         run: python3 scripts/check_data_quality.py --fetch-names
 
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stocks/ data/stocks_stooq/
+          # 只 add 存在的數據目錄；--ignore-removal 不會把別輪新增、本輪沒有的快照當成刪除
+          add_data() { for d in data/stocks data/stocks_hkex; do [ -d "$d" ] && git add --ignore-removal "$d"; done; }
+          add_data
           if git diff --cached --quiet; then
             echo "No data changes"
             exit 0
           fi
           git commit -m "chore(data): 自動更新股票日線數據 + 品質日報 $(date -u +%Y-%m-%d)"
-          # 這條分支有別的 session 同時在推（對帳/Telegram），推失敗就把自己這個
-          # 剛做的 commit rebase 到最新遠端再推——只動 bot 自己未推出的 commit
+          # 推送被拒（別的 session/別輪先推了）：本輪數據是整檔重抓的最新版，
+          # 直接把 HEAD 指到最新遠端、保留工作區的新數據重新 commit——不 rebase
+          # 二進位檔（會衝突），也不會動到別人改的非數據檔（只 add 數據目錄）
           for i in 1 2 3 4 5; do
             git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
             sleep $((i * 5))
-            git pull --rebase origin claude/gifted-carson-v2tvhw
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_data
+            if git diff --cached --quiet; then
+              echo "遠端已有相同數據"
+              exit 0
+            fi
+            git commit -m "chore(data): 自動更新股票日線數據 + 品質日報 $(date -u +%Y-%m-%d)"
           done
           echo "push 重試 5 次仍失敗" && exit 1
+
+      # Telegram 通道一（方法見 claude/dazzling-curie-f3xzb8 的 tradingview/DATA_PIPELINE.md 第6節）：
+      # 有 🔴 發警報（任何觸發都發）；否則只在港股收市那輪排程發日報；手動觸發預設靜默。
+      # curl --fail：Telegram 拒收（bot 沒按 START、secret 錯）時這步會紅，不靜默失敗。
+      - name: Telegram notify（警報優先，日報兜底）
+        if: always()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          EVENT: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+          WANT_DIGEST: ${{ inputs.digest }}
+        run: |
+          MSG=""
+          if [ -s data/stocks/qc_alert.txt ]; then
+            MSG=data/stocks/qc_alert.txt
+          elif { [ "$EVENT" = "schedule" ] && [ "$CRON" = "0 9 * * 1-5" ]; } || [ "$WANT_DIGEST" = "true" ]; then
+            if [ -s data/stocks/qc_digest.txt ]; then MSG=data/stocks/qc_digest.txt; fi
+          fi
+          if [ -z "$MSG" ]; then
+            echo "nothing to send - skip"
+          elif [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送 $MSG"
+          else
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat "$MSG")" > /dev/null
+            echo "telegram sent: $MSG"
+          fi

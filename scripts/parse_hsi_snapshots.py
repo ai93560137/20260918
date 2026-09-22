@@ -34,11 +34,34 @@ def clean_wiki_name(raw: str) -> str:
     return re.sub(r"\s+", " ", s.replace("'''", "").replace("''", "")).strip()
 
 
-def parse_bullet_format(text: str) -> list[tuple[str, str]]:
-    return [(m.group(1).zfill(4), clean_wiki_name(m.group(2))) for m in BULLET_RE.finditer(text)]
+SECTOR_HEADER_RE = re.compile(r"Hang Seng (Finance|Utilities|Properties|Commerce (?:&|and) Industry) Sub-index")
 
 
-def parse_sehk_format(text: str) -> list[tuple[str, str]]:
+def norm_sector(raw: str) -> str:
+    """統一成恒指四個分類指數：Finance / Utilities / Properties / Commerce & Industry。"""
+    r = raw.strip().lower()
+    for key, name in (("financ", "Finance"), ("utilit", "Utilities"), ("propert", "Properties"),
+                      ("commerce", "Commerce & Industry")):
+        if key in r:
+            return name
+    return ""
+
+
+def parse_bullet_format(text: str) -> list[tuple[str, str, str]]:
+    """條列格式：成分股列在「Hang Seng <行業> Sub-index」粗體標題之下。"""
+    out, sector = [], ""
+    for line in text.splitlines():
+        h = SECTOR_HEADER_RE.search(line)
+        if h:
+            sector = norm_sector(h.group(1))
+            continue
+        m = BULLET_RE.match(line)
+        if m:
+            out.append((m.group(1).zfill(4), clean_wiki_name(m.group(2)), sector))
+    return out
+
+
+def parse_sehk_format(text: str) -> list[tuple[str, str, str]]:
     """表格列：`|{{SEHK|5}}` 下一個 `|` 開頭的儲存格是公司名；
     也容忍同一行 `||` 分隔的寫法。"""
     lines = text.splitlines()
@@ -48,23 +71,23 @@ def parse_sehk_format(text: str) -> list[tuple[str, str]]:
         if not m:
             continue
         code = m.group(1).zfill(4)
-        name = ""
+        cells: list[str] = []
         if "||" in line:
-            cells = line.split("||")
-            if len(cells) > 1:
-                name = clean_wiki_name(cells[1])
+            cells = line.split("||")[1:]
         else:
-            for nxt in lines[i + 1:i + 4]:
+            for nxt in lines[i + 1:i + 5]:
                 if nxt.startswith("|-") or nxt.startswith("|}"):
                     break
                 if nxt.startswith("|"):
-                    name = clean_wiki_name(nxt)
-                    break
-        out.append((code, name))
+                    cells.append(nxt)
+        name = clean_wiki_name(cells[0]) if cells else ""
+        sector = norm_sector(clean_wiki_name(cells[1])) if len(cells) > 1 else ""
+        out.append((code, name, sector))
     return out
 
 
-def parse_snapshot(path: Path) -> list[tuple[str, str]]:
+def parse_snapshot(path: Path) -> list[tuple[str, str, str]]:
+    """回傳 [(4位代碼, 公司名, 行業)]。"""
     text = path.read_text(encoding="utf-8")
     rows = parse_sehk_format(text)
     if not rows:
@@ -72,10 +95,10 @@ def parse_snapshot(path: Path) -> list[tuple[str, str]]:
     # 保留原順序但去重（sortable table 有時同一代碼因排序輔助行重複出現）
     seen = set()
     out = []
-    for code, name in rows:
-        if code not in seen:
-            seen.add(code)
-            out.append((code, name))
+    for row in rows:
+        if row[0] not in seen:
+            seen.add(row[0])
+            out.append(row)
     return out
 
 
@@ -85,21 +108,41 @@ def main() -> None:
     if not snapshots:
         raise SystemExit(f"找不到快照檔案，先跑 research_hsi_history.py（在 {SRC_DIR}）")
 
+    corrections_path = OUT_DIR / "corrections.json"
+    corrections = json.loads(corrections_path.read_text(encoding="utf-8")) if corrections_path.exists() else {}
+
     summary = []
     names: dict[str, dict[str, str]] = {}  # {"0005.HK": {"2010": "HSBC Holdings plc", ...}}
+    sectors: dict[str, dict[str, str]] = {}  # {"0005.HK": {"2010": "Finance", ...}}
     for path in snapshots:
         year = path.stem.rsplit("_", 1)[-1]
         rows = parse_snapshot(path)
+        # 套用人工更正（Wikipedia 當年版本本身寫錯的代碼，見 corrections.json）
+        fixed = []
+        for code, name, sector in rows:
+            fix = corrections.get(year, {}).get(f"{code}.HK")
+            if fix is None:
+                fixed.append((code, name, sector))
+            elif fix["to"]:
+                fixed.append((fix["to"][:-3], name, sector))
+                print(f"{year}: 更正 {code}.HK -> {fix['to']}（{name}）")
+            else:
+                print(f"{year}: 刪除 {code}.HK（{name}）")
+        rows = fixed
         out_path = OUT_DIR / f"hsi_{year}.txt"
         out_path.write_text(
             f"# 恒生指數 {year} 年中前後的成分股快照（近似 point-in-time，\n"
             f"# 來源：Wikipedia「Hang Seng Index」條目該時間點的修訂版本，\n"
             f"# 非官方權威來源，見 scripts/parse_hsi_snapshots.py 說明）\n"
-            + "\n".join(f"{c}.HK" for c, _ in rows) + "\n",
+            + "\n".join(f"{c}.HK" for c, _, _ in rows) + "\n",
             encoding="utf-8",
         )
-        for code, name in rows:
+        for code, name, sector in rows:
             names.setdefault(f"{code}.HK", {})[year] = name
+            sectors.setdefault(f"{code}.HK", {})[year] = sector
+        missing_sector = [c for c, _, sec in rows if not sec]
+        if missing_sector:
+            print(f"WARN {year}: {len(missing_sector)} 檔沒解析到行業: {missing_sector[:5]}")
         summary.append((year, len(rows)))
         print(f"{year}: {len(rows)} 檔 -> {out_path}")
 
@@ -110,6 +153,11 @@ def main() -> None:
     names_path.write_text(json.dumps(names, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                           encoding="utf-8")
     print(f"\n名字對照表: {len(names)} 檔 -> {names_path}")
+    # point-in-time 行業（恒指四個分類指數），給行業中性策略用
+    sectors_path = OUT_DIR / "hsi_sectors.json"
+    sectors_path.write_text(json.dumps(sectors, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                            encoding="utf-8")
+    print(f"行業對照表: {len(sectors)} 檔 -> {sectors_path}")
     print("年度成分股數量:", summary)
 
 

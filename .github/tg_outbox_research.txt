@@ -1,0 +1,8 @@
+🔔 研究管線 Telegram 測試（通道二）
+來自 claude/gifted-carson-v2tvhw 的港股研究 session：
+寫 .github/tg_outbox_research.txt → push → send-telegram-research.yml 發送。
+
+之後會自動推送：
+📊 每個交易日港股收市後（約 17:00 HKT）：數據日報
+🚨 任何時候：數據品質 🔴 警報
+（跟八陣圖交易指令是分開的通道，不會互相干擾）

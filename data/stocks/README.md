@@ -16,14 +16,40 @@ data/stocks/<TICKER>.csv.gz     # yfinance 代碼，^ 換成 _（如 ^HSI -> _HS
   算總回報基準（RESEARCH_HANDBOOK.md 第三節第7條）一律用這欄，不要用 `Close`。
 - 每次排程執行對每個 ticker 重抓全部歷史並整檔覆寫，不做增量合併。
 
+## 其他分支怎麼用這批數據
+
+數據只住在 `claude/gifted-carson-v2tvhw` 這條分支（排程每天 commit 進來）。
+其他分支不需要合併整條分支，只把需要的目錄拉過來：
+
+```bash
+git fetch origin claude/gifted-carson-v2tvhw
+git checkout origin/claude/gifted-carson-v2tvhw -- data/stocks/ data/stocks_hkex/ scripts/pointintime/
+# 回測引擎/抓取腳本也要的話：
+git checkout origin/claude/gifted-carson-v2tvhw -- stock_momentum_backtest.py scripts/
+```
+
+拉之前先看 `data/stocks/QC_REPORT.md` 的 🔴。港股選股回測請用
+`scripts/pointintime/`（逐年真成分股），不要用 `scripts/pool_hsi_full.txt`
+（「現在的名單」，只剩歷史對照用途）。
+
 ## 第二來源與每日品質檢查
 
 每次排程抓完 yfinance 後，同一個 workflow 接著：
 
-1. `scripts/fetch_stooq.py` 抓第二來源 Stooq → `data/stocks_stooq/<TICKER>.csv.gz`
-   （`Date,Open,High,Low,Close,Volume`，免 API key；抓不到的只記錄原因）。
+1. `scripts/fetch_hkex_equity.py` 抓第二來源**港交所官方每日報價表**（Daily Quotations，
+   `hkex.com.hk/eng/stat/smstat/dayquot/d<YYMMDD>e.htm`，全市場每檔官方英文簡稱 + 前收/收市/高低/成交）→
+   `data/stocks_hkex/quotes_<交易日>.json`（只留我們 universe 的代碼，幾 KB/天）。每次往回補最近 10 天
+   沒存過的交易日。首次驗證：2026-09-22 106 檔可比，105 檔與 yfinance 收市價完全一致、其餘 <1%。
+   Stooq 已擋自動下載、港交所 widget 端點參數未解，都不用。
 2. `scripts/check_data_quality.py --fetch-names` 產生 **`data/stocks/QC_REPORT.md`
    （每日品質日報）**，並更新 `data/stocks/names_yf.json`（yfinance 公司名與改名歷史）。
+
+**Telegram 推送**（方法見 `claude/dazzling-curie-f3xzb8` 的 `tradingview/DATA_PIPELINE.md` 第6節）：
+- 通道一（管線內建）：有 🔴 即時發警報（`qc_alert.txt`）；否則每個交易日港股收市那輪
+  （09:00 UTC）發日報（`qc_digest.txt`）；手動觸發預設靜默，dispatch 帶 `digest=true` 才發
+- 通道二（任意訊息）：寫 `.github/tg_outbox_research.txt` + push，`send-telegram-research.yml` 發送。
+  **不要用** `.github/tg_outbox.txt`——那是八陣圖交易指令的通道，共用會衝突/重發
+- 基準 2800 超過 6 天沒新數據 → 🔴 `pipeline_stale`（主來源抓取壞了）
 
 日報分三級：🔴 嚴重（會污染回測，先處理）、🟡 注意、✅ 已確認
 （`scripts/qc_acks.json`，人工核對過的項目，附理由）。逐根價格檢查只對近 30 天
