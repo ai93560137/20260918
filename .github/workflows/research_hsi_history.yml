@@ -1,7 +1,14 @@
 name: Research HSI constituent history
 
+# 一次性研究探勘：跑 scripts/research_*.py，輸出 commit 回 research_output/。
+# 只手動觸發；script 參數預設是原本的恒指成分股歷史探勘。
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      script:
+        description: 'scripts/ 底下要跑的 research_*.py'
+        required: false
+        default: 'research_hsi_history.py'
 
 permissions:
   contents: write
@@ -9,6 +16,7 @@ permissions:
 jobs:
   research:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,8 +29,15 @@ jobs:
       - name: Install deps
         run: pip install requests
 
-      - name: Fetch candidate sources
-        run: python3 scripts/research_hsi_history.py
+      - name: Run research script
+        env:
+          # 經 env 傳入並嚴格比對檔名，不直接把輸入拼進 shell（防 script injection）
+          SCRIPT: ${{ inputs.script || 'research_hsi_history.py' }}
+        run: |
+          if [[ ! "$SCRIPT" =~ ^research_[a-z0-9_]+\.py$ ]]; then
+            echo "只允許 scripts/research_<name>.py，收到: $SCRIPT"; exit 1
+          fi
+          python3 "scripts/$SCRIPT"
 
       - name: Commit research output if changed
         run: |
@@ -31,7 +46,13 @@ jobs:
           git add research_output/
           if git diff --cached --quiet; then
             echo "No changes"
-          else
-            git commit -m "chore(research): HSI 成分股歷史來源探勘輸出"
-            git push origin HEAD:claude/gifted-carson-v2tvhw
+            exit 0
           fi
+          git commit -m "chore(research): 研究探勘輸出"
+          # 這條分支有別的 session 同時在推，失敗就 rebase bot 自己的 commit 再推
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 5))
+            git pull --rebase origin claude/gifted-carson-v2tvhw
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
