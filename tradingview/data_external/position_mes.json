@@ -1,0 +1,16 @@
+{
+ "market": "MES",
+ "instrument": "MES 期權（Micro E-mini S&P 500，歐式週權）",
+ "expiry": "2026-10-16",
+ "strike": 7830,
+ "qty": 1,
+ "entry_date": "2026-09-22",
+ "legs": {"call_sold": 88.75, "put_sold": 89.75},
+ "credit_pts": 178.5,
+ "credit_usd": 892.5,
+ "entry_futures": 7830.75,
+ "entry_iv": 11.16,
+ "notional_usd": 39154,
+ "stop_buyback_pts": 357,
+ "note": "部位止損：跨式買回總價 >= 357 點（2x 權利金）即平倉；帳戶硬止損權益 < HK$750,000"
+}
