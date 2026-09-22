@@ -57,7 +57,8 @@
 | ☠️ | 港股動量輪動 on 手選8檔「現在知名大市值股」池（0700/9988/3690/1810等） | 總報酬離譜到不可信（+3244% vs 基準+226%，t=3.85，參數平原也通過）——股票池本身帶後見之明的最壞版倖存者偏差，機制本身沒問題，數字作廢，見 MOMENTUM_HK_BACKTEST.md |
 | ☠️ | 同上，換成「現有恒指全部成分股」76檔重測 | 數字更誇張（+12201%~+33588%，最大回撤惡化到-48.4%），不是修正——**「現在還在指數裡」本身就是倖存者篩選**，池子越寬只是接住越多後見之明贏家；不管手選還是現有成分股表，不是 point-in-time 歷史成分股（含當時已剔除/下市公司）就不能信，見 MOMENTUM_HK_BACKTEST.md |
 | ☠️ | 同上，改用 point-in-time 市值前N大近似（raw Close x 當時流通股數，`--cap-top-n`） | 當時 +567%、t=2.29 看似有希望，但被第四輪真 point-in-time 推翻——候選池全是倖存者，市值排名再合理也高估約3倍。**近似法不能代替真的歷史名單** |
-| ☠️ | 港股 12-1 動量 top-k 月輪動 on **真 point-in-time 恒指成分股**（Wikipedia 修訂歷史，2010-2026） | +190% vs 基準+97%、t=1.55、MDD -48%、8正9負年；鄰域 t 0.55~1.71（一格歸零）、30bps 成本 t=1.38——參數非平原、t 不及格。單獨使用判死，陣名「鳥翔」不發；可當下一個港股策略的對照組。見 MOMENTUM_HK_BACKTEST.md 第四輪 |
+| ☠️ | 港股 12-1 動量 top-k 月輪動 on **真 point-in-time 恒指成分股**（Wikipedia 修訂歷史，2010-2026） | +190% vs 基準+97%、t=1.55、MDD -48%、8正9負年；鄰域 t 0.55~1.71（一格歸零）、30bps 成本 t=1.38——參數非平原、t 不及格。單獨使用判死，陣名「鳥翔」不發；可當下一個港股策略的對照組。見 MOMENTUM_HK_BACKTEST.md 第四輪。**改用相對基準指標後更確定**：每月超額報酬 t 只有 -0.41~0.94，先前 t=1.55 大部分是大盤 beta |
+| 🔍 | 港股**低波動**（過去252日波動最低10檔、等權、月換倉）on 真 point-in-time 恒指成分股 | +239% vs 基準+97%、MDD -27% vs -47%、夏普 0.60 vs 0.31、13正4負年、換手極低；6格鄰域風險調整面全為平原。**但預先登記主指標（每月超額報酬 t）只有 0.35~0.83**；事後 CAPM alpha t 1.75~2.41（beta 0.6）不能拿來升級。持倉幾乎固定是公用股+大行，未分辨是因子還是押行業。陣名「地載」保留未發。見 LOWVOL_HK_BACKTEST.md |
 
 ## 三、股票市場研究的特別守則
 
@@ -88,6 +89,9 @@
    低頻（成本敏感度低）、只做多（可執行）、按組合分散（抗個股肥尾）。
 7. **基準**：任何港股策略 vs 盈富(2800)/恒指總回報；美股 vs SPY 總回報（含股息！
    價格指數會低估基準約 2%/年）。
+8. **只做多的股票策略，t 值要算「相對基準的超額報酬」**，不要算策略自己的報酬——
+   後者把大盤 beta 也算成 edge（動量實測：自身 t=1.55，超額 t 只有 0.73）。
+   防守型策略（beta 遠低於1）另看 CAPM alpha t，但要**事先登記**才能用來判決。
 
 ## 四、倉庫工具索引
 
@@ -104,7 +108,8 @@
 | `BACKTEST.md` | 更早的 v12 回測教訓（樣本長度、樣本內外）|
 | `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據 + 流通股數歷史自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
 | `data/stocks/` | 股票/指數日線數據（格式見 `data/stocks/README.md`，與根目錄 MT5 M1 期貨數據分開）|
-| `stock_momentum_backtest.py` | 港股動量輪動回測（月頻、次日開盤成交、換手才收費；`--pointintime-dir` 用逐年真成分股、防代碼重用、下市持股按最後價結算）|
+| `stock_momentum_backtest.py` | 港股月頻選股回測引擎（`--signal momentum|lowvol`；次日開盤成交、換手才收費；`--pointintime-dir` 用逐年真成分股、防代碼重用、下市持股按最後價結算；輸出相對 2800 的每月超額 t、夏普、基準回撤）|
+| `LOWVOL_HK_BACKTEST.md` | 低波動策略記錄（預先登記設計、6格鄰域、事後 CAPM、持倉集中度、升級條件）|
 | `MOMENTUM_HK_BACKTEST.md` | 動量輪動四輪實驗記錄——倖存者偏差一層層剝掉、edge 從 +3244% 蒸發到 +190% 的完整教訓 |
 | `scripts/pointintime/hsi_<year>.txt` + `hsi_names.json` | **港股 point-in-time 宇宙**：2010-2025 逐年恒指成分股（Wikipedia 修訂歷史解析，非官方但驗證過）與當年公司名；來源腳本 `scripts/research_hsi_history.py`、`scripts/parse_hsi_snapshots.py`。之後任何港股選股回測都用這個，不要用「現在的名單」|
 | `scripts/fetch_hkex_equity.py` + `data/stocks_hkex/` | 第二收市數據源：**港交所官方每日報價表**（Daily Quotations 靜態檔，全市場代碼/官方簡稱/收市價），每日快照供收市價與名字交叉驗證；首次比對 105/106 檔與 yfinance 完全一致。Stooq 已擋自動下載，不可用 |

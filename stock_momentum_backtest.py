@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""港股動量輪動策略回測（原型）——月頻只做多動量輪動 vs 買入持有基準。
+"""港股月頻選股回測引擎——`--signal momentum`（動量輪動，判死，見 MOMENTUM_HK_BACKTEST.md）、
+`--signal lowvol`（低波動，🔍，見 LOWVOL_HK_BACKTEST.md），只做多 vs 買入持有基準。
 
 屬於 RESEARCH_HANDBOOK.md 第三節「適合股票的策略形態」候選之一：
 低頻（月頻）、只做多、按組合分散。
@@ -125,9 +126,14 @@ def load_pointintime(directory: Path) -> list[tuple[date, set[str]]]:
 def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                   top_k: int, cost_bps: float, start: date | None,
                   abs_filter: bool, cap_top_n: int | None = None,
-                  pointintime: list[tuple[date, set[str]]] | None = None) -> dict:
+                  pointintime: list[tuple[date, set[str]]] | None = None,
+                  signal: str = "momentum", vol_days: int = 252) -> dict:
     all_tickers = pool + [benchmark]
     series = {t: load_series(t) for t in all_tickers}
+    if signal == "lowvol":
+        # 低波動要逐日收市價算波動率，先建好排序後的日期/AdjClose 陣列
+        daily = {t: sorted((d, v[1]) for d, v in series[t].items()) for t in pool}
+        daily_dates = {t: [d for d, _ in rows] for t, rows in daily.items()}
     shares = {t: load_shares(t) for t in pool} if cap_top_n else {}
     first_date = {t: min(s) for t, s in series.items() if s}
     excluded_no_cap_data = 0
@@ -155,6 +161,8 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
     equity = 1.0
     equity_curve: list[tuple[date, float]] = []
     period_returns: list[tuple[date, float]] = []  # (exec_date, net period return)
+    bench_period_returns: list[float] = []         # 同一期基準（AdjOpen 對 AdjOpen）
+    baskets: list[tuple[date, list[str]]] = []      # 每期實際持倉（給持倉/行業集中度檢查）
     current_basket: set[str] = set()
     total_cost_paid = 0.0
     cash_periods = 0
@@ -199,10 +207,21 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         else:
             eligible = base
 
-        # --- 算動量，選籃子 ---
+        # --- 算訊號，選籃子（分數越高越優先）---
         scored = []
         for t in eligible:
             s = series[t]
+            if signal == "lowvol":
+                # 訊號日（含）之前 vol_days 根的日報酬標準差；至少要 80% 的根數
+                idx = bisect.bisect_right(daily_dates[t], signal_me)
+                closes = [c for _, c in daily[t][max(0, idx - vol_days - 1):idx] if c > 0]
+                if len(closes) < int(vol_days * 0.8):
+                    continue
+                rets = [math.log(closes[j] / closes[j - 1]) for j in range(1, len(closes))]
+                mean = sum(rets) / len(rets)
+                vol = math.sqrt(sum((r - mean) ** 2 for r in rets) / (len(rets) - 1))
+                scored.append((-vol, t))
+                continue
             me_skip = exec_dates[i - skip][0]
             me_lb = exec_dates[i - skip - lookback][0]
             if me_skip not in s or me_lb not in s:
@@ -262,6 +281,9 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         total_cost_paid += cost_frac
         equity_curve.append((exit_exec, equity))
         period_returns.append((exit_exec, net_ret))
+        b = series[benchmark]
+        bench_period_returns.append(b[exit_exec][0] / b[entry_exec][0] - 1.0)
+        baskets.append((entry_exec, sorted(new_basket)))
         current_basket = new_basket
 
     if first_entry is None:
@@ -287,6 +309,8 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         "avg_members": member_slots / len(period_returns) if period_returns and pointintime else 0.0,
         "avg_holes": holes / len(period_returns) if period_returns and pointintime else 0.0,
         "delist_marks": delist_marks,
+        "bench_period_returns": bench_period_returns,
+        "baskets": baskets,
     }
 
 
@@ -318,6 +342,35 @@ def t_stat(values: list[float]) -> float:
     return mean / (sd / math.sqrt(n))
 
 
+def risk_stats(res: dict) -> dict:
+    """相對基準的評估：主指標是「每月超額報酬（策略 - 2800）」的 t 值——
+    策略只看自己報酬的 t 值會把大盤 beta 也算成 edge。夏普未扣無風險利率。"""
+    rets = [r for _, r in res["period_returns"]]
+    bench = res["bench_period_returns"]
+    excess = [r - b for r, b in zip(rets, bench)]
+
+    def sharpe(xs: list[float]) -> float:
+        if len(xs) < 2:
+            return float("nan")
+        m = sum(xs) / len(xs)
+        sd = math.sqrt(sum((x - m) ** 2 for x in xs) / (len(xs) - 1))
+        return m / sd * math.sqrt(12) if sd else float("nan")
+
+    curve, eq = [], 1.0
+    for d, b in zip((d for d, _ in res["period_returns"]), bench):
+        eq *= 1.0 + b
+        curve.append((d, eq))
+    bench_mdd = max_drawdown([(None, 1.0)] + curve)[0] if curve else float("nan")
+    return {
+        "t_excess": t_stat(excess),
+        "excess_ann": sum(excess) / len(excess) * 12 if excess else float("nan"),
+        "sharpe": sharpe(rets),
+        "bench_sharpe": sharpe(bench),
+        "bench_mdd": bench_mdd,
+        "hit_rate": sum(1 for x in excess if x > 0) / len(excess) if excess else float("nan"),
+    }
+
+
 def by_year(period_returns: list[tuple[date, float]]) -> dict[int, float]:
     acc: dict[int, float] = {}
     for d, r in period_returns:
@@ -341,6 +394,11 @@ def report(res: dict, label: str) -> None:
     print(f"基準({res['bench_start']}->{res['bench_end']}) 買入持有總報酬: {res['bench_total_return']:+.1%}")
     print(f"最大回撤（月頻打點，會低估月中回撤）: {mdd:.1%}，回補耗時 {mdd_months} 個月")
     print(f"月報酬 t 值: {t:.2f}（t>=2 已驗證 / 1.5~2 有希望未證實 / <1.5 不看，見手冊鐵律第7條）")
+    rs = risk_stats(res)
+    print(f"**相對基準** 每月超額報酬 t 值: {rs['t_excess']:.2f}，年化超額 {rs['excess_ann']:+.1%}，"
+          f"勝過基準月份 {rs['hit_rate']:.0%}")
+    print(f"夏普（未扣無風險）: 策略 {rs['sharpe']:.2f} vs 基準 {rs['bench_sharpe']:.2f}；"
+          f"基準同期月頻最大回撤 {rs['bench_mdd']:.1%}")
     print(f"空手（無合格標的）月數: {res['cash_periods']}/{n}")
     if res.get("avg_excluded_no_cap_data"):
         print(f"平均每期因缺流通股數資料被排除的候選數: {res['avg_excluded_no_cap_data']:.1f}")
@@ -373,6 +431,9 @@ def main() -> None:
     ap.add_argument("--pointintime-dir", type=Path, default=None,
                      help="用逐年 point-in-time 成分股快照（scripts/pointintime/hsi_<year>.txt）決定每期"
                           "可選名單，取代 --universe 的固定股票池")
+    ap.add_argument("--signal", choices=["momentum", "lowvol"], default="momentum",
+                     help="momentum=12-1 動量取最強 top_k；lowvol=過去 vol_days 日報酬波動率取最低 top_k")
+    ap.add_argument("--vol-days", type=int, default=252, help="低波動訊號的回看交易日數")
     ap.add_argument("--sweep", action="store_true", help="掃 lookback x top-k 鄰域，檢查手冊鐵律第4條的參數平原")
     args = ap.parse_args()
 
@@ -389,26 +450,31 @@ def main() -> None:
         print(f"股票池（{len(pool)} 檔，非權威成分股表）: {pool}")
 
     if args.sweep:
-        for lb in (6, 9, 12):
-            for k in (2, 3, 4):
-                try:
-                    res = run_backtest(pool, args.benchmark, lb, args.skip, k,
-                                        args.cost_bps, args.start, not args.no_abs_filter,
-                                        args.cap_top_n, pointintime)
-                except SystemExit as e:
-                    print(f"lookback={lb} top_k={k}: {e}")
-                    continue
-                total_ret = res["final_equity"] - 1.0
-                rets = [r for _, r in res["period_returns"]]
-                t = t_stat(rets)
-                print(f"lookback={lb:2d} top_k={k}: 總報酬 {total_ret:+7.1%}  "
-                      f"基準 {res['bench_total_return']:+7.1%}  t={t:5.2f}  "
-                      f"空手 {res['cash_periods']}/{res['n_periods']}")
+        # 預先登記的鄰域（手冊鐵律第4、9條）：動量 lookback(月) x top_k；低波動 vol_days x 持股數
+        grid = ([(lb, k, args.vol_days) for lb in (6, 9, 12) for k in (2, 3, 4)] if args.signal == "momentum"
+                else [(args.lookback, k, vd) for vd in (126, 252) for k in (5, 10, 15)])
+        for lb, k, vd in grid:
+            try:
+                res = run_backtest(pool, args.benchmark, lb, args.skip, k,
+                                    args.cost_bps, args.start, not args.no_abs_filter,
+                                    args.cap_top_n, pointintime, args.signal, vd)
+            except SystemExit as e:
+                print(f"lookback={lb} top_k={k} vol_days={vd}: {e}")
+                continue
+            total_ret = res["final_equity"] - 1.0
+            rs = risk_stats(res)
+            mdd = max_drawdown(res["equity_curve"])[0]
+            head = f"lookback={lb:2d} top_k={k}" if args.signal == "momentum" else f"vol_days={vd:3d} top_k={k:2d}"
+            print(f"{head}: 總報酬 {total_ret:+7.1%}  基準 {res['bench_total_return']:+7.1%}  "
+                  f"超額t={rs['t_excess']:5.2f}  年化超額 {rs['excess_ann']:+6.1%}  "
+                  f"夏普 {rs['sharpe']:.2f}/{rs['bench_sharpe']:.2f}  MDD {mdd:.0%}/{rs['bench_mdd']:.0%}")
         return
 
     res = run_backtest(pool, args.benchmark, args.lookback, args.skip, args.top_k,
-                        args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n, pointintime)
-    label = f"lookback={args.lookback} skip={args.skip} top_k={args.top_k} cost={args.cost_bps}bps"
+                        args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n, pointintime,
+                        args.signal, args.vol_days)
+    label = (f"signal={args.signal} " + (f"lookback={args.lookback} skip={args.skip}" if args.signal == "momentum"
+             else f"vol_days={args.vol_days}") + f" top_k={args.top_k} cost={args.cost_bps}bps")
     if args.cap_top_n:
         label += f" cap_top_n={args.cap_top_n}"
     if pointintime:
