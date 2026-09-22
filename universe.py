@@ -47,6 +47,7 @@ class Universe:
         self.snapshots: list[tuple[date, set[str]]] = []
         self.intervals: list[tuple[str, date, date | None]] = []
         self.live: set[str] = set()
+        self.blocked: list[tuple[str, date, date | None]] = []   # 代碼重用黑名單擋掉的區間（當洞處理）
         if self.cfg["kind"] == "snapshots":
             for p in sorted((ROOT / self.cfg["dir"]).glob(self.cfg["pattern"])):
                 y = p.stem.split("_")[-1]
@@ -57,10 +58,16 @@ class Universe:
                 self.live = _read_list(live)
         else:
             renames = load_renames(self.cfg["market"])
+            blocked = load_blocklist(self.cfg["market"])
             with open(ROOT / self.cfg["file"], newline="", encoding="utf-8") as f:
                 for r in csv.DictReader(f):
-                    self.intervals.append((renames.get(r["ticker"], r["ticker"]), date.fromisoformat(r["start"]),
-                                           date.fromisoformat(r["end"]) if r["end"] else None))
+                    t = renames.get(r["ticker"], r["ticker"])
+                    a = date.fromisoformat(r["start"])
+                    b = date.fromisoformat(r["end"]) if r["end"] else None
+                    if (t, a) in blocked:
+                        self.blocked.append((t, a, b))
+                        continue
+                    self.intervals.append((t, a, b))
 
     def all_tickers(self, since: date | None = None) -> list[str]:
         """曾經是成分股的全部代碼（since：只要該日之後還在的）。"""
@@ -68,6 +75,10 @@ class Universe:
             s = set().union(*(m for d, m in self.snapshots if not since or d >= since - timedelta(days=366)))
             return sorted(s | self.live)
         return sorted({t for t, a, b in self.intervals if not since or b is None or b >= since})
+
+    def listed_at(self, d: date) -> int:
+        """d 當天名單上的成分股總數（含被黑名單擋掉的；算倖存者偏差洞用）。"""
+        return len(self.members_at(d)) + sum(1 for _, a, b in self.blocked if a <= d and (b is None or d < b))
 
     def members_at(self, d: date) -> dict[str, date]:
         """d 當天的成分股 -> 入選日（給防代碼重用的價格起始檢查）。"""
@@ -126,6 +137,17 @@ def load_renames(market: str) -> dict[str, str]:
         return {}
     with open(p, newline="", encoding="utf-8") as f:
         return {r["old"]: r["new"] for r in csv.DictReader(f)}
+
+
+def load_blocklist(market: str) -> set[tuple[str, date]]:
+    """universes/<market>/reuse_blocklist.csv（ticker,start,end,reason）：Yahoo 上同代碼的價格其實是
+    後來拿到代碼的別家公司、而且那家歷史更長（防代碼重用的起點檢查擋不住），人工查證後列入。
+    以（代碼、入選日）比對，套在改代碼對照之後。"""
+    p = ROOT / "universes" / market / "reuse_blocklist.csv"
+    if not p.exists():
+        return set()
+    with open(p, newline="", encoding="utf-8") as f:
+        return {(r["ticker"], date.fromisoformat(r["start"])) for r in csv.DictReader(f)}
 
 
 def _read_list(p: Path) -> set[str]:

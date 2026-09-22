@@ -77,11 +77,11 @@ class Market:
         self._hold_cache: dict = {}
         self._score_cache: dict = {}
         for me in self.m_ends:
-            listed = self.uni.members_at(me)
+            listed = self.uni.listed_at(me)
             mem = sorted(t for t in self.uni.eligible_at(me, self.first) if me in self.series[t])
             self.members[me] = mem
-            self.slots += len(listed)
-            self.holes += len(listed) - len(mem)
+            self.slots += listed
+            self.holes += listed - len(mem)
 
     def close_on_or_before(self, t: str, d: date) -> float | None:
         ds = self.dates[t]

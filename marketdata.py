@@ -115,10 +115,29 @@ def adjust_factors(dates: list[date], closes: list[float], divs: list[tuple[date
     return out
 
 
+SPIKE_FACTOR = 5.0
+
+
+def drop_spikes(rows: list) -> tuple[list, list]:
+    """Yahoo 在下市日/停牌期間偶有垃圾列（8303.T 2023-09-27 收市 553 億圓、成交量 0）。
+    成交量為 0 且收市價相對前一根有效收市跳 > 5 倍（或 < 1/5）的列丟掉，回傳 (保留, 丟掉)。
+    原始檔不改，只在載入時濾；QC 報告列出被濾的列數。"""
+    kept, dropped = [], []
+    for r in rows:
+        if kept and r[5] == 0 and kept[-1][4] > 0:
+            ratio = r[4] / kept[-1][4]
+            if ratio > SPIKE_FACTOR or ratio < 1 / SPIKE_FACTOR:
+                dropped.append(r)
+                continue
+        kept.append(r)
+    return kept, dropped
+
+
 def load_ohlcv(ticker: str) -> list[dict]:
-    """[{Date, Open, High, Low, Close, AdjClose, Volume}]，兩種格式同一個介面（給 QC 用）。"""
+    """[{Date, Open, High, Low, Close, AdjClose, Volume}]，兩種格式同一個介面（給 QC 用）。
+    新格式會先濾掉明顯的垃圾列（drop_spikes）。"""
     if has_v2(ticker):
-        rows = load_raw(ticker)
+        rows, _ = drop_spikes(load_raw(ticker))
         divs, _ = load_actions(ticker)
         fac = adjust_factors([r[0] for r in rows], [r[4] for r in rows], divs)
         return [{"Date": r[0], "Open": r[1], "High": r[2], "Low": r[3], "Close": r[4],

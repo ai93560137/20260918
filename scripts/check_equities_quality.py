@@ -45,12 +45,14 @@ XSRC_TOL = 0.01
 XSRC_WINDOW = 20
 ADJ_TOL = 0.005
 NAME_SIM_MIN = 0.5
+REUSE_DV_RATIO = 0.02   # 在榜期間成交額 < 同指數同年中位數的 2% 視為代碼重用嫌疑
 BENCH = {"us": "SPY", "jp": "1321.T"}
 STOP = {"inc", "incorporated", "corp", "corporation", "co", "company", "ltd", "limited", "plc", "the",
         "holdings", "holding", "group", "common", "stock", "shares", "share", "class", "ordinary",
         "a", "b", "c", "de", "new", "sa", "nv", "ag", "se", "lp", "llc", "trust", "reit",
         "depositary", "american", "ads", "adr", "each", "representing", "one", "par", "value",
-        "kabushiki", "kaisha", "kk", "subordinate", "voting", "beneficial", "interest", "of"}
+        "kabushiki", "kaisha", "kk", "subordinate", "voting", "beneficial", "interest", "of",
+        "units", "unit", "partner", "partners", "interests"}
 
 
 def norm_name(s: str) -> str:
@@ -160,6 +162,10 @@ def main() -> None:
                     if abs(mv) > BIG_MOVE:
                         flag("🔴", t, "bigmove", f"{r['Date']} 單日 {mv:+.0%}（當天無拆股紀錄）")
             prev = r
+        _, spikes = md.drop_spikes(md.load_raw(t))
+        if spikes:
+            flag("🟡", t, "spike_rows_dropped",
+                 f"載入時濾掉 {len(spikes)} 根垃圾列（成交量 0、價格跳 >5 倍），例 {spikes[0][0]} 收市 {spikes[0][4]:g}")
         err = status.get(t, {}).get("adj_err_max")
         if err is not None and err > ADJ_TOL:
             flag("🟡", t, "adj_mismatch", f"重算 AdjClose 與 yfinance 最大差 {err:.2%}")
@@ -237,7 +243,32 @@ def main() -> None:
             if not mem:
                 continue
             miss = [t for t in mem if not md.has_v2(t)]
-            holes.append((u.key, y, len(mem), len(miss)))
+            n_listed = u.listed_at(d)
+            holes.append((u.key, y, n_listed, len(miss) + n_listed - len(mem)))
+
+    # --- 代碼重用嫌疑：在榜期間的成交額遠低於同指數同年成員（Yahoo 同代碼可能是別家公司）---
+    # 防代碼重用的起點檢查只擋「別家歷史比較短」；別家歷史更長時要靠這個抓（EP、CPWR 實例）
+    blocked = {(t, a) for u in unis for t, a, _ in u.blocked}
+    for u in unis:
+        yearly: dict[int, dict[str, float]] = {}
+        for t, a, b in u.intervals:
+            if t not in loaded:
+                continue
+            by_y: dict[int, list[float]] = {}
+            for d, r in loaded[t].items():
+                if d >= a and (b is None or d < b):
+                    by_y.setdefault(d.year, []).append(r["Close"] * r["Volume"])
+            for y, v in by_y.items():
+                if len(v) >= 20:
+                    yearly.setdefault(y, {})[t] = sorted(v)[len(v) // 2]
+        dv_base = {y: sorted(v.values())[len(v) // 2] for y, v in yearly.items() if len(v) >= 10}
+        for t, a, b in u.intervals:
+            ratios = [yearly[y][t] / dv_base[y] for y in yearly if t in yearly[y] and dv_base.get(y)]
+            if len(ratios) >= 1 and sorted(ratios)[len(ratios) // 2] < REUSE_DV_RATIO and (t, a) not in blocked:
+                flag("🟡", t, f"reuse_suspect_{u.key}_{a}",
+                     f"{u.key} {a}~{b or '今'} 在榜期間成交額只有同年成員中位數的 "
+                     f"{sorted(ratios)[len(ratios) // 2]:.1%}——Yahoo 這個代碼可能是別家公司，查證後列入 "
+                     f"universes/{m}/reuse_blocklist.csv 或 qc_acks.json")
 
     # --- 報告 ---
     red = [f for f in flags if f[0] == "🔴" and f"{f[1]}:{f[2]}" not in acks]

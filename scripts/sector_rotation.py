@@ -107,12 +107,12 @@ def main() -> None:
     member_slots = hole_slots = 0
     for me in m_ends:
         # point-in-time 名單 + 防代碼重用（價格須早於入選日存在）+ 當天有價
-        listed = uni.members_at(me)
+        listed = uni.listed_at(me)
         mem = {t for t in uni.eligible_at(me, first_date) if adj_close(t, me)}
         if not mem:
             continue
-        member_slots += len(listed)
-        hole_slots += len(listed) - len(mem)
+        member_slots += listed
+        hole_slots += listed - len(mem)
         g: dict[str, list[str]] = defaultdict(list)
         g["全體等權"] = sorted(mem)
         for t in mem:

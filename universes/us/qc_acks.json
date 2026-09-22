@@ -3,5 +3,7 @@
  "EA:stale": "Electronic Arts 2026-08 私有化下市；Nasdaq-100 名單是 Wikipedia 年度快照（2026-06-29），尚未反映出榜——回測到 8 月初之後自然沒有它的價格",
  "MRSH:name_mismatch": "Marsh McLennan 2026 改名 Marsh、代碼 MMC->MRSH；yfinance 名字還沒更新",
  "VMRK:name_mismatch": "AvalonBay 2026 改名 Vivmark Residential、代碼 AVB->VMRK；yfinance 名字還沒更新",
- "EA:no_second_source": "Electronic Arts 2026-08 私有化下市（見 EA:stale）"
+ "EA:no_second_source": "Electronic Arts 2026-08 私有化下市（見 EA:stale）",
+ "BATRA:reuse_suspect_ndx_2016-06-30": "Liberty Braves Group A 追蹤股（同一實體，本來就成交清淡），不是代碼重用",
+ "BATRK:reuse_suspect_ndx_2016-06-30": "Liberty Braves Group C 追蹤股（同上）"
 }
