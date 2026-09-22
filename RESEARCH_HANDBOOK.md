@@ -59,6 +59,7 @@
 | ☠️ | 同上，改用 point-in-time 市值前N大近似（raw Close x 當時流通股數，`--cap-top-n`） | 當時 +567%、t=2.29 看似有希望，但被第四輪真 point-in-time 推翻——候選池全是倖存者，市值排名再合理也高估約3倍。**近似法不能代替真的歷史名單** |
 | ☠️ | 港股 12-1 動量 top-k 月輪動 on **真 point-in-time 恒指成分股**（Wikipedia 修訂歷史，2010-2026） | +190% vs 基準+97%、t=1.55、MDD -48%、8正9負年；鄰域 t 0.55~1.71（一格歸零）、30bps 成本 t=1.38——參數非平原、t 不及格。單獨使用判死，陣名「鳥翔」不發；可當下一個港股策略的對照組。見 MOMENTUM_HK_BACKTEST.md 第四輪。**改用相對基準指標後更確定**：每月超額報酬 t 只有 -0.41~0.94，先前 t=1.55 大部分是大盤 beta |
 | 🔍 | 港股**低波動**（過去252日波動最低10檔、等權、月換倉）on 真 point-in-time 恒指成分股 | +239% vs 基準+97%、MDD -27% vs -47%、夏普 0.60 vs 0.31、13正4負年、換手極低；6格鄰域風險調整面全為平原。**但預先登記主指標（每月超額報酬 t）只有 0.35~0.83**；事後 CAPM alpha t 1.75~2.41（beta 0.6）不能拿來升級。持倉幾乎固定是公用股+大行。**行業中性複核（預先登記）**：預設格 alpha t 1.45，落在門檻之間→不確定、不升不降；鄰域 4/6 格≥1.5；只持公用股的診斷 alpha t 0.87、總報酬輸基準——「押公用股」解釋不了原 alpha，行業中性後保留約六成。同段樣本已用盡，只剩前向模擬盤能判。陣名「地載」保留未發。見 LOWVOL_HK_BACKTEST.md |
+| 🔍 | 港股**高股息**（滾動12月股息率最高10檔、等權、月換倉；股息由還原價反推）on 真 point-in-time 恒指成分股 | 預先登記門檻乾淨通過：+434% vs 基準+97%、alpha t 2.77（beta 0.96）、6格全≥1.5、MDD -34% vs -47%。與低波動持倉只重疊25%（算新策略）但月報酬相關0.82。**⚠️ alpha 集中在 2022 年後**（國企高息行情：2022前 alpha t 1.24、之後 2.73；低波動同形狀），前10個月佔86%報酬。同段樣本已用盡，只剩前向模擬。見 DIVYIELD_HK_BACKTEST.md |
 
 ## 三、股票市場研究的特別守則
 
@@ -94,6 +95,9 @@
 8. **只做多的股票策略，t 值要算「相對基準的超額報酬」**，不要算策略自己的報酬——
    後者把大盤 beta 也算成 edge（動量實測：自身 t=1.55，超額 t 只有 0.73）。
    防守型策略（beta 遠低於1）另看 CAPM alpha t，但要**事先登記**才能用來判決。
+9. **港股防守/價值類策略要拆 2022 前後看**：高股息、低波動的 alpha 大部分來自 2022-2025
+   國企高息行情（2022 前兩者 alpha t 都 < 1.3）。新策略若也是這一路，先看 2022 前單獨
+   是否成立，別把單一行情當長期因子。
 
 ## 四、倉庫工具索引
 
@@ -110,8 +114,9 @@
 | `BACKTEST.md` | 更早的 v12 回測教訓（樣本長度、樣本內外）|
 | `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據 + 流通股數歷史自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
 | `data/stocks/` | 股票/指數日線數據（格式見 `data/stocks/README.md`，與根目錄 MT5 M1 期貨數據分開）|
-| `stock_momentum_backtest.py` | 港股月頻選股回測引擎（`--signal momentum|lowvol`、`--sector-neutral`、`--sector-only`；輸出 CAPM alpha/beta；次日開盤成交、換手才收費；`--pointintime-dir` 用逐年真成分股、防代碼重用、下市持股按最後價結算；輸出相對 2800 的每月超額 t、夏普、基準回撤）|
+| `stock_momentum_backtest.py` | 港股月頻選股回測引擎（`--signal momentum|lowvol|divyield`、`--sector-neutral`、`--sector-only`；輸出 CAPM alpha/beta；次日開盤成交、換手才收費；`--pointintime-dir` 用逐年真成分股、防代碼重用、下市持股按最後價結算；輸出相對 2800 的每月超額 t、夏普、基準回撤）|
 | `scripts/paper_trade.py` → `paper/` | **港股低波動前向模擬盤**（每日管線內自動執行；每月初結算+建倉、Telegram 月報；選股/結算已驗證與回測引擎逐期一致；證偽：回撤 -35% 或滾動24月 alpha<0）|
+| `DIVYIELD_HK_BACKTEST.md` | 高股息策略記錄（股息反推驗證、預先登記、鄰域、重疊診斷、2022 前後拆解）|
 | `LOWVOL_HK_BACKTEST.md` | 低波動策略記錄（預先登記設計、6格鄰域、事後 CAPM、持倉集中度、升級條件）|
 | `MOMENTUM_HK_BACKTEST.md` | 動量輪動四輪實驗記錄——倖存者偏差一層層剝掉、edge 從 +3244% 蒸發到 +190% 的完整教訓 |
 | `scripts/pointintime/hsi_<year>.txt` + `hsi_names.json` + `hsi_sectors.json` | **港股 point-in-time 宇宙**：2010-2025 逐年恒指成分股（Wikipedia 修訂歷史解析，非官方但驗證過）與當年公司名、當年行業（恒指四分類）；來源腳本 `scripts/research_hsi_history.py`、`scripts/parse_hsi_snapshots.py`。之後任何港股選股回測都用這個，不要用「現在的名單」|

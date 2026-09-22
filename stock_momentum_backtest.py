@@ -37,7 +37,7 @@ import csv
 import gzip
 import math
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "stocks"
@@ -137,6 +137,23 @@ def trailing_vol(daily_rows: list[tuple[date, float]], daily_dates: list[date], 
     return math.sqrt(sum((r - mean) ** 2 for r in rets) / (len(rets) - 1))
 
 
+def derive_dividends(series: dict[date, tuple[float, float, float]],
+                     thresh: float = 0.001) -> list[tuple[date, float]]:
+    """從 AdjClose/Close 比值在除淨日的跳幅反推每股股息：
+    股息 = 除淨前一日收市 x (1 - 前一日比值 / 除淨日比值)；跳幅 < thresh 視為四捨五入噪音。
+    驗證見 DIVYIELD_HK_BACKTEST.md（匯豐 2020 停派、中電季息、騰訊年息等都對得上）。"""
+    ds = sorted(series)
+    out = []
+    for a_, b_ in zip(ds, ds[1:]):
+        (_, ac_a, c_a), (_, ac_b, c_b) = series[a_], series[b_]
+        if c_a <= 0 or c_b <= 0 or ac_a <= 0:
+            continue
+        fa, fb = ac_a / c_a, ac_b / c_b
+        if fb / fa - 1 > thresh:
+            out.append((b_, c_a * (1 - fa / fb)))
+    return out
+
+
 def sector_neutral_pick(scored: list[tuple[float, str]], sector_of: dict[str, str], k: int) -> set[str]:
     """K 個名額按各行業「有訊號的候選檔數」比例分配（最大餘數法），行業內取分數最高者。
     讓組合的行業組成跟宇宙一致，分辨「因子本身」與「押某個行業」。"""
@@ -159,13 +176,17 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                   pointintime: list[tuple[date, set[str]]] | None = None,
                   signal: str = "momentum", vol_days: int = 252,
                   sectors: dict[str, dict[str, str]] | None = None,
-                  sector_neutral: bool = False, sector_only: str | None = None) -> dict:
+                  sector_neutral: bool = False, sector_only: str | None = None,
+                  div_months: int = 12) -> dict:
     all_tickers = pool + [benchmark]
     series = {t: load_series(t) for t in all_tickers}
     if signal == "lowvol":
         # 低波動要逐日收市價算波動率，先建好排序後的日期/AdjClose 陣列
         daily = {t: sorted((d, v[1]) for d, v in series[t].items()) for t in pool}
         daily_dates = {t: [d for d, _ in rows] for t, rows in daily.items()}
+    if signal == "divyield":
+        divs = {t: derive_dividends(series[t]) for t in pool}
+        div_window = timedelta(days=round(div_months * 30.4375))
     shares = {t: load_shares(t) for t in pool} if cap_top_n else {}
     first_date = {t: min(s) for t, s in series.items() if s}
     excluded_no_cap_data = 0
@@ -251,6 +272,15 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         scored = []
         for t in eligible:
             s = series[t]
+            if signal == "divyield":
+                # 滾動 div_months 個月股息（年化）÷ 訊號日收市；價格歷史須涵蓋完整窗口、沒派息不選
+                if first_date[t] > signal_me - div_window or signal_me not in s:
+                    continue
+                ttm = sum(x for d, x in divs[t] if signal_me - div_window < d <= signal_me)
+                close = s[signal_me][2]
+                if ttm > 0 and close > 0:
+                    scored.append((ttm / (div_months / 12) / close, t))
+                continue
             if signal == "lowvol":
                 vol = trailing_vol(daily[t], daily_dates[t], signal_me, vol_days)
                 if vol is not None:
@@ -483,9 +513,10 @@ def main() -> None:
     ap.add_argument("--pointintime-dir", type=Path, default=None,
                      help="用逐年 point-in-time 成分股快照（scripts/pointintime/hsi_<year>.txt）決定每期"
                           "可選名單，取代 --universe 的固定股票池")
-    ap.add_argument("--signal", choices=["momentum", "lowvol"], default="momentum",
+    ap.add_argument("--signal", choices=["momentum", "lowvol", "divyield"], default="momentum",
                      help="momentum=12-1 動量取最強 top_k；lowvol=過去 vol_days 日報酬波動率取最低 top_k")
     ap.add_argument("--vol-days", type=int, default=252, help="低波動訊號的回看交易日數")
+    ap.add_argument("--div-months", type=int, default=12, help="高股息訊號的滾動股息月數（年化）")
     ap.add_argument("--sector-neutral", action="store_true",
                      help="名額按 point-in-time 行業檔數比例分配、行業內選股（需 --pointintime-dir）")
     ap.add_argument("--sector-only", default=None,
@@ -512,22 +543,29 @@ def main() -> None:
 
     if args.sweep:
         # 預先登記的鄰域（手冊鐵律第4、9條）：動量 lookback(月) x top_k；低波動 vol_days x 持股數
-        grid = ([(lb, k, args.vol_days) for lb in (6, 9, 12) for k in (2, 3, 4)] if args.signal == "momentum"
-                else [(args.lookback, k, vd) for vd in (126, 252)
-                      for k in ((10, 15, 20) if args.sector_neutral else (5, 10, 15))])
+        if args.signal == "momentum":
+            grid = [(lb, k, args.vol_days) for lb in (6, 9, 12) for k in (2, 3, 4)]
+        elif args.signal == "divyield":
+            grid = [(args.lookback, k, w) for w in (12, 24) for k in (5, 10, 15)]
+        else:
+            grid = [(args.lookback, k, vd) for vd in (126, 252)
+                    for k in ((10, 15, 20) if args.sector_neutral else (5, 10, 15))]
         for lb, k, vd in grid:
             try:
                 res = run_backtest(pool, args.benchmark, lb, args.skip, k,
                                     args.cost_bps, args.start, not args.no_abs_filter,
-                                    args.cap_top_n, pointintime, args.signal, vd,
-                                    sectors, args.sector_neutral, args.sector_only)
+                                    args.cap_top_n, pointintime, args.signal,
+                                    vd if args.signal == "lowvol" else args.vol_days,
+                                    sectors, args.sector_neutral, args.sector_only,
+                                    vd if args.signal == "divyield" else args.div_months)
             except SystemExit as e:
                 print(f"lookback={lb} top_k={k} vol_days={vd}: {e}")
                 continue
             total_ret = res["final_equity"] - 1.0
             rs = risk_stats(res)
             mdd = max_drawdown(res["equity_curve"])[0]
-            head = f"lookback={lb:2d} top_k={k}" if args.signal == "momentum" else f"vol_days={vd:3d} top_k={k:2d}"
+            head = {"momentum": f"lookback={lb:2d} top_k={k}", "lowvol": f"vol_days={vd:3d} top_k={k:2d}",
+                    "divyield": f"div_months={vd:2d} top_k={k:2d}"}[args.signal]
             print(f"{head}: 總報酬 {total_ret:+7.1%}  基準 {res['bench_total_return']:+7.1%}  "
                   f"alpha t={rs['alpha_t']:5.2f}  beta {rs['beta']:.2f}  超額t={rs['t_excess']:5.2f}  "
                   f"夏普 {rs['sharpe']:.2f}/{rs['bench_sharpe']:.2f}  MDD {mdd:.0%}/{rs['bench_mdd']:.0%}")
@@ -535,9 +573,12 @@ def main() -> None:
 
     res = run_backtest(pool, args.benchmark, args.lookback, args.skip, args.top_k,
                         args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n, pointintime,
-                        args.signal, args.vol_days, sectors, args.sector_neutral, args.sector_only)
-    label = (f"signal={args.signal} " + (f"lookback={args.lookback} skip={args.skip}" if args.signal == "momentum"
-             else f"vol_days={args.vol_days}") + f" top_k={args.top_k} cost={args.cost_bps}bps")
+                        args.signal, args.vol_days, sectors, args.sector_neutral, args.sector_only,
+                        args.div_months)
+    label = (f"signal={args.signal} " + {"momentum": f"lookback={args.lookback} skip={args.skip}",
+                                          "lowvol": f"vol_days={args.vol_days}",
+                                          "divyield": f"div_months={args.div_months}"}[args.signal]
+             + f" top_k={args.top_k} cost={args.cost_bps}bps")
     if args.cap_top_n:
         label += f" cap_top_n={args.cap_top_n}"
     if pointintime:
