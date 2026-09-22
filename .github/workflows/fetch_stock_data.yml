@@ -30,14 +30,29 @@ jobs:
         continue-on-error: true  # 有些代碼(已下市/合併)預期會抓不到，不該擋住其他成功的 commit
         run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
+      - name: Fetch second source (Stooq)
+        continue-on-error: true
+        run: python3 scripts/fetch_stooq.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
+
+      - name: Data quality check
+        continue-on-error: true
+        run: python3 scripts/check_data_quality.py --fetch-names
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stocks/
+          git add data/stocks/ data/stocks_stooq/
           if git diff --cached --quiet; then
             echo "No data changes"
-          else
-            git commit -m "chore(data): 自動更新股票日線數據 $(date -u +%Y-%m-%d)"
-            git push origin HEAD:claude/gifted-carson-v2tvhw
+            exit 0
           fi
+          git commit -m "chore(data): 自動更新股票日線數據 + 品質日報 $(date -u +%Y-%m-%d)"
+          # 這條分支有別的 session 同時在推（對帳/Telegram），推失敗就把自己這個
+          # 剛做的 commit rebase 到最新遠端再推——只動 bot 自己未推出的 commit
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 5))
+            git pull --rebase origin claude/gifted-carson-v2tvhw
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
