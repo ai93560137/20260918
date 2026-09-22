@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
-"""港股版塊輪動檢測（描述性監測工具，不是策略、不產生交易訊號）。
+"""版塊輪動檢測（多市場；描述性監測工具，不是策略、不產生交易訊號）。
 
-在 point-in-time 恒指成分股宇宙上建三類「組」的等權指數，看資金往哪裡轉：
-1. **行業**：yfinance sector（data/stocks/names_yf.json，每日 QC 順便抓；已下市
-   抓不到的用 scripts/pointintime/sectors_manual.json 補，報告標明來源）。
+在 point-in-time 指數成分股宇宙（universe.py：恒指/S&P 500/Nasdaq-100/道指/日經225）
+上建三類「組」的等權指數，看資金往哪裡轉：
+1. **行業**：yfinance sector（各市場同一套 11 類，跨市場可比；每日 QC 順便抓；已下市
+   抓不到的用手動補缺檔，報告標明來源）。
    ⚠ 是「今天的分類」套用到歷史——公司轉型（如 0001 長實→長和）會被歸錯年代，
    這個偏差寫進報告。
-2. **恒指分類指數**：Wikipedia 當年快照的四大類（金融/公用/地產/工商），
+2. **指數公司分類**（有才有）：恒指 Wikipedia 當年快照的四大類（金融/公用/地產/工商），
    point-in-time 正確但太粗，當交叉核對。
-3. **風格籃子**（每月底在當時成分股裡重選 10 檔，全部只用當時已知數據）：
+3. **風格籃子**（每月底在當時成分股裡重選約 1/10 檔數，全部只用當時已知數據）：
    高息（滾動 12 個月股息率）、低波（252 日波動最低）、動量（12-1 個月報酬）、
    大市值（股數×收市）。
 
 指數構造：每月最後一個交易日按 point-in-time 名單定組員，組內**每日等權**
 （當日組員 AdjClose 日報酬平均，含股息）；組員中途停牌/下市就從那天起不計。
-基準：2800.HK（盈富，市值加權）與「全體成分股等權」——相對等權才是乾淨的
-版塊輪動（相對 2800 會混入大小盤效應）。
+基準：指數 ETF（2800.HK/SPY/QQQ/DIA/1321.T，市值加權）與「全體成分股等權」——
+相對等權才是乾淨的版塊輪動（相對市值加權基準會混入大小盤效應）。
 
-輸出（sector/）：
+輸出（sector/<index>/）：
 - ROTATION_REPORT.md：最新 1/3/6/12 個月超額、排名、排名變化、廣度、年度輪動表
 - group_index.csv：各組日指數（給後續研究/畫圖）
 - tg_rotation.txt：Telegram 摘要
@@ -26,7 +27,8 @@
 那是版塊動量策略的問題，必須先預註冊（SECTOR_ROTATION.md）再用回測引擎測，
 不能拿這份報告的數字反覆看來挑參數。
 
-    python3 scripts/sector_rotation.py
+    python3 scripts/sector_rotation.py                      # 預設恒指
+    python3 scripts/sector_rotation.py --index sp500
     python3 scripts/sector_rotation.py --as-of 2024-12-31   # 看歷史某一天
 """
 import argparse
@@ -42,17 +44,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from stock_momentum_backtest import (  # noqa: E402
-    derive_dividends, load_pointintime, load_series, load_shares, month_end_dates,
-    shares_asof, trailing_vol,
+    derive_dividends, load_series, load_shares, month_end_dates, shares_asof, trailing_vol,
 )
+from universe import INDICES, Universe  # noqa: E402
 
-PIT_DIR = ROOT / "scripts" / "pointintime"
-LIVE_UNIVERSE = ROOT / "scripts" / "universe_hsi_live.txt"
-YF_NAMES = ROOT / "data" / "stocks" / "names_yf.json"
-MANUAL_SECTORS = PIT_DIR / "sectors_manual.json"
-OUT_DIR = ROOT / "sector"
-BENCH = "2800.HK"
-STYLE_K = 10
+OUT_ROOT = ROOT / "sector"
 WINDOWS = [("1M", 21), ("3M", 63), ("6M", 126), ("12M", 252)]
 MIN_MEMBERS = 3          # 組員少於此數：結果標「薄」，別過度解讀
 
@@ -63,43 +59,26 @@ SECTOR_ZH = {
     "Energy": "能源", "Basic Materials": "原材料", "Industrials": "工業",
     "Healthcare": "醫療",
 }
-HSI_ZH = {"Finance": "金融", "Utilities": "公用", "Properties": "地產", "Commerce & Industry": "工商"}
+OFFICIAL_ZH = {"Finance": "金融", "Utilities": "公用", "Properties": "地產", "Commerce & Industry": "工商"}
 STYLE_ZH = {"divyield": "高息", "lowvol": "低波", "momentum": "動量", "largecap": "大市值"}
-
-
-def load_sector_map() -> tuple[dict[str, str], dict[str, str]]:
-    """回傳 (ticker -> yfinance sector, ticker -> 來源 'yf'/'manual')。"""
-    sec, src = {}, {}
-    if MANUAL_SECTORS.exists():
-        for t, s in json.loads(MANUAL_SECTORS.read_text(encoding="utf-8")).items():
-            if not t.startswith("_"):
-                sec[t], src[t] = s, "manual"
-    if YF_NAMES.exists():
-        for t, rec in json.loads(YF_NAMES.read_text(encoding="utf-8")).items():
-            if rec.get("sector"):
-                sec[t], src[t] = rec["sector"], "yf"   # yfinance 優先，手動只補缺
-    return sec, src
-
-
-def read_list(p: Path) -> set[str]:
-    return {l.strip() for l in p.read_text(encoding="utf-8").splitlines()
-            if l.strip() and not l.startswith("#")}
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--index", default="hsi", choices=list(INDICES))
     ap.add_argument("--as-of", type=date.fromisoformat, default=None, help="報告日（預設最新交易日）")
     ap.add_argument("--start", type=date.fromisoformat, default=date(2010, 6, 30))
     args = ap.parse_args()
 
-    pit = load_pointintime(PIT_DIR)
-    hsi_sectors = json.loads((PIT_DIR / "hsi_sectors.json").read_text(encoding="utf-8"))
-    sec_map, sec_src = load_sector_map()
-    live = read_list(LIVE_UNIVERSE) if LIVE_UNIVERSE.exists() else set()
+    uni = Universe(args.index)
+    BENCH = uni.benchmark
+    STYLE_K = uni.cfg["style_k"]
+    OUT_DIR = OUT_ROOT / args.index
+    official = uni.official_sectors()
+    sec_map, sec_src = uni.sectors()
 
-    universe = set().union(*(m for _, m in pit)) | live
     series, shares, divs = {}, {}, {}
-    for t in sorted(universe | {BENCH}):
+    for t in uni.all_tickers(since=args.start - timedelta(days=400)) + [BENCH]:
         try:
             series[t] = load_series(t)
         except FileNotFoundError:
@@ -107,13 +86,15 @@ def main() -> None:
         if t != BENCH:
             shares[t] = load_shares(t)
             divs[t] = derive_dividends(series[t])
+    if BENCH not in series:
+        raise SystemExit(f"沒有基準 {BENCH} 的數據")
     first_date = {t: min(s) for t, s in series.items() if s}
     daily = {t: sorted((d, v[1]) for d, v in s.items()) for t, s in series.items()}
     daily_dates = {t: [d for d, _ in rows] for t, rows in daily.items()}
 
     cal = sorted(series[BENCH])
     as_of = args.as_of or cal[-1]
-    cal = [d for d in cal if args.start <= d <= as_of]
+    cal = [d for d in cal if max(args.start, uni.first_date()) <= d <= as_of]
     m_ends = month_end_dates(cal)
     cal_idx = {d: i for i, d in enumerate(cal)}
 
@@ -121,35 +102,27 @@ def main() -> None:
         v = series[t].get(d)
         return v[1] if v and v[1] > 0 else None
 
-    def members_at(me: date) -> tuple[set[str], int]:
-        """point-in-time 名單；最後一份快照之後若有現行名單（paper_trade 每天更新）改用現行名單。"""
-        snap = None
-        for sd, mem in pit:
-            if sd <= me:
-                snap = (sd, mem)
-        if snap is None:
-            return set(), 0
-        sd, mem = snap
-        if live and me >= pit[-1][0] + timedelta(days=365):
-            mem, sd = live, me
-        # 防代碼重用：價格必須早於快照日就存在
-        return {t for t in mem if t in first_date and first_date[t] <= sd and adj_close(t, me)}, sd.year
-
     # --- 每月底決定各組組員 ---
     groups_by_month: dict[date, dict[str, list[str]]] = {}
+    member_slots = hole_slots = 0
     for me in m_ends:
-        mem, snap_year = members_at(me)
+        # point-in-time 名單 + 防代碼重用（價格須早於入選日存在）+ 當天有價
+        listed = uni.members_at(me)
+        mem = {t for t in uni.eligible_at(me, first_date) if adj_close(t, me)}
         if not mem:
             continue
+        member_slots += len(listed)
+        hole_slots += len(listed) - len(mem)
         g: dict[str, list[str]] = defaultdict(list)
         g["全體等權"] = sorted(mem)
         for t in mem:
             g["行業:" + SECTOR_ZH.get(sec_map.get(t, ""), sec_map.get(t) or "未分類")].append(t)
-            # 現行名單期間沒有當年快照：用該股最近一年的分類
-            yrs = [y for y in hsi_sectors.get(t, {}) if int(y) <= snap_year]
-            hs = hsi_sectors[t][max(yrs)] if yrs else None
+            # 指數公司分類（恒指）：用 <= 當年最近一年的分類（現行名單期間沒有當年快照）
+            snap_year = me.year if me >= date(me.year, 6, 30) else me.year - 1
+            yrs = [y for y in official.get(t, {}) if int(y) <= snap_year]
+            hs = official[t][max(yrs)] if yrs else None
             if hs:
-                g["恒指類:" + HSI_ZH.get(hs, hs)].append(t)
+                g["官方分類:" + OFFICIAL_ZH.get(hs, hs)].append(t)
         # 風格籃子
         dy, lv, mo, cap = [], [], [], []
         me_skip = m_ends[m_ends.index(me) - 1] if m_ends.index(me) >= 1 else None
@@ -239,8 +212,9 @@ def main() -> None:
 
     # --- 報告 ---
     L = []
-    L.append(f"# 港股版塊輪動報告（{as_of}）\n")
-    L.append(f"宇宙：point-in-time 恒指成分股（組員定於 {last_me}，共 {len(cur_groups['全體等權'])} 檔）。"
+    L.append(f"# {uni.cfg['name']} 版塊輪動報告（{as_of}）\n")
+    L.append(f"宇宙：point-in-time {uni.cfg['name']} 成分股（組員定於 {last_me}，共 {len(cur_groups['全體等權'])} 檔；"
+             f"歷史上成分股中 {hole_slots / max(member_slots, 1):.1%} 的月份檔次沒有可用價格——倖存者偏差洞）。"
              "各組每日等權、含股息。超額 = 組報酬 − 基準報酬。**描述性，不是交易訊號**"
              "（見 scripts/sector_rotation.py 開頭的紀律說明）。\n")
 
@@ -251,7 +225,7 @@ def main() -> None:
         rows.sort(key=lambda k: rk_now.get(k, 99))
         L.append(f"\n## {title}\n")
         L.append("| 組 | 檔數 | " + " | ".join(f"{w} 超額vs等權" for w, _ in WINDOWS)
-                 + " | 3M 超額vs2800 | 3M排名(一個月前) | 廣度(>200日線) |")
+                 + f" | 3M 超額vs{BENCH} | 3M排名(一個月前) | 廣度(>200日線) |")
         L.append("|---|---|" + "---|" * (len(WINDOWS) + 3))
         for k in rows:
             mem = cur_groups[k]
@@ -260,7 +234,7 @@ def main() -> None:
                 r, b = ret_over(k, n), ret_over("全體等權", n)
                 cells.append(f"{(r - b) * 100:+.1f}%" if r is not None and b is not None else "—")
             r3, b3 = ret_over(k, 63), ret_over(BENCH, 63)
-            vs2800 = f"{(r3 - b3) * 100:+.1f}%" if r3 is not None and b3 is not None else "—"
+            vs_b = f"{(r3 - b3) * 100:+.1f}%" if r3 is not None and b3 is not None else "—"
             now, prev = rk_now.get(k), rk_prev.get(k)
             if now and prev:
                 arrow = "↑" if now < prev else ("↓" if now > prev else "→")
@@ -270,17 +244,18 @@ def main() -> None:
             br = breadth(mem)
             label = k.split(":", 1)[-1]
             L.append(f"| {label} | {len(mem)} | " + " | ".join(cells)
-                     + f" | {vs2800} | {rk} | {f'{br:.0%}' if br is not None else '—'} |")
+                     + f" | {vs_b} | {rk} | {f'{br:.0%}' if br is not None else '—'} |")
 
     table("行業:", "行業（yfinance sector）")
     table("風格:", "風格籃子（每月底在當時成分股裡選 10 檔）")
-    table("恒指類:", "恒指四大分類（Wikipedia 當年快照，交叉核對用）")
+    if official:
+        table("官方分類:", "指數公司分類（當年快照，交叉核對用）")
 
     # 全體/基準參考
     L.append("\n## 基準參考\n")
     L.append("| | " + " | ".join(w for w, _ in WINDOWS) + " |")
     L.append("|---|" + "---|" * len(WINDOWS))
-    for k, lab in (("全體等權", "全體成分股等權"), (BENCH, "2800 盈富（市值加權）")):
+    for k, lab in (("全體等權", "全體成分股等權"), (BENCH, f"{BENCH}（市值加權指數 ETF）")):
         L.append(f"| {lab} | " + " | ".join(
             f"{ret_over(k, n) * 100:+.1f}%" if ret_over(k, n) is not None else "—" for _, n in WINDOWS) + " |")
 
@@ -352,10 +327,10 @@ def main() -> None:
              f"手動補 {n_man}（scripts/pointintime/sectors_manual.json）、未分類 {len(n_none)}"
              + (f"（{', '.join(n_none)}）" if n_none else ""))
     L.append("- yfinance 分類是**今天的**，套用到歷史：業務轉型的公司在早年會被歸錯組（前視偏差，"
-             "影響描述不影響價格）。恒指四大分類是當年快照，可以對照。")
+             "影響描述不影響價格）。" + ("指數公司分類是當年快照，可以對照。" if official else ""))
     L.append(f"- 現行組員不足 {MIN_MEMBERS} 檔的組標「薄」、不參與排名。")
 
-    OUT_DIR.mkdir(exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "ROTATION_REPORT.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
     with open(OUT_DIR / "group_index.csv", "w", newline="", encoding="utf-8") as f:
@@ -370,7 +345,7 @@ def main() -> None:
     def ex3(k):
         r, b = ret_over(k, 63), ret_over("全體等權", 63)
         return f"{k.split(':')[1]} {(r - b) * 100:+.1f}%"
-    tg = [f"港股版塊輪動 {as_of}（3個月超額 vs 成分股等權）",
+    tg = [f"{uni.cfg['name']} 版塊輪動 {as_of}（3個月超額 vs 成分股等權）",
           "強：" + "、".join(ex3(k) for k in order[:3]),
           "弱：" + "、".join(ex3(k) for k in order[-3:]),
           "風格：" + "、".join(ex3(k) for k in sorted(ranking(e_now, 63, "風格:"),
