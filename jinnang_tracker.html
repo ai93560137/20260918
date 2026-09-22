@@ -169,13 +169,21 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
   <p>一筆交易「合規」＝ 三格全勾。<strong>盈虧完全不看。</strong>
     違規一次，連續計數歸零重數。</p>
   <div class="norms">
-    <div class="norm"><dt>合格訊號有進場</dt><dd>✓<span class="cap">向上＋ATR≥0.10%；漏掉 = 違規</span></dd></div>
+    <div class="norm"><dt>合格訊號有進場</dt><dd>✓<span class="cap">向上＋ATR≥0.10%；醒著時漏掉 = 違規</span></dd></div>
     <div class="norm"><dt>抱滿 10 根</dt><dd>2.5h<span class="cap">提早出 = 違規</span></dd></div>
     <div class="norm"><dt>沒加碼沒移動</dt><dd>✓<span class="cap">動了 = 違規</span></dd></div>
   </div>
   <p class="note"><strong>v4 的兩個減法：只做多、ATR(14)÷價格 ≥ 0.10%。</strong>
-    向下訊號、低波動訊號都<b>不算漏</b> —— 它們本來就不在名單上。
-    每年約 61 筆合格訊號，<b>90 筆要跑約 1.5 年</b>。這是功能不是問題：它強迫你等。</p>
+    向下訊號、低波動訊號都<b>不算漏</b> —— 它們本來就不在名單上。</p>
+  <p class="note"><strong>睡眠時段（香港 00:00–07:00）的訊號也不算漏</strong>，但也不計入 90 筆。
+    理由：這條規則要測的是「虧錢時你會不會改參數、連虧五筆會不會開始挑訊號」——
+    那些在你醒著的時候一樣會發生。睡過頭不是紀律失敗，是物理限制；
+    用一個測不到東西的標準去歸零一個真正要測的東西，沒有意義。
+    <br>實測：276 筆進場裡有 <b>42 筆（15.2%）</b>落在香港 00:00–07:00。
+    黃金活躍在倫敦／紐約盤，換成香港時間是下午到深夜（16:00–23:00 最密集），
+    凌晨反而最冷清 —— 所以代價比想像中小。
+    扣掉之後每年約 <b>51 筆</b>，<b>90 筆要跑約 1.75 年</b>（本來 1.5 年）。
+    這是功能不是問題：它強迫你等。</p>
 </section>
 
 <section>
@@ -208,7 +216,8 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
 <section>
   <h2><span class="num">03</span>九十筆</h2>
   <p class="note">點任一格填寫。到期時間會自動算（進場時間 ＋ 2 小時 30 分）。
-    v4 每年約 61 筆，<b>這 90 格大概要填 1.5 年</b>。</p>
+    v4 每年約 61 筆，扣掉睡眠時段（香港 00:00–07:00，實測佔 15.2%）約 51 筆，
+    <b>這 90 格大概要填 1.75 年</b>。</p>
   <div id="rounds"></div>
 </section>
 
