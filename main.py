@@ -17,7 +17,7 @@
 #     GATE_DRIVER=REGIME 可一鍵回退成舊行為，只為了能並排比對。
 #   * ⚠️ 但三級共振【沒有完全退場】：PureGCPPyramidingSession.evaluate_and_trigger
 #     的第一行仍然讀 gate_state["dir"]，而那個 dir 是三級共振寫的。所以現在是：
-#         armed（准不准下單）← 風控五關    ✅ 已量度
+#         armed（准不准下單）← 風控六關    ✅ 已量度
 #         dir  （往哪個方向）← 三級共振    ❌ 未量度，且已證實無優勢
 #     RANGE 時 dir = None，引擎直接 return None → 實際上 87.3% 的時間不會下單。
 #     再加上 LONG_ONLY=1，等於「只在三級共振說 UP 的時候做多」。
@@ -213,7 +213,13 @@ EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)
 # [R90] 高水位是用哪一把尺量的。R88 把風控淨值從「淨值」改成「淨值 − 信用」之後，
 #       舊的高水位（含信用）跟新的淨值不能比 —— 差額是信用，不是虧損，卻會被
 #       讀成一筆從未發生的回撤，把空城計鎖死。換尺就重新起算。
-EQUITY_PEAK_BASIS = "risk_equity_v2"              # 曝險硬上限（名目 ÷ 淨值）
+EQUITY_PEAK_BASIS = "risk_equity_v2"
+
+# [R93] 回撤煞車。曝險公式限制的是【單次槓桿】，擋不住【連續小額停損的累積】——
+#       README §28 的金字塔回測 1,111 次停損 × 約 HK$94 就吃掉 23.4% 回撤，
+#       超過整套空城計建立在上面的 20% 容忍。所以要一條直接對累積回撤的閘。
+#       達到門檻就停當日新單（紐約日界線換日後重評）。0 = 停用。
+DD_BRAKE_PCT = _env_float("DD_BRAKE_PCT", 15.0)              # 曝險硬上限（名目 ÷ 淨值）
 DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日虧損上限（佔淨值）
 # [R72] 波動門檻用 EA 已經在傳的 atr_m15。校準見 README §24：只做多、抱 10 根、
 #       扣 US$0.40 來回時，打平點是 ATR(14)/價格 = 0.0837%。預設取 0.10%（打平點
@@ -673,6 +679,7 @@ def default_gate_state():
         "risk": {},               # [R70] 風控電閘最近一次評估（開閘的真正依據）
         "equity_peak": 0.0,       # [R74] 歷史淨值高水位，空城計的回撤基準
         "equity_peak_basis": "",  # [R90] 上面那個高水位是用哪一把尺量的
+        "dd_brake_day": "",       # [R93] 回撤煞車在哪一個紐約交易日踩下（當日鎖存）
         "trades_today": {},       # {"ny_date": "YYYY-MM-DD", "count": n}  [R73]
         "last_m1_bar_time": 0,    # idempotency for M1 packets  [R25]
         "last_m15_bar_time": 0,   # [R78] 錦囊：同一根已收盤 M15 只評估一次
@@ -777,7 +784,7 @@ def next_trend_state(state, verdict, skip_setup=False):
 #
 # 舊版：三級共振說「趨勢中」→ 開閘。量度後證實那沒有優勢（README §22/§23）。
 # 新版：電閘不再預測方向，只回答一個問題——「現在讓你下單，最壞會怎樣？」
-#       五道關卡全過才開閘，任何一道不過就鎖死並寫明原因。
+#       六道關卡全過才開閘，任何一道不過就鎖死並寫明原因。
 # -----------------------------------------------------------------------------
 def _ny_date(now=None):
     return datetime.fromtimestamp(now_ts() if now is None else now, NY_TZ).strftime("%Y-%m-%d")
@@ -807,7 +814,7 @@ def bump_trades_today():
 
 
 def evaluate_risk_gate(snapshot, state, now=None):
-    """五道關卡。回傳 {"open": bool, "checks": [...], "reason": str, ...}。
+    """六道關卡。回傳 {"open": bool, "checks": [...], "reason": str, ...}。
 
     缺數據一律當成不過關（fail-closed），與 read_gate_state 的失敗語意一致。 [R13a]
     """
@@ -903,11 +910,31 @@ def evaluate_risk_gate(snapshot, state, now=None):
         add("pace", "訓練節奏", ok, f"今日 {used} / {TRAINING_MAX_PER_DAY} 筆"
                                     f"{'' if ok else ' → 今日額滿，明天再來'}")
 
+    # ⑥ 回撤煞車  [R93]
+    #    踩下之後當日鎖存 —— 盤中回撤縮回去也不放行，否則那不叫煞車。
+    brake_hit = False
+    latched = str(state.get("dd_brake_day") or "") == _ny_date(now)
+    if DD_BRAKE_PCT <= 0:
+        add("brake", "回撤煞車", True, f"已停用（DD_BRAKE_PCT=0）")
+    elif dd_now is None:
+        add("brake", "回撤煞車", False, "缺淨值，算不出回撤")
+    else:
+        brake_hit = dd_now >= DD_BRAKE_PCT
+        engaged = brake_hit or latched
+        detail = f"回撤 {dd_now:.1f}% / 煞車 {DD_BRAKE_PCT:.0f}%"
+        if engaged:
+            detail += ("　🛑 今日不再開新倉"
+                       f"{'（今日稍早踩下，已鎖存）' if latched and not brake_hit else ''}。"
+                       "已開的倉不受影響，EA 的定時出場照常。"
+                       "紐約日界線換日後重評 —— 回撤沒縮小的話明天仍會煞停，"
+                       "那要人介入（加本金、縮手數，或確認高水位是對的），等下去不會自己好。")
+        add("brake", "回撤煞車", not engaged, detail)
+
     failed = [c for c in checks if not c["ok"]]
     return {
         "open": not failed,
         "checks": checks,
-        "reason": "五關全過 → 開閘" if not failed else "｜".join(f"{c['name']}：{c['detail']}" for c in failed),
+        "reason": "六關全過 → 開閘" if not failed else "｜".join(f"{c['name']}：{c['detail']}" for c in failed),
         "atr_pct": atr_pct, "exposure": exp_now, "exposure_cap": cap_eff, "drawdown_pct": dd_now,
         "equity_peak": max(
             (to_float(state.get("equity_peak"), 0.0) or 0.0)
@@ -915,6 +942,7 @@ def evaluate_risk_gate(snapshot, state, now=None):
             equity or 0.0, balance or 0.0),
         "equity_peak_basis": EQUITY_PEAK_BASIS,
         "trades_today": used, "evaluated_utc": fmt_utc(now),
+        "dd_brake_hit": brake_hit,                                               # [R93]
     }
 
 
@@ -937,10 +965,20 @@ def apply_risk_to_gate(snapshot, news_locked):
         # [R90] 換尺時新高水位會【變小】，上面那個 > 比較抓不到，所以要單獨判一次，
         #       否則基準標記永遠寫不進去，舊尺的高水位會一直把電閘鎖著。
         basis_changed = state.get("equity_peak_basis") != risk["equity_peak_basis"]
+        # [R93] 煞車踩下要鎖存到當日結束。evaluate_risk_gate 必須無副作用（儀表板
+        #       也會呼叫它試算），所以鎖存寫在這裡，不寫在評估裡。
+        brake_day = str(state.get("dd_brake_day") or "")
+        if risk.get("dd_brake_hit"):
+            brake_day = _ny_date()
+        brake_changed = brake_day != str(state.get("dd_brake_day") or "")
         changed = (shape(prev) != shape(risk) or bool(state.get("armed")) != armed
                    or bool(state.get("news_lock")) != bool(news_locked)
-                   or basis_changed
+                   or basis_changed or brake_changed
                    or risk["equity_peak"] > (to_float(state.get("equity_peak"), 0.0) or 0.0) + 1e-9)
+        if brake_changed:
+            print(f"🛑 [回撤煞車] 回撤 {risk.get('drawdown_pct') or 0:.1f}% 達到 "
+                  f"{DD_BRAKE_PCT:g}% —— {brake_day}（紐約）不再開新倉。"
+                  f"已開的倉不受影響。[R93]", flush=True)
         if basis_changed:
             print(f"ℹ️ [高水位重新起算] 風控淨值的定義變了（{state.get('equity_peak_basis') or '未標記'}"
                   f" → {risk['equity_peak_basis']}），舊高水位 "
@@ -948,7 +986,8 @@ def apply_risk_to_gate(snapshot, news_locked):
                   f"改由 {risk['equity_peak']:,.2f} 起算。[R90]", flush=True)
         state.update(risk=risk, armed=armed, news_lock=bool(news_locked), last_reason=reason,
                      equity_peak=risk["equity_peak"],
-                     equity_peak_basis=risk["equity_peak_basis"])
+                     equity_peak_basis=risk["equity_peak_basis"],
+                     dd_brake_day=brake_day)                                     # [R93]
         after = gate_status(state)
         return changed, {"before": before, "after": after, "reason": reason, "risk": risk}
 
@@ -3119,7 +3158,7 @@ def _jinnang_html():
 
 
 def _risk_gate_html(state):
-    """儀表板上的風控電閘區塊。回傳 (五關表格, 雷達標籤, 雷達註解, 電閘細節, 恢復自動註解)。"""
+    """儀表板上的風控電閘區塊。回傳 (六關表格, 雷達標籤, 雷達註解, 電閘細節, 恢復自動註解)。"""
     if GATE_DRIVER == "REGIME":
         detail = (f"趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / "
                   f"{'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}")
@@ -3143,11 +3182,11 @@ def _risk_gate_html(state):
             f"<td class='{'muted' if c.get('ok') else ''}' style='font-size:13px;"
             f"{'' if c.get('ok') else ' color:#b02a37; font-weight:600;'}'>{esc(c.get('detail'))}</td></tr>"
             for c in checks)
-    block = (f"<div class='section-header'>🛡️ 風控電閘五關"
+    block = (f"<div class='section-header'>🛡️ 風控電閘六關"
              f"（{'只做多' if LONG_ONLY else '多空皆可'}）</div>"
              f"<div class='section'><table style='width:100%; border-collapse:collapse;'>{rows}</table>"
              f"<div class='muted' style='font-size:12px; margin-top:8px;'>"
-             f"五關全過才開閘。缺數據一律當成不過關。評估時間："
+             f"六關全過才開閘。缺數據一律當成不過關。評估時間："
              f"{esc(risk.get('evaluated_utc') or '—')} UTC</div></div>")
 
     passed = sum(1 for c in checks if c.get("ok"))
@@ -3598,7 +3637,7 @@ def system_parameter_values(params=None):
     return [
         {"group": "🛡️ 風控電閘（開閘的真正依據）", "items": [
             _pv("GATE_DRIVER", GATE_DRIVER,
-                "RISK＝風控五關決定開閘（現行）；REGIME＝舊的三級共振（已量度為無優勢，僅供回退比對）"),
+                "RISK＝風控六關決定開閘（現行）；REGIME＝舊的三級共振（已量度為無優勢，僅供回退比對）"),
             _pv("LONG_ONLY", "只做多" if LONG_ONLY else "多空皆可",
                 "全期 1,464 筆中 671 筆空單，每筆 −HK$0.84、t=−0.25（README §23）"),
             _pv("VOL_FLOOR_ATR_PCT", f"{VOL_FLOOR_ATR_PCT:g}%" if VOL_FLOOR_ATR_PCT > 0 else "停用",

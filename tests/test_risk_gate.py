@@ -65,7 +65,7 @@ FAKE.clear()
 st = main.default_gate_state()
 r = main.evaluate_risk_gate({}, st)
 check("空快照 → 不開閘", r["open"] is False)
-check("五道關卡都有回報", len(r["checks"]) == 5, r["checks"])
+check("六道關卡都有回報（R93 加了回撤煞車）", len(r["checks"]) == 6, r["checks"])
 check("理由寫明是哪幾關", "波動水位" in r["reason"], r["reason"])
 
 print("\n=== 2. 五關全過 → 開閘 ===")
@@ -74,7 +74,7 @@ good = {"equity": 20000.0, "balance": 20000.0, "daily_pnl": 0.0, "net_lots": 0.0
 # 4300 * 0.10% = 4.3 → atr 8.0 => 0.186% 過關
 open_now = main.GoldIndicatorSession.is_gold_market_open()
 r = main.evaluate_risk_gate(good, st)
-check(f"開市時五關全過（現在 is_open={open_now}）",
+check(f"開市時六關全過（現在 is_open={open_now}）",
       r["open"] is open_now, r["reason"])
 check("ATR% 算得對", abs(r["atr_pct"] - 8.0/4300*100) < 1e-9, r["atr_pct"])
 
@@ -82,8 +82,8 @@ print("\n=== 2b. 強制開市，驗證真正的開閘路徑 ===")
 _real_open = main.GoldIndicatorSession.is_gold_market_open
 main.GoldIndicatorSession.is_gold_market_open = staticmethod(lambda now=None: True)
 r = main.evaluate_risk_gate(good, st)
-check("強制開市後五關全過 → 開閘", r["open"] is True, r["reason"])
-check("五關全部 ok", all(c["ok"] for c in r["checks"]), [c for c in r["checks"] if not c["ok"]])
+check("強制開市後六關全過 → 開閘", r["open"] is True, r["reason"])
+check("六關全部 ok", all(c["ok"] for c in r["checks"]), [c for c in r["checks"] if not c["ok"]])
 FAKE.clear()
 resp = post({"action": "check_gate", "token": "tok", **good})
 code = resp[1] if isinstance(resp, tuple) else 200
@@ -93,7 +93,7 @@ check("心跳回應 200（沒有 M1 → monitoring）", code == 200, code)
 check("gate_summary 顯示放行", main.gate_summary(st_open)[0] == "pos", main.gate_summary(st_open))
 r2 = get("?view=dashboard")
 html = body_of(r2)
-check("儀表板有風控五關表", "風控電閘五關" in html)
+check("儀表板有風控六關表", "風控電閘六關" in html)
 check("儀表板標明雷達不參與開閘", "不參與開閘" in html)
 main.GoldIndicatorSession.is_gold_market_open = _real_open
 
