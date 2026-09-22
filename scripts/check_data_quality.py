@@ -84,10 +84,15 @@ def name_similarity(a: str, b: str) -> float:
     return max(jaccard, SequenceMatcher(None, na, nb).ratio())
 
 
-def fetch_yf_names(tickers: list[str]) -> dict[str, str]:
+def fetch_yf_names(tickers: list[str], budget_s: float = 360) -> dict[str, str]:
+    """有時間上限：抓名字很慢時寧可少抓幾檔，也要讓日報照常寫出來。"""
     import yfinance as yf
     out = {}
+    started = time.monotonic()
     for t in tickers:
+        if time.monotonic() - started > budget_s:
+            print(f"WARN 抓公司名超過 {budget_s}s，只抓了 {len(out)} 檔", file=sys.stderr)
+            break
         try:
             info = yf.Ticker(t).get_info()
             name = info.get("longName") or info.get("shortName") or ""

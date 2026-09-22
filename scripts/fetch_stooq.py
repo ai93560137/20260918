@@ -24,6 +24,8 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (data-quality cross-check)"}
 URL = "https://stooq.com/q/d/l/?s={sym}&i=d"
 
 INDEX_MAP = {"^HSI": ["^hsi"], "^GSPC": ["^spx"]}
+PROBE_N = 5
+TIME_BUDGET_S = 300
 
 
 def read_universe(path: Path) -> list[str]:
@@ -52,7 +54,7 @@ def fetch_one(ticker: str) -> tuple[int, str]:
     last_reason = ""
     for sym in stooq_candidates(ticker):
         try:
-            r = requests.get(URL.format(sym=sym), headers=HEADERS, timeout=30)
+            r = requests.get(URL.format(sym=sym), headers=HEADERS, timeout=10)
         except Exception as exc:
             last_reason = f"{sym}: {exc}"
             continue
@@ -87,15 +89,24 @@ def main() -> None:
             if t not in tickers:
                 tickers.append(t)
 
+    # 第二來源只是複核用，絕不能拖住主數據的 commit：前幾檔全失敗就判定來源
+    # 掛了/被擋直接放棄，總時間也設上限
+    started = time.monotonic()
     ok, missing = 0, []
-    for t in tickers:
+    for i, t in enumerate(tickers):
+        if time.monotonic() - started > TIME_BUDGET_S:
+            print(f"超過時間預算 {TIME_BUDGET_S}s，停在第 {i} 檔", file=sys.stderr)
+            break
         n, info = fetch_one(t)
         if n:
             ok += 1
-            print(f"OK {t}: {n} 根 ({info})")
+            print(f"OK {t}: {n} 根 ({info})", flush=True)
         else:
             missing.append((t, info))
-            print(f"MISS {t}: {info}", file=sys.stderr)
+            print(f"MISS {t}: {info}", file=sys.stderr, flush=True)
+        if i + 1 == PROBE_N and ok == 0:
+            print(f"前 {PROBE_N} 檔全部失敗，判定 Stooq 目前不可用，放棄。原因: {missing}", file=sys.stderr)
+            break
         time.sleep(0.5)
 
     print(f"\nStooq 覆蓋: {ok}/{len(tickers)}")
