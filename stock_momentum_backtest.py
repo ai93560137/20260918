@@ -108,13 +108,33 @@ def next_trading_day(calendar: list[date], after: date) -> date | None:
     return None
 
 
+def load_pointintime(directory: Path) -> list[tuple[date, set[str]]]:
+    """讀 scripts/pointintime/hsi_<year>.txt，回傳按日期排序的
+    [(快照日, 成分股集合)]。快照是 Wikipedia 年中版本，快照日取 6/30。"""
+    out = []
+    for p in sorted(directory.glob("hsi_*.txt")):
+        year = p.stem.split("_")[-1]
+        if not year.isdigit():
+            continue
+        members = {l.strip() for l in p.read_text(encoding="utf-8").splitlines()
+                   if l.strip() and not l.startswith("#")}
+        out.append((date(int(year), 6, 30), members))
+    return out
+
+
 def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                   top_k: int, cost_bps: float, start: date | None,
-                  abs_filter: bool, cap_top_n: int | None = None) -> dict:
+                  abs_filter: bool, cap_top_n: int | None = None,
+                  pointintime: list[tuple[date, set[str]]] | None = None) -> dict:
     all_tickers = pool + [benchmark]
     series = {t: load_series(t) for t in all_tickers}
     shares = {t: load_shares(t) for t in pool} if cap_top_n else {}
+    first_date = {t: min(s) for t, s in series.items() if s}
     excluded_no_cap_data = 0
+    member_slots = 0     # point-in-time：各期成分股總數
+    holes = 0            # point-in-time：成分股但沒有可用價格（已下市/代碼重用）
+    delist_marks = 0     # 持倉期間價格中斷，用最後可得價結算的次數
+    first_entry: date | None = None
 
     # 共用行事曆：用基準的交易日集合（HK 交易所同一行事曆）
     calendar = sorted(series[benchmark].keys())
@@ -133,7 +153,7 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         raise SystemExit("樣本太短，不夠算動量，check --start / 數據期間")
 
     equity = 1.0
-    equity_curve: list[tuple[date, float]] = [(exec_dates[0][1], 1.0)]
+    equity_curve: list[tuple[date, float]] = []
     period_returns: list[tuple[date, float]] = []  # (exec_date, net period return)
     current_basket: set[str] = set()
     total_cost_paid = 0.0
@@ -143,11 +163,28 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         signal_me, entry_exec = exec_dates[i]
         _, exit_exec = exec_dates[i + 1]
 
+        # --- point-in-time 成分股（當時的名單，含後來被剔除/下市的公司）---
+        if pointintime:
+            snap = None
+            for snap_date, members in pointintime:
+                if snap_date <= signal_me:
+                    snap = (snap_date, members)
+            if snap is None:
+                continue  # 第一個快照之前不知道成分股是誰，不交易
+            snap_date, members = snap
+            # 防代碼重用：價格必須在快照日之前就存在，否則那份價格屬於
+            # 後來拿到這個代碼的別家公司（例：0013 和黃 -> 和黃醫藥）
+            base = {t for t in members if t in first_date and first_date[t] <= snap_date}
+            member_slots += len(members)
+            holes += len(members) - len(base)
+        else:
+            base = set(pool)
+
         # --- point-in-time 市值前 N 大過濾（近似 point-in-time 成分股表，
         #     見 RESEARCH_HANDBOOK.md 第三節第4條：不能只用「現在還在」的名單）---
         if cap_top_n:
             caps = []
-            for t in pool:
+            for t in base:
                 sh = shares.get(t)
                 if sh is None or signal_me not in series[t]:
                     continue
@@ -156,11 +193,11 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                     continue
                 raw_close = series[t][signal_me][2]
                 caps.append((raw_close * n_shares, t))
-            excluded_no_cap_data += len(pool) - len(caps)
+            excluded_no_cap_data += len(base) - len(caps)
             caps.sort(reverse=True)
             eligible = {t for _, t in caps[:cap_top_n]}
         else:
-            eligible = set(pool)
+            eligible = base
 
         # --- 算動量，選籃子 ---
         scored = []
@@ -198,16 +235,28 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
             rets = []
             for t in new_basket:
                 s = series[t]
-                if entry_exec not in s or exit_exec not in s:
-                    continue
+                if entry_exec not in s:
+                    continue  # 買不進（停牌），不算入這期
                 p0 = s[entry_exec][0]
-                p1 = s[exit_exec][0]
+                if exit_exec in s:
+                    p1 = s[exit_exec][0]
+                else:
+                    # 持倉期間下市/停牌：用最後可得收市價結算，不能讓它從平均裡
+                    # 靜默消失（那等於把崩盤下市的持股當作沒買過——倖存者偏差）
+                    last = [d for d in s if entry_exec <= d < exit_exec]
+                    if not last:
+                        continue
+                    p1 = s[max(last)][1]
+                    delist_marks += 1
                 if p0 > 0:
                     rets.append(p1 / p0 - 1.0)
             gross_ret = sum(rets) / len(rets) if rets else 0.0
         else:
             gross_ret = 0.0
 
+        if first_entry is None:
+            first_entry = entry_exec
+            equity_curve.append((entry_exec, 1.0))
         net_ret = gross_ret - cost_frac
         equity *= (1.0 + net_ret)
         total_cost_paid += cost_frac
@@ -215,9 +264,12 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         period_returns.append((exit_exec, net_ret))
         current_basket = new_basket
 
-    # --- 基準買入持有（同一段執行日窗口）---
+    if first_entry is None:
+        raise SystemExit("沒有任何可交易的期間（check --start / point-in-time 快照範圍）")
+
+    # --- 基準買入持有（跟策略同一段：第一個實際交易期 -> 最後）---
     bench = series[benchmark]
-    b_start = exec_dates[lookback + skip][1]
+    b_start = first_entry
     b_end = exec_dates[-1][1]
     bench_ret = bench[b_end][0] / bench[b_start][0] - 1.0 if b_start in bench and b_end in bench else float("nan")
 
@@ -232,6 +284,9 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         "bench_start": b_start,
         "bench_end": b_end,
         "avg_excluded_no_cap_data": excluded_no_cap_data / len(period_returns) if period_returns and cap_top_n else 0.0,
+        "avg_members": member_slots / len(period_returns) if period_returns and pointintime else 0.0,
+        "avg_holes": holes / len(period_returns) if period_returns and pointintime else 0.0,
+        "delist_marks": delist_marks,
     }
 
 
@@ -289,6 +344,11 @@ def report(res: dict, label: str) -> None:
     print(f"空手（無合格標的）月數: {res['cash_periods']}/{n}")
     if res.get("avg_excluded_no_cap_data"):
         print(f"平均每期因缺流通股數資料被排除的候選數: {res['avg_excluded_no_cap_data']:.1f}")
+    if res.get("avg_members"):
+        print(f"point-in-time：平均每期成分股 {res['avg_members']:.1f} 檔，其中沒有可用價格 "
+              f"{res['avg_holes']:.1f} 檔（已下市/私有化/代碼重用——殘留的倖存者偏差）")
+    if res.get("delist_marks"):
+        print(f"持倉期間價格中斷、以最後可得價結算: {res['delist_marks']} 次")
     print(f"累計成本拖累: {res['total_cost_paid']:.1%}（已算進總報酬）")
     print("按年拆解:")
     for y in sorted(years_map):
@@ -310,11 +370,23 @@ def main() -> None:
     ap.add_argument("--cap-top-n", type=int, default=None,
                      help="每期只在「當時市值前N大」候選裡選動量，近似 point-in-time 成分股表；"
                           "需要 data/stocks/<TICKER>.shares.csv.gz（流通股數歷史）")
+    ap.add_argument("--pointintime-dir", type=Path, default=None,
+                     help="用逐年 point-in-time 成分股快照（scripts/pointintime/hsi_<year>.txt）決定每期"
+                          "可選名單，取代 --universe 的固定股票池")
     ap.add_argument("--sweep", action="store_true", help="掃 lookback x top-k 鄰域，檢查手冊鐵律第4條的參數平原")
     args = ap.parse_args()
 
-    pool = read_pool(args.universe, exclude={args.benchmark})
-    print(f"股票池（{len(pool)} 檔，非權威成分股表）: {pool}")
+    pointintime = load_pointintime(args.pointintime_dir) if args.pointintime_dir else None
+    if pointintime:
+        members = set().union(*(m for _, m in pointintime))
+        pool = sorted(t for t in members if t != args.benchmark and
+                      (DATA_DIR / (t.replace("^", "_") + ".csv.gz")).exists())
+        missing = sorted(members - set(pool) - {args.benchmark})
+        print(f"point-in-time 快照 {len(pointintime)} 期（{pointintime[0][0]} ~ {pointintime[-1][0]}），"
+              f"歷年成分股聯集 {len(members)} 檔，有價格 {len(pool)} 檔，完全沒價格: {missing}")
+    else:
+        pool = read_pool(args.universe, exclude={args.benchmark})
+        print(f"股票池（{len(pool)} 檔，非權威成分股表）: {pool}")
 
     if args.sweep:
         for lb in (6, 9, 12):
@@ -322,7 +394,7 @@ def main() -> None:
                 try:
                     res = run_backtest(pool, args.benchmark, lb, args.skip, k,
                                         args.cost_bps, args.start, not args.no_abs_filter,
-                                        args.cap_top_n)
+                                        args.cap_top_n, pointintime)
                 except SystemExit as e:
                     print(f"lookback={lb} top_k={k}: {e}")
                     continue
@@ -335,10 +407,12 @@ def main() -> None:
         return
 
     res = run_backtest(pool, args.benchmark, args.lookback, args.skip, args.top_k,
-                        args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n)
+                        args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n, pointintime)
     label = f"lookback={args.lookback} skip={args.skip} top_k={args.top_k} cost={args.cost_bps}bps"
     if args.cap_top_n:
         label += f" cap_top_n={args.cap_top_n}"
+    if pointintime:
+        label += " point-in-time"
     report(res, label)
 
 
