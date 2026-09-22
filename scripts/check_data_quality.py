@@ -197,6 +197,27 @@ def main() -> None:
                 flag("🟡", t, "wiki_name_varies", f"最新記載「{base}」，但 " +
                      "、".join(f"{y}年「{n}」" for y, n in odd))
 
+    # --- point-in-time 成分股覆蓋率：每個「某年是成分股」的代碼，那年有沒有價格？---
+    # 快照是年中（6/30 前後）的 Wikipedia 版本，用 6/30 當作「那年是成分股」的檢查日
+    first_date = {}
+    for t, p in zip(tickers, primary_files):
+        rows = load_ohlc(p)
+        if rows:
+            first_date[t] = rows[0][0]
+    for t, yrs in sorted(wiki_names.items()):
+        member_years = sorted(yrs)
+        if t not in first_date:
+            flag("🟡", t, "constituent_no_data",
+                 f"{member_years[0]}-{member_years[-1]}年是成分股（{yrs[member_years[-1]]}），但主來源完全沒有價格"
+                 "（多半已下市/私有化——回測測不到它，倖存者偏差殘留）")
+            continue
+        uncovered = [y for y in member_years if first_date[t] > date(int(y), 6, 30)]
+        if uncovered:
+            # 價格從成分股期間之後才開始 = 這個代碼後來換了公司，現有價格屬於新公司
+            flag("🔴", t, "code_reuse_suspected",
+                 f"{uncovered[0]}-{uncovered[-1]}年是成分股（{yrs[uncovered[-1]]}），但價格 {first_date[t]} 才開始"
+                 "——代碼被重新分配給別家公司，現有價格不是當年那家，回測不能拿來代表它")
+
     # --- yfinance 公司名：跟 Wikipedia 比、跟上次比 ---
     if args.fetch_names:
         hk_tickers = [t for t in tickers if t.endswith(".HK")]
