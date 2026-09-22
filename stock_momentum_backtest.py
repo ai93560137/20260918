@@ -32,6 +32,7 @@
 """
 import argparse
 import bisect
+import json
 import csv
 import gzip
 import math
@@ -123,11 +124,29 @@ def load_pointintime(directory: Path) -> list[tuple[date, set[str]]]:
     return out
 
 
+def sector_neutral_pick(scored: list[tuple[float, str]], sector_of: dict[str, str], k: int) -> set[str]:
+    """K 個名額按各行業「有訊號的候選檔數」比例分配（最大餘數法），行業內取分數最高者。
+    讓組合的行業組成跟宇宙一致，分辨「因子本身」與「押某個行業」。"""
+    groups: dict[str, list[tuple[float, str]]] = {}
+    for sc, t in scored:  # scored 已由高到低排好
+        groups.setdefault(sector_of.get(t, ""), []).append((sc, t))
+    n = sum(len(g) for g in groups.values())
+    if n == 0:
+        return set()
+    raw = {sec: k * len(g) / n for sec, g in groups.items()}
+    quota = {sec: int(q) for sec, q in raw.items()}
+    for sec in sorted(raw, key=lambda x: raw[x] - quota[x], reverse=True)[:k - sum(quota.values())]:
+        quota[sec] += 1
+    return {t for sec, g in groups.items() for _, t in g[:quota[sec]]}
+
+
 def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                   top_k: int, cost_bps: float, start: date | None,
                   abs_filter: bool, cap_top_n: int | None = None,
                   pointintime: list[tuple[date, set[str]]] | None = None,
-                  signal: str = "momentum", vol_days: int = 252) -> dict:
+                  signal: str = "momentum", vol_days: int = 252,
+                  sectors: dict[str, dict[str, str]] | None = None,
+                  sector_neutral: bool = False, sector_only: str | None = None) -> dict:
     all_tickers = pool + [benchmark]
     series = {t: load_series(t) for t in all_tickers}
     if signal == "lowvol":
@@ -207,6 +226,14 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         else:
             eligible = base
 
+        # --- 行業（point-in-time：用同一年快照的恒指分類指數）---
+        sector_of: dict[str, str] = {}
+        if sectors is not None and pointintime:
+            y = str(snap_date.year)
+            sector_of = {t: sectors.get(t, {}).get(y, "") for t in eligible}
+            if sector_only:
+                eligible = {t for t in eligible if sector_of[t] == sector_only}
+
         # --- 算訊號，選籃子（分數越高越優先）---
         scored = []
         for t in eligible:
@@ -235,7 +262,10 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                 continue
             scored.append((mom, t))
         scored.sort(reverse=True)
-        new_basket = {t for _, t in scored[:top_k]}
+        if sector_neutral and sector_of:
+            new_basket = sector_neutral_pick(scored, sector_of, top_k)
+        else:
+            new_basket = {t for _, t in scored[:top_k]}
         if entry_exec not in series[benchmark] or exit_exec not in series[benchmark]:
             continue
 
@@ -361,7 +391,21 @@ def risk_stats(res: dict) -> dict:
         eq *= 1.0 + b
         curve.append((d, eq))
     bench_mdd = max_drawdown([(None, 1.0)] + curve)[0] if curve else float("nan")
+    n = len(rets)
+    beta = alpha = alpha_t = float("nan")
+    if n > 2:
+        mb, mr = sum(bench) / n, sum(rets) / n
+        sbb = sum((x - mb) ** 2 for x in bench)
+        if sbb > 0:
+            beta = sum((x - mb) * (y - mr) for x, y in zip(bench, rets)) / sbb
+            alpha = mr - beta * mb
+            resid = [y - alpha - beta * x for x, y in zip(bench, rets)]
+            se = math.sqrt(sum(e * e for e in resid) / (n - 2)) * math.sqrt(1 / n + mb * mb / sbb)
+            alpha_t = alpha / se if se else float("nan")
     return {
+        "beta": beta,
+        "alpha_ann": alpha * 12,
+        "alpha_t": alpha_t,
         "t_excess": t_stat(excess),
         "excess_ann": sum(excess) / len(excess) * 12 if excess else float("nan"),
         "sharpe": sharpe(rets),
@@ -397,6 +441,7 @@ def report(res: dict, label: str) -> None:
     rs = risk_stats(res)
     print(f"**相對基準** 每月超額報酬 t 值: {rs['t_excess']:.2f}，年化超額 {rs['excess_ann']:+.1%}，"
           f"勝過基準月份 {rs['hit_rate']:.0%}")
+    print(f"CAPM: beta {rs['beta']:.2f}，年化 alpha {rs['alpha_ann']:+.1%}，alpha t {rs['alpha_t']:.2f}")
     print(f"夏普（未扣無風險）: 策略 {rs['sharpe']:.2f} vs 基準 {rs['bench_sharpe']:.2f}；"
           f"基準同期月頻最大回撤 {rs['bench_mdd']:.1%}")
     print(f"空手（無合格標的）月數: {res['cash_periods']}/{n}")
@@ -434,10 +479,19 @@ def main() -> None:
     ap.add_argument("--signal", choices=["momentum", "lowvol"], default="momentum",
                      help="momentum=12-1 動量取最強 top_k；lowvol=過去 vol_days 日報酬波動率取最低 top_k")
     ap.add_argument("--vol-days", type=int, default=252, help="低波動訊號的回看交易日數")
+    ap.add_argument("--sector-neutral", action="store_true",
+                     help="名額按 point-in-time 行業檔數比例分配、行業內選股（需 --pointintime-dir）")
+    ap.add_argument("--sector-only", default=None,
+                     help="只在某行業內選（診斷用，如 Utilities；配 --top-k 99 = 該行業全部等權）")
     ap.add_argument("--sweep", action="store_true", help="掃 lookback x top-k 鄰域，檢查手冊鐵律第4條的參數平原")
     args = ap.parse_args()
 
     pointintime = load_pointintime(args.pointintime_dir) if args.pointintime_dir else None
+    sectors = None
+    if args.sector_neutral or args.sector_only:
+        if not args.pointintime_dir:
+            raise SystemExit("--sector-neutral / --sector-only 需要 --pointintime-dir（行業要用當年的分類）")
+        sectors = json.loads((args.pointintime_dir / "hsi_sectors.json").read_text(encoding="utf-8"))
     if pointintime:
         members = set().union(*(m for _, m in pointintime))
         pool = sorted(t for t in members if t != args.benchmark and
@@ -452,12 +506,14 @@ def main() -> None:
     if args.sweep:
         # 預先登記的鄰域（手冊鐵律第4、9條）：動量 lookback(月) x top_k；低波動 vol_days x 持股數
         grid = ([(lb, k, args.vol_days) for lb in (6, 9, 12) for k in (2, 3, 4)] if args.signal == "momentum"
-                else [(args.lookback, k, vd) for vd in (126, 252) for k in (5, 10, 15)])
+                else [(args.lookback, k, vd) for vd in (126, 252)
+                      for k in ((10, 15, 20) if args.sector_neutral else (5, 10, 15))])
         for lb, k, vd in grid:
             try:
                 res = run_backtest(pool, args.benchmark, lb, args.skip, k,
                                     args.cost_bps, args.start, not args.no_abs_filter,
-                                    args.cap_top_n, pointintime, args.signal, vd)
+                                    args.cap_top_n, pointintime, args.signal, vd,
+                                    sectors, args.sector_neutral, args.sector_only)
             except SystemExit as e:
                 print(f"lookback={lb} top_k={k} vol_days={vd}: {e}")
                 continue
@@ -466,19 +522,23 @@ def main() -> None:
             mdd = max_drawdown(res["equity_curve"])[0]
             head = f"lookback={lb:2d} top_k={k}" if args.signal == "momentum" else f"vol_days={vd:3d} top_k={k:2d}"
             print(f"{head}: 總報酬 {total_ret:+7.1%}  基準 {res['bench_total_return']:+7.1%}  "
-                  f"超額t={rs['t_excess']:5.2f}  年化超額 {rs['excess_ann']:+6.1%}  "
+                  f"alpha t={rs['alpha_t']:5.2f}  beta {rs['beta']:.2f}  超額t={rs['t_excess']:5.2f}  "
                   f"夏普 {rs['sharpe']:.2f}/{rs['bench_sharpe']:.2f}  MDD {mdd:.0%}/{rs['bench_mdd']:.0%}")
         return
 
     res = run_backtest(pool, args.benchmark, args.lookback, args.skip, args.top_k,
                         args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n, pointintime,
-                        args.signal, args.vol_days)
+                        args.signal, args.vol_days, sectors, args.sector_neutral, args.sector_only)
     label = (f"signal={args.signal} " + (f"lookback={args.lookback} skip={args.skip}" if args.signal == "momentum"
              else f"vol_days={args.vol_days}") + f" top_k={args.top_k} cost={args.cost_bps}bps")
     if args.cap_top_n:
         label += f" cap_top_n={args.cap_top_n}"
     if pointintime:
         label += " point-in-time"
+    if args.sector_neutral:
+        label += " 行業中性"
+    if args.sector_only:
+        label += f" 只持{args.sector_only}"
     report(res, label)
 
 
