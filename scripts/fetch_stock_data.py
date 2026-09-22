@@ -35,6 +35,36 @@ def safe_filename(ticker: str) -> str:
     return ticker.replace("^", "_") + ".csv.gz"
 
 
+def shares_filename(ticker: str) -> str:
+    return ticker.replace("^", "_") + ".shares.csv.gz"
+
+
+def fetch_shares_outstanding(ticker: str) -> int:
+    """盡力抓歷史流通股數（給 point-in-time 市值排名用），抓不到就略過，
+    不算失敗——yfinance 對非美股的股數歷史覆蓋率本來就不穩定。"""
+    try:
+        shares = yf.Ticker(ticker).get_shares_full(start="2000-01-01")
+    except Exception as exc:
+        print(f"WARN {ticker}: 抓不到流通股數歷史，略過（{exc}）", file=sys.stderr)
+        return 0
+    if shares is None or shares.empty:
+        print(f"WARN {ticker}: 流通股數歷史是空的，略過", file=sys.stderr)
+        return 0
+
+    out_path = DATA_DIR / shares_filename(ticker)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(out_path, "wt", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Date", "Shares"])
+        for idx, value in shares.items():
+            if pd.isna(value):
+                continue
+            d = idx.date() if hasattr(idx, "date") else idx
+            writer.writerow([d.isoformat(), int(value)])
+    print(f"OK {ticker}: {len(shares)} 筆流通股數 -> {out_path}")
+    return len(shares)
+
+
 def fetch_one(ticker: str) -> None:
     hist = yf.Ticker(ticker).history(period="max", auto_adjust=False, actions=False)
     if hist.empty:
@@ -57,6 +87,7 @@ def fetch_one(ticker: str) -> None:
                 volume,
             ])
     print(f"OK {ticker}: {len(hist)} 根 -> {out_path}")
+    fetch_shares_outstanding(ticker)
 
 
 def main() -> None:
