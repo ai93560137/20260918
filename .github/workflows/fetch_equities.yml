@@ -64,11 +64,10 @@ jobs:
         run: python3 scripts/fetch_equities.py ${{ steps.m.outputs.shares }} --budget-min 70 universes/${{ steps.m.outputs.market }}/fetch_list.txt
 
       # 第二來源與品質報告是輔助，各自設時間上限，絕不能拖住主數據的 commit
-      - name: Second source（美股 Nasdaq.com）
-        if: steps.m.outputs.market == 'us'
+      - name: Second source（美股 Nasdaq.com / 日股 Yahoo!ファイナンス + JPX）
         continue-on-error: true
-        timeout-minutes: 5
-        run: python3 scripts/fetch_second_source.py --market us
+        timeout-minutes: 12
+        run: python3 scripts/fetch_second_source.py --market ${{ steps.m.outputs.market }}
 
       - name: Data quality check
         continue-on-error: true
