@@ -1,0 +1,9 @@
+quote page len=257298 token=yes
+js https://www.hkex.com.hk/lhkexw/js/marketsecurities.js?_=20200814a: ['getequityquote']
+js https://www.hkex.com.hk/lhkexw/js/quoteequities.js?_=20220105a: ['getequityquote']
+endpoints found: ['getequityquote']
+getequityquote {'sym': '700'}: jsonp=False len=998 head='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns'
+getequityquote {'sym': '00700'}: jsonp=False len=998 head='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns'
+getequityquote {'sym': '700', 'type': '0'}: jsonp=False len=998 head='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns'
+dayquot 2026-09-23: HTTP 404 len=2912
+dayquot 2026-09-22: HTTP 200 len=25719359

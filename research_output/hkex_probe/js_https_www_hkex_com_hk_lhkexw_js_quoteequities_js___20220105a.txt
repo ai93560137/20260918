@@ -1,0 +1,2340 @@
+////////////////////////////////////////////////////////////////////////////////
+// LabCI HKEX Widget - Quoteequities
+//////////////////////////////////////////////////////////////////////////////////
+
+(function($) {
+
+//################################################################################
+//################################################################################
+// The LabCI object for Generic Widget Package
+// LabCI = { WP: { ... } }
+
+if (typeof(LabCI)==="undefined") LabCI = {WP: { }};
+else if (typeof(LabCI.WP)==="undefined") LabCI.WP = { };
+
+//################################################################################
+
+// Create a new QuoteequitiesPageObj ...
+LabCI.WP.createquoteequitiespageobj = function() {
+    var pobj = LabCI.AbstractPageObj.extend("lhkexw-quoteequities", LabCI.WP.QuoteequitiesPageObj);
+    return pobj;
+};
+
+// The QuoteequitiesPageObj class
+// The main object definition is here...
+LabCI.WP.QuoteequitiesPageObj = {
+
+    ////////////////////////////////////////////////////////////////////
+    // Some setting constants
+
+    // ... @TODO
+
+    ////////////////////////////////////////////////////////////////////
+    $listpane: null,
+    $detailpane: null,
+    $searchbox: null,
+    $searchinput: null,
+    $company_level: null,
+    $scroll_tabs: null,
+    $equity_scroll_tabs1: null,
+//    $equity_scroll_tabs2: null,
+    $interval: null,
+    $dividend_level: null,
+    $dividend_table: null,
+    $comann_level: null,
+    $comann_table: null,
+    $related_level: null,
+    $relatedproducts_table: null,
+    $chartbox: null,
+    curdata: null,
+    curindexric: null,
+    curchartintopt: null,
+    hasentitlementdate: false,
+
+    ric: null,
+    sym: null,
+    currhc: null,
+    currtck: null,
+    force_ddMMM: false,
+    force_MMMyy: false,
+    sc_lang: 'en',
+    entitlementpage: 1,
+    entitlementrecperpage: 5,
+
+    ddMMMformat: '%e %b',
+    MMMyyformat: '%b %y',
+
+    initImpl: function() {
+        // Get ready
+        var that = this;
+        if (LabCI.getLang() == 'zh_HK')
+            this.sc_lang = 'zh-hk';
+        else if (LabCI.getLang() == 'chn')
+            this.sc_lang = 'zh-cn';
+        ////////////////////////////////////////////////////////////////////
+        if (this.lang != 'en'){
+            this.ddMMMformat = '%b%e日';
+            this.MMMyyformat = '%y年%b';
+        }
+
+        // Create the HTML...
+        this.$listpane = this.$pageobj.find(".listpane");
+        this.$detailpane = this.$pageobj.find(".detailpane");
+	this.$searchbox = this.$pageobj.find(".searchbox");
+	this.$searchinput = this.$searchbox.find("#tags");
+        this.$company_level = this.$pageobj.find(".company_level");
+        
+        this.$scroll_tabs = this.$detailpane.find(".hkex_scroll_tabs");
+        this.$interval = this.$detailpane.find(".interval");
+
+        this.$dividend_level = this.$pageobj.find(".dividend_level");
+        this.$dividend_table = this.$dividend_level.find(".table_divi");
+        
+        this.$comann_level = this.$pageobj.find(".comann_level");
+        this.$comann_table = this.$comann_level.find(".table_coma");
+        
+        this.$related_level = this.$pageobj.find(".related_level");
+        this.$equity_scroll_tabs1 = this.$related_level.find(".equity_scroll_tabs1");
+        this.$equity_scroll_tabs2 = this.$related_level.find(".equity_scroll_tabs2");
+        this.$relatedproducts_table = this.$related_level.find(".table_relatedproducts");
+        ////////////////////////////////////////////////////////////////////
+        this.$scroll_tabs.scrollTabs();
+        this.$equity_scroll_tabs1.scrollTabs();
+        this.$equity_scroll_tabs2.scrollTabs();
+        ////////////////////////////////////////////////////////////////////
+        
+        this.sym = LabCI.Utils.getURLParameter('sym');
+        
+        this.$scroll_tabs.find(".period").click(function(){
+            $(this).addClass("selected").siblings().removeClass("selected");
+            var c_rb = LabCI.WP.CommonRC.getMsg("interval", that.lang);
+            var intervals = that.PAGEOBJ_RESOURCEBUNDLE.conf.intervals;
+            var sup_int = that.PAGEOBJ_RESOURCEBUNDLE.conf.perintsetting[$(this).attr('id')];
+            if (sup_int){
+                that.$interval.find(".period").detach();
+                var arr = sup_int.split(',');
+                for (var i=0; i<arr.length; i++){
+                    var $item = $("<div/>").addClass("period").attr("id", intervals[arr[i]]).html(c_rb[intervals[arr[i]]]);
+                    if (i == 0)
+                        $item.addClass("selected");
+                    
+                    $item.click(function(){
+                        $(this).addClass("selected").siblings().removeClass("selected");
+                        var d;
+                        // $.each(that.curdata.futureslist, function(index, value){
+                        //     if (value.ric)
+                        //         d = value;
+                        // })
+                         
+                        that._showchart(that.ric, that.currhc, that.currtck);
+                    })
+                    
+                    that.$interval.append($item);
+                }
+            }
+            
+            //if (that.curdata){
+            //    var d;
+                // $.each(that.curdata.futureslist, function(index, value){
+                //     if (value.ric)
+                //         d = value;
+                // })
+                that._showchart(that.ric, that.currhc, that.currtck);
+            //}
+            
+//            dcsMultiTrack('WT.dl', '99', 'WT.wg_n', 'Quote', 'WT.wg_s', 'Equities', 'WT.wg_ev',  $(this).attr('id'));
+
+        });
+        this.$scroll_tabs.find(".period").eq(0).click();
+        
+        this.$equity_scroll_tabs1.find("li").click(function() {
+            if ($('.equity_scroll_tabs2').find("li").hasClass("tab_selected")) {
+                $('.equity_scroll_tabs2').find("li").removeClass("tab_selected");
+            }  
+            if($(this).hasClass("tab_selected")){
+                var rank = $(this).index();
+                switch (rank)
+                {
+                    case 0:
+                        that._loadrelateddwsdata();
+                        break;
+                    case 1:
+                        that._loadrelatedcbbcsdata();
+                        break;
+                    case 2:
+                        that._loadrelatediwsdata();
+                        break;
+                }
+            }
+        });
+        
+        this.$equity_scroll_tabs2.find("li").removeClass("tab_selected");
+        this.$equity_scroll_tabs2.find("li").click(function() {
+            if ($('.equity_scroll_tabs1').find("li").hasClass("tab_selected")) {
+                $('.equity_scroll_tabs1').find("li").removeClass("tab_selected");
+            }  
+            if($(this).hasClass("tab_selected")){
+                var rank = $(this).index();
+                switch (rank)
+                {
+                    case 0:
+                        that._loadrelatedoptionsdata();
+                        break;
+                    case 1:
+                        that._loadrelatedfuturesdata();
+                        break;
+                }
+            }
+        });
+
+        var c_rb = LabCI.WP.CommonRC.getMsg("chart", that.lang);
+        //  Highcharts 
+        Highcharts.setOptions({
+            global: {
+                timezone: 'Asia/Hong_Kong'
+            },
+            lang: {
+                numericSymbols: null,
+                thousandsSep: ',',
+                noData: c_rb['noData'],
+                month: c_rb['months'],
+                shortMonths: c_rb['short_months']
+            }
+        });
+
+        this.$dividend_level.find(".loadmore").click(function() {
+            that._loadmoreentitlement();
+        });
+
+        this.$comann_level.find(".sublink a, .title_link").click(function() {
+            var ticker = Array(Math.max(5 - String(that.sym).length + 1, 0)).join(0) + that.sym;
+            var path;
+            var to_d, to_m, to_y;
+            if (that.lang=='en') {
+                path = LabCI.SSDLConf.HKEXNEWS_EN_PATH;
+            } else {
+                path = LabCI.SSDLConf.HKEXNEWS_CHI_PATH;
+            }
+            var t = new Date();
+            to_d = t.getDate();
+            if (to_d < 10) to_d = '0' + to_d;
+            to_m = t.getMonth()+1;
+            if (to_m <10 ) to_m = '0' + to_m;
+            to_y = t.getFullYear();
+            
+            var f = $('<form>').attr("method", "POST").attr("action", path).attr("target", "_blank");
+            f.append($('<input>').attr('name', 'current_page').attr('value', '1'));
+            f.append($('<input>').attr('name', 'stock_market').attr('value', 'HKEX'));
+            f.append($('<input>').attr('name', 'rdo_SelectSortBy').attr('value', 'DateTime'));
+            f.append($('<input>').attr('name', 'txt_stock_code').attr('value', ticker));
+            f.append($('<input>').attr('name', 'rdo_SelectDocType').attr('value', ''));
+            f.append($('<input>').attr('name', 'sel_DocTypePrior2006').attr('value', '-1'));
+            f.append($('<input>').attr('name', 'sel_DocTypeAfter2006').attr('value', ''));
+            f.append($('<input>').attr('name', 'sel_tier_1').attr('value', '-2'));
+            f.append($('<input>').attr('name', 'sel_tier_2').attr('value', '-2'));
+            f.append($('<input>').attr('name', 'sel_tier_2_group').attr('value', '-2'));
+            f.append($('<input>').attr('name', 'IsFromNewList').attr('value', 'False'));
+            f.append($('<input>').attr('name', 'txtKeyWord').attr('value', ''));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseFrom_d').attr('value', '01'));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseFrom_m').attr('value', '04'));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseFrom_y').attr('value', '1999'));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseTo_d').attr('value', to_d));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseTo_m').attr('value', to_m));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseTo_y').attr('value', to_y));
+            $(document.body).append(f);
+            f.submit();
+            f.detach();
+        });
+        
+        this.$company_level.find(".listing_cat_row a").click(function() {
+            var ticker = Array(Math.max(5 - String(that.sym).length + 1, 0)).join(0) + that.sym;
+            var path;
+            var to_d, to_m, to_y;
+            var newstitle;
+            if (that.lang=='en') {
+                path = LabCI.SSDLConf.HKEXNEWS_EN_PATH;
+                newstitle = 'Company Information Sheet';
+            } else if (that.lang=='zh_HK') {
+                path = LabCI.SSDLConf.HKEXNEWS_CHI_PATH;
+                newstitle = '公司資料報表';
+            } else if (that.lang=='chn') {
+                path = LabCI.SSDLConf.HKEXNEWS_CHI_PATH;
+                newstitle = '公司資料報表';
+                //newstitle = '公司资料报表';
+            }
+            var t = new Date();
+            to_d = t.getDate();
+            if (to_d < 10) to_d = '0' + to_d;
+            to_m = t.getMonth()+1;
+            if (to_m <10 ) to_m = '0' + to_m;
+            to_y = t.getFullYear();
+            
+            var f = $('<form>').attr("method", "POST").attr("action", path).attr("target", "_blank");
+            f.append($('<input>').attr('name', 'current_page').attr('value', '1'));
+            f.append($('<input>').attr('name', 'stock_market').attr('value', 'HKEX'));
+            f.append($('<input>').attr('name', 'rdo_SelectSortBy').attr('value', 'DateTime'));
+            f.append($('<input>').attr('name', 'txt_stock_code').attr('value', ticker));
+            f.append($('<input>').attr('name', 'rdo_SelectDocType').attr('value', ''));
+            f.append($('<input>').attr('name', 'sel_DocTypePrior2006').attr('value', '-1'));
+            f.append($('<input>').attr('name', 'sel_DocTypeAfter2006').attr('value', ''));
+            f.append($('<input>').attr('name', 'sel_tier_1').attr('value', '-2'));
+            f.append($('<input>').attr('name', 'sel_tier_2').attr('value', '-2'));
+            f.append($('<input>').attr('name', 'sel_tier_2_group').attr('value', '-2'));
+            f.append($('<input>').attr('name', 'IsFromNewList').attr('value', 'False'));
+            f.append($('<input>').attr('name', 'txtKeyWord').attr('value', newstitle));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseFrom_d').attr('value', '01'));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseFrom_m').attr('value', '04'));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseFrom_y').attr('value', '1999'));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseTo_d').attr('value', to_d));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseTo_m').attr('value', to_m));
+            f.append($('<input>').attr('name', 'sel_DateOfReleaseTo_y').attr('value', to_y));
+            $(document.body).append(f);
+            f.submit();
+            f.detach();
+        });
+        
+//        that.$related_level.find(".sublink a").click(function() {
+//            window.location.href = "/Market-Data/Securities-Prices/Derivative-Warrants?sc_lang=" + that.lang;
+//        });
+        
+        //export to excel
+        that.$detailpane.find(".ete").on('click',function(){
+            that._exportToExcel();
+        });
+
+        ////////////////////////////////////////////////////////////////////
+        // Prepare the resize function
+        // ... this has to be created here, because when resize() is called, the "this" will be in a different context
+        // ... hence, use "that" in the function scope here to build this resize() function
+        // ... a bad trick, but works ;)
+        
+        this.resize = function() {
+            that.$pageobj.delaycall("resize", function() {
+                that.resizeImpl();
+//                if($(window).width()<=1000){
+//                    that.loaddata();
+//                }else{
+//                    that.$pageobj.find(".mCSB_scrollTools").css("display","none");
+//                }
+            }, 100);
+        };
+
+        ////////////////////////////////////////////////////////////////////
+
+        new ResizeSensor(this.$detailpane[0], function() {
+            that.$chartbox.highcharts().reflow();
+        });
+
+        return this; // chain this
+    },
+
+    ////////////////////////////////////////////////////////////////////
+
+    resize: null,
+
+    resizeImpl: function() {
+		/* SPECIAL HANDLING FOR TOOLTIP IN OVERFLOW */
+		
+		$(".tooltip.MCB").off("mouseover").on("mouseover",function(){
+			$ttt = $(".tooltip.MCB .tooltiptext")
+			$ttt.css({position: 'absolute',bottom: '125%',left: '50%'});
+			
+			$ttt_o = $ttt.offset();
+			
+			$ttt.css({position: 'fixed',top: $ttt_o.top - $(window).scrollTop() ,left: $ttt_o.left, bottom: 'inherit'});
+		});
+		
+		$(".tooltip.MCB").off("mouseout").on("mouseout",function(){
+			$ttt = $(".tooltip.MCB .tooltiptext")
+			$ttt.css({position: 'absolute',bottom: '125%',left: '50%',top:'inherit'});
+			
+		});
+		
+		////////////////////////////////////////////////////////////////////
+		
+		
+        var tprightW = this.$detailpane.width();
+        if(tprightW > 400){
+            this.$scroll_tabs.find(".scroll_tab_inner li").css({
+                "width":"8.6%",
+                "margin-right":"3px",
+                "margin-left":"3px",
+                "padding":"0",
+                "text-align":"center"
+            });
+        }else{
+            this.$scroll_tabs.find(".scroll_tab_inner li").css({
+                "width":"auto",
+                "margin-right":"3px",
+                "margin-left":"3px",
+                "padding":"0 10px",
+                "text-align":"center"
+            });
+        }
+        //title
+        var tprightT = this.$related_level.width();
+        if(tprightT > 400){
+        //     this.$related_level.find(".scroll_tab_inner li").css({
+        //         "width":"30%",
+        //         "line-height":"40px"
+        //     });
+        // }else{
+            // this.$related_level.find(".scroll_tab_inner li").css({
+            //     "width":"25%",
+            //     "line-height":"20px"
+            // });
+        }
+        
+        this.resizeCustomScroll();
+    },
+
+    resizeCustomScroll: function(){
+        if(Math.abs(this.$dividend_level.find(".diviover").width() - this.$dividend_level.find(".table_divi").width()) < 2){
+            this.$dividend_level.find(".diviover").mCustomScrollbar("disable");
+        }else{
+            this.$dividend_level.find(".diviover").mCustomScrollbar("update");  
+            this.$dividend_level.find(".diviover").mCustomScrollbar({
+                axis:"x",
+                theme:"my",
+                advanced:{
+                    autoExpandHorizontalScroll:true
+                },
+                scrollButtons:{
+                    enable:true,
+                    scrollType:"stepped"
+                },
+                mouseWheel:{deltaFactor:40}
+            });
+        }
+    },
+    ////////////////////////////////////////////////////////////////////
+
+    showImpl: function(statedata) {
+//        // Get ready
+        $(window).resize(this.resize);
+        this.resizeImpl();
+        if($(window).width()<=1000){
+//            this.loaddata();
+        }
+        this._loadquotedata();
+        this._loadentitlementdata();
+//        this._loadnewsdata();
+        this._loadrelateddwsdata();
+        
+        return this; // chain this
+    },
+
+    hideImpl: function() {
+        var that = this;
+
+        // Unbind the resize event
+        $(window).off(_RESIZE_EVENT, this.resize);
+
+        return this; // chain this
+    },
+
+    refreshImpl: function() {
+        return this; // chain this
+    },
+
+    resetImpl: function() {
+        return this; // chain this
+    },
+
+    ////////////////////////////////////////////////////////////////////
+
+    getStateDataImpl: function() {
+        return { };
+    },
+
+    ////////////////////////////////////////////////////////////////////
+    curdata: null,
+    
+    _initchart: function() {
+        this.force_ddMMM = false;
+        this.force_MMMyy = false;
+        this.$chartbox = this.$detailpane.find(".chartbox").highcharts('StockChart', {
+            chart: {
+                alignTicks: false,
+                panning: false,
+                pinchType: 'none'
+            },
+            rangeSelector: {
+                enabled: false
+            },
+            navigator: {
+                enabled: false
+            },
+            scrollbar: {
+                enabled: false
+            },
+            credits:{
+                enabled: false
+            },
+            title: {
+                text: null
+            },
+            tooltip: {
+                crosshairs: [{
+                    width: 1,
+                    color: 'gray',
+                    dashStyle: 'dot',
+                    zIndex: 22
+                }],
+                padding: 5,
+                positioner:function(labelWidth, labelHeight, point){
+                    var x = point.plotX;
+                    var chart = this.chart;
+
+                    if (x - labelWidth/2 < - chart.plotLeft)
+                        x  = 0;
+                    else if ((x + labelWidth) > (chart.plotLeft + chart.plotWidth))
+                        x -= (x + labelWidth) - (chart.plotLeft + chart.plotWidth);
+                    
+                    return {x : x, y : 0};
+                },
+                formatter: function () {
+                    return Highcharts.numberFormat(this.y, 3) + ' (' +Highcharts.dateFormat('%H:%M', new Date(this.x)) +')';
+                }
+            },
+            exporting: {
+                enabled: false
+            },
+            plotOptions: {
+                series: {
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutBounce'
+                    }
+                }
+            },
+            series: [{
+                name: '',
+                yAxis: 0,
+                type: 'area',
+                threshold: null,
+                tooltip: {
+                    valueDecimals: 3
+                },
+                color: '#7AC1E4',
+                lineWidth: 1,
+                fillColor: 'rgba(180,222,242, 0.75)',
+                marker: {
+                    states: {
+                        hover: {
+                            fillColor: "#FF0000",
+                            radiusPlus: 2
+                        }
+                    }
+                },
+                dataGrouping: {
+                    enabled: false
+                }
+            },{
+                type: 'column',
+                name: '',
+                yAxis: 1,
+                lineWidth: 1,
+                color: '#C7E6F5',
+                dataGrouping: {
+                    enabled: false
+                }
+            }],
+            yAxis: [{
+                opposite: false,
+                labels: {
+                    style: {
+                        "color": "#13426B"
+                    },
+                    format: '{value:.' + '3' + 'f}',
+                    y: 4
+                },
+                gridLineColor: "#EDEDED",
+                gridLineWidth: 1,
+                startOnTick: true,
+                endOnTick: true,
+                height: '75%',
+                showLastLabel: true,
+                tickAmount: 5
+            }, {
+                opposite: false,
+                lineColor: 'none',
+                labels: {
+                    style: {
+                        "color": "#13426B"
+                    },
+                    align: 'right',
+                    formatter: function () {
+                        if (this.value.toFixed(0) >= 1000000) {
+                            return this.value.toFixed(0) / 1000000 + 'M';
+                        } else if (this.value.toFixed(0) >= 1000) {
+                            return this.value.toFixed(0) / 1000 + 'K';
+                        } else{
+                            return this.value.toFixed(0);
+                        }
+                    },
+                    y: 4
+                },
+                top: '80%',
+                height: '20%',
+                lineWidth: 1,
+                gridLineColor: "#EDEDED",
+                gridLineWidth: 1,
+                startOnTick: false,
+                endOnTick: false,
+                offset: 0,
+                showLastLabel: true,
+                tickAmount: 3
+            }],
+            xAxis: {
+
+                lineColor: "#13426B",
+                labels: {
+                    style: {
+                    "color": "#13426B"
+                    },
+                    formatter: function(){
+                        return Highcharts.dateFormat('%H:%M', new Date(this.value));
+                    }
+                },
+                tickColor: "#13426B",
+                tickPosition: 'inside',
+                tickLength: 5,
+                zIndex: 22,
+                startOnTick: false,
+                ordinal: false,
+                tickPositioner: function(){
+                    var positions = [],
+                        tick = Math.floor(this.min);
+
+                    var start_date = new Date(tick);
+                    start_date.set({minute: 0});
+
+                    if (this.max !== null && this.min !== null) {
+                        while (start_date.getTime() <= this.max){
+                            positions.push(start_date.getTime());
+                            start_date.add({hours: 1});
+                        }
+                    }
+
+                    return positions;
+                }
+            }
+        });
+        this.$chartbox.highcharts().hideNoData();
+    },
+
+    _getSelectedSpan: function() {
+        var sel = this.$interval.find(".period.selected").attr("id");
+        if (sel == 'min')
+            return 0;
+        else if (sel == 'min5')
+            return 2;
+        else if (sel == 'min15')
+            return 3;
+        else if (sel == 'hourly')
+            return 5;
+        else if (sel == 'daily')
+            return 6;
+        else if (sel == 'weekly')
+            return 7;
+        else if (sel == 'monthly')
+            return 8;
+        else if (sel == 'quarterly')
+            return 9;
+    },
+
+    _getSelectedInterval: function() {
+        var sel = this.$scroll_tabs.find(".period.selected").attr("id");
+        if  (sel == 'p1d')
+            return 0;
+        else if (sel == 'p5d')
+            return 1;
+        else if (sel == 'p1m')
+            return 2;
+        else if (sel == 'p3m')
+            return 3;
+        else if (sel == 'p6m')
+            return 4;
+        else if (sel == 'p1y')
+            return 5;
+        else if (sel == 'p2y')
+            return 6;
+        else if (sel == 'p5y')
+            return 7;
+        else if (sel == 'ytd')
+            return 9;
+        else if (sel == 'p10y')
+            return 8;
+    },
+
+    _getDefaultSpan: function(interval) {
+        var span = 6;
+        if (interval == 0) {
+            span = 0;
+        } else if (interval == 1) {
+            span = 3;
+        }
+        return span;
+    },
+
+    _showchart: function(ric, pClose, tick) {
+        var that = this;
+        
+        if (!ric)
+            return;
+        this._initchart();
+        
+        this.$chartbox.highcharts().yAxis[0].removePlotLine('pClose');
+        this.$chartbox.highcharts().yAxis[0].setExtremes(null, null);
+        this.$chartbox.highcharts().hideNoData();
+        
+        this.$pageobj.loaddata("getchartdata2", "getchartdata2",
+        {
+            "hchart": 1,
+            "span": that._getSelectedSpan(),
+            "int": that._getSelectedInterval(),
+            "ric": ric,
+            "token": LabCI.getToken()
+        },
+        function(result) {
+            if (result && result.data) {
+                var $chart = that.$chartbox.highcharts();                
+                
+                var start_h = result.data.start_h;
+                var start_m = result.data.start_m;
+                var end_h = result.data.end_h;
+                var end_m = result.data.end_m;
+
+                var weekend_fr = Date.UTC(2010, 0, 1, end_h, end_m  + 1, 0, 0);
+                var weekend_to = Date.UTC(2010, 0, 4, start_h, start_m - 1, 0, 0);
+                
+                var night_fr = Date.UTC(2010, 1, 3, end_h, end_m  + 1, 0, 0);
+                var night_to = Date.UTC(2010, 1, 4, start_h, start_m - 1, 0, 0);
+
+                if (that._getSelectedSpan() < 6){
+                    if (that._getSelectedSpan() == 5){
+                        weekend_fr = Date.UTC(2010, 0, 1, end_h, end_m  + 1, 0, 0);
+                        weekend_to = Date.UTC(2010, 0, 4, start_h-1, 59, 0, 0);
+                        night_fr = Date.UTC(2010, 1, 3, end_h, end_m  + 1, 0, 0);
+                        night_to = Date.UTC(2010, 1, 4, start_h-1, 59, 0, 0);
+                    }
+                    
+                    var format = '%H:%M';
+
+                    if (that._getSelectedInterval() == 1)
+                        format = '%m/%d %H:%M';
+
+                    $chart.tooltip.options.formatter = function() {
+                        return Highcharts.numberFormat(this.points[0].y, 3) + ' (' +Highcharts.dateFormat(format, new Date(this.x)) +')<br/>Vol: ' + Highcharts.numberFormat(this.points[1].y, 0);
+                    }
+
+                    var breaks = [{ // Weekends
+                        from: weekend_fr,
+                        to: weekend_to,
+                        repeat: 7 * 24 * 36e5
+                    }
+                    ,{
+                        from: Date.UTC(2017, 3, 14, start_h, start_m, 0, 0),
+                        to: Date.UTC(2017, 3, 14, end_h, end_m, 0, 0)
+                    }
+                    ,{
+                        from: Date.UTC(2017, 3, 17, start_h, start_m, 0, 0),
+                        to: Date.UTC(2017, 3, 17, end_h, end_m, 0, 0)
+                    }
+                    ];
+
+                    if (night_to.valueOf() - night_fr.valueOf() < 86340000){
+                        breaks.push({ // Nights
+                            from: night_fr,
+                            to: night_to,
+                            repeat: 24 * 36e5
+                        });
+                    }
+
+                    $chart.xAxis[0].update({breaks :breaks});
+                    $chart.hideNoData();
+                    $chart.xAxis[0].setExtremes(result.data.datalist[0][0], result.data.datalist[result.data.datalist.length-1][0]);
+                    $chart.hideNoData();
+                    
+                    if (that._getSelectedInterval() == 0){  // 1 Day
+                        
+                    
+                    }else{  // 5 Day
+                        $chart.xAxis[0].update({tickPositioner: function(){
+                            var positions = [],
+                                tick = Math.floor(this.min);
+
+                            var start_date = new Date(tick);
+                            start_date.set({hour: start_h + 8, minute: start_m});
+
+                            if (this.max !== null && this.min !== null) {
+                                while (start_date.getTime() <= this.max){
+                                    positions.push(start_date.getTime());
+                                    start_date.add({days: 1});
+                                }
+                            }
+
+
+                            return positions;
+                        }});
+                    $chart.hideNoData();
+                    }
+                    if (that._getSelectedInterval() == 1){
+                        $chart.xAxis[0].update({labels: {
+                            style: {
+                            "color": "#13426B"
+                            },
+                            formatter: function(){
+                                return Highcharts.dateFormat(that.ddMMMformat, new Date(this.value));
+                            }
+                        }
+                        });
+                        $chart.hideNoData();
+                    }
+                }else{
+                    $chart.xAxis[0].update({labels: {
+                        style: {
+                        "color": "#13426B"
+                        },
+                        formatter: function(){
+                            if (result.data.datalist.length >= 3 && result.data.datalist[result.data.datalist.length-2][0] - result.data.datalist[1][0] > 31556952000){
+                                return Highcharts.dateFormat(that.MMMyyformat, new Date(this.value));
+                            }else if (that.force_MMMyy){
+                                return Highcharts.dateFormat(that.MMMyyformat, new Date(this.value));
+                            }else if (!that.force_ddMMM && (that._getSelectedInterval() == 6 || that._getSelectedInterval() == 7)){
+                                return Highcharts.dateFormat(that.MMMyyformat, new Date(this.value));
+                            }else if (!that.force_ddMMM && that._getSelectedInterval() == 8)
+                                return Highcharts.dateFormat('%Y', new Date(this.value));
+                            else
+                                return Highcharts.dateFormat(that.ddMMMformat, new Date(this.value));
+                            }
+                        }
+                    });
+                    $chart.hideNoData();
+                    
+                    $chart.xAxis[0].update({tickPositioner: function(){
+                        var positions = [],
+                            tick = Math.floor(this.dataMin);
+                            
+                        if (result.data.datalist.length == 2)
+                            return positions;
+
+                        var date = new Date(tick);
+                        if (that._getSelectedInterval() == 2 || that._getSelectedInterval() == 3){ // 1 Month or 3 Months
+                            date.moveToDayOfWeek(1, -1).setHours(0);
+                            if (this.dataMax !== null && this.dataMin !== null) {
+                                while (date.getTime() <= this.dataMax){
+                                    date.add({days: 7});
+                                    positions.push(date.getTime());
+                                }
+                            }
+                        }else if (that._getSelectedInterval() == 5 || that._getSelectedInterval() == 6){    // 1 Year or 2 Year
+                            date.set({month: 0, day: 1}).setHours(0);
+                            if (this.dataMax !== null && this.dataMin !== null) {
+                                while (date.getTime() <= this.dataMax){
+                                    date.addMonths(3);
+                                    positions.push(date.getTime());
+                                }
+                            }
+                        }else if (that._getSelectedInterval() == 7 || that._getSelectedInterval() == 8){    // 5 Year or 10 Year
+                            date.set({month: 0, day: 1}).setHours(0);
+                            if (this.dataMax !== null && this.dataMin !== null) {
+                                while (date.getTime() <= this.dataMax){
+                                    date.addYears(1);
+                                    positions.push(date.getTime());
+                                }
+                            }
+                        }else {
+                            date.set({day: 1}).setHours(0);
+                            if (this.dataMax !== null && this.dataMin !== null) {
+                                while (date.getTime() <= this.dataMax){
+                                    date.addMonths(1);
+                                    positions.push(date.getTime());
+                                }
+                            }
+                        }
+                        
+                        if (positions.length > 0 && $(window).width() <= 1000){
+                            if (positions.length > 4 && (that._getSelectedInterval() == 6 || that._getSelectedInterval() == 7 || that._getSelectedInterval() == 8))
+                                that.force_MMMyy = true;
+                            
+                            var s = Math.max(Math.ceil(positions.length/3), 1);
+                            var pos = [] ;
+                            for (var i=0; i<positions.length; i+=s){
+                                pos.push(positions[i]);
+                            }
+                            positions = pos;
+                        }
+                        
+                        if (($(window).width() > 1000 && positions.length <= 5) || ($(window).width() < 1000 && positions.length <= 4)){
+                            positions = [];
+                            var last = result.data.datalist.length - 1;
+                            if (that._getSelectedSpan() >= 6){
+                                if (that._getSelectedSpan() >= 8 && result.data.datalist.length >= 6)
+                                    last = result.data.datalist.length - 3;
+                                else if (!result.data.datalist[result.data.datalist.length - 1][1])
+                                    last = result.data.datalist.length - 2;
+                            }
+                            
+                            if (result.data.datalist.length < 8) {
+                                for (var i=0; i<=last; i++){
+                                    var date = new Date(result.data.datalist[i][0]);
+                                    positions.push(date.getTime());
+                                }
+                            }else {
+//                                var step = Math.floor(Math.floor((result.data.datalist[last][0] - result.data.datalist[1][0]) / 86400000) / 5);
+                                var sector = $(window).width() < 1000 ? 3 : 5;
+                                var step = Math.floor(Math.floor((result.data.datalist[last][0] - result.data.datalist[1][0]) / 86400000) / sector);
+                                var date = new Date(result.data.datalist[last][0]);
+                                date.setHours(0);
+                                var start = new Date(result.data.datalist[1][0]);
+                                while (date >= start){
+                                    positions.push(date.getTime());
+                                    date.addDays(-step);
+                                }
+                            }
+                            
+                            that.force_ddMMM = true;
+                        }else {
+                            that.force_ddMMM = false;
+                        }
+                        
+                        return positions;
+                    }});
+                    $chart.hideNoData();
+                    
+                    $chart.tooltip.options.formatter = function() {
+                        return Highcharts.numberFormat(this.y, 3) + ' (' +Highcharts.dateFormat('%m/%d/%Y', new Date(this.x)) +')<br/>Vol: ' + Highcharts.numberFormat(this.points[1].y, 0);
+                    }
+
+                }
+
+                var close = [];
+                var volume = [];
+                var min = parseFloat(LabCI.Utils.removeCommaSeparators(pClose));
+                var max = parseFloat(LabCI.Utils.removeCommaSeparators(pClose));
+
+                for (var i=1; i<result.data.datalist.length; i++){
+                    var val = result.data.datalist[i][4];
+                    if (!val && result.data.datalist.length == 2){
+                        continue;
+                    }
+                    
+                    var f = parseFloat(val);
+                    if (isNaN(min))
+                        min = f;
+                    else if (f < min)
+                        min = f;
+                        
+                    if (isNaN(max))
+                        max = f;
+                    else if (f > max)
+                        max = f;
+
+                    close.push([result.data.datalist[i][0], val]);
+                    volume.push([result.data.datalist[i][0], result.data.datalist[i][5]]);
+                }
+
+                if (!isNaN(min) || !isNaN(max)){
+                    if (!isNaN(parseFloat(tick))){
+                        min -= parseFloat(tick);
+                        max += parseFloat(tick);
+                    }
+                    $chart.yAxis[0].setExtremes(min,max);
+                    $chart.hideNoData();
+                    
+                    if (!isNaN(parseFloat(tick)) && max - min < 10*tick){
+                        $chart.yAxis[0].update({tickInterval: parseFloat(tick)});
+                        $chart.hideNoData();
+                    }
+                }
+//                $chart.series[0].setData(close, false);
+
+                var series = {
+                        name: '',
+                        yAxis: 0,
+                        type: 'area',
+                        threshold: null,
+                        tooltip: {
+                            valueDecimals: 3
+                        },
+                        color: '#7AC1E4',
+                        lineWidth: 1,
+                        fillColor: 'rgba(180,222,242, 0.75)',
+                        marker: {
+                            states: {
+                                hover: {
+                                    fillColor: "#FF0000",
+                                    radiusPlus: 2
+                                }
+                            }
+                        },
+                        data: close,
+                        dataGrouping: {
+                            enabled: false
+                        }
+                    };
+
+                var volumeSeries = {
+                    type: 'column',
+                    name: '',
+                    data: volume,
+                    yAxis: 1,
+                    maxPointWidth: 5,
+                    borderColor: '#7AC1E4',
+                    color: '#7AC1E4',
+                    dataGrouping: {
+                        enabled: false
+                    }
+                };
+
+                $chart.series[1].remove();
+                $chart.series[0].remove();
+                $chart.addSeries(series);
+                $chart.addSeries(volumeSeries);
+                
+                if (pClose){
+                    var labely = 15;
+    //                var low_value = parseFloat(LabCI.Utils.removeCommaSeparators(low));
+                    var pClose_value = parseFloat(LabCI.Utils.removeCommaSeparators(pClose));
+
+                    var axisy = $chart.yAxis[0].toPixels($chart.yAxis[0].min, false);
+                    var liney = $chart.yAxis[0].toPixels(pClose_value, false)
+
+                    if (axisy - liney < 60)
+                        labely = -15;
+
+                    var c_rb = LabCI.WP.CommonRC.getMsg("chart", that.lang);
+                    $chart.yAxis[0].addPlotLine({
+                        id: 'pClose',
+                        value: LabCI.Utils.removeCommaSeparators(pClose),
+                        color: '#13426B',
+                        dashStyle: 'dot',
+                        width: 1,
+                        label: {
+                            align: 'right',
+                            text: c_rb['pclose'] + '<br/>' + pClose,
+                            useHTML: true,
+                            style: {
+                                "color": "#13426B",
+                                "line-height": "14px",
+                                "font-size": '0.875rem'
+                            },
+                            x: -20,
+                            y: labely
+                        },
+                        zIndex: 22
+                    });
+                }
+
+//                $chart.redraw();
+            }else{
+                var $chart = that.$chartbox.highcharts();
+//                $chart.series[0].setData([]);
+                $chart.series[1].remove();
+                $chart.series[0].remove();
+                $chart.showNoData();
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadstandcom: function(){
+           
+     },
+    
+    _loadfutures: function(inx){
+         
+    },
+    
+    _loadquotedata: function(){
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityquote", "getequityquote", {
+            sym: this.sym,
+            token: LabCI.getToken(),
+            lang: lang
+        },
+        function(result) {
+            if (result && result.data) {
+                if (result.data.responsecode == 002 || result.data.quote.product_type != "EQTY")
+                    location.href ="https://www.hkex.com.hk/CustomErrorHandler/404.aspx";
+				
+				
+                that.ric = result.data.quote.ric;
+                that.currhc = result.data.quote.hc;
+                that.currtck = result.data.quote.tck;
+                
+                if (result.data.quote.product_subtype== 'EW'){
+                    that.$company_level.find(".company_txt").hide();
+                    that.$company_level.find(".company_list").not('.eqty_warrant').hide();
+                    that.$company_level.find('.eqty_warrant').show();
+                    that.$company_level.find('.eqty_warrant_row').show();
+                    
+                    that.$company_level.find(".eqty_warrant").find('.col_ew_desc').setValue(result.data.quote.ew_desc);
+                    var strike_ccy = LabCI.WP.CommonRC.currency2display(result.data.quote.ew_strike_cur, that.lang);
+                    that.$company_level.find(".eqty_warrant").find('.col_ew_sub_right').setValue(result.data.quote.ew_sub_right, '', strike_ccy);
+                    that.$company_level.find(".eqty_warrant").find('.col_ew_strike').setValue(result.data.quote.ew_strike, '', strike_ccy);
+                    that.$company_level.find(".eqty_warrant").find('.col_ew_underlying_code').setValue(result.data.quote.ew_underlying_code);
+                    
+//                    that.$company_level.find(".eqty_warrant").find('.col_ew_amt_os').setValue(result.data.quote.ew_amt_os + ' ' + result.data.quote.ew_amt_os_cur + '<br/>(' + result.data.quote.ew_amt_os_dat +')');
+                    if (result.data.quote.ew_amt_os_cur==='UNITs')
+                        that.$company_level.find(".eqty_warrant").find('.col_ew_amt_os .val').setValue(result.data.quote.ew_amt_os, 'Units');
+                    else{
+                        var amt_os_ccy = LabCI.WP.CommonRC.currency2display(result.data.quote.ew_amt_os_cur, that.lang);
+                        that.$company_level.find(".eqty_warrant").find('.col_ew_amt_os .val').setValue(result.data.quote.ew_amt_os, '', amt_os_ccy);
+                    }
+                    that.$company_level.find(".eqty_warrant").find('.col_ew_amt_os .dat').setValue('(' + result.data.quote.ew_amt_os_dat +')');
+                    that.$company_level.find(".eqty_warrant").find('.col_ew_sub_per').setValue(result.data.quote.ew_sub_per_from + that.pageobj_rb.msg.company_level.ew_to + result.data.quote.ew_sub_per_to);
+                    
+                    that.$company_level.find(".eqty_warrant").find(".col_ew_entitlement_ratio").setValue(result.data.quote.entitlement_ratio);
+                    that.$company_level.find(".eqty_warrant").find(".col_ew_listdate").setValue(result.data.quote.listing_date);
+                    that.$company_level.find(".eqty_warrant").find(".col_ew_trd_ccy").setValue(result.data.quote.ccy);
+                    
+                }else{
+                    that.$company_level.find(".company_txt").show();
+                    that.$company_level.find(".company_list").not('.eqty_warrant').show();
+                }
+                
+                
+                var ccy = LabCI.WP.CommonRC.currency2display(result.data.quote.ccy, that.lang);
+                that.$pageobj.find(".title .col_longname").setValue(result.data.quote.nm.toUpperCase() + " (" + result.data.quote.sym + ")");
+                
+                 if (result.data.quote.multiple_counter && result.data.quote.multiple_counter.length > 0){
+                    var $multiple_counter_code = $("<span/>");
+                     for (var i=0; i<result.data.quote.multiple_counter.length; i++) { 
+                        var counter_trading_currency = LabCI.WP.CommonRC.currency2fulldisplay(result.data.quote.multiple_counter[i].counter_trading_currency, that.lang);                            
+                        var value_txt = counter_trading_currency +' '+ result.data.quote.counter_label + ' ('+result.data.quote.multiple_counter[i].counter_sym+')';
+                        var symbol = result.data.quote.multiple_counter[i].counter_sym;
+                        var url = '/Market-Data/Securities-Prices/Equities/Equities-Quote?sym=' + symbol + '&sc_lang=' + that.sc_lang;
+                        $multiple_counter_code.append($("<a/>").setValue(value_txt).attr("href", url));     
+                    }
+                    that.$pageobj.find(".title .multiple_counter").append($multiple_counter_code);
+                }
+                
+                that.$listpane.find(".col_name").setValue((result.data.quote.nm_s?result.data.quote.nm_s:"-") + " (" + (result.data.quote.sym?result.data.quote.sym:"-") + ")");
+                that.$listpane.find(".col_ccy").setValue(ccy);
+                that.$listpane.find(".col_last").setValue(result.data.quote.ls, null, null, true, "N/A");
+                var updownClass = LabCI.Utils.getUpDownClass(result.data.quote.nc);
+                that.$listpane.find(".col_change .nc").removeClass(".upval .downval").addClass(updownClass).setValue(result.data.quote.nc);
+                that.$listpane.find(".col_change .pc").removeClass(".upval .downval").addClass(updownClass).setValue("(" + (result.data.quote.pc?result.data.quote.pc+"%":"-") + ")");
+                
+                if (result.data.quote.trdstatus=="S") {
+                    if (that.lang=="en") {
+                        that.$listpane.find(".susico").removeClass("suspend").addClass("suspend");
+                    } else {
+                        that.$listpane.find(".susico").removeClass("suspend_ch").addClass("suspend_ch");
+                    }
+                }
+                
+                that.$listpane.find(".col_prevcls").setValue(result.data.quote.hc, null, ccy);
+                that.$listpane.find(".col_open").setValue(result.data.quote.op, null, ccy);
+                that.$listpane.find(".col_lotsize").setValue(result.data.quote.lot);
+                that.$listpane.find(".col_bid").setValue(result.data.quote.bd, null, ccy);
+                that.$listpane.find(".col_ask").setValue(result.data.quote.as, null, ccy);
+                that.$listpane.find(".col_volume").setValue(result.data.quote.vo, result.data.quote.vo_u);
+                that.$listpane.find(".col_turnover").setValue(result.data.quote.am, result.data.quote.am_u, ccy);
+                
+                if (result.data.quote.h_share_flag === true){
+                    $abbr = $("<abbr/>").addClass("tooltiptext tooltip_mktcap").html(that.pageobj_rb.msg.listpane.h_share);
+                    that.$listpane.find(".col_mktcap").setValue(result.data.quote.mkt_cap, result.data.quote.mkt_cap_u, ccy).addClass("tooltip").append($abbr);
+                    that.$listpane.find(".h_share_row").show();
+                }else {
+                    that.$listpane.find(".col_mktcap").setValue(result.data.quote.mkt_cap, result.data.quote.mkt_cap_u, ccy);                
+                    that.$listpane.find(".h_share_row").hide();
+                }
+                
+                that.$listpane.find(".col_pe").setValue(result.data.quote.pe, 'x');
+                that.$listpane.find(".col_divyield").setValue(result.data.quote.div_yield, '%');
+                
+                if (parseFloat(result.data.quote.eps) == 0) {
+                    that.$listpane.find(".col_eps").setValue("-");
+                } else {
+                    that.$listpane.find(".col_eps").setValue(result.data.quote.eps, null, LabCI.WP.CommonRC.currency2display(result.data.quote.eps_ccy, that.lang), true);
+                }
+                
+                that.$listpane.find(".col_high").setValue(result.data.quote.hi, null, ccy);
+                that.$listpane.find(".col_low").setValue(result.data.quote.lo, null, ccy);
+                that.$listpane.find(".col_high52").setValue(result.data.quote.hi52, null, ccy);
+                that.$listpane.find(".col_low52").setValue(result.data.quote.lo52, null, ccy);
+                
+                if (result.data.quote.rs_stock_flag === true){
+                    that.$listpane.find(".rs_txt_row").show();
+                } else {
+                    that.$listpane.find(".rs_txt_row").hide();
+                }
+                
+                if (result.data.quote.updatetime === null || result.data.quote.updatetime === "-" || result.data.quote.updatetime === "") {
+                    if (result.data.quote.hist_closedate === null || result.data.quote.hist_closedate === "-" || result.data.quote.hist_closedate === "") {
+                        that.$listpane.find(".col_lastupdated").setValue("-");  
+                    } else {
+                        that.$listpane.find(".col_lastupdated").setValue(result.data.quote.hist_closedate);           
+                    }
+                } else {
+                    that.$listpane.find(".col_lastupdated").setValue(result.data.quote.updatetime, " HKT");
+                }
+                
+                if (result.data.quote.product_type === "EQTY" && (result.data.quote.product_subtype === "EW" || result.data.quote.product_subtype === "RGHT")){
+                    that.$company_level.find(".col_summary").setValue("-");
+                    that.$company_level.find(".col_issued_shares").setValue("-");
+                    that.$company_level.find(".col_industry_hsic").setValue("-");
+                    that.$company_level.find(".col_listing_date").setValue(result.data.quote.listing_date);                    
+                    that.$company_level.find(".col_financial_year_ends").setValue("-");
+                    that.$company_level.find(".col_chairman").setValue("-");
+                    that.$company_level.find(".col_poi").setValue("-");
+                    that.$company_level.find(".col_listing_cat").setValue("-");
+                    that.$company_level.find(".col_registrar").setValue("-");
+                    that.$company_level.find(".col_lastupdated").setValue(result.data.quote.db_updatetime, " HKT");
+                    
+                    that.$company_level.find(".listing_cat_row").hide();
+                    that.$company_level.find(".listing_date_row").hide();
+                    that.$company_level.find(".label_hsic").hide();
+                    that.$company_level.find(".hsic_row").hide();
+                    that.$company_level.find(".col_industry_csic").hide();
+                    that.$company_level.find(".label_csic").hide();
+                    that.$company_level.find(".col_csic").hide();
+                    that.$company_level.find(".csic_row").hide();
+                    that.$company_level.find(".issued_shares_row").show();
+                    that.$company_level.find(".adjusted_no_row").hide();
+                } else {
+                    that.$company_level.find(".col_summary").setValue(result.data.quote.summary + ' *');
+                    if (!result.data.quote.amt_os && !result.data.quote.shares_issued_date){
+                        that.$company_level.find(".col_issued_shares").setValue("-");
+                        that.$company_level.find(".adjusted_no_row").hide();
+                    } else {
+                        if (result.data.quote.class_A_description && result.data.quote.class_B_description && result.data.quote.issued_shares_class_A && result.data.quote.issued_shares_class_B) {				
+                                if (LabCI.getLang() == "chn" || LabCI.getLang() == "zh_HK") {
+                                    update_format = "YYYY年M月D日";
+                                } else {
+                                    update_format = "D MMM YYYY";
+                                }
+
+                                if (result.data.quote.issued_shares_note !== null && result.data.quote.issued_shares_note !== "") {
+                                    that.$company_level.find(".col_issued_shares").addClass("tooltip").append(result.data.quote.issued_shares_class_A.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " (" + result.data.quote.class_A_description + " " + result.data.quote.as_at_label + " " + result.data.quote.shares_issued_date + ")<br>" + result.data.quote.issued_shares_class_B.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " (" + result.data.quote.class_B_description + " " + result.data.quote.as_at_label + " " + result.data.quote.shares_issued_date + ")");
+                                    that.$company_level.find(".col_issued_shares").find(".lhkexw_tooltiptext").setValue(result.data.quote.issued_shares_note);
+                                } else {
+                                    that.$company_level.find(".col_issued_shares").setValue(result.data.quote.issued_shares_class_A.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " (" + result.data.quote.class_A_description + " " + result.data.quote.as_at_label + " " + result.data.quote.shares_issued_date + ")<br>" + result.data.quote.issued_shares_class_B.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " (" + result.data.quote.class_B_description + " " + result.data.quote.as_at_label + " " + result.data.quote.shares_issued_date + ")");
+                                }
+                        } else if (result.data.quote.issued_shares_note !== null && result.data.quote.issued_shares_note !== "") {
+                            if (result.data.quote.amt_os) {
+                                that.$company_level.find(".col_issued_shares").addClass("tooltip").append(result.data.quote.amt_os + ' (' + result.data.quote.as_at_label + ' ' + (result.data.quote.shares_issued_date ? result.data.quote.shares_issued_date : "-") + ')');
+                                that.$company_level.find(".col_issued_shares").find(".lhkexw_tooltiptext").setValue(result.data.quote.issued_shares_note);
+                            } else {
+                                that.$company_level.find(".col_issued_shares").setValue("-" + ' (' + result.data.quote.as_at_label + ' ' + (result.data.quote.shares_issued_date ? result.data.quote.shares_issued_date : "-") + ')');
+                            }
+                        } else {
+                            that.$company_level.find(".col_issued_shares").setValue((result.data.quote.amt_os ? result.data.quote.amt_os : "-") + ' (' + result.data.quote.as_at_label + ' ' + (result.data.quote.shares_issued_date ? result.data.quote.shares_issued_date : "-") + ')');
+                            that.$company_level.find(".adjusted_no_row").hide();
+                        }
+                    }
+
+                    if (result.data.quote.transfer_of_listing_date && result.data.quote.transfer_of_listing_date !== ""){
+                        that.$company_level.find(".col_listing_date").setValue(result.data.quote.listing_date, "**");
+                        that.$company_level.find(".col_transfer_of_listing_date").setValue(result.data.quote.transfer_of_listing_date);
+                        that.$company_level.find(".listing_date_row").show();
+                    } else {
+                        that.$company_level.find(".col_listing_date").setValue(result.data.quote.listing_date);
+                        that.$company_level.find(".listing_date_row").hide();
+                    }
+
+                    that.$company_level.find(".col_financial_year_ends").setValue(result.data.quote.fiscal_year_end);
+                    that.$company_level.find(".col_chairman").setValue(result.data.quote.chairman);
+                    that.$company_level.find(".col_poi").setValue(result.data.quote.incorpin);
+
+                    if (result.data.quote.secondary_listing_flag === true){
+                        that.$company_level.find(".col_listing_cat").setValue(result.data.quote.listing_category, "*");
+                        that.$company_level.find(".listing_cat_row").show();
+                    } else {
+                        that.$company_level.find(".col_listing_cat").setValue(result.data.quote.listing_category);
+                        that.$company_level.find(".listing_cat_row").hide();
+                    }
+                    
+                    if (result.data.quote.secondary_listing){
+                        that.$company_level.find(".col_primary_market").setValue(result.data.quote.primary_market);
+                        that.$company_level.find(".primary_listing_row").show();
+                    }
+                    
+                    if (result.data.quote.hdr){
+                        that.$company_level.find(".col_depositary").setValue(result.data.quote.depositary);
+                        that.$company_level.find(".col_drratio").setValue(result.data.quote.dr_ratio);
+                        that.$company_level.find(".hdr_row").show();
+                    }
+
+                    that.$company_level.find(".col_registrar").setValue(result.data.quote.registrar);
+                    that.$company_level.find(".col_lastupdated").setValue(result.data.quote.db_updatetime, " HKT");
+
+                    if (result.data.quote.hsic_ind_classification === null && result.data.quote.hsic_sub_sector_classification === null){
+                        that.$company_level.find(".col_industry_hsic").setValue("-");
+                        that.$company_level.find(".label_hsic").hide();
+                        that.$company_level.find(".hsic_row").hide();
+                    } else if (result.data.quote.hsic_ind_classification === null) {
+                        that.$company_level.find(".col_industry_hsic").setValue(result.data.quote.hsic_sub_sector_classification);
+                        that.$company_level.find(".label_hsic").show();
+                        that.$company_level.find(".hsic_row").show();
+                    } else if (result.data.quote.hsic_sub_sector_classification === null) {
+                        that.$company_level.find(".col_industry_hsic").setValue(result.data.quote.hsic_ind_classification);
+                        that.$company_level.find(".label_hsic").show();
+                        that.$company_level.find(".hsic_row").show();
+                    } else {
+                        that.$company_level.find(".col_industry_hsic").setValue(result.data.quote.hsic_ind_classification + " - " + result.data.quote.hsic_sub_sector_classification);
+                        that.$company_level.find(".label_hsic").show();
+                        that.$company_level.find(".hsic_row").show();
+                    }       
+
+                    if (result.data.quote.csic_classification === null){
+                        that.$company_level.find(".col_industry_csic").hide();
+                        that.$company_level.find(".label_csic").hide();
+                        that.$company_level.find(".col_csic").hide();
+                        that.$company_level.find(".csic_row").hide();
+                    } else {
+                        that.$company_level.find(".col_industry_csic").setValue(result.data.quote.csic_classification);
+                        that.$company_level.find(".col_industry_csic").show();
+                        that.$company_level.find(".label_csic").show();
+                        that.$company_level.find(".col_csic").show();
+                        that.$company_level.find(".csic_row").show();
+                    }
+                }
+                
+                if (result.data.quote.office_address){
+                    var office_address = result.data.quote.office_address.replace(/\s\s+/g, ", ");
+                    that.$company_level.find(".col_office").setValue(office_address);
+                }
+                    
+                that._showchart(that.ric, that.currhc, that.currtck);
+            } else{
+                location.href ="https://www.hkex.com.hk/CustomErrorHandler/404.aspx";
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+        
+    },
+    
+    _loadentitlementdata: function() {
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityentitlement", "getequityentitlement", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang,
+            recperpage: that.entitlementrecperpage,
+            page: that.entitlementpage
+        },
+        function(result) {
+            if (result && result.data) {
+                if (result.data.entitlementlist) {
+                    for (var i=0; i<result.data.entitlementlist.length; i++) {
+                        that._appendEntitlementRow(result.data.entitlementlist[i]);
+                        if (!that.hasentitlementdate && i==0) {
+                            that.$dividend_level.find(".lastupdated .data").setValue(result.data.entitlementlist[i].update_time, " HKT");
+                            that.hasentitlementdate = true;
+                        }
+                    }
+//                    if (result.data.entitlementlist.length<that.entitlementrecperpage) {
+                    if (that.entitlementpage >= result.data.totpage){
+                        that.$dividend_level.find(".loadmore").hide();
+                    }
+                    
+                    that.resizeCustomScroll();
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadnewsdata: function() {
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequitynews", "getequitynews", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang
+        },
+        function(result) {
+            if (result && result.data) {
+                if (result.data.newslist) {
+                    for (var i=0; i<result.data.newslist.length; i++) {
+                        that._appendNewsRow(result.data.newslist[i]);
+                    }
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadrelateddwsdata: function() {
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityrelatedproducts", "getequityrelatedproducts", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang,
+            type: "dws"
+        },
+        function(result) {
+            if (result && result.data) {
+                that._createRelatedDWsTitle();
+                if (result.data.relateddwslist && result.data.relateddwslist.length > 0) {
+                    var cnt = 0;
+                    that.$relatedproducts_table.find("tbody").html("");
+                    for (var i=0; i<result.data.relateddwslist.length; i++) {
+                        var data = result.data.relateddwslist[i];
+                        if (i<3 && data.callput_indicator=='Call') {
+                            if (i==2) var sep = true;
+                            that._appendRelatedDWsRow(data, sep);
+                        } else if (i<3 && data.callput_indicator=='Put') {
+                            for (var j=0; j<3-i; j++) {
+                                if (j==3-i-1) var sep2 = true;
+                                that._appendRelatedDWsRow({}, sep2);
+                                cnt++;
+                            }
+                        } else if (i>2 && data.callput_indicator=='Put') {
+                            if (i==5) var sep3 = true;
+                            that._appendRelatedDWsRow(data, sep3);
+                        }
+                        if (i==result.data.relateddwslist.length-1) {
+                            that.$related_level.find(".col_lastupdated").setValue(data.update_time, " HKT");
+                        }
+                    }
+                    if (result.data.relateddwslist.length < 6) {
+                        for (var i=0; i<(6-result.data.relateddwslist.length-cnt); i++) {
+                            if (result.data.relateddwslist.length<4 && i==2) var sep4 = true;
+                            if (i==6-result.data.relateddwslist.length-cnt-1) var sep4 = true;
+                            that._appendRelatedDWsRow({}, sep4);
+                            sep4 = false;
+                        }
+                    }
+                    
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Securities-Prices/Derivative-Warrants?sc_lang=" + that.sc_lang + "&underlying=" + that.sym;
+                    });
+                } else {
+                    that.$relatedproducts_table.find("tbody").html("");
+                    that._appendEmptyRelatedRow(5);
+                    
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Securities-Prices/Derivative-Warrants?sc_lang=" + that.sc_lang + "&underlying=" + that.sym;
+                    });
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadrelatediwsdata: function() { //Heliam Note 
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang==='en')
+            lang='eng';
+        else if(this.lang==='zh_HK')
+            lang='chi';
+        else if(this.lang==='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityrelatedproducts", "getequityrelatedproducts", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang,
+            type: "iws"
+        },
+        function(result) {
+            that._createRelatedIWsTitle();
+            if (result && result.data) {
+                if (result.data.relatedIWslist && result.data.relatedIWslist.length > 0) {
+                    var cnt = 0;
+                    that.$relatedproducts_table.find("tbody").html("");
+                    for (var i=0; i<result.data.relatedIWslist.length; i++) {
+                        if (i===5) var sep = true;
+                        var data = result.data.relatedIWslist[i];
+                        that._appendRelatedIWsRow(data, sep);
+                        sep = false;
+                        if (i===result.data.relatedIWslist.length-1) {
+                            that.$related_level.find(".col_lastupdated").setValue(data.update_time, " HKT");
+                        }
+                    }
+                    if (result.data.relatedIWslist.length < 6) {
+                        for (var i=0; i<(6-result.data.relatedIWslist.length-cnt); i++) {
+                            if (i===6-result.data.relatedIWslist.length-cnt-1) var sep2 = true;
+                            that._appendRelatedIWsRow({}, sep2);
+                            sep2 = false;
+                        }
+                    }
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Securities-Prices/Derivative-Warrants?sc_lang=" + that.sc_lang + "&underlying=" + that.sym;
+                    });
+                } else {
+                    that.$relatedproducts_table.find("tbody").html("");
+                    that._appendEmptyRelatedRow(5);
+                    
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Securities-Prices/Derivative-Warrants?sc_lang=" + that.sc_lang + "&underlying=" + that.sym;
+                    });
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadrelatedcbbcsdata: function() {
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityrelatedproducts", "getequityrelatedproducts", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang,
+            type: "cbbcs"
+        },
+        function(result) {
+            if (result && result.data) {
+                that._createRelatedCBBCsTitle();
+                if (result.data.relatedcbbcslist && result.data.relatedcbbcslist.length > 0) {
+                    var cnt = 0;
+                    that.$relatedproducts_table.find("tbody").html("");
+                    for (var i=0; i<result.data.relatedcbbcslist.length; i++) {
+                        var data = result.data.relatedcbbcslist[i];
+                        if (i<3 && data.callput_indicator=='Bull') {
+                            if (i==2) var sep = true;
+                            that._appendRelatedCBBCsRow(data, sep);
+                        } else if (i<3 && data.callput_indicator=='Bear') {
+                            for (var j=0; j<3-i; j++) {
+                                if (j==3-i-1) var sep2 = true;
+                                that._appendRelatedCBBCsRow({}, sep2);
+                                cnt++;
+                            }
+                        } else if (i>2 && data.callput_indicator=='Bear') {
+                            if (i==5) var sep3 = true;
+                            that._appendRelatedCBBCsRow(data, sep3);
+                        }
+                        if (i==result.data.relatedcbbcslist.length-1) {
+                            that.$related_level.find(".col_lastupdated").setValue(data.update_time, " HKT");
+                        }
+                    }
+                    if (result.data.relatedcbbcslist.length < 6) {
+                        for (var i=0; i<(6-result.data.relatedcbbcslist.length-cnt); i++) {
+                            if (result.data.relatedcbbcslist.length<4 && i==2) var sep4 = true;
+                            if (i==6-result.data.relatedcbbcslist.length-cnt-1) var sep4 = true;
+                            that._appendRelatedCBBCsRow({}, sep4);
+                            sep4 = false;
+                        }
+                    }
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Securities-Prices/Callable-Bull-Bear-Contracts?sc_lang=" + that.sc_lang + "&underlying=" + that.sym;
+                    });
+                } else {
+                    that.$relatedproducts_table.find("tbody").html("");
+                    that._appendEmptyRelatedRow(5);
+                    
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Securities-Prices/Callable-Bull-Bear-Contracts?sc_lang=" + that.sc_lang + "&underlying=" + that.sym;
+                    });
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadrelatedoptionsdata: function() {
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityrelatedproducts", "getequityrelatedproducts", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang,
+            type: "options"
+        },
+        function(result) {
+            that._createRelatedOptionsTitle();
+            if (result && result.data) {
+                if (result.data.relatedoptionslist && result.data.relatedoptionslist.length > 0) {
+                    var cnt = 0;
+                    that.$relatedproducts_table.find("tbody").html("");
+                    for (var i=0; i<result.data.relatedoptionslist.length; i++) {
+                        var data = result.data.relatedoptionslist[i];
+                        if (i<3 && (data.type=='Call')) {
+                            if (i==2) var sep = true;
+                            that._appendRelatedOptionsRow(data, sep);
+                        } else if (i<3 && (data.type=='Put')) {
+                            for (var j=0; j<3-i; j++) {
+                                if (j==3-i-1) var sep2 = true;
+                                that._appendRelatedOptionsRow({}, sep2);
+                                cnt++;
+                            }
+                        }else if (i>2 && (data.type=='Put')) {
+                            if (i==5) var sep3 = true;
+                            that._appendRelatedOptionsRow(data, sep3);
+                        }
+                        if (i==result.data.relatedoptionslist.length-1) {
+                            that.$related_level.find(".col_lastupdated").setValue(data.update_time, " HKT");
+                        }
+                    }
+                    if (result.data.relatedoptionslist.length < 6) {
+                        for (var i=0; i<(6-result.data.relatedoptionslist.length-cnt); i++) {
+                            if (result.data.relatedoptionslist.length<4 && i==2) var sep4 = true;
+                            if (i==6-result.data.relatedoptionslist.length-cnt-1) var sep4 = true;
+                            that._appendRelatedOptionsRow({}, sep4);
+                            sep4 = false;
+                        }
+                    }
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Futures-and-Options-Prices/Single-Stock/Stock-Options?sc_lang=" + that.sc_lang + "&sttype=options&underlying=" + that.ric;
+                    });
+                } else {
+                    that.$relatedproducts_table.find("tbody").html("");
+                    that._appendEmptyRelatedRow(4);
+                    
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Futures-and-Options-Prices/Single-Stock/Stock-Options?sc_lang=" + that.sc_lang + "&sttype=options&underlying=" + that.ric;
+                    });
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _loadrelatedfuturesdata: function() {
+        var that = this;
+        
+        var lang=LabCI.getLang();
+        if(this.lang=='en')
+            lang='eng';
+        else if(this.lang=='zh_HK')
+            lang='chi';
+        else if(this.lang=='chn')
+            lang='chn';
+        
+        this.$pageobj.loaddata("getequityrelatedproducts", "getequityrelatedproducts", {
+            sym: that.sym,
+            token: LabCI.getToken(),
+            lang: lang,
+            type: "futures"
+        },
+        function(result) {
+            that._createRelatedFuturesTitle();
+            if (result && result.data) {
+                if (result.data.relatedfutureslist && result.data.relatedfutureslist.length > 0) {
+                    var cnt = 0;
+                    that.$relatedproducts_table.find("tbody").html("");
+                    for (var i=0; i<result.data.relatedfutureslist.length; i++) {
+                        if (i==5) var sep = true;
+                        var data = result.data.relatedfutureslist[i];
+                        that._appendRelatedFuturesRow(data, sep);
+                        sep = false;
+                        if (i==result.data.relatedfutureslist.length-1) {
+                            that.$related_level.find(".col_lastupdated").setValue(data.update_time, " HKT");
+                        }
+                    }
+                    if (result.data.relatedfutureslist.length < 6) {
+                        for (var i=0; i<(6-result.data.relatedfutureslist.length-cnt); i++) {
+                            if (i==6-result.data.relatedfutureslist.length-cnt-1) var sep2 = true;
+                            that._appendRelatedFuturesRow({}, sep2);
+                            sep2 = false;
+                        }
+                    }
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Futures-and-Options-Prices/Single-Stock/Stock-Futures?sc_lang=" + that.sc_lang + "&sttype=futures&underlying=" + that.ric;
+                    });
+                }else {
+                    that.$relatedproducts_table.find("tbody").html("");
+                    that._appendEmptyRelatedRow(4);
+                    
+                    that.$related_level.find(".sublink a").click(function() {
+                        window.location.href = "/Market-Data/Futures-and-Options-Prices/Single-Stock/Stock-Futures?sc_lang=" + that.sc_lang + "&sttype=futures&underlying=" + that.ric;
+                    });
+                }
+            }
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    loaddata: function() {
+        var that = this;
+        var index = 0;
+        var result = {data: {
+            responseCode: "S"
+        }};
+        if (result) {
+            // Fit the data into the UI
+            // that._showindexquote(data);
+            //
+            this.$dividend_level.find(".diviover").mCustomScrollbar({
+                axis:"x",
+                theme:"my",
+                advanced:{
+                    autoExpandHorizontalScroll:true
+                },
+                scrollButtons:{
+                    enable:true,
+                    scrollType:"stepped"
+                },
+                mouseWheel:{deltaFactor:40}
+            })
+            //
+            this.$dividend_level.find(".mCSB_buttonRight").css("top",150+"px");
+            this.$dividend_level.find(".mCSB_buttonLeft").css("top",150+"px");
+        }
+        else {
+            // alert(2);
+            // Error handling...
+        }
+
+        return this; // chain this
+    },
+    showindexquote: function(data) {
+        var that = this;
+        var html = '';
+        
+        //
+        // this.$loadrow.find(".lastupdated .data").html(data.data.lastupd+' HKT');
+        return;
+        if (ric) this.curindexric = ric; // update the value first
+
+        var d = this.curdata.indexlist[this.curindexric];
+        if (d) {
+            
+        }
+        else {
+            
+        }
+
+        return this; // chain this
+    },
+    showfuturehsirow: function(data,index){
+        var that = this;
+        
+        // this._showchart(data.data.futureslist[index].ric, data.data.futureslist[index].hc, data.data.futureslist[index].lo);
+    },
+    
+    _loadmoreentitlement: function() {
+        this.entitlementpage++;
+        this._loadentitlementdata();
+    },
+
+    _appendEntitlementRow: function(data){
+        var book_closed = '';
+        if (data.book_closed_from === null || data.book_closed_from === ""){
+            book_closed = data.book_closed_to;
+        } else if (data.book_closed_to === null || data.book_closed_to === "") {
+            book_closed = data.book_closed_from;
+        } else {
+            book_closed = data.book_closed_from + " - " + data.book_closed_to;
+        }
+        var de_formated = "";
+        if (data.detail){
+            de_formated = data.detail.replace(/\s\s+/g, "<br>");
+        }
+        
+        var rb = this.pageobj_rb;
+        if (data.div_type_desc && data.div_type_desc.length > 0) {
+            de_formated += "<br><br>" + rb.msg.dividend_level.divTypeSubtitle + "<br>";
+            
+            let threshold = this.lang == 'en' ? 95: 95;
+            if (data.div_type_desc.length >= threshold) {
+                de_formated += data.div_type_desc.substr(0, threshold) + "...";
+                
+                de_formated += "<a target='_blank' href='" + data.announcement_URL+ "'>" + rb.msg.dividend_level.more + "</a>";
+            }else {
+                de_formated += data.div_type_desc;
+            }
+        }
+        
+        var $row = $("<tr/>")
+            .append($("<td/>").setValue(data.announcement_date))
+            .append($("<td/>").setValue(data.ex_date))
+            .append($("<td/>").addClass("de").setValue(de_formated))
+            .append($("<td/>").setValue(data.fyear_end))
+            .append($("<td/>").setValue(book_closed))
+            .append($("<td/>").setValue(data.payment_date));
+            
+        this.$dividend_table.append($row);
+    },
+
+    _appendNewsRow: function(data) {
+        var $row;
+        if (!data.newsURL || data.newsURL === ""){
+            $row = $("<tr/>")
+            .append($("<td/>").addClass("data").setValue(data.datetime))
+            .append($("<td/>").setValue(data.headline));
+        } else {
+            $row = $("<tr/>")
+            .append($("<td/>").addClass("data").setValue(data.datetime))
+            .append($("<td/>").append($("<a/>").setValue(data.headline).attr('href', data.newsURL).attr('target', '_blank')));
+            
+        }
+        this.$comann_table.append($row);
+    },
+    
+    _createRelatedDWsTitle: function() {
+        var rb = this.pageobj_rb;  
+        var $row = $("<tr/>").addClass("product_title")
+            .append($("<th/>").addClass("c").setValue(rb.msg.related_level.code))
+            .append($("<th/>").addClass("ind").setValue(rb.msg.related_level.callput))
+            .append($("<th/>").addClass("ed").setValue(rb.msg.related_level.expiry))
+            .append($("<th/>").addClass("sp").setValue(rb.msg.related_level.strike))
+            .append($("<th/>").addClass("lp").setValue(rb.msg.related_level.lastPrc));
+            
+        this.$relatedproducts_table.find("thead").html("").append($row);
+    },
+    
+	_createRelatedIWsTitle: function() { //Heliam Note
+        var rb = this.pageobj_rb;  
+        var $row = $("<tr/>").addClass("product_title")
+            .append($("<th/>").addClass("c").setValue(rb.msg.related_level.code))
+            .append($("<th/>").addClass("lsp").setValue(rb.msg.related_level.lowerStrike))
+            .append($("<th/>").addClass("usp").setValue(rb.msg.related_level.upperStrike))
+            .append($("<th/>").addClass("ed").setValue(rb.msg.related_level.expiry))
+            .append($("<th/>").addClass("lp").setValue(rb.msg.related_level.lastPrc));
+            
+        this.$relatedproducts_table.find("thead").html("").append($row);  
+    },
+    
+    _createRelatedCBBCsTitle: function() {
+        var rb = this.pageobj_rb;  
+        var $row = $("<tr/>").addClass("product_title")
+            .append($("<th/>").addClass("c").setValue(rb.msg.related_level.code))
+            .append($("<th/>").addClass("ind").setValue(rb.msg.related_level.bullbear))
+            .append($("<th/>").addClass("ed").setValue(rb.msg.related_level.expiry))
+            .append($("<th/>").addClass("sp").setValue(rb.msg.related_level.strike))
+            .append($("<th/>").addClass("lp").setValue(rb.msg.related_level.lastPrc));
+            
+        this.$relatedproducts_table.find("thead").html("").append($row);        
+    },
+    
+    _appendRelatedDWsRow: function(data, hassep) {
+        var that = this;
+        var cls = "";
+        var callput_display = LabCI.WP.CommonRC.callput2display(data.callput_indicator, that.lang);
+        if (hassep) cls = "para";
+        var $row = $("<tr/>").addClass(cls)
+            .append($("<td/>").append($("<a/>").setValue(data.symbol).attr("href","/Market-Data/Securities-Prices/Derivative-Warrants/Derivative-Warrants-Quote?sym="+data.symbol+"&sc_lang="+that.sc_lang)))
+            .append($("<td/>").setValue(callput_display))
+            .append($("<td/>").setValue(data.expiry_date))
+            .append($("<td/>").setValue(data.strike_price))
+            .append($("<td/>").setValue(data.last_price));
+            
+        this.$relatedproducts_table.append($row);
+    },    
+    
+    _appendRelatedIWsRow: function(data, hassep) {
+        var that = this;
+        var cls = "";
+        if (hassep) cls = "para";
+        var $row = $("<tr/>").addClass(cls)
+            .append($("<td/>").append($("<a/>").setValue(data.symbol).attr("href","/Market-Data/Securities-Prices/Inline-Warrants/Inline-Warrants-Quote?sym="+data.symbol+"&sc_lang="+that.sc_lang)))
+            .append($("<td/>").setValue(data.lower_strike_price))
+            .append($("<td/>").setValue(data.upper_strike_price))
+            .append($("<td/>").setValue(data.expiry_date))
+            .append($("<td/>").setValue(data.last_price));
+            
+        this.$relatedproducts_table.append($row);
+    }, 
+    
+    _appendRelatedCBBCsRow: function(data, hassep) {
+        var that = this;
+        var cls = "";
+        var callput_display = LabCI.WP.CommonRC.callput2display(data.callput_indicator, that.lang);
+        if (hassep) cls = "para";
+        var $row = $("<tr/>").addClass(cls)
+            .append($("<td/>").append($("<a/>").setValue(data.symbol).attr("href","/Market-Data/Securities-Prices/Callable-Bull-Bear-Contracts/Callable-Bull-Bear-Contracts-Quote?sym="+data.symbol+"&sc_lang="+that.sc_lang)))
+            .append($("<td/>").setValue(callput_display))
+            .append($("<td/>").setValue(data.expiry_date))
+            .append($("<td/>").setValue(data.strike_price))
+            .append($("<td/>").setValue(data.last_price));
+            
+        this.$relatedproducts_table.append($row);
+    },
+
+    _createRelatedOptionsTitle: function() {
+        var rb = this.pageobj_rb;  
+        var $row = $("<tr/>").addClass("product_title")
+            .append($("<th/>").addClass("ind").setValue(rb.msg.related_level.callput))
+            .append($("<th/>").addClass("sp").setValue(rb.msg.related_level.strike))
+            .append($("<th/>").addClass("lp").setValue(rb.msg.related_level.lastPrc))
+            .append($("<th/>").addClass("vol").setValue(rb.msg.related_level.volume));
+            
+        this.$relatedproducts_table.find("thead").html("").append($row);  
+    },
+
+    _appendRelatedOptionsRow: function(data, hassep) {
+        var that = this;
+        var cls = "";
+        var callput_display = LabCI.WP.CommonRC.callput2display(data.type, that.lang);
+        if (hassep) cls = "para";
+        var $row = $("<tr/>").addClass(cls)
+            .append($("<td/>").setValue(callput_display))
+            .append($("<td/>").setValue(data.strike_price))
+            .append($("<td/>").setValue(data.last_price))
+            .append($("<td/>").setValue(data.volume));
+            
+        this.$relatedproducts_table.append($row);
+    },
+
+    _createRelatedFuturesTitle: function() {
+        var rb = this.pageobj_rb;  
+        var $row = $("<tr/>").addClass("product_title")
+            .append($("<th/>").addClass("con").setValue(rb.msg.related_level.contract))
+            .append($("<th/>").addClass("lt").setValue(rb.msg.related_level.lastTrade))
+            .append($("<th/>").addClass("vol").setValue(rb.msg.related_level.volume))
+            .append($("<th/>").addClass("oi").setValue(rb.msg.related_level.oi));
+            
+        this.$relatedproducts_table.find("thead").html("").append($row);  
+    },
+
+    _appendRelatedFuturesRow: function(data, hassep) {
+        var cls = "";
+        if (hassep) cls = "para";
+        var $row = $("<tr/>").addClass(cls)
+            .append($("<td/>").setValue(data.contract))
+            .append($("<td/>").setValue(data.last_price))
+            .append($("<td/>").setValue(data.volume))
+            .append($("<td/>").setValue(data.oi));
+            
+        this.$relatedproducts_table.append($row);
+    },
+    
+    _appendEmptyRelatedRow: function(colspan){
+        var rb = this.pageobj_rb;  
+        var $row = $("<tr/>")
+            .append($("<td colspan='"+colspan+"'/>").setValue(rb.msg.related_level.noProduct));
+            
+        this.$relatedproducts_table.append($row);
+    },
+
+    //export
+    _exportToExcel: function() {
+        var that=this;
+        var interval = that._getSelectedInterval();
+        
+        var showDisclaimer = interval == 7 || interval == 8;
+        if (interval > 6 && interval < 9) {
+            interval = 6;
+        }
+        var span = that._getDefaultSpan(interval);
+        
+        that.$pageobj.loaddata("getchartdata2", "getchartdata2",
+        {
+            "span": span,
+            "int": interval,
+            "ric": that.ric,
+            "token": LabCI.getToken()
+        },
+        function(result) {
+            var html='';
+            if (span < 6) { // intraday
+                if (that.lang==='zh_HK'){
+                    html+='<tr>'+
+                        '<th class="">時間</th>'+
+                        '<th class="">最後成交價</th>'+
+                        '<th class="">成交數量</th>'+
+                    '</tr>';
+                }
+                else if (that.lang==='chn'){
+                    html+='<tr>'+
+                        '<th class="">时间</th>'+
+                        '<th class="">最后成交价</th>'+
+                        '<th class="">成交数量</th>'+
+                    '</tr>';
+                } else {
+                    html+='<tr>'+
+                        '<th class="">Time</th>'+
+                        '<th class="">Last Traded Price</th>'+
+                        '<th class="">Volume</th>'+
+                    '</tr>';
+                }
+                
+                html+=that._buildDataTableRows(result.data.datalist, 0);
+            } else { // interday
+                if (that.lang==='zh_HK'){
+                    html+='<tr>'+
+                        '<th class="">時間</th>'+
+                        '<th class="">收市價</th>'+
+                        '<th class="">成交數量</th>'+
+                    '</tr>';
+                }
+                else if (that.lang==='chn'){
+                    html+='<tr>'+
+                        '<th class="">时间</th>'+
+                        '<th class="">收市价</th>'+
+                        '<th class="">成交数量</th>'+
+                    '</tr>';
+                } else {
+                    html+='<tr>'+
+                        '<th class="">Time</th>'+
+                        '<th class="">Closed Price</th>'+
+                        '<th class="">Volume</th>'+
+                    '</tr>';
+                }
+                
+                html+=that._buildDataTableRows(result.data.datalist, 1);
+                
+                if (showDisclaimer){
+                    var c_rb = LabCI.WP.CommonRC.getMsg("chart", that.lang);
+                    html+='<tr><td>' + c_rb['dis_2year'] + '</td></tr>';
+                }
+            }
+            
+            that.$detailpane.find("#datatable").html(html);
+            
+            //export
+            that._eTTE('datatable','xlsx','Equities_' + that.sym);
+        },
+        0,
+        {
+            datatype: "jsonp"
+        });
+    },
+    
+    _buildDataTableRows: function(data, flag) {
+        var that=this;
+        
+        var html='';
+        for(var i=1; i<data.length-1; i++){
+            html+='<tr>'+
+                '<td>'+that._getDateTime(data[i][0],flag)+'</td>'+
+                '<td>'+data[i][4]+'</td>'+
+                '<td>'+data[i][5]+'</td>'+
+            '</tr>';
+        };
+        
+        return html;
+    },
+    
+    //get date time
+    _getDateTime : function(str,flag){
+        var oTime;
+        if(flag == 0){
+//          1985-04-19 00:00:00
+            oTime = Highcharts.dateFormat('%Y/%m/%d %H:%M', new Date(str));
+        }else{
+//          1985-04-19
+            oTime = Highcharts.dateFormat('%Y/%m/%d', new Date(str));
+        }
+
+        return oTime;  
+    },
+    
+    _getzf : function(num){
+        if(parseInt(num) < 10){  
+            num = '0'+num;  
+        }  
+        return num; 
+    },
+
+    _s2ab : function(s){
+        if(typeof ArrayBuffer !== 'undefined') {
+            var buf = new ArrayBuffer(s.length);
+            var view = new Uint8Array(buf);
+            for (var i=0; i!=s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+            return buf;
+        }else{
+            var buf = new Array(s.length);
+            for (var i=0; i!=s.length; ++i) buf[i] = s.charCodeAt(i) & 0xFF;
+            return buf;
+        }
+    },
+    _eTTE : function(id, type, name, fn){
+    	var that=this;
+    	
+        var wb = XLSX.utils.table_to_book(document.getElementById(id), {sheet:"Sheet JS"});
+        var wbout = XLSX.write(wb, {bookType:type, bookSST:true, type: 'binary'});
+        var fname = fn || name + '.' + type;
+        try {
+            saveAs(new Blob([that._s2ab(wbout)],{type:"application/octet-stream"}), fname);
+        }catch(e) {if(typeof console != 'undefined') console.log(e, wbout);}
+        return wbout;
+    },
+
+    ////////////////////////////////////////////////////////////////////
+
+    // Build up the UI on-the-fly for different languages
+    _setUILabels: function() {
+        var that = this;
+        var rb = this.pageobj_rb;
+        var c_rb = LabCI.WP.CommonRC.getMsg("period", that.lang);
+        
+        this.$scroll_tabs.find("#p1d").html(c_rb.p1d);
+        this.$scroll_tabs.find("#p5d").html(c_rb.p5d);
+        this.$scroll_tabs.find("#p1m").html(c_rb.p1m);
+        this.$scroll_tabs.find("#p3m").html(c_rb.p3m);
+        this.$scroll_tabs.find("#p6m").html(c_rb.p6m);
+        this.$scroll_tabs.find("#p1y").html(c_rb.p1y);
+        this.$scroll_tabs.find("#p2y").html(c_rb.p2y);
+        this.$scroll_tabs.find("#p5y").html(c_rb.p5y);
+        this.$scroll_tabs.find("#ytd").html(c_rb.ytd);
+        this.$scroll_tabs.find("#p10y").html(c_rb.p10y);
+        
+        this.$listpane.find(".label_prevcls").append(rb.msg.listpane.prevClose);
+        this.$listpane.find(".tooltip_prevcls").html(rb.msg.listpane.prevcloseDesc);
+        this.$listpane.find(".label_open").append(rb.msg.listpane.open);
+        this.$listpane.find(".tooltip_open").html(rb.msg.listpane.openDesc);
+		
+        this.$listpane.find(".label_turnover").html(rb.msg.listpane.turnover);
+        this.$listpane.find(".label_volume").html(rb.msg.listpane.volume);
+        this.$listpane.find(".label_mktcap").html(rb.msg.listpane.mktCap);
+        this.$listpane.find(".label_lotsize").html(rb.msg.listpane.lotSize);
+        this.$listpane.find(".label_bid").html(rb.msg.listpane.bid);
+        this.$listpane.find(".label_ask").html(rb.msg.listpane.ask);
+        this.$listpane.find(".label_eps").html(rb.msg.listpane.eps);
+        this.$listpane.find(".label_pe").html(rb.msg.listpane.pe);
+        this.$listpane.find(".label_divyield").html(rb.msg.listpane.divYield);
+        this.$listpane.find(".label_intra").html(rb.msg.listpane.intraday);
+        this.$listpane.find(".label_quote52").html(rb.msg.listpane.quote52);
+        this.$listpane.find(".label_high").html(rb.msg.listpane.high);
+        this.$listpane.find(".label_low").html(rb.msg.listpane.low);
+        this.$listpane.find(".rs_txt_1").html(rb.msg.listpane.rs_txt_1);
+        this.$listpane.find(".rs_txt_row a").attr("href", rb.link.rs_indicator).text(rb.msg.listpane.rs_txt_a);
+        this.$listpane.find(".rs_txt_2").html(rb.msg.listpane.rs_txt_2);
+        this.$listpane.find(".disclaimer3").html(rb.msg.listpane.delayDesc);
+        this.$listpane.find(".lasupd").html(rb.msg.lastupdate);
+        
+        this.$related_level.find(".title__main span").html(rb.msg.related_level.title);
+        this.$related_level.find(".sublink a").html(rb.msg.seeAll);    
+        this.$related_level.find(".lasupd").html(rb.msg.lastupdate);        
+        this.$equity_scroll_tabs1.find(".label_tabDWs").html(rb.msg.related_level.tabDWs);
+        this.$equity_scroll_tabs1.find(".label_tabCBBCs").html(rb.msg.related_level.tabCBBCs);
+        this.$equity_scroll_tabs1.find(".label_tabIWs").html(rb.msg.related_level.tabIWs);
+        this.$equity_scroll_tabs2.find(".label_tabOptions").html(rb.msg.related_level.tabOptions);
+        this.$equity_scroll_tabs2.find(".label_tabFutures").html(rb.msg.related_level.tabFutures);        
+       
+        this.$detailpane.find(".list_txt").html(rb.msg.detailpane.inputDesc);
+        this.$detailpane.find(".ete").html(rb.msg.detailpane.exportExcel);
+        this.$detailpane.find(".disclaimer1").html(rb.msg.detailpane.chartDesc);
+        
+        this.$company_level.find(".title__main span").html(rb.msg.company_level.title);
+		
+        this.$company_level.find(".label_issued_shares").append(rb.msg.company_level.issuedShares);
+        this.$company_level.find(".label_industry").html(rb.msg.company_level.industry);
+		
+		this.$company_level.find(".tooltip_issued_shares").find(".issued_shares_txt_1").html(rb.msg.company_level.issued_shares_txt_1);
+        this.$company_level.find(".tooltip_issued_shares").find(".issued_shares_txt_2").html(rb.msg.company_level.issued_shares_txt_2);
+        this.$company_level.find(".tooltip_issued_shares").find(".issued_shares_txt_link").html(rb.msg.company_level.issued_shares_txt_a);
+        this.$company_level.find(".label_listing_date").html(rb.msg.company_level.listingDate);
+        this.$company_level.find(".label_financial_year_ends").html(rb.msg.company_level.finYrEnds);
+        this.$company_level.find(".label_chairman").html(rb.msg.company_level.chairman);       
+        this.$company_level.find(".label_office").html(rb.msg.company_level.office);        
+        this.$company_level.find(".label_poi").html(rb.msg.company_level.placeOfIncorp);    
+        this.$company_level.find(".label_cat").html(rb.msg.company_level.listingCat);      
+        this.$company_level.find(".label_registrar").html(rb.msg.company_level.reg);        
+        this.$company_level.find(".col_registrar").attr("href", rb.link.registrar);
+        this.$company_level.find(".lasupd").html(rb.msg.lastupdate);  
+        this.$company_level.find(".listing_cat_row a").text(rb.msg.company_level.listing_cat_txt_a);
+        this.$company_level.find(".listing_cat_txt_1").html(rb.msg.company_level.listing_cat_txt_1);  
+        this.$company_level.find(".listing_cat_txt_2").html(rb.msg.company_level.listing_cat_txt_2);
+        this.$company_level.find(".listing_date_txt").html(rb.msg.company_level.listing_date_txt);
+        this.$company_level.find(".label_hsic").append(rb.msg.company_level.hsic_label);
+        this.$company_level.find(".label_csic").append(rb.msg.company_level.csic_label);
+        this.$company_level.find(".hsic_txt_1").html(rb.msg.company_level.hsic_txt_1);
+        this.$company_level.find(".hsic_txt_2").html(rb.msg.company_level.hsic_txt_2);
+        this.$company_level.find(".hsic_txt_link").html(rb.msg.company_level.hsic_txt_link);
+        this.$company_level.find(".csic_txt_1").html(rb.msg.company_level.csic_txt_1);
+        this.$company_level.find(".csic_txt_2").html(rb.msg.company_level.csic_txt_2);
+        this.$company_level.find(".csic_txt_3").html(rb.msg.company_level.csic_txt_3);
+        this.$company_level.find(".csic_a_1").html(rb.msg.company_level.csic_a_1);
+        this.$company_level.find(".csic_a_2").attr("href", rb.link.csic_doc).text(rb.msg.company_level.csic_a_2);
+        this.$company_level.find(".issued_shares_txt_3").html(rb.msg.company_level.issued_shares_txt_3);
+        this.$company_level.find(".issued_shares_txt_4").html(rb.msg.company_level.issued_shares_txt_a);
+        this.$company_level.find(".issued_shares_txt_4").attr("href", rb.msg.company_level.issued_shares_txt_4);
+        this.$company_level.find(".issued_shares_txt_5").html(rb.msg.company_level.issued_shares_txt_5);
+        this.$company_level.find(".issued_shares_txt_link").html(rb.msg.company_level.issued_shares_txt_a);
+        
+        this.$company_level.find(".adjusted_no_txt_1").html(rb.msg.company_level.adjusted_no_txt_1);
+        this.$company_level.find(".adjusted_no_txt_2").html(rb.msg.company_level.adjusted_no_txt_2);
+        this.$company_level.find(".adjusted_no_txt_a").text(rb.msg.company_level.adjusted_no_txt_a);
+        this.$company_level.find(".hsic_modal .modal_header_1").html(rb.msg.company_level.hsic_modal_header_1);
+        this.$company_level.find(".hsic_modal .modal_txt_1").html(rb.msg.company_level.hsic_modal_txt_1);
+        this.$company_level.find(".hsic_modal .modal_header_2").html(rb.msg.company_level.hsic_modal_header_2);
+        this.$company_level.find(".hsic_modal .modal_txt_2").html(rb.msg.company_level.hsic_modal_txt_2);
+        this.$company_level.find(".csic_modal .modal_header").html(rb.msg.company_level.csic_modal_header);
+        this.$company_level.find(".csic_modal .modal_txt").html(rb.msg.company_level.csic_modal_txt);
+        this.$company_level.find(".issued_shares_modal .modal_header").html(rb.msg.company_level.is_modal_header);
+        this.$company_level.find(".issued_shares_modal .modal_txt_1").html(rb.msg.company_level.is_modal_txt_1);
+        this.$company_level.find(".issued_shares_modal .modal_txt_2").html(rb.msg.company_level.is_modal_txt_2);
+        this.$company_level.find(".issued_shares_modal .modal_txt_3").html(rb.msg.company_level.is_modal_txt_3);
+        this.$company_level.find(".issued_shares_modal .modal_txt_4").html(rb.msg.company_level.is_modal_txt_4);
+        this.$company_level.find(".issued_shares_modal .modal_txt_5").html(rb.msg.company_level.is_modal_txt_5);
+        this.$company_level.find(".issued_shares_modal .modal_txt_6").html(rb.msg.company_level.is_modal_txt_6);
+        this.$company_level.find(".issued_shares_modal .modal_txt_7").html(rb.msg.company_level.is_modal_txt_7);
+        this.$company_level.find(".issued_shares_modal .modal_txt_8").html(rb.msg.company_level.is_modal_txt_8);
+        this.$company_level.find(".issued_shares_modal .modal_txt_9").html(rb.msg.company_level.is_modal_txt_9);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_1_h").html(rb.msg.company_level.is_modal_txt_3_1_h);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_1").html(rb.msg.company_level.is_modal_txt_3_1);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_2_h").html(rb.msg.company_level.is_modal_txt_3_2_h);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_2").html(rb.msg.company_level.is_modal_txt_3_2);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_3_h").html(rb.msg.company_level.is_modal_txt_3_3_h);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_3").html(rb.msg.company_level.is_modal_txt_3_3);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_4_h").html(rb.msg.company_level.is_modal_txt_3_4_h);
+        this.$company_level.find(".issued_shares_modal .is_modal_txt_3_4").html(rb.msg.company_level.is_modal_txt_3_4);
+        this.$company_level.find(".label_primary_market").html(rb.msg.company_level.primary_market_label);
+        this.$company_level.find(".label_depositary").html(rb.msg.company_level.depositary_label);
+        this.$company_level.find(".label_drratio").html(rb.msg.company_level.drratio_label);
+        
+        this.$company_level.find(".label_ew_desc").html(rb.msg.company_level.ew_desc);
+        this.$company_level.find(".label_ew_amt_os").html(rb.msg.company_level.ew_amt_os);
+        this.$company_level.find(".label_ew_sub_right").html(rb.msg.company_level.ew_sub_right);
+        this.$company_level.find(".label_ew_strike").html(rb.msg.company_level.ew_strike);
+        this.$company_level.find(".label_ew_listdate").html(rb.msg.company_level.ew_listdate);
+        this.$company_level.find(".label_ew_entitlement_ratio").append(rb.msg.company_level.ew_entitlement_ratio);        
+        this.$company_level.find(".tooltip_ew_entitlement_ratio").html(rb.msg.company_level.ew_footer);
+        this.$company_level.find(".label_ew_sub_per").html(rb.msg.company_level.ew_sub_per);
+        this.$company_level.find(".label_ew_underlying_code").html(rb.msg.company_level.ew_underlying_code);
+        this.$company_level.find(".label_ew_trd_ccy").html(rb.msg.company_level.ew_trd_ccy);
+        this.$company_level.find(".company_footnote .text").html(rb.msg.company_level.company_footnote);
+        
+        this.$dividend_level.find(".title__main span").html(rb.msg.dividend_level.title);  
+        this.$dividend_level.find(".load").html(rb.msg.load);
+        this.$dividend_level.find(".lasupd").html(rb.msg.lastupdate);
+        this.$dividend_table.find(".da").html(rb.msg.dividend_level.dateAnnounced); 
+        this.$dividend_table.find(".ed").html(rb.msg.dividend_level.exDate);
+        this.$dividend_table.find(".di").html(rb.msg.dividend_level.details);
+        this.$dividend_table.find(".ped").html(rb.msg.dividend_level.finYrEnd);
+        this.$dividend_table.find(".bc").html(rb.msg.dividend_level.bookClsDate);
+        this.$dividend_table.find(".pd").append(rb.msg.dividend_level.paymentDate);
+        this.$dividend_level.find(".tooltip_pd").html(rb.msg.dividend_level.payDateDesc);
+        this.$dividend_level.find(".dividend_footnote .text").html(rb.msg.dividend_level.footnote);
+        
+        this.$comann_level.find(".title__main span").html(rb.msg.comann_level.title);
+        this.$comann_level.find(".sublink").html(rb.msg.comann_level_seeAll);
+        this.$comann_level.find(".disclaimer").html(rb.msg.comann_level.disclaimer);
+        
+        this.$searchbox.find("input").attr("placeholder",rb.msg.txt);
+        
+        that.loaddata();
+    },
+    _filtersVal : function(val){
+        var valName;
+        if(val){
+            valName=val;
+        }else{
+            valName='-';
+        }
+        
+        return valName;
+    },
+    ////////////////////////////////////////////////////////////////////
+    _setUIInterval: function(str,classname) {
+        var that = this;
+        var html='';
+        var arr=str.split(",");
+        var interval = LabCI.WP.CommonRC.getMsg("interval", that.lang);
+        for(var i=0;i<arr.length;i++){
+            for(var j=0;j<interval.length;j++){
+                if(i==j){
+                    html+='<div class="period">'+interval[arr[i]]+'</div>';
+                }
+            }
+        }
+        that.$interval.attr("class","interval clearfix "+classname);
+        that.$interval.html(html);
+
+        that.$interval.find(".period").off('click').on('click',function(){
+            $(this).addClass("selected").siblings().removeClass("selected");
+        });
+    },
+    // A placeholder for resources, to be defined in separate resource files for specific languages
+    PAGEOBJ_RESOURCEBUNDLE: {
+        conf: {
+            "default": {
+                indexric: ".HSI",
+                chartintopt: "p1m"
+            },
+            indexlisttable: [
+                ".HSI",
+                ".HSCE",
+                ".CSI300",
+                ".RXYY"
+            ],
+            perintsetting: {
+                p1d: "0,1,2,3",
+                p5d: "2,3",
+                p1m: "4",
+                p3m: "4,5",
+                p6m: "4,5",
+                p1y: "4,5,6",
+                p2y: "4,5,6",
+                p5y: "5,6,7",
+                p10y: "6,7",
+                ytd: "4,5,6,7"
+            },
+            intervals: ['min', 'min5', 'min15', 'hourly', 'daily', 'weekly', 'monthly', 'quarterly']
+
+        }
+    }
+
+};
+
+})(jQuery);
