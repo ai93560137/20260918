@@ -178,12 +178,6 @@ def hsi_levels():
         q = call('getderivativesfutures', ats='HSI', type=0)
         qd = (q or {}).get('data', {})
         row = (qd.get('futureslist') or [{}])[0]
-
-        def num(x):
-            try:
-                return float(str(x).replace(',', ''))
-            except (TypeError, ValueError):
-                return None
         bd, as_, se = num(row.get('bd')), num(row.get('as')), num(row.get('se'))
         if bd and as_:
             out['quote'] = {'px': round((bd + as_) / 2), 'kind': '中間價',
