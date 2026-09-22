@@ -54,6 +54,7 @@
 | ✅ | 八陣圖 on XAUUSD（期貨/多空）；ETF 只做多版亦可 | 4.1 年 +2,659/oz、PF 1.78；空頭腿≈0 |
 | 🔍 | BTC/ETH/白銀（掃描器候選） | 待 0.1% 成本重測 + 終審；白銀與黃金高相關，分散價值低 |
 | ☠️ | 八陣圖直接套個股 | 四個結構性衝突（見下節）|
+| ☠️ | 港股動量輪動 on 手選8檔「現在知名大市值股」池（0700/9988/3690/1810等） | 總報酬離譜到不可信（+3244% vs 基準+226%，t=3.85，參數平原也通過）——股票池本身帶後見之明的最壞版倖存者偏差，機制本身沒問題，數字作廢，見 MOMENTUM_HK_BACKTEST.md |
 
 ## 三、股票市場研究的特別守則
 
@@ -91,6 +92,8 @@
 | `BACKTEST.md` | 更早的 v12 回測教訓（樣本長度、樣本內外）|
 | `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
 | `data/stocks/` | 股票/指數日線數據（格式見 `data/stocks/README.md`，與根目錄 MT5 M1 期貨數據分開）|
+| `stock_momentum_backtest.py` | 港股動量輪動回測原型（月頻、絕對動量濾網、次日開盤成交、換手才收費）|
+| `MOMENTUM_HK_BACKTEST.md` | 動量輪動實驗記錄——含倖存者偏差教訓（手選股票池作弊）|
 
 ## 五、新 session 開工清單
 
