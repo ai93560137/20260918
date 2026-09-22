@@ -1,0 +1,7 @@
+nikkei_nidxprice_p1: HTTP 200 text/html; charset=utf-8 497755 bytes  https://www.nikkei.com/markets/kabu/nidxprice/?StockIndex=N225&Gcode=00&hm=1
+nikkei_nidxprice_p2: HTTP 200 text/html; charset=utf-8 497755 bytes  https://www.nikkei.com/markets/kabu/nidxprice/?StockIndex=N225&Gcode=00&hm=2
+nikkei_nidxprice_p5: HTTP 200 text/html; charset=utf-8 497755 bytes  https://www.nikkei.com/markets/kabu/nidxprice/?StockIndex=N225&Gcode=00&hm=5
+jpx_misc_index: HTTP 200 text/html 29914 bytes  https://www.jpx.co.jp/markets/statistics-equities/misc/01.html
+jpx xls links: ['/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xlsx']
+jpx_listed_0: HTTP 200 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet 228486 bytes  https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xlsx
+yahoojp_7203_full: HTTP 200 text/html; charset=utf-8 451581 bytes  https://finance.yahoo.co.jp/quote/7203.T
