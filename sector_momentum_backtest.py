@@ -264,7 +264,7 @@ def main() -> None:
         ts.sort()
         pct = sum(x < s["alpha_t"] for x in ts) / len(ts)
         print(f"\n隨機行業對照組 200 次：alpha t 中位數 {ts[100]:.2f}、第 90 百分位 {ts[179]:.2f}；"
-              f"預設格 {s['alpha_t']:.2f} 位於第 {pct:.0%} 百分位")
+              f"預設格 {s['alpha_t']:.2f} 位於第 {pct:.1%} 百分位（{sum(x < s['alpha_t'] for x in ts)}/200 次隨機低於它）")
 
     if args.attribution:
         attribution(mk)
