@@ -255,7 +255,10 @@ def main() -> None:
         for t, name in fetched.items():
             rec = yf_names.setdefault(t, {"name": name, "history": [{"date": today.isoformat(), "name": name}]})
             if rec["name"] != name:
-                flag("🔴", t, "yf_name_changed", f"上次「{rec['name']}」→ 今天「{name}」（改名或代碼被重用）")
+                # 只有正規化後（忽略大小寫/標點/Ltd 類字）仍不同才算真的換名；純外觀變動
+                # （如 "of" -> "Of"，2026-09-22 誤報過一次）只默默更新紀錄
+                if norm_name(rec["name"]) != norm_name(name):
+                    flag("🔴", t, "yf_name_changed", f"上次「{rec['name']}」→ 今天「{name}」（改名或代碼被重用）")
                 rec["history"].append({"date": today.isoformat(), "name": name})
                 rec["name"] = name
         YF_NAMES.write_text(json.dumps(yf_names, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
@@ -267,7 +270,8 @@ def main() -> None:
         prev = hkex_snaps[-2] if len(hkex_snaps) > 1 else None
         for t, q in sorted(latest_q.items()):
             name = q.get("name", "")
-            if prev and t in prev[1] and prev[1][t].get("name") and name and prev[1][t]["name"] != name:
+            if (prev and t in prev[1] and prev[1][t].get("name") and name
+                    and norm_name(prev[1][t]["name"]) != norm_name(name)):
                 flag("🔴", t, "hkex_name_changed", f"港交所名稱 {prev[0]}「{prev[1][t]['name']}」→ "
                                                    f"{latest_d}「{name}」（改名或代碼被重用）")
             wn = wiki_names.get(t)
