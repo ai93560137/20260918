@@ -1,23 +1,23 @@
 {
- "fetched_at": "2026-09-23 00:55 HKT",
+ "fetched_at": "2026-09-23 00:57 HKT",
  "hsi": {
-  "h1": 25057,
-  "l1": 24613,
-  "h2": 24868,
-  "l2": 24561,
-  "h3": 24718,
-  "l3": 24330,
+  "h1": 25255,
+  "l1": 25042,
+  "h2": 25057,
+  "l2": 24613,
+  "h3": 24868,
+  "l3": 24561,
   "dates": [
+   "2026-09-22",
    "2026-09-21",
-   "2026-09-18",
-   "2026-09-17"
+   "2026-09-18"
   ],
   "quote": {
    "px": 25062,
    "kind": "中間價",
    "asof": "22/09/2026 16:29"
   },
-  "source": "HKEX 即月期貨 HSIc1(15分鐘延遲)"
+  "source": "HKEX 即月期貨 HSIc1(15分鐘延遲)(當日取自報價高低)"
  },
  "mgc": {
   "h1": 4414.1,
@@ -32,7 +32,7 @@
    "2026-09-18"
   ],
   "quote": {
-   "px": 4369.5,
+   "px": 4369.9,
    "kind": "小時收盤",
    "asof": "09-23 00:00 HKT"
   },
@@ -44,18 +44,16 @@
   "raw 2026-09-17 00:00 h=24718.0 l=24330.0",
   "raw 2026-09-18 00:00 h=24868.0 l=24561.0",
   "raw 2026-09-21 00:00 h=25057.0 l=24613.0",
-  "intraday int=4 span=1: 222 rows, 0 in window [09-22 17:16..09-23 00:38]",
+  "intraday int=4 span=1: 223 rows, 0 in window [09-22 17:16..09-23 00:40]",
   "intraday int=4 span=2: 89 rows, 0 in window [09-22 17:15..09-23 00:35]",
   "intraday int=5 span=2: 89 rows, 0 in window [09-22 17:15..09-23 00:35]",
   "intraday int=3 span=2: 89 rows, 0 in window [09-22 17:15..09-23 00:35]",
   "intraday int=5 span=3: 29 rows, 0 in window [09-22 17:15..09-23 00:15]",
   "intraday int=6 span=3: 29 rows, 0 in window [09-22 17:15..09-23 00:15]",
   "futureslist[0] raw: {\"as\": \"25,072\", \"bd\": \"25,051\", \"con\": \"Sep-26\", \"con_l\": \"SEPTEMBER 2026\", \"hc\": \"25,044\", \"hi\": \"25,255\", \"lo\": \"25,042\", \"ls\": \"25,060\", \"nc\": \"+16\", \"oi\": \"127,402\", \"op\": \"25,137\", \"pc\": \"+0.06\", \"ric\": \"2HSIU6\", \"se\": \"25,055\", \"vo\": \"70,242\"}",
-  "quote hi/lo fail: cannot access local variable 'num' where it is not associated with a value",
-  "yahoo HSI=F df rows=0",
-  "yahoo fallback rejected: cutoff_in=False overlap=0 bad=[]",
+  "quote hi/lo accepted 2026-09-22: h=25255 l=25042",
   "hsi quote: {'px': 25062, 'kind': '中間價', 'asof': '22/09/2026 16:29'}",
-  "hsi: OK ['2026-09-21', '2026-09-18', '2026-09-17']",
+  "hsi: OK ['2026-09-22', '2026-09-21', '2026-09-18']",
   "mgc: OK ['2026-09-22', '2026-09-21', '2026-09-18']"
  ]
 }
