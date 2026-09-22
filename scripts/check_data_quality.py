@@ -14,7 +14,7 @@
   ——港交所代碼下市後會重新分配給別家公司，同一代碼的價格歷史可能被
   靜默拼接成兩家公司，回測會完全錯
 - 🔴 名字變了：yfinance 公司名跟上次檢查不同（改名或代碼被重用）
-- 🔴 雙來源收市價不符：最近 20 個共同交易日 yfinance vs Stooq 收市價
+- 🔴 雙來源收市價不符：最近 20 份港交所官方快照 vs yfinance 收市價
   相差 > 1%
 - 🟡 數據過期（最後一根距今 > 7 天，已下市的舊成分股是預期結果）
 - 🟡 交易日斷層 > 14 天（停牌？）
@@ -37,7 +37,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PRIMARY_DIR = ROOT / "data" / "stocks"
-SECONDARY_DIR = ROOT / "data" / "stocks_stooq"
+HKEX_DIR = ROOT / "data" / "stocks_hkex"
 WIKI_NAMES = ROOT / "scripts" / "pointintime" / "hsi_names.json"
 YF_NAMES = PRIMARY_DIR / "names_yf.json"
 ACKS = ROOT / "scripts" / "qc_acks.json"
@@ -121,6 +121,16 @@ def main() -> None:
     tickers = [p.name[:-len(".csv.gz")].replace("_", "^", 1) if p.name.startswith("_")
                else p.name[:-len(".csv.gz")] for p in primary_files]
 
+    # 港交所每日快照（fetch_hkex_equity.py），取最近 XSRC_WINDOW 份
+    hkex_snaps: list[tuple[date, dict]] = []
+    if HKEX_DIR.exists():
+        for p in sorted(HKEX_DIR.glob("quotes_*.json"))[-XSRC_WINDOW:]:
+            try:
+                snap = json.loads(p.read_text(encoding="utf-8"))
+                hkex_snaps.append((date.fromisoformat(snap["trade_date_guess"]), snap["quotes"]))
+            except (ValueError, KeyError):
+                continue
+
     issues: list[tuple[str, str, str, str]] = []  # (severity, ticker, check, detail)
     history: dict[str, dict[str, tuple[int, date]]] = {}  # {ticker: {check: (count, last_date)}}，只統計不每天警告
 
@@ -177,20 +187,18 @@ def main() -> None:
             g0, g1 = gaps[-1]
             flag("🟡", t, "gap", f"{len(gaps)} 段 > {GAP_DAYS} 天斷層，最近 {g0} -> {g1}")
 
-        # --- 第二來源交叉比對 ---
-        sec_path = SECONDARY_DIR / path.name
-        if not sec_path.exists():
-            flag("🟡", t, "no_second_source", "Stooq 沒有這檔，無法交叉驗證")
-        else:
-            sec = {r[0]: r[4] for r in load_ohlc(sec_path)}
-            common = [(d, c) for d, _, _, _, c in rows if d in sec and c > 0 and sec[d] > 0][-XSRC_WINDOW:]
-            if not common:
-                flag("🟡", t, "no_overlap", "兩個來源沒有共同交易日")
-            else:
-                worst_d, worst = max(((d, c / sec[d] - 1) for d, c in common), key=lambda x: abs(x[1]))
-                if abs(worst) > XSRC_TOL:
-                    flag("🔴", t, "xsource", f"最近 {len(common)} 個共同交易日最大差 {worst:+.2%}（{worst_d}，"
-                                            f"yf={dict(common)[worst_d]:.4g} stooq={sec[worst_d]:.4g}）")
+        # --- 第二來源（港交所官方收市價）交叉比對：只有港股有 ---
+        if t.endswith(".HK") and age <= STALE_DAYS:
+            sec = {d: q[t]["close"] for d, q in hkex_snaps if t in q and q[t].get("close")}
+            yf_close = {r[0]: r[4] for r in rows}
+            common = [(d, yf_close[d], c) for d, c in sec.items() if d in yf_close and yf_close[d] > 0 and c > 0]
+            if not sec:
+                flag("🟡", t, "no_second_source", "港交所快照沒有這檔，無法交叉驗證收市價")
+            elif common:
+                worst_d, yv, hv = max(common, key=lambda x: abs(x[1] / x[2] - 1))
+                if abs(yv / hv - 1) > XSRC_TOL:
+                    flag("🔴", t, "xsource", f"最近 {len(common)} 個共同交易日最大差 {yv / hv - 1:+.2%}"
+                                            f"（{worst_d}，yfinance={yv:.4g} 港交所={hv:.4g}）")
 
         # --- Wikipedia 不同年份名字是否一致 ---
         wn = wiki_names.get(t, {})
@@ -236,6 +244,24 @@ def main() -> None:
         YF_NAMES.write_text(json.dumps(yf_names, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                             encoding="utf-8")
 
+    # --- 港交所官方公司名：跟前一份快照比（代碼重用/改名），跟 Wikipedia 比 ---
+    if hkex_snaps:
+        latest_d, latest_q = hkex_snaps[-1]
+        prev = hkex_snaps[-2] if len(hkex_snaps) > 1 else None
+        for t, q in sorted(latest_q.items()):
+            name = q.get("name", "")
+            if prev and t in prev[1] and prev[1][t].get("name") and name and prev[1][t]["name"] != name:
+                flag("🔴", t, "hkex_name_changed", f"港交所名稱 {prev[0]}「{prev[1][t]['name']}」→ "
+                                                   f"{latest_d}「{name}」（改名或代碼被重用）")
+            wn = wiki_names.get(t)
+            if wn and name:
+                y = max(wn)
+                sim = name_similarity(name, wn[y])
+                if sim < NAME_SIM_MIN:
+                    # 港交所用英文簡稱（如 CKH HOLDINGS），縮寫會讓相似度偏低，先列 🟡 人工確認
+                    flag("🟡", t, "hkex_vs_wiki_name", f"港交所「{name}」vs Wikipedia {y}年「{wn[y]}」"
+                                                       f"（相似度 {sim:.2f}）")
+
     for t, rec in yf_names.items():
         wn = wiki_names.get(t)
         if not wn:
@@ -256,8 +282,8 @@ def main() -> None:
         f"# 數據品質日報（{today}）",
         "",
         f"由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）"
-        f"{len(tickers)} 檔，第二來源 Stooq（`data/stocks_stooq/`）"
-        f"{len(list(SECONDARY_DIR.glob('*.csv.gz'))) if SECONDARY_DIR.exists() else 0} 檔，"
+        f"{len(tickers)} 檔，第二來源港交所官方快照（`data/stocks_hkex/`）"
+        f"{len(hkex_snaps)} 份（最新 {hkex_snaps[-1][0] if hkex_snaps else '無'}），"
         f"公司名紀錄 {len(yf_names)} 檔。",
         "",
         f"**🔴 嚴重 {len(crit)} 項 ｜ 🟡 注意 {len(warn)} 項 ｜ ✅ 已確認 {len(acked)} 項**",
