@@ -1,0 +1,2725 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="lLt_6ueDgc36qLjjzuEClXHz2QrN3IGhnqEeL9u7vZ8aJWPj71u7kIbJyoYAE2MK8yUsR069gE-vXovS45jk2A" />
+       
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="bingbot" content="noarchive">
+    <meta name="description" content="The Nikkei Indexes provide the information regarding all of the indexes calculated by Nikkei Inc., represented by Nikkei Stock Average." />
+    <meta name="keywords" content="Nikkei,225,index,indices" />
+    <title>Components - Nikkei Indexes</title>
+    
+	<!-- Google Tag Manager -->
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-NVVVBZXG');</script>
+	<!-- End Google Tag Manager -->
+    
+    <script src="/en/nkave/assets/jquery-3.7.1.min.js"></script>
+    <script src="/en/nkave/assets/bootstrap.min.js"></script>
+    <script src="/en/nkave/assets/bootstrap.bundle.min.js"></script>
+    <script src="/en/nkave/assets/jquery-ui.min.js"></script>
+    <script src="/en/nkave/assets/jquery.colorbox-min.js"></script>
+    <script src="/en/nkave/assets/w2ui-1.5.rc1.min.js"></script>
+        <link rel="stylesheet" href="/en/nkave/assets/kite-color.en.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/bootstrap.min.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/bootstrap-icons.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/colorbox.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/jquery-ui.min.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/jquery.jqplot.min.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/w2ui-1.5.rc1.min.css" media="screen" />
+    <link rel="stylesheet" href="/en/nkave/assets/style-extend-bootstrap-style.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/style-common-parts.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/style-global.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/style-icon.css" media="screen, print" />
+    <link rel="stylesheet" href="/en/nkave/assets/style.css" media="screen, print" />
+    
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="nTMdkNHKIRUTMlEXkvjTQulugcU5rwSKKa2TKO3JukoTrQGZ2RIbSG9TI3JcCrLda7h0iLrOBWQYUgbV1erjDQ" />
+    
+      
+      
+      
+      
+      
+      
+      
+      
+    
+      
+      
+      
+     
+
+  </head>
+    
+  <body>
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVVVBZXG"
+	height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
+
+      
+
+
+    
+  
+    
+    <div class="idx-ja">
+        
+        <!-- Sidebar -->
+        <nav class="navbar navbar-expand-lg idx-sidebar sticky-top">
+            
+            <div class="container-fluid px-0">
+                
+                    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#gNav" aria-controls="offcanvasNavbar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                
+                <!-- Brand -->
+                <div class="idx-brand">
+                    <a class="navbar-brand" href="/en/nkave">Nikkei Indexes</a>
+                    <p class="idx-tagline">-Nikkei 225 Official Site-</p>
+                </div>
+                
+                    <div class="offcanvas offcanvas-start" tabindex="-1" id="gNav" aria-labelledby="gNavLabel">
+                        
+                        <!-- Navigation header -->
+                        <div class="offcanvas-header">
+                            <h5 class="offcanvas-title" id="gNavLabel">Nikkei Indexes</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        
+                        <!-- Navigation contents -->
+                        <div class="offcanvas-body">
+                            <ul class="navbar-nav justify-content-end idx-gnav">
+                                <li class="nav-item"><p class="label">Resources</p></li>
+                                <li class="nav-item"><a class="nav-link " href="/en/nkave/newsroom"><i class="idx-icon icon-news"></i>News&amp;Release</a></li>
+                                <li class="nav-item">
+                                    <div class="nav-item has-sub">
+                                        <span class="nav-link ">
+                                            <i class="idx-icon icon-index"></i><span>Index List</span>
+                                        </span>
+                                        <ul class="nav-subnav">
+                                            <li class="nav-item"><a class="nav-link " href="/en/nkave/index?type=index">Current Values</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/en/nkave/index?type=download">Download Center</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item">
+                                    <div class="nav-item has-sub">
+                                        <span class="nav-link ">
+                                            <i class="idx-icon icon-archive"></i><span>Nikkei 225 Archives</span>
+                                        </span>
+                                        <ul class="nav-subnav">
+                                            <li class="nav-item"><a class="nav-link " href="/en/nkave/archives/summary">Daily Summary</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/en/nkave/archives/data">Historical Data in Nikkei 225</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/en/nkave/archives/record">Records in Nikkei 225</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/en/nkave/archives/calendar">Winning rate of the day</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="/en/nkave/faq/chronology.html">Chronology</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item"><a class="nav-link " href="/en/nkave/index/search"><i class="idx-icon icon-search"></i>Index Stock Finder</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/en/nkave/governance/"><i class="idx-icon icon-governance"></i>Governance</a></li>
+                                <li class="nav-item"><p class="label">Utilization</p></li>
+                                <li class="nav-item"><a class="nav-link" href="/en/nkave/license/"><i class="idx-icon icon-license"></i>License</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/en/nkave/data/"><i class="idx-icon icon-data"></i>Index Data</a></li>
+                                <li class="nav-item"><p class="label">Support</p></li>
+                                <li class="nav-item"><a class="nav-link" href="/en/nkave/faq/"><i class="idx-icon icon-faq"></i>FAQ</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/en/nkave/contact/"><i class="idx-icon icon-contact"></i>Contact</a></li>
+                            </ul>
+                            
+                            <!-- Member link -->
+                            <div class="idx-member" id="member">
+                                <a class="idx-member-link" href="/en/nkave/service"><i class="idx-icon icon-lock"></i>&nbsp;For Subscribers</a>
+                            </div>
+                        </div>
+                    </div>
+                
+                <!-- Language switcher md -->
+                <div class="idx-lang-md">
+                    <ul class="lang-switcher lang-md">
+                            <li class="lang-switcher-item active"><span>EN</span></li>
+                            <li class="lang-switcher-item"><a href="/cz/nkave/index/profile" class="lang-switcher-link"><span>CN</span></a></li>
+                            <li class="lang-switcher-item"><a href="/nkave/index/component?idx=nk225" class="lang-switcher-link"><span>JA</span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main column -->
+        <div class="idx-main">
+            
+            
+            <nav class="idx-topbar">
+                <div class="container-fluid d-flex justify-content-between align-items-center">
+                    <!-- Breadcrumb -->
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/en/nkave">Top</a></li>
+                                <li class="breadcrumb-item active">Index List</li>
+    <li class="breadcrumb-item" aria-current="page"><a href="/en/nkave/index/profile?idx=nk225">Nikkei Stock Average (Nikkei 225)</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Components</li>
+
+                        </ol>
+                    
+                    <!-- Language switcher lg -->
+                    <div class="idx-lang-lg">
+                        <ul class="lang-switcher lang-lg">
+                                <li class="lang-switcher-item active"><span>English</span></li>
+                                <li class="lang-switcher-item"><a href="/cz/nkave/index/profile" class="lang-switcher-link"><span>簡体中文</span></a></li>
+                                <li class="lang-switcher-item"><a href="/nkave/index/component?idx=nk225" class="lang-switcher-link"><span>日本語</span></a></li>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Page title -->
+            <header class="idx-header">
+                    <div class="idx-header-pagetitle">
+        <div class="container-fluid">
+            <h1 class="idx-header-headding d-flex align-items-center"><i class="idx-icon icon-index"></i>Components</h1>
+        </div>
+    </div>
+
+            </header>
+            
+            <!-- Contents -->
+            
+
+<main class="flex-lg-1 h-screen">
+    <!-- daily-summary -->
+    <section class="idx-section">
+        <div class="container-fluid">
+            <h2 class="idx-section-heading">Components:Nikkei Stock Average (Nikkei 225)</h2>
+            
+            <div class="idx-componentslist-header">
+                
+                <div class="idx-ui-group">
+                    <a class="menu-toggler" data-bs-toggle="collapse" href="#collapse-menu" role="button" aria-expanded="false" aria-controls="collapse-menu">
+                        <i class="bi bi-building"></i>&nbsp;Industry List
+                    </a>
+                    <!--daily_changing--><p class="date position-end">Update：Sep/18/2026</p>
+                </div>
+                <div class="collapse" id="collapse-menu">
+                    <div class="idx-u-menu">
+                        
+                        
+                            
+                                    
+                                    
+                                    <div class="category">
+                                        <p class="title">Technology</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C09">Pharmaceuticals</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C23">Electric Machinery</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C27">Automobiles &amp; Auto parts</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C31">Precision Instruments</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C65">Communications</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">Financials</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C47">Banking</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C52">Other Financial Services</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C49">Securities</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C51">Insurance</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">Consumer Goods</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C35">Fishery</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C01">Foods</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C45">Retail</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C71">Services</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">Materials</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C37">Mining</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C03">Textiles &amp; Apparel</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C05">Pulp &amp; Paper</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C07">Chemicals</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C11">Petroleum</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C13">Rubber</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C15">Glass &amp; Ceramics</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C17">Steel</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C19">Nonferrous Metals</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C43">Trading Companies</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">Capital Goods/Others</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C41">Construction</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C21">Machinery</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C25">Shipbuilding</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C29">Transportation Equipment</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C33">Other Manufacturing</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C53">Real Estate</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">Transportation and Utilities</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C55">Railway &amp; Bus</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C57">Land Transport</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C59">Marine Transport</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C61">Air Transport</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C63">Warehousing</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C67">Electric Power</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C69">Gas</a></li>
+                            
+                            </ul>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            
+                
+                    
+                    
+                    <a name="C09" id="C09"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Pharmaceuticals</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>4151</td>
+                        <td>KYOWA KIRIN CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4502</td>
+                        <td>TAKEDA PHARMACEUTICAL CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4503</td>
+                        <td>ASTELLAS PHARMA INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4506</td>
+                        <td>SUMITOMO PHARMA CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4507</td>
+                        <td>SHIONOGI &amp; CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4519</td>
+                        <td>CHUGAI PHARMACEUTICAL CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4523</td>
+                        <td>EISAI CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4568</td>
+                        <td>DAIICHI SANKYO CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4578</td>
+                        <td>OTSUKA HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C23" id="C23"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Electric Machinery</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>285A</td>
+                        <td>KIOXIA HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4062</td>
+                        <td>IBIDEN CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6479</td>
+                        <td>MINEBEA MITSUMI INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6501</td>
+                        <td>HITACHI, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6503</td>
+                        <td>MITSUBISHI ELECTRIC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6504</td>
+                        <td>FUJI ELECTRIC CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6506</td>
+                        <td>YASKAWA ELECTRIC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6526</td>
+                        <td>SOCIONEXT INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6645</td>
+                        <td>OMRON CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6701</td>
+                        <td>NEC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6702</td>
+                        <td>FUJITSU LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6723</td>
+                        <td>RENESAS ELECTRONICS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6724</td>
+                        <td>SEIKO EPSON CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6752</td>
+                        <td>PANASONIC HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6753</td>
+                        <td>SHARP CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6758</td>
+                        <td>SONY GROUP CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6762</td>
+                        <td>TDK CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6770</td>
+                        <td>ALPS ALPINE CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6841</td>
+                        <td>YOKOGAWA ELECTRIC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6857</td>
+                        <td>ADVANTEST CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6861</td>
+                        <td>KEYENCE CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6902</td>
+                        <td>DENSO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6920</td>
+                        <td>LASERTEC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6954</td>
+                        <td>FANUC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6963</td>
+                        <td>ROHM CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6971</td>
+                        <td>KYOCERA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6976</td>
+                        <td>TAIYO YUDEN CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6981</td>
+                        <td>MURATA MANUFACTURING CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7735</td>
+                        <td>SCREEN HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7751</td>
+                        <td>CANON INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7752</td>
+                        <td>RICOH CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8035</td>
+                        <td>TOKYO ELECTRON LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C27" id="C27"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Automobiles &amp; Auto parts</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>543A</td>
+                        <td>ARCHION CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7201</td>
+                        <td>NISSAN MOTOR CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7202</td>
+                        <td>ISUZU MOTORS LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7203</td>
+                        <td>TOYOTA MOTOR CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7211</td>
+                        <td>MITSUBISHI MOTORS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7261</td>
+                        <td>MAZDA MOTOR CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7267</td>
+                        <td>HONDA MOTOR CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7269</td>
+                        <td>SUZUKI MOTOR CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7270</td>
+                        <td>SUBARU CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7272</td>
+                        <td>YAMAHA MOTOR CO., LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C31" id="C31"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Precision Instruments</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>4543</td>
+                        <td>TERUMO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4902</td>
+                        <td>KONICA MINOLTA, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6146</td>
+                        <td>DISCO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7731</td>
+                        <td>NIKON CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7733</td>
+                        <td>OLYMPUS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7741</td>
+                        <td>HOYA CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C65" id="C65"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Communications</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9432</td>
+                        <td>NTT, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9433</td>
+                        <td>KDDI CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9434</td>
+                        <td>SOFTBANK CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9984</td>
+                        <td>SOFTBANK GROUP CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C47" id="C47"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Banking</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5831</td>
+                        <td>SHIZUOKA FINANCIAL GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7186</td>
+                        <td>YOKOHAMA FINANCIAL GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8304</td>
+                        <td>AOZORA BANK, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8306</td>
+                        <td>MITSUBISHI UFJ FINANCIAL GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8308</td>
+                        <td>RESONA HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8309</td>
+                        <td>SUMITOMO MITSUI TRUST GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8316</td>
+                        <td>SUMITOMO MITSUI FINANCIAL GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8331</td>
+                        <td>THE CHIBA BANK, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8354</td>
+                        <td>FUKUOKA FINANCIAL GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8411</td>
+                        <td>MIZUHO FINANCIAL GROUP, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C52" id="C52"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Other Financial Services</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>8253</td>
+                        <td>CREDIT SAISON CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8591</td>
+                        <td>ORIX CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8697</td>
+                        <td>JAPAN EXCHANGE GROUP, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C49" id="C49"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Securities</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>8601</td>
+                        <td>DAIWA SECURITIES GROUP INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8604</td>
+                        <td>NOMURA HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C51" id="C51"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Insurance</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>8630</td>
+                        <td>SOMPO HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8725</td>
+                        <td>MS&amp;AD INSURANCE GROUP HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8750</td>
+                        <td>DAIICHI LIFE GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8766</td>
+                        <td>TOKIO MARINE HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8795</td>
+                        <td>T&amp;D HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C35" id="C35"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Fishery</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>1332</td>
+                        <td>NISSUI CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C01" id="C01"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Foods</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>2002</td>
+                        <td>NISSHIN SEIFUN GROUP INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2269</td>
+                        <td>MEIJI HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2282</td>
+                        <td>NH FOODS LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2501</td>
+                        <td>SAPPORO BREWERIES LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2502</td>
+                        <td>ASAHI GROUP HOLDINGS, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2503</td>
+                        <td>KIRIN HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2801</td>
+                        <td>KIKKOMAN CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2802</td>
+                        <td>AJINOMOTO CO., INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2871</td>
+                        <td>NICHIREI CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2914</td>
+                        <td>JAPAN TOBACCO INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C45" id="C45"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Retail</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3086</td>
+                        <td>J.FRONT RETAILING CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3092</td>
+                        <td>ZOZO, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3099</td>
+                        <td>ISETAN MITSUKOSHI HOLDINGS LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3382</td>
+                        <td>SEVEN &amp; I HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7453</td>
+                        <td>RYOHIN KEIKAKU CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7532</td>
+                        <td>PAN PACIFIC INTERNATIONAL HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8233</td>
+                        <td>TAKASHIMAYA CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8252</td>
+                        <td>MARUI GROUP CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8267</td>
+                        <td>AEON CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9843</td>
+                        <td>NITORI HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9983</td>
+                        <td>FAST RETAILING CO., LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C71" id="C71"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Services</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>2413</td>
+                        <td>M3, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2432</td>
+                        <td>DENA CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3659</td>
+                        <td>NEXON CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3697</td>
+                        <td>SHIFT INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4307</td>
+                        <td>NOMURA RESEARCH INSTITUTE, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4324</td>
+                        <td>DENTSU GROUP INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4385</td>
+                        <td>MERCARI, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4661</td>
+                        <td>ORIENTAL LAND CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4689</td>
+                        <td>LY CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4704</td>
+                        <td>TREND MICRO INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4751</td>
+                        <td>CYBERAGENT, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4755</td>
+                        <td>RAKUTEN GROUP, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6098</td>
+                        <td>RECRUIT HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6178</td>
+                        <td>JAPAN POST HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6532</td>
+                        <td>BAYCURRENT, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7974</td>
+                        <td>NINTENDO CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9602</td>
+                        <td>TOHO CO., LTD</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9735</td>
+                        <td>SECOM CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9766</td>
+                        <td>KONAMI GROUP CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C37" id="C37"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Mining</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>1605</td>
+                        <td>INPEX CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C03" id="C03"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Textiles &amp; Apparel</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3401</td>
+                        <td>TEIJIN LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3402</td>
+                        <td>TORAY INDUSTRIES, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C05" id="C05"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Pulp &amp; Paper</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3861</td>
+                        <td>OJI HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C07" id="C07"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Chemicals</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3405</td>
+                        <td>KURARAY CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3407</td>
+                        <td>ASAHI KASEI CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4004</td>
+                        <td>RESONAC HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4005</td>
+                        <td>SUMITOMO CHEMICAL CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4021</td>
+                        <td>NISSAN CHEMICAL CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4042</td>
+                        <td>TOSOH CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4043</td>
+                        <td>TOKUYAMA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4061</td>
+                        <td>DENKA CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4063</td>
+                        <td>SHIN-ETSU CHEMICAL CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4183</td>
+                        <td>MITSUI CHEMICALS, INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4188</td>
+                        <td>MITSUBISHI CHEMICAL GROUP CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4208</td>
+                        <td>UBE CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4452</td>
+                        <td>KAO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4901</td>
+                        <td>FUJIFILM HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4911</td>
+                        <td>SHISEIDO CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6988</td>
+                        <td>NITTO DENKO CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C11" id="C11"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Petroleum</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5019</td>
+                        <td>IDEMITSU KOSAN CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5020</td>
+                        <td>ENEOS HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C13" id="C13"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Rubber</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5101</td>
+                        <td>THE YOKOHAMA RUBBER CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5108</td>
+                        <td>BRIDGESTONE CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C15" id="C15"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Glass &amp; Ceramics</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5201</td>
+                        <td>AGC INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5214</td>
+                        <td>NIPPON ELECTRIC GLASS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5233</td>
+                        <td>TAIHEIYO CEMENT CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5301</td>
+                        <td>TOKAI CARBON CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5332</td>
+                        <td>TOTO LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5333</td>
+                        <td>NGK CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C17" id="C17"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Steel</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5401</td>
+                        <td>NIPPON STEEL CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5406</td>
+                        <td>KOBE STEEL, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5411</td>
+                        <td>JFE HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C19" id="C19"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Nonferrous Metals</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3436</td>
+                        <td>SUMCO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5706</td>
+                        <td>MITSUI KINZOKU CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5711</td>
+                        <td>MITSUBISHI MATERIALS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5713</td>
+                        <td>SUMITOMO METAL MINING CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5714</td>
+                        <td>DOWA HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5801</td>
+                        <td>FURUKAWA ELECTRIC CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5802</td>
+                        <td>SUMITOMO ELECTRIC IND., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5803</td>
+                        <td>FUJIKURA LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C43" id="C43"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Trading Companies</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>2768</td>
+                        <td>SOJITZ CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8001</td>
+                        <td>ITOCHU CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8002</td>
+                        <td>MARUBENI CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8015</td>
+                        <td>TOYOTA TSUSHO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8031</td>
+                        <td>MITSUI &amp; CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8053</td>
+                        <td>SUMITOMO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8058</td>
+                        <td>MITSUBISHI CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C41" id="C41"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Construction</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>1721</td>
+                        <td>COMSYS HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1801</td>
+                        <td>TAISEI CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1802</td>
+                        <td>OBAYASHI CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1803</td>
+                        <td>SHIMIZU CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1808</td>
+                        <td>HASEKO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1812</td>
+                        <td>KAJIMA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1925</td>
+                        <td>DAIWA HOUSE IND. CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1928</td>
+                        <td>SEKISUI HOUSE, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1963</td>
+                        <td>JGC HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C21" id="C21"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Machinery</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5631</td>
+                        <td>THE JAPAN STEEL WORKS, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6103</td>
+                        <td>OKUMA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6113</td>
+                        <td>AMADA CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6273</td>
+                        <td>SMC CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6301</td>
+                        <td>KOMATSU LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6302</td>
+                        <td>SUMITOMO HEAVY IND., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6305</td>
+                        <td>HITACHI CONST. MACH. CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6326</td>
+                        <td>KUBOTA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6361</td>
+                        <td>EBARA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6367</td>
+                        <td>DAIKIN INDUSTRIES, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6471</td>
+                        <td>NSK LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6472</td>
+                        <td>NTN CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6473</td>
+                        <td>JTEKT CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7004</td>
+                        <td>KANADEVIA CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7011</td>
+                        <td>MITSUBISHI HEAVY IND., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7013</td>
+                        <td>IHI CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C25" id="C25"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Shipbuilding</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>7012</td>
+                        <td>KAWASAKI HEAVY IND., LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C33" id="C33"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Other Manufacturing</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>7832</td>
+                        <td>BANDAI NAMCO HOLDINGS INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7911</td>
+                        <td>TOPPAN HOLDINGS INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7912</td>
+                        <td>DAI NIPPON PRINTING CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7951</td>
+                        <td>YAMAHA CORP.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C53" id="C53"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Real Estate</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3289</td>
+                        <td>TOKYU FUDOSAN HOLDINGS CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8801</td>
+                        <td>MITSUI FUDOSAN CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8802</td>
+                        <td>MITSUBISHI ESTATE CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8804</td>
+                        <td>TOKYO TATEMONO CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8830</td>
+                        <td>SUMITOMO REALTY &amp; DEVELOPMENT CO., LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C55" id="C55"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Railway &amp; Bus</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9001</td>
+                        <td>TOBU RAILWAY CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9005</td>
+                        <td>TOKYU CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9007</td>
+                        <td>ODAKYU ELECTRIC RAILWAY CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9008</td>
+                        <td>KEIO CORP.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9009</td>
+                        <td>KEISEI ELECTRIC RAILWAY CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9020</td>
+                        <td>EAST JAPAN RAILWAY CO.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9021</td>
+                        <td>WEST JAPAN RAILWAY CO.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9022</td>
+                        <td>CENTRAL JAPAN RAILWAY CO., LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C57" id="C57"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Land Transport</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9064</td>
+                        <td>YAMATO HOLDINGS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9147</td>
+                        <td>NIPPON EXPRESS HOLDINGS, INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C59" id="C59"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Marine Transport</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9101</td>
+                        <td>NIPPON YUSEN K.K.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9104</td>
+                        <td>MITSUI O.S.K.LINES, LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9107</td>
+                        <td>KAWASAKI KISEN KAISHA, LTD.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C61" id="C61"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Air Transport</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9201</td>
+                        <td>JAPAN AIRLINES CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9202</td>
+                        <td>ANA HOLDINGS INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C67" id="C67"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Electric Power</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9501</td>
+                        <td>TOKYO ELECTRIC POWER COMPANY HOLDINGS, I</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9502</td>
+                        <td>CHUBU ELECTRIC POWER CO., INC.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9503</td>
+                        <td>THE KANSAI ELECTRIC POWER CO., INC.</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C69" id="C69"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">Gas</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="20%">Code</th>
+                                        <th width="80%">Company Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9531</td>
+                        <td>TOKYO GAS CO., LTD.</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9532</td>
+                        <td>OSAKA GAS CO., LTD.</td>
+                </tr>
+                
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </section>
+</main>
+            
+            <!-- Application -->
+                
+<aside class="idx-section idx-bg-gray">
+    <div class="container-fluid idx-application">
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+            <div class="col">
+                <div class="">
+                    <h2 class="idx-application-title">Guide to make better use of the Nikkei Indexes</h2>
+                </div>
+            </div>
+            <div class="col">
+                <div class="">
+                    <h3 class="idx-application-subtitle">The most trusted gauge of the stock markets</h3>
+                    <p class="idx-application-text">Nikkei Inc. has developed and calculated its own indexes from various perspective, looking at changes in society and markets. Nikkei Stock Average, the premier and flagship index of Japanese stocks, and other Nikkei Indexes are widely used globally as representative indicators of the Japanese equity market, and financial products linked to the Nikkei Indexes are traded around the world.</p>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <img src="/nkave/assets/contract.png" class="card-img-top" alt="License Agreement">
+                    <div class="card-body">
+                        <h3 class="card-title">License Agreement</h3>
+                        <p class="card-text">Nikkei retains all intellectual property rights to the Nikkei Stock Average and other Nikkei Indexes.  In addition to displaying the data on our website and mobile apps, Nikkei guides information on approval procedures for different usage patterns, including display and non-display usage of the indexes,  and creation of financial instruments on the indexes.</p>
+                        <a href="/en/nkave/license/" class="btn btn-primary">More details</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <img src="/nkave/assets/data_provision.png" class="card-img-top" alt="Provision of index data">
+                    <div class="card-body">
+                        <h3 class="card-title">Provision of index data</h3>
+                            <p class="card-text">This section provides information on the procedures for using basic data in business use such as index constituents stock prices, dividends and weights, which are indispensable for calculating the Nikkei Stock Average, for business use.</p>
+                            <a href="/en/nkave/data/" class="btn btn-primary">More details</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">FAQ</h3>
+                        <p class="card-text">Here you will find answers to your questions about the Nikkei Stock Average and other Nikkei Indexes, as well as licensing agreements and use of this site.</p>
+                        <a href="/en/nkave/faq/" class="btn btn-primary">View all FAQ</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">Contact us</h3>
+                            <p class="card-text">Please contact us here for any questions about the Nikkei Indexes, your interest in using the Nikkei Indexes for business purposes and/or any comments about this site.</p>
+                            <a href="/en/nkave/contact/" class="btn btn-primary">Contact us from here</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
+            
+            <!-- Footer -->
+            <footer class="idx-footer">
+                    <nav class="idx-footer-gnav">
+                        <ul class="idx-list">
+                            <li class="list-item"><a class="list-link" href="/en/nkave/newsroom">News&amp;Release</a></li>
+                            <li class="list-item has-sub">
+                                <a class="list-link" role="button" data-bs-toggle="button" style="text-decoration: none;">Index List</a>
+                                <div class="sub-item">
+                                    <ul>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/index?type=index">Current Values</a></li>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/index?type=download">Download Center</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li class="list-item has-sub">
+                                <a class="list-link" role="button" data-bs-toggle="button" style="text-decoration: none;">Nikkei 225 Archives</a>
+                                <div class="sub-item">
+                                    <ul>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/archives/summary">Daily Summary</a></li>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/archives/data">Historical Data in Nikkei 225</a></li>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/archives/record">Records in Nikkei 225</a></li>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/archives/calendar">Winning rate of the day</a></li>
+                                        <li class="list-item"><a class="list-link" href="/en/nkave/faq/chronology.html">Chronology</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li class="list-item"><a class="list-link" href="/en/nkave/index/search">Index Stock Finder</a></li>
+                            <li class="list-item"><a class="list-link" href="/en/nkave/governance/">Governance</a></li>
+                            <li class="list-item"><a class="list-link" href="/en/nkave/license/">License</a></li>
+                            <li class="list-item"><a class="list-link" href="/en/nkave/data/">Index Data</a></li>
+                            <li class="list-item"><a class="list-link" href="/en/nkave/faq/">FAQ</a></li>
+                            <li class="list-item"><a class="list-link" href="/en/nkave/contact/">Contact</a></li>
+                        </ul>
+                    </nav>
+                <nav>
+                    <ul class="idx-list idx-lg-list-flat idx-list-col-2">
+                            <li class="list-item"><a class="list-link" href="/en/nkave/sitemap">Sitemap</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/archives/file/terms_of_use_en.pdf"  onclick="_gaq.push(['_trackEvent', 'stocknames_EN', '.PDF', 'terms_of_use_en.pdf'])" target="_blank">Term of Use</a></li>
+                            <li class="list-item"><a class="list-link" href="https://www.nikkei.com/lounge/privacy/en/privacy.html" target="_blank">Privacy Policy&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                        
+                            <li class="list-item"><a class="list-link" href="https://www.nikkei.com/lounge/privacy/cookie/en/policy.html" target="_blank">Cookie Policy&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                        <li class="list-item"><a class="list-link" href="https://www.nikkei.com/lounge/privacy/cookie/optout.html#nikkeipdp" target="_blank">Information Transmission&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/archives/file/users_guide_en.pdf" onclick="_gaq.push(['_trackEvent', 'stocknames_EN', '.PDF', 'users_guide_en.pdf'])" target="_blank">User&#39;s Guide</a></li>
+                    </ul>
+                    <ul class="idx-list idx-lg-list-flat idx-list-col-2">
+                            <li class="list-item"><a class="list-link" href="http://asia.nikkei.com/" target="_blank">Nikkei Asian&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                            <li class="list-item"><a class="list-link" href="https://www.nikkei.co.jp/nikkeiinfo/en/" target="_blank">Nikkei Inc.&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                    </ul>
+                </nav>
+                <p class="idx-copyright">
+                    <span class="idx-copyright-brand"><img src="/nkave/assets/cmn_logo_nikkei_01.svg" alt="Nikkei Inc."></span>
+                    <span>No reproduction without permission.</span>
+                </p>
+            </footer>
+            
+            <!--  Utility -->
+            <div class="idx-back-to-top">
+                <a class="idx-back-to-top-link" href="#"><i class="bi bi-arrow-up"></i></a>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-28645102-1']);
+      _gaq.push(['_gat._anonymizeIp']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+      
+      // bfcache対策
+      window.onpageshow = function(event) {
+        if (event.persisted) {
+          window.location.reload();
+        }
+      };
+      
+      // divlinkのホバー時にアンダーラインをつける
+      $("div.divlink").hover(function(){
+        $(this).addClass("divlink-hover");
+        $("div",this).addClass("divlink-hover");
+      },function(){
+        if($(this).hasClass("divlink-hover")){
+          $(this).removeClass("divlink-hover");
+          $("div",this).removeClass("divlink-hover");
+        }
+      });
+    </script>
+    
+  </body>
+
+</html>
