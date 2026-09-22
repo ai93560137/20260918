@@ -90,7 +90,12 @@ def hsi_levels():
                         and r[2] and r[3] and 15000 < float(r[3]) <= float(r[2]) < 40000]
                 seg = [r for r in cand
                        if w0 <= datetime.fromtimestamp(r[0] / 1000, tz=HKT) < w1]
-                log.append(f'intraday int={i} span={sp}: {len(cand)} rows, {len(seg)} in window')
+                span_dbg = ''
+                if cand:
+                    t0 = datetime.fromtimestamp(cand[0][0] / 1000, tz=HKT)
+                    t1 = datetime.fromtimestamp(cand[-1][0] / 1000, tz=HKT)
+                    span_dbg = f' [{t0:%m-%d %H:%M}..{t1:%m-%d %H:%M}]'
+                log.append(f'intraday int={i} span={sp}: {len(cand)} rows, {len(seg)} in window{span_dbg}')
                 if len(seg) >= 30:
                     hi_d = max(float(r[2]) for r in seg)
                     lo_d = min(float(r[3]) for r in seg)
