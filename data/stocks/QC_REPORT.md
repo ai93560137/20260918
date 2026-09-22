@@ -1,27 +1,14 @@
 # 數據品質日報（2026-09-22）
 
-由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）0 份（最新 無），公司名紀錄 106 檔。
+由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）7 份（最新 2026-09-22），公司名紀錄 106 檔。
 
-**🔴 嚴重 12 項 ｜ 🟡 注意 111 項 ｜ ✅ 已確認 8 項**
+**🔴 嚴重 0 項 ｜ 🟡 注意 19 項 ｜ ✅ 已確認 19 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
 ## 🔴 嚴重（會污染回測，先處理）
 
-| 代碼 | 檢查 | 說明 |
-|---|---|---|
-| 0013.HK | code_reuse_suspected | 2010-2015年是成分股（Hutchison Whampoa Ltd），但價格 2021-06-30 才開始——代碼被重新分配給別家公司，現有價格不是當年那家，回測不能拿來代表它 |
-| 1880.HK | code_reuse_suspected | 2011-2018年是成分股（Belle International），但價格 2022-08-25 才開始——代碼被重新分配給別家公司，現有價格不是當年那家，回測不能拿來代表它 |
-| 0013.HK | name_mismatch | yfinance「HUTCHMED (China) Limited」vs Wikipedia 2015年「Hutchison Whampoa Ltd」（相似度 0.45） |
-| 0322.HK | name_mismatch | yfinance「Tingyi (Cayman Islands) Holding Corp.」vs Wikipedia 2025年「Tingyi」（相似度 0.44） |
-| 0386.HK | name_mismatch | yfinance「China Petroleum & Chemical Corporation」vs Wikipedia 2025年「Sinopec Corp」（相似度 0.32） |
-| 0388.HK | name_mismatch | yfinance「Hong Kong Exchanges and Clearing Limited」vs Wikipedia 2025年「HKEx Limited」（相似度 0.22） |
-| 0823.HK | name_mismatch | yfinance「Link Real Estate Investment Trust」vs Wikipedia 2025年「Link REIT」（相似度 0.38） |
-| 1199.HK | name_mismatch | yfinance「COSCO SHIPPING Ports Limited」vs Wikipedia 2014年「COSCO Pacific Ltd」（相似度 0.48） |
-| 1880.HK | name_mismatch | yfinance「China Tourism Group Duty Free Corporation Limited」vs Wikipedia 2018年「Belle International」（相似度 0.24） |
-| 2003.HK | name_mismatch | yfinance「VCREDIT Holdings Limited」vs Wikipedia 2019年「Country Garden」（相似度 0.29） |
-| 2038.HK | name_mismatch | yfinance「FIH Mobile Limited」vs Wikipedia 2011年「Foxconn International Holdings Ltd」（相似度 0.26） |
-| 6690.HK | name_mismatch | yfinance「Haier Smart Home Co., Ltd.」vs Wikipedia 2025年「Haier」（相似度 0.48） |
+（無）
 
 ## 🟡 注意
 
@@ -29,112 +16,20 @@
 |---|---|---|
 | 0011.HK | constituent_no_data | 2010-2025年是成分股（Hang Seng Bank Ltd），但主來源完全沒有價格（多半已下市/私有化——回測測不到它，倖存者偏差殘留） |
 | 0494.HK | constituent_no_data | 2010-2016年是成分股（Li & Fung Ltd），但主來源完全沒有價格（多半已下市/私有化——回測測不到它，倖存者偏差殘留） |
-| 0001.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0002.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0003.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0004.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0005.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0006.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0012.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0013.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0016.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0017.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0019.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0023.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0027.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0066.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0083.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0101.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0135.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0144.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0151.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0175.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0241.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0267.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0288.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0291.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0293.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0316.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0322.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0330.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0386.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0388.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0669.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0688.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0700.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0762.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0823.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0836.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0857.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0868.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0881.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0883.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0939.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0941.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0960.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0968.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0981.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0992.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1038.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1044.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1088.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1093.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1099.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1109.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1113.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1177.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1199.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1209.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1211.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1288.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1299.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1339.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1378.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1398.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1810.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1876.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1880.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1898.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1928.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1929.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1997.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2003.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2007.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2015.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2018.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2020.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2038.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2269.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2313.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2318.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2319.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2331.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2359.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2382.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2388.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2600.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2601.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2628.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2688.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2800.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2899.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 3328.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 3690.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 3692.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 3968.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 3988.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 6030.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 6098.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 6618.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 6690.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 6862.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9618.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9633.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9888.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9901.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9961.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9988.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9999.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
+| 0001.HK | hkex_vs_wiki_name | 港交所「CKH HOLDINGS」vs Wikipedia 2025年「CK Hutchison Holdings Limited」（相似度 0.40） |
+| 0013.HK | hkex_vs_wiki_name | 港交所「HUTCHMED」vs Wikipedia 2015年「Hutchison Whampoa Ltd」（相似度 0.48） |
+| 0016.HK | hkex_vs_wiki_name | 港交所「SHK PPT」vs Wikipedia 2025年「Sun Hung Kai Properties Limited」（相似度 0.47） |
+| 0316.HK | hkex_vs_wiki_name | 港交所「OOIL」vs Wikipedia 2025年「Orient Overseas (International) Limited」（相似度 0.24） |
+| 0939.HK | hkex_vs_wiki_name | 港交所「CCB」vs Wikipedia 2025年「China Construction Bank」（相似度 0.23） |
+| 0981.HK | hkex_vs_wiki_name | 港交所「SMIC」vs Wikipedia 2025年「Semiconductor Manufacturing International Corporation」（相似度 0.18） |
+| 1038.HK | hkex_vs_wiki_name | 港交所「CKI HOLDINGS」vs Wikipedia 2025年「Cheung Kong Infrastructure Holdings Limited」（相似度 0.21） |
+| 1177.HK | hkex_vs_wiki_name | 港交所「SBP GROUP」vs Wikipedia 2025年「Sino Biopharm」（相似度 0.38） |
+| 1398.HK | hkex_vs_wiki_name | 港交所「ICBC」vs Wikipedia 2025年「Industrial and Commercial Bank of China」（相似度 0.19） |
+| 1880.HK | hkex_vs_wiki_name | 港交所「CTG DUTY-FREE」vs Wikipedia 2018年「Belle International」（相似度 0.12） |
+| 1997.HK | hkex_vs_wiki_name | 港交所「WHARF REIC」vs Wikipedia 2025年「Wharf Real Estate Investment Company Limited」（相似度 0.47） |
+| 2038.HK | hkex_vs_wiki_name | 港交所「FIH」vs Wikipedia 2011年「Foxconn International Holdings Ltd」（相似度 0.17） |
+| 2600.HK | hkex_vs_wiki_name | 港交所「CHALCO」vs Wikipedia 2013年「Aluminum Corporation of China Limited (Chalco)」（相似度 0.40） |
+| 6098.HK | hkex_vs_wiki_name | 港交所「CG SERVICES」vs Wikipedia 2025年「Country Garden」（相似度 0.24） |
 | 0330.HK | ohlc_auction | 近30天 2 根開/收市價落在高低價外（多半是競價時段慣例）：2026-08-24, 2026-09-08 |
 | 0960.HK | wiki_name_varies | 最新記載「Longfor Properties」，但 2023年「The Link REIT」 |
 | 6098.HK | wiki_name_varies | 最新記載「Country Garden」，但 2023年「CG SERVICES」 |
@@ -143,6 +38,17 @@
 
 | 代碼 | 檢查 | 確認理由 |
 |---|---|---|
+| 0013.HK | code_reuse_suspected | 確認代碼重用：和記黃埔2015併入長和後0013由和黃醫藥(2021上市)使用。回測引擎以「價格須早於快照日」排除，無污染 |
+| 1880.HK | code_reuse_suspected | 確認代碼重用：百麗國際2017私有化後1880由中國中免H股(2022上市)使用。回測引擎已排除 |
+| 0013.HK | name_mismatch | 同上，代碼重用（和黃->和黃醫藥），已由回測防護排除 |
+| 0322.HK | name_mismatch | 同一公司：康師傅，Wikipedia 只寫簡稱 Tingyi |
+| 0386.HK | name_mismatch | 同一公司：中國石化，Sinopec = China Petroleum & Chemical Corporation |
+| 0388.HK | name_mismatch | 同一公司：港交所，HKEx = Hong Kong Exchanges and Clearing |
+| 0823.HK | name_mismatch | 同一公司：領展，Link REIT = Link Real Estate Investment Trust |
+| 1199.HK | name_mismatch | 同一公司改名：中遠太平洋(COSCO Pacific) 2016年改名中遠海運港口(COSCO SHIPPING Ports) |
+| 1880.HK | name_mismatch | 同上，代碼重用（百麗->中免），已由回測防護排除 |
+| 2038.HK | name_mismatch | 同一公司改名：富士康國際(Foxconn International) 改名富智康(FIH Mobile) |
+| 6690.HK | name_mismatch | 同一公司：海爾智家，Wikipedia 只寫簡稱 Haier |
 | 0001.HK | wiki_name_varies | 真實重組：2015年長實(Cheung Kong)與和黃重組為長和(CK Hutchison)，沿用0001代碼。回測注意：同一代碼前後是不同業務結構的公司 |
 | 0006.HK | wiki_name_varies | 真實改名：香港電燈集團(HK Electric Holdings)2011年改名電能實業(Power Assets)，同一公司 |
 | 0101.HK | wiki_name_varies | Wikipedia 2023年修訂版本本身名字錯位一列（已核對原始 wikitext：代碼正確、名字錯位，2024年已修正），非代碼重用 |
