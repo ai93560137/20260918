@@ -97,7 +97,7 @@
   "shares_rows": 443
  },
  "ABT": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -151,7 +151,7 @@
   "shares_rows": 415
  },
  "ADI": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -298,7 +298,7 @@
   "shares_rows": 559
  },
  "AJG": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -368,7 +368,7 @@
   "shares_rows": 582
  },
  "ALL": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -477,7 +477,7 @@
  },
  "AMLN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AMP": {
@@ -492,7 +492,7 @@
   "shares_rows": 544
  },
  "AMT": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -735,7 +735,7 @@
   "shares_rows": 502
  },
  "ASML": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -761,7 +761,7 @@
   "shares_rows": 557
  },
  "ATO": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -976,7 +976,7 @@
   "shares_rows": 176
  },
  "BBWI": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -987,7 +987,7 @@
   "shares_rows": 389
  },
  "BBY": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1019,7 +1019,7 @@
   "last_fail": "2026-09-22"
  },
  "BDX": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1307,7 +1307,7 @@
   "last_fail": "2026-09-22"
  },
  "BUD": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1405,7 +1405,7 @@
   "shares_rows": 1
  },
  "CARR": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1662,7 +1662,7 @@
   "rows": 7606
  },
  "CHRW": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1684,7 +1684,7 @@
   "shares_rows": 533
  },
  "CI": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1706,7 +1706,7 @@
   "shares_rows": 540
  },
  "CINF": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1929,7 +1929,7 @@
   "shares_rows": 354
  },
  "COST": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2152,7 +2152,7 @@
  },
  "CTRX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CTSH": {
@@ -2167,7 +2167,7 @@
   "shares_rows": 590
  },
  "CTVA": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2499,7 +2499,7 @@
   "last_fail": "2026-09-22"
  },
  "DOC": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2558,7 +2558,7 @@
   "last_fail": "2026-09-22"
  },
  "DRI": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2727,7 +2727,7 @@
   "shares_rows": 581
  },
  "EG": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2924,7 +2924,7 @@
   "shares_rows": 593
  },
  "ES": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3162,7 +3162,7 @@
   "last_fail": "2026-09-22"
  },
  "FDS": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3385,7 +3385,7 @@
  },
  "FMCN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FNMA": {
@@ -3504,7 +3504,7 @@
  },
  "FWLT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "GAP": {
@@ -3523,7 +3523,7 @@
   "last_fail": "2026-09-22"
  },
  "GD": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3567,7 +3567,7 @@
   "shares_rows": 379
  },
  "GEN": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3637,7 +3637,7 @@
   "shares_rows": 572
  },
  "GIS": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3794,7 +3794,7 @@
   "shares_rows": 534
  },
  "GS": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3839,7 +3839,7 @@
  },
  "HANS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HAR": {
@@ -3960,7 +3960,7 @@
   "last_fail": "2026-09-22"
  },
  "HOG": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4041,7 +4041,7 @@
   "shares_rows": 677
  },
  "HPQ": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4052,7 +4052,7 @@
   "shares_rows": 481
  },
  "HRB": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4111,7 +4111,7 @@
   "shares_rows": 460
  },
  "HSY": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4161,7 +4161,7 @@
  },
  "IACI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "IBKR": {
@@ -4427,7 +4427,7 @@
   "shares_rows": 533
  },
  "J": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4556,7 +4556,7 @@
  },
  "JOYG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "JPM": {
@@ -4586,7 +4586,7 @@
   "last_fail": "2026-09-22"
  },
  "KBH": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4777,7 +4777,7 @@
   "shares_rows": 334
  },
  "L": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4851,7 +4851,7 @@
  },
  "LEAP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LEG": {
@@ -4871,7 +4871,7 @@
   "last_fail": "2026-09-22"
  },
  "LEN": {
-  "adj_err_max": 9e-06,
+  "adj_err_max": 1e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4882,7 +4882,7 @@
   "shares_rows": 1584
  },
  "LH": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4958,7 +4958,7 @@
  },
  "LINTA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LITE": {
@@ -4973,7 +4973,7 @@
   "shares_rows": 356
  },
  "LKQ": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5011,12 +5011,12 @@
  },
  "LMCA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LMCK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LMT": {
@@ -5068,7 +5068,7 @@
   "rows": 7418
  },
  "LOW": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5134,7 +5134,7 @@
  },
  "LVNTA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LVS": {
@@ -5231,7 +5231,7 @@
   "shares_rows": 503
  },
  "MAR": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5510,7 +5510,7 @@
   "shares_rows": 602
  },
  "MMM": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5569,7 +5569,7 @@
   "last_fail": "2026-09-22"
  },
  "MOS": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5776,7 +5776,7 @@
   "shares_rows": 612
  },
  "MUR": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5833,7 +5833,7 @@
   "last_fail": "2026-09-22"
  },
  "NBR": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5937,7 +5937,7 @@
   "shares_rows": 36
  },
  "NI": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5949,7 +5949,7 @@
  },
  "NIHD": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NKE": {
@@ -6034,7 +6034,7 @@
   "shares_rows": 606
  },
  "NSC": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6083,11 +6083,11 @@
  },
  "NUAN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NUE": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6402,7 +6402,7 @@
   "shares_rows": 546
  },
  "PCG": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6471,7 +6471,7 @@
   "shares_rows": 529
  },
  "PEP": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6679,7 +6679,7 @@
  },
  "PPDI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PPG": {
@@ -6694,7 +6694,7 @@
   "shares_rows": 403
  },
  "PPL": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6727,7 +6727,7 @@
   "shares_rows": 426
  },
  "PSA": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6883,7 +6883,7 @@
  },
  "QRTEA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "QRVO": {
@@ -6899,11 +6899,11 @@
  },
  "QVCA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "R": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6951,7 +6951,7 @@
   "last_fail": "2026-09-22"
  },
  "REG": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7012,11 +7012,11 @@
  },
  "RIMM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RJF": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7086,7 +7086,7 @@
   "shares_rows": 499
  },
  "ROP": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7167,7 +7167,7 @@
   "shares_rows": 351
  },
  "RVTY": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7214,7 +7214,7 @@
   "last_fail": "2026-09-22"
  },
  "SBAC": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7291,7 +7291,7 @@
  },
  "SGEN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SGP": {
@@ -7328,7 +7328,7 @@
  },
  "SHPG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SHW": {
@@ -7348,7 +7348,7 @@
   "last_fail": "2026-09-22"
  },
  "SIG": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7544,7 +7544,7 @@
  },
  "SPLK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SPLS": {
@@ -7559,7 +7559,7 @@
   "shares_rows": 15
  },
  "SPY": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7575,7 +7575,7 @@
   "last_fail": "2026-09-22"
  },
  "SRE": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7748,7 +7748,7 @@
   "shares_rows": 572
  },
  "SYK": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7786,7 +7786,7 @@
   "shares_rows": 516
  },
  "TAP": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8011,7 +8011,7 @@
   "last_fail": "2026-09-22"
  },
  "TMO": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8043,7 +8043,7 @@
   "rows": 5076
  },
  "TPL": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8283,7 +8283,7 @@
  },
  "UAUA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "UBER": {
@@ -8353,7 +8353,7 @@
   "shares_rows": 507
  },
  "UNM": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8364,7 +8364,7 @@
   "shares_rows": 550
  },
  "UNP": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8461,8 +8461,18 @@
   "rows": 3252,
   "shares_rows": 591
  },
+ "VEON": {
+  "adj_err_max": 3e-06,
+  "error": null,
+  "fails": 0,
+  "fetched": "2026-09-22",
+  "files_changed": 32,
+  "first": "1996-11-15",
+  "last": "2026-09-22",
+  "rows": 7508
+ },
  "VFC": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8537,7 +8547,7 @@
   "shares_rows": 290
  },
  "VMC": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8549,11 +8559,11 @@
  },
  "VMED": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "VMRK": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8564,7 +8574,7 @@
   "shares_rows": 2
  },
  "VNO": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8575,7 +8585,7 @@
   "shares_rows": 478
  },
  "VNT": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8673,7 +8683,7 @@
   "shares_rows": 375
  },
  "VZ": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8684,7 +8694,7 @@
   "shares_rows": 543
  },
  "WAB": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8744,7 +8754,7 @@
  },
  "WCRX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WDAY": {
@@ -8781,7 +8791,7 @@
   "shares_rows": 540
  },
  "WELL": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8820,7 +8830,7 @@
  },
  "WFMI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WFT": {
@@ -9016,7 +9026,7 @@
   "last_fail": "2026-09-22"
  },
  "XOM": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -9077,7 +9087,7 @@
  },
  "YHOO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "YUM": {

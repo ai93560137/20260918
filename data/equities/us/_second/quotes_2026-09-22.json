@@ -519,13 +519,6 @@
    "name": "Baxter International Inc. Common Stock",
    "sector": "Health Care"
   },
-  "BBT": {
-   "close": 28.42,
-   "industry": "Banks",
-   "market_cap": 2382053164.0,
-   "name": "Beacon Financial Corporation Common stock",
-   "sector": "Finance"
-  },
   "BBWI": {
    "close": 17.18,
    "industry": "Other Specialty Stores",
@@ -805,13 +798,6 @@
    "market_cap": 30515782371.0,
    "name": "Carnival Corporation Ltd. Common Shares",
    "sector": "Consumer Discretionary"
-  },
-  "CCU": {
-   "close": 11.17,
-   "industry": "Beverages (Production/Distribution)",
-   "market_cap": 2063673540.0,
-   "name": "Compania Cervecerias Unidas S.A. Common Stock",
-   "sector": "Consumer Staples"
   },
   "CDNS": {
    "close": 302.95,
@@ -1485,13 +1471,6 @@
    "name": "EOG Resources Inc. Common Stock",
    "sector": "Energy"
   },
-  "EP": {
-   "close": 2.23,
-   "industry": "Oil & Gas Production",
-   "market_cap": 92773220.0,
-   "name": "Empire Petroleum Corporation Common Stock",
-   "sector": "Energy"
-  },
   "EPAM": {
    "close": 111.54,
    "industry": "EDP Services",
@@ -1946,13 +1925,6 @@
    "market_cap": 3687826121.0,
    "name": "Genworth Financial Inc Common Stock",
    "sector": "Finance"
-  },
-  "GOLD": {
-   "close": 44.65,
-   "industry": "Other Specialty Stores",
-   "market_cap": 1301759855.0,
-   "name": "Gold.com Inc. Common Stock",
-   "sector": "Industrials"
   },
   "GOOG": {
    "close": 347.41,
@@ -2415,13 +2387,6 @@
    "market_cap": 59129404833.0,
    "name": "Keysight Technologies Inc. Common Stock",
    "sector": "Industrials"
-  },
-  "KG": {
-   "close": 5.38,
-   "industry": "Property-Casualty Insurers",
-   "market_cap": 42093281.0,
-   "name": "Kestrel Group Ltd.",
-   "sector": "Finance"
   },
   "KHC": {
    "close": 24.0,
@@ -3354,13 +3319,6 @@
    "name": "Palo Alto Networks Inc. Common Stock",
    "sector": "Technology"
   },
-  "PARA": {
-   "close": 0.8846,
-   "industry": "Broadcasting",
-   "market_cap": null,
-   "name": "Banzai International Inc. Class A Common Stock",
-   "sector": "Industrials"
-  },
   "PAYC": {
    "close": 224.61,
    "industry": "Computer Software: Prepackaged Software",
@@ -3864,13 +3822,6 @@
    "market_cap": 3847817542.0,
    "name": "Signet Jewelers Limited Common Shares",
    "sector": "Consumer Discretionary"
-  },
-  "SII": {
-   "close": 131.56,
-   "industry": "Finance: Consumer Services",
-   "market_cap": 3394248000.0,
-   "name": "Sprott Inc. Common Shares",
-   "sector": "Finance"
   },
   "SIRI": {
    "close": 26.53,
@@ -4467,6 +4418,13 @@
    "name": "Veeva Systems Inc. Class A Common Stock",
    "sector": "Technology"
   },
+  "VEON": {
+   "close": 69.37,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 4776901097.0,
+   "name": "VEON Ltd. ADS",
+   "sector": "Telecommunications"
+  },
   "VFC": {
    "close": 13.55,
    "industry": "Garments and Clothing",
@@ -4487,13 +4445,6 @@
    "market_cap": 26403839937.0,
    "name": "VICI Properties Inc. Common Stock",
    "sector": "Real Estate"
-  },
-  "VIP": {
-   "close": 1.87,
-   "industry": "Finance: Consumer Services",
-   "market_cap": 34463917.0,
-   "name": "Vulcan Infrastructure and Power Inc. Class A Common Stock",
-   "sector": "Finance"
   },
   "VLO": {
    "close": 377.14,
@@ -4655,13 +4606,6 @@
    "market_cap": 166052429261.0,
    "name": "Welltower Inc. Common Stock",
    "sector": "Real Estate"
-  },
-  "WEN": {
-   "close": 6.81,
-   "industry": "Restaurants",
-   "market_cap": 1298462223.0,
-   "name": "Wendy's Company (The) Common Stock",
-   "sector": "Consumer Discretionary"
   },
   "WFC": {
    "close": 83.15,
