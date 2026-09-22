@@ -65,6 +65,9 @@ def hsi_levels():
     now_hk = datetime.now(HKT)
     cutoff = now_hk.date() if (now_hk.hour, now_hk.minute) >= (16, 35) else \
         (now_hk.date() - timedelta(days=1))
+    for r in rows[-4:]:                                    # 除錯:源序列尾部原樣記錄
+        ts = datetime.fromtimestamp(r[0] / 1000, tz=HKT)
+        log.append(f'raw {ts:%Y-%m-%d %H:%M} h={r[2]} l={r[3]}')
     days = []
     for r in rows:
         d = datetime.fromtimestamp(r[0] / 1000, tz=HKT).date()
