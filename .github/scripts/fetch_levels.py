@@ -60,11 +60,15 @@ def hsi_levels():
     if not rows:
         raise RuntimeError('getchartdata2 no usable daily series: ' + ' | '.join(log[-6:]))
 
-    today_hk = datetime.now(HKT).date()
+    # 港交所慣例:夜市屬下一交易日,故當日日線於 16:30 收市即完結。
+    # 16:35(HKT)後把「今天」納入窗口,與 TradingView 的日界一致。
+    now_hk = datetime.now(HKT)
+    cutoff = now_hk.date() if (now_hk.hour, now_hk.minute) >= (16, 35) else \
+        (now_hk.date() - timedelta(days=1))
     days = []
     for r in rows:
         d = datetime.fromtimestamp(r[0] / 1000, tz=HKT).date()
-        if d < today_hk:                                   # 只要已完結的日
+        if d <= cutoff:                                    # 只要已完結的日
             days.append((d, float(r[2]), float(r[3])))     # (date, high, low)
     days = days[-3:]
     if len(days) < 3:
