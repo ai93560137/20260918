@@ -31,10 +31,10 @@ jobs:
         run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
       # 第二來源與品質日報都是輔助，各自設時間上限，絕不能拖住主數據的 commit
-      - name: Fetch second source (Stooq)
+      - name: Fetch second source (HKEX official quotes)
         continue-on-error: true
         timeout-minutes: 8
-        run: python3 scripts/fetch_stooq.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
+        run: python3 scripts/fetch_hkex_equity.py scripts/universe_hk.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
       - name: Data quality check
         continue-on-error: true
@@ -45,7 +45,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stocks/ data/stocks_stooq/
+          # 只 add 存在的目錄——對不存在的路徑 git add 會報錯，整個 commit 步驟就掉了
+          for d in data/stocks data/stocks_hkex; do
+            [ -d "$d" ] && git add "$d"
+          done
           if git diff --cached --quiet; then
             echo "No data changes"
             exit 0
