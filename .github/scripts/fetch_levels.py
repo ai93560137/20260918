@@ -77,34 +77,29 @@ def hsi_levels():
     # 用日內數據按 HKEX 交易日窗口(前一交易日 17:10 夜市起 → 當日 16:35)聚合。
     agg_note = ''
     if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
-        idata = None
-        for i, sp in [(4, 1), (4, 2), (3, 1), (5, 2), (2, 1)]:
+        back = 3 if cutoff.weekday() == 0 else 1            # 週一的夜市始於上週五
+        w0 = datetime.combine(cutoff - timedelta(days=back),
+                              datetime.min.time(), tzinfo=HKT) + timedelta(hours=17, minutes=10)
+        w1 = datetime.combine(cutoff, datetime.min.time(), tzinfo=HKT) + timedelta(hours=16, minutes=35)
+        # 逐組嘗試,以「窗口內夠多根」為準——小 span 的緩衝在深夜會滑出目標窗口
+        for i, sp in [(4, 1), (4, 2), (5, 2), (3, 2), (5, 3), (6, 3)]:
             try:
                 d2 = call('getchartdata2', hchart=1, span=sp, int=i, ric='HSIc1')
                 dl = (d2 or {}).get('data', {}).get('datalist') or []
                 cand = [r for r in dl if isinstance(r, list) and len(r) >= 5
                         and r[2] and r[3] and 15000 < float(r[3]) <= float(r[2]) < 40000]
-                if len(cand) >= 100 and (cand[-1][0] - cand[-2][0]) / 3600000 < 20:
-                    idata = cand
-                    log.append(f'intraday int={i} span={sp}: {len(cand)} rows')
+                seg = [r for r in cand
+                       if w0 <= datetime.fromtimestamp(r[0] / 1000, tz=HKT) < w1]
+                log.append(f'intraday int={i} span={sp}: {len(cand)} rows, {len(seg)} in window')
+                if len(seg) >= 30:
+                    hi_d = max(float(r[2]) for r in seg)
+                    lo_d = min(float(r[3]) for r in seg)
+                    days.append((cutoff, hi_d, lo_d))
+                    agg_note = '(當日由日內聚合)'
+                    log.append(f'aggregated {cutoff}: h={hi_d} l={lo_d} from {len(seg)} bars')
                     break
             except Exception as e:
                 log.append(f'intraday int={i} span={sp}: {e}')
-        if idata:
-            back = 3 if cutoff.weekday() == 0 else 1        # 週一的夜市始於上週五
-            w0 = datetime.combine(cutoff - timedelta(days=back),
-                                  datetime.min.time(), tzinfo=HKT) + timedelta(hours=17, minutes=10)
-            w1 = datetime.combine(cutoff, datetime.min.time(), tzinfo=HKT) + timedelta(hours=16, minutes=35)
-            seg = [r for r in idata
-                   if w0 <= datetime.fromtimestamp(r[0] / 1000, tz=HKT) < w1]
-            if len(seg) >= 30:
-                hi_d = max(float(r[2]) for r in seg)
-                lo_d = min(float(r[3]) for r in seg)
-                days.append((cutoff, hi_d, lo_d))
-                agg_note = '(當日由日內聚合)'
-                log.append(f'aggregated {cutoff}: h={hi_d} l={lo_d} from {len(seg)} bars')
-            else:
-                log.append(f'aggregate skip: only {len(seg)} bars in window')
     days = days[-3:]
     if len(days) < 3:
         raise RuntimeError(f'only {len(days)} completed days')
