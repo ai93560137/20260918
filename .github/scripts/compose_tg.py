@@ -33,7 +33,7 @@ px = q.get('px')
 quote_line = (f"💰 現價:{f(px)}({q.get('kind', '')} · {q.get('asof', '')},延遲≥15分鐘)\n"
               f"↕️ 距上軌 {f(up - px)} 點 · 距下軌 {f(px - lo)} 點\n") if px else ''
 
-msg = f"""🎯 八陣圖指令台 · 大恒指 HSI
+msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
 🕐 {d.get('fetched_at', '')}
 
 📊 前 3 個完整交易日
