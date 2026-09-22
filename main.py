@@ -209,7 +209,11 @@ DD_TOLERANCE_PCT = _env_float("DD_TOLERANCE_PCT", 20.0)               # 可承�
 #           gap=7.6%→ 回撤 6.2%（HK$1,240 ＝ 3.4 次最壞虧損）才鎖死
 #       用 TradingView 全期 513 筆重播：gap=10 擋掉 6 筆，gap=7.6 一筆都不擋。
 WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 7.6)
-EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)              # 曝險硬上限（名目 ÷ 淨值）
+EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)
+# [R90] 高水位是用哪一把尺量的。R88 把風控淨值從「淨值」改成「淨值 − 信用」之後，
+#       舊的高水位（含信用）跟新的淨值不能比 —— 差額是信用，不是虧損，卻會被
+#       讀成一筆從未發生的回撤，把空城計鎖死。換尺就重新起算。
+EQUITY_PEAK_BASIS = "risk_equity_v2"              # 曝險硬上限（名目 ÷ 淨值）
 DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日虧損上限（佔淨值）
 # [R72] 波動門檻用 EA 已經在傳的 atr_m15。校準見 README §24：只做多、抱 10 根、
 #       扣 US$0.40 來回時，打平點是 ATR(14)/價格 = 0.0837%。預設取 0.10%（打平點
@@ -668,6 +672,7 @@ def default_gate_state():
         "news_lock": False,
         "risk": {},               # [R70] 風控電閘最近一次評估（開閘的真正依據）
         "equity_peak": 0.0,       # [R74] 歷史淨值高水位，空城計的回撤基準
+        "equity_peak_basis": "",  # [R90] 上面那個高水位是用哪一把尺量的
         "trades_today": {},       # {"ny_date": "YYYY-MM-DD", "count": n}  [R73]
         "last_m1_bar_time": 0,    # idempotency for M1 packets  [R25]
         "last_m15_bar_time": 0,   # [R78] 錦囊：同一根已收盤 M15 只評估一次
@@ -846,7 +851,10 @@ def evaluate_risk_gate(snapshot, state, now=None):
     if not equity or equity <= 0:
         add("exposure", "曝險上限", False, "缺淨值，無法試算")
     else:
-        peak = max(to_float(state.get("equity_peak"), 0.0) or 0.0, equity, balance or 0.0)
+        # [R90] 尺換了就不能沿用舊高水位，否則差額會被當成回撤。
+        stored_peak = (to_float(state.get("equity_peak"), 0.0) or 0.0) \
+            if state.get("equity_peak_basis") == EQUITY_PEAK_BASIS else 0.0
+        peak = max(stored_peak, equity, balance or 0.0)
         dd_now = max(0.0, (peak - equity) / peak * 100) if peak > 0 else 0.0
         cap_dyn = max(0.0, (DD_TOLERANCE_PCT - dd_now) / WORST_GAP_PCT) if WORST_GAP_PCT > 0 else 0.0
         cap_eff = min(EXPOSURE_HARD_CAP, cap_dyn)
@@ -901,7 +909,11 @@ def evaluate_risk_gate(snapshot, state, now=None):
         "checks": checks,
         "reason": "五關全過 → 開閘" if not failed else "｜".join(f"{c['name']}：{c['detail']}" for c in failed),
         "atr_pct": atr_pct, "exposure": exp_now, "exposure_cap": cap_eff, "drawdown_pct": dd_now,
-        "equity_peak": max(to_float(state.get("equity_peak"), 0.0) or 0.0, equity or 0.0, balance or 0.0),
+        "equity_peak": max(
+            (to_float(state.get("equity_peak"), 0.0) or 0.0)
+            if state.get("equity_peak_basis") == EQUITY_PEAK_BASIS else 0.0,     # [R90]
+            equity or 0.0, balance or 0.0),
+        "equity_peak_basis": EQUITY_PEAK_BASIS,
         "trades_today": used, "evaluated_utc": fmt_utc(now),
     }
 
@@ -922,11 +934,21 @@ def apply_risk_to_gate(snapshot, news_locked):
         def shape(r):
             return (r.get("open"), r.get("reason"),
                     tuple((c.get("key"), c.get("ok"), c.get("detail")) for c in r.get("checks", [])))
+        # [R90] 換尺時新高水位會【變小】，上面那個 > 比較抓不到，所以要單獨判一次，
+        #       否則基準標記永遠寫不進去，舊尺的高水位會一直把電閘鎖著。
+        basis_changed = state.get("equity_peak_basis") != risk["equity_peak_basis"]
         changed = (shape(prev) != shape(risk) or bool(state.get("armed")) != armed
                    or bool(state.get("news_lock")) != bool(news_locked)
+                   or basis_changed
                    or risk["equity_peak"] > (to_float(state.get("equity_peak"), 0.0) or 0.0) + 1e-9)
+        if basis_changed:
+            print(f"ℹ️ [高水位重新起算] 風控淨值的定義變了（{state.get('equity_peak_basis') or '未標記'}"
+                  f" → {risk['equity_peak_basis']}），舊高水位 "
+                  f"{to_float(state.get('equity_peak'), 0.0) or 0.0:,.2f} 不再沿用，"
+                  f"改由 {risk['equity_peak']:,.2f} 起算。[R90]", flush=True)
         state.update(risk=risk, armed=armed, news_lock=bool(news_locked), last_reason=reason,
-                     equity_peak=risk["equity_peak"])
+                     equity_peak=risk["equity_peak"],
+                     equity_peak_basis=risk["equity_peak_basis"])
         after = gate_status(state)
         return changed, {"before": before, "after": after, "reason": reason, "risk": risk}
 

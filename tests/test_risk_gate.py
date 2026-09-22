@@ -134,6 +134,8 @@ check(f"已有 1 盎司 → 下單後 2 盎司 = {2*want:.2f}x，超過可用 "
 
 print("\n=== 4c. 回撤要對歷史高水位（R74）===")
 st_hw = main.default_gate_state(); st_hw["equity_peak"] = 25000.0
+# [R90] 高水位要標明是用哪一把尺量的，沒標記會被當成換尺前的舊值丟掉。
+st_hw["equity_peak_basis"] = main.EQUITY_PEAK_BASIS
 # 虧損已實現 → balance 也跟著掉，max(equity,balance) 會讀成 0% 回撤
 r = main.evaluate_risk_gate(dict(good, equity=20000.0, balance=20000.0), st_hw)
 check("已實現虧損仍算得出 20% 回撤", abs(r["drawdown_pct"] - 20.0) < 1e-9, r["drawdown_pct"])
