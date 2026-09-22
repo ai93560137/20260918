@@ -60,6 +60,7 @@
 | ☠️ | 港股 12-1 動量 top-k 月輪動 on **真 point-in-time 恒指成分股**（Wikipedia 修訂歷史，2010-2026） | +190% vs 基準+97%、t=1.55、MDD -48%、8正9負年；鄰域 t 0.55~1.71（一格歸零）、30bps 成本 t=1.38——參數非平原、t 不及格。單獨使用判死，陣名「鳥翔」不發；可當下一個港股策略的對照組。見 MOMENTUM_HK_BACKTEST.md 第四輪。**改用相對基準指標後更確定**：每月超額報酬 t 只有 -0.41~0.94，先前 t=1.55 大部分是大盤 beta |
 | 🔍 | 港股**低波動**（過去252日波動最低10檔、等權、月換倉）on 真 point-in-time 恒指成分股 | +239% vs 基準+97%、MDD -27% vs -47%、夏普 0.60 vs 0.31、13正4負年、換手極低；6格鄰域風險調整面全為平原。**但預先登記主指標（每月超額報酬 t）只有 0.35~0.83**；事後 CAPM alpha t 1.75~2.41（beta 0.6）不能拿來升級。持倉幾乎固定是公用股+大行。**行業中性複核（預先登記）**：預設格 alpha t 1.45，落在門檻之間→不確定、不升不降；鄰域 4/6 格≥1.5；只持公用股的診斷 alpha t 0.87、總報酬輸基準——「押公用股」解釋不了原 alpha，行業中性後保留約六成。同段樣本已用盡，只剩前向模擬盤能判。陣名「地載」保留未發。見 LOWVOL_HK_BACKTEST.md |
 | 🔍 | 港股**高股息**（滾動12月股息率最高10檔、等權、月換倉；股息由還原價反推）on 真 point-in-time 恒指成分股 | 預先登記門檻乾淨通過：+434% vs 基準+97%、alpha t 2.77（beta 0.96）、6格全≥1.5、MDD -34% vs -47%。與低波動持倉只重疊25%（算新策略）但月報酬相關0.82。**⚠️ alpha 集中在 2022 年後**（國企高息行情：2022前 alpha t 1.24、之後 2.73；低波動同形狀），前10個月佔86%報酬。同段樣本已用盡，只剩前向模擬。見 DIVYIELD_HK_BACKTEST.md |
+| 🔍 | 港股**行業動量**（yfinance 11 行業，過去 6 個月組員平均報酬最強 3 個行業、行業間等權、月換倉）on 真 point-in-time 恒指成分股 | 預先登記四條件全過但壓線：alpha t 2.01（vs 2800）、9 格鄰域 7 格 ≥1.5、隨機行業 200 次對照第 96 百分位、相對等權宇宙 alpha t 1.79。**⚠️ 又是 2022 後的形狀**（2022 前 t 0.92、後 1.95）。相對等權的超額與高股息相關 −0.13（edge 來源大致獨立）。同一規格已預先登記到 S&P 500/日經225/Nasdaq-100，恒指以外再一個市場獨立過門檻才算跨市場現象。見 SECTOR_ROTATION.md |
 
 ## 三、股票市場研究的特別守則
 
@@ -97,7 +98,11 @@
    防守型策略（beta 遠低於1）另看 CAPM alpha t，但要**事先登記**才能用來判決。
 9. **港股防守/價值類策略要拆 2022 前後看**：高股息、低波動的 alpha 大部分來自 2022-2025
    國企高息行情（2022 前兩者 alpha t 都 < 1.3）。新策略若也是這一路，先看 2022 前單獨
-   是否成立，別把單一行情當長期因子。
+   是否成立，別把單一行情當長期因子。（行業動量也是同一形狀；行業歸因顯示高股息 2022 前
+   靠行業內選股、2022 後靠押對行業，見 SECTOR_ROTATION.md 第二部分。）
+10. **多市場用同一規格事先登記**：港股樣本已被低波動/高股息/行業動量反覆使用，
+    新想法的獨立證據要從其他市場來（S&P 500 / 日經225 / Nasdaq-100，`universe.py`）。
+    規格在跑任何市場之前一次寫死，不為各市場另調參數；只在一個市場及格不下通用結論。
 
 ## 四、倉庫工具索引
 
@@ -121,6 +126,15 @@
 | `MOMENTUM_HK_BACKTEST.md` | 動量輪動四輪實驗記錄——倖存者偏差一層層剝掉、edge 從 +3244% 蒸發到 +190% 的完整教訓 |
 | `scripts/pointintime/hsi_<year>.txt` + `hsi_names.json` + `hsi_sectors.json` | **港股 point-in-time 宇宙**：2010-2025 逐年恒指成分股（Wikipedia 修訂歷史解析，非官方但驗證過）與當年公司名、當年行業（恒指四分類）；來源腳本 `scripts/research_hsi_history.py`、`scripts/parse_hsi_snapshots.py`。之後任何港股選股回測都用這個，不要用「現在的名單」|
 | `scripts/fetch_hkex_equity.py` + `data/stocks_hkex/` | 第二收市數據源：**港交所官方每日報價表**（Daily Quotations 靜態檔，全市場代碼/官方簡稱/收市價），每日快照供收市價與名字交叉驗證；首次比對 105/106 檔與 yfinance 完全一致。Stooq 已擋自動下載，不可用 |
+| `marketdata.py` | **多市場數據層**（所有工具讀價都經過它）：港股舊格式 `data/stocks/*.csv.gz` 與新格式 `data/equities/<market>/<TICKER>/`（分年純文字原始價 + actions，AdjClose 載入時用股息重算）。新格式日更只改今年一個小檔——舊格式每天整檔重寫，8 輪就讓 git 長 64MB，不能擴到美日股 |
+| `universe.py` | **指數宇宙層**：恒指 / S&P 500 / Nasdaq-100 / 道指 / 日經225 的 point-in-time 成分股（逐年快照或精確到日的區間）、基準 ETF、行業分類、防代碼重用檢查 |
+| `universes/<index>/membership.csv` | PIT 成分股區間（ticker,start,end）。S&P 500 來自 fja05680/sp500（MIT，1996 起逐日）；`scripts/build_universe_us.py` 重建；Nasdaq-100/道指/日經225 由 Wikipedia 修訂歷史解析（`scripts/build_universe_wiki.py`）|
+| `scripts/fetch_equities.py` + `.github/workflows/fetch_equities.yml` | 美股/日股日線（新格式；只寫有變的檔；重算 AdjClose 跟 yfinance 比對記錄誤差；下市代碼連續失敗 3 次後只週一重試）|
+| `scripts/fetch_second_source.py` | 美日股第二收市源：美股 Nasdaq.com screener（全市場一次請求，收市/名字/行業）；日股 Yahoo!ファイナンス「前日終値」（自帶日期）+ JPX 上場銘柄一覧（官方日文名、33業種）|
+| `scripts/check_equities_quality.py` → `data/equities/<market>/QC_REPORT.md` | 美日股每日品質檢查（現任成分股缺數據/過期、髒值、雙來源收市、名字變動、AdjClose 重算誤差、**倖存者偏差洞按年比例**）|
+| `scripts/sector_rotation.py` → `sector/<index>/` | 版塊輪動**監測**（描述性）：PIT 等權行業/風格籃子（高息/低波/動量/大市值）/官方分類指數、1-12 月超額、排名變化、廣度、年度輪動表 |
+| `sector_momentum_backtest.py` | 行業動量回測引擎（多市場，`--grid` 3x3 鄰域、`--permutation` 隨機行業對照、`--attribution` Brinson 行業歸因）|
+| `SECTOR_ROTATION.md` | 行業動量預先登記與各市場結果、既有 alpha 的行業歸因 |
 | `scripts/check_data_quality.py` → `data/stocks/QC_REPORT.md` | **每日數據品質日報**（排程自動跑，🔴 即時 Telegram 警報、每交易日收市推日報；研究 session 任意推送用 `.github/tg_outbox_research.txt`，勿用八陣圖的 `tg_outbox.txt`）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |
 
 ## 五、陣名典故與命名規範（其他分支沿用）
