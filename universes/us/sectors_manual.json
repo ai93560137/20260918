@@ -1,0 +1,18 @@
+{
+ "_說明": "yfinance 有價格但 get_info 沒有行業的歷史成分股，手動補（同 yfinance 11 類命名）；報告標為 manual",
+ "ABI": "Healthcare",
+ "BBBY": "Consumer Cyclical",
+ "CAM": "Energy",
+ "CSRA": "Technology",
+ "EMC": "Technology",
+ "FB": "Communication Services",
+ "FISV": "Technology",
+ "GENZ": "Healthcare",
+ "INFO": "Industrials",
+ "JAVA": "Technology",
+ "NFX": "Energy",
+ "PCL": "Real Estate",
+ "SHLD": "Consumer Cyclical",
+ "SPLS": "Consumer Cyclical",
+ "UST": "Consumer Defensive"
+}
