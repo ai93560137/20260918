@@ -1,0 +1,171 @@
+//@version=5
+// =============================================================================
+// 智能諸葛亮 八陣圖掃描器
+//
+// 一次掃描 10 個商品：對每個商品用日線數據模擬「前 N 日高低點突破反手
+// （sar）」策略，在表格顯示筆數／勝率／PF／淨利／買入持有對比。
+// 成交模型與 donchian_backtest.py 一致：觸價 stop order，
+// 成交價 = max(開盤, 通道價)（多）／min(開盤, 通道價)（空）。
+//
+// 用法：
+//   1. 把圖表切到 **日線 (D)**，主圖商品建議用 7 天交易的 BTCUSD
+//      （host 的交易日曆決定取樣，7 天商品不會漏掉別人的交易日）。
+//   2. 加上本指標，在參數頁填 10 個候選商品（期貨連續合約優先）。
+//   3. 看記分板：綠色「候選」= 淨利>買持的一半 且 PF≥1.2。
+//      候選者再用「智能諸葛亮 八陣圖」策略做完整深度回測+真實成本裁決。
+//
+// 限制（掃描器定位是粗篩，不是終審）：
+//   - 成本用「% / 來回」統一近似（期貨約 0.01–0.05%），終審要按各商品實填；
+//   - 同日雙向突破只取離開盤較近的一側（M1 引擎可同日兩次反手，此處近似）；
+//   - 歷史深度 = TradingView 給本圖的日線根數（約 10–20 年，視方案）。
+// =============================================================================
+indicator("智能諸葛亮 八陣圖掃描器", overlay = false)
+
+N       = input.int(3, "通道回看天數 N", minval = 1, maxval = 10)
+costPct = input.float(0.02, "來回成本（％，期貨約 0.01–0.05）", step = 0.01, minval = 0.0) / 100.0
+
+s01 = input.symbol("COMEX:SI1!",     "商品 1")
+s02 = input.symbol("COMEX:HG1!",     "商品 2")
+s03 = input.symbol("BINANCE:BTCUSDT","商品 3")
+s04 = input.symbol("BINANCE:ETHUSDT","商品 4")
+s05 = input.symbol("NYMEX:CL1!",     "商品 5")
+s06 = input.symbol("CME:NKD1!",      "商品 6")
+s07 = input.symbol("SGX:CN1!",       "商品 7")
+s08 = input.symbol("CME:6E1!",       "商品 8")
+s09 = input.symbol("COMEX:GC1!",     "商品 9（對照：金）")
+s10 = input.symbol("HKEX:HSI1!",     "商品 10（對照：恒指）")
+
+// ---- 單商品模擬（每個呼叫點各自保存狀態）------------------------------------
+sim(t, o, h, l, c) =>
+    var float[] hs = array.new_float()
+    var float[] ls = array.new_float()
+    var int   pos    = 0
+    var float entry  = na
+    var float grossW = 0.0
+    var float grossL = 0.0
+    var float pnl    = 0.0
+    var int   trades = 0
+    var int   wins   = 0
+    var float firstC = na
+    var int   lastT  = na
+    var int   firstYr = na
+    ok = not na(c) and not na(t) and (na(lastT) or t != lastT)   // 跳過 na 與重覆日
+    if ok
+        lastT := t
+        if na(firstC)
+            firstC := c
+            firstYr := year(t)
+        if array.size(hs) >= N
+            hi = array.max(hs)
+            lo = array.min(ls)
+            longSig  = h >= hi
+            shortSig = l <= lo
+            if longSig and shortSig                    // 同日雙破：取離開盤較近者
+                if math.abs(hi - o) <= math.abs(o - lo)
+                    shortSig := false
+                else
+                    longSig := false
+            if pos <= 0 and longSig
+                fill = math.max(o, hi)
+                if pos < 0
+                    gain = (entry - fill) - entry * costPct
+                    pnl += gain
+                    trades += 1
+                    if gain > 0
+                        wins += 1
+                        grossW += gain
+                    else
+                        grossL -= gain
+                pos := 1
+                entry := fill
+            else if pos >= 0 and shortSig
+                fill = math.min(o, lo)
+                if pos > 0
+                    gain = (fill - entry) - entry * costPct
+                    pnl += gain
+                    trades += 1
+                    if gain > 0
+                        wins += 1
+                        grossW += gain
+                    else
+                        grossL -= gain
+                pos := -1
+                entry := fill
+        array.push(hs, h)
+        array.push(ls, l)
+        if array.size(hs) > N
+            array.shift(hs)
+            array.shift(ls)
+    openPnl = pos != 0 and not na(c) and not na(entry) ? (c - entry) * pos : 0.0
+    bh = not na(firstC) and not na(c) ? c - firstC : na
+    [trades, wins, grossW, grossL, pnl + openPnl, bh, firstYr]
+
+// ---- 拉數據並模擬（gaps_on：非交易日回 na，避免重覆日污染通道）----------------
+[t1, o1, h1, l1, c1] = request.security(s01, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t2, o2, h2, l2, c2] = request.security(s02, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t3, o3, h3, l3, c3] = request.security(s03, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t4, o4, h4, l4, c4] = request.security(s04, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t5, o5, h5, l5, c5] = request.security(s05, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t6, o6, h6, l6, c6] = request.security(s06, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t7, o7, h7, l7, c7] = request.security(s07, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t8, o8, h8, l8, c8] = request.security(s08, "D", [time, open, high, low, close], barmerge.gaps_on)
+[t9, o9, h9, l9, c9] = request.security(s09, "D", [time, open, high, low, close], barmerge.gaps_on)
+[tA, oA, hA, lA, cA] = request.security(s10, "D", [time, open, high, low, close], barmerge.gaps_on)
+
+[n1, w1, gw1, gl1, p1, b1, y1] = sim(t1, o1, h1, l1, c1)
+[n2, w2, gw2, gl2, p2, b2, y2] = sim(t2, o2, h2, l2, c2)
+[n3, w3, gw3, gl3, p3, b3, y3] = sim(t3, o3, h3, l3, c3)
+[n4, w4, gw4, gl4, p4, b4, y4] = sim(t4, o4, h4, l4, c4)
+[n5, w5, gw5, gl5, p5, b5, y5] = sim(t5, o5, h5, l5, c5)
+[n6, w6, gw6, gl6, p6, b6, y6] = sim(t6, o6, h6, l6, c6)
+[n7, w7, gw7, gl7, p7, b7, y7] = sim(t7, o7, h7, l7, c7)
+[n8, w8, gw8, gl8, p8, b8, y8] = sim(t8, o8, h8, l8, c8)
+[n9, w9, gw9, gl9, p9, b9, y9] = sim(t9, o9, h9, l9, c9)
+[nA, wA, gwA, glA, pA, bA, yA] = sim(tA, oA, hA, lA, cA)
+
+// ---- 記分板 -------------------------------------------------------------------
+plot(na)     // 指標需至少一個輸出
+
+row(tbl, r, name, n, w, gw, gl, p, b, yr) =>
+    tc = color.black
+    pf = gl > 0 ? gw / gl : na
+    pass = not na(p) and not na(b) and pf >= 1.2 and p > 0 and (b <= 0 or p >= 0.5 * b)
+    table.cell(tbl, 0, r, name, text_color = tc, text_size = size.small, text_halign = text.align_left)
+    table.cell(tbl, 1, r, na(yr) ? "-" : str.tostring(yr), text_color = tc, text_size = size.small)
+    table.cell(tbl, 2, r, str.tostring(n), text_color = tc, text_size = size.small)
+    table.cell(tbl, 3, r, n > 0 ? str.tostring(100.0 * w / n, "#.#") + "%" : "-", text_color = tc, text_size = size.small)
+    table.cell(tbl, 4, r, na(pf) ? "-" : str.tostring(pf, "#.##"), text_color = na(pf) ? tc : pf >= 1.2 ? color.teal : color.red, text_size = size.small)
+    table.cell(tbl, 5, r, na(p) ? "-" : str.tostring(p, "#,###.##"), text_color = na(p) ? tc : p >= 0 ? color.teal : color.red, text_size = size.small)
+    table.cell(tbl, 6, r, na(b) ? "-" : str.tostring(b, "#,###.##"), text_color = tc, text_size = size.small)
+    table.cell(tbl, 7, r, pass ? "✓ 候選" : "✗", text_color = pass ? color.teal : color.gray,
+         text_size = size.small, bgcolor = pass ? color.new(color.teal, 85) : na)
+
+var table tbl = na
+if barstate.islast
+    if na(tbl)
+        tbl := table.new(position.middle_center, 8, 13, bgcolor = color.new(color.white, 5),
+             border_width = 1, border_color = color.new(color.gray, 70),
+             frame_width = 2, frame_color = color.gray)
+    table.cell(tbl, 0, 0, timeframe.isdaily ?
+         "八陣圖掃描器｜sar N=" + str.tostring(N) + "｜成本 " + str.tostring(costPct * 100, "#.##") + "%/回合" :
+         "⚠️ 請把圖表切到日線 (D)，其他週期結果無效",
+         text_color = timeframe.isdaily ? color.black : color.red, text_size = size.normal,
+         bgcolor = color.new(color.orange, 60))
+    table.merge_cells(tbl, 0, 0, 7, 0)
+    hdrs = array.from("商品", "起始", "筆數", "勝率", "PF", "淨利(價位)", "買入持有", "裁決")
+    for i = 0 to 7
+        table.cell(tbl, i, 1, array.get(hdrs, i), text_color = color.black, text_size = size.small,
+             bgcolor = color.new(color.gray, 60))
+    row(tbl,  2, s01, n1, w1, gw1, gl1, p1, b1, y1)
+    row(tbl,  3, s02, n2, w2, gw2, gl2, p2, b2, y2)
+    row(tbl,  4, s03, n3, w3, gw3, gl3, p3, b3, y3)
+    row(tbl,  5, s04, n4, w4, gw4, gl4, p4, b4, y4)
+    row(tbl,  6, s05, n5, w5, gw5, gl5, p5, b5, y5)
+    row(tbl,  7, s06, n6, w6, gw6, gl6, p6, b6, y6)
+    row(tbl,  8, s07, n7, w7, gw7, gl7, p7, b7, y7)
+    row(tbl,  9, s08, n8, w8, gw8, gl8, p8, b8, y8)
+    row(tbl, 10, s09, n9, w9, gw9, gl9, p9, b9, y9)
+    row(tbl, 11, s10, nA, wA, gwA, glA, pA, bA, yA)
+    table.cell(tbl, 0, 12, "「候選」= PF≥1.2 且淨利>0 且（淨利≥買持一半 或 買持≤0）。淨利與買持單位＝該商品報價單位。",
+         text_color = color.gray, text_size = size.small, text_halign = text.align_left)
+    table.merge_cells(tbl, 0, 12, 7, 12)
