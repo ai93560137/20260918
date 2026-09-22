@@ -30,12 +30,15 @@ jobs:
         continue-on-error: true  # 有些代碼(已下市/合併)預期會抓不到，不該擋住其他成功的 commit
         run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
+      # 第二來源與品質日報都是輔助，各自設時間上限，絕不能拖住主數據的 commit
       - name: Fetch second source (Stooq)
         continue-on-error: true
+        timeout-minutes: 8
         run: python3 scripts/fetch_stooq.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
       - name: Data quality check
         continue-on-error: true
+        timeout-minutes: 10
         run: python3 scripts/check_data_quality.py --fetch-names
 
       - name: Commit and push if changed
