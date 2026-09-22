@@ -4,7 +4,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   research:
@@ -24,8 +24,14 @@ jobs:
       - name: Fetch candidate sources
         run: python3 scripts/research_hsi_history.py
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: hsi-history-research
-          path: research_output/
-          retention-days: 7
+      - name: Commit research output if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add research_output/
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore(research): HSI 成分股歷史來源探勘輸出"
+            git push origin HEAD:claude/gifted-carson-v2tvhw
+          fi
