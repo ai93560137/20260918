@@ -27,6 +27,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -53,8 +54,11 @@ STOP = {"inc", "incorporated", "corp", "corporation", "co", "company", "ltd", "l
 
 
 def norm_name(s: str) -> str:
-    s = s.lower().replace("&", " and ")
-    return " ".join(t for t in re.findall(r"[a-z0-9]+", s) if t not in STOP)
+    """英文去公司類字；日文（NFKC 全形轉半形後）去 (株)/株式会社 等。\w 含漢字/假名。"""
+    s = unicodedata.normalize("NFKC", s).lower().replace("&", " and ")
+    for x in ("(株)", "株式会社", "ホールディングス", "グループ"):
+        s = s.replace(x, " ")
+    return " ".join(t for t in re.findall(r"\w+", s) if t not in STOP)
 
 
 def name_sim(a: str, b: str) -> float:
@@ -161,8 +165,8 @@ def main() -> None:
     snap_data = [json.loads(p.read_text(encoding="utf-8")) for p in snaps]
     n_cmp = 0
     for s in snap_data:
-        d = date.fromisoformat(s["trade_date"])
         for t, q in s["quotes"].items():
+            d = date.fromisoformat(q.get("date") or s["trade_date"])   # 日股每檔自帶前日終値日期
             r = loaded.get(t, {}).get(d)
             if r is None or not q.get("close"):
                 continue
@@ -200,9 +204,21 @@ def main() -> None:
                 if info.get(k):
                     rec[k] = info[k]
         names_path.write_text(json.dumps(names, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    for t, q in latest_q.items():
-        if t in names and q.get("name") and name_sim(q["name"], names[t]["name"]) < NAME_SIM_MIN:
-            flag("🟡", t, "name_mismatch", f"第二來源「{q['name']}」vs yfinance「{names[t]['name']}」")
+    if m == "us":
+        # 美股兩邊都是英文名，可以直接比
+        for t, q in latest_q.items():
+            if t in names and q.get("name") and name_sim(q["name"], names[t]["name"]) < NAME_SIM_MIN:
+                flag("🟡", t, "name_mismatch", f"第二來源「{q['name']}」vs yfinance「{names[t]['name']}」")
+    else:
+        # 日股：yfinance 是英文名，改拿 Yahoo!ファイナンス日文名跟 JPX 官方日文名比
+        jpx_path = base / "_jpx_listed.json"
+        jpx = json.loads(jpx_path.read_text(encoding="utf-8"))["listed"] if jpx_path.exists() else {}
+        for t, q in latest_q.items():
+            if t in jpx and q.get("name") and name_sim(q["name"], jpx[t]["name"]) < NAME_SIM_MIN:
+                flag("🟡", t, "name_mismatch", f"Yahoo!ファイナンス「{q['name']}」vs JPX「{jpx[t]['name']}」")
+        for t in sorted(current):
+            if jpx and t not in jpx:
+                flag("🔴", t, "not_listed_jpx", "現任日經225成分股不在 JPX 上場銘柄一覧（下市/代碼錯？）")
 
     # --- 倖存者偏差洞：歷史成分股中沒有價格的比例，按年 ---
     holes = []
