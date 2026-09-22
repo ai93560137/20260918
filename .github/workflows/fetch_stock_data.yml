@@ -40,25 +40,38 @@ jobs:
 
       - name: Fetch HK + US universes
         continue-on-error: true  # 有些代碼(已下市/合併)預期會抓不到，不該擋住其他成功的 commit
-        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
+        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt scripts/universe_hsi_live.txt
 
       # 第二來源與品質日報都是輔助，各自設時間上限，絕不能拖住主數據的 commit
       - name: Fetch second source (HKEX official quotes)
         continue-on-error: true
         timeout-minutes: 8
-        run: python3 scripts/fetch_hkex_equity.py scripts/universe_hk.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
+        run: python3 scripts/fetch_hkex_equity.py scripts/universe_hk.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt scripts/universe_hsi_live.txt
 
       - name: Data quality check
         continue-on-error: true
         timeout-minutes: 10
         run: python3 scripts/check_data_quality.py --fetch-names
 
+      # 前向模擬盤：每天檢查，新月份第一個交易日結算上月、建本月籃子（scripts/paper_trade.py）。
+      # 只有這一輪真的產生新月報（git 看得到 tg_monthly.txt 變動）才標 rebalanced，
+      # 避免失敗後殘留的舊月報在下一輪被重發
+      - name: Paper trading（前向模擬盤）
+        id: paper
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          python3 scripts/paper_trade.py
+          if [ -s paper/tg_monthly.txt ] && [ -n "$(git status --porcelain paper/tg_monthly.txt)" ]; then
+            echo "rebalanced=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # 只 add 存在的數據目錄；--ignore-removal 不會把別輪新增、本輪沒有的快照當成刪除
-          add_data() { for d in data/stocks data/stocks_hkex; do [ -d "$d" ] && git add --ignore-removal "$d"; done; }
+          add_data() { for d in data/stocks data/stocks_hkex paper scripts/universe_hsi_live.txt; do [ -e "$d" ] && git add --ignore-removal "$d"; done; }
           add_data
           if git diff --cached --quiet; then
             echo "No data changes"
@@ -93,6 +106,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           CRON: ${{ github.event.schedule }}
           WANT_DIGEST: ${{ inputs.digest }}
+          REBALANCED: ${{ steps.paper.outputs.rebalanced }}
         run: |
           MSG=""
           if [ -s data/stocks/qc_alert.txt ]; then
@@ -100,13 +114,19 @@ jobs:
           elif { [ "$EVENT" = "schedule" ] && [ "$CRON" = "0 9 * * 1-5" ]; } || [ "$WANT_DIGEST" = "true" ]; then
             if [ -s data/stocks/qc_digest.txt ]; then MSG=data/stocks/qc_digest.txt; fi
           fi
+          send() {
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat "$1")" > /dev/null
+            echo "telegram sent: $1"
+          }
+          if [ "$REBALANCED" = "true" ] && [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+            send paper/tg_monthly.txt
+          fi
           if [ -z "$MSG" ]; then
             echo "nothing to send - skip"
           elif [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送 $MSG"
           else
-            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-              --data-urlencode "chat_id=${TG_CHAT_ID}" \
-              --data-urlencode "text=$(cat "$MSG")" > /dev/null
-            echo "telegram sent: $MSG"
+            send "$MSG"
           fi

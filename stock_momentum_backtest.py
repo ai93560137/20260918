@@ -124,6 +124,19 @@ def load_pointintime(directory: Path) -> list[tuple[date, set[str]]]:
     return out
 
 
+def trailing_vol(daily_rows: list[tuple[date, float]], daily_dates: list[date], as_of: date,
+                 vol_days: int) -> float | None:
+    """as_of（含）之前 vol_days 根 AdjClose 日對數報酬的標準差；根數不足 80% 回 None。
+    回測引擎與前向模擬盤（scripts/paper_trade.py）共用，保證兩邊選股邏輯一致。"""
+    idx = bisect.bisect_right(daily_dates, as_of)
+    closes = [c for _, c in daily_rows[max(0, idx - vol_days - 1):idx] if c > 0]
+    if len(closes) < int(vol_days * 0.8):
+        return None
+    rets = [math.log(closes[j] / closes[j - 1]) for j in range(1, len(closes))]
+    mean = sum(rets) / len(rets)
+    return math.sqrt(sum((r - mean) ** 2 for r in rets) / (len(rets) - 1))
+
+
 def sector_neutral_pick(scored: list[tuple[float, str]], sector_of: dict[str, str], k: int) -> set[str]:
     """K 個名額按各行業「有訊號的候選檔數」比例分配（最大餘數法），行業內取分數最高者。
     讓組合的行業組成跟宇宙一致，分辨「因子本身」與「押某個行業」。"""
@@ -239,15 +252,9 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         for t in eligible:
             s = series[t]
             if signal == "lowvol":
-                # 訊號日（含）之前 vol_days 根的日報酬標準差；至少要 80% 的根數
-                idx = bisect.bisect_right(daily_dates[t], signal_me)
-                closes = [c for _, c in daily[t][max(0, idx - vol_days - 1):idx] if c > 0]
-                if len(closes) < int(vol_days * 0.8):
-                    continue
-                rets = [math.log(closes[j] / closes[j - 1]) for j in range(1, len(closes))]
-                mean = sum(rets) / len(rets)
-                vol = math.sqrt(sum((r - mean) ** 2 for r in rets) / (len(rets) - 1))
-                scored.append((-vol, t))
+                vol = trailing_vol(daily[t], daily_dates[t], signal_me, vol_days)
+                if vol is not None:
+                    scored.append((-vol, t))
                 continue
             me_skip = exec_dates[i - skip][0]
             me_lb = exec_dates[i - skip - lookback][0]

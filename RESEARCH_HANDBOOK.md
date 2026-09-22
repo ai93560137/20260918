@@ -109,6 +109,7 @@
 | `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據 + 流通股數歷史自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
 | `data/stocks/` | 股票/指數日線數據（格式見 `data/stocks/README.md`，與根目錄 MT5 M1 期貨數據分開）|
 | `stock_momentum_backtest.py` | 港股月頻選股回測引擎（`--signal momentum|lowvol`、`--sector-neutral`、`--sector-only`；輸出 CAPM alpha/beta；次日開盤成交、換手才收費；`--pointintime-dir` 用逐年真成分股、防代碼重用、下市持股按最後價結算；輸出相對 2800 的每月超額 t、夏普、基準回撤）|
+| `scripts/paper_trade.py` → `paper/` | **港股低波動前向模擬盤**（每日管線內自動執行；每月初結算+建倉、Telegram 月報；選股/結算已驗證與回測引擎逐期一致；證偽：回撤 -35% 或滾動24月 alpha<0）|
 | `LOWVOL_HK_BACKTEST.md` | 低波動策略記錄（預先登記設計、6格鄰域、事後 CAPM、持倉集中度、升級條件）|
 | `MOMENTUM_HK_BACKTEST.md` | 動量輪動四輪實驗記錄——倖存者偏差一層層剝掉、edge 從 +3244% 蒸發到 +190% 的完整教訓 |
 | `scripts/pointintime/hsi_<year>.txt` + `hsi_names.json` + `hsi_sectors.json` | **港股 point-in-time 宇宙**：2010-2025 逐年恒指成分股（Wikipedia 修訂歷史解析，非官方但驗證過）與當年公司名、當年行業（恒指四分類）；來源腳本 `scripts/research_hsi_history.py`、`scripts/parse_hsi_snapshots.py`。之後任何港股選股回測都用這個，不要用「現在的名單」|
