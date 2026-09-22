@@ -28,7 +28,13 @@ LEGACY_DIR = ROOT / "data" / "stocks"
 V2_DIR = ROOT / "data" / "equities"
 
 
+# 指數代碼沒有交易所後綴，要明列市場（其餘 ^ 開頭的當美股指數）
+INDEX_MARKET = {"^N225": "jp", "^TOPX": "jp", "^HSI": "hk", "^HSCE": "hk"}
+
+
 def market_of(ticker: str) -> str:
+    if ticker in INDEX_MARKET:
+        return INDEX_MARKET[ticker]
     if ticker.endswith(".HK"):
         return "hk"
     if ticker.endswith(".T"):

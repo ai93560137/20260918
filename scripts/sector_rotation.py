@@ -346,8 +346,8 @@ def main() -> None:
         r, b = ret_over(k, 63), ret_over("全體等權", 63)
         return f"{k.split(':')[1]} {(r - b) * 100:+.1f}%"
     tg = [f"{uni.cfg['name']} 版塊輪動 {as_of}（3個月超額 vs 成分股等權）",
-          "強：" + "、".join(ex3(k) for k in order[:3]),
-          "弱：" + "、".join(ex3(k) for k in order[-3:]),
+          "強：" + "、".join(ex3(k) for k in order[:min(3, len(order) // 2)]),
+          "弱：" + "、".join(ex3(k) for k in order[-min(3, len(order) // 2):]),
           "風格：" + "、".join(ex3(k) for k in sorted(ranking(e_now, 63, "風格:"),
                                                      key=ranking(e_now, 63, "風格:").get))]
     tg += [s.replace("**", "").replace("- ", "", 1) for s in sigs[:4]]
