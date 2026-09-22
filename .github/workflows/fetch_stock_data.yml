@@ -27,7 +27,8 @@ jobs:
         run: pip install -r scripts/requirements.txt
 
       - name: Fetch HK + US universes
-        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt
+        continue-on-error: true  # 有些代碼(已下市/合併)預期會抓不到，不該擋住其他成功的 commit
+        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt
 
       - name: Commit and push if changed
         run: |
