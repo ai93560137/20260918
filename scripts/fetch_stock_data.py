@@ -12,6 +12,7 @@ import argparse
 import csv
 import gzip
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -37,8 +38,7 @@ def safe_filename(ticker: str) -> str:
 def fetch_one(ticker: str) -> None:
     hist = yf.Ticker(ticker).history(period="max", auto_adjust=False, actions=False)
     if hist.empty:
-        print(f"WARN {ticker}: 無資料，略過", file=sys.stderr)
-        return
+        raise RuntimeError("yfinance 回傳空資料（可能是暫時性 rate limit，重跑一次通常會好）")
 
     out_path = DATA_DIR / safe_filename(ticker)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -75,16 +75,25 @@ def main() -> None:
         print("ERROR: 空的 ticker 清單", file=sys.stderr)
         sys.exit(1)
 
-    failed = []
-    for ticker in tickers:
-        try:
-            fetch_one(ticker)
-        except Exception as exc:
-            print(f"ERROR {ticker}: {exc}", file=sys.stderr)
-            failed.append(ticker)
+    def fetch_all(ts: list[str]) -> list[str]:
+        still_failed = []
+        for ticker in ts:
+            try:
+                fetch_one(ticker)
+            except Exception as exc:
+                print(f"ERROR {ticker}: {exc}", file=sys.stderr)
+                still_failed.append(ticker)
+            time.sleep(0.3)  # 降低連續請求觸發 yfinance/Yahoo rate limit 的機率
+        return still_failed
+
+    failed = fetch_all(tickers)
+    if failed:
+        print(f"第一輪 {len(failed)} 個失敗，重試一次: {failed}", file=sys.stderr)
+        time.sleep(5)
+        failed = fetch_all(failed)
 
     if failed:
-        print(f"完成，{len(failed)} 個失敗: {failed}", file=sys.stderr)
+        print(f"重試後仍失敗 {len(failed)} 個: {failed}", file=sys.stderr)
         sys.exit(1)
 
 
