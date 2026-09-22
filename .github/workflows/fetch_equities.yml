@@ -1,0 +1,90 @@
+name: Fetch equities (US / JP)
+
+# 美股/日股日線（v2 純文字分年格式，見 marketdata.py / scripts/fetch_equities.py）。
+# 港股仍由 fetch_stock_data.yml 負責（舊格式，遷移待定）。
+on:
+  schedule:
+    # 美股收市後：06:30 HKT（22:30 UTC，夏令/冬令都已收市）
+    - cron: '30 22 * * 1-5'
+    # 日股收市後：16:30 JST（07:30 UTC）
+    - cron: '30 7 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      market:
+        description: 'us 或 jp'
+        required: true
+        default: 'us'
+      shares:
+        description: '順便抓流通股數歷史（慢；排程只在週一抓）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-equities-${{ inputs.market || github.event.schedule }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Decide market
+        id: m
+        env:
+          IN_MARKET: ${{ inputs.market }}
+          CRON: ${{ github.event.schedule }}
+          IN_SHARES: ${{ inputs.shares }}
+        run: |
+          if [ -n "$IN_MARKET" ]; then M="$IN_MARKET"
+          elif [ "$CRON" = "30 7 * * 1-5" ]; then M=jp
+          else M=us; fi
+          if [[ ! "$M" =~ ^(us|jp)$ ]]; then echo "market 只能是 us/jp：$M"; exit 1; fi
+          echo "market=$M" >> "$GITHUB_OUTPUT"
+          if [ "$IN_SHARES" = "true" ] || [ "$(date -u +%u)" = "1" ]; then echo "shares=--shares" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Fetch prices (yfinance)
+        continue-on-error: true
+        timeout-minutes: 75
+        run: python3 scripts/fetch_equities.py ${{ steps.m.outputs.shares }} --budget-min 70 universes/${{ steps.m.outputs.market }}/fetch_list.txt
+
+      - name: Commit and push if changed
+        env:
+          M: ${{ steps.m.outputs.market }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_data() { for d in "data/equities/$M"; do [ -e "$d" ] && git add --ignore-removal "$d"; done; }
+          add_data
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+          git commit -q -m "chore(data): 自動更新 $M 日線 $(date -u +%Y-%m-%d)"
+          # 純文字檔、只 add 本市場目錄：被拒就把 HEAD 指到最新遠端、重新 add 本輪檔案再 commit
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 5))
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_data
+            if git diff --cached --quiet; then
+              echo "遠端已有相同數據"
+              exit 0
+            fi
+            git commit -q -m "chore(data): 自動更新 $M 日線 $(date -u +%Y-%m-%d)"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1

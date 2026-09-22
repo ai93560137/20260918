@@ -96,7 +96,7 @@ class Prices:
 
     def series(self, t: str) -> dict | None:
         if t not in self._cache:
-            path = eng.DATA_DIR / (t.replace("^", "_") + ".csv.gz")
+            path = eng.DATA_DIR / (t.replace("^", "_") + ".csv.gz")  # noqa: 港股仍是舊格式
             self._cache[t] = eng.load_series(t) if path.exists() else None
         return self._cache[t]
 

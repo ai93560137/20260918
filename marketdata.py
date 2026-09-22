@@ -1,0 +1,156 @@
+"""多市場股票數據層（港股/美股/日股共用）——所有回測/監測工具讀價格都經過這裡。
+
+兩種儲存格式，載入時自動判斷：
+
+**v2（data/equities/<market>/<TICKER>/，新市場一律用這個）**
+    prices_<YYYY>.csv   Date,Open,High,Low,Close,Volume（原始價；Close 已按拆股還原、未按股息還原）
+    actions.csv         Date,Dividend,Split（yfinance actions；股息已按拆股還原）
+    shares.csv          Date,Shares
+  AdjClose 不存，載入時用股息重算（Yahoo/CRSP 法：除淨日之前的價格乘
+  1 − 股息 / 除淨前一日收市）。好處：每天只有「今年那個檔」多一行，舊年份
+  不動，git 只存幾 KB 的差異。
+  （舊格式整檔 .csv.gz 每天重寫，股息一回溯全部價格都變，二進位檔在 git 裡
+  沒法做差異壓縮——8 輪就長了 64MB，照這速度港股一年 4GB，見 README。）
+
+**legacy（data/stocks/<TICKER>.csv.gz，港股現行）**
+    Date,Open,High,Low,Close,AdjClose,Volume  + <TICKER>.shares.csv.gz
+
+市場由代碼後綴判斷：.HK 港股、.T 日股、其他美股（指數代碼 ^ 換 _ 存檔）。
+"""
+import bisect
+import csv
+import gzip
+from datetime import date
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+LEGACY_DIR = ROOT / "data" / "stocks"
+V2_DIR = ROOT / "data" / "equities"
+
+
+def market_of(ticker: str) -> str:
+    if ticker.endswith(".HK"):
+        return "hk"
+    if ticker.endswith(".T"):
+        return "jp"
+    return "us"
+
+
+def safe_name(ticker: str) -> str:
+    return ticker.replace("^", "_")
+
+
+def v2_dir(ticker: str) -> Path:
+    return V2_DIR / market_of(ticker) / safe_name(ticker)
+
+
+def has_v2(ticker: str) -> bool:
+    return any(v2_dir(ticker).glob("prices_*.csv"))
+
+
+def has_data(ticker: str) -> bool:
+    return has_v2(ticker) or (LEGACY_DIR / (safe_name(ticker) + ".csv.gz")).exists()
+
+
+def _num(s: str) -> float | None:
+    try:
+        return float(s) if s != "" else None
+    except ValueError:
+        return None
+
+
+def load_raw(ticker: str) -> list[tuple[date, float | None, float | None, float | None, float, int]]:
+    """v2 原始日線 [(date, open, high, low, close, volume)]，按日期排序。"""
+    rows = []
+    for p in sorted(v2_dir(ticker).glob("prices_*.csv")):
+        with open(p, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                c = _num(r["Close"])
+                if c is None:
+                    continue
+                rows.append((date.fromisoformat(r["Date"]), _num(r["Open"]), _num(r["High"]),
+                             _num(r["Low"]), c, int(float(r["Volume"] or 0))))
+    rows.sort(key=lambda x: x[0])
+    return rows
+
+
+def load_actions(ticker: str) -> tuple[list[tuple[date, float]], list[tuple[date, float]]]:
+    """v2 (股息 [(除淨日, 每股)], 拆股 [(日期, 比例)])。"""
+    divs, splits = [], []
+    p = v2_dir(ticker) / "actions.csv"
+    if p.exists():
+        with open(p, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                d = date.fromisoformat(r["Date"])
+                if _num(r.get("Dividend", "")):
+                    divs.append((d, float(r["Dividend"])))
+                if _num(r.get("Split", "")):
+                    splits.append((d, float(r["Split"])))
+    return divs, splits
+
+
+def adjust_factors(dates: list[date], closes: list[float], divs: list[tuple[date, float]]) -> list[float]:
+    """每一根的股息還原因子（AdjClose = Close × 因子）。
+    除淨日 e、股息 D：e 之前所有價格乘 (1 − D / e 前一交易日收市)，多次除淨連乘。"""
+    n = len(dates)
+    step = [1.0] * n        # step[i]：第 i 根「之後」發生的除淨，對 i 及之前的價格的乘數
+    for e, d_amt in divs:
+        j = bisect.bisect_left(dates, e)     # 除淨日（或之後第一個交易日）
+        if j <= 0 or j >= n:  # 除淨日在第一根之前、或在最後一根之後（已公布未到）：不影響
+            continue
+        prev_close = closes[j - 1]
+        if prev_close > 0 and 0 < d_amt < prev_close:
+            step[j - 1] *= 1 - d_amt / prev_close
+    out = [1.0] * n
+    acc = 1.0
+    for i in range(n - 1, -1, -1):
+        acc *= step[i]
+        out[i] = acc
+    return out
+
+
+def load_ohlcv(ticker: str) -> list[dict]:
+    """[{Date, Open, High, Low, Close, AdjClose, Volume}]，兩種格式同一個介面（給 QC 用）。"""
+    if has_v2(ticker):
+        rows = load_raw(ticker)
+        divs, _ = load_actions(ticker)
+        fac = adjust_factors([r[0] for r in rows], [r[4] for r in rows], divs)
+        return [{"Date": r[0], "Open": r[1], "High": r[2], "Low": r[3], "Close": r[4],
+                 "AdjClose": r[4] * f, "Volume": r[5]} for r, f in zip(rows, fac)]
+    path = LEGACY_DIR / (safe_name(ticker) + ".csv.gz")
+    out = []
+    with gzip.open(path, "rt", newline="") as f:
+        for r in csv.DictReader(f):
+            out.append({"Date": date.fromisoformat(r["Date"]), "Open": float(r["Open"]),
+                        "High": float(r["High"]), "Low": float(r["Low"]), "Close": float(r["Close"]),
+                        "AdjClose": float(r["AdjClose"]), "Volume": int(float(r["Volume"] or 0))})
+    return out
+
+
+def load_series(ticker: str) -> dict[date, tuple[float, float, float]]:
+    """{date: (adj_open, adj_close, raw_close)}——回測引擎的標準輸入。
+    Open=0 的髒值退回用當天 AdjClose（見 data/stocks/README.md 已知限制）。
+    找不到數據丟 FileNotFoundError。"""
+    out = {}
+    for r in load_ohlcv(ticker):
+        c, ac, o = r["Close"], r["AdjClose"], r["Open"]
+        adj_open = o * (ac / c) if c and o else ac
+        out[r["Date"]] = (adj_open, ac, c)
+    return out
+
+
+def load_shares(ticker: str) -> list[tuple[date, int]] | None:
+    """流通股數歷史 [(date, shares)]（排序），沒有就 None。"""
+    rows = []
+    v2 = v2_dir(ticker) / "shares.csv"
+    if v2.exists():
+        with open(v2, newline="", encoding="utf-8") as f:
+            rows = [(date.fromisoformat(r["Date"]), int(r["Shares"])) for r in csv.DictReader(f)]
+    else:
+        path = LEGACY_DIR / (safe_name(ticker) + ".shares.csv.gz")
+        if not path.exists():
+            return None
+        with gzip.open(path, "rt", newline="") as f:
+            rows = [(date.fromisoformat(r["Date"]), int(r["Shares"])) for r in csv.DictReader(f)]
+    rows.sort()
+    return rows or None

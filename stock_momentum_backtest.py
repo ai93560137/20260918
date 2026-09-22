@@ -33,44 +33,28 @@
 import argparse
 import bisect
 import json
-import csv
-import gzip
 import math
 import sys
 from datetime import date, timedelta
 from pathlib import Path
+
+import marketdata
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "stocks"
 
 
 def load_series(ticker: str) -> dict[date, tuple[float, float, float]]:
     """回傳 {date: (adj_open, adj_close, raw_close)}。raw_close 給市值排名用
-    （市值 = 當時實際股價 x 當時實際股數，不能用還原股息/拆股的 AdjClose）。"""
-    path = DATA_DIR / (ticker.replace("^", "_") + ".csv.gz")
-    out = {}
-    with gzip.open(path, "rt", newline="") as f:
-        for row in csv.DictReader(f):
-            d = date.fromisoformat(row["Date"])
-            o, c, ac = float(row["Open"]), float(row["Close"]), float(row["AdjClose"])
-            # yfinance 港股數據偶有 Open=0 的髒值（見 data/stocks/README.md 已知限制），
-            # 退回用 AdjClose 當天的收盤價估開盤（假設無隔夜跳空，聊勝於除以零崩潰）
-            adj_open = o * (ac / c) if c and o else ac
-            out[d] = (adj_open, ac, c)
-    return out
+    （市值 = 當時實際股價 x 當時實際股數，不能用還原股息/拆股的 AdjClose）。
+    讀檔交給多市場數據層 marketdata.py（港股舊格式 data/stocks/*.csv.gz、
+    美股/日股新格式 data/equities/ 都支援）。"""
+    return marketdata.load_series(ticker)
 
 
 def load_shares(ticker: str) -> list[tuple[date, int]] | None:
     """回傳按日期排序的 [(date, shares_outstanding), ...]，抓不到就 None。
     見 scripts/fetch_stock_data.py 的 fetch_shares_outstanding。"""
-    path = DATA_DIR / (ticker.replace("^", "_") + ".shares.csv.gz")
-    if not path.exists():
-        return None
-    out = []
-    with gzip.open(path, "rt", newline="") as f:
-        for row in csv.DictReader(f):
-            out.append((date.fromisoformat(row["Date"]), int(row["Shares"])))
-    out.sort()
-    return out or None
+    return marketdata.load_shares(ticker)
 
 
 def shares_asof(shares: list[tuple[date, int]], as_of: date) -> int | None:
@@ -533,7 +517,7 @@ def main() -> None:
     if pointintime:
         members = set().union(*(m for _, m in pointintime))
         pool = sorted(t for t in members if t != args.benchmark and
-                      (DATA_DIR / (t.replace("^", "_") + ".csv.gz")).exists())
+                      marketdata.has_data(t))
         missing = sorted(members - set(pool) - {args.benchmark})
         print(f"point-in-time 快照 {len(pointintime)} 期（{pointintime[0][0]} ~ {pointintime[-1][0]}），"
               f"歷年成分股聯集 {len(members)} 檔，有價格 {len(pool)} 檔，完全沒價格: {missing}")
