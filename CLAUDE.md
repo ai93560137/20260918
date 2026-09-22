@@ -4,5 +4,8 @@
 donchian_backtest.py）、TradingView 策略（tradingview/）。
 歷史數據在 data/（.csv.gz，格式見 data/README.md）。
 
+**進行任何策略研究/回測前**：先讀 RESEARCH_HANDBOOK.md（方法論鐵律、
+已判決結論庫、股票研究守則）——已判決的不重測，鐵律不繞過。
+
 **當用戶上傳富途牛牛截圖或提到「對帳」時**：閱讀 journal/RULES.md 並嚴格
 按該文件執行每日核對與記錄（journal/log.csv），核對後 commit + push。
