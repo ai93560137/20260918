@@ -2,7 +2,7 @@
 
 市場最新交易日 2026-09-22；現任成分股 518 檔（sp500, ndx, djia）；有數據 720 檔；第二來源快照 1 份、比對 691 筆收市價。
 
-**🔴 0 嚴重 / 🟡 4 注意 / ✅ 1 已確認**
+**🔴 0 嚴重 / 🟡 1 注意 / ✅ 4 已確認**
 
 
 ## 🔴 嚴重
@@ -11,14 +11,14 @@
 
 ## 🟡 注意
 
-- `EA` no_second_source：現任成分股沒有第二來源報價
-- `MRSH` name_mismatch：第二來源「Marsh Common Stock」vs yfinance「Marsh & McLennan Companies, Inc.」
-- `SHOP` name_mismatch：第二來源「Shopify Inc. Class A Subordinate Voting Shares」vs yfinance「Shopify Inc.」
-- `VMRK` name_mismatch：第二來源「Vivmark Residential Common Shares of Beneficial Interest」vs yfinance「AvalonBay Communities, Inc.」
+- `SUN` name_mismatch：第二來源「Sunoco LP Common Units representing limited partner interests」vs yfinance「Sunoco LP」
 
 ## ✅ 已確認
 
 - `EA` stale：現任成分股最後一根 2026-08-04，市場最新 2026-09-22（Electronic Arts 2026-08 私有化下市；Nasdaq-100 名單是 Wikipedia 年度快照（2026-06-29），尚未反映出榜——回測到 8 月初之後自然沒有它的價格）
+- `EA` no_second_source：現任成分股沒有第二來源報價（Electronic Arts 2026-08 私有化下市（見 EA:stale））
+- `MRSH` name_mismatch：第二來源「Marsh Common Stock」vs yfinance「Marsh & McLennan Companies, Inc.」（Marsh McLennan 2026 改名 Marsh、代碼 MMC->MRSH；yfinance 名字還沒更新）
+- `VMRK` name_mismatch：第二來源「Vivmark Residential Common Shares of Beneficial Interest」vs yfinance「AvalonBay Communities, Inc.」（AvalonBay 2026 改名 Vivmark Residential、代碼 AVB->VMRK；yfinance 名字還沒更新）
 
 ## 📉 倖存者偏差洞（歷史成分股抓不到價格的比例，每年 6/30）
 

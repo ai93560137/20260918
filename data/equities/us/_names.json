@@ -11,6 +11,30 @@
   "name": "Agilent Technologies, Inc.",
   "sector": "Healthcare"
  },
+ "AAL": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "American Airlines Group Inc."
+   }
+  ],
+  "industry": "Airlines",
+  "name": "American Airlines Group Inc.",
+  "sector": "Industrials"
+ },
+ "AAP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Advance Auto Parts, Inc."
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "Advance Auto Parts, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "AAPL": {
   "checked": "2026-09-22",
   "history": [
@@ -34,6 +58,16 @@
   "industry": "Drug Manufacturers - General",
   "name": "AbbVie Inc.",
   "sector": "Healthcare"
+ },
+ "ABI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "VictoryShares Pioneer Asset-Based Inc ETF"
+   }
+  ],
+  "name": "VictoryShares Pioneer Asset-Based Inc ETF"
  },
  "ABNB": {
   "checked": "2026-09-22",
@@ -143,6 +177,18 @@
   "name": "Autodesk, Inc.",
   "sector": "Technology"
  },
+ "ADT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ADT Inc."
+   }
+  ],
+  "industry": "Security & Protection Services",
+  "name": "ADT Inc.",
+  "sector": "Industrials"
+ },
  "AEE": {
   "checked": "2026-09-22",
   "history": [
@@ -202,6 +248,18 @@
   "industry": "Insurance - Diversified",
   "name": "American International Group, Inc.",
   "sector": "Financial Services"
+ },
+ "AIV": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Apartment Investment and Management Company"
+   }
+  ],
+  "industry": "REIT - Residential",
+  "name": "Apartment Investment and Management Company",
+  "sector": "Real Estate"
  },
  "AIZ": {
   "checked": "2026-09-22",
@@ -274,6 +332,18 @@
   "industry": "Medical Instruments & Supplies",
   "name": "Align Technology, Inc.",
   "sector": "Healthcare"
+ },
+ "ALK": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Alaska Air Group, Inc."
+   }
+  ],
+  "industry": "Airlines",
+  "name": "Alaska Air Group, Inc.",
+  "sector": "Industrials"
  },
  "ALL": {
   "checked": "2026-09-22",
@@ -359,6 +429,18 @@
   "name": "AMETEK, Inc.",
   "sector": "Industrials"
  },
+ "AMG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Affiliated Managers Group, Inc."
+   }
+  ],
+  "industry": "Asset Management",
+  "name": "Affiliated Managers Group, Inc.",
+  "sector": "Financial Services"
+ },
  "AMGN": {
   "checked": "2026-09-22",
   "history": [
@@ -395,6 +477,18 @@
   "name": "American Tower Corporation",
   "sector": "Real Estate"
  },
+ "AMTM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Amentum Holdings, Inc."
+   }
+  ],
+  "industry": "Specialty Business Services",
+  "name": "Amentum Holdings, Inc.",
+  "sector": "Industrials"
+ },
  "AMZN": {
   "checked": "2026-09-22",
   "history": [
@@ -405,6 +499,18 @@
   ],
   "industry": "Internet Retail",
   "name": "Amazon.com, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "AN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "AutoNation, Inc."
+   }
+  ],
+  "industry": "Auto & Truck Dealerships",
+  "name": "AutoNation, Inc.",
   "sector": "Consumer Cyclical"
  },
  "ANET": {
@@ -418,6 +524,18 @@
   "industry": "Computer Hardware",
   "name": "Arista Networks, Inc.",
   "sector": "Technology"
+ },
+ "ANF": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Abercrombie & Fitch Co."
+   }
+  ],
+  "industry": "Apparel Retail",
+  "name": "Abercrombie & Fitch Co.",
+  "sector": "Consumer Cyclical"
  },
  "AON": {
   "checked": "2026-09-22",
@@ -453,6 +571,18 @@
   ],
   "industry": "Oil & Gas E&P",
   "name": "APA Corporation",
+  "sector": "Energy"
+ },
+ "APC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ARKO Petroleum Corp."
+   }
+  ],
+  "industry": "Oil & Gas Refining & Marketing",
+  "name": "ARKO Petroleum Corp.",
   "sector": "Energy"
  },
  "APD": {
@@ -551,6 +681,18 @@
   "name": "Arm Holdings plc",
   "sector": "Technology"
  },
+ "ASH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Ashland Inc."
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "Ashland Inc.",
+  "sector": "Basic Materials"
+ },
  "ASML": {
   "checked": "2026-09-22",
   "history": [
@@ -563,6 +705,18 @@
   "name": "ASML Holding N.V.",
   "sector": "Technology"
  },
+ "ATI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ATI Inc."
+   }
+  ],
+  "industry": "Metal Fabrication",
+  "name": "ATI Inc.",
+  "sector": "Industrials"
+ },
  "ATO": {
   "checked": "2026-09-22",
   "history": [
@@ -574,6 +728,18 @@
   "industry": "Utilities - Regulated Gas",
   "name": "Atmos Energy Corporation",
   "sector": "Utilities"
+ },
+ "AVB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "AvalonBay Communities Inc"
+   }
+  ],
+  "industry": "REIT - Residential",
+  "name": "AvalonBay Communities Inc",
+  "sector": "Real Estate"
  },
  "AVGO": {
   "checked": "2026-09-22",
@@ -635,6 +801,30 @@
   "name": "American Express Company",
   "sector": "Financial Services"
  },
+ "AYI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Acuity Inc."
+   }
+  ],
+  "industry": "Electrical Equipment & Parts",
+  "name": "Acuity Inc.",
+  "sector": "Industrials"
+ },
+ "AZN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "AstraZeneca PLC"
+   }
+  ],
+  "industry": "Drug Manufacturers - General",
+  "name": "AstraZeneca PLC",
+  "sector": "Healthcare"
+ },
  "AZO": {
   "checked": "2026-09-22",
   "history": [
@@ -683,6 +873,30 @@
   "name": "Ball Corporation",
   "sector": "Consumer Cyclical"
  },
+ "BATRA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Atlanta Braves Holdings, Inc."
+   }
+  ],
+  "industry": "Entertainment",
+  "name": "Atlanta Braves Holdings, Inc.",
+  "sector": "Communication Services"
+ },
+ "BATRK": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Atlanta Braves Holdings, Inc."
+   }
+  ],
+  "industry": "Entertainment",
+  "name": "Atlanta Braves Holdings, Inc.",
+  "sector": "Communication Services"
+ },
  "BAX": {
   "checked": "2026-09-22",
   "history": [
@@ -694,6 +908,40 @@
   "industry": "Medical Instruments & Supplies",
   "name": "Baxter International Inc.",
   "sector": "Healthcare"
+ },
+ "BBBY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Bed Bath & Beyond, Inc."
+   }
+  ],
+  "name": "Bed Bath & Beyond, Inc."
+ },
+ "BBT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Beacon Financial Corporation"
+   }
+  ],
+  "industry": "Banks - Regional",
+  "name": "Beacon Financial Corporation",
+  "sector": "Financial Services"
+ },
+ "BBWI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Bath & Body Works, Inc."
+   }
+  ],
+  "industry": "Specialty Retail",
+  "name": "Bath & Body Works, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "BBY": {
   "checked": "2026-09-22",
@@ -707,6 +955,18 @@
   "name": "Best Buy Co., Inc.",
   "sector": "Consumer Cyclical"
  },
+ "BC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Brunswick Corporation"
+   }
+  ],
+  "industry": "Recreational Vehicles",
+  "name": "Brunswick Corporation",
+  "sector": "Consumer Cyclical"
+ },
  "BDX": {
   "checked": "2026-09-22",
   "history": [
@@ -717,6 +977,18 @@
   ],
   "industry": "Medical Instruments & Supplies",
   "name": "Becton, Dickinson and Company",
+  "sector": "Healthcare"
+ },
+ "BEAM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Beam Therapeutics Inc."
+   }
+  ],
+  "industry": "Biotechnology",
+  "name": "Beam Therapeutics Inc.",
   "sector": "Healthcare"
  },
  "BEN": {
@@ -743,6 +1015,18 @@
   "name": "Brown-Forman Corporation",
   "sector": "Consumer Defensive"
  },
+ "BFH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Bread Financial Holdings, Inc."
+   }
+  ],
+  "industry": "Credit Services",
+  "name": "Bread Financial Holdings, Inc.",
+  "sector": "Financial Services"
+ },
  "BG": {
   "checked": "2026-09-22",
   "history": [
@@ -755,6 +1039,30 @@
   "name": "Bunge Global SA",
   "sector": "Consumer Defensive"
  },
+ "BHF": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Brighthouse Financial, Inc."
+   }
+  ],
+  "industry": "Insurance - Life",
+  "name": "Brighthouse Financial, Inc.",
+  "sector": "Financial Services"
+ },
+ "BIDU": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Baidu, Inc."
+   }
+  ],
+  "industry": "Internet Content & Information",
+  "name": "Baidu, Inc.",
+  "sector": "Communication Services"
+ },
  "BIIB": {
   "checked": "2026-09-22",
   "history": [
@@ -765,6 +1073,18 @@
   ],
   "industry": "Drug Manufacturers - General",
   "name": "Biogen Inc.",
+  "sector": "Healthcare"
+ },
+ "BIO": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Bio-Rad Laboratories, Inc."
+   }
+  ],
+  "industry": "Medical Devices",
+  "name": "Bio-Rad Laboratories, Inc.",
   "sector": "Healthcare"
  },
  "BKNG": {
@@ -814,6 +1134,18 @@
   "industry": "Asset Management",
   "name": "BlackRock, Inc.",
   "sector": "Financial Services"
+ },
+ "BMRN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "BioMarin Pharmaceutical Inc."
+   }
+  ],
+  "industry": "Biotechnology",
+  "name": "BioMarin Pharmaceutical Inc.",
+  "sector": "Healthcare"
  },
  "BMY": {
   "checked": "2026-09-22",
@@ -887,6 +1219,30 @@
   "name": "Boston Scientific Corporation",
   "sector": "Healthcare"
  },
+ "BUD": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Anheuser-Busch InBev SA/NV"
+   }
+  ],
+  "industry": "Beverages - Brewers",
+  "name": "Anheuser-Busch InBev SA/NV",
+  "sector": "Consumer Defensive"
+ },
+ "BWA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "BorgWarner Inc."
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "BorgWarner Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "BX": {
   "checked": "2026-09-22",
   "history": [
@@ -923,6 +1279,18 @@
   "name": "Citigroup Inc.",
   "sector": "Financial Services"
  },
+ "CAG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Conagra Brands, Inc."
+   }
+  ],
+  "industry": "Packaged Foods",
+  "name": "Conagra Brands, Inc.",
+  "sector": "Consumer Defensive"
+ },
  "CAH": {
   "checked": "2026-09-22",
   "history": [
@@ -934,6 +1302,16 @@
   "industry": "Medical Distribution",
   "name": "Cardinal Health, Inc.",
   "sector": "Healthcare"
+ },
+ "CAM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "AB California Intermediate Municipal ETF"
+   }
+  ],
+  "name": "AB California Intermediate Municipal ETF"
  },
  "CARR": {
   "checked": "2026-09-22",
@@ -1043,6 +1421,18 @@
   "name": "Carnival Corporation Ltd.",
   "sector": "Consumer Cyclical"
  },
+ "CCU": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Compañía Cervecerías Unidas S.A."
+   }
+  ],
+  "industry": "Beverages - Brewers",
+  "name": "Compañía Cervecerías Unidas S.A.",
+  "sector": "Consumer Defensive"
+ },
  "CDNS": {
   "checked": "2026-09-22",
   "history": [
@@ -1066,6 +1456,18 @@
   "industry": "Information Technology Services",
   "name": "CDW Corporation",
   "sector": "Technology"
+ },
+ "CE": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Celanese Corporation"
+   }
+  ],
+  "industry": "Chemicals",
+  "name": "Celanese Corporation",
+  "sector": "Basic Materials"
  },
  "CEG": {
   "checked": "2026-09-22",
@@ -1114,6 +1516,18 @@
   "industry": "Household & Personal Products",
   "name": "Church & Dwight Co., Inc.",
   "sector": "Consumer Defensive"
+ },
+ "CHKP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Check Point Software Technologies Ltd."
+   }
+  ],
+  "industry": "Software - Infrastructure",
+  "name": "Check Point Software Technologies Ltd.",
+  "sector": "Technology"
  },
  "CHRW": {
   "checked": "2026-09-22",
@@ -1186,6 +1600,18 @@
   "industry": "Household & Personal Products",
   "name": "Colgate-Palmolive Company",
   "sector": "Consumer Defensive"
+ },
+ "CLF": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Cleveland-Cliffs Inc."
+   }
+  ],
+  "industry": "Steel",
+  "name": "Cleveland-Cliffs Inc.",
+  "sector": "Basic Materials"
  },
  "CLX": {
   "checked": "2026-09-22",
@@ -1283,6 +1709,18 @@
   "name": "CenterPoint Energy, Inc.",
   "sector": "Utilities"
  },
+ "CNX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "CNX Resources Corporation"
+   }
+  ],
+  "industry": "Oil & Gas E&P",
+  "name": "CNX Resources Corporation",
+  "sector": "Energy"
+ },
  "COF": {
   "checked": "2026-09-22",
   "history": [
@@ -1367,6 +1805,18 @@
   "name": "Costco Wholesale Corporation",
   "sector": "Consumer Defensive"
  },
+ "COTY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Coty Inc."
+   }
+  ],
+  "industry": "Household & Personal Products",
+  "name": "Coty Inc.",
+  "sector": "Consumer Defensive"
+ },
  "CPAY": {
   "checked": "2026-09-22",
   "history": [
@@ -1378,6 +1828,30 @@
   "industry": "Software - Infrastructure",
   "name": "Corpay, Inc.",
   "sector": "Technology"
+ },
+ "CPB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Campbell's Company"
+   }
+  ],
+  "industry": "Packaged Foods",
+  "name": "The Campbell's Company",
+  "sector": "Consumer Defensive"
+ },
+ "CPRI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Capri Holdings Limited"
+   }
+  ],
+  "industry": "Luxury Goods",
+  "name": "Capri Holdings Limited",
+  "sector": "Consumer Cyclical"
  },
  "CPRT": {
   "checked": "2026-09-22",
@@ -1402,6 +1876,18 @@
   "industry": "REIT - Residential",
   "name": "Camden Property Trust",
   "sector": "Real Estate"
+ },
+ "CPWR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Ocean Thermal Energy Corporation"
+   }
+  ],
+  "industry": "Utilities - Renewable",
+  "name": "Ocean Thermal Energy Corporation",
+  "sector": "Utilities"
  },
  "CRH": {
   "checked": "2026-09-22",
@@ -1487,6 +1973,16 @@
   "name": "CoStar Group, Inc.",
   "sector": "Real Estate"
  },
+ "CSRA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Cohen & Steers Real Assets Active ETF"
+   }
+  ],
+  "name": "Cohen & Steers Real Assets Active ETF"
+ },
  "CSX": {
   "checked": "2026-09-22",
   "history": [
@@ -1571,6 +2067,18 @@
   "name": "Chevron Corporation",
   "sector": "Energy"
  },
+ "CZR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Caesars Entertainment, Inc."
+   }
+  ],
+  "industry": "Resorts & Casinos",
+  "name": "Caesars Entertainment, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "D": {
   "checked": "2026-09-22",
   "history": [
@@ -1630,6 +2138,18 @@
   "industry": "Software - Application",
   "name": "Datadog, Inc.",
   "sector": "Technology"
+ },
+ "DDS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Dillard's, Inc."
+   }
+  ],
+  "industry": "Department Stores",
+  "name": "Dillard's, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "DE": {
   "checked": "2026-09-22",
@@ -1715,6 +2235,28 @@
   "name": "Danaher Corporation",
   "sector": "Healthcare"
  },
+ "DIA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "State Street SPDR Dow Jones Industrial Average ETF Trust"
+   }
+  ],
+  "name": "State Street SPDR Dow Jones Industrial Average ETF Trust"
+ },
+ "DINO": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "HF Sinclair Corporation"
+   }
+  ],
+  "industry": "Oil & Gas Refining & Marketing",
+  "name": "HF Sinclair Corporation",
+  "sector": "Energy"
+ },
  "DIS": {
   "checked": "2026-09-22",
   "history": [
@@ -1762,6 +2304,18 @@
   "industry": "REIT - Healthcare Facilities",
   "name": "Healthpeak Properties, Inc.",
   "sector": "Real Estate"
+ },
+ "DOCU": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "DocuSign, Inc."
+   }
+  ],
+  "industry": "Software - Application",
+  "name": "DocuSign, Inc.",
+  "sector": "Technology"
  },
  "DOV": {
   "checked": "2026-09-22",
@@ -1859,6 +2413,18 @@
   "name": "Devon Energy Corporation",
   "sector": "Energy"
  },
+ "DXC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "DXC Technology Company"
+   }
+  ],
+  "industry": "Information Technology Services",
+  "name": "DXC Technology Company",
+  "sector": "Technology"
+ },
  "DXCM": {
   "checked": "2026-09-22",
   "history": [
@@ -1869,6 +2435,18 @@
   ],
   "industry": "Medical Devices",
   "name": "DexCom, Inc.",
+  "sector": "Healthcare"
+ },
+ "DYN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Dyne Therapeutics, Inc."
+   }
+  ],
+  "industry": "Biotechnology",
+  "name": "Dyne Therapeutics, Inc.",
   "sector": "Healthcare"
  },
  "EA": {
@@ -1991,6 +2569,16 @@
   "name": "Elevance Health, Inc.",
   "sector": "Healthcare"
  },
+ "EMC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Global X Emerging Markets Great Consumer ETF"
+   }
+  ],
+  "name": "Global X Emerging Markets Great Consumer ETF"
+ },
  "EME": {
   "checked": "2026-09-22",
   "history": [
@@ -2002,6 +2590,18 @@
   "industry": "Engineering & Construction",
   "name": "EMCOR Group, Inc.",
   "sector": "Industrials"
+ },
+ "EMN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Eastman Chemical Company"
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "Eastman Chemical Company",
+  "sector": "Basic Materials"
  },
  "EMR": {
   "checked": "2026-09-22",
@@ -2015,6 +2615,18 @@
   "name": "Emerson Electric Co.",
   "sector": "Industrials"
  },
+ "ENPH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Enphase Energy, Inc."
+   }
+  ],
+  "industry": "Solar",
+  "name": "Enphase Energy, Inc.",
+  "sector": "Technology"
+ },
  "EOG": {
   "checked": "2026-09-22",
   "history": [
@@ -2027,6 +2639,42 @@
   "name": "EOG Resources, Inc.",
   "sector": "Energy"
  },
+ "EP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Empire Petroleum Corporation"
+   }
+  ],
+  "industry": "Oil & Gas E&P",
+  "name": "Empire Petroleum Corporation",
+  "sector": "Energy"
+ },
+ "EPAM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "EPAM Systems, Inc."
+   }
+  ],
+  "industry": "Information Technology Services",
+  "name": "EPAM Systems, Inc.",
+  "sector": "Technology"
+ },
+ "EQ": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Equillium, Inc."
+   }
+  ],
+  "industry": "Biotechnology",
+  "name": "Equillium, Inc.",
+  "sector": "Healthcare"
+ },
  "EQIX": {
   "checked": "2026-09-22",
   "history": [
@@ -2037,6 +2685,18 @@
   ],
   "industry": "REIT - Specialty",
   "name": "Equinix, Inc.",
+  "sector": "Real Estate"
+ },
+ "EQR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Equity Residential"
+   }
+  ],
+  "industry": "REIT - Residential",
+  "name": "Equity Residential",
   "sector": "Real Estate"
  },
  "EQT": {
@@ -2110,6 +2770,18 @@
   "industry": "Utilities - Regulated Electric",
   "name": "Entergy Corporation",
   "sector": "Utilities"
+ },
+ "ETSY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Etsy, Inc."
+   }
+  ],
+  "industry": "Internet Retail",
+  "name": "Etsy, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "EVRG": {
   "checked": "2026-09-22",
@@ -2231,6 +2903,40 @@
   "name": "Fastenal Company",
   "sector": "Industrials"
  },
+ "FB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ProShares S&P 500 Dynamic Daily Buffer ETF"
+   }
+  ],
+  "name": "ProShares S&P 500 Dynamic Daily Buffer ETF"
+ },
+ "FBIN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Fortune Brands Innovations, Inc."
+   }
+  ],
+  "industry": "Building Products & Equipment",
+  "name": "Fortune Brands Innovations, Inc.",
+  "sector": "Industrials"
+ },
+ "FCPT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Four Corners Property Trust, Inc."
+   }
+  ],
+  "industry": "REIT - Retail",
+  "name": "Four Corners Property Trust, Inc.",
+  "sector": "Real Estate"
+ },
  "FCX": {
   "checked": "2026-09-22",
   "history": [
@@ -2327,6 +3033,18 @@
   "name": "F5, Inc.",
   "sector": "Technology"
  },
+ "FHN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "First Horizon Corporation"
+   }
+  ],
+  "industry": "Banks - Regional",
+  "name": "First Horizon Corporation",
+  "sector": "Financial Services"
+ },
  "FICO": {
   "checked": "2026-09-22",
   "history": [
@@ -2397,6 +3115,78 @@
   "name": "Flex Ltd.",
   "sector": "Technology"
  },
+ "FLR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Fluor Corporation"
+   }
+  ],
+  "industry": "Engineering & Construction",
+  "name": "Fluor Corporation",
+  "sector": "Industrials"
+ },
+ "FLS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Flowserve Corporation"
+   }
+  ],
+  "industry": "Specialty Industrial Machinery",
+  "name": "Flowserve Corporation",
+  "sector": "Industrials"
+ },
+ "FMC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "FMC Corporation"
+   }
+  ],
+  "industry": "Agricultural Inputs",
+  "name": "FMC Corporation",
+  "sector": "Basic Materials"
+ },
+ "FMCC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Federal Home Loan Mortgage Corporation"
+   }
+  ],
+  "industry": "Mortgage Finance",
+  "name": "Federal Home Loan Mortgage Corporation",
+  "sector": "Financial Services"
+ },
+ "FNMA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Federal National Mortgage Association"
+   }
+  ],
+  "industry": "Mortgage Finance",
+  "name": "Federal National Mortgage Association",
+  "sector": "Financial Services"
+ },
+ "FOSL": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Fossil Group, Inc."
+   }
+  ],
+  "industry": "Footwear & Accessories",
+  "name": "Fossil Group, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "FOX": {
   "checked": "2026-09-22",
   "history": [
@@ -2445,6 +3235,18 @@
   "name": "First Solar, Inc.",
   "sector": "Technology"
  },
+ "FTI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "TechnipFMC plc"
+   }
+  ],
+  "industry": "Oil & Gas Equipment & Services",
+  "name": "TechnipFMC plc",
+  "sector": "Energy"
+ },
  "FTNT": {
   "checked": "2026-09-22",
   "history": [
@@ -2468,6 +3270,18 @@
   "industry": "Scientific & Technical Instruments",
   "name": "Fortive Corporation",
   "sector": "Technology"
+ },
+ "GAP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Gap, Inc."
+   }
+  ],
+  "industry": "Apparel Retail",
+  "name": "The Gap, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "GD": {
   "checked": "2026-09-22",
@@ -2529,6 +3343,16 @@
   "name": "Gen Digital Inc.",
   "sector": "Technology"
  },
+ "GENZ": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "VanEck Digital Native Economy ETF"
+   }
+  ],
+  "name": "VanEck Digital Native Economy ETF"
+ },
  "GEV": {
   "checked": "2026-09-22",
   "history": [
@@ -2539,6 +3363,30 @@
   ],
   "industry": "Specialty Industrial Machinery",
   "name": "GE Vernova Inc.",
+  "sector": "Industrials"
+ },
+ "GFS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "GLOBALFOUNDRIES Inc."
+   }
+  ],
+  "industry": "Semiconductors",
+  "name": "GLOBALFOUNDRIES Inc.",
+  "sector": "Technology"
+ },
+ "GHC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Graham Holdings Company"
+   }
+  ],
+  "industry": "Conglomerates",
+  "name": "Graham Holdings Company",
   "sector": "Industrials"
  },
  "GILD": {
@@ -2601,6 +3449,18 @@
   "name": "General Motors Company",
   "sector": "Consumer Cyclical"
  },
+ "GME": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "GameStop Corp."
+   }
+  ],
+  "industry": "Specialty Retail",
+  "name": "GameStop Corp.",
+  "sector": "Consumer Cyclical"
+ },
  "GNRC": {
   "checked": "2026-09-22",
   "history": [
@@ -2612,6 +3472,30 @@
   "industry": "Specialty Industrial Machinery",
   "name": "Generac Holdings Inc.",
   "sector": "Industrials"
+ },
+ "GNW": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Genworth Financial, Inc."
+   }
+  ],
+  "industry": "Insurance - Life",
+  "name": "Genworth Financial, Inc.",
+  "sector": "Financial Services"
+ },
+ "GOLD": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Gold.com, Inc."
+   }
+  ],
+  "industry": "Capital Markets",
+  "name": "Gold.com, Inc.",
+  "sector": "Financial Services"
  },
  "GOOG": {
   "checked": "2026-09-22",
@@ -2684,6 +3568,18 @@
   "industry": "Capital Markets",
   "name": "The Goldman Sachs Group, Inc.",
   "sector": "Financial Services"
+ },
+ "GT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Goodyear Tire & Rubber Company"
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "The Goodyear Tire & Rubber Company",
+  "sector": "Consumer Cyclical"
  },
  "GWW": {
   "checked": "2026-09-22",
@@ -2793,6 +3689,18 @@
   "name": "Hilton Worldwide Holdings Inc.",
   "sector": "Consumer Cyclical"
  },
+ "HOG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Harley-Davidson, Inc."
+   }
+  ],
+  "industry": "Recreational Vehicles",
+  "name": "Harley-Davidson, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "HON": {
   "checked": "2026-09-22",
   "history": [
@@ -2829,6 +3737,18 @@
   "name": "Robinhood Markets, Inc.",
   "sector": "Financial Services"
  },
+ "HP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Helmerich & Payne, Inc."
+   }
+  ],
+  "industry": "Oil & Gas Drilling",
+  "name": "Helmerich & Payne, Inc.",
+  "sector": "Energy"
+ },
  "HPE": {
   "checked": "2026-09-22",
   "history": [
@@ -2852,6 +3772,18 @@
   "industry": "Computer Hardware",
   "name": "HP Inc.",
   "sector": "Technology"
+ },
+ "HRB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "H&R Block, Inc."
+   }
+  ],
+  "industry": "Personal Services",
+  "name": "H&R Block, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "HRL": {
   "checked": "2026-09-22",
@@ -3009,6 +3941,18 @@
   "name": "International Flavors & Fragrances Inc.",
   "sector": "Basic Materials"
  },
+ "ILMN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Illumina, Inc."
+   }
+  ],
+  "industry": "Diagnostics & Research",
+  "name": "Illumina, Inc.",
+  "sector": "Healthcare"
+ },
  "INCY": {
   "checked": "2026-09-22",
   "history": [
@@ -3020,6 +3964,28 @@
   "industry": "Biotechnology",
   "name": "Incyte Corporation",
   "sector": "Healthcare"
+ },
+ "INFO": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Harbor PanAgora Dynamic Large Cap Core ETF"
+   }
+  ],
+  "name": "Harbor PanAgora Dynamic Large Cap Core ETF"
+ },
+ "INFY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Infosys Limited"
+   }
+  ],
+  "industry": "Information Technology Services",
+  "name": "Infosys Limited",
+  "sector": "Technology"
  },
  "INTC": {
   "checked": "2026-09-22",
@@ -3068,6 +4034,18 @@
   "industry": "Packaging & Containers",
   "name": "International Paper Company",
   "sector": "Consumer Cyclical"
+ },
+ "IPGP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "IPG Photonics Corporation"
+   }
+  ],
+  "industry": "Semiconductor Equipment & Materials",
+  "name": "IPG Photonics Corporation",
+  "sector": "Technology"
  },
  "IQV": {
   "checked": "2026-09-22",
@@ -3129,6 +4107,18 @@
   "name": "Gartner, Inc.",
   "sector": "Technology"
  },
+ "ITT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ITT Inc."
+   }
+  ],
+  "industry": "Specialty Industrial Machinery",
+  "name": "ITT Inc.",
+  "sector": "Industrials"
+ },
  "ITW": {
   "checked": "2026-09-22",
   "history": [
@@ -3164,6 +4154,16 @@
   "industry": "Engineering & Construction",
   "name": "Jacobs Solutions Inc.",
   "sector": "Industrials"
+ },
+ "JAVA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "JPMorgan Active Value ETF"
+   }
+  ],
+  "name": "JPMorgan Active Value ETF"
  },
  "JBHT": {
   "checked": "2026-09-22",
@@ -3201,6 +4201,30 @@
   "name": "Johnson Controls International plc",
   "sector": "Industrials"
  },
+ "JD": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "JD.com, Inc."
+   }
+  ],
+  "industry": "Internet Retail",
+  "name": "JD.com, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "JEF": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Jefferies Financial Group Inc."
+   }
+  ],
+  "industry": "Capital Markets",
+  "name": "Jefferies Financial Group Inc.",
+  "sector": "Financial Services"
+ },
  "JKHY": {
   "checked": "2026-09-22",
   "history": [
@@ -3237,6 +4261,18 @@
   "name": "JPMorgan Chase & Co.",
   "sector": "Financial Services"
  },
+ "KBH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "KB Home"
+   }
+  ],
+  "industry": "Residential Construction",
+  "name": "KB Home",
+  "sector": "Consumer Cyclical"
+ },
  "KDP": {
   "checked": "2026-09-22",
   "history": [
@@ -3272,6 +4308,18 @@
   "industry": "Scientific & Technical Instruments",
   "name": "Keysight Technologies, Inc.",
   "sector": "Technology"
+ },
+ "KG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Kestrel Group Ltd"
+   }
+  ],
+  "industry": "Insurance - Reinsurance",
+  "name": "Kestrel Group Ltd",
+  "sector": "Financial Services"
  },
  "KHC": {
   "checked": "2026-09-22",
@@ -3345,6 +4393,18 @@
   "name": "Kinder Morgan, Inc.",
   "sector": "Energy"
  },
+ "KMX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "CarMax, Inc."
+   }
+  ],
+  "industry": "Auto & Truck Dealerships",
+  "name": "CarMax, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "KO": {
   "checked": "2026-09-22",
   "history": [
@@ -3368,6 +4428,18 @@
   "industry": "Grocery Stores",
   "name": "The Kroger Co.",
   "sector": "Consumer Defensive"
+ },
+ "KSS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Kohl's Corporation"
+   }
+  ],
+  "industry": "Department Stores",
+  "name": "Kohl's Corporation",
+  "sector": "Consumer Cyclical"
  },
  "KVUE": {
   "checked": "2026-09-22",
@@ -3393,6 +4465,66 @@
   "name": "Loews Corporation",
   "sector": "Financial Services"
  },
+ "LAMR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Lamar Advertising Company"
+   }
+  ],
+  "industry": "REIT - Specialty",
+  "name": "Lamar Advertising Company",
+  "sector": "Real Estate"
+ },
+ "LB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "LandBridge Company LLC"
+   }
+  ],
+  "industry": "Oil & Gas E&P",
+  "name": "LandBridge Company LLC",
+  "sector": "Energy"
+ },
+ "LBTYA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Liberty Global Ltd."
+   }
+  ],
+  "industry": "Telecom Services",
+  "name": "Liberty Global Ltd.",
+  "sector": "Communication Services"
+ },
+ "LBTYK": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Liberty Global Ltd."
+   }
+  ],
+  "industry": "Telecom Services",
+  "name": "Liberty Global Ltd.",
+  "sector": "Communication Services"
+ },
+ "LCID": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Lucid Group, Inc."
+   }
+  ],
+  "industry": "Auto Manufacturers",
+  "name": "Lucid Group, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "LDOS": {
   "checked": "2026-09-22",
   "history": [
@@ -3404,6 +4536,18 @@
   "industry": "Information Technology Services",
   "name": "Leidos Holdings, Inc.",
   "sector": "Technology"
+ },
+ "LEG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Leggett & Platt Inc"
+   }
+  ],
+  "industry": "Furnishings, Fixtures & Appliances",
+  "name": "Leggett & Platt Inc",
+  "sector": "Consumer Cyclical"
  },
  "LEN": {
   "checked": "2026-09-22",
@@ -3441,6 +4585,18 @@
   "name": "L3Harris Technologies, Inc.",
   "sector": "Industrials"
  },
+ "LIFE": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Ethos Technologies Inc."
+   }
+  ],
+  "industry": "Insurance Brokers",
+  "name": "Ethos Technologies Inc.",
+  "sector": "Financial Services"
+ },
  "LII": {
   "checked": "2026-09-22",
   "history": [
@@ -3452,6 +4608,30 @@
   "industry": "Building Products & Equipment",
   "name": "Lennox International Inc.",
   "sector": "Industrials"
+ },
+ "LILA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Liberty Latin America Ltd."
+   }
+  ],
+  "industry": "Telecom Services",
+  "name": "Liberty Latin America Ltd.",
+  "sector": "Communication Services"
+ },
+ "LILAK": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Liberty Latin America Ltd."
+   }
+  ],
+  "industry": "Telecom Services",
+  "name": "Liberty Latin America Ltd.",
+  "sector": "Communication Services"
  },
  "LIN": {
   "checked": "2026-09-22",
@@ -3477,6 +4657,18 @@
   "name": "Lumentum Holdings Inc.",
   "sector": "Technology"
  },
+ "LKQ": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "LKQ Corporation"
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "LKQ Corporation",
+  "sector": "Consumer Cyclical"
+ },
  "LLY": {
   "checked": "2026-09-22",
   "history": [
@@ -3501,6 +4693,18 @@
   "name": "Lockheed Martin Corporation",
   "sector": "Industrials"
  },
+ "LNC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Lincoln National Corporation"
+   }
+  ],
+  "industry": "Insurance - Life",
+  "name": "Lincoln National Corporation",
+  "sector": "Financial Services"
+ },
  "LNT": {
   "checked": "2026-09-22",
   "history": [
@@ -3512,6 +4716,18 @@
   "industry": "Utilities - Regulated Electric",
   "name": "Alliant Energy Corporation",
   "sector": "Utilities"
+ },
+ "LOGI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Logitech International S.A."
+   }
+  ],
+  "industry": "Computer Hardware",
+  "name": "Logitech International S.A.",
+  "sector": "Technology"
  },
  "LOW": {
   "checked": "2026-09-22",
@@ -3549,6 +4765,18 @@
   "name": "lululemon athletica inc.",
   "sector": "Consumer Cyclical"
  },
+ "LUMN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Lumen Technologies, Inc."
+   }
+  ],
+  "industry": "Telecom Services",
+  "name": "Lumen Technologies, Inc.",
+  "sector": "Communication Services"
+ },
  "LUV": {
   "checked": "2026-09-22",
   "history": [
@@ -3572,6 +4800,18 @@
   "industry": "Resorts & Casinos",
   "name": "Las Vegas Sands Corp.",
   "sector": "Consumer Cyclical"
+ },
+ "LW": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Lamb Weston Holdings, Inc."
+   }
+  ],
+  "industry": "Packaged Foods",
+  "name": "Lamb Weston Holdings, Inc.",
+  "sector": "Consumer Defensive"
  },
  "LYB": {
   "checked": "2026-09-22",
@@ -3597,6 +4837,18 @@
   "name": "Live Nation Entertainment, Inc.",
   "sector": "Communication Services"
  },
+ "M": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Macy's, Inc."
+   }
+  ],
+  "industry": "Department Stores",
+  "name": "Macy's, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "MA": {
   "checked": "2026-09-22",
   "history": [
@@ -3619,6 +4871,18 @@
   ],
   "industry": "REIT - Residential",
   "name": "Mid-America Apartment Communities, Inc.",
+  "sector": "Real Estate"
+ },
+ "MAC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Macerich Company"
+   }
+  ],
+  "industry": "REIT - Retail",
+  "name": "The Macerich Company",
   "sector": "Real Estate"
  },
  "MAR": {
@@ -3644,6 +4908,30 @@
   "industry": "Building Products & Equipment",
   "name": "Masco Corporation",
   "sector": "Industrials"
+ },
+ "MAT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Mattel, Inc."
+   }
+  ],
+  "industry": "Leisure",
+  "name": "Mattel, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "MBI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "MBIA Inc."
+   }
+  ],
+  "industry": "Insurance - Specialty",
+  "name": "MBIA Inc.",
+  "sector": "Financial Services"
  },
  "MCD": {
   "checked": "2026-09-22",
@@ -3692,6 +4980,18 @@
   "industry": "Financial Data & Stock Exchanges",
   "name": "Moody's Corporation",
   "sector": "Financial Services"
+ },
+ "MDB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "MongoDB, Inc."
+   }
+  ],
+  "industry": "Software - Infrastructure",
+  "name": "MongoDB, Inc.",
+  "sector": "Technology"
  },
  "MDLZ": {
   "checked": "2026-09-22",
@@ -3765,6 +5065,42 @@
   "name": "MGM Resorts International",
   "sector": "Consumer Cyclical"
  },
+ "MHK": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Mohawk Industries, Inc."
+   }
+  ],
+  "industry": "Furnishings, Fixtures & Appliances",
+  "name": "Mohawk Industries, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "MI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "NFT Limited"
+   }
+  ],
+  "industry": "Internet Retail",
+  "name": "NFT Limited",
+  "sector": "Consumer Cyclical"
+ },
+ "MICC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Magnum Ice Cream Company N.V."
+   }
+  ],
+  "industry": "Packaged Foods",
+  "name": "The Magnum Ice Cream Company N.V.",
+  "sector": "Consumer Defensive"
+ },
  "MKC": {
   "checked": "2026-09-22",
   "history": [
@@ -3777,6 +5113,18 @@
   "name": "McCormick & Company, Incorporated",
   "sector": "Consumer Defensive"
  },
+ "MKTX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "MarketAxess Holdings Inc."
+   }
+  ],
+  "industry": "Capital Markets",
+  "name": "MarketAxess Holdings Inc.",
+  "sector": "Financial Services"
+ },
  "MLM": {
   "checked": "2026-09-22",
   "history": [
@@ -3788,6 +5136,18 @@
   "industry": "Building Materials",
   "name": "Martin Marietta Materials, Inc.",
   "sector": "Basic Materials"
+ },
+ "MMI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Marcus & Millichap, Inc."
+   }
+  ],
+  "industry": "Real Estate Services",
+  "name": "Marcus & Millichap, Inc.",
+  "sector": "Real Estate"
  },
  "MMM": {
   "checked": "2026-09-22",
@@ -3824,6 +5184,18 @@
   "industry": "Tobacco",
   "name": "Altria Group, Inc.",
   "sector": "Consumer Defensive"
+ },
+ "MOH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Molina Healthcare, Inc."
+   }
+  ],
+  "industry": "Healthcare Plans",
+  "name": "Molina Healthcare, Inc.",
+  "sector": "Healthcare"
  },
  "MOS": {
   "checked": "2026-09-22",
@@ -3981,6 +5353,18 @@
   "name": "M&T Bank Corporation",
   "sector": "Financial Services"
  },
+ "MTCH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Match Group, Inc."
+   }
+  ],
+  "industry": "Internet Content & Information",
+  "name": "Match Group, Inc.",
+  "sector": "Communication Services"
+ },
  "MTD": {
   "checked": "2026-09-22",
   "history": [
@@ -3992,6 +5376,30 @@
   "industry": "Diagnostics & Research",
   "name": "Mettler-Toledo International Inc.",
   "sector": "Healthcare"
+ },
+ "MTG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "MGIC Investment Corporation"
+   }
+  ],
+  "industry": "Insurance - Specialty",
+  "name": "MGIC Investment Corporation",
+  "sector": "Financial Services"
+ },
+ "MTW": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Manitowoc Company, Inc."
+   }
+  ],
+  "industry": "Farm & Heavy Construction Machinery",
+  "name": "The Manitowoc Company, Inc.",
+  "sector": "Industrials"
  },
  "MU": {
   "checked": "2026-09-22",
@@ -4005,6 +5413,30 @@
   "name": "Micron Technology, Inc.",
   "sector": "Technology"
  },
+ "MUR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Murphy Oil Corporation"
+   }
+  ],
+  "industry": "Oil & Gas E&P",
+  "name": "Murphy Oil Corporation",
+  "sector": "Energy"
+ },
+ "NAVI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Navient Corporation"
+   }
+  ],
+  "industry": "Credit Services",
+  "name": "Navient Corporation",
+  "sector": "Financial Services"
+ },
  "NBIS": {
   "checked": "2026-09-22",
   "history": [
@@ -4016,6 +5448,18 @@
   "industry": "Internet Content & Information",
   "name": "Nebius Group N.V.",
   "sector": "Communication Services"
+ },
+ "NBR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nabors Industries Ltd."
+   }
+  ],
+  "industry": "Oil & Gas Drilling",
+  "name": "Nabors Industries Ltd.",
+  "sector": "Energy"
  },
  "NCLH": {
   "checked": "2026-09-22",
@@ -4053,6 +5497,18 @@
   "name": "Nordson Corporation",
   "sector": "Industrials"
  },
+ "NE": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Noble Corporation plc"
+   }
+  ],
+  "industry": "Oil & Gas Drilling",
+  "name": "Noble Corporation plc",
+  "sector": "Energy"
+ },
  "NEE": {
   "checked": "2026-09-22",
   "history": [
@@ -4089,6 +5545,16 @@
   "name": "Netflix, Inc.",
   "sector": "Communication Services"
  },
+ "NFX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Corgi NFLX 2x Daily ETF"
+   }
+  ],
+  "name": "Corgi NFLX 2x Daily ETF"
+ },
  "NI": {
   "checked": "2026-09-22",
   "history": [
@@ -4113,6 +5579,18 @@
   "name": "NIKE, Inc.",
   "sector": "Consumer Cyclical"
  },
+ "NKTR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nektar Therapeutics"
+   }
+  ],
+  "industry": "Biotechnology",
+  "name": "Nektar Therapeutics",
+  "sector": "Healthcare"
+ },
  "NOC": {
   "checked": "2026-09-22",
   "history": [
@@ -4124,6 +5602,18 @@
   "industry": "Aerospace & Defense",
   "name": "Northrop Grumman Corporation",
   "sector": "Industrials"
+ },
+ "NOV": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "NOV Inc."
+   }
+  ],
+  "industry": "Oil & Gas Equipment & Services",
+  "name": "NOV Inc.",
+  "sector": "Energy"
  },
  "NOW": {
   "checked": "2026-09-22",
@@ -4173,6 +5663,18 @@
   "name": "NetApp, Inc.",
   "sector": "Technology"
  },
+ "NTES": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "NetEase, Inc."
+   }
+  ],
+  "industry": "Electronic Gaming & Multimedia",
+  "name": "NetEase, Inc.",
+  "sector": "Communication Services"
+ },
  "NTRS": {
   "checked": "2026-09-22",
   "history": [
@@ -4221,6 +5723,18 @@
   "name": "NVR, Inc.",
   "sector": "Consumer Cyclical"
  },
+ "NWL": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Newell Brands Inc."
+   }
+  ],
+  "industry": "Household & Personal Products",
+  "name": "Newell Brands Inc.",
+  "sector": "Consumer Defensive"
+ },
  "NWS": {
   "checked": "2026-09-22",
   "history": [
@@ -4257,6 +5771,18 @@
   "name": "NXP Semiconductors N.V.",
   "sector": "Technology"
  },
+ "NYT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The New York Times Company"
+   }
+  ],
+  "industry": "Publishing",
+  "name": "The New York Times Company",
+  "sector": "Communication Services"
+ },
  "O": {
   "checked": "2026-09-22",
   "history": [
@@ -4281,6 +5807,30 @@
   "name": "Old Dominion Freight Line, Inc.",
   "sector": "Industrials"
  },
+ "OGN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Organon & Co."
+   }
+  ],
+  "industry": "Drug Manufacturers - General",
+  "name": "Organon & Co.",
+  "sector": "Healthcare"
+ },
+ "OI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "O-I Glass, Inc."
+   }
+  ],
+  "industry": "Packaging & Containers",
+  "name": "O-I Glass, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "OKE": {
   "checked": "2026-09-22",
   "history": [
@@ -4292,6 +5842,18 @@
   "industry": "Oil & Gas Midstream",
   "name": "ONEOK, Inc.",
   "sector": "Energy"
+ },
+ "OKTA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Okta, Inc."
+   }
+  ],
+  "industry": "Software - Infrastructure",
+  "name": "Okta, Inc.",
+  "sector": "Technology"
  },
  "OMC": {
   "checked": "2026-09-22",
@@ -4377,6 +5939,30 @@
   "name": "Palo Alto Networks, Inc.",
   "sector": "Technology"
  },
+ "PARA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Banzai International, Inc."
+   }
+  ],
+  "industry": "Software - Application",
+  "name": "Banzai International, Inc.",
+  "sector": "Technology"
+ },
+ "PAYC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Paycom Software, Inc."
+   }
+  ],
+  "industry": "Software - Application",
+  "name": "Paycom Software, Inc.",
+  "sector": "Technology"
+ },
  "PAYX": {
   "checked": "2026-09-22",
   "history": [
@@ -4388,6 +5974,18 @@
   "industry": "Software - Application",
   "name": "Paychex, Inc.",
   "sector": "Technology"
+ },
+ "PBI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Pitney Bowes Inc."
+   }
+  ],
+  "industry": "Integrated Freight & Logistics",
+  "name": "Pitney Bowes Inc.",
+  "sector": "Industrials"
  },
  "PCAR": {
   "checked": "2026-09-22",
@@ -4413,6 +6011,16 @@
   "name": "PG&E Corporation",
   "sector": "Utilities"
  },
+ "PCL": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "PGIM Corporate Bond 10+ Year ETF"
+   }
+  ],
+  "name": "PGIM Corporate Bond 10+ Year ETF"
+ },
  "PDD": {
   "checked": "2026-09-22",
   "history": [
@@ -4436,6 +6044,18 @@
   "industry": "Utilities - Regulated Electric",
   "name": "Public Service Enterprise Group Incorporated",
   "sector": "Utilities"
+ },
+ "PENN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "PENN Entertainment, Inc."
+   }
+  ],
+  "industry": "Resorts & Casinos",
+  "name": "PENN Entertainment, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "PEP": {
   "checked": "2026-09-22",
@@ -4617,6 +6237,30 @@
   "name": "Insulet Corporation",
   "sector": "Healthcare"
  },
+ "POM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Pomdoctor Limited"
+   }
+  ],
+  "industry": "Pharmaceutical Retailers",
+  "name": "Pomdoctor Limited",
+  "sector": "Healthcare"
+ },
+ "POOL": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Pool Corporation"
+   }
+  ],
+  "industry": "Industrial Distribution",
+  "name": "Pool Corporation",
+  "sector": "Industrials"
+ },
  "PPG": {
   "checked": "2026-09-22",
   "history": [
@@ -4640,6 +6284,18 @@
   "industry": "Utilities - Regulated Electric",
   "name": "PPL Corporation",
   "sector": "Utilities"
+ },
+ "PRGO": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Perrigo Company plc"
+   }
+  ],
+  "industry": "Drug Manufacturers - Specialty & Generic",
+  "name": "Perrigo Company plc",
+  "sector": "Healthcare"
  },
  "PRU": {
   "checked": "2026-09-22",
@@ -4701,6 +6357,30 @@
   "name": "PTC Inc.",
   "sector": "Technology"
  },
+ "PTON": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Peloton Interactive, Inc."
+   }
+  ],
+  "industry": "Leisure",
+  "name": "Peloton Interactive, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "PVH": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "PVH Corp."
+   }
+  ],
+  "industry": "Apparel Manufacturing",
+  "name": "PVH Corp.",
+  "sector": "Consumer Cyclical"
+ },
  "PWR": {
   "checked": "2026-09-22",
   "history": [
@@ -4748,6 +6428,52 @@
   "industry": "Semiconductors",
   "name": "QUALCOMM Incorporated",
   "sector": "Technology"
+ },
+ "QGEN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Qiagen N.V."
+   }
+  ],
+  "industry": "Diagnostics & Research",
+  "name": "Qiagen N.V.",
+  "sector": "Healthcare"
+ },
+ "QQQ": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Invesco QQQ Trust"
+   }
+  ],
+  "name": "Invesco QQQ Trust"
+ },
+ "QRVO": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Qorvo, Inc."
+   }
+  ],
+  "industry": "Semiconductors",
+  "name": "Qorvo, Inc.",
+  "sector": "Technology"
+ },
+ "R": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Ryder System, Inc."
+   }
+  ],
+  "industry": "Rental & Leasing Services",
+  "name": "Ryder System, Inc.",
+  "sector": "Industrials"
  },
  "RCL": {
   "checked": "2026-09-22",
@@ -4808,6 +6534,30 @@
   "industry": "Banks - Regional",
   "name": "Regions Financial Corporation",
   "sector": "Financial Services"
+ },
+ "RHI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Robert Half Inc."
+   }
+  ],
+  "industry": "Staffing & Employment Services",
+  "name": "Robert Half Inc.",
+  "sector": "Industrials"
+ },
+ "RIG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Transocean Ltd."
+   }
+  ],
+  "industry": "Oil & Gas Drilling",
+  "name": "Transocean Ltd.",
+  "sector": "Energy"
  },
  "RJF": {
   "checked": "2026-09-22",
@@ -4905,6 +6655,18 @@
   "name": "Ross Stores, Inc.",
   "sector": "Consumer Cyclical"
  },
+ "RRC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Range Resources Corporation"
+   }
+  ],
+  "industry": "Oil & Gas E&P",
+  "name": "Range Resources Corporation",
+  "sector": "Energy"
+ },
  "RSG": {
   "checked": "2026-09-22",
   "history": [
@@ -4916,6 +6678,16 @@
   "industry": "Waste Management",
   "name": "Republic Services, Inc.",
   "sector": "Industrials"
+ },
+ "RSP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Invesco S&P 500 Equal Weight ETF"
+   }
+  ],
+  "name": "Invesco S&P 500 Equal Weight ETF"
  },
  "RTX": {
   "checked": "2026-09-22",
@@ -4941,6 +6713,30 @@
   "name": "Revvity, Inc.",
   "sector": "Healthcare"
  },
+ "RYAAY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Ryanair Holdings plc"
+   }
+  ],
+  "industry": "Airlines",
+  "name": "Ryanair Holdings plc",
+  "sector": "Industrials"
+ },
+ "S": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SentinelOne, Inc."
+   }
+  ],
+  "industry": "Software - Infrastructure",
+  "name": "SentinelOne, Inc.",
+  "sector": "Technology"
+ },
  "SBAC": {
   "checked": "2026-09-22",
   "history": [
@@ -4952,6 +6748,18 @@
   "industry": "REIT - Specialty",
   "name": "SBA Communications Corporation",
   "sector": "Real Estate"
+ },
+ "SBNY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Signature Bank"
+   }
+  ],
+  "industry": "Banks - Regional",
+  "name": "Signature Bank",
+  "sector": "Financial Services"
  },
  "SBUX": {
   "checked": "2026-09-22",
@@ -4977,6 +6785,52 @@
   "name": "The Charles Schwab Corporation",
   "sector": "Financial Services"
  },
+ "SE": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Sea Limited"
+   }
+  ],
+  "industry": "Internet Retail",
+  "name": "Sea Limited",
+  "sector": "Consumer Cyclical"
+ },
+ "SEDG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SolarEdge Technologies, Inc."
+   }
+  ],
+  "industry": "Solar",
+  "name": "SolarEdge Technologies, Inc.",
+  "sector": "Technology"
+ },
+ "SGP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SpyGlass Pharma, Inc."
+   }
+  ],
+  "industry": "Biotechnology",
+  "name": "SpyGlass Pharma, Inc.",
+  "sector": "Healthcare"
+ },
+ "SHLD": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Global X Defense Tech ETF"
+   }
+  ],
+  "name": "Global X Defense Tech ETF"
+ },
  "SHOP": {
   "checked": "2026-09-22",
   "history": [
@@ -5001,6 +6855,42 @@
   "name": "The Sherwin-Williams Company",
   "sector": "Basic Materials"
  },
+ "SIG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Signet Jewelers Limited"
+   }
+  ],
+  "industry": "Luxury Goods",
+  "name": "Signet Jewelers Limited",
+  "sector": "Consumer Cyclical"
+ },
+ "SII": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Sprott Inc."
+   }
+  ],
+  "industry": "Asset Management",
+  "name": "Sprott Inc.",
+  "sector": "Financial Services"
+ },
+ "SIRI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Sirius XM Holdings Inc."
+   }
+  ],
+  "industry": "Entertainment",
+  "name": "Sirius XM Holdings Inc.",
+  "sector": "Communication Services"
+ },
  "SJM": {
   "checked": "2026-09-22",
   "history": [
@@ -5024,6 +6914,30 @@
   "industry": "Oil & Gas Equipment & Services",
   "name": "SLB N.V.",
   "sector": "Energy"
+ },
+ "SLG": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SL Green Realty Corp."
+   }
+  ],
+  "industry": "REIT - Office",
+  "name": "SL Green Realty Corp.",
+  "sector": "Real Estate"
+ },
+ "SLM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SLM Corporation"
+   }
+  ],
+  "industry": "Credit Services",
+  "name": "SLM Corporation",
+  "sector": "Financial Services"
  },
  "SMCI": {
   "checked": "2026-09-22",
@@ -5085,6 +6999,18 @@
   "name": "The Southern Company",
   "sector": "Utilities"
  },
+ "SOLS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Solstice Advanced Materials, Inc."
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "Solstice Advanced Materials, Inc.",
+  "sector": "Basic Materials"
+ },
  "SOLV": {
   "checked": "2026-09-22",
   "history": [
@@ -5121,6 +7047,16 @@
   "name": "S&P Global Inc.",
   "sector": "Financial Services"
  },
+ "SPLS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "PIMCO US Stocks PLUS Active Bond Exchange Traded Fund"
+   }
+  ],
+  "name": "PIMCO US Stocks PLUS Active Bond Exchange Traded Fund"
+ },
  "SRE": {
   "checked": "2026-09-22",
   "history": [
@@ -5133,6 +7069,18 @@
   "name": "Sempra",
   "sector": "Utilities"
  },
+ "SSP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The E.W. Scripps Company"
+   }
+  ],
+  "industry": "Broadcasting",
+  "name": "The E.W. Scripps Company",
+  "sector": "Communication Services"
+ },
  "STE": {
   "checked": "2026-09-22",
   "history": [
@@ -5144,6 +7092,18 @@
   "industry": "Medical Devices",
   "name": "STERIS plc",
   "sector": "Healthcare"
+ },
+ "STI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Solidion Technology, Inc."
+   }
+  ],
+  "industry": "Electrical Equipment & Parts",
+  "name": "Solidion Technology, Inc.",
+  "sector": "Industrials"
  },
  "STLD": {
   "checked": "2026-09-22",
@@ -5192,6 +7152,18 @@
   "industry": "Beverages - Brewers",
   "name": "Constellation Brands, Inc.",
   "sector": "Consumer Defensive"
+ },
+ "SUN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Sunoco LP"
+   }
+  ],
+  "industry": "Oil & Gas Refining & Marketing",
+  "name": "Sunoco LP",
+  "sector": "Energy"
  },
  "SW": {
   "checked": "2026-09-22",
@@ -5289,6 +7261,30 @@
   "name": "Molson Coors Beverage Company",
   "sector": "Consumer Defensive"
  },
+ "TCOM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Trip.com Group Limited"
+   }
+  ],
+  "industry": "Travel Services",
+  "name": "Trip.com Group Limited",
+  "sector": "Consumer Cyclical"
+ },
+ "TDC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Teradata Corporation"
+   }
+  ],
+  "industry": "Software - Infrastructure",
+  "name": "Teradata Corporation",
+  "sector": "Technology"
+ },
  "TDG": {
   "checked": "2026-09-22",
   "history": [
@@ -5311,6 +7307,30 @@
   ],
   "industry": "Scientific & Technical Instruments",
   "name": "Teledyne Technologies Incorporated",
+  "sector": "Technology"
+ },
+ "TE": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "T1 Energy Inc."
+   }
+  ],
+  "industry": "Electrical Equipment & Parts",
+  "name": "T1 Energy Inc.",
+  "sector": "Industrials"
+ },
+ "TEAM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Atlassian Corporation"
+   }
+  ],
+  "industry": "Software - Application",
+  "name": "Atlassian Corporation",
   "sector": "Technology"
  },
  "TECH": {
@@ -5349,6 +7369,30 @@
   "name": "Teradyne, Inc.",
   "sector": "Technology"
  },
+ "TEVA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Teva Pharmaceutical Industries Limited"
+   }
+  ],
+  "industry": "Drug Manufacturers - Specialty & Generic",
+  "name": "Teva Pharmaceutical Industries Limited",
+  "sector": "Healthcare"
+ },
+ "TEX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Terex Corporation"
+   }
+  ],
+  "industry": "Farm & Heavy Construction Machinery",
+  "name": "Terex Corporation",
+  "sector": "Industrials"
+ },
  "TFC": {
   "checked": "2026-09-22",
   "history": [
@@ -5361,6 +7405,18 @@
   "name": "Truist Financial Corporation",
   "sector": "Financial Services"
  },
+ "TFX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Teleflex Incorporated"
+   }
+  ],
+  "industry": "Medical Instruments & Supplies",
+  "name": "Teleflex Incorporated",
+  "sector": "Healthcare"
+ },
  "TGT": {
   "checked": "2026-09-22",
   "history": [
@@ -5372,6 +7428,18 @@
   "industry": "Discount Stores",
   "name": "Target Corporation",
   "sector": "Consumer Defensive"
+ },
+ "THC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Tenet Healthcare Corporation"
+   }
+  ],
+  "industry": "Medical Care Facilities",
+  "name": "Tenet Healthcare Corporation",
+  "sector": "Healthcare"
  },
  "TJX": {
   "checked": "2026-09-22",
@@ -5421,6 +7489,18 @@
   "name": "T-Mobile US, Inc.",
   "sector": "Communication Services"
  },
+ "TNL": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Travel + Leisure Co."
+   }
+  ],
+  "industry": "Travel Services",
+  "name": "Travel + Leisure Co.",
+  "sector": "Consumer Cyclical"
+ },
  "TPL": {
   "checked": "2026-09-22",
   "history": [
@@ -5468,6 +7548,18 @@
   "industry": "Specialty Business Services",
   "name": "Thomson Reuters Corporation",
   "sector": "Industrials"
+ },
+ "TRIP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Tripadvisor, Inc."
+   }
+  ],
+  "industry": "Travel Services",
+  "name": "Tripadvisor, Inc.",
+  "sector": "Consumer Cyclical"
  },
  "TRMB": {
   "checked": "2026-09-22",
@@ -5613,6 +7705,30 @@
   "name": "Tyler Technologies, Inc.",
   "sector": "Technology"
  },
+ "UA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Under Armour, Inc."
+   }
+  ],
+  "industry": "Apparel Manufacturing",
+  "name": "Under Armour, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "UAA": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Under Armour, Inc."
+   }
+  ],
+  "industry": "Apparel Manufacturing",
+  "name": "Under Armour, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "UAL": {
   "checked": "2026-09-22",
   "history": [
@@ -5661,6 +7777,18 @@
   "name": "Universal Health Services, Inc.",
   "sector": "Healthcare"
  },
+ "UIS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Unisys Corporation"
+   }
+  ],
+  "industry": "Information Technology Services",
+  "name": "Unisys Corporation",
+  "sector": "Technology"
+ },
  "ULTA": {
   "checked": "2026-09-22",
   "history": [
@@ -5684,6 +7812,18 @@
   "industry": "Healthcare Plans",
   "name": "UnitedHealth Group Incorporated",
   "sector": "Healthcare"
+ },
+ "UNM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Unum Group"
+   }
+  ],
+  "industry": "Insurance - Life",
+  "name": "Unum Group",
+  "sector": "Financial Services"
  },
  "UNP": {
   "checked": "2026-09-22",
@@ -5709,6 +7849,18 @@
   "name": "United Parcel Service, Inc.",
   "sector": "Industrials"
  },
+ "URBN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Urban Outfitters, Inc."
+   }
+  ],
+  "industry": "Apparel Retail",
+  "name": "Urban Outfitters, Inc.",
+  "sector": "Consumer Cyclical"
+ },
  "URI": {
   "checked": "2026-09-22",
   "history": [
@@ -5732,6 +7884,16 @@
   "industry": "Banks - Regional",
   "name": "U.S. Bancorp",
   "sector": "Financial Services"
+ },
+ "UST": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "ProShares Ultra 7-10 Year Treasury"
+   }
+  ],
+  "name": "ProShares Ultra 7-10 Year Treasury"
  },
  "V": {
   "checked": "2026-09-22",
@@ -5757,6 +7919,30 @@
   "name": "Veeva Systems Inc.",
   "sector": "Healthcare"
  },
+ "VFC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "V.F. Corporation"
+   }
+  ],
+  "industry": "Apparel Manufacturing",
+  "name": "V.F. Corporation",
+  "sector": "Consumer Cyclical"
+ },
+ "VIAV": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Viavi Solutions Inc."
+   }
+  ],
+  "industry": "Communication Equipment",
+  "name": "Viavi Solutions Inc.",
+  "sector": "Technology"
+ },
  "VICI": {
   "checked": "2026-09-22",
   "history": [
@@ -5768,6 +7954,18 @@
   "industry": "REIT - Diversified",
   "name": "VICI Properties Inc.",
   "sector": "Real Estate"
+ },
+ "VIP": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Vulcan Infrastructure and Power Inc."
+   }
+  ],
+  "industry": "Capital Markets",
+  "name": "Vulcan Infrastructure and Power Inc.",
+  "sector": "Financial Services"
  },
  "VLO": {
   "checked": "2026-09-22",
@@ -5816,6 +8014,42 @@
   "industry": "REIT - Residential",
   "name": "AvalonBay Communities, Inc.",
   "sector": "Real Estate"
+ },
+ "VNO": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Vornado Realty Trust"
+   }
+  ],
+  "industry": "REIT - Office",
+  "name": "Vornado Realty Trust",
+  "sector": "Real Estate"
+ },
+ "VNT": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Vontier Corporation"
+   }
+  ],
+  "industry": "Scientific & Technical Instruments",
+  "name": "Vontier Corporation",
+  "sector": "Technology"
+ },
+ "VOD": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Vodafone Group Public Limited Company"
+   }
+  ],
+  "industry": "Telecom Services",
+  "name": "Vodafone Group Public Limited Company",
+  "sector": "Communication Services"
  },
  "VRSK": {
   "checked": "2026-09-22",
@@ -5937,6 +8171,18 @@
   "name": "Waters Corporation",
   "sector": "Healthcare"
  },
+ "WB": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Weibo Corporation"
+   }
+  ],
+  "industry": "Internet Content & Information",
+  "name": "Weibo Corporation",
+  "sector": "Communication Services"
+ },
  "WBD": {
   "checked": "2026-09-22",
   "history": [
@@ -5997,6 +8243,18 @@
   "name": "Welltower Inc.",
   "sector": "Real Estate"
  },
+ "WEN": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Wendy's Company"
+   }
+  ],
+  "industry": "Restaurants",
+  "name": "The Wendy's Company",
+  "sector": "Consumer Cyclical"
+ },
  "WFC": {
   "checked": "2026-09-22",
   "history": [
@@ -6008,6 +8266,18 @@
   "industry": "Banks - Diversified",
   "name": "Wells Fargo & Company",
   "sector": "Financial Services"
+ },
+ "WHR": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Whirlpool Corporation"
+   }
+  ],
+  "industry": "Furnishings, Fixtures & Appliances",
+  "name": "Whirlpool Corporation",
+  "sector": "Consumer Cyclical"
  },
  "WM": {
   "checked": "2026-09-22",
@@ -6093,6 +8363,18 @@
   "name": "Willis Towers Watson Public Limited Company",
   "sector": "Financial Services"
  },
+ "WU": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Western Union Company"
+   }
+  ],
+  "industry": "Credit Services",
+  "name": "The Western Union Company",
+  "sector": "Financial Services"
+ },
  "WY": {
   "checked": "2026-09-22",
   "history": [
@@ -6140,6 +8422,30 @@
   "industry": "Oil & Gas Integrated",
   "name": "ExxonMobil Holdings Corporation",
   "sector": "Energy"
+ },
+ "XRAY": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "DENTSPLY SIRONA Inc."
+   }
+  ],
+  "industry": "Medical Instruments & Supplies",
+  "name": "DENTSPLY SIRONA Inc.",
+  "sector": "Healthcare"
+ },
+ "XRX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Xerox Holdings Corporation"
+   }
+  ],
+  "industry": "Business Equipment & Supplies",
+  "name": "Xerox Holdings Corporation",
+  "sector": "Industrials"
  },
  "XYL": {
   "checked": "2026-09-22",
@@ -6201,6 +8507,42 @@
   "name": "Zebra Technologies Corporation",
   "sector": "Technology"
  },
+ "ZION": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Zions Bancorporation, National Association"
+   }
+  ],
+  "industry": "Banks - Regional",
+  "name": "Zions Bancorporation, National Association",
+  "sector": "Financial Services"
+ },
+ "ZM": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Zoom Communications, Inc."
+   }
+  ],
+  "industry": "Software - Application",
+  "name": "Zoom Communications, Inc.",
+  "sector": "Technology"
+ },
+ "ZS": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Zscaler, Inc."
+   }
+  ],
+  "industry": "Software - Infrastructure",
+  "name": "Zscaler, Inc.",
+  "sector": "Technology"
+ },
  "ZTS": {
   "checked": "2026-09-22",
   "history": [
@@ -6212,5 +8554,35 @@
   "industry": "Drug Manufacturers - Specialty & Generic",
   "name": "Zoetis Inc.",
   "sector": "Healthcare"
+ },
+ "^DJI": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Dow Jones Industrial Average"
+   }
+  ],
+  "name": "Dow Jones Industrial Average"
+ },
+ "^GSPC": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "S&P 500"
+   }
+  ],
+  "name": "S&P 500"
+ },
+ "^NDX": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "NASDAQ-100"
+   }
+  ],
+  "name": "NASDAQ-100"
  }
 }

@@ -4,7 +4,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1999-11-18",
   "last": "2026-09-22",
   "rows": 6750,
@@ -12,7 +12,7 @@
  },
  "AABA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AAL": {
@@ -42,7 +42,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 16,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -77,12 +77,12 @@
  },
  "ABKFQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ABMD": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ABNB": {
@@ -101,7 +101,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -109,7 +109,7 @@
  },
  "ACAS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ACGL": {
@@ -117,7 +117,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 17,
+  "files_changed": 0,
   "first": "1995-09-14",
   "last": "2026-09-22",
   "rows": 7806,
@@ -136,7 +136,7 @@
  },
  "ACS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ADBE": {
@@ -144,18 +144,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 415
  },
  "ADI": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -166,7 +166,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -193,7 +193,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -222,7 +222,7 @@
   "shares_rows": 584
  },
  "AEP": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -237,7 +237,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -245,7 +245,7 @@
  },
  "AET": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AFL": {
@@ -253,7 +253,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -261,7 +261,7 @@
  },
  "AGN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AIG": {
@@ -280,7 +280,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 26,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -302,7 +302,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -313,7 +313,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1999-10-29",
   "last": "2026-09-22",
   "rows": 6764,
@@ -321,7 +321,7 @@
  },
  "AKS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ALAB": {
@@ -329,7 +329,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "2024-03-20",
   "last": "2026-09-22",
   "rows": 629
@@ -339,7 +339,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -350,7 +350,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2001-01-30",
   "last": "2026-09-22",
   "rows": 6449,
@@ -361,14 +361,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 582
  },
  "ALL": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -394,19 +394,19 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 24,
+  "files_changed": 0,
   "first": "2004-06-01",
   "last": "2026-09-22",
   "rows": 5613
  },
  "ALTR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ALXN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AMAT": {
@@ -414,7 +414,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -436,7 +436,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -447,7 +447,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -458,7 +458,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1997-11-21",
   "last": "2026-09-22",
   "rows": 7251,
@@ -469,7 +469,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -477,7 +477,7 @@
  },
  "AMLN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "AMP": {
@@ -518,7 +518,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1997-05-15",
   "last": "2026-09-22",
   "rows": 7384,
@@ -529,7 +529,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -537,7 +537,7 @@
  },
  "ANDV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ANET": {
@@ -545,7 +545,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "2014-06-06",
   "last": "2026-09-22",
   "rows": 3092,
@@ -556,7 +556,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1996-09-26",
   "last": "2026-09-22",
   "rows": 7544,
@@ -564,12 +564,12 @@
  },
  "ANRZQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ANSS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ANTM": {
@@ -593,18 +593,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 16,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 596
  },
  "APA": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -622,7 +622,7 @@
   "shares_rows": 127
  },
  "APD": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -637,7 +637,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 26,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -656,7 +656,7 @@
  },
  "APOL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "APP": {
@@ -705,7 +705,7 @@
  },
  "ARG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ARM": {
@@ -713,7 +713,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "2023-09-14",
   "last": "2026-09-22",
   "rows": 758
@@ -728,25 +728,25 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 502
  },
  "ASML": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-03-15",
   "last": "2026-09-22",
   "rows": 7933
  },
  "ATGE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ATI": {
@@ -773,7 +773,7 @@
  },
  "ATVI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AVB": {
@@ -800,7 +800,7 @@
  },
  "AVP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AVY": {
@@ -816,7 +816,7 @@
  },
  "AW": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AWK": {
@@ -835,7 +835,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "2001-06-19",
   "last": "2026-09-22",
   "rows": 6352,
@@ -846,7 +846,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -854,7 +854,7 @@
  },
  "AYE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "AYI": {
@@ -873,7 +873,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983
@@ -890,7 +890,7 @@
   "shares_rows": 522
  },
  "BA": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -916,7 +916,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -927,7 +927,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "2016-04-18",
   "last": "2026-09-22",
   "rows": 2623
@@ -937,7 +937,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "2016-04-18",
   "last": "2026-09-22",
   "rows": 2623
@@ -947,7 +947,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -980,18 +980,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 389
  },
  "BBY": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1010,20 +1010,20 @@
  },
  "BCR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BDK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BDX": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1041,11 +1041,11 @@
   "shares_rows": 445
  },
  "BEN": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1056,7 +1056,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1067,7 +1067,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 27,
+  "files_changed": 0,
   "first": "2001-06-15",
   "last": "2026-09-22",
   "rows": 6354
@@ -1104,14 +1104,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 23,
+  "files_changed": 0,
   "first": "2005-08-05",
   "last": "2026-09-22",
   "rows": 5315
  },
  "BIG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BIIB": {
@@ -1119,7 +1119,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1130,7 +1130,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1138,7 +1138,7 @@
  },
  "BJS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BK": {
@@ -1151,7 +1151,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1999-03-31",
   "last": "2026-09-22",
   "rows": 6912,
@@ -1173,7 +1173,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "2005-06-28",
   "last": "2026-09-22",
   "rows": 5342,
@@ -1197,7 +1197,7 @@
  },
  "BMC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BMRN": {
@@ -1205,14 +1205,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 29,
+  "files_changed": 0,
   "first": "1999-07-26",
   "last": "2026-09-22",
   "rows": 6832
  },
  "BMS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BMY": {
@@ -1228,7 +1228,7 @@
  },
  "BNI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BNY": {
@@ -1236,7 +1236,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1255,7 +1255,7 @@
  },
  "BRCM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BRK-B": {
@@ -1271,7 +1271,7 @@
  },
  "BRL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BRO": {
@@ -1279,7 +1279,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1287,7 +1287,7 @@
  },
  "BSC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BSX": {
@@ -1295,7 +1295,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1303,7 +1303,7 @@
  },
  "BTUUQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BUD": {
@@ -1322,7 +1322,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 13,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1333,7 +1333,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "2007-06-22",
   "last": "2026-09-22",
   "rows": 4843,
@@ -1341,7 +1341,7 @@
  },
  "BXLT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "BXP": {
@@ -1368,11 +1368,11 @@
  },
  "CA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CAG": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1416,18 +1416,18 @@
   "shares_rows": 389
  },
  "CASY": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 502
  },
  "CAT": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1442,7 +1442,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1450,12 +1450,12 @@
  },
  "CBE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CBH": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CBOE": {
@@ -1474,7 +1474,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2004-06-10",
   "last": "2026-09-22",
   "rows": 5606,
@@ -1487,7 +1487,7 @@
  },
  "CCE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CCEP": {
@@ -1495,7 +1495,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1506,7 +1506,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1998-08-18",
   "last": "2026-09-22",
   "rows": 7067,
@@ -1525,7 +1525,7 @@
  },
  "CCTYQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CCU": {
@@ -1533,7 +1533,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1541,7 +1541,7 @@
  },
  "CDAY": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CDNS": {
@@ -1549,7 +1549,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1590,17 +1590,17 @@
  },
  "CELG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CEPH": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CERN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CF": {
@@ -1616,7 +1616,7 @@
  },
  "CFC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CFG": {
@@ -1632,7 +1632,7 @@
  },
  "CFN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CHD": {
@@ -1640,7 +1640,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1648,7 +1648,7 @@
  },
  "CHK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CHKP": {
@@ -1656,17 +1656,17 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 32,
+  "files_changed": 0,
   "first": "1996-06-28",
   "last": "2026-09-22",
   "rows": 7606
  },
  "CHRW": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1997-10-16",
   "last": "2026-09-22",
   "rows": 7277,
@@ -1688,7 +1688,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1718,15 +1718,15 @@
  },
  "CITGQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CL": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1737,7 +1737,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1756,7 +1756,7 @@
  },
  "CMA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CMCSA": {
@@ -1764,7 +1764,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 17,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1772,7 +1772,7 @@
  },
  "CMCSK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CME": {
@@ -1802,14 +1802,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 566
  },
  "CMS": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -1824,7 +1824,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "2001-12-13",
   "last": "2026-09-22",
   "rows": 6232,
@@ -1835,7 +1835,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1846,7 +1846,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1999-04-30",
   "last": "2026-09-22",
   "rows": 6891,
@@ -1857,7 +1857,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1865,7 +1865,7 @@
  },
  "COG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "COHR": {
@@ -1873,7 +1873,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1892,7 +1892,7 @@
  },
  "COL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "COO": {
@@ -1900,7 +1900,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1922,18 +1922,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-04-04",
   "last": "2026-09-22",
   "rows": 7919,
   "shares_rows": 354
  },
  "COST": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -1952,7 +1952,7 @@
  },
  "COV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CPAY": {
@@ -1979,7 +1979,7 @@
  },
  "CPGX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CPRI": {
@@ -1998,7 +1998,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 23,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2020,10 +2020,10 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 20,
+  "files_changed": 1,
   "first": "2006-12-04",
-  "last": "2026-09-22",
-  "rows": 4980,
+  "last": "2026-09-21",
+  "rows": 4979,
   "shares_rows": 569
  },
  "CRH": {
@@ -2075,7 +2075,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "2025-03-28",
   "last": "2026-09-22",
   "rows": 373
@@ -2085,7 +2085,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2096,7 +2096,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1998-07-01",
   "last": "2026-09-22",
   "rows": 7100,
@@ -2118,7 +2118,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 22,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2129,7 +2129,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2142,17 +2142,17 @@
  },
  "CTLT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CTRA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CTRX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "CTSH": {
@@ -2160,7 +2160,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1998-06-19",
   "last": "2026-09-22",
   "rows": 7108,
@@ -2179,27 +2179,27 @@
  },
  "CTX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CTXS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CVC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CVG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CVH": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CVNA": {
@@ -2218,7 +2218,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2237,7 +2237,7 @@
  },
  "CXO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "CZR": {
@@ -2252,7 +2252,7 @@
   "shares_rows": 554
  },
  "D": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2286,7 +2286,7 @@
  },
  "DAY": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DD": {
@@ -2313,7 +2313,7 @@
  },
  "DDR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DDS": {
@@ -2321,7 +2321,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2343,7 +2343,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 21,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2362,12 +2362,12 @@
  },
  "DF": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DFS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DG": {
@@ -2386,7 +2386,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1996-12-17",
   "last": "2026-09-22",
   "rows": 7487,
@@ -2397,18 +2397,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 515
  },
  "DHR": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2430,7 +2430,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983
@@ -2453,12 +2453,12 @@
  },
  "DISCK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DISH": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DLR": {
@@ -2477,7 +2477,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 14,
+  "files_changed": 0,
   "first": "1995-03-07",
   "last": "2026-09-22",
   "rows": 7939,
@@ -2485,17 +2485,17 @@
  },
  "DNB": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DNR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DOC": {
@@ -2503,7 +2503,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2514,7 +2514,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "2018-04-27",
   "last": "2026-09-22",
   "rows": 2112
@@ -2524,7 +2524,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2554,22 +2554,22 @@
  },
  "DRE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DRI": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-05-09",
   "last": "2026-09-22",
   "rows": 7895,
   "shares_rows": 550
  },
  "DTE": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2581,11 +2581,11 @@
  },
  "DTV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "DUK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -2600,7 +2600,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-10-31",
   "last": "2026-09-22",
   "rows": 7773,
@@ -2611,7 +2611,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2671,7 +2671,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1998-09-24",
   "last": "2026-09-22",
   "rows": 7041,
@@ -2689,11 +2689,11 @@
   "shares_rows": 178
  },
  "ECL": {
-  "adj_err_max": 4.9e-05,
+  "adj_err_max": 4.8e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2712,7 +2712,7 @@
  },
  "EDS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "EFX": {
@@ -2750,15 +2750,15 @@
  },
  "EKDKQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "EL": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-11-17",
   "last": "2026-09-22",
   "rows": 7760,
@@ -2791,7 +2791,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-10",
   "last": "2026-09-22",
   "rows": 7978,
@@ -2821,7 +2821,7 @@
  },
  "ENDP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ENPH": {
@@ -2840,7 +2840,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2906,7 +2906,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2936,7 +2936,7 @@
  },
  "ESRX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ESS": {
@@ -2952,20 +2952,20 @@
  },
  "ESV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ETFC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ETN": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2976,7 +2976,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -2995,11 +2995,11 @@
  },
  "EVHC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "EVRG": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3014,7 +3014,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "2000-03-27",
   "last": "2026-09-22",
   "rows": 6662,
@@ -3025,7 +3025,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3047,7 +3047,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3080,7 +3080,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3102,7 +3102,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 17,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3129,7 +3129,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 17,
+  "files_changed": 0,
   "first": "2011-09-16",
   "last": "2026-09-22",
   "rows": 3775
@@ -3150,7 +3150,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-07-10",
   "last": "2026-09-22",
   "rows": 7853,
@@ -3158,7 +3158,7 @@
  },
  "FDO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FDS": {
@@ -3166,14 +3166,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1996-06-28",
   "last": "2026-09-22",
   "rows": 7606,
   "shares_rows": 574
  },
  "FDX": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3210,7 +3210,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 16,
+  "files_changed": 0,
   "first": "2012-08-13",
   "last": "2026-09-22",
   "rows": 3547
@@ -3231,7 +3231,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1999-06-04",
   "last": "2026-09-22",
   "rows": 6867,
@@ -3242,7 +3242,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3258,7 +3258,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3266,7 +3266,7 @@
  },
  "FII": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FIS": {
@@ -3285,7 +3285,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7982,
@@ -3296,7 +3296,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3315,7 +3315,7 @@
  },
  "FL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FLEX": {
@@ -3323,7 +3323,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 24,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3331,7 +3331,7 @@
  },
  "FLIR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FLR": {
@@ -3350,7 +3350,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3366,7 +3366,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3385,7 +3385,7 @@
  },
  "FMCN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "FNMA": {
@@ -3404,7 +3404,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3434,7 +3434,7 @@
  },
  "FRC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FRT": {
@@ -3450,7 +3450,7 @@
  },
  "FRX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FSLR": {
@@ -3469,7 +3469,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "2001-06-15",
   "last": "2026-09-22",
   "rows": 6354,
@@ -3488,7 +3488,7 @@
  },
  "FTR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "FTV": {
@@ -3504,7 +3504,7 @@
  },
  "FWLT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "GAP": {
@@ -3512,14 +3512,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983
  },
  "GAS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "GD": {
@@ -3567,11 +3567,11 @@
   "shares_rows": 379
  },
  "GEN": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3604,14 +3604,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "2021-10-28",
   "last": "2026-09-22",
   "rows": 1229
  },
  "GGP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "GHC": {
@@ -3630,7 +3630,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3652,7 +3652,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3663,7 +3663,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3682,7 +3682,7 @@
  },
  "GMCR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "GME": {
@@ -3690,7 +3690,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "2002-02-13",
   "last": "2026-09-22",
   "rows": 6191,
@@ -3723,7 +3723,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 14,
+  "files_changed": 0,
   "first": "2014-03-17",
   "last": "2026-09-22",
   "rows": 3149
@@ -3733,7 +3733,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "2004-08-19",
   "last": "2026-09-22",
   "rows": 5558,
@@ -3744,14 +3744,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "2004-08-19",
   "last": "2026-09-22",
   "rows": 5558,
   "shares_rows": 1561
  },
  "GPC": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3766,7 +3766,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2001-01-16",
   "last": "2026-09-22",
   "rows": 6459,
@@ -3779,7 +3779,7 @@
  },
  "GR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "GRMN": {
@@ -3787,14 +3787,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "2000-12-08",
   "last": "2026-09-22",
   "rows": 6483,
   "shares_rows": 534
  },
  "GS": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3831,7 +3831,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3839,12 +3839,12 @@
  },
  "HANS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "HAR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HAS": {
@@ -3859,7 +3859,7 @@
   "shares_rows": 545
  },
  "HBAN": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -3871,7 +3871,7 @@
  },
  "HBI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HCA": {
@@ -3887,7 +3887,7 @@
  },
  "HCBK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HCP": {
@@ -3900,7 +3900,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3908,12 +3908,12 @@
  },
  "HES": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HET": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HFC": {
@@ -3956,15 +3956,15 @@
  },
  "HNZ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HOG": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -3972,7 +3972,7 @@
  },
  "HOLX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HON": {
@@ -4010,7 +4010,7 @@
  },
  "HOT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HP": {
@@ -4018,7 +4018,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4026,7 +4026,7 @@
  },
  "HPC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HPE": {
@@ -4034,7 +4034,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "2015-10-19",
   "last": "2026-09-22",
   "rows": 2747,
@@ -4045,7 +4045,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4056,7 +4056,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4067,7 +4067,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4080,7 +4080,7 @@
  },
  "HSH": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HSIC": {
@@ -4088,7 +4088,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-11-03",
   "last": "2026-09-22",
   "rows": 7770,
@@ -4096,7 +4096,7 @@
  },
  "HSP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "HST": {
@@ -4104,14 +4104,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 460
  },
  "HSY": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4133,11 +4133,11 @@
   "shares_rows": 542
  },
  "HUM": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4148,7 +4148,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2016-11-01",
   "last": "2026-09-22",
   "rows": 2485,
@@ -4156,12 +4156,12 @@
  },
  "IAC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "IACI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "IBKR": {
@@ -4202,7 +4202,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4213,7 +4213,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4232,7 +4232,7 @@
  },
  "IGT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ILMN": {
@@ -4240,7 +4240,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "2000-07-28",
   "last": "2026-09-22",
   "rows": 6576,
@@ -4251,7 +4251,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4273,7 +4273,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 29,
+  "files_changed": 0,
   "first": "1999-03-11",
   "last": "2026-09-22",
   "rows": 6926
@@ -4283,7 +4283,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4294,7 +4294,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4316,7 +4316,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4324,7 +4324,7 @@
  },
  "IPG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "IPGP": {
@@ -4365,7 +4365,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1996-02-01",
   "last": "2026-09-22",
   "rows": 7709,
@@ -4376,7 +4376,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "2000-06-16",
   "last": "2026-09-22",
   "rows": 6605,
@@ -4387,7 +4387,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4398,18 +4398,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-12-15",
   "last": "2026-09-22",
   "rows": 7741,
   "shares_rows": 339
  },
  "ITW": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4427,11 +4427,11 @@
   "shares_rows": 533
  },
  "J": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4453,7 +4453,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4464,7 +4464,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4475,7 +4475,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4483,7 +4483,7 @@
  },
  "JCP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "JD": {
@@ -4491,7 +4491,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 14,
+  "files_changed": 0,
   "first": "2014-05-22",
   "last": "2026-09-22",
   "rows": 3102
@@ -4506,18 +4506,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 577
  },
  "JKHY": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4536,31 +4536,31 @@
  },
  "JNPR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "JNS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "JNY": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "JOY": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "JOYG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "JPM": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4572,25 +4572,25 @@
  },
  "JWN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "K": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "KATE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "KBH": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4630,7 +4630,7 @@
   "shares_rows": 542
  },
  "KG": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4656,7 +4656,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4678,14 +4678,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 546
  },
  "KMB": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4711,14 +4711,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1997-02-04",
   "last": "2026-09-22",
   "rows": 7454,
   "shares_rows": 584
  },
  "KO": {
-  "adj_err_max": 3.6e-05,
+  "adj_err_max": 3.7e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -4738,7 +4738,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4746,7 +4746,7 @@
  },
  "KRFT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "KSS": {
@@ -4754,7 +4754,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4762,7 +4762,7 @@
  },
  "KSU": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "KVUE": {
@@ -4781,7 +4781,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4792,7 +4792,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 32,
+  "files_changed": 0,
   "first": "1996-08-02",
   "last": "2026-09-22",
   "rows": 7582
@@ -4813,7 +4813,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 24,
+  "files_changed": 0,
   "first": "2004-06-03",
   "last": "2026-09-22",
   "rows": 5611
@@ -4823,7 +4823,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 23,
+  "files_changed": 0,
   "first": "2005-09-08",
   "last": "2026-09-22",
   "rows": 5292
@@ -4833,7 +4833,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "2020-09-18",
   "last": "2026-09-22",
   "rows": 1509
@@ -4851,7 +4851,7 @@
  },
  "LEAP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "LEG": {
@@ -4867,26 +4867,26 @@
  },
  "LEHMQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LEN": {
-  "adj_err_max": 8e-06,
+  "adj_err_max": 9e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 1584
  },
  "LH": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4897,7 +4897,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -4919,7 +4919,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1999-07-29",
   "last": "2026-09-22",
   "rows": 6829,
@@ -4930,7 +4930,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 13,
+  "files_changed": 0,
   "first": "2015-07-02",
   "last": "2026-09-22",
   "rows": 2822
@@ -4940,7 +4940,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 13,
+  "files_changed": 0,
   "first": "2015-06-23",
   "last": "2026-09-22",
   "rows": 2829
@@ -4958,7 +4958,7 @@
  },
  "LINTA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "LITE": {
@@ -4973,11 +4973,11 @@
   "shares_rows": 356
  },
  "LKQ": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "2003-10-06",
   "last": "2026-09-22",
   "rows": 5777,
@@ -4985,12 +4985,12 @@
  },
  "LLL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LLTC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LLY": {
@@ -5006,17 +5006,17 @@
  },
  "LM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LMCA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "LMCK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "LMT": {
@@ -5054,25 +5054,25 @@
  },
  "LO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LOGI": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 31,
+  "files_changed": 0,
   "first": "1997-03-27",
   "last": "2026-09-22",
   "rows": 7418
  },
  "LOW": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5083,7 +5083,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5091,7 +5091,7 @@
  },
  "LSI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LULU": {
@@ -5121,7 +5121,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5129,12 +5129,12 @@
  },
  "LVLT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LVNTA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "LVS": {
@@ -5161,7 +5161,7 @@
  },
  "LXK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "LYB": {
@@ -5224,7 +5224,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5235,7 +5235,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1998-03-23",
   "last": "2026-09-22",
   "rows": 7170,
@@ -5246,7 +5246,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5257,7 +5257,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5290,7 +5290,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5323,7 +5323,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "2017-10-19",
   "last": "2026-09-22",
   "rows": 2242
@@ -5341,7 +5341,7 @@
  },
  "MDP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MDT": {
@@ -5349,7 +5349,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5357,7 +5357,7 @@
  },
  "MEE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MELI": {
@@ -5365,14 +5365,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 21,
+  "files_changed": 0,
   "first": "2007-08-10",
   "last": "2026-09-22",
   "rows": 4809
  },
  "MER": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MET": {
@@ -5399,7 +5399,7 @@
  },
  "MFE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MGM": {
@@ -5407,7 +5407,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5418,7 +5418,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5426,7 +5426,7 @@
  },
  "MHS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MI": {
@@ -5445,19 +5445,19 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "2025-12-08",
   "last": "2026-09-22",
   "rows": 198
  },
  "MIL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MJN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MKC": {
@@ -5465,7 +5465,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5510,7 +5510,7 @@
   "shares_rows": 602
  },
  "MMM": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5522,7 +5522,7 @@
  },
  "MNK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MNST": {
@@ -5530,14 +5530,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 22,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 541
  },
  "MO": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -5560,12 +5560,12 @@
  },
  "MOLX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MON": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MOS": {
@@ -5625,7 +5625,7 @@
  },
  "MRO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MRSH": {
@@ -5640,11 +5640,11 @@
   "shares_rows": 7
  },
  "MRVL": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "2000-06-30",
   "last": "2026-09-22",
   "rows": 6595,
@@ -5655,7 +5655,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5677,7 +5677,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5699,7 +5699,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 30,
+  "files_changed": 0,
   "first": "1998-06-11",
   "last": "2026-09-22",
   "rows": 7114
@@ -5720,7 +5720,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 17,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5750,7 +5750,7 @@
  },
  "MTLQQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MTW": {
@@ -5758,7 +5758,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 16,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5780,7 +5780,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5788,22 +5788,22 @@
  },
  "MWV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MWW": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MXIM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "MYL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NAVI": {
@@ -5822,14 +5822,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "2024-10-21",
   "last": "2026-09-22",
   "rows": 481
  },
  "NBL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NBR": {
@@ -5845,7 +5845,7 @@
  },
  "NCC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NCLH": {
@@ -5864,7 +5864,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "2002-07-01",
   "last": "2026-09-22",
   "rows": 6096,
@@ -5875,7 +5875,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5897,7 +5897,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5919,7 +5919,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 14,
+  "files_changed": 0,
   "first": "2002-05-23",
   "last": "2026-09-22",
   "rows": 6122,
@@ -5941,7 +5941,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 19,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5949,15 +5949,15 @@
  },
  "NIHD": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "NKE": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -5981,7 +5981,7 @@
  },
  "NLSN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NOC": {
@@ -6000,7 +6000,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1996-10-29",
   "last": "2026-09-22",
   "rows": 7521,
@@ -6008,7 +6008,7 @@
  },
  "NOVL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NOW": {
@@ -6034,7 +6034,7 @@
   "shares_rows": 606
  },
  "NSC": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6046,7 +6046,7 @@
  },
  "NSM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NTAP": {
@@ -6054,7 +6054,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-11-21",
   "last": "2026-09-22",
   "rows": 7758,
@@ -6065,7 +6065,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 28,
+  "files_changed": 0,
   "first": "2000-06-30",
   "last": "2026-09-22",
   "rows": 6595
@@ -6075,7 +6075,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6083,15 +6083,15 @@
  },
  "NUAN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "NUE": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6102,7 +6102,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 22,
+  "files_changed": 0,
   "first": "1999-01-22",
   "last": "2026-09-22",
   "rows": 6959,
@@ -6110,7 +6110,7 @@
  },
  "NVLS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "NVR": {
@@ -6118,7 +6118,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6181,7 +6181,7 @@
  },
  "NYX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "O": {
@@ -6189,7 +6189,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6200,7 +6200,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 18,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6208,11 +6208,11 @@
  },
  "ODP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "OGN": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6234,11 +6234,11 @@
   "shares_rows": 546
  },
  "OKE": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6249,7 +6249,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "2017-04-07",
   "last": "2026-09-22",
   "rows": 2377
@@ -6259,7 +6259,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6267,7 +6267,7 @@
  },
  "OMX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ON": {
@@ -6275,7 +6275,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "2000-05-02",
   "last": "2026-09-22",
   "rows": 6637,
@@ -6286,7 +6286,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6297,14 +6297,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 20,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 579
  },
  "OTIS": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6319,7 +6319,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6330,7 +6330,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "2012-07-20",
   "last": "2026-09-22",
   "rows": 3563,
@@ -6363,7 +6363,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6371,12 +6371,12 @@
  },
  "PBCT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PBG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PBI": {
@@ -6395,7 +6395,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6425,12 +6425,12 @@
  },
  "PCP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PDCO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PDD": {
@@ -6438,7 +6438,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "2018-07-26",
   "last": "2026-09-22",
   "rows": 2050
@@ -6464,14 +6464,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 18,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 529
  },
  "PEP": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6483,7 +6483,7 @@
  },
  "PETM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PFE": {
@@ -6491,7 +6491,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6521,7 +6521,7 @@
  },
  "PGN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PGR": {
@@ -6529,7 +6529,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6551,7 +6551,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6586,7 +6586,7 @@
  },
  "PLL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PLTR": {
@@ -6627,7 +6627,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6671,7 +6671,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-10-13",
   "last": "2026-09-22",
   "rows": 7785,
@@ -6679,7 +6679,7 @@
  },
  "PPDI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "PPG": {
@@ -6694,11 +6694,11 @@
   "shares_rows": 403
  },
  "PPL": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6709,7 +6709,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6775,14 +6775,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "2019-09-26",
   "last": "2026-09-22",
   "rows": 1756
  },
  "PTV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PVH": {
@@ -6790,7 +6790,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6801,7 +6801,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1998-02-12",
   "last": "2026-09-22",
   "rows": 7196,
@@ -6814,7 +6814,7 @@
  },
  "PXD": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "PYPL": {
@@ -6844,7 +6844,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6852,7 +6852,7 @@
  },
  "QEP": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "QGEN": {
@@ -6860,18 +6860,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 32,
+  "files_changed": 0,
   "first": "1996-06-28",
   "last": "2026-09-22",
   "rows": 7606
  },
  "QLGC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "QQQ": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -6883,7 +6883,7 @@
  },
  "QRTEA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "QRVO": {
@@ -6899,7 +6899,7 @@
  },
  "QVCA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "R": {
@@ -6915,7 +6915,7 @@
  },
  "RAI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RCL": {
@@ -6931,7 +6931,7 @@
  },
  "RDC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RDDT": {
@@ -6966,7 +6966,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6988,7 +6988,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -6996,7 +6996,7 @@
  },
  "RHT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RIG": {
@@ -7012,15 +7012,15 @@
  },
  "RIMM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "RJF": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7031,7 +7031,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "2020-11-24",
   "last": "2026-09-22",
   "rows": 1462
@@ -7052,7 +7052,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-06-02",
   "last": "2026-09-22",
   "rows": 7878,
@@ -7060,11 +7060,11 @@
  },
  "ROH": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "ROK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7079,18 +7079,18 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 21,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 499
  },
  "ROP": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7101,7 +7101,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7112,7 +7112,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7120,7 +7120,7 @@
  },
  "RRD": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RSG": {
@@ -7128,7 +7128,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1998-07-01",
   "last": "2026-09-22",
   "rows": 7100,
@@ -7136,7 +7136,7 @@
  },
  "RSHCQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RSP": {
@@ -7152,7 +7152,7 @@
  },
  "RTN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RTX": {
@@ -7160,7 +7160,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7171,7 +7171,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7179,7 +7179,7 @@
  },
  "RX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "RYAAY": {
@@ -7187,7 +7187,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 31,
+  "files_changed": 0,
   "first": "1997-05-29",
   "last": "2026-09-22",
   "rows": 7375
@@ -7205,12 +7205,12 @@
  },
  "SAF": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SATS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SBAC": {
@@ -7218,7 +7218,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1999-06-16",
   "last": "2026-09-22",
   "rows": 6859,
@@ -7240,7 +7240,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7248,7 +7248,7 @@
  },
  "SCG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SCHW": {
@@ -7256,7 +7256,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7286,12 +7286,12 @@
  },
  "SEE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SGEN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "SGP": {
@@ -7321,14 +7321,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 13,
+  "files_changed": 0,
   "first": "2015-05-20",
   "last": "2026-09-22",
   "rows": 2852
  },
  "SHPG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "SHW": {
@@ -7336,7 +7336,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7344,7 +7344,7 @@
  },
  "SIAL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SIG": {
@@ -7352,7 +7352,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7374,14 +7374,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983
  },
  "SIVB": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SJM": {
@@ -7396,7 +7396,7 @@
   "shares_rows": 569
  },
  "SLB": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7411,7 +7411,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1997-08-15",
   "last": "2026-09-22",
   "rows": 7320,
@@ -7422,7 +7422,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 16,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7463,7 +7463,7 @@
  },
  "SNI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SNPS": {
@@ -7479,7 +7479,7 @@
  },
  "SNV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SO": {
@@ -7517,7 +7517,7 @@
  },
  "SOV": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SPG": {
@@ -7536,7 +7536,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7544,7 +7544,7 @@
  },
  "SPLK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "SPLS": {
@@ -7559,7 +7559,7 @@
   "shares_rows": 15
  },
  "SPY": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7571,7 +7571,7 @@
  },
  "SRCL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SRE": {
@@ -7579,7 +7579,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1998-06-29",
   "last": "2026-09-22",
   "rows": 7102,
@@ -7590,7 +7590,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 14,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7601,7 +7601,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7620,7 +7620,7 @@
  },
  "STJ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "STLD": {
@@ -7628,7 +7628,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1996-11-22",
   "last": "2026-09-22",
   "rows": 7503,
@@ -7636,15 +7636,15 @@
  },
  "STR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "STT": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7666,7 +7666,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7685,12 +7685,12 @@
  },
  "SUNEQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SVU": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SW": {
@@ -7720,7 +7720,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7728,16 +7728,16 @@
  },
  "SWN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SWY": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "SYF": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -7748,11 +7748,11 @@
   "shares_rows": 572
  },
  "SYK": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7764,11 +7764,11 @@
   "last_fail": "2026-09-22"
  },
  "SYY": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7790,7 +7790,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7801,7 +7801,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 25,
+  "files_changed": 0,
   "first": "2003-12-09",
   "last": "2026-09-22",
   "rows": 5732
@@ -7855,7 +7855,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 13,
+  "files_changed": 0,
   "first": "2015-12-09",
   "last": "2026-09-22",
   "rows": 2711
@@ -7865,7 +7865,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7873,7 +7873,7 @@
  },
  "TEG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TEL": {
@@ -7892,7 +7892,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7903,7 +7903,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983
@@ -7913,7 +7913,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7924,7 +7924,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7943,7 +7943,7 @@
  },
  "TGNA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TGT": {
@@ -7951,7 +7951,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -7970,12 +7970,12 @@
  },
  "TIE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TIF": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TJX": {
@@ -7983,7 +7983,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8002,7 +8002,7 @@
  },
  "TLAB": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TMK": {
@@ -8037,7 +8037,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 22,
+  "files_changed": 0,
   "first": "2006-07-19",
   "last": "2026-09-22",
   "rows": 5076
@@ -8047,7 +8047,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 19,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8058,7 +8058,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "2000-10-06",
   "last": "2026-09-22",
   "rows": 6527,
@@ -8080,7 +8080,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 26,
+  "files_changed": 0,
   "first": "2002-06-12",
   "last": "2026-09-22",
   "rows": 6109
@@ -8101,7 +8101,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8112,7 +8112,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8134,7 +8134,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8145,7 +8145,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "2010-06-29",
   "last": "2026-09-22",
   "rows": 4083,
@@ -8164,7 +8164,7 @@
  },
  "TSS": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TT": {
@@ -8172,7 +8172,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8194,7 +8194,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1997-04-15",
   "last": "2026-09-22",
   "rows": 7406,
@@ -8202,25 +8202,25 @@
  },
  "TWC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TWTR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TWX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "TXN": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8242,7 +8242,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8253,7 +8253,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2016-03-23",
   "last": "2026-09-22",
   "rows": 2640,
@@ -8264,7 +8264,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 8,
+  "files_changed": 0,
   "first": "2005-11-18",
   "last": "2026-09-22",
   "rows": 5241,
@@ -8283,7 +8283,7 @@
  },
  "UAUA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "UBER": {
@@ -8313,7 +8313,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8346,14 +8346,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 507
  },
  "UNM": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8368,7 +8368,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8390,14 +8390,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 524
  },
  "URI": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8412,7 +8412,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8447,7 +8447,7 @@
  },
  "VAR": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "VEEV": {
@@ -8466,7 +8466,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 11,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8474,7 +8474,7 @@
  },
  "VIAB": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "VIAC": {
@@ -8487,14 +8487,14 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 15,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
   "shares_rows": 538
  },
  "VICI": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8509,7 +8509,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 28,
+  "files_changed": 0,
   "first": "2000-07-19",
   "last": "2026-09-22",
   "rows": 6583
@@ -8519,7 +8519,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8537,7 +8537,7 @@
   "shares_rows": 290
  },
  "VMC": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8549,11 +8549,11 @@
  },
  "VMED": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "VMRK": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
@@ -8590,7 +8590,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 33,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983
@@ -8611,7 +8611,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1998-01-30",
   "last": "2026-09-22",
   "rows": 7205,
@@ -8633,7 +8633,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8655,7 +8655,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1997-05-05",
   "last": "2026-09-22",
   "rows": 7392,
@@ -8666,7 +8666,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8684,11 +8684,11 @@
   "shares_rows": 543
  },
  "WAB": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "1995-06-16",
   "last": "2026-09-22",
   "rows": 7868,
@@ -8696,7 +8696,7 @@
  },
  "WAMUQ": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WAT": {
@@ -8704,7 +8704,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-11-17",
   "last": "2026-09-22",
   "rows": 7760,
@@ -8723,7 +8723,7 @@
  },
  "WBA": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WBD": {
@@ -8731,7 +8731,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 5,
+  "files_changed": 0,
   "first": "2005-07-08",
   "last": "2026-09-22",
   "rows": 5335,
@@ -8739,12 +8739,12 @@
  },
  "WCG": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WCRX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "WDAY": {
@@ -8763,7 +8763,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 12,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8774,7 +8774,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8796,7 +8796,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8807,7 +8807,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 2,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8815,17 +8815,17 @@
  },
  "WFM": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WFMI": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "WFT": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WHR": {
@@ -8841,7 +8841,7 @@
  },
  "WIN": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WLTW": {
@@ -8865,7 +8865,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8876,7 +8876,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 4,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8884,7 +8884,7 @@
  },
  "WPX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WRB": {
@@ -8892,7 +8892,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 18,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8900,7 +8900,7 @@
  },
  "WRK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WSM": {
@@ -8908,7 +8908,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8919,7 +8919,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -8949,7 +8949,7 @@
  },
  "WWY": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WY": {
@@ -8965,7 +8965,7 @@
  },
  "WYE": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "WYND": {
@@ -8986,12 +8986,12 @@
  },
  "X": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "XEC": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "XEL": {
@@ -9007,12 +9007,12 @@
  },
  "XL": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "XLNX": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "XOM": {
@@ -9031,7 +9031,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 6,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -9042,7 +9042,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -9050,7 +9050,7 @@
  },
  "XTO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 2,
+  "fails": 3,
   "last_fail": "2026-09-22"
  },
  "XYL": {
@@ -9077,7 +9077,7 @@
  },
  "YHOO": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "fails": 2,
   "last_fail": "2026-09-22"
  },
  "YUM": {
@@ -9085,7 +9085,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 7,
+  "files_changed": 0,
   "first": "1997-09-17",
   "last": "2026-09-22",
   "rows": 7298,
@@ -9107,7 +9107,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 3,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -9118,7 +9118,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "last": "2026-09-22",
   "rows": 7983,
@@ -9129,7 +9129,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 9,
+  "files_changed": 0,
   "first": "2019-04-18",
   "last": "2026-09-22",
   "rows": 1867
@@ -9139,7 +9139,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-22",
-  "files_changed": 10,
+  "files_changed": 0,
   "first": "2018-03-16",
   "last": "2026-09-22",
   "rows": 2141
