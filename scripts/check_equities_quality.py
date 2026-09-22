@@ -254,9 +254,18 @@ def main() -> None:
              "等於只看活下來的公司。洞的比例越高的年份，回測結果越樂觀，判決時要打折。")
     base.mkdir(parents=True, exist_ok=True)
     (base / "QC_REPORT.md").write_text("\n".join(L) + "\n", encoding="utf-8")
-    digest = [f"{m.upper()} 數據日報 {today}：🔴{len(red)} 🟡{len(yellow)}，現任 {len(current)} 檔、"
-              f"有數據 {len(loaded)}、雙來源比對 {n_cmp} 筆"]
-    digest += [f"🔴 {t} {c}：{msg}" for _, t, c, msg in red[:15]]
+    label = {"us": "🇺🇸 美股", "jp": "🇯🇵 日股"}[m]
+    idx_names = "/".join(INDICES[u.key]["name"] for u in unis) or "（無成分股名單）"
+    src2 = {"us": "Nasdaq.com", "jp": "Yahoo!ファイナンス"}[m]
+    latest2 = snap_data[-1]["trade_date"] if snap_data else "—"
+    digest = [f"📊 {label}數據日報 {today}（{idx_names}）",
+              f"✅ yfinance {len(loaded)} 檔（現任成分股 {len(current)}），基準 {bench} 最新 {bench_last}",
+              f"🏛 第二來源 {src2} 快照 {len(snap_data)} 份，最新 {latest2}（比對 {n_cmp} 筆收市價）",
+              f"🔴 {len(red)} ｜ 🟡 {len(yellow)} ｜ ✅ 已確認 {len(acked)}"]
+    digest += [f"🔴 {t} {c}：{msg}" for _, t, c, msg in red[:12]]
+    if len(red) > 12:
+        digest.append(f"……另 {len(red) - 12} 項 🔴 見報告")
+    digest.append(f"報告：data/equities/{m}/QC_REPORT.md（分支 claude/gifted-carson-v2tvhw）")
     (base / "qc_digest.txt").write_text("\n".join(digest) + "\n", encoding="utf-8")
     alert = base / "qc_alert.txt"
     if red:
