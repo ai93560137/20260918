@@ -1,5 +1,5 @@
 {
- "fetched_at": "2026-09-23 00:49 HKT",
+ "fetched_at": "2026-09-23 00:55 HKT",
  "hsi": {
   "h1": 25057,
   "l1": 24613,
@@ -32,7 +32,7 @@
    "2026-09-18"
   ],
   "quote": {
-   "px": 4365.9,
+   "px": 4369.5,
    "kind": "小時收盤",
    "asof": "09-23 00:00 HKT"
   },
@@ -44,12 +44,15 @@
   "raw 2026-09-17 00:00 h=24718.0 l=24330.0",
   "raw 2026-09-18 00:00 h=24868.0 l=24561.0",
   "raw 2026-09-21 00:00 h=25057.0 l=24613.0",
-  "intraday int=4 span=1: 219 rows, 0 in window [09-22 17:16..09-23 00:32]",
-  "intraday int=4 span=2: 87 rows, 0 in window [09-22 17:15..09-23 00:25]",
-  "intraday int=5 span=2: 87 rows, 0 in window [09-22 17:15..09-23 00:25]",
-  "intraday int=3 span=2: 87 rows, 0 in window [09-22 17:15..09-23 00:25]",
+  "intraday int=4 span=1: 222 rows, 0 in window [09-22 17:16..09-23 00:38]",
+  "intraday int=4 span=2: 89 rows, 0 in window [09-22 17:15..09-23 00:35]",
+  "intraday int=5 span=2: 89 rows, 0 in window [09-22 17:15..09-23 00:35]",
+  "intraday int=3 span=2: 89 rows, 0 in window [09-22 17:15..09-23 00:35]",
   "intraday int=5 span=3: 29 rows, 0 in window [09-22 17:15..09-23 00:15]",
   "intraday int=6 span=3: 29 rows, 0 in window [09-22 17:15..09-23 00:15]",
+  "futureslist[0] raw: {\"as\": \"25,072\", \"bd\": \"25,051\", \"con\": \"Sep-26\", \"con_l\": \"SEPTEMBER 2026\", \"hc\": \"25,044\", \"hi\": \"25,255\", \"lo\": \"25,042\", \"ls\": \"25,060\", \"nc\": \"+16\", \"oi\": \"127,402\", \"op\": \"25,137\", \"pc\": \"+0.06\", \"ric\": \"2HSIU6\", \"se\": \"25,055\", \"vo\": \"70,242\"}",
+  "quote hi/lo fail: cannot access local variable 'num' where it is not associated with a value",
+  "yahoo HSI=F df rows=0",
   "yahoo fallback rejected: cutoff_in=False overlap=0 bad=[]",
   "hsi quote: {'px': 25062, 'kind': '中間價', 'asof': '22/09/2026 16:29'}",
   "hsi: OK ['2026-09-21', '2026-09-18', '2026-09-17']",
