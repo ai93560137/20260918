@@ -1,0 +1,56 @@
+run 2026-09-22T22:39:32.297307+00:00
+wiki ndx 2008: 2008-05-31T20:29:16Z 12582 chars
+wiki ndx 2009: 2009-06-29T22:09:48Z 16059 chars
+wiki ndx 2010: 2010-05-28T02:29:25Z 16383 chars
+wiki ndx 2011: 2011-06-24T23:52:10Z 17736 chars
+wiki ndx 2012: 2012-06-21T07:31:22Z 20250 chars
+wiki ndx 2013: 2013-06-11T10:16:24Z 24165 chars
+wiki ndx 2014: 2014-06-21T02:52:21Z 25858 chars
+wiki ndx 2015: 2015-06-10T22:22:41Z 26725 chars
+wiki ndx 2016: 2016-06-11T00:48:01Z 31003 chars
+wiki ndx 2017: 2017-06-20T19:21:14Z 33709 chars
+wiki ndx 2018: 2018-06-27T20:25:31Z 34790 chars
+wiki ndx 2019: 2019-05-31T00:54:33Z 36573 chars
+wiki ndx 2020: 2020-06-29T02:19:52Z 39996 chars
+wiki ndx 2021: 2021-06-28T22:52:25Z 48740 chars
+wiki ndx 2022: 2022-06-25T03:54:48Z 52512 chars
+wiki ndx 2023: 2023-06-29T01:54:58Z 56320 chars
+wiki ndx 2024: 2024-06-28T22:15:08Z 59447 chars
+wiki ndx 2025: 2025-06-24T00:44:34Z 81818 chars
+wiki ndx 2026: 2026-06-29T19:32:59Z 86088 chars
+wiki ndx current: 2026-09-19T03:38:08Z 10911 chars
+wiki n225 2008: 2008-05-16T08:16:52Z 17966 chars
+wiki n225 2009: 2009-06-25T21:23:03Z 17776 chars
+wiki n225 2010: 2010-06-25T01:30:02Z 15575 chars
+wiki n225 2011: 2011-06-02T15:56:02Z 16364 chars
+wiki n225 2012: 2012-06-19T15:40:08Z 16633 chars
+wiki n225 2013: 2013-06-09T08:45:23Z 18128 chars
+wiki n225 2014: 2014-05-11T07:21:55Z 18982 chars
+wiki n225 2015: 2015-05-28T04:06:31Z 31821 chars
+wiki n225 2016: 2016-05-28T19:23:23Z 31212 chars
+wiki n225 2017: 2017-03-10T09:53:34Z 16882 chars
+wiki n225 2018: 2018-04-24T19:17:03Z 20886 chars
+wiki n225 2019: 2019-06-27T13:16:21Z 20558 chars
+wiki n225 2020: 2020-04-18T05:12:31Z 24631 chars
+wiki n225 2021: 2021-06-09T23:59:44Z 25726 chars
+wiki n225 2022: 2022-05-04T17:48:05Z 25997 chars
+wiki n225 2023: 2023-06-28T08:37:16Z 27763 chars
+wiki n225 2024: 2024-06-02T02:33:18Z 29659 chars
+wiki n225 2025: 2025-06-14T13:58:23Z 31413 chars
+wiki n225 2026: 2026-06-25T07:35:36Z 34489 chars
+wiki n225 current: 2026-07-19T21:03:05Z 34494 chars
+wiki djia_hist current: 2026-08-16T21:54:44Z 92969 chars
+wiki sp500_list current: 2026-09-20T22:18:13Z 86842 chars
+probe nasdaq_screener: HTTP 200 application/json; charset=utf-8 2232996 bytes
+nasdaq screener: 7132 檔，範例 {'symbol': 'A', 'name': 'Agilent Technologies Inc. Common Stock', 'lastsale': '$167.26', 'netchange': '5.32', 'pctchange': '3.285%', 'volume': '3782549', 'marketCap': '47155420120.00', 'country': 'United States', 'ipoyear': '1999', 'industry': 'Biotechnology: Laboratory Analytical Instruments', 'sector': 'Industrials', 'url': '/market-activity/stocks/a'}
+probe nasdaq_hist_aapl: HTTP 200 application/json; charset=utf-8 3648 bytes
+probe nasdaq_info_aapl: HTTP 200 application/json; charset=utf-8 1403 bytes
+probe jpx_listed_xls: HTTP 404 text/html 21082 bytes
+probe nikkei_components_en: HTTP 200 text/html; charset=utf-8 99189 bytes
+probe nikkei_components_ja: HTTP 200 text/html; charset=utf-8 127786 bytes
+probe nikkei_changes_ja: HTTP 404 text/html 1993 bytes
+probe yahoojp_7203: HTTP 200 text/html; charset=utf-8 451538 bytes
+probe yahoojp_7203_hist: HTTP 200 text/html; charset=utf-8 316150 bytes
+probe kabutan_7203: HTTP 405 text/html; charset=UTF-8 2541 bytes
+probe stooq_aapl: HTTP 200 text/html; charset=utf-8 796 bytes
+probe stooq_7203: HTTP 200 text/html; charset=utf-8 796 bytes

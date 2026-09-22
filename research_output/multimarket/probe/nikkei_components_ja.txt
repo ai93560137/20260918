@@ -1,0 +1,2987 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="uzDwpX0jA17ss-huYLnYUcWYppt9QO8ErsjWhsXTacSFqdCK_0Z2r28x9c5q6ah7SB4N7q1cfNLZKCyXsUG41Q" />
+       
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="bingbot" content="noarchive">
+    <meta name="description" content="日経の指数公式サイト。日経平均株価をはじめとした日本経済新聞社が算出、公表する指数に関する情報を提供いたします。" />
+    <meta name="keywords" content="日経平均,日経225,指数,インデックス" />
+    <title>構成銘柄一覧 － 日経平均プロフィル</title>
+    
+	<!-- Google Tag Manager -->
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-NVVVBZXG');</script>
+	<!-- End Google Tag Manager -->
+    
+    <script src="/nkave/assets/jquery-3.7.1.min.js"></script>
+      <script src="/nkave/assets/jquery.ui.datepicker-ja.js"></script>
+    <script src="/nkave/assets/bootstrap.min.js"></script>
+    <script src="/nkave/assets/bootstrap.bundle.min.js"></script>
+    <script src="/nkave/assets/jquery-ui.min.js"></script>
+    <script src="/nkave/assets/jquery.colorbox-min.js"></script>
+    <script src="/nkave/assets/w2ui-1.5.rc1.min.js"></script>
+        <link rel="stylesheet" href="/nkave/assets/kite-color.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/bootstrap.min.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/bootstrap-icons.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/colorbox.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/jquery-ui.min.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/jquery.jqplot.min.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/w2ui-1.5.rc1.min.css" media="screen" />
+    <link rel="stylesheet" href="/nkave/assets/style-extend-bootstrap-style.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/style-common-parts.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/style-global.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/style-icon.css" media="screen, print" />
+    <link rel="stylesheet" href="/nkave/assets/style.css" media="screen, print" />
+    
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="0xjdkO1k8GekaRSD-jxMbCpKZv83afhQWBIYajK2h6_tgf2_bwGFlifrCSPwbDxGp8zNiud1a4Yv8uJ7RiRWvg" />
+    
+      
+      
+      
+      
+      
+      
+      
+      
+    
+      
+      
+      
+     
+
+  </head>
+    
+  <body>
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVVVBZXG"
+	height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
+
+      
+
+
+    
+  
+    
+    <div class="idx-ja">
+        
+        <!-- Sidebar -->
+        <nav class="navbar navbar-expand-lg idx-sidebar sticky-top">
+            
+            <div class="container-fluid px-0">
+                
+                    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#gNav" aria-controls="offcanvasNavbar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                
+                <!-- Brand -->
+                <div class="idx-brand">
+                    <a class="navbar-brand" href="/nkave">日経平均プロフィル</a>
+                    <p class="idx-tagline">日経の指数公式サイト</p>
+                </div>
+                
+                    <div class="offcanvas offcanvas-start" tabindex="-1" id="gNav" aria-labelledby="gNavLabel">
+                        
+                        <!-- Navigation header -->
+                        <div class="offcanvas-header">
+                            <h5 class="offcanvas-title" id="gNavLabel">日経平均プロフィル</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        
+                        <!-- Navigation contents -->
+                        <div class="offcanvas-body">
+                            <ul class="navbar-nav justify-content-end idx-gnav">
+                                <li class="nav-item"><p class="label">指数を知る</p></li>
+                                <li class="nav-item"><a class="nav-link " href="/nkave/newsroom"><i class="idx-icon icon-news"></i>ニュース＆リリース</a></li>
+                                <li class="nav-item">
+                                    <div class="nav-item has-sub">
+                                        <span class="nav-link ">
+                                            <i class="idx-icon icon-index"></i><span>指数一覧</span>
+                                        </span>
+                                        <ul class="nav-subnav">
+                                            <li class="nav-item"><a class="nav-link " href="/nkave/index?type=index">指数値一覧</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/nkave/index?type=download">ダウンロードセンター</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item">
+                                    <div class="nav-item has-sub">
+                                        <span class="nav-link ">
+                                            <i class="idx-icon icon-archive"></i><span>日経平均アーカイブ</span>
+                                        </span>
+                                        <ul class="nav-subnav">
+                                            <li class="nav-item"><a class="nav-link " href="/nkave/archives/summary">日次サマリー</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/nkave/archives/data">ヒストリカルデータ</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/nkave/archives/record">上昇・下落記録</a></li>
+                                            <li class="nav-item"><a class="nav-link " href="/nkave/archives/calendar">騰落率カレンダー</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="/nkave/faq/chronology.html">日経指数年表</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item"><a class="nav-link " href="/nkave/index/search"><i class="idx-icon icon-search"></i>銘柄から指数を探す</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/nkave/governance/"><i class="idx-icon icon-governance"></i>ガバナンス</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/atoz/"><i class="idx-icon icon-document"></i>読む知る学ぶ</a></li>
+                                <li class="nav-item"><p class="label">指数を利用</p></li>
+                                <li class="nav-item"><a class="nav-link" href="/nkave/license/"><i class="idx-icon icon-license"></i>ライセンス契約</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/nkave/data/"><i class="idx-icon icon-data"></i>指数データ取得</a></li>
+                                <li class="nav-item"><p class="label">サポート</p></li>
+                                <li class="nav-item"><a class="nav-link" href="/nkave/faq/"><i class="idx-icon icon-faq"></i>よくあるご質問</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/nkave/contact/"><i class="idx-icon icon-contact"></i>お問い合わせ</a></li>
+                            </ul>
+                            
+                            <!-- Member link -->
+                            <div class="idx-member" id="member">
+                                <a class="idx-member-link" href="/nkave/service"><i class="idx-icon icon-lock"></i>&nbsp;有料会員様向けサービス</a>
+                            </div>
+                        </div>
+                    </div>
+                
+                <!-- Language switcher md -->
+                <div class="idx-lang-md">
+                    <ul class="lang-switcher lang-md">
+                            <li class="lang-switcher-item"><a href="/en/nkave/index/component?idx=nk225" class="lang-switcher-link"><span>EN</span></a></li>
+                            <li class="lang-switcher-item"><a href="/cz/nkave/index/profile" class="lang-switcher-link"><span>CN</span></a></li>
+                            <li class="lang-switcher-item active"><span>JA</span></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main column -->
+        <div class="idx-main">
+            
+            
+            <nav class="idx-topbar">
+                <div class="container-fluid d-flex justify-content-between align-items-center">
+                    <!-- Breadcrumb -->
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/nkave">トップ</a></li>
+                                <li class="breadcrumb-item active">指数一覧</li>
+    <li class="breadcrumb-item" aria-current="page"><a href="/nkave/index/profile?idx=nk225">日経平均株価</a></li>
+    <li class="breadcrumb-item active" aria-current="page">構成銘柄一覧</li>
+
+                        </ol>
+                    
+                    <!-- Language switcher lg -->
+                    <div class="idx-lang-lg">
+                        <ul class="lang-switcher lang-lg">
+                                <li class="lang-switcher-item"><a href="/en/nkave/index/component?idx=nk225" class="lang-switcher-link"><span>English</span></a></li>
+                                <li class="lang-switcher-item"><a href="/cz/nkave/index/profile" class="lang-switcher-link"><span>簡体中文</span></a></li>
+                                <li class="lang-switcher-item active"><span>日本語</span></li>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Page title -->
+            <header class="idx-header">
+                    <div class="idx-header-pagetitle">
+        <div class="container-fluid">
+            <h1 class="idx-header-headding d-flex align-items-center"><i class="idx-icon icon-index"></i>構成銘柄一覧</h1>
+        </div>
+    </div>
+
+            </header>
+            
+            <!-- Contents -->
+            
+
+<main class="flex-lg-1 h-screen">
+    <!-- daily-summary -->
+    <section class="idx-section">
+        <div class="container-fluid">
+            <h2 class="idx-section-heading">構成銘柄：日経平均株価</h2>
+            
+            <div class="idx-componentslist-header">
+                
+                <div class="idx-ui-group">
+                    <a class="menu-toggler" data-bs-toggle="collapse" href="#collapse-menu" role="button" aria-expanded="false" aria-controls="collapse-menu">
+                        <i class="bi bi-building"></i>&nbsp;業種一覧
+                    </a>
+                    <!--daily_changing--><p class="date position-end">更新日付：2026.09.18</p>
+                </div>
+                <div class="collapse" id="collapse-menu">
+                    <div class="idx-u-menu">
+                        
+                        
+                            
+                                    
+                                    
+                                    <div class="category">
+                                        <p class="title">技術</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C09">医薬品</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C23">電気機器</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C27">自動車</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C31">精密機器</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C65">通信</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">金融</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C47">銀行</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C52">その他金融</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C49">証券</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C51">保険</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">消費</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C35">水産</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C01">食品</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C45">小売業</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C71">サービス</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">素材</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C37">鉱業</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C03">繊維</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C05">パルプ・紙</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C07">化学</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C11">石油</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C13">ゴム</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C15">窯業</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C17">鉄鋼</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C19">非鉄・金属</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C43">商社</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">資本財・その他</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C41">建設</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C21">機械</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C25">造船</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C29">輸送用機器</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C33">その他製造</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C53">不動産</a></li>
+                            
+                            
+                                    
+                                            </ul>
+                                        </div>
+                                    
+                                    <div class="category">
+                                        <p class="title">運輸・公共</p>
+                                        <ul class="list">
+                                        
+                            
+                            <li class="list-item"><a href="#C55">鉄道・バス</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C57">陸運</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C59">海運</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C61">空運</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C63">倉庫</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C67">電力</a></li>
+                            
+                            
+                            
+                            <li class="list-item"><a href="#C69">ガス</a></li>
+                            
+                            </ul>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            
+                
+                    
+                    
+                    <a name="C09" id="C09"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">医薬品</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>4151</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4151">協和キリン</a></td>
+                        <td>協和キリン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4502</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4502">武田</a></td>
+                        <td>武田薬品工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4503</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4503">アステラス</a></td>
+                        <td>アステラス製薬（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4506</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4506">住友ファーマ</a></td>
+                        <td>住友ファーマ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4507</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4507">塩野義</a></td>
+                        <td>塩野義製薬（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4519</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4519">中外薬</a></td>
+                        <td>中外製薬（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4523</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4523">エーザイ</a></td>
+                        <td>エーザイ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4568</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4568">第一三共</a></td>
+                        <td>第一三共（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4578</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4578">大塚ＨＤ</a></td>
+                        <td>大塚ホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C23" id="C23"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">電気機器</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>285A</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=285A">キオクシア</a></td>
+                        <td>キオクシアホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4062</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4062">イビデン</a></td>
+                        <td>イビデン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6479</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6479">ミネベア</a></td>
+                        <td>ミネベアミツミ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6501</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6501">日立</a></td>
+                        <td>（株）日立製作所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6503</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6503">三菱電</a></td>
+                        <td>三菱電機（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6504</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6504">富士電機</a></td>
+                        <td>富士電機（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6506</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6506">安川電</a></td>
+                        <td>（株）安川電機</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6526</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6526">ソシオネクス</a></td>
+                        <td>（株）ソシオネクスト</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6645</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6645">オムロン</a></td>
+                        <td>オムロン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6701</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6701">ＮＥＣ</a></td>
+                        <td>日本電気（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6702</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6702">富士通</a></td>
+                        <td>富士通（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6723</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6723">ルネサス</a></td>
+                        <td>ルネサスエレクトロニクス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6724</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6724">エプソン</a></td>
+                        <td>セイコーエプソン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6752</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6752">パナＨＤ</a></td>
+                        <td>パナソニック　ホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6753</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6753">シャープ</a></td>
+                        <td>シャープ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6758</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6758">ソニーＧ</a></td>
+                        <td>ソニーグループ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6762</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6762">ＴＤＫ</a></td>
+                        <td>ＴＤＫ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6770</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6770">アルプスアル</a></td>
+                        <td>アルプスアルパイン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6841</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6841">横河電</a></td>
+                        <td>横河電機（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6857</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6857">アドテスト</a></td>
+                        <td>（株）アドバンテスト</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6861</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6861">キーエンス</a></td>
+                        <td>（株）キーエンス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6902</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6902">デンソー</a></td>
+                        <td>（株）デンソー</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6920</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6920">レーザーテク</a></td>
+                        <td>レーザーテック（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6954</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6954">ファナック</a></td>
+                        <td>ファナック（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6963</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6963">ローム</a></td>
+                        <td>ローム（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6971</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6971">京セラ</a></td>
+                        <td>京セラ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6976</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6976">太陽誘電</a></td>
+                        <td>太陽誘電（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6981</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6981">村田製</a></td>
+                        <td>（株）村田製作所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7735</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7735">スクリン</a></td>
+                        <td>（株）ＳＣＲＥＥＮホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7751</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7751">キヤノン</a></td>
+                        <td>キヤノン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7752</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7752">リコー</a></td>
+                        <td>（株）リコー</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8035</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8035">東エレク</a></td>
+                        <td>東京エレクトロン（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C27" id="C27"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">自動車</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>543A</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=543A">ＡＲＣＨＩＯ</a></td>
+                        <td>ＡＲＣＨＩＯＮ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7201</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7201">日産自</a></td>
+                        <td>日産自動車（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7202</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7202">いすゞ</a></td>
+                        <td>いすゞ自動車（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7203</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7203">トヨタ</a></td>
+                        <td>トヨタ自動車（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7211</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7211">三菱自</a></td>
+                        <td>三菱自動車工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7261</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7261">マツダ</a></td>
+                        <td>マツダ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7267</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7267">ホンダ</a></td>
+                        <td>本田技研工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7269</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7269">スズキ</a></td>
+                        <td>スズキ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7270</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7270">ＳＵＢＡＲＵ</a></td>
+                        <td>（株）ＳＵＢＡＲＵ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7272</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7272">ヤマハ発</a></td>
+                        <td>ヤマハ発動機（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C31" id="C31"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">精密機器</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>4543</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4543">テルモ</a></td>
+                        <td>テルモ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4902</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4902">コニカミノル</a></td>
+                        <td>コニカミノルタ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6146</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6146">ディスコ</a></td>
+                        <td>（株）ディスコ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7731</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7731">ニコン</a></td>
+                        <td>（株）ニコン</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7733</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7733">オリンパス</a></td>
+                        <td>オリンパス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7741</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7741">ＨＯＹＡ</a></td>
+                        <td>ＨＯＹＡ（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C65" id="C65"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">通信</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9432</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9432">ＮＴＴ</a></td>
+                        <td>ＮＴＴ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9433</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9433">ＫＤＤＩ</a></td>
+                        <td>ＫＤＤＩ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9434</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9434">ＳＢ</a></td>
+                        <td>ソフトバンク（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9984</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9984">ＳＢＧ</a></td>
+                        <td>ソフトバンクグループ（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C47" id="C47"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">銀行</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5831</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5831">しずおかＦＧ</a></td>
+                        <td>（株）しずおかフィナンシャルグループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7186</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7186">横浜ＦＧ</a></td>
+                        <td>（株）横浜フィナンシャルグループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8304</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8304">あおぞら銀</a></td>
+                        <td>（株）あおぞら銀行</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8306</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8306">三菱ＵＦＪ</a></td>
+                        <td>（株）三菱ＵＦＪフィナンシャル・グループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8308</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8308">りそなＨＤ</a></td>
+                        <td>（株）りそなホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8309</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8309">三井住友トラ</a></td>
+                        <td>三井住友トラストグループ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8316</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8316">三井住友ＦＧ</a></td>
+                        <td>（株）三井住友フィナンシャルグループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8331</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8331">千葉銀</a></td>
+                        <td>（株）千葉銀行</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8354</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8354">ふくおかＦＧ</a></td>
+                        <td>（株）ふくおかフィナンシャルグループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8411</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8411">みずほＦＧ</a></td>
+                        <td>（株）みずほフィナンシャルグループ</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C52" id="C52"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">その他金融</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>8253</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8253">クレセゾン</a></td>
+                        <td>（株）クレディセゾン</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8591</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8591">オリックス</a></td>
+                        <td>オリックス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8697</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8697">日本取引所</a></td>
+                        <td>（株）日本取引所グループ</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C49" id="C49"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">証券</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>8601</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8601">大和</a></td>
+                        <td>（株）大和証券グループ本社</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8604</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8604">野村</a></td>
+                        <td>野村ホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C51" id="C51"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">保険</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>8630</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8630">ＳＯＭＰＯ</a></td>
+                        <td>ＳＯＭＰＯホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8725</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8725">ＭＳ＆ＡＤ</a></td>
+                        <td>ＭＳ＆ＡＤインシュアランスグループホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8750</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8750">第一ライフ</a></td>
+                        <td>（株）第一ライフグループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8766</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8766">東京海上</a></td>
+                        <td>東京海上ホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8795</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8795">Ｔ＆Ｄ</a></td>
+                        <td>（株）Ｔ＆Ｄホールディングス</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C35" id="C35"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">水産</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>1332</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1332">ニッスイ</a></td>
+                        <td>（株）ニッスイ</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C01" id="C01"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">食品</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>2002</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2002">日清粉Ｇ</a></td>
+                        <td>（株）日清製粉グループ本社</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2269</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2269">明治ＨＤ</a></td>
+                        <td>明治ホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2282</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2282">日ハム</a></td>
+                        <td>日本ハム（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2501</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2501">サッポロ</a></td>
+                        <td>サッポロビール（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2502</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2502">アサヒ</a></td>
+                        <td>アサヒグループホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2503</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2503">キリンＨＤ</a></td>
+                        <td>キリンホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2801</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2801">キッコマン</a></td>
+                        <td>キッコーマン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2802</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2802">味の素</a></td>
+                        <td>味の素（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2871</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2871">ニチレイ</a></td>
+                        <td>（株）ニチレイ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2914</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2914">ＪＴ</a></td>
+                        <td>日本たばこ産業（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C45" id="C45"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">小売業</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3086</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3086">Ｊフロント</a></td>
+                        <td>Ｊ．フロント　リテイリング（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3092</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3092">ＺＯＺＯ</a></td>
+                        <td>（株）ＺＯＺＯ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3099</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3099">三越伊勢丹</a></td>
+                        <td>（株）三越伊勢丹ホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3382</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3382">セブン＆アイ</a></td>
+                        <td>（株）セブン＆アイ・ホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7453</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7453">良品計画</a></td>
+                        <td>（株）良品計画</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7532</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7532">パンパシＨＤ</a></td>
+                        <td>（株）パン・パシフィック・インターナショナルホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8233</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8233">高島屋</a></td>
+                        <td>（株）高島屋</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8252</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8252">丸井Ｇ</a></td>
+                        <td>（株）丸井グループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8267</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8267">イオン</a></td>
+                        <td>イオン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9843</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9843">ニトリＨＤ</a></td>
+                        <td>（株）ニトリホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9983</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9983">ファストリ</a></td>
+                        <td>（株）ファーストリテイリング</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C71" id="C71"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">サービス</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>2413</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2413">エムスリー</a></td>
+                        <td>エムスリー（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>2432</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2432">ディーエヌエ</a></td>
+                        <td>（株）ディー・エヌ・エー</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3659</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3659">ネクソン</a></td>
+                        <td>（株）ネクソン</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3697</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3697">ＳＨＩＦＴ</a></td>
+                        <td>（株）ＳＨＩＦＴ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4307</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4307">野村総研</a></td>
+                        <td>（株）野村総合研究所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4324</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4324">電通グループ</a></td>
+                        <td>（株）電通グループ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4385</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4385">メルカリ</a></td>
+                        <td>（株）メルカリ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4661</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4661">ＯＬＣ</a></td>
+                        <td>（株）オリエンタルランド</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4689</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4689">ラインヤフー</a></td>
+                        <td>ＬＩＮＥヤフー（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4704</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4704">トレンド</a></td>
+                        <td>トレンドマイクロ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4751</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4751">サイバー</a></td>
+                        <td>（株）サイバーエージェント</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4755</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4755">楽天グループ</a></td>
+                        <td>楽天グループ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6098</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6098">リクルート</a></td>
+                        <td>（株）リクルートホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6178</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6178">日本郵政</a></td>
+                        <td>日本郵政（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6532</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6532">ベイカレント</a></td>
+                        <td>（株）ベイカレント</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7974</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7974">任天堂</a></td>
+                        <td>任天堂（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9602</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9602">東宝</a></td>
+                        <td>東宝（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9735</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9735">セコム</a></td>
+                        <td>セコム（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9766</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9766">コナミＧ</a></td>
+                        <td>コナミグループ（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C37" id="C37"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">鉱業</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>1605</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1605">ＩＮＰＥＸ</a></td>
+                        <td>（株）ＩＮＰＥＸ</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C03" id="C03"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">繊維</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3401</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3401">帝人</a></td>
+                        <td>帝人（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3402</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3402">東レ</a></td>
+                        <td>東レ（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C05" id="C05"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">パルプ・紙</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3861</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3861">王子ＨＤ</a></td>
+                        <td>王子ホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C07" id="C07"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">化学</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3405</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3405">クラレ</a></td>
+                        <td>（株）クラレ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>3407</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3407">旭化成</a></td>
+                        <td>旭化成（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4004</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4004">レゾナック</a></td>
+                        <td>（株）レゾナック・ホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4005</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4005">住友化</a></td>
+                        <td>住友化学（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4021</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4021">日産化</a></td>
+                        <td>日産化学（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4042</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4042">東ソー</a></td>
+                        <td>東ソー（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4043</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4043">トクヤマ</a></td>
+                        <td>（株）トクヤマ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4061</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4061">デンカ</a></td>
+                        <td>デンカ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4063</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4063">信越化</a></td>
+                        <td>信越化学工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4183</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4183">三井化学</a></td>
+                        <td>三井化学（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4188</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4188">三菱ケミＧ</a></td>
+                        <td>三菱ケミカルグループ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4208</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4208">ＵＢＥ</a></td>
+                        <td>ＵＢＥ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4452</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4452">花王</a></td>
+                        <td>花王（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4901</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4901">富士フイルム</a></td>
+                        <td>富士フイルムホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>4911</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=4911">資生堂</a></td>
+                        <td>（株）資生堂</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6988</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6988">日東電</a></td>
+                        <td>日東電工（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C11" id="C11"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">石油</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5019</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5019">出光興産</a></td>
+                        <td>出光興産（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5020</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5020">ＥＮＥＯＳ</a></td>
+                        <td>ＥＮＥＯＳホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C13" id="C13"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">ゴム</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5101</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5101">浜ゴム</a></td>
+                        <td>横浜ゴム（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5108</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5108">ブリヂストン</a></td>
+                        <td>（株）ブリヂストン</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C15" id="C15"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">窯業</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5201</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5201">ＡＧＣ</a></td>
+                        <td>ＡＧＣ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5214</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5214">日電硝</a></td>
+                        <td>日本電気硝子（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5233</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5233">太平洋セメ</a></td>
+                        <td>太平洋セメント（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5301</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5301">東海カーボン</a></td>
+                        <td>東海カーボン（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5332</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5332">ＴＯＴＯ</a></td>
+                        <td>ＴＯＴＯ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5333</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5333">ＮＧＫ</a></td>
+                        <td>ＮＧＫ（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C17" id="C17"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">鉄鋼</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5401</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5401">日本製鉄</a></td>
+                        <td>日本製鉄（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5406</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5406">神戸鋼</a></td>
+                        <td>（株）神戸製鋼所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5411</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5411">ＪＦＥ</a></td>
+                        <td>ＪＦＥホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C19" id="C19"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">非鉄・金属</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3436</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3436">ＳＵＭＣＯ</a></td>
+                        <td>（株）ＳＵＭＣＯ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5706</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5706">三井金属</a></td>
+                        <td>三井金属（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5711</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5711">三菱マ</a></td>
+                        <td>三菱マテリアル（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5713</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5713">住友鉱</a></td>
+                        <td>住友金属鉱山（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5714</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5714">ＤＯＷＡ</a></td>
+                        <td>ＤＯＷＡホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5801</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5801">古河電</a></td>
+                        <td>古河電気工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5802</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5802">住友電</a></td>
+                        <td>住友電気工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>5803</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5803">フジクラ</a></td>
+                        <td>（株）フジクラ</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C43" id="C43"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">商社</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>2768</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=2768">双日</a></td>
+                        <td>双日（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8001</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8001">伊藤忠</a></td>
+                        <td>伊藤忠商事（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8002</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8002">丸紅</a></td>
+                        <td>丸紅（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8015</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8015">豊田通商</a></td>
+                        <td>豊田通商（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8031</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8031">三井物</a></td>
+                        <td>三井物産（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8053</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8053">住友商</a></td>
+                        <td>住友商事（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8058</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8058">三菱商</a></td>
+                        <td>三菱商事（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C41" id="C41"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">建設</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>1721</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1721">コムシスＨＤ</a></td>
+                        <td>コムシスホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1801</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1801">大成建</a></td>
+                        <td>大成建設（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1802</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1802">大林組</a></td>
+                        <td>（株）大林組</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1803</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1803">清水建</a></td>
+                        <td>清水建設（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1808</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1808">長谷工</a></td>
+                        <td>（株）長谷工コーポレーション</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1812</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1812">鹿島</a></td>
+                        <td>鹿島建設（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1925</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1925">ハウス</a></td>
+                        <td>大和ハウス工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1928</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1928">積ハウス</a></td>
+                        <td>積水ハウス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>1963</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=1963">日揮ＨＤ</a></td>
+                        <td>日揮ホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C21" id="C21"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">機械</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>5631</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=5631">日製鋼</a></td>
+                        <td>（株）日本製鋼所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6103</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6103">オークマ</a></td>
+                        <td>オークマ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6113</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6113">アマダ</a></td>
+                        <td>（株）アマダ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6273</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6273">ＳＭＣ</a></td>
+                        <td>ＳＭＣ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6301</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6301">コマツ</a></td>
+                        <td>（株）小松製作所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6302</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6302">住友重</a></td>
+                        <td>住友重機械工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6305</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6305">日立建機</a></td>
+                        <td>日立建機（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6326</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6326">クボタ</a></td>
+                        <td>（株）クボタ</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6361</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6361">荏原</a></td>
+                        <td>（株）荏原製作所</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6367</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6367">ダイキン</a></td>
+                        <td>ダイキン工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6471</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6471">日精工</a></td>
+                        <td>日本精工（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6472</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6472">ＮＴＮ</a></td>
+                        <td>ＮＴＮ（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>6473</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=6473">ジェイテクト</a></td>
+                        <td>（株）ジェイテクト</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7004</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7004">カナデビア</a></td>
+                        <td>カナデビア（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7011</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7011">三菱重</a></td>
+                        <td>三菱重工業（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7013</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7013">ＩＨＩ</a></td>
+                        <td>（株）ＩＨＩ</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C25" id="C25"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">造船</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>7012</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7012">川重</a></td>
+                        <td>川崎重工業（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C33" id="C33"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">その他製造</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>7832</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7832">バンナムＨＤ</a></td>
+                        <td>（株）バンダイナムコホールディングス</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7911</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7911">ＴＯＰＰＡＮ</a></td>
+                        <td>ＴＯＰＰＡＮホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7912</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7912">大日印</a></td>
+                        <td>大日本印刷（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>7951</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=7951">ヤマハ</a></td>
+                        <td>ヤマハ（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C53" id="C53"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">不動産</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>3289</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=3289">東急不ＨＤ</a></td>
+                        <td>東急不動産ホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8801</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8801">三井不</a></td>
+                        <td>三井不動産（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8802</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8802">菱地所</a></td>
+                        <td>三菱地所（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8804</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8804">東建物</a></td>
+                        <td>東京建物（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>8830</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=8830">住友不</a></td>
+                        <td>住友不動産（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C55" id="C55"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">鉄道・バス</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9001</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9001">東武</a></td>
+                        <td>東武鉄道（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9005</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9005">東急</a></td>
+                        <td>東急（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9007</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9007">小田急</a></td>
+                        <td>小田急電鉄（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9008</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9008">京王</a></td>
+                        <td>京王電鉄（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9009</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9009">京成</a></td>
+                        <td>京成電鉄（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9020</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9020">ＪＲ東日本</a></td>
+                        <td>東日本旅客鉄道（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9021</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9021">ＪＲ西日本</a></td>
+                        <td>西日本旅客鉄道（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9022</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9022">ＪＲ東海</a></td>
+                        <td>東海旅客鉄道（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C57" id="C57"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">陸運</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9064</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9064">ヤマトＨＤ</a></td>
+                        <td>ヤマトホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9147</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9147">ＮＸＨＤ</a></td>
+                        <td>ＮＩＰＰＯＮ　ＥＸＰＲＥＳＳホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C59" id="C59"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">海運</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9101</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9101">郵船</a></td>
+                        <td>日本郵船（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9104</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9104">商船三井</a></td>
+                        <td>（株）商船三井</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9107</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9107">川崎汽</a></td>
+                        <td>川崎汽船（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C61" id="C61"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">空運</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9201</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9201">ＪＡＬ</a></td>
+                        <td>日本航空（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9202</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9202">ＡＮＡＨＤ</a></td>
+                        <td>ＡＮＡホールディングス（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C67" id="C67"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">電力</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9501</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9501">東電ＨＤ</a></td>
+                        <td>東京電力ホールディングス（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9502</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9502">中部電</a></td>
+                        <td>中部電力（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9503</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9503">関西電</a></td>
+                        <td>関西電力（株）</td>
+                </tr>
+                
+                
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a name="C69" id="C69"></a>
+                    <div class="idx-index-components table-responsive-md">
+                        
+                        <h3 class="idx-section-subheading">ガス</h3>
+                        <table class="table table-striped table-hover idx-extend">
+                            <thead>
+                                <tr>
+                                        <th width="14%">コード</th>
+                                        <th width="21%">銘柄名</th>
+                                        <th width="65%">社名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                
+                <tr>
+                        <td>9531</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9531">東ガス</a></td>
+                        <td>東京瓦斯（株）</td>
+                </tr>
+                
+                
+                
+                <tr>
+                        <td>9532</td>
+                        <td><a href="https://www.nikkei.com/nkd/company/?scode=9532">大ガス</a></td>
+                        <td>大阪瓦斯（株）</td>
+                </tr>
+                
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </section>
+</main>
+            
+            <!-- Application -->
+                
+<aside class="idx-section idx-bg-gray">
+    <div class="container-fluid idx-application">
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+            <div class="col">
+                <div class="">
+                    <h2 class="idx-application-title">指数をもっと<br>活用していただくために</h2>
+                </div>
+            </div>
+            <div class="col">
+                <div class="">
+                    <h3 class="idx-application-subtitle">日本市場をはかる、最も信頼されるものさし</h3>
+                    <p class="idx-application-text">日本経済新聞社は、社会の変化を見据え、日本経済をさまざまな視点から切り取る指数を算出しています。日本の株式市場の指標として広く利用されるとともに、指数に連動する商品が作られ世界中で取引されています</p>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <img src="/nkave/assets/contract.png" class="card-img-top" alt="ライセンス契約">
+                    <div class="card-body">
+                        <h3 class="card-title">ライセンス契約</h3>
+                        <p class="card-text">日経平均株価をはじめ日本経済新聞社の各指数は日経が一切の知的財産権を保有しています。ウェブサイトやモバイルアプリでの表示のほか、日経指数データをインプットにした機械での演算処理、金融商品の組成など利用シーンに応じた手続きをご案内しています</p>
+                        <a href="/nkave/license/" class="btn btn-primary">もっと詳しく</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <img src="/nkave/assets/data_provision.png" class="card-img-top" alt="指数データの取得">
+                    <div class="card-body">
+                        <h3 class="card-title">指数データの提供</h3>
+                            <p class="card-text">日経平均株価の算出に不可欠な構成銘柄の株価や配当、指数に占める比率（ウェート）といった基本データをビジネスでお使いになる際の手続きをご案内しています</p>
+                            <a href="/nkave/data/" class="btn btn-primary">もっと詳しく</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">よくあるご質問</h3>
+                        <p class="card-text">日経平均株価をはじめ日経指数に関するものからライセンス契約、本サイトのご利用まで皆様から寄せられるご質問とその回答をご確認いただけます</p>
+                        <a href="/nkave/faq/" class="btn btn-primary">一覧を見る</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">お問い合わせ</h3>
+                            <p class="card-text">日経指数に関するご質問やビジネスでのご利用についてのご確認、本サイトへのご意見等各種窓口はこちらからお送りいただけます</p>
+                            <a href="/nkave/contact/" class="btn btn-primary">もっと詳しく</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
+            
+            <!-- Footer -->
+            <footer class="idx-footer">
+                    <nav class="idx-footer-gnav">
+                        <ul class="idx-list">
+                            <li class="list-item"><a class="list-link" href="/nkave/newsroom">ニュース＆リリース</a></li>
+                            <li class="list-item has-sub">
+                                <a class="list-link" role="button" data-bs-toggle="button" style="text-decoration: none;">指数一覧</a>
+                                <div class="sub-item">
+                                    <ul>
+                                        <li class="list-item"><a class="list-link" href="/nkave/index?type=index">指数値一覧</a></li>
+                                        <li class="list-item"><a class="list-link" href="/nkave/index?type=download">ダウンロードセンター</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li class="list-item has-sub">
+                                <a class="list-link" role="button" data-bs-toggle="button" style="text-decoration: none;">日経平均アーカイブ</a>
+                                <div class="sub-item">
+                                    <ul>
+                                        <li class="list-item"><a class="list-link" href="/nkave/archives/summary">日次サマリー</a></li>
+                                        <li class="list-item"><a class="list-link" href="/nkave/archives/data">ヒストリカルデータ</a></li>
+                                        <li class="list-item"><a class="list-link" href="/nkave/archives/record">上昇・下落記録</a></li>
+                                        <li class="list-item"><a class="list-link" href="/nkave/archives/calendar">騰落率カレンダー</a></li>
+                                        <li class="list-item"><a class="list-link" href="/nkave/faq/chronology.html">日経指数年表</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li class="list-item"><a class="list-link" href="/nkave/index/search">銘柄から指数を探す</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/governance/">ガバナンス</a></li>
+                            <li class="list-item"><a class="list-link" href="/atoz/">読む知る学ぶ</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/license/">ライセンス契約</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/data/">指数データ取得</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/faq/">よくあるご質問</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/contact/">お問い合わせ</a></li>
+                        </ul>
+                    </nav>
+                <nav>
+                    <ul class="idx-list idx-lg-list-flat idx-list-col-2">
+                            <li class="list-item"><a class="list-link" href="/nkave/sitemap">サイトマップ</a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/archives/file/terms_of_use_jp.pdf"  onclick="_gaq.push(['_trackEvent', 'stocknames_JP', '.PDF', 'terms_of_use_jp.pdf'])" target="_blank">利用規約</a></li>
+                            <li class="list-item"><a class="list-link" href="https://www.nikkei.com/lounge/privacy/privacy.html" target="_blank">プライバシーポリシー&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                        
+                            <li class="list-item"><a class="list-link" href="https://www.nikkei.com/lounge/privacy/cookie/policy.html" target="_blank">クッキーポリシー&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                        <li class="list-item"><a class="list-link" href="https://www.nikkei.com/lounge/privacy/cookie/optout.html#nikkeipdp" target="_blank">外部送信&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                            <li class="list-item"><a class="list-link" href="/nkave/archives/file/users_guide_jp.pdf" onclick="_gaq.push(['_trackEvent', 'stocknames_JP', '.PDF', 'users_guide_jp.pdf'])" target="_blank">ユーザーズ・ガイド</a></li>
+                    </ul>
+                    <ul class="idx-list idx-lg-list-flat idx-list-col-2">
+                            <li class="list-item"><a class="list-link" href="http://www.nikkei.com/" target="_blank">日経電子版&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                            <li class="list-item"><a class="list-link" href="https://www.nikkei.co.jp/nikkeiinfo/" target="_blank">日本経済新聞社&nbsp;<i class="bi bi-box-arrow-up-right"></i></a></li>
+                    </ul>
+                </nav>
+                <p class="idx-copyright">
+                    <span class="idx-copyright-brand"><img src="/nkave/assets/cmn_logo_nikkei_01.svg" alt="Nikkei Inc."></span>
+                    <span>No reproduction without permission.</span>
+                </p>
+            </footer>
+            
+            <!--  Utility -->
+            <div class="idx-back-to-top">
+                <a class="idx-back-to-top-link" href="#"><i class="bi bi-arrow-up"></i></a>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-28645102-1']);
+      _gaq.push(['_gat._anonymizeIp']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+      
+      // bfcache対策
+      window.onpageshow = function(event) {
+        if (event.persisted) {
+          window.location.reload();
+        }
+      };
+      
+      // divlinkのホバー時にアンダーラインをつける
+      $("div.divlink").hover(function(){
+        $(this).addClass("divlink-hover");
+        $("div",this).addClass("divlink-hover");
+      },function(){
+        if($(this).hasClass("divlink-hover")){
+          $(this).removeClass("divlink-hover");
+          $("div",this).removeClass("divlink-hover");
+        }
+      });
+    </script>
+    
+  </body>
+
+</html>
