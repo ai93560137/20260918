@@ -105,12 +105,16 @@ def scan_futures():
     LINES.append("| 月份 | 買 | 賣 | 價差 | 結算 | OI |")
     LINES.append("|---|---:|---:|---:|---:|---:|")
     prev_se = None
-    front = None
+    front, front_live = None, False
     for i, row in enumerate(d.get('futureslist', [])[:4]):
         bd, as_, se = num(row['bd']), num(row['as']), num(row['se'])
         spr = as_ - bd if bd and as_ else None
         if front is None:
-            front = se
+            # 近月價 = 買賣中間價（實時）；無雙邊報價才退回昨結（並標明）
+            if bd and as_:
+                front, front_live = (bd + as_) / 2, True
+            else:
+                front = se
         LINES.append(f"| {row['con']} | {row['bd']} | {row['as']} | "
                      f"{spr if spr is not None else '—'} | {row['se']} | {row['oi']} |")
         # 只警報前兩個月：遠月（尤其夜盤）報價稀疏，價差寬是流動性現象不是機會
@@ -120,7 +124,7 @@ def scan_futures():
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
         prev_se = se
     if front:
-        DIGEST.append(f"HSI 期貨(近月) {front:,.0f}")
+        DIGEST.append(f"HSI 期貨(近月{'中間價' if front_live else '昨結'}) {front:,.0f}")
     return front
 
 
@@ -202,7 +206,7 @@ def scan_us():
         q = json.load(open(fq))
         es = q.get('ES=F', {})
         if es:
-            DIGEST.append(f"ES 期貨 {es['price']:,.0f}（MES 同價，"
+            DIGEST.append(f"ES 期貨 {es['price']:,.0f}（延遲價，MES 同價，"
                           f"進場參考檔 {round(es['price'] / 5) * 5:,.0f}）")
     if (date.today() - asof).days > 5:
         ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
