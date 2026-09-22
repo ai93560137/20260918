@@ -27,7 +27,7 @@ jobs:
         run: pip install -r scripts/requirements.txt
 
       - name: Fetch HK + US universes
-        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt
+        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt
 
       - name: Commit and push if changed
         run: |
