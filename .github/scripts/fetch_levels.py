@@ -26,6 +26,13 @@ S.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 result = {'fetched_at': datetime.now(HKT).strftime('%Y-%m-%d %H:%M HKT')}
 
 
+def num(x):
+    try:
+        return float(str(x).replace(',', ''))
+    except (TypeError, ValueError):
+        return None
+
+
 def hsi_levels():
     page = S.get('https://www.hkex.com.hk/Market-Data/Futures-and-Options-Prices/'
                  'Equity-Index/Hang-Seng-Index-Futures-and-Options?sc_lang=en', timeout=30).text
@@ -105,13 +112,34 @@ def hsi_levels():
                     break
             except Exception as e:
                 log.append(f'intraday int={i} span={sp}: {e}')
-    # 深夜補位第二招:HKEX 日內 feed 只留當前(夜)時段,昨日日市已不可得——
-    # 改用 Yahoo HSI=F 日線,先用已知 HKEX 日子交叉驗證(容差 40 點)才敢收缺行。
+    # 深夜補位第二招:期貨報價 widget 的當日高低。深夜 lastupd 停在日市收市
+    # (實測 00:49 仍見 '22/09/2026 16:29'),日期等於 cutoff 時其 hi/lo 即當日高低。
+    if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
+        try:
+            q0 = call('getderivativesfutures', ats='HSI', type=0)
+            qd0 = (q0 or {}).get('data', {})
+            row0 = (qd0.get('futureslist') or [{}])[0]
+            log.append('futureslist[0] raw: ' + json.dumps(
+                {k: row0.get(k) for k in sorted(row0)}, ensure_ascii=False)[:700])
+            hi_q, lo_q = num(row0.get('hi')), num(row0.get('lo'))
+            lu = str(qd0.get('lastupd', ''))
+            m = re.match(r'(\d{2})/(\d{2})/(\d{4})', lu)
+            lu_d = datetime(int(m.group(3)), int(m.group(2)), int(m.group(1))).date() if m else None
+            if lu_d == cutoff and hi_q and lo_q and 15000 < lo_q <= hi_q < 40000:
+                days.append((cutoff, hi_q, lo_q))
+                agg_note = '(當日取自報價高低)'
+                log.append(f'quote hi/lo accepted {cutoff}: h={hi_q:.0f} l={lo_q:.0f}')
+            else:
+                log.append(f'quote hi/lo rejected: lastupd={lu!r} hi={hi_q} lo={lo_q}')
+        except Exception as e:
+            log.append(f'quote hi/lo fail: {e}')
+    # 第三招:Yahoo HSI=F 日線,先用已知 HKEX 日子交叉驗證(容差 40 點)才敢收缺行。
     if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
         try:
             import yfinance as yf
             df = yf.download('HSI=F', period='10d', interval='1d',
                              progress=False, auto_adjust=False)
+            log.append(f'yahoo HSI=F df rows={len(df)}')
             if hasattr(df.columns, 'levels'):
                 df.columns = df.columns.get_level_values(0)
             ymap = {}
