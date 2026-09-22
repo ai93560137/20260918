@@ -25,14 +25,21 @@ ALERTS, LINES, DIGEST = [], [], []
 FIRST_ATM = {}   # 最近月 ATM（scan_options 填入，delta 參考用）
 
 
-def straddle_delta(F, K, iv_pct, days):
-    """賣出跨式的組合 delta（Black-76，每組）= −(2·N(d1)−1)。"""
-    if not (F and K and iv_pct and days > 0):
-        return None
+def _nd1(F, K, iv_pct, days):
     s, t = iv_pct / 100, days / 365
     d1 = (math.log(F / K) + 0.5 * s * s * t) / (s * math.sqrt(t))
-    nd1 = 0.5 * (1 + math.erf(d1 / math.sqrt(2)))
-    return -(2 * nd1 - 1)
+    return 0.5 * (1 + math.erf(d1 / math.sqrt(2)))
+
+
+def straddle_delta(F, K, iv_pct, days, piv_pct=None):
+    """賣出跨式的組合 delta（Black-76，每組）= −(N(d1_call)+N(d1_put)−1)。
+    piv_pct 給出時 call/put 各用自己的 IV（與券商鏈上 delta 對齊）；
+    否則兩腿同用 iv_pct，即 −(2·N(d1)−1)。"""
+    if not (F and K and iv_pct and days > 0):
+        return None
+    nc = _nd1(F, K, iv_pct, days)
+    np_ = _nd1(F, K, piv_pct, days) if piv_pct else nc
+    return -(nc + np_ - 1)
 
 
 def delta_report(front, hsi_expiry):
@@ -50,7 +57,8 @@ def delta_report(front, hsi_expiry):
     else:
         K = None
     if K and FIRST_ATM:
-        d = straddle_delta(front, K, FIRST_ATM['iv'], (exp - today).days)
+        d = straddle_delta(front, K, FIRST_ATM.get('civ') or FIRST_ATM['iv'],
+                           (exp - today).days, FIRST_ATM.get('piv'))
         if d is not None:
             act = f" → 對沖 {abs(d * qty):.0f} 手" if abs(d * qty) > 0.5 else "（無動作）"
             DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}")
@@ -160,7 +168,7 @@ def scan_options(hv, front=None):
             K, civ, piv = min(ivs, key=lambda x: abs(x[1] - x[2]))
         atm = (civ + piv) / 2
         if not FIRST_ATM:
-            FIRST_ATM.update(mon=mon, K=K, iv=atm)
+            FIRST_ATM.update(mon=mon, K=K, iv=atm, civ=civ, piv=piv)
         LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
         if hv:
             prem = atm - hv
