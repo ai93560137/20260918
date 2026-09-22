@@ -76,7 +76,7 @@ jobs:
       - name: Data quality check
         continue-on-error: true
         timeout-minutes: 25
-        run: python3 scripts/check_equities_quality.py --market ${{ steps.m.outputs.market }} ${{ steps.m.outputs.names }}
+        run: python3 scripts/check_equities_quality.py --market ${{ steps.m.outputs.market }} --fetch-missing-names ${{ steps.m.outputs.names }}
 
       - name: Commit and push if changed
         env:

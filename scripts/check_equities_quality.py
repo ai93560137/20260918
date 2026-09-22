@@ -50,7 +50,7 @@ STOP = {"inc", "incorporated", "corp", "corporation", "co", "company", "ltd", "l
         "holdings", "holding", "group", "common", "stock", "shares", "share", "class", "ordinary",
         "a", "b", "c", "de", "new", "sa", "nv", "ag", "se", "lp", "llc", "trust", "reit",
         "depositary", "american", "ads", "adr", "each", "representing", "one", "par", "value",
-        "kabushiki", "kaisha", "kk"}
+        "kabushiki", "kaisha", "kk", "subordinate", "voting", "beneficial", "interest", "of"}
 
 
 def norm_name(s: str) -> str:
@@ -91,7 +91,9 @@ def fetch_yf_info(tickers: list[str], budget_s: float) -> dict[str, dict]:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--market", choices=["us", "jp"], required=True)
-    ap.add_argument("--fetch-names", action="store_true")
+    ap.add_argument("--fetch-names", action="store_true", help="全部輪流重抓 yfinance 名字/行業（週一）")
+    ap.add_argument("--fetch-missing-names", action="store_true",
+                    help="只補還沒有名字/行業的代碼（每天；歷史成分股也要行業，輪動研究才分得了組）")
     ap.add_argument("--names-budget-min", type=float, default=20)
     ap.add_argument("--today", type=date.fromisoformat, default=None)
     args = ap.parse_args()
@@ -190,10 +192,12 @@ def main() -> None:
     # --- yfinance 公司名/行業 ---
     names_path = base / "_names.json"
     names = json.loads(names_path.read_text(encoding="utf-8")) if names_path.exists() else {}
-    if args.fetch_names:
-        # 優先抓從沒抓過的，其餘輪流（每次時間有限）
-        todo = sorted((t for t in current if md.has_v2(t)),
-                      key=lambda t: (t in names, names.get(t, {}).get("checked", "")))
+    if args.fetch_names or args.fetch_missing_names:
+        # 有數據的全部代碼（含歷史成分股）；優先現任、從沒抓過的，其餘按上次檢查日輪流（每次時間有限）
+        pool = [t for t in loaded if t != bench]
+        if not args.fetch_names:
+            pool = [t for t in pool if not names.get(t, {}).get("sector")]
+        todo = sorted(pool, key=lambda t: (t in names, t not in current, names.get(t, {}).get("checked", "")))
         fetched = fetch_yf_info(todo, args.names_budget_min * 60)
         for t, info in fetched.items():
             rec = names.setdefault(t, {"name": info["name"], "history": [{"date": today.isoformat(), "name": info["name"]}]})
