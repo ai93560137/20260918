@@ -1,5 +1,5 @@
 {
- "fetched_at": "2026-09-23 00:36 HKT",
+ "fetched_at": "2026-09-23 00:37 HKT",
  "hsi": {
   "h1": 25057,
   "l1": 24613,
@@ -32,7 +32,7 @@
    "2026-09-18"
   ],
   "quote": {
-   "px": 4363.7,
+   "px": 4364.1,
    "kind": "小時收盤",
    "asof": "09-23 00:00 HKT"
   },
@@ -44,12 +44,12 @@
   "raw 2026-09-17 00:00 h=24718.0 l=24330.0",
   "raw 2026-09-18 00:00 h=24868.0 l=24561.0",
   "raw 2026-09-21 00:00 h=25057.0 l=24613.0",
-  "intraday int=4 span=1: 212 rows, 0 in window",
-  "intraday int=4 span=2: 85 rows, 0 in window",
-  "intraday int=5 span=2: 85 rows, 0 in window",
-  "intraday int=3 span=2: 85 rows, 0 in window",
-  "intraday int=5 span=3: 28 rows, 0 in window",
-  "intraday int=6 span=3: 28 rows, 0 in window",
+  "intraday int=4 span=1: 213 rows, 0 in window [09-22 17:16..09-23 00:20]",
+  "intraday int=4 span=2: 85 rows, 0 in window [09-22 17:15..09-23 00:15]",
+  "intraday int=5 span=2: 85 rows, 0 in window [09-22 17:15..09-23 00:15]",
+  "intraday int=3 span=2: 85 rows, 0 in window [09-22 17:15..09-23 00:15]",
+  "intraday int=5 span=3: 28 rows, 0 in window [09-22 17:15..09-23 00:00]",
+  "intraday int=6 span=3: 28 rows, 0 in window [09-22 17:15..09-23 00:00]",
   "hsi quote: {'px': 25062, 'kind': '中間價', 'asof': '22/09/2026 16:29'}",
   "hsi: OK ['2026-09-21', '2026-09-18', '2026-09-17']",
   "mgc: OK ['2026-09-22', '2026-09-21', '2026-09-18']"
