@@ -56,6 +56,7 @@
 | ☠️ | 八陣圖直接套個股 | 四個結構性衝突（見下節）|
 | ☠️ | 港股動量輪動 on 手選8檔「現在知名大市值股」池（0700/9988/3690/1810等） | 總報酬離譜到不可信（+3244% vs 基準+226%，t=3.85，參數平原也通過）——股票池本身帶後見之明的最壞版倖存者偏差，機制本身沒問題，數字作廢，見 MOMENTUM_HK_BACKTEST.md |
 | ☠️ | 同上，換成「現有恒指全部成分股」76檔重測 | 數字更誇張（+12201%~+33588%，最大回撤惡化到-48.4%），不是修正——**「現在還在指數裡」本身就是倖存者篩選**，池子越寬只是接住越多後見之明贏家；不管手選還是現有成分股表，不是 point-in-time 歷史成分股（含當時已剔除/下市公司）就不能信，見 MOMENTUM_HK_BACKTEST.md |
+| 🔍 | 同上，改用 point-in-time 市值前N大近似（raw Close x 當時流通股數，`--cap-top-n`） | 數字砍回合理區間（+310%~+1399% vs 基準+90~226%，t=1.75~2.79，大部分過2.0），比前兩輪可信很多，但 cap_top_n 本身不是平原、候選池仍限於現存76檔倖存者（下市/破產公司測不到）——有希望未證實，見 MOMENTUM_HK_BACKTEST.md 第三輪 |
 
 ## 三、股票市場研究的特別守則
 
@@ -96,7 +97,7 @@
 | `ZGL_BACKTEST.md` | ZGL 死刑判決書 |
 | `journal/RULES.md` | 每日對帳、滑價證偽、雪球資金管理規則 |
 | `BACKTEST.md` | 更早的 v12 回測教訓（樣本長度、樣本內外）|
-| `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
+| `scripts/fetch_stock_data.py` + `.github/workflows/fetch_stock_data.yml` | 港股/美股日線數據 + 流通股數歷史自動抓取（yfinance，GitHub Actions 排程 commit 進 `data/stocks/`）——此 session 環境網路白名單擋掉所有財經 API，故改由 Actions runner 抓、經 GitHub 落地 |
 | `data/stocks/` | 股票/指數日線數據（格式見 `data/stocks/README.md`，與根目錄 MT5 M1 期貨數據分開）|
 | `stock_momentum_backtest.py` | 港股動量輪動回測原型（月頻、絕對動量濾網、次日開盤成交、換手才收費）|
 | `MOMENTUM_HK_BACKTEST.md` | 動量輪動實驗記錄——含倖存者偏差教訓（手選股票池作弊）|

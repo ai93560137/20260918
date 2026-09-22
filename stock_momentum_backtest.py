@@ -4,9 +4,14 @@
 屬於 RESEARCH_HANDBOOK.md 第三節「適合股票的策略形態」候選之一：
 低頻（月頻）、只做多、按組合分散。
 
-**這是機制原型，不是可判決的結論**：`scripts/universe_hk.txt` 目前只有
-8 檔起手名單，不是嚴謹的 point-in-time 成分股表，存在倖存者偏差
-（手冊第三節第4條）；正式判決前需要換成官方歷史成分股名單並重跑。
+**這是機制原型，不是可判決的結論**：手選8檔和「現有」HSI成分股76檔
+兩輪都測過，結果都離譜到不可信（見 MOMENTUM_HK_BACKTEST.md）——不管
+股票池是手選還是官方現有名單，只要不是 point-in-time 歷史成分股就
+不能信（手冊第三節第4條）。`--cap-top-n` 是退而求其次的近似：每期
+只在候選池裡「當時市值前N大」的子集選動量，至少修正「不管當時大小、
+只要現在有名就能被選」的問題，但候選池本身仍限於我們已經有數據的
+76 檔倖存者，測不到當時存在、後來下市/破產的公司，偏差沒有完全消除，
+只是比整池排名收斂一些。
 
 方法：
 - 訊號：每月最後一個交易日，用 AdjClose 算 (lookback-skip) 個月動量，
@@ -25,6 +30,7 @@
     python3 stock_momentum_backtest.py --sweep
 """
 import argparse
+import bisect
 import csv
 import gzip
 import math
@@ -35,8 +41,9 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parent / "data" / "stocks"
 
 
-def load_series(ticker: str) -> dict[date, tuple[float, float]]:
-    """回傳 {date: (adj_open, adj_close)}。"""
+def load_series(ticker: str) -> dict[date, tuple[float, float, float]]:
+    """回傳 {date: (adj_open, adj_close, raw_close)}。raw_close 給市值排名用
+    （市值 = 當時實際股價 x 當時實際股數，不能用還原股息/拆股的 AdjClose）。"""
     path = DATA_DIR / (ticker.replace("^", "_") + ".csv.gz")
     out = {}
     with gzip.open(path, "rt", newline="") as f:
@@ -46,8 +53,32 @@ def load_series(ticker: str) -> dict[date, tuple[float, float]]:
             # yfinance 港股數據偶有 Open=0 的髒值（見 data/stocks/README.md 已知限制），
             # 退回用 AdjClose 當天的收盤價估開盤（假設無隔夜跳空，聊勝於除以零崩潰）
             adj_open = o * (ac / c) if c and o else ac
-            out[d] = (adj_open, ac)
+            out[d] = (adj_open, ac, c)
     return out
+
+
+def load_shares(ticker: str) -> list[tuple[date, int]] | None:
+    """回傳按日期排序的 [(date, shares_outstanding), ...]，抓不到就 None。
+    見 scripts/fetch_stock_data.py 的 fetch_shares_outstanding。"""
+    path = DATA_DIR / (ticker.replace("^", "_") + ".shares.csv.gz")
+    if not path.exists():
+        return None
+    out = []
+    with gzip.open(path, "rt", newline="") as f:
+        for row in csv.DictReader(f):
+            out.append((date.fromisoformat(row["Date"]), int(row["Shares"])))
+    out.sort()
+    return out or None
+
+
+def shares_asof(shares: list[tuple[date, int]], as_of: date) -> int | None:
+    """當時流通股數：找 <= as_of 的最近一筆（forward-fill）；再早都沒有就 None
+    （表示這檔股票在 as_of 當時還沒有可靠的股數資料，不該被排進市值排名）。"""
+    dates = [d for d, _ in shares]
+    i = bisect.bisect_right(dates, as_of) - 1
+    if i < 0:
+        return None
+    return shares[i][1]
 
 
 def read_pool(universe_path: Path, exclude: set[str]) -> list[str]:
@@ -79,9 +110,11 @@ def next_trading_day(calendar: list[date], after: date) -> date | None:
 
 def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
                   top_k: int, cost_bps: float, start: date | None,
-                  abs_filter: bool) -> dict:
+                  abs_filter: bool, cap_top_n: int | None = None) -> dict:
     all_tickers = pool + [benchmark]
     series = {t: load_series(t) for t in all_tickers}
+    shares = {t: load_shares(t) for t in pool} if cap_top_n else {}
+    excluded_no_cap_data = 0
 
     # 共用行事曆：用基準的交易日集合（HK 交易所同一行事曆）
     calendar = sorted(series[benchmark].keys())
@@ -110,9 +143,28 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         signal_me, entry_exec = exec_dates[i]
         _, exit_exec = exec_dates[i + 1]
 
+        # --- point-in-time 市值前 N 大過濾（近似 point-in-time 成分股表，
+        #     見 RESEARCH_HANDBOOK.md 第三節第4條：不能只用「現在還在」的名單）---
+        if cap_top_n:
+            caps = []
+            for t in pool:
+                sh = shares.get(t)
+                if sh is None or signal_me not in series[t]:
+                    continue
+                n_shares = shares_asof(sh, signal_me)
+                if n_shares is None:
+                    continue
+                raw_close = series[t][signal_me][2]
+                caps.append((raw_close * n_shares, t))
+            excluded_no_cap_data += len(pool) - len(caps)
+            caps.sort(reverse=True)
+            eligible = {t for _, t in caps[:cap_top_n]}
+        else:
+            eligible = set(pool)
+
         # --- 算動量，選籃子 ---
         scored = []
-        for t in pool:
+        for t in eligible:
             s = series[t]
             me_skip = exec_dates[i - skip][0]
             me_lb = exec_dates[i - skip - lookback][0]
@@ -179,6 +231,7 @@ def run_backtest(pool: list[str], benchmark: str, lookback: int, skip: int,
         "bench_total_return": bench_ret,
         "bench_start": b_start,
         "bench_end": b_end,
+        "avg_excluded_no_cap_data": excluded_no_cap_data / len(period_returns) if period_returns and cap_top_n else 0.0,
     }
 
 
@@ -234,6 +287,8 @@ def report(res: dict, label: str) -> None:
     print(f"最大回撤（月頻打點，會低估月中回撤）: {mdd:.1%}，回補耗時 {mdd_months} 個月")
     print(f"月報酬 t 值: {t:.2f}（t>=2 已驗證 / 1.5~2 有希望未證實 / <1.5 不看，見手冊鐵律第7條）")
     print(f"空手（無合格標的）月數: {res['cash_periods']}/{n}")
+    if res.get("avg_excluded_no_cap_data"):
+        print(f"平均每期因缺流通股數資料被排除的候選數: {res['avg_excluded_no_cap_data']:.1f}")
     print(f"累計成本拖累: {res['total_cost_paid']:.1%}（已算進總報酬）")
     print("按年拆解:")
     for y in sorted(years_map):
@@ -252,6 +307,9 @@ def main() -> None:
     ap.add_argument("--cost-bps", type=float, default=15.0, help="單邊成本 bps，預設 15bps~=港股印花稅+費用來回一半")
     ap.add_argument("--start", type=lambda s: date.fromisoformat(s), default=None)
     ap.add_argument("--no-abs-filter", action="store_true", help="關掉絕對動量濾網，動量<=0也硬選")
+    ap.add_argument("--cap-top-n", type=int, default=None,
+                     help="每期只在「當時市值前N大」候選裡選動量，近似 point-in-time 成分股表；"
+                          "需要 data/stocks/<TICKER>.shares.csv.gz（流通股數歷史）")
     ap.add_argument("--sweep", action="store_true", help="掃 lookback x top-k 鄰域，檢查手冊鐵律第4條的參數平原")
     args = ap.parse_args()
 
@@ -263,7 +321,8 @@ def main() -> None:
             for k in (2, 3, 4):
                 try:
                     res = run_backtest(pool, args.benchmark, lb, args.skip, k,
-                                        args.cost_bps, args.start, not args.no_abs_filter)
+                                        args.cost_bps, args.start, not args.no_abs_filter,
+                                        args.cap_top_n)
                 except SystemExit as e:
                     print(f"lookback={lb} top_k={k}: {e}")
                     continue
@@ -276,8 +335,11 @@ def main() -> None:
         return
 
     res = run_backtest(pool, args.benchmark, args.lookback, args.skip, args.top_k,
-                        args.cost_bps, args.start, not args.no_abs_filter)
-    report(res, f"lookback={args.lookback} skip={args.skip} top_k={args.top_k} cost={args.cost_bps}bps")
+                        args.cost_bps, args.start, not args.no_abs_filter, args.cap_top_n)
+    label = f"lookback={args.lookback} skip={args.skip} top_k={args.top_k} cost={args.cost_bps}bps"
+    if args.cap_top_n:
+        label += f" cap_top_n={args.cap_top_n}"
+    report(res, label)
 
 
 if __name__ == "__main__":
