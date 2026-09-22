@@ -125,3 +125,78 @@ ls  tradingview/data_external/quotes/           # HKEX 原始 JSON（時間戳�
 ls  tradingview/data_external/quotes_us/        # SPX 鏈快照
 cat tradingview/data_external/us_futures_quote.json  # ES/NQ 延遲價
 ```
+
+## 6. Telegram 發送方法（session → 使用者手機）
+
+沙盒無外網，session 不能直接打 Telegram API——**發送也走 Actions**。
+兩條通道都已實測跑通。
+
+### 6.1 一次性設置
+
+1. Telegram 找 **@BotFather** → `/newbot` → 得到 bot token（格式 `123456:ABC-...`）
+2. **使用者必須先給 bot 發一條訊息**（按 START）——bot 不能主動開聊，
+   沒這步所有發送靜默失敗
+3. 拿 chat_id：`curl "https://api.telegram.org/bot<TOKEN>/getUpdates"`，
+   讀 `result[].message.chat.id`（純數字）。**注意 getUpdates 的記錄 ~24 小時過期**，
+   拿到後立刻存起來，別依賴每次現查
+4. Repo → Settings → Secrets and variables → Actions → 建兩個 secret：
+   `TG_BOT_TOKEN`、`TG_CHAT_ID`。**Token 永遠只進 Secrets，不進代碼、不進對話**
+
+### 6.2 發送核心（一條 curl）
+
+```bash
+curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+  --data-urlencode "chat_id=${TG_CHAT_ID}" \
+  --data-urlencode "text=$(cat 訊息檔案.txt)" > /dev/null
+```
+要點：`--data-urlencode` 處理中文/換行/特殊字元；純文字即可（不用 parse_mode，
+Markdown 轉義坑多）；訊息上限 4096 字元，日報級長度安全。
+
+### 6.3 通道一：管線自動訊息（fetch-quotes.yml 內建步驟）
+
+掃描器每次跑完寫兩個檔：`alert.txt`（僅有警報時存在）、`digest.txt`（每次都寫）。
+workflow 的 telegram 步驟按優先級發：
+
+```yaml
+- name: telegram notify
+  env:
+    TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+    TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+    WANT_DIGEST: ${{ inputs.digest || 'true' }}   # dispatch 可帶 digest=false 靜默跑
+  run: |
+    MSG=""
+    if [ -s tradingview/data_external/alert.txt ]; then
+      MSG=tradingview/data_external/alert.txt          # 有警報發警報
+    elif [ "$WANT_DIGEST" != "false" ] && [ -s tradingview/data_external/digest.txt ]; then
+      MSG=tradingview/data_external/digest.txt         # 否則發日報
+    fi
+    if [ -n "$MSG" ] && [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+      curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        --data-urlencode "chat_id=${TG_CHAT_ID}" \
+        --data-urlencode "text=$(cat $MSG)" > /dev/null && echo "telegram sent: $MSG"
+    else
+      echo "nothing to send or no token - skip"
+    fi
+```
+`digest=false` 的用途：session 做驗證性/中途刷新時不騷擾使用者，警報仍照發。
+
+### 6.4 通道二：任意訊息（send-telegram.yml，session 隨時可用）
+
+Session 想發任何一條訊息（對沖指令、臨時提醒、月報）：
+
+```bash
+echo "🔔 訊息內容" > .github/tg_outbox.txt
+git add .github/tg_outbox.txt && git commit -m "notify: ..." && git push
+```
+`send-telegram.yml` 監聽 `on.push.paths: ['.github/tg_outbox.txt']`，push 即發。
+這就是「session 無外網卻能主動推手機」的完整答案：**寫檔 → push → workflow 發**。
+
+### 6.5 踩過的坑
+
+- **字串替換上 YAML 要驗證**：第一版 telegram 步驟因 Edit 錨點不存在而靜默沒加上,
+  push 前 `grep` 確認片段真的在檔案裡
+- getUpdates 自動偵測 chat_id 只在使用者剛發過訊息時有效（24h 窗）→ 固定存
+  `TG_CHAT_ID` secret,別依賴自動偵測
+- Actions 日誌會自動遮罩 secrets（顯示 ***），但 echo 整條 URL 仍是壞習慣,別做
+- 每次 push tg_outbox.txt 都是一條新訊息——同一內容重複 push 會重複發,
+  發送用 commit 訊息區分意圖（`notify: ...`）
