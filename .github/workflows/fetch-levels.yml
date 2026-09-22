@@ -1,0 +1,32 @@
+name: fetch-levels
+# 八陣圖指令台的每日通道數據(前 3 日高低)。觸發:push .github/levels-trigger
+# 或手動 dispatch。產出 tradingview/data_external/levels.json 並 commit 回本分支。
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/levels-trigger', '.github/scripts/fetch_levels.py', '.github/workflows/fetch-levels.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: fetch levels
+        run: |
+          pip install -q requests yfinance pandas
+          python .github/scripts/fetch_levels.py
+      - name: commit
+        run: |
+          git config user.name 'levels-bot'
+          git config user.email 'actions@github.com'
+          git add tradingview/data_external/levels.json
+          git commit -m "data: levels.json $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push
