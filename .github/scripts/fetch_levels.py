@@ -173,18 +173,33 @@ def hsi_levels():
     out['dates'] = [str(d) for d, _, _ in days]
     out['agg'] = agg_note
 
-    # 延遲報價:近月買賣中間價;無雙邊報價退回昨結並標明(昨結≠現價!)
+    # 延遲報價:近月買賣中間價。type=0 日市 / type=1 夜市(T+1),日市報價在
+    # 夜市時段會凍結在 16:29——兩邊都拿,取 lastupd 較新且有雙邊報價的一邊。
     try:
-        q = call('getderivativesfutures', ats='HSI', type=0)
-        qd = (q or {}).get('data', {})
-        row = (qd.get('futureslist') or [{}])[0]
-        bd, as_, se = num(row.get('bd')), num(row.get('as')), num(row.get('se'))
-        if bd and as_:
-            out['quote'] = {'px': round((bd + as_) / 2), 'kind': '中間價',
-                            'asof': qd.get('lastupd', '')}
-        elif se:
-            out['quote'] = {'px': round(se), 'kind': '昨結(非現價)',
-                            'asof': qd.get('lastupd', '')}
+        best = None
+        for typ, tag in ((0, '日市'), (1, '夜市')):
+            try:
+                q = call('getderivativesfutures', ats='HSI', type=typ)
+                qd = (q or {}).get('data', {})
+                row = (qd.get('futureslist') or [{}])[0]
+                bd, as_, se = num(row.get('bd')), num(row.get('as')), num(row.get('se'))
+                lu = str(qd.get('lastupd', ''))
+                m = re.match(r'(\d{2})/(\d{2})/(\d{4})\s+(\d{2}):(\d{2})', lu)
+                ts = datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)),
+                              int(m.group(4)), int(m.group(5))) if m else None
+                log.append(f'quote {tag}: bd={bd} as={as_} se={se} lastupd={lu!r}')
+                cand = None
+                if bd and as_ and 15000 < bd <= as_ < 40000:
+                    cand = {'px': round((bd + as_) / 2), 'kind': f'中間價({tag})', 'asof': lu}
+                elif typ == 0 and se:
+                    cand = {'px': round(se), 'kind': '昨結(非現價)', 'asof': lu}
+                if cand and (best is None or (ts and best[0] and ts > best[0])
+                             or (ts and not best[0])):
+                    best = (ts, cand)
+            except Exception as e:
+                log.append(f'quote type={typ} fail: {e}')
+        if best:
+            out['quote'] = best[1]
         log.append(f"hsi quote: {out.get('quote')}")
     except Exception as e:
         log.append(f'hsi quote fail: {e}')
