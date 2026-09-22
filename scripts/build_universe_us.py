@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """建美股指數 point-in-time 成分股區間檔 universes/<index>/membership.csv（ticker,start,end）
-與抓取清單 universes/us/fetch_list.txt。
+（抓取清單由 scripts/build_fetch_lists.py 產生）。
 
 S&P 500：fja05680/sp500（MIT，Clenow《Trading Evolved》原始名單 1996–2019 + 作者依
 Wikipedia 逐次更新）的逐日名單，轉成每檔的在榜區間。
@@ -18,8 +18,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 UNIV = ROOT / "universes"
-FETCH_SINCE = date(2008, 1, 1)     # 抓取清單：2008 後仍在榜的（輪動檢測 2010 起，多留暖身）
-BENCHMARKS = ["SPY", "QQQ", "DIA", "^GSPC", "^NDX", "^DJI", "RSP"]
 
 
 def yahoo(t: str) -> str:
@@ -96,22 +94,7 @@ def main() -> None:
     if args.sp500_csv:
         write_membership("sp500", build_sp500(args.sp500_csv, renames), "fja05680/sp500")
 
-    # 抓取清單：所有美股指數 membership 的聯集（2008 後仍在榜）+ 基準
-    tickers = set()
-    for idx in ("sp500", "ndx", "djia"):
-        p = UNIV / idx / "membership.csv"
-        if not p.exists():
-            continue
-        with open(p, newline="", encoding="utf-8") as f:
-            for r in csv.DictReader(f):
-                if not r["end"] or date.fromisoformat(r["end"]) >= FETCH_SINCE:
-                    tickers.add(r["ticker"])
-    out = UNIV / "us" / "fetch_list.txt"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("# 自動產生（scripts/build_universe_us.py）：美股指數 PIT 成分股聯集 + 基準\n"
-                   + "\n".join(BENCHMARKS + sorted(tickers - set(BENCHMARKS))) + "\n", encoding="utf-8")
-    print(f"抓取清單 {len(tickers)} 檔 + {len(BENCHMARKS)} 基準 -> {out}")
-
+    print("成分股檔更新後跑 scripts/build_fetch_lists.py 重建抓取清單")
 
 if __name__ == "__main__":
     main()
