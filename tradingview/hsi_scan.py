@@ -261,8 +261,10 @@ if __name__ == '__main__':
     hsi_expiry = roll_check()
     scan_us()
     delta_report(front, hsi_expiry)
-    stamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-    head = [f"# HSI 掃描報告  {stamp}\n"]
+    from datetime import timedelta, timezone
+    hkt = datetime.now(timezone.utc) + timedelta(hours=8)
+    stamp = hkt.strftime('%Y-%m-%d %H:%M')
+    head = [f"# HSI 掃描報告  {stamp} HKT\n"]
     head.append("**⚠ 警報：**\n" + '\n'.join(f"- {a}" for a in ALERTS) + "\n" if ALERTS
                 else "**無警報**（無套利條件全過、溢價正常、未到滾倉窗口）\n")
     report = '\n'.join(head + LINES)
@@ -271,13 +273,13 @@ if __name__ == '__main__':
     alert_path = os.path.join(BASE, 'alert.txt')
     if ALERTS:
         with open(alert_path, 'w') as fp:
-            fp.write('⚠ 雲垂陣警報 ' + stamp + '\n' + '\n'.join(f'- {a}' for a in ALERTS))
+            fp.write('⚠️ 八陣圖 · 雲垂陣 警報\n🕐 ' + stamp + ' HKT\n'
+                     + '\n'.join(f'- {a}' for a in ALERTS))
     elif os.path.exists(alert_path):
         os.remove(alert_path)
     # 每日摘要（無論有無警報都寫，workflow 每日發 Telegram）
-    from datetime import timedelta, timezone
-    hkt = datetime.now(timezone.utc) + timedelta(hours=8)
-    dig = [f"☁️ 雲垂陣日報 {hkt.strftime('%m-%d %H:%M')} HKT"]
+    dig = ["☁️ 八陣圖 · 雲垂陣 · 恒指 HSI + 標普 MES",
+           f"🕐 {stamp} HKT"]
     if ALERTS:
         dig += [f'⚠ {a}' for a in ALERTS]
     else:
