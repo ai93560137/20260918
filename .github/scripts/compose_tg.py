@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""從 levels.json 組出八陣圖指令台的 Telegram 每日訊息,寫入 .github/tg_outbox.txt。
+
+用法: python3 .github/scripts/compose_tg.py [--out PATH]
+session 每日排程(12:00 / 16:45 HKT)更新完通道後執行,commit+push 即經
+send-telegram.yml 發送。
+"""
+import argparse
+import json
+import sys
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--out', default='.github/tg_outbox.txt')
+ap.add_argument('--src', default='tradingview/data_external/levels.json')
+a = ap.parse_args()
+
+d = json.load(open(a.src, encoding='utf-8'))
+h = d.get('hsi') or {}
+if 'error' in h or h.get('h1') is None:
+    print(f"levels.json 無可用 hsi 數據: {h.get('error', 'h1 missing')}", file=sys.stderr)
+    sys.exit(1)
+
+hs = [h['h1'], h['h2'], h['h3']]
+ls = [h['l1'], h['l2'], h['l3']]
+dates = [s[5:].replace('-', '-') for s in h['dates']]        # YYYY-MM-DD → MM-DD
+up, up_d = max(zip(hs, dates))
+lo, lo_d = min(zip(ls, dates))
+f = lambda v: f'{v:,.0f}'
+
+q = h.get('quote') or {}
+px = q.get('px')
+quote_line = (f"💰 現價:{f(px)}({q.get('kind', '')} · {q.get('asof', '')},延遲≥15分鐘)\n"
+              f"↕️ 距上軌 {f(up - px)} 點 · 距下軌 {f(px - lo)} 點\n") if px else ''
+
+msg = f"""🎯 八陣圖指令台 · 大恒指 HSI
+🕐 {d.get('fetched_at', '')}
+
+📊 前 3 個完整交易日
+📅 {dates[0]}:🔼 {f(hs[0])} ／ 🔽 {f(ls[0])}
+📅 {dates[1]}:🔼 {f(hs[1])} ／ 🔽 {f(ls[1])}
+📅 {dates[2]}:🔼 {f(hs[2])} ／ 🔽 {f(ls[2])}
+
+📈 通道上軌:{f(up)}({up_d})
+📉 通道下軌:{f(lo)}({lo_d})
+{quote_line}
+🧭 今日指令(每次 1 張)
+🈳 空手:
+ ① 價 ≥ {f(up)} → 市價買入 1 張(開多倉)
+ ② 價 ≤ {f(lo)} → 市價賣出 1 張(開空倉)
+🐂 持 1 張多倉:
+ ▶ 價 ≤ {f(lo)} → 市價賣出 2 張(平多＋反手做空)
+🐻 持 1 張空倉:
+ ▶ 價 ≥ {f(up)} → 市價買入 2 張(平空＋反手做多)
+
+⚠️ 成交以券商實時價為準
+🌐 指令台:https://claude.ai/artifact/Qovghgidoao32zWai3gffX
+"""
+with open(a.out, 'w', encoding='utf-8') as fp:
+    fp.write(msg)
+print(msg)
