@@ -56,9 +56,10 @@ class Universe:
             if self.cfg.get("live") and live.exists():
                 self.live = _read_list(live)
         else:
+            renames = load_renames(self.cfg["market"])
             with open(ROOT / self.cfg["file"], newline="", encoding="utf-8") as f:
                 for r in csv.DictReader(f):
-                    self.intervals.append((r["ticker"], date.fromisoformat(r["start"]),
+                    self.intervals.append((renames.get(r["ticker"], r["ticker"]), date.fromisoformat(r["start"]),
                                            date.fromisoformat(r["end"]) if r["end"] else None))
 
     def all_tickers(self, since: date | None = None) -> list[str]:
@@ -114,6 +115,17 @@ class Universe:
         """指數公司自己的分類（當年快照）；只有恒指有。{ticker: {year: sector}}"""
         p = self.cfg.get("official_sectors")
         return json.loads((ROOT / p).read_text(encoding="utf-8")) if p else {}
+
+
+def load_renames(market: str) -> dict[str, str]:
+    """universes/<market>/renames.csv（old,new,note）：改代碼的公司，Yahoo 只用新代碼保存整段
+    歷史——成分股檔裡的舊代碼載入時改掛新代碼。對應錯了也不會混進別家價格：新代碼的價格
+    仍要通過防代碼重用檢查（起點不晚於入選日）。"""
+    p = ROOT / "universes" / market / "renames.csv"
+    if not p.exists():
+        return {}
+    with open(p, newline="", encoding="utf-8") as f:
+        return {r["old"]: r["new"] for r in csv.DictReader(f)}
 
 
 def _read_list(p: Path) -> set[str]:

@@ -7,9 +7,8 @@ Wikipedia 逐次更新）的逐日名單，轉成每檔的在榜區間。
     git clone --depth 1 https://github.com/fja05680/sp500 /tmp/sp500
     python3 scripts/build_universe_us.py --sp500-csv "/tmp/sp500/S&P 500 Historical Components & Changes (Updated).csv"
 
-代碼轉 Yahoo 格式（BRK.B -> BRK-B）；改代碼的公司（FB -> META：Yahoo 只用新代碼保留
-整段歷史）用 universes/us/renames.csv（old,new,note）對照，舊代碼的區間改掛新代碼、
-與新代碼的區間相接就合併。
+代碼轉 Yahoo 格式（BRK.B -> BRK-B）；成分股檔保留當時代碼，改代碼對照
+（universes/us/renames.csv）在 universe.py 載入時統一套用（S&P 500/Nasdaq-100/道指共用）。
 """
 import argparse
 import csv
@@ -89,7 +88,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sp500-csv", type=Path)
     args = ap.parse_args()
-    renames = load_renames()
+    renames: dict[str, str] = {}
 
     if args.sp500_csv:
         write_membership("sp500", build_sp500(args.sp500_csv, renames), "fja05680/sp500")

@@ -44,7 +44,8 @@ def read_list(paths: list[Path]) -> list[str]:
 def fmt(x) -> str:
     if x is None or x != x:  # NaN
         return ""
-    s = f"{float(x):.4f}".rstrip("0").rstrip(".")
+    # 低價（拆股還原後的早年價格常只有幾分錢）多留位數，否則重算 AdjClose 的相對誤差會放大
+    s = f"{float(x):.{6 if abs(float(x)) < 10 else 4}f}".rstrip("0").rstrip(".")
     return s if s not in ("", "-0") else "0"
 
 
