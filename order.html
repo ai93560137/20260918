@@ -521,7 +521,8 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
   // ---- 頁頂導覽：連結指向使用者填的 Cloud Function 網址 ----
   var PAGE_LINKS = [["welcome", "🏠 首頁"], ["info", "📄 投資人日誌"], ["gates_app", "🎛️ 關卡開關"],
                     ["order_app", "🧾 送單參數"], ["jinnang_sheet", "🗒️ 錦囊執行單"],
-                    ["jinnang_tracker", "✅ 錦囊九十筆"], ["dashboard", "⚙️ 控制台"]];
+                    ["jinnang_tracker", "✅ 錦囊九十筆"],
+                    ["https://claude.ai/artifact/Qovghgidoao32zWai3gffX", "⚔️ 八陣圖指令台 ↗"], ["dashboard", "⚙️ 控制台"]];
 
   function navBase() {
     var raw = el("endpoint").value.trim();
@@ -540,6 +541,18 @@ th { color:var(--muted); font-weight:600; background:#f8f9fa; }
     host.textContent = "";
     PAGE_LINKS.forEach(function (item) {
       var view = item[0], label = item[1];
+      // [R91] 完整網址 = 站外的頁（八陣圖指令台在 claude.ai 上）。它不需要 base，
+      //       也不會是「目前這一頁」，所以要在那兩個判斷之前先接走。
+      if (view.indexOf("http") === 0) {
+        var out = document.createElement("a");
+        out.className = "nav-link";
+        out.textContent = label;
+        out.href = view;
+        out.target = "_blank";
+        out.rel = "noopener noreferrer";
+        host.appendChild(out);
+        return;
+      }
       if (view === CURRENT_VIEW) { host.appendChild(node("span", "nav-link nav-current", label)); return; }
       if (!base) {
         var dead = node("span", "nav-link nav-disabled", label);

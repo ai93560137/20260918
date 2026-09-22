@@ -317,15 +317,30 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
     for m in must:
         check(f"{f} 含「{m}」", m in txt)
 
-print("\n=== 10d. 七頁導覽列一致 ===")
+print("\n=== 10d. 八頁導覽列一致（含一個站外連結）===")
 VIEWS = [v for v, _ in main.PAGE_LINKS]
-check(f"main.py 的 PAGE_LINKS 有 7 頁（{len(VIEWS)}）", len(VIEWS) == 7, VIEWS)
+check(f"main.py 的 PAGE_LINKS 有 8 頁（{len(VIEWS)}）", len(VIEWS) == 8, VIEWS)
+EXTERNAL = [v for v in VIEWS if v.startswith("http")]
+check("其中剛好一個是站外連結（八陣圖）", len(EXTERNAL) == 1, EXTERNAL)
+check("站外連結就是 BAZHENTU_URL", EXTERNAL == [main.BAZHENTU_URL], EXTERNAL)
 for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html"):
     txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
     self_view = f[:-5] if f.startswith("jinnang") else f[:-5] + "_app"
     # 當前頁不該連到自己（下面另有一項專門檢查），所以從必須出現的清單裡排除
     miss = [v for v in VIEWS if v != self_view and v not in txt]
-    check(f"{f} 連到其餘 6 頁", not miss, f"缺 {miss}")
+    check(f"{f} 連到其餘 7 頁", not miss, f"缺 {miss}")
+    check(f"{f} 的站外連結有 target=_blank", 'target="_blank"' in txt or "target: '_blank'" in txt
+          or 'out.target = "_blank"' in txt, f)
+
+print("\n=== 10e. page_nav 對站外連結的處理（R91）===")
+nav = main.page_nav("welcome")
+check("站外連結用完整網址，不是 ?view=", f"href='{main.BAZHENTU_URL}'" in nav, nav[:400])
+check("沒有把網址接在 ?view= 後面", "?view=https" not in nav, nav[:400])
+check("另開分頁", "target='_blank'" in nav and "noopener" in nav, nav[:400])
+check("站內連結照舊", "href='?view=jinnang_tracker'" in nav, nav[:400])
+nav_bz = main.page_nav(main.BAZHENTU_URL)
+check("站外連結永遠是連結，不會變成 nav-current",
+      f"href='{main.BAZHENTU_URL}'" in nav_bz, nav_bz[:400])
 for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html", "錦囊九十筆")):
     txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
     check(f"{f} 自己那格標成 current",
@@ -333,10 +348,13 @@ for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html
           or f'class="nav-link nav-current" aria-current="page">🗒️ {cur}<' in txt)
     check(f"{f} 沒有連到自己", f'href="?view={f[:-5]}"' not in txt)
 # 兩頁實際 serve 出來要含全部連結
+# [R91] 站外連結是完整網址，不會長成 ?view=...，所以兩種要分開比。
+def _linked(html, view):
+    return (view in html) if view.startswith("http") else (("?view=" + view) in html)
 for v in ("jinnang_sheet", "jinnang_tracker"):
     html = body_of(get("?view=" + v))
-    miss = [x for x in VIEWS if x != v and ("?view=" + x) not in html]
-    check(f"?view={v} 實際輸出含其餘 6 個連結", not miss, f"缺 {miss}")
+    miss = [x for x in VIEWS if x != v and not _linked(html, x)]
+    check(f"?view={v} 實際輸出含其餘 7 個連結", not miss, f"缺 {miss}")
 
 # 七頁的導覽列要用同一組 class（統一外觀）
 mainsrc = io.open("/home/user/20260918/main.py", encoding="utf-8").read()

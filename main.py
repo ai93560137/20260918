@@ -2815,6 +2815,11 @@ CHART_SCRIPT = """
 
 
 # 每一頁頁頂都有同一組連結，current 那一項不做連結
+# [R91] 八陣圖指令台（大恒指人手掛單）住在 claude.ai 的 artifact 上，不在這裡託管 ——
+#       它用 window.claude.use("db") 自動載入每日高低點，那個執行環境只有 artifact 有。
+#       導覽列上開一個連出去的口就好。
+BAZHENTU_URL = "https://claude.ai/artifact/Qovghgidoao32zWai3gffX"
+
 PAGE_LINKS = [
     ("welcome", "🏠 首頁"),
     ("info", "📄 投資人日誌"),
@@ -2822,16 +2827,22 @@ PAGE_LINKS = [
     ("order_app", "🧾 送單參數"),
     ("jinnang_sheet", "🗒️ 錦囊執行單"),
     ("jinnang_tracker", "✅ 錦囊九十筆"),
+    (BAZHENTU_URL, "⚔️ 八陣圖指令台"),
     ("dashboard", "⚙️ 控制台"),
 ]
 
 
 def page_nav(current, extra=()):
-    items = "".join(
-        f"<span class='nav-link nav-current'>{label}</span>" if view == current
-        else f"<a class='nav-link' href='?view={view}'>{label}</a>"
-        for view, label in PAGE_LINKS
-    )
+    def one(view, label):
+        # [R91] 完整網址 = 站外的頁，直接連出去並另開分頁；其餘照舊用 ?view=。
+        if view.startswith("http"):
+            return (f"<a class='nav-link' href='{esc(view)}' target='_blank' "
+                    f"rel='noopener noreferrer'>{label} ↗</a>")
+        if view == current:
+            return f"<span class='nav-link nav-current'>{label}</span>"
+        return f"<a class='nav-link' href='?view={view}'>{label}</a>"
+
+    items = "".join(one(view, label) for view, label in PAGE_LINKS)
     items += "".join(f"<a class='nav-link' href='{href}'>{esc(label)}</a>" for href, label in extra)
     return f"<nav class='nav-links' aria-label='頁面導覽'>{items}</nav>"
 
