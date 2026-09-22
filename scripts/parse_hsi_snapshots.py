@@ -85,11 +85,26 @@ def main() -> None:
     if not snapshots:
         raise SystemExit(f"找不到快照檔案，先跑 research_hsi_history.py（在 {SRC_DIR}）")
 
+    corrections_path = OUT_DIR / "corrections.json"
+    corrections = json.loads(corrections_path.read_text(encoding="utf-8")) if corrections_path.exists() else {}
+
     summary = []
     names: dict[str, dict[str, str]] = {}  # {"0005.HK": {"2010": "HSBC Holdings plc", ...}}
     for path in snapshots:
         year = path.stem.rsplit("_", 1)[-1]
         rows = parse_snapshot(path)
+        # 套用人工更正（Wikipedia 當年版本本身寫錯的代碼，見 corrections.json）
+        fixed = []
+        for code, name in rows:
+            fix = corrections.get(year, {}).get(f"{code}.HK")
+            if fix is None:
+                fixed.append((code, name))
+            elif fix["to"]:
+                fixed.append((fix["to"][:-3], name))
+                print(f"{year}: 更正 {code}.HK -> {fix['to']}（{name}）")
+            else:
+                print(f"{year}: 刪除 {code}.HK（{name}）")
+        rows = fixed
         out_path = OUT_DIR / f"hsi_{year}.txt"
         out_path.write_text(
             f"# 恒生指數 {year} 年中前後的成分股快照（近似 point-in-time，\n"
