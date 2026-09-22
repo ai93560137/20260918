@@ -110,9 +110,11 @@ def scan_futures():
         return None
     d = json.load(open(f))['data']
     LINES.append(f"## 期貨（{d.get('lastupd')}）\n")
-    # 夜盤快照的價差不警報（遠月夜盤無人報價是流動性現象，不是機會/風險）
-    m = re.search(r'\s(\d{1,2}):\d{2}', str(d.get('lastupd', '')))
-    day_session = m and 9 <= int(m.group(1)) < 17
+    # 價差警報只看盤中快照 09:30–16:00：夜盤此端點凍結在 16:29 收市快照，
+    # 收市瞬間做市商撤單價差本來就寬（實測 81 點），屬殘影非實況
+    m = re.search(r'\s(\d{1,2}):(\d{2})', str(d.get('lastupd', '')))
+    mins = int(m.group(1)) * 60 + int(m.group(2)) if m else -1
+    day_session = 9 * 60 + 30 <= mins <= 16 * 60
     LINES.append("| 月份 | 買 | 賣 | 價差 | 結算 | OI |")
     LINES.append("|---|---:|---:|---:|---:|---:|")
     prev_se = None
