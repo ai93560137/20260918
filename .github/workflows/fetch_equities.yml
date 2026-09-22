@@ -18,6 +18,10 @@ on:
         description: '順便抓流通股數歷史（慢；排程只在週一抓）'
         required: false
         default: 'false'
+      digest:
+        description: '手動觸發時是否發 Telegram 日報（有 🔴 警報一律照發）'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -102,18 +106,28 @@ jobs:
           done
           echo "push 重試 5 次仍失敗" && exit 1
 
-      # Telegram 通道一：只有 🔴 才發（日報由港股管線負責，避免洗版）
-      - name: Telegram alert
+      # Telegram 通道一（同港股 fetch_stock_data.yml）：有 🔴 發警報（任何觸發都發）；
+      # 否則排程輪發日報、手動觸發預設靜默（digest=true 才發）。curl --fail：拒收時這步會紅
+      - name: Telegram notify（警報優先，日報兜底）
         if: always()
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           M: ${{ steps.m.outputs.market }}
+          EVENT: ${{ github.event_name }}
+          WANT_DIGEST: ${{ inputs.digest }}
         run: |
-          F="data/equities/$M/qc_alert.txt"
-          if [ ! -s "$F" ]; then echo "no alert"; exit 0; fi
-          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then echo "::warning::TG secrets 沒設"; exit 0; fi
+          MSG=""
+          if [ -s "data/equities/$M/qc_alert.txt" ]; then
+            MSG="data/equities/$M/qc_alert.txt"
+          elif [ "$EVENT" = "schedule" ] || [ "$WANT_DIGEST" = "true" ]; then
+            if [ -s "data/equities/$M/qc_digest.txt" ]; then MSG="data/equities/$M/qc_digest.txt"; fi
+          fi
+          if [ -z "$MSG" ]; then echo "nothing to send - skip"; exit 0; fi
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送 $MSG"; exit 0
+          fi
           curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TG_CHAT_ID}" \
-            --data-urlencode "text=$(cat "$F")" > /dev/null
-          echo "telegram sent: $F"
+            --data-urlencode "text=$(cat "$MSG")" > /dev/null
+          echo "telegram sent: $MSG"
