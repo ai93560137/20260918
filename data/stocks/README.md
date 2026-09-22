@@ -44,6 +44,13 @@ git checkout origin/claude/gifted-carson-v2tvhw -- stock_momentum_backtest.py sc
 2. `scripts/check_data_quality.py --fetch-names` 產生 **`data/stocks/QC_REPORT.md`
    （每日品質日報）**，並更新 `data/stocks/names_yf.json`（yfinance 公司名與改名歷史）。
 
+**Telegram 推送**（方法見 `claude/dazzling-curie-f3xzb8` 的 `tradingview/DATA_PIPELINE.md` 第6節）：
+- 通道一（管線內建）：有 🔴 即時發警報（`qc_alert.txt`）；否則每個交易日港股收市那輪
+  （09:00 UTC）發日報（`qc_digest.txt`）；手動觸發預設靜默，dispatch 帶 `digest=true` 才發
+- 通道二（任意訊息）：寫 `.github/tg_outbox_research.txt` + push，`send-telegram-research.yml` 發送。
+  **不要用** `.github/tg_outbox.txt`——那是八陣圖交易指令的通道，共用會衝突/重發
+- 基準 2800 超過 6 天沒新數據 → 🔴 `pipeline_stale`（主來源抓取壞了）
+
 日報分三級：🔴 嚴重（會污染回測，先處理）、🟡 注意、✅ 已確認
 （`scripts/qc_acks.json`，人工核對過的項目，附理由）。逐根價格檢查只對近 30 天
 每天警告，更早的彙總在報告最後的「歷史已知」表。**用這批數據回測前先看日報的 🔴。**

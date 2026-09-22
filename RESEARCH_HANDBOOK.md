@@ -113,7 +113,7 @@
 | `MOMENTUM_HK_BACKTEST.md` | 動量輪動四輪實驗記錄——倖存者偏差一層層剝掉、edge 從 +3244% 蒸發到 +190% 的完整教訓 |
 | `scripts/pointintime/hsi_<year>.txt` + `hsi_names.json` + `hsi_sectors.json` | **港股 point-in-time 宇宙**：2010-2025 逐年恒指成分股（Wikipedia 修訂歷史解析，非官方但驗證過）與當年公司名、當年行業（恒指四分類）；來源腳本 `scripts/research_hsi_history.py`、`scripts/parse_hsi_snapshots.py`。之後任何港股選股回測都用這個，不要用「現在的名單」|
 | `scripts/fetch_hkex_equity.py` + `data/stocks_hkex/` | 第二收市數據源：**港交所官方每日報價表**（Daily Quotations 靜態檔，全市場代碼/官方簡稱/收市價），每日快照供收市價與名字交叉驗證；首次比對 105/106 檔與 yfinance 完全一致。Stooq 已擋自動下載，不可用 |
-| `scripts/check_data_quality.py` → `data/stocks/QC_REPORT.md` | **每日數據品質日報**（排程自動跑）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |
+| `scripts/check_data_quality.py` → `data/stocks/QC_REPORT.md` | **每日數據品質日報**（排程自動跑，🔴 即時 Telegram 警報、每交易日收市推日報；研究 session 任意推送用 `.github/tg_outbox_research.txt`，勿用八陣圖的 `tg_outbox.txt`）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |
 
 ## 五、陣名典故與命名規範（其他分支沿用）
 

@@ -6,7 +6,12 @@ on:
     - cron: '0 9 * * 1-5'
     # 05:30 HKT 次日（21:30 UTC 前一日）：美股收盤後
     - cron: '30 21 * * 1-5'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: '手動觸發時是否發 Telegram 日報（有 🔴 警報一律照發）'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -76,3 +81,32 @@ jobs:
             git commit -m "chore(data): 自動更新股票日線數據 + 品質日報 $(date -u +%Y-%m-%d)"
           done
           echo "push 重試 5 次仍失敗" && exit 1
+
+      # Telegram 通道一（方法見 claude/dazzling-curie-f3xzb8 的 tradingview/DATA_PIPELINE.md 第6節）：
+      # 有 🔴 發警報（任何觸發都發）；否則只在港股收市那輪排程發日報；手動觸發預設靜默。
+      # curl --fail：Telegram 拒收（bot 沒按 START、secret 錯）時這步會紅，不靜默失敗。
+      - name: Telegram notify（警報優先，日報兜底）
+        if: always()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          EVENT: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+          WANT_DIGEST: ${{ inputs.digest }}
+        run: |
+          MSG=""
+          if [ -s data/stocks/qc_alert.txt ]; then
+            MSG=data/stocks/qc_alert.txt
+          elif { [ "$EVENT" = "schedule" ] && [ "$CRON" = "0 9 * * 1-5" ]; } || [ "$WANT_DIGEST" = "true" ]; then
+            if [ -s data/stocks/qc_digest.txt ]; then MSG=data/stocks/qc_digest.txt; fi
+          fi
+          if [ -z "$MSG" ]; then
+            echo "nothing to send - skip"
+          elif [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送 $MSG"
+          else
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat "$MSG")" > /dev/null
+            echo "telegram sent: $MSG"
+          fi

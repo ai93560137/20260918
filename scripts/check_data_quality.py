@@ -42,6 +42,12 @@ WIKI_NAMES = ROOT / "scripts" / "pointintime" / "hsi_names.json"
 YF_NAMES = PRIMARY_DIR / "names_yf.json"
 ACKS = ROOT / "scripts" / "qc_acks.json"
 REPORT = PRIMARY_DIR / "QC_REPORT.md"
+# Telegram 通道一用的兩個純文字檔（.github/workflows/fetch_stock_data.yml 讀）：
+# 有 🔴 才寫警報檔（沒有就刪掉，避免舊警報被重發）；日報每次都寫
+TG_ALERT = PRIMARY_DIR / "qc_alert.txt"
+TG_DIGEST = PRIMARY_DIR / "qc_digest.txt"
+BENCHMARK = "2800.HK"
+PIPELINE_STALE_DAYS = 6  # 基準這麼多天沒新數據 = 抓取壞了（長假最多約 5 天休市）
 
 STALE_DAYS = 7
 RECENT_DAYS = 30
@@ -212,6 +218,15 @@ def main() -> None:
                 flag("🟡", t, "wiki_name_varies", f"最新記載「{base}」，但 " +
                      "、".join(f"{y}年「{n}」" for y, n in odd))
 
+    # --- 管線健康：基準太久沒新數據 = 主來源抓取壞了（不是個股問題）---
+    bench_last = None
+    if BENCHMARK in tickers:
+        bench_rows = load_ohlc(primary_files[tickers.index(BENCHMARK)])
+        bench_last = bench_rows[-1][0] if bench_rows else None
+        if bench_last is None or (today - bench_last).days > PIPELINE_STALE_DAYS:
+            flag("🔴", BENCHMARK, "pipeline_stale",
+                 f"基準最後一根 {bench_last}，超過 {PIPELINE_STALE_DAYS} 天沒更新——主來源抓取可能壞了")
+
     # --- point-in-time 成分股覆蓋率：每個「某年是成分股」的代碼，那年有沒有價格？---
     # 快照是年中（6/30 前後）的 Wikipedia 版本，用 6/30 當作「那年是成分股」的檢查日
     first_date = {}
@@ -318,6 +333,28 @@ def main() -> None:
 
     REPORT.write_text("\n".join(lines), encoding="utf-8")
     print(f"QC: 🔴 {len(crit)} 嚴重 / 🟡 {len(warn)} 注意 / ✅ {len(acked)} 已確認 -> {REPORT}")
+
+    # --- Telegram 純文字（不用 parse_mode；上限 4096 字，列前 10 項）---
+    hk_latest = hkex_snaps[-1][0] if hkex_snaps else None
+    xs_checked = sum(1 for t in tickers if t.endswith(".HK") and hkex_snaps and t in hkex_snaps[-1][1])
+    link = "報告：data/stocks/QC_REPORT.md（分支 claude/gifted-carson-v2tvhw）"
+    if crit:
+        lines_a = [f"🚨 港股數據品質警報 {today}", f"🔴 嚴重 {len(crit)} 項（會污染回測）：", ""]
+        for _, t, c, d in sorted(crit, key=lambda x: (x[2], x[1]))[:10]:
+            lines_a.append(f"• {t} {c}：{d[:120]}")
+        if len(crit) > 10:
+            lines_a.append(f"…另有 {len(crit) - 10} 項")
+        lines_a += ["", link]
+        TG_ALERT.write_text("\n".join(lines_a) + "\n", encoding="utf-8")
+    elif TG_ALERT.exists():
+        TG_ALERT.unlink()
+    TG_DIGEST.write_text("\n".join([
+        f"📊 港股數據日報 {today}",
+        f"✅ yfinance {len(tickers)} 檔，基準 2800 最新 {bench_last}",
+        f"🏛 港交所官方快照 {len(hkex_snaps)} 份，最新 {hk_latest or '無'}（{xs_checked} 檔可交叉比對）",
+        f"🔴 {len(crit)} ｜ 🟡 {len(warn)} ｜ ✅ 已確認 {len(acked)}",
+        link,
+    ]) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
