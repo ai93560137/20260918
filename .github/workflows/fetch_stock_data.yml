@@ -11,9 +11,16 @@ on:
 permissions:
   contents: write
 
+# 同一時間只跑一個抓取（手動觸發撞上排程時排隊，不重疊）——兩輪同時整檔覆寫
+# 同一批 .csv.gz，後推的那輪會在二進位檔上衝突而整輪失敗（2026-09-22 實際發生）
+concurrency:
+  group: fetch-stock-data
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,20 +52,27 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # 只 add 存在的目錄——對不存在的路徑 git add 會報錯，整個 commit 步驟就掉了
-          for d in data/stocks data/stocks_hkex; do
-            [ -d "$d" ] && git add "$d"
-          done
+          # 只 add 存在的數據目錄；--ignore-removal 不會把別輪新增、本輪沒有的快照當成刪除
+          add_data() { for d in data/stocks data/stocks_hkex; do [ -d "$d" ] && git add --ignore-removal "$d"; done; }
+          add_data
           if git diff --cached --quiet; then
             echo "No data changes"
             exit 0
           fi
           git commit -m "chore(data): 自動更新股票日線數據 + 品質日報 $(date -u +%Y-%m-%d)"
-          # 這條分支有別的 session 同時在推（對帳/Telegram），推失敗就把自己這個
-          # 剛做的 commit rebase 到最新遠端再推——只動 bot 自己未推出的 commit
+          # 推送被拒（別的 session/別輪先推了）：本輪數據是整檔重抓的最新版，
+          # 直接把 HEAD 指到最新遠端、保留工作區的新數據重新 commit——不 rebase
+          # 二進位檔（會衝突），也不會動到別人改的非數據檔（只 add 數據目錄）
           for i in 1 2 3 4 5; do
             git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
             sleep $((i * 5))
-            git pull --rebase origin claude/gifted-carson-v2tvhw
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_data
+            if git diff --cached --quiet; then
+              echo "遠端已有相同數據"
+              exit 0
+            fi
+            git commit -m "chore(data): 自動更新股票日線數據 + 品質日報 $(date -u +%Y-%m-%d)"
           done
           echo "push 重試 5 次仍失敗" && exit 1
