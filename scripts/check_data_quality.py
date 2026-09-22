@@ -54,6 +54,8 @@ NAME_SIM_MIN = 0.5
 NAME_STOPWORDS = {
     "limited", "ltd", "co", "company", "corp", "corporation", "inc", "plc", "the",
     "holdings", "holding", "group", "grop", "a", "h", "class", "shares", "share",
+    # 港交所簡稱的股份類別後綴：-W 同股不同權、-SW 第二上市+同股不同權、-R 人民幣櫃台
+    "w", "sw", "r",
 }
 
 
@@ -127,7 +129,7 @@ def main() -> None:
         for p in sorted(HKEX_DIR.glob("quotes_*.json"))[-XSRC_WINDOW:]:
             try:
                 snap = json.loads(p.read_text(encoding="utf-8"))
-                hkex_snaps.append((date.fromisoformat(snap["trade_date_guess"]), snap["quotes"]))
+                hkex_snaps.append((date.fromisoformat(snap.get("trade_date") or snap["trade_date_guess"]), snap["quotes"]))
             except (ValueError, KeyError):
                 continue
 

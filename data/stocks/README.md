@@ -36,9 +36,11 @@ git checkout origin/claude/gifted-carson-v2tvhw -- stock_momentum_backtest.py sc
 
 每次排程抓完 yfinance 後，同一個 workflow 接著：
 
-1. `scripts/fetch_hkex_equity.py` 抓第二來源**港交所官方行情**（HKEX 網站 widget API，免註冊）→
-   `data/stocks_hkex/quotes_<交易日>.json`（每檔官方英文簡稱 + 收市價；只有當天，歷史從此開始
-   每天累積；抓不到只記錄原因）。原本用 Stooq，但 Stooq 已改成擋自動下載（回 HTML 不回 CSV），已移除。
+1. `scripts/fetch_hkex_equity.py` 抓第二來源**港交所官方每日報價表**（Daily Quotations，
+   `hkex.com.hk/eng/stat/smstat/dayquot/d<YYMMDD>e.htm`，全市場每檔官方英文簡稱 + 前收/收市/高低/成交）→
+   `data/stocks_hkex/quotes_<交易日>.json`（只留我們 universe 的代碼，幾 KB/天）。每次往回補最近 10 天
+   沒存過的交易日。首次驗證：2026-09-22 106 檔可比，105 檔與 yfinance 收市價完全一致、其餘 <1%。
+   Stooq 已擋自動下載、港交所 widget 端點參數未解，都不用。
 2. `scripts/check_data_quality.py --fetch-names` 產生 **`data/stocks/QC_REPORT.md`
    （每日品質日報）**，並更新 `data/stocks/names_yf.json`（yfinance 公司名與改名歷史）。
 
