@@ -16,6 +16,22 @@ data/stocks/<TICKER>.csv.gz     # yfinance 代碼，^ 換成 _（如 ^HSI -> _HS
   算總回報基準（RESEARCH_HANDBOOK.md 第三節第7條）一律用這欄，不要用 `Close`。
 - 每次排程執行對每個 ticker 重抓全部歷史並整檔覆寫，不做增量合併。
 
+## 其他分支怎麼用這批數據
+
+數據只住在 `claude/gifted-carson-v2tvhw` 這條分支（排程每天 commit 進來）。
+其他分支不需要合併整條分支，只把需要的目錄拉過來：
+
+```bash
+git fetch origin claude/gifted-carson-v2tvhw
+git checkout origin/claude/gifted-carson-v2tvhw -- data/stocks/ data/stocks_stooq/ scripts/pointintime/
+# 回測引擎/抓取腳本也要的話：
+git checkout origin/claude/gifted-carson-v2tvhw -- stock_momentum_backtest.py scripts/
+```
+
+拉之前先看 `data/stocks/QC_REPORT.md` 的 🔴。港股選股回測請用
+`scripts/pointintime/`（逐年真成分股），不要用 `scripts/pool_hsi_full.txt`
+（「現在的名單」，只剩歷史對照用途）。
+
 ## 第二來源與每日品質檢查
 
 每次排程抓完 yfinance 後，同一個 workflow 接著：
