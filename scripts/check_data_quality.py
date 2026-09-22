@@ -92,8 +92,10 @@ def name_similarity(a: str, b: str) -> float:
     return max(jaccard, SequenceMatcher(None, na, nb).ratio())
 
 
-def fetch_yf_names(tickers: list[str], budget_s: float = 360) -> dict[str, str]:
-    """有時間上限：抓名字很慢時寧可少抓幾檔，也要讓日報照常寫出來。"""
+def fetch_yf_names(tickers: list[str], budget_s: float = 360) -> dict[str, dict]:
+    """有時間上限：抓名字很慢時寧可少抓幾檔，也要讓日報照常寫出來。
+    回傳 {ticker: {"name", "sector", "industry"}}——行業分類同一個 get_info() 順便拿，
+    給版塊輪動研究用（scripts/sector_rotation.py），不用多打 API。"""
     import yfinance as yf
     out = {}
     started = time.monotonic()
@@ -106,9 +108,9 @@ def fetch_yf_names(tickers: list[str], budget_s: float = 360) -> dict[str, str]:
             name = info.get("longName") or info.get("shortName") or ""
         except Exception as exc:
             print(f"WARN {t}: 抓不到公司名（{exc}）", file=sys.stderr)
-            name = ""
+            info, name = {}, ""
         if name:
-            out[t] = name
+            out[t] = {"name": name, "sector": info.get("sector") or "", "industry": info.get("industry") or ""}
         time.sleep(0.3)
     return out
 
@@ -252,8 +254,13 @@ def main() -> None:
     if args.fetch_names:
         hk_tickers = [t for t in tickers if t.endswith(".HK")]
         fetched = fetch_yf_names(hk_tickers)
-        for t, name in fetched.items():
+        for t, info in fetched.items():
+            name = info["name"]
             rec = yf_names.setdefault(t, {"name": name, "history": [{"date": today.isoformat(), "name": name}]})
+            # 行業分類只記最新值（不告警）；yfinance 給空字串時保留舊值
+            for k in ("sector", "industry"):
+                if info.get(k):
+                    rec[k] = info[k]
             if rec["name"] != name:
                 # 只有正規化後（忽略大小寫/標點/Ltd 類字）仍不同才算真的換名；純外觀變動
                 # （如 "of" -> "Of"，2026-09-22 誤報過一次）只默默更新紀錄
