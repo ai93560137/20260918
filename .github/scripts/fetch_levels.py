@@ -105,6 +105,36 @@ def hsi_levels():
                     break
             except Exception as e:
                 log.append(f'intraday int={i} span={sp}: {e}')
+    # 深夜補位第二招:HKEX 日內 feed 只留當前(夜)時段,昨日日市已不可得——
+    # 改用 Yahoo HSI=F 日線,先用已知 HKEX 日子交叉驗證(容差 40 點)才敢收缺行。
+    if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
+        try:
+            import yfinance as yf
+            df = yf.download('HSI=F', period='10d', interval='1d',
+                             progress=False, auto_adjust=False)
+            if hasattr(df.columns, 'levels'):
+                df.columns = df.columns.get_level_values(0)
+            ymap = {}
+            for idx, r in df.iterrows():
+                h, l = float(r['High']), float(r['Low'])
+                if 15000 < l <= h < 40000:
+                    ymap[idx.date()] = (h, l)
+                    log.append(f'yahoo HSI=F {idx.date()} h={h:.0f} l={l:.0f}')
+            known = {d: (h, l) for d, h, l in days}
+            overlap = [d for d in ymap if d in known]
+            bad = [d for d in overlap
+                   if abs(ymap[d][0] - known[d][0]) > 40 or abs(ymap[d][1] - known[d][1]) > 40]
+            if cutoff in ymap and len(overlap) >= 2 and not bad:
+                h, l = ymap[cutoff]
+                days.append((cutoff, h, l))
+                agg_note = '(當日補自 Yahoo HSI=F)'
+                log.append(f'yahoo fallback accepted {cutoff}: h={h:.0f} l={l:.0f} '
+                           f'(validated on {len(overlap)} overlap days)')
+            else:
+                log.append(f'yahoo fallback rejected: cutoff_in={cutoff in ymap} '
+                           f'overlap={len(overlap)} bad={[str(d) for d in bad]}')
+        except Exception as e:
+            log.append(f'yahoo fallback fail: {e}')
     days = days[-3:]
     if len(days) < 3:
         raise RuntimeError(f'only {len(days)} completed days')
