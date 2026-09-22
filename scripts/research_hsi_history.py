@@ -48,11 +48,18 @@ def fetch_revision_at(rvstart: str) -> dict | None:
         "format": "json",
         "formatversion": 2,
     }
-    try:
-        r = requests.get(API, params=params, headers=HEADERS, timeout=30)
-    except Exception as exc:
-        print(f"{rvstart}: ERROR {exc}")
-        return None
+    r = None
+    for attempt in range(5):
+        try:
+            r = requests.get(API, params=params, headers=HEADERS, timeout=30)
+        except Exception as exc:
+            print(f"{rvstart}: ERROR {exc}")
+            return None
+        if r.status_code != 429:
+            break
+        wait = 5 * (attempt + 1)
+        print(f"{rvstart}: HTTP 429，等 {wait}s 重試（第 {attempt + 1} 次）")
+        time.sleep(wait)
     if r.status_code != 200:
         print(f"{rvstart}: HTTP {r.status_code}")
         return None
@@ -68,16 +75,19 @@ def fetch_revision_at(rvstart: str) -> dict | None:
 def main() -> None:
     OUT_DIR.mkdir(exist_ok=True)
     for target in SNAPSHOT_DATES:
+        year = target[:4]
+        out_path = OUT_DIR / f"hsi_wikipedia_snapshot_{year}.txt"
+        if out_path.exists():
+            print(f"{target}: 已有檔案，略過")
+            continue
         rev = fetch_revision_at(target)
         if rev is None:
             continue
-        year = target[:4]
-        out_path = OUT_DIR / f"hsi_wikipedia_snapshot_{year}.txt"
         out_path.write_text(rev["wikitext"], encoding="utf-8")
         has_table = "constituents" in rev["wikitext"] or "SEHK|" in rev["wikitext"]
         print(f"{target} -> 實際版本時間 {rev['actual_timestamp']}, "
               f"長度 {len(rev['wikitext'])}, 看起來有成分股表: {has_table}")
-        time.sleep(1)
+        time.sleep(3)
 
     print("done, files in", OUT_DIR.resolve())
 
