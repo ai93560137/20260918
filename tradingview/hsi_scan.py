@@ -110,6 +110,9 @@ def scan_futures():
         return None
     d = json.load(open(f))['data']
     LINES.append(f"## 期貨（{d.get('lastupd')}）\n")
+    # 夜盤快照的價差不警報（遠月夜盤無人報價是流動性現象，不是機會/風險）
+    m = re.search(r'\s(\d{1,2}):\d{2}', str(d.get('lastupd', '')))
+    day_session = m and 9 <= int(m.group(1)) < 17
     LINES.append("| 月份 | 買 | 賣 | 價差 | 結算 | OI |")
     LINES.append("|---|---:|---:|---:|---:|---:|")
     prev_se = None
@@ -125,8 +128,8 @@ def scan_futures():
                 front = se
         LINES.append(f"| {row['con']} | {row['bd']} | {row['as']} | "
                      f"{spr if spr is not None else '—'} | {row['se']} | {row['oi']} |")
-        # 只警報前兩個月：遠月（尤其夜盤）報價稀疏，價差寬是流動性現象不是機會
-        if spr is not None and spr > 30 and i < 2:
+        # 只警報前兩個月 + 僅日盤快照：遠月/夜盤報價稀疏，價差寬是流動性現象
+        if spr is not None and spr > 30 and i < 2 and day_session:
             ALERTS.append(f"期貨 {row['con']} 價差 {spr:.0f} 點（異常寬）")
         if prev_se and se and se < prev_se - 60:
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
