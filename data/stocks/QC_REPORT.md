@@ -2,13 +2,15 @@
 
 由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）7 份（最新 2026-09-22），公司名紀錄 106 檔。
 
-**🔴 嚴重 0 項 ｜ 🟡 注意 19 項 ｜ ✅ 已確認 19 項**
+**🔴 嚴重 1 項 ｜ 🟡 注意 19 項 ｜ ✅ 已確認 19 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
 ## 🔴 嚴重（會污染回測，先處理）
 
-（無）
+| 代碼 | 檢查 | 說明 |
+|---|---|---|
+| 2800.HK | yf_name_changed | 上次「Tracker Fund of Hong Kong」→ 今天「Tracker Fund Of Hong Kong」（改名或代碼被重用） |
 
 ## 🟡 注意
 
