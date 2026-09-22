@@ -13,6 +13,7 @@
 - 2010-2022：按 sub-index 分段的條列格式 `*0005 [[HSBC Holdings plc]]`
 - 2023 起：`{{SEHK|N}}` 模板的 sortable wikitable
 """
+import json
 import re
 from pathlib import Path
 
@@ -21,28 +22,60 @@ OUT_DIR = Path(__file__).resolve().parent / "pointintime"
 
 BULLET_RE = re.compile(r"^\*(\d{1,5})\s+(.+?)\s*$", re.MULTILINE)
 SEHK_RE = re.compile(r"\{\{SEHK\|(\d{1,5})\}\}")
+LINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
+REF_RE = re.compile(r"<ref[^>]*>.*?</ref>|<ref[^>]*/>", re.DOTALL)
 
 
-def parse_bullet_format(text: str) -> list[str]:
-    return [m.group(1).zfill(4) for m in BULLET_RE.finditer(text)]
+def clean_wiki_name(raw: str) -> str:
+    """`[[Bank of China (Hong Kong)|BOC Hong Kong (Holdings) Ltd]]` -> 顯示文字；
+    去掉 <ref>、表格前綴 `|`、多餘空白。"""
+    s = REF_RE.sub("", raw).strip().lstrip("|").strip()
+    s = LINK_RE.sub(lambda m: m.group(2) or m.group(1), s)
+    return re.sub(r"\s+", " ", s.replace("'''", "").replace("''", "")).strip()
 
 
-def parse_sehk_format(text: str) -> list[str]:
-    return [m.group(1).zfill(4) for m in SEHK_RE.finditer(text)]
+def parse_bullet_format(text: str) -> list[tuple[str, str]]:
+    return [(m.group(1).zfill(4), clean_wiki_name(m.group(2))) for m in BULLET_RE.finditer(text)]
 
 
-def parse_snapshot(path: Path) -> list[str]:
+def parse_sehk_format(text: str) -> list[tuple[str, str]]:
+    """表格列：`|{{SEHK|5}}` 下一個 `|` 開頭的儲存格是公司名；
+    也容忍同一行 `||` 分隔的寫法。"""
+    lines = text.splitlines()
+    out = []
+    for i, line in enumerate(lines):
+        m = SEHK_RE.search(line)
+        if not m:
+            continue
+        code = m.group(1).zfill(4)
+        name = ""
+        if "||" in line:
+            cells = line.split("||")
+            if len(cells) > 1:
+                name = clean_wiki_name(cells[1])
+        else:
+            for nxt in lines[i + 1:i + 4]:
+                if nxt.startswith("|-") or nxt.startswith("|}"):
+                    break
+                if nxt.startswith("|"):
+                    name = clean_wiki_name(nxt)
+                    break
+        out.append((code, name))
+    return out
+
+
+def parse_snapshot(path: Path) -> list[tuple[str, str]]:
     text = path.read_text(encoding="utf-8")
-    codes = parse_sehk_format(text)
-    if not codes:
-        codes = parse_bullet_format(text)
+    rows = parse_sehk_format(text)
+    if not rows:
+        rows = parse_bullet_format(text)
     # 保留原順序但去重（sortable table 有時同一代碼因排序輔助行重複出現）
     seen = set()
     out = []
-    for c in codes:
-        if c not in seen:
-            seen.add(c)
-            out.append(c)
+    for code, name in rows:
+        if code not in seen:
+            seen.add(code)
+            out.append((code, name))
     return out
 
 
@@ -53,21 +86,31 @@ def main() -> None:
         raise SystemExit(f"找不到快照檔案，先跑 research_hsi_history.py（在 {SRC_DIR}）")
 
     summary = []
+    names: dict[str, dict[str, str]] = {}  # {"0005.HK": {"2010": "HSBC Holdings plc", ...}}
     for path in snapshots:
         year = path.stem.rsplit("_", 1)[-1]
-        codes = parse_snapshot(path)
+        rows = parse_snapshot(path)
         out_path = OUT_DIR / f"hsi_{year}.txt"
         out_path.write_text(
             f"# 恒生指數 {year} 年中前後的成分股快照（近似 point-in-time，\n"
             f"# 來源：Wikipedia「Hang Seng Index」條目該時間點的修訂版本，\n"
             f"# 非官方權威來源，見 scripts/parse_hsi_snapshots.py 說明）\n"
-            + "\n".join(f"{c}.HK" for c in codes) + "\n",
+            + "\n".join(f"{c}.HK" for c, _ in rows) + "\n",
             encoding="utf-8",
         )
-        summary.append((year, len(codes)))
-        print(f"{year}: {len(codes)} 檔 -> {out_path}")
+        for code, name in rows:
+            names.setdefault(f"{code}.HK", {})[year] = name
+        summary.append((year, len(rows)))
+        print(f"{year}: {len(rows)} 檔 -> {out_path}")
 
-    print("\n年度成分股數量:", summary)
+    # 名字對照表給每日資料品質檢查用（scripts/check_data_quality.py）：
+    # 港交所代碼會在下市後被重新分配給別家公司，同一代碼在不同年代可能是
+    # 完全不同的公司——價格歷史會被靜默拼接，必須靠名字比對抓出來。
+    names_path = OUT_DIR / "hsi_names.json"
+    names_path.write_text(json.dumps(names, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                          encoding="utf-8")
+    print(f"\n名字對照表: {len(names)} 檔 -> {names_path}")
+    print("年度成分股數量:", summary)
 
 
 if __name__ == "__main__":
