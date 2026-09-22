@@ -271,13 +271,13 @@ if __name__ == '__main__':
     alert_path = os.path.join(BASE, 'alert.txt')
     if ALERTS:
         with open(alert_path, 'w') as fp:
-            fp.write('⚠ 警報 ' + stamp + '\n' + '\n'.join(f'- {a}' for a in ALERTS))
+            fp.write('⚠ 雲垂陣警報 ' + stamp + '\n' + '\n'.join(f'- {a}' for a in ALERTS))
     elif os.path.exists(alert_path):
         os.remove(alert_path)
     # 每日摘要（無論有無警報都寫，workflow 每日發 Telegram）
     from datetime import timedelta, timezone
     hkt = datetime.now(timezone.utc) + timedelta(hours=8)
-    dig = [f"📊 HSI+MES 日報 {hkt.strftime('%m-%d %H:%M')} HKT"]
+    dig = [f"☁️ 雲垂陣日報 {hkt.strftime('%m-%d %H:%M')} HKT"]
     if ALERTS:
         dig += [f'⚠ {a}' for a in ALERTS]
     else:
