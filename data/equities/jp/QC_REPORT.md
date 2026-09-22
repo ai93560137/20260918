@@ -2,7 +2,7 @@
 
 市場最新交易日 2026-09-18；現任成分股 225 檔（n225）；有數據 264 檔；第二來源快照 1 份、比對 225 筆收市價。
 
-**🔴 0 嚴重 / 🟡 6 注意 / ✅ 0 已確認**
+**🔴 0 嚴重 / 🟡 0 注意 / ✅ 6 已確認**
 
 
 ## 🔴 嚴重
@@ -11,12 +11,16 @@
 
 ## 🟡 注意
 
-- `8303.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 100.00%
-- `8766.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 476.95%
-- `2914.T` name_mismatch：Yahoo!ファイナンス「ＪＴ」vs JPX「日本たばこ産業」
-- `6301.T` name_mismatch：Yahoo!ファイナンス「コマツ」vs JPX「小松製作所」
-- `6701.T` name_mismatch：Yahoo!ファイナンス「ＮＥＣ」vs JPX「日本電気」
-- `7267.T` name_mismatch：Yahoo!ファイナンス「ホンダ」vs JPX「本田技研工業」
+- 無
+
+## ✅ 已確認
+
+- `8303.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 100.00%（Yahoo 股息數據錯誤（每股 2 億日圓）；重算時自動忽略 >= 股價的股息，錯的是 yfinance 的 Adj Close，不是我們的（2026-09-22 查））
+- `8766.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 476.95%（Yahoo 2006 年前數據被重複還原（Millea 單位株 500 分割 + 2022 年 1 拆 3，2000 年價格變成 0.546 圓）；日經225 研究 2008 起、回看最早到 2007，不受影響（2026-09-22 查））
+- `2914.T` name_mismatch：Yahoo!ファイナンス「ＪＴ」vs JPX「日本たばこ産業」（通稱 vs 正式名：ＪＴ = 日本たばこ産業）
+- `6301.T` name_mismatch：Yahoo!ファイナンス「コマツ」vs JPX「小松製作所」（通稱 vs 正式名：コマツ = 小松製作所）
+- `6701.T` name_mismatch：Yahoo!ファイナンス「ＮＥＣ」vs JPX「日本電気」（通稱 vs 正式名：ＮＥＣ = 日本電気）
+- `7267.T` name_mismatch：Yahoo!ファイナンス「ホンダ」vs JPX「本田技研工業」（通稱 vs 正式名：ホンダ = 本田技研工業）
 
 ## 📉 倖存者偏差洞（歷史成分股抓不到價格的比例，每年 6/30）
 

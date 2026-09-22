@@ -11,6 +11,18 @@
   "name": "Nissui Corporation",
   "sector": "Consumer Defensive"
  },
+ "1333.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Umios Corporation"
+   }
+  ],
+  "industry": "Packaged Foods",
+  "name": "Umios Corporation",
+  "sector": "Consumer Defensive"
+ },
  "1605.T": {
   "checked": "2026-09-22",
   "history": [
@@ -93,6 +105,18 @@
   ],
   "industry": "Engineering & Construction",
   "name": "Kajima Corporation",
+  "sector": "Industrials"
+ },
+ "1861.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Kumagai Gumi Co.,Ltd."
+   }
+  ],
+  "industry": "Engineering & Construction",
+  "name": "Kumagai Gumi Co.,Ltd.",
   "sector": "Industrials"
  },
  "1925.T": {
@@ -227,6 +251,30 @@
   "name": "Kirin Holdings Company, Limited",
   "sector": "Consumer Defensive"
  },
+ "2531.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Takara Holdings Inc."
+   }
+  ],
+  "industry": "Beverages - Brewers",
+  "name": "Takara Holdings Inc.",
+  "sector": "Consumer Defensive"
+ },
+ "2602.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "The Nisshin OilliO Group,Ltd."
+   }
+  ],
+  "industry": "Packaged Foods",
+  "name": "The Nisshin OilliO Group,Ltd.",
+  "sector": "Consumer Defensive"
+ },
  "2768.T": {
   "checked": "2026-09-22",
   "history": [
@@ -333,6 +381,54 @@
   ],
   "industry": "Department Stores",
   "name": "Isetan Mitsukoshi Holdings Ltd.",
+  "sector": "Consumer Cyclical"
+ },
+ "3101.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Toyobo Co., Ltd."
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "Toyobo Co., Ltd.",
+  "sector": "Basic Materials"
+ },
+ "3103.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Unitika Ltd."
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "Unitika Ltd.",
+  "sector": "Basic Materials"
+ },
+ "3105.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nisshinbo Holdings Inc."
+   }
+  ],
+  "industry": "Conglomerates",
+  "name": "Nisshinbo Holdings Inc.",
+  "sector": "Industrials"
+ },
+ "3110.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nitto Boseki Co., Ltd."
+   }
+  ],
+  "industry": "Textile Manufacturing",
+  "name": "Nitto Boseki Co., Ltd.",
   "sector": "Consumer Cyclical"
  },
  "3289.T": {
@@ -455,6 +551,42 @@
   "name": "Oji Holdings Corporation",
   "sector": "Basic Materials"
  },
+ "3863.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nippon Paper Industries Co., Ltd."
+   }
+  ],
+  "industry": "Paper & Paper Products",
+  "name": "Nippon Paper Industries Co., Ltd.",
+  "sector": "Basic Materials"
+ },
+ "3864.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Mitsubishi Paper Mills Limited"
+   }
+  ],
+  "industry": "Paper & Paper Products",
+  "name": "Mitsubishi Paper Mills Limited",
+  "sector": "Basic Materials"
+ },
+ "3865.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Hokuetsu Corporation"
+   }
+  ],
+  "industry": "Paper & Paper Products",
+  "name": "Hokuetsu Corporation",
+  "sector": "Basic Materials"
+ },
  "4004.T": {
   "checked": "2026-09-22",
   "history": [
@@ -491,6 +623,18 @@
   "name": "Nissan Chemical Corporation",
   "sector": "Basic Materials"
  },
+ "4041.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nippon Soda Co., Ltd."
+   }
+  ],
+  "industry": "Chemicals",
+  "name": "Nippon Soda Co., Ltd.",
+  "sector": "Basic Materials"
+ },
  "4042.T": {
   "checked": "2026-09-22",
   "history": [
@@ -513,6 +657,18 @@
   ],
   "industry": "Specialty Chemicals",
   "name": "Tokuyama Corporation",
+  "sector": "Basic Materials"
+ },
+ "4045.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Toagosei Co., Ltd."
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "Toagosei Co., Ltd.",
   "sector": "Basic Materials"
  },
  "4061.T": {
@@ -585,6 +741,18 @@
   ],
   "industry": "Specialty Chemicals",
   "name": "UBE Corporation",
+  "sector": "Basic Materials"
+ },
+ "4272.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nippon Kayaku Co., Ltd."
+   }
+  ],
+  "industry": "Chemicals",
+  "name": "Nippon Kayaku Co., Ltd.",
   "sector": "Basic Materials"
  },
  "4307.T": {
@@ -743,6 +911,18 @@
   "name": "Otsuka Holdings Co., Ltd.",
   "sector": "Healthcare"
  },
+ "4631.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "DIC Corporation"
+   }
+  ],
+  "industry": "Specialty Chemicals",
+  "name": "DIC Corporation",
+  "sector": "Basic Materials"
+ },
  "4661.T": {
   "checked": "2026-09-22",
   "history": [
@@ -839,6 +1019,18 @@
   "name": "Shiseido Company, Limited",
   "sector": "Consumer Defensive"
  },
+ "5016.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "JX Advanced Metals Corporation"
+   }
+  ],
+  "industry": "Semiconductor Equipment & Materials",
+  "name": "JX Advanced Metals Corporation",
+  "sector": "Technology"
+ },
  "5019.T": {
   "checked": "2026-09-22",
   "history": [
@@ -899,6 +1091,18 @@
   "name": "AGC Inc.",
   "sector": "Industrials"
  },
+ "5202.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nippon Sheet Glass Company, Limited"
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "Nippon Sheet Glass Company, Limited",
+  "sector": "Consumer Cyclical"
+ },
  "5214.T": {
   "checked": "2026-09-22",
   "history": [
@@ -910,6 +1114,18 @@
   "industry": "Electronic Components",
   "name": "Nippon Electric Glass Co., Ltd.",
   "sector": "Technology"
+ },
+ "5232.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Sumitomo Osaka Cement Co., Ltd."
+   }
+  ],
+  "industry": "Building Materials",
+  "name": "Sumitomo Osaka Cement Co., Ltd.",
+  "sector": "Basic Materials"
  },
  "5233.T": {
   "checked": "2026-09-22",
@@ -1007,6 +1223,18 @@
   "name": "ARCHION Corporation",
   "sector": "Industrials"
  },
+ "5541.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Pacific Metals Co., Ltd."
+   }
+  ],
+  "industry": "Other Industrial Metals & Mining",
+  "name": "Pacific Metals Co., Ltd.",
+  "sector": "Basic Materials"
+ },
  "5631.T": {
   "checked": "2026-09-22",
   "history": [
@@ -1019,6 +1247,18 @@
   "name": "The Japan Steel Works, Ltd.",
   "sector": "Industrials"
  },
+ "5703.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Nippon Light Metal Holdings Company, Ltd."
+   }
+  ],
+  "industry": "Aluminum",
+  "name": "Nippon Light Metal Holdings Company, Ltd.",
+  "sector": "Basic Materials"
+ },
  "5706.T": {
   "checked": "2026-09-22",
   "history": [
@@ -1030,6 +1270,18 @@
   "industry": "Conglomerates",
   "name": "Mitsui Kinzoku Company, Limited",
   "sector": "Industrials"
+ },
+ "5707.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Toho Zinc Co., Ltd."
+   }
+  ],
+  "industry": "Other Industrial Metals & Mining",
+  "name": "Toho Zinc Co., Ltd.",
+  "sector": "Basic Materials"
  },
  "5711.T": {
   "checked": "2026-09-22",
@@ -1065,6 +1317,18 @@
   ],
   "industry": "Other Industrial Metals & Mining",
   "name": "Dowa Holdings Co., Ltd.",
+  "sector": "Basic Materials"
+ },
+ "5715.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Furukawa Co.,Ltd."
+   }
+  ],
+  "industry": "Other Industrial Metals & Mining",
+  "name": "Furukawa Co.,Ltd.",
   "sector": "Basic Materials"
  },
  "5801.T": {
@@ -1114,6 +1378,18 @@
   "industry": "Banks - Regional",
   "name": "Shizuoka Financial Group,Inc.",
   "sector": "Financial Services"
+ },
+ "5901.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Toyo Seikan Group Holdings, Ltd."
+   }
+  ],
+  "industry": "Packaging & Containers",
+  "name": "Toyo Seikan Group Holdings, Ltd.",
+  "sector": "Consumer Cyclical"
  },
  "6098.T": {
   "checked": "2026-09-22",
@@ -1247,6 +1523,18 @@
   "name": "Ebara Corporation",
   "sector": "Industrials"
  },
+ "6366.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Chiyoda Corporation"
+   }
+  ],
+  "industry": "Engineering & Construction",
+  "name": "Chiyoda Corporation",
+  "sector": "Industrials"
+ },
  "6367.T": {
   "checked": "2026-09-22",
   "history": [
@@ -1257,6 +1545,18 @@
   ],
   "industry": "Building Products & Equipment",
   "name": "Daikin Industries,Ltd.",
+  "sector": "Industrials"
+ },
+ "6465.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Hoshizaki Corporation"
+   }
+  ],
+  "industry": "Specialty Industrial Machinery",
+  "name": "Hoshizaki Corporation",
   "sector": "Industrials"
  },
  "6471.T": {
@@ -1355,6 +1655,18 @@
   "name": "YASKAWA Electric Corporation",
   "sector": "Industrials"
  },
+ "6508.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Meidensha Corporation"
+   }
+  ],
+  "industry": "Specialty Industrial Machinery",
+  "name": "Meidensha Corporation",
+  "sector": "Industrials"
+ },
  "6526.T": {
   "checked": "2026-09-22",
   "history": [
@@ -1403,6 +1715,18 @@
   "name": "OMRON Corporation",
   "sector": "Technology"
  },
+ "6674.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "GS Yuasa Corporation"
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "GS Yuasa Corporation",
+  "sector": "Consumer Cyclical"
+ },
  "6701.T": {
   "checked": "2026-09-22",
   "history": [
@@ -1425,6 +1749,18 @@
   ],
   "industry": "Information Technology Services",
   "name": "Fujitsu Limited",
+  "sector": "Technology"
+ },
+ "6703.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Oki Electric Industry Co., Ltd."
+   }
+  ],
+  "industry": "Communication Equipment",
+  "name": "Oki Electric Industry Co., Ltd.",
   "sector": "Technology"
  },
  "6723.T": {
@@ -1571,6 +1907,18 @@
   "name": "Lasertec Corporation",
   "sector": "Technology"
  },
+ "6952.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Casio Computer Co.,Ltd."
+   }
+  ],
+  "industry": "Consumer Electronics",
+  "name": "Casio Computer Co.,Ltd.",
+  "sector": "Technology"
+ },
  "6954.T": {
   "checked": "2026-09-22",
   "history": [
@@ -1642,6 +1990,18 @@
   "industry": "Specialty Chemicals",
   "name": "Nitto Denko Corporation",
   "sector": "Basic Materials"
+ },
+ "7003.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "MITSUI E&S Co., Ltd."
+   }
+  ],
+  "industry": "Aerospace & Defense",
+  "name": "MITSUI E&S Co., Ltd.",
+  "sector": "Industrials"
  },
  "7004.T": {
   "checked": "2026-09-22",
@@ -1749,6 +2109,18 @@
   ],
   "industry": "Auto Manufacturers",
   "name": "Mitsubishi Motors Corporation",
+  "sector": "Consumer Cyclical"
+ },
+ "7231.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Topy Industries, Limited"
+   }
+  ],
+  "industry": "Auto Parts",
+  "name": "Topy Industries, Limited",
   "sector": "Consumer Cyclical"
  },
  "7261.T": {
@@ -1906,6 +2278,18 @@
   "industry": "Business Equipment & Supplies",
   "name": "Ricoh Company, Ltd.",
   "sector": "Industrials"
+ },
+ "7762.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Citizen Watch Co., Ltd."
+   }
+  ],
+  "industry": "Footwear & Accessories",
+  "name": "Citizen Watch Co., Ltd.",
+  "sector": "Consumer Cyclical"
  },
  "7832.T": {
   "checked": "2026-09-22",
@@ -2099,6 +2483,18 @@
   "name": "Aeon Co., Ltd.",
   "sector": "Consumer Cyclical"
  },
+ "8303.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SBI Shinsei Bank, Limited"
+   }
+  ],
+  "industry": "Banks - Regional",
+  "name": "SBI Shinsei Bank, Limited",
+  "sector": "Financial Services"
+ },
  "8304.T": {
   "checked": "2026-09-22",
   "history": [
@@ -2231,6 +2627,18 @@
   "name": "Nomura Holdings, Inc.",
   "sector": "Financial Services"
  },
+ "8628.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Matsui Securities Co., Ltd."
+   }
+  ],
+  "industry": "Capital Markets",
+  "name": "Matsui Securities Co., Ltd.",
+  "sector": "Financial Services"
+ },
  "8630.T": {
   "checked": "2026-09-22",
   "history": [
@@ -2265,6 +2673,18 @@
   ],
   "industry": "Insurance - Property & Casualty",
   "name": "MS&AD Insurance Group Holdings, Inc.",
+  "sector": "Financial Services"
+ },
+ "8729.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Sony Financial Group Inc."
+   }
+  ],
+  "industry": "Insurance - Life",
+  "name": "Sony Financial Group Inc.",
   "sector": "Financial Services"
  },
  "8750.T": {
@@ -2325,6 +2745,18 @@
   ],
   "industry": "Real Estate - Diversified",
   "name": "Mitsubishi Estate Co., Ltd.",
+  "sector": "Real Estate"
+ },
+ "8803.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Heiwa Real Estate Co., Ltd."
+   }
+  ],
+  "industry": "Real Estate - Diversified",
+  "name": "Heiwa Real Estate Co., Ltd.",
   "sector": "Real Estate"
  },
  "8804.T": {
@@ -2530,6 +2962,30 @@
   "industry": "Airlines",
   "name": "ANA Holdings Inc.",
   "sector": "Industrials"
+ },
+ "9301.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "Mitsubishi Logistics Corporation"
+   }
+  ],
+  "industry": "Integrated Freight & Logistics",
+  "name": "Mitsubishi Logistics Corporation",
+  "sector": "Industrials"
+ },
+ "9412.T": {
+  "checked": "2026-09-22",
+  "history": [
+   {
+    "date": "2026-09-22",
+    "name": "SKY Perfect JSAT Corporation"
+   }
+  ],
+  "industry": "Broadcasting",
+  "name": "SKY Perfect JSAT Corporation",
+  "sector": "Communication Services"
  },
  "9432.T": {
   "checked": "2026-09-22",
