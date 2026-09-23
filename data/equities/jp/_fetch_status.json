@@ -180,7 +180,7 @@
   "last_fail": "2026-09-22"
  },
  "2269.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -224,7 +224,7 @@
   "shares_rows": 497
  },
  "2501.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -350,7 +350,7 @@
   "shares_rows": 348
  },
  "3086.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -416,7 +416,7 @@
   "shares_rows": 430
  },
  "3110.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -542,7 +542,7 @@
   "shares_rows": 388
  },
  "3863.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -701,7 +701,7 @@
   "shares_rows": 372
  },
  "4188.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1013,7 +1013,7 @@
   "shares_rows": 372
  },
  "5020.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1057,9 +1057,9 @@
   "shares_rows": 326
  },
  "5202.T": {
-  "adj_err_max": 1e-06,
-  "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "adj_err_max": 0.0,
+  "error": null,
+  "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
@@ -1151,7 +1151,7 @@
   "last_fail": "2026-09-22"
  },
  "5406.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1232,7 +1232,7 @@
   "shares_rows": 314
  },
  "5706.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1353,7 +1353,7 @@
   "shares_rows": 348
  },
  "6098.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1552,8 +1552,8 @@
  },
  "6501.T": {
   "adj_err_max": 1e-06,
-  "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 1,
+  "error": null,
+  "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
@@ -1656,7 +1656,7 @@
   "shares_rows": 353
  },
  "6674.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1967,7 +1967,7 @@
   "shares_rows": 405
  },
  "7012.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2148,7 +2148,7 @@
   "shares_rows": 358
  },
  "7733.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2159,7 +2159,7 @@
   "shares_rows": 372
  },
  "7735.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2427,7 +2427,7 @@
   "shares_rows": 368
  },
  "8306.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2513,7 +2513,7 @@
   "last_fail": "2026-09-22"
  },
  "8411.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2583,7 +2583,7 @@
   "shares_rows": 309
  },
  "8630.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2605,7 +2605,7 @@
   "shares_rows": 309
  },
  "8725.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2659,7 +2659,7 @@
   "shares_rows": 450
  },
  "8795.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
