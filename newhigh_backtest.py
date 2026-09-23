@@ -45,8 +45,29 @@ def consecutive(mask: np.ndarray) -> np.ndarray:
     return out
 
 
-def stock_frame(t: str) -> pd.DataFrame | None:
-    rows = md.load_ohlcv(t)
+def load_full(market: str):
+    """全市場數據（data_full/<market>/<TICKER>.csv.gz，不進 git）的 loader，格式同 marketdata.load_ohlcv。"""
+    base = ROOT / "data_full" / market
+
+    def loader(t: str) -> list[dict]:
+        p = base / f"{t.replace('^', '_')}.csv.gz"
+        if not p.exists():
+            raise FileNotFoundError(p)
+        df = pd.read_csv(p, compression="gzip")
+        df = df[df["Close"] > 0]
+        rows = [(date.fromisoformat(d), o, h, lo, c, int(v) if v == v else 0)
+                for d, o, h, lo, c, v in zip(df["Date"], df["Open"], df["High"], df["Low"], df["Close"], df["Volume"])]
+        kept, _ = md.drop_spikes(rows)
+        keep = {r[0] for r in kept}
+        adj = dict(zip(df["Date"], df["AdjClose"]))
+        return [{"Date": r[0], "Open": r[1], "High": r[2], "Low": r[3], "Close": r[4],
+                 "AdjClose": adj[r[0].isoformat()] if adj[r[0].isoformat()] == adj[r[0].isoformat()] else r[4],
+                 "Volume": r[5]} for r in rows if r[0] in keep]
+    return loader
+
+
+def stock_frame(t: str, loader=None) -> pd.DataFrame | None:
+    rows = (loader or md.load_ohlcv)(t)
     if len(rows) < 260:
         return None
     df = pd.DataFrame(rows).set_index("Date")
@@ -89,9 +110,15 @@ def stock_frame(t: str) -> pd.DataFrame | None:
 class MarketData:
     """一個市場：日曆 × 股票的矩陣（還原收市/開市、訊號、出場條件、成分股遮罩）。"""
 
-    def __init__(self, market: str):
-        cfg = MARKETS[market]
+    def __init__(self, market: str, pool: list[str] | None = None, loader=None, top_n: int | None = None,
+                 cost: float | None = None):
+        """pool/loader/top_n 給全市場版：候選池、數據 loader、每日按 60 日成交額中位數取前 N（point-in-time）。
+        不給就是原本的指數成分股版。"""
+        cfg = dict(MARKETS[market])
+        if cost is not None:
+            cfg["cost"] = cost
         self.market, self.cfg = market, cfg
+        self.loader = loader or md.load_ohlcv
         self.uni = Universe(cfg["index"])
         hol = set()
         p = ROOT / "universes" / "calendars" / f"{market}.csv"
@@ -101,11 +128,40 @@ class MarketData:
         cal = set(md.load_series(cfg["etf"])) | set(md.load_series(cfg["idx"]))
         self.cal = sorted(d for d in cal if d >= cfg["start"] - timedelta(days=30) and d not in hol)
         self.ci = {d: i for i, d in enumerate(self.cal)}
-        tickers = self.uni.all_tickers(since=cfg["start"])
+        tickers = pool if pool is not None else self.uni.all_tickers(since=cfg["start"])
+        idx0 = pd.Index(self.cal)
+        tv_rank = None
+        if top_n:
+            # 第一輪：只算成交額（原始收市 × 量，60 日中位數），決定每日前 N；只保留曾入宇宙的股票，省記憶體
+            tvs, names = [], []
+            for t in tickers:
+                try:
+                    rows = self.loader(t)
+                except FileNotFoundError:
+                    continue
+                if len(rows) < 260:
+                    continue
+                ser = pd.Series([r["Close"] * r["Volume"] for r in rows], index=[r["Date"] for r in rows])
+                tvs.append(ser.rolling(60, min_periods=60).median().reindex(idx0).to_numpy(dtype=np.float32))
+                names.append(t)
+            tv = np.vstack(tvs) if tvs else np.zeros((0, len(self.cal)), dtype=np.float32)
+            mem = np.zeros(tv.shape, dtype=bool)
+            for j in range(tv.shape[1]):
+                col = tv[:, j]
+                ok = np.nonzero(~np.isnan(col) & (col > 0))[0]
+                if len(ok) <= top_n:
+                    mem[ok, j] = True
+                else:
+                    mem[ok[np.argpartition(-col[ok], top_n - 1)[:top_n]], j] = True
+            j0 = next(j for j, d in enumerate(self.cal) if d >= cfg["start"])
+            keep = [i for i in range(len(names)) if mem[i, j0:].any()]
+            tickers = [names[i] for i in keep]
+            tv_rank = {names[i]: mem[i] for i in keep}
+            print(f"[{market}] 全市場候選 {len(names)} 檔有數據、曾入前 {top_n} 名 {len(tickers)} 檔", file=sys.stderr)
         frames, first = {}, {}
         for t in tickers:
             try:
-                fr = stock_frame(t)
+                fr = stock_frame(t, self.loader)
             except FileNotFoundError:
                 continue
             if fr is not None:
@@ -130,10 +186,14 @@ class MarketData:
         # 成分股遮罩（point-in-time + 防代碼重用）
         self.member = np.zeros((S, D), dtype=bool)
         pos = {t: s for s, t in enumerate(self.tickers)}
-        for j, d in enumerate(self.cal):
-            for t in self.uni.eligible_at(d, first):
-                if t in pos:
-                    self.member[pos[t], j] = True
+        if tv_rank is not None:
+            for t, s in pos.items():
+                self.member[s] = tv_rank[t]
+        else:
+            for j, d in enumerate(self.cal):
+                for t in self.uni.eligible_at(d, first):
+                    if t in pos:
+                        self.member[pos[t], j] = True
         # 日報酬（收市到收市；停牌日 0，隔日用前一個有效收市）
         filled = pd.DataFrame(self.adj.T).ffill().to_numpy().T
         prev = np.c_[np.full(S, np.nan), filled[:, :-1]]

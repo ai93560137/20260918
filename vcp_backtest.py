@@ -14,17 +14,24 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import marketdata as md  # noqa: E402
 import newhigh_backtest as nb  # noqa: E402
 import vcp  # noqa: E402
 
 GRID = [(r, D) for r in (0.7, 0.8, 0.9) for D in (0.08, 0.10, 0.15)]
 DEFAULT = (0.8, 0.10)
+FULL_TOP_N = {"hk": 500, "jp": 1000, "us": 1500}          # 全市場宇宙：每日 60 日成交額中位數前 N
+FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010}   # 全市場成本（每邊）
 
 
 class VCPData:
-    def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N):
-        self.m = m = nb.MarketData(market)
+    def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N, full: bool = False):
+        if full:     # 全市場版（VCP_FULLMARKET_BACKTEST.md）：成交額前 N、成本加大
+            pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
+                encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
+            self.m = m = nb.MarketData(market, pool=pool, loader=nb.load_full(market), top_n=FULL_TOP_N[market],
+                                       cost=FULL_COST[market])
+        else:
+            self.m = m = nb.MarketData(market)
         S, Dn = m.adj.shape
         idx = pd.Index(m.cal)
         self.raw = {}
@@ -32,7 +39,7 @@ class VCPData:
         volc = np.zeros((S, Dn), dtype=bool)
         r252 = np.full((S, Dn), np.nan)
         for s, t in enumerate(m.tickers):
-            df = pd.DataFrame(md.load_ohlcv(t)).set_index("Date")
+            df = pd.DataFrame(m.loader(t)).set_index("Date")
             df = df[df["AdjClose"] > 0]
             f = df["AdjClose"] / df["Close"]
             adj, close = df["AdjClose"], df["Close"]
@@ -140,9 +147,11 @@ def main() -> None:
     ap.add_argument("--random", type=int, default=0)
     ap.add_argument("--version", type=int, default=2, choices=(1, 2), help="1 = 3%% ZigZag（原登記）、2 = 碎形高點（修訂）")
     ap.add_argument("--n", type=int, default=vcp.FRACTAL_N, help="v2 碎形窗口（預設 5；10 只作敏感度）")
-    ap.add_argument("--out", type=Path, default=ROOT / "research" / "vcp")
+    ap.add_argument("--full", action="store_true", help="全市場版（data_full/、成交額前 N）")
+    ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
-    v = VCPData(args.market, args.version, args.n)
+    args.out = args.out or ROOT / "research" / ("vcp_full" if args.full else "vcp")
+    v = VCPData(args.market, args.version, args.n, full=args.full)
     m = v.m
     res = {"market": args.market, "cells": {}, "random": {}}
     for r, D in GRID:
