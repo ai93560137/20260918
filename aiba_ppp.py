@@ -156,8 +156,11 @@ class AibaPPP:
 
 
 def summarize(e: dict) -> dict:
-    tr = e.pop("tr")
-    pos = sorted((x for x in tr), reverse=True)
+    # 逐筆統計去掉 NaN（樣本末仍持有、最後一個日曆日停牌的股票沒有收市價；組合日報酬不受影響）
+    tr = [x for x in e.pop("tr") if x == x]
+    e["win"] = float(np.mean([x > 0 for x in tr])) if tr else float("nan")
+    e["avg_trade"] = float(np.mean(tr)) if tr else float("nan")
+    pos = sorted(tr, reverse=True)
     tot = sum(tr)
     e["top10_share"] = float(sum(pos[:10]) / tot) if tot > 0 else float("nan")
     by = e["by_year"]
