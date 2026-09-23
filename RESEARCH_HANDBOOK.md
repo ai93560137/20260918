@@ -193,3 +193,83 @@
 3. 建獨立回測檔（引擎可複用 `load_any` 載入器），selftest 先行；
 4. 結論寫進獨立的 `*_BACKTEST.md`，判決（含死刑）追加到本文件第二節；
 5. 數據 commit 進 `data/`（.csv.gz 按年切塊，規則見 data/README.md）。
+6. **股票研究**：先讀第七節——三地全市場日線、品質檢查、回測引擎、核對流程都已建好，直接用，不要重抓重寫。
+
+## 七、全市場股票數據與研究流水線（2026-09 建成；其他分支直接用）
+
+VCP 全市場（VCP_FULLMARKET_BACKTEST.md）與相場師朗 PPP（AIBA_PPP_BACKTEST.md）兩輪研究的沉澱。
+程式都在分支 `claude/gifted-carson-v2tvhw`；日線數據**不進 git**，放在 GitHub Release `fullmarket-data`（整個倉庫共用）。
+
+### 7.1 有甚麼數據
+| 市場 | 檔數（`data_full/<m>/`）| 候選池有數據／曾入成交額前 N | 日線起點 | 回測樣本起點 | 大小 |
+|---|---|---|---|---|---|
+| 港股 | 2,787 | 1,634／1,425（前 500） | 2000 | 2010-07 | 100 MB |
+| 日股 | 3,707 | 3,608／2,649（前 1000） | 1999 | 2009-07 | 217 MB |
+| 美股 | 5,834 | 5,189／3,401（前 1500） | 1995 | 2000-01 | 319 MB |
+
+- 格式：`<TICKER>.csv.gz`，欄位 `Date,Open,High,Low,Close,AdjClose,Volume`（yfinance、`auto_adjust=False`；
+  `Close` 已按拆股還原、`AdjClose` 再按股息還原）。代碼：港 `0005.HK`、日 `7203.T`、美 `AAPL`
+- 候選池快照在 git：`universes/full/<m>_pool.txt`（港交所股本、JPX 內國株、Nasdaq screener + 指數歷史成分）
+- **品質（四層檢查，結果在 `research/vcp_full/<m>_qc.md`）**：
+  - 港股：**收市價可靠**（對港交所日報表 2,003 檔 0 差、對指數版 0 差）；**盤中高低價不可靠**（948 檔收市超出高低價範圍，
+    小型股、2019 年前居多）→ 只用開市／收市的策略可以考慮放回這些股票（`load_full(m, repair_hl=True)`，只作敏感度）
+  - 日股：最乾淨，排除 34 檔
+  - 美股：排除 143 檔（小型股尖刺）；Nasdaq 第二來源只有近 10 年，**2016 年前的交易無法逐筆核對**
+- **倖存者偏差**：候選池只有現存股票（下市股不在內）→ 回測偏向高估，判決門檻要從嚴
+
+### 7.2 怎樣拿到數據（雲端 session／其他分支）
+```bash
+git fetch origin claude/gifted-carson-v2tvhw
+git merge --no-edit origin/claude/gifted-carson-v2tvhw      # 或只 checkout 需要的檔（見 7.3）
+for m in hk jp us; do
+  curl -sL -o /tmp/$m.tar https://github.com/ai93560137/20260918/releases/download/fullmarket-data/$m.tar
+  tar -xf /tmp/$m.tar                                       # → data_full/<m>/
+  python3 scripts/qc_full_market.py --market $m --no-network   # 重建 _qc_exclude.txt／_qc_zombie.json（已驗證與原版逐字相同）
+done
+git checkout -- research/vcp_full/                          # 上一步會改寫 <m>_qc.md，還原成已 commit 版
+```
+- Release 的 tar **不含**品質排除檔，一定要跑上面的 `qc_full_market.py --no-network`（結構檢查，不用外網）
+- **Actions 快取按分支隔離，其他分支拿不到**；GitHub Actions 裡用 `gh release download fullmarket-data -p "$M.tar"`
+- 更新數據：手動觸發 `vcp_fullmarket.yml`（`backtest=false`），會補抓、重傳 Release（該 workflow 固定 checkout 本分支）
+- 已確認雲端沙盒可以直接下載 Release（2026-09-23 實測 hk.tar 100 MB 成功）
+
+### 7.3 工具（程式都在本分支）
+| 檔案 | 用途 |
+|---|---|
+| `newhigh_backtest.py` | 引擎：`MarketData(m, pool=..., loader=load_full(m), top_n=N, cost=c)` → 日曆 × 股票矩陣（`adj`、`aopen`、`member` 每日成交額前 N 宇宙、`next_px`）；`trades_from_events(ev, rule)`、`exit_index`、`portfolio`（日曆時間等權）、`evaluate`（CAPM alpha t vs ETF、相對等權 t、前後段、年化、MDD、按年）|
+| `vcp_backtest.py` | `FULL_TOP_N`（港 500／日 1000／美 1500）、`FULL_COST`（每邊 港 25／日 15／美 10 bps）；`VCPData`（趨勢模板 + RS 百分位矩陣 `tt`）|
+| `vcp.py` | 趨勢模板、碎形擺動點、VCP 收縮／樞紐點（每日篩選共用）|
+| `vcp_minervini.py` | 樞紐點盤中成交、大市 50/200 日線過濾、固定止損／保本／50 日線出場的模擬器（逐日 K 線）|
+| `aiba_ppp.py` | 相場流 `features()`：PPP（20／60／100）、下半身（比例可調）、逆下半身、跌破 60 日線；自訂出場規則掛進引擎的範例（`m.exitc[...]`、`m.next_exit[...]`）|
+| `scripts/build_full_pools.py`、`fetch_full_market.py` | 候選池、yfinance 抓取（收市 + 30 分鐘前的半根會丟掉）|
+| `scripts/qc_full_market.py` | 結構檢查（重複、還原比例、高低價矛盾、尖刺、殭屍段）+ 對指數版 + 最新一日第二來源 |
+| `scripts/verify_trades.py` | 逐筆交易對第二來源：`--src <明細.json> --sample 300 --split-ok --out-dir <資料夾>` |
+| `.github/workflows/vcp_fullmarket.yml`、`aiba_verify.yml` | 抓數據＋回測全流程；只做外網核對的輕量版（push 抽樣明細就自動跑）|
+
+### 7.4 新假設的標準流程（照做，兩輪已驗證可行）
+1. 讀第二節判決庫 → 寫 `<名稱>_BACKTEST.md` 預先登記（定義、鄰域 3×3、隨機對照、門檻、已看過甚麼）→ **先 commit**
+2. 寫程式；用 `--inspect`／`--trades-only` 只看交易機制、手算一兩筆，**不看績效**
+3. 預設格抽 300 筆逐筆核對：港股本機（內部一致性）；**日美要外網 → 在 Actions 跑**（雲端沙盒連不到 Nasdaq／Yahoo!ファイナンス）
+4. 三地各正式跑一次（`--random 200`）→ 結果寫回文件、判決追加到第二節
+
+### 7.5 已踩過的坑
+- `pgrep -f "<腳本名>"` 會配對到自己的等待迴圈 → 用 `pgrep -f "^python3 <腳本>"` 或記 PID
+- 日股第二來源（Yahoo!ファイナンス）歷史價**不按拆股還原** → 三個比例差整數倍不是錯誤（`--split-ok`）；GungHo 3765.T 曾因此被誤剔
+- 股票偶有日曆沒有的交易日（港股 2016-10-21）→ 出場日要對到下一個日曆日
+- 樣本最後一天停牌的持倉沒有收市價 → 逐筆統計要去 NaN（組合報酬不受影響）
+- Actions 多市場並行 commit 只 add 本市場的檔，否則會把別的市場檔案改回舊版
+- 美股開市中抓到的是未收市半根 → `fetch_full_market.py` 已按當地收市 + 30 分鐘截斷
+
+### 7.6 這批歷史數據已用過幾次（多重測試帳本）
+| # | 假設 | 結果 |
+|---|---|---|
+| 1 | VCP（指數成分股版） | ☠️ |
+| 2 | VCP 全市場 + XV 出場 | 港 1.64 不確定／日美 ☠️ |
+| 3 | VCP 全市場 + 五日 EMA 出場 | 美 1.35 不確定／港日 ☠️ |
+| 4 | VCP Minervini 忠實版 | 港 1.24 不確定／日美 ☠️ |
+| 5 | （新高連續天數入場，指數成分股數據） | ☠️ |
+| 6 | 相場師朗 PPP 中的下半身 | 三地 ☠️ |
+
+→ 下一個在同一批數據上的趨勢跟隨假設：預設格 alpha t 門檻 **≥ 2.5 起跳**，並要求隨機對照 ≥ 95 百分位、前後段都正。
+能用前向數據（每日篩選寫進 `analysis/newhighs/`、`analysis/vcp/` 的名單）驗證的，優先用前向數據。
+
