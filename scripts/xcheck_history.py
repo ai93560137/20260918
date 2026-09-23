@@ -68,8 +68,9 @@ class Blocked(Exception):
     """第二來源拒答/限流（非 200、或頁面沒有 histories 欄位）——不能當成「沒有數據」記錄。"""
 
 
-YJ_PAUSE = 1.5   # 每頁間隔秒數（2026-09-23 實測：0.2~0.4 秒連抓約 40 頁後 Yahoo!ファイナンス 開始回空頁；
-                 # 2.5 秒跑 2 小時沒被擋，改 1.5 秒加速，被擋會自動退避）
+YJ_PAUSE = 2.5   # 每頁間隔秒數。2026-09-23 實測：2.5 秒連跑 2 小時（~850 頁）沒被擋；1.5 秒或緊接在
+                 # 第二來源（225 頁、0.5 秒）之後開跑，十幾頁就被拒——對方容許穩定速率、不容許連續爆量
+YJ_COOLDOWN = 90  # 日股開跑前先等（讓第二來源那波請求的限流窗口過去）
 
 
 def yj_page(s: requests.Session, t: str, params: dict) -> list[dict]:
@@ -214,6 +215,8 @@ def main() -> None:
     today = datetime.now(timezone.utc).date().isoformat()
     s = requests.Session()
     s.headers.update(NQ if m == "us" else dict(UA, **{"Accept-Language": "ja"}))
+    if m == "jp":
+        time.sleep(YJ_COOLDOWN)
     started, done = time.monotonic(), 0
     for t in tickers:
         if time.monotonic() - started > args.budget_min * 60:
