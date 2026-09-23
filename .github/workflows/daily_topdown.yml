@@ -68,6 +68,14 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: HKEX Chinese names（港交所證券名單，港股中文名）
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
+        continue-on-error: true   # 抓不到就沿用舊檔／英文名，不擋報告
+        timeout-minutes: 5
+        run: |
+          pip install -q openpyxl
+          python3 scripts/fetch_hkex_names.py
+
       - name: Sector indices（三地板塊指數）
         if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
         run: |
@@ -82,7 +90,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add analysis sector; }
+          add_out() { git add analysis sector; [ -f data/equities/hk/_hkex_listed.json ] && git add data/equities/hk/_hkex_listed.json; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "chore(analysis): 每日由上而下分析 $(date +%F)"
