@@ -1,6 +1,6 @@
 name: Daily top-down analysis（每日由上而下分析）
 
-# 國家（指數 ETF）→ 板塊動能 → 個股，見 scripts/daily_topdown.py。
+# 國家（指數 ETF）→ 個股 200 日線 → 12/9/6/3 個月新高 → 按板塊統計，見 scripts/daily_topdown.py。
 # 美股數據是最後到的（06:30 HKT 開抓），所以等美股抓完再跑：
 # - workflow_run：Fetch equities 美股輪（22:xx UTC 建立的排程）完成後觸發
 # - cron 01:15 UTC（09:15 HKT，港股開市前）兜底：美股輪太慢或失敗時也要有報告；當天已有報告就跳過
@@ -103,12 +103,15 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          MSG=analysis/tg_topdown.txt
-          if [ ! -s "$MSG" ]; then echo "沒有摘要"; exit 1; fi
+          # 總覽一則 + 每個市場一則（名單長時會再切，每則 < 4096 字），依序發送
+          ls analysis/tg_parts/part_*.txt > /dev/null 2>&1 || { echo "沒有摘要"; exit 1; }
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0
           fi
-          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${TG_CHAT_ID}" \
-            --data-urlencode "text=$(cat "$MSG")" > /dev/null
-          echo "telegram sent"
+          for MSG in analysis/tg_parts/part_*.txt; do
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat "$MSG")" > /dev/null
+            echo "telegram sent: $MSG"
+            sleep 1
+          done
