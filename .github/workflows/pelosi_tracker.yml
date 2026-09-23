@@ -1,0 +1,85 @@
+name: Pelosi stock tracker（佩洛西股票追蹤）
+
+# 每 4 小時抓一次眾議院書記官處（House Clerk）的 PTR 申報索引，
+# 發現佩洛西新申報就下載 PDF、解析每筆交易，更新 data/pelosi/ 並發 Telegram。
+# 腳本見 scripts/pelosi_tracker.py。首次執行（還沒有 data/pelosi/state.json）只建檔不通知。
+on:
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      years:
+        description: '回補年份（空白 = 今年；例：2024 2025 2026）'
+        required: false
+        default: ''
+      notify_backfill:
+        description: '首次建檔也發 Telegram'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pelosi-tracker
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests pypdf
+
+      - name: Fetch & parse PTR filings
+        id: track
+        env:
+          YEARS: ${{ inputs.years }}
+          BACKFILL: ${{ inputs.notify_backfill }}
+        run: |
+          ARGS=""
+          [ -n "$YEARS" ] && ARGS="--years $YEARS"
+          [ "$BACKFILL" = "true" ] && ARGS="$ARGS --notify-backfill"
+          python3 scripts/pelosi_tracker.py $ARGS
+
+      - name: Commit and push
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { git add data/pelosi/state.json data/pelosi/transactions.json data/pelosi/README.md; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(pelosi): 更新佩洛西交易 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(pelosi): 更新佩洛西交易 $(date -u +%F)" || exit 0; }
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
+
+      - name: Telegram
+        if: steps.track.outputs.notify == '1'
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0
+          fi
+          for MSG in data/pelosi/tg_msg_*.txt; do
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "disable_web_page_preview=true" \
+              --data-urlencode "text=$(cat "$MSG")" > /dev/null
+            echo "telegram sent: $MSG"
+            sleep 1
+          done
