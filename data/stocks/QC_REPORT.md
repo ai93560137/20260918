@@ -1,8 +1,8 @@
-# 數據品質日報（2026-09-22）
+# 數據品質日報（2026-09-23）
 
-由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）119 檔，第二來源港交所官方快照（`data/stocks_hkex/`）7 份（最新 2026-09-22），公司名紀錄 112 檔。
+由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）119 檔，第二來源港交所官方快照（`data/stocks_hkex/`）43 份（最新 2026-09-22），公司名紀錄 112 檔。
 
-**🔴 嚴重 0 項 ｜ 🟡 注意 26 項 ｜ ✅ 已確認 19 項**
+**🔴 嚴重 0 項 ｜ 🟡 注意 20 項 ｜ ✅ 已確認 19 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
@@ -31,12 +31,6 @@
 | 2038.HK | hkex_vs_wiki_name | 港交所「FIH」vs Wikipedia 2011年「Foxconn International Holdings Ltd」（相似度 0.17） |
 | 2600.HK | hkex_vs_wiki_name | 港交所「CHALCO」vs Wikipedia 2013年「Aluminum Corporation of China Limited (Chalco)」（相似度 0.40） |
 | 6098.HK | hkex_vs_wiki_name | 港交所「CG SERVICES」vs Wikipedia 2025年「Country Garden」（相似度 0.24） |
-| 0285.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 0300.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 1024.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2057.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 2618.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
-| 9992.HK | no_second_source | 港交所快照沒有這檔，無法交叉驗證收市價 |
 | 0330.HK | ohlc_auction | 近30天 2 根開/收市價落在高低價外（多半是競價時段慣例）：2026-08-24, 2026-09-08 |
 | 0960.HK | wiki_name_varies | 最新記載「Longfor Properties」，但 2023年「The Link REIT」 |
 | 6098.HK | wiki_name_varies | 最新記載「Country Garden」，但 2023年「CG SERVICES」 |
