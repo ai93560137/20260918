@@ -42,6 +42,7 @@ OUT_DIR = os.path.join(ROOT, "data", "pelosi")
 STATE_FILE = os.path.join(OUT_DIR, "state.json")
 TX_FILE = os.path.join(OUT_DIR, "transactions.json")
 REPORT_FILE = os.path.join(OUT_DIR, "README.md")
+RAW_DIR = os.path.join(OUT_DIR, "raw")  # 每份 PTR 抽出的純文字，可離線重新解析
 BACKFILL_FROM = 2014  # 更早的申報多為紙本掃描，解析不了
 
 TX_TYPES = {"P": "買入", "S": "賣出", "S (partial)": "部分賣出", "E": "交換"}
@@ -49,15 +50,22 @@ OWNERS = {"SP": "配偶", "JT": "聯名", "DC": "受養子女", "Self": "本人"
 
 # 一筆交易的核心：[資產類別] 交易類型 交易日 通知日 金額區間
 # pypdf 抽出的日期常黏在一起（01/14/202501/14/2025$250,001 -），所以 \s* 都允許 0 個空白
+# 兩種版面都要吃：
+#   新版（約 2020 起）：SP Apple Inc. (AAPL) [ST] P 01/14/2025 01/14/2025 $250,001 - $500,000
+#   舊版（2014–2020）：sP apple Inc. (aaPl) P 02/2/2018 02/2/2018 $100,001 - $250,000
+#     小型大寫字型被抽成大小寫混雜（sP、(aaPl)、[oP]、交易類型 s），沒有 [資產類別]，日可能是單位數。
+# pypdf 抽出的日期常黏在一起（01/14/202501/14/2025$250,001 -），所以 \s* 都允許 0 個空白
 CORE_RE = re.compile(
-    r"\[(?P<atype>[A-Z]{2})\]\s*"
-    r"(?P<tx>S\s*\(partial\)|P|S|E)\s*"
-    r"(?P<date>\d{2}/\d{2}/\d{4})\s*"
-    r"(?P<notif>\d{2}/\d{2}/\d{4})\s*"
+    r"(?:\[(?P<atype>[A-Za-z]{2})\]\s*)?"
+    r"(?<![A-Za-z])(?P<tx>[Ss]\s*\(\s*partial\s*\)|[PpSsEe])\s*"
+    r"(?P<date>\d{1,2}/\d{1,2}/\d{4})\s*"
+    r"(?P<notif>\d{1,2}/\d{1,2}/\d{4})\s*"
     r"(?P<amount>\$[\d,]+\s*-\s*\$[\d,]+|Over \$[\d,]+|Spouse/DC Over \$[\d,]+|\$[\d,]+)"
 )
-OWNER_RE = re.compile(r"(?:^|\s)(SP|JT|DC)\s")
-TICKER_RE = re.compile(r"\(([A-Z][A-Z0-9.\-]{0,6})\)\s*$")
+# 持有人代號前可能黏著上一筆說明的句點（…9/21/18.sP apple Inc.）
+OWNER_RE = re.compile(r"(?:^|[\s.])(SP|JT|DC)\s", re.I)
+# pypdf 會把代號抽成大小寫混雜（TSlA、(aaPl)），所以不分大小寫、之後轉大寫
+TICKER_RE = re.compile(r"\(\s*([A-Za-z][A-Za-z0-9.\-]{0,6})\s*\)\s*$")
 # 頁首/頁尾樣板文字，出現在交易列表中間時要剔除
 BOILERPLATE_RE = re.compile(
     r"\* For the complete list of asset type abbreviations.*?(?=SP |JT |DC |$)"
@@ -65,12 +73,33 @@ BOILERPLATE_RE = re.compile(
     r"|Clerk of the House of Representatives[^\n]*",
     re.S,
 )
-OPTION_RE = re.compile(
-    r"(?P<verb>Purchased|Sold|Exercised|Received)\s+(?P<n>[\d,]+)\s+(?P<kind>call|put)\s+options?"
-    r".*?strike price of \$(?P<strike>[\d,.]+)"
-    r".*?expiration date of (?P<exp>\d{1,2}/\d{1,2}/\d{2,4})",
-    re.I | re.S,
+# 表頭（每頁重複）：交易從第一個表頭之後開始，之前的申報人資料（含 Washington, DC）不能當持有人代號
+HEADER_RE = re.compile(
+    r"ID Owner Asset Transaction\s*Type\s*Date\s*Notification\s*Date\s*Amount(?:\s*Cap\.\s*Gains\s*>\s*\$200\?)?",
+    re.I,
 )
+# 跨頁被切開的一筆：「… Class A Common P 01/16/2026 01/16/2026 $50,001 - [表頭] Stock (TEM) [ST] $100,000」
+STRADDLE_RE = re.compile(
+    r"^\s*(?P<rest>[^()\[\]$]*?)\(\s*(?P<tk>[A-Za-z][A-Za-z0-9.\-]{0,6})\s*\)\s*"
+    r"\[(?P<at>[A-Za-z]{2})\]\s*(?P<amt>\$[\d,]+)"
+)
+# 期權說明在去掉所有空白後比對（舊版會把字拆開：expiration d ate、personall y）
+OPTION_RE = re.compile(
+    r"(?P<verb>purchased|purchaseof|purchase|sold|saleof|exercised|exerciseof|received)"
+    r"(?P<n>[\d,]+)(?P<kind>call|put)options?"
+    r".*?strikepriceof\$(?P<strike>[\d,.]+?)\.?(?=[a-z]|$)"
+    r".*?expirationdateof(?P<exp>\d{1,2}/\d{1,2}/(?:20\d{2}|\d{2}))",
+    re.S,
+)
+# 「50 call options purchased 12/17/21 … expired with no value.」：到期作廢，視同出場
+EXPIRED_RE = re.compile(
+    r"(?P<n>[\d,]+)(?P<kind>call|put)options?.*?strikepriceof\$(?P<strike>[\d,.]+?)\.?(?=[a-z]|$)"
+    r".*?expirationdateof(?P<exp>\d{1,2}/\d{1,2}/(?:20\d{2}|\d{2})).*?expired",
+    re.S,
+)
+# 2014 年版只寫「Purchase of 50 Options」，沒有 call/put、行使價、到期日
+BARE_OPTION_RE = re.compile(r"(?P<verb>purchased|purchaseof|purchase|sold|saleof)(?P<n>[\d,]+)options?")
+VERBS = {"purchaseof": "purchased", "purchase": "purchased", "saleof": "sold", "exerciseof": "exercised"}
 
 
 # -----------------------------------------------------------------------------
@@ -142,14 +171,29 @@ def _clean_desc(text):
     text = BOILERPLATE_RE.sub(" ", text)
     text = re.sub(r"\s+", " ", text).strip()
     # 常見欄位：F S: New（申報狀態）、S O:（子帳戶）、D:（說明）、C:（備註）
-    m = re.search(r"\bD:\s*(.+?)(?=\s+(?:C:|F S:|S O:|I P O|\* For)|$)", text)
+    # 舊版是 F IlINg s TaTus : New D EsCRIPTIoN : …（大小寫亂、字被拆開），標籤前也可能沒空白
+    m = re.search(r"(?<![A-Za-z])D\s*(?:(?i:ESCRIPTION)\s*)?:\s*(.+?)"
+                  r"(?=\s*(?:C\s*(?:(?i:OMMENTS)\s*)?:|F\s*(?:(?i:ILING)\s*)?S\s*(?:(?i:TATUS)\s*)?:"
+                  r"|S\s*(?:(?i:UBHOLDING)\s*)?O\s*(?:(?i:F)\s*)?:|I P O|(?i:i\s*nitial\s+p\s*ublic)"
+                  r"|\* For)|$)",
+                  text)
     return m.group(1).strip() if m else ""
 
 
 def parse_option(desc):
-    m = OPTION_RE.search(desc or "")
+    compact = re.sub(r"\s+", "", desc or "").lower()
+    m = OPTION_RE.search(compact)
+    verb = m.group("verb") if m else None
     if not m:
-        return None
+        m = EXPIRED_RE.search(compact)
+        verb = "expired" if m else None
+    if not m:
+        b = BARE_OPTION_RE.search(compact)
+        if not b:
+            return None
+        return {"action": VERBS.get(b.group("verb"), b.group("verb")),
+                "contracts": int(b.group("n").replace(",", "")),
+                "kind": None, "strike": None, "expiry": None}
     exp = m.group("exp")
     for fmt in ("%m/%d/%y", "%m/%d/%Y"):
         try:
@@ -158,10 +202,10 @@ def parse_option(desc):
         except ValueError:
             pass
     return {
-        "action": m.group("verb").lower(),
+        "action": VERBS.get(verb, verb),
         "contracts": int(m.group("n").replace(",", "")),
-        "kind": m.group("kind").lower(),
-        "strike": float(m.group("strike").replace(",", "").rstrip(".")),
+        "kind": m.group("kind"),
+        "strike": float(m.group("strike").replace(",", "")),
         "expiry": exp,
     }
 
@@ -175,9 +219,28 @@ def parse_amount(amount):
     return nums[0], nums[-1]
 
 
+def _fix_straddle(row, tail):
+    """跨頁切開的一筆：代號、資產類別、金額上限跑到下一頁開頭，補回 row，回傳剩下的說明文字。"""
+    if row["ticker"]:
+        return tail
+    m = STRADDLE_RE.match(tail)
+    if not m:
+        return tail
+    row["asset"] = f"{row['asset']} {m.group('rest').strip(' -')}".strip()
+    row["ticker"] = m.group("tk").upper()
+    row["asset_type"] = row["asset_type"] or m.group("at").upper()
+    if "-" not in row["amount"]:  # 金額只抓到下限
+        row["amount"] = f"{row['amount'].strip()} - {m.group('amt')}"
+        row["amount_min"], row["amount_max"] = parse_amount(row["amount"])
+    return tail[m.end():]
+
+
 def parse_ptr(text):
     """PTR 純文字 → 交易清單。解析不到回 []（多半是手寫掃描版）。"""
-    flat = re.sub(r"\s+", " ", BOILERPLATE_RE.sub(" ", text))
+    # 小型大寫標籤會被抽成「D\0\0\0…:」，先去掉 NUL
+    flat = re.sub(r"\s+", " ", BOILERPLATE_RE.sub(" ", text.replace("\x00", "")))
+    h = HEADER_RE.search(flat)
+    flat = HEADER_RE.sub(" ", flat[h.end():] if h else flat)
     matches = list(CORE_RE.finditer(flat))
     rows = []
     prev_end = 0
@@ -187,24 +250,26 @@ def parse_ptr(text):
         owners = list(OWNER_RE.finditer(seg))
         if owners:
             o = owners[-1]
-            owner, asset, desc_prev = o.group(1), seg[o.end():], seg[:o.start()]
+            owner, asset, desc_prev = o.group(1).upper(), seg[o.end():], seg[:o.start()]
         else:
-            owner, asset, desc_prev = "Self", seg, ""
-            if i == 0:  # 沒有持有人代號時，去掉表頭
-                asset = re.split(r"\$200\?", asset)[-1]
+            # 2014–2015 年版沒有持有人代號：seg 整段同時是上一筆說明和這一筆資產名稱，分不乾淨。
+            # 代號仍在 seg 結尾；上一筆說明會帶著這筆名稱當字尾（只影響顯示，期權/代號照樣解析）
+            owner, asset, desc_prev = "SP", seg, seg
+            if rows:
+                asset = re.split(r"[.:]\s*(?=[^.:]*$)|\d/\d{2}(?=[A-Z])", asset)[-1]
         if rows:
-            rows[-1]["description"] = _clean_desc(desc_prev)
+            rows[-1]["description"] = _clean_desc(_fix_straddle(rows[-1], desc_prev))
         asset = asset.strip()
         tm = TICKER_RE.search(asset)
-        ticker = tm.group(1) if tm else ""
+        ticker = tm.group(1).upper() if tm else ""
         name = asset[:tm.start()].strip() if tm else asset
-        tx = re.sub(r"\s+", " ", m.group("tx"))
+        tx = "S (partial)" if "partial" in m.group("tx").lower() else m.group("tx").upper()
         lo, hi = parse_amount(m.group("amount"))
         rows.append({
             "owner": owner,
             "asset": name,
             "ticker": ticker,
-            "asset_type": m.group("atype"),
+            "asset_type": (m.group("atype") or "").upper(),
             "type": tx,
             "date": _iso(m.group("date")),
             "notified": _iso(m.group("notif")),
@@ -215,9 +280,12 @@ def parse_ptr(text):
         })
         prev_end = m.end()
     if rows:
-        rows[-1]["description"] = _clean_desc(flat[prev_end:])
+        rows[-1]["description"] = _clean_desc(_fix_straddle(rows[-1], flat[prev_end:]))
     for r in rows:
-        r["option"] = parse_option(r["description"]) if r["asset_type"] == "OP" else None
+        opt = parse_option(r["description"])
+        if not r["asset_type"]:  # 舊版沒有資產類別：說明提到期權就當 OP，其餘當股票
+            r["asset_type"] = "OP" if opt else "ST"
+        r["option"] = opt if r["asset_type"] == "OP" else None
     return rows
 
 
@@ -225,7 +293,7 @@ def parse_ptr(text):
 # 現價（best effort，Yahoo 失敗就略過）
 # -----------------------------------------------------------------------------
 def yahoo_closes(ticker, start):
-    t = ticker.replace(".", "-")
+    t = {"SQ": "XYZ", "FB": "META"}.get(ticker, ticker).replace(".", "-")  # 改名代號
     p1 = int(datetime.combine(start - timedelta(days=7), datetime.min.time(), timezone.utc).timestamp())
     url = YAHOO_URL.format(ticker=t) + f"?period1={p1}&period2={int(time.time())}&interval=1d"
     r = requests.get(url, headers=UA, timeout=30)
@@ -279,6 +347,22 @@ def save_json(path, obj):
         f.write("\n")
 
 
+def fmt_option(opt):
+    """「50 張 Call 行使價 $150 到期 2026-01-16」；舊版申報缺的欄位就省略，作廢的標明。"""
+    parts = [f"{opt['contracts']} 張"]
+    if opt.get("kind"):
+        parts.append(opt["kind"].title())
+    else:
+        parts.append("期權")
+    if opt.get("strike") is not None:
+        parts.append(f"行使價 ${opt['strike']:g}")
+    if opt.get("expiry"):
+        parts.append(f"到期 {opt['expiry']}")
+    if opt.get("action") == "expired":
+        parts.append("（到期作廢）")
+    return " ".join(parts)
+
+
 def fmt_tx_line(r):
     tx = TX_TYPES.get(r["type"], r["type"])
     head = f"{'🟢' if r['type'] == 'P' else '🔴' if r['type'].startswith('S') else '⚪'} {tx} "
@@ -288,8 +372,7 @@ def fmt_tx_line(r):
     lines = [head, f"   交易日 {r['date']}｜{r['amount']}｜{OWNERS.get(r['owner'], r['owner'])}"]
     opt = r.get("option")
     if opt:
-        kind = "Call" if opt["kind"] == "call" else "Put"
-        lines.append(f"   期權：{opt['contracts']} 張 {kind} 行使價 ${opt['strike']:g} 到期 {opt['expiry']}")
+        lines.append(f"   期權：{fmt_option(opt)}")
     elif r["description"]:
         lines.append(f"   說明：{r['description'][:160]}")
     if r.get("change_pct") is not None:
@@ -361,7 +444,7 @@ def build_report(filings):
             "|---|---|---|---|---|---|---|---:|"]
     for r in txs:
         opt = r.get("option")
-        detail = (f"{opt['contracts']}張 {opt['kind'].title()} ${opt['strike']:g} 到期{opt['expiry']}"
+        detail = (fmt_option(opt)
                   if opt else (r["description"][:60] or ""))
         chg = f"{r['change_pct']:+.1f}%" if r.get("change_pct") is not None else "—"
         asset = r["asset"].replace("|", "/")[:45]
@@ -372,6 +455,38 @@ def build_report(filings):
         out += ["", "## 無法自動解析的申報", ""]
         out += [f"- {f['filing_date']} [{f['doc_id']}]({f['url']})" for f in unparsed]
     return "\n".join(out) + "\n"
+
+
+def filing_text(f):
+    """PTR 純文字：優先讀 raw 快取，沒有才下載 PDF 抽字並存檔。PDF 尚未上線回 None。"""
+    path = os.path.join(RAW_DIR, f"{f['doc_id']}.txt")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            return fh.read()
+    pdf = http_get(f["url"])
+    if pdf is None:
+        return None
+    try:
+        text = pdf_text(pdf)
+    except Exception as e:  # noqa: BLE001 — 壞檔當成空文字，不擋其他申報
+        print(f"  {f['doc_id']} PDF 讀取失敗：{e}")
+        text = ""
+    os.makedirs(RAW_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    time.sleep(0.5)
+    return text
+
+
+def safe_parse(f, text):
+    try:
+        rows = parse_ptr(text)
+    except Exception as e:  # noqa: BLE001 — 單份解析失敗不擋其他
+        print(f"  {f['doc_id']} 解析失敗：{e}")
+        rows = []
+    note = "（無文字，多半是掃描版）" if not text.strip() else ""
+    print(f"  {f['doc_id']}（{f['filing_date']}）交易 {len(rows)} 筆{note}")
+    return rows
 
 
 def gh_output(key, value):
@@ -388,6 +503,7 @@ def main():
     ap.add_argument("--member", default="Pelosi", help="議員姓氏（預設 Pelosi）")
     ap.add_argument("--no-prices", action="store_true", help="不抓 Yahoo 現價")
     ap.add_argument("--notify-backfill", action="store_true", help="首次建檔也產生通知")
+    ap.add_argument("--reparse", action="store_true", help="重新解析所有已知申報（改了解析規則後用）")
     args = ap.parse_args()
 
     today = datetime.now(timezone.utc).date()
@@ -414,19 +530,19 @@ def main():
             if f["doc_id"] in seen or f["doc_id"] in known:
                 continue
             f["url"] = PTR_URL.format(year=f["year"] or y, doc_id=f["doc_id"])
-            pdf = http_get(f["url"])
-            if pdf is None:
+            text = filing_text(f)
+            if text is None:
                 print(f"  {f['doc_id']} PDF 尚未上線，下次再試")
                 continue
-            try:
-                f["transactions"] = parse_ptr(pdf_text(pdf))
-            except Exception as e:  # noqa: BLE001 — 單份壞檔不擋其他
-                print(f"  {f['doc_id']} 解析失敗：{e}")
-                f["transactions"] = []
-            print(f"  {f['doc_id']}（{f['filing_date']}）交易 {len(f['transactions'])} 筆")
+            f["transactions"] = safe_parse(f, text)
             new.append(f)
             seen.add(f["doc_id"])
-            time.sleep(0.5)
+
+    if args.reparse:  # 解析規則改了之後，用 raw 文字重跑全部舊申報（raw 沒有才重新下載）
+        for f in filings:
+            text = filing_text(f)
+            if text is not None:
+                f["transactions"] = safe_parse(f, text)
 
     if not args.no_prices:
         attach_prices([r for f in filings + new for r in f["transactions"]])
