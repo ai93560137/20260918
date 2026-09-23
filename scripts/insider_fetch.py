@@ -29,6 +29,7 @@ import gzip
 import io
 import json
 import os
+import re
 import sys
 import time
 import zipfile
@@ -36,8 +37,13 @@ from datetime import date, datetime, timezone
 
 import requests
 
-URL = ("https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/"
-       "{y}q{q}_form345.zip")
+BASE = "https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/"
+# 檔名大小寫沒有把握（2025Q1_form345.zip / 2025q1_form345.zip），S3 對不存在的路徑也回 403，
+# 所以先從 SEC 的資料集頁面抓真正的連結；抓不到才兩種大小寫都試。
+URL_VARIANTS = [BASE + "{y}q{q}_form345.zip", BASE + "{y}Q{q}_form345.zip"]
+LIST_PAGES = ["https://www.sec.gov/data-research/sec-markets-data/insider-transactions-data-sets",
+              "https://www.sec.gov/dera/data/form-345"]
+LINK_RE = re.compile(r'href="([^"]*?(\d{4})[qQ]([1-4])_form345\.zip)"')
 FIRST_QUARTER = (2006, 1)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, "data", "insider")
@@ -194,6 +200,43 @@ def extract_purchases(zip_bytes, sample_dir=None):
     return out
 
 
+def discover_links(ua):
+    """從 SEC 資料集頁面抓每季 zip 的真正連結。回傳 ({(年, 季): url}, {頁面: HTTP 狀態})。"""
+    links, status = {}, {}
+    for page in LIST_PAGES:
+        try:
+            r = requests.get(page, headers=ua, timeout=60)
+        except requests.RequestException as e:
+            status[page] = str(e)
+            continue
+        status[page] = r.status_code
+        if r.status_code != 200:
+            continue
+        for href, y, q in LINK_RE.findall(r.text):
+            url = href if href.startswith("http") else "https://www.sec.gov" + (href if href.startswith("/") else "/" + href)
+            links.setdefault((int(y), int(q)), url)
+        if links:
+            break
+    return links, status
+
+
+def download(urls, ua, label):
+    """依序試每個網址。404/403 當作「這個網址不存在」換下一個；其他錯誤重試。全失敗回 None。"""
+    for url in urls:
+        for i in range(4):
+            try:
+                r = requests.get(url, headers=ua, timeout=300)
+                if r.status_code in (403, 404):
+                    print(f"  {label}：{url} → {r.status_code}", flush=True)
+                    break
+                r.raise_for_status()
+                return r.content
+            except requests.RequestException as e:
+                print(f"  {label} 第 {i + 1} 次失敗：{e}", flush=True)
+                time.sleep(5 * (i + 1))
+    return None
+
+
 def write_year(year, rows):
     os.makedirs(PURCHASE_DIR, exist_ok=True)
     rows.sort(key=lambda r: (r["filing_date"], r["ticker"], r["owner_cik"], r["trans_date"]))
@@ -248,25 +291,17 @@ def main():
         with open(STATE_FILE, "w") as f:
             json.dump(state, f, indent=1)
 
+    links, page_status = discover_links(ua)
+    print(f"資料集頁面：{page_status}；找到 {len(links)} 個季度連結"
+          + (f"（例：{next(iter(links.values()))}）" if links else ""), flush=True)
+    if links == {} and page_status and all(c == 403 for c in page_status.values()):
+        print(f"SEC 資料集頁面也回 403——是 User-Agent 被擋，不是網址錯。請把 SEC_USER_AGENT"
+              f"（目前：{ua['User-Agent']!r}）設成「名稱 + 真實 email」", flush=True)
+        return 2
+
     for n, (y, q) in enumerate(todo, 1):
-        url = URL.format(y=y, q=q)
-        blob = None
-        for i in range(4):
-            try:
-                r = requests.get(url, headers=ua, timeout=300)
-                if r.status_code == 404:
-                    break
-                if r.status_code == 403:
-                    # SEC 擋 User-Agent（或 IP 被限流）：重試沒用，直接停，已完成的季度都已存檔
-                    print(f"  {y}q{q}：403 Forbidden——SEC 拒絕請求，請確認 SEC_USER_AGENT"
-                          f"（目前：{ua['User-Agent']!r}）是「名稱 + email」格式", flush=True)
-                    return 2
-                r.raise_for_status()
-                blob = r.content
-                break
-            except requests.RequestException as e:
-                print(f"  {y}q{q} 第 {i + 1} 次失敗：{e}", flush=True)
-                time.sleep(5 * (i + 1))
+        urls = [links[(y, q)]] if (y, q) in links else [u.format(y=y, q=q) for u in URL_VARIANTS]
+        blob = download(urls, ua, f"{y}q{q}")
         if blob is None:
             print(f"  {y}q{q}：尚未上線或下載失敗", flush=True)
             if (y, q) != end:
