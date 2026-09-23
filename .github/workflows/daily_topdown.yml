@@ -68,12 +68,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install dependencies（每日篩選的 VCP 掃描要 numpy/pandas）
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
+        run: pip install -q numpy pandas openpyxl
+
       - name: HKEX Chinese names（港交所證券名單，港股中文名）
         if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
         continue-on-error: true   # 抓不到就沿用舊檔／英文名，不擋報告
         timeout-minutes: 5
         run: |
-          pip install -q openpyxl
           python3 scripts/fetch_hkex_names.py
 
       - name: Sector indices（三地板塊指數）
