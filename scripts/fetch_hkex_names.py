@@ -31,7 +31,8 @@ def download(url: str) -> bytes:
 def parse(xlsx: bytes, code_keys: tuple[str, ...], name_keys: tuple[str, ...]) -> tuple[str, dict[str, dict]]:
     """回傳 (更新日字串, {代碼: {name, category}})。表頭列用關鍵字找（檔案前幾列是標題/更新日）。"""
     import openpyxl
-    wb = openpyxl.load_workbook(io.BytesIO(xlsx), read_only=True, data_only=True)
+    # 不用 read_only：港交所的檔把工作表範圍寫成 A1:F8，唯讀模式照信就只讀到 8 列（2026-09-23 實測）
+    wb = openpyxl.load_workbook(io.BytesIO(xlsx), data_only=True)
     ws = wb.worksheets[0]
     asof, header, out = "", None, {}
     n_rows, samples = 0, []
@@ -40,7 +41,7 @@ def parse(xlsx: bytes, code_keys: tuple[str, ...], name_keys: tuple[str, ...]) -
         # 數字格：openpyxl 可能給 int 或 700.0，統一成整數字串
         cells = ["" if v is None else (str(int(v)) if isinstance(v, float) and v.is_integer() else str(v).strip())
                  for v in row]
-        if len(samples) < 12:
+        if len(samples) < 6:
             samples.append(cells[:6])
         if header is None:
             joined = " ".join(cells)
