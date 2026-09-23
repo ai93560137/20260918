@@ -23,7 +23,7 @@ on:
         required: false
         default: 'false'
       xcheck_min:
-        description: '全量歷史比對的時間上限（分鐘；空白 = 美股 15、日股 40）'
+        description: '全量歷史比對的時間上限（分鐘；空白 = 美股 15、日股 60）'
         required: false
         default: ''
 
@@ -86,7 +86,7 @@ jobs:
           XMIN: ${{ inputs.xcheck_min }}
         run: |
           if [[ ! "$XMIN" =~ ^[0-9]*$ ]]; then echo "xcheck_min 只能是數字"; exit 1; fi
-          if [ -z "$XMIN" ]; then if [ "$M" = "jp" ]; then XMIN=40; else XMIN=15; fi; fi
+          if [ -z "$XMIN" ]; then if [ "$M" = "jp" ]; then XMIN=60; else XMIN=15; fi; fi
           python3 scripts/xcheck_history.py --market "$M" --budget-min "$XMIN"
 
       - name: Data quality check
