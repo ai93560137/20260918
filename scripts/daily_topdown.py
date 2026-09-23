@@ -129,16 +129,41 @@ def fmt_d(d: date | None) -> str:
     return f"{d} 週{WEEKDAY_ZH[d.weekday()]}" if d else "—"
 
 
-def gap_note(last: date | None, as_of: date) -> str:
-    """last 之後到 as_of 之間的平日沒有收市（假期或數據未到）→ 列出日期。"""
+_CAL: dict[str, dict[date, tuple[str, str]]] = {}
+
+
+def holidays(market: str) -> dict[date, tuple[str, str]]:
+    """三地官方休市日曆（universes/calendars/<market>.csv，scripts/build_market_calendars.py 產生）：
+    {日期: (中文名, holiday 假期 / adhoc 臨時休市)}。"""
+    if market not in _CAL:
+        p = ROOT / "universes" / "calendars" / f"{market}.csv"
+        _CAL[market] = {}
+        if p.exists():
+            with open(p, newline="", encoding="utf-8") as f:
+                _CAL[market] = {date.fromisoformat(r["date"]): (r["name_zh"], r["kind"]) for r in csv.DictReader(f)}
+    return _CAL[market]
+
+
+def day_status(market: str, d: date, later_data: bool = False) -> str:
+    """某市場某個平日為何沒有收市：休市（假期名）／臨時休市／有開市但數據未到（或缺失）。"""
+    h = holidays(market).get(d)
+    if h:
+        return f"休市（{h[0]}）" if h[1] == "holiday" else f"臨時休市（{h[0]}）"
+    if later_data:
+        return "有開市但沒有數據（可能是颱風／黑雨等臨時休市，或數據缺失）"
+    return "有開市，數據未到（下次更新會補上）"
+
+
+def gap_note(last: date | None, as_of: date, market: str) -> str:
+    """last 之後到 as_of 之間沒有收市的平日，逐日標明是休市還是數據未到。"""
     if not last:
         return ""
     miss, d = [], last + timedelta(days=1)
     while d <= as_of:
         if d.weekday() < 5:
-            miss.append(f"{d.month}/{d.day}")
+            miss.append(f"{d.month}/{d.day} {day_status(market, d)}")
         d += timedelta(days=1)
-    return f"（{'、'.join(miss)} 沒有收市：假期或數據未到）" if miss else ""
+    return f"（{'；'.join(miss)}）" if miss else ""
 
 
 def pct(x: float | None, digits: int = 1, sign: bool = True) -> str:
@@ -249,7 +274,7 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
             for d in ds[bisect.bisect_left(ds, start):]:
                 cnt[d] = cnt.get(d, 0) + 1
         for d, n in cnt.items():
-            if n >= 0.5 * max(len(uni.eligible_at(d, first)), 1):
+            if d not in holidays(c) and n >= 0.5 * max(len(uni.eligible_at(d, first)), 1):
                 trading.add(d)
         mk[c] = {"uni": uni, "cache": cache, "first": first, "trading": trading,
                  "sec": uni.sectors()[0], "names": load_names(uni.cfg["market"])}
@@ -267,7 +292,8 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
         for c in LIST_ORDER:
             m_ = mk[c]
             if D not in m_["trading"]:
-                md_lines.append(f"## {COUNTRIES[c]['zh']}\n\n沒有 {D} 的收市數據（休市，或數據未到——之後幾天的例行重算會補上）\n")
+                later = any(d > D for d in m_["trading"])
+                md_lines.append(f"## {COUNTRIES[c]['zh']}\n\n{fmt_d(D)}：{day_status(c, D, later)}\n")
                 continue
             ms = {}
             for t in m_["uni"].eligible_at(D, m_["first"]):
@@ -354,6 +380,18 @@ def main() -> None:
         """創新高的最長窗口（顯示時每隻股票只列在這一格，不在較短窗口重複）。"""
         return next((lab for lab in SHOW if m["highs"][lab]), "")
 
+    def streak(c: str, t: str) -> int:
+        """連續第幾個交易日列在今天這個窗口（最長新高窗口相同、且在 200 日線上）；窗口改變就由 1 重新計。"""
+        lab = longest(stocks[c][t])
+        rows, hl = series_of[c][t]
+        n = 0
+        for i in range(len(rows) - 1, max(len(rows) - 120, 0), -1):
+            m = metrics(rows[max(0, i - 300):i + 1], hl[max(0, i - 300):i + 1])
+            if not m or m["vs200"] is None or m["vs200"] <= 0 or longest(m) != lab:
+                break
+            n += 1
+        return n
+
     # --- 第一層：國家（只排名，不篩選）---
     country = {}
     for c, cfg in COUNTRIES.items():
@@ -366,6 +404,7 @@ def main() -> None:
 
     # --- 第二、三層：個股 200 日線 → 新高 ---
     stocks: dict[str, dict[str, dict]] = {}
+    series_of: dict[str, dict] = {}          # 每個市場每檔的 (還原收市, 原始收市/最高) 序列，算連續天數用
     sec_of: dict[str, dict[str, str]] = {}
     names: dict[str, dict[str, str]] = {}
     for c, cfg in COUNTRIES.items():
@@ -376,6 +415,7 @@ def main() -> None:
             if rows:
                 first[t], data[t] = rows[0][0], (rows, hl)
         stocks[c] = {t: m for t in uni.eligible_at(as_of, first) if (m := metrics(*data[t]))}
+        series_of[c] = data
         sec_of[c] = uni.sectors()[0]
         names[c] = load_names(uni.cfg["market"])
         st = stocks[c]
@@ -458,7 +498,7 @@ def main() -> None:
         sd, table = sectors[c]
         hi_tot = {lab: sum(r["excl"][lab] for r in table) for lab in WIN}
         L.append(f"### {COUNTRIES[c]['zh']}（{Universe(COUNTRIES[c]['index']).cfg['name']}，收市 {fmt_d(x['last'])}）"
-                 f"{gap_note(x['last'], as_of)}\n")
+                 f"{gap_note(x['last'], as_of, c)}\n")
         L.append(f"成分股 {x['n_members']} → 200 日線上 **{len(x['above'])}** → "
                  + "、".join(f"{lab}新高 **{hi_tot[lab]}**" for lab in SHOW) + f"（合共 **{len(x['kept'])}**）\n")
         L.append("| 板塊 | 成分股 | 200日線上 | " + " | ".join(f"**{lab}新高**" for lab in SHOW)
@@ -490,11 +530,11 @@ def main() -> None:
             if not hits:
                 L.append("（無）\n")
                 continue
-            L.append("| 板塊 | 代碼 | 名稱 | 距200日線 | 1個月 | 3個月 | 12個月 |")
-            L.append("|---|---|---|---|---|---|---|")
+            L.append("| 板塊 | 代碼 | 名稱 | 連續天數 | 距200日線 | 1個月 | 3個月 | 12個月 |")
+            L.append("|---|---|---|---|---|---|---|---|")
             for t in sorted(hits, key=lambda t: (order.index(sector_zh(sec_of[c], t)), t)):
                 m = st[t]
-                L.append(f"| {sector_zh(sec_of[c], t)} | {disp(t)} | {names[c].get(t, '')} | "
+                L.append(f"| {sector_zh(sec_of[c], t)} | {disp(t)} | {names[c].get(t, '')} | 🟢{streak(c, t)} | "
                          f"{pct(m['vs200'])} | {pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
             L.append("")
 
@@ -561,9 +601,9 @@ def main() -> None:
 
     # Telegram（給投資人看）：第一則總覽，之後每個市場一則；每個窗口列出**全部**股票與名稱，不省略。
     # Telegram 單則上限 4096 字，超過就按行切成多則（標「續」）。
-    def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.JP / AMD）+ 名稱；收市日跟該市場不同就標日期
+    def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.JP / AMD）+ 名稱 + 連續天數；收市日跟該市場不同就標日期
         n = names[c].get(t, "")
-        s_ = f"{disp(t)} {n}" if n else disp(t)
+        s_ = (f"{disp(t)} {n}" if n else disp(t)) + f" 🟢{streak(c, t)}"
         lt = stocks[c][t]["last"]
         return s_ + (f"（{lt.month}/{lt.day} 收市）" if lt != country[c]["last"] else "")
 
@@ -577,6 +617,7 @@ def main() -> None:
             "③ 該收市價高於過去 12／9／6／3 個月的最高價（盤中最高，跟報價頁「52 週高」同一把尺）",
             "④ 按板塊（行業）統計檔數，並列出每一隻股票",
             "每隻股票只列在它創新高的最長窗口（列在 12 個月的，也是 9／6／3 個月新高，不再重複）",
+            "🟢N = 連續第 N 個交易日列在同一個窗口；窗口改變（例如 3 個月升到 6 個月）就由 🟢1 重新計",
             "",
             "國家動能（3/6/12 個月報酬平均）：",
             *[f"・{COUNTRIES[c]['zh']}（{disp(country[c]['ticker'])}，收市 {fmt_d(country[c]['m']['last'])}）"
@@ -585,7 +626,7 @@ def main() -> None:
             "各市場總覽："]
     for c in ranked:
         x, st = country[c], stocks[c]
-        head.append(f"【{COUNTRIES[c]['zh']}】收市 {fmt_d(x['last'])}{gap_note(x['last'], as_of)}")
+        head.append(f"【{COUNTRIES[c]['zh']}】收市 {fmt_d(x['last'])}{gap_note(x['last'], as_of, c)}")
         head.append(f"  {x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔 → "
                     + "、".join(f"{lab}新高 {sum(1 for t in x['above'] if longest(st[t]) == lab)}" for lab in SHOW)
                     + f"（合共 {len(x['kept'])}）")
@@ -594,7 +635,7 @@ def main() -> None:
     for c in ranked:
         x, st = country[c], stocks[c]
         lines = [f"【{COUNTRIES[c]['zh']}｜{uni_name[c]}】收市 {fmt_d(x['last'])}",
-                 *([gap_note(x["last"], as_of)] if gap_note(x["last"], as_of) else []),
+                 *([gap_note(x["last"], as_of, c)] if gap_note(x["last"], as_of, c) else []),
                  f"成分股 {x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔"]
         for lab in SHOW:
             hits = {t for t in x["above"] if longest(st[t]) == lab}

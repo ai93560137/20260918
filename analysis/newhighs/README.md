@@ -8,7 +8,7 @@
 
 由 `scripts/daily_topdown.py` 產生，`.github/workflows/daily_topdown.yml` 每個交易日早上自動更新並 commit。
 每次都會重算最近 5 個交易日，遲到或被補回的收市數據（例如 Yahoo 暫時缺的一天）會自動補進當天的名單。
-某個市場當天休市（例如日本假期）就不列該市場。
+某個市場當天沒有收市就不列該市場，並按三地官方休市日曆（`universes/calendars/`）註明是「休市（假期名）」還是「有開市但數據未到」。
 
 ## 規則（跟每日報告一致）
 
