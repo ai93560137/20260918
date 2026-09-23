@@ -48,13 +48,19 @@ def consecutive(mask: np.ndarray) -> np.ndarray:
 def load_full(market: str):
     """全市場數據（data_full/<market>/<TICKER>.csv.gz，不進 git）的 loader，格式同 marketdata.load_ohlcv。"""
     base = ROOT / "data_full" / market
+    # 品質檢查（scripts/qc_full_market.py）：整檔排除 + 殭屍段
+    ex_p, zb_p = base / "_qc_exclude.txt", base / "_qc_zombie.json"
+    excluded = set(ex_p.read_text(encoding="utf-8").split()) if ex_p.exists() else set()
+    zombies = json.loads(zb_p.read_text(encoding="utf-8")) if zb_p.exists() else {}
 
     def loader(t: str) -> list[dict]:
         p = base / f"{t.replace('^', '_')}.csv.gz"
-        if not p.exists():
+        if not p.exists() or t.replace('^', '_') in excluded:
             raise FileNotFoundError(p)
         df = pd.read_csv(p, compression="gzip")
         df = df[df["Close"] > 0]
+        for a, b in zombies.get(t.replace('^', '_'), []):
+            df = df[(df["Date"] < a) | (df["Date"] > b)]
         rows = [(date.fromisoformat(d), o, h, lo, c, int(v) if v == v else 0)
                 for d, o, h, lo, c, v in zip(df["Date"], df["Open"], df["High"], df["Low"], df["Close"], df["Volume"])]
         kept, _ = md.drop_spikes(rows)
@@ -157,6 +163,14 @@ class MarketData:
             keep = [i for i in range(len(names)) if mem[i, j0:].any()]
             tickers = [names[i] for i in keep]
             tv_rank = {names[i]: mem[i] for i in keep}
+            # 成交額名次（1 = 最大；只給訊號報告「大/中/小型」分布用）
+            rk = np.full(tv.shape, 0, dtype=np.int32)
+            for j in range(tv.shape[1]):
+                col = tv[:, j]
+                ok = np.nonzero(~np.isnan(col) & (col > 0))[0]
+                rk[ok[np.argsort(-col[ok])], j] = np.arange(1, len(ok) + 1)
+            self.tv_rankpos = {names[i]: rk[i] for i in keep}
+            self.top_n = top_n
             print(f"[{market}] 全市場候選 {len(names)} 檔有數據、曾入前 {top_n} 名 {len(tickers)} 檔", file=sys.stderr)
         frames, first = {}, {}
         for t in tickers:

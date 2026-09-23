@@ -24,7 +24,8 @@ FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010}   # 全市場成本（每
 
 
 class VCPData:
-    def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N, full: bool = False):
+    def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N, full: bool = False,
+                 exclude: set | None = None):
         if full:     # 全市場版（VCP_FULLMARKET_BACKTEST.md）：成交額前 N、成本加大
             pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
                 encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
@@ -54,6 +55,7 @@ class VCPData:
             r252[s] = (adj / adj.shift(252) - 1).reindex(idx).to_numpy()
             self.raw[s] = {"dates": {d: i for i, d in enumerate(df.index)}, "high": high.to_numpy(),
                            "low": low.to_numpy(), "close": close.to_numpy(), "vol": vol.to_numpy(),
+                           "open": df["Open"].to_numpy(dtype=float),
                            "alow": (low * f).to_numpy()}
         # 相對強度：當天 PIT 成分股中 252 日報酬的百分位
         rs = np.full((S, Dn), np.nan)
@@ -72,7 +74,7 @@ class VCPData:
             if p is None:
                 continue
             info = vcp.analyze(rw["high"], rw["low"], rw["close"], rw["vol"], rw["alow"], p, version, n)
-            if info:
+            if info and (m.tickers[s], m.cal[j].isoformat()) not in (exclude or set()):
                 self.info[(int(s), int(j))] = info
         print(f"[{market}] 趨勢模板+放量候選 {int(cand.sum())} 個、形態成立（未判 r/D）{len(self.info)} 個", file=sys.stderr)
 
@@ -148,10 +150,14 @@ def main() -> None:
     ap.add_argument("--version", type=int, default=2, choices=(1, 2), help="1 = 3%% ZigZag（原登記）、2 = 碎形高點（修訂）")
     ap.add_argument("--n", type=int, default=vcp.FRACTAL_N, help="v2 碎形窗口（預設 5；10 只作敏感度）")
     ap.add_argument("--full", action="store_true", help="全市場版（data_full/、成交額前 N）")
+    ap.add_argument("--exclude-signals", type=Path, default=None,
+                    help="逐筆核對標為可疑的訊號（JSON：[[ticker, 訊號日], ...]），剔除後重算")
+    ap.add_argument("--tag", default="", help="輸出檔名後綴（例：_qc）")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
     args.out = args.out or ROOT / "research" / ("vcp_full" if args.full else "vcp")
-    v = VCPData(args.market, args.version, args.n, full=args.full)
+    excl = {tuple(x) for x in json.loads(args.exclude_signals.read_text())} if args.exclude_signals else None
+    v = VCPData(args.market, args.version, args.n, full=args.full, exclude=excl)
     m = v.m
     res = {"market": args.market, "cells": {}, "random": {}}
     for r, D in GRID:
@@ -176,6 +182,28 @@ def main() -> None:
                   + (f"  平均停損距離 {np.mean(stops):.1%}" if stops else ""), file=sys.stderr)
         if (r, D) == DEFAULT:
             res["n_t"] = dict(Counter(info["n_t"] for info in ev.values()))
+            # 預設格逐筆（給 scripts/verify_trades.py 核對）
+            raw_px = []
+            for (s, a, b, op) in v.trades(ev, "xv"):
+                t = m.tickers[s]
+                j = next(jj for (ss, jj) in ev if ss == s and m.next_px[s, jj + 1] == a)
+                rw = v.raw[s]
+                p_sig, p_a = rw["dates"][m.cal[j]], rw["dates"].get(m.cal[a])
+                p_b = rw["dates"].get(m.cal[b])
+                raw_px.append({"ticker": t, "signal": m.cal[j].isoformat(), "entry": m.cal[a].isoformat(),
+                               "exit": m.cal[b].isoformat(), "exit_at_open": bool(op),
+                               "signal_close": float(rw["close"][p_sig]), "signal_volume": float(rw["vol"][p_sig]),
+                               "entry_open": float(rw["open"][p_a]) if p_a is not None else None,
+                               "exit_px": (float(rw["open"][p_b]) if op else float(rw["close"][p_b])) if p_b is not None else None,
+                               "tv_rank": int(m.tv_rankpos[t][j]) if hasattr(m, "tv_rankpos") else None})
+            res["trades_detail"] = raw_px
+            if hasattr(m, "tv_rankpos"):
+                third = m.top_n / 3
+                ranks = [x["tv_rank"] for x in raw_px if x["tv_rank"]]
+                res["rank_dist"] = {"大型（前 1/3）": sum(r_ <= third for r_ in ranks),
+                                    "中型": sum(third < r_ <= 2 * third for r_ in ranks),
+                                    "小型（後 1/3）": sum(r_ > 2 * third for r_ in ranks)}
+                print(f"預設格訊號成交額排名分布：{res['rank_dist']}", file=sys.stderr)
             print(f"預設格收縮次數分布：{dict(sorted(res['n_t'].items()))}", file=sys.stderr)
     if args.random:
         ev = v.events(*DEFAULT)
@@ -186,7 +214,7 @@ def main() -> None:
         print(f"隨機對照 {len(ts)} 次：中位數 {ts[len(ts) // 2]:.2f}、第 90 百分位 {ts[int(0.9 * len(ts))]:.2f}；"
               f"預設格 {real:.2f} 在第 {pct:.0%} 百分位", file=sys.stderr)
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / (f"{args.market}_v{args.version}" + ("" if args.n == vcp.FRACTAL_N else f"_n{args.n}") + ".json")).write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float) + "\n",
+    (args.out / (f"{args.market}_v{args.version}" + ("" if args.n == vcp.FRACTAL_N else f"_n{args.n}") + args.tag + ".json")).write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float) + "\n",
                                                   encoding="utf-8")
 
 
