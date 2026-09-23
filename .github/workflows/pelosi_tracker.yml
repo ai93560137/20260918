@@ -22,6 +22,10 @@ on:
         description: '重跑回測'
         required: false
         default: 'true'
+      reparse:
+        description: '用 raw 文字重新解析所有舊申報（改了解析規則後用）'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -37,6 +41,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout US equities（回測用本地日線，只取 data/equities/us）
+        uses: actions/checkout@v4
+        continue-on-error: true   # 拿不到就全部改抓 Yahoo
+        with:
+          ref: claude/gifted-carson-v2tvhw
+          path: _equities
+          fetch-depth: 1
+          sparse-checkout: data/equities/us
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -49,9 +62,11 @@ jobs:
         env:
           YEARS: ${{ inputs.years }}
           BACKFILL: ${{ inputs.notify_backfill }}
+          REPARSE: ${{ inputs.reparse }}
         run: |
           ARGS=""
-          [ -n "$YEARS" ] && ARGS="--years $YEARS"
+          [ "$REPARSE" = "true" ] && ARGS="$ARGS --reparse"
+          [ -n "$YEARS" ] && ARGS="$ARGS --years $YEARS"
           [ "$BACKFILL" = "true" ] && ARGS="$ARGS --notify-backfill"
           python3 scripts/pelosi_tracker.py $ARGS
 
@@ -75,7 +90,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add data/pelosi/state.json data/pelosi/transactions.json data/pelosi/README.md; [ -d data/pelosi/backtest ] && git add data/pelosi/backtest; true; }
+          add_out() { git add data/pelosi/state.json data/pelosi/transactions.json data/pelosi/README.md; [ -d data/pelosi/raw ] && git add data/pelosi/raw; [ -d data/pelosi/backtest ] && git add data/pelosi/backtest; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "chore(pelosi): 更新佩洛西交易 $(date -u +%F)"

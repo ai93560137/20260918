@@ -42,6 +42,7 @@ OUT_DIR = os.path.join(ROOT, "data", "pelosi")
 STATE_FILE = os.path.join(OUT_DIR, "state.json")
 TX_FILE = os.path.join(OUT_DIR, "transactions.json")
 REPORT_FILE = os.path.join(OUT_DIR, "README.md")
+RAW_DIR = os.path.join(OUT_DIR, "raw")  # 每份 PTR 抽出的純文字，可離線重新解析
 BACKFILL_FROM = 2014  # 更早的申報多為紙本掃描，解析不了
 
 TX_TYPES = {"P": "買入", "S": "賣出", "S (partial)": "部分賣出", "E": "交換"}
@@ -57,7 +58,8 @@ CORE_RE = re.compile(
     r"(?P<amount>\$[\d,]+\s*-\s*\$[\d,]+|Over \$[\d,]+|Spouse/DC Over \$[\d,]+|\$[\d,]+)"
 )
 OWNER_RE = re.compile(r"(?:^|\s)(SP|JT|DC)\s")
-TICKER_RE = re.compile(r"\(([A-Z][A-Z0-9.\-]{0,6})\)\s*$")
+# pypdf 偶爾把代號抽成小寫字母（TSlA、AAPl），所以不分大小寫、之後轉大寫
+TICKER_RE = re.compile(r"\(([A-Za-z][A-Za-z0-9.\-]{0,6})\)\s*$")
 # 頁首/頁尾樣板文字，出現在交易列表中間時要剔除
 BOILERPLATE_RE = re.compile(
     r"\* For the complete list of asset type abbreviations.*?(?=SP |JT |DC |$)"
@@ -142,7 +144,10 @@ def _clean_desc(text):
     text = BOILERPLATE_RE.sub(" ", text)
     text = re.sub(r"\s+", " ", text).strip()
     # 常見欄位：F S: New（申報狀態）、S O:（子帳戶）、D:（說明）、C:（備註）
-    m = re.search(r"\bD:\s*(.+?)(?=\s+(?:C:|F S:|S O:|I P O|\* For)|$)", text)
+    # 標籤前不一定有空白（F S: NewD: Purchased…），也可能是全寫 DESCRIPTION:
+    m = re.search(r"(?<![A-Z])D(?:ESCRIPTION)?\s*:\s*(.+?)"
+                  r"(?=\s*(?:C(?:OMMENTS)?\s*:|F\s?S\s*:|FILING STATUS|S\s?O\s*:|SUBHOLDING OF|I P O|\* For)|$)",
+                  text)
     return m.group(1).strip() if m else ""
 
 
@@ -196,7 +201,7 @@ def parse_ptr(text):
             rows[-1]["description"] = _clean_desc(desc_prev)
         asset = asset.strip()
         tm = TICKER_RE.search(asset)
-        ticker = tm.group(1) if tm else ""
+        ticker = tm.group(1).upper() if tm else ""
         name = asset[:tm.start()].strip() if tm else asset
         tx = re.sub(r"\s+", " ", m.group("tx"))
         lo, hi = parse_amount(m.group("amount"))
@@ -374,6 +379,38 @@ def build_report(filings):
     return "\n".join(out) + "\n"
 
 
+def filing_text(f):
+    """PTR 純文字：優先讀 raw 快取，沒有才下載 PDF 抽字並存檔。PDF 尚未上線回 None。"""
+    path = os.path.join(RAW_DIR, f"{f['doc_id']}.txt")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            return fh.read()
+    pdf = http_get(f["url"])
+    if pdf is None:
+        return None
+    try:
+        text = pdf_text(pdf)
+    except Exception as e:  # noqa: BLE001 — 壞檔當成空文字，不擋其他申報
+        print(f"  {f['doc_id']} PDF 讀取失敗：{e}")
+        text = ""
+    os.makedirs(RAW_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    time.sleep(0.5)
+    return text
+
+
+def safe_parse(f, text):
+    try:
+        rows = parse_ptr(text)
+    except Exception as e:  # noqa: BLE001 — 單份解析失敗不擋其他
+        print(f"  {f['doc_id']} 解析失敗：{e}")
+        rows = []
+    note = "（無文字，多半是掃描版）" if not text.strip() else ""
+    print(f"  {f['doc_id']}（{f['filing_date']}）交易 {len(rows)} 筆{note}")
+    return rows
+
+
 def gh_output(key, value):
     path = os.environ.get("GITHUB_OUTPUT")
     if path:
@@ -388,6 +425,7 @@ def main():
     ap.add_argument("--member", default="Pelosi", help="議員姓氏（預設 Pelosi）")
     ap.add_argument("--no-prices", action="store_true", help="不抓 Yahoo 現價")
     ap.add_argument("--notify-backfill", action="store_true", help="首次建檔也產生通知")
+    ap.add_argument("--reparse", action="store_true", help="重新解析所有已知申報（改了解析規則後用）")
     args = ap.parse_args()
 
     today = datetime.now(timezone.utc).date()
@@ -414,19 +452,19 @@ def main():
             if f["doc_id"] in seen or f["doc_id"] in known:
                 continue
             f["url"] = PTR_URL.format(year=f["year"] or y, doc_id=f["doc_id"])
-            pdf = http_get(f["url"])
-            if pdf is None:
+            text = filing_text(f)
+            if text is None:
                 print(f"  {f['doc_id']} PDF 尚未上線，下次再試")
                 continue
-            try:
-                f["transactions"] = parse_ptr(pdf_text(pdf))
-            except Exception as e:  # noqa: BLE001 — 單份壞檔不擋其他
-                print(f"  {f['doc_id']} 解析失敗：{e}")
-                f["transactions"] = []
-            print(f"  {f['doc_id']}（{f['filing_date']}）交易 {len(f['transactions'])} 筆")
+            f["transactions"] = safe_parse(f, text)
             new.append(f)
             seen.add(f["doc_id"])
-            time.sleep(0.5)
+
+    if args.reparse:  # 解析規則改了之後，用 raw 文字重跑全部舊申報（raw 沒有才重新下載）
+        for f in filings:
+            text = filing_text(f)
+            if text is not None:
+                f["transactions"] = safe_parse(f, text)
 
     if not args.no_prices:
         attach_prices([r for f in filings + new for r in f["transactions"]])

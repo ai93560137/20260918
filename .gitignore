@@ -5,3 +5,4 @@ venv/
 *.egg-info/
 .env
 data/pelosi/tg_msg_*.txt
+_equities/

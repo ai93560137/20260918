@@ -3,7 +3,8 @@
 # 佩洛西跟單回測（方案 B：申報日跟單）
 # -----------------------------------------------------------------------------
 # 輸入：data/pelosi/transactions.json（scripts/pelosi_tracker.py 產生）
-# 價格：Yahoo 日線（開/收盤按 adjclose 還原除權息）
+# 價格：優先讀本地美股日線（gifted-carson 分支 data/equities/us，已拆股調整，
+#       這裡再用 actions.csv 的股息還原成含息總報酬）；本地沒有的代號才抓 Yahoo 還原日線。
 #
 # 規則（不偷看未來）：
 #   * 進場：申報日「之後」第一個交易日的開盤價。申報可能在收盤後才公開，
@@ -21,6 +22,7 @@
 # 用法：
 #   python3 scripts/pelosi_backtest.py
 #   python3 scripts/pelosi_backtest.py --start 2018-01-01 --exits sell h3m h12m
+#   python3 scripts/pelosi_backtest.py --equities path/to/data/equities/us
 # 輸出：data/pelosi/backtest/README.md、trades.csv、summary.json、equity.svg
 # =============================================================================
 import argparse
@@ -38,6 +40,8 @@ import requests
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TX_FILE = os.path.join(ROOT, "data", "pelosi", "transactions.json")
 OUT_DIR = os.path.join(ROOT, "data", "pelosi", "backtest")
+# workflow 把 gifted-carson 分支的美股資料 sparse checkout 到 _equities/
+DEFAULT_EQUITIES = os.path.join(ROOT, "_equities", "data", "equities", "us")
 YAHOO_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
 UA = {"User-Agent": "Mozilla/5.0 (pelosi-backtest; +github actions)"}
 BENCHMARKS = ["SPY", "QQQ"]
@@ -104,9 +108,75 @@ def fetch_prices(ticker, start, retries=4):
             time.sleep(2 ** (i + 1))
 
 
-def load_all_prices(tickers, start, cache_dir=None):
+def _read_csv_rows(path):
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def load_local_prices(equities_dir, ticker, start):
+    """讀本地日線（已拆股調整），用股息往回乘還原因子得到含息總報酬價。
+    做法同 Yahoo adjclose：除息日之前的價格 × (1 − 股息 ÷ 除息前一日收盤)。"""
+    folder = os.path.join(equities_dir, ticker.replace(".", "-").replace("/", "-"))
+    if not os.path.isdir(folder):
+        return None
+    rows = []
+    for name in sorted(os.listdir(folder)):
+        if not (name.startswith("prices_") and name.endswith(".csv")):
+            continue
+        try:
+            year = int(name[7:11])
+        except ValueError:
+            continue
+        if year < start.year:
+            continue
+        for r in _read_csv_rows(os.path.join(folder, name)):
+            try:
+                d = date.fromisoformat(r["Date"])
+                o, c = float(r["Open"]), float(r["Close"])
+            except (KeyError, ValueError):
+                continue
+            if o > 0 and c > 0 and d >= start:
+                rows.append((d, o, c))
+    rows.sort()
+    rows = [r for i, r in enumerate(rows) if i == 0 or r[0] != rows[i - 1][0]]
+    if not rows:
+        return None
+    divs = {}
+    act = os.path.join(folder, "actions.csv")
+    if os.path.exists(act):
+        for r in _read_csv_rows(act):
+            try:
+                if r.get("Dividend"):
+                    d = date.fromisoformat(r["Date"])
+                    divs[d] = divs.get(d, 0.0) + float(r["Dividend"])
+            except ValueError:
+                continue
+    days = [r[0] for r in rows]
+    # 股息對到除息日當天或之後第一個交易日
+    div_at = {}
+    for d, amt in divs.items():
+        i = bisect_right(days, d - timedelta(days=1))
+        if 0 < i < len(days):
+            div_at[i] = div_at.get(i, 0.0) + amt
+    factor, f = [1.0] * len(rows), 1.0
+    for i in range(len(rows) - 1, -1, -1):
+        factor[i] = f
+        if i in div_at:
+            prev_close = rows[i - 1][2]
+            f *= max(1 - div_at[i] / prev_close, 0.5)  # 防呆：異常股息不讓價格歸零
+    return Prices(days, [r[1] * k for r, k in zip(rows, factor)], [r[2] * k for r, k in zip(rows, factor)])
+
+
+def load_all_prices(tickers, start, cache_dir=None, equities_dir=None, sources=None):
     out = {}
+    sources = sources if sources is not None else {}
     for n, tk in enumerate(sorted(tickers), 1):
+        if equities_dir:
+            p = load_local_prices(equities_dir, tk, start)
+            if p:
+                out[tk] = p
+                sources[tk] = "local"
+                continue
         cache = os.path.join(cache_dir, f"{tk}.json") if cache_dir else None
         if cache and os.path.exists(cache):
             with open(cache) as f:
@@ -116,6 +186,7 @@ def load_all_prices(tickers, start, cache_dir=None):
         p = fetch_prices(tk, start)
         if p:
             out[tk] = p
+            sources[tk] = "yahoo"
             if cache:
                 with open(cache, "w") as f:
                     json.dump({"d": [d.isoformat() for d in p.days], "o": p.open, "c": p.close}, f)
@@ -429,7 +500,9 @@ def main():
     ap.add_argument("--out", default=OUT_DIR)
     ap.add_argument("--start", help="只用此日期（含）之後的申報，YYYY-MM-DD")
     ap.add_argument("--exits", nargs="*", default=ALL_EXITS, choices=ALL_EXITS)
-    ap.add_argument("--cache", help="價格快取資料夾（本機反覆跑時用）")
+    ap.add_argument("--cache", help="Yahoo 價格快取資料夾（本機反覆跑時用）")
+    ap.add_argument("--equities", default=os.environ.get("PELOSI_EQUITIES", DEFAULT_EQUITIES),
+                    help="本地美股日線資料夾（data/equities/us 格式）；不存在就全部用 Yahoo")
     args = ap.parse_args()
 
     with open(args.transactions, encoding="utf-8") as f:
@@ -447,7 +520,13 @@ def main():
     if args.cache:
         os.makedirs(args.cache, exist_ok=True)
     tickers = {s["ticker"] for s in signals} | set(BENCHMARKS) | set(EXTRA_BENCH)
-    prices = load_all_prices(tickers, first - timedelta(days=10), args.cache)
+    equities = args.equities if args.equities and os.path.isdir(args.equities) else None
+    print(f"本地美股資料：{equities or '無（全部用 Yahoo）'}")
+    sources = {}
+    prices = load_all_prices(tickers, first - timedelta(days=10), args.cache, equities, sources)
+    n_local = sum(1 for v in sources.values() if v == "local")
+    src_note = f"價格來源：本地美股資料 {n_local} 檔、Yahoo {len(sources) - n_local} 檔"
+    print(src_note)
     spy, qqq = prices.get("SPY"), prices.get("QQQ")
     if not spy:
         print("抓不到 SPY，無法建立交易日曆")
@@ -503,10 +582,10 @@ def main():
     summary = [{k: r[k] for k in ("exit", "weight", "port", "trade_date_port", "trades")} for r in results]
     with open(os.path.join(args.out, "summary.json"), "w", encoding="utf-8") as f:
         json.dump({"generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                   "benchmarks": bstats, "results": summary}, f, ensure_ascii=False, indent=1, default=str)
+                   "price_sources": sources, "benchmarks": bstats, "results": summary}, f, ensure_ascii=False, indent=1, default=str)
 
     with open(os.path.join(args.out, "README.md"), "w", encoding="utf-8") as f:
-        f.write(render_report(results, best, bstats, nanc_note, signals, cal))
+        f.write(render_report(results, best, bstats, nanc_note, signals, cal, src_note))
     print(f"報告：{os.path.relpath(os.path.join(args.out, 'README.md'), ROOT)}")
     return 0
 
@@ -516,7 +595,7 @@ EXIT_NAMES = {"sell": "跟賣出場", "h1m": "持有 1 個月", "h3m": "持有 3
 WEIGHT_NAMES = {"equal": "等權重", "amount": "金額加權"}
 
 
-def render_report(results, best, bstats, nanc_note, signals, cal):
+def render_report(results, best, bstats, nanc_note, signals, cal, src_note=""):
     lags = sorted(s["lag_days"] for s in signals)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     o = [
@@ -524,7 +603,8 @@ def render_report(results, best, bstats, nanc_note, signals, cal):
         f"更新：{now}　｜　期間 {cal[0]} ～ {cal[-1]}　｜　訊號 {len(signals)} 筆"
         f"　｜　申報延遲中位數 {lags[len(lags) // 2]} 天", "",
         "規則：申報公開後的下一個交易日**開盤**進場；Call 期權改買正股；Put 與交換略過。"
-        "組合只持有未平倉部位、依市值加權，空倉時為現金。價格為 Yahoo 還原日線，未計手續費與滑價。", "",
+        "組合只持有未平倉部位、依市值加權，空倉時為現金。價格為含息還原日線，未計手續費與滑價。"
+        f"{src_note}。", "",
         "![淨值](equity.svg)", "",
         "## 組合績效", "",
         "| 出場 | 倉位 | 年化 | 總報酬 | 最大回撤 | 波動 | Sharpe | 持倉時間 | 交易日進場（對照） |",
