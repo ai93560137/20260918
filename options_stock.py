@@ -4,7 +4,7 @@
     python3 options_stock.py --selftest
     python3 options_stock.py --market us        # ρ 格點掃描 + 指數參考 → research/options_equity/stock_us.json
     python3 options_stock.py --market hk
-    python3 options_stock.py --live us          # 今天的真實個股 ρ（讀 data/options_equity/live/）
+    python3 options_stock.py --live us|hk       # 今天的真實個股 ρ（讀 data/options_equity/live/）
 
 - 宇宙：S&P 500／恒指 point-in-time 成分股（防代碼重用），每月到期日當天仍在指數且有 ≥ 60 日有效報酬的股票
 - 平值 IV = ρ × RV63（入場日前 63 個交易日 AdjClose 對數報酬年化），偏斜 = 第一部分同市場斜率的一半，下限 5%
@@ -389,6 +389,59 @@ def live_us() -> dict:
                 rv_median=float(np.median([r["rv"] for r in rows])) if rows else None, rows=rows)
 
 
+def live_hk() -> dict:
+    """港交所股票期權每日市場報告：每類別取 20–45 日內最近到期、最接近收市價的行使價，call／put 的 IV%（港交所按結算價計）平均。
+    宇宙 = 報告日的恒指成分股；RV63 用我們自己的日線。"""
+    import gzip
+    import re
+    from datetime import datetime
+    reps = sorted(LIVE.glob("hk_dqe_*.htm.gz"))
+    if not reps:
+        raise SystemExit("沒有 data/options_equity/live/hk_dqe_*.htm.gz")
+    rp = reps[-1]
+    day = date.fromisoformat(rp.name[7:17])
+    txt = re.sub(r"<[^>]*>", "", gzip.decompress(rp.read_bytes()).decode("latin-1"))
+    code_of = {}
+    for m_ in re.finditer(r"^([A-Z0-9]{3}) .{20,40}?\(\s*(\d{5})\)", txt, re.M):
+        code_of[m_.group(1)] = f"{int(m_.group(2)):04d}.HK"
+    members = set(Universe("hsi").members_at(day))
+    rows, seen = [], set()
+    for sec in re.split(r"(?=^CLASS [A-Z0-9]{3} - )", txt, flags=re.M):
+        h = re.match(r"CLASS ([A-Z0-9]{3}) - .*?CLOSING PRICE HK\$\s*([\d.,]+)", sec)
+        if not h or h.group(1) in seen:
+            continue
+        seen.add(h.group(1))
+        tk = code_of.get(h.group(1))
+        if tk not in members or not md.has_data(tk) or any(r["ticker"] == tk for r in rows):   # 調整後合約另開類別：每檔只算第一個
+            continue
+        spot = float(h.group(2).replace(",", ""))
+        ser = {}
+        for m_ in re.finditer(r"^(\d{2}[A-Z]{3}\d{2})\s+([\d.,]+) ([CP])\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+[-+\d.]+\s+(\d+)", sec, re.M):
+            ex = datetime.strptime(m_.group(1), "%d%b%y").date()
+            ser.setdefault(ex, {}).setdefault(float(m_.group(2).replace(",", "")), {})[m_.group(3)] = int(m_.group(5))
+        cands = sorted(e for e in ser if 20 <= (e - day).days <= 45)
+        if not cands:
+            continue
+        ex = cands[0]
+        both = [k for k, v in ser[ex].items() if v.get("C", 0) > 0 and v.get("P", 0) > 0]
+        if not both:
+            continue
+        k0 = min(both, key=lambda k: abs(k - spot))
+        iv = (ser[ex][k0]["C"] + ser[ex][k0]["P"]) / 200
+        o = md.load_ohlcv(tk)
+        adj = np.array([x["AdjClose"] for x in o if x["Date"] <= day][-64:])
+        if len(adj) < 61:
+            continue
+        rv = float(np.diff(np.log(adj)).std(ddof=1) * math.sqrt(252))
+        rows.append(dict(ticker=tk, iv=iv, rv=rv, rho=iv / rv, dte=(ex - day).days, strike=k0, spot=spot))
+    rho = np.array([r["rho"] for r in rows])
+    q = lambda a: [float(np.percentile(a, x)) for x in (25, 50, 75)] if len(a) else None  # noqa: E731
+    return dict(asof=str(day), n=len(rows), members=len(members), rho_q=q(rho),
+                iv_median=float(np.median([r["iv"] for r in rows])) if rows else None,
+                rv_median=float(np.median([r["rv"] for r in rows])) if rows else None, rows=rows,
+                note="IV = 港交所報告的結算價 IV%（不是自己由買賣價反推——報告沒有買賣價）；業績日無數據")
+
+
 # ───────────────────────── 自檢 ─────────────────────────
 def selftest() -> None:
     x = np.array([-3, -1, -0.1, 0, 0.5, 2.5])
@@ -408,7 +461,7 @@ def selftest() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--market", choices=["us", "hk"])
-    ap.add_argument("--live", choices=["us"])
+    ap.add_argument("--live", choices=["us", "hk"])
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest or not (a.market or a.live):
@@ -416,10 +469,10 @@ def main() -> None:
         return
     OUT.mkdir(parents=True, exist_ok=True)
     if a.live:
-        res = live_us()
+        res = live_us() if a.live == "us" else live_hk()
         (OUT / f"stock_live_{a.live}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"live {a.live} {res['asof']}：{res['n']} 檔；ρ 四分位 {res['rho_q']}；排除業績窗口 {res['rho_q_no_earnings']}；"
-              f"業績在窗口內比例 {res['share_earnings_in_window']}；IV 中位 {res['iv_median']}、RV 中位 {res['rv_median']}")
+        print(f"live {a.live} {res['asof']}：{res['n']} 檔；ρ 四分位 {res['rho_q']}；排除業績窗口 {res.get('rho_q_no_earnings')}；"
+              f"業績在窗口內比例 {res.get('share_earnings_in_window')}；IV 中位 {res['iv_median']}、RV 中位 {res['rv_median']}")
         return
     P = Panel(a.market)
     res = scan(P)
