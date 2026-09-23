@@ -233,6 +233,21 @@ def main():
     ua = {"User-Agent": user_agent(), "Accept-Encoding": "gzip, deflate"}
     by_year = {}
     failed = []
+    def save(y):
+        # 同一筆（accession + 申報人 + 日期 + 股數 + 價格）只留一次
+        seen, uniq = set(), []
+        for r in by_year[y]:
+            k = (r["accession"], r["owner_cik"], r["trans_date"], str(r["shares"]), str(r["price"]))
+            if k not in seen:
+                seen.add(k)
+                uniq.append(r)
+        by_year[y] = uniq
+        write_year(y, uniq)
+        state["updated"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        os.makedirs(OUT_DIR, exist_ok=True)
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=1)
+
     for n, (y, q) in enumerate(todo, 1):
         url = URL.format(y=y, q=q)
         blob = None
@@ -241,14 +256,19 @@ def main():
                 r = requests.get(url, headers=ua, timeout=300)
                 if r.status_code == 404:
                     break
+                if r.status_code == 403:
+                    # SEC 擋 User-Agent（或 IP 被限流）：重試沒用，直接停，已完成的季度都已存檔
+                    print(f"  {y}q{q}：403 Forbidden——SEC 拒絕請求，請確認 SEC_USER_AGENT"
+                          f"（目前：{ua['User-Agent']!r}）是「名稱 + email」格式", flush=True)
+                    return 2
                 r.raise_for_status()
                 blob = r.content
                 break
             except requests.RequestException as e:
-                print(f"  {y}q{q} 第 {i + 1} 次失敗：{e}")
+                print(f"  {y}q{q} 第 {i + 1} 次失敗：{e}", flush=True)
                 time.sleep(5 * (i + 1))
         if blob is None:
-            print(f"  {y}q{q}：尚未上線或下載失敗")
+            print(f"  {y}q{q}：尚未上線或下載失敗", flush=True)
             if (y, q) != end:
                 failed.append(f"{y}q{q}")
             continue
@@ -261,24 +281,10 @@ def main():
             by_year[y] = read_year(y)
         by_year[y] = [r for r in by_year[y] if r.get("quarter") != qkey] + rows
         state["done"][qkey] = {"rows": len(rows), "fetched": date.today().isoformat()}
-        print(f"  [{n}/{len(todo)}] {qkey}：買入 {len(rows)} 筆（{len(blob) / 1e6:.1f} MB）")
+        save(y)  # 每季存檔：中途被中斷，已完成的季度不會白抓
+        print(f"  [{n}/{len(todo)}] {qkey}：買入 {len(rows)} 筆（{len(blob) / 1e6:.1f} MB）", flush=True)
         time.sleep(0.5)  # SEC 限每秒 10 次，這裡遠低於
 
-    for y, rows in by_year.items():
-        # 同一筆（accession + 申報人 + 日期 + 股數 + 價格）只留一次
-        seen, uniq = set(), []
-        for r in rows:
-            k = (r["accession"], r["owner_cik"], r["trans_date"], str(r["shares"]), str(r["price"]))
-            if k not in seen:
-                seen.add(k)
-                uniq.append(r)
-        write_year(y, uniq)
-        print(f"{y}：共 {len(uniq)} 筆")
-
-    state["updated"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    os.makedirs(OUT_DIR, exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=1)
     if failed:
         print(f"下載失敗的季度：{failed}")
         return 1
