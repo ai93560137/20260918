@@ -22,6 +22,10 @@ on:
         description: '手動觸發時是否發 Telegram 日報（有 🔴 警報一律照發）'
         required: false
         default: 'false'
+      xcheck_min:
+        description: '全量歷史比對的時間上限（分鐘；空白 = 美股 15、日股 25）'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -33,7 +37,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,6 +76,18 @@ jobs:
         continue-on-error: true
         timeout-minutes: 12
         run: python3 scripts/fetch_second_source.py --market ${{ steps.m.outputs.market }}
+
+      # 全量歷史比對：第二來源整段歷史逐筆比，分批推進（進度存 _xcheck.json），全部比完自動輪回
+      - name: Full history cross-check（全量歷史比對）
+        continue-on-error: true
+        timeout-minutes: 130
+        env:
+          M: ${{ steps.m.outputs.market }}
+          XMIN: ${{ inputs.xcheck_min }}
+        run: |
+          if [[ ! "$XMIN" =~ ^[0-9]*$ ]]; then echo "xcheck_min 只能是數字"; exit 1; fi
+          if [ -z "$XMIN" ]; then if [ "$M" = "jp" ]; then XMIN=25; else XMIN=15; fi; fi
+          python3 scripts/xcheck_history.py --market "$M" --budget-min "$XMIN"
 
       - name: Data quality check
         continue-on-error: true
