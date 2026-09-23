@@ -18,12 +18,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Purchased 10,000 shares.",
     "option": null,
     "price_at_tx": 184.89,
-    "price_now": 274.07,
+    "price_now": 275.39,
     "price_now_date": "2026-09-23",
-    "change_pct": 48.23
+    "change_pct": 48.95
    },
    {
     "owner": "SP",
@@ -36,12 +36,18 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $100 and an expiration date of 6/17/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2027-06-17"
+    },
     "price_at_tx": 184.89,
-    "price_now": 274.07,
+    "price_now": 275.39,
     "price_now_date": "2026-09-23",
-    "change_pct": 48.23
+    "change_pct": 48.95
    },
    {
     "owner": "SP",
@@ -54,12 +60,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 5,000 shares.",
     "option": null,
     "price_at_tx": 166.84,
-    "price_now": 274.07,
+    "price_now": 275.39,
     "price_now_date": "2026-09-23",
-    "change_pct": 64.27
+    "change_pct": 65.07
    },
    {
     "owner": "SP",
@@ -72,12 +78,18 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $100 and an expiration date of 6/17/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2027-06-17"
+    },
     "price_at_tx": 166.84,
-    "price_now": 274.07,
+    "price_now": 275.39,
     "price_now_date": "2026-09-23",
-    "change_pct": 64.27
+    "change_pct": 65.07
    },
    {
     "owner": "SP",
@@ -90,12 +102,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $50 and an expiration date of 6/17/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 50.0,
+     "expiry": "2027-06-17"
+    },
     "price_at_tx": 92.32,
-    "price_now": 120.18,
+    "price_now": 120.49,
     "price_now_date": "2026-09-23",
-    "change_pct": 30.17
+    "change_pct": 30.51
    },
    {
     "owner": "SP",
@@ -108,12 +126,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 10,000 shares.",
     "option": null,
     "price_at_tx": 92.32,
-    "price_now": 120.18,
+    "price_now": 120.49,
     "price_now_date": "2026-09-23",
-    "change_pct": 30.17
+    "change_pct": 30.51
    },
    {
     "owner": "SP",
@@ -126,7 +144,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Additional investment in LLC which is acquiring and restoring a luxury hotel property in San Francisco, CA.",
     "option": null
    }
   ]
@@ -150,12 +168,18 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 200 call options with a strike price of $50 and an expiration date of 3/19/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 200,
+     "kind": "call",
+     "strike": 50.0,
+     "expiry": "2027-03-19"
+    },
     "price_at_tx": 114.68,
-    "price_now": 120.18,
+    "price_now": 120.49,
     "price_now_date": "2026-09-23",
-    "change_pct": 4.79
+    "change_pct": 5.07
    },
    {
     "owner": "SP",
@@ -168,12 +192,18 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 200 call options with a strike price of $50 and an expiration date of 3/19/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 200,
+     "kind": "call",
+     "strike": 50.0,
+     "expiry": "2027-03-19"
+    },
     "price_at_tx": 70.4,
-    "price_now": 69.79,
+    "price_now": 69.85,
     "price_now_date": "2026-09-23",
-    "change_pct": -0.87
+    "change_pct": -0.78
    }
   ]
  },
@@ -196,7 +226,7 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Purchased 25,000 shares.",
     "option": null
    },
    {
@@ -210,12 +240,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 50 call options purchased 1/14/25 (5,000 shares) at a strike price of $150 with an expiration date of 1/16/26.",
     "option": null,
     "price_at_tx": 330.0,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 3.26
+    "change_pct": 2.7
    },
    {
     "owner": "SP",
@@ -228,12 +258,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $150 and an expiration date of 1/15/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 150.0,
+     "expiry": "2027-01-15"
+    },
     "price_at_tx": 313.85,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 8.58
+    "change_pct": 7.98
    },
    {
     "owner": "SP",
@@ -246,12 +282,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Contribution of 7,704 shares held personally to Donor-Advised Fund.",
     "option": null,
     "price_at_tx": 313.85,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 8.58
+    "change_pct": 7.98
    },
    {
     "owner": "SP",
@@ -264,12 +300,18 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $120 and an expiration date of 1/15/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 120.0,
+     "expiry": "2027-01-15"
+    },
     "price_at_tx": 232.53,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 7.65
+    "change_pct": 7.19
    },
    {
     "owner": "SP",
@@ -282,12 +324,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 20,000 shares.",
     "option": null,
     "price_at_tx": 232.38,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 7.72
+    "change_pct": 7.26
    },
    {
     "owner": "SP",
@@ -300,12 +342,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 50 call options purchased 1/14/25 (5,000 shares) at a strike price of $150 with an expiration date of 1/16/26.",
     "option": null,
     "price_at_tx": 239.12,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 4.68
+    "change_pct": 4.24
    },
    {
     "owner": "SP",
@@ -318,12 +360,12 @@
     "amount": "$5,000,001 - $25,000,000",
     "amount_min": 5000001,
     "amount_max": 25000000,
-    "description": "",
+    "description": "Sold 45,000 shares.",
     "option": null,
     "price_at_tx": 273.81,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 23.02
+    "change_pct": 23.01
    },
    {
     "owner": "SP",
@@ -336,12 +378,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $100 and an expiration date of 1/15/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2027-01-15"
+    },
     "price_at_tx": 273.08,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 23.35
+    "change_pct": 23.34
    },
    {
     "owner": "SP",
@@ -354,12 +402,12 @@
     "amount": "$5,000,001 - $25,000,000",
     "amount_min": 5000001,
     "amount_max": 25000000,
-    "description": "",
+    "description": "Contribution of 28,200 shares to Donor-Advised Fund.",
     "option": null,
     "price_at_tx": 273.08,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 23.35
+    "change_pct": 23.34
    },
    {
     "owner": "SP",
@@ -372,12 +420,18 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $100 and an expiration date of 1/15/27.",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2027-01-15"
+    },
     "price_at_tx": 187.54,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 19.92
+    "change_pct": 19.56
    },
    {
     "owner": "SP",
@@ -390,12 +444,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 20,000 shares.",
     "option": null,
     "price_at_tx": 188.61,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 19.24
+    "change_pct": 18.88
    },
    {
     "owner": "SP",
@@ -408,12 +462,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Exercised 50 call options purchased 1/14/25 (5,000 shares) at a strike price of $80 with an expiration date of 1/16/26.",
     "option": null,
     "price_at_tx": 186.23,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 20.76
+    "change_pct": 20.4
    },
    {
     "owner": "SP",
@@ -426,12 +480,30 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 59.1,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -10.78
+    "change_pct": -11.19
+   },
+   {
+    "owner": "SP",
+    "asset": "Tempus AI, Inc. - Class A Common Stock",
+    "ticker": "TEM",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2026-01-16",
+    "notified": "2026-01-16",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Exercised 50 call options purchased 1/14/25 (5,000 shares) at a strike price of $20 with an expiration date of 1/16/26.",
+    "option": null,
+    "price_at_tx": 70.33,
+    "price_now": 77.36,
+    "price_now_date": "2026-09-23",
+    "change_pct": 10.0
    },
    {
     "owner": "SP",
@@ -444,12 +516,12 @@
     "amount": "$15",
     "amount_min": 15,
     "amount_max": 15,
-    "description": "",
+    "description": "776 shares and cash in lieu received as a result of spinoff from Comcast Corporation. No shares of Comcast were surrendered as a result of the spinoff.",
     "option": null,
     "price_at_tx": 46.65,
-    "price_now": 33.26,
+    "price_now": 33.24,
     "price_now_date": "2026-09-23",
-    "change_pct": -28.7
+    "change_pct": -28.76
    },
    {
     "owner": "SP",
@@ -462,12 +534,12 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Exercised 50 call options purchased 1/14/25 (5,000 shares) at a strike price of $50 with an expiration date of 1/16/26.",
     "option": null,
     "price_at_tx": 166.6,
-    "price_now": 139.37,
+    "price_now": 139.39,
     "price_now_date": "2026-09-23",
-    "change_pct": -16.35
+    "change_pct": -16.33
    },
    {
     "owner": "SP",
@@ -480,12 +552,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 114.79,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": -9.41
+    "change_pct": -9.24
    }
   ]
  },
@@ -508,10 +580,10 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Contribution of 382 shares held personally to Trinity University in Washington, DC.",
     "option": null,
     "price_at_tx": 258.45,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
     "change_pct": 30.33
    }
@@ -536,12 +608,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 200 call options purchased 6/24/24 (20,000 shares) at a strike price of $80 with an expiration date of 6/20/25.",
     "option": null,
     "price_at_tx": 249.99,
-    "price_now": 355.73,
+    "price_now": 355.28,
     "price_now_date": "2026-09-23",
-    "change_pct": 42.3
+    "change_pct": 42.12
    },
    {
     "owner": "SP",
@@ -554,7 +626,7 @@
     "amount": "$15,001 - $50,000",
     "amount_min": 15001,
     "amount_max": 50000,
-    "description": "",
+    "description": "Sale of 2,822 units.",
     "option": null
    }
   ]
@@ -578,12 +650,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $150 and an expiration date of 1/16/26.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 150.0,
+     "expiry": "2026-01-16"
+    },
     "price_at_tx": 189.66,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 79.67
+    "change_pct": 78.69
    },
    {
     "owner": "SP",
@@ -596,12 +674,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $150 and an expiration date of 1/16/26.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 150.0,
+     "expiry": "2026-01-16"
+    },
     "price_at_tx": 217.76,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 14.95
+    "change_pct": 14.46
    },
    {
     "owner": "SP",
@@ -614,12 +698,12 @@
     "amount": "$5,000,001 - $25,000,000",
     "amount_min": 5000001,
     "amount_max": 25000000,
-    "description": "",
+    "description": "Sold 31,600 shares.",
     "option": null,
     "price_at_tx": 250.42,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 34.51
+    "change_pct": 34.5
    },
    {
     "owner": "SP",
@@ -632,12 +716,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 134.29,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 67.47
+    "change_pct": 66.97
    },
    {
     "owner": "SP",
@@ -650,12 +734,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 500 call options purchased 11/22/23 (50,000 shares) at a strike price of $12 with an expiration date of 12/20/24.",
     "option": null,
     "price_at_tx": 134.7,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 66.96
+    "change_pct": 66.46
    },
    {
     "owner": "SP",
@@ -668,12 +752,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $80 and an expiration date of 1/16/26.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 80.0,
+     "expiry": "2026-01-16"
+    },
     "price_at_tx": 131.76,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 70.68
+    "change_pct": 70.18
    },
    {
     "owner": "SP",
@@ -686,12 +776,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 140 call options purchased 2/12/24 & 2/21/24 (14,000 shares) at a strike price of $100 with an expiration date of 12/20/24.",
     "option": null,
     "price_at_tx": 186.78,
-    "price_now": 385.61,
+    "price_now": 385.98,
     "price_now_date": "2026-09-23",
-    "change_pct": 106.45
+    "change_pct": 106.65
    },
    {
     "owner": "SP",
@@ -704,12 +794,18 @@
     "amount": "$50,001 - $100,000",
     "amount_min": 50001,
     "amount_max": 100000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $20 and an expiration date of 1/16/26.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 20.0,
+     "expiry": "2026-01-16"
+    },
     "price_at_tx": 31.83,
-    "price_now": 77.17,
+    "price_now": 77.36,
     "price_now_date": "2026-09-23",
-    "change_pct": 142.44
+    "change_pct": 143.06
    },
    {
     "owner": "SP",
@@ -722,12 +818,18 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $50 and an expiration date of 1/16/26.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 50.0,
+     "expiry": "2026-01-16"
+    },
     "price_at_tx": 170.51,
-    "price_now": 139.37,
+    "price_now": 139.39,
     "price_now_date": "2026-09-23",
-    "change_pct": -18.27
+    "change_pct": -18.25
    }
   ]
  },
@@ -750,7 +852,7 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Investment in LLC which is acquiring and managing a commercial office property at 631 Howard Street in San Francisco, CA.",
     "option": null
    }
   ]
@@ -774,12 +876,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 425.27,
-    "price_now": 498.73,
+    "price_now": 498.56,
     "price_now_date": "2026-09-23",
-    "change_pct": 17.27
+    "change_pct": 17.23
    },
    {
     "owner": "SP",
@@ -792,12 +894,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Purchased 10,000 shares.",
     "option": null,
     "price_at_tx": 113.06,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 98.91
+    "change_pct": 98.32
    }
   ]
  },
@@ -820,12 +922,18 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $800 and an expiration date of 6/20/25.",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 800.0,
+     "expiry": "2025-06-20"
+    },
     "price_at_tx": 159.22,
-    "price_now": 355.73,
+    "price_now": 355.28,
     "price_now_date": "2026-09-23",
-    "change_pct": 123.42
+    "change_pct": 123.14
    },
    {
     "owner": "SP",
@@ -838,12 +946,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Purchased 10,000 shares.",
     "option": null,
     "price_at_tx": 126.4,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 77.92
+    "change_pct": 77.39
    },
    {
     "owner": "SP",
@@ -856,12 +964,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Sold 2,500 shares.",
     "option": null,
     "price_at_tx": 182.58,
-    "price_now": 380.27,
+    "price_now": 379.52,
     "price_now_date": "2026-09-23",
-    "change_pct": 108.28
+    "change_pct": 107.86
    },
    {
     "owner": "SP",
@@ -874,12 +982,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 2,000 shares.",
     "option": null,
     "price_at_tx": 263.24,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 38.01
+    "change_pct": 37.95
    }
   ]
  },
@@ -902,7 +1010,7 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Investment in fund that owns Databricks stock. Databricks is a San Francisco engineering and analytic software company based on AI technology.",
     "option": null
    }
   ]
@@ -926,12 +1034,18 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $200 and an expiration date of 1/17/25.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 200.0,
+     "expiry": "2025-01-17"
+    },
     "price_at_tx": 185.99,
-    "price_now": 385.61,
+    "price_now": 385.98,
     "price_now_date": "2026-09-23",
-    "change_pct": 107.33
+    "change_pct": 107.53
    },
    {
     "owner": "SP",
@@ -944,12 +1058,18 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $200 and an expiration date of 1/17/25.",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 200.0,
+     "expiry": "2025-01-17"
+    },
     "price_at_tx": 130.99,
-    "price_now": 385.61,
+    "price_now": 385.98,
     "price_now_date": "2026-09-23",
-    "change_pct": 194.39
+    "change_pct": 194.67
    }
   ]
  },
@@ -972,12 +1092,18 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $120 and an expiration date of 12/20/24.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 120.0,
+     "expiry": "2024-12-20"
+    },
     "price_at_tx": 48.72,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 361.63
+    "change_pct": 360.27
    }
   ]
  },
@@ -1000,12 +1126,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Exercised 50 call options purchased 5/24/22 (5,000 shares) at a strike price of $80 with an expiration date of 6/16/23.",
     "option": null,
     "price_at_tx": 186.01,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 81.09
+    "change_pct": 81.08
    },
    {
     "owner": "SP",
@@ -1018,12 +1144,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 50 call options purchased 5/24/22 (5,000 shares) at a strike price of $180 with an expiration date of 6/16/23.",
     "option": null,
     "price_at_tx": 348.1,
-    "price_now": 498.73,
+    "price_now": 498.56,
     "price_now_date": "2026-09-23",
-    "change_pct": 43.27
+    "change_pct": 43.22
    }
   ]
  },
@@ -1046,10 +1172,10 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Contribution of 2,900 shares held personally to Trinity College.",
     "option": null,
     "price_at_tx": 173.5,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
     "change_pct": 94.14
    }
@@ -1074,12 +1200,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 100 call options purchased 5/13/22 (10,000 shares) at a strike price of $80 with an expiration date of 3/17/23.",
     "option": null,
     "price_at_tx": 155.0,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 117.32
+    "change_pct": 117.31
    },
    {
     "owner": "SP",
@@ -1092,7 +1218,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Investment in LLC which is acquiring and restoring a luxury hotel property in San Francisco, CA.",
     "option": null
    }
   ]
@@ -1116,12 +1242,18 @@
     "amount": "$1",
     "amount_min": 1,
     "amount_max": 1,
-    "description": "",
-    "option": null,
+    "description": "100 call options purchased 12/20/21 with a strike price of $100 and an expiration date of 1/20/23 expired with no value.",
+    "option": {
+     "action": "expired",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2023-01-20"
+    },
     "price_at_tx": 35.38,
-    "price_now": 49.13,
+    "price_now": 49.21,
     "price_now_date": "2026-09-23",
-    "change_pct": 38.88
+    "change_pct": 39.09
    }
   ]
  },
@@ -1144,7 +1276,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 20,000 shares.",
     "option": null
    },
    {
@@ -1158,12 +1290,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 86.02,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 296.15
+    "change_pct": 293.99
    },
    {
     "owner": "SP",
@@ -1176,12 +1308,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 89.02,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 282.8
+    "change_pct": 280.71
    },
    {
     "owner": "SP",
@@ -1194,12 +1326,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 89.58,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 280.4
+    "change_pct": 278.33
    },
    {
     "owner": "SP",
@@ -1212,12 +1344,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Sold 1,000 shares.",
     "option": null,
     "price_at_tx": 29.11,
-    "price_now": 71.7,
+    "price_now": 71.71,
     "price_now_date": "2026-09-23",
-    "change_pct": 146.29
+    "change_pct": 146.31
    },
    {
     "owner": "SP",
@@ -1230,12 +1362,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Sold 1,000 shares.",
     "option": null,
     "price_at_tx": 29.49,
-    "price_now": 71.7,
+    "price_now": 71.71,
     "price_now_date": "2026-09-23",
-    "change_pct": 143.15
+    "change_pct": 143.17
    },
    {
     "owner": "SP",
@@ -1248,12 +1380,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 69.21,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -23.81
+    "change_pct": -24.17
    },
    {
     "owner": "SP",
@@ -1266,12 +1398,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 67.55,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -21.94
+    "change_pct": -22.3
    },
    {
     "owner": "SP",
@@ -1284,7 +1416,7 @@
     "amount": "$15,001 - $50,000",
     "amount_min": 15001,
     "amount_max": 50000,
-    "description": "",
+    "description": "Additional investment in LLC which acquired five Courtyard by Marriott hotels located in Fairfax, VA (one), suburban Baltimore, MD (two) and San Antonio, TX (two).",
     "option": null
    },
    {
@@ -1298,12 +1430,12 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 26.16,
-    "price_now": 49.13,
+    "price_now": 49.21,
     "price_now_date": "2026-09-23",
-    "change_pct": 87.82
+    "change_pct": 88.11
    },
    {
     "owner": "SP",
@@ -1316,12 +1448,18 @@
     "amount": "$9",
     "amount_min": 9,
     "amount_max": 9,
-    "description": "",
-    "option": null,
+    "description": "Sold 130 call options purchased 12/20/21 with a strike price of $210 and an expiration date of 1/20/23.",
+    "option": {
+     "action": "sold",
+     "contracts": 130,
+     "kind": "call",
+     "strike": 210.0,
+     "expiry": "2023-01-20"
+    },
     "price_at_tx": 128.45,
-    "price_now": 238.91,
+    "price_now": 239.66,
     "price_now_date": "2026-09-23",
-    "change_pct": 85.99
+    "change_pct": 86.58
    },
    {
     "owner": "SP",
@@ -1334,12 +1472,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 137.8,
-    "price_now": 380.27,
+    "price_now": 379.52,
     "price_now_date": "2026-09-23",
-    "change_pct": 175.96
+    "change_pct": 175.41
    },
    {
     "owner": "SP",
@@ -1352,12 +1490,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 86.92,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": 19.63
+    "change_pct": 19.86
    }
   ]
  },
@@ -1380,12 +1518,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 20,000 shares.",
     "option": null,
     "price_at_tx": 201.78,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 80.05
+    "change_pct": 79.97
    }
   ]
  },
@@ -1408,12 +1546,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 200 call options purchased 12/17/21 (20,000 shares) at a strike price of $100 with an expiration date of 9/16/22.",
     "option": null,
     "price_at_tx": 103.63,
-    "price_now": 337.44,
+    "price_now": 335.6,
     "price_now_date": "2026-09-23",
-    "change_pct": 225.62
+    "change_pct": 223.84
    },
    {
     "owner": "SP",
@@ -1426,12 +1564,18 @@
     "amount": "$15,001 - $50,000",
     "amount_min": 15001,
     "amount_max": 50000,
-    "description": "",
-    "option": null,
+    "description": "Sold 100 call options purchased 12/21/21 with a strike price of $50 and an expiration date of 9/16/22.",
+    "option": {
+     "action": "sold",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 50.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 52.85,
-    "price_now": 1075.02,
+    "price_now": 1069.7,
     "price_now_date": "2026-09-23",
-    "change_pct": 1934.1
+    "change_pct": 1924.04
    },
    {
     "owner": "SP",
@@ -1444,12 +1588,18 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Sold 50 call options purchased 7/23/21 with a strike price of $100 and an expiration date of 9/16/22.",
+    "option": {
+     "action": "sold",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 13.2,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 1603.97
+    "change_pct": 1598.93
    },
    {
     "owner": "SP",
@@ -1462,12 +1612,18 @@
     "amount": "$1",
     "amount_min": 1,
     "amount_max": 1,
-    "description": "",
-    "option": null,
+    "description": "50 call options purchased 12/17/21 with a strike price of $130 and an expiration date of 9/16/22 expired with no value.",
+    "option": {
+     "action": "expired",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 130.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 108.25,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": -3.94
+    "change_pct": -3.76
    }
   ]
  },
@@ -1490,7 +1646,7 @@
     "amount": "$15,001 - $50,000",
     "amount_min": 15001,
     "amount_max": 50000,
-    "description": "",
+    "description": "Additional investment in LLC which acquired five Courtyard by Marriott hotels located in Fairfax, VA (one), suburban Baltimore, MD (two) and San Antonio, TX (two).",
     "option": null
    }
   ]
@@ -1514,12 +1670,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 25,000 shares.",
     "option": null,
     "price_at_tx": 16.53,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 1260.25
+    "change_pct": 1256.23
    }
   ]
  },
@@ -1542,12 +1698,18 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Sold 50 call options with a strike price of $100 and an expiration date of 6/17/22.",
+    "option": {
+     "action": "sold",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-06-17"
+    },
     "price_at_tx": 131.56,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 156.04
+    "change_pct": 156.02
    },
    {
     "owner": "SP",
@@ -1560,12 +1722,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 200 call options (20,000 shares) expiring 6/17/22 at a strike price of $100.",
     "option": null,
     "price_at_tx": 15.88,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 1316.18
+    "change_pct": 1312.0
    },
    {
     "owner": "SP",
@@ -1578,12 +1740,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 194.39,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 86.89
+    "change_pct": 86.82
    }
   ]
  },
@@ -1606,12 +1768,18 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $80 and an expiration date of 3/17/23.",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 80.0,
+     "expiry": "2023-03-17"
+    },
     "price_at_tx": 147.11,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 128.97
+    "change_pct": 128.96
    },
    {
     "owner": "SP",
@@ -1624,12 +1792,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $80 and an expiration date of 6/16/23.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 80.0,
+     "expiry": "2023-06-16"
+    },
     "price_at_tx": 140.36,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 139.98
+    "change_pct": 139.97
    },
    {
     "owner": "SP",
@@ -1642,12 +1816,18 @@
     "amount": "$50,001 - $100,000",
     "amount_min": 50001,
     "amount_max": 100000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 10 call options with a strike price of $180 and an expiration date of 6/16/23.",
+    "option": {
+     "action": "purchased",
+     "contracts": 10,
+     "kind": "call",
+     "strike": 180.0,
+     "expiry": "2023-06-16"
+    },
     "price_at_tx": 259.62,
-    "price_now": 498.73,
+    "price_now": 498.56,
     "price_now_date": "2026-09-23",
-    "change_pct": 92.1
+    "change_pct": 92.03
    },
    {
     "owner": "SP",
@@ -1660,12 +1840,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 40 call options with a strike price of $180 and an expiration date of 6/16/23.",
+    "option": {
+     "action": "purchased",
+     "contracts": 40,
+     "kind": "call",
+     "strike": 180.0,
+     "expiry": "2023-06-16"
+    },
     "price_at_tx": 259.62,
-    "price_now": 498.73,
+    "price_now": 498.56,
     "price_now_date": "2026-09-23",
-    "change_pct": 92.1
+    "change_pct": 92.03
    }
   ]
  },
@@ -1688,12 +1874,12 @@
     "amount": "$50,001 - $100,000",
     "amount_min": 50001,
     "amount_max": 100000,
-    "description": "",
+    "description": "2419 shares received as the result of a spinoff of AT&T (T) shares held.",
     "option": null,
     "price_at_tx": 24.78,
-    "price_now": 30.78,
+    "price_now": 30.75,
     "price_now_date": "2026-09-23",
-    "change_pct": 24.23
+    "change_pct": 24.11
    }
   ]
  },
@@ -1716,12 +1902,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 25 call options (2,500 shares) expiring 3/18/22 at a strike price of $500.",
     "option": null,
     "price_at_tx": 290.53,
-    "price_now": 380.27,
+    "price_now": 379.52,
     "price_now_date": "2026-09-23",
-    "change_pct": 30.89
+    "change_pct": 30.63
    }
   ]
  },
@@ -1735,6 +1921,20 @@
   "transactions": [
    {
     "owner": "SP",
+    "asset": "AllianceBernstein Holding l.P. units",
+    "ticker": "AB",
+    "asset_type": "OL",
+    "type": "P",
+    "date": "2022-01-27",
+    "notified": "2022-02-28",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchased 10,000 units in a global asset management firm providing investment management andresearch services worldwide to institutional, high-net-worth and retail investors. 2000090455",
+    "option": null
+   },
+   {
+    "owner": "SP",
     "asset": "American Express Company",
     "ticker": "AXP",
     "asset_type": "ST",
@@ -1744,12 +1944,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Exercised 50 call options (5,000 shares) expiring 1/21/22 at a strike price of $80. 2000090456",
     "option": null,
     "price_at_tx": 158.74,
-    "price_now": 303.03,
+    "price_now": 303.4,
     "price_now_date": "2026-09-23",
-    "change_pct": 90.9
+    "change_pct": 91.13
    },
    {
     "owner": "SP",
@@ -1762,12 +1962,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100.2000090458",
     "option": null,
     "price_at_tx": 162.41,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 107.4
+    "change_pct": 107.39
    },
    {
     "owner": "SP",
@@ -1780,12 +1980,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 50 call options (5,000 shares) expiring 1/21/22 at a strike price of $100. 2000090457",
     "option": null,
     "price_at_tx": 163.54,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -67.76
+    "change_pct": -67.91
    },
    {
     "owner": "SP",
@@ -1798,12 +1998,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100.",
     "option": null,
     "price_at_tx": 137.38,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": -24.31
+    "change_pct": -24.17
    }
   ]
  },
@@ -1817,6 +2017,20 @@
   "transactions": [
    {
     "owner": "SP",
+    "asset": "AllianceBernstein Holding l.P. units",
+    "ticker": "AB",
+    "asset_type": "OL",
+    "type": "P",
+    "date": "2022-01-27",
+    "notified": "2022-01-27",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchased 10,000 units in a global asset management firm providing investment management and researchservices worldwide to institutional, high-net-worth and retail investors.",
+    "option": null
+   },
+   {
+    "owner": "SP",
     "asset": "American Express Company",
     "ticker": "AXP",
     "asset_type": "ST",
@@ -1826,12 +2040,12 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Exercised 50 call options (5,000 shares) expiring 1/21/22 at a strike price of $80.",
     "option": null,
     "price_at_tx": 158.74,
-    "price_now": 303.03,
+    "price_now": 303.4,
     "price_now_date": "2026-09-23",
-    "change_pct": 90.9
+    "change_pct": 91.13
    },
    {
     "owner": "SP",
@@ -1844,16 +2058,16 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100",
     "option": null,
     "price_at_tx": 162.41,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 107.4
+    "change_pct": 107.39
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100.SP PayPal Holdings, Inc.",
+    "owner": "SP",
+    "asset": "PayPal Holdings, Inc.",
     "ticker": "PYPL",
     "asset_type": "ST",
     "type": "P",
@@ -1862,12 +2076,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Exercised 50 call options (5,000 shares) expiring 1/21/22 at a strike price of $100.",
     "option": null,
     "price_at_tx": 163.54,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -67.76
+    "change_pct": -67.91
    },
    {
     "owner": "SP",
@@ -1880,12 +2094,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100.",
     "option": null,
     "price_at_tx": 137.38,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": -24.31
+    "change_pct": -24.17
    }
   ]
  },
@@ -1908,16 +2122,16 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Contribution of 3,000 shares held personall y to the Paul F. Pelosi Endowed Fund at georgetown university",
     "option": null,
     "price_at_tx": 178.2,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
     "change_pct": 89.02
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Contribution of 3,000 shares held personall y to the Paul F. Pelosi Endowed Fund at georgetown university.SP Apple Inc.",
+    "owner": "SP",
+    "asset": "Apple Inc.",
     "ticker": "AAPL",
     "asset_type": "ST",
     "type": "S (partial)",
@@ -1926,10 +2140,10 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Contribution of 3,000 shares held personall y to Trinity College.",
     "option": null,
     "price_at_tx": 178.2,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
     "change_pct": 89.02
    }
@@ -1954,16 +2168,22 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 10 call options with a strike price of $2000 and an expiration date o f 9/16/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 10,
+     "kind": "call",
+     "strike": 2000.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 142.8,
-    "price_now": 337.44,
+    "price_now": 335.6,
     "price_now_date": "2026-09-23",
-    "change_pct": 136.3
+    "change_pct": 135.01
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 10 call options with a strike price of $2000 and an expiration date o f 9/16/22.SP Micron Technology, Inc.",
+    "owner": "SP",
+    "asset": "Micron Technology, Inc.",
     "ticker": "MU",
     "asset_type": "OP",
     "type": "P",
@@ -1972,16 +2192,22 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $50 and an expiration d ate of 9/16/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 50.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 90.68,
-    "price_now": 1075.02,
+    "price_now": 1069.7,
     "price_now_date": "2026-09-23",
-    "change_pct": 1085.51
+    "change_pct": 1079.65
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 100 call options with a strike price of $50 and an expiration d ate of 9/16/22.SP REOF XX, llC",
+    "owner": "SP",
+    "asset": "REOF XX, llC",
     "ticker": "",
     "asset_type": "AB",
     "type": "P",
@@ -1990,7 +2216,7 @@
     "amount": "$50,001 - $100,000",
     "amount_min": 50001,
     "amount_max": 100000,
-    "description": "",
+    "description": "Additional investment in llC which acquired five Courty ard by Marriott hotels located in Fairfax, VA (one),suburban Baltimore, MD (two) and San Antonio, TX (two).",
     "option": null
    },
    {
@@ -2004,16 +2230,22 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $100 and an expiration date of 1/20/23",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2023-01-20"
+    },
     "price_at_tx": 98.69,
-    "price_now": 49.13,
+    "price_now": 49.21,
     "price_now_date": "2026-09-23",
-    "change_pct": -50.21
+    "change_pct": -50.14
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 100 call options with a strike price of $100 and an expiration date of 1/20/23.SP Salesforce.com Inc",
+    "owner": "SP",
+    "asset": "Salesforce.com Inc",
     "ticker": "CRM",
     "asset_type": "OP",
     "type": "P",
@@ -2022,16 +2254,22 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $210 and an expiration d ate of 1/20/23",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 210.0,
+     "expiry": "2023-01-20"
+    },
     "price_at_tx": 247.21,
-    "price_now": 238.91,
+    "price_now": 239.66,
     "price_now_date": "2026-09-23",
-    "change_pct": -3.36
+    "change_pct": -3.05
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 100 call options with a strike price of $210 and an expiration d ate of 1/20/23.SP Salesforce.com Inc",
+    "owner": "SP",
+    "asset": "Salesforce.com Inc",
     "ticker": "CRM",
     "asset_type": "OP",
     "type": "P",
@@ -2040,16 +2278,22 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 30 call options with a strike price of $210 and an expiration date o f 1/20/23",
+    "option": {
+     "action": "purchased",
+     "contracts": 30,
+     "kind": "call",
+     "strike": 210.0,
+     "expiry": "2023-01-20"
+    },
     "price_at_tx": 247.21,
-    "price_now": 238.91,
+    "price_now": 239.66,
     "price_now_date": "2026-09-23",
-    "change_pct": -3.36
+    "change_pct": -3.05
    },
    {
-    "owner": "Self",
-    "asset": "g fedc F IlINg S TATuS : New D ESCRIPTION : Purchased 30 call options with a strike price of $210 and an expiration date o f 1/20/23.SP Walt Disney Company",
+    "owner": "SP",
+    "asset": "Walt Disney Company",
     "ticker": "DIS",
     "asset_type": "OP",
     "type": "P",
@@ -2058,12 +2302,18 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $130 and an expiration d ate of 9/16/22.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 130.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 148.76,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": -30.1
+    "change_pct": -29.97
    }
   ]
  },
@@ -2086,12 +2336,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 5,000 shares.",
     "option": null,
     "price_at_tx": 19.56,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 1049.86
+    "change_pct": 1046.46
    },
    {
     "owner": "SP",
@@ -2104,16 +2354,22 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $100 and an expiration d ate of 9/16/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-09-16"
+    },
     "price_at_tx": 19.56,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 1049.86
+    "change_pct": 1046.46
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 50 call options with a strike price of $100 and an expiration d ate of 9/16/22.SP REOF XXII, llC",
+    "owner": "SP",
+    "asset": "REOF XXII, llC",
     "ticker": "",
     "asset_type": "AB",
     "type": "P",
@@ -2122,7 +2378,7 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "Investment in llC which is acquiring eleven Marriott-branded hotel s (Rogers, AR - 1, Phoenix, AZ - 1,lakeland, Fl -1, Albany, gA - 1, Andover, MA - 1, Fa yetteville, NC - 1, greenville, SC - 1, Johnson City, TN - 1, Beaumont,TX - 1, Richmond, VA - 1, Vancouver, WA - 1) and nine Hilton-branded hotels (Montgomery, Al -2, Sch aumberg, Il -1,Jackson, TN - 1, Allen, TX -2, Burleson, TX - 1, El Paso, TX - 1, Irving, TX - 1).",
     "option": null
    },
    {
@@ -2136,7 +2392,7 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
+    "description": "10,000 shares of Slack Technologies Inc. exchanged for 776 shares of Salesforce.com Inc. as a result of amerger, with a cash payout of $267,900.",
     "option": null
    }
   ]
@@ -2160,12 +2416,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 40 call options (4,000 shares) expiring 6/18/21 at a strike price of $1200.",
     "option": null,
     "price_at_tx": 120.11,
-    "price_now": 340.77,
+    "price_now": 338.91,
     "price_now_date": "2026-09-23",
-    "change_pct": 183.71
+    "change_pct": 182.16
    },
    {
     "owner": "SP",
@@ -2178,16 +2434,22 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 20 call options with a strike price of $3,000 and an expiration date o f 6/17/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 3000.0,
+     "expiry": "2022-06-17"
+    },
     "price_at_tx": 160.15,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 56.29
+    "change_pct": 55.63
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 20 call options with a strike price of $3,000 and an expiration date o f 6/17/22.SP Apple Inc.",
+    "owner": "SP",
+    "asset": "Apple Inc.",
     "ticker": "AAPL",
     "asset_type": "OP",
     "type": "P",
@@ -2196,16 +2458,22 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $100 and an expiration d ate of 6/17/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-06-17"
+    },
     "price_at_tx": 125.43,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 168.55
+    "change_pct": 168.54
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 50 call options with a strike price of $100 and an expiration d ate of 6/17/22.SP NVIDIA Corporation",
+    "owner": "SP",
+    "asset": "NVIDIA Corporation",
     "ticker": "NVDA",
     "asset_type": "OP",
     "type": "P",
@@ -2214,12 +2482,18 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $400 and an expiration date o f 6/17/22.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 400.0,
+     "expiry": "2022-06-17"
+    },
     "price_at_tx": 16.97,
-    "price_now": 224.89,
+    "price_now": 224.23,
     "price_now_date": "2026-09-23",
-    "change_pct": 1225.24
+    "change_pct": 1221.32
    }
   ]
  },
@@ -2242,7 +2516,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 20,000 units in a global as set management firm providing investment management andresearch services worldwide to institutional, high-net-worth and retail investors. 2000076481",
     "option": null
    },
    {
@@ -2256,7 +2530,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 15,000 units in a global asset management firm providing investment management andresearch services worldwide to institutional, high-net-worth and retail investors. 2000076482",
     "option": null
    },
    {
@@ -2270,7 +2544,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 25,000 units in a global as set management firm providing investment management andresearch services worldwide to institutional, high-net-worth and retail investors.",
     "option": null
    },
    {
@@ -2284,16 +2558,16 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 150 call options (15,000 shares) expiring 3/19/2021 at a strike price of $130",
     "option": null,
     "price_at_tx": 230.35,
-    "price_now": 498.73,
+    "price_now": 498.56,
     "price_now_date": "2026-09-23",
-    "change_pct": 116.51
+    "change_pct": 116.44
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF ILINg S TATUS : New D ESCRIPTION : Exercised 150 call options (15,000 shares) expiring 3/19/2021 at a strike price of $130.SP Microsoft Corporation",
+    "owner": "SP",
+    "asset": "Microsoft Corporation",
     "ticker": "MSFT",
     "asset_type": "ST",
     "type": "P",
@@ -2302,16 +2576,16 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 100 call options (10,000 shares) expiring 3/19/2021 at a strike price of $140",
     "option": null,
     "price_at_tx": 230.35,
-    "price_now": 498.73,
+    "price_now": 498.56,
     "price_now_date": "2026-09-23",
-    "change_pct": 116.51
+    "change_pct": 116.44
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF ILINg S TATUS : New D ESCRIPTION : Exercised 100 call options (10,000 shares) expiring 3/19/2021 at a strike price of $140.SP Roblox Corporation",
+    "owner": "SP",
+    "asset": "Roblox Corporation",
     "ticker": "",
     "asset_type": "OT",
     "type": "P",
@@ -2320,7 +2594,7 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 10,000 shares.",
     "option": null
    }
   ]
@@ -2344,12 +2618,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 15,000 shares.",
     "option": null,
     "price_at_tx": 37.89,
-    "price_now": 35.87,
+    "price_now": 35.92,
     "price_now_date": "2026-09-23",
-    "change_pct": -5.33
+    "change_pct": -5.19
    },
    {
     "owner": "SP",
@@ -2362,12 +2636,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 25,000 shares.",
     "option": null,
     "price_at_tx": 36.19,
-    "price_now": 35.87,
+    "price_now": 35.92,
     "price_now_date": "2026-09-23",
-    "change_pct": -0.88
+    "change_pct": -0.73
    }
   ]
  },
@@ -2390,12 +2664,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 20,000 shares.",
     "option": null,
     "price_at_tx": 33.37,
-    "price_now": 35.87,
+    "price_now": 35.92,
     "price_now_date": "2026-09-23",
-    "change_pct": 7.49
+    "change_pct": 7.66
    },
    {
     "owner": "SP",
@@ -2408,16 +2682,22 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $100 and an expiration date of 1/21/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-01-21"
+    },
     "price_at_tx": 131.88,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 155.41
+    "change_pct": 155.4
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 100 call options with a strike price of $100 and an expiration date of 1/21/22.SP Tesla, Inc.",
+    "owner": "SP",
+    "asset": "Tesla, Inc.",
     "ticker": "TSLA",
     "asset_type": "OP",
     "type": "P",
@@ -2426,16 +2706,22 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 25 call options with a strike price of $500 and an expiration date o f 3/18/22",
+    "option": {
+     "action": "purchased",
+     "contracts": 25,
+     "kind": "call",
+     "strike": 500.0,
+     "expiry": "2022-03-18"
+    },
     "price_at_tx": 213.45,
-    "price_now": 380.27,
+    "price_now": 379.52,
     "price_now_date": "2026-09-23",
-    "change_pct": 78.16
+    "change_pct": 77.8
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 25 call options with a strike price of $500 and an expiration date o f 3/18/22.SP Walt Disney Company",
+    "owner": "SP",
+    "asset": "Walt Disney Company",
     "ticker": "DIS",
     "asset_type": "OP",
     "type": "P",
@@ -2444,12 +2730,18 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 100 call options with a strike price of $100 and an expiration date of 1/21/22.",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-01-21"
+    },
     "price_at_tx": 170.45,
-    "price_now": 103.99,
+    "price_now": 104.18,
     "price_now_date": "2026-09-23",
-    "change_pct": -38.99
+    "change_pct": -38.88
    }
   ]
  },
@@ -2472,12 +2764,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Contribution of 4,500 shares held personally to the Paul F. Pelosi Endowed Fund at georgetown university.",
     "option": null,
     "price_at_tx": 118.69,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 183.8
+    "change_pct": 183.79
    },
    {
     "owner": "SP",
@@ -2490,7 +2782,7 @@
     "amount": "$15,001 - $50,000",
     "amount_min": 15001,
     "amount_max": 50000,
-    "description": "",
+    "description": "Additional investment in LLC which acquired five Courty ard by Marriott hotels located in Fairfax, VA (one),suburban Baltimore, MD (two) and San Antonio, TX (two).",
     "option": null
    }
   ]
@@ -2514,12 +2806,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 5,000 shares.",
     "option": null,
     "price_at_tx": 32.31,
-    "price_now": 261.0,
+    "price_now": 261.24,
     "price_now_date": "2026-09-23",
-    "change_pct": 707.74
+    "change_pct": 708.48
    }
   ]
  },
@@ -2542,12 +2834,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Contribution of 5,000 shares held personall y to The Paul & Nancy Pelosi Charitable Foundation via transferbetween brokerage accounts.",
     "option": null,
-    "price_at_tx": 39.91,
-    "price_now": 45.55,
+    "price_at_tx": 268.44,
+    "price_now": 756.65,
     "price_now_date": "2026-09-23",
-    "change_pct": 14.13
+    "change_pct": 181.87
    }
   ]
  },
@@ -2570,12 +2862,18 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Sold 20 call options with a strike price of $1,700 and an expiration date of 1/17/20.2000060676",
+    "option": {
+     "action": "sold",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 1700.0,
+     "expiry": "2020-01-17"
+    },
     "price_at_tx": 93.9,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 166.58
+    "change_pct": 165.45
    },
    {
     "owner": "SP",
@@ -2588,16 +2886,22 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Sold 20 call options with a strike price of $1,600 and an expiration date of 1/17/20",
+    "option": {
+     "action": "sold",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 1600.0,
+     "expiry": "2020-01-17"
+    },
     "price_at_tx": 93.9,
-    "price_now": 250.31,
+    "price_now": 249.25,
     "price_now_date": "2026-09-23",
-    "change_pct": 166.58
+    "change_pct": 165.45
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : Amended D ESCRIPTION : Sold 20 call options with a strike price of $1,600 and an expiration date of 1/17/20.SP American Express Company",
+    "owner": "SP",
+    "asset": "American Express Company",
     "ticker": "AXP",
     "asset_type": "OP",
     "type": "P",
@@ -2606,16 +2910,22 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $80 and an expiration date o f 1/21/2022",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 80.0,
+     "expiry": "2022-01-21"
+    },
     "price_at_tx": 95.48,
-    "price_now": 303.03,
+    "price_now": 303.4,
     "price_now_date": "2026-09-23",
-    "change_pct": 217.38
+    "change_pct": 217.77
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 50 call options with a strike price of $80 and an expiration date o f 1/21/2022.SP Apple Inc.",
+    "owner": "SP",
+    "asset": "Apple Inc.",
     "ticker": "AAPL",
     "asset_type": "OP",
     "type": "S",
@@ -2624,16 +2934,22 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
-    "option": null,
+    "description": "Sold 100 call options with a strike price of $145 and an expiration date o f 6/19/2020",
+    "option": {
+     "action": "sold",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 145.0,
+     "expiry": "2020-06-19"
+    },
     "price_at_tx": 87.93,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 283.07
+    "change_pct": 283.05
    },
    {
-    "owner": "Self",
-    "asset": "g fedcbF IlINg S TATuS : New D ESCRIPTION : Sold 100 call options with a strike price of $145 and an expiration date o f 6/19/2020.SP Netflix, Inc.",
+    "owner": "SP",
+    "asset": "Netflix, Inc.",
     "ticker": "NFLX",
     "asset_type": "ST",
     "type": "P",
@@ -2642,12 +2958,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 50 call options (5,000 shares) expiring 6/19/2020 at a strike price of $250.",
     "option": null,
     "price_at_tx": 44.99,
-    "price_now": 71.7,
+    "price_now": 71.71,
     "price_now_date": "2026-09-23",
-    "change_pct": 59.38
+    "change_pct": 59.39
    },
    {
     "owner": "SP",
@@ -2660,12 +2976,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 5,000 shares.",
     "option": null,
     "price_at_tx": 155.26,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -66.04
+    "change_pct": -66.2
    },
    {
     "owner": "SP",
@@ -2678,12 +2994,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Purchased 5,000 shares.",
     "option": null,
     "price_at_tx": 155.26,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -66.04
+    "change_pct": -66.2
    },
    {
     "owner": "SP",
@@ -2696,16 +3012,22 @@
     "amount": "$250,001 - $500,000",
     "amount_min": 250001,
     "amount_max": 500000,
-    "description": "",
-    "option": null,
+    "description": "Purchased 50 call options with a strike price of $100 and an expiration d ate of 1/21/2022",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 100.0,
+     "expiry": "2022-01-21"
+    },
     "price_at_tx": 168.0,
-    "price_now": 52.73,
+    "price_now": 52.49,
     "price_now_date": "2026-09-23",
-    "change_pct": -68.61
+    "change_pct": -68.76
    },
    {
-    "owner": "Self",
-    "asset": "g fedcF IlINg S TATuS : New D ESCRIPTION : Purchased 50 call options with a strike price of $100 and an expiration d ate of 1/21/2022.SP Salesforce.com Inc",
+    "owner": "SP",
+    "asset": "Salesforce.com Inc",
     "ticker": "CRM",
     "asset_type": "ST",
     "type": "P",
@@ -2714,12 +3036,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Exercised 100 call options (10,000 shares) expiring 6/19/2020 at a strike price o f $140.",
     "option": null,
     "price_at_tx": 187.66,
-    "price_now": 238.91,
+    "price_now": 239.66,
     "price_now_date": "2026-09-23",
-    "change_pct": 27.31
+    "change_pct": 27.71
    }
   ]
  },
@@ -2742,12 +3064,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 1,700 shares.",
     "option": null,
     "price_at_tx": 77.53,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 334.45
+    "change_pct": 334.43
    },
    {
     "owner": "SP",
@@ -2760,12 +3082,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 3,000 shares.",
     "option": null,
     "price_at_tx": 77.53,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 334.45
+    "change_pct": 334.43
    },
    {
     "owner": "SP",
@@ -2778,12 +3100,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 3,300 shares.",
     "option": null,
     "price_at_tx": 77.53,
-    "price_now": 336.84,
+    "price_now": 336.83,
     "price_now_date": "2026-09-23",
-    "change_pct": 334.45
+    "change_pct": 334.43
    },
    {
     "owner": "SP",
@@ -2796,12 +3118,12 @@
     "amount": "$1,000,001 - $5,000,000",
     "amount_min": 1000001,
     "amount_max": 5000000,
-    "description": "",
+    "description": "Sold 5,000 shares.",
     "option": null,
-    "price_at_tx": 39.91,
-    "price_now": 45.55,
+    "price_at_tx": 212.35,
+    "price_now": 756.65,
     "price_now_date": "2026-09-23",
-    "change_pct": 14.13
+    "change_pct": 256.32
    },
    {
     "owner": "SP",
@@ -2814,12 +3136,12 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Sold 3,000 shares.",
     "option": null,
     "price_at_tx": 10.28,
-    "price_now": 92.71,
+    "price_now": 92.73,
     "price_now_date": "2026-09-23",
-    "change_pct": 801.68
+    "change_pct": 801.78
    },
    {
     "owner": "SP",
@@ -2832,12 +3154,26 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Sold 1,700 shares.",
     "option": null,
     "price_at_tx": 143.12,
-    "price_now": 200.46,
+    "price_now": 200.29,
     "price_now_date": "2026-09-23",
-    "change_pct": 40.06
+    "change_pct": 39.94
+   },
+   {
+    "owner": "SP",
+    "asset": "REoF XX, llC",
+    "ticker": "",
+    "asset_type": "AB",
+    "type": "P",
+    "date": "2020-04-28",
+    "notified": "2020-04-28",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "additional investment in llC which acquired five Courty ard by Marriott hotels located in Fairfax, Va (one),suburban Baltimore, MD (two) and San antonio, TX (two).",
+    "option": null
    },
    {
     "owner": "SP",
@@ -2850,12 +3186,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 3,000 shares.",
     "option": null,
     "price_at_tx": 185.09,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 96.28
+    "change_pct": 96.2
    },
    {
     "owner": "SP",
@@ -2868,12 +3204,12 @@
     "amount": "$500,001 - $1,000,000",
     "amount_min": 500001,
     "amount_max": 1000000,
-    "description": "",
+    "description": "Sold 3,000 shares.",
     "option": null,
     "price_at_tx": 185.09,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 96.28
+    "change_pct": 96.2
    }
   ]
  },
@@ -2884,7 +3220,118 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "alphabet Inc. - Cl ass a",
+    "ticker": "GOOGL",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2020-02-27",
+    "notified": "2020-02-27",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Purchased 40 call options with a strike price of $1200 and an expiration date o f 6/18/2021",
+    "option": {
+     "action": "purchased",
+     "contracts": 40,
+     "kind": "call",
+     "strike": 1200.0,
+     "expiry": "2021-06-18"
+    },
+    "price_at_tx": 65.75,
+    "price_now": 338.91,
+    "price_now_date": "2026-09-23",
+    "change_pct": 415.47
+   },
+   {
+    "owner": "SP",
+    "asset": "Microsoft Corporation",
+    "ticker": "MSFT",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2020-02-28",
+    "notified": "2020-02-28",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchased 50 call options with a strike price of $130 and an expiration d ate of 3/19/2021",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 130.0,
+     "expiry": "2021-03-19"
+    },
+    "price_at_tx": 162.01,
+    "price_now": 498.56,
+    "price_now_date": "2026-09-23",
+    "change_pct": 207.73
+   },
+   {
+    "owner": "SP",
+    "asset": "Microsoft Corporation",
+    "ticker": "MSFT",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2020-02-20",
+    "notified": "2020-02-20",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchased 100 call options with a strike price of $140 and an expiration d ate of 3/19/2021",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 140.0,
+     "expiry": "2021-03-19"
+    },
+    "price_at_tx": 184.42,
+    "price_now": 498.56,
+    "price_now_date": "2026-09-23",
+    "change_pct": 170.34
+   },
+   {
+    "owner": "SP",
+    "asset": "Microsoft Corporation",
+    "ticker": "MSFT",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2020-02-21",
+    "notified": "2020-02-21",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Purchased 100 call options with a strike price of $130 and an expiration date of 3/19/2021",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 130.0,
+     "expiry": "2021-03-19"
+    },
+    "price_at_tx": 178.59,
+    "price_now": 498.56,
+    "price_now_date": "2026-09-23",
+    "change_pct": 179.16
+   },
+   {
+    "owner": "SP",
+    "asset": "slack Technologies, Inc. Class a",
+    "ticker": "WORK",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2020-02-20",
+    "notified": "2020-02-20",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchased 10,000 shares.",
+    "option": null
+   }
+  ]
  },
  {
   "doc_id": "20016155",
@@ -2905,7 +3352,7 @@
     "amount": "$50,001 - $100,000",
     "amount_min": 50001,
     "amount_max": 100000,
-    "description": "",
+    "description": "Additional investment in LLC which acquired five Courtyard by Marriott hotels located in Fair fax, VA (one),suburban Baltimore, MD (two) and San Antonio, TX (two).",
     "option": null
    }
   ]
@@ -2917,7 +3364,98 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "amazon.com, Inc.",
+    "ticker": "AMZN",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2020-01-16",
+    "notified": "2020-01-16",
+    "amount": "$1,000,001 - $5,000,000",
+    "amount_min": 1000001,
+    "amount_max": 5000000,
+    "description": "Exercised 30 call options (3,000 shares) expiring 1/17/20 at a strike price o f $1600",
+    "option": null,
+    "price_at_tx": 93.9,
+    "price_now": 249.25,
+    "price_now_date": "2026-09-23",
+    "change_pct": 165.45
+   },
+   {
+    "owner": "SP",
+    "asset": "amazon.com, Inc.",
+    "ticker": "AMZN",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2020-01-16",
+    "notified": "2020-01-16",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "sold 20 call options with a strike price of $1,700 and an expiration date of 1/17/20",
+    "option": null,
+    "price_at_tx": 93.9,
+    "price_now": 249.25,
+    "price_now_date": "2026-09-23",
+    "change_pct": 165.45
+   },
+   {
+    "owner": "SP",
+    "asset": "amazon.com, Inc.",
+    "ticker": "AMZN",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2020-01-16",
+    "notified": "2020-01-16",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "sold 20 call options with a strike price of $1,600 and an expiration date of 1/17/20",
+    "option": null,
+    "price_at_tx": 93.9,
+    "price_now": 249.25,
+    "price_now_date": "2026-09-23",
+    "change_pct": 165.45
+   },
+   {
+    "owner": "SP",
+    "asset": "Facebook, Inc. - Class a",
+    "ticker": "FB",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2020-01-16",
+    "notified": "2020-01-16",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Exercised 30 call options (3,000 shares) expiring 1/17/20 at a strike price o f $140",
+    "option": null,
+    "price_at_tx": 221.77,
+    "price_now": 756.65,
+    "price_now_date": "2026-09-23",
+    "change_pct": 241.19
+   },
+   {
+    "owner": "SP",
+    "asset": "Facebook, Inc. - Class a",
+    "ticker": "FB",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2020-01-16",
+    "notified": "2020-01-16",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Exercised 20 call options (2,000 shares) expiring 1/17/20 at a strike price of $150.",
+    "option": null,
+    "price_at_tx": 221.77,
+    "price_now": 756.65,
+    "price_now_date": "2026-09-23",
+    "change_pct": 241.19
+   }
+  ]
  },
  {
   "doc_id": "20012343",
@@ -2938,12 +3476,12 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Sale of 1,000 Shares",
     "option": null,
     "price_at_tx": 175.32,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 107.22
+    "change_pct": 107.14
    }
   ]
  },
@@ -2957,21 +3495,17 @@
   "transactions": [
    {
     "owner": "SP",
-    "asset": "Visa Inc.",
-    "ticker": "V",
-    "asset_type": "ST",
-    "type": "S (partial)",
-    "date": "2019-08-07",
-    "notified": "2019-08-07",
-    "amount": "$100,001 - $250,000",
-    "amount_min": 100001,
-    "amount_max": 250000,
-    "description": "",
-    "option": null,
-    "price_at_tx": 175.32,
-    "price_now": 363.3,
-    "price_now_date": "2026-09-23",
-    "change_pct": 107.22
+    "asset": "REoF XXI, llC",
+    "ticker": "",
+    "asset_type": "AB",
+    "type": "P",
+    "date": "2019-08-13",
+    "notified": "2019-08-13",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Investment in llC which is acquiring three unique o ffice buildings with a common address of 222 KearnyStreet in San Francisco.",
+    "option": null
    },
    {
     "owner": "SP",
@@ -2984,12 +3518,30 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Sale of 1.000 Shares",
     "option": null,
     "price_at_tx": 175.32,
-    "price_now": 363.3,
+    "price_now": 363.15,
     "price_now_date": "2026-09-23",
-    "change_pct": 107.22
+    "change_pct": 107.14
+   },
+   {
+    "owner": "SP",
+    "asset": "Visa Inc.",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S (partial)",
+    "date": "2019-08-07",
+    "notified": "2019-08-07",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Sale of 1,000 Shares",
+    "option": null,
+    "price_at_tx": 175.32,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 107.14
    }
   ]
  },
@@ -3003,7 +3555,79 @@
   "transactions": [
    {
     "owner": "SP",
-    "asset": "Amazon.com, Inc. (AMZN) [oP] P 07/22/2019 07/22/2019 $500,001 - $1,000,000 g fedcF ILINg S TATuS : New D ESCRIPTIoN : Purchased 20 call options with a strike price of $1700 and an expiration date o f 1/17/20.SP Netflix, Inc. (NFLX) [oP] P 07/22/2019 07/22/2019 $100,001 - $250,000 g fedcF ILINg S TATuS : New D ESCRIPTIoN : Purchased 30 call options with a strike price of $250 and an expiration date o f 6/19/20.SP Netflix, Inc. (NFLX) [oP] P 07/05/2019 07/05/2019 $250,001 - $500,000 g fedcF ILINg S TATuS : New D ESCRIPTIoN : Purchased 20 call options with a strike price of $250 and an expiration date of 6/ 19/20.SP REoF XX, LLC",
+    "asset": "Amazon.com, Inc.",
+    "ticker": "AMZN",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2019-07-22",
+    "notified": "2019-07-22",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Purchased 20 call options with a strike price of $1700 and an expiration date o f 1/17/20",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 1700.0,
+     "expiry": "2020-01-17"
+    },
+    "price_at_tx": 99.28,
+    "price_now": 249.25,
+    "price_now_date": "2026-09-23",
+    "change_pct": 151.05
+   },
+   {
+    "owner": "SP",
+    "asset": "Netflix, Inc.",
+    "ticker": "NFLX",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2019-07-22",
+    "notified": "2019-07-22",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchased 30 call options with a strike price of $250 and an expiration date o f 6/19/20",
+    "option": {
+     "action": "purchased",
+     "contracts": 30,
+     "kind": "call",
+     "strike": 250.0,
+     "expiry": "2020-06-19"
+    },
+    "price_at_tx": 31.06,
+    "price_now": 71.71,
+    "price_now_date": "2026-09-23",
+    "change_pct": 130.84
+   },
+   {
+    "owner": "SP",
+    "asset": "Netflix, Inc.",
+    "ticker": "NFLX",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2019-07-05",
+    "notified": "2019-07-05",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchased 20 call options with a strike price of $250 and an expiration date of 6/ 19/20",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 250.0,
+     "expiry": "2020-06-19"
+    },
+    "price_at_tx": 38.06,
+    "price_now": 71.71,
+    "price_now_date": "2026-09-23",
+    "change_pct": 88.42
+   },
+   {
+    "owner": "SP",
+    "asset": "REoF XX, LLC",
     "ticker": "",
     "asset_type": "AB",
     "type": "P",
@@ -3012,7 +3636,7 @@
     "amount": "$100,001 - $250,000",
     "amount_min": 100001,
     "amount_max": 250000,
-    "description": "",
+    "description": "Investment in LLC which acquired five Courtyard by Marriott hotels located in Fairfax, VA (one), suburbanBaltimore, MD (two), and San Antonio, TX (two).",
     "option": null
    }
   ]
@@ -3024,7 +3648,56 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011965.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "salesforce.com Inc",
+    "ticker": "CRM",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2019-06-14",
+    "notified": "2019-06-14",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchased 20 call options with a strike price of $140 and an expiration date o f 6/19/20",
+    "option": {
+     "action": "purchased",
+     "contracts": 20,
+     "kind": "call",
+     "strike": 140.0,
+     "expiry": "2020-06-19"
+    },
+    "price_at_tx": 150.01,
+    "price_now": 239.66,
+    "price_now_date": "2026-09-23",
+    "change_pct": 59.76
+   },
+   {
+    "owner": "SP",
+    "asset": "salesforce.com Inc",
+    "ticker": "CRM",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2019-06-18",
+    "notified": "2019-06-18",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchased 80 call options with a strike price of $140 and an expiration date o f 6/19/20.",
+    "option": {
+     "action": "purchased",
+     "contracts": 80,
+     "kind": "call",
+     "strike": 140.0,
+     "expiry": "2020-06-19"
+    },
+    "price_at_tx": 150.59,
+    "price_now": 239.66,
+    "price_now_date": "2026-09-23",
+    "change_pct": 59.15
+   }
+  ]
  },
  {
   "doc_id": "20011279",
@@ -3033,7 +3706,22 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011279.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "BF Enterprises Common stock New",
+    "ticker": "BFET",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2019-02-07",
+    "notified": "2019-02-07",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "Final cash liquidation initiated by corporation.",
+    "option": null
+   }
+  ]
  },
  {
   "doc_id": "20010631",
@@ -3042,7 +3730,62 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "amazon.com, Inc.",
+    "ticker": "AMZN",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-10-12",
+    "notified": "2018-10-12",
+    "amount": "$1,000,001 - $5,000,000",
+    "amount_min": 1000001,
+    "amount_max": 5000000,
+    "description": "Purchased 30 call options with a strike price of $1600 and an expiration d ate of 1/17/20",
+    "option": null,
+    "price_at_tx": 89.43,
+    "price_now": 249.25,
+    "price_now_date": "2026-09-23",
+    "change_pct": 178.71
+   },
+   {
+    "owner": "SP",
+    "asset": "aT&T Inc.",
+    "ticker": "T",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-10-24",
+    "notified": "2018-10-24",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchased 10,000 shares.",
+    "option": null,
+    "price_at_tx": 22.93,
+    "price_now": 25.48,
+    "price_now_date": "2026-09-23",
+    "change_pct": 11.1
+   },
+   {
+    "owner": "SP",
+    "asset": "Facebook, Inc. - Class a",
+    "ticker": "FB",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-10-09",
+    "notified": "2018-10-09",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchased 30 call options with a strike price of $140 and an expiration date o f 1/17/20.",
+    "option": null,
+    "price_at_tx": 157.9,
+    "price_now": 756.65,
+    "price_now_date": "2026-09-23",
+    "change_pct": 379.2
+   }
+  ]
  },
  {
   "doc_id": "20010452",
@@ -3051,7 +3794,62 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-09-11",
+    "notified": "2018-09-11",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Purchased 100 call options with a strike price of $145 and an expiration d ate of 6/19/20",
+    "option": null,
+    "price_at_tx": 55.96,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 501.88
+   },
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-09-20",
+    "notified": "2018-09-20",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Exercised 50 call options (5,000 shares) expiring 9/21/18 at a strike price o f $130",
+    "option": null,
+    "price_at_tx": 55.01,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 512.33
+   },
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-09-20",
+    "notified": "2018-09-20",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Exercised 50 call options (5,000 shares) expiring 9/21/18 at a strike price o f $140.",
+    "option": null,
+    "price_at_tx": 55.01,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 512.33
+   }
+  ]
  },
  {
   "doc_id": "20009481",
@@ -3060,7 +3858,58 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009481.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Amazon.com, Inc.",
+    "ticker": "AMZN",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-07-27",
+    "notified": "2018-07-27",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Purchase of 20 call options with a strike price of $1700 and an expiration d ate of 1/17/20",
+    "option": null,
+    "price_at_tx": 90.86,
+    "price_now": 249.25,
+    "price_now_date": "2026-09-23",
+    "change_pct": 174.31
+   },
+   {
+    "owner": "SP",
+    "asset": "Facebook, Inc. - Class A",
+    "ticker": "FB",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-07-27",
+    "notified": "2018-07-27",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 20 call options with a strike price of $150 and an expiration d ate of 1/17/20",
+    "option": null,
+    "price_at_tx": 174.89,
+    "price_now": 756.65,
+    "price_now_date": "2026-09-23",
+    "change_pct": 332.64
+   },
+   {
+    "owner": "SP",
+    "asset": "Mojo Networks, Inc.",
+    "ticker": "",
+    "asset_type": "PS",
+    "type": "S",
+    "date": "2018-08-23",
+    "notified": "2018-08-22",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "Final cash distribution for preferr ed shares held resulting from Arista Networks, Inc. acquisition of MojoNetworks, Inc.",
+    "option": null
+   }
+  ]
  },
  {
   "doc_id": "20009293",
@@ -3069,7 +3918,26 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009293.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Dropbox, Inc. - Class a",
+    "ticker": "DBX",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2018-03-27",
+    "notified": "2018-03-27",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchase of 10,000 Shares",
+    "option": null,
+    "price_at_tx": 29.9,
+    "price_now": 34.1,
+    "price_now_date": "2026-09-23",
+    "change_pct": 14.06
+   }
+  ]
  },
  {
   "doc_id": "20009030",
@@ -3078,7 +3946,56 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009030.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2018-02-02",
+    "notified": "2018-02-02",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchase of 50 call options with a strike price of $140 and an expiration d ate of 9/21/18",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 140.0,
+     "expiry": "2018-09-21"
+    },
+    "price_at_tx": 40.12,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 739.44
+   },
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2018-02-02",
+    "notified": "2018-02-02",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchase of 50 call options with a strike price of $130 and an expiration date of 9/21/18.",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 130.0,
+     "expiry": "2018-09-21"
+    },
+    "price_at_tx": 40.12,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 739.44
+   }
+  ]
  },
  {
   "doc_id": "20008699",
@@ -3087,7 +4004,98 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2017-12-21",
+    "notified": "2017-12-21",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Contribution of 1,300 shares held person ally to Isolep Enterprises via transfer between brokerage accounts",
+    "option": null,
+    "price_at_tx": 43.75,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 669.84
+   },
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2017-12-28",
+    "notified": "2017-12-28",
+    "amount": "$1,000,001 - $5,000,000",
+    "amount_min": 1000001,
+    "amount_max": 5000000,
+    "description": "sale of 9,000 shares",
+    "option": null,
+    "price_at_tx": 42.77,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 687.53
+   },
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2017-12-29",
+    "notified": "2017-12-29",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Contribution of 2,800 shares held personally to the Pa ul & Nancy Pelosi Charitable Foundation via transferbetween brokerage accounts.",
+    "option": null,
+    "price_at_tx": 42.31,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 696.14
+   },
+   {
+    "owner": "SP",
+    "asset": "Visa Inc.",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2017-12-28",
+    "notified": "2017-12-28",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "sale of 5,000 shares",
+    "option": null,
+    "price_at_tx": 114.35,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 217.58
+   },
+   {
+    "owner": "SP",
+    "asset": "Visa Inc.",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2017-12-21",
+    "notified": "2017-12-21",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Contribution of 1,750 shares held person ally to Isolep Enterprises via transfer between brokerage accounts.",
+    "option": null,
+    "price_at_tx": 112.41,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 223.06
+   }
+  ]
  },
  {
   "doc_id": "20007655",
@@ -3096,7 +4104,40 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20007655.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2017-06-15",
+    "notified": "2017-06-15",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Exercised 100 call options (10,000 shares) expiring 6/16/ 17 at a strike price of $80sP BF Enterprises Common stock New (BFET)",
+    "option": null,
+    "price_at_tx": 36.07,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 833.74
+   },
+   {
+    "owner": "SP",
+    "asset": "Exercised 100 call options (10,000 shares) expiring 6/16/ 17 at a strike price of $80sP BF Enterprises Common stock New",
+    "ticker": "BFET",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2017-06-20",
+    "notified": "2017-06-20",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "Partial cash liquidation initiated by corporation.",
+    "option": null
+   }
+  ]
  },
  {
   "doc_id": "20006735",
@@ -3105,7 +4146,68 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2017-01-19",
+    "notified": "2017-01-19",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Exercised 100 call options (10,000 shares) expiring 1/20/17 at a strike price of $90sP apple Inc. (aaPl)",
+    "option": null,
+    "price_at_tx": 29.94,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 1024.81
+   },
+   {
+    "owner": "SP",
+    "asset": "",
+    "ticker": "AAPL",
+    "asset_type": "OP",
+    "type": "S",
+    "date": "2017-01-20",
+    "notified": "2017-01-20",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "sale of 100 call options with a strike price of $90 and an expiration date of 1/20/17sP square, Inc. Class a (sQ)",
+    "option": {
+     "action": "sold",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 90.0,
+     "expiry": "2017-01-20"
+    },
+    "price_at_tx": 30.0,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 1022.75
+   },
+   {
+    "owner": "SP",
+    "asset": "Class a",
+    "ticker": "SQ",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2017-01-20",
+    "notified": "2017-01-20",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "Exercised 50 call options (5,000 shares) expiring 1/20/17 at a strike price o f $8",
+    "option": null,
+    "price_at_tx": 14.89,
+    "price_now": 75.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 404.73
+   }
+  ]
  },
  {
   "doc_id": "20006683",
@@ -3114,7 +4216,22 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006683.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "JT",
+    "asset": "1600 Atlas Peak Road - Real Estate Investment",
+    "ticker": "",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2016-12-30",
+    "notified": "2016-12-30",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Sale of Investment Property JT 723 Mule Ears Court - Town homeS 12/27/2016 12/27/2016 $1,000,001 - $5,000,000",
+    "option": null
+   }
+  ]
  },
  {
   "doc_id": "20005689",
@@ -3123,7 +4240,44 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005689.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Mcgrath RentCorp",
+    "ticker": "MGRC",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2016-07-21",
+    "notified": "2016-07-21",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Sale of 8,000 Shares",
+    "option": null,
+    "price_at_tx": 32.16,
+    "price_now": 112.66,
+    "price_now_date": "2026-09-23",
+    "change_pct": 250.31
+   },
+   {
+    "owner": "SP",
+    "asset": "Visa Inc.",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2016-07-21",
+    "notified": "2016-07-21",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Sale of 1,250 Shares",
+    "option": null,
+    "price_at_tx": 78.79,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 360.91
+   }
+  ]
  },
  {
   "doc_id": "20005096",
@@ -3132,7 +4286,56 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005096.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2016-05-17",
+    "notified": "2016-05-17",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchase of 100 call options with a strike price of $80 and an expiration date of 6/16/17square, Inc. Class a (sQ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 80.0,
+     "expiry": "2017-06-16"
+    },
+    "price_at_tx": 23.37,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 1341.12
+   },
+   {
+    "owner": "SP",
+    "asset": "Class a",
+    "ticker": "SQ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2016-05-17",
+    "notified": "2016-05-17",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "Purchase of 50 call options with a strike price of $8 and an expiration d ate of 1/20/17",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 8.0,
+     "expiry": "2017-01-20"
+    },
+    "price_at_tx": 9.18,
+    "price_now": 75.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 718.68
+   }
+  ]
  },
  {
   "doc_id": "20004596",
@@ -3141,7 +4344,50 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004596.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "apple Inc.",
+    "ticker": "AAPL",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2016-01-13",
+    "notified": "2016-01-13",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Purchase of 200 call options with a strike price of $90 and an expiration date o f 1/20/17Walt Disney Company (DIs)",
+    "option": {
+     "action": "purchased",
+     "contracts": 200,
+     "kind": "call",
+     "strike": 90.0,
+     "expiry": "2017-01-20"
+    },
+    "price_at_tx": 24.35,
+    "price_now": 336.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": 1283.41
+   },
+   {
+    "owner": "SP",
+    "asset": "Walt Disney Company",
+    "ticker": "DIS",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2016-01-15",
+    "notified": "2016-01-15",
+    "amount": "$500,001 - $1,000,000",
+    "amount_min": 500001,
+    "amount_max": 1000000,
+    "description": "Exercised 100 call options (10,000 shares) expiring 1/ 15/16 at a strike price of $90",
+    "option": null,
+    "price_at_tx": 93.9,
+    "price_now": 104.18,
+    "price_now_date": "2026-09-23",
+    "change_pct": 10.95
+   }
+  ]
  },
  {
   "doc_id": "20004503",
@@ -3150,7 +4396,62 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Salesforce.com Inc",
+    "ticker": "CRM",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2015-12-30",
+    "notified": "2015-12-30",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Contribution of 1,084 shares held personall y to The Paul & Nancy Pelosi Charitable Foundation via transferbetween brokerage accounts. Visa Inc. (V)",
+    "option": null,
+    "price_at_tx": 79.14,
+    "price_now": 239.66,
+    "price_now_date": "2026-09-23",
+    "change_pct": 202.83
+   },
+   {
+    "owner": "SP",
+    "asset": "",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2015-12-30",
+    "notified": "2015-12-30",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Contribution of 2,000 shares held personally to The Pa ul & Nancy Pelosi Charitable Foundation via transferbetween brokerage accounts. Visa Inc. (V)",
+    "option": null,
+    "price_at_tx": 78.35,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 363.5
+   },
+   {
+    "owner": "SP",
+    "asset": "",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2015-12-29",
+    "notified": "2015-12-29",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "Sale of 5,000 Shares",
+    "option": null,
+    "price_at_tx": 79.21,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 358.46
+   }
+  ]
  },
  {
   "doc_id": "20003475",
@@ -3159,7 +4460,56 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003475.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2015-07-15",
+    "notified": "2015-07-15",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "Purchase of 42 call options with a strike price of $14 and an expiration date o f 1/15/16Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 42,
+     "kind": "call",
+     "strike": 14.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2015-07-16",
+    "notified": "2015-07-16",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchase of 258 call options with a strike price of $14 and an expiration date o f 1/15/16",
+    "option": {
+     "action": "purchased",
+     "contracts": 258,
+     "kind": "call",
+     "strike": 14.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   }
+  ]
  },
  {
   "doc_id": "20003320",
@@ -3168,7 +4518,152 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "2000005577 Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-05",
+    "notified": "2014-11-05",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "Purchase of 50 call options with a strike price of $22 and an expiration date o f 1/15/162000005579 Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": "call",
+     "strike": 22.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 50 call options with a strike price of $22 and an expiration date o f 1/15/162000005579 Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-25",
+    "notified": "2014-11-25",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchase of 200 call options with a strike price of $22 and an expiration date of 1/15/162000005578 Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 200,
+     "kind": "call",
+     "strike": 22.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 200 call options with a strike price of $22 and an expiration date of 1/15/162000005578 Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-06",
+    "notified": "2014-11-06",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 150 call options with a strike price of $22 and an expiration date o f 1/15/162000005581 Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 150,
+     "kind": "call",
+     "strike": 22.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 150 call options with a strike price of $22 and an expiration date o f 1/15/162000005581 Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-28",
+    "notified": "2014-11-28",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 100 call options with a strike price of $22 and an expiration date o f 1/15/162000006116 Walt Disney Company (DIs)",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": "call",
+     "strike": 22.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 100 call options with a strike price of $22 and an expiration date o f 1/15/162000006116 Walt Disney Company",
+    "ticker": "DIS",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-12-10",
+    "notified": "2014-12-10",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 92 call options with a strike price of $90 and an expiration date o f 1/15/162000005580 Walt Disney Company (DIs)",
+    "option": {
+     "action": "purchased",
+     "contracts": 92,
+     "kind": "call",
+     "strike": 90.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 91.63,
+    "price_now": 104.18,
+    "price_now_date": "2026-09-23",
+    "change_pct": 13.7
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 92 call options with a strike price of $90 and an expiration date o f 1/15/162000005580 Walt Disney Company",
+    "ticker": "DIS",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-28",
+    "notified": "2014-11-28",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "Purchase of 8 call options with a strike price of $90 and an expiration d ate of 1/15/16",
+    "option": {
+     "action": "purchased",
+     "contracts": 8,
+     "kind": "call",
+     "strike": 90.0,
+     "expiry": "2016-01-15"
+    },
+    "price_at_tx": 92.51,
+    "price_now": 104.18,
+    "price_now_date": "2026-09-23",
+    "change_pct": 12.61
+   }
+  ]
  },
  {
   "doc_id": "20002351",
@@ -3177,7 +4672,68 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Visa Inc.",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-12-29",
+    "notified": "2014-12-29",
+    "amount": "$250,001 - $500,000",
+    "amount_min": 250001,
+    "amount_max": 500000,
+    "description": "sale of 1000 shares Visa Inc. (V)",
+    "option": null,
+    "price_at_tx": 66.36,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 447.26
+   },
+   {
+    "owner": "SP",
+    "asset": "",
+    "ticker": "V",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-12-30",
+    "notified": "2014-12-30",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "sale of 500 shares Walt Disney Company (DIs)",
+    "option": null,
+    "price_at_tx": 66.14,
+    "price_now": 363.15,
+    "price_now_date": "2026-09-23",
+    "change_pct": 449.08
+   },
+   {
+    "owner": "SP",
+    "asset": "sale of 500 shares Walt Disney Company",
+    "ticker": "DIS",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-12-10",
+    "notified": "2014-12-10",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 92 Options c ommentS",
+    "option": {
+     "action": "purchased",
+     "contracts": 92,
+     "kind": null,
+     "strike": null,
+     "expiry": null
+    },
+    "price_at_tx": 91.63,
+    "price_now": 104.18,
+    "price_now_date": "2026-09-23",
+    "change_pct": 13.7
+   }
+  ]
  },
  {
   "doc_id": "20002236",
@@ -3186,7 +4742,128 @@
   "name": "Hon. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-05",
+    "notified": "2014-11-05",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "Purchase of 50 Options Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 50,
+     "kind": null,
+     "strike": null,
+     "expiry": null
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 50 Options Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-06",
+    "notified": "2014-11-06",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 150 Options Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 150,
+     "kind": null,
+     "strike": null,
+     "expiry": null
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 150 Options Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-25",
+    "notified": "2014-11-25",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Purchase of 200 Options Hertz global Holdings, Inc ( HTZ)",
+    "option": {
+     "action": "purchased",
+     "contracts": 200,
+     "kind": null,
+     "strike": null,
+     "expiry": null
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 200 Options Hertz global Holdings, Inc",
+    "ticker": "HTZ",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-28",
+    "notified": "2014-11-28",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Purchase of 100 Options Walt Disney Company (DIs)",
+    "option": {
+     "action": "purchased",
+     "contracts": 100,
+     "kind": null,
+     "strike": null,
+     "expiry": null
+    },
+    "price_at_tx": 26.99,
+    "price_now": 1.78,
+    "price_now_date": "2026-09-23",
+    "change_pct": -93.4
+   },
+   {
+    "owner": "SP",
+    "asset": "Purchase of 100 Options Walt Disney Company",
+    "ticker": "DIS",
+    "asset_type": "OP",
+    "type": "P",
+    "date": "2014-11-28",
+    "notified": "2014-11-28",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "Purchase of 8 Options c ommentS",
+    "option": {
+     "action": "purchased",
+     "contracts": 8,
+     "kind": null,
+     "strike": null,
+     "expiry": null
+    },
+    "price_at_tx": 92.51,
+    "price_now": 104.18,
+    "price_now_date": "2026-09-23",
+    "change_pct": 12.61
+   }
+  ]
  },
  {
   "doc_id": "20001991",
@@ -3195,6 +4872,171 @@
   "name": "Ms. Nancy Pelosi",
   "district": "CA12",
   "url": "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf",
-  "transactions": []
+  "transactions": [
+   {
+    "owner": "SP",
+    "asset": "alcoa Inc.",
+    "ticker": "AA",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "",
+    "option": null,
+    "price_at_tx": 39.02,
+    "price_now": 44.56,
+    "price_now_date": "2026-09-23",
+    "change_pct": 14.18
+   },
+   {
+    "owner": "SP",
+    "asset": "Blucora, Inc.",
+    "ticker": "BCOR",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "",
+    "option": null,
+    "price_at_tx": 25.13,
+    "price_now": 29.3,
+    "price_now_date": "2026-09-23",
+    "change_pct": 16.63
+   },
+   {
+    "owner": "SP",
+    "asset": "Broadcom Corporation - Class a",
+    "ticker": "BRCM",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "",
+    "option": null
+   },
+   {
+    "owner": "SP",
+    "asset": "Dow Chemical Company",
+    "ticker": "DOW",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "",
+    "option": null,
+    "price_at_tx": 49.8,
+    "price_now": 28.83,
+    "price_now_date": "2026-09-23",
+    "change_pct": -42.12
+   },
+   {
+    "owner": "SP",
+    "asset": "Emulex Corporation",
+    "ticker": "ELX",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "",
+    "option": null
+   },
+   {
+    "owner": "SP",
+    "asset": "Entropic Communications, Inc.",
+    "ticker": "ENTR",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$1,001 - $15,000",
+    "amount_min": 1001,
+    "amount_max": 15000,
+    "description": "",
+    "option": null
+   },
+   {
+    "owner": "SP",
+    "asset": "Mcgrath RentCorp",
+    "ticker": "MGRC",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-09-22",
+    "notified": "2014-09-22",
+    "amount": "$50,001 - $100,000",
+    "amount_min": 50001,
+    "amount_max": 100000,
+    "description": "Contribution of shares held personall y to The Paul & Nancy Pelosi Charitable Foundation via transfer betweenbrokerage accounts.",
+    "option": null,
+    "price_at_tx": 35.69,
+    "price_now": 112.66,
+    "price_now_date": "2026-09-23",
+    "change_pct": 215.66
+   },
+   {
+    "owner": "SP",
+    "asset": "Robert Half Internat ional Inc.",
+    "ticker": "RHI",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-09-22",
+    "notified": "2014-09-22",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "Contribution of shares held personall y to The Paul & Nancy Pelosi Charitable Foundation via transfer betweenbrokerage accounts.",
+    "option": null,
+    "price_at_tx": 50.37,
+    "price_now": 37.64,
+    "price_now_date": "2026-09-23",
+    "change_pct": -25.27
+   },
+   {
+    "owner": "SP",
+    "asset": "shutterfly, Inc.",
+    "ticker": "SFLY",
+    "asset_type": "ST",
+    "type": "S",
+    "date": "2014-10-23",
+    "notified": "2014-10-23",
+    "amount": "$15,001 - $50,000",
+    "amount_min": 15001,
+    "amount_max": 50000,
+    "description": "",
+    "option": null
+   },
+   {
+    "owner": "SP",
+    "asset": "sunEdison, Inc.",
+    "ticker": "SUNE",
+    "asset_type": "ST",
+    "type": "P",
+    "date": "2014-10-24",
+    "notified": "2014-10-24",
+    "amount": "$100,001 - $250,000",
+    "amount_min": 100001,
+    "amount_max": 250000,
+    "description": "",
+    "option": null,
+    "price_at_tx": 6792000.0,
+    "price_now": 2.47,
+    "price_now_date": "2026-09-23",
+    "change_pct": -100.0
+   }
+  ]
  }
 ]
