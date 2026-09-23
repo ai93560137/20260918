@@ -9,8 +9,9 @@
 # 規則（不偷看未來）：
 #   * 進場：申報日「之後」第一個交易日的開盤價。申報可能在收盤後才公開，
 #     所以不用申報日當天。交易日只拿來算「延遲成本」對照，不當策略結果。
-#   * 訊號：股票/ETF 買入 → 做多；Call 期權的買入/行權 → 改買正股做多
-#     （期權歷史價難取得、槓桿也不複製）。Put、交換（E）、無代號資產略過。
+#   * 訊號：股票/ETF 買入 → 做多；買 Call → 改買正股做多（期權歷史價難取得、槓桿也不複製）。
+#     賣出股票/Call、Call 到期作廢 → 賣出訊號。行使 Call 只是延續部位，不算新訊號。
+#     Put、交換（E）、無代號資產略過。修正申報的重複交易只算最早那份。
 #   * 出場（兩類，分別回測）：
 #       sell  她申報賣出同一代號 → 該申報後第一個交易日開盤全數平倉
 #       hNm   固定持有 N 個月（1/3/6/12）→ 到期後第一個交易日開盤平倉
@@ -48,6 +49,8 @@ BENCHMARKS = ["SPY", "QQQ"]
 EXTRA_BENCH = ["NANC"]  # 2023 年上市，只在有資料的期間比較
 ALL_EXITS = ["sell", "h1m", "h3m", "h6m", "h12m"]
 WEIGHTS = ["equal", "amount"]
+# 改名的代號：申報上寫舊代號，價格用新代號查（拆股/還原已在同一條歷史裡）
+TICKER_ALIASES = {"SQ": "XYZ", "FB": "META"}
 
 
 # -----------------------------------------------------------------------------
@@ -171,8 +174,10 @@ def load_all_prices(tickers, start, cache_dir=None, equities_dir=None, sources=N
     out = {}
     sources = sources if sources is not None else {}
     for n, tk in enumerate(sorted(tickers), 1):
+        src = TICKER_ALIASES.get(tk, tk)
         if equities_dir:
-            p = load_local_prices(equities_dir, tk, start)
+            p = load_local_prices(equities_dir, src, start) or (
+                load_local_prices(equities_dir, tk, start) if src != tk else None)
             if p:
                 out[tk] = p
                 sources[tk] = "local"
@@ -183,7 +188,7 @@ def load_all_prices(tickers, start, cache_dir=None, equities_dir=None, sources=N
                 raw = json.load(f)
             out[tk] = Prices([date.fromisoformat(d) for d in raw["d"]], raw["o"], raw["c"])
             continue
-        p = fetch_prices(tk, start)
+        p = fetch_prices(src, start)
         if p:
             out[tk] = p
             sources[tk] = "yahoo"
@@ -210,14 +215,19 @@ def classify(r):
     tk, at, tp = r.get("ticker"), r.get("asset_type"), r.get("type", "")
     if not tk or at not in ("ST", "OP", "EF"):
         return None
+    if "exercis" in (r.get("description") or "").lower():
+        return None  # 行使早已買入的 Call：部位延續，不是新訊號（買 Call 時已進場）
     if at == "OP":
         opt = r.get("option") or {}
-        if opt.get("kind") != "call":
+        if opt.get("kind") == "put":
             return None  # Put 方向與意圖不明，略過
-        if opt.get("action") in ("purchased", "exercised") or tp == "P":
-            return "buy"
+        # kind 為 None：2014 年版只寫「Purchase of N Options」，她幾乎只買 Call，視為看多
+        if opt.get("action") == "expired":
+            return "sell"  # Call 到期作廢，部位消失
         if opt.get("action") == "sold" or tp.startswith("S"):
             return "sell"
+        if opt.get("action") == "purchased" or tp == "P":
+            return "buy"
         return None
     if tp == "P":
         return "buy"
@@ -227,8 +237,9 @@ def classify(r):
 
 
 def build_signals(filings, start=None):
-    sig = []
-    for f in filings:
+    """修正申報（Amended）會把同一筆交易再報一次：跨申報的重複只保留最早公開的那份。"""
+    sig, seen = [], {}
+    for f in sorted(filings, key=lambda x: x["filing_date"]):
         fd = date.fromisoformat(f["filing_date"])
         if start and fd < start:
             continue
@@ -240,6 +251,10 @@ def build_signals(filings, start=None):
                 td = date.fromisoformat(r["date"])
             except ValueError:
                 continue
+            key = (r["ticker"].upper(), side, td, r.get("amount"))
+            if seen.get(key, f["doc_id"]) != f["doc_id"]:
+                continue
+            seen[key] = f["doc_id"]
             sig.append({
                 "ticker": r["ticker"].upper(), "side": side, "trade_date": td, "filing_date": fd,
                 "lag_days": (fd - td).days, "weight_amount": amount_mid(r),
@@ -602,7 +617,7 @@ def render_report(results, best, bstats, nanc_note, signals, cal, src_note=""):
         "# 佩洛西跟單回測（申報日跟單）", "",
         f"更新：{now}　｜　期間 {cal[0]} ～ {cal[-1]}　｜　訊號 {len(signals)} 筆"
         f"　｜　申報延遲中位數 {lags[len(lags) // 2]} 天", "",
-        "規則：申報公開後的下一個交易日**開盤**進場；Call 期權改買正股；Put 與交換略過。"
+        "規則：申報公開後的下一個交易日**開盤**進場；Call 期權改買正股；行使 Call 不算新訊號；Put 與交換略過。"
         "組合只持有未平倉部位、依市值加權，空倉時為現金。價格為含息還原日線，未計手續費與滑價。"
         f"{src_note}。", "",
         "![淨值](equity.svg)", "",
