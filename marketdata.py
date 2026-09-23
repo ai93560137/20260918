@@ -20,6 +20,7 @@
 import bisect
 import csv
 import gzip
+import os
 from datetime import date
 from pathlib import Path
 
@@ -51,6 +52,9 @@ def v2_dir(ticker: str) -> Path:
 
 
 def has_v2(ticker: str) -> bool:
+    # MARKETDATA_FORCE_LEGACY=1：強制讀舊格式（只給港股遷移時新舊對照驗證用）
+    if os.environ.get("MARKETDATA_FORCE_LEGACY") == "1":
+        return False
     return any(v2_dir(ticker).glob("prices_*.csv"))
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""每日股票數據品質檢查，輸出 data/stocks/QC_REPORT.md。
+"""港股每日數據品質檢查，輸出 data/equities/hk/QC_REPORT.md（美股/日股見 check_equities_quality.py）。
 
 由 .github/workflows/fetch_stock_data.yml 每次抓完數據後執行；本機也能跑
 （不加 --fetch-names 就不需要網路，只檢查已存在的檔案）：
@@ -25,8 +25,6 @@
 報告會移到「已確認」區，不再每天重複警告。
 """
 import argparse
-import csv
-import gzip
 import json
 import re
 import sys
@@ -36,10 +34,14 @@ from difflib import SequenceMatcher
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PRIMARY_DIR = ROOT / "data" / "stocks"
+sys.path.insert(0, str(ROOT))
+import marketdata as md  # noqa: E402
+
+# 2026-09-23 起港股改用新格式（data/equities/hk/，見 marketdata.py），舊的 data/stocks/*.csv.gz 已移除
+PRIMARY_DIR = md.V2_DIR / "hk"
 HKEX_DIR = ROOT / "data" / "stocks_hkex"
 WIKI_NAMES = ROOT / "scripts" / "pointintime" / "hsi_names.json"
-YF_NAMES = PRIMARY_DIR / "names_yf.json"
+YF_NAMES = PRIMARY_DIR / "_names.json"
 ACKS = ROOT / "scripts" / "qc_acks.json"
 REPORT = PRIMARY_DIR / "QC_REPORT.md"
 # Telegram 通道一用的兩個純文字檔（.github/workflows/fetch_stock_data.yml 讀）：
@@ -64,15 +66,13 @@ NAME_STOPWORDS = {
 }
 
 
-def load_ohlc(path: Path) -> list[tuple[date, float, float, float, float]]:
+def load_ohlc(ticker: str) -> list[tuple[date, float, float, float, float]]:
+    """(date, open, high, low, close)——經 marketdata 讀（濾垃圾列、套人工修正）；開/高/低缺值的列略過。"""
     rows = []
-    with gzip.open(path, "rt", newline="") as f:
-        for r in csv.DictReader(f):
-            try:
-                rows.append((date.fromisoformat(r["Date"]), float(r["Open"]), float(r["High"]),
-                             float(r["Low"]), float(r["Close"])))
-            except (ValueError, TypeError, KeyError):
-                continue
+    for r in md.load_ohlcv(ticker):
+        if None in (r["Open"], r["High"], r["Low"]):
+            continue
+        rows.append((r["Date"], r["Open"], r["High"], r["Low"], r["Close"]))
     return rows
 
 
@@ -126,9 +126,9 @@ def main() -> None:
         json.loads(WIKI_NAMES.read_text(encoding="utf-8")) if WIKI_NAMES.exists() else {})
     yf_names: dict[str, dict] = json.loads(YF_NAMES.read_text(encoding="utf-8")) if YF_NAMES.exists() else {}
 
-    primary_files = sorted(p for p in PRIMARY_DIR.glob("*.csv.gz") if ".shares." not in p.name)
-    tickers = [p.name[:-len(".csv.gz")].replace("_", "^", 1) if p.name.startswith("_")
-               else p.name[:-len(".csv.gz")] for p in primary_files]
+    # 有價格檔的代碼目錄（指數 ^HSI 存成 _HSI）
+    tickers = sorted(p.name.replace("_", "^", 1) if p.name.startswith("_") else p.name
+                     for p in PRIMARY_DIR.glob("*/") if any(p.glob("prices_*.csv")))
 
     # 港交所每日快照（fetch_hkex_equity.py）：全部都比（港交所只保留最近幾個月的報表，
     # 更早的歷史沒有免費第二來源——能存的每一天都存、都比）
@@ -148,8 +148,8 @@ def main() -> None:
     def flag(sev: str, t: str, check: str, detail: str) -> None:
         issues.append((sev, t, check, detail))
 
-    for t, path in zip(tickers, primary_files):
-        rows = load_ohlc(path)
+    for t in tickers:
+        rows = load_ohlc(t)
         if not rows:
             flag("🔴", t, "empty", "檔案沒有可解析的資料列")
             continue
@@ -226,7 +226,7 @@ def main() -> None:
     # --- 管線健康：基準太久沒新數據 = 主來源抓取壞了（不是個股問題）---
     bench_last = None
     if BENCHMARK in tickers:
-        bench_rows = load_ohlc(primary_files[tickers.index(BENCHMARK)])
+        bench_rows = load_ohlc(BENCHMARK)
         bench_last = bench_rows[-1][0] if bench_rows else None
         if bench_last is None or (today - bench_last).days > PIPELINE_STALE_DAYS:
             flag("🔴", BENCHMARK, "pipeline_stale",
@@ -235,8 +235,8 @@ def main() -> None:
     # --- point-in-time 成分股覆蓋率：每個「某年是成分股」的代碼，那年有沒有價格？---
     # 快照是年中（6/30 前後）的 Wikipedia 版本，用 6/30 當作「那年是成分股」的檢查日
     first_date = {}
-    for t, p in zip(tickers, primary_files):
-        rows = load_ohlc(p)
+    for t in tickers:
+        rows = load_ohlc(t)
         if rows:
             first_date[t] = rows[0][0]
     for t, yrs in sorted(wiki_names.items()):
@@ -312,7 +312,7 @@ def main() -> None:
     lines = [
         f"# 數據品質日報（{today}）",
         "",
-        f"由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/stocks/`）"
+        f"由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）"
         f"{len(tickers)} 檔，第二來源港交所官方快照（`data/stocks_hkex/`）"
         f"{len(hkex_snaps)} 份（最新 {hkex_snaps[-1][0] if hkex_snaps else '無'}），"
         f"公司名紀錄 {len(yf_names)} 檔。",
@@ -351,7 +351,7 @@ def main() -> None:
     # --- Telegram 純文字（不用 parse_mode；上限 4096 字，列前 10 項）---
     hk_latest = hkex_snaps[-1][0] if hkex_snaps else None
     xs_checked = sum(1 for t in tickers if t.endswith(".HK") and hkex_snaps and t in hkex_snaps[-1][1])
-    link = "報告：data/stocks/QC_REPORT.md（分支 claude/gifted-carson-v2tvhw）"
+    link = "報告：data/equities/hk/QC_REPORT.md（分支 claude/gifted-carson-v2tvhw）"
     if crit:
         lines_a = [f"🚨 港股數據品質警報 {today}", f"🔴 嚴重 {len(crit)} 項（會污染回測）：", ""]
         for _, t, c, d in sorted(crit, key=lambda x: (x[2], x[1]))[:10]:

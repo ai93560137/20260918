@@ -25,7 +25,7 @@ INDICES = {
     "hsi": {"market": "hk", "name": "恒生指數", "benchmark": "2800.HK", "kind": "snapshots",
             "dir": "scripts/pointintime", "pattern": "hsi_*.txt", "live": "scripts/universe_hsi_live.txt",
             "official_sectors": "scripts/pointintime/hsi_sectors.json",
-            "names": "data/stocks/names_yf.json", "style_k": 10},
+            "names": "data/equities/hk/_names.json", "style_k": 10},
     "sp500": {"market": "us", "name": "S&P 500", "benchmark": "SPY", "kind": "intervals",
               "file": "universes/sp500/membership.csv", "names": "data/equities/us/_names.json", "style_k": 50},
     "ndx": {"market": "us", "name": "Nasdaq-100", "benchmark": "QQQ", "kind": "intervals",

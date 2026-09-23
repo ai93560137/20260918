@@ -40,20 +40,18 @@ from pathlib import Path
 
 import marketdata
 
-DATA_DIR = Path(__file__).resolve().parent / "data" / "stocks"
 
 
 def load_series(ticker: str) -> dict[date, tuple[float, float, float]]:
     """回傳 {date: (adj_open, adj_close, raw_close)}。raw_close 給市值排名用
     （市值 = 當時實際股價 x 當時實際股數，不能用還原股息/拆股的 AdjClose）。
-    讀檔交給多市場數據層 marketdata.py（港股舊格式 data/stocks/*.csv.gz、
-    美股/日股新格式 data/equities/ 都支援）。"""
+    讀檔交給多市場數據層 marketdata.py（data/equities/<market>/）。"""
     return marketdata.load_series(ticker)
 
 
 def load_shares(ticker: str) -> list[tuple[date, int]] | None:
     """回傳按日期排序的 [(date, shares_outstanding), ...]，抓不到就 None。
-    見 scripts/fetch_stock_data.py 的 fetch_shares_outstanding。"""
+    見 scripts/fetch_equities.py --shares。"""
     return marketdata.load_shares(ticker)
 
 
@@ -493,7 +491,7 @@ def main() -> None:
     ap.add_argument("--no-abs-filter", action="store_true", help="關掉絕對動量濾網，動量<=0也硬選")
     ap.add_argument("--cap-top-n", type=int, default=None,
                      help="每期只在「當時市值前N大」候選裡選動量，近似 point-in-time 成分股表；"
-                          "需要 data/stocks/<TICKER>.shares.csv.gz（流通股數歷史）")
+                          "需要流通股數歷史（data/equities/<market>/<TICKER>/shares.csv）")
     ap.add_argument("--pointintime-dir", type=Path, default=None,
                      help="用逐年 point-in-time 成分股快照（scripts/pointintime/hsi_<year>.txt）決定每期"
                           "可選名單，取代 --universe 的固定股票池")

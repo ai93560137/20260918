@@ -69,6 +69,19 @@ def save_history(ticker: str, hist) -> dict:
     d = md.v2_dir(ticker)
     by_year: dict[int, list[list]] = {}
     act_rows = []
+    # 股息幣別：Yahoo 的 Dividends 欄是派息幣別（匯豐/東方海外 2011 年前以美元宣派），價格是港元——
+    # 直接用會把股息少算 ~7.8 倍。Yahoo 自己的 Adj Close 有換算，所以用除淨日前後 Adj/Close 比值的跳幅
+    # 反推「以價格幣別計」的有效股息；跟原值差 >5% 才改用（同幣別的美股/日股不受影響），原值另存
+    closes, adjs = list(hist["Close"]), list(hist["Adj Close"])
+    eff_div: dict = {}
+    for i, (idx, dv) in enumerate(hist["Dividends"].items() if "Dividends" in hist else []):
+        if not dv or dv != dv or i == 0:
+            continue
+        c0, a0, c1, a1 = closes[i - 1], adjs[i - 1], closes[i], adjs[i]
+        if min(c0, a0, c1, a1) > 0 and c0 == c0 and a1 == a1:
+            eff = c0 * (1 - (a0 / c0) / (a1 / c1))
+            if eff > 0 and abs(eff / dv - 1) > 0.05:
+                eff_div[idx] = eff
     for idx, r in hist.iterrows():
         day = idx.date()
         if r["Close"] != r["Close"]:  # NaN 收市（Yahoo 偶有的空行）不存
@@ -80,8 +93,11 @@ def save_history(ticker: str, hist) -> dict:
         div = float(r.get("Dividends", 0) or 0)
         spl = float(r.get("Stock Splits", 0) or 0)
         if div or spl:
+            raw = ""
+            if idx in eff_div:
+                raw, div = f"{div:.6f}".rstrip("0").rstrip("."), eff_div[idx]
             act_rows.append([day.isoformat(), f"{div:.6f}".rstrip("0").rstrip(".") if div else "",
-                             f"{spl:g}" if spl else ""])
+                             f"{spl:g}" if spl else "", raw])
     # 保護：Yahoo 偶爾在收市後幾小時內把「最新一天」暫時拿掉（2026-09-23 實測：09-22 收市後有這根，
     # 幾小時後重抓只到 09-21），直接覆寫會讓數據倒退一天——新抓到的最後日期比舊檔早時，保留舊檔裡
     # 更新的列（最多 10 天內），下一輪 Yahoo 補回來再以新值為準
@@ -104,7 +120,8 @@ def save_history(ticker: str, hist) -> dict:
         if int(p.stem.split("_")[1]) not in by_year:
             p.unlink()
             changed += 1
-    changed += write_if_changed(d / "actions.csv", to_csv(["Date", "Dividend", "Split"], act_rows))
+    # DividendRaw：Yahoo 原始股息（只有換算過的列才填，見上）
+    changed += write_if_changed(d / "actions.csv", to_csv(["Date", "Dividend", "Split", "DividendRaw"], act_rows))
 
     # 用剛存的檔重算 AdjClose，跟 yfinance 比
     loaded = md.load_ohlcv(ticker, apply_adjustments=False)   # 驗證存檔本身，不含人工修正
