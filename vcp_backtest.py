@@ -23,7 +23,7 @@ DEFAULT = (0.8, 0.10)
 
 
 class VCPData:
-    def __init__(self, market: str):
+    def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N):
         self.m = m = nb.MarketData(market)
         S, Dn = m.adj.shape
         idx = pd.Index(m.cal)
@@ -39,9 +39,7 @@ class VCPData:
             high = pd.concat([df["High"].fillna(close), close], axis=1).max(axis=1)
             low = pd.concat([df["Low"].where(df["Low"] > 0).fillna(close), close], axis=1).min(axis=1)
             vol = df["Volume"].astype(float)
-            ma50, ma150, ma200 = (adj.rolling(n).mean() for n in (50, 150, 200))
-            tt = ((adj > ma50) & (ma50 > ma150) & (ma150 > ma200) & (ma200 > ma200.shift(21))
-                  & (adj >= adj.rolling(252).min() * 1.30) & (adj >= adj.rolling(252).max() * 0.75))
+            tt = vcp.trend_template(adj)
             avg50 = vol.rolling(50).mean().shift(1)
             vb = (vol >= vcp.VOL_BREAK * avg50) & (avg50 > 0)
             partial[s] = tt.reindex(idx).fillna(False).to_numpy(dtype=bool)
@@ -57,7 +55,7 @@ class VCPData:
             if ok.sum() >= 5:
                 v = r252[ok, j]
                 rs[ok, j] = pd.Series(v).rank(pct=True).to_numpy() * 100
-        self.tt = partial & (np.nan_to_num(rs) >= 70) & m.member
+        self.tt = partial & (np.nan_to_num(rs) >= vcp.RS_MIN) & m.member
         cand = self.tt & volc
         cand[:, :m.start_j] = False
         self.info = {}
@@ -66,7 +64,7 @@ class VCPData:
             p = rw["dates"].get(m.cal[j])
             if p is None:
                 continue
-            info = vcp.analyze(rw["high"], rw["low"], rw["close"], rw["vol"], rw["alow"], p)
+            info = vcp.analyze(rw["high"], rw["low"], rw["close"], rw["vol"], rw["alow"], p, version, n)
             if info:
                 self.info[(int(s), int(j))] = info
         print(f"[{market}] 趨勢模板+放量候選 {int(cand.sum())} 個、形態成立（未判 r/D）{len(self.info)} 個", file=sys.stderr)
@@ -140,9 +138,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--market", required=True, choices=list(nb.MARKETS))
     ap.add_argument("--random", type=int, default=0)
+    ap.add_argument("--version", type=int, default=2, choices=(1, 2), help="1 = 3%% ZigZag（原登記）、2 = 碎形高點（修訂）")
+    ap.add_argument("--n", type=int, default=vcp.FRACTAL_N, help="v2 碎形窗口（預設 5；10 只作敏感度）")
     ap.add_argument("--out", type=Path, default=ROOT / "research" / "vcp")
     args = ap.parse_args()
-    v = VCPData(args.market)
+    v = VCPData(args.market, args.version, args.n)
     m = v.m
     res = {"market": args.market, "cells": {}, "random": {}}
     for r, D in GRID:
@@ -177,7 +177,7 @@ def main() -> None:
         print(f"隨機對照 {len(ts)} 次：中位數 {ts[len(ts) // 2]:.2f}、第 90 百分位 {ts[int(0.9 * len(ts))]:.2f}；"
               f"預設格 {real:.2f} 在第 {pct:.0%} 百分位", file=sys.stderr)
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / f"{args.market}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float) + "\n",
+    (args.out / (f"{args.market}_v{args.version}" + ("" if args.n == vcp.FRACTAL_N else f"_n{args.n}") + ".json")).write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float) + "\n",
                                                   encoding="utf-8")
 
 

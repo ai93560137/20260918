@@ -32,9 +32,13 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import marketdata as md  # noqa: E402
+import vcp  # noqa: E402
 from universe import Universe  # noqa: E402
 
 OUT = ROOT / "analysis"
@@ -386,6 +390,70 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
     return days
 
 
+# ---------- VCP（波動收縮形態，vcp.py；回測判決見 VCP_BACKTEST.md）----------
+
+VCP_FIELDS = ["date", "market", "market_zh", "status", "ticker", "name", "n_contractions", "depths_pct",
+              "pivot", "close", "pct_vs_pivot", "stop", "stop_pct", "yahoo_ticker"]
+
+
+def vcp_scan(c: str, tickers: list[str], as_of: date, r12: dict[str, float]) -> list[dict]:
+    """現任成分股中：今日突破（第 1–11 條全成立）與形態中待突破（第 1–10 條成立、收市未過樞紐點）。
+    相對強度 = 252 日報酬在這批成分股中的百分位 ≥ 70。預設格 r = 0.8、D = 10%。"""
+    vals = sorted(v for v in r12.values() if v is not None)
+    out = []
+    for t in tickers:
+        if r12.get(t) is None or bisect.bisect_right(vals, r12[t]) / len(vals) * 100 < vcp.RS_MIN:
+            continue
+        rows = [r for r in md.load_ohlcv(t) if r["Date"] <= as_of and r["AdjClose"] > 0]
+        if len(rows) < vcp.BASE_LOOKBACK + 2:
+            continue
+        adj = pd.Series([r["AdjClose"] for r in rows])
+        if not bool(vcp.trend_template(adj).iloc[-1]):
+            continue
+        close = np.array([r["Close"] for r in rows])
+        high = np.maximum(np.array([r["High"] or r["Close"] for r in rows]), close)
+        low = np.minimum(np.array([r["Low"] if r["Low"] else r["Close"] for r in rows]), close)
+        vol = np.array([float(r["Volume"]) for r in rows])
+        alow = low * adj.to_numpy() / close
+        i = len(rows) - 1
+        info, status = vcp.analyze(high, low, close, vol, alow, i), "breakout"
+        if not vcp.passes(info):
+            info = vcp.base_info(high, low, vol, alow, i)
+            if not vcp.passes(info) or close[i] > info["pivot"]:
+                continue
+            status = "setup"
+        stop = info["stop_adj"] * close[i] / adj.iloc[-1]          # 還原停損位換回原始價
+        out.append({"date": rows[-1]["Date"].isoformat(), "market": c, "market_zh": COUNTRIES[c]["zh"],
+                    "status": status, "ticker": disp(t), "yahoo_ticker": t, "n_contractions": info["n_t"],
+                    "depths_pct": "/".join(f"{d * 100:.0f}" for d in info["depths"]),
+                    "pivot": f"{info['pivot']:g}", "close": f"{close[i]:g}",
+                    "pct_vs_pivot": f"{(close[i] / info['pivot'] - 1) * 100:+.1f}",
+                    "stop": f"{stop:.4g}", "stop_pct": f"{(stop / close[i] - 1) * 100:.1f}"})
+    return out
+
+
+def write_vcp_lists(rows: list[dict], markets: dict[str, date]) -> None:
+    """analysis/vcp/<收市日>.csv：每個市場寫進它自己的收市日那一檔（同一天的其他市場保留）。"""
+    out_dir = OUT / "vcp"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for c, d in markets.items():
+        if not d:
+            continue
+        p = out_dir / f"{d}.csv"
+        keep = []
+        if p.exists():
+            with open(p, newline="", encoding="utf-8") as f:
+                keep = [r for r in csv.DictReader(f) if r["market"] != c]
+        allr = keep + [r for r in rows if r["market"] == c and r["date"] == d.isoformat()]
+        allr.sort(key=lambda r: (["hk", "jp", "us"].index(r["market"]), r["status"], r["ticker"]))
+        buf = io.StringIO()
+        w = csv.DictWriter(buf, fieldnames=VCP_FIELDS, lineterminator="\n")
+        w.writeheader()
+        w.writerows({k: r.get(k, "") for k in VCP_FIELDS} for r in allr)
+        if not p.exists() or p.read_text(encoding="utf-8") != buf.getvalue():
+            p.write_text(buf.getvalue(), encoding="utf-8")
+
+
 # ---------- 主程式 ----------
 
 def sector_zh(sec_map: dict[str, str], t: str) -> str:
@@ -467,6 +535,15 @@ def main() -> None:
         country[c].update(n_members=len(st), n_ma=sum(m["vs200"] is not None for m in st.values()),
                           above=above, kept=kept, last=last,
                           stale=sorted(t for t, m in st.items() if last and m["last"] < last))
+
+    # --- VCP 掃描（描述性，每地現任成分股）---
+    vcp_rows = []
+    for c in COUNTRIES:
+        found = vcp_scan(c, sorted(stocks[c]), as_of, {t: m["r12"] for t, m in stocks[c].items()})
+        for r in found:
+            r["name"] = names[c].get(r["yahoo_ticker"], "")
+        vcp_rows += found
+    write_vcp_lists(vcp_rows, {c: country[c]["last"] for c in COUNTRIES})
 
     # --- 板塊統計 + 板塊動能排名（參考）---
     sectors = {}
@@ -578,7 +655,24 @@ def main() -> None:
                          f"{pct(m['vs200'])} | {pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
             L.append("")
 
-    L.append("## 四、與上次報告比較\n")
+    L.append("## 四、VCP 波動收縮形態（Minervini）\n")
+    L.append("趨勢模板（含相對強度 ≥ 70）+ 2–6 次逐次收縮（每次 ≤ 上一次 × 0.8、最後一次 ≤ 10%）+ 量縮；"
+             "**今日突破** = 收市過樞紐點且成交量 ≥ 50 日均量 × 1.4；**形態中** = 形態已成、還沒突破。"
+             "定義與回測判決見 VCP_BACKTEST.md（**描述性，非買入建議**）。名單存 `analysis/vcp/<收市日>.csv`。\n")
+    for c in ranked:
+        rs_ = [r for r in vcp_rows if r["market"] == c]
+        L.append(f"**{COUNTRIES[c]['zh']}**（{fmt_d(country[c]['last'])} 收市）：今日突破 "
+                 f"{sum(r['status'] == 'breakout' for r in rs_)} 檔、形態中 {sum(r['status'] == 'setup' for r in rs_)} 檔\n")
+        if rs_:
+            L.append("| 狀態 | 代碼 | 名稱 | 收縮（%） | 樞紐點 | 收市 | 距樞紐 | 停損位 | 停損距離 |")
+            L.append("|---|---|---|---|---|---|---|---|---|")
+            for r in sorted(rs_, key=lambda r: (r["status"], r["ticker"])):
+                L.append(f"| {'今日突破' if r['status'] == 'breakout' else '形態中'} | {r['ticker']} | {r['name']} | "
+                         f"{r['n_contractions']}T：{r['depths_pct']} | {r['pivot']} | {r['close']} | {r['pct_vs_pivot']}% | "
+                         f"{r['stop']} | {r['stop_pct']}% |")
+            L.append("")
+
+    L.append("## 五、與上次報告比較\n")
     if prev:
         for c in ranked:
             old = set(prev.get(f"{c}_kept", "").split())
@@ -601,7 +695,7 @@ def main() -> None:
         L.append("- 第一份新格式報告，沒有可比較的上次紀錄。")
     L.append("")
 
-    L.append("## 五、規則與限制（寫死，不按結果調）\n")
+    L.append("## 六、規則與限制（寫死，不按結果調）\n")
     L.append("- 國家：動能分數 = 3/6/12 個月總報酬平均，只排名、不篩選")
     L.append("- 個股：各地指數現任 point-in-time 成分股（恒指／S&P 500／日經225），最新收市 > 200 日均線")
     L.append("- 新高：昨天收市價**嚴格高於**之前 62／125／188／251 個交易日（連昨天約 3／6／9／12 個月）的盤中最高價；"
@@ -687,6 +781,13 @@ def main() -> None:
                 sec_hits = sorted(t for t in hits if sector_zh(sec_of[c], t) == r["name"])
                 if sec_hits:
                     lines.append(f"・{r['name']} {len(sec_hits)} 檔：" + "、".join(tk(c, t) for t in sec_hits))
+        vb = sorted((r for r in vcp_rows if r["market"] == c and r["status"] == "breakout"), key=lambda r: r["ticker"])
+        vs = sorted((r for r in vcp_rows if r["market"] == c and r["status"] == "setup"), key=lambda r: r["ticker"])
+        lines += ["", f"▍VCP 波動收縮（{x['last'].month}/{x['last'].day} 收市）"]
+        lines.append(f"・今日突破 {len(vb)} 檔" + ("：" + "、".join(
+            f"{r['ticker']} {r['name']}（{r['n_contractions']}T，停損 {r['stop_pct']}%）" for r in vb) if vb else ""))
+        lines.append(f"・形態中待突破 {len(vs)} 檔" + ("：" + "、".join(
+            f"{r['ticker']} {r['name']}（{r['n_contractions']}T，樞紐 {r['pivot']}，差 {r['pct_vs_pivot']}%）" for r in vs) if vs else ""))
         # 按行切成 ≤ 3800 字的多則
         chunk: list[str] = []
         for line in lines:
