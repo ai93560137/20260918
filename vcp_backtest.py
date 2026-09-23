@@ -25,11 +25,11 @@ FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010}   # 全市場成本（每
 
 class VCPData:
     def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N, full: bool = False,
-                 exclude: set | None = None):
+                 exclude: set | None = None, repair_hl: bool = False):
         if full:     # 全市場版（VCP_FULLMARKET_BACKTEST.md）：成交額前 N、成本加大
             pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
                 encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
-            self.m = m = nb.MarketData(market, pool=pool, loader=nb.load_full(market), top_n=FULL_TOP_N[market],
+            self.m = m = nb.MarketData(market, pool=pool, loader=nb.load_full(market, repair_hl), top_n=FULL_TOP_N[market],
                                        cost=FULL_COST[market])
         else:
             self.m = m = nb.MarketData(market)
@@ -153,11 +153,12 @@ def main() -> None:
     ap.add_argument("--exclude-signals", type=Path, default=None,
                     help="逐筆核對標為可疑的訊號（JSON：[[ticker, 訊號日], ...]），剔除後重算")
     ap.add_argument("--tag", default="", help="輸出檔名後綴（例：_qc）")
+    ap.add_argument("--hl-repair", action="store_true", help="港股敏感度：高低價修正代替整檔排除（只作參考）")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
     args.out = args.out or ROOT / "research" / ("vcp_full" if args.full else "vcp")
     excl = {tuple(x) for x in json.loads(args.exclude_signals.read_text())} if args.exclude_signals else None
-    v = VCPData(args.market, args.version, args.n, full=args.full, exclude=excl)
+    v = VCPData(args.market, args.version, args.n, full=args.full, exclude=excl, repair_hl=args.hl_repair)
     m = v.m
     res = {"market": args.market, "cells": {}, "random": {}}
     for r, D in GRID:

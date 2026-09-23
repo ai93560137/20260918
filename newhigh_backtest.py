@@ -45,8 +45,10 @@ def consecutive(mask: np.ndarray) -> np.ndarray:
     return out
 
 
-def load_full(market: str):
-    """全市場數據（data_full/<market>/<TICKER>.csv.gz，不進 git）的 loader，格式同 marketdata.load_ohlcv。"""
+def load_full(market: str, repair_hl: bool = False):
+    """全市場數據（data_full/<market>/<TICKER>.csv.gz，不進 git）的 loader，格式同 marketdata.load_ohlcv。
+    repair_hl：港股敏感度（VCP_FULLMARKET_BACKTEST.md，只作參考）——只因「高低價矛盾」被排除的股票不排除，
+    改把最高／最低價修正為包含開市與收市。"""
     base = ROOT / "data_full" / market
     # 品質檢查（scripts/qc_full_market.py）：整檔排除 + 殭屍段
     ex_p, zb_p = base / "_qc_exclude.txt", base / "_qc_zombie.json"
@@ -55,9 +57,19 @@ def load_full(market: str):
 
     def loader(t: str) -> list[dict]:
         p = base / f"{t.replace('^', '_')}.csv.gz"
-        if not p.exists() or t.replace('^', '_') in excluded:
+        if not p.exists():
             raise FileNotFoundError(p)
         df = pd.read_csv(p, compression="gzip")
+        if t.replace('^', '_') in excluded:
+            if not repair_hl:
+                raise FileNotFoundError(p)
+            sys.path.insert(0, str(ROOT / "scripts"))
+            from qc_full_market import structural
+            if any(not x.startswith("高低價矛盾") for x in structural(df)[0]):
+                raise FileNotFoundError(p)
+        if repair_hl:
+            df["High"] = df[["High", "Open", "Close"]].max(axis=1)
+            df["Low"] = df[["Low", "Open", "Close"]].min(axis=1)
         df = df[df["Close"] > 0]
         for a, b in zombies.get(t.replace('^', '_'), []):
             df = df[(df["Date"] < a) | (df["Date"] > b)]
