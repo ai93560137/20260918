@@ -25,7 +25,7 @@ FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010}   # 全市場成本（每
 
 class VCPData:
     def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N, full: bool = False,
-                 exclude: set | None = None, repair_hl: bool = False):
+                 exclude: set | None = None, repair_hl: bool = False, scan: bool = True):
         if full:     # 全市場版（VCP_FULLMARKET_BACKTEST.md）：成交額前 N、成本加大
             pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
                 encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
@@ -55,7 +55,8 @@ class VCPData:
             r252[s] = (adj / adj.shift(252) - 1).reindex(idx).to_numpy()
             self.raw[s] = {"dates": {d: i for i, d in enumerate(df.index)}, "high": high.to_numpy(),
                            "low": low.to_numpy(), "close": close.to_numpy(), "vol": vol.to_numpy(),
-                           "open": df["Open"].to_numpy(dtype=float),
+                           "open": df["Open"].to_numpy(dtype=float), "adj": adj.to_numpy(dtype=float),
+                           "ma50": adj.rolling(50).mean().to_numpy(dtype=float),
                            "alow": (low * f).to_numpy()}
         # 相對強度：當天 PIT 成分股中 252 日報酬的百分位
         rs = np.full((S, Dn), np.nan)
@@ -68,6 +69,8 @@ class VCPData:
         cand = self.tt & volc
         cand[:, :m.start_j] = False
         self.info = {}
+        if not scan:        # Minervini 忠實版自己找形態（vcp_minervini.py）
+            return
         for s, j in zip(*np.nonzero(cand)):
             rw = self.raw[s]
             p = rw["dates"].get(m.cal[j])
