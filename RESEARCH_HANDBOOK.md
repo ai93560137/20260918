@@ -6,6 +6,81 @@
 
 ---
 
+## 〇、數據和工具，直接可用（2026-09-23 盤點）
+
+**新研究先用現成的，不要重新抓數據、不要重寫流水線。** 以下全部已經跑通、經過品質檢查，任何分支都可以直接接上。
+
+### 1. 三地全市場日線（`data_full/<hk|jp|us>/<TICKER>.csv.gz`，不進 git）
+
+| | 港股 | 日股 | 美股 |
+|---|---|---|---|
+| 候選池（`universes/full/<m>_pool.txt`） | 2,797（港交所證券名單股本類 + 3 檔歷史成分股） | 3,746（JPX 內国株式 + 39 檔歷史成分股） | 6,281（Nasdaq screener 去權證／單位／優先股／存託憑證 + 513 檔歷史成分股） |
+| 使用者盤點可用檔數 | **2,787** | **3,608** | **5,189** |
+| 品質檢查：有日線檔數 → 整檔排除 | 2,787 → 971（948 檔是 Yahoo 盤中高低價錯，收市正確；只用開收市的策略可用 `--hl-repair` 放回） | 3,707 → 34 | 5,834 → 143（多為小型股尖刺） |
+| 最早日期／回測樣本起點 | 2010-07 | 2009-07 | **1999 年**（樣本 2000-01 起，1999 作均線暖身） |
+| 成本（每邊） | 25 bps | 15 bps | 10 bps |
+| 基準 ETF | 2800.HK | 1321.T | SPY |
+
+- 欄位：`Date,Open,High,Low,Close,AdjClose,Volume`（yfinance，`auto_adjust=False`；還原因子 = AdjClose ÷ Close）
+- 數字出處：`research/vcp_full/<m>_qc.md`（品質檢查時的檔數）；可用檔數會隨每次補抓變動，以最新 qc.md 為準
+
+### 2. 四層品質檢查（已全部通過，規則寫死在 VCP_FULLMARKET_BACKTEST.md 第一部分之二）
+
+1. **結構檢查**：重複日期、收市 ≤ 0、還原比例異常、高低價矛盾、尖刺（一來一回 ≥ 3 次）→ 整檔排除（`_qc_exclude.txt`）；
+   殭屍段（連續 20 日收市不變且量 0）→ 只丟那段（`_qc_zombie.json`）。**`newhigh_backtest.load_full()` 載入時自動套用**
+2. **跟指數版數據對照**：港 111 檔／日／美 705 檔，差異股 **0%** ✅
+3. **最新一日第二來源**：港交所日報表 2,003 檔 0 差、Yahoo!ファイナンス 198 檔 0 差、Nasdaq 歷史 API 296 檔 0 差 ✅
+4. **逐筆交易核對**：預設格交易的訊號日／入場／出場價對第二來源（美 Nasdaq 歷史 API 近 10 年、日 Yahoo!ファイナンス、
+   港股內部一致性）→ 可疑交易寫 `<m>_suspect.json`，判決用剔除後的數字。
+   **拆股教訓**：三個價格比例是同一個整數倍 = 第二來源沒還原，不算可疑
+
+### 3. 流水線（全部在 GitHub Actions 上跑；本環境網路白名單擋財經 API）
+
+| 步驟 | 工具 | 說明 |
+|---|---|---|
+| 成交額宇宙 | `scripts/build_full_pools.py` + `newhigh_backtest.MarketData(top_n=…)` | 候選池快照 commit 進 `universes/full/`；每日按過去 60 日成交額中位數取前 港 500／日 1000／美 1500（point-in-time、無前視；上市不足 60 日不排名）|
+| 抓數據 | `scripts/fetch_full_market.py` | 缺的才抓、可中斷續抓；丟掉未收市的半根；抓不到的記 `_failed.txt` |
+| 品質檢查 | `scripts/qc_full_market.py` | 上面第 1–3 層；超門檻回傳碼 2 → 流程自動不跑回測 |
+| 第二來源核對 | 同上 + `scripts/fetch_second_source.py`、`scripts/fetch_hkex_equity.py` | 美 Nasdaq、日 Yahoo!ファイナンス + JPX、港 港交所日報表 |
+| 逐筆交易核對 | `scripts/verify_trades.py --market m [--src 明細.json --out-dir 目錄 --split-ok]` | 任何策略的逐筆明細都能丟進來；訊號多就按比例抽樣（PPP 用 300 筆、種子 0）|
+| 隨機對照 | `vcp_backtest.py --random 200`、`aiba_ppp.py --random 200` | 同日從「同條件、非訊號」股票隨機挑，同一套出場，200 次（種子 0..199）→ 百分位 |
+| 快取 + 備份 | `.github/workflows/vcp_fullmarket.yml` | Actions 快取 `fullmarket-<m>-v1-*`（7 日沒用會被清）→ 每次抓完打包上載 Release **`fullmarket-data`**（`hk.tar`／`jp.tar`／`us.tar`，不過期）；快取空了自動從 Release 還原 |
+
+**觸發方式**：Actions → `VCP full-market backtest` → `market`（hk/jp/us/all）、`backtest=false` 只更新數據與品質檢查、
+`refresh=true` 全部重抓、`retry_failed=true` 重試抓不到的。PPP 抽樣核對：`aiba_verify.yml`（push 抽樣明細自動觸發）。
+
+**在別的分支或本機取數據**（數據在 Release，不在 git）：
+
+```bash
+gh release download fullmarket-data -p 'us.tar' -D /tmp && tar -xf /tmp/us.tar   # → data_full/us/
+git show origin/claude/gifted-carson-v2tvhw:newhigh_backtest.py > newhigh_backtest.py   # 或直接 checkout 該分支
+```
+
+```python
+import newhigh_backtest as nb
+loader = nb.load_full("us")                      # 已套品質檢查排除 + 殭屍段 + 垃圾列
+pool = [l for l in open("universes/full/us_pool.txt", encoding="utf-8").read().splitlines()
+        if l and not l.startswith("#")]
+mdata = nb.MarketData("us", pool=pool, loader=loader, top_n=1500, cost=0.0010)
+```
+
+新策略的 workflow 照抄 `vcp_fullmarket.yml`：還原快取 → 空了從 Release 還原 → **不要再加抓取步驟** → 跑自己的回測 → 只 commit 結果。
+**只 `git add` 自己市場／自己策略的檔**（2026-09-23 jp 那次 `git add` 整個資料夾把 `us_qc.md` 改回舊版）。
+
+### 4. 已經可以直接套用的策略引擎
+
+| 引擎 | 狀態 | 用法 |
+|---|---|---|
+| `aiba_ppp.py`（相場師朗 **PPP 中的下半身**；逆下半身／跌破 60 日線出場）| 預先登記已 commit（AIBA_PPP_BACKTEST.md）；三地預設格抽樣 300 筆核對完成：港 300/300 通過、日可疑 4、美可疑 3（皆成交量不符，已寫 `research/aiba_ppp/<m>_suspect.json`）；**正式一次（鄰域 9 格 + 隨機 200）還沒跑** | `python3 aiba_ppp.py --market hk --random 200`；`--trades-only` 只寫明細；港股敏感度 `--hl-repair --tag _hlrepair`。**只測一次，跑完不調參數** |
+| `aiba_ppp.features()` | 可複用 | 單一股票的 PPP（20／60／100 日深度）、下半身（比例 0／0.5／0.75）、逆下半身、跌破 60 日線布林序列——做其他相場流變化（くちばし等）直接接這個 |
+| `vcp_backtest.py --full`、`vcp_minervini.py` | 已判決（見第二節，不要重測）| 形態偵測與組合引擎可複用 |
+| `newhigh_backtest.MarketData` | 可複用 | 日曆 × 股票矩陣、成交額宇宙、日曆時間等權組合、CAPM alpha t、前後分段、相對等權宇宙 |
+
+**提醒**：這批全市場數據已經被趨勢跟隨入場用了六次（VCP 五次 + PPP 一次），新的趨勢跟隨想法門檻要跟 PPP 一樣嚴
+（預設格 t ≥ 2.5、隨機 ≥ 第 95 百分位、前後兩段都正）；倖存者偏差（候選池只有現存股票）照樣存在，判決以同宇宙內比較為主。
+
+---
+
 ## 一、方法論鐵律（The Ruler）
 
 任何策略想法，按此順序裁決，不憑印象：
@@ -186,8 +261,8 @@
 
 ## 六、新 session 開工清單
 
-1. 讀本文件 + 相關判決記錄；
+1. 讀本文件 + 相關判決記錄；**要股票數據先看第〇節（三地全市場日線 + 流水線現成可用，不要重抓）**；
 2. 新策略想法先過三問：成本入場券？成交方式可實現？基準是什麼？
 3. 建獨立回測檔（引擎可複用 `load_any` 載入器），selftest 先行；
 4. 結論寫進獨立的 `*_BACKTEST.md`，判決（含死刑）追加到本文件第二節；
-5. 數據 commit 進 `data/`（.csv.gz 按年切塊，規則見 data/README.md）。
+5. 數據 commit 進 `data/`（.csv.gz 按年切塊，規則見 data/README.md）；全市場日線例外——不進 git，走 Actions 快取 + Release `fullmarket-data`（第〇節）。
