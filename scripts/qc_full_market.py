@@ -84,7 +84,9 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
         for t in sample[:300]:
             try:
                 r = s.get(f"https://api.nasdaq.com/api/quote/{t.replace('-', '.')}/historical", headers=fs.UA,
-                          timeout=30, params={"assetclass": "stocks", "fromdate": d_max, "todate": d_max, "limit": "5"})
+                          timeout=30, params={"assetclass": "stocks", "limit": "20",
+                                              "fromdate": (date.fromisoformat(d_max) - __import__("datetime").timedelta(days=14)).isoformat(),
+                                              "todate": d_max})     # 只給同一天會回空表，要給區間
                 rows = (((r.json().get("data") or {}).get("tradesTable") or {}).get("rows")) or []
             except Exception:
                 rows = []
