@@ -320,23 +320,22 @@ def main() -> None:
         L.append("")
 
     L.append("## 三、新高股票名單（12 → 9 → 6 → 3 個月）\n")
-    L.append("每個窗口列出該窗口的**全部**新高股（累計）；「✚」= 這個窗口才新增（沒有創更長窗口的新高）。\n")
+    L.append("每個窗口列出該窗口的**全部**新高股（12 個月新高的股票同時也會出現在 9、6、3 個月的名單）。\n")
     for c in ranked:
         st = stocks[c]
         L.append(f"### {COUNTRIES[c]['zh']}\n")
         order = [r["name"] for r in sectors[c][1]]
-        for i, lab in enumerate(SHOW):
+        for lab in SHOW:
             hits = [t for t in country[c]["above"] if st[t]["highs"][lab]]
-            longer = set(t for t in hits if i and st[t]["highs"][SHOW[i - 1]])
-            L.append(f"**{lab}新高：{len(hits)} 檔**" + (f"（比 {SHOW[i - 1]}新增 {len(hits) - len(longer)} 檔）" if i else "") + "\n")
+            L.append(f"**{lab}新高：{len(hits)} 檔**\n")
             if not hits:
                 L.append("（無）\n")
                 continue
-            L.append("| 板塊 | 代碼 | 名稱 | 新增 | 距200日線 | 1個月 | 3個月 | 12個月 |")
-            L.append("|---|---|---|---|---|---|---|---|")
-            for t in sorted(hits, key=lambda t: (order.index(sector_zh(sec_of[c], t)), t in longer, t)):
+            L.append("| 板塊 | 代碼 | 名稱 | 距200日線 | 1個月 | 3個月 | 12個月 |")
+            L.append("|---|---|---|---|---|---|---|")
+            for t in sorted(hits, key=lambda t: (order.index(sector_zh(sec_of[c], t)), t)):
                 m = st[t]
-                L.append(f"| {sector_zh(sec_of[c], t)} | {t} | {names[c].get(t, '')} | {'' if t in longer or not i else '✚'} | "
+                L.append(f"| {sector_zh(sec_of[c], t)} | {t} | {names[c].get(t, '')} | "
                          f"{pct(m['vs200'])} | {pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
             L.append("")
 
@@ -397,46 +396,63 @@ def main() -> None:
         for r in sorted(log_rows, key=lambda r: r["date"]):
             w.writerow({k: r.get(k, "") for k in rec})
 
-    # Telegram 摘要：每地 12 → 9 → 6 → 3 個月，各板塊累計檔數；代碼只在首次出現的（最長）窗口列出，較短窗口標「+新增」
+    # Telegram（給投資人看）：第一則總覽，之後每個市場一則；每個窗口列出**全部**股票與名稱，不省略。
+    # Telegram 單則上限 4096 字，超過就按行切成多則（標「續」）。
     def tk(c: str, t: str) -> str:
-        if c == "us":
-            return t
-        n = names[c].get(t, "")[:6 if c == "jp" else 14]      # 日文漢字短、港股英文名長
-        return f"{t.replace('.HK', '').replace('.T', '')} {n}".strip()
+        code = t.replace(".HK", "").replace(".T", "")
+        n = names[c].get(t, "")
+        return f"{code} {n}" if n else code
 
-    tg = [f"📊 每日篩選 {report_day}（昨天收市：200日線 → 12/9/6/3月新高）",
-          "國家動能（3/6/12月平均）：" + "、".join(
-              f"{COUNTRIES[c]['zh']} {pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"])]
+    uni_name = {c: Universe(COUNTRIES[c]["index"]).cfg["name"] for c in COUNTRIES}
+    head = [f"📊 每日股票篩選 {report_day}",
+            "",
+            "篩選方法：",
+            "① 三地指數成分股（恒生指數、S&P 500、日經225）",
+            "② 昨天收市價在 200 天平均線之上",
+            "③ 昨天收市價創 12／9／6／3 個月新高",
+            "④ 按板塊（行業）統計檔數，並列出每一隻股票",
+            "",
+            "國家動能（3/6/12 個月報酬平均）：",
+            *[f"・{COUNTRIES[c]['zh']}（{country[c]['ticker']}）{pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"]],
+            "",
+            "各市場總覽："]
     for c in ranked:
         x, st = country[c], stocks[c]
-        tg.append("")
-        tg.append(f"【{COUNTRIES[c]['zh']}】收市 {x['last']}：{x['n_members']} 檔 → 200日線上 {len(x['above'])}")
-        prev_set: set[str] = set()
-        for i, lab in enumerate(SHOW):
+        head.append(f"【{COUNTRIES[c]['zh']}】{x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔 → "
+                    + "、".join(f"{lab}新高 {sum(1 for t in x['above'] if st[t]['highs'][lab])}" for lab in SHOW))
+    head += ["", "註：12 個月新高的股票必然也是 9、6、3 個月新高，所以會在每個窗口重複出現。",
+             "描述性篩選，未經回測，不是買入建議。"]
+    msgs = ["\n".join(head)]
+    for c in ranked:
+        x, st = country[c], stocks[c]
+        lines = [f"【{COUNTRIES[c]['zh']}｜{uni_name[c]}】收市 {x['last']}",
+                 f"成分股 {x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔"]
+        for lab in SHOW:
             hits = {t for t in x["above"] if st[t]["highs"][lab]}
+            lines += ["", f"▍{lab}新高：{len(hits)} 檔"]
             if not hits:
-                tg.append(f" {lab}新高 0")
+                lines.append("（無）")
                 continue
-            if i and hits == prev_set:
-                tg.append(f" {lab}新高 {len(hits)}：同{SHOW[i - 1]}")
-                continue
-            parts = []
             for r in sectors[c][1]:
                 sec_hits = sorted(t for t in hits if sector_zh(sec_of[c], t) == r["name"])
-                if not sec_hits:
-                    continue
-                new = [t for t in sec_hits if t not in prev_set]
-                lst = "、".join(tk(c, t) for t in new[:8]) + ("…" if len(new) > 8 else "")
-                parts.append(f"{r['name']} {len(sec_hits)}" + (f"（{'+' if i else ''}{lst}）" if new else ""))
-            tg.append(f" {lab}新高 {len(hits)}：" + "、".join(parts))
-            prev_set = hits
-    tg.append("")
-    tg.append("各窗口是累計檔數；括號內是該窗口新增的股票（+ = 比更長窗口多出的）。描述性篩選，非買入建議；全文 analysis/DAILY_TOPDOWN.md")
-    if len("\n".join(tg)) > 4000:     # Telegram 單則上限 4096 字
-        tg = [l if len(l) < 300 else l[:297] + "…" for l in tg]
-    (OUT / "tg_topdown.txt").write_text("\n".join(tg) + "\n", encoding="utf-8")
-    print("\n".join(tg))
-
+                if sec_hits:
+                    lines.append(f"・{r['name']} {len(sec_hits)} 檔：" + "、".join(tk(c, t) for t in sec_hits))
+        # 按行切成 ≤ 3800 字的多則
+        chunk: list[str] = []
+        for line in lines:
+            if chunk and len("\n".join(chunk + [line])) > 3800:
+                msgs.append("\n".join(chunk))
+                chunk = [f"【{COUNTRIES[c]['zh']}】（續）"]
+            chunk.append(line[:3700])
+        msgs.append("\n".join(chunk))
+    parts_dir = OUT / "tg_parts"
+    parts_dir.mkdir(exist_ok=True)
+    for old in parts_dir.glob("part_*.txt"):
+        old.unlink()
+    for i, m in enumerate(msgs, 1):
+        (parts_dir / f"part_{i:02d}.txt").write_text(m + "\n", encoding="utf-8")
+    (OUT / "tg_topdown.txt").write_text("\n\n".join(msgs) + "\n", encoding="utf-8")
+    print("\n\n----\n".join(msgs))
 
 if __name__ == "__main__":
     main()

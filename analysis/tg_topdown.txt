@@ -1,22 +1,79 @@
-📊 每日篩選 2026-09-23（昨天收市：200日線 → 12/9/6/3月新高）
-國家動能（3/6/12月平均）：日股 +22.9%、美股 +14.1%、港股 +2.0%
+📊 每日股票篩選 2026-09-23
 
-【日股】收市 2026-09-18：225 檔 → 200日線上 154
- 12月新高 2：醫療 1（4502 武田薬品工業）、原材料 1（5301 東海カーボン）
- 9月新高 2：同12月
- 6月新高 2：同9月
- 3月新高 5：醫療 2（+4568 第一三共）、原材料 1、工業 2（+1721 コムシスホー、6594 ニデック）
+篩選方法：
+① 三地指數成分股（恒生指數、S&P 500、日經225）
+② 昨天收市價在 200 天平均線之上
+③ 昨天收市價創 12／9／6／3 個月新高
+④ 按板塊（行業）統計檔數，並列出每一隻股票
 
-【美股】收市 2026-09-21：498 檔 → 200日線上 260
- 12月新高 8：科技 4（AMD、CRWD、FFIV、FTNT）、醫療 3（A、TECH、TMO）、通訊/互聯網 1（WBD）
- 9月新高 9：科技 4、醫療 3、通訊/互聯網 2（+META）
- 6月新高 9：同9月
- 3月新高 12：科技 6（+SMCI、VRSN）、醫療 3、通訊/互聯網 2、金融 1（+COIN）
+國家動能（3/6/12 個月報酬平均）：
+・日股（1321.T）+22.9%
+・美股（SPY）+14.1%
+・港股（2800.HK）+2.0%
 
-【港股】收市 2026-09-22：85 檔 → 200日線上 35
- 12月新高 1：醫療 1（2359 WuXi AppTec Co）
- 9月新高 1：同12月
- 6月新高 2：醫療 2（+1093 CSPC Pharmaceu）
- 3月新高 2：同6月
+各市場總覽：
+【日股】225 檔 → 200天線上 154 檔 → 12月新高 2、9月新高 2、6月新高 2、3月新高 5
+【美股】498 檔 → 200天線上 260 檔 → 12月新高 8、9月新高 9、6月新高 9、3月新高 12
+【港股】85 檔 → 200天線上 35 檔 → 12月新高 1、9月新高 1、6月新高 2、3月新高 2
 
-各窗口是累計檔數；括號內是該窗口新增的股票（+ = 比更長窗口多出的）。描述性篩選，非買入建議；全文 analysis/DAILY_TOPDOWN.md
+註：12 個月新高的股票必然也是 9、6、3 個月新高，所以會在每個窗口重複出現。
+描述性篩選，未經回測，不是買入建議。
+
+【日股｜日經225】收市 2026-09-18
+成分股 225 檔 → 200天線上 154 檔
+
+▍12月新高：2 檔
+・醫療 1 檔：4502 武田薬品工業
+・原材料 1 檔：5301 東海カーボン
+
+▍9月新高：2 檔
+・醫療 1 檔：4502 武田薬品工業
+・原材料 1 檔：5301 東海カーボン
+
+▍6月新高：2 檔
+・醫療 1 檔：4502 武田薬品工業
+・原材料 1 檔：5301 東海カーボン
+
+▍3月新高：5 檔
+・醫療 2 檔：4502 武田薬品工業、4568 第一三共
+・原材料 1 檔：5301 東海カーボン
+・工業 2 檔：1721 コムシスホールディングス、6594 ニデック
+
+【美股｜S&P 500】收市 2026-09-21
+成分股 498 檔 → 200天線上 260 檔
+
+▍12月新高：8 檔
+・科技 4 檔：AMD Advanced Micro Devices、CRWD CrowdStrike、FFIV F5、FTNT Fortinet
+・醫療 3 檔：A Agilent Technologies、TECH Bio-Techne、TMO Thermo Fisher Scientific
+・通訊/互聯網 1 檔：WBD Warner Bros. Discovery
+
+▍9月新高：9 檔
+・科技 4 檔：AMD Advanced Micro Devices、CRWD CrowdStrike、FFIV F5、FTNT Fortinet
+・醫療 3 檔：A Agilent Technologies、TECH Bio-Techne、TMO Thermo Fisher Scientific
+・通訊/互聯網 2 檔：META Meta Platforms、WBD Warner Bros. Discovery
+
+▍6月新高：9 檔
+・科技 4 檔：AMD Advanced Micro Devices、CRWD CrowdStrike、FFIV F5、FTNT Fortinet
+・醫療 3 檔：A Agilent Technologies、TECH Bio-Techne、TMO Thermo Fisher Scientific
+・通訊/互聯網 2 檔：META Meta Platforms、WBD Warner Bros. Discovery
+
+▍3月新高：12 檔
+・科技 6 檔：AMD Advanced Micro Devices、CRWD CrowdStrike、FFIV F5、FTNT Fortinet、SMCI Super Micro Computer、VRSN VeriSign
+・醫療 3 檔：A Agilent Technologies、TECH Bio-Techne、TMO Thermo Fisher Scientific
+・通訊/互聯網 2 檔：META Meta Platforms、WBD Warner Bros. Discovery
+・金融 1 檔：COIN Coinbase Global
+
+【港股｜恒生指數】收市 2026-09-22
+成分股 85 檔 → 200天線上 35 檔
+
+▍12月新高：1 檔
+・醫療 1 檔：2359 WuXi AppTec Co.
+
+▍9月新高：1 檔
+・醫療 1 檔：2359 WuXi AppTec Co.
+
+▍6月新高：2 檔
+・醫療 2 檔：1093 CSPC Pharmaceutical、2359 WuXi AppTec Co.
+
+▍3月新高：2 檔
+・醫療 2 檔：1093 CSPC Pharmaceutical、2359 WuXi AppTec Co.
