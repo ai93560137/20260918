@@ -64,23 +64,44 @@ def us_series(s: requests.Session, t: str) -> dict[date, float] | None:
     return out
 
 
-def yj_pages(s: requests.Session, t: str, params: dict, max_pages: int) -> list[dict]:
-    rows = []
-    for page in range(1, max_pages + 1):
-        r = s.get(f"https://finance.yahoo.co.jp/quote/{t}/history", params=dict(params, page=page), timeout=45)
+class Blocked(Exception):
+    """第二來源拒答/限流（非 200、或頁面沒有 histories 欄位）——不能當成「沒有數據」記錄。"""
+
+
+YJ_PAUSE = 2.5   # 每頁間隔秒數（2026-09-23 實測：連續快抓約 40 頁後 Yahoo!ファイナンス 開始回空頁）
+
+
+def yj_page(s: requests.Session, t: str, params: dict) -> list[dict]:
+    for wait in (0, 30, 60, 120):
+        if wait:
+            print(f"  {t}: 疑似限流，等 {wait}s 重試", file=sys.stderr)
+            time.sleep(wait)
+        try:
+            r = s.get(f"https://finance.yahoo.co.jp/quote/{t}/history", params=params, timeout=45)
+        except requests.RequestException:
+            continue
+        if r.status_code == 404:
+            return []   # 真的沒有這個代碼的頁面（已下市）
         if r.status_code != 200:
-            break
+            continue
         u = r.text.replace('\\"', '"')
         i = u.find('"histories":')
         if i < 0:
-            break
-        arr = json.JSONDecoder().raw_decode(u[i + len('"histories":'):])[0]
+            continue    # 頁面沒有數據欄位 = 被擋或格式變了，不是「沒有數據」
+        return json.JSONDecoder().raw_decode(u[i + len('"histories":'):])[0]
+    raise Blocked(f"{t} {params}")
+
+
+def yj_pages(s: requests.Session, t: str, params: dict, max_pages: int) -> list[dict]:
+    rows = []
+    for page in range(1, max_pages + 1):
+        arr = yj_page(s, t, dict(params, page=page))
+        time.sleep(YJ_PAUSE)
         if not arr:
             break
         rows += arr
         if len(arr) < 20:
             break
-        time.sleep(0.4)
     return rows
 
 
@@ -158,6 +179,9 @@ def main() -> None:
                            "max_diff": max(cm["max_diff"], cd["max_diff"]),
                            "examples": (cm["examples"] + cd["examples"])[:5],
                            "span": f"{min(th_m) if th_m else '-'}~{max(th_d) if th_d else '-'}"}
+        except Blocked as exc:
+            print(f"STOP 第二來源持續拒答（{exc}），保存進度、下輪再續", file=sys.stderr)
+            break
         except Exception as exc:
             print(f"WARN {t}: {exc}", file=sys.stderr)
             time.sleep(2)
