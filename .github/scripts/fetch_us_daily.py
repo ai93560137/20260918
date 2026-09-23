@@ -39,13 +39,29 @@ for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
 # 日經波指（Nikkei 225 VI）：Yahoo 不載，改抓日經指數公司官方 CSV
 import io
 import requests
-H = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-for url in ['https://indexes.nikkei.co.jp/en/nkave/archives/file/nikkei_stock_average_vi_daily_en.csv',
-            'https://indexes.nikkei.co.jp/nkave/archives/file/nikkei_stock_average_vi_daily_jp.csv',
-            'https://indexes.nikkei.co.jp/en/nkave/statistics/dataload?list=vi&csv=1']:
+H = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+     'Referer': 'https://indexes.nikkei.co.jp/en/nkave/archives/download',
+     'Accept': 'text/csv,text/html,application/json,*/*'}
+# 先爬下載頁找真實 CSV 連結
+try:
+    import re as _re
+    pg = requests.get('https://indexes.nikkei.co.jp/en/nkave/archives/download', headers=H, timeout=30)
+    links = _re.findall(r'href="([^"]*(?:vi|volatility)[^"]*\.csv[^"]*)"', pg.text, _re.I)
+    log.append(f"NKVI download page: HTTP {pg.status_code}, vi-csv links: {links[:5]}")
+except Exception as e:
+    links = []
+    log.append(f"NKVI page ERR: {e!r}")
+cands = [l if l.startswith('http') else 'https://indexes.nikkei.co.jp' + l for l in links]
+cands += ['https://indexes.nikkei.co.jp/en/nkave/archives/file/nikkei_stock_average_vi_daily_en.csv',
+          'https://indexes.nikkei.co.jp/nkave/archives/file/nikkei_stock_average_vi_daily_jp.csv',
+          'https://indexes.nikkei.co.jp/en/nkave/statistics/dataload?list=vi&csv=1']
+for url in cands:
     try:
         r = requests.get(url, headers=H, timeout=30)
-        log.append(f"NKVI url {url.split('/')[-1]}: HTTP {r.status_code}, {len(r.content)} bytes")
+        log.append(f"NKVI url {url.split('/')[-1][:60]}: HTTP {r.status_code}, {len(r.content)} bytes")
+        if r.status_code == 200 and len(r.content) < 5000:
+            with open(f'{OUT}/nkvi_probe_body.txt', 'w') as pf:
+                pf.write(r.text[:3000])
         if r.status_code == 200 and len(r.content) > 5000:
             raw = r.content.decode('utf-8-sig', errors='replace')
             d = pd.read_csv(io.StringIO(raw))
