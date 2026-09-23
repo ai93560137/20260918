@@ -203,7 +203,15 @@ def main() -> None:
     xc_rows = sum(xc[t].get("n_cmp", 0) for t in xc_done)
     xc_bad = sum(xc[t].get("n_bad", 0) for t in xc_done)
     xc_nosrc = [t for t in xc_done if xc[t].get("note")]
-    xc_method = [t for t in xc_done if xc[t].get("method_diff")]   # Yahoo 分拆調整 vs 對方未調（已解釋）
+    # 價格比值階梯（xcheck_history.find_breaks）：Yahoo 有記錄的 = 調整方法不同（已解釋）；
+    # Yahoo 沒記錄、對方有調 = 我們的價格在該日有假跳動（總回報失真）
+    xc_method = [t for t in xc_done if any(b["type"] == "yahoo_adjusted" for b in xc[t].get("breaks", []))]
+    xc_unadj = [(t, b) for t in xc_done for b in xc[t].get("breaks", []) if b["type"] == "yahoo_unadjusted"]
+    for t, b in xc_unadj:
+        lvl = "🔴" if abs(b["step"] - 1) >= 0.05 else "🟡"
+        flag(lvl, t, f"unadjusted_action_{b['date']}",
+             f"{b['date']} 第二來源對公司行動做了回溯調整（×{b['step']:g}）、Yahoo 沒有——我們的價格在這天有"
+             f"約 {b['step'] - 1:+.1%} 的假跳動，總回報/回測會失真")
     for t in xc_done:
         r = xc[t]
         if r.get("n_bad"):
@@ -307,7 +315,10 @@ def main() -> None:
     L.append("- 美股：Nasdaq.com 10 年日線逐日比；日股：Yahoo!ファイナンス 1995 起月線（月底、拆股還原）+ 最近 20 日日線")
     L.append(f"- 調整方法差異（已解釋、不算不符）{len(xc_method)} 檔：Yahoo 把分拆/股份交換記成非整數拆股並回溯"
              "調整價格（總回報正確），第二來源只調真拆股；比對前按事件日倍數對齊。例："
-             + "；".join(f"{t} {', '.join(xc[t]['method_diff'][:2])}" for t in xc_method[:8]))
+             + "；".join(f"{t} " + ", ".join(f"{b['date']} ×{b['step']:g}" for b in xc[t]["breaks"]
+                                             if b["type"] == "yahoo_adjusted")[:60] for t in xc_method[:8]))
+    L.append(f"- Yahoo 漏調的公司行動（第二來源有調、我們沒有）{len(xc_unadj)} 處："
+             + ("；".join(f"{t} {b['date']} ×{b['step']:g}" for t, b in xc_unadj[:15]) or "無"))
     L.append("\n## 📉 倖存者偏差洞（歷史成分股抓不到價格的比例，每年 6/30）\n")
     L.append("| 指數 | 年 | 成分股 | 無價格 | 比例 |\n|---|---|---|---|---|")
     L += [f"| {k} | {y} | {n} | {miss} | {miss / n:.0%} |" for k, y, n, miss in holes]
@@ -323,7 +334,8 @@ def main() -> None:
               f"✅ yfinance {len(loaded)} 檔（現任成分股 {len(current)}），基準 {bench} 最新 {bench_last}",
               f"🏛 第二來源 {src2} 快照 {len(snap_data)} 份，最新 {latest2}（比對 {n_cmp} 筆收市價）",
               f"🔎 全量歷史比對：{len(xc_done)}/{len(xc_total)} 檔、{xc_rows:,} 筆、不符 {xc_bad} 筆"
-              f"（第二來源沒有的已下市代碼 {len(xc_nosrc)} 檔；分拆等調整方法差異已解釋 {len(xc_method)} 檔）",
+              f"（第二來源沒有的已下市代碼 {len(xc_nosrc)} 檔；分拆等調整方法不同已解釋 {len(xc_method)} 檔；"
+              f"Yahoo 漏調公司行動 {len(xc_unadj)} 處）",
               f"🔴 {len(red)} ｜ 🟡 {len(yellow)} ｜ ✅ 已確認 {len(acked)}"]
     digest += [f"🔴 {t} {c}：{msg}" for _, t, c, msg in red[:12]]
     if len(red) > 12:

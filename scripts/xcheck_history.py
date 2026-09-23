@@ -105,30 +105,38 @@ def yj_pages(s: requests.Session, t: str, params: dict, max_pages: int) -> list[
     return rows
 
 
-def rebase_for_actions(ours: dict[date, float], theirs: dict[date, float],
-                       splits: list[tuple[date, float]]) -> tuple[dict[date, float], list[str]]:
-    """Yahoo 把分拆（spin-off）、股份交換等也記成「非整數拆股」並回溯調整 Close
-    （APTV 2017-12-05 ×1.193 = 分拆 Delphi Technologies）；Nasdaq 只調真拆股。
-    對每個我們有、而對方價格在該日前後剛好跳同一倍數的事件，把對方事件前的價格同樣除掉，
-    回傳 (調整後的對方序列, 已解釋的事件)——這是「調整方法不同」，不是數據錯。從最近的事件往回做。"""
+def find_breaks(ours: dict[date, float], theirs: dict[date, float],
+                actions: list[date]) -> tuple[dict[date, float], list[dict]]:
+    """兩來源價格比值（對方/我們）的「階梯」＝其中一方對公司行動（分拆、股份交換、ADR 比例變動…）
+    做了回溯調整、另一方沒做或倍數不同。找出每個階梯並分類：
+    - yahoo_adjusted：我們的 actions.csv 在該日 ±5 天內有記錄（Yahoo 把分拆記成非整數拆股並回溯
+      調整，總回報正確）——調整方法不同，不是數據錯
+    - yahoo_unadjusted：我們沒有任何記錄、對方有調——我們的價格在該日有一個**假的跳動**，
+      總回報會失真（例：BIIB 2017 分拆 Bioverativ），要報告
+    把對方階梯前的價格按階梯倍數對齊後回傳，剩下的差異才算逐筆不符。從最近的階梯往回做。"""
     th = dict(theirs)
-    explained = []
-    common = sorted(d for d in th if d in ours and ours[d] > 0 and th[d] > 0)
-    for e, f in sorted(splits, reverse=True):
-        if not f or f <= 0 or abs(f - 1) < 0.005:
-            continue
-        before = [d for d in common if d < e][-5:]
-        after = [d for d in common if d >= e][:5]
-        if len(before) < 3 or len(after) < 3:
-            continue
-        rb = sorted(th[d] / ours[d] for d in before)[len(before) // 2]
-        ra = sorted(th[d] / ours[d] for d in after)[len(after) // 2]
-        if abs((rb / ra) / f - 1) < 0.03:
+    days = sorted(d for d in th if d in ours and ours[d] > 0 and th[d] > 0)
+    breaks = []
+    W = 10
+    i = len(days) - W
+    while i >= W:
+        before = [th[d] / ours[d] for d in days[i - W:i]]
+        after = [th[d] / ours[d] for d in days[i:i + W]]
+        rb, ra = sorted(before)[W // 2], sorted(after)[W // 2]
+        step = ra / rb
+        flat = max(before) / min(before) < 1.01 and max(after) / min(after) < 1.01
+        if flat and abs(step - 1) > 0.01:
+            e = days[i]
+            near = any(abs((a - e).days) <= 5 for a in actions)
+            breaks.append({"date": e.isoformat(), "step": round(1 / step, 4),
+                           "type": "yahoo_adjusted" if near else "yahoo_unadjusted"})
             for d in th:
                 if d < e:
-                    th[d] /= f
-            explained.append(f"{e} ×{f:g}")
-    return th, explained
+                    th[d] *= step          # 對方階梯前的價格對齊到階梯後的比值水準
+            i -= W                          # 同一個階梯不重複認
+        else:
+            i -= 1
+    return th, breaks
 
 
 def compare(ours: dict[date, float], theirs: dict[date, float]) -> dict:
@@ -176,9 +184,10 @@ def main() -> None:
                     rec.update(n_cmp=0, n_bad=0, max_diff=0, examples=[], note="第二來源沒有此代碼（已下市/改代碼）")
                 else:
                     raw = compare(ours, theirs)
-                    th, explained = rebase_for_actions(ours, theirs, md.load_actions(t)[1])
+                    divs, splits = md.load_actions(t)
+                    th, breaks = find_breaks(ours, theirs, [d for d, _ in splits])
                     rec.update(compare(ours, th), span=f"{min(theirs)}~{max(theirs)}",
-                               n_bad_raw=raw["n_bad"], method_diff=explained)
+                               n_bad_raw=raw["n_bad"], breaks=breaks)
             else:
                 monthly = yj_pages(s, t, {"from": "19950101", "to": today.replace("-", ""), "timeFrame": "m"}, 25)
                 daily = yj_pages(s, t, {"timeFrame": "d"}, 1)
