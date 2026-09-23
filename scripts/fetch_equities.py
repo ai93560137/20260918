@@ -94,7 +94,7 @@ def save_history(ticker: str, hist) -> dict:
     changed += write_if_changed(d / "actions.csv", to_csv(["Date", "Dividend", "Split"], act_rows))
 
     # 用剛存的檔重算 AdjClose，跟 yfinance 比
-    loaded = md.load_ohlcv(ticker)
+    loaded = md.load_ohlcv(ticker, apply_adjustments=False)   # 驗證存檔本身，不含人工修正
     yf_adj = {idx.date(): float(v) for idx, v in hist["Adj Close"].items() if v == v}
     errs = [abs(r["AdjClose"] / yf_adj[r["Date"]] - 1) for r in loaded
             if r["Date"] in yf_adj and yf_adj[r["Date"]] > 0]

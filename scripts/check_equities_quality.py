@@ -221,7 +221,8 @@ def main() -> None:
     for t in xc_done:
         r = xc[t]
         if r.get("n_bad"):
-            lvl = "🔴" if r["n_bad"] >= 3 or r.get("max_diff", 0) > 0.05 else "🟡"
+            # 兩家數據商之間零星一兩天差 1-2% 是常態雜訊（🟡）；差 >5% 或 >=10 天才是真問題（🔴）
+            lvl = "🔴" if r["n_bad"] >= 10 or r.get("max_diff", 0) > 0.05 else "🟡"
             flag(lvl, t, "xcheck_history",
                  f"全量歷史比對 {r['n_bad']}/{r['n_cmp']} 筆收市差 >1%（最大 {r['max_diff']:.1%}，{r['source']}）；"
                  f"例 {'；'.join(r['examples'][:2])}")

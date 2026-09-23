@@ -152,13 +152,14 @@ def load_adjustments(ticker: str) -> list[tuple[date, float]]:
                       for r in csv.DictReader(f) if r["ticker"] == ticker)
 
 
-def load_ohlcv(ticker: str) -> list[dict]:
+def load_ohlcv(ticker: str, apply_adjustments: bool = True) -> list[dict]:
     """[{Date, Open, High, Low, Close, AdjClose, Volume}]，兩種格式同一個介面（給 QC 用）。
-    新格式會先濾掉明顯的垃圾列（drop_spikes）。"""
+    新格式會先濾掉明顯的垃圾列（drop_spikes），並套用人工登記的公司行動修正（load_adjustments；
+    apply_adjustments=False 給「驗證存檔忠實重建 yfinance」用）。"""
     if has_v2(ticker):
         rows, _ = drop_spikes(load_raw(ticker))
         divs, _ = load_actions(ticker)
-        for e, f in load_adjustments(ticker):
+        for e, f in (load_adjustments(ticker) if apply_adjustments else []):
             rows = [(r[0], *(x * f if x is not None else None for x in r[1:5]), r[5]) if r[0] < e else r
                     for r in rows]
             divs = [(d, a * f) if d < e else (d, a) for d, a in divs]
