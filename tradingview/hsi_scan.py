@@ -241,8 +241,21 @@ def scan_us():
 
 
 def roll_check():
-    # 月度到期 = 當月最後交易日的前一日（近似：月底倒數第二個工作日）
     today = date.today()
+    # 有持倉時倒數「持倉自己的到期日」，避免當月（非持倉月）結算的假滾倉警報
+    pos_f = os.path.join(BASE, 'position.json')
+    if os.path.exists(pos_f):
+        p = json.load(open(pos_f))
+        expiry = datetime.strptime(p['expiry'], '%Y-%m-%d').date()
+        dd = (expiry - today).days
+        LINES.append(f"\n## 持倉到期：{expiry}（{dd:+d} 天）")
+        DIGEST.append(f"HSI 持倉 {p.get('strike')} 跨式 到期剩 {dd} 天")
+        if 3 <= dd <= 5:
+            DIGEST.append("HSI 結算週：明早 10:00 加看一次 delta")
+        if 0 <= dd <= 2:
+            ALERTS.append(f"HSI 滾倉窗口：{dd} 天後持倉結算（{expiry}），持有至結算，次日賣下月 ATM 跨式")
+        return expiry
+    # 無持倉：照舊倒數當月月度到期（近似：月底倒數第二個工作日）
     bdays = pd.bdate_range(today.replace(day=1), periods=40)
     month_b = [d.date() for d in bdays if d.month == today.month]
     expiry = month_b[-2] if len(month_b) >= 2 else month_b[-1]
