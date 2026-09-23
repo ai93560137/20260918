@@ -65,8 +65,12 @@ def structural(df: pd.DataFrame) -> tuple[list[str], list[tuple[str, str]]]:
 
 
 def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tuple[str, int, int]:
-    """最新一日第二來源：回傳 (說明, 比對檔數, 差 >1% 檔數)。"""
+    """最新一日第二來源：回傳 (說明, 比對檔數, 差 >1% 檔數)。
+    「最新一日」取大部分股票共同的最後日期（眾數）——不能取最大值：假期偶有個別股票多一根雜列，
+    最大值會變成假期、跟第二來源的日期對不上（日股 2026-09-23 秋分就這樣比對到 0 檔）。"""
     import requests
+    from collections import Counter
+    mode_day = Counter(d for d, _ in last.values()).most_common(1)[0][0]
     if market == "us":
         import fetch_second_source as fs
         r = requests.get("https://api.nasdaq.com/api/screener/stocks", headers=fs.UA,
@@ -74,12 +78,12 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
         r.raise_for_status()
         theirs = {x["symbol"].strip().replace("/", "-"): fs.money(x.get("lastsale", ""))
                   for x in r.json()["data"]["rows"]}
-        d_max = max(d for d, _ in last.values())
+        d_max = mode_day
         pairs = [(v[1], theirs.get(t)) for t, v in last.items() if v[0] == d_max and theirs.get(t)]
         src = f"Nasdaq screener 最後成交價 vs 我們 {d_max} 收市"
     elif market == "hk":
         import fetch_hkex_equity as fh
-        d_max = max(d for d, _ in last.values())
+        d_max = mode_day
         r = requests.get(fh.URL.format(d=date.fromisoformat(d_max)), headers={"User-Agent": "Mozilla/5.0"}, timeout=60)
         r.raise_for_status()
         q = fh.parse_quotations(r.content.decode("utf-8", errors="replace"))
@@ -87,13 +91,15 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
         src = f"港交所日報表 {d_max}"
     else:
         import fetch_second_source as fs
-        d_max = max(d for d, _ in last.values())
+        d_max = mode_day
         sample = sorted(t for t, v in last.items() if v[0] == d_max)
         random.Random(0).shuffle(sample)
         got = fs.fetch_jp(sample[:200])
         pairs = [(last[t][1], v["close"]) for t, v in got.items() if v.get("date") == d_max and v.get("close")]
         src = f"Yahoo!ファイナンス 前日終値（抽 200 檔）{d_max}"
     n_bad = sum(1 for a, b in pairs if abs(a / b - 1) > 0.01)
+    if not pairs:
+        raise RuntimeError(f"{src}：比對 0 檔（第二來源沒回應或日期對不上），這項檢查沒有做成")
     return src, len(pairs), n_bad
 
 
