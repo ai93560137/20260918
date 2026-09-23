@@ -16,7 +16,7 @@
 #   python3 scripts/pelosi_tracker.py                 # 抓今年（1 月時連去年）
 #   python3 scripts/pelosi_tracker.py --years 2024 2025 2026   # 回補
 #   python3 scripts/pelosi_tracker.py --no-prices     # 不抓 Yahoo 現價
-# 首次執行（沒有 state）只建檔、不發通知，避免把整年舊申報一次推送。
+# 首次執行（沒有 state）自動回補 2014 年起的申報，只建檔、不發通知。
 # =============================================================================
 import argparse
 import io
@@ -42,6 +42,7 @@ OUT_DIR = os.path.join(ROOT, "data", "pelosi")
 STATE_FILE = os.path.join(OUT_DIR, "state.json")
 TX_FILE = os.path.join(OUT_DIR, "transactions.json")
 REPORT_FILE = os.path.join(OUT_DIR, "README.md")
+BACKFILL_FROM = 2014  # 更早的申報多為紙本掃描，解析不了
 
 TX_TYPES = {"P": "買入", "S": "賣出", "S (partial)": "部分賣出", "E": "交換"}
 OWNERS = {"SP": "配偶", "JT": "聯名", "DC": "受養子女", "Self": "本人"}
@@ -390,11 +391,16 @@ def main():
     args = ap.parse_args()
 
     today = datetime.now(timezone.utc).date()
-    years = args.years or ([today.year - 1, today.year] if today.month == 1 else [today.year])
     os.makedirs(OUT_DIR, exist_ok=True)
 
     state = load_json(STATE_FILE, None)
     first_run = state is None
+    if args.years:
+        years = args.years
+    elif first_run:  # 首次建檔直接回補歷史，回測才有樣本（不通知）
+        years = list(range(BACKFILL_FROM, today.year + 1))
+    else:
+        years = [today.year - 1, today.year] if today.month == 1 else [today.year]
     state = state or {"seen": []}
     seen = set(state["seen"])
     filings = load_json(TX_FILE, [])

@@ -2,7 +2,9 @@ name: Pelosi stock tracker（佩洛西股票追蹤）
 
 # 每 4 小時抓一次眾議院書記官處（House Clerk）的 PTR 申報索引，
 # 發現佩洛西新申報就下載 PDF、解析每筆交易，更新 data/pelosi/ 並發 Telegram。
-# 腳本見 scripts/pelosi_tracker.py。首次執行（還沒有 data/pelosi/state.json）只建檔不通知。
+# 腳本見 scripts/pelosi_tracker.py。首次執行（還沒有 data/pelosi/state.json）自動回補 2014 年起的申報，只建檔不通知。
+# 回測（scripts/pelosi_backtest.py，申報日跟單）在有新申報、手動觸發、或每週一 00 時那輪重跑，
+# 報告在 data/pelosi/backtest/README.md。
 on:
   schedule:
     - cron: '17 */4 * * *'
@@ -16,6 +18,10 @@ on:
         description: '首次建檔也發 Telegram'
         required: false
         default: 'false'
+      backtest:
+        description: '重跑回測'
+        required: false
+        default: 'true'
 
 permissions:
   contents: write
@@ -27,7 +33,7 @@ concurrency:
 jobs:
   track:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -49,13 +55,27 @@ jobs:
           [ "$BACKFILL" = "true" ] && ARGS="$ARGS --notify-backfill"
           python3 scripts/pelosi_tracker.py $ARGS
 
+      - name: Backtest（申報日跟單）
+        id: bt
+        continue-on-error: true   # 回測失敗（例如 Yahoo 限流）不擋追蹤資料提交
+        env:
+          EVENT: ${{ github.event_name }}
+          NEW: ${{ steps.track.outputs.new }}
+          WANT: ${{ inputs.backtest }}
+        run: |
+          RUN=false
+          if [ "$EVENT" = "workflow_dispatch" ]; then [ "$WANT" != "false" ] && RUN=true
+          elif [ "${NEW:-0}" != "0" ] || [ "$(date -u +%u%H)" = "100" ] || [ ! -f data/pelosi/backtest/summary.json ]; then RUN=true; fi
+          echo "run backtest: $RUN"
+          if [ "$RUN" = "true" ]; then python3 scripts/pelosi_backtest.py; fi
+
       - name: Commit and push
         env:
           BRANCH: ${{ github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add data/pelosi/state.json data/pelosi/transactions.json data/pelosi/README.md; }
+          add_out() { git add data/pelosi/state.json data/pelosi/transactions.json data/pelosi/README.md; [ -d data/pelosi/backtest ] && git add data/pelosi/backtest; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "chore(pelosi): 更新佩洛西交易 $(date -u +%F)"
