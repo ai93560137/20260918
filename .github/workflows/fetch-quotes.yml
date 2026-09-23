@@ -23,7 +23,6 @@ jobs:
           pip -q install requests pandas numpy yfinance
           python .github/scripts/fetch_us_daily.py || echo "us daily refresh failed - scan uses last snapshot"
           python .github/scripts/fetch_spx_chain.py || echo "spx chain fetch failed - non-fatal"
-          python .github/scripts/probe_nkvi.py || echo "nkvi probe failed - non-fatal"
           python .github/scripts/fetch_hkex_quotes.py
           cd tradingview && python hsi_scan.py
       - name: telegram notify
