@@ -40,7 +40,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2000-01-04",
   "kept_tail": 0,
   "last": "2026-09-23",
@@ -113,7 +113,7 @@
   "shares_rows": 371
  },
  "0017.HK": {
-  "adj_err_max": 8.4e-05,
+  "adj_err_max": 8.3e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -197,7 +197,7 @@
   "shares_rows": 564
  },
  "0135.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -209,7 +209,7 @@
   "shares_rows": 423
  },
  "0144.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.015125,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -221,7 +221,7 @@
   "shares_rows": 578
  },
  "0151.HK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -333,7 +333,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 2,
+  "files_changed": 1,
   "first": "2004-04-15",
   "kept_tail": 0,
   "last": "2026-09-23",
@@ -357,7 +357,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2002-09-23",
   "kept_tail": 0,
   "last": "2026-09-23",
@@ -466,7 +466,7 @@
   "shares_rows": 464
  },
  "0857.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -674,7 +674,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2015-06-03",
   "kept_tail": 0,
   "last": "2026-09-23",
@@ -742,7 +742,7 @@
   "shares_rows": 1565
  },
  "1299.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -878,7 +878,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 0,
+  "files_changed": 1,
   "first": "2018-06-21",
   "kept_tail": 0,
   "last": "2026-09-23",
@@ -938,7 +938,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2005-02-03",
   "kept_tail": 0,
   "last": "2026-09-23",
@@ -970,7 +970,7 @@
   "shares_rows": 490
  },
  "2313.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1054,7 +1054,7 @@
   "shares_rows": 566
  },
  "2600.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1120,13 +1120,13 @@
   "fetched": "2026-09-23",
   "files_changed": 1,
   "first": "2008-01-02",
-  "kept_tail": 0,
+  "kept_tail": 1,
   "last": "2026-09-23",
-  "rows": 4613,
+  "rows": 4614,
   "shares_rows": 72
  },
  "2899.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1138,7 +1138,7 @@
   "shares_rows": 1570
  },
  "3328.HK": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1186,7 +1186,7 @@
   "shares_rows": 1527
  },
  "3988.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1342,7 +1342,7 @@
   "shares_rows": 341
  },
  "9999.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1358,9 +1358,9 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
-  "kept_tail": 0,
+  "kept_tail": 1,
   "last": "2026-09-23",
   "rows": 7820,
   "shares_rows": 0
