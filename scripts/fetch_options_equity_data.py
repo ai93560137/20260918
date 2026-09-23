@@ -7,7 +7,8 @@
   PUT（平值現金擔保賣 put）、PPUT（5% 價外保護 put）、CLL（95–110 領口）
   來源 cdn.cboe.com 的 <SYM>_History.csv；拿不到就退回 yfinance ^<SYM>
 - 無風險利率：^IRX（13 週美國國庫券，年化 %）
-- 波動率指數：^VIX、^VHSI（雲垂分支已有歷史，這裡一併保存一份，研究分支自給自足）
+- 波動率指數：^VIX、^VHSI（^VHSI 在 yfinance 抓不到時保留現有 VHSI.csv——初版複製自雲垂分支 tradingview/data_external/vhsi_daily.csv）
+- 2800.HK 全部股息（倉庫 data/equities/hk/2800.HK/actions.csv 只從 2013 起，2008–2012 缺）→ DIV_2800.csv（Date,Dividend）
 輸出一律 Date,Close 兩欄，只在內容有變時重寫。
 """
 import io
@@ -86,6 +87,15 @@ def main() -> int:
             bad += 1
             continue
         write(name, s, "yfinance")
+    try:
+        import yfinance as yf
+        dv = yf.Ticker("2800.HK").dividends
+        dv.index = pd.to_datetime(dv.index).tz_localize(None).normalize()
+        text = "Date,Dividend\n" + "".join(f"{d:%Y-%m-%d},{v:.6g}\n" for d, v in dv.sort_index().items())
+        (OUT / "DIV_2800.csv").write_text(text, encoding="utf-8")
+        print(f"DIV_2800: {len(dv)} 筆 {dv.index.min():%Y-%m-%d} → {dv.index.max():%Y-%m-%d}")
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning::2800.HK 股息拿不到 {e!r}")
     return 1 if bad == len(CBOE) + len(YF) else 0
 
 
