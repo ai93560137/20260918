@@ -138,6 +138,7 @@
 | `scripts/fetch_second_source.py` | 美日股第二收市源：美股 Nasdaq.com screener（全市場一次請求，收市/名字/行業）；日股 Yahoo!ファイナンス「前日終値」（自帶日期）+ JPX 上場銘柄一覧（官方日文名、33業種）|
 | `scripts/check_equities_quality.py` → `data/equities/<market>/QC_REPORT.md` | 美日股每日品質檢查（現任成分股缺數據/過期、髒值、雙來源收市、名字變動、AdjClose 重算誤差、**倖存者偏差洞按年比例**）|
 | `scripts/sector_rotation.py` → `sector/<index>/` | 版塊輪動**監測**（描述性）：PIT 等權行業/風格籃子（高息/低波/動量/大市值）/官方分類指數、1-12 月超額、排名變化、廣度、年度輪動表 |
+| `scripts/daily_topdown.py` → `analysis/` | **每日由上而下分析**（描述性篩選，規則寫死）：三地指數 ETF 動能選焦點國家 → 板塊 6 個月超額排名 → 前 3 板塊個股動能排序；每天清單記入 `analysis/topdown_log.csv` 做樣本外追蹤；`daily_topdown.yml` 美股數據更新後自動跑 + Telegram（約 08:00-09:30 HKT）|
 | `sector_momentum_backtest.py` | 行業動量回測引擎（多市場，`--grid` 3x3 鄰域、`--permutation` 隨機行業對照、`--attribution` Brinson 行業歸因）|
 | `SECTOR_ROTATION.md` | 行業動量預先登記與各市場結果、既有 alpha 的行業歸因 |
 | `scripts/check_data_quality.py` → `data/equities/hk/QC_REPORT.md` | **每日數據品質日報**（排程自動跑，🔴 即時 Telegram 警報、每交易日收市推日報；研究 session 任意推送用 `.github/tg_outbox_research.txt`，勿用八陣圖的 `tg_outbox.txt`）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |

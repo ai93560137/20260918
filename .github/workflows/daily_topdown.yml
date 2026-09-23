@@ -1,0 +1,114 @@
+name: Daily top-down analysis（每日由上而下分析）
+
+# 國家（指數 ETF）→ 板塊動能 → 個股，見 scripts/daily_topdown.py。
+# 美股數據是最後到的（06:30 HKT 開抓），所以等美股抓完再跑：
+# - workflow_run：Fetch equities 美股輪（22:xx UTC 建立的排程）完成後觸發
+# - cron 01:15 UTC（09:15 HKT，港股開市前）兜底：美股輪太慢或失敗時也要有報告；當天已有報告就跳過
+on:
+  workflow_run:
+    workflows: ["Fetch equities (US / JP)"]
+    types: [completed]
+  schedule:
+    - cron: '15 1 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: '是否發 Telegram'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-topdown
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: Asia/Hong_Kong   # 報告日期用香港日期
+    steps:
+      - name: Decide whether to run
+        id: gate
+        env:
+          EVENT: ${{ github.event_name }}
+          RUN_CREATED: ${{ github.event.workflow_run.created_at }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+        run: |
+          GO=true
+          if [ "$EVENT" = "workflow_run" ]; then
+            # 只接美股排程輪（cron 22:30 UTC，GitHub 排程常延遲，所以收 20-03 時）；
+            # 日股輪（07:30 UTC）與手動回補不觸發
+            H=$((10#$(TZ=UTC date -d "$RUN_CREATED" +%H)))
+            if [ "$RUN_EVENT" != "schedule" ] || { [ "$H" -lt 20 ] && [ "$H" -gt 3 ]; }; then GO=false; fi
+          fi
+          echo "go=$GO" >> "$GITHUB_OUTPUT"
+          echo "event=$EVENT run_event=$RUN_EVENT created=$RUN_CREATED go=$GO"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          ref: claude/gifted-carson-v2tvhw
+
+      - name: Skip if today's report exists（cron 兜底時）
+        id: dup
+        if: steps.gate.outputs.go == 'true'
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = "schedule" ] && [ -f "analysis/archive/$(date +%F).md" ]; then
+            echo "今天的報告已由美股輪產生，跳過"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
+        with:
+          python-version: '3.11'
+
+      - name: Sector indices（三地板塊指數）
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
+        run: |
+          for i in hsi sp500 n225; do python3 scripts/sector_rotation.py --index $i > /dev/null; done
+
+      - name: Top-down report
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
+        run: python3 scripts/daily_topdown.py
+
+      - name: Commit and push
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { git add analysis sector; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(analysis): 每日由上而下分析 $(date +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 5))
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "chore(analysis): 每日由上而下分析 $(date +%F)"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
+
+      - name: Telegram
+        if: steps.gate.outputs.go == 'true' && steps.dup.outputs.skip != 'true' && (github.event_name != 'workflow_dispatch' || inputs.digest == 'true')
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          MSG=analysis/tg_topdown.txt
+          if [ ! -s "$MSG" ]; then echo "沒有摘要"; exit 1; fi
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0
+          fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "text=$(cat "$MSG")" > /dev/null
+          echo "telegram sent"

@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT))
 from universe import INDICES, Universe  # noqa: E402
 
 FETCH_SINCE = date(2008, 1, 1)   # 輪動檢測/策略 2010 起，多留暖身
-BENCHMARKS = {"us": ["SPY", "QQQ", "DIA", "^GSPC", "^NDX", "^DJI", "RSP"], "jp": ["1321.T", "^N225"]}
+BENCHMARKS = {"us": ["SPY", "QQQ", "DIA", "^GSPC", "^NDX", "^DJI", "RSP", "EWJ"], "jp": ["1321.T", "^N225"]}
 
 
 def main() -> None:
