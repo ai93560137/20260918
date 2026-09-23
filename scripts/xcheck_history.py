@@ -105,6 +105,48 @@ def yj_pages(s: requests.Session, t: str, params: dict, max_pages: int) -> list[
     return rows
 
 
+def drop_stale(ours: dict[date, float], theirs: dict[date, float]) -> tuple[dict[date, float], int]:
+    """第二來源停滯：對方同一個收市價連續 >= 3 天、我們同期有變動 → 對方數據壞（2026-09-23 實測
+    Nasdaq 的 TEVA 2016、IBKR 2018 整段卡在同一價），這些列不算不符，另外計數。"""
+    days = sorted(d for d in theirs if d in ours)
+    stale = set()
+    i = 0
+    while i < len(days):
+        j = i
+        while j + 1 < len(days) and theirs[days[j + 1]] == theirs[days[i]]:
+            j += 1
+        if j - i + 1 >= 3 and len({ours[d] for d in days[i:j + 1]}) > 1:
+            stale.update(days[i + 1:j + 1])    # 第一天可能是真的，之後的才是卡住
+        i = j + 1
+    return {d: v for d, v in theirs.items() if d not in stale}, len(stale)
+
+
+_UNI: dict = {}
+
+
+def used_windows(t: str, market: str) -> list[tuple[date, date]]:
+    """回測實際會用到這檔價格的期間：各指數在榜區間（通過防代碼重用檢查者）＋入選前 400 天回看。
+    不在任何期間內的價格（例如代碼後來給了別家公司：MI 2002-2011 是 Marshall & Ilsley，Yahoo 的 MI
+    現在是 NFT Limited）比對出問題也不影響研究，只記錄、不警報。"""
+    from datetime import timedelta
+    sys.path.insert(0, str(ROOT))
+    from universe import INDICES, Universe, GRACE_DAYS
+    rows = md.load_ohlcv(t)
+    if not rows:
+        return []
+    first = rows[0]["Date"]
+    out = []
+    for key, cfg in INDICES.items():
+        if cfg["market"] != market or not (ROOT / cfg.get("file", "")).is_file():
+            continue
+        if key not in _UNI:
+            _UNI[key] = Universe(key)
+        for tt, a, b in _UNI[key].intervals:
+            if tt == t and first <= a + timedelta(days=GRACE_DAYS):
+                out.append((a - timedelta(days=400), b or date(2100, 1, 1)))
+    return out
+
+
 def find_breaks(ours: dict[date, float], theirs: dict[date, float],
                 actions: list[date]) -> tuple[dict[date, float], list[dict]]:
     """兩來源價格比值（對方/我們）的「階梯」＝其中一方對公司行動（分拆、股份交換、ADR 比例變動…）
@@ -124,7 +166,7 @@ def find_breaks(ours: dict[date, float], theirs: dict[date, float],
         after = [th[d] / ours[d] for d in days[i:i + W]]
         rb, ra = sorted(before)[W // 2], sorted(after)[W // 2]
         step = ra / rb
-        flat = max(before) / min(before) < 1.01 and max(after) / min(after) < 1.01
+        flat = max(before) / min(before) < 1.015 and max(after) / min(after) < 1.015
         if flat and abs(step - 1) > 0.01:
             e = days[i]
             near = any(abs((a - e).days) <= 5 for a in actions)
@@ -184,10 +226,17 @@ def main() -> None:
                     rec.update(n_cmp=0, n_bad=0, max_diff=0, examples=[], note="第二來源沒有此代碼（已下市/改代碼）")
                 else:
                     raw = compare(ours, theirs)
+                    theirs, n_stale = drop_stale(ours, theirs)
                     divs, splits = md.load_actions(t)
                     th, breaks = find_breaks(ours, theirs, [d for d, _ in splits])
-                    rec.update(compare(ours, th), span=f"{min(theirs)}~{max(theirs)}",
-                               n_bad_raw=raw["n_bad"], breaks=breaks)
+                    win = used_windows(t, m)
+                    inwin = lambda d: any(a <= d < b for a, b in win)  # noqa: E731
+                    for b_ in breaks:
+                        b_["used"] = inwin(date.fromisoformat(b_["date"]))
+                    used = compare({d: v for d, v in ours.items() if inwin(d)}, th)
+                    rec.update(used, span=f"{min(theirs)}~{max(theirs)}", n_bad_raw=raw["n_bad"],
+                               n_stale_theirs=n_stale, breaks=breaks, n_bad_all=compare(ours, th)["n_bad"],
+                               in_use=bool(win))
             else:
                 monthly = yj_pages(s, t, {"from": "19950101", "to": today.replace("-", ""), "timeFrame": "m"}, 25)
                 daily = yj_pages(s, t, {"timeFrame": "d"}, 1)

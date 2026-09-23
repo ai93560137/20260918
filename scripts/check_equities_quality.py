@@ -206,7 +206,10 @@ def main() -> None:
     # 價格比值階梯（xcheck_history.find_breaks）：Yahoo 有記錄的 = 調整方法不同（已解釋）；
     # Yahoo 沒記錄、對方有調 = 我們的價格在該日有假跳動（總回報失真）
     xc_method = [t for t in xc_done if any(b["type"] == "yahoo_adjusted" for b in xc[t].get("breaks", []))]
-    xc_unadj = [(t, b) for t in xc_done for b in xc[t].get("breaks", []) if b["type"] == "yahoo_unadjusted"]
+    # 只警報「回測會用到的期間」內的漏調（used=False：代碼已給別家公司等，不影響研究）
+    xc_unadj = [(t, b) for t in xc_done for b in xc[t].get("breaks", [])
+                if b["type"] == "yahoo_unadjusted" and b.get("used", True)]
+    xc_stale = sum(xc[t].get("n_stale_theirs", 0) for t in xc_done)
     for t, b in xc_unadj:
         lvl = "🔴" if abs(b["step"] - 1) >= 0.05 else "🟡"
         flag(lvl, t, f"unadjusted_action_{b['date']}",
@@ -335,7 +338,7 @@ def main() -> None:
               f"🏛 第二來源 {src2} 快照 {len(snap_data)} 份，最新 {latest2}（比對 {n_cmp} 筆收市價）",
               f"🔎 全量歷史比對：{len(xc_done)}/{len(xc_total)} 檔、{xc_rows:,} 筆、不符 {xc_bad} 筆"
               f"（第二來源沒有的已下市代碼 {len(xc_nosrc)} 檔；分拆等調整方法不同已解釋 {len(xc_method)} 檔；"
-              f"Yahoo 漏調公司行動 {len(xc_unadj)} 處）",
+              f"Yahoo 漏調公司行動 {len(xc_unadj)} 處；對方數據停滯剔除 {xc_stale} 筆）",
               f"🔴 {len(red)} ｜ 🟡 {len(yellow)} ｜ ✅ 已確認 {len(acked)}"]
     digest += [f"🔴 {t} {c}：{msg}" for _, t, c, msg in red[:12]]
     if len(red) > 12:
