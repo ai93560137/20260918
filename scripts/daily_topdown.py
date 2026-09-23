@@ -76,7 +76,17 @@ def ret(c: list[float], n: int, skip: int = 0) -> float | None:
     return c[-1 - skip] / c[-1 - n] - 1
 
 
-def metrics(rows: list[tuple[date, float]]) -> dict | None:
+def ohlc_upto(ticker: str, as_of: date) -> tuple[list[tuple[date, float]], list[tuple[float, float]]]:
+    """([(date, 還原收市)], [(原始收市, 原始最高價)])，對齊；給個股用（新高要用原始最高價）。"""
+    try:
+        rows = [r for r in md.load_ohlcv(ticker) if r["Date"] <= as_of and r["AdjClose"] > 0]
+    except (FileNotFoundError, StopIteration):
+        return [], []
+    return ([(r["Date"], r["AdjClose"]) for r in rows],
+            [(r["Close"], max(r["High"] or r["Close"], r["Close"])) for r in rows])
+
+
+def metrics(rows: list[tuple[date, float]], hl: list[tuple[float, float]] | None = None) -> dict | None:
     if len(rows) < 64:
         return None
     c = [x for _, x in rows]
@@ -90,8 +100,15 @@ def metrics(rows: list[tuple[date, float]]) -> dict | None:
     lr = [math.log(b / a) for a, b in zip(c[-64:], c[-63:])]
     mu = sum(lr) / len(lr)
     m["vol"] = math.sqrt(sum((x - mu) ** 2 for x in lr) / (len(lr) - 1) * 252)
-    # 新高：最新收市 >= 過去 n 個交易日（含當天）收市最高；歷史不足 n 天 = None（不算新高也不算否）
-    m["highs"] = {lab: (c[-1] >= max(c[-n:]) if len(c) >= n else None) for lab, n in RULES["high_windows"]}
+    # 新高（2026-09-23 使用者指定，跟報價頁「52 週高」同一把尺）：昨天**收市價**嚴格高於之前 n−1 個交易日
+    # （連昨天共 n 天 ≈ N 個月）的**盤中最高價**。用原始價（只按拆股還原、不按股息），跟富途/Yahoo 報價頁一致；
+    # 歷史不足 n 天 = None（不算）
+    if hl:
+        rc, hi = [x for x, _ in hl], [y for _, y in hl]
+        m["highs"] = {lab: (rc[-1] > max(hi[-n:-1]) if len(hl) >= n else None) for lab, n in RULES["high_windows"]}
+        m["prior_high"] = {lab: max(hi[-n:-1]) if len(hl) >= n else None for lab, n in RULES["high_windows"]}
+    else:
+        m["highs"] = {lab: None for lab, _ in RULES["high_windows"]}
     moms = [m[k] for k in ("r3", "r6", "r12")]
     m["score"] = sum(moms) / 3 if all(x is not None for x in moms) else None
     return m
@@ -226,10 +243,10 @@ def main() -> None:
         uni = Universe(cfg["index"])
         first, data = {}, {}
         for t in uni.members_at(as_of):
-            rows = closes_upto(t, as_of)
+            rows, hl = ohlc_upto(t, as_of)
             if rows:
-                first[t], data[t] = rows[0][0], rows
-        stocks[c] = {t: m for t in uni.eligible_at(as_of, first) if (m := metrics(data[t]))}
+                first[t], data[t] = rows[0][0], (rows, hl)
+        stocks[c] = {t: m for t in uni.eligible_at(as_of, first) if (m := metrics(*data[t]))}
         sec_of[c] = uni.sectors()[0]
         names[c] = load_names(uni.cfg["market"])
         st = stocks[c]
