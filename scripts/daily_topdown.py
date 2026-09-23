@@ -124,6 +124,13 @@ def disp(t: str) -> str:
 WEEKDAY_ZH = "一二三四五六日"
 
 
+def keycap(n: int) -> str:
+    """連續天數用數字 emoji：1️⃣…9️⃣、🔟；11 以上逐位拼（1️⃣1️⃣）。"""
+    if n == 10:
+        return "🔟"
+    return "".join(f"{ch}\ufe0f\u20e3" for ch in str(n))
+
+
 def fmt_d(d: date | None) -> str:
     """2026-09-18 週五——三地假期不同，日期一律帶星期。"""
     return f"{d} 週{WEEKDAY_ZH[d.weekday()]}" if d else "—"
@@ -534,7 +541,7 @@ def main() -> None:
             L.append("|---|---|---|---|---|---|---|---|")
             for t in sorted(hits, key=lambda t: (order.index(sector_zh(sec_of[c], t)), t)):
                 m = st[t]
-                L.append(f"| {sector_zh(sec_of[c], t)} | {disp(t)} | {names[c].get(t, '')} | 🟢{streak(c, t)} | "
+                L.append(f"| {sector_zh(sec_of[c], t)} | {disp(t)} | {names[c].get(t, '')} | {keycap(streak(c, t))} | "
                          f"{pct(m['vs200'])} | {pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
             L.append("")
 
@@ -603,7 +610,7 @@ def main() -> None:
     # Telegram 單則上限 4096 字，超過就按行切成多則（標「續」）。
     def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.JP / AMD）+ 名稱 + 連續天數；收市日跟該市場不同就標日期
         n = names[c].get(t, "")
-        s_ = (f"{disp(t)} {n}" if n else disp(t)) + f" 🟢{streak(c, t)}"
+        s_ = (f"{disp(t)} {n}" if n else disp(t)) + f" {keycap(streak(c, t))}"
         lt = stocks[c][t]["last"]
         return s_ + (f"（{lt.month}/{lt.day} 收市）" if lt != country[c]["last"] else "")
 
@@ -617,7 +624,7 @@ def main() -> None:
             "③ 該收市價高於過去 12／9／6／3 個月的最高價（盤中最高，跟報價頁「52 週高」同一把尺）",
             "④ 按板塊（行業）統計檔數，並列出每一隻股票",
             "每隻股票只列在它創新高的最長窗口（列在 12 個月的，也是 9／6／3 個月新高，不再重複）",
-            "🟢N = 連續第 N 個交易日列在同一個窗口；窗口改變（例如 3 個月升到 6 個月）就由 🟢1 重新計",
+            "數字 emoji（1️⃣2️⃣…🔟）= 連續第幾個交易日列在同一個窗口；窗口改變（例如 3 個月升到 6 個月）就由 1️⃣ 重新計",
             "",
             "國家動能（3/6/12 個月報酬平均）：",
             *[f"・{COUNTRIES[c]['zh']}（{disp(country[c]['ticker'])}，收市 {fmt_d(country[c]['m']['last'])}）"
