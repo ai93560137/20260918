@@ -1,0 +1,10 @@
+PAGE https://indexes.nikkei.co.jp/en/nkave/archives?list=vi -> HTTP 404, 2354b, links: []
+PAGE https://indexes.nikkei.co.jp/en/nkave/archives -> HTTP 404, 2354b, links: []
+PAGE https://indexes.nikkei.co.jp/en/nkave/index/profile?idx=nk225vi -> HTTP 200, 37336b, links: ['/cz/nkave/index/profile', '/en/nkave/archives/calendar', '/en/nkave/archives/data', '/en/nkave/archives/record', '/en/nkave/archives/summary', '/en/nkave/index/profile?cid=1&amp;idx=nk225vi#section-gist', '/en/nkave/index/profile?cid=2&amp;idx=nk225vi#section-gist', '/en/nkave/index/profile?cid=3&amp;idx=nk225vi#section-gist', '/en/nkave/index/profile?cid=4&amp;idx=nk225vi#section-gist', '/en/nkave/index/profile?cid=5&amp;idx=nk225vi#section-gist', '/en/nkave/index/profile?cid=6&amp;idx=nk225vi#section-gist', '/en/nkave/index/profile?cid=7&amp;idx=nk225vi#section-gist']
+PAGE https://indexes.nikkei.co.jp/en/nkave/ -> HTTP 200, 36322b, links: ['/cz/nkave/index/profile', '/en/nkave/archives/calendar', '/en/nkave/archives/data', '/en/nkave/archives/news/20260807E_1.pdf', '/en/nkave/archives/news/20260824E_1.pdf', '/en/nkave/archives/news/20260904E_1.pdf', '/en/nkave/archives/news/20260909E_1.pdf', '/en/nkave/archives/news/20260914E_1.pdf', '/en/nkave/archives/news/20260915E_1.pdf', '/en/nkave/archives/news/20260915E_2.pdf', '/en/nkave/archives/news/20260915E_3.pdf', '/en/nkave/archives/record']
+DATALOAD ?list=vi -> HTTP 200, 3802b, 數值td數: 0, 樣本: []
+DATALOAD ?list=vi&year=2020 -> HTTP 200, 5044b, 數值td數: 0, 樣本: []
+DATALOAD ?idx=nk225vi&csv=1 -> HTTP 200, 3802b, 數值td數: 0, 樣本: []
+DATALOAD ?list=nk225vi&csv=1 -> HTTP 200, 3802b, 數值td數: 0, 樣本: []
+DATALOAD ?list=vi&csv=1&year=2015 -> HTTP 200, 4837b, 數值td數: 0, 樣本: []
+CSV(cookie) -> HTTP 403, 2354b

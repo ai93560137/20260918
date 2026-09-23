@@ -1,4 +1,4 @@
-token OK (74)
+token OK (76)
 getderivativesfutures(ats=HSI&type=0): code=000, 2484 chars
 getoptioncontractlist(ats=HSI&type=0): code=000, 488 chars
 contracts: [('092026', 'Sep-26'), ('102026', 'Oct-26'), ('112026', 'Nov-26'), ('122026', 'Dec-26'), ('032027', 'Mar-27'), ('062027', 'Jun-27'), ('092027', 'Sep-27'), ('122027', 'Dec-27')]
