@@ -121,7 +121,14 @@ def load_names(market: str) -> dict[str, str]:
             for t, r in json.loads(p.read_text(encoding="utf-8")).get("listed", {}).items():
                 if r.get("name"):
                     out[t] = r["name"].replace("　", " ")
-    return {t: short_name(n) for t, n in out.items()}
+    out = {t: short_name(n) for t, n in out.items()}
+    if market == "hk":   # 港股用港交所官方中文簡稱（scripts/fetch_hkex_names.py），沒有才用英文名
+        p = md.V2_DIR / "hk" / "_hkex_listed.json"
+        if p.exists():
+            for t, r in json.loads(p.read_text(encoding="utf-8")).get("listed", {}).items():
+                if r.get("name_zh"):
+                    out[t] = r["name_zh"]
+    return out
 
 
 # ---------- 板塊指數（sector_rotation.py 的輸出）----------
@@ -398,10 +405,9 @@ def main() -> None:
 
     # Telegram（給投資人看）：第一則總覽，之後每個市場一則；每個窗口列出**全部**股票與名稱，不省略。
     # Telegram 單則上限 4096 字，超過就按行切成多則（標「續」）。
-    def tk(c: str, t: str) -> str:
-        code = t.replace(".HK", "").replace(".T", "")
+    def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.T / AMD）+ 名稱
         n = names[c].get(t, "")
-        return f"{code} {n}" if n else code
+        return f"{t} {n}" if n else t
 
     uni_name = {c: Universe(COUNTRIES[c]["index"]).cfg["name"] for c in COUNTRIES}
     head = [f"📊 每日股票篩選 {report_day}",
