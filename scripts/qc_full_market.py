@@ -72,24 +72,28 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
     from collections import Counter
     mode_day = Counter(d for d, _ in last.values()).most_common(1)[0][0]
     if market == "us":
+        # 抽 300 檔，用 Nasdaq 歷史 API 查「同一天」的收市（不用 screener：它只有今天／前收市，
+        # Yahoo 缺某天時對不上日期——2026-09-23 美股大部分缺 9/22、最後一根是 9/21）
+        import time as _t
         import fetch_second_source as fs
-        r = requests.get("https://api.nasdaq.com/api/screener/stocks", headers=fs.UA,
-                         params={"tableonly": "true", "download": "true"}, timeout=60)
-        r.raise_for_status()
-        # screener 只有「最後成交價」與「今日升跌」：我們最後一根若是今天（美東）→ 比最後成交價；
-        # 若是前一個交易日（盤中或開市前跑）→ 比「最後成交價 − 今日升跌」＝ 前收市
-        from datetime import datetime
-        from zoneinfo import ZoneInfo
-        today_et = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
         d_max = mode_day
-        use_prev = d_max < today_et
-        theirs = {}
-        for x in r.json()["data"]["rows"]:
-            last_sale, chg = fs.money(x.get("lastsale", "")), fs.money(x.get("netchange", "") or "0")
-            if last_sale:
-                theirs[x["symbol"].strip().replace("/", "-")] = last_sale - (chg or 0) if use_prev else last_sale
-        pairs = [(v[1], theirs.get(t)) for t, v in last.items() if v[0] == d_max and theirs.get(t)]
-        src = f"Nasdaq screener {'前收市（最後成交價 − 今日升跌）' if use_prev else '最後成交價'} vs 我們 {d_max} 收市"
+        sample = sorted(t for t, v in last.items() if v[0] == d_max)
+        random.Random(0).shuffle(sample)
+        s = requests.Session()
+        pairs = []
+        for t in sample[:300]:
+            try:
+                r = s.get(f"https://api.nasdaq.com/api/quote/{t.replace('-', '.')}/historical", headers=fs.UA,
+                          timeout=30, params={"assetclass": "stocks", "fromdate": d_max, "todate": d_max, "limit": "5"})
+                rows = (((r.json().get("data") or {}).get("tradesTable") or {}).get("rows")) or []
+            except Exception:
+                rows = []
+            for x in rows:
+                mo, dd, y = x["date"].split("/")
+                if f"{y}-{int(mo):02d}-{int(dd):02d}" == d_max and fs.money(x.get("close", "")):
+                    pairs.append((last[t][1], fs.money(x["close"])))
+            _t.sleep(0.3)
+        src = f"Nasdaq 歷史 API 同日收市（抽 300 檔）{d_max}"
     elif market == "hk":
         import fetch_hkex_equity as fh
         d_max = mode_day
