@@ -103,13 +103,25 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
         pairs = [(v[1], q[t]["close"]) for t, v in last.items() if v[0] == d_max and t in q and q[t].get("close")]
         src = f"港交所日報表 {d_max}"
     else:
-        import fetch_second_source as fs
+        # 抽 200 檔，用 Yahoo!ファイナンス 日線頁查同一天終値（報價頁「前日終値」在假期後對不上日期、比對到 0 檔）
+        from datetime import timedelta
+        import verify_trades as vt
         d_max = mode_day
+        d0 = date.fromisoformat(d_max)
         sample = sorted(t for t, v in last.items() if v[0] == d_max)
         random.Random(0).shuffle(sample)
-        got = fs.fetch_jp(sample[:200])
-        pairs = [(last[t][1], v["close"]) for t, v in got.items() if v.get("date") == d_max and v.get("close")]
-        src = f"Yahoo!ファイナンス 前日終値（抽 200 檔）{d_max}"
+        s = requests.Session()
+        s.headers.update({"User-Agent": "Mozilla/5.0", "Accept-Language": "ja"})
+        pairs = []
+        for t in sample[:200]:
+            try:
+                got = vt.jp_window(s, t, d0 - timedelta(days=3), d0)
+            except Exception as exc:
+                print(f"WARN {t}: {exc}", file=sys.stderr)
+                continue
+            if (got.get(d0) or {}).get("close"):
+                pairs.append((last[t][1], got[d0]["close"]))
+        src = f"Yahoo!ファイナンス 日線同日終値（抽 200 檔）{d_max}"
     n_bad = sum(1 for a, b in pairs if abs(a / b - 1) > 0.01)
     if not pairs:
         raise RuntimeError(f"{src}：比對 0 檔（第二來源沒回應或日期對不上），這項檢查沒有做成")
@@ -120,6 +132,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--market", required=True, choices=["hk", "jp", "us"])
     ap.add_argument("--no-network", action="store_true", help="不做最新一日第二來源（本機測試用）")
+    ap.add_argument("--keep-trade-check", action="store_true", help="保留舊報告的第 4 節（只重跑品質檢查、不重跑回測時）")
     args = ap.parse_args()
     m = args.market
     base = ROOT / "data_full" / m
@@ -185,7 +198,9 @@ def main() -> None:
             L.append(f"## 3. 最新一日第二來源\n\n⚠ 抓取失敗：{str(exc)[:200]}（不擋判決，但要在結果裡註明）\n")
     out = ROOT / "research" / "vcp_full"
     out.mkdir(parents=True, exist_ok=True)
-    (out / f"{m}_qc.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    prev = (out / f"{m}_qc.md").read_text(encoding="utf-8") if (out / f"{m}_qc.md").exists() else ""
+    keep4 = prev[prev.index("\n## 4."):] if "\n## 4." in prev and args.keep_trade_check else ""
+    (out / f"{m}_qc.md").write_text("\n".join(L) + "\n" + keep4, encoding="utf-8")
     print("\n".join(L))
     sys.exit(0 if ok2 and ok3 else 2)
 
