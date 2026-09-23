@@ -98,6 +98,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("universe", nargs="+", type=Path)
     ap.add_argument("--parse-file", type=Path, help="只解析本機報價表檔案（測試用，不下載不存檔）")
+    ap.add_argument("--lookback-days", type=int, default=LOOKBACK_DAYS,
+                    help="往回看幾天（一次性回補用；港交所只保留最近幾個月，連續 15 個平日 404 就停）")
     args = ap.parse_args()
 
     wanted = {t for p in args.universe for t in read_universe(p) if t.endswith(".HK")}
@@ -115,10 +117,14 @@ def main() -> None:
     s.headers.update(HEADERS)
     today = datetime.now(HKT).date()
     saved = 0
-    for back in range(LOOKBACK_DAYS):
+    miss_streak = 0
+    for back in range(args.lookback_days):
         d = today - timedelta(days=back)
         if d.weekday() >= 5 or (OUT_DIR / f"quotes_{d.isoformat()}.json").exists():
             continue
+        if miss_streak >= 15:
+            print(f"{d}: 連續 {miss_streak} 個平日沒有報表，已到港交所保留期限，停止回補")
+            break
         url = URL.format(d=d)
         try:
             r = s.get(url, timeout=60)
@@ -127,7 +133,9 @@ def main() -> None:
             continue
         if r.status_code != 200:
             print(f"{d}: HTTP {r.status_code}（未發布或假期）")
+            miss_streak += 1
             continue
+        miss_streak = 0
         try:
             quotes = parse_quotations(r.content.decode("utf-8", errors="replace"))
         except ValueError as exc:

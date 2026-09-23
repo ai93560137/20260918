@@ -12,6 +12,10 @@ on:
         description: '手動觸發時是否發 Telegram 日報（有 🔴 警報一律照發）'
         required: false
         default: 'false'
+      hkex_backfill_days:
+        description: '一次性回補港交所報價表的天數（空白 = 平常的 10 天）'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -25,7 +29,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,8 +49,12 @@ jobs:
       # 第二來源與品質日報都是輔助，各自設時間上限，絕不能拖住主數據的 commit
       - name: Fetch second source (HKEX official quotes)
         continue-on-error: true
-        timeout-minutes: 8
-        run: python3 scripts/fetch_hkex_equity.py scripts/universe_hk.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt scripts/universe_hsi_live.txt
+        timeout-minutes: 40
+        env:
+          BACKFILL: ${{ inputs.hkex_backfill_days }}
+        run: |
+          if [[ ! "$BACKFILL" =~ ^[0-9]*$ ]]; then echo "hkex_backfill_days 只能是數字"; exit 1; fi
+          python3 scripts/fetch_hkex_equity.py ${BACKFILL:+--lookback-days "$BACKFILL"} scripts/universe_hk.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt scripts/universe_hsi_live.txt
 
       - name: Data quality check
         continue-on-error: true

@@ -14,7 +14,7 @@
   ——港交所代碼下市後會重新分配給別家公司，同一代碼的價格歷史可能被
   靜默拼接成兩家公司，回測會完全錯
 - 🔴 名字變了：yfinance 公司名跟上次檢查不同（改名或代碼被重用）
-- 🔴 雙來源收市價不符：最近 20 份港交所官方快照 vs yfinance 收市價
+- 🔴 雙來源收市價不符：**全部**港交所官方快照 vs yfinance 收市價（逐日逐檔）
   相差 > 1%
 - 🟡 數據過期（最後一根距今 > 7 天，已下市的舊成分股是預期結果）
 - 🟡 交易日斷層 > 14 天（停牌？）
@@ -54,7 +54,6 @@ RECENT_DAYS = 30
 BIG_MOVE = 0.40
 GAP_DAYS = 14
 XSRC_TOL = 0.01
-XSRC_WINDOW = 20
 NAME_SIM_MIN = 0.5
 
 NAME_STOPWORDS = {
@@ -131,10 +130,12 @@ def main() -> None:
     tickers = [p.name[:-len(".csv.gz")].replace("_", "^", 1) if p.name.startswith("_")
                else p.name[:-len(".csv.gz")] for p in primary_files]
 
-    # 港交所每日快照（fetch_hkex_equity.py），取最近 XSRC_WINDOW 份
+    # 港交所每日快照（fetch_hkex_equity.py）：全部都比（港交所只保留最近幾個月的報表，
+    # 更早的歷史沒有免費第二來源——能存的每一天都存、都比）
     hkex_snaps: list[tuple[date, dict]] = []
+    xs_rows = xs_bad = 0
     if HKEX_DIR.exists():
-        for p in sorted(HKEX_DIR.glob("quotes_*.json"))[-XSRC_WINDOW:]:
+        for p in sorted(HKEX_DIR.glob("quotes_*.json")):
             try:
                 snap = json.loads(p.read_text(encoding="utf-8"))
                 hkex_snaps.append((date.fromisoformat(snap.get("trade_date") or snap["trade_date_guess"]), snap["quotes"]))
@@ -202,12 +203,14 @@ def main() -> None:
             sec = {d: q[t]["close"] for d, q in hkex_snaps if t in q and q[t].get("close")}
             yf_close = {r[0]: r[4] for r in rows}
             common = [(d, yf_close[d], c) for d, c in sec.items() if d in yf_close and yf_close[d] > 0 and c > 0]
+            xs_rows += len(common)
+            xs_bad += sum(1 for _, yv_, hv_ in common if abs(yv_ / hv_ - 1) > XSRC_TOL)
             if not sec:
                 flag("🟡", t, "no_second_source", "港交所快照沒有這檔，無法交叉驗證收市價")
             elif common:
                 worst_d, yv, hv = max(common, key=lambda x: abs(x[1] / x[2] - 1))
                 if abs(yv / hv - 1) > XSRC_TOL:
-                    flag("🔴", t, "xsource", f"最近 {len(common)} 個共同交易日最大差 {yv / hv - 1:+.2%}"
+                    flag("🔴", t, "xsource", f"{len(common)} 個共同交易日最大差 {yv / hv - 1:+.2%}"
                                             f"（{worst_d}，yfinance={yv:.4g} 港交所={hv:.4g}）")
 
         # --- Wikipedia 不同年份名字是否一致 ---
@@ -362,7 +365,8 @@ def main() -> None:
     TG_DIGEST.write_text("\n".join([
         f"📊 港股數據日報 {today}",
         f"✅ yfinance {len(tickers)} 檔，基準 2800 最新 {bench_last}",
-        f"🏛 港交所官方快照 {len(hkex_snaps)} 份，最新 {hk_latest or '無'}（{xs_checked} 檔可交叉比對）",
+        f"🏛 港交所官方快照 {len(hkex_snaps)} 份（{hkex_snaps[0][0] if hkex_snaps else '無'} ~ {hk_latest or '無'}），"
+        f"全部比對 {xs_rows:,} 筆收市價、不符 {xs_bad} 筆（{xs_checked} 檔）",
         f"🔴 {len(crit)} ｜ 🟡 {len(warn)} ｜ ✅ 已確認 {len(acked)}",
         link,
     ]) + "\n", encoding="utf-8")
