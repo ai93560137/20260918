@@ -4,5 +4,10 @@ SAVED vix_daily.csv: 9250 rows -> 2026-09-23 00:00:00
 SAVED spx_daily.csv: 24798 rows -> 2026-09-23 00:00:00
 SAVED vxn_daily.csv: 6454 rows -> 2026-09-23 00:00:00
 SAVED ndx_daily.csv: 10323 rows -> 2026-09-23 00:00:00
-ES=F: 7772.5 @ 2026-09-23 15:00:00-04:00
-NQ=F: 30754.5 @ 2026-09-23 15:00:00-04:00
+SAVED n225_daily.csv: 15171 rows -> 2026-09-18 00:00:00
+NKVI probe ^JNIV: 0 rows
+NKVI probe ^N225VI: 0 rows
+NKVI probe ^NKVI: 0 rows
+NKVI probe JNIV.OS: 0 rows
+ES=F: 7774.5 @ 2026-09-23 15:00:00-04:00
+NQ=F: 30769.0 @ 2026-09-23 15:00:00-04:00
