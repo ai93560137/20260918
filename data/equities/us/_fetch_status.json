@@ -151,7 +151,7 @@
   "shares_rows": 415
  },
  "ADI": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -200,7 +200,7 @@
   "shares_rows": 456
  },
  "ADT": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -368,7 +368,7 @@
   "shares_rows": 582
  },
  "ALL": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -622,7 +622,7 @@
   "shares_rows": 127
  },
  "APD": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -735,7 +735,7 @@
   "shares_rows": 502
  },
  "ASML": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -842,7 +842,7 @@
   "shares_rows": 584
  },
  "AXP": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -998,7 +998,7 @@
   "shares_rows": 540
  },
  "BC": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1019,7 +1019,7 @@
   "last_fail": "2026-09-22"
  },
  "BDX": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1383,7 +1383,7 @@
   "shares_rows": 582
  },
  "CAH": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1416,7 +1416,7 @@
   "shares_rows": 389
  },
  "CASY": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1491,7 +1491,7 @@
   "last_fail": "2026-09-22"
  },
  "CCEP": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1662,7 +1662,7 @@
   "rows": 7605
  },
  "CHRW": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -1907,7 +1907,7 @@
   "shares_rows": 566
  },
  "COP": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2214,7 +2214,7 @@
   "shares_rows": 194
  },
  "CVS": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2499,7 +2499,7 @@
   "last_fail": "2026-09-22"
  },
  "DOC": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2531,7 +2531,7 @@
   "shares_rows": 562
  },
  "DOW": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2569,7 +2569,7 @@
   "shares_rows": 550
  },
  "DTE": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2607,7 +2607,7 @@
   "shares_rows": 366
  },
  "DVN": {
-  "adj_err_max": 3.9e-05,
+  "adj_err_max": 3.8e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2754,7 +2754,7 @@
   "last_fail": "2026-09-22"
  },
  "EL": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2972,7 +2972,7 @@
   "shares_rows": 365
  },
  "ETR": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -2999,7 +2999,7 @@
   "last_fail": "2026-09-22"
  },
  "EVRG": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3173,7 +3173,7 @@
   "shares_rows": 574
  },
  "FDX": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3303,7 +3303,7 @@
   "shares_rows": 495
  },
  "FIX": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3335,7 +3335,7 @@
   "last_fail": "2026-09-22"
  },
  "FLR": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3438,7 +3438,7 @@
   "last_fail": "2026-09-22"
  },
  "FRT": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3523,7 +3523,7 @@
   "last_fail": "2026-09-22"
  },
  "GD": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3637,7 +3637,7 @@
   "shares_rows": 572
  },
  "GIS": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3751,7 +3751,7 @@
   "shares_rows": 1561
  },
  "GPC": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3859,7 +3859,7 @@
   "shares_rows": 545
  },
  "HBAN": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -3944,7 +3944,7 @@
   "shares_rows": 561
  },
  "HLT": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4014,7 +4014,7 @@
   "last_fail": "2026-09-22"
  },
  "HP": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4144,7 +4144,7 @@
   "shares_rows": 536
  },
  "HWM": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4220,7 +4220,7 @@
   "shares_rows": 542
  },
  "IFF": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4279,7 +4279,7 @@
   "rows": 6925
  },
  "INTC": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4301,7 +4301,7 @@
   "shares_rows": 360
  },
  "INVH": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4513,7 +4513,7 @@
   "shares_rows": 577
  },
  "JKHY": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4641,7 +4641,7 @@
   "shares_rows": 75
  },
  "KHC": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4777,7 +4777,7 @@
   "shares_rows": 334
  },
  "L": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -4946,7 +4946,7 @@
   "rows": 2828
  },
  "LIN": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5042,7 +5042,7 @@
   "shares_rows": 584
  },
  "LNT": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5068,7 +5068,7 @@
   "rows": 7417
  },
  "LOW": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5117,7 +5117,7 @@
   "shares_rows": 390
  },
  "LUV": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5220,7 +5220,7 @@
   "shares_rows": 515
  },
  "MAC": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5231,7 +5231,7 @@
   "shares_rows": 503
  },
  "MAR": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5308,7 +5308,7 @@
   "shares_rows": 510
  },
  "MCO": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5640,7 +5640,7 @@
   "shares_rows": 7
  },
  "MRVL": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5705,7 +5705,7 @@
   "rows": 7113
  },
  "MTB": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5776,7 +5776,7 @@
   "shares_rows": 612
  },
  "MUR": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5833,7 +5833,7 @@
   "last_fail": "2026-09-22"
  },
  "NBR": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -5985,7 +5985,7 @@
   "last_fail": "2026-09-22"
  },
  "NOC": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6034,7 +6034,7 @@
   "shares_rows": 606
  },
  "NSC": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6147,7 +6147,7 @@
   "shares_rows": 1695
  },
  "NWSA": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6185,7 +6185,7 @@
   "last_fail": "2026-09-22"
  },
  "O": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6255,7 +6255,7 @@
   "rows": 2376
  },
  "OMC": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6359,7 +6359,7 @@
   "shares_rows": 582
  },
  "PAYX": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6471,7 +6471,7 @@
   "shares_rows": 529
  },
  "PEP": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6574,7 +6574,7 @@
   "last_fail": "2026-09-22"
  },
  "PLD": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6694,7 +6694,7 @@
   "shares_rows": 403
  },
  "PPL": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6903,7 +6903,7 @@
   "last_fail": "2026-09-22"
  },
  "R": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -6951,7 +6951,7 @@
   "last_fail": "2026-09-22"
  },
  "REG": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7064,7 +7064,7 @@
   "last_fail": "2026-09-22"
  },
  "ROK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7075,7 +7075,7 @@
   "shares_rows": 532
  },
  "ROL": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7086,7 +7086,7 @@
   "shares_rows": 499
  },
  "ROP": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7167,7 +7167,7 @@
   "shares_rows": 351
  },
  "RVTY": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7252,7 +7252,7 @@
   "last_fail": "2026-09-22"
  },
  "SCHW": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7396,7 +7396,7 @@
   "shares_rows": 569
  },
  "SLB": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7575,7 +7575,7 @@
   "last_fail": "2026-09-22"
  },
  "SRE": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7640,7 +7640,7 @@
   "last_fail": "2026-09-22"
  },
  "STT": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7694,7 +7694,7 @@
   "last_fail": "2026-09-22"
  },
  "SW": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7764,7 +7764,7 @@
   "last_fail": "2026-09-22"
  },
  "SYY": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7786,7 +7786,7 @@
   "shares_rows": 516
  },
  "TAP": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -7920,7 +7920,7 @@
   "shares_rows": 354
  },
  "TFC": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8011,7 +8011,7 @@
   "last_fail": "2026-09-22"
  },
  "TMO": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8022,7 +8022,7 @@
   "shares_rows": 559
  },
  "TMUS": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8397,7 +8397,7 @@
   "shares_rows": 524
  },
  "URI": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8504,7 +8504,7 @@
   "shares_rows": 538
  },
  "VICI": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8547,7 +8547,7 @@
   "shares_rows": 290
  },
  "VMC": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8563,7 +8563,7 @@
   "last_fail": "2026-09-22"
  },
  "VMRK": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8661,7 +8661,7 @@
   "shares_rows": 566
  },
  "VTR": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 6e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8683,7 +8683,7 @@
   "shares_rows": 375
  },
  "VZ": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8694,7 +8694,7 @@
   "shares_rows": 543
  },
  "WAB": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8791,7 +8791,7 @@
   "shares_rows": 540
  },
  "WELL": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8860,7 +8860,7 @@
   "last_fail": "2026-09-22"
  },
  "WM": {
-  "adj_err_max": 3e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8914,7 +8914,7 @@
   "last_fail": "2026-09-22"
  },
  "WSM": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
@@ -8963,7 +8963,7 @@
   "last_fail": "2026-09-22"
  },
  "WY": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
