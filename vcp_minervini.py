@@ -11,6 +11,7 @@
 - 組合：日曆時間等權（成交價、止損價換成還原價計報酬）；統計沿用 newhigh_backtest.MarketData
 """
 import argparse
+import bisect
 import json
 import math
 import sys
@@ -126,8 +127,13 @@ class Minervini:
         f_in = rw["adj"][p] / rw["close"][p]
         f_out = rw["adj"][k] / rw["close"][k]
         dates = list(rw["dates"])
-        return {"s": s_i, "a": self.ci[dates[p]], "b": self.ci[dates[k]], "in_adj": fill * f_in,
+        return {"s": s_i, "a": self.ci[dates[p]], "b": self.cal_j(dates[k]), "in_adj": fill * f_in,
                 "out_adj": px * f_out, "at_close": at_close}
+
+    def cal_j(self, d) -> int:
+        """股票有、日曆沒有的日子（例：港股 2016-10-21 個別股票多一根）→ 下一個日曆日（最後一日則取最後）。"""
+        j = self.ci.get(d)
+        return j if j is not None else min(bisect.bisect_left(self.m.cal, d), len(self.m.cal) - 1)
 
     def daily(self, trades: list[dict]) -> tuple[np.ndarray, list[float], np.ndarray]:
         m = self.m
