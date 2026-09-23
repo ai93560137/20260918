@@ -53,7 +53,7 @@ jobs:
 
       - name: Fetch SEC insider purchases
         env:
-          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || format('{0} research {1}@users.noreply.github.com', github.repository, github.repository_owner) }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || format('{0} Research {0}@users.noreply.github.com', github.repository_owner) }}
           REFRESH_ALL: ${{ inputs.refresh_all }}
         run: |
           ARGS=""
