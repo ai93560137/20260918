@@ -1,8 +1,8 @@
-# 美股/日股日線數據（data/equities/，v2 格式）
+# 港股/美股/日股日線數據（data/equities/，v2 格式）
 
-由 `.github/workflows/fetch_equities.yml` 排程抓取（yfinance），格式與讀法見根目錄
-`marketdata.py`。港股仍在 `data/stocks/`（舊格式 .csv.gz），兩者都用 `marketdata.load_series()`
-讀，呼叫端不用管格式。
+美股/日股由 `.github/workflows/fetch_equities.yml`、港股由 `.github/workflows/fetch_stock_data.yml`
+排程抓取（yfinance），格式與讀法見根目錄 `marketdata.py`。港股 2026-09-23 從舊的 `data/stocks/*.csv.gz`
+遷移過來（驗證見 `data/stocks/README.md`）。讀價一律用 `marketdata.load_series()`。
 
 ## 目錄
 
@@ -17,7 +17,11 @@ data/equities/jp/_jpx_listed.json                   JPX 東証上場銘柄一覧
 data/equities/<market>/QC_REPORT.md                 每日品質報告（含倖存者偏差洞比例）
 ```
 
-- `<market>`：`us`（代碼無後綴，Yahoo 格式 `BRK-B`）、`jp`（`7203.T`）；指數代碼 `^` 存成 `_`
+- `<market>`：`hk`（`0700.HK`）、`us`（代碼無後綴，Yahoo 格式 `BRK-B`）、`jp`（`7203.T`）；指數代碼 `^` 存成 `_`
+- 股息以**價格幣別**存：Yahoo 的 Dividends 欄是派息幣別（匯豐等 2011 年前以美元宣派、價格是港元），
+  抓取時用 Yahoo 自己 Adj Close 的除淨跳幅換算，原值存 `DividendRaw`
+- 人工修正：`universes/<market>/adjustments.csv`（Yahoo 漏調的分拆）、`price_overrides.csv`（單日錯價），
+  由全量歷史比對抓到、查證後登記，載入時套用，原始檔不改
 - 價格是**原始價**：Close 已按拆股還原（Yahoo 慣例）、**未按股息還原**；總回報要用
   `marketdata.load_ohlcv()` / `load_series()` 算出的 AdjClose（除淨日之前的價格乘
   1 − 股息 ÷ 除淨前一日收市，Yahoo/CRSP 法；每檔抓取時都跟 yfinance 的 Adj Close 比對過，

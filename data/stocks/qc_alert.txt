@@ -1,6 +1,0 @@
-🚨 港股數據品質警報 2026-09-22
-🔴 嚴重 1 項（會污染回測）：
-
-• 2800.HK yf_name_changed：上次「Tracker Fund of Hong Kong」→ 今天「Tracker Fund Of Hong Kong」（改名或代碼被重用）
-
-報告：data/stocks/QC_REPORT.md（分支 claude/gifted-carson-v2tvhw）

@@ -2,7 +2,7 @@
 
 兩種儲存格式，載入時自動判斷：
 
-**v2（data/equities/<market>/<TICKER>/，新市場一律用這個）**
+**v2（data/equities/<market>/<TICKER>/，港股/美股/日股都用這個；港股 2026-09-23 遷移）**
     prices_<YYYY>.csv   Date,Open,High,Low,Close,Volume（原始價；Close 已按拆股還原、未按股息還原）
     actions.csv         Date,Dividend,Split（yfinance actions；股息已按拆股還原）
     shares.csv          Date,Shares
@@ -12,7 +12,7 @@
   （舊格式整檔 .csv.gz 每天重寫，股息一回溯全部價格都變，二進位檔在 git 裡
   沒法做差異壓縮——8 輪就長了 64MB，照這速度港股一年 4GB，見 README。）
 
-**legacy（data/stocks/<TICKER>.csv.gz，港股現行）**
+**legacy（data/stocks/<TICKER>.csv.gz，已停用；只為了還拿著舊數據的其他分支保留讀取）**
     Date,Open,High,Low,Close,AdjClose,Volume  + <TICKER>.shares.csv.gz
 
 市場由代碼後綴判斷：.HK 港股、.T 日股、其他美股（指數代碼 ^ 換 _ 存檔）。
@@ -20,7 +20,6 @@
 import bisect
 import csv
 import gzip
-import os
 from datetime import date
 from pathlib import Path
 
@@ -52,9 +51,6 @@ def v2_dir(ticker: str) -> Path:
 
 
 def has_v2(ticker: str) -> bool:
-    # MARKETDATA_FORCE_LEGACY=1：強制讀舊格式（只給港股遷移時新舊對照驗證用）
-    if os.environ.get("MARKETDATA_FORCE_LEGACY") == "1":
-        return False
     return any(v2_dir(ticker).glob("prices_*.csv"))
 
 
