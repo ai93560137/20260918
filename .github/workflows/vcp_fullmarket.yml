@@ -109,23 +109,46 @@ jobs:
           gh release upload fullmarket-data /tmp/$M.tar --clobber
           echo "已備份 $N 檔到 Release fullmarket-data"
 
-      - name: Backtest（數據抓齊才跑）
-        if: steps.fetch.outputs.done == 'true' && inputs.backtest == 'true'
+      - name: Data quality check（結構／跟指數版對照／最新一日第二來源）
+        id: qc
+        if: steps.fetch.outputs.done == 'true'
+        run: |
+          set +e
+          python3 scripts/qc_full_market.py --market "$M"
+          RC=$?
+          if [ $RC -eq 0 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          if [ $RC -ne 0 ]; then echo "::warning::$M 數據品質超出門檻，不跑回測（見 research/vcp_full/${M}_qc.md）"; fi
+          exit 0
+
+      - name: Backtest pass 1（取得預設格逐筆交易）
+        if: steps.qc.outputs.ok == 'true' && inputs.backtest == 'true'
+        run: |
+          set -o pipefail
+          mkdir -p research/vcp_full
+          python3 vcp_backtest.py --market "$M" --full 2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2_pass1.log
+
+      - name: Verify trades（逐筆交易核對第二來源）
+        if: steps.qc.outputs.ok == 'true' && inputs.backtest == 'true'
+        run: python3 scripts/verify_trades.py --market "$M"
+
+      - name: Backtest final（剔除可疑交易 + 隨機對照 + N=10 敏感度）
+        if: steps.qc.outputs.ok == 'true' && inputs.backtest == 'true'
         env:
           RANDOM_N: ${{ inputs.random }}
         run: |
           if [[ ! "$RANDOM_N" =~ ^[0-9]+$ ]]; then echo "random 只能是數字"; exit 1; fi
           set -o pipefail
-          mkdir -p research/vcp_full
-          python3 vcp_backtest.py --market "$M" --full --random "$RANDOM_N" 2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2.log
-          python3 vcp_backtest.py --market "$M" --full --n 10 2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2_n10.log
+          python3 vcp_backtest.py --market "$M" --full --random "$RANDOM_N" --exclude-signals research/vcp_full/${M}_suspect.json --tag _qc \
+            2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2_qc.log
+          python3 vcp_backtest.py --market "$M" --full --n 10 --exclude-signals research/vcp_full/${M}_suspect.json --tag _qc \
+            2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2_n10_qc.log
 
       - name: Commit pool snapshot and results
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add universes/full/${M}_pool.txt; [ -d research/vcp_full ] && git add research/vcp_full; true; }
+          add_out() { git add --ignore-removal universes/full/${M}_pool.txt; [ -d research/vcp_full ] && git add --ignore-removal research/vcp_full; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "research(vcp_full): $M 候選池快照 / 回測結果 $(date -u +%F)"
