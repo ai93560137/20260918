@@ -195,6 +195,22 @@ def main() -> None:
             if t not in latest_q and md.has_v2(t):
                 flag("🟡", t, "no_second_source", "現任成分股沒有第二來源報價")
 
+    # --- 全量歷史比對（scripts/xcheck_history.py 分批推進的結果）---
+    xc_path = base / "_xcheck.json"
+    xc = json.loads(xc_path.read_text(encoding="utf-8")) if xc_path.exists() else {}
+    xc_total = [t for t in loaded if not t.startswith("^")]
+    xc_done = [t for t in xc_total if t in xc]
+    xc_rows = sum(xc[t].get("n_cmp", 0) for t in xc_done)
+    xc_bad = sum(xc[t].get("n_bad", 0) for t in xc_done)
+    xc_nosrc = [t for t in xc_done if xc[t].get("note")]
+    for t in xc_done:
+        r = xc[t]
+        if r.get("n_bad"):
+            lvl = "🔴" if r["n_bad"] >= 3 or r.get("max_diff", 0) > 0.05 else "🟡"
+            flag(lvl, t, "xcheck_history",
+                 f"全量歷史比對 {r['n_bad']}/{r['n_cmp']} 筆收市差 >1%（最大 {r['max_diff']:.1%}，{r['source']}）；"
+                 f"例 {'；'.join(r['examples'][:2])}")
+
     # --- yfinance 公司名/行業 ---
     names_path = base / "_names.json"
     names = json.loads(names_path.read_text(encoding="utf-8")) if names_path.exists() else {}
@@ -284,6 +300,10 @@ def main() -> None:
     if acked:
         L.append("\n## ✅ 已確認\n")
         L += [f"- `{t}` {c}：{msg}（{acks[f'{t}:{c}']}）" for _, t, c, msg in acked]
+    L.append("\n## 🔎 全量歷史比對（第二來源整段歷史 vs yfinance）\n")
+    L.append(f"- 已比對 {len(xc_done)}/{len(xc_total)} 檔、{xc_rows:,} 筆收市價、不符（>1%）{xc_bad} 筆；"
+             f"第二來源沒有的已下市/改代碼 {len(xc_nosrc)} 檔（{', '.join(xc_nosrc[:20])}{'…' if len(xc_nosrc) > 20 else ''}）")
+    L.append("- 美股：Nasdaq.com 10 年日線逐日比；日股：Yahoo!ファイナンス 1995 起月線（月底、拆股還原）+ 最近 20 日日線")
     L.append("\n## 📉 倖存者偏差洞（歷史成分股抓不到價格的比例，每年 6/30）\n")
     L.append("| 指數 | 年 | 成分股 | 無價格 | 比例 |\n|---|---|---|---|---|")
     L += [f"| {k} | {y} | {n} | {miss} | {miss / n:.0%} |" for k, y, n, miss in holes]
@@ -298,6 +318,8 @@ def main() -> None:
     digest = [f"📊 {label}數據日報 {today}（{idx_names}）",
               f"✅ yfinance {len(loaded)} 檔（現任成分股 {len(current)}），基準 {bench} 最新 {bench_last}",
               f"🏛 第二來源 {src2} 快照 {len(snap_data)} 份，最新 {latest2}（比對 {n_cmp} 筆收市價）",
+              f"🔎 全量歷史比對：{len(xc_done)}/{len(xc_total)} 檔、{xc_rows:,} 筆、不符 {xc_bad} 筆"
+              f"（第二來源沒有的已下市代碼 {len(xc_nosrc)} 檔）",
               f"🔴 {len(red)} ｜ 🟡 {len(yellow)} ｜ ✅ 已確認 {len(acked)}"]
     digest += [f"🔴 {t} {c}：{msg}" for _, t, c, msg in red[:12]]
     if len(red) > 12:
