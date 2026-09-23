@@ -17,9 +17,10 @@ for p in ['/en/nkave/index/profile?idx=nk225vi', '/en/nkave/archives/data?idx=nk
 # 2) XHR 呼叫 dataload
 xhr = {'X-Requested-With': 'XMLHttpRequest',
        'Referer': B + '/en/nkave/archives/data?idx=nk225vi'}
-for name, q in [('m2015_09', '?list=daily&year=2015&month=9'),
-                ('m2026_08', '?list=daily&year=2026&month=8'),
-                ('m2020_03', '?list=daily&year=2020&month=3')]:
+for name, q in [('vi_2020_03', '?list=vi&year=2020&month=3'),
+                ('idx_2020_03', '?list=daily&year=2020&month=3&idx=nk225vi'),
+                ('vi_2015_09', '?list=vi&year=2015&month=9'),
+                ('vi_2026_08', '?list=vi&year=2026&month=8')]:
     r = S.get(B + '/en/nkave/statistics/dataload' + q, headers=xhr, timeout=30)
     with open(f'{OUT}/xhr_{name}.txt', 'w') as f:
         f.write(r.text[:30000])
