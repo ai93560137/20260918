@@ -121,6 +121,26 @@ def disp(t: str) -> str:
     return t[:-2] + ".JP" if t.endswith(".T") else t
 
 
+WEEKDAY_ZH = "一二三四五六日"
+
+
+def fmt_d(d: date | None) -> str:
+    """2026-09-18（週五）——三地假期不同，日期一律帶星期。"""
+    return f"{d}（週{WEEKDAY_ZH[d.weekday()]}）" if d else "—"
+
+
+def gap_note(last: date | None, as_of: date) -> str:
+    """last 之後到 as_of 之間的平日沒有收市（假期或數據未到）→ 列出日期。"""
+    if not last:
+        return ""
+    miss, d = [], last + timedelta(days=1)
+    while d <= as_of:
+        if d.weekday() < 5:
+            miss.append(f"{d.month}/{d.day}")
+        d += timedelta(days=1)
+    return f"（{'、'.join(miss)} 沒有收市：假期或數據未到）" if miss else ""
+
+
 def pct(x: float | None, digits: int = 1, sign: bool = True) -> str:
     if x is None:
         return "—"
@@ -417,7 +437,7 @@ def main() -> None:
         if not m:
             L.append(f"| {COUNTRIES[c]['zh']} | {x['ticker']} | 無數據 |" + " |" * 9)
             continue
-        L.append(f"| **{COUNTRIES[c]['zh']}** | {disp(x['ticker'])} | {m['last']} | {pct(m['r1'])} | {pct(m['r3'])} | "
+        L.append(f"| **{COUNTRIES[c]['zh']}** | {disp(x['ticker'])} | {fmt_d(m['last'])} | {pct(m['r1'])} | {pct(m['r3'])} | "
                  f"{pct(m['r6'])} | {pct(m['r12'])} | **{pct(m['score'])}** | {pct(m['vs200'])} | {pct(m['dd52'])} | "
                  f"{len(x['above'])}/{x['n_members']}（{len(x['above']) / max(x['n_members'], 1):.0%}） | "
                  f"{len(x['kept'])} |")
@@ -437,7 +457,8 @@ def main() -> None:
         x, st = country[c], stocks[c]
         sd, table = sectors[c]
         hi_tot = {lab: sum(r["excl"][lab] for r in table) for lab in WIN}
-        L.append(f"### {COUNTRIES[c]['zh']}（{Universe(COUNTRIES[c]['index']).cfg['name']}，收市 {x['last']}）\n")
+        L.append(f"### {COUNTRIES[c]['zh']}（{Universe(COUNTRIES[c]['index']).cfg['name']}，收市 {fmt_d(x['last'])}）"
+                 f"{gap_note(x['last'], as_of)}\n")
         L.append(f"成分股 {x['n_members']} → 200 日線上 **{len(x['above'])}** → "
                  + "、".join(f"{lab}新高 **{hi_tot[lab]}**" for lab in SHOW) + f"（合共 **{len(x['kept'])}**）\n")
         L.append("| 板塊 | 成分股 | 200日線上 | " + " | ".join(f"**{lab}新高**" for lab in SHOW)
@@ -540,12 +561,15 @@ def main() -> None:
 
     # Telegram（給投資人看）：第一則總覽，之後每個市場一則；每個窗口列出**全部**股票與名稱，不省略。
     # Telegram 單則上限 4096 字，超過就按行切成多則（標「續」）。
-    def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.T / AMD）+ 名稱
+    def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.JP / AMD）+ 名稱；收市日跟該市場不同就標日期
         n = names[c].get(t, "")
-        return f"{disp(t)} {n}" if n else disp(t)
+        s_ = f"{disp(t)} {n}" if n else disp(t)
+        lt = stocks[c][t]["last"]
+        return s_ + (f"（{lt.month}/{lt.day} 收市）" if lt != country[c]["last"] else "")
 
     uni_name = {c: Universe(COUNTRIES[c]["index"]).cfg["name"] for c in COUNTRIES}
-    head = [f"📊 每日股票篩選 {report_day}",
+    head = [f"📊 每日股票篩選｜報告日 {fmt_d(report_day)}（香港）",
+            "各市場用自己最近一個交易日的收市價，三地假期不同，請看每個市場標示的收市日期。",
             "",
             "篩選方法：",
             "① 三地指數成分股（恒生指數、S&P 500、日經225）",
@@ -555,23 +579,26 @@ def main() -> None:
             "每隻股票只列在它創新高的最長窗口（列在 12 個月的，也是 9／6／3 個月新高，不再重複）",
             "",
             "國家動能（3/6/12 個月報酬平均）：",
-            *[f"・{COUNTRIES[c]['zh']}（{disp(country[c]['ticker'])}）{pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"]],
+            *[f"・{COUNTRIES[c]['zh']}（{disp(country[c]['ticker'])}，收市 {fmt_d(country[c]['m']['last'])}）"
+              f"{pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"]],
             "",
             "各市場總覽："]
     for c in ranked:
         x, st = country[c], stocks[c]
-        head.append(f"【{COUNTRIES[c]['zh']}】{x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔 → "
+        head.append(f"【{COUNTRIES[c]['zh']}】收市 {fmt_d(x['last'])}{gap_note(x['last'], as_of)}")
+        head.append(f"  {x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔 → "
                     + "、".join(f"{lab}新高 {sum(1 for t in x['above'] if longest(st[t]) == lab)}" for lab in SHOW)
                     + f"（合共 {len(x['kept'])}）")
     head += ["", "描述性篩選，未經回測，不是買入建議。"]
     msgs = ["\n".join(head)]
     for c in ranked:
         x, st = country[c], stocks[c]
-        lines = [f"【{COUNTRIES[c]['zh']}｜{uni_name[c]}】收市 {x['last']}",
+        lines = [f"【{COUNTRIES[c]['zh']}｜{uni_name[c]}】收市 {fmt_d(x['last'])}",
+                 *([gap_note(x["last"], as_of)] if gap_note(x["last"], as_of) else []),
                  f"成分股 {x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔"]
         for lab in SHOW:
             hits = {t for t in x["above"] if longest(st[t]) == lab}
-            lines += ["", f"▍{lab}新高：{len(hits)} 檔"]
+            lines += ["", f"▍{lab}新高（{x['last'].month}/{x['last'].day} 收市）：{len(hits)} 檔"]
             if not hits:
                 lines.append("（無）")
                 continue
