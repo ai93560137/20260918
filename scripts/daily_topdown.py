@@ -125,8 +125,8 @@ WEEKDAY_ZH = "一二三四五六日"
 
 
 def fmt_d(d: date | None) -> str:
-    """2026-09-18（週五）——三地假期不同，日期一律帶星期。"""
-    return f"{d}（週{WEEKDAY_ZH[d.weekday()]}）" if d else "—"
+    """2026-09-18 週五——三地假期不同，日期一律帶星期。"""
+    return f"{d} 週{WEEKDAY_ZH[d.weekday()]}" if d else "—"
 
 
 def gap_note(last: date | None, as_of: date) -> str:
@@ -261,7 +261,7 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
         with open(summ_path, newline="", encoding="utf-8") as f:
             summary = [r for r in csv.DictReader(f) if date.fromisoformat(r["date"]) not in days]
     for D in days:
-        recs, md_lines = [], [f"# 新高名單 {D}\n",
+        recs, md_lines = [], [f"# 新高名單 {fmt_d(D)} 收市\n",
                               "當天收市在 200 日線上、且收市價**高於**之前 12／9／6／3 個月盤中最高價的指數成分股"
                               "（12 個月新高必然也列在 9／6／3 個月）。由 scripts/daily_topdown.py 產生；描述性篩選，非買入建議。\n"]
         for c in LIST_ORDER:
@@ -573,8 +573,8 @@ def main() -> None:
             "",
             "篩選方法：",
             "① 三地指數成分股（恒生指數、S&P 500、日經225）",
-            "② 昨天收市價在 200 天平均線之上",
-            "③ 昨天收市價高於過去 12／9／6／3 個月的最高價（盤中最高，跟報價頁「52 週高」同一把尺）",
+            "② 最近一個交易日的收市價在 200 天平均線之上",
+            "③ 該收市價高於過去 12／9／6／3 個月的最高價（盤中最高，跟報價頁「52 週高」同一把尺）",
             "④ 按板塊（行業）統計檔數，並列出每一隻股票",
             "每隻股票只列在它創新高的最長窗口（列在 12 個月的，也是 9／6／3 個月新高，不再重複）",
             "",
