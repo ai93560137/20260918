@@ -1,0 +1,18 @@
+nasdaq_hist_AAPL: HTTP 200 284436 bytes https://api.nasdaq.com/api/quote/AAPL/historical?assetclass=stocks&fromdate=1995-01-01&todate=2026-09-22&limit=20000
+  AAPL: totalRecords=2513 回傳 2513 列 最早 09/21/2016 最晚 09/21/2026
+nasdaq_hist_SPY: HTTP 200 273069 bytes https://api.nasdaq.com/api/quote/SPY/historical?assetclass=etf&fromdate=1995-01-01&todate=2026-09-22&limit=20000
+  SPY: totalRecords=2513 回傳 2513 列 最早 09/21/2016 最晚 09/21/2026
+nasdaq_hist_AAL: HTTP 200 272131 bytes https://api.nasdaq.com/api/quote/AAL/historical?assetclass=stocks&fromdate=1995-01-01&todate=2026-09-22&limit=20000
+  AAL: totalRecords=2513 回傳 2513 列 最早 09/21/2016 最晚 09/21/2026
+nasdaq_hist_CELG: HTTP 200 142 bytes https://api.nasdaq.com/api/quote/CELG/historical?assetclass=stocks&fromdate=1995-01-01&todate=2026-09-22&limit=20000
+  CELG: totalRecords=None 回傳 0 列 最早 None 最晚 None
+nasdaq_hist_FB: HTTP 200 142 bytes https://api.nasdaq.com/api/quote/FB/historical?assetclass=stocks&fromdate=1995-01-01&todate=2026-09-22&limit=20000
+  FB: totalRecords=None 回傳 0 列 最早 None 最晚 None
+yj_7203_m_p1: HTTP 200 289482 bytes https://finance.yahoo.co.jp/quote/7203.T/history?timeFrame=m&page=1
+  yj_7203_m_p1: baseDatetime x0 []...[] closePrice []
+yj_7203_m_p2: HTTP 200 239402 bytes https://finance.yahoo.co.jp/quote/7203.T/history?timeFrame=m&page=2
+  yj_7203_m_p2: baseDatetime x0 []...[] closePrice []
+yj_7203_m_range: HTTP 200 319756 bytes https://finance.yahoo.co.jp/quote/7203.T/history?from=20000101&to=20091231&timeFrame=m&page=1
+  yj_7203_m_range: baseDatetime x0 []...[] closePrice []
+yj_7203_d_p1: HTTP 200 316669 bytes https://finance.yahoo.co.jp/quote/7203.T/history?timeFrame=d&page=1
+  yj_7203_d_p1: baseDatetime x0 []...[] closePrice []
