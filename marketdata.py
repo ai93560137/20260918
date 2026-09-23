@@ -130,6 +130,13 @@ def drop_spikes(rows: list) -> tuple[list, list]:
                 dropped.append(r)
                 continue
         kept.append(r)
+    # 開頭的孤立列：成交量 0、跟下一根差 >5 倍（0300.HK 2024-07-05 的 2.49，是代碼前一任主人的殘留，
+    # 美的 H 股 2024-10 才有真價格）——留著會讓「價格早於入選日」的防代碼重用檢查被騙過
+    while len(kept) >= 2 and kept[0][5] == 0 and kept[0][4] > 0:
+        ratio = kept[1][4] / kept[0][4]
+        if 1 / SPIKE_FACTOR <= ratio <= SPIKE_FACTOR:
+            break
+        dropped.append(kept.pop(0))
     return kept, dropped
 
 
@@ -149,7 +156,9 @@ def load_ohlcv(ticker: str) -> list[dict]:
             out.append({"Date": date.fromisoformat(r["Date"]), "Open": float(r["Open"]),
                         "High": float(r["High"]), "Low": float(r["Low"]), "Close": float(r["Close"]),
                         "AdjClose": float(r["AdjClose"]), "Volume": int(float(r["Volume"] or 0))})
-    return out
+    kept, _ = drop_spikes([(x["Date"], x["Open"], x["High"], x["Low"], x["Close"], x["Volume"]) for x in out])
+    keep_dates = {x[0] for x in kept}
+    return [x for x in out if x["Date"] in keep_dates]
 
 
 def load_series(ticker: str) -> dict[date, tuple[float, float, float]]:
