@@ -330,6 +330,10 @@ def main() -> None:
     SHOW = list(reversed(WIN))          # 顯示順序：12 → 9 → 6 → 3 個月（使用者指定）
     KEEP = RULES["keep_min_window"]
 
+    def longest(m: dict) -> str:
+        """創新高的最長窗口（顯示時每隻股票只列在這一格，不在較短窗口重複）。"""
+        return next((lab for lab in SHOW if m["highs"][lab]), "")
+
     # --- 第一層：國家（只排名，不篩選）---
     country = {}
     for c, cfg in COUNTRIES.items():
@@ -384,10 +388,11 @@ def main() -> None:
             mem = [t for t in st if sector_zh(sec_of[c], t) == name]
             ab = [t for t in mem if t in country[c]["above"]]
             row = {"name": name, "n": n, "above": len(ab),
-                   "highs": {lab: sum(1 for t in ab if st[t]["highs"][lab]) for lab in WIN},
+                   "highs": {lab: sum(1 for t in ab if st[t]["highs"][lab]) for lab in WIN},   # 累計（記錄用）
+                   "excl": {lab: sum(1 for t in ab if longest(st[t]) == lab) for lab in WIN},  # 只算最長窗口（顯示用）
                    "mom_rank": mom_rank.get(name), "ex6": mom.get(name, {}).get("ex6"), "n_rank": len(mom_rank)}
             table.append(row)
-        table.sort(key=lambda r: (*(-r["highs"][lab] for lab in SHOW), -r["above"] / r["n"], r["name"]))
+        table.sort(key=lambda r: (*(-r["excl"][lab] for lab in SHOW), -r["above"] / r["n"], r["name"]))
         sectors[c] = (sd, table)
 
     # --- 上次紀錄 ---
@@ -398,9 +403,6 @@ def main() -> None:
             log_rows = list(csv.DictReader(f))
     prev = next((r for r in reversed(log_rows) if r["date"] < report_day.isoformat()), None)
 
-    def longest(m: dict) -> str:
-        return next((lab for lab in reversed(WIN) if m["highs"][lab]), "")
-
     # --- 報告 ---
     L = [f"# 每日由上而下股票分析（{report_day}，用 {as_of} 或之前的最新收市）\n",
          "> 國家 → 個股 200 日線 → 3／6／9／12 個月新高 → 按板塊統計。**描述性篩選**，不是回測過的交易訊號；"
@@ -408,7 +410,7 @@ def main() -> None:
 
     L.append("## 一、國家（只排名、不篩選，三地全部往下做）\n")
     L.append("| 市場 | 指數 ETF | 收市日 | 1個月 | 3個月 | 6個月 | 12個月 | **動能分數** | 距200日線 | 距52週高 | "
-             "成分股 >200日線 | 成分股 3月新高 |")
+             "成分股 >200日線 | 新高合共（3個月以上） |")
     L.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
     for c in ranked:
         x, m = country[c], country[c]["m"]
@@ -429,38 +431,40 @@ def main() -> None:
 
     L.append("## 二、個股篩選：200 日線 → 新高 → 各板塊檔數\n")
     L.append(f"「留下」= 最新收市在 200 日線上 **且** 創至少 {KEEP}新高。四個窗口依序顯示 **12 → 9 → 6 → 3 個月**；"
-             "12 個月新高必然也是 9／6／3 個月新高，所以各欄是累計（12月 ≤ 9月 ≤ 6月 ≤ 3月）。"
-             "板塊按 12 個月新高檔數排序，同數再比 9、6、3 個月。\n")
+             "**每隻股票只算在它創新高的最長窗口**（12 個月新高不再重複算進 9／6／3 個月），各欄相加 = 合共。"
+             "板塊按 12 個月新高檔數排序，同數再比 9、6、3 個月。（累計版名單見 `analysis/newhighs/`。）\n")
     for c in ranked:
         x, st = country[c], stocks[c]
         sd, table = sectors[c]
-        hi_tot = {lab: sum(r["highs"][lab] for r in table) for lab in WIN}
+        hi_tot = {lab: sum(r["excl"][lab] for r in table) for lab in WIN}
         L.append(f"### {COUNTRIES[c]['zh']}（{Universe(COUNTRIES[c]['index']).cfg['name']}，收市 {x['last']}）\n")
         L.append(f"成分股 {x['n_members']} → 200 日線上 **{len(x['above'])}** → "
-                 + "、".join(f"{lab}新高 **{hi_tot[lab]}**" for lab in SHOW) + "\n")
+                 + "、".join(f"{lab}新高 **{hi_tot[lab]}**" for lab in SHOW) + f"（合共 **{len(x['kept'])}**）\n")
         L.append("| 板塊 | 成分股 | 200日線上 | " + " | ".join(f"**{lab}新高**" for lab in SHOW)
-                 + " | 留下佔板塊 | 板塊動能排名（6月超額） |")
-        L.append("|---|---|---|" + "---|" * len(SHOW) + "---|---|")
+                 + " | 合共 | 留下佔板塊 | 板塊動能排名（6月超額） |")
+        L.append("|---|---|---|" + "---|" * len(SHOW) + "---|---|---|")
         for r in table:
             mr = f"{r['mom_rank']}/{r['n_rank']}（{pct(r['ex6'])}）" if r["mom_rank"] else ("薄" if r["n"] < RULES["min_members"] else "—")
             L.append(f"| {r['name']} | {r['n']} | {r['above']} | "
-                     + " | ".join(f"**{r['highs'][lab]}**" if r["highs"][lab] else "0" for lab in SHOW)
-                     + f" | {r['highs'][KEEP] / r['n']:.0%} | {mr} |")
+                     + " | ".join(f"**{r['excl'][lab]}**" if r["excl"][lab] else "0" for lab in SHOW)
+                     + f" | {r['highs'][KEEP]} | {r['highs'][KEEP] / r['n']:.0%} | {mr} |")
         L.append(f"| **合計** | {x['n_members']} | {len(x['above'])} | "
-                 + " | ".join(f"**{hi_tot[lab]}**" for lab in SHOW) + f" | {hi_tot[KEEP] / max(x['n_members'], 1):.0%} | |")
+                 + " | ".join(f"**{hi_tot[lab]}**" for lab in SHOW)
+                 + f" | **{len(x['kept'])}** | {len(x['kept']) / max(x['n_members'], 1):.0%} | |")
         if x["stale"]:
             L.append(f"\n⚠ {len(x['stale'])} 檔最新收市早於 {x['last']}（停牌或數據未更新），用其最後收市判斷："
                      + "、".join(f"{disp(t)}（{st[t]['last']}）" for t in x["stale"][:10]))
         L.append("")
 
     L.append("## 三、新高股票名單（12 → 9 → 6 → 3 個月）\n")
-    L.append("每個窗口列出該窗口的**全部**新高股（12 個月新高的股票同時也會出現在 9、6、3 個月的名單）。\n")
+    L.append("每隻股票只列在它創新高的**最長**窗口：列在「12月」的也是 9／6／3 個月新高，不再重複列出。"
+             "（每個窗口的完整累計名單見 `analysis/newhighs/<收市日>.md`。）\n")
     for c in ranked:
         st = stocks[c]
         L.append(f"### {COUNTRIES[c]['zh']}\n")
         order = [r["name"] for r in sectors[c][1]]
         for lab in SHOW:
-            hits = [t for t in country[c]["above"] if st[t]["highs"][lab]]
+            hits = [t for t in country[c]["above"] if longest(st[t]) == lab]
             L.append(f"**{lab}新高：{len(hits)} 檔**\n")
             if not hits:
                 L.append("（無）\n")
@@ -548,6 +552,7 @@ def main() -> None:
             "② 昨天收市價在 200 天平均線之上",
             "③ 昨天收市價高於過去 12／9／6／3 個月的最高價（盤中最高，跟報價頁「52 週高」同一把尺）",
             "④ 按板塊（行業）統計檔數，並列出每一隻股票",
+            "每隻股票只列在它創新高的最長窗口（列在 12 個月的，也是 9／6／3 個月新高，不再重複）",
             "",
             "國家動能（3/6/12 個月報酬平均）：",
             *[f"・{COUNTRIES[c]['zh']}（{disp(country[c]['ticker'])}）{pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"]],
@@ -556,16 +561,16 @@ def main() -> None:
     for c in ranked:
         x, st = country[c], stocks[c]
         head.append(f"【{COUNTRIES[c]['zh']}】{x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔 → "
-                    + "、".join(f"{lab}新高 {sum(1 for t in x['above'] if st[t]['highs'][lab])}" for lab in SHOW))
-    head += ["", "註：12 個月新高的股票必然也是 9、6、3 個月新高，所以會在每個窗口重複出現。",
-             "描述性篩選，未經回測，不是買入建議。"]
+                    + "、".join(f"{lab}新高 {sum(1 for t in x['above'] if longest(st[t]) == lab)}" for lab in SHOW)
+                    + f"（合共 {len(x['kept'])}）")
+    head += ["", "描述性篩選，未經回測，不是買入建議。"]
     msgs = ["\n".join(head)]
     for c in ranked:
         x, st = country[c], stocks[c]
         lines = [f"【{COUNTRIES[c]['zh']}｜{uni_name[c]}】收市 {x['last']}",
                  f"成分股 {x['n_members']} 檔 → 200天線上 {len(x['above'])} 檔"]
         for lab in SHOW:
-            hits = {t for t in x["above"] if st[t]["highs"][lab]}
+            hits = {t for t in x["above"] if longest(st[t]) == lab}
             lines += ["", f"▍{lab}新高：{len(hits)} 檔"]
             if not hits:
                 lines.append("（無）")
