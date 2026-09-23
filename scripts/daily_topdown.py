@@ -193,6 +193,7 @@ def main() -> None:
     # 用「昨天收市」：只取報告日之前的收市（早上跑本來就是這樣；白天手動跑也不會混進盤中價）
     as_of = report_day - timedelta(days=1)
     WIN = [lab for lab, _ in RULES["high_windows"]]
+    SHOW = list(reversed(WIN))          # 顯示順序：12 → 9 → 6 → 3 個月（使用者指定）
     KEEP = RULES["keep_min_window"]
 
     # --- 第一層：國家（只排名，不篩選）---
@@ -252,7 +253,7 @@ def main() -> None:
                    "highs": {lab: sum(1 for t in ab if st[t]["highs"][lab]) for lab in WIN},
                    "mom_rank": mom_rank.get(name), "ex6": mom.get(name, {}).get("ex6"), "n_rank": len(mom_rank)}
             table.append(row)
-        table.sort(key=lambda r: (-r["highs"][KEEP], -r["highs"][WIN[-1]], -r["above"] / r["n"], r["name"]))
+        table.sort(key=lambda r: (*(-r["highs"][lab] for lab in SHOW), -r["above"] / r["n"], r["name"]))
         sectors[c] = (sd, table)
 
     # --- 上次紀錄 ---
@@ -293,47 +294,51 @@ def main() -> None:
              "跟港美股同一把尺。" + "".join(notes) + "\n")
 
     L.append("## 二、個股篩選：200 日線 → 新高 → 各板塊檔數\n")
-    L.append(f"「留下」= 最新收市在 200 日線上 **且** 創至少 {KEEP}新高。12 個月新高必然也是 9／6／3 個月新高，"
-             "所以各欄是分層計數（3月 ≥ 6月 ≥ 9月 ≥ 12月）。板塊按留下檔數排序。\n")
+    L.append(f"「留下」= 最新收市在 200 日線上 **且** 創至少 {KEEP}新高。四個窗口依序顯示 **12 → 9 → 6 → 3 個月**；"
+             "12 個月新高必然也是 9／6／3 個月新高，所以各欄是累計（12月 ≤ 9月 ≤ 6月 ≤ 3月）。"
+             "板塊按 12 個月新高檔數排序，同數再比 9、6、3 個月。\n")
     for c in ranked:
         x, st = country[c], stocks[c]
         sd, table = sectors[c]
         hi_tot = {lab: sum(r["highs"][lab] for r in table) for lab in WIN}
         L.append(f"### {COUNTRIES[c]['zh']}（{Universe(COUNTRIES[c]['index']).cfg['name']}，收市 {x['last']}）\n")
         L.append(f"成分股 {x['n_members']} → 200 日線上 **{len(x['above'])}** → "
-                 + " → ".join(f"{lab}新高 **{hi_tot[lab]}**" for lab in WIN) + "\n")
-        L.append("| 板塊 | 成分股 | 200日線上 | " + " | ".join(f"**{lab}新高**" if lab == KEEP else f"{lab}新高" for lab in WIN)
+                 + "、".join(f"{lab}新高 **{hi_tot[lab]}**" for lab in SHOW) + "\n")
+        L.append("| 板塊 | 成分股 | 200日線上 | " + " | ".join(f"**{lab}新高**" for lab in SHOW)
                  + " | 留下佔板塊 | 板塊動能排名（6月超額） |")
-        L.append("|---|---|---|" + "---|" * len(WIN) + "---|---|")
+        L.append("|---|---|---|" + "---|" * len(SHOW) + "---|---|")
         for r in table:
             mr = f"{r['mom_rank']}/{r['n_rank']}（{pct(r['ex6'])}）" if r["mom_rank"] else ("薄" if r["n"] < RULES["min_members"] else "—")
             L.append(f"| {r['name']} | {r['n']} | {r['above']} | "
-                     + " | ".join(f"**{r['highs'][lab]}**" if lab == KEEP else str(r["highs"][lab]) for lab in WIN)
+                     + " | ".join(f"**{r['highs'][lab]}**" if r["highs"][lab] else "0" for lab in SHOW)
                      + f" | {r['highs'][KEEP] / r['n']:.0%} | {mr} |")
         L.append(f"| **合計** | {x['n_members']} | {len(x['above'])} | "
-                 + " | ".join(f"**{hi_tot[lab]}**" for lab in WIN) + f" | {hi_tot[KEEP] / max(x['n_members'], 1):.0%} | |")
+                 + " | ".join(f"**{hi_tot[lab]}**" for lab in SHOW) + f" | {hi_tot[KEEP] / max(x['n_members'], 1):.0%} | |")
         if x["stale"]:
             L.append(f"\n⚠ {len(x['stale'])} 檔最新收市早於 {x['last']}（停牌或數據未更新），用其最後收市判斷："
                      + "、".join(f"{t}（{st[t]['last']}）" for t in x["stale"][:10]))
         L.append("")
 
-    L.append("## 三、留下的股票（按板塊）\n")
-    L.append("「最長新高」= 創新高的最長窗口；距200日線、1個月報酬供參考。\n")
+    L.append("## 三、新高股票名單（12 → 9 → 6 → 3 個月）\n")
+    L.append("每個窗口列出該窗口的**全部**新高股（累計）；「✚」= 這個窗口才新增（沒有創更長窗口的新高）。\n")
     for c in ranked:
         st = stocks[c]
-        kept = country[c]["kept"]
-        L.append(f"### {COUNTRIES[c]['zh']}（{len(kept)} 檔）\n")
-        if not kept:
-            L.append("（今天沒有股票同時在 200 日線上且創 3 個月新高）\n")
-            continue
-        L.append("| 板塊 | 代碼 | 名稱 | 最長新高 | 距200日線 | 1個月 | 3個月 | 12個月 |")
-        L.append("|---|---|---|---|---|---|---|---|")
+        L.append(f"### {COUNTRIES[c]['zh']}\n")
         order = [r["name"] for r in sectors[c][1]]
-        for t in sorted(kept, key=lambda t: (order.index(sector_zh(sec_of[c], t)), -WIN.index(longest(st[t])), t)):
-            m = st[t]
-            L.append(f"| {sector_zh(sec_of[c], t)} | {t} | {names[c].get(t, '')} | {longest(m)} | {pct(m['vs200'])} | "
-                     f"{pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
-        L.append("")
+        for i, lab in enumerate(SHOW):
+            hits = [t for t in country[c]["above"] if st[t]["highs"][lab]]
+            longer = set(t for t in hits if i and st[t]["highs"][SHOW[i - 1]])
+            L.append(f"**{lab}新高：{len(hits)} 檔**" + (f"（比 {SHOW[i - 1]}新增 {len(hits) - len(longer)} 檔）" if i else "") + "\n")
+            if not hits:
+                L.append("（無）\n")
+                continue
+            L.append("| 板塊 | 代碼 | 名稱 | 新增 | 距200日線 | 1個月 | 3個月 | 12個月 |")
+            L.append("|---|---|---|---|---|---|---|---|")
+            for t in sorted(hits, key=lambda t: (order.index(sector_zh(sec_of[c], t)), t in longer, t)):
+                m = st[t]
+                L.append(f"| {sector_zh(sec_of[c], t)} | {t} | {names[c].get(t, '')} | {'' if t in longer or not i else '✚'} | "
+                         f"{pct(m['vs200'])} | {pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
+            L.append("")
 
     L.append("## 四、與上次報告比較\n")
     if prev:
@@ -392,22 +397,43 @@ def main() -> None:
         for r in sorted(log_rows, key=lambda r: r["date"]):
             w.writerow({k: r.get(k, "") for k in rec})
 
-    # Telegram 摘要：每地一行漏斗 + 各板塊留下檔數
-    tg = [f"📊 每日篩選 {report_day}（昨天收市：200日線 → 3/6/9/12月新高）",
+    # Telegram 摘要：每地 12 → 9 → 6 → 3 個月，各板塊累計檔數；代碼只在首次出現的（最長）窗口列出，較短窗口標「+新增」
+    def tk(c: str, t: str) -> str:
+        if c == "us":
+            return t
+        n = names[c].get(t, "")[:6 if c == "jp" else 14]      # 日文漢字短、港股英文名長
+        return f"{t.replace('.HK', '').replace('.T', '')} {n}".strip()
+
+    tg = [f"📊 每日篩選 {report_day}（昨天收市：200日線 → 12/9/6/3月新高）",
           "國家動能（3/6/12月平均）：" + "、".join(
               f"{COUNTRIES[c]['zh']} {pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"])]
     for c in ranked:
-        x = country[c]
-        hi = {lab: sum(r["highs"][lab] for r in sectors[c][1]) for lab in WIN}
+        x, st = country[c], stocks[c]
         tg.append("")
-        tg.append(f"【{COUNTRIES[c]['zh']}】收市 {x['last']}：{x['n_members']} 檔 → 200日線上 {len(x['above'])} → "
-                  + "/".join(f"{lab}{hi[lab]}" for lab in WIN))
-        rows = [r for r in sectors[c][1] if r["highs"][KEEP]]
-        tg.append("  " + ("、".join(f"{r['name']} {r['highs'][KEEP]}"
-                                   + (f"（12月{r['highs'][WIN[-1]]}）" if r["highs"][WIN[-1]] else "") for r in rows)
-                          or "無"))
+        tg.append(f"【{COUNTRIES[c]['zh']}】收市 {x['last']}：{x['n_members']} 檔 → 200日線上 {len(x['above'])}")
+        prev_set: set[str] = set()
+        for i, lab in enumerate(SHOW):
+            hits = {t for t in x["above"] if st[t]["highs"][lab]}
+            if not hits:
+                tg.append(f" {lab}新高 0")
+                continue
+            if i and hits == prev_set:
+                tg.append(f" {lab}新高 {len(hits)}：同{SHOW[i - 1]}")
+                continue
+            parts = []
+            for r in sectors[c][1]:
+                sec_hits = sorted(t for t in hits if sector_zh(sec_of[c], t) == r["name"])
+                if not sec_hits:
+                    continue
+                new = [t for t in sec_hits if t not in prev_set]
+                lst = "、".join(tk(c, t) for t in new[:8]) + ("…" if len(new) > 8 else "")
+                parts.append(f"{r['name']} {len(sec_hits)}" + (f"（{'+' if i else ''}{lst}）" if new else ""))
+            tg.append(f" {lab}新高 {len(hits)}：" + "、".join(parts))
+            prev_set = hits
     tg.append("")
-    tg.append("括號 = 其中 12 個月新高。描述性篩選，非買入建議；全文 analysis/DAILY_TOPDOWN.md")
+    tg.append("各窗口是累計檔數；括號內是該窗口新增的股票（+ = 比更長窗口多出的）。描述性篩選，非買入建議；全文 analysis/DAILY_TOPDOWN.md")
+    if len("\n".join(tg)) > 4000:     # Telegram 單則上限 4096 字
+        tg = [l if len(l) < 300 else l[:297] + "…" for l in tg]
     (OUT / "tg_topdown.txt").write_text("\n".join(tg) + "\n", encoding="utf-8")
     print("\n".join(tg))
 
