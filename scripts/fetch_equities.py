@@ -21,7 +21,7 @@ import io
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -82,6 +82,19 @@ def save_history(ticker: str, hist) -> dict:
         if div or spl:
             act_rows.append([day.isoformat(), f"{div:.6f}".rstrip("0").rstrip(".") if div else "",
                              f"{spl:g}" if spl else ""])
+    # 保護：Yahoo 偶爾在收市後幾小時內把「最新一天」暫時拿掉（2026-09-23 實測：09-22 收市後有這根，
+    # 幾小時後重抓只到 09-21），直接覆寫會讓數據倒退一天——新抓到的最後日期比舊檔早時，保留舊檔裡
+    # 更新的列（最多 10 天內），下一輪 Yahoo 補回來再以新值為準
+    old_rows = md.load_raw(ticker) if md.has_v2(ticker) else []
+    new_last = max((date.fromisoformat(r[0]) for rows in by_year.values() for r in rows), default=None)
+    kept_tail = 0
+    if old_rows and new_last and old_rows[-1][0] > new_last and (old_rows[-1][0] - new_last).days <= 10:
+        for r in old_rows:
+            if r[0] > new_last:
+                by_year.setdefault(r[0].year, []).append(
+                    [r[0].isoformat(), fmt(r[1]), fmt(r[2]), fmt(r[3]), fmt(r[4]), r[5]])
+                kept_tail += 1
+        print(f"WARN {ticker}: yfinance 只到 {new_last}，保留舊檔 {kept_tail} 根較新的數據", file=sys.stderr)
     changed = 0
     for y, rows in by_year.items():
         changed += write_if_changed(d / f"prices_{y}.csv",
@@ -99,7 +112,8 @@ def save_history(ticker: str, hist) -> dict:
     errs = [abs(r["AdjClose"] / yf_adj[r["Date"]] - 1) for r in loaded
             if r["Date"] in yf_adj and yf_adj[r["Date"]] > 0]
     return {"rows": len(loaded), "first": loaded[0]["Date"].isoformat(), "last": loaded[-1]["Date"].isoformat(),
-            "files_changed": changed, "adj_err_max": round(max(errs), 6) if errs else None}
+            "files_changed": changed, "adj_err_max": round(max(errs), 6) if errs else None,
+            "kept_tail": kept_tail}
 
 
 def save_shares(ticker: str, yf) -> int:
