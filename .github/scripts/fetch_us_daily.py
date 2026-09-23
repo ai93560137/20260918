@@ -36,22 +36,35 @@ for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
     except Exception as e:
         log.append(f"{sym} ERR: {e!r}")
 
-# 日經波指（Nikkei 225 VI）：Yahoo ticker 不確定，逐個試，成功即存
-for sym in ['^JNIV', '^N225VI', '^NKVI', 'JNIV.OS']:
+# 日經波指（Nikkei 225 VI）：Yahoo 不載，改抓日經指數公司官方 CSV
+import io
+import requests
+H = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+for url in ['https://indexes.nikkei.co.jp/en/nkave/archives/file/nikkei_stock_average_vi_daily_en.csv',
+            'https://indexes.nikkei.co.jp/nkave/archives/file/nikkei_stock_average_vi_daily_jp.csv',
+            'https://indexes.nikkei.co.jp/en/nkave/statistics/dataload?list=vi&csv=1']:
     try:
-        d = yf.download(sym, period='max', interval='1d', progress=False, auto_adjust=False)
-        if isinstance(d.columns, pd.MultiIndex):
-            d.columns = d.columns.get_level_values(0)
-        d = d.reset_index()
-        d.columns = [str(c).strip().title() for c in d.columns]
-        d = d[[c for c in ['Date', 'Close'] if c in d.columns]].dropna()
-        log.append(f"NKVI probe {sym}: {len(d)} rows")
-        if len(d) > 500:
-            d.to_csv(f'{OUT}/jniv_daily.csv', index=False)
-            log.append(f"SAVED jniv_daily.csv from {sym}: {d.Date.min()} -> {d.Date.max()}")
-            break
+        r = requests.get(url, headers=H, timeout=30)
+        log.append(f"NKVI url {url.split('/')[-1]}: HTTP {r.status_code}, {len(r.content)} bytes")
+        if r.status_code == 200 and len(r.content) > 5000:
+            raw = r.content.decode('utf-8-sig', errors='replace')
+            d = pd.read_csv(io.StringIO(raw))
+            log.append(f"NKVI columns: {list(d.columns)[:6]}, rows {len(d)}")
+            # 第一欄日期、找收盤欄（close/終値/VI）
+            d.columns = [str(c).strip() for c in d.columns]
+            datec = d.columns[0]
+            closec = next((c for c in d.columns if 'close' in c.lower() or '終値' in c or c == 'VI'),
+                          d.columns[-1])
+            out = d[[datec, closec]].dropna()
+            out.columns = ['Date', 'Close']
+            out['Close'] = pd.to_numeric(out['Close'], errors='coerce')
+            out = out.dropna()
+            if len(out) > 500:
+                out.to_csv(f'{OUT}/jniv_daily.csv', index=False)
+                log.append(f"SAVED jniv_daily.csv: {len(out)} rows {out.Date.iloc[0]} -> {out.Date.iloc[-1]}")
+                break
     except Exception as e:
-        log.append(f"NKVI probe {sym} ERR: {e!r}")
+        log.append(f"NKVI url ERR: {e!r}")
 
 # 期貨最新價（延遲報價即可，供 delta 對沖指令與監測用）
 fut = {}
