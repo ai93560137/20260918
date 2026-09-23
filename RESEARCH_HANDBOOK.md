@@ -139,6 +139,7 @@ mdata = nb.MarketData("us", pool=pool, loader=loader, top_n=1500, cost=0.0010)
 | ☠️ | **新高連續天數入場**（在 200 日線上 + 收市價破 3/6/9/12 個月盤中最高；H4 連續 K 天、H5a 剛升級、H5b 同級停留；次日開盤入、跌破 20 日低點出；日曆時間等權）on 港／美／日 PIT 成分股 | 預先登記 9 個測試**沒有一個過 🔍**：港股、日股 6 個全 ☠️（alpha t -1.75~0.42）；美股 H4 1.35、H5a 1.35 不確定，但隨機對照只在第 67/81 百分位（同日隨機挑「200 日線上」股票就有此水平）、相對等權 t < 1、H4 的 alpha 全在 2013 前（倖存者偏差洞最大的時段）。連續天數沒有加分；「剛升級 vs 停留」三地都分不出（\|t\| < 2）。每日名單保留作描述性監測。見 NEWHIGH_BACKTEST.md |
 | ☠️ | **VCP 波動收縮形態**（Minervini 趨勢模板含 RS≥70 + 2–6 次逐次收縮 r≤0.8、最後 ≤10% + 量縮 + 帶量突破樞紐點；次日開盤入、收縮低點停損 + 20 日低點上移）on 港／美／日 PIT 成分股 | 預先登記（v1 3% ZigZag 三地共 7 筆無法判 → 登記修訂 v2 碎形高點 N=5）：預設格 alpha t 港 -0.60（10 筆）、美 -0.37（37 筆）、日 -0.26（22 筆），27 個鄰域格無一 ≥1.0，四種出場都救不了；美股 2013 後 t -2.78。**樣本全部 < 50 筆**——性質是「嚴格 VCP 在指數成分股裡太罕見、出手也沒贏」，不是 VCP 已被證偽。每日篩選保留監測。見 VCP_BACKTEST.md |
 | ☠️（日／美）❓（港）| **VCP 全市場版**（成交額前 港500／日1000／美1500，同一 v2 形態定義；三種做法：XV 收縮低點停損、X5 五日 EMA 出場、Minervini 忠實版 = 盤中破樞紐點買 + 大市 50/200 日線過濾 + 7.5% 止損 + 1.15 倍保本 + 跌破 50 日線出）| 預先登記、4 層數據品質檢查後判：XV 港 1.64（143 筆、隨機第 87 百分位）／日 -0.73／美 0.82；X5 港 0.79／日 0.02／美 1.35；Minervini 港 1.24（219 筆）／日 0.33（543 筆）／美 -0.24（1,131 筆，**隨機第 8 百分位**——比隨機趨勢模板股還差）。同一定義五次測試無一格過 🔍，alpha 都集中在樣本前段（港 2022 前、美日 2013 前）。**不再用歷史數據調 VCP**；港股只能靠每日篩選名單前向驗證。見 VCP_FULLMARKET_BACKTEST.md 第五部分 |
+| ☠️（美：真實 CBOE 指數）☠️（港：模型）| **股票期權 + 正股**：備兌（BXM 型平值 call）、現金擔保賣 put（PUT 型）、保護 put（PPUT 型 95%）、領口（CLL 型 95/110）、輪動（the wheel）；每月一期、指數層面（SPY／2800）| 預先登記、兩地各跑一次：模型對照 CBOE 五個真實指數**不過**（相關 0.90–0.99 但期權一律偏便宜 1.6–4%/年）→ 美股改用真實指數判：BXM alpha t −0.88、PUT −0.32、PPUT −0.86（夏普比 SPY 低 0.10）、CLL −0.05（夏普低 0.15）；回撤少 20–35% 但夏普全部低於持有，贏 SPY 的年份只有 4–7 年。港股模型 alpha t −0.46～−0.93，k 調 0.1 仍 < 1.0；保護 put 不確定；輪動美股無真實指數、不確定。**波動溢價是真的（雲垂 t 11.7），但疊在正股上收不到**——放棄的上漲蓋過權利金。見 OPTIONS_EQUITY_BACKTEST.md（分支 `claude/market-data-tools-ready-6l5djr`）|
 
 ## 三、股票市場研究的特別守則
 
@@ -223,6 +224,7 @@ mdata = nb.MarketData("us", pool=pool, loader=loader, top_n=1500, cost=0.0010)
 | `sector_momentum_backtest.py` | 行業動量回測引擎（多市場，`--grid` 3x3 鄰域、`--permutation` 隨機行業對照、`--attribution` Brinson 行業歸因）|
 | `SECTOR_ROTATION.md` | 行業動量預先登記與各市場結果、既有 alpha 的行業歸因 |
 | `scripts/check_data_quality.py` → `data/equities/hk/QC_REPORT.md` | **每日數據品質日報**（排程自動跑，🔴 即時 Telegram 警報、每交易日收市推日報；研究 session 任意推送用 `.github/tg_outbox_research.txt`，勿用八陣圖的 `tg_outbox.txt`）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |
+| `options_equity.py` + `scripts/{calib_option_chains,fetch_options_equity_data}.py` → `research/options_equity/`、`data/options_equity/` | **期權 + 正股回測引擎**（BS + 波動率指數 × k + 兩邊偏斜，成本 = 波動點 × vega；CC／CSP／PP／COL／WHL；CAPM alpha、分段、危機月）；CBOE BXM／BXY／PUT／PPUT／CLL 真實指數、^IRX、VIX、VHSI 由 `fetch_options_equity.yml` 抓。**教訓：單一政權快照校準的 k 不能代表歷史——先過真實指數對照再信模型** |
 
 ## 五、陣名典故與命名規範（其他分支沿用）
 
