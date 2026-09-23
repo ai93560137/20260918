@@ -105,6 +105,32 @@ def yj_pages(s: requests.Session, t: str, params: dict, max_pages: int) -> list[
     return rows
 
 
+def rebase_for_actions(ours: dict[date, float], theirs: dict[date, float],
+                       splits: list[tuple[date, float]]) -> tuple[dict[date, float], list[str]]:
+    """Yahoo 把分拆（spin-off）、股份交換等也記成「非整數拆股」並回溯調整 Close
+    （APTV 2017-12-05 ×1.193 = 分拆 Delphi Technologies）；Nasdaq 只調真拆股。
+    對每個我們有、而對方價格在該日前後剛好跳同一倍數的事件，把對方事件前的價格同樣除掉，
+    回傳 (調整後的對方序列, 已解釋的事件)——這是「調整方法不同」，不是數據錯。從最近的事件往回做。"""
+    th = dict(theirs)
+    explained = []
+    common = sorted(d for d in th if d in ours and ours[d] > 0 and th[d] > 0)
+    for e, f in sorted(splits, reverse=True):
+        if not f or f <= 0 or abs(f - 1) < 0.005:
+            continue
+        before = [d for d in common if d < e][-5:]
+        after = [d for d in common if d >= e][:5]
+        if len(before) < 3 or len(after) < 3:
+            continue
+        rb = sorted(th[d] / ours[d] for d in before)[len(before) // 2]
+        ra = sorted(th[d] / ours[d] for d in after)[len(after) // 2]
+        if abs((rb / ra) / f - 1) < 0.03:
+            for d in th:
+                if d < e:
+                    th[d] /= f
+            explained.append(f"{e} ×{f:g}")
+    return th, explained
+
+
 def compare(ours: dict[date, float], theirs: dict[date, float]) -> dict:
     n = bad = 0
     worst, examples = 0.0, []
@@ -149,7 +175,10 @@ def main() -> None:
                 if theirs is None:
                     rec.update(n_cmp=0, n_bad=0, max_diff=0, examples=[], note="第二來源沒有此代碼（已下市/改代碼）")
                 else:
-                    rec.update(compare(ours, theirs), span=f"{min(theirs)}~{max(theirs)}")
+                    raw = compare(ours, theirs)
+                    th, explained = rebase_for_actions(ours, theirs, md.load_actions(t)[1])
+                    rec.update(compare(ours, th), span=f"{min(theirs)}~{max(theirs)}",
+                               n_bad_raw=raw["n_bad"], method_diff=explained)
             else:
                 monthly = yj_pages(s, t, {"from": "19950101", "to": today.replace("-", ""), "timeFrame": "m"}, 25)
                 daily = yj_pages(s, t, {"timeFrame": "d"}, 1)
