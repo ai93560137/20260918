@@ -61,8 +61,9 @@ def jp_window(s: requests.Session, t: str, a: date, b: date) -> dict[date, dict]
     return out
 
 
-def check(tr: dict, src: dict[date, dict]) -> tuple[str, str]:
-    """回傳 (狀態 ok/suspect/unverifiable, 說明)。"""
+def check(tr: dict, src: dict[date, dict], split_ok: bool = False) -> tuple[str, str]:
+    """回傳 (狀態 ok/suspect/unverifiable, 說明)。
+    split_ok（AIBA_PPP_BACKTEST.md 登記）：三個比例相差剛好一個整數倍（≥2，誤差 2% 內）= 第二來源沒按拆股還原，不算可疑。"""
     sig, ent, ex = (date.fromisoformat(tr[k]) for k in ("signal", "entry", "exit"))
     pts = [(sig, "close", tr["signal_close"]), (ent, "open", tr["entry_open"]),
            (ex, "open" if tr["exit_at_open"] else "close", tr["exit_px"])]
@@ -74,6 +75,9 @@ def check(tr: dict, src: dict[date, dict]) -> tuple[str, str]:
     if len(ratios) < 2:
         return "unverifiable", "第二來源沒有這些日子"
     if max(ratios) / min(ratios) - 1 > TOL_PX:
+        k = max(ratios) / min(ratios)
+        if split_ok and round(k) >= 2 and abs(k / round(k) - 1) <= TOL_PX:
+            return "ok", f"第二來源未按拆股還原（比例 {[round(x, 4) for x in ratios]}）"
         return "suspect", f"價格比例不一致 {[round(x, 4) for x in ratios]}"
     v = (src.get(sig) or {}).get("volume")
     if v and tr["signal_volume"]:
@@ -86,10 +90,18 @@ def check(tr: dict, src: dict[date, dict]) -> tuple[str, str]:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--market", required=True, choices=["hk", "jp", "us"])
+    ap.add_argument("--src", help="逐筆明細 JSON（預設 research/vcp_full/<m>_v2.json）")
+    ap.add_argument("--out-dir", type=Path, default=ROOT / "research" / "vcp_full")
+    ap.add_argument("--sample", type=int, default=0, help="隨機抽 N 筆核對（種子 0；0 = 全部）")
+    ap.add_argument("--split-ok", action="store_true", help="整數倍比例 = 第二來源未還原拆股，不算可疑")
     args = ap.parse_args()
     m = args.market
-    res = json.loads((ROOT / "research" / "vcp_full" / f"{m}_v2.json").read_text(encoding="utf-8"))
+    src_p = Path(args.src) if args.src else ROOT / "research" / "vcp_full" / f"{m}_v2.json"
+    res = json.loads(src_p.read_text(encoding="utf-8"))
     trades = res.get("trades_detail", [])
+    if args.sample and len(trades) > args.sample:
+        import random
+        trades = random.Random(0).sample(trades, args.sample)
     status, notes = {}, {}
     s = requests.Session()
     if m == "us":
@@ -103,7 +115,7 @@ def main() -> None:
                     print(f"WARN {t}: {exc}", file=sys.stderr)
                     cache[t] = {}
                 time.sleep(0.5)
-            status[(t, tr["signal"])], notes[(t, tr["signal"])] = check(tr, cache[t])
+            status[(t, tr["signal"])], notes[(t, tr["signal"])] = check(tr, cache[t], args.split_ok)
     elif m == "jp":
         s.headers.update({"User-Agent": "Mozilla/5.0", "Accept-Language": "ja"})
         time.sleep(90)
@@ -116,7 +128,7 @@ def main() -> None:
             except Exception as exc:
                 print(f"WARN {t}: {exc}", file=sys.stderr)
                 src = {}
-            status[(t, tr["signal"])], notes[(t, tr["signal"])] = check(tr, src)
+            status[(t, tr["signal"])], notes[(t, tr["signal"])] = check(tr, src, args.split_ok)
     else:
         load = nb.load_full("hk")
         for tr in trades:
@@ -138,11 +150,12 @@ def main() -> None:
             notes[(t, tr["signal"])] = "、".join(why)
     sus = sorted(k for k, v in status.items() if v == "suspect")
     unv = sum(v == "unverifiable" for v in status.values())
-    out = ROOT / "research" / "vcp_full"
+    out = args.out_dir
+    out.mkdir(parents=True, exist_ok=True)
     (out / f"{m}_suspect.json").write_text(json.dumps([list(k) for k in sus], ensure_ascii=False) + "\n", encoding="utf-8")
     how = {"us": "Nasdaq 歷史 API", "jp": "Yahoo!ファイナンス日線", "hk": "內部一致性（港股無免費歷史第二來源）"}[m]
     L = [f"\n## 4. 逐筆交易核對（{how}）\n",
-         f"預設格 {len(trades)} 筆：通過 {sum(v == 'ok' for v in status.values())}、**可疑 {len(sus)}**、"
+         f"預設格{'隨機抽' if args.sample else ''} {len(trades)} 筆：通過 {sum(v == 'ok' for v in status.values())}、**可疑 {len(sus)}**、"
          f"無法核對 {unv}（第二來源沒有那些日子，例如美股 10 年前）。可疑的剔除後重算判決。\n"]
     L += [f"- {t} {d}：{notes[(t, d)]}" for t, d in sus[:30]]
     qc = out / f"{m}_qc.md"
