@@ -1,0 +1,45 @@
+name: Options + equity research data（CBOE 策略指數 / 利率 / 波動率指數）
+
+# 研究見 OPTIONS_EQUITY_BACKTEST.md。本環境擋 CBOE 與 Yahoo，所以在 Actions 上抓、commit 回研究分支。
+on:
+  push:
+    branches: [claude/market-data-tools-ready-6l5djr]
+    paths:
+      - 'scripts/fetch_options_equity_data.py'
+      - '.github/workflows/fetch_options_equity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: options-equity-data-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install -q yfinance pandas requests
+      - name: Fetch
+        run: python3 scripts/fetch_options_equity_data.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/options_equity
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(options_equity): CBOE 策略指數 / 利率 / 波動率指數 $(date -u +%F)"
+          BR="${GITHUB_REF#refs/heads/}"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:"$BR" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -q origin "$BR"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
