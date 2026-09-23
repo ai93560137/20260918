@@ -50,6 +50,7 @@ EXTRA_BENCH = ["NANC"]  # 2023 年上市，只在有資料的期間比較
 ALL_EXITS = ["sell", "h1m", "h3m", "h6m", "h12m"]
 WEIGHTS = ["equal", "amount"]
 # 改名的代號：申報上寫舊代號，價格用新代號查（拆股/還原已在同一條歷史裡）
+MAX_ENTRY_GAP_DAYS = 7  # 申報後這麼多天內沒有成交價，視為無法跟單
 TICKER_ALIASES = {"SQ": "XYZ", "FB": "META"}
 
 
@@ -297,6 +298,10 @@ def make_lots(signals, prices, exit_rule, weight_mode, entry_on="filing"):
         ei = p.first_index_after(ref) if entry_on == "filing" else p.first_index_on_or_after(ref)
         if ei is None:
             skipped.append((s, "進場日無資料"))
+            continue
+        if (p.days[ei] - ref).days > MAX_ENTRY_GAP_DAYS:
+            # 例：舊 Hertz 2020 年破產，Yahoo 的 HTZ 從 2021 年新上市才有資料——不能拿 2021 價格當 2014 進場
+            skipped.append((s, f"申報後 {MAX_ENTRY_GAP_DAYS} 天內無價格（已下市或代號被重用）"))
             continue
         xi, reason = None, "未平倉"
         if exit_rule == "sell":
