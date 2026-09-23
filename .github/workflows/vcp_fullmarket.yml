@@ -1,0 +1,141 @@
+name: VCP full-market backtest（全市場 VCP 回測）
+
+# 預先登記見 VCP_FULLMARKET_BACKTEST.md。全市場日線不進 git：
+# - 存 Actions 快取（每次先還原、只補缺的，7 日沒用會被清）
+# - 每次抓完打包上載到 Release「fullmarket-data」當備份（不會過期、不進 git 歷史）；快取沒了就從這裡還原
+# 只 commit 候選池快照（universes/full/）與回測結果（research/vcp_full/）。
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: 'hk、jp、us 或 all'
+        required: true
+        default: 'all'
+      backtest:
+        description: '數據抓齊後跑回測（true/false）'
+        required: false
+        default: 'true'
+      random:
+        description: '隨機對照次數（預先登記 200）'
+        required: false
+        default: '200'
+      retry_failed:
+        description: '重試之前抓不到的代碼'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vcp-fullmarket-${{ inputs.market }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        market: ${{ fromJSON(inputs.market == 'all' && '["hk","jp","us"]' || format('["{0}"]', inputs.market)) }}
+    env:
+      M: ${{ matrix.market }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q yfinance pandas numpy openpyxl requests
+
+      - name: Restore data cache（Actions 快取）
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data_full/${{ matrix.market }}
+          key: fullmarket-${{ matrix.market }}-v1-${{ github.run_id }}
+          restore-keys: fullmarket-${{ matrix.market }}-v1-
+
+      - name: Restore from Release backup if cache empty（快取沒了就從 Release 還原）
+        run: |
+          N=$(ls data_full/$M/*.csv.gz 2>/dev/null | wc -l)
+          echo "快取還原 $N 檔"
+          if [ "$N" -eq 0 ] && gh release view fullmarket-data > /dev/null 2>&1; then
+            gh release download fullmarket-data -p "$M.tar" -D /tmp && tar -xf /tmp/$M.tar && \
+              echo "從 Release 還原 $(ls data_full/$M/*.csv.gz | wc -l) 檔" || echo "Release 沒有 $M 的備份"
+          fi
+
+      - name: Build candidate pool（候選池快照）
+        run: python3 scripts/build_full_pools.py --market "$M"
+
+      - name: Fetch full-market prices（缺的才抓，可續抓）
+        id: fetch
+        continue-on-error: true
+        env:
+          RETRY: ${{ inputs.retry_failed }}
+        run: |
+          ARGS="--market $M --budget-min 240"
+          if [ "$RETRY" = "true" ]; then ARGS="$ARGS --retry-failed"; fi
+          set +e
+          python3 scripts/fetch_full_market.py $ARGS
+          RC=$?
+          if [ $RC -eq 0 ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
+          exit 0
+
+      - name: Save data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data_full/${{ matrix.market }}
+          key: fullmarket-${{ matrix.market }}-v1-${{ github.run_id }}
+
+      - name: Backup to Release（每次抓完上載一份）
+        if: always()
+        continue-on-error: true
+        run: |
+          N=$(ls data_full/$M/*.csv.gz 2>/dev/null | wc -l)
+          if [ "$N" -eq 0 ]; then echo "沒有數據可備份"; exit 0; fi
+          tar -cf /tmp/$M.tar data_full/$M
+          ls -lh /tmp/$M.tar
+          gh release view fullmarket-data > /dev/null 2>&1 || \
+            gh release create fullmarket-data --target claude/gifted-carson-v2tvhw --title "全市場日線數據備份" \
+              --notes "VCP 全市場回測用的日線（data_full/<市場>/），由 vcp_fullmarket.yml 自動上載；不進 git。"
+          gh release upload fullmarket-data /tmp/$M.tar --clobber
+          echo "已備份 $N 檔到 Release fullmarket-data"
+
+      - name: Backtest（數據抓齊才跑）
+        if: steps.fetch.outputs.done == 'true' && inputs.backtest == 'true'
+        env:
+          RANDOM_N: ${{ inputs.random }}
+        run: |
+          if [[ ! "$RANDOM_N" =~ ^[0-9]+$ ]]; then echo "random 只能是數字"; exit 1; fi
+          set -o pipefail
+          mkdir -p research/vcp_full
+          python3 vcp_backtest.py --market "$M" --full --random "$RANDOM_N" 2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2.log
+          python3 vcp_backtest.py --market "$M" --full --n 10 2>&1 | grep -v "^\[.*\] [0-9]" | tee research/vcp_full/${M}_v2_n10.log
+
+      - name: Commit pool snapshot and results
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { git add universes/full/${M}_pool.txt; [ -d research/vcp_full ] && git add research/vcp_full; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "research(vcp_full): $M 候選池快照 / 回測結果 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 7))
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "research(vcp_full): $M 候選池快照 / 回測結果 $(date -u +%F)"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
