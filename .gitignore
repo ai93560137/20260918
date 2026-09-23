@@ -5,3 +5,4 @@ venv/
 *.egg-info/
 .env
 data_full/
+research/aiba_ppp/*_trades.json
