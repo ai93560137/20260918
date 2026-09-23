@@ -293,7 +293,7 @@ def parse_ptr(text):
 # 現價（best effort，Yahoo 失敗就略過）
 # -----------------------------------------------------------------------------
 def yahoo_closes(ticker, start):
-    t = ticker.replace(".", "-")
+    t = {"SQ": "XYZ", "FB": "META"}.get(ticker, ticker).replace(".", "-")  # 改名代號
     p1 = int(datetime.combine(start - timedelta(days=7), datetime.min.time(), timezone.utc).timestamp())
     url = YAHOO_URL.format(ticker=t) + f"?period1={p1}&period2={int(time.time())}&interval=1d"
     r = requests.get(url, headers=UA, timeout=30)
@@ -347,6 +347,22 @@ def save_json(path, obj):
         f.write("\n")
 
 
+def fmt_option(opt):
+    """「50 張 Call 行使價 $150 到期 2026-01-16」；舊版申報缺的欄位就省略，作廢的標明。"""
+    parts = [f"{opt['contracts']} 張"]
+    if opt.get("kind"):
+        parts.append(opt["kind"].title())
+    else:
+        parts.append("期權")
+    if opt.get("strike") is not None:
+        parts.append(f"行使價 ${opt['strike']:g}")
+    if opt.get("expiry"):
+        parts.append(f"到期 {opt['expiry']}")
+    if opt.get("action") == "expired":
+        parts.append("（到期作廢）")
+    return " ".join(parts)
+
+
 def fmt_tx_line(r):
     tx = TX_TYPES.get(r["type"], r["type"])
     head = f"{'🟢' if r['type'] == 'P' else '🔴' if r['type'].startswith('S') else '⚪'} {tx} "
@@ -356,8 +372,7 @@ def fmt_tx_line(r):
     lines = [head, f"   交易日 {r['date']}｜{r['amount']}｜{OWNERS.get(r['owner'], r['owner'])}"]
     opt = r.get("option")
     if opt:
-        kind = "Call" if opt["kind"] == "call" else "Put"
-        lines.append(f"   期權：{opt['contracts']} 張 {kind} 行使價 ${opt['strike']:g} 到期 {opt['expiry']}")
+        lines.append(f"   期權：{fmt_option(opt)}")
     elif r["description"]:
         lines.append(f"   說明：{r['description'][:160]}")
     if r.get("change_pct") is not None:
@@ -429,7 +444,7 @@ def build_report(filings):
             "|---|---|---|---|---|---|---|---:|"]
     for r in txs:
         opt = r.get("option")
-        detail = (f"{opt['contracts']}張 {opt['kind'].title()} ${opt['strike']:g} 到期{opt['expiry']}"
+        detail = (fmt_option(opt)
                   if opt else (r["description"][:60] or ""))
         chg = f"{r['change_pct']:+.1f}%" if r.get("change_pct") is not None else "—"
         asset = r["asset"].replace("|", "/")[:45]
