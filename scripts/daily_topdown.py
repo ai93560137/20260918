@@ -255,7 +255,8 @@ def rank_by(rows: list[dict], key: str) -> dict[str, int]:
 
 LIST_ORDER = ["hk", "jp", "us"]          # 名單檔裡的市場順序：港股、日股、美股
 LIST_FIELDS = ["date", "market", "market_zh", "window_months", "sector", "ticker", "name",
-               "close", "prior_high", "pct_above_ma200", "yahoo_ticker"]
+               "close", "prior_high", "pct_above_ma200", "longest_months", "streak_window", "streak_longest",
+               "yahoo_ticker"]
 
 
 def write_newhigh_lists(end: date, n_days: int) -> list[date]:
@@ -283,9 +284,36 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
         for d, n in cnt.items():
             if d not in holidays(c) and n >= 0.5 * max(len(uni.eligible_at(d, first)), 1):
                 trading.add(d)
-        mk[c] = {"uni": uni, "cache": cache, "first": first, "trading": trading,
+        mk[c] = {"uni": uni, "cache": cache, "first": first, "trading": trading, "memo": {},
                  "sec": uni.sectors()[0], "names": load_names(uni.cfg["market"])}
     days = sorted(set().union(*(m["trading"] for m in mk.values())))[-n_days:]
+
+    def day_metrics(c: str, t: str, i: int) -> dict | None:
+        """該股第 i 根（含）為止的指標，快取。"""
+        memo = mk[c]["memo"]
+        if (t, i) not in memo:
+            rows, hl, _ = mk[c]["cache"][t]
+            memo[(t, i)] = metrics(rows[max(0, i - 299):i + 1], hl[max(0, i - 299):i + 1]) if i >= 0 else None
+        return memo[(t, i)]
+
+    def top_window(m: dict) -> int:
+        return next((mo for lab, mo in wins if m["highs"][lab]), 0)
+
+    def streaks(c: str, t: str, i: int, lab: str) -> tuple[int, int]:
+        """(這個窗口連續創新高的交易日數, 最長窗口不變的連續交易日數)；都要求在 200 日線上。往回數該股的交易日。"""
+        top = top_window(day_metrics(c, t, i))
+        sw = sl = 0
+        alive_w = alive_l = True
+        for k in range(i, max(i - 250, -1), -1):
+            m = day_metrics(c, t, k)
+            ok = bool(m) and m["vs200"] is not None and m["vs200"] > 0
+            alive_w = alive_w and ok and bool(m["highs"][lab])
+            alive_l = alive_l and ok and top_window(m) == top
+            sw += alive_w
+            sl += alive_l
+            if not (alive_w or alive_l):
+                break
+        return sw, sl
 
     summ_path = out_dir / "summary.csv"
     summary = []
@@ -295,7 +323,9 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
     for D in days:
         recs, md_lines = [], [f"# 新高名單 {fmt_d(D)} 收市\n",
                               "當天收市在 200 日線上、且收市價**高於**之前 12／9／6／3 個月盤中最高價的指數成分股"
-                              "（12 個月新高必然也列在 9／6／3 個月）。由 scripts/daily_topdown.py 產生；描述性篩選，非買入建議。\n"]
+                              "（12 個月新高必然也列在 9／6／3 個月）。名字後的數字 emoji = 連續第幾個交易日創這個窗口的新高"
+                              "（CSV 另有 streak_longest：最長窗口不變的連續天數，跟 Telegram 一致）。"
+                              "由 scripts/daily_topdown.py 產生；描述性篩選，非買入建議。\n"]
         for c in LIST_ORDER:
             m_ = mk[c]
             if D not in m_["trading"]:
@@ -308,10 +338,10 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
                 i = bisect.bisect_right(ds, D)
                 if i == 0 or ds[i - 1] != D:          # 當天停牌/沒數據
                     continue
-                m = metrics(rows[max(0, i - 300):i], hl[max(0, i - 300):i])
+                m = day_metrics(c, t, i - 1)
                 if m:
-                    ms[t] = (m, hl[i - 1][0])
-            above = {t for t, (m, _) in ms.items() if m["vs200"] is not None and m["vs200"] > 0}
+                    ms[t] = (m, hl[i - 1][0], i - 1)
+            above = {t for t, (m, _, _) in ms.items() if m["vs200"] is not None and m["vs200"] > 0}
             counts = {}
             md_lines.append(f"## {COUNTRIES[c]['zh']}（{m_['uni'].cfg['name']}：{len(ms)} 檔有收市價，200 日線上 {len(above)} 檔）\n")
             for lab, months in wins:
@@ -325,14 +355,17 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
                     md_lines.append("（無）")
                 for sec in sorted(by_sec, key=lambda k: (-len(by_sec[k]), k)):
                     md_lines.append(f"- **{sec}** {len(by_sec[sec])} 檔：" + "、".join(
-                        f"{disp(t)} {m_['names'].get(t, '')}".strip() for t in sorted(by_sec[sec])))
+                        f"{disp(t)} {m_['names'].get(t, '')} {keycap(streaks(c, t, ms[t][2], lab)[0])}".replace("  ", " ")
+                        for t in sorted(by_sec[sec])))
                     for t in sorted(by_sec[sec]):
-                        m, close = ms[t]
+                        m, close, idx = ms[t]
+                        sw, sl = streaks(c, t, idx, lab)
                         recs.append({"date": D.isoformat(), "market": c, "market_zh": COUNTRIES[c]["zh"],
                                      "window_months": months, "sector": sec, "ticker": disp(t),
                                      "name": m_["names"].get(t, ""), "close": f"{close:g}",
                                      "prior_high": f"{m['prior_high'][lab]:g}",
-                                     "pct_above_ma200": f"{m['vs200'] * 100:.1f}", "yahoo_ticker": t})
+                                     "pct_above_ma200": f"{m['vs200'] * 100:.1f}", "longest_months": top_window(m),
+                                     "streak_window": sw, "streak_longest": sl, "yahoo_ticker": t})
                 md_lines.append("")
             summary.append({"date": D.isoformat(), "market": c, "n_members": len(ms), "n_above_ma200": len(above),
                             **{f"n_{mo}m": counts[mo] for _, mo in wins}})

@@ -1,18 +1,18 @@
-date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,yahoo_ticker
-2026-09-21,hk,港股,3,醫療,1177.HK,中國生物製藥,5.92,5.915,5.4,1177.HK
-2026-09-21,us,美股,12,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,AMD
-2026-09-21,us,美股,12,科技,FFIV,F5,450.1,439.83,33.8,FFIV
-2026-09-21,us,美股,12,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,30,11.9,WBD
-2026-09-21,us,美股,9,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,AMD
-2026-09-21,us,美股,9,科技,FFIV,F5,450.1,439.83,33.8,FFIV
-2026-09-21,us,美股,9,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,29.5,11.9,WBD
-2026-09-21,us,美股,6,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,AMD
-2026-09-21,us,美股,6,科技,FFIV,F5,450.1,439.83,33.8,FFIV
-2026-09-21,us,美股,6,通訊/互聯網,META,Meta Platforms,741.25,691.52,18.9,META
-2026-09-21,us,美股,6,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,28.99,11.9,WBD
-2026-09-21,us,美股,3,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,AMD
-2026-09-21,us,美股,3,科技,FFIV,F5,450.1,439.83,33.8,FFIV
-2026-09-21,us,美股,3,科技,VRSN,VeriSign,308.18,307.2,17.3,VRSN
-2026-09-21,us,美股,3,通訊/互聯網,META,Meta Platforms,741.25,690.15,18.9,META
-2026-09-21,us,美股,3,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,28.99,11.9,WBD
-2026-09-21,us,美股,3,金融,COIN,Coinbase Global,201.05,196.21,6.4,COIN
+date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,longest_months,streak_window,streak_longest,yahoo_ticker
+2026-09-21,hk,港股,3,醫療,1177.HK,中國生物製藥,5.92,5.915,5.4,3,1,1,1177.HK
+2026-09-21,us,美股,12,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,12,1,1,AMD
+2026-09-21,us,美股,12,科技,FFIV,F5,450.1,439.83,33.8,12,1,1,FFIV
+2026-09-21,us,美股,12,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,30,11.9,12,1,1,WBD
+2026-09-21,us,美股,9,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,12,1,1,AMD
+2026-09-21,us,美股,9,科技,FFIV,F5,450.1,439.83,33.8,12,1,1,FFIV
+2026-09-21,us,美股,9,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,29.5,11.9,12,1,1,WBD
+2026-09-21,us,美股,6,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,12,1,1,AMD
+2026-09-21,us,美股,6,科技,FFIV,F5,450.1,439.83,33.8,12,1,1,FFIV
+2026-09-21,us,美股,6,通訊/互聯網,META,Meta Platforms,741.25,691.52,18.9,6,1,1,META
+2026-09-21,us,美股,6,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,28.99,11.9,12,1,1,WBD
+2026-09-21,us,美股,3,科技,AMD,Advanced Micro Devices,615.52,584.73,72.6,12,1,1,AMD
+2026-09-21,us,美股,3,科技,FFIV,F5,450.1,439.83,33.8,12,1,1,FFIV
+2026-09-21,us,美股,3,科技,VRSN,VeriSign,308.18,307.2,17.3,3,1,1,VRSN
+2026-09-21,us,美股,3,通訊/互聯網,META,Meta Platforms,741.25,690.15,18.9,6,1,1,META
+2026-09-21,us,美股,3,通訊/互聯網,WBD,Warner Bros. Discovery,30.8,28.99,11.9,12,1,1,WBD
+2026-09-21,us,美股,3,金融,COIN,Coinbase Global,201.05,196.21,6.4,3,1,1,COIN

@@ -1,17 +1,17 @@
-date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,yahoo_ticker
-2026-09-16,us,美股,12,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,MPC
-2026-09-16,us,美股,12,能源,VLO,Valero Energy,403.28,399.76,64.2,VLO
-2026-09-16,us,美股,12,醫療,RVTY,Revvity,145.73,140.22,41.0,RVTY
-2026-09-16,us,美股,12,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,TMO
-2026-09-16,us,美股,9,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,MPC
-2026-09-16,us,美股,9,能源,VLO,Valero Energy,403.28,399.76,64.2,VLO
-2026-09-16,us,美股,9,醫療,RVTY,Revvity,145.73,140.22,41.0,RVTY
-2026-09-16,us,美股,9,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,TMO
-2026-09-16,us,美股,6,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,MPC
-2026-09-16,us,美股,6,能源,VLO,Valero Energy,403.28,399.76,64.2,VLO
-2026-09-16,us,美股,6,醫療,RVTY,Revvity,145.73,140.22,41.0,RVTY
-2026-09-16,us,美股,6,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,TMO
-2026-09-16,us,美股,3,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,MPC
-2026-09-16,us,美股,3,能源,VLO,Valero Energy,403.28,399.76,64.2,VLO
-2026-09-16,us,美股,3,醫療,RVTY,Revvity,145.73,140.22,41.0,RVTY
-2026-09-16,us,美股,3,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,TMO
+date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,longest_months,streak_window,streak_longest,yahoo_ticker
+2026-09-16,us,美股,12,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,12,2,2,MPC
+2026-09-16,us,美股,12,能源,VLO,Valero Energy,403.28,399.76,64.2,12,1,1,VLO
+2026-09-16,us,美股,12,醫療,RVTY,Revvity,145.73,140.22,41.0,12,2,2,RVTY
+2026-09-16,us,美股,12,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,12,1,1,TMO
+2026-09-16,us,美股,9,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,12,2,2,MPC
+2026-09-16,us,美股,9,能源,VLO,Valero Energy,403.28,399.76,64.2,12,1,1,VLO
+2026-09-16,us,美股,9,醫療,RVTY,Revvity,145.73,140.22,41.0,12,2,2,RVTY
+2026-09-16,us,美股,9,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,12,1,1,TMO
+2026-09-16,us,美股,6,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,12,2,2,MPC
+2026-09-16,us,美股,6,能源,VLO,Valero Energy,403.28,399.76,64.2,12,1,1,VLO
+2026-09-16,us,美股,6,醫療,RVTY,Revvity,145.73,140.22,41.0,12,2,2,RVTY
+2026-09-16,us,美股,6,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,12,1,1,TMO
+2026-09-16,us,美股,3,能源,MPC,Marathon Petroleum,413.92,413.28,67.1,12,2,2,MPC
+2026-09-16,us,美股,3,能源,VLO,Valero Energy,403.28,399.76,64.2,12,1,1,VLO
+2026-09-16,us,美股,3,醫療,RVTY,Revvity,145.73,140.22,41.0,12,2,2,RVTY
+2026-09-16,us,美股,3,醫療,TMO,Thermo Fisher Scientific,648.43,647,20.9,12,1,1,TMO
