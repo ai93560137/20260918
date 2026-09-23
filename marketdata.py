@@ -152,6 +152,17 @@ def load_adjustments(ticker: str) -> list[tuple[date, float]]:
                       for r in csv.DictReader(f) if r["ticker"] == ticker)
 
 
+def load_overrides(ticker: str) -> dict[date, float]:
+    """universes/<market>/price_overrides.csv（ticker,date,close,source,note）：全量歷史比對抓到、
+    人工查證的 Yahoo 單日錯價（例：5333.T 2010-10-29 收市被記成前一日低價 1486，實際 1219）。
+    載入時改收市價（高低價跟著夾住），原始檔不改。"""
+    p = ROOT / "universes" / market_of(ticker) / "price_overrides.csv"
+    if not p.exists():
+        return {}
+    with open(p, newline="", encoding="utf-8") as f:
+        return {date.fromisoformat(r["date"]): float(r["close"]) for r in csv.DictReader(f) if r["ticker"] == ticker}
+
+
 def load_ohlcv(ticker: str, apply_adjustments: bool = True) -> list[dict]:
     """[{Date, Open, High, Low, Close, AdjClose, Volume}]，兩種格式同一個介面（給 QC 用）。
     新格式會先濾掉明顯的垃圾列（drop_spikes），並套用人工登記的公司行動修正（load_adjustments；
@@ -159,6 +170,11 @@ def load_ohlcv(ticker: str, apply_adjustments: bool = True) -> list[dict]:
     if has_v2(ticker):
         rows, _ = drop_spikes(load_raw(ticker))
         divs, _ = load_actions(ticker)
+        if apply_adjustments:
+            ov = load_overrides(ticker)
+            rows = [(r[0], r[1], max(r[2], ov[r[0]]) if r[2] is not None else None,
+                     min(r[3], ov[r[0]]) if r[3] is not None else None, ov[r[0]], r[5]) if r[0] in ov else r
+                    for r in rows]
         for e, f in (load_adjustments(ticker) if apply_adjustments else []):
             rows = [(r[0], *(x * f if x is not None else None for x in r[1:5]), r[5]) if r[0] < e else r
                     for r in rows]
