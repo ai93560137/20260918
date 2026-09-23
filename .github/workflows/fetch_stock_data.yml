@@ -20,8 +20,7 @@ on:
 permissions:
   contents: write
 
-# 同一時間只跑一個抓取（手動觸發撞上排程時排隊，不重疊）——兩輪同時整檔覆寫
-# 同一批 .csv.gz，後推的那輪會在二進位檔上衝突而整輪失敗（2026-09-22 實際發生）
+# 同一時間只跑一個抓取（手動觸發撞上排程時排隊，不重疊）
 concurrency:
   group: fetch-stock-data
   cancel-in-progress: false
@@ -42,9 +41,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/requirements.txt
 
-      - name: Fetch HK + US universes
+      # 2026-09-23 起港股改新格式（data/equities/hk/，見 marketdata.py）：每天只改今年一個小檔，
+      # 不再整檔重寫 .csv.gz。美股由 fetch_equities.yml 負責。流通股數週一抓。
+      - name: Fetch HK universe（新格式）
         continue-on-error: true  # 有些代碼(已下市/合併)預期會抓不到，不該擋住其他成功的 commit
-        run: python3 scripts/fetch_stock_data.py scripts/universe_hk.txt scripts/universe_us.txt scripts/pool_hsi_full.txt scripts/universe_hsi_pointintime_extra.txt scripts/universe_hsi_live.txt
+        timeout-minutes: 30
+        run: |
+          SHARES=""; if [ "$(date -u +%u)" = "1" ]; then SHARES="--shares"; fi
+          python3 scripts/fetch_equities.py $SHARES --budget-min 25 universes/hk/fetch_list.txt scripts/universe_hsi_live.txt
 
       # 第二來源與品質日報都是輔助，各自設時間上限，絕不能拖住主數據的 commit
       - name: Fetch second source (HKEX official quotes)
@@ -79,7 +83,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # 只 add 存在的數據目錄；--ignore-removal 不會把別輪新增、本輪沒有的快照當成刪除
-          add_data() { for d in data/stocks data/stocks_hkex paper scripts/universe_hsi_live.txt; do [ -e "$d" ] && git add --ignore-removal "$d"; done; }
+          add_data() { for d in data/equities/hk data/stocks_hkex paper scripts/universe_hsi_live.txt; do [ -e "$d" ] && git add --ignore-removal "$d"; done; }
           add_data
           if git diff --cached --quiet; then
             echo "No data changes"
@@ -117,10 +121,10 @@ jobs:
           REBALANCED: ${{ steps.paper.outputs.rebalanced }}
         run: |
           MSG=""
-          if [ -s data/stocks/qc_alert.txt ]; then
-            MSG=data/stocks/qc_alert.txt
+          if [ -s data/equities/hk/qc_alert.txt ]; then
+            MSG=data/equities/hk/qc_alert.txt
           elif { [ "$EVENT" = "schedule" ] && [ "$CRON" = "0 9 * * 1-5" ]; } || [ "$WANT_DIGEST" = "true" ]; then
-            if [ -s data/stocks/qc_digest.txt ]; then MSG=data/stocks/qc_digest.txt; fi
+            if [ -s data/equities/hk/qc_digest.txt ]; then MSG=data/equities/hk/qc_digest.txt; fi
           fi
           send() {
             curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
