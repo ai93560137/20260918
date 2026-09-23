@@ -1,0 +1,2381 @@
+{
+ "1321.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0.00309,
+  "n_bad": 0,
+  "n_cmp": 232,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2009-01-30~2026-09-18"
+ },
+ "1332.T": {
+  "checked": "2026-09-23",
+  "examples": [
+   "2002-01-31 我們 183 vs 對方 180（-1.6%）",
+   "2024-03-29 我們 971.1 vs 對方 960.1（-1.1%）"
+  ],
+  "max_diff": 0.01639,
+  "n_bad": 2,
+  "n_cmp": 320,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~-"
+ },
+ "1333.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1605.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1721.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1801.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1802.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1803.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1808.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1812.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1861.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1925.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1928.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "1963.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2002.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2269.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2282.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2413.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2432.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2501.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2502.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2503.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2531.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2602.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2768.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2801.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2802.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "285A.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2871.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "2914.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3086.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3092.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3099.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3101.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3103.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3105.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3110.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3289.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3382.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3401.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3402.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3405.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3407.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3436.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3659.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3697.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3861.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3863.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3864.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "3865.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4004.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4005.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4021.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4041.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4042.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4043.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4045.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4061.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4063.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4151.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4183.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4188.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4208.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4272.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4307.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4324.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4385.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4452.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4502.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4503.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4506.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4507.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4519.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4523.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4543.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4568.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4578.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4631.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4661.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4689.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4704.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4751.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4755.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4901.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4902.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "4911.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5016.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5019.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5020.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5101.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5108.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5201.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5202.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5214.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5232.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5233.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5301.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5332.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5333.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5401.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5406.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5411.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "543A.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5541.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5631.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5703.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5706.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5707.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5711.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5713.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5714.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5715.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5801.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5802.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5803.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5831.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "5901.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6098.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6103.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6113.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6146.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6178.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6273.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6301.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6302.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6305.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6326.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6361.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6366.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6367.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6465.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6471.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6472.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6473.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6479.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6501.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6503.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6504.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6506.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6508.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6526.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6532.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6594.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6645.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6674.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6701.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6702.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6703.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6723.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6724.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6752.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6753.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6758.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6762.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6770.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6841.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6857.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6861.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6902.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6920.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6952.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6954.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6963.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6971.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6976.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6981.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "6988.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7003.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7004.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7011.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7012.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7013.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7186.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7201.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7202.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7203.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7211.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7231.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7261.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7267.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7269.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7270.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7272.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7453.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7532.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7731.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7733.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7735.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7741.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7751.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7752.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7762.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7832.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7911.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7912.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7951.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "7974.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8001.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8002.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8015.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8031.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8035.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8053.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8058.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8233.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8252.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8253.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8267.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8303.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8304.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8306.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8308.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8309.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8316.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8331.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8354.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8411.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8591.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8601.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8604.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8628.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8630.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8697.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8725.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8729.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8750.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8766.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8795.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8801.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8802.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8803.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8804.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "8830.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9001.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9005.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9007.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9008.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9009.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9020.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9021.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9022.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9064.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9101.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9104.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9107.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9147.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9201.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9202.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9301.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9412.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9432.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9433.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9434.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9501.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9502.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9503.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9531.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9532.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9602.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9735.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9766.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9843.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9983.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ },
+ "9984.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "max_diff": 0,
+  "n_bad": 0,
+  "n_cmp": 0,
+  "note": "第二來源沒有此代碼（已下市/改代碼）",
+  "source": "yahoo.co.jp"
+ }
+}
