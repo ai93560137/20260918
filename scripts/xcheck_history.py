@@ -171,9 +171,12 @@ def find_breaks(ours: dict[date, float], theirs: dict[date, float],
         flat = max(before) / min(before) < 1.015 and max(after) / min(after) < 1.015
         if flat and abs(step - 1) > 0.01:
             e = days[i]
-            near = any(abs((a - e).days) <= 5 for a in actions)
-            breaks.append({"date": e.isoformat(), "step": round(1 / step, 4),
-                           "type": "yahoo_adjusted" if near else "yahoo_unadjusted"})
+            near = any(abs((a - e).days) <= 30 for a in actions)   # 除權日/派發日口徑可差幾週
+            f = round(1 / step, 4)   # 我們事件前的價格乘 f 才會跟對方一致
+            # f < 1：我們事件前的價格比對方高 = 對方有扣分拆價值、Yahoo 沒扣 → 我們的數據有假跳動
+            # f > 1：我們比對方低 = Yahoo 有扣（只是沒記在 actions）、對方沒扣或扣得少 → 我們沒問題
+            kind = "yahoo_adjusted" if near else ("yahoo_unadjusted" if f < 1 else "other_unadjusted")
+            breaks.append({"date": e.isoformat(), "step": f, "type": kind})
             for d in th:
                 if d < e:
                     th[d] *= step          # 對方階梯前的價格對齊到階梯後的比值水準
@@ -181,6 +184,14 @@ def find_breaks(ours: dict[date, float], theirs: dict[date, float],
         else:
             i -= 1
     return th, breaks
+
+
+def constant_offset(ours: dict[date, float], theirs: dict[date, float]) -> bool:
+    """不符的列若比值幾乎固定（全距 < 0.3%）且在 3% 內，是調整因子口徑不同（J 長年 +1.6%、NKTR +1.0%），
+    不是數據錯——真的髒值不會整段剛好差同一個比例。"""
+    r = [theirs[d] / ours[d] for d in theirs if d in ours and ours[d] > 0 and theirs[d] > 0
+         and abs(theirs[d] / ours[d] - 1) > TOL]
+    return len(r) >= 3 and max(r) / min(r) < 1.003 and all(abs(x - 1) < 0.03 for x in r)
 
 
 def compare(ours: dict[date, float], theirs: dict[date, float]) -> dict:
@@ -232,12 +243,18 @@ def main() -> None:
                     raw = compare(ours, theirs)
                     theirs, n_stale = drop_stale(ours, theirs)
                     divs, splits = md.load_actions(t)
-                    th, breaks = find_breaks(ours, theirs, [d for d, _ in splits])
+                    # Yahoo 有時把分拆記成一筆大額現金股息（JCI 2016-10-31 分拆 Adient 記為 $4.70）：
+                    # AdjClose 已正確、只有 Close 沒調——股息 >2% 股價也算「Yahoo 有處理」
+                    big_divs = [d for d, a in divs if ours.get(d) and a / ours[d] > 0.02]
+                    th, breaks = find_breaks(ours, theirs, [d for d, _ in splits] + big_divs)
                     win = used_windows(t, m)
                     inwin = lambda d: any(a <= d < b for a, b in win)  # noqa: E731
                     for b_ in breaks:
                         b_["used"] = inwin(date.fromisoformat(b_["date"]))
-                    used = compare({d: v for d, v in ours.items() if inwin(d)}, th)
+                    ours_used = {d: v for d, v in ours.items() if inwin(d)}
+                    used = compare(ours_used, th)
+                    if used["n_bad"] and constant_offset(ours_used, th):
+                        used.update(n_bad=0, examples=[], constant_offset=True)
                     rec.update(used, span=f"{min(theirs)}~{max(theirs)}", n_bad_raw=raw["n_bad"],
                                n_stale_theirs=n_stale, breaks=breaks, n_bad_all=compare(ours, th)["n_bad"],
                                in_use=bool(win))

@@ -207,7 +207,8 @@ def main() -> None:
     xc_nosrc = [t for t in xc_done if xc[t].get("note")]
     # 價格比值階梯（xcheck_history.find_breaks）：Yahoo 有記錄的 = 調整方法不同（已解釋）；
     # Yahoo 沒記錄、對方有調 = 我們的價格在該日有假跳動（總回報失真）
-    xc_method = [t for t in xc_done if any(b["type"] == "yahoo_adjusted" for b in xc[t].get("breaks", []))]
+    xc_method = [t for t in xc_done if xc[t].get("constant_offset")
+                 or any(b["type"] in ("yahoo_adjusted", "other_unadjusted") for b in xc[t].get("breaks", []))]
     # 只警報「回測會用到的期間」內的漏調（used=False：代碼已給別家公司等，不影響研究）
     xc_unadj = [(t, b) for t in xc_done for b in xc[t].get("breaks", [])
                 if b["type"] == "yahoo_unadjusted" and b.get("used", True)]
@@ -321,7 +322,7 @@ def main() -> None:
     L.append(f"- 調整方法差異（已解釋、不算不符）{len(xc_method)} 檔：Yahoo 把分拆/股份交換記成非整數拆股並回溯"
              "調整價格（總回報正確），第二來源只調真拆股；比對前按事件日倍數對齊。例："
              + "；".join(f"{t} " + ", ".join(f"{b['date']} ×{b['step']:g}" for b in xc[t]["breaks"]
-                                             if b["type"] == "yahoo_adjusted")[:60] for t in xc_method[:8]))
+                                             if b["type"] != "yahoo_unadjusted")[:60] for t in xc_method[:8]))
     L.append(f"- Yahoo 漏調的公司行動（第二來源有調、我們沒有）{len(xc_unadj)} 處："
              + ("；".join(f"{t} {b['date']} ×{b['step']:g}" for t, b in xc_unadj[:15]) or "無"))
     L.append("\n## 📉 倖存者偏差洞（歷史成分股抓不到價格的比例，每年 6/30）\n")

@@ -140,12 +140,28 @@ def drop_spikes(rows: list) -> tuple[list, list]:
     return kept, dropped
 
 
+def load_adjustments(ticker: str) -> list[tuple[date, float]]:
+    """universes/<market>/adjustments.csv（ticker,date,factor,source,note）：Yahoo 漏調的公司行動
+    （分拆等），由全量歷史比對（scripts/xcheck_history.py）抓到、人工查證後登記。載入時把該日之前的
+    價格與股息乘 factor（原始檔不改）。"""
+    p = ROOT / "universes" / market_of(ticker) / "adjustments.csv"
+    if not p.exists():
+        return []
+    with open(p, newline="", encoding="utf-8") as f:
+        return sorted((date.fromisoformat(r["date"]), float(r["factor"]))
+                      for r in csv.DictReader(f) if r["ticker"] == ticker)
+
+
 def load_ohlcv(ticker: str) -> list[dict]:
     """[{Date, Open, High, Low, Close, AdjClose, Volume}]，兩種格式同一個介面（給 QC 用）。
     新格式會先濾掉明顯的垃圾列（drop_spikes）。"""
     if has_v2(ticker):
         rows, _ = drop_spikes(load_raw(ticker))
         divs, _ = load_actions(ticker)
+        for e, f in load_adjustments(ticker):
+            rows = [(r[0], *(x * f if x is not None else None for x in r[1:5]), r[5]) if r[0] < e else r
+                    for r in rows]
+            divs = [(d, a * f) if d < e else (d, a) for d, a in divs]
         fac = adjust_factors([r[0] for r in rows], [r[4] for r in rows], divs)
         return [{"Date": r[0], "Open": r[1], "High": r[2], "Low": r[3], "Close": r[4],
                  "AdjClose": r[4] * f, "Volume": r[5]} for r, f in zip(rows, fac)]
