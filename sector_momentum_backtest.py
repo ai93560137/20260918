@@ -9,6 +9,8 @@
     python3 sector_momentum_backtest.py --index hsi --grid          # 3x3 鄰域
     python3 sector_momentum_backtest.py --index hsi --permutation   # 隨機行業對照組（200 次）
     python3 sector_momentum_backtest.py --index hsi --attribution   # 第二部分：低波動/高股息的行業歸因
+    python3 sector_momentum_backtest.py --index sp500 --strategy ts --grid --permutation    # 第三部分 H2 行業趨勢
+    python3 sector_momentum_backtest.py --index n225 --strategy uslead --grid --permutation # 第三部分 H3 美股領先
 """
 import argparse
 import bisect
@@ -29,6 +31,8 @@ START = {"hsi": date(2010, 7, 1), "sp500": date(2000, 1, 1)}
 MIN_MEMBERS = 3
 GRID_L = (3, 6, 12)
 GRID_N = (2, 3, 4)
+GRID_L_TS = (3, 6, 9, 12, 18, 24)   # H2 行業趨勢鄰域（第三部分預先登記）
+GRID_L_US = (1, 3, 6)               # H3 美股領先鄰域
 
 
 def capm(rets: list[float], bench: list[float]) -> dict:
@@ -76,6 +80,9 @@ class Market:
         self.holes = self.slots = 0
         self._hold_cache: dict = {}
         self._score_cache: dict = {}
+        self._score_vals: dict = {}
+        self._us = None
+        self._us_sig: dict = {}
         for me in self.m_ends:
             listed = self.uni.listed_at(me)
             mem = sorted(t for t in self.uni.eligible_at(me, self.first) if me in self.series[t])
@@ -124,7 +131,12 @@ class Market:
                 if trs:
                     score[s] = sum(trs) / len(trs)
             self._score_cache[key] = (groups, sorted(score, key=score.get, reverse=True))
+            self._score_vals[key] = score
         return self._score_cache[key]
+
+    def scores(self, me: date, L: int) -> dict[str, float]:
+        self.ranked_sectors(me, L)
+        return self._score_vals[(me, L)]
 
     def hold_return(self, t: str, d0: date, d1: date) -> float | None:
         """d0 開盤進場到 d1 開盤出場（AdjOpen，含股息）；中途沒價就用最後可得收市結算。"""
@@ -188,6 +200,92 @@ class Market:
         return {"rets": rets, "bench": bench, "ew": ew, "months": months, "picks": picks}
 
 
+def run_select(mk: "Market", select) -> dict:
+    """通用版：select(me) -> (行業->組員, 被選行業清單)；行業間等權（1/被選數）、行業內等權；
+    被選清單為空 = 全部現金（該月報酬 0，只付賣出的換手成本）。H2/H3 用。"""
+    prev_w: dict[str, float] = {}
+    rets, bench, ew, months, picks = [], [], [], [], []
+    for i, me in enumerate(mk.m_ends[:-1]):
+        d0, d1 = mk.exec_of[me], mk.exec_of[mk.m_ends[i + 1]]
+        if d0 is None or d1 is None or not mk.members[me]:
+            continue
+        groups, chosen = select(me)
+        w = {}
+        for s_ in chosen:
+            for t in groups[s_]:
+                w[t] = w.get(t, 0) + 1 / len(chosen) / len(groups[s_])
+        turnover = sum(abs(w.get(t, 0) - prev_w.get(t, 0)) for t in set(w) | set(prev_w))
+        r = (mk.portfolio_return(w, d0, d1) if w else 0.0) - turnover * mk.cost
+        b = mk.hold_return(mk.bench, d0, d1)
+        e = mk.portfolio_return({t: 1 / len(mk.members[me]) for t in mk.members[me]}, d0, d1)
+        if b is None:
+            continue
+        rets.append(r)
+        bench.append(b)
+        ew.append(e)
+        months.append(d0)
+        picks.append(list(chosen))
+        prev_w = w
+    return {"rets": rets, "bench": bench, "ew": ew, "months": months, "picks": picks}
+
+
+def ts_select(mk: "Market", L: int, rng: random.Random | None = None):
+    """H2 行業趨勢：持有過去 L 月組員平均報酬 > 0 的全部行業；rng＝隨機對照（同數量、隨機挑）。"""
+    def select(me):
+        groups, ranked = mk.ranked_sectors(me, L)
+        sc = mk.scores(me, L)
+        pos = [x for x in ranked if sc[x] > 0]
+        if rng is not None:
+            pos = rng.sample(ranked, len(pos))
+        return groups, pos
+    return select
+
+
+def last_trading_on_or_before(cal: list[date], d: date) -> date | None:
+    i = bisect.bisect_right(cal, d) - 1
+    return cal[i] if i >= 0 else None
+
+
+def us_sector_signal(mk: "Market", d: date, L: int) -> dict[str, float]:
+    """H3：美國（S&P 500 PIT 成分股）各行業過去 L 月組員平均總報酬，只用美國日期 <= d 的收市。"""
+    key = (d, L)
+    if key in mk._us_sig:
+        return mk._us_sig[key]
+    if mk._us is None:
+        mk._us = Market("sp500", start=date(1998, 1, 1))
+    us = mk._us
+    d_us = last_trading_on_or_before(us.cal, d)
+    y, m = d_us.year, d_us.month - L
+    while m <= 0:
+        y, m = y - 1, m + 12
+    d_start_cal = date(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1)
+    g = defaultdict(list)
+    for t in us.uni.eligible_at(d_us, us.first):
+        if d_us not in us.series[t] or us.first[t] > d_start_cal:
+            continue
+        p0 = us.close_on_or_before(t, d_start_cal)
+        sec = us.sectors.get(t)
+        if p0 and sec:
+            g[sec].append(us.series[t][d_us][1] / p0 - 1)
+    out = {s_: sum(v) / len(v) for s_, v in g.items() if len(v) >= MIN_MEMBERS}
+    mk._us_sig[key] = out
+    return out
+
+
+def uslead_select(mk: "Market", L: int, N: int, rng: random.Random | None = None):
+    """H3 美股領先：本地行業按「美國同名行業」過去 L 月報酬排名，取前 N；rng＝隨機挑 N 個。"""
+    def select(me):
+        groups = mk.sector_groups(me)
+        sig = us_sector_signal(mk, me, L)
+        cand = [x for x in groups if x in sig]
+        if len(cand) < N:
+            return groups, []
+        if rng is not None:
+            return groups, rng.sample(cand, N)
+        return groups, sorted(cand, key=sig.get, reverse=True)[:N]
+    return select
+
+
 def summarize(res: dict) -> dict:
     rets, bench, ew = res["rets"], res["bench"], res["ew"]
     eq = eqb = 1.0
@@ -219,19 +317,43 @@ def fmt(s: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--index", default="hsi", choices=[k for k in INDICES if k != "djia"])
-    ap.add_argument("--L", type=int, default=6)
-    ap.add_argument("--N", type=int, default=3)
+    ap.add_argument("--strategy", default="xs", choices=["xs", "ts", "uslead"],
+                    help="xs=橫斷面行業動量（第一部分）；ts=H2 行業趨勢；uslead=H3 美股領先（第三部分）")
+    ap.add_argument("--L", type=int, default=None)
+    ap.add_argument("--N", type=int, default=None)
     ap.add_argument("--grid", action="store_true")
     ap.add_argument("--permutation", action="store_true")
     ap.add_argument("--attribution", action="store_true")
     args = ap.parse_args()
+    st = args.strategy
+    if st == "uslead" and args.index not in ("hsi", "n225"):
+        raise SystemExit("H3 美股領先只測港股（hsi）、日股（n225）")
+    L = args.L or {"xs": 6, "ts": 12, "uslead": 1}[st]
+    N = args.N or 3
 
     mk = Market(args.index)
-    print(f"{args.index}：{mk.m_ends[0]} ~ {mk.m_ends[-1]}，{len(mk.m_ends)} 個月底；基準 {mk.bench}；"
+    print(f"{args.index} [{st}]：{mk.m_ends[0]} ~ {mk.m_ends[-1]}，{len(mk.m_ends)} 個月底；基準 {mk.bench}；"
           f"成本 {mk.cost * 1e4:.0f}bps；倖存者偏差洞 {mk.holes / max(mk.slots, 1):.1%}")
-    res = mk.run(args.L, args.N)
+
+    def run(L_, N_, rng=None):
+        if st == "xs":
+            return mk.run(L_, N_, picker=(lambda me, ranked: rng.sample(ranked, N_)) if rng else None)
+        if st == "ts":
+            return run_select(mk, ts_select(mk, L_, rng))
+        return run_select(mk, uslead_select(mk, L_, N_, rng))
+
+    res = run(L, N)
     s = summarize(res)
-    print(f"L={args.L} N={args.N}：{fmt(s)}")
+    print(f"L={L}" + (f" N={N}" if st != "ts" else "") + f"：{fmt(s)}")
+    if st == "ts":
+        n_sec = [len(p_) for p_ in res["picks"]]
+        eqb, pk, mddb = 1.0, 1.0, 0.0
+        for b_ in res["bench"]:
+            eqb *= 1 + b_
+            pk = max(pk, eqb)
+            mddb = min(mddb, eqb / pk - 1)
+        print(f"   平均持有 {sum(n_sec) / len(n_sec):.1f} 個行業；全現金 {sum(1 for x in n_sec if x == 0)} 個月；"
+              f"最大回撤 {s['mdd']:.0%} vs 基準 {mddb:.0%}")
     cut = date(2022, 1, 1) if args.index == "hsi" else date(2013, 1, 1)
     for label, part in zip((f"{cut} 前", f"{cut} 起"), split(res, cut)):
         if len(part["rets"]) > 12:
@@ -242,26 +364,26 @@ def main() -> None:
         yrs[d.year][1] *= 1 + b
     print("   按年（策略/基準）：" + "  ".join(f"{y}:{a - 1:+.0%}/{b - 1:+.0%}" for y, (a, b) in sorted(yrs.items())))
     from collections import Counter
-    cnt = Counter(x for p in res["picks"] for x in p)
+    cnt = Counter(x for p_ in res["picks"] for x in p_)
     print("   行業入選次數：" + "、".join(f"{k} {v}" for k, v in cnt.most_common()))
 
     if args.grid:
         print("\n鄰域（alpha t vs 基準 / vs 等權）：")
-        print("       " + "".join(f"   N={n}        " for n in GRID_N))
-        for L in GRID_L:
-            cells = []
-            for n in GRID_N:
-                g = summarize(mk.run(L, n))
-                cells.append(f"{g['alpha_t']:5.2f} / {g['alpha_t_ew']:5.2f}")
-            print(f"L={L:>2}  " + "   ".join(cells))
+        if st == "ts":
+            cells = [f"L={L_}: {summarize(run(L_, N))['alpha_t']:.2f} / {summarize(run(L_, N))['alpha_t_ew']:.2f}"
+                     for L_ in GRID_L_TS]
+            print("   " + "   ".join(cells))
+        else:
+            print("       " + "".join(f"   N={n}        " for n in GRID_N))
+            for L_ in (GRID_L if st == "xs" else GRID_L_US):
+                cells = []
+                for n in GRID_N:
+                    g = summarize(run(L_, n))
+                    cells.append(f"{g['alpha_t']:5.2f} / {g['alpha_t_ew']:5.2f}")
+                print(f"L={L_:>2}  " + "   ".join(cells))
 
     if args.permutation:
-        ts = []
-        for seed in range(200):
-            rng = random.Random(seed)
-            r = mk.run(args.L, args.N, picker=lambda me, ranked: rng.sample(ranked, args.N))
-            ts.append(summarize(r)["alpha_t"])
-        ts.sort()
+        ts = sorted(summarize(run(L, N, random.Random(seed)))["alpha_t"] for seed in range(200))
         pct = sum(x < s["alpha_t"] for x in ts) / len(ts)
         print(f"\n隨機行業對照組 200 次：alpha t 中位數 {ts[100]:.2f}、第 90 百分位 {ts[179]:.2f}；"
               f"預設格 {s['alpha_t']:.2f} 位於第 {pct:.1%} 百分位（{sum(x < s['alpha_t'] for x in ts)}/200 次隨機低於它）")
