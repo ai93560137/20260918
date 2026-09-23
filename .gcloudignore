@@ -7,3 +7,6 @@ __pycache__/
 venv/
 DEPLOY.md
 *.md
+# 佩洛西追蹤/回測（GitHub Actions 用，不需部署到 Cloud Function）
+scripts/
+data/
