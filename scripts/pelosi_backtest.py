@@ -171,7 +171,7 @@ def load_local_prices(equities_dir, ticker, start):
     return Prices(days, [r[1] * k for r, k in zip(rows, factor)], [r[2] * k for r, k in zip(rows, factor)])
 
 
-def load_all_prices(tickers, start, cache_dir=None, equities_dir=None, sources=None):
+def load_all_prices(tickers, start, cache_dir=None, equities_dir=None, sources=None, yahoo=True):
     out = {}
     sources = sources if sources is not None else {}
     for n, tk in enumerate(sorted(tickers), 1):
@@ -183,6 +183,8 @@ def load_all_prices(tickers, start, cache_dir=None, equities_dir=None, sources=N
                 out[tk] = p
                 sources[tk] = "local"
                 continue
+        if not yahoo:
+            continue
         cache = os.path.join(cache_dir, f"{tk}.json") if cache_dir else None
         if cache and os.path.exists(cache):
             with open(cache) as f:

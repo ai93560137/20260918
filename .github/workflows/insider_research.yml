@@ -1,0 +1,82 @@
+name: Insider buying research（內部人買入 Form 4 研究）
+
+# 抓 SEC Form 3/4/5 季度資料集（scripts/insider_fetch.py），只留公開市場買入，
+# 再用 gifted-carson 分支的美股日線 + S&P 500 point-in-time 成分股回測（scripts/insider_backtest.py）。
+# 報告：data/insider/backtest/README.md
+# SEC 要求 User-Agent 帶聯絡方式：請在 repo Settings → Secrets 新增 SEC_USER_AGENT
+# （例如 "YourName research you@example.com"）；沒設時用 GitHub noreply 位址代替。
+on:
+  schedule:
+    - cron: '0 3 * * 0'   # 每週日 03:00 UTC：補最近兩季的延遲申報並重跑回測
+  workflow_dispatch:
+    inputs:
+      refresh_all:
+        description: '全部季度重抓'
+        required: false
+        default: 'false'
+  push:   # 開發期間：這個分支改了研究腳本就自動跑一次（新 workflow 在合併前無法手動觸發）
+    branches: [claude/pelosi-stock-tracking-f9f94g]
+    paths:
+      - 'scripts/insider_*.py'
+      - '.github/workflows/insider_research.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: insider-research-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout US equities + S&P 500 point-in-time universe
+        uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+          path: _equities
+          fetch-depth: 1
+          sparse-checkout: |
+            data/equities/us
+            universes
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests
+
+      - name: Fetch SEC insider purchases
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || format('{0} research {1}@users.noreply.github.com', github.repository, github.repository_owner) }}
+          REFRESH_ALL: ${{ inputs.refresh_all }}
+        run: |
+          ARGS=""
+          [ "$REFRESH_ALL" = "true" ] && ARGS="--refresh-all"
+          python3 scripts/insider_fetch.py $ARGS
+
+      - name: Backtest
+        run: python3 scripts/insider_backtest.py
+
+      - name: Commit and push
+        if: always()
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { [ -d data/insider ] && git add data/insider; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(insider): 更新內部人買入資料與回測 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(insider): 更新內部人買入資料與回測 $(date -u +%F)" || exit 0; }
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
