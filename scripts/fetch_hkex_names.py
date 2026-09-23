@@ -34,8 +34,14 @@ def parse(xlsx: bytes, code_keys: tuple[str, ...], name_keys: tuple[str, ...]) -
     wb = openpyxl.load_workbook(io.BytesIO(xlsx), read_only=True, data_only=True)
     ws = wb.worksheets[0]
     asof, header, out = "", None, {}
+    n_rows, samples = 0, []
     for row in ws.iter_rows(values_only=True):
-        cells = ["" if v is None else str(v).strip() for v in row]
+        n_rows += 1
+        # 數字格：openpyxl 可能給 int 或 700.0，統一成整數字串
+        cells = ["" if v is None else (str(int(v)) if isinstance(v, float) and v.is_integer() else str(v).strip())
+                 for v in row]
+        if len(samples) < 12:
+            samples.append(cells[:6])
         if header is None:
             joined = " ".join(cells)
             m = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", joined)
@@ -48,12 +54,17 @@ def parse(xlsx: bytes, code_keys: tuple[str, ...], name_keys: tuple[str, ...]) -
                 header = (ci, ni, cat)
             continue
         ci, ni, cat = header
-        code = cells[ci] if ci < len(cells) else ""
+        code = (cells[ci] if ci < len(cells) else "").replace(" ", "")
         if not code.isdigit():
+            if len(samples) < 20:
+                samples.append(["SKIP", *cells[:6]])
             continue
         out[f"{int(code):04d}.HK" if int(code) < 10000 else f"{int(code)}.HK"] = {
             "name": cells[ni] if ni < len(cells) else "",
             "category": cells[cat] if cat is not None and cat < len(cells) else ""}
+    print(f"xlsx：{n_rows} 列、表頭欄位 {header}、解析 {len(out)} 檔；前幾列：", file=sys.stderr)
+    for r in samples:
+        print("   ", r, file=sys.stderr)
     if header is None:
         raise SystemExit("找不到表頭（代號/名稱欄），港交所可能改了格式；前幾列：" + repr(
             [r for _, r in zip(range(6), ws.iter_rows(values_only=True))]))
