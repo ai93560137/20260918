@@ -14,11 +14,6 @@ on:
         description: '全部季度重抓'
         required: false
         default: 'false'
-  push:   # 開發期間：這個分支改了研究腳本就自動跑一次（新 workflow 在合併前無法手動觸發）
-    branches: [claude/pelosi-stock-tracking-f9f94g]
-    paths:
-      - 'scripts/insider_*.py'
-      - '.github/workflows/insider_research.yml'
 
 permissions:
   contents: write

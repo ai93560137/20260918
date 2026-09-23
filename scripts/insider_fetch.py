@@ -308,7 +308,7 @@ def main():
                 failed.append(f"{y}q{q}")
             continue
         qkey = f"{y}q{q}"
-        rows = extract_purchases(blob, SAMPLE_DIR if (y, q) == todo[-1] else None)
+        rows = extract_purchases(blob, SAMPLE_DIR)  # 每季覆寫，留下最後成功那季的表頭樣本
         for r in rows:
             r["quarter"] = qkey
         # 同一年其他季度保留舊資料，只換掉這一季（資料集的季度 = SEC 收件季度，不一定等於申報日年份）
