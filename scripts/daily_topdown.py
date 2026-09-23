@@ -97,6 +97,11 @@ def metrics(rows: list[tuple[date, float]]) -> dict | None:
     return m
 
 
+def disp(t: str) -> str:
+    """顯示用代號：港股 2359.HK、美股 AMD、日股 4502.JP（內部/Yahoo 代號是 .T，只改顯示）。"""
+    return t[:-2] + ".JP" if t.endswith(".T") else t
+
+
 def pct(x: float | None, digits: int = 1, sign: bool = True) -> str:
     if x is None:
         return "—"
@@ -209,7 +214,7 @@ def main() -> None:
         usd_t = cfg["usd"] if md.has_data(cfg["usd"]) else cfg["etf"]
         refs = {t: metrics(closes_upto(t, as_of)) for t in cfg["refs"] + ([cfg["etf"]] if usd_t != cfg["etf"] else [])}
         country[c] = {"ticker": usd_t, "m": metrics(closes_upto(usd_t, as_of)), "refs": refs,
-                      "usd_note": "" if usd_t == cfg["usd"] else f"（{cfg['usd']} 尚無數據，暫用 {cfg['etf']} 本幣計）"}
+                      "usd_note": "" if usd_t == cfg["usd"] else f"（{cfg['usd']} 尚無數據，暫用 {disp(cfg['etf'])} 本幣計）"}
     ranked = sorted(COUNTRIES, key=lambda c: -(country[c]["m"]["score"]
                                                  if country[c]["m"] and country[c]["m"]["score"] is not None else -9))
 
@@ -288,13 +293,13 @@ def main() -> None:
         if not m:
             L.append(f"| {COUNTRIES[c]['zh']} | {x['ticker']} | 無數據 |" + " |" * 9)
             continue
-        L.append(f"| **{COUNTRIES[c]['zh']}** | {x['ticker']} | {m['last']} | {pct(m['r1'])} | {pct(m['r3'])} | "
+        L.append(f"| **{COUNTRIES[c]['zh']}** | {disp(x['ticker'])} | {m['last']} | {pct(m['r1'])} | {pct(m['r3'])} | "
                  f"{pct(m['r6'])} | {pct(m['r12'])} | **{pct(m['score'])}** | {pct(m['vs200'])} | {pct(m['dd52'])} | "
                  f"{len(x['above'])}/{x['n_members']}（{len(x['above']) / max(x['n_members'], 1):.0%}） | "
                  f"{len(x['kept'])} |")
     L.append("")
     L.append("參考：" + "；".join(
-        f"{REF_ZH.get(t, t)} {t} 3個月 {pct(m['r3'])}、12個月 {pct(m['r12'])}"
+        f"{REF_ZH.get(t, t)} {disp(t)} 3個月 {pct(m['r3'])}、12個月 {pct(m['r12'])}"
         for c in ranked for t, m in country[c]["refs"].items() if m) + "。")
     notes = [country[c]["usd_note"] for c in COUNTRIES if country[c]["usd_note"]]
     L.append("動能分數 = 3/6/12 個月總報酬平均。港股以港元計（聯繫匯率≈美元）；日股用美元計的 EWJ，"
@@ -323,7 +328,7 @@ def main() -> None:
                  + " | ".join(f"**{hi_tot[lab]}**" for lab in SHOW) + f" | {hi_tot[KEEP] / max(x['n_members'], 1):.0%} | |")
         if x["stale"]:
             L.append(f"\n⚠ {len(x['stale'])} 檔最新收市早於 {x['last']}（停牌或數據未更新），用其最後收市判斷："
-                     + "、".join(f"{t}（{st[t]['last']}）" for t in x["stale"][:10]))
+                     + "、".join(f"{disp(t)}（{st[t]['last']}）" for t in x["stale"][:10]))
         L.append("")
 
     L.append("## 三、新高股票名單（12 → 9 → 6 → 3 個月）\n")
@@ -342,7 +347,7 @@ def main() -> None:
             L.append("|---|---|---|---|---|---|---|")
             for t in sorted(hits, key=lambda t: (order.index(sector_zh(sec_of[c], t)), t)):
                 m = st[t]
-                L.append(f"| {sector_zh(sec_of[c], t)} | {t} | {names[c].get(t, '')} | "
+                L.append(f"| {sector_zh(sec_of[c], t)} | {disp(t)} | {names[c].get(t, '')} | "
                          f"{pct(m['vs200'])} | {pct(m['r1'])} | {pct(m['r3'])} | {pct(m['r12'])} |")
             L.append("")
 
@@ -354,9 +359,9 @@ def main() -> None:
             added, dropped = sorted(new - old), sorted(old - new)
             line = f"- {COUNTRIES[c]['zh']}：留下 {prev.get(f'{c}_n_kept') or len(old)} → {len(new)} 檔"
             if added:
-                line += f"；新進 {'、'.join(added)}"
+                line += f"；新進 {'、'.join(map(disp, added))}"
             if dropped:
-                line += f"；移出 {'、'.join(dropped)}"
+                line += f"；移出 {'、'.join(map(disp, dropped))}"
             L.append(line)
             if old:   # 上次名單從上次報告日至今（單次、未扣成本，只供追蹤）
                 pd_ = date.fromisoformat(prev["date"])
@@ -364,7 +369,7 @@ def main() -> None:
                 b = ret_since(country[c]["ticker"], pd_, as_of)
                 if rs:
                     L.append(f"  - 上次（{prev['date']}）名單 {len(rs)} 檔等權至今 {pct(sum(rs) / len(rs))}"
-                             + (f"，同期 {country[c]['ticker']} {pct(b)}" if b is not None else ""))
+                             + (f"，同期 {disp(country[c]['ticker'])} {pct(b)}" if b is not None else ""))
     else:
         L.append("- 第一份新格式報告，沒有可比較的上次紀錄。")
     L.append("")
@@ -407,7 +412,7 @@ def main() -> None:
     # Telegram 單則上限 4096 字，超過就按行切成多則（標「續」）。
     def tk(c: str, t: str) -> str:     # 完整代號（2359.HK / 4502.T / AMD）+ 名稱
         n = names[c].get(t, "")
-        return f"{t} {n}" if n else t
+        return f"{disp(t)} {n}" if n else disp(t)
 
     uni_name = {c: Universe(COUNTRIES[c]["index"]).cfg["name"] for c in COUNTRIES}
     head = [f"📊 每日股票篩選 {report_day}",
@@ -419,7 +424,7 @@ def main() -> None:
             "④ 按板塊（行業）統計檔數，並列出每一隻股票",
             "",
             "國家動能（3/6/12 個月報酬平均）：",
-            *[f"・{COUNTRIES[c]['zh']}（{country[c]['ticker']}）{pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"]],
+            *[f"・{COUNTRIES[c]['zh']}（{disp(country[c]['ticker'])}）{pct(country[c]['m']['score'])}" for c in ranked if country[c]["m"]],
             "",
             "各市場總覽："]
     for c in ranked:
