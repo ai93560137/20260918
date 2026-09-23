@@ -114,6 +114,8 @@ def hsi_levels():
                 log.append(f'intraday int={i} span={sp}: {e}')
     # 深夜補位第二招:期貨報價 widget 的當日高低。深夜 lastupd 停在日市收市
     # (實測 00:49 仍見 '22/09/2026 16:29'),日期等於 cutoff 時其 hi/lo 即當日高低。
+    # 注意:此 hi/lo 只覆蓋日市段;昨夜市段(屬同一交易日)由前次執行存下的
+    # night 記錄(見報價段)在此合併,否則上軌可能低估(09-23 實測差 170 點)。
     if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
         try:
             q0 = call('getderivativesfutures', ats='HSI', type=0)
@@ -126,8 +128,18 @@ def hsi_levels():
             m = re.match(r'(\d{2})/(\d{2})/(\d{4})', lu)
             lu_d = datetime(int(m.group(3)), int(m.group(2)), int(m.group(1))).date() if m else None
             if lu_d == cutoff and hi_q and lo_q and 15000 < lo_q <= hi_q < 40000:
+                agg_note = '(當日取自收市報價)'
+                try:
+                    prev = json.load(open(f'{OUT}/levels.json', encoding='utf-8'))
+                    n = (prev.get('hsi') or {}).get('night') or {}
+                    nh, nl = num(n.get('h')), num(n.get('l'))
+                    if n.get('date') == str(cutoff) and nh and nl and 15000 < nl <= nh < 40000:
+                        hi_q, lo_q = max(hi_q, nh), min(lo_q, nl)
+                        agg_note = '(當日=收市報價+昨夜市合併)'
+                        log.append(f'night merged {n}')
+                except Exception as e:
+                    log.append(f'night merge skip: {e}')
                 days.append((cutoff, hi_q, lo_q))
-                agg_note = '(當日取自報價高低)'
                 log.append(f'quote hi/lo accepted {cutoff}: h={hi_q:.0f} l={lo_q:.0f}')
             else:
                 log.append(f'quote hi/lo rejected: lastupd={lu!r} hi={hi_q} lo={lo_q}')
@@ -188,6 +200,16 @@ def hsi_levels():
                 ts = datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)),
                               int(m.group(4)), int(m.group(5))) if m else None
                 log.append(f'quote {tag}: bd={bd} as={as_} se={se} lastupd={lu!r}')
+                # 記下夜市時段高低給下次執行合併(夜市屬下一交易日:
+                # lastupd 17:15-23:59 → 翌日;00:00-03:00 → 當日;週末順延至週一)
+                if typ == 1 and ts:
+                    nh, nl = num(row.get('hi')), num(row.get('lo'))
+                    if nh and nl and 15000 < nl <= nh < 40000:
+                        nd = ts.date() + timedelta(days=1 if ts.hour >= 12 else 0)
+                        while nd.weekday() >= 5:
+                            nd += timedelta(days=1)
+                        out['night'] = {'date': str(nd), 'h': nh, 'l': nl, 'asof': lu}
+                        log.append(f"night session saved: {out['night']}")
                 cand = None
                 if bd and as_ and 15000 < bd <= as_ < 40000:
                     cand = {'px': round((bd + as_) / 2), 'kind': f'中間價({tag})', 'asof': lu}
@@ -203,6 +225,14 @@ def hsi_levels():
         log.append(f"hsi quote: {out.get('quote')}")
     except Exception as e:
         log.append(f'hsi quote fail: {e}')
+    if 'night' not in out:                      # 本次拿不到夜市記錄則沿用上次的
+        try:
+            prev = json.load(open(f'{OUT}/levels.json', encoding='utf-8'))
+            n = (prev.get('hsi') or {}).get('night')
+            if n:
+                out['night'] = n
+        except Exception:
+            pass
     return out
 
 
