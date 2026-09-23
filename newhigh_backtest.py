@@ -122,6 +122,7 @@ def stock_frame(t: str, loader=None) -> pd.DataFrame | None:
     out["above"] = above
     out["x2"] = (adj < alow.shift(1).rolling(X2_LOOKBACK).min()).to_numpy()
     out["x3"] = (adj < ma200).to_numpy() & ma200.notna().to_numpy()
+    out["x5"] = (adj < adj.ewm(span=5, adjust=False).mean()).to_numpy()     # 五日 EMA 出場（VCP 全市場第三部分）
     return out
 
 
@@ -208,7 +209,7 @@ class MarketData:
         self.L, self.sl = mat("L", np.int32, 0), mat("sl", np.int32, 0)
         self.upgrade = mat("upgrade", bool, False)
         self.above = mat("above", bool, False)
-        self.exitc = {"x2": mat("x2", bool, False), "x3": mat("x3", bool, False)}
+        self.exitc = {"x2": mat("x2", bool, False), "x3": mat("x3", bool, False), "x5": mat("x5", bool, False)}
         # 成分股遮罩（point-in-time + 防代碼重用）
         self.member = np.zeros((S, D), dtype=bool)
         pos = {t: s for s, t in enumerate(self.tickers)}

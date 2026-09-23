@@ -117,7 +117,7 @@ class VCPData:
             busy[s] = ex
         return out
 
-    def random_trades(self, ev: dict, seed: int) -> list:
+    def random_trades(self, ev: dict, seed: int, rule: str = "xv") -> list:
         m = self.m
         rng = np.random.default_rng(seed)
         Dn = len(m.cal)
@@ -136,8 +136,11 @@ class VCPData:
             entry = m.next_px[r, j + 1]
             if entry >= Dn or np.isnan(m.adj[r, j]):
                 continue
-            stop = m.adj[r, j] * info["stop_adj"] / m.adj[s, j]
-            ex, op = self.xv_exit(r, entry, stop)
+            if rule == "xv":
+                stop = m.adj[r, j] * info["stop_adj"] / m.adj[s, j]
+                ex, op = self.xv_exit(r, entry, stop)
+            else:
+                ex, op = m.exit_index(r, entry, rule)
             if ex >= entry:
                 out.append((r, int(entry), ex, op))
         return out
@@ -154,6 +157,8 @@ def main() -> None:
                     help="逐筆核對標為可疑的訊號（JSON：[[ticker, 訊號日], ...]），剔除後重算")
     ap.add_argument("--tag", default="", help="輸出檔名後綴（例：_qc）")
     ap.add_argument("--hl-repair", action="store_true", help="港股敏感度：高低價修正代替整檔排除（只作參考）")
+    ap.add_argument("--exit", default="xv", choices=("xv", "x5"),
+                    help="判決用出場：xv（預設，第一部分）或 x5（五日 EMA，第三部分；鄰域與隨機對照都用它）")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
     args.out = args.out or ROOT / "research" / ("vcp_full" if args.full else "vcp")
@@ -163,7 +168,9 @@ def main() -> None:
     res = {"market": args.market, "cells": {}, "random": {}}
     for r, D in GRID:
         ev = v.events(r, D)
-        rules = ("xv", "x2", "x1", "x3") if (r, D) == DEFAULT else ("xv",)
+        main_rule = args.exit
+        rules = ((main_rule,) + tuple(x for x in ("xv", "x2", "x1", "x3") if x != main_rule)) if (r, D) == DEFAULT \
+            else (main_rule,)
         for rule in rules:
             tr = v.trades(ev, rule)
             if not tr:
@@ -173,6 +180,8 @@ def main() -> None:
             e = m.evaluate(tr)
             key = f"r={r} D={D:.0%}|{rule}"
             stops = [1 - ev[(s, j)]["stop_adj"] / m.adj[s, j] for (s, j) in ev] if rule == "xv" else []
+            if rule == main_rule and (r, D) == DEFAULT:
+                res["main_trade_rets"] = e["tr"]
             res["cells"][key] = {k: val for k, val in e.items() if k != "tr"}
             if stops:
                 res["cells"][key]["avg_stop"] = float(np.mean(stops))
@@ -208,8 +217,8 @@ def main() -> None:
             print(f"預設格收縮次數分布：{dict(sorted(res['n_t'].items()))}", file=sys.stderr)
     if args.random:
         ev = v.events(*DEFAULT)
-        real = res["cells"][f"r={DEFAULT[0]} D={DEFAULT[1]:.0%}|xv"].get("t")
-        ts = sorted(m.evaluate(v.random_trades(ev, sd))["t"] for sd in range(args.random))
+        real = res["cells"][f"r={DEFAULT[0]} D={DEFAULT[1]:.0%}|{args.exit}"].get("t")
+        ts = sorted(m.evaluate(v.random_trades(ev, sd, args.exit))["t"] for sd in range(args.random))
         pct = sum(x < real for x in ts) / len(ts) if real is not None else float("nan")
         res["random"] = {"median": ts[len(ts) // 2], "p90": ts[int(0.9 * len(ts))], "real_pctl": pct, "n": len(ts)}
         print(f"隨機對照 {len(ts)} 次：中位數 {ts[len(ts) // 2]:.2f}、第 90 百分位 {ts[int(0.9 * len(ts))]:.2f}；"
