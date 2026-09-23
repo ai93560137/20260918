@@ -118,9 +118,13 @@ jobs:
       - name: Data quality check（結構／跟指數版對照／最新一日第二來源）
         id: qc
         if: steps.fetch.outputs.done == 'true'
+        env:
+          BT: ${{ inputs.backtest }}
         run: |
           set +e
-          python3 scripts/qc_full_market.py --market "$M"
+          KEEP=""
+          if [ "$BT" != "true" ]; then KEEP="--keep-trade-check"; fi
+          python3 scripts/qc_full_market.py --market "$M" $KEEP
           RC=$?
           if [ $RC -eq 0 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
           if [ $RC -ne 0 ]; then echo "::warning::$M 數據品質超出門檻，不跑回測（見 research/vcp_full/${M}_qc.md）"; fi
