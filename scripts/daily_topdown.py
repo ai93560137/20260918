@@ -25,6 +25,7 @@ analysis/topdown_log.csv，累積幾個月就是真正的樣本外紀錄，可�
 import argparse
 import bisect
 import csv
+import io
 import json
 import math
 import sys
@@ -130,7 +131,7 @@ def short_name(name: str) -> str:
     for suf in (" Limited", " Ltd.", " Ltd", " Co., Ltd.", " Company", " Corporation", " Corp.", " Inc.",
                 ", Inc.", " Holdings", " Group", " plc", " N.V.", " Incorporated", " (The)"):
         name = name.replace(suf, "")
-    return name.strip(" ,")[:28]
+    return name.strip(" ,")[:40]
 
 
 def load_names(market: str) -> dict[str, str]:
@@ -198,6 +199,107 @@ def rank_by(rows: list[dict], key: str) -> dict[str, int]:
     return {n: i + 1 for i, (_, n) in enumerate(reversed(v))}
 
 
+# ---------- 每日新高名單（analysis/newhighs/，給其他分支/程式用）----------
+
+LIST_ORDER = ["hk", "jp", "us"]          # 名單檔裡的市場順序：港股、日股、美股
+LIST_FIELDS = ["date", "market", "market_zh", "window_months", "sector", "ticker", "name",
+               "close", "prior_high", "pct_above_ma200", "yahoo_ticker"]
+
+
+def write_newhigh_lists(end: date, n_days: int) -> list[date]:
+    """重算 end（含）之前最近 n_days 個交易日的新高名單，每天一檔：
+    analysis/newhighs/<收市日>.csv（機器讀）+ .md（人讀），並更新 summary.csv。
+    規則同報告：point-in-time 成分股、當天收市在 200 日線上、收市價嚴格高於之前 N 個月盤中最高價。
+    某市場當天休市（有當天價格的成分股不到一半）就不列該市場。只在內容有變時才寫檔。"""
+    out_dir = OUT / "newhighs"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    wins = [(lab, int(lab.rstrip("月"))) for lab, _ in reversed(RULES["high_windows"])]   # 12 → 3
+    start = end - timedelta(days=max(40, n_days * 3))
+    mk = {}
+    for c in LIST_ORDER:
+        uni = Universe(COUNTRIES[c]["index"])
+        cache, first = {}, {}
+        for t in uni.all_tickers(since=start):
+            rows, hl = ohlc_upto(t, end)
+            if rows:
+                cache[t], first[t] = (rows, hl, [d for d, _ in rows]), rows[0][0]
+        trading = set()
+        cnt: dict[date, int] = {}
+        for rows, _, ds in cache.values():
+            for d in ds[bisect.bisect_left(ds, start):]:
+                cnt[d] = cnt.get(d, 0) + 1
+        for d, n in cnt.items():
+            if n >= 0.5 * max(len(uni.eligible_at(d, first)), 1):
+                trading.add(d)
+        mk[c] = {"uni": uni, "cache": cache, "first": first, "trading": trading,
+                 "sec": uni.sectors()[0], "names": load_names(uni.cfg["market"])}
+    days = sorted(set().union(*(m["trading"] for m in mk.values())))[-n_days:]
+
+    summ_path = out_dir / "summary.csv"
+    summary = []
+    if summ_path.exists():
+        with open(summ_path, newline="", encoding="utf-8") as f:
+            summary = [r for r in csv.DictReader(f) if date.fromisoformat(r["date"]) not in days]
+    for D in days:
+        recs, md_lines = [], [f"# 新高名單 {D}\n",
+                              "當天收市在 200 日線上、且收市價**高於**之前 12／9／6／3 個月盤中最高價的指數成分股"
+                              "（12 個月新高必然也列在 9／6／3 個月）。由 scripts/daily_topdown.py 產生；描述性篩選，非買入建議。\n"]
+        for c in LIST_ORDER:
+            m_ = mk[c]
+            if D not in m_["trading"]:
+                md_lines.append(f"## {COUNTRIES[c]['zh']}\n\n沒有 {D} 的收市數據（休市，或數據未到——之後幾天的例行重算會補上）\n")
+                continue
+            ms = {}
+            for t in m_["uni"].eligible_at(D, m_["first"]):
+                rows, hl, ds = m_["cache"][t]
+                i = bisect.bisect_right(ds, D)
+                if i == 0 or ds[i - 1] != D:          # 當天停牌/沒數據
+                    continue
+                m = metrics(rows[max(0, i - 300):i], hl[max(0, i - 300):i])
+                if m:
+                    ms[t] = (m, hl[i - 1][0])
+            above = {t for t, (m, _) in ms.items() if m["vs200"] is not None and m["vs200"] > 0}
+            counts = {}
+            md_lines.append(f"## {COUNTRIES[c]['zh']}（{m_['uni'].cfg['name']}：{len(ms)} 檔有收市價，200 日線上 {len(above)} 檔）\n")
+            for lab, months in wins:
+                hits = [t for t in above if ms[t][0]["highs"][lab]]
+                counts[months] = len(hits)
+                by_sec: dict[str, list[str]] = {}
+                for t in hits:
+                    by_sec.setdefault(sector_zh(m_["sec"], t), []).append(t)
+                md_lines.append(f"### {months} 個月新高：{len(hits)} 檔\n")
+                if not hits:
+                    md_lines.append("（無）")
+                for sec in sorted(by_sec, key=lambda k: (-len(by_sec[k]), k)):
+                    md_lines.append(f"- **{sec}** {len(by_sec[sec])} 檔：" + "、".join(
+                        f"{disp(t)} {m_['names'].get(t, '')}".strip() for t in sorted(by_sec[sec])))
+                    for t in sorted(by_sec[sec]):
+                        m, close = ms[t]
+                        recs.append({"date": D.isoformat(), "market": c, "market_zh": COUNTRIES[c]["zh"],
+                                     "window_months": months, "sector": sec, "ticker": disp(t),
+                                     "name": m_["names"].get(t, ""), "close": f"{close:g}",
+                                     "prior_high": f"{m['prior_high'][lab]:g}",
+                                     "pct_above_ma200": f"{m['vs200'] * 100:.1f}", "yahoo_ticker": t})
+                md_lines.append("")
+            summary.append({"date": D.isoformat(), "market": c, "n_members": len(ms), "n_above_ma200": len(above),
+                            **{f"n_{mo}m": counts[mo] for _, mo in wins}})
+        buf = io.StringIO()
+        w = csv.DictWriter(buf, fieldnames=LIST_FIELDS, lineterminator="\n")
+        w.writeheader()
+        w.writerows(recs)
+        for path, text in ((out_dir / f"{D}.csv", buf.getvalue()), (out_dir / f"{D}.md", "\n".join(md_lines) + "\n")):
+            if not path.exists() or path.read_text(encoding="utf-8") != text:
+                path.write_text(text, encoding="utf-8")
+    summary.sort(key=lambda r: (r["date"], LIST_ORDER.index(r["market"])))
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=["date", "market", "n_members", "n_above_ma200", "n_12m", "n_9m", "n_6m", "n_3m"],
+                       lineterminator="\n")
+    w.writeheader()
+    w.writerows(summary)
+    summ_path.write_text(buf.getvalue(), encoding="utf-8")
+    return days
+
+
 # ---------- 主程式 ----------
 
 def sector_zh(sec_map: dict[str, str], t: str) -> str:
@@ -218,6 +320,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--as-of", type=date.fromisoformat, default=None,
                     help="報告日（預設今天，香港日期）；各市場取報告日之前的最新收市（= 昨天收市）")
+    ap.add_argument("--list-days", type=int, default=5,
+                    help="重算最近幾個交易日的新高名單（analysis/newhighs/；預設 5，補回補數據/遲到的收市）")
     args = ap.parse_args()
     report_day = args.as_of or date.today()
     # 用「昨天收市」：只取報告日之前的收市（早上跑本來就是這樣；白天手動跑也不會混進盤中價）
@@ -404,6 +508,9 @@ def main() -> None:
     L.append("- 三地收市日可能不同（見各地標題）；美股收市在亞洲早上才有數據")
 
     OUT.mkdir(parents=True, exist_ok=True)
+    listed_days = write_newhigh_lists(as_of, args.list_days)
+    print(f"新高名單：{listed_days[0]} ~ {listed_days[-1]}（{len(listed_days)} 個交易日）-> {OUT / 'newhighs'}",
+          file=sys.stderr)
     text = "\n".join(L) + "\n"
     (OUT / "DAILY_TOPDOWN.md").write_text(text, encoding="utf-8")
     (OUT / "archive").mkdir(exist_ok=True)
