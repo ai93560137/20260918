@@ -6,6 +6,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2009-01-05",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4349,
   "shares_rows": 0
@@ -17,6 +18,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 475
@@ -28,6 +30,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2014-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 3070,
   "shares_rows": 332
@@ -44,6 +47,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 365
@@ -55,6 +59,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2003-09-29",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5692,
   "shares_rows": 376
@@ -66,6 +71,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 380
@@ -77,6 +83,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 382
@@ -88,6 +95,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 360
@@ -99,6 +107,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 380
@@ -110,6 +119,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 386
@@ -121,6 +131,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 350
@@ -132,6 +143,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 377
@@ -143,6 +155,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 366
@@ -154,6 +167,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 400
@@ -165,6 +179,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 376
@@ -180,23 +195,25 @@
   "last_fail": "2026-09-22"
  },
  "2269.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 353
  },
  "2282.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 338
@@ -208,28 +225,31 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2004-09-16",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5439,
   "shares_rows": 535
  },
  "2432.T": {
-  "adj_err_max": 1e-06,
-  "error": null,
-  "fails": 0,
-  "fetched": "2026-09-23",
-  "files_changed": 0,
-  "first": "2005-02-16",
-  "last": "2026-09-18",
-  "rows": 5330,
-  "shares_rows": 497
- },
- "2501.T": {
   "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
+  "first": "2005-02-16",
+  "kept_tail": 0,
+  "last": "2026-09-18",
+  "rows": 5330,
+  "shares_rows": 497
+ },
+ "2501.T": {
+  "adj_err_max": 1e-06,
+  "error": null,
+  "fails": 0,
+  "fetched": "2026-09-23",
+  "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 349
@@ -241,6 +261,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 365
@@ -252,6 +273,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 436
@@ -263,6 +285,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 413
@@ -274,6 +297,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 360
@@ -285,6 +309,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 361
@@ -301,6 +326,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 419
@@ -312,6 +338,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 374
@@ -323,6 +350,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2024-12-18",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 427,
   "shares_rows": 72
@@ -334,6 +362,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 400
@@ -345,17 +374,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 348
  },
  "3086.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 367
@@ -367,6 +398,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2007-12-11",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4610,
   "shares_rows": 377
@@ -378,6 +410,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 380
@@ -389,6 +422,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 314
@@ -400,6 +434,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 396
@@ -411,28 +446,31 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 430
  },
  "3110.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 329
  },
  "3289.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2013-10-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 3187,
   "shares_rows": 454
@@ -444,6 +482,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 397
@@ -455,6 +494,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 418
@@ -466,6 +506,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 435
@@ -482,6 +523,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 376
@@ -493,6 +535,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 463
@@ -504,17 +547,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2003-08-15",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5723,
   "shares_rows": 463
  },
  "3659.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2011-12-14",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 3633,
   "shares_rows": 393
@@ -526,6 +571,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2014-11-14",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 2915,
   "shares_rows": 384
@@ -537,6 +583,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 388
@@ -548,6 +595,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2013-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 3315,
   "shares_rows": 326
@@ -559,6 +607,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2005-09-29",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5169,
   "shares_rows": 305
@@ -570,6 +619,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 343
@@ -586,6 +636,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 343
@@ -597,6 +648,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 468
@@ -608,6 +660,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 367
@@ -619,6 +672,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 329
@@ -630,6 +684,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 411
@@ -641,6 +696,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 376
@@ -652,6 +708,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 390
@@ -663,6 +720,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 429
@@ -674,6 +732,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 375
@@ -685,6 +744,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 339
@@ -696,6 +756,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 372
@@ -707,6 +768,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 450
@@ -718,6 +780,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 384
@@ -729,6 +792,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 348
@@ -740,6 +804,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-12-17",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6157,
   "shares_rows": 460
@@ -751,6 +816,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-11-30",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6168,
   "shares_rows": 378
@@ -762,6 +828,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2018-06-19",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 2021,
   "shares_rows": 467
@@ -773,6 +840,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 331
@@ -784,6 +852,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 371
@@ -795,6 +864,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 398
@@ -806,6 +876,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 317
@@ -817,6 +888,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 424
@@ -828,6 +900,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 350
@@ -839,6 +912,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 437
@@ -850,6 +924,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 381
@@ -861,6 +936,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 366
@@ -872,6 +948,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2010-12-15",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 3877,
   "shares_rows": 352
@@ -883,6 +960,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 306
@@ -894,6 +972,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 352
@@ -905,17 +984,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2003-10-28",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5671,
   "shares_rows": 477
  },
  "4704.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-08-17",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6504,
   "shares_rows": 340
@@ -927,6 +1008,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 386
@@ -938,6 +1020,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-04-19",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6590,
   "shares_rows": 469
@@ -954,6 +1037,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 355
@@ -965,6 +1049,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 478
@@ -976,6 +1061,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 377
@@ -997,6 +1083,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2025-03-19",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 369,
   "shares_rows": 77
@@ -1008,17 +1095,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2006-10-24",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4891,
   "shares_rows": 372
  },
  "5020.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 362
@@ -1030,6 +1119,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 320
@@ -1041,6 +1131,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 357
@@ -1052,6 +1143,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 326
@@ -1063,6 +1155,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "last_fail": "2026-09-23",
   "rows": 6666,
@@ -1075,6 +1168,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 330
@@ -1086,6 +1180,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 327
@@ -1097,6 +1192,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 358
@@ -1108,6 +1204,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 370
@@ -1119,6 +1216,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 314
@@ -1130,17 +1228,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 382
  },
  "5401.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 392
@@ -1157,6 +1257,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 363
@@ -1167,12 +1268,13 @@
   "last_fail": "2026-09-22"
  },
  "5411.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2002-09-26",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5954,
   "shares_rows": 390
@@ -1189,6 +1291,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 2
@@ -1200,6 +1303,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 308
@@ -1211,6 +1315,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 338
@@ -1227,17 +1332,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 314
  },
  "5706.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 325
@@ -1249,6 +1356,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 333
@@ -1260,6 +1368,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 346
@@ -1271,6 +1380,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 356
@@ -1282,6 +1392,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 397
@@ -1293,6 +1404,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 315
@@ -1304,6 +1416,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 327
@@ -1315,6 +1428,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 420
@@ -1326,6 +1440,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 304
@@ -1337,6 +1452,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2022-10-03",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 971,
   "shares_rows": 227
@@ -1348,6 +1464,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 348
@@ -1359,6 +1476,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2014-10-16",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 2935,
   "shares_rows": 363
@@ -1370,6 +1488,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 319
@@ -1381,6 +1500,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 400
@@ -1392,6 +1512,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 332
@@ -1403,6 +1524,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2015-11-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 2679,
   "shares_rows": 388
@@ -1414,6 +1536,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 359
@@ -1425,17 +1548,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 351
  },
  "6302.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 347
@@ -1447,6 +1572,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 315
@@ -1458,6 +1584,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 400
@@ -1469,6 +1596,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 457
@@ -1480,6 +1608,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 315
@@ -1491,6 +1620,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 330
@@ -1502,6 +1632,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2008-12-10",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4366,
   "shares_rows": 345
@@ -1513,6 +1644,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 412
@@ -1524,6 +1656,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 421
@@ -1535,6 +1668,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 409
@@ -1546,6 +1680,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 396
@@ -1557,6 +1692,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "last_fail": "2026-09-23",
   "rows": 6666,
@@ -1574,6 +1710,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 329
@@ -1585,6 +1722,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 416
@@ -1596,6 +1734,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 325
@@ -1607,6 +1746,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 301
@@ -1618,6 +1758,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2022-10-12",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 965,
   "shares_rows": 198
@@ -1629,6 +1770,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2016-09-02",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 2475,
   "shares_rows": 325
@@ -1640,6 +1782,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 437
@@ -1651,6 +1794,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 353
@@ -1662,6 +1806,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 358
@@ -1673,6 +1818,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 321
@@ -1684,6 +1830,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 369
@@ -1695,6 +1842,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 323
@@ -1706,6 +1854,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2003-07-24",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5739,
   "shares_rows": 445
@@ -1717,6 +1866,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 373
@@ -1728,6 +1878,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 449
@@ -1739,6 +1890,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 542
@@ -1750,6 +1902,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 401
@@ -1761,6 +1914,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 382
@@ -1782,6 +1936,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 388
@@ -1803,6 +1958,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 319
@@ -1814,6 +1970,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 340
@@ -1825,6 +1982,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 334
@@ -1836,6 +1994,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 389
@@ -1847,6 +2006,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2010-02-22",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4076,
   "shares_rows": 313
@@ -1858,6 +2018,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 431
@@ -1869,6 +2030,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 375
@@ -1880,6 +2042,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 326
@@ -1891,6 +2054,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 418
@@ -1902,6 +2066,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 401
@@ -1913,6 +2078,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 408
@@ -1924,6 +2090,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 348
@@ -1940,6 +2107,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 317
@@ -1951,6 +2119,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 276
@@ -1962,6 +2131,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 405
@@ -1973,6 +2143,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2004-11-05",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5403,
   "shares_rows": 318
@@ -1984,6 +2155,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 337
@@ -1995,6 +2167,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2016-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 2579,
   "shares_rows": 388
@@ -2006,6 +2179,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 455
@@ -2017,6 +2191,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 347
@@ -2028,6 +2203,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "1999-05-06",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6839,
   "shares_rows": 410
@@ -2038,12 +2214,13 @@
   "last_fail": "2026-09-22"
  },
  "7211.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 415
@@ -2055,17 +2232,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 273
  },
  "7261.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 417
@@ -2077,6 +2256,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 481
@@ -2088,6 +2268,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 361
@@ -2099,6 +2280,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 442
@@ -2110,6 +2292,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 392
@@ -2121,6 +2304,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 394
@@ -2132,6 +2316,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 327
@@ -2143,28 +2328,31 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 358
  },
  "7733.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 372
  },
  "7735.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 321
@@ -2176,6 +2364,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 347
@@ -2187,6 +2376,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 372
@@ -2198,6 +2388,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "1999-05-06",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6839,
   "shares_rows": 324
@@ -2209,6 +2400,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 320
@@ -2220,6 +2412,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 334
@@ -2231,6 +2424,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 377
@@ -2242,6 +2436,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 322
@@ -2253,6 +2448,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 343
@@ -2264,6 +2460,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 344
@@ -2275,6 +2472,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 369
@@ -2286,6 +2484,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 386
@@ -2297,6 +2496,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 325
@@ -2313,6 +2513,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 464
@@ -2324,6 +2525,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 324
@@ -2335,6 +2537,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 345
@@ -2346,6 +2549,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 370
@@ -2357,6 +2561,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 315
@@ -2373,6 +2578,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 390
@@ -2384,6 +2590,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 313
@@ -2395,6 +2602,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 309
@@ -2411,6 +2619,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2004-02-19",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5045,
   "shares_rows": 173
@@ -2422,28 +2631,31 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2006-11-14",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4876,
   "shares_rows": 368
  },
  "8306.T": {
-  "adj_err_max": 1e-06,
-  "error": null,
-  "fails": 0,
-  "fetched": "2026-09-23",
-  "files_changed": 0,
-  "first": "2005-09-29",
-  "last": "2026-09-18",
-  "rows": 5169,
-  "shares_rows": 428
- },
- "8308.T": {
   "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
+  "first": "2005-09-29",
+  "kept_tail": 0,
+  "last": "2026-09-18",
+  "rows": 5169,
+  "shares_rows": 428
+ },
+ "8308.T": {
+  "adj_err_max": 1e-06,
+  "error": null,
+  "fails": 0,
+  "fetched": "2026-09-23",
+  "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 366
@@ -2455,6 +2667,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 339
@@ -2466,6 +2679,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 453
@@ -2477,6 +2691,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 403
@@ -2487,12 +2702,13 @@
   "last_fail": "2026-09-22"
  },
  "8354.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 343
@@ -2513,12 +2729,13 @@
   "last_fail": "2026-09-22"
  },
  "8411.T": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2003-03-12",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5835,
   "shares_rows": 370
@@ -2535,6 +2752,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 386
@@ -2546,6 +2764,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 507
@@ -2562,6 +2781,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 521
@@ -2578,6 +2798,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-08-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6255,
   "shares_rows": 309
@@ -2589,6 +2810,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2010-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4049,
   "shares_rows": 335
@@ -2600,6 +2822,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2008-09-05",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4429,
   "shares_rows": 309
@@ -2611,6 +2834,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2008-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4538,
   "shares_rows": 393
@@ -2622,17 +2846,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2025-09-29",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 239,
   "shares_rows": 166
  },
  "8750.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2010-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 4049,
   "shares_rows": 384
@@ -2654,17 +2880,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 450
  },
  "8795.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2004-04-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5559,
   "shares_rows": 351
@@ -2676,6 +2904,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 366
@@ -2687,6 +2916,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 360
@@ -2698,6 +2928,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 322
@@ -2709,6 +2940,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-01",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6407,
   "shares_rows": 366
@@ -2725,6 +2957,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 301
@@ -2736,6 +2969,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 358
@@ -2747,6 +2981,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 388
@@ -2758,6 +2993,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 342
@@ -2769,6 +3005,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 316
@@ -2780,6 +3017,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 376
@@ -2791,6 +3029,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 325
@@ -2802,6 +3041,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 324
@@ -2813,6 +3053,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2001-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6404,
   "shares_rows": 314
@@ -2829,17 +3070,19 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 362
  },
  "9101.T": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2004-11-05",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5403,
   "shares_rows": 323
@@ -2851,6 +3094,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 312
@@ -2862,6 +3106,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 358
@@ -2873,6 +3118,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2022-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 1153,
   "shares_rows": 195
@@ -2884,6 +3130,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 379
@@ -2895,6 +3142,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 519
@@ -2911,6 +3159,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 334
@@ -2922,6 +3171,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-08-07",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6512,
   "shares_rows": 300
@@ -2933,6 +3183,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 413
@@ -2944,6 +3195,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 375
@@ -2955,6 +3207,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2018-12-19",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 1890,
   "shares_rows": 359
@@ -2971,6 +3224,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 475
@@ -2982,6 +3236,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 402
@@ -2993,6 +3248,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 354
@@ -3004,6 +3260,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 358
@@ -3015,6 +3272,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 341
@@ -3026,6 +3284,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 311
@@ -3047,6 +3306,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 324
@@ -3063,6 +3323,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 287
@@ -3074,6 +3335,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2002-10-29",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 5931,
   "shares_rows": 297
@@ -3085,6 +3347,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 337
@@ -3096,6 +3359,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "2000-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 6666,
   "shares_rows": 372
@@ -3107,6 +3371,7 @@
   "fetched": "2026-09-23",
   "files_changed": 0,
   "first": "1995-01-04",
+  "kept_tail": 0,
   "last": "2026-09-18",
   "rows": 7778
  }

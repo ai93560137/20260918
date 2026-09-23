@@ -574,5 +574,117 @@
   "n_cmp_all": 328,
   "source": "yahoo.co.jp 月線全段 + 最近 20 日",
   "span": "2001-01-31~2026-09-18"
+ },
+ "6645.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00405,
+  "n_bad": 0,
+  "n_bad_all": 3,
+  "n_cmp": 96,
+  "n_cmp_all": 328,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2001-01-31~2026-09-18"
+ },
+ "6723.T": {
+  "checked": "2026-09-23",
+  "examples": [
+   "2024-03-29 我們 2640.5 vs 對方 2670.5（+1.1%）"
+  ],
+  "in_use": true,
+  "max_diff": 0.01136,
+  "n_bad": 1,
+  "n_bad_all": 2,
+  "n_cmp": 60,
+  "n_cmp_all": 298,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2003-07-31~2026-09-18"
+ },
+ "6752.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00365,
+  "n_bad": 0,
+  "n_bad_all": 2,
+  "n_cmp": 252,
+  "n_cmp_all": 340,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~2026-09-18"
+ },
+ "6770.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00125,
+  "n_bad": 0,
+  "n_bad_all": 0,
+  "n_cmp": 252,
+  "n_cmp_all": 340,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~2026-09-18"
+ },
+ "6841.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00258,
+  "n_bad": 0,
+  "n_bad_all": 1,
+  "n_cmp": 252,
+  "n_cmp_all": 340,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~2026-09-18"
+ },
+ "6952.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00601,
+  "n_bad": 0,
+  "n_bad_all": 1,
+  "n_cmp": 229,
+  "n_cmp_all": 340,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~2026-09-18"
+ },
+ "6976.T": {
+  "checked": "2026-09-23",
+  "examples": [
+   "2012-07-31 我們 640.5 vs 對方 649（+1.3%）"
+  ],
+  "in_use": true,
+  "max_diff": 0.01327,
+  "n_bad": 1,
+  "n_bad_all": 2,
+  "n_cmp": 252,
+  "n_cmp_all": 340,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~2026-09-18"
+ },
+ "7186.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00444,
+  "n_bad": 0,
+  "n_bad_all": 0,
+  "n_cmp": 132,
+  "n_cmp_all": 145,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2016-04-28~2026-09-18"
+ },
+ "7201.T": {
+  "checked": "2026-09-23",
+  "examples": [],
+  "in_use": true,
+  "max_diff": 0.00268,
+  "n_bad": 0,
+  "n_bad_all": 1,
+  "n_cmp": 252,
+  "n_cmp_all": 340,
+  "source": "yahoo.co.jp 月線全段 + 最近 20 日",
+  "span": "2000-01-31~2026-09-18"
  }
 }
