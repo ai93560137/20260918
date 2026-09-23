@@ -1,0 +1,52 @@
+name: Live stock option IV（個股期權報價快照，OPTIONS_EQUITY_BACKTEST.md 第四部分）
+
+on:
+  push:
+    branches: [claude/market-data-tools-ready-6l5djr]
+    paths:
+      - 'scripts/fetch_stock_option_iv.py'
+      - '.github/workflows/fetch_stock_option_iv.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-option-iv-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        market: [us, hk]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install -q yfinance pandas requests
+      - name: Fetch
+        continue-on-error: true
+        run: python3 scripts/fetch_stock_option_iv.py --market ${{ matrix.market }}
+      - name: Commit
+        env:
+          M: ${{ matrix.market }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/options_equity/live 2>/dev/null || true
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(options_equity): $M 個股期權報價快照 $(date -u +%F)"
+          BR="${GITHUB_REF#refs/heads/}"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:"$BR" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -q origin "$BR"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
