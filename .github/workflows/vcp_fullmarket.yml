@@ -158,7 +158,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add --ignore-removal universes/full/${M}_pool.txt; [ -d research/vcp_full ] && git add --ignore-removal research/vcp_full; true; }
+          # 只 add 本市場的檔：其他市場的檔在本工作目錄可能是舊版（本 job 開始後別的 job 才更新），
+          # add 整個資料夾會把它們改回舊版（2026-09-23 jp 那次 commit 就把 us_qc.md 改回舊版）
+          add_out() { git add --ignore-removal universes/full/${M}_pool.txt; for f in research/vcp_full/${M}_*; do [ -e "$f" ] && git add -- "$f"; done; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "research(vcp_full): $M 候選池快照 / 回測結果 $(date -u +%F)"
