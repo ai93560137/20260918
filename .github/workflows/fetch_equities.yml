@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       market:
-        description: 'us 或 jp'
+        description: 'us、jp 或 hk（hk 平常由 fetch_stock_data.yml 負責，這裡給一次性回補）'
         required: true
         default: 'us'
       shares:
@@ -60,7 +60,7 @@ jobs:
           if [ -n "$IN_MARKET" ]; then M="$IN_MARKET"
           elif [ "$CRON" = "30 7 * * 1-5" ]; then M=jp
           else M=us; fi
-          if [[ ! "$M" =~ ^(us|jp)$ ]]; then echo "market 只能是 us/jp：$M"; exit 1; fi
+          if [[ ! "$M" =~ ^(us|jp|hk)$ ]]; then echo "market 只能是 us/jp/hk：$M"; exit 1; fi
           echo "market=$M" >> "$GITHUB_OUTPUT"
           if [ "$IN_SHARES" = "true" ] || [ "$(date -u +%u)" = "1" ]; then echo "shares=--shares" >> "$GITHUB_OUTPUT"; fi
           # yfinance 公司名/行業：週一或還沒有名字檔時才抓（每天的改名偵測靠第二來源名字）
@@ -73,12 +73,14 @@ jobs:
 
       # 第二來源與品質報告是輔助，各自設時間上限，絕不能拖住主數據的 commit
       - name: Second source（美股 Nasdaq.com / 日股 Yahoo!ファイナンス + JPX）
+        if: steps.m.outputs.market != 'hk'   # 港股有自己的第二來源與 QC（fetch_stock_data.yml）
         continue-on-error: true
         timeout-minutes: 12
         run: python3 scripts/fetch_second_source.py --market ${{ steps.m.outputs.market }}
 
       # 全量歷史比對：第二來源整段歷史逐筆比，分批推進（進度存 _xcheck.json），全部比完自動輪回
       - name: Full history cross-check（全量歷史比對）
+        if: steps.m.outputs.market != 'hk'   # 港股有自己的第二來源與 QC（fetch_stock_data.yml）
         continue-on-error: true
         timeout-minutes: 130
         env:
@@ -90,6 +92,7 @@ jobs:
           python3 scripts/xcheck_history.py --market "$M" --budget-min "$XMIN"
 
       - name: Data quality check
+        if: steps.m.outputs.market != 'hk'   # 港股有自己的第二來源與 QC（fetch_stock_data.yml）
         continue-on-error: true
         timeout-minutes: 25
         run: python3 scripts/check_equities_quality.py --market ${{ steps.m.outputs.market }} --fetch-missing-names ${{ steps.m.outputs.names }}
