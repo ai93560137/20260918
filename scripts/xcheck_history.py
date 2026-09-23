@@ -68,7 +68,8 @@ class Blocked(Exception):
     """第二來源拒答/限流（非 200、或頁面沒有 histories 欄位）——不能當成「沒有數據」記錄。"""
 
 
-YJ_PAUSE = 2.5   # 每頁間隔秒數（2026-09-23 實測：連續快抓約 40 頁後 Yahoo!ファイナンス 開始回空頁）
+YJ_PAUSE = 1.5   # 每頁間隔秒數（2026-09-23 實測：0.2~0.4 秒連抓約 40 頁後 Yahoo!ファイナンス 開始回空頁；
+                 # 2.5 秒跑 2 小時沒被擋，改 1.5 秒加速，被擋會自動退避）
 
 
 def yj_page(s: requests.Session, t: str, params: dict) -> list[dict]:
@@ -256,7 +257,11 @@ def main() -> None:
                     v = num(h["values"][5]["value"])
                     if v:
                         th_d[date.fromisoformat(h["date"])] = v
-                cm, cd = compare(ours, th_m), compare(ours, th_d)
+                win = used_windows(t, m)
+                inwin = lambda d: any(a <= d < b for a, b in win)  # noqa: E731
+                ours_used = {d: v for d, v in ours.items() if inwin(d)}
+                cm, cd = compare(ours_used, th_m), compare(ours_used, th_d)
+                n_all = compare(ours, th_m)["n_bad"] + compare(ours, th_d)["n_bad"]
                 if not monthly and not daily:
                     rec = {"source": "yahoo.co.jp", "n_cmp": 0, "n_bad": 0, "max_diff": 0, "examples": [],
                            "note": "第二來源沒有此代碼（已下市/改代碼）"}
@@ -265,7 +270,9 @@ def main() -> None:
                            "n_cmp": cm["n_cmp"] + cd["n_cmp"], "n_bad": cm["n_bad"] + cd["n_bad"],
                            "max_diff": max(cm["max_diff"], cd["max_diff"]),
                            "examples": (cm["examples"] + cd["examples"])[:5],
-                           "span": f"{min(th_m) if th_m else '-'}~{max(th_d) if th_d else '-'}"}
+                           "span": f"{min(th_m) if th_m else '-'}~{max(th_d) if th_d else '-'}",
+                           "n_bad_all": n_all, "in_use": bool(win),
+                           "n_cmp_all": len([d for d in th_m if d in ours]) + len([d for d in th_d if d in ours])}
         except Blocked as exc:
             print(f"STOP 第二來源持續拒答（{exc}），保存進度、下輪再續", file=sys.stderr)
             break

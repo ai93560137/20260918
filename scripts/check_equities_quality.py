@@ -200,7 +200,9 @@ def main() -> None:
     xc = json.loads(xc_path.read_text(encoding="utf-8")) if xc_path.exists() else {}
     xc_total = [t for t in loaded if not t.startswith("^")]
     xc_done = [t for t in xc_total if t in xc]
-    xc_rows = sum(xc[t].get("n_cmp", 0) for t in xc_done)
+    # n_cmp_all/n_bad_all＝全部歷史；n_cmp/n_bad＝回測實際會用到的期間（警報只看這個）
+    xc_rows = sum(xc[t].get("n_cmp_all", xc[t].get("n_cmp", 0)) for t in xc_done)
+    xc_bad_all = sum(xc[t].get("n_bad_all", xc[t].get("n_bad", 0)) for t in xc_done)
     xc_bad = sum(xc[t].get("n_bad", 0) for t in xc_done)
     xc_nosrc = [t for t in xc_done if xc[t].get("note")]
     # 價格比值階梯（xcheck_history.find_breaks）：Yahoo 有記錄的 = 調整方法不同（已解釋）；
@@ -336,7 +338,8 @@ def main() -> None:
     digest = [f"📊 {label}數據日報 {today}（{idx_names}）",
               f"✅ yfinance {len(loaded)} 檔（現任成分股 {len(current)}），基準 {bench} 最新 {bench_last}",
               f"🏛 第二來源 {src2} 快照 {len(snap_data)} 份，最新 {latest2}（比對 {n_cmp} 筆收市價）",
-              f"🔎 全量歷史比對：{len(xc_done)}/{len(xc_total)} 檔、{xc_rows:,} 筆、不符 {xc_bad} 筆"
+              f"🔎 全量歷史比對：{len(xc_done)}/{len(xc_total)} 檔、{xc_rows:,} 筆、不符 {xc_bad_all} 筆"
+              f"（其中落在回測使用期間 {xc_bad} 筆）"
               f"（第二來源沒有的已下市代碼 {len(xc_nosrc)} 檔；分拆等調整方法不同已解釋 {len(xc_method)} 檔；"
               f"Yahoo 漏調公司行動 {len(xc_unadj)} 處；對方數據停滯剔除 {xc_stale} 筆）",
               f"🔴 {len(red)} ｜ 🟡 {len(yellow)} ｜ ✅ 已確認 {len(acked)}"]
