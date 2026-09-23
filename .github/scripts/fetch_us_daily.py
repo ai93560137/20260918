@@ -14,7 +14,8 @@ log = []
 
 for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
                    ('^VIX', 'vix_daily.csv'), ('^GSPC', 'spx_daily.csv'),
-                   ('^VXN', 'vxn_daily.csv'), ('^NDX', 'ndx_daily.csv')]:
+                   ('^VXN', 'vxn_daily.csv'), ('^NDX', 'ndx_daily.csv'),
+                   ('^N225', 'n225_daily.csv')]:
     try:
         d = yf.download(sym, period='max', interval='1d', progress=False, auto_adjust=False)
         if isinstance(d.columns, pd.MultiIndex):
@@ -34,6 +35,23 @@ for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
         log.append(f"SAVED {fname}: {len(d)} rows -> {d.Date.max()}")
     except Exception as e:
         log.append(f"{sym} ERR: {e!r}")
+
+# 日經波指（Nikkei 225 VI）：Yahoo ticker 不確定，逐個試，成功即存
+for sym in ['^JNIV', '^N225VI', '^NKVI', 'JNIV.OS']:
+    try:
+        d = yf.download(sym, period='max', interval='1d', progress=False, auto_adjust=False)
+        if isinstance(d.columns, pd.MultiIndex):
+            d.columns = d.columns.get_level_values(0)
+        d = d.reset_index()
+        d.columns = [str(c).strip().title() for c in d.columns]
+        d = d[[c for c in ['Date', 'Close'] if c in d.columns]].dropna()
+        log.append(f"NKVI probe {sym}: {len(d)} rows")
+        if len(d) > 500:
+            d.to_csv(f'{OUT}/jniv_daily.csv', index=False)
+            log.append(f"SAVED jniv_daily.csv from {sym}: {d.Date.min()} -> {d.Date.max()}")
+            break
+    except Exception as e:
+        log.append(f"NKVI probe {sym} ERR: {e!r}")
 
 # 期貨最新價（延遲報價即可，供 delta 對沖指令與監測用）
 fut = {}
