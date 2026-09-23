@@ -23,6 +23,10 @@ on:
         description: '重試之前抓不到的代碼'
         required: false
         default: 'false'
+      refresh:
+        description: '全部重抓（之前在盤中抓到未收市的半根時用）'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -79,9 +83,11 @@ jobs:
         continue-on-error: true
         env:
           RETRY: ${{ inputs.retry_failed }}
+          REFRESH: ${{ inputs.refresh }}
         run: |
           ARGS="--market $M --budget-min 240"
           if [ "$RETRY" = "true" ]; then ARGS="$ARGS --retry-failed"; fi
+          if [ "$REFRESH" = "true" ]; then ARGS="$ARGS --refresh-all"; fi
           set +e
           python3 scripts/fetch_full_market.py $ARGS
           RC=$?

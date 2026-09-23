@@ -76,11 +76,20 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
         r = requests.get("https://api.nasdaq.com/api/screener/stocks", headers=fs.UA,
                          params={"tableonly": "true", "download": "true"}, timeout=60)
         r.raise_for_status()
-        theirs = {x["symbol"].strip().replace("/", "-"): fs.money(x.get("lastsale", ""))
-                  for x in r.json()["data"]["rows"]}
+        # screener 只有「最後成交價」與「今日升跌」：我們最後一根若是今天（美東）→ 比最後成交價；
+        # 若是前一個交易日（盤中或開市前跑）→ 比「最後成交價 − 今日升跌」＝ 前收市
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        today_et = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
         d_max = mode_day
+        use_prev = d_max < today_et
+        theirs = {}
+        for x in r.json()["data"]["rows"]:
+            last_sale, chg = fs.money(x.get("lastsale", "")), fs.money(x.get("netchange", "") or "0")
+            if last_sale:
+                theirs[x["symbol"].strip().replace("/", "-")] = last_sale - (chg or 0) if use_prev else last_sale
         pairs = [(v[1], theirs.get(t)) for t, v in last.items() if v[0] == d_max and theirs.get(t)]
-        src = f"Nasdaq screener 最後成交價 vs 我們 {d_max} 收市"
+        src = f"Nasdaq screener {'前收市（最後成交價 − 今日升跌）' if use_prev else '最後成交價'} vs 我們 {d_max} 收市"
     elif market == "hk":
         import fetch_hkex_equity as fh
         d_max = mode_day

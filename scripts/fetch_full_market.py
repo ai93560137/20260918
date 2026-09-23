@@ -15,6 +15,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BATCH = 100
+# 收市時間（當地）+ 30 分鐘緩衝：還沒到就丟掉「今天」那根（盤中抓到的是未收市的半根，2026-09-23 美股 09:40 ET 抓到過）
+CLOSE = {"hk": ("Asia/Hong_Kong", 16, 40), "jp": ("Asia/Tokyo", 16, 0), "us": ("America/New_York", 16, 30)}
+
+
+def last_complete_cutoff(market: str) -> date:
+    """回傳「可以保留的最後日期」（含）：當地已過收市 + 緩衝 → 今天；否則 → 昨天。"""
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    tz, h, mi = CLOSE[market]
+    now = datetime.now(ZoneInfo(tz))
+    today = now.date()
+    return today if (now.hour, now.minute) >= (h, mi) else today - timedelta(days=1)
 
 
 def main() -> None:
@@ -23,6 +35,7 @@ def main() -> None:
     ap.add_argument("--budget-min", type=float, default=300)
     ap.add_argument("--retry-failed", action="store_true")
     ap.add_argument("--refresh-days", type=int, default=0, help="檔案比這更舊就重抓（0 = 不重抓）")
+    ap.add_argument("--refresh-all", action="store_true", help="全部重抓（例如之前在盤中抓到半根）")
     args = ap.parse_args()
     import pandas as pd
     import yfinance as yf
@@ -37,13 +50,15 @@ def main() -> None:
 
     def stale(t: str) -> bool:
         p = out / f"{t.replace('^', '_')}.csv.gz"
-        if not p.exists():
+        if not p.exists() or args.refresh_all:
             return True
         return args.refresh_days > 0 and now - p.stat().st_mtime > args.refresh_days * 86400
 
     todo = [t for t in pool if t not in failed and stale(t)]
     print(f"{args.market}: 候選池 {len(pool)}、已有 {len(pool) - len(todo) - len(failed & set(pool))}、"
           f"失敗跳過 {len(failed & set(pool))}、要抓 {len(todo)}")
+    cutoff = last_complete_cutoff(args.market)
+    print(f"只保留 {cutoff}（含）以前的日線（之後的是未收市的半根）")
     started = time.monotonic()
     n_ok = 0
     for b in range(0, len(todo), BATCH):
@@ -74,6 +89,7 @@ def main() -> None:
             sub = sub.rename(columns={"Adj Close": "AdjClose"})[["Open", "High", "Low", "Close", "AdjClose", "Volume"]]
             sub.index = pd.to_datetime(sub.index).date
             sub.index.name = "Date"
+            sub = sub[sub.index <= cutoff]
             sub.to_csv(out / f"{t.replace('^', '_')}.csv.gz", float_format="%.6g", compression="gzip")
             n_ok += 1
         print(f"  {min(b + BATCH, len(todo))}/{len(todo)}  成功累計 {n_ok}、失敗累計 {len(failed)}", flush=True)
@@ -82,6 +98,7 @@ def main() -> None:
     have = len(list(out.glob("*.csv.gz")))
     (out / "_status.txt").write_text(f"{date.today()} 候選池 {len(pool)}、有數據 {have}、失敗 {len(failed)}\n")
     print(f"完成：本輪成功 {n_ok}；目錄共有 {have} 檔、失敗名單 {len(failed)}")
+    args.refresh_all = False
     missing = [t for t in pool if t not in failed and stale(t)]
     sys.exit(0 if not missing else 3)     # 3 = 還沒抓完（下一步不要跑回測）
 
