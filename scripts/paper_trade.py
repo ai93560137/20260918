@@ -399,6 +399,12 @@ def main() -> None:
         check_settlement(*args.check_settlement)
     else:
         run(args.offline)
+        # 高息股前向模擬盤（DIVYIELD_CC_BACKTEST.md 第二部分）：獨立帳本，出錯不影響低波動模擬盤
+        try:
+            import paper_divyield
+            paper_divyield.run(args.offline)
+        except Exception as ex:  # noqa: BLE001
+            print(f"高息模擬盤出錯：{ex!r}")
 
 
 if __name__ == "__main__":
