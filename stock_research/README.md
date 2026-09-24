@@ -18,6 +18,7 @@
 | `AIBA_PPP_BACKTEST.md` | 相場師朗 PPP 中的下半身（逆下半身／五日 EMA 出場） |
 | `OOS_VALIDATION.md` | 樣本外兩輪：台韓澳、加印新 |
 | `EXPECTANCY_REVIEW.md` | 期望值／RRR／總回報覆核（描述性） |
+| `DISCIPLINE_BACKTEST.md` | 「紀律本身」：剛進入趨勢模板＋大市過濾＋Minervini 出場（不看 VCP 形態），9 國一次的預先登記與結果 |
 
 ## 2. 程式與輸出（路徑不變）
 
@@ -28,6 +29,7 @@
 | `vcp.py` + `vcp_backtest.py` → `research/vcp/` | VCP 偵測（趨勢模板、碎形擺動點、收縮、量縮、樞紐點；每日篩選共用）與回測（同新高那套組合／門檻；隨機對照 = 同日趨勢模板股、同停損距離）|
 | `vcp_minervini.py` + `scripts/{build_full_pools,fetch_full_market,qc_full_market,verify_trades}.py` → `research/vcp_full/` | 全市場（成交額前 N）版：候選池、yfinance 全市場日線（不進 git，Actions 快取 + Release 備份）、4 層品質檢查、逐筆交易核對；Minervini 忠實版（樞紐點盤中成交、大市過濾、固定止損／保本／50 日線出場）|
 | `aiba_ppp.py` + `.github/workflows/aiba_verify.yml` → `research/aiba_ppp/` | 相場流 PPP／下半身／逆下半身（還原 K 線、SMA）全市場回測；`--trades-only` 先出逐筆明細不看績效、抽樣交給 Actions 核對第二來源 |
+| `discipline_backtest.py` → `research/discipline/` | 「紀律本身」回測（D0 剛進入趨勢模板＋大市過濾＋Minervini 出場；R 隨機 200 日線上非模板股對照；D1 無大市過濾、D2 只持 252 日、D3 X2 出場；M Minervini 重跑並列；`--check-sim` 向量化出場逐筆比對、`--pool` 9 市場合併檢定）|
 | `scripts/expectancy_report.py` → `research/expectancy/` | 已判決策略預設格的期望值、RRR、獲利因子、累計／年化／MDD vs ETF（一個市場一次重建數據，全部策略共用）|
 | `scripts/get_market_data.py` + `MARKET_DATA_CATALOG.md` | 一鍵下載 9 個市場日線並重建品質排除檔；數據目錄、注意事項、策略×市場已驗證矩陣 |
 | `oos_backtest.py` + `scripts/build_oos_pools.py` + `.github/workflows/oos_fullmarket.yml` → `research/oos/` | 樣本外新市場（台 .TW/.TWO、韓 .KS/.KQ、澳 .AX）候選池、抓數據（Release `oos-data`）、凍結規格回測、漲停鎖死跳過、三市場合併 alpha 檢定 |
