@@ -6,7 +6,8 @@
 - 台灣：證交所 ISIN 清單（上市 strMode=2 → .TW；上櫃 strMode=4 → .TWO），CFI 代碼 ESVUFR（普通股）、4 位數代號
 - 韓國：KRX KIND 上市公司清單（KOSPI → .KS、KOSDAQ → .KQ；不含 KONEX），去掉 SPAC（스팩）；失敗改用 FinanceDataReader
 - 澳洲：ASX 上市公司清單（ASXListedCompanies.csv；失敗改用 ASX 研究 API 的公司目錄）
-- 另加基準 ETF 與指數（0050.TW／^TWII、069500.KS／^KS11、STW.AX／^AXJO）一起抓
+- 第二輪：加拿大 TSX 公司目錄 → .TO；印度 NSE EQUITY_L.csv（SERIES EQ）→ .NS；新加坡 SGX 證券 API（股票＋REIT）→ .SI
+- 另加基準 ETF 與指數一起抓（見 EXTRA）
 名單檔頭記錄來源與日期。
 """
 import argparse
@@ -22,7 +23,10 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "universes" / "full"
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
-EXTRA = {"tw": ["0050.TW", "^TWII"], "kr": ["069500.KS", "^KS11"], "au": ["STW.AX", "^AXJO"]}
+EXTRA = {"tw": ["0050.TW", "^TWII"], "kr": ["069500.KS", "^KS11"], "au": ["STW.AX", "^AXJO"],
+         # 第二輪（OOS_VALIDATION.md 第三部分）
+         "ca": ["XIU.TO", "^GSPTSE"], "in": ["NIFTYBEES.NS", "^NSEI"], "sg": ["ES3.SI", "^STI"]}
+CA_EXCLUDE = re.compile(r"\bETF\b|\bfund\b|\bindex\b|portfolio|\bnotes?\b|warrant|debenture|preferred|\bpref\b|\bsplit\b", re.I)
 
 
 def get(url: str, **kw) -> requests.Response:
@@ -112,12 +116,66 @@ def pool_au() -> tuple[list[str], str]:
     return out, f"{src} {date.today()}（{len(out)} 檔）"
 
 
+def pool_ca() -> tuple[list[str], str]:
+    """TSX 主板公司目錄（JSON）；代號 BBD.B → BBD-B.TO、REI.UN → REI-UN.TO；去掉 ETF／基金／優先股／權證／債券／美元線。"""
+    r = get("https://www.tsx.com/json/company-directory/search/tsx/%5E*")
+    res = r.json().get("results", [])
+    out = set()
+    for co in res:
+        for ins in co.get("instruments") or [{"symbol": co.get("symbol"), "name": co.get("name")}]:
+            sym, nm = str(ins.get("symbol") or "").strip(), str(ins.get("name") or co.get("name") or "")
+            if not sym or CA_EXCLUDE.search(nm) or re.search(r"\.(PR|DB|WT|NT|RT|U|WS)(\.|$)", sym):
+                continue
+            out.add(sym.replace(".", "-") + ".TO")
+    print(f"加拿大：公司 {len(res)} → {len(out)} 個代號（例：{sorted(out)[:5]}）", file=sys.stderr)
+    return sorted(out), f"TSX 公司目錄 {date.today()}（{len(out)} 個代號）"
+
+
+def pool_in() -> tuple[list[str], str]:
+    last = None
+    for url in ("https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv",
+                "https://archives.nseindia.com/content/equities/EQUITY_L.csv",
+                "https://www1.nseindia.com/content/equities/EQUITY_L.csv"):
+        try:
+            r = get(url)
+            df = pd.read_csv(io.StringIO(r.content.decode("utf-8", errors="replace")))
+            df.columns = [str(c).strip() for c in df.columns]
+            eq = df[df["SERIES"].astype(str).str.strip() == "EQ"]
+            out = sorted({f"{x.strip()}.NS" for x in eq["SYMBOL"].astype(str)})
+            print(f"印度：{len(df)} 列 → EQ {len(out)} 檔（{url}）", file=sys.stderr)
+            return out, f"NSE EQUITY_L.csv {date.today()}（SERIES EQ {len(out)} 檔）"
+        except Exception as exc:
+            last = exc
+            print(f"WARN {url} 失敗（{exc}）", file=sys.stderr)
+    raise SystemExit(f"印度候選池全部來源失敗：{last}")
+
+
+def pool_sg() -> tuple[list[str], str]:
+    last = None
+    for host in ("https://api.sgx.com", "https://api2.sgx.com"):
+        try:
+            r = get(f"{host}/securities/v1.1", params={"excludetypes": "bonds", "params": "nc,n,type"})
+            rows = (r.json().get("data") or {}).get("prices") or []
+            kinds = {}
+            out = set()
+            for x in rows:
+                kinds[x.get("type")] = kinds.get(x.get("type"), 0) + 1
+                if str(x.get("type", "")).lower() in ("stocks", "reits") and x.get("nc"):
+                    out.add(f"{str(x['nc']).strip()}.SI")
+            print(f"新加坡：{len(rows)} 列、類別 {kinds} → {len(out)} 檔（{host}）", file=sys.stderr)
+            return sorted(out), f"SGX 證券 API {date.today()}（股票＋REIT {len(out)} 檔）"
+        except Exception as exc:
+            last = exc
+            print(f"WARN {host} 失敗（{exc}）", file=sys.stderr)
+    raise SystemExit(f"新加坡候選池全部來源失敗：{last}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--market", required=True, choices=["tw", "kr", "au"])
+    ap.add_argument("--market", required=True, choices=list(EXTRA))
     m = ap.parse_args().market
-    pool, src = {"tw": pool_tw, "kr": pool_kr, "au": pool_au}[m]()
-    if len(pool) < 300:
+    pool, src = {"tw": pool_tw, "kr": pool_kr, "au": pool_au, "ca": pool_ca, "in": pool_in, "sg": pool_sg}[m]()
+    if len(pool) < (150 if m == "sg" else 300):
         raise SystemExit(f"{m} 候選池只有 {len(pool)} 檔，來源可能改版，先查清楚")
     pool = sorted(set(pool) | set(EXTRA[m]))
     OUT.mkdir(parents=True, exist_ok=True)

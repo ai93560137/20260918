@@ -1,4 +1,4 @@
-name: OOS new markets data（樣本外驗證：台灣／韓國／澳洲 候選池＋日線＋品質檢查）
+name: OOS new markets data（樣本外驗證：台韓澳／加印新 候選池＋日線＋品質檢查）
 
 # 預先登記見 OOS_VALIDATION.md。日線不進 git：存 Actions 快取 + Release「oos-data」備份（同 vcp_fullmarket.yml）。
 # 只 commit 候選池快照（universes/full/<m>_pool.txt）與品質報告（research/oos/<m>_qc.md）。回測在本機用 Release 數據跑。
@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       market:
-        description: 'tw、kr、au 或 all'
+        description: '單一市場（tw kr au ca in sg）、r1（台韓澳）或 r2（加印新）'
         required: true
-        default: 'all'
+        default: 'r2'
       retry_failed:
         description: '重試之前抓不到的代碼'
         required: false
@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: oos-fullmarket-${{ inputs.market || 'all' }}
+  group: oos-fullmarket-${{ inputs.market || 'r2' }}
   cancel-in-progress: false
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        market: ${{ fromJSON((inputs.market || 'all') == 'all' && '["tw","kr","au"]' || format('["{0}"]', inputs.market)) }}
+        market: ${{ fromJSON(((inputs.market || 'r2') == 'r1' && '["tw","kr","au"]') || ((inputs.market || 'r2') == 'r2' && '["ca","in","sg"]') || format('["{0}"]', inputs.market)) }}
     env:
       M: ${{ matrix.market }}
       GH_TOKEN: ${{ github.token }}

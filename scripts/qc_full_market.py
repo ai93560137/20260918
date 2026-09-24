@@ -127,7 +127,7 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
                         pass
         pairs = [(v[1], q[t]) for t, v in last.items() if v[0] == d_max and t in q and q[t] > 0]
         src = f"證交所每日收盤行情 {d_max}（上市股）"
-    elif market in ("kr", "au"):
+    elif market in ("kr", "au", "ca", "in", "sg"):
         raise RuntimeError("沒有免費、可程式取得的全市場收市第二來源（登記：取不到就註明，不擋判決）")
     else:
         # 抽 200 檔，用 Yahoo!ファイナンス 日線頁查同一天終値（報價頁「前日終値」在假期後對不上日期、比對到 0 檔）
@@ -157,7 +157,7 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--market", required=True, choices=["hk", "jp", "us", "tw", "kr", "au"])
+    ap.add_argument("--market", required=True, choices=["hk", "jp", "us", "tw", "kr", "au", "ca", "in", "sg"])
     ap.add_argument("--report-dir", type=Path, default=ROOT / "research" / "vcp_full",
                     help="報告資料夾（樣本外驗證用 research/oos）")
     ap.add_argument("--no-network", action="store_true", help="不做最新一日第二來源（本機測試用）")

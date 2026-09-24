@@ -18,7 +18,8 @@ BATCH = 100
 # 收市時間（當地）+ 30 分鐘緩衝：還沒到就丟掉「今天」那根（盤中抓到的是未收市的半根，2026-09-23 美股 09:40 ET 抓到過）
 CLOSE = {"hk": ("Asia/Hong_Kong", 16, 40), "jp": ("Asia/Tokyo", 16, 0), "us": ("America/New_York", 16, 30),
          # 樣本外驗證新市場（OOS_VALIDATION.md）：台灣 13:30、韓國 15:30、澳洲 16:10（收市競價）收市
-         "tw": ("Asia/Taipei", 14, 0), "kr": ("Asia/Seoul", 16, 0), "au": ("Australia/Sydney", 16, 40)}
+         "tw": ("Asia/Taipei", 14, 0), "kr": ("Asia/Seoul", 16, 0), "au": ("Australia/Sydney", 16, 40),
+         "ca": ("America/Toronto", 16, 30), "in": ("Asia/Kolkata", 16, 0), "sg": ("Asia/Singapore", 17, 40)}
 
 
 def last_complete_cutoff(market: str) -> date:
