@@ -4,6 +4,7 @@
     python3 aiba_ppp.py --market hk --trades-only        # 只寫預設格逐筆明細（給 verify_trades 抽樣核對，不印績效）
     python3 aiba_ppp.py --market hk --random 200         # 正式一次：鄰域 9 格 + 隨機對照
     python3 aiba_ppp.py --market hk --hl-repair --tag _hlrepair   # 港股敏感度（只作參考）
+    python3 aiba_ppp.py --market hk --exit ema5 --random 200      # 第三部分：五日 EMA 出場、絕對回報判決
 
 - 形態用還原 K 線（開市、收市 × AdjClose/Close），均線 = 還原收市 SMA，「向上」= 今天 > 昨天
 - 訊號（t 收市）：PPP（預設 M5>M10>M20>M60 且 M10/M20/M60 向上）＋ 下半身（陽燭、O < M5 < C、
@@ -51,25 +52,27 @@ def features(df: pd.DataFrame) -> dict[str, pd.Series]:
     rev = (C < O) & (O > M[5]) & (M[5] > C) & ((M[5] - C) >= 0.5 * (O - C)) & (M[5] < M[5].shift(1))
     out["rev"] = rev
     out["below60"] = C < M[60]
+    out["x5"] = C < C.ewm(span=5, adjust=False).mean()      # 第三部分：收市跌破五日 EMA
     return out
 
 
 class AibaPPP:
-    def __init__(self, market: str, repair_hl: bool = False):
+    def __init__(self, market: str, repair_hl: bool = False, exit_rule: str = "rev"):
+        self.exit_rule = exit_rule
         pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
             encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
         self.m = m = nb.MarketData(market, pool=pool, loader=nb.load_full(market, repair_hl),
                                    top_n=vb.FULL_TOP_N[market], cost=vb.FULL_COST[market])
         S, D = m.adj.shape
         idx = pd.Index(m.cal)
-        keys = [f"ppp{d}" for d in DEPTHS] + [f"kh{h}" for h in HALVES] + ["rev", "below60"]
+        keys = [f"ppp{d}" for d in DEPTHS] + [f"kh{h}" for h in HALVES] + ["rev", "below60", "x5"]
         self.mat = {k: np.zeros((S, D), dtype=bool) for k in keys}
         for s, t in enumerate(m.tickers):
             df = pd.DataFrame(m.loader(t)).set_index("Date")
             df = df[(df["AdjClose"] > 0) & (df["Close"] > 0)]
             for k, ser in features(df).items():
                 self.mat[k][s] = ser.reindex(idx).fillna(False).to_numpy(dtype=bool)
-        m.exitc[RULE] = self.mat["rev"] | self.mat["below60"]
+        m.exitc[RULE] = self.mat["x5"] if exit_rule == "ema5" else self.mat["rev"] | self.mat["below60"]
         ii = np.where(m.exitc[RULE], np.arange(D)[None, :], D)
         m.next_exit[RULE] = np.minimum.accumulate(ii[:, ::-1], axis=1)[:, ::-1]
 
@@ -127,6 +130,8 @@ class AibaPPP:
             sig = int(m.next_exit[RULE][s, a])
             if sig + 1 >= D or m.next_px[s, sig + 1] != b:
                 c["252 日上限"] += 1
+            elif self.exit_rule == "ema5":
+                c["跌破五日 EMA"] += 1
             elif self.mat["rev"][s, sig]:
                 c["逆下半身"] += 1
             else:
@@ -155,6 +160,17 @@ class AibaPPP:
         return out
 
 
+def abs_t(m, trades) -> dict:
+    """絕對回報 t（第三部分主指標）：組合每月淨報酬平均 ÷ (標準差 ÷ √月數)；前後段同樣算。"""
+    mo = m.monthly(m.portfolio(trades)[0])
+    sp = pd.Timestamp(m.cfg["split"])
+
+    def t(x):
+        return float(x.mean() / (x.std(ddof=1) / np.sqrt(len(x)))) if len(x) > 24 and x.std() > 0 else float("nan")
+    return {"t_abs": t(mo), "t_abs_pre": t(mo[mo.index < sp]), "t_abs_post": t(mo[mo.index >= sp]),
+            "mean_month": float(mo.mean())}
+
+
 def summarize(e: dict) -> dict:
     # 逐筆統計去掉 NaN（樣本末仍持有、最後一個日曆日停牌的股票沒有收市價；組合日報酬不受影響）
     tr = [x for x in e.pop("tr") if x == x]
@@ -176,11 +192,14 @@ def main() -> None:
     ap.add_argument("--trades-only", action="store_true", help="只寫預設格逐筆明細，不算績效")
     ap.add_argument("--hl-repair", action="store_true", help="港股敏感度：只因高低價矛盾被排除的股票放回來")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--exit", default="rev", choices=["rev", "ema5"], help="rev = 第二部分；ema5 = 第三部分")
     args = ap.parse_args()
     mk = args.market
     out_dir = ROOT / "research" / "aiba_ppp"
     out_dir.mkdir(parents=True, exist_ok=True)
-    ap_ = AibaPPP(mk, repair_hl=args.hl_repair)
+    ap_ = AibaPPP(mk, repair_hl=args.hl_repair, exit_rule=args.exit)
+    ema = args.exit == "ema5"
+    tag = args.tag + ("_ema5" if ema else "")
     m = ap_.m
     if args.trades_only:
         ev = ap_.events(*DEFAULT)
@@ -192,12 +211,15 @@ def main() -> None:
         return
     sus_p = out_dir / f"{mk}_suspect.json"
     excl = {tuple(x) for x in json.loads(sus_p.read_text())} if sus_p.exists() and not args.tag else set()
+    tkey = "t_abs" if ema else "t"
     res = {"market": mk, "excluded_suspects": sorted(map(list, excl)), "cells": {}}
     cells = [DEFAULT] if args.tag else GRID
     for d, h in cells:
         ev = ap_.events(d, h, excl)
         trades = m.trades_from_events(ev, RULE)
         e = summarize(m.evaluate(trades))
+        if ema:
+            e.update(abs_t(m, trades))
         e["n_signals"] = int(ev.sum())
         e["exit_reasons"] = ap_.exit_reasons(trades)
         key = f"PPP{d} 下半身{h}"
@@ -206,6 +228,9 @@ def main() -> None:
               f"beta {e['beta']:.2f}  年化 {e['cagr']:+.1%} (ETF {e['cagr_etf']:+.1%})  MDD {e['mdd']:.0%} "
               f"(ETF {e['mdd_etf']:.0%})  勝率 {e['win']:.0%}  每筆 {e['avg_trade']:+.2%}  持有 {e['avg_hold']:.0f} 日  "
               f"持倉 {e['avg_pos']:.1f}  前/後 t {e['t_pre']:.2f}/{e['t_post']:.2f}", file=sys.stderr)
+        if ema:
+            print(f"{'':16} 【絕對】t {e['t_abs']:5.2f}  前/後 {e['t_abs_pre']:.2f}/{e['t_abs_post']:.2f}  "
+                  f"每月平均 {e['mean_month']:+.2%}", file=sys.stderr)
         if (d, h) == DEFAULT:
             print(f"  出場原因 {e['exit_reasons']}；正年數 {e['pos_years']}、最差年 {e['worst_year']}；"
                   f"前 10 筆佔總獲利 {e['top10_share']:.0%}", file=sys.stderr)
@@ -217,18 +242,25 @@ def main() -> None:
                                 "小型（後 1/3）": sum(r > 2 * third for r in ranks)}
             print(f"  訊號成交額排名分布：{res['rank_dist']}", file=sys.stderr)
             if excl:     # 登記：可疑剔除前後取較保守
-                e0 = summarize(m.evaluate(m.trades_from_events(ap_.events(*DEFAULT), RULE)))
-                res["default_no_exclusion"] = {k: e0[k] for k in ("trades", "t", "t_ew", "t_pre", "t_post")}
-                print(f"  不剔除可疑：筆數 {e0['trades']}  alpha t {e0['t']:.2f}  vs等權 t {e0['t_ew']:.2f}", file=sys.stderr)
+                tr0 = m.trades_from_events(ap_.events(*DEFAULT), RULE)
+                e0 = summarize(m.evaluate(tr0))
+                if ema:
+                    e0.update(abs_t(m, tr0))
+                res["default_no_exclusion"] = {k: e0[k] for k in ("trades", "t", "t_ew", "t_pre", "t_post", "t_abs") if k in e0}
+                print(f"  不剔除可疑：筆數 {e0['trades']}  alpha t {e0['t']:.2f}  vs等權 t {e0['t_ew']:.2f}"
+                      + (f"  絕對 t {e0['t_abs']:.2f}" if ema else ""), file=sys.stderr)
     if args.random:
         ev = ap_.events(*DEFAULT, excl)
-        real = res["cells"][f"PPP{DEFAULT[0]} 下半身{DEFAULT[1]}"]["t"]
-        ts = sorted(m.evaluate(ap_.random_trades(ev, DEFAULT[0], sd))["t"] for sd in range(args.random))
+        real = res["cells"][f"PPP{DEFAULT[0]} 下半身{DEFAULT[1]}"][tkey]
+
+        def metric(tr):
+            return abs_t(m, tr)["t_abs"] if ema else m.evaluate(tr)["t"]
+        ts = sorted(metric(ap_.random_trades(ev, DEFAULT[0], sd)) for sd in range(args.random))
         pct = sum(x < real for x in ts) / len(ts)
-        res["random"] = {"median": ts[len(ts) // 2], "p95": ts[int(0.95 * len(ts))], "real_pctl": pct, "n": len(ts)}
+        res["random"] = {"metric": tkey, "median": ts[len(ts) // 2], "p95": ts[int(0.95 * len(ts))], "real_pctl": pct, "n": len(ts)}
         print(f"隨機對照 {len(ts)} 次：中位數 {ts[len(ts) // 2]:.2f}、第 95 百分位 {ts[int(0.95 * len(ts))]:.2f}；"
               f"預設格 {real:.2f} 在第 {pct:.0%} 百分位", file=sys.stderr)
-    (out_dir / f"{mk}{args.tag}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1, default=str) + "\n",
+    (out_dir / f"{mk}{tag}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1, default=str) + "\n",
                                                   encoding="utf-8")
 
 
