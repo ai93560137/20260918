@@ -5,6 +5,8 @@ donchian_backtest.py）、TradingView 策略（tradingview/）。
 歷史數據在 data/（.csv.gz，格式見 data/README.md）。
 全市場股票日線（9 個市場：港日美台韓澳加印新，不進 git、存 GitHub Release）見 stock_research/MARKET_DATA_CATALOG.md，
 一鍵下載 `python3 scripts/get_market_data.py`。
+外匯歷史數據（26 個商品 Dukascopy M1／H1／D1，2003 起，不進 git、存 GitHub Release）見 forex_research/FOREX_DATA_CATALOG.md，
+一鍵下載 `python3 scripts/get_forex_data.py`；外匯測試的規矩與交接見 forex_research/README.md。
 股票研究（新高／VCP／Minervini／相場師朗／9 國樣本外）集中在 `stock_research/`：策略／數據／執行見 stock_research/README.md，
 判決見 stock_research/VERDICTS.md，接手總結見 stock_research/STOCK_RESEARCH_HANDOFF.md。
 

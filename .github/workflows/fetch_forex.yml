@@ -1,0 +1,149 @@
+name: Forex data（外匯歷史數據：Dukascopy M1／H1／D1 + Yahoo／FRED 第二來源 + 品質檢查）
+
+# 沙盒連不到 Dukascopy／Yahoo／FRED，所以在這裡抓。數據不進 git：每個商品打包成 <PAIR>.tar 上傳 Release「forex-data」
+# （不會過期、不進 git 歷史）；下次先從 Release 還原，只補缺的（fetch_forex.py 可續抓）。
+# 只 commit 品質報告（forex_research/data_qc/、forex_research/DATA_QC.md）。本機取數據：python3 scripts/get_forex_data.py
+on:
+  workflow_dispatch:
+    inputs:
+      group:
+        description: '分組：majors（七大）、crosses（交叉盤）、asia（港元／離岸人民幣／新加坡元）、metals（金銀）或 all'
+        required: true
+        default: 'all'
+      budget_min:
+        description: '每個分組最多抓幾分鐘（超過就先上傳，下次續抓）'
+        required: false
+        default: '300'
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths:
+      - '.github/workflows/fetch_forex.yml'
+      - 'scripts/fetch_forex.py'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        group: ${{ fromJSON((inputs.group || 'all') == 'all' && '["majors","crosses","asia","metals"]' || format('["{0}"]', inputs.group)) }}
+    concurrency:
+      group: forex-data-${{ matrix.group }}
+      cancel-in-progress: false
+    env:
+      G: ${{ matrix.group }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q pandas numpy requests yfinance
+
+      - name: List pairs in group
+        id: pairs
+        run: |
+          PAIRS=$(python3 -c "from scripts.fetch_forex import INSTRUMENTS; print(' '.join(p for p,v in INSTRUMENTS.items() if v[2]=='$G'))")
+          echo "商品：$PAIRS"
+          echo "pairs=$PAIRS" >> "$GITHUB_OUTPUT"
+
+      - name: Restore from Release（只補缺的）
+        run: |
+          mkdir -p data_forex
+          if gh release view forex-data > /dev/null 2>&1; then
+            for P in ${{ steps.pairs.outputs.pairs }}; do
+              if gh release download forex-data -p "$P.tar" -D /tmp 2>/dev/null; then
+                tar -xf /tmp/$P.tar && echo "$P：從 Release 還原 $(ls data_forex/$P | wc -l) 個檔"
+              else
+                echo "$P：Release 沒有備份，全新抓"
+              fi
+            done
+          else
+            echo "Release forex-data 還不存在"
+          fi
+
+      - name: Fetch（Dukascopy + Yahoo + FRED；可續抓）
+        id: fetch
+        run: |
+          set +e
+          python3 scripts/fetch_forex.py --group "$G" --budget-min "${{ inputs.budget_min || '300' }}"
+          RC=$?
+          echo "回傳碼 $RC（0 = 全部抓齊、3 = 未完成）"
+          echo "done=$([ $RC -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Backup to Release
+        if: always()
+        continue-on-error: true
+        run: |
+          gh release view forex-data > /dev/null 2>&1 || \
+            gh release create forex-data --target "${{ github.ref_name }}" --title "外匯歷史數據（Dukascopy M1／H1／D1）" \
+              --notes "每個商品一個 tar（data_forex/<PAIR>/），由 fetch_forex.yml 自動上載；不進 git。目錄見 forex_research/FOREX_DATA_CATALOG.md。"
+          for P in ${{ steps.pairs.outputs.pairs }}; do
+            if [ -d data_forex/$P ] && ls data_forex/$P/*_D1.csv.gz > /dev/null 2>&1; then
+              tar -cf /tmp/$P.tar data_forex/$P
+              gh release upload forex-data /tmp/$P.tar --clobber && echo "$P：已備份 $(du -h /tmp/$P.tar | cut -f1)"
+            else
+              echo "$P：沒有數據可備份"
+            fi
+          done
+
+      - name: Data quality check
+        if: always()
+        run: |
+          set +e
+          python3 scripts/qc_forex.py --pair ${{ steps.pairs.outputs.pairs }}
+          echo "品質檢查回傳碼 $?"
+          exit 0
+
+      - name: Commit QC reports（只 add 本分組的檔）
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { for P in ${{ steps.pairs.outputs.pairs }}; do for f in forex_research/data_qc/${P}_qc.*; do [ -e "$f" ] && git add -- "$f"; done; done; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(forex): $G 品質檢查 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep $((i * 7))
+            git fetch origin ${{ github.ref_name }}
+            git reset --mixed FETCH_HEAD
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "data(forex): $G 品質檢查 $(date -u +%F)"
+          done
+          exit 1
+
+  summary:
+    needs: fetch
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q pandas numpy requests
+      - name: Rebuild DATA_QC.md and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch origin ${{ github.ref_name }} && git reset --hard FETCH_HEAD
+            python3 scripts/qc_forex.py --summary
+            git add forex_research/DATA_QC.md
+            if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+            git commit -q -m "data(forex): 品質總表 $(date -u +%F)"
+            git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep $((i * 7))
+          done
+          exit 1
