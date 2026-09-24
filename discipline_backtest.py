@@ -343,7 +343,7 @@ def pool_all() -> None:
     out["random"] = {"n": n, "median": rt[n // 2], "p95": rt[int(0.95 * n)], "real_pctl": sum(x < real for x in rt) / n}
     for mk in MARKETS:
         c = R[mk]["cells"]
-        out["per_market"][mk] = {k: {x: c[k][x] for x in ("alpha_t", "t_ew", "t_pre", "t_post", "cagr", "cagr_etf", "cum", "cum_etf",
+        out["per_market"][mk] = {k: {x: c[k].get(x) for x in ("alpha_t", "t_ew", "t_pre", "t_post", "cagr", "cagr_etf", "cum", "cum_etf",
                                                            "mdd", "trades", "win", "avg_hold", "avg_pos", "top10_share")}
                                  for k in ("D0", "D1", "D2", "D3", "M")}
         out["per_market"][mk]["random"] = R[mk].get("random")
