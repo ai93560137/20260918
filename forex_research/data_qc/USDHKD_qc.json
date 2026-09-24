@@ -1,0 +1,33 @@
+{
+ "pair": "USDHKD",
+ "generated": "2026-09-24 16:14 UTC",
+ "first": "2000-01-01",
+ "last": "2025-12-31",
+ "d1_rows": 9497,
+ "h1_rows": 170976,
+ "m1_rows": 0,
+ "m1_first": null,
+ "m1_last": null,
+ "m1_per_year": {},
+ "m1_days_per_year": {},
+ "struct": {
+  "D1": {
+   "rows": 9497,
+   "bad_high": 2,
+   "bad_low": 244,
+   "nonpositive": 0,
+   "zero_range_pct": 18.4
+  },
+  "H1": {
+   "rows": 170976,
+   "bad_high": 0,
+   "bad_low": 0,
+   "nonpositive": 0,
+   "zero_range_pct": 29.09
+  },
+  "M1": {
+   "rows": 0,
+   "dup": 0
+  }
+ }
+}
