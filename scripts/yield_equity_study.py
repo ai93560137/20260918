@@ -17,9 +17,16 @@
 #   3. 條件報酬：依「殖利率水位」與「12 個月變動」分組，看未來 12 個月 S&P 報酬
 #   4. 股債相關性：每月 S&P 報酬 vs 殖利率變動，分年代的相關係數
 #   5. 經典案例：1987、1994、2000、2007、2018、2022、2023
+#   6. 殖利率曲線：10Y−3M（1953 起）、10Y−2Y（1976 起）倒掛 / 解除倒掛 → 衰退與 S&P
+#   7. 股債相對價值：S&P 盈餘殖利率（E/P，近 12 個月盈餘）− 10Y，分組看未來報酬
 #
-# 用法：python3 scripts/yield_equity_study.py [--out data/macro/yield_equity]
-# 輸出：README.md、summary.json、yield_spx.svg
+# 6、7 需要 FRED（GS2、TB3MS、DGS 日線）與 multpl（近期 EPS）；這兩站連不上時
+# （例如沙箱只放行 GitHub）10Y 改用上面的鏡像、盈餘只到鏡像的 2023-06，
+# 殖利率曲線整段跳過。GitHub Actions（yield_equity_study.yml）每月跑一次完整版。
+#
+# 用法：python3 scripts/yield_equity_study.py [--out data/macro/yield_equity] [--eps 250]
+#       --eps：手動指定最新的近 12 個月 EPS（multpl 抓不到時用）
+# 輸出：README.md、summary.json、yield_spx.svg、curve_gap.svg
 # =============================================================================
 import argparse
 import csv
@@ -27,12 +34,25 @@ import io
 import json
 import math
 import os
-from datetime import date
+import re
+import time
+from datetime import date, datetime
 
 import requests
 
 URL_10Y = "https://raw.githubusercontent.com/datasets/bond-yields-us-10y/main/data/monthly.csv"
 URL_SPX = "https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv"
+URL_FRED = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}"
+URL_EPS = "https://www.multpl.com/s-p-500-earnings/table/by-month"
+UA = {"User-Agent": "Mozilla/5.0 (research script; yield_equity_study.py)"}
+
+# NBER 衰退期（景氣高點月, 谷底月）
+RECESSIONS = [(date(1953, 7, 1), date(1954, 5, 1)), (date(1957, 8, 1), date(1958, 4, 1)),
+              (date(1960, 4, 1), date(1961, 2, 1)), (date(1969, 12, 1), date(1970, 11, 1)),
+              (date(1973, 11, 1), date(1975, 3, 1)), (date(1980, 1, 1), date(1980, 7, 1)),
+              (date(1981, 7, 1), date(1982, 11, 1)), (date(1990, 7, 1), date(1991, 3, 1)),
+              (date(2001, 3, 1), date(2001, 11, 1)), (date(2007, 12, 1), date(2009, 6, 1)),
+              (date(2020, 2, 1), date(2020, 4, 1))]
 
 # 經典案例：(標籤, 起始月, 說明)
 CASES = [
@@ -47,23 +67,76 @@ CASES = [
 ]
 
 
-def fetch_csv(url, retries=4):
+def fetch_text(url, retries=4):
     for i in range(retries):
         try:
-            r = requests.get(url, timeout=30)
+            r = requests.get(url, timeout=30, headers=UA)
             r.raise_for_status()
-            return list(csv.DictReader(io.StringIO(r.text)))
+            return r.text
         except requests.RequestException:
             if i == retries - 1:
                 raise
+            time.sleep(2 ** i)
 
 
-def load():
-    y = {date.fromisoformat(r["Date"]): float(r["Rate"]) for r in fetch_csv(URL_10Y)}
-    s = {date.fromisoformat(r["Date"]): float(r["SP500"]) for r in fetch_csv(URL_SPX)
-         if float(r["SP500"]) > 0}
+def fetch_csv(url):
+    return list(csv.DictReader(io.StringIO(fetch_text(url))))
+
+
+def fred(series):
+    """FRED 單一序列 → {date: float}；連不上回 None。"""
+    try:
+        rows = fetch_csv(URL_FRED.format(series))
+    except requests.RequestException as e:
+        print(f"FRED {series} 無法取得：{e}")
+        return None
+    out = {}
+    for r in rows:
+        d = r.get("observation_date") or r.get("DATE")
+        v = r.get(series)
+        if d and v not in (None, "", "."):
+            out[date.fromisoformat(d)] = float(v)
+    return out or None
+
+
+def multpl_eps():
+    """multpl 的 S&P 500 近 12 個月盈餘（月表）→ {月初: EPS}；抓不到回 {}。"""
+    try:
+        html = fetch_text(URL_EPS)
+    except requests.RequestException as e:
+        print(f"multpl EPS 無法取得：{e}")
+        return {}
+    out = {}
+    for m in re.finditer(r"<td>\s*([A-Z][a-z]{2}) (\d{1,2}), (\d{4})\s*</td>\s*<td[^>]*>(.*?)</td>", html, re.S):
+        num = re.sub(r"<[^>]+>|&[#\w]+;|[^0-9.]", "", m.group(4))
+        if not num:
+            continue
+        d = datetime.strptime(f"{m.group(1)} {m.group(3)}", "%b %Y").date()
+        out[d] = float(num)
+    return out
+
+
+def load(eps_override=None):
+    shiller = [r for r in fetch_csv(URL_SPX) if float(r["SP500"]) > 0]
+    s = {date.fromisoformat(r["Date"]): float(r["SP500"]) for r in shiller}
+    eps = {date.fromisoformat(r["Date"]): float(r["Earnings"]) for r in shiller if float(r["Earnings"]) > 0}
+    src = {"10y": "FRED GS10", "eps": "Shiller（鏡像）"}
+    y = fred("GS10")
+    if y is None:
+        y = {date.fromisoformat(r["Date"]): float(r["Rate"]) for r in fetch_csv(URL_10Y)}
+        src["10y"] = "FRED GS10（GitHub 鏡像）"
+    recent = {d: v for d, v in multpl_eps().items() if d > max(eps)}
+    if recent:
+        eps.update(recent)
+        src["eps"] = f"Shiller（鏡像）+ multpl（{min(recent):%Y-%m} 起）"
+    if eps_override:
+        last = max(s)
+        eps[last] = eps_override
+        src["eps"] += f"；{last:%Y-%m} 用手動 EPS {eps_override:g}"
     months = sorted(set(y) & set(s))
-    return months, y, s
+    extra = {"gs2": fred("GS2"), "tb3": fred("TB3MS"),
+             "d10": fred("DGS10"), "d2": fred("DGS2"), "d3m": fred("DGS3MO")}
+    return months, y, s, eps, extra, src
 
 
 def add_months(d, n):
@@ -136,10 +209,10 @@ def upcross_events(months, y, s, th=5.0, lookback=12):
     return ev
 
 
-def bucket_stats(months, y, s, key, buckets):
+def bucket_stats(months, y, s, key, buckets, n=12):
     rows = []
     for lo, hi, label in buckets:
-        rs = [fwd(s, d, 12) for d in months if key(d) is not None and lo <= key(d) < hi]
+        rs = [fwd(s, d, n) for d in months if key(d) is not None and lo <= key(d) < hi]
         rs = [r for r in rs if r is not None]
         if not rs:
             rows.append({"bucket": label, "n": 0})
@@ -174,6 +247,88 @@ def cases(months, y, s):
         out.append({"case": label, "month": d.isoformat(), "yield": y.get(d), "note": note,
                      "fwd_12m": fwd(s, d, 12), "maxdd_24m": max_dd(s, d, 24)})
     return out
+
+
+def next_recession(d):
+    return min((a for a, _ in RECESSIONS if a >= d), default=None)
+
+
+def months_between(a, b):
+    return (b.year - a.year) * 12 + b.month - a.month
+
+
+def curve_events(months, spread, s, min_len=3):
+    """倒掛開始（spread < 0，且前 12 個月都 ≥ 0）與解除倒掛（倒掛 ≥ min_len 個月後回到 ≥ 0）。"""
+    ms = [d for d in months if d in spread]
+    ev, inv_start = [], None
+    for i, d in enumerate(ms):
+        if spread[d] < 0 and inv_start is None and i >= 12 and all(spread[ms[j]] >= 0 for j in range(i - 12, i)):
+            inv_start = d
+            ev.append({"type": "倒掛", "month": d, "spread": spread[d]})
+        elif spread[d] >= 0 and inv_start is not None:
+            if months_between(inv_start, d) >= min_len:
+                ev.append({"type": "解除倒掛", "month": d, "spread": spread[d],
+                           "inverted_months": months_between(inv_start, d)})
+            else:
+                ev.pop()  # 太短的倒掛當雜訊
+            inv_start = None
+    out = []
+    for e in ev:
+        d = e["month"]
+        rec = next_recession(d)
+        lag = months_between(d, rec) if rec else None
+        peak = max((m for m in months if d <= m <= add_months(d, 36)), key=lambda m: s[m], default=d)
+        out.append({**e, "month": d.isoformat(),
+                    "recession": rec.isoformat() if rec and lag <= 36 else None,
+                    "lag_to_recession": lag if lag is not None and lag <= 36 else None,
+                    "months_to_spx_peak": months_between(d, peak),
+                    "fwd_12m": fwd(s, d, 12), "fwd_24m": fwd(s, d, 24), "maxdd_24m": max_dd(s, d, 24)})
+    return out, (inv_start.isoformat() if inv_start else None)
+
+
+def curve_study(months, y, s, extra):
+    res = {}
+    for key, series, label in (("10y3m", extra.get("tb3"), "10Y−3M"), ("10y2y", extra.get("gs2"), "10Y−2Y")):
+        if not series:
+            continue
+        spread = {d: y[d] - series[d] for d in months if d in series}
+        ev, open_inv = curve_events(months, spread, s)
+        ms = [d for d in months if d in spread]
+        res[key] = {"label": label, "start": ms[0].isoformat(), "events": ev, "open_inversion": open_inv,
+                    "latest_month": ms[-1].isoformat(), "latest": spread[ms[-1]],
+                    "series": {d.isoformat(): round(v, 3) for d, v in spread.items()}}
+    # 日線最新值（貼文那天的狀態）
+    d10, d2, d3 = extra.get("d10"), extra.get("d2"), extra.get("d3m")
+    if d10:
+        day = max(d10)
+        res["daily"] = {"date": day.isoformat(), "10y": d10[day],
+                        "2y": d2.get(day) if d2 else None, "3m": d3.get(day) if d3 else None}
+    return res
+
+
+def gap_study(months, y, s, eps):
+    """盈餘殖利率 E/P − 10Y。月資料 E 為近 12 個月盈餘（Shiller 為季資料內插）。"""
+    gap = {d: eps[d] / s[d] * 100 - y[d] for d in months if d in eps}
+    if not gap:
+        return None
+    buckets = [(-99, -2, "< −2 個百分點"), (-2, 0, "−2 ～ 0"), (0, 2, "0 ～ 2"),
+               (2, 4, "2 ～ 4"), (4, 99, "≥ 4 個百分點")]
+    key = lambda d: gap.get(d)
+    last = max(gap)
+    lower = [d for d in gap if gap[d] <= gap[last]]
+    return {
+        "latest_month": last.isoformat(), "latest_gap": gap[last],
+        "latest_ep": eps[last] / s[last] * 100, "latest_eps": eps[last], "latest_spx": s[last],
+        "latest_10y": y[last],
+        "pctile": len(lower) / len(gap),
+        "last_lower": max((d.isoformat() for d in gap if gap[d] <= gap[last] and d.year < last.year - 1), default=None),
+        "by_gap_12m": bucket_stats(months, y, s, key, buckets, 12),
+        "by_gap_36m": bucket_stats(months, y, s, key, buckets, 36),
+        "snap": [{"month": d.isoformat(), "ep": eps[d] / s[d] * 100, "y": y[d], "gap": gap[d]}
+                 for d in (date(1981, 9, 1), date(1987, 8, 1), date(2000, 1, 1), date(2007, 6, 1),
+                           date(2009, 3, 1), date(2012, 6, 1), date(2021, 12, 1)) if d in gap],
+        "series": {d.isoformat(): round(v, 3) for d, v in gap.items()},
+    }
 
 
 # ---------------------------------------------------------------- 圖
@@ -231,11 +386,56 @@ def svg_chart(months, y, s, path, marks):
         f.write("\n".join(out))
 
 
+def svg_panels(panels, path, shade=()):
+    """多個上下排列的折線面板，共用時間軸；0 線加粗，shade 為 [(起, 迄)] 灰底（衰退期）。
+    panels: [(標題, {date: 值}, css_var)]"""
+    W, L, R, PH, GAP = 900, 56, 24, 190, 48
+    H = 40 + len(panels) * (PH + GAP)
+    d0 = min(min(p[1]) for p in panels)
+    d1 = max(max(p[1]) for p in panels)
+    span = (d1 - d0).days
+    X = lambda d: L + (d - d0).days / span * (W - L - R)
+    css = (
+        ":root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df;--zero:#8a8984;--sh:#ebeae6;"
+        "--s1:#2a78d6;--s2:#eb6834}"
+        "@media (prefers-color-scheme: dark){:root{--bg:#1a1a19;--ink:#ffffff;--ink2:#c3c2b7;"
+        "--grid:#3a3936;--zero:#8a8984;--sh:#2a2a28;--s1:#3987e5;--s2:#d95926}}"
+        "text{font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:var(--ink2)}"
+        ".t{font-size:14px;font-weight:600;fill:var(--ink)}"
+    )
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
+           f"<style>{css}</style>", f'<rect width="{W}" height="{H}" fill="var(--bg)"/>']
+    for i, (title, ser, var) in enumerate(panels):
+        top = 40 + i * (PH + GAP)
+        lo, hi = min(ser.values()), max(ser.values())
+        lo, hi = math.floor(min(lo, 0)), math.ceil(max(hi, 0))
+        Y = lambda v, top=top, lo=lo, hi=hi: top + (hi - v) / (hi - lo) * PH
+        out.append(f'<text class="t" x="{L}" y="{top - 14}">{title}</text>')
+        for a, b in shade:
+            if b >= d0 and a <= d1:
+                xa, xb = X(max(a, d0)), X(min(b, d1))
+                out.append(f'<rect x="{xa:.1f}" y="{top}" width="{max(xb - xa, 1):.1f}" height="{PH}" fill="var(--sh)"/>')
+        step = max(1, (hi - lo) // 5)
+        for v in range(lo, hi + 1, step):
+            sty = 'stroke="var(--zero)" stroke-width="1.5"' if v == 0 else 'stroke="var(--grid)"'
+            out.append(f'<line x1="{L}" x2="{W - R}" y1="{Y(v):.1f}" y2="{Y(v):.1f}" {sty}/>')
+            out.append(f'<text x="{L - 6}" y="{Y(v) + 4:.1f}" text-anchor="end">{v:+d}</text>')
+        ds = sorted(ser)
+        path_d = " ".join(f"{'M' if j == 0 else 'L'}{X(d):.1f},{Y(ser[d]):.1f}" for j, d in enumerate(ds))
+        out.append(f'<path d="{path_d}" fill="none" stroke="var({var})" stroke-width="1.6"/>')
+        out.append(f'<circle cx="{X(ds[-1]):.1f}" cy="{Y(ser[ds[-1]]):.1f}" r="3.5" fill="var({var})"/>')
+    for yr in range((d0.year // 10 + 1) * 10, d1.year + 1, 10):
+        out.append(f'<text x="{X(date(yr, 1, 1)):.1f}" y="{H - 14}" text-anchor="middle">{yr}</text>')
+    out.append("</svg>")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out))
+
+
 # ---------------------------------------------------------------- 報告
 def render(res, months):
     c = res["claim"]
     L = ["# 美國 10 年期公債殖利率 vs 美股：歷史驗證", "",
-         f"資料：FRED GS10 月均殖利率 + Shiller S&P 500 月均價，"
+         f"資料：{res['sources']['10y']} 月均殖利率 + Shiller S&P 500 月均價，盈餘 {res['sources']['eps']}，"
          f"{months[0]:%Y-%m} ～ {months[-1]:%Y-%m}（共 {len(months)} 個月）。"
          "產生方式：`python3 scripts/yield_equity_study.py`。", "",
          "![S&P 500 與 10Y 殖利率](yield_spx.svg)", "",
@@ -276,20 +476,78 @@ def render(res, months):
     for r in res["cases"]:
         L.append(f"| {r['case']} | {r['month'][:7]} | {r['yield']:.2f}% | {r['note']} "
                  f"| {pct(r['fwd_12m'])} | {pct(r['maxdd_24m'])} |")
+    L += render_curve(res.get("curve") or {}) + render_gap(res.get("gap"))
     L += ["", "## 限制", "",
           "- 月平均殖利率會磨平單日高點；S&P 用月均價、不含股息。",
+          "- 盈餘用的是近 12 個月「公告」盈餘（GAAP），景氣谷底時盈餘暴跌會讓 E/P 失真（例：2009）。",
+          "- 衰退日期取 NBER 景氣高點；判定有落後，最近的衰退不一定已經公布。",
           "- 突破 5% 的事件只有個位數，統計上說服力有限，分組結果也有月份重疊。",
           "- 1953–1980 年代通膨環境與現在差很多，高水位分組主要由那段時期構成。", ""]
     return "\n".join(L)
 
 
+def render_curve(c):
+    L = ["", "## 6. 殖利率曲線（長短利差）", ""]
+    if not c.get("10y3m") and not c.get("10y2y"):
+        return L + ["（這次執行連不上 FRED，拿不到短天期殖利率，本段略過；GitHub Actions 版會補上。）"]
+    L += ["灰底為 NBER 衰退期。倒掛＝短天期殖利率高於 10 年期，市場預期未來會降息（經濟轉弱）。", "",
+          "![殖利率曲線與股債利差](curve_gap.svg)", ""]
+    dly = c.get("daily")
+    if dly:
+        parts = [f"10Y {dly['10y']:.2f}%"]
+        if dly.get("2y") is not None:
+            parts.append(f"2Y {dly['2y']:.2f}%（10Y−2Y {dly['10y'] - dly['2y']:+.2f}）")
+        if dly.get("3m") is not None:
+            parts.append(f"3M {dly['3m']:.2f}%（10Y−3M {dly['10y'] - dly['3m']:+.2f}）")
+        L += [f"**最新日線（{dly['date']}）**：" + "、".join(parts), ""]
+    for key in ("10y3m", "10y2y"):
+        r = c.get(key)
+        if not r:
+            continue
+        L += [f"### {r['label']}（{r['start'][:7]} 起；最新月均 {r['latest_month'][:7]}：{r['latest']:+.2f} 個百分點"
+              + ("，目前仍倒掛" if r["open_inversion"] else "") + "）", "",
+              "| 事件 | 月份 | 利差 | 倒掛月數 | 之後的衰退（落後月數） | S&P 36 個月內高點在幾個月後 | 12 個月 | 24 個月 | 24 個月內最大跌幅 |",
+              "|---|---|---|---|---|---|---|---|---|"]
+        for e in r["events"]:
+            rec = f"{e['recession'][:7]}（{e['lag_to_recession']}）" if e["recession"] else "36 個月內無"
+            L.append(f"| {e['type']} | {e['month'][:7]} | {e['spread']:+.2f} | {e.get('inverted_months', '')} | {rec} "
+                     f"| {e['months_to_spx_peak']} | {pct(e['fwd_12m'])} | {pct(e['fwd_24m'])} | {pct(e['maxdd_24m'])} |")
+        L.append("")
+    return L
+
+
+def render_gap(g):
+    L = ["", "## 7. 股債相對價值：S&P 盈餘殖利率 − 10Y 殖利率", ""]
+    if not g:
+        return L + ["（沒有盈餘資料，本段略過。）"]
+    L += ["盈餘殖利率 = 近 12 個月 EPS ÷ S&P 指數，也就是本益比的倒數。減掉 10Y 殖利率，"
+          "就是「買股票比買公債多拿多少」（俗稱 Fed model）。數字越低，股票相對公債越貴。", "",
+          f"**有盈餘資料的最新月份（{g['latest_month'][:7]}）**：S&P {g['latest_spx']:,.0f}、EPS {g['latest_eps']:.1f}"
+          f"（本益比 {100 / g['latest_ep']:.1f} 倍）→ 盈餘殖利率 {g['latest_ep']:.2f}%，"
+          f"10Y {g['latest_10y']:.2f}%，利差 **{g['latest_gap']:+.2f}** 個百分點，"
+          f"比歷史上 {g['pctile'] * 100:.0f}% 的月份低（或相同）。"
+          + (f"上一次這麼低是 {g['last_lower'][:7]}。" if g["last_lower"] else ""), "",
+          "| 時點 | 盈餘殖利率 | 10Y | 利差 |", "|---|---|---|---|"]
+    for r in g["snap"]:
+        L.append(f"| {r['month'][:7]} | {r['ep']:.2f}% | {r['y']:.2f}% | {r['gap']:+.2f} |")
+    for title, key in (("未來 12 個月", "by_gap_12m"), ("未來 36 個月（累計）", "by_gap_36m")):
+        L += ["", f"#### 依利差分組 → S&P {title}", "",
+              "| 利差 | 月數 | 平均 | 中位數 | 下跌機率 | 跌逾 15% 機率 |", "|---|---|---|---|---|---|"]
+        for r in g[key]:
+            if r["n"]:
+                L.append(f"| {r['bucket']} | {r['n']} | {pct(r['mean'])} | {pct(r['median'])} "
+                         f"| {r['p_neg'] * 100:.0f}% | {r['p_crash'] * 100:.0f}% |")
+    return L
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="data/macro/yield_equity")
+    ap.add_argument("--eps", type=float, help="手動指定最新月份的近 12 個月 EPS")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-    months, y, s = load()
+    months, y, s, eps, extra, src = load(args.eps)
     chg12 = {d: y[d] - y[months[i - 12]] for i, d in enumerate(months) if i >= 12}
     all_fwd = [r for r in (fwd(s, d, 12) for d in months) if r is not None]
     res = {
@@ -307,12 +565,20 @@ def main():
                       "p_crash": sum(r < -0.15 for r in all_fwd) / len(all_fwd)},
         "decade_corr": decade_corr(months, y, s),
         "cases": cases(months, y, s),
+        "curve": curve_study(months, y, s, extra),
+        "gap": gap_study(months, y, s, eps),
+        "sources": src,
     }
     with open(os.path.join(args.out, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(res, f, ensure_ascii=False, indent=2)
     svg_chart(months, y, s, os.path.join(args.out, "yield_spx.svg"),
               [(date(1987, 10, 1), "1987"), (date(2000, 1, 1), "2000"),
                (date(2007, 6, 1), "2007"), (date(2023, 10, 1), "2023")])
+    panels = [(f"{res['curve'][k]['label']} 利差（月均，百分點）", {date.fromisoformat(d): v for d, v in res["curve"][k]["series"].items()}, "--s1")
+              for k in ("10y3m", "10y2y") if k in res["curve"]]
+    if res["gap"]:
+        panels.append(("S&P 盈餘殖利率 − 10Y（百分點）", {date.fromisoformat(d): v for d, v in res["gap"]["series"].items()}, "--s2"))
+    svg_panels(panels, os.path.join(args.out, "curve_gap.svg"), RECESSIONS)
     with open(os.path.join(args.out, "README.md"), "w", encoding="utf-8") as f:
         f.write(render(res, months))
     print(f"輸出：{args.out}（{months[0]:%Y-%m} ～ {months[-1]:%Y-%m}）")
