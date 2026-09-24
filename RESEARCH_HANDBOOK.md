@@ -159,6 +159,7 @@
 | `vcp_minervini.py` + `scripts/{build_full_pools,fetch_full_market,qc_full_market,verify_trades}.py` → `research/vcp_full/` | 全市場（成交額前 N）版：候選池、yfinance 全市場日線（不進 git，Actions 快取 + Release 備份）、4 層品質檢查、逐筆交易核對；Minervini 忠實版（樞紐點盤中成交、大市過濾、固定止損／保本／50 日線出場）|
 | `aiba_ppp.py` + `.github/workflows/aiba_verify.yml` → `research/aiba_ppp/` | 相場流 PPP／下半身／逆下半身（還原 K 線、SMA）全市場回測；`--trades-only` 先出逐筆明細不看績效、抽樣交給 Actions 核對第二來源 |
 | `scripts/expectancy_report.py` → `research/expectancy/` | 已判決策略預設格的期望值、RRR、獲利因子、累計／年化／MDD vs ETF（一個市場一次重建數據，全部策略共用）|
+| `scripts/get_market_data.py` + `MARKET_DATA_CATALOG.md` | 一鍵下載 9 個市場日線並重建品質排除檔；數據目錄、注意事項、策略×市場已驗證矩陣 |
 | `oos_backtest.py` + `scripts/build_oos_pools.py` + `.github/workflows/oos_fullmarket.yml` → `research/oos/` | 樣本外新市場（台 .TW/.TWO、韓 .KS/.KQ、澳 .AX）候選池、抓數據（Release `oos-data`）、凍結規格回測、漲停鎖死跳過、三市場合併 alpha 檢定 |
 | `sector_momentum_backtest.py` | 行業動量回測引擎（多市場，`--grid` 3x3 鄰域、`--permutation` 隨機行業對照、`--attribution` Brinson 行業歸因）|
 | `SECTOR_ROTATION.md` | 行業動量預先登記與各市場結果、既有 alpha 的行業歸因 |
@@ -213,6 +214,9 @@
 
 VCP 全市場（VCP_FULLMARKET_BACKTEST.md）與相場師朗 PPP（AIBA_PPP_BACKTEST.md）兩輪研究的沉澱。
 程式都在分支 `claude/gifted-carson-v2tvhw`；日線數據**不進 git**，放在 GitHub Release `fullmarket-data`（整個倉庫共用）。
+
+> **2026-09-24 擴充到 9 個市場**（港日美＋台韓澳加印新，約 2.3 萬檔）：完整目錄、每市場注意事項、已驗證矩陣（哪些策略還沒在哪些市場測）
+> 見 **MARKET_DATA_CATALOG.md**；一鍵下載 `python3 scripts/get_market_data.py`（港日美在 Release `fullmarket-data`，其他在 `oos-data`）。
 
 ### 7.1 有甚麼數據
 | 市場 | 檔數（`data_full/<m>/`）| 候選池有數據／曾入成交額前 N | 日線起點 | 回測樣本起點 | 大小 |

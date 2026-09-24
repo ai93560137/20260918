@@ -1,0 +1,102 @@
+# 全市場股票數據目錄（MARKET_DATA_CATALOG.md）
+
+**9 個市場、約 2.3 萬檔股票的日線**，2026-09 為 VCP／Minervini／相場師朗／新高研究建立。不論那些策略結果如何，
+這批數據、品質檢查與回測工具**任何分支都可以直接拿來回測其他策略**，或把已有策略拿去別的市場驗證（見第 4 節的空格）。
+
+程式在分支 `claude/gifted-carson-v2tvhw`；日線**不進 git**，放在 GitHub Release（整個倉庫共用）。
+
+## 1. 一鍵取得
+
+```bash
+git fetch origin claude/gifted-carson-v2tvhw
+git merge --no-edit origin/claude/gifted-carson-v2tvhw   # 或 checkout 需要的檔（第 3 節）
+python3 scripts/get_market_data.py                      # 全部 9 個市場（約 1.2 GB）→ data_full/<m>/，並重建品質排除檔
+python3 scripts/get_market_data.py --market in sg       # 只拿幾個
+python3 scripts/get_market_data.py --list               # 看下載網址
+```
+- 已實測：雲端沙盒可直接下載 Release；重建的品質排除檔與原版逐字相同
+- GitHub Actions 裡也可以用 `gh release download fullmarket-data -p hk.tar`（港日美）／`gh release download oos-data -p in.tar`（其他）
+- Actions 快取按分支隔離，**其他分支拿不到快取，只能用 Release**
+
+## 2. 各市場概況（2026-09-24 快照）
+
+| 代碼 | 市場 | Yahoo 代號 | 候選池（來源） | 有日線 | 品質排除 | 日線最早 | 基準 ETF（Yahoo 起） | 全市場前 N | 每邊成本 | 大小 | Release |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| hk | 港股 | `0005.HK` | 2,797（港交所證券名單 股本類 + 恒指歷史成分） | 2,787 | 971 | 2000 | 2800.HK（data/） | 500 | 25 bps | 99 MB | fullmarket-data |
+| jp | 日股 | `7203.T` | 3,746（JPX 内国株式 + 日經歷史成分） | 3,707 | 34 | 2000 | 1321.T（data/） | 1000 | 15 bps | 220 MB | fullmarket-data |
+| us | 美股 | `AAPL` | 6,281（Nasdaq screener + S&P/NDX/Dow 歷史成分） | 5,834 | 143 | 1995 | SPY（data/） | 1500 | 10 bps | 321 MB | fullmarket-data |
+| tw | 台灣 | `2330.TW`／`6488.TWO` | 1,979（證交所 ISIN：上市 1,084、上櫃 893 普通股） | 1,979 | 47 | 2000 | 0050.TW（2009-01） | 500 | 30 bps | 121 MB | oos-data |
+| kr | 韓國 | `005930.KS`／`035720.KQ` | 2,552（FinanceDataReader：KOSPI 827、KOSDAQ 1,723；去 SPAC） | 2,544 | 16 | 2000 | 069500.KS（2007-01） | 700 | 15 bps | 149 MB | oos-data |
+| au | 澳洲 | `BHP.AX` | 2,047（ASXListedCompanies.csv） | 1,551 | 99 | 1995 | STW.AX（2008-01） | 500 | 10 bps | 61 MB | oos-data |
+| ca | 加拿大 | `RY.TO`、`BBD-B.TO` | 2,125（TSX 主板公司目錄，去 ETF／優先股／權證） | 2,115 | 88 | 1995 | XIU.TO（1999-10） | 400 | 10 bps | 65 MB | oos-data |
+| in | 印度 | `RELIANCE.NS` | 2,322（NSE EQUITY_L.csv，SERIES EQ） | 2,322 | 23 | 1996 | NIFTYBEES.NS（2009-01） | 700 | 20 bps | 113 MB | oos-data |
+| sg | 新加坡 | `D05.SI` | 603（SGX 證券 API：股票＋REIT） | 571 | 59 | 1995 | ES3.SI（2008-01） | 200 | 20 bps | 21 MB | oos-data |
+
+- 候選池快照在 git：`universes/full/<m>_pool.txt`（檔頭寫來源與日期）；品質報告：港日美 `research/vcp_full/<m>_qc.md`，其他 `research/oos/<m>_qc.md`
+- 「日線最早」是最早的股票；大部分股票較晚上市。回測樣本起點 = max(引擎設定, 基準 ETF 在 Yahoo 的第一日)
+- 全市場前 N 與成本在 `vcp_backtest.FULL_TOP_N`／`FULL_COST`；引擎市場設定在 `newhigh_backtest.MARKETS`
+
+### 檔案格式
+`data_full/<m>/<TICKER>.csv.gz`（指數 `^` 換成 `_`，例：`_NSEI.csv.gz`），欄位 `Date,Open,High,Low,Close,AdjClose,Volume`
+（yfinance、`auto_adjust=False`：**Close 已按拆股還原、AdjClose 再按股息還原**）。同資料夾：
+`_failed.txt`（Yahoo 抓不到的代號）、`_status.txt`、`_qc_exclude.txt`（整檔排除）、`_qc_zombie.json`（殭屍段，載入時丟掉）
+
+### 各市場要注意的地方
+| 市場 | 注意 |
+|---|---|
+| 全部 | **倖存者偏差**：候選池只有現存股票（下市股大多不在）→ 回測偏高，門檻要從嚴 |
+| 港股 | 收市價可靠（對港交所日報表 0 差）；**盤中高低價不可靠**（948 檔收市超出高低價）→ 只用開收市的策略可用 `load_full("hk", repair_hl=True)` 放回這些股票（只作敏感度） |
+| 日股 | 最乾淨；第二來源 Yahoo!ファイナンス 歷史價**不按拆股還原**（核對時用 `--split-ok`） |
+| 美股 | 小型股尖刺多；Nasdaq 第二來源只有近 10 年 |
+| 台灣 | 漲跌停 ±7%（2015-06 前）→ ±10%；證交稅賣方 0.3%；證交所每日收盤行情可做第二來源（只在 Actions 連得到） |
+| 韓國 | 漲跌停 ±15%（2015-06 前）→ ±30%；KRX KIND 清單下載失敗改用 FinanceDataReader；**SK 海力士（000660.KS）等 8 檔因「還原比例異常」被整檔排除**——做大型股策略要留意 |
+| 澳洲 | `^AXJO` Yahoo 沒有（日曆只用 ETF）；微型股多（496 檔抓不到、1.3 萬段殭屍段）→ 用成交額前 N |
+| 加拿大 | 只含 TSX 主板（不含創業板 TSXV）；代號的點換成連字號（`BAM.A` → `BAM-A.TO`） |
+| 印度 | 個股漲跌幅上限 5／10／20%；Yahoo 的 NIFTYBEES 只到 2009 |
+| 新加坡 | 市場小（571 檔）、價差闊；基準 ES3 在 Yahoo 由 2008 起 |
+| 台韓澳加印新 | **沒有免費的最新一日收市第二來源**（台灣上市股除外）；品質只靠結構檢查＋逐筆內部一致性 |
+
+## 3. 怎樣用來回測
+
+```python
+import newhigh_backtest as nb, vcp_backtest as vb
+mk = "in"
+pool = [l.strip() for l in open(f"universes/full/{mk}_pool.txt") if l.strip() and not l.startswith("#")]
+m = nb.MarketData(mk, pool=pool, loader=nb.load_full(mk), top_n=vb.FULL_TOP_N[mk], cost=vb.FULL_COST[mk])
+# m.cal 交易日、m.tickers、m.adj／m.aopen（還原收市／開市矩陣）、m.member（每日成交額前 N 宇宙）、m.etf_ret
+# 自訂訊號 ev（股票 × 日 的布林矩陣，t 收市後觸發）→ m.trades_from_events(ev, "x2") → m.evaluate(trades)
+rows = nb.load_full(mk)("RELIANCE.NS")    # 單一股票逐日（已套品質排除與殭屍段）
+```
+- 現成訊號：`vcp.py`（趨勢模板、VCP）、`vcp_minervini.py`（樞紐點＋止損模擬）、`aiba_ppp.features()`（PPP／下半身）、
+  `newhigh_backtest.stock_frame()`（3／6／9／12 個月新高、連續天數）
+- 多市場樣本外範例：`oos_backtest.py`（漲停鎖死跳過、三市場合併 alpha 檢定）
+- 描述性統計（期望值、RRR、累計 vs ETF）：`scripts/expectancy_report.py`
+- **研究規矩照 RESEARCH_HANDBOOK.md**：先預先登記再跑；判決照手冊第二節格式追加
+
+## 4. 已驗證矩陣（alpha t vs 當地 ETF；— = 還沒測，歡迎其他分支補）
+
+| 策略 | 港 | 日 | 美 | 台 | 韓 | 澳 | 加 | 印 | 新 |
+|---|---|---|---|---|---|---|---|---|---|
+| 新高 H4 連續新高（指數成分股） | -0.24 | -1.57 | 1.35 | — | — | — | — | — | — |
+| 新高 H5a 剛升級 | 0.42 | 0.13 | 1.35 | -0.45 | -0.95 | 1.35 | — | — | — |
+| 新高 H5b 停留 | -1.75 | 0.06 | 0.32 | — | — | — | — | — | — |
+| VCP 指數版 | -0.60 | -0.26 | -0.37 | — | — | — | — | — | — |
+| VCP 全市場 XV | 1.64 | -0.73 | 0.82 | — | — | — | — | — | — |
+| VCP 全市場 X5（五日 EMA） | 0.79 | 0.02 | 1.35 | — | — | — | — | — | — |
+| **VCP Minervini 忠實版** | 1.24 | 0.33 | -0.24 | **3.18** | 0.08 | **2.10** | 1.67 | **2.04** | **2.35** |
+| PPP 下半身＋逆下半身 | 0.42 | -1.52 | -1.49 | 0.10 | -3.20 | 1.33 | — | — | — |
+| PPP 下半身＋五日 EMA（絕對 t） | -0.29 | -1.13 | -2.24 | — | — | — | — | — | — |
+
+港日美新高／VCP 指數版用 point-in-time 指數成分股；H5a 在台韓澳用成交額前 N 代替。詳情見各 `*_BACKTEST.md` 與 `OOS_VALIDATION.md`。
+**空格就是機會**：例如把 H4／VCP XV 拿去加印新，或把新想法一次在 9 個市場測。
+
+## 5. 更新與擴充
+
+- **更新數據**（補最新日線、重傳 Release）：手動觸發 `vcp_fullmarket.yml`（market = hk／jp／us／all，backtest = false）或
+  `oos_fullmarket.yml`（market = tw／kr／au／ca／in／sg，或 r1 = 台韓澳、r2 = 加印新）。更新後其他分支重跑 `get_market_data.py`
+- **加新市場**（使用者要求不加歐洲）：
+  1. `scripts/build_oos_pools.py` 加 `pool_<m>()`（交易所官方清單，附後備來源）與 `EXTRA`（基準 ETF、指數）
+  2. `scripts/fetch_full_market.py` 的 `CLOSE` 加收市時間；`scripts/qc_full_market.py` 的 choices（有第二來源就加）
+  3. `newhigh_backtest.MARKETS`（ETF、指數、起點、成本、分段日）、`vcp_backtest.FULL_TOP_N`／`FULL_COST`
+  4. `.github/workflows/oos_fullmarket.yml` 的 market 選項；`scripts/get_market_data.py` 的 `RELEASE`／`NAME`
+  5. 更新本目錄第 2、4 節
