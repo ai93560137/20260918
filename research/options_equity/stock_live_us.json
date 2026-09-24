@@ -1,0 +1,3871 @@
+{
+ "asof": "2026-09-23",
+ "n": 428,
+ "rho_q": [
+  0.8342532400873625,
+  0.9503956729130213,
+  1.0687064437209237
+ ],
+ "rho_q_no_earnings": [
+  0.828401114346722,
+  0.94421484938585,
+  1.0411653333314197
+ ],
+ "share_earnings_in_window": 0.09579439252336448,
+ "iv_median": 0.3150366093974377,
+ "rv_median": 0.3312378496936343,
+ "rows": [
+  {
+   "ticker": "A",
+   "iv": 0.29408634626955865,
+   "rv": 0.28549177482315324,
+   "rho": 1.030104445046549,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AAPL",
+   "iv": 0.22897954733596265,
+   "rv": 0.3173166158780354,
+   "rho": 0.7216122190839631,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ABBV",
+   "iv": 0.26174649330925653,
+   "rv": 0.2540974278053248,
+   "rho": 1.030102884432943,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ABNB",
+   "iv": 0.3658642940110093,
+   "rv": 0.4477359258315794,
+   "rho": 0.8171430365599767,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ABT",
+   "iv": 0.2989403630544445,
+   "rv": 0.31458028761475554,
+   "rho": 0.9502832021710649,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ACN",
+   "iv": 0.5435771721200351,
+   "rv": 0.46536114951533736,
+   "rho": 1.1680759614036493,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ADBE",
+   "iv": 0.3882111956725296,
+   "rv": 0.47658977305421985,
+   "rho": 0.8145604828754146,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ADI",
+   "iv": 0.37415109596320356,
+   "rv": 0.39708732597761986,
+   "rho": 0.9422388262885303,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ADM",
+   "iv": 0.3123280594010699,
+   "rv": 0.28145575581437404,
+   "rho": 1.1096879454369972,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ADP",
+   "iv": 0.2683437718245257,
+   "rv": 0.2991387199222252,
+   "rho": 0.8970546236685573,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ADSK",
+   "iv": 0.3882954695850877,
+   "rv": 0.4629079550381153,
+   "rho": 0.8388178802265688,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AEE",
+   "iv": 0.2039671381641618,
+   "rv": 0.1903949870530131,
+   "rho": 1.0712841830618665,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AEP",
+   "iv": 0.18921764777351752,
+   "rv": 0.1858304100644515,
+   "rho": 1.0182275748511302,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AFL",
+   "iv": 0.18933749107837988,
+   "rv": 0.1821073854060034,
+   "rho": 1.0397024297298934,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AJG",
+   "iv": 0.32973620923332453,
+   "rv": 0.35752915508641686,
+   "rho": 0.9222638337106392,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AKAM",
+   "iv": 0.594211758377015,
+   "rv": 0.5569846713886254,
+   "rho": 1.0668368249624864,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ALB",
+   "iv": 0.48328992704817597,
+   "rv": 0.4386739464761107,
+   "rho": 1.1017064745478222,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ALGN",
+   "iv": 0.3880740185544644,
+   "rv": 0.38552077873133617,
+   "rho": 1.006622833227123,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ALL",
+   "iv": 0.2711162674242728,
+   "rv": 0.2970218870135693,
+   "rho": 0.9127821190223837,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ALLE",
+   "iv": 0.2518354450340725,
+   "rv": 0.3079961087310153,
+   "rho": 0.8176578790935634,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMAT",
+   "iv": 0.5442203069409688,
+   "rv": 0.7816204534695974,
+   "rho": 0.69627183439889,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMCR",
+   "iv": 0.24854971362942616,
+   "rv": 0.2885622266204556,
+   "rho": 0.861338355128311,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMD",
+   "iv": 0.5111963435999188,
+   "rv": 0.7054475161045127,
+   "rho": 0.7246412127478306,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AME",
+   "iv": 0.22625481764464173,
+   "rv": 0.2388392417026762,
+   "rho": 0.9473100652626404,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMGN",
+   "iv": 0.2759973221559445,
+   "rv": 0.3309064027562885,
+   "rho": 0.834064617236239,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMP",
+   "iv": 0.27301474411053156,
+   "rv": 0.23843827882903101,
+   "rho": 1.1450122247623384,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMT",
+   "iv": 0.2469947711054245,
+   "rv": 0.28390114103063463,
+   "rho": 0.8700027418303764,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AMZN",
+   "iv": 0.29577026348561675,
+   "rv": 0.4033467399035699,
+   "rho": 0.7332903287041022,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ANET",
+   "iv": 0.457190367257999,
+   "rv": 0.5716429649095491,
+   "rho": 0.7997830732165838,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AON",
+   "iv": 0.2799251352633854,
+   "rv": 0.35052997581511414,
+   "rho": 0.7985768823692014,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AOS",
+   "iv": 0.24907648674705757,
+   "rv": 0.2958289231251291,
+   "rho": 0.8419612393400212,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "APA",
+   "iv": 0.4477606761826818,
+   "rv": 0.42171641586772957,
+   "rho": 1.061757757903171,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "APD",
+   "iv": 0.23821202526521135,
+   "rv": 0.26871629233145083,
+   "rho": 0.886481512521713,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "APH",
+   "iv": 0.40637024568811836,
+   "rv": 0.4394118185297335,
+   "rho": 0.9248049973890738,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "APO",
+   "iv": 0.35111065020153237,
+   "rv": 0.3606589818598095,
+   "rho": 0.9735253185459593,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "APP",
+   "iv": 0.5290201259754755,
+   "rv": 0.7179779439417494,
+   "rho": 0.7368194670035654,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "APTV",
+   "iv": 0.36195808884248815,
+   "rv": 0.4980579556314717,
+   "rho": 0.726738896045889,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ARES",
+   "iv": 0.4002810158078563,
+   "rv": 0.3986815560786207,
+   "rho": 1.0040118728966738,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ATO",
+   "iv": 0.17201809273150176,
+   "rv": 0.1631811647143515,
+   "rho": 1.0541540932902354,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AVGO",
+   "iv": 0.3515450928846715,
+   "rv": 0.40251781071767057,
+   "rho": 0.8733653108613577,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AVY",
+   "iv": 0.2694286090888255,
+   "rv": 0.2713275824562883,
+   "rho": 0.9930011783163669,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AWK",
+   "iv": 0.21050071708403034,
+   "rv": 0.22854304861061833,
+   "rho": 0.9210549975758496,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AXON",
+   "iv": 0.5380936270620162,
+   "rv": 0.7751163403517082,
+   "rho": 0.6942101450446224,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AXP",
+   "iv": 0.2431056445247323,
+   "rv": 0.24053171361588613,
+   "rho": 1.0107010043297515,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "AZO",
+   "iv": 0.31575057071083024,
+   "rv": 0.3044871450568307,
+   "rho": 1.0369914652781065,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BA",
+   "iv": 0.31067982893600454,
+   "rv": 0.3271290236308233,
+   "rho": 0.9497164925562146,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BAC",
+   "iv": 0.2807514383607779,
+   "rv": 0.20729722395476266,
+   "rho": 1.3543424895166216,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BAX",
+   "iv": 0.35721037971192837,
+   "rv": 0.4046786864751567,
+   "rho": 0.8827012433575683,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BBY",
+   "iv": 0.3657904060368342,
+   "rv": 0.3551460741882111,
+   "rho": 1.0299717007232976,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BDX",
+   "iv": 0.27670797577533207,
+   "rv": 0.28509539775879755,
+   "rho": 0.9705802968080124,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BEN",
+   "iv": 0.2935092782964476,
+   "rv": 0.24759933403970544,
+   "rho": 1.185420305893795,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BF-B",
+   "iv": 0.31538922066424524,
+   "rv": 0.34576185047939195,
+   "rho": 0.912157371401629,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BG",
+   "iv": 0.36067766594482614,
+   "rv": 0.3556730622136709,
+   "rho": 1.014070797771434,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BIIB",
+   "iv": 0.31459269905424814,
+   "rv": 0.3855349168734168,
+   "rho": 0.8159901614243121,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BKNG",
+   "iv": 0.3851186806613297,
+   "rv": 0.41373319455112734,
+   "rho": 0.9308382448721755,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BKR",
+   "iv": 0.33975036131586256,
+   "rv": 0.32093257194788555,
+   "rho": 1.0586347133722305,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BLDR",
+   "iv": 0.55074370668072,
+   "rv": 0.5520070021308751,
+   "rho": 0.9977114503162489,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BLK",
+   "iv": 0.3175533286960814,
+   "rv": 0.2849278186730855,
+   "rho": 1.1145044740627066,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BMY",
+   "iv": 0.25293625377335044,
+   "rv": 0.27556682159302204,
+   "rho": 0.9178762969763677,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BNY",
+   "iv": 0.2715746441263253,
+   "rv": 0.22111393464290205,
+   "rho": 1.2282113497953762,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BR",
+   "iv": 0.32880246146672376,
+   "rv": 0.3424964458982043,
+   "rho": 0.9600171488040765,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BRK-B",
+   "iv": 0.13757591390357857,
+   "rv": 0.15260642766225474,
+   "rho": 0.9015079902666919,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BRO",
+   "iv": 0.30561431328904065,
+   "rv": 0.3590787527055261,
+   "rho": 0.8511066471807351,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BSX",
+   "iv": 0.36414074711107924,
+   "rv": 0.36656953234056094,
+   "rho": 0.993374285053169,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BX",
+   "iv": 0.3574581315940511,
+   "rv": 0.36570988864236675,
+   "rho": 0.977436330532519,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "BXP",
+   "iv": 0.8653322529332377,
+   "rv": 0.26681265043478863,
+   "rho": 3.243220482698711,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "C",
+   "iv": 0.33992136384074795,
+   "rv": 0.2754531095658754,
+   "rho": 1.2340443873604368,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CAH",
+   "iv": 0.26028850945075904,
+   "rv": 0.2287711665988327,
+   "rho": 1.1377679858895609,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CARR",
+   "iv": 0.34796521408440073,
+   "rv": 0.34040280007613294,
+   "rho": 1.0222160746227011,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CASY",
+   "iv": 0.32951965798959054,
+   "rv": 0.46130147605538735,
+   "rho": 0.7143260429325526,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CAT",
+   "iv": 0.3540968881252959,
+   "rv": 0.41834527419219886,
+   "rho": 0.8464225843330895,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CB",
+   "iv": 0.1901296399550543,
+   "rv": 0.23359893981561544,
+   "rho": 0.8139148238649012,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CBOE",
+   "iv": 0.33659253673438655,
+   "rv": 0.38249905953919844,
+   "rho": 0.8799826518263442,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CBRE",
+   "iv": 0.37547828036472347,
+   "rv": 0.33928936840241364,
+   "rho": 1.106660907568987,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CCI",
+   "iv": 0.29074661169356947,
+   "rv": 0.31472545048776757,
+   "rho": 0.9238102963804318,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CCL",
+   "iv": 0.49612224051925163,
+   "rv": 0.34423684667027665,
+   "rho": 1.441223521880726,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CDNS",
+   "iv": 0.40517208855169085,
+   "rv": 0.39933375750694367,
+   "rho": 1.0146201790732547,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CDW",
+   "iv": 0.41698795252888055,
+   "rv": 0.4997961148613523,
+   "rho": 0.8343161143710702,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CEG",
+   "iv": 0.40804552095418506,
+   "rv": 0.3819034244768373,
+   "rho": 1.0684521132879585,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CF",
+   "iv": 0.42489469401421553,
+   "rv": 0.39195709710011145,
+   "rho": 1.0840336790883298,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CFG",
+   "iv": 0.2964044069766172,
+   "rv": 0.252588641830824,
+   "rho": 1.1734668860333775,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CHRW",
+   "iv": 0.32297459491941655,
+   "rv": 0.5081305763837313,
+   "rho": 0.6356133835085567,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CHTR",
+   "iv": 0.5378828657736485,
+   "rv": 0.571455889687146,
+   "rho": 0.9412500168090355,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CI",
+   "iv": 0.3058265191362176,
+   "rv": 0.28204023562036934,
+   "rho": 1.084336490017208,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CIEN",
+   "iv": 0.633548776604232,
+   "rv": 0.7656782157572924,
+   "rho": 0.8274347677210876,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CL",
+   "iv": 0.21404402490112634,
+   "rv": 0.21176137362173453,
+   "rho": 1.0107793562175758,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CLX",
+   "iv": 0.3213889335447191,
+   "rv": 0.31326761879550546,
+   "rho": 1.0259245267048014,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CMCSA",
+   "iv": 0.29986615294500774,
+   "rv": 0.36141002832664193,
+   "rho": 0.8297117662545576,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CME",
+   "iv": 0.23785721772044688,
+   "rv": 0.26618687819506703,
+   "rho": 0.8935722877599563,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CMG",
+   "iv": 0.362693767034238,
+   "rv": 0.49345361408516725,
+   "rho": 0.7350108635978886,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CMI",
+   "iv": 0.30790102266273955,
+   "rv": 0.3421853017532415,
+   "rho": 0.8998078558171817,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CMS",
+   "iv": 0.20016064223903246,
+   "rv": 0.17576399618145103,
+   "rho": 1.1388034329419514,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CNC",
+   "iv": 0.4192186383687231,
+   "rv": 0.372267901794641,
+   "rho": 1.1261208295094487,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "COF",
+   "iv": 0.2871257076823084,
+   "rv": 0.2738651039891555,
+   "rho": 1.048420202136005,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "COHR",
+   "iv": 0.7339133008268942,
+   "rv": 1.0345550453279089,
+   "rho": 0.7093999532854974,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "COIN",
+   "iv": 0.629098195797922,
+   "rv": 0.7918226637198781,
+   "rho": 0.794493798450403,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "COO",
+   "iv": 0.2894198948207657,
+   "rv": 0.4416222589454867,
+   "rho": 0.6553562212010046,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "COP",
+   "iv": 0.3045186175653989,
+   "rv": 0.3135425423493944,
+   "rho": 0.971219456484665,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "COST",
+   "iv": 0.25370629083508583,
+   "rv": 0.20125408637150444,
+   "rho": 1.2606267798545834,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CPRT",
+   "iv": 0.3242226905915001,
+   "rv": 0.43669350915546273,
+   "rho": 0.7424490719326834,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CRH",
+   "iv": 0.36000098646772205,
+   "rv": 0.293401357998872,
+   "rho": 1.2269915481069658,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CRL",
+   "iv": 0.4770680200031443,
+   "rv": 0.4185704564205083,
+   "rho": 1.1397555959464747,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CRM",
+   "iv": 0.39828921682989205,
+   "rv": 0.5800867702133643,
+   "rho": 0.6866028278552112,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CRWD",
+   "iv": 0.5578667194761792,
+   "rv": 0.6999839738232446,
+   "rho": 0.7969707026707558,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CSCO",
+   "iv": 0.29610358420158805,
+   "rv": 0.34951674245317566,
+   "rho": 0.8471799723335334,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CSGP",
+   "iv": 0.5091510769238832,
+   "rv": 0.49399708948770266,
+   "rho": 1.030676268663639,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CTAS",
+   "iv": 0.24344075758167144,
+   "rv": 0.26642574922407836,
+   "rho": 0.9137283400371512,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CTSH",
+   "iv": 0.4180347596758927,
+   "rv": 0.4881180893130536,
+   "rho": 0.8564213636585529,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CTVA",
+   "iv": 0.28040948491744677,
+   "rv": 0.3580023409755327,
+   "rho": 0.7832615958693161,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CVNA",
+   "iv": 0.578962125588268,
+   "rv": 0.5735332776605979,
+   "rho": 1.009465619762839,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CVS",
+   "iv": 0.31183312871783486,
+   "rv": 0.2574434021549744,
+   "rho": 1.211268675396541,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "CVX",
+   "iv": 0.26964459642542504,
+   "rv": 0.2503806048409556,
+   "rho": 1.0769388331684322,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "D",
+   "iv": 0.2131934940141306,
+   "rv": 0.15026592771480937,
+   "rho": 1.4187746833650263,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DAL",
+   "iv": 0.4661774709828321,
+   "rv": 0.3105017269398987,
+   "rho": 1.501368367825749,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DASH",
+   "iv": 0.4450745493040138,
+   "rv": 0.38722291263652037,
+   "rho": 1.1494013778099899,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DD",
+   "iv": 0.27854438965701867,
+   "rv": 0.23060422130380076,
+   "rho": 1.20788937896354,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DDOG",
+   "iv": 0.5602650886916306,
+   "rv": 0.7000541953392162,
+   "rho": 0.800316736078055,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DE",
+   "iv": 0.31049967160443814,
+   "rv": 0.34126157029187565,
+   "rho": 0.9098582982516099,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DECK",
+   "iv": 0.35827928522071467,
+   "rv": 0.3811754679754054,
+   "rho": 0.939932695888582,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DELL",
+   "iv": 0.599745104365455,
+   "rv": 0.8041549995763019,
+   "rho": 0.7458078413756706,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DG",
+   "iv": 0.3320069293002593,
+   "rv": 0.348649599316036,
+   "rho": 0.9522653401913398,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DGX",
+   "iv": 0.2405649162998577,
+   "rv": 0.2550392871945019,
+   "rho": 0.9432465050625493,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DHI",
+   "iv": 0.3354048100080353,
+   "rv": 0.3464960686849477,
+   "rho": 0.9679902322730329,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DHR",
+   "iv": 0.302891913028385,
+   "rv": 0.3911703576141922,
+   "rho": 0.774322254057718,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DIS",
+   "iv": 0.24878862808620567,
+   "rv": 0.27504668296886453,
+   "rho": 0.9045323702899144,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DLR",
+   "iv": 0.28560544664945464,
+   "rv": 0.3499960563384178,
+   "rho": 0.81602475649982,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DLTR",
+   "iv": 0.3559153407203018,
+   "rv": 0.358947382257092,
+   "rho": 0.9915529637861559,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DOV",
+   "iv": 0.22270644878210444,
+   "rv": 0.27093989422545045,
+   "rho": 0.8219773223827617,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DOW",
+   "iv": 0.3903209577381859,
+   "rv": 0.365846450143693,
+   "rho": 1.0668983055182855,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DPZ",
+   "iv": 0.44087271696058605,
+   "rv": 0.38280479496020475,
+   "rho": 1.1516906861274239,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DRI",
+   "iv": 0.35845786812604413,
+   "rv": 0.2991483324498756,
+   "rho": 1.198261294624152,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DTE",
+   "iv": 0.18167540852288694,
+   "rv": 0.17268413056328985,
+   "rho": 1.0520677721239806,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DUK",
+   "iv": 0.17511466020952499,
+   "rv": 0.17979229457990323,
+   "rho": 0.973983121015793,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DVA",
+   "iv": 0.3345345953923796,
+   "rv": 0.4674662335182167,
+   "rho": 0.7156337108557022,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DVN",
+   "iv": 0.3654471954643277,
+   "rv": 0.3417088731082392,
+   "rho": 1.0694694350198193,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "DXCM",
+   "iv": 0.33564065958118616,
+   "rv": 0.4056530947217484,
+   "rho": 0.8274081079337354,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EBAY",
+   "iv": 0.36005123258416166,
+   "rv": 0.3304834764515648,
+   "rho": 1.0894681829484152,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ECHO",
+   "iv": 2.7056392388051194,
+   "rv": 0.38111848232340834,
+   "rho": 7.099207633045664,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ECL",
+   "iv": 0.22068166757106034,
+   "rv": 0.20753527673156416,
+   "rho": 1.0633453311963939,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ED",
+   "iv": 0.16627230269067034,
+   "rv": 0.17392571056458497,
+   "rho": 0.9559961097811779,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EG",
+   "iv": 0.2108193380346081,
+   "rv": 0.23631077443335108,
+   "rho": 0.8921274899129384,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EIX",
+   "iv": 0.34150069693248575,
+   "rv": 0.6524498547912776,
+   "rho": 0.5234129403580506,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EL",
+   "iv": 0.3577603279259439,
+   "rv": 0.42675056256384974,
+   "rho": 0.8383359257374532,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ELV",
+   "iv": 0.3084259061486134,
+   "rv": 0.3602869123224467,
+   "rho": 0.8560563695208026,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EME",
+   "iv": 0.3479419685136836,
+   "rv": 0.5274817769213286,
+   "rho": 0.6596284151169406,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EMR",
+   "iv": 0.28603858716019137,
+   "rv": 0.3050147660557022,
+   "rho": 0.9377860319980529,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EOG",
+   "iv": 0.34090665544370713,
+   "rv": 0.33982415761253654,
+   "rho": 1.0031854646202194,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EQIX",
+   "iv": 0.2724487706948708,
+   "rv": 0.28742597522103636,
+   "rho": 0.9478919589134287,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EQT",
+   "iv": 0.3124301955679176,
+   "rv": 0.28265128411780716,
+   "rho": 1.1053556559739486,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ERIE",
+   "iv": 0.36465190420029014,
+   "rv": 0.4941994540736381,
+   "rho": 0.7378638345196458,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ES",
+   "iv": 0.2099037855419562,
+   "rv": 0.19415582753256796,
+   "rho": 1.081109891006216,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ETN",
+   "iv": 0.3774902073495169,
+   "rv": 0.4944133987165178,
+   "rho": 0.7635112809027224,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EW",
+   "iv": 0.26589927480196224,
+   "rv": 0.24101940694066293,
+   "rho": 1.1032276536446068,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EXC",
+   "iv": 0.1992708274254601,
+   "rv": 0.18982403380739155,
+   "rho": 1.0497660566398768,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EXE",
+   "iv": 0.3122178585423392,
+   "rv": 0.28692826824228995,
+   "rho": 1.088139068537834,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EXPE",
+   "iv": 0.49838405010005055,
+   "rv": 0.4644422574482698,
+   "rho": 1.0730807589263371,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "EXR",
+   "iv": 0.223979382493408,
+   "rv": 0.20205043653672503,
+   "rho": 1.108532039487562,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "F",
+   "iv": 0.31572489003545917,
+   "rv": 0.3119128883517342,
+   "rho": 1.0122213663688893,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FANG",
+   "iv": 0.3465570586377482,
+   "rv": 0.36684357773629944,
+   "rho": 0.9446998112281689,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FAST",
+   "iv": 0.34871017033474927,
+   "rv": 0.22643981862097795,
+   "rho": 1.5399684227729897,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FCX",
+   "iv": 0.4609785711714363,
+   "rv": 0.48498119058595424,
+   "rho": 0.9505081436549777,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FDS",
+   "iv": 0.5421951456412177,
+   "rv": 0.5172575322059837,
+   "rho": 1.048211213723425,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FDX",
+   "iv": 0.26328188669466474,
+   "rv": 0.2646373255263944,
+   "rho": 0.9948781267758298,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FDXF",
+   "iv": 0.451451259154379,
+   "rv": 0.4601211959563787,
+   "rho": 0.981157275782571,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FERG",
+   "iv": 0.2821182185943717,
+   "rv": 0.29307965005230624,
+   "rho": 0.96259913830258,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FFIV",
+   "iv": 0.38541841947588773,
+   "rv": 0.37583823128594873,
+   "rho": 1.0254901907056126,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FICO",
+   "iv": 0.5133067148335709,
+   "rv": 0.6843386919635956,
+   "rho": 0.7500770026033791,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FIS",
+   "iv": 0.360354217284333,
+   "rv": 0.3736601438544449,
+   "rho": 0.9643902974696303,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FISV",
+   "iv": 0.38400134119779333,
+   "rv": 0.38966846026907687,
+   "rho": 0.985456562054393,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FITB",
+   "iv": 0.2629459848945227,
+   "rv": 0.21952229894874117,
+   "rho": 1.1978099088508591,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FIX",
+   "iv": 0.5338131805574039,
+   "rv": 0.6222377251374175,
+   "rho": 0.8578926654431221,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FLEX",
+   "iv": 0.6213764878945935,
+   "rv": 0.692234975987771,
+   "rho": 0.8976380989821161,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FOXA",
+   "iv": 0.3081847906029028,
+   "rv": 0.33955417442968877,
+   "rho": 0.9076159676744555,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FSLR",
+   "iv": 0.4873703741658064,
+   "rv": 0.47069813885239864,
+   "rho": 1.035420227821712,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "FTNT",
+   "iv": 0.4514544391985373,
+   "rv": 0.45139464275862473,
+   "rho": 1.0001324704244319,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GD",
+   "iv": 0.19949787993179793,
+   "rv": 0.1860281280211464,
+   "rho": 1.0724070711990414,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GDDY",
+   "iv": 0.5553217485184689,
+   "rv": 0.6658360216715327,
+   "rho": 0.8340217868122759,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GE",
+   "iv": 0.2974252416924793,
+   "rv": 0.2943636526964307,
+   "rho": 1.0104007032390168,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GEHC",
+   "iv": 0.32119069113609094,
+   "rv": 0.3768971716659455,
+   "rho": 0.8521971383239013,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GEN",
+   "iv": 0.4191571457571961,
+   "rv": 0.3355313705677194,
+   "rho": 1.2492338497231474,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GEV",
+   "iv": 0.47010306168018307,
+   "rv": 0.5660035234585447,
+   "rho": 0.8305656099234768,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GILD",
+   "iv": 0.2868403210467713,
+   "rv": 0.2820406377397737,
+   "rho": 1.0170177012272468,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GIS",
+   "iv": 0.31301137153188663,
+   "rv": 0.3678233117100854,
+   "rho": 0.8509829626530007,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GLW",
+   "iv": 0.5704309274204382,
+   "rv": 0.9193797965340392,
+   "rho": 0.6204518845975299,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GM",
+   "iv": 0.3227580545147686,
+   "rv": 0.3095619733685824,
+   "rho": 1.0426282369329458,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GNRC",
+   "iv": 0.46786078659833646,
+   "rv": 0.6231761865632117,
+   "rho": 0.7507680760052263,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GOOG",
+   "iv": 0.31873568496164145,
+   "rv": 0.3418800626520811,
+   "rho": 0.932302639964142,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GOOGL",
+   "iv": 0.31506213752330053,
+   "rv": 0.346880810841834,
+   "rho": 0.9082720279587858,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GPN",
+   "iv": 0.3690620188950796,
+   "rv": 0.39426444310109454,
+   "rho": 0.9360773596325735,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GRMN",
+   "iv": 0.27545024726973577,
+   "rv": 0.3956377668294213,
+   "rho": 0.6962182844098799,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GS",
+   "iv": 0.34420949745423385,
+   "rv": 0.36263609032700184,
+   "rho": 0.9491870959226588,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "GWW",
+   "iv": 0.2343314640571005,
+   "rv": 0.22086728629392743,
+   "rho": 1.060960488939295,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HAL",
+   "iv": 0.34831845910955306,
+   "rv": 0.33156929663098006,
+   "rho": 1.0505148174114987,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HCA",
+   "iv": 0.29143444720532324,
+   "rv": 0.3562153076813199,
+   "rho": 0.8181412783811317,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HD",
+   "iv": 0.2538251692822555,
+   "rv": 0.260199557650035,
+   "rho": 0.9755019246560251,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HIG",
+   "iv": 0.20046132172165984,
+   "rv": 0.20399379336529672,
+   "rho": 0.9826834356802651,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HII",
+   "iv": 0.2828903798095286,
+   "rv": 0.38482926676153145,
+   "rho": 0.7351061996665349,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HLT",
+   "iv": 0.250062604821963,
+   "rv": 0.22361456276246394,
+   "rho": 1.11827513258872,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HON",
+   "iv": 0.24320766851889572,
+   "rv": 0.31061032699428676,
+   "rho": 0.7829992997089539,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HONA",
+   "iv": 0.38992991830175827,
+   "rv": 0.7578647274374207,
+   "rho": 0.514511236880273,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HOOD",
+   "iv": 0.6272143562873811,
+   "rv": 0.7334825995428188,
+   "rho": 0.8551182491286434,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HPE",
+   "iv": 0.6384663705194904,
+   "rv": 0.6761875974888247,
+   "rho": 0.94421484938585,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HPQ",
+   "iv": 0.4921929160644833,
+   "rv": 0.501166879202756,
+   "rho": 0.982093862322769,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HSY",
+   "iv": 0.2515016803760773,
+   "rv": 0.26732686738697,
+   "rho": 0.9408021080500492,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HUBB",
+   "iv": 0.289502711800447,
+   "rv": 0.3405233166905291,
+   "rho": 0.8501700107177973,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HUM",
+   "iv": 0.6898383439482922,
+   "rv": 0.3402436560893013,
+   "rho": 2.027483339078732,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "HWM",
+   "iv": 0.3347544856398828,
+   "rv": 0.37973750305182286,
+   "rho": 0.8815418096700309,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IBKR",
+   "iv": 0.42751580214058965,
+   "rv": 0.42391547555503434,
+   "rho": 1.0084930293729932,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IBM",
+   "iv": 0.33618492964521357,
+   "rv": 0.6866506190281597,
+   "rho": 0.48960114551564476,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ICE",
+   "iv": 0.2544963704010768,
+   "rv": 0.25499496788180415,
+   "rho": 0.9980446771759102,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IFF",
+   "iv": 0.24861027632947416,
+   "rv": 0.32499341551237837,
+   "rho": 0.7649701946653903,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "INTC",
+   "iv": 0.6597977495517148,
+   "rv": 0.7592525578786845,
+   "rho": 0.8690095841035534,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "INTU",
+   "iv": 0.4490776520593478,
+   "rv": 0.46069542506189043,
+   "rho": 0.9747820959997988,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "INVH",
+   "iv": 0.20112680682574385,
+   "rv": 0.18380363636250346,
+   "rho": 1.0942482466945054,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IP",
+   "iv": 0.36744063081036465,
+   "rv": 0.42498693966455947,
+   "rho": 0.864592759251341,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IQV",
+   "iv": 0.3117583661080586,
+   "rv": 0.408861404931367,
+   "rho": 0.7625037784145743,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IR",
+   "iv": 0.31057569561414994,
+   "rv": 0.3026646433518757,
+   "rho": 1.0261380126025388,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IRM",
+   "iv": 0.2985717542390344,
+   "rv": 0.30438441400413324,
+   "rho": 0.9809035564974102,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ISRG",
+   "iv": 0.32033798853016826,
+   "rv": 0.48824100245090923,
+   "rho": 0.6561062813694698,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IT",
+   "iv": 0.49700508085898015,
+   "rv": 0.7013352300768798,
+   "rho": 0.7086555181385924,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ITW",
+   "iv": 0.20351441089505523,
+   "rv": 0.2137221593109494,
+   "rho": 0.9522382309405611,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "IVZ",
+   "iv": 0.34211244823989384,
+   "rv": 0.35772564234122967,
+   "rho": 0.9563542775431161,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "JBHT",
+   "iv": 0.3875968690816684,
+   "rv": 0.4293614001377068,
+   "rho": 0.9027287244669794,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "JBL",
+   "iv": 0.5916489343212707,
+   "rv": 0.5118323015483303,
+   "rho": 1.155942937816721,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "JCI",
+   "iv": 0.2915568365523319,
+   "rv": 0.313709072016346,
+   "rho": 0.9293860540224993,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "JNJ",
+   "iv": 0.2732414442038613,
+   "rv": 0.24286369501971697,
+   "rho": 1.125081474946999,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "JPM",
+   "iv": 0.2809470123582033,
+   "rv": 0.17687699686295796,
+   "rho": 1.5883750704783701,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KEY",
+   "iv": 0.2461297086603363,
+   "rv": 0.21114289487634624,
+   "rho": 1.1657020654399937,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KEYS",
+   "iv": 0.3618867175621879,
+   "rv": 0.4806064372174407,
+   "rho": 0.7529793393059767,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KHC",
+   "iv": 0.26003521807320723,
+   "rv": 0.31378550948180256,
+   "rho": 0.8287037170793494,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KKR",
+   "iv": 0.3703284259112467,
+   "rv": 0.37284444309353804,
+   "rho": 0.9932518313497832,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KLAC",
+   "iv": 0.5602842388945574,
+   "rv": 0.7468615931574182,
+   "rho": 0.7501848321399286,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KMI",
+   "iv": 0.2428539714565635,
+   "rv": 0.21343808805762457,
+   "rho": 1.1378192789611064,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KO",
+   "iv": 0.17865657116487713,
+   "rv": 0.21697494423972669,
+   "rho": 0.8233972442803664,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "KR",
+   "iv": 0.25286473732001136,
+   "rv": 0.27661854240453615,
+   "rho": 0.9141279363341217,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LDOS",
+   "iv": 0.32083493413025316,
+   "rv": 0.38623170728429024,
+   "rho": 0.8306799469834799,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LEN",
+   "iv": 0.3782929836470886,
+   "rv": 0.35750279423750586,
+   "rho": 1.058153921436963,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LH",
+   "iv": 0.24522883759858072,
+   "rv": 0.24642782295824964,
+   "rho": 0.9951345373859345,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LHX",
+   "iv": 0.24811690080810136,
+   "rv": 0.30213580761705794,
+   "rho": 0.8212098485280406,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LII",
+   "iv": 0.31974402201046914,
+   "rv": 0.5565059030482509,
+   "rho": 0.5745563888165015,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LIN",
+   "iv": 0.194788748368084,
+   "rv": 0.20591380619921798,
+   "rho": 0.9459722587985641,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LITE",
+   "iv": 0.72941798709729,
+   "rv": 0.9859638441964607,
+   "rho": 0.7398019627096468,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LLY",
+   "iv": 0.315390988812823,
+   "rv": 0.3261918086763648,
+   "rho": 0.9668881327603847,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LMT",
+   "iv": 0.27223866600471236,
+   "rv": 0.3240874070514862,
+   "rho": 0.840016181071371,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LOW",
+   "iv": 0.26599590454451005,
+   "rv": 0.26235468865357575,
+   "rho": 1.013878981578798,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LRCX",
+   "iv": 0.5752815642753328,
+   "rv": 0.8012769971187905,
+   "rho": 0.7179559207913296,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LULU",
+   "iv": 0.40847137372348097,
+   "rv": 0.5388755061253866,
+   "rho": 0.7580069405278128,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LUV",
+   "iv": 0.4081530545795832,
+   "rv": 0.34550591480704157,
+   "rho": 1.1813200211276522,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LVS",
+   "iv": 0.3204378867791979,
+   "rv": 0.2484640315457507,
+   "rho": 1.289675148494056,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LYB",
+   "iv": 0.4108912275520711,
+   "rv": 0.3495188711197453,
+   "rho": 1.175590966621369,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "LYV",
+   "iv": 0.28617559898031253,
+   "rv": 0.24796274821528505,
+   "rho": 1.1541072239280494,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MA",
+   "iv": 0.21123914128718368,
+   "rv": 0.2089057018124203,
+   "rho": 1.0111698218599061,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MAR",
+   "iv": 0.22275823189605157,
+   "rv": 0.26179367922057817,
+   "rho": 0.8508923231426199,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MCD",
+   "iv": 0.22164046504412538,
+   "rv": 0.21843613526797184,
+   "rho": 1.0146694125137425,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MCHP",
+   "iv": 0.4675514444869208,
+   "rv": 0.5622270811738816,
+   "rho": 0.8316060541066675,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MCK",
+   "iv": 0.25777846027282836,
+   "rv": 0.315273699515107,
+   "rho": 0.8176338865858247,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MDT",
+   "iv": 0.3093286994934228,
+   "rv": 0.2646527471134784,
+   "rho": 1.1688097058021019,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MET",
+   "iv": 0.2330700036830379,
+   "rv": 0.22533589015035047,
+   "rho": 1.0343225995979912,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "META",
+   "iv": 0.45368681899385394,
+   "rv": 0.4924551738145118,
+   "rho": 0.9212753629526078,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MGM",
+   "iv": 0.5804096851385832,
+   "rv": 0.2149645012482403,
+   "rho": 2.700025733403898,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MKC",
+   "iv": 0.3905233276348964,
+   "rv": 0.3046538217830073,
+   "rho": 1.2818592767007875,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MLM",
+   "iv": 0.28308035019960687,
+   "rv": 0.316239719300613,
+   "rho": 0.8951448313502792,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MMM",
+   "iv": 0.24003982439018934,
+   "rv": 0.24765547650160008,
+   "rho": 0.9692490058407348,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MNST",
+   "iv": 0.2706967673590467,
+   "rv": 0.24288446753906953,
+   "rho": 1.1145083508294056,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MO",
+   "iv": 0.21433939751199937,
+   "rv": 0.3111553633572703,
+   "rho": 0.6888500818348219,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MOS",
+   "iv": 0.46425494126734956,
+   "rv": 0.39324338986422336,
+   "rho": 1.1805791355517625,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MPC",
+   "iv": 0.49380716667547414,
+   "rv": 0.3412805446300719,
+   "rho": 1.4469244568591866,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MPWR",
+   "iv": 0.5512039986207552,
+   "rv": 0.5695045864917619,
+   "rho": 0.9678657761410822,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MRK",
+   "iv": 0.275983284538499,
+   "rv": 0.35291069097289735,
+   "rho": 0.7820201869704588,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MRNA",
+   "iv": 0.7488088836635536,
+   "rv": 2.2521896632776293,
+   "rho": 0.3324803838118172,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MRSH",
+   "iv": 0.2963078346531504,
+   "rv": 0.27891908869219223,
+   "rho": 1.062343334199503,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MRVL",
+   "iv": 0.686468914944362,
+   "rv": 0.8784035206639021,
+   "rho": 0.7814960878407284,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MS",
+   "iv": 0.3516492949258367,
+   "rv": 0.2846921233678154,
+   "rho": 1.2351915141379384,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MSCI",
+   "iv": 0.2599623284190531,
+   "rv": 0.34770808539555964,
+   "rho": 0.7476453362403546,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MSFT",
+   "iv": 0.2541882739520852,
+   "rv": 0.4014985477645663,
+   "rho": 0.6330988626667163,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MSI",
+   "iv": 0.21338354996862355,
+   "rv": 0.2621560389025038,
+   "rho": 0.8139562638417085,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MTB",
+   "iv": 0.2613575012485073,
+   "rv": 0.20174101855590643,
+   "rho": 1.295509971741716,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MTD",
+   "iv": 1.1620993157571906,
+   "rv": 0.27129269385645616,
+   "rho": 4.2835628900941565,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "MU",
+   "iv": 0.6533046309808934,
+   "rv": 0.8869977267840236,
+   "rho": 0.7365347297445415,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NCLH",
+   "iv": 0.5601662634568054,
+   "rv": 0.4597006525552163,
+   "rho": 1.2185457217499203,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NDAQ",
+   "iv": 0.2594130470688423,
+   "rv": 0.2873219499812957,
+   "rho": 0.9028653992001995,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NDSN",
+   "iv": 0.19319307210039957,
+   "rv": 0.25233246863999226,
+   "rho": 0.765629065263226,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NEE",
+   "iv": 0.20210703717633385,
+   "rv": 0.14256745865702533,
+   "rho": 1.4176239029591104,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NEM",
+   "iv": 0.41798685453638895,
+   "rv": 0.43650829488078363,
+   "rho": 0.9575690987740493,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NFLX",
+   "iv": 0.32443769977493603,
+   "rv": 0.3780713099260675,
+   "rho": 0.858138904637806,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NKE",
+   "iv": 0.5012865973061108,
+   "rv": 0.3090969731000504,
+   "rho": 1.621777762100088,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NOC",
+   "iv": 0.27806544475301975,
+   "rv": 0.2553907085726952,
+   "rho": 1.0887844992758238,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NOW",
+   "iv": 0.5393680890596583,
+   "rv": 0.5992843203449109,
+   "rho": 0.900020358866108,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NRG",
+   "iv": 0.4537844463102945,
+   "rv": 0.5671811752609497,
+   "rho": 0.8000696534075141,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NSC",
+   "iv": 0.2355018485138286,
+   "rv": 0.20839152386725707,
+   "rho": 1.130093221372288,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NTAP",
+   "iv": 0.44781822459314985,
+   "rv": 0.4257346266380499,
+   "rho": 1.0518717449165227,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NTRS",
+   "iv": 0.24117949982337578,
+   "rv": 0.21458922311313552,
+   "rho": 1.1239124515410606,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NUE",
+   "iv": 0.35409574328175863,
+   "rv": 0.3779973915282504,
+   "rho": 0.9367676899836347,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NVDA",
+   "iv": 0.3056755537494966,
+   "rv": 0.39785111446209986,
+   "rho": 0.7683164446146498,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "NXPI",
+   "iv": 0.4333354270249942,
+   "rv": 0.4473344747219382,
+   "rho": 0.968705636413009,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "O",
+   "iv": 0.1654216464423625,
+   "rv": 0.1683745932619457,
+   "rho": 0.9824620403685893,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ODFL",
+   "iv": 0.34246003251711954,
+   "rv": 0.2976027456452966,
+   "rho": 1.1507287400005608,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "OKE",
+   "iv": 0.28103565936068137,
+   "rv": 0.25882209441146736,
+   "rho": 1.0858256131483874,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "OMC",
+   "iv": 0.3083246659266412,
+   "rv": 0.35304471643223545,
+   "rho": 0.8733303504510088,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ON",
+   "iv": 0.5490560765562326,
+   "rv": 0.796753658990149,
+   "rho": 0.6891164795554721,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ORCL",
+   "iv": 0.48857433486958624,
+   "rv": 0.55623953617723,
+   "rho": 0.8783524059208834,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ORLY",
+   "iv": 0.2714636328607243,
+   "rv": 0.3096695398037112,
+   "rho": 0.8766236195939571,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "OTIS",
+   "iv": 0.21588786555085965,
+   "rv": 0.23019652516566644,
+   "rho": 0.9378415481966584,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "OXY",
+   "iv": 0.34250437160791153,
+   "rv": 0.3446480223718108,
+   "rho": 0.9937801739027922,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PANW",
+   "iv": 0.5351124009231433,
+   "rv": 0.6137549727515013,
+   "rho": 0.8718665015848287,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PAYX",
+   "iv": 0.28696412370548113,
+   "rv": 0.3121878716449341,
+   "rho": 0.9192033059883212,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PCAR",
+   "iv": 0.2684618890450118,
+   "rv": 0.2643668222234921,
+   "rho": 1.0154900936020548,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PCG",
+   "iv": 0.3838936643470493,
+   "rv": 0.577186525250734,
+   "rho": 0.6651119656341303,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PEG",
+   "iv": 0.20030117163539568,
+   "rv": 0.15542192609951982,
+   "rho": 1.2887574917012594,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PEP",
+   "iv": 0.25693672140874996,
+   "rv": 0.22368703152427902,
+   "rho": 1.1486437978004194,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PFE",
+   "iv": 0.21676635609194117,
+   "rv": 0.21210765057791114,
+   "rho": 1.0219638730679297,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PG",
+   "iv": 0.17624984964773205,
+   "rv": 0.18648429999981375,
+   "rho": 0.9451189705938144,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PGR",
+   "iv": 0.29030310470323684,
+   "rv": 0.347872036541149,
+   "rho": 0.8345111828754236,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PH",
+   "iv": 0.2667420212931108,
+   "rv": 0.2690213194184609,
+   "rho": 0.9915274442550605,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PHM",
+   "iv": 0.33370126584500254,
+   "rv": 0.33474083784310366,
+   "rho": 0.9968943974544618,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PKG",
+   "iv": 0.2636001008215141,
+   "rv": 0.2791407468117471,
+   "rho": 0.9443268452645014,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PLD",
+   "iv": 0.261561599783324,
+   "rv": 0.21767234148454243,
+   "rho": 1.201629926886684,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PLTR",
+   "iv": 0.4825352237048753,
+   "rv": 0.7302792445859909,
+   "rho": 0.6607543994741815,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PM",
+   "iv": 0.29825418331273457,
+   "rv": 0.2707180454533569,
+   "rho": 1.1017151915871155,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PNC",
+   "iv": 0.29379524931996687,
+   "rv": 0.18462514190220303,
+   "rho": 1.5913068301152173,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PODD",
+   "iv": 0.4165033335364446,
+   "rv": 0.5835619874960054,
+   "rho": 0.7137259493607706,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PPG",
+   "iv": 0.26648783497103556,
+   "rv": 0.29513090684249216,
+   "rho": 0.9029479081743782,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PPL",
+   "iv": 0.20387065378689906,
+   "rv": 0.18761473608073526,
+   "rho": 1.0866452073315205,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PRU",
+   "iv": 0.2517953486496505,
+   "rv": 0.20519772074895964,
+   "rho": 1.2270864789853035,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PSA",
+   "iv": 0.2308458242800529,
+   "rv": 0.21428072481452162,
+   "rho": 1.077305597504721,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PSKY",
+   "iv": 0.5789432753127528,
+   "rv": 0.40094707609205466,
+   "rho": 1.4439393871021309,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PSX",
+   "iv": 0.4333522659245488,
+   "rv": 0.30966957500339987,
+   "rho": 1.3994021399092598,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PTC",
+   "iv": 0.4680824689536668,
+   "rv": 0.43689102260163254,
+   "rho": 1.071394111433769,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PWR",
+   "iv": 0.3870009189391728,
+   "rv": 0.5141588444186711,
+   "rho": 0.7526874683576275,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "PYPL",
+   "iv": 0.3224421842629769,
+   "rv": 0.5078135563242977,
+   "rho": 0.6349617497352912,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "Q",
+   "iv": 0.5325430862139074,
+   "rv": 0.5336738204883457,
+   "rho": 0.9978812258892453,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "QCOM",
+   "iv": 0.5086483496625958,
+   "rv": 0.5070249330906336,
+   "rho": 1.003201847613423,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "RCL",
+   "iv": 0.433969214567263,
+   "rv": 0.3082025730361647,
+   "rho": 1.4080648655595123,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "RDDT",
+   "iv": 0.5706934288713476,
+   "rv": 0.8300341174905862,
+   "rho": 0.6875541822265155,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "REGN",
+   "iv": 0.28952034409184096,
+   "rv": 0.3000162169239038,
+   "rho": 0.9650156483550187,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "RL",
+   "iv": 0.3107152805899691,
+   "rv": 0.2974713098383425,
+   "rho": 1.0445218423209415,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "RMD",
+   "iv": 0.2857971779698383,
+   "rv": 0.361960804248984,
+   "rho": 0.7895804590301588,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ROK",
+   "iv": 0.26413892024328645,
+   "rv": 0.3075063997736819,
+   "rho": 0.8589704813873371,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ROST",
+   "iv": 0.25111705117767813,
+   "rv": 0.28391858286017124,
+   "rho": 0.8844685284349714,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "RSG",
+   "iv": 0.19278469689808508,
+   "rv": 0.20880624920305135,
+   "rho": 0.9232707240989407,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "RTX",
+   "iv": 0.23601017095993934,
+   "rv": 0.24984274091121608,
+   "rho": 0.9446348935301175,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SBUX",
+   "iv": 0.27264704256702266,
+   "rv": 0.21762817562075495,
+   "rho": 1.252811322749611,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SCHW",
+   "iv": 0.31501108127157496,
+   "rv": 0.22207710204486986,
+   "rho": 1.4184761885443198,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SHW",
+   "iv": 0.2557447399561108,
+   "rv": 0.3087074270609008,
+   "rho": 0.8284372760026221,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SJM",
+   "iv": 0.24906690720402216,
+   "rv": 0.29549745645231207,
+   "rho": 0.8428732693481477,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SLB",
+   "iv": 0.3640853214207937,
+   "rv": 0.3874114662865497,
+   "rho": 0.9397897406358572,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SMCI",
+   "iv": 0.7092588842144972,
+   "rv": 0.8805862243069175,
+   "rho": 0.8054394500353821,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SNA",
+   "iv": 0.26062985777950354,
+   "rv": 0.17857506299547385,
+   "rho": 1.4594974987415206,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SNDK",
+   "iv": 0.7298422451979566,
+   "rv": 1.3112179863787083,
+   "rho": 0.5566139671509679,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SNPS",
+   "iv": 0.43798402968861677,
+   "rv": 0.46413304363244207,
+   "rho": 0.9436605208300288,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SO",
+   "iv": 0.1798147793072986,
+   "rv": 0.16357147946238926,
+   "rho": 1.0993039856232654,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SOLV",
+   "iv": 0.2961732650860113,
+   "rv": 0.30552737912418426,
+   "rho": 0.9693837126316234,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SPG",
+   "iv": 0.204188488411249,
+   "rv": 0.1816615215993501,
+   "rho": 1.1240051641843096,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SPGI",
+   "iv": 0.2637549095858469,
+   "rv": 0.3324586169884649,
+   "rho": 0.7933465884417075,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SRE",
+   "iv": 0.24940489501835472,
+   "rv": 0.22612104271985978,
+   "rho": 1.1029707453071547,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "STE",
+   "iv": 0.23929107534689986,
+   "rv": 0.2729098265997653,
+   "rho": 0.87681370190393,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "STLD",
+   "iv": 0.3730607152359728,
+   "rv": 0.39284318115209166,
+   "rho": 0.9496428425762595,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "STT",
+   "iv": 0.3344231945570983,
+   "rv": 0.23271188209778157,
+   "rho": 1.4370696998470383,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "STX",
+   "iv": 0.6825816206696205,
+   "rv": 0.8273722374770678,
+   "rho": 0.8249994255923284,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "STZ",
+   "iv": 0.37730303277690425,
+   "rv": 0.30268587364626,
+   "rho": 1.2465168203318504,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SW",
+   "iv": 0.3510186847473543,
+   "rv": 0.43558404222109864,
+   "rho": 0.8058575400454645,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SWK",
+   "iv": 0.32567567688314664,
+   "rv": 0.33892444365109325,
+   "rho": 0.960909379609145,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SWKS",
+   "iv": 0.5728433106343238,
+   "rv": 0.6059937904088595,
+   "rho": 0.9452956774488246,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SYF",
+   "iv": 0.30885088219076434,
+   "rv": 0.33541177434531544,
+   "rho": 0.9208110919588471,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SYK",
+   "iv": 0.31183769448045867,
+   "rv": 0.4169682321844129,
+   "rho": 0.7478691910095969,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "SYY",
+   "iv": 0.21607505078051303,
+   "rv": 0.2062922703919442,
+   "rho": 1.0474219434881495,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "T",
+   "iv": 0.2546711948304605,
+   "rv": 0.2899733099625756,
+   "rho": 0.8782573639737008,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TAP",
+   "iv": 0.2945818276922241,
+   "rv": 0.31765510984924133,
+   "rho": 0.9273637305316202,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TDG",
+   "iv": 0.2925387634442114,
+   "rv": 0.2549077763089017,
+   "rho": 1.1476258891753377,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TEL",
+   "iv": 0.32295429280452437,
+   "rv": 0.3258119675967691,
+   "rho": 0.9912290674485553,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TER",
+   "iv": 0.6444151049019758,
+   "rv": 0.9032666865715308,
+   "rho": 0.7134272906132954,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TFC",
+   "iv": 0.29163482049491635,
+   "rv": 0.2175742344748996,
+   "rho": 1.3403922628925105,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TGT",
+   "iv": 0.29248109140321216,
+   "rv": 0.3272628476358171,
+   "rho": 0.8937192031302295,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TJX",
+   "iv": 0.22552050518503772,
+   "rv": 0.25679605403779954,
+   "rho": 0.8782086081114076,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TKO",
+   "iv": 0.349859759950454,
+   "rv": 0.327028197179666,
+   "rho": 1.0698152727125378,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TMO",
+   "iv": 0.27756939664523766,
+   "rv": 0.29622481317243254,
+   "rho": 0.9370227756162495,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TMUS",
+   "iv": 0.3073679660211394,
+   "rv": 0.42003719691089675,
+   "rho": 0.7317636825539094,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TPL",
+   "iv": 0.43429588557809246,
+   "rv": 0.45450831607256037,
+   "rho": 0.9555290194266961,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TPR",
+   "iv": 0.34390105667949794,
+   "rv": 0.47267193954754055,
+   "rho": 0.7275681670646517,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TRGP",
+   "iv": 0.31459964820916203,
+   "rv": 0.3167899278360507,
+   "rho": 0.9930860187321922,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TRV",
+   "iv": 0.2594637770968657,
+   "rv": 0.27396738950494287,
+   "rho": 0.9470608073673107,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TSCO",
+   "iv": 0.3392014575083263,
+   "rv": 0.3037173698014904,
+   "rho": 1.1168325925185916,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TSLA",
+   "iv": 0.4036381472686729,
+   "rv": 0.5739303310403501,
+   "rho": 0.703287708347819,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TSN",
+   "iv": 0.23275454684228322,
+   "rv": 0.2809806789703188,
+   "rho": 0.8283649526908221,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TT",
+   "iv": 0.2777498452677017,
+   "rv": 0.28237589525998824,
+   "rho": 0.9836174047787356,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TTD",
+   "iv": 0.5506298837577766,
+   "rv": 0.6924383253043869,
+   "rho": 0.7952042277783034,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TTWO",
+   "iv": 0.36317296712037994,
+   "rv": 0.346988033965706,
+   "rho": 1.0466440671446138,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TXN",
+   "iv": 0.38310495504440445,
+   "rv": 0.4218889625314431,
+   "rho": 0.9080705803386642,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TXT",
+   "iv": 0.23795243772111185,
+   "rv": 0.2731572382107855,
+   "rho": 0.8711189177329893,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "TYL",
+   "iv": 0.39911932114571524,
+   "rv": 0.4483886548745473,
+   "rho": 0.8901191339405835,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "UAL",
+   "iv": 0.5320058599369037,
+   "rv": 0.40101791094238376,
+   "rho": 1.3266386498465892,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "UBER",
+   "iv": 0.3422215589116125,
+   "rv": 0.40158008850276344,
+   "rho": 0.8521875678337013,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "UHS",
+   "iv": 0.29658449042184554,
+   "rv": 0.31031496649438534,
+   "rho": 0.9557530974813997,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ULTA",
+   "iv": 0.3032006149229012,
+   "rv": 0.3554494393559546,
+   "rho": 0.8530063107492193,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "UNH",
+   "iv": 0.4293877582130413,
+   "rv": 0.23555808980620166,
+   "rho": 1.8228529470853971,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "UNP",
+   "iv": 0.20929398695574378,
+   "rv": 0.22069308938892862,
+   "rho": 0.9483486208619059,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "UPS",
+   "iv": 0.24403567218179686,
+   "rv": 0.2930624246874033,
+   "rho": 0.8327088416131782,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "URI",
+   "iv": 0.32135032503531674,
+   "rv": 0.37469212050658224,
+   "rho": 0.8576383314408971,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "USB",
+   "iv": 0.27725755247876854,
+   "rv": 0.20551512329871574,
+   "rho": 1.34908588734745,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "V",
+   "iv": 0.20788467785608877,
+   "rv": 0.19674194188044766,
+   "rho": 1.0566363016911366,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VEEV",
+   "iv": 0.3874808280565368,
+   "rv": 0.48175037263881904,
+   "rho": 0.8043186888140539,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VLO",
+   "iv": 0.5415183277094846,
+   "rv": 0.34659861702626266,
+   "rho": 1.5623787894931283,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VMC",
+   "iv": 0.2734031953363635,
+   "rv": 0.3002371820331055,
+   "rho": 0.9106240389180604,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VMRK",
+   "iv": 0.23108367058548318,
+   "rv": 0.22902689711757762,
+   "rho": 1.0089804887277045,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VRSK",
+   "iv": 0.3100821818515417,
+   "rv": 0.4041053396544616,
+   "rho": 0.7673300781342897,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VRSN",
+   "iv": 0.2775553536812351,
+   "rv": 0.284507086838676,
+   "rho": 0.9755656942163176,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VRT",
+   "iv": 0.5444918989761356,
+   "rv": 0.7595568539467588,
+   "rho": 0.7168546977713163,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VST",
+   "iv": 0.41279255042331736,
+   "rv": 0.41619119196548293,
+   "rho": 0.9918339416888778,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "VZ",
+   "iv": 0.24100430171665765,
+   "rv": 0.2729692812452486,
+   "rho": 0.8828989863519767,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WAT",
+   "iv": 0.2912845285285792,
+   "rv": 0.2706388231634075,
+   "rho": 1.0762850840239806,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WBD",
+   "iv": 2.575730498023774,
+   "rv": 0.27405067209763634,
+   "rho": 9.398738117694219,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WDAY",
+   "iv": 0.49892010638713535,
+   "rv": 0.6604335771933814,
+   "rho": 0.7554432778953737,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WDC",
+   "iv": 0.6955911853014503,
+   "rv": 0.9155933083835003,
+   "rho": 0.7597163270333763,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WELL",
+   "iv": 0.2397009341336148,
+   "rv": 0.2180407194816653,
+   "rho": 1.099340227382486,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WFC",
+   "iv": 0.33125832326344407,
+   "rv": 0.23093936356138625,
+   "rho": 1.4343952375853497,
+   "dte": 23,
+   "earnings_in_window": true,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WM",
+   "iv": 0.19291787017927145,
+   "rv": 0.22077652559950972,
+   "rho": 0.8738151379790527,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WMB",
+   "iv": 0.26105702038351336,
+   "rv": 0.2693965778640378,
+   "rho": 0.9690435656360366,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WMT",
+   "iv": 0.2305354642378947,
+   "rv": 0.288722701047108,
+   "rho": 0.7984667066420957,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WSM",
+   "iv": 0.3641981997224925,
+   "rv": 0.2901872026041942,
+   "rho": 1.2550456962061378,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WST",
+   "iv": 0.23609349168823499,
+   "rv": 0.2514189962979756,
+   "rho": 0.9390439671011287,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WTW",
+   "iv": 0.24933559663028004,
+   "rv": 0.3092406844239487,
+   "rho": 0.806283290617923,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "WY",
+   "iv": 0.2407332300425088,
+   "rv": 0.2979091454998849,
+   "rho": 0.8080759979307242,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "XEL",
+   "iv": 0.2891324213405617,
+   "rv": 0.18286662072759552,
+   "rho": 1.5811109768975466,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "XOM",
+   "iv": 0.289085802539536,
+   "rv": 0.2588411114772637,
+   "rho": 1.1168465507262704,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "XYL",
+   "iv": 0.2663264046112229,
+   "rv": 0.26951248517701754,
+   "rho": 0.9881783563247469,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "XYZ",
+   "iv": 0.38787372935257214,
+   "rv": 0.37584530162827534,
+   "rho": 1.0320036665941705,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "YUM",
+   "iv": 0.2445279586388343,
+   "rv": 0.3034569900888538,
+   "rho": 0.8058076321367165,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  },
+  {
+   "ticker": "ZTS",
+   "iv": 0.3289355490728917,
+   "rv": 0.3120410150544593,
+   "rho": 1.0541420300644895,
+   "dte": 23,
+   "earnings_in_window": false,
+   "earnings_known": true
+  }
+ ]
+}

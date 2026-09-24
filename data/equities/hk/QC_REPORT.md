@@ -1,8 +1,8 @@
 # 數據品質日報（2026-09-23）
 
-由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）43 份（最新 2026-09-22），公司名紀錄 112 檔。
+由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）44 份（最新 2026-09-23），公司名紀錄 112 檔。
 
-**🔴 嚴重 0 項 ｜ 🟡 注意 0 項 ｜ ✅ 已確認 38 項**
+**🔴 嚴重 0 項 ｜ 🟡 注意 1 項 ｜ ✅ 已確認 38 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
@@ -12,7 +12,9 @@
 
 ## 🟡 注意
 
-（無）
+| 代碼 | 檢查 | 說明 |
+|---|---|---|
+| 2003.HK | ohlc_auction | 近30天 1 根開/收市價落在高低價外（多半是競價時段慣例）：2026-09-23 |
 
 ## ✅ 已確認（不再警告）
 
