@@ -39,6 +39,27 @@ MARKETS = {
 }
 
 
+def apply_etf_fixes(t: str, df: pd.DataFrame) -> pd.DataFrame:
+    """基準 ETF 已知數據錯誤（universes/full/etf_fixes.csv，2026-09-24）：scale_before = 該日之前所有價格乘 factor（Yahoo 拆股回溯只做一半）；
+    drop = 剔除該日（價格少一個零）。"""
+    p = ROOT / "universes" / "full" / "etf_fixes.csv"
+    if not p.exists():
+        return df
+    fx = pd.read_csv(p)
+    fx = fx[fx["ticker"] == t]
+    if fx.empty:
+        return df
+    df = df.copy()
+    for _, r in fx.iterrows():
+        if r["action"] == "drop":
+            df = df[df["Date"] != r["date"]]
+        elif r["action"] == "scale_before":
+            m = df["Date"] < r["date"]
+            for c in ("Open", "High", "Low", "Close", "AdjClose"):
+                df.loc[m, c] = df.loc[m, c] * float(r["factor"])
+    return df
+
+
 def load_series_any(market: str, t: str) -> dict:
     """指數／ETF 日線：先找 data/（已第二來源檢查），沒有就讀全市場 data_full/<market>/（新市場）。"""
     try:
@@ -48,6 +69,7 @@ def load_series_any(market: str, t: str) -> dict:
     p = ROOT / "data_full" / market / f"{t.replace('^', '_')}.csv.gz"
     df = pd.read_csv(p, compression="gzip").dropna(subset=["Close"])
     df = df[df["Close"] > 0]
+    df = apply_etf_fixes(t, df)
     out = {}
     for d, o, c, ac in zip(df["Date"], df["Open"], df["Close"], df["AdjClose"]):
         ac = ac if ac == ac and ac > 0 else c
