@@ -53,4 +53,11 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 | 日期 | 事項 |
 |---|---|
-| 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首輪 Dukascopy 全 M1 抓法被限流，改為 HistData M1 + Dukascopy D1／H1；首次全抓在 Actions 進行 |
+| 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首輪 Dukascopy 全 M1 抓法被限流，改為 HistData M1 + Dukascopy D1／H1；交叉核對抓出 HistData 時區是紐約當地時間含夏令、2004 年壞 tick，已修；**26 個商品首次全抓完成、Release `forex-data` 可用**（沙盒實測 `get_forex_data.py --pair EURUSD --merge-m1` 後 `backtest.load_bars` 可直接讀） |
+
+## 6. 下一步（使用者未決定）
+
+1. **選商品**：按 DATA_QC.md 的「波幅÷點差」與自己券商的實際點差重算入場券；Dukascopy 口徑通過 80 倍的只有 EURUSD、USDJPY、EURJPY、AUDJPY、GBPUSD（XAUUSD 75 倍差一點）
+2. **第一個外匯假設**：先看手冊已判決（八陣圖 on 歐元 ☠️ 是 CFD 4 年樣本；XAUUSD ✅ 4.1 年）——同一策略換 20 年 HistData 樣本、ECN 成本重測算不算「已判決不重測」，要先在預先登記裡講清楚為甚麼是新證據（樣本長 5 倍、成本口徑不同）
+3. **多商品同一規格**：外匯 26 個商品是現成的多重樣本，新假設一次在全部商品上登記、只跑一次，避免單一商品的選擇偏差（手冊鐵律 9）
+4. **每月更新**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
