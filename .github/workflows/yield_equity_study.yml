@@ -1,7 +1,7 @@
 name: Yield vs equity study（美債殖利率 vs 美股）
 
 # 跑 scripts/yield_equity_study.py：10Y 殖利率、殖利率曲線、股債利差 vs S&P 500 的歷史驗證。
-# 需要 FRED（GS10/GS2/TB3MS/DGS*）與 multpl（近期 EPS），沙箱連不到，所以放在 Actions 跑。
+# 需要 FRED（GS10/GS2/TB3MS）、財政部殖利率曲線與 multpl（近期 EPS），沙箱連不到，所以放在 Actions 跑。
 # 每月 5 日（月資料更新後）重跑；改了腳本或手動觸發也會跑。報告在 data/macro/yield_equity/README.md。
 on:
   schedule:
@@ -27,7 +27,7 @@ concurrency:
 jobs:
   study:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 

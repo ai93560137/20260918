@@ -20,7 +20,7 @@
 #   6. 殖利率曲線：10Y−3M（1953 起）、10Y−2Y（1976 起）倒掛 / 解除倒掛 → 衰退與 S&P
 #   7. 股債相對價值：S&P 盈餘殖利率（E/P，近 12 個月盈餘）− 10Y，分組看未來報酬
 #
-# 6、7 需要 FRED（GS2、TB3MS、DGS 日線）與 multpl（近期 EPS）；這兩站連不上時
+# 6、7 需要 FRED（GS2、TB3MS；抓不到改用財政部 1990 起的殖利率曲線）與 multpl（近期 EPS）；連不上時
 # （例如沙箱只放行 GitHub）10Y 改用上面的鏡像、盈餘只到鏡像的 2023-06，
 # 殖利率曲線整段跳過。GitHub Actions（yield_equity_study.yml）每月跑一次完整版。
 #
@@ -44,7 +44,10 @@ URL_10Y = "https://raw.githubusercontent.com/datasets/bond-yields-us-10y/main/da
 URL_SPX = "https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv"
 URL_FRED = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}"
 URL_EPS = "https://www.multpl.com/s-p-500-earnings/table/by-month"
-UA = {"User-Agent": "Mozilla/5.0 (research script; yield_equity_study.py)"}
+URL_UST = ("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/"
+           "daily-treasury-rates.csv/{0}/all?type=daily_treasury_yield_curve&field_tdr_date_value={0}&page&_format=csv")
+UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/126.0 Safari/537.36"}
 
 # NBER 衰退期（景氣高點月, 谷底月）
 RECESSIONS = [(date(1953, 7, 1), date(1954, 5, 1)), (date(1957, 8, 1), date(1958, 4, 1)),
@@ -70,7 +73,7 @@ CASES = [
 def fetch_text(url, retries=4):
     for i in range(retries):
         try:
-            r = requests.get(url, timeout=30, headers=UA)
+            r = requests.get(url, timeout=(10, 40), headers=UA)
             r.raise_for_status()
             return r.text
         except requests.RequestException:
@@ -83,20 +86,49 @@ def fetch_csv(url):
     return list(csv.DictReader(io.StringIO(fetch_text(url))))
 
 
-def fred(series):
-    """FRED 單一序列 → {date: float}；連不上回 None。"""
+def fred(*series):
+    """FRED 多個序列一次抓 → {序列: {date: float}}；連不上回 {}。
+    FRED 對雲端 IP 常常不回應，所以只試兩次、逾時短。"""
     try:
-        rows = fetch_csv(URL_FRED.format(series))
+        rows = list(csv.DictReader(io.StringIO(fetch_text(URL_FRED.format(",".join(series)), retries=2))))
     except requests.RequestException as e:
-        print(f"FRED {series} 無法取得：{e}")
-        return None
-    out = {}
+        print(f"FRED {','.join(series)} 無法取得：{e}")
+        return {}
+    out = {k: {} for k in series}
     for r in rows:
         d = r.get("observation_date") or r.get("DATE")
-        v = r.get(series)
-        if d and v not in (None, "", "."):
-            out[date.fromisoformat(d)] = float(v)
-    return out or None
+        for k in series:
+            v = r.get(k)
+            if d and v not in (None, "", "."):
+                out[k][date.fromisoformat(d)] = float(v)
+    return {k: v for k, v in out.items() if v}
+
+
+def treasury_curve(first=1990):
+    """美國財政部每日殖利率曲線（1990 起）→ {"10y"|"2y"|"3m": {日: 值}}；逐年抓，缺的年份略過。"""
+    cols = {"10 Yr": "10y", "2 Yr": "2y", "3 Mo": "3m"}
+    out = {v: {} for v in cols.values()}
+    for yr in range(first, date.today().year + 1):
+        try:
+            rows = fetch_csv(URL_UST.format(yr))
+        except requests.RequestException as e:
+            print(f"財政部 {yr} 無法取得：{e}")
+            if yr == first:
+                return {}  # 第一年就失敗 → 整站連不上，不必再試
+            continue
+        for r in rows:
+            d = datetime.strptime(r["Date"], "%m/%d/%Y").date()
+            for c, k in cols.items():
+                if r.get(c) not in (None, ""):
+                    out[k][d] = float(r[c])
+    return {k: v for k, v in out.items() if v}
+
+
+def monthly_mean(daily):
+    acc = {}
+    for d, v in daily.items():
+        acc.setdefault(date(d.year, d.month, 1), []).append(v)
+    return {m: sum(v) / len(v) for m, v in acc.items()}
 
 
 def multpl_eps():
@@ -121,7 +153,8 @@ def load(eps_override=None):
     s = {date.fromisoformat(r["Date"]): float(r["SP500"]) for r in shiller}
     eps = {date.fromisoformat(r["Date"]): float(r["Earnings"]) for r in shiller if float(r["Earnings"]) > 0}
     src = {"10y": "FRED GS10", "eps": "Shiller（鏡像）"}
-    y = fred("GS10")
+    f = fred("GS10", "GS2", "TB3MS")
+    y = f.get("GS10")
     if y is None:
         y = {date.fromisoformat(r["Date"]): float(r["Rate"]) for r in fetch_csv(URL_10Y)}
         src["10y"] = "FRED GS10（GitHub 鏡像）"
@@ -134,8 +167,15 @@ def load(eps_override=None):
         eps[last] = eps_override
         src["eps"] += f"；{last:%Y-%m} 用手動 EPS {eps_override:g}"
     months = sorted(set(y) & set(s))
-    extra = {"gs2": fred("GS2"), "tb3": fred("TB3MS"),
-             "d10": fred("DGS10"), "d2": fred("DGS2"), "d3m": fred("DGS3MO")}
+    extra = {"gs2": f.get("GS2"), "tb3": f.get("TB3MS")}
+    # 日線最新值與 FRED 抓不到時的短天期月資料：財政部殖利率曲線
+    ust = treasury_curve(date.today().year - 1 if f.get("GS2") and f.get("TB3MS") else 1990)
+    extra.update({"d10": ust.get("10y"), "d2": ust.get("2y"), "d3m": ust.get("3m")})
+    for key, col in (("gs2", "2y"), ("tb3", "3m")):
+        if not extra[key] and ust.get(col):
+            extra[key] = monthly_mean(ust[col])
+            src[key] = "財政部殖利率曲線（1990 起）"
+    src.setdefault("gs2", "FRED GS2"), src.setdefault("tb3", "FRED TB3MS")
     return months, y, s, eps, extra, src
 
 
@@ -268,18 +308,19 @@ def curve_events(months, spread, s, min_len=3):
         elif spread[d] >= 0 and inv_start is not None:
             if months_between(inv_start, d) >= min_len:
                 ev.append({"type": "解除倒掛", "month": d, "spread": spread[d],
-                           "inverted_months": months_between(inv_start, d)})
+                           "inverted_months": months_between(inv_start, d), "inv_start": inv_start})
             else:
                 ev.pop()  # 太短的倒掛當雜訊
             inv_start = None
     out = []
     for e in ev:
         d = e["month"]
-        rec = next_recession(d)
+        # 解除倒掛常發生在衰退已經開始之後，所以找「倒掛開始之後」的第一次衰退，落後月數可為負
+        rec = next_recession(e.pop("inv_start", d))
         lag = months_between(d, rec) if rec else None
         peak = max((m for m in months if d <= m <= add_months(d, 36)), key=lambda m: s[m], default=d)
         out.append({**e, "month": d.isoformat(),
-                    "recession": rec.isoformat() if rec and lag <= 36 else None,
+                    "recession": rec.isoformat() if rec is not None and lag <= 36 else None,
                     "lag_to_recession": lag if lag is not None and lag <= 36 else None,
                     "months_to_spx_peak": months_between(d, peak),
                     "fwd_12m": fwd(s, d, 12), "fwd_24m": fwd(s, d, 24), "maxdd_24m": max_dd(s, d, 24)})
@@ -504,12 +545,17 @@ def render_curve(c):
         r = c.get(key)
         if not r:
             continue
-        L += [f"### {r['label']}（{r['start'][:7]} 起；最新月均 {r['latest_month'][:7]}：{r['latest']:+.2f} 個百分點"
+        L += [f"### {r['label']}（{r.get('source', '')}，{r['start'][:7]} 起；最新月均 {r['latest_month'][:7]}：{r['latest']:+.2f} 個百分點"
               + ("，目前仍倒掛" if r["open_inversion"] else "") + "）", "",
               "| 事件 | 月份 | 利差 | 倒掛月數 | 之後的衰退（落後月數） | S&P 36 個月內高點在幾個月後 | 12 個月 | 24 個月 | 24 個月內最大跌幅 |",
               "|---|---|---|---|---|---|---|---|---|"]
         for e in r["events"]:
-            rec = f"{e['recession'][:7]}（{e['lag_to_recession']}）" if e["recession"] else "36 個月內無"
+            if not e["recession"]:
+                rec = "36 個月內無"
+            elif e["lag_to_recession"] < 0:
+                rec = f"{e['recession'][:7]}（已開始 {-e['lag_to_recession']} 個月）"
+            else:
+                rec = f"{e['recession'][:7]}（{e['lag_to_recession']}）"
             L.append(f"| {e['type']} | {e['month'][:7]} | {e['spread']:+.2f} | {e.get('inverted_months', '')} | {rec} "
                      f"| {e['months_to_spx_peak']} | {pct(e['fwd_12m'])} | {pct(e['fwd_24m'])} | {pct(e['maxdd_24m'])} |")
         L.append("")
@@ -565,7 +611,8 @@ def main():
                       "p_crash": sum(r < -0.15 for r in all_fwd) / len(all_fwd)},
         "decade_corr": decade_corr(months, y, s),
         "cases": cases(months, y, s),
-        "curve": curve_study(months, y, s, extra),
+        "curve": {k: ({**v, "source": src.get({"10y3m": "tb3", "10y2y": "gs2"}.get(k))} if k != "daily" else v)
+                  for k, v in curve_study(months, y, s, extra).items()},
         "gap": gap_study(months, y, s, eps),
         "sources": src,
     }
