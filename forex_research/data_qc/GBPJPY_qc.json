@@ -1,0 +1,29 @@
+{
+ "pair": "GBPJPY",
+ "generated": "2026-09-24 16:32 UTC",
+ "first": "2000-01-01",
+ "last": "2025-12-31",
+ "d1_rows": 9497,
+ "h1_rows": 0,
+ "m1_rows": 0,
+ "m1_first": null,
+ "m1_last": null,
+ "m1_per_year": {},
+ "m1_days_per_year": {},
+ "struct": {
+  "D1": {
+   "rows": 9497,
+   "bad_high": 3,
+   "bad_low": 24,
+   "nonpositive": 0,
+   "zero_range_pct": 16.27
+  },
+  "H1": {
+   "rows": 0
+  },
+  "M1": {
+   "rows": 0,
+   "dup": 0
+  }
+ }
+}
