@@ -5,6 +5,7 @@ donchian_backtest.py）、TradingView 策略（tradingview/）。
 歷史數據在 data/（.csv.gz，格式見 data/README.md）。
 全市場股票日線（9 個市場：港日美台韓澳加印新，不進 git、存 GitHub Release）見 MARKET_DATA_CATALOG.md，
 一鍵下載 `python3 scripts/get_market_data.py`。
+股票研究（新高／VCP／Minervini／相場師朗／9 國樣本外）的總結與接手指引見 STOCK_RESEARCH_HANDOFF.md。
 
 **進行任何策略研究/回測前**：先讀 RESEARCH_HANDBOOK.md（方法論鐵律、
 已判決結論庫、股票研究守則）——已判決的不重測，鐵律不繞過。
