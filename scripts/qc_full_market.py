@@ -104,6 +104,31 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
         q = fh.parse_quotations(r.content.decode("utf-8", errors="replace"))
         pairs = [(v[1], q[t]["close"]) for t, v in last.items() if v[0] == d_max and t in q and q[t].get("close")]
         src = f"港交所日報表 {d_max}"
+    elif market == "tw":
+        # 證交所每日收盤行情（上市 .TW；上櫃 .TWO 不在這份表）
+        d_max = mode_day
+        r = requests.get("https://www.twse.com.tw/exchangeReport/MI_INDEX", headers={"User-Agent": "Mozilla/5.0"},
+                         params={"response": "json", "date": d_max.replace("-", ""), "type": "ALLBUT0999"}, timeout=60)
+        r.raise_for_status()
+        j = r.json()
+        tables = list(j.get("tables") or [])
+        for i in range(1, 12):                       # 舊版格式 fieldsN／dataN
+            if j.get(f"fields{i}"):
+                tables.append({"fields": j[f"fields{i}"], "data": j.get(f"data{i}", [])})
+        q = {}
+        for tb in tables:
+            f = [str(x) for x in tb.get("fields") or []]
+            if "證券代號" in f and "收盤價" in f:
+                ic, ip = f.index("證券代號"), f.index("收盤價")
+                for row in tb.get("data") or []:
+                    try:
+                        q[f"{str(row[ic]).strip()}.TW"] = float(str(row[ip]).replace(",", ""))
+                    except ValueError:
+                        pass
+        pairs = [(v[1], q[t]) for t, v in last.items() if v[0] == d_max and t in q and q[t] > 0]
+        src = f"證交所每日收盤行情 {d_max}（上市股）"
+    elif market in ("kr", "au"):
+        raise RuntimeError("沒有免費、可程式取得的全市場收市第二來源（登記：取不到就註明，不擋判決）")
     else:
         # 抽 200 檔，用 Yahoo!ファイナンス 日線頁查同一天終値（報價頁「前日終値」在假期後對不上日期、比對到 0 檔）
         from datetime import timedelta
@@ -132,7 +157,9 @@ def latest_second_source(market: str, last: dict[str, tuple[str, float]]) -> tup
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--market", required=True, choices=["hk", "jp", "us"])
+    ap.add_argument("--market", required=True, choices=["hk", "jp", "us", "tw", "kr", "au"])
+    ap.add_argument("--report-dir", type=Path, default=ROOT / "research" / "vcp_full",
+                    help="報告資料夾（樣本外驗證用 research/oos）")
     ap.add_argument("--no-network", action="store_true", help="不做最新一日第二來源（本機測試用）")
     ap.add_argument("--keep-trade-check", action="store_true", help="保留舊報告的第 4 節（只重跑品質檢查、不重跑回測時）")
     args = ap.parse_args()
@@ -172,7 +199,7 @@ def main() -> None:
     (base / "_qc_zombie.json").write_text(json.dumps(zombies, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
 
     L = [f"# 全市場數據品質檢查：{m}（{date.today()}）\n",
-         "規則見 VCP_FULLMARKET_BACKTEST.md 第一部分之二。\n",
+         "規則見 VCP_FULLMARKET_BACKTEST.md 第一部分之二（樣本外驗證新市場沿用，見 OOS_VALIDATION.md）。\n",
          f"## 1. 結構檢查\n\n{len(files)} 檔 → 整檔排除 **{len(exclude)}** 檔、有殭屍段 {len(zombies)} 檔"
          f"（共 {sum(len(v) for v in zombies.values())} 段，載入時丟掉）。\n"]
     kinds = {}
@@ -198,7 +225,7 @@ def main() -> None:
                      f"{'✅ 通過' if ok3 else '❌ 超出門檻，先查清楚'}\n")
         except Exception as exc:
             L.append(f"## 3. 最新一日第二來源\n\n⚠ 抓取失敗：{str(exc)[:200]}（不擋判決，但要在結果裡註明）\n")
-    out = ROOT / "research" / "vcp_full"
+    out = args.report_dir
     out.mkdir(parents=True, exist_ok=True)
     prev = (out / f"{m}_qc.md").read_text(encoding="utf-8") if (out / f"{m}_qc.md").exists() else ""
     keep4 = prev[prev.index("\n## 4."):] if "\n## 4." in prev and args.keep_trade_check else ""

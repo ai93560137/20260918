@@ -16,7 +16,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BATCH = 100
 # 收市時間（當地）+ 30 分鐘緩衝：還沒到就丟掉「今天」那根（盤中抓到的是未收市的半根，2026-09-23 美股 09:40 ET 抓到過）
-CLOSE = {"hk": ("Asia/Hong_Kong", 16, 40), "jp": ("Asia/Tokyo", 16, 0), "us": ("America/New_York", 16, 30)}
+CLOSE = {"hk": ("Asia/Hong_Kong", 16, 40), "jp": ("Asia/Tokyo", 16, 0), "us": ("America/New_York", 16, 30),
+         # 樣本外驗證新市場（OOS_VALIDATION.md）：台灣 13:30、韓國 15:30、澳洲 16:10（收市競價）收市
+         "tw": ("Asia/Taipei", 14, 0), "kr": ("Asia/Seoul", 16, 0), "au": ("Australia/Sydney", 16, 40)}
 
 
 def last_complete_cutoff(market: str) -> date:
@@ -31,7 +33,7 @@ def last_complete_cutoff(market: str) -> date:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--market", required=True, choices=["hk", "jp", "us"])
+    ap.add_argument("--market", required=True, choices=list(CLOSE))
     ap.add_argument("--budget-min", type=float, default=300)
     ap.add_argument("--retry-failed", action="store_true")
     ap.add_argument("--refresh-days", type=int, default=0, help="檔案比這更舊就重抓（0 = 不重抓）")

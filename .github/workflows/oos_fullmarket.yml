@@ -1,0 +1,132 @@
+name: OOS new markets data（樣本外驗證：台灣／韓國／澳洲 候選池＋日線＋品質檢查）
+
+# 預先登記見 OOS_VALIDATION.md。日線不進 git：存 Actions 快取 + Release「oos-data」備份（同 vcp_fullmarket.yml）。
+# 只 commit 候選池快照（universes/full/<m>_pool.txt）與品質報告（research/oos/<m>_qc.md）。回測在本機用 Release 數據跑。
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: 'tw、kr、au 或 all'
+        required: true
+        default: 'all'
+      retry_failed:
+        description: '重試之前抓不到的代碼'
+        required: false
+        default: 'false'
+  push:
+    branches: [claude/gifted-carson-v2tvhw]
+    paths:
+      - '.github/workflows/oos_fullmarket.yml'
+      - 'scripts/build_oos_pools.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oos-fullmarket-${{ inputs.market || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        market: ${{ fromJSON((inputs.market || 'all') == 'all' && '["tw","kr","au"]' || format('["{0}"]', inputs.market)) }}
+    env:
+      M: ${{ matrix.market }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q yfinance pandas numpy openpyxl requests lxml html5lib finance-datareader
+
+      - name: Restore data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data_full/${{ matrix.market }}
+          key: oosdata-${{ matrix.market }}-v1-${{ github.run_id }}
+          restore-keys: oosdata-${{ matrix.market }}-v1-
+
+      - name: Restore from Release backup if cache empty
+        run: |
+          N=$(ls data_full/$M/*.csv.gz 2>/dev/null | wc -l)
+          echo "快取還原 $N 檔"
+          if [ "$N" -eq 0 ] && gh release view oos-data > /dev/null 2>&1; then
+            gh release download oos-data -p "$M.tar" -D /tmp && tar -xf /tmp/$M.tar && \
+              echo "從 Release 還原 $(ls data_full/$M/*.csv.gz | wc -l) 檔" || echo "Release 沒有 $M 的備份"
+          fi
+
+      - name: Build candidate pool（候選池快照）
+        run: python3 scripts/build_oos_pools.py --market "$M"
+
+      - name: Fetch prices（缺的才抓，可續抓）
+        id: fetch
+        continue-on-error: true
+        env:
+          RETRY: ${{ inputs.retry_failed }}
+        run: |
+          ARGS="--market $M --budget-min 240"
+          if [ "$RETRY" = "true" ]; then ARGS="$ARGS --retry-failed"; fi
+          set +e
+          python3 scripts/fetch_full_market.py $ARGS
+          RC=$?
+          if [ $RC -eq 0 ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
+          exit 0
+
+      - name: Save data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data_full/${{ matrix.market }}
+          key: oosdata-${{ matrix.market }}-v1-${{ github.run_id }}
+
+      - name: Backup to Release
+        if: always()
+        continue-on-error: true
+        run: |
+          N=$(ls data_full/$M/*.csv.gz 2>/dev/null | wc -l)
+          if [ "$N" -eq 0 ]; then echo "沒有數據可備份"; exit 0; fi
+          tar -cf /tmp/$M.tar data_full/$M
+          ls -lh /tmp/$M.tar
+          gh release view oos-data > /dev/null 2>&1 || \
+            gh release create oos-data --target claude/gifted-carson-v2tvhw --title "樣本外驗證新市場日線" \
+              --notes "台灣／韓國／澳洲全市場日線（data_full/<市場>/），由 oos_fullmarket.yml 自動上載；不進 git。見 OOS_VALIDATION.md。"
+          gh release upload oos-data /tmp/$M.tar --clobber
+          echo "已備份 $N 檔到 Release oos-data"
+
+      - name: Data quality check（結構／最新一日第二來源）
+        if: steps.fetch.outputs.done == 'true'
+        run: |
+          set +e
+          python3 scripts/qc_full_market.py --market "$M" --report-dir research/oos
+          echo "品質檢查回傳碼 $?"
+          exit 0
+
+      - name: Commit pool snapshot and QC report
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { git add --ignore-removal universes/full/${M}_pool.txt; for f in research/oos/${M}_*; do [ -e "$f" ] && git add -- "$f"; done; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "research(oos): $M 候選池快照 / 品質檢查 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 7))
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "research(oos): $M 候選池快照 / 品質檢查 $(date -u +%F)"
+          done
+          exit 1
