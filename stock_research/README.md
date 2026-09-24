@@ -20,6 +20,7 @@
 | `EXPECTANCY_REVIEW.md` | 期望值／RRR／總回報覆核（描述性） |
 | `DISCIPLINE_BACKTEST.md` | 「紀律本身」：剛進入趨勢模板＋大市過濾＋Minervini 出場（不看 VCP 形態），9 國一次的預先登記與結果 |
 | `RRR30_BACKTEST.md` | 低勝率 30:1 策略（VCP 入場＋3% 硬止損＋200 日線出＋30R 後追蹤）9 國預先登記與結果，兩輪（200 日線出場／純兩極出場）：RRR 13.2 → 21.7、alpha 3.0 不隨出場變，都不確定 |
+| `ETF_TIMING_BACKTEST.md` | ETF 擇時：VCP 突破日後持有 ETF 一季 vs 純 MA 過濾 vs 隨機日，9 國預先登記與結果：☠️（VCP 日對 ETF 無擇時資訊；MA 日頻過濾扣成本跑輸持有） |
 | `DISCIPLINE_RULES.md` | 上述回測用到的全部規則一覽（宇宙、趨勢模板、大市過濾、出場紀律、六個組合、鄰域、合併檢定、門檻、程序規則、程式對應；不含結果） |
 
 ## 2. 程式與輸出（路徑不變）
@@ -33,6 +34,7 @@
 | `aiba_ppp.py` + `.github/workflows/aiba_verify.yml` → `research/aiba_ppp/` | 相場流 PPP／下半身／逆下半身（還原 K 線、SMA）全市場回測；`--trades-only` 先出逐筆明細不看績效、抽樣交給 Actions 核對第二來源 |
 | `discipline_backtest.py` → `research/discipline/` | 「紀律本身」回測（D0 剛進入趨勢模板＋大市過濾＋Minervini 出場；R 隨機 200 日線上非模板股對照；D1 無大市過濾、D2 只持 252 日、D3 X2 出場；M Minervini 重跑並列；`--check-sim` 向量化出場逐筆比對、`--pool` 9 市場合併檢定）|
 | `rrr30_backtest.py` → `research/rrr30/` | 低勝率 30:1 回測（通用出場模擬器 `sim_gen`：硬止損／MA 出場／目標後追蹤／保本／上限可組合；`--check-sim` 退化參數對 Minervini 逐筆比對）|
+| `etf_timing_backtest.py` → `research/etf_timing/` | ETF 擇時回測（突破日 → 曝險聯集、每段一筆；MF 對照；隨機日對照；`--selftest`）|
 | `scripts/expectancy_report.py` → `research/expectancy/` | 已判決策略預設格的期望值、RRR、獲利因子、累計／年化／MDD vs ETF（一個市場一次重建數據，全部策略共用）|
 | `scripts/get_market_data.py` + `MARKET_DATA_CATALOG.md` | 一鍵下載 9 個市場日線並重建品質排除檔；數據目錄、注意事項、策略×市場已驗證矩陣 |
 | `oos_backtest.py` + `scripts/build_oos_pools.py` + `.github/workflows/oos_fullmarket.yml` → `research/oos/` | 樣本外新市場（台 .TW/.TWO、韓 .KS/.KQ、澳 .AX）候選池、抓數據（Release `oos-data`）、凍結規格回測、漲停鎖死跳過、三市場合併 alpha 檢定 |
