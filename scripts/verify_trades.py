@@ -89,7 +89,7 @@ def check(tr: dict, src: dict[date, dict], split_ok: bool = False) -> tuple[str,
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--market", required=True, choices=["hk", "jp", "us", "tw", "kr", "au"])
+    ap.add_argument("--market", required=True, choices=["hk", "jp", "us", "tw", "kr", "au", "ca", "in", "sg"])
     ap.add_argument("--src", help="逐筆明細 JSON（預設 research/vcp_full/<m>_v2.json）")
     ap.add_argument("--out-dir", type=Path, default=ROOT / "research" / "vcp_full")
     ap.add_argument("--sample", type=int, default=0, help="隨機抽 N 筆核對（種子 0；0 = 全部）")

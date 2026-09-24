@@ -32,6 +32,10 @@ MARKETS = {
     "tw": {"index": None, "etf": "0050.TW", "idx": "^TWII", "start": date(2005, 1, 1), "cost": 0.0030, "split": date(2015, 1, 1)},
     "kr": {"index": None, "etf": "069500.KS", "idx": "^KS11", "start": date(2005, 1, 1), "cost": 0.0015, "split": date(2015, 1, 1)},
     "au": {"index": None, "etf": "STW.AX", "idx": "^AXJO", "start": date(2005, 1, 1), "cost": 0.0010, "split": date(2015, 1, 1)},
+    # 第二輪樣本外（OOS_VALIDATION.md 第三部分）
+    "ca": {"index": None, "etf": "XIU.TO", "idx": "^GSPTSE", "start": date(2005, 1, 1), "cost": 0.0010, "split": date(2015, 1, 1)},
+    "in": {"index": None, "etf": "NIFTYBEES.NS", "idx": "^NSEI", "start": date(2005, 1, 1), "cost": 0.0020, "split": date(2015, 1, 1)},
+    "sg": {"index": None, "etf": "ES3.SI", "idx": "^STI", "start": date(2005, 1, 1), "cost": 0.0020, "split": date(2015, 1, 1)},
 }
 
 
