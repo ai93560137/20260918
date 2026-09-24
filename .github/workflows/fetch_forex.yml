@@ -2,7 +2,8 @@ name: Forex data（外匯歷史數據：Dukascopy M1／H1／D1 + Yahoo／FRED �
 
 # 沙盒連不到 Dukascopy／Yahoo／FRED，所以在這裡抓。數據不進 git：每個商品打包成 <PAIR>.tar 上傳 Release「forex-data」
 # （不會過期、不進 git 歷史）；下次先從 Release 還原，只補缺的（fetch_forex.py 可續抓）。
-# Dukascopy 會限流：程式每秒最多 2.5 個請求；首次全抓每組要幾個小時，超過預算就先上傳、再手動觸發續抓。
+# 來源分工：M1 由 HistData（每年／每月一個 zip）；Dukascopy 只抓 D1／H1 買賣價與近期 M1（它對 Actions 的 IP 限流很兇，
+# 每秒 1.5 個請求以內、同時最多兩組）。超過預算就先上傳、再手動觸發續抓。
 # 只 commit 品質報告（forex_research/data_qc/、forex_research/DATA_QC.md）。本機取數據：python3 scripts/get_forex_data.py
 on:
   workflow_dispatch:
@@ -30,6 +31,7 @@ jobs:
     timeout-minutes: 350
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         group: ${{ fromJSON((inputs.group || 'all') == 'all' && '["majors","jpy","eur","other","metals"]' || format('["{0}"]', inputs.group)) }}
     concurrency:

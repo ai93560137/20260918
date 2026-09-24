@@ -1,34 +1,39 @@
 #!/usr/bin/env python3
-"""外匯歷史數據（Dukascopy 免費歷史行情）→ data_forex/<PAIR>/（不進 git，存 GitHub Release「forex-data」）。
+"""外匯歷史數據 → data_forex/<PAIR>/（不進 git，存 GitHub Release「forex-data」）。
 
     python3 scripts/fetch_forex.py --group majors --budget-min 300     # 七大主要貨幣對
     python3 scripts/fetch_forex.py --pair EURUSD USDJPY                  # 指定幾個
     python3 scripts/fetch_forex.py --list                                # 列出全部商品與分組
 
-每個商品：
-- 往年：D1 每年一檔、H1 每月一檔（買價 bid 與賣價 ask）；M1 每日一檔（bid）
-- 當年：Dukascopy 沒有當年的 D1／當月的 H1 檔 → 抓 M1（bid 與 ask）再按 UTC 聚合成 H1／D1（D1 日界實測就是 UTC）
-- 輸出 <PAIR>_D1.csv.gz、<PAIR>_D1_ask.csv.gz、<PAIR>_H1.csv.gz、<PAIR>_H1_ask.csv.gz、<PAIR>_M1_<YYYY>.csv.gz
-  （與 data/ 目錄的 MT5 匯出同一命名，backtest.py 載入器直接讀）、當年起另有 <PAIR>_M1_<YYYY>_ask.csv.gz
+兩個來源分工（Dukascopy 對 GitHub Actions 的 IP 限流很兇，M1 每日一檔的抓法行不通）：
+- **HistData**（histdata.com，免費 M1，每年／每月一個 zip，一個商品約 35 個請求）→ M1 主來源：
+  <PAIR>_M1_<YYYY>.csv.gz（欄位 Time,Open,High,Low,Close；**沒有成交量**；原檔是美東標準時間 UTC−5 無夏令，已轉 UTC）
+  當年只有已完成的月份（HistData 月初幾天後才放上月）；USDCNH HistData 沒有
+- **Dukascopy**（瑞士銀行，2003 起，UTC）→ 往年 D1 每年一檔、每個已完成月份的 H1 每月一檔（買價 bid 與賣價 ask，算點差用），
+  以及**近 62 天／HistData 之後**的 M1（bid + ask，每日一檔）：<PAIR>_M1_recent.csv.gz、<PAIR>_M1_recent_ask.csv.gz
+  當月 H1 由近期 M1 聚合、當年 D1 由 H1 聚合（Dukascopy D1 的日界實測就是 UTC）
 - 第二來源：Yahoo 日線（<PAIR>=X）→ _ref_yahoo.csv.gz；FRED H.10 紐約中午匯率 → _ref_fred.csv.gz
-- 欄位 Time,Open,High,Low,Close,Volume；**時間一律 UTC**（回測 --broker-offset 0）；Volume 是 Dukascopy 自己的成交量單位
-- **Dukascopy 的檔案把週末、假期、上市前的時段用「平價、零量」K 線填滿**（D1 每年 365 根、M1 每天 1440 根）——
-  一律丟掉 Volume = 0 且 High = Low 的 K 線（實測真數據沒有這種組合）；舊檔載入時也會清一次
+- 所有檔案欄位 Time,Open,High,Low,Close[,Volume]；**時間一律 UTC**（回測 --broker-offset 0）；與 data/ 的 MT5 匯出同一命名，
+  backtest.py 載入器直接讀
+- **Dukascopy 的檔案把週末、假期、上市前的時段用「平價、零量」K 線填滿**——一律丟掉 Volume = 0 且 High = Low 的 K 線
+  （實測真數據沒有這種組合；HistData 檔沒有成交量欄，不受影響）
 - 可中斷續抓：已完成的年／月記在 _done.json；只保留今天（UTC）以前的完整日
-- Dukascopy 會限流（連線重設、5xx）：全域限速（預設每秒 2.5 個請求）、指數退避、冷卻後再試；仍失敗就先存檔、回傳碼 3 等下輪續抓
+- Dukascopy 限流（503、連線重設）：全域限速（預設每秒 1.5 個請求）、指數退避；仍失敗就先存檔、回傳碼 3 等下輪續抓
 
 bi5 = LZMA；每筆 24 bytes 大端 int×5 + float：時間偏移秒、開、收、低、高、量；價格整數要除以 10^小數位。
-沙盒連不到 datafeed.dukascopy.com，這個程式在 GitHub Actions（fetch_forex.yml）跑；本機用 scripts/get_forex_data.py 拿 Release。
+沙盒連不到這些網站，這個程式在 GitHub Actions（fetch_forex.yml）跑；本機用 scripts/get_forex_data.py 拿 Release。
 """
 import argparse
 import gzip
 import io
 import json
 import lzma
+import re
 import struct
 import sys
 import threading
 import time
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -38,8 +43,11 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 OUT_ROOT = ROOT / "data_forex"
 BASE = "https://datafeed.dukascopy.com/datafeed"
+HD_BASE = "https://www.histdata.com"
 FIRST_YEAR = 2000
+RECENT_DAYS = 62                          # Dukascopy 近期 M1 最多回抓幾天（HistData 上月檔通常月初幾天後才有）
 HEADER = "Time,Open,High,Low,Close,Volume\n"
+UA = "Mozilla/5.0 (research data fetch; github.com/ai93560137/20260918)"
 
 # 商品：Dukascopy 路徑、小數位（JPY 交叉盤與貴金屬 3 位，其餘 5 位）、分組、Yahoo 代號、FRED H.10 系列（[] = 沒有）
 # FRED 方向已核對：DEXUSEU = 每歐元美元（= EURUSD）、DEXJPUS = 每美元日圓（= USDJPY）…；交叉盤由主要貨幣對相乘／相除推算
@@ -72,10 +80,11 @@ INSTRUMENTS = {
     "USDHKD": ("USDHKD", 5, "other", "HKD=X", [("DEXHKUS", 1)]),
     "USDCNH": ("USDCNH", 5, "other", "CNH=X", [("DEXCHUS", 1)]),          # FRED 只有在岸 CNY，差距屬正常
     "USDSGD": ("USDSGD", 5, "other", "SGD=X", [("DEXSIUS", 1)]),
-    # 貴金屬現貨（XAUUSD 另有券商 MT5 M1 在 data/，2022-08 起；這裡 M1 可以回到 2003）
+    # 貴金屬現貨（XAUUSD 另有券商 MT5 M1 在 data/，2022-08 起）
     "XAUUSD": ("XAUUSD", 3, "metals", "XAUUSD=X", []),
     "XAGUSD": ("XAGUSD", 3, "metals", "XAGUSD=X", []),
 }
+NO_HISTDATA = {"USDCNH"}                  # HistData 沒有的商品：M1 只有 Dukascopy 近 62 天
 GROUPS = list(dict.fromkeys(v[2] for v in INSTRUMENTS.values()))
 REC = struct.Struct(">iiiiif")           # 時間偏移秒、開、收、低、高、量
 
@@ -90,9 +99,9 @@ class Throttled(Exception):
 
 # ---------------------------------------------------------------- Dukascopy
 class Feed:
-    def __init__(self, workers: int = 3, rate: float = 2.5):
+    def __init__(self, workers: int = 3, rate: float = 1.5):
         self.s = requests.Session()
-        self.s.headers["User-Agent"] = "Mozilla/5.0 (research data fetch; github.com/ai93560137/20260918)"
+        self.s.headers["User-Agent"] = UA
         self.workers = workers
         self.interval = 1.0 / rate
         self.lock = threading.Lock()
@@ -162,9 +171,73 @@ def decode(raw: bytes, base: datetime, scale: float) -> list[tuple]:
     return out
 
 
+# ---------------------------------------------------------------- HistData
+class HistData:
+    def __init__(self):
+        self.s = requests.Session()
+        self.s.headers["User-Agent"] = UA
+        self.n_req = 0
+
+    def download(self, pair: str, year: int, month: int | None = None) -> list[tuple] | None:
+        """HistData 的 M1 zip → [(Time UTC, open, high, low, close)]；沒有這個年／月 → None。"""
+        slug = (f"/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/{pair.lower()}/{year}"
+                + (f"/{month}" if month else ""))
+        for attempt in range(4):
+            try:
+                page = self.s.get(HD_BASE + slug, timeout=60)
+                self.n_req += 1
+                if page.status_code == 404:
+                    return None
+                page.raise_for_status()
+                fields = {}
+                for k in ("tk", "date", "datemonth", "platform", "timeframe", "fxpair"):
+                    m = re.search(rf'<input[^>]*name="{k}"[^>]*value="([^"]*)"', page.text)
+                    if m:
+                        fields[k] = m.group(1)
+                if "tk" not in fields:
+                    return None
+                r = self.s.post(HD_BASE + "/get.php", data=fields, timeout=300,
+                                headers={"Referer": HD_BASE + slug, "Origin": HD_BASE})
+                self.n_req += 1
+                r.raise_for_status()
+                if not r.content.startswith(b"PK"):
+                    return None
+                return parse_histdata_zip(r.content)
+            except requests.RequestException as exc:
+                if attempt == 3:
+                    raise
+                log(f"    HistData 錯誤（{exc!r}），{10 * (attempt + 1)} 秒後重試 {slug}")
+                time.sleep(10 * (attempt + 1))
+        return None
+
+
+def parse_histdata_zip(data: bytes) -> list[tuple]:
+    """DAT_ASCII_<PAIR>_M1_<期間>.csv：'YYYYMMDD HHMMSS;開;高;低;收;量'，美東標準時間（UTC−5 無夏令）→ UTC。"""
+    out = []
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        for name in zf.namelist():
+            if not name.lower().endswith(".csv"):
+                continue
+            for line in zf.read(name).decode("utf-8", "replace").splitlines():
+                f = line.strip().split(";")
+                if len(f) < 5:
+                    continue
+                try:
+                    ts = datetime.strptime(f[0], "%Y%m%d %H%M%S") + timedelta(hours=5)
+                    out.append((ts.strftime("%Y-%m-%d %H:%M:%S"), float(f[1]), float(f[2]), float(f[3]), float(f[4])))
+                except ValueError:
+                    continue
+    return out
+
+
+# ---------------------------------------------------------------- 檔案
 def fmt(rows: list[tuple], decimals: int) -> str:
     p = decimals
-    return "".join(f"{t},{o:.{p}f},{h:.{p}f},{l:.{p}f},{c:.{p}f},{v:g}\n" for t, o, h, l, c, v in rows)
+    out = []
+    for r in rows:
+        t, o, h, l, c = r[:5]
+        out.append(f"{t},{o:.{p}f},{h:.{p}f},{l:.{p}f},{c:.{p}f}" + (f",{r[5]:g}\n" if len(r) > 5 else "\n"))
+    return "".join(out)
 
 
 def is_padding(line: str) -> bool:
@@ -195,7 +268,7 @@ def write_gz(path: Path, rows: dict[str, str]) -> None:
 
 
 def merge_write(path: Path, new_rows: list[tuple], decimals: int, cutoff: str, drop_from: str = "") -> int:
-    """合併寫入；drop_from 給了就先丟掉 >= drop_from 的舊行（當年重算用）。"""
+    """合併寫入；drop_from 給了就先丟掉 >= drop_from 的舊行（當月／當年重算用）。"""
     rows = read_gz(path)
     if drop_from:
         rows = {k: v for k, v in rows.items() if k < drop_from}
@@ -207,7 +280,7 @@ def merge_write(path: Path, new_rows: list[tuple], decimals: int, cutoff: str, d
 
 
 def aggregate(rows: dict[str, str], freq: str) -> list[tuple]:
-    """M1 行 → H1（'h'）或 D1（'D'）K 線（UTC 日界；Dukascopy 的 D1 實測就是 UTC）。"""
+    """M1／H1 行 → H1（'h'）或 D1（'D'）K 線（UTC 日界；Dukascopy 的 D1 實測就是 UTC）。"""
     import pandas as pd
     if not rows:
         return []
@@ -217,11 +290,19 @@ def aggregate(rows: dict[str, str], freq: str) -> list[tuple]:
     return [(t.strftime("%Y-%m-%d %H:%M:%S"), *map(float, r)) for t, r in zip(g.index, g.to_numpy())]
 
 
-def clean_existing(out: Path) -> None:
-    """舊檔清一次填充 K 線（read_gz 會丟，重寫就乾淨）。"""
+def clean_existing(out: Path, pair: str) -> None:
+    """舊檔清一次填充 K 線；舊版（Dukascopy 來源、6 欄）的 M1 年檔刪掉，改由 HistData 重抓。"""
     for p in sorted(out.glob("*.csv.gz")):
         if p.name.startswith("_ref"):
             continue
+        if re.fullmatch(rf"{pair}_M1_\d{{4}}(_ask)?\.csv\.gz", p.name):
+            with gzip.open(p, "rt", encoding="utf-8") as f:
+                next(f, None)
+                first = f.readline()
+            if p.name.endswith("_ask.csv.gz") or first.count(",") >= 5:
+                p.unlink()
+                log(f"  刪除舊版 Dukascopy M1 年檔 {p.name}（改由 HistData 重抓）")
+                continue
         with gzip.open(p, "rt", encoding="utf-8") as f:
             n_raw = sum(1 for line in f if not line.startswith("Time"))
         rows = read_gz(p)
@@ -234,23 +315,28 @@ def clean_existing(out: Path) -> None:
 
 
 # ---------------------------------------------------------------- 各時間框架
-def fetch_pair(pair: str, feed: Feed, budget_end: float, do_refs: bool) -> bool:
+def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: bool) -> bool:
     sym, decimals, group, ysym, fred = INSTRUMENTS[pair]
     scale = 10 ** decimals
     out = OUT_ROOT / pair
     out.mkdir(parents=True, exist_ok=True)
-    clean_existing(out)
+    clean_existing(out, pair)
     done_p = out / "_done.json"
     done = json.loads(done_p.read_text()) if done_p.exists() else {}
-    for k in ("d1_years", "d1_years_ask", "h1_months", "h1_months_ask", "m1_years", "m1_years_ask"):
+    for k in ("d1_years", "d1_years_ask", "h1_months", "h1_months_ask", "hd_years", "hd_months"):
         done.setdefault(k, [])
     today = datetime.now(timezone.utc).date()
     cutoff = today.strftime("%Y-%m-%d")               # 只保留 < 今天 00:00 UTC 的 K 線
     this_year = today.year
     year_start = f"{this_year}-01-01"
+    month_start = today.replace(day=1).isoformat()
+    complete = True
 
     def save_done() -> None:
         done_p.write_text(json.dumps(done, ensure_ascii=False))
+
+    def over_budget() -> bool:
+        return time.monotonic() > budget_end
 
     if do_refs:
         try:
@@ -258,7 +344,7 @@ def fetch_pair(pair: str, feed: Feed, budget_end: float, do_refs: bool) -> bool:
         except Exception as exc:                      # 第二來源失敗不影響主數據
             log(f"  {pair} 第二來源失敗：{exc!r}")
 
-    # ---- D1：往年每年一檔（bid + ask），只抓一次
+    # ---- Dukascopy D1：往年每年一檔（bid + ask），只抓一次
     for side, key, name in (("BID", "d1_years", f"{pair}_D1.csv.gz"), ("ASK", "d1_years_ask", f"{pair}_D1_ask.csv.gz")):
         rows = []
         for y in range(FIRST_YEAR, this_year):
@@ -276,12 +362,12 @@ def fetch_pair(pair: str, feed: Feed, budget_end: float, do_refs: bool) -> bool:
         (out / "_status.txt").write_text(f"{today} 沒有數據\n")
         return True
     first = date.fromisoformat(min(d1)[:10])
-    log(f"  {pair}：日線 {first} → {max(d1)[:10]}（{len(d1)} 根，已去填充）")
+    log(f"  {pair}：Dukascopy 日線 {first} → {max(d1)[:10]}（{len(d1)} 根，已去填充）")
 
-    # ---- H1：往年每月一檔（bid + ask）
+    # ---- Dukascopy H1：每個已完成月份一檔（bid + ask，含當年）
     for side, key, name in (("BID", "h1_months", f"{pair}_H1.csv.gz"), ("ASK", "h1_months_ask", f"{pair}_H1_ask.csv.gz")):
-        months = [(y, m) for y in range(first.year, this_year) for m in range(1, 13)
-                  if (y, m) >= (first.year, first.month) and f"{y:04d}-{m:02d}" not in done[key]]
+        months = [(y, m) for y in range(first.year, this_year + 1) for m in range(1, 13)
+                  if (first.year, first.month) <= (y, m) < (today.year, today.month) and f"{y:04d}-{m:02d}" not in done[key]]
         if not months:
             continue
 
@@ -289,89 +375,110 @@ def fetch_pair(pair: str, feed: Feed, budget_end: float, do_refs: bool) -> bool:
             yy, mm = ym
             return ym, feed.candles(f"{sym}/{yy}/{mm - 1:02d}/{side}_candles_hour_1.bi5", datetime(yy, mm, 1), scale)
         rows = []
-        with ThreadPoolExecutor(feed.workers) as ex:
-            for (yy, mm), got in ex.map(one, months):
-                rows += got
-                done[key].append(f"{yy:04d}-{mm:02d}")
+        try:
+            with ThreadPoolExecutor(feed.workers) as ex:
+                for (yy, mm), got in ex.map(one, months):
+                    rows += got
+                    done[key].append(f"{yy:04d}-{mm:02d}")
+        except Throttled as exc:
+            log(f"  {pair} H1 {side.lower()}：限流退避後仍失敗（{exc}），先存檔，下輪續抓")
+            complete = False
         n = merge_write(out / name, rows, decimals, cutoff)
-        log(f"  {pair} H1 {side.lower()}：抓 {len(months)} 個月、新增 {len(rows)} 根，共 {n}")
+        log(f"  {pair} H1 {side.lower()}：抓 {len(done[key])}/{len(done[key]) + len(months) - len(rows and done[key])} 個月、新增 {len(rows)} 根，共 {n}")
         save_done()
+        if not complete:
+            break
 
-    # ---- M1：每日一檔，按年存；往年 bid、當年 bid + ask；從該年檔案最後一天續抓（週六跳過：Dukascopy 週六沒有數據）
-    # Dukascopy 的 D1 比 H1／M1 早幾年（XAUUSD D1 2000、M1 2003-05）→ M1 從 H1 第一天起抓，省掉上市前的空請求
-    h1_bid = read_gz(out / f"{pair}_H1.csv.gz")
-    first_m1 = max(first, date.fromisoformat(min(h1_bid)[:10])) if h1_bid else first
-    log(f"  {pair}：H1 {min(h1_bid)[:10] if h1_bid else '—'} 起，M1 從 {first_m1} 起抓")
-    complete = True
-    jobs = [("BID", y, "m1_years", f"{pair}_M1_{y}.csv.gz") for y in range(first_m1.year, this_year + 1)]
-    jobs.append(("ASK", this_year, "m1_years_ask", f"{pair}_M1_{this_year}_ask.csv.gz"))
-    for side, y, key, name in jobs:
-        if y in done[key]:
-            continue
-        if time.monotonic() > budget_end:
+    # ---- HistData M1：往年每年一檔、當年每個已完成月份一檔
+    last_hd = None
+    if pair not in NO_HISTDATA and complete:
+        for y in range(first.year, this_year + 1):
+            if y < this_year and y in done["hd_years"]:
+                continue
+            if over_budget():
+                complete = False
+                break
+            p = out / f"{pair}_M1_{y}.csv.gz"
+            try:
+                if y < this_year:
+                    rows = hd.download(pair, y)
+                    if rows is None:
+                        log(f"  {pair} HistData {y}：沒有（起點之前）")
+                    else:
+                        n = merge_write(p, rows, decimals, cutoff)
+                        log(f"  {pair} HistData {y}：{len(rows)} 根，共 {n}")
+                    done["hd_years"].append(y)
+                else:
+                    for m in range(1, today.month):
+                        tag = f"{y:04d}-{m:02d}"
+                        if tag in done["hd_months"]:
+                            continue
+                        rows = hd.download(pair, y, m)
+                        if rows is None:
+                            log(f"  {pair} HistData {tag}：還沒有")
+                            break
+                        n = merge_write(p, rows, decimals, cutoff)
+                        done["hd_months"].append(tag)
+                        log(f"  {pair} HistData {tag}：{len(rows)} 根，本年共 {n}")
+            except requests.RequestException as exc:
+                log(f"  {pair} HistData {y} 失敗：{exc!r}；下輪續抓")
+                complete = False
+                break
+            save_done()
+        hd_files = sorted(p for p in out.glob(f"{pair}_M1_*.csv.gz") if re.fullmatch(rf"{pair}_M1_\d{{4}}\.csv\.gz", p.name))
+        if hd_files:
+            last_hd = date.fromisoformat(max(read_gz(hd_files[-1]))[:10])
+
+    # ---- Dukascopy 近期 M1（bid + ask）：HistData 之後到昨天，最多回抓 RECENT_DAYS 天（週六跳過）
+    recent_from = today - timedelta(days=RECENT_DAYS)
+    if last_hd:
+        recent_from = max(recent_from, last_hd + timedelta(days=1))
+    for side, name in (("BID", f"{pair}_M1_recent.csv.gz"), ("ASK", f"{pair}_M1_recent_ask.csv.gz")):
+        if over_budget() or not complete:
             complete = False
             break
         p = out / name
-        have = read_gz(p)
-        start = max(first_m1, date(y, 1, 1))
+        have = {k: v for k, v in read_gz(p).items() if k >= recent_from.isoformat()}
+        start = recent_from
         if have:
             start = max(start, date.fromisoformat(max(have)[:10]))      # 最後一天重抓（可能不完整）
-        end = min(date(y, 12, 31), today - timedelta(days=1))
-        days = [start + timedelta(i) for i in range((end - start).days + 1)]
+        days = [start + timedelta(i) for i in range((today - timedelta(days=1) - start).days + 1)]
         days = [d for d in days if d.weekday() != 5]
-        if not days:
-            if y < this_year:
-                done[key].append(y)
-            continue
 
         def one_day(d: date):
             return d, feed.candles(f"{sym}/{d.year}/{d.month - 1:02d}/{d.day:02d}/{side}_candles_min_1.bi5",
                                    datetime(d.year, d.month, d.day), scale)
-
-        CH = 90
-        n_new = 0
-        stopped = False
-        for i in range(0, len(days), CH):
-            if time.monotonic() > budget_end:
-                stopped = True
-                break
-            chunk = days[i:i + CH]
-            rows = []
-            try:
-                with ThreadPoolExecutor(feed.workers) as ex:
-                    for d, got in ex.map(one_day, chunk):
-                        rows += got
-            except Throttled as exc:
-                log(f"  {pair} M1 {y} {side.lower()}：限流退避後仍失敗（{exc}），先存檔，下輪續抓")
-                stopped = True
-                break
-            for line in fmt(rows, decimals).splitlines(keepends=True):
-                have[line.split(",", 1)[0]] = line
-            n_new += len(rows)
-            have = {k: v for k, v in have.items() if k < cutoff}
-            write_gz(p, have)
-            log(f"  {pair} M1 {y} {side.lower()}：{chunk[-1]}  本年 {len(have)} 根（本輪 +{n_new}，"
-                f"累計請求 {feed.n_req}、404 {feed.n_404}、重試 {feed.n_retry}）")
-        if stopped:
+        rows = []
+        try:
+            with ThreadPoolExecutor(feed.workers) as ex:
+                for d, got in ex.map(one_day, days):
+                    rows += got
+        except Throttled as exc:
+            log(f"  {pair} 近期 M1 {side.lower()}：限流退避後仍失敗（{exc}），先存檔，下輪續抓")
             complete = False
-            break
-        if y < this_year:
-            done[key].append(y)
-        save_done()
-    save_done()
+        for line in fmt(rows, decimals).splitlines(keepends=True):
+            have[line.split(",", 1)[0]] = line
+        have = {k: v for k, v in have.items() if k < cutoff}
+        if have:
+            write_gz(p, have)
+        log(f"  {pair} 近期 M1 {side.lower()}：{recent_from} 起，{len(days)} 天、新增 {len(rows)} 根，共 {len(have)}"
+            f"（Dukascopy 請求 {feed.n_req}、404 {feed.n_404}、重試 {feed.n_retry}）")
 
-    # ---- 當年的 H1／D1 由 M1 聚合（Dukascopy 沒有當年 D1、當月 H1 檔）
-    for m1_name, h1_name, d1_name in ((f"{pair}_M1_{this_year}.csv.gz", f"{pair}_H1.csv.gz", f"{pair}_D1.csv.gz"),
-                                      (f"{pair}_M1_{this_year}_ask.csv.gz", f"{pair}_H1_ask.csv.gz", f"{pair}_D1_ask.csv.gz")):
-        m1 = read_gz(out / m1_name)
+    # ---- 當月 H1 由近期 M1 聚合；當年 D1 由 H1 聚合
+    for m1_name, h1_name, d1_name in ((f"{pair}_M1_recent.csv.gz", f"{pair}_H1.csv.gz", f"{pair}_D1.csv.gz"),
+                                      (f"{pair}_M1_recent_ask.csv.gz", f"{pair}_H1_ask.csv.gz", f"{pair}_D1_ask.csv.gz")):
+        m1 = {k: v for k, v in read_gz(out / m1_name).items() if k >= month_start}
         if m1:
-            n_h = merge_write(out / h1_name, aggregate(m1, "h"), decimals, cutoff, drop_from=year_start)
-            n_d = merge_write(out / d1_name, aggregate(m1, "D"), decimals, cutoff, drop_from=year_start)
-            log(f"  {pair} {this_year} 由 M1 聚合：H1 共 {n_h} 根、D1 共 {n_d} 根（{m1_name}）")
+            merge_write(out / h1_name, aggregate(m1, "h"), decimals, cutoff, drop_from=month_start)
+        h1 = {k: v for k, v in read_gz(out / h1_name).items() if k >= year_start}
+        if h1:
+            n = merge_write(out / d1_name, aggregate(h1, "D"), decimals, cutoff, drop_from=year_start)
+            log(f"  {pair} {d1_name}：當年由 H1 聚合，共 {n} 根（當月 H1 由近期 M1 聚合 {len(m1)} 根）")
 
-    m1_files = sorted(out.glob(f"{pair}_M1_*.csv.gz"))
-    (out / "_status.txt").write_text(f"{today} D1 {len(read_gz(out / f'{pair}_D1.csv.gz'))} 根（{first} 起）、"
-                                     f"M1 年檔 {len(m1_files)}、{'完成' if complete else '未完成（下輪續抓）'}\n")
+    hd_n = len([p for p in out.glob(f"{pair}_M1_*.csv.gz") if re.fullmatch(rf"{pair}_M1_\d{{4}}\.csv\.gz", p.name)])
+    (out / "_status.txt").write_text(
+        f"{today} Dukascopy D1 {len(read_gz(out / f'{pair}_D1.csv.gz'))} 根（{first} 起）、HistData M1 年檔 {hd_n}"
+        f"（→ {last_hd or '無'}）、Dukascopy 近期 M1 {recent_from} 起、{'完成' if complete else '未完成（下輪續抓）'}\n")
     return complete
 
 
@@ -415,7 +522,8 @@ def fetch_refs(pair: str, out: Path) -> None:
 
 # ---------------------------------------------------------------- 自檢
 def selftest() -> None:
-    """用合成 bi5 檢查解碼、填充過濾、格式、合併、聚合（不用外網）。"""
+    """用合成 bi5／HistData zip 檢查解碼、填充過濾、格式、合併、聚合（不用外網）。"""
+    import tempfile
     base = datetime(2024, 1, 2)
     recs = [(60 * i, 108000 + i, 108050 + i, 107950 + i, 108100 + i, 1.5) for i in range(3)]   # 時間、開、收、低、高、量
     recs.append((180, 108100, 108100, 108100, 108100, 0.0))                                      # 填充 K 線
@@ -427,7 +535,15 @@ def selftest() -> None:
     txt = fmt(rows, 3)
     assert txt.splitlines()[0] == "2024-01-02 00:00:00,108.000,108.100,107.950,108.050,1.5", txt
     assert is_padding("2024-01-02 00:03:00,108.100,108.100,108.100,108.100,0\n") and not is_padding(txt.splitlines()[0])
-    import tempfile
+    # HistData zip：美東標準時間 → UTC（+5 小時）、5 欄、平價零量不算填充
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("DAT_ASCII_EURUSD_M1_2024.csv", "20240101 170000;1.10390;1.10400;1.10380;1.10390;0\n"
+                                                    "20240101 170100;1.10390;1.10390;1.10390;1.10390;0\n")
+    hd = parse_histdata_zip(buf.getvalue())
+    assert hd[0] == ("2024-01-01 22:00:00", 1.1039, 1.104, 1.1038, 1.1039) and len(hd) == 2, hd
+    hd_txt = fmt(hd, 5)
+    assert hd_txt.splitlines()[1] == "2024-01-01 22:01:00,1.10390,1.10390,1.10390,1.10390" and not is_padding(hd_txt.splitlines()[1])
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "x.csv.gz"
         n = merge_write(p, rows, 3, "2024-01-02 00:02:00")
@@ -436,19 +552,24 @@ def selftest() -> None:
         assert n == 4 and list(read_gz(p))[0] == "2024-01-02 00:00:00"
         with gzip.open(p, "at", encoding="utf-8") as f:                       # 混入填充行，clean_existing 要清掉
             f.write("2024-01-02 00:03:00,108.100,108.100,108.100,108.100,0\n")
-        clean_existing(Path(td))
-        assert len(read_gz(p)) == 4
+        q = Path(td) / "EURUSD_M1_2024.csv.gz"
+        merge_write(q, hd, 5, "2099-01-01")
+        old = Path(td) / "EURUSD_M1_2023.csv.gz"
+        merge_write(old, rows, 3, "2099-01-01")                                # 舊版 6 欄年檔要被刪
+        clean_existing(Path(td), "EURUSD")
+        assert len(read_gz(p)) == 4 and len(read_gz(q)) == 2 and not old.exists()
         h = aggregate(read_gz(p), "h")
         assert len(h) == 1 and h[0][1] == 108.0 and h[0][2] == 108.102 and h[0][3] == 107.95 and h[0][4] == 108.1, h
         assert aggregate(read_gz(p), "D")[0][0] == "2024-01-02 00:00:00"
-    # backtest.py 的載入器要能直接讀（時間格式 %Y-%m-%d %H:%M:%S，欄名 Time）
-    sys.path.insert(0, str(ROOT))
-    from backtest import load_bars
-    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as f:
-        f.write(HEADER + txt)
-    bars = load_bars(f.name, 0)
-    assert len(bars) == 4 and bars[0]["close"] == 108.05 and bars[1]["time"] - bars[0]["time"] == 60
-    print("selftest OK：bi5 解碼、填充過濾、CSV 格式、合併去重、聚合、backtest.load_bars 相容")
+        assert aggregate(read_gz(q), "h")[0][:5] == ("2024-01-01 22:00:00", 1.1039, 1.104, 1.1038, 1.1039)
+        # backtest.py 的載入器要能直接讀（時間格式 %Y-%m-%d %H:%M:%S，欄名 Time；5 欄 HistData 亦可）
+        sys.path.insert(0, str(ROOT))
+        from backtest import load_bars
+        with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, dir=td) as f:
+            f.write(HEADER + txt + hd_txt)
+        bars = load_bars(f.name, 0)
+        assert len(bars) == 6 and bars[0]["close"] == 1.1039 and bars[-1]["close"] == 108.1, bars
+    print("selftest OK：bi5 解碼、填充過濾、HistData zip、CSV 格式、合併去重、舊檔清理、聚合、backtest.load_bars 相容")
 
 
 def main() -> None:
@@ -457,7 +578,7 @@ def main() -> None:
     ap.add_argument("--pair", nargs="*", choices=list(INSTRUMENTS), default=[])
     ap.add_argument("--budget-min", type=float, default=300)
     ap.add_argument("--workers", type=int, default=3)
-    ap.add_argument("--rate", type=float, default=2.5, help="每秒最多幾個請求（Dukascopy 會限流）")
+    ap.add_argument("--rate", type=float, default=1.5, help="Dukascopy 每秒最多幾個請求（會限流）")
     ap.add_argument("--no-refs", action="store_true", help="不抓 Yahoo／FRED 第二來源")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--selftest", action="store_true")
@@ -467,19 +588,21 @@ def main() -> None:
         return
     if args.list:
         for p, (sym, dec, g, ysym, fred) in INSTRUMENTS.items():
-            print(f"{p:7} {g:7} 小數 {dec}  Yahoo {ysym:10} FRED {'×'.join(s + ('⁻¹' if pw < 0 else '') for s, pw in fred) or '—'}")
+            print(f"{p:7} {g:7} 小數 {dec}  HistData {'無' if p in NO_HISTDATA else '有'}  Yahoo {ysym:10} "
+                  f"FRED {'×'.join(s + ('⁻¹' if pw < 0 else '') for s, pw in fred) or '—'}")
         return
     groups = set(GROUPS) if "all" in args.group else set(args.group)
     pairs = [p for p, v in INSTRUMENTS.items() if v[2] in groups or p in args.pair]
     if not pairs:
         ap.error("請用 --group 或 --pair 指定商品")
     feed = Feed(args.workers, args.rate)
+    hd = HistData()
     budget_end = time.monotonic() + args.budget_min * 60
     incomplete = []
     for p in pairs:
         log(f"== {p}")
         try:
-            if not fetch_pair(p, feed, budget_end, not args.no_refs):
+            if not fetch_pair(p, feed, hd, budget_end, not args.no_refs):
                 incomplete.append(p)
         except Throttled as exc:
             log(f"  {p} 限流：{exc}；這輪到此為止，下輪續抓")
@@ -493,8 +616,8 @@ def main() -> None:
             log(f"超過 {args.budget_min} 分鐘，餘下的等下輪續抓")
             break
     incomplete = list(dict.fromkeys(incomplete))
-    log(f"完成：{len(pairs) - len(incomplete)}/{len(pairs)} 個商品抓齊；請求 {feed.n_req}、404 {feed.n_404}、重試 {feed.n_retry}"
-        + (f"；未完成：{' '.join(incomplete)}" if incomplete else ""))
+    log(f"完成：{len(pairs) - len(incomplete)}/{len(pairs)} 個商品抓齊；Dukascopy 請求 {feed.n_req}、404 {feed.n_404}、"
+        f"重試 {feed.n_retry}；HistData 請求 {hd.n_req}" + (f"；未完成：{' '.join(incomplete)}" if incomplete else ""))
     sys.exit(3 if incomplete else 0)
 
 

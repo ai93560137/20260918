@@ -18,6 +18,7 @@
 import argparse
 import gzip
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,17 +38,26 @@ def load(path: Path) -> pd.DataFrame:
     return df[~df.index.duplicated()].sort_index()
 
 
-def load_m1(d: Path, pair: str) -> tuple[pd.DataFrame, dict, int]:
+def load_m1(d: Path, pair: str) -> tuple[pd.DataFrame, dict, int, pd.DataFrame]:
+    """HistData 年檔（<PAIR>_M1_<YYYY>，5 欄）+ Dukascopy 近期檔（<PAIR>_M1_recent）；回傳合併 M1、逐年根數、重複數、近期檔。"""
     parts, per_year, dup = [], {}, 0
     for p in sorted(d.glob(f"{pair}_M1_*.csv.gz")):
+        m = re.fullmatch(rf"{pair}_M1_(\d{{4}})\.csv\.gz", p.name)
+        if not m:
+            continue
         df = pd.read_csv(p, parse_dates=["Time"]).set_index("Time")
         dup += int(df.index.duplicated().sum())
         df = df[~df.index.duplicated()]
-        per_year[int(p.stem.split("_")[-1].split(".")[0])] = len(df)
+        per_year[int(m.group(1))] = len(df)
         parts.append(df)
+    recent = load(d / f"{pair}_M1_recent.csv.gz")
+    if not recent.empty:
+        parts.append(recent)
     if not parts:
-        return pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"]), {}, 0
-    return pd.concat(parts).sort_index(), per_year, dup
+        return pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"]), {}, 0, recent
+    m1 = pd.concat(parts)
+    m1 = m1[~m1.index.duplicated(keep="first")].sort_index()      # HistData 優先，近期檔補尾
+    return m1, per_year, dup, recent
 
 
 def structure(df: pd.DataFrame) -> dict:
@@ -70,7 +80,7 @@ def qc_pair(pair: str, decimals: int) -> dict:
     res = {"pair": pair, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     d1, d1a = load(d / f"{pair}_D1.csv.gz"), load(d / f"{pair}_D1_ask.csv.gz")
     h1, h1a = load(d / f"{pair}_H1.csv.gz"), load(d / f"{pair}_H1_ask.csv.gz")
-    m1, per_year, m1_dup = load_m1(d, pair)
+    m1, per_year, m1_dup, recent = load_m1(d, pair)
     if d1.empty:
         res["error"] = "沒有 D1"
         return res
@@ -80,6 +90,27 @@ def qc_pair(pair: str, decimals: int) -> dict:
     res["m1_first"] = str(m1.index[0]) if not m1.empty else None
     res["m1_last"] = str(m1.index[-1]) if not m1.empty else None
     res["m1_per_year"] = {str(y): n for y, n in per_year.items()}
+    res["m1_recent"] = {"rows": int(len(recent)), "first": str(recent.index[0]) if len(recent) else None,
+                        "last": str(recent.index[-1]) if len(recent) else None}
+    hd = m1[m1["Volume"].isna()] if "Volume" in m1 else m1.iloc[0:0]      # HistData 沒有成交量欄 → 用來辨認來源
+    if not hd.empty and not h1.empty:
+        hc = hd["Close"].groupby(hd.index.floor("h")).last()
+        tries = {}
+        for shift in (-1, 0, 1):
+            s2 = hc.copy()
+            s2.index = s2.index + pd.Timedelta(hours=shift)
+            j = s2.to_frame("hd").join(h1["Close"].to_frame("duka"), how="inner")
+            ad = np.abs(pct(j["hd"], j["duka"]))
+            tries[shift] = {"hours": int(len(j)), "median_abs_pct": round(float(np.median(ad)), 4) if len(j) else None,
+                            "within_0.05pct": round(float((ad <= 0.05).mean() * 100), 1) if len(j) else None}
+        best = min((k for k in tries if tries[k]["hours"]), key=lambda k: tries[k]["median_abs_pct"], default=0)
+        j = hc.to_frame("hd").join(h1["Close"].to_frame("duka"), how="inner")
+        ad = pd.Series(np.abs(pct(j["hd"], j["duka"])), index=j.index)
+        by_year = ad.groupby(ad.index.year).median().round(4)
+        res["hd_vs_duka"] = {"hours": int(len(j)), "median_abs_pct": tries[0]["median_abs_pct"], "p99_abs_pct": round(float(ad.quantile(0.99)), 3) if len(j) else None,
+                             "within_0.05pct": tries[0]["within_0.05pct"], "best_shift_h": int(best), "shifts": tries,
+                             "by_year": {str(k): float(v) for k, v in by_year.items()},
+                             "worst": [(str(t), round(float(v), 2)) for t, v in ad.sort_values(ascending=False).head(5).items()]}
     res["m1_days_per_year"] = {str(y): int(n) for y, n in m1.groupby(m1.index.year).apply(
         lambda g: g.index.normalize().nunique()).items()} if not m1.empty else {}
     res["struct"] = {"D1": structure(d1), "H1": structure(h1), "M1": structure(m1) | {"dup": m1_dup}}
@@ -190,8 +221,10 @@ def render(r: dict) -> str:
     L = [f"# {r['pair']} 數據品質（{r['generated']}）", ""]
     if "error" in r:
         return "\n".join(L + [r["error"], ""])
-    L += [f"- 覆蓋：D1 {r['first']} → {r['last']}（{r['d1_rows']} 根）、H1 {r['h1_rows']} 根、M1 {r['m1_rows']} 根"
-          f"（{r['m1_first']} → {r['m1_last']}）", "",
+    rc = r.get("m1_recent", {})
+    L += [f"- 覆蓋：Dukascopy D1 {r['first']} → {r['last']}（{r['d1_rows']} 根）、H1 {r['h1_rows']} 根；"
+          f"M1 {r['m1_rows']} 根（{r['m1_first']} → {r['m1_last']}；HistData 年檔 {len(r['m1_per_year'])} 個 + "
+          f"Dukascopy 近期檔 {rc.get('rows', 0)} 根 {rc.get('first')} → {rc.get('last')}）", "",
           "## 1. 逐年 M1", "", "| 年 | M1 根數 | 有數據的日數 |", "|---|---:|---:|"]
     for y in sorted(r["m1_per_year"]):
         L.append(f"| {y} | {r['m1_per_year'][y]:,} | {r['m1_days_per_year'].get(y, 0)} |")
@@ -213,6 +246,13 @@ def render(r: dict) -> str:
         L += ["", f"## 5. M1 按 UTC 日聚合 vs Dukascopy D1（{v['days']} 天，容差半 pip）", ""]
         if v["days"]:
             L.append(f"- 開 {v['Open']}%、高 {v['High']}%、低 {v['Low']}%、收 {v['Close']}% 吻合")
+    if "hd_vs_duka" in r:
+        v = r["hd_vs_duka"]
+        L += ["", f"## 5b. HistData M1 聚合 vs Dukascopy H1 收市（{v['hours']:,} 小時）", "",
+              f"- 絕對差中位 {v['median_abs_pct']}%、99 百分位 {v['p99_abs_pct']}%、{v['within_0.05pct']}% 小時在 0.05% 內；"
+              f"時差試 −1／0／+1 小時最佳為 {v['best_shift_h']:+d}（0 = HistData 美東標準時間 +5 小時轉 UTC 正確）",
+              "- 逐年中位差%：" + "、".join(f"{k} {x}" for k, x in v["by_year"].items()),
+              "- 最大：" + "、".join(f"{t} {x}%" for t, x in v["worst"])]
     if "spread" in r:
         s = r["spread"]
         L += ["", "## 6. 點差（H1 賣價收市 − 買價收市，pips；1 pip = " + f"{s['pip']:g}）", "",
@@ -244,19 +284,20 @@ def summary() -> None:
     L = ["# 外匯數據品質總表（DATA_QC.md）", "",
          f"由 `scripts/qc_forex.py --summary` 於 {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC 重建；逐商品細節在 `data_qc/<PAIR>_qc.md`。",
          "數據取得：`python3 scripts/get_forex_data.py`；目錄與注意事項：FOREX_DATA_CATALOG.md。", "",
-         "| 商品 | 起 | 迄 | M1 根數 | 缺口小時% | 尖刺 | D1 收吻合% | 點差中位(3年) | 波幅÷點差 | Yahoo 中位差% | FRED 中位差% | Yahoo>0.5% 天 |",
-         "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+         "| 商品 | 起 | M1 起 | M1 根數 | 缺口小時% | 尖刺 | D1 收吻合% | HistData vs Duka H1 中位差% | 點差中位(3年) | 波幅÷點差 | Yahoo 中位差% | FRED 中位差% | Yahoo>0.5% 天 |",
+         "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for r in rows:
         if "error" in r:
-            L.append(f"| {r['pair']} | — | — | — | — | — | — | — | — | — | — | {r['error']} |")
+            L.append(f"| {r['pair']} | — | — | — | — | — | — | — | — | — | — | — | {r['error']} |")
             continue
         g, s, v = r.get("gaps", {}), r.get("spread", {}), r.get("d1_vs_m1", {})
-        L.append(f"| {r['pair']} | {r['first']} | {r['last']} | {r['m1_rows']:,} | "
+        L.append(f"| {r['pair']} | {r['first']} | {(r.get('m1_first') or '—')[:10]} | {r['m1_rows']:,} | "
                  f"{g.get('weekday_hours_missing', 0) / max(g.get('weekday_hours_total', 1), 1) * 100:.2f} | "
-                 f"{r.get('spikes', {}).get('count', '—')} | {v.get('Close', '—')} | {s.get('median_3y', '—')} | "
+                 f"{r.get('spikes', {}).get('count', '—')} | {v.get('Close', '—')} | {r.get('hd_vs_duka', {}).get('median_abs_pct', '—')} | {s.get('median_3y', '—')} | "
                  f"{s.get('range_over_spread_3y', '—')} | {r.get('yahoo', {}).get('median_abs_pct', '—')} | "
                  f"{r.get('fred', {}).get('median_abs_pct', '—')} | {r.get('yahoo', {}).get('over_0.5pct', '—')} |")
-    L += ["", "- 缺口小時% = 平日（週一 00:00 → 週五 21:00 UTC）沒有任何 M1 的小時比例（含假期，不代表數據錯）",
+    L += ["", "- M1 = HistData 年檔（美東標準時間已轉 UTC，沒有成交量）+ Dukascopy 近期檔；HistData vs Duka H1 = HistData M1 按 UTC 小時取收市 vs Dukascopy H1 收市的絕對差中位（兩個獨立來源互相核對）",
+          "- 缺口小時% = 平日（週一 00:00 → 週五 21:00 UTC）沒有任何 M1 的小時比例（含假期，不代表數據錯）",
           "- D1 收吻合% = M1 按 UTC 日聚合的收市 vs Dukascopy D1 收市在半 pip 內的比例（低 → D1 的日界不是 UTC，回測日線請自己從 M1 聚合）",
           "- 波幅÷點差 = 近 3 年日均高低差中位 ÷ H1 點差中位（手冊鐵律 2 的入場券：> 80 倍；CFD 實際點差通常比 Dukascopy 寬，要按自己券商換算）",
           "- Yahoo／FRED 差 = 收市（或紐約中午）價與 Dukascopy 對應時點的絕對百分比差中位；Yahoo 日界與 Dukascopy 不同，0.1–0.3% 屬正常，只看 > 2% 的離群天", ""]

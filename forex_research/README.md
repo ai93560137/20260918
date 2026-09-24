@@ -18,8 +18,8 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 
 | 檔案 | 用途 |
 |---|---|
-| `scripts/fetch_forex.py` | Dukascopy bi5 → CSV（D1／H1 買賣價、M1 買價、可續抓）+ Yahoo／FRED 第二來源；`--selftest` 不用外網 |
-| `scripts/qc_forex.py` | 品質檢查（結構、尖刺、缺口、D1 vs M1 聚合、點差、第二來源、XAUUSD 對券商 MT5）→ `data_qc/`、`DATA_QC.md` |
+| `scripts/fetch_forex.py` | HistData M1 zip + Dukascopy bi5（D1／H1 買賣價、近期 M1）→ CSV（UTC、可續抓、去填充）+ Yahoo／FRED 第二來源；`--selftest` 不用外網 |
+| `scripts/qc_forex.py` | 品質檢查（結構、尖刺、缺口、D1 vs M1 聚合、HistData vs Dukascopy 交叉核對、點差、第二來源、XAUUSD 對券商 MT5）→ `data_qc/`、`DATA_QC.md` |
 | `scripts/get_forex_data.py` | 本機一鍵下載 Release `forex-data`；`--merge-m1` 合併 M1 給 `donchian_backtest.py`／`zgl_backtest.py` |
 | `.github/workflows/fetch_forex.yml` | Actions：從 Release 還原 → 抓 → 上傳 Release → 品質檢查 → commit 報告（分組並行；只 add 本分組的檔） |
 | `donchian_backtest.py`、`zgl_backtest.py` | 現有 M1 引擎（八陣圖通道突破、ZGL），`--broker-offset 0` 直接讀外匯 M1 |
@@ -27,13 +27,15 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 ## 3. 數據怎樣來（沙盒連不到外網）
 
 ```
-GitHub Actions（fetch_forex.yml）抓 Dukascopy／Yahoo／FRED → 上傳 Release forex-data（每商品一個 tar）
+GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → 上傳 Release forex-data（每商品一個 tar）
                                                           → commit forex_research/data_qc/ 與 DATA_QC.md
 本機／沙盒：python3 scripts/get_forex_data.py  → data_forex/<PAIR>/（.gitignore 已排除）
 ```
-- 首次全抓約 15 萬個請求（M1 每日一檔），分五組並行，每組上限 300 分鐘，抓不完會先上傳、下次續抓（`_done.json`）
+- 每商品約 35 個 HistData zip + 約 650 個 Dukascopy 請求；五組、同時最多兩組，每組上限 300 分鐘，抓不完會先上傳、下次續抓（`_done.json`）
 - 手動觸發：Actions → Forex data → group（majors／jpy／eur／other／metals／all）
-- Dukascopy 限流：每秒 2.5 個請求以內；原檔的週末／假期／上市前是平價零量的填充 K 線，程式已過濾（首輪抓回來才發現）
+- 踩過的坑（2026-09-24）：Dukascopy 對 Actions 的 IP 限流很兇（M1 每日一檔 15 萬個請求的抓法放棄，M1 改 HistData）；
+  Dukascopy 原檔的週末／假期／上市前是平價零量的填充 K 線（已過濾）；Dukascopy 沒有當年 D1／當月 H1 檔（改聚合）；
+  進行中的 Actions job 讀不到日誌，要等它結束
 
 ## 4. 外匯測試的常設規矩（沿用股票研究那套）
 
@@ -51,4 +53,4 @@ GitHub Actions（fetch_forex.yml）抓 Dukascopy／Yahoo／FRED → 上傳 Relea
 
 | 日期 | 事項 |
 |---|---|
-| 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首次全抓在 Actions 進行 |
+| 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首輪 Dukascopy 全 M1 抓法被限流，改為 HistData M1 + Dukascopy D1／H1；首次全抓在 Actions 進行 |
