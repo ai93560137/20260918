@@ -28,7 +28,27 @@ MARKETS = {
     "hk": {"index": "hsi", "etf": "2800.HK", "idx": "^HSI", "start": date(2010, 7, 1), "cost": 0.0015, "split": date(2022, 1, 1)},
     "us": {"index": "sp500", "etf": "SPY", "idx": "^GSPC", "start": date(2000, 1, 1), "cost": 0.0005, "split": date(2013, 1, 1)},
     "jp": {"index": "n225", "etf": "1321.T", "idx": "^N225", "start": date(2009, 7, 1), "cost": 0.0010, "split": date(2013, 1, 1)},
+    # 樣本外驗證新市場（OOS_VALIDATION.md）：沒有 point-in-time 指數成分股 → 只能用全市場成交額宇宙（pool + top_n）
+    "tw": {"index": None, "etf": "0050.TW", "idx": "^TWII", "start": date(2005, 1, 1), "cost": 0.0030, "split": date(2015, 1, 1)},
+    "kr": {"index": None, "etf": "069500.KS", "idx": "^KS11", "start": date(2005, 1, 1), "cost": 0.0015, "split": date(2015, 1, 1)},
+    "au": {"index": None, "etf": "STW.AX", "idx": "^AXJO", "start": date(2005, 1, 1), "cost": 0.0010, "split": date(2015, 1, 1)},
 }
+
+
+def load_series_any(market: str, t: str) -> dict:
+    """指數／ETF 日線：先找 data/（已第二來源檢查），沒有就讀全市場 data_full/<market>/（新市場）。"""
+    try:
+        return md.load_series(t)
+    except Exception:
+        pass
+    p = ROOT / "data_full" / market / f"{t.replace('^', '_')}.csv.gz"
+    df = pd.read_csv(p, compression="gzip").dropna(subset=["Close"])
+    df = df[df["Close"] > 0]
+    out = {}
+    for d, o, c, ac in zip(df["Date"], df["Open"], df["Close"], df["AdjClose"]):
+        ac = ac if ac == ac and ac > 0 else c
+        out[date.fromisoformat(d)] = (o * ac / c if o == o and o > 0 else ac, ac, c)
+    return out
 WINDOWS = {3: 63, 6: 126, 9: 189, 12: 252}
 MAX_HOLD = 252
 X1_DAYS = 20
@@ -138,13 +158,13 @@ class MarketData:
             cfg["cost"] = cost
         self.market, self.cfg = market, cfg
         self.loader = loader or md.load_ohlcv
-        self.uni = Universe(cfg["index"])
+        self.uni = Universe(cfg["index"]) if cfg["index"] else None
         hol = set()
         p = ROOT / "universes" / "calendars" / f"{market}.csv"
         if p.exists():
             with open(p, newline="", encoding="utf-8") as f:
                 hol = {date.fromisoformat(r["date"]) for r in csv.DictReader(f)}
-        cal = set(md.load_series(cfg["etf"])) | set(md.load_series(cfg["idx"]))
+        cal = set(load_series_any(market, cfg["etf"])) | set(load_series_any(market, cfg["idx"]))
         self.cal = sorted(d for d in cal if d >= cfg["start"] - timedelta(days=30) and d not in hol)
         self.ci = {d: i for i, d in enumerate(self.cal)}
         tickers = pool if pool is not None else self.uni.all_tickers(since=cfg["start"])
@@ -238,7 +258,7 @@ class MarketData:
         # 股票自己的第幾個交易日（X1 用）
         self.nth = np.cumsum(self.has, axis=1)
         self.start_j = next(j for j, d in enumerate(self.cal) if d >= self.cfg["start"])
-        etf = md.load_series(cfg["etf"])
+        etf = load_series_any(market, cfg["etf"])
         e = np.array([etf[d][1] if d in etf else np.nan for d in self.cal])
         e = pd.Series(e).ffill().to_numpy()
         self.etf_ret = np.r_[0.0, e[1:] / e[:-1] - 1]

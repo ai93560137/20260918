@@ -89,7 +89,7 @@ def check(tr: dict, src: dict[date, dict], split_ok: bool = False) -> tuple[str,
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--market", required=True, choices=["hk", "jp", "us"])
+    ap.add_argument("--market", required=True, choices=["hk", "jp", "us", "tw", "kr", "au"])
     ap.add_argument("--src", help="逐筆明細 JSON（預設 research/vcp_full/<m>_v2.json）")
     ap.add_argument("--out-dir", type=Path, default=ROOT / "research" / "vcp_full")
     ap.add_argument("--sample", type=int, default=0, help="隨機抽 N 筆核對（種子 0；0 = 全部）")
@@ -130,7 +130,7 @@ def main() -> None:
                 src = {}
             status[(t, tr["signal"])], notes[(t, tr["signal"])] = check(tr, src, args.split_ok)
     else:
-        load = nb.load_full("hk")
+        load = nb.load_full(m)          # 港股與樣本外新市場：內部一致性
         for tr in trades:
             t = tr["ticker"]
             rows = load(t)
@@ -153,7 +153,7 @@ def main() -> None:
     out = args.out_dir
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{m}_suspect.json").write_text(json.dumps([list(k) for k in sus], ensure_ascii=False) + "\n", encoding="utf-8")
-    how = {"us": "Nasdaq 歷史 API", "jp": "Yahoo!ファイナンス日線", "hk": "內部一致性（港股無免費歷史第二來源）"}[m]
+    how = {"us": "Nasdaq 歷史 API", "jp": "Yahoo!ファイナンス日線"}.get(m, "內部一致性（無免費歷史第二來源）")
     L = [f"\n## 4. 逐筆交易核對（{how}）\n",
          f"預設格{'隨機抽' if args.sample else ''} {len(trades)} 筆：通過 {sum(v == 'ok' for v in status.values())}、**可疑 {len(sus)}**、"
          f"無法核對 {unv}（第二來源沒有那些日子，例如美股 10 年前）。可疑的剔除後重算判決。\n"]

@@ -19,8 +19,10 @@ import vcp  # noqa: E402
 
 GRID = [(r, D) for r in (0.7, 0.8, 0.9) for D in (0.08, 0.10, 0.15)]
 DEFAULT = (0.8, 0.10)
-FULL_TOP_N = {"hk": 500, "jp": 1000, "us": 1500}          # 全市場宇宙：每日 60 日成交額中位數前 N
-FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010}   # 全市場成本（每邊）
+FULL_TOP_N = {"hk": 500, "jp": 1000, "us": 1500,          # 全市場宇宙：每日 60 日成交額中位數前 N
+              "tw": 500, "kr": 700, "au": 500}           # 樣本外驗證新市場（OOS_VALIDATION.md）
+FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010,   # 全市場成本（每邊）
+             "tw": 0.0030, "kr": 0.0015, "au": 0.0010}
 
 
 class VCPData:
