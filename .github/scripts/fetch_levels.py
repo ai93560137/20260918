@@ -302,26 +302,38 @@ def gold_levels():
     except Exception as e:
         log.append(f'gold fut 1m fail: {e}')
 
+    # 雙口徑輸出:主欄位=現貨(ETF 用),fut=期貨(MGC 掛單用)。
+    # 訊號兩邊同步觸發,但掛單價必須用所交易工具自己的口徑。
     out = {}
+    fut_rows = list(rows[-3:])
+    fut_rows.reverse()
+    fut = {}
+    for n, (d, h, l) in enumerate(fut_rows, 1):
+        fut[f'h{n}'], fut[f'l{n}'] = round(h, 1), round(l, 1)
+    if fut_now:
+        fut['quote'] = {'px': round(fut_now[0], 1), 'kind': '期貨延遲',
+                        'asof': fut_now[1].strftime('%m-%d %H:%M HKT')}
     if spot and fut_now:
-        # 通道換算到現貨:期貨日線 H/L + 當前基差(現貨−期貨,carry 三天內變化 ~1-2 美元)
         basis = spot[1] - fut_now[0]
-        rows = [(d, h + basis, l + basis) for d, h, l in rows]
-        out['src'] = f'XAUUSD 現貨(期貨日線+基差 {basis:+.1f} 換算,{spot[0]})'
+        srows = [(d, h + basis, l + basis) for d, h, l in rows[-3:]]
+        srows.reverse()
+        for n, (d, h, l) in enumerate(srows, 1):
+            out[f'h{n}'], out[f'l{n}'] = round(h, 1), round(l, 1)
         out['quote'] = {'px': round(spot[1], 1), 'kind': '現貨即時',
                         'asof': datetime.now(HKT).strftime('%m-%d %H:%M HKT')}
+        out['src'] = f'XAUUSD 現貨(期貨日線+基差 {basis:+.1f} 換算,{spot[0]})'
+        fut['basis'] = round(basis, 1)
         log.append(f'basis={basis:+.1f} (spot {spot[1]:.1f} via {spot[0]} − fut {fut_now[0]:.1f})')
     else:
+        # 現貨源不可用:主欄位退回期貨口徑並明確標註
+        for k in ('h1', 'l1', 'h2', 'l2', 'h3', 'l3'):
+            out[k] = fut[k]
+        if 'quote' in fut:
+            out['quote'] = dict(fut['quote'], kind='期貨延遲(非現貨)')
         out['src'] = 'Yahoo GC=F(期貨——現貨源不可用,價位比現貨高一個基差)'
-        if fut_now:
-            out['quote'] = {'px': round(fut_now[0], 1), 'kind': '期貨延遲(非現貨)',
-                            'asof': fut_now[1].strftime('%m-%d %H:%M HKT')}
-    rows = rows[-3:]
-    rows.reverse()
-    for n, (d, h, l) in enumerate(rows, 1):
-        out[f'h{n}'], out[f'l{n}'] = round(h, 1), round(l, 1)
-    out['dates'] = [str(d) for d, _, _ in rows]
-    log.append(f"gold quote: {out.get('quote')}")
+    out['fut'] = fut
+    out['dates'] = [str(d) for d, _, _ in fut_rows]
+    log.append(f"gold quote: {out.get('quote')} fut={fut.get('quote')}")
     return out
 
 
