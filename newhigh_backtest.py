@@ -164,7 +164,11 @@ class MarketData:
         if p.exists():
             with open(p, newline="", encoding="utf-8") as f:
                 hol = {date.fromisoformat(r["date"]) for r in csv.DictReader(f)}
-        cal = set(load_series_any(market, cfg["etf"])) | set(load_series_any(market, cfg["idx"]))
+        try:
+            idx_days = set(load_series_any(market, cfg["idx"]))
+        except FileNotFoundError:        # 指數抓不到（例：Yahoo 沒有 ^AXJO）→ 日曆只用 ETF
+            idx_days = set()
+        cal = set(load_series_any(market, cfg["etf"])) | idx_days
         self.cal = sorted(d for d in cal if d >= cfg["start"] - timedelta(days=30) and d not in hol)
         self.ci = {d: i for i, d in enumerate(self.cal)}
         tickers = pool if pool is not None else self.uni.all_tickers(since=cfg["start"])
