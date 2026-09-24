@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""全市場候選池（VCP_FULLMARKET_BACKTEST.md 預先登記）→ universes/full/<market>_pool.txt（Yahoo 代號，一行一檔）。
+"""全市場候選池（stock_research/VCP_FULLMARKET_BACKTEST.md 預先登記）→ universes/full/<market>_pool.txt（Yahoo 代號，一行一檔）。
 
     python3 scripts/build_full_pools.py --market hk     # 在 GitHub Actions 上跑（要連港交所/JPX/Nasdaq）
 

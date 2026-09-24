@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""樣本外驗證（預先登記：OOS_VALIDATION.md，寫程式與抓數據之前已 commit；只測一次）。
+"""樣本外驗證（預先登記：stock_research/OOS_VALIDATION.md，寫程式與抓數據之前已 commit；只測一次）。
 
     python3 oos_backtest.py --market tw --trades-only     # H5a 預設格逐筆明細抽 300 筆（給 verify_trades，不算績效）
     python3 oos_backtest.py --market tw --random 200      # 正式：H5a（主要）＋ Minervini、PPP 逆下半身（次要）

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VCP Minervini 忠實版回測（預先登記：VCP_FULLMARKET_BACKTEST.md 第四部分，寫程式前已 commit；三地只測一次）。
+"""VCP Minervini 忠實版回測（預先登記：stock_research/VCP_FULLMARKET_BACKTEST.md 第四部分，寫程式前已 commit；三地只測一次）。
 
     python3 vcp_minervini.py --market hk --random 200
 

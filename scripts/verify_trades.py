@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""全市場 VCP 預設格逐筆交易核對（VCP_FULLMARKET_BACKTEST.md 第一部分之二第 4 條，規則寫死）。
+"""全市場 VCP 預設格逐筆交易核對（stock_research/VCP_FULLMARKET_BACKTEST.md 第一部分之二第 4 條，規則寫死）。
 
     python3 scripts/verify_trades.py --market us      # 讀 research/vcp_full/us_v2.json 的 trades_detail
 
@@ -63,7 +63,7 @@ def jp_window(s: requests.Session, t: str, a: date, b: date) -> dict[date, dict]
 
 def check(tr: dict, src: dict[date, dict], split_ok: bool = False) -> tuple[str, str]:
     """回傳 (狀態 ok/suspect/unverifiable, 說明)。
-    split_ok（AIBA_PPP_BACKTEST.md 登記）：三個比例相差剛好一個整數倍（≥2，誤差 2% 內）= 第二來源沒按拆股還原，不算可疑。"""
+    split_ok（stock_research/AIBA_PPP_BACKTEST.md 登記）：三個比例相差剛好一個整數倍（≥2，誤差 2% 內）= 第二來源沒按拆股還原，不算可疑。"""
     sig, ent, ex = (date.fromisoformat(tr[k]) for k in ("signal", "entry", "exit"))
     pts = [(sig, "close", tr["signal_close"]), (ent, "open", tr["entry_open"]),
            (ex, "open" if tr["exit_at_open"] else "close", tr["exit_px"])]

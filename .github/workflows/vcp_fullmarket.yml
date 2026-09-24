@@ -1,6 +1,6 @@
 name: VCP full-market backtest（全市場 VCP 回測）
 
-# 預先登記見 VCP_FULLMARKET_BACKTEST.md。全市場日線不進 git：
+# 預先登記見 stock_research/VCP_FULLMARKET_BACKTEST.md。全市場日線不進 git：
 # - 存 Actions 快取（每次先還原、只補缺的，7 日沒用會被清）
 # - 每次抓完打包上載到 Release「fullmarket-data」當備份（不會過期、不進 git 歷史）；快取沒了就從這裡還原
 # 只 commit 候選池快照（universes/full/）與回測結果（research/vcp_full/）。

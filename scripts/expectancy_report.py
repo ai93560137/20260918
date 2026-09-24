@@ -67,13 +67,13 @@ def main() -> None:
               f"累計 {st['cum']:+.0%}（ETF {st['cum_etf']:+.0%}）  年化 {st['cagr']:+.1%}（ETF {st['cagr_etf']:+.1%}）  "
               f"MDD {st['mdd']:.0%}", file=sys.stderr, flush=True)
 
-    # 1. 新高連續天數（指數成分股；NEWHIGH_BACKTEST.md 預設格，X2 反向突破出場）
+    # 1. 新高連續天數（指數成分股；stock_research/NEWHIGH_BACKTEST.md 預設格，X2 反向突破出場）
     mi = nb.MarketData(mk)
     for kind in ("H4", "H5a", "H5b"):
         g = nb.GRIDS[kind]
         put(f"新高 {kind} {nb.label(kind, g['default'])}", from_trades(mi, mi.trades_from_events(mi.events(kind, g["default"]), "x2")))
     del mi
-    # 2. VCP 指數成分股版 v2（VCP_BACKTEST.md，XV 出場）
+    # 2. VCP 指數成分股版 v2（stock_research/VCP_BACKTEST.md，XV 出場）
     vi = vb.VCPData(mk)
     put("VCP 指數版 v2 XV", from_trades(vi.m, vi.trades(vi.events(*vb.DEFAULT), "xv")))
     del vi

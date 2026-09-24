@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""新高連續天數入場策略回測引擎（預先登記見 NEWHIGH_BACKTEST.md，跑數前已 commit）。
+"""新高連續天數入場策略回測引擎（預先登記見 stock_research/NEWHIGH_BACKTEST.md，跑數前已 commit）。
 
     python3 newhigh_backtest.py --market hk            # 預設格 + 鄰域 + 出場替代
     python3 newhigh_backtest.py --market us --random 200
@@ -28,11 +28,11 @@ MARKETS = {
     "hk": {"index": "hsi", "etf": "2800.HK", "idx": "^HSI", "start": date(2010, 7, 1), "cost": 0.0015, "split": date(2022, 1, 1)},
     "us": {"index": "sp500", "etf": "SPY", "idx": "^GSPC", "start": date(2000, 1, 1), "cost": 0.0005, "split": date(2013, 1, 1)},
     "jp": {"index": "n225", "etf": "1321.T", "idx": "^N225", "start": date(2009, 7, 1), "cost": 0.0010, "split": date(2013, 1, 1)},
-    # 樣本外驗證新市場（OOS_VALIDATION.md）：沒有 point-in-time 指數成分股 → 只能用全市場成交額宇宙（pool + top_n）
+    # 樣本外驗證新市場（stock_research/OOS_VALIDATION.md）：沒有 point-in-time 指數成分股 → 只能用全市場成交額宇宙（pool + top_n）
     "tw": {"index": None, "etf": "0050.TW", "idx": "^TWII", "start": date(2005, 1, 1), "cost": 0.0030, "split": date(2015, 1, 1)},
     "kr": {"index": None, "etf": "069500.KS", "idx": "^KS11", "start": date(2005, 1, 1), "cost": 0.0015, "split": date(2015, 1, 1)},
     "au": {"index": None, "etf": "STW.AX", "idx": "^AXJO", "start": date(2005, 1, 1), "cost": 0.0010, "split": date(2015, 1, 1)},
-    # 第二輪樣本外（OOS_VALIDATION.md 第三部分）
+    # 第二輪樣本外（stock_research/OOS_VALIDATION.md 第三部分）
     "ca": {"index": None, "etf": "XIU.TO", "idx": "^GSPTSE", "start": date(2005, 1, 1), "cost": 0.0010, "split": date(2015, 1, 1)},
     "in": {"index": None, "etf": "NIFTYBEES.NS", "idx": "^NSEI", "start": date(2005, 1, 1), "cost": 0.0020, "split": date(2015, 1, 1)},
     "sg": {"index": None, "etf": "ES3.SI", "idx": "^STI", "start": date(2005, 1, 1), "cost": 0.0020, "split": date(2015, 1, 1)},
@@ -71,7 +71,7 @@ def consecutive(mask: np.ndarray) -> np.ndarray:
 
 def load_full(market: str, repair_hl: bool = False):
     """全市場數據（data_full/<market>/<TICKER>.csv.gz，不進 git）的 loader，格式同 marketdata.load_ohlcv。
-    repair_hl：港股敏感度（VCP_FULLMARKET_BACKTEST.md，只作參考）——只因「高低價矛盾」被排除的股票不排除，
+    repair_hl：港股敏感度（stock_research/VCP_FULLMARKET_BACKTEST.md，只作參考）——只因「高低價矛盾」被排除的股票不排除，
     改把最高／最低價修正為包含開市與收市。"""
     base = ROOT / "data_full" / market
     # 品質檢查（scripts/qc_full_market.py）：整檔排除 + 殭屍段

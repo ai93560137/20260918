@@ -1,6 +1,6 @@
 # 全市場數據品質檢查：jp（2026-09-23）
 
-規則見 VCP_FULLMARKET_BACKTEST.md 第一部分之二。
+規則見 stock_research/VCP_FULLMARKET_BACKTEST.md 第一部分之二。
 
 ## 1. 結構檢查
 

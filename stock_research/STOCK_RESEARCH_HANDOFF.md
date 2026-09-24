@@ -1,7 +1,8 @@
 # 股票研究交接總結（STOCK_RESEARCH_HANDOFF.md）
 
 2026-09-18 ～ 09-24 一個長 session 的全部成果，給下一個 session 接手用。細節都在各文件，這裡只放「結論＋去哪裡找」。
-**開工先讀**：本文件 → RESEARCH_HANDBOOK.md（鐵律、判決庫、第七節）→ MARKET_DATA_CATALOG.md。
+**開工先讀**：本文件 → README.md（策略、數據、執行）→ VERDICTS.md（全部判決）→ MARKET_DATA_CATALOG.md；方法論鐵律見 RESEARCH_HANDBOOK.md。
+（以上都在 `stock_research/`；2026-09-24 從共用手冊抽離，程式路徑不變）
 
 分支：所有工作在 `claude/gifted-carson-v2tvhw`（每日工作流程、Release、其他分支都讀這裡）。
 
@@ -31,19 +32,9 @@ Telegram token 只在 GitHub Secrets（TG_BOT_TOKEN／TG_CHAT_ID），不要寫�
 - 一鍵取得：`python3 scripts/get_market_data.py`；目錄、注意事項、策略×市場已驗證矩陣：**MARKET_DATA_CATALOG.md**
 - 候選池快照 `universes/full/<m>_pool.txt`；品質報告 `research/vcp_full/`、`research/oos/`
 
-## 4. 全部判決（alpha t vs 當地 ETF；詳見各文件）
+## 4. 全部判決
 
-| 策略 | 港 | 日 | 美 | 台 | 韓 | 澳 | 加 | 印 | 新 | 判決 | 文件 |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 新高 H4 連續新高 | -0.24 | -1.57 | 1.35 | | | | | | | ☠️（美不確定） | NEWHIGH_BACKTEST.md |
-| 新高 H5a 剛升級 | 0.42 | 0.13 | 1.35 | -0.45 | -0.95 | 1.35 | | | | ☠️（樣本外失敗） | 同上、OOS_VALIDATION.md |
-| 新高 H5b 停留 | -1.75 | 0.06 | 0.32 | | | | | | | ☠️ | NEWHIGH_BACKTEST.md |
-| VCP 指數成分股版 | -0.60 | -0.26 | -0.37 | | | | | | | ☠️（樣本太少） | VCP_BACKTEST.md |
-| VCP 全市場 XV 出場 | 1.64 | -0.73 | 0.82 | | | | | | | 港不確定／日美 ☠️ | VCP_FULLMARKET_BACKTEST.md |
-| VCP 全市場 五日 EMA 出場 | 0.79 | 0.02 | 1.35 | | | | | | | 美不確定／港日 ☠️ | 同上第三部分 |
-| **VCP Minervini 忠實版** | 1.24 | 0.33 | -0.24 | **3.18** | 0.08 | **2.10** | 1.67 | **2.04** | **2.35** | **✅ 兩輪樣本外通過** | 同上第四部分、OOS_VALIDATION.md |
-| 相場師朗 PPP 下半身＋逆下半身 | 0.42 | -1.52 | -1.49 | 0.10 | -3.20 | 1.33 | | | | ☠️（使用者指定保留觀察） | AIBA_PPP_BACKTEST.md |
-| PPP 下半身＋五日 EMA（絕對回報） | -0.29 | -1.13 | -2.24 | | | | | | | ☠️（三地絕對回報都負） | 同上第三、四部分 |
+判決庫、9 策略 × 9 市場矩陣、多重測試帳本都在 **VERDICTS.md**（判決集中一處）。
 
 描述性覆核（期望值、RRR、總回報排名，不改判決）：EXPECTANCY_REVIEW.md。趨勢策略共同形態：勝率 27–43%、靠 RRR 2–4 賺錢；
 期望值正不等於組合賺錢（日股 VCP XV 期望值 +1.64%、組合 -31%）。
@@ -67,7 +58,7 @@ Telegram token 只在 GitHub Secrets（TG_BOT_TOKEN／TG_CHAT_ID），不要寫�
    未碰過的市場 15–20 年歷史是現成的獨立樣本
 3. **隨機對照比 ETF 比較更有資訊**：分得出「策略本身」與「同類股票＋同一套出場」的功勞
 4. **成本決定短線策略生死**：五日 EMA 出場持有 < 5 日，每年來回 ~50 次，毛利被吃光
-5. **多重測試帳本**（手冊第七節 7.6）：港日美同一批數據已用 7 次，下一個趨勢跟隨假設門檻 ≥ 2.5 起跳
+5. **多重測試帳本**（VERDICTS.md 第 3 節）：港日美同一批數據已用 7 次，下一個趨勢跟隨假設門檻 ≥ 2.5 起跳
 6. 數據坑：港股盤中高低價不可靠；日股第二來源不按拆股還原；Yahoo 基準 ETF 歷史比預期晚（台 2009、韓 2007、澳 2008、印 2009、新 2008）；
    `pgrep -f` 會配對到自己的等待迴圈；Actions 多市場並行 commit 只 add 本市場檔
 

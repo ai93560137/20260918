@@ -390,7 +390,7 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
     return days
 
 
-# ---------- VCP（波動收縮形態，vcp.py；回測判決見 VCP_BACKTEST.md）----------
+# ---------- VCP（波動收縮形態，vcp.py；回測判決見 stock_research/VCP_BACKTEST.md）----------
 
 VCP_FIELDS = ["date", "market", "market_zh", "status", "ticker", "name", "n_contractions", "depths_pct",
               "pivot", "close", "pct_vs_pivot", "stop", "stop_pct", "yahoo_ticker"]
@@ -658,7 +658,7 @@ def main() -> None:
     L.append("## 四、VCP 波動收縮形態（Minervini）\n")
     L.append("趨勢模板（含相對強度 ≥ 70）+ 2–6 次逐次收縮（每次 ≤ 上一次 × 0.8、最後一次 ≤ 10%）+ 量縮；"
              "**今日突破** = 收市過樞紐點且成交量 ≥ 50 日均量 × 1.4；**形態中** = 形態已成、還沒突破。"
-             "定義與回測判決見 VCP_BACKTEST.md（**描述性，非買入建議**）。名單存 `analysis/vcp/<收市日>.csv`。\n")
+             "定義與回測判決見 stock_research/VCP_BACKTEST.md（**描述性，非買入建議**）。名單存 `analysis/vcp/<收市日>.csv`。\n")
     for c in ranked:
         rs_ = [r for r in vcp_rows if r["market"] == c]
         L.append(f"**{COUNTRIES[c]['zh']}**（{fmt_d(country[c]['last'])} 收市）：今日突破 "

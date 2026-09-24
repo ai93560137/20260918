@@ -1,6 +1,6 @@
 # 全市場數據品質檢查：sg（2026-09-24）
 
-規則見 VCP_FULLMARKET_BACKTEST.md 第一部分之二（樣本外驗證新市場沿用，見 OOS_VALIDATION.md）。
+規則見 stock_research/VCP_FULLMARKET_BACKTEST.md 第一部分之二（樣本外驗證新市場沿用，見 stock_research/OOS_VALIDATION.md）。
 
 ## 1. 結構檢查
 

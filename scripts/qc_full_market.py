@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""全市場日線品質檢查（VCP_FULLMARKET_BACKTEST.md 第一部分之二，規則寫死）。
+"""全市場日線品質檢查（stock_research/VCP_FULLMARKET_BACKTEST.md 第一部分之二，規則寫死）。
 
     python3 scripts/qc_full_market.py --market hk      # 在 GitHub Actions 上跑（第二來源要連外網）
 
@@ -199,7 +199,7 @@ def main() -> None:
     (base / "_qc_zombie.json").write_text(json.dumps(zombies, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
 
     L = [f"# 全市場數據品質檢查：{m}（{date.today()}）\n",
-         "規則見 VCP_FULLMARKET_BACKTEST.md 第一部分之二（樣本外驗證新市場沿用，見 OOS_VALIDATION.md）。\n",
+         "規則見 stock_research/VCP_FULLMARKET_BACKTEST.md 第一部分之二（樣本外驗證新市場沿用，見 stock_research/OOS_VALIDATION.md）。\n",
          f"## 1. 結構檢查\n\n{len(files)} 檔 → 整檔排除 **{len(exclude)}** 檔、有殭屍段 {len(zombies)} 檔"
          f"（共 {sum(len(v) for v in zombies.values())} 段，載入時丟掉）。\n"]
     kinds = {}

@@ -5,7 +5,7 @@
     python3 scripts/get_market_data.py --market hk us   # 只拿幾個
     python3 scripts/get_market_data.py --list           # 只列出有甚麼
 
-目錄與每個市場的注意事項見 MARKET_DATA_CATALOG.md。
+目錄與每個市場的注意事項見 stock_research/MARKET_DATA_CATALOG.md。
 - 港日美在 Release `fullmarket-data`（vcp_fullmarket.yml 更新）；台韓澳加印新在 Release `oos-data`（oos_fullmarket.yml 更新）
 - tar 裡沒有品質排除檔 → 下載後自動跑 `qc_full_market.py --no-network`（結構檢查，不用外網；結果與原版逐字相同），
   報告寫到暫存資料夾，不會改動倉庫裡已 commit 的品質報告

@@ -1,5 +1,5 @@
 """VCP（波動收縮形態）偵測——回測（vcp_backtest.py）與每日篩選（scripts/daily_topdown.py）共用同一套。
-定義與參數見 VCP_BACKTEST.md 第一部分（預先登記，寫死）。
+定義與參數見 stock_research/VCP_BACKTEST.md 第一部分（預先登記，寫死）。
 
 analyze(high, low, close, vol, alow, t) 只看 t 之前的底部 + t 當天的突破；價格形態用原始價
 （按拆股還原、不按股息），alow 是還原最低價（給停損位用）。回傳 dict（形態資料）或 None（形態不成立）。
@@ -8,7 +8,7 @@ r、D 兩個鄰域參數不在這裡判，交給 passes()，所以一次偵測�
 import numpy as np
 import pandas as pd
 
-ZIGZAG = 0.03          # v1 擺動點：反向走 ≥ 3%（三地樣本不足，見 VCP_BACKTEST.md 第一部分之二）
+ZIGZAG = 0.03          # v1 擺動點：反向走 ≥ 3%（三地樣本不足，見 stock_research/VCP_BACKTEST.md 第一部分之二）
 FRACTAL_N = 5          # v2 擺動點：前後各 N 日內的最高價（碎形高點）
 BASE_LOOKBACK = 252    # H₀ = t 之前 252 日最高價
 MIN_BASE_DAYS = 15     # 底部 ≥ 3 週

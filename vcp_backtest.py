@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VCP 回測（預先登記見 VCP_BACKTEST.md，跑數前已 commit）。組合、成本、統計沿用 newhigh_backtest.MarketData。
+"""VCP 回測（預先登記見 stock_research/VCP_BACKTEST.md，跑數前已 commit）。組合、成本、統計沿用 newhigh_backtest.MarketData。
 
     python3 vcp_backtest.py --market hk --random 200
 """
@@ -20,7 +20,7 @@ import vcp  # noqa: E402
 GRID = [(r, D) for r in (0.7, 0.8, 0.9) for D in (0.08, 0.10, 0.15)]
 DEFAULT = (0.8, 0.10)
 FULL_TOP_N = {"hk": 500, "jp": 1000, "us": 1500,          # 全市場宇宙：每日 60 日成交額中位數前 N
-              "tw": 500, "kr": 700, "au": 500,           # 樣本外驗證新市場（OOS_VALIDATION.md）
+              "tw": 500, "kr": 700, "au": 500,           # 樣本外驗證新市場（stock_research/OOS_VALIDATION.md）
               "ca": 400, "in": 700, "sg": 200}
 FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010,   # 全市場成本（每邊）
              "tw": 0.0030, "kr": 0.0015, "au": 0.0010, "ca": 0.0010, "in": 0.0020, "sg": 0.0020}
@@ -29,7 +29,7 @@ FULL_COST = {"hk": 0.0025, "jp": 0.0015, "us": 0.0010,   # 全市場成本（每
 class VCPData:
     def __init__(self, market: str, version: int = 2, n: int = vcp.FRACTAL_N, full: bool = False,
                  exclude: set | None = None, repair_hl: bool = False, scan: bool = True):
-        if full:     # 全市場版（VCP_FULLMARKET_BACKTEST.md）：成交額前 N、成本加大
+        if full:     # 全市場版（stock_research/VCP_FULLMARKET_BACKTEST.md）：成交額前 N、成本加大
             pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
                 encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
             self.m = m = nb.MarketData(market, pool=pool, loader=nb.load_full(market, repair_hl), top_n=FULL_TOP_N[market],

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""相場師朗「PPP 中的下半身」全市場回測（預先登記：AIBA_PPP_BACKTEST.md，寫程式前已 commit；三地只測一次）。
+"""相場師朗「PPP 中的下半身」全市場回測（預先登記：stock_research/AIBA_PPP_BACKTEST.md，寫程式前已 commit；三地只測一次）。
 
     python3 aiba_ppp.py --market hk --trades-only        # 只寫預設格逐筆明細（給 verify_trades 抽樣核對，不印績效）
     python3 aiba_ppp.py --market hk --random 200         # 正式一次：鄰域 9 格 + 隨機對照
