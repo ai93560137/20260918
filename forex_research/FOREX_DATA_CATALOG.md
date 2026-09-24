@@ -1,7 +1,7 @@
 # 外匯數據目錄（FOREX_DATA_CATALOG.md）
 
 **26 個商品（七大主要貨幣對、12 個交叉盤、澳紐加交叉、3 個亞洲貨幣、金銀現貨）的 M1／H1／D1 歷史**，2026-09 為外匯策略測試建立。
-兩個來源分工：**M1 來自 HistData**（histdata.com 免費 M1，2000／2003 年起，美東標準時間已轉 UTC，沒有成交量）；
+兩個來源分工：**M1 來自 HistData**（histdata.com 免費 M1，2000／2003 年起，紐約當地時間已轉 UTC，沒有成交量，壞 tick 已丟）；
 **D1／H1 買賣價與近期 M1 來自 Dukascopy**（瑞士銀行，2003 起，UTC；賣價供算點差）。兩者互相核對（品質報告 5b 節）。
 第二來源 Yahoo 日線與 FRED（聯儲 H.10 紐約中午匯率）。**數據不進 git**，存 GitHub Release `forex-data`（整個倉庫共用）。
 
@@ -51,7 +51,11 @@ data_forex/<PAIR>/
   _done.json / _status.txt    # 已完成的年／月（續抓用）、狀態
 ```
 - 欄位 `Time,Open,High,Low,Close[,Volume]`；`Time` 為 `YYYY-MM-DD HH:MM:SS` **UTC**（沒有券商時差；`backtest.py` 載入器直接讀，`--broker-offset 0`）
-- HistData 原檔是美東標準時間（UTC−5，**全年不用夏令**），已加 5 小時轉 UTC；品質報告 5b 節用 Dukascopy H1 核對時差（試 −1／0／+1 小時）
+- HistData 原檔時間：網站寫「EST 無夏令」，**實測是紐約當地時間（含夏令）**——每週開盤全年都在當地 17:00，按 America/New_York 轉 UTC 後
+  與 Dukascopy 小時收市差中位 0.003%、95.6% 在 0.05% 內（固定 +5 小時只有 64%）；品質報告 5b 節持續核對（試 −1／0／+1 小時，最佳應為 0）
+- HistData 壞 tick：2004 年有 +100%／−50% 的單根尖刺，抓取時丟掉「開高低收相對前後 7 根收市中位數偏離 > 5%」的 K 線
+  （EURJPY 全期只丟 5 根、保留英國脫歐 2016-06-24 的 2.4% 真實一分鐘波動），丟掉的記在 `_dropped_m1.txt`
+- HistData 2023 年 2–7 月每月只有 2–2.5 萬根（其他月 3 萬多），是來源本身稀疏，不是缺檔
 - `Volume` 只有 Dukascopy 檔有（它自己的成交量單位，只作相對比較）；HistData 檔一律沒有這欄，回測引擎不用成交量所以無影響
 - 一個商品的 M1 全期 = HistData 年檔 + Dukascopy 近期檔：`python3 scripts/get_forex_data.py --pair EURUSD --merge-m1 <輸出.csv>` 會自動合併（HistData 優先）
 - Dukascopy 週六沒有數據、週日 21:00／22:00 UTC 開始；每根 K 線的時間是開盤時間

@@ -35,7 +35,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 - 手動觸發：Actions → Forex data → group（majors／jpy／eur／other／metals／all）
 - 踩過的坑（2026-09-24）：Dukascopy 對 Actions 的 IP 限流很兇（M1 每日一檔 15 萬個請求的抓法放棄，M1 改 HistData）；
   Dukascopy 原檔的週末／假期／上市前是平價零量的填充 K 線（已過濾）；Dukascopy 沒有當年 D1／當月 H1 檔（改聚合）；
-  進行中的 Actions job 讀不到日誌，要等它結束
+  進行中的 Actions job 讀不到日誌，要等它結束；HistData 網站說時間是 EST 無夏令，實測是紐約當地時間含夏令（交叉核對抓出來的）
 
 ## 4. 外匯測試的常設規矩（沿用股票研究那套）
 

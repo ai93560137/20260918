@@ -144,8 +144,7 @@ def qc_pair(pair: str, decimals: int) -> dict:
         agg = m1.groupby(m1.index.normalize()).agg(Open=("Open", "first"), High=("High", "max"),
                                                     Low=("Low", "min"), Close=("Close", "last"))
         j = agg.join(d1, how="inner", lsuffix="_m", rsuffix="_d")
-        tol = pip / 2
-        res["d1_vs_m1"] = {"days": int(len(j))} | {k: round(float((abs(j[f"{k}_m"] - j[f"{k}_d"]) <= tol).mean() * 100), 1)
+        res["d1_vs_m1"] = {"days": int(len(j))} | {k: round(float((abs(j[f"{k}_m"] / j[f"{k}_d"] - 1) <= 0.0005).mean() * 100), 1)
                                                   for k in ("Open", "High", "Low", "Close")} if len(j) else {"days": 0}
 
     # 點差（H1 ask − bid 收市，pips）
@@ -243,14 +242,14 @@ def render(r: dict) -> str:
         L += [f"- {a} → {b}（{n} 小時）" for a, b, n in g["longest"]]
     if "d1_vs_m1" in r:
         v = r["d1_vs_m1"]
-        L += ["", f"## 5. M1 按 UTC 日聚合 vs Dukascopy D1（{v['days']} 天，容差半 pip）", ""]
+        L += ["", f"## 5. M1（HistData）按 UTC 日聚合 vs Dukascopy D1（{v['days']} 天，容差 0.05%）", ""]
         if v["days"]:
             L.append(f"- 開 {v['Open']}%、高 {v['High']}%、低 {v['Low']}%、收 {v['Close']}% 吻合")
     if "hd_vs_duka" in r:
         v = r["hd_vs_duka"]
         L += ["", f"## 5b. HistData M1 聚合 vs Dukascopy H1 收市（{v['hours']:,} 小時）", "",
               f"- 絕對差中位 {v['median_abs_pct']}%、99 百分位 {v['p99_abs_pct']}%、{v['within_0.05pct']}% 小時在 0.05% 內；"
-              f"時差試 −1／0／+1 小時最佳為 {v['best_shift_h']:+d}（0 = HistData 美東標準時間 +5 小時轉 UTC 正確）",
+              f"時差試 −1／0／+1 小時最佳為 {v['best_shift_h']:+d}（0 = HistData 紐約當地時間含夏令轉 UTC 正確）",
               "- 逐年中位差%：" + "、".join(f"{k} {x}" for k, x in v["by_year"].items()),
               "- 最大：" + "、".join(f"{t} {x}%" for t, x in v["worst"])]
     if "spread" in r:
@@ -296,9 +295,9 @@ def summary() -> None:
                  f"{r.get('spikes', {}).get('count', '—')} | {v.get('Close', '—')} | {r.get('hd_vs_duka', {}).get('median_abs_pct', '—')} | {s.get('median_3y', '—')} | "
                  f"{s.get('range_over_spread_3y', '—')} | {r.get('yahoo', {}).get('median_abs_pct', '—')} | "
                  f"{r.get('fred', {}).get('median_abs_pct', '—')} | {r.get('yahoo', {}).get('over_0.5pct', '—')} |")
-    L += ["", "- M1 = HistData 年檔（美東標準時間已轉 UTC，沒有成交量）+ Dukascopy 近期檔；HistData vs Duka H1 = HistData M1 按 UTC 小時取收市 vs Dukascopy H1 收市的絕對差中位（兩個獨立來源互相核對）",
+    L += ["", "- M1 = HistData 年檔（紐約當地時間含夏令已轉 UTC，沒有成交量，壞 tick 已丟）+ Dukascopy 近期檔；HistData vs Duka H1 = HistData M1 按 UTC 小時取收市 vs Dukascopy H1 收市的絕對差中位（兩個獨立來源互相核對）",
           "- 缺口小時% = 平日（週一 00:00 → 週五 21:00 UTC）沒有任何 M1 的小時比例（含假期，不代表數據錯）",
-          "- D1 收吻合% = M1 按 UTC 日聚合的收市 vs Dukascopy D1 收市在半 pip 內的比例（低 → D1 的日界不是 UTC，回測日線請自己從 M1 聚合）",
+          "- D1 收吻合% = HistData M1 按 UTC 日聚合的收市 vs Dukascopy D1 收市在 0.05% 內的比例（兩個來源；低 → 時區或日界有問題）",
           "- 波幅÷點差 = 近 3 年日均高低差中位 ÷ H1 點差中位（手冊鐵律 2 的入場券：> 80 倍；CFD 實際點差通常比 Dukascopy 寬，要按自己券商換算）",
           "- Yahoo／FRED 差 = 收市（或紐約中午）價與 Dukascopy 對應時點的絕對百分比差中位；Yahoo 日界與 Dukascopy 不同，0.1–0.3% 屬正常，只看 > 2% 的離群天", ""]
     SUMMARY.parent.mkdir(parents=True, exist_ok=True)

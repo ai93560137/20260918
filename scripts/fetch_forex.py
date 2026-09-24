@@ -7,7 +7,8 @@
 
 兩個來源分工（Dukascopy 對 GitHub Actions 的 IP 限流很兇，M1 每日一檔的抓法行不通）：
 - **HistData**（histdata.com，免費 M1，每年／每月一個 zip，一個商品約 35 個請求）→ M1 主來源：
-  <PAIR>_M1_<YYYY>.csv.gz（欄位 Time,Open,High,Low,Close；**沒有成交量**；原檔是美東標準時間 UTC−5 無夏令，已轉 UTC）
+  <PAIR>_M1_<YYYY>.csv.gz（欄位 Time,Open,High,Low,Close；**沒有成交量**；原檔是**紐約當地時間（含夏令）**——網站寫「EST 無夏令」
+  但實測每週開盤全年都在當地 17:00、對 Dukascopy 的差只有按 America/New_York 轉才最小——已轉 UTC；相對 7 根中位數偏離 > 5% 的壞 tick 已丟）
   當年只有已完成的月份（HistData 月初幾天後才放上月）；USDCNH HistData 沒有
 - **Dukascopy**（瑞士銀行，2003 起，UTC）→ 往年 D1 每年一檔、每個已完成月份的 H1 每月一檔（買價 bid 與賣價 ask，算點差用），
   以及**近 62 天／HistData 之後**的 M1（bid + ask，每日一檔）：<PAIR>_M1_recent.csv.gz、<PAIR>_M1_recent_ask.csv.gz
@@ -37,6 +38,7 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -44,6 +46,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT_ROOT = ROOT / "data_forex"
 BASE = "https://datafeed.dukascopy.com/datafeed"
 HD_BASE = "https://www.histdata.com"
+HD_TZ = "America/New_York"                # HistData 原檔時區（實測含夏令）；改動這裡會讓舊檔全部重抓
+NY = ZoneInfo(HD_TZ)
+SPIKE_PCT = 5.0                           # M1 開高低收相對前後 7 根收市中位數偏離超過此 % → 壞 tick，丟掉
 FIRST_YEAR = 2000
 RECENT_DAYS = 62                          # Dukascopy 近期 M1 最多回抓幾天（HistData 上月檔通常月初幾天後才有）
 HEADER = "Time,Open,High,Low,Close,Volume\n"
@@ -212,7 +217,7 @@ class HistData:
 
 
 def parse_histdata_zip(data: bytes) -> list[tuple]:
-    """DAT_ASCII_<PAIR>_M1_<期間>.csv：'YYYYMMDD HHMMSS;開;高;低;收;量'，美東標準時間（UTC−5 無夏令）→ UTC。"""
+    """DAT_ASCII_<PAIR>_M1_<期間>.csv：'YYYYMMDD HHMMSS;開;高;低;收;量'，紐約當地時間（含夏令）→ UTC。"""
     out = []
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         for name in zf.namelist():
@@ -223,11 +228,26 @@ def parse_histdata_zip(data: bytes) -> list[tuple]:
                 if len(f) < 5:
                     continue
                 try:
-                    ts = datetime.strptime(f[0], "%Y%m%d %H%M%S") + timedelta(hours=5)
+                    ts = datetime.strptime(f[0], "%Y%m%d %H%M%S").replace(tzinfo=NY).astimezone(timezone.utc)
                     out.append((ts.strftime("%Y-%m-%d %H:%M:%S"), float(f[1]), float(f[2]), float(f[3]), float(f[4])))
                 except ValueError:
                     continue
     return out
+
+
+def despike(rows: list[tuple], pct: float = SPIKE_PCT) -> tuple[list[tuple], list[tuple]]:
+    """丟掉開高低收任一相對前後 7 根收市中位數偏離 > pct% 的 K 線（HistData 2004 有 +100%／−50% 的壞 tick）；回傳（保留, 丟掉）。"""
+    if len(rows) < 7:
+        return rows, []
+    import numpy as np
+    import pandas as pd
+    rows = sorted(rows)
+    c = pd.Series([r[4] for r in rows], dtype=float)
+    med = c.rolling(7, center=True, min_periods=3).median().to_numpy()
+    arr = np.array([r[1:5] for r in rows], dtype=float)
+    dev = np.nanmax(np.abs(arr / med[:, None] - 1), axis=1) * 100
+    bad = dev > pct
+    return [r for r, b in zip(rows, bad) if not b], [r for r, b in zip(rows, bad) if b]
 
 
 # ---------------------------------------------------------------- 檔案
@@ -325,6 +345,12 @@ def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: 
     done = json.loads(done_p.read_text()) if done_p.exists() else {}
     for k in ("d1_years", "d1_years_ask", "h1_months", "h1_months_ask", "hd_years", "hd_months"):
         done.setdefault(k, [])
+    if done.get("hd_tz") != HD_TZ:                    # 時區規則改了 → HistData 檔全部重抓（很快，每商品約 35 個 zip）
+        for p in out.glob(f"{pair}_M1_*.csv.gz"):
+            if re.fullmatch(rf"{pair}_M1_\d{{4}}\.csv\.gz", p.name):
+                p.unlink()
+        done["hd_years"], done["hd_months"], done["hd_tz"] = [], [], HD_TZ
+        log(f"  {pair}：HistData 時區規則 {HD_TZ}，舊年檔已刪除重抓")
     today = datetime.now(timezone.utc).date()
     cutoff = today.strftime("%Y-%m-%d")               # 只保留 < 今天 00:00 UTC 的 K 線
     this_year = today.year
@@ -399,12 +425,22 @@ def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: 
                 complete = False
                 break
             p = out / f"{pair}_M1_{y}.csv.gz"
+            dropped_p = out / "_dropped_m1.txt"
+
+            def keep(rows: list[tuple], tag: str) -> list[tuple]:
+                rows, bad = despike(rows)
+                if bad:
+                    with dropped_p.open("a", encoding="utf-8") as f:
+                        f.write("".join(f"{tag},{r[0]},{r[1]},{r[2]},{r[3]},{r[4]}\n" for r in bad))
+                    log(f"  {pair} HistData {tag}：丟掉 {len(bad)} 根壞 tick（相對 7 根中位數偏離 > {SPIKE_PCT:g}%），例：{bad[0]}")
+                return rows
             try:
                 if y < this_year:
                     rows = hd.download(pair, y)
                     if rows is None:
                         log(f"  {pair} HistData {y}：沒有（起點之前）")
                     else:
+                        rows = keep(rows, str(y))
                         n = merge_write(p, rows, decimals, cutoff)
                         log(f"  {pair} HistData {y}：{len(rows)} 根，共 {n}")
                     done["hd_years"].append(y)
@@ -417,6 +453,7 @@ def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: 
                         if rows is None:
                             log(f"  {pair} HistData {tag}：還沒有")
                             break
+                        rows = keep(rows, tag)
                         n = merge_write(p, rows, decimals, cutoff)
                         done["hd_months"].append(tag)
                         log(f"  {pair} HistData {tag}：{len(rows)} 根，本年共 {n}")
@@ -535,13 +572,21 @@ def selftest() -> None:
     txt = fmt(rows, 3)
     assert txt.splitlines()[0] == "2024-01-02 00:00:00,108.000,108.100,107.950,108.050,1.5", txt
     assert is_padding("2024-01-02 00:03:00,108.100,108.100,108.100,108.100,0\n") and not is_padding(txt.splitlines()[0])
-    # HistData zip：美東標準時間 → UTC（+5 小時）、5 欄、平價零量不算填充
+    # HistData zip：紐約當地時間 → UTC（冬令 +5、夏令 +4 小時）、5 欄、平價零量不算填充
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
         zf.writestr("DAT_ASCII_EURUSD_M1_2024.csv", "20240101 170000;1.10390;1.10400;1.10380;1.10390;0\n"
-                                                    "20240101 170100;1.10390;1.10390;1.10390;1.10390;0\n")
+                                                    "20240101 170100;1.10390;1.10390;1.10390;1.10390;0\n"
+                                                    "20240701 170000;1.07000;1.07010;1.06990;1.07000;0\n")
     hd = parse_histdata_zip(buf.getvalue())
-    assert hd[0] == ("2024-01-01 22:00:00", 1.1039, 1.104, 1.1038, 1.1039) and len(hd) == 2, hd
+    assert hd[0] == ("2024-01-01 22:00:00", 1.1039, 1.104, 1.1038, 1.1039) and len(hd) == 3, hd
+    assert hd[2][0] == "2024-07-01 21:00:00", hd[2]
+    hd = hd[:2]
+    # 去尖刺：一根 +100% 的壞 tick 要丟、其餘保留
+    base_rows = [(f"2024-01-02 00:{i:02d}:00", 1.1, 1.1005, 1.0995, 1.1) for i in range(9)]
+    spiky = base_rows[:4] + [("2024-01-02 00:04:00", 1.1, 2.2, 1.1, 2.2)] + base_rows[5:]
+    ok, bad = despike(spiky)
+    assert len(ok) == 8 and len(bad) == 1 and bad[0][0] == "2024-01-02 00:04:00", (len(ok), bad)
     hd_txt = fmt(hd, 5)
     assert hd_txt.splitlines()[1] == "2024-01-01 22:01:00,1.10390,1.10390,1.10390,1.10390" and not is_padding(hd_txt.splitlines()[1])
     with tempfile.TemporaryDirectory() as td:
@@ -569,7 +614,7 @@ def selftest() -> None:
             f.write(HEADER + txt + hd_txt)
         bars = load_bars(f.name, 0)
         assert len(bars) == 6 and bars[0]["close"] == 1.1039 and bars[-1]["close"] == 108.1, bars
-    print("selftest OK：bi5 解碼、填充過濾、HistData zip、CSV 格式、合併去重、舊檔清理、聚合、backtest.load_bars 相容")
+    print("selftest OK：bi5 解碼、填充過濾、HistData zip（紐約時間含夏令）、去尖刺、CSV 格式、合併去重、舊檔清理、聚合、backtest.load_bars 相容")
 
 
 def main() -> None:
