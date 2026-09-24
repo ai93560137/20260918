@@ -68,6 +68,7 @@
 | ☠️（美：真實 CBOE 指數）☠️（港：模型）| **股票期權 + 正股**：備兌（BXM 型平值 call）、現金擔保賣 put（PUT 型）、保護 put（PPUT 型 95%）、領口（CLL 型 95/110）、輪動（the wheel）；每月一期、指數層面（SPY／2800）| 預先登記、兩地各跑一次：模型對照 CBOE 五個真實指數**不過**（相關 0.90–0.99 但期權一律偏便宜 1.6–4%/年）→ 美股改用真實指數判：BXM alpha t −0.88、PUT −0.32、PPUT −0.86（夏普比 SPY 低 0.10）、CLL −0.05（夏普低 0.15）；回撤少 20–35% 但夏普全部低於持有，贏 SPY 的年份只有 4–7 年。港股模型 alpha t −0.46～−0.93，k 調 0.1 仍 < 1.0；保護 put 不確定；輪動美股無真實指數、不確定。**波動溢價是真的（雲垂 t 11.7），但疊在正股上收不到**——放棄的上漲蓋過權利金。見 OPTIONS_EQUITY_BACKTEST.md（分支 `claude/market-data-tools-ready-6l5djr`）|
 | ☠️（今天的價格）| **個股備兌／輪動**（S&P 500、恒指 PIT 成分股；每月賣平值／5% 價外 call 或輪動）——損益平衡分析 | 個股無 IV 歷史 → 問「IV ÷ RV63（ρ）要多高才贏同股持有」：美股 ρ₀ ≈ 1.00、顯著贏要 1.1；港股 ρ₀ ≈ 1.04、要 1.2（成本較高）。2026-09-23 真實報價：美股 428 檔 ρ 中位 **0.95**、港股 72 檔 **0.93**，都低於損益平衡；高 ρ 的多是業績前。一天快照 → 只能前向每月記錄 ρ 再議。見 OPTIONS_EQUITY_BACKTEST.md 第四、五部分 |
 | 不確定（限價單更好）| **short put 接貨 vs 直接買 vs 限價買**（事件 = 第一次上 12 個月新高名單；賣 1 個月 3% 價外 put，到期收市低於行使價接貨；持有 6 個月）| 按月平均：美股賣 put 比直接買 +0.41%（t 3.04），但**比同價限價單差 −0.16%（t −2.31）**；港股 +0.17%（t 0.57）、比限價單差 −0.32%（t −2.12）；逐事件平均賣 put 兩地都輸直接買。限價單成交率 59–70% vs put 接貨率 27–36%：回調後反彈時 put 接不到。隨機股票同樣是限價單贏。ρ 要 ≥ 1.0（美）／1.05（港）賣 put 才贏限價單，今天 0.95／0.93。見 OPTIONS_EQUITY_BACKTEST.md 第六、七部分 |
+| ☠️ | **全部成分股每月賣 5% 價外 put、接貨後永遠持有**（S&P 500、恒指 PIT；年度批次 vs 同批股票買入持有）| 美股 30 批：1 年 −1.88%（t −2.24）、5 年中位 −2.7%、10 年 −3.0%；港股 15 批：1 年 −2.15%、5 年 −0.6%、10 年 −2.6%。一年內約九成、三年內全部接貨——沒有「錯過大贏家」，代價是接貨前錯過的升幅，接貨時鎖定、之後追不回。回撤只小約 1 個百分點、夏普一樣。ρ 要 ≈ 1.1–1.15 才打平，今天 0.95／0.93。見 OPTIONS_EQUITY_BACKTEST.md 第八、九部分 |
 
 ## 三、股票市場研究的特別守則
 
@@ -153,7 +154,7 @@
 | `sector_momentum_backtest.py` | 行業動量回測引擎（多市場，`--grid` 3x3 鄰域、`--permutation` 隨機行業對照、`--attribution` Brinson 行業歸因）|
 | `SECTOR_ROTATION.md` | 行業動量預先登記與各市場結果、既有 alpha 的行業歸因 |
 | `scripts/check_data_quality.py` → `data/equities/hk/QC_REPORT.md` | **每日數據品質日報**（排程自動跑，🔴 即時 Telegram 警報、每交易日收市推日報；研究 session 任意推送用 `.github/tg_outbox_research.txt`，勿用八陣圖的 `tg_outbox.txt`）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |
-| `options_equity.py`、`options_assign.py`（short put 接貨 vs 直接買 vs 限價買，新高名單事件 + 隨機對照）、`options_stock.py`（個股 ρ 損益平衡 + `--live` 今天的真實 ρ；`fetch_stock_option_iv.yml` 抓美股期權鏈與港交所股票期權日報）+ `scripts/{calib_option_chains,fetch_options_equity_data}.py` → `research/options_equity/`、`data/options_equity/` | **期權 + 正股回測引擎**（BS + 波動率指數 × k + 兩邊偏斜，成本 = 波動點 × vega；CC／CSP／PP／COL／WHL；CAPM alpha、分段、危機月）；CBOE BXM／BXY／PUT／PPUT／CLL 真實指數、^IRX、VIX、VHSI 由 `fetch_options_equity.yml` 抓。**教訓：單一政權快照校準的 k 不能代表歷史——先過真實指數對照再信模型** |
+| `options_equity.py`、`options_putwrite_hold.py`（全部成分股賣 put 接貨後持有，年度批次）、`options_assign.py`（short put 接貨 vs 直接買 vs 限價買，新高名單事件 + 隨機對照）、`options_stock.py`（個股 ρ 損益平衡 + `--live` 今天的真實 ρ；`fetch_stock_option_iv.yml` 抓美股期權鏈與港交所股票期權日報）+ `scripts/{calib_option_chains,fetch_options_equity_data}.py` → `research/options_equity/`、`data/options_equity/` | **期權 + 正股回測引擎**（BS + 波動率指數 × k + 兩邊偏斜，成本 = 波動點 × vega；CC／CSP／PP／COL／WHL；CAPM alpha、分段、危機月）；CBOE BXM／BXY／PUT／PPUT／CLL 真實指數、^IRX、VIX、VHSI 由 `fetch_options_equity.yml` 抓。**教訓：單一政權快照校準的 k 不能代表歷史——先過真實指數對照再信模型** |
 
 ## 五、陣名典故與命名規範（其他分支沿用）
 
