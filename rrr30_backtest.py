@@ -34,11 +34,56 @@ DEFAULT = (0.03, 0.20)
 TARGET_R = 30
 OUT = ROOT / "research" / "rrr30"
 DISC = ROOT / "research" / "discipline"
+# 第二輪「純兩極出場」（RRR30_BACKTEST.md 第三部分）：--bimodal → 拿掉 200 日線；3% 止損唯一出場直到 30R；時間止損（格 2 = 交易日數）
+BIMODAL = False
+TRAIL = 0.20
+GRID_B = [(stop, cap) for stop in (0.02, 0.03, 0.04) for cap in (252, 504, 756)]
+DEFAULT_B = (0.03, 504)
+OUT_B = ROOT / "research" / "rrr30_bimodal"
 SAMPLE_N, SAMPLE_MAX_SUSPECT = 300, 0.05
 
 
-def key(stop: float, trail: float) -> str:
-    return f"止損{stop:.0%} 追蹤{trail:.0%}"
+def key(stop: float, p2) -> str:
+    return f"止損{stop:.0%} 時間{p2}日" if BIMODAL else f"止損{stop:.0%} 追蹤{p2:.0%}"
+
+
+def sim_bimodal(rw: dict, p: int, fill: float, stop_pct: float, trail: float, target_mult: float, cap: int) -> tuple[int, float, bool, bool]:
+    """純兩極出場：到達目標前唯一出場是硬止損；到達後 收市 < 峰值 × (1 − trail) → 下一日開市出；
+    第 cap 個交易日仍未到達目標 → 當日收市出（到達過的不受時間止損限制）。"""
+    low, close, opn = rw["low"], rw["close"], rw["open"]
+    n = len(close)
+    stop0 = fill * (1 - stop_pct)
+    if low[p] <= stop0:
+        return p, stop0, False, False
+    c, lo, o = close[p:], low[p:], opn[p:]
+    L = n - p
+    o = np.where((o == o) & (o > 0), o, c)
+    idx = np.arange(L)
+    hit = np.nonzero((lo <= stop0) & (idx > 0))[0]
+    stop_i = int(hit[0]) if len(hit) else L
+    rc = np.nonzero(c >= fill * target_mult)[0]
+    reached_i = int(rc[0]) if len(rc) else L
+    trail_i = L
+    if reached_i < L:
+        peak = np.maximum.accumulate(c)
+        th = np.nonzero((idx >= reached_i) & (c < peak * (1 - trail)))[0]
+        trail_i = int(th[0]) + 1 if len(th) else L
+    ei = min(stop_i, trail_i, L - 1)
+    if reached_i > cap and ei > cap:                      # 時間止損
+        return p + cap, float(c[cap]), True, False
+    reached = reached_i < ei or (reached_i == ei == L - 1)
+    k = p + ei
+    if ei == trail_i:
+        return k, float(o[ei]), False, reached
+    if ei == stop_i:
+        return k, float(min(o[ei], stop0)), False, reached
+    return k, float(c[ei]), True, reached
+
+
+def simulate(rw: dict, p: int, fill: float, stop: float, p2) -> tuple[int, float, bool, bool]:
+    if BIMODAL:
+        return sim_bimodal(rw, p, fill, stop, TRAIL, 1 + TARGET_R * stop, p2)
+    return sim_gen(rw, p, fill, stop, "ma200", p2, 1 + TARGET_R * stop, None, None)
 
 
 def sim_gen(rw: dict, p: int, fill: float, stop_pct: float, ma_key: str, trail: float | None, target_mult: float | None,
@@ -128,7 +173,7 @@ class RRR30:
                 if p <= busy.get(s_i, -1):
                     continue
                 fill = max(o, pivot)
-                k, px, ac, rc = sim_gen(v.raw[s_i], p, fill, stop, "ma200", trail, 1 + TARGET_R * stop, None, None)
+                k, px, ac, rc = simulate(v.raw[s_i], p, fill, stop, trail)
                 busy[s_i] = k
                 out.append(self._trade(s_i, p, fill, k, px, ac, rc))
             else:   # 隨機對照：同日 t−1 通過趨勢模板、當天不是 VCP 突破的股票，t 開市買、同一套出場（同 Minervini 的隨機對照）
@@ -145,7 +190,7 @@ class RRR30:
                 o_r = v.raw[r]["open"][pr]
                 if not (o_r == o_r and o_r > 0):
                     continue
-                k, px, ac, rc = sim_gen(v.raw[r], pr, o_r, stop, "ma200", trail, 1 + TARGET_R * stop, None, None)
+                k, px, ac, rc = simulate(v.raw[r], pr, o_r, stop, trail)
                 out.append(self._trade(r, pr, o_r, k, px, ac, rc))
         return out
 
@@ -284,6 +329,10 @@ def pool_all() -> None:
     out["pooled"]["S0_pre"] = ob.tstat(ob.pooled([split_abn(mk, R[mk]["abn"]["S0"])[0] for mk in MARKETS]))
     out["pooled"]["S0_post"] = ob.tstat(ob.pooled([split_abn(mk, R[mk]["abn"]["S0"])[1] for mk in MARKETS]))
     out["diff"] = {"S0-M": ob.tstat(ob.pooled([diff_series(R[mk]["abn"]["S0"], M[mk]) for mk in MARKETS]))}
+    if BIMODAL:      # 並列第一輪 S0（200 日線出場）
+        R1 = {mk: json.loads((ROOT / "research" / "rrr30" / f"{mk}.json").read_text(encoding="utf-8"))["abn"]["S0"] for mk in MARKETS}
+        out["pooled"]["S0_round1"] = ob.tstat(ob.pooled([R1[mk] for mk in MARKETS]))
+        out["diff"]["S1-S0round1"] = ob.tstat(ob.pooled([diff_series(R[mk]["abn"]["S0"], R1[mk]) for mk in MARKETS]))
     for g, mks in GROUPS.items():
         out["groups"][g] = {"S0": pt("S0", mks), "M": ob.tstat(ob.pooled([M[mk] for mk in mks]))}
     for stop, trail in GRID:
@@ -348,7 +397,11 @@ def main() -> None:
     a.add_argument("--inspect", type=int, default=0)
     a.add_argument("--check-sim", action="store_true")
     a.add_argument("--pool", action="store_true")
+    a.add_argument("--bimodal", action="store_true", help="第二輪 純兩極出場（RRR30_BACKTEST.md 第三部分）")
     args = a.parse_args()
+    if args.bimodal:
+        global BIMODAL, GRID, DEFAULT, OUT
+        BIMODAL, GRID, DEFAULT, OUT = True, GRID_B, DEFAULT_B, OUT_B
     if args.pool:
         pool_all()
     elif args.market and args.check_sim:
