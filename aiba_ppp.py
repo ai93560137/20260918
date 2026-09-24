@@ -57,12 +57,14 @@ def features(df: pd.DataFrame) -> dict[str, pd.Series]:
 
 
 class AibaPPP:
-    def __init__(self, market: str, repair_hl: bool = False, exit_rule: str = "rev"):
+    def __init__(self, market: str, repair_hl: bool = False, exit_rule: str = "rev", m=None):
         self.exit_rule = exit_rule
-        pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
-            encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
-        self.m = m = nb.MarketData(market, pool=pool, loader=nb.load_full(market, repair_hl),
-                                   top_n=vb.FULL_TOP_N[market], cost=vb.FULL_COST[market])
+        if m is None:      # m：可傳入現成的全市場 MarketData（同宇宙、同成本），省得重建
+            pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{market}_pool.txt").read_text(
+                encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
+            m = nb.MarketData(market, pool=pool, loader=nb.load_full(market, repair_hl),
+                              top_n=vb.FULL_TOP_N[market], cost=vb.FULL_COST[market])
+        self.m = m
         S, D = m.adj.shape
         idx = pd.Index(m.cal)
         keys = [f"ppp{d}" for d in DEPTHS] + [f"kh{h}" for h in HALVES] + ["rev", "below60", "x5"]
@@ -72,6 +74,11 @@ class AibaPPP:
             df = df[(df["AdjClose"] > 0) & (df["Close"] > 0)]
             for k, ser in features(df).items():
                 self.mat[k][s] = ser.reindex(idx).fillna(False).to_numpy(dtype=bool)
+        self.set_exit(exit_rule)
+
+    def set_exit(self, exit_rule: str) -> None:
+        m, D = self.m, len(self.m.cal)
+        self.exit_rule = exit_rule
         m.exitc[RULE] = self.mat["x5"] if exit_rule == "ema5" else self.mat["rev"] | self.mat["below60"]
         ii = np.where(m.exitc[RULE], np.arange(D)[None, :], D)
         m.next_exit[RULE] = np.minimum.accumulate(ii[:, ::-1], axis=1)[:, ::-1]

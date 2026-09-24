@@ -32,8 +32,8 @@ MAX_HOLD = 252
 
 
 class Minervini:
-    def __init__(self, market: str, exclude: set | None = None):
-        self.v = v = vb.VCPData(market, full=True, exclude=exclude, scan=False)
+    def __init__(self, market: str, exclude: set | None = None, v=None):
+        self.v = v = v or vb.VCPData(market, full=True, exclude=exclude, scan=False)
         self.m = m = v.m
         self.ci = {d: j for j, d in enumerate(m.cal)}
         # 大市過濾：ETF 還原收市 > 50 日線 且 > 200 日線（用 m.etf_ret 重建水平）
