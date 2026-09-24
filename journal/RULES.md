@@ -88,3 +88,11 @@ date,instrument,target_pos,actual_pos,orders_ok,violation,notes
 - 近 20 筆平均滑價 ≤ 2 點：正常；
 - 3–5 點：黃燈，對帳時提醒；
 - **> 5 點：紅燈，暫停開新倉，觸發策略重審**（edge 可能已不存在）。
+
+## 前向測試每日盈虧(2026-09-24 起)
+
+- `journal/position.json`:當前持倉真值(pos/entry/realized/fees);用戶回報成交後由對帳工作階段更新。
+- `journal/update_forward.py`:16:45 排程自動執行,按收市報價(16:29 延遲中間價,方法論固定)
+  逐日結算,追加 `journal/forward_test.csv`(date, pos, entry, mark, open_pnl,
+  realized_cum, fees_cum, equity),並把摘要附進每日 Telegram。
+- 這是模擬盤→實盤驗證期的核心記錄:每日權益曲線 + 逐筆滑價(log.csv)= 假設檢驗的樣本外數據。

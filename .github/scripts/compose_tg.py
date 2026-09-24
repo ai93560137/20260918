@@ -91,6 +91,13 @@ if g.get('h1') is not None:
 🌐 黃金指令台:https://claude.ai/artifact/26ZLBsaqoMFKoAxsD7E1iw
 """
 
+try:
+    fl = open('journal/forward_line.txt', encoding='utf-8').read().strip()
+    if fl:
+        msg += '\n──────────────\n' + fl + '\n'
+except OSError:
+    pass
+
 with open(a.out, 'w', encoding='utf-8') as fp:
     fp.write(msg)
 print(msg)
