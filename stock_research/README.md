@@ -19,6 +19,7 @@
 | `OOS_VALIDATION.md` | 樣本外兩輪：台韓澳、加印新 |
 | `EXPECTANCY_REVIEW.md` | 期望值／RRR／總回報覆核（描述性） |
 | `DISCIPLINE_BACKTEST.md` | 「紀律本身」：剛進入趨勢模板＋大市過濾＋Minervini 出場（不看 VCP 形態），9 國一次的預先登記與結果 |
+| `DISCIPLINE_RULES.md` | 上述回測用到的全部規則一覽（宇宙、趨勢模板、大市過濾、出場紀律、六個組合、鄰域、合併檢定、門檻、程序規則、程式對應；不含結果） |
 
 ## 2. 程式與輸出（路徑不變）
 
