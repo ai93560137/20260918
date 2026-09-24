@@ -256,13 +256,22 @@ def gold_levels():
                 continue
             if d <= cutoff and 1500 < l < h < 6000:        # 嚴格 l<h 也擋掉壞行
                 rows.append((d, h, l))
-        log.append(f'{sym} daily: {len(rows)} valid rows, last={rows[-1] if rows else None}')
+        raw = ''
+        if len(df):
+            r0 = df.iloc[-1]
+            raw = f" raw_last={df.index[-1].date()} H={r0.get('High')} L={r0.get('Low')}"
+        log.append(f'{sym} daily: df={len(df)} rows, {len(rows)} valid{raw}')
         return rows[-3:]
 
-    rows, src = daily('XAUUSD=X'), 'Yahoo XAUUSD 現貨'
-    if len(rows) < 3:
-        log.append('XAUUSD=X 日線不足,退回 GC=F 期貨')
-        rows, src = daily('GC=F'), 'Yahoo GC=F(期貨,現貨源缺數據)'
+    rows, src = [], ''
+    for sym, label in (('XAUUSD=X', 'Yahoo XAUUSD 現貨'), ('XAU=X', 'Yahoo XAU 現貨'),
+                       ('GC=F', 'Yahoo GC=F(期貨,現貨源缺數據)')):
+        try:
+            rows, src = daily(sym), label
+        except Exception as e:
+            log.append(f'{sym} daily fail: {e}')
+        if len(rows) >= 3:
+            break
     if len(rows) < 3:
         raise RuntimeError(f'only {len(rows)} completed days')
     rows.reverse()
@@ -270,7 +279,8 @@ def gold_levels():
     for n, (d, h, l) in enumerate(rows, 1):
         out[f'h{n}'], out[f'l{n}'] = round(h, 1), round(l, 1)
     out['dates'] = [str(d) for d, _, _ in rows]
-    for sym, kind in (('XAUUSD=X', '現貨延遲'), ('GC=F', '期貨延遲(非現貨)')):
+    for sym, kind in (('XAUUSD=X', '現貨延遲'), ('XAU=X', '現貨延遲'),
+                      ('GC=F', '期貨延遲(非現貨)')):
         try:
             hh = yf.download(sym, period='1d', interval='1m', progress=False, auto_adjust=False)
             if hasattr(hh.columns, 'levels'):
