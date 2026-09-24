@@ -72,7 +72,16 @@ footer{font-size:11px; color:var(--muted); margin-top:22px; line-height:1.7;}
         -->
       </select></div>
     <div><label for="qty">每次下單手數</label><input id="qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
-    <div><label for="pos">目前實倉（+多 −空 0空手）</label><input id="pos" type="number" step="1" value="0" inputmode="numeric"></div>
+    <div><label for="pos">目前實倉（+多 −空 0空手）</label>
+      <select id="pos">
+        <option value="3">+3（多 3 張）</option>
+        <option value="2">+2（多 2 張）</option>
+        <option value="1">+1（多 1 張）</option>
+        <option value="0" selected>0（空手）</option>
+        <option value="-1">−1（空 1 張）</option>
+        <option value="-2">−2（空 2 張）</option>
+        <option value="-3">−3（空 3 張）</option>
+      </select></div>
   </div>
 </section>
 
@@ -127,6 +136,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       ids.forEach(function(k){ if(s[k] !== undefined && s[k] !== "") $(k).value = s[k]; });
     }catch(e){}
     if(!$("inst").value) $("inst").value = "hsi";   // 舊儲存值對應已下架選項時回退
+    if(!$("pos").value) $("pos").value = "0";       // 實倉改下拉後,舊儲存值不在選項時回退
   }
   function save(){
     try{
@@ -203,7 +213,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
     save();
   }
 
-  ids.forEach(function(k){ $(k).addEventListener("input", render); });
+  ids.forEach(function(k){ $(k).addEventListener("input", render); $(k).addEventListener("change", render); });
   load();
   try{
     var dd = JSON.parse(localStorage.getItem("bztDates") || "null");
