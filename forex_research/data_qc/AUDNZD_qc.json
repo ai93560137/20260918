@@ -1,5 +1,60 @@
 {
  "pair": "AUDNZD",
- "generated": "2026-09-24 16:32 UTC",
- "error": "沒有 D1"
+ "generated": "2026-09-24 17:08 UTC",
+ "first": "2000-01-03",
+ "last": "2025-12-31",
+ "d1_rows": 7774,
+ "h1_rows": 0,
+ "m1_rows": 0,
+ "m1_first": null,
+ "m1_last": null,
+ "m1_per_year": {},
+ "m1_days_per_year": {},
+ "struct": {
+  "D1": {
+   "rows": 7774,
+   "bad_high": 1,
+   "bad_low": 155,
+   "nonpositive": 0,
+   "zero_range_pct": 0.01
+  },
+  "H1": {
+   "rows": 0
+  },
+  "M1": {
+   "rows": 0,
+   "dup": 0
+  }
+ },
+ "yahoo": {
+  "days": 5746,
+  "first": "2003-12-01",
+  "last": "2025-12-31",
+  "median_abs_pct": 0.153,
+  "p99_abs_pct": 1.135,
+  "over_0.5pct": 673,
+  "over_2pct": 3,
+  "worst": [
+   [
+    "2016-04-27",
+    2.44
+   ],
+   [
+    "2017-10-19",
+    -2.13
+   ],
+   [
+    "2016-03-09",
+    -2.04
+   ],
+   [
+    "2015-06-10",
+    -1.97
+   ],
+   [
+    "2011-07-13",
+    1.92
+   ]
+  ]
+ }
 }
