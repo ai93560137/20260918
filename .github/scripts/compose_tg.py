@@ -54,8 +54,33 @@ msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
  ▶ 價 ≥ {f(up)} → 市價買入 2 張(平空＋反手做多)
 
 ⚠️ 成交以券商實時價為準
-🌐 指令台:https://claude.ai/artifact/Qovghgidoao32zWai3gffX
+🌐 恒指指令台:https://claude.ai/artifact/Qovghgidoao32zWai3gffX
 """
+
+g = d.get('mgc') or {}
+if g.get('h1') is not None:
+    gh = [g['h1'], g['h2'], g['h3']]
+    gl = [g['l1'], g['l2'], g['l3']]
+    gd = [s[5:] for s in g['dates']]
+    gup, gup_d = max(zip(gh, gd))
+    glo, glo_d = min(zip(gl, gd))
+    g1 = lambda v: f'{v:,.1f}'
+    gq = g.get('quote') or {}
+    gpx = gq.get('px')
+    gq_line = (f"💰 現價:{g1(gpx)}({gq.get('kind', '')} · {gq.get('asof', '')})\n"
+               f"↕️ 距上軌 {g1(gup - gpx)} · 距下軌 {g1(gpx - glo)}\n") if gpx else ''
+    msg += f"""
+──────────────
+🥇 黃金(微型金 MGC ／ ETF 只做多)
+
+📈 通道上軌:{g1(gup)}({gup_d})
+📉 通道下軌:{g1(glo)}({glo_d})
+{gq_line}
+🧭 MGC 多空雙向:空手 ①價 ≥ {g1(gup)} → 買 1 張;②價 ≤ {g1(glo)} → 賣 1 張;持倉觸反向軌 → 雙倍反手
+🧭 ETF 只做多:升破 {g1(gup)} → 買入;跌破 {g1(glo)} → 只平倉不做空
+🌐 黃金指令台:https://claude.ai/artifact/26ZLBsaqoMFKoAxsD7E1iw
+"""
+
 with open(a.out, 'w', encoding='utf-8') as fp:
     fp.write(msg)
 print(msg)
