@@ -8,6 +8,7 @@
 
 | 文件 | 內容 |
 |---|---|
+| `NEW_SESSION_PROMPT.md` | **新 session 開場指示**（整段複製貼上即可接手） |
 | `STOCK_RESEARCH_HANDOFF.md` | **交接總結**：一句話結論、Minervini 狀態、方法論教訓、下一步選項（新 session 先讀） |
 | `VERDICTS.md` | 全部判決、策略 × 市場矩陣、多重測試帳本 |
 | `MARKET_DATA_CATALOG.md` | 9 個市場數據目錄、注意事項、一鍵下載 |
