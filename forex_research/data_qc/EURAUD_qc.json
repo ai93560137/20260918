@@ -1,5 +1,65 @@
 {
  "pair": "EURAUD",
- "generated": "2026-09-24 18:25 UTC",
- "error": "沒有 D1"
+ "generated": "2026-09-24 21:23 UTC",
+ "first": "2000-01-03",
+ "last": "2025-12-31",
+ "d1_rows": 7820,
+ "h1_rows": 0,
+ "m1_rows": 0,
+ "m1_first": null,
+ "m1_last": null,
+ "m1_per_year": {},
+ "m1_recent": {
+  "rows": 0,
+  "first": null,
+  "last": null
+ },
+ "m1_days_per_year": {},
+ "struct": {
+  "D1": {
+   "rows": 7820,
+   "bad_high": 3,
+   "bad_low": 45,
+   "nonpositive": 0,
+   "zero_range_pct": 0.01
+  },
+  "H1": {
+   "rows": 0
+  },
+  "M1": {
+   "rows": 0,
+   "dup": 0
+  }
+ },
+ "yahoo": {
+  "days": 5745,
+  "first": "2003-12-01",
+  "last": "2025-12-31",
+  "median_abs_pct": 0.199,
+  "p99_abs_pct": 1.56,
+  "over_0.5pct": 1245,
+  "over_2pct": 20,
+  "worst": [
+   [
+    "2025-04-04",
+    -3.67
+   ],
+   [
+    "2025-04-09",
+    3.27
+   ],
+   [
+    "2015-08-24",
+    -2.9
+   ],
+   [
+    "2020-03-18",
+    -2.7
+   ],
+   [
+    "2011-05-06",
+    2.56
+   ]
+  ]
+ }
 }
