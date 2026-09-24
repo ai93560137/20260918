@@ -236,9 +236,14 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
         if(!snap || !snap.exists) { info("☁️ 此商品尚無雲端數據（每日 12:00／16:45 HKT 更新）"); return; }
         var d = snap.data();
         if(!d || d.h1 == null) { info("☁️ 此商品尚無雲端數據（每日 12:00／16:45 HKT 更新）"); cloudQuote = null; render(); return; }
-        cloudQuote = d.quote || null;
-        info('☁️ 已自動套用雲端數據 · ' + (d.source || '') + ' · ' + (d.asof || ''));
-        ["h1","l1","h2","l2","h3","l3"].forEach(function(k){ $(k).value = d[k]; });
+        // MGC 掛期貨單 → 用期貨口徑（fut）；ETF 跟現貨 → 用主欄位（現貨口徑）
+        var use = d, gauge = "現貨口徑";
+        if(inst === "mgc" && d.fut && d.fut.h1 != null){
+          use = d.fut; gauge = "期貨口徑（MGC 掛單價）";
+        }
+        cloudQuote = use.quote || d.quote || null;
+        info('☁️ 已自動套用雲端數據 · ' + gauge + ' · ' + (d.source || '') + ' · ' + (d.asof || ''));
+        ["h1","l1","h2","l2","h3","l3"].forEach(function(k){ $(k).value = use[k]; });
         if(d.dates && d.dates.length === 3){
           ["d1","d2","d3"].forEach(function(k,i){ $(k).textContent = d.dates[i]; });
           try{ localStorage.setItem("bztAuDates", JSON.stringify(d.dates)); }catch(e){}

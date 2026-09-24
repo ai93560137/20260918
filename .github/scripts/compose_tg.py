@@ -69,15 +69,25 @@ if g.get('h1') is not None:
     gpx = gq.get('px')
     gq_line = (f"💰 現價:{g1(gpx)}({gq.get('kind', '')} · {gq.get('asof', '')})\n"
                f"↕️ 距上軌 {g1(gup - gpx)} · 距下軌 {g1(gpx - glo)}\n") if gpx else ''
+    fu = g.get('fut') or {}
+    if fu.get('h1') is not None:
+        fup = max(fu['h1'], fu['h2'], fu['h3'])
+        flo = min(fu['l1'], fu['l2'], fu['l3'])
+        fq = (fu.get('quote') or {}).get('px')
+        mgc_line = (f"🧭 MGC 期貨口徑{'(期貨現價 ' + g1(fq) + ')' if fq else ''}:"
+                    f"空手 ①價 ≥ {g1(fup)} → 買 1 張;②價 ≤ {g1(flo)} → 賣 1 張;持倉觸反向軌 → 雙倍反手")
+    else:
+        mgc_line = (f"🧭 MGC 多空雙向:空手 ①價 ≥ {g1(gup)} → 買 1 張;"
+                    f"②價 ≤ {g1(glo)} → 賣 1 張;持倉觸反向軌 → 雙倍反手")
     msg += f"""
 ──────────────
 🥇 黃金(微型金 MGC ／ ETF 只做多)
 
-📈 通道上軌:{g1(gup)}({gup_d})
-📉 通道下軌:{g1(glo)}({glo_d})
+📈 現貨通道上軌:{g1(gup)}({gup_d})
+📉 現貨通道下軌:{g1(glo)}({glo_d})
 {gq_line}
-🧭 MGC 多空雙向:空手 ①價 ≥ {g1(gup)} → 買 1 張;②價 ≤ {g1(glo)} → 賣 1 張;持倉觸反向軌 → 雙倍反手
-🧭 ETF 只做多:升破 {g1(gup)} → 買入;跌破 {g1(glo)} → 只平倉不做空
+{mgc_line}
+🧭 ETF 只做多(現貨口徑):升破 {g1(gup)} → 買入;跌破 {g1(glo)} → 只平倉不做空
 🌐 黃金指令台:https://claude.ai/artifact/26ZLBsaqoMFKoAxsD7E1iw
 """
 
