@@ -263,40 +263,64 @@ def gold_levels():
         log.append(f'{sym} daily: df={len(df)} rows, {len(rows)} valid{raw}')
         return rows[-3:]
 
-    rows, src = [], ''
-    for sym, label in (('XAUUSD=X', 'Yahoo XAUUSD 現貨'), ('XAU=X', 'Yahoo XAU 現貨'),
-                       ('GC=F', 'Yahoo GC=F(期貨,現貨源缺數據)')):
-        try:
-            rows, src = daily(sym), label
-        except Exception as e:
-            log.append(f'{sym} daily fail: {e}')
-        if len(rows) >= 3:
-            break
+    rows = daily('GC=F')                       # Yahoo 無 XAU 現貨,期貨日線最可靠
     if len(rows) < 3:
         raise RuntimeError(f'only {len(rows)} completed days')
+
+    # 現貨即時價:Swissquote 公開報價(免費即時) → gold-api.com 後備
+    spot = None
+    try:
+        r = requests.get('https://forex-data-feed.swissquote.com/public-quotes/'
+                         'bboquotes/instrument/XAU/USD', timeout=20).json()
+        p = r[0]['spreadProfilePrices'][0]
+        m = (float(p['bid']) + float(p['ask'])) / 2
+        if 1500 < m < 6000:
+            spot = ('Swissquote 現貨', m)
+    except Exception as e:
+        log.append(f'swissquote fail: {e}')
+    if spot is None:
+        try:
+            j = requests.get('https://api.gold-api.com/price/XAU', timeout=20).json()
+            m = float(j['price'])
+            if 1500 < m < 6000:
+                spot = ('gold-api 現貨', m)
+        except Exception as e:
+            log.append(f'gold-api fail: {e}')
+
+    # 期貨即時價(Yahoo 1 分鐘),用於算基差
+    fut_now = None
+    try:
+        hh = yf.download('GC=F', period='1d', interval='1m', progress=False, auto_adjust=False)
+        if hasattr(hh.columns, 'levels'):
+            hh.columns = hh.columns.get_level_values(0)
+        if len(hh):
+            px = float(hh['Close'].iloc[-1])
+            ts = hh.index[-1].tz_convert(HKT) if hh.index[-1].tzinfo else \
+                hh.index[-1].tz_localize('UTC').tz_convert(HKT)
+            if 1500 < px < 6000:
+                fut_now = (px, ts)
+    except Exception as e:
+        log.append(f'gold fut 1m fail: {e}')
+
+    out = {}
+    if spot and fut_now:
+        # 通道換算到現貨:期貨日線 H/L + 當前基差(現貨−期貨,carry 三天內變化 ~1-2 美元)
+        basis = spot[1] - fut_now[0]
+        rows = [(d, h + basis, l + basis) for d, h, l in rows]
+        out['src'] = f'XAUUSD 現貨(期貨日線+基差 {basis:+.1f} 換算,{spot[0]})'
+        out['quote'] = {'px': round(spot[1], 1), 'kind': '現貨即時',
+                        'asof': datetime.now(HKT).strftime('%m-%d %H:%M HKT')}
+        log.append(f'basis={basis:+.1f} (spot {spot[1]:.1f} via {spot[0]} − fut {fut_now[0]:.1f})')
+    else:
+        out['src'] = 'Yahoo GC=F(期貨——現貨源不可用,價位比現貨高一個基差)'
+        if fut_now:
+            out['quote'] = {'px': round(fut_now[0], 1), 'kind': '期貨延遲(非現貨)',
+                            'asof': fut_now[1].strftime('%m-%d %H:%M HKT')}
+    rows = rows[-3:]
     rows.reverse()
-    out = {'src': src}
     for n, (d, h, l) in enumerate(rows, 1):
         out[f'h{n}'], out[f'l{n}'] = round(h, 1), round(l, 1)
     out['dates'] = [str(d) for d, _, _ in rows]
-    for sym, kind in (('XAUUSD=X', '現貨延遲'), ('XAU=X', '現貨延遲'),
-                      ('GC=F', '期貨延遲(非現貨)')):
-        try:
-            hh = yf.download(sym, period='1d', interval='1m', progress=False, auto_adjust=False)
-            if hasattr(hh.columns, 'levels'):
-                hh.columns = hh.columns.get_level_values(0)
-            if not len(hh):
-                continue
-            px = float(hh['Close'].iloc[-1])
-            if not 1500 < px < 6000:
-                continue
-            ts = hh.index[-1].tz_convert(HKT) if hh.index[-1].tzinfo else \
-                hh.index[-1].tz_localize('UTC').tz_convert(HKT)
-            out['quote'] = {'px': round(px, 1), 'kind': kind,
-                            'asof': ts.strftime('%m-%d %H:%M HKT')}
-            break
-        except Exception as e:
-            log.append(f'gold quote {sym} fail: {e}')
     log.append(f"gold quote: {out.get('quote')}")
     return out
 
