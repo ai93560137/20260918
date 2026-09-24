@@ -2,12 +2,13 @@ name: Forex data（外匯歷史數據：Dukascopy M1／H1／D1 + Yahoo／FRED �
 
 # 沙盒連不到 Dukascopy／Yahoo／FRED，所以在這裡抓。數據不進 git：每個商品打包成 <PAIR>.tar 上傳 Release「forex-data」
 # （不會過期、不進 git 歷史）；下次先從 Release 還原，只補缺的（fetch_forex.py 可續抓）。
+# Dukascopy 會限流：程式每秒最多 2.5 個請求；首次全抓每組要幾個小時，超過預算就先上傳、再手動觸發續抓。
 # 只 commit 品質報告（forex_research/data_qc/、forex_research/DATA_QC.md）。本機取數據：python3 scripts/get_forex_data.py
 on:
   workflow_dispatch:
     inputs:
       group:
-        description: '分組：majors（七大）、crosses（交叉盤）、asia（港元／離岸人民幣／新加坡元）、metals（金銀）或 all'
+        description: '分組：majors（七大）、jpy（日圓交叉盤）、eur（歐元／英鎊交叉盤）、other（澳紐加交叉＋港元／離岸人民幣／新加坡元）、metals（金銀）或 all'
         required: true
         default: 'all'
       budget_min:
@@ -30,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: ${{ fromJSON((inputs.group || 'all') == 'all' && '["majors","crosses","asia","metals"]' || format('["{0}"]', inputs.group)) }}
+        group: ${{ fromJSON((inputs.group || 'all') == 'all' && '["majors","jpy","eur","other","metals"]' || format('["{0}"]', inputs.group)) }}
     concurrency:
       group: forex-data-${{ matrix.group }}
       cancel-in-progress: false

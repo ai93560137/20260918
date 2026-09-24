@@ -31,8 +31,9 @@ GitHub Actions（fetch_forex.yml）抓 Dukascopy／Yahoo／FRED → 上傳 Relea
                                                           → commit forex_research/data_qc/ 與 DATA_QC.md
 本機／沙盒：python3 scripts/get_forex_data.py  → data_forex/<PAIR>/（.gitignore 已排除）
 ```
-- 首次全抓約 20 萬個請求（M1 每日一檔），分四組並行，每組上限 300 分鐘，抓不完會先上傳、下次續抓（`_done.json`）
-- 手動觸發：Actions → Forex data → group（majors／crosses／asia／metals／all）
+- 首次全抓約 15 萬個請求（M1 每日一檔），分五組並行，每組上限 300 分鐘，抓不完會先上傳、下次續抓（`_done.json`）
+- 手動觸發：Actions → Forex data → group（majors／jpy／eur／other／metals／all）
+- Dukascopy 限流：每秒 2.5 個請求以內；原檔的週末／假期／上市前是平價零量的填充 K 線，程式已過濾（首輪抓回來才發現）
 
 ## 4. 外匯測試的常設規矩（沿用股票研究那套）
 

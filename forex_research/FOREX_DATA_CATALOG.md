@@ -17,16 +17,18 @@ python3 scripts/get_forex_data.py --pair EURUSD --merge-m1 /tmp/eurusd_m1.csv   
 python3 scripts/get_forex_data.py --list                      # 看下載網址
 ```
 - 雲端沙盒可以直接下載 Release（與股票數據相同）；沙盒**連不到** Dukascopy／Yahoo／FRED，抓新數據只能在 GitHub Actions
-- 更新數據：手動觸發 `.github/workflows/fetch_forex.yml`（group = majors／crosses／asia／metals／all）；
+- 更新數據：手動觸發 `.github/workflows/fetch_forex.yml`（group = majors／jpy／eur／other／metals／all）；
   它先從 Release 還原、只補缺的月／日，抓完重新上傳 Release 並 commit 品質報告
+- Dukascopy 會限流（每秒 2.5 個請求以內才穩），首次全抓每組要幾個小時；超過 300 分鐘預算會先上傳、再觸發一次續抓
 
 ## 2. 商品
 
 | 分組 | 商品 | 小數位 | FRED 第二來源 |
 |---|---|---|---|
 | majors（七大） | EURUSD、USDJPY、GBPUSD、USDCHF、AUDUSD、USDCAD、NZDUSD | JPY 3、其餘 5 | 直接對應（DEXUSEU、DEXJPUS…） |
-| crosses（交叉盤） | EURJPY、GBPJPY、AUDJPY、NZDJPY、CADJPY、CHFJPY、EURGBP、EURCHF、EURAUD、EURCAD、GBPCHF、GBPAUD、AUDNZD、AUDCAD | JPY 3、其餘 5 | 由主要貨幣對相乘／相除推算 |
-| asia | USDHKD、USDCNH、USDSGD | 5 | DEXHKUS、DEXCHUS（在岸 CNY，與 CNH 有差）、DEXSIUS |
+| jpy（日圓交叉盤） | EURJPY、GBPJPY、AUDJPY、NZDJPY、CADJPY、CHFJPY | 3 | 由主要貨幣對相乘／相除推算 |
+| eur（歐元／英鎊交叉盤） | EURGBP、EURCHF、EURAUD、EURCAD、GBPCHF、GBPAUD | 5 | 同上 |
+| other | AUDNZD、AUDCAD、USDHKD、USDCNH、USDSGD | 5 | 交叉盤推算；DEXHKUS、DEXCHUS（在岸 CNY，與 CNH 有差）、DEXSIUS |
 | metals | XAUUSD、XAGUSD | 3 | 無（只有 Yahoo） |
 
 - 完整清單與 Yahoo 代號：`python3 scripts/fetch_forex.py --list`；定義在 `scripts/fetch_forex.py` 的 `INSTRUMENTS`
@@ -37,7 +39,7 @@ python3 scripts/get_forex_data.py --list                      # 看下載網址
 
 ```
 data_forex/<PAIR>/
-  <PAIR>_M1_<YYYY>.csv.gz     # M1 買價，每年一檔（與 data/ 的 MT5 匯出同一命名）
+  <PAIR>_M1_<YYYY>.csv.gz     # M1 買價，每年一檔（與 data/ 的 MT5 匯出同一命名）；2026 起另有 _ask 版（當年 H1／D1 由它聚合）
   <PAIR>_H1.csv.gz            # H1 買價（單檔）        <PAIR>_H1_ask.csv.gz   # H1 賣價
   <PAIR>_D1.csv.gz            # D1 買價（單檔）        <PAIR>_D1_ask.csv.gz   # D1 賣價
   _ref_yahoo.csv.gz           # Yahoo 日線 Date,Open,High,Low,Close（收市可靠、高低價粗糙）
@@ -47,8 +49,10 @@ data_forex/<PAIR>/
 - 欄位 `Time,Open,High,Low,Close,Volume`；`Time` 為 `YYYY-MM-DD HH:MM:SS` **UTC**（沒有券商時差；`backtest.py` 載入器直接讀，`--broker-offset 0`）
 - `Volume` 是 Dukascopy 自己的成交量單位（只作相對比較）
 - Dukascopy 週六沒有數據、週日 21:00／22:00 UTC 開始；每根 K 線的時間是開盤時間
-- D1 的日界：由 M1 按 UTC 日聚合與 Dukascopy D1 的吻合率判斷（DATA_QC.md「D1 收吻合%」）；若不吻合，日線策略請自己從 M1／H1 聚合
-- M1 只有買價；點差用 H1 賣價 − 買價估（按年、按時段中位數在品質報告裡）。**Dukascopy 是 ECN 原始點差，CFD 券商通常寬 2–5 倍**，
+- **Dukascopy 原檔把週末、假期、上市前用「平價、零量」K 線填滿**（D1 每年 365 根、M1 每天 1440 根）；抓取程式已丟掉 Volume = 0 且 High = Low 的 K 線
+- D1 的日界是 UTC（XAUUSD 實測：H1 按 UTC 日聚合與 Dukascopy D1 的開高低收 96% 吻合；EET／紐約日界只有 0–16%）；
+  Dukascopy 沒有當年的 D1 檔與當月的 H1 檔，當年的 H1／D1 由 M1 聚合
+- 往年 M1 只有買價；點差用 H1 賣價 − 買價估（按年、按時段中位數在品質報告裡）。**Dukascopy 是 ECN 原始點差，CFD 券商通常寬 2–5 倍**，
   回測成本請按自己券商的實際點差（手冊鐵律 2、3）
 
 ## 4. 怎樣用來回測
