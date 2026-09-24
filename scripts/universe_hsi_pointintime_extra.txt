@@ -1,0 +1,36 @@
+# 只在 scripts/pointintime/hsi_<year>.txt 某些年份出現、但不在
+# scripts/pool_hsi_full.txt 起手池裡的代碼——多半是已下市/合併/改名的
+# 舊成分股（如 0013 和記黃埔 2015年併入長和）。跟 pool_hsi_full.txt
+# 一起餵給 fetch_stock_data.py，抓不到（yfinance 404）是預期結果，
+# 不是要修的錯誤——那正是倖存者偏差要抓的「消失的公司」。
+0004.HK
+0011.HK
+0013.HK
+0017.HK
+0019.HK
+0023.HK
+0083.HK
+0135.HK
+0144.HK
+0151.HK
+0241.HK
+0267.HK
+0293.HK
+0330.HK
+0386.HK
+0494.HK
+0836.HK
+0960.HK
+1099.HK
+1199.HK
+1880.HK
+1898.HK
+2003.HK
+2007.HK
+2018.HK
+2038.HK
+2359.HK
+2600.HK
+2899.HK
+3692.HK
+6098.HK

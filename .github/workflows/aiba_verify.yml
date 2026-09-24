@@ -1,0 +1,61 @@
+name: Aiba PPP trade verification（相場師朗 PPP 下半身：抽樣逐筆核對）
+
+# 預先登記見 AIBA_PPP_BACKTEST.md「逐筆交易核對」：預設格每市場隨機抽 300 筆（種子 0）對第二來源。
+# 抽樣明細 research/aiba_ppp/<m>_trades_sample.json 由 aiba_ppp.py --trades-only 在本機產生後 commit；
+# 這裡只做需要連外網的核對（美股 Nasdaq 歷史 API、日股 Yahoo!ファイナンス），結果 commit 回來。
+on:
+  push:
+    branches: [claude/gifted-carson-v2tvhw]
+    paths:
+      - 'research/aiba_ppp/*_trades_sample.json'
+      - '.github/workflows/aiba_verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aiba-verify-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        market: [jp, us]
+    env:
+      M: ${{ matrix.market }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: pip install -q pandas numpy requests
+      - name: Verify sampled trades
+        run: |
+          [ -e research/aiba_ppp/${M}_trades_sample.json ] || { echo "沒有抽樣明細"; exit 0; }
+          rm -f research/aiba_ppp/${M}_qc.md
+          python3 scripts/verify_trades.py --market "$M" --src research/aiba_ppp/${M}_trades_sample.json \
+            --out-dir research/aiba_ppp --split-ok
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { for f in research/aiba_ppp/${M}_suspect.json research/aiba_ppp/${M}_qc.md; do [ -e "$f" ] && git add -- "$f"; done; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "research(aiba_ppp): $M 抽樣逐筆核對 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/gifted-carson-v2tvhw && exit 0
+            sleep $((i * 7))
+            git fetch origin claude/gifted-carson-v2tvhw
+            git reset --mixed FETCH_HEAD
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "research(aiba_ppp): $M 抽樣逐筆核對 $(date -u +%F)"
+          done
+          exit 1

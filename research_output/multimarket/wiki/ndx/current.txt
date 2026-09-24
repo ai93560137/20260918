@@ -1,0 +1,288 @@
+<!-- revision 2026-09-19T03:38:08Z -->
+{{Short description|U.S. large cap stock market index}}
+{{Redirect|NDX}}
+{{for|a list of companies included in the index|List of NASDAQ-100 companies}}
+{{Use mdy dates|date=April 2024}}
+{{Infobox Index
+|name         = Nasdaq-100
+|logo         =
+|image        = NASDAQ-100-1985to2015.svg
+|caption      = Nasdaq-100 Index from 1985 to 2015
+|foundation   = {{start date and age|1985|1|31}}
+|operator     = [[Nasdaq, Inc.]]
+|exchanges    = [[Nasdaq]]
+|symbol       = ^NDX or NDX
+|constituents = 101
+|cap_level    = [[Market capitalization#Market cap terms|Large-cap]]
+|mcap         = {{US$|31&nbsp;trillion|link=yes}}<ref name=assets>{{Cite web | url=https://www.nasdaq.com/articles/assets-and-liquidity-nasdaq-100-ecosystem | title=Assets and Liquidity in the Nasdaq-100 Ecosystem | work=[[Nasdaq]] | date=May 14, 2026}}</ref>
+|weighting    = [[Capitalization-weighted index|Free-float capitalization-weighted]]
+|related      = [[Nasdaq Financial-100]]
+|homepage     = {{URL|https://www.nasdaq.com/solutions/global-indexes/nasdaq-100}}
+}}
+{{Pie chart
+| caption = [[Industry classification]] of the components of the index per the [[Industry Classification Benchmark]] {{as of|2026|7|1|df=US|lc=yes}}<ref name=qqq>{{Cite web | url=https://www.invesco.com/qqq-etf/en/about.html | title=About QQQ | work=[[Invesco]]}}</ref>
+| value1 = 68.51
+| label1 = Technology
+| value2 = 16.53
+| label2 = Consumer Discretionary
+| value3 = 3.46
+| label3 = Telecommunications
+| value4 = 3.56
+| label4 = Health Care
+| value5 = 3.13
+| label5 = Industrials
+| value6 = 2.04
+| label6 = Consumer Staples
+| value7 = 1.14
+| label7 = Utilities
+| value8 = 1.28
+| label8 = Basic Materials
+| value9 = 0.45
+| label9 = Energy
+}}
+
+The '''Nasdaq-100''' is a [[stock market index]] made up of equity securities issued by 100 of the largest non-financial companies listed on the [[Nasdaq]] stock exchange. The Nasdaq-100 is often abbreviated as NDX,<ref>{{Cite web |title=NASDAQ-100 (NDX)|url=https://www.nasdaq.com/market-activity/index/ndx |website=[[Nasdaq]]}}</ref> NDQ, NAS100, or US100. The Nasdaq-100 index is a [[public float]] weighted/[[capitalization-weighted index]], with a maximum weight of 24% for the largest component.
+
+Products linked to the Nasdaq-100 include [[index fund]]s ([[exchange-traded fund]]s/ETFs and [[mutual funds]]) as well as [[Derivative (finance)|derivative]]s ([[Option (finance)|options]] and [[futures contract]]s), which are available for trading in many countries with the goal of replicating the performance of the index. Also available are modified index funds; they replicate the performance of the index with modifications such as the use of [[covered call]] strategies, equal weighting, performance buffers, [[Leverage (finance)|leverage]], inclusion of only growth or value stocks, or exclusion of certain sectors, all with the goal of changing the risk/return and [[Yield (finance)|yield]]. [[Invesco QQQ]], with approximately $500 billion in assets, has the highest average daily volume of all Nasdaq-100 ETFs. In total, there is approximately $1.4 trillion in assets tracking the index.<ref name=assets/>
+
+==History==
+The Nasdaq-100 was launched on January 31, 1985, by the Nasdaq.<ref>{{cite web | url=https://www.nasdaq.com/articles/10-fun-facts-about-the-nasdaq-100-index-2018-08-03-0 | title=10 Fun Facts about the Nasdaq-100 Index | publisher=[[Nasdaq]]}}</ref> It created two indices: the Nasdaq-100, which consists of [[Industrial sector|industrial]], [[technology]], [[retail]], [[telecommunication]], [[biotechnology]], [[health care]], [[transportation]], [[mass media]] and [[tertiary sector of the economy|service]] companies, and the [[Nasdaq Financial-100]], which consists of [[bank]]s, [[Insurance companies]], [[brokerage firm]]s, and [[mortgage loan]] companies.
+
+The base price of the index was initially set at 250. In January 1994, in advance of the launch of options trading on the index by the [[Chicago Board Options Exchange]], the value of the index halved, similar to a 2-for-1 [[stock split]], to make the index value below that of the [[Nasdaq Composite]].<ref name=nasdaq100>{{Cite web | url=https://www.nasdaq.com/docs/2021/04/28/Nasdaq-100-Tracking-Innovation-Large-Cap-Growth.pdf | title=The Nasdaq-100 | work=[[Nasdaq]] | date=April 28, 2021}}</ref>
+
+In November 1998, to make the index suitable for the basis of an exchange-traded fund, the index weights were modified away from market cap weights.<ref name=nasdaq100/>
+
+Foreign companies were first admitted to the Nasdaq-100 in January 1998.<ref>{{cite web | url=https://cpram.com/fra/en/individual/glossary/nasdaq-100 | title=NASDAQ 100 | work=CPRAM}}</ref>
+
+==Selection criteria==
+Entry to the index is determined by the Nasdaq Index Management Committee, which follows a strict, transparent, and rules-based methodology rather than a subjective selection process. Requirements to be added to the index include having a primary listing on the Nasdaq and an average daily traded value of at least $5 million. The index components are recalculated annually after the close of trading on the third Friday in December. The number of shares outstanding and public float of each component is updated quarterly.<ref>{{Cite web |title=NASDAQ 100 Index Methodology |url=https://indexes.nasdaq.com/docs/Methodology_NDX.pdf | work=[[Nasdaq]]}}</ref>
+
+==Performance==
+===Record values===
+{| class="wikitable"
+|-
+! Category
+! colspan="2" |All-Time Highs<ref name=historicaldata/>
+|-
+| Closing || 30,660.60 || Tuesday, June 2, 2026
+|-
+| Intraday || 30,762.20 || Wednesday, June 3, 2026
+|}
+
+===Annual returns===
+Annual returns have been as follows:<ref>{{Cite web | title=NASDAQ 100 (^NDX) historical data | url=https://finance.yahoo.com/quote/%5ENDX/history/ | publisher=[[Yahoo! Finance]]}}</ref>
+{| class="wikitable" style="text-align:right;"
+|-
+! Year
+! Closing level
+! Change in Index<br />in Points
+! Change in Index<br />in %
+|-
+| 1985 || 132.29 || ||
+|-
+| 1986 || 141.41 || 9.12 || 6.89
+|-
+| 1987 || 156.25 || 14.84 || 10.49
+|-
+| 1988 || 177.41 || 21.16 || 13.54
+|-
+| 1989 || 223.84 || 46.43 || 26.17
+|-
+| 1990 || 200.53 || −23.31 || style="color:red" | −10.41
+|-
+| 1991 || 330.86 || 130.33 || 64.99
+|-
+| 1992 || 360.19 || 29.33 || 8.86
+|-
+| 1993 || 398.28 || 38.09 || 10.57
+|-
+| 1994 || 404.27 || 5.99 || 1.50
+|-
+| 1995 || 576.23 || 171.96 || 42.54
+|-
+| 1996 || 821.36 || 245.13 || 42.54
+|-
+| 1997 || 990.80 || 169.44 || 20.63
+|-
+| 1998 || 1,836.01 || 845.21 || 85.31
+|-
+| 1999 || 3,707.83 || 1,871.81 || 101.95
+|-
+| 2000 || 2,341.70 || −1,366.13 || style="color:red" | −36.84
+|-
+| 2001 || 1,577.05 || −764.65 || style="color:red" | −32.65
+|-
+| 2002 || 984.36 || −592.69 || style="color:red" | −37.58
+|-
+| 2003 || 1,467.92 || 483.56 || 49.12
+|-
+| 2004 || 1,621.12 || 153.20 || 10.44
+|-
+| 2005 || 1,645.20 || 24.08 || 1.49
+|-
+| 2006 || 1,756.90 || 111.70 || 6.79
+|-
+| 2007 || 2,084.93 || 328.03 || 18.67
+|-
+| 2008 || 1,211.65 || −873.28 || style="color:red" | −41.89
+|-
+| 2009 || 1,860.31 || 648.66 || 53.54
+|-
+| 2010 || 2,217.86 || 357.55 || 19.22
+|-
+| 2011 || 2,277.83 || 59.97 || 2.70
+|-
+| 2012 || 2,660.93 || 383.10 || 16.82
+|-
+| 2013 || 3,592.00 || 931.07 || 34.99
+|-
+| 2014 || 4,236.28 || 644.28 || 17.94
+|-
+| 2015 || 4,593.27 || 356.99 || 8.43
+|-
+| 2016 || 4,863.62 || 270.35 || 5.89
+|-
+| 2017 || 6,396.42 || 1,532.80 || 31.52
+|-
+| 2018 || 6,329.96 || −66.46 || style="color:red" | −1.04
+|-
+| 2019 || 8,733.07 || 2,403.11 || 37.96
+|-
+| 2020 || 12,888.28 || 4,155.21 || 47.58
+|-
+| 2021 || 16,320.08 || 3,431.80 || 26.63
+|-
+| 2022 || 10,939.76 || −5,380.32 || style="color:red" | −32.97
+|-
+| 2023 || 16,825.93 || 5,886.17 || 53.81
+|-
+| 2024 || 21,012.17 || 4,186.24 || 24.88
+|-
+| 2025 || 25,249.85 || 4,237.68 || 20.17
+|}
+
+==Closing milestones==
+===List of 1,000-point milestones by number of trading days===
+{| class="wikitable"
+! Milestone (closing)<ref name=historicaldata>{{Cite web | url=https://finance.yahoo.com/quote/%5ENDX/history/?period1=497021400&period2=1783629910 | title=NASDAQ-100 (^NDX) | work=[[Yahoo Finance]]}}</ref>
+! Date of Record (closing)<ref name=historicaldata/>
+! Trading Days<ref name=historicaldata/>
+|-
+| 1,000 || July 8, 1997 || 3,143
+|-
+| 2,000 || January 11, 1999 || 381
+|-
+| 3,000 || November 18, 1999 || 217
+|-
+| 4,000 || February 8, 2000 || 55
+|-
+| 5,000 || January 6, 2017 || 4,255
+|-
+| 6,000 || September 13, 2017 || 172
+|-
+| 7,000 || January 26, 2018 || 93
+|-
+| 8,000 || July 24, 2019 || 374
+|-
+| 9,000 || January 13, 2020 || 119
+|-
+| 10,000 || June 10, 2020 || 103
+|-
+| 11,000 || August 3, 2020 || 37
+|-
+| 12,000 || August 31, 2020 || 20
+|-
+| 13,000 || January 8, 2021 || 90
+|-
+| 14,000 || April 15, 2021 || 66
+|-
+| 15,000 || July 23, 2021 || 69
+|-
+| 16,000 || November 3, 2021 || 72
+|-
+| 17,000 || January 19, 2024 || 554
+|-
+| 18,000 || February 22, 2024 || 23
+|-
+| 19,000 || June 5, 2024 || 72
+|-
+| 20,000 || July 2, 2024 || 18
+|-
+| 21,000 || November 7, 2024 || 90
+|-
+| 22,000 || December 16, 2024 || 26
+|-
+| 23,000 || July 17, 2025 || 144
+|-
+| 24,000 || September 12, 2025 || 40
+|-
+|25,000
+|October 8, 2025
+|18
+|-
+|26,000
+|October 28, 2025
+|14
+|-
+|27,000
+|April 24, 2026
+|122
+|-
+|28,000
+|May 5, 2026
+|7
+|-
+|29,000
+|May 8, 2026
+|3
+|-
+|30,000
+|May 26, 2026
+|11
+|}
+
+===List of 10,000-point milestones by number of trading days===
+{| class="wikitable"
+! Milestone (closing)<ref name=historicaldata/>
+! Date of Record (closing)<ref name=historicaldata/>
+! Trading Days<ref name=historicaldata/>
+|-
+| 10,000 || June 10, 2020 || 8,912
+|-
+| 20,000 || July 2, 2024 || 1,021
+|-
+| 30,000 || May 26, 2026 || 475
+|}
+
+==Related indices==
+Related indices are:
+* [[Nasdaq Composite]] - includes every company with a primary listing on the Nasdaq
+* [[Nasdaq Financial-100]] (IXF) - includes the largest financial companies listed on the Nasdaq
+* NASDAQ Q-50 (NXTQ) - includes the 50 stocks that are next eligible for inclusion in the Nasdaq-100
+* NASDAQ-100 Technology Sector (NDXT) - an equal weighted index of components of the Nasdaq-100 that have an [[industry classification]] of "Technology" per the [[Industry Classification Benchmark]] 
+
+==See also== 
+* [[List of NASDAQ-100 companies]]
+* [[Historical components of the Nasdaq-100]]
+* [[List of recessions in the United States]]
+
+==References==
+{{Reflist}}
+
+==External links==
+* {{Official website|https://www.nasdaq.com/solutions/global-indexes/nasdaq-100}}
+* [https://indexes.nasdaqomx.com/Index/Overview/NDX Products Linked to the Nasdaq-100]
+* [https://finance.yahoo.com/q?s=^NDX Nasdaq-100] at [[Yahoo Finance]]
+* [https://www.bloomberg.com/apps/quote?ticker=NDX:IND Nasdaq-100] at [[Bloomberg L.P.]]
+
+{{Nasdaq-100}}
+{{Nasdaqomx}}
+{{Stock Market Indices}}
+{{Stock market indexes}}
+{{North and South American Stock market indices}}
+
+[[Category:1985 establishments in the United States]]
+[[Category:1985 introductions]]
+[[Category:American stock market indices]]
+[[Category:Nasdaq]]
+[[Category:Companies in the Nasdaq-100| ]]

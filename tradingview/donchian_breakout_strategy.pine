@@ -1,0 +1,297 @@
+//@version=5
+// =============================================================================
+// 前 N 日高低點突破策略（Donchian Breakout）
+//
+// 規則（與 repo 的 donchian_backtest.py 完全對應，XAUUSD 已用 2022-08→2026-09
+// 真實 M1 數據驗證，詳見 DONCHIAN_BACKTEST.md）：
+//   進場：價格升破「前 N 個完整交易日」最高點 → 做多（stop order）
+//         價格跌破「前 N 個完整交易日」最低點 → 做空（stop order）
+//   離場：sar 模式＝反向突破時平倉並反手（永遠在場）
+//         eod 模式＝當日截止時間強制平倉（不留隔夜），日內反向突破則反手
+//   每個交易日、每個方向最多進場一次。
+//
+// 建議設定（XAUUSD）：
+//   主版本：exitMode=sar, N=3   （全期 +2,659 點/oz，PF 1.78，回撤 3.6%）
+//   保守版：exitMode=eod, N=2   （五個年份全部非負，PF 1.19）
+// 用 M5～M30 圖皆可：進出場價都落在通道價位上，結果與時間框架無關
+// （M1/M5/M15/M30 回測結果逐筆一致）。
+//
+// 成本假設：commission = 每張每次成交 0.15（一買一賣合計 0.30，
+// 對應 XAUUSD 0.30 點差、1 張 = 1 oz = 0.01 手）。請按你的帳戶調整。
+// =============================================================================
+strategy("智能諸葛亮 八陣圖",
+     overlay = true,
+     initial_capital = 10000,
+     default_qty_type = strategy.fixed,
+     default_qty_value = 1,
+     commission_type = strategy.commission.cash_per_contract,
+     commission_value = 0.15,
+     pyramiding = 0,
+     // 保證金 10%（= 10 倍槓桿）：權益不足以維持部位時模擬強制平倉。
+     // 期貨（HSI1!/MHI1!）必須開著；XAUUSD 0.01 手倉位極小，開著也無影響。
+     margin_long = 10,
+     margin_short = 10)
+
+// ---- 參數 -------------------------------------------------------------------
+lookback  = input.int(3, "通道回看天數 N", minval = 1, maxval = 10)
+exitMode  = input.string("sar", "出場模式", options = ["sar", "eod", "ema"],
+     tooltip = "sar＝反向突破反手、永遠在場；eod＝每日截止時間平倉不留隔夜；" +
+         "ema＝價格回穿日收盤EMA先平倉（實驗模式，回測比較用）")
+emaLen    = input.int(50, "ema 出場：日收盤 EMA 週期", minval = 2)
+tradeDir  = input.string("both", "交易方向", options = ["both", "long", "short"])
+eodHour   = input.int(23, "eod 平倉時間（交易所時區）－時", minval = 0, maxval = 23)
+eodMinute = input.int(50, "eod 平倉時間－分", minval = 0, maxval = 59)
+
+// ---- 前 N 個「完整交易日」的高低（手動聚合，無 security、無未來函數） ----------
+var float[] dayHighs = array.new_float()
+var float[] dayLows  = array.new_float()
+var float curHigh = na
+var float curLow  = na
+var float curClose = na    // 進行中交易日的最新收盤（日結時成為該日收盤價）
+var float dEma  = na       // 日收盤 EMA（ema 出場線，每日更新一次）
+var int   dEmaN = 0
+newDay = ta.change(time("D")) != 0
+
+if newDay
+    if not na(curHigh)
+        array.push(dayHighs, curHigh)
+        array.push(dayLows,  curLow)
+        if array.size(dayHighs) > lookback
+            array.shift(dayHighs)
+            array.shift(dayLows)
+        dEma := na(dEma) ? curClose : dEma + 2.0 / (emaLen + 1) * (curClose - dEma)
+        dEmaN += 1
+    curHigh := high
+    curLow  := low
+else
+    curHigh := math.max(nz(curHigh, high), high)
+    curLow  := math.min(nz(curLow,  low),  low)
+curClose := close
+emaReady = dEmaN >= emaLen
+
+ready   = array.size(dayHighs) == lookback
+hiLevel = ready ? array.max(dayHighs) : na
+loLevel = ready ? array.min(dayLows)  : na
+
+// ---- 每日每方向只進場一次 ----------------------------------------------------
+var bool longUsed  = false
+var bool shortUsed = false
+if newDay
+    longUsed  := false
+    shortUsed := false
+// 成交後（本根倉位方向翻轉）才視為用掉當日額度——同 Python 引擎
+if strategy.position_size > 0 and strategy.position_size[1] <= 0
+    longUsed := true
+if strategy.position_size < 0 and strategy.position_size[1] >= 0
+    shortUsed := true
+
+// ---- eod 模式：截止時間之後不再進場，並平掉所有倉位 ---------------------------
+minuteOfDay = hour(time, syminfo.timezone) * 60 + minute(time, syminfo.timezone)
+pastCutoff  = exitMode == "eod" and minuteOfDay >= eodHour * 60 + eodMinute
+if pastCutoff and strategy.position_size != 0
+    strategy.close_all(comment = "EOD")
+if exitMode == "eod" and newDay and strategy.position_size != 0   // 保險絲：漏平時新日開盤補平
+    strategy.close_all(comment = "EOD-gap")
+
+// ---- 進場（stop order 掛在通道價位；反向觸發時 pyramiding=0 會自動反手） -------
+emaOk = exitMode != "ema" or emaReady    // ema 模式等 EMA 暖機完成才進場
+allowLong  = ready and emaOk and not pastCutoff and not longUsed  and tradeDir != "short"
+allowShort = ready and emaOk and not pastCutoff and not shortUsed and tradeDir != "long"
+
+if allowLong
+    strategy.entry("L", strategy.long, stop = hiLevel)
+else
+    strategy.cancel("L")
+if allowShort
+    strategy.entry("S", strategy.short, stop = loLevel)
+else
+    strategy.cancel("S")
+
+// ---- 單邊模式的離場：對面通道只平倉不反手 -------------------------------------
+if tradeDir == "long" and strategy.position_size > 0
+    strategy.exit("XL", from_entry = "L", stop = loLevel)
+if tradeDir == "short" and strategy.position_size < 0
+    strategy.exit("XS", from_entry = "S", stop = hiLevel)
+
+// ---- ema 模式的離場：價格回穿日收盤 EMA 先平倉（反向突破單仍掛著會反手） -------
+if exitMode == "ema" and emaReady and strategy.position_size > 0
+    strategy.exit("XEL", from_entry = "L", stop = dEma)
+if exitMode == "ema" and emaReady and strategy.position_size < 0
+    strategy.exit("XES", from_entry = "S", stop = dEma)
+
+// ---- 手動下單提醒（富途等券商人手執行用） -------------------------------------
+// 在 TradingView 建立警報：條件選本策略 →「alert() 函數呼叫」→ 通知勾 App 推播。
+// 每個新交易日第一根 K 推送「今天要掛的停損單」；倉位變化時推送成交確認。
+alertOn = input.bool(true, "開啟每日掛單／成交提醒")
+myQty   = input.int(1, "我的每次下單手數", minval = 1, tooltip = "實際在券商每次進場的張數；指示與提醒的數量按此換算")
+myPos   = input.int(0, "我目前實際持倉（+多 −空 0空手）", tooltip = "填富途目前淨持倉張數，面板會核對是否與策略同步")
+
+fmt(x) =>
+    str.tostring(x, format.mintick)
+
+posTxt(int p) =>
+    p > 0 ? "+" + str.tostring(p) + " 張（多）" : p < 0 ? str.tostring(p) + " 張（空）" : "空手"
+
+posLong  = strategy.position_size > 0
+posShort = strategy.position_size < 0
+
+// 依「策略目前狀態 × 我的手數」生成今天該掛的條件單（富途：條件單/觸價單）
+// 回傳 [掛單①, 掛單②, 備註]；沒有第二張單時掛單②為 na
+orderPlan(int qty) =>
+    q  = str.tostring(qty)
+    q2 = str.tostring(2 * qty)
+    string s1 = na
+    string s2 = na
+    if tradeDir == "both"
+        if posLong
+            s1 := "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q2 + " 張（" + q + " 張平多倉＋" + q + " 張開空倉）"
+        else if posShort
+            s1 := "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q2 + " 張（" + q + " 張平空倉＋" + q + " 張開多倉）"
+        else
+            s1 := "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q + " 張（開多倉）"
+            s2 := "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q + " 張（開空倉）"
+    else if tradeDir == "long"
+        s1 := posLong ? "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q + " 張（平多倉，之後空手）" :
+          "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q + " 張（開多倉）"
+    else
+        s1 := posShort ? "若最新價 ≥ " + fmt(hiLevel) + " → 市價買入 " + q + " 張（平空倉，之後空手）" :
+          "若最新價 ≤ " + fmt(loLevel) + " → 市價賣出 " + q + " 張（開空倉）"
+    note = exitMode == "eod" ?
+         "條件單設「當日有效」；" + str.tostring(eodHour) + ":" + str.tostring(eodMinute, "00") +
+         " 未觸發請撤單、持倉請市價平掉" :
+         exitMode == "ema" ?
+         "⚠ ema 為回測實驗模式：另有日EMA出場線（圖上橙線 " + fmt(dEma) + "），本指示未含該出場單" :
+         "條件單設「當日有效」；未觸發則明日按新價位重掛"
+    [s1, s2, note]
+
+[plan1, plan2, planNote] = orderPlan(myQty)
+
+if alertOn and ready and newDay
+    alert("【每日掛單】" + syminfo.ticker + "｜① " + plan1 +
+         (na(plan2) ? "" : "｜② " + plan2) + "｜" + planNote, alert.freq_once_per_bar)
+
+posState = posLong ? 1 : posShort ? -1 : 0
+if alertOn and posState != posState[1]
+    stateTxt = posState == 1 ? "翻多／開多" : posState == -1 ? "翻空／開空" : "平倉離場"
+    alert("【成交確認】" + syminfo.ticker + "｜" + stateTxt + "｜現價 " + fmt(close) +
+         "，請核對富途實際倉位", alert.freq_once_per_bar)
+
+// ---- 圖上回測統計面板 ---------------------------------------------------------
+// 數字直接取自 strategy.* 內建變數（與「績效摘要」同一計算來源），
+// 面板與 Strategy Tester 應完全一致——不一致即代表邏輯有誤，這就是求證機制。
+// 按年損益以「平倉當年」歸屬（同交易清單分析）。
+showPanel = input.bool(true, "顯示回測統計面板")
+sizeOpt   = input.string("中", "面板字體大小", options = ["小", "中", "大"])
+panelSize = sizeOpt == "小" ? size.small : sizeOpt == "大" ? size.large : size.normal
+
+var int[]   pnlYear   = array.new_int()     // 出現過的年份
+var float[] pnlStart  = array.new_float()   // 該年開始時的累計淨利
+var int[]   trdStart  = array.new_int()     // 該年開始時的累計平倉筆數
+var int[]   winStart  = array.new_int()     // 該年開始時的累計獲利筆數
+curYr = year(time)
+// 注意：Pine 的 or／?: 不短路，array.get 必須放在真正的條件區塊內
+int lastYr = na
+if array.size(pnlYear) > 0
+    lastYr := array.get(pnlYear, array.size(pnlYear) - 1)
+if na(lastYr) or lastYr != curYr
+    array.push(pnlYear, curYr)
+    array.push(pnlStart, strategy.netprofit)
+    array.push(trdStart, strategy.closedtrades)
+    array.push(winStart, strategy.wintrades)
+
+money(x) =>
+    str.tostring(x, "#,###")
+pct(x) =>
+    str.tostring(x, "#.##") + "%"
+
+var table tbl = na
+if showPanel and barstate.islast
+    nYears = array.size(pnlYear)
+    if na(tbl)
+        tbl := table.new(position.top_right, 4, 40, bgcolor = color.new(color.white, 10),
+             border_width = 1, border_color = color.new(color.gray, 70),
+             frame_width = 1, frame_color = color.gray)
+    cap = strategy.initial_capital
+    pf  = strategy.grossloss > 0 ? strategy.grossprofit / strategy.grossloss : na
+    wr  = strategy.closedtrades > 0 ? 100.0 * strategy.wintrades / strategy.closedtrades : na
+    hdr = color.new(color.gray, 60)
+    txt = color.black
+    table.cell(tbl, 0, 0, "回測統計（與績效摘要同源）", text_color = txt, text_size = panelSize, bgcolor = hdr)
+    table.merge_cells(tbl, 0, 0, 3, 0)
+    table.cell(tbl, 0, 1, "淨利",     text_color = txt, text_size = panelSize)
+    table.cell(tbl, 1, 1, money(strategy.netprofit) + "（" + pct(100 * strategy.netprofit / cap) + "）",
+         text_color = strategy.netprofit >= 0 ? color.teal : color.red, text_size = panelSize)
+    table.cell(tbl, 2, 1, "最大回撤", text_color = txt, text_size = panelSize)
+    table.cell(tbl, 3, 1, money(strategy.max_drawdown), text_color = color.red, text_size = panelSize)
+    table.cell(tbl, 0, 2, "平倉筆數", text_color = txt, text_size = panelSize)
+    table.cell(tbl, 1, 2, str.tostring(strategy.closedtrades), text_color = txt, text_size = panelSize)
+    table.cell(tbl, 2, 2, "勝率",     text_color = txt, text_size = panelSize)
+    table.cell(tbl, 3, 2, pct(wr), text_color = txt, text_size = panelSize)
+    table.cell(tbl, 0, 3, "獲利因子", text_color = txt, text_size = panelSize)
+    table.cell(tbl, 1, 3, str.tostring(pf, "#.###"), text_color = txt, text_size = panelSize)
+    table.cell(tbl, 2, 3, "期望值/筆", text_color = txt, text_size = panelSize)
+    table.cell(tbl, 3, 3, strategy.closedtrades > 0 ? money(strategy.netprofit / strategy.closedtrades) : "-",
+         text_color = txt, text_size = panelSize)
+    table.cell(tbl, 0, 4, "年份", text_color = txt, text_size = panelSize, bgcolor = hdr)
+    table.cell(tbl, 1, 4, "損益", text_color = txt, text_size = panelSize, bgcolor = hdr)
+    table.cell(tbl, 2, 4, "筆數", text_color = txt, text_size = panelSize, bgcolor = hdr)
+    table.cell(tbl, 3, 4, "勝率", text_color = txt, text_size = panelSize, bgcolor = hdr)
+    for i = 0 to nYears - 1
+        float endP = strategy.netprofit
+        int   endT = strategy.closedtrades
+        int   endW = strategy.wintrades
+        if i + 1 < nYears
+            endP := array.get(pnlStart, i + 1)
+            endT := array.get(trdStart, i + 1)
+            endW := array.get(winStart, i + 1)
+        yP = endP - array.get(pnlStart, i)
+        yT = endT - array.get(trdStart, i)
+        yW = endW - array.get(winStart, i)
+        row = 5 + i
+        if row < 40
+            table.cell(tbl, 0, row, str.tostring(array.get(pnlYear, i)), text_color = txt, text_size = panelSize)
+            table.cell(tbl, 1, row, money(yP), text_color = yP >= 0 ? color.teal : color.red, text_size = panelSize)
+            table.cell(tbl, 2, row, str.tostring(yT), text_color = txt, text_size = panelSize)
+            table.cell(tbl, 3, row, yT > 0 ? pct(100.0 * yW / yT) : "-", text_color = txt, text_size = panelSize)
+
+// ---- 今日操作指示面板（輸入手數/實倉，立即顯示答案） ---------------------------
+showGuide = input.bool(true, "顯示今日操作指示面板")
+
+var table guide = na
+if showGuide and barstate.islast
+    if na(guide)
+        guide := table.new(position.bottom_right, 2, 7, bgcolor = color.new(color.white, 5),
+             border_width = 1, border_color = color.new(color.gray, 70),
+             frame_width = 2, frame_color = color.gray)
+    targetPos = (posLong ? 1 : posShort ? -1 : 0) * myQty
+    synced = myPos == targetPos
+    tc = color.black
+    table.cell(guide, 0, 0, "📋 今日操作指示", text_color = tc, text_size = panelSize,
+         bgcolor = color.new(color.orange, 60))
+    table.merge_cells(guide, 0, 0, 1, 0)
+    table.cell(guide, 0, 1, "策略目標倉位", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 1, posTxt(targetPos), text_color = tc, text_size = panelSize)
+    table.cell(guide, 0, 2, "你輸入的實倉", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 2, posTxt(myPos), text_color = tc, text_size = panelSize)
+    table.cell(guide, 0, 3, "同步檢查", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 3,
+         synced ? "✅ 同步" : "⚠️ 不同步！先市價" + (targetPos > myPos ? "買入 " : "賣出 ") +
+         str.tostring(math.abs(targetPos - myPos)) + " 張調整到目標",
+         text_color = synced ? color.teal : color.red, text_size = panelSize,
+         bgcolor = synced ? na : color.new(color.red, 85))
+    table.cell(guide, 0, 4, "掛單 ①", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 4, ready ? plan1 : "暖機中（未滿 N 個完整交易日）",
+         text_color = color.new(color.blue, 0), text_size = panelSize)
+    table.cell(guide, 0, 5, "掛單 ②", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 5, not ready ? "—" : na(plan2) ? "—（今天只需掛單①）" : plan2,
+         text_color = color.new(color.blue, 0), text_size = panelSize)
+    table.cell(guide, 0, 6, "備註", text_color = tc, text_size = panelSize)
+    table.cell(guide, 1, 6, planNote, text_color = tc, text_size = panelSize)
+
+// ---- 畫圖 --------------------------------------------------------------------
+plot(hiLevel, "前N日最高", color = color.new(color.teal, 0), linewidth = 2, style = plot.style_linebr)
+plot(loLevel, "前N日最低", color = color.new(color.red, 0),  linewidth = 2, style = plot.style_linebr)
+plot(exitMode == "ema" and emaReady ? dEma : na, "日EMA出場線",
+     color = color.new(color.orange, 0), linewidth = 2, style = plot.style_linebr)
+bgcolor(strategy.position_size > 0 ? color.new(color.teal, 92) :
+     strategy.position_size < 0 ? color.new(color.red, 92) : na)

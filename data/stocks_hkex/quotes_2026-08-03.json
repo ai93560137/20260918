@@ -1,0 +1,1122 @@
+{
+ "n_market": 17035,
+ "quotes": {
+  "0001.HK": {
+   "close": 73.0,
+   "high": 74.2,
+   "low": 72.5,
+   "marker": "",
+   "name": "CKH HOLDINGS",
+   "prev_close": 73.6,
+   "turnover": 485281196.0,
+   "volume": 6639945.0
+  },
+  "0002.HK": {
+   "close": 77.55,
+   "high": 78.3,
+   "low": 77.2,
+   "marker": "",
+   "name": "CLP HOLDINGS",
+   "prev_close": 78.1,
+   "turnover": 186687154.0,
+   "volume": 2406706.0
+  },
+  "0003.HK": {
+   "close": 6.96,
+   "high": 7.09,
+   "low": 6.945,
+   "marker": "",
+   "name": "HK & CHINA GAS",
+   "prev_close": 7.03,
+   "turnover": 153414080.0,
+   "volume": 21969680.0
+  },
+  "0004.HK": {
+   "close": 19.5,
+   "high": 19.8,
+   "low": 19.23,
+   "marker": "",
+   "name": "WHARF HOLDINGS",
+   "prev_close": 19.65,
+   "turnover": 13892306.0,
+   "volume": 714192.0
+  },
+  "0005.HK": {
+   "close": 168.2,
+   "high": 168.7,
+   "low": 166.4,
+   "marker": "*",
+   "name": "HSBC HOLDINGS",
+   "prev_close": 168.2,
+   "turnover": 2080225850.0,
+   "volume": 12417142.0
+  },
+  "0006.HK": {
+   "close": 58.8,
+   "high": 59.75,
+   "low": 58.7,
+   "marker": "",
+   "name": "POWER ASSETS",
+   "prev_close": 59.05,
+   "turnover": 113865337.0,
+   "volume": 1929975.0
+  },
+  "0012.HK": {
+   "close": 28.14,
+   "high": 28.68,
+   "low": 27.82,
+   "marker": "",
+   "name": "HENDERSON LAND",
+   "prev_close": 28.4,
+   "turnover": 152934162.0,
+   "volume": 5445644.0
+  },
+  "0013.HK": {
+   "close": 18.09,
+   "high": 18.17,
+   "low": 17.42,
+   "marker": "",
+   "name": "HUTCHMED",
+   "prev_close": 17.71,
+   "turnover": 60531049.0,
+   "volume": 3403221.0
+  },
+  "0016.HK": {
+   "close": 122.2,
+   "high": 125.1,
+   "low": 121.1,
+   "marker": "",
+   "name": "SHK PPT",
+   "prev_close": 123.2,
+   "turnover": 368372761.0,
+   "volume": 3003452.0
+  },
+  "0017.HK": {
+   "close": 6.87,
+   "high": 6.92,
+   "low": 6.83,
+   "marker": "",
+   "name": "NEW WORLD DEV",
+   "prev_close": 6.88,
+   "turnover": 18382408.0,
+   "volume": 2672877.0
+  },
+  "0019.HK": {
+   "close": 97.95,
+   "high": 99.8,
+   "low": 96.0,
+   "marker": "",
+   "name": "SWIRE PACIFIC A",
+   "prev_close": 99.5,
+   "turnover": 132968243.0,
+   "volume": 1367783.0
+  },
+  "0023.HK": {
+   "close": 17.21,
+   "high": 17.3,
+   "low": 16.59,
+   "marker": "",
+   "name": "BANK OF E ASIA",
+   "prev_close": 16.68,
+   "turnover": 73474066.0,
+   "volume": 4291929.0
+  },
+  "0027.HK": {
+   "close": 33.6,
+   "high": 34.38,
+   "low": 33.42,
+   "marker": "",
+   "name": "GALAXY ENT",
+   "prev_close": 34.2,
+   "turnover": 412846016.0,
+   "volume": 12261047.0
+  },
+  "0066.HK": {
+   "close": 32.52,
+   "high": 33.18,
+   "low": 32.28,
+   "marker": "",
+   "name": "MTR CORPORATION",
+   "prev_close": 33.12,
+   "turnover": 189544923.0,
+   "volume": 5824678.0
+  },
+  "0083.HK": {
+   "close": 10.65,
+   "high": 10.88,
+   "low": 10.54,
+   "marker": "",
+   "name": "SINO LAND",
+   "prev_close": 10.7,
+   "turnover": 40370291.0,
+   "volume": 3797628.0
+  },
+  "0101.HK": {
+   "close": 7.62,
+   "high": 7.67,
+   "low": 7.35,
+   "marker": "",
+   "name": "HANG LUNG PPT",
+   "prev_close": 7.29,
+   "turnover": 112134553.0,
+   "volume": 14779380.0
+  },
+  "0135.HK": {
+   "close": 7.165,
+   "high": 7.295,
+   "low": 7.125,
+   "marker": "",
+   "name": "KUNLUN ENERGY",
+   "prev_close": 7.24,
+   "turnover": 38297725.0,
+   "volume": 5330149.0
+  },
+  "0144.HK": {
+   "close": 15.25,
+   "high": 15.41,
+   "low": 15.1,
+   "marker": "",
+   "name": "CHINA MER PORT",
+   "prev_close": 15.29,
+   "turnover": 49337379.0,
+   "volume": 3247256.0
+  },
+  "0151.HK": {
+   "close": 3.42,
+   "high": 3.44,
+   "low": 3.34,
+   "marker": "",
+   "name": "WANT WANT CHINA",
+   "prev_close": 3.38,
+   "turnover": 41869961.0,
+   "volume": 12290431.0
+  },
+  "0175.HK": {
+   "close": 19.58,
+   "high": 20.1,
+   "low": 19.37,
+   "marker": "",
+   "name": "GEELY AUTO",
+   "prev_close": 19.8,
+   "turnover": 653719987.0,
+   "volume": 33421548.0
+  },
+  "0241.HK": {
+   "close": 3.615,
+   "high": 3.685,
+   "low": 3.57,
+   "marker": "",
+   "name": "ALI HEALTH",
+   "prev_close": 3.59,
+   "turnover": 328060489.0,
+   "volume": 90915977.0
+  },
+  "0267.HK": {
+   "close": 12.17,
+   "high": 12.44,
+   "low": 12.14,
+   "marker": "",
+   "name": "CITIC",
+   "prev_close": 12.37,
+   "turnover": 147872452.0,
+   "volume": 12111631.0
+  },
+  "0285.HK": {
+   "close": 24.24,
+   "high": 24.46,
+   "low": 23.44,
+   "marker": "",
+   "name": "BYD ELECTRONIC",
+   "prev_close": 23.48,
+   "turnover": 263110345.0,
+   "volume": 10926672.0
+  },
+  "0288.HK": {
+   "close": 8.415,
+   "high": 8.52,
+   "low": 8.365,
+   "marker": "",
+   "name": "WH GROUP",
+   "prev_close": 8.45,
+   "turnover": 400980689.0,
+   "volume": 47662018.0
+  },
+  "0291.HK": {
+   "close": 23.44,
+   "high": 23.78,
+   "low": 23.22,
+   "marker": "",
+   "name": "CHINA RES BEER",
+   "prev_close": 23.66,
+   "turnover": 188285102.0,
+   "volume": 8052430.0
+  },
+  "0293.HK": {
+   "close": 14.55,
+   "high": 14.67,
+   "low": 14.43,
+   "marker": "",
+   "name": "CATHAY PAC AIR",
+   "prev_close": 14.6,
+   "turnover": 88077502.0,
+   "volume": 6072993.0
+  },
+  "0300.HK": {
+   "close": 97.75,
+   "high": 99.75,
+   "low": 97.25,
+   "marker": "",
+   "name": "MIDEA GROUP",
+   "prev_close": 99.35,
+   "turnover": 342772008.0,
+   "volume": 3503208.0
+  },
+  "0316.HK": {
+   "close": 149.6,
+   "high": 154.0,
+   "low": 148.9,
+   "marker": "",
+   "name": "OOIL",
+   "prev_close": 153.1,
+   "turnover": 128994027.0,
+   "volume": 859652.0
+  },
+  "0322.HK": {
+   "close": 11.8,
+   "high": 12.07,
+   "low": 11.76,
+   "marker": "",
+   "name": "TINGYI",
+   "prev_close": 11.9,
+   "turnover": 111725213.0,
+   "volume": 9427572.0
+  },
+  "0330.HK": {
+   "close": 0.48,
+   "high": 0.5,
+   "low": 0.475,
+   "marker": "",
+   "name": "ESPRIT HOLDINGS",
+   "prev_close": 0.49,
+   "turnover": 50338.0,
+   "volume": 101635.0
+  },
+  "0386.HK": {
+   "close": 4.385,
+   "high": 4.45,
+   "low": 4.365,
+   "marker": "",
+   "name": "SINOPEC CORP",
+   "prev_close": 4.43,
+   "turnover": 369045438.0,
+   "volume": 84040617.0
+  },
+  "0388.HK": {
+   "close": 409.0,
+   "high": 410.4,
+   "low": 405.2,
+   "marker": "",
+   "name": "HKEX",
+   "prev_close": 408.6,
+   "turnover": 1008110480.0,
+   "volume": 2469232.0
+  },
+  "0669.HK": {
+   "close": 133.8,
+   "high": 134.0,
+   "low": 129.6,
+   "marker": "",
+   "name": "TECHTRONIC IND",
+   "prev_close": 132.0,
+   "turnover": 750986707.0,
+   "volume": 5670803.0
+  },
+  "0688.HK": {
+   "close": 13.4,
+   "high": 13.72,
+   "low": 13.17,
+   "marker": "",
+   "name": "CHINA OVERSEAS",
+   "prev_close": 13.51,
+   "turnover": 202726317.0,
+   "volume": 15239017.0
+  },
+  "0700.HK": {
+   "close": 490.4,
+   "high": 491.0,
+   "low": 480.6,
+   "marker": "*",
+   "name": "TENCENT",
+   "prev_close": 475.2,
+   "turnover": 18865174458.0,
+   "volume": 38649910.0
+  },
+  "0762.HK": {
+   "close": 6.705,
+   "high": 6.83,
+   "low": 6.67,
+   "marker": "",
+   "name": "CHINA UNICOM",
+   "prev_close": 6.72,
+   "turnover": 195628060.0,
+   "volume": 29133402.0
+  },
+  "0823.HK": {
+   "close": 39.14,
+   "high": 39.54,
+   "low": 38.86,
+   "marker": "",
+   "name": "LINK REIT",
+   "prev_close": 39.12,
+   "turnover": 287131491.0,
+   "volume": 7337689.0
+  },
+  "0836.HK": {
+   "close": 19.39,
+   "high": 19.68,
+   "low": 19.2,
+   "marker": "",
+   "name": "CHINA RES POWER",
+   "prev_close": 19.34,
+   "turnover": 455093229.0,
+   "volume": 23409137.0
+  },
+  "0857.HK": {
+   "close": 9.81,
+   "high": 9.985,
+   "low": 9.725,
+   "marker": "",
+   "name": "PETROCHINA",
+   "prev_close": 9.94,
+   "turnover": 803192420.0,
+   "volume": 81719701.0
+  },
+  "0868.HK": {
+   "close": 9.475,
+   "high": 9.765,
+   "low": 9.32,
+   "marker": "",
+   "name": "XINYI GLASS",
+   "prev_close": 9.32,
+   "turnover": 208835348.0,
+   "volume": 21925089.0
+  },
+  "0881.HK": {
+   "close": 4.495,
+   "high": 4.625,
+   "low": 4.47,
+   "marker": "",
+   "name": "ZHONGSHENG HLDG",
+   "prev_close": 4.53,
+   "turnover": 34531783.0,
+   "volume": 7636880.0
+  },
+  "0883.HK": {
+   "close": 23.74,
+   "high": 23.86,
+   "low": 23.36,
+   "marker": "",
+   "name": "CNOOC",
+   "prev_close": 23.82,
+   "turnover": 1289817224.0,
+   "volume": 54447012.0
+  },
+  "0939.HK": {
+   "close": 9.2,
+   "high": 9.295,
+   "low": 9.055,
+   "marker": "*",
+   "name": "CCB",
+   "prev_close": 9.21,
+   "turnover": 1805305732.0,
+   "volume": 197114261.0
+  },
+  "0941.HK": {
+   "close": null,
+   "name": "CHINA MOBILE",
+   "note": "83.65 83.65 84.50 11,533,633 </font></pre><pre><font size='1'> 83.60 83.60 83.10"
+  },
+  "0960.HK": {
+   "close": 6.855,
+   "high": 6.98,
+   "low": 6.725,
+   "marker": "",
+   "name": "LONGFOR GROUP",
+   "prev_close": 6.86,
+   "turnover": 38108810.0,
+   "volume": 5587122.0
+  },
+  "0968.HK": {
+   "close": 2.495,
+   "high": 2.495,
+   "low": 2.225,
+   "marker": "",
+   "name": "XINYI SOLAR",
+   "prev_close": 2.2,
+   "turnover": 416478600.0,
+   "volume": 172533056.0
+  },
+  "0981.HK": {
+   "close": 62.2,
+   "high": 63.8,
+   "low": 61.3,
+   "marker": "*",
+   "name": "SMIC",
+   "prev_close": 63.25,
+   "turnover": 5152916238.0,
+   "volume": 82857600.0
+  },
+  "0992.HK": {
+   "close": 24.74,
+   "high": 24.78,
+   "low": 23.56,
+   "marker": "*",
+   "name": "LENOVO GROUP",
+   "prev_close": 23.86,
+   "turnover": 1872560032.0,
+   "volume": 76826724.0
+  },
+  "1024.HK": {
+   "close": 45.02,
+   "high": 45.58,
+   "low": 43.64,
+   "marker": "*",
+   "name": "KUAISHOU-W",
+   "prev_close": 43.7,
+   "turnover": 1918707400.0,
+   "volume": 42666995.0
+  },
+  "1038.HK": {
+   "close": 62.15,
+   "high": 62.95,
+   "low": 61.85,
+   "marker": "",
+   "name": "CKI HOLDINGS",
+   "prev_close": 62.6,
+   "turnover": 70649570.0,
+   "volume": 1136342.0
+  },
+  "1044.HK": {
+   "close": 24.48,
+   "high": 25.22,
+   "low": 24.32,
+   "marker": "",
+   "name": "HENGAN INT'L",
+   "prev_close": 24.76,
+   "turnover": 90968996.0,
+   "volume": 3705936.0
+  },
+  "1088.HK": {
+   "close": 42.64,
+   "high": 43.54,
+   "low": 42.58,
+   "marker": "",
+   "name": "CHINA SHENHUA",
+   "prev_close": 43.46,
+   "turnover": 371977862.0,
+   "volume": 8685819.0
+  },
+  "1093.HK": {
+   "close": 8.465,
+   "high": 8.675,
+   "low": 8.305,
+   "marker": "",
+   "name": "CSPC PHARMA",
+   "prev_close": 8.58,
+   "turnover": 442958419.0,
+   "volume": 52658947.0
+  },
+  "1099.HK": {
+   "close": 17.46,
+   "high": 17.51,
+   "low": 17.35,
+   "marker": "",
+   "name": "SINOPHARM",
+   "prev_close": 17.38,
+   "turnover": 56427460.0,
+   "volume": 3235248.0
+  },
+  "1109.HK": {
+   "close": 33.1,
+   "high": 33.98,
+   "low": 32.5,
+   "marker": "",
+   "name": "CHINA RES LAND",
+   "prev_close": 33.2,
+   "turnover": 611130664.0,
+   "volume": 18558348.0
+  },
+  "1113.HK": {
+   "close": 47.7,
+   "high": 48.38,
+   "low": 47.36,
+   "marker": "",
+   "name": "CK ASSET",
+   "prev_close": 47.84,
+   "turnover": 147446736.0,
+   "volume": 3092483.0
+  },
+  "1177.HK": {
+   "close": 4.945,
+   "high": 5.08,
+   "low": 4.88,
+   "marker": "",
+   "name": "SBP GROUP",
+   "prev_close": 5.03,
+   "turnover": 287302376.0,
+   "volume": 58176637.0
+  },
+  "1199.HK": {
+   "close": 5.305,
+   "high": 5.4,
+   "low": 5.28,
+   "marker": "",
+   "name": "COSCO SHIP PORT",
+   "prev_close": 5.33,
+   "turnover": 9181853.0,
+   "volume": 1727511.0
+  },
+  "1209.HK": {
+   "close": 40.18,
+   "high": 40.68,
+   "low": 39.6,
+   "marker": "",
+   "name": "CHINA RES MIXC",
+   "prev_close": 39.92,
+   "turnover": 179634508.0,
+   "volume": 4462961.0
+  },
+  "1211.HK": {
+   "close": 94.9,
+   "high": 96.65,
+   "low": 94.2,
+   "marker": "",
+   "name": "BYD COMPANY",
+   "prev_close": 94.15,
+   "turnover": 1688969158.0,
+   "volume": 17725391.0
+  },
+  "1288.HK": {
+   "close": 6.19,
+   "high": 6.335,
+   "low": 6.11,
+   "marker": "",
+   "name": "ABC",
+   "prev_close": 6.31,
+   "turnover": 661213606.0,
+   "volume": 106748215.0
+  },
+  "1299.HK": {
+   "close": 78.55,
+   "high": 79.3,
+   "low": 77.8,
+   "marker": "",
+   "name": "AIA",
+   "prev_close": 79.25,
+   "turnover": 1596647025.0,
+   "volume": 20353345.0
+  },
+  "1339.HK": {
+   "close": 5.34,
+   "high": 5.49,
+   "low": 5.29,
+   "marker": "",
+   "name": "PICC GROUP",
+   "prev_close": 5.46,
+   "turnover": 195768755.0,
+   "volume": 36666297.0
+  },
+  "1378.HK": {
+   "close": 22.96,
+   "high": 23.9,
+   "low": 22.66,
+   "marker": "",
+   "name": "CHINAHONGQIAO",
+   "prev_close": 24.54,
+   "turnover": 1547819836.0,
+   "volume": 67204893.0
+  },
+  "1398.HK": {
+   "close": 7.495,
+   "high": 7.62,
+   "low": 7.35,
+   "marker": "",
+   "name": "ICBC",
+   "prev_close": 7.51,
+   "turnover": 1284967569.0,
+   "volume": 172036790.0
+  },
+  "1810.HK": {
+   "close": 27.96,
+   "high": 28.76,
+   "low": 27.2,
+   "marker": "*",
+   "name": "XIAOMI-W",
+   "prev_close": 28.78,
+   "turnover": 8060075268.0,
+   "volume": 291271451.0
+  },
+  "1876.HK": {
+   "close": 6.565,
+   "high": 6.685,
+   "low": 6.505,
+   "marker": "",
+   "name": "BUD APAC",
+   "prev_close": 6.58,
+   "turnover": 166941441.0,
+   "volume": 25363397.0
+  },
+  "1880.HK": {
+   "close": 52.4,
+   "high": 53.8,
+   "low": 52.0,
+   "marker": "",
+   "name": "CTG DUTY-FREE",
+   "prev_close": 53.6,
+   "turnover": 64380735.0,
+   "volume": 1225348.0
+  },
+  "1898.HK": {
+   "close": 10.52,
+   "high": 10.71,
+   "low": 10.44,
+   "marker": "",
+   "name": "CHINA COAL",
+   "prev_close": 10.71,
+   "turnover": 131493847.0,
+   "volume": 12497024.0
+  },
+  "1928.HK": {
+   "close": 14.49,
+   "high": 14.72,
+   "low": 14.33,
+   "marker": "",
+   "name": "SANDS CHINA LTD",
+   "prev_close": 14.72,
+   "turnover": 190197614.0,
+   "volume": 13159199.0
+  },
+  "1929.HK": {
+   "close": 12.49,
+   "high": 12.5,
+   "low": 12.22,
+   "marker": "",
+   "name": "CHOW TAI FOOK",
+   "prev_close": 12.37,
+   "turnover": 119382355.0,
+   "volume": 9619206.0
+  },
+  "1997.HK": {
+   "close": 26.56,
+   "high": 26.86,
+   "low": 26.22,
+   "marker": "",
+   "name": "WHARF REIC",
+   "prev_close": 26.58,
+   "turnover": 100742764.0,
+   "volume": 3797792.0
+  },
+  "2003.HK": {
+   "close": 0.885,
+   "high": 0.885,
+   "low": 0.85,
+   "marker": "",
+   "name": "VCREDIT",
+   "prev_close": 0.86,
+   "turnover": 27726.0,
+   "volume": 32200.0
+  },
+  "2007.HK": {
+   "close": 0.171,
+   "high": 0.173,
+   "low": 0.169,
+   "marker": "",
+   "name": "COUNTRY GARDEN",
+   "prev_close": 0.17,
+   "turnover": 36892747.0,
+   "volume": 215901605.0
+  },
+  "2015.HK": {
+   "close": 51.85,
+   "high": 54.45,
+   "low": 51.45,
+   "marker": "",
+   "name": "LI AUTO-W",
+   "prev_close": 53.4,
+   "turnover": 584922116.0,
+   "volume": 11189530.0
+  },
+  "2018.HK": {
+   "close": 40.28,
+   "high": 40.6,
+   "low": 37.58,
+   "marker": "",
+   "name": "AAC TECH",
+   "prev_close": 38.54,
+   "turnover": 256956497.0,
+   "volume": 6427849.0
+  },
+  "2020.HK": {
+   "close": 77.0,
+   "high": 79.25,
+   "low": 76.25,
+   "marker": "",
+   "name": "ANTA SPORTS",
+   "prev_close": 78.95,
+   "turnover": 794440790.0,
+   "volume": 10300098.0
+  },
+  "2038.HK": {
+   "close": 17.14,
+   "high": 19.15,
+   "low": 16.66,
+   "marker": "",
+   "name": "FIH",
+   "prev_close": 19.3,
+   "turnover": 53226759.0,
+   "volume": 3130895.0
+  },
+  "2057.HK": {
+   "close": 192.3,
+   "high": 192.4,
+   "low": 187.8,
+   "marker": "",
+   "name": "ZTO EXPRESS-W",
+   "prev_close": 186.8,
+   "turnover": 215003834.0,
+   "volume": 1122447.0
+  },
+  "2269.HK": {
+   "close": 38.8,
+   "high": 39.18,
+   "low": 38.14,
+   "marker": "",
+   "name": "WUXI BIO",
+   "prev_close": 38.74,
+   "turnover": 647105248.0,
+   "volume": 16774908.0
+  },
+  "2313.HK": {
+   "close": 43.24,
+   "high": 44.96,
+   "low": 42.92,
+   "marker": "",
+   "name": "SHENZHOU INTL",
+   "prev_close": 44.58,
+   "turnover": 209931545.0,
+   "volume": 4841707.0
+  },
+  "2318.HK": {
+   "close": 58.45,
+   "high": 59.0,
+   "low": 58.05,
+   "marker": "",
+   "name": "PING AN",
+   "prev_close": 58.65,
+   "turnover": 1368066571.0,
+   "volume": 23426906.0
+  },
+  "2319.HK": {
+   "close": 18.63,
+   "high": 19.08,
+   "low": 18.46,
+   "marker": "",
+   "name": "MENGNIU DAIRY",
+   "prev_close": 18.9,
+   "turnover": 421962433.0,
+   "volume": 22638543.0
+  },
+  "2331.HK": {
+   "close": 14.89,
+   "high": 15.14,
+   "low": 14.81,
+   "marker": "",
+   "name": "LI NING",
+   "prev_close": 15.15,
+   "turnover": 239213173.0,
+   "volume": 16072796.0
+  },
+  "2359.HK": {
+   "close": 162.9,
+   "high": 165.8,
+   "low": 158.4,
+   "marker": "",
+   "name": "WUXI APPTEC",
+   "prev_close": 160.7,
+   "turnover": 822525255.0,
+   "volume": 5086868.0
+  },
+  "2382.HK": {
+   "close": 56.55,
+   "high": 56.55,
+   "low": 54.55,
+   "marker": "",
+   "name": "SUNNY OPTICAL",
+   "prev_close": 56.05,
+   "turnover": 906807404.0,
+   "volume": 16231806.0
+  },
+  "2388.HK": {
+   "close": 51.65,
+   "high": 52.35,
+   "low": 51.3,
+   "marker": "",
+   "name": "BOC HONG KONG",
+   "prev_close": 52.2,
+   "turnover": 470911564.0,
+   "volume": 9111358.0
+  },
+  "2600.HK": {
+   "close": 8.26,
+   "high": 8.41,
+   "low": 8.165,
+   "marker": "",
+   "name": "CHALCO",
+   "prev_close": 8.46,
+   "turnover": 348691142.0,
+   "volume": 42316279.0
+  },
+  "2601.HK": {
+   "close": 30.66,
+   "high": 30.74,
+   "low": 30.28,
+   "marker": "",
+   "name": "CPIC",
+   "prev_close": 30.56,
+   "turnover": 203789604.0,
+   "volume": 6677475.0
+  },
+  "2618.HK": {
+   "close": 15.24,
+   "high": 15.46,
+   "low": 14.98,
+   "marker": "",
+   "name": "JD LOGISTICS",
+   "prev_close": 15.02,
+   "turnover": 126490152.0,
+   "volume": 8290607.0
+  },
+  "2628.HK": {
+   "close": 29.0,
+   "high": 29.38,
+   "low": 28.64,
+   "marker": "",
+   "name": "CHINA LIFE",
+   "prev_close": 29.2,
+   "turnover": 959714881.0,
+   "volume": 33177334.0
+  },
+  "2688.HK": {
+   "close": 46.62,
+   "high": 47.62,
+   "low": 46.28,
+   "marker": "",
+   "name": "ENN ENERGY",
+   "prev_close": 46.94,
+   "turnover": 218522819.0,
+   "volume": 4676968.0
+  },
+  "2800.HK": {
+   "close": 26.46,
+   "high": 26.62,
+   "low": 26.3,
+   "marker": "*",
+   "name": "TRACKER FUND",
+   "prev_close": 26.4,
+   "turnover": 23610036690.0,
+   "volume": 892735000.0
+  },
+  "2899.HK": {
+   "close": 32.92,
+   "high": 33.16,
+   "low": 32.46,
+   "marker": "",
+   "name": "ZIJIN MINING",
+   "prev_close": 33.24,
+   "turnover": 1091074586.0,
+   "volume": 33128264.0
+  },
+  "3328.HK": {
+   "close": 7.59,
+   "high": 7.64,
+   "low": 7.48,
+   "marker": "",
+   "name": "BANKCOMM",
+   "prev_close": 7.56,
+   "turnover": 204764880.0,
+   "volume": 27043043.0
+  },
+  "3690.HK": {
+   "close": 93.45,
+   "high": 94.15,
+   "low": 91.6,
+   "marker": "*",
+   "name": "MEITUAN-W",
+   "prev_close": 92.5,
+   "turnover": 3644256687.0,
+   "volume": 39105188.0
+  },
+  "3692.HK": {
+   "close": 31.5,
+   "high": 32.18,
+   "low": 30.74,
+   "marker": "",
+   "name": "HANSOH PHARMA",
+   "prev_close": 32.18,
+   "turnover": 385108705.0,
+   "volume": 12270209.0
+  },
+  "3968.HK": {
+   "close": 50.9,
+   "high": 51.3,
+   "low": 50.25,
+   "marker": "",
+   "name": "CM BANK",
+   "prev_close": 50.9,
+   "turnover": 614059889.0,
+   "volume": 12107184.0
+  },
+  "3988.HK": {
+   "close": 5.485,
+   "high": 5.58,
+   "low": 5.435,
+   "marker": "",
+   "name": "BANK OF CHINA",
+   "prev_close": 5.51,
+   "turnover": 764892914.0,
+   "volume": 139140074.0
+  },
+  "6030.HK": {
+   "close": 27.18,
+   "high": 27.32,
+   "low": 26.78,
+   "marker": "",
+   "name": "CITIC SEC",
+   "prev_close": 27.32,
+   "turnover": 182419134.0,
+   "volume": 6751606.0
+  },
+  "6098.HK": {
+   "close": 5.585,
+   "high": 5.65,
+   "low": 5.52,
+   "marker": "",
+   "name": "CG SERVICES",
+   "prev_close": 5.6,
+   "turnover": 10641443.0,
+   "volume": 1907383.0
+  },
+  "6618.HK": {
+   "close": 39.8,
+   "high": 40.06,
+   "low": 38.78,
+   "marker": "",
+   "name": "JD HEALTH",
+   "prev_close": 39.4,
+   "turnover": 274406797.0,
+   "volume": 6936201.0
+  },
+  "6690.HK": {
+   "close": 21.2,
+   "high": 21.78,
+   "low": 21.12,
+   "marker": "",
+   "name": "HAIER SMARTHOME",
+   "prev_close": 21.575,
+   "turnover": 341212342.0,
+   "volume": 16001543.0
+  },
+  "6862.HK": {
+   "close": 11.69,
+   "high": 11.94,
+   "low": 11.6,
+   "marker": "",
+   "name": "HAIDILAO",
+   "prev_close": 11.89,
+   "turnover": 100390787.0,
+   "volume": 8568297.0
+  },
+  "9618.HK": {
+   "close": 129.3,
+   "high": 130.9,
+   "low": 128.2,
+   "marker": "",
+   "name": "JD-SW",
+   "prev_close": 127.1,
+   "turnover": 990962294.0,
+   "volume": 7657992.0
+  },
+  "9633.HK": {
+   "close": 43.6,
+   "high": 44.38,
+   "low": 43.24,
+   "marker": "",
+   "name": "NONGFU SPRING",
+   "prev_close": 43.78,
+   "turnover": 263452736.0,
+   "volume": 6037334.0
+  },
+  "9888.HK": {
+   "close": 109.9,
+   "high": 110.8,
+   "low": 108.7,
+   "marker": "",
+   "name": "BIDU-SW",
+   "prev_close": 105.9,
+   "turnover": 823536927.0,
+   "volume": 7504418.0
+  },
+  "9901.HK": {
+   "close": 47.42,
+   "high": 47.8,
+   "low": 45.8,
+   "marker": "",
+   "name": "NEW ORIENTAL-S",
+   "prev_close": 45.28,
+   "turnover": 417721829.0,
+   "volume": 8903096.0
+  },
+  "9961.HK": {
+   "close": 363.6,
+   "high": 369.6,
+   "low": 361.4,
+   "marker": "",
+   "name": "TRIP.COM-S",
+   "prev_close": 366.4,
+   "turnover": 640604695.0,
+   "volume": 1761150.0
+  },
+  "9988.HK": {
+   "close": 125.2,
+   "high": 126.0,
+   "low": 120.1,
+   "marker": "*",
+   "name": "BABA-W",
+   "prev_close": 117.0,
+   "turnover": 23935012441.0,
+   "volume": 192268809.0
+  },
+  "9992.HK": {
+   "close": 159.9,
+   "high": 163.6,
+   "low": 159.8,
+   "marker": "*",
+   "name": "POP MART",
+   "prev_close": 162.6,
+   "turnover": 2168501788.0,
+   "volume": 13490332.0
+  },
+  "9999.HK": {
+   "close": 208.0,
+   "high": 210.6,
+   "low": 206.2,
+   "marker": "",
+   "name": "NTES",
+   "prev_close": 207.8,
+   "turnover": 1190854928.0,
+   "volume": 5732394.0
+  }
+ },
+ "source": "https://www.hkex.com.hk/eng/stat/smstat/dayquot/d260803e.htm",
+ "trade_date": "2026-08-03"
+}

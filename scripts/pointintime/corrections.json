@@ -1,0 +1,9 @@
+{
+ "_說明": "Wikipedia 修訂版本本身的錯誤更正，由 scripts/parse_hsi_snapshots.py 解析後套用。格式：{年份: {錯誤代碼: {to: 正確代碼或 null(刪除), reason}}}。每一條都要能從原始 wikitext 或每日品質日報追溯。",
+ "2019": {
+  "2003.HK": {
+   "to": "2007.HK",
+   "reason": "Wikipedia 2019年版把碧桂園(Country Garden)代碼誤寫成 2003（2020年版起改正為 2007）。2003.HK 其實是維信金科(VCREDIT)，2018年上市，會通過代碼重用防護、被誤當成2019年成分股。由品質日報 name_mismatch（yfinance「VCREDIT Holdings」vs Wikipedia「Country Garden」）抓到。"
+  }
+ }
+}

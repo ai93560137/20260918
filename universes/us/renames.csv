@@ -1,0 +1,40 @@
+old,new,note
+ABC,COR,AmerisourceBergen -> Cencora 2023
+ANTM,ELV,Anthem -> Elevance Health 2022
+BLL,BALL,Ball Corp 改代碼 2022
+BK,BNY,Bank of New York Mellon 改代碼 2024
+FLT,CPAY,FleetCor -> Corpay 2024
+HFC,DINO,HollyFrontier -> HF Sinclair 2022（控股公司承接；價格起點由防代碼重用檢查把關）
+JEC,J,Jacobs 改代碼 2019
+KORS,CPRI,Michael Kors -> Capri Holdings 2018
+NLOK,GEN,NortonLifeLock -> Gen Digital 2022
+SYMC,GEN,Symantec -> NortonLifeLock -> Gen Digital
+PKI,RVTY,PerkinElmer -> Revvity 2023
+RE,EG,Everest Re -> Everest Group 2023
+WLTW,WTW,Willis Towers Watson 改代碼 2022
+GPS,GAP,Gap Inc 改代碼 2024
+FI,FISV,Fiserv 2023 FISV->FI、2025 轉 Nasdaq 改回 FISV
+CTL,LUMN,CenturyLink -> Lumen 2020
+DWDP,DD,DowDuPont -> DuPont de Nemours 2019
+ARNC,HWM,Alcoa Inc/Arconic -> Howmet Aerospace 2020（價格起點由防代碼重用檢查把關）
+BHGE,BKR,Baker Hughes 改代碼 2019（Yahoo BKR 只從 2017 起，早年區間會被防代碼重用檢查擋掉）
+TMK,GL,Torchmark -> Globe Life 2019
+HRS,LHX,Harris -> L3Harris 2019（Harris 為存續公司）
+PX,LIN,Praxair -> Linde plc 2018（價格起點由防代碼重用檢查把關）
+ADS,BFH,Alliance Data -> Bread Financial 2022
+FBHS,FBIN,Fortune Brands Home & Security -> Fortune Brands Innovations 2022
+UTX,RTX,United Technologies -> Raytheon Technologies 2020（UTX 為存續公司）
+WYND,TNL,Wyndham Worldwide/Destinations -> Travel + Leisure 2021
+DISCA,WBD,Discovery -> Warner Bros. Discovery 2022（Discovery 為存續公司）
+HCP,DOC,HCP -> Healthpeak(PEAK) -> 2024 改代碼 DOC
+PEAK,DOC,Healthpeak 2024 改代碼 DOC
+MMC,MRSH,Marsh McLennan 2026 改代碼（Nasdaq screener 名單確認）
+CBS,PSKY,CBS -> ViacomCBS -> Paramount -> Paramount Skydance（Yahoo PSKY 多半從 2025 起，防代碼重用檢查會擋掉）
+VIAC,PSKY,ViacomCBS -> Paramount -> Paramount Skydance（同上）
+FB,META,Facebook -> Meta 2022
+PCLN,BKNG,Priceline -> Booking 2018
+CTRP,TCOM,Ctrip -> Trip.com 2019
+ERTS,EA,Electronic Arts 舊代碼
+AVB,VMRK,AvalonBay -> Vivmark Residential 2026 改名改代碼（Nasdaq screener 名單確認）
+BBT,TFC,BB&T 為存續公司，2019 與 SunTrust 合併後改名 Truist、代碼 TFC（Yahoo BBT 現為別家）
+VIP,VEON,VimpelCom 2017 改代碼 VEON

@@ -1,0 +1,14 @@
+{
+ "_說明": "人工確認沒問題的 QC 項目（<TICKER>:<檢查> -> 理由）；check_equities_quality.py 會移到「已確認」區",
+ "EA:stale": "Electronic Arts 2026-08 私有化下市；Nasdaq-100 名單是 Wikipedia 年度快照（2026-06-29），尚未反映出榜——回測到 8 月初之後自然沒有它的價格",
+ "MRSH:name_mismatch": "Marsh McLennan 2026 改名 Marsh、代碼 MMC->MRSH；yfinance 名字還沒更新",
+ "VMRK:name_mismatch": "AvalonBay 2026 改名 Vivmark Residential、代碼 AVB->VMRK；yfinance 名字還沒更新",
+ "EA:no_second_source": "Electronic Arts 2026-08 私有化下市（見 EA:stale）",
+ "BATRA:reuse_suspect_ndx_2016-06-30": "Liberty Braves Group A 追蹤股（同一實體，本來就成交清淡），不是代碼重用",
+ "BATRK:reuse_suspect_ndx_2016-06-30": "Liberty Braves Group C 追蹤股（同上）",
+ "GM:xcheck_history": "Nasdaq 端壞價：2017-12-01 Nasdaq 35.55、實際收市約 43（我們 42.79 正確）；另 2 筆 1-4% 單日差（2026-09-23 查）",
+ "LBTYA:xcheck_history": "Nasdaq 端壞價：2019-09-20 等 3 天 Nasdaq 收市 0.0001 美元量級（我們 13.43 正常）",
+ "LILA:xcheck_history": "Nasdaq 端壞價：2017-12-29 Nasdaq 45.84（我們 12.90、前後日連續）",
+ "LILAK:xcheck_history": "Nasdaq 端壞價：2017-12-29 Nasdaq 52.76（我們 12.72、前後日連續）",
+ "AZN:xcheck_history": "Nasdaq 的 AZN 2021 段數據逐日 ±2-3% 來回跳（我們平滑、符合 ADR×2 的 2026 直接上市換算）；另 400 筆 Nasdaq 停滯已剔除——判斷為第二來源雜訊（2026-09-23 查）"
+}

@@ -1,0 +1,30 @@
+name: send-telegram-research
+# Telegram 通道二（研究 session 專用）：寫 .github/tg_outbox_research.txt + push 即發。
+# 刻意不共用 .github/tg_outbox.txt——那個是八陣圖交易指令的通道（compose_tg.py 會改寫），
+# 兩個 session 寫同一檔會合併衝突，解衝突後的 push 還可能重發交易指令。
+on:
+  push:
+    paths: ['.github/tg_outbox_research.txt']
+permissions:
+  contents: read
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: send
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ ! -s .github/tg_outbox_research.txt ]; then
+            echo "empty outbox - skip"
+          elif [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"
+          else
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat .github/tg_outbox_research.txt)" > /dev/null
+            echo "telegram sent"
+          fi
