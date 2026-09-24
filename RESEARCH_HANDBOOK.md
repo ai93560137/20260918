@@ -67,6 +67,7 @@
 | ☠️ | **相場師朗「PPP 中的下半身」**（M5>M10>M20>M60 且向上 + 陽燭由下穿 5 日線過半 + M5 轉上；t+1 開市買；逆下半身或跌破 60 日線出）on 全市場 港500／日1000／美1500 | 預先登記、抽樣 300 筆核對：預設格 alpha t 港 0.42（17,075 筆）／日 -1.52（37,294）／美 -1.49（111,816）；27 格鄰域無一 ≥ 1.0；三地後段 t -1.7 ~ -3.2。港日「等下半身」勝過隨機 PPP 日（第 99.5／100 百分位）但 PPP 股本身用此出場就虧；持有 14–16 日、成本拖累大。鳥嘴／PPP 單獨入場另有外部負面證據（ねほり.com），不另測。見 AIBA_PPP_BACKTEST.md |
 | ☠️ | 同上，**出場改五日 EMA、只看絕對回報**（使用者指定，看過逆下半身結果後改）| 預先登記（第三部分）：絕對 t 港 -0.29／日 -1.13／美 -2.24，年化 -5.6%／-6.3%／-9.3%、回撤 -82% ~ -95%；平均持有 < 5 日，每年來回約 50 次，成本吃光毛利。比逆下半身出場更差。見 AIBA_PPP_BACKTEST.md 第四部分 |
 | 📌 保留候選 | **期望值／RRR 覆核**（EXPECTANCY_REVIEW.md，描述性、不改判決）：扣成本後跑贏同期 ETF 的只有港股 VCP 全市場 XV（年化 +13.6%）、港股 Minervini（+6.9%）、美股新高 H5a（+9.2%）；另使用者指定保留 PPP 下半身＋逆下半身出場（三地正回報但輸 ETF）。趨勢策略共同形態：勝率 27–43%、RRR 2–4。只作前向追蹤候選，不是驗證通過 | 見 EXPECTANCY_REVIEW.md |
+| ☠️（H5a）／ 🔍（Minervini 待再驗證） | **樣本外驗證：台灣、韓國、澳洲**（OOS_VALIDATION.md，預先登記、凍結規格；主要候選新高 H5a，次要 Minervini、PPP 逆下半身） | 合併 alpha t：**H5a -0.64 ☠️**（台 -0.45、韓 -0.95、澳 +1.35——港日美「三地都正」沒有重現，原排名第一是選擇偏差）；**Minervini 3.17、隨機第 100 百分位、三地都正**（台 3.18、澳 2.10、韓 0.08）→ 按登記只標「值得再驗證」，台灣前 10 筆佔獲利 73%，六市場合計一半有效一半無效；PPP -1.02 ☠️。按登記：**不做個股策略實盤，指數 ETF 核心** |
 | ☠️（美：真實 CBOE 指數）☠️（港：模型）| **股票期權 + 正股**：備兌（BXM 型平值 call）、現金擔保賣 put（PUT 型）、保護 put（PPUT 型 95%）、領口（CLL 型 95/110）、輪動（the wheel）；每月一期、指數層面（SPY／2800）| 預先登記、兩地各跑一次：模型對照 CBOE 五個真實指數**不過**（相關 0.90–0.99 但期權一律偏便宜 1.6–4%/年）→ 美股改用真實指數判：BXM alpha t −0.88、PUT −0.32、PPUT −0.86（夏普比 SPY 低 0.10）、CLL −0.05（夏普低 0.15）；回撤少 20–35% 但夏普全部低於持有，贏 SPY 的年份只有 4–7 年。港股模型 alpha t −0.46～−0.93，k 調 0.1 仍 < 1.0；保護 put 不確定；輪動美股無真實指數、不確定。**波動溢價是真的（雲垂 t 11.7），但疊在正股上收不到**——放棄的上漲蓋過權利金。見 OPTIONS_EQUITY_BACKTEST.md（分支 `claude/market-data-tools-ready-6l5djr`）|
 | ☠️（今天的價格）| **個股備兌／輪動**（S&P 500、恒指 PIT 成分股；每月賣平值／5% 價外 call 或輪動）——損益平衡分析 | 個股無 IV 歷史 → 問「IV ÷ RV63（ρ）要多高才贏同股持有」：美股 ρ₀ ≈ 1.00、顯著贏要 1.1；港股 ρ₀ ≈ 1.04、要 1.2（成本較高）。2026-09-23 真實報價：美股 428 檔 ρ 中位 **0.95**、港股 72 檔 **0.93**，都低於損益平衡；高 ρ 的多是業績前。一天快照 → 只能前向每月記錄 ρ 再議。見 OPTIONS_EQUITY_BACKTEST.md 第四、五部分 |
 | 不確定（限價單更好）| **short put 接貨 vs 直接買 vs 限價買**（事件 = 第一次上 12 個月新高名單；賣 1 個月 3% 價外 put，到期收市低於行使價接貨；持有 6 個月）| 按月平均：美股賣 put 比直接買 +0.41%（t 3.04），但**比同價限價單差 −0.16%（t −2.31）**；港股 +0.17%（t 0.57）、比限價單差 −0.32%（t −2.12）；逐事件平均賣 put 兩地都輸直接買。限價單成交率 59–70% vs put 接貨率 27–36%：回調後反彈時 put 接不到。隨機股票同樣是限價單贏。ρ 要 ≥ 1.0（美）／1.05（港）賣 put 才贏限價單，今天 0.95／0.93。見 OPTIONS_EQUITY_BACKTEST.md 第六、七部分 |
@@ -157,6 +158,7 @@
 | `vcp_minervini.py` + `scripts/{build_full_pools,fetch_full_market,qc_full_market,verify_trades}.py` → `research/vcp_full/` | 全市場（成交額前 N）版：候選池、yfinance 全市場日線（不進 git，Actions 快取 + Release 備份）、4 層品質檢查、逐筆交易核對；Minervini 忠實版（樞紐點盤中成交、大市過濾、固定止損／保本／50 日線出場）|
 | `aiba_ppp.py` + `.github/workflows/aiba_verify.yml` → `research/aiba_ppp/` | 相場流 PPP／下半身／逆下半身（還原 K 線、SMA）全市場回測；`--trades-only` 先出逐筆明細不看績效、抽樣交給 Actions 核對第二來源 |
 | `scripts/expectancy_report.py` → `research/expectancy/` | 已判決策略預設格的期望值、RRR、獲利因子、累計／年化／MDD vs ETF（一個市場一次重建數據，全部策略共用）|
+| `oos_backtest.py` + `scripts/build_oos_pools.py` + `.github/workflows/oos_fullmarket.yml` → `research/oos/` | 樣本外新市場（台 .TW/.TWO、韓 .KS/.KQ、澳 .AX）候選池、抓數據（Release `oos-data`）、凍結規格回測、漲停鎖死跳過、三市場合併 alpha 檢定 |
 | `sector_momentum_backtest.py` | 行業動量回測引擎（多市場，`--grid` 3x3 鄰域、`--permutation` 隨機行業對照、`--attribution` Brinson 行業歸因）|
 | `SECTOR_ROTATION.md` | 行業動量預先登記與各市場結果、既有 alpha 的行業歸因 |
 | `scripts/check_data_quality.py` → `data/equities/hk/QC_REPORT.md` | **每日數據品質日報**（排程自動跑，🔴 即時 Telegram 警報、每交易日收市推日報；研究 session 任意推送用 `.github/tg_outbox_research.txt`，勿用八陣圖的 `tg_outbox.txt`）：近30天髒值、雙來源收市價比對、公司名核對（抓代碼重用）、過期/斷層；人工確認項寫 `scripts/qc_acks.json`。回測前先看 🔴 |
@@ -281,6 +283,7 @@ git checkout -- research/vcp_full/                          # 上一步會改寫
 | 5 | （新高連續天數入場，指數成分股數據） | 9 個測試無一過；港日 ☠️／美 不確定 |
 | 6 | 相場師朗 PPP 中的下半身 | 三地 ☠️ |
 | 7 | 相場師朗 PPP 下半身 + 五日 EMA 出場（絕對回報） | 三地 ☠️（絕對回報為負） |
+| — | 樣本外新市場（台韓澳，獨立數據，不計入港日美帳本） | H5a ☠️、PPP ☠️、Minervini 合併 t 3.17（待再驗證） |
 
 → 下一個在同一批數據上的趨勢跟隨假設（第 8 次）：預設格門檻 **≥ 2.5 起跳**，並要求隨機對照 ≥ 95 百分位、前後段都正。
 能用前向數據（每日篩選寫進 `analysis/newhighs/`、`analysis/vcp/` 的名單）驗證的，優先用前向數據。

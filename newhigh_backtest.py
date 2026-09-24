@@ -264,8 +264,14 @@ class MarketData:
         self.start_j = next(j for j, d in enumerate(self.cal) if d >= self.cfg["start"])
         etf = load_series_any(market, cfg["etf"])
         e = np.array([etf[d][1] if d in etf else np.nan for d in self.cal])
+        ok_e = ~np.isnan(e)
+        if ok_e.any() and int(np.argmax(ok_e)) > self.start_j:
+            # 基準 ETF 數據比樣本起點晚（樣本外新市場：Yahoo 的 0050.TW 由 2009、069500.KS 由 2007 起）
+            # → 樣本起點改為 ETF 第一日；之前 ETF 報酬記 0（否則 NaN 會令大市過濾全假、ETF 年化變 NaN）
+            self.start_j = int(np.argmax(ok_e))
+            print(f"[{market}] 基準 {cfg['etf']} 數據由 {self.cal[self.start_j]} 起 → 樣本起點改為該日", file=sys.stderr)
         e = pd.Series(e).ffill().to_numpy()
-        self.etf_ret = np.r_[0.0, e[1:] / e[:-1] - 1]
+        self.etf_ret = np.nan_to_num(np.r_[0.0, e[1:] / e[:-1] - 1])
         m = self.member & self.has
         self.ew_ret = np.where(m.sum(0) > 0, (self.ret * m).sum(0) / np.maximum(m.sum(0), 1), 0.0)
         print(f"[{market}] {S} 檔、{D} 個交易日（{self.cal[0]} ~ {self.cal[-1]}）", file=sys.stderr)
