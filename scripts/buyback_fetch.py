@@ -326,24 +326,39 @@ HK_FIELDS = ["news_id", "stock_code", "stock_name", "date_time", "title", "categ
 HK_NEW_CATEGORY_FROM = date(2009, 1, 1)  # 之前是「Share Buyback Reports」（t1 51000）
 
 
-def hk_range(s, d0, d1, t1, t2, depth=0):
-    url = HK_URL.format(f=d0.strftime("%Y%m%d"), t=d1.strftime("%Y%m%d"), t1=t1, t2=t2, n=100)
+def hk_range(s, d0, d1, t1, t2, rows_per=3000):
+    """一次請求整段日期；網站的「載入更多」就是加大 rowRange，所以先用大的 rowRange，
+    仍有下一頁才把日期對半拆。回傳 (列表, 是否仍被截斷)。"""
+    url = HK_URL.format(f=d0.strftime("%Y%m%d"), t=d1.strftime("%Y%m%d"), t1=t1, t2=t2, n=rows_per)
     r = get(s, url, pause=0.3)
     if r is None:
-        return [], False
+        return [], True
     js = r.json()
     rows = json.loads(js.get("result") or "[]")
     if not js.get("hasNextRow"):
         return rows, False
     if d0 < d1:
         mid = d0 + (d1 - d0) // 2
-        a, ta = hk_range(s, d0, mid, t1, t2, depth + 1)
-        b, tb = hk_range(s, mid + timedelta(days=1), d1, t1, t2, depth + 1)
+        a, ta = hk_range(s, d0, mid, t1, t2, rows_per)
+        b, tb = hk_range(s, mid + timedelta(days=1), d1, t1, t2, rows_per)
         return a + b, ta or tb
-    # 單日仍超過 100 筆：放大 rowRange
-    r = get(s, url.replace("rowRange=100", "rowRange=1000"), pause=0.3)
-    js = r.json() if r is not None else {}
-    return json.loads(js.get("result") or "[]"), bool(js.get("hasNextRow"))
+    return rows, True
+
+
+def _hk_row(x):
+    return {"news_id": x["NEWS_ID"],
+            "stock_code": re.sub(r"<br\s*/?>", "|", x.get("STOCK_CODE", "")).strip("|"),
+            "stock_name": html.unescape(re.sub(r"<br\s*/?>", "|", x.get("STOCK_NAME", ""))).strip("|"),
+            "date_time": x.get("DATE_TIME", ""),
+            "title": html.unescape(x.get("TITLE", "")),
+            "category": html.unescape(re.sub(r"<br\s*/?>", "", x.get("LONG_TEXT", ""))),
+            "file_link": x.get("FILE_LINK", "")}
+
+
+def _hk_key(r):
+    d, _, t = r["date_time"].partition(" ")
+    dd, mm, yy = d.split("/")
+    return f"{yy}-{mm}-{dd} {t}", r["news_id"]
 
 
 def fetch_hk(args):
@@ -353,10 +368,24 @@ def fetch_hk(args):
     path = os.path.join(OUT, "hk", "reports.csv.gz")
     have = {r["news_id"]: r for r in read_csv(path)}
     done = set(state.get("done_months", []))
+    truncated = set(state.get("truncated_months", []))
     today = date.today()
+    deadline = time.time() + args.budget_min * 60
+
+    def save():
+        out = sorted(have.values(), key=_hk_key)
+        write_csv(path, HK_FIELDS, out)
+        state["done_months"] = sorted(done)
+        state["truncated_months"] = sorted(truncated)
+        state["summary"] = {"reports": len(out), "stocks": len({r["stock_code"] for r in out}),
+                            "first": _hk_key(out[0])[0] if out else "", "last": _hk_key(out[-1])[0] if out else ""}
+        save_state("hk", state)
+
     y, m = map(int, args.start_hk.split("-"))
-    truncated = set(state.get("truncated_days", []))
     while (y, m) <= (today.year, today.month):
+        if time.time() > deadline:
+            print("時間預算用完，下次接著抓")
+            break
         ym = f"{y:04d}-{m:02d}"
         d0 = date(y, m, 1)
         d1 = min(date(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1), today)
@@ -364,33 +393,15 @@ def fetch_hk(args):
             t1, t2 = ("50000", "50100") if d0 >= HK_NEW_CATEGORY_FROM else ("51000", "-2")
             rows, trunc = hk_range(s, d0, d1, t1, t2)
             for x in rows:
-                have[x["NEWS_ID"]] = {
-                    "news_id": x["NEWS_ID"],
-                    "stock_code": re.sub(r"<br\s*/?>", "|", x.get("STOCK_CODE", "")).strip("|"),
-                    "stock_name": html.unescape(re.sub(r"<br\s*/?>", "|", x.get("STOCK_NAME", ""))).strip("|"),
-                    "date_time": x.get("DATE_TIME", ""),
-                    "title": html.unescape(x.get("TITLE", "")),
-                    "category": html.unescape(re.sub(r"<br\s*/?>", "", x.get("LONG_TEXT", ""))),
-                    "file_link": x.get("FILE_LINK", "")}
-            if trunc:
-                truncated.add(ym)
+                have[x["NEWS_ID"]] = _hk_row(x)
+            (truncated.add if trunc else truncated.discard)(ym)
             print(f"  {ym}：{len(rows)} 筆{'（有截斷）' if trunc else ''}")
             done.add(ym)
-            state["done_months"] = sorted(done)
-            state["truncated_days"] = sorted(truncated)
+            save()
         y, m = (y + 1, 1) if m == 12 else (y, m + 1)
-
-    def key(r):
-        d, t = r["date_time"].split(" ") if " " in r["date_time"] else (r["date_time"], "")
-        dd, mm, yy = d.split("/")
-        return f"{yy}-{mm}-{dd} {t}", r["news_id"]
-
-    out = sorted(have.values(), key=key)
-    write_csv(path, HK_FIELDS, out)
-    state["summary"] = {"reports": len(out), "stocks": len({r["stock_code"] for r in out}),
-                        "first": key(out[0])[0] if out else "", "last": key(out[-1])[0] if out else ""}
-    save_state("hk", state)
-    print(f"香港：回購申報 {len(out)} 筆，{state['summary']['stocks']} 檔")
+    save()
+    print(f"香港：回購申報 {state['summary']['reports']} 筆，{state['summary']['stocks']} 檔；"
+          f"完成 {len(done)} 個月")
     return 0
 
 
@@ -464,7 +475,7 @@ def main():
     ap.add_argument("--market", required=True, choices=["us", "hk", "tw"])
     ap.add_argument("--start", default="2006-01", help="美國起始月")
     ap.add_argument("--start-hk", default="2000-01", help="香港起始月")
-    ap.add_argument("--budget-min", type=float, default=300, help="美國抓取時間預算（分鐘）")
+    ap.add_argument("--budget-min", type=float, default=300, help="抓取時間預算（分鐘，美、港）")
     args = ap.parse_args()
     try:
         return {"us": fetch_us, "hk": fetch_hk, "tw": fetch_tw}[args.market](args)
