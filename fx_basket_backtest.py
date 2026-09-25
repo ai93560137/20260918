@@ -104,6 +104,32 @@ def load_prices(root: Path, pairs: list[str], start: str, end: str) -> dict[str,
     return out
 
 
+def fixed_spreads(root: Path, pairs: list[str], start: str = "2003-06-01", end: str = "2006-12-31") -> dict[str, float]:
+    """每對 Dukascopy 買賣價差中位數（start→end）——FRED 單一價樣本用的固定點差（FX_COT_OOS_BACKTEST.md F1）。"""
+    out = {}
+    for p in pairs:
+        d = root / "data_forex" / p
+        bid = pd.read_csv(d / f"{p}_D1.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
+        ask = pd.read_csv(d / f"{p}_D1_ask.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
+        sp = (ask - bid).loc[start:end]
+        out[p] = float(sp[sp > 0].median())
+    return out
+
+
+def load_prices_fred(root: Path, pairs: list[str], start: str, end: str, spreads: dict[str, float]) -> dict[str, pd.DataFrame]:
+    """FRED H.10 紐約中午價（data_forex/<PAIR>/_ref_fred.csv.gz，Date,Close）→ 與 load_prices 同格式：Mid = Close、Spread 固定、開高低 = 收。"""
+    out = {}
+    for p in pairs:
+        f = root / "data_forex" / p / "_ref_fred.csv.gz"
+        s_ = pd.read_csv(f, parse_dates=["Date"]).set_index("Date")["Close"].astype(float)
+        s_ = s_[(s_.index >= start) & (s_.index <= end)]
+        s_ = s_[s_.index.weekday < 5]
+        df = pd.DataFrame({"Open": s_, "High": s_, "Low": s_, "Close": s_, "AskClose": s_ + spreads[p], "Mid": s_, "Spread": spreads[p]})
+        df.index.name = "Time"
+        out[p] = df
+    return out
+
+
 def load_rates(rates_dir: Path, ccys: list[str]) -> pd.DataFrame:
     """回傳月頻（月底）利率表（%），欄 = 貨幣；主系列缺的月份用備援補；再延後一個月（公布時滯）由呼叫端處理。"""
     cols = {}
@@ -143,8 +169,9 @@ def load_vix(info_dir: Path) -> pd.Series:
     return pd.read_csv(info_dir / "VIXCLS.csv", parse_dates=["Date"]).set_index("Date")["Value"].astype(float).sort_index()
 
 
-def load_cot(cot_dir: Path, ccys: list[str], window: int = 156, min_weeks: int = 52, raw: bool = False) -> pd.DataFrame:
-    """CFTC 非商業淨部位比 (多−空)/未平倉 → 相對過去 window 週的 z 分數（raw=True 就用原比率）；索引 = 報告日（週二）。"""
+def load_cot(cot_dir: Path, ccys: list[str], window: int = 156, min_weeks: int = 52, raw: bool = False, calendar: bool = False) -> pd.DataFrame:
+    """CFTC 非商業淨部位比 (多−空)/未平倉 → 相對過去 window 週的 z 分數（raw=True 就用原比率）；索引 = 報告日（週二）。
+    calendar=True：窗改為 window × 7 個日曆天（1992 年前是雙週報，FX_COT_OOS_BACKTEST.md 用這個）。"""
     df = pd.read_csv(cot_dir / "cot_currencies.csv", dtype={"code": str}, parse_dates=["date"])
     out = {}
     for c in ccys:
@@ -156,8 +183,8 @@ def load_cot(cot_dir: Path, ccys: list[str], window: int = 156, min_weeks: int =
         if raw:
             out[c] = net
         else:
-            m = net.rolling(window, min_periods=min_weeks).mean()
-            sd = net.rolling(window, min_periods=min_weeks).std()
+            roll = net.rolling(f"{window * 7}D", min_periods=min_weeks) if calendar else net.rolling(window, min_periods=min_weeks)
+            m, sd = roll.mean(), roll.std()
             out[c] = (net - m) / sd.replace(0, np.nan)
     return pd.DataFrame(out).sort_index()
 
@@ -350,7 +377,7 @@ def strat_factor(prices, idx, rates_d: pd.DataFrame, reer_m: pd.DataFrame | None
                  combine: str = "rank", value_def: str = "5y", mom_months: int = 12, rng: np.random.Generator | None = None,
                  log: list | None = None, k_rule: str = "fixed", rates_m: pd.DataFrame | None = None, ratemom_months: int = 6,
                  teny_m: pd.DataFrame | None = None, cot_w: pd.DataFrame | None = None, cot_follow: bool = False,
-                 vix: pd.Series | None = None, vix_max: float = 0.0, vix_rel: bool = False) -> pd.DataFrame:
+                 vix: pd.Series | None = None, vix_max: float = 0.0, vix_rel: bool = False, freq: str = "M") -> pd.DataFrame:
     """三因子橫截面籃子（FX_THREE_FACTOR_BACKTEST.md 第 1、2 節）：每月最後交易日，7 個外幣按
     carry（三個月利率，延後一個月）、value（−REER 過去 5 年變動，延後一個月）、mom（對美元 12 個月即期變動）各排名（1 = 最差），
     合成 = 名次平均（或 z 分數平均）；做多最高 top 個、做空最低 top 個，各 1/top；任一因子缺值的貨幣該月不參與。
@@ -360,10 +387,16 @@ def strat_factor(prices, idx, rates_d: pd.DataFrame, reer_m: pd.DataFrame | None
     （vix_rel=True：門檻 = 過去 252 個交易日平均 + 1 標準差）。"""
     ccy_pair = {p[:3] if p.endswith("USD") else p[3:]: p for p in prices if "USD" in p}
     mids = pd.DataFrame({p: df["Mid"] for p, df in prices.items()}).reindex(idx).ffill()
-    month_ends = mids.groupby(mids.index.to_period("M")).tail(1).index
-    # 外幣對美元的價格（1 單位外幣值多少美元），月底表
-    spot = pd.DataFrame({c: (mids[p] if p.endswith("USD") else 1.0 / mids[p]) for c, p in ccy_pair.items()}).loc[month_ends]
-    mom_m = spot / spot.shift(mom_months) - 1.0
+    month_ends = mids.groupby(mids.index.to_period("W-FRI" if freq == "W" else "M")).tail(1).index   # 調倉日（週頻 = 每週最後交易日）
+    # 外幣對美元的價格（1 單位外幣值多少美元），調倉日表；動量用日期位移（週頻時不能用列位移）
+    spot_d = pd.DataFrame({c: (mids[p] if p.endswith("USD") else 1.0 / mids[p]) for c, p in ccy_pair.items()})
+    spot = spot_d.loc[month_ends]
+    if freq == "M":                                                  # 月頻：與登記時一致（月底表往前 mom_months 列）
+        mom_m = spot / spot.shift(mom_months) - 1.0
+    else:                                                            # 週頻：日期位移（不能用列位移）
+        past_idx = [spot_d.index[spot_d.index <= me - pd.DateOffset(months=mom_months)] for me in month_ends]
+        ref = pd.DataFrame([spot_d.loc[pi[-1]] if len(pi) else pd.Series(np.nan, index=spot_d.columns) for pi in past_idx], index=month_ends)
+        mom_m = spot / ref - 1.0
     value_m = None
     if reer_m is not None:
         r = reer_m[list(ccy_pair)]
@@ -445,6 +478,7 @@ def strat_factor(prices, idx, rates_d: pd.DataFrame, reer_m: pd.DataFrame | None
 def stats(daily: pd.Series, contrib: pd.DataFrame, split: str = "2013-01-01") -> dict:
     monthly = daily.groupby(daily.index.to_period("M")).sum()
     monthly.index = monthly.index.to_timestamp("M")
+    weekly = daily.groupby(daily.index.to_period("W-FRI")).sum()
 
     def t_of(m: pd.Series) -> float:
         return float(m.mean() / m.std(ddof=1) * math.sqrt(len(m))) if len(m) > 2 and m.std(ddof=1) > 0 else float("nan")
@@ -453,7 +487,7 @@ def stats(daily: pd.Series, contrib: pd.DataFrame, split: str = "2013-01-01") ->
     yearly = daily.groupby(daily.index.year).sum()
     pairs = contrib.sum().sort_values(ascending=False)
     m1, m2 = monthly[monthly.index < split], monthly[monthly.index >= split]
-    return {"months": int(len(monthly)), "t": round(t_of(monthly), 2), "ann_return_pct": round(float(daily.mean() * 252 * 100), 2),
+    return {"months": int(len(monthly)), "t": round(t_of(monthly), 2), "t_weekly": round(t_of(weekly), 2), "ann_return_pct": round(float(daily.mean() * 252 * 100), 2),
             "ann_vol_pct": round(float(daily.std() * math.sqrt(252) * 100), 2),
             "sharpe": round(float(daily.mean() / daily.std() * math.sqrt(252)), 2) if daily.std() > 0 else float("nan"),
             "max_dd_pct": round(float(dd * 100), 2), "pos_years": f"{int((yearly > 0).sum())}/{len(yearly)}",
@@ -476,6 +510,11 @@ def main() -> None:
     ap.add_argument("--ratemom-months", type=int, default=6)
     ap.add_argument("--cot-window", type=int, default=156)
     ap.add_argument("--cot-raw", action="store_true", help="COT 用原始淨部位比，不做 z 分數")
+    ap.add_argument("--cot-calendar", action="store_true", help="COT z 的窗用日曆天（--cot-window × 7 天），早期雙週報用")
+    ap.add_argument("--rebalance", choices=["M", "W"], default="M", help="factor 策略調倉頻率：月底或每週最後交易日")
+    ap.add_argument("--price-source", choices=["dukascopy", "fred"], default="dukascopy",
+                    help="fred = FRED H.10 單一價（1971 起），點差固定為該對 2003-06→2006-12 Dukascopy 價差中位數 × spread-mult")
+    ap.add_argument("--split", default="2013-01-01", help="分段日期（統計用）")
     ap.add_argument("--cot-follow", action="store_true", help="COT 跟隨投機客（預設反向）")
     ap.add_argument("--vix-max", type=float, default=0.0, help="> 0：月底 VIX 高於此值該月空手")
     ap.add_argument("--vix-rel", action="store_true", help="VIX 門檻改為過去 252 日平均 + 1 標準差")
@@ -517,7 +556,12 @@ def main() -> None:
         haircut = {p: (args.swap_haircut if (p[:3] in G10 and p[3:] in G10) else args.swap_haircut_em) for p in pairs}
     # 訊號要用到樣本起點之前的歷史（12 個月動量、55 日通道、60 日波動）→ 多載一年
     pre_start = (pd.Timestamp(args.start) - pd.DateOffset(months=14)).strftime("%Y-%m-%d")
-    prices = load_prices(args.root, pairs, pre_start, args.end)
+    if args.price_source == "fred":
+        base_sp = fixed_spreads(args.root, pairs)
+        print("固定點差（Dukascopy 2003-06→2006-12 價差中位數）：" + "、".join(f"{p} {v / PIP[p]:.2f} pip" for p, v in base_sp.items()))
+        prices = load_prices_fred(args.root, pairs, pre_start, args.end, base_sp)
+    else:
+        prices = load_prices(args.root, pairs, pre_start, args.end)
     idx = pd.DatetimeIndex(sorted(set().union(*[set(df.index) for df in prices.values()])))
     rates_d = None
     if not args.no_swap or args.strategy in ("carry", "factor"):
@@ -541,10 +585,10 @@ def main() -> None:
         rates_m = load_rates(args.rates, ccys)
         info_dir = args.rates / "info"
         teny_m = load_teny(info_dir, ccys) if "term" in factors else None
-        cot_w = load_cot(args.rates / "cot", ccys, args.cot_window, raw=args.cot_raw) if "cot" in factors else None
+        cot_w = load_cot(args.rates / "cot", ccys, args.cot_window, raw=args.cot_raw, calendar=args.cot_calendar) if "cot" in factors else None
         vix = load_vix(info_dir) if args.vix_max > 0 else None
         extra = dict(k_rule=args.k_rule, rates_m=rates_m, ratemom_months=args.ratemom_months, teny_m=teny_m, cot_w=cot_w,
-                     cot_follow=args.cot_follow, vix=vix, vix_max=args.vix_max, vix_rel=args.vix_rel)
+                     cot_follow=args.cot_follow, vix=vix, vix_max=args.vix_max, vix_rel=args.vix_rel, freq=args.rebalance)
         if args.random:
             rng = np.random.default_rng(args.seed)
             ts = []
@@ -552,7 +596,7 @@ def main() -> None:
                 wr = strat_factor(prices, idx, rates_d, reer_m, factors, args.top, args.combine, args.value_def, args.mom_months, rng=rng, **extra)
                 d, c = portfolio_pnl(prices, wr, None if args.no_swap else rates_d, args.spread_mult, args.slip_pip, haircut)
                 d = d[(d.index >= args.start) & (d.index <= args.end)]
-                ts.append(stats(d, c.loc[d.index])[0]["t"])
+                ts.append(stats(d, c.loc[d.index], args.split)[0]["t" if args.rebalance == "M" else "t_weekly"])
             ts = np.array(ts)
             pct = {q: round(float(np.percentile(ts, q)), 2) for q in (2.5, 5, 25, 50, 75, 95, 97.5)}
             print(f"== 隨機排序對照 {args.random} 次（top{args.top}、加價 {args.swap_haircut:g}%）：t 中位 {pct[50]}、"
@@ -568,7 +612,8 @@ def main() -> None:
         label = f"Factor[{'+'.join(factors)}] " + (f"top{args.top}" if args.k_rule == "fixed" else f"k={args.k_rule}") + f" {args.combine}" + \
                 (f" value={args.value_def}" if "value" in factors else "") + (f" mom={args.mom_months}m" if "mom" in factors else "") + \
                 (f" ratemom={args.ratemom_months}m" if "ratemom" in factors else "") + \
-                (f" cot={'raw' if args.cot_raw else str(args.cot_window) + 'w'}{'+follow' if args.cot_follow else ''}" if "cot" in factors else "") + \
+                (f" cot={'raw' if args.cot_raw else str(args.cot_window) + ('cal' if args.cot_calendar else 'w')}{'+follow' if args.cot_follow else ''}" if "cot" in factors else "") + \
+                (" weekly" if args.rebalance == "W" else "") + (" FRED" if args.price_source == "fred" else "") + \
                 (f" vix{'rel' if args.vix_rel else '>' + str(args.vix_max)}" if args.vix_max > 0 else "") + \
                 (f" N={len(pairs)}" if args.universe == "wide" or args.pairs else "")
         if args.out:
@@ -603,14 +648,14 @@ def main() -> None:
         contrib = contrib - adj
     daily = daily[(daily.index >= args.start) & (daily.index <= args.end)]
     contrib = contrib.loc[daily.index]
-    st, monthly = stats(daily, contrib)
+    st, monthly = stats(daily, contrib, args.split)
     st = {"label": label, "spread_mult": args.spread_mult, "slip_pip": args.slip_pip, "swap_haircut": args.swap_haircut, "swap_haircut_em": args.swap_haircut_em,
           "pairs": pairs, "exclude": args.exclude,
           "no_swap": args.no_swap, "vol_target": args.vol_target, "vol_window": args.vol_window, "start": args.start, "end": args.end} | st
     print(f"== {label}  點差×{args.spread_mult:g} 滑點 {args.slip_pip:g}pip swap 加價 {args.swap_haircut:g}%{'（不含 swap）' if args.no_swap else ''}")
-    print(f"  月數 {st['months']}、t = {st['t']}、年化 {st['ann_return_pct']}%、波動 {st['ann_vol_pct']}%、夏普 {st['sharpe']}、"
+    print(f"  月數 {st['months']}、t = {st['t']}、週報酬 t = {st['t_weekly']}、年化 {st['ann_return_pct']}%、波動 {st['ann_vol_pct']}%、夏普 {st['sharpe']}、"
           f"最大回撤 {st['max_dd_pct']}%、正年 {st['pos_years']}、最差年 {st['worst_year']}、正貢獻對數 {st['pairs_positive']}")
-    print(f"  2003–2012：t {st['t_before_split']}、累計 {st['ret_before_split_pct']}%｜2013–2026：t {st['t_from_split']}、累計 {st['ret_from_split_pct']}%")
+    print(f"  {args.split} 前：t {st['t_before_split']}、累計 {st['ret_before_split_pct']}%｜之後：t {st['t_from_split']}、累計 {st['ret_from_split_pct']}%")
     print("  按年%：" + "、".join(f"{k} {v:+.1f}" for k, v in st["yearly_pct"].items()))
     print("  各對貢獻%：" + "、".join(f"{k} {v:+.2f}" for k, v in st["pair_contrib_pct"].items()))
     if args.out:
