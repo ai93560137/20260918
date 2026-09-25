@@ -27,6 +27,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote, urlencode
 
@@ -36,7 +37,8 @@ UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
                     "Chrome/126.0 Safari/537.36"}
 URL_UST = ("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/"
            "daily-treasury-rates.csv/{year}/all?type={kind}&field_tdr_date_value={year}&page&_format=csv")
-URL_YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=1y&interval=1d"
+URL_YAHOO = "https://{host}.finance.yahoo.com/v8/finance/chart/{t}?range=1y&interval=1d"
+URL_STOOQ = "https://stooq.com/q/d/l/?s={t}&i=d&d1={d1:%Y%m%d}&d2={d2:%Y%m%d}"
 URL_FISCAL = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/"
 URL_GNEWS = "https://news.google.com/rss/search?q={q}&hl={hl}&gl={gl}&ceid={ceid}"
 
@@ -121,6 +123,7 @@ def esc(s):
 
 
 def bp(x):
+    """百分點差 → bp 字串（0.10 → +10）。"""
     return "—" if x is None else f"{x * 100:+.0f}"
 
 
@@ -169,7 +172,7 @@ def yields_block(today):
     for label, key in TENORS:
         if key not in cur:
             continue
-        ch = [bp(cur[key] / 100 - r[key] / 100) if r and key in r else "—" for r in ref.values()]
+        ch = [bp(cur[key] - r[key]) if r and key in r else "—" for r in ref.values()]
         L.append(f"{label:<5} {cur[key]:>5.2f}% {ch[0]:>4} {ch[1]:>4} {ch[2]:>4} {ch[3]:>4}")
     L.append("</pre>")
 
@@ -209,11 +212,34 @@ def yields_block(today):
 
 # ---------------------------------------------------------------- 2. 債券價格
 def yahoo(t):
-    r = get(URL_YAHOO.format(t=quote(t)))
-    res = r.json()["chart"]["result"][0]
-    q = res["indicators"]["quote"][0]
-    out = [(datetime.fromtimestamp(ts, timezone.utc).date(), c)
-           for ts, c in zip(res.get("timestamp") or [], q["close"]) if c]
+    """Yahoo 日線收盤 [(date, close)]。GitHub runner 常被 429 限流，所以兩個主機輪流、慢慢重試。"""
+    err = None
+    for i, host in enumerate(("query1", "query2", "query1", "query2")):
+        try:
+            r = requests.get(URL_YAHOO.format(host=host, t=quote(t)), headers=UA, timeout=(10, 30))
+            if r.status_code == 429:
+                raise requests.HTTPError("429 Too Many Requests")
+            r.raise_for_status()
+            res = r.json()["chart"]["result"][0]
+            q = res["indicators"]["quote"][0]
+            return [(datetime.fromtimestamp(ts, timezone.utc).date(), c)
+                    for ts, c in zip(res.get("timestamp") or [], q["close"]) if c]
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
+            err = e
+            time.sleep(3 * (i + 1))
+    raise RuntimeError(err)
+
+
+def stooq(t):
+    """Stooq 日線（Yahoo 抓不到時的備援，只有美股 ETF）。"""
+    if t.endswith("=F"):
+        raise ValueError("Stooq 不提供這檔")
+    today = date.today()
+    text = get(URL_STOOQ.format(t=f"{t.lower()}.us", d1=today - timedelta(days=400), d2=today)).text
+    out = [(date.fromisoformat(r["Date"]), float(r["Close"])) for r in csv.DictReader(io.StringIO(text))
+           if r.get("Close") not in (None, "", "N/D")]
+    if not out:
+        raise ValueError("Stooq 無資料")
     return out
 
 
@@ -241,17 +267,19 @@ def prices_block():
     L = ["<b>② 債券價格</b>", "<pre>Ticker  Price     1d     1w     1m    YTD"]
     notes = []
     for t, name in TICKERS:
-        try:
-            s = yahoo(t)
-        except Exception as e:  # noqa: BLE001
-            print(f"::warning::{t} 失敗：{e}")
-            continue
+        s = None
+        for src in (yahoo, stooq):
+            try:
+                s = src(t)
+                break
+            except Exception as e:  # noqa: BLE001
+                print(f"::warning::{t} {src.__name__} 失敗：{e}")
         if not s:
             continue
         L.append(f"{t:<6} {fmt_price(t, s[-1][1]):>7} {pctf(chg(s, 1)):>6} {pctf(chg(s, 7)):>6} "
                  f"{pctf(chg(s, 30)):>6} {pctf(chg(s, ytd=True)):>6}")
         notes.append(f"{t} {name}")
-        time.sleep(0.5)
+        time.sleep(1)
     if len(L) == 2:
         raise ValueError("所有報價都抓不到")
     L.append("</pre>")
@@ -317,8 +345,9 @@ def auctions_block(today):
         ind = num(r.get("indirect_bidder_accepted"))
         tot = num(r.get("total_accepted") or r.get("offering_amt"))
         share = f"、海外等間接投標 {ind / tot * 100:.0f}%" if ind and tot else ""
-        L.append(f"已標：{r.get('auction_date')} {esc(term)} {esc(r.get('security_type'))}"
-                 f" 得標殖利率 {hy:.3f}%、投標倍數 {btc:.2f}{share}")
+        tips = (r.get("inflation_index_security") or "").lower() == "yes"
+        L.append(f"已標：{r.get('auction_date')} {esc(term)} {'TIPS ' if tips else ''}{esc(r.get('security_type'))}"
+                 f" 得標{'實質' if tips else ''}殖利率 {hy:.3f}%、投標倍數 {btc:.2f}{share}")
     up = fiscal("upcoming_auctions", {"sort": "auction_date", "page[size]": 30})
     horizon = today + timedelta(days=7)
     for r in up:
@@ -349,12 +378,16 @@ def news_block(now):
             src = (it.findtext("source") or "").strip()
             if src and title.endswith(" - " + src):
                 title = title[: -len(src) - 3]
-            key = re.sub(r"\W+", "", title.lower())[:40]
+            title = re.sub(r"\s*[|｜]\s*[^|｜]{1,20}$", "", title)  # 去掉「 | 媒體名」尾巴
+            key = re.sub(r"^[A-Z ]+-", "", title)  # 去掉「GLOBAL MARKETS-」這類前綴
+            key = re.sub(r"\W+", "", key.lower())
             try:
                 pub = parsedate_to_datetime(it.findtext("pubDate"))
             except (TypeError, ValueError):
                 continue
-            if not title or key in seen or now - pub > timedelta(hours=26):
+            if not title or now - pub > timedelta(hours=26):
+                continue
+            if any(SequenceMatcher(None, key, k).ratio() > 0.75 for k in seen):
                 continue
             seen.add(key)
             items.append((pub, title, src, it.findtext("link") or ""))
