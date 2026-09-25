@@ -21,7 +21,7 @@
 | `DISCIPLINE_BACKTEST.md` | 「紀律本身」：剛進入趨勢模板＋大市過濾＋Minervini 出場（不看 VCP 形態），9 國一次的預先登記與結果 |
 | `RRR30_BACKTEST.md` | 低勝率 30:1 策略（VCP 入場＋3% 硬止損＋200 日線出＋30R 後追蹤）9 國預先登記與結果，兩輪（200 日線出場／純兩極出場）：RRR 13.2 → 21.7、alpha 3.0 不隨出場變，都不確定 |
 | `ETF_TIMING_BACKTEST.md` | ETF 擇時：VCP 突破日後持有 ETF 一季 vs 純 MA 過濾 vs 隨機日，9 國預先登記與結果：☠️（VCP 日對 ETF 無擇時資訊；MA 日頻過濾扣成本跑輸持有） |
-| `TT_MOMENTUM_BACKTEST.md` | 趨勢模板動量組合（月底選 20 檔、大市過濾、等權持一月）9 國登記與結果：只是動量 beta（合併 3.13、相對等權 1.85）；排序有害；含數據斷點規則與基準 ETF 修正 |
+| `TT_MOMENTUM_BACKTEST.md` | 趨勢模板動量組合（月底選 20 檔、大市過濾、等權持一月）9 國登記與結果：第一輪 20 檔排序：只是動量 beta（合併 3.13、相對等權 1.85）、排序有害；**第二輪全部等權：🔍（合併 4.59、相對等權 3.21、十條全過）**；含數據斷點規則與基準 ETF 修正 |
 | `DISCIPLINE_RULES.md` | 上述回測用到的全部規則一覽（宇宙、趨勢模板、大市過濾、出場紀律、六個組合、鄰域、合併檢定、門檻、程序規則、程式對應；不含結果） |
 
 ## 2. 程式與輸出（路徑不變）
@@ -37,6 +37,7 @@
 | `rrr30_backtest.py` → `research/rrr30/` | 低勝率 30:1 回測（通用出場模擬器 `sim_gen`：硬止損／MA 出場／目標後追蹤／保本／上限可組合；`--check-sim` 退化參數對 Minervini 逐筆比對）|
 | `etf_timing_backtest.py` → `research/etf_timing/` | ETF 擇時回測（突破日 → 曝險聯集、每段一筆；MF 對照；隨機日對照；`--selftest`）|
 | `tt_momentum_backtest.py` → `research/tt_momentum/` | 月頻選股組合引擎（換倉日名單、等權、進出成本、大市過濾；R1／R2 隨機對照；數據斷點剔除；已清理等權基準）|
+| `tt_all_backtest.py` → `research/tt_all/` | 趨勢模板股全部等權（第二輪；上限×大市過濾鄰域；R2 同檔數隨機）|
 | `scripts/expectancy_report.py` → `research/expectancy/` | 已判決策略預設格的期望值、RRR、獲利因子、累計／年化／MDD vs ETF（一個市場一次重建數據，全部策略共用）|
 | `scripts/get_market_data.py` + `MARKET_DATA_CATALOG.md` | 一鍵下載 9 個市場日線並重建品質排除檔；數據目錄、注意事項、策略×市場已驗證矩陣 |
 | `oos_backtest.py` + `scripts/build_oos_pools.py` + `.github/workflows/oos_fullmarket.yml` → `research/oos/` | 樣本外新市場（台 .TW/.TWO、韓 .KS/.KQ、澳 .AX）候選池、抓數據（Release `oos-data`）、凍結規格回測、漲停鎖死跳過、三市場合併 alpha 檢定 |
