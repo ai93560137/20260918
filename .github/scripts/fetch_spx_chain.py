@@ -44,3 +44,36 @@ atm = min(rows, key=lambda k: abs(k - spot))
 print(f"SPX {spot:.0f}  expiry {exp} ({dte}d)  strikes {len(rows)}  "
       f"ATM {atm:.0f} c_iv {rows[atm].get('c', {}).get('iv')} "
       f"p_iv {rows[atm].get('p', {}).get('iv')}")
+
+
+def atm_iv_cp(chain, spot_px):
+    """ATM (c_iv+p_iv)/2 —— Yahoo 單腿 IV 有現貨/股息偏差，取雙腿平均校正。"""
+    ivs = {}
+    for side, df in [('c', chain.calls), ('p', chain.puts)]:
+        df = df.dropna(subset=['impliedVolatility'])
+        if len(df) == 0:
+            return None
+        r = df.iloc[(df.strike - spot_px).abs().argmin()]
+        ivs[side] = float(r.impliedVolatility) * 100
+    return round((ivs['c'] + ivs['p']) / 2, 2)
+
+
+# 週權 IV 記錄（gamma 實驗室用）：週度短 gamma 的可行性取決於
+# 真實週權 ATM IV 對 30 天 IV 的折讓 h，逐日記錄累積實測分布。
+try:
+    wk = [x for x in exps if 4 <= x[1] <= 10]
+    if wk:
+        wexp, wdte = min(wk, key=lambda x: x[1])
+        wiv = atm_iv_cp(t.option_chain(wexp), spot)
+        miv = atm_iv_cp(ch, spot)
+        if wiv and miv:
+            logf = 'tradingview/data_external/weekly_iv_log.csv'
+            new = not os.path.exists(logf)
+            with open(logf, 'a') as f:
+                if new:
+                    f.write('date_utc,spot,wk_exp,wk_dte,wk_iv,mon_exp,mon_dte,mon_iv\n')
+                f.write(f"{today},{spot:.2f},{wexp},{wdte},{wiv},{exp},{dte},{miv}\n")
+            print(f"weekly IV log: {wexp} ({wdte}d) ATM {wiv} vs monthly {miv}  "
+                  f"diff {miv - wiv:+.2f}")
+except Exception as e:
+    print(f"weekly IV log skipped: {e!r}")
