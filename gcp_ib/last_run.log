@@ -1,41 +1,23 @@
-Fri Sep 25 16:20:02 UTC 2026
-Error 10141, reqId -1: Paper trading disclaimer must first be accepted for API connection.
-Peer closed connection. clientId 17 already in use?
-API connection failed: TimeoutError()
-Traceback (most recent call last):
-  File "/usr/lib/python3.11/asyncio/tasks.py", line 490, in wait_for
-    return fut.result()
-           ^^^^^^^^^^^^
-  File "/usr/lib/python3.11/asyncio/tasks.py", line 684, in _wrap_awaitable
-    return (yield from awaitable.__await__())
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-asyncio.exceptions.CancelledError
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/hengkychansinghing/20260918/gcp_ib/ib_collector.py", line 137, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/home/hengkychansinghing/20260918/gcp_ib/ib_collector.py", line 97, in main
-    ib.connect('127.0.0.1', a.port, clientId=17, timeout=20)
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 279, in connect
-    return self._run(self.connectAsync(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 318, in _run
-    return util.run(*awaitables, timeout=self.RequestTimeout)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/util.py", line 341, in run
-    result = loop.run_until_complete(task)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
-    return future.result()
-           ^^^^^^^^^^^^^^^
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 1748, in connectAsync
-    await self.client.connectAsync(host, port, clientId, timeout)
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/client.py", line 217, in connectAsync
-    await asyncio.wait_for(self.apiStart, timeout)
-  File "/usr/lib/python3.11/asyncio/tasks.py", line 492, in wait_for
-    raise exceptions.TimeoutError() from exc
-TimeoutError
-exit=1
+Fri Sep 25 16:40:02 UTC 2026
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
+Error 10090, reqId 10: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=927192663, symbol='ESTX50', lastTradeDateOrContractMonth='20260928', strike=6305.0, right='C', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='C OEXP 20260928 6305 W', tradingClass='OEXP')
+Error 10090, reqId 12: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=927194522, symbol='ESTX50', lastTradeDateOrContractMonth='20260928', strike=6305.0, right='P', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='P OEXP 20260928 6305 W', tradingClass='OEXP')
+Error 200, reqId 13: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
+Unknown contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
+Error 200, reqId 14: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
+Error 200, reqId 15: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='P', exchange='EUREX', currency='EUR', tradingClass='OESX')
+Unknown contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='P', exchange='EUREX', currency='EUR', tradingClass='OESX')
+Error 200, reqId 16: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='P', exchange='EUREX', currency='EUR', tradingClass='OESX')
+N225: spot 66364.2  wk None  mon None  (27 expiries)
+  expiries: ['20261008', '20261112', '20261210', '20270107', '20270210', '20270311', '20270408', '20270513', '20270610', '20270708', '20270812', '20270909']
+ESTX50: spot 6302.82  wk 20260928  mon 20261016  (55 expiries)
+  expiries: ['20260925', '20260928', '20260929', '20260930', '20261001', '20261002', '20261005', '20261006', '20261007', '20261008', '20261009', '20261016']
+  ESTX50 20260928 6305.0C: iv=9.97
+  ESTX50 20260928 6305.0P: iv=None
+  ESTX50 20261016 6305.0C: iv=None
+  ESTX50 20261016 6305.0P: iv=None
+dry run or no rows - nothing written
+exit=0
