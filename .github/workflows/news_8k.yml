@@ -13,11 +13,6 @@ on:
         description: '連舊分頁全部重抓'
         required: false
         default: 'false'
-  push:   # 開發期間：這個分支改了腳本就跑一次（新 workflow 在合併前無法手動觸發）
-    branches: [claude/pelosi-stock-tracking-f9f94g]
-    paths:
-      - 'scripts/news_8k_fetch.py'
-      - '.github/workflows/news_8k.yml'
 
 permissions:
   contents: write
