@@ -10,6 +10,7 @@ import argparse
 import csv
 import html
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -54,6 +55,12 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
 """
 
 
+def ticker_key(t: str):
+    """代號排序：先純數字開頭（按數值），再英文字母（按字母）。例 0805.HK < 2388.HK < 42C.SI < A31.SI < BHP.AX。"""
+    mm = re.match(r"^(\d+)(.*)$", t)
+    return (0, int(mm.group(1)), mm.group(2)) if mm else (1, t.upper(), "")
+
+
 def load(mk: str):
     p = OUT / f"{mk}_latest.json"
     if not p.exists():
@@ -63,7 +70,7 @@ def load(mk: str):
     csvp = OUT / f"{mk}_{meta['date']}.csv"
     if csvp.exists():
         with open(csvp, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
+            rows = sorted(csv.DictReader(f), key=lambda r: ticker_key(r["ticker"]))
     return meta, rows
 
 

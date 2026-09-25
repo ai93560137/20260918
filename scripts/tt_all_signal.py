@@ -13,6 +13,7 @@ analysis/tt_all/log.csv（每次訊號一行：日期、市場、大市過濾、
 import argparse
 import csv
 import json
+import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -31,6 +32,12 @@ CAP = 40
 # 回測等級（TT_MOMENTUM_BACKTEST.md 第四部分）：試行 = 相對等權 ≥ 1.7；觀察 = alpha 正但相對等權 < 1.7；不建議 = alpha ≤ 0 或接近 0
 TIER = {"hk": "試行", "sg": "試行", "ca": "試行", "in": "試行", "au": "試行", "us": "觀察", "jp": "觀察", "tw": "不建議", "kr": "不建議"}
 TG_LIMIT = 3900
+
+
+def ticker_key(t: str):
+    """代號排序：先純數字開頭（按數值），再英文字母（按字母）。例 0805.HK < 2388.HK < 42C.SI < A31.SI < BHP.AX。"""
+    mm = re.match(r"^(\d+)(.*)$", t)
+    return (0, int(mm.group(1)), mm.group(2)) if mm else (1, t.upper(), "")
 
 
 def hk_names() -> dict[str, str]:
@@ -109,6 +116,8 @@ def run(mk: str, force: bool) -> None:
         pick40 = {r["ticker"] for r in rows}
     OUT.mkdir(parents=True, exist_ok=True)
     tag = d.isoformat()
+    top5_rows = rows[:5]
+    rows.sort(key=lambda r: ticker_key(r["ticker"]))
     with open(OUT / f"{mk}_{tag}.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["ticker", "name", "close", "ret252", "rs", "above_200ma_pct", "in40"], lineterminator="\n")
         w.writeheader()
@@ -131,7 +140,7 @@ def run(mk: str, force: bool) -> None:
             "n": len(rows), "top_n": int(getattr(m, "top_n", 0)), "seed": seed, "cap": CAP,
             "tier": TIER[mk], "n_enter": len(cur_set - prev_set) if prev_set else None, "n_leave": len(prev_set - cur_set) if prev_set else None,
             "prev_date": prev[-1].stem.split("_", 1)[1] if prev else None,
-            "top5": [f"{r['ticker']} {r['name']}".strip() for r in rows[:5]]}
+            "top5": [f"{r['ticker']} {r['name']}".strip() for r in top5_rows]}
     (OUT / f"{mk}_latest.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"[{mk}] {d} 大市過濾 {ok} 候選 {len(rows)} 檔", file=sys.stderr)
 
