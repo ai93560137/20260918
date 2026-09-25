@@ -200,3 +200,41 @@ git add .github/tg_outbox.txt && git commit -m "notify: ..." && git push
 - Actions 日誌會自動遮罩 secrets（顯示 ***），但 echo 整條 URL 仍是壞習慣,別做
 - 每次 push tg_outbox.txt 都是一條新訊息——同一內容重複 push 會重複發,
   發送用 commit 訊息區分意圖（`notify: ...`）
+
+## 七、IB 管道（2026-09-25 起建，解鎖日經/歐洲）
+
+沙盒出口只有 GitHub，IB Gateway 需要常駐登入——所以 IB 採集**跑在使用者的
+GCP VM**（或任何常開機器），產出 push 回 repo，session 照常讀。與 Actions 橋樑同構。
+
+### 架構
+```
+GCP VM: IB Gateway(常駐登入) ← ib_collector.py(ib_insync, 延遲數據)
+        → ib_iv_log.csv → git push → repo → session 讀取/回測/金絲雀
+```
+
+### 關鍵設計決定
+1. **延遲數據就夠**（`reqMarketDataType(3)`）：監測/研究用，免每月訂閱費。
+   下單永遠用券商實時報價（本專案鐵律），所以延遲完全無害。
+2. **v1 只收兩個市場**：N225（OSE，日經案 §12.5 復活條件）+ ESTX50（Eurex，
+   歐洲金絲雀）。每天各記「最近週權 vs 最近月權 ATM IV + 斜率」一行。
+3. 到期/行使價用 `reqSecDefOptParams` 自動發現；IV 優先取 IB modelGreeks，
+   缺失時用中間價反推 Black-76（腳本內建 bisection）。
+
+### 使用者要做的一次性設置（沙盒做不了）
+1. IB 帳戶：建議**另開 paper 帳戶專供數據**（避開 live 帳 2FA 對 headless 的干擾；
+   paper 繼承 live 的數據權限）。
+2. VM 裝 IB Gateway + [IBC](https://github.com/IbcAlpha/IBC)（自動登入/重啟）；
+   `pip install ib_insync`。
+3. Repo clone 到 VM：用 **fine-grained PAT（只授本 repo contents:rw）** 或 deploy key。
+4. crontab 掛 `gcp_ib/run_daily.sh`（建議 UTC 07:35：東京收盤後、法蘭克福盤中）。
+5. 首跑先 `python3 gcp_ib/ib_collector.py --dry` 看鏈發現是否正常，把輸出貼給 session 調試。
+
+### 安全鐵律
+- IB 帳密只存在 VM 的 IBC 設定檔（chmod 600），**永不**進 repo/聊天/日誌。
+- PAT 只授單一 repo 讀寫，不用 classic 全域 token。
+- 採集器無下單權：Gateway 設定裡把 API 設 read-only（Configure → API → Read-Only API ✓）。
+
+### 之後可擴充
+- KOSPI200（KSE）、FTSE（ICEEU）同法加 MARKETS 一行
+- 恒指/MES 的 IB 實時對板（quality_log 第四源）
+- 日經 VRP 回測數據累積（週月 IV + N225 現貨已有 → 月度模擬可起）
