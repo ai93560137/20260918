@@ -124,6 +124,9 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
   var $ = function(id){ return document.getElementById(id); };
   var ids = ["inst","qty","pos","h1","l1","h2","l2","h3","l3"];
   var cloudQuote = null;   // 雲端延遲報價 {px,kind,asof}(由 db 載入)
+  var liveSpot = null;     // 即時現貨價(瀏覽器直連 gold-api,60 秒刷新)
+  var liveAsof = "";
+  var dbBasis = null;      // 現貨−期貨基差(由 db fut.basis 載入,MGC 口徑換算用)
 
   function load(){
     try{
@@ -162,14 +165,24 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       (lo !== null ? " · " + dayTag(ls.indexOf(lo)) : "") + "）";
 
     var ql = $("quoteLine"), pt = $("pxTile");
-    if(cloudQuote && cloudQuote.px != null){
-      $("pxLv").textContent = fmt(cloudQuote.px);
-      $("pxK").textContent = "現價 · " + (cloudQuote.kind || "") +
-        (cloudQuote.asof ? " · " + cloudQuote.asof : "");
+    var q = cloudQuote;            // 即時價優先:MGC 口徑 = 現貨 − 基差
+    if(liveSpot !== null){
+      if($("inst").value === "mgc" && dbBasis !== null){
+        q = {px: Math.round((liveSpot - dbBasis) * 10) / 10,
+             kind: "即時（現貨−基差換算）", asof: liveAsof};
+      } else {
+        q = {px: Math.round(liveSpot * 10) / 10, kind: "現貨即時", asof: liveAsof};
+      }
+    }
+    if(q && q.px != null){
+      $("pxLv").textContent = fmt(q.px);
+      $("pxK").textContent = "現價 · " + (q.kind || "") +
+        (q.asof ? " · " + q.asof : "");
       pt.hidden = false;
       if(hi !== null && lo !== null){
-        ql.textContent = "距上軌 " + fmt(hi - cloudQuote.px) + " 點 · 距下軌 " +
-          fmt(cloudQuote.px - lo) + " 點（報價延遲 ≥15 分鐘，成交以券商為準）";
+        ql.textContent = "距上軌 " + fmt(hi - q.px) + " 點 · 距下軌 " +
+          fmt(q.px - lo) + " 點（" + (liveSpot !== null ? "即時參考" : "報價延遲") +
+          "，成交以券商為準）";
         ql.hidden = false;
       } else { ql.hidden = true; }
     } else {
@@ -209,6 +222,20 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
   }
 
   ids.forEach(function(k){ $(k).addEventListener("input", render); $(k).addEventListener("change", render); });
+
+  // ---- 即時報價:gold-api 現貨(CORS 開放),60 秒刷新;失敗保留雲端延遲價 ----
+  function liveQuote(){
+    fetch("https://api.gold-api.com/price/XAU").then(function(r){ return r.json(); }).then(function(j){
+      var s = parseFloat(j && j.price);
+      if(!(s > 1500 && s < 6000)) return;
+      liveSpot = s;
+      var d = new Date();
+      liveAsof = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+      render();
+    }).catch(function(){});
+  }
+  liveQuote();
+  setInterval(liveQuote, 60000);
   load();
   try{
     var dd = JSON.parse(localStorage.getItem("bztAuDates") || "null");
@@ -242,6 +269,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
           use = d.fut; gauge = "期貨口徑（MGC 掛單價）";
         }
         cloudQuote = use.quote || d.quote || null;
+        dbBasis = (d.fut && typeof d.fut.basis === "number") ? d.fut.basis : dbBasis;
         info('☁️ 已自動套用雲端數據 · ' + gauge + ' · ' + (d.source || '') + ' · ' + (d.asof || ''));
         ["h1","l1","h2","l2","h3","l3"].forEach(function(k){ $(k).value = use[k]; });
         if(d.dates && d.dates.length === 3){

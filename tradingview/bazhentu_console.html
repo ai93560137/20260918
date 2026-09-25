@@ -129,6 +129,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
   var $ = function(id){ return document.getElementById(id); };
   var ids = ["inst","qty","pos","h1","l1","h2","l2","h3","l3"];
   var cloudQuote = null;   // 雲端延遲報價 {px,kind,asof}(由 db 載入)
+  var liveQ = null;        // 即時報價(瀏覽器直連騰訊 hf_HSI,60 秒刷新)
 
   function load(){
     try{
@@ -167,14 +168,16 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       (lo !== null ? " · " + dayTag(ls.indexOf(lo)) : "") + "）";
 
     var ql = $("quoteLine"), pt = $("pxTile");
-    if(cloudQuote && cloudQuote.px != null){
-      $("pxLv").textContent = fmt(cloudQuote.px);
-      $("pxK").textContent = "現價 · " + (cloudQuote.kind || "") +
-        (cloudQuote.asof ? " · " + cloudQuote.asof : "");
+    var q = liveQ || cloudQuote;   // 即時價優先,抓不到退回雲端延遲價
+    if(q && q.px != null){
+      $("pxLv").textContent = fmt(q.px);
+      $("pxK").textContent = "現價 · " + (q.kind || "") +
+        (q.asof ? " · " + q.asof : "");
       pt.hidden = false;
       if(hi !== null && lo !== null){
-        ql.textContent = "距上軌 " + fmt(hi - cloudQuote.px) + " 點 · 距下軌 " +
-          fmt(cloudQuote.px - lo) + " 點（報價延遲 ≥15 分鐘，成交以券商為準）";
+        ql.textContent = "距上軌 " + fmt(hi - q.px) + " 點 · 距下軌 " +
+          fmt(q.px - lo) + " 點（" + (liveQ ? "即時參考" : "報價延遲 ≥15 分鐘") +
+          "，成交以券商為準）";
         ql.hidden = false;
       } else { ql.hidden = true; }
     } else {
@@ -214,6 +217,21 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
   }
 
   ids.forEach(function(k){ $(k).addEventListener("input", render); $(k).addEventListener("change", render); });
+
+  // ---- 即時報價:騰訊恒指期貨 hf_HSI(CORS 開放),60 秒刷新;失敗保留雲端延遲價 ----
+  function liveQuote(){
+    fetch("https://qt.gtimg.cn/q=hf_HSI").then(function(r){ return r.text(); }).then(function(t){
+      var m = t.match(/"([^"]*)"/);
+      if(!m) return;
+      var f = m[1].split(",");
+      var px = parseFloat(f[0]);
+      if(!(px > 15000 && px < 40000)) return;
+      liveQ = {px: Math.round(px), kind: "即時（騰訊期貨）", asof: (f[6] || "").slice(0, 5)};
+      render();
+    }).catch(function(){});
+  }
+  liveQuote();
+  setInterval(liveQuote, 60000);
   load();
   try{
     var dd = JSON.parse(localStorage.getItem("bztDates") || "null");
