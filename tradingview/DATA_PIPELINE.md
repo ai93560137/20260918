@@ -238,3 +238,25 @@ GCP VM: IB Gateway(常駐登入) ← ib_collector.py(ib_insync, 延遲數據)
 - KOSPI200（KSE）、FTSE（ICEEU）同法加 MARKETS 一行
 - 恒指/MES 的 IB 實時對板（quality_log 第四源）
 - 日經 VRP 回測數據累積（週月 IV + N225 現貨已有 → 月度模擬可起）
+
+### 排障記錄（2026-09-25 首日接通實錄，後來者按序自查）
+1. **Cloud Shell ≠ VM**：最常見的坑。Cloud Shell 是臨時機，裝什麼都會蒸發，
+   Gateway 也不在那裡。凡是操作，先認提示符 `@ib-data` 才動手。
+2. **Debian 12 pip 被 PEP668 擋** → `--break-system-packages`（setup 已內建後備）。
+3. **記憶體**：Gateway 的 Java 在 1–2GB 機上會被 OOM 殺或原生崩潰（曾崩在
+   getenv）→ 加 2GB swap（setup 未含，見下）＋自癒器每 5 分鐘重試直到起來。
+4. **SSH 登出殺進程** → 啟動一律 `setsid` + `</dev/null`（setup 已修）。
+5. **edemo 幽靈**：config.ini 沒改到時 Gateway 用示範帳號登入，永遠報
+   Invalid username or password。paper 帳戶要用**專屬**用戶名（Client Portal →
+   Settings → Paper Trading Account），不是 live 帳號。
+6. **10141 Paper disclaimer**：模擬帳第一次 API 前要在 Gateway 畫面按一次
+   「I understand and accept」——headless 下用 `xdotool` 隔空點（座標從
+   `import -window root` 截圖量）。
+7. **Existing session**：網頁/手機登著同一 paper 帳會搶席位，Gateway 彈
+   Reconnect This Session——同樣 xdotool 點掉，平時避免瀏覽器掛著 paper。
+8. **採集器三修**：到期窗口 1–14/15–60 天（N225 只有月權）；行使價按距離試
+   6 檔（月權網格較疏，鏈上 strikes 是全到期聯集）；延遲數據要輪詢 ~16 秒
+   才灌進 modelGreeks。
+9. **遙控迴路**：`gcp_ib/ib-trigger`（首行=參數，改 nonce 即觸發）→ VM 看門狗
+   每 10 分鐘 pull → 跑採集 → `last_run.log` + CSV 推回。git add 多檔要分開加
+   （一檔缺席會整條放棄）。git 首推需 user.name/email + credential store。
