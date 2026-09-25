@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """各國短期利率（利差策略用）：FRED 上的 OECD 三個月銀行同業拆息（月）與即期／隔夜利率（月），另加幾個日頻政策利率作備援。
+另抓 BIS 實質有效匯率（價值因子用；FRED 轉載，月，2020=100）：寬口徑 RB<國>BIS（1994 起）與窄口徑 RN<國>BIS（1964 起）→ data_forex_rates/reer/。
 輸出 data_forex_rates/<系列>.csv（Date,Value；小檔，進 git）。沙盒連不到 FRED，在 GitHub Actions（fetch_fx_rates.yml）跑。
 
     python3 scripts/fetch_fx_rates.py
@@ -25,25 +26,45 @@ SERIES = {
     "CAD": ["IR3TIB01CAM156N", "IRSTCI01CAM156N", "IRSTCB01CAM156N"],
     "SGD": ["IR3TIB01SGM156N", "IRSTCI01SGM156N"],
 }
+# 貨幣 → BIS 實質有效匯率（寬口徑 broad 61 國、窄口徑 narrow 27 國）；歐元用歐元區 XM
+REER_SERIES = {
+    "USD": ["RBUSBIS", "RNUSBIS"],
+    "EUR": ["RBXMBIS", "RNXMBIS"],
+    "GBP": ["RBGBBIS", "RNGBBIS"],
+    "JPY": ["RBJPBIS", "RNJPBIS"],
+    "CHF": ["RBCHBIS", "RNCHBIS"],
+    "AUD": ["RBAUBIS", "RNAUBIS"],
+    "NZD": ["RBNZBIS", "RNNZBIS"],
+    "CAD": ["RBCABIS", "RNCABIS"],
+    "SGD": ["RBSGBIS", "RNSGBIS"],
+}
+
+
+def fetch_series(sid: str) -> "pd.DataFrame | None":
+    r = requests.get(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}", timeout=60)
+    if r.status_code != 200 or not r.text.startswith("observation_date") and not r.text.startswith("DATE"):
+        return None
+    s = pd.read_csv(io.StringIO(r.text), na_values=["."])
+    s.columns = ["Date", "Value"]
+    return s.dropna()
 
 
 def main() -> None:
     OUT.mkdir(exist_ok=True)
+    (OUT / "reer").mkdir(exist_ok=True)
     ok, bad = [], []
-    for ccy, ids in SERIES.items():
-        for sid in ids:
-            try:
-                r = requests.get(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}", timeout=60)
-                if r.status_code != 200 or not r.text.startswith("observation_date") and not r.text.startswith("DATE"):
-                    bad.append(sid)
-                    continue
-                s = pd.read_csv(io.StringIO(r.text), na_values=["."])
-                s.columns = ["Date", "Value"]
-                s = s.dropna()
-                s.to_csv(OUT / f"{sid}.csv", index=False)
-                ok.append(f"{ccy} {sid} {len(s)} 筆 {s.Date.iloc[0]}→{s.Date.iloc[-1]}")
-            except Exception as exc:  # noqa: BLE001
-                bad.append(f"{sid}({exc!r})")
+    for table, out_dir in [(SERIES, OUT), (REER_SERIES, OUT / "reer")]:
+        for ccy, ids in table.items():
+            for sid in ids:
+                try:
+                    s = fetch_series(sid)
+                    if s is None:
+                        bad.append(sid)
+                        continue
+                    s.to_csv(out_dir / f"{sid}.csv", index=False)
+                    ok.append(f"{ccy} {sid} {len(s)} 筆 {s.Date.iloc[0]}→{s.Date.iloc[-1]}")
+                except Exception as exc:  # noqa: BLE001
+                    bad.append(f"{sid}({exc!r})")
     (OUT / "_status.txt").write_text("\n".join(ok + [f"失敗 {b}" for b in bad]) + "\n", encoding="utf-8")
     print("\n".join(ok))
     print("失敗：", bad)
