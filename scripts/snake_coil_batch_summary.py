@@ -24,7 +24,7 @@ def main() -> None:
     args = ap.parse_args()
     files = {}
     for f in glob.glob(str(args.dir / "*_sar_N*_sp*.csv")):
-        m = re.match(r"(\w+)_sar_N(\d)_sp([\d.]+)\.csv", Path(f).name)
+        m = re.match(r"(\w+)_sar_N(\d)_sp([-\deE.]+)\.csv", Path(f).name)
         files.setdefault(m.group(1), {})[int(m.group(2))] = (f, float(m.group(3)))
     rows, pooled, pooled_by_pair = [], [], {}
     for pair in sorted(files, key=lambda p: list(INSTRUMENTS).index(p)):
