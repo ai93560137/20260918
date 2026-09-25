@@ -14,6 +14,7 @@
 #
 # 輸出（data/news/）：
 #   sp500_cik_map.csv            每段成分股區間對到的 CIK、來源、候選數（人工核對用）
+#   cik_overrides.csv            人工修正（ticker,start,cik,valid_from,valid_to,note），優先於自動對照
 #   earnings_8k.csv.gz           這些 CIK 的全部 2.02 申報（2005 年起，不限成分股期間）
 #   sp500_earnings_events.csv.gz 只留申報當時是 S&P 500 成分股的事件，附價格資料夾用的代號
 #   state.json                   每個 CIK 是否已抓完舊分頁、acceptance 時間的小時分布（時區核對）
@@ -157,35 +158,85 @@ def load_ticker_cik():
     return out, len(files)
 
 
-def map_intervals(members, tc, renames, current):
-    """每段成分股區間選一個 CIK：區間內用該代號申報最多次的公司。
-    代號同時試原樣、改名後、去掉連字號（BRK-B → BRKB 之類的申報寫法）。"""
+def map_intervals(members, tc, renames, current, overrides=None):
+    """每段成分股區間拆成「CIK 分段」：逐季選當季用該代號申報最多次的 CIK。
+    公司重組換 CIK（如遷冊成 plc）時，同一段區間會分成新舊兩個 CIK。
+    主 CIK（涵蓋最多季）優先；其他 CIK 只在主 CIK 整季沒有申報時補位。
+    代號變體：第一層（原樣、改名前後、去連字號）；第一層整段都找不到才用第二層
+    （去掉破產後的 Q 尾碼、股份類別取連字號前）。現任成分股仍找不到時用 company_tickers.json。
+    overrides：{(代號, 區間起日): [{"cik","valid_from","valid_to","note"}]}，指定日期範圍內強制用該 CIK。
+    回傳每個分段一列：ticker, start, end（區間）, cik, seg_from, seg_to（分段）, company, source, share。"""
+    overrides = overrides or {}
     back = defaultdict(set)
     for old, new in renames.items():
         back[new].add(old)
-    out = []
-    for m in members:
-        t = m["ticker"]
-        variants = {t, renames.get(t, t), t.replace("-", "")} | back.get(t, set())
+
+    def per_quarter(variants, m):
         end = m["end"] or date.max
-        score, names = Counter(), {}
+        q = defaultdict(Counter)   # 季起日 → {cik: 申報數}
+        names = {}
         for v in variants:
             for cik, spans in tc.get(v, {}).items():
                 for q0, q1, n, name in spans:
                     if q0 < end and q1 > max(m["start"], START):
-                        score[cik] += n
+                        q[q0][cik] += n
                         names[cik] = name
+        return q, names
+
+    out = []
+    for m in members:
+        t = m["ticker"]
+        tier1 = {t, renames.get(t, t), t.replace("-", "")} | back.get(t, set())
+        q, names = per_quarter(tier1, m)
         src = "form345"
-        if not score and m["end"] is None and t in current:
-            score[current[t][0]] = 1
+        if not q:
+            tier2 = set()
+            if len(t) >= 4 and t.endswith("Q"):
+                base = t.rstrip("Q")
+                tier2 |= {t[:-1], base, base[:-1] if len(base) >= 4 else base}
+            if "-" in t:
+                tier2.add(t.split("-")[0])
+            q, names = per_quarter(tier2 - tier1, m)
+            src = "form345_fallback"
+        # 主 CIK = 涵蓋最多季的；其他 CIK 只在主 CIK「整季沒有申報」時補位（重組換 CIK 後舊 CIK 會完全消失，
+        # 而共用代號的別家公司會一直並存——不讓它們交替出現）
+        cover = Counter(c for qq in q.values() for c in qq)
+        primary = cover.most_common(1)[0][0] if cover else None
+        segs = []   # [cik, 起季, 迄季, 該 CIK 在分段內申報占比]
+        pq = sorted(q0 for q0 in q if primary in q[q0])
+        for q0 in sorted(q):
+            if primary in q[q0]:
+                cik, n = primary, q[q0][primary]
+            elif pq and pq[0] < q0 < pq[-1]:
+                continue   # 主 CIK 前後都有申報：只是這季沒人申報，不讓別家公司補位
+            else:
+                cik, n = q[q0].most_common(1)[0]
+            share = n / sum(q[q0].values())
+            if segs and segs[-1][0] == cik:
+                segs[-1][2] = q0
+                segs[-1][3] = min(segs[-1][3], share)
+            else:
+                segs.append([cik, q0, q0, share])
+        if not segs and m["end"] is None and t in current:
+            segs = [[current[t][0], max(m["start"], START), date.max, 1.0]]
             names[current[t][0]] = current[t][1]
             src = "company_tickers"
-        if score:
-            cik, _ = score.most_common(1)[0]
-            out.append({**m, "cik": cik, "company": names[cik], "source": src,
-                        "n_candidates": len(score), "alternatives": ";".join(c for c in score if c != cik)})
-        else:
-            out.append({**m, "cik": "", "company": "", "source": "missing", "n_candidates": 0, "alternatives": ""})
+        ov = overrides.get((t, m["start"].isoformat()))
+        if ov:
+            segs = [[o["cik"].lstrip("0"), date.fromisoformat(o["valid_from"]),
+                     date.fromisoformat(o["valid_to"]) if o.get("valid_to") else date.max, 1.0] for o in ov]
+            for o in ov:
+                names[o["cik"].lstrip("0")] = o.get("note", "")
+            src = "override"
+        if not segs:
+            out.append({**m, "cik": "", "seg_from": "", "seg_to": "", "company": "", "source": "missing", "share": ""})
+            continue
+        for i, (cik, q0, q1, share) in enumerate(segs):
+            # 分段邊界用季：第一段從區間起日、最後一段到區間迄日，中間以季切換
+            seg_from = max(m["start"], START) if i == 0 else q0
+            seg_to = (m["end"] or date.max) if i == len(segs) - 1 else segs[i + 1][1]
+            out.append({**m, "cik": cik, "seg_from": seg_from, "seg_to": seg_to, "company": names.get(cik, ""),
+                        "source": src, "share": round(share, 3)})
     return out
 
 
@@ -264,12 +315,21 @@ def main():
         return 2
     current = {norm_ticker(v["ticker"]): (str(v["cik_str"]), v.get("title", "")) for v in ct.values()}
 
-    mapping = map_intervals(members, tc, renames, current)
+    ov_path = os.path.join(OUT_DIR, "cik_overrides.csv")
+    overrides = defaultdict(list)
+    for r in (read_csv(ov_path) if os.path.exists(ov_path) else []):
+        overrides[(norm_ticker(r["ticker"]), r["start"])].append(r)
+    mapping = map_intervals(members, tc, renames, current, overrides)
     src = Counter(m["source"] for m in mapping)
-    print(f"區間對到 CIK：{dict(src)}；多候選 {sum(1 for m in mapping if m['n_candidates'] > 1)} 段", flush=True)
+    multi = Counter((m["ticker"], m["start"]) for m in mapping)
+    print(f"成分股區間分段：{dict(src)}；拆成多個 CIK 的區間 {sum(1 for v in multi.values() if v > 1)} 段", flush=True)
+    missing = [m["ticker"] for m in mapping if m["source"] == "missing"]
+    print(f"對不到 CIK 的 {len(missing)} 段：{missing}", flush=True)
+    fmt = lambda d: "" if d in ("", None, date.max) else d
     write_csv(os.path.join(OUT_DIR, "sp500_cik_map.csv"),
-              [{**m, "start": m["start"], "end": m["end"] or ""} for m in mapping],
-              ["ticker", "start", "end", "cik", "company", "source", "n_candidates", "alternatives"])
+              [{**m, "start": m["start"], "end": fmt(m["end"]), "seg_from": fmt(m["seg_from"]),
+                "seg_to": fmt(m["seg_to"])} for m in mapping],
+              ["ticker", "start", "end", "cik", "seg_from", "seg_to", "company", "source", "share"])
 
     state_path = os.path.join(OUT_DIR, "state.json")
     state = json.load(open(state_path)) if os.path.exists(state_path) else {"ciks": {}}
@@ -306,7 +366,8 @@ def main():
     for r in all_events:
         d = date.fromisoformat(r["filing_date"])
         for m in by_cik.get(r["cik"], []):
-            if m["start"] <= d and (m["end"] is None or d < m["end"]):
+            in_member = m["start"] <= d and (m["end"] is None or d < m["end"])
+            if in_member and m["seg_from"] <= d < m["seg_to"]:
                 joined.append({**r, "ticker": m["ticker"], "price_ticker": renames.get(m["ticker"], m["ticker"]),
                                "member_start": m["start"]})
                 break
