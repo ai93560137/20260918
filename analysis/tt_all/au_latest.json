@@ -1,0 +1,26 @@
+{
+ "market": "au",
+ "name": "澳洲",
+ "etf": "STW",
+ "date": "2026-09-23",
+ "month_end": false,
+ "test": true,
+ "market_ok": false,
+ "etf_vs_ma50": -0.01539180495759318,
+ "etf_vs_ma200": 0.010086308508957531,
+ "n": 56,
+ "top_n": 500,
+ "seed": 202609,
+ "cap": 40,
+ "tier": "試行",
+ "n_enter": null,
+ "n_leave": null,
+ "prev_date": null,
+ "top5": [
+  "EQR.AX",
+  "SLS.AX",
+  "CBE.AX",
+  "MYE.AX",
+  "KRR.AX"
+ ]
+}

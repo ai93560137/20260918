@@ -1,0 +1,26 @@
+{
+ "market": "jp",
+ "name": "日股",
+ "etf": "1321",
+ "date": "2026-09-18",
+ "month_end": false,
+ "test": true,
+ "market_ok": false,
+ "etf_vs_ma50": -0.008515671896516253,
+ "etf_vs_ma200": 0.09337934671269132,
+ "n": 149,
+ "top_n": 1000,
+ "seed": 202609,
+ "cap": 40,
+ "tier": "觀察",
+ "n_enter": null,
+ "n_leave": null,
+ "prev_date": null,
+ "top5": [
+  "4588.T",
+  "2962.T",
+  "6862.T",
+  "2737.T",
+  "278A.T"
+ ]
+}

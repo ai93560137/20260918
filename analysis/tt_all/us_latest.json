@@ -1,0 +1,26 @@
+{
+ "market": "us",
+ "name": "美股",
+ "etf": "SPY",
+ "date": "2026-09-21",
+ "month_end": false,
+ "test": true,
+ "market_ok": true,
+ "etf_vs_ma50": 0.020051236714398568,
+ "etf_vs_ma200": 0.08488162608994387,
+ "n": 191,
+ "top_n": 1500,
+ "seed": 202609,
+ "cap": 40,
+ "tier": "觀察",
+ "n_enter": null,
+ "n_leave": null,
+ "prev_date": "2026-09-22",
+ "top5": [
+  "SNDK",
+  "MU",
+  "TXG",
+  "TWST",
+  "LITE"
+ ]
+}

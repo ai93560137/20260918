@@ -1,0 +1,26 @@
+{
+ "market": "tw",
+ "name": "台灣",
+ "etf": "0050",
+ "date": "2026-09-23",
+ "month_end": false,
+ "test": true,
+ "market_ok": true,
+ "etf_vs_ma50": 0.06546127385959277,
+ "etf_vs_ma200": 0.26526291976822414,
+ "n": 80,
+ "top_n": 500,
+ "seed": 202609,
+ "cap": 40,
+ "tier": "不建議",
+ "n_enter": null,
+ "n_leave": null,
+ "prev_date": null,
+ "top5": [
+  "2408.TW",
+  "3026.TW",
+  "3189.TW",
+  "3037.TW",
+  "6173.TWO"
+ ]
+}
