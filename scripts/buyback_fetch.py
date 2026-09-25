@@ -129,9 +129,10 @@ BUY = r"(?:re-?purchas\w*|buy-?\s?backs?|buy\s+back)"
 AUTH = r"(?:authori[sz]\w*|approv\w*)"
 _ANY = r"(?:[^.]|\.(?=\d))"  # 句中任意字元（小數點不算句尾）
 NEW_RE = re.compile(r"\b(?:new|additional|incremental|increas\w*|expan\w*|augment\w*|replac\w*|another|"
-                    r"upsiz\w*|supplement\w*|extension|extend\w*|raise[sd]?|boost\w*)\b", re.I)
+                    r"upsiz\w*|supplement\w*|raise[sd]?|boost\w*)\b", re.I)
 # 董事會（剛剛）授權：「board/directors ... authorized/approved ... repurchase」
-GRANT_RE = re.compile(rf"\b(?:board|directors|company|we)\b{_ANY}{{0,80}}?\b(?:has\s+|have\s+|recently\s+|today\s+)?"
+GRANT_RE = re.compile(rf"\b(?:board|directors|company|we)\b{_ANY}{{0,80}}?(?<![-\w])(?<!is\s)(?<!are\s)(?<!be\s)"
+                      rf"(?<!been\s)(?:has\s+|have\s+|recently\s+|today\s+)?"
                       rf"(?:authori[sz]ed|approved)\b{_ANY}{{0,200}}?{BUY}", re.I)
 # 公告標題型：「XYZ Announces $500 Million Share Repurchase Authorization」「New $40 mil ... authorization」
 HEAD_RE = re.compile(rf"\b(?:announc\w*|declar\w*|new)\b{_ANY}{{0,80}}?(?:\$|million|billion){_ANY}{{0,60}}?"
@@ -171,16 +172,76 @@ def sentences(text):
                 yield s
 
 
-def classify_sentence(s, file_year=None):
-    if file_year and not TODAY_RE.search(s):
+MONTHS = {m: i + 1 for i, m in enumerate(["january", "february", "march", "april", "may", "june", "july", "august",
+                                           "september", "october", "november", "december"])}
+DATE_RE = re.compile(r"\b(january|february|march|april|may|june|july|august|september|october|november|december)"
+                     r"\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+((?:19|20)\d\d))?\b", re.I)
+IN_MONTH_RE = re.compile(r"\b(?:in|during|since)\s+(?:early\s+|late\s+|mid-?)?(january|february|march|april|may|june|"
+                         r"july|august|september|october|november|december)\b", re.I)
+TERM_ONLY_RE = re.compile(r"\b(?:extension|extend\w*|continu\w+|renew\w*|reinstat\w+|re-?affirm\w*)\b", re.I)
+CAND_AUTH = r"(?:authori[sz]\w*|approved|approves|approving)"
+PAST_ANN_RE = re.compile(r"\b(?:previously|as|had\s+been|was|were|it|we)\s+(?:previously\s+)?announced\b|"
+                         r"\bas\s+previously\b", re.I)
+EXTRA_OLD_RE = re.compile(r"\b(?:since\s+(?:\w+\s+(?:of\s+)?)?(?:19|20)\d\d|a\s+total\s+of|cumulative|aggregate\s+of|"
+                          r"expired|expire[sd]?\s+(?:on|in)|not\s+(?:to\s+)?(?:extend|renew)|elected\s+not|did\s+not|"
+                          r"terminat\w+|during\s+(?:the\s+)?(?:(?:first|second|third|fourth)\s+)?(?:quarter|year|fiscal|(?:19|20)\d\d)|"
+                          r"(?:re)?purchased\s+(?:approximately\s+)?[\d,.]+)\b", re.I)
+JUNK_RE = re.compile(r"\b(?:repurchase|redemption)\s+price\b|\bprice\s+(?:at\s+which|per\s+share)|\btrustee\b|"
+                     r"\bindenture\b|\bholders?\s+of\b|\bsection\s+\d|\bwill\s+require\b|\bstrategic\s+options\b|"
+                     r"\bmay\s+(?:re)?purchase\s+up\s+to\s+an\s+additional\b", re.I)
+INCR_RE = re.compile(r"(?:increase\w*\s+(?:of|by)\s+|additional\s+|by\s+)(?:US)?\$\s?(\d[\d,]*(?:\.\d+)?)\s*"
+                     r"(billion|million|bn|mm|mil|m|b)?\b|(?:US)?\$\s?(\d[\d,]*(?:\.\d+)?)\s*(billion|million|bn|mm|mil|m|b)?"
+                     r"\s+(?:increase|addition|expansion)", re.I)
+
+
+def _is_junk(s):
+    digits = sum(c.isdigit() for c in s)
+    return len(s) > 700 or digits > 0.2 * len(s) or bool(JUNK_RE.search(s))
+
+
+def _pick_money(s):
+    """加碼句優先取「增加的金額」；否則取最靠近回購字眼、且不是每股金額（股息、價格）的金額。超過一兆視為解析錯誤。"""
+    m = INCR_RE.search(s)
+    if m:
+        v, u = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
+        x = _num(v, u)
+        if x < 1e12:
+            return x
+    anchor = [m.start() for m in re.finditer(BUY, s, re.I)] or [0]
+    best, dist = None, 10 ** 9
+    for m in MONEY_RE.finditer(s):
+        tail = s[m.end():m.end() + 25].lower()
+        if re.match(r"\s*(?:per|a|each)\s+(?:share|unit)|\s*/\s*share", tail):
+            continue
+        d = min(abs(m.start() - a) for a in anchor)
+        if d < dist:
+            best, dist = m, d
+    x = _num(*best.groups()) if best else ""
+    return x if x == "" or x < 1e12 else ""
+
+
+def classify_sentence(s, file_date=None):
+    """回傳 (kind, score)。file_date：申報日（ISO），用來判斷句中日期是不是過去的授權。"""
+    today = bool(TODAY_RE.search(s)) and not PAST_ANN_RE.search(s)
+    if file_date and not re.search(r"\btoday\b", s, re.I):  # 只有明寫 today 才不看句中日期
+        fd = date.fromisoformat(file_date)
+        if IN_MONTH_RE.search(s):
+            return "old", 1  # 「In January, the Company announced ...」：回顧之前的公告
+        for mon, d, y in DATE_RE.findall(s):
+            try:
+                if date(int(y or fd.year), MONTHS[mon.lower()], int(d)) < fd - timedelta(days=21):
+                    return "old", 1  # 描述三週以前的授權
+            except ValueError:
+                continue
         years = [int(y) for y in re.findall(r"\b((?:19|20)\d\d)\b", s)]
-        if years and max(years) < file_year:
+        if years and max(years) < fd.year:
             return "old", 1  # 描述往年的授權
     grant = bool(GRANT_RE.search(s))
     head = bool(HEAD_RE.search(s))
+    if TERM_ONLY_RE.search(s) and not NEW_RE.search(s):
+        return "old", 1  # 只延長期限或延續既有計畫
     new = bool(NEW_RE.search(s))
-    old = bool(OLD_RE.search(s))
-    today = bool(TODAY_RE.search(s))
+    old = bool(OLD_RE.search(s)) or bool(EXTRA_OLD_RE.search(s)) or bool(PAST_ANN_RE.search(s))
     if (grant or head) and (not old or (new and today)):
         return "new", 3 + today
     if new and not old and re.search(AUTH, s, re.I):
@@ -188,24 +249,35 @@ def classify_sentence(s, file_year=None):
     return "old", 1 if (grant or new) else 0
 
 
-def classify(text, file_year=None):
-    """回傳 dict：kind = new（新增或加碼）/ old（只提既有計畫）/ none；附金額、股數、比例、原句，
-    以及所有候選句（存下來以便之後改判讀規則時不必重新下載）。"""
-    best, cands = None, []
-    for s in sentences(text):
-        if not re.search(BUY, s, re.I) or not re.search(AUTH, s, re.I):
+def is_candidate(s):
+    """回購字眼與授權動詞都要有，而且相距 150 字元以內。"""
+    b = [m.start() for m in re.finditer(BUY, s, re.I)]
+    a = [m.start() for m in re.finditer(CAND_AUTH, s, re.I)]
+    return bool(b and a and min(abs(x - y) for x in b for y in a) <= 150)
+
+
+def classify_sentences(sents, file_date=None):
+    """sents：候選句（已含回購與授權字眼）。回傳最佳判讀 dict。"""
+    best = None
+    for s in sents:
+        if _is_junk(s) or not is_candidate(s):
             continue
-        cands.append(s[:600])
-        kind, score = classify_sentence(s, file_year)
-        m, sh, pc = MONEY_RE.search(s), SHARES_RE.search(s), PCT_RE.search(s)
-        cand = {"kind": kind, "score": score + (0.5 if (m or sh or pc) else 0),
-                "amount_usd": _num(*m.groups()) if m else "",
-                "shares": _num(*sh.groups()) if sh else "",
-                "pct": float(pc.group(1)) if pc else "",
-                "sentence": s[:600]}
+        kind, score = classify_sentence(s, file_date)
+        sh, pc = SHARES_RE.search(s), PCT_RE.search(s)
+        money = _pick_money(s)
+        cand = {"kind": kind, "score": score + (0.5 if (money or sh or pc) else 0),
+                "amount_usd": money, "shares": _num(*sh.groups()) if sh else "",
+                "pct": float(pc.group(1)) if pc else "", "sentence": s[:600]}
         if best is None or cand["score"] > best["score"]:
             best = cand
-    out = best or {"kind": "none", "score": -1, "amount_usd": "", "shares": "", "pct": "", "sentence": ""}
+    return best or {"kind": "none", "score": -1, "amount_usd": "", "shares": "", "pct": "", "sentence": ""}
+
+
+def classify(text, file_date=None):
+    """回傳 dict：kind = new（新增或加碼）/ old（只提既有計畫）/ none；附金額、股數、比例、原句，
+    以及所有候選句（存下來以便之後改判讀規則時不必重新下載）。"""
+    cands = [s[:600] for s in sentences(text) if is_candidate(s)]
+    out = classify_sentences(cands, file_date)
     out["candidates"] = " ⏎ ".join(cands[:6])
     return out
 
@@ -219,7 +291,8 @@ US_QUERIES = ['"repurchase program" authorized', '"repurchase plan" authorized',
               '"repurchase authorization"', '"buyback program" authorized']
 US_FIELDS = ["adsh", "cik", "ticker", "company", "form", "items", "file_date", "acceptance_et", "session",
              "doc", "kind", "amount_usd", "shares", "pct", "sentence", "candidates", "queries"]
-US_VERSION = 2  # 判讀或欄位改版時加一，舊版月份會重抓
+US_VERSION = 3  # 判讀或欄位改版時加一
+RECLASSIFY_FROM = 2  # 這個版本起每筆都存了候選句：改版時直接重新判讀，不必重新下載
 
 
 def efts_month(s, ym):
@@ -300,6 +373,21 @@ class Acceptance:
         return self.cache.get(adsh, "")
 
 
+def reclassify_us(state, acc, to_eastern):
+    """不重新下載：用每筆存下的候選句重新判讀；新判為新授權但沒有申報時間的，補抓時間。"""
+    for ym in sorted(state.get("done_months", [])):
+        path = os.path.join(OUT, "us", "months", f"{ym}.csv.gz")
+        rows = read_csv(path)
+        for r in rows:
+            sents = [x.strip() for x in (r.get("candidates") or "").split(" ⏎ ") if x.strip()]
+            c = classify_sentences(sents, r["file_date"] or None)
+            r.update({k: c.get(k, "") for k in ("kind", "amount_usd", "shares", "pct", "sentence")})
+            if r["kind"] == "new" and not r.get("acceptance_et"):
+                r["acceptance_et"], r["session"] = to_eastern(acc.get(r["cik"], r["adsh"], r["file_date"]))
+        write_csv(path, US_FIELDS, rows)
+        state.setdefault("months", {}).setdefault(ym, {})["new"] = sum(1 for r in rows if r["kind"] == "new")
+
+
 def fetch_us(args):
     from news_8k_fetch import to_eastern  # 同一套 UTC → 美東與時段判斷
     ua = os.environ.get("SEC_USER_AGENT", "").strip()
@@ -311,8 +399,14 @@ def fetch_us(args):
     acc = Acceptance(s)
     state = load_state("us")
     if state.get("version") != US_VERSION:
-        print(f"判讀版本 {state.get('version')} → {US_VERSION}：全部月份重抓")
-        state = {"version": US_VERSION}
+        if (state.get("version") or 0) >= RECLASSIFY_FROM:
+            print(f"判讀版本 {state['version']} → {US_VERSION}：用候選句重新判讀 {len(state.get('done_months', []))} 個月")
+            reclassify_us(state, acc, to_eastern)
+            state["version"] = US_VERSION
+            save_state("us", state)
+        else:
+            print(f"判讀版本 {state.get('version')} → {US_VERSION}：全部月份重抓")
+            state = {"version": US_VERSION}
     done = set(state.get("done_months", []))
     today = date.today()
     months, y, m = [], *map(int, args.start.split("-"))
@@ -338,7 +432,7 @@ def fetch_us(args):
                 r = get(s, url, pause=0.12)
                 if r is None:
                     continue
-                c = classify(html_to_text(r.text), int(src.get("file_date", "0000")[:4]) or None)
+                c = classify(html_to_text(r.text), src.get("file_date") or None)
                 if c["candidates"]:
                     cands.append(c["candidates"])
                 if c["score"] > best["score"]:
