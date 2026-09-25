@@ -14,6 +14,8 @@ git archive "$B" data/insider data/pelosi | tar -x -C /tmp/data_src   # 解到�
 | 數據 | 路徑 | 範圍 | 更新 | 產生腳本 |
 |---|---|---|---|---|
 | 內部人公開市場買入（SEC Form 4） | `data/insider/purchases/{年}.csv.gz` | 2006-01 起，所有申報公司（約 16,000 個代號），約 123 萬列 | 每週日 03:00 UTC（重抓最近兩季） | `scripts/insider_fetch.py` |
+| 財報事件（SEC 8-K Item 2.02） | `data/news/sp500_earnings_events.csv.gz` | 2005-01 起，申報當時的 S&P 500 成分股，約 4.7 萬筆 | 美股收盤後每日 | `scripts/news_8k_fetch.py` |
+| 歷史代號 ↔ CIK | `data/insider/ticker_cik/{季}.csv.gz` | 2006Q1 起，所有 Form 3/4/5 申報公司 | 隨內部人數據每週 | `scripts/insider_fetch.py` |
 | 佩洛西交易申報（眾議院 PTR） | `data/pelosi/transactions.json` | 2014-11 起，65 份申報、226 筆交易 | 每 4 小時 | `scripts/pelosi_tracker.py` |
 
 ---
@@ -61,7 +63,35 @@ rows = [r for p in sorted(glob.glob("data/insider/purchases/*.csv.gz"))
 
 ---
 
-## 2. 佩洛西交易 `data/pelosi/transactions.json`
+## 2. 財報事件 `data/news/sp500_earnings_events.csv.gz`
+
+來源：SEC `data.sec.gov/submissions`，只留 8-K／8-K/A 且 items 含 `2.02`（Results of Operations）。
+
+| 欄位 | 說明 |
+|---|---|
+| `cik` / `company` | 公司（CIK 為主鍵） |
+| `form` | `8-K` 或 `8-K/A`（修正） |
+| `accession` | 申報編號 |
+| `filing_date` | 申報日 |
+| `acceptance` | SEC 收件時間，**UTC**，精確到秒 |
+| `acceptance_et` / `session` | 美東時間；`pre`（09:30 前）、`regular`（盤中）、`post`（16:00 後） |
+| `items` | 8-K 項目，常見 `2.02,9.01` |
+| `ticker` / `price_ticker` | 成分股名單上的代號／價格資料夾用的代號（已套改名） |
+| `member_start` | 該段成分股區間起日 |
+
+**使用前必讀：**
+- **時間是 UTC**：美股盤後財報約為 20:00–21:30 UTC。決定事件日請用 `session`：`pre` 當天反應，其餘隔一交易日。
+- **8-K 時間可能晚於新聞稿**：時段分布為盤前 53%、盤後 32%、盤中 16%。盤中那部分多半是盤前已發新聞稿、
+  白天才補交 8-K。用 8-K 時間不會偷看未來，但事件日可能晚一天；計算反應時窗口從 t0 前一日收盤起算，可涵蓋這種情況。
+- **8-K/A 與同一季多份 2.02**：常見修正或補充公告，回測通常同一公司 30 天內只取第一份。
+- **成分股對照**：`data/news/sp500_cik_map.csv` 記錄每段區間用哪個 CIK（公司重組會分段），
+  錯配修正在 `data/news/cik_overrides.csv`；38 段已下市區間對不到 CIK（如 FNMA、VIAB、WAMUQ），這些事件缺漏。
+- **價格代號可能被重用**：已下市公司的代號後來可能給了別家（如 CAM、JAVA），價格資料夾裡可能是新公司的股價；
+  回測要檢查價格歷史在成分股起日前就存在。
+
+---
+
+## 3. 佩洛西交易 `data/pelosi/transactions.json`
 
 來源：眾議院書記官處 Periodic Transaction Report（PDF 解析）。每個元素是一份申報：
 

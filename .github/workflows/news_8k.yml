@@ -1,0 +1,71 @@
+name: News 8-K earnings events（財報事件 8-K Item 2.02）
+
+# 抓 S&P 500（point-in-time）成分股的 SEC 8-K Item 2.02 財報公告，供
+# research/news_trade/STRATEGY.md（財報公告後漂移）回測與之後的每日掃描使用。
+# 腳本：scripts/news_8k_fetch.py；輸出 data/news/。
+# 需要：repo secret SEC_USER_AGENT；data/insider/ticker_cik/（insider_research.yml 產生）。
+on:
+  schedule:
+    - cron: '30 22 * * 1-5'   # 美股收盤後（UTC 22:30），每個 CIK 只抓最新一頁，約 2 分鐘
+  workflow_dispatch:
+    inputs:
+      full:
+        description: '連舊分頁全部重抓'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news-8k-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout S&P 500 point-in-time universe
+        uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+          path: _equities
+          fetch-depth: 1
+          sparse-checkout: universes
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests
+
+      - name: Fetch 8-K Item 2.02 events
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          FULL: ${{ inputs.full }}
+        run: |
+          ARGS=""
+          [ "$FULL" = "true" ] && ARGS="--full"
+          python3 -u scripts/news_8k_fetch.py $ARGS
+
+      - name: Commit and push
+        if: always()
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { [ -d data/news ] && git add data/news; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(news): 更新 8-K 財報事件 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(news): 更新 8-K 財報事件 $(date -u +%F)" || exit 0; }
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
