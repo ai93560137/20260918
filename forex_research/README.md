@@ -14,6 +14,7 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
 | `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
 | `FX_COST_MODEL.md` | 外匯 swap 加價與點差的公開證據（IBKR 分層、Saxo 等級、CME 期貨路徑）與各口徑對策略的影響；之後登記的成本從這裡取 |
+| `IBKR_DATA_REQUEST.md` | 給雲垂分支（GCP VM 上的 IB Gateway）的數據需求：CME 外匯期貨隱含波動歷史（波動溢價用）、IDEALPRO 5 分鐘 BID_ASK（日內點差用）；腳本 `scripts/ib_fx_history.py` |
 | `FX_COT_OOS_BACKTEST.md` | CFTC 持倉反向再登記：F1 1990–2003 樣本外（FRED 價格）t −1.52、F3 週頻 1.41 → **☠️ 路線關閉** |
 | `FX_NEW_INFO_BACKTEST.md` | 路線 B 新資訊：央行利率路徑、VIX>25 過濾利差、CFTC 持倉反向（G7、機構／零售並列）——**全部 ☠️**（t −1.0／0.21／0.77） |
 | `FX_EM_UNIVERSE_BACKTEST.md` | 路線 A 新宇宙：G7＋MXN ZAR TRY PLN SEK HUF NOK（機械剔除規則、動態 k_t、兩級 swap 加價）利差／價值／三因子——**全部 ☠️**（機構 t −0.51／−0.82／−1.30；TRY 一個貨幣 −49%） |
