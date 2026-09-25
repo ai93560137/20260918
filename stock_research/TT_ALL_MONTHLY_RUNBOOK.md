@@ -53,6 +53,21 @@ git add analysis/tt_all && git commit -m "chore(tt-all): 覆核請求" && git pu
 - **有「不一致」或「無數據」的股票：下單前先查**（停牌、下市、代號改了、拆股）；不一致 > 5% 的市場先不要下單
 - 之後 `git pull --no-rebase` 把 Actions 的 commit 拉回來再做第 4 步
 
+## 第 3c 步：IBKR 第三來源覆核（雲垂分支代抓，選做但建議）
+
+月底名單出來後 `analysis/tt_all/ibkr_request.csv` 已自動更新（第 2 步 `tt_all_signal.py` 產生）。到雲垂 session 貼 `stock_research/IBKR_DATA_REQUEST.md` 第 2 節的指令（probe → closes → commit 到雲垂分支），約 30 分鐘交貨；然後在本分支：
+
+```bash
+git fetch origin claude/dazzling-curie-f3xzb8
+git checkout origin/claude/dazzling-curie-f3xzb8 -- data_stock_ibkr
+python3 scripts/tt_all_verify.py --ibkr      # 寫 <市場>_<日期>_verify_ibkr.csv、<市場>_verify_ibkr.json、tg_verify_ibkr.txt
+python3 scripts/tt_all_page.py               # 網頁多一欄「IB」與「IBKR 覆核」統計
+```
+
+- 能比的市場：美、澳、港、新、台主板（IB 無台灣上櫃；加、日帳戶無歷史數據權限；印、韓無合約）。
+- IB 的「下一交易日開市價」存在 `_verify_ibkr.csv` 的 `ibkr_next_open`，是執行基準：第 7 步記錄成交後，滑價 = 成交價 ÷ 開市價 − 1。
+- 把 `tg_verify_ibkr.txt` 內容寫進 `.github/tg_outbox_research.txt` 並 push 就發到 Telegram。
+
 ## 第 4 步：發布網頁
 
 在 Claude session 說「重新發布月底名單網頁」：把 `analysis/tt_all/index.html` 重新發布到**同一個**連結 https://claude.ai/artifact/MidE38TQkYwN6pjoHFn9sP （路徑不變即更新，連結不變）。

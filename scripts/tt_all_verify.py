@@ -194,19 +194,27 @@ def write_tg(summaries: list[dict]) -> None:
 
 
 def verify_ibkr(mk: str, d: str) -> dict | None:
-    """把雲垂分支交回的 IBKR 收市（data_stock_ibkr/<mk>_<d>.csv）當第三把尺；同時把下一交易日開市存為執行基準。"""
+    """把雲垂分支交回的 IBKR 收市（data_stock_ibkr/<mk>_<d>.csv）當第三把尺；同時把下一交易日開市存為執行基準。
+    狀態：一致／整數倍／不一致（IB 有收市）、無合約（IB 解析不到，例如台灣上櫃、印韓）、無權限（合約有、日線拉不到 = 帳戶沒該交易所歷史數據）、未抓。"""
     p = ROOT / "data_stock_ibkr" / f"{mk}_{d}.csv"
     if not p.exists():
         return None
     with open(p, newline="", encoding="utf-8") as f:
         ib = {r["ticker"]: r for r in csv.DictReader(f)}
     rows = read_list(mk, d)
-    out, cnt = [], {"一致": 0, "不一致": 0, "整數倍": 0, "無數據": 0}
+    out, cnt = [], {"一致": 0, "整數倍": 0, "不一致": 0, "無合約": 0, "無權限": 0, "未抓": 0}
     for r in rows:
-        x = ib.get(r["ticker"], {})
-        theirs = float(x["ib_close"]) if x.get("status") == "ok" and x.get("ib_close") else None
-        st, diff = classify(float(r["close"]), theirs, mk)
+        x = ib.get(r["ticker"])
+        if x is None:
+            st, diff = "未抓", None
+        elif x.get("status") == "no_contract":
+            st, diff = "無合約", None
+        elif x.get("status") == "ok" and x.get("ib_close"):
+            st, diff = classify(float(r["close"]), float(x["ib_close"]), mk)
+        else:
+            st, diff = "無權限", None
         cnt[st] += 1
+        x = x or {}
         out.append({"ticker": r["ticker"], "ours": r["close"], "ibkr_close": x.get("ib_close", ""), "next_date": x.get("next_date", ""),
                     "ibkr_next_open": x.get("ib_next_open", ""), "diff_pct": f"{diff * 100:+.2f}" if diff is not None else "", "status": st,
                     "ib_status": x.get("status", "missing"), "note": x.get("note", "")})
@@ -214,11 +222,32 @@ def verify_ibkr(mk: str, d: str) -> dict | None:
         w = csv.DictWriter(f, fieldnames=list(out[0].keys()) if out else ["ticker"], lineterminator="\n")
         w.writeheader()
         w.writerows(out)
-    summ = {"market": mk, "date": d, "n": len(rows), "source": "IBKR 日線 TRADES", **cnt,
-            "bad": [r["ticker"] for r in out if r["status"] in ("不一致", "無數據")]}
+    n_ok = cnt["一致"] + cnt["整數倍"] + cnt["不一致"]
+    summ = {"market": mk, "date": d, "n": len(rows), "n_ib": n_ok, "source": "IBKR 日線 TRADES", **cnt,
+            "bad": [r["ticker"] for r in out if r["status"] == "不一致"],
+            "no_contract": [r["ticker"] for r in out if r["status"] == "無合約"]}
     (OUT / f"{mk}_verify_ibkr.json").write_text(json.dumps(summ, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"[{mk}] {d} IBKR 覆核 {len(rows)} 檔：一致 {cnt['一致']}、不一致 {cnt['不一致']}、整數倍 {cnt['整數倍']}、無數據 {cnt['無數據']}", file=sys.stderr)
+    print(f"[{mk}] {d} IBKR 覆核 {len(rows)} 檔：一致 {cnt['一致']}、不一致 {cnt['不一致']}、整數倍 {cnt['整數倍']}、無合約 {cnt['無合約']}、無權限 {cnt['無權限']}、未抓 {cnt['未抓']}", file=sys.stderr)
     return summ
+
+
+def ibkr_line(s: dict) -> str:
+    """Telegram 一行：有 IB 收市的市場報一致數；整個市場沒合約／沒權限就講原因，不逐檔列。"""
+    nm, n = NAME[s["market"]], s["n"]
+    if s["n_ib"] == 0:
+        why = ("IB 無合約（未上架）" if s["無合約"] == n else "IB 無合約（probe 首檔即失敗，未續抓）" if s["無合約"] and s["無合約"] + s["未抓"] == n
+               else "IB 帳戶無此交易所歷史數據權限" if s["無權限"] == n else "IB 未抓到")
+        return f"⛔ {nm} {s['date']}：0/{n}，{why}"
+    parts = [f"{s['一致'] + s['整數倍']}/{s['n_ib']} 一致"]
+    if s["bad"]:
+        parts.append(f"不一致 {len(s['bad'])}：" + "、".join(s["bad"][:8]) + ("…" if len(s["bad"]) > 8 else ""))
+    if s["無合約"]:
+        two = [t for t in s["no_contract"] if t.endswith(".TWO")]
+        parts.append(f"IB 無合約 {s['無合約']}" + ("（全是上櫃 .TWO）" if two and len(two) == s["無合約"] else "：" + "、".join(s["no_contract"][:5])))
+    if s["無權限"]:
+        parts.append(f"無權限 {s['無權限']}")
+    icon = "✅" if not s["bad"] and s["n_ib"] == n else "⚠️" if s["bad"] else "☑️"
+    return f"{icon} {nm} {s['date']}：" + "；".join(parts)
 
 
 def selftest() -> None:
@@ -249,9 +278,11 @@ def main() -> None:
             if s:
                 summaries.append(s)
         if summaries:
-            lines = ["🔎 鳥翔｜IBKR 第三來源覆核", ""] + [
-                f"{'✅' if not s['bad'] else '⚠️'} {NAME[s['market']]} {s['date']}：{s['一致']}/{s['n']} 一致；無數據 {s['無數據']}、不一致 {s['不一致']}"
-                + (("；要查：" + "、".join(s["bad"][:10])) if s["bad"] else "") for s in summaries]
+            n_exec = sum(s["n_ib"] for s in summaries)
+            mk_exec = [NAME[s["market"]] for s in summaries if s["n_ib"]]
+            lines = ["🔎 鳥翔｜IBKR 第三來源覆核（雲垂分支 IB Gateway 交回）", ""] + [ibkr_line(s) for s in summaries] + [
+                "", f"執行基準：{'、'.join(mk_exec)} 共 {n_exec} 檔已存 IB「下一交易日開市價」，成交後滑價 = 成交價 ÷ 開市價 − 1。",
+                "一致 = 收市差 ≤ 1%。不一致的逐檔查（小型股尾盤競價、拆股）；明細 analysis/tt_all/<市場>_<日期>_verify_ibkr.csv。"]
             (OUT / "tg_verify_ibkr.txt").write_text("\n".join(lines)[:3900] + "\n", encoding="utf-8")
         return
     jobs = []

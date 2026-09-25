@@ -17,7 +17,7 @@ IBKR 是券商口徑的獨立來源：**訊號日收市**用來覆核名單，**
 |---|---|---|---|---|---|---|---|
 | **P0** | `analysis/tt_all/ibkr_request.csv` 列出的股票（market, ticker, signal_date）：`Stock(symbol, exchange, currency)`，映射在腳本 `to_ib()`：港 SEHK／新 SGX／加 TSE／澳 ASX／美 SMART／日 TSEJ／印 NSE／台 TWSE／韓 KSE | `TRADES` | 1 day，`useRTH=True` | 1 個（`1 M`） | 訊號日收市、下一交易日日期／開市／收市 | `<市場>_<訊號日>.csv` | 名單收市覆核＋執行基準 |
 
-- 印度、台灣、韓國 IB 很可能不提供（非居民／未上架），**預期失敗**：把 `no_contract`／錯誤訊息留在檔內與 `_status.txt` 就好，不要想辦法繞。
+- 印度、韓國 IB 不提供（`no_contract`）；台灣**上市主板有、上櫃（.TWO）無**——2026-09-25 首次全量已證實，見第 7 節。失敗的照錄在檔內與 `_status.txt` 就好，不要想辦法繞。
 - 加拿大 `BAM-A.TO` 之類的類別股，腳本已把 `-` 換成 `.`；美股 `BRK-B` 換成 `BRK B`。若某檔解析不到合約，記 `no_contract` 即可。
 - IB 的日線 TRADES 是按拆股還原、不按股息，與我們的 Close 口徑相同，直接比得上。
 
@@ -64,3 +64,20 @@ nohup python3 scripts/ib_stock_verify.py --port 4002 --job closes > data_stock_i
 - 不要用這些數據跑任何回測或改鳥翔的規則——規格已凍結，跑數在鳥翔分支。
 - 不要改 `gcp_ib/ib_collector.py`（這次不需要每日採集）。
 - 不要把 `data_stock_ibkr/` 合併回其他分支。
+
+## 7. 首次全量結果（2026-09-25，雲垂 commit a1457c98；鳥翔以 `tt_all_verify.py --ibkr` 比對）
+
+| 市場 | IB 有收市 | 與我們的收市一致（≤1%） | 失敗形狀 |
+|---|---|---|---|
+| 美 | 191/191 | 191 | — |
+| 港 | 45/45 | 45 | — |
+| 澳 | 56/56 | 52 | 4 檔小型股差 1.0–4.6%（BCM、BNZ、CUP、MYE；待 Yahoo 重抓判定是誰的尾盤價） |
+| 新 | 20/21 | 20 | H78.SI 無合約 |
+| 台 | 58/80 | 58 | 22 檔全是上櫃 .TWO，IB 無合約；主板 100% 一致 |
+| 加 | 0/70 | — | 合約解析到，日線 `Error 162 No market data permissions for TSE STK`（帳戶權限，非個股） |
+| 日 | 0/149 | — | 同上（TSEJ） |
+| 印、韓 | 0 | — | probe 首檔即 `no_contract` |
+
+結論：**美澳港新台主板五個市場**可用 IB 做收市覆核與「下一交易日開市」執行基準（370 檔已存）；澳洲與台灣主板從「只有 Yahoo」升級為有獨立來源。
+加、日要買 IB 歷史數據訂閱才有——按第 3 節第 3 條不買，由用戶決定（日本 149 檔是最大市場之一）。台灣上櫃、印、韓維持 Yahoo 單源。
+鳥翔分支的處理：`analysis/tt_all/<市場>_<日期>_verify_ibkr.csv`、`<市場>_verify_ibkr.json`、網頁多一欄「IB」、Telegram 一則「🔎 鳥翔｜IBKR 第三來源覆核」。
