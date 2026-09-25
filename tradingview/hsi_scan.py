@@ -221,6 +221,18 @@ def scan_us():
         if es:
             DIGEST.append(f"ES 期貨 {es['price']:,.0f}（延遲價，MES 同價，"
                           f"進場參考檔 {round(es['price'] / 5) * 5:,.0f}）")
+    # 期限結構警戒儀（hedge_signal_lab.py 驗證，2011–2026）：
+    # slope = VIX9D − VIX；倒掛(>0)時未來 5 天 RV 20.3 vs 11.3、對沖負載約 2×，
+    # 2011 起 4 個災難月進場前後 5 天全部曾倒掛（4/4）。倒掛 = 加密檢查，不是離場。
+    f9 = os.path.join(BASE, 'vix9d_daily.csv')
+    if os.path.exists(f9):
+        v9 = pd.read_csv(f9, parse_dates=['Date']).set_index('Date').Close
+        slope = float(v9.iloc[-1]) - iv
+        lvl = '紅·倒掛' if slope > 0 else ('黃·走平' if slope > -0.5 else '綠')
+        DIGEST.append(f"期限結構 VIX9D−VIX {slope:+.1f}（{lvl}）")
+        if slope > 0:
+            ALERTS.append(f"期限結構倒掛 VIX9D−VIX = {slope:+.1f}：本週對沖負載預期 2×，"
+                          f"兩市場 delta 檢查加密（盤中各加一次），週內見 -2% 單日機率 28%")
     if (date.today() - asof).days > 5:
         ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
     if prem < 0:
