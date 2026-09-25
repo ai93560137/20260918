@@ -39,6 +39,18 @@ python3 scripts/tt_all_page.py
 - `tg_summary.txt`：每個市場一行，✅／⛔ 與「對 50/200 日線」的正負一致（✅ 必須兩個都正）
 - 抽一檔看 CSV：收市價與券商報價同一數量級（防拆股／縫接）
 
+## 第 3b 步：第二來源覆核（GitHub Actions，push 觸發）
+
+```bash
+printf "hk 2026-09-30\nsg 2026-09-30\nca 2026-09-30\nin 2026-09-30\nau 2026-09-30\nus 2026-09-30\njp 2026-09-30\n" > analysis/tt_all/verify_request.txt   # 日期 = 各市場的訊號日（<市場>_latest.json）
+git add analysis/tt_all && git commit -m "chore(tt-all): 覆核請求" && git push origin claude/stock-research-k9nzau
+```
+- `tt_all_verify.yml` 會跑：港 → 港交所日報表；美 → Nasdaq 歷史 API（每檔 0.3 秒，200 檔約 8 分鐘）；台 → 證交所（上市股）；日 → Yahoo!ファイナンス；
+  韓澳加印新與取不到的 → Yahoo 即時重抓（同來源，只驗快照沒過期、股票還在交易）
+- 完成後自動 commit `<市場>_<日期>_verify.csv`、`<市場>_verify.json`、重建 `index.html`（加「覆核」欄），並發一則 Telegram：「✅ 港股 45/45 一致（港交所日報表）」
+- **有「不一致」或「無數據」的股票：下單前先查**（停牌、下市、代號改了、拆股）；不一致 > 5% 的市場先不要下單
+- 之後 `git pull --no-rebase` 把 Actions 的 commit 拉回來再做第 4 步
+
 ## 第 4 步：發布網頁
 
 在 Claude session 說「重新發布月底名單網頁」：把 `analysis/tt_all/index.html` 重新發布到**同一個**連結 https://claude.ai/artifact/MidE38TQkYwN6pjoHFn9sP （路徑不變即更新，連結不變）。
@@ -77,7 +89,7 @@ git push origin claude/stock-research-k9nzau        # push 即觸發 send-telegr
 ## 最省事的做法
 
 月底翌日早上先在 GitHub 觸發第 1 步的兩個 workflow，一小時後開 Claude session 說：
-「**跑月底名單：拿數據、出 9 國名單、發布網頁、發 Telegram**」——第 2 到 5 步一次做完，你只需做第 6、7 步。
+「**跑月底名單：拿數據、出 9 國名單、覆核、發布網頁、發 Telegram**」——第 2 到 5 步一次做完（覆核要等 Actions 約 10 分鐘），你只需做第 6、7 步。
 
 ## 常見問題
 - **某市場沒出名單**：數據未更新到月底（第 1 步沒跑或 Yahoo 抓失敗），看 Actions 記錄
