@@ -1,6 +1,18 @@
-Fri Sep 25 14:18:44 UTC 2026
-API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
-Make sure API port on TWS/IBG is open
+Fri Sep 25 16:00:03 UTC 2026
+Error 10141, reqId -1: Paper trading disclaimer must first be accepted for API connection.
+Peer closed connection. clientId 17 already in use?
+API connection failed: TimeoutError()
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 490, in wait_for
+    return fut.result()
+           ^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 684, in _wrap_awaitable
+    return (yield from awaitable.__await__())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
 Traceback (most recent call last):
   File "/home/hengkychansinghing/20260918/gcp_ib/ib_collector.py", line 137, in <module>
     sys.exit(main())
@@ -21,25 +33,9 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^
   File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 1748, in connectAsync
     await self.client.connectAsync(host, port, clientId, timeout)
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/client.py", line 211, in connectAsync
-    await asyncio.wait_for(self.conn.connectAsync(host, port), timeout)
-  File "/usr/lib/python3.11/asyncio/tasks.py", line 479, in wait_for
-    return fut.result()
-           ^^^^^^^^^^^^
-  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/connection.py", line 39, in connectAsync
-    self.transport, _ = await loop.create_connection(
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.11/asyncio/base_events.py", line 1085, in create_connection
-    raise exceptions[0]
-  File "/usr/lib/python3.11/asyncio/base_events.py", line 1069, in create_connection
-    sock = await self._connect_sock(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.11/asyncio/base_events.py", line 973, in _connect_sock
-    await self.sock_connect(sock, address)
-  File "/usr/lib/python3.11/asyncio/selector_events.py", line 634, in sock_connect
-    return await fut
-           ^^^^^^^^^
-  File "/usr/lib/python3.11/asyncio/selector_events.py", line 674, in _sock_connect_cb
-    raise OSError(err, f'Connect call failed {address}')
-ConnectionRefusedError: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/client.py", line 217, in connectAsync
+    await asyncio.wait_for(self.apiStart, timeout)
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 492, in wait_for
+    raise exceptions.TimeoutError() from exc
+TimeoutError
 exit=1
