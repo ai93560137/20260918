@@ -81,7 +81,7 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
     def close_pos(price, ts, reason):
         nonlocal pos, pnl, peak, max_dd, wins, losses, win_sum, loss_sum
         nonlocal entry_price, entry_time, sl, tp
-        exit_price = price - spread if pos < 0 else price   # 空單回補付點差
+        exit_price = price + spread if pos < 0 else price   # 空單回補付點差（買回要付 ask = 價 + 點差）
         gain = (exit_price - entry_price) * pos
         pnl += gain
         peak = max(peak, pnl)
