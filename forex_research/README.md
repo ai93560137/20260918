@@ -59,7 +59,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 ## 6. 下一步（使用者未決定）
 
-1. **把引擎修正合併回主分支 `claude/gifted-carson-v2tvhw`**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFF 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
+1. **把引擎修正合併回主分支 `claude/gifted-carson-v2tvhw`**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFD 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
 2. **蛇蟠陣外匯到此為止**：入場券已擋掉 24 個商品，USDJPY ☠️；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
 3. **XAUUSD 只做多變體**是唯一有希望的形態（樣本外 t 1.70、全期 2.75）：可與主分支的 XAUUSD 前向測試（journal/）對照，記錄多頭腿與空頭腿分開的實盤損益
 4. **提供券商實際點差**：GBPJPY ≤ 1.48、EURJPY ≤ 1.21、AUDJPY ≤ 0.92、GBPUSD ≤ 0.88 pip 之內的商品可另行登記
