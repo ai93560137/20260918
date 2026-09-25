@@ -94,7 +94,7 @@ def run(bars, lookback=2, mode="sar", trade_mode="both", spread=0.30,
             loss_sum -= gain
         if collect_trades:
             trade_rows.append(["LONG" if pos > 0 else "SHORT",
-                               f"{entry_price:.2f}", f"{exit_price:.2f}", f"{gain:.2f}",
+                               f"{entry_price:.6f}", f"{exit_price:.6f}", f"{gain:.6f}",   # 6 位小數：5 位報價的外匯 .2f 會把損益四捨五入到 100 pips
                                datetime.fromtimestamp(entry_time, tz=timezone.utc).isoformat(),
                                datetime.fromtimestamp(ts, tz=timezone.utc).isoformat(), reason])
         pos, entry_price, entry_time, sl, tp = 0, None, None, None, None
