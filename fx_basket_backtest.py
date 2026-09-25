@@ -5,10 +5,13 @@
     python3 fx_basket_backtest.py --root <含 data_forex/ 的資料夾> --strategy tsmom --lookback 12
     python3 fx_basket_backtest.py --root ... --strategy turtle --entry 55 --exit 20
     python3 fx_basket_backtest.py --root ... --strategy carry --top 3 [--trend-filter 12]
+    python3 fx_basket_backtest.py --root ... --strategy factor --factors carry,value,mom --top 3 [--combine rank|z] [--value-def 5y|10ymean|3y] [--mom-months 12]
+        （三因子籃子，登記見 forex_research/FX_THREE_FACTOR_BACKTEST.md；--random 500 跑隨機排序對照）
     共同參數：--spread-mult 2 --slip-pip 0.2 --swap-haircut 1.0 --vol-target 0.10 --vol-window 60 --start 2003-06-01 --end 2026-08-31
     --out <前綴>：寫 <前綴>_monthly.csv（月報酬）、<前綴>_pairs.csv（各對貢獻）、<前綴>_stats.json
 
-數據：data_forex/<PAIR>/<PAIR>_D1.csv.gz（買價）與 _D1_ask.csv.gz（賣價），Dukascopy UTC 日；利率 data_forex_rates/（FRED，月，%）。
+數據：data_forex/<PAIR>/<PAIR>_D1.csv.gz（買價）與 _D1_ask.csv.gz（賣價），Dukascopy UTC 日；利率 data_forex_rates/（FRED，月，%）；
+BIS 實質有效匯率 data_forex_rates/reer/（FRED 轉載，月，2020=100；寬口徑 RB<國>BIS、窄口徑 RN<國>BIS）。
 """
 import argparse
 import json
@@ -35,6 +38,8 @@ RATE_SERIES = {
     "NZD": ["IR3TIB01NZM156N", "IRSTCI01NZM156N"],
     "CAD": ["IR3TIB01CAM156N", "IRSTCI01CAM156N", "IRSTCB01CAM156N"],
 }
+REER_SERIES = {c: [f"RB{k}BIS", f"RN{k}BIS"] for c, k in
+               {"USD": "US", "EUR": "XM", "GBP": "GB", "JPY": "JP", "CHF": "CH", "AUD": "AU", "NZD": "NZ", "CAD": "CA"}.items()}
 
 
 # ---------------------------------------------------------------- 數據
@@ -96,6 +101,36 @@ def daily_rates(rates_m: pd.DataFrame, index: pd.DatetimeIndex, lag_months: int 
     r = rates_m.copy()
     r.index = r.index + pd.offsets.MonthEnd(lag_months)
     return r.reindex(r.index.union(index)).ffill().reindex(index)
+
+
+def load_reer(reer_dir: Path, ccys: list[str]) -> pd.DataFrame:
+    """BIS 實質有效匯率月表（月底索引；欄 = 貨幣）。寬口徑為主，寬口徑沒有的早期月份用窄口徑**按重疊第一個月的比例接上**
+    （兩個口徑水平不同，直接混用會在接點製造假跳動）。"""
+    cols = {}
+    for c in ccys:
+        broad = narrow = None
+        for sid in REER_SERIES[c]:
+            f = reer_dir / f"{sid}.csv"
+            if not f.exists():
+                continue
+            s = pd.read_csv(f, parse_dates=["Date"]).set_index("Date")["Value"].astype(float).resample("ME").last()
+            if sid.startswith("RB"):
+                broad = s
+            else:
+                narrow = s
+        if broad is None and narrow is None:
+            raise SystemExit(f"沒有 {c} 的 REER")
+        if broad is None:
+            cols[c] = narrow
+            continue
+        if narrow is not None:
+            first = broad.first_valid_index()
+            if narrow.first_valid_index() < first:
+                scale = broad.loc[first] / narrow.loc[first]
+                cols[c] = broad.combine_first(narrow[narrow.index < first] * scale)
+                continue
+        cols[c] = broad
+    return pd.DataFrame(cols).sort_index()
 
 
 # ---------------------------------------------------------------- 共同：由每日權重算籃子報酬
@@ -241,6 +276,66 @@ def strat_carry(prices, idx, rates_d: pd.DataFrame, top: int, trend_filter: int,
     return w
 
 
+def strat_factor(prices, idx, rates_d: pd.DataFrame, reer_m: pd.DataFrame | None, factors: list[str], top: int,
+                 combine: str = "rank", value_def: str = "5y", mom_months: int = 12, rng: np.random.Generator | None = None,
+                 log: list | None = None) -> pd.DataFrame:
+    """三因子橫截面籃子（FX_THREE_FACTOR_BACKTEST.md 第 1、2 節）：每月最後交易日，7 個外幣按
+    carry（三個月利率，延後一個月）、value（−REER 過去 5 年變動，延後一個月）、mom（對美元 12 個月即期變動）各排名（1 = 最差），
+    合成 = 名次平均（或 z 分數平均）；做多最高 top 個、做空最低 top 個，各 1/top；任一因子缺值的貨幣該月不參與。
+    rng 給了 = 隨機排序對照（每月隨機排列取代合成分數）。"""
+    ccy_pair = {p[:3] if p.endswith("USD") else p[3:]: p for p in USD_PAIRS if p in prices}
+    mids = pd.DataFrame({p: df["Mid"] for p, df in prices.items()}).reindex(idx).ffill()
+    month_ends = mids.groupby(mids.index.to_period("M")).tail(1).index
+    # 外幣對美元的價格（1 單位外幣值多少美元），月底表
+    spot = pd.DataFrame({c: (mids[p] if p.endswith("USD") else 1.0 / mids[p]) for c, p in ccy_pair.items()}).loc[month_ends]
+    mom_m = spot / spot.shift(mom_months) - 1.0
+    value_m = None
+    if reer_m is not None:
+        r = reer_m[list(ccy_pair)]
+        if value_def == "5y":
+            v = -(r / r.shift(60) - 1.0)
+        elif value_def == "3y":
+            v = -(r / r.shift(36) - 1.0)
+        elif value_def == "10ymean":
+            v = -(r / r.rolling(120, min_periods=120).mean() - 1.0)
+        else:
+            raise SystemExit(f"未知 value-def {value_def}")
+        value_m = v.shift(1)                                              # 公布時滯：t 月底用 t−1 月值
+        value_m = value_m.reindex(value_m.index.union(month_ends)).ffill().loc[month_ends]
+    w = pd.DataFrame(0.0, index=idx, columns=mids.columns)
+    for i, me in enumerate(month_ends):
+        table = {}
+        if "carry" in factors:
+            table["carry"] = rates_d.loc[me, list(ccy_pair)]
+        if "mom" in factors:
+            table["mom"] = mom_m.loc[me]
+        if "value" in factors:
+            table["value"] = value_m.loc[me]
+        f = pd.DataFrame(table).dropna()
+        if len(f) < 2 * top:
+            continue
+        if rng is not None:
+            score = pd.Series(rng.permutation(len(f)), index=f.index, dtype=float)
+        elif combine == "rank":
+            score = f.rank(method="average").mean(axis=1)
+        elif combine == "z":
+            score = ((f - f.mean()) / f.std(ddof=0).replace(0, np.nan)).fillna(0.0).mean(axis=1)
+        else:
+            raise SystemExit(f"未知 combine {combine}")
+        ranked = list(score.sort_values(kind="stable").index)
+        longs, shorts = ranked[-top:], ranked[:top]
+        if log is not None:
+            log.append({"month_end": str(me.date()), "longs": longs, "shorts": shorts,
+                        **{f"{k}_{c}": round(float(f.loc[c, k]), 4) for k in f.columns for c in f.index}})
+        nxt_end = month_ends[i + 1] if i + 1 < len(month_ends) else idx[-1]
+        span = idx[(idx > me) & (idx <= nxt_end)]
+        for c, direction in [(c, 1) for c in longs] + [(c, -1) for c in shorts]:
+            p = ccy_pair[c]
+            sign_pair = 1 if p.endswith("USD") else -1
+            w.loc[span, p] = direction * sign_pair / top
+    return w
+
+
 # ---------------------------------------------------------------- 統計
 def stats(daily: pd.Series, contrib: pd.DataFrame, split: str = "2013-01-01") -> dict:
     monthly = daily.groupby(daily.index.to_period("M")).sum()
@@ -270,7 +365,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", type=Path, default=ROOT)
     ap.add_argument("--rates", type=Path, default=ROOT / "data_forex_rates")
-    ap.add_argument("--strategy", choices=["tsmom", "turtle", "carry"], required=True)
+    ap.add_argument("--strategy", choices=["tsmom", "turtle", "carry", "factor"], required=True)
+    ap.add_argument("--factors", default="carry,value,mom", help="factor 策略用哪些因子（逗號分隔：carry、value、mom）")
+    ap.add_argument("--combine", choices=["rank", "z"], default="rank")
+    ap.add_argument("--value-def", choices=["5y", "3y", "10ymean"], default="5y")
+    ap.add_argument("--mom-months", type=int, default=12)
+    ap.add_argument("--random", type=int, default=0, help="隨機排序對照：跑 N 次隨機排列，報告 t 分佈（不跑正式策略）")
+    ap.add_argument("--seed", type=int, default=20260925)
+    ap.add_argument("--reer", type=Path, default=ROOT / "data_forex_rates" / "reer")
     ap.add_argument("--pairs", nargs="*", default=None)
     ap.add_argument("--lookback", type=int, default=12)
     ap.add_argument("--entry", type=int, default=55)
@@ -290,13 +392,13 @@ def main() -> None:
     ap.add_argument("--inspect", action="store_true", help="只看交易機制（曝險、換手、成本、swap、筆數），不看績效")
     args = ap.parse_args()
 
-    pairs = args.pairs or (USD_PAIRS if args.strategy == "carry" else BASKET)
+    pairs = args.pairs or (USD_PAIRS if args.strategy in ("carry", "factor") else BASKET)
     # 訊號要用到樣本起點之前的歷史（12 個月動量、55 日通道、60 日波動）→ 多載一年
     pre_start = (pd.Timestamp(args.start) - pd.DateOffset(months=14)).strftime("%Y-%m-%d")
     prices = load_prices(args.root, pairs, pre_start, args.end)
     idx = pd.DatetimeIndex(sorted(set().union(*[set(df.index) for df in prices.values()])))
     rates_d = None
-    if not args.no_swap or args.strategy == "carry":
+    if not args.no_swap or args.strategy in ("carry", "factor"):
         ccys = sorted({p[:3] for p in pairs} | {p[3:] for p in pairs})
         rates_d = daily_rates(load_rates(args.rates, ccys), idx, lag_months=1)
     adj = None
@@ -306,10 +408,39 @@ def main() -> None:
     elif args.strategy == "turtle":
         w, adj = strat_turtle(prices, idx, args.entry, args.exit_, args.vol_window, args.vol_target)
         label = f"Turtle {args.entry}/{args.exit_}"
-    else:
+    elif args.strategy == "carry":
         w = strat_carry(prices, idx, rates_d, args.top, args.trend_filter, args.vol_window, args.vol_target,
                         equal_weight=not args.carry_vol_weight)
         label = f"Carry top{args.top}" + (f" +trend{args.trend_filter}m" if args.trend_filter else "")
+    else:
+        factors = [f.strip() for f in args.factors.split(",") if f.strip()]
+        ccys = sorted({p[:3] for p in pairs} | {p[3:] for p in pairs})
+        reer_m = load_reer(args.reer, [c for c in ccys if c != "USD"]) if "value" in factors else None
+        if args.random:
+            rng = np.random.default_rng(args.seed)
+            ts = []
+            for k in range(args.random):
+                wr = strat_factor(prices, idx, rates_d, reer_m, factors, args.top, args.combine, args.value_def, args.mom_months, rng=rng)
+                d, c = portfolio_pnl(prices, wr, None if args.no_swap else rates_d, args.spread_mult, args.slip_pip, args.swap_haircut)
+                d = d[(d.index >= args.start) & (d.index <= args.end)]
+                ts.append(stats(d, c.loc[d.index])[0]["t"])
+            ts = np.array(ts)
+            pct = {q: round(float(np.percentile(ts, q)), 2) for q in (2.5, 5, 25, 50, 75, 95, 97.5)}
+            print(f"== 隨機排序對照 {args.random} 次（top{args.top}、加價 {args.swap_haircut:g}%）：t 中位 {pct[50]}、"
+                  f"百分位 {pct}")
+            if args.out:
+                args.out.parent.mkdir(parents=True, exist_ok=True)
+                Path(f"{args.out}_random_t.json").write_text(json.dumps({"n": args.random, "seed": args.seed, "swap_haircut": args.swap_haircut,
+                                                                          "top": args.top, "percentiles": pct, "t": [round(float(x), 3) for x in ts]}),
+                                                              encoding="utf-8")
+            return
+        siglog = []
+        w = strat_factor(prices, idx, rates_d, reer_m, factors, args.top, args.combine, args.value_def, args.mom_months, log=siglog)
+        label = f"Factor[{'+'.join(factors)}] top{args.top} {args.combine}" + (f" value={args.value_def}" if "value" in factors else "") + \
+                (f" mom={args.mom_months}m" if "mom" in factors else "")
+        if args.out:
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(siglog).to_csv(f"{args.out}_signals.csv", index=False)
     if args.inspect:
         ww = w[(w.index >= args.start) & (w.index <= args.end)]
         years = (ww.index[-1] - ww.index[0]).days / 365.25
