@@ -16,6 +16,9 @@ git archive "$B" data/insider data/pelosi | tar -x -C /tmp/data_src   # 解到�
 | 內部人公開市場買入（SEC Form 4） | `data/insider/purchases/{年}.csv.gz` | 2006-01 起，所有申報公司（約 16,000 個代號），約 123 萬列 | 每週日 03:00 UTC（重抓最近兩季） | `scripts/insider_fetch.py` |
 | 財報事件（SEC 8-K Item 2.02） | `data/news/sp500_earnings_events.csv.gz` | 2005-01 起，申報當時的 S&P 500 成分股，約 4.7 萬筆 | 美股收盤後每日 | `scripts/news_8k_fetch.py` |
 | 歷史代號 ↔ CIK | `data/insider/ticker_cik/{季}.csv.gz` | 2006Q1 起，所有 Form 3/4/5 申報公司 | 隨內部人數據每週 | `scripts/insider_fetch.py` |
+| 回購授權（美，SEC 8-K 判讀） | `data/buyback/us/events.csv.gz` | 2006-01 起，全市場，約 1.65 萬筆 | 美股收盤後每日 | `scripts/buyback_fetch.py` |
+| 實際回購申報（港，披露易） | `data/buyback/hk/reports.csv.gz` | 2007-06 起，約 8.3 萬筆、1,085 檔 | 同上 | `scripts/buyback_fetch.py` |
+| 董事會買回決議（台，公開資訊觀測站） | `data/buyback/tw/resolutions.csv.gz` | 2000 起，上市＋上櫃 5,759 筆 | 同上 | `scripts/buyback_fetch.py` |
 | 佩洛西交易申報（眾議院 PTR） | `data/pelosi/transactions.json` | 2014-11 起，65 份申報、226 筆交易 | 每 4 小時 | `scripts/pelosi_tracker.py` |
 
 ---
@@ -115,9 +118,72 @@ rows = [r for p in sorted(glob.glob("data/insider/purchases/*.csv.gz"))
 
 ---
 
+## 4. 回購（美、港、台）`data/buyback/`
+
+三個市場的「回購」意義不同，**不能直接合併比較**：美國是董事會新增授權、香港是實際買回、台灣是董事會買回決議。
+
+### 美國 `us/events.csv.gz`（新增或加碼授權）
+
+來源：SEC 全文搜尋找含回購授權用語的 8-K → 下載內文逐句判讀。逐月原始結果在 `us/months/{YYYY-MM}.csv.gz`
+（含判為舊計畫、無關的申報與全部候選句），`events.csv.gz` 只留判為新授權的。
+
+| 欄位 | 說明 |
+|---|---|
+| `adsh` / `cik` / `company` | 申報編號、公司 |
+| `ticker` | 申報上的代號；**約 28% 空白**（舊申報沒有），請用 `cik` 對 `data/insider/ticker_cik/` 的當季代號 |
+| `file_date` / `acceptance_et` / `session` | 申報日；SEC 收件時間（美東）；`pre`／`regular`／`post` |
+| `items` | 8-K 項目；含 `2.02` 表示與財報同時宣布 |
+| `amount_usd` / `shares` / `pct` | 授權金額（美元）、股數、占流通股比例；加碼時為增加的部分；**約 16% 三者皆空** |
+| `sentence` / `candidates` | 判讀依據的原句、所有候選句（供稽核與改規則重判） |
+
+**使用前必讀：**
+- **判讀準確率約 90%**（樣本外 50 筆，信賴區間約 78%–96%），見 `us/AUDIT.md`。誤判多為「回顧已公告的授權」，
+  事件日會偏晚，對策略不利、不會美化結果。
+- 事件日請用 `session`：`pre` 當天開盤可進場，其餘隔一交易日。
+- 同一公司常在財報 8-K 與另一份 8-K 各提一次，回測要以公司去重（例如 180 天內只取第一次）。
+- 價格資料是 Yahoo 全市場，有倖存者偏差（下市公司缺價）。
+
+### 香港 `hk/reports.csv.gz`（實際買回申報）
+
+來源：披露易「翌日披露報表 → Share Buyback」（2009 起）與舊「Share Buyback Reports」（2007-06 至 2008）。
+港股每年股東大會都會給一般授權，「授權」沒有訊號意義，所以抓的是**實際買回**的申報。
+
+| 欄位 | 說明 |
+|---|---|
+| `stock_code` / `stock_name` | 股票代號（5 位數）；2009 年前的彙總報表一列可能含多檔，以 `|` 分隔 |
+| `date_time` | 發佈時間（香港時間，`DD/MM/YYYY HH:MM`），通常是買回當日傍晚 → 下一交易日才能用 |
+| `title` / `category` / `file_link` | 標題、分類、PDF 連結（`https://www1.hkexnews.hk` + 連結） |
+
+**使用前必讀：**
+- **只能回溯到 2007-06**（披露易此分類的起點）。
+- 只有標題資料，沒有買回股數與金額（在 PDF 內）。可用的訊號是「沉寂一段時間後開始買回」或買回頻率。
+- `(Cancelled and Reissued)` 開頭的分類是重發，與原申報重複，去重時以股票代號＋日期為準。
+
+### 台灣 `tw/resolutions.csv.gz`（董事會買回決議）
+
+來源：公開資訊觀測站「買回自己公司股份彙總統計表」（t35sc09），上市 `sii`＋上櫃 `otc`。
+
+| 欄位 | 說明 |
+|---|---|
+| `co_id` / `name` / `market` | 公司代號、名稱、上市或上櫃 |
+| `resolution_date` | 董事會決議日；重大訊息須在**次一營業日開盤前**公告 → 決議日隔天開盤可進場 |
+| `purpose` | 1 = 轉讓員工、2 = 股權轉換、3 = 維護公司信用及股東權益（最接近「股價被低估」） |
+| `planned_shares` / `price_low` / `price_high` / `period_start` / `period_end` | 預定買回股數、價格區間、期間 |
+| `legal_cap_twd` | 法定上限金額（依最新財報），不是這次預定買回的金額 |
+| `completed` ~ `incomplete_reason` | 執行結果 |
+
+**使用前必讀：**
+- **執行結果欄位（已買回股數、比例、金額、未執行原因）要到期間結束後才知道**，回測只能當事後分析，不能當進場訊號。
+- 沒有流通股數，規模比例要另外用股價資料換算（預定股數 × 價格 ÷ 市值）。
+- 股災年份決議特別多（2008 年 696 筆），事件在時間上高度集中，檢定時要按月份分組。
+
+---
+
 ## 已有的研究結論（供參考，不必重做）
 
 - `data/pelosi/backtest/README.md`：申報日跟單，持有 12 個月年化 +27%，但主要是大型科技股 beta，
   且有選人偏差；她 2027 年初卸任後不會再有新申報。
 - 內部人買入回測（S&P 500 point-in-time、以等權 S&P 500 為基準）：16 種組合的 t 值都不到 2，
   大型股沒有可靠的超額報酬。報告在 `data/insider/backtest/README.md`。
+- PEAD（財報後 2 天異常報酬 ≥ +5% 且量 ≥ 2 倍，持有 60 日）：逐筆超額 t = 0.17，9 格鄰域沒有一格 t ≥ 1.5，
+  大型股財報後沒有可交易的漂移。報告在 `data/news/backtest/README.md`，規格在 `research/news_trade/STRATEGY.md`。
