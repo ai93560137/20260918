@@ -100,8 +100,26 @@ def load_prices(root: Path, pairs: list[str], start: str, end: str) -> dict[str,
         df = bid.join(ask[["Close"]].rename(columns={"Close": "AskClose"}), how="inner")
         df = df[(df.index >= max(pd.Timestamp(start), real_start(p))) & (df.index <= end)]
         df = df[df.index.weekday < 5]                                  # 週日的幾根不算交易日
+        if p in EM_PAIRS:                                              # em 組壞日：與第二來源（FRED H.10，沒有就 Yahoo）差 > 5% 的日子整列設 NaN
+            ref = None
+            for name, col in (("_ref_fred.csv.gz", "Close"), ("_ref_yahoo.csv.gz", "Close")):
+                f = d / name
+                if f.exists():
+                    ref = pd.read_csv(f, parse_dates=["Date"]).set_index("Date")[col].astype(float)
+                    break
+            if ref is not None:
+                dev = ((df["Close"] + df["AskClose"]) / 2 / ref.reindex(df.index) - 1).abs()
+                bad = dev > 0.05
+                if bad.any():
+                    print(f"  {p}：{int(bad.sum())} 天與第二來源差 > 5%（{bad[bad].index[0].date()} → {bad[bad].index[-1].date()}）設為缺值")
+                    df.loc[bad, ["Open", "High", "Low", "Close", "AskClose"]] = np.nan
         df["Mid"] = (df["Close"] + df["AskClose"]) / 2
         df["Spread"] = (df["AskClose"] - df["Close"]).clip(lower=0)
+        if p in EM_PAIRS:                                              # em 組點差壞值：相對點差 > 2% 的日子不計入點差中位數（USDZAR 有整段賣價錯誤）
+            wide = df["Spread"] / df["Mid"] > 0.02
+            if wide.any():
+                print(f"  {p}：{int(wide.sum())} 天相對點差 > 2% 不計入點差")
+                df.loc[wide, "Spread"] = np.nan
         df["Spread"] = df["Spread"].rolling(20, min_periods=1).median()     # 平滑一下，避免單日異常
         out[p] = df
     return out
@@ -397,7 +415,9 @@ def strat_factor(prices, idx, rates_d: pd.DataFrame, reer_m: pd.DataFrame | None
     cot（CFTC 非商業淨部位 z 分數，反向：−z；cot_follow=True 取 +z；用月底 − 3 天前最後一份報告）；vix_max > 0：月底 VIX > 門檻該月空手
     （vix_rel=True：門檻 = 過去 252 個交易日平均 + 1 標準差）。"""
     ccy_pair = {p[:3] if p.endswith("USD") else p[3:]: p for p in prices if "USD" in p}
-    mids = pd.DataFrame({p: df["Mid"] for p, df in prices.items()}).reindex(idx).ffill()
+    raw_mids = pd.DataFrame({p: df["Mid"] for p, df in prices.items()}).reindex(idx)
+    fresh = raw_mids.notna().astype(float).rolling(5, min_periods=1).max() >= 1      # 過去 5 個交易日有自己的數據才參與
+    mids = raw_mids.ffill()
     month_ends = mids.groupby(mids.index.to_period("W-FRI" if freq == "W" else "M")).tail(1).index   # 調倉日（週頻 = 每週最後交易日）
     # 外幣對美元的價格（1 單位外幣值多少美元），調倉日表；動量用日期位移（週頻時不能用列位移）
     spot_d = pd.DataFrame({c: (mids[p] if p.endswith("USD") else 1.0 / mids[p]) for c, p in ccy_pair.items()})
@@ -451,6 +471,7 @@ def strat_factor(prices, idx, rates_d: pd.DataFrame, reer_m: pd.DataFrame | None
             z = avail.iloc[-1].reindex(list(ccy_pair))
             table["cot"] = z if cot_follow else -z
         f = pd.DataFrame(table).dropna()
+        f = f[[bool(fresh.loc[me, ccy_pair[c]]) for c in f.index]]
         k = k_of(k_rule, len(f), top)
         if len(f) < 2 * k:
             continue
