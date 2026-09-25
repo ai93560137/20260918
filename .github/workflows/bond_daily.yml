@@ -1,0 +1,46 @@
+name: Bond daily（每日美債快報 → Telegram）
+
+# 每日美債快報：殖利率曲線、實質利率、債券 ETF / 期貨價格、長債價格敏感度、公債標售、新聞、每日債券知識。
+# 腳本見 scripts/bond_daily.py。美股每個交易日收盤後發送：UTC 週一至週五 23:30 = 台灣 / 香港週二至週六 07:30。
+# 排程 workflow 必須在預設分支才會觸發；腳本在 claude/us-intl-data-stock-market-vgt0yi，
+# 所以 checkout 該分支執行。改了腳本（push）只試跑、印出訊息不發送；手動觸發會立刻發一則。
+on:
+  schedule:
+    - cron: '30 23 * * 1-5'
+  push:
+    paths:
+      - scripts/bond_daily.py
+      - .github/workflows/bond_daily.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bond-daily
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/us-intl-data-stock-market-vgt0yi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests
+
+      - name: Build & send
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = "push" ]; then python3 scripts/bond_daily.py --dry-run
+          else python3 scripts/bond_daily.py; fi
