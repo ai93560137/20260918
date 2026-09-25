@@ -1,5 +1,100 @@
 {
  "pair": "USDNOK",
- "generated": "2026-09-25 09:20 UTC",
- "error": "沒有 D1"
+ "generated": "2026-09-25 11:47 UTC",
+ "first": "2000-01-03",
+ "last": "2025-12-31",
+ "d1_rows": 7943,
+ "h1_rows": 38051,
+ "m1_rows": 0,
+ "m1_first": null,
+ "m1_last": null,
+ "m1_per_year": {},
+ "m1_recent": {
+  "rows": 0,
+  "first": null,
+  "last": null
+ },
+ "m1_days_per_year": {},
+ "struct": {
+  "D1": {
+   "rows": 7943,
+   "bad_high": 2,
+   "bad_low": 18,
+   "nonpositive": 0,
+   "zero_range_pct": 0.0
+  },
+  "H1": {
+   "rows": 38051,
+   "bad_high": 0,
+   "bad_low": 0,
+   "nonpositive": 0,
+   "zero_range_pct": 0.01
+  },
+  "M1": {
+   "rows": 0,
+   "dup": 0
+  }
+ },
+ "yahoo": {
+  "days": 6187,
+  "first": "2001-07-16",
+  "last": "2025-12-31",
+  "median_abs_pct": 0.197,
+  "p99_abs_pct": 2.029,
+  "over_0.5pct": 1719,
+  "over_2pct": 63,
+  "worst": [
+   [
+    "2020-03-20",
+    -34.52
+   ],
+   [
+    "2021-12-27",
+    -9.44
+   ],
+   [
+    "2020-03-18",
+    -7.23
+   ],
+   [
+    "2020-01-01",
+    -4.71
+   ],
+   [
+    "2020-03-12",
+    -4.59
+   ]
+  ]
+ },
+ "fred": {
+  "days": 1532,
+  "first": "2003-08-04",
+  "last": "2009-08-31",
+  "median_abs_pct": 0.065,
+  "p99_abs_pct": 0.494,
+  "over_0.5pct": 15,
+  "over_2pct": 0,
+  "worst": [
+   [
+    "2008-10-24",
+    1.46
+   ],
+   [
+    "2008-10-27",
+    1.25
+   ],
+   [
+    "2007-10-08",
+    1.02
+   ],
+   [
+    "2008-10-29",
+    0.79
+   ],
+   [
+    "2009-08-18",
+    0.77
+   ]
+  ]
+ }
 }

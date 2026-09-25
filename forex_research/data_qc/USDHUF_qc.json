@@ -1,5 +1,69 @@
 {
  "pair": "USDHUF",
- "generated": "2026-09-25 09:20 UTC",
- "error": "沒有 D1"
+ "generated": "2026-09-25 11:47 UTC",
+ "first": "2000-01-03",
+ "last": "2025-12-31",
+ "d1_rows": 7512,
+ "h1_rows": 99607,
+ "m1_rows": 0,
+ "m1_first": null,
+ "m1_last": null,
+ "m1_per_year": {},
+ "m1_recent": {
+  "rows": 0,
+  "first": null,
+  "last": null
+ },
+ "m1_days_per_year": {},
+ "struct": {
+  "D1": {
+   "rows": 7512,
+   "bad_high": 1,
+   "bad_low": 533,
+   "nonpositive": 0,
+   "zero_range_pct": 0.04
+  },
+  "H1": {
+   "rows": 99607,
+   "bad_high": 0,
+   "bad_low": 0,
+   "nonpositive": 0,
+   "zero_range_pct": 0.12
+  },
+  "M1": {
+   "rows": 0,
+   "dup": 0
+  }
+ },
+ "yahoo": {
+  "days": 5703,
+  "first": "2003-12-01",
+  "last": "2025-12-31",
+  "median_abs_pct": 0.285,
+  "p99_abs_pct": 2.257,
+  "over_0.5pct": 1869,
+  "over_2pct": 99,
+  "worst": [
+   [
+    "2022-03-09",
+    4.9
+   ],
+   [
+    "2016-06-23",
+    -4.6
+   ],
+   [
+    "2015-03-18",
+    4.06
+   ],
+   [
+    "2011-10-27",
+    3.71
+   ],
+   [
+    "2020-03-19",
+    -3.52
+   ]
+  ]
+ }
 }
