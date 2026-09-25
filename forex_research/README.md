@@ -14,6 +14,8 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
 | `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
 | `FX_COST_MODEL.md` | 外匯 swap 加價與點差的公開證據（IBKR 分層、Saxo 等級、CME 期貨路徑）與各口徑對策略的影響；之後登記的成本從這裡取 |
+| `FX_NEW_INFO_BACKTEST.md` | 路線 B 新資訊：央行利率路徑、VIX>25 過濾利差、CFTC 持倉反向（G7、機構／零售並列）——**全部 ☠️**（t −1.0／0.21／0.77） |
+| `FX_EM_UNIVERSE_BACKTEST.md` | 路線 A 新宇宙：G10＋新興市場（機械剔除規則、動態 k_t、兩級 swap 加價）利差／價值／三因子——預先登記，等 Dukascopy em1／em2 數據 |
 | `FX_THREE_FACTOR_BACKTEST.md` | 三因子籃子（利差＋BIS 實質有效匯率價值＋橫截面動量）：預先登記、機構 0.25%／零售 1.25% 兩個口徑並列、隨機排序對照、**全部 ☠️**（機構 t 1.09、零售 0.04；價值單獨 0.04） |
 | `FX_TREND_CARRY_BACKTEST.md` | 外匯長週期趨勢（TSMOM、海龜）與利差（G7 排序、利差+趨勢過濾）籃子：預先登記、四個主檢定全 ☠️、swap 加價是生死關鍵 |
 | `SNAKE_COIL_FOREX_BACKTEST.md` | 蛇蟠陣 on 外匯：成本入場券（26 商品）、USDJPY 測試、XAUUSD 2009–2022 樣本外、引擎點差 bug 揭露與前後數字 |
@@ -24,7 +26,9 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 |---|---|
 | `scripts/fetch_forex.py` | HistData M1 zip + Dukascopy bi5（D1／H1 買賣價、近期 M1）→ CSV（UTC、可續抓、去填充）+ Yahoo／FRED 第二來源；`--selftest` 不用外網 |
 | `scripts/qc_forex.py` | 品質檢查（結構、尖刺、缺口、D1 vs M1 聚合、HistData vs Dukascopy 交叉核對、點差、第二來源、XAUUSD 對券商 MT5）→ `data_qc/`、`DATA_QC.md` |
-| `scripts/fetch_fx_rates.py` | Actions（`fetch_fx_rates.yml`）抓 FRED：各國三個月利率 → `data_forex_rates/`、BIS 實質有效匯率（寬／窄口徑）→ `data_forex_rates/reer/`（小檔，進 git） |
+| `scripts/fetch_fx_rates.py` | Actions（`fetch_fx_rates.yml`）抓 FRED：24 個貨幣的三個月利率 → `data_forex_rates/`、BIS REER → `reer/`、OECD 十年期殖利率／美國 2 年 10 年／VIX EVZ VXEEM → `info/`（小檔，進 git） |
+| `scripts/fetch_cot.py` | 同一工作流程抓 CFTC legacy COT（1986 起）貨幣期貨 → `data_forex_rates/cot/cot_currencies.csv` |
+| `scripts/fx_forward_signals.py` + `fx_forward.yml` | 路線 C 前向記錄：每月 2 日補七大數據、記錄上月底訊號（利差 top2／top3、三因子）、上月模型損益、CME 期貨基差 vs 模型利差 → `forex_research/forward/` |
 | `fx_basket_backtest.py` | 日線籃子引擎：TSMOM、海龜、利差、`factor`（三因子橫截面、`--random` 隨機排序對照）；`--inspect` 只看機制 |
 | `scripts/get_forex_data.py` | 本機一鍵下載 Release `forex-data`；`--merge-m1` 合併 M1 給 `donchian_backtest.py`／`zgl_backtest.py` |
 | `.github/workflows/fetch_forex.yml` | Actions：從 Release 還原 → 抓 → 上傳 Release → 品質檢查 → commit 報告（分組並行；只 add 本分組的檔） |
@@ -59,6 +63,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 | 日期 | 事項 |
 |---|---|
+| 2026-09-25（五） | 使用者要求三條路都做。**路線 B 新資訊三檢定全部 ☠️**（利率 6 個月變動 t −1.0、VIX>25 過濾利差 0.21〔不過濾 0.81〕、COT 156 週 z 反向 0.77）；帳本第 6 次，下一個假設必須是新宇宙或新頻率。路線 A 已登記（`FX_EM_UNIVERSE_BACKTEST.md`），15 個新興市場／其他 G10 對由 Actions 抓 Dukascopy D1／H1 中；路線 C 前向記錄工作流程上線（每月 2 日）。數據管線擴充：24 個貨幣利率、REER、殖利率、VIX、COT |
 | 2026-09-25（四） | **三因子籃子（利差＋BIS REER 價值＋12 個月橫截面動量，G7 對美元，2003–2026）全部 ☠️**：機構口徑（加價 0.25%）t 1.09、零售口徑（1.25%）0.04、價值單獨 0.04／−1.0、橫截面動量單獨 −1.21／−2.2；隨機排序對照 500 次的 97.5 百分位 1.17，主檢定沒過；加價 0% 也只有 1.35。REER 數據由 Actions 抓（`data_forex_rates/reer/`）。**G7 對美元月頻橫截面路線到此用盡**，帳本門檻升到 t ≥ 3 |
 | 2026-09-25（三） | 長週期趨勢與利差籃子（四個主檢定，21 對／G7，2003–2026）**全部 ☠️**：TSMOM t −0.69、海龜 −1.61、利差 0.11、利差+趨勢 −0.22；純價格動量 t 0.02；點差 1–3 倍不影響、swap 加價 0→2% 決定生死。新工具 `fx_basket_backtest.py`、利率數據 `data_forex_rates/`（Actions 抓 FRED） |
 | 2026-09-25（續） | 使用者要求續測其餘外匯：23 個商品同規格批次掃描 **全部 ☠️**（0 個達 t ≥ 2.5，合併 t −1.55），入場券結論成立；發現並修正引擎第二個 bug（`--trades` 明細兩位小數令 5 位報價外匯逐筆統計失真）；兩個引擎修正與更正後的數字已推回 `claude/gifted-carson-v2tvhw`（規格書第四節、DONCHIAN_BACKTEST.md） |
