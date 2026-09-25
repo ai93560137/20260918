@@ -60,6 +60,6 @@ jobs:
           for i in 1 2 3 4 5; do
             git push origin "HEAD:$BRANCH" && exit 0
             sleep $((i * 7))
-            git pull --rebase origin "$BRANCH" || exit 1
+            git pull --rebase --autostash -X theirs origin "$BRANCH" || { git rebase --abort; exit 1; }
           done
           echo "push 重試 5 次仍失敗" && exit 1

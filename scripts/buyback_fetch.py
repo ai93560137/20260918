@@ -109,35 +109,48 @@ def save_state(market, state):
 
 
 def html_to_text(s):
+    """HTML 的換行只是排版，區塊標籤才是段落；純文字（舊式 .txt 申報）每行固定寬度換行，空行才是段落。
+    回傳以空行分段的文字，段落內沒有換行。"""
+    is_html = bool(re.search(r"(?i)<(html|p|div|td|br)\b", s[:20000]))
     s = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", s)
-    s = re.sub(r"(?i)<br\s*/?>|</p>|</div>|</tr>|</li>", "\n", s)
+    if is_html:
+        s = re.sub(r"[\r\n]+", " ", s)
+        s = re.sub(r"(?i)<br\s*/?>|</?(p|div|tr|li|h\d|table)\b[^>]*>", "\n\n", s)
     s = re.sub(r"<[^>]+>", " ", s)
-    s = html.unescape(s).replace("\xa0", " ")
-    return re.sub(r"[ \t\r\f\v]+", " ", s)
+    s = html.unescape(s).replace("\xa0", " ").replace("\r", "")
+    paras = [re.sub(r"\s+", " ", p).strip() for p in re.split(r"\n\s*\n", s)]
+    return "\n\n".join(p for p in paras if p)
 
 
 # -----------------------------------------------------------------------------
 # 美國：判讀
 # -----------------------------------------------------------------------------
-BUY = r"(?:re-?purchase|buy-?\s?back|buy\s+back)"
-AUTH = r"(?:authori[sz]|approv)"
-# 新增或加碼：新計畫、額外、增加、擴大、取代原計畫
-NEW_RE = re.compile(
-    rf"\b(?:new|additional|incremental|increas\w*|expan\w*|augment\w*|replac\w*|another|upsiz\w*|"
-    rf"supplement\w*)\b", re.I)
-# 董事會（剛剛）授權了一個計畫：「board ... authorized/approved ... repurchase」
-GRANT_RE = re.compile(
-    rf"\b(?:board|directors|company|we)\b[^.]{{0,80}}?\b(?:has\s+|have\s+|recently\s+|today\s+)?"
-    rf"(?:authori[sz]ed|approved)\b[^.]{{0,160}}?{BUY}", re.I)
-# 只描述既有計畫的執行進度或剩餘額度
+BUY = r"(?:re-?purchas\w*|buy-?\s?backs?|buy\s+back)"
+AUTH = r"(?:authori[sz]\w*|approv\w*)"
+_ANY = r"(?:[^.]|\.(?=\d))"  # 句中任意字元（小數點不算句尾）
+NEW_RE = re.compile(r"\b(?:new|additional|incremental|increas\w*|expan\w*|augment\w*|replac\w*|another|"
+                    r"upsiz\w*|supplement\w*|extension|extend\w*|raise[sd]?|boost\w*)\b", re.I)
+# 董事會（剛剛）授權：「board/directors ... authorized/approved ... repurchase」
+GRANT_RE = re.compile(rf"\b(?:board|directors|company|we)\b{_ANY}{{0,80}}?\b(?:has\s+|have\s+|recently\s+|today\s+)?"
+                      rf"(?:authori[sz]ed|approved)\b{_ANY}{{0,200}}?{BUY}", re.I)
+# 公告標題型：「XYZ Announces $500 Million Share Repurchase Authorization」「New $40 mil ... authorization」
+HEAD_RE = re.compile(rf"\b(?:announc\w*|declar\w*|new)\b{_ANY}{{0,80}}?(?:\$|million|billion){_ANY}{{0,60}}?"
+                     rf"{BUY}{_ANY}{{0,30}}?(?:program|plan|authori[sz]ation)", re.I)
+# 描述既有計畫的進度、剩餘額度，或過去某個時點的授權
 OLD_RE = re.compile(
-    r"\b(?:previously|prior|existing|remaining|remained|remains|available\s+under|under\s+(?:the|its|our)\s+"
-    r"(?:current|existing)|had\s+repurchased|has\s+repurchased|repurchased\s+[\d,.]+\s*(?:million\s+)?shares)\b",
-    re.I)
-MONEY_RE = re.compile(r"(?:US)?\$\s?(\d[\d,]*(?:\.\d+)?)\s*(billion|million|bn|mm|m|b)?\b", re.I)
-SHARES_RE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(million|billion)?\s+(?:of\s+(?:its|the\s+company'?s|our)\s+)?"
-                       r"(?:outstanding\s+)?(?:common\s+)?shares", re.I)
-PCT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%\s+of\s+(?:its|the\s+company'?s|our)?\s*(?:outstanding|issued)", re.I)
+    r"\b(?:previously|prior|existing|remaining|remained|remains|available\s+under|under\s+(?:the|its|our|this|that)\s+"
+    r"(?:current|existing|\$)|had\s+repurchased|has\s+repurchased|have\s+repurchased|was\s+approximately|"
+    r"as\s+of\s+(?:the\s+end|\w+\s+\d)|since\s+(?:the\s+)?inception|to\s+date|during\s+the\s+(?:first|second|third|"
+    r"fourth)\s+quarter|in\s+(?:january|february|march|april|may|june|july|august|september|october|november|"
+    r"december)\b|repurchased\s+(?:approximately\s+|a\s+total\s+of\s+)?[\d,.]+\s*(?:million\s+)?shares)", re.I)
+TODAY_RE = re.compile(r"\b(?:today|announced|announces|has\s+authori[sz]ed|has\s+approved|have\s+authori[sz]ed|"
+                      r"have\s+approved)\b", re.I)
+MONEY_RE = re.compile(r"(?:US)?\$\s?(\d[\d,]*(?:\.\d+)?)\s*(billion|million|bn|mm|mil|m|b)?\b", re.I)
+SHARES_RE = re.compile(r"(?<![$\d.,])(\d[\d,]*(?:\.\d+)?)\s*(million|billion)?\s+(?:of\s+(?:its|the\s+company'?s|our)\s+)?"
+                       r"(?:outstanding\s+)?(?:shares|common\s+shares|common\s+stock|shares\s+of\s+(?:its\s+|the\s+"
+                       r"company'?s\s+|our\s+)?common\s+stock)\b", re.I)
+PCT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:%|percent)\s+of\s+(?:its|the\s+company'?s|our)?\s*(?:then\s+)?"
+                    r"(?:outstanding|issued)", re.I)
 
 
 def _num(v, unit):
@@ -145,37 +158,46 @@ def _num(v, unit):
     unit = (unit or "").lower()
     if unit in ("billion", "bn", "b"):
         x *= 1e9
-    elif unit in ("million", "mm", "m"):
+    elif unit in ("million", "mm", "mil", "m"):
         x *= 1e6
     return x
 
 
 def sentences(text):
-    text = re.sub(r"\s*\n\s*", " \n ", text)
-    for s in re.split(r"(?<=[.;])\s+(?=[A-Z(])|\n", text):
-        s = s.strip()
-        if 20 <= len(s) <= 1500:
-            yield s
+    for para in text.split("\n\n"):
+        for s in re.split(r"(?<=[.;!?])\s+(?=[A-Z(\"“])", para):
+            s = s.strip()
+            if 20 <= len(s) <= 1500:
+                yield s
 
 
-def classify(text):
-    """回傳 dict：kind = new（新增或加碼）/ old（只提既有計畫）/ none；附金額、股數、比例與原句。"""
-    best = None
+def classify_sentence(s, file_year=None):
+    if file_year and not TODAY_RE.search(s):
+        years = [int(y) for y in re.findall(r"\b((?:19|20)\d\d)\b", s)]
+        if years and max(years) < file_year:
+            return "old", 1  # 描述往年的授權
+    grant = bool(GRANT_RE.search(s))
+    head = bool(HEAD_RE.search(s))
+    new = bool(NEW_RE.search(s))
+    old = bool(OLD_RE.search(s))
+    today = bool(TODAY_RE.search(s))
+    if (grant or head) and (not old or (new and today)):
+        return "new", 3 + today
+    if new and not old and re.search(AUTH, s, re.I):
+        return "new", 2
+    return "old", 1 if (grant or new) else 0
+
+
+def classify(text, file_year=None):
+    """回傳 dict：kind = new（新增或加碼）/ old（只提既有計畫）/ none；附金額、股數、比例、原句，
+    以及所有候選句（存下來以便之後改判讀規則時不必重新下載）。"""
+    best, cands = None, []
     for s in sentences(text):
         if not re.search(BUY, s, re.I) or not re.search(AUTH, s, re.I):
             continue
-        grant = bool(GRANT_RE.search(s))
-        new = bool(NEW_RE.search(s))
-        old = bool(OLD_RE.search(s))
-        if grant and (new or not old):
-            kind, score = "new", 2
-        elif grant or new:
-            kind, score = "old", 1
-        else:
-            kind, score = "old", 0
-        m = MONEY_RE.search(s)
-        sh = SHARES_RE.search(s)
-        pc = PCT_RE.search(s)
+        cands.append(s[:600])
+        kind, score = classify_sentence(s, file_year)
+        m, sh, pc = MONEY_RE.search(s), SHARES_RE.search(s), PCT_RE.search(s)
         cand = {"kind": kind, "score": score + (0.5 if (m or sh or pc) else 0),
                 "amount_usd": _num(*m.groups()) if m else "",
                 "shares": _num(*sh.groups()) if sh else "",
@@ -183,21 +205,25 @@ def classify(text):
                 "sentence": s[:600]}
         if best is None or cand["score"] > best["score"]:
             best = cand
-    return best or {"kind": "none", "amount_usd": "", "shares": "", "pct": "", "sentence": ""}
+    out = best or {"kind": "none", "score": -1, "amount_usd": "", "shares": "", "pct": "", "sentence": ""}
+    out["candidates"] = " ⏎ ".join(cands[:6])
+    return out
 
 
 # -----------------------------------------------------------------------------
 # 美國：抓取
 # -----------------------------------------------------------------------------
 EFTS = "https://efts.sec.gov/LATEST/search-index"
+SUBMISSIONS = "https://data.sec.gov/submissions/{name}"
 US_QUERIES = ['"repurchase program" authorized', '"repurchase plan" authorized',
               '"repurchase authorization"', '"buyback program" authorized']
-US_FIELDS = ["adsh", "cik", "ticker", "company", "form", "items", "file_date", "acceptance_et", "doc",
-             "kind", "amount_usd", "shares", "pct", "sentence", "queries"]
+US_FIELDS = ["adsh", "cik", "ticker", "company", "form", "items", "file_date", "acceptance_et", "session",
+             "doc", "kind", "amount_usd", "shares", "pct", "sentence", "candidates", "queries"]
+US_VERSION = 2  # 判讀或欄位改版時加一，舊版月份會重抓
 
 
 def efts_month(s, ym):
-    """回傳 {adsh: {meta, docs:set, queries:set}}。"""
+    """回傳 {adsh: {src, docs:set, queries:set}}。"""
     y, m = map(int, ym.split("-"))
     d0 = date(y, m, 1)
     d1 = (date(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1))
@@ -238,24 +264,55 @@ def ticker_of(src):
     return ""
 
 
-def acceptance_of(s, cik, adsh):
-    url = (f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{adsh.replace('-', '')}/"
-           f"{adsh}-index-headers.html")
-    r = get(s, url, pause=0.12)
-    m = re.search(r"ACCEPTANCE-DATETIME>\s*(\d{14})", r.text) if r is not None else None
-    if not m:
-        return ""
-    return datetime.strptime(m.group(1), "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+class Acceptance:
+    """adsh → acceptanceDateTime（UTC），用 data.sec.gov/submissions 逐 CIK 查，含舊分頁；同一次執行內快取。"""
+
+    def __init__(self, session):
+        self.s, self.cache, self.pages_done = session, {}, set()
+
+    def _absorb(self, block):
+        for a, t in zip(block.get("accessionNumber", []), block.get("acceptanceDateTime", [])):
+            self.cache[a] = t
+
+    def get(self, cik, adsh, file_date):
+        if adsh in self.cache:
+            return self.cache[adsh]
+        c10 = f"{int(cik):010d}"
+        if c10 not in self.pages_done:
+            self.pages_done.add(c10)
+            r = get(self.s, SUBMISSIONS.format(name=f"CIK{c10}.json"), pause=0.12)
+            if r is not None:
+                js = r.json()
+                self._absorb((js.get("filings") or {}).get("recent") or {})
+                for f in (js.get("filings") or {}).get("files") or []:
+                    self.pages_done.add(f["name"] + "?")  # 舊分頁先記下名稱，需要時才抓
+                    self.cache.setdefault(("page", c10), []).append(f)
+        if adsh in self.cache:
+            return self.cache[adsh]
+        for f in self.cache.get(("page", c10), []):
+            if f.get("filingFrom", "") <= file_date <= f.get("filingTo", "9999") and f["name"] not in self.pages_done:
+                self.pages_done.add(f["name"])
+                r = get(self.s, SUBMISSIONS.format(name=f["name"]), pause=0.12)
+                if r is not None:
+                    self._absorb(r.json())
+                if adsh in self.cache:
+                    break
+        return self.cache.get(adsh, "")
 
 
 def fetch_us(args):
+    from news_8k_fetch import to_eastern  # 同一套 UTC → 美東與時段判斷
     ua = os.environ.get("SEC_USER_AGENT", "").strip()
     if not ua or "@" not in ua:
         print("需要環境變數 SEC_USER_AGENT（含聯絡 email）")
         return 1
     s = requests.Session()
     s.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
+    acc = Acceptance(s)
     state = load_state("us")
+    if state.get("version") != US_VERSION:
+        print(f"判讀版本 {state.get('version')} → {US_VERSION}：全部月份重抓")
+        state = {"version": US_VERSION}
     done = set(state.get("done_months", []))
     today = date.today()
     months, y, m = [], *map(int, args.start.split("-"))
@@ -275,34 +332,33 @@ def fetch_us(args):
         for adsh, e in sorted(found.items()):
             src = e["src"]
             cik = (src.get("ciks") or [""])[0]
-            best = {"kind": "none", "score": -1}
-            best_doc = ""
+            best, best_doc, cands = {"kind": "none", "score": -1}, "", []
             for fname in sorted(e["docs"]):
                 url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{adsh.replace('-', '')}/{fname}"
                 r = get(s, url, pause=0.12)
                 if r is None:
                     continue
-                c = classify(html_to_text(r.text))
-                c.setdefault("score", 0)
-                if c["kind"] == "new":
-                    c["score"] += 10
+                c = classify(html_to_text(r.text), int(src.get("file_date", "0000")[:4]) or None)
+                if c["candidates"]:
+                    cands.append(c["candidates"])
                 if c["score"] > best["score"]:
                     best, best_doc = c, fname
             row = {"adsh": adsh, "cik": cik, "ticker": ticker_of(src),
                    "company": re.sub(r"\s*\(.*$", "", (src.get("display_names") or [""])[0]),
                    "form": src.get("form", ""), "items": ",".join(src.get("items") or []),
                    "file_date": src.get("file_date", ""), "doc": best_doc,
-                   "queries": "|".join(sorted(e["queries"]))}
+                   "queries": "|".join(sorted(e["queries"])), "candidates": " ⏎ ".join(cands)[:3000]}
             row.update({k: best.get(k, "") for k in ("kind", "amount_usd", "shares", "pct", "sentence")})
             if row["kind"] == "new":
-                row["acceptance_et"] = acceptance_of(s, cik, adsh)
+                row["acceptance_et"], row["session"] = to_eastern(acc.get(cik, adsh, row["file_date"]))
             rows.append(row)
         write_csv(os.path.join(OUT, "us", "months", f"{ym}.csv.gz"), US_FIELDS, rows)
         n_new = sum(1 for r in rows if r["kind"] == "new")
-        print(f"  {ym}：申報 {len(rows)}，判為新授權 {n_new}")
+        n_acc = sum(1 for r in rows if r["kind"] == "new" and r.get("acceptance_et"))
+        print(f"  {ym}：申報 {len(rows)}，判為新授權 {n_new}（有申報時間 {n_acc}）")
         done.add(ym)
         state["done_months"] = sorted(done)
-        state.setdefault("months", {})[ym] = {"filings": len(rows), "new": n_new,
+        state.setdefault("months", {})[ym] = {"filings": len(rows), "new": n_new, "with_time": n_acc,
                                               "fetched": today.isoformat()}
         save_state("us", state)
     # 合併成事件檔（只留新授權）
