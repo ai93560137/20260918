@@ -121,3 +121,5 @@ rows = [r for p in sorted(glob.glob("data/insider/purchases/*.csv.gz"))
   且有選人偏差；她 2027 年初卸任後不會再有新申報。
 - 內部人買入回測（S&P 500 point-in-time、以等權 S&P 500 為基準）：16 種組合的 t 值都不到 2，
   大型股沒有可靠的超額報酬。報告在 `data/insider/backtest/README.md`。
+- PEAD（財報後 2 天異常報酬 ≥ +5% 且量 ≥ 2 倍，持有 60 日）：逐筆超額 t = 0.17，9 格鄰域沒有一格 t ≥ 1.5，
+  大型股財報後沒有可交易的漂移。報告在 `data/news/backtest/README.md`，規格在 `research/news_trade/STRATEGY.md`。
