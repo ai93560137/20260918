@@ -244,30 +244,31 @@ def scan_us():
         s3 = (iv - v3m) if v3m is not None else None
         hot = [n for n, p in [('VVIX', vvix_p), ('MOVE', move_p), ('AXVI', axvi_p)]
                if p is not None and p >= 90]
-        if s3 is not None and s3 > 0:
-            lvl = '深紅·災難級'
-        elif s9 > 0:
-            lvl = '紅·倒掛'
-        elif hot:
-            lvl = f"黃·{'/'.join(hot)}升溫"
-        else:
-            lvl = '綠'
-        pane = f"金絲雀: 9D{s9:+.1f}"
+        # 每隻鳥自帶燈；行首 = 全場最高級。斜率鳥：9D 🟢<-0.5 ⚪走平 🔴倒掛；
+        # 3M 🟢未倒掛 🟣倒掛。分位鳥：🟢<90 🟡>=90。
+        birds = [('9D', f"{s9:+.1f}",
+                  '🔴' if s9 > 0 else ('⚪' if s9 > -0.5 else '🟢'))]
         if s3 is not None:
-            pane += f" 3M{s3:+.1f}"
-        if vvix_p is not None:
-            pane += f" VVIX p{vvix_p:.0f}"
-        if move_p is not None:
-            pane += f" MOVE p{move_p:.0f}"
-        if axvi_p is not None:
-            pane += f" AXVI p{axvi_p:.0f}"
-        DIGEST.append(f"{pane}（{lvl}）")
+            birds.append(('3M', f"{s3:+.1f}", '🟣' if s3 > 0 else '🟢'))
+        for nm, p in [('VVIX', vvix_p), ('MOVE', move_p), ('AXVI', axvi_p)]:
+            if p is not None:
+                birds.append((nm, f"p{p:.0f}", '🟡' if p >= 90 else '🟢'))
         if s3 is not None and s3 > 0:
-            ALERTS.append(f"金絲雀深紅：VIX−VIX3M = {s3:+.1f} 倒掛（歷史誤報僅 9%，"
+            head, lvl = '🟣', '深紅·災難級'
+        elif s9 > 0:
+            head, lvl = '🔴', '紅·倒掛'
+        elif hot:
+            head, lvl = '🟡', f"黃·{'/'.join(hot)}升溫"
+        else:
+            head, lvl = '🟢', '綠'
+        pane = ' '.join(f"{e}{n}{v}" for n, v, e in birds)
+        DIGEST.append(f"金絲雀 {head}{lvl}｜{pane}")
+        if s3 is not None and s3 > 0:
+            ALERTS.append(f"🟣🚨 金絲雀深紅：VIX−VIX3M = {s3:+.1f} 倒掛（歷史誤報僅 9%，"
                           f"HSI 災難月 3/3 前均出現）。兩市場對沖檢查全加密、"
                           f"複核止損線與保證金餘裕；紀律不變：不加倉、不提前平倉")
         elif s9 > 0:
-            ALERTS.append(f"金絲雀紅：VIX9D−VIX = {s9:+.1f} 倒掛，本週對沖負載預期 2×，"
+            ALERTS.append(f"🔴 金絲雀紅：VIX9D−VIX = {s9:+.1f} 倒掛，本週對沖負載預期 2×，"
                           f"兩市場 delta 檢查盤中各加一次（週內見 -2% 單日機率 28%）")
     if (date.today() - asof).days > 5:
         ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
