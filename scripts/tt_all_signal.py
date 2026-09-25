@@ -68,8 +68,12 @@ def chunks(lines: list[str], head: str, limit: int = TG_LIMIT) -> list[str]:
 def run(mk: str, force: bool) -> None:
     x = T.TTMom(mk)
     m = x.m
-    j = x.D - 1
+    # 訊號日 = 最後一個「宇宙內至少一半股票有價格」的日曆日（ETF 序列可能比 Release 的個股數據新一兩天）
+    cover = (m.has & m.member).sum(0) / np.maximum(m.member.sum(0), 1)
+    j = int(np.nonzero(cover >= 0.5)[0][-1])
     d = m.cal[j]
+    if j < x.D - 1:
+        print(f"[{mk}] 日曆最後一日 {m.cal[x.D - 1]} 個股數據不足，訊號日改為 {d}", file=sys.stderr)
     month_end = is_month_end(mk, d)
     if not month_end and not force:
         print(f"[{mk}] 最新數據 {d} 不是當月最後一個交易日，不出名單", file=sys.stderr)
