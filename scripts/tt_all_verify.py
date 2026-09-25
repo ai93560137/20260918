@@ -179,7 +179,7 @@ def verify(mk: str, d: str) -> dict:
 
 
 def write_tg(summaries: list[dict]) -> None:
-    lines = ["🔎 月底名單第二來源覆核", ""]
+    lines = ["🔎 鳥翔｜月底名單第二來源覆核", ""]
     for s in summaries:
         src = s["official_source"] or s["fallback_source"]
         flag = "✅" if not s["bad"] else "⚠️"

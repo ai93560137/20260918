@@ -23,6 +23,7 @@
 | `ETF_TIMING_BACKTEST.md` | ETF 擇時：VCP 突破日後持有 ETF 一季 vs 純 MA 過濾 vs 隨機日，9 國預先登記與結果：☠️（VCP 日對 ETF 無擇時資訊；MA 日頻過濾扣成本跑輸持有） |
 | `TT_MOMENTUM_BACKTEST.md` | 趨勢模板動量組合（月底選 20 檔、大市過濾、等權持一月）9 國登記與結果：第一輪 20 檔排序：只是動量 beta（合併 3.13、相對等權 1.85）、排序有害；**第二輪全部等權：🔍（合併 4.59、相對等權 3.21、十條全過）**；含數據斷點規則與基準 ETF 修正 |
 | `TT_ALL_MONTHLY_RUNBOOK.md` | 月底操作手冊：更新數據 → 出名單 → 檢查 → 發布網頁 → Telegram → 下單 → 記錄成交 → 每月覆核與證偽 |
+| `TT_ALL_INVESTOR_BRIEF.pdf` | 投資人說明書 PDF（`scripts/tt_all_pdf.py` 由 .md 產生，Chromium 排版；3 頁） |
 | `TT_ALL_INVESTOR_BRIEF.md` | 投資人說明書：一句話、證據、可執行規則、全部指標（年化、回撤、夏普、勝率、RRR、獲利因子、期望值、換手、alpha）、風險、證偽條件、建議配置 |
 | `TT_ALL_INVESTOR_SUMMARY.md` | 給投資人看的趨勢模板全部等權摘要：各市場期望值、勝率、RRR、獲利因子、總回報 vs ETF、回撤、最差月、換手（全部版與 40 檔版） |
 | `DISCIPLINE_RULES.md` | 上述回測用到的全部規則一覽（宇宙、趨勢模板、大市過濾、出場紀律、六個組合、鄰域、合併檢定、門檻、程序規則、程式對應；不含結果） |

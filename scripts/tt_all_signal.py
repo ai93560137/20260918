@@ -170,7 +170,7 @@ def write_summary(markets: list[str]) -> None:
     url = url_p.read_text(encoding="utf-8").strip() if url_p.exists() else ""
     d = max(x["date"] for x in metas)
     test = any(x["test"] for x in metas)
-    lines = [f"📋 趨勢模板全部等權｜月底摘要 {d}{'（測試，非月底）' if test else ''}",
+    lines = [f"🕊 鳥翔｜趨勢模板全部等權｜月底摘要 {d}{'（測試，非月底）' if test else ''}",
              "等級：試行 = 回測相對等權顯著（港新加印澳）；觀察 = 日美；不建議 = 台韓（回測 alpha 不顯著）", ""]
     for x in metas:
         st = "✅ 持股" if x["market_ok"] else "⛔ 現金"

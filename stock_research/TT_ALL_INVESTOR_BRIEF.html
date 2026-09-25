@@ -1,0 +1,100 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>鳥翔 投資人說明書</title><style>
+@page{size:A4;margin:16mm 14mm 18mm 14mm}
+body{font-family:"Noto Sans CJK TC","Noto Sans TC","WenQuanYi Zen Hei","PingFang TC",sans-serif;font-size:10.5pt;line-height:1.55;color:#1E2A32;margin:0}
+h1{font-size:20pt;margin:0 0 4pt;letter-spacing:.02em}
+h2{font-size:13.5pt;margin:16pt 0 6pt;padding-bottom:3pt;border-bottom:1.5px solid #0E6F68;color:#0B5B55}
+p{margin:5pt 0}
+.cover{border-left:5px solid #0E6F68;padding-left:10pt;margin-bottom:12pt}
+.cover .sub{color:#66707A;font-size:9.5pt}
+.badge{display:inline-block;background:#E3F2EE;color:#0B5B55;border-radius:4px;padding:1pt 7pt;font-size:9pt;font-weight:600;margin-right:6pt}
+table{border-collapse:collapse;width:100%;font-size:8.2pt;margin:6pt 0;page-break-inside:auto}
+th,td{border-bottom:1px solid #DDDBD3;padding:3pt 4pt;text-align:right;white-space:normal;font-variant-numeric:tabular-nums;vertical-align:top}
+table.num th,table.num td{white-space:nowrap}
+table:not(.num) th,table:not(.num) td{text-align:left}
+th{background:#F1F0EA;color:#4A545C;font-weight:600;text-align:right}
+td:first-child,th:first-child{text-align:left}
+tr{page-break-inside:avoid}
+ol,ul{padding-left:18pt;margin:4pt 0}li{margin:2pt 0}
+code{font-family:"DejaVu Sans Mono",monospace;font-size:9pt;background:#F1F0EA;padding:0 3pt}
+.note{color:#66707A;font-size:9pt}
+.wide{font-size:7.6pt}
+.foot{margin-top:14pt;padding-top:6pt;border-top:1px solid #DDDBD3;color:#66707A;font-size:8.5pt}
+</style></head><body><div class="cover"><h1>鳥翔 · 趨勢模板全部等權策略</h1>
+<div class="sub">投資人說明書 · 2026-09-25 · 陣名「鳥翔」已對號、正式發名待前向驗證</div>
+<p><span class="badge">回測 🔍 有希望未證實</span><span class="badge">9 市場 · 2005–2026</span><span class="badge">衛星倉 ≤ 10%</span></p></div><p>版本 2026-09-25。研究記錄：TT_MOMENTUM_BACKTEST.md（預先登記與判決）、TT_ALL_INVESTOR_SUMMARY.md（數字摘要）。 <b>狀態：回測通過預先登記的全部門檻，判定「有希望、未經前向驗證」。只適合以小比例（≤ 總資產 10%）作衛星倉試行，核心資產仍應是指數 ETF。</b></p>
+<h2>1. 一句話講完</h2>
+<p>每個月最後一個交易日收市後，把市場上<b>正處於健康上升趨勢</b>的股票（Minervini 趨勢模板）<b>全部等權買入</b>，持有一個月；若<b>大市本身不在上升趨勢</b>（指數 ETF 收市低於 50 日或 200 日均線），該月<b>全部持現金</b>。不排序、不止損、不加減碼。</p>
+<h2>2. 為什麼是這套規則（證據，不是信念）</h2>
+<p>本專案 2026-09 用 9 個市場（港、日、美、台、韓、澳、加、印、新）約 2.3 萬檔股票的 15–26 年日線，按「先登記門檻、再跑一次、不調參數」的方法測了 13 個假設。 結果：<b>選股訊號（趨勢模板）有效，但所有加在它上面的「聰明」都是減分</b>——</p>
+<ul>
+<li>按 252 日報酬排序挑最強 20 檔：比隨機挑通過模板的股票差（3.13 vs 3.93）</li>
+<li>加 7.5% 或 3% 止損：勝率掉到 10–30%，alpha 反而下降</li>
+<li>用 VCP 形態精挑入場點：交易數少、依賴少數大贏家</li>
+<li>用 VCP 日子擇時買 ETF：無效</li>
+</ul>
+<p><b>留下來的只有三件事：趨勢模板選股、大市過濾、分散等權。</b> 這三件事都有 30 年以上的學術文獻支持（橫截面動量、趨勢跟隨、動量崩盤的規避），不是這批數據挖出來的。</p>
+<h2>3. 規則（可以照著執行）</h2>
+<table><thead><tr><th>步驤</th><th>規則</th></tr></thead><tbody>
+<tr><td>宇宙</td><td>該市場 60 日成交額中位數最高的前 N 檔（港 500、新 200、加 400、印 700、澳 500、美 1500、日 1000）；剔除數據異常股</td></tr>
+<tr><td>選股（月底收市）</td><td>同時滿足：收市 &gt; 50 日均線 &gt; 150 日均線 &gt; 200 日均線；200 日均線高於一個月前；收市 ≥ 52 週低點 × 1.3；收市 ≥ 52 週高點 × 0.75；過去 12 個月報酬在宇宙內排名前 30%</td></tr>
+<tr><td>大市過濾</td><td>當地指數 ETF 收市高於 50 日<b>和</b> 200 日均線 → 持股；否則整月持現金</td></tr>
+<tr><td>買入</td><td>次一交易日開市價，全部等權</td></tr>
+<tr><td>持有</td><td>一個月，中途不動；下月底重做一次，名單不變的留任</td></tr>
+<tr><td>散戶版</td><td>通過的股票超過 40 檔時隨機抽 40 檔（種子固定，可重現）</td></tr>
+</tbody></table>
+<h2>4. 績效指標（扣成本回測；括號外為策略、ETF 另列）</h2>
+<p><b>9 市場合併（1103 個持股月）</b>：持股月期望值 <b>+1.65%</b>（含現金月 +0.85%）、持股月勝率 <b>65%</b>、平均贏月 <b>+4.8%</b> vs 平均輸月 <b>-4.1%</b>、<b>RRR 1.17</b>、獲利因子 <b>2.13</b>。 統計檢定：9 市場合併 alpha t 4.59（對 ETF）、3.21（對全市場等權）；同期同檔數隨機選股 200 次對照，9 個市場都排第 100 百分位。</p>
+<table class="num wide"><thead><tr><th>市場</th><th>基準 ETF</th><th>期間</th><th>持股月比例</th><th>平均持股</th><th>策略年化</th><th>ETF 年化</th><th>策略總回報</th><th>ETF 總回報</th><th>策略最大回撤</th><th>ETF 最大回撤</th></tr></thead><tbody>
+<tr><td>港股</td><td>盈富 2800</td><td>2010–2026</td><td>42%</td><td>81</td><td>+10.2%</td><td>+8.1%</td><td>+383%</td><td>+253%</td><td>-19%</td><td>-45%</td></tr>
+<tr><td>新加坡</td><td>ES3</td><td>2008–2026</td><td>54%</td><td>30</td><td>+12.3%</td><td>+7.0%</td><td>+773%</td><td>+254%</td><td>-22%</td><td>-52%</td></tr>
+<tr><td>加拿大</td><td>XIU</td><td>2005–2026</td><td>60%</td><td>65</td><td>+11.6%</td><td>+10.7%</td><td>+988%</td><td>+802%</td><td>-32%</td><td>-54%</td></tr>
+<tr><td>印度</td><td>NIFTYBEES</td><td>2009–2026</td><td>55%</td><td>126</td><td>+19.4%</td><td>+16.3%</td><td>+2184%</td><td>+1331%</td><td>-28%</td><td>-33%</td></tr>
+<tr><td>澳洲</td><td>STW</td><td>2008–2026</td><td>53%</td><td>79</td><td>+9.0%</td><td>+5.8%</td><td>+402%</td><td>+187%</td><td>-28%</td><td>-43%</td></tr>
+<tr><td>美股</td><td>SPY</td><td>2000–2026</td><td>58%</td><td>284</td><td>+6.8%</td><td>+10.7%</td><td>+471%</td><td>+1412%</td><td>-29%</td><td>-55%</td></tr>
+<tr><td>日股</td><td>1321 日經</td><td>2009–2026</td><td>52%</td><td>181</td><td>+9.6%</td><td>+13.4%</td><td>+380%</td><td>+767%</td><td>-21%</td><td>-31%</td></tr>
+<tr><td>台灣</td><td>0050</td><td>2009–2026</td><td>60%</td><td>92</td><td>+10.0%</td><td>+22.9%</td><td>+439%</td><td>+3748%</td><td>-41%</td><td>-34%</td></tr>
+<tr><td>韓國</td><td>KODEX200</td><td>2007–2026</td><td>44%</td><td>105</td><td>-0.1%</td><td>+12.6%</td><td>-1%</td><td>+936%</td><td>-48%</td><td>-35%</td></tr>
+</tbody></table>
+<table class="num wide"><thead><tr><th>市場</th><th>夏普（月，無風險利率 0）</th><th>持股月勝率</th><th>平均贏月</th><th>平均輸月</th><th><b>RRR</b></th><th>獲利因子</th><th>持股月期望值</th><th>最差月</th><th>年換手</th><th>alpha t</th><th>相對等權 t</th></tr></thead><tbody>
+<tr><td>港股</td><td>0.71</td><td>68%</td><td>+5.6%</td><td>-4.8%</td><td>1.17</td><td>2.43</td><td>+2.20%</td><td>-12%</td><td>274%</td><td>2.34</td><td>2.42</td></tr>
+<tr><td>新加坡</td><td>0.90</td><td>65%</td><td>+5.0%</td><td>-3.5%</td><td>1.43</td><td>2.65</td><td>+2.01%</td><td>-11%</td><td>339%</td><td>3.42</td><td>2.94</td></tr>
+<tr><td>加拿大</td><td>0.89</td><td>70%</td><td>+4.0%</td><td>-3.8%</td><td>1.08</td><td>2.47</td><td>+1.68%</td><td>-18%</td><td>360%</td><td>3.05</td><td>2.19</td></tr>
+<tr><td>印度</td><td>1.24</td><td>73%</td><td>+5.7%</td><td>-4.1%</td><td>1.37</td><td>3.68</td><td>+3.00%</td><td>-13%</td><td>332%</td><td>3.98</td><td>2.99</td></tr>
+<tr><td>澳洲</td><td>0.70</td><td>59%</td><td>+4.7%</td><td>-3.2%</td><td>1.49</td><td>2.19</td><td>+1.52%</td><td>-16%</td><td>335%</td><td>2.53</td><td>1.73</td></tr>
+<tr><td>美股</td><td>0.65</td><td>66%</td><td>+3.4%</td><td>-3.4%</td><td>1.00</td><td>1.91</td><td>+1.06%</td><td>-11%</td><td>340%</td><td>2.06</td><td>1.60</td></tr>
+<tr><td>日股</td><td>0.70</td><td>66%</td><td>+4.8%</td><td>-4.4%</td><td>1.09</td><td>2.15</td><td>+1.69%</td><td>-14%</td><td>333%</td><td>1.36</td><td>1.39</td></tr>
+<tr><td>台灣</td><td>0.58</td><td>65%</td><td>+5.7%</td><td>-5.7%</td><td>1.01</td><td>1.86</td><td>+1.72%</td><td>-32%</td><td>375%</td><td>0.76</td><td>0.17</td></tr>
+<tr><td>韓國</td><td>0.09</td><td>48%</td><td>+6.2%</td><td>-4.9%</td><td>1.25</td><td>1.13</td><td>+0.34%</td><td>-35%</td><td>325%</td><td>-0.65</td><td>-0.48</td></tr>
+</tbody></table>
+<p>RRR = 持股月的平均贏 ÷ 平均輸（絕對值）。這套策略的 RRR 約 1，靠的是 <b>勝率 60–70% 加分散</b>，不是大賺小賠；「一半以上的月份賺、賺輸幅度相近、每年少數幾個大月」是它的長相。</p>
+<p><b>散戶 40 檔版</b>（超過 40 檔時隨機抽）：</p>
+<table><thead><tr><th>市場</th><th>40 檔版年化</th><th>40 檔版最大回撤</th><th>40 檔版 alpha t</th></tr></thead><tbody>
+<tr><td>港股</td><td>+8.5%</td><td>-19%</td><td>1.98</td></tr>
+<tr><td>新加坡</td><td>+12.5%</td><td>-22%</td><td>3.45</td></tr>
+<tr><td>加拿大</td><td>+10.0%</td><td>-32%</td><td>2.44</td></tr>
+<tr><td>印度</td><td>+16.8%</td><td>-28%</td><td>3.29</td></tr>
+<tr><td>澳洲</td><td>+7.8%</td><td>-30%</td><td>2.05</td></tr>
+<tr><td>美股</td><td>+5.2%</td><td>-33%</td><td>1.23</td></tr>
+<tr><td>日股</td><td>+10.5%</td><td>-26%</td><td>1.56</td></tr>
+<tr><td>台灣</td><td>+8.6%</td><td>-43%</td><td>0.41</td></tr>
+<tr><td>韓國</td><td>+0.7%</td><td>-42%</td><td>-0.54</td></tr>
+</tbody></table>
+<h2>5. 風險（投資人必須接受的）</h2>
+<ol>
+<li><b>總回報未必贏 ETF</b>：日、美、台、韓四個市場的絕對回報輸給買入持有 ETF；策略贏的是<b>風險調整後</b>的回報（回撤小、波動低），不是「賺得最多」</li>
+<li><b>一半時間在場外</b>：持股月只佔 40–60%，其餘月份持現金看著市場升是常態；這是回撤只有 ETF 一半的代價</li>
+<li><b>最差單月 −11% 到 −18%</b>；台灣 −32%、韓國 −35%（漲跌停市場，趨勢股集體崩）。連續虧損 3–6 個持股月要有心理準備</li>
+<li><b>韓國不做、台灣不建議</b>：韓國 20 年總回報約 0；台灣 alpha 不顯著</li>
+<li><b>換手與成本</b>：每年約 3–4 倍換手，港股每邊 0.25% 成本每年約吃 1.5–2%，數字已扣；散戶版換手更高</li>
+<li><b>執行滑價</b>：回測用次日開市價；實盤若追價，每年多吃 0.5–1%</li>
+<li><b>倖存者偏差</b>：回測的股票池只有今天還存在的公司，趨勢股可能比隨機更偏向未來的倖存者，回測數字會比真實高——這一點只有前向記錄能驗證</li>
+</ol>
+<h2>6. 這是回測，不是實績</h2>
+<ul>
+<li>假設是在看過前 12 輪結果之後形成的（已在研究記錄揭露），門檻是事先寫死的，過的幅度大</li>
+<li>前向記錄從 2026-09 開始（月底名單自動產生並記錄）</li>
+<li><b>證偽條件（寫死）</b>：前向 12 個月相對當地 ETF 跑輸 15 個百分點，或相對全市場等權為負 → 停止</li>
+<li>手冊鐵律：未經前向驗證的策略只能是衛星倉，核心仍是指數 ETF</li>
+</ul>
+<h2>7. 給投資人的建議配置</h2>
+<p>核心 ≥ 90%：低成本指數 ETF（當地或全球）。衛星 ≤ 10%：本策略，先做港、新、加、印、澳（回測最強），美股可做但 2013 後偏弱。每月底看一次名單、下個交易日開市下單、一個月不看。</p><div class="foot">本文件為研究記錄與回測結果的整理，不構成投資建議。回測數據來自 Yahoo Finance 日線（候選池只含現存股票，存在倖存者偏差），全部扣除交易成本；未來表現不保證與回測一致。研究方法與全部判決見倉庫 stock_research/ 資料夾。</div></body></html>

@@ -167,12 +167,12 @@ def build(markets: list[str]) -> str:
             secs.append(section(meta, rows))
     date = max(m["date"] for m in metas) if metas else "—"
     nav = "".join(f'<a href="#{m["market"]}">{m["name"]} {"✅" if m["market_ok"] else "⛔"} {m["n"]}</a>' for m in metas)
-    return f"""<title>趨勢模板月底名單</title>
+    return f"""<title>鳥翔月底名單</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>{CSS}</style>
 <div class="wrap" id="top">
   <header>
-    <h1>趨勢模板全部等權 · 月底名單</h1>
+    <h1>鳥翔 · 趨勢模板全部等權 · 月底名單</h1>
     <p class="sub">數據日 {date}。等級：試行 = 回測相對等權顯著（港、新、加、印、澳）；觀察 = 日、美；不建議 = 台、韓（回測 alpha 不顯著，只作記錄）。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>
   </header>
   <nav class="nav">{nav}</nav>
