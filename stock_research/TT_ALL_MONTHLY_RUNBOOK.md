@@ -16,6 +16,8 @@
 
 ## 第 1 步：更新數據（GitHub Actions，要連 Yahoo，沙盒做不到）
 
+這兩個 workflow 在預設分支上有登記，Claude session 可以直接用 GitHub API（`actions_run_trigger`，ref = `claude/gifted-carson-v2tvhw`）觸發，不必人手到 GitHub 按；`oos_fullmarket.yml` 有 concurrency，r1 與 r2 要先後觸發。
+
 在 GitHub → Actions 手動觸發兩個 workflow（它們固定 checkout `claude/gifted-carson-v2tvhw`，不用改分支）：
 1. `vcp_fullmarket.yml`：market = `all`、backtest = `false` → 港日美，上傳 Release `fullmarket-data`
 2. `oos_fullmarket.yml`：market = `r1`（台韓澳）再一次 `r2`（加印新），或逐個市場 → 上傳 Release `oos-data`
@@ -88,7 +90,7 @@ git push origin claude/stock-research-k9nzau        # push 即觸發 send-telegr
 
 ## 最省事的做法
 
-月底翌日早上先在 GitHub 觸發第 1 步的兩個 workflow，一小時後開 Claude session 說：
+9 月底已排定：session 會在 2026-10-01 08:30 HKT 自動醒來做第 1 步、10:00 HKT 做第 2–5 步（`send_later`）。之後每月：月底翌日早上開 Claude session 說：
 「**跑月底名單：拿數據、出 9 國名單、覆核、發布網頁、發 Telegram**」——第 2 到 5 步一次做完（覆核要等 Actions 約 10 分鐘），你只需做第 6、7 步。
 
 ## 常見問題
