@@ -120,6 +120,7 @@
 
 | 資產 | 用途 |
 |---|---|
+| `SNAKE_COIL_SPEC.md` | **蛇蟠陣完整策略規格書**——給其他分支測試用：精確規則/日界/成本模型/生死關鍵/對照組/最小動作序列 |
 | `donchian_backtest.py` | 通道突破回測引擎（M1 逐根，sar/channel/atr/eod/ema 出場）|
 | `zgl_backtest.py` | ZGL 指標回測 + `load_any()` 通用 MT5 CSV/.gz 載入器（可複用於任何新引擎）|
 | `data/` | XAUUSD/HK50/NAS100 M1+多框架歷史數據 2022-08→2026-09（格式見 data/README.md）|
