@@ -53,7 +53,7 @@ sleep 2
 TWS_MAJOR_VRSN=\$(ls "\$HOME/Jts/ibgateway" | sort | tail -1)
 "\$HOME/ibc/scripts/ibcstart.sh" "\$TWS_MAJOR_VRSN" --gateway \
   "--tws-path=\$HOME/Jts" "--ibc-path=\$HOME/ibc" "--ibc-ini=\$HOME/ibc/config.ini" \
-  "--mode=paper" &
+  "--mode=paper" > "\$HOME/ibgw.log" 2>&1 &
 EOF
 chmod +x "$HOME/start_ibgw.sh"
 ( crontab -l 2>/dev/null | grep -v 'start_ibgw\|run_daily' ;
