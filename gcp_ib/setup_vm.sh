@@ -47,13 +47,14 @@ fi
 echo "== 4/4 開機自啟 + 每日採集 crontab =="
 cat > "$HOME/start_ibgw.sh" << EOF
 #!/usr/bin/env bash
+# setsid + </dev/null：脫離 SSH session，登出不會殺掉 Gateway
 export DISPLAY=:1
-pgrep -f Xvfb > /dev/null || (Xvfb :1 -screen 0 1024x768x24 &)
+pgrep -f Xvfb > /dev/null || (setsid Xvfb :1 -screen 0 1024x768x24 < /dev/null > /dev/null 2>&1 &)
 sleep 2
 TWS_MAJOR_VRSN=\$(ls "\$HOME/Jts/ibgateway" | sort | tail -1)
-"\$HOME/ibc/scripts/ibcstart.sh" "\$TWS_MAJOR_VRSN" --gateway \
+setsid "\$HOME/ibc/scripts/ibcstart.sh" "\$TWS_MAJOR_VRSN" --gateway \
   "--tws-path=\$HOME/Jts" "--ibc-path=\$HOME/ibc" "--ibc-ini=\$HOME/ibc/config.ini" \
-  "--mode=paper" > "\$HOME/ibgw.log" 2>&1 &
+  "--mode=paper" < /dev/null > "\$HOME/ibgw.log" 2>&1 &
 EOF
 chmod +x "$HOME/start_ibgw.sh"
 ( crontab -l 2>/dev/null | grep -v 'start_ibgw\|run_daily' ;
