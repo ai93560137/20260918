@@ -13,6 +13,7 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `FOREX_DATA_CATALOG.md` | 26 個商品（七大、交叉盤、亞洲、金銀）的來源、格式、一鍵下載、回測用法、各商品注意事項 |
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
 | `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
+| `FX_TREND_CARRY_BACKTEST.md` | 外匯長週期趨勢（TSMOM、海龜）與利差（G7 排序、利差+趨勢過濾）籃子：預先登記、四個主檢定全 ☠️、swap 加價是生死關鍵 |
 | `SNAKE_COIL_FOREX_BACKTEST.md` | 蛇蟠陣 on 外匯：成本入場券（26 商品）、USDJPY 測試、XAUUSD 2009–2022 樣本外、引擎點差 bug 揭露與前後數字 |
 
 ## 2. 程式
@@ -54,6 +55,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 | 日期 | 事項 |
 |---|---|
+| 2026-09-25（三） | 長週期趨勢與利差籃子（四個主檢定，21 對／G7，2003–2026）**全部 ☠️**：TSMOM t −0.69、海龜 −1.61、利差 0.11、利差+趨勢 −0.22；純價格動量 t 0.02；點差 1–3 倍不影響、swap 加價 0→2% 決定生死。新工具 `fx_basket_backtest.py`、利率數據 `data_forex_rates/`（Actions 抓 FRED） |
 | 2026-09-25（續） | 使用者要求續測其餘外匯：23 個商品同規格批次掃描 **全部 ☠️**（0 個達 t ≥ 2.5，合併 t −1.55），入場券結論成立；發現並修正引擎第二個 bug（`--trades` 明細兩位小數令 5 位報價外匯逐筆統計失真）；兩個引擎修正與更正後的數字已推回 `claude/gifted-carson-v2tvhw`（規格書第四節、DONCHIAN_BACKTEST.md） |
 | 2026-09-25 | 蛇蟠陣外匯測試：入場券 26 商品只有 USDJPY 勉強過（零佣金 ≤ 1.2 pip）；USDJPY ☠️（t 1.07）；XAUUSD 樣本外 13.4 年 t 1.36 → 雙向版由 ✅ 降 🔍，只做多變體 🔍（t 1.70／全期 2.75）；**發現並修正 `donchian_backtest.py` 空單回補點差方向 bug**（原本整段回測幾乎沒扣點差），前後數字見登記文件 |
 | 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首輪 Dukascopy 全 M1 抓法被限流，改為 HistData M1 + Dukascopy D1／H1；交叉核對抓出 HistData 時區是紐約當地時間含夏令、2004 年壞 tick，已修；**26 個商品首次全抓完成、Release `forex-data` 可用**（沙盒實測 `get_forex_data.py --pair EURUSD --merge-m1` 後 `backtest.load_bars` 可直接讀） |
@@ -62,6 +64,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 1. ~~把引擎修正合併回主分支~~（已完成：兩個修正與更正後數字都已推回，規格書 XAUUSD 已改 🔍）
 1b. **原第 1 點的核對已做**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFD 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
-2. **蛇蟠陣外匯到此為止**：25 個商品全部測過（USDJPY ☠️、XAUUSD 🔍、其餘 23 個批次 ☠️、合併 t −1.55）；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
+2. **外匯四個長線機制也到此為止**（FX_TREND_CARRY_BACKTEST.md）：剩下只有（a）查券商實際 swap 加價，若接近 0 才值得前向觀察利差；（b）換資訊來源（央行路徑、隱含波動、CFTC 持倉），每個要新數據新登記
+2b. **蛇蟠陣外匯到此為止**：25 個商品全部測過（USDJPY ☠️、XAUUSD 🔍、其餘 23 個批次 ☠️、合併 t −1.55）；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
 3. **XAUUSD 只做多變體**是唯一有希望的形態（樣本外 t 1.70、全期 2.75）：可與主分支的 XAUUSD 前向測試（journal/）對照，記錄多頭腿與空頭腿分開的實盤損益
 5. **每月更新數據**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
