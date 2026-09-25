@@ -21,7 +21,8 @@ def load(path: str) -> list[dict]:
         rows = list(csv.DictReader(f))
     for r in rows:
         r["pnl"] = float(r["pnl"])
-        r["direction"] = int(float(r["direction"]))
+        d = r["direction"].strip().upper()
+        r["direction"] = 1 if d in ("LONG", "1", "1.0") else -1
         r["year"] = r["close_time"][:4]
     return rows
 
