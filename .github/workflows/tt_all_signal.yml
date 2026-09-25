@@ -1,0 +1,86 @@
+name: TT-All monthly signal（趨勢模板全部等權 月底名單）
+
+# 分支 claude/stock-research-k9nzau 獨立跑（不動 gifted-carson）。
+# 規格：stock_research/TT_MOMENTUM_BACKTEST.md 第三部分（凍結）；前向記錄用。
+# 注意：GitHub 的 schedule 只會用預設分支上的 workflow 檔，所以這裡先只有手動觸發（workflow_dispatch）；
+#       要自動每月跑，得在預設分支放一個薄殼 workflow 來 checkout 本分支，那一步由使用者決定。
+on:
+  workflow_dispatch:
+    inputs:
+      markets:
+        description: '市場（空格分隔：hk sg ca in au jp us tw kr）'
+        required: false
+        default: 'hk sg'
+      force:
+        description: '不是月底也出名單（測試）'
+        required: false
+        default: 'false'
+      digest:
+        description: '是否發 Telegram'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tt-all-signal
+  cancel-in-progress: false
+
+jobs:
+  signal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: Asia/Hong_Kong
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: pip install -q numpy pandas requests
+
+      - name: Market data（GitHub Release，不進 git）
+        run: python3 scripts/get_market_data.py --market ${{ inputs.markets }}
+
+      - name: Signal
+        run: |
+          F=""; [ "${{ inputs.force }}" = "true" ] && F="--force"
+          python3 scripts/tt_all_signal.py --market ${{ inputs.markets }} $F
+
+      - name: Commit and push（名單與記錄）
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/tt_all
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(tt-all): 月底名單 $(date +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 5))
+            git pull --no-rebase -q origin ${GITHUB_REF_NAME} || true
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
+
+      - name: Telegram
+        if: inputs.digest == 'true'
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          ls analysis/tt_all/tg_*.txt > /dev/null 2>&1 || { echo "沒有名單（不是月底或無數據）"; exit 0; }
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0
+          fi
+          for MSG in $(ls analysis/tt_all/tg_*.txt | sort); do
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat "$MSG")" > /dev/null
+            echo "telegram sent: $MSG"
+            sleep 1
+          done
