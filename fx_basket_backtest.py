@@ -78,13 +78,16 @@ def real_start(pair: str) -> pd.Timestamp:
         m1 = json.loads(q.read_text(encoding="utf-8")).get("m1_first")
         if m1 and pair not in EM_PAIRS:                                       # em 組沒有 HistData M1，只有近 62 天，不能當起點
             start = max(start, pd.Timestamp(m1[:10]))
-    if pair in EM_PAIRS:                                                      # em 組：H1 檔第一筆 = 真數據起點
-        h1 = ROOT / "data_forex" / pair / f"{pair}_H1.csv.gz"
-        if h1.exists():
-            import gzip
-            with gzip.open(h1, "rt", encoding="utf-8") as fh:
-                next(fh)
-                start = max(start, pd.Timestamp(next(fh)[:10]))
+    if pair in EM_PAIRS:                                                      # em 組：D1 第一個「賣價 > 買價」的日子 = 真買賣價起點（之前是合成日線）
+        d = ROOT / "data_forex" / pair
+        try:
+            bid = pd.read_csv(d / f"{pair}_D1.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
+            ask = pd.read_csv(d / f"{pair}_D1_ask.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
+            sp = (ask - bid)
+            first_real = sp[sp > 0].index[0]
+            start = max(start, first_real)
+        except (FileNotFoundError, IndexError):
+            pass
     return start
 
 
