@@ -32,13 +32,19 @@ td:nth-child(2),td:nth-child(3),th:nth-child(2),th:nth-child(3){text-align:left}
 tbody tr:nth-child(even){background:var(--row)}
 tr:last-child td{border-bottom:0}
 .star{color:var(--star)}
+.top{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--rule);border-radius:999px;padding:3px 12px;text-decoration:none;color:var(--ink);font-size:.86rem;background:var(--surface);white-space:nowrap}
+.top:hover,.top:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.head-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10;border:1px solid var(--rule);border-radius:999px;padding:10px 16px;background:var(--surface);color:var(--ink);font:inherit;font-size:.9rem;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer}
+#totop:hover,#totop:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#totop[hidden]{display:none!important}
 .note{color:var(--muted);font-size:.86rem;max-width:68ch}
 .rules{font-size:.9rem;display:grid;gap:6px;max-width:72ch}
 .rules li{margin:0}
 code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
-<div class="wrap">
+<div class="wrap" id="top">
   <header>
     <h1>趨勢模板全部等權 · 月底名單</h1>
     <p class="sub">數據日 2026-09-23。等級：試行 = 回測相對等權顯著（港、新、加、印、澳）；觀察 = 日、美；不建議 = 台、韓（回測 alpha 不顯著，只作記錄）。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>
@@ -46,7 +52,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   <nav class="nav"><a href="#hk">港股 ⛔ 45</a><a href="#sg">新加坡 ✅ 21</a><a href="#ca">加拿大 ⛔ 70</a><a href="#in">印度 ⛔ 123</a><a href="#au">澳洲 ⛔ 56</a><a href="#us">美股 ✅ 191</a><a href="#jp">日股 ⛔ 149</a><a href="#tw">台灣 ✅ 80</a><a href="#kr">韓國 ✅ 36</a></nav>
   
 <section class="market" id="hk">
-  <div class="head"><h2>港股 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill warn">⛔ 本月持現金</span></div>
+  <div class="head"><h2>港股 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill warn">⛔ 本月持現金</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>盈富 2800　-0.5% / -0.3%</b></div>
     <div><span>通過趨勢模板</span><b>45 檔</b>（宇宙前 500）</div>
@@ -60,7 +66,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="sg">
-  <div class="head"><h2>新加坡 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill ok">✅ 本月持股</span></div>
+  <div class="head"><h2>新加坡 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill ok">✅ 本月持股</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>ES3　+1.8% / +13.9%</b></div>
     <div><span>通過趨勢模板</span><b>21 檔</b>（宇宙前 200）</div>
@@ -74,7 +80,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="ca">
-  <div class="head"><h2>加拿大 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill warn">⛔ 本月持現金</span></div>
+  <div class="head"><h2>加拿大 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill warn">⛔ 本月持現金</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>XIU　-0.8% / +6.3%</b></div>
     <div><span>通過趨勢模板</span><b>70 檔</b>（宇宙前 400）</div>
@@ -88,7 +94,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="in">
-  <div class="head"><h2>印度 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill warn">⛔ 本月持現金</span></div>
+  <div class="head"><h2>印度 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill warn">⛔ 本月持現金</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>NIFTYBEES　-2.6% / -3.7%</b></div>
     <div><span>通過趨勢模板</span><b>123 檔</b>（宇宙前 700）</div>
@@ -102,7 +108,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="au">
-  <div class="head"><h2>澳洲 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill warn">⛔ 本月持現金</span></div>
+  <div class="head"><h2>澳洲 <span class="sub">2026-09-23 · 試行</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill warn">⛔ 本月持現金</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>STW　-1.5% / +1.0%</b></div>
     <div><span>通過趨勢模板</span><b>56 檔</b>（宇宙前 500）</div>
@@ -116,7 +122,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="us">
-  <div class="head"><h2>美股 <span class="sub">2026-09-21 · 觀察</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill ok">✅ 本月持股</span></div>
+  <div class="head"><h2>美股 <span class="sub">2026-09-21 · 觀察</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill ok">✅ 本月持股</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>SPY　+2.0% / +8.5%</b></div>
     <div><span>通過趨勢模板</span><b>191 檔</b>（宇宙前 1500）</div>
@@ -130,7 +136,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="jp">
-  <div class="head"><h2>日股 <span class="sub">2026-09-18 · 觀察</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill warn">⛔ 本月持現金</span></div>
+  <div class="head"><h2>日股 <span class="sub">2026-09-18 · 觀察</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill warn">⛔ 本月持現金</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>1321　-0.9% / +9.3%</b></div>
     <div><span>通過趨勢模板</span><b>149 檔</b>（宇宙前 1000）</div>
@@ -144,7 +150,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="tw">
-  <div class="head"><h2>台灣 <span class="sub">2026-09-23 · 不建議</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill ok">✅ 本月持股</span></div>
+  <div class="head"><h2>台灣 <span class="sub">2026-09-23 · 不建議</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill ok">✅ 本月持股</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>0050　+6.5% / +26.5%</b></div>
     <div><span>通過趨勢模板</span><b>80 檔</b>（宇宙前 500）</div>
@@ -158,7 +164,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </table></div>
 </section>
 <section class="market" id="kr">
-  <div class="head"><h2>韓國 <span class="sub">2026-09-23 · 不建議</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill ok">✅ 本月持股</span></div>
+  <div class="head"><h2>韓國 <span class="sub">2026-09-23 · 不建議</span> <span class="sub">（測試輸出，非月底）</span></h2><div class="head-right"><span class="pill ok">✅ 本月持股</span><a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>KODEX200　+6.8% / +17.6%</b></div>
     <div><span>通過趨勢模板</span><b>36 檔</b>（宇宙前 700）</div>
@@ -184,6 +190,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
   </section>
 </div>
 
+<button id="totop" type="button" hidden aria-label="回到頁頂">↑ 頁頂</button>
 <script>
 (function(){
   function sortTable(th){
@@ -199,6 +206,13 @@ code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
       return (parseFloat(a.dataset[f])-parseFloat(b.dataset[f]))*(dir==="asc"?1:-1);
     });
     rows.forEach(function(r){tbody.appendChild(r);});
+  }
+  var btn=document.getElementById("totop");
+  if(btn){
+    var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    btn.addEventListener("click",function(){window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});});
+    var onScroll=function(){btn.hidden=(window.scrollY||document.documentElement.scrollTop)<400;};
+    window.addEventListener("scroll",onScroll,{passive:true}); onScroll();
   }
   document.querySelectorAll("th[data-sort]").forEach(function(th){
     th.addEventListener("click",function(){sortTable(th);});

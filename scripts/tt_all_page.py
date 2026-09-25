@@ -49,6 +49,12 @@ td:nth-child(2),td:nth-child(3),th:nth-child(2),th:nth-child(3){text-align:left}
 tbody tr:nth-child(even){background:var(--row)}
 tr:last-child td{border-bottom:0}
 .star{color:var(--star)}
+.top{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--rule);border-radius:999px;padding:3px 12px;text-decoration:none;color:var(--ink);font-size:.86rem;background:var(--surface);white-space:nowrap}
+.top:hover,.top:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.head-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10;border:1px solid var(--rule);border-radius:999px;padding:10px 16px;background:var(--surface);color:var(--ink);font:inherit;font-size:.9rem;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer}
+#totop:hover,#totop:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#totop[hidden]{display:none!important}
 .note{color:var(--muted);font-size:.86rem;max-width:68ch}
 .rules{font-size:.9rem;display:grid;gap:6px;max-width:72ch}
 .rules li{margin:0}
@@ -101,7 +107,7 @@ def section(meta: dict, rows: list[dict]) -> str:
     test = '<span class="sub">（測試輸出，非月底）</span>' if meta.get("test") else ""
     return f"""
 <section class="market" id="{meta['market']}">
-  <div class="head"><h2>{meta['name']} <span class="sub">{meta['date']} · {meta.get('tier', '')}</span> {test}</h2>{pill}</div>
+  <div class="head"><h2>{meta['name']} <span class="sub">{meta['date']} · {meta.get('tier', '')}</span> {test}</h2><div class="head-right">{pill}<a class="top" href="#top">↑ 頁頂</a></div></div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>{meta['etf']}　{pct(meta['etf_vs_ma50'], 1)} / {pct(meta['etf_vs_ma200'], 1)}</b></div>
     <div><span>通過趨勢模板</span><b>{meta['n']} 檔</b>（宇宙前 {meta['top_n']}）</div>
@@ -129,7 +135,7 @@ def build(markets: list[str]) -> str:
     return f"""<title>趨勢模板月底名單</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>{CSS}</style>
-<div class="wrap">
+<div class="wrap" id="top">
   <header>
     <h1>趨勢模板全部等權 · 月底名單</h1>
     <p class="sub">數據日 {date}。等級：試行 = 回測相對等權顯著（港、新、加、印、澳）；觀察 = 日、美；不建議 = 台、韓（回測 alpha 不顯著，只作記錄）。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>
@@ -149,6 +155,7 @@ def build(markets: list[str]) -> str:
   </section>
 </div>
 
+<button id="totop" type="button" hidden aria-label="回到頁頂">↑ 頁頂</button>
 <script>
 (function(){{
   function sortTable(th){{
@@ -164,6 +171,13 @@ def build(markets: list[str]) -> str:
       return (parseFloat(a.dataset[f])-parseFloat(b.dataset[f]))*(dir==="asc"?1:-1);
     }});
     rows.forEach(function(r){{tbody.appendChild(r);}});
+  }}
+  var btn=document.getElementById("totop");
+  if(btn){{
+    var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    btn.addEventListener("click",function(){{window.scrollTo({{top:0,behavior:reduce?"auto":"smooth"}});}});
+    var onScroll=function(){{btn.hidden=(window.scrollY||document.documentElement.scrollTop)<400;}};
+    window.addEventListener("scroll",onScroll,{{passive:true}}); onScroll();
   }}
   document.querySelectorAll("th[data-sort]").forEach(function(th){{
     th.addEventListener("click",function(){{sortTable(th);}});
