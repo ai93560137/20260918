@@ -64,7 +64,7 @@ python3 scripts/tt_all_verify.py --ibkr      # 寫 <市場>_<日期>_verify_ibkr
 python3 scripts/tt_all_page.py               # 網頁多一欄「IB」與「IBKR 覆核」統計
 ```
 
-- 能比的市場：美、澳、港、新、台主板（IB 無台灣上櫃；加、日帳戶無歷史數據權限；印、韓無合約）。
+- 能比的市場：美、澳、港、新、台主板（IB 無台灣上櫃；加、日帳戶無歷史數據權限；印、韓無合約）。澳洲小型股 IB 與 Yahoo 差 1–4% 是尾盤競價口徑（見 IBKR_DATA_REQUEST.md 第 7 節），不是數據錯。
 - IB 的「下一交易日開市價」存在 `_verify_ibkr.csv` 的 `ibkr_next_open`，是執行基準：第 7 步記錄成交後，滑價 = 成交價 ÷ 開市價 − 1。
 - 把 `tg_verify_ibkr.txt` 內容寫進 `.github/tg_outbox_research.txt` 並 push 就發到 Telegram。
 

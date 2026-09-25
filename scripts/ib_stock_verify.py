@@ -6,6 +6,7 @@
     python3 scripts/ib_stock_verify.py --port 4002 --job probe                 # 先跑：每個市場各試 1 檔，看合約能不能解析、有沒有權限錯誤
     python3 scripts/ib_stock_verify.py --port 4002 --job closes                # P0：request 檔裡每檔的訊號日收市 + 下一交易日開市（1 day TRADES）
     python3 scripts/ib_stock_verify.py --port 4002 --job closes --market hk sg # 只跑某些市場
+    python3 scripts/ib_stock_verify.py --port 4002 --job closes --market au --no-rth  # 日線含收市競價（澳洲對照用）
 
 輸入 analysis/tt_all/ibkr_request.csv（欄位 market,ticker,signal_date；由鳥翔分支產生）。
 輸出 data_stock_ibkr/<市場>_<訊號日>.csv（ticker,ib_symbol,exchange,currency,con_id,signal_date,ib_close,next_date,ib_next_open,ib_next_close,status,note）
@@ -80,7 +81,7 @@ def save(path: Path, rows: dict[str, dict]) -> None:
             w.writerow({k: rows[t].get(k, "") for k in FIELDS})
 
 
-def fetch_one(ib, mk: str, t: str, d: str, pace: float) -> dict:
+def fetch_one(ib, mk: str, t: str, d: str, pace: float, rth: bool = True) -> dict:
     from ib_insync import Stock, util
     sym, exch, cur = to_ib(mk, t)
     row = {"ticker": t, "ib_symbol": sym, "exchange": exch, "currency": cur, "signal_date": d, "status": "", "note": ""}
@@ -96,7 +97,7 @@ def fetch_one(ib, mk: str, t: str, d: str, pace: float) -> dict:
         end_dt = datetime.strptime(d, "%Y-%m-%d")
         end2 = (end_dt.replace(hour=23, minute=59, second=59)).strftime("%Y%m%d %H:%M:%S")
         bars = ib.reqHistoricalData(c, endDateTime="", durationStr="1 M", barSizeSetting="1 day", whatToShow="TRADES",
-                                    useRTH=True, formatDate=1, keepUpToDate=False, timeout=60)
+                                    useRTH=rth, formatDate=1, keepUpToDate=False, timeout=60)
         time.sleep(pace)
         if not bars:
             row["status"] = "no_data"
@@ -133,6 +134,7 @@ def main() -> None:
     ap.add_argument("--market", nargs="*", default=None)
     ap.add_argument("--pace", type=float, default=2.5)
     ap.add_argument("--client-id", type=int, default=24)
+    ap.add_argument("--no-rth", action="store_true", help="useRTH=False：日線含收市競價（2026-09 澳洲 4 檔小型股 IB 與 Yahoo 差 1–4.6%，懷疑是 RTH 日線少了尾盤競價；下月澳洲用此旗標對照）")
     args = ap.parse_args()
     from ib_insync import IB
     ib = IB()
@@ -146,7 +148,7 @@ def main() -> None:
         todo = tickers[:1] if args.job == "probe" else [t for t in tickers if rows.get(t, {}).get("status") != "ok"]
         log(f"[{mk}] {d}：{len(tickers)} 檔，待抓 {len(todo)}")
         for k, t in enumerate(todo, 1):
-            r = fetch_one(ib, mk, t, d, args.pace)
+            r = fetch_one(ib, mk, t, d, args.pace, rth=not args.no_rth)
             rows[t] = r
             if args.job == "probe" or k % 20 == 0 or k == len(todo):
                 save(path, rows)

@@ -71,7 +71,7 @@ nohup python3 scripts/ib_stock_verify.py --port 4002 --job closes > data_stock_i
 |---|---|---|---|
 | 美 | 191/191 | 191 | — |
 | 港 | 45/45 | 45 | — |
-| 澳 | 56/56 | 52 | 4 檔小型股差 1.0–4.6%（BCM、BNZ、CUP、MYE；待 Yahoo 重抓判定是誰的尾盤價） |
+| 澳 | 56/56 | 52 | 4 檔小型股差 1.0–4.6%（BCM、BNZ、CUP、MYE）。Yahoo 重抓（Actions，2026-09-26）仍是我們的數，所以是 IB 與 Yahoo 口徑差：懷疑 IB `useRTH=True` 日線少了 ASX 16:10 收市競價，薄股才看得出。下月澳洲請加 `--no-rth` 跑一次對照 |
 | 新 | 20/21 | 20 | H78.SI 無合約 |
 | 台 | 58/80 | 58 | 22 檔全是上櫃 .TWO，IB 無合約；主板 100% 一致 |
 | 加 | 0/70 | — | 合約解析到，日線 `Error 162 No market data permissions for TSE STK`（帳戶權限，非個股） |
