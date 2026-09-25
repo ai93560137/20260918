@@ -1,19 +1,19 @@
-SAVED vhsi_daily.csv: 5735 rows -> 2026-09-25 00:00:00
-SAVED hsi_daily.csv: 9806 rows -> 2026-09-25 00:00:00
-SAVED vix_daily.csv: 9252 rows -> 2026-09-25 00:00:00
-SAVED spx_daily.csv: 24799 rows -> 2026-09-24 00:00:00
-SAVED vxn_daily.csv: 6455 rows -> 2026-09-24 00:00:00
-SAVED ndx_daily.csv: 10324 rows -> 2026-09-24 00:00:00
-SAVED n225_daily.csv: 15173 rows -> 2026-09-25 00:00:00
-SAVED vix9d_daily.csv: 3954 rows -> 2026-09-24 00:00:00
-SAVED vix3m_daily.csv: 5079 rows -> 2026-09-24 00:00:00
-SAVED vvix_daily.csv: 4953 rows -> 2026-09-24 00:00:00
-SAVED move_daily.csv: 5901 rows -> 2026-09-24 00:00:00
-SAVED skew_daily.csv: 9175 rows -> 2026-09-24 00:00:00
-SAVED axvi_daily.csv: 4737 rows -> 2026-09-25 00:00:00
+SAVED vhsi_daily.csv: 5735 rows -> 2026-09-24 00:00:00
+SAVED hsi_daily.csv: 9806 rows -> 2026-09-24 00:00:00
+SAVED vix_daily.csv: 9253 rows -> 2026-09-25 00:00:00
+SAVED spx_daily.csv: 24801 rows -> 2026-09-25 00:00:00
+SAVED vxn_daily.csv: 6457 rows -> 2026-09-25 00:00:00
+SAVED ndx_daily.csv: 10326 rows -> 2026-09-25 00:00:00
+SAVED n225_daily.csv: 15172 rows -> 2026-09-24 00:00:00
+SAVED vix9d_daily.csv: 3956 rows -> 2026-09-25 00:00:00
+SAVED vix3m_daily.csv: 5081 rows -> 2026-09-25 00:00:00
+SAVED vvix_daily.csv: 4955 rows -> 2026-09-25 00:00:00
+SAVED move_daily.csv: 5902 rows -> 2026-09-24 00:00:00
+SAVED skew_daily.csv: 9176 rows -> 2026-09-24 00:00:00
+SAVED axvi_daily.csv: 4737 rows -> 2026-09-24 00:00:00
 NKVI download page: HTTP 404, vi-csv links: []
 NKVI url nikkei_stock_average_vi_daily_en.csv: HTTP 403, 2354 bytes
 NKVI url nikkei_stock_average_vi_daily_jp.csv: HTTP 403, 2354 bytes
 NKVI url dataload?list=vi&csv=1: HTTP 200, 4216 bytes
-ES=F: 7776.25 @ 2026-09-25 03:00:00-04:00
-NQ=F: 30873.25 @ 2026-09-25 03:00:00-04:00
+ES=F: 7795.25 @ 2026-09-25 15:00:00-04:00
+NQ=F: 30865.25 @ 2026-09-25 15:00:00-04:00
