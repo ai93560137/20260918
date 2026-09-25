@@ -23,6 +23,7 @@ import pandas as pd
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data_external')
 ALERTS, LINES, DIGEST = [], [], []
 FIRST_ATM = {}   # 最近月 ATM（scan_options 填入，delta 參考用）
+MONTH_IVS = []   # [(月份, ATM IV)]（scan_options 填入，港金絲雀近/遠斜率用）
 
 
 def _nd1(F, K, iv_pct, days):
@@ -174,6 +175,7 @@ def scan_options(hv, front=None):
         atm = (civ + piv) / 2
         if not FIRST_ATM:
             FIRST_ATM.update(mon=mon, K=K, iv=atm, civ=civ, piv=piv)
+        MONTH_IVS.append((mon, atm))
         LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
         if hv:
             prem = atm - hv
@@ -289,6 +291,28 @@ def scan_us():
                           f"到期日美東 16:00 前平倉，次日賣 25–40 天窗口最近系列")
 
 
+def hk_canary():
+    """港股本土金絲雀（試用期·只顯示不警報，2026-09-25 起）：
+    快鳥 = HSIW 週權 vs 月權 ATM IV 斜率（hsi_weekly_iv_log.csv 最新一筆）；
+    慢鳥 = 掃描鏈近月 vs 第三月 ATM IV。倒掛閾值待本土數據累積後校準，
+    校準前警報仍由美系鳥（VIX9D/VIX3M）負責——跨市場效力已驗證。"""
+    parts = []
+    fw = os.path.join(BASE, 'hsi_weekly_iv_log.csv')
+    if os.path.exists(fw):
+        try:
+            w = pd.read_csv(fw).iloc[-1]
+            s = float(w['mon_iv']) - float(w['wk_iv'])
+            flag = '⚪倒掛!' if s < 0 else '🟢'
+            parts.append(f"{flag}週/月{s:+.1f}({w['date']})")
+        except Exception:
+            pass
+    if len(MONTH_IVS) >= 3:
+        s3 = MONTH_IVS[2][1] - MONTH_IVS[0][1]
+        parts.append(f"{'⚪倒掛!' if s3 < 0 else '🟢'}近/遠{s3:+.1f}")
+    if parts:
+        DIGEST.append("港金絲雀(試用·無警報): " + ' '.join(parts))
+
+
 def roll_check():
     today = date.today()
     # 有持倉時倒數「持倉自己的到期日」，避免當月（非持倉月）結算的假滾倉警報
@@ -322,6 +346,7 @@ if __name__ == '__main__':
     scan_options(hv, front)
     hsi_expiry = roll_check()
     scan_us()
+    hk_canary()
     delta_report(front, hsi_expiry)
     from datetime import timedelta, timezone
     hkt = datetime.now(timezone.utc) + timedelta(hours=8)
