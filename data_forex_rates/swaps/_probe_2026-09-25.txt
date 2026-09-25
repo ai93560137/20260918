@@ -1,0 +1,13 @@
+dukascopy_overnights_plugin: HTTP 200 46782 bytes text/html; charset=UTF-8 → https://www.dukascopy.com/swiss/english/fx-market-tools/charts/
+dukascopy_overnights_page: HTTP 404 119558 bytes text/html; charset=UTF-8 → https://www.dukascopy.com/swiss/english/marketwatch/overnights/
+dukascopy_freeserv_overnights: HTTP 403 0 bytes text/html; charset=UTF-8 → https://freeserv.dukascopy.com/2.0/index.php?path=common/overnights&jsonp=
+dukascopy_freeserv_instruments: HTTP 403 0 bytes text/html; charset=UTF-8 → https://freeserv.dukascopy.com/2.0/index.php?path=common/instruments&jsonp=
+dukascopy_swap_policy: HTTP 404 119558 bytes text/html; charset=UTF-8 → https://www.dukascopy.com/swiss/english/forex/trading/rollover/
+ibkr_interest_rates: HTTP 200 326986 bytes text/html; charset=UTF-8 → https://www.interactivebrokers.com/en/accounts/fees/pricing-interest-rates.php
+ibkr_benchmark: HTTP 200 313707 bytes text/html; charset=UTF-8 → https://www.interactivebrokers.com/en/trading/margin-rates.php
+oanda_financing: HTTP 404 149398 bytes text/html; charset=utf-8 → https://www.oanda.com/us-en/trading/spreads-margin/financing-rates/
+oanda_financing_api: HTTP 404 146134 bytes text/html; charset=utf-8 → https://www.oanda.com/bvi-ft/trading/spreads-margin/
+saxo_swap: HTTP 200 239477 bytes text/html; charset=utf-8 → https://www.home.saxo/rates-and-conditions/forex/spreads-and-commissions
+ig_swap: HTTP 404 741652 bytes text/html; charset=UTF-8 → https://www.ig.com/uk/forex/spread-betting-forex-rates
+pepperstone_swap: HTTP 404 40056 bytes text/html; charset=utf-8 → https://pepperstone.com/en/trading-conditions/swap-rates
+icmarkets_swap: HTTP 404 134762 bytes text/html; charset=utf-8 → https://www.ic.com/en/trading-conditions/swap-rates
