@@ -5,9 +5,6 @@ name: PEAD backtest（財報公告後漂移回測）
 # 報告：data/news/backtest/README.md。規格固定，只在數據更新後手動重跑。
 on:
   workflow_dispatch:
-  push:  # 開發用，合併前移除
-    branches: [claude/pelosi-stock-tracking-f9f94g]
-    paths: [scripts/pead_backtest.py, .github/workflows/pead_backtest.yml]
 
 permissions:
   contents: write
