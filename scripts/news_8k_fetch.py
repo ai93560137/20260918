@@ -394,13 +394,13 @@ def main():
     hours = Counter(h for h in (acceptance_hour(r["acceptance"]) for r in all_events) if h is not None)
     state["acceptance_hour_hist"] = {str(h): hours[h] for h in sorted(hours)}
     state["updated"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    sess = Counter(r["session"] for r in joined)
     state["summary"] = {"intervals": len(mapping), "mapping_sources": dict(src), "ciks": len(ciks),
-                        "events_all": len(all_events), "events_sp500": len(joined), "requests": sec.calls}
+                        "events_all": len(all_events), "events_sp500": len(joined), "sessions": dict(sess),
+                        "requests": sec.calls}
     with open(state_path, "w") as f:
         json.dump(state, f, indent=1)
     print(f"2.02 事件 {len(all_events)} 筆，其中申報時是成分股 {len(joined)} 筆", flush=True)
-    sess = Counter(r["session"] for r in joined)
-    state["summary"]["sessions"] = dict(sess)
     print(f"acceptance UTC 小時分布：{state['acceptance_hour_hist']}；成分股事件時段（美東）：{dict(sess)}", flush=True)
     return 0
 
