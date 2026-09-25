@@ -5,3 +5,523 @@ open orders request timed out
 completed orders request timed out
 2026-09-25 19:03:32 job=closes 市場 ['au', 'ca', 'hk', 'jp', 'sg', 'tw', 'us']，共 612 檔
 2026-09-25 19:03:32 [au] 2026-09-23：56 檔，待抓 55
+2026-09-25 19:07:18 [au] 2026-09-23 完成：ok 56／56
+2026-09-25 19:07:18 [ca] 2026-09-23：70 檔，待抓 70
+Error 162, reqId 114: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=26762951, symbol='ALS', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='ALS', tradingClass='ALS')
+2026-09-25 19:07:21   ALS.TO → no_data 
+Error 162, reqId 116: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=530091921, symbol='AMD', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='AMD', tradingClass='AMD')
+2026-09-25 19:07:25   AMD.TO → no_data 
+Error 162, reqId 118: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14888410, symbol='ARE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='ARE', tradingClass='ARE')
+2026-09-25 19:07:29   ARE.TO → no_data 
+Error 162, reqId 120: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=26763006, symbol='ARG', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='ARG', tradingClass='ARG')
+2026-09-25 19:07:33   ARG.TO → no_data 
+Error 162, reqId 122: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=437108877, symbol='AYA', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='AYA', tradingClass='AYA')
+2026-09-25 19:07:37   AYA.TO → no_data 
+Error 162, reqId 124: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=490157696, symbol='BDGI', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='BDGI', tradingClass='BDGI')
+2026-09-25 19:07:41   BDGI.TO → no_data 
+Error 162, reqId 126: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=71485316, symbol='BDI', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='BDI', tradingClass='BDI')
+2026-09-25 19:07:46   BDI.TO → no_data 
+Error 162, reqId 128: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=82371888, symbol='BDT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='BDT', tradingClass='BDT')
+2026-09-25 19:07:50   BDT.TO → no_data 
+Error 162, reqId 130: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=4457153, symbol='BNS', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='BNS', tradingClass='BNS')
+2026-09-25 19:07:54   BNS.TO → no_data 
+Error 162, reqId 132: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=82487859, symbol='BTE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='BTE', tradingClass='BTE')
+2026-09-25 19:07:58   BTE.TO → no_data 
+Error 162, reqId 134: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14889595, symbol='CAS', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CAS', tradingClass='CAS')
+2026-09-25 19:08:02   CAS.TO → no_data 
+Error 162, reqId 136: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=279447238, symbol='CEU', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CEU', tradingClass='CEU')
+2026-09-25 19:08:07   CEU.TO → no_data 
+Error 162, reqId 138: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14889568, symbol='CG', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CG', tradingClass='CG')
+2026-09-25 19:08:11   CG.TO → no_data 
+Error 162, reqId 140: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=77111381, symbol='CGG', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CGG', tradingClass='CGG')
+2026-09-25 19:08:15   CGG.TO → no_data 
+Error 162, reqId 142: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=228158957, symbol='CGY', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CGY', tradingClass='CGY')
+2026-09-25 19:08:19   CGY.TO → no_data 
+Error 162, reqId 144: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=140073516, symbol='CJ', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CJ', tradingClass='CJ')
+2026-09-25 19:08:23   CJ.TO → no_data 
+Error 162, reqId 146: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=5027019, symbol='CNQ', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CNQ', tradingClass='CNQ')
+2026-09-25 19:08:27   CNQ.TO → no_data 
+Error 162, reqId 148: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=889301737, symbol='CURA', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CURA', tradingClass='CURA')
+2026-09-25 19:08:31   CURA.TO → no_data 
+Error 162, reqId 150: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=70009773, symbol='CVE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='CVE', tradingClass='CVE')
+2026-09-25 19:08:35   CVE.TO → no_data 
+Error 162, reqId 152: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=814025540, symbol='DPM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='DPM', tradingClass='DPM')
+2026-09-25 19:08:39   DPM.TO → no_data 
+Error 162, reqId 154: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=897526152, symbol='DSV', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='DSV', tradingClass='DSV')
+2026-09-25 19:08:43   DSV.TO → no_data 
+Error 162, reqId 156: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=292735630, symbol='ERO', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='ERO', tradingClass='ERO')
+2026-09-25 19:08:47   ERO.TO → no_data 
+Error 162, reqId 158: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=302202051, symbol='FF', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='FF', tradingClass='FF')
+2026-09-25 19:08:51   FF.TO → no_data 
+Error 162, reqId 160: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14890726, symbol='FM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='FM', tradingClass='FM')
+2026-09-25 19:08:55   FM.TO → no_data 
+Error 162, reqId 162: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14890684, symbol='FTT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='FTT', tradingClass='FTT')
+2026-09-25 19:08:59   FTT.TO → no_data 
+Error 162, reqId 164: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=72563331, symbol='GGD', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='GGD', tradingClass='GGD')
+2026-09-25 19:09:03   GGD.TO → no_data 
+Error 162, reqId 166: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=716136920, symbol='GMIN', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='GMIN', tradingClass='GMIN')
+2026-09-25 19:09:07   GMIN.TO → no_data 
+Error 162, reqId 168: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14891100, symbol='GWO', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='GWO', tradingClass='GWO')
+2026-09-25 19:09:11   GWO.TO → no_data 
+Error 162, reqId 170: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=32922365, symbol='HBM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='HBM', tradingClass='HBM')
+2026-09-25 19:09:15   HBM.TO → no_data 
+Error 162, reqId 172: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=434088384, symbol='HOU', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='HOU', tradingClass='HOU')
+2026-09-25 19:09:19   HOU.TO → no_data 
+Error 162, reqId 174: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=669228285, symbol='HUT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='HUT', tradingClass='HUT')
+2026-09-25 19:09:23   HUT.TO → no_data 
+Error 162, reqId 176: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=777166662, symbol='IPO', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='IPO', tradingClass='IPO')
+2026-09-25 19:09:27   IPO.TO → no_data 
+Error 162, reqId 178: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=156540901, symbol='JOY', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='JOY', tradingClass='JOY')
+2026-09-25 19:09:31   JOY.TO → no_data 
+Error 162, reqId 180: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=123510628, symbol='KEL', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='KEL', tradingClass='KEL')
+2026-09-25 19:09:35   KEL.TO → no_data 
+Error 162, reqId 182: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=234846145, symbol='KNT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='KNT', tradingClass='KNT')
+2026-09-25 19:09:39   KNT.TO → no_data 
+Error 162, reqId 184: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=275669846, symbol='LGD', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='LGD', tradingClass='LGD')
+2026-09-25 19:09:43   LGD.TO → no_data 
+Error 162, reqId 186: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=676131022, symbol='MATR', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='MATR', tradingClass='MATR')
+2026-09-25 19:09:47   MATR.TO → no_data 
+Error 162, reqId 188: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=451447716, symbol='MAU', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='MAU', tradingClass='MAU')
+2026-09-25 19:09:51   MAU.TO → no_data 
+Error 162, reqId 190: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=60018497, symbol='MTL', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='MTL', tradingClass='MTL')
+2026-09-25 19:09:55   MTL.TO → no_data 
+Error 162, reqId 192: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14892334, symbol='MX', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='MX', tradingClass='MX')
+2026-09-25 19:09:59   MX.TO → no_data 
+Error 162, reqId 194: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=412860649, symbol='NRGU', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='NRGU', tradingClass='NRGU')
+2026-09-25 19:10:03   NRGU.TO → no_data 
+Error 162, reqId 196: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=456523912, symbol='NUAG', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='NUAG', tradingClass='NUAG')
+2026-09-25 19:10:07   NUAG.TO → no_data 
+Error 162, reqId 198: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=370373728, symbol='OBE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='OBE', tradingClass='OBE')
+2026-09-25 19:10:11   OBE.TO → no_data 
+Error 162, reqId 200: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=280661216, symbol='OM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='OM', tradingClass='OM')
+2026-09-25 19:10:15   OM.TO → no_data 
+Error 162, reqId 202: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=58226771, symbol='ORE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='ORE', tradingClass='ORE')
+2026-09-25 19:10:19   ORE.TO → no_data 
+Error 162, reqId 204: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14893288, symbol='POW', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='POW', tradingClass='POW')
+2026-09-25 19:10:24   POW.TO → no_data 
+Error 162, reqId 206: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=70227108, symbol='PXT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='PXT', tradingClass='PXT')
+2026-09-25 19:10:28   PXT.TO → no_data 
+Error 162, reqId 208: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14893671, symbol='RUS', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='RUS', tradingClass='RUS')
+2026-09-25 19:10:32   RUS.TO → no_data 
+Error 162, reqId 210: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=889303002, symbol='SEA', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SEA', tradingClass='SEA')
+2026-09-25 19:10:36   SEA.TO → no_data 
+Error 162, reqId 212: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=509189312, symbol='SGY', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SGY', tradingClass='SGY')
+2026-09-25 19:10:40   SGY.TO → no_data 
+Error 162, reqId 214: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=495923385, symbol='SKE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SKE', tradingClass='SKE')
+2026-09-25 19:10:44   SKE.TO → no_data 
+Error 162, reqId 216: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=520149915, symbol='SOIL', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SOIL', tradingClass='SOIL')
+2026-09-25 19:10:48   SOIL.TO → no_data 
+Error 162, reqId 218: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=284632514, symbol='SSRM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SSRM', tradingClass='SSRM')
+2026-09-25 19:10:52   SSRM.TO → no_data 
+Error 162, reqId 220: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=64731259, symbol='SU', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SU', tradingClass='SU')
+2026-09-25 19:10:56   SU.TO → no_data 
+Error 162, reqId 222: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=753285836, symbol='SXGC', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='SXGC', tradingClass='SXGC')
+2026-09-25 19:11:00   SXGC.TO → no_data 
+Error 162, reqId 224: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=14894399, symbol='TIH', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='TIH', tradingClass='TIH')
+2026-09-25 19:11:04   TIH.TO → no_data 
+Error 162, reqId 226: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=896309239, symbol='TKO', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='TKO', tradingClass='TKO')
+2026-09-25 19:11:08   TKO.TO → no_data 
+Error 162, reqId 228: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=534613943, symbol='TNZ', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='TNZ', tradingClass='TNZ')
+2026-09-25 19:11:12   TNZ.TO → no_data 
+Error 162, reqId 230: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=60579323, symbol='TOT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='TOT', tradingClass='TOT')
+2026-09-25 19:11:17   TOT.TO → no_data 
+Error 162, reqId 232: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=527091252, symbol='TSAT', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='TSAT', tradingClass='TSAT')
+2026-09-25 19:11:20   TSAT.TO → no_data 
+Error 162, reqId 234: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=810789643, symbol='TWM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='TWM', tradingClass='TWM')
+2026-09-25 19:11:24   TWM.TO → no_data 
+Error 162, reqId 236: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=78675158, symbol='VET', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='VET', tradingClass='VET')
+2026-09-25 19:11:29   VET.TO → no_data 
+Error 162, reqId 238: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=94327875, symbol='VLE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='VLE', tradingClass='VLE')
+2026-09-25 19:11:33   VLE.TO → no_data 
+Error 162, reqId 240: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=79953361, symbol='WCP', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='WCP', tradingClass='WCP')
+2026-09-25 19:11:37   WCP.TO → no_data 
+Error 162, reqId 242: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=37877916, symbol='WDO', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='WDO', tradingClass='WDO')
+2026-09-25 19:11:41   WDO.TO → no_data 
+Error 162, reqId 244: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=82458350, symbol='WJX', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='WJX', tradingClass='WJX')
+2026-09-25 19:11:45   WJX.TO → no_data 
+Error 162, reqId 246: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=110277229, symbol='WTE', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='WTE', tradingClass='WTE')
+2026-09-25 19:11:49   WTE.TO → no_data 
+Error 162, reqId 248: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=86823353, symbol='XBM', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='XBM', tradingClass='XBM')
+2026-09-25 19:11:53   XBM.TO → no_data 
+Error 162, reqId 250: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=653041476, symbol='XCHP', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='XCHP', tradingClass='XCHP')
+2026-09-25 19:11:57   XCHP.TO → no_data 
+Error 162, reqId 252: Historical Market Data Service error message:No market data permissions for TSE STK, contract: Stock(conId=74580606, symbol='XEG', exchange='TSE', primaryExchange='TSE', currency='CAD', localSymbol='XEG', tradingClass='XEG')
+2026-09-25 19:12:01   XEG.TO → no_data 
+2026-09-25 19:12:01 [ca] 2026-09-23 完成：ok 0／70
+2026-09-25 19:12:01 [hk] 2026-09-23：45 檔，待抓 44
+2026-09-25 19:14:36 [hk] 2026-09-23 完成：ok 45／45
+2026-09-25 19:14:36 [jp] 2026-09-18：149 檔，待抓 149
+Error 162, reqId 342: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=738362078, symbol='278A', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='278A.T', tradingClass='278A')
+2026-09-25 19:14:39   278A.T → no_data 
+Error 162, reqId 344: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=752417066, symbol='319A', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='319A.T', tradingClass='319A')
+2026-09-25 19:14:44   319A.T → no_data 
+Error 162, reqId 346: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14014501, symbol='1515', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='1515.T', tradingClass='1515')
+2026-09-25 19:14:48   1515.T → no_data 
+Error 162, reqId 348: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14014506, symbol='1518', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='1518.T', tradingClass='1518')
+2026-09-25 19:14:52   1518.T → no_data 
+Error 162, reqId 350: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=49597899, symbol='2175', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2175.T', tradingClass='2175')
+2026-09-25 19:14:56   2175.T → no_data 
+Error 162, reqId 352: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=47183739, symbol='2354', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2354.T', tradingClass='2354')
+2026-09-25 19:15:00   2354.T → no_data 
+Error 162, reqId 354: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=47384030, symbol='2492', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2492.T', tradingClass='2492')
+2026-09-25 19:15:04   2492.T → no_data 
+Error 162, reqId 356: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=47416830, symbol='2737', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2737.T', tradingClass='2737')
+2026-09-25 19:15:08   2737.T → no_data 
+Error 162, reqId 358: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131087909, symbol='2782', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2782.T', tradingClass='2782')
+2026-09-25 19:15:12   2782.T → no_data 
+Error 162, reqId 360: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14030825, symbol='2805', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2805.T', tradingClass='2805')
+2026-09-25 19:15:16   2805.T → no_data 
+Error 162, reqId 362: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015129, symbol='2874', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2874.T', tradingClass='2874')
+2026-09-25 19:15:20   2874.T → no_data 
+Error 162, reqId 364: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905344, symbol='2914', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2914.T', tradingClass='2914')
+2026-09-25 19:15:25   2914.T → no_data 
+Error 162, reqId 366: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=638550519, symbol='2962', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='2962.T', tradingClass='2962')
+2026-09-25 19:15:29   2962.T → no_data 
+Error 162, reqId 368: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=49597902, symbol='3036', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='3036.T', tradingClass='3036')
+2026-09-25 19:15:33   3036.T → no_data 
+Error 162, reqId 370: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905361, symbol='3105', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='3105.T', tradingClass='3105')
+2026-09-25 19:15:37   3105.T → no_data 
+Error 162, reqId 372: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=185916339, symbol='3132', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='3132.T', tradingClass='3132')
+2026-09-25 19:15:41   3132.T → no_data 
+Error 162, reqId 374: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=80788896, symbol='3156', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='3156.T', tradingClass='3156')
+2026-09-25 19:15:45   3156.T → no_data 
+Error 162, reqId 376: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=180351551, symbol='3907', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='3907.T', tradingClass='3907')
+2026-09-25 19:15:49   3907.T → no_data 
+Error 162, reqId 378: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015341, symbol='3941', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='3941.T', tradingClass='3941')
+2026-09-25 19:15:53   3941.T → no_data 
+Error 162, reqId 380: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905418, symbol='4021', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4021.T', tradingClass='4021')
+2026-09-25 19:15:57   4021.T → no_data 
+Error 162, reqId 382: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015423, symbol='4092', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4092.T', tradingClass='4092')
+2026-09-25 19:16:01   4092.T → no_data 
+Error 162, reqId 384: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015494, symbol='4203', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4203.T', tradingClass='4203')
+2026-09-25 19:16:05   4203.T → no_data 
+Error 162, reqId 386: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015589, symbol='4461', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4461.T', tradingClass='4461')
+2026-09-25 19:16:10   4461.T → no_data 
+Error 162, reqId 388: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015594, symbol='4471', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4471.T', tradingClass='4471')
+2026-09-25 19:16:14   4471.T → no_data 
+Error 162, reqId 390: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=137703091, symbol='4588', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4588.T', tradingClass='4588')
+2026-09-25 19:16:18   4588.T → no_data 
+Error 162, reqId 392: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015740, symbol='4634', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4634.T', tradingClass='4634')
+2026-09-25 19:16:22   4634.T → no_data 
+Error 162, reqId 394: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14031190, symbol='4968', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='4968.T', tradingClass='4968')
+2026-09-25 19:16:26   4968.T → no_data 
+Error 162, reqId 396: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=512458250, symbol='5076', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5076.T', tradingClass='5076')
+2026-09-25 19:16:30   5076.T → no_data 
+Error 162, reqId 398: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015937, symbol='5186', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5186.T', tradingClass='5186')
+2026-09-25 19:16:34   5186.T → no_data 
+Error 162, reqId 400: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14031267, symbol='5208', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5208.T', tradingClass='5208')
+2026-09-25 19:16:38   5208.T → no_data 
+Error 162, reqId 402: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=599230178, symbol='5243', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5243.T', tradingClass='5243')
+2026-09-25 19:16:43   5243.T → no_data 
+Error 162, reqId 404: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905543, symbol='5301', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5301.T', tradingClass='5301')
+2026-09-25 19:16:47   5301.T → no_data 
+Error 162, reqId 406: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=38692873, symbol='5310', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5310.T', tradingClass='5310')
+2026-09-25 19:16:51   5310.T → no_data 
+Error 162, reqId 408: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14015992, symbol='5331', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5331.T', tradingClass='5331')
+2026-09-25 19:16:55   5331.T → no_data 
+Error 162, reqId 410: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14016081, symbol='5471', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5471.T', tradingClass='5471')
+2026-09-25 19:16:59   5471.T → no_data 
+Error 162, reqId 412: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131085385, symbol='5702', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5702.T', tradingClass='5702')
+2026-09-25 19:17:03   5702.T → no_data 
+Error 162, reqId 414: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=583228529, symbol='5830', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5830.T', tradingClass='5830')
+2026-09-25 19:17:07   5830.T → no_data 
+Error 162, reqId 416: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=583228527, symbol='5831', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5831.T', tradingClass='5831')
+2026-09-25 19:17:11   5831.T → no_data 
+Error 162, reqId 418: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=583228517, symbol='5832', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5832.T', tradingClass='5832')
+2026-09-25 19:17:16   5832.T → no_data 
+Error 162, reqId 420: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=652855605, symbol='5844', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5844.T', tradingClass='5844')
+2026-09-25 19:17:20   5844.T → no_data 
+Error 162, reqId 422: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131085024, symbol='5985', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='5985.T', tradingClass='5985')
+2026-09-25 19:17:24   5985.T → no_data 
+Error 162, reqId 424: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=105094301, symbol='6058', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6058.T', tradingClass='6058')
+2026-09-25 19:17:28   6058.T → no_data 
+Error 162, reqId 426: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=166623148, symbol='6098', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6098.T', tradingClass='6098')
+2026-09-25 19:17:32   6098.T → no_data 
+Error 162, reqId 428: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=206408205, symbol='6178', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6178.T', tradingClass='6178')
+2026-09-25 19:17:36   6178.T → no_data 
+Error 162, reqId 430: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14016397, symbol='6203', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6203.T', tradingClass='6203')
+2026-09-25 19:17:40   6203.T → no_data 
+Error 162, reqId 432: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=112131203, symbol='6250', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6250.T', tradingClass='6250')
+2026-09-25 19:17:44   6250.T → no_data 
+Error 162, reqId 434: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131083930, symbol='6258', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6258.T', tradingClass='6258')
+2026-09-25 19:17:48   6258.T → no_data 
+Error 162, reqId 436: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905629, symbol='6302', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6302.T', tradingClass='6302')
+2026-09-25 19:17:53   6302.T → no_data 
+Error 162, reqId 438: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14031600, symbol='6379', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6379.T', tradingClass='6379')
+2026-09-25 19:17:57   6379.T → no_data 
+Error 162, reqId 440: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14016666, symbol='6448', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6448.T', tradingClass='6448')
+2026-09-25 19:18:01   6448.T → no_data 
+Error 162, reqId 442: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905680, symbol='6508', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6508.T', tradingClass='6508')
+2026-09-25 19:18:05   6508.T → no_data 
+Error 162, reqId 444: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=81849333, symbol='6627', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6627.T', tradingClass='6627')
+2026-09-25 19:18:09   6627.T → no_data 
+Error 162, reqId 446: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14016810, symbol='6645', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6645.T', tradingClass='6645')
+2026-09-25 19:18:13   6645.T → no_data 
+Error 162, reqId 448: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14016817, symbol='6652', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6652.T', tradingClass='6652')
+2026-09-25 19:18:17   6652.T → no_data 
+Error 162, reqId 450: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=49939805, symbol='6668', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6668.T', tradingClass='6668')
+2026-09-25 19:18:21   6668.T → no_data 
+Error 162, reqId 452: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=28346247, symbol='6724', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6724.T', tradingClass='6724')
+2026-09-25 19:18:25   6724.T → no_data 
+Error 162, reqId 454: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905699, symbol='6752', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6752.T', tradingClass='6752')
+2026-09-25 19:18:29   6752.T → no_data 
+Error 162, reqId 456: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131086670, symbol='6862', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6862.T', tradingClass='6862')
+2026-09-25 19:18:33   6862.T → no_data 
+Error 162, reqId 458: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017050, symbol='6875', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6875.T', tradingClass='6875')
+2026-09-25 19:18:38   6875.T → no_data 
+Error 162, reqId 460: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131086334, symbol='6890', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6890.T', tradingClass='6890')
+2026-09-25 19:18:42   6890.T → no_data 
+Error 162, reqId 462: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905755, symbol='6952', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6952.T', tradingClass='6952')
+2026-09-25 19:18:46   6952.T → no_data 
+Error 162, reqId 464: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017133, symbol='6958', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6958.T', tradingClass='6958')
+2026-09-25 19:18:50   6958.T → no_data 
+Error 162, reqId 466: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131081928, symbol='6960', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='6960.T', tradingClass='6960')
+2026-09-25 19:18:54   6960.T → no_data 
+Error 162, reqId 468: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=59348782, symbol='7014', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7014.T', tradingClass='7014')
+2026-09-25 19:18:58   7014.T → no_data 
+Error 162, reqId 470: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=138396592, symbol='7167', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7167.T', tradingClass='7167')
+2026-09-25 19:19:02   7167.T → no_data 
+Error 162, reqId 472: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=205624376, symbol='7180', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7180.T', tradingClass='7180')
+2026-09-25 19:19:06   7180.T → no_data 
+Error 162, reqId 474: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=222425058, symbol='7184', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7184.T', tradingClass='7184')
+2026-09-25 19:19:11   7184.T → no_data 
+Error 162, reqId 476: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=246980426, symbol='7189', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7189.T', tradingClass='7189')
+2026-09-25 19:19:15   7189.T → no_data 
+Error 162, reqId 478: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017331, symbol='7272', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7272.T', tradingClass='7272')
+2026-09-25 19:19:19   7272.T → no_data 
+Error 162, reqId 480: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14031964, symbol='7287', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7287.T', tradingClass='7287')
+2026-09-25 19:19:23   7287.T → no_data 
+Error 162, reqId 482: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=309630182, symbol='7322', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7322.T', tradingClass='7322')
+2026-09-25 19:19:27   7322.T → no_data 
+Error 162, reqId 484: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=332261988, symbol='7327', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7327.T', tradingClass='7327')
+2026-09-25 19:19:31   7327.T → no_data 
+Error 162, reqId 486: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=443121199, symbol='7337', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7337.T', tradingClass='7337')
+2026-09-25 19:19:35   7337.T → no_data 
+Error 162, reqId 488: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=512458500, symbol='7350', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7350.T', tradingClass='7350')
+2026-09-25 19:19:40   7350.T → no_data 
+Error 162, reqId 490: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=512459263, symbol='7380', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7380.T', tradingClass='7380')
+2026-09-25 19:19:44   7380.T → no_data 
+Error 162, reqId 492: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=512459648, symbol='7381', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7381.T', tradingClass='7381')
+2026-09-25 19:19:48   7381.T → no_data 
+Error 162, reqId 494: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=547757424, symbol='7384', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7384.T', tradingClass='7384')
+2026-09-25 19:19:53   7384.T → no_data 
+Error 162, reqId 496: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=583228522, symbol='7389', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7389.T', tradingClass='7389')
+2026-09-25 19:19:57   7389.T → no_data 
+Error 162, reqId 498: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14032118, symbol='7609', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7609.T', tradingClass='7609')
+2026-09-25 19:20:01   7609.T → no_data 
+Error 162, reqId 500: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=129106821, symbol='7715', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7715.T', tradingClass='7715')
+2026-09-25 19:20:05   7715.T → no_data 
+Error 162, reqId 502: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=319647854, symbol='7806', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7806.T', tradingClass='7806')
+2026-09-25 19:20:09   7806.T → no_data 
+Error 162, reqId 504: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131087720, symbol='7826', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='7826.T', tradingClass='7826')
+2026-09-25 19:20:13   7826.T → no_data 
+Error 162, reqId 506: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017801, symbol='8015', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8015.T', tradingClass='8015')
+2026-09-25 19:20:17   8015.T → no_data 
+Error 162, reqId 508: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017816, symbol='8020', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8020.T', tradingClass='8020')
+2026-09-25 19:20:21   8020.T → no_data 
+Error 162, reqId 510: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017825, symbol='8022', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8022.T', tradingClass='8022')
+2026-09-25 19:20:26   8022.T → no_data 
+Error 162, reqId 512: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017875, symbol='8050', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8050.T', tradingClass='8050')
+2026-09-25 19:20:30   8050.T → no_data 
+Error 162, reqId 514: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905884, symbol='8053', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8053.T', tradingClass='8053')
+2026-09-25 19:20:34   8053.T → no_data 
+Error 162, reqId 516: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017903, symbol='8061', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8061.T', tradingClass='8061')
+2026-09-25 19:20:38   8061.T → no_data 
+Error 162, reqId 518: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14017931, symbol='8078', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8078.T', tradingClass='8078')
+2026-09-25 19:20:42   8078.T → no_data 
+Error 162, reqId 520: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018113, symbol='8173', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8173.T', tradingClass='8173')
+2026-09-25 19:20:46   8173.T → no_data 
+Error 162, reqId 522: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=41664897, symbol='8304', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8304.T', tradingClass='8304')
+2026-09-25 19:20:50   8304.T → no_data 
+Error 162, reqId 524: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905935, symbol='8306', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8306.T', tradingClass='8306')
+2026-09-25 19:20:55   8306.T → no_data 
+Error 162, reqId 526: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13857206, symbol='8308', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8308.T', tradingClass='8308')
+2026-09-25 19:20:59   8308.T → no_data 
+Error 162, reqId 528: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=15785250, symbol='8309', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8309.T', tradingClass='8309')
+2026-09-25 19:21:03   8309.T → no_data 
+Error 162, reqId 530: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018360, symbol='8334', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8334.T', tradingClass='8334')
+2026-09-25 19:21:07   8334.T → no_data 
+Error 162, reqId 532: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018368, symbol='8336', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8336.T', tradingClass='8336')
+2026-09-25 19:21:11   8336.T → no_data 
+Error 162, reqId 534: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018373, symbol='8337', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8337.T', tradingClass='8337')
+2026-09-25 19:21:15   8337.T → no_data 
+Error 162, reqId 536: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018378, symbol='8338', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8338.T', tradingClass='8338')
+2026-09-25 19:21:19   8338.T → no_data 
+Error 162, reqId 538: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018385, symbol='8341', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8341.T', tradingClass='8341')
+2026-09-25 19:21:24   8341.T → no_data 
+Error 162, reqId 540: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018395, symbol='8343', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8343.T', tradingClass='8343')
+2026-09-25 19:21:28   8343.T → no_data 
+Error 162, reqId 542: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018398, symbol='8344', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8344.T', tradingClass='8344')
+2026-09-25 19:21:32   8344.T → no_data 
+Error 162, reqId 544: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018402, symbol='8345', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8345.T', tradingClass='8345')
+2026-09-25 19:21:36   8345.T → no_data 
+Error 162, reqId 546: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018407, symbol='8346', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8346.T', tradingClass='8346')
+2026-09-25 19:21:40   8346.T → no_data 
+Error 162, reqId 548: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=43623853, symbol='8354', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8354.T', tradingClass='8354')
+2026-09-25 19:21:44   8354.T → no_data 
+Error 162, reqId 550: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018425, symbol='8358', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8358.T', tradingClass='8358')
+2026-09-25 19:21:48   8358.T → no_data 
+Error 162, reqId 552: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018428, symbol='8359', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8359.T', tradingClass='8359')
+2026-09-25 19:21:53   8359.T → no_data 
+Error 162, reqId 554: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018435, symbol='8360', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8360.T', tradingClass='8360')
+2026-09-25 19:21:57   8360.T → no_data 
+Error 162, reqId 556: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018438, symbol='8361', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8361.T', tradingClass='8361')
+2026-09-25 19:22:01   8361.T → no_data 
+Error 162, reqId 558: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018441, symbol='8362', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8362.T', tradingClass='8362')
+2026-09-25 19:22:05   8362.T → no_data 
+Error 162, reqId 560: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018455, symbol='8366', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8366.T', tradingClass='8366')
+2026-09-25 19:22:09   8366.T → no_data 
+Error 162, reqId 562: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018456, symbol='8367', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8367.T', tradingClass='8367')
+2026-09-25 19:22:13   8367.T → no_data 
+Error 162, reqId 564: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018461, symbol='8368', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8368.T', tradingClass='8368')
+2026-09-25 19:22:17   8368.T → no_data 
+Error 162, reqId 566: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=134128000, symbol='8370', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8370.T', tradingClass='8370')
+2026-09-25 19:22:22   8370.T → no_data 
+Error 162, reqId 568: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=31676907, symbol='8377', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8377.T', tradingClass='8377')
+2026-09-25 19:22:26   8377.T → no_data 
+Error 162, reqId 570: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018490, symbol='8381', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8381.T', tradingClass='8381')
+2026-09-25 19:22:30   8381.T → no_data 
+Error 162, reqId 572: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018504, symbol='8386', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8386.T', tradingClass='8386')
+2026-09-25 19:22:34   8386.T → no_data 
+Error 162, reqId 574: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018509, symbol='8387', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8387.T', tradingClass='8387')
+2026-09-25 19:22:38   8387.T → no_data 
+Error 162, reqId 576: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018515, symbol='8388', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8388.T', tradingClass='8388')
+2026-09-25 19:22:42   8388.T → no_data 
+Error 162, reqId 578: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018524, symbol='8392', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8392.T', tradingClass='8392')
+2026-09-25 19:22:46   8392.T → no_data 
+Error 162, reqId 580: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018528, symbol='8393', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8393.T', tradingClass='8393')
+2026-09-25 19:22:51   8393.T → no_data 
+Error 162, reqId 582: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018548, symbol='8399', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8399.T', tradingClass='8399')
+2026-09-25 19:22:55   8399.T → no_data 
+Error 162, reqId 584: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=17301320, symbol='8411', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8411.T', tradingClass='8411')
+2026-09-25 19:22:59   8411.T → no_data 
+Error 162, reqId 586: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=41121699, symbol='8418', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8418.T', tradingClass='8418')
+2026-09-25 19:23:03   8418.T → no_data 
+Error 162, reqId 588: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018576, symbol='8522', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8522.T', tradingClass='8522')
+2026-09-25 19:23:07   8522.T → no_data 
+Error 162, reqId 590: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=114841992, symbol='8524', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8524.T', tradingClass='8524')
+2026-09-25 19:23:11   8524.T → no_data 
+Error 162, reqId 592: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018601, symbol='8541', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8541.T', tradingClass='8541')
+2026-09-25 19:23:15   8541.T → no_data 
+Error 162, reqId 594: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018615, symbol='8544', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8544.T', tradingClass='8544')
+2026-09-25 19:23:19   8544.T → no_data 
+Error 162, reqId 596: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018621, symbol='8550', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8550.T', tradingClass='8550')
+2026-09-25 19:23:24   8550.T → no_data 
+Error 162, reqId 598: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=73953261, symbol='8600', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8600.T', tradingClass='8600')
+2026-09-25 19:23:28   8600.T → no_data 
+Error 162, reqId 600: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13905974, symbol='8601', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8601.T', tradingClass='8601')
+2026-09-25 19:23:32   8601.T → no_data 
+Error 162, reqId 602: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018734, symbol='8609', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8609.T', tradingClass='8609')
+2026-09-25 19:23:36   8609.T → no_data 
+Error 162, reqId 604: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018759, symbol='8616', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8616.T', tradingClass='8616')
+2026-09-25 19:23:40   8616.T → no_data 
+Error 162, reqId 606: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018777, symbol='8628', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8628.T', tradingClass='8628')
+2026-09-25 19:23:44   8628.T → no_data 
+Error 162, reqId 608: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=37915514, symbol='8707', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8707.T', tradingClass='8707')
+2026-09-25 19:23:48   8707.T → no_data 
+Error 162, reqId 610: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=69188900, symbol='8714', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8714.T', tradingClass='8714')
+2026-09-25 19:23:53   8714.T → no_data 
+Error 162, reqId 612: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=49987470, symbol='8725', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8725.T', tradingClass='8725')
+2026-09-25 19:23:57   8725.T → no_data 
+Error 162, reqId 614: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=74028027, symbol='8750', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='8750.T', tradingClass='8750')
+2026-09-25 19:24:01   8750.T → no_data 
+Error 162, reqId 616: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018976, symbol='9075', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9075.T', tradingClass='9075')
+2026-09-25 19:24:05   9075.T → no_data 
+Error 162, reqId 618: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13906050, symbol='9104', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9104.T', tradingClass='9104')
+2026-09-25 19:24:09   9104.T → no_data 
+Error 162, reqId 620: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=13906055, symbol='9107', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9107.T', tradingClass='9107')
+2026-09-25 19:24:13   9107.T → no_data 
+Error 162, reqId 622: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14018993, symbol='9110', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9110.T', tradingClass='9110')
+2026-09-25 19:24:17   9110.T → no_data 
+Error 162, reqId 624: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=531981186, symbol='9147', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9147.T', tradingClass='9147')
+2026-09-25 19:24:21   9147.T → no_data 
+Error 162, reqId 626: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14019041, symbol='9304', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9304.T', tradingClass='9304')
+2026-09-25 19:24:25   9304.T → no_data 
+Error 162, reqId 628: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=131082285, symbol='9436', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9436.T', tradingClass='9436')
+2026-09-25 19:24:30   9436.T → no_data 
+Error 162, reqId 630: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14019120, symbol='9507', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9507.T', tradingClass='9507')
+2026-09-25 19:24:34   9507.T → no_data 
+Error 162, reqId 632: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=31916064, symbol='9513', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9513.T', tradingClass='9513')
+2026-09-25 19:24:38   9513.T → no_data 
+Error 162, reqId 634: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14019226, symbol='9678', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9678.T', tradingClass='9678')
+2026-09-25 19:24:42   9678.T → no_data 
+Error 162, reqId 636: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=47211400, symbol='9824', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9824.T', tradingClass='9824')
+2026-09-25 19:24:46   9824.T → no_data 
+Error 162, reqId 638: Historical Market Data Service error message:No market data permissions for TSEJ STK, contract: Stock(conId=14019450, symbol='9934', exchange='TSEJ', primaryExchange='TSEJ', currency='JPY', localSymbol='9934.T', tradingClass='9934')
+2026-09-25 19:24:50   9934.T → no_data 
+2026-09-25 19:24:50 [jp] 2026-09-18 完成：ok 0／149
+2026-09-25 19:24:50 [sg] 2026-09-23：21 檔，待抓 20
+Error 200, reqId 661: No security definition has been found for the request, contract: Stock(symbol='H78', exchange='SGX', currency='SGD')
+Unknown contract: Stock(symbol='H78', exchange='SGX', currency='SGD')
+2026-09-25 19:25:29   H78.SI → no_contract 
+2026-09-25 19:25:58 [sg] 2026-09-23 完成：ok 20／21
+2026-09-25 19:25:58 [tw] 2026-09-23：80 檔，待抓 79
+Error 200, reqId 742: No security definition has been found for the request, contract: Stock(symbol='3081', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3081', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:50   3081.TWO → no_contract 
+Error 200, reqId 747: No security definition has been found for the request, contract: Stock(symbol='3221', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3221', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:58   3221.TWO → no_contract 
+Error 200, reqId 748: No security definition has been found for the request, contract: Stock(symbol='3234', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3234', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:58   3234.TWO → no_contract 
+Error 200, reqId 749: No security definition has been found for the request, contract: Stock(symbol='3260', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3260', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:58   3260.TWO → no_contract 
+Error 200, reqId 750: No security definition has been found for the request, contract: Stock(symbol='3264', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3264', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:59   3264.TWO → no_contract 
+Error 200, reqId 751: No security definition has been found for the request, contract: Stock(symbol='3374', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3374', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:59   3374.TWO → no_contract 
+Error 200, reqId 752: No security definition has been found for the request, contract: Stock(symbol='3441', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3441', exchange='TWSE', currency='TWD')
+2026-09-25 19:27:59   3441.TWO → no_contract 
+Error 200, reqId 757: No security definition has been found for the request, contract: Stock(symbol='3455', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3455', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:07   3455.TWO → no_contract 
+Error 200, reqId 758: No security definition has been found for the request, contract: Stock(symbol='3498', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3498', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:07   3498.TWO → no_contract 
+Error 200, reqId 763: No security definition has been found for the request, contract: Stock(symbol='3624', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3624', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:14   3624.TWO → no_contract 
+Error 200, reqId 766: No security definition has been found for the request, contract: Stock(symbol='3693', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='3693', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:18   3693.TWO → no_contract 
+Error 200, reqId 769: No security definition has been found for the request, contract: Stock(symbol='4939', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='4939', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:22   4939.TWO → no_contract 
+Error 200, reqId 772: No security definition has been found for the request, contract: Stock(symbol='4979', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='4979', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:26   4979.TWO → no_contract 
+Error 200, reqId 773: No security definition has been found for the request, contract: Stock(symbol='5274', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='5274', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:26   5274.TWO → no_contract 
+Error 200, reqId 774: No security definition has been found for the request, contract: Stock(symbol='5351', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='5351', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:26   5351.TWO → no_contract 
+Error 200, reqId 775: No security definition has been found for the request, contract: Stock(symbol='5864', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='5864', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:26   5864.TWO → no_contract 
+Error 200, reqId 778: No security definition has been found for the request, contract: Stock(symbol='6173', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='6173', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:30   6173.TWO → no_contract 
+Error 200, reqId 779: No security definition has been found for the request, contract: Stock(symbol='6187', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='6187', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:31   6187.TWO → no_contract 
+Error 200, reqId 788: No security definition has been found for the request, contract: Stock(symbol='6274', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='6274', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:45   6274.TWO → no_contract 
+Error 200, reqId 795: No security definition has been found for the request, contract: Stock(symbol='6538', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='6538', exchange='TWSE', currency='TWD')
+2026-09-25 19:28:56   6538.TWO → no_contract 
+Error 200, reqId 804: No security definition has been found for the request, contract: Stock(symbol='7828', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='7828', exchange='TWSE', currency='TWD')
+2026-09-25 19:29:10   7828.TWO → no_contract 
+Error 200, reqId 809: No security definition has been found for the request, contract: Stock(symbol='8064', exchange='TWSE', currency='TWD')
+Unknown contract: Stock(symbol='8064', exchange='TWSE', currency='TWD')
+2026-09-25 19:29:18   8064.TWO → no_contract 
+2026-09-25 19:29:25 [tw] 2026-09-23 完成：ok 58／80
+2026-09-25 19:29:25 [us] 2026-09-21：191 檔，待抓 190
+2026-09-25 19:43:09 [us] 2026-09-21 完成：ok 191／191
