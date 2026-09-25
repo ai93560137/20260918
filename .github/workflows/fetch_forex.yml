@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       group:
-        description: '分組：majors（七大）、jpy（日圓交叉盤）、eur（歐元／英鎊交叉盤）、other（澳紐加交叉＋港元／離岸人民幣／新加坡元）、metals（金銀）或 all'
+        description: '分組：majors（七大）、jpy（日圓交叉盤）、eur（歐元／英鎊交叉盤）、other（澳紐加交叉＋港元／離岸人民幣／新加坡元）、metals（金銀）、em1／em2（新興市場／其他 G10，只有 D1／H1）、em（兩組）或 all'
         required: true
         default: 'all'
       budget_min:
@@ -33,7 +33,8 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        group: ${{ fromJSON((inputs.group || 'all') == 'all' && '["majors","jpy","eur","other","metals"]' || format('["{0}"]', inputs.group)) }}
+        # push 觸發只跑 em（新加的組）；其他組要手動觸發，免得每次改程式都重跑五組
+        group: ${{ fromJSON((github.event_name == 'push' || inputs.group == 'em') && '["em1","em2"]' || (inputs.group == 'all' && '["majors","jpy","eur","other","metals","em1","em2"]' || format('["{0}"]', inputs.group))) }}
     concurrency:
       group: forex-data-${{ matrix.group }}
       cancel-in-progress: false

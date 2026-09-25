@@ -318,7 +318,11 @@ def main() -> None:
     pairs = args.pair or ([p.name for p in sorted(DATA.iterdir()) if p.is_dir() and p.name in INSTRUMENTS] if args.all else [])
     args.report_dir.mkdir(parents=True, exist_ok=True)
     for p in pairs:
-        r = qc_pair(p, INSTRUMENTS[p][1])
+        dec = INSTRUMENTS[p][1]
+        if dec is None:                                   # em 組：小數位由 fetch_forex.py 首次抓時判定、記在 _done.json
+            done_p = DATA / p / "_done.json"
+            dec = (json.loads(done_p.read_text()).get("decimals") if done_p.exists() else None) or 5
+        r = qc_pair(p, dec)
         (args.report_dir / f"{p}_qc.json").write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
         (args.report_dir / f"{p}_qc.md").write_text(render(r), encoding="utf-8")
         msg = "錯誤 " + r["error"] if "error" in r else f"M1 {r['m1_rows']:,} 根、{r['first']} → {r['last']}"

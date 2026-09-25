@@ -88,8 +88,27 @@ INSTRUMENTS = {
     # 貴金屬現貨（XAUUSD 另有券商 MT5 M1 在 data/，2022-08 起）
     "XAUUSD": ("XAUUSD", 3, "metals", "XAUUSD=X", []),
     "XAGUSD": ("XAGUSD", 3, "metals", "XAGUSD=X", []),
+    # 新興市場／其他 G10（外匯基金新宇宙，分 em1／em2 兩組並行；只要 Dukascopy D1／H1，不抓 HistData M1；小數位 None = 首次抓時按價位自動判定）
+    "USDMXN": ("USDMXN", None, "em1", "MXN=X", [("DEXMXUS", 1)]),
+    "USDZAR": ("USDZAR", None, "em1", "ZAR=X", [("DEXSFUS", 1)]),
+    "USDTRY": ("USDTRY", None, "em1", "TRY=X", []),
+    "USDPLN": ("USDPLN", None, "em1", "PLN=X", []),
+    "USDHUF": ("USDHUF", None, "em1", "HUF=X", []),
+    "USDCZK": ("USDCZK", None, "em1", "CZK=X", []),
+    "USDSEK": ("USDSEK", None, "em1", "SEK=X", [("DEXSDUS", 1)]),
+    "USDNOK": ("USDNOK", None, "em1", "NOK=X", [("DEXNOUS", 1)]),
+    "USDDKK": ("USDDKK", None, "em2", "DKK=X", [("DEXDNUS", 1)]),
+    "USDRON": ("USDRON", None, "em2", "RON=X", []),
+    "USDILS": ("USDILS", None, "em2", "ILS=X", []),
+    "USDTHB": ("USDTHB", None, "em2", "THB=X", [("DEXTHUS", 1)]),
+    "USDBRL": ("USDBRL", None, "em2", "BRL=X", [("DEXBZUS", 1)]),
+    "USDINR": ("USDINR", None, "em2", "INR=X", [("DEXINUS", 1)]),
+    "USDKRW": ("USDKRW", None, "em2", "KRW=X", [("DEXKOUS", 1)]),
 }
-NO_HISTDATA = {"USDCNH"}                  # HistData 沒有的商品：M1 只有 Dukascopy 近 62 天
+# 自動判定小數位用的大約價位（2025 年水平；bi5 的整數價 ÷ 10^小數位 應落在這附近，差 10 倍就是小數位錯）
+REF_LEVEL = {"USDMXN": 19, "USDZAR": 18, "USDTRY": 38, "USDPLN": 3.9, "USDHUF": 360, "USDCZK": 22, "USDSEK": 10, "USDNOK": 10.5,
+             "USDDKK": 6.9, "USDRON": 4.5, "USDILS": 3.6, "USDTHB": 33, "USDBRL": 5.5, "USDINR": 85, "USDKRW": 1400}
+NO_HISTDATA = {"USDCNH"} | {p for p, v in INSTRUMENTS.items() if v[2] in ("em1", "em2")}   # HistData 沒有／不抓的商品：M1 只有 Dukascopy 近 62 天
 GROUPS = list(dict.fromkeys(v[2] for v in INSTRUMENTS.values()))
 REC = struct.Struct(">iiiiif")           # 時間偏移秒、開、收、低、高、量
 
@@ -335,14 +354,42 @@ def clean_existing(out: Path, pair: str) -> None:
 
 
 # ---------------------------------------------------------------- 各時間框架
+def resolve_decimals(pair: str, feed: Feed, done: dict) -> int | None:
+    """小數位：表裡寫死的 → 用；None → 用 _done.json 記住的；都沒有 → 抓去年 D1 原始整數價，
+    小數位 = round(log10(中位整數價 ÷ 大約價位))，記進 _done.json。"""
+    import math
+    import statistics
+    dec = INSTRUMENTS[pair][1]
+    if dec is not None:
+        return dec
+    if done.get("decimals") is not None:
+        return done["decimals"]
+    sym = INSTRUMENTS[pair][0]
+    y = datetime.now(timezone.utc).year - 1
+    rows = feed.candles(f"{sym}/{y}/BID_candles_day_1.bi5", datetime(y, 1, 1), 1.0)
+    if not rows:
+        return None
+    med = statistics.median(r[4] for r in rows)
+    dec = int(round(math.log10(med / REF_LEVEL[pair])))
+    log(f"  {pair}：{y} 年 D1 原始整數收市中位 {med:.0f}、大約價位 {REF_LEVEL[pair]} → 小數位 {dec}")
+    done["decimals"] = dec
+    return dec
+
+
 def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: bool) -> bool:
-    sym, decimals, group, ysym, fred = INSTRUMENTS[pair]
-    scale = 10 ** decimals
+    sym, _dec, group, ysym, fred = INSTRUMENTS[pair]
     out = OUT_ROOT / pair
     out.mkdir(parents=True, exist_ok=True)
     clean_existing(out, pair)
     done_p = out / "_done.json"
     done = json.loads(done_p.read_text()) if done_p.exists() else {}
+    decimals = resolve_decimals(pair, feed, done)
+    if decimals is None:
+        log(f"  {pair}：Dukascopy 沒有去年日線，無法判定小數位，跳過")
+        (out / "_status.txt").write_text(f"{datetime.now(timezone.utc).date()} 沒有數據\n")
+        return True
+    done_p.write_text(json.dumps(done, ensure_ascii=False))
+    scale = 10 ** decimals
     for k in ("d1_years", "d1_years_ask", "h1_months", "h1_months_ask", "hd_years", "hd_months"):
         done.setdefault(k, [])
     if done.get("hd_tz") != HD_TZ:                    # 時區規則改了 → HistData 檔全部重抓（很快，每商品約 35 個 zip）
@@ -366,7 +413,7 @@ def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: 
 
     if do_refs:
         try:
-            fetch_refs(pair, out)
+            fetch_refs(pair, out, decimals)
         except Exception as exc:                      # 第二來源失敗不影響主數據
             log(f"  {pair} 第二來源失敗：{exc!r}")
 
@@ -520,8 +567,9 @@ def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: 
 
 
 # ---------------------------------------------------------------- 第二來源
-def fetch_refs(pair: str, out: Path) -> None:
-    sym, decimals, group, ysym, fred = INSTRUMENTS[pair]
+def fetch_refs(pair: str, out: Path, decimals: int | None = None) -> None:
+    sym, dec0, group, ysym, fred = INSTRUMENTS[pair]
+    decimals = dec0 if decimals is None else decimals
     import pandas as pd
     # Yahoo 日線（收市價可靠、高低價粗糙）
     try:
