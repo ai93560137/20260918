@@ -111,8 +111,13 @@ def fixed_spreads(root: Path, pairs: list[str], start: str = "2003-06-01", end: 
         d = root / "data_forex" / p
         bid = pd.read_csv(d / f"{p}_D1.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
         ask = pd.read_csv(d / f"{p}_D1_ask.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
-        sp = (ask - bid).loc[start:end]
-        out[p] = float(sp[sp > 0].median())
+        sp = (ask - bid)
+        w = sp.loc[start:end]
+        if (w > 0).sum() < 250:                                          # 該窗沒有真買賣價（例如 USDMXN 真數據 2007-03 起）→ 真數據起 3 年
+            rs = real_start(p)
+            w = sp.loc[rs:rs + pd.DateOffset(years=3)]
+            print(f"  {p}：{start}→{end} 沒有真價差，改用真數據起 3 年（{rs.date()} 起）")
+        out[p] = float(w[w > 0].median())
     return out
 
 

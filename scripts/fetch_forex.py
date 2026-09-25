@@ -366,7 +366,16 @@ def resolve_decimals(pair: str, feed: Feed, done: dict) -> int | None:
         return done["decimals"]
     sym = INSTRUMENTS[pair][0]
     y = datetime.now(timezone.utc).year - 1
-    rows = feed.candles(f"{sym}/{y}/BID_candles_day_1.bi5", datetime(y, 1, 1), 1.0)
+    rows, tried = [], []
+    for path, base in ((f"{sym}/{y}/BID_candles_day_1.bi5", datetime(y, 1, 1)), (f"{sym}/{y - 1}/BID_candles_day_1.bi5", datetime(y - 1, 1, 1)),
+                       (f"{sym}/{y}/11/BID_candles_hour_1.bi5", datetime(y, 12, 1))):
+        raw = feed.get(path)                      # None = 404（真的沒有）；限流會直接拋 Throttled，由外層當作未完成、下輪續抓
+        tried.append(f"{path}:{'404' if raw is None else str(len(raw)) + 'B'}")
+        if raw:
+            rows = decode(raw, base, 1.0)
+            if rows:
+                break
+    log(f"  {pair}：小數位探測 {'、'.join(tried)}")
     if not rows:
         return None
     med = statistics.median(r[4] for r in rows)
@@ -385,8 +394,8 @@ def fetch_pair(pair: str, feed: Feed, hd: HistData, budget_end: float, do_refs: 
     done = json.loads(done_p.read_text()) if done_p.exists() else {}
     decimals = resolve_decimals(pair, feed, done)
     if decimals is None:
-        log(f"  {pair}：Dukascopy 沒有去年日線，無法判定小數位，跳過")
-        (out / "_status.txt").write_text(f"{datetime.now(timezone.utc).date()} 沒有數據\n")
+        log(f"  {pair}：Dukascopy 沒有這個商品的日線／小時線（404），跳過")
+        (out / "_status.txt").write_text(f"{datetime.now(timezone.utc).date()} 沒有數據：Dukascopy 404（去年／前年 D1、去年 12 月 H1 都沒有）\n")
         return True
     done_p.write_text(json.dumps(done, ensure_ascii=False))
     scale = 10 ** decimals

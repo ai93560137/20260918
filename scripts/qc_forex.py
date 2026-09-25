@@ -82,7 +82,8 @@ def qc_pair(pair: str, decimals: int) -> dict:
     h1, h1a = load(d / f"{pair}_H1.csv.gz"), load(d / f"{pair}_H1_ask.csv.gz")
     m1, per_year, m1_dup, recent = load_m1(d, pair)
     if d1.empty:
-        res["error"] = "沒有 D1"
+        st = d / "_status.txt"
+        res["error"] = "沒有 D1" + (f"（{st.read_text(encoding='utf-8').strip()}）" if st.exists() else "")
         return res
     pip = 10.0 ** -(decimals - 1)
     res["first"], res["last"] = str(d1.index[0].date()), str(d1.index[-1].date())
