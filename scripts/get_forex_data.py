@@ -48,8 +48,17 @@ def fetch(pair: str, root: Path) -> bool:
     return True
 
 
-def merge_m1(pair: str, root: Path, out: Path) -> None:
-    """把 <PAIR>_M1_<YYYY>.csv.gz 合併成一個 CSV（UTC；donchian_backtest.py／zgl_backtest.py 用 --broker-offset 0）。"""
+def to_broker_time(t: str) -> str:
+    """UTC → 「券商時間」= 紐約當地時間 + 7 小時（冬令 UTC+2、夏令 UTC+3；與 data/ 的 MT5 券商相同）。
+    這樣日曆日的午夜就是紐約 17:00 的外匯／黃金日界，donchian_backtest.py 按日曆日切「完整交易日」才正確。"""
+    from datetime import datetime, timedelta, timezone
+    from zoneinfo import ZoneInfo
+    ts = datetime.strptime(t, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).astimezone(ZoneInfo("America/New_York"))
+    return (ts.replace(tzinfo=None) + timedelta(hours=7)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def merge_m1(pair: str, root: Path, out: Path, broker_time: bool = False) -> None:
+    """把 <PAIR>_M1_<YYYY>.csv.gz 合併成一個 CSV（UTC；--broker-time 轉成紐約 17:00 日界的券商時間，八陣圖回測用）。"""
     d = root / "data_forex" / pair
     files = sorted(p for p in d.glob(f"{pair}_M1_*.csv.gz") if re.fullmatch(rf"{pair}_M1_\d{{4}}\.csv\.gz", p.name))
     rows = {}
@@ -63,8 +72,9 @@ def merge_m1(pair: str, root: Path, out: Path) -> None:
     with open(out, "w", encoding="utf-8") as w:
         w.write("Time,Open,High,Low,Close,Volume\n")
         for k in sorted(rows):
-            w.write(rows[k])
-    print(f"{pair}：M1 合併 {len(files)} 個 HistData 年檔 + Dukascopy 近期檔、{len(rows):,} 根 → {out}")
+            w.write((to_broker_time(k) + rows[k][19:]) if broker_time else rows[k])
+    print(f"{pair}：M1 合併 {len(files)} 個 HistData 年檔 + Dukascopy 近期檔、{len(rows):,} 根 → {out}"
+          f"{'（券商時間：紐約 17:00 = 午夜）' if broker_time else '（UTC）'}")
 
 
 def main() -> None:
@@ -73,6 +83,8 @@ def main() -> None:
     ap.add_argument("--pair", nargs="*", choices=list(INSTRUMENTS), default=[])
     ap.add_argument("--root", type=Path, default=ROOT, help="解壓到哪裡（預設倉庫根目錄 → data_forex/<PAIR>/）")
     ap.add_argument("--merge-m1", type=Path, help="下載後把 M1 合併成這個 CSV（只在指定單一商品時）")
+    ap.add_argument("--broker-time", action="store_true", help="合併時把 UTC 轉成券商時間（紐約 17:00 日界 = 午夜；八陣圖回測要用）")
+    ap.add_argument("--no-download", action="store_true", help="不下載，只用已有的 data_forex/ 合併")
     ap.add_argument("--list", action="store_true")
     args = ap.parse_args()
     pairs = [p for p, v in INSTRUMENTS.items() if (not args.group and not args.pair) or v[2] in args.group or p in args.pair]
@@ -80,11 +92,11 @@ def main() -> None:
         for p in pairs:
             print(f"{p:7} {INSTRUMENTS[p][2]:8} https://github.com/{REPO}/releases/download/{TAG}/{p}.tar")
         return
-    ok = [p for p in pairs if fetch(p, args.root)]
+    ok = pairs if args.no_download else [p for p in pairs if fetch(p, args.root)]
     if args.merge_m1:
         if len(ok) != 1:
             sys.exit("--merge-m1 只能配一個商品（--pair XXX）")
-        merge_m1(ok[0], args.root, args.merge_m1)
+        merge_m1(ok[0], args.root, args.merge_m1, args.broker_time)
 
 
 if __name__ == "__main__":
