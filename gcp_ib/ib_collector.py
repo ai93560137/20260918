@@ -32,12 +32,18 @@ def mid_or_last(t):
 
 
 def iv_of(ib, opt, spot):
-    """優先用 IB 的 modelGreeks IV；沒有就用中間價反推 Black-76 IV。"""
-    [tk] = ib.reqTickers(opt)
-    g = tk.modelGreeks
-    if g and g.impliedVol and 0.01 < g.impliedVol < 3:
-        return round(g.impliedVol * 100, 2)
-    prem = mid_or_last(tk)
+    """優先用 IB 的 modelGreeks IV；沒有就用中間價反推 Black-76 IV。
+    延遲數據要等幾秒才灌進 ticker，輪詢最多 ~16 秒。"""
+    tk = ib.reqMktData(opt, '', False, False)
+    prem = None
+    for _ in range(4):
+        ib.sleep(4)
+        g = tk.modelGreeks
+        if g and g.impliedVol and 0.01 < g.impliedVol < 3:
+            ib.cancelMktData(opt)
+            return round(g.impliedVol * 100, 2)
+        prem = mid_or_last(tk)
+    ib.cancelMktData(opt)
     if not prem:
         return None
     dte = (datetime.strptime(opt.lastTradeDateOrContractMonth[:8], '%Y%m%d').date()
@@ -59,33 +65,44 @@ def iv_of(ib, opt, spot):
 
 
 def pick_expiries(exps):
-    """回傳 (最近 3–10 天的週度, 最近 18–45 天的月度) 到期字串。"""
+    """回傳 (短腿 1–14 天, 長腿 15–60 天) 到期字串——N225 只有月權時
+    取最近兩個月度也能量斜率。長窗落空就取短腿之後最近的一個。"""
     today = date.today()
     parsed = sorted((datetime.strptime(e, '%Y%m%d').date(), e) for e in exps)
-    wk = next((e for d, e in parsed if 3 <= (d - today).days <= 10), None)
-    mon = next((e for d, e in parsed if 18 <= (d - today).days <= 45), None)
+    dtes = [((d - today).days, e) for d, e in parsed]
+    wk = next((e for dd, e in dtes if 1 <= dd <= 14), None)
+    mon = next((e for dd, e in dtes if 15 <= dd <= 60), None)
+    if wk and mon is None:
+        mon = next((e for dd, e in dtes if dd > 14), None)
     return wk, mon
 
 
 def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry):
+    """ATM (c+p)/2 IV。月權行使價網格較疏（如 Eurex 週權 5 點/月權 25 點），
+    同一鏈的 strikes 是全到期聯集——挑中的檔位不一定在該到期掛牌，
+    所以按距離試最多 6 檔，qualify 不到就跳下一檔。"""
     ch = next((c for c in chains if c.exchange == opt_exch and expiry in c.expirations), None)
     if not ch:
         return None
-    strike = min(ch.strikes, key=lambda k: abs(k - spot))
-    ivs = []
-    for right in ('C', 'P'):
-        o = Option(und.symbol, expiry, strike, right, opt_exch,
-                   currency=und.currency, tradingClass=ch.tradingClass)
-        try:
-            ib.qualifyContracts(o)
-            iv = iv_of(ib, o, spot)
-            if dry:
-                print(f"  {label} {expiry} {strike}{right}: iv={iv}")
-            if iv:
-                ivs.append(iv)
-        except Exception as e:
-            print(f"  {label} {expiry} {strike}{right} ERR: {e}")
-    return (round(sum(ivs) / 2, 2), strike) if len(ivs) == 2 else None
+    for strike in sorted(ch.strikes, key=lambda k: abs(k - spot))[:6]:
+        ivs = []
+        for right in ('C', 'P'):
+            o = Option(und.symbol, expiry, strike, right, opt_exch,
+                       currency=und.currency, tradingClass=ch.tradingClass)
+            try:
+                if not ib.qualifyContracts(o):
+                    break
+                iv = iv_of(ib, o, spot)
+                if dry:
+                    print(f"  {label} {expiry} {strike}{right}: iv={iv}")
+                if iv:
+                    ivs.append(iv)
+            except Exception as e:
+                print(f"  {label} {expiry} {strike}{right} ERR: {e}")
+                break
+        if len(ivs) == 2:
+            return (round(sum(ivs) / 2, 2), strike)
+    return None
 
 
 def main():
