@@ -3,7 +3,7 @@ name: Pelosi stock tracker（佩洛西股票追蹤）
 # 每 4 小時抓一次眾議院書記官處（House Clerk）的 PTR 申報索引，
 # 發現佩洛西新申報就下載 PDF、解析每筆交易，更新 data/pelosi/ 並發 Telegram。
 # 腳本見 scripts/pelosi_tracker.py。首次執行（還沒有 data/pelosi/state.json）自動回補 2014 年起的申報，只建檔不通知。
-# 回測（scripts/pelosi_backtest.py，申報日跟單）在有新申報、手動觸發、或每週一 00 時那輪重跑，
+# 回測（scripts/pelosi_backtest.py，申報日跟單）研究已結束，只在手動觸發且勾選 backtest 時重跑，
 # 報告在 data/pelosi/backtest/README.md。
 on:
   schedule:
@@ -19,9 +19,9 @@ on:
         required: false
         default: 'false'
       backtest:
-        description: '重跑回測'
+        description: '重跑回測（研究已結束，預設不跑）'
         required: false
-        default: 'true'
+        default: 'false'
       reparse:
         description: '用 raw 文字重新解析所有舊申報（改了解析規則後用）'
         required: false
@@ -75,12 +75,10 @@ jobs:
         continue-on-error: true   # 回測失敗（例如 Yahoo 限流）不擋追蹤資料提交
         env:
           EVENT: ${{ github.event_name }}
-          NEW: ${{ steps.track.outputs.new }}
           WANT: ${{ inputs.backtest }}
         run: |
           RUN=false
-          if [ "$EVENT" = "workflow_dispatch" ]; then [ "$WANT" != "false" ] && RUN=true
-          elif [ "${NEW:-0}" != "0" ] || [ "$(date -u +%u%H)" = "100" ] || [ ! -f data/pelosi/backtest/summary.json ]; then RUN=true; fi
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$WANT" = "true" ]; then RUN=true; fi
           echo "run backtest: $RUN"
           if [ "$RUN" = "true" ]; then python3 scripts/pelosi_backtest.py; fi
 
