@@ -1,0 +1,25 @@
+{
+ "market": "sg",
+ "name": "新加坡",
+ "etf": "ES3",
+ "date": "2026-09-23",
+ "month_end": false,
+ "test": true,
+ "market_ok": true,
+ "etf_vs_ma50": 0.017535268118445746,
+ "etf_vs_ma200": 0.1386630607308068,
+ "n": 21,
+ "top_n": 200,
+ "seed": 202609,
+ "cap": 40,
+ "n_enter": null,
+ "n_leave": null,
+ "prev_date": null,
+ "top5": [
+  "42C.SI",
+  "A31.SI",
+  "QZG.SI",
+  "AWX.SI",
+  "PCT.SI"
+ ]
+}

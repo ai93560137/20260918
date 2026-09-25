@@ -52,6 +52,7 @@ jobs:
         run: |
           F=""; [ "${{ inputs.force }}" = "true" ] && F="--force"
           python3 scripts/tt_all_signal.py --market ${{ inputs.markets }} $F
+          python3 scripts/tt_all_page.py
 
       - name: Commit and push（名單與記錄）
         run: |
@@ -73,14 +74,12 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          ls analysis/tt_all/tg_*.txt > /dev/null 2>&1 || { echo "沒有名單（不是月底或無數據）"; exit 0; }
+          # 只發一則摘要（各市場大市狀態、檔數、進出、RS 前五、網頁連結）；完整名單在 analysis/tt_all/index.html（發布為 claude.ai 網頁）
+          [ -s analysis/tt_all/tg_summary.txt ] || { echo "沒有摘要（不是月底或無數據）"; exit 0; }
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0
           fi
-          for MSG in $(ls analysis/tt_all/tg_*.txt | sort); do
-            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-              --data-urlencode "chat_id=${TG_CHAT_ID}" \
-              --data-urlencode "text=$(cat "$MSG")" > /dev/null
-            echo "telegram sent: $MSG"
-            sleep 1
-          done
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "text=$(cat analysis/tt_all/tg_summary.txt)" > /dev/null
+          echo "telegram sent: summary"

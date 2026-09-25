@@ -1,0 +1,85 @@
+<title>趨勢模板月底名單</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+:root{color-scheme:light;--bg:#F6F5F0;--surface:#FFFFFF;--ink:#1E2A32;--muted:#6A7580;--rule:#E1DFD6;--accent:#0E6F68;--accent-ink:#0B5B55;
+--ok-bg:#E3F2EE;--ok-ink:#0B5B55;--warn-bg:#FBEBD5;--warn-ink:#8A4B08;--star:#B7791F;--row:#F9F8F4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#141A1E;--surface:#1B2328;--ink:#E7E5DF;--muted:#98A2AB;--rule:#2B353C;
+--accent:#3FB8AE;--accent-ink:#7ADBD2;--ok-bg:#153A36;--ok-ink:#8FE0D6;--warn-bg:#4A2E0F;--warn-ink:#F3C77E;--star:#E2B45A;--row:#1F292F}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#141A1E;--surface:#1B2328;--ink:#E7E5DF;--muted:#98A2AB;--rule:#2B353C;
+--accent:#3FB8AE;--accent-ink:#7ADBD2;--ok-bg:#153A36;--ok-ink:#8FE0D6;--warn-bg:#4A2E0F;--warn-ink:#F3C77E;--star:#E2B45A;--row:#1F292F}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.5;padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:960px;margin:0 auto;display:grid;gap:22px}
+h1{font-size:1.5rem;margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:1.15rem;margin:0}
+.sub{color:var(--muted);font-size:.92rem}
+.nav{display:flex;flex-wrap:wrap;gap:8px}
+.nav a{border:1px solid var(--rule);border-radius:999px;padding:4px 12px;text-decoration:none;color:var(--ink);font-size:.9rem;background:var(--surface)}
+.nav a:focus-visible,.nav a:hover{outline:2px solid var(--accent);outline-offset:1px}
+.market{display:grid;gap:12px;padding-block:8px;border-top:1px solid var(--rule)}
+.head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.pill{display:inline-block;border-radius:6px;padding:2px 10px;font-weight:600;font-size:.9rem}
+.ok{background:var(--ok-bg);color:var(--ok-ink)}.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 16px;font-size:.92rem}
+.stats div span{display:block;color:var(--muted);font-size:.8rem;letter-spacing:.04em}
+.stats b{font-variant-numeric:tabular-nums;font-weight:600}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule)}
+th{color:var(--muted);font-weight:500;font-size:.8rem;letter-spacing:.04em;position:sticky;top:0;background:var(--surface)}
+td:nth-child(2),td:nth-child(3),th:nth-child(2),th:nth-child(3){text-align:left}
+tbody tr:nth-child(even){background:var(--row)}
+tr:last-child td{border-bottom:0}
+.star{color:var(--star)}
+.note{color:var(--muted);font-size:.86rem;max-width:68ch}
+.rules{font-size:.9rem;display:grid;gap:6px;max-width:72ch}
+.rules li{margin:0}
+code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+<div class="wrap">
+  <header>
+    <h1>趨勢模板全部等權 · 月底名單</h1>
+    <p class="sub">數據日 2026-09-23。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>
+  </header>
+  <nav class="nav"><a href="#hk">港股 ⛔ 45</a><a href="#sg">新加坡 ✅ 21</a></nav>
+  
+<section class="market" id="hk">
+  <div class="head"><h2>港股 <span class="sub">2026-09-23</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill warn">⛔ 本月持現金</span></div>
+  <div class="stats">
+    <div><span>基準 ETF 對 50 / 200 日線</span><b>盈富 2800　-0.5% / -0.3%</b></div>
+    <div><span>通過趨勢模板</span><b>45 檔</b>（宇宙前 500）</div>
+    
+    <div><span>40 檔版</span><b>★ = 40 檔版抽中（種子 202609）</b></div>
+  </div>
+  <p class="note">大市過濾未通過：本月不買入，名單只作記錄。持股中的舊倉按規則在月初開市全部賣出。</p>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>代號</th><th>名稱</th><th>收市</th><th>252 日報酬</th><th>RS 百分位</th><th>對 200 日線</th></tr></thead>
+    <tbody><tr><td><span class="star">★</span></td><td>0805.HK</td><td>新吉奧房車</td><td>9.47</td><td>+709%</td><td>100</td><td>+162.7%</td></tr><tr><td><span class="star">★</span></td><td>2225.HK</td><td>今海醫療科技</td><td>5.83</td><td>+495%</td><td>100</td><td>+84.7%</td></tr><tr><td><span class="star">★</span></td><td>0622.HK</td><td>威華達控股</td><td>3.09</td><td>+494%</td><td>99</td><td>+66.0%</td></tr><tr><td><span class="star">★</span></td><td>8279.HK</td><td>亞博科技控股</td><td>1.21</td><td>+408%</td><td>99</td><td>+83.6%</td></tr><tr><td><span class="star">★</span></td><td>2436.HK</td><td>凌雄科技</td><td>20.9</td><td>+323%</td><td>99</td><td>+33.8%</td></tr><tr><td><span class="star">★</span></td><td>0992.HK</td><td>聯想集團</td><td>36.92</td><td>+219%</td><td>98</td><td>+117.5%</td></tr><tr><td><span class="star">★</span></td><td>2315.HK</td><td>百奧賽圖－Ｂ</td><td>70.3</td><td>+206%</td><td>98</td><td>+41.4%</td></tr><tr><td></td><td>1548.HK</td><td>金斯瑞生物科技</td><td>41.76</td><td>+140%</td><td>97</td><td>+152.5%</td></tr><tr><td><span class="star">★</span></td><td>3396.HK</td><td>聯想控股</td><td>25.64</td><td>+132%</td><td>97</td><td>+112.2%</td></tr><tr><td><span class="star">★</span></td><td>2359.HK</td><td>藥明康德</td><td>207.6</td><td>+91%</td><td>96</td><td>+52.0%</td></tr><tr><td></td><td>0400.HK</td><td>硬蛋創新</td><td>4.75</td><td>+82%</td><td>95</td><td>+32.5%</td></tr><tr><td><span class="star">★</span></td><td>2343.HK</td><td>太平洋航運</td><td>4.095</td><td>+77%</td><td>95</td><td>+33.9%</td></tr><tr><td><span class="star">★</span></td><td>1070.HK</td><td>ＴＣＬ電子</td><td>16.58</td><td>+71%</td><td>94</td><td>+24.2%</td></tr><tr><td><span class="star">★</span></td><td>1308.HK</td><td>海豐國際</td><td>47.8</td><td>+67%</td><td>94</td><td>+44.4%</td></tr><tr><td><span class="star">★</span></td><td>2451.HK</td><td>綠源集團控股</td><td>16.54</td><td>+66%</td><td>94</td><td>+27.8%</td></tr><tr><td></td><td>2099.HK</td><td>中國黃金國際</td><td>227.8</td><td>+66%</td><td>94</td><td>+26.0%</td></tr><tr><td><span class="star">★</span></td><td>6821.HK</td><td>凱萊英</td><td>157.3</td><td>+64%</td><td>93</td><td>+59.4%</td></tr><tr><td></td><td>2510.HK</td><td>德翔海運</td><td>13.3</td><td>+62%</td><td>93</td><td>+56.9%</td></tr><tr><td><span class="star">★</span></td><td>0023.HK</td><td>東亞銀行</td><td>19.23</td><td>+62%</td><td>93</td><td>+35.3%</td></tr><tr><td><span class="star">★</span></td><td>2888.HK</td><td>渣打集團</td><td>240</td><td>+60%</td><td>93</td><td>+18.7%</td></tr><tr><td></td><td>3939.HK</td><td>萬國黃金集團</td><td>14.24</td><td>+58%</td><td>93</td><td>+19.0%</td></tr><tr><td><span class="star">★</span></td><td>0019.HK</td><td>太古股份公司Ａ</td><td>102.8</td><td>+57%</td><td>92</td><td>+24.2%</td></tr><tr><td><span class="star">★</span></td><td>2356.HK</td><td>大新銀行集團</td><td>14.42</td><td>+51%</td><td>92</td><td>+19.6%</td></tr><tr><td><span class="star">★</span></td><td>0293.HK</td><td>國泰航空</td><td>14.35</td><td>+46%</td><td>91</td><td>+15.4%</td></tr><tr><td><span class="star">★</span></td><td>2269.HK</td><td>藥明生物</td><td>52.8</td><td>+45%</td><td>91</td><td>+40.1%</td></tr><tr><td><span class="star">★</span></td><td>6699.HK</td><td>時代天使</td><td>86.2</td><td>+43%</td><td>91</td><td>+22.4%</td></tr><tr><td><span class="star">★</span></td><td>3988.HK</td><td>中國銀行</td><td>6</td><td>+42%</td><td>91</td><td>+21.7%</td></tr><tr><td><span class="star">★</span></td><td>2388.HK</td><td>中銀香港</td><td>51.3</td><td>+40%</td><td>90</td><td>+17.8%</td></tr><tr><td><span class="star">★</span></td><td>1997.HK</td><td>九龍倉置業</td><td>31.04</td><td>+35%</td><td>90</td><td>+23.9%</td></tr><tr><td><span class="star">★</span></td><td>2218.HK</td><td>安德利果汁</td><td>21.7</td><td>+33%</td><td>88</td><td>+26.6%</td></tr><tr><td><span class="star">★</span></td><td>1398.HK</td><td>工商銀行</td><td>7.54</td><td>+33%</td><td>88</td><td>+12.5%</td></tr><tr><td><span class="star">★</span></td><td>0087.HK</td><td>太古股份公司Ｂ</td><td>14.95</td><td>+32%</td><td>88</td><td>+15.4%</td></tr><tr><td><span class="star">★</span></td><td>1919.HK</td><td>中遠海控</td><td>16.3</td><td>+32%</td><td>87</td><td>+15.4%</td></tr><tr><td><span class="star">★</span></td><td>3759.HK</td><td>康龍化成</td><td>30.6</td><td>+31%</td><td>87</td><td>+41.0%</td></tr><tr><td><span class="star">★</span></td><td>0939.HK</td><td>建設銀行</td><td>9.66</td><td>+30%</td><td>87</td><td>+16.8%</td></tr><tr><td><span class="star">★</span></td><td>1112.HK</td><td>Ｈ＆Ｈ國際控股</td><td>18</td><td>+29%</td><td>87</td><td>+34.2%</td></tr><tr><td><span class="star">★</span></td><td>1038.HK</td><td>長江基建集團</td><td>65.25</td><td>+29%</td><td>86</td><td>+7.7%</td></tr><tr><td><span class="star">★</span></td><td>0270.HK</td><td>粵海投資</td><td>8.67</td><td>+29%</td><td>86</td><td>+16.0%</td></tr><tr><td><span class="star">★</span></td><td>3328.HK</td><td>交通銀行</td><td>8.21</td><td>+25%</td><td>85</td><td>+17.8%</td></tr><tr><td><span class="star">★</span></td><td>0998.HK</td><td>中信銀行</td><td>8.465</td><td>+23%</td><td>85</td><td>+14.2%</td></tr><tr><td><span class="star">★</span></td><td>1288.HK</td><td>農業銀行</td><td>6.495</td><td>+22%</td><td>83</td><td>+14.0%</td></tr><tr><td><span class="star">★</span></td><td>3866.HK</td><td>青島銀行</td><td>4.995</td><td>+20%</td><td>82</td><td>+14.8%</td></tr><tr><td><span class="star">★</span></td><td>0144.HK</td><td>招商局港口</td><td>16.78</td><td>+15%</td><td>78</td><td>+10.7%</td></tr><tr><td><span class="star">★</span></td><td>0081.HK</td><td>中國海外宏洋集團</td><td>2.86</td><td>+12%</td><td>76</td><td>+14.5%</td></tr><tr><td><span class="star">★</span></td><td>1801.HK</td><td>信達生物</td><td>103.4</td><td>+6%</td><td>73</td><td>+18.7%</td></tr></tbody>
+  </table></div>
+</section>
+<section class="market" id="sg">
+  <div class="head"><h2>新加坡 <span class="sub">2026-09-23</span> <span class="sub">（測試輸出，非月底）</span></h2><span class="pill ok">✅ 本月持股</span></div>
+  <div class="stats">
+    <div><span>基準 ETF 對 50 / 200 日線</span><b>ES3　+1.8% / +13.9%</b></div>
+    <div><span>通過趨勢模板</span><b>21 檔</b>（宇宙前 200）</div>
+    
+    <div><span>40 檔版</span><b>不足 40 檔，40 檔版 = 全部</b></div>
+  </div>
+  
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>代號</th><th>名稱</th><th>收市</th><th>252 日報酬</th><th>RS 百分位</th><th>對 200 日線</th></tr></thead>
+    <tbody><tr><td></td><td>42C.SI</td><td></td><td>0.565</td><td>+2725%</td><td>100</td><td>+74.3%</td></tr><tr><td></td><td>A31.SI</td><td></td><td>0.19</td><td>+631%</td><td>100</td><td>+56.7%</td></tr><tr><td></td><td>QZG.SI</td><td></td><td>0.179</td><td>+442%</td><td>98</td><td>+175.8%</td></tr><tr><td></td><td>AWX.SI</td><td></td><td>9.96</td><td>+426%</td><td>98</td><td>+59.6%</td></tr><tr><td></td><td>PCT.SI</td><td></td><td>3.13</td><td>+204%</td><td>96</td><td>+64.0%</td></tr><tr><td></td><td>EB5.SI</td><td></td><td>4.44</td><td>+180%</td><td>96</td><td>+49.2%</td></tr><tr><td></td><td>558.SI</td><td></td><td>2.65</td><td>+138%</td><td>94</td><td>+30.7%</td></tr><tr><td></td><td>O39.SI</td><td></td><td>31.65</td><td>+101%</td><td>94</td><td>+33.3%</td></tr><tr><td></td><td>P8Z.SI</td><td></td><td>2.1</td><td>+90%</td><td>94</td><td>+26.1%</td></tr><tr><td></td><td>5WA.SI</td><td></td><td>0.049</td><td>+81%</td><td>92</td><td>+50.3%</td></tr><tr><td></td><td>BS6.SI</td><td></td><td>5.18</td><td>+64%</td><td>88</td><td>+34.6%</td></tr><tr><td></td><td>D05.SI</td><td></td><td>77.69</td><td>+62%</td><td>88</td><td>+24.6%</td></tr><tr><td></td><td>P52.SI</td><td></td><td>1.68</td><td>+46%</td><td>84</td><td>+17.8%</td></tr><tr><td></td><td>H78.SI</td><td></td><td>8.74</td><td>+41%</td><td>82</td><td>+12.0%</td></tr><tr><td></td><td>S61.SI</td><td></td><td>3.7</td><td>+36%</td><td>80</td><td>+13.3%</td></tr><tr><td></td><td>AGS.SI</td><td></td><td>2.81</td><td>+35%</td><td>80</td><td>+14.2%</td></tr><tr><td></td><td>U11.SI</td><td></td><td>42.84</td><td>+29%</td><td>76</td><td>+13.7%</td></tr><tr><td></td><td>1F2.SI</td><td></td><td>0.465</td><td>+29%</td><td>75</td><td>+11.7%</td></tr><tr><td></td><td>DM0.SI</td><td></td><td>0.5</td><td>+27%</td><td>74</td><td>+17.3%</td></tr><tr><td></td><td>RE4.SI</td><td></td><td>0.555</td><td>+27%</td><td>73</td><td>+11.9%</td></tr><tr><td></td><td>5VS.SI</td><td></td><td>0.615</td><td>+22%</td><td>70</td><td>+21.7%</td></tr></tbody>
+  </table></div>
+</section>
+  <section class="market">
+    <h2>規則</h2>
+    <ol class="rules">
+      <li>宇宙：該市場 60 日成交額中位數前 N 檔；剔除數據斷點股（一日 ±100%／−60% 的縫接、垃圾列）與指數／ETF 代號。</li>
+      <li>趨勢模板（月底收市）：收市 &gt; 50 日 &gt; 150 日 &gt; 200 日均線；200 日均線高於 21 個交易日前；收市 ≥ 252 日低點 × 1.3；收市 ≥ 252 日高點 × 0.75；252 日報酬在宇宙內百分位 ≥ 70。</li>
+      <li>大市過濾：基準 ETF 收市高於 50 日與 200 日均線才持股，否則整月現金。</li>
+      <li>買入：下一交易日開市價，全部等權（40 檔版：超過 40 檔時隨機抽，種子 = 年月）。持有到下月底，中途不動。</li>
+      <li>證偽：前向 12 個月相對當地 ETF 跑輸 15 個百分點，或相對全市場等權為負 → 停。</li>
+    </ol>
+    <p class="note">「對 200 日線」= 收市高於 200 日均線的幅度。RS 百分位 = 252 日報酬在宇宙內的排名。表內為原始收市價（按拆股還原、不按股息）。本頁不是投資建議；回測數字見 TT_ALL_INVESTOR_BRIEF.md。</p>
+  </section>
+</div>

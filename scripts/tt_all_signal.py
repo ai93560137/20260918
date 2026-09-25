@@ -114,28 +114,24 @@ def run(mk: str, force: bool) -> None:
             w.writerow({**{k: (f"{v:.4g}" if isinstance(v, float) else v) for k, v in r.items()}, "in40": int(r["ticker"] in pick40)})
     with open(OUT / "log.csv", "a", newline="", encoding="utf-8") as f:
         csv.writer(f, lineterminator="\n").writerow([tag, mk, int(ok), len(rows), seed, int(force and not month_end)])
-    # ---- Telegram（純文字）----
+    # ---- 上月名單（算進出）----
+    prev = sorted(OUT.glob(f"{mk}_*.csv"))
+    prev = [q for q in prev if q.stem != f"{mk}_{tag}"]
+    prev_set = set()
+    if prev:
+        with open(prev[-1], newline="", encoding="utf-8") as f:
+            prev_set = {r["ticker"] for r in csv.DictReader(f)}
+    cur_set = {r["ticker"] for r in rows}
     lvl = np.cumprod(1 + m.etf_ret)
     ma50, ma200 = lvl[j - 49:j + 1].mean(), lvl[j - 199:j + 1].mean()
-    title = f"📋 趨勢模板全部等權｜{NAME[mk]}｜{d.isoformat()}{'（測試，非月底）' if force and not month_end else ''}"
-    head = (f"{title}\n"
-            f"大市過濾：{ETF[mk]} 收市 {'高於' if ok else '低於'} 50/200 日線（{lvl[j] / ma50 - 1:+.1%} / {lvl[j] / ma200 - 1:+.1%}）→ "
-            f"{'✅ 持股' if ok else '⛔ 整月持現金'}\n"
-            f"通過模板 {len(rows)} 檔（宇宙前 {m.top_n if hasattr(m, 'top_n') else '?'}；已剔除數據斷點股）\n"
-            f"執行：下一交易日開市等權買入，持有到下月底；不止損、不加減碼\n"
-            f"40 檔版：{'★ 標記者' if len(rows) > CAP else '全部'}（隨機種子 {seed}）\n"
-            f"格式：代號 名稱｜收市｜252日報酬｜RS百分位\n")
-    if not ok:
-        body = ["（大市過濾未通過：本月不持股，名單只作記錄）"] + [f"{r['ticker']} {r['name']}".strip() for r in rows[:30]]
-        if len(rows) > 30:
-            body.append(f"…共 {len(rows)} 檔，見 analysis/tt_all/{mk}_{tag}.csv")
-    else:
-        body = [f"{'★' if r['ticker'] in pick40 and len(rows) > CAP else '·'} {r['ticker']} {r['name']}｜{r['close']:g}｜{r['ret252']:+.0%}｜{r['rs']:.0f}".replace("  ", " ")
-                for r in rows]
-    parts = chunks(body, head)
-    for i, ptxt in enumerate(parts, 1):
-        (OUT / (f"tg_{mk}.txt" if i == 1 else f"tg_{mk}_{i}.txt")).write_text(ptxt, encoding="utf-8")
-    print(f"[{mk}] {d} 大市過濾 {ok} 候選 {len(rows)} 檔 → {len(parts)} 則訊息", file=sys.stderr)
+    meta = {"market": mk, "name": NAME[mk], "etf": ETF[mk], "date": tag, "month_end": month_end, "test": bool(force and not month_end),
+            "market_ok": ok, "etf_vs_ma50": float(lvl[j] / ma50 - 1), "etf_vs_ma200": float(lvl[j] / ma200 - 1),
+            "n": len(rows), "top_n": int(getattr(m, "top_n", 0)), "seed": seed, "cap": CAP,
+            "n_enter": len(cur_set - prev_set) if prev_set else None, "n_leave": len(prev_set - cur_set) if prev_set else None,
+            "prev_date": prev[-1].stem.split("_", 1)[1] if prev else None,
+            "top5": [f"{r['ticker']} {r['name']}".strip() for r in rows[:5]]}
+    (OUT / f"{mk}_latest.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"[{mk}] {d} 大市過濾 {ok} 候選 {len(rows)} 檔", file=sys.stderr)
 
 
 def main() -> None:
@@ -147,6 +143,35 @@ def main() -> None:
         f.unlink()
     for mk in args.market:
         run(mk, args.force)
+    write_summary(args.market)
+
+
+def write_summary(markets: list[str]) -> None:
+    """Telegram 一則摘要：各市場大市狀態、檔數、進出、前五名；名單本身在網頁。"""
+    metas = []
+    for mk in markets:
+        p = OUT / f"{mk}_latest.json"
+        if p.exists():
+            metas.append(json.loads(p.read_text(encoding="utf-8")))
+    if not metas:
+        return
+    url_p = OUT / "page_url.txt"
+    url = url_p.read_text(encoding="utf-8").strip() if url_p.exists() else ""
+    d = max(x["date"] for x in metas)
+    test = any(x["test"] for x in metas)
+    lines = [f"📋 趨勢模板全部等權｜月底摘要 {d}{'（測試，非月底）' if test else ''}", ""]
+    for x in metas:
+        st = "✅ 持股" if x["market_ok"] else "⛔ 現金"
+        chg = "" if x["n_enter"] is None else f"｜較上月 +{x['n_enter']} −{x['n_leave']}"
+        lines.append(f"{x['name']}：{st}｜{x['etf']} 對 50/200 日線 {x['etf_vs_ma50']:+.1%}/{x['etf_vs_ma200']:+.1%}｜通過模板 {x['n']} 檔{chg}")
+        if x["market_ok"] and x["top5"]:
+            lines.append("　RS 前五：" + "、".join(x["top5"]))
+    lines += ["", "執行：下一交易日開市等權買入（40 檔版：超過 40 檔隨機抽，種子 " + str(metas[0]["seed"]) + "），持有到下月底；不止損、不加減碼",
+              "全部名單、收市價、252 日報酬、RS：" + (url if url else "（網頁連結待設定：analysis/tt_all/page_url.txt）"),
+              "證偽：前向 12 個月相對當地 ETF 跑輸 15 個百分點或相對等權為負 → 停"]
+    txt = "\n".join(lines)
+    (OUT / "tg_summary.txt").write_text(txt[:3900] + "\n", encoding="utf-8")
+    print(f"摘要 {len(txt)} 字 → {OUT / 'tg_summary.txt'}", file=sys.stderr)
 
 
 if __name__ == "__main__":
