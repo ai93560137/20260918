@@ -1,0 +1,59 @@
+name: TT-All verify（月底名單第二來源覆核）
+
+# 本分支獨立跑（非預設分支不能 workflow_dispatch，所以用 push 觸發）：
+# 寫 analysis/tt_all/verify_request.txt（每行「市場 日期」，例 "hk 2026-09-30"）並 push 即跑。
+# 步驟：拿第二來源比收市 → 寫 *_verify.csv／*_verify.json → 重建 index.html（加「覆核」欄）→ commit → Telegram 一則覆核摘要。
+on:
+  push:
+    paths: ['analysis/tt_all/verify_request.txt']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tt-all-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: Asia/Hong_Kong
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install -q requests
+      - name: Verify
+        run: python3 scripts/tt_all_verify.py --request
+      - name: Rebuild page
+        run: python3 scripts/tt_all_page.py
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/tt_all
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(tt-all): 第二來源覆核 $(date +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 5))
+            git pull --no-rebase -q origin ${GITHUB_REF_NAME} || true
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
+      - name: Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          [ -s analysis/tt_all/tg_verify.txt ] || { echo "沒有覆核摘要"; exit 0; }
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0
+          fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "text=$(cat analysis/tt_all/tg_verify.txt)" > /dev/null
+          echo "telegram sent: verify"

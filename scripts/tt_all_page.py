@@ -49,6 +49,7 @@ td:nth-child(2),td:nth-child(3),th:nth-child(2),th:nth-child(3){text-align:left}
 tbody tr:nth-child(even){background:var(--row)}
 tr:last-child td{border-bottom:0}
 .star{color:var(--star)}
+.v-ok{color:var(--ok-ink)}.v-bad{color:var(--warn-ink);font-weight:600}
 .top{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--rule);border-radius:999px;padding:3px 12px;text-decoration:none;color:var(--ink);font-size:.86rem;background:var(--surface);white-space:nowrap}
 .top:hover,.top:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .head-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -79,6 +80,17 @@ def load(mk: str):
     if csvp.exists():
         with open(csvp, newline="", encoding="utf-8") as f:
             rows = sorted(csv.DictReader(f), key=lambda r: ticker_key(r["ticker"]))
+    vp = OUT / f"{mk}_{meta['date']}_verify.csv"
+    vs = OUT / f"{mk}_verify.json"
+    if vp.exists():
+        with open(vp, newline="", encoding="utf-8") as f:
+            vmap = {r["ticker"]: r for r in csv.DictReader(f)}
+        for r in rows:
+            v = vmap.get(r["ticker"])
+            r["verify"] = v["status"] if v else ""
+            r["verify_diff"] = v["diff_pct"] if v else ""
+        if vs.exists():
+            meta["verify"] = json.loads(vs.read_text(encoding="utf-8"))
     return meta, rows
 
 
@@ -87,6 +99,27 @@ def pct(x: str | float, digits: int = 0) -> str:
         return f"{float(x) * 100:+.{digits}f}%"
     except (TypeError, ValueError):
         return "—"
+
+
+def verify_cell(r: dict) -> str:
+    st = r.get("verify", "")
+    if not st:
+        return '<span class="sub">—</span>'
+    icon = {"一致": "✓", "整數倍": "≈", "不一致": "✗", "無數據": "?"}.get(st, st)
+    cls = "v-ok" if st in ("一致", "整數倍") else "v-bad"
+    d = r.get("verify_diff", "")
+    return f'<span class="{cls}" title="{html.escape(st)} {html.escape(d)}%">{icon}{(" " + d + "%") if st == "不一致" and d else ""}</span>'
+
+
+def verify_stat(meta: dict) -> str:
+    v = meta.get("verify")
+    if not v:
+        return '<div><span>第二來源覆核</span><b class="sub">未做</b></div>'
+    src = v.get("official_source") or v.get("fallback_source") or ""
+    bad = v.get("不一致", 0) + v.get("無數據", 0)
+    cls = "v-ok" if bad == 0 else "v-bad"
+    extra = "".join(f"、{k} {v[k]}" for k in ("整數倍", "不一致", "無數據") if v.get(k))
+    return f'<div><span>第二來源覆核（{html.escape(src)}）</span><b class="{cls}">{v.get("一致", 0)}/{v.get("n", 0)} 一致{extra}</b></div>'
 
 
 def section(meta: dict, rows: list[dict]) -> str:
@@ -101,8 +134,9 @@ def section(meta: dict, rows: list[dict]) -> str:
         tkey = f"{k[0]}-{k[1]:012d}-{k[2]}" if k[0] == 0 else f"{k[0]}-{k[1]}"
         trs.append(f"<tr data-ticker=\"{html.escape(tkey)}\" data-ret=\"{float(r['ret252'])}\" data-rs=\"{float(r['rs'])}\" data-ma=\"{float(r['above_200ma_pct'])}\">"
                    f"<td>{star}</td><td>{html.escape(r['ticker'])}</td><td>{html.escape(r.get('name', ''))}</td>"
-                   f"<td>{html.escape(r['close'])}</td><td>{pct(r['ret252'])}</td><td>{float(r['rs']):.0f}</td><td>{pct(r['above_200ma_pct'], 1)}</td></tr>")
-    body = ("<tbody>" + "".join(trs) + "</tbody>") if trs else '<tbody><tr><td colspan="7" style="text-align:left">沒有股票通過趨勢模板</td></tr></tbody>'
+                   f"<td>{html.escape(r['close'])}</td><td>{pct(r['ret252'])}</td><td>{float(r['rs']):.0f}</td><td>{pct(r['above_200ma_pct'], 1)}</td>"
+                   f"<td>{verify_cell(r)}</td></tr>")
+    body = ("<tbody>" + "".join(trs) + "</tbody>") if trs else '<tbody><tr><td colspan="8" style="text-align:left">沒有股票通過趨勢模板</td></tr></tbody>'
     banner = "" if ok else '<p class="note">大市過濾未通過：本月不買入，名單只作記錄。持股中的舊倉按規則在月初開市全部賣出。</p>'
     test = '<span class="sub">（測試輸出，非月底）</span>' if meta.get("test") else ""
     return f"""
@@ -113,10 +147,11 @@ def section(meta: dict, rows: list[dict]) -> str:
     <div><span>通過趨勢模板</span><b>{meta['n']} 檔</b>（宇宙前 {meta['top_n']}）</div>
     {chg}
     <div><span>40 檔版</span><b>{cap_note}</b></div>
+    {verify_stat(meta)}
   </div>
   {banner}
   <div class="tbl"><table>
-    <thead><tr><th></th><th data-sort="ticker" class="asc" tabindex="0">代號</th><th>名稱</th><th>收市</th><th data-sort="ret" tabindex="0">252 日報酬</th><th data-sort="rs" tabindex="0">RS 百分位</th><th data-sort="ma" tabindex="0">對 200 日線</th></tr></thead>
+    <thead><tr><th></th><th data-sort="ticker" class="asc" tabindex="0">代號</th><th>名稱</th><th>收市</th><th data-sort="ret" tabindex="0">252 日報酬</th><th data-sort="rs" tabindex="0">RS 百分位</th><th data-sort="ma" tabindex="0">對 200 日線</th><th>覆核</th></tr></thead>
     {body}
   </table></div>
 </section>"""
@@ -151,7 +186,7 @@ def build(markets: list[str]) -> str:
       <li>買入：下一交易日開市價，全部等權（40 檔版：超過 40 檔時隨機抽，種子 = 年月）。持有到下月底，中途不動。</li>
       <li>證偽：前向 12 個月相對當地 ETF 跑輸 15 個百分點，或相對全市場等權為負 → 停。</li>
     </ol>
-    <p class="note">「對 200 日線」= 收市高於 200 日均線的幅度。RS 百分位 = 過去 252 個交易日報酬在宇宙內由低到高的排名（0–100）；RS 90 = 一年表現贏過宇宙內 90% 的股票，模板要求 ≥ 70。點表頭可按代號、252 日報酬、RS、對 200 日線排序。表內為原始收市價（按拆股還原、不按股息）。本頁不是投資建議；回測數字見 TT_ALL_INVESTOR_BRIEF.md。</p>
+    <p class="note">「對 200 日線」= 收市高於 200 日均線的幅度。RS 百分位 = 過去 252 個交易日報酬在宇宙內由低到高的排名（0–100）；RS 90 = 一年表現贏過宇宙內 90% 的股票，模板要求 ≥ 70。點表頭可按代號、252 日報酬、RS、對 200 日線排序。「覆核」= 收市價對第二來源（港交所／Nasdaq／證交所／Yahoo!ファイナンス，其餘市場 Yahoo 重抓）：✓ 差 ≤ 1%、≈ 整數倍（拆股未還原）、✗ 不一致、? 第二來源無數據（停牌／下市／代號改了，下單前先查）。表內為原始收市價（按拆股還原、不按股息）。本頁不是投資建議；回測數字見 TT_ALL_INVESTOR_BRIEF.md。</p>
   </section>
 </div>
 
