@@ -186,7 +186,10 @@ def load_cot(cot_dir: Path, ccys: list[str], window: int = 156, min_weeks: int =
             roll = net.rolling(f"{window * 7}D", min_periods=min_weeks) if calendar else net.rolling(window, min_periods=min_weeks)
             m, sd = roll.mean(), roll.std()
             out[c] = (net - m) / sd.replace(0, np.nan)
-    return pd.DataFrame(out).sort_index()
+    # 各合約報告日不一定同步（1992 年前雙週報、各合約起迄不同）→ 轉成日頻、每欄各自前向填補最多 21 天；
+    # 之後「≤ 調倉日 − 3 天的最後一列」就是每個貨幣各自最近 21 天內的報告（2026-09-25 發現英鎊 1991–92 被漏掉後修正，E3 數字不變）
+    df_ = pd.DataFrame(out).sort_index()
+    return df_.resample("D").last().ffill(limit=21)
 
 
 def load_reer(reer_dir: Path, ccys: list[str]) -> pd.DataFrame:
