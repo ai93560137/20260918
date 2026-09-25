@@ -8,7 +8,8 @@ cd "$HOME"
 echo "== 1/4 系統依賴 =="
 sudo apt-get update -qq
 sudo apt-get install -y -qq openjfx unzip xvfb python3-pip curl > /dev/null
-pip3 install -q ib_insync
+# Debian 12+ 的 PEP668 保護：先試正常裝，被拒就加 --break-system-packages（專用 VM 無妨）
+pip3 install -q ib_insync 2>/dev/null || pip3 install -q --break-system-packages ib_insync
 
 echo "== 2/4 IB Gateway（stable, headless 安裝）=="
 if [ ! -d "$HOME/Jts" ]; then
