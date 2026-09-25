@@ -1,0 +1,65 @@
+name: Buyback announcements（回購公告抓取：美、港、台）
+
+# scripts/buyback_fetch.py；輸出 data/buyback/<市場>/。規格見 research/buyback/STRATEGY.md。
+# 美國有時間預算，第一次完整抓取要跑數次（每次接著上次的月份）。
+on:
+  schedule:
+    - cron: '15 23 * * 1-5'   # 美股收盤後：補最近兩個月（美）、最近 45 天（港），台灣整表重抓
+  workflow_dispatch:
+    inputs:
+      market:
+        description: 'us、hk、tw 或 all'
+        required: true
+        default: 'all'
+      budget_min:
+        description: '美國抓取時間預算（分鐘）'
+        required: false
+        default: '300'
+  push:  # 開發用，合併前移除
+    branches: [claude/pelosi-stock-tracking-f9f94g]
+    paths: [scripts/buyback_fetch.py, .github/workflows/buyback_fetch.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        market: ${{ fromJSON(((inputs.market || 'all') == 'all' && '["us","hk","tw"]') || format('["{0}"]', inputs.market)) }}
+    concurrency:
+      group: buyback-${{ matrix.market }}-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      M: ${{ matrix.market }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests
+      - name: Fetch
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          BUDGET: ${{ inputs.budget_min || '300' }}
+        run: python3 -u scripts/buyback_fetch.py --market "$M" --budget-min "$BUDGET"
+      - name: Commit and push
+        if: always()
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          [ -d "data/buyback/$M" ] || exit 0
+          git add "data/buyback/$M"
+          git diff --cached --quiet && { echo "No changes"; exit 0; }
+          git commit -q -m "chore(buyback): 更新 $M 回購公告 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 7))
+            git pull --rebase origin "$BRANCH" || exit 1
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
