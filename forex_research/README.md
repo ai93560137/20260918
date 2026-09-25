@@ -12,7 +12,8 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 |---|---|
 | `FOREX_DATA_CATALOG.md` | 26 個商品（七大、交叉盤、亞洲、金銀）的來源、格式、一鍵下載、回測用法、各商品注意事項 |
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
-| `VERDICTS.md`（待建） | 外匯策略判決追加到這裡（格式同 RESEARCH_HANDBOOK.md 第二節），不要再寫進共用手冊 |
+| `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
+| `SNAKE_COIL_FOREX_BACKTEST.md` | 蛇蟠陣 on 外匯：成本入場券（26 商品）、USDJPY 測試、XAUUSD 2009–2022 樣本外、引擎點差 bug 揭露與前後數字 |
 
 ## 2. 程式
 
@@ -53,11 +54,13 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 | 日期 | 事項 |
 |---|---|
+| 2026-09-25 | 蛇蟠陣外匯測試：入場券 26 商品只有 USDJPY 勉強過（零佣金 ≤ 1.2 pip）；USDJPY ☠️（t 1.07）；XAUUSD 樣本外 13.4 年 t 1.36 → 雙向版由 ✅ 降 🔍，只做多變體 🔍（t 1.70／全期 2.75）；**發現並修正 `donchian_backtest.py` 空單回補點差方向 bug**（原本整段回測幾乎沒扣點差），前後數字見登記文件 |
 | 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首輪 Dukascopy 全 M1 抓法被限流，改為 HistData M1 + Dukascopy D1／H1；交叉核對抓出 HistData 時區是紐約當地時間含夏令、2004 年壞 tick，已修；**26 個商品首次全抓完成、Release `forex-data` 可用**（沙盒實測 `get_forex_data.py --pair EURUSD --merge-m1` 後 `backtest.load_bars` 可直接讀） |
 
 ## 6. 下一步（使用者未決定）
 
-1. **選商品**：按 DATA_QC.md 的「波幅÷點差」與自己券商的實際點差重算入場券；Dukascopy 口徑通過 80 倍的只有 EURUSD、USDJPY、EURJPY、AUDJPY、GBPUSD（XAUUSD 75 倍差一點）
-2. **第一個外匯假設**：先看手冊已判決（八陣圖 on 歐元 ☠️ 是 CFD 4 年樣本；XAUUSD ✅ 4.1 年）——同一策略換 20 年 HistData 樣本、ECN 成本重測算不算「已判決不重測」，要先在預先登記裡講清楚為甚麼是新證據（樣本長 5 倍、成本口徑不同）
-3. **多商品同一規格**：外匯 26 個商品是現成的多重樣本，新假設一次在全部商品上登記、只跑一次，避免單一商品的選擇偏差（手冊鐵律 9）
-4. **每月更新**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
+1. **把引擎修正合併回主分支 `claude/gifted-carson-v2tvhw`**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFF 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
+2. **蛇蟠陣外匯到此為止**：入場券已擋掉 24 個商品，USDJPY ☠️；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
+3. **XAUUSD 只做多變體**是唯一有希望的形態（樣本外 t 1.70、全期 2.75）：可與主分支的 XAUUSD 前向測試（journal/）對照，記錄多頭腿與空頭腿分開的實盤損益
+4. **提供券商實際點差**：GBPJPY ≤ 1.48、EURJPY ≤ 1.21、AUDJPY ≤ 0.92、GBPUSD ≤ 0.88 pip 之內的商品可另行登記
+5. **每月更新數據**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
