@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+(function(){
+  var orig=document.createElement.bind(document);
+  document.createElement=function(tagName){
+    var el=orig(tagName);
+    if(tagName&&tagName.toLowerCase()==='script'){
+      var n=document.querySelector('script[nonce]');
+      if(n)el.setAttribute('nonce',n.nonce||n.getAttribute('nonce')||'');
+    }
+    return el;
+  };
+})();
+</script>
+<meta charset="UTF-8" />
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+<meta name="description" content="Live Forex and CFD Charts - Data & Tools | Dukascopy Bank SA. Dukascopy offers its free Live Forex Chart, a user-friendly widget for analyzing Forex, Commodities (oil, gas, etc), precious metals (gold, silver etc), stocks, ETFs, indices, crypto, and bonds markets. The live Forex chart widget can be..." />
+<meta name="keywords" content="forex, forex trading, currency trading, online trading, forex broker, managed accounts, SW" />
+<meta name="page-id" content="sectionID-16021" />
+<meta name="copyright" content="Online Forex (FX) Trading - Dukascopy Bank SA" />
+<meta property="og:site_name" content="Dukascopy Bank SA" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="en" />
+<meta property="og:title" content="Live Forex and CFD Charts - Data & Tools | Dukascopy Bank SA" />
+<meta property="og:description" content="Live Forex and CFD Charts - Data & Tools | Dukascopy Bank SA. Dukascopy offers its free Live Forex Chart, a user-friendly widget for analyzing Forex, Commodities (oil, gas, etc), precious metals (gold, silver etc), stocks, ETFs, indices, crypto, and bonds markets. The live Forex chart widget can be..." />
+<meta property="og:url" content="https://www.dukascopy.com/swiss/english/fx-market-tools/charts/" />
+<meta property="og:image" content="https://www.dukascopy.com/static/images/og/16020-16021.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="fb:app_id" content="124661587605657" />
+<link rel="canonical" href="https://www.dukascopy.com/swiss/english/fx-market-tools/charts/" />
+<link rel="dns-prefetch" href="//freeserv.dukascopy.com" />
+<link rel="icon" href="/media/static/favicons/Regular/favicon_32x32.ico" type="image/x-icon" />
+<link rel="shortcut icon" href="/media/static/favicons/Regular/favicon_32x32.ico" type="image/x-icon" />
+<title>Live Forex and CFD Charts - Data & Tools | Dukascopy Bank SA</title>
+<!-- FOR alternate meta -->
+<link rel="alternate" hreflang="en" href="https://www.dukascopy.com/swiss/english/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="fr" href="https://www.dukascopy.com/swiss/french/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="de" href="https://www.dukascopy.com/swiss/deutsch/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="ru" href="https://www.dukascopy.com/swiss/russian/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="es" href="https://www.dukascopy.com/swiss/spanish/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="pl" href="https://www.dukascopy.com/swiss/pl/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="cs" href="https://www.dukascopy.com/swiss/cz/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="pt" href="https://www.dukascopy.com/swiss/pt/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="it" href="https://www.dukascopy.com/swiss/it/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="sk" href="https://www.dukascopy.com/swiss/sk/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="zh" href="https://www.dukascopy.com/swiss/chinese/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="ar" href="https://www.dukascopy.com/swiss/arabic/fx-market-tools/charts/" />
+<link rel="alternate" hreflang="x-default" href="https://www.dukascopy.com/swiss/english/fx-market-tools/charts/" />
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+(() => {
+const THEME_KEY = 'fxMarketWatchTheme';
+const LEGACY_THEME_KEY = 'toggleState';
+const DARK_CLASS = 'dark-theme';
+const SWITCH_SELECTOR = '.swScheme';
+const safeGet = (key) => {
+try {
+return window.localStorage.getItem(key);
+} catch (error) {
+return null;
+}
+};
+const safeSet = (key, value) => {
+try {
+window.localStorage.setItem(key, value);
+} catch (error) {
+}
+};
+const resolveScheme = () => {
+const savedTheme = safeGet(THEME_KEY);
+if (savedTheme === 'dark' || savedTheme === 'light') {
+return savedTheme;
+}
+return safeGet(LEGACY_THEME_KEY) === 'on' ? 'dark' : 'light';
+};
+const getCurrentThemeScheme = () => {
+const isDark = document.documentElement.classList.contains(DARK_CLASS)
+|| (document.body && document.body.classList.contains(DARK_CLASS));
+return isDark ? 'dark' : 'light';
+};
+const persistScheme = (scheme) => {
+const isDark = scheme === 'dark';
+safeSet(THEME_KEY, isDark ? 'dark' : 'light');
+safeSet(LEGACY_THEME_KEY, isDark ? 'on' : 'off');
+};
+const applyScheme = (scheme) => {
+const isDark = scheme === 'dark';
+document.documentElement.classList.toggle(DARK_CLASS, isDark);
+if (document.body) {
+document.body.classList.toggle(DARK_CLASS, isDark);
+}
+persistScheme(scheme);
+};
+const syncSwitches = (scheme) => {
+const isDark = scheme === 'dark';
+document.querySelectorAll(SWITCH_SELECTOR).forEach((switchElement) => {
+switchElement.checked = isDark;
+});
+};
+window.getCurrentThemeScheme = getCurrentThemeScheme;
+const initialScheme = resolveScheme();
+applyScheme(initialScheme);
+const syncFromDomClass = () => {
+const scheme = getCurrentThemeScheme();
+persistScheme(scheme);
+syncSwitches(scheme);
+};
+document.addEventListener('change', (event) => {
+const target = event.target;
+if (!target || !target.matches || !target.matches(SWITCH_SELECTOR)) {
+return;
+}
+const nextScheme = target.checked ? 'dark' : 'light';
+applyScheme(nextScheme);
+syncSwitches(nextScheme);
+});
+const observer = new MutationObserver((mutations) => {
+const hasClassMutation = mutations.some((mutation) => mutation.attributeName === 'class');
+if (hasClassMutation) {
+syncFromDomClass();
+}
+});
+observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+document.addEventListener('DOMContentLoaded', () => {
+if (document.body) {
+observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+}
+syncFromDomClass();
+});
+})();
+</script>
+<!----------- STYLES ------->
+<link
+rel="stylesheet"
+href="/static/custom_templates/fxMarketWatch/css/styles.min.css?v=3.2.55" />
+<!----------- SCRIPTS ------->
+<script type="application/ld+json" nonce="398pYE1XC4XsKFLDcRMIKQ">
+{
+"@context": "http://schema.org",
+"@type": "WebPage",
+"name": "Live Forex and CFD Charts ",
+"image": "https://www.dukascopy.com/static/images/og/16020-16021.jpg",
+"description": "Live Forex and CFD Charts - Data & Tools | Dukascopy Bank SA. Dukascopy offers its free Live Forex Chart, a user-friendly widget for analyzing Forex, Commodities (oil, gas, etc), precious metals (gold, silver etc), stocks, ETFs, indices, crypto, and bonds markets. The live Forex chart widget can be...",
+"url": "https://www.dukascopy.com/swiss/english/fx-market-tools/charts/",
+"datePublished": "2026-09-24T14:41:08",
+"mainContentOfPage": {
+"@type": "WebPageElement",
+"cssSelector": ".schema-cont"
+},
+"primaryImageOfPage": {
+"@type": "ImageObject",
+"url": "https://www.dukascopy.com/static/images/og/16020-16021.jpg"
+},
+"about": {
+"@type": "Organization",
+"name": "Dukascopy Bank SA",
+"url": "https://www.dukascopy.com",
+"logo": "https://www.dukascopy.com/static/common/images/logo/dukascopy-logo.png",
+"sameAs": [
+"https://en.wikipedia.org/wiki/Dukascopy_Bank",
+"https://twitter.com/DukascopyBankSA",
+"https://www.youtube.com/@Dukascopy_Bank",
+"https://www.facebook.com/dukascopy",
+"https://www.linkedin.com/company/dukascopy-bank-sa/"
+]
+}
+}
+</script>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+let rootSectionID = '16020',
+globalLang = 'en',
+userCountry = 'US'; //',
+ruWarning = '',
+sectionId = '16021';
+</script>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+(function (w, d, s, l, i) {
+w[l] = w[l] || [];
+w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+var f = d.getElementsByTagName(s)[0],
+j = d.createElement(s),
+dl = l != "dataLayer" ? "&l=" + l : "";
+j.async = true;
+j.src = "//www.googletagmanager.com/gtm.js?id=" + i + dl;
+f.parentNode.insertBefore(j, f);
+})(window, document, "script", "dataLayer", "GTM-TMQZPK");
+</script>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+(function () {
+  if (window.__dcCspGuardInstalled) {
+    return;
+  }
+  window.__dcCspGuardInstalled = true;
+
+  const blockedHosts = new Set([
+    'www.googleadservices.com',
+    'pagead2.googlesyndication.com'
+  ]);
+  const blockedHostSuffixes = [
+    '.googleadservices.com',
+    '.googlesyndication.com'
+  ];
+  const trackingInlinePattern = /(gtag\s*\(|ga\s*\(|fbq\s*\(|dataLayer\.push|goog_report_conversion|_hj|hotjar|doubleclick|googleadservices|googlesyndication)/i;
+  let shouldCleanInlineAttrs = false;
+
+  const parseUrl = (value) => {
+    if (!value || typeof value !== 'string') {
+      return null;
+    }
+
+    try {
+      return new URL(value, window.location.href);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const isBlockedUrl = (value) => {
+    const parsedUrl = parseUrl(value);
+    if (!parsedUrl) {
+      return false;
+    }
+
+    const protocol = parsedUrl.protocol.toLowerCase();
+    if (protocol === 'javascript:') {
+      return true;
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+
+    // Never block same-origin requests: a CSP violation must not disable the site's own APIs.
+    // Никогда не блокируем same-origin: нарушение CSP не должно отключать собственные API сайта.
+    if (hostname === window.location.hostname.toLowerCase()) {
+      return false;
+    }
+
+    if (blockedHosts.has(hostname)) {
+      return true;
+    }
+
+    return blockedHostSuffixes.some((suffix) => hostname.endsWith(suffix));
+  };
+
+  const removeTrackingInlineHandlers = (rootNode) => {
+    const root = rootNode && rootNode.nodeType === 1 ? rootNode : document;
+    const elements = root.querySelectorAll ? root.querySelectorAll('*') : [];
+    for (const element of elements) {
+      for (const attribute of Array.from(element.attributes || [])) {
+        const name = attribute.name ? attribute.name.toLowerCase() : '';
+        if (!name || name.indexOf('on') !== 0) {
+          continue;
+        }
+        const value = attribute.value || '';
+        if (trackingInlinePattern.test(value)) {
+          element.removeAttribute(attribute.name);
+        }
+      }
+    }
+  };
+
+  if (window.fetch) {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = function guardedFetch(resource, init) {
+      const url = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
+      if (isBlockedUrl(url)) {
+        if (typeof Response === 'function') {
+          // 204 is a null-body status: passing any body (even "") makes the Response
+          // constructor throw "Response with null body status cannot have body". Use null.
+          // 204 — статус без тела: любое тело (даже "") заставляет конструктор Response
+          // бросить "Response with null body status cannot have body". Передаём null.
+          return Promise.resolve(new Response(null, { status: 204, statusText: 'No Content' }));
+        }
+        return Promise.resolve({ ok: true, status: 204, statusText: 'No Content', text: function () { return Promise.resolve(''); } });
+      }
+      return nativeFetch(resource, init);
+    };
+  }
+
+  if (window.XMLHttpRequest && window.XMLHttpRequest.prototype) {
+    const nativeOpen = XMLHttpRequest.prototype.open;
+    const nativeSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function guardedOpen(method, url) {
+      this.__dcGuardBlocked = isBlockedUrl(url);
+      this.__dcGuardUrl = url;
+      return nativeOpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function guardedSend(body) {
+      if (this.__dcGuardBlocked) {
+        try {
+          this.abort();
+        } catch (error) {}
+        return;
+      }
+      return nativeSend.call(this, body);
+    };
+  }
+
+  if (navigator.sendBeacon) {
+    const nativeSendBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function guardedSendBeacon(url, data) {
+      if (isBlockedUrl(url)) {
+        return true;
+      }
+      return nativeSendBeacon(url, data);
+    };
+  }
+
+  if (window.HTMLImageElement && window.HTMLImageElement.prototype) {
+    const imageSrcDescriptor = Object.getOwnPropertyDescriptor(window.HTMLImageElement.prototype, 'src');
+    if (imageSrcDescriptor && imageSrcDescriptor.set && imageSrcDescriptor.get) {
+      Object.defineProperty(window.HTMLImageElement.prototype, 'src', {
+        configurable: true,
+        enumerable: imageSrcDescriptor.enumerable,
+        get: imageSrcDescriptor.get,
+        set: function guardedImageSrc(value) {
+          if (isBlockedUrl(value)) {
+            return;
+          }
+          imageSrcDescriptor.set.call(this, value);
+        }
+      });
+    }
+  }
+
+  document.addEventListener('securitypolicyviolation', function onCspViolation(event) {
+    if (!event) {
+      return;
+    }
+
+    // Only blacklist real external hosts. Non-URL blockedURI tokens like "inline"/"eval"
+    // resolve to the page's OWN host via new URL(value, location.href); adding them would make
+    // the guard 204 every same-origin fetch/XHR. Require an absolute http(s) URI and skip self.
+    // Заносим только реальные внешние хосты. Токены вроде "inline"/"eval" через
+    // new URL(value, location.href) резолвятся в собственный хост страницы; их добавление
+    // заставит стража отдавать 204 на все same-origin fetch/XHR. Требуем абсолютный http(s) URI и пропускаем self.
+    if (event.blockedURI && /^https?:\/\//i.test(event.blockedURI)) {
+      const parsedBlockedUrl = parseUrl(event.blockedURI);
+      if (parsedBlockedUrl && parsedBlockedUrl.hostname
+        && parsedBlockedUrl.hostname.toLowerCase() !== window.location.hostname.toLowerCase()) {
+        blockedHosts.add(parsedBlockedUrl.hostname.toLowerCase());
+      }
+    }
+
+    const directive = (event.effectiveDirective || event.violatedDirective || '').toLowerCase();
+    if (directive === 'script-src-attr') {
+      shouldCleanInlineAttrs = true;
+      removeTrackingInlineHandlers(document);
+    }
+  }, true);
+
+  if (window.MutationObserver) {
+    const mutationObserver = new MutationObserver(function (mutations) {
+      if (!shouldCleanInlineAttrs) {
+        return;
+      }
+      for (const mutation of mutations) {
+        for (const node of Array.from(mutation.addedNodes || [])) {
+          if (node && node.nodeType === 1) {
+            removeTrackingInlineHandlers(node);
+          }
+        }
+      }
+    });
+    mutationObserver.observe(document.documentElement || document, { childList: true, subtree: true });
+  }
+})();
+</script>
+</head>
+<body class="">
+<!-- Google Tag Manager -->
+<noscript><iframe
+src="//www.googletagmanager.com/ns.html?id=GTM-TMQZPK"
+height="0"
+width="0"
+style="display: none; visibility: hidden;"></iframe></noscript>
+<!-- End Google Tag Manager -->
+<header class="top-header">
+<div class="container">
+<div class="col mobile-nav-block">
+<div class="mobile-menu">
+<div class="bar"></div>
+</div>
+</div>
+<a href="/swiss/english/home/" class="logo">
+<svg style="height: 24px;" class="logo2025" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 553.6 62.5">
+<path d="M107.7,4.9h-20.2v52.7h20.2c16.4,0,26.6-10.1,26.6-26.4s-10.2-26.4-26.6-26.4ZM107.5,50.4h-9.5V12.1h9.5c10.3,0,16.4,7.2,16.4,19.1s-6.1,19.1-16.4,19.1h0Z"></path>
+<path d="M163.3,59.1c14.9,0,23.4-7.3,23.4-20.1V4.9h-10.7v34.8c0,7.5-4.6,11.8-12.7,11.8s-12.7-4.3-12.7-11.8V4.9h-10.8v34c0,12.6,8.7,20.1,23.4,20.1h0s0,0,0,0Z"></path>
+<path d="M320.7,59.1c13.4,0,21.8-6.2,21.8-16.1s-5-13-16.3-15.2l-7.8-1.5c-6-1.2-10-3.1-10-8s4.3-7.8,10.9-7.8,11.5,3.4,11.9,9.2h9.9v-.5c-.7-9.7-9.2-15.7-22.1-15.7s-21,4.8-21,15.4,8.6,13.7,15.8,15.2l7.8,1.6c6.7,1.3,10.5,3.1,10.5,8.2s-4.3,8.3-11.5,8.3-12.5-3.5-13.4-9.7h-10.1v.5c.6,9.8,9.8,16.2,23.6,16.2h0Z"></path>
+<path d="M374.3,3.5c-16.2,0-26.2,10.7-26.2,27.8s10,27.8,26.2,27.8,22.7-10.4,23.5-19.2v-.5h-9.8c-.5,3.4-2.9,12.1-13.6,12.1s-16-7.9-16-20.2,6.3-20.2,16-20.2,12.8,5.9,13.4,11.6h9.8v-.5c-.5-9.3-7.9-18.7-23.3-18.7h0s0,0,0,0Z"></path>
+<path d="M427.6,3.4c-16.7,0-27.1,10.7-27.1,27.8s10.4,27.8,27.1,27.8,27.1-10.7,27.1-27.8-10.4-27.8-27.1-27.8ZM427.6,51.4c-10.2,0-16.5-7.7-16.5-20.2s6.3-20.2,16.5-20.2,16.6,7.7,16.6,20.2-6.3,20.2-16.6,20.2Z"></path>
+<path d="M502.9,20.6c0-9.5-7.1-15.7-18-15.7h-24.5v52.7h10.5v-21.2h14c10.8,0,18-6.3,18-15.8ZM470.9,29.1V12.1h11.7c6.2,0,9.9,3.2,9.9,8.5s-3.7,8.5-9.9,8.5h-11.7Z"></path>
+<path d="M514.5,4.9h-11.2v1.1l19.8,31.8v19.9h10.5v-19.5l-19.1-33.2Z"></path>
+<path d="M239.3,56.5l-22.8-28.4,22.2-22.2v-1.1h-11.7l-21.8,22.4h-1.1V4.9h-10.4v52.7h10.4v-16.5l5.7-6.2,17.9,22.7h11.7v-1.1Z"></path>
+<path d="M553.7,6v-1.1h-10.8l-12.2,20.5h10.7l12.3-19.4h0Z"></path>
+<path d="M294.2,56.5l-15-40.1h-9.4l7.5,21.9h-17l11.1-32.4v-1.1h-8.6l-19.3,51.6v1.1h10.3l4.2-12h21.6l4.2,12h10.4v-1.1Z"></path>
+<path fill="red" d="M62.5,0H0v62.5h62.5V0Z"></path>
+<path fill="#fff" fill-rule="evenodd" d="M25,12.5h12.5v12.5h12.5v12.5h-12.5v12.5h-12.5v-12.5h-12.5v-12.5h12.5v-12.5Z"></path>
+</svg>
+</a>
+<div class="clock box-date sm-hide">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M6.40625 4.375H4.375C3.33947 4.375 2.5 5.21447 2.5 6.25V15.625C2.5 16.6605 3.33947 17.5 4.375 17.5H15.625C16.6605 17.5 17.5 16.6605 17.5 15.625V6.25C17.5 5.21447 16.6605 4.375 15.625 4.375H13.5938V2.5H12.6562V4.375H7.34375V2.5H6.40625V4.375ZM6.40625 5.3125V6.875H7.34375V5.3125H12.6562V6.875H13.5938V5.3125H15.625C16.1428 5.3125 16.5625 5.73223 16.5625 6.25V8.28125H3.4375V6.25C3.4375 5.73223 3.85723 5.3125 4.375 5.3125H6.40625ZM3.4375 9.21875V15.625C3.4375 16.1428 3.85723 16.5625 4.375 16.5625H15.625C16.1428 16.5625 16.5625 16.1428 16.5625 15.625V9.21875H3.4375Z" fill="var(--cText)" />
+</svg>
+<span class="date"></span>
+<div class="box-time">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10 16.5625C13.6244 16.5625 16.5625 13.6244 16.5625 10C16.5625 6.37563 13.6244 3.4375 10 3.4375C6.37563 3.4375 3.4375 6.37563 3.4375 10C3.4375 13.6244 6.37563 16.5625 10 16.5625ZM10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z" fill="var(--cText)" />
+<path fill-rule="evenodd" clip-rule="evenodd" d="M8.90625 6.875H9.84375V10.1562H14.375V11.0937H8.90625V6.875Z" fill="var(--cText)" />
+</svg>
+<span class="time"></span>
+</div>
+</div>
+<div class="switchScheme sm-hide">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M20.9245 10.0157C19.7359 9.03753 18.2821 8.43527 16.75 8.28635V4H15.25V8.28635C13.7174 8.43531 12.2632 9.03786 11.0745 10.0165L9.03068 7.97002L7.96932 9.02998L10.0141 11.0775C9.03706 12.2654 8.43544 13.7181 8.28645 15.249H4V16.749H8.28626C8.4349 18.2803 9.03637 19.7334 10.0134 20.9217L7.96912 22.9702L9.03088 24.0298L11.0736 21.9828C12.2626 22.9619 13.7171 23.5647 15.25 23.7136V28H16.75V23.7136C18.2825 23.5647 19.7366 22.9622 20.9254 21.9836L22.9694 24.03L24.0306 22.97L21.9858 20.9227C22.9633 19.7342 23.5651 18.2807 23.7137 16.749H28V15.249H23.7136C23.5645 13.7177 22.9626 12.2646 21.9851 11.0765L24.0304 9.03021L22.9696 7.96979L20.9245 10.0157ZM14.298 9.9862C14.847 9.83081 15.4193 9.75 16 9.75C17.6576 9.75 19.2473 10.4085 20.4194 11.5806C21.5915 12.7527 22.25 14.3424 22.25 16C22.25 17.0919 21.9643 18.1543 21.4343 19.0873C20.3569 19.3471 19.3794 19.3042 18.2912 18.9693C17.1485 18.6177 16.125 17.9499 15.3371 17.0404C14.5492 16.1309 14.0284 15.0161 13.8345 13.8218C13.6407 12.6276 13.7818 11.4025 14.2415 10.2854C14.2818 10.1874 14.2998 10.0858 14.298 9.9862ZM12.4882 10.8299C12.165 11.0494 11.8608 11.3003 11.5806 11.5806C10.4085 12.7527 9.75 14.3424 9.75 16C9.75 17.6576 10.4085 19.2473 11.5806 20.4194C12.7527 21.5915 14.3424 22.25 16 22.25C17.4919 22.25 18.9288 21.7166 20.0558 20.7554C19.3257 20.7532 18.6013 20.6342 17.85 20.403C16.4374 19.9683 15.1744 19.1434 14.2034 18.0226C13.2325 16.9019 12.5921 15.5299 12.3539 14.0621C12.1787 12.9828 12.2261 11.8828 12.4882 10.8299Z" fill="var(--cText)" />
+</svg>
+<div class="group-form">
+<div class="switcher switcher-lg">
+<input id="swScheme" type="checkbox" name="sw-scheme" class="swScheme">
+<label for="swScheme"></label>
+</div>
+</div>
+</div>
+<div class="md-vis"> </div>
+</div>
+</header>
+<div class="container main-container">
+<aside>
+<h2 class="head">Forex Data & Tools</h2>
+<nav class="nav">
+<style>
+.subMenu .itm {
+padding-left: 50px!important;
+}
+.pos-rel {
+position: relative;
+}
+.menuCross.open { 
+position: absolute;
+top:8px;
+right: 10px;
+color:#888;
+transform: rotate(45deg);
+}
+.menuCross { 
+position: absolute;
+top:8px;
+right: 10px;
+color:#888;
+}
+.menuCross:hover { 
+color: #D92626;
+}
+.subMenu {
+transition: max-height 0.8s ease;
+transition: height 0.8s ease;
+/* max-height: 300px; */
+}
+.subMenuClosed {
+max-height: 0;
+overflow: hidden;
+}
+</style>
+<a data-page-id="16021" href="/plugins/fxMarketWatch/?charts" class="itm pos-rel" data-a=" active"> Online charts <div id="menuCross" class="menuCross">✚</div></a>
+<div class="subMenu subMenuClosed">
+<a data-page-id="16116" href="/swiss/english/fx-market-tools/charts/eur-usd/" class="itm">EUR/USD Live Chart</a>
+<a data-page-id="16117" href="/swiss/english/fx-market-tools/charts/usd-jpy/" class="itm">USD/JPY Live Chart</a>
+<a data-page-id="16118" href="/swiss/english/fx-market-tools/charts/gbp-usd/" class="itm">GBP/USD Live Chart </a>
+<a data-page-id="16119" href="/swiss/english/fx-market-tools/charts/usd-chf/" class="itm">USD/CHF Live Chart</a>
+<a data-page-id="16120" href="/swiss/english/fx-market-tools/charts/aud-usd/" class="itm">AUD/USD Live Chart</a>
+<a data-page-id="16121" href="/swiss/english/fx-market-tools/charts/usd-cad/" class="itm">USD/CAD Live Chart</a>
+<a data-page-id="16122" href="/swiss/english/fx-market-tools/charts/nzd-usd/" class="itm">NZD/USD Live Chart</a>
+<a data-page-id="16210" href="/swiss/english/fx-market-tools/charts/xau-usd/" class="itm">XAU/USD Live Chart</a>
+</div>
+<a data-page-id="16253" href="/swiss/english/fx-market-tools/market-summary/" class="itm">Market summary</a>
+<a data-page-id="16255" href="/swiss/english/fx-market-tools/forex-calculator/" class="itm">Forex calculator</a>
+<a data-page-id="16256" href="/swiss/english/fx-market-tools/market-depth/" class="itm">Market depth</a>
+<a data-page-id="16254" href="/swiss/english/fx-market-tools/corporate-actions/" class="itm">Corporate actions</a>
+<a data-page-id="16022" href="/swiss/english/fx-market-tools/market-news/" class="itm">Market News</a>
+<a data-page-id="16023" href="/swiss/english/fx-market-tools/economic-calendar/" class="itm">Economic Calendar</a>
+<a data-page-id="16024" href="/swiss/english/fx-market-tools/daily-highs-lows/" class="itm">Daily High / Low</a>
+<a data-page-id="16025" href="/swiss/english/fx-market-tools/movers-and-shakers/" class="itm">Movers & Shakers Forex</a>
+<a data-page-id="16026" href="/swiss/english/fx-market-tools/swfx-index/" class="itm">SWFX Sentiment Index</a>
+<a data-page-id="16030" href="/swiss/english/fx-market-tools/pivot-point-levels/" class="itm">Pivot Point Levels</a>
+<a data-page-id="16031" href="/swiss/english/fx-market-tools/commitment-of-traders/" class="itm">COT Charts</a>
+<a data-page-id="16032" href="/swiss/english/fx-market-tools/holiday-calendar/" class="itm">National Holidays Calendar</a>
+<a data-page-id="16033" href="/swiss/english/fx-market-tools/historical-data/" class="itm">Historical Data Export</a>
+<a data-page-id="16034" href="/swiss/english/fx-market-tools/currency-converter/" class="itm">Currency Converter</a>
+<a data-page-id="16035" href="/swiss/english/fx-market-tools/swfx-widget/" class="itm">SWFX Widget</a>
+<a data-page-id="16036" href="/swiss/english/fx-market-tools/overnight-policy/" class="itm">Overnight Swaps</a>
+<a data-page-id="16037" href="/swiss/english/fx-market-tools/margin-requirements/" class="itm">Margin Requirements</a>
+<a data-page-id="16038" href="/swiss/english/fx-market-tools/average-spreads/" class="itm">Average Spreads</a>
+<a data-page-id="16039" href="/swiss/english/fx-market-tools/currency-index/" class="itm">Currency Index</a>
+<a data-page-id="16040" href="/swiss/english/fx-market-tools/intraday-movers-and-shakers/" class="itm">Intraday Movers & Shakers</a>
+<a data-page-id="16041" href="/swiss/english/fx-market-tools/historical-sentiment-index/" class="itm">Historical Sentiment Index</a>
+<a data-page-id="16042" href="/swiss/english/fx-market-tools/interest-rate-calendar/" class="itm">Interest Rate Calendar</a>
+<a data-page-id="16043" href="/swiss/english/fx-market-tools/market-signals/" class="itm">FX Market Signals</a>
+<a data-page-id="16056" href="/swiss/english/fx-market-tools/forex-market-hours/" class="itm">Forex Market Hours</a>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+(function(){
+const subMenuDiv = document.querySelector('.subMenu');
+const menuCross =  document.querySelector('.menuCross');
+const subMenuLinks = document.querySelectorAll('.subMenu a');
+const allMenuLinks = document.querySelectorAll('a[data-page-id]');
+const currentPageMeta = document.querySelector('meta[name="page-id"]');
+const currentPageId = (currentPageMeta && currentPageMeta.getAttribute('content') || '').match(/(\d+)$/);
+function togglMenu(){
+subMenuDiv.classList.toggle('subMenuClosed');
+menuCross.classList.toggle('open');
+}
+function setActiveMenuItem(pageId) {
+if (!pageId) {
+return;
+}
+allMenuLinks.forEach(link => {
+link.classList.remove('active');
+link.removeAttribute('data-a');
+});
+const currentMenuLink = document.querySelector(`a[data-page-id="${pageId}"]`);
+if (!currentMenuLink) {
+return;
+}
+currentMenuLink.classList.add('active');
+currentMenuLink.setAttribute('data-a', ' active');
+if (subMenuDiv.contains(currentMenuLink)) {
+subMenuDiv.classList.remove('subMenuClosed');
+menuCross.classList.add('open');
+}
+}
+subMenuLinks.forEach(link => {
+const href = link.getAttribute('href');
+if (!href.includes('swiss')) {
+link.setAttribute('href', href.replace('//','/swiss/'));
+}
+});
+menuCross.addEventListener('click', function(event) {
+event.preventDefault();
+togglMenu();
+});
+setActiveMenuItem(currentPageId ? currentPageId[1] : '');
+})()
+</script>
+</nav>
+<footer class="aside-foot md-vis">
+<div class="clock box-date">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M6.40625 4.375H4.375C3.33947 4.375 2.5 5.21447 2.5 6.25V15.625C2.5 16.6605 3.33947 17.5 4.375 17.5H15.625C16.6605 17.5 17.5 16.6605 17.5 15.625V6.25C17.5 5.21447 16.6605 4.375 15.625 4.375H13.5938V2.5H12.6562V4.375H7.34375V2.5H6.40625V4.375ZM6.40625 5.3125V6.875H7.34375V5.3125H12.6562V6.875H13.5938V5.3125H15.625C16.1428 5.3125 16.5625 5.73223 16.5625 6.25V8.28125H3.4375V6.25C3.4375 5.73223 3.85723 5.3125 4.375 5.3125H6.40625ZM3.4375 9.21875V15.625C3.4375 16.1428 3.85723 16.5625 4.375 16.5625H15.625C16.1428 16.5625 16.5625 16.1428 16.5625 15.625V9.21875H3.4375Z" fill="var(--cText)" />
+</svg>
+<span class="date"></span>
+<div class="box-time">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10 16.5625C13.6244 16.5625 16.5625 13.6244 16.5625 10C16.5625 6.37563 13.6244 3.4375 10 3.4375C6.37563 3.4375 3.4375 6.37563 3.4375 10C3.4375 13.6244 6.37563 16.5625 10 16.5625ZM10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z" fill="var(--cText)" />
+<path fill-rule="evenodd" clip-rule="evenodd" d="M8.90625 6.875H9.84375V10.1562H14.375V11.0937H8.90625V6.875Z" fill="var(--cText)" />
+</svg>
+<span class="time"></span>
+</div>
+</div>
+<div class="switchScheme">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M20.9245 10.0157C19.7359 9.03753 18.2821 8.43527 16.75 8.28635V4H15.25V8.28635C13.7174 8.43531 12.2632 9.03786 11.0745 10.0165L9.03068 7.97002L7.96932 9.02998L10.0141 11.0775C9.03706 12.2654 8.43544 13.7181 8.28645 15.249H4V16.749H8.28626C8.4349 18.2803 9.03637 19.7334 10.0134 20.9217L7.96912 22.9702L9.03088 24.0298L11.0736 21.9828C12.2626 22.9619 13.7171 23.5647 15.25 23.7136V28H16.75V23.7136C18.2825 23.5647 19.7366 22.9622 20.9254 21.9836L22.9694 24.03L24.0306 22.97L21.9858 20.9227C22.9633 19.7342 23.5651 18.2807 23.7137 16.749H28V15.249H23.7136C23.5645 13.7177 22.9626 12.2646 21.9851 11.0765L24.0304 9.03021L22.9696 7.96979L20.9245 10.0157ZM14.298 9.9862C14.847 9.83081 15.4193 9.75 16 9.75C17.6576 9.75 19.2473 10.4085 20.4194 11.5806C21.5915 12.7527 22.25 14.3424 22.25 16C22.25 17.0919 21.9643 18.1543 21.4343 19.0873C20.3569 19.3471 19.3794 19.3042 18.2912 18.9693C17.1485 18.6177 16.125 17.9499 15.3371 17.0404C14.5492 16.1309 14.0284 15.0161 13.8345 13.8218C13.6407 12.6276 13.7818 11.4025 14.2415 10.2854C14.2818 10.1874 14.2998 10.0858 14.298 9.9862ZM12.4882 10.8299C12.165 11.0494 11.8608 11.3003 11.5806 11.5806C10.4085 12.7527 9.75 14.3424 9.75 16C9.75 17.6576 10.4085 19.2473 11.5806 20.4194C12.7527 21.5915 14.3424 22.25 16 22.25C17.4919 22.25 18.9288 21.7166 20.0558 20.7554C19.3257 20.7532 18.6013 20.6342 17.85 20.403C16.4374 19.9683 15.1744 19.1434 14.2034 18.0226C13.2325 16.9019 12.5921 15.5299 12.3539 14.0621C12.1787 12.9828 12.2261 11.8828 12.4882 10.8299Z" fill="var(--cText)" />
+</svg>
+<div class="group-form">
+<div class="switcher switcher-lg">
+<input id="swScheme2" type="checkbox" name="sw-scheme" class="swScheme">
+<label for="swScheme2"></label>
+</div>
+</div>
+</div>
+</footer>
+</aside>
+<main>
+<header class="main-head">
+<h1 class="head">Live Forex and CFD Charts </h1>
+<div class="box-btn">
+<button class="btn btn-default btn-xs" id="btn-detach">
+<svg style="margin-right: 7px" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.375 7.3125C10.8217 7.3125 9.5625 8.5717 9.5625 10.125C9.5625 11.6783 10.8217 12.9375 12.375 12.9375V14.0625C10.2004 14.0625 8.4375 12.2996 8.4375 10.125C8.4375 7.95038 10.2004 6.1875 12.375 6.1875H16.875C19.0496 6.1875 20.8125 7.95038 20.8125 10.125C20.8125 12.2996 19.0496 14.0625 16.875 14.0625V12.9375C18.4283 12.9375 19.6875 11.6783 19.6875 10.125C19.6875 8.5717 18.4283 7.3125 16.875 7.3125H12.375Z" fill="var(--cText)" />
+<path d="M11.625 16.6875C13.1783 16.6875 14.4375 15.4283 14.4375 13.875C14.4375 12.3217 13.1783 11.0625 11.625 11.0625V9.9375C13.7996 9.9375 15.5625 11.7004 15.5625 13.875C15.5625 16.0496 13.7996 17.8125 11.625 17.8125H7.125C4.95038 17.8125 3.1875 16.0496 3.1875 13.875C3.1875 11.7004 4.95038 9.9375 7.125 9.9375V11.0625C5.5717 11.0625 4.3125 12.3217 4.3125 13.875C4.3125 15.4283 5.5717 16.6875 7.125 16.6875H11.625Z" fill="var(--cText)" />
+</svg>
+detach
+</button>
+<a href="https://widgets.dukascopy.com/en/" target="_blank" class="btn btn-red btn-xs">
+<svg style="margin-right: 7px" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11.4375 12.5625V18H12.5625V12.5625H18V11.4375H12.5625V6H11.4375V11.4375H6V12.5625H11.4375Z" fill="white" />
+</svg>
+Add to Website
+</a>
+</div>
+</header>
+<div class="schema-cont">
+<!-- -=MAIN BLOCK=- --><script type="text/javascript" src="https://www.dukascopy.com/api/data/get/dukascopy-chart-fs3" nonce="398pYE1XC4XsKFLDcRMIKQ"></script>
+<div class="box-tool" id="tool">
+<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+<div style="min-width: 780px;"> 
+<div id="chart-container"></div>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+DukasChart.mount("#chart-container", {
+width: "100%",
+height: "800px",
+init: {
+toolbar: 1,
+instrument: "EUR-USD",
+theme: window.getCurrentThemeScheme(),
+interval: "1",
+series: "CANDLES"
+}
+});
+</script>
+</div>
+</div>
+</div>
+<h2>Live Forex and CFD Charts - Data & Tools | Dukascopy Bank SA</h2>
+<p>Dukascopy offers its free Live Forex Chart, a user-friendly widget for analyzing Forex, Commodities (oil, gas, etc),
+precious metals (gold, silver etc), stocks, ETFs, indices, crypto, and bonds markets. The live Forex chart widget
+can be inserted in any web site free of charge and accessed from various PCs via a login.</p>
+<p>Unlike others, the chart widget can be greatly useful for not only full-time traders but also beginners. </p>
+<p>Choose more than “60 indicators” available, and use the intuitive charting options with the “Candle,” “Line,” or
+“Bar” charts. Be able to see the current market “News” on the spot, choose the “Tick” settings, and elevate your
+analysis in minutes. Real-time quotes and continuously updated data are available! Get started! </p>
+<!-- <section class="articles mb-5" itemscope itemtype="http://schema.org/FAQPage">
+<h2 class="mb-3 pt-3" itemprop="headline">FAQ</h2>
+<div class="styleless unfolding-list with-crosses big-crosses wide-block">
+<div class="unfolding-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+<button class="styleless unfolding-trigger">
+<h3 itemprop="name">Which is more risky - CFDs or spread betting?</h3>
+<span class="anchor" id="anch-overview"></span>
+</button>
+<div class="unfolding-block mt-2" itemprop="acceptedAnswer" itemscope itemtype="http://schema.org/Answer">
+<div itemprop="text">
+<p>Both spread betting and CFD trading carry a high degree of risk. The primary risk factor stems from leverage, which can amplify both profits and losses. While it's possible to implement risk management strategies like stop-loss orders, the potential for significant losses remains due to the leveraged nature of both products.</p>
+</div>
+</div>
+</div>
+-->
+<section class="articles mb-5" itemscope itemtype="http://schema.org/FAQPage">
+<h2 class="mt-3">FAQ</h2>
+<div class="accordion mt-3">
+<div class="drop" style="--h: 0;">
+<h3 class="head">
+How to Read and Analyze Forex Charts?
+</h3>
+<div class="wrap">
+<div class="body">
+<p itemprop="text">To successfully analyze and read Forex charts, you will need to go through the types of charts
+available and understand what each one can do for you. Let’s summarize the main types of charts, and
+their functions and uncover the main steps of reading Forex charts. </p>
+<h2 class="mt-3">Chart Types </h2>
+<ol class="circle">
+<li class="mt-2" itemscope itemprop="mainEntity" itemtype="http://schema.org/Question">
+<h3 itemprop="name">Line</h3>
+<div itemscope itemprop="acceptedAnswer" itemtype="http://schema.org/Answer">
+<span itemprop="text">
+<p>The line chart is chosen by many traders because of its simplicity. The line chart is used to
+see the closing price for a particular time frame.</p>
+<p>Charting prices down the horizontal axis, which symbolizes time, is done from left to right.
+The price is displayed on a vertical axis, with the most current price being furthest to the
+right.</p>
+<p>Keep in mind that line charts are mainly used to see the closing price and understand the
+picture of an overall trend reducing market noise. </p>
+</span>
+<div class="img">
+<a class="spotlight" href="//www.dukascopy.com/media-storage/896040315/o/"><img src="//www.dukascopy.com/media-storage/896040315/o/" alt="Line chart" /></a>
+</div>
+</div>
+</li>
+<li class="mt-2" itemscope itemprop="mainEntity" itemtype="http://schema.org/Question">
+<h3 itemprop="name">Bar</h3>
+<div itemscope itemprop="acceptedAnswer" itemtype="http://schema.org/Answer">
+<span itemprop="text">
+<p>The bar chart contains more detailed information on price charting compared to the line
+chart. It consists of a vertical line that represents the price range of a specific
+timeframe. The time periods can be hourly, daily, or others.</p>
+<p>The highest point of the bar represents the “High Price” of an asset, thus the lowest point
+shows the “Low Price”. The distance between these points is called the “Price Range”. The
+line also has ticks from each side showing the “Opening Price” and “Closing Price”. </p>
+<p>The consecutive bars together can give specific information on market trends and price
+ranges.</p>
+</span>
+<div class="img">
+<a class="spotlight" href="//www.dukascopy.com/media-storage/1512193065/o/"><img src="//www.dukascopy.com/media-storage/1512193065/o/" alt="Bar chart" /></a>
+</div>
+</div>
+</li>
+<li class="mt-2" itemscope itemprop="mainEntity" itemtype="http://schema.org/Question">
+<h3 itemprop="name">Japanese Candlestick</h3>
+<div itemscope itemprop="acceptedAnswer" itemtype="http://schema.org/Answer">
+<span itemprop="text">
+<p>As the name suggests, this price charting uses a shape similar to a “candle stick” as a
+visual representation. This chart is perhaps one of the most known methods traders use. One
+candlestick shows the “High” “Open” “Low” and “Close” prices at the chosen timeframe. The
+distance between the “High” and “Low” is called “The Shadow or Wick” </p>
+<p>The body of the candle indicates the distance between the “Open” and “Close” price.
+When the Close is higher than the Open price then the body of the candlestick is filled with
+green. This reflects a positive sentiment in the market, thus when the body is red and the
+market sentiment is negative. </p>
+<p>There are many different shapes and sizes to the candlesticks and the patterns they form,
+each one representing a specific measure and market trend.</p>
+</span>
+<div class="img">
+<a class="spotlight" href="//www.dukascopy.com/media-storage/574362397/o/"><img src="//www.dukascopy.com/media-storage/574362397/o/" alt="Candel chart" /></a>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="drop" style="--h: 0;" itemscope itemprop="mainEntity" itemtype="http://schema.org/Question">
+<h3 class="head" itemprop="name">Which chart type is best for forex trading?</h3>
+<div class="wrap">
+<div class="body" itemscope itemprop="acceptedAnswer" itemtype="http://schema.org/Answer">
+<p itemprop="text">The selection of the most suitable chart type for forex trading is a matter of individual preference and trading strategy. Candlestick types, renowned for their visual representation of price data including open, high, low, and closing values, are a popular choice. Conversely, line charts offer a streamlined depiction of price trends, while bar charts present a balanced view. The optimal type empowers traders to effectively identify a forex pattern, trends, and a potential signal for trading. Experimentation with various chart types is essential to determine the most effective tool for individual trading styles and objectives.</p>
+</div>
+</div>
+</div>
+<div class="drop" style="--h: 0;" itemscope itemprop="mainEntity" itemtype="http://schema.org/Question">
+<h3 class="head" itemprop="name">Which timeframes should I use for real-time charts?</h3>
+<div class="wrap">
+<div class="body" itemscope itemprop="acceptedAnswer" itemtype="http://schema.org/Answer">
+<p span itemprop="text">Choosing the appropriate timeframes for real-time charts is crucial for effective analysis and generating trading signals. Higher timeframes, such as daily or weekly, offer a broader perspective on market trends and patterns, while lower timeframes, like 15-minute or 5-minute, provide more granular details about price movements. Combining multiple timeframes can offer a comprehensive view. For example, analyzing a daily chart to identify the overall trend and then using a 15-minute chart to pinpoint entry and exit points can be a powerful approach. Ultimately, the best timeframes depend on your trading style and strategy.</p>
+</div>
+</div>
+</div>
+<div class="drop" style="--h: 0;" itemscope itemprop="mainEntity" itemtype="http://schema.org/Question">
+<h3 class="head" itemprop="name">How to become a better chart analyst?</h3>
+<div class="wrap">
+<div class="body" itemscope itemprop="acceptedAnswer" itemtype="http://schema.org/Answer">
+<p span itemprop="text">Becoming a skilled chart analyst requires dedication and practice. Start by mastering average patterns like head and shoulders, double tops/bottoms, and triangles. Understand how technical indicators like moving averages and RSI can provide additional insights. Practice identifying support and resistance levels. Analyze historical price movement to recognize recurring patterns. Remember, chart analysis is an art and a science, so continuous learning and adaptation are essential.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- spotlight plugin -->
+<div><!-- documentation: https://github.com/nextapps-de/spotlight -->
+<!-- test for live -->
+<script src="/core/modules/spotlight-master/dist/js/spotlight.min.js" nonce="398pYE1XC4XsKFLDcRMIKQ"></script>
+<link rel="stylesheet" href="/core/modules/spotlight-master/dist/css/spotlight.min.css">
+</div>
+<!-- /spotlight plugin --><!-- -=MAIN BLOCK=- -->
+</div>
+</main>
+</div>
+<footer class="body-footer">
+<div class="container">
+<p>© 1998-2026 Dukascopy® Bank SA</p>
+<p>On-line Currency forex trading with Swiss Forex Broker - ECN Forex Brokerage, Managed Forex Accounts, introducing forex brokers, Currency Forex Data Feed and News, Currency Forex Trading Platform provided on-line by Dukascopy.com</p>
+<p>All trading related information on the Dukascopy website is not intended for Belgian residents.</p>
+<p>An error correcting system is functioning on our website. If you find a mistake you are able to send us a notification. Simply highlight the error and press Ctrl + Enter and then follow the instructions.</p>
+</div>
+</footer>
+<script src="/static/custom_templates/fxMarketWatch/js/script.min.js?v=3.2.55" defer nonce="398pYE1XC4XsKFLDcRMIKQ"></script>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+const euCountries = [
+'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+'DE', 'GR', 'HU', 'IS', 'IE', 'IT', 'LV', 'LI', 'LT', 'LU',
+'MT', 'NL', 'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+'GB'
+];
+const forEU = '1' === '2'; 
+if (euCountries.indexOf(userCountry) > -1) {
+const openPrivacySettingsElement = document.getElementById('open-privacy-settings')
+if (openPrivacySettingsElement) {
+openPrivacySettingsElement.addEventListener('click', (e) => {
+e.preventDefault()
+if (window.yummyCookieWidget) {
+window.yummyCookieWidget.setWidgetVisibility(true)
+window.yummyCookieWidget.setScreenVisibility(1)
+}
+})
+}
+const scriptElement = document.createElement('script');
+scriptElement.src = '/api/data/get/yummyCookieWidget?lang=en&forJs=1&branchId=1&noCache=1&v=1.0.9';
+document.body.appendChild(scriptElement);
+if(document.cookie.indexOf('yummyCookieWidget') === -1 ) {    
+try{dataLayer.push({'event': 'cookie_bnr_show_dur'});
+}catch(e){}
+}
+}
+else{
+const openPrivacySettingsElement = document.getElementById('open-privacy-settings');
+if (openPrivacySettingsElement) {
+openPrivacySettingsElement.parentElement.style.display = 'none';
+}
+}
+</script>
+<!-- straw -->
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+document.addEventListener('DOMContentLoaded', function() {
+const themeSwitch = document.querySelector('div.switchScheme.sm-hide > div > div > label');
+function openNewWindow() {
+const contentContainer = document.getElementById('tool');
+const clonedContainer = contentContainer.cloneNode(true);
+clonedContainer.querySelectorAll('iframe').forEach(iframe => iframe.remove());
+const code = clonedContainer.innerHTML;
+const newWindow = window.open('', '_blank', 'width=800,height=860');
+newWindow.document.write(code);
+newWindow.document.title = document.title;
+}
+var openWindowBtn = document.getElementById('btn-detach');
+openWindowBtn.addEventListener('click', openNewWindow);
+//    window.simulateClick = () => {
+//      var event = new MouseEvent('click', {
+//        bubbles: true,
+//        cancelable: true,
+//        view: window
+//      });
+//      themeSwitch.dispatchEvent(event);
+//    }
+//
+//    let toggleSwitch = document.getElementById('swScheme');
+//    let savedValue = localStorage.getItem('toggleState');
+//
+//    console.log('================: ', savedValue);
+//    if (savedValue === 'on') {
+//      setTimeout("simulateClick()", 200);
+//      // simulateClick();
+//      // toggleSwitch.checked = true;
+//    }
+//
+//    const logo = document.querySelector('div.logo');
+//    if(logo) {
+//        logo.style.cursor = 'pointer';
+//        logo.addEventListener('click', ()=>{ document.location.href="/swiss/english/home/"});
+//    }
+const btnCode = document.querySelector('#btn-get-code');
+if(btnCode) {
+btnCode.addEventListener('click', ()=>{ document.location.href="https://www.dukascopy.com/trading-tools/"});
+}
+//    toggleSwitch.addEventListener('change', function() {
+//      localStorage.setItem('toggleState', toggleSwitch.checked ? 'on' : 'off');
+//
+//    });
+});
+</script>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+let CCODE = userCountry;
+let LANG_CODE = 'en';
+</script>
+<script src="/api/data/get/CW-external" defer nonce="398pYE1XC4XsKFLDcRMIKQ"></script>
+<script nonce="398pYE1XC4XsKFLDcRMIKQ">
+(() => {
+const LEGACY_THEME_KEY = 'toggleState';
+const MODERN_THEME_KEY = 'fxMarketWatchTheme';
+const DARK_CLASS = 'dark-theme';
+const persistFromDom = () => {
+const isDark = document.documentElement.classList.contains(DARK_CLASS)
+|| (document.body && document.body.classList.contains(DARK_CLASS));
+try {
+window.localStorage.setItem(LEGACY_THEME_KEY, isDark ? 'on' : 'off');
+window.localStorage.setItem(MODERN_THEME_KEY, isDark ? 'dark' : 'light');
+} catch (error) {
+}
+};
+// Run after other change listeners to avoid stale writes from legacy inline scripts.
+// Запускаем после остальных change-обработчиков, чтобы исправить устаревшие записи legacy-скриптов.
+document.addEventListener('change', () => {
+window.setTimeout(persistFromDom, 0);
+}, true);
+document.addEventListener('DOMContentLoaded', () => {
+persistFromDom();
+});
+window.addEventListener('pageshow', persistFromDom);
+})();
+</script>
+<!-- /straw -->
+</body>
+</html>
+<!-- CACHED: [R] :for-pages:b1:4158651454 US-->
+<!-- PAGE-DEBUG: lang=english id=1871 iso2=en splitMode=off source=cache -->
