@@ -221,18 +221,50 @@ def scan_us():
         if es:
             DIGEST.append(f"ES 期貨 {es['price']:,.0f}（延遲價，MES 同價，"
                           f"進場參考檔 {round(es['price'] / 5) * 5:,.0f}）")
-    # 期限結構警戒儀（hedge_signal_lab.py 驗證，2011–2026）：
-    # slope = VIX9D − VIX；倒掛(>0)時未來 5 天 RV 20.3 vs 11.3、對沖負載約 2×，
-    # 2011 起 4 個災難月進場前後 5 天全部曾倒掛（4/4）。倒掛 = 加密檢查，不是離場。
-    f9 = os.path.join(BASE, 'vix9d_daily.csv')
-    if os.path.exists(f9):
-        v9 = pd.read_csv(f9, parse_dates=['Date']).set_index('Date').Close
-        slope = float(v9.iloc[-1]) - iv
-        lvl = '紅·倒掛' if slope > 0 else ('黃·走平' if slope > -0.5 else '綠')
-        DIGEST.append(f"期限結構 VIX9D−VIX {slope:+.1f}（{lvl}）")
-        if slope > 0:
-            ALERTS.append(f"期限結構倒掛 VIX9D−VIX = {slope:+.1f}：本週對沖負載預期 2×，"
-                          f"兩市場 delta 檢查加密（盤中各加一次），週內見 -2% 單日機率 28%")
+    # 金絲雀面板（hedge_signal_lab / canary_lab 驗證，兩市場共用）：
+    #   9D 倒掛(紅)   = 未來5日RV~2×、對沖負載2×，加密檢查（不是離場）
+    #   3M 倒掛(深紅) = 災難級：SPX RV 2.6×/-2%日3.0×/誤報僅9%，HSI 災難月 3/3 預警
+    #   VVIX/MOVE >252日90分位(黃) = 背景升溫，9D 綠燈下仍有 1.2–1.4× RV 增量
+    #   SKEW、VXN−VIX 考核不及格，不養
+    def _last_and_pct(fname, win=252):
+        fp = os.path.join(BASE, fname)
+        if not os.path.exists(fp):
+            return None, None
+        srs = pd.read_csv(fp, parse_dates=['Date']).set_index('Date').Close
+        tail = srs.tail(win)
+        return float(srs.iloc[-1]), float((tail <= srs.iloc[-1]).mean() * 100)
+
+    v9, _ = _last_and_pct('vix9d_daily.csv')
+    v3m, _ = _last_and_pct('vix3m_daily.csv')
+    _, vvix_p = _last_and_pct('vvix_daily.csv')
+    _, move_p = _last_and_pct('move_daily.csv')
+    if v9 is not None:
+        s9 = v9 - iv
+        s3 = (iv - v3m) if v3m is not None else None
+        hot = [n for n, p in [('VVIX', vvix_p), ('MOVE', move_p)] if p is not None and p >= 90]
+        if s3 is not None and s3 > 0:
+            lvl = '深紅·災難級'
+        elif s9 > 0:
+            lvl = '紅·倒掛'
+        elif hot:
+            lvl = f"黃·{'/'.join(hot)}升溫"
+        else:
+            lvl = '綠'
+        pane = f"金絲雀: 9D{s9:+.1f}"
+        if s3 is not None:
+            pane += f" 3M{s3:+.1f}"
+        if vvix_p is not None:
+            pane += f" VVIX p{vvix_p:.0f}"
+        if move_p is not None:
+            pane += f" MOVE p{move_p:.0f}"
+        DIGEST.append(f"{pane}（{lvl}）")
+        if s3 is not None and s3 > 0:
+            ALERTS.append(f"金絲雀深紅：VIX−VIX3M = {s3:+.1f} 倒掛（歷史誤報僅 9%，"
+                          f"HSI 災難月 3/3 前均出現）。兩市場對沖檢查全加密、"
+                          f"複核止損線與保證金餘裕；紀律不變：不加倉、不提前平倉")
+        elif s9 > 0:
+            ALERTS.append(f"金絲雀紅：VIX9D−VIX = {s9:+.1f} 倒掛，本週對沖負載預期 2×，"
+                          f"兩市場 delta 檢查盤中各加一次（週內見 -2% 單日機率 28%）")
     if (date.today() - asof).days > 5:
         ALERTS.append(f"美股數據呆滯：VIX 最後日期 {asof}，刷新可能壞了")
     if prem < 0:
