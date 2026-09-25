@@ -88,8 +88,18 @@ def main() -> None:
     ap.add_argument("--pip", type=float, default=0.0, help="1 pip 的價格單位（給了就以 pips 顯示）")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--split", default="", help="YYYY-MM-DD：另外分「此日之前（樣本外）」與「此日起（重疊段）」各算一次")
+    ap.add_argument("--cost-shift", nargs="*", type=float, default=[],
+                    help="成本敏感度：引擎每筆來回恰好扣一次點差，所以每筆損益減去（新成本 − 原成本）就是新成本下的結果；"
+                         "給幾個「額外成本」（價格單位，例如 USDJPY 0.002 = 0.2 pip 滑點）各算一次 t／PF／總損益")
     args = ap.parse_args()
     rows = load(args.trades)
+    if args.cost_shift:
+        unit0, u0 = (args.pip, " pips") if args.pip else (1.0, "")
+        print(f"== {args.label} 成本敏感度（每筆再扣）")
+        for extra in [0.0] + args.cost_shift:
+            shifted = [dict(r, pnl=r["pnl"] - extra) for r in rows]
+            z = summarize(shifted)
+            print(f"  +{extra / unit0:g}{u0}: 總損益 {z['total'] / unit0:+,.0f}{u0}、t = {z['t']:.2f}、PF {z['pf']:.2f}、正年 {z['pos_years']}/{z['n_years']}")
     unit, u = (args.pip, " pips") if args.pip else (1.0, "")
     out = {"all": summarize(rows), "long": summarize([r for r in rows if r["direction"] > 0]),
            "short": summarize([r for r in rows if r["direction"] < 0])}

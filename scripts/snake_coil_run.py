@@ -15,6 +15,25 @@ import donchian_backtest as db  # noqa: E402
 from zgl_backtest import load_any  # noqa: E402
 
 
+def load_fast(path: str) -> list[dict]:
+    """省記憶體的載入器（backtest.load_bars 會把整個檔與 csv 列表都留在記憶體，900 萬根要 7 GB 以上，沙盒會被 OOM 殺掉）。
+    只接受本專案外匯 CSV 格式：Time(YYYY-MM-DD HH:MM:SS),Open,High,Low,Close[,Volume]，時間視為「券商時間」直接當 UTC 算 epoch。"""
+    import calendar
+    bars = []
+    with open(path, encoding="utf-8") as f:
+        next(f)
+        for line in f:
+            t, o, h, l, c = line.split(",", 5)[:5]
+            epoch = calendar.timegm((int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), int(t[17:19]), 0, 0, 0))
+            bars.append({"time": epoch, "open": float(o), "high": float(h), "low": float(l), "close": float(c)})
+    bars.sort(key=lambda b: b["time"])
+    out = [bars[0]]
+    for b in bars[1:]:
+        if b["time"] != out[-1]["time"]:
+            out.append(b)
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("data")
@@ -25,7 +44,7 @@ def main() -> None:
     args = ap.parse_args()
     args.outdir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
-    bars = load_any(args.data, 0.0)
+    bars = load_fast(args.data) if args.data.endswith(".csv") else load_any(args.data, 0.0)
     print(f"{args.label}: 載入 {len(bars):,} 根（{db.day_key(bars[0]['time'])} → {db.day_key(bars[-1]['time'])}），{time.time()-t0:.0f} 秒", flush=True)
     print(db.HEADER, flush=True)
     for i, sp in enumerate(args.spreads):
