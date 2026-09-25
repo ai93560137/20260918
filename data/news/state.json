@@ -3837,7 +3837,7 @@
   "22": 1643,
   "23": 580
  },
- "updated": "2026-09-25T02:24:49+00:00",
+ "updated": "2026-09-25T02:28:21+00:00",
  "summary": {
   "intervals": 1047,
   "mapping_sources": {
@@ -3850,6 +3850,11 @@
   "ciks": 953,
   "events_all": 66083,
   "events_sp500": 46787,
+  "sessions": {
+   "pre": 24686,
+   "regular": 7278,
+   "post": 14823
+  },
   "requests": 954
  }
 }
