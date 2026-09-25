@@ -13,6 +13,7 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `FOREX_DATA_CATALOG.md` | 26 個商品（七大、交叉盤、亞洲、金銀）的來源、格式、一鍵下載、回測用法、各商品注意事項 |
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
 | `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
+| `FX_COST_MODEL.md` | 外匯 swap 加價與點差的公開證據（IBKR 分層、Saxo 等級、CME 期貨路徑）與各口徑對策略的影響；之後登記的成本從這裡取 |
 | `FX_TREND_CARRY_BACKTEST.md` | 外匯長週期趨勢（TSMOM、海龜）與利差（G7 排序、利差+趨勢過濾）籃子：預先登記、四個主檢定全 ☠️、swap 加價是生死關鍵 |
 | `SNAKE_COIL_FOREX_BACKTEST.md` | 蛇蟠陣 on 外匯：成本入場券（26 商品）、USDJPY 測試、XAUUSD 2009–2022 樣本外、引擎點差 bug 揭露與前後數字 |
 
@@ -64,7 +65,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 1. ~~把引擎修正合併回主分支~~（已完成：兩個修正與更正後數字都已推回，規格書 XAUUSD 已改 🔍）
 1b. **原第 1 點的核對已做**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFD 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
-2. **外匯四個長線機制也到此為止**（FX_TREND_CARRY_BACKTEST.md）：剩下只有（a）查券商實際 swap 加價，若接近 0 才值得前向觀察利差；（b）換資訊來源（央行路徑、隱含波動、CFTC 持倉），每個要新數據新登記
+2. **外匯四個長線機制也到此為止**（FX_TREND_CARRY_BACKTEST.md）：swap 加價已用公開資料定量（FX_COST_MODEL.md：零售 1–2%、期貨／PB 0.1–0.3%），機構口徑下利差夏普也只有 0.14–0.21；剩下只有（a）若走 CME 期貨路徑，可前向觀察利差 top2；（b）換資訊來源（央行路徑、隱含波動、CFTC 持倉），每個要新數據新登記
 2b. **蛇蟠陣外匯到此為止**：25 個商品全部測過（USDJPY ☠️、XAUUSD 🔍、其餘 23 個批次 ☠️、合併 t −1.55）；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
 3. **XAUUSD 只做多變體**是唯一有希望的形態（樣本外 t 1.70、全期 2.75）：可與主分支的 XAUUSD 前向測試（journal/）對照，記錄多頭腿與空頭腿分開的實盤損益
 5. **每月更新數據**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
