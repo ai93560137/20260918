@@ -193,6 +193,34 @@ def write_tg(summaries: list[dict]) -> None:
     (OUT / "tg_verify.txt").write_text("\n".join(lines)[:3900] + "\n", encoding="utf-8")
 
 
+def verify_ibkr(mk: str, d: str) -> dict | None:
+    """把雲垂分支交回的 IBKR 收市（data_stock_ibkr/<mk>_<d>.csv）當第三把尺；同時把下一交易日開市存為執行基準。"""
+    p = ROOT / "data_stock_ibkr" / f"{mk}_{d}.csv"
+    if not p.exists():
+        return None
+    with open(p, newline="", encoding="utf-8") as f:
+        ib = {r["ticker"]: r for r in csv.DictReader(f)}
+    rows = read_list(mk, d)
+    out, cnt = [], {"一致": 0, "不一致": 0, "整數倍": 0, "無數據": 0}
+    for r in rows:
+        x = ib.get(r["ticker"], {})
+        theirs = float(x["ib_close"]) if x.get("status") == "ok" and x.get("ib_close") else None
+        st, diff = classify(float(r["close"]), theirs, mk)
+        cnt[st] += 1
+        out.append({"ticker": r["ticker"], "ours": r["close"], "ibkr_close": x.get("ib_close", ""), "next_date": x.get("next_date", ""),
+                    "ibkr_next_open": x.get("ib_next_open", ""), "diff_pct": f"{diff * 100:+.2f}" if diff is not None else "", "status": st,
+                    "ib_status": x.get("status", "missing"), "note": x.get("note", "")})
+    with open(OUT / f"{mk}_{d}_verify_ibkr.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(out[0].keys()) if out else ["ticker"], lineterminator="\n")
+        w.writeheader()
+        w.writerows(out)
+    summ = {"market": mk, "date": d, "n": len(rows), "source": "IBKR 日線 TRADES", **cnt,
+            "bad": [r["ticker"] for r in out if r["status"] in ("不一致", "無數據")]}
+    (OUT / f"{mk}_verify_ibkr.json").write_text(json.dumps(summ, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"[{mk}] {d} IBKR 覆核 {len(rows)} 檔：一致 {cnt['一致']}、不一致 {cnt['不一致']}、整數倍 {cnt['整數倍']}、無數據 {cnt['無數據']}", file=sys.stderr)
+    return summ
+
+
 def selftest() -> None:
     assert classify(10.0, 10.05, "hk")[0] == "一致"
     assert classify(10.0, 10.5, "hk")[0] == "不一致"
@@ -206,9 +234,25 @@ def main() -> None:
     a.add_argument("--market", nargs="*", default=[])
     a.add_argument("--request", action="store_true")
     a.add_argument("--selftest", action="store_true")
+    a.add_argument("--ibkr", action="store_true", help="用 data_stock_ibkr/ 的 IBKR 收市作第三把尺（雲垂分支交回後）")
     args = a.parse_args()
     if args.selftest:
         selftest()
+        return
+    if args.ibkr:
+        summaries = []
+        for p in sorted(OUT.glob("*_latest.json")):
+            meta = json.loads(p.read_text(encoding="utf-8"))
+            if args.market and meta["market"] not in args.market:
+                continue
+            s = verify_ibkr(meta["market"], meta["date"])
+            if s:
+                summaries.append(s)
+        if summaries:
+            lines = ["🔎 鳥翔｜IBKR 第三來源覆核", ""] + [
+                f"{'✅' if not s['bad'] else '⚠️'} {NAME[s['market']]} {s['date']}：{s['一致']}/{s['n']} 一致；無數據 {s['無數據']}、不一致 {s['不一致']}"
+                + (("；要查：" + "、".join(s["bad"][:10])) if s["bad"] else "") for s in summaries]
+            (OUT / "tg_verify_ibkr.txt").write_text("\n".join(lines)[:3900] + "\n", encoding="utf-8")
         return
     jobs = []
     if args.request:

@@ -155,6 +155,24 @@ def main() -> None:
     for mk in args.market:
         run(mk, args.force)
     write_summary(args.market)
+    write_ibkr_request()
+
+
+def write_ibkr_request() -> None:
+    """給雲垂分支 IBKR 覆核用：所有市場最新名單的 (market, ticker, signal_date)（stock_research/IBKR_DATA_REQUEST.md）。"""
+    rows = []
+    for p in sorted(OUT.glob("*_latest.json")):
+        meta = json.loads(p.read_text(encoding="utf-8"))
+        lp = OUT / f"{meta['market']}_{meta['date']}.csv"
+        if not lp.exists():
+            continue
+        with open(lp, newline="", encoding="utf-8") as f:
+            rows += [(meta["market"], r["ticker"], meta["date"]) for r in csv.DictReader(f)]
+    with open(OUT / "ibkr_request.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["market", "ticker", "signal_date"])
+        w.writerows(rows)
+    print(f"IBKR 請求檔 {len(rows)} 檔 → {OUT / 'ibkr_request.csv'}", file=sys.stderr)
 
 
 def write_summary(markets: list[str]) -> None:
