@@ -9,8 +9,8 @@
 #      → 用 data/insider/ticker_cik/{季}.csv.gz（當時的代號 ↔ CIK）找出每段成分股區間的 CIK；
 #      找不到的現任成分股用 SEC company_tickers.json 補。
 #   2. 對每個 CIK 抓 https://data.sec.gov/submissions/CIK##########.json（含較舊的分頁），
-#      留下 form 為 8-K／8-K/A 且 items 含 2.02 的申報。acceptanceDateTime 精確到秒，
-#      回測用它判斷是盤前還是盤後公布。
+#      留下 form 為 8-K／8-K/A 且 items 含 2.02 的申報。acceptanceDateTime 是 UTC、精確到秒；
+#      事件檔另附美東時間與時段（pre／regular／post），回測用它決定事件日 t0。
 #
 # 輸出（data/news/）：
 #   sp500_cik_map.csv            每段成分股區間對到的 CIK、來源、候選數（人工核對用）
@@ -36,6 +36,7 @@ import sys
 import time
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -280,12 +281,27 @@ def fetch_cik(sec, cik, full):
     return events, full
 
 
+NY = ZoneInfo("America/New_York")
+
+
 def acceptance_hour(s):
-    """'2024-05-02T16:30:22.000Z' → 16。SEC 的時間實際上是美東時間，但字串帶 Z；以分布核對。"""
+    """'2024-05-02T20:30:22.000Z' → 20（UTC 小時）。"""
     try:
         return int(s[11:13])
     except (ValueError, IndexError):
         return None
+
+
+def to_eastern(s):
+    """acceptanceDateTime 是真正的 UTC（已用實際資料核對：Apple 盤後財報 20:30Z 夏令／21:30Z 冬令
+    = 美東 16:30）。回傳 (美東時間字串, 時段)：pre = 09:30 前、regular = 盤中、post = 16:00 後。"""
+    try:
+        t = datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc).astimezone(NY)
+    except ValueError:
+        return "", ""
+    hm = t.hour * 60 + t.minute
+    session = "pre" if hm < 9 * 60 + 30 else ("regular" if hm < 16 * 60 else "post")
+    return t.strftime("%Y-%m-%d %H:%M:%S"), session
 
 
 # -----------------------------------------------------------------------------
@@ -368,11 +384,12 @@ def main():
         for m in by_cik.get(r["cik"], []):
             in_member = m["start"] <= d and (m["end"] is None or d < m["end"])
             if in_member and m["seg_from"] <= d < m["seg_to"]:
-                joined.append({**r, "ticker": m["ticker"], "price_ticker": renames.get(m["ticker"], m["ticker"]),
-                               "member_start": m["start"]})
+                et, session = to_eastern(r["acceptance"])
+                joined.append({**r, "acceptance_et": et, "session": session, "ticker": m["ticker"],
+                               "price_ticker": renames.get(m["ticker"], m["ticker"]), "member_start": m["start"]})
                 break
     write_csv(os.path.join(OUT_DIR, "sp500_earnings_events.csv.gz"), joined,
-              EVENT_FIELDS + ["ticker", "price_ticker", "member_start"], gz=True)
+              EVENT_FIELDS + ["acceptance_et", "session", "ticker", "price_ticker", "member_start"], gz=True)
 
     hours = Counter(h for h in (acceptance_hour(r["acceptance"]) for r in all_events) if h is not None)
     state["acceptance_hour_hist"] = {str(h): hours[h] for h in sorted(hours)}
@@ -382,7 +399,9 @@ def main():
     with open(state_path, "w") as f:
         json.dump(state, f, indent=1)
     print(f"2.02 事件 {len(all_events)} 筆，其中申報時是成分股 {len(joined)} 筆", flush=True)
-    print(f"acceptance 小時分布（核對時區：美東盤後約 16–17 時、盤前約 6–9 時）：{state['acceptance_hour_hist']}", flush=True)
+    sess = Counter(r["session"] for r in joined)
+    state["summary"]["sessions"] = dict(sess)
+    print(f"acceptance UTC 小時分布：{state['acceptance_hour_hist']}；成分股事件時段（美東）：{dict(sess)}", flush=True)
     return 0
 
 
