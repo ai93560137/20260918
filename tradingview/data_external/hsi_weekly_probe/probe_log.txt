@@ -1,0 +1,8 @@
+token: OK
+HSI conlist: 13 entries
+weekly-flagged entries: 0 -> []
+ats=HSIW: conlist 3 -> [{'id': '25092026', 'mon': '25-Sep-26'}, {'id': '02102026', 'mon': '02-Oct-26'}, {'id': '09102026', 'mon': '09-Oct-26'}]
+ats=WHI: conlist 0 -> []
+ats=PHS: conlist 13 -> [{'id': '102026', 'mon': 'Oct-26'}, {'id': '112026', 'mon': 'Nov-26'}, {'id': '122026', 'mon': 'Dec-26'}]
+ats=HSI.W: conlist 0 -> []
+ats=WTI1: conlist 0 -> []
