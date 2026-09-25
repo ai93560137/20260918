@@ -82,7 +82,7 @@ class TTAll(T.TTMom):
             r = T.month_return(rets, n_enter, n_leave, len(kept), self.cost)
             rows.append({"month": m.cal[b].isoformat()[:7], "ret": r, "etf": float(np.prod(1 + m.etf_ret[a:b + 1]) - 1),
                          "ew": float(np.prod(1 + self.ew_clean[a:b + 1]) - 1), "n": len(kept),
-                         "turn": (n_enter + n_leave) / 2 / max(len(kept), 1), "invested": len(kept) > 0, "date": m.cal[j]})
+                         "turn": (n_enter + n_leave) / 2 / max(len(kept), len(held), 1),     # 清倉月以原持股數為分母 "invested": len(kept) > 0, "date": m.cal[j]})
             held = kept
         return self.stats(pd.DataFrame(rows))
 
