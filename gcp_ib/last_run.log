@@ -1,23 +1,29 @@
-Fri Sep 25 16:40:02 UTC 2026
+Fri Sep 25 16:50:02 UTC 2026
 Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
 Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
 open orders request timed out
 completed orders request timed out
-Error 10090, reqId 10: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=927192663, symbol='ESTX50', lastTradeDateOrContractMonth='20260928', strike=6305.0, right='C', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='C OEXP 20260928 6305 W', tradingClass='OEXP')
-Error 10090, reqId 12: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=927194522, symbol='ESTX50', lastTradeDateOrContractMonth='20260928', strike=6305.0, right='P', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='P OEXP 20260928 6305 W', tradingClass='OEXP')
-Error 200, reqId 13: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
+Error 10090, reqId 7: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.N225 Nikkei 225/TOP/ALL, contract: Option(conId=900163986, symbol='N225', lastTradeDateOrContractMonth='20261008', strike=66375.0, right='C', multiplier='1000', exchange='OSE.JPN', currency='JPY', localSymbol='141106318', tradingClass='225')
+Error 10090, reqId 9: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.N225 Nikkei 225/TOP/ALL, contract: Option(conId=900163991, symbol='N225', lastTradeDateOrContractMonth='20261008', strike=66375.0, right='P', multiplier='1000', exchange='OSE.JPN', currency='JPY', localSymbol='131106318', tradingClass='225')
+Error 10090, reqId 11: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.N225 Nikkei 225/TOP/ALL, contract: Option(conId=910829452, symbol='N225', lastTradeDateOrContractMonth='20261112', strike=66375.0, right='C', multiplier='1000', exchange='OSE.JPN', currency='JPY', localSymbol='141116318', tradingClass='225')
+Error 10090, reqId 13: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.N225 Nikkei 225/TOP/ALL, contract: Option(conId=910829458, symbol='N225', lastTradeDateOrContractMonth='20261112', strike=66375.0, right='P', multiplier='1000', exchange='OSE.JPN', currency='JPY', localSymbol='131116318', tradingClass='225')
+Error 10090, reqId 18: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=927192663, symbol='ESTX50', lastTradeDateOrContractMonth='20260928', strike=6305.0, right='C', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='C OEXP 20260928 6305 W', tradingClass='OEXP')
+Error 10090, reqId 20: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=927194522, symbol='ESTX50', lastTradeDateOrContractMonth='20260928', strike=6305.0, right='P', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='P OEXP 20260928 6305 W', tradingClass='OEXP')
+Error 200, reqId 21: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
 Unknown contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
-Error 200, reqId 14: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='C', exchange='EUREX', currency='EUR', tradingClass='OESX')
-Error 200, reqId 15: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='P', exchange='EUREX', currency='EUR', tradingClass='OESX')
-Unknown contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='P', exchange='EUREX', currency='EUR', tradingClass='OESX')
-Error 200, reqId 16: No security definition has been found for the request, contract: Option(symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6305.0, right='P', exchange='EUREX', currency='EUR', tradingClass='OESX')
-N225: spot 66364.2  wk None  mon None  (27 expiries)
+Error 10090, reqId 23: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=816678861, symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6300.0, right='C', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='C OESX 20261016 6300 M', tradingClass='OESX')
+Error 10090, reqId 25: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.ESTX50 Euro STOXX50 (SX5E) /TOP/ALL, contract: Option(conId=816679535, symbol='ESTX50', lastTradeDateOrContractMonth='20261016', strike=6300.0, right='P', multiplier='10', exchange='EUREX', currency='EUR', localSymbol='P OESX 20261016 6300 M', tradingClass='OESX')
+N225: spot 66364.2  wk 20261008  mon 20261112  (27 expiries)
   expiries: ['20261008', '20261112', '20261210', '20270107', '20270210', '20270311', '20270408', '20270513', '20270610', '20270708', '20270812', '20270909']
+  N225 20261008 66375.0C: iv=23.76
+  N225 20261008 66375.0P: iv=23.75
+  N225 20261112 66375.0C: iv=24.93
+  N225 20261112 66375.0P: iv=24.93
 ESTX50: spot 6302.82  wk 20260928  mon 20261016  (55 expiries)
   expiries: ['20260925', '20260928', '20260929', '20260930', '20261001', '20261002', '20261005', '20261006', '20261007', '20261008', '20261009', '20261016']
-  ESTX50 20260928 6305.0C: iv=9.97
-  ESTX50 20260928 6305.0P: iv=None
-  ESTX50 20261016 6305.0C: iv=None
-  ESTX50 20261016 6305.0P: iv=None
+  ESTX50 20260928 6305.0C: iv=10.46
+  ESTX50 20260928 6305.0P: iv=10.46
+  ESTX50 20261016 6300.0C: iv=14.65
+  ESTX50 20261016 6300.0P: iv=14.65
 dry run or no rows - nothing written
 exit=0
