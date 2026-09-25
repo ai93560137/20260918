@@ -1,7 +1,7 @@
 name: Buyback announcements（回購公告抓取：美、港、台）
 
 # scripts/buyback_fetch.py；輸出 data/buyback/<市場>/。規格見 research/buyback/STRATEGY.md。
-# 美國有時間預算，第一次完整抓取要跑數次（每次接著上次的月份）。
+# 美國有時間預算，沒抓完下次接著抓；判讀規則改版（US_VERSION）時用存下的候選句重新判讀，不必重新下載。
 on:
   schedule:
     - cron: '15 23 * * 1-5'   # 美股收盤後：補最近兩個月（美）、最近 45 天（港），台灣整表重抓
@@ -15,9 +15,6 @@ on:
         description: '美國抓取時間預算（分鐘）'
         required: false
         default: '300'
-  push:  # 開發用，合併前移除
-    branches: [claude/pelosi-stock-tracking-f9f94g]
-    paths: [scripts/buyback_fetch.py, .github/workflows/buyback_fetch.yml]
 
 permissions:
   contents: write
