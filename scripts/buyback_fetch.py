@@ -180,15 +180,18 @@ IN_MONTH_RE = re.compile(r"\b(?:in|during|since)\s+(?:early\s+|late\s+|mid-?)?(j
                          r"july|august|september|october|november|december)\b", re.I)
 TERM_ONLY_RE = re.compile(r"\b(?:extension|extend\w*|continu\w+|renew\w*|reinstat\w+|re-?affirm\w*)\b", re.I)
 CAND_AUTH = r"(?:authori[sz]\w*|approved|approves|approving)"
-PAST_ANN_RE = re.compile(r"\b(?:previously|as|had\s+been|was|were|it|we)\s+(?:previously\s+)?announced\b|"
-                         r"\bas\s+previously\b", re.I)
+PAST_ANN_RE = re.compile(r"\b(?:previously|as|had\s+been|was|were|it|we|recently)\s+(?:previously\s+)?announced\b|"
+                         r"\bas\s+previously\b|\bresum\w+\b|\bfrom\s+time\s+to\s+time,?\s+(?:approved|authori[sz]ed)\b", re.I)
+MONTH_YEAR_RE = re.compile(r"\b(january|february|march|april|may|june|july|august|september|october|november|december)"
+                           r",?\s+((?:19|20)\d\d)\b", re.I)
 EXTRA_OLD_RE = re.compile(r"\b(?:since\s+(?:\w+\s+(?:of\s+)?)?(?:19|20)\d\d|a\s+total\s+of|cumulative|aggregate\s+of|"
                           r"expired|expire[sd]?\s+(?:on|in)|not\s+(?:to\s+)?(?:extend|renew)|elected\s+not|did\s+not|"
                           r"terminat\w+|during\s+(?:the\s+)?(?:(?:first|second|third|fourth)\s+)?(?:quarter|year|fiscal|(?:19|20)\d\d)|"
                           r"(?:re)?purchased\s+(?:approximately\s+)?[\d,.]+)\b", re.I)
 JUNK_RE = re.compile(r"\b(?:repurchase|redemption)\s+price\b|\bprice\s+(?:at\s+which|per\s+share)|\btrustee\b|"
                      r"\bindenture\b|\bholders?\s+of\b|\bsection\s+\d|\bwill\s+require\b|\bstrategic\s+options\b|"
-                     r"\bmay\s+(?:re)?purchase\s+up\s+to\s+an\s+additional\b", re.I)
+                     r"\bmay\s+(?:re)?purchase\s+up\s+to\s+an\s+additional\b|\bplan\s+administrator\b|\breinvestment\b|"
+                     r"\bunless\b|\bshall\b", re.I)
 INCR_RE = re.compile(r"(?:increase\w*\s+(?:of|by)\s+|additional\s+|by\s+)(?:US)?\$\s?(\d[\d,]*(?:\.\d+)?)\s*"
                      r"(billion|million|bn|mm|mil|m|b)?\b|(?:US)?\$\s?(\d[\d,]*(?:\.\d+)?)\s*(billion|million|bn|mm|mil|m|b)?"
                      r"\s+(?:increase|addition|expansion)", re.I)
@@ -229,10 +232,13 @@ def classify_sentence(s, file_date=None):
             return "old", 1  # 「In January, the Company announced ...」：回顧之前的公告
         for mon, d, y in DATE_RE.findall(s):
             try:
-                if date(int(y or fd.year), MONTHS[mon.lower()], int(d)) < fd - timedelta(days=21):
-                    return "old", 1  # 描述三週以前的授權
+                if date(int(y or fd.year), MONTHS[mon.lower()], int(d)) < fd - timedelta(days=10):
+                    return "old", 1  # 描述十天以前的授權（新授權的 8-K 通常在 4 個營業日內申報）
             except ValueError:
                 continue
+        for mon, y in MONTH_YEAR_RE.findall(s):
+            if (int(y), MONTHS[mon.lower()]) < (fd.year, fd.month):
+                return "old", 1  # 「April 2024 Stock Repurchase Plan」這類以過去月份命名的計畫
         years = [int(y) for y in re.findall(r"\b((?:19|20)\d\d)\b", s)]
         if years and max(years) < fd.year:
             return "old", 1  # 描述往年的授權
@@ -240,6 +246,8 @@ def classify_sentence(s, file_date=None):
     head = bool(HEAD_RE.search(s))
     if TERM_ONLY_RE.search(s) and not NEW_RE.search(s):
         return "old", 1  # 只延長期限或延續既有計畫
+    if re.search(r"10b5-?1", s) and not (MONEY_RE.search(s) or SHARES_RE.search(s)):
+        return "old", 1  # 只是授權 10b5-1 交易計畫（執行方式），沒有新額度
     new = bool(NEW_RE.search(s))
     old = bool(OLD_RE.search(s)) or bool(EXTRA_OLD_RE.search(s)) or bool(PAST_ANN_RE.search(s))
     if (grant or head) and (not old or (new and today)):
@@ -291,7 +299,7 @@ US_QUERIES = ['"repurchase program" authorized', '"repurchase plan" authorized',
               '"repurchase authorization"', '"buyback program" authorized']
 US_FIELDS = ["adsh", "cik", "ticker", "company", "form", "items", "file_date", "acceptance_et", "session",
              "doc", "kind", "amount_usd", "shares", "pct", "sentence", "candidates", "queries"]
-US_VERSION = 3  # 判讀或欄位改版時加一
+US_VERSION = 4  # 判讀或欄位改版時加一
 RECLASSIFY_FROM = 2  # 這個版本起每筆都存了候選句：改版時直接重新判讀，不必重新下載
 
 
