@@ -1,0 +1,66 @@
+name: FX forward record（外匯前向記錄：每月初補數據、算上月底訊號與上月模型損益、CME 期貨基差）
+
+# 路線 C（FX_COST_MODEL.md／README.md 第 6 節）：機構口徑候選（利差 top2／top3、三因子 top3）逐月記錄，不是回測。
+# 每月 2 日 06:00 UTC：從 Release 還原七大 → 補抓到上月底 → 回傳 Release → 抓 FRED 利率／REER → 算訊號與損益 → 抓 CME 期貨基差 → commit forex_research/forward/
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 2 * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forex-data-majors
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/forex-data-testing-w4q3m2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q pandas numpy requests yfinance
+      - name: Restore majors from Release
+        run: |
+          mkdir -p data_forex
+          for P in EURUSD GBPUSD AUDUSD NZDUSD USDJPY USDCHF USDCAD; do
+            gh release download forex-data -p "$P.tar" -D /tmp && tar -xf /tmp/$P.tar && echo "$P：$(ls data_forex/$P | wc -l) 個檔"
+          done
+      - name: Fetch to month end（可續抓；HistData 上月檔通常月初幾天後才有，沒有就用 Dukascopy 近期 M1 聚合）
+        run: |
+          set +e
+          python3 scripts/fetch_forex.py --group majors --budget-min 60 --no-refs
+          echo "回傳碼 $?"
+          exit 0
+      - name: Backup to Release
+        continue-on-error: true
+        run: |
+          for P in EURUSD GBPUSD AUDUSD NZDUSD USDJPY USDCHF USDCAD; do
+            tar -cf /tmp/$P.tar data_forex/$P && gh release upload forex-data /tmp/$P.tar --clobber && echo "$P 已備份"
+          done
+      - name: Rates / REER
+        run: python3 scripts/fetch_fx_rates.py
+      - name: Signals, last-month PnL, futures basis
+        run: python3 scripts/fx_forward_signals.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add forex_research/forward data_forex_rates
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "forward(forex): 前向記錄 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/forex-data-testing-w4q3m2 && exit 0
+            sleep $((i * 7)); git fetch origin claude/forex-data-testing-w4q3m2; git reset --mixed FETCH_HEAD; git add forex_research/forward data_forex_rates
+            git diff --cached --quiet && exit 0
+            git commit -q -m "forward(forex): 前向記錄 $(date -u +%F)"
+          done
+          exit 1
