@@ -13,6 +13,7 @@
 #                     TRANS_ACQUIRED_DISP_CD、SHRS_OWND_FOLWNG_TRANS、DIRECT_INDIRECT_OWNERSHIP
 # 只保留 TRANS_CODE = P 且為取得（A）的非衍生性交易，每年一個檔：
 #   data/insider/purchases/{年}.csv.gz
+# 另存每季「代號 ↔ CIK」對照（所有申報，不只買入）：data/insider/ticker_cik/{季}.csv.gz
 # 已處理過的季度記在 data/insider/state.json，之後只重抓最近兩季（SEC 會補登延遲申報）。
 #
 # SEC 要求 User-Agent 帶聯絡方式（否則回 403），用環境變數 SEC_USER_AGENT 設定，
@@ -49,6 +50,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, "data", "insider")
 PURCHASE_DIR = os.path.join(OUT_DIR, "purchases")
 STATE_FILE = os.path.join(OUT_DIR, "state.json")
+TICKER_CIK_DIR = os.path.join(OUT_DIR, "ticker_cik")  # 每季一檔：當時的代號 ↔ CIK（所有 Form 3/4/5，不只買入）
 SAMPLE_DIR = os.path.join(OUT_DIR, "_sample")  # 最新一季每張表前幾行，欄位變動時方便對照
 
 FIELDS = ["quarter", "accession", "filing_date", "trans_date", "doc_type", "ticker", "issuer_cik", "issuer_name",
@@ -237,6 +239,40 @@ def download(urls, ua, label):
     return None
 
 
+def extract_ticker_cik(zip_bytes):
+    """一季 zip 的所有申報（不只買入）→ 當時使用的代號與 CIK 對照。
+    S&P 500 公司每季都有內部人申報，這是最完整的「歷史代號 → CIK」來源（含已下市公司）。"""
+    agg = {}
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+        header, rows = read_tsv(z, "SUBMISSION")
+        ix = {h: i for i, h in enumerate(header)}
+        for r in rows:
+            if len(r) < len(header):
+                continue
+            t = r[ix["ISSUERTRADINGSYMBOL"]].strip().upper()
+            cik = r[ix["ISSUERCIK"]].strip()
+            fd = parse_date(r[ix["FILING_DATE"]])
+            if not t or not cik or fd is None:
+                continue
+            a = agg.setdefault((t, cik), {"ticker": t, "cik": cik, "issuer_name": r[ix["ISSUERNAME"]].strip(),
+                                          "n_filings": 0, "first_filing": fd, "last_filing": fd})
+            a["n_filings"] += 1
+            a["first_filing"] = min(a["first_filing"], fd)
+            a["last_filing"] = max(a["last_filing"], fd)
+    return sorted(agg.values(), key=lambda a: (a["ticker"], a["cik"]))
+
+
+def write_ticker_cik(qkey, rows):
+    os.makedirs(TICKER_CIK_DIR, exist_ok=True)
+    cols = ["ticker", "cik", "issuer_name", "n_filings", "first_filing", "last_filing"]
+    with open(os.path.join(TICKER_CIK_DIR, f"{qkey}.csv.gz"), "wb") as raw, \
+            gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as gz, \
+            io.TextIOWrapper(gz, encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols)
+        w.writeheader()
+        w.writerows(rows)
+
+
 def write_year(year, rows):
     os.makedirs(PURCHASE_DIR, exist_ok=True)
     rows.sort(key=lambda r: (r["filing_date"], r["ticker"], r["owner_cik"], r["trans_date"]))
@@ -315,7 +351,9 @@ def main():
         if y not in by_year:
             by_year[y] = read_year(y)
         by_year[y] = [r for r in by_year[y] if r.get("quarter") != qkey] + rows
-        state["done"][qkey] = {"rows": len(rows), "fetched": date.today().isoformat()}
+        pairs = extract_ticker_cik(blob)
+        write_ticker_cik(qkey, pairs)
+        state["done"][qkey] = {"rows": len(rows), "ticker_cik": len(pairs), "fetched": date.today().isoformat()}
         save(y)  # 每季存檔：中途被中斷，已完成的季度不會白抓
         print(f"  [{n}/{len(todo)}] {qkey}：買入 {len(rows)} 筆（{len(blob) / 1e6:.1f} MB）", flush=True)
         time.sleep(0.5)  # SEC 限每秒 10 次，這裡遠低於
