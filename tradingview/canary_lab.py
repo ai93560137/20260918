@@ -64,6 +64,13 @@ for name, f in [('vvix高位', 'vvix_daily.csv'), ('move高位', 'move_daily.csv
 vxn = s('vxn_daily.csv')
 sp_vxn = (vxn - vix).dropna()
 sigs['vxn溢價'] = sp_vxn > sp_vxn.rolling(252).quantile(0.9)
+for name, f in [('印度vix高位', 'global_vol/india_vix.csv'),
+                ('澳洲axvi高位', 'global_vol/australia_axvi.csv')]:
+    try:
+        x = s(f)
+        sigs[name] = x > x.rolling(252).quantile(0.9)
+    except Exception as e:
+        print(f"{name} 無數據: {e!r}")
 green = ((v9 - vix).dropna() <= 0)          # VIX9D 未倒掛 = 現有儀表沒響
 
 dis = {'SPX': disasters(vix, spx), 'HSI': disasters(s('vhsi_daily.csv'), hsi)}

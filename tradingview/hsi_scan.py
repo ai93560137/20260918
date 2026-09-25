@@ -238,10 +238,12 @@ def scan_us():
     v3m, _ = _last_and_pct('vix3m_daily.csv')
     _, vvix_p = _last_and_pct('vvix_daily.csv')
     _, move_p = _last_and_pct('move_daily.csv')
+    _, axvi_p = _last_and_pct('axvi_daily.csv')
     if v9 is not None:
         s9 = v9 - iv
         s3 = (iv - v3m) if v3m is not None else None
-        hot = [n for n, p in [('VVIX', vvix_p), ('MOVE', move_p)] if p is not None and p >= 90]
+        hot = [n for n, p in [('VVIX', vvix_p), ('MOVE', move_p), ('AXVI', axvi_p)]
+               if p is not None and p >= 90]
         if s3 is not None and s3 > 0:
             lvl = '深紅·災難級'
         elif s9 > 0:
@@ -257,6 +259,8 @@ def scan_us():
             pane += f" VVIX p{vvix_p:.0f}"
         if move_p is not None:
             pane += f" MOVE p{move_p:.0f}"
+        if axvi_p is not None:
+            pane += f" AXVI p{axvi_p:.0f}"
         DIGEST.append(f"{pane}（{lvl}）")
         if s3 is not None and s3 > 0:
             ALERTS.append(f"金絲雀深紅：VIX−VIX3M = {s3:+.1f} 倒掛（歷史誤報僅 9%，"
