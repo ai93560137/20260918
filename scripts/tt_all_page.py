@@ -43,6 +43,8 @@ h2{font-size:1.15rem;margin:0}
 table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
 th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule)}
 th{color:var(--muted);font-weight:500;font-size:.8rem;letter-spacing:.04em;position:sticky;top:0;background:var(--surface)}
+th[data-sort]{cursor:pointer;user-select:none}th[data-sort]:hover,th[data-sort]:focus-visible{color:var(--accent-ink);outline:none}
+th[data-sort]::after{content:" ↕";opacity:.45}th[data-sort].asc::after{content:" ↑";opacity:1}th[data-sort].desc::after{content:" ↓";opacity:1}
 td:nth-child(2),td:nth-child(3),th:nth-child(2),th:nth-child(3){text-align:left}
 tbody tr:nth-child(even){background:var(--row)}
 tr:last-child td{border-bottom:0}
@@ -89,7 +91,10 @@ def section(meta: dict, rows: list[dict]) -> str:
     trs = []
     for r in rows:
         star = '<span class="star">★</span>' if r.get("in40") == "1" and meta["n"] > meta["cap"] else ""
-        trs.append(f"<tr><td>{star}</td><td>{html.escape(r['ticker'])}</td><td>{html.escape(r.get('name', ''))}</td>"
+        k = ticker_key(r["ticker"])
+        tkey = f"{k[0]}-{k[1]:012d}-{k[2]}" if k[0] == 0 else f"{k[0]}-{k[1]}"
+        trs.append(f"<tr data-ticker=\"{html.escape(tkey)}\" data-ret=\"{float(r['ret252'])}\" data-rs=\"{float(r['rs'])}\" data-ma=\"{float(r['above_200ma_pct'])}\">"
+                   f"<td>{star}</td><td>{html.escape(r['ticker'])}</td><td>{html.escape(r.get('name', ''))}</td>"
                    f"<td>{html.escape(r['close'])}</td><td>{pct(r['ret252'])}</td><td>{float(r['rs']):.0f}</td><td>{pct(r['above_200ma_pct'], 1)}</td></tr>")
     body = ("<tbody>" + "".join(trs) + "</tbody>") if trs else '<tbody><tr><td colspan="7" style="text-align:left">沒有股票通過趨勢模板</td></tr></tbody>'
     banner = "" if ok else '<p class="note">大市過濾未通過：本月不買入，名單只作記錄。持股中的舊倉按規則在月初開市全部賣出。</p>'
@@ -105,7 +110,7 @@ def section(meta: dict, rows: list[dict]) -> str:
   </div>
   {banner}
   <div class="tbl"><table>
-    <thead><tr><th></th><th>代號</th><th>名稱</th><th>收市</th><th>252 日報酬</th><th>RS 百分位</th><th>對 200 日線</th></tr></thead>
+    <thead><tr><th></th><th data-sort="ticker" class="asc" tabindex="0">代號</th><th>名稱</th><th>收市</th><th data-sort="ret" tabindex="0">252 日報酬</th><th data-sort="rs" tabindex="0">RS 百分位</th><th data-sort="ma" tabindex="0">對 200 日線</th></tr></thead>
     {body}
   </table></div>
 </section>"""
@@ -140,9 +145,32 @@ def build(markets: list[str]) -> str:
       <li>買入：下一交易日開市價，全部等權（40 檔版：超過 40 檔時隨機抽，種子 = 年月）。持有到下月底，中途不動。</li>
       <li>證偽：前向 12 個月相對當地 ETF 跑輸 15 個百分點，或相對全市場等權為負 → 停。</li>
     </ol>
-    <p class="note">「對 200 日線」= 收市高於 200 日均線的幅度。RS 百分位 = 252 日報酬在宇宙內的排名。表內為原始收市價（按拆股還原、不按股息）。本頁不是投資建議；回測數字見 TT_ALL_INVESTOR_BRIEF.md。</p>
+    <p class="note">「對 200 日線」= 收市高於 200 日均線的幅度。RS 百分位 = 過去 252 個交易日報酬在宇宙內由低到高的排名（0–100）；RS 90 = 一年表現贏過宇宙內 90% 的股票，模板要求 ≥ 70。點表頭可按代號、252 日報酬、RS、對 200 日線排序。表內為原始收市價（按拆股還原、不按股息）。本頁不是投資建議；回測數字見 TT_ALL_INVESTOR_BRIEF.md。</p>
   </section>
 </div>
+
+<script>
+(function(){{
+  function sortTable(th){{
+    var table=th.closest("table"), tbody=table.querySelector("tbody"), key=th.dataset.sort;
+    var was=th.classList.contains("asc")?"asc":th.classList.contains("desc")?"desc":"";
+    var dir = was ? (was==="asc"?"desc":"asc") : (key==="ticker"?"asc":"desc");
+    table.querySelectorAll("th[data-sort]").forEach(function(h){{h.classList.remove("asc","desc");}});
+    th.classList.add(dir);
+    var rows=Array.prototype.slice.call(tbody.querySelectorAll("tr[data-ticker]"));
+    rows.sort(function(a,b){{
+      if(key==="ticker"){{var x=a.dataset.ticker,y=b.dataset.ticker;return (x<y?-1:x>y?1:0)*(dir==="asc"?1:-1);}}
+      var f=key==="ret"?"ret":key==="rs"?"rs":"ma";
+      return (parseFloat(a.dataset[f])-parseFloat(b.dataset[f]))*(dir==="asc"?1:-1);
+    }});
+    rows.forEach(function(r){{tbody.appendChild(r);}});
+  }}
+  document.querySelectorAll("th[data-sort]").forEach(function(th){{
+    th.addEventListener("click",function(){{sortTable(th);}});
+    th.addEventListener("keydown",function(e){{if(e.key==="Enter"||e.key===" "){{e.preventDefault();sortTable(th);}}}});
+  }});
+}})();
+</script>
 """
 
 
