@@ -24,6 +24,7 @@
 | 每日由上而下分析 → Telegram | `scripts/daily_topdown.py`、`.github/workflows/daily_topdown.yml` | 國家排名、200 日線上個股、3／6／9／12 個月新高（只顯示最長窗口）、板塊統計、港交所中文名、`.HK`／`.JP` 代號、日期＋星期、官方假期（休市 vs 數據未到）、連續天數 keycap emoji、VCP 突破／形態區 |
 | 每日新高名單（累積版，含 streak_window／streak_longest） | `analysis/newhighs/<日>.csv/.md` | 其他分支用 `git show origin/claude/gifted-carson-v2tvhw:analysis/newhighs/...` |
 | 每日 VCP 名單 | `analysis/vcp/<日>.csv` | 前向追蹤用 |
+| **趨勢模板全部等權 月底名單**（前向記錄；本分支 `claude/stock-research-k9nzau` 獨立） | `scripts/tt_all_signal.py` → `analysis/tt_all/`；`.github/workflows/tt_all_signal.yml`（只有 workflow_dispatch，**GitHub 對非預設分支的 workflow 檔不能手動觸發也不會排程**，要自動每月跑需在預設分支放薄殼 workflow）；測試訊息 2026-09-25 經研究通道 `.github/tg_outbox_research.txt` 成功送達 Telegram | 每月最後一個交易日收市後：各市場通過趨勢模板（非斷點、非指數/ETF）的全部名單、大市過濾狀態、40 檔隨機抽（種子=年月）；訊號日 = 個股數據覆蓋 ≥ 50% 的最後一日 |
 | 官方假期表 | `universes/calendars/{hk,jp,us}.csv` | `scripts/build_market_calendars.py` |
 | 港交所中文名 | `data/equities/hk/_hkex_listed.json` | `scripts/fetch_hkex_names.py` |
 
