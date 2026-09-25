@@ -202,3 +202,23 @@
 
 本分支 2026-09 的股票研究（9 國全市場數據、回測流水線、策略、判決）已抽離到 `stock_research/`：
 策略／數據／執行 → `stock_research/README.md`；判決 → `stock_research/VERDICTS.md`；數據目錄 → `stock_research/MARKET_DATA_CATALOG.md`。
+
+## 八、金絲雀訊號登記（雲垂陣發現，2026-09-25，供他分支回測成獨立策略）
+
+**發現**：波動率期限結構倒掛是罕見的高質量前瞻風險訊號（來源分支
+`claude/dazzling-curie-f3xzb8`，驗證腳本 `tradingview/hedge_signal_lab.py` +
+`tradingview/canary_lab.py`，數據 `tradingview/data_external/*.csv` 每日自動更新）：
+
+| 訊號 | 定義 | 驗證（2011–2026，3,948 日） |
+|---|---|---|
+| 紅 | VIX9D > VIX | 未來 5 日 RV 2×（20.3 vs 11.3）、-2% 單日機率 28% vs 13%、誤報 40% |
+| 深紅 | VIX > VIX3M | SPX RV 2.63×、-2% 提升 3.0×、**誤報僅 9%**；恒指災難月 3/3、美股 4/6 事前亮燈 |
+| 黃 | VVIX 或 MOVE > 252 日 90 分位 | RV 1.4–2.0×，且在紅燈未亮時仍有 1.2–1.4× 增量（獨立資訊） |
+| 淘汰 | SKEW、VXN−VIX | 預測力不及格（RV 倍率 ≈1、災難覆蓋近零），勿重測 |
+
+回測成策略的注意事項（雲垂陣已踩過的坑）：訊號亮燈時做多波動率仍是負期望
+（見 `gamma_lab.py`：長 gamma 各種過濾全滅），出路更可能是**擇時避險/降倉**
+而非反向做多；倒掛期做空波動率平均仍賺（RV−VIX 為負），故訊號對短 vol 策略
+是調檢查頻率、不是離場鍵。恒指本地版數據管道：HKEX widget `ats=HSIW`（恒指
+週權鏈），記錄儀 `hsi_weekly_iv_log.csv` 2026-09-25 起每日累積。
+**訊號的實時運行留在雲垂陣**（日報金絲雀面板），他分支取數據自建策略即可。
