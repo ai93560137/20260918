@@ -38,7 +38,11 @@ UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 URL_UST = ("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/"
            "daily-treasury-rates.csv/{year}/all?type={kind}&field_tdr_date_value={year}&page&_format=csv")
 URL_YAHOO = "https://{host}.finance.yahoo.com/v8/finance/chart/{t}?range=1y&interval=1d"
-URL_STOOQ = "https://stooq.com/q/d/l/?s={t}&i=d&d1={d1:%Y%m%d}&d2={d2:%Y%m%d}"
+URL_NASDAQ = ("https://api.nasdaq.com/api/quote/{t}/historical?assetclass=etf"
+              "&fromdate={d1:%Y-%m-%d}&todate={d2:%Y-%m-%d}&limit=400")
+URL_CNBC = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol"
+            "?symbols={s}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json")
+CNBC_SYMBOL = {"ZN=F": "@TY.1", "ZB=F": "@US.1"}  # CNBC 的公債期貨近月代號
 URL_FISCAL = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/"
 URL_GNEWS = "https://news.google.com/rss/search?q={q}&hl={hl}&gl={gl}&ceid={ceid}"
 
@@ -211,10 +215,38 @@ def yields_block(today):
 
 
 # ---------------------------------------------------------------- 2. 債券價格
+def nasdaq(t):
+    """Nasdaq 日線收盤 [(date, close)]（美股 ETF）。"""
+    if t.endswith("=F"):
+        raise ValueError("Nasdaq 不提供期貨")
+    today = date.today()
+    r = requests.get(URL_NASDAQ.format(t=t, d1=today - timedelta(days=400), d2=today), timeout=(10, 30),
+                     headers={**UA, "Accept": "application/json", "Origin": "https://www.nasdaq.com",
+                              "Referer": "https://www.nasdaq.com/"})
+    r.raise_for_status()
+    rows = (((r.json().get("data") or {}).get("tradesTable") or {}).get("rows")) or []
+    out = [(datetime.strptime(x["date"], "%m/%d/%Y").date(), float(x["close"].replace("$", "").replace(",", "")))
+           for x in rows if x.get("close")]
+    if not out:
+        raise ValueError("Nasdaq 無資料")
+    return sorted(out)
+
+
+def cnbc(t):
+    """CNBC 即時報價，只有最新價與前一日收盤 → [(前一日, 昨收), (今天, 最新)]（期貨用）。"""
+    sym = CNBC_SYMBOL.get(t, t)
+    r = get(URL_CNBC.format(s=quote(sym)))
+    q = r.json()["FormattedQuoteResult"]["FormattedQuote"][0]
+    last = float(str(q["last"]).replace(",", ""))
+    prev = float(str(q["previous_day_closing"]).replace(",", ""))
+    today = date.today()
+    return [(today - timedelta(days=1), prev), (today, last)]
+
+
 def yahoo(t):
-    """Yahoo 日線收盤 [(date, close)]。GitHub runner 常被 429 限流，所以兩個主機輪流、慢慢重試。"""
+    """Yahoo 日線收盤 [(date, close)]。GitHub runner 常被 429 限流，所以兩個主機各試一次。"""
     err = None
-    for i, host in enumerate(("query1", "query2", "query1", "query2")):
+    for i, host in enumerate(("query1", "query2")):
         try:
             r = requests.get(URL_YAHOO.format(host=host, t=quote(t)), headers=UA, timeout=(10, 30))
             if r.status_code == 429:
@@ -228,19 +260,6 @@ def yahoo(t):
             err = e
             time.sleep(3 * (i + 1))
     raise RuntimeError(err)
-
-
-def stooq(t):
-    """Stooq 日線（Yahoo 抓不到時的備援，只有美股 ETF）。"""
-    if t.endswith("=F"):
-        raise ValueError("Stooq 不提供這檔")
-    today = date.today()
-    text = get(URL_STOOQ.format(t=f"{t.lower()}.us", d1=today - timedelta(days=400), d2=today)).text
-    out = [(date.fromisoformat(r["Date"]), float(r["Close"])) for r in csv.DictReader(io.StringIO(text))
-           if r.get("Close") not in (None, "", "N/D")]
-    if not out:
-        raise ValueError("Stooq 無資料")
-    return out
 
 
 def chg(series, days=None, ytd=False):
@@ -268,7 +287,7 @@ def prices_block():
     notes = []
     for t, name in TICKERS:
         s = None
-        for src in (yahoo, stooq):
+        for src in ((cnbc, yahoo) if t.endswith("=F") else (nasdaq, yahoo)):
             try:
                 s = src(t)
                 break
