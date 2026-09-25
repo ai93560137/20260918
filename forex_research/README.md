@@ -54,13 +54,14 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 | 日期 | 事項 |
 |---|---|
+| 2026-09-25（續） | 使用者要求續測其餘外匯：23 個商品同規格批次掃描 **全部 ☠️**（0 個達 t ≥ 2.5，合併 t −1.55），入場券結論成立；發現並修正引擎第二個 bug（`--trades` 明細兩位小數令 5 位報價外匯逐筆統計失真）；兩個引擎修正與更正後的數字已推回 `claude/gifted-carson-v2tvhw`（規格書第四節、DONCHIAN_BACKTEST.md） |
 | 2026-09-25 | 蛇蟠陣外匯測試：入場券 26 商品只有 USDJPY 勉強過（零佣金 ≤ 1.2 pip）；USDJPY ☠️（t 1.07）；XAUUSD 樣本外 13.4 年 t 1.36 → 雙向版由 ✅ 降 🔍，只做多變體 🔍（t 1.70／全期 2.75）；**發現並修正 `donchian_backtest.py` 空單回補點差方向 bug**（原本整段回測幾乎沒扣點差），前後數字見登記文件 |
 | 2026-09-24 | 建立數據管線（抓取、品質檢查、Release、一鍵下載）與目錄文件；首輪 Dukascopy 全 M1 抓法被限流，改為 HistData M1 + Dukascopy D1／H1；交叉核對抓出 HistData 時區是紐約當地時間含夏令、2004 年壞 tick，已修；**26 個商品首次全抓完成、Release `forex-data` 可用**（沙盒實測 `get_forex_data.py --pair EURUSD --merge-m1` 後 `backtest.load_bars` 可直接讀） |
 
 ## 6. 下一步（使用者未決定）
 
-1. **把引擎修正合併回主分支 `claude/gifted-carson-v2tvhw`**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFD 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
-2. **蛇蟠陣外匯到此為止**：入場券已擋掉 24 個商品，USDJPY ☠️；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
+1. ~~把引擎修正合併回主分支~~（已完成：兩個修正與更正後數字都已推回，規格書 XAUUSD 已改 🔍）
+1b. **原第 1 點的核對已做**（`donchian_backtest.py` 空單回補點差 bug，commit 933a3e7f），並用修正後引擎重看規格書／手冊的 HSI、HK50 CFD、NAS100 數字（黃金結論不變，指數 CFD 點差大會更差）；規格書的 XAUUSD ✅ 應按 VERDICTS.md 改為 🔍
+2. **蛇蟠陣外匯到此為止**：25 個商品全部測過（USDJPY ☠️、XAUUSD 🔍、其餘 23 個批次 ☠️、合併 t −1.55）；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
 3. **XAUUSD 只做多變體**是唯一有希望的形態（樣本外 t 1.70、全期 2.75）：可與主分支的 XAUUSD 前向測試（journal/）對照，記錄多頭腿與空頭腿分開的實盤損益
-4. **提供券商實際點差**：GBPJPY ≤ 1.48、EURJPY ≤ 1.21、AUDJPY ≤ 0.92、GBPUSD ≤ 0.88 pip 之內的商品可另行登記
 5. **每月更新數據**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
