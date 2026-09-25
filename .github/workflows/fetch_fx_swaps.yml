@@ -1,0 +1,36 @@
+name: FX swap probe（公開券商隔夜利息表，反算券商加價）
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths: ['scripts/fetch_fx_swaps.py', '.github/workflows/fetch_fx_swaps.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests
+      - run: python3 scripts/fetch_fx_swaps.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data_forex_rates/swaps
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(forex): 券商 swap 探針 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep $((i * 7)); git fetch origin ${{ github.ref_name }}; git reset --mixed FETCH_HEAD; git add data_forex_rates/swaps
+            git diff --cached --quiet && exit 0
+            git commit -q -m "data(forex): 券商 swap 探針 $(date -u +%F)"
+          done
+          exit 1
