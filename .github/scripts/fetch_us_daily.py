@@ -15,7 +15,7 @@ log = []
 for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
                    ('^VIX', 'vix_daily.csv'), ('^GSPC', 'spx_daily.csv'),
                    ('^VXN', 'vxn_daily.csv'), ('^NDX', 'ndx_daily.csv'),
-                   ('^N225', 'n225_daily.csv')]:
+                   ('^N225', 'n225_daily.csv'), ('^VIX9D', 'vix9d_daily.csv')]:
     try:
         d = yf.download(sym, period='max', interval='1d', progress=False, auto_adjust=False)
         if isinstance(d.columns, pd.MultiIndex):
