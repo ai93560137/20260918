@@ -28,6 +28,8 @@ OUT = ROOT / "analysis" / "tt_all"
 NAME = {"hk": "港股", "jp": "日股", "us": "美股", "tw": "台灣", "kr": "韓國", "au": "澳洲", "ca": "加拿大", "in": "印度", "sg": "新加坡"}
 ETF = {"hk": "盈富 2800", "jp": "1321", "us": "SPY", "tw": "0050", "kr": "KODEX200", "au": "STW", "ca": "XIU", "in": "NIFTYBEES", "sg": "ES3"}
 CAP = 40
+# 回測等級（TT_MOMENTUM_BACKTEST.md 第四部分）：試行 = 相對等權 ≥ 1.7；觀察 = alpha 正但相對等權 < 1.7；不建議 = alpha ≤ 0 或接近 0
+TIER = {"hk": "試行", "sg": "試行", "ca": "試行", "in": "試行", "au": "試行", "us": "觀察", "jp": "觀察", "tw": "不建議", "kr": "不建議"}
 TG_LIMIT = 3900
 
 
@@ -69,7 +71,7 @@ def run(mk: str, force: bool) -> None:
     x = T.TTMom(mk)
     m = x.m
     # 訊號日 = 最後一個「宇宙內至少一半股票有價格」的日曆日（ETF 序列可能比 Release 的個股數據新一兩天）
-    cover = (m.has & m.member).sum(0) / np.maximum(m.member.sum(0), 1)
+    cover = (m.has & m.member).sum(0) / max(int(getattr(m, "top_n", 0)) or int(np.median(m.member.sum(0))), 1)   # 分母 = 宇宙前 N（成員只在有數據的股票中定義，不能當分母）
     j = int(np.nonzero(cover >= 0.5)[0][-1])
     d = m.cal[j]
     if j < x.D - 1:
@@ -127,7 +129,7 @@ def run(mk: str, force: bool) -> None:
     meta = {"market": mk, "name": NAME[mk], "etf": ETF[mk], "date": tag, "month_end": month_end, "test": bool(force and not month_end),
             "market_ok": ok, "etf_vs_ma50": float(lvl[j] / ma50 - 1), "etf_vs_ma200": float(lvl[j] / ma200 - 1),
             "n": len(rows), "top_n": int(getattr(m, "top_n", 0)), "seed": seed, "cap": CAP,
-            "n_enter": len(cur_set - prev_set) if prev_set else None, "n_leave": len(prev_set - cur_set) if prev_set else None,
+            "tier": TIER[mk], "n_enter": len(cur_set - prev_set) if prev_set else None, "n_leave": len(prev_set - cur_set) if prev_set else None,
             "prev_date": prev[-1].stem.split("_", 1)[1] if prev else None,
             "top5": [f"{r['ticker']} {r['name']}".strip() for r in rows[:5]]}
     (OUT / f"{mk}_latest.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -159,11 +161,12 @@ def write_summary(markets: list[str]) -> None:
     url = url_p.read_text(encoding="utf-8").strip() if url_p.exists() else ""
     d = max(x["date"] for x in metas)
     test = any(x["test"] for x in metas)
-    lines = [f"📋 趨勢模板全部等權｜月底摘要 {d}{'（測試，非月底）' if test else ''}", ""]
+    lines = [f"📋 趨勢模板全部等權｜月底摘要 {d}{'（測試，非月底）' if test else ''}",
+             "等級：試行 = 回測相對等權顯著（港新加印澳）；觀察 = 日美；不建議 = 台韓（回測 alpha 不顯著）", ""]
     for x in metas:
         st = "✅ 持股" if x["market_ok"] else "⛔ 現金"
         chg = "" if x["n_enter"] is None else f"｜較上月 +{x['n_enter']} −{x['n_leave']}"
-        lines.append(f"{x['name']}：{st}｜{x['etf']} 對 50/200 日線 {x['etf_vs_ma50']:+.1%}/{x['etf_vs_ma200']:+.1%}｜通過模板 {x['n']} 檔{chg}")
+        lines.append(f"{x['name']}（{x.get('tier', '')}）：{st}｜{x['etf']} 對 50/200 日線 {x['etf_vs_ma50']:+.1%}/{x['etf_vs_ma200']:+.1%}｜通過模板 {x['n']} 檔{chg}")
         if x["market_ok"] and x["top5"]:
             lines.append("　RS 前五：" + "、".join(x["top5"]))
     lines += ["", "執行：下一交易日開市等權買入（40 檔版：超過 40 檔隨機抽，種子 " + str(metas[0]["seed"]) + "），持有到下月底；不止損、不加減碼",

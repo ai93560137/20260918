@@ -89,7 +89,7 @@ def section(meta: dict, rows: list[dict]) -> str:
     test = '<span class="sub">（測試輸出，非月底）</span>' if meta.get("test") else ""
     return f"""
 <section class="market" id="{meta['market']}">
-  <div class="head"><h2>{meta['name']} <span class="sub">{meta['date']}</span> {test}</h2>{pill}</div>
+  <div class="head"><h2>{meta['name']} <span class="sub">{meta['date']} · {meta.get('tier', '')}</span> {test}</h2>{pill}</div>
   <div class="stats">
     <div><span>基準 ETF 對 50 / 200 日線</span><b>{meta['etf']}　{pct(meta['etf_vs_ma50'], 1)} / {pct(meta['etf_vs_ma200'], 1)}</b></div>
     <div><span>通過趨勢模板</span><b>{meta['n']} 檔</b>（宇宙前 {meta['top_n']}）</div>
@@ -120,7 +120,7 @@ def build(markets: list[str]) -> str:
 <div class="wrap">
   <header>
     <h1>趨勢模板全部等權 · 月底名單</h1>
-    <p class="sub">數據日 {date}。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>
+    <p class="sub">數據日 {date}。等級：試行 = 回測相對等權顯著（港、新、加、印、澳）；觀察 = 日、美；不建議 = 台、韓（回測 alpha 不顯著，只作記錄）。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>
   </header>
   <nav class="nav">{nav}</nav>
   {''.join(secs)}
