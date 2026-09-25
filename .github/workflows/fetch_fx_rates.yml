@@ -1,0 +1,36 @@
+name: FX interest rates（利差策略用各國短期利率，FRED）
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths: ['scripts/fetch_fx_rates.py', '.github/workflows/fetch_fx_rates.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q pandas requests
+      - run: python3 scripts/fetch_fx_rates.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data_forex_rates
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(forex): 各國短期利率 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep $((i * 7)); git fetch origin ${{ github.ref_name }}; git reset --mixed FETCH_HEAD; git add data_forex_rates
+            git diff --cached --quiet && exit 0
+            git commit -q -m "data(forex): 各國短期利率 $(date -u +%F)"
+          done
+          exit 1
