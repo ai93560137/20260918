@@ -1,0 +1,69 @@
+name: GCP deploy（部署 Cloud Function）
+
+# 手動觸發（或由 Claude 透過 GitHub API 觸發）。用 Workload Identity Federation 認證，GitHub 不保存任何金鑰。
+# 需要的 secrets：GCP_WORKLOAD_IDENTITY_PROVIDER、GCP_SERVICE_ACCOUNT（scripts/gcp_bootstrap.sh --github 會印出來）。
+# 預設 dry_run=true：只打包、檢查來源、印出「將會做什麼」。要真的部署把 dry_run 設成 false。
+# 排程 / 手動 workflow 只在預設分支上出現；可用 ref 指定要部署哪個分支的四個檔案。
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 要部署的分支或 commit（預設：觸發時所在的分支）
+        required: false
+        default: ''
+      region:
+        description: 區域（asia-east1 台灣 / asia-east2 香港）
+        required: false
+        default: asia-east1
+      dry_run:
+        description: 只檢查不部署
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: gcp-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install agent dependencies
+        run: pip install -q -r scripts/requirements-agent.txt
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        if: ${{ inputs.dry_run == false }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Package check (dry run)
+        env:
+          GCP_REGION: ${{ inputs.region }}
+        run: python3 scripts/gcp_agent.py deploy
+
+      - name: Deploy
+        if: ${{ inputs.dry_run == false }}
+        env:
+          GCP_REGION: ${{ inputs.region }}
+        run: python3 scripts/gcp_agent.py deploy --yes
+
+      - name: Recent logs
+        if: ${{ inputs.dry_run == false }}
+        env:
+          GCP_REGION: ${{ inputs.region }}
+        run: python3 scripts/gcp_agent.py logs --since 10m --limit 40 || true
