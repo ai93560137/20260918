@@ -248,7 +248,19 @@ gcloud functions deploy receive_tradingview_signal \
 gcloud functions logs read receive_tradingview_signal --region=asia-east1 --limit=50
 ```
 
-## 附錄 B：從 GitHub 部署
+## 附錄 B：讓 Claude 代你部署（不用 gcloud）
+
+設定一次服務帳戶後（見 `AGENTIC.md`），在 Claude Code 工作階段裡：
+
+```bash
+python3 scripts/gcp_agent.py deploy         # dry-run：打包四個檔案並檢查
+python3 scripts/gcp_agent.py deploy --yes   # 真的部署，完成後自動檢查五個頁面
+python3 scripts/gcp_agent.py logs --since 30m
+```
+
+或直接對 Claude 說「部署最新的 main.py」，它會先給你看 dry-run 結果再問你要不要執行。
+
+## 附錄 C：從 GitHub 部署
 
 來源分頁選「從存放區部署」，指向本 repo 與分支，目錄留根目錄（`/`），
 進入點一樣填 `receive_tradingview_signal`。之後改程式只要 push 再按部署。
