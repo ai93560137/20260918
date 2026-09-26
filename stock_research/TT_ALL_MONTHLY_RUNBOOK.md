@@ -68,6 +68,15 @@ python3 scripts/tt_all_page.py               # 網頁多一欄「IB」與「IBKR
 - IB 的「下一交易日開市價」存在 `_verify_ibkr.csv` 的 `ibkr_next_open`，是執行基準：第 7 步記錄成交後，滑價 = 成交價 ÷ 開市價 − 1。
 - 把 `tg_verify_ibkr.txt` 內容寫進 `.github/tg_outbox_research.txt` 並 push 就發到 Telegram。
 
+## 第 3d 步：記錄烽燧燈色（一行指令，不改任何行為）
+
+```bash
+python3 scripts/tt_all_beacon.py     # 讀雲垂分支六隻鳥日線，記各市場訊號日收盤的燈色到 analysis/tt_all/beacon_log.csv
+```
+
+烽燧響應規則（鳥翔）：紅=不行動；深紅=不行動；黃=不行動。每次月底訊號日只記錄訊號日收盤的燈色（`scripts/tt_all_beacon.py` → `analysis/tt_all/beacon_log.csv`，Telegram 摘要附一行「烽燧：燈色（只記錄不行動）」）。登記日期：2026-09-26。
+理由：鳥翔規格已凍結，🔍 判決基於原規格，前向 12 個月內任何反應都會令證偽結果無法歸因；烽燧預測力只在標普／恒指證實，鳥翔九個市場未證；鳥翔自有大市過濾（ETF 對 50／200 日線）已承擔同一職能。第二期若要響應，先預先登記回測「深紅週延後月底換倉」（CANARY_PLAYBOOK §7 建議；lag=1、閾值固定、t≥3）過門檻後另作新登記，舊紀錄不得追溯重算。
+
 ## 第 4 步：發布網頁
 
 在 Claude session 說「重新發布月底名單網頁」：把 `analysis/tt_all/index.html` 重新發布到**同一個**連結 https://claude.ai/artifact/MidE38TQkYwN6pjoHFn9sP （路徑不變即更新，連結不變）。

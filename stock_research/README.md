@@ -24,6 +24,7 @@
 | `TT_MOMENTUM_BACKTEST.md` | 趨勢模板動量組合（月底選 20 檔、大市過濾、等權持一月）9 國登記與結果：第一輪 20 檔排序：只是動量 beta（合併 3.13、相對等權 1.85）、排序有害；**第二輪全部等權：🔍（合併 4.59、相對等權 3.21、十條全過）**；含數據斷點規則與基準 ETF 修正 |
 | `TT_ALL_MONTHLY_RUNBOOK.md` | 月底操作手冊：更新數據 → 出名單 → 檢查 → 發布網頁 → Telegram → 下單 → 記錄成交 → 每月覆核與證偽 |
 | `IBKR_DATA_REQUEST.md` | 給雲垂分支（GCP VM + IB Gateway）的數據需求：用 `scripts/ib_stock_verify.py` 抓月底名單的訊號日收市與下一交易日開市，回傳 `data_stock_ibkr/`；鳥翔分支跑 `tt_all_verify.py --ibkr` 當第三把尺 |
+| （烽燧響應登記） | 鳥翔對金絲雀燈色的預先登記：紅／深紅／黃皆不行動，只記錄（`scripts/tt_all_beacon.py` → `analysis/tt_all/beacon_log.csv`）；登記日 2026-09-26；全文在 RESEARCH_HANDBOOK.md §五 鳥翔段與 TT_ALL_MONTHLY_RUNBOOK.md 第 3d 步 |
 | `TT_ALL_INVESTOR_BRIEF.pdf` | 投資人說明書 PDF（`scripts/tt_all_pdf.py` 由 .md 產生，Chromium 排版；3 頁） |
 | `TT_ALL_INVESTOR_BRIEF.md` | 投資人說明書：一句話、證據、可執行規則、全部指標（年化、回撤、夏普、勝率、RRR、獲利因子、期望值、換手、alpha）、風險、證偽條件、建議配置 |
 | `TT_ALL_INVESTOR_SUMMARY.md` | 給投資人看的趨勢模板全部等權摘要：各市場期望值、勝率、RRR、獲利因子、總回報 vs ETF、回撤、最差月、換手（全部版與 40 檔版） |

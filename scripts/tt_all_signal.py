@@ -196,6 +196,13 @@ def write_summary(markets: list[str]) -> None:
         lines.append(f"{x['name']}（{x.get('tier', '')}）：{st}｜{x['etf']} 對 50/200 日線 {x['etf_vs_ma50']:+.1%}/{x['etf_vs_ma200']:+.1%}｜通過模板 {x['n']} 檔{chg}")
         if x["market_ok"] and x["top5"]:
             lines.append("　RS 前五：" + "、".join(x["top5"]))
+    bl = OUT / "beacon_log.csv"
+    if bl.exists():
+        beacon = {r["date"]: r for r in csv.DictReader(bl.open(newline="", encoding="utf-8"))}
+        lamps = sorted({beacon[x["date"]]["lamp"] for x in metas if x["date"] in beacon})
+        if lamps:
+            lines.append("")
+            lines.append("烽燧（金絲雀）訊號日收盤：" + "／".join(lamps) + "　— 鳥翔登記：只記錄、不行動（2026-09-26）")
     lines += ["", "執行：下一交易日開市等權買入（40 檔版：超過 40 檔隨機抽，種子 " + str(metas[0]["seed"]) + "），持有到下月底；不止損、不加減碼",
               "全部名單、收市價、252 日報酬、RS：" + (url if url else "（網頁連結待設定：analysis/tt_all/page_url.txt）"),
               "證偽：前向 12 個月相對當地 ETF 跑輸 15 個百分點或相對等權為負 → 停"]
