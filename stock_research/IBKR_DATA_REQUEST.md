@@ -47,7 +47,8 @@ nohup python3 scripts/ib_stock_verify.py --port 4002 --job closes > data_stock_i
 1. 把 `data_stock_ibkr/` 整個資料夾（含 `_status.txt` 與 `.log`）**commit 到雲垂分支**（每檔幾十 KB，直接進 git）。
 2. commit 訊息寫 `data(ibkr): 鳥翔月底名單 收市／開市覆核 <訊號日>`；鳥翔分支會 `git fetch` 後 `git checkout origin/claude/dazzling-curie-f3xzb8 -- data_stock_ibkr` 取用，
    再跑 `python3 scripts/tt_all_verify.py --ibkr`（把 IBKR 當第三把尺，寫進網頁「覆核」欄與 Telegram）。
-3. 若 probe 就被擋（paper 帳戶沒有某交易所的歷史數據權限），**不要買訂閱**——交回錯誤訊息，我們再決定。
+3. 若 probe 就被擋（paper 帳戶沒有某交易所的歷史數據權限），**不要自己買訂閱**——交回錯誤訊息，由用戶決定。
+   **2026-09-26 用戶已決定：加拿大（TSE）與日本（TSEJ）買 IB 歷史數據訂閱**，由用戶在 IBKR Client Portal 操作（見第 8 節）；訂閱生效後雲垂只需重跑 `--market ca jp`。
 
 ## 4. 鳥翔分支收到後會做的檢查
 
@@ -79,5 +80,25 @@ nohup python3 scripts/ib_stock_verify.py --port 4002 --job closes > data_stock_i
 | 印、韓 | 0 | — | probe 首檔即 `no_contract` |
 
 結論：**美澳港新台主板五個市場**可用 IB 做收市覆核與「下一交易日開市」執行基準（370 檔已存）；澳洲與台灣主板從「只有 Yahoo」升級為有獨立來源。
-加、日要買 IB 歷史數據訂閱才有——按第 3 節第 3 條不買，由用戶決定（日本 149 檔是最大市場之一）。台灣上櫃、印、韓維持 Yahoo 單源。
+加、日要買 IB 歷史數據訂閱才有——用戶 2026-09-26 決定買（第 8 節）。台灣上櫃、印、韓維持 Yahoo 單源。
 鳥翔分支的處理：`analysis/tt_all/<市場>_<日期>_verify_ibkr.csv`、`<市場>_verify_ibkr.json`、網頁多一欄「IB」、Telegram 一則「🔎 鳥翔｜IBKR 第三來源覆核」。
+
+## 8. 加拿大／日本訂閱（用戶 2026-09-26 決定買）
+
+**用戶在 IBKR Client Portal 做（雲垂與鳥翔都碰不到帳戶）：**
+1. 登入**實盤**帳戶的 Client Portal → 設定 → 帳戶設定 → 市場數據訂閱（Market Data Subscriptions）。
+2. 北美區加 **Toronto Stock Exchange（TSE／TSX）Level I**；亞太區加 **Tokyo Stock Exchange（TSEJ）Level I**。非專業（Non-Professional）等級即可，只要日線收市與開市；價格與名稱以 IBKR 頁面為準。
+3. 同一頁勾 **「與模擬帳戶共享市場數據訂閱」（Share real-time market data subscriptions with paper trading account）**——雲垂的 IB Gateway 連的是 paper（4002），不勾就仍然 `Error 162 No market data permissions`。
+4. 訂閱通常立即或下一個交易日生效；生效後 IB 歷史數據（回溯一年以上）跟著開放，不另收費。
+
+**生效後雲垂跑（只重抓失敗列，ok 的跳過）：**
+```bash
+cd ~/20260918 && git fetch origin claude/stock-research-k9nzau
+git checkout origin/claude/stock-research-k9nzau -- scripts/ib_stock_verify.py analysis/tt_all/ibkr_request.csv
+python3 scripts/ib_stock_verify.py --port 4002 --job probe --market ca jp          # 先看 162 有沒有消失
+python3 scripts/ib_stock_verify.py --port 4002 --job closes --market ca jp         # 70 + 149 檔，約 10 分鐘
+git add data_stock_ibkr && git commit -m "data(ibkr): 鳥翔月底名單 加／日 收市／開市覆核 2026-09-23（訂閱後補抓）" && git push
+```
+**鳥翔收到後**：`git checkout origin/claude/dazzling-curie-f3xzb8 -- data_stock_ibkr && python3 scripts/tt_all_verify.py --ibkr && python3 scripts/tt_all_page.py`，重發網頁與 Telegram。
+
+**提醒**：日本名單訊號日是 2026-09-18（測試輸出），IB `1 M` 日線足夠回溯；若拖過 10 月中才生效，改抓十月底的正式名單即可，不必補九月的。
