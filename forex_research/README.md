@@ -58,6 +58,12 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 - 已判決不重測；判決追加到 `forex_research/VERDICTS.md`
 - 不 force-push、不 rebase 別人的 commit，合併用 `git pull --no-rebase`；不開 PR 除非使用者要求；commit 不寫模型名
 - Telegram token 只在 GitHub Secrets（TG_BOT_TOKEN／TG_CHAT_ID），不寫進程式或對話；不用 `.github/tg_outbox.txt`
+- **烽燧響應規則（登記日期 2026-09-26；烽燧 = 雲垂陣 CANARY_PLAYBOOK.md §2 的紅／深紅／黃燈，本分支只取用不改閾值）**：
+  - 路線 C 前向記錄（利差 top2／top3、三因子，`forex_research/forward/`）：**紅、深紅、黃皆不改倉位，只在該月記錄欄標註燈色**。
+    依據：FX_NEW_INFO_BACKTEST.md E2——VIX 過濾利差籃子 t 0.21 低於不過濾的 0.81，避開崩跌也避開反彈；月頻籃子對烽火不反應是經回測的決定，不是沒想過。
+  - 外匯波動溢價（尚未登記；數據見 IBKR_DATA_REQUEST.md）：登記時**照抄雲垂陣的規則**——進場日紅 = 延後至首個綠日（≤ 10 交易日，逾期跳過）；進場日深紅 = 跳過本月；
+    持倉中紅 = 加一次 delta 檢查；持倉中深紅 = 複核止損與保證金；黃 = 標註不行動；任何燈色不平倉。這裡先寫死，登記文件不得另訂。
+  - 修改以上規則 = 新登記，舊紀錄不追溯重算。
 - 改每日報告或股票 Actions 工作流程的改動要推回 `claude/gifted-carson-v2tvhw`（那些 Actions 固定 checkout 該分支）；
   `fetch_forex.yml` 則固定在本分支跑
 
