@@ -14,6 +14,12 @@
 #   trial_yellow2       🟡🟡 黃×2:至少兩隻黃鳥同時亮
 #   trial_deep_yellow   🟡 深黃:VVIX > 自身滾動 252 日 95 分位
 #
+# 雙軸欄位(2026-09-26 紅燈提位,見 RED_UPGRADE.md):
+#   axis_short          短期軸(VIX9D 系):紅 / 走平 / 綠      看未來一兩週對沖負載
+#   axis_disaster       災難軸(VIX3M 系):深紅 / 綠           看災難風險
+#   trial_red_deep      🔴 紅相對深度(試用,無警報權):slope_9d > 自身滾動 252 日 p90
+#   trial_red_9d3m      🔴 9D對3M倒掛(試用,無警報權):VIX9D − VIX3M > 0,紅與深紅之間的中間層
+#
 # 口徑與雲垂陣 tradingview/canary_lab.py 一致:
 #   * 滾動 252 日 90 分位 = pandas `x.rolling(252).quantile(0.9)`,窗口**含當日**,
 #     線性插值;不足 252 筆的日子為空值。這裡用純標準庫重現,不需安裝 pandas。
@@ -56,11 +62,11 @@ FLAT_LOWER = -0.5
 
 # 紅燈或深紅亮起時一併展示(CANARY_PLAYBOOK.md §3 註,2026-09-26 增補)
 RED_NOTE = (
-    "註:紅與深紅的分工。Lim(2026,SSRN 6752518)發現含 VIX9D 的期限結構量度,\n"
-    "    對未來 5–10 個交易日實現波動率的預測力在所有期限上勝過傳統 VIX−VIX3M 量度\n"
-    "    (通過 2019–2026 樣本外檢驗),紅燈的學理地位高於手冊 §3 表所示。\n"
-    "    但該文預測的是短期實現波動;深紅的王牌地位來自「災難月事前預警」,\n"
-    "    兩者目標不同,不衝突:看未來一兩週的對沖負載看紅,看災難風險看深紅。"
+    "註:紅與深紅的分工。Lim(2026,SSRN 6752518)發現含 VIX9D 的量度在控制 VIX 水準後,\n"
+    "    對未來 5–10 日實現波動有增量預測力(R² 額外 +2.4~6.9 個百分點,通過樣本外檢驗)。\n"
+    "    但在手冊 §3 口徑(無條件亮燈日 RV 倍率、同樣本 2011 起)深紅仍勝紅:SPX 5 日 2.56 對 1.79。\n"
+    "    兩者不矛盾:紅的價值在覆蓋面(亮燈最多、災難月覆蓋 4/4),是「別進場」的早期雷達;\n"
+    "    深紅的價值在精度(誤報 10%)。看未來一兩週的對沖負載看紅(短期軸),看災難風險看深紅(災難軸)。"
 )
 
 
@@ -148,6 +154,9 @@ def build(start=None):
     vv_dates = [d for d, _ in series["vvix"]]
     vv_vals = [v for _, v in series["vvix"]]
     vvix_p95 = dict(zip(vv_dates, rolling_quantile(vv_vals, q=QUANTILE_DEEP)))
+    s9_dates = [d for d, _ in series["vix9d"] if d in close["vix"]]
+    s9_vals = [close["vix9d"][d] - close["vix"][d] for d in s9_dates]
+    slope9_p90 = dict(zip(s9_dates, rolling_quantile(s9_vals)))
 
     # 日曆:VIX 交易日,自 VIX3M 起算(深紅可算的第一天)
     first = series["vix3m"][0][0]
@@ -177,6 +186,13 @@ def build(start=None):
         yellow2 = None if ycount is None else ycount >= 2
         vv, vthr = close["vvix"].get(d), vvix_p95.get(d)
         deep_yellow = None if (vv is None or vthr is None) else vv > vthr
+
+        # 雙軸(紅燈提位):短期軸看 VIX9D,災難軸看 VIX3M,互不遮蔽
+        axis_short = "" if red is None else ("紅" if red else ("走平" if flat else "綠"))
+        axis_disaster = "" if deep is None else ("深紅" if deep else "綠")
+        thr9 = slope9_p90.get(d)
+        red_deep = None if (s9 is None or thr9 is None) else s9 > thr9
+        red_9d3m = None if (v9 is None or v3 is None) else (v9 - v3) > 0
 
         # 單欄燈色(斜率燈互斥;黃燈另欄獨立標示)
         if deep:
@@ -210,6 +226,11 @@ def build(start=None):
             "trial_yellow2": flag(yellow2),
             "vvix_p95": fmt(vvix_p95.get(d), 2),
             "trial_deep_yellow": flag(deep_yellow),
+            "axis_short": axis_short,
+            "axis_disaster": axis_disaster,
+            "slope9_p90": fmt(thr9, 2),
+            "trial_red_deep": flag(red_deep),
+            "trial_red_9d3m": flag(red_9d3m),
         })
     return rows
 
@@ -222,15 +243,18 @@ def summarize(rows):
     last = rows[-1]
     print(f"\n燈色表 {rows[0]['date']} → {last['date']},共 {len(rows)} 個交易日")
     for key, label in [("red", "紅"), ("deep_red", "深紅"), ("flat", "走平"), ("yellow", "黃"),
-                       ("trial_yellow2", "黃×2(試用)"), ("trial_deep_yellow", "深黃(試用)")]:
+                       ("trial_yellow2", "黃×2(試用)"), ("trial_deep_yellow", "深黃(試用)"),
+                       ("trial_red_deep", "紅相對深度(試用)"), ("trial_red_9d3m", "9D對3M倒掛(試用)")]:
         n, tot = share(key)
         print(f"  {label:<3} {n:>5} / {tot} 日  ({n / tot * 100 if tot else 0:.1f}%)")
     yparts = "/".join(f"{b}={last['yellow_' + b] or '-'}" for b in PCT_BIRDS)
     print(f"\n最新 {last['date']}:{last['light'] or '(無資料)'}"
           f"  slope_9d={last['slope_9d']}  slope_3m={last['slope_3m']}"
           f"  黃={last['yellow'] or '-'} ({yparts})")
+    print(f"雙軸:短期軸={last['axis_short'] or '-'}  災難軸={last['axis_disaster'] or '-'}")
     print(f"試用(無警報權):yellow_count={last['yellow_count'] or '-'}"
-          f"  黃×2={last['trial_yellow2'] or '-'}  深黃VVIX p95={last['trial_deep_yellow'] or '-'}")
+          f"  黃×2={last['trial_yellow2'] or '-'}  深黃VVIX p95={last['trial_deep_yellow'] or '-'}"
+          f"  紅相對深度p90={last['trial_red_deep'] or '-'}  9D對3M倒掛={last['trial_red_9d3m'] or '-'}")
     print("提醒:此燈色只能用於下一個交易日起(lag=1)。")
     if last["light"] in ("紅", "深紅"):
         print("\n" + RED_NOTE)

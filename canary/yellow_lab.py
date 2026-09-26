@@ -15,7 +15,7 @@ Park 2015 / Huang et al. 2019 指出 VVIX 獨立於 VIX 被定價),候選**預�
   相對類
     VVIX/VIX    VVIX ÷ VIX > 該比率的滾動 252 日 p90(「對恐懼的恐懼」相對於恐懼本身)
 
-考核口徑與雲垂陣 tradingview/canary_lab.py 完全一致(對 SPX 與 HSI 各一份):
+考核口徑與雲垂陣 tradingview/canary_lab.py 完全一致(共用 lab_common.py;對 SPX 與 HSI 各一份):
   1. 亮燈日未來 5 天 RV vs 不亮燈(倍率)+ Welch t 值
   2. 亮燈日 5 天內見 −2% 單日機率 vs 無條件(提升)+ 誤報率(亮燈但未來 RV 低於中位)
   3. 增量:VIX9D 未倒掛(綠)時亮燈,是否仍有預測力
@@ -33,60 +33,14 @@ Park 2015 / Huang et al. 2019 指出 VVIX 獨立於 VIX 被定價),候選**預�
 用法(需 pandas):python3 canary/yellow_lab.py  → 印表 + 寫 canary/YELLOW_UPGRADE.md
 """
 import os
-import sys
 from datetime import date
 
-import numpy as np
 import pandas as pd
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-D = os.path.join(HERE, "data_external")
+from lab_common import HERE, disasters, evaluate, fmt_table, hi, s
+
 OUT_MD = os.path.join(HERE, "YELLOW_UPGRADE.md")
-
-W, Q, Q_DEEP = 252, 0.9, 0.95
-MIN_N = 100
-
-
-def s(f):
-    return pd.read_csv(os.path.join(D, f), parse_dates=["Date"]).set_index("Date").Close.dropna()
-
-
-def fwd(px):
-    r = np.log(px).diff()
-    rv, dn = [], []
-    for i in range(len(r)):
-        w = r.iloc[i + 1:i + 6]
-        rv.append(w.std() * np.sqrt(252) * 100 if len(w) == 5 else np.nan)
-        dn.append(int((w < -0.02).any()) if len(w) == 5 else np.nan)
-    return pd.Series(rv, index=r.index), pd.Series(dn, index=r.index)
-
-
-def disasters(ivs, px):
-    VEGA = 0.8 * np.sqrt(21 / 252)
-    df = pd.concat([ivs.rename("iv"), px.rename("px")], axis=1, sort=True).dropna()
-    df["r"] = np.log(df.px).diff()
-    out = []
-    for d0 in df.groupby(df.index.to_period("M")).head(1).index:
-        i0 = df.index.get_loc(d0)
-        if i0 + 21 >= len(df):
-            break
-        iv0 = df.iv.iloc[i0]
-        rv = df.r.iloc[i0 + 1:i0 + 22].std() * np.sqrt(252) * 100
-        if VEGA * (iv0 - rv) <= -VEGA * iv0:
-            out.append(d0)
-    return out
-
-
-def welch_t(a, b):
-    a, b = a.dropna(), b.dropna()
-    if len(a) < 2 or len(b) < 2:
-        return np.nan
-    return (a.mean() - b.mean()) / np.sqrt(a.var(ddof=1) / len(a) + b.var(ddof=1) / len(b))
-
-
-def hi(x, q=Q):
-    return x > x.rolling(W).quantile(q)
-
+Q_DEEP, MIN_N = 0.95, 100
 
 # ---------------------------------------------------------------- 資料與候選
 vix, v9, v3 = s("vix_daily.csv"), s("vix9d_daily.csv"), s("vix3m_daily.csv")
@@ -118,54 +72,12 @@ sigs = {
 CANDIDATES = ["黃×2", "黃×3", "深黃VVIX p95", "VVIX斜率5日", "MOVE斜率5日", "VVIX/VIX比"]
 green = (v9 - vix).dropna() <= 0
 
-
-def us_lag1_for_hsi(sig, hsi_index):
-    """HSI 第 d 日只能用 d 之前(曆日嚴格小於)最新的美訊號。"""
-    sig = sig.dropna().astype(bool)
-    pos = sig.index.searchsorted(hsi_index, side="left") - 1
-    out = pd.Series(False, index=hsi_index)
-    ok = pos >= 0
-    out[ok] = sig.values[pos[ok]]
-    return out
-
-
 # ---------------------------------------------------------------- 考核
 dis = {"SPX": disasters(vix, spx), "HSI": disasters(vhsi, hsi)}
-results = {}
-for mkt, px in [("SPX", spx), ("HSI", hsi)]:
-    rv5, dn2 = fwd(px)
-    valid = rv5.dropna().index
-    rows = []
-    for name, sig in sigs.items():
-        if mkt == "HSI":
-            g_full = us_lag1_for_hsi(sig, valid)
-            idx = valid[valid >= sig.dropna().index.min()]
-        else:
-            idx = sig.dropna().index.intersection(valid)
-            g_full = sig.reindex(idx).fillna(False).astype(bool)
-        g = g_full.reindex(idx).fillna(False).astype(bool)
-        n = int(g.sum())
-        if n < 30:
-            continue
-        on, off = rv5[idx][g], rv5[idx][~g]
-        rvr = on.mean() / off.mean()
-        t = welch_t(on, off)
-        lift = dn2[idx][g].mean() / max(dn2[idx].mean(), 1e-9)
-        fa = (on < rv5[idx].median()).mean() * 100
-        if mkt == "HSI":
-            gidx = idx[us_lag1_for_hsi(green, idx).values]
-        else:
-            gidx = idx.intersection(green[green].index)
-        gg = g.reindex(gidx).fillna(False).astype(bool)
-        inc = rv5[gidx][gg].mean() / rv5[gidx][~gg].mean() if gg.sum() > 30 else np.nan
-        cov = 0
-        for d0 in dis[mkt]:
-            w = g_full.loc[:d0].tail(6)
-            cov += int(bool(len(w)) and bool(w.any()))
-        rows.append(dict(訊號=name, 樣本日=len(idx), 亮燈日=n, 亮燈佔=g.mean() * 100,
-                         RV倍率=rvr, t=t, 下跌提升=lift, 誤報=fa, 綠燈下倍率=inc,
-                         災難覆蓋=f"{cov}/{len(dis[mkt])}"))
-    results[mkt] = pd.DataFrame(rows).set_index("訊號")
+results = {
+    "SPX": evaluate(sigs, spx, green, dis["SPX"]),
+    "HSI": evaluate(sigs, hsi, green, dis["HSI"], lag_us_for_hsi=True),
+}
 
 # ---------------------------------------------------------------- 晉升判定(預先登記門檻)
 spx_t, hsi_t = results["SPX"], results["HSI"]
@@ -189,19 +101,7 @@ for c in CANDIDATES:
         fails.append("(e) HSI 方向不一致")
     verdict[c] = ("✅ 通過→試用期" if not fails else "❌ 未過", fails)
 
-
 # ---------------------------------------------------------------- 輸出
-def fmt_table(df):
-    d = df.copy()
-    d["亮燈佔"] = d["亮燈佔"].map(lambda x: f"{x:.0f}%")
-    d["RV倍率"] = d["RV倍率"].map(lambda x: f"{x:.2f}")
-    d["t"] = d["t"].map(lambda x: f"{x:.1f}")
-    d["下跌提升"] = d["下跌提升"].map(lambda x: f"{x:.1f}×")
-    d["誤報"] = d["誤報"].map(lambda x: f"{x:.0f}%")
-    d["綠燈下倍率"] = d["綠燈下倍率"].map(lambda x: "—" if pd.isna(x) else f"{x:.2f}")
-    return d
-
-
 pd.set_option("display.width", 200)
 for mkt in ("SPX", "HSI"):
     print(f"\n=== 對 {mkt} 的預測力(訊號 lag=1 → 未來 5 個交易日) ===")
