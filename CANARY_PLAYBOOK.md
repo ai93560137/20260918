@@ -1,4 +1,5 @@
 # 金絲雀作戰手冊(CANARY_PLAYBOOK)
+## 建制:烽燧・遊軍斥候(不入八陣,駐雲垂陣,情報通報全軍)
 
 出品:雲垂陣 `claude/dazzling-curie-f3xzb8`,2026-09-25 定稿。
 供其他分支取用測試:`git fetch origin claude/dazzling-curie-f3xzb8 && git checkout origin/claude/dazzling-curie-f3xzb8 -- CANARY_PLAYBOOK.md`
