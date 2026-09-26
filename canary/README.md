@@ -1,0 +1,70 @@
+# 金絲雀燈色表(canary/)
+
+由六隻鳥日線產出**每日燈色 CSV**,規則照 `CANARY_PLAYBOOK.md` §2 現役編制,固定閾值、不調參。
+這個目錄**只提供訊號**,不接任何策略;各策略回測自己讀 `canary_daily.csv`。
+
+| 檔案 | 內容 |
+|---|---|
+| `canary_daily.csv` | 燈色表,2006-07-17 起,每個美股交易日一列 |
+| `build_canary_table.py` | 產生器,純 Python 標準庫,不需 pandas |
+| `yellow_lab.py` / `YELLOW_UPGRADE.md` | 黃燈升級考核腳本(需 pandas)與結果報告 |
+| `red_lab.py` / `RED_UPGRADE.md` | 紅燈(VIX9D 系)提位考核腳本與結果報告 |
+| `lab_common.py` | 兩個考核室共用的口徑函式(與雲垂陣 canary_lab.py 一致) |
+| `data_external/*_daily.csv` | 六隻鳥日線快照(VIX9D、VIX、VIX3M、VVIX、MOVE、AXVI)+ SPX/HSI/VHSI(考核用),來源見下 |
+
+## 欄位
+
+| 欄 | 意義 |
+|---|---|
+| `date` | 收盤日(美股交易日) |
+| `vix9d` `vix` `vix3m` `vvix` `move` `axvi` | 各鳥當日收盤 |
+| `slope_9d` | VIX9D − VIX(週/月斜率) |
+| `slope_3m` | VIX − VIX3M(月/季斜率) |
+| `vvix_p90` `move_p90` `axvi_p90` | 各自滾動 252 日 90 分位(窗口含當日) |
+| `red` | 🔴 `slope_9d > 0` |
+| `deep_red` | 🟣 `slope_3m > 0` |
+| `flat` | ⚪ `−0.5 < slope_9d ≤ 0` |
+| `yellow_vvix` `yellow_move` `yellow_axvi` | 🟡 各鳥是否 > 自身 p90 |
+| `yellow` | 三隻黃鳥任一亮 |
+| `light` | 斜率燈單欄:`深紅` > `紅` > `走平` > `綠`(互斥;黃燈另看 `yellow`) |
+| `yellow_count` | 三隻黃鳥同時亮的數目 0–3(描述欄位) |
+| `trial_yellow2` | 🟡🟡 **試用**:黃×2,至少兩隻黃鳥同時亮 |
+| `vvix_p95` | VVIX 滾動 252 日 95 分位 |
+| `trial_deep_yellow` | 🟡 **試用**:深黃,VVIX > `vvix_p95` |
+| `axis_short` | 短期軸(VIX9D 系):`紅` / `走平` / `綠`,看未來一兩週對沖負載 |
+| `axis_disaster` | 災難軸(VIX3M 系):`深紅` / `綠`,看災難風險 |
+| `slope9_p90` | slope_9d 的滾動 252 日 90 分位 |
+| `trial_red_deep` | 🔴 **試用**:紅相對深度,slope_9d > `slope9_p90`(紅的嚴格層) |
+| `trial_red_9d3m` | 🔴 **試用**:9D對3M倒掛,VIX9D − VIX3M > 0(紅與深紅之間的中間層,在紅內鑑別力 1.83) |
+
+布林欄位:`1` 亮、`0` 不亮、空白 = 該日資料不足(例如 2011 年前無 VIX9D、各鳥前 252 日無分位)。
+
+`trial_*` 欄位是 2026-09-26 黃燈升級(六取二,`YELLOW_UPGRADE.md`)與紅燈提位(四取二,`RED_UPGRADE.md`)考核的通過者,
+**試用期、無警報權**:各策略可以記錄、可以回測,但不得據此改變響應,待雲垂陣採納才升為正式分層。
+考核腳本 `yellow_lab.py` / `red_lab.py`(需 pandas,共用 `lab_common.py`)候選與門檻預先登記於檔頭;未過者列入淘汰名單勿重測。
+
+## 使用紀律(§7,不可省)
+
+1. **lag=1**:`date` = T 的燈色,只能用於 T **之後**的交易日。進場日看前一日的燈,不看當日。
+2. **不調參**:閾值(>0、p90、252 日)寫死在腳本裡。要換閾值 = 新研究,不是改這張表。
+3. **先登記再用**:取用前依 `CANARY_PLAYBOOK.md` §8 在登記冊寫下響應規則(紅/深紅/黃各一句)。
+4. **預測波動不預測方向**:燈色決定「要不要進、進多大」,不決定多空。
+5. AXVI 是亞洲時段指數,日期上會比美鳥慢一天;對港股當日有效、對美股照 lag=1。
+6. **紅與深紅的分工**(手冊 §3 註,2026-09-26 增補):Lim(2026)發現含 VIX9D 的量度在控制 VIX 水準後對 5–10 日實現波動
+   有增量預測力;但本分支用手冊口徑複核,同樣本下深紅仍勝紅。紅的價值在覆蓋面(短期軸),深紅在精度(災難軸),
+   分工不變、不排序。產生器在最新燈色為紅或深紅時會自動印出此註。
+
+## 更新
+
+```bash
+python3 canary/build_canary_table.py --refresh   # 從雲垂陣分支拉最新六隻鳥,重產燈色表
+python3 canary/build_canary_table.py             # 只用現有快照重產
+```
+
+來源:分支 `claude/dazzling-curie-f3xzb8` 的 `tradingview/data_external/*_daily.csv`,
+每日由該分支的 GitHub Actions 更新。本目錄的快照是取用當時的版本,`--refresh` 才會跟上。
+
+## 口徑驗證
+
+滾動分位的純標準庫實作已與 `pandas.Series.rolling(252).quantile(0.9)` 逐點比對,
+三隻黃鳥合計 14,842 個點最大差 0;紅、深紅、黃(VVIX)旗標與 pandas 獨立重算逐日一致。
