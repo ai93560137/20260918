@@ -27,6 +27,21 @@ Claude 工作階段（雲端容器，讀 CLAUDE.md 知道規則）
 
 ## 香港 Google 帳戶要注意的事
 
+### 先講最重要的：Google 帳戶是香港的，跟能不能用 claude.ai 無關
+
+- claude.ai 只是「用 Google 登入」，**不會看你的 Google 帳戶是哪個地區**。決定能不能用的是 Anthropic 的支援地區清單，
+  以及你實際所在的位置（IP、手機號碼驗證、付款地址）。
+- Anthropic 官方清單（https://www.anthropic.com/supported-countries）目前**沒有香港、澳門與中國大陸**；台灣、新加坡、日本都在清單上，
+  claude.ai 與 Claude API 皆同。Anthropic 發言人亦曾表示 Claude「從未正式支援香港」。
+- 所以：人在香港、用香港 IP 與 +852 號碼註冊或登入 claude.ai 會被拒絕；人在台灣、新加坡、日本等支援地區則可以正常用，
+  Google 帳戶是香港的也沒關係。用 VPN 繞過屬於違反 Anthropic 使用政策，帳號可能被停用，本文件不建議。
+- **GCP 那一邊完全不受影響**：香港 Google 帳戶開 GCP 專案、部署函式、讓 Claude 透過服務帳戶操作，都沒有問題（見下表）。
+  Claude 的工作階段跑在 Anthropic 的雲端容器，連 GCP 的是那個容器，不是你的香港網路。
+- Google Cloud 的 Vertex AI Model Garden 也提供 Claude 模型，但同樣受 Anthropic 使用政策約束；是否對香港帳單地址的專案開放，
+  請以 Google Cloud 主控台實際能否啟用為準，本文件不作保證。
+
+### GCP 各服務對香港帳戶的狀況
+
 | 項目 | 狀況 |
 |---|---|
 | 開 GCP 專案、Cloud Functions、Cloud Run、Cloud Storage、Cloud Logging | **香港帳戶完全可用**，帳單可用 HKD 或 USD 信用卡 |
