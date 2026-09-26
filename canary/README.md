@@ -7,7 +7,8 @@
 |---|---|
 | `canary_daily.csv` | 燈色表,2006-07-17 起,每個美股交易日一列 |
 | `build_canary_table.py` | 產生器,純 Python 標準庫,不需 pandas |
-| `data_external/*_daily.csv` | 六隻鳥日線快照(VIX9D、VIX、VIX3M、VVIX、MOVE、AXVI),來源見下 |
+| `yellow_lab.py` / `YELLOW_UPGRADE.md` | 黃燈升級考核腳本(需 pandas)與結果報告 |
+| `data_external/*_daily.csv` | 六隻鳥日線快照(VIX9D、VIX、VIX3M、VVIX、MOVE、AXVI)+ SPX/HSI/VHSI(考核用),來源見下 |
 
 ## 欄位
 
@@ -24,8 +25,16 @@
 | `yellow_vvix` `yellow_move` `yellow_axvi` | 🟡 各鳥是否 > 自身 p90 |
 | `yellow` | 三隻黃鳥任一亮 |
 | `light` | 斜率燈單欄:`深紅` > `紅` > `走平` > `綠`(互斥;黃燈另看 `yellow`) |
+| `yellow_count` | 三隻黃鳥同時亮的數目 0–3(描述欄位) |
+| `trial_yellow2` | 🟡🟡 **試用**:黃×2,至少兩隻黃鳥同時亮 |
+| `vvix_p95` | VVIX 滾動 252 日 95 分位 |
+| `trial_deep_yellow` | 🟡 **試用**:深黃,VVIX > `vvix_p95` |
 
 布林欄位:`1` 亮、`0` 不亮、空白 = 該日資料不足(例如 2011 年前無 VIX9D、各鳥前 252 日無分位)。
+
+`trial_*` 欄位是 2026-09-26 黃燈升級考核的通過者(六個候選取二,見 `YELLOW_UPGRADE.md`),
+**試用期、無警報權**:各策略可以記錄、可以回測,但不得據此改變響應,待雲垂陣採納才升為正式分層。
+考核腳本 `yellow_lab.py`(需 pandas)候選與門檻預先登記於檔頭;未過者列入淘汰名單勿重測。
 
 ## 使用紀律(§7,不可省)
 

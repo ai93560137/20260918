@@ -9,6 +9,11 @@
 #   🟡 黃      VVIX / MOVE / AXVI 任一 > 自身滾動 252 日 90 分位
 #   🟢 綠      以上皆無
 #
+# 試用期欄位(2026-09-26 黃燈升級考核通過,見 YELLOW_UPGRADE.md;**無警報權**):
+#   yellow_count        三隻黃鳥同時亮的數目 0–3(描述欄位)
+#   trial_yellow2       🟡🟡 黃×2:至少兩隻黃鳥同時亮
+#   trial_deep_yellow   🟡 深黃:VVIX > 自身滾動 252 日 95 分位
+#
 # 口徑與雲垂陣 tradingview/canary_lab.py 一致:
 #   * 滾動 252 日 90 分位 = pandas `x.rolling(252).quantile(0.9)`,窗口**含當日**,
 #     線性插值;不足 252 筆的日子為空值。這裡用純標準庫重現,不需安裝 pandas。
@@ -42,9 +47,11 @@ SOURCE_BRANCH = "claude/dazzling-curie-f3xzb8"
 SOURCE_PATH = "tradingview/data_external"
 BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi"]
 PCT_BIRDS = ["vvix", "move", "axvi"]   # 黃燈三隻:滾動分位
+LAB_FILES = ["spx", "hsi", "vhsi"]     # 考核用(yellow_lab.py):標的與 VHSI
 
 WINDOW = 252
 QUANTILE = 0.9
+QUANTILE_DEEP = 0.95   # 深黃(試用)
 FLAT_LOWER = -0.5
 
 # 紅燈或深紅亮起時一併展示(CANARY_PLAYBOOK.md §3 註,2026-09-26 增補)
@@ -80,7 +87,7 @@ def refresh_snapshot():
     ref = f"origin/{SOURCE_BRANCH}"
     subprocess.run(["git", "fetch", "-q", "origin", SOURCE_BRANCH], check=True, cwd=HERE)
     os.makedirs(DATA_DIR, exist_ok=True)
-    for b in BIRDS:
+    for b in BIRDS + LAB_FILES:
         src = f"{ref}:{SOURCE_PATH}/{b}_daily.csv"
         out = subprocess.run(["git", "show", src], check=True, cwd=HERE,
                              capture_output=True, text=True).stdout
@@ -138,6 +145,9 @@ def build(start=None):
         dates = [d for d, _ in series[b]]
         vals = [v for _, v in series[b]]
         p90[b] = dict(zip(dates, rolling_quantile(vals)))
+    vv_dates = [d for d, _ in series["vvix"]]
+    vv_vals = [v for _, v in series["vvix"]]
+    vvix_p95 = dict(zip(vv_dates, rolling_quantile(vv_vals, q=QUANTILE_DEEP)))
 
     # 日曆:VIX 交易日,自 VIX3M 起算(深紅可算的第一天)
     first = series["vix3m"][0][0]
@@ -163,6 +173,10 @@ def build(start=None):
             yellow_parts[b] = None if (v is None or thr is None) else v > thr
         known = [x for x in yellow_parts.values() if x is not None]
         yellow = None if not known else any(known)
+        ycount = None if not known else sum(1 for x in known if x)
+        yellow2 = None if ycount is None else ycount >= 2
+        vv, vthr = close["vvix"].get(d), vvix_p95.get(d)
+        deep_yellow = None if (vv is None or vthr is None) else vv > vthr
 
         # 單欄燈色(斜率燈互斥;黃燈另欄獨立標示)
         if deep:
@@ -192,6 +206,10 @@ def build(start=None):
             "yellow_axvi": flag(yellow_parts["axvi"]),
             "yellow": flag(yellow),
             "light": light,
+            "yellow_count": "" if ycount is None else str(ycount),
+            "trial_yellow2": flag(yellow2),
+            "vvix_p95": fmt(vvix_p95.get(d), 2),
+            "trial_deep_yellow": flag(deep_yellow),
         })
     return rows
 
@@ -203,13 +221,16 @@ def summarize(rows):
 
     last = rows[-1]
     print(f"\n燈色表 {rows[0]['date']} → {last['date']},共 {len(rows)} 個交易日")
-    for key, label in [("red", "紅"), ("deep_red", "深紅"), ("flat", "走平"), ("yellow", "黃")]:
+    for key, label in [("red", "紅"), ("deep_red", "深紅"), ("flat", "走平"), ("yellow", "黃"),
+                       ("trial_yellow2", "黃×2(試用)"), ("trial_deep_yellow", "深黃(試用)")]:
         n, tot = share(key)
         print(f"  {label:<3} {n:>5} / {tot} 日  ({n / tot * 100 if tot else 0:.1f}%)")
     yparts = "/".join(f"{b}={last['yellow_' + b] or '-'}" for b in PCT_BIRDS)
     print(f"\n最新 {last['date']}:{last['light'] or '(無資料)'}"
           f"  slope_9d={last['slope_9d']}  slope_3m={last['slope_3m']}"
           f"  黃={last['yellow'] or '-'} ({yparts})")
+    print(f"試用(無警報權):yellow_count={last['yellow_count'] or '-'}"
+          f"  黃×2={last['trial_yellow2'] or '-'}  深黃VVIX p95={last['trial_deep_yellow'] or '-'}")
     print("提醒:此燈色只能用於下一個交易日起(lag=1)。")
     if last["light"] in ("紅", "深紅"):
         print("\n" + RED_NOTE)
