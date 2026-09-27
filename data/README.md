@@ -17,7 +17,7 @@ git archive "$B" data/insider data/pelosi | tar -x -C /tmp/data_src   # 解到�
 | 財報事件（SEC 8-K Item 2.02） | `data/news/sp500_earnings_events.csv.gz` | 2005-01 起，申報當時的 S&P 500 成分股，約 4.7 萬筆 | 美股收盤後每日 | `scripts/news_8k_fetch.py` |
 | 歷史代號 ↔ CIK | `data/insider/ticker_cik/{季}.csv.gz` | 2006Q1 起，所有 Form 3/4/5 申報公司 | 隨內部人數據每週 | `scripts/insider_fetch.py` |
 | 佩洛西交易申報（眾議院 PTR） | `data/pelosi/transactions.json` | 2014-11 起，65 份申報、226 筆交易 | 每 4 小時 | `scripts/pelosi_tracker.py` |
-| 外部來源：MT5（XAUUSD CFD M1）、Futu（K 線與期權 IV）、IBKR（IV 與股票覆核） | `data/external/`，說明見 [`data/external/README.md`](external/README.md) | MT5／Futu 自 R95 部署起；IBKR 鏡像雲垂分支 | 每日 22:41 UTC | `scripts/external_data_sync.py` |
+| 外部來源：MT5（XAUUSD CFD M1）、Futu（K 線與期權 IV）、IBKR（IV 與股票覆核） | `data/external/`，說明見 [`data/external/README.md`](external/README.md) | MT5／Futu 自 R95 部署起；IBKR 鏡像雲垂分支 | 每日 00:17 UTC（香港 08:17） | `scripts/external_data_sync.py` |
 
 ---
 

@@ -121,5 +121,17 @@ check("不含別天的檔", "2026-09-24" not in json.dumps(j["data"]["futu_k_5m/
 check("壞日期 → 400", client.get("/?view=archive&format=json&date=../x").status_code == 400)
 check("沒資料的日子 → 空", client.get("/?view=archive&format=json&date=2020-01-01").get_json()["series"] == {})
 
+print("\n=== R96：日線抽樣（K_DAY）只封存，不蓋掉控制台快照 ===")
+before_latest = FAKE.get(main.FUTU_SNAPSHOT_FILE, (None,))[0]
+before_qqq = FAKE.get(main.futu_symbol_file("US.QQQ"), (None,))[0]
+r = client.post("/", json={"action": "futu_data", "token": "tok", "symbol": "US.QQQ", "kline_type": "K_DAY",
+                           "data": [{"time_key": "2026-09-24 00:00:00", "open": 735.29, "high": 742.66, "low": 734.62,
+                                     "close": 741.1, "volume": 29000900}], "options": []})
+check("K_DAY 回 stored", r.get_json().get("status") == "stored", r.get_json())
+check("控制台最新快照沒被蓋掉", FAKE.get(main.FUTU_SNAPSHOT_FILE, (None,))[0] == before_latest)
+check("代號快照沒被蓋掉", FAKE.get(main.futu_symbol_file("US.QQQ"), (None,))[0] == before_qqq)
+kd = main.archive_blob_name("futu_k_day", "US.QQQ", "2026-09-24")
+check("日線按日期封存到 futu_k_day", kd in FAKE and rows(kd)[0]["close"] == 741.1, sorted(k for k in FAKE if "k_day" in k))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

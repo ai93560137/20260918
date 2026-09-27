@@ -1,0 +1,483 @@
+family,check,instrument,date,field,a_src,a,b_src,b,diff,diff_pct,verdict,note
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-24,close,futu_5m,741.1,web_yahoo,741.1,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-24,open/high/low/volume,futu_5m,,web_yahoo,,,,⏭️,交易時段不完整（42/78 根），只比收盤
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,close,futu_5m,744.5,web_yahoo,744.5,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,high,futu_5m,745.915,web_yahoo,745.915,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,low,futu_5m,739.64,web_yahoo,739.64,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,open,futu_5m,742.83,web_yahoo,742.84,-0.01,-0.0013,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,volume,futu_5m,27752952.0,web_yahoo,30017218.0,-2264266.0,-7.5432,ℹ️,口徑不同，只記錄
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,open,canary,25303.41015625,web_yahoo,25303.4102,-4.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,high,canary,25578.26953125,web_yahoo,25578.2695,3.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,low,canary,25303.41015625,web_yahoo,25303.4102,-4.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,close,canary,25453.23046875,web_yahoo,25453.2305,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,open,canary,25368.869140625,web_yahoo,25368.8691,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,high,canary,25518.029296875,web_yahoo,25518.0293,-3e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,low,canary,25240.619140625,web_yahoo,25240.6191,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,close,canary,25471.150390625,web_yahoo,25471.1504,-9e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-19,open,canary,25346.900390625,web_yahoo,25346.9004,-9e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-19,high,canary,25537.189453125,web_yahoo,25537.1895,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-19,low,canary,25315.3203125,web_yahoo,25315.3203,1.3e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-19,close,canary,25495.0703125,web_yahoo,25495.0703,1.3e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-20,open,canary,25779.080078125,web_yahoo,25779.0801,-2.2e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-20,high,canary,25842.91015625,web_yahoo,25842.9102,-4.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-20,low,canary,25632.390625,web_yahoo,25632.3906,2.5e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-20,close,canary,25698.490234375,web_yahoo,25698.4902,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,open,canary,25807.609375,web_yahoo,25807.6094,-2.5e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,high,canary,26009.4609375,web_yahoo,26009.4609,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,low,canary,25807.609375,web_yahoo,25807.6094,-2.5e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,close,canary,26009.4609375,web_yahoo,26009.4609,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,open,canary,25780.119140625,web_yahoo,25780.1191,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,high,canary,25780.119140625,web_yahoo,25780.1191,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,low,canary,25430.939453125,web_yahoo,25430.9395,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,close,canary,25517.330078125,web_yahoo,25517.3301,-2.2e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-25,open,canary,25634.220703125,web_yahoo,25634.2207,3e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-25,high,canary,25676.76953125,web_yahoo,25676.7695,3.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-25,low,canary,25403.439453125,web_yahoo,25403.4395,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-25,close,canary,25511.099609375,web_yahoo,25511.0996,9e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-26,open,canary,25635.240234375,web_yahoo,25635.2402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-26,high,canary,25800.220703125,web_yahoo,25800.2207,3e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-26,low,canary,25615.939453125,web_yahoo,25615.9395,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-26,close,canary,25652.970703125,web_yahoo,25652.9707,3e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-27,open,canary,25774.869140625,web_yahoo,25774.8691,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-27,high,canary,25792.009765625,web_yahoo,25792.0098,-3.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-27,low,canary,25500.9609375,web_yahoo,25500.9609,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-27,close,canary,25565.740234375,web_yahoo,25565.7402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-28,open,canary,25410.4609375,web_yahoo,25410.4609,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-28,high,canary,25699.08984375,web_yahoo,25699.0898,4.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-28,low,canary,25410.4609375,web_yahoo,25410.4609,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-28,close,canary,25584.7890625,web_yahoo,25584.7891,-3.8e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-31,open,canary,25420.630859375,web_yahoo,25420.6309,-4.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-31,high,canary,25566.990234375,web_yahoo,25566.9902,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-31,low,canary,25290.689453125,web_yahoo,25290.6895,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-31,close,canary,25566.990234375,web_yahoo,25566.9902,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-01,open,canary,25415.720703125,web_yahoo,25415.7207,3e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-01,high,canary,25478.98046875,web_yahoo,25478.9805,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-01,low,canary,25240.19921875,web_yahoo,25240.1992,1.9e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-01,close,canary,25329.73046875,web_yahoo,25329.7305,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-02,open,canary,25280.8203125,web_yahoo,25280.8203,1.3e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-02,high,canary,25311.2109375,web_yahoo,25311.2109,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-02,low,canary,25008.869140625,web_yahoo,25008.8691,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-02,close,canary,25311.2109375,web_yahoo,25311.2109,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-03,open,canary,25482.560546875,web_yahoo,25482.5605,4.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-03,high,canary,25538.150390625,web_yahoo,25538.1504,-9e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-03,low,canary,25160.380859375,web_yahoo,25160.3809,-4.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-03,close,canary,25213.310546875,web_yahoo,25213.3105,4.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-04,open,canary,25515.740234375,web_yahoo,25515.7402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-04,high,canary,25791.380859375,web_yahoo,25791.3809,-4.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-04,low,canary,25515.740234375,web_yahoo,25515.7402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-04,close,canary,25650.869140625,web_yahoo,25650.8691,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-07,open,canary,25652.970703125,web_yahoo,25652.9707,3e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-07,high,canary,25664.98046875,web_yahoo,25664.9805,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-07,low,canary,25362.98046875,web_yahoo,25362.9805,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-07,close,canary,25413.119140625,web_yahoo,25413.1191,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-08,open,canary,25252.0703125,web_yahoo,25252.0703,1.3e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-08,high,canary,25394.599609375,web_yahoo,25394.5996,9e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-08,low,canary,25225.689453125,web_yahoo,25225.6895,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-08,close,canary,25317.1796875,web_yahoo,25317.1797,-1.3e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-09,open,canary,25328.130859375,web_yahoo,25328.1309,-4.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-09,high,canary,25335.51953125,web_yahoo,25335.5195,3.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-09,low,canary,25161.669921875,web_yahoo,25161.6699,2.2e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-09,close,canary,25274.9609375,web_yahoo,25274.9609,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-10,open,canary,24985.1796875,web_yahoo,24985.1797,-1.3e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-10,high,canary,25021.810546875,web_yahoo,25021.8105,4.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-10,low,canary,24889.640625,web_yahoo,24889.6406,2.5e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-10,close,canary,24954.470703125,web_yahoo,24954.4707,3e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-11,open,canary,24718.150390625,web_yahoo,24718.1504,-9e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-11,high,canary,24851.1796875,web_yahoo,24851.1797,-1.3e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-11,low,canary,24570.240234375,web_yahoo,24570.2402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-11,close,canary,24805.630859375,web_yahoo,24805.6309,-4.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-14,open,canary,24701.1796875,web_yahoo,24701.1797,-1.3e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-14,high,canary,24926.240234375,web_yahoo,24926.2402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-14,low,canary,24662.109375,web_yahoo,24662.1094,-2.5e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-14,close,canary,24917.599609375,web_yahoo,24917.5996,9e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-15,open,canary,24934.060546875,web_yahoo,24934.0605,4.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-15,high,canary,24934.060546875,web_yahoo,24934.0605,4.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-15,low,canary,24657.009765625,web_yahoo,24657.0098,-3.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-15,close,canary,24667.240234375,web_yahoo,24667.2402,3.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-16,open,canary,24789.91015625,web_yahoo,24789.9102,-4.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-16,high,canary,24789.91015625,web_yahoo,24789.9102,-4.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-16,low,canary,24574.75,web_yahoo,24574.75,0.0,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-16,close,canary,24713.779296875,web_yahoo,24713.7793,-3e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-17,open,canary,24480.5703125,web_yahoo,24480.5703,1.3e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-17,high,canary,24606.150390625,web_yahoo,24606.1504,-9e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-17,low,canary,24357.689453125,web_yahoo,24357.6895,-4.7e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-17,close,canary,24604.2890625,web_yahoo,24604.2891,-3.8e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-18,open,canary,24723.849609375,web_yahoo,24723.8496,9e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-18,high,canary,24862.98046875,web_yahoo,24862.9805,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-18,low,canary,24703.919921875,web_yahoo,24703.9199,2.2e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-18,close,canary,24750.779296875,web_yahoo,24750.7793,-3e-06,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-21,open,canary,24748.44921875,web_yahoo,24748.4492,1.9e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-21,high,canary,25042.7109375,web_yahoo,25042.7109,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-21,low,canary,24736.919921875,web_yahoo,24736.9199,2.2e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-21,close,canary,25042.7109375,web_yahoo,25042.7109,3.8e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-22,open,canary,25170.80078125,web_yahoo,25170.8008,-1.9e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-22,high,canary,25254.109375,web_yahoo,25254.1094,-2.5e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-22,low,canary,25043.640625,web_yahoo,25043.6406,2.5e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-22,close,canary,25087.75,web_yahoo,25087.75,0.0,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-23,open,canary,25064.83984375,web_yahoo,25064.8398,4.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-23,high,canary,25072.25,web_yahoo,25072.25,0.0,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-23,low,canary,24811.849609375,web_yahoo,24811.8496,9e-06,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-23,close,canary,24834.119140625,web_yahoo,24834.1191,4.1e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,open,canary,24649.44921875,web_yahoo,24649.4492,1.9e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,high,canary,24791.19921875,web_yahoo,24791.1992,1.9e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,low,canary,24648.2890625,web_yahoo,24648.2891,-3.8e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,close,canary,24761.130859375,web_yahoo,24761.1309,-4.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv,_HSI,2026-09-25,date,canary,,web_yahoo,,,,⏭️,金絲雀最新只到 2026-09-24（亞洲鳥慢一日屬手冊 §9.1 已知）
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,open,canary,7806.60009765625,web_yahoo,7806.6001,-2e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,high,canary,7810.009765625,web_yahoo,7810.0098,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,low,canary,7776.31005859375,web_yahoo,7776.3101,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,close,canary,7785.759765625,web_yahoo,7785.7598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,open,canary,7790.68017578125,web_yahoo,7790.6802,-2.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,high,canary,7790.68017578125,web_yahoo,7790.6802,-2.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,low,canary,7744.8798828125,web_yahoo,7744.8799,-1.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,close,canary,7745.06005859375,web_yahoo,7745.0601,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-18,open,canary,7700.0400390625,web_yahoo,7700.04,3.9e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-18,high,canary,7713.9501953125,web_yahoo,7713.9502,-5e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-18,low,canary,7688.6298828125,web_yahoo,7688.6299,-1.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-18,close,canary,7691.759765625,web_yahoo,7691.7598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-19,open,canary,7716.740234375,web_yahoo,7716.7402,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-19,high,canary,7743.93017578125,web_yahoo,7743.9302,-2.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-19,low,canary,7700.06982421875,web_yahoo,7700.0698,2.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-19,close,canary,7707.97998046875,web_yahoo,7707.98,-2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-20,open,canary,7690.490234375,web_yahoo,7690.4902,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-20,high,canary,7699.9599609375,web_yahoo,7699.96,-3.9e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-20,low,canary,7639.009765625,web_yahoo,7639.0098,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-20,close,canary,7641.16015625,web_yahoo,7641.1602,-4.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,open,canary,7665.68017578125,web_yahoo,7665.6802,-2.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,high,canary,7697.10986328125,web_yahoo,7697.1099,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,low,canary,7660.06005859375,web_yahoo,7660.0601,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,close,canary,7674.3701171875,web_yahoo,7674.3701,1.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,open,canary,7663.3798828125,web_yahoo,7663.3799,-1.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,high,canary,7670.2998046875,web_yahoo,7670.2998,5e-06,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,low,canary,7638.169921875,web_yahoo,7638.1699,2.2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,close,canary,7652.85986328125,web_yahoo,7652.8599,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-25,open,canary,7676.66015625,web_yahoo,7676.6602,-4.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-25,high,canary,7686.10986328125,web_yahoo,7686.1099,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-25,low,canary,7650.919921875,web_yahoo,7650.9199,2.2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-25,close,canary,7677.27978515625,web_yahoo,7677.2798,-1.5e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-26,open,canary,7666.8798828125,web_yahoo,7666.8799,-1.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-26,high,canary,7690.72998046875,web_yahoo,7690.73,-2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-26,low,canary,7657.41015625,web_yahoo,7657.4102,-4.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-26,close,canary,7675.7001953125,web_yahoo,7675.7002,-5e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-27,open,canary,7710.33984375,web_yahoo,7710.3398,4.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-27,high,canary,7741.27001953125,web_yahoo,7741.27,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-27,low,canary,7689.89013671875,web_yahoo,7689.8901,3.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-27,close,canary,7730.990234375,web_yahoo,7730.9902,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-28,open,canary,7735.169921875,web_yahoo,7735.1699,2.2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-28,high,canary,7771.47998046875,web_yahoo,7771.48,-2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-28,low,canary,7700.91015625,web_yahoo,7700.9102,-4.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-28,close,canary,7711.759765625,web_yahoo,7711.7598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-31,open,canary,7697.52001953125,web_yahoo,7697.52,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-31,high,canary,7697.52001953125,web_yahoo,7697.52,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-31,low,canary,7665.06005859375,web_yahoo,7665.0601,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-31,close,canary,7686.14013671875,web_yahoo,7686.1401,3.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-01,open,canary,7635.47021484375,web_yahoo,7635.4702,1.5e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-01,high,canary,7663.6298828125,web_yahoo,7663.6299,-1.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-01,low,canary,7611.2001953125,web_yahoo,7611.2002,-5e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-01,close,canary,7631.47021484375,web_yahoo,7631.4702,1.5e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-02,open,canary,7634.580078125,web_yahoo,7634.5801,-2.2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-02,high,canary,7681.18994140625,web_yahoo,7681.1899,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-02,low,canary,7633.6201171875,web_yahoo,7633.6201,1.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-02,close,canary,7666.60009765625,web_yahoo,7666.6001,-2e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-03,open,canary,7686.7099609375,web_yahoo,7686.71,-3.9e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-03,high,canary,7756.759765625,web_yahoo,7756.7598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-03,low,canary,7686.7099609375,web_yahoo,7686.71,-3.9e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-03,close,canary,7747.7099609375,web_yahoo,7747.71,-3.9e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-04,open,canary,7750.18994140625,web_yahoo,7750.1899,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-04,high,canary,7750.18994140625,web_yahoo,7750.1899,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-04,low,canary,7706.1201171875,web_yahoo,7706.1201,1.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-04,close,canary,7718.60009765625,web_yahoo,7718.6001,-2e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-08,open,canary,7717.81005859375,web_yahoo,7717.8101,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-08,high,canary,7717.81005859375,web_yahoo,7717.8101,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-08,low,canary,7666.990234375,web_yahoo,7666.9902,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-08,close,canary,7673.52001953125,web_yahoo,7673.52,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-09,open,canary,7660.68017578125,web_yahoo,7660.6802,-2.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-09,high,canary,7660.68017578125,web_yahoo,7660.6802,-2.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-09,low,canary,7624.16015625,web_yahoo,7624.1602,-4.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-09,close,canary,7636.35986328125,web_yahoo,7636.3599,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-10,open,canary,7594.740234375,web_yahoo,7594.7402,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-10,high,canary,7612.85986328125,web_yahoo,7612.8599,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-10,low,canary,7580.06005859375,web_yahoo,7580.0601,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-10,close,canary,7591.7001953125,web_yahoo,7591.7002,-5e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-11,open,canary,7636.75,web_yahoo,7636.75,0.0,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-11,high,canary,7677.02001953125,web_yahoo,7677.02,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-11,low,canary,7636.75,web_yahoo,7636.75,0.0,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-11,close,canary,7656.97998046875,web_yahoo,7656.98,-2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-14,open,canary,7611.43994140625,web_yahoo,7611.4399,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-14,high,canary,7647.990234375,web_yahoo,7647.9902,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-14,low,canary,7592.27978515625,web_yahoo,7592.2798,-1.5e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-14,close,canary,7619.97998046875,web_yahoo,7619.98,-2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-15,open,canary,7612.2998046875,web_yahoo,7612.2998,5e-06,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-15,high,canary,7617.259765625,web_yahoo,7617.2598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-15,low,canary,7572.68994140625,web_yahoo,7572.6899,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-15,close,canary,7585.72998046875,web_yahoo,7585.73,-2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-16,open,canary,7601.25,web_yahoo,7601.25,0.0,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-16,high,canary,7626.7900390625,web_yahoo,7626.79,3.9e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-16,low,canary,7507.77001953125,web_yahoo,7507.77,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-16,close,canary,7551.81005859375,web_yahoo,7551.8101,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-17,open,canary,7631.43994140625,web_yahoo,7631.4399,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-17,high,canary,7646.85986328125,web_yahoo,7646.8599,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-17,low,canary,7611.81005859375,web_yahoo,7611.8101,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-17,close,canary,7637.759765625,web_yahoo,7637.7598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-18,open,canary,7657.169921875,web_yahoo,7657.1699,2.2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-18,high,canary,7657.169921875,web_yahoo,7657.1699,2.2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-18,low,canary,7610.52001953125,web_yahoo,7610.52,2e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-18,close,canary,7650.5,web_yahoo,7650.5,0.0,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-21,open,canary,7692.830078125,web_yahoo,7692.8301,-2.2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-21,high,canary,7779.22021484375,web_yahoo,7779.2202,1.5e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-21,low,canary,7691.18994140625,web_yahoo,7691.1899,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-21,close,canary,7764.7001953125,web_yahoo,7764.7002,-5e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-22,open,canary,7770.81005859375,web_yahoo,7770.8101,-4.1e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-22,high,canary,7782.18994140625,web_yahoo,7782.1899,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-22,low,canary,7756.259765625,web_yahoo,7756.2598,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-22,close,canary,7764.64013671875,web_yahoo,7764.6401,3.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-23,open,canary,7761.93994140625,web_yahoo,7761.9399,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-23,high,canary,7761.93994140625,web_yahoo,7761.9399,4.1e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-23,low,canary,7694.89013671875,web_yahoo,7694.8901,3.7e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-23,close,canary,7706.02978515625,web_yahoo,7706.0298,-1.5e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-24,open,canary,7666.990234375,web_yahoo,7666.9902,3.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-24,high,canary,7719.009765625,web_yahoo,7719.0098,-3.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-24,low,canary,7662.56982421875,web_yahoo,7662.5698,2.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-24,close,canary,7704.1298828125,web_yahoo,7704.1299,-1.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,open,canary,7709.85986328125,web_yahoo,7709.8599,-3.7e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,high,canary,7752.06982421875,web_yahoo,7752.0698,2.4e-05,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,low,canary,7693.080078125,web_yahoo,7693.0801,-2.2e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,close,canary,7743.41015625,web_yahoo,7743.4102,-4.4e-05,-0.0,✅,
+canary_inputs,IBKR 獨立來源,ib_daily_sample.csv,,all,ibkr,,canary,,,,⏭️,雲垂還沒開始每日抽樣（見 SOP 附錄 B）
+ibkr_vs_web,股票收市,au_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,au 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,ca_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,ca 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,hk_2026-09-23.csv,,coverage,ibkr,,web,,,,⏭️,30／45 檔不在網站日線（鳥翔分支 data/equities），未比
+ibkr_vs_web,股票收市,0019.HK,2026-09-23,close,ibkr,102.8,web_yahoo,102.8,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0019.HK,2026-09-24,open,ibkr,102.8,web_yahoo,102.8,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0019.HK,2026-09-24,close,ibkr,103.8,web_yahoo,103.8,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0023.HK,2026-09-23,close,ibkr,19.23,web_yahoo,19.23,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0023.HK,2026-09-24,open,ibkr,19.18,web_yahoo,19.18,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0023.HK,2026-09-24,close,ibkr,19.26,web_yahoo,19.26,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0144.HK,2026-09-23,close,ibkr,16.78,web_yahoo,16.78,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0144.HK,2026-09-24,open,ibkr,16.49,web_yahoo,16.48,0.01,0.0607,❌,
+ibkr_vs_web,股票收市,0144.HK,2026-09-24,close,ibkr,16.74,web_yahoo,16.74,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0293.HK,2026-09-23,close,ibkr,14.35,web_yahoo,14.35,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0293.HK,2026-09-24,open,ibkr,14.12,web_yahoo,14.12,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0293.HK,2026-09-24,close,ibkr,14.39,web_yahoo,14.39,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0939.HK,2026-09-23,close,ibkr,9.66,web_yahoo,9.66,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0939.HK,2026-09-24,open,ibkr,9.6,web_yahoo,9.585,0.015,0.1565,❌,
+ibkr_vs_web,股票收市,0939.HK,2026-09-24,close,ibkr,9.68,web_yahoo,9.68,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0992.HK,2026-09-23,close,ibkr,36.92,web_yahoo,36.92,0.0,0.0,✅,
+ibkr_vs_web,股票收市,0992.HK,2026-09-24,open,ibkr,36.4,web_yahoo,36.5,-0.1,-0.274,❌,
+ibkr_vs_web,股票收市,0992.HK,2026-09-24,close,ibkr,36.02,web_yahoo,36.02,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1038.HK,2026-09-23,close,ibkr,65.26,web_yahoo,65.25,0.01,0.0153,❌,
+ibkr_vs_web,股票收市,1038.HK,2026-09-24,open,ibkr,65.6,web_yahoo,65.6,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1038.HK,2026-09-24,close,ibkr,65.7,web_yahoo,65.7,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1288.HK,2026-09-23,close,ibkr,6.495,web_yahoo,6.495,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1288.HK,2026-09-24,open,ibkr,6.445,web_yahoo,6.44,0.005,0.0776,❌,
+ibkr_vs_web,股票收市,1288.HK,2026-09-24,close,ibkr,6.61,web_yahoo,6.61,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1398.HK,2026-09-23,close,ibkr,7.54,web_yahoo,7.54,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1398.HK,2026-09-24,open,ibkr,7.51,web_yahoo,7.51,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1398.HK,2026-09-24,close,ibkr,7.66,web_yahoo,7.66,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1997.HK,2026-09-23,close,ibkr,31.04,web_yahoo,31.04,0.0,0.0,✅,
+ibkr_vs_web,股票收市,1997.HK,2026-09-24,open,ibkr,30.6,web_yahoo,30.7,-0.1,-0.3257,❌,
+ibkr_vs_web,股票收市,1997.HK,2026-09-24,close,ibkr,30.78,web_yahoo,30.78,0.0,0.0,✅,
+ibkr_vs_web,股票收市,2269.HK,2026-09-23,close,ibkr,52.8,web_yahoo,52.8,0.0,0.0,✅,
+ibkr_vs_web,股票收市,2269.HK,2026-09-24,open,ibkr,52.4,web_yahoo,52.5,-0.1,-0.1905,❌,
+ibkr_vs_web,股票收市,2269.HK,2026-09-24,close,ibkr,51.9,web_yahoo,51.9,0.0,0.0,✅,
+ibkr_vs_web,股票收市,2359.HK,2026-09-23,close,ibkr,207.6,web_yahoo,207.6,0.0,0.0,✅,
+ibkr_vs_web,股票收市,2359.HK,2026-09-24,open,ibkr,207.0,web_yahoo,206.8,0.2,0.0967,❌,
+ibkr_vs_web,股票收市,2359.HK,2026-09-24,close,ibkr,205.0,web_yahoo,205.0,0.0,0.0,✅,
+ibkr_vs_web,股票收市,2388.HK,2026-09-23,close,ibkr,51.3,web_yahoo,51.3,0.0,0.0,✅,
+ibkr_vs_web,股票收市,2388.HK,2026-09-24,open,ibkr,51.26,web_yahoo,51.3,-0.04,-0.078,❌,
+ibkr_vs_web,股票收市,2388.HK,2026-09-24,close,ibkr,51.26,web_yahoo,51.25,0.01,0.0195,❌,
+ibkr_vs_web,股票收市,3328.HK,2026-09-23,close,ibkr,8.21,web_yahoo,8.21,0.0,0.0,✅,
+ibkr_vs_web,股票收市,3328.HK,2026-09-24,open,ibkr,8.21,web_yahoo,8.16,0.05,0.6127,❌,
+ibkr_vs_web,股票收市,3328.HK,2026-09-24,close,ibkr,8.285,web_yahoo,8.285,0.0,0.0,✅,
+ibkr_vs_web,股票收市,3988.HK,2026-09-23,close,ibkr,6.0,web_yahoo,6.0,0.0,0.0,✅,
+ibkr_vs_web,股票收市,3988.HK,2026-09-24,open,ibkr,5.96,web_yahoo,5.96,0.0,0.0,✅,
+ibkr_vs_web,股票收市,3988.HK,2026-09-24,close,ibkr,6.04,web_yahoo,6.04,0.0,0.0,✅,
+ibkr_vs_web,股票收市,in_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,in 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,jp_2026-09-18.csv,,all,ibkr,,web,,,,⏭️,jp 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,kr_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,kr 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,sg_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,sg 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,tw_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,tw 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
+ibkr_vs_web,股票收市,us_2026-09-21.csv,,coverage,ibkr,,web,,,,⏭️,121／191 檔不在網站日線（鳥翔分支 data/equities），未比
+ibkr_vs_web,股票收市,ADI,2026-09-21,close,ibkr,383.0,web_yahoo,383.0,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-22,open,ibkr,382.19,web_yahoo,382.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-22,close,ibkr,390.37,web_yahoo,390.37,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADM,2026-09-21,close,ibkr,83.38,web_yahoo,83.38,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADM,2026-09-22,open,ibkr,82.88,web_yahoo,82.88,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADM,2026-09-22,close,ibkr,82.34,web_yahoo,82.34,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMD,2026-09-21,close,ibkr,615.52,web_yahoo,615.52,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMD,2026-09-22,open,ibkr,606.57,web_yahoo,606.57,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMD,2026-09-22,close,ibkr,623.77,web_yahoo,623.77,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ANET,2026-09-21,close,ibkr,205.42,web_yahoo,205.42,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ANET,2026-09-22,open,ibkr,204.35,web_yahoo,204.35,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ANET,2026-09-22,close,ibkr,205.19,web_yahoo,205.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CRL,2026-09-21,close,ibkr,279.01,web_yahoo,279.01,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CRL,2026-09-22,open,ibkr,280.19,web_yahoo,280.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CRL,2026-09-22,close,ibkr,285.11,web_yahoo,285.11,0.0,0.0,✅,
+ibkr_vs_web,股票收市,GOOGL,2026-09-21,close,ibkr,354.97,web_yahoo,354.97,0.0,0.0,✅,
+ibkr_vs_web,股票收市,GOOGL,2026-09-22,open,ibkr,357.75,web_yahoo,357.65,0.1,0.028,❌,
+ibkr_vs_web,股票收市,GOOGL,2026-09-22,close,ibkr,351.16,web_yahoo,351.16,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HP,2026-09-21,close,ibkr,40.29,web_yahoo,40.29,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HP,2026-09-22,open,ibkr,39.72,web_yahoo,39.72,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HP,2026-09-22,close,ibkr,39.79,web_yahoo,39.79,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ILMN,2026-09-21,close,ibkr,238.82,web_yahoo,238.82,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ILMN,2026-09-22,open,ibkr,237.09,web_yahoo,237.09,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ILMN,2026-09-22,close,ibkr,247.46,web_yahoo,247.46,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INCY,2026-09-21,close,ibkr,124.65,web_yahoo,124.65,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INCY,2026-09-22,open,ibkr,124.72,web_yahoo,124.72,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INCY,2026-09-22,close,ibkr,126.93,web_yahoo,126.93,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INTC,2026-09-21,close,ibkr,121.78,web_yahoo,121.78,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INTC,2026-09-22,open,ibkr,120.07,web_yahoo,120.15,-0.08,-0.0666,❌,
+ibkr_vs_web,股票收市,INTC,2026-09-22,close,ibkr,123.86,web_yahoo,123.86,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MRK,2026-09-21,close,ibkr,149.5,web_yahoo,149.5,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MRK,2026-09-22,open,ibkr,148.69,web_yahoo,148.69,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MRK,2026-09-22,close,ibkr,150.91,web_yahoo,150.91,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MU,2026-09-21,close,ibkr,1043.96,web_yahoo,1043.96,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MU,2026-09-22,open,ibkr,1032.26,web_yahoo,1032.85,-0.59,-0.0571,❌,
+ibkr_vs_web,股票收市,MU,2026-09-22,close,ibkr,1096.16,web_yahoo,1096.16,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NBIS,2026-09-21,close,ibkr,232.8,web_yahoo,232.8,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NBIS,2026-09-22,open,ibkr,233.24,web_yahoo,233.24,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NBIS,2026-09-22,close,ibkr,236.12,web_yahoo,236.12,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NDSN,2026-09-21,close,ibkr,314.35,web_yahoo,314.35,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NDSN,2026-09-22,open,ibkr,315.27,web_yahoo,315.27,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NDSN,2026-09-22,close,ibkr,319.67,web_yahoo,319.67,0.0,0.0,✅,
+ibkr_vs_web,股票收市,RVTY,2026-09-21,close,ibkr,143.59,web_yahoo,143.59,0.0,0.0,✅,
+ibkr_vs_web,股票收市,RVTY,2026-09-22,open,ibkr,143.12,web_yahoo,143.12,0.0,0.0,✅,
+ibkr_vs_web,股票收市,RVTY,2026-09-22,close,ibkr,143.31,web_yahoo,143.31,0.0,0.0,✅,
+ibkr_vs_web,股票收市,STX,2026-09-21,close,ibkr,877.33,web_yahoo,877.33,0.0,0.0,✅,
+ibkr_vs_web,股票收市,STX,2026-09-22,open,ibkr,857.69,web_yahoo,857.69,0.0,0.0,✅,
+ibkr_vs_web,股票收市,STX,2026-09-22,close,ibkr,919.84,web_yahoo,919.84,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TEVA,2026-09-21,close,ibkr,40.06,web_yahoo,40.06,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TEVA,2026-09-22,open,ibkr,39.45,web_yahoo,39.45,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TEVA,2026-09-22,close,ibkr,39.52,web_yahoo,39.52,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TGT,2026-09-21,close,ibkr,157.71,web_yahoo,157.71,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TGT,2026-09-22,open,ibkr,157.87,web_yahoo,157.87,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TGT,2026-09-22,close,ibkr,159.02,web_yahoo,159.02,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRV,2026-09-21,close,ibkr,371.13,web_yahoo,371.13,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRV,2026-09-22,open,ibkr,369.92,web_yahoo,369.92,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRV,2026-09-22,close,ibkr,362.01,web_yahoo,362.01,0.0,0.0,✅,
+ibkr_vs_web,股票收市,XOM,2026-09-21,close,ibkr,158.3,web_yahoo,158.3,0.0,0.0,✅,
+ibkr_vs_web,股票收市,XOM,2026-09-22,open,ibkr,157.53,web_yahoo,157.53,0.0,0.0,✅,
+ibkr_vs_web,股票收市,XOM,2026-09-22,close,ibkr,158.71,web_yahoo,158.71,0.0,0.0,✅,
+web_vs_web,Nasdaq↔Yahoo,A,2026-09-22,close,web_nasdaq,167.26,web_yahoo,167.26,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,ABNB,2026-09-22,close,web_nasdaq,161.81,web_yahoo,161.81,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,APO,2026-09-22,close,web_nasdaq,124.15,web_yahoo,124.15,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,AYI,2026-09-22,close,web_nasdaq,310.77,web_yahoo,310.77,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,BAX,2026-09-22,close,web_nasdaq,23.68,web_yahoo,23.68,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,BHF,2026-09-22,close,web_nasdaq,51.9,web_yahoo,51.9,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,BRO,2026-09-22,close,web_nasdaq,62.44,web_yahoo,62.44,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,BUD,2026-09-22,close,web_nasdaq,78.2,web_yahoo,78.2,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,CNX,2026-09-22,close,web_nasdaq,32.81,web_yahoo,32.81,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,CRWV,2026-09-22,close,web_nasdaq,86.76,web_yahoo,86.76,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,DVN,2026-09-22,close,web_nasdaq,46.93,web_yahoo,46.93,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,FDS,2026-09-22,close,web_nasdaq,276.42,web_yahoo,276.42,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,FERG,2026-09-22,close,web_nasdaq,221.17,web_yahoo,221.17,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,GIS,2026-09-22,close,web_nasdaq,35.45,web_yahoo,35.45,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,INVH,2026-09-22,close,web_nasdaq,27.14,web_yahoo,27.14,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,KIM,2026-09-22,close,web_nasdaq,22.55,web_yahoo,22.55,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,LEN,2026-09-22,close,web_nasdaq,83.06,web_yahoo,83.06,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,META,2026-09-22,close,web_nasdaq,736.595,web_yahoo,736.6,-0.005,-0.0007,❌,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,MLM,2026-09-22,close,web_nasdaq,499.34,web_yahoo,499.34,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,NRG,2026-09-22,close,web_nasdaq,102.75,web_yahoo,102.75,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,PH,2026-09-22,close,web_nasdaq,964.85,web_yahoo,964.85,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,PNC,2026-09-22,close,web_nasdaq,227.96,web_yahoo,227.96,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,SBUX,2026-09-22,close,web_nasdaq,95.11,web_yahoo,95.11,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,STI,2026-09-22,close,web_nasdaq,6.86,web_yahoo,6.86,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,UDR,2026-09-22,close,web_nasdaq,34.1,web_yahoo,34.1,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,VTRS,2026-09-22,close,web_nasdaq,17.18,web_yahoo,17.18,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,WB,2026-09-22,close,web_nasdaq,6.69,web_yahoo,6.69,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,WFC,2026-09-22,close,web_nasdaq,83.15,web_yahoo,83.15,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,XEL,2026-09-22,close,web_nasdaq,72.06,web_yahoo,72.06,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,XRAY,2026-09-22,close,web_nasdaq,9.95,web_yahoo,9.95,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,AMZN,2026-09-23,close,web_nasdaq,249.27,web_yahoo,249.27,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,AVY,2026-09-23,close,web_nasdaq,172.66,web_yahoo,172.66,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,BIDU,2026-09-23,close,web_nasdaq,89.78,web_yahoo,89.78,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,CAG,2026-09-23,close,web_nasdaq,14.78,web_yahoo,14.78,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,CPRT,2026-09-23,close,web_nasdaq,28.865,web_yahoo,28.87,-0.005,-0.0173,❌,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,CTVA,2026-09-23,close,web_nasdaq,80.42,web_yahoo,80.42,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,DHR,2026-09-23,close,web_nasdaq,221.56,web_yahoo,221.56,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,DOC,2026-09-23,close,web_nasdaq,20.48,web_yahoo,20.48,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,DOV,2026-09-23,close,web_nasdaq,189.03,web_yahoo,189.03,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ES,2026-09-23,close,web_nasdaq,64.91,web_yahoo,64.91,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,EXC,2026-09-23,close,web_nasdaq,40.69,web_yahoo,40.69,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,FOXA,2026-09-23,close,web_nasdaq,63.96,web_yahoo,63.96,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,HAL,2026-09-23,close,web_nasdaq,33.01,web_yahoo,33.01,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,HSIC,2026-09-23,close,web_nasdaq,85.05,web_yahoo,85.05,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,INTC,2026-09-23,close,web_nasdaq,122.6,web_yahoo,122.6,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,KLAC,2026-09-23,close,web_nasdaq,187.86,web_yahoo,187.86,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,LKQ,2026-09-23,close,web_nasdaq,23.43,web_yahoo,23.43,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,MSI,2026-09-23,close,web_nasdaq,460.44,web_yahoo,460.44,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,NFLX,2026-09-23,close,web_nasdaq,71.36,web_yahoo,71.36,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,NVR,2026-09-23,close,web_nasdaq,6241.61,web_yahoo,6241.6099,0.0001,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,PBI,2026-09-23,close,web_nasdaq,16.27,web_yahoo,16.27,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,PPG,2026-09-23,close,web_nasdaq,107.2,web_yahoo,107.2,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,PPL,2026-09-23,close,web_nasdaq,32.25,web_yahoo,32.25,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,REG,2026-09-23,close,web_nasdaq,72.73,web_yahoo,72.73,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,SNDK,2026-09-23,close,web_nasdaq,1816.57,web_yahoo,1816.5699,0.0001,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,SPG,2026-09-23,close,web_nasdaq,204.16,web_yahoo,204.16,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,SWKS,2026-09-23,close,web_nasdaq,91.45,web_yahoo,91.45,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,VZ,2026-09-23,close,web_nasdaq,46.52,web_yahoo,46.52,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ZION,2026-09-23,close,web_nasdaq,62.65,web_yahoo,62.65,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ZM,2026-09-23,close,web_nasdaq,91.9,web_yahoo,91.9,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ABT,2026-09-24,close,web_nasdaq,103.49,web_yahoo,101.07,2.42,2.3944,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,AJG,2026-09-24,close,web_nasdaq,229.64,web_yahoo,227.13,2.51,1.1051,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,APP,2026-09-24,close,web_nasdaq,315.25,web_yahoo,312.47,2.78,0.8897,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,BBWI,2026-09-24,close,web_nasdaq,17.02,web_yahoo,16.8,0.22,1.3095,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,BR,2026-09-24,close,web_nasdaq,163.45,web_yahoo,162.66,0.79,0.4857,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,CNC,2026-09-24,close,web_nasdaq,62.08,web_yahoo,61.92,0.16,0.2584,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,COHR,2026-09-24,close,web_nasdaq,300.6,web_yahoo,290.61,9.99,3.4376,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,D,2026-09-24,close,web_nasdaq,61.17,web_yahoo,60.4,0.77,1.2748,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,EFX,2026-09-24,close,web_nasdaq,155.32,web_yahoo,148.8,6.52,4.3817,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,GPN,2026-09-24,close,web_nasdaq,84.0,web_yahoo,85.31,-1.31,-1.5356,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,KKR,2026-09-24,close,web_nasdaq,97.21,web_yahoo,95.64,1.57,1.6416,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,LCID,2026-09-24,close,web_nasdaq,4.16,web_yahoo,4.15,0.01,0.241,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,MAS,2026-09-24,close,web_nasdaq,68.16,web_yahoo,67.31,0.85,1.2628,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,MCD,2026-09-24,close,web_nasdaq,238.32,web_yahoo,237.02,1.3,0.5485,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,MCHP,2026-09-24,close,web_nasdaq,75.53,web_yahoo,74.69,0.84,1.1246,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,META,2026-09-24,close,web_nasdaq,744.1,web_yahoo,777.59,-33.49,-4.3069,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,NKTR,2026-09-24,close,web_nasdaq,57.66,web_yahoo,59.38,-1.72,-2.8966,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,NOW,2026-09-24,close,web_nasdaq,140.78,web_yahoo,137.78,3.0,2.1774,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,NVR,2026-09-24,close,web_nasdaq,6241.61,web_yahoo,6235.4902,6.1198,0.0981,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,PANW,2026-09-24,close,web_nasdaq,393.3,web_yahoo,389.92,3.38,0.8668,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,POOL,2026-09-24,close,web_nasdaq,166.61,web_yahoo,161.71,4.9,3.0301,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,PPL,2026-09-24,close,web_nasdaq,32.25,web_yahoo,31.97,0.28,0.8758,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,RJF,2026-09-24,close,web_nasdaq,158.23,web_yahoo,158.76,-0.53,-0.3338,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,SPG,2026-09-24,close,web_nasdaq,204.16,web_yahoo,204.7,-0.54,-0.2638,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,T,2026-09-24,close,web_nasdaq,25.3,web_yahoo,25.45,-0.15,-0.5894,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,TDC,2026-09-24,close,web_nasdaq,29.21,web_yahoo,29.46,-0.25,-0.8486,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,WFC,2026-09-24,close,web_nasdaq,81.9,web_yahoo,82.18,-0.28,-0.3407,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,WMT,2026-09-24,close,web_nasdaq,110.53,web_yahoo,107.59,2.94,2.7326,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,WTW,2026-09-24,close,web_nasdaq,298.99,web_yahoo,293.63,5.36,1.8254,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,ZION,2026-09-24,close,web_nasdaq,62.65,web_yahoo,62.82,-0.17,-0.2706,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,ABNB,2026-09-25,close,web_nasdaq,151.39,web_yahoo,157.47,-6.08,-3.8611,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,ALB,2026-09-25,close,web_nasdaq,108.25,web_yahoo,109.73,-1.48,-1.3488,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CASY,2026-09-25,close,web_nasdaq,598.85,web_yahoo,598.46,0.39,0.0652,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CDW,2026-09-25,close,web_nasdaq,139.46,web_yahoo,135.43,4.03,2.9757,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CL,2026-09-25,close,web_nasdaq,85.32,web_yahoo,86.06,-0.74,-0.8599,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CPT,2026-09-25,close,web_nasdaq,97.41,web_yahoo,98.12,-0.71,-0.7236,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CRH,2026-09-25,close,web_nasdaq,83.96,web_yahoo,85.04,-1.08,-1.27,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CSCO,2026-09-25,close,web_nasdaq,106.97,web_yahoo,106.7,0.27,0.253,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,DE,2026-09-25,close,web_nasdaq,694.94,web_yahoo,690.46,4.48,0.6488,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,GM,2026-09-25,close,web_nasdaq,80.57,web_yahoo,82.63,-2.06,-2.493,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,HII,2026-09-25,close,web_nasdaq,266.0,web_yahoo,264.02,1.98,0.7499,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,IT,2026-09-25,close,web_nasdaq,179.32,web_yahoo,187.9,-8.58,-4.5663,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,MAC,2026-09-25,close,web_nasdaq,22.64,web_yahoo,22.64,0.0,0.0,✅,快照 quotes_2026-09-25.json
+web_vs_web,Nasdaq↔Yahoo,MAR,2026-09-25,close,web_nasdaq,351.51,web_yahoo,352.03,-0.52,-0.1477,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,MCD,2026-09-25,close,web_nasdaq,237.02,web_yahoo,236.5,0.52,0.2199,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,MCO,2026-09-25,close,web_nasdaq,467.35,web_yahoo,468.7,-1.35,-0.288,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,MDLZ,2026-09-25,close,web_nasdaq,60.86,web_yahoo,60.25,0.61,1.0124,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,MNST,2026-09-25,close,web_nasdaq,42.67,web_yahoo,43.11,-0.44,-1.0206,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,PNW,2026-09-25,close,web_nasdaq,91.08,web_yahoo,91.74,-0.66,-0.7194,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,PWR,2026-09-25,close,web_nasdaq,643.5,web_yahoo,649.13,-5.63,-0.8673,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,Q,2026-09-25,close,web_nasdaq,122.31,web_yahoo,124.69,-2.38,-1.9087,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,RCL,2026-09-25,close,web_nasdaq,238.98,web_yahoo,242.7,-3.72,-1.5328,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,SO,2026-09-25,close,web_nasdaq,82.89,web_yahoo,82.88,0.01,0.0121,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,SYF,2026-09-25,close,web_nasdaq,71.55,web_yahoo,72.94,-1.39,-1.9057,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,SYK,2026-09-25,close,web_nasdaq,269.75,web_yahoo,272.36,-2.61,-0.9583,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,SYY,2026-09-25,close,web_nasdaq,78.19,web_yahoo,78.46,-0.27,-0.3441,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,TRMB,2026-09-25,close,web_nasdaq,57.69,web_yahoo,57.85,-0.16,-0.2766,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,VLTO,2026-09-25,close,web_nasdaq,96.2,web_yahoo,97.14,-0.94,-0.9677,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,WMT,2026-09-25,close,web_nasdaq,107.59,web_yahoo,107.98,-0.39,-0.3612,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,WU,2026-09-25,close,web_nasdaq,6.03,web_yahoo,6.18,-0.15,-2.4272,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+internal,5分K OHLC,US.QQQ,2026-09-24,ohlc,futu_5m,,,,,,✅,全部合理
+internal,5分K OHLC,US.QQQ,2026-09-25,ohlc,futu_5m,,,,,,✅,全部合理
+internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-25,rules,futu_options,,,,,,ℹ️,bid>0 10/10；價差≤20%中價 10/10；|delta| 0.10–0.90 10/10

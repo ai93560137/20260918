@@ -53,6 +53,8 @@
 #     期權 IV，存 archive/<source>/<instrument>/<日期>.json；?view=archive&format=json
 #     &date=YYYY-MM-DD 讀回，給預設分支的每日彙整拉進 data/external/。
 #     Futu 支援多代號（futu/snapshots/<代號>.json，?view=futu&format=json&symbol=）。
+#   * 2026-09-27 — [R96] kline_type=K_DAY 的封包（本地腳本 v4 的每日日線抽樣，給數據
+#     品質比對用）只按日封存，不覆蓋控制台與 ?view=futu 的即時快照。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2054,10 +2056,12 @@ def handle_futu_data(payload):
         "options": options,
         "warnings": warnings,
     }
+    daily = snapshot["kline_type"].upper() == "K_DAY"   # [R96] 日線抽樣只封存，不蓋掉控制台的即時快照
     try:
-        text = json.dumps(snapshot, ensure_ascii=False)
-        gcs_write_text(FUTU_SNAPSHOT_FILE, text)
-        gcs_write_text(futu_symbol_file(symbol), text)            # [R95] 多代號各一份
+        if not daily:
+            text = json.dumps(snapshot, ensure_ascii=False)
+            gcs_write_text(FUTU_SNAPSHOT_FILE, text)
+            gcs_write_text(futu_symbol_file(symbol), text)        # [R95] 多代號各一份
     except StorageError as exc:
         log_event(f"⚠️ [Futu 行情寫入失敗] {exc}", severity="ERROR", component="futu")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
