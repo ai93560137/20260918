@@ -35,7 +35,7 @@ OUT_MD = os.path.join(HERE, "DAILY_REPORT.md")
 OUT_LOG = os.path.join(HERE, "daily_log.csv")
 OUT_TG = os.path.join(HERE, "tg_daily.txt")
 
-BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi"]
+BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi"]   # vhsi 為試用層資料,亞洲時段
 US_BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move"]     # axvi 是亞洲時段,天生慢一天
 W1_Q = 0.10                                              # 觀察名單 W1:VVIX/VIX < 滾動 252 日 p10
 DATA_DIR = os.path.join(HERE, "data_external")
@@ -43,9 +43,9 @@ STALE_TOL = 0.01                                         # 呆值:四價相同�
 
 LOG_FIELDS = ["date", "axis_short", "axis_disaster", "yellow", "yellow_count",
               "yellow_vvix", "yellow_move", "yellow_axvi",
-              "trial_yellow2", "trial_deep_yellow", "trial_red_deep", "trial_red_9d3m",
+              "trial_yellow2", "trial_deep_yellow", "trial_red_deep", "trial_red_9d3m", "trial_yellow_vhsi",
               "w1_fear_spike", "vvix_vix_ratio", "ratio_p10",
-              "vix9d", "vix", "vix3m", "vvix", "move", "axvi", "slope_9d", "slope_3m",
+              "vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi", "slope_9d", "slope_3m",
               "stale_us_days", "stale_print", "generated_at_utc"]
 
 
@@ -134,12 +134,13 @@ def build_report(rows, health, today):
 
     # 1. 燈色與變化
     def chg(key):
-        if prev is None or prev[key] == last[key]:
-            return ""
-        return f"(前日 {prev[key] or '—'} → 今日 {last[key] or '—'})"
+        if prev is None or prev.get(key, "") == last.get(key, "") or last.get(key, "") == "":
+            return ""   # 無資料不算變化(亞洲鳥常慢一日)
+        return f"(前日 {prev.get(key, '') or '—'} → 今日 {last.get(key, '')})"
 
     def onoff(key):
-        return {"1": "亮", "0": "滅", "": "無資料"}.get(last[key], last[key])
+        v = last.get(key, "")
+        return {"1": "亮", "0": "滅", "": "無資料"}.get(v, v)
 
     lights = [
         ("短期軸(VIX9D 系)", last["axis_short"] or "無資料", chg("axis_short"),
@@ -158,16 +159,30 @@ def build_report(rows, health, today):
         dist.append(f"slope_9d = {s9:+.2f}(>0 為紅;−0.5~0 為走平)")
     if s3 is not None:
         dist.append(f"slope_3m = {s3:+.2f}(>0 為深紅)")
-    for name, flag, col, pcol in yparts:
-        v, p = f(last[col]), f(last[pcol])
+    def last_with(col):
+        for r in reversed(rows):
+            if r.get(col, "") != "":
+                return r
+        return None
+
+    def dist_line(name, col, pcol):
+        r = last_with(col)
+        if r is None:
+            return f"{name}:無資料"
+        v, p = f(r[col]), f(r.get(pcol))
+        tag = "" if r["date"] == last["date"] else f",{r['date'][5:]} 值"
         if v is not None and p is not None and p != 0:
-            dist.append(f"{name} = {v:.2f},p90 = {p:.2f},距門檻 {(v / p - 1) * 100:+.1f}%")
-        else:
-            dist.append(f"{name}:當日無資料")
+            return f"{name} = {v:.2f},p90 = {p:.2f},距門檻 {(v / p - 1) * 100:+.1f}%{tag}"
+        return f"{name} = {v:.2f}{tag}(p90 窗口未滿)"
+
+    for name, flag, col, pcol in yparts:
+        dist.append(dist_line(name, col, pcol))
+    dist.append(dist_line("VHSI(試用)", "vhsi", "vhsi_p90"))
 
     # 3. 試用與 W1
     trials = [("黃×2", "trial_yellow2"), ("深黃 VVIX p95", "trial_deep_yellow"),
-              ("紅相對深度 p90", "trial_red_deep"), ("9D對3M倒掛", "trial_red_9d3m")]
+              ("紅相對深度 p90", "trial_red_deep"), ("9D對3M倒掛", "trial_red_9d3m"),
+              ("黃VHSI p90", "trial_yellow_vhsi")]
     ratio, p10, w1 = w1_status(rows)
 
     # 4. 新鮮度
@@ -175,7 +190,7 @@ def build_report(rows, health, today):
     latest_by_bird = {}
     for b in BIRDS:
         for r in reversed(rows):
-            if r[b] != "":
+            if r.get(b, "") != "":
                 latest_by_bird[b] = r["date"]
                 break
         else:
@@ -186,8 +201,8 @@ def build_report(rows, health, today):
         fresh.append((b, lb, gap))
         if b in US_BIRDS and gap is not None and gap > 1:
             warnings.append(f"{b} 最後日期 {lb},落後 {gap} 個交易日")
-        if b == "axvi" and gap is not None and gap > 2:
-            warnings.append(f"axvi 最後日期 {lb},落後 {gap} 個交易日(亞洲時段允許 1–2 日)")
+        if b in ("axvi", "vhsi") and gap is not None and gap > 2:
+            warnings.append(f"{b} 最後日期 {lb},落後 {gap} 個交易日(亞洲時段允許 1–2 日)")
     if stale_us > 1:
         warnings.append(f"燈色表最新列 {last['date']},距今 {stale_us} 個交易日,上游可能未更新")
     stale = stale_prints()
@@ -202,9 +217,9 @@ def build_report(rows, health, today):
     checks.append(("日期單調遞增", "是" if mono else "否", mono))
     dup = len(dates) != len(set(dates))
     checks.append(("無重複日期", "否" if dup else "是", not dup))
-    missing = [b for b in BIRDS if last[b] == ""]
-    checks.append(("最新列六隻鳥齊全", "是" if not missing else "缺 " + "、".join(missing),
-                   not missing or missing == ["axvi"]))
+    missing = [b for b in BIRDS if last.get(b, "") == ""]
+    checks.append(("最新列各鳥齊全(亞洲鳥可慢一日)", "是" if not missing else "缺 " + "、".join(missing),
+                   all(m in ("axvi", "vhsi") for m in missing)))
     checks.append(("無呆值(四價相同且等於前日收盤)", "是" if not stale else "疑似:" + "、".join(b for b, _, _ in stale),
                    not stale))
     for k, v in health.items():
@@ -235,7 +250,8 @@ def build_report(rows, health, today):
     md.append("## 3. 試用層與觀察名單(只記錄,無警報權,不得據此改變響應)\n")
     md.append("| 項目 | 今日 | 變化 | 連續 |\n|---|---|---|---|")
     for name, key in trials:
-        md.append(f"| 試用:{name} | {onoff(key)} | {chg(key) or '—'} | {streak(rows, key, last[key])} 日 |")
+        stk = "—" if last.get(key, "") == "" else f"{streak(rows, key, last[key])} 日"
+        md.append(f"| 試用:{name} | {onoff(key)} | {chg(key) or '—'} | {stk} |")
     if ratio is not None:
         w1txt = "無資料(窗口未滿)" if w1 is None else ("亮" if w1 else "滅")
         md.append(f"| 觀察 W1:VVIX/VIX < p10 | {w1txt} | 比率 {ratio:.2f},p10 {p10 if p10 is None else round(p10, 2)} | 樣本外累積中(自 2026-09-27) |")
@@ -279,7 +295,8 @@ def build_report(rows, health, today):
         plain = "🟢 一切平靜,保險價格正常。照平常節奏做事。"
 
     def onoff_emoji(key):
-        return {"1": "🔔亮", "0": "滅", "": "—"}.get(last[key], last[key])
+        v = last.get(key, "")
+        return {"1": "🔔亮", "0": "滅", "": "—"}.get(v, v)
 
     tg = [f"🐤 金絲雀每日總結 📅 {today.isoformat()}",
           f"燈色日 {last['date']}{weekend_note}",
@@ -303,7 +320,7 @@ def build_report(rows, health, today):
         tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}(比率 {ratio:.2f},門檻 {p10 if p10 is None else round(p10, 2)})")
     tg += ["",
            "🩺 數據與健康",
-           "• 新鮮度:" + "、".join(f"{b} {lb}" for b, lb, _ in fresh if b in ("vix", "vvix", "move", "axvi")),
+           "• 新鮮度:" + "、".join(f"{b} {lb}" for b, lb, _ in fresh if b in ("vix", "vvix", "move", "axvi", "vhsi")),
            "• 健康檢查:" + ("全過 ✅" if all(ok for _, _, ok in checks) else "有未過 ❌,見下"),
            ]
     if warnings:
@@ -321,10 +338,11 @@ def build_report(rows, health, today):
         "yellow_vvix": last["yellow_vvix"], "yellow_move": last["yellow_move"], "yellow_axvi": last["yellow_axvi"],
         "trial_yellow2": last["trial_yellow2"], "trial_deep_yellow": last["trial_deep_yellow"],
         "trial_red_deep": last["trial_red_deep"], "trial_red_9d3m": last["trial_red_9d3m"],
+        "trial_yellow_vhsi": last.get("trial_yellow_vhsi", ""),
         "w1_fear_spike": "" if w1 is None else ("1" if w1 else "0"),
         "vvix_vix_ratio": "" if ratio is None else f"{ratio:.4f}",
         "ratio_p10": "" if p10 is None else f"{p10:.4f}",
-        **{b: last[b] for b in BIRDS},
+        **{b: last.get(b, "") for b in BIRDS},
         "slope_9d": last["slope_9d"], "slope_3m": last["slope_3m"],
         "stale_us_days": str(stale_us),
         "stale_print": ";".join(b for b, _, _ in stale),

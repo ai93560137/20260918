@@ -37,10 +37,12 @@
 | `slope9_p90` | slope_9d 的滾動 252 日 90 分位 |
 | `trial_red_deep` | 🔴 **試用**:紅相對深度,slope_9d > `slope9_p90`(紅的嚴格層) |
 | `trial_red_9d3m` | 🔴 **試用**:9D對3M倒掛,VIX9D − VIX3M > 0(紅與深紅之間的中間層,在紅內鑑別力 1.83) |
+| `vhsi` `vhsi_p90` | 恒指波幅指數收盤與其滾動 252 日 90 分位 |
+| `trial_yellow_vhsi` | 🟡 **試用**:黃VHSI,VHSI > `vhsi_p90`(對美股當日可用,對港股 lag=1;不併入 `yellow` / `yellow_count`) |
 
 布林欄位:`1` 亮、`0` 不亮、空白 = 該日資料不足(例如 2011 年前無 VIX9D、各鳥前 252 日無分位)。
 
-`trial_*` 欄位是 2026-09-26 黃燈升級(六取二,`YELLOW_UPGRADE.md`)與紅燈提位(四取二,`RED_UPGRADE.md`)考核的通過者,
+`trial_*` 欄位是 2026-09-26 黃燈升級(六取二)、2026-09-27 海外鳥 VHSI(`YELLOW_UPGRADE.md`)與紅燈提位(四取二,`RED_UPGRADE.md`)考核的通過者,
 **試用期、無警報權**:各策略可以記錄、可以回測,但不得據此改變響應,待雲垂陣採納才升為正式分層。
 考核腳本 `yellow_lab.py` / `red_lab.py`(需 **pandas + tabulate**,共用 `lab_common.py`;`pip install pandas tabulate`)候選與門檻預先登記於檔頭;未過者列入淘汰名單勿重測。
 

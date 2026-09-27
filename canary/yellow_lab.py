@@ -14,6 +14,9 @@ Park 2015 / Huang et al. 2019 指出 VVIX 獨立於 VIX 被定價),候選**預�
     MOVE斜率    MOVE 5 日變化 > 該變化的滾動 252 日 p90
   相對類
     VVIX/VIX    VVIX ÷ VIX > 該比率的滾動 252 日 p90(「對恐懼的恐懼」相對於恐懼本身)
+  海外類(2026-09-27 登記,使用者指示)
+    黃VHSI      恒指波幅指數 VHSI > 滾動 252 日 p90。港股 16:00 HKT 收盤在美股開盤前,對 SPX 當日可用
+                (與 AXVI 同理);對 HSI 是自家指數,必須 lag=1(evaluate 的 HSI 路徑已處理)。
 
 考核口徑與雲垂陣 tradingview/canary_lab.py 完全一致(共用 lab_common.py;對 SPX 與 HSI 各一份):
   1. 亮燈日未來 5 天 RV vs 不亮燈(倍率)+ Welch t 值
@@ -44,7 +47,7 @@ Q_DEEP, MIN_N = 0.95, 100
 
 # ---------------------------------------------------------------- 資料與候選
 vix, v9, v3 = s("vix_daily.csv"), s("vix9d_daily.csv"), s("vix3m_daily.csv")
-vvix, move, axvi = s("vvix_daily.csv"), s("move_daily.csv"), s("axvi_daily.csv")
+vvix, move, axvi, vhsi = s("vvix_daily.csv"), s("move_daily.csv"), s("axvi_daily.csv"), s("vhsi_daily.csv")
 spx, hsi, vhsi = s("spx_daily.csv"), s("hsi_daily.csv"), s("vhsi_daily.csv")
 
 y_vvix, y_move, y_axvi = hi(vvix), hi(move), hi(axvi)
@@ -68,8 +71,10 @@ sigs = {
     "MOVE斜率5日": hi(move.diff(5)),
     # 候選:相對
     "VVIX/VIX比": hi((vvix / vix).dropna()),
+    # 候選:海外
+    "黃VHSI p90": hi(vhsi),
 }
-CANDIDATES = ["黃×2", "黃×3", "深黃VVIX p95", "VVIX斜率5日", "MOVE斜率5日", "VVIX/VIX比"]
+CANDIDATES = ["黃×2", "黃×3", "深黃VVIX p95", "VVIX斜率5日", "MOVE斜率5日", "VVIX/VIX比", "黃VHSI p90"]
 green = (v9 - vix).dropna() <= 0
 
 # ---------------------------------------------------------------- 考核
@@ -125,7 +130,8 @@ for c, (v, fails) in verdict.items():
     md.append(f"| {c} | {v} | {'; '.join(fails) if fails else '—'} |")
 md.append("")
 if passed:
-    md.append("通過者以 `trial_*` 欄位進入 `canary_daily.csv` **試用期,無警報權**:" + "、".join(passed))
+    md.append("通過者以 `trial_*` 欄位進入 `canary_daily.csv` **試用期,無警報權**:" + "、".join(passed)
+              + "(欄位:黃×2→trial_yellow2、深黃→trial_deep_yellow、黃VHSI→trial_yellow_vhsi;VHSI 不併入正式黃燈計數)")
 else:
     md.append("**無候選通過。** 黃燈維持現役定義;`yellow_count`(0–3)僅作描述欄位加入燈色表,不具警報權。")
 md.append("\n未通過的候選列入本分支淘汰名單,**勿重測**(§7 口徑紀律)。")

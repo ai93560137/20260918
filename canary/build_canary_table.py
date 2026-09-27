@@ -19,6 +19,8 @@
 #   axis_disaster       災難軸(VIX3M 系):深紅 / 綠           看災難風險
 #   trial_red_deep      🔴 紅相對深度(試用,無警報權):slope_9d > 自身滾動 252 日 p90
 #   trial_red_9d3m      🔴 9D對3M倒掛(試用,無警報權):VIX9D − VIX3M > 0,紅與深紅之間的中間層
+#   trial_yellow_vhsi   🟡 黃VHSI(試用,無警報權,2026-09-27):恒指波幅指數 VHSI > 自身滾動 252 日 p90;
+#                       對美股當日可用(港股先收),對港股須 lag=1;不併入 yellow / yellow_count
 #
 # 口徑與雲垂陣 tradingview/canary_lab.py 一致:
 #   * 滾動 252 日 90 分位 = pandas `x.rolling(252).quantile(0.9)`,窗口**含當日**,
@@ -53,7 +55,7 @@ SOURCE_BRANCH = "claude/dazzling-curie-f3xzb8"
 SOURCE_PATH = "tradingview/data_external"
 BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi"]
 PCT_BIRDS = ["vvix", "move", "axvi"]   # 黃燈三隻:滾動分位
-LAB_FILES = ["spx", "hsi", "vhsi"]     # 考核用(yellow_lab.py):標的與 VHSI
+LAB_FILES = ["spx", "hsi", "vhsi"]     # 考核用(yellow_lab.py):標的與 VHSI;vhsi 亦供試用層 trial_yellow_vhsi
 
 WINDOW = 252
 QUANTILE = 0.9
@@ -144,6 +146,10 @@ def build(start=None):
             sys.exit(f"{p} 讀不到任何資料。")
 
     close = {b: dict(series[b]) for b in BIRDS}
+    vhsi_path = os.path.join(DATA_DIR, "vhsi_daily.csv")
+    vhsi_series = load_close(vhsi_path) if os.path.exists(vhsi_path) else []
+    close["vhsi"] = dict(vhsi_series)
+    vhsi_p90 = dict(zip([d for d, _ in vhsi_series], rolling_quantile([v for _, v in vhsi_series]))) if vhsi_series else {}
 
     # 黃燈三隻:在各自日曆上算分位
     p90 = {}
@@ -193,6 +199,8 @@ def build(start=None):
         thr9 = slope9_p90.get(d)
         red_deep = None if (s9 is None or thr9 is None) else s9 > thr9
         red_9d3m = None if (v9 is None or v3 is None) else (v9 - v3) > 0
+        vh, vhthr = close["vhsi"].get(d), vhsi_p90.get(d)
+        yellow_vhsi = None if (vh is None or vhthr is None) else vh > vhthr
 
         # 單欄燈色(斜率燈互斥;黃燈另欄獨立標示)
         if deep:
@@ -231,6 +239,9 @@ def build(start=None):
             "slope9_p90": fmt(thr9, 2),
             "trial_red_deep": flag(red_deep),
             "trial_red_9d3m": flag(red_9d3m),
+            "vhsi": fmt(vh, 2),
+            "vhsi_p90": fmt(vhthr, 2),
+            "trial_yellow_vhsi": flag(yellow_vhsi),
         })
     return rows
 
@@ -244,7 +255,8 @@ def summarize(rows):
     print(f"\n燈色表 {rows[0]['date']} → {last['date']},共 {len(rows)} 個交易日")
     for key, label in [("red", "紅"), ("deep_red", "深紅"), ("flat", "走平"), ("yellow", "黃"),
                        ("trial_yellow2", "黃×2(試用)"), ("trial_deep_yellow", "深黃(試用)"),
-                       ("trial_red_deep", "紅相對深度(試用)"), ("trial_red_9d3m", "9D對3M倒掛(試用)")]:
+                       ("trial_red_deep", "紅相對深度(試用)"), ("trial_red_9d3m", "9D對3M倒掛(試用)"),
+                       ("trial_yellow_vhsi", "黃VHSI(試用)")]:
         n, tot = share(key)
         print(f"  {label:<3} {n:>5} / {tot} 日  ({n / tot * 100 if tot else 0:.1f}%)")
     yparts = "/".join(f"{b}={last['yellow_' + b] or '-'}" for b in PCT_BIRDS)
@@ -254,7 +266,8 @@ def summarize(rows):
     print(f"雙軸:短期軸={last['axis_short'] or '-'}  災難軸={last['axis_disaster'] or '-'}")
     print(f"試用(無警報權):yellow_count={last['yellow_count'] or '-'}"
           f"  黃×2={last['trial_yellow2'] or '-'}  深黃VVIX p95={last['trial_deep_yellow'] or '-'}"
-          f"  紅相對深度p90={last['trial_red_deep'] or '-'}  9D對3M倒掛={last['trial_red_9d3m'] or '-'}")
+          f"  紅相對深度p90={last['trial_red_deep'] or '-'}  9D對3M倒掛={last['trial_red_9d3m'] or '-'}"
+          f"  黃VHSI={last['trial_yellow_vhsi'] or '-'}")
     print("提醒:此燈色只能用於下一個交易日起(lag=1)。")
     if last["light"] in ("紅", "深紅"):
         print("\n" + RED_NOTE)
