@@ -7,11 +7,35 @@
 # BEHAVIOUR CHANGES — read before deploying
 #   * No dry-run mode: every approved signal is sent LIVE to the real account.
 #   * Gate + trend state is ONE JSON document (regime, direction, armed,
-#     hard lock, news lock) updated with GCS generation checks. Entries are
-#     only taken in the confirmed trend direction.                   [R4 R9 R30 R35]
+#     hard lock, news lock) updated with GCS generation checks.      [R4 R9 R35]
+#   * 2026-09-20 — 開閘依據改寫。三級共振第一次被量度（README §22/§23）：
+#     修正 look-ahead 後 1~360 分鐘每個持倉長度的毛利 t 值都在 ±1.6 內，
+#     延後一分鐘進場由 t=+5.28 掉到 −2.18，而 EA 每 60 秒才輪詢一次。
+#     → 它退出開閘決策，只留在儀表板當雷達看。電閘改由五道風控關卡驅動：
+#       市場時段 / 波動水位 / 空城計曝險上限 / 單日虧損 / 訓練節奏。
+#       缺任何一項數據一律當成不過關（fail-closed）。   [R70 R72 R73]
+#     GATE_DRIVER=REGIME 可一鍵回退成舊行為，只為了能並排比對。
+#   * ⚠️ 但三級共振【沒有完全退場】：PureGCPPyramidingSession.evaluate_and_trigger
+#     的第一行仍然讀 gate_state["dir"]，而那個 dir 是三級共振寫的。所以現在是：
+#         armed（准不准下單）← 風控六關    ✅ 已量度
+#         dir  （往哪個方向）← 三級共振    ❌ 未量度，且已證實無優勢
+#     RANGE 時 dir = None，引擎直接 return None → 實際上 87.3% 的時間不會下單。
+#     再加上 LONG_ONLY=1，等於「只在三級共振說 UP 的時候做多」。
+#     → 進場規則本身仍然沒有任何回測支持。見 README §27。  [R77]
+#   * LONG_ONLY 預設開啟：全期 1,464 筆中 671 筆空單每筆 −HK$0.84、
+#     t = −0.25，八年半期望值為零，唯一作用是付點差。            [R71]
+#   * 2026-09-20 — 進場引擎換成【錦囊 v4】（ENTRY_ENGINE=JINNANG）。   [R78]
+#     舊的 PureGCPPyramidingSession 第一次被量度（README §28）：全期去掉最賺
+#     5% → −HK$16,945、最大回撤 23.4%，而三級共振給的方向在配對檢驗下
+#     t = +0.82（置換第 79.3 百分位）—— 不顯著。三級共振至此完全退場。
+#     錦囊 v4：M15 區間突破 · 只做多 · ATR(14)÷價格 ≥ 0.10% · 抱 10 根 ·
+#     無價格停損；出場由 EA 的 InpHoldMinutes = 150 分鐘定時全平。
+#     TradingView 全期 513 筆（2018-03 → 2026-09）：年化 +2.47%、
+#     最大回撤 5.72%。⚠️ 樣本外 −0.82%/年、異常值佔淨利 106% —— 未證實。
+#     ENTRY_ENGINE=PYRAMID 可回退成舊引擎，只為了能並排比對。
 #   * TARGET_HIT and manual LOCK are HARD locks that the state machine cannot
 #     reopen. The dashboard "OPEN" button became "release hard lock / resume
-#     auto"; the gate then opens on the next Setup→Trigger cycle.       [R10 R29]
+#     auto"; the gate then reopens once the five risk checks pass.      [R10 R29]
 #   * Position cap is risk-based: equity × RISK_PCT ÷ (SL distance × 100),
 #     also capped by margin and HARD_MAX_LOTS.                              [R11]
 #   * Entry rules are deterministic Python. The LLM is an optional reviewer
@@ -79,9 +103,15 @@ GCP_SECRET_TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "123456")
 
 # --- Execution ----------------------------------------------------------------
 ORDER_SIZE = _env_float("ORDER_SIZE", 0.01)
-BROKER_API_URL = "https://webhooktrade.com/signals/v1/webhook_receptions.php?t=e66cdac4abb48f1a"
+# [R82] 這個 URL 的 ?t=... 是你個人的接收端權杖 —— 跟 api_key 一樣算憑證，
+#       原本寫死在這裡，而這個 repo 是【公開】的。改成環境變數，沒設就不送單。
+BROKER_API_URL = _env_str("BROKER_API_URL", "")
 BROKER_TIMEOUT_SEC = _env_int("BROKER_TIMEOUT_SEC", 8)            # keep total request < EA WebRequest timeout
-ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD")                    # symbol sent to webhooktrade
+# [R83] 券商的商品名要一字不差（UltimaMarkets 可能是 XAUUSD 或 XAUUSD+）。
+#       送錯名字會被拒單，或更糟 —— 成交在另一個商品上。
+#       不靠人記：EA 的心跳裡帶著圖表商品名（m1_ohlc.symbol），
+#       GCP 會拿它跟這個值比對，不一樣就在 Log 與儀表板上示警。見 broker_symbol_mismatch()。
+ORDER_SYMBOL = _env_str("ORDER_SYMBOL", "XAUUSD")                    # 必須與券商商品列表完全一致
 ORDER_ACCOUNT = _env_str("ORDER_ACCOUNT", "1")                       # webhooktrade 範本的 account 欄位
 # webhooktrade 有兩組距離欄位，單位不同，只能擇一送出：
 #   price  → sl_distance_price / tp_distance_price / ts_activation_price / …   值＝美元（13.00）
@@ -104,7 +134,11 @@ LOCKED_HTTP_STATUS = _env_int("LOCKED_HTTP_STATUS", 403)              # [R63] 40
 
 ORDER_TEMPLATE = {
     "username": "Webhook8",
-    "api_key": os.environ.get("WEBHOOK_API_KEY", "9dff998f1ed0a6cb"),
+    # [R82] 絕對不要在這裡放預設值 —— 這個 repo 是【公開】的。
+    #       原本寫死的那把金鑰已經在 GitHub 上公開過，必須視為外洩，請重新產生。
+    #       沒設 WEBHOOK_API_KEY 時留空，送單會被券商拒絕（fail-closed），
+    #       比帶著一把公開過的金鑰去下單安全。
+    "api_key": os.environ.get("WEBHOOK_API_KEY", ""),
     "broker": "metatrader",
     "account_type": "real",
     "symbol": ORDER_SYMBOL,
@@ -145,13 +179,89 @@ RSI_BUY_MAX = _env_float("RSI_BUY_MAX", 85.0)
 RSI_SELL_MIN = _env_float("RSI_SELL_MIN", 15.0)
 BREAKEVEN_EPS = _env_float("BREAKEVEN_EPS", 1.0)                      # [R24c] |profit| <= this = break-even
 STATS_WINDOW = _env_int("STATS_WINDOW", 100)
-BROKER_UTC_OFFSET_HOURS = _env_float("BROKER_UTC_OFFSET_HOURS", 0.0)  # [R42] MT5 server time - UTC
+# [R42] MT5 伺服器時間 − UTC。BACKTEST.md 實測本券商為 UTC+3（夏令），回測指令
+# 一路用 --broker-offset 3；設錯會讓 pair_trade_result() 配到錯的進場訊號。
+# 夏令時結束後券商可能變 UTC+2，屆時用環境變數覆寫。
+BROKER_UTC_OFFSET_HOURS = _env_float("BROKER_UTC_OFFSET_HOURS", 3.0)
 
 # --- M1 regime radar -----------------------------------------------------------
 MIN_M1_BARS = _env_int("MIN_M1_BARS", 65)                             # [R47] 60-min window + margin
 M1_HISTORY_MAX = 200
 M1_GAP_RESET_SEC = _env_int("M1_GAP_RESET_SEC", 15 * 60)              # [R21]
 NOISE_K = _env_float("NOISE_K", 1.0)                                  # [R31] threshold = K·σ·√minutes
+
+# --- 🛡️ 風控電閘（取代三級共振做開閘決策）-------------------------------------
+# [R70] 2026-09-20：三級共振第一次被量度（README §22/§23）。修正 look-ahead 後，
+#       1~360 分鐘每個持倉長度的毛利 t 值都在 ±1.6 內，而且延後一分鐘進場就由
+#       +5.28 掉到 −2.18。EA 每 60 秒才輪詢一次，這個架構本來就接不住這種訊號。
+#       → 三級共振改為「僅供觀察」，不再參與開閘。電閘改由風控條件驅動。
+GATE_DRIVER = _env_str("GATE_DRIVER", "RISK").upper()                 # RISK | REGIME（舊行為，僅供回退）
+LONG_ONLY = _env_bool("LONG_ONLY", True)                              # [R71] 全期 671 筆空單 t=−0.25
+DD_TOLERANCE_PCT = _env_float("DD_TOLERANCE_PCT", 20.0)               # 可承受回撤（空城計基準）
+# [R81] 這個數字要對應【持倉長度】，不是隨便抄一個「黃金最壞單日」。
+#       錦囊抱 10 根 M15 = 150 分鐘。全歷史 13,696 個 10 根窗口的實測逆行：
+#           最壞 7.55%　99.9 百分位 3.79%　（對照：最壞單日 9.60%、最壞日內 13.94%）
+#       取 7.6 = 實測最壞，不是估的。
+#       為什麼不能用 10 或 14：1 盎司在 HK$20,000、金價 4,378 是 1.68x 曝險，
+#       而 可用曝險 = (20% − 回撤) ÷ gap。代進去：
+#           gap=14% → 回撤 0.0% 就鎖死（一開始就不能下單）
+#           gap=10% → 回撤 2.5%（HK$500 ＝ 1.4 次最壞虧損）就鎖死
+#           gap=7.6%→ 回撤 6.2%（HK$1,240 ＝ 3.4 次最壞虧損）才鎖死
+#       用 TradingView 全期 513 筆重播：gap=10 擋掉 6 筆，gap=7.6 一筆都不擋。
+WORST_GAP_PCT = _env_float("WORST_GAP_PCT", 7.6)
+EXPOSURE_HARD_CAP = _env_float("EXPOSURE_HARD_CAP", 2.0)
+# [R90] 高水位是用哪一把尺量的。R88 把風控淨值從「淨值」改成「淨值 − 信用」之後，
+#       舊的高水位（含信用）跟新的淨值不能比 —— 差額是信用，不是虧損，卻會被
+#       讀成一筆從未發生的回撤，把空城計鎖死。換尺就重新起算。
+EQUITY_PEAK_BASIS = "risk_equity_v2"
+
+# [R93] 回撤煞車。曝險公式限制的是【單次槓桿】，擋不住【連續小額停損的累積】——
+#       README §28 的金字塔回測 1,111 次停損 × 約 HK$94 就吃掉 23.4% 回撤，
+#       超過整套空城計建立在上面的 20% 容忍。所以要一條直接對累積回撤的閘。
+#       達到門檻就停當日新單（紐約日界線換日後重評）。0 = 停用。
+DD_BRAKE_PCT = _env_float("DD_BRAKE_PCT", 15.0)              # 曝險硬上限（名目 ÷ 淨值）
+DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 3.0)        # 單日虧損上限（佔淨值）
+# [R72] 波動門檻用 EA 已經在傳的 atr_m15。校準見 README §24：只做多、抱 10 根、
+#       扣 US$0.40 來回時，打平點是 ATR(14)/價格 = 0.0837%。預設取 0.10%（打平點
+#       之上、非最佳化值）。設 0 可停用。
+VOL_FLOOR_ATR_PCT = _env_float("VOL_FLOOR_ATR_PCT", 0.10)
+TRAINING_MAX_PER_DAY = _env_int("TRAINING_MAX_PER_DAY", 2)            # 90 筆訓練的節奏；0 = 不限
+
+# --- 🎯 進場引擎：錦囊 v4 ---------------------------------------------------
+# [R78] 2026-09-20：舊的 PureGCPPyramidingSession（結構／K 線／RSI／加單間距）
+#       第一次被量度（README §28）：全期去掉最賺 5% → −HK$16,945，最大回撤 23.4%，
+#       而三級共振給的方向在配對檢驗下 t = +0.82（置換第 79.3 百分位）—— 不顯著。
+#       錦囊 v4 至少有 8.46 年、513 筆的 TradingView 實測：年化 +2.47%、
+#       最大回撤 5.72%、樣本外 −0.82%/年。兩個都未證實，但後者量過、前者沒有。
+ENTRY_ENGINE = _env_str("ENTRY_ENGINE", "JINNANG").upper()            # JINNANG | PYRAMID（舊，保留回退）
+JN_LEN_TREND      = _env_int("JN_LEN_TREND", 60)                      # 八陣圖 M15 原廠值，以下同
+JN_R2_MIN         = _env_float("JN_R2_MIN", 0.48)
+JN_SLOPE_MIN      = _env_float("JN_SLOPE_MIN", 0.025)
+JN_LEN_RANGE      = _env_int("JN_LEN_RANGE", 20)
+JN_RANGE_MAX_ATR  = _env_float("JN_RANGE_MAX_ATR", 3.8)
+JN_RANGE_MIN_BARS = _env_int("JN_RANGE_MIN_BARS", 8)
+JN_BOX_MAX_AGE    = _env_int("JN_BOX_MAX_AGE", 30)
+JN_BUF_ATR        = _env_float("JN_BUF_ATR", 0.25)
+JN_CONFIRM_BARS   = _env_int("JN_CONFIRM_BARS", 1)
+JN_ATR_LEN        = _env_int("JN_ATR_LEN", 14)
+JN_HOLD_BARS      = _env_int("JN_HOLD_BARS", 10)                      # 10 根 M15 = 150 分鐘＝EA 的 InpHoldMinutes
+# 錦囊沒有價格停損 —— 出場是 EA 的定時。這裡送的是【災難停損】，正常碰不到。
+JN_DISASTER_SL_ATR = _env_float("JN_DISASTER_SL_ATR", 8.0)
+# [R79] 倉位大小不能照災難停損算。calculate_max_lots 的 2% 風險模型假設
+#       「止損就是出場點」，但錦囊是時間出場、根本沒有價格停損。
+#       用 ATR×8 去算，在金價 4,300 附近會算出 0.00 手 —— 系統會安靜地永遠不下單。
+#       正確的基準是【這條規則實測的最壞單筆虧損】：8.46 年 276 筆裡
+#       最壞的一筆是進場價的 −1.097%（US$46.45/oz = HK$362 = 戶口的 1.81%）。
+#       取 1.10% 當倉位計算距離 —— 意思是「最壞的一筆剛好等於 RISK_PCT」。
+#       （最大逆行 MAE 最壞 1.638%，但那沒有造成虧損：沒有停損就不會被掃掉。）
+JN_SIZING_ADVERSE_PCT = _env_float("JN_SIZING_ADVERSE_PCT", 1.10)
+JN_MIN_BARS       = _env_int("JN_MIN_BARS", 100)                      # 判定前要累積多少根已收盤 M15
+# [R80] EA 送的 m15_ohlc 是「已收盤」還是「正在形成」的那一根？
+#       RiskManager V22/V23 用的是 CopyRates(symbol, PERIOD_M15, 1, 1, ...) —— shift=1，
+#       也就是【最後一根已收盤】的 K 線。所以整份 M15 歷史都是收盤資料，
+#       判定時要用 history 全部，不能再砍掉最後一根（砍了會晚 15 分鐘進場）。
+#       若之後換成會送 shift=0（正在形成）的 EA，把這個設成 0，程式會自動丟掉最後一根。
+JN_M15_LAST_CLOSED = _env_bool("JN_M15_LAST_CLOSED", True)
 
 # --- News -----------------------------------------------------------------------
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"  # [R17] ISO dates with UTC offset
@@ -166,6 +276,8 @@ NEWS_FAIL_CLOSED = _env_bool("NEWS_FAIL_CLOSED", True)                # [R13e]
 # --- AI reviewer ---------------------------------------------------------------
 AI_REVIEW_ENABLED = _env_bool("AI_REVIEW_ENABLED", True)
 AI_FAIL_OPEN = _env_bool("AI_FAIL_OPEN", False)                       # [R2 R13f R13g] one policy
+AI_SHADOW_MODE = _env_bool("AI_SHADOW_MODE", False)                   # 覆核照跑、判斷照記，但不否決訊號
+FEW_SHOT_LIMIT = _env_int("FEW_SHOT_LIMIT", 3)                        # [R6] 動態 few-shot 取幾條虧損教訓
 AI_MODEL = _env_str("AI_MODEL", "gemini-2.5-flash")
 AI_LOCATION = _env_str("AI_LOCATION", "us-central1")
 AI_THINKING_BUDGET = _env_int("AI_THINKING_BUDGET", 0)                # [R14] 0 = no thinking (Flash only)
@@ -271,6 +383,13 @@ def next_ny_rollover_ts(now=None):
 
 
 def _startup_warnings():
+    if not str(BROKER_API_URL or "").strip():
+        print("🚨 [設定缺失] BROKER_API_URL 未設定 —— 不會送出任何訂單。"
+              "請在環境變數裡設好完整網址（含 ?t=... 權杖）。[R82]", flush=True)
+    if not str(ORDER_TEMPLATE.get("api_key") or "").strip():
+        print("🚨 [設定缺失] WEBHOOK_API_KEY 未設定 —— 送單一定會被券商拒絕。"
+              "請在 Cloud Function 的環境變數裡設好（不要寫進原始碼，這個 repo 是公開的）。[R82]",
+              flush=True)
     print(f"⚙️ [啟動] 🔴 實盤下單模式 (account_type={ORDER_TEMPLATE['account_type']}) | "
           f"RISK_PCT={RISK_PCT} | LEVERAGE={BROKER_LEVERAGE} | FIRST_ENTRY_MODE={FIRST_ENTRY_MODE}", flush=True)
     activation, distance = to_float(TS_ACTIVATION_PRICE, 0.0), to_float(TS_DISTANCE_PRICE, 0.0)
@@ -450,14 +569,23 @@ def read_decision_logs():
 # =============================================================================
 def save_account_snapshot(payload, m15_ohlc, m15_levels):
     # Missing numbers are stored as None (shown as "—"), never as fake defaults.  [R61]
+    # [R83] EA 無持倉時 symbol 回報 "NONE"，但 m1_ohlc.symbol 一定是圖表商品名
+    #       ——那就是券商商品列表裡的真名。拿它來對照 ORDER_SYMBOL。
+    m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
+    broker_symbol = str(m1.get("symbol") or "").strip()
+    if not broker_symbol:
+        held = str(payload.get("symbol") or "").strip()
+        broker_symbol = held if held and held != "NONE" else ""
     snapshot = {
         "status": str(payload.get("status") or "").strip().upper(),
         "symbol": str(payload.get("symbol") or "NONE"),
+        "broker_symbol": broker_symbol or (read_account_snapshot().get("broker_symbol") or ""),
         "currency": str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT),
         "net_lots": to_float(payload.get("net_lots")),
         "buy_lots": to_float(payload.get("buy_lots")),
         "sell_lots": to_float(payload.get("sell_lots")),
         "equity": to_float(payload.get("equity")),
+        "credit": to_float(payload.get("credit")),                  # [R88] 券商的錢，不算進風控
         "balance": to_float(payload.get("balance")),
         "floating": to_float(payload.get("floating")),
         "daily_pnl": to_float(payload.get("daily_pnl")),
@@ -469,6 +597,64 @@ def save_account_snapshot(payload, m15_ohlc, m15_levels):
         gcs_write_text(ACCOUNT_FILE, json.dumps(snapshot, ensure_ascii=False))
     except StorageError as exc:
         print(f"⚠️ [戶口快照寫入失敗] {exc}", flush=True)
+    return snapshot
+
+
+def broker_symbol_mismatch(snapshot=None):
+    """[R83] ORDER_SYMBOL 與 EA 回報的券商商品名不一致時回一句話，否則 None。
+
+    EA 的 m1_ohlc.symbol 是圖表商品，也就是券商商品列表裡的真名。
+    人會記錯 XAUUSD / XAUUSD+，程式不會。
+    """
+    snap = snapshot if isinstance(snapshot, dict) else read_account_snapshot()
+    seen = str(snap.get("broker_symbol") or "").strip()
+    if not seen:
+        return None
+    ours = str(read_order_params()[0].get("symbol") or ORDER_SYMBOL).strip()
+    if seen == ours:
+        return None
+    return (f"送單用的商品名是「{ours}」，但 EA 回報券商上的是「{seen}」。"
+            f"不一致會被拒單，或成交在另一個商品上。"
+            f"請到送單參數頁把 symbol 改成「{seen}」。")
+
+
+def risk_equity(src):
+    """[R88] 風控用的淨值 = 淨值 − 信用。只算自己的錢。
+
+    MT5：淨值 = 結餘 + 信用 + 浮動。信用是券商給的額度，隨時可收回，虧損時
+    通常第一個被扣 —— 拿它當安全邊際，等於把煞車借給別人踩。扣掉之後
+    RISK_PCT 的 2% 和 DD_TOLERANCE_PCT 的 20% 才真的是自己本金的 2% 和 20%，
+    而且入金出金會自動跟上，不需要任何換算係數。
+
+    舊版 EA 的封包沒有 credit 欄位，那就退回 min(淨值, 結餘)：結餘本來就不含
+    信用，所以有信用時這個值等於結餘，仍然是保守的。兩個都沒有才回 None。
+    """
+    if not isinstance(src, dict):
+        return None
+    eq = to_float(src.get("equity"))
+    credit = to_float(src.get("credit"))
+    if credit is not None:
+        if eq is None:
+            return None
+        return max(eq - max(credit, 0.0), 0.0)
+    bal = to_float(src.get("balance"))
+    if eq is None:
+        return bal
+    return min(eq, bal) if bal is not None else eq
+
+
+def broker_symbol_unverified(snapshot=None):
+    """[R86] 還沒從 EA 看過券商商品名時，要說「沒核對過」，不要沉默。
+
+    m1_ohlc.symbol 只在新的 M1 K 線才會帶（EA 第 706-717 行），所以休市期間
+    一直收不到。沉默會讓儀表板看起來像「核對過、沒問題」，其實是從沒對過。
+    """
+    snap = snapshot if isinstance(snapshot, dict) else read_account_snapshot()
+    if str(snap.get("broker_symbol") or "").strip():
+        return None
+    ours = str(read_order_params()[0].get("symbol") or ORDER_SYMBOL).strip()
+    return (f"還沒從 EA 收到券商上的商品名，所以送單用的「{ours}」**沒有被核對過**。"
+            f"EA 只在新的 M1 K 線才會帶商品名，開市後第一根 M1 收盤就會自動補上。")
 
 
 def read_account_snapshot():
@@ -490,7 +676,13 @@ def default_gate_state():
         "armed": False,           # True only after SETUP -> same-direction TREND
         "hard_lock": None,        # {"reason", "since_utc", "until_ts" (None = until manual release)}
         "news_lock": False,
+        "risk": {},               # [R70] 風控電閘最近一次評估（開閘的真正依據）
+        "equity_peak": 0.0,       # [R74] 歷史淨值高水位，空城計的回撤基準
+        "equity_peak_basis": "",  # [R90] 上面那個高水位是用哪一把尺量的
+        "dd_brake_day": "",       # [R93] 回撤煞車在哪一個紐約交易日踩下（當日鎖存）
+        "trades_today": {},       # {"ny_date": "YYYY-MM-DD", "count": n}  [R73]
         "last_m1_bar_time": 0,    # idempotency for M1 packets  [R25]
+        "last_m15_bar_time": 0,   # [R78] 錦囊：同一根已收盤 M15 只評估一次
         "last_reason": "",
         "updated_utc": None,
     }
@@ -512,11 +704,15 @@ def hard_lock_active(state, now=None):
 
 
 def gate_status(state, now=None):
+    """[R70] armed 由風控電閘決定（GATE_DRIVER=RISK），不再由三級共振決定。
+    GATE_DRIVER=REGIME 保留舊行為，只為了能一鍵回退比對。"""
     if hard_lock_active(state, now) or state.get("news_lock"):
         return "LOCK"
-    if state.get("armed") and state.get("regime") == REGIME_TREND and state.get("dir") in ("UP", "DOWN"):
-        return "OPEN"
-    return "LOCK"
+    if not state.get("armed"):
+        return "LOCK"
+    if GATE_DRIVER == "REGIME":
+        return "OPEN" if (state.get("regime") == REGIME_TREND and state.get("dir") in ("UP", "DOWN")) else "LOCK"
+    return "OPEN"
 
 
 def read_gate_state():
@@ -583,6 +779,225 @@ def next_trend_state(state, verdict, skip_setup=False):
     return REGIME_RANGE, None, False, f"❌ 未知判定 {v_regime}，取消開閘"
 
 
+# -----------------------------------------------------------------------------
+# 🛡️ 風控電閘  [R70 R71 R72 R73]
+#
+# 舊版：三級共振說「趨勢中」→ 開閘。量度後證實那沒有優勢（README §22/§23）。
+# 新版：電閘不再預測方向，只回答一個問題——「現在讓你下單，最壞會怎樣？」
+#       六道關卡全過才開閘，任何一道不過就鎖死並寫明原因。
+# -----------------------------------------------------------------------------
+def _ny_date(now=None):
+    return datetime.fromtimestamp(now_ts() if now is None else now, NY_TZ).strftime("%Y-%m-%d")
+
+
+def trades_today_count(state, now=None):
+    box = state.get("trades_today")
+    if not isinstance(box, dict) or box.get("ny_date") != _ny_date(now):
+        return 0
+    return int(to_float(box.get("count"), 0) or 0)
+
+
+def bump_trades_today():
+    """交易日以紐約日界線為準，與 EA 的跨日重置同源。  [R73]"""
+    def fn(state):
+        today = _ny_date()
+        box = state.get("trades_today")
+        count = int(to_float(box.get("count"), 0) or 0) if isinstance(box, dict) and box.get("ny_date") == today else 0
+        state["trades_today"] = {"ny_date": today, "count": count + 1}
+        return True, count + 1
+
+    try:
+        return update_gate_state(fn)
+    except StorageError as exc:
+        print(f"⚠️ [當日交易計數寫入失敗] {exc}", flush=True)
+        return None
+
+
+def evaluate_risk_gate(snapshot, state, now=None):
+    """六道關卡。回傳 {"open": bool, "checks": [...], "reason": str, ...}。
+
+    缺數據一律當成不過關（fail-closed），與 read_gate_state 的失敗語意一致。 [R13a]
+    """
+    now = now_ts() if now is None else now
+    snapshot = snapshot if isinstance(snapshot, dict) else {}
+    m15 = snapshot.get("m15_ohlc") if isinstance(snapshot.get("m15_ohlc"), dict) else {}
+    equity = risk_equity(snapshot)                                   # [R88] 扣掉信用
+    balance = to_float(snapshot.get("balance"))
+    daily = to_float(snapshot.get("daily_pnl"))
+    lots = abs(to_float(snapshot.get("net_lots"), 0.0) or 0.0)
+    price = to_float(m15.get("close"))
+    atr15 = to_float(m15.get("atr_m15"))
+    checks = []
+
+    def add(key, name, ok, detail):
+        checks.append({"key": key, "name": name, "ok": bool(ok), "detail": detail})
+        return bool(ok)
+
+    # ① 市場要開著
+    market = GoldIndicatorSession.is_gold_market_open(now)
+    add("market", "市場時段", market, "開市中" if market else "黃金休市")
+
+    # ② 波動要夠付點差  [R72]
+    if VOL_FLOOR_ATR_PCT <= 0:
+        add("vol", "波動水位", True, "已停用（VOL_FLOOR_ATR_PCT=0）")
+        atr_pct = None
+    elif not atr15 or not price:
+        atr_pct = None
+        add("vol", "波動水位", False, "缺 atr_m15 或價格，無法判定")
+    else:
+        atr_pct = atr15 / price * 100
+        ok = atr_pct >= VOL_FLOOR_ATR_PCT
+        add("vol", "波動水位", ok,
+            f"ATR(14)/價格 = {atr_pct:.4f}%，門檻 {VOL_FLOOR_ATR_PCT:.4f}%"
+            f"（打平點 0.0837%）{'' if ok else ' → 波動不足以付點差'}")
+
+    # ③ 空城計曝險上限：可用曝險 = (可承受回撤 − 目前回撤) ÷ 最壞跳空
+    #    [R74] 回撤要對「歷史高水位」量。max(equity, balance) 不是高水位：
+    #    虧損一旦實現就併進 balance，回撤會讀成 0，這一關等於沒有。
+    exp_now = cap_eff = dd_now = None
+    if not equity or equity <= 0:
+        add("exposure", "曝險上限", False, "缺淨值，無法試算")
+    else:
+        # [R90] 尺換了就不能沿用舊高水位，否則差額會被當成回撤。
+        stored_peak = (to_float(state.get("equity_peak"), 0.0) or 0.0) \
+            if state.get("equity_peak_basis") == EQUITY_PEAK_BASIS else 0.0
+        peak = max(stored_peak, equity, balance or 0.0)
+        dd_now = max(0.0, (peak - equity) / peak * 100) if peak > 0 else 0.0
+        cap_dyn = max(0.0, (DD_TOLERANCE_PCT - dd_now) / WORST_GAP_PCT) if WORST_GAP_PCT > 0 else 0.0
+        cap_eff = min(EXPOSURE_HARD_CAP, cap_dyn)
+        # [R79] 要檢查的是【下單之後】的曝險。原本只看目前持倉，空手時永遠是 0，
+        #       等於第一張單完全不受上限管 —— 1 盎司（1.68x）可能已經超過可用曝險。
+        pending = ORDER_SIZE if ENTRY_ENGINE == "JINNANG" else 0.0
+        notional = (lots + pending) * CONTRACT_SIZE * (price or 0.0)
+        rate = FX_TO_USD.get(str(snapshot.get("currency") or ACCOUNT_CURRENCY_DEFAULT).upper()) \
+            or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
+        equity_usd = equity * rate if rate else None          # 與 calculate_max_lots 同一個方向
+        if price and equity_usd and equity_usd > 0:
+            exp_now = notional / equity_usd
+            ok = exp_now <= cap_eff
+            detail = (f"下單後 {exp_now:.2f}x / 可用 {cap_eff:.2f}x"
+                      f"（高水位 {peak:,.0f} → 回撤 {dd_now:.1f}% / 容忍 {DD_TOLERANCE_PCT:.0f}%，"
+                      f"最壞跳空 {WORST_GAP_PCT:g}%）")
+            # [R81] 分清楚兩種擋法。空手卻還是超標 = 戶口對這個最小手數來說太小，
+            #       而且【停了就回不來】：不能交易 → 權益不變 → 回撤不會縮小。
+            #       這是要人介入的狀態，不是等一等就會好，所以訊息要講清楚。
+            if not ok and lots <= 0:
+                need_eq = (pending * CONTRACT_SIZE * price / cap_eff / rate) if cap_eff > 0 else None
+                detail += ("　🔒 空手就已超標 = 這個戶口做不了 "
+                           f"{pending:g} 手。停了之後權益不會再變，回撤也不會縮小 —— "
+                           "要加本金或縮小手數，等下去沒有用。")
+                if need_eq:
+                    detail += f"（本金要 ≥ {need_eq:,.0f}）"
+            add("exposure", "曝險上限", ok, detail)
+        else:
+            add("exposure", "曝險上限", False, "缺價格或匯率，無法試算曝險")
+
+    # ④ 單日虧損上限
+    if daily is None or not equity or equity <= 0:
+        add("daily", "單日虧損", False, "缺當日損益或淨值，無法判定")
+    else:
+        limit = equity * DAILY_LOSS_LIMIT_PCT / 100
+        ok = daily > -limit
+        add("daily", "單日虧損", ok,
+            f"今日 {daily:,.0f} / 上限 −{limit:,.0f}（淨值的 {DAILY_LOSS_LIMIT_PCT:.1f}%）")
+
+    # ⑤ 訓練節奏  [R73]
+    used = trades_today_count(state, now)
+    if TRAINING_MAX_PER_DAY <= 0:
+        add("pace", "訓練節奏", True, f"不限筆數（今日已 {used} 筆）")
+    else:
+        ok = used < TRAINING_MAX_PER_DAY
+        add("pace", "訓練節奏", ok, f"今日 {used} / {TRAINING_MAX_PER_DAY} 筆"
+                                    f"{'' if ok else ' → 今日額滿，明天再來'}")
+
+    # ⑥ 回撤煞車  [R93]
+    #    踩下之後當日鎖存 —— 盤中回撤縮回去也不放行，否則那不叫煞車。
+    brake_hit = False
+    latched = str(state.get("dd_brake_day") or "") == _ny_date(now)
+    if DD_BRAKE_PCT <= 0:
+        add("brake", "回撤煞車", True, f"已停用（DD_BRAKE_PCT=0）")
+    elif dd_now is None:
+        add("brake", "回撤煞車", False, "缺淨值，算不出回撤")
+    else:
+        brake_hit = dd_now >= DD_BRAKE_PCT
+        engaged = brake_hit or latched
+        detail = f"回撤 {dd_now:.1f}% / 煞車 {DD_BRAKE_PCT:.0f}%"
+        if engaged:
+            detail += ("　🛑 今日不再開新倉"
+                       f"{'（今日稍早踩下，已鎖存）' if latched and not brake_hit else ''}。"
+                       "已開的倉不受影響，EA 的定時出場照常。"
+                       "紐約日界線換日後重評 —— 回撤沒縮小的話明天仍會煞停，"
+                       "那要人介入（加本金、縮手數，或確認高水位是對的），等下去不會自己好。")
+        add("brake", "回撤煞車", not engaged, detail)
+
+    failed = [c for c in checks if not c["ok"]]
+    return {
+        "open": not failed,
+        "checks": checks,
+        "reason": "六關全過 → 開閘" if not failed else "｜".join(f"{c['name']}：{c['detail']}" for c in failed),
+        "atr_pct": atr_pct, "exposure": exp_now, "exposure_cap": cap_eff, "drawdown_pct": dd_now,
+        "equity_peak": max(
+            (to_float(state.get("equity_peak"), 0.0) or 0.0)
+            if state.get("equity_peak_basis") == EQUITY_PEAK_BASIS else 0.0,     # [R90]
+            equity or 0.0, balance or 0.0),
+        "equity_peak_basis": EQUITY_PEAK_BASIS,
+        "trades_today": used, "evaluated_utc": fmt_utc(now),
+        "dd_brake_hit": brake_hit,                                               # [R93]
+    }
+
+
+def apply_risk_to_gate(snapshot, news_locked):
+    """把風控評估寫進電閘。這是 GATE_DRIVER=RISK 下唯一設定 armed 的地方。"""
+    def fn(state):
+        before = gate_status(state)
+        risk = evaluate_risk_gate(snapshot, state)
+        armed = risk["open"]
+        reason = risk["reason"]
+        if news_locked and armed:
+            armed = False
+            reason = "❌ 新聞風控期間不開閘"
+        # [R75] 每 60 秒一次心跳 = 一天 1,440 次寫入。只有實際變動才寫。
+        #       evaluated_utc 每次都不同，比較時要排除它。
+        prev = state.get("risk") if isinstance(state.get("risk"), dict) else {}
+        def shape(r):
+            return (r.get("open"), r.get("reason"),
+                    tuple((c.get("key"), c.get("ok"), c.get("detail")) for c in r.get("checks", [])))
+        # [R90] 換尺時新高水位會【變小】，上面那個 > 比較抓不到，所以要單獨判一次，
+        #       否則基準標記永遠寫不進去，舊尺的高水位會一直把電閘鎖著。
+        basis_changed = state.get("equity_peak_basis") != risk["equity_peak_basis"]
+        # [R93] 煞車踩下要鎖存到當日結束。evaluate_risk_gate 必須無副作用（儀表板
+        #       也會呼叫它試算），所以鎖存寫在這裡，不寫在評估裡。
+        brake_day = str(state.get("dd_brake_day") or "")
+        if risk.get("dd_brake_hit"):
+            brake_day = _ny_date()
+        brake_changed = brake_day != str(state.get("dd_brake_day") or "")
+        changed = (shape(prev) != shape(risk) or bool(state.get("armed")) != armed
+                   or bool(state.get("news_lock")) != bool(news_locked)
+                   or basis_changed or brake_changed
+                   or risk["equity_peak"] > (to_float(state.get("equity_peak"), 0.0) or 0.0) + 1e-9)
+        if brake_changed:
+            print(f"🛑 [回撤煞車] 回撤 {risk.get('drawdown_pct') or 0:.1f}% 達到 "
+                  f"{DD_BRAKE_PCT:g}% —— {brake_day}（紐約）不再開新倉。"
+                  f"已開的倉不受影響。[R93]", flush=True)
+        if basis_changed:
+            print(f"ℹ️ [高水位重新起算] 風控淨值的定義變了（{state.get('equity_peak_basis') or '未標記'}"
+                  f" → {risk['equity_peak_basis']}），舊高水位 "
+                  f"{to_float(state.get('equity_peak'), 0.0) or 0.0:,.2f} 不再沿用，"
+                  f"改由 {risk['equity_peak']:,.2f} 起算。[R90]", flush=True)
+        state.update(risk=risk, armed=armed, news_lock=bool(news_locked), last_reason=reason,
+                     equity_peak=risk["equity_peak"],
+                     equity_peak_basis=risk["equity_peak_basis"],
+                     dd_brake_day=brake_day)                                     # [R93]
+        after = gate_status(state)
+        return changed, {"before": before, "after": after, "reason": reason, "risk": risk}
+
+    try:
+        return update_gate_state(fn)
+    except StorageError as exc:
+        print(f"⚠️ [風控電閘寫入失敗 → 維持原狀] {exc}", flush=True)
+        return None
+
+
 def _state_label(state_tuple):
     regime, direction, armed = state_tuple
     name = {REGIME_RANGE: "橫行", REGIME_SETUP: "Setup", REGIME_TREND: "趨勢"}.get(regime, str(regime))
@@ -604,6 +1019,21 @@ def apply_verdict_to_gate(verdict, news_locked, skip_setup=False):
                       "prev": prev, "now": (regime, direction, armed)}
 
     return update_gate_state(fn)
+
+
+def claim_m15_bar(bar_time):
+    """True 只對第一個帶著這根 M15 時間的封包成立。  [R78]"""
+    def fn(state):
+        if bar_time <= int(to_float(state.get("last_m15_bar_time"), 0)):
+            return False, False
+        state["last_m15_bar_time"] = bar_time
+        return True, True
+
+    try:
+        return update_gate_state(fn)
+    except StorageError as exc:
+        print(f"⚠️ [M15 去重寫入失敗，本根略過] {exc}", flush=True)
+        return False
 
 
 def claim_m1_bar(bar_time):
@@ -848,11 +1278,29 @@ class GoldIndicatorSession:
             print(f"⚠️ [M1 判定日誌寫入失敗] {exc}", flush=True)
 
     def process_m1_bar(self, bar, news_locked, skip_setup=False):
+        """[R70] GATE_DRIVER=RISK 時本函式只更新雷達顯示，不碰 armed。
+        三級共振量度後已退出開閘決策（README §22/§23）；保留是因為看盤有用，
+        不是因為它有優勢。"""
         history = self.ingest_bar(bar)
         verdict = self.compute_verdict(history)
         rsi = wilder_rsi_last([b["close"] for b in history])
-        print(f"📊 [M1 盤勢監控] {verdict['text']}", flush=True)
+        print(f"📊 [M1 盤勢監控｜僅供觀察] {verdict['text']}", flush=True)
         self._append_verdict_log(verdict["text"])
+
+        if GATE_DRIVER != "REGIME":
+            def fn(state):
+                prev = (state.get("regime"), state.get("dir"))
+                state.update(regime=verdict["regime"] if verdict["regime"] in
+                             (REGIME_RANGE, REGIME_SETUP, REGIME_TREND) else REGIME_RANGE,
+                             dir=verdict.get("dir"))
+                return prev != (state.get("regime"), state.get("dir")), None
+            try:
+                update_gate_state(fn)
+            except StorageError as exc:
+                print(f"⚠️ [雷達顯示寫入失敗] {exc}", flush=True)
+            short = verdict["text"].split(" (")[0]
+            log_decision(f"📡 [盤勢雷達｜不參與開閘] {short}", key="monitor")
+            return {"verdict": verdict, "rsi": rsi, "bars": len(history)}
 
         result = apply_verdict_to_gate(verdict, news_locked, skip_setup)
         before, after, reason = result["before"], result["after"], result["reason"]
@@ -877,7 +1325,9 @@ gold_indicator_session = GoldIndicatorSession()
 class MTFDynamicLevelsSession:
     bb_period = 20
     bb_std_dev = 2.0
-    history_max = 30
+    # [R78] 錦囊 v4 需要 60 根迴歸 + 20 根區間 + 14 根 ATR + 30 根區間壽命，
+    #       而且要能重播區間狀態機，所以留 200 根（約 50 小時）。
+    history_max = _env_int("M15_HISTORY_MAX", 200)
 
     @staticmethod
     def parse_bar(m15_ohlc):
@@ -905,6 +1355,36 @@ class MTFDynamicLevelsSession:
             if history and bar["time"] == history[-1]["time"]:
                 if history[-1] == bar:
                     return None, history
+                # [R80] 同一根時間、但 OHLC 變了。只有當這根就是【當下】那一根時，
+                #       才代表 EA 送的是正在形成的 K 線。舊 K 線被改寫是另一回事
+                #       （券商重新同步歷史，或歷史檔混進了別的商品），不能叫人改設定。[R85]
+                if ENTRY_ENGINE == "JINNANG":
+                    prev = history[-1]
+                    age = now_ts() - (bar["time"] - BROKER_UTC_OFFSET_HOURS * 3600)
+                    moved = ", ".join(
+                        f"{k} {prev.get(k)}→{bar.get(k)}"
+                        for k in ("open", "high", "low", "close")
+                        if prev.get(k) != bar.get(k))
+                    if not moved:
+                        # OHLC 四個值一樣卻判定為「變了」= 存檔的形狀跟現在不一樣
+                        # （多餘欄位、或 time 型別不同），不是行情在動，跟 K 線新舊
+                        # 無關，所以這條要先判，不能落到下面的「正在形成」。[R85]
+                        print(f"⚠️ [M15] K 線（{bar['time']}）的 OHLC 四個值完全相同，"
+                              f"卻被判定為有變動 —— 差異在存檔格式，不是行情在動。"
+                              f"別動 JN_M15_LAST_CLOSED。"
+                              f"舊={sorted(prev)} 新={sorted(bar)}  [R85]", flush=True)
+                    elif age < 2 * 900:
+                        if JN_M15_LAST_CLOSED:
+                            print(f"⚠️ [M15] 當下這根 K 線（{bar['time']}）的 OHLC 被更新 —— "
+                                  f"你的 EA 送的是【正在形成】的 K 線，但 JN_M15_LAST_CLOSED=1。"
+                                  f"請把它設成 0，否則錦囊會用半根 K 線判訊號。"
+                                  f"（{moved}）[R80]", flush=True)
+                    else:
+                        print(f"⚠️ [M15] 已收盤 {age / 3600:.1f} 小時的 K 線（{bar['time']}）"
+                              f"被改寫。這不是「正在形成」，別動 JN_M15_LAST_CLOSED。"
+                              f"一次性多半是券商重新同步歷史；反覆出現要查歷史檔是不是"
+                              f"混了兩個商品（XAUUSD / XAUUSD+ 報價不同）。"
+                              f"（{moved}）[R85]", flush=True)
                 history[-1] = bar
             else:
                 history.append(bar)
@@ -947,6 +1427,169 @@ class MTFDynamicLevelsSession:
 
 
 mtf_levels_session = MTFDynamicLevelsSession()
+
+
+# =============================================================================
+# 🎯 錦囊 v4 進場引擎  [R78]
+#
+# 規則（TradingView `zhugeliang_jinnang_v4.pine` 的 Python 移植）：
+#   XAUUSD M15 · 八陣圖原廠門檻 · 只做多 · ATR(14)÷價格 ≥ VOL_FLOOR_ATR_PCT
+#   橫行區間確認 → 收盤突破上緣 + bufATR → 下一根進場 → 抱 10 根 → 無價格停損
+#
+# 出場【不在這裡】：EA 的 CheckTimeExit() 在 InpHoldMinutes = 150 分鐘時全平。
+# 這裡送出的 SL 是災難停損（JN_DISASTER_SL_ATR × ATR），正常情況碰不到。
+#
+# ⚠️ 與 TradingView 的已知差異：ATR(14) 的 RMA 在這裡只用最近 200 根 M15 起算，
+#    TradingView 從圖表最左邊起算。邊界訊號（剛好卡在門檻上）兩邊可能不同。
+#    2026-09-20 對數實測吻合 88.8%，詳見 README §29。
+# =============================================================================
+class JinnangSession:
+    @staticmethod
+    def _wilder_atr(bars, length):
+        """Wilder RMA 的 ATR。bars 必須是時間排序的已收盤 K 線。"""
+        if len(bars) < length + 1:
+            return None
+        trs = []
+        for i in range(1, len(bars)):
+            h, l, pc = bars[i]["high"], bars[i]["low"], bars[i - 1]["close"]
+            trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+        atr = sum(trs[:length]) / length
+        for tr in trs[length:]:
+            atr = (atr * (length - 1) + tr) / length
+        return atr
+
+    @staticmethod
+    def _slope_r2(closes):
+        """最小平方迴歸的斜率，以及 Pine `ta.correlation(close, bar_index, n)^2`。"""
+        n = len(closes)
+        if n < 3:
+            return 0.0, 0.0
+        xs = list(range(n))
+        mx, my = (n - 1) / 2.0, sum(closes) / n
+        sxy = sum((x - mx) * (y - my) for x, y in zip(xs, closes))
+        sxx = sum((x - mx) ** 2 for x in xs)
+        syy = sum((y - my) ** 2 for y in closes)
+        if sxx <= 0 or syy <= 0:
+            return 0.0, 0.0
+        slope = sxy / sxx
+        r = sxy / math.sqrt(sxx * syy)
+        return slope, r * r
+
+    @classmethod
+    def _atr_series(cls, bars, length):
+        """每根一個 ATR（Wilder RMA）。前 length 根是 None。"""
+        n = len(bars)
+        out = [None] * n
+        if n < length + 1:
+            return out
+        trs = [None]
+        for i in range(1, n):
+            h, l, pc = bars[i]["high"], bars[i]["low"], bars[i - 1]["close"]
+            trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+        atr = sum(trs[1:length + 1]) / length
+        out[length] = atr
+        for i in range(length + 1, n):
+            atr = (atr * (length - 1) + trs[i]) / length
+            out[i] = atr
+        return out
+
+    @classmethod
+    def evaluate(cls, history):
+        """history = 已收盤的 M15 K 線（時間排序）。最後一根 = 剛收盤那一根。
+
+        訊號成立時，下一根開盤進場（EA 收到 200 後自行下單）。
+        """
+        bars = [b for b in (history or []) if to_float(b.get("close"), 0.0) > 0]
+        need = max(JN_LEN_TREND, JN_LEN_RANGE, JN_ATR_LEN + 1, JN_MIN_BARS)
+        if len(bars) < need:
+            return {"ready": False, "signal": None,
+                    "text": f"【累積中⏳】已收盤 M15 {len(bars)}/{need} 根"}
+
+        n = len(bars)
+        closes = [b["close"] for b in bars]
+        highs = [b["high"] for b in bars]
+        lows = [b["low"] for b in bars]
+        atrs = cls._atr_series(bars, JN_ATR_LEN)
+
+        # 一次算完每根的 st（1 上升 / −1 下降 / 0 橫行 / 2 其他）
+        first = max(JN_LEN_TREND - 1, JN_LEN_RANGE - 1, JN_ATR_LEN)
+        st = [None] * n
+        for i in range(first, n):
+            atr = atrs[i]
+            if not atr or atr <= 0:
+                continue
+            slope, r2v = cls._slope_r2(closes[i - JN_LEN_TREND + 1:i + 1])
+            sn = slope / atr
+            w = (max(highs[i - JN_LEN_RANGE + 1:i + 1])
+                 - min(lows[i - JN_LEN_RANGE + 1:i + 1])) / atr
+            if r2v >= JN_R2_MIN and sn >= JN_SLOPE_MIN:
+                st[i] = 1
+            elif r2v >= JN_R2_MIN and sn <= -JN_SLOPE_MIN:
+                st[i] = -1
+            else:
+                st[i] = 0 if w <= JN_RANGE_MAX_ATR else 2
+
+        # 線性重播狀態機，與 Pine 的 barstate.isconfirmed 分支一一對應
+        box_top = box_bot = None
+        box_live = False
+        last_range_bar = -1
+        run = pend_dir = pend_cnt = 0
+        for i in range(first, n):
+            if st[i] is None:
+                continue
+            run = run + 1 if st[i] == 0 else 0
+            if st[i] == 0 and run >= JN_RANGE_MIN_BARS:
+                box_top = max(highs[i - JN_LEN_RANGE:i])
+                box_bot = min(lows[i - JN_LEN_RANGE:i])
+                box_live, last_range_bar = True, i
+            elif box_live and last_range_bar >= 0 and i - last_range_bar > JN_BOX_MAX_AGE:
+                box_live = False
+            if not box_live or not atrs[i]:
+                pend_dir = pend_cnt = 0
+                continue
+            up_level = box_top + JN_BUF_ATR * atrs[i]
+            dn_level = box_bot - JN_BUF_ATR * atrs[i]
+            raw = 1 if closes[i] > up_level else (-1 if closes[i] < dn_level else 0)
+            if raw != 0 and raw == pend_dir:
+                pend_cnt += 1
+            elif raw != 0:
+                pend_dir, pend_cnt = raw, 1
+            else:
+                pend_dir = pend_cnt = 0
+            # [R78] Pine 的 `boxLive := false` 在 `if takeUp ...` 區塊裡面：
+            #       只有【真的會下單】的訊號才消耗掉區間。被只做多或波動門檻擋掉
+            #       的不算。這一行讓重播和 Pine 一致，否則同一個區間會重複觸發。
+            if i < n - 1 and pend_dir == 1 and pend_cnt == JN_CONFIRM_BARS:
+                a = atrs[i]
+                pct_i = (a / closes[i] * 100) if a and closes[i] else None
+                if VOL_FLOOR_ATR_PCT <= 0 or (pct_i is not None and pct_i >= VOL_FLOOR_ATR_PCT):
+                    box_live = False
+
+        atr_now, price = atrs[-1], closes[-1]
+        atr_pct = (atr_now / price * 100) if atr_now and price else None
+        confirm_up = box_live and pend_dir == 1 and pend_cnt == JN_CONFIRM_BARS
+        vol_ok = VOL_FLOOR_ATR_PCT <= 0 or (atr_pct is not None and atr_pct >= VOL_FLOOR_ATR_PCT)
+        base = {"ready": True, "atr_pct": atr_pct, "atr": atr_now, "price": price,
+                "box_top": box_top, "box_bot": box_bot, "box_live": box_live,
+                "bar_time": bars[-1]["time"]}
+        pct = f"{atr_pct:.3f}%" if atr_pct is not None else "—"
+
+        if pend_dir == -1 and pend_cnt == JN_CONFIRM_BARS and box_live:
+            return {**base, "signal": None,
+                    "text": f"【略過·只做多】向下跌破 {box_bot:.2f}，v4 不做空"}
+        if not confirm_up:
+            why = "區間未成形" if not box_live else "未突破上緣"
+            return {**base, "signal": None, "text": f"【等待🔍】{why}（ATR {pct}）"}
+        if not vol_ok:
+            return {**base, "signal": None,
+                    "text": f"【略過·波動不足】突破成立但 ATR {pct} < 門檻 "
+                            f"{VOL_FLOOR_ATR_PCT:g}%（打平點 0.0837%）"}
+        return {**base, "signal": "BUY",
+                "text": f"【錦囊進場訊號✅】向上突破 {box_top:.2f} + {JN_BUF_ATR:g}ATR，"
+                        f"ATR {pct}（門檻 {VOL_FLOOR_ATR_PCT:g}%），抱 {JN_HOLD_BARS} 根"}
+
+
+jinnang_session = JinnangSession()
 
 
 def m15_close_position(m15_ohlc):
@@ -1084,7 +1727,7 @@ class SFTDataPipeline:
         return "【自我反思與進化規則庫】\n" + body
 
     @staticmethod
-    def get_dynamic_few_shot(limit=3):
+    def get_dynamic_few_shot(limit=FEW_SHOT_LIMIT):
         """Last losing signals as compact one-liners WITH their outcome.  [R6 R6b]
         Legacy rows (without 'meta') are ignored, so old nested prompts never re-enter."""
         try:
@@ -1105,8 +1748,10 @@ class SFTDataPipeline:
         return ("【歷史虧損教訓 (Dynamic Few-Shot)】\n" + "\n".join(lessons)) if lessons else ""
 
     @staticmethod
-    def save_pending_signal(meta):
+    def save_pending_signal(meta, ai_verdict=None):
         item = {"id": uuid.uuid4().hex, "symbol": normalize_symbol(meta.get("symbol")), "ts": now_ts(), "meta": meta}
+        if isinstance(ai_verdict, dict):
+            item["ai_verdict"] = ai_verdict        # 平倉配對時一併寫進 SFT 資料集
 
         def mutate(queue):
             queue = queue if isinstance(queue, list) else []
@@ -1159,6 +1804,9 @@ class SFTDataPipeline:
             "meta": item["meta"],
             "outcome": {"label": label, "profit": profit, "ticket": ticket, "closed_utc": fmt_utc()},
         }
+        if isinstance(item.get("ai_verdict"), dict):
+            # 「AI 當時說了什麼」＋「實際賺賠」配成一對——ai_eval.py 算判別力就靠這個。
+            example["ai_verdict"] = item["ai_verdict"]
 
         def append(rows):
             rows.append(example)
@@ -1309,6 +1957,21 @@ def news_blocks_entries(news):
     return bool(news.get("locked")) or (not news.get("known") and NEWS_FAIL_CLOSED)
 
 
+def ai_prompt_diagnostics(rules_text, few_shot, prompt=""):
+    """量化「AI 手上到底有多少材料」——投資人日誌與雲端日誌共用這組數字。
+
+    build_prompt() 要 AI「參考規則庫與歷史虧損教訓，判斷是否與過去虧損情境相似」。
+    若這兩樣都是空的，那句指令就是空轉，AI 只能靠通用直覺猜。"""
+    body = (rules_text or "").split("\n", 1)[-1].strip()
+    return {
+        "ai_model": AI_MODEL,
+        "ai_mode": "shadow" if AI_SHADOW_MODE else "enforce",
+        "prompt_chars": len(prompt),
+        "rules_chars": 0 if body in ("", "目前無額外規則。") else len(body),
+        "few_shot_lessons": sum(1 for line in (few_shot or "").splitlines() if line.startswith("- ")),
+    }
+
+
 # =============================================================================
 # 🤖 Optional LLM reviewer — one consistent fail policy  [R2 R5 R13f R13g R14 R66]
 # =============================================================================
@@ -1357,14 +2020,37 @@ class AIReviewSession:
             return True, "AI 覆核已停用 (AI_REVIEW_ENABLED=0)"
         if self.client is None:
             return self._fallback("Vertex AI 未初始化")
-        prompt = self.build_prompt(meta, sft_pipeline_session.get_trading_rules(),
-                                   sft_pipeline_session.get_dynamic_few_shot())
+        rules_text = sft_pipeline_session.get_trading_rules()
+        few_shot = sft_pipeline_session.get_dynamic_few_shot()
+        prompt = self.build_prompt(meta, rules_text, few_shot)
+        diag = ai_prompt_diagnostics(rules_text, few_shot, prompt)
+
+        # 這幾個數字決定了 AI 判斷的品質上限：prompt 叫它「比對過去虧損情境」，
+        # 但若動態 few-shot 是空的，它手上根本沒有可比對的東西。
+        log_event(f"🤖 [AI 送出覆核] {AI_MODEL}｜{'影子' if AI_SHADOW_MODE else '強制'}模式｜"
+                  f"prompt {diag['prompt_chars']} 字元｜規則庫 {diag['rules_chars']} 字元｜"
+                  f"虧損教訓 {diag['few_shot_lessons']} 條", component="ai", **diag)
+        if diag["few_shot_lessons"] == 0:
+            log_event("⚠️ [AI 知識庫] 動態 few-shot 是空的：SFT 資料集沒有可用的歷史虧損，"
+                      "AI 無法執行「與過去虧損比對」，只能靠通用直覺判斷。",
+                      severity="WARNING", component="ai", **diag)
+        if diag["rules_chars"] == 0:
+            log_event("⚠️ [AI 知識庫] 規則庫是空的：ai_training/trading_rules.txt 沒有內容。",
+                      severity="WARNING", component="ai", **diag)
+
+        started = time.time()
         try:
             response = self.client.models.generate_content(model=AI_MODEL, contents=prompt, config=self._config())
             text = (response.text or "").strip()
         except Exception as exc:
+            log_event(f"💥 [AI 呼叫失敗] {str(exc)[:200]}（{int((time.time() - started) * 1000)} ms）",
+                      severity="ERROR", component="ai",
+                      latency_ms=int((time.time() - started) * 1000), **diag)
             return self._fallback(f"AI API 錯誤：{str(exc)[:150]}")
-        print(f"🔍 [Vertex AI 原始回應] {text[:300]}", flush=True)
+
+        elapsed_ms = int((time.time() - started) * 1000)
+        log_event(f"🔍 [AI 原始回應] {text[:300] or '（空回應）'}", component="ai",
+                  latency_ms=elapsed_ms, raw_response=text[:500], **diag)
         if not text:
             return self._fallback("AI 空回應")
 
@@ -1374,10 +2060,12 @@ class AIReviewSession:
         reason = reason.strip() or "（無理由）"
         if not separator:
             return self._fallback(f"AI 回應格式錯誤：{first_line[:80]}")
-        if decision == "APPROVE":
-            return True, reason
-        if decision == "REJECT":
-            return False, reason
+        if decision in ("APPROVE", "REJECT"):
+            # 投資人日誌看得到的一行：AI 說了什麼、根據多少材料、花了多久。
+            log_decision(f"{'👍' if decision == 'APPROVE' else '🚫'} [AI 覆核] {decision}"
+                         f"｜{AI_MODEL}｜教訓 {diag['few_shot_lessons']} 條・規則 {diag['rules_chars']} 字"
+                         f"・{elapsed_ms} ms｜理由：{reason[:70]}", key="ai_review")
+            return decision == "APPROVE", reason
         return self._fallback(f"AI 回應無法辨識：{first_line[:80]}")
 
 
@@ -1604,7 +2292,7 @@ class PureGCPPyramidingSession:
         symbol = params["symbol"]   # EA sends symbol "NONE" when flat, so never trust payload symbol for orders
 
         buy_lots, sell_lots = to_float(payload.get("buy_lots")), to_float(payload.get("sell_lots"))
-        equity = to_float(payload.get("equity"))
+        equity = risk_equity(payload)                                                  # [R88] 扣掉信用
         if buy_lots is None or sell_lots is None or equity is None or equity <= 0:      # [R13c]
             log_decision("⏸️ [資料不足] 封包缺少 buy_lots / sell_lots / equity，本根不交易。", key="data")
             return None
@@ -1739,7 +2427,12 @@ def build_order(candidate, params=None):
         "comment": params["comment"],
     }
     order[field["sl"]] = format_distance(sl, params)
-    order[field["tp"]] = format_distance(round(sl * params["target_rrr"], 2), params)
+    # [R78] 錦囊的出場是 EA 的定時，不是 TP。candidate 明確帶 tp_distance=None 時
+    #       整個 TP 欄位不送出 —— 送 0 有被解讀成「距離 0」的風險。
+    tp = candidate.get("tp_distance", round(sl * params["target_rrr"], 2)) \
+        if "tp_distance" in candidate else round(sl * params["target_rrr"], 2)
+    if tp is not None:
+        order[field["tp"]] = format_distance(tp, params)
 
     # 移動止損與保本：設成 0 代表停用，此時整個欄位不送出。
     # 送 "0.00" 有被解讀成「距離 0」的風險（止損貼著現價），不送最保險。
@@ -1755,6 +2448,15 @@ def build_order(candidate, params=None):
 def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset(), params=None):
     signal, price = candidate["signal"], candidate["price"]
     label = "首單" if candidate["kind"] == "FIRST" else "加單"
+
+    # [R71] 只做多。全期 1,464 筆裡 671 筆空單，每筆 −HK$0.84、t = −0.25：
+    #       八年半期望值是零，唯一作用是付點差。README §23。
+    if LONG_ONLY and str(signal).upper() not in ("BUY", "LONG"):
+        log_decision(f"🚫 [只做多] {label} {signal} @ {price:.2f} 取消："
+                     f"空單全期 671 筆 t=−0.25，已停用（LONG_ONLY=0 可恢復）", key="long_only")
+        return {"status": "long_only_rejected",
+                "reason": "LONG_ONLY=1：空單經 8.4 年量度期望值為零"}
+
     m15_ohlc = payload.get("m15_ohlc") if isinstance(payload.get("m15_ohlc"), dict) else {}
     meta = build_signal_meta(candidate, m15_levels, m15_ohlc, rsi)
 
@@ -1763,10 +2465,35 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         log_decision(f"📰 [新聞攔截] {label} {signal} @ {price:.2f} 取消：{reason}", key="news_reject")
         return {"status": "news_rejected", "reason": reason}
 
-    approved, ai_reason = (True, "AI 覆核關卡已略過") if "ai" in bypass else ai_review_session.review(meta)
-    if not approved:
-        log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_reason}", key="ai_reject")
-        return {"status": "ai_rejected", "reason": ai_reason}
+    # 判斷與執行分家：影子模式要「照跑、照記、但不否決」。被 AI 反對的訊號若真的
+    # 被擋掉，那筆交易就不存在，也就永遠沒有實際損益可以回頭驗證它判斷得對不對。
+    if "ai" in bypass:
+        ai_verdict = {"approved": True, "reason": "AI 覆核關卡已略過", "mode": "bypass", "enforced": False}
+    else:
+        approved, ai_reason = ai_review_session.review(meta)
+        ai_verdict = {"approved": bool(approved), "reason": ai_reason,
+                      "mode": "shadow" if AI_SHADOW_MODE else "enforce",
+                      "enforced": not AI_SHADOW_MODE}
+
+    # ⚠️ review() 在 API 出錯時會依 AI_FAIL_OPEN 回傳拒絕（預設 False）。那是「錯誤」
+    #    不是「判斷」，影子模式下必須照樣放行，否則會變成「影子模式反而擋單」。
+    log_event(f"⚖️ [AI 判決] {label} {signal} @ {price:.2f} → "
+              f"{'APPROVE' if ai_verdict['approved'] else 'REJECT'}"
+              f"（{ai_verdict['mode']}，{'擋單' if not ai_verdict['approved'] and ai_verdict['enforced'] else '放行'}）"
+              f"｜{ai_verdict['reason'][:120]}",
+              component="ai", direction="verdict", ai_approved=ai_verdict["approved"],
+              ai_mode=ai_verdict["mode"], ai_enforced=ai_verdict["enforced"],
+              ai_reason=ai_verdict["reason"][:200], kind=candidate["kind"], signal=signal, price=price)
+
+    if not ai_verdict["approved"]:
+        if ai_verdict["enforced"]:
+            log_decision(f"❌ [AI 攔截] {label} {signal} @ {price:.2f} 理由：{ai_verdict['reason']}", key="ai_reject")
+            return {"status": "ai_rejected", "reason": ai_verdict["reason"]}
+        log_decision(f"👁️ [AI 影子攔截] {label} {signal} @ {price:.2f} 仍照常送出，僅記錄供事後對帳。"
+                     f"理由：{ai_verdict['reason']}", key="ai_shadow")
+        log_event(f"👁️ [影子模式] 這筆若在強制執行模式下會被擋掉，現在照常送出以取得實際損益。",
+                  severity="WARNING", component="ai", direction="shadow_pass",
+                  signal=signal, price=price, ai_reason=ai_verdict["reason"][:200])
 
     order = build_order(candidate, params)
     summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{order['sl_distance_price']} "
@@ -1805,9 +2532,13 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
         update_pyramid_state(**commit, last_order_status="SENT")
     except StorageError as exc:
         print(f"🚨 [嚴重] 訂單已送出但加單狀態寫入失敗：{exc}", flush=True)
-    sft_pipeline_session.save_pending_signal(meta)
-    log_decision(f"✅ [已送出] {summary}", key="entry_sent")
-    return {"status": "success", "executed_signal": signal}
+    sft_pipeline_session.save_pending_signal(meta, ai_verdict)
+    used = bump_trades_today()                                                       # [R73] 訓練節奏
+    log_decision(f"✅ [已送出] {summary}"
+                 + (f"｜今日第 {used} 筆"
+                    + (f"／{TRAINING_MAX_PER_DAY}" if TRAINING_MAX_PER_DAY > 0 else "")
+                    if used else ""), key="entry_sent")
+    return {"status": "success", "executed_signal": signal, "trades_today": used}
 
 
 # =============================================================================
@@ -1830,10 +2561,14 @@ def parse_payload(req):
 
 def locked_response(state):
     lock = state.get("hard_lock") if hard_lock_active(state) else None
+    risk = state.get("risk") if isinstance(state.get("risk"), dict) else {}
     return jsonify({
         "status": "forbidden", "message": "Gate is LOCK", "current_gate": "LOCK",
         "regime": state.get("regime"), "dir": state.get("dir"), "news_lock": state.get("news_lock"),
         "hard_lock": lock.get("reason") if lock else None,
+        # [R76] 讓 EA 的 log 看得出是哪一關擋的，不用再開網頁猜。
+        "failed_checks": [c.get("key") for c in (risk.get("checks") or []) if not c.get("ok")],
+        "reason": state.get("last_reason"),
     }), LOCKED_HTTP_STATUS
 
 
@@ -1881,6 +2616,74 @@ def handle_trade_result(payload):
                     "win_rate": stats["win_rate"], "recommended_rrr": stats["recommended_rrr"]}), 200
 
 
+def jinnang_entry(payload, now, bypass, params):
+    """錦囊 v4 的進場判定。回傳 candidate dict，或一句說明為什麼沒有下單。  [R78]
+
+    只在【一根 M15 剛收盤】時評估，同一根只評估一次。
+    錦囊沒有加碼（Pine 的 pyramiding = 0），所以有持倉就不再進場。
+    """
+    buy_lots, sell_lots = to_float(payload.get("buy_lots")), to_float(payload.get("sell_lots"))
+    equity = risk_equity(payload)                                                      # [R88] 扣掉信用
+    if buy_lots is None or sell_lots is None or equity is None or equity <= 0:
+        return "封包缺少 buy_lots / sell_lots / equity"
+    if round(buy_lots + sell_lots, 2) > 0:
+        return "已有持倉，錦囊不加碼（pyramiding = 0），等 EA 定時出場"
+
+    try:
+        history = gcs_read_json(M15_HISTORY_FILE, [])
+    except StorageError as exc:
+        print(f"⚠️ [M15 歷史讀取失敗] {exc}", flush=True)
+        return "M15 歷史不可用"
+    history = history if isinstance(history, list) else []
+    if len(history) < 2:
+        return f"M15 歷史只有 {len(history)} 根"
+
+    # [R80] EA（V22/V23）送的是 shift=1 的 K 線，整份歷史都已收盤 → 全部拿來用。
+    #       JN_M15_LAST_CLOSED=0 時才丟掉最後一根（會送正在形成那根的 EA）。
+    closed = history if JN_M15_LAST_CLOSED else history[:-1]
+    if len(closed) < 2:
+        return f"已收盤的 M15 只有 {len(closed)} 根"
+    last_closed = closed[-1]
+    if not claim_m15_bar(int(last_closed["time"])):
+        return "這根 M15 已經評估過了"
+
+    v = jinnang_session.evaluate(closed)
+    print(f"🎯 [錦囊 v4] {v['text']}", flush=True)
+    if not v.get("ready"):
+        log_decision(f"⏳ [錦囊] {v['text']}", key="jinnang")
+        return v["text"]
+    if v.get("signal") != "BUY":
+        log_decision(f"📡 [錦囊] {v['text']}", key="jinnang")
+        return v["text"]
+
+    atr = v["atr"]
+    # 錦囊沒有價格停損 —— 真正的出場是 EA 的 InpHoldMinutes = 150 分鐘定時全平。
+    # 這裡送的是災難停損，正常碰不到；tp_distance = None 代表不送 TP 欄位。
+    sl_distance = max(params["min_sl_distance"], round(atr * JN_DISASTER_SL_ATR, 2))
+    price = to_float(payload.get("price")) or v["price"]
+    # [R79] 倉位大小用【實測最壞單筆虧損】當距離，不是用災難停損 —— 理由見常數區。
+    sizing_distance = max(params["min_sl_distance"],
+                          round(price * JN_SIZING_ADVERSE_PCT / 100.0, 2))
+    max_lots, note = PureGCPPyramidingSession.calculate_max_lots(
+        equity, str(payload.get("currency") or ACCOUNT_CURRENCY_DEFAULT), price, sizing_distance,
+        ignore_risk="risk_cap" in bypass)
+    if max_lots + 1e-9 < params["size"]:
+        ceil_px = jinnang_price_ceiling(equity, payload.get("currency"))
+        msg = (f"風險上限 {max_lots:.2f} 手 < 單筆 {params['size']:.2f} 手"
+               f"（以實測最壞虧損 {JN_SIZING_ADVERSE_PCT:g}% = US${sizing_distance:.2f} 計；{note}）")
+        if ceil_px:
+            msg += (f"。這個戶口在 RISK_PCT={RISK_PCT*100:g}% 之下最高只能做到金價 "
+                    f"US${ceil_px:,.0f}，目前 {price:,.0f} —— 要繼續做就得加本金，不是調鬆風控。")
+        log_decision(f"🛑 [錦囊·資金控管] {msg}", key="risk")
+        return msg
+
+    log_decision(f"🎯 [錦囊候選] BUY @ {price:.2f}｜{v['text']}｜抱 {JN_HOLD_BARS} 根後由 EA 定時出場",
+                 key="candidate")
+    return {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+            "sl_distance": sl_distance, "tp_distance": None, "atr_m15": atr,
+            "max_lots": max_lots, "exposure": 0.0, "kind": "FIRST", "engine": "JINNANG"}
+
+
 def handle_heartbeat(payload, can_trade):
     now = now_ts()
     action = payload.get("action")
@@ -1902,11 +2705,24 @@ def handle_heartbeat(payload, can_trade):
 
     # 2) M15 levels (writer path) and account snapshot.
     m15_levels = mtf_levels_session.ingest(m15_ohlc) if m15_ohlc else mtf_levels_session.read_levels()
-    save_account_snapshot(payload, m15_ohlc, m15_levels)
+    snapshot = save_account_snapshot(payload, m15_ohlc, m15_levels)
 
-    # 3) M1 bar: validate, de-duplicate, update regime/gate.
+    warn = broker_symbol_mismatch(snapshot)                                              # [R83]
+    if warn:
+        print(f"🚨 [商品名不一致] {warn}", flush=True)
+        log_decision(f"🚨 [商品名不一致] {warn}", key="symbol_mismatch")
+
+    # 2b) 🛡️ 風控電閘：每一次心跳都重評，這是 armed 的唯一來源。  [R70]
     m1_result, bar, news = None, None, None
     bypass = read_gate_bypass()
+    if GATE_DRIVER != "REGIME":
+        news = macro_news_session.status(now)
+        risk_result = apply_risk_to_gate(snapshot, news["locked"] and "news" not in bypass)
+        if isinstance(risk_result, dict) and risk_result["before"] != risk_result["after"]:
+            log_decision(f"{'🟢' if risk_result['after'] == 'OPEN' else '🔒'} "
+                         f"[電閘 {risk_result['before']}→{risk_result['after']}] {risk_result['reason']}", key="gate")
+
+    # 3) M1 bar: validate, de-duplicate, update the radar (display only under RISK).
     m1_ohlc = payload.get("m1_ohlc")
     if isinstance(m1_ohlc, dict) and m1_ohlc.get("is_new_bar"):
         bar = gold_indicator_session.parse_bar(m1_ohlc)
@@ -1918,7 +2734,7 @@ def handle_heartbeat(payload, can_trade):
         elif not claim_m1_bar(bar["time"]):
             print(f"ℹ️ [M1] 重複的 K 線封包 {bar['time']}，略過。", flush=True)
         else:
-            news = macro_news_session.status(now)
+            news = news or macro_news_session.status(now)
             try:
                 m1_result = gold_indicator_session.process_m1_bar(
                     bar, news["locked"] and "news" not in bypass, skip_setup="setup_trigger" in bypass)
@@ -1931,11 +2747,28 @@ def handle_heartbeat(payload, can_trade):
         return locked_response(gate_state)
     if not can_trade:                                                                    # [R18]
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
+    order_params = read_order_params()[0]
+
+    # 4b) [R86] 商品名確定不一致就不送單。只有兩邊都知道、而且不同時才會擋，
+    #     所以不會因為「還沒核對過」把自己鎖死。回 monitoring，EA 收到就是不動作。
+    sym_warn = broker_symbol_mismatch(snapshot)
+    if sym_warn:
+        log_decision(f"🚨 [商品名不一致・已擋單] {sym_warn}", key="symbol_mismatch_block")
+        return jsonify({"status": "monitoring", "current_gate": "OPEN",
+                        "message": f"商品名不一致，拒絕送單。{sym_warn}"}), 200
+
+    # 5) 進場引擎 → 執行。
+    if ENTRY_ENGINE == "JINNANG":                                                        # [R78]
+        candidate = jinnang_entry(payload, now, bypass, order_params)
+        if not isinstance(candidate, dict):
+            return jsonify({"status": "monitoring", "message": candidate or "Waiting for 錦囊 v4 signal",
+                            "current_gate": "OPEN"}), 200
+        rsi = m1_result["rsi"] if m1_result else None
+        news = news or macro_news_session.status(now)
+        return jsonify(execute_signal(candidate, payload, m15_levels, rsi, news, bypass, order_params)), 200
+
     if m1_result is None:
         return jsonify({"status": "monitoring", "message": "No new M1 bar to evaluate", "current_gate": "OPEN"}), 200
-
-    # 5) Engine → execution.
-    order_params = read_order_params()[0]
     candidate = pure_gcp_session.evaluate_and_trigger(payload, gate_state, m15_levels, bar, m1_result["rsi"], now,
                                                       bypass=bypass, params=order_params)
     if not candidate:
@@ -1997,6 +2830,7 @@ LOG_KEY_COLORS = {
     "wait": "#6c757d", "filter": "#6c757d", "settle": "#6c757d", "anchor": "#6c757d",
     "data": "#d97706", "risk": "#dc3545", "structure": "#dc3545", "ai_reject": "#dc3545",
     "news_reject": "#dc3545", "broker_error": "#dc3545", "target_hit": "#dc3545",
+    "ai_review": "#7c3aed", "ai_shadow": "#d97706",
 }
 
 CHART_SCRIPT = """
@@ -2020,21 +2854,34 @@ CHART_SCRIPT = """
 
 
 # 每一頁頁頂都有同一組連結，current 那一項不做連結
+# [R91] 八陣圖指令台（大恒指人手掛單）住在 claude.ai 的 artifact 上，不在這裡託管 ——
+#       它用 window.claude.use("db") 自動載入每日高低點，那個執行環境只有 artifact 有。
+#       導覽列上開一個連出去的口就好。
+BAZHENTU_URL = "https://claude.ai/artifact/Qovghgidoao32zWai3gffX"
+
 PAGE_LINKS = [
     ("welcome", "🏠 首頁"),
     ("info", "📄 投資人日誌"),
     ("gates_app", "🎛️ 關卡開關"),
     ("order_app", "🧾 送單參數"),
+    ("jinnang_sheet", "🗒️ 錦囊執行單"),
+    ("jinnang_tracker", "✅ 錦囊九十筆"),
+    (BAZHENTU_URL, "⚔️ 八陣圖指令台"),
     ("dashboard", "⚙️ 控制台"),
 ]
 
 
 def page_nav(current, extra=()):
-    items = "".join(
-        f"<span class='nav-link nav-current'>{label}</span>" if view == current
-        else f"<a class='nav-link' href='?view={view}'>{label}</a>"
-        for view, label in PAGE_LINKS
-    )
+    def one(view, label):
+        # [R91] 完整網址 = 站外的頁，直接連出去並另開分頁；其餘照舊用 ?view=。
+        if view.startswith("http"):
+            return (f"<a class='nav-link' href='{esc(view)}' target='_blank' "
+                    f"rel='noopener noreferrer'>{label} ↗</a>")
+        if view == current:
+            return f"<span class='nav-link nav-current'>{label}</span>"
+        return f"<a class='nav-link' href='?view={view}'>{label}</a>"
+
+    items = "".join(one(view, label) for view, label in PAGE_LINKS)
     items += "".join(f"<a class='nav-link' href='{href}'>{esc(label)}</a>" for href, label in extra)
     return f"<nav class='nav-links' aria-label='頁面導覽'>{items}</nav>"
 
@@ -2061,10 +2908,22 @@ def gate_summary(state):
         return "neg", f"🛑 硬鎖：{lock.get('reason')}" + (f"（至 {fmt_ny(until)}）" if until else "（需手動解除）")
     if state.get("news_lock"):
         return "neg", "📰 新聞風控中"
+    if GATE_DRIVER == "REGIME":
+        if gate_status(state) == "OPEN":
+            return "pos", f"✅ 放行（{DIR_WORD.get(state.get('dir'), '')}趨勢）"
+        regime_text = {REGIME_RANGE: "橫行", REGIME_SETUP: "Setup 醞釀",
+                       REGIME_TREND: "趨勢未確認"}.get(state.get("regime"), "—")
+        return "muted", f"⏸️ 等待趨勢確認（{regime_text}）"
+    risk = state.get("risk") if isinstance(state.get("risk"), dict) else {}
     if gate_status(state) == "OPEN":
-        return "pos", f"✅ 放行（{DIR_WORD.get(state.get('dir'), '')}趨勢）"
-    regime_text = {REGIME_RANGE: "橫行", REGIME_SETUP: "Setup 醞釀", REGIME_TREND: "趨勢未確認"}.get(state.get("regime"), "—")
-    return "muted", f"⏸️ 等待趨勢確認（{regime_text}）"
+        bits = []
+        if risk.get("atr_pct") is not None:
+            bits.append(f"波動 {risk['atr_pct']:.3f}%")
+        if risk.get("exposure") is not None and risk.get("exposure_cap") is not None:
+            bits.append(f"曝險 {risk['exposure']:.2f}x/{risk['exposure_cap']:.2f}x")
+        return "pos", "✅ 放行" + (f"（{'、'.join(bits)}）" if bits else "")
+    failed = [c["name"] for c in risk.get("checks", []) if not c.get("ok")]
+    return "muted", "⏸️ " + ("、".join(failed) + " 未過關" if failed else "風控未評估")
 
 
 # =============================================================================
@@ -2172,6 +3031,22 @@ HUB_ICONS = {
                              "<path d='M19 23c-2 0-3 1-3 2.8v1.6c0 1.3-.9 1.8-1.8 1.8.9 0 1.8.5 1.8 1.8v1.6c0 1.8 1 2.8 3 2.8'/>"
                              "<path d='M28 23c2 0 3 1 3 2.8v1.6c0 1.3.9 1.8 1.8 1.8-.9 0-1.8.5-1.8 1.8v1.6c0 1.8-1 2.8-3 2.8'/>"
                              "</svg>"),
+    # 錦囊執行單：夾板上的單據與打勾
+    "jinnang_sheet": SVG_OPEN + ("<path d='M16 8H12a2 2 0 0 0-2 2v30a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-4'/>"
+                                 "<rect x='17' y='5' width='14' height='7' rx='2.2'/>"
+                                 "<path d='M16 22h16M16 29h16'/>"
+                                 "<path d='M16 35.5l2.6 2.6L23 33.5'/></svg>"),
+    # 錦囊九十筆：九宮格，最後一格打勾
+    "jinnang_tracker": SVG_OPEN + ("<rect x='7' y='7' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='19' y='7' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='31' y='7' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='7' y='19' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='19' y='19' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='31' y='19' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='7' y='31' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='19' y='31' width='10' height='10' rx='2.2'/>"
+                                   "<rect x='31' y='31' width='10' height='10' rx='2.2'/>"
+                                   "<path d='M33.4 36l2.1 2.1L39 34.6'/></svg>"),
     # 系統控制台：儀表板指針
     "dashboard": SVG_OPEN + ("<path d='M8 35a16 16 0 1 1 32 0'/><path d='M24 35l9-9'/><circle cx='24' cy='35' r='3'/>"
                              "<path d='M24 13v3M12.6 18.6l2.1 2.1M35.4 18.6l-2.1 2.1M8 35h3M37 35h3'/></svg>"),
@@ -2182,6 +3057,8 @@ HUB_TILES = [
     ("?view=info", "info", "投資人日誌", "實盤績效與 GCP 決策", "#0f62fe"),
     ("?view=gates_app", "gates_app", "關卡開關", "逐關開關與逐關測試", "#d97706"),
     ("?view=order_app", "order_app", "送單參數", "webhook 封包欄位", "#0aa06e"),
+    ("?view=jinnang_sheet", "jinnang_sheet", "錦囊執行單", "思考流程與單筆執行單", "#2c6b7a"),
+    ("?view=jinnang_tracker", "jinnang_tracker", "錦囊九十筆", "人手下單的合規訓練", "#6d5bd0"),
     ("?view=dashboard", "dashboard", "系統控制台", "管理員・電閘與帳戶", "#212529"),
 ]
 
@@ -2208,6 +3085,114 @@ def render_welcome_page():
       <div class='hub-foot'>&copy; 2026 AI Trading Lab</div>
     </div>"""
     return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
+
+
+def jinnang_price_ceiling(equity, currency=None):
+    """[R79] 這個戶口在 RISK_PCT 之下，最高能做到金價多少（1 張 ORDER_SIZE）。
+
+    倉位風險 = 價格 × JN_SIZING_ADVERSE_PCT% × CONTRACT_SIZE × ORDER_SIZE ≤ 淨值 × RISK_PCT
+    黃金越貴、1 盎司的名目越大，同一個戶口能承受的就越少。這是限制，不是故障。
+    """
+    rate = FX_TO_USD.get(str(currency or ACCOUNT_CURRENCY_DEFAULT).upper()) \
+        or (ACCOUNT_TO_USD_RATE if ACCOUNT_TO_USD_RATE > 0 else None)
+    if not rate or not equity or equity <= 0 or JN_SIZING_ADVERSE_PCT <= 0:
+        return None
+    return (equity * rate * RISK_PCT) / (ORDER_SIZE * CONTRACT_SIZE * JN_SIZING_ADVERSE_PCT / 100.0)
+
+
+def _jinnang_html():
+    """儀表板上的錦囊 v4 進場引擎狀態。  [R78]"""
+    if ENTRY_ENGINE != "JINNANG":
+        return ""
+    try:
+        history = gcs_read_json(M15_HISTORY_FILE, [])
+    except StorageError:
+        history = []
+    history = history if isinstance(history, list) else []
+    v = jinnang_session.evaluate(history[:-1]) if len(history) >= 2 else {
+        "ready": False, "text": f"【累積中⏳】M15 歷史 {len(history)} 根"}
+    sig = v.get("signal")
+    color = "#0f7b3f" if sig == "BUY" else "#5b6470"
+    rows = [("判定", v.get("text", "—"))]
+    warn = broker_symbol_mismatch()
+    if warn:
+        rows.append(("🚨 商品名不一致", warn))
+    else:
+        unverified = broker_symbol_unverified()                                          # [R86]
+        if unverified:
+            rows.append(("⚠️ 商品名未核對", unverified))
+    if v.get("ready"):
+        rows += [
+            ("波動水位", (f"ATR(14)÷價格 = {v['atr_pct']:.4f}%　門檻 {VOL_FLOOR_ATR_PCT:g}%"
+                      f"　打平 0.0837%") if v.get("atr_pct") is not None else "—"),
+            ("橫行區間", (f"{v['box_bot']:.2f} ~ {v['box_top']:.2f}"
+                      f"（突破線 {v['box_top'] + JN_BUF_ATR * v['atr']:.2f}）")
+             if v.get("box_live") and v.get("box_top") else "尚未成形"),
+            ("現價", f"{v['price']:.2f}" if v.get("price") else "—"),
+        ]
+        snap = read_account_snapshot()
+        eq = risk_equity(snap)                                                         # [R88] 扣掉信用
+        ceil_px = jinnang_price_ceiling(eq, snap.get("currency"))
+        if eq and eq > 0 and v.get("price") and WORST_GAP_PCT > 0:
+            # 曝險 × 最壞跳空 ≤ 容忍 − 回撤 → 解出會停止下單的回撤水準
+            expo = ORDER_SIZE * CONTRACT_SIZE * v["price"] / (eq * FX_TO_USD.get(
+                str(snap.get("currency") or ACCOUNT_CURRENCY_DEFAULT).upper(), FX_TO_USD["HKD"]))
+            stop_dd = DD_TOLERANCE_PCT - expo * WORST_GAP_PCT
+            rows.append(("回撤多少會停",
+                         f"{max(0.0, stop_dd):.1f}%（約 {eq * max(0.0, stop_dd) / 100:,.0f}）"
+                         f"　停了之後權益不會變，要加本金才解得開"))
+        if ceil_px and v.get("price"):
+            head = min(100.0, (ceil_px / v["price"] - 1) * 100)
+            rows.append(("可做到的金價上限",
+                         f"US${ceil_px:,.0f}（現價 {v['price']:,.0f}，還有 {head:+.1f}% 空間）"
+                         + ("　⚠️ 超過就下不了單" if head < 10 else "")))
+    body = "".join(f"<tr><td style='white-space:nowrap;font-weight:600;width:110px;'>{esc(k)}</td>"
+                   f"<td style='font-size:13px;'>{esc(str(val))}</td></tr>" for k, val in rows)
+    return (f"<div class='section-header'>🎯 錦囊 v4 進場引擎（只做多 · 抱 {JN_HOLD_BARS} 根 · 無價格停損）</div>"
+            f"<div class='section' style='border-left:4px solid {color};'>"
+            f"<table style='width:100%; border-collapse:collapse;'>{body}</table>"
+            f"<div class='muted' style='font-size:12px; margin-top:8px;'>"
+            f"出場不在這裡：EA 的 InpHoldMinutes = {JN_HOLD_BARS * 15} 分鐘定時全平。"
+            f"全期實測年化 +2.47%、最大回撤 5.72%，但<b>樣本外 −0.82%/年、異常值佔淨利 106%，"
+            f"優勢未被證實</b>。</div></div>")
+
+
+def _risk_gate_html(state):
+    """儀表板上的風控電閘區塊。回傳 (六關表格, 雷達標籤, 雷達註解, 電閘細節, 恢復自動註解)。"""
+    if GATE_DRIVER == "REGIME":
+        detail = (f"趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / "
+                  f"{'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}")
+        return "", "", "", detail, "恢復自動後，電閘仍需完成 Setup→Trigger 才會開啟。"
+
+    tag = ("<span style='font-size:12px; font-weight:600; color:#8a6d3b; background:#fcf8e3; "
+           "border:1px solid #faebcc; border-radius:10px; padding:2px 8px; margin-left:8px;'>僅供觀察・不參與開閘</span>")
+    note = ("<div class='muted' style='font-size:12px; margin:-4px 0 10px;'>"
+            "三級共振已於 2026-09-20 量度（README §22/§23）：修正 look-ahead 後 1~360 分鐘每個持倉長度的"
+            "毛利 t 值都在 ±1.6 內，延後一分鐘進場由 +5.28 掉到 −2.18。它留在這裡是因為看盤有用，"
+            "不是因為它有優勢。開閘由下方五道風控關卡決定。</div>")
+
+    risk = state.get("risk") if isinstance(state.get("risk"), dict) else {}
+    checks = risk.get("checks") or []
+    if not checks:
+        rows = "<tr><td colspan='3' class='muted'>尚未收到心跳，風控電閘未評估（fail-closed：視為 LOCK）。</td></tr>"
+    else:
+        rows = "".join(
+            f"<tr><td style='width:34px; font-size:16px;'>{'✅' if c.get('ok') else '⛔'}</td>"
+            f"<td style='white-space:nowrap; font-weight:600;'>{esc(c.get('name'))}</td>"
+            f"<td class='{'muted' if c.get('ok') else ''}' style='font-size:13px;"
+            f"{'' if c.get('ok') else ' color:#b02a37; font-weight:600;'}'>{esc(c.get('detail'))}</td></tr>"
+            for c in checks)
+    block = (f"<div class='section-header'>🛡️ 風控電閘六關"
+             f"（{'只做多' if LONG_ONLY else '多空皆可'}）</div>"
+             f"<div class='section'><table style='width:100%; border-collapse:collapse;'>{rows}</table>"
+             f"<div class='muted' style='font-size:12px; margin-top:8px;'>"
+             f"六關全過才開閘。缺數據一律當成不過關。評估時間："
+             f"{esc(risk.get('evaluated_utc') or '—')} UTC</div></div>")
+
+    passed = sum(1 for c in checks if c.get("ok"))
+    detail = (f"風控關卡：{passed}/{len(checks) or 5} 通過 / "
+              f"{'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}")
+    return block, tag, note, detail, "恢復自動後，電閘仍需五道風控關卡全過才會開啟。"
 
 
 def build_dashboard_page(msg):
@@ -2239,24 +3224,30 @@ def build_dashboard_page(msg):
     gate_bg = "#d1e7dd" if status == "OPEN" else "#f8d7da"
     summary_class, summary_text = gate_summary(state)
     recent = stats.get("recent", {})
+    risk_html, radar_tag, radar_note, gate_detail, auto_note = _risk_gate_html(state)
+    risk_html = _jinnang_html() + risk_html
 
     body = f"""
     <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div><h1 class='page-title'>⚙️ 核心控制台</h1></div>
       {page_nav("dashboard")}</div>
     {banner}{gates_warning}
-    <div class='section-header'>🧠 M1 動能雷達（{bars_count} 根連續 K 線，需 {MIN_M1_BARS}）</div>
+    <div class='section-header'>🧠 M1 動能雷達（{bars_count} 根連續 K 線，需 {MIN_M1_BARS}）{radar_tag}</div>
+    {radar_note}
     <div class='log-box mono' style='color:#3730a3; font-weight:600; max-height:200px;'>{esc(verdict_log)}</div>
+
+    {risk_html}
 
     <div class='section' style='text-align:center; border-top:5px solid {gate_color}; margin-top:24px;'>
       <div class='muted' style='font-weight:600;'>雲端風控電閘狀態 (Gate Status)</div>
       <div style='display:inline-block; background:{gate_bg}; color:{gate_color}; padding:8px 20px; border-radius:30px; font-weight:800; font-size:24px; margin:15px 0;'>【 {status} 】</div>
       <div class='{summary_class}' style='font-weight:600; margin-bottom:6px;'>{esc(summary_text)}</div>
-      <div class='muted' style='font-size:13px;'>趨勢狀態：{esc(state.get('regime'))} / {esc(DIR_WORD.get(state.get('dir'), '—'))} / {'🟢 開閘：是' if state.get('armed') else '❌ 開閘：否'}｜{esc(state.get('last_reason'))}</div>
+      <div class='muted' style='font-size:13px;'>{gate_detail}｜{esc(state.get('last_reason'))}</div>
       <div style='margin-top:15px;'>
         <a href='?view=dashboard&action=auto' class='btn btn-open'>🟢 解除硬鎖・恢復自動</a>
         <a href='?view=dashboard&action=lock' class='btn btn-lock'>🔴 緊急硬鎖 (LOCK)</a>
+        <a href='?view=reset' class='btn' style='background:#6c757d; color:#fff;'>🧹 重置歷史紀錄</a>
       </div>
-      <div class='muted' style='font-size:12px; margin-top:6px;'>恢復自動後，電閘仍需完成 Setup→Trigger 才會開啟。🔴 實盤下單模式</div>
+      <div class='muted' style='font-size:12px; margin-top:6px;'>{auto_note}🔴 實盤下單模式</div>
     </div>
 
     <div class='section-header'>💰 帳戶即時資金狀態 ({esc(currency)})｜更新：{esc(acc.get('received_utc', '—'))} UTC</div>
@@ -2286,6 +3277,57 @@ def build_dashboard_page(msg):
     <div class='mono' style='background:#1e1e1e; color:#d4d4d4; border-left:4px solid var(--primary); padding:16px 20px; border-radius:0 8px 8px 0; font-size:13px; max-height:350px; overflow:auto;'>{esc(webhook_log_session.get_last_payload())}</div>
     """
     return html_page("智能諸葛亮量化儀表板 - 核心控制台", body)
+
+
+def _ai_status_html():
+    """投資人日誌上的「AI 覆核」面板：這道關卡現在到底在做什麼、手上有什麼材料。"""
+    if not AI_REVIEW_ENABLED:
+        return ("<div class='muted'>AI 覆核已停用（<code>AI_REVIEW_ENABLED=0</code>）——"
+                "所有訊號都不會經過 LLM。</div>")
+
+    try:
+        rules_text = sft_pipeline_session.get_trading_rules()
+        few_shot = sft_pipeline_session.get_dynamic_few_shot()
+    except Exception as exc:                                  # 這個面板壞掉不該影響整頁
+        return f"<div class='muted'>AI 知識庫讀取失敗：{esc(str(exc)[:120])}</div>"
+    diag = ai_prompt_diagnostics(rules_text, few_shot)
+
+    if AI_SHADOW_MODE:
+        mode_html = ("<span style='color:#d97706; font-weight:700;'>👁️ 影子模式</span>"
+                     "<div class='card-desc'>AI 照常判斷並記錄，但<b>不會擋單</b>；"
+                     "事後可用 ai_eval.py 對帳，算出它擋對還是擋錯。</div>")
+    else:
+        mode_html = ("<span style='color:#dc3545; font-weight:700;'>🚫 強制執行</span>"
+                     "<div class='card-desc'>AI 說 REJECT 就真的不下單。被擋掉的訊號沒有損益，"
+                     "所以<b>無法驗證它擋得對不對</b>。</div>")
+
+    lessons, rules_chars = diag["few_shot_lessons"], diag["rules_chars"]
+    warn = ""
+    if lessons == 0:
+        warn += ("<div class='log-line' style='color:#d97706;'>⚠️ 動態 few-shot 是空的："
+                 "SFT 資料集沒有可用的歷史虧損，prompt 裡會寫「目前無」。"
+                 "AI 無法執行「與過去虧損比對」，只能靠通用直覺判斷。</div>")
+    if rules_chars == 0:
+        warn += ("<div class='log-line' style='color:#d97706;'>⚠️ 規則庫是空的："
+                 "<code>ai_training/trading_rules.txt</code> 沒有內容。</div>")
+    if not warn:
+        warn = ("<div class='log-line' style='color:#198754;'>✅ AI 手上有規則庫與歷史教訓，"
+                "「與過去虧損比對」這件事是有材料可做的。</div>")
+
+    return f"""
+      <div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:10px;'>
+        <div class='level-box'><div class='card-title'>執行模式</div><div class='card-small'>{mode_html}</div></div>
+        <div class='level-box'><div class='card-title'>模型</div>
+          <div class='card-small' style='font-size:14px;'>{esc(AI_MODEL)}</div>
+          <div class='card-desc'>出錯時{'放行' if AI_FAIL_OPEN else '拒絕'}（AI_FAIL_OPEN）</div></div>
+        <div class='level-box'><div class='card-title'>歷史虧損教訓</div>
+          <div class='card-small {'neg' if lessons == 0 else 'pos'}'>{lessons} 條</div>
+          <div class='card-desc'>取最近 {FEW_SHOT_LIMIT} 筆已平倉的虧損單</div></div>
+        <div class='level-box'><div class='card-title'>規則庫</div>
+          <div class='card-small {'neg' if rules_chars == 0 else 'pos'}'>{rules_chars} 字元</div>
+          <div class='card-desc'>trading_rules.txt，上限 4000</div></div>
+      </div>
+      <div class='log-box' style='max-height:160px;'>{warn}</div>"""
 
 
 def _legacy_decision_log_html():
@@ -2419,8 +3461,14 @@ def build_info_page():
         <div style='font-size:14px; font-weight:bold; padding-top:6px;'>{calendar_html}</div><div class='card-desc'>重大財經數據監控引擎</div></div>
     </div>
 
+    <div class='section'><h2>🧠 AI 覆核關卡現況</h2>
+      <p class='muted' style='font-size:12px;'>這道關卡只能否決、不能加分，所以「它手上有多少材料」決定了它的判斷品質上限。
+        舊版格式的訓練資料無法使用，可到 <a href='?view=reset'>🧹 重置歷史紀錄</a> 清空後從乾淨的基準重新累積。</p>
+      {_ai_status_html()}</div>
+
     <div class='section'><h2>🤖 純 GCP 交易大腦即時決策還原</h2>
-      <p class='muted' style='font-size:12px;'>每一次候選訊號、覆核結果與實際送單都會記錄於此。</p>
+      <p class='muted' style='font-size:12px;'>每一次候選訊號、覆核結果與實際送單都會記錄於此。
+      紫色是 AI 的判斷、橘色是影子模式下「本來會被擋、但仍照常送出」的訊號。</p>
       <div class='log-box'>{log_lines}</div></div>
 
     <div class='section'><h2>🎯 核心決策水位與指標基準</h2>
@@ -2482,8 +3530,9 @@ GATE_SWITCH_DEFS = [
      "數據公布期間照常交易，日曆失效也照常交易。",
      "⚠️ 數據行情跳空與滑價可能遠超止損距離。"),
     ("ai", "AI 覆核",
-     "Gemini 須回覆 APPROVE；出錯或格式錯誤時拒絕。",
-     "不呼叫 Gemini，直接放行。",
+     "LLM 須回覆 APPROVE；出錯或格式錯誤時依 AI_FAIL_OPEN 處理。"
+     "AI_SHADOW_MODE=1 時照樣呼叫並記錄判斷，但不否決訊號。",
+     "不呼叫 LLM，直接放行，連判斷紀錄都不會留下。",
      "少一層定性過濾。"),
     ("cooldown", "平倉後冷卻",
      "平倉後須等 REENTRY_COOLDOWN_SEC 秒才開新首單。",
@@ -2565,9 +3614,11 @@ def gate_parameter_values(params=None):
             _pv("NEWS_FAIL_CLOSED", "是" if NEWS_FAIL_CLOSED else "否", "日曆載不到時是否禁止新倉"),
         ],
         "ai": [
-            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 Gemini"),
+            _pv("AI_REVIEW_ENABLED", "是" if AI_REVIEW_ENABLED else "否", "是否呼叫 LLM"),
             _pv("AI_MODEL", AI_MODEL, ""),
             _pv("AI_FAIL_OPEN", "放行" if AI_FAIL_OPEN else "拒絕", "AI 出錯或格式錯誤時怎麼處理"),
+            _pv("AI_SHADOW_MODE", "👁️ 影子（記錄但不否決）" if AI_SHADOW_MODE else "強制執行",
+                "影子模式下 AI 的反對不擋單，但會寫進 SFT 資料集供事後對帳"),
         ],
         "cooldown": [
             _pv("REENTRY_COOLDOWN_SEC", REENTRY_COOLDOWN_SEC,
@@ -2584,6 +3635,35 @@ def system_parameter_values(params=None):
     params = params or read_order_params()[0]
     currencies = "、".join(f"{k}→{v:.4f}" for k, v in FX_TO_USD.items())
     return [
+        {"group": "🛡️ 風控電閘（開閘的真正依據）", "items": [
+            _pv("GATE_DRIVER", GATE_DRIVER,
+                "RISK＝風控六關決定開閘（現行）；REGIME＝舊的三級共振（已量度為無優勢，僅供回退比對）"),
+            _pv("LONG_ONLY", "只做多" if LONG_ONLY else "多空皆可",
+                "全期 1,464 筆中 671 筆空單，每筆 −HK$0.84、t=−0.25（README §23）"),
+            _pv("VOL_FLOOR_ATR_PCT", f"{VOL_FLOOR_ATR_PCT:g}%" if VOL_FLOOR_ATR_PCT > 0 else "停用",
+                "波動下限＝ATR(14)/價格。打平點實測 0.0837%，低於此點差吃掉全部毛利"),
+            _pv("DD_TOLERANCE_PCT", f"{DD_TOLERANCE_PCT:g}%", "空城計可承受回撤"),
+            _pv("WORST_GAP_PCT", f"{WORST_GAP_PCT:g}%", "最壞日內跳空（黃金實測 −13.94%）"),
+            _pv("EXPOSURE_HARD_CAP", f"{EXPOSURE_HARD_CAP:g}x", "曝險硬上限：名目 ÷ 淨值"),
+            _pv("DAILY_LOSS_LIMIT_PCT", f"{DAILY_LOSS_LIMIT_PCT:g}%", "單日虧損上限（佔淨值）"),
+            _pv("TRAINING_MAX_PER_DAY", TRAINING_MAX_PER_DAY if TRAINING_MAX_PER_DAY > 0 else "不限",
+                "90 筆訓練的節奏；以紐約日界線計算"),
+        ]},
+        {"group": "🎯 進場引擎（錦囊 v4）", "items": [
+            _pv("ENTRY_ENGINE", ENTRY_ENGINE,
+                "JINNANG＝錦囊 v4（TradingView 全期 513 筆實測）；PYRAMID＝舊的加單引擎（從未回測，README §28）"),
+            _pv("規則", "M15 區間突破 → 只做多 → 抱 10 根 → 無價格停損",
+                "出場由 EA 的 InpHoldMinutes = 150 分鐘定時全平，不是 TP"),
+            _pv("JN_HOLD_BARS", f"{JN_HOLD_BARS} 根 M15（{JN_HOLD_BARS*15} 分鐘）",
+                "要和 EA 的 InpHoldMinutes 一致"),
+            _pv("VOL_FLOOR_ATR_PCT", f"{VOL_FLOOR_ATR_PCT:g}%", "ATR(14)÷價格；打平點實測 0.0837%"),
+            _pv("JN_DISASTER_SL_ATR", f"{JN_DISASTER_SL_ATR:g} × ATR",
+                "災難停損，正常碰不到。錦囊本身沒有價格停損，TP 欄位不送出"),
+            _pv("JN_MIN_BARS", f"{JN_MIN_BARS} 根",
+                f"判定前要累積這麼多根已收盤 M15（約 {JN_MIN_BARS*15//60} 小時）"),
+            _pv("全期實測", "513 筆／年化 +2.47%／最大回撤 5.72%",
+                "TradingView 2018-03 → 2026-09。⚠️ 樣本外 −0.82%/年，異常值佔淨利 106%，優勢未證實"),
+        ]},
         {"group": "🧾 送單（送單參數頁可即時修改）", "items": [
             _pv("size", f"{params['size']:.2f} 手", "每張單的手數", "order"),
             _pv("symbol", params["symbol"], "送單用的商品代號", "order"),
@@ -2618,6 +3698,15 @@ def system_parameter_values(params=None):
             _pv("BREAKEVEN_EPS", f"{BREAKEVEN_EPS:g}", "損益絕對值小於此值視為保本，不計入勝負"),
         ]},
     ]
+
+
+# [R78] 目前的進場引擎實際會讀哪幾個 bypass key。
+#       錦囊只看 risk_cap（資金控管）、news（新聞）、ai（覆核）；
+#       其餘（setup_trigger / structure / candle / rsi / cooldown / add_spacing）
+#       是舊 PureGCPPyramidingSession 專用的，換成錦囊後不會被讀到。
+JINNANG_BYPASS_KEYS = frozenset({"risk_cap", "news", "ai"})
+ACTIVE_BYPASS_KEYS = (JINNANG_BYPASS_KEYS if ENTRY_ENGINE == "JINNANG"
+                      else frozenset(key for key, *_ in GATE_SWITCH_DEFS))
 
 
 def read_gate_bypass():
@@ -2728,7 +3817,8 @@ def _risk_cap_preview():
     """Uses the last account snapshot to show what switching off the 2% cap means."""
     snap = read_account_snapshot()
     m15 = snap.get("m15_ohlc") if isinstance(snap.get("m15_ohlc"), dict) else {}
-    equity, price, atr = to_float(snap.get("equity")), to_float(m15.get("close")), to_float(m15.get("atr_m15"))
+    equity = risk_equity(snap)                                                         # [R88] 扣掉信用
+    price, atr = to_float(m15.get("close")), to_float(m15.get("atr_m15"))
     currency = str(snap.get("currency") or ACCOUNT_CURRENCY_DEFAULT)
     if not equity or not price or not atr:
         return "（尚無足夠的帳戶與 ATR 資料可試算）"
@@ -2797,6 +3887,12 @@ def gates_state_payload(message=None):
             "dir": state.get("dir"),
             "dir_word": DIR_WORD.get(state.get("dir")),
             "armed": bool(state.get("armed")),
+            "driver": GATE_DRIVER,
+            "entry_engine": ENTRY_ENGINE,
+            "risk": state.get("risk") if isinstance(state.get("risk"), dict) else {},
+            "long_only": LONG_ONLY,
+            "trades_today": trades_today_count(state),
+            "trades_max_per_day": TRAINING_MAX_PER_DAY,
             "news_lock": bool(state.get("news_lock")),
             "last_reason": state.get("last_reason"),
             "summary": summary_text,
@@ -2806,16 +3902,24 @@ def gates_state_payload(message=None):
                           if isinstance(lock, dict) else None),
         },
         "switches": {
+            "engine": ENTRY_ENGINE,
             "mode": detect_gate_mode(bypass),
             "bypass": sorted(bypass),
             "updated_utc": doc.get("updated_utc"),
+            # [R78] applies=False 的關卡在目前的進場引擎下【根本不會被讀到】，
+            #       開關仍然存著（換回舊引擎就恢復），但頁面要標示清楚。
             "gates": [{"key": key, "title": title, "normal": normal, "skipped": skipped,
-                       "risk": risk, "enabled": key not in bypass, "params": gate_values.get(key, [])}
+                       "risk": risk, "enabled": key not in bypass, "params": gate_values.get(key, []),
+                       "applies": key in ACTIVE_BYPASS_KEYS,
+                       "na_note": (None if key in ACTIVE_BYPASS_KEYS else
+                                   f"錦囊 v4 不讀這個關卡（它屬於舊的加單引擎）。"
+                                   f"ENTRY_ENGINE=PYRAMID 才會生效。")}
                       for key, title, normal, skipped, risk in GATE_SWITCH_DEFS],
         },
         "modes": [{"key": key, "label": label, "bypass": sorted(keys)} for key, (label, keys) in GATE_MODES.items()],
         "test": solo_test_status(bypass),
         "risk_preview": _risk_cap_preview(),
+        "symbol_mismatch": broker_symbol_mismatch(),
         "always_on": GATE_ALWAYS_ON_NOTES,
         "system_params": system_parameter_values(order_params),
         "auth_required": ADMIN_API_REQUIRE_TOKEN,
@@ -2902,9 +4006,20 @@ def order_preview(params):
     live = price is not None and price > 0 and atr is not None and atr > 0
     if not live:
         price, atr = 2000.00, 6.00
-    sl = max(params["min_sl_distance"], round(atr * params["sl_atr_mult"], 2))
-    candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
-                 "sl_distance": sl, "atr_m15": atr, "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST"}
+    # [R78] 預覽必須跟著【實際在跑的引擎】走，否則這一頁會顯示一張不會被送出的封包。
+    if ENTRY_ENGINE == "JINNANG":
+        sl = max(params["min_sl_distance"], round(atr * JN_DISASTER_SL_ATR, 2))
+        candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+                     "sl_distance": sl, "tp_distance": None, "atr_m15": atr,
+                     "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST", "engine": "JINNANG"}
+        engine_note = (f"錦囊 v4：止損 = ATR × {JN_DISASTER_SL_ATR:g}（災難停損，正常碰不到）；"
+                       f"【不送 TP】—— 出場是 EA 的 {JN_HOLD_BARS * 15} 分鐘定時全平")
+    else:
+        sl = max(params["min_sl_distance"], round(atr * params["sl_atr_mult"], 2))
+        candidate = {"signal": "BUY", "ticker": params["symbol"], "price": price, "direction": "UP",
+                     "sl_distance": sl, "atr_m15": atr, "max_lots": 0.0, "exposure": 0.0, "kind": "FIRST"}
+        engine_note = (f"舊加單引擎：止損 = ATR × {params['sl_atr_mult']:g}，"
+                       f"止盈 = 止損 × {params['target_rrr']:g}")
     order = build_order(candidate, params)
     order["api_key"] = mask_secret(order["api_key"])
     return {
@@ -2913,6 +4028,8 @@ def order_preview(params):
         "price": price,
         "atr_m15": atr,
         "sl_distance": sl,
+        "engine": ENTRY_ENGINE,
+        "engine_note": engine_note,
         "note": ("以最新 M15 快照試算（BUY 首單）" if live else "尚未收到 M15 快照，以 價格 2000 / ATR 6 示範"),
     }
 
@@ -3016,6 +4133,87 @@ def serve_order_app():
     except OSError as exc:
         print(f"⚠️ [送單參數頁讀取失敗] {exc}", flush=True)
         return _json_response({"status": "error", "message": "order.html 不存在於部署內容中"}, 500)
+
+# -----------------------------------------------------------------------------
+# 🗒️ 錦囊：執行單 + 九十筆訓練進度表
+#     兩頁都是靜態 HTML；進度表的紀錄存在 GCS，換裝置／換瀏覽器也看得到。
+#         執行單      ?view=jinnang_sheet
+#         進度表      ?view=jinnang_tracker
+#         進度表資料  ?view=jinnang&format=json   （GET 讀、POST 寫）
+#     兩頁互相有連結，頁首的分頁列切換。
+# -----------------------------------------------------------------------------
+_JINNANG_DIR = os.path.dirname(os.path.abspath(__file__))
+JINNANG_SHEET_FILE = os.path.join(_JINNANG_DIR, "jinnang_sheet.html")
+JINNANG_TRACKER_FILE = os.path.join(_JINNANG_DIR, "jinnang_tracker.html")
+JINNANG_STATE_FILE = "jinnang_training.json"      # GCS 物件名
+JINNANG_SLOTS = 90
+
+
+def _serve_static_html(path, label):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
+    except OSError as exc:
+        print(f"⚠️ [{label}讀取失敗] {exc}", flush=True)
+        return _json_response({"status": "error",
+                               "message": f"{os.path.basename(path)} 不存在於部署內容中"}, 500)
+
+
+def serve_jinnang_sheet():
+    return _serve_static_html(JINNANG_SHEET_FILE, "錦囊執行單")
+
+
+def serve_jinnang_tracker():
+    return _serve_static_html(JINNANG_TRACKER_FILE, "錦囊進度表")
+
+
+def _jinnang_clean(raw):
+    """只收白名單欄位、長度固定 90；格式不對的那一格當成空的。"""
+    text_keys = ("date", "dir", "inTime", "outTime", "px", "pnl")
+    rows = raw if isinstance(raw, list) else []
+    out = []
+    for i in range(JINNANG_SLOTS):
+        row = rows[i] if i < len(rows) else None
+        if not isinstance(row, dict):
+            out.append(None)
+            continue
+        rec = {k: str(row.get(k, ""))[:32] for k in text_keys}
+        for k in ("c1", "c2", "c3"):
+            rec[k] = bool(row.get(k))
+        used = any(rec[k] for k in text_keys) or rec["c1"] or rec["c2"] or rec["c3"]
+        out.append(rec if used else None)
+    return out
+
+
+def handle_jinnang_api_get():
+    try:
+        doc = gcs_read_json(JINNANG_STATE_FILE, None)
+    except StorageError as exc:
+        print(f"⚠️ [錦囊紀錄讀取失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "讀取失敗"}, 500)
+    doc = doc if isinstance(doc, dict) else {}
+    return _json_response({"status": "ok",
+                           "trades": _jinnang_clean(doc.get("trades")),
+                           "updated_utc": doc.get("updated_utc")})
+
+
+def handle_jinnang_api_post(req):
+    body = req.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _json_response({"status": "error", "message": "請求內容不是 JSON 物件"}, 400)
+    trades = _jinnang_clean(body.get("trades"))
+    stamp = fmt_utc()
+    try:
+        gcs_write_text(JINNANG_STATE_FILE,
+                       json.dumps({"trades": trades, "updated_utc": stamp}, ensure_ascii=False))
+    except StorageError as exc:
+        print(f"⚠️ [錦囊紀錄寫入失敗] {exc}", flush=True)
+        return _json_response({"status": "error", "message": "寫入失敗"}, 500)
+    done = sum(1 for t in trades if t)
+    ok = sum(1 for t in trades if t and t["c1"] and t["c2"] and t["c3"])
+    print(f"🗒️ [錦囊] 已記 {done}/{JINNANG_SLOTS} 筆，其中合規 {ok}", flush=True)
+    return _json_response({"status": "ok", "trades": trades, "updated_utc": stamp})
+
 
 
 def build_gates_page(msg):
@@ -3210,6 +4408,186 @@ def handle_gates_post(req):
     return redirect(f"?view=gates&msg={msg}")
 
 
+# =============================================================================
+# 🧹 重置：把歷史紀錄清空，用這個版本重新開始
+# -----------------------------------------------------------------------------
+# 刻意「分組」而不是一鍵全清——不同紀錄清掉的後果差很多，有些會讓系統停擺一小時。
+# 設定檔（送單參數、關卡開關）不在任何一組裡，重置不會動到你調好的設定。
+# =============================================================================
+RESET_GROUPS = [
+    ("ai", "AI 訓練資料", [SFT_DATASET_FILE, PENDING_SIGNALS_FILE], False,
+     "歷史虧損教訓與待配對訊號。清掉後 AI 的 few-shot 會是空的，要重新累積。"
+     "舊版格式的資料本來就無法使用，清掉可讓「教訓 N 條」這個數字從乾淨的基準開始。"),
+    ("rules", "AI 規則庫", [TRADING_RULES_FILE], False,
+     "trading_rules.txt 的內容。"),
+    ("logs", "決策日誌與封包紀錄", [DECISION_LOG_FILE, M1_VERDICT_LOG_FILE, WEBHOOK_LOG_FILE, LAST_ORDER_FILE], False,
+     "只是顯示用的紀錄，清掉不影響交易邏輯。"),
+    ("cache", "新聞日曆快取", [NEWS_CACHE_FILE], False,
+     "下次需要時會自動重抓。"),
+    ("trades", "交易績效紀錄", [TRADE_HISTORY_FILE], True,
+     "⚠️ 累計已實現損益、實盤勝率、期望值會全部歸零，且<b>無法復原</b>。"
+     "MT5 那邊的歷史不受影響，但這個系統算出來的績效統計會從零開始。"
+     "<br>✅ 從 DEMO 換到實盤時<b>應該清</b>——模擬單的損益混進實盤統計會讓勝率與期望值失真，"
+     "而期望值會回頭影響建議的 TP 倍數。"),
+    ("market", "M1／M15 行情快取", [M1_HISTORY_FILE, M15_HISTORY_FILE], True,
+     f"⚠️ 清掉後要重新累積約 {MIN_M1_BARS} 根 M1 K 線（<b>約一小時</b>）才能再次開閘交易。"),
+    ("state", "執行狀態", [GATE_STATE_FILE, PYRAMID_STATE_FILE, ACCOUNT_FILE], True,
+     "⚠️ 電閘回到 LOCK、加單基準價清空、帳戶快照清除"
+     "（EA 下次心跳會重建）。若此刻有未平倉部位，加單基準會遺失。"),
+]
+RESET_GROUP_MAP = {key: (label, files, danger, desc) for key, label, files, danger, desc in RESET_GROUPS}
+RESET_KEEPS = [("送單參數", ORDER_PARAMS_FILE), ("關卡開關設定", GATE_SWITCHES_FILE)]
+RESET_CONFIRM_WORD = "RESET"
+
+# 常見情境的預設勾選組合，避免手動勾錯——特別是誤勾行情快取會白等一小時。
+RESET_PRESETS = {
+    "live": ("🔁 DEMO → 實盤", {"ai", "trades", "logs", "state"},
+             "換帳戶用。demo 的損益、訊號與狀態全部清掉，實盤統計從零開始。"
+             f"<b>不含行情快取</b>——K 線是商品行情，demo 與實盤看到的 XAUUSD 是同一份，"
+             f"清掉只會白等 {MIN_M1_BARS} 分鐘重新累積。"),
+    "ai": ("🧠 只重置 AI 訓練資料", {"ai", "logs"},
+           "保留交易績效，只把 AI 的教訓與日誌歸零。舊版格式的 SFT 資料無法使用時用這個。"),
+}
+
+
+def perform_reset(keys):
+    """把選到的檔案寫成空字串——所有讀取端都把「空」當成預設值，等同清除。
+
+    用覆寫而不是刪除：少一種權限與 generation 的失敗模式，行為也比較好預期。"""
+    cleared, failed = [], []
+    for key in keys:
+        label, files, _danger, _desc = RESET_GROUP_MAP[key]
+        for name in files:
+            try:
+                gcs_write_text(name, "")
+                cleared.append(name)
+            except StorageError as exc:
+                print(f"⚠️ [重置失敗] {name}：{exc}", flush=True)
+                failed.append(name)
+    labels = "、".join(RESET_GROUP_MAP[k][0] for k in keys)
+    log_event(f"🧹 [重置] 已清空：{labels}｜檔案 {len(cleared)} 個"
+              + (f"｜失敗 {len(failed)} 個" if failed else ""),
+              severity="WARNING" if failed else "INFO", component="admin",
+              reset_groups=list(keys), cleared=cleared, failed=failed)
+    log_decision(f"🧹 [管理員重置] 已清空：{labels}"
+                 + (f"（{len(failed)} 個檔案失敗）" if failed else ""), key="admin")
+    return cleared, failed
+
+
+def build_reset_page(msg=None, error=None, preset=None):
+    banner = ""
+    if msg:
+        banner = f"<div class='level-box' style='border-left:4px solid #198754;'>{esc(msg)}</div>"
+    elif error:
+        banner = f"<div class='level-box' style='border-left:4px solid #dc3545;'>{esc(error)}</div>"
+
+    preselected = RESET_PRESETS.get(preset, (None, set(), ""))[1]
+    preset_html = "".join(
+        f"<a href='?view=reset&preset={esc(key)}' class='level-box' "
+        f"style='display:block; margin-bottom:8px; text-decoration:none; "
+        f"border-left:4px solid {'#0f62fe' if preset == key else '#c7ccd1'};'>"
+        f"<b>{label}</b>{' ✔️ 已套用' if preset == key else ''}"
+        f"<div class='card-desc' style='margin-top:4px;'>{desc}</div></a>"
+        for key, (label, _keys, desc) in RESET_PRESETS.items())
+
+    rows = ""
+    danger_tag = " <span style='color:#dc3545; font-weight:700;'>（高風險）</span>"
+    for key, label, files, danger, desc in RESET_GROUPS:
+        colour = "#dc3545" if danger else "#6c757d"
+        file_list = "、".join(f"<code>{esc(f)}</code>" for f in files)
+        checked = " checked" if key in preselected else ""
+        rows += (f"<div class='level-box' style='border-left:4px solid {colour}; margin-bottom:8px;'>"
+                 f"<label style='display:flex; gap:10px; align-items:flex-start; cursor:pointer;'>"
+                 f"<input type='checkbox' name='g_{esc(key)}' value='1' style='margin-top:4px;'{checked}>"
+                 f"<span><b>{esc(label)}</b>{danger_tag if danger else ''}"
+                 f"<div class='card-desc' style='margin-top:4px;'>{desc}</div>"
+                 f"<div class='card-desc' style='margin-top:4px;'>{file_list}</div>"
+                 f"</span></label></div>")
+
+    # 先告訴你「即將刪掉什麼」——盲按按鈕是這種頁面最容易出事的地方。
+    try:
+        trade_count = len(risk_manager_session.read_trades())
+        realised = sum(to_float(t.get("profit"), 0.0) for t in risk_manager_session.read_trades())
+        trades_note = (f"目前有 <b>{trade_count}</b> 筆已結算交易，"
+                       f"累計 <b>{realised:+,.2f} {esc(ACCOUNT_CURRENCY_DEFAULT)}</b>")
+    except Exception as exc:
+        trades_note = f"交易紀錄讀取失敗：{esc(str(exc)[:80])}"
+    try:
+        account_type = str(read_order_params()[0].get("account_type") or "?")
+    except Exception:
+        account_type = "?"
+    account_html = (f"<span style='color:#dc3545; font-weight:700;'>🔴 real（實盤）</span>"
+                    if account_type == "real" else
+                    f"<span style='color:#d97706; font-weight:700;'>🟡 {esc(account_type)}</span>"
+                    + ("　⚠️ 送單參數仍是 demo，換實盤前記得到送單參數頁改成 real。"
+                       if account_type == "demo" else ""))
+
+    keeps = "、".join(f"<code>{esc(f)}</code>（{esc(name)}）" for name, f in RESET_KEEPS)
+    body = f"""
+    <div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>
+      <h1 class='page-title'>🧹 重置歷史紀錄</h1></div>{page_nav("reset")}</div>
+    {banner}
+    <div class='section'>
+      <p class='muted' style='font-size:13px;'>
+        用這個版本重新開始：勾選要清空的紀錄。<b>這個動作無法復原</b>，請先確認沒有正在等待配對的交易。
+      </p>
+      <div class='level-box' style='border-left:4px solid #0f62fe; margin-bottom:12px;'>
+        <div class='card-title'>目前狀態</div>
+        <div style='margin-top:4px;'>{trades_note}<br>下單模式：{account_html}</div>
+      </div>
+      <div class='level-box' style='border-left:4px solid #198754; margin-bottom:12px;'>
+        ✅ <b>不會被清掉的東西</b>：{keeps}。你調好的設定會原封不動保留。
+        <div class='card-desc' style='margin-top:6px;'>
+          另外，重置這個動作本身一定會留下一筆稽核紀錄（即使你清掉決策日誌），
+          不會讓破壞性操作沒有痕跡。
+        </div>
+      </div>
+      <div class='card-title' style='margin-bottom:6px;'>常見情境（點一下自動勾好）</div>
+      {preset_html}
+      <form method='POST' action='?view=reset'>
+        <div class='card-title' style='margin:14px 0 6px;'>逐項確認</div>
+        {rows}
+        <div class='level-box' style='margin-top:12px;'>
+          <div class='card-title'>管理權杖</div>
+          <input type='password' name='token' placeholder='WEBHOOK_SECRET_TOKEN'
+                 style='width:100%; padding:8px; margin-top:4px;' autocomplete='off'>
+        </div>
+        <div class='level-box' style='margin-top:8px; border-left:4px solid #dc3545;'>
+          <div class='card-title'>輸入 <code>{RESET_CONFIRM_WORD}</code> 以確認</div>
+          <input type='text' name='confirm' placeholder='{RESET_CONFIRM_WORD}'
+                 style='width:100%; padding:8px; margin-top:4px;' autocomplete='off'>
+        </div>
+        <button type='submit' style='margin-top:12px; padding:10px 18px; font-weight:700;
+                background:#dc3545; color:#fff; border:none; border-radius:6px; cursor:pointer;'>
+          🧹 清空勾選的紀錄
+        </button>
+      </form>
+    </div>"""
+    return html_page("重置歷史紀錄 - 智能諸葛亮", body)
+
+
+def handle_reset_post(req):
+    form = req.form
+    if ADMIN_API_REQUIRE_TOKEN:
+        token = form.get("token")
+        if not (isinstance(token, str) and token.strip() == GCP_SECRET_TOKEN.strip()):
+            return build_reset_page(error="管理權杖不正確，沒有清除任何東西。")
+    if (form.get("confirm") or "").strip().upper() != RESET_CONFIRM_WORD:
+        return build_reset_page(error=f"請在確認欄輸入 {RESET_CONFIRM_WORD}，沒有清除任何東西。")
+
+    keys = [key for key, *_ in RESET_GROUPS if form.get(f"g_{key}") == "1"]
+    if not keys:
+        return build_reset_page(error="沒有勾選任何項目，沒有清除任何東西。")
+
+    cleared, failed = perform_reset(keys)
+    labels = "、".join(RESET_GROUP_MAP[k][0] for k in keys)
+    if failed:
+        return build_reset_page(error=f"已清空 {len(cleared)} 個檔案，但有 {len(failed)} 個失敗："
+                                      f"{'、'.join(failed)}。請查看 Cloud Logging。")
+    note = "　接下來要等 M1 K 線重新累積才能開閘。" if "market" in keys else ""
+    return build_reset_page(msg=f"✅ 已清空「{labels}」，共 {len(cleared)} 個檔案。{note}")
+
+
 def handle_get(req):
     view = req.args.get("view", "welcome")
     action = req.args.get("action")
@@ -3221,8 +4599,16 @@ def handle_get(req):
         return handle_order_api_get()
     if view == "order_app":                                      # standalone order.html, served here
         return serve_order_app()
+    if view == "jinnang" and req.args.get("format") == "json":   # 進度表讀取訓練紀錄
+        return handle_jinnang_api_get()
+    if view == "jinnang_sheet":                                  # 錦囊執行單
+        return serve_jinnang_sheet()
+    if view == "jinnang_tracker":                                # 錦囊九十筆進度表
+        return serve_jinnang_tracker()
     if view == "info":
         return build_info_page()
+    if view == "reset":
+        return build_reset_page(preset=req.args.get("preset"))
     if view == "gates":
         return build_gates_page(req.args.get("msg"))
     if view == "dashboard":
@@ -3309,6 +4695,10 @@ def receive_tradingview_signal(request):
         return handle_gates_post(request)
     if request.args.get("view") == "order":          # posts from the order parameter page
         return handle_order_api_post(request)
+    if request.args.get("view") == "jinnang":        # 錦囊進度表寫入訓練紀錄
+        return handle_jinnang_api_post(request)
+    if request.args.get("view") == "reset":          # 重置頁的表單（需權杖＋確認字串）
+        return handle_reset_post(request)
 
     payload = parse_payload(request)
     if payload is None:
@@ -3333,3 +4723,30 @@ def receive_tradingview_signal(request):
               severity="INFO" if code < 500 else "ERROR", component="webhook", direction="out",
               action=summary["action"], http_status=code, result=status)
     return response
+
+
+# ---------------------------------------------------------------------------
+# [R84] WSGI fallback so `gunicorn main:app` also works.
+#
+# GCP buildpacks pick the server by whether GOOGLE_FUNCTION_TARGET is set at
+# build time.  Set -> `functions-framework --target=...` (normal path, the
+# object below is never touched).  Unset -> `gunicorn main:app`, which used to
+# abort with "Failed to find attribute 'app' in 'main'" and return 503 to the
+# EA even though the module itself had imported cleanly.  Exposing `app` makes
+# the same source deploy correctly either way.
+# ---------------------------------------------------------------------------
+def _build_wsgi_app():
+    from flask import Flask, request as flask_request
+
+    wsgi = Flask(__name__)
+
+    def _entry(_path=""):
+        return receive_tradingview_signal(flask_request)
+
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+    wsgi.add_url_rule("/", "entry_root", _entry, methods=methods)
+    wsgi.add_url_rule("/<path:_path>", "entry_any", _entry, methods=methods)
+    return wsgi
+
+
+app = _build_wsgi_app()
