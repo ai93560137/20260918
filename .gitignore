@@ -6,3 +6,8 @@ venv/
 .env
 data/pelosi/tg_msg_*.txt
 _equities/
+# GCP 服務帳戶金鑰（絕不 commit）
+*service*account*.json
+claude-agent-*.json
+gcp-key*.json
+.config/

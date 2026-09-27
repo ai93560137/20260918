@@ -1,0 +1,5 @@
+# scripts/gcp_agent.py 需要的套件（Claude Code 雲端容器由 .claude/hooks/session-start.sh 自動安裝）
+requests>=2.31
+google-auth>=2.30
+cryptography>=41
+cffi>=1.16

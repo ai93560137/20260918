@@ -293,3 +293,15 @@ setx FUTU_SYMBOLS "US.QQQ,US.SPY"
 ```
 
 目錄、欄位與各分支取法見 `data/external/README.md`。
+
+## 附錄 E：讓 Claude 代你部署（不用 gcloud）
+
+設定一次服務帳戶後（見 `AGENTIC.md`），在 Claude Code 工作階段裡：
+
+```bash
+python3 scripts/gcp_agent.py deploy         # dry-run：打包部署檔案並檢查
+python3 scripts/gcp_agent.py deploy --yes   # 真的部署，完成後自動檢查五個頁面
+python3 scripts/gcp_agent.py logs --since 30m
+```
+
+或直接對 Claude 說「部署最新的 main.py」，它會先給你看 dry-run 結果再問你要不要執行。
