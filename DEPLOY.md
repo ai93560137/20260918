@@ -252,3 +252,23 @@ gcloud functions logs read receive_tradingview_signal --region=asia-east1 --limi
 
 來源分頁選「從存放區部署」，指向本 repo 與分支，目錄留根目錄（`/`），
 進入點一樣填 `receive_tradingview_signal`。之後改程式只要 push 再按部署。
+
+## 附錄 C：Futu OpenD 行情推送（R94）
+
+雲端的 `main.py` 從 R94 起接收 `action=futu_data`：驗權杖、存進 bucket 的
+`futu/latest_snapshot.json`、在控制台顯示，並回 `status: "stored"`。
+R93 以前的版本會回 `status: "ignored"`，資料直接丟掉。
+
+本地電腦（裝 Futu OpenD 的那台）跑 `futu/push_to_gcp.py`：
+
+```bat
+pip install futu-api requests
+setx ZHUGE_GCP_URL "https://你的服務.run.app/"
+setx WEBHOOK_SECRET_TOKEN "跟 Cloud Run 環境變數相同的權杖"
+REM 重開命令列後：
+python push_to_gcp.py --once
+python push_to_gcp.py
+```
+
+驗證：瀏覽器開 `?view=futu&format=json`，`status` 應為 `ok`、`stale` 為 `false`；
+控制台會多一個「📡 Futu 行情」區塊。Futu 行情只存、只顯示，不影響電閘與下單。

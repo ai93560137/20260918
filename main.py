@@ -45,6 +45,10 @@
 #   * News lock = ±30 min around High-impact USD events, from the FF JSON
 #     feed (explicit UTC offsets). Unknown calendar blocks new entries.
 #                                                                [R13e R16 R17]
+#   * 2026-09-27 — [R94] action=futu_data 有了處理器：本地 Futu OpenD 推上來的
+#     K 線與期權 IV 驗權杖後存進 futu/latest_snapshot.json，控制台顯示，
+#     ?view=futu&format=json 可讀回。回 status "stored"，不再是 "ignored"。
+#     只存、只顯示，不影響電閘與下單。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -1861,6 +1865,177 @@ webhook_log_session = WebhookLogSession()
 
 
 # =============================================================================
+# 📡 Futu OpenD 行情（本地 push_to_gcp.py 推上來的 K 線與期權 IV）  [R94]
+# -----------------------------------------------------------------------------
+# 之前 action=futu_data 沒有處理器：回 HTTP 200 + status "ignored"，資料直接丟掉，
+# 本地腳本只看狀態碼就印「大滿貫成功」。現在：驗權杖 → 清洗 → 存 GCS →
+# 回 status "stored"，控制台與 ?view=futu&format=json 看得到。
+# ⚠️ 只存、只顯示：不進電閘、不進錦囊、不影響任何下單。QQQ 不是 XAUUSD，
+#    要拿它當訊號之前先回測。
+# =============================================================================
+FUTU_SNAPSHOT_FILE = "futu/latest_snapshot.json"
+FUTU_MAX_BARS = max(1, _env_int("FUTU_MAX_BARS", 500))
+FUTU_MAX_OPTIONS = 200
+FUTU_STALE_SEC = max(60, _env_int("FUTU_STALE_SEC", 900))           # 推送間隔 300 秒 × 3
+FUTU_BAR_FIELDS = ("open", "high", "low", "close", "volume")
+FUTU_OPTION_FIELDS = ("strike", "iv", "delta", "gamma", "vega", "theta",
+                      "last", "bid", "ask", "volume", "open_interest")
+
+
+def _futu_text(value, max_len):
+    return str(value if value is not None else "").strip()[:max_len]
+
+
+def futu_clean_bars(raw):
+    """Futu K 線（DataFrame.to_dict('records')）→ 依 time_key 排序、去重、只留最後 FUTU_MAX_BARS 根。"""
+    if not isinstance(raw, list):
+        return []
+    bars = {}
+    for row in raw:
+        if not isinstance(row, dict):
+            continue
+        time_key = _futu_text(row.get("time_key") or row.get("time"), 19)
+        close = to_float(row.get("close"))
+        if not time_key or close is None:
+            continue
+        bar = {"time_key": time_key}
+        bar.update({field: to_float(row.get(field)) for field in FUTU_BAR_FIELDS})
+        bars[time_key] = bar                      # 同一根重複送 → 留最後一份
+    return [bars[key] for key in sorted(bars)][-FUTU_MAX_BARS:]
+
+
+def futu_clean_options(payload):
+    """新版腳本送 options（清單，含 strike / iv / delta…）；舊版只送 options_iv {code: iv}。"""
+    rows = []
+    raw = payload.get("options")
+    if isinstance(raw, list):
+        for row in raw[:FUTU_MAX_OPTIONS]:
+            if not isinstance(row, dict):
+                continue
+            code = _futu_text(row.get("code"), 40)
+            if not code:
+                continue
+            item = {"code": code,
+                    "option_type": _futu_text(row.get("option_type"), 4).upper(),
+                    "expiry": _futu_text(row.get("expiry"), 10)}
+            item.update({field: to_float(row.get(field)) for field in FUTU_OPTION_FIELDS})
+            rows.append(item)
+    legacy = payload.get("options_iv")
+    if not rows and isinstance(legacy, dict):
+        for code, iv in list(legacy.items())[:FUTU_MAX_OPTIONS]:
+            code = _futu_text(code, 40)
+            if code:
+                rows.append({"code": code, "iv": to_float(iv)})
+    return rows
+
+
+def handle_futu_data(payload):
+    """權杖已在 _dispatch_post 驗過。成功 → 200 stored；沒內容 → 422；寫不進 GCS → 503。"""
+    symbol = _futu_text(payload.get("symbol"), 32).upper()
+    if not symbol:
+        return jsonify({"status": "error", "message": "futu_data: missing symbol"}), 422
+    bars = futu_clean_bars(payload.get("data"))
+    options = futu_clean_options(payload)
+    if not bars and not options:
+        return jsonify({"status": "error", "message": "futu_data: no usable bars or options"}), 422
+
+    ivs = [row["iv"] for row in options if row.get("iv")]
+    warnings = []
+    if options and not ivs:
+        warnings.append("所有期權 IV 都是 0 或空值（舊版腳本讀錯欄位名稱）")
+    latest = bars[-1] if bars else {}
+    snapshot = {
+        "symbol": symbol,
+        "source": _futu_text(payload.get("source"), 32) or "futu_opend",
+        "kline_type": _futu_text(payload.get("kline_type"), 16),
+        "client_time": _futu_text(payload.get("timestamp"), 32),
+        "script_version": _futu_text(payload.get("script_version"), 16),
+        "received_utc": fmt_utc(),
+        "received_ts": now_ts(),
+        "bars": bars,
+        "options": options,
+        "warnings": warnings,
+    }
+    try:
+        gcs_write_text(FUTU_SNAPSHOT_FILE, json.dumps(snapshot, ensure_ascii=False))
+    except StorageError as exc:
+        log_event(f"⚠️ [Futu 行情寫入失敗] {exc}", severity="ERROR", component="futu")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+
+    log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
+              f"收 {fmt_num(latest.get('close'))}）期權 {len(options)} 檔（IV 有值 {len(ivs)}）",
+              severity="WARNING" if warnings else "INFO", component="futu", symbol=symbol,
+              bars=len(bars), options=len(options), iv_count=len(ivs))
+    return jsonify({"status": "stored", "symbol": symbol, "bars": len(bars),
+                    "latest_time": latest.get("time_key"), "latest_close": latest.get("close"),
+                    "options": len(options), "iv_count": len(ivs), "warnings": warnings}), 200
+
+
+def read_futu_snapshot():
+    try:
+        data = gcs_read_json(FUTU_SNAPSHOT_FILE, {})
+        return data if isinstance(data, dict) else {}
+    except StorageError as exc:
+        print(f"⚠️ [Futu 行情讀取失敗] {exc}", flush=True)
+        return {"error": str(exc)}
+
+
+def futu_age_sec(snap, now=None):
+    received = to_float(snap.get("received_ts"))
+    return None if received is None else max(0.0, (now or now_ts()) - received)
+
+
+def handle_futu_api_get():
+    snap = read_futu_snapshot()
+    if snap.get("error"):
+        return _json_response({"status": "error", "message": "storage read failed"}, 503)
+    if not snap:
+        return _json_response({"status": "empty", "message": "尚未收到 Futu 行情"}, 200)
+    age = futu_age_sec(snap)
+    return _json_response({"status": "ok", "age_sec": None if age is None else int(age),
+                           "stale": age is None or age > FUTU_STALE_SEC, **snap}, 200)
+
+
+def futu_dashboard_html():
+    snap = read_futu_snapshot()
+    if snap.get("error"):
+        return ("<div class='section-header'>📡 Futu 行情</div>"
+                "<div class='banner' style='background:#fff3cd; color:#856404;'>⚠️ Futu 行情讀取失敗，請查看 Cloud Logging。</div>")
+    if not snap:
+        return ("<div class='section-header'>📡 Futu 行情</div>"
+                "<div class='muted' style='margin-bottom:24px;'>尚未收到 Futu 行情。本地執行 push_to_gcp.py 後，這裡會顯示最新 K 線與期權 IV。</div>")
+    bars = snap.get("bars") or []
+    latest = bars[-1] if bars else {}
+    age = futu_age_sec(snap)
+    stale = age is None or age > FUTU_STALE_SEC
+    age_text = "—" if age is None else countdown_text(age)
+    age_html = (f"<span class='neg'>⚠️ {esc(age_text)} 前（超過 {FUTU_STALE_SEC // 60} 分鐘，推送可能已停止）</span>"
+                if stale else f"<span class='pos'>{esc(age_text)} 前</span>")
+    warn = "".join(f"<div class='banner' style='background:#fff3cd; color:#856404;'>⚠️ {esc(w)}</div>"
+                   for w in snap.get("warnings") or [])
+    rows = "".join(
+        f"<tr><td class='mono'>{esc(o.get('code'))}</td><td>{esc(o.get('option_type') or '—')}</td>"
+        f"<td>{esc(o.get('expiry') or '—')}</td><td>{fmt_num(o.get('strike'))}</td>"
+        f"<td>{fmt_num(o.get('iv'), '{:.2f}%')}</td><td>{fmt_num(o.get('delta'), '{:+.3f}')}</td></tr>"
+        for o in (snap.get("options") or [])[:20])
+    table = (f"<div style='overflow-x:auto;'><table style='width:100%; border-collapse:collapse; font-size:13px;'>"
+             f"<tr><th align='left'>合約</th><th align='left'>類型</th><th align='left'>到期</th>"
+             f"<th align='left'>行使價</th><th align='left'>IV</th><th align='left'>Delta</th></tr>{rows}</table></div>"
+             if rows else "<div class='muted'>本次沒有期權資料。</div>")
+    return f"""
+    <div class='section-header'>📡 Futu 行情（{esc(snap.get('symbol'))}）｜收到：{esc(snap.get('received_utc', '—'))} UTC，{age_html}</div>
+    {warn}
+    <div class='grid'>
+      <div class='card'><div class='card-title'>最新收盤</div><div class='card-value'>{fmt_num(latest.get('close'))}</div><div class='card-desc'>K 線時間（美東）{esc(latest.get('time_key', '—'))}</div></div>
+      <div class='card'><div class='card-title'>K 線</div><div class='card-small'>{len(bars)} 根 {esc(snap.get('kline_type') or '')}</div></div>
+      <div class='card'><div class='card-title'>期權</div><div class='card-small'>{len(snap.get('options') or [])} 檔</div></div>
+    </div>
+    <div class='section' style='margin-bottom:24px;'>{table}
+      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a></div>
+    </div>"""
+
+
+# =============================================================================
 # 📰 Macro news calendar  [R13e R16 R17 R32 R52 R53 R54]
 # =============================================================================
 class MacroNewsSession:
@@ -3273,6 +3448,8 @@ def build_dashboard_page(msg):
       <div class='card'><div class='card-title'>TP 倍數</div><div class='card-small'>{stats['recommended_rrr']:.2f}R</div></div>
     </div>
 
+    {futu_dashboard_html()}
+
     <div class='section-header'>📦 最新接收封包 (Raw Payload)</div>
     <div class='mono' style='background:#1e1e1e; color:#d4d4d4; border-left:4px solid var(--primary); padding:16px 20px; border-radius:0 8px 8px 0; font-size:13px; max-height:350px; overflow:auto;'>{esc(webhook_log_session.get_last_payload())}</div>
     """
@@ -4605,6 +4782,8 @@ def handle_get(req):
         return serve_jinnang_sheet()
     if view == "jinnang_tracker":                                # 錦囊九十筆進度表
         return serve_jinnang_tracker()
+    if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情
+        return handle_futu_api_get()
     if view == "info":
         return build_info_page()
     if view == "reset":
@@ -4680,6 +4859,8 @@ def _dispatch_post(payload):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     if action == "update_levels":
         return jsonify({"status": "success", "message": "TV levels received but intentionally ignored."}), 200
+    if action == "futu_data":                        # [R94] 本地 Futu OpenD 推上來的行情
+        return handle_futu_data(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -4709,7 +4890,8 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    webhook_log_session.save_payload(payload)
+    if payload.get("action") != "futu_data":        # [R94] Futu 封包大且每 5 分鐘一次，另存
+        webhook_log_session.save_payload(payload)
 
     started = now_ts()
     try:
