@@ -1,0 +1,6 @@
+run_date,family,status,match,info,skip,known,fail
+2026-09-27,futu_vs_web,PASS,4,2,1,0,0
+2026-09-27,ibkr_vs_web,FAIL,91,0,9,0,14
+2026-09-27,web_vs_web,FAIL,59,0,0,0,61
+2026-09-27,canary_inputs,PASS,236,0,1,0,0
+2026-09-27,internal,PASS,2,1,0,0,0

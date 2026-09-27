@@ -5,6 +5,8 @@ name: External data daily（外部來源每日彙整）
 #   Futu ← Cloud Run ?view=archive（本地 push_to_gcp.py 推上來的 K 線與期權 IV）
 #   IBKR ← 雲垂分支 claude/dazzling-curie-f3xzb8（GCP VM 推回的 IV 與股票收市）
 # 腳本見 scripts/external_data_sync.py，狀態見 data/external/STATUS.md。
+# 同步完接著跑 scripts/external_qc.py：Futu／IBKR 對照各分支的網站數據，逐欄逐日期比對，
+# 報告與閘門在 data/external/qc/（QC_REPORT.md、GATE.json），並產生明天給 Futu 的日線抽樣清單。
 # 需要 GitHub Secret：ZHUGE_GCP_URL（Cloud Run 網址，結尾斜線可有可無）。沒設就只同步 IBKR。
 # 22:41 UTC：美股收市（20:00／21:00 UTC）與 MT5 券商日切換（21:00 UTC）之後。
 on:
@@ -13,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: '重拉最近幾天（預設 4；補漏可填 10）'
+        description: '重拉最近幾天（預設 10；補漏可填 30）'
         required: false
-        default: '4'
+        default: '10'
 
 permissions:
   contents: write
@@ -35,6 +37,14 @@ jobs:
         continue-on-error: true   # 拿不到就只同步 GCP，STATUS.md 會寫明
         run: git fetch --depth=1 origin "claude/dazzling-curie-f3xzb8:refs/remotes/origin/claude/dazzling-curie-f3xzb8"
 
+      - name: Fetch web-data branches for QC（鳥翔網站日線、金絲雀）
+        continue-on-error: true   # 拿不到的類別在 QC 報告裡會是 NO_DATA
+        run: |
+          # blob:none：只抓目錄結構，比對讀到哪個檔才下載哪個（網站日線分支整包 400 MB）
+          for B in claude/gifted-carson-v2tvhw claude/canary-playbook-final-3um9lp; do
+            git fetch --depth=1 --filter=blob:none origin "$B:refs/remotes/origin/$B"
+          done
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -45,10 +55,14 @@ jobs:
       - name: Sync external sources
         env:
           ZHUGE_GCP_URL: ${{ secrets.ZHUGE_GCP_URL }}
-          EXTERNAL_DAYS: ${{ inputs.days || '4' }}
+          EXTERNAL_DAYS: ${{ inputs.days || '10' }}
         run: |
           [ -z "$ZHUGE_GCP_URL" ] && echo "::warning::GitHub Secret ZHUGE_GCP_URL 沒設，MT5／Futu 不會同步"
           python3 scripts/external_data_sync.py
+
+      - name: Cross-source QC（抽樣比對）
+        continue-on-error: true   # 比對程式出錯不擋數據提交；比對結果 FAIL 不是程式錯誤
+        run: python3 scripts/external_qc.py
 
       - name: Commit and push
         env:

@@ -20,20 +20,29 @@
         OPEND_HOST（127.0.0.1）、OPEND_PORT（11111）、
         PUSH_INTERVAL_SEC（300）、BAR_COUNT（120）、ATM_STRIKES（2 → 每邊 5 檔）
 
+[v4] 每日日線抽樣（數據品質比對用）：
+  每天香港時間 16:30–21:00（港股已收市、美股未開市）讀預設分支的
+  data/external/qc/futu_sample.txt（錨點＋昨天有爭議的代號＋隨機抽樣），
+  每個代號抓最近 FUTU_DAILY_BARS 根日 K 推到 GCP，隔天由 external_qc.py 對照網站數據。
+  關掉：setx FUTU_DAILY 0。清單讀不到就只抓錨點 HK.800000、US.SPY、US.QQQ。
+
 執行：
-  python push_to_gcp.py          # 常駐
-  python push_to_gcp.py --once   # 只推一次，用來測試
+  python push_to_gcp.py                  # 常駐
+  python push_to_gcp.py --once           # 只推一次，用來測試
+  python push_to_gcp.py --once --daily   # 立刻跑一次日線抽樣（不看時段），用來測試
 """
 import math
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "3"
+SCRIPT_VERSION = "4"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -48,6 +57,20 @@ ATM_STRIKES = max(0, int(os.environ.get("ATM_STRIKES", "2")))
 KTYPE = ft.KLType.K_5M
 SUBTYPE = ft.SubType.K_5M
 HTTP_TIMEOUT_SEC = 20
+
+# [v4] 每日日線抽樣
+HK_TZ = ZoneInfo("Asia/Hong_Kong")
+DAILY_ENABLED = os.environ.get("FUTU_DAILY", "1").strip() != "0"
+DAILY_WINDOW_MIN = (16 * 60 + 30, 21 * 60)          # 香港時間 16:30–21:00
+DAILY_BARS = max(5, min(100, int(os.environ.get("FUTU_DAILY_BARS", "20"))))
+DAILY_MAX_CODES = 60                                 # 訂閱額度 100，留給 5 分 K
+DAILY_ANCHORS = ["HK.800000", "US.SPY", "US.QQQ"]
+SAMPLE_URL = os.environ.get(
+    "FUTU_SAMPLE_URL",
+    "https://raw.githubusercontent.com/ai93560137/20260918/refs/heads/"
+    "claude/gcp-trading-v12-rewrite-bz75t2/data/external/qc/futu_sample.txt")
+UNSUB_AFTER_SEC = 70                                  # Futu 規定訂閱滿 1 分鐘才能退訂
+CODE_RE = re.compile(r"^(US|HK)\.[A-Z0-9][A-Z0-9.]{0,11}$")
 
 
 def log(message):
@@ -67,11 +90,14 @@ class FutuPusher:
     def __init__(self):
         self.ctx = None
         self.subscribed = set()
+        self.daily_done = None                        # 已完成日線抽樣的香港日期
+        self.pending_unsub = []                       # [(訂閱時間, [代號…])]
 
     def connect(self):
         if self.ctx is None:
             self.ctx = ft.OpenQuoteContext(host=OPEND_HOST, port=OPEND_PORT)
             self.subscribed = set()
+            self.pending_unsub = []
 
     def close(self):
         if self.ctx is not None:
@@ -80,6 +106,7 @@ class FutuPusher:
             finally:
                 self.ctx = None
                 self.subscribed = set()
+                self.pending_unsub = []
 
     # ---- K 線 -------------------------------------------------------------
     def fetch_bars(self, symbol):
@@ -149,10 +176,88 @@ class FutuPusher:
         return options
 
     # ---- 一輪 -------------------------------------------------------------
-    def run_once(self):
-        """每個代號各推一包；全部成功才回 True。"""
+    def run_once(self, force_daily=False):
+        """每個代號各推一包；全部成功才回 True。之後視時段跑日線抽樣、退掉過期的日線訂閱。"""
         results = [self.run_symbol(symbol) for symbol in SYMBOLS]
+        if DAILY_ENABLED or force_daily:
+            results.append(self.maybe_run_daily(force_daily))
+        self.release_daily_subs()
         return all(results)
+
+    # ---- [v4] 每日日線抽樣 ------------------------------------------------
+    @staticmethod
+    def load_sample():
+        try:
+            resp = requests.get(SAMPLE_URL, timeout=HTTP_TIMEOUT_SEC)
+            resp.raise_for_status()
+            text = resp.content.decode("utf-8", errors="replace")     # 不靠伺服器宣告的編碼
+            lines = [line.strip() for line in text.split("\n")]
+            codes = [line.upper() for line in lines if line and not line.startswith("#")]
+            bad = [c for c in codes if not CODE_RE.match(c)]
+            if bad:
+                log(f"  ⚠️ 抽樣清單有 {len(bad)} 行不像代號，已略過：{bad[:3]}")
+            codes = [c for c in codes if CODE_RE.match(c)]
+        except requests.RequestException as exc:
+            log(f"  ⚠️ 讀不到抽樣清單（{exc}），只抓錨點")
+            codes = []
+        return list(dict.fromkeys(DAILY_ANCHORS + codes))[:DAILY_MAX_CODES]
+
+    def maybe_run_daily(self, force=False):
+        now_hk = datetime.now(HK_TZ)
+        minute = now_hk.hour * 60 + now_hk.minute
+        today = now_hk.strftime("%Y-%m-%d")
+        if not force and (self.daily_done == today or not DAILY_WINDOW_MIN[0] <= minute < DAILY_WINDOW_MIN[1]):
+            return True
+        codes = self.load_sample()
+        log(f"📅 日線抽樣：{len(codes)} 個代號，每個最近 {DAILY_BARS} 根日 K")
+        try:
+            self.connect()
+        except Exception as exc:
+            log(f"🔴 日線抽樣連不上 OpenD：{exc}")
+            return False
+        subscribed, ok, failed = [], 0, []
+        for code in codes:
+            ret, err = self.ctx.subscribe([code], [ft.SubType.K_DAY], subscribe_push=False)
+            if ret != ft.RET_OK:
+                failed.append(f"{code}（訂閱：{str(err)[:60]}）")
+                continue
+            subscribed.append(code)
+            ret, df = self.ctx.get_cur_kline(code, num=DAILY_BARS, ktype=ft.KLType.K_DAY)
+            if ret != ft.RET_OK or df.empty:
+                failed.append(f"{code}（日 K：{str(df)[:60]}）")
+                continue
+            df = df.sort_values("time_key")
+            bars = [{"time_key": str(row["time_key"]), "open": num(row["open"]), "high": num(row["high"]),
+                     "low": num(row["low"]), "close": num(row["close"]), "volume": num(row["volume"])}
+                    for _, row in df.iterrows()]
+            if self.post({"action": "futu_data", "token": TOKEN, "source": "futu_opend",
+                          "script_version": SCRIPT_VERSION, "symbol": code, "kline_type": "K_DAY",
+                          "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                          "data": bars, "options": []}, quiet=True):
+                ok += 1
+            else:
+                failed.append(f"{code}（推送失敗）")
+        if subscribed:
+            self.pending_unsub.append((time.time(), subscribed))
+        log(f"📅 日線抽樣完成：成功 {ok}／{len(codes)}"
+            + (f"；失敗：{'、'.join(failed[:8])}" + ("…" if len(failed) > 8 else "") if failed else ""))
+        if ok:
+            self.daily_done = today
+        return not failed
+
+    def release_daily_subs(self):
+        if self.ctx is None:
+            return
+        keep = []
+        for started, codes in self.pending_unsub:
+            if time.time() - started < UNSUB_AFTER_SEC:
+                keep.append((started, codes))
+                continue
+            ret, err = self.ctx.unsubscribe(codes, [ft.SubType.K_DAY])
+            if ret != ft.RET_OK:
+                log(f"  ⚠️ 日線退訂失敗（下一輪再試）：{err}")
+                keep.append((started, codes))
+        self.pending_unsub = keep
 
     def run_symbol(self, symbol):
         log(f"向 OpenD {OPEND_HOST}:{OPEND_PORT} 取 {symbol} 行情…")
@@ -175,10 +280,12 @@ class FutuPusher:
             self.close()
             return False
 
-        packet = {"action": "futu_data", "token": TOKEN, "source": "futu_opend",
+        return self.post({"action": "futu_data", "token": TOKEN, "source": "futu_opend",
                   "script_version": SCRIPT_VERSION, "symbol": symbol, "kline_type": "K_5M",
                   "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                  "data": bars, "options": options}
+                  "data": bars, "options": options})
+
+    def post(self, packet, quiet=False):
         try:
             response = requests.post(GCP_URL, json=packet, timeout=HTTP_TIMEOUT_SEC)
         except requests.RequestException as exc:
@@ -190,6 +297,8 @@ class FutuPusher:
             body = {}
         status = body.get("status") if isinstance(body, dict) else None
         if response.status_code == 200 and status == "stored":
+            if quiet:
+                return True
             log(f"✅ GCP 已存檔：K 線 {body.get('bars')} 根，最新 {body.get('latest_time')} "
                 f"收 {body.get('latest_close')}，IV {body.get('iv_count')}/{body.get('options')} 檔")
             for warning in body.get("warnings") or []:
@@ -209,13 +318,17 @@ def main():
         print("請先設定環境變數 ZHUGE_GCP_URL 與 WEBHOOK_SECRET_TOKEN（見檔案開頭說明）。", file=sys.stderr)
         return 2
     once = "--once" in sys.argv[1:]
+    force_daily = "--daily" in sys.argv[1:]
     pusher = FutuPusher()
     log(f"🚀 Futu 行情推送啟動（v{SCRIPT_VERSION}）：{', '.join(SYMBOLS)} → {GCP_URL}"
         + ("（只推一次）" if once else f"，每 {INTERVAL_SEC} 秒"))
     try:
         while True:
-            ok = pusher.run_once()
+            ok = pusher.run_once(force_daily=force_daily)
             if once:
+                if pusher.pending_unsub:                 # 測試模式：等滿 1 分鐘再退訂，不留訂閱
+                    time.sleep(UNSUB_AFTER_SEC)
+                    pusher.release_daily_subs()
                 return 0 if ok else 1
             time.sleep(INTERVAL_SEC)
     except KeyboardInterrupt:

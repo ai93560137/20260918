@@ -6,6 +6,7 @@
 - 彙整腳本：`scripts/external_data_sync.py`
 - 排程：`.github/workflows/external_data_daily.yml`，每天 22:41 UTC
 - 最新狀態：[`STATUS.md`](STATUS.md)（每個系列的最新日期與列數、本次執行結果）
+- 數據品質：[`qc/QC_REPORT.md`](qc/QC_REPORT.md)、[`qc/GATE.json`](qc/GATE.json)（第六節）
 
 ## 一、三個來源
 
@@ -13,6 +14,7 @@
 |---|---|---|---|---|
 | **MT5** | 使用者的 MT5 終端機，EA 推到 Cloud Run | XAUUSD **CFD** 的 M1 | 開市時每分鐘 | `mt5/XAUUSD/M1/<年>/<日期>.csv.gz` |
 | **Futu** | 使用者的 Windows 電腦，OpenD 加 `futu/push_to_gcp.py` 推到 Cloud Run | US.QQQ 5 分 K、最近到期日最接近現價 5 個行使價的 Call／Put IV 與 Greeks | 腳本常駐時每 5 分鐘 | `futu/<代號>/K_5M/<年>/<日期>.csv.gz`、`futu/<代號>/options/<年>/<日期>.csv.gz` |
+| **Futu 日線抽樣** | 同上，腳本 v4 每天香港時間 16:30–21:00 一次 | `qc/futu_sample.txt` 的代號（錨點＋爭議＋隨機）最近 20 根日 K | 每天一次 | `futu/_K_DAY/<年>/<日期>.csv.gz`（含 `code` 欄） |
 | **IBKR** | 雲垂的 GCP VM，IB Gateway paper 帳戶，延遲數據，唯讀 | 日經 N225、EURO STOXX 50 週權對月權 ATM IV；股票收市／開市覆核（依需求） | 平日一次；覆核依需求 | `ibkr/iv_term_structure/ib_iv_log.csv`、`ibkr/stock_closes/` |
 
 MT5 與 Futu 的原始資料在 GCS bucket 的 `archive/` 按日封存（main.py R95），這裡是每天拉下來的副本。
@@ -81,7 +83,37 @@ iv = load("/tmp/ext/data/external/futu/US.QQQ/options/*/*.csv.gz")
 
 ## 五、一次性設定（使用者做）
 
-1. Cloud Run 部署 R95 以上的 `main.py`（按日封存與 `?view=archive` 端點）。
+1. Cloud Run 部署 R96 以上的 `main.py`（按日封存、`?view=archive` 端點；R96 起日線抽樣不蓋掉控制台快照）。
 2. GitHub → Settings → Secrets and variables → Actions → 新增 `ZHUGE_GCP_URL`，值是 Cloud Run 服務網址。
-3. 跑 OpenD 的電腦換上 v3 以上的 `futu/push_to_gcp.py`，需要時設 `FUTU_SYMBOLS`。
-4. 到 Actions 手動執行一次 External data daily，確認 `STATUS.md` 三個來源都是 ✅。
+3. 跑 OpenD 的電腦換上 v4 以上的 `futu/push_to_gcp.py`（每日日線抽樣），需要時設 `FUTU_SYMBOLS`。
+   先部署第 1 步再換腳本，否則日線封包會暫時蓋掉控制台上的即時快照。
+4. 到 Actions 手動執行一次 External data daily，確認 `STATUS.md` 三個來源都是 ✅，再看 `qc/QC_REPORT.md`。
+
+## 六、數據品質比對與閘門（`qc/`）
+
+每天同步完接著跑 `scripts/external_qc.py`，拿 Futu、IBKR 對照各分支從網站抓的數據。**取數據前先看 `qc/GATE.json`，只用 PASS 的類別。**
+
+| 類別 | 比什麼 | 抽樣 |
+|---|---|---|
+| `futu_vs_web` | Futu 日線抽樣、Futu 5 分 K 合成日線 ↔ 網站日線（鳥翔所用的 `claude/gifted-carson-v2tvhw` 的 `data/equities`，Yahoo） | Futu 抓到的全部比 |
+| `ibkr_vs_web` | IBKR 收市、次日開市、次日收市 ↔ 同上網站日線 | 每市場每天 20 檔，種子 = 執行日 |
+| `web_vs_web` | Nasdaq.com 第二收市源 ↔ Yahoo（美股） | 最近 5 份快照，每份 30 檔 |
+| `canary_inputs` | 金絲雀實際用的恒指、標普日線 ↔ 網站日線；Futu 恒指 ↔ 金絲雀恒指 | 最近 30 個交易日全比 |
+| `internal` | 封存內部一致性：K 線高低關係、MT5 四價相同、期權清洗規則通過率（金絲雀手冊 §10，只記錄） | 全部 |
+
+**判定規則（預先登記，不事後調整）**
+
+| 標記 | 意思 | 會不會擋閘門 |
+|---|---|---|
+| ✅ 一致 | `|甲 − 乙| ≤ max(0.0005, 0.000001 × |乙|)`。吸收 Yahoo 的 float32 尾數，不吸收任何一跳價差 | 不會 |
+| ℹ️ 記錄 | 口徑本來就不同的欄位：5 分 K 合成的開盤（首筆成交 ≠ 開盤競價）、成交量 | 不會 |
+| ⏭️ 略過 | 對方沒有這一天（超出對方最新日期）、沒有這個代號、交易時段不完整（不完整只比收盤） | 不會 |
+| ⚠️ 已知 | 命中 `qc/known_issues.csv` 登記的原因 | 不會 |
+| ❌ 未解釋 | 其他一切差異，包括兩邊日期範圍重疊、卻只有一邊有某一天的**日期缺漏** | **會，該類 FAIL** |
+
+- **日期錯位自動辨認**：不一致時，若甲的值等於乙的前一或後一交易日，說明欄直接寫出「日期錯位」和是哪一天。
+- **第三來源投票**：兩邊不一致時，說明欄列出其他來源同一天同一欄的值；已知錯位的來源不投票。
+- **爭議代號隔天重抓**：今天「數值不同」的代號會排進明天的 Futu 抽樣清單 `qc/futu_sample.txt`，讓 Futu 當第三票。
+- **已知原因怎麼登記**：查明原因、而且數據**仍然可以用**，才把 `代號,日期,欄位,原因,登記人` 加進 `qc/known_issues.csv`（代號或日期可填 `*`）。
+  數據本身就是錯的（例如日期錯位），不要登記，讓閘門維持 FAIL，直到來源修好。
+- 輸出：`QC_REPORT.md`（給人看）、`GATE.json`（給程式看）、`results_latest.csv`（本次每一筆）、`history.csv`（每天每類一列）。
