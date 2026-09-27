@@ -140,7 +140,7 @@ for mkt in ("SPX", "HSI"):
 print("\n=== 母訊號內的條件鑑別力(SPX 5 日):候選亮 vs 母亮但候選不亮 ===")
 for c in CANDIDATES:
     wr, wt, n_on, n_off = within_res[c]
-    print(f"{c:<14} 在「{PARENT[c].split("(")[0]}」內 RV 倍率 {wr:.2f}(t={wt:.1f}) 亮/不亮 {n_on}/{n_off}")
+    print(f"{c:<14} 在「{PARENT[c].split('(')[0]}」內 RV 倍率 {wr:.2f}(t={wt:.1f}) 亮/不亮 {n_on}/{n_off}")
 print("\n=== Jaccard 重疊(候選 vs 現役;候選之間) ===")
 for c in CANDIDATES:
     print(f"{c:<14} vs 紅 {jaccard(sigs[c], EXISTING['紅']):.2f}  vs 深紅 {jaccard(sigs[c], EXISTING['深紅']):.2f}")
@@ -171,7 +171,7 @@ md.append("## 母訊號內的條件鑑別力與重疊(SPX 5 日)\n")
 md.append("| 候選 | 母訊號 | 母內 RV 倍率 | t | 亮/不亮 | Jaccard vs 紅 | Jaccard vs 深紅 |\n|---|---|---|---|---|---|---|")
 for c in CANDIDATES:
     wr, wt, n_on, n_off = within_res[c]
-    md.append(f"| {c} | {PARENT[c].split("(")[0]} | {wr:.2f} | {wt:.1f} | {n_on}/{n_off} | "
+    md.append(f"| {c} | {PARENT[c].split('(')[0]} | {wr:.2f} | {wt:.1f} | {n_on}/{n_off} | "
               f"{jaccard(sigs[c], EXISTING['紅']):.2f} | {jaccard(sigs[c], EXISTING['深紅']):.2f} |")
 md.append("")
 md.append("候選之間 Jaccard:" + ";".join(
@@ -194,6 +194,25 @@ md.append(f"4. 紅相對深度 p90 在紅內鑑別力 {within_res['紅相對深�
 md.append("5. 通過者以 `trial_red_9d3m`、`trial_red_deep` 進入燈色表**試用期,無警報權**。"
           "紅的地位提高以結構呈現:燈色表新增 `axis_short`(紅/走平/綠)與 `axis_disaster`(深紅/綠)雙欄,紅不再被深紅遮住;手冊 §2 改為雙軸表述。")
 md.append("\n未通過的候選列入本分支淘汰名單,**勿重測**(§7 口徑紀律)。")
+
+# ---------------------------------------------------------------- 觀察名單(預先登記,尚未考核)
+WATCHLIST_MD = """
+## 觀察名單(預先登記,尚未考核;不進燈色表、無警報權)
+
+### W1. VVIX/VIX 比率低位(急性恐懼)— 登記日 2026-09-27
+
+| 項目 | 內容 |
+|---|---|
+| 定義 | VVIX ÷ VIX < 該比率滾動 252 日 **p10**(閾值固定,登記後不得調整) |
+| 機制 | 比率與 VIX 水準相關 −0.79。比率低 = VIX 漲得比 VVIX 快,「恐懼本身急升、對恐懼的恐懼未跟上」的急性壓力期;與黃燈(VVIX 高位)看的是不同一面 |
+| 來源 | 2026-09-26 黃燈考核候選「VVIX/VIX 比率 > p90」被證偽(SPX RV 倍率 0.59,t=−23,比率高實為 VIX 低的代名詞)。本候選是其**符號翻轉**,屬看過結果後才提出,**證據打折**;原候選維持淘汰,紀錄不刪 |
+| 樣本內診斷(2011 起,僅供參考,不作晉升依據) | SPX 5 日 RV 倍率 2.35(t=18.5)、誤報 13%、紅燈未亮時 1.73、控制 VIX>p90 後增量 1.87(t=11.3)、與 VIX>p90 Jaccard 0.42;受傷週(RV5−VIX>0)佔 32%、平均 RV−VIX −0.9;HSI 1.63(t=14.7);災難覆蓋 2/4 |
+| **晉升條件(預先登記)** | 全部滿足才升試用:(1) **樣本外**:自 2026-09-27 起累積 ≥ 126 個交易日後,以 `lab_common.py` 口徑重跑,樣本外 SPX 5 日 RV 倍率 ≥ 1.5 且 t ≥ 3;(2) 全樣本通過 `yellow_lab.py` 門檻 (a)–(e);(3) 受傷週佔比 ≥ 現役黃 VVIX;(4) 與屆時所有正式燈與試用燈 Jaccard < 0.85 |
+| 通過後 | 試用欄位 `trial_fear_spike`,無警報權;未過 → 淘汰,勿再翻轉 |
+
+登記人:本分支(canary/)。此為黃燈系(VVIX)訊號,依使用者指示登記於本檔;`YELLOW_UPGRADE.md` 淘汰名單中的原候選條目不變。
+"""
+md.append(WATCHLIST_MD)
 with open(OUT_MD, "w", encoding="utf-8") as fh:
     fh.write("\n".join(md) + "\n")
 print(f"\n已寫入 {os.path.relpath(OUT_MD)}")
