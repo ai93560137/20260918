@@ -1,8 +1,14 @@
 name: Canary broadcast（金絲雀 Telegram 廣播,手動）
 
-# 手動把 repo 內的一個純文字檔發到 Telegram(用與其他工作流相同的 TG_BOT_TOKEN / TG_CHAT_ID 密鑰)。
-# 預設發 canary/BROADCAST.txt;超過 Telegram 單則上限(4096 字元)時自動分段。
+# 把 repo 內的一個純文字檔發到 Telegram(用與其他工作流相同的 TG_BOT_TOKEN / TG_CHAT_ID 密鑰)。
+# 觸發方式(與雲垂陣 send-telegram.yml 同一套路):**推送 canary/BROADCAST.txt 即發送**;
+# 也可手動 workflow_dispatch 指定別的檔。超過 Telegram 單則上限(4096 字元)時自動按段落分段。
+# 注意:GitHub 只在工作流跑過一次後才登記它,功能分支上新加的工作流用 API 手動觸發會 404,推送觸發不受影響。
 on:
+  push:
+    paths:
+      - 'canary/BROADCAST.txt'
+      - '.github/workflows/canary_broadcast.yml'
   workflow_dispatch:
     inputs:
       file:
@@ -26,7 +32,7 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          FILE: ${{ inputs.file }}
+          FILE: ${{ inputs.file || 'canary/BROADCAST.txt' }}
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::error::TG_BOT_TOKEN / TG_CHAT_ID 沒設,無法發送"; exit 1
