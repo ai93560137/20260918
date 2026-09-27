@@ -29,7 +29,7 @@ from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from build_canary_table import RED_NOTE, WINDOW, rolling_quantile  # noqa: E402
+from build_canary_table import RED_NOTE, WINDOW, load_close, rolling_quantile  # noqa: E402
 
 TABLE = os.path.join(HERE, "canary_daily.csv")
 OUT_MD = os.path.join(HERE, "DAILY_REPORT.md")
@@ -76,25 +76,26 @@ def business_days_between(d0, d1):
     return n
 
 
-def streak(rows, key, value):
-    n = 0
+def streak_info(rows, key, value):
+    """由最新列往前數與 value 相同的列:回傳 (連續列數, 起始日期 ISO, 途中跳過的無資料列日期 list)。
+    無資料列(空白,例如美股假期只有 VIX 一根 bar 的列)不算中斷、也不計入天數,但列出來讓讀者知道。"""
+    n, start, skipped = 0, None, []
     for r in reversed(rows):
-        if r[key] == value:
+        v = r[key]
+        if v == value:
             n += 1
-        else:
-            break
-    return n
-
-
-def streak_start(rows, key, value):
-    """與 streak 同一段連續列的起始日期(ISO)。"""
-    start = None
-    for r in reversed(rows):
-        if r[key] == value:
             start = r["date"]
+        elif v == "":
+            skipped.append(r["date"])
         else:
             break
-    return start
+    # 起點之前的空白列不算「途中」
+    skipped = [d for d in skipped if start is None or d > start]
+    return n, start, skipped
+
+
+def streak(rows, key, value):
+    return streak_info(rows, key, value)[0]
 
 
 WEEKDAY_ZH = "一二三四五六日"
@@ -121,8 +122,8 @@ def window_span(bird, end_iso, window=WINDOW):
     path = os.path.join(DATA_DIR, f"{bird}_daily.csv")
     if not os.path.exists(path):
         return None
-    with open(path, newline="", encoding="utf-8") as fh:
-        ds = [r["Date"][:10] for r in csv.DictReader(fh) if r.get("Close") and r["Date"][:10] <= end_iso]
+    end = date.fromisoformat(end_iso)
+    ds = [d.isoformat() for d, _ in load_close(path) if d <= end]   # 與產生器同一讀法:排序、去重、跳壞值
     if len(ds) < window:
         return None
     return ds[-window], ds[-1]
@@ -188,17 +189,30 @@ def build_report(rows, health, today):
     def word(v):
         return {"1": "亮", "0": "滅", "": "—"}.get(v, v)
 
+    def prev_with(key):
+        """燈色日之前、該欄最近一個有值的列(通常就是 D−1;D−1 空白時往前找,日期會寫在括號裡)。"""
+        for r in reversed(rows[:-1]):
+            if r.get(key, "") != "":
+                return r
+        return None
+
     def chg(key):
-        if prev is None or prev.get(key, "") == last.get(key, "") or last.get(key, "") == "":
-            return ""   # 無資料不算變化(亞洲鳥常慢一日)
-        return f"({D1} {word(prev.get(key, ''))} → {D} {word(last.get(key, ''))})"
+        lv = last.get(key, "")
+        if lv == "":
+            return ""   # 燈色日本身無資料,不談變化
+        p = prev_with(key)
+        if p is None or p[key] == lv:
+            return ""
+        return f"({dz(p['date'])} {word(p[key])} → {D} {word(lv)})"
 
     def run(key):
-        """連續天數 + 起日,如「7 日(自 09-17(三)起)」。"""
+        """連續天數 + 起日,如「7 日(自 09-17(三) 起)」;途中有無資料列則註明。"""
         v = last.get(key, "")
         if v == "":
             return "—"
-        return f"{streak(rows, key, v)} 日(自 {dz(streak_start(rows, key, v))} 起)"
+        n, start, skipped = streak_info(rows, key, v)
+        note = "" if not skipped else f",途中 {len(skipped)} 列無資料不計:{'、'.join(dz(d) for d in skipped[-3:])}"
+        return f"{n} 日(自 {dz(start)} 起{note})"
 
     def onoff(key):
         v = last.get(key, "")
@@ -291,6 +305,10 @@ def build_report(rows, health, today):
             warnings.append(f"{b} 最後日期 {lb},落後報告日 {today} 共 {gap} 個交易日(亞洲時段允許 1–2 日)")
     if stale_us > 1:
         warnings.append(f"燈色表最新列 {last['date']},距報告日 {today} 共 {stale_us} 個交易日,上游可能未更新")
+    holiday_like = [r["date"] for r in rows[-30:] if r["vix"] != "" and r["vix9d"] == "" and r["vix3m"] == ""]
+    for hd in holiday_like:
+        warnings.append(f"{dz(hd)} 有 VIX 值但無 VIX9D、VIX3M(疑似美股假期只剩一根 bar):該列燈色空白,"
+                        f"不計入連續天數、不作「變化」的比較基準")
     stale = stale_prints()
     for b, dt, c, pdt, pc in stale:
         warnings.append(f"{b} {dz(dt)} 疑似呆值:開高低收四價相同({c:.2f})且等於前一列 {dz(pdt)} 收盤({pc:.2f}),"
@@ -328,7 +346,8 @@ def build_report(rows, health, today):
     md.append(f"| 報告日 | {dz(today)} | 產出本報告;「新鮮度」的落後交易日以此日起算 |")
     md.append(f"| 燈色日 D | **{D}** | 所有正式燈以 D 當日收盤計算:短期軸 = D 的 VIX9D − D 的 VIX;災難軸 = D 的 VIX − D 的 VIX3M;"
               f"黃 = 各鳥 D 值 vs 各鳥自身截至 D 的 {WINDOW} 交易日 p90(含 D) |")
-    md.append(f"| 前一列 D−1 | {D1} | 「變化」欄 = D−1 列 對 D 列;呆值檢查 = D 的四價 對 D−1 的收盤 |")
+    md.append(f"| 前一列 D−1 | {D1} | 「變化」欄 = 該燈上一個有值的列(通常即 D−1,空白則再往前,括號內寫明日期)對 D 列;"
+              f"呆值檢查 = D 的四價 對 D−1 的收盤 |")
     md.append(f"| 適用日 | {dz(d_apply)} | D 之後第一個交易日(lag=1;以週一至五估,遇假期順延)。此燈只管適用日起的 5 個交易日 |")
     md.append(f"| 亞洲鳥 AXVI / VHSI | 各自最近值日 | 亞洲時段(澳洲、香港)收盤,天生比美鳥慢一日;D 列無值時**不計入** D 的黃燈,只括注最近值供參考 |")
     md.append("")
@@ -376,7 +395,10 @@ def build_report(rows, health, today):
         weekend_note = f"(今天{'週六' if today.weekday() == 5 else '週日' if today.weekday() == 6 else '週一早上'}無新美股收盤,燈色沿用 {last['date']})"
 
     # 白話總結
-    if a_d == "深紅":
+    if a_s == "" and a_d == "":
+        plain = (f"❔ 燈色日 {D} 缺 VIX9D 與 VIX3M 讀數(多半是美股假期只剩 VIX 一根 bar),今天判不了燈。"
+                 f"請沿用上一個有燈色的交易日,不要把空白當綠燈。")
+    elif a_d == "深紅":
         plain = "🟣 災難軸亮了。這是最準的燈,十次只錯一次。今天起別開新倉、複核止損與保證金,已有倉位不必平,但要盯緊。"
     elif a_s == "紅":
         plain = "🔴 短期軸亮了,市場在為未來幾天的大震盪付保險費。該做的是減注、晚幾天再進場、檢查止損;不是猜方向。"
@@ -401,7 +423,7 @@ def build_report(rows, health, today):
           f"• 燈色日 D = {D}:所有燈都用這一天的收盤算",
           f"• 短期軸 = D 的 VIX9D 減 D 的 VIX;災難軸 = D 的 VIX 減 D 的 VIX3M(同一天兩隻鳥相減)",
           f"• 黃燈 = 各鳥 D 的值,對比該鳥自己截至 D 的 {WINDOW} 個交易日 p90(窗口起迄見距門檻)",
-          f"• 「變化」= 前一列 {D1} 對 燈色日 {D};連續天數括注起日",
+          f"• 「變化」= 該燈上一個有值的列(通常是前一列 {D1})對 燈色日 {D},括號內寫明兩個日期;連續天數括注起日,途中無資料列不計並列出",
           f"• 亞洲鳥 AXVI / VHSI 若 {D} 列無值,不計入 {D} 黃燈,只括注最近值日期",
           f"• 報告日 {dz(today)};適用日 {dz(d_apply)} = D 之後第一個交易日",
           "",
