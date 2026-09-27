@@ -94,6 +94,7 @@ nohup python3 scripts/ib_stock_verify.py --port 4002 --job closes > data_stock_i
 | 日本 | 觀察（不下單） | Yahoo!ファイナンス（日本站，與主數據 Yahoo 美國 API 不同來源；`tt_all_verify.yml` 已補裝 numpy） | 不要。IB 的價值是下一日開市價當執行基準，觀察市場用不上 |
 | 加拿大 | 試行（會下單） | **多倫多交易所自家網站 money.tmx.com 的日線**（`tt_all_verify.py` 的 `src_tmx`，免費、非券商），失敗才退回 Yahoo 重抓 | 不要。執行基準改用 Yahoo 的下一日開市價（同來源，弱一級，已知並接受） |
 
+- **首次實測（2026-09-27，Actions run）**：加拿大 2026-09-23 名單 70/70 與 TMX 一致，全部走官方來源、無退回 Yahoo。
 - IB 這條線維持覆蓋美、澳、港、新、台主板五個市場，已足夠支撐現在真正下單的港、新、澳。
 - 台灣上櫃、印、韓維持 Yahoo 單源。
 - 若日後任何 IBKR 戶口有餘額，再回來訂 TSE 即可，腳本與流程不用改；日本不必訂。
