@@ -1,0 +1,60 @@
+name: Canary broadcast（金絲雀 Telegram 廣播,手動）
+
+# 手動把 repo 內的一個純文字檔發到 Telegram(用與其他工作流相同的 TG_BOT_TOKEN / TG_CHAT_ID 密鑰)。
+# 預設發 canary/BROADCAST.txt;超過 Telegram 單則上限(4096 字元)時自動分段。
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: '要發送的文字檔路徑'
+        required: false
+        default: 'canary/BROADCAST.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Send to Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          FILE: ${{ inputs.file }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::error::TG_BOT_TOKEN / TG_CHAT_ID 沒設,無法發送"; exit 1
+          fi
+          if [ ! -s "$FILE" ]; then
+            echo "::error::找不到或空檔:$FILE"; exit 1
+          fi
+          # 以段落為單位切成 ≤3800 字元的區塊(Telegram 上限 4096)
+          python3 - "$FILE" <<'PY'
+          import sys, pathlib
+          text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+          chunks, cur = [], ""
+          for para in text.split("\n\n"):
+              cand = (cur + "\n\n" + para) if cur else para
+              if len(cand) > 3800 and cur:
+                  chunks.append(cur); cur = para
+              else:
+                  cur = cand
+          if cur: chunks.append(cur)
+          for i, c in enumerate(chunks, 1):
+              pathlib.Path(f"/tmp/tg_chunk_{i:02d}.txt").write_text(c, encoding="utf-8")
+          print(f"共 {len(chunks)} 段")
+          PY
+          for f in /tmp/tg_chunk_*.txt; do
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "disable_web_page_preview=true" \
+              --data-urlencode "text=$(cat "$f")" > /dev/null
+            echo "sent $f ($(wc -c < "$f") bytes)"
+            sleep 1
+          done
