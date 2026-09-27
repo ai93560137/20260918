@@ -47,7 +47,7 @@ python3 scripts/tt_all_page.py
 printf "hk 2026-09-30\nsg 2026-09-30\nca 2026-09-30\nin 2026-09-30\nau 2026-09-30\nus 2026-09-30\njp 2026-09-30\n" > analysis/tt_all/verify_request.txt   # 日期 = 各市場的訊號日（<市場>_latest.json）
 git add analysis/tt_all && git commit -m "chore(tt-all): 覆核請求" && git push origin claude/stock-research-k9nzau
 ```
-- `tt_all_verify.yml` 會跑：港 → 港交所日報表；美 → Nasdaq 歷史 API（每檔 0.3 秒，200 檔約 8 分鐘）；台 → 證交所（上市股）；日 → Yahoo!ファイナンス；
+- `tt_all_verify.yml` 會跑：港 → 港交所日報表；美 → Nasdaq 歷史 API（每檔 0.3 秒，200 檔約 8 分鐘）；台 → 證交所（上市股）；日 → Yahoo!ファイナンス；加 → 多倫多交易所網站 money.tmx.com 日線；
   韓澳加印新與取不到的 → Yahoo 即時重抓（同來源，只驗快照沒過期、股票還在交易）
 - 完成後自動 commit `<市場>_<日期>_verify.csv`、`<市場>_verify.json`、重建 `index.html`（加「覆核」欄），並發一則 Telegram：「✅ 港股 45/45 一致（港交所日報表）」
 - **有「不一致」或「無數據」的股票：下單前先查**（停牌、下市、代號改了、拆股）；不一致 > 5% 的市場先不要下單
@@ -64,7 +64,7 @@ python3 scripts/tt_all_verify.py --ibkr      # 寫 <市場>_<日期>_verify_ibkr
 python3 scripts/tt_all_page.py               # 網頁多一欄「IB」與「IBKR 覆核」統計
 ```
 
-- 能比的市場：美、澳、港、新、台主板；加、日待用戶訂閱 IB 市場數據（TSE／TSEJ Level I，並與 paper 帳戶共享）後加入（IBKR_DATA_REQUEST.md 第 8 節）；IB 無台灣上櫃；印、韓無合約。澳洲小型股 IB 與 Yahoo 差 1–4% 是尾盤競價口徑（見 IBKR_DATA_REQUEST.md 第 7 節），不是數據錯。
+- 能比的市場：美、澳、港、新、台主板。加、日不買 IB 訂閱（IBKR_DATA_REQUEST.md 第 8 節）：加拿大第二來源改用多倫多交易所網站（第 3b 步自動用），日本用 Yahoo!ファイナンス；IB 無台灣上櫃；印、韓無合約。澳洲小型股 IB 與 Yahoo 差 1–4% 是尾盤競價口徑（見 IBKR_DATA_REQUEST.md 第 7 節），不是數據錯。
 - IB 的「下一交易日開市價」存在 `_verify_ibkr.csv` 的 `ibkr_next_open`，是執行基準：第 7 步記錄成交後，滑價 = 成交價 ÷ 開市價 − 1。
 - 把 `tg_verify_ibkr.txt` 內容寫進 `.github/tg_outbox_research.txt` 並 push 就發到 Telegram。
 

@@ -65,6 +65,34 @@ def src_nasdaq(tickers: list[str], d: str) -> tuple[dict[str, float], str]:
     return out, "Nasdaq 歷史 API"
 
 
+def src_tmx(tickers: list[str], d: str) -> tuple[dict[str, float], str]:
+    """加拿大：多倫多交易所自家網站 money.tmx.com 的 GraphQL 日線（免費、非券商、與 Yahoo 獨立）。
+    代號：BAM-A.TO → BAM.A；.TO 去掉。查詢 getTimeSeriesData(symbol, freq=day, start, end)。"""
+    s = requests.Session()
+    hdr = {**UA, "Content-Type": "application/json", "Accept": "application/json", "locale": "en",
+           "Origin": "https://money.tmx.com", "Referer": "https://money.tmx.com/"}
+    q = ("query getTimeSeriesData($symbol: String!, $freq: String, $interval: Int, $start: String, $end: String) "
+         "{ getTimeSeriesData(symbol: $symbol, freq: $freq, interval: $interval, start: $start, end: $end) { dateTime open high low close volume } }")
+    out = {}
+    dd = date.fromisoformat(d)
+    for t in tickers:
+        sym = t[:-3].replace("-", ".") if t.endswith(".TO") else t
+        try:
+            r = s.post("https://app-money.tmx.com/graphql", headers=hdr, timeout=30,
+                       json={"operationName": "getTimeSeriesData", "query": q,
+                             "variables": {"symbol": sym, "freq": "day", "interval": 1,
+                                           "start": (dd - timedelta(days=10)).isoformat(), "end": (dd + timedelta(days=1)).isoformat()}})
+            rows = ((r.json().get("data") or {}).get("getTimeSeriesData")) or []
+        except Exception as exc:
+            print(f"WARN {t}: TMX {exc}", file=sys.stderr)
+            rows = []
+        for x in rows:
+            if str(x.get("dateTime", ""))[:10] == d and x.get("close"):
+                out[t] = float(x["close"])
+        time.sleep(0.4)
+    return out, "TMX Money（多倫多交易所網站）日線"
+
+
 def src_twse(tickers: list[str], d: str) -> tuple[dict[str, float], str]:
     r = requests.get("https://www.twse.com.tw/exchangeReport/MI_INDEX", headers=UA,
                      params={"response": "json", "date": d.replace("-", ""), "type": "ALLBUT0999"}, timeout=60)
@@ -127,7 +155,7 @@ def src_yahoo(tickers: list[str], d: str) -> tuple[dict[str, float], str]:
     return out, "Yahoo 即時重抓（同來源）"
 
 
-SOURCES = {"hk": src_hkex, "us": src_nasdaq, "tw": src_twse, "jp": src_yj}
+SOURCES = {"hk": src_hkex, "us": src_nasdaq, "tw": src_twse, "jp": src_yj, "ca": src_tmx}
 
 
 def classify(ours: float, theirs: float | None, mk: str) -> tuple[str, float | None]:
