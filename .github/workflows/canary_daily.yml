@@ -1,0 +1,103 @@
+name: Canary daily（金絲雀每日燈色表 + 總結報告）
+
+# 每個交易日美股收盤後,從雲垂陣分支拉六隻鳥日線 → 重產 canary/canary_daily.csv →
+# 產出 canary/DAILY_REPORT.md、追加 canary/daily_log.csv → 提交回本分支 → 有 TG 密鑰則發 Telegram。
+# 週六另跑 yellow_lab.py / red_lab.py 重產兩份考核報告(需 pandas + tabulate)。
+# 上游 fetch-quotes 約 20:17 UTC 提交當日收盤,本工作流排 22:30 UTC(香港 06:30),週二至週六(涵蓋週一至週五收盤)。
+# 注意:GitHub 的 schedule 只對預設分支上的工作流生效;本檔在合併前只能手動 workflow_dispatch。
+on:
+  schedule:
+    - cron: '30 22 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      run_labs:
+        description: '同時重跑 yellow_lab / red_lab 考核報告'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canary-daily
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh birds and rebuild table
+        id: build
+        run: |
+          set -o pipefail
+          STATUS_REFRESH=ok
+          python3 canary/build_canary_table.py --refresh 2>&1 | tee /tmp/build.log || STATUS_REFRESH=fail
+          if [ "$STATUS_REFRESH" = "fail" ]; then
+            echo "::warning::--refresh 失敗,改用現有快照重產"
+            python3 canary/build_canary_table.py 2>&1 | tee /tmp/build.log
+          fi
+          echo "refresh=$STATUS_REFRESH" >> "$GITHUB_OUTPUT"
+
+      - name: Labs (Saturday or on request)
+        id: labs
+        env:
+          WANT: ${{ inputs.run_labs }}
+        run: |
+          DOW=$(date -u +%u)
+          if [ "$DOW" = "6" ] || [ "$WANT" = "true" ]; then
+            pip install -q pandas tabulate
+            STATUS=ok
+            ( cd canary && python3 yellow_lab.py > /tmp/yellow.log 2>&1 ) || STATUS=fail
+            ( cd canary && python3 red_lab.py > /tmp/red.log 2>&1 ) || STATUS=fail
+            tail -3 /tmp/yellow.log /tmp/red.log || true
+            echo "labs=$STATUS" >> "$GITHUB_OUTPUT"
+          else
+            echo "labs=skipped" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Daily report
+        env:
+          R: ${{ steps.build.outputs.refresh }}
+          L: ${{ steps.labs.outputs.labs }}
+        run: |
+          python3 canary/daily_report.py --health "refresh=$R" "build=ok" "labs=$L"
+
+      - name: Commit and push
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(canary): 每日燈色表與總結 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(canary): 每日燈色表與總結 $(date -u +%F)" || exit 0; }
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
+
+      - name: Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設,未發送"; exit 0
+          fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=$(cat canary/tg_daily.txt)" > /dev/null
+          echo "telegram sent"

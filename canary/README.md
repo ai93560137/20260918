@@ -9,6 +9,7 @@
 | `build_canary_table.py` | 產生器,純 Python 標準庫,不需 pandas |
 | `yellow_lab.py` / `YELLOW_UPGRADE.md` | 黃燈升級考核腳本(需 pandas)與結果報告 |
 | `red_lab.py` / `RED_UPGRADE.md` | 紅燈(VIX9D 系)提位考核腳本與結果報告 |
+| `daily_report.py` / `DAILY_REPORT.md` / `daily_log.csv` / `tg_daily.txt` | 每日總結報告產生器、當日報告、長期逐日紀錄、Telegram 短訊 |
 | `lab_common.py` | 兩個考核室共用的口徑函式(與雲垂陣 canary_lab.py 一致) |
 | `data_external/*_daily.csv` | 六隻鳥日線快照(VIX9D、VIX、VIX3M、VVIX、MOVE、AXVI)+ SPX/HSI/VHSI(考核用),來源見下 |
 
@@ -41,7 +42,7 @@
 
 `trial_*` 欄位是 2026-09-26 黃燈升級(六取二,`YELLOW_UPGRADE.md`)與紅燈提位(四取二,`RED_UPGRADE.md`)考核的通過者,
 **試用期、無警報權**:各策略可以記錄、可以回測,但不得據此改變響應,待雲垂陣採納才升為正式分層。
-考核腳本 `yellow_lab.py` / `red_lab.py`(需 pandas,共用 `lab_common.py`)候選與門檻預先登記於檔頭;未過者列入淘汰名單勿重測。
+考核腳本 `yellow_lab.py` / `red_lab.py`(需 **pandas + tabulate**,共用 `lab_common.py`;`pip install pandas tabulate`)候選與門檻預先登記於檔頭;未過者列入淘汰名單勿重測。
 
 ## 使用紀律(§7,不可省)
 
@@ -54,12 +55,21 @@
    有增量預測力;但本分支用手冊口徑複核,同樣本下深紅仍勝紅。紅的價值在覆蓋面(短期軸),深紅在精度(災難軸),
    分工不變、不排序。產生器在最新燈色為紅或深紅時會自動印出此註。
 
-## 更新
+## 更新與每日報告
 
 ```bash
 python3 canary/build_canary_table.py --refresh   # 從雲垂陣分支拉最新六隻鳥,重產燈色表
 python3 canary/build_canary_table.py             # 只用現有快照重產
+python3 canary/daily_report.py                   # 產出 DAILY_REPORT.md、追加 daily_log.csv、寫 tg_daily.txt
+pip install pandas tabulate && (cd canary && python3 yellow_lab.py && python3 red_lab.py)   # 重跑兩份考核報告
 ```
+
+**自動化**:`.github/workflows/canary_daily.yml` 每交易日 22:30 UTC(香港 06:30)拉數據、重產燈色表、寫每日報告並提交回分支;
+週六另跑兩個考核室;有 `TG_BOT_TOKEN` / `TG_CHAT_ID` 密鑰時發 Telegram。GitHub 的排程只對預設分支生效,
+本分支合併前需手動 `workflow_dispatch`,或由 Claude Code Routine 每日代跑。
+
+`daily_log.csv` 是逐日累積的長期紀錄(燈色、試用層、觀察名單 W1 讀數、數據新鮮度),是觀察名單日後
+「樣本外」考核的原始資料,也是各策略登記響應後的對帳依據。**不要手改。**
 
 來源:分支 `claude/dazzling-curie-f3xzb8` 的 `tradingview/data_external/*_daily.csv`,
 每日由該分支的 GitHub Actions 更新。本目錄的快照是取用當時的版本,`--refresh` 才會跟上。
