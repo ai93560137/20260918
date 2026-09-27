@@ -248,19 +248,60 @@ gcloud functions deploy receive_tradingview_signal \
 gcloud functions logs read receive_tradingview_signal --region=asia-east1 --limit=50
 ```
 
-## 附錄 B：讓 Claude 代你部署（不用 gcloud）
+## 附錄 B：從 GitHub 部署
+
+來源分頁選「從存放區部署」，指向本 repo 與分支，目錄留根目錄（`/`），
+進入點一樣填 `receive_tradingview_signal`。之後改程式只要 push 再按部署。
+
+## 附錄 C：Futu OpenD 行情推送（R94）
+
+雲端的 `main.py` 從 R94 起接收 `action=futu_data`：驗權杖、存進 bucket 的
+`futu/latest_snapshot.json`、在控制台顯示，並回 `status: "stored"`。
+R93 以前的版本會回 `status: "ignored"`，資料直接丟掉。
+
+本地電腦（裝 Futu OpenD 的那台）跑 `futu/push_to_gcp.py`：
+
+```bat
+pip install futu-api requests
+setx ZHUGE_GCP_URL "https://你的服務.run.app/"
+setx WEBHOOK_SECRET_TOKEN "跟 Cloud Run 環境變數相同的權杖"
+REM 重開命令列後：
+python push_to_gcp.py --once
+python push_to_gcp.py
+```
+
+驗證：瀏覽器開 `?view=futu&format=json`，`status` 應為 `ok`、`stale` 為 `false`；
+控制台會多一個「📡 Futu 行情」區塊。Futu 行情只存、只顯示，不影響電閘與下單。
+
+## 附錄 D：外部來源按日封存與每日彙整（R95）
+
+R95 起 `main.py` 把 MT5 每根 M1、Futu 每次推送的 K 線與期權 IV 另存到 bucket 的
+`archive/<來源>/<商品>/<日期>.json`，`?view=archive&format=json&date=YYYY-MM-DD` 可讀回。
+封存失敗只記 Log，不影響交易。
+
+每日彙整由預設分支的 GitHub Actions 執行，要先在 GitHub 設一個 Secret：
+
+1. GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**。
+2. Name 填 `ZHUGE_GCP_URL`，Secret 填 Cloud Run 服務網址。
+3. 到 **Actions → External data daily → Run workflow** 手動跑一次。
+4. 看 `data/external/STATUS.md`，MT5／Futu 與 IBKR 都應是 ✅。
+
+Futu 要取多個商品：在跑 OpenD 的電腦設 `FUTU_SYMBOLS`（逗號分隔），不用改程式：
+
+```bat
+setx FUTU_SYMBOLS "US.QQQ,US.SPY"
+```
+
+目錄、欄位與各分支取法見 `data/external/README.md`。
+
+## 附錄 E：讓 Claude 代你部署（不用 gcloud）
 
 設定一次服務帳戶後（見 `AGENTIC.md`），在 Claude Code 工作階段裡：
 
 ```bash
-python3 scripts/gcp_agent.py deploy         # dry-run：打包四個檔案並檢查
+python3 scripts/gcp_agent.py deploy         # dry-run：打包部署檔案並檢查
 python3 scripts/gcp_agent.py deploy --yes   # 真的部署，完成後自動檢查五個頁面
 python3 scripts/gcp_agent.py logs --since 30m
 ```
 
 或直接對 Claude 說「部署最新的 main.py」，它會先給你看 dry-run 結果再問你要不要執行。
-
-## 附錄 C：從 GitHub 部署
-
-來源分頁選「從存放區部署」，指向本 repo 與分支，目錄留根目錄（`/`），
-進入點一樣填 `receive_tradingview_signal`。之後改程式只要 push 再按部署。

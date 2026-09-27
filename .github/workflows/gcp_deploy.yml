@@ -3,7 +3,7 @@ name: GCP deploy（部署 Cloud Function）
 # 手動觸發（或由 Claude 透過 GitHub API 觸發）。用 Workload Identity Federation 認證，GitHub 不保存任何金鑰。
 # 需要的 secrets：GCP_WORKLOAD_IDENTITY_PROVIDER、GCP_SERVICE_ACCOUNT（scripts/gcp_bootstrap.sh --github 會印出來）。
 # 預設 dry_run=true：只打包、檢查來源、印出「將會做什麼」。要真的部署把 dry_run 設成 false。
-# 排程 / 手動 workflow 只在預設分支上出現；可用 ref 指定要部署哪個分支的四個檔案。
+# 排程 / 手動 workflow 只在預設分支上出現；可用 ref 指定要部署哪個分支的部署檔案。
 on:
   workflow_dispatch:
     inputs:

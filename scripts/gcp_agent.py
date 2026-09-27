@@ -25,7 +25,7 @@ gcp_agent.py — 讓 Claude（或任何人）不用 gcloud 也能操作本專案
   cat           印出 bucket 內任一物件（--object path）
   check         打函式網址的五個頁面，確認都回 200
   env           顯示或修改環境變數（env set KEY=VAL ... --yes）
-  deploy        打包四個檔案並部署（預設 dry-run；真的部署要加 --yes）
+  deploy        打包部署檔案（main.py、requirements.txt 與各 HTML）並部署（預設 dry-run；真的部署要加 --yes）
   iam-public    讓函式允許未經驗證的叫用（allUsers → roles/run.invoker）
 
 所有會改動 GCP 的命令都需要 --yes；沒有 --yes 只會印出「將會做什麼」。
@@ -52,7 +52,8 @@ except ImportError:  # pragma: no cover
     sys.exit(2)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEPLOY_FILES = ("main.py", "requirements.txt", "gates.html", "order.html")
+DEPLOY_FILES = ("main.py", "requirements.txt", "gates.html", "order.html",
+                "jinnang_sheet.html", "jinnang_tracker.html")
 ENTRY_POINT = "receive_tradingview_signal"
 DEFAULT_RUNTIME = "python312"
 DEFAULT_MEMORY = "512Mi"
@@ -455,9 +456,10 @@ def sanity_check_sources(source_dir: Path):
     main_py = (source_dir / "main.py").read_text(encoding="utf-8", errors="replace")
     if f"def {ENTRY_POINT}(" not in main_py:
         problems.append(f"main.py 找不到 def {ENTRY_POINT}(")
-    if not main_py.rstrip().endswith("return response"):
-        problems.append("main.py 結尾不是 `return response`（檔案可能貼到一半）")
-    for html_name in ("gates.html", "order.html"):
+    tail = main_py.rstrip()
+    if not (tail.endswith("app = _build_wsgi_app()") or tail.endswith("return response")):
+        problems.append("main.py 結尾不是 `app = _build_wsgi_app()` 也不是 `return response`（檔案可能貼到一半）")
+    for html_name in [n for n in DEPLOY_FILES if n.endswith(".html")]:
         text = (source_dir / html_name).read_text(encoding="utf-8", errors="replace")
         if not text.lstrip().lower().startswith("<!doctype html>") or not text.rstrip().lower().endswith("</html>"):
             problems.append(f"{html_name} 頭尾不完整")

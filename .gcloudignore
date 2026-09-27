@@ -10,6 +10,11 @@ DEPLOY.md
 # 佩洛西追蹤/回測（GitHub Actions 用，不需部署到 Cloud Function）
 scripts/
 data/
+# Claude 工作階段設定與 GitHub Actions，不部署
 .claude/
 .github/
 research/
+
+# Futu 推送腳本在本地電腦跑，不部署到 Cloud Run
+futu/
+tests/

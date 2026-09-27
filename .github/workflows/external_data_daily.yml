@@ -1,0 +1,68 @@
+name: External data daily（外部來源每日彙整）
+
+# 每天把三個外部來源收進本分支的 data/external/，其他分支都從這裡取：
+#   MT5  ← Cloud Run ?view=archive（main.py R95 按日封存的 M1）
+#   Futu ← Cloud Run ?view=archive（本地 push_to_gcp.py 推上來的 K 線與期權 IV）
+#   IBKR ← 雲垂分支 claude/dazzling-curie-f3xzb8（GCP VM 推回的 IV 與股票收市）
+# 腳本見 scripts/external_data_sync.py，狀態見 data/external/STATUS.md。
+# 需要 GitHub Secret：ZHUGE_GCP_URL（Cloud Run 網址，結尾斜線可有可無）。沒設就只同步 IBKR。
+# 22:41 UTC：美股收市（20:00／21:00 UTC）與 MT5 券商日切換（21:00 UTC）之後。
+on:
+  schedule:
+    - cron: '41 22 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: '重拉最近幾天（預設 4；補漏可填 10）'
+        required: false
+        default: '4'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: external-data-daily
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch IBKR source branch（雲垂）
+        continue-on-error: true   # 拿不到就只同步 GCP，STATUS.md 會寫明
+        run: git fetch --depth=1 origin "claude/dazzling-curie-f3xzb8:refs/remotes/origin/claude/dazzling-curie-f3xzb8"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests
+
+      - name: Sync external sources
+        env:
+          ZHUGE_GCP_URL: ${{ secrets.ZHUGE_GCP_URL }}
+          EXTERNAL_DAYS: ${{ inputs.days || '4' }}
+        run: |
+          [ -z "$ZHUGE_GCP_URL" ] && echo "::warning::GitHub Secret ZHUGE_GCP_URL 沒設，MT5／Futu 不會同步"
+          python3 scripts/external_data_sync.py
+
+      - name: Commit and push
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          add_out() { git add data/external; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(external): 外部來源每日彙整 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(external): 外部來源每日彙整 $(date -u +%F)" || exit 0; }
+          done
+          echo "push 重試 5 次仍失敗" && exit 1

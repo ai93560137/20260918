@@ -108,7 +108,7 @@ bash scripts/gcp_bootstrap.sh 你的專案ID asia-east1
 | 「最近兩小時有沒有送單？」 | `logs --since 2h --grep 已送出`，整理成表 |
 | 「電閘現在是什麼狀態？」 | `state`，解讀 regime / armed / hard lock |
 | 「把 TARGET_RRR 改成 2」 | `env set TARGET_RRR=2` 先給你看計畫 → 你說「確定」→ `--yes` |
-| 「部署我剛改好的 main.py」 | `py_compile` → `deploy`（dry-run 檢查四個檔案）→ 你確認 → `deploy --yes` → `check` 五個頁面 |
+| 「部署我剛改好的 main.py」 | `py_compile` → `deploy`（dry-run 檢查六個部署檔案）→ 你確認 → `deploy --yes` → `check` 五個頁面 |
 | 「五個頁面還正常嗎？」 | `check` |
 | 「昨天有沒有 WARNING 以上的錯誤？」 | `logs --since 1d --severity WARNING` |
 
