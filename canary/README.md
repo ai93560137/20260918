@@ -88,7 +88,7 @@ pip install pandas tabulate && (cd canary && python3 yellow_lab.py && python3 re
 
 **Telegram 每日總結**:`tg_daily.txt` 是完整白話版(三軸、黃鳥、距門檻、試用層、新鮮度、健康、白話一句、免責),
 含當日日期戳,所以每天內容必變、每天必發(週末標明「燈色沿用」)。合併前由 Routine 推送觸發 `canary_broadcast.yml` 發;
-合併後由 `canary_daily.yml` 自己發。要臨時廣播別的內容,改 `BROADCAST.txt` 推送即可。
+合併後由 `canary_daily.yml` 自己發。要臨時廣播別的內容,改 `BROADCAST.txt` 推送即可;幾行的更正或補充用 `NOTICE.txt`,不必重發整份說明。提交訊息含 `[skip-tg]` 則只改檔不發送(例如修正存檔內容);之後要發,用 `workflow_dispatch` 指定檔名。
 
 `daily_log.csv` 是逐日累積的長期紀錄(燈色、試用層、觀察名單 W1 讀數、數據新鮮度),是觀察名單日後
 「樣本外」考核的原始資料,也是各策略登記響應後的對帳依據。**不要手改。**

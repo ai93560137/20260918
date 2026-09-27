@@ -4,8 +4,10 @@ name: Canary broadcast（金絲雀 Telegram 廣播）
 # 觸發方式(與雲垂陣 send-telegram.yml 同一套路):
 #   * 推送 canary/BROADCAST.txt  → 發長版廣播(一次性,只在檔案有改動時)
 #   * 推送 canary/tg_daily.txt   → 發每日短訊(Routine 每日提交時帶上;週末內容不變就不會觸發)
+#   * 推送 canary/NOTICE.txt     → 發幾行短通知(更正、補充),不必重發整份 BROADCAST
 #   * 手動 workflow_dispatch 指定任一檔
 # 只發「這次推送真的改動了」的檔;只改工作流本身不會發。超過 4096 字元自動按段落分段。
+# 提交訊息含 [skip-tg] → 只改檔、不發送(例如修正 BROADCAST.txt 的存檔內容,不想整份重發)。
 # 注意:GitHub 只在工作流跑過一次後才登記它,功能分支上新加的工作流用 API 手動觸發會 404,推送觸發不受影響。
 # 合併到預設分支後,canary_daily.yml 用 GITHUB_TOKEN 的提交不會觸發本工作流(GitHub 防遞迴),
 # 由 canary_daily.yml 自己的 Telegram 步驟發送,不會重複。
@@ -14,6 +16,7 @@ on:
     paths:
       - 'canary/BROADCAST.txt'
       - 'canary/tg_daily.txt'
+      - 'canary/NOTICE.txt'
       - '.github/workflows/canary_broadcast.yml'
   workflow_dispatch:
     inputs:
@@ -40,12 +43,15 @@ jobs:
           EVENT: ${{ github.event_name }}
           INPUT_FILE: ${{ inputs.file }}
           BEFORE: ${{ github.event.before }}
+          HEAD_MSG: ${{ github.event.head_commit.message }}
         run: |
           if [ "$EVENT" = "workflow_dispatch" ]; then
             FILES="${INPUT_FILE:-canary/BROADCAST.txt}"
+          elif printf '%s' "$HEAD_MSG" | grep -q '\[skip-tg\]'; then
+            FILES=""; echo "[skip-tg] 提交訊息要求不發送"
           else
             CHANGED=$(git diff --name-only "$BEFORE" HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
-            FILES=$(echo "$CHANGED" | grep -E '^canary/(BROADCAST|tg_daily)\.txt$' | tr '\n' ' ')
+            FILES=$(echo "$CHANGED" | grep -E '^canary/(BROADCAST|tg_daily|NOTICE)\.txt$' | tr '\n' ' ')
           fi
           echo "files=$FILES" >> "$GITHUB_OUTPUT"
           echo "to send: ${FILES:-(none)}"
