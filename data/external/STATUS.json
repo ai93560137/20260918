@@ -1,0 +1,16 @@
+{
+  "gcp": {
+    "note": "GitHub Secret ZHUGE_GCP_URL 沒設，MT5／Futu 未同步",
+    "ok": false
+  },
+  "ibkr": {
+    "files": 11,
+    "files_changed": 11,
+    "missing": [],
+    "ok": true,
+    "source_branch": "claude/dazzling-curie-f3xzb8",
+    "source_commit": "ca98209df19c8480ae10bc2b8d6cc0025045d665 2026-09-26T00:27:38+00:00"
+  },
+  "run_utc": "2026-09-27 19:31:00",
+  "series": {}
+}
