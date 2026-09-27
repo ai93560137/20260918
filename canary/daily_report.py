@@ -13,6 +13,7 @@
 #   2. 距離門檻多遠(斜率數值、黃鳥距 p90 的百分比)
 #   3. 試用層(無警報權)與觀察名單 W1 的當日讀數(只記錄,不行動)
 #   4. 數據新鮮度:各鳥最後日期,落後交易日數;落後 > 1 個交易日則警告
+#      + 呆值檢查:原始檔最後一列開高低收四價相同、且與前一日收盤差 < 0.01 → 疑似未更新(日期新、數值舊)
 #   5. 健康檢查:列數、日期單調、無重複、最新列六隻鳥齊全;工作流各步驟狀態(--health)
 #   6. 紅或深紅亮起時附 §3 註記
 # 純標準庫。用法:
@@ -37,13 +38,15 @@ OUT_TG = os.path.join(HERE, "tg_daily.txt")
 BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi"]
 US_BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move"]     # axvi 是亞洲時段,天生慢一天
 W1_Q = 0.10                                              # 觀察名單 W1:VVIX/VIX < 滾動 252 日 p10
+DATA_DIR = os.path.join(HERE, "data_external")
+STALE_TOL = 0.01                                         # 呆值:四價相同且 |C − 前日C| < 此值
 
 LOG_FIELDS = ["date", "axis_short", "axis_disaster", "yellow", "yellow_count",
               "yellow_vvix", "yellow_move", "yellow_axvi",
               "trial_yellow2", "trial_deep_yellow", "trial_red_deep", "trial_red_9d3m",
               "w1_fear_spike", "vvix_vix_ratio", "ratio_p10",
               "vix9d", "vix", "vix3m", "vvix", "move", "axvi", "slope_9d", "slope_3m",
-              "stale_us_days", "generated_at_utc"]
+              "stale_us_days", "stale_print", "generated_at_utc"]
 
 
 # ----------------------------------------------------------------------------- 讀表
@@ -80,6 +83,29 @@ def streak(rows, key, value):
         else:
             break
     return n
+
+
+# ----------------------------------------------------------------------------- 呆值檢查
+def stale_prints():
+    """回傳 [(bird, date, close)]:原始檔最後一列 O=H=L=C 且與前一列收盤差 < STALE_TOL。"""
+    out = []
+    for b in BIRDS:
+        path = os.path.join(DATA_DIR, f"{b}_daily.csv")
+        if not os.path.exists(path):
+            continue
+        with open(path, newline="", encoding="utf-8") as fh:
+            rows = [r for r in csv.DictReader(fh) if r.get("Close")]
+        if len(rows) < 2:
+            continue
+        last, prev = rows[-1], rows[-2]
+        try:
+            o, h, l, c = (float(last[k]) for k in ("Open", "High", "Low", "Close"))
+            pc = float(prev["Close"])
+        except (KeyError, ValueError):
+            continue
+        if o == h == l == c and abs(c - pc) < STALE_TOL:
+            out.append((b, last["Date"][:10], c))
+    return out
 
 
 # ----------------------------------------------------------------------------- W1 觀察值
@@ -164,6 +190,9 @@ def build_report(rows, health, today):
             warnings.append(f"axvi 最後日期 {lb},落後 {gap} 個交易日(亞洲時段允許 1–2 日)")
     if stale_us > 1:
         warnings.append(f"燈色表最新列 {last['date']},距今 {stale_us} 個交易日,上游可能未更新")
+    stale = stale_prints()
+    for b, dt, c in stale:
+        warnings.append(f"{b} {dt} 疑似呆值:開高低收四價相同({c:.2f})且等於前一日收盤,該日讀數可能是舊值填充")
 
     # 5. 健康檢查
     checks = []
@@ -176,9 +205,11 @@ def build_report(rows, health, today):
     missing = [b for b in BIRDS if last[b] == ""]
     checks.append(("最新列六隻鳥齊全", "是" if not missing else "缺 " + "、".join(missing),
                    not missing or missing == ["axvi"]))
+    checks.append(("無呆值(四價相同且等於前日收盤)", "是" if not stale else "疑似:" + "、".join(b for b, _, _ in stale),
+                   not stale))
     for k, v in health.items():
         checks.append((f"工作流:{k}", v, v.lower() in ("ok", "skipped", "pass")))
-    bad = [c for c in checks if not c[2]]
+    bad = [c for c in checks if not c[2] and not c[0].startswith("無呆值")]   # 呆值已各自成一則警告,不重複
     if bad:
         warnings.extend(f"健康檢查未過:{c[0]} = {c[1]}" for c in bad)
 
@@ -254,6 +285,7 @@ def build_report(rows, health, today):
         **{b: last[b] for b in BIRDS},
         "slope_9d": last["slope_9d"], "slope_3m": last["slope_3m"],
         "stale_us_days": str(stale_us),
+        "stale_print": ";".join(b for b, _, _ in stale),
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
     }
     return "\n".join(md) + "\n", tg_text, log_row, warnings
@@ -267,7 +299,7 @@ def append_log(row):
     existing.append(row)
     existing.sort(key=lambda r: r["date"])
     with open(OUT_LOG, "w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=LOG_FIELDS)
+        w = csv.DictWriter(fh, fieldnames=LOG_FIELDS, restval="")
         w.writeheader()
         w.writerows(existing)
     return len(existing)
