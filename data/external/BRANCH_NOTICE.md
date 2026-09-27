@@ -40,8 +40,9 @@
 - 雲垂（claude/dazzling-curie-f3xzb8）：IBKR 採集照舊推回本分支即可，預設分支會鏡像
   tradingview/data_external/ib_iv_log.csv 與 data_stock_ibkr/。這兩個路徑要改名的話，
   要同時改預設分支的 scripts/external_data_sync.py。Futu 港股期權可當恒指波動溢價的另一個對照源。
-- 蛇蟠（claude/forex-data-testing-w4q3m2）：MT5 XAUUSD M1 從 R95 起每天累積，可接在本分支
-  data/XAUUSD_M1_*.csv.gz（同券商 MT5 匯出）之後。注意 time_utc 固定用 +3 換算，冬令要自己修正。
+- 蛇蟠陣（session「恆指黃金突破K」，claude/gifted-carson-v2tvhw）：MT5 XAUUSD M1 從 R95 起每天累積，可對照黃金通道；
+  更早的 XAUUSD M1 歷史（同券商 MT5 匯出，2022-08 起）在外匯分支 claude/forex-data-testing-w4q3m2 的
+  data/XAUUSD_M1_*.csv.gz，新數據可接在它之後。注意 time_utc 固定用 +3 換算，冬令要自己修正。
 - 鳥翔（claude/stock-research-k9nzau）：IBKR 股票覆核照舊，預設分支也有鏡像（ibkr/stock_closes）。
   Futu 有美股 LV3、港股 LV1，可當第四來源；30 天內歷史 K 線額度只有 100 個代號，大量覆核先問我。
 
