@@ -1,0 +1,57 @@
+name: PEAD backtest（財報公告後漂移回測）
+
+# 照 research/news_trade/STRATEGY.md 預先登記的規格回測（scripts/pead_backtest.py）。
+# 事件：data/news/sp500_earnings_events.csv.gz；價格：gifted-carson 分支的美股日線與 S&P 500 成分股。
+# 報告：data/news/backtest/README.md。規格固定，只在數據更新後手動重跑。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pead-backtest-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout US equities + S&P 500 point-in-time universe
+        uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+          path: _equities
+          fetch-depth: 1
+          sparse-checkout: |
+            data/equities/us
+            universes
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests
+
+      - name: Backtest
+        run: python3 -u scripts/pead_backtest.py
+
+      - name: Commit and push
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news/backtest
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(news): 更新 PEAD 回測 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || exit 1
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
