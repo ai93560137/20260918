@@ -9,8 +9,9 @@
 #   canary/tg_daily.txt      Telegram 短訊(工作流有設 TG 密鑰時發送)
 #
 # 報告內容:
-#   1. 三軸燈色(短期軸/災難軸/黃)+ 與前一日的變化 + 連續天數
-#   2. 距離門檻多遠(斜率數值、黃鳥距 p90 的百分比)
+#   0. 日期對照:報告日 / 燈色日 D / 前一列 D−1 / 適用日(D 之後第一個交易日);每個燈號都寫明「用哪幾天、跟哪幾天比」
+#   1. 三軸燈色(短期軸/災難軸/黃)+ 與前一列的變化(標明兩個日期)+ 連續天數(標明起日)
+#   2. 距離門檻多遠(斜率 = 同日兩鳥相減;黃鳥 = 值日 vs 自身 252 交易日窗口 p90,標明窗口起迄)
 #   3. 試用層(無警報權)與觀察名單 W1 的當日讀數(只記錄,不行動)
 #   4. 數據新鮮度:各鳥最後日期,落後交易日數;落後 > 1 個交易日則警告
 #      + 呆值檢查:原始檔最後一列開高低收四價相同、且與前一日收盤差 < 0.01 → 疑似未更新(日期新、數值舊)
@@ -28,7 +29,7 @@ from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from build_canary_table import RED_NOTE, rolling_quantile  # noqa: E402
+from build_canary_table import RED_NOTE, WINDOW, rolling_quantile  # noqa: E402
 
 TABLE = os.path.join(HERE, "canary_daily.csv")
 OUT_MD = os.path.join(HERE, "DAILY_REPORT.md")
@@ -85,6 +86,54 @@ def streak(rows, key, value):
     return n
 
 
+def streak_start(rows, key, value):
+    """與 streak 同一段連續列的起始日期(ISO)。"""
+    start = None
+    for r in reversed(rows):
+        if r[key] == value:
+            start = r["date"]
+        else:
+            break
+    return start
+
+
+WEEKDAY_ZH = "一二三四五六日"
+
+
+def dz(d):
+    """MM-DD(星期),如 09-25(五);接受 date 或 ISO 字串。"""
+    if isinstance(d, str):
+        d = date.fromisoformat(d)
+    return f"{d.isoformat()[5:]}({WEEKDAY_ZH[d.weekday()]})"
+
+
+def next_weekday(d):
+    """d 之後第一個週一至週五(交易所假期不在此估,遇假期順延)。"""
+    d += timedelta(days=1)
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return d
+
+
+def window_span(bird, end_iso, window=WINDOW):
+    """bird 原始檔上、以 end_iso 為終點(含)的最近 window 個交易日 → (起日, 終日) ISO;不足 window 筆回 None。
+    與 build_canary_table 的 p90 口徑一致:窗口在各鳥自己的日曆上、含當日。"""
+    path = os.path.join(DATA_DIR, f"{bird}_daily.csv")
+    if not os.path.exists(path):
+        return None
+    with open(path, newline="", encoding="utf-8") as fh:
+        ds = [r["Date"][:10] for r in csv.DictReader(fh) if r.get("Close") and r["Date"][:10] <= end_iso]
+    if len(ds) < window:
+        return None
+    return ds[-window], ds[-1]
+
+
+def win_text(span, label):
+    if span is None:
+        return "窗口未滿 252 日"
+    return f"窗口 {span[0]}→{span[1]},最近 {WINDOW} 個{label}交易日,含當日"
+
+
 # ----------------------------------------------------------------------------- 呆值檢查
 def stale_prints():
     """回傳 [(bird, date, close)]:原始檔最後一列 O=H=L=C 且與前一列收盤差 < STALE_TOL。"""
@@ -104,7 +153,7 @@ def stale_prints():
         except (KeyError, ValueError):
             continue
         if o == h == l == c and abs(c - pc) < STALE_TOL:
-            out.append((b, last["Date"][:10], c))
+            out.append((b, last["Date"][:10], c, prev["Date"][:10], pc))
     return out
 
 
@@ -118,11 +167,12 @@ def w1_status(rows):
             dates.append(r["date"])
             vals.append(vv / vx)
     if not vals:
-        return None, None, None
+        return None, None, None, None, None
     p10 = rolling_quantile(vals, q=W1_Q)
     last_ratio, last_p10 = vals[-1], p10[-1]
     lit = None if last_p10 is None else last_ratio < last_p10
-    return last_ratio, last_p10, lit
+    span = (dates[-WINDOW], dates[-1]) if len(dates) >= WINDOW else None
+    return last_ratio, last_p10, lit, dates[-1], span
 
 
 # ----------------------------------------------------------------------------- 報告
@@ -131,59 +181,95 @@ def build_report(rows, health, today):
     d_last = date.fromisoformat(last["date"])
     stale_us = business_days_between(d_last, today)
     warnings = []
+    D, D1 = dz(d_last), (dz(prev["date"]) if prev else "—")          # 燈色日、前一列
+    d_apply = next_weekday(d_last)                                     # 適用日(lag=1)
 
-    # 1. 燈色與變化
+    # 1. 燈色與變化(變化 = 表中前一列 D−1 對 燈色日 D,兩個日期都寫出)
+    def word(v):
+        return {"1": "亮", "0": "滅", "": "—"}.get(v, v)
+
     def chg(key):
         if prev is None or prev.get(key, "") == last.get(key, "") or last.get(key, "") == "":
             return ""   # 無資料不算變化(亞洲鳥常慢一日)
-        return f"(前日 {prev.get(key, '') or '—'} → 今日 {last.get(key, '')})"
+        return f"({D1} {word(prev.get(key, ''))} → {D} {word(last.get(key, ''))})"
+
+    def run(key):
+        """連續天數 + 起日,如「7 日(自 09-17(三)起)」。"""
+        v = last.get(key, "")
+        if v == "":
+            return "—"
+        return f"{streak(rows, key, v)} 日(自 {dz(streak_start(rows, key, v))} 起)"
 
     def onoff(key):
         v = last.get(key, "")
         return {"1": "亮", "0": "滅", "": "無資料"}.get(v, v)
 
+    v9, vx, v3 = f(last["vix9d"]), f(last["vix"]), f(last["vix3m"])
+    s9, s3 = f(last["slope_9d"]), f(last["slope_3m"])
+    cmp_short = (f"{D} VIX9D {v9:.2f} − 同日 VIX {vx:.2f} = {s9:+.2f}" if s9 is not None else "缺 VIX9D 或 VIX")
+    cmp_dis = (f"{D} VIX {vx:.2f} − 同日 VIX3M {v3:.2f} = {s3:+.2f}" if s3 is not None else "缺 VIX 或 VIX3M")
+    cmp_yel = f"各鳥 {D} 收盤 vs 自身截至 {D} 的 {WINDOW} 交易日 p90(明細見距門檻)"
     lights = [
-        ("短期軸(VIX9D 系)", last["axis_short"] or "無資料", chg("axis_short"),
-         streak(rows, "axis_short", last["axis_short"])),
-        ("災難軸(VIX3M 系)", last["axis_disaster"] or "無資料", chg("axis_disaster"),
-         streak(rows, "axis_disaster", last["axis_disaster"])),
-        ("黃(任一)", onoff("yellow"), chg("yellow"), streak(rows, "yellow", last["yellow"])),
+        ("短期軸(VIX9D 系)", last["axis_short"] or "無資料", cmp_short, chg("axis_short"), run("axis_short")),
+        ("災難軸(VIX3M 系)", last["axis_disaster"] or "無資料", cmp_dis, chg("axis_disaster"), run("axis_disaster")),
+        ("黃(任一)", onoff("yellow"), cmp_yel, chg("yellow"), run("yellow")),
     ]
     yparts = [("VVIX", "yellow_vvix", "vvix", "vvix_p90"), ("MOVE", "yellow_move", "move", "move_p90"),
               ("AXVI", "yellow_axvi", "axvi", "axvi_p90")]
 
-    # 2. 距門檻
-    s9, s3 = f(last["slope_9d"]), f(last["slope_3m"])
+    # 2. 距門檻(每行寫明:哪一天的值、跟哪個窗口的 p90 比)
     dist = []
     if s9 is not None:
-        dist.append(f"slope_9d = {s9:+.2f}(>0 為紅;−0.5~0 為走平)")
+        dist.append(f"短期軸 slope_9d:{cmp_short}(>0 紅;−0.5~0 走平;其餘綠)→ {last['axis_short']}")
     if s3 is not None:
-        dist.append(f"slope_3m = {s3:+.2f}(>0 為深紅)")
+        dist.append(f"災難軸 slope_3m:{cmp_dis}(>0 深紅)→ {last['axis_disaster']}")
+
     def last_with(col):
         for r in reversed(rows):
             if r.get(col, "") != "":
                 return r
         return None
 
-    def dist_line(name, col, pcol):
+    def dist_line(name, bird, col, pcol):
         r = last_with(col)
         if r is None:
             return f"{name}:無資料"
         v, p = f(r[col]), f(r.get(pcol))
-        tag = "" if r["date"] == last["date"] else f",{r['date'][5:]} 值"
+        win = win_text(window_span(bird, r["date"]), name.split("(")[0])
+        if r["date"] == last["date"]:
+            head = f"{name}:{D} 值 {v:.2f}"
+        else:
+            head = f"{name}:{D} 列無值,不計入 {D} 燈色;最近 {dz(r['date'])} 值 {v:.2f}"
         if v is not None and p is not None and p != 0:
-            return f"{name} = {v:.2f},p90 = {p:.2f},距門檻 {(v / p - 1) * 100:+.1f}%{tag}"
-        return f"{name} = {v:.2f}{tag}(p90 窗口未滿)"
+            return f"{head} vs p90 {p:.2f}({win})→ {'亮' if v > p else '滅'},距門檻 {(v / p - 1) * 100:+.1f}%"
+        return f"{head}({win})"
 
     for name, flag, col, pcol in yparts:
-        dist.append(dist_line(name, col, pcol))
-    dist.append(dist_line("VHSI(試用)", "vhsi", "vhsi_p90"))
+        dist.append(dist_line(name, col, col, pcol))
+    dist.append(dist_line("VHSI(試用)", "vhsi", "vhsi", "vhsi_p90"))
 
     # 3. 試用與 W1
-    trials = [("黃×2", "trial_yellow2"), ("深黃 VVIX p95", "trial_deep_yellow"),
-              ("紅相對深度 p90", "trial_red_deep"), ("9D對3M倒掛", "trial_red_9d3m"),
-              ("黃VHSI p90", "trial_yellow_vhsi")]
-    ratio, p10, w1 = w1_status(rows)
+    vv95, s9p90 = f(last["vvix_p95"]), f(last["slope9_p90"])
+    vhr = last_with("vhsi")
+    trials = [
+        ("黃×2", "trial_yellow2", f"{D} 三隻黃鳥亮數 yellow_count = {last['yellow_count'] or '—'},≥2 亮"),
+        ("深黃 VVIX p95", "trial_deep_yellow",
+         f"{D} VVIX {last['vvix'] or '—'} vs p95 {last['vvix_p95'] or '—'}({win_text(window_span('vvix', last['date']), 'VVIX')})"),
+        ("紅相對深度 p90", "trial_red_deep",
+         f"{D} slope_9d {last['slope_9d'] or '—'} vs 其 p90 {last['slope9_p90'] or '—'}(窗口 = 截至 {D} 最近 {WINDOW} 個有 VIX9D 的交易日)"),
+        ("9D對3M倒掛", "trial_red_9d3m",
+         f"{D} VIX9D {v9:.2f} − 同日 VIX3M {v3:.2f} = {v9 - v3:+.2f},>0 亮" if (v9 is not None and v3 is not None) else "缺值"),
+        ("黃VHSI p90", "trial_yellow_vhsi",
+         (f"{D} 列無值;最近 {dz(vhr['date'])} VHSI {vhr['vhsi']} vs p90 {vhr.get('vhsi_p90') or '—'}"
+          if vhr and vhr["date"] != last["date"] else
+          f"{D} VHSI {last.get('vhsi') or '—'} vs p90 {last.get('vhsi_p90') or '—'}") if vhr else "無資料"),
+    ]
+    ratio, p10, w1, ratio_date, w1_span = w1_status(rows)
+    w1_cmp = ""
+    if ratio is not None:
+        rr = last_with("vvix") if ratio_date == last["date"] else next(r for r in reversed(rows) if r["date"] == ratio_date)
+        w1_cmp = (f"{dz(ratio_date)} VVIX {rr['vvix']} ÷ 同日 VIX {rr['vix']} = {ratio:.2f} vs p10 "
+                  f"{'—' if p10 is None else round(p10, 2)}({'窗口未滿' if w1_span is None else f'窗口 {w1_span[0]}→{w1_span[1]}'})")
 
     # 4. 新鮮度
     fresh = []
@@ -200,14 +286,15 @@ def build_report(rows, health, today):
         gap = business_days_between(date.fromisoformat(lb), today) if lb != "—" else None
         fresh.append((b, lb, gap))
         if b in US_BIRDS and gap is not None and gap > 1:
-            warnings.append(f"{b} 最後日期 {lb},落後 {gap} 個交易日")
+            warnings.append(f"{b} 最後日期 {lb},落後報告日 {today} 共 {gap} 個交易日")
         if b in ("axvi", "vhsi") and gap is not None and gap > 2:
-            warnings.append(f"{b} 最後日期 {lb},落後 {gap} 個交易日(亞洲時段允許 1–2 日)")
+            warnings.append(f"{b} 最後日期 {lb},落後報告日 {today} 共 {gap} 個交易日(亞洲時段允許 1–2 日)")
     if stale_us > 1:
-        warnings.append(f"燈色表最新列 {last['date']},距今 {stale_us} 個交易日,上游可能未更新")
+        warnings.append(f"燈色表最新列 {last['date']},距報告日 {today} 共 {stale_us} 個交易日,上游可能未更新")
     stale = stale_prints()
-    for b, dt, c in stale:
-        warnings.append(f"{b} {dt} 疑似呆值:開高低收四價相同({c:.2f})且等於前一日收盤,該日讀數可能是舊值填充")
+    for b, dt, c, pdt, pc in stale:
+        warnings.append(f"{b} {dz(dt)} 疑似呆值:開高低收四價相同({c:.2f})且等於前一列 {dz(pdt)} 收盤({pc:.2f}),"
+                        f"{dt} 讀數可能是舊值填充")
 
     # 5. 健康檢查
     checks = []
@@ -220,7 +307,7 @@ def build_report(rows, health, today):
     missing = [b for b in BIRDS if last.get(b, "") == ""]
     checks.append(("最新列各鳥齊全(亞洲鳥可慢一日)", "是" if not missing else "缺 " + "、".join(missing),
                    all(m in ("axvi", "vhsi") for m in missing)))
-    checks.append(("無呆值(四價相同且等於前日收盤)", "是" if not stale else "疑似:" + "、".join(b for b, _, _ in stale),
+    checks.append(("無呆值(四價相同且等於前日收盤)", "是" if not stale else "疑似:" + "、".join(b for b, *_ in stale),
                    not stale))
     for k, v in health.items():
         checks.append((f"工作流:{k}", v, v.lower() in ("ok", "skipped", "pass")))
@@ -231,15 +318,24 @@ def build_report(rows, health, today):
     # ---- Markdown
     md = [f"# 金絲雀每日總結 — 燈色日 {last['date']}",
           f"產生於 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')};"
-          f"此燈色只能用於 **{last['date']} 之後**的交易日(lag=1)。\n"]
+          f"此燈色只能用於 **{last['date']} 之後**的交易日(lag=1),第一個適用日 **{d_apply.isoformat()}**。\n"]
     if warnings:
         md.append("## ⚠️ 警告\n")
         md += [f"- {w}" for w in warnings]
         md.append("")
+    md.append("## 0. 日期對照(每個燈號用哪幾天、跟哪幾天比)\n")
+    md.append("| 角色 | 日期 | 用途 |\n|---|---|---|")
+    md.append(f"| 報告日 | {dz(today)} | 產出本報告;「新鮮度」的落後交易日以此日起算 |")
+    md.append(f"| 燈色日 D | **{D}** | 所有正式燈以 D 當日收盤計算:短期軸 = D 的 VIX9D − D 的 VIX;災難軸 = D 的 VIX − D 的 VIX3M;"
+              f"黃 = 各鳥 D 值 vs 各鳥自身截至 D 的 {WINDOW} 交易日 p90(含 D) |")
+    md.append(f"| 前一列 D−1 | {D1} | 「變化」欄 = D−1 列 對 D 列;呆值檢查 = D 的四價 對 D−1 的收盤 |")
+    md.append(f"| 適用日 | {dz(d_apply)} | D 之後第一個交易日(lag=1;以週一至五估,遇假期順延)。此燈只管適用日起的 5 個交易日 |")
+    md.append(f"| 亞洲鳥 AXVI / VHSI | 各自最近值日 | 亞洲時段(澳洲、香港)收盤,天生比美鳥慢一日;D 列無值時**不計入** D 的黃燈,只括注最近值供參考 |")
+    md.append("")
     md.append("## 1. 燈色\n")
-    md.append("| 軸 | 今日 | 變化 | 連續 |\n|---|---|---|---|")
-    for name, val, c, n in lights:
-        md.append(f"| {name} | **{val}** | {c or '—'} | {n} 日 |")
+    md.append("| 軸 | 今日 | 比較(哪幾天) | 變化(前一列 → 燈色日) | 連續(起日) |\n|---|---|---|---|---|")
+    for name, val, cmp_, c, n in lights:
+        md.append(f"| {name} | **{val}** | {cmp_} | {c or '—'} | {n} |")
     md.append("")
     md.append("黃鳥明細:" + ";".join(f"{n} {onoff(flag)}" for n, flag, _, _ in yparts)
               + f";yellow_count = {last['yellow_count'] or '—'}")
@@ -248,16 +344,15 @@ def build_report(rows, health, today):
     md += [f"- {x}" for x in dist]
     md.append("")
     md.append("## 3. 試用層與觀察名單(只記錄,無警報權,不得據此改變響應)\n")
-    md.append("| 項目 | 今日 | 變化 | 連續 |\n|---|---|---|---|")
-    for name, key in trials:
-        stk = "—" if last.get(key, "") == "" else f"{streak(rows, key, last[key])} 日"
-        md.append(f"| 試用:{name} | {onoff(key)} | {chg(key) or '—'} | {stk} |")
+    md.append("| 項目 | 今日 | 比較(哪幾天) | 變化(前一列 → 燈色日) | 連續(起日) |\n|---|---|---|---|---|")
+    for name, key, cmp_ in trials:
+        md.append(f"| 試用:{name} | {onoff(key)} | {cmp_} | {chg(key) or '—'} | {run(key)} |")
     if ratio is not None:
         w1txt = "無資料(窗口未滿)" if w1 is None else ("亮" if w1 else "滅")
-        md.append(f"| 觀察 W1:VVIX/VIX < p10 | {w1txt} | 比率 {ratio:.2f},p10 {p10 if p10 is None else round(p10, 2)} | 樣本外累積中(自 2026-09-27) |")
+        md.append(f"| 觀察 W1:VVIX/VIX < p10 | {w1txt} | {w1_cmp} | — | 樣本外累積中(自 2026-09-27) |")
     md.append("")
     md.append("## 4. 數據新鮮度\n")
-    md.append("| 鳥 | 最後日期 | 落後交易日 |\n|---|---|---|")
+    md.append(f"| 鳥 | 最後日期 | 落後交易日(至報告日 {dz(today)}) |\n|---|---|---|")
     for b, lb, gap in fresh:
         md.append(f"| {b} | {lb} | {'—' if gap is None else gap} |")
     md.append("")
@@ -300,27 +395,36 @@ def build_report(rows, health, today):
 
     tg = [f"🐤 金絲雀每日總結 📅 {today.isoformat()}",
           f"燈色日 {last['date']}{weekend_note}",
-          f"⏰ 此燈色用於 {last['date']} 之後的交易日(lag=1)",
+          f"⏰ 此燈色用於 {last['date']} 之後的交易日(lag=1),第一個適用日 {dz(d_apply)}",
+          "",
+          "📆 日期對照(每個燈用哪幾天)",
+          f"• 燈色日 D = {D}:所有燈都用這一天的收盤算",
+          f"• 短期軸 = D 的 VIX9D 減 D 的 VIX;災難軸 = D 的 VIX 減 D 的 VIX3M(同一天兩隻鳥相減)",
+          f"• 黃燈 = 各鳥 D 的值,對比該鳥自己截至 D 的 {WINDOW} 個交易日 p90(窗口起迄見距門檻)",
+          f"• 「變化」= 前一列 {D1} 對 燈色日 {D};連續天數括注起日",
+          f"• 亞洲鳥 AXVI / VHSI 若 {D} 列無值,不計入 {D} 黃燈,只括注最近值日期",
+          f"• 報告日 {dz(today)};適用日 {dz(d_apply)} = D 之後第一個交易日",
           "",
           "🚦 三軸",
-          f"{L.get(a_s, '❔')} 短期軸(一週 vs 一月保險):{a_s or '無資料'},連續 {streak(rows, 'axis_short', a_s)} 天"
-          + (f" {chg('axis_short')}" if chg('axis_short') else ""),
-          f"{L.get(a_d, '❔')} 災難軸(一月 vs 三月保險):{a_d or '無資料'},連續 {streak(rows, 'axis_disaster', a_d)} 天"
-          + (f" {chg('axis_disaster')}" if chg('axis_disaster') else ""),
-          f"🟡 側翼鳥:{'、'.join(ylit) if ylit else '全滅'}(黃燈連續 {streak(rows, 'yellow', last['yellow'])} 天)"
-          + (f" {chg('yellow')}" if chg('yellow') else ""),
+          f"{L.get(a_s, '❔')} 短期軸(一週 vs 一月保險):{a_s or '無資料'},{run('axis_short')}"
+          + (f" {chg('axis_short')}" if chg('axis_short') else "") + f"|{cmp_short}",
+          f"{L.get(a_d, '❔')} 災難軸(一月 vs 三月保險):{a_d or '無資料'},{run('axis_disaster')}"
+          + (f" {chg('axis_disaster')}" if chg('axis_disaster') else "") + f"|{cmp_dis}",
+          f"🟡 側翼鳥:{'、'.join(ylit) if ylit else '全滅'}(黃燈 {run('yellow')})"
+          + (f" {chg('yellow')}" if chg('yellow') else "") + f"|{cmp_yel}",
           "",
-          "📏 距門檻",
+          "📏 距門檻(值日 vs 窗口)",
           *[f"• {x}" for x in dist],
           "",
           "🧪 試用層與觀察名單(無警報權,只記錄)",
-          "• " + " | ".join(f"{n} {onoff_emoji(k)}" for n, k in trials),
+          *[f"• {n} {onoff_emoji(k)}|{c}" for n, k, c in trials],
           ]
     if ratio is not None:
-        tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}(比率 {ratio:.2f},門檻 {p10 if p10 is None else round(p10, 2)})")
+        tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}|{w1_cmp}")
     tg += ["",
            "🩺 數據與健康",
-           "• 新鮮度:" + "、".join(f"{b} {lb}" for b, lb, _ in fresh if b in ("vix", "vvix", "move", "axvi", "vhsi")),
+           f"• 新鮮度(各鳥最後日期,落後至報告日 {dz(today)} 的交易日數):"
+           + "、".join(f"{b} {lb}(落後 {'—' if gap is None else gap})" for b, lb, gap in fresh if b in ("vix", "vvix", "move", "axvi", "vhsi")),
            "• 健康檢查:" + ("全過 ✅" if all(ok for _, _, ok in checks) else "有未過 ❌,見下"),
            ]
     if warnings:
@@ -345,7 +449,7 @@ def build_report(rows, health, today):
         **{b: last.get(b, "") for b in BIRDS},
         "slope_9d": last["slope_9d"], "slope_3m": last["slope_3m"],
         "stale_us_days": str(stale_us),
-        "stale_print": ";".join(b for b, _, _ in stale),
+        "stale_print": ";".join(b for b, *_ in stale),
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
     }
     return "\n".join(md) + "\n", tg_text, log_row, warnings
