@@ -16,7 +16,8 @@
   Windows（設一次，重開命令列生效）：
     setx ZHUGE_GCP_URL "https://你的服務.run.app/"
     setx WEBHOOK_SECRET_TOKEN "跟 Cloud Run 環境變數相同的權杖"
-  選填：FUTU_SYMBOL（預設 US.QQQ）、OPEND_HOST（127.0.0.1）、OPEND_PORT（11111）、
+  選填：FUTU_SYMBOLS（逗號分隔，預設 US.QQQ；例 US.QQQ,US.SPY,HK.800000）、
+        OPEND_HOST（127.0.0.1）、OPEND_PORT（11111）、
         PUSH_INTERVAL_SEC（300）、BAR_COUNT（120）、ATM_STRIKES（2 → 每邊 5 檔）
 
 執行：
@@ -32,10 +33,13 @@ from datetime import datetime, timedelta
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "2"
+SCRIPT_VERSION = "3"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
-SYMBOL = os.environ.get("FUTU_SYMBOL", "US.QQQ").strip().upper()
+# [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
+SYMBOLS = [x.strip().upper() for x in
+           (os.environ.get("FUTU_SYMBOLS") or os.environ.get("FUTU_SYMBOL") or "US.QQQ").split(",")
+           if x.strip()]
 OPEND_HOST = os.environ.get("OPEND_HOST", "127.0.0.1").strip()
 OPEND_PORT = int(os.environ.get("OPEND_PORT", "11111"))
 INTERVAL_SEC = max(60, int(os.environ.get("PUSH_INTERVAL_SEC", "300")))
@@ -62,12 +66,12 @@ def num(value):
 class FutuPusher:
     def __init__(self):
         self.ctx = None
-        self.subscribed = False
+        self.subscribed = set()
 
     def connect(self):
         if self.ctx is None:
             self.ctx = ft.OpenQuoteContext(host=OPEND_HOST, port=OPEND_PORT)
-            self.subscribed = False
+            self.subscribed = set()
 
     def close(self):
         if self.ctx is not None:
@@ -75,21 +79,22 @@ class FutuPusher:
                 self.ctx.close()
             finally:
                 self.ctx = None
-                self.subscribed = False
+                self.subscribed = set()
 
     # ---- K 線 -------------------------------------------------------------
-    def fetch_bars(self):
-        if not self.subscribed:
-            ret, err = self.ctx.subscribe([SYMBOL], [SUBTYPE], subscribe_push=False)
-            self.subscribed = ret == ft.RET_OK
-            if not self.subscribed:
-                log(f"  ⚠️ 訂閱 {SYMBOL} 5 分 K 失敗：{err}；改用歷史 K 線")
-        if self.subscribed:
-            ret, df = self.ctx.get_cur_kline(SYMBOL, num=BAR_COUNT, ktype=KTYPE)
+    def fetch_bars(self, symbol):
+        if symbol not in self.subscribed:
+            ret, err = self.ctx.subscribe([symbol], [SUBTYPE], subscribe_push=False)
+            if ret == ft.RET_OK:
+                self.subscribed.add(symbol)
+            else:
+                log(f"  ⚠️ 訂閱 {symbol} 5 分 K 失敗：{err}；改用歷史 K 線")
+        if symbol in self.subscribed:
+            ret, df = self.ctx.get_cur_kline(symbol, num=BAR_COUNT, ktype=KTYPE)
         else:
             start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             end = datetime.now().strftime("%Y-%m-%d")
-            ret, df, _ = self.ctx.request_history_kline(SYMBOL, start=start, end=end,
+            ret, df, _ = self.ctx.request_history_kline(symbol, start=start, end=end,
                                                         ktype=KTYPE, max_count=None)
         if ret != ft.RET_OK:
             raise RuntimeError(f"K 線取得失敗：{df}")
@@ -99,10 +104,10 @@ class FutuPusher:
                 for _, row in df.iterrows()]
 
     # ---- 期權 -------------------------------------------------------------
-    def fetch_options(self, spot):
+    def fetch_options(self, symbol, spot):
         today = datetime.now().strftime("%Y-%m-%d")
         end = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
-        ret, chain = self.ctx.get_option_chain(code=SYMBOL, start=today, end=end)
+        ret, chain = self.ctx.get_option_chain(code=symbol, start=today, end=end)
         if ret != ft.RET_OK:
             raise RuntimeError(f"期權鏈取得失敗：{chain}")
         if chain.empty:
@@ -145,16 +150,21 @@ class FutuPusher:
 
     # ---- 一輪 -------------------------------------------------------------
     def run_once(self):
-        log(f"向 OpenD {OPEND_HOST}:{OPEND_PORT} 取 {SYMBOL} 行情…")
+        """每個代號各推一包；全部成功才回 True。"""
+        results = [self.run_symbol(symbol) for symbol in SYMBOLS]
+        return all(results)
+
+    def run_symbol(self, symbol):
+        log(f"向 OpenD {OPEND_HOST}:{OPEND_PORT} 取 {symbol} 行情…")
         try:
             self.connect()
-            bars = self.fetch_bars()
+            bars = self.fetch_bars(symbol)
             spot = bars[-1]["close"] if bars else None
             log(f"  K 線 {len(bars)} 根，最新 {bars[-1]['time_key'] if bars else '—'}（美東）收 {spot}")
             options = []
             if spot is not None:
                 try:
-                    options = self.fetch_options(spot)
+                    options = self.fetch_options(symbol, spot)
                     ivs = [o["iv"] for o in options if o["iv"]]
                     log(f"  期權 {len(options)} 檔，IV 有值 {len(ivs)} 檔"
                         + (f"，範圍 {min(ivs):.2f}%～{max(ivs):.2f}%" if ivs else ""))
@@ -166,7 +176,7 @@ class FutuPusher:
             return False
 
         packet = {"action": "futu_data", "token": TOKEN, "source": "futu_opend",
-                  "script_version": SCRIPT_VERSION, "symbol": SYMBOL, "kline_type": "K_5M",
+                  "script_version": SCRIPT_VERSION, "symbol": symbol, "kline_type": "K_5M",
                   "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                   "data": bars, "options": options}
         try:
@@ -200,7 +210,7 @@ def main():
         return 2
     once = "--once" in sys.argv[1:]
     pusher = FutuPusher()
-    log(f"🚀 Futu 行情推送啟動（v{SCRIPT_VERSION}）：{SYMBOL} → {GCP_URL}"
+    log(f"🚀 Futu 行情推送啟動（v{SCRIPT_VERSION}）：{', '.join(SYMBOLS)} → {GCP_URL}"
         + ("（只推一次）" if once else f"，每 {INTERVAL_SEC} 秒"))
     try:
         while True:

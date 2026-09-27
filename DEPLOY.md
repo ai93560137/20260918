@@ -272,3 +272,24 @@ python push_to_gcp.py
 
 驗證：瀏覽器開 `?view=futu&format=json`，`status` 應為 `ok`、`stale` 為 `false`；
 控制台會多一個「📡 Futu 行情」區塊。Futu 行情只存、只顯示，不影響電閘與下單。
+
+## 附錄 D：外部來源按日封存與每日彙整（R95）
+
+R95 起 `main.py` 把 MT5 每根 M1、Futu 每次推送的 K 線與期權 IV 另存到 bucket 的
+`archive/<來源>/<商品>/<日期>.json`，`?view=archive&format=json&date=YYYY-MM-DD` 可讀回。
+封存失敗只記 Log，不影響交易。
+
+每日彙整由預設分支的 GitHub Actions 執行，要先在 GitHub 設一個 Secret：
+
+1. GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**。
+2. Name 填 `ZHUGE_GCP_URL`，Secret 填 Cloud Run 服務網址。
+3. 到 **Actions → External data daily → Run workflow** 手動跑一次。
+4. 看 `data/external/STATUS.md`，MT5／Futu 與 IBKR 都應是 ✅。
+
+Futu 要取多個商品：在跑 OpenD 的電腦設 `FUTU_SYMBOLS`（逗號分隔），不用改程式：
+
+```bat
+setx FUTU_SYMBOLS "US.QQQ,US.SPY"
+```
+
+目錄、欄位與各分支取法見 `data/external/README.md`。

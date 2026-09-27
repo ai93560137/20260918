@@ -49,6 +49,10 @@
 #     K 線與期權 IV 驗權杖後存進 futu/latest_snapshot.json，控制台顯示，
 #     ?view=futu&format=json 可讀回。回 status "stored"，不再是 "ignored"。
 #     只存、只顯示，不影響電閘與下單。
+#   * 2026-09-27 — [R95] 外部來源按日封存：MT5 每根 M1、Futu 每次推送的 K 線與
+#     期權 IV，存 archive/<source>/<instrument>/<日期>.json；?view=archive&format=json
+#     &date=YYYY-MM-DD 讀回，給預設分支的每日彙整拉進 data/external/。
+#     Futu 支援多代號（futu/snapshots/<代號>.json，?view=futu&format=json&symbol=）。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -59,6 +63,7 @@ import json
 import math
 import os
 import random
+import re
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -1286,6 +1291,7 @@ class GoldIndicatorSession:
         三級共振量度後已退出開閘決策（README §22/§23）；保留是因為看盤有用，
         不是因為它有優勢。"""
         history = self.ingest_bar(bar)
+        archive_mt5_bar(bar)                        # [R95] 按日封存，失敗只記 Log
         verdict = self.compute_verdict(history)
         rsi = wilder_rsi_last([b["close"] for b in history])
         print(f"📊 [M1 盤勢監控｜僅供觀察] {verdict['text']}", flush=True)
@@ -1865,6 +1871,97 @@ webhook_log_session = WebhookLogSession()
 
 
 # =============================================================================
+# 🗄️ 外部來源按日封存（MT5 M1、Futu K 線與期權）  [R95]
+# -----------------------------------------------------------------------------
+# M1 快取只留 M1_HISTORY_MAX（200）根 ≈ 3 小時，Futu 快照只留最新一次。
+# 每日彙整（預設分支的 external_data_daily 工作流程）一天只拉一次，所以
+# 另存一份按日切的封存：archive/<source>/<instrument>/<日期>.json。
+# 日期用來源自己的時區：MT5 = 券商伺服器時間，Futu = 美東（time_key 本身）。
+# ⚠️ 封存寫不進去只記 Log，絕不擋交易流程。
+# =============================================================================
+ARCHIVE_PREFIX = "archive"
+ARCHIVE_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+ARCHIVE_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def archive_blob_name(source, instrument, day):
+    return (f"{ARCHIVE_PREFIX}/{ARCHIVE_SAFE_RE.sub('_', source)}/"
+            f"{ARCHIVE_SAFE_RE.sub('_', instrument)}/{day}.json")
+
+
+def archive_merge(source, instrument, day, rows, key_fields):
+    """Merge rows into one day's archive by key (later rows win). Returns the row count.
+    Raises StorageError."""
+    if not rows or not ARCHIVE_DATE_RE.match(str(day)):
+        return 0
+
+    def key_of(row):
+        return tuple(str(row.get(field)) for field in key_fields)
+
+    def mutate(existing):
+        merged = {key_of(row): row for row in (existing if isinstance(existing, list) else [])
+                  if isinstance(row, dict)}
+        before = dict(merged)
+        for row in rows:
+            merged[key_of(row)] = row
+        if merged == before:
+            return None, len(merged)
+        ordered = [merged[key] for key in sorted(merged)]
+        return ordered, len(ordered)
+
+    return gcs_update(archive_blob_name(source, instrument, day), mutate, default_factory=list)
+
+
+def archive_list(day):
+    """{'<source>/<instrument>': rows} for every archive object of that day."""
+    if not ARCHIVE_DATE_RE.match(str(day)):
+        return {}
+    suffix = f"/{day}.json"
+    try:
+        blobs = list(_bucket().list_blobs(prefix=f"{ARCHIVE_PREFIX}/", match_glob=f"**{suffix}"))
+    except Exception as exc:
+        raise StorageError(f"list {ARCHIVE_PREFIX}/: {exc}") from exc
+    result = {}
+    for blob in blobs:
+        name = getattr(blob, "name", "")
+        if not name.endswith(suffix):
+            continue
+        parts = name.split("/")
+        if len(parts) != 4:
+            continue
+        rows = gcs_read_json(name, [])
+        result[f"{parts[1]}/{parts[2]}"] = rows if isinstance(rows, list) else []
+    return result
+
+
+def handle_archive_api_get(req):
+    day = str(req.args.get("date") or fmt_utc(fmt="%Y-%m-%d"))
+    if not ARCHIVE_DATE_RE.match(day):
+        return _json_response({"status": "error", "message": "date must be YYYY-MM-DD"}, 400)
+    try:
+        data = archive_list(day)
+    except StorageError as exc:
+        log_event(f"⚠️ [封存讀取失敗] {exc}", severity="ERROR", component="archive")
+        return _json_response({"status": "error", "message": "storage read failed"}, 503)
+    return _json_response({"status": "ok", "date": day, "generated_utc": fmt_utc(),
+                           "series": {key: len(rows) for key, rows in data.items()},
+                           "data": data}, 200)
+
+
+def archive_mt5_bar(bar, symbol="XAUUSD"):
+    """一根剛收盤的 M1（券商伺服器時間的 epoch 秒）→ archive/mt5_m1/<symbol>/<券商日期>.json。"""
+    try:
+        day = datetime.fromtimestamp(int(bar["time"]), UTC).strftime("%Y-%m-%d")
+        row = {"time": int(bar["time"]),
+               "time_server": datetime.fromtimestamp(int(bar["time"]), UTC).strftime("%Y-%m-%d %H:%M:%S"),
+               "time_utc": fmt_utc(int(bar["time"]) - BROKER_UTC_OFFSET_HOURS * 3600),
+               **{key: bar.get(key) for key in ("open", "high", "low", "close")}}
+        archive_merge("mt5_m1", symbol, day, [row], ("time",))
+    except Exception as exc:                        # never let archiving break the trading path
+        print(f"⚠️ [MT5 封存失敗] {type(exc).__name__}: {exc}", flush=True)
+
+
+# =============================================================================
 # 📡 Futu OpenD 行情（本地 push_to_gcp.py 推上來的 K 線與期權 IV）  [R94]
 # -----------------------------------------------------------------------------
 # 之前 action=futu_data 沒有處理器：回 HTTP 200 + status "ignored"，資料直接丟掉，
@@ -1874,6 +1971,7 @@ webhook_log_session = WebhookLogSession()
 #    要拿它當訊號之前先回測。
 # =============================================================================
 FUTU_SNAPSHOT_FILE = "futu/latest_snapshot.json"
+FUTU_SYMBOL_DIR = "futu/snapshots"                                     # [R95] 每個代號一份最新快照
 FUTU_MAX_BARS = max(1, _env_int("FUTU_MAX_BARS", 500))
 FUTU_MAX_OPTIONS = 200
 FUTU_STALE_SEC = max(60, _env_int("FUTU_STALE_SEC", 900))           # 推送間隔 300 秒 × 3
@@ -1957,10 +2055,13 @@ def handle_futu_data(payload):
         "warnings": warnings,
     }
     try:
-        gcs_write_text(FUTU_SNAPSHOT_FILE, json.dumps(snapshot, ensure_ascii=False))
+        text = json.dumps(snapshot, ensure_ascii=False)
+        gcs_write_text(FUTU_SNAPSHOT_FILE, text)
+        gcs_write_text(futu_symbol_file(symbol), text)            # [R95] 多代號各一份
     except StorageError as exc:
         log_event(f"⚠️ [Futu 行情寫入失敗] {exc}", severity="ERROR", component="futu")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
+    warnings.extend(futu_archive(snapshot))
 
     log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
               f"收 {fmt_num(latest.get('close'))}）期權 {len(options)} 檔（IV 有值 {len(ivs)}）",
@@ -1971,9 +2072,37 @@ def handle_futu_data(payload):
                     "options": len(options), "iv_count": len(ivs), "warnings": warnings}), 200
 
 
-def read_futu_snapshot():
+def futu_symbol_file(symbol):
+    return f"{FUTU_SYMBOL_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def futu_archive(snapshot):
+    """K 線按 time_key 的日期（美東）分檔；期權每次推送記一列，日期跟最新 K 線同一天。
+    回傳警告清單（封存失敗不影響 stored）。"""
+    symbol = snapshot["symbol"]
+    kline = (snapshot.get("kline_type") or "K_5M").lower()
+    by_day = {}
+    for bar in snapshot.get("bars") or []:
+        by_day.setdefault(bar["time_key"][:10], []).append(bar)
+    bars = snapshot.get("bars") or []
+    option_day = bars[-1]["time_key"][:10] if bars else snapshot["received_utc"][:10]
+    spot = bars[-1].get("close") if bars else None
+    asof_ts = round(float(snapshot["received_ts"]), 3)
+    option_rows = [{"asof_utc": snapshot["received_utc"], "asof_ts": asof_ts, "spot": spot, **row}
+                   for row in snapshot.get("options") or []]
     try:
-        data = gcs_read_json(FUTU_SNAPSHOT_FILE, {})
+        for day, rows in by_day.items():
+            archive_merge(f"futu_{kline}", symbol, day, rows, ("time_key",))
+        archive_merge("futu_options", symbol, option_day, option_rows, ("asof_ts", "code"))
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [Futu 封存失敗] {exc}", severity="WARNING", component="futu")
+        return ["按日封存寫入失敗（最新快照已存，下一次推送會補 K 線）"]
+
+
+def read_futu_snapshot(symbol=None):
+    try:
+        data = gcs_read_json(futu_symbol_file(symbol) if symbol else FUTU_SNAPSHOT_FILE, {})
         return data if isinstance(data, dict) else {}
     except StorageError as exc:
         print(f"⚠️ [Futu 行情讀取失敗] {exc}", flush=True)
@@ -1985,8 +2114,8 @@ def futu_age_sec(snap, now=None):
     return None if received is None else max(0.0, (now or now_ts()) - received)
 
 
-def handle_futu_api_get():
-    snap = read_futu_snapshot()
+def handle_futu_api_get(symbol=None):
+    snap = read_futu_snapshot(_futu_text(symbol, 32).upper() or None)
     if snap.get("error"):
         return _json_response({"status": "error", "message": "storage read failed"}, 503)
     if not snap:
@@ -4782,8 +4911,10 @@ def handle_get(req):
         return serve_jinnang_sheet()
     if view == "jinnang_tracker":                                # 錦囊九十筆進度表
         return serve_jinnang_tracker()
-    if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情
-        return handle_futu_api_get()
+    if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
+        return handle_futu_api_get(req.args.get("symbol"))
+    if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取
+        return handle_archive_api_get(req)
     if view == "info":
         return build_info_page()
     if view == "reset":
