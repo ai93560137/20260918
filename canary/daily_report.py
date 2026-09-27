@@ -256,21 +256,63 @@ def build_report(rows, health, today):
         md.append("")
     md.append("---\n口徑:`CANARY_PLAYBOOK.md` §2;欄位說明 `canary/README.md`;長期紀錄 `canary/daily_log.csv`。")
 
-    # ---- Telegram 短訊
-    tg = [f"🐤 金絲雀 {last['date']}",
-          f"短期軸 {last['axis_short'] or '—'} | 災難軸 {last['axis_disaster'] or '—'} | 黃 {onoff('yellow')}"
-          + (f"({'/'.join(n for n, flag, _, _ in yparts if last[flag] == '1')})" if last["yellow"] == "1" else ""),
-          f"slope_9d {s9:+.2f} slope_3m {s3:+.2f}" if s9 is not None and s3 is not None else "",
-          "試用:" + " ".join(f"{n}={onoff(k)}" for n, k in trials)
-          + (f" | W1={'亮' if w1 else '滅'}" if w1 is not None else "")]
-    changed = [name for name, _, c, _ in lights if c] + [n for n, k in trials if chg(k)]
-    if changed:
-        tg.append("變化:" + "、".join(changed))
+    # ---- Telegram 每日總結(白話、emoji;每天必發,含週末)
+    L = {"綠": "🟢", "走平": "⚪", "紅": "🔴", "深紅": "🟣", "": "❔"}
+    a_s, a_d = last["axis_short"], last["axis_disaster"]
+    ylit = [n for n, flag, _, _ in yparts if last[flag] == "1"]
+    weekend_note = ""
+    if stale_us == 0 and today.weekday() in (5, 6, 0) and today != d_last:
+        weekend_note = f"(今天{'週六' if today.weekday() == 5 else '週日' if today.weekday() == 6 else '週一早上'}無新美股收盤,燈色沿用 {last['date']})"
+
+    # 白話總結
+    if a_d == "深紅":
+        plain = "🟣 災難軸亮了。這是最準的燈,十次只錯一次。今天起別開新倉、複核止損與保證金,已有倉位不必平,但要盯緊。"
+    elif a_s == "紅":
+        plain = "🔴 短期軸亮了,市場在為未來幾天的大震盪付保險費。該做的是減注、晚幾天再進場、檢查止損;不是猜方向。"
+    elif a_s == "走平":
+        plain = "⚪ 保險價格開始走樣,還沒到警戒。留神,不必行動。"
+    elif last["yellow"] == "1" and last["yellow_count"] not in ("", "0", "1"):
+        plain = "🟡🟡 兩隻以上側翼鳥同時亮,可靠度大幅提高。自己家還沒事,但鄰居兩戶都響了,進場前多想一下。"
+    elif last["yellow"] == "1":
+        plain = f"🟡 只有 {'、'.join(ylit)} 一隻側翼鳥亮,像鄰居家警報響了,自己家沒事。單隻黃燈誤報約三成,記錄就好,不用行動。"
+    else:
+        plain = "🟢 一切平靜,保險價格正常。照平常節奏做事。"
+
+    def onoff_emoji(key):
+        return {"1": "🔔亮", "0": "滅", "": "—"}.get(last[key], last[key])
+
+    tg = [f"🐤 金絲雀每日總結 📅 {today.isoformat()}",
+          f"燈色日 {last['date']}{weekend_note}",
+          f"⏰ 此燈色用於 {last['date']} 之後的交易日(lag=1)",
+          "",
+          "🚦 三軸",
+          f"{L.get(a_s, '❔')} 短期軸(一週 vs 一月保險):{a_s or '無資料'},連續 {streak(rows, 'axis_short', a_s)} 天"
+          + (f" {chg('axis_short')}" if chg('axis_short') else ""),
+          f"{L.get(a_d, '❔')} 災難軸(一月 vs 三月保險):{a_d or '無資料'},連續 {streak(rows, 'axis_disaster', a_d)} 天"
+          + (f" {chg('axis_disaster')}" if chg('axis_disaster') else ""),
+          f"🟡 側翼鳥:{'、'.join(ylit) if ylit else '全滅'}(黃燈連續 {streak(rows, 'yellow', last['yellow'])} 天)"
+          + (f" {chg('yellow')}" if chg('yellow') else ""),
+          "",
+          "📏 距門檻",
+          *[f"• {x}" for x in dist],
+          "",
+          "🧪 試用層與觀察名單(無警報權,只記錄)",
+          "• " + " | ".join(f"{n} {onoff_emoji(k)}" for n, k in trials),
+          ]
+    if ratio is not None:
+        tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}(比率 {ratio:.2f},門檻 {p10 if p10 is None else round(p10, 2)})")
+    tg += ["",
+           "🩺 數據與健康",
+           "• 新鮮度:" + "、".join(f"{b} {lb}" for b, lb, _ in fresh if b in ("vix", "vvix", "move", "axvi")),
+           "• 健康檢查:" + ("全過 ✅" if all(ok for _, _, ok in checks) else "有未過 ❌,見下"),
+           ]
     if warnings:
-        tg.append("⚠️ " + ";".join(warnings))
-    if last["axis_short"] == "紅" or last["axis_disaster"] == "深紅":
-        tg.append("看短期對沖負載看紅,看災難風險看深紅(§3 註)。lag=1:明日起生效。")
-    tg_text = "\n".join(x for x in tg if x)
+        tg += ["", "⚠️ 警告"] + [f"• {w}" for w in warnings]
+    if a_s == "紅" or a_d == "深紅":
+        tg += ["", "📌 §3 分工:看未來一兩週的對沖負載看紅,看災難風險看深紅。紅覆蓋面廣、深紅精度高,兩者不排序。"]
+    tg += ["", "🗣️ 白話一句", plain,
+           "", "⚠️ 這是市場風險的天氣預報,不是買賣建議。金絲雀預測震盪,不預測漲跌。"]
+    tg_text = "\n".join(tg)
 
     # ---- log 列
     log_row = {

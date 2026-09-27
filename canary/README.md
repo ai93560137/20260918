@@ -64,9 +64,13 @@ python3 canary/daily_report.py                   # 產出 DAILY_REPORT.md、追�
 pip install pandas tabulate && (cd canary && python3 yellow_lab.py && python3 red_lab.py)   # 重跑兩份考核報告
 ```
 
-**自動化**:`.github/workflows/canary_daily.yml` 每交易日 22:30 UTC(香港 06:30)拉數據、重產燈色表、寫每日報告並提交回分支;
+**自動化**:`.github/workflows/canary_daily.yml` **每天** 22:30 UTC(香港 06:30)拉數據、重產燈色表、寫每日報告並提交回分支;
 週六另跑兩個考核室;有 `TG_BOT_TOKEN` / `TG_CHAT_ID` 密鑰時發 Telegram。GitHub 的排程只對預設分支生效,
 本分支合併前需手動 `workflow_dispatch`,或由 Claude Code Routine 每日代跑。
+
+**Telegram 每日總結**:`tg_daily.txt` 是完整白話版(三軸、黃鳥、距門檻、試用層、新鮮度、健康、白話一句、免責),
+含當日日期戳,所以每天內容必變、每天必發(週末標明「燈色沿用」)。合併前由 Routine 推送觸發 `canary_broadcast.yml` 發;
+合併後由 `canary_daily.yml` 自己發。要臨時廣播別的內容,改 `BROADCAST.txt` 推送即可。
 
 `daily_log.csv` 是逐日累積的長期紀錄(燈色、試用層、觀察名單 W1 讀數、數據新鮮度),是觀察名單日後
 「樣本外」考核的原始資料,也是各策略登記響應後的對帳依據。**不要手改。**
