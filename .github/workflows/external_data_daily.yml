@@ -38,11 +38,11 @@ jobs:
         continue-on-error: true   # 拿不到就只同步 GCP，STATUS.md 會寫明
         run: git fetch --depth=1 origin "claude/dazzling-curie-f3xzb8:refs/remotes/origin/claude/dazzling-curie-f3xzb8"
 
-      - name: Fetch web-data branches for QC（鳥翔網站日線、金絲雀）
+      - name: Fetch web-data branch for QC（鳥翔網站日線；金絲雀數據已在本分支 canary/）
         continue-on-error: true   # 拿不到的類別在 QC 報告裡會是 NO_DATA
         run: |
           # blob:none：只抓目錄結構，比對讀到哪個檔才下載哪個（網站日線分支整包 400 MB）
-          for B in claude/gifted-carson-v2tvhw claude/canary-playbook-final-3um9lp; do
+          for B in claude/gifted-carson-v2tvhw; do
             git fetch --depth=1 --filter=blob:none origin "$B:refs/remotes/origin/$B"
           done
 

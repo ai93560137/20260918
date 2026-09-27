@@ -8,7 +8,7 @@
   futu_vs_web     Futu 日線／5 分 K 合成日線  ↔ 網站日線（鳥翔分支 claude/gifted-carson-v2tvhw data/equities，Yahoo）
   ibkr_vs_web     IBKR 收市／次日開市／次日收市 ↔ 同上網站日線（每市場每次抽樣 SAMPLE_IBKR 檔）
   web_vs_web      Yahoo 收市 ↔ Nasdaq.com 第二收市源（美股，每次抽樣 SAMPLE_WEB 檔）
-  canary_inputs   Futu 恒指 ↔ 金絲雀分支 canary/data_external/hsi_daily.csv（Yahoo ^HSI）
+  canary_inputs   Futu 恒指、IBKR 指數 ↔ 預設分支 canary/data_external/（金絲雀每日工作流更新，Yahoo）
   internal        封存內部一致性：OHLC 關係、重複、交易時段、期權報價清洗規則（金絲雀手冊 §10，只記錄）
 
 判定（預先登記，不事後調整；README「品質閘門」一節）
@@ -39,7 +39,9 @@ ROOT = Path(__file__).resolve().parent.parent
 EXT = Path(os.environ.get("EXTERNAL_DIR") or ROOT / "data" / "external")   # 測試時可改到暫存區
 QC = EXT / "qc"
 WEB_REF = "origin/claude/gifted-carson-v2tvhw"
-CANARY_REF = "origin/claude/canary-playbook-final-3um9lp"
+# [2026-09-27] PR #10 合併後，金絲雀的每日工作流在預設分支更新 canary/data_external/，
+# 金絲雀分支不再更新。本腳本在預設分支上執行，所以直接讀目前的 HEAD。
+CANARY_REF = os.environ.get("CANARY_REF", "HEAD")
 SAMPLE_IBKR = 20
 SAMPLE_WEB = 30
 # Futu 抽樣清單是「排好優先順序的長清單」：錨點 → 昨天的爭議代號 → 隨機（美股:港股 = 2:1 交錯）。
