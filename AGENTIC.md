@@ -14,7 +14,8 @@ Claude 工作階段（雲端容器，讀 CLAUDE.md 知道規則）
    │  python3 scripts/gcp_agent.py …   ← 用 GCP_SA_KEY 服務帳戶認證
    ▼
 你的 GCP 專案
-   ├─ Cloud Functions 第 2 代 receive_tradingview_signal（部署 / 狀態 / 環境變數）
+   ├─ Cloud Run 服務 zhuge-risk-manager（europe-west1，目前實際在跑；狀態 / 日誌 / 環境變數，唯讀）
+   ├─ Cloud Functions 第 2 代 receive_tradingview_signal（舊流程，--target function）
    ├─ Cloud Logging（讀日誌）
    ├─ Cloud Storage zhuge-risk-manager-bucket（電閘、加單、決策日誌、送單參數）
    └─ Cloud Run IAM（允許未經驗證的叫用）
@@ -86,7 +87,8 @@ bash scripts/gcp_bootstrap.sh 你的專案ID asia-east1
 | 環境變數 | 值 |
 |---|---|
 | `GCP_SA_KEY` | bootstrap 印出的那一行 base64（或整段 JSON） |
-| `GCP_REGION` | `asia-east1`（或你函式所在區域） |
+| `GCP_RUN_REGION` | 可省略，預設 `europe-west1`（Cloud Run 服務所在區域） |
+| `GCP_REGION` | 可省略；只有 `--target function` 舊流程會用，預設 `asia-east1` |
 | `GCP_PROJECT` | 可省略，金鑰內已含 |
 
 網路存取：需要能連 `*.googleapis.com`（預設的網路政策已可連）。儲存後，**新的**工作階段才會生效。
@@ -95,7 +97,7 @@ bash scripts/gcp_bootstrap.sh 你的專案ID asia-east1
 
 開一個新的 Claude 工作階段（本 repo），對它說：
 
-> 跑 `python3 scripts/gcp_agent.py whoami` 和 `status`，告訴我函式狀態。
+> 跑 `python3 scripts/gcp_agent.py whoami` 和 `status`，告訴我服務狀態。
 
 看到帳戶、專案、API 都是 ✅ 就完成了。
 
@@ -107,8 +109,8 @@ bash scripts/gcp_bootstrap.sh 你的專案ID asia-east1
 |---|---|
 | 「最近兩小時有沒有送單？」 | `logs --since 2h --grep 已送出`，整理成表 |
 | 「電閘現在是什麼狀態？」 | `state`，解讀 regime / armed / hard lock |
-| 「把 TARGET_RRR 改成 2」 | `env set TARGET_RRR=2` 先給你看計畫 → 你說「確定」→ `--yes` |
-| 「部署我剛改好的 main.py」 | `py_compile` → `deploy`（dry-run 檢查六個部署檔案）→ 你確認 → `deploy --yes` → `check` 五個頁面 |
+| 「把 TARGET_RRR 改成 2」 | Cloud Run 模式尚未支援修改；Claude 會先告訴你，不會自己繞過 |
+| 「部署我剛改好的 main.py」 | `py_compile` → `deploy`（本機檢查六個部署檔案）；Cloud Run 部署尚未支援，Claude 會告訴你 |
 | 「五個頁面還正常嗎？」 | `check` |
 | 「昨天有沒有 WARNING 以上的錯誤？」 | `logs --since 1d --severity WARNING` |
 

@@ -1,7 +1,9 @@
 # CLAUDE.md — 給 Claude 的工作說明
 
-本 repo 是「智能諸葛亮」XAUUSD 量化交易系統：`main.py` 是 GCP Cloud Functions（第 2 代）的進入點
-`receive_tradingview_signal`，狀態全部存在 GCS bucket `zhuge-risk-manager-bucket`。
+本 repo 是「智能諸葛亮」XAUUSD 量化交易系統：`main.py` 的進入點是 `receive_tradingview_signal`，
+狀態全部存在 GCS bucket `zhuge-risk-manager-bucket`。
+**目前實際在跑的是 Cloud Run 服務 `zhuge-risk-manager`（區域 `europe-west1`）**，不是 Cloud Function；
+專案裡沒有任何 Cloud Function。asia-east1 另有一個同名、部署失敗的舊 Cloud Run 服務（不接流量，別理它）。
 `scripts/` 與 `data/` 是 GitHub Actions 跑的研究／追蹤腳本，不會部署到 Cloud Function。
 
 ## 你可以直接操作使用者的 GCP
@@ -12,15 +14,22 @@
 | 想做什麼 | 指令 |
 |---|---|
 | 確認憑證、專案、已啟用 API | `python3 scripts/gcp_agent.py whoami` |
-| 函式狀態、網址、環境變數 | `python3 scripts/gcp_agent.py status` |
+| 服務狀態、網址、修訂、環境變數 | `python3 scripts/gcp_agent.py status` |
 | 看日誌 | `python3 scripts/gcp_agent.py logs --since 2h --limit 100 [--grep 已送出] [--severity WARNING]` |
 | 電閘／加單／決策日誌 | `python3 scripts/gcp_agent.py state` |
 | bucket 內容 | `python3 scripts/gcp_agent.py bucket --prefix logs/`、`cat --object logs/last_order_sent.json` |
-| 五個頁面是否正常 | `python3 scripts/gcp_agent.py check` |
-| 改環境變數 | `python3 scripts/gcp_agent.py env set KEY=VAL`（先看計畫）→ 加 `--yes` 套用 |
-| 部署 | `python3 scripts/gcp_agent.py deploy`（dry-run）→ 加 `--yes` 真的部署 |
+| 五個頁面是否正常 | `python3 scripts/gcp_agent.py check`（雲端容器的網路政策可能擋 `*.run.app`，被擋時請使用者在環境設定放行） |
+| 看環境變數 | `python3 scripts/gcp_agent.py env get` |
+| 部署前的本機來源檢查 | `python3 scripts/gcp_agent.py deploy`（不連線、不改動） |
 
-區域預設 `asia-east1`；使用者若說函式在別的區域，加 `--region asia-east2` 或設 `GCP_REGION`。
+預設模式是 `--target run`：Cloud Run 服務 `zhuge-risk-manager`、區域 `europe-west1`
+（可用 `GCP_SERVICE`、`GCP_RUN_REGION` 或 `--service`、`--region` 改）。全域參數要放在子命令**前面**，
+例如 `gcp_agent.py --region asia-east1 status`。
+
+**run 模式目前只支援讀取**：`env set/unset`、`deploy --yes`、`iam-public` 會直接拒絕。
+要改 Cloud Run 的環境變數或部署，請先告訴使用者此工具尚未支援，不要自己組 REST 請求繞過（見安全規則 5）。
+`--target function`（或 `GCP_TARGET=function`）是舊的 Cloud Functions 流程，區域用 `GCP_REGION`（預設 asia-east1）；
+在那個模式下 `deploy --yes` 會**另外建立一個新函式**，不會更新正在跑的 Cloud Run 服務，除非使用者明確要求，否則不要用。
 `whoami` 失敗且訊息是「找不到 GCP 憑證」時，請使用者依 `AGENTIC.md` 在雲端環境設定加入 `GCP_SA_KEY`，
 不要請他把金鑰貼進對話。
 
@@ -32,7 +41,7 @@
    （`main.py`、`requirements.txt`、`gates.html`、`order.html`、`jinnang_sheet.html`、`jinnang_tracker.html`）必須完整。
    `futu/`、`tests/`、`scripts/`、`data/` 不部署（見 `.gcloudignore`）。
 3. 不要印出、記錄或 commit 任何金鑰與權杖（`WEBHOOK_SECRET_TOKEN`、`WEBHOOK_API_KEY`、`GCP_SA_KEY`）。
-   `gcp_agent.py` 對含 TOKEN/SECRET/KEY 的值會自動遮罩，請保持。
+   `gcp_agent.py` 對含 TOKEN/SECRET/KEY 的值、以及網址的查詢參數（例如 `BROKER_API_URL` 的 `?t=…`）會自動遮罩，請保持。
 4. 不要刪 bucket 物件、不要刪函式、不要改 IAM（除了 `iam-public` 這個既定步驟），除非使用者明確要求。
 5. 不要用 `gcp_agent.py` 以外的方法繞過 dry-run（例如自己組 REST 請求去部署）。
 6. 改完 `main.py` 要部署時，先跑 `python3 -m unittest scripts/test_gcp_agent.py`（工具本身的測試）與

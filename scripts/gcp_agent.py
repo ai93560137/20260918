@@ -10,15 +10,22 @@ gcp_agent.py — 讓 Claude（或任何人）不用 gcloud 也能操作本專案
   2. 環境變數 GOOGLE_APPLICATION_CREDENTIALS — 金鑰檔路徑
   3. Application Default Credentials（本機 gcloud auth application-default login / Cloud Shell）
 
-專案 / 區域 / 函式名稱：
-  GCP_PROJECT   （預設取金鑰檔的 project_id）
-  GCP_REGION    （預設 asia-east1；香港可用 asia-east2）
-  GCP_FUNCTION  （預設 receive_tradingview_signal）
-  GCP_BUCKET    （預設 zhuge-risk-manager-bucket）
+操作對象（--target 或 GCP_TARGET）：
+  run           （預設）Cloud Run 服務 zhuge-risk-manager（europe-west1）— 目前實際在跑的系統
+  function      Cloud Functions 第 2 代 receive_tradingview_signal（舊部署方式）
+
+專案 / 區域 / 名稱：
+  GCP_PROJECT     （預設取金鑰檔的 project_id）
+  GCP_RUN_REGION  run 模式的區域（預設 europe-west1）
+  GCP_SERVICE     run 模式的服務名稱（預設 zhuge-risk-manager）
+  GCP_REGION      function 模式的區域（預設 asia-east1；香港可用 asia-east2）
+  GCP_FUNCTION    function 模式的函式名稱（預設 receive_tradingview_signal）
+  GCP_BUCKET      （預設 zhuge-risk-manager-bucket）
+  --region 會覆蓋目前模式的區域。
 
 子命令：
   whoami        驗證憑證，列出專案、服務帳戶、已啟用 API
-  status        Cloud Function 狀態、網址、執行階段設定、環境變數（值會遮罩）
+  status        服務 / 函式狀態、網址、執行階段設定、環境變數（值會遮罩）
   logs          讀 Cloud Logging（--since 2h --limit 100 --grep 已送出）
   state         讀 GCS 上的電閘 / 加單 / 決策日誌
   bucket        列出 bucket 物件（--prefix）
@@ -29,6 +36,8 @@ gcp_agent.py — 讓 Claude（或任何人）不用 gcloud 也能操作本專案
   iam-public    讓函式允許未經驗證的叫用（allUsers → roles/run.invoker）
 
 所有會改動 GCP 的命令都需要 --yes；沒有 --yes 只會印出「將會做什麼」。
+run 模式目前只支援讀取類命令；env set/unset、deploy --yes、iam-public 會拒絕執行
+（deploy 不加 --yes 仍會做本機來源檢查）。
 """
 from __future__ import annotations
 
@@ -58,6 +67,10 @@ ENTRY_POINT = "receive_tradingview_signal"
 DEFAULT_RUNTIME = "python312"
 DEFAULT_MEMORY = "512Mi"
 DEFAULT_TIMEOUT = 60
+DEFAULT_TARGET = "run"
+DEFAULT_RUN_REGION = "europe-west1"
+DEFAULT_SERVICE = "zhuge-risk-manager"
+DEFAULT_FN_REGION = "asia-east1"
 SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 HK_TZ = timezone(timedelta(hours=8))
 
@@ -79,13 +92,22 @@ class Ctx:
         self.project = None
         self.account = None
         self._session = None
-        self.region = os.environ.get("GCP_REGION", "asia-east1").strip()
+        self.target = (getattr(args, "target", None) or os.environ.get("GCP_TARGET") or DEFAULT_TARGET).strip().lower()
+        if self.target not in ("run", "function"):
+            die(f"--target / GCP_TARGET 只能是 run 或 function：{self.target}")
+        if self.target == "run":
+            self.region = os.environ.get("GCP_RUN_REGION", DEFAULT_RUN_REGION).strip()
+        else:
+            self.region = os.environ.get("GCP_REGION", DEFAULT_FN_REGION).strip()
         self.function = os.environ.get("GCP_FUNCTION", ENTRY_POINT).strip()
+        self.service = os.environ.get("GCP_SERVICE", DEFAULT_SERVICE).strip()
         self.bucket = os.environ.get("GCP_BUCKET", "zhuge-risk-manager-bucket").strip()
         if getattr(args, "region", None):
             self.region = args.region
         if getattr(args, "function", None):
             self.function = args.function
+        if getattr(args, "service", None):
+            self.service = args.service
         if getattr(args, "bucket", None):
             self.bucket = args.bucket
         if getattr(args, "project", None):
@@ -181,15 +203,29 @@ class Ctx:
     def fn_name(self):
         return f"{self.fn_parent}/functions/{self.function}"
 
+    @property
+    def svc_name(self):
+        return f"{self.fn_parent}/services/{self.service}"
+
+    @property
+    def is_run(self):
+        return self.target == "run"
+
 
 def die(msg, code=1):
     print(f"❌ {msg}", file=sys.stderr)
     sys.exit(code)
 
 
+URL_QUERY_VALUE = re.compile(r"([?&][^=&#\s]+=)[^&#\s]+")
+
+
 def mask(key, value):
     if SECRET_ENV_PATTERN.search(key) and value:
         return value[:2] + "…" + value[-2:] if len(value) > 6 else "••••"
+    if isinstance(value, str) and "://" in value:
+        # 網址的查詢參數常夾帶權杖（例如 BROKER_API_URL 的 ?t=…），一律遮罩
+        return URL_QUERY_VALUE.sub(r"\1••••", value)
     return value
 
 
@@ -218,7 +254,9 @@ def plan(msg):
 # =============================================================================
 def cmd_whoami(ctx: Ctx):
     ctx.session  # 觸發載入憑證
-    print(f"✅ 憑證可用\n   帳戶：{ctx.account}\n   專案：{ctx.project}\n   區域：{ctx.region}\n   函式：{ctx.function}\n   Bucket：{ctx.bucket}")
+    what = f"Cloud Run 服務：{ctx.service}" if ctx.is_run else f"Cloud Function：{ctx.function}"
+    print(f"✅ 憑證可用\n   帳戶：{ctx.account}\n   專案：{ctx.project}\n   模式：{ctx.target}（{what}）\n"
+          f"   區域：{ctx.region}\n   Bucket：{ctx.bucket}")
     data = ctx.call("GET", f"{SU_API}/projects/{ctx.project}/services", params={"filter": "state:ENABLED", "pageSize": 200})
     names = sorted(s["config"]["name"] for s in data.get("services", []))
     wanted = ["cloudfunctions", "run", "cloudbuild", "artifactregistry", "storage", "logging", "aiplatform"]
@@ -239,7 +277,68 @@ def get_function(ctx: Ctx, quiet=False):
     return resp.json()
 
 
+def get_service(ctx: Ctx, quiet=False):
+    resp = ctx.session.get(f"{RUN_API}/{ctx.svc_name}", timeout=60)
+    if resp.status_code == 404:
+        if not quiet:
+            print(f"ℹ️ Cloud Run 服務 {ctx.svc_name} 不存在。")
+        return None
+    if resp.status_code != 200:
+        die(f"讀取 Cloud Run 服務失敗 HTTP {resp.status_code}: {resp.text[:500]}")
+    return resp.json()
+
+
+def service_url(svc):
+    urls = svc.get("urls") or []
+    return urls[0] if urls else svc.get("uri")
+
+
+def run_env(svc):
+    """Cloud Run 容器環境變數 → {name: 顯示用字串}；Secret Manager 參照只顯示來源。"""
+    containers = (svc.get("template") or {}).get("containers") or [{}]
+    out = {}
+    for e in containers[0].get("env", []):
+        ref = (e.get("valueSource") or {}).get("secretKeyRef")
+        if ref:
+            out[e["name"]] = f"<secret {ref.get('secret')}:{ref.get('version', 'latest')}>"
+        else:
+            out[e["name"]] = mask(e["name"], e.get("value", ""))
+    return out
+
+
+def cmd_status_run(ctx: Ctx):
+    svc = get_service(ctx)
+    if not svc:
+        return
+    tpl = svc.get("template") or {}
+    c = (tpl.get("containers") or [{}])[0]
+    limits = (c.get("resources") or {}).get("limits") or {}
+    scaling = tpl.get("scaling") or {}
+    term = svc.get("terminalCondition") or {}
+    ready = term.get("state") == "CONDITION_SUCCEEDED"
+    print(f"服務：{svc['name']}")
+    print(f"狀態：{'✅ Ready' if ready else '❌ ' + str(term.get('state'))}  更新：{hk_time(svc.get('updateTime', ''))} (HK)"
+          f"  最後修改者：{svc.get('lastModifier')}")
+    if not ready and term.get("message"):
+        print(f"⚠️ {term['message'][:500]}")
+    for u in svc.get("urls") or [svc.get("uri")]:
+        print(f"網址：{u}")
+    print(f"修訂：{(svc.get('latestReadyRevision') or '').rsplit('/', 1)[-1] or '（無）'}  Ingress：{svc.get('ingress')}")
+    print(f"映像：{c.get('image')}")
+    print(f"CPU：{limits.get('cpu')}  記憶體：{limits.get('memory')}  逾時：{tpl.get('timeout')}"
+          f"  執行個體：{scaling.get('minInstanceCount', 0)}–{scaling.get('maxInstanceCount', '?')}"
+          f"  服務帳戶：{tpl.get('serviceAccount')}")
+    for t in svc.get("trafficStatuses") or []:
+        print(f"流量：{t.get('percent', 0)}% → {t.get('revision') or t.get('type')}")
+    env = run_env(svc)
+    print(f"環境變數（{len(env)}）：")
+    for k in sorted(env):
+        print(f"   {k}={env[k]}")
+
+
 def cmd_status(ctx: Ctx):
+    if ctx.is_run:
+        return cmd_status_run(ctx)
     fn = get_function(ctx)
     if not fn:
         return
@@ -263,16 +362,23 @@ def cmd_status(ctx: Ctx):
 def cmd_logs(ctx: Ctx):
     a = ctx.args
     since = datetime.now(timezone.utc) - parse_since(a.since)
-    service = ctx.function.replace("_", "-")
-    flt = (
-        f'((resource.type="cloud_run_revision" AND resource.labels.service_name="{service}") '
-        f'OR (resource.type="cloud_function" AND resource.labels.function_name="{ctx.function}")) '
-        f'AND timestamp>="{since.isoformat()}"'
-    )
+    if ctx.is_run:
+        flt = (
+            f'resource.type="cloud_run_revision" AND resource.labels.service_name="{ctx.service}" '
+            f'AND resource.labels.location="{ctx.region}" AND timestamp>="{since.isoformat()}"'
+        )
+    else:
+        service = ctx.function.replace("_", "-")
+        flt = (
+            f'((resource.type="cloud_run_revision" AND resource.labels.service_name="{service}") '
+            f'OR (resource.type="cloud_function" AND resource.labels.function_name="{ctx.function}")) '
+            f'AND timestamp>="{since.isoformat()}"'
+        )
     if a.severity:
         flt += f" AND severity>={a.severity.upper()}"
     if a.grep:
-        flt += f' AND textPayload:"{a.grep}"'
+        # 結構化日誌的訊息在 jsonPayload.message，純文字在 textPayload
+        flt += f' AND (textPayload:"{a.grep}" OR jsonPayload.message:"{a.grep}")'
     body = {"resourceNames": [f"projects/{ctx.project}"], "filter": flt, "orderBy": "timestamp desc", "pageSize": min(a.limit, 1000)}
     data = ctx.call("POST", f"{LOG_API}/entries:list", json=body)
     entries = data.get("entries", [])
@@ -281,9 +387,14 @@ def cmd_logs(ctx: Ctx):
         return
     for e in reversed(entries):
         payload = e.get("textPayload")
-        if payload is None:
-            jp = e.get("jsonPayload") or {}
+        if payload is None and e.get("jsonPayload") is not None:
+            jp = e["jsonPayload"]
             payload = jp.get("message") or json.dumps(jp, ensure_ascii=False)
+        elif payload is None and e.get("httpRequest"):
+            hr = e["httpRequest"]
+            payload = f"[HTTP] {hr.get('requestMethod')} {hr.get('status')} {hr.get('latency', '')} {hr.get('requestUrl', '')}"
+        elif payload is None:
+            payload = ""
         sev = (e.get("severity") or "DEFAULT")[:4]
         print(f"{hk_time(e['timestamp'])} {sev:<4} {str(payload).rstrip()}")
     print(f"—— {len(entries)} 筆（HK 時間）——")
@@ -348,6 +459,11 @@ def cmd_cat(ctx: Ctx):
 
 def cmd_check(ctx: Ctx):
     url = ctx.args.url
+    if not url and ctx.is_run:
+        svc = get_service(ctx)
+        if not svc:
+            die("Cloud Run 服務不存在，無法檢查。")
+        url = service_url(svc)
     if not url:
         fn = get_function(ctx)
         if not fn:
@@ -400,8 +516,22 @@ def wait_operation(ctx: Ctx, op, poll=6, max_wait=900):
     return op.get("response", {})
 
 
+RUN_WRITE_REFUSAL = ("run 模式（Cloud Run 服務 {svc}）尚未支援{what}，本工具不會做任何改動。\n"
+                     "   若要改 Cloud Functions 舊部署，請加 --target function。")
+
+
 def cmd_env(ctx: Ctx):
     a = ctx.args
+    if ctx.is_run:
+        if a.env_action != "get":
+            die(RUN_WRITE_REFUSAL.format(svc=ctx.svc_name, what="修改環境變數"))
+        svc = get_service(ctx)
+        if not svc:
+            die("Cloud Run 服務不存在。")
+        env = run_env(svc)
+        for k in sorted(env):
+            print(f"{k}={env[k]}")
+        return
     fn = get_function(ctx)
     if not fn:
         die("函式不存在。")
@@ -475,6 +605,8 @@ def sanity_check_sources(source_dir: Path):
 
 def cmd_deploy(ctx: Ctx):
     a = ctx.args
+    if ctx.is_run and a.yes:
+        die(RUN_WRITE_REFUSAL.format(svc=ctx.svc_name, what="部署"))
     source_dir = Path(a.source).resolve()
     problems = sanity_check_sources(source_dir)
     zip_bytes, manifest = build_zip(source_dir)
@@ -486,6 +618,9 @@ def cmd_deploy(ctx: Ctx):
             print(f"❌ {p}")
         die("來源檔案檢查未通過，停止部署。")
     print("✅ 來源檔案檢查通過")
+    if ctx.is_run:
+        print(f"ℹ️ run 模式：只做本機來源檢查。部署到 Cloud Run 服務 {ctx.svc_name} 尚未支援，不會連線或改動 GCP。")
+        return
 
     env_changes = parse_kv(a.set_env) if a.set_env else {}
     fn = get_function(ctx, quiet=True)
@@ -561,6 +696,8 @@ def make_public(ctx: Ctx, fn=None):
 
 
 def cmd_iam_public(ctx: Ctx):
+    if ctx.is_run:
+        die(RUN_WRITE_REFUSAL.format(svc=ctx.svc_name, what="修改 IAM"))
     if not ctx.args.yes:
         plan("將 allUsers 加入 roles/run.invoker（EA 與網頁才能直接打函式）。加 --yes 執行。")
         return
@@ -573,18 +710,21 @@ def cmd_iam_public(ctx: Ctx):
 def build_parser():
     p = argparse.ArgumentParser(prog="gcp_agent.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--project", help="GCP 專案 ID（預設取金鑰的 project_id 或 $GCP_PROJECT）")
-    p.add_argument("--region", help="區域（預設 $GCP_REGION 或 asia-east1）")
+    p.add_argument("--target", choices=["run", "function"],
+                   help="操作對象：run = Cloud Run 服務（預設），function = Cloud Functions（或設 $GCP_TARGET）")
+    p.add_argument("--region", help="區域（run 預設 $GCP_RUN_REGION 或 europe-west1；function 預設 $GCP_REGION 或 asia-east1）")
+    p.add_argument("--service", help="Cloud Run 服務名稱（預設 $GCP_SERVICE 或 zhuge-risk-manager）")
     p.add_argument("--function", help="函式名稱（預設 receive_tradingview_signal）")
     p.add_argument("--bucket", help="狀態 bucket（預設 zhuge-risk-manager-bucket）")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("whoami", help="驗證憑證與專案")
-    sub.add_parser("status", help="函式狀態")
+    sub.add_parser("status", help="服務 / 函式狀態")
 
     s = sub.add_parser("logs", help="讀 Cloud Logging")
     s.add_argument("--since", default="2h")
     s.add_argument("--limit", type=int, default=100)
-    s.add_argument("--grep", help="textPayload 包含的字串，例如 已送出")
+    s.add_argument("--grep", help="訊息包含的字串（textPayload 或 jsonPayload.message），例如 已送出")
     s.add_argument("--severity", help="最低嚴重度，例如 WARNING")
 
     s = sub.add_parser("state", help="讀 GCS 狀態")
@@ -628,8 +768,8 @@ COMMANDS = {
 def main(argv=None):
     args = build_parser().parse_args(argv)
     ctx = Ctx(args)
-    # deploy 的 dry-run 若沒有憑證也要能跑（純檢查套件）
-    if args.cmd == "deploy" and not args.yes:
+    # deploy 的 dry-run 若沒有憑證也要能跑（純檢查套件）；run 模式的 dry-run 本來就不連線
+    if args.cmd == "deploy" and not args.yes and not ctx.is_run:
         try:
             ctx.session
         except SystemExit:
