@@ -20,16 +20,24 @@
         OPEND_HOST（127.0.0.1）、OPEND_PORT（11111）、
         PUSH_INTERVAL_SEC（300）、BAR_COUNT（120）、ATM_STRIKES（2 → 每邊 5 檔）
 
-[v4] 每日日線抽樣（數據品質比對用）：
+[v4／v5] 每日日線抽樣（數據品質比對用，SOP 第三節）：
   每天香港時間 16:30–21:00（港股已收市、美股未開市）讀預設分支的
-  data/external/qc/futu_sample.txt（錨點＋昨天有爭議的代號＋隨機抽樣），
-  每個代號抓最近 FUTU_DAILY_BARS 根日 K 推到 GCP，隔天由 external_qc.py 對照網站數據。
-  關掉：setx FUTU_DAILY 0。清單讀不到就只抓錨點 HK.800000、US.SPY、US.QQQ。
+  data/external/qc/futu_sample.txt（已排好優先順序：錨點 → 昨天的爭議代號 → 隨機），
+  取前 FUTU_DAILY_MAX 個，每個抓最近 FUTU_DAILY_BARS 根日 K 推到 GCP，隔天由 external_qc.py 對照網站數據。
+  訂閱額度只有 100：每批 FUTU_DAILY_BATCH 個，訂滿 70 秒退訂再換下一批，所以 FUTU_DAILY_MAX 可以開到幾百。
+
+  要抓多少、抓什麼，只改這台電腦的環境變數（改完重開命令列、重啟腳本）：
+    setx FUTU_DAILY_MAX 200                      # 每天抽樣幾個代號（預設 60，上限 1000）
+    setx FUTU_DAILY_EXTRA "US.IWM,US.DIA"        # 每天一定要抓的代號（排在最前面，不佔 MAX）
+    setx FUTU_DAILY_BARS 20                      # 每個代號抓幾根日 K（預設 20）
+    setx FUTU_DAILY 0                            # 關掉日線抽樣
+  清單讀不到就只抓錨點 HK.800000、US.SPY、US.QQQ 和 FUTU_DAILY_EXTRA。
 
 執行：
   python push_to_gcp.py                  # 常駐
   python push_to_gcp.py --once           # 只推一次，用來測試
   python push_to_gcp.py --once --daily   # 立刻跑一次日線抽樣（不看時段），用來測試
+  python push_to_gcp.py --search 波幅    # 查指數代號（例如 VHSI），不推送、不需設 GCP 網址
 """
 import math
 import os
@@ -42,7 +50,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "4"
+SCRIPT_VERSION = "5"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -63,8 +71,10 @@ HK_TZ = ZoneInfo("Asia/Hong_Kong")
 DAILY_ENABLED = os.environ.get("FUTU_DAILY", "1").strip() != "0"
 DAILY_WINDOW_MIN = (16 * 60 + 30, 21 * 60)          # 香港時間 16:30–21:00
 DAILY_BARS = max(5, min(100, int(os.environ.get("FUTU_DAILY_BARS", "20"))))
-DAILY_MAX_CODES = 60                                 # 訂閱額度 100，留給 5 分 K
+DAILY_MAX = max(1, min(1000, int(os.environ.get("FUTU_DAILY_MAX", "60"))))
+DAILY_BATCH = max(5, min(100 - len(SYMBOLS) - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
 DAILY_ANCHORS = ["HK.800000", "US.SPY", "US.QQQ"]
+DAILY_EXTRA = [x.strip().upper() for x in os.environ.get("FUTU_DAILY_EXTRA", "").split(",") if x.strip()]
 SAMPLE_URL = os.environ.get(
     "FUTU_SAMPLE_URL",
     "https://raw.githubusercontent.com/ai93560137/20260918/refs/heads/"
@@ -198,9 +208,11 @@ class FutuPusher:
                 log(f"  ⚠️ 抽樣清單有 {len(bad)} 行不像代號，已略過：{bad[:3]}")
             codes = [c for c in codes if CODE_RE.match(c)]
         except requests.RequestException as exc:
-            log(f"  ⚠️ 讀不到抽樣清單（{exc}），只抓錨點")
+            log(f"  ⚠️ 讀不到抽樣清單（{exc}），只抓錨點與 FUTU_DAILY_EXTRA")
             codes = []
-        return list(dict.fromkeys(DAILY_ANCHORS + codes))[:DAILY_MAX_CODES]
+        fixed = list(dict.fromkeys(DAILY_ANCHORS + [c for c in DAILY_EXTRA if CODE_RE.match(c)]))
+        rest = [c for c in dict.fromkeys(codes) if c not in fixed]
+        return fixed + rest[:DAILY_MAX]
 
     def maybe_run_daily(self, force=False):
         now_hk = datetime.now(HK_TZ)
@@ -209,36 +221,56 @@ class FutuPusher:
         if not force and (self.daily_done == today or not DAILY_WINDOW_MIN[0] <= minute < DAILY_WINDOW_MIN[1]):
             return True
         codes = self.load_sample()
-        log(f"📅 日線抽樣：{len(codes)} 個代號，每個最近 {DAILY_BARS} 根日 K")
+        batches = [codes[i:i + DAILY_BATCH] for i in range(0, len(codes), DAILY_BATCH)]
+        log(f"📅 日線抽樣：{len(codes)} 個代號，分 {len(batches)} 批（每批 ≤ {DAILY_BATCH}），每個最近 {DAILY_BARS} 根日 K")
         try:
             self.connect()
         except Exception as exc:
             log(f"🔴 日線抽樣連不上 OpenD：{exc}")
             return False
-        subscribed, ok, failed = [], 0, []
-        for code in codes:
-            ret, err = self.ctx.subscribe([code], [ft.SubType.K_DAY], subscribe_push=False)
-            if ret != ft.RET_OK:
-                failed.append(f"{code}（訂閱：{str(err)[:60]}）")
+        ok, failed, done = 0, [], 0
+        for n, batch in enumerate(batches, 1):
+            now_min = datetime.now(HK_TZ).hour * 60 + datetime.now(HK_TZ).minute
+            if not force and now_min >= DAILY_WINDOW_MIN[1]:
+                log(f"  ⏹️ 已過香港時間 21:00（美股快開市），剩下 {len(codes) - done} 個代號明天再抓")
+                break
+            started, subscribed = time.time(), []
+            for code in batch:
+                done += 1
+                ret, err = self.ctx.subscribe([code], [ft.SubType.K_DAY], subscribe_push=False)
+                if ret != ft.RET_OK:
+                    failed.append(f"{code}（訂閱：{str(err)[:60]}）")
+                    continue
+                subscribed.append(code)
+                ret, df = self.ctx.get_cur_kline(code, num=DAILY_BARS, ktype=ft.KLType.K_DAY)
+                if ret != ft.RET_OK or df.empty:
+                    failed.append(f"{code}（日 K：{str(df)[:60]}）")
+                    continue
+                df = df.sort_values("time_key")
+                bars = [{"time_key": str(row["time_key"]), "open": num(row["open"]), "high": num(row["high"]),
+                         "low": num(row["low"]), "close": num(row["close"]), "volume": num(row["volume"])}
+                        for _, row in df.iterrows()]
+                if self.post({"action": "futu_data", "token": TOKEN, "source": "futu_opend",
+                              "script_version": SCRIPT_VERSION, "symbol": code, "kline_type": "K_DAY",
+                              "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                              "data": bars, "options": []}, quiet=True):
+                    ok += 1
+                else:
+                    failed.append(f"{code}（推送失敗）")
+            if not subscribed:
                 continue
-            subscribed.append(code)
-            ret, df = self.ctx.get_cur_kline(code, num=DAILY_BARS, ktype=ft.KLType.K_DAY)
-            if ret != ft.RET_OK or df.empty:
-                failed.append(f"{code}（日 K：{str(df)[:60]}）")
-                continue
-            df = df.sort_values("time_key")
-            bars = [{"time_key": str(row["time_key"]), "open": num(row["open"]), "high": num(row["high"]),
-                     "low": num(row["low"]), "close": num(row["close"]), "volume": num(row["volume"])}
-                    for _, row in df.iterrows()]
-            if self.post({"action": "futu_data", "token": TOKEN, "source": "futu_opend",
-                          "script_version": SCRIPT_VERSION, "symbol": code, "kline_type": "K_DAY",
-                          "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                          "data": bars, "options": []}, quiet=True):
-                ok += 1
+            if n < len(batches):                      # 還有下一批：等滿 70 秒退訂，把額度讓出來
+                wait = UNSUB_AFTER_SEC - (time.time() - started)
+                if wait > 0:
+                    log(f"  ⏳ 第 {n}/{len(batches)} 批完成，等 {int(wait)} 秒退訂再抓下一批")
+                    time.sleep(wait)
+                ret, err = self.ctx.unsubscribe(subscribed, [ft.SubType.K_DAY])
+                if ret != ft.RET_OK:
+                    log(f"  ⚠️ 第 {n} 批退訂失敗：{err}；停止，剩下的明天再抓")
+                    self.pending_unsub.append((started, subscribed))
+                    break
             else:
-                failed.append(f"{code}（推送失敗）")
-        if subscribed:
-            self.pending_unsub.append((time.time(), subscribed))
+                self.pending_unsub.append((started, subscribed))
         log(f"📅 日線抽樣完成：成功 {ok}／{len(codes)}"
             + (f"；失敗：{'、'.join(failed[:8])}" + ("…" if len(failed) > 8 else "") if failed else ""))
         if ok:
@@ -313,7 +345,29 @@ class FutuPusher:
         return False
 
 
+def search(keyword):
+    """列出名稱或代號含關鍵字的港股、美股指數，例如 --search 波幅 找 VHSI。只讀，不推送。"""
+    ctx = ft.OpenQuoteContext(host=OPEND_HOST, port=OPEND_PORT)
+    try:
+        for market in (ft.Market.HK, ft.Market.US):
+            ret, df = ctx.get_stock_basicinfo(market, ft.SecurityType.IDX)
+            if ret != ft.RET_OK:
+                print(f"{market}：查不到（{str(df)[:80]}）")
+                continue
+            hits = df[df["name"].astype(str).str.contains(keyword, case=False, regex=False)
+                      | df["code"].astype(str).str.contains(keyword, case=False, regex=False)]
+            print(f"{market}：{len(hits)} 筆")
+            for _, row in hits.head(50).iterrows():
+                print(f"  {row['code']}\t{row['name']}")
+    finally:
+        ctx.close()
+    return 0
+
+
 def main():
+    if "--search" in sys.argv[1:]:
+        idx = sys.argv.index("--search")
+        return search(sys.argv[idx + 1] if idx + 1 < len(sys.argv) else "")
     if not GCP_URL or not TOKEN:
         print("請先設定環境變數 ZHUGE_GCP_URL 與 WEBHOOK_SECRET_TOKEN（見檔案開頭說明）。", file=sys.stderr)
         return 2

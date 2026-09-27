@@ -109,13 +109,15 @@ check("爭議列附上 Futu 的值", "futu 8.16" in rows[0]["note"], rows[0]["no
 check("已錯位的來源不投票", "web_nasdaq" not in rows[0]["note"], rows[0]["note"])
 
 print("\n=== 閘門 ===")
-g = qc.gates([{"family": "futu_vs_web", "verdict": qc.OK}, {"family": "ibkr_vs_web", "verdict": qc.OK},
-              {"family": "ibkr_vs_web", "verdict": qc.FAIL}, {"family": "web_vs_web", "verdict": qc.SKIP},
-              {"family": "canary_inputs", "verdict": qc.KNOWN}, {"family": "canary_inputs", "verdict": qc.OK}])
+g = qc.gates([{"family": f, "verdict": v, "check": "x"} for f, v in (
+    ("futu_vs_web", qc.OK), ("ibkr_vs_web", qc.OK), ("ibkr_vs_web", qc.FAIL), ("web_vs_web", qc.SKIP),
+    ("canary_inputs", qc.KNOWN), ("canary_inputs", qc.OK))])
 check("只有一致 → PASS", g["futu_vs_web"]["status"] == "PASS")
 check("有一筆未解釋 → FAIL", g["ibkr_vs_web"]["status"] == "FAIL")
 check("全是略過 → NO_DATA", g["web_vs_web"]["status"] == "NO_DATA")
 check("已知不擋 → PASS", g["canary_inputs"]["status"] == "PASS")
+g2 = qc.gates([{"family": "canary_inputs", "verdict": qc.OK, "check": "hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）"}])
+check("只有同源一致 → SAME_SOURCE_ONLY", g2["canary_inputs"]["status"] == "SAME_SOURCE_ONLY", g2["canary_inputs"])
 
 print("\n=== 明天的 Futu 抽樣清單 ===")
 qc.QC.mkdir(parents=True, exist_ok=True)
@@ -123,6 +125,38 @@ codes = qc.write_sample(__import__("random").Random(1), "2026-09-27", rows)
 check("錨點在最前面", codes[:3] == qc.FUTU_ANCHORS, codes[:5])
 check("今天的爭議代號排進去", "HK.03328" in codes, codes)
 check("代號格式轉換正確", qc.web_to_futu("us", "BRK-B") == "US.BRK.B" and qc.futu_to_web("HK.00700") == ("hk", "0700.HK"))
+
+print("\n=== IBKR 每日抽樣（SOP 附錄 B）===")
+WEB["canary/data_external/vix_daily.csv"] = "Date,Open,High,Low,Close\n2026-09-25,15.609999656677246,15.9399995803833,14.680000305175781,14.859999656677246\n"
+WEB["canary/data_external/spx_daily.csv"] = "Date,Open,High,Low,Close\n2026-09-25,7709.86,7752.07,7693.08,7743.41\n"
+qc.canary_file.__defaults__[0].clear()
+rep = qc.Report({})
+qc.ibkr_daily(qc.WebDaily("x"), rep)
+check("還沒有檔 → 略過並指向附錄 B", rep.rows and rep.rows[0]["verdict"] == qc.SKIP and "附錄 B" in rep.rows[0]["note"])
+ib = ext / "ibkr/daily_sample/ib_daily_sample.csv"; ib.parent.mkdir(parents=True, exist_ok=True)
+ib.write_text("date,sec_type,symbol,exchange,currency,open,high,low,close,volume,fetched_utc\n"
+              "2026-09-25,IND,VIX,CBOE,USD,15.61,15.94,14.68,14.86,,2026-09-26 01:00:00\n"
+              "2026-09-25,IND,SPX,CBOE,USD,7709.86,7752.07,7693.08,7744.41,,2026-09-26 01:00:00\n"
+              "2026-09-25,STK,QQQ,SMART,USD,742.84,745.915,739.64,744.5,30017218,2026-09-26 01:00:00\n"
+              "2026-09-24,STK,3328,SEHK,HKD,8.21,8.3,8.16,8.285,1,2026-09-26 01:00:00\n", encoding="utf-8")
+rep = qc.Report({})
+qc.ibkr_daily(qc.WebDaily("x"), rep)
+got = {(r["family"], r["instrument"], r["field"]): r for r in rep.rows}
+check("VIX 對金絲雀（float32 尾數）→ 一致", got[("canary_inputs", "VIX", "close")]["verdict"] == qc.OK)
+check("SPX 收盤差 1 點 → ❌", got[("canary_inputs", "SPX", "close")]["verdict"] == qc.FAIL, got[("canary_inputs", "SPX", "close")])
+check("SPX 也對網站 _GSPC（沒有這檔 → 略過）", ("ibkr_vs_web", "_GSPC", "close") in got)
+check("股票 QQQ 對網站 → 一致", got[("ibkr_vs_web", "QQQ", "close")]["verdict"] == qc.OK)
+check("港股 3328 開盤 8.21 對 8.16 → ❌", got[("ibkr_vs_web", "3328.HK", "open")]["verdict"] == qc.FAIL)
+rep2 = qc.Report({}); qc.canary_vs_web(qc.WebDaily("x"), rep2)
+check("金絲雀對網站的比對標示為同源", any("同源" in r["check"] for r in rep2.rows if r["verdict"] == qc.OK),
+      {r["check"] for r in rep2.rows})
+
+print("\n=== 請求清單 ===")
+codes = qc.write_sample(__import__("random").Random(2), "2026-09-27", [])
+ibl = (qc.QC / "ibkr_sample.txt").read_text(encoding="utf-8").splitlines()
+check("IBKR 清單有表頭與金絲雀指數", ibl[0].startswith("sec_type,") and any(l.startswith("IND,VIX,CBOE") for l in ibl))
+check("IBKR 美股代號空格格式（BRK B）", all("-" not in l.split(",")[1] for l in ibl[1:]))
+check("Futu 清單美港交錯", codes[3:6] and any(c.startswith("HK.") for c in codes[3:12]), codes[:12])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

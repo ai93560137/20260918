@@ -153,21 +153,24 @@ def git(*args):
 
 
 def mirror_ibkr(status):
-    copies = [("tradingview/data_external/ib_iv_log.csv", OUT / "ibkr" / "iv_term_structure" / "ib_iv_log.csv")]
+    # (來源, 目的地, 選用)：選用的檔還不存在不算缺（雲垂開始產生後自動同步）
+    copies = [("tradingview/data_external/ib_iv_log.csv", OUT / "ibkr" / "iv_term_structure" / "ib_iv_log.csv", False),
+              ("tradingview/data_external/ib_daily_sample.csv",                     # SOP 附錄 B：每日抽樣
+               OUT / "ibkr" / "daily_sample" / "ib_daily_sample.csv", True)]
     try:
         listing = git("ls-tree", "--name-only", IBKR_REF, "data_stock_ibkr/").decode().split()
-        copies += [(name, OUT / "ibkr" / "stock_closes" / Path(name).name)
+        copies += [(name, OUT / "ibkr" / "stock_closes" / Path(name).name, False)
                    for name in listing if name.endswith((".csv", ".txt"))]
         head = git("log", "-1", "--format=%H %cI", IBKR_REF).decode().strip()
     except subprocess.CalledProcessError as exc:
         status["ibkr"] = {"ok": False, "note": f"讀不到 {IBKR_REF}：{exc.stderr.decode(errors='replace').strip()[:200]}"}
         return
-    changed, missing = 0, []
-    for src, dst in copies:
+    changed, missing, pending = 0, [], []
+    for src, dst, optional in copies:
         try:
             data = git("show", f"{IBKR_REF}:{src}")
         except subprocess.CalledProcessError:
-            missing.append(src)
+            (pending if optional else missing).append(src)
             continue
         if dst.exists() and dst.read_bytes() == data:
             continue
@@ -175,7 +178,8 @@ def mirror_ibkr(status):
         dst.write_bytes(data)
         changed += 1
     status["ibkr"] = {"ok": not missing, "source_branch": IBKR_BRANCH, "source_commit": head,
-                      "files": len(copies) - len(missing), "files_changed": changed, "missing": missing}
+                      "files": len(copies) - len(missing) - len(pending), "files_changed": changed,
+                      "missing": missing, "not_yet": pending}
 
 
 # ---------------------------------------------------------------- status
@@ -210,7 +214,8 @@ def write_status(status):
               + (ibkr.get("note") or f"{ibkr.get('files', 0)} 個檔，變更 {ibkr.get('files_changed', 0)} 個"
                  + (f"，來源 commit {ibkr.get('source_commit', '')[:8]} {ibkr.get('source_commit', '')[41:51]}"
                     if ibkr.get("source_commit") else "")
-                 + ("；缺：" + "、".join(ibkr["missing"]) if ibkr.get("missing") else "")),
+                 + ("；缺：" + "、".join(ibkr["missing"]) if ibkr.get("missing") else "")
+                 + ("；尚未開始：" + "、".join(ibkr["not_yet"]) if ibkr.get("not_yet") else "")),
               "", "週末與假日沒有新 K 線是正常的；平日最新日期落後兩天以上才需要查。", ""]
     (OUT / "STATUS.md").write_text("\n".join(lines), encoding="utf-8")
 

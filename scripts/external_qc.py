@@ -42,9 +42,24 @@ WEB_REF = "origin/claude/gifted-carson-v2tvhw"
 CANARY_REF = "origin/claude/canary-playbook-final-3um9lp"
 SAMPLE_IBKR = 20
 SAMPLE_WEB = 30
-SAMPLE_FUTU_US = 20
-SAMPLE_FUTU_HK = 10
+# Futu 抽樣清單是「排好優先順序的長清單」：錨點 → 昨天的爭議代號 → 隨機（美股:港股 = 2:1 交錯）。
+# 本地腳本只取前 FUTU_DAILY_MAX 個（預設 60），要抓更多只改本地環境變數，不用改這裡。
+SAMPLE_FUTU_US = 300
+SAMPLE_FUTU_HK = 150
 FUTU_ANCHORS = ["HK.800000", "US.SPY", "US.QQQ"]
+# IBKR 每日抽樣請求（雲垂 VM 讀 qc/ibkr_sample.txt）：金絲雀的指數 + 股票隨機抽樣。
+# (sec_type, symbol, exchange, currency, 對照：canary:<檔名> 或 web:<市場>/<代號>，可多個用 |)
+IBKR_ANCHORS = [
+    ("IND", "SPX", "CBOE", "USD", "canary:spx_daily.csv|web:us/_GSPC"),
+    ("IND", "VIX", "CBOE", "USD", "canary:vix_daily.csv"),
+    ("IND", "VIX9D", "CBOE", "USD", "canary:vix9d_daily.csv"),
+    ("IND", "VIX3M", "CBOE", "USD", "canary:vix3m_daily.csv"),
+    ("IND", "VVIX", "CBOE", "USD", "canary:vvix_daily.csv"),
+    ("IND", "HSI", "HKFE", "HKD", "canary:hsi_daily.csv|web:hk/_HSI"),
+    ("IND", "VHSI", "HKFE", "HKD", "canary:vhsi_daily.csv"),
+]
+SAMPLE_IBKR_DAILY_US = 30
+SAMPLE_IBKR_DAILY_HK = 15
 US_TZ = ZoneInfo("America/New_York")
 
 OK, INFO, SKIP, KNOWN, FAIL = "✅", "ℹ️", "⏭️", "⚠️", "❌"
@@ -305,11 +320,77 @@ def canary_vs_web(web, rep):
                         else "日期缺漏：金絲雀少了這一天")
                 continue
             prev, nxt = web.neighbour(market, ticker, day, -1), web.neighbour(market, ticker, day, 1)
-            compare_ohlc(rep, "canary_inputs", fname, ticker, day, "canary", canary[day], "web_yahoo",
-                         web_rows[day], ["open", "high", "low", "close"], prev=prev, nxt=nxt)
+            compare_ohlc(rep, "canary_inputs", f"{fname}（同源 Yahoo：只驗抄錄與日期）", ticker, day, "canary",
+                         canary[day], "web_yahoo", web_rows[day], ["open", "high", "low", "close"], prev=prev, nxt=nxt)
         for day in sorted(d for d in canary if window[0] <= d <= w_latest and d not in web_rows):
             rep.add("canary_inputs", fname, ticker, day, "date", "canary", None, "web_yahoo", None, FAIL,
                     "日期缺漏：網站少了這一天")
+
+
+def ib_web_key(sec_type, symbol, currency):
+    if sec_type != "STK":
+        return None, None
+    if currency == "USD":
+        return "us", symbol.replace(" ", "-")
+    if currency == "HKD" and symbol.isdigit():
+        return "hk", f"{int(symbol):04d}.HK"
+    return None, None
+
+
+def canary_file(name, cache={}):
+    if name not in cache:
+        text = git_show(CANARY_REF, f"canary/data_external/{name}")
+        cache[name] = {r["Date"][:10]: {k.lower(): v for k, v in r.items()}
+                       for r in csv.DictReader(io.StringIO(text))} if text else None
+    return cache[name]
+
+
+def ibkr_daily(web, rep):
+    """雲垂 VM 每日抽樣（ibkr/daily_sample/ib_daily_sample.csv）↔ 網站日線與金絲雀的指數檔。
+    這是金絲雀美股指數鳥唯一的獨立來源（Futu 沒有美國指數權限）。"""
+    path = EXT / "ibkr" / "daily_sample" / "ib_daily_sample.csv"
+    if not path.exists():
+        rep.add("canary_inputs", "IBKR 獨立來源", "ib_daily_sample.csv", "", "all", "ibkr", None, "canary", None,
+                SKIP, "雲垂還沒開始每日抽樣（見 SOP 附錄 B）")
+        return
+    targets = {(a[0], a[1]): a[4] for a in IBKR_ANCHORS}
+    for r in csv.DictReader(path.open(encoding="utf-8")):
+        day, key = r["date"][:10], (r["sec_type"], r["symbol"])
+        if r["sec_type"] == "STK":
+            market, ticker = ib_web_key(r["sec_type"], r["symbol"], r["currency"])
+            if market is None or not web.has_ticker(market, ticker, day[:4]):
+                rep.add("ibkr_vs_web", "每日抽樣", r["symbol"], day, "close", "ibkr_daily", fnum(r["close"]),
+                        "web_yahoo", None, SKIP, "網站沒有這個代號")
+                continue
+            web_row = web.get(market, ticker, day)
+            if web_row is None:
+                rep.add("ibkr_vs_web", "每日抽樣", ticker, day, "close", "ibkr_daily", fnum(r["close"]),
+                        "web_yahoo", None, SKIP, "網站沒有這一天")
+                continue
+            compare_ohlc(rep, "ibkr_vs_web", "每日抽樣", ticker, day, "ibkr_daily", r, "web_yahoo", web_row,
+                         ["open", "high", "low", "close", "volume"], info_fields=("volume",),
+                         prev=web.neighbour(market, ticker, day, -1), nxt=web.neighbour(market, ticker, day, 1))
+            continue
+        for target in (targets.get(key) or "").split("|"):
+            kind, _, name = target.partition(":")
+            if kind == "canary":
+                rows = canary_file(name)
+                other = rows.get(day) if rows else None
+                src, check = f"canary_{name.split('_')[0]}", "IBKR 獨立來源"
+                fam, inst = "canary_inputs", r["symbol"]
+                later = rows is not None and day > max(rows)
+            elif kind == "web":
+                market, ticker = name.split("/", 1)
+                other = web.get(market, ticker, day)
+                src, check, fam, inst = "web_yahoo", "IBKR 指數", "ibkr_vs_web", ticker
+                later = False
+            else:
+                continue
+            if other is None:
+                rep.add(fam, check, inst, day, "close", "ibkr_daily", fnum(r["close"]), src, None, SKIP,
+                        "對方還沒有這一天" if later else "對方沒有這一天")
+                continue
+            compare_ohlc(rep, fam, check, inst, day, "ibkr_daily", r, src, other, ["open", "high", "low", "close"])
 
 
 def ibkr_vs_web(web, rep, rng):
@@ -402,6 +483,10 @@ def internal_checks(rep):
 
 # ---------------------------------------------------------------- third-source votes
 def canonical(instrument):
+    if instrument in ("HSI",):
+        return "hk/_HSI"
+    if instrument in ("SPX",):
+        return "us/_GSPC"
     if "." in instrument and instrument.split(".", 1)[0] in ("US", "HK"):
         market, ticker = futu_to_web(instrument)
         return f"{market}/{ticker}"
@@ -443,9 +528,17 @@ def gates(rows):
     for fam in ("futu_vs_web", "ibkr_vs_web", "web_vs_web", "canary_inputs", "internal"):
         fr = [r for r in rows if r["family"] == fam]
         count = {v: sum(1 for r in fr if r["verdict"] == v) for v in (OK, INFO, SKIP, KNOWN, FAIL)}
-        status = "FAIL" if count[FAIL] else ("PASS" if count[OK] else "NO_DATA")
-        out[fam] = {"status": status, "match": count[OK], "info": count[INFO], "skip": count[SKIP],
-                    "known": count[KNOWN], "fail": count[FAIL]}
+        independent = sum(1 for r in fr if r["verdict"] == OK and "同源" not in r["check"])
+        if count[FAIL]:
+            status = "FAIL"
+        elif independent:
+            status = "PASS"
+        elif count[OK]:
+            status = "SAME_SOURCE_ONLY"          # 只有同源比對通過：日期與抄錄沒錯，數值真偽未經獨立來源驗證
+        else:
+            status = "NO_DATA"
+        out[fam] = {"status": status, "match": count[OK], "match_independent": independent, "info": count[INFO],
+                    "skip": count[SKIP], "known": count[KNOWN], "fail": count[FAIL]}
     return out
 
 
@@ -460,13 +553,26 @@ def write_sample(rng, run_day, rows):
             code = "HK.800000" if ticker == "_HSI" else web_to_futu(market, ticker)
             if code and code not in disputes:
                 disputes.append(code)
-    picks = rng.sample(us, min(SAMPLE_FUTU_US, len(us))) + rng.sample(hk, min(SAMPLE_FUTU_HK, len(hk)))
-    codes = list(dict.fromkeys(FUTU_ANCHORS + disputes[:20] + [c for c in (web_to_futu("us" if t in us else "hk", t)
-                                                                            for t in picks) if c]))
+    us_pick = [web_to_futu("us", t) for t in rng.sample(us, min(SAMPLE_FUTU_US, len(us)))]
+    hk_pick = [web_to_futu("hk", t) for t in rng.sample(hk, min(SAMPLE_FUTU_HK, len(hk)))]
+    mixed = []
+    while us_pick or hk_pick:                          # 美股:港股 = 2:1 交錯，取前 N 個時兩個市場都有
+        mixed += us_pick[:2] + hk_pick[:1]
+        us_pick, hk_pick = us_pick[2:], hk_pick[1:]
+    codes = list(dict.fromkeys(FUTU_ANCHORS + disputes[:40] + [c for c in mixed if c]))
     (QC / "futu_sample.txt").write_text(
         f"# Futu 日線抽樣清單（{run_day} UTC 產生，external_qc.py；種子 = 產生日）\n"
-        "# 本地 push_to_gcp.py 每天 16:30–21:00（香港時間）讀這份清單抓日線\n" + "\n".join(codes) + "\n",
-        encoding="utf-8")
+        "# 已按優先順序排好：錨點 → 昨天的爭議代號 → 隨機（美:港 = 2:1）。\n"
+        "# 本地 push_to_gcp.py 每天 16:30–21:00（香港時間）取前 FUTU_DAILY_MAX 個（預設 60）抓日線。\n"
+        + "\n".join(codes) + "\n", encoding="utf-8")
+    # IBKR 每日抽樣請求（雲垂 VM 讀；見 SOP 附錄 B）
+    lines = ["sec_type,symbol,exchange,currency,compare_with"]
+    lines += [",".join(a) for a in IBKR_ANCHORS]
+    for t in rng.sample(us, min(SAMPLE_IBKR_DAILY_US, len(us))):
+        lines.append(f"STK,{t.replace('-', ' ')},SMART,USD,web:us/{t}")
+    for t in rng.sample(hk, min(SAMPLE_IBKR_DAILY_HK, len(hk))):
+        lines.append(f"STK,{int(t[:-3])},SEHK,HKD,web:hk/{t}")
+    (QC / "ibkr_sample.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return codes
 
 
@@ -481,17 +587,20 @@ def write_outputs(rows, gate, run_day, sample_codes):
     with hist.open("a", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh, lineterminator="\n")
         if new:
-            writer.writerow(["run_date", "family", "status", "match", "info", "skip", "known", "fail"])
+            writer.writerow(["run_date", "family", "status", "match", "match_independent", "info", "skip", "known", "fail"])
         for fam, g in gate.items():
-            writer.writerow([run_day, fam, g["status"], g["match"], g["info"], g["skip"], g["known"], g["fail"]])
+            writer.writerow([run_day, fam, g["status"], g["match"], g["match_independent"], g["info"], g["skip"],
+                             g["known"], g["fail"]])
     (QC / "GATE.json").write_text(json.dumps({"run_date": run_day, "families": gate}, ensure_ascii=False,
                                              indent=2) + "\n", encoding="utf-8")
-    icon = {"PASS": "✅ PASS", "FAIL": "❌ FAIL", "NO_DATA": "⏭️ NO_DATA"}
+    icon = {"PASS": "✅ PASS", "FAIL": "❌ FAIL", "NO_DATA": "⏭️ NO_DATA", "SAME_SOURCE_ONLY": "🟡 僅同源"}
     lines = [f"# 數據品質比對報告（{run_day} UTC）", "",
-             "每類數據各一個閘門。**只取 PASS 的類別**；FAIL 先看下面「未解釋的差異」。規則見 `data/external/README.md` 第六節。", "",
-             "| 類別 | 閘門 | ✅ 一致 | ℹ️ 記錄 | ⏭️ 略過 | ⚠️ 已知 | ❌ 未解釋 |", "|---|---|---:|---:|---:|---:|---:|"]
-    lines += [f"| `{fam}` | {icon[g['status']]} | {g['match']} | {g['info']} | {g['skip']} | {g['known']} | {g['fail']} |"
-              for fam, g in gate.items()]
+             "每類數據各一個閘門。**只取 PASS 的類別**；🟡 僅同源 = 日期與抄錄沒錯、數值未經獨立來源驗證；"
+             "FAIL 先看下面「未解釋的差異」。規則見 `data/external/README.md` 第六節與 `data/external/SOP.md`。", "",
+             "| 類別 | 閘門 | ✅ 一致 | 其中獨立來源 | ℹ️ 記錄 | ⏭️ 略過 | ⚠️ 已知 | ❌ 未解釋 |",
+             "|---|---|---:|---:|---:|---:|---:|---:|"]
+    lines += [f"| `{fam}` | {icon[g['status']]} | {g['match']} | {g['match_independent']} | {g['info']} | {g['skip']} | "
+              f"{g['known']} | {g['fail']} |" for fam, g in gate.items()]
     fails = [r for r in rows if r["verdict"] == FAIL]
     lines += ["", "## 未解釋的差異（按原因歸類，每類最多列 8 筆，全部見 results_latest.csv）", ""]
     if fails:
@@ -520,7 +629,9 @@ def write_outputs(rows, gate, run_day, sample_codes):
                                           for r in rules[-20:]]
     lines += ["", "## 抽樣", "",
               f"- 種子 = {run_day}；IBKR 每市場 {SAMPLE_IBKR} 檔、Yahoo↔Nasdaq {SAMPLE_WEB} 檔。明細：`results_latest.csv`。",
-              f"- 明天給 Futu 抓日線的清單（`futu_sample.txt`）：{len(sample_codes)} 個代號，含錨點 {', '.join(FUTU_ANCHORS)}。", ""]
+              f"- 明天給 Futu 抓日線的清單（`futu_sample.txt`）：{len(sample_codes)} 個代號，已排優先順序，本地取前 FUTU_DAILY_MAX 個。",
+              f"- 明天給 IBKR 的請求清單（`ibkr_sample.txt`）：{len(IBKR_ANCHORS)} 個指數錨點＋美股 {SAMPLE_IBKR_DAILY_US}＋港股 {SAMPLE_IBKR_DAILY_HK}。",
+              "- `canary_inputs` 裡標「同源 Yahoo」的只驗抄錄與日期；數值真偽要看「IBKR 獨立來源」與 Futu 恒指兩項。", ""]
     (QC / "QC_REPORT.md").write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -537,6 +648,7 @@ def main():
     futu_intraday_daily(web, rep)
     futu_kday(web, canary_hsi, rep, args.run_date)
     canary_vs_web(web, rep)
+    ibkr_daily(web, rep)
     ibkr_vs_web(web, rep, random.Random(args.run_date + "ibkr"))
     web_vs_web(web, rep, random.Random(args.run_date + "web"))
     internal_checks(rep)

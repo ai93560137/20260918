@@ -1,14 +1,14 @@
 # 數據品質比對報告（2026-09-27 UTC）
 
-每類數據各一個閘門。**只取 PASS 的類別**；FAIL 先看下面「未解釋的差異」。規則見 `data/external/README.md` 第六節。
+每類數據各一個閘門。**只取 PASS 的類別**；🟡 僅同源 = 日期與抄錄沒錯、數值未經獨立來源驗證；FAIL 先看下面「未解釋的差異」。規則見 `data/external/README.md` 第六節與 `data/external/SOP.md`。
 
-| 類別 | 閘門 | ✅ 一致 | ℹ️ 記錄 | ⏭️ 略過 | ⚠️ 已知 | ❌ 未解釋 |
-|---|---|---:|---:|---:|---:|---:|
-| `futu_vs_web` | ✅ PASS | 4 | 2 | 1 | 0 | 0 |
-| `ibkr_vs_web` | ❌ FAIL | 91 | 0 | 9 | 0 | 14 |
-| `web_vs_web` | ❌ FAIL | 59 | 0 | 0 | 0 | 61 |
-| `canary_inputs` | ✅ PASS | 236 | 0 | 1 | 0 | 0 |
-| `internal` | ✅ PASS | 2 | 1 | 0 | 0 | 0 |
+| 類別 | 閘門 | ✅ 一致 | 其中獨立來源 | ℹ️ 記錄 | ⏭️ 略過 | ⚠️ 已知 | ❌ 未解釋 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `futu_vs_web` | ✅ PASS | 4 | 4 | 2 | 1 | 0 | 0 |
+| `ibkr_vs_web` | ❌ FAIL | 91 | 91 | 0 | 9 | 0 | 14 |
+| `web_vs_web` | ❌ FAIL | 59 | 59 | 0 | 0 | 0 | 61 |
+| `canary_inputs` | 🟡 僅同源 | 236 | 0 | 0 | 2 | 0 | 0 |
+| `internal` | ✅ PASS | 2 | 2 | 1 | 0 | 0 | 0 |
 
 ## 未解釋的差異（按原因歸類，每類最多列 8 筆，全部見 results_latest.csv）
 
@@ -61,4 +61,6 @@
 ## 抽樣
 
 - 種子 = 2026-09-27；IBKR 每市場 20 檔、Yahoo↔Nasdaq 30 檔。明細：`results_latest.csv`。
-- 明天給 Futu 抓日線的清單（`futu_sample.txt`）：46 個代號，含錨點 HK.800000, US.SPY, US.QQQ。
+- 明天給 Futu 抓日線的清單（`futu_sample.txt`）：416 個代號，已排優先順序，本地取前 FUTU_DAILY_MAX 個。
+- 明天給 IBKR 的請求清單（`ibkr_sample.txt`）：7 個指數錨點＋美股 30＋港股 15。
+- `canary_inputs` 裡標「同源 Yahoo」的只驗抄錄與日期；數值真偽要看「IBKR 獨立來源」與 Futu 恒指兩項。

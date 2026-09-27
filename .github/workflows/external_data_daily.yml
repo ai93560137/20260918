@@ -8,10 +8,11 @@ name: External data daily（外部來源每日彙整）
 # 同步完接著跑 scripts/external_qc.py：Futu／IBKR 對照各分支的網站數據，逐欄逐日期比對，
 # 報告與閘門在 data/external/qc/（QC_REPORT.md、GATE.json），並產生明天給 Futu 的日線抽樣清單。
 # 需要 GitHub Secret：ZHUGE_GCP_URL（Cloud Run 網址，結尾斜線可有可無）。沒設就只同步 IBKR。
-# 22:41 UTC：美股收市（20:00／21:00 UTC）與 MT5 券商日切換（21:00 UTC）之後。
+# 00:17 UTC（香港 08:17）：美股收市、MT5 券商換日（21:00 UTC）之後，也等鳥翔的網站日線
+# （gifted-carson 約 22:58–23:56 UTC 提交）更新完，當天的數據當天比得到；在港股開市前完成。
 on:
   schedule:
-    - cron: '41 22 * * *'
+    - cron: '17 0 * * *'
   workflow_dispatch:
     inputs:
       days:

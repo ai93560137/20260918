@@ -4,7 +4,8 @@
 其他分支一律從這裡取，不要各自重抓、也不要在別的分支改這個資料夾（每天會被覆蓋）。
 
 - 彙整腳本：`scripts/external_data_sync.py`
-- 排程：`.github/workflows/external_data_daily.yml`，每天 22:41 UTC
+- 排程：`.github/workflows/external_data_daily.yml`，每天 00:17 UTC（香港 08:17）
+- 作業程序：[`SOP.md`](SOP.md)（每日檢查、擴充取數、差異處理）
 - 最新狀態：[`STATUS.md`](STATUS.md)（每個系列的最新日期與列數、本次執行結果）
 - 數據品質：[`qc/QC_REPORT.md`](qc/QC_REPORT.md)、[`qc/GATE.json`](qc/GATE.json)（第六節）
 
@@ -98,7 +99,7 @@ iv = load("/tmp/ext/data/external/futu/US.QQQ/options/*/*.csv.gz")
 | `futu_vs_web` | Futu 日線抽樣、Futu 5 分 K 合成日線 ↔ 網站日線（鳥翔所用的 `claude/gifted-carson-v2tvhw` 的 `data/equities`，Yahoo） | Futu 抓到的全部比 |
 | `ibkr_vs_web` | IBKR 收市、次日開市、次日收市 ↔ 同上網站日線 | 每市場每天 20 檔，種子 = 執行日 |
 | `web_vs_web` | Nasdaq.com 第二收市源 ↔ Yahoo（美股） | 最近 5 份快照，每份 30 檔 |
-| `canary_inputs` | 金絲雀實際用的恒指、標普日線 ↔ 網站日線；Futu 恒指 ↔ 金絲雀恒指 | 最近 30 個交易日全比 |
+| `canary_inputs` | 金絲雀實際用的恒指、標普日線 ↔ 網站日線（**同源 Yahoo**，只驗抄錄與日期）；Futu 恒指、IBKR 指數 ↔ 金絲雀（獨立來源） | 最近 30 個交易日全比 |
 | `internal` | 封存內部一致性：K 線高低關係、MT5 四價相同、期權清洗規則通過率（金絲雀手冊 §10，只記錄） | 全部 |
 
 **判定規則（預先登記，不事後調整）**
@@ -110,6 +111,8 @@ iv = load("/tmp/ext/data/external/futu/US.QQQ/options/*/*.csv.gz")
 | ⏭️ 略過 | 對方沒有這一天（超出對方最新日期）、沒有這個代號、交易時段不完整（不完整只比收盤） | 不會 |
 | ⚠️ 已知 | 命中 `qc/known_issues.csv` 登記的原因 | 不會 |
 | ❌ 未解釋 | 其他一切差異，包括兩邊日期範圍重疊、卻只有一邊有某一天的**日期缺漏** | **會，該類 FAIL** |
+
+類別閘門：有 ❌ → `FAIL`；有獨立來源的 ✅ → `PASS`；✅ 全部來自同源比對（例如兩邊都是 Yahoo）→ `SAME_SOURCE_ONLY`（🟡 僅同源：日期與抄錄沒錯，數值未經獨立驗證）；沒有任何 ✅ → `NO_DATA`。
 
 - **日期錯位自動辨認**：不一致時，若甲的值等於乙的前一或後一交易日，說明欄直接寫出「日期錯位」和是哪一天。
 - **第三來源投票**：兩邊不一致時，說明欄列出其他來源同一天同一欄的值；已知錯位的來源不投票。
