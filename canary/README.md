@@ -9,7 +9,7 @@
 | `build_canary_table.py` | 產生器,純 Python 標準庫,不需 pandas |
 | `yellow_lab.py` / `YELLOW_UPGRADE.md` | 黃燈升級考核腳本(需 pandas)與結果報告 |
 | `red_lab.py` / `RED_UPGRADE.md` | 紅燈(VIX9D 系)提位考核腳本與結果報告 |
-| `daily_report.py` / `DAILY_REPORT.md` / `daily_log.csv` / `tg_daily.txt` | 每日總結報告產生器、當日報告、長期逐日紀錄、Telegram 短訊 |
+| `daily_report.py` / `DAILY_REPORT.md` / `daily_log.csv` / `sent_log.csv` / `tg_daily.txt` | 每日總結報告產生器、當日報告、長期逐日紀錄、**已發訊息紀錄(只追加,供次日回驗)**、Telegram 短訊 |
 | `lab_common.py` | 兩個考核室共用的口徑函式(與雲垂陣 canary_lab.py 一致) |
 | `data_external/*_daily.csv` | 六隻鳥日線快照(VIX9D、VIX、VIX3M、VVIX、MOVE、AXVI)+ SPX/HSI/VHSI(考核用),來源見下 |
 
@@ -78,7 +78,8 @@
 ```bash
 python3 canary/build_canary_table.py --refresh   # 從雲垂陣分支拉最新六隻鳥,重產燈色表
 python3 canary/build_canary_table.py             # 只用現有快照重產
-python3 canary/daily_report.py                   # 產出 DAILY_REPORT.md、追加 daily_log.csv、寫 tg_daily.txt
+python3 canary/daily_report.py                   # 產出 DAILY_REPORT.md、追加 daily_log.csv 與 sent_log.csv、寫 tg_daily.txt
+python3 canary/daily_report.py --today 2026-09-27 --dry-run   # 測試:不動兩個紀錄檔
 pip install pandas tabulate && (cd canary && python3 yellow_lab.py && python3 red_lab.py)   # 重跑兩份考核報告
 ```
 
@@ -89,6 +90,12 @@ pip install pandas tabulate && (cd canary && python3 yellow_lab.py && python3 re
 **Telegram 每日總結**:`tg_daily.txt` 是完整白話版(三軸、黃鳥、距門檻、試用層、新鮮度、健康、白話一句、免責),
 含當日日期戳,所以每天內容必變、每天必發(週末標明「燈色沿用」)。合併前由 Routine 推送觸發 `canary_broadcast.yml` 發;
 合併後由 `canary_daily.yml` 自己發。要臨時廣播別的內容,改 `BROADCAST.txt` 推送即可;幾行的更正或補充用 `NOTICE.txt`,不必重發整份說明。提交訊息含 `[skip-tg]` 則只改檔不發送(例如修正存檔內容);之後要發,用 `workflow_dispatch` 指定檔名。
+
+**T−1 訊息回驗**:每次發訊息前,先把 `sent_log.csv` 最後一列(昨天真正發出的訊息當時的讀數、燈色、連續天數、預測適用日)
+拿來對照今天重產的表,結果寫進報告 §6 與 Telegram 🔁 段:數值被上游修訂或燈色改判 → ❌(並進警告);亞洲鳥補值 → ℹ️(當時正確);
+呆值有無被真值取代;預測的適用日對不對;連續天數是否接得上。燈色日後 5 個 SPX 交易日齊了,再補一則 📐 後驗
+(實現波動為前一年 5 日 RV 中位的幾倍、有無 −2% 單日),與 `lab_common.fwd` 同口徑,只記錄、不作單日結論。
+`sent_log.csv` **只追加、不覆蓋**(唯一會改的舊欄位是 `posthoc_done`),是「T 日說了什麼」的原始證據。
 
 `daily_log.csv` 是逐日累積的長期紀錄(燈色、試用層、觀察名單 W1 讀數、數據新鮮度),是觀察名單日後
 「樣本外」考核的原始資料,也是各策略登記響應後的對帳依據。**不要手改。**

@@ -78,7 +78,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
+          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "chore(canary): 每日燈色表與總結 $(date -u +%F)"

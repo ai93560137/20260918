@@ -16,13 +16,19 @@
 #   4. 數據新鮮度:各鳥最後日期,落後交易日數;落後 > 1 個交易日則警告
 #      + 呆值檢查:原始檔最後一列開高低收四價相同、且與前一日收盤差 < 0.01 → 疑似未更新(日期新、數值舊)
 #   5. 健康檢查:列數、日期單調、無重複、最新列六隻鳥齊全;工作流各步驟狀態(--health)
-#   6. 紅或深紅亮起時附 §3 註記
+#   6. T−1 訊息回驗:把上一次真正發出的訊息(sent_log.csv 最後一列)拿回來,對照今天重產的表——
+#      數值有沒有被上游修訂、燈色有沒有改判、亞洲鳥補值後黃鳥數有沒有變、預測的適用日對不對、
+#      連續天數是否接得上;以及燈色日後 5 個交易日已齊時,SPX 實現波動的後驗(只記錄)
+#   7. 紅或深紅亮起時附 §3 註記
 # 純標準庫。用法:
 #   python3 canary/daily_report.py
 #   python3 canary/daily_report.py --health refresh=ok build=ok labs=skipped
+#   python3 canary/daily_report.py --today 2026-09-27 --dry-run   # 測試:不寫 daily_log / sent_log
 # =============================================================================
 import argparse
 import csv
+import hashlib
+import math
 import os
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -35,12 +41,14 @@ TABLE = os.path.join(HERE, "canary_daily.csv")
 OUT_MD = os.path.join(HERE, "DAILY_REPORT.md")
 OUT_LOG = os.path.join(HERE, "daily_log.csv")
 OUT_TG = os.path.join(HERE, "tg_daily.txt")
+OUT_SENT = os.path.join(HERE, "sent_log.csv")          # 只追加、不覆蓋:每次發出的訊息各一列,供次日回驗
 
 BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi"]   # vhsi 為試用層資料,亞洲時段
 US_BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move"]     # axvi 是亞洲時段,天生慢一天
 W1_Q = 0.10                                              # 觀察名單 W1:VVIX/VIX < 滾動 252 日 p10
 DATA_DIR = os.path.join(HERE, "data_external")
 STALE_TOL = 0.01                                         # 呆值:四價相同且 |C − 前日C| < 此值
+SPX_FILE = os.path.join(DATA_DIR, "spx_daily.csv")      # 後驗用:燈色日後 5 個交易日的 SPX 實現波動
 
 LOG_FIELDS = ["date", "axis_short", "axis_disaster", "yellow", "yellow_count",
               "yellow_vvix", "yellow_move", "yellow_axvi",
@@ -48,6 +56,15 @@ LOG_FIELDS = ["date", "axis_short", "axis_disaster", "yellow", "yellow_count",
               "w1_fear_spike", "vvix_vix_ratio", "ratio_p10",
               "vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi", "slope_9d", "slope_3m",
               "stale_us_days", "stale_print", "generated_at_utc"]
+
+# sent_log.csv:T 日發出的訊息「當時說了什麼」。次日拿最後一列對照重產的表,驗 T−1 訊息正確與否。
+COMPARE_VALUES = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi", "slope_9d", "slope_3m",
+                  "vvix_p90", "move_p90", "axvi_p90", "vhsi_p90"]
+COMPARE_LIGHTS = ["axis_short", "axis_disaster", "yellow", "yellow_count", "yellow_vvix", "yellow_move", "yellow_axvi",
+                  "trial_yellow2", "trial_deep_yellow", "trial_red_deep", "trial_red_9d3m", "trial_yellow_vhsi"]
+SENT_FIELDS = (["report_date", "generated_at_utc", "light_date", "apply_date_pred",
+                "streak_short", "streak_disaster", "streak_yellow", "stale_print", "stale_detail", "tg_sha1", "posthoc_done"]
+               + COMPARE_LIGHTS + COMPARE_VALUES)
 
 
 # ----------------------------------------------------------------------------- 讀表
@@ -99,6 +116,10 @@ def streak(rows, key, value):
 
 
 WEEKDAY_ZH = "一二三四五六日"
+
+
+def word(v):
+    return {"1": "亮", "0": "滅", "": "—"}.get(v, v)
 
 
 def dz(d):
@@ -176,8 +197,126 @@ def w1_status(rows):
     return last_ratio, last_p10, lit, dates[-1], span
 
 
+# ----------------------------------------------------------------------------- T−1 訊息回驗
+def load_sent():
+    if not os.path.exists(OUT_SENT):
+        return []
+    with open(OUT_SENT, newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def spx_fwd5(light_date):
+    """燈色日 D 之後 5 個交易日的 SPX 實現波動(與 lab_common.fwd 同口徑:5 個對數報酬的樣本標準差×√252×100)、
+    是否出現 −2% 單日,以及 D 之前 252 日的無條件 5 日 RV 中位。D+5 未齊則回 None。"""
+    if not os.path.exists(SPX_FILE):
+        return None
+    ser = load_close(SPX_FILE)
+    ds = [d.isoformat() for d, _ in ser]
+    px = [v for _, v in ser]
+    # D 不在 SPX 日曆上(例如假期孤 bar)→ 取 ≤ D 的最後一個 SPX 交易日
+    i = max((k for k, d in enumerate(ds) if d <= light_date), default=None)
+    if i is None or i + 5 >= len(px):
+        return None
+    r = [math.log(px[k + 1] / px[k]) for k in range(len(px) - 1)]      # r[k] = k→k+1 的報酬,對應日期 ds[k+1]
+
+    def rv(j):                                                          # 以 j 為訊號日:報酬 r[j..j+4](日期 j+1..j+5)
+        w = r[j:j + 5]
+        if len(w) < 5:
+            return None
+        m = sum(w) / 5
+        return math.sqrt(sum((x - m) ** 2 for x in w) / 4) * math.sqrt(252) * 100
+
+    fwd = rv(i)
+    down = any(x < -0.02 for x in r[i:i + 5])
+    hist = [v for v in (rv(j) for j in range(max(0, i - 252), i)) if v is not None]
+    med = sorted(hist)[len(hist) // 2] if hist else None
+    return {"spx_day": ds[i], "end": ds[i + 5], "rv": fwd, "down2": down, "median": med}
+
+
+def verify_previous(rows, sent, today):
+    """回傳 (lines, posthoc_ids):lines 是回驗結果文字;posthoc_ids 是本次完成後驗的 sent 列 generated_at。"""
+    lines, done = [], []
+    by_date = {r["date"]: r for r in rows}
+    if not sent:
+        return ["首次產出,沒有前一則訊息可驗(明天起每天回驗昨天發出的訊息)"], done
+    S = sent[-1]
+    ld = S["light_date"]
+    lines.append(f"對象:{dz(S['report_date'])} 發出、燈色日 {dz(ld)} 的訊息(生成 {S['generated_at_utc']})")
+    cur = by_date.get(ld)
+    if cur is None:
+        lines.append(f"⚠️ 燈色日 {dz(ld)} 這一列今天在表中消失了(上游重建了日線?)——昨日訊息無從對照")
+        return lines, done
+    filled, revised, relit = [], [], []
+    for k in COMPARE_VALUES:
+        old, new = S.get(k, ""), cur.get(k, "")
+        if old == new:
+            continue
+        if old == "" and new != "":
+            filled.append(f"{k} 補值 {new}")
+        else:
+            revised.append(f"{k} {old or '—'} → {new or '—'}")
+    for k in COMPARE_LIGHTS:
+        old, new = S.get(k, ""), cur.get(k, "")
+        if old == new:
+            continue
+        if old == "" and new != "":
+            filled.append(f"{k} 補判 {word(new)}")
+        else:
+            relit.append(f"{k} {word(old) if old else '—'} → {word(new) if new else '—'}")
+    if revised:
+        lines.append("❌ 數值被上游修訂(昨日訊息用的是舊值):" + ";".join(revised))
+    if relit:
+        lines.append("❌ 燈色改判(昨日訊息的燈色在事後看是錯的):" + ";".join(relit))
+    if filled:
+        lines.append("ℹ️ 補值(昨日訊息當時未到的亞洲鳥今天補進來,昨日訊息在當時資訊下正確):" + ";".join(filled))
+    if not (revised or relit or filled):
+        lines.append(f"✅ 燈色日 {dz(ld)} 的全部讀數與燈色,與今天重產的表逐欄一致({len(COMPARE_VALUES)} 個數值、{len(COMPARE_LIGHTS)} 個燈)")
+    # 呆值有沒有被真值取代(stale_detail = "bird@YYYY-MM-DD@值";呆值列未必是燈色日,按它自己的日期查)
+    for item in filter(None, S.get("stale_detail", "").split(";")):
+        b, sd, old = (item.split("@") + ["", ""])[:3]
+        row_sd = by_date.get(sd)
+        new = row_sd.get(b, "") if row_sd else ""
+        if row_sd is None:
+            lines.append(f"⚠️ 昨日警告 {b} {dz(sd)} 疑似呆值 {old}:該日今天不在表中,無法對照")
+        else:
+            lines.append(f"{'✅' if old != new else '⚠️'} 昨日警告 {b} {dz(sd)} 疑似呆值 {old}:"
+                         + (f"今天已被真值 {new or '—'} 取代" if old != new else "今天仍是同一個值,上游未修正,該讀數仍不可信"))
+    # 預測的適用日 vs 實際下一列
+    later = [r["date"] for r in rows if r["date"] > ld]
+    if later:
+        actual = later[0]
+        ok = actual == S.get("apply_date_pred", "")
+        lines.append(f"{'✅' if ok else '⚠️'} 昨日說適用日 {dz(S['apply_date_pred'])},實際下一個交易日列是 {dz(actual)}"
+                     + ("" if ok else "(中間有假期或缺列;昨日訊息的適用日寫錯,燈色本身不受影響)"))
+    else:
+        lines.append(f"⏳ 適用日 {dz(S['apply_date_pred'])} 尚未有新收盤,無法驗;燈色沿用")
+    # 連續天數接得上嗎(僅當今天燈色日就是 T−1 燈色日的下一列)
+    last = rows[-1]
+    if later and last["date"] == later[0]:
+        for key, sk in (("axis_short", "streak_short"), ("axis_disaster", "streak_disaster"), ("yellow", "streak_yellow")):
+            if last[key] == "" or S.get(sk, "") == "":
+                continue
+            n_now = streak_info(rows, key, last[key])[0]
+            expect = int(S[sk]) + 1 if S.get(key, "") == last[key] else 1
+            lines.append(f"{'✅' if n_now == expect else '⚠️'} {key} 連續天數:昨日 {S[sk]} → 今日 {n_now}(預期 {expect})")
+    # 後驗:凡 sent 列的燈色日 D 已有 D+5 個 SPX 交易日、且尚未後驗者
+    for row in sent:
+        if row.get("posthoc_done") == "1":
+            continue
+        ph = spx_fwd5(row["light_date"])
+        if ph is None:
+            continue
+        ratio = (ph["rv"] / ph["median"]) if (ph["median"] and ph["rv"] is not None) else None
+        lights = f"短期軸 {row.get('axis_short') or '—'}、災難軸 {row.get('axis_disaster') or '—'}、黃 {word(row.get('yellow', ''))}"
+        lines.append(f"📐 後驗 燈色日 {dz(row['light_date'])}({lights}):其後 5 個交易日({dz(ph['spx_day'])} 收盤→{dz(ph['end'])})"
+                     f" SPX 實現波動 {ph['rv']:.1f}% 年化,為前一年 5 日 RV 中位({ph['median']:.1f}%)的 "
+                     f"{ratio:.2f} 倍;{'出現' if ph['down2'] else '未出現'} −2% 單日。單日樣本只記錄,不作結論(手冊看整體倍率)")
+        done.append(row["generated_at_utc"])
+    return lines, done
+
+
 # ----------------------------------------------------------------------------- 報告
-def build_report(rows, health, today):
+def build_report(rows, health, today, sent=None):
     last, prev = rows[-1], (rows[-2] if len(rows) > 1 else None)
     d_last = date.fromisoformat(last["date"])
     stale_us = business_days_between(d_last, today)
@@ -185,10 +324,7 @@ def build_report(rows, health, today):
     D, D1 = dz(d_last), (dz(prev["date"]) if prev else "—")          # 燈色日、前一列
     d_apply = next_weekday(d_last)                                     # 適用日(lag=1)
 
-    # 1. 燈色與變化(變化 = 表中前一列 D−1 對 燈色日 D,兩個日期都寫出)
-    def word(v):
-        return {"1": "亮", "0": "滅", "": "—"}.get(v, v)
-
+    # 1. 燈色與變化(變化 = 該燈上一個有值的列 對 燈色日 D,兩個日期都寫出)
     def prev_with(key):
         """燈色日之前、該欄最近一個有值的列(通常就是 D−1;D−1 空白時往前找,日期會寫在括號裡)。"""
         for r in reversed(rows[:-1]):
@@ -333,6 +469,11 @@ def build_report(rows, health, today):
     if bad:
         warnings.extend(f"健康檢查未過:{c[0]} = {c[1]}" for c in bad)
 
+    # 6. T−1 訊息回驗
+    verify_lines, posthoc_done = verify_previous(rows, sent or [], today)
+    if any(x.startswith("❌") for x in verify_lines):
+        warnings.append("T−1 訊息回驗有 ❌:昨日訊息的數值或燈色在今天的表上已不成立,見「T−1 訊息回驗」")
+
     # ---- Markdown
     md = [f"# 金絲雀每日總結 — 燈色日 {last['date']}",
           f"產生於 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')};"
@@ -380,8 +521,11 @@ def build_report(rows, health, today):
     for k, v, ok in checks:
         md.append(f"| {k} | {v} | {'✅' if ok else '❌'} |")
     md.append("")
+    md.append("## 6. T−1 訊息回驗(昨天發出的訊息,今天對照重產的表)\n")
+    md += [f"- {x}" for x in verify_lines]
+    md.append("")
     if last["axis_short"] == "紅" or last["axis_disaster"] == "深紅":
-        md.append("## 6. §3 註記(紅或深紅亮起時展示)\n")
+        md.append("## 7. §3 註記(紅或深紅亮起時展示)\n")
         md.append("```\n" + RED_NOTE + "\n```")
         md.append("")
     md.append("---\n口徑:`CANARY_PLAYBOOK.md` §2;欄位說明 `canary/README.md`;長期紀錄 `canary/daily_log.csv`。")
@@ -449,6 +593,7 @@ def build_report(rows, health, today):
            + "、".join(f"{b} {lb}(落後 {'—' if gap is None else gap})" for b, lb, gap in fresh if b in ("vix", "vvix", "move", "axvi", "vhsi")),
            "• 健康檢查:" + ("全過 ✅" if all(ok for _, _, ok in checks) else "有未過 ❌,見下"),
            ]
+    tg += ["", "🔁 回驗昨日訊息(T−1)"] + [f"• {x}" for x in verify_lines]
     if warnings:
         tg += ["", "⚠️ 警告"] + [f"• {w}" for w in warnings]
     if a_s == "紅" or a_d == "深紅":
@@ -474,7 +619,19 @@ def build_report(rows, health, today):
         "stale_print": ";".join(b for b, *_ in stale),
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
     }
-    return "\n".join(md) + "\n", tg_text, log_row, warnings
+    sent_row = {
+        "report_date": today.isoformat(), "generated_at_utc": log_row["generated_at_utc"],
+        "light_date": last["date"], "apply_date_pred": d_apply.isoformat(),
+        "streak_short": "" if last["axis_short"] == "" else str(streak_info(rows, "axis_short", last["axis_short"])[0]),
+        "streak_disaster": "" if last["axis_disaster"] == "" else str(streak_info(rows, "axis_disaster", last["axis_disaster"])[0]),
+        "streak_yellow": "" if last["yellow"] == "" else str(streak_info(rows, "yellow", last["yellow"])[0]),
+        "stale_print": log_row["stale_print"],
+        "stale_detail": ";".join(f"{b}@{dt}@{c:.2f}" for b, dt, c, _, _ in stale),
+        "tg_sha1": hashlib.sha1(tg_text.encode("utf-8")).hexdigest()[:12],
+        "posthoc_done": "0",
+        **{k: last.get(k, "") for k in COMPARE_LIGHTS + COMPARE_VALUES},
+    }
+    return "\n".join(md) + "\n", tg_text, log_row, warnings, sent_row, posthoc_done
 
 
 def append_log(row):
@@ -491,23 +648,42 @@ def append_log(row):
     return len(existing)
 
 
+def append_sent(sent, row, posthoc_done):
+    """只追加;同時把已完成後驗的舊列標記 posthoc_done=1(唯一允許改動舊列的欄位)。"""
+    for r in sent:
+        if r.get("generated_at_utc") in posthoc_done:
+            r["posthoc_done"] = "1"
+    sent.append(row)
+    with open(OUT_SENT, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=SENT_FIELDS, restval="", extrasaction="ignore")
+        w.writeheader()
+        w.writerows(sent)
+    return len(sent)
+
+
 def main():
     ap = argparse.ArgumentParser(description="金絲雀每日總結報告")
     ap.add_argument("--health", nargs="*", default=[], help="工作流步驟狀態,如 refresh=ok build=ok labs=skipped")
     ap.add_argument("--today", default=None, help="覆寫今日日期(YYYY-MM-DD),測試用")
+    ap.add_argument("--dry-run", action="store_true", help="只寫 DAILY_REPORT.md / tg_daily.txt,不動 daily_log / sent_log")
     args = ap.parse_args()
     health = dict(h.split("=", 1) for h in args.health if "=" in h)
     today = date.fromisoformat(args.today) if args.today else datetime.now(timezone.utc).date()
 
     rows = load_table()
-    md, tg, log_row, warnings = build_report(rows, health, today)
+    sent = load_sent()
+    md, tg, log_row, warnings, sent_row, posthoc_done = build_report(rows, health, today, sent)
     with open(OUT_MD, "w", encoding="utf-8") as fh:
         fh.write(md)
     with open(OUT_TG, "w", encoding="utf-8") as fh:
         fh.write(tg + "\n")
-    n = append_log(log_row)
     print(md)
-    print(f"[daily_report] 已寫入 DAILY_REPORT.md、tg_daily.txt;daily_log.csv 共 {n} 列;警告 {len(warnings)} 則")
+    if args.dry_run:
+        print("[daily_report] --dry-run:未寫 daily_log.csv / sent_log.csv")
+    else:
+        n = append_log(log_row)
+        m = append_sent(sent, sent_row, posthoc_done)
+        print(f"[daily_report] 已寫入 DAILY_REPORT.md、tg_daily.txt;daily_log.csv 共 {n} 列;sent_log.csv 共 {m} 列;警告 {len(warnings)} 則")
     if warnings:
         print("[daily_report] " + " | ".join(warnings), file=sys.stderr)
 
