@@ -1,13 +1,19 @@
-name: Canary broadcast（金絲雀 Telegram 廣播,手動）
+name: Canary broadcast（金絲雀 Telegram 廣播）
 
-# 把 repo 內的一個純文字檔發到 Telegram(用與其他工作流相同的 TG_BOT_TOKEN / TG_CHAT_ID 密鑰)。
-# 觸發方式(與雲垂陣 send-telegram.yml 同一套路):**推送 canary/BROADCAST.txt 即發送**;
-# 也可手動 workflow_dispatch 指定別的檔。超過 Telegram 單則上限(4096 字元)時自動按段落分段。
+# 把 repo 內的純文字檔發到 Telegram(用與其他工作流相同的 TG_BOT_TOKEN / TG_CHAT_ID 密鑰)。
+# 觸發方式(與雲垂陣 send-telegram.yml 同一套路):
+#   * 推送 canary/BROADCAST.txt  → 發長版廣播(一次性,只在檔案有改動時)
+#   * 推送 canary/tg_daily.txt   → 發每日短訊(Routine 每日提交時帶上;週末內容不變就不會觸發)
+#   * 手動 workflow_dispatch 指定任一檔
+# 只發「這次推送真的改動了」的檔;只改工作流本身不會發。超過 4096 字元自動按段落分段。
 # 注意:GitHub 只在工作流跑過一次後才登記它,功能分支上新加的工作流用 API 手動觸發會 404,推送觸發不受影響。
+# 合併到預設分支後,canary_daily.yml 用 GITHUB_TOKEN 的提交不會觸發本工作流(GitHub 防遞迴),
+# 由 canary_daily.yml 自己的 Telegram 步驟發送,不會重複。
 on:
   push:
     paths:
       - 'canary/BROADCAST.txt'
+      - 'canary/tg_daily.txt'
       - '.github/workflows/canary_broadcast.yml'
   workflow_dispatch:
     inputs:
@@ -26,19 +32,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 2
+
+      - name: Decide which files to send
+        id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_FILE: ${{ inputs.file }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            FILES="${INPUT_FILE:-canary/BROADCAST.txt}"
+          else
+            CHANGED=$(git diff --name-only "$BEFORE" HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+            FILES=$(echo "$CHANGED" | grep -E '^canary/(BROADCAST|tg_daily)\.txt$' | tr '\n' ' ')
+          fi
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "to send: ${FILES:-(none)}"
 
       - name: Send to Telegram
+        if: steps.pick.outputs.files != ''
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          FILE: ${{ inputs.file || 'canary/BROADCAST.txt' }}
+          FILES: ${{ steps.pick.outputs.files }}
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::error::TG_BOT_TOKEN / TG_CHAT_ID 沒設,無法發送"; exit 1
           fi
+          for FILE in $FILES; do
           if [ ! -s "$FILE" ]; then
-            echo "::error::找不到或空檔:$FILE"; exit 1
+            echo "::warning::找不到或空檔:$FILE"; continue
           fi
           # 以段落為單位切成 ≤3800 字元的區塊(Telegram 上限 4096)
           python3 - "$FILE" <<'PY'
@@ -61,6 +85,8 @@ jobs:
               --data-urlencode "chat_id=${TG_CHAT_ID}" \
               --data-urlencode "disable_web_page_preview=true" \
               --data-urlencode "text=$(cat "$f")" > /dev/null
-            echo "sent $f ($(wc -c < "$f") bytes)"
+            echo "sent $FILE → $f ($(wc -c < "$f") bytes)"
             sleep 1
+          done
+          rm -f /tmp/tg_chunk_*.txt
           done
