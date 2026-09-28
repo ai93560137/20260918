@@ -570,6 +570,41 @@ def wait_run_operation(ctx: Ctx, op, api=RUN_API, label="Cloud Run", poll=5, max
     return op.get("response", {})
 
 
+BUILD_DONE = ("SUCCESS", "FAILURE", "INTERNAL_ERROR", "TIMEOUT", "CANCELLED", "EXPIRED")
+
+
+def build_id_from_operation(op):
+    """builds:submit 回傳的操作名稱是全域格式 operations/build/<專案>/<base64(建置ID)>，
+    但建置在區域內，GET 全域操作會 404；改從 metadata 或名稱解出建置 ID。"""
+    bid = ((op.get("metadata") or {}).get("build") or {}).get("id")
+    if bid:
+        return bid
+    m = re.fullmatch(r"operations/build/[^/]+/([A-Za-z0-9_=-]+)", op.get("name", ""))
+    if m:
+        raw = m.group(1)
+        try:
+            return base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            return None
+    return None
+
+
+def wait_build(ctx: Ctx, op, poll=8, max_wait=1500):
+    bid = build_id_from_operation(op)
+    if not bid:
+        return wait_run_operation(ctx, op, api=CB_API, label="Cloud Build")
+    url = f"{CB_API}/projects/{ctx.project}/locations/{ctx.region}/builds/{bid}"
+    started = time.time()
+    build = ctx.call("GET", url)
+    while build.get("status") not in BUILD_DONE:
+        if time.time() - started > max_wait:
+            die(f"建置逾時（{max_wait}s）：{bid}")
+        time.sleep(poll)
+        build = ctx.call("GET", url)
+        print(f"   ⏳ {int(time.time() - started):>4}s Cloud Build {build.get('status')}…", flush=True)
+    return build
+
+
 def update_service(ctx: Ctx, svc, what):
     """送出整個 Service（含 etag，避免蓋掉別人同時的修改）：先 validateOnly，再真的更新。"""
     body = json.loads(json.dumps(svc))
@@ -886,8 +921,8 @@ def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
     sub = ctx.call("POST", f"{RUN_API}/{ctx.fn_parent}/builds:submit", json=build_req)
     if sub.get("baseImageWarning"):
         print(f"⚠️ {sub['baseImageWarning']}")
-    build = wait_run_operation(ctx, sub["buildOperation"], api=CB_API, label="Cloud Build")
-    if build.get("status") not in (None, "SUCCESS"):
+    build = wait_build(ctx, sub["buildOperation"])
+    if build.get("status") != "SUCCESS":
         die(f"建置失敗：{build.get('status')} {build.get('statusDetail', '')}  日誌：{build.get('logUrl', '')}")
     digest = next((i.get("digest") for i in (build.get("results") or {}).get("images", [])
                    if i.get("name", "").split("@")[0] == image_uri and i.get("digest")), None)

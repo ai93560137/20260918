@@ -491,18 +491,27 @@ class CloudRunDeployTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(writes(s), [])
 
+    def test_build_id_from_operation(self):
+        import base64
+        name = f"operations/build/{PROJECT}/" + base64.b64encode(b"05d72ba7-4db3-4ede-ad99-d19c62b91a09").decode().rstrip("=")
+        self.assertEqual(ga.build_id_from_operation({"name": name}), "05d72ba7-4db3-4ede-ad99-d19c62b91a09")
+        self.assertEqual(ga.build_id_from_operation({"name": "x", "metadata": {"build": {"id": "abc"}}}), "abc")
+        self.assertIsNone(ga.build_id_from_operation({"name": "projects/p/locations/l/operations/o"}))
+
     def test_deploy_yes_full_flow(self):
+        import base64
         image = f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/{SVC}:latest"
-        build_op = f"projects/{PROJECT}/locations/{RUN_REGION}/operations/build-1"
+        build_op = f"operations/build/{PROJECT}/" + base64.b64encode(b"bid-1").decode()
+        build_url = f"projects/{PROJECT}/locations/{RUN_REGION}/builds/bid-1"
         build_polls = iter([
-            FakeResp(200, {"name": build_op, "done": False}),
-            FakeResp(200, {"name": build_op, "done": True, "response": {
-                "status": "SUCCESS", "results": {"images": [{"name": image, "digest": "sha256:" + "f" * 64}]}}}),
+            FakeResp(200, {"id": "bid-1", "status": "WORKING"}),
+            FakeResp(200, {"id": "bid-1", "status": "SUCCESS",
+                           "results": {"images": [{"name": image, "digest": "sha256:" + "f" * 64}]}}),
         ])
         s = FakeSession(perm_handlers(ok=True) + [
             ("POST", "/upload/storage/v1/b/run-sources-demo-proj-europe-west1/o", FakeResp(200, {"name": "x", "generation": "777"})),
             ("POST", f"locations/{RUN_REGION}/builds:submit", FakeResp(200, {"buildOperation": {"name": build_op, "done": False}})),
-            ("GET", build_op, lambda *_: next(build_polls)),
+            ("GET", build_url, lambda *_: next(build_polls)),
             ("GET", OP, done_op()),
             ("GET", SVC_NAME, FakeResp(200, svc_body())),
             ("PATCH", SVC_NAME, FakeResp(200, {"name": OP, "done": True})),
@@ -534,7 +543,8 @@ class CloudRunDeployTests(unittest.TestCase):
         s = FakeSession(perm_handlers(ok=True) + [
             ("POST", "/upload/storage/", FakeResp(200, {"generation": "1"})),
             ("POST", "builds:submit", FakeResp(200, {"buildOperation": {"name": build_op, "done": True,
-                                                                           "response": {"status": "FAILURE", "logUrl": "https://log"}}})),
+                                                                           "metadata": {"build": {"id": "bid-2"}}}})),
+            ("GET", "/builds/bid-2", FakeResp(200, {"id": "bid-2", "status": "FAILURE", "logUrl": "https://log"})),
             ("GET", SVC_NAME, FakeResp(200, svc_body())),
         ])
         out, code = run(["deploy", "--yes", "--no-check"], s, RUN_ENV)
