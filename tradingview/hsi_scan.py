@@ -8,6 +8,7 @@
   4. 滾倉提醒（距月度到期 ≤ 2 曆日）
 輸出：data_external/scan_report.md；有警報時 exit code 仍為 0，警報寫在報告最上方。
 """
+import calendar
 import glob
 import json
 import os
@@ -177,11 +178,21 @@ def scan_options(hv, front=None):
             FIRST_ATM.update(mon=mon, K=K, iv=atm, civ=civ, piv=piv)
         MONTH_IVS.append((mon, atm))
         LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
+        # 到期前 5 天內的月份：剩餘天數太短，IV 對 HV20 的比較沒有意義，只顯示不警報
+        try:
+            m0 = datetime.strptime(mon, '%b-%y').date()
+            month_end = date(m0.year, m0.month, calendar.monthrange(m0.year, m0.month)[1])
+            expiring = (month_end - date.today()).days <= 5
+        except ValueError:
+            expiring = False
         if hv:
             prem = atm - hv
-            LINES.append(f"- IV − HV20 = {prem:+.1f} 點（23 年平均 +2.4）")
-            DIGEST.append(f"HSI {mon}: ATM {K:.0f} IV {atm:.1f} 溢價{prem:+.1f}（均+2.4）")
-            if prem < 0:
+            tag = '（到期月·不評估）' if expiring else '（均+2.4）'
+            LINES.append(f"- IV − HV20 = {prem:+.1f} 點（23 年平均 +2.4）{'；到期月不評估' if expiring else ''}")
+            DIGEST.append(f"HSI {mon}: ATM {K:.0f} IV {atm:.1f} 溢價{prem:+.1f}{tag}")
+            if expiring:
+                pass
+            elif prem < 0:
                 ALERTS.append(f"{mon} IV−HV = {prem:+.1f} 為負：保費消失，暫停新賣出")
             elif prem > 8:
                 ALERTS.append(f"{mon} IV−HV = {prem:+.1f} 異常厚：檢查是否有事件風險")
