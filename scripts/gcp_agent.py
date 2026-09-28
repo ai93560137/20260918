@@ -36,8 +36,13 @@ gcp_agent.py — 讓 Claude（或任何人）不用 gcloud 也能操作本專案
   iam-public    讓函式允許未經驗證的叫用（allUsers → roles/run.invoker）
 
 所有會改動 GCP 的命令都需要 --yes；沒有 --yes 只會印出「將會做什麼」。
-run 模式目前只支援讀取類命令；env set/unset、deploy --yes、iam-public 會拒絕執行
-（deploy 不加 --yes 仍會做本機來源檢查）。
+run 模式（Cloud Run 服務）：
+  env set/unset 建立新修訂（沿用目前映像），先 validateOnly 驗證再套用
+  revisions     列出修訂、建立時間、映像、流量
+  rollback      把 100% 流量切回舊修訂（不建新修訂、不刪任何東西）
+  deploy        上傳 zip → Cloud Build（buildpacks，沿用服務的 buildConfig）→ 換新映像建立新修訂
+                dry-run 會列出計畫與缺少的權限；--local-only 只做本機來源檢查
+  iam-public    run 模式不提供
 """
 from __future__ import annotations
 
@@ -79,6 +84,9 @@ RUN_API = "https://run.googleapis.com/v2"
 LOG_API = "https://logging.googleapis.com/v2"
 GCS_API = "https://storage.googleapis.com/storage/v1"
 SU_API = "https://serviceusage.googleapis.com/v1"
+CB_API = "https://cloudbuild.googleapis.com/v1"
+CRM_API = "https://cloudresourcemanager.googleapis.com/v1"
+GCS_UPLOAD_API = "https://storage.googleapis.com/upload/storage/v1"
 
 SECRET_ENV_PATTERN = re.compile(r"(TOKEN|SECRET|KEY|PASSWORD|PASS)", re.I)
 
@@ -516,22 +524,209 @@ def wait_operation(ctx: Ctx, op, poll=6, max_wait=900):
     return op.get("response", {})
 
 
-RUN_WRITE_REFUSAL = ("run 模式（Cloud Run 服務 {svc}）尚未支援{what}，本工具不會做任何改動。\n"
-                     "   若要改 Cloud Functions 舊部署，請加 --target function。")
+# ---- Cloud Run 寫入（env set/unset、rollback、deploy） ------------------------------
+LATEST_TRAFFIC = [{"type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST", "percent": 100}]
+
+
+def short_rev(name):
+    return (name or "").rsplit("/", 1)[-1]
+
+
+def short_image(image):
+    image = image or ""
+    if "@sha256:" in image:
+        return "sha256:" + image.split("@sha256:", 1)[1][:12]
+    return image.rsplit("/", 1)[-1]
+
+
+def traffic_map(svc):
+    """{修訂短名: 百分比}，LATEST 類型換成目前的 latestReadyRevision。"""
+    out = {}
+    for t in svc.get("trafficStatuses") or []:
+        rev = short_rev(t.get("revision"))
+        if not rev and "LATEST" in (t.get("type") or ""):
+            rev = short_rev(svc.get("latestReadyRevision"))
+        if rev:
+            out[rev] = out.get(rev, 0) + int(t.get("percent", 0) or 0)
+    return out
+
+
+def traffic_follows_latest(svc):
+    return any("LATEST" in (t.get("type") or "") and int(t.get("percent", 0) or 0) == 100
+               for t in svc.get("traffic") or [])
+
+
+def wait_run_operation(ctx: Ctx, op, api=RUN_API, label="Cloud Run", poll=5, max_wait=1200):
+    name = op["name"]
+    started = time.time()
+    while not op.get("done"):
+        if time.time() - started > max_wait:
+            die(f"操作逾時（{max_wait}s）：{name}")
+        time.sleep(poll)
+        op = ctx.call("GET", f"{api}/{name}")
+        print(f"   ⏳ {int(time.time() - started):>4}s {label}…", flush=True)
+    if "error" in op:
+        die(f"操作失敗：{json.dumps(op['error'], ensure_ascii=False)[:1500]}")
+    return op.get("response", {})
+
+
+def update_service(ctx: Ctx, svc, what):
+    """送出整個 Service（含 etag，避免蓋掉別人同時的修改）：先 validateOnly，再真的更新。"""
+    body = json.loads(json.dumps(svc))
+    (body.get("template") or {}).pop("revision", None)  # 指定修訂名稱會與既有修訂衝突
+    url = f"{RUN_API}/{svc['name']}"
+    ctx.call("PATCH", url, params={"validateOnly": "true"}, json=body)
+    print("✅ GCP 伺服器端驗證通過（validateOnly，尚未改動）")
+    print(f"🚀 {what}（約 1–3 分鐘）…")
+    op = ctx.call("PATCH", url, json=body)
+    wait_run_operation(ctx, op)
+    return report_after_update(ctx, svc)
+
+
+def report_after_update(ctx: Ctx, before):
+    svc = get_service(ctx, quiet=True) or {}
+    term = svc.get("terminalCondition") or {}
+    ready = term.get("state") == "CONDITION_SUCCEEDED"
+    old_rev = short_rev(before.get("latestReadyRevision"))
+    new_rev = short_rev(svc.get("latestReadyRevision"))
+    print(f"{'✅' if ready else '❌'} 服務狀態：{term.get('state')}  最新修訂：{new_rev}")
+    if not ready and term.get("message"):
+        print(f"⚠️ {term['message'][:500]}")
+    print("   流量：" + ("、".join(f"{p}% → {r}" for r, p in traffic_map(svc).items()) or "（無）"))
+    if old_rev and old_rev != new_rev:
+        print(f"↩️  若有問題，退回上一版：python3 scripts/gcp_agent.py rollback --to {old_rev} --yes")
+    return svc
+
+
+def require_service(ctx: Ctx):
+    svc = get_service(ctx)
+    if not svc:
+        die("Cloud Run 服務不存在。")
+    return svc
+
+
+def cmd_env_run(ctx: Ctx):
+    a = ctx.args
+    svc = require_service(ctx)
+    if a.env_action == "get":
+        env = run_env(svc)
+        for k in sorted(env):
+            print(f"{k}={env[k]}")
+        return
+    container = svc["template"]["containers"][0]
+    env_list = container.get("env", [])
+    changes = parse_kv(a.pairs) if a.env_action == "set" else {}
+    removals = set(a.pairs) if a.env_action == "unset" else set()
+    if not changes and not removals:
+        die("請指定要修改的變數，例如：env set TARGET_RRR=2")
+    existing = {e["name"] for e in env_list}
+    new_list, changed = [], False
+    for e in env_list:
+        name = e["name"]
+        if name in removals:
+            plan(f"移除 {name}")
+            changed = True
+            continue
+        if name in changes:
+            if (e.get("valueSource") or {}).get("secretKeyRef"):
+                die(f"{name} 是 Secret Manager 參照，請到 GCP 主控台修改，本工具不處理。")
+            if e.get("value", "") != changes[name]:
+                plan(f"修改 {name}: {mask(name, e.get('value', ''))} → {mask(name, changes[name])}")
+                changed = True
+            new_list.append({"name": name, "value": changes[name]})
+        else:
+            new_list.append(e)
+    for name in changes:
+        if name not in existing:
+            plan(f"新增 {name}={mask(name, changes[name])}")
+            new_list.append({"name": name, "value": changes[name]})
+            changed = True
+    for name in sorted(removals - existing):
+        print(f"ℹ️ {name} 本來就不存在")
+    if not changed:
+        print("沒有變更。")
+        return
+    plan(f"以目前的程式碼映像（{short_image(container.get('image'))}）建立新修訂，100% 流量切到新修訂")
+    if not traffic_follows_latest(svc):
+        plan("⚠️ 目前流量不是跟著最新修訂（可能之前做過 rollback）；套用後流量會改回最新修訂")
+    plan(f"目前修訂 {short_rev(svc.get('latestReadyRevision'))} 會保留，可隨時 rollback")
+    if not a.yes:
+        print("（dry-run；確認無誤後加 --yes 才會套用。此系統會對真實帳戶送單，改參數會立刻影響交易。）")
+        return
+    container["env"] = new_list
+    svc["traffic"] = LATEST_TRAFFIC
+    update_service(ctx, svc, "套用環境變數，建立新修訂")
+
+
+def list_revisions(ctx: Ctx):
+    data = ctx.call("GET", f"{RUN_API}/{ctx.svc_name}/revisions", params={"pageSize": 100})
+    revs = data.get("revisions", [])
+    return sorted(revs, key=lambda r: r.get("createTime", ""), reverse=True)
+
+
+def revision_ready(rev):
+    for c in rev.get("conditions") or []:
+        if c.get("type") == "Ready":
+            return c.get("state") == "CONDITION_SUCCEEDED"
+    return None
+
+
+def cmd_revisions(ctx: Ctx):
+    if not ctx.is_run:
+        die("revisions 只支援 run 模式。")
+    svc = require_service(ctx)
+    traffic = traffic_map(svc)
+    revs = list_revisions(ctx)[: ctx.args.limit]
+    print(f"{'修訂':<32} {'建立時間(HK)':<15} {'狀態':<4} {'流量':>5}  映像")
+    for r in revs:
+        name = short_rev(r["name"])
+        ok = revision_ready(r)
+        img = short_image(((r.get("containers") or [{}])[0]).get("image"))
+        pct = traffic.get(name, 0)
+        print(f"{name:<32} {hk_time(r.get('createTime', '')):<15} {'✅' if ok else ('❌' if ok is False else '？'):<4} {pct:>4}%  {img}")
+
+
+def cmd_rollback(ctx: Ctx):
+    if not ctx.is_run:
+        die("rollback 只支援 run 模式。")
+    a = ctx.args
+    svc = require_service(ctx)
+    revs = list_revisions(ctx)
+    names = [short_rev(r["name"]) for r in revs]
+    current = traffic_map(svc)
+    if a.to:
+        target = short_rev(a.to)
+        if target not in names:
+            die(f"找不到修訂 {target}。可用 `revisions` 列出。")
+        rev = revs[names.index(target)]
+    else:
+        # 預設：目前服務中修訂之前、最近一個 Ready 的修訂
+        serving = max(current, key=current.get) if current else short_rev(svc.get("latestReadyRevision"))
+        idx = names.index(serving) + 1 if serving in names else 0
+        rev = next((r for r in revs[idx:] if revision_ready(r)), None)
+        if not rev:
+            die("找不到可退回的舊修訂。")
+        target = short_rev(rev["name"])
+    if revision_ready(rev) is False:
+        die(f"修訂 {target} 不是 Ready 狀態，不能把流量切過去。")
+    if current == {target: 100}:
+        print(f"ℹ️ 流量已經 100% 在 {target}。")
+        return
+    plan("目前流量：" + ("、".join(f"{p}% → {r}" for r, p in current.items()) or "（無）"))
+    plan(f"改為 100% → {target}（建立於 {hk_time(rev.get('createTime', ''))} HK，映像 "
+         f"{short_image(((rev.get('containers') or [{}])[0]).get('image'))}）")
+    plan("不會建立新修訂，也不會刪除任何修訂；之後 env set / deploy 會把流量改回最新修訂")
+    if not a.yes:
+        print("（dry-run；確認無誤後加 --yes 才會切換流量。）")
+        return
+    svc["traffic"] = [{"type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION", "revision": target, "percent": 100}]
+    update_service(ctx, svc, f"流量切換到 {target}")
 
 
 def cmd_env(ctx: Ctx):
     a = ctx.args
     if ctx.is_run:
-        if a.env_action != "get":
-            die(RUN_WRITE_REFUSAL.format(svc=ctx.svc_name, what="修改環境變數"))
-        svc = get_service(ctx)
-        if not svc:
-            die("Cloud Run 服務不存在。")
-        env = run_env(svc)
-        for k in sorted(env):
-            print(f"{k}={env[k]}")
-        return
+        return cmd_env_run(ctx)
     fn = get_function(ctx)
     if not fn:
         die("函式不存在。")
@@ -603,10 +798,115 @@ def sanity_check_sources(source_dir: Path):
     return problems
 
 
+def git_revision(source_dir: Path):
+    import subprocess
+
+    try:
+        head = subprocess.run(["git", "-C", str(source_dir), "log", "-1", "--format=%h %ci %s"],
+                              capture_output=True, text=True, timeout=10).stdout.strip()
+        dirty = subprocess.run(["git", "-C", str(source_dir), "status", "--porcelain", "--", *DEPLOY_FILES],
+                               capture_output=True, text=True, timeout=10).stdout.strip()
+        return head, bool(dirty)
+    except Exception:  # noqa: BLE001
+        return "", False
+
+
+def run_sources_bucket(ctx: Ctx):
+    return f"run-sources-{ctx.project}-{ctx.region}"
+
+
+def missing_deploy_permissions(ctx: Ctx, svc):
+    """用 testIamPermissions（唯讀）列出部署還缺哪些權限。"""
+    missing = []
+    r = ctx.session.post(f"{CRM_API}/projects/{ctx.project}:testIamPermissions",
+                         json={"permissions": ["cloudbuild.builds.create", "cloudbuild.builds.get"]}, timeout=60)
+    have = set((r.json() if r.status_code == 200 else {}).get("permissions", []))
+    for perm in ("cloudbuild.builds.create", "cloudbuild.builds.get"):
+        if perm not in have:
+            missing.append(f"專案層級 {perm}（角色：Cloud Build 編輯者 roles/cloudbuild.builds.editor）")
+    bucket = run_sources_bucket(ctx)
+    r = ctx.session.get(f"{GCS_API}/b/{bucket}/iam/testPermissions",
+                        params={"permissions": ["storage.objects.create"]}, timeout=60)
+    if "storage.objects.create" not in (r.json() if r.status_code == 200 else {}).get("permissions", []):
+        missing.append(f"bucket {bucket} 的 storage.objects.create（角色：Storage 物件建立者 roles/storage.objectCreator）")
+    r = ctx.session.post(f"{RUN_API}/{svc['name']}:testIamPermissions",
+                         json={"permissions": ["run.services.update"]}, timeout=60)
+    if "run.services.update" not in (r.json() if r.status_code == 200 else {}).get("permissions", []):
+        missing.append("服務的 run.services.update（角色：Cloud Run 開發人員 roles/run.developer）")
+    return missing
+
+
+def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
+    a = ctx.args
+    svc = require_service(ctx)
+    bc = dict(svc.get("buildConfig") or {})
+    if not bc.get("functionTarget") and not bc.get("baseImage"):
+        die("這個 Cloud Run 服務不是用原始碼部署的（沒有 buildConfig），本工具不處理。")
+    container = svc["template"]["containers"][0]
+    image_uri = (bc.get("imageUri") or container.get("image", "")).split("@", 1)[0]
+    bucket = run_sources_bucket(ctx)
+    head, dirty = git_revision(source_dir)
+    print(f"📌 來源版本：{head or '（非 git）'}{'  ⚠️ 部署檔案有尚未 commit 的修改' if dirty else ''}")
+    plan(f"上傳原始碼 zip 到 gs://{bucket}/services/{ctx.service}/<時間戳>.zip")
+    plan(f"Cloud Build 建置（buildpacks，函式進入點 {bc.get('functionTarget')}，基底 {short_image(bc.get('baseImage'))}）→ {image_uri}")
+    plan(f"更新服務 {ctx.svc_name}：換上新映像並建立新修訂，100% 流量切到新修訂")
+    plan(f"環境變數保持不變（{len(container.get('env', []))} 個），目前修訂 {short_rev(svc.get('latestReadyRevision'))} 保留可 rollback")
+    missing = missing_deploy_permissions(ctx, svc)
+    if missing:
+        print("⚠️ 服務帳戶還缺以下權限，現在加 --yes 會失敗：")
+        for m in missing:
+            print(f"   - {m}")
+    if not a.yes:
+        print("（dry-run；確認無誤後加 --yes 才會真的部署。此系統會對真實帳戶送單，請先確認 main.py 是預期版本。）")
+        return
+    if missing:
+        die("權限不足，停止部署（沒有做任何改動）。")
+
+    from urllib.parse import quote
+
+    obj = f"services/{ctx.service}/{time.time():.6f}.zip"
+    print("⬆️  上傳原始碼…")
+    up = ctx.call("POST", f"{GCS_UPLOAD_API}/b/{bucket}/o", params={"uploadType": "media", "name": obj},
+                  data=zip_bytes, headers={"Content-Type": "application/zip"})
+    generation = up.get("generation")
+    print(f"✅ 已上傳 gs://{bucket}/{obj}")
+    build_req = {
+        "storageSource": {"bucket": bucket, "object": obj, **({"generation": generation} if generation else {})},
+        "imageUri": image_uri,
+        "buildpackBuild": {k: v for k, v in {
+            "baseImage": bc.get("baseImage"),
+            "functionTarget": bc.get("functionTarget"),
+            "enableAutomaticUpdates": bc.get("enableAutomaticUpdates"),
+            "environmentVariables": bc.get("environmentVariables"),
+        }.items() if v is not None},
+    }
+    if bc.get("serviceAccount"):
+        build_req["serviceAccount"] = bc["serviceAccount"]
+    print("🏗️  送出 Cloud Build（約 2–5 分鐘）…")
+    sub = ctx.call("POST", f"{RUN_API}/{ctx.fn_parent}/builds:submit", json=build_req)
+    if sub.get("baseImageWarning"):
+        print(f"⚠️ {sub['baseImageWarning']}")
+    build = wait_run_operation(ctx, sub["buildOperation"], api=CB_API, label="Cloud Build")
+    if build.get("status") not in (None, "SUCCESS"):
+        die(f"建置失敗：{build.get('status')} {build.get('statusDetail', '')}  日誌：{build.get('logUrl', '')}")
+    digest = next((i.get("digest") for i in (build.get("results") or {}).get("images", [])
+                   if i.get("name", "").split("@")[0] == image_uri and i.get("digest")), None)
+    new_image = f"{image_uri}@{digest}" if digest else image_uri
+    print(f"✅ 建置完成：{short_image(new_image)}")
+
+    container["image"] = new_image
+    bc.pop("name", None)  # output only：上一次建置的名稱
+    bc["sourceLocation"] = f"gs://{bucket}/{quote(obj)}" + (f"#{generation}" if generation else "")
+    svc["buildConfig"] = bc
+    svc["traffic"] = LATEST_TRAFFIC
+    after = update_service(ctx, svc, "換上新映像，建立新修訂")
+    if not a.no_check:
+        ctx.args.url = service_url(after)
+        cmd_check(ctx)
+
+
 def cmd_deploy(ctx: Ctx):
     a = ctx.args
-    if ctx.is_run and a.yes:
-        die(RUN_WRITE_REFUSAL.format(svc=ctx.svc_name, what="部署"))
     source_dir = Path(a.source).resolve()
     problems = sanity_check_sources(source_dir)
     zip_bytes, manifest = build_zip(source_dir)
@@ -619,8 +919,9 @@ def cmd_deploy(ctx: Ctx):
         die("來源檔案檢查未通過，停止部署。")
     print("✅ 來源檔案檢查通過")
     if ctx.is_run:
-        print(f"ℹ️ run 模式：只做本機來源檢查。部署到 Cloud Run 服務 {ctx.svc_name} 尚未支援，不會連線或改動 GCP。")
-        return
+        if a.local_only:
+            return
+        return deploy_run(ctx, source_dir, zip_bytes)
 
     env_changes = parse_kv(a.set_env) if a.set_env else {}
     fn = get_function(ctx, quiet=True)
@@ -697,7 +998,7 @@ def make_public(ctx: Ctx, fn=None):
 
 def cmd_iam_public(ctx: Ctx):
     if ctx.is_run:
-        die(RUN_WRITE_REFUSAL.format(svc=ctx.svc_name, what="修改 IAM"))
+        die("run 模式不提供 iam-public：服務的叫用權限請到 GCP 主控台調整，本工具不會改動 IAM。")
     if not ctx.args.yes:
         plan("將 allUsers 加入 roles/run.invoker（EA 與網頁才能直接打函式）。加 --yes 執行。")
         return
@@ -752,6 +1053,14 @@ def build_parser():
     s.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
     s.add_argument("--set-env", nargs="*", metavar="KEY=VAL")
     s.add_argument("--no-check", action="store_true", help="部署後不打頁面檢查")
+    s.add_argument("--local-only", action="store_true", help="只做本機來源檢查，不連線 GCP")
+    s.add_argument("--yes", action="store_true")
+
+    s = sub.add_parser("revisions", help="列出 Cloud Run 修訂與流量（run 模式）")
+    s.add_argument("--limit", type=int, default=10)
+
+    s = sub.add_parser("rollback", help="把流量切回舊修訂（預設 dry-run；run 模式）")
+    s.add_argument("--to", help="目標修訂名稱（省略則選目前修訂之前最近一個 Ready 的）")
     s.add_argument("--yes", action="store_true")
 
     s = sub.add_parser("iam-public", help="允許未經驗證的叫用")
@@ -762,18 +1071,21 @@ def build_parser():
 COMMANDS = {
     "whoami": cmd_whoami, "status": cmd_status, "logs": cmd_logs, "state": cmd_state, "bucket": cmd_bucket,
     "cat": cmd_cat, "check": cmd_check, "env": cmd_env, "deploy": cmd_deploy, "iam-public": cmd_iam_public,
+    "revisions": cmd_revisions, "rollback": cmd_rollback,
 }
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
     ctx = Ctx(args)
-    # deploy 的 dry-run 若沒有憑證也要能跑（純檢查套件）；run 模式的 dry-run 本來就不連線
-    if args.cmd == "deploy" and not args.yes and not ctx.is_run:
+    # deploy 的 dry-run 若沒有憑證（或指定 --local-only）也要能跑：純檢查套件
+    if args.cmd == "deploy" and not args.yes:
         try:
+            if args.local_only:
+                raise SystemExit
             ctx.session
         except SystemExit:
-            print("⚠️ 沒有 GCP 憑證，只做本機套件檢查。")
+            print("ℹ️ 只做本機套件檢查（不連線 GCP）。" if args.local_only else "⚠️ 沒有 GCP 憑證，只做本機套件檢查。")
             problems = sanity_check_sources(Path(args.source).resolve())
             zip_bytes, manifest = build_zip(Path(args.source).resolve())
             print(f"📦 部署套件（{len(zip_bytes)} bytes）：")

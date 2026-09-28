@@ -20,14 +20,22 @@
 | bucket 內容 | `python3 scripts/gcp_agent.py bucket --prefix logs/`、`cat --object logs/last_order_sent.json` |
 | 五個頁面是否正常 | `python3 scripts/gcp_agent.py check`（雲端容器的網路政策可能擋 `*.run.app`，被擋時請使用者在環境設定放行） |
 | 看環境變數 | `python3 scripts/gcp_agent.py env get` |
-| 部署前的本機來源檢查 | `python3 scripts/gcp_agent.py deploy`（不連線、不改動） |
+| 改參數（環境變數） | `python3 scripts/gcp_agent.py env set KEY=VAL`（先看計畫）→ 使用者同意後加 `--yes` |
+| 列出版本與流量 | `python3 scripts/gcp_agent.py revisions` |
+| 退回舊版本 | `python3 scripts/gcp_agent.py rollback [--to 修訂名]`（先看計畫）→ 同意後加 `--yes` |
+| 部署新程式 | `python3 scripts/gcp_agent.py deploy`（dry-run：來源檢查＋計畫＋缺少的權限）→ 同意後加 `--yes` |
+| 只做本機來源檢查 | `python3 scripts/gcp_agent.py deploy --local-only`（不連線） |
 
 預設模式是 `--target run`：Cloud Run 服務 `zhuge-risk-manager`、區域 `europe-west1`
 （可用 `GCP_SERVICE`、`GCP_RUN_REGION` 或 `--service`、`--region` 改）。全域參數要放在子命令**前面**，
 例如 `gcp_agent.py --region asia-east1 status`。
 
-**run 模式目前只支援讀取**：`env set/unset`、`deploy --yes`、`iam-public` 會直接拒絕。
-要改 Cloud Run 的環境變數或部署，請先告訴使用者此工具尚未支援，不要自己組 REST 請求繞過（見安全規則 5）。
+run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新修訂；`deploy` 上傳 zip → Cloud Build
+（沿用服務的 buildConfig：buildpacks、進入點 `receive_tradingview_signal`）→ 換上新映像建立新修訂。
+兩者都先 validateOnly 再套用，100% 流量切到新修訂，舊修訂保留；出事就 `rollback`（只切流量、不建新修訂、不刪東西）。
+每次寫入後把 `rollback --to <舊修訂> --yes` 指令告訴使用者。`iam-public` 在 run 模式不提供。
+部署需要服務帳戶有 Cloud Build 編輯者與 `run-sources-<專案>-europe-west1` bucket 的物件建立權限；
+`deploy` dry-run 會列出缺哪些，缺的話請使用者依 `AGENTIC.md` 到 IAM 加，不要自己改 IAM。
 `--target function`（或 `GCP_TARGET=function`）是舊的 Cloud Functions 流程，區域用 `GCP_REGION`（預設 asia-east1）；
 在那個模式下 `deploy --yes` 會**另外建立一個新函式**，不會更新正在跑的 Cloud Run 服務，除非使用者明確要求，否則不要用。
 `whoami` 失敗且訊息是「找不到 GCP 憑證」時，請使用者依 `AGENTIC.md` 在雲端環境設定加入 `GCP_SA_KEY`，

@@ -70,6 +70,9 @@ class FakeSession:
     def get(self, url, **kw):
         return self.request("GET", url, **kw)
 
+    def post(self, url, **kw):
+        return self.request("POST", url, **kw)
+
 
 def run(argv, session, env_extra=None):
     """跑 CLI，回傳 (stdout, exit_code)。"""
@@ -242,8 +245,26 @@ def svc_body(ready=True):
                                      "env": [{"name": "WEBHOOK_API_KEY", "value": "supersecret123"},
                                              {"name": "BROKER_API_URL", "value": "https://broker.example/hook.php?t=abc123tok&x=1"},
                                              {"name": "DB_PASS", "valueSource": {"secretKeyRef": {"secret": "db-pass", "version": "3"}}}]}]},
+        "traffic": [{"type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST", "percent": 100}],
         "trafficStatuses": [{"type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST", "percent": 100}],
+        "etag": "\"etag-1\"",
+        "buildConfig": {"name": "projects/1/locations/europe-west1/builds/old", "functionTarget": FN,
+                        "sourceLocation": "gs://run-sources-demo-proj-europe-west1/services/zhuge-risk-manager/1.zip#1",
+                        "imageUri": f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/{SVC}:latest",
+                        "baseImage": "europe-west1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/python311",
+                        "enableAutomaticUpdates": True, "environmentVariables": {"GOOGLE_FUNCTION_TARGET": FN}},
     }
+
+
+def rev_body(n, ready=True, created="2026-09-27T20:00:00Z"):
+    return {"name": f"{SVC_NAME}/revisions/{SVC}-{n:05d}-abc", "createTime": created,
+            "conditions": [{"type": "Ready", "state": "CONDITION_SUCCEEDED" if ready else "CONDITION_FAILED"}],
+            "containers": [{"image": f"europe-west1-docker.pkg.dev/p/r/{SVC}@sha256:{n:064d}"}]}
+
+
+REVS = {"revisions": [rev_body(229, created="2026-09-26T10:00:00Z"), rev_body(231, created="2026-09-27T20:02:00Z"),
+                      rev_body(230, ready=False, created="2026-09-27T19:00:00Z")]}
+OP = f"projects/{PROJECT}/locations/{RUN_REGION}/operations/op-run"
 
 
 class MaskTests(unittest.TestCase):
@@ -329,22 +350,196 @@ class CloudRunTargetTests(unittest.TestCase):
         self.assertNotIn("abc123tok", out)
         self.assertNotIn("supersecret123", out)
 
-    def test_run_write_commands_refused_without_any_call(self):
-        for argv in (["env", "set", "A=1", "--yes"], ["env", "unset", "A"], ["deploy", "--yes"], ["iam-public", "--yes"]):
-            s = FakeSession([])
-            with mock.patch.object(ga.requests, "put") as put:
-                out, code = run(argv, s, RUN_ENV)
-            self.assertEqual(code, 1, argv)
-            self.assertEqual(s.calls, [], argv)
-            put.assert_not_called()
-
-    def test_deploy_dry_run_in_run_mode_is_local_only(self):
+    def test_iam_public_refused_in_run_mode(self):
         s = FakeSession([])
+        out, code = run(["iam-public", "--yes"], s, RUN_ENV)
+        self.assertEqual(code, 1)
+        self.assertEqual(s.calls, [])
+
+    def test_deploy_local_only_makes_no_call(self):
+        s = FakeSession([])
+        out, code = run(["deploy", "--local-only"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("只做本機套件檢查", out)
+        self.assertEqual(s.calls, [])
+
+
+def writes(session):
+    return [c for c in session.calls if c[0] in ("PATCH", "PUT", "DELETE")
+            or (c[0] == "POST" and not c[1].endswith(("testIamPermissions", "entries:list")))]
+
+
+def done_op(name=OP, response=None):
+    return FakeResp(200, {"name": name, "done": True, "response": response or {}})
+
+
+class CloudRunWriteTests(unittest.TestCase):
+    def test_env_set_dry_run_no_write_and_masked(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["env", "set", "TARGET_RRR=2", "WEBHOOK_API_KEY=newsecret999"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(writes(s), [])
+        self.assertIn("新增 TARGET_RRR=2", out)
+        self.assertIn("修改 WEBHOOK_API_KEY", out)
+        self.assertNotIn("newsecret999", out)
+        self.assertNotIn("supersecret123", out)
+        self.assertIn("dry-run", out)
+
+    def test_env_set_yes_validates_then_patches(self):
+        new_svc = svc_body()
+        new_svc["latestReadyRevision"] = f"{SVC_NAME}/revisions/{SVC}-00232-new"
+        gets = iter([FakeResp(200, svc_body()), FakeResp(200, new_svc)])
+        s = FakeSession([
+            ("GET", OP, done_op()),
+            ("GET", SVC_NAME, lambda *_: next(gets)),
+            ("PATCH", SVC_NAME, lambda m, u, kw: done_op() if not kw.get("params") else FakeResp(200, {"name": OP, "done": True})),
+        ])
+        out, code = run(["env", "set", "TARGET_RRR=2", "--yes"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        patches = [c for c in s.calls if c[0] == "PATCH"]
+        self.assertEqual(len(patches), 2)
+        self.assertEqual(patches[0][2]["params"], {"validateOnly": "true"})
+        self.assertNotIn("params", patches[1][2])
+        body = patches[1][2]["json"]
+        self.assertEqual(body["etag"], "\"etag-1\"")
+        env = body["template"]["containers"][0]["env"]
+        self.assertIn({"name": "TARGET_RRR", "value": "2"}, env)
+        self.assertIn({"name": "WEBHOOK_API_KEY", "value": "supersecret123"}, env)  # 既有變數保留
+        self.assertIn("secretKeyRef", json.dumps(env))  # Secret 參照保留
+        self.assertEqual(body["traffic"], ga.LATEST_TRAFFIC)
+        self.assertEqual(body["template"]["containers"][0]["image"], svc_body()["template"]["containers"][0]["image"])
+        self.assertIn(f"rollback --to {SVC}-00231-szd --yes", out)
+        self.assertNotIn("supersecret123", out)
+
+    def test_env_set_refuses_secret_ref(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["env", "set", "DB_PASS=x", "--yes"], s, RUN_ENV)
+        self.assertEqual(code, 1)
+        self.assertEqual(writes(s), [])
+
+    def test_env_unset_and_no_change(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, _ = run(["env", "unset", "BROKER_API_URL"], s, RUN_ENV)
+        self.assertIn("移除 BROKER_API_URL", out)
+        out, _ = run(["env", "set", "WEBHOOK_API_KEY=supersecret123"], s, RUN_ENV)
+        self.assertIn("沒有變更", out)
+        self.assertEqual(writes(s), [])
+
+    def test_revisions_lists_traffic(self):
+        s = FakeSession([("GET", f"{SVC_NAME}/revisions", FakeResp(200, REVS)), ("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["revisions"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        lines = [l for l in out.splitlines() if SVC in l]
+        self.assertTrue(lines[0].startswith(f"{SVC}-00231"))  # 最新在前
+        self.assertIn("❌", lines[1])
+
+    def test_rollback_default_picks_previous_ready(self):
+        svc = svc_body()
+        svc["latestReadyRevision"] = f"{SVC_NAME}/revisions/{SVC}-00231-abc"
+        s = FakeSession([("GET", f"{SVC_NAME}/revisions", FakeResp(200, REVS)), ("GET", SVC_NAME, FakeResp(200, svc))])
+        out, code = run(["rollback"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"100% → {SVC}-00229-abc", out)  # 跳過失敗的 00230
+        self.assertEqual(writes(s), [])
+
+    def test_rollback_yes_sets_revision_traffic(self):
+        svc = svc_body()
+        svc["latestReadyRevision"] = f"{SVC_NAME}/revisions/{SVC}-00231-abc"
+        s = FakeSession([
+            ("GET", f"{SVC_NAME}/revisions", FakeResp(200, REVS)),
+            ("GET", OP, done_op()),
+            ("GET", SVC_NAME, FakeResp(200, svc)),
+            ("PATCH", SVC_NAME, FakeResp(200, {"name": OP, "done": True})),
+        ])
+        out, code = run(["rollback", "--to", f"{SVC}-00229-abc", "--yes"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        body = [c for c in s.calls if c[0] == "PATCH"][-1][2]["json"]
+        self.assertEqual(body["traffic"], [{"type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION", "revision": f"{SVC}-00229-abc", "percent": 100}])
+        self.assertEqual(body["template"], svc["template"])  # 不動範本 → 不建新修訂
+
+    def test_rollback_refuses_failed_revision(self):
+        s = FakeSession([("GET", f"{SVC_NAME}/revisions", FakeResp(200, REVS)), ("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["rollback", "--to", f"{SVC}-00230-abc", "--yes"], s, RUN_ENV)
+        self.assertEqual(code, 1)
+        self.assertEqual(writes(s), [])
+
+
+def perm_handlers(ok=True):
+    def crm(m, u, kw):
+        return FakeResp(200, {"permissions": kw["json"]["permissions"]} if ok else {})
+    def gcs(m, u, kw):
+        return FakeResp(200, {"permissions": ["storage.objects.create"]} if ok else {"kind": "x"})
+    def run_perm(m, u, kw):
+        return FakeResp(200, {"permissions": ["run.services.update"]})
+    return [("POST", ":testIamPermissions", lambda m, u, kw: crm(m, u, kw) if "cloudresourcemanager" in u else run_perm(m, u, kw)),
+            ("GET", "/iam/testPermissions", gcs)]
+
+
+class CloudRunDeployTests(unittest.TestCase):
+    def test_deploy_dry_run_reports_missing_permissions(self):
+        s = FakeSession(perm_handlers(ok=False) + [("GET", SVC_NAME, FakeResp(200, svc_body()))])
         out, code = run(["deploy"], s, RUN_ENV)
         self.assertEqual(code, 0, out)
-        self.assertIn("來源檔案檢查通過", out)
-        self.assertIn("只做本機來源檢查", out)
-        self.assertEqual(s.calls, [])
+        self.assertIn("roles/cloudbuild.builds.editor", out)
+        self.assertIn("run-sources-demo-proj-europe-west1", out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_deploy_yes_without_permissions_stops_before_upload(self):
+        s = FakeSession(perm_handlers(ok=False) + [("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["deploy", "--yes", "--no-check"], s, RUN_ENV)
+        self.assertEqual(code, 1)
+        self.assertEqual(writes(s), [])
+
+    def test_deploy_yes_full_flow(self):
+        image = f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/{SVC}:latest"
+        build_op = f"projects/{PROJECT}/locations/{RUN_REGION}/operations/build-1"
+        build_polls = iter([
+            FakeResp(200, {"name": build_op, "done": False}),
+            FakeResp(200, {"name": build_op, "done": True, "response": {
+                "status": "SUCCESS", "results": {"images": [{"name": image, "digest": "sha256:" + "f" * 64}]}}}),
+        ])
+        s = FakeSession(perm_handlers(ok=True) + [
+            ("POST", "/upload/storage/v1/b/run-sources-demo-proj-europe-west1/o", FakeResp(200, {"name": "x", "generation": "777"})),
+            ("POST", f"locations/{RUN_REGION}/builds:submit", FakeResp(200, {"buildOperation": {"name": build_op, "done": False}})),
+            ("GET", build_op, lambda *_: next(build_polls)),
+            ("GET", OP, done_op()),
+            ("GET", SVC_NAME, FakeResp(200, svc_body())),
+            ("PATCH", SVC_NAME, FakeResp(200, {"name": OP, "done": True})),
+        ])
+        out, code = run(["deploy", "--yes", "--no-check"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        up = next(c for c in s.calls if "/upload/" in c[1])
+        self.assertEqual(up[2]["headers"]["Content-Type"], "application/zip")
+        self.assertTrue(up[2]["data"].startswith(b"PK"))
+        self.assertTrue(up[2]["params"]["name"].startswith(f"services/{SVC}/"))
+        submit = next(c for c in s.calls if c[1].endswith("builds:submit"))[2]["json"]
+        self.assertEqual(submit["imageUri"], image)
+        self.assertEqual(submit["storageSource"]["generation"], "777")
+        self.assertEqual(submit["buildpackBuild"]["functionTarget"], FN)
+        self.assertTrue(any(c[1].startswith(ga.CB_API) for c in s.calls))  # 建置操作輪詢 Cloud Build
+        patches = [c for c in s.calls if c[0] == "PATCH"]
+        self.assertEqual(patches[0][2]["params"], {"validateOnly": "true"})
+        body = patches[-1][2]["json"]
+        self.assertEqual(body["template"]["containers"][0]["image"], f"{image}@sha256:" + "f" * 64)
+        self.assertNotIn("name", body["buildConfig"])
+        self.assertTrue(body["buildConfig"]["sourceLocation"].endswith("#777"))
+        self.assertEqual(body["traffic"], ga.LATEST_TRAFFIC)
+        env_names = [e["name"] for e in body["template"]["containers"][0]["env"]]
+        self.assertEqual(env_names, ["WEBHOOK_API_KEY", "BROKER_API_URL", "DB_PASS"])  # 環境變數不變
+        self.assertNotIn("supersecret123", out)
+
+    def test_deploy_build_failure_does_not_touch_service(self):
+        build_op = f"projects/{PROJECT}/locations/{RUN_REGION}/operations/build-2"
+        s = FakeSession(perm_handlers(ok=True) + [
+            ("POST", "/upload/storage/", FakeResp(200, {"generation": "1"})),
+            ("POST", "builds:submit", FakeResp(200, {"buildOperation": {"name": build_op, "done": True,
+                                                                           "response": {"status": "FAILURE", "logUrl": "https://log"}}})),
+            ("GET", SVC_NAME, FakeResp(200, svc_body())),
+        ])
+        out, code = run(["deploy", "--yes", "--no-check"], s, RUN_ENV)
+        self.assertEqual(code, 1)
+        self.assertFalse(any(c[0] == "PATCH" for c in s.calls))
 
 
 class CheckTests(unittest.TestCase):
