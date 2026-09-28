@@ -73,7 +73,7 @@ class FakeSession:
 
 def run(argv, session, env_extra=None):
     """跑 CLI，回傳 (stdout, exit_code)。"""
-    env = {"GCP_PROJECT": PROJECT, "GCP_REGION": REGION}
+    env = {"GCP_PROJECT": PROJECT, "GCP_REGION": REGION, "GCP_TARGET": "function"}
     env.update(env_extra or {})
     out = io.StringIO()
     code = 0
@@ -219,6 +219,132 @@ class DeployTests(unittest.TestCase):
         self.assertIn("serviceConfig.environmentVariables", patch[2]["params"]["updateMask"])
         self.assertEqual(patch[2]["json"]["serviceConfig"]["environmentVariables"]["WEBHOOK_SECRET_TOKEN"], "supersecret123")
         self.assertFalse(any(":setIamPolicy" in c[1] for c in s.calls))  # 更新時不動 IAM
+
+
+RUN_REGION = "europe-west1"
+SVC = "zhuge-risk-manager"
+SVC_NAME = f"projects/{PROJECT}/locations/{RUN_REGION}/services/{SVC}"
+RUN_URL = "https://zhuge-risk-manager-123.europe-west1.run.app"
+RUN_ENV = {"GCP_TARGET": "run", "GCP_RUN_REGION": RUN_REGION, "GCP_SERVICE": SVC}
+
+
+def svc_body(ready=True):
+    return {
+        "name": SVC_NAME, "updateTime": "2026-09-27T20:02:13Z", "lastModifier": "someone@example.com",
+        "uri": "https://zhuge-risk-manager-xyz-ew.a.run.app", "urls": [RUN_URL, "https://zhuge-risk-manager-xyz-ew.a.run.app"],
+        "ingress": "INGRESS_TRAFFIC_ALL", "latestReadyRevision": f"{SVC_NAME}/revisions/{SVC}-00231-szd",
+        "terminalCondition": {"type": "Ready", "state": "CONDITION_SUCCEEDED" if ready else "CONDITION_FAILED",
+                              "message": "" if ready else "container failed to start"},
+        "template": {"timeout": "300s", "serviceAccount": "sa@x.iam.gserviceaccount.com",
+                     "scaling": {"maxInstanceCount": 20},
+                     "containers": [{"image": "europe-west1-docker.pkg.dev/p/cloud-run-source-deploy/zhuge-risk-manager@sha256:abc",
+                                     "resources": {"limits": {"cpu": "1", "memory": "512Mi"}},
+                                     "env": [{"name": "WEBHOOK_API_KEY", "value": "supersecret123"},
+                                             {"name": "BROKER_API_URL", "value": "https://broker.example/hook.php?t=abc123tok&x=1"},
+                                             {"name": "DB_PASS", "valueSource": {"secretKeyRef": {"secret": "db-pass", "version": "3"}}}]}]},
+        "trafficStatuses": [{"type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST", "percent": 100}],
+    }
+
+
+class MaskTests(unittest.TestCase):
+    def test_mask(self):
+        self.assertEqual(ga.mask("WEBHOOK_API_KEY", "abcdefgh"), "ab…gh")
+        self.assertEqual(ga.mask("URL", "https://h/p?t=tok#frag"), "https://h/p?t=••••#frag")
+        self.assertEqual(ga.mask("URL", "https://h/p"), "https://h/p")
+        self.assertEqual(ga.mask("TARGET_RRR", "3"), "3")
+
+
+class CloudRunTargetTests(unittest.TestCase):
+    def test_default_target_is_run_europe_west1(self):
+        with mock.patch.dict("os.environ", {}, clear=True):
+            ctx = ga.Ctx(ga.build_parser().parse_args(["--project", PROJECT, "status"]))
+        self.assertEqual(ctx.target, "run")
+        self.assertEqual(ctx.svc_name, SVC_NAME)
+
+    def test_run_ignores_function_region_env(self):
+        # session-start hook 會把 GCP_REGION 設成 asia-east1；run 模式不應被它影響
+        with mock.patch.dict("os.environ", {"GCP_REGION": "asia-east1"}, clear=True):
+            ctx = ga.Ctx(ga.build_parser().parse_args(["--project", PROJECT, "status"]))
+        self.assertEqual(ctx.region, RUN_REGION)
+        with mock.patch.dict("os.environ", {"GCP_REGION": "asia-east1"}, clear=True):
+            ctx = ga.Ctx(ga.build_parser().parse_args(["--project", PROJECT, "--region", "asia-east2", "status"]))
+        self.assertEqual(ctx.region, "asia-east2")
+
+    def test_status_run_masks_secrets(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["status"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(s.calls[0][1], f"{ga.RUN_API}/{SVC_NAME}")
+        self.assertIn("✅ Ready", out)
+        self.assertIn(RUN_URL, out)
+        self.assertIn(f"{SVC}-00231-szd", out)
+        self.assertIn("BROKER_API_URL=https://broker.example/hook.php?t=••••&x=••••", out)
+        self.assertNotIn("abc123tok", out)
+        self.assertIn("DB_PASS=<secret db-pass:3>", out)
+        self.assertNotIn("supersecret123", out)
+
+    def test_status_run_not_ready_and_missing(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body(ready=False)))])
+        out, _ = run(["status"], s, RUN_ENV)
+        self.assertIn("❌ CONDITION_FAILED", out)
+        self.assertIn("container failed to start", out)
+        s = FakeSession([("GET", SVC_NAME, FakeResp(404, text="nope"))])
+        out, code = run(["status"], s, RUN_ENV)
+        self.assertEqual(code, 0)
+        self.assertIn("不存在", out)
+
+    def test_logs_run_filter(self):
+        entries = {"entries": [
+            {"timestamp": "2026-09-26T00:00:02Z", "severity": "INFO", "jsonPayload": {"message": "📤 [回應] HTTP 200"}},
+            {"timestamp": "2026-09-26T00:00:01Z", "severity": "INFO", "httpRequest": {"requestMethod": "POST", "status": 200, "requestUrl": RUN_URL}},
+        ]}
+        s = FakeSession([("POST", "entries:list", FakeResp(200, entries))])
+        out, code = run(["logs", "--grep", "已送出"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        flt = s.calls[0][2]["json"]["filter"]
+        self.assertIn(f'service_name="{SVC}"', flt)
+        self.assertIn(f'location="{RUN_REGION}"', flt)
+        self.assertNotIn("cloud_function", flt)
+        self.assertIn('jsonPayload.message:"已送出"', flt)
+        self.assertIn("📤 [回應] HTTP 200", out)
+        self.assertIn("[HTTP] POST 200", out)
+
+    def test_check_run_uses_service_url(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        seen = []
+        def fake_get(url, timeout):
+            seen.append(url)
+            return FakeResp(200, text="<html>" + "x" * 300 + "</html>")
+        with mock.patch.object(ga.requests, "get", side_effect=fake_get):
+            out, code = run(["check"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(seen[0], RUN_URL)
+        self.assertEqual(len(seen), 5)
+
+    def test_env_get_run_masks(self):
+        s = FakeSession([("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["env", "get"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("BROKER_API_URL=https://broker.example/hook.php?t=••••&x=••••", out)
+        self.assertNotIn("abc123tok", out)
+        self.assertNotIn("supersecret123", out)
+
+    def test_run_write_commands_refused_without_any_call(self):
+        for argv in (["env", "set", "A=1", "--yes"], ["env", "unset", "A"], ["deploy", "--yes"], ["iam-public", "--yes"]):
+            s = FakeSession([])
+            with mock.patch.object(ga.requests, "put") as put:
+                out, code = run(argv, s, RUN_ENV)
+            self.assertEqual(code, 1, argv)
+            self.assertEqual(s.calls, [], argv)
+            put.assert_not_called()
+
+    def test_deploy_dry_run_in_run_mode_is_local_only(self):
+        s = FakeSession([])
+        out, code = run(["deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("來源檔案檢查通過", out)
+        self.assertIn("只做本機來源檢查", out)
+        self.assertEqual(s.calls, [])
 
 
 class CheckTests(unittest.TestCase):
