@@ -254,7 +254,8 @@ def gold_levels():
                 h, l = float(r['High']), float(r['Low'])
             except (TypeError, ValueError):
                 continue
-            if d <= cutoff and 1500 < l < h < 6000:        # 嚴格 l<h 也擋掉壞行
+            # 週末日期的行是週日晚開盤的未完時段(屬週一),Yahoo 卻標週日日期
+            if d <= cutoff and d.weekday() < 5 and 1500 < l < h < 6000:
                 rows.append((d, h, l))
         raw = ''
         if len(df):
