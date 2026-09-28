@@ -14,7 +14,7 @@ Claude 工作階段（雲端容器，讀 CLAUDE.md 知道規則）
    │  python3 scripts/gcp_agent.py …   ← 用 GCP_SA_KEY 服務帳戶認證
    ▼
 你的 GCP 專案
-   ├─ Cloud Run 服務 zhuge-risk-manager（europe-west1，目前實際在跑；狀態 / 日誌 / 環境變數，唯讀）
+   ├─ Cloud Run 服務 zhuge-risk-manager（europe-west1，目前實際在跑；狀態 / 日誌 / 改參數 / 部署 / 回滾）
    ├─ Cloud Functions 第 2 代 receive_tradingview_signal（舊流程，--target function）
    ├─ Cloud Logging（讀日誌）
    ├─ Cloud Storage zhuge-risk-manager-bucket（電閘、加單、決策日誌、送單參數）
@@ -109,13 +109,29 @@ bash scripts/gcp_bootstrap.sh 你的專案ID asia-east1
 |---|---|
 | 「最近兩小時有沒有送單？」 | `logs --since 2h --grep 已送出`，整理成表 |
 | 「電閘現在是什麼狀態？」 | `state`，解讀 regime / armed / hard lock |
-| 「把 TARGET_RRR 改成 2」 | Cloud Run 模式尚未支援修改；Claude 會先告訴你，不會自己繞過 |
-| 「部署我剛改好的 main.py」 | `py_compile` → `deploy`（本機檢查六個部署檔案）；Cloud Run 部署尚未支援，Claude 會告訴你 |
+| 「把 TARGET_RRR 改成 2」 | `env set TARGET_RRR=2` 先給你看計畫 → 你說「確定」→ `--yes`（建立新修訂，舊修訂保留） |
+| 「部署我剛改好的 main.py」 | `py_compile` + 測試 → `deploy`（dry-run：檢查六個部署檔案、列計畫與缺少的權限）→ 你確認 → `deploy --yes` → `check` 五個頁面 |
+| 「剛剛那版有問題，退回去」 | `rollback` 先給你看要切回哪個修訂 → 你確認 → `--yes`（只切流量，幾秒生效） |
+| 「現在有哪些版本？」 | `revisions` |
 | 「五個頁面還正常嗎？」 | `check` |
 | 「昨天有沒有 WARNING 以上的錯誤？」 | `logs --since 1d --severity WARNING` |
 
 規則（寫在 `CLAUDE.md`，Claude 每次工作階段都會讀）：**任何會改動 GCP 的動作都先 dry-run、經你確認才執行**；
 讀取類動作可自由執行；金鑰與權杖一律遮罩。
+
+---
+
+## 讓 Claude 部署到 Cloud Run 需要的權限
+
+改參數和回滾只需要「Cloud Run 開發人員」＋「以服務帳戶身分執行」（一般已有）。**部署新程式**另外需要兩個權限，
+在 GCP 主控台 → **IAM 與管理** → **IAM** → 找到 `claude-agent@…` 那一列 → 鉛筆圖示 → **新增其他角色**：
+
+| 角色 | 用途 |
+|---|---|
+| **Cloud Build 編輯者**（`roles/cloudbuild.builds.editor`） | 送出建置 |
+| **Storage 物件建立者**（`roles/storage.objectCreator`） | 上傳原始碼 zip 到 `run-sources-<專案>-europe-west1` |
+
+加完後請 Claude 跑 `deploy`（dry-run），確認「缺少的權限」清單消失即可。
 
 ---
 
