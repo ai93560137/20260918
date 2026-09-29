@@ -1,17 +1,54 @@
 {
-  "note": "週度腿 paper 測試（IBKR 模擬帳戶，人手落單）。成交價/ES 待使用者回報；截圖只給行使價、Delta、剩餘天數。不併入實盤 position_mes.json。",
-  "opened_hkt": "2026-09-29 22:15後（確切成交時間待回報）",
+  "note": "週度腿 paper 測試（IBKR 模擬帳戶，人手落單）。不併入實盤 position_mes.json。",
+  "opened_hkt": "2026-09-30 01:17:03",
   "underlying": "MES FOP (MS1E) Oct02",
   "expiry": "2026-10-02",
   "strike": 7720,
   "legs": [
-    {"right": "C", "qty": -1, "fill": null},
-    {"right": "P", "qty": -1, "fill": null}
+    {
+      "right": "C",
+      "qty": -1,
+      "fill_pts": 37.5,
+      "fill_usd": 187.5,
+      "order": "Market Day",
+      "comm_usd": 0.38
+    },
+    {
+      "right": "P",
+      "qty": -1,
+      "fill_pts": 42.5,
+      "fill_usd": 212.5,
+      "order": "Market Day",
+      "comm_usd": 0.38
+    }
   ],
   "es_at_fill": null,
   "snapshots": [
-    {"hkt": "2026-09-30 01:18", "call_delta_ibkr": 0.478, "put_delta_ibkr": -0.521,
-     "straddle_delta_per_set": 0.043, "days": 3, "nlv": 999979, "daily_pnl": -440,
-     "source": "使用者 IBKR app 截圖（延遲/GFIS 資料）"}
-  ]
+    {
+      "hkt": "2026-09-30 01:18",
+      "call_delta_ibkr": 0.478,
+      "put_delta_ibkr": -0.521,
+      "straddle_delta_per_set": 0.043,
+      "days": 3,
+      "nlv": 999979,
+      "daily_pnl": -440,
+      "source": "使用者 IBKR app 截圖（延遲/GFIS 資料）",
+      "note": "截圖 01:18 HKT；−440 與淨值 −21 不吻合，疑幣別/計算時點，不採用；以到期結算為準"
+    }
+  ],
+  "credit_pts": 80.0,
+  "credit_usd": 400.0,
+  "es_at_fill_implied": 7715.0,
+  "derived": {
+    "implied_forward": "K+C-P = 7715（put-call parity，兩腿同秒成交）",
+    "implied_iv_pct_3d": 14.3,
+    "implied_iv_pct_2.75d": 14.95,
+    "monthly_atm_iv_ref": "weekly_iv_log 9/29: 10/26 月權 12.3–12.7；SPX 10/5 週權 10.8–11.9",
+    "h_vol_pts": "約 -2 ~ -2.6（週權 IV 高於月權，非折讓）",
+    "caveats": [
+      "n=1",
+      "含 10/2 NFP（首個週五）事件波動",
+      "市價單賣在買價，已讓出點差；中間價 IV 更高"
+    ]
+  }
 }
