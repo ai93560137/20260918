@@ -106,6 +106,19 @@ def hv20():
     return float(r.tail(20).std() * np.sqrt(252) * 100)
 
 
+def hsi_fut_expired_today(con):
+    """con 如 'Sep-26'。恒指期貨最後交易日 = 該月倒數第二個營業日（未計港股假期）；
+    今日 >= 該日 → 視為到期日/已到期，報價不可當現價。"""
+    try:
+        m0 = datetime.strptime(con, '%b-%y').date()
+    except ValueError:
+        return False
+    bd = [d.date() for d in pd.bdate_range(m0.replace(day=1),
+          date(m0.year, m0.month, calendar.monthrange(m0.year, m0.month)[1]))]
+    last_td = bd[-2] if len(bd) >= 2 else bd[-1]
+    return date.today() >= last_td
+
+
 def scan_futures():
     f = latest('futures_*.json')
     if not f:
@@ -121,10 +134,15 @@ def scan_futures():
     LINES.append("|---|---:|---:|---:|---:|---:|")
     prev_se = None
     front, front_live = None, False
+    front_note = ''
     for i, row in enumerate(d.get('futureslist', [])[:4]):
         bd, as_, se = num(row['bd']), num(row['as']), num(row['se'])
         spr = as_ - bd if bd and as_ else None
-        if front is None:
+        if front is None and hsi_fut_expired_today(row['con']):
+            # 到期日當天：該月期貨價被「當日 5 分鐘指數均值」結算機制黏住、成交極薄，
+            # 不代表市況（2026-09-29 實測 80 分鐘不動）→ front 改用下一個月合約
+            front_note = f"（{row['con']} 今日到期，改用次月）"
+        elif front is None:
             # 近月價 = 買賣中間價（實時）；無雙邊報價才退回昨結（並標明）
             if bd and as_:
                 front, front_live = (bd + as_) / 2, True
@@ -139,7 +157,7 @@ def scan_futures():
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
         prev_se = se
     if front:
-        DIGEST.append(f"HSI 期貨(近月{'中間價' if front_live else '昨結'}) {front:,.0f}")
+        DIGEST.append(f"HSI 期貨(近月{'中間價' if front_live else '昨結'}) {front:,.0f}{front_note}")
     return front
 
 
