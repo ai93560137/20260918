@@ -1,32 +1,32 @@
 {
-  "run_date": "2026-09-28",
+  "run_date": "2026-09-29",
   "families": {
     "futu_vs_web": {
-      "status": "PASS",
-      "match": 4,
-      "match_independent": 4,
-      "info": 2,
+      "status": "FAIL",
+      "match": 6,
+      "match_independent": 6,
+      "info": 4,
       "skip": 1,
       "known": 0,
-      "fail": 0
+      "fail": 1
     },
     "ibkr_vs_web": {
       "status": "FAIL",
-      "match": 90,
-      "match_independent": 90,
+      "match": 91,
+      "match_independent": 91,
       "info": 0,
       "skip": 9,
       "known": 0,
-      "fail": 15
+      "fail": 14
     },
     "web_vs_web": {
       "status": "FAIL",
-      "match": 61,
-      "match_independent": 61,
+      "match": 59,
+      "match_independent": 59,
       "info": 0,
       "skip": 0,
       "known": 0,
-      "fail": 59
+      "fail": 91
     },
     "canary_inputs": {
       "status": "SAME_SOURCE_ONLY",
@@ -39,9 +39,9 @@
     },
     "internal": {
       "status": "PASS",
-      "match": 4,
-      "match_independent": 4,
-      "info": 1,
+      "match": 6,
+      "match_independent": 6,
+      "info": 2,
       "skip": 0,
       "known": 0,
       "fail": 0

@@ -2,14 +2,15 @@ family,check,instrument,date,field,a_src,a,b_src,b,diff,diff_pct,verdict,note
 futu_vs_web,5分K合成日線,US.QQQ,2026-09-24,close,futu_5m,741.1,web_yahoo,741.1,0.0,0.0,✅,
 futu_vs_web,5分K合成日線,US.QQQ,2026-09-24,open/high/low/volume,futu_5m,,web_yahoo,,,,⏭️,交易時段不完整（42/78 根），只比收盤
 futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,close,futu_5m,744.5,web_yahoo,744.5,0.0,0.0,✅,
-futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,high,futu_5m,745.915,web_yahoo,745.915,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,high,futu_5m,745.915,web_yahoo,745.92,-0.005,-0.0007,❌,
 futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,low,futu_5m,739.64,web_yahoo,739.64,0.0,0.0,✅,
-futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,open,futu_5m,742.83,web_yahoo,742.84,-0.01,-0.0013,ℹ️,口徑不同，只記錄
-futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,volume,futu_5m,27752952.0,web_yahoo,30017218.0,-2264266.0,-7.5432,ℹ️,口徑不同，只記錄
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,open,canary,25303.41015625,web_yahoo,25303.4102,-4.4e-05,-0.0,✅,
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,high,canary,25578.26953125,web_yahoo,25578.2695,3.1e-05,0.0,✅,
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,low,canary,25303.41015625,web_yahoo,25303.4102,-4.4e-05,-0.0,✅,
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-17,close,canary,25453.23046875,web_yahoo,25453.2305,-3.1e-05,-0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,open,futu_5m,742.83,web_yahoo,742.83,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-25,volume,futu_5m,27752952.0,web_yahoo,30249200.0,-2496248.0,-8.2523,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-28,close,futu_5m,736.53,web_yahoo,736.53,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-28,high,futu_5m,741.42,web_yahoo,741.42,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-28,low,futu_5m,731.63,web_yahoo,731.63,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-28,open,futu_5m,740.455,web_yahoo,740.455,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-09-28,volume,futu_5m,19504501.0,web_yahoo,41420278.0,-21915777.0,-52.9107,ℹ️,口徑不同，只記錄
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,open,canary,25368.869140625,web_yahoo,25368.8691,4.1e-05,0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,high,canary,25518.029296875,web_yahoo,25518.0293,-3e-06,-0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-18,low,canary,25240.619140625,web_yahoo,25240.6191,4.1e-05,0.0,✅,
@@ -122,11 +123,11 @@ canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,high,canary,24791.19921875,web_yahoo,24791.1992,1.9e-05,0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,low,canary,24648.2890625,web_yahoo,24648.2891,-3.8e-05,-0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-24,close,canary,24761.130859375,web_yahoo,24761.1309,-4.1e-05,-0.0,✅,
-canary_inputs,hsi_daily.csv,_HSI,2026-09-25,date,canary,,web_yahoo,,,,⏭️,金絲雀最新只到 2026-09-24（亞洲鳥慢一日屬手冊 §9.1 已知）
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,open,canary,7806.60009765625,web_yahoo,7806.6001,-2e-06,-0.0,✅,
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,high,canary,7810.009765625,web_yahoo,7810.0098,-3.4e-05,-0.0,✅,
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,low,canary,7776.31005859375,web_yahoo,7776.3101,-4.1e-05,-0.0,✅,
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-14,close,canary,7785.759765625,web_yahoo,7785.7598,-3.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-25,open,canary,24523.5,web_yahoo,24523.5,0.0,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-25,high,canary,24537.140625,web_yahoo,24537.1406,2.5e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-25,low,canary,24275.560546875,web_yahoo,24275.5605,4.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-25,close,canary,24510.08984375,web_yahoo,24510.0898,4.4e-05,0.0,✅,
+canary_inputs,hsi_daily.csv,_HSI,2026-09-28,date,canary,,web_yahoo,,,,⏭️,金絲雀最新只到 2026-09-25（亞洲鳥慢一日屬手冊 §9.1 已知）
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,open,canary,7790.68017578125,web_yahoo,7790.6802,-2.4e-05,-0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,high,canary,7790.68017578125,web_yahoo,7790.6802,-2.4e-05,-0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-17,low,canary,7744.8798828125,web_yahoo,7744.8799,-1.7e-05,-0.0,✅,
@@ -243,6 +244,10 @@ canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,high,canary,7752.06982421875,web_yahoo,7752.0698,2.4e-05,0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,low,canary,7693.080078125,web_yahoo,7693.0801,-2.2e-05,-0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-25,close,canary,7743.41015625,web_yahoo,7743.4102,-4.4e-05,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-28,open,canary,7721.7001953125,web_yahoo,7721.7002,-5e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-28,high,canary,7724.14990234375,web_yahoo,7724.1499,2e-06,0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-28,low,canary,7666.60009765625,web_yahoo,7666.6001,-2e-06,-0.0,✅,
+canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-09-28,close,canary,7683.68994140625,web_yahoo,7683.6899,4.1e-05,0.0,✅,
 canary_inputs,IBKR 獨立來源,ib_daily_sample.csv,,all,ibkr,,canary,,,,⏭️,雲垂還沒開始每日抽樣（見 SOP 附錄 B）
 ibkr_vs_web,股票收市,au_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,au 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
 ibkr_vs_web,股票收市,ca_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,ca 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
@@ -298,188 +303,221 @@ ibkr_vs_web,股票收市,kr_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,kr 的網站
 ibkr_vs_web,股票收市,sg_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,sg 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
 ibkr_vs_web,股票收市,tw_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,tw 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
 ibkr_vs_web,股票收市,us_2026-09-21.csv,,coverage,ibkr,,web,,,,⏭️,121／191 檔不在網站日線（鳥翔分支 data/equities），未比
-ibkr_vs_web,股票收市,COP,2026-09-21,close,ibkr,127.53,web_yahoo,127.53,0.0,0.0,✅,
-ibkr_vs_web,股票收市,COP,2026-09-22,open,ibkr,125.98,web_yahoo,125.98,0.0,0.0,✅,
-ibkr_vs_web,股票收市,COP,2026-09-22,close,ibkr,125.27,web_yahoo,125.27,0.0,0.0,✅,
-ibkr_vs_web,股票收市,CRWD,2026-09-21,close,ibkr,249.35,web_yahoo,249.35,0.0,0.0,✅,
-ibkr_vs_web,股票收市,CRWD,2026-09-22,open,ibkr,248.21,web_yahoo,248.21,0.0,0.0,✅,
-ibkr_vs_web,股票收市,CRWD,2026-09-22,close,ibkr,250.06,web_yahoo,250.06,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DDOG,2026-09-21,close,ibkr,245.05,web_yahoo,245.05,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DDOG,2026-09-22,open,ibkr,245.67,web_yahoo,245.67,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DDOG,2026-09-22,close,ibkr,247.47,web_yahoo,247.475,-0.005,-0.002,❌,
-ibkr_vs_web,股票收市,DGX,2026-09-21,close,ibkr,244.88,web_yahoo,244.88,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DGX,2026-09-22,open,ibkr,228.59,web_yahoo,228.59,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DGX,2026-09-22,close,ibkr,234.76,web_yahoo,234.76,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DINO,2026-09-21,close,ibkr,109.29,web_yahoo,109.29,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DINO,2026-09-22,open,ibkr,107.14,web_yahoo,107.14,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DINO,2026-09-22,close,ibkr,106.69,web_yahoo,106.69,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DVN,2026-09-21,close,ibkr,47.59,web_yahoo,47.59,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DVN,2026-09-22,open,ibkr,46.8,web_yahoo,46.8,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DVN,2026-09-22,close,ibkr,46.93,web_yahoo,46.93,0.0,0.0,✅,
-ibkr_vs_web,股票收市,EQIX,2026-09-21,close,ibkr,1057.26,web_yahoo,1057.26,0.0,0.0,✅,
-ibkr_vs_web,股票收市,EQIX,2026-09-22,open,ibkr,1051.91,web_yahoo,1051.91,0.0,0.0,✅,
-ibkr_vs_web,股票收市,EQIX,2026-09-22,close,ibkr,1059.26,web_yahoo,1059.26,0.0,0.0,✅,
-ibkr_vs_web,股票收市,EXPD,2026-09-21,close,ibkr,192.15,web_yahoo,192.15,0.0,0.0,✅,
-ibkr_vs_web,股票收市,EXPD,2026-09-22,open,ibkr,192.33,web_yahoo,192.33,0.0,0.0,✅,
-ibkr_vs_web,股票收市,EXPD,2026-09-22,close,ibkr,187.51,web_yahoo,187.51,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AAPL,2026-09-21,close,ibkr,338.98,web_yahoo,338.98,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AAPL,2026-09-22,open,ibkr,340.14,web_yahoo,340.14,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AAPL,2026-09-22,close,ibkr,339.75,web_yahoo,339.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-21,close,ibkr,383.0,web_yahoo,383.0,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-22,open,ibkr,382.19,web_yahoo,382.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-22,close,ibkr,390.37,web_yahoo,390.37,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADM,2026-09-21,close,ibkr,83.38,web_yahoo,83.38,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADM,2026-09-22,open,ibkr,82.88,web_yahoo,82.88,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADM,2026-09-22,close,ibkr,82.34,web_yahoo,82.34,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMG,2026-09-21,close,ibkr,364.66,web_yahoo,364.66,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMG,2026-09-22,open,ibkr,366.04,web_yahoo,366.04,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMG,2026-09-22,close,ibkr,360.28,web_yahoo,360.28,0.0,0.0,✅,
+ibkr_vs_web,股票收市,C,2026-09-21,close,ibkr,135.05,web_yahoo,135.05,0.0,0.0,✅,
+ibkr_vs_web,股票收市,C,2026-09-22,open,ibkr,134.87,web_yahoo,134.87,0.0,0.0,✅,
+ibkr_vs_web,股票收市,C,2026-09-22,close,ibkr,132.47,web_yahoo,132.47,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CRL,2026-09-21,close,ibkr,279.01,web_yahoo,279.01,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CRL,2026-09-22,open,ibkr,280.19,web_yahoo,280.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CRL,2026-09-22,close,ibkr,285.11,web_yahoo,285.11,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CVX,2026-09-21,close,ibkr,203.67,web_yahoo,203.67,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CVX,2026-09-22,open,ibkr,201.87,web_yahoo,201.87,0.0,0.0,✅,
+ibkr_vs_web,股票收市,CVX,2026-09-22,close,ibkr,202.41,web_yahoo,202.41,0.0,0.0,✅,
 ibkr_vs_web,股票收市,FCX,2026-09-21,close,ibkr,72.16,web_yahoo,72.16,0.0,0.0,✅,
 ibkr_vs_web,股票收市,FCX,2026-09-22,open,ibkr,72.65,web_yahoo,72.65,0.0,0.0,✅,
 ibkr_vs_web,股票收市,FCX,2026-09-22,close,ibkr,74.35,web_yahoo,74.35,0.0,0.0,✅,
-ibkr_vs_web,股票收市,GOOGL,2026-09-21,close,ibkr,354.97,web_yahoo,354.97,0.0,0.0,✅,
-ibkr_vs_web,股票收市,GOOGL,2026-09-22,open,ibkr,357.75,web_yahoo,357.65,0.1,0.028,❌,
-ibkr_vs_web,股票收市,GOOGL,2026-09-22,close,ibkr,351.16,web_yahoo,351.16,0.0,0.0,✅,
-ibkr_vs_web,股票收市,HP,2026-09-21,close,ibkr,40.29,web_yahoo,40.29,0.0,0.0,✅,
-ibkr_vs_web,股票收市,HP,2026-09-22,open,ibkr,39.72,web_yahoo,39.72,0.0,0.0,✅,
-ibkr_vs_web,股票收市,HP,2026-09-22,close,ibkr,39.79,web_yahoo,39.79,0.0,0.0,✅,
-ibkr_vs_web,股票收市,INCY,2026-09-21,close,ibkr,124.65,web_yahoo,124.65,0.0,0.0,✅,
-ibkr_vs_web,股票收市,INCY,2026-09-22,open,ibkr,124.72,web_yahoo,124.72,0.0,0.0,✅,
-ibkr_vs_web,股票收市,INCY,2026-09-22,close,ibkr,126.93,web_yahoo,126.93,0.0,0.0,✅,
+ibkr_vs_web,股票收市,FTNT,2026-09-21,close,ibkr,175.23,web_yahoo,175.23,0.0,0.0,✅,
+ibkr_vs_web,股票收市,FTNT,2026-09-22,open,ibkr,176.14,web_yahoo,176.09,0.05,0.0284,❌,
+ibkr_vs_web,股票收市,FTNT,2026-09-22,close,ibkr,174.26,web_yahoo,174.26,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HPE,2026-09-21,close,ibkr,61.75,web_yahoo,61.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HPE,2026-09-22,open,ibkr,61.75,web_yahoo,61.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HPE,2026-09-22,close,ibkr,61.03,web_yahoo,61.03,0.0,0.0,✅,
+ibkr_vs_web,股票收市,IFF,2026-09-21,close,ibkr,83.6,web_yahoo,83.6,0.0,0.0,✅,
+ibkr_vs_web,股票收市,IFF,2026-09-22,open,ibkr,84.81,web_yahoo,84.97,-0.16,-0.1883,❌,
+ibkr_vs_web,股票收市,IFF,2026-09-22,close,ibkr,85.79,web_yahoo,85.79,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INTC,2026-09-21,close,ibkr,121.78,web_yahoo,121.78,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INTC,2026-09-22,open,ibkr,120.07,web_yahoo,120.15,-0.08,-0.0666,❌,
+ibkr_vs_web,股票收市,INTC,2026-09-22,close,ibkr,123.86,web_yahoo,123.86,0.0,0.0,✅,
 ibkr_vs_web,股票收市,JCI,2026-09-21,close,ibkr,145.18,web_yahoo,145.18,0.0,0.0,✅,
 ibkr_vs_web,股票收市,JCI,2026-09-22,open,ibkr,145.0,web_yahoo,145.0,0.0,0.0,✅,
 ibkr_vs_web,股票收市,JCI,2026-09-22,close,ibkr,146.44,web_yahoo,146.44,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NBIS,2026-09-21,close,ibkr,232.8,web_yahoo,232.8,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NBIS,2026-09-22,open,ibkr,233.24,web_yahoo,233.24,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NBIS,2026-09-22,close,ibkr,236.12,web_yahoo,236.12,0.0,0.0,✅,
+ibkr_vs_web,股票收市,LITE,2026-09-21,close,ibkr,954.49,web_yahoo,954.49,0.0,0.0,✅,
+ibkr_vs_web,股票收市,LITE,2026-09-22,open,ibkr,937.17,web_yahoo,937.17,0.0,0.0,✅,
+ibkr_vs_web,股票收市,LITE,2026-09-22,close,ibkr,945.67,web_yahoo,945.67,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MPC,2026-09-21,close,ibkr,402.38,web_yahoo,402.38,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MPC,2026-09-22,open,ibkr,391.68,web_yahoo,391.68,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MPC,2026-09-22,close,ibkr,389.68,web_yahoo,389.68,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NDSN,2026-09-21,close,ibkr,314.35,web_yahoo,314.35,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NDSN,2026-09-22,open,ibkr,315.27,web_yahoo,315.27,0.0,0.0,✅,
+ibkr_vs_web,股票收市,NDSN,2026-09-22,close,ibkr,319.67,web_yahoo,319.67,0.0,0.0,✅,
 ibkr_vs_web,股票收市,OKTA,2026-09-21,close,ibkr,191.33,web_yahoo,191.33,0.0,0.0,✅,
 ibkr_vs_web,股票收市,OKTA,2026-09-22,open,ibkr,192.82,web_yahoo,192.82,0.0,0.0,✅,
 ibkr_vs_web,股票收市,OKTA,2026-09-22,close,ibkr,196.62,web_yahoo,196.62,0.0,0.0,✅,
-ibkr_vs_web,股票收市,PFG,2026-09-21,close,ibkr,116.47,web_yahoo,116.47,0.0,0.0,✅,
-ibkr_vs_web,股票收市,PFG,2026-09-22,open,ibkr,116.65,web_yahoo,116.6,0.05,0.0429,❌,
-ibkr_vs_web,股票收市,PFG,2026-09-22,close,ibkr,113.59,web_yahoo,113.59,0.0,0.0,✅,
-ibkr_vs_web,股票收市,RVTY,2026-09-21,close,ibkr,143.59,web_yahoo,143.59,0.0,0.0,✅,
-ibkr_vs_web,股票收市,RVTY,2026-09-22,open,ibkr,143.12,web_yahoo,143.12,0.0,0.0,✅,
-ibkr_vs_web,股票收市,RVTY,2026-09-22,close,ibkr,143.31,web_yahoo,143.31,0.0,0.0,✅,
-ibkr_vs_web,股票收市,SNDK,2026-09-21,close,ibkr,1766.64,web_yahoo,1766.64,0.0,0.0,✅,
-ibkr_vs_web,股票收市,SNDK,2026-09-22,open,ibkr,1757.51,web_yahoo,1757.505,0.005,0.0003,❌,
-ibkr_vs_web,股票收市,SNDK,2026-09-22,close,ibkr,1887.04,web_yahoo,1887.04,0.0,0.0,✅,
-ibkr_vs_web,股票收市,TER,2026-09-21,close,ibkr,381.54,web_yahoo,381.54,0.0,0.0,✅,
-ibkr_vs_web,股票收市,TER,2026-09-22,open,ibkr,373.0,web_yahoo,373.0,0.0,0.0,✅,
-ibkr_vs_web,股票收市,TER,2026-09-22,close,ibkr,398.69,web_yahoo,398.69,0.0,0.0,✅,
-ibkr_vs_web,股票收市,THC,2026-09-21,close,ibkr,260.97,web_yahoo,260.97,0.0,0.0,✅,
-ibkr_vs_web,股票收市,THC,2026-09-22,open,ibkr,263.06,web_yahoo,263.06,0.0,0.0,✅,
-ibkr_vs_web,股票收市,THC,2026-09-22,close,ibkr,262.06,web_yahoo,262.06,0.0,0.0,✅,
-web_vs_web,Nasdaq↔Yahoo,ALLE,2026-09-22,close,web_nasdaq,153.95,web_yahoo,153.95,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,APP,2026-09-22,close,web_nasdaq,328.73,web_yahoo,328.73,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,ATI,2026-09-22,close,web_nasdaq,186.56,web_yahoo,186.56,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,BG,2026-09-22,close,web_nasdaq,110.0,web_yahoo,110.0,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,CHD,2026-09-22,close,web_nasdaq,96.12,web_yahoo,96.12,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,CRWV,2026-09-22,close,web_nasdaq,86.76,web_yahoo,86.76,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,CVNA,2026-09-22,close,web_nasdaq,65.4,web_yahoo,65.4,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,DOCU,2026-09-22,close,web_nasdaq,66.76,web_yahoo,66.76,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,EPAM,2026-09-22,close,web_nasdaq,111.54,web_yahoo,111.54,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,FER,2026-09-22,close,web_nasdaq,56.3,web_yahoo,56.3,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,FFIV,2026-09-22,close,web_nasdaq,453.33,web_yahoo,453.33,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,GEV,2026-09-22,close,web_nasdaq,950.28,web_yahoo,950.28,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,HRB,2026-09-22,close,web_nasdaq,42.86,web_yahoo,42.86,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,IP,2026-09-22,close,web_nasdaq,35.71,web_yahoo,35.71,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,J,2026-09-22,close,web_nasdaq,143.12,web_yahoo,143.12,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,JBHT,2026-09-22,close,web_nasdaq,237.41,web_yahoo,237.41,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,KKR,2026-09-22,close,web_nasdaq,98.44,web_yahoo,98.44,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,MCO,2026-09-22,close,web_nasdaq,469.25,web_yahoo,469.25,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,MDB,2026-09-22,close,web_nasdaq,427.69,web_yahoo,427.69,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,MDLZ,2026-09-22,close,web_nasdaq,61.08,web_yahoo,61.08,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,MTW,2026-09-22,close,web_nasdaq,22.61,web_yahoo,22.61,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,MU,2026-09-22,close,web_nasdaq,1096.16,web_yahoo,1096.16,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,NCLH,2026-09-22,close,web_nasdaq,14.22,web_yahoo,14.22,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,NVDA,2026-09-22,close,web_nasdaq,228.87,web_yahoo,228.87,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,Q,2026-09-22,close,web_nasdaq,124.86,web_yahoo,124.86,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,QGEN,2026-09-22,close,web_nasdaq,43.69,web_yahoo,43.69,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,RF,2026-09-22,close,web_nasdaq,27.91,web_yahoo,27.91,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,TJX,2026-09-22,close,web_nasdaq,130.79,web_yahoo,130.79,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,TPR,2026-09-22,close,web_nasdaq,112.59,web_yahoo,112.59,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,TSN,2026-09-22,close,web_nasdaq,51.82,web_yahoo,51.82,0.0,0.0,✅,快照 quotes_2026-09-22.json
-web_vs_web,Nasdaq↔Yahoo,ABBV,2026-09-23,close,web_nasdaq,265.08,web_yahoo,265.08,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,AMAT,2026-09-23,close,web_nasdaq,474.38,web_yahoo,474.38,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,BDX,2026-09-23,close,web_nasdaq,182.52,web_yahoo,182.52,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,DASH,2026-09-23,close,web_nasdaq,189.27,web_yahoo,189.27,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,ECL,2026-09-23,close,web_nasdaq,276.72,web_yahoo,276.72,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,EL,2026-09-23,close,web_nasdaq,98.83,web_yahoo,98.83,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,ETSY,2026-09-23,close,web_nasdaq,73.7,web_yahoo,73.7,0.0,0.0,✅,快照 quotes_2026-09-23.json
+ibkr_vs_web,股票收市,PSX,2026-09-21,close,ibkr,261.75,web_yahoo,261.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,PSX,2026-09-22,open,ibkr,256.88,web_yahoo,256.88,0.0,0.0,✅,
+ibkr_vs_web,股票收市,PSX,2026-09-22,close,ibkr,256.78,web_yahoo,256.78,0.0,0.0,✅,
+ibkr_vs_web,股票收市,STX,2026-09-21,close,ibkr,877.33,web_yahoo,877.33,0.0,0.0,✅,
+ibkr_vs_web,股票收市,STX,2026-09-22,open,ibkr,857.69,web_yahoo,857.69,0.0,0.0,✅,
+ibkr_vs_web,股票收市,STX,2026-09-22,close,ibkr,919.84,web_yahoo,919.84,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRV,2026-09-21,close,ibkr,371.13,web_yahoo,371.13,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRV,2026-09-22,open,ibkr,369.92,web_yahoo,369.92,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRV,2026-09-22,close,ibkr,362.01,web_yahoo,362.01,0.0,0.0,✅,
+web_vs_web,Nasdaq↔Yahoo,AIZ,2026-09-22,close,web_nasdaq,271.08,web_yahoo,271.08,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,ALB,2026-09-22,close,web_nasdaq,116.8,web_yahoo,116.8,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,AON,2026-09-22,close,web_nasdaq,286.1,web_yahoo,286.1,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,BBY,2026-09-22,close,web_nasdaq,94.82,web_yahoo,94.82,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,CB,2026-09-22,close,web_nasdaq,335.77,web_yahoo,335.77,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,CBOE,2026-09-22,close,web_nasdaq,266.83,web_yahoo,266.83,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,CPRT,2026-09-22,close,web_nasdaq,28.795,web_yahoo,28.8,-0.005,-0.0174,❌,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,EBAY,2026-09-22,close,web_nasdaq,109.28,web_yahoo,109.28,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,EXE,2026-09-22,close,web_nasdaq,87.03,web_yahoo,87.03,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,FCX,2026-09-22,close,web_nasdaq,74.35,web_yahoo,74.35,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,FE,2026-09-22,close,web_nasdaq,44.73,web_yahoo,44.73,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,FERG,2026-09-22,close,web_nasdaq,221.17,web_yahoo,221.17,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,GE,2026-09-22,close,web_nasdaq,319.22,web_yahoo,319.22,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,HBAN,2026-09-22,close,web_nasdaq,15.69,web_yahoo,15.69,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,IDXX,2026-09-22,close,web_nasdaq,521.5,web_yahoo,521.5,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,INFY,2026-09-22,close,web_nasdaq,10.76,web_yahoo,10.76,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,IPGP,2026-09-22,close,web_nasdaq,78.2,web_yahoo,78.2,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,KIM,2026-09-22,close,web_nasdaq,22.55,web_yahoo,22.55,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,LITE,2026-09-22,close,web_nasdaq,945.67,web_yahoo,945.67,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,LRCX,2026-09-22,close,web_nasdaq,310.96,web_yahoo,310.96,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,MHK,2026-09-22,close,web_nasdaq,121.23,web_yahoo,121.23,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,MI,2026-09-22,close,web_nasdaq,2.38,web_yahoo,2.38,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,OGN,2026-09-22,close,web_nasdaq,13.7,web_yahoo,13.7,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,R,2026-09-22,close,web_nasdaq,236.5,web_yahoo,236.5,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,ROST,2026-09-22,close,web_nasdaq,232.51,web_yahoo,232.51,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,SMCI,2026-09-22,close,web_nasdaq,41.54,web_yahoo,41.54,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,TEL,2026-09-22,close,web_nasdaq,213.48,web_yahoo,213.48,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,TFC,2026-09-22,close,web_nasdaq,48.07,web_yahoo,48.07,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,THC,2026-09-22,close,web_nasdaq,262.06,web_yahoo,262.06,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,VTRS,2026-09-22,close,web_nasdaq,17.18,web_yahoo,17.18,0.0,0.0,✅,快照 quotes_2026-09-22.json
+web_vs_web,Nasdaq↔Yahoo,AAPL,2026-09-23,close,web_nasdaq,337.02,web_yahoo,337.02,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ALK,2026-09-23,close,web_nasdaq,39.7,web_yahoo,39.7,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ALL,2026-09-23,close,web_nasdaq,225.66,web_yahoo,225.66,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,AME,2026-09-23,close,web_nasdaq,246.45,web_yahoo,246.45,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ASML,2026-09-23,close,web_nasdaq,1744.61,web_yahoo,1744.61,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,AXP,2026-09-23,close,web_nasdaq,301.96,web_yahoo,301.96,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,BIIB,2026-09-23,close,web_nasdaq,227.53,web_yahoo,227.53,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,C,2026-09-23,close,web_nasdaq,131.93,web_yahoo,131.93,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,CCL,2026-09-23,close,web_nasdaq,21.8,web_yahoo,21.8,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,CLF,2026-09-23,close,web_nasdaq,12.87,web_yahoo,12.87,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,DHR,2026-09-23,close,web_nasdaq,221.56,web_yahoo,221.56,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,DOW,2026-09-23,close,web_nasdaq,28.65,web_yahoo,28.65,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,EQT,2026-09-23,close,web_nasdaq,51.06,web_yahoo,51.06,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,EVRG,2026-09-23,close,web_nasdaq,78.42,web_yahoo,78.42,0.0,0.0,✅,快照 quotes_2026-09-23.json
 web_vs_web,Nasdaq↔Yahoo,EXPD,2026-09-23,close,web_nasdaq,188.03,web_yahoo,188.03,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,FER,2026-09-23,close,web_nasdaq,55.28,web_yahoo,55.28,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,GEHC,2026-09-23,close,web_nasdaq,66.09,web_yahoo,66.09,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,GFS,2026-09-23,close,web_nasdaq,46.42,web_yahoo,46.42,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,ICE,2026-09-23,close,web_nasdaq,156.35,web_yahoo,156.35,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,LDOS,2026-09-23,close,web_nasdaq,124.69,web_yahoo,124.69,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,MA,2026-09-23,close,web_nasdaq,559.92,web_yahoo,559.92,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,MCD,2026-09-23,close,web_nasdaq,238.32,web_yahoo,238.32,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,MCK,2026-09-23,close,web_nasdaq,880.5,web_yahoo,880.5,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,MDT,2026-09-23,close,web_nasdaq,89.3,web_yahoo,89.3,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,MMM,2026-09-23,close,web_nasdaq,170.3,web_yahoo,170.3,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,NOC,2026-09-23,close,web_nasdaq,514.42,web_yahoo,514.42,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,OKE,2026-09-23,close,web_nasdaq,90.54,web_yahoo,90.54,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,PKG,2026-09-23,close,web_nasdaq,240.98,web_yahoo,240.98,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,PVH,2026-09-23,close,web_nasdaq,75.39,web_yahoo,75.39,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,RMD,2026-09-23,close,web_nasdaq,222.3,web_yahoo,222.3,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,SHW,2026-09-23,close,web_nasdaq,326.46,web_yahoo,326.46,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,SLB,2026-09-23,close,web_nasdaq,51.87,web_yahoo,51.87,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,T,2026-09-23,close,web_nasdaq,25.3,web_yahoo,25.3,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,VEON,2026-09-23,close,web_nasdaq,70.36,web_yahoo,70.36,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,WRB,2026-09-23,close,web_nasdaq,67.67,web_yahoo,67.67,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,GDDY,2026-09-23,close,web_nasdaq,96.38,web_yahoo,96.38,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,HAL,2026-09-23,close,web_nasdaq,33.01,web_yahoo,33.01,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,KHC,2026-09-23,close,web_nasdaq,23.79,web_yahoo,23.79,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,LBTYA,2026-09-23,close,web_nasdaq,9.48,web_yahoo,9.48,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,LIFE,2026-09-23,close,web_nasdaq,33.91,web_yahoo,33.91,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,LYB,2026-09-23,close,web_nasdaq,59.97,web_yahoo,59.97,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,MGM,2026-09-23,close,web_nasdaq,37.85,web_yahoo,37.85,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,MRSH,2026-09-23,close,web_nasdaq,170.38,web_yahoo,170.38,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,MTB,2026-09-23,close,web_nasdaq,219.58,web_yahoo,219.58,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,PODD,2026-09-23,close,web_nasdaq,136.49,web_yahoo,136.49,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ROST,2026-09-23,close,web_nasdaq,233.98,web_yahoo,233.98,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,TRV,2026-09-23,close,web_nasdaq,360.39,web_yahoo,360.39,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,UHS,2026-09-23,close,web_nasdaq,181.39,web_yahoo,181.39,0.0,0.0,✅,快照 quotes_2026-09-23.json
 web_vs_web,Nasdaq↔Yahoo,WY,2026-09-23,close,web_nasdaq,21.17,web_yahoo,21.17,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,YUM,2026-09-23,close,web_nasdaq,140.63,web_yahoo,140.63,0.0,0.0,✅,快照 quotes_2026-09-23.json
-web_vs_web,Nasdaq↔Yahoo,AAP,2026-09-24,close,web_nasdaq,41.1,web_yahoo,41.43,-0.33,-0.7965,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,APTV,2026-09-24,close,web_nasdaq,45.17,web_yahoo,43.58,1.59,3.6485,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,XYL,2026-09-23,close,web_nasdaq,108.64,web_yahoo,108.64,0.0,0.0,✅,快照 quotes_2026-09-23.json
+web_vs_web,Nasdaq↔Yahoo,ALAB,2026-09-24,close,web_nasdaq,360.46,web_yahoo,360.51,-0.05,-0.0139,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,ANF,2026-09-24,close,web_nasdaq,132.25,web_yahoo,134.3,-2.05,-1.5264,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,AXON,2026-09-24,close,web_nasdaq,450.61,web_yahoo,445.0,5.61,1.2607,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
 web_vs_web,Nasdaq↔Yahoo,BATRA,2026-09-24,close,web_nasdaq,58.09,web_yahoo,58.85,-0.76,-1.2914,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,BBWI,2026-09-24,close,web_nasdaq,17.02,web_yahoo,16.8,0.22,1.3095,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,CRL,2026-09-24,close,web_nasdaq,277.33,web_yahoo,294.44,-17.11,-5.811,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,CVX,2026-09-24,close,web_nasdaq,205.51,web_yahoo,205.65,-0.14,-0.0681,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,CZR,2026-09-24,close,web_nasdaq,29.61,web_yahoo,29.62,-0.01,-0.0338,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,EOG,2026-09-24,close,web_nasdaq,141.84,web_yahoo,142.86,-1.02,-0.714,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,EVRG,2026-09-24,close,web_nasdaq,78.42,web_yahoo,77.66,0.76,0.9786,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,FMC,2026-09-24,close,web_nasdaq,9.9,web_yahoo,9.59,0.31,3.2325,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,FOSL,2026-09-24,close,web_nasdaq,6.17,web_yahoo,5.85,0.32,5.4701,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,FTV,2026-09-24,close,web_nasdaq,56.26,web_yahoo,55.44,0.82,1.4791,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,GE,2026-09-24,close,web_nasdaq,319.8,web_yahoo,319.78,0.02,0.0063,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,INVH,2026-09-24,close,web_nasdaq,26.93,web_yahoo,26.5,0.43,1.6226,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,IPGP,2026-09-24,close,web_nasdaq,77.18,web_yahoo,77.42,-0.24,-0.31,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,LBTYA,2026-09-24,close,web_nasdaq,9.48,web_yahoo,9.42,0.06,0.6369,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,LLY,2026-09-24,close,web_nasdaq,1150.99,web_yahoo,1181.89,-30.9,-2.6145,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,MAC,2026-09-24,close,web_nasdaq,22.67,web_yahoo,22.64,0.03,0.1325,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,META,2026-09-24,close,web_nasdaq,744.1,web_yahoo,777.59,-33.49,-4.3069,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,MOH,2026-09-24,close,web_nasdaq,189.37,web_yahoo,193.31,-3.94,-2.0382,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,MRSH,2026-09-24,close,web_nasdaq,170.38,web_yahoo,169.93,0.45,0.2648,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,MTCH,2026-09-24,close,web_nasdaq,40.48,web_yahoo,40.8,-0.32,-0.7843,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,PANW,2026-09-24,close,web_nasdaq,393.3,web_yahoo,389.92,3.38,0.8668,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,PLD,2026-09-24,close,web_nasdaq,133.96,web_yahoo,133.82,0.14,0.1046,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,RMD,2026-09-24,close,web_nasdaq,222.3,web_yahoo,221.89,0.41,0.1848,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,TXT,2026-09-24,close,web_nasdaq,76.81,web_yahoo,76.02,0.79,1.0392,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,UAA,2026-09-24,close,web_nasdaq,4.53,web_yahoo,4.5,0.03,0.6667,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,USB,2026-09-24,close,web_nasdaq,58.48,web_yahoo,58.4,0.08,0.137,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,VTRS,2026-09-24,close,web_nasdaq,17.12,web_yahoo,17.42,-0.3,-1.7222,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,WMT,2026-09-24,close,web_nasdaq,110.53,web_yahoo,107.59,2.94,2.7326,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
-web_vs_web,Nasdaq↔Yahoo,ADBE,2026-09-25,close,web_nasdaq,238.93,web_yahoo,235.47,3.46,1.4694,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,AMGN,2026-09-25,close,web_nasdaq,406.04,web_yahoo,414.61,-8.57,-2.067,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,APTV,2026-09-25,close,web_nasdaq,43.58,web_yahoo,44.79,-1.21,-2.7015,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,BIO,2026-09-25,close,web_nasdaq,387.54,web_yahoo,381.0,6.54,1.7165,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,CAH,2026-09-25,close,web_nasdaq,222.62,web_yahoo,220.22,2.4,1.0898,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,CME,2026-09-25,close,web_nasdaq,268.91,web_yahoo,264.48,4.43,1.675,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,CZR,2026-09-25,close,web_nasdaq,29.62,web_yahoo,29.59,0.03,0.1014,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,DGX,2026-09-25,close,web_nasdaq,236.59,web_yahoo,236.32,0.27,0.1143,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,DINO,2026-09-25,close,web_nasdaq,105.79,web_yahoo,106.82,-1.03,-0.9642,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,EMR,2026-09-25,close,web_nasdaq,156.14,web_yahoo,158.23,-2.09,-1.3209,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,EQT,2026-09-25,close,web_nasdaq,51.87,web_yahoo,50.81,1.06,2.0862,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,ES,2026-09-25,close,web_nasdaq,63.8,web_yahoo,63.67,0.13,0.2042,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,BG,2026-09-24,close,web_nasdaq,111.48,web_yahoo,110.21,1.27,1.1523,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,CDW,2026-09-24,close,web_nasdaq,146.16,web_yahoo,139.46,6.7,4.8042,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,CRWD,2026-09-24,close,web_nasdaq,262.49,web_yahoo,259.67,2.82,1.086,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,DVN,2026-09-24,close,web_nasdaq,48.04,web_yahoo,48.9,-0.86,-1.7587,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,FCX,2026-09-24,close,web_nasdaq,72.58,web_yahoo,72.08,0.5,0.6937,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,FITB,2026-09-24,close,web_nasdaq,51.69,web_yahoo,51.46,0.23,0.4469,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,FIX,2026-09-24,close,web_nasdaq,1625.9,web_yahoo,1643.39,-17.49,-1.0643,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,GFS,2026-09-24,close,web_nasdaq,46.42,web_yahoo,47.05,-0.63,-1.339,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,LILAK,2026-09-24,close,web_nasdaq,8.44,web_yahoo,8.55,-0.11,-1.2865,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,LOGI,2026-09-24,close,web_nasdaq,104.65,web_yahoo,99.56,5.09,5.1125,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,MELI,2026-09-24,close,web_nasdaq,1799.24,web_yahoo,1754.13,45.11,2.5716,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,MICC,2026-09-24,close,web_nasdaq,19.06,web_yahoo,19.28,-0.22,-1.1411,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,MSI,2026-09-24,close,web_nasdaq,460.44,web_yahoo,454.91,5.53,1.2156,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,PCAR,2026-09-24,close,web_nasdaq,112.09,web_yahoo,110.67,1.42,1.2831,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,PH,2026-09-24,close,web_nasdaq,971.21,web_yahoo,974.98,-3.77,-0.3867,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,RDDT,2026-09-24,close,web_nasdaq,151.98,web_yahoo,152.72,-0.74,-0.4845,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,SHW,2026-09-24,close,web_nasdaq,326.46,web_yahoo,320.4,6.06,1.8914,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,SLM,2026-09-24,close,web_nasdaq,23.61,web_yahoo,23.05,0.56,2.4295,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,SMCI,2026-09-24,close,web_nasdaq,41.44,web_yahoo,41.51,-0.07,-0.1686,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,STE,2026-09-24,close,web_nasdaq,209.98,web_yahoo,208.77,1.21,0.5796,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,TAP,2026-09-24,close,web_nasdaq,36.62,web_yahoo,36.35,0.27,0.7428,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,TECH,2026-09-24,close,web_nasdaq,72.52,web_yahoo,72.57,-0.05,-0.0689,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,TRIP,2026-09-24,close,web_nasdaq,8.04,web_yahoo,8.52,-0.48,-5.6338,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,URI,2026-09-24,close,web_nasdaq,1031.99,web_yahoo,1021.67,10.32,1.0101,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,VFC,2026-09-24,close,web_nasdaq,13.52,web_yahoo,13.69,-0.17,-1.2418,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,WYNN,2026-09-24,close,web_nasdaq,81.45,web_yahoo,80.19,1.26,1.5713,❌,快照 quotes_2026-09-24.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-23
+web_vs_web,Nasdaq↔Yahoo,APO,2026-09-25,close,web_nasdaq,120.69,web_yahoo,121.69,-1.0,-0.8218,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,AWK,2026-09-25,close,web_nasdaq,131.53,web_yahoo,130.91,0.62,0.4736,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,BC,2026-09-25,close,web_nasdaq,66.16,web_yahoo,67.19,-1.03,-1.533,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,CTVA,2026-09-25,close,web_nasdaq,79.45,web_yahoo,78.52,0.93,1.1844,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,EMN,2026-09-25,close,web_nasdaq,66.19,web_yahoo,66.97,-0.78,-1.1647,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
 web_vs_web,Nasdaq↔Yahoo,ETN,2026-09-25,close,web_nasdaq,440.0,web_yahoo,439.98,0.02,0.0045,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,EXR,2026-09-25,close,web_nasdaq,132.23,web_yahoo,133.35,-1.12,-0.8399,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,IBKR,2026-09-25,close,web_nasdaq,89.82,web_yahoo,89.24,0.58,0.6499,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,INFY,2026-09-25,close,web_nasdaq,10.5,web_yahoo,10.5,0.0,0.0,✅,快照 quotes_2026-09-25.json
-web_vs_web,Nasdaq↔Yahoo,JEF,2026-09-25,close,web_nasdaq,46.24,web_yahoo,47.68,-1.44,-3.0201,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,KHC,2026-09-25,close,web_nasdaq,23.86,web_yahoo,23.63,0.23,0.9733,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,PEG,2026-09-25,close,web_nasdaq,66.56,web_yahoo,67.02,-0.46,-0.6864,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,PFG,2026-09-25,close,web_nasdaq,114.15,web_yahoo,114.77,-0.62,-0.5402,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,FLEX,2026-09-25,close,web_nasdaq,112.4,web_yahoo,114.68,-2.28,-1.9881,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,GDDY,2026-09-25,close,web_nasdaq,100.81,web_yahoo,97.14,3.67,3.7781,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,GOOG,2026-09-25,close,web_nasdaq,339.01,web_yahoo,341.08,-2.07,-0.6069,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,HLT,2026-09-25,close,web_nasdaq,312.13,web_yahoo,313.96,-1.83,-0.5829,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,IBM,2026-09-25,close,web_nasdaq,227.06,web_yahoo,225.51,1.55,0.6873,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,ILMN,2026-09-25,close,web_nasdaq,273.9,web_yahoo,270.0,3.9,1.4444,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,JD,2026-09-25,close,web_nasdaq,26.75,web_yahoo,26.51,0.24,0.9053,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,JPM,2026-09-25,close,web_nasdaq,338.56,web_yahoo,343.06,-4.5,-1.3117,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,KKR,2026-09-25,close,web_nasdaq,95.64,web_yahoo,96.67,-1.03,-1.0655,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,KVUE,2026-09-25,close,web_nasdaq,17.61,web_yahoo,17.8,-0.19,-1.0674,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,LUV,2026-09-25,close,web_nasdaq,41.55,web_yahoo,42.68,-1.13,-2.6476,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,LYV,2026-09-25,close,web_nasdaq,171.06,web_yahoo,170.87,0.19,0.1112,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,NDSN,2026-09-25,close,web_nasdaq,323.26,web_yahoo,325.77,-2.51,-0.7705,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,NVR,2026-09-25,close,web_nasdaq,6235.49,web_yahoo,6297.6001,-62.1101,-0.9863,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,NWSA,2026-09-25,close,web_nasdaq,28.44,web_yahoo,28.49,-0.05,-0.1755,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
 web_vs_web,Nasdaq↔Yahoo,PSX,2026-09-25,close,web_nasdaq,255.87,web_yahoo,255.75,0.12,0.0469,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,R,2026-09-25,close,web_nasdaq,236.25,web_yahoo,235.57,0.68,0.2887,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,SBUX,2026-09-25,close,web_nasdaq,93.65,web_yahoo,94.86,-1.21,-1.2756,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,SJM,2026-09-25,close,web_nasdaq,121.66,web_yahoo,121.0,0.66,0.5455,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,SOLV,2026-09-25,close,web_nasdaq,88.59,web_yahoo,89.5,-0.91,-1.0168,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,STLD,2026-09-25,close,web_nasdaq,235.2,web_yahoo,233.66,1.54,0.6591,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,TNL,2026-09-25,close,web_nasdaq,62.83,web_yahoo,63.66,-0.83,-1.3038,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,TRIP,2026-09-25,close,web_nasdaq,8.52,web_yahoo,8.41,0.11,1.308,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,URI,2026-09-25,close,web_nasdaq,1021.67,web_yahoo,1047.0601,-25.3901,-2.4249,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
-web_vs_web,Nasdaq↔Yahoo,VRSK,2026-09-25,close,web_nasdaq,168.65,web_yahoo,169.21,-0.56,-0.3309,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,RTX,2026-09-25,close,web_nasdaq,188.61,web_yahoo,189.4,-0.79,-0.4171,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,SEDG,2026-09-25,close,web_nasdaq,31.91,web_yahoo,32.68,-0.77,-2.3562,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,TRMB,2026-09-25,close,web_nasdaq,57.69,web_yahoo,57.85,-0.16,-0.2766,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,TSCO,2026-09-25,close,web_nasdaq,31.44,web_yahoo,32.27,-0.83,-2.572,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,VTR,2026-09-25,close,web_nasdaq,86.83,web_yahoo,86.59,0.24,0.2772,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,WELL,2026-09-25,close,web_nasdaq,233.61,web_yahoo,231.37,2.24,0.9681,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,WY,2026-09-25,close,web_nasdaq,20.14,web_yahoo,20.01,0.13,0.6497,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,ZM,2026-09-25,close,web_nasdaq,90.35,web_yahoo,89.71,0.64,0.7134,❌,快照 quotes_2026-09-25.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-24
+web_vs_web,Nasdaq↔Yahoo,AAL,2026-09-28,close,web_nasdaq,13.87,web_yahoo,13.52,0.35,2.5888,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,ABT,2026-09-28,close,web_nasdaq,101.29,web_yahoo,100.98,0.31,0.307,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,ADP,2026-09-28,close,web_nasdaq,263.67,web_yahoo,261.8,1.87,0.7143,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,ALB,2026-09-28,close,web_nasdaq,109.73,web_yahoo,107.39,2.34,2.179,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,APC,2026-09-28,close,web_nasdaq,16.23,web_yahoo,16.11,0.12,0.7449,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,BEAM,2026-09-28,close,web_nasdaq,24.27,web_yahoo,24.23,0.04,0.1651,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,BEN,2026-09-28,close,web_nasdaq,33.02,web_yahoo,32.68,0.34,1.0404,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,CNX,2026-09-28,close,web_nasdaq,32.79,web_yahoo,31.7,1.09,3.4385,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,COP,2026-09-28,close,web_nasdaq,127.3,web_yahoo,126.04,1.26,0.9997,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,CPB,2026-09-28,close,web_nasdaq,19.37,web_yahoo,20.04,-0.67,-3.3433,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,CTVA,2026-09-28,close,web_nasdaq,78.52,web_yahoo,77.74,0.78,1.0033,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,GEV,2026-09-28,close,web_nasdaq,957.63,web_yahoo,949.77,7.86,0.8276,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,HSY,2026-09-28,close,web_nasdaq,166.37,web_yahoo,164.41,1.96,1.1921,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,IFF,2026-09-28,close,web_nasdaq,85.69,web_yahoo,85.72,-0.03,-0.035,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,KBH,2026-09-28,close,web_nasdaq,48.01,web_yahoo,47.88,0.13,0.2715,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,KMI,2026-09-28,close,web_nasdaq,30.75,web_yahoo,30.63,0.12,0.3918,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,LIFE,2026-09-28,close,web_nasdaq,34.3,web_yahoo,34.24,0.06,0.1752,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,LOW,2026-09-28,close,web_nasdaq,189.28,web_yahoo,187.66,1.62,0.8633,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,MKC,2026-09-28,close,web_nasdaq,47.94,web_yahoo,48.46,-0.52,-1.073,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,MTW,2026-09-28,close,web_nasdaq,22.14,web_yahoo,22.17,-0.03,-0.1353,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,NWL,2026-09-28,close,web_nasdaq,5.43,web_yahoo,5.44,-0.01,-0.1838,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,O,2026-09-28,close,web_nasdaq,55.54,web_yahoo,55.35,0.19,0.3433,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,RJF,2026-09-28,close,web_nasdaq,159.87,web_yahoo,161.16,-1.29,-0.8004,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,RKLB,2026-09-28,close,web_nasdaq,73.95,web_yahoo,72.19,1.76,2.438,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,SBAC,2026-09-28,close,web_nasdaq,166.15,web_yahoo,163.43,2.72,1.6643,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,SHW,2026-09-28,close,web_nasdaq,329.1,web_yahoo,332.79,-3.69,-1.1088,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,SLG,2026-09-28,close,web_nasdaq,51.01,web_yahoo,49.32,1.69,3.4266,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,SRE,2026-09-28,close,web_nasdaq,77.93,web_yahoo,76.89,1.04,1.3526,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,TDY,2026-09-28,close,web_nasdaq,614.15,web_yahoo,610.83,3.32,0.5435,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
+web_vs_web,Nasdaq↔Yahoo,UPS,2026-09-28,close,web_nasdaq,93.96,web_yahoo,94.25,-0.29,-0.3077,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
 internal,5分K OHLC,US.QQQ,2026-09-24,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-09-25,ohlc,futu_5m,,,,,,✅,全部合理
+internal,5分K OHLC,US.QQQ,2026-09-28,ohlc,futu_5m,,,,,,✅,全部合理
 internal,MT5 M1 OHLC,XAUUSD,2026-09-25,ohlc,mt5,,,,,,✅,1 根，高低不合 0，四價相同 0
-internal,MT5 M1 OHLC,XAUUSD,2026-09-28,ohlc,mt5,,,,,,✅,153 根，高低不合 0，四價相同 0
-internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-25,rules,futu_options,,,,,,ℹ️,bid>0 530/530；價差≤20%中價 530/530；|delta| 0.10–0.90 530/530
+internal,MT5 M1 OHLC,XAUUSD,2026-09-28,ohlc,mt5,,,,,,✅,1378 根，高低不合 0，四價相同 0
+internal,MT5 M1 OHLC,XAUUSD,2026-09-29,ohlc,mt5,,,,,,✅,149 根，高低不合 0，四價相同 0
+internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-25,rules,futu_options,,,,,,ℹ️,bid>0 2060/2060；價差≤20%中價 2060/2060；|delta| 0.10–0.90 2060/2060
+internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-28,rules,futu_options,,,,,,ℹ️,bid>0 1310/1320；價差≤20%中價 1310/1320；|delta| 0.10–0.90 1320/1320
