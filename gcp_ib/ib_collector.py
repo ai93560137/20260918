@@ -31,6 +31,8 @@ FX_MARKETS = [
     ('6J', 'JPY'),
 ]
 FX_EXCH = 'CME'
+FX_LEG_TRIES = 2            # 某一腿在最近的到期日拿不到 IV（例如剩 1 天的週權沒報價）時，再試下一個到期日
+FX_FALLBACK_STRIKES = 3     # 備援到期日只試最靠近的 3 檔，避免拖太久
 FX_PRICE_DECIMALS = 7        # 6E ~1.17、6J ~0.0067（日圓 5 位小數只剩 3 位有效數字）；指數用的 .1f 會把它抹平
 
 
@@ -86,14 +88,14 @@ def pick_expiries(exps):
     return wk, mon
 
 
-def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry, fop=False):
+def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry, fop=False, max_strikes=6):
     """ATM (c+p)/2 IV。月權行使價網格較疏（如 Eurex 週權 5 點/月權 25 點），
     同一鏈的 strikes 是全到期聯集——挑中的檔位不一定在該到期掛牌，
     所以按距離試最多 6 檔，qualify 不到就跳下一檔。"""
     ch = next((c for c in chains if c.exchange == opt_exch and expiry in c.expirations), None)
     if not ch:
         return None
-    for strike in sorted(ch.strikes, key=lambda k: abs(k - spot))[:6]:
+    for strike in sorted(ch.strikes, key=lambda k: abs(k - spot))[:max_strikes]:
         ivs = []
         for right in ('C', 'P'):
             if fop:   # 期貨期權：要帶 multiplier，否則同代碼多個合約會 ambiguous
@@ -107,7 +109,7 @@ def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry, fop=False):
                 if not ib.qualifyContracts(o):
                     break
                 iv = iv_of(ib, o, spot)
-                if dry:
+                if dry or not iv:     # 拿不到 IV 時正式執行也留紀錄，事後才查得出原因
                     print(f"  {label} {expiry} {strike}{right}: iv={iv}")
                 if iv:
                     ivs.append(iv)
@@ -129,6 +131,15 @@ def fx_underlyings(ib, sym, n=3):
     return futs[:n]
 
 
+def expiry_candidates(exps, n=FX_LEG_TRIES):
+    """(短腿候選, 長腿候選)：短腿 1–14 天、長腿 15–60 天（沒有就取 14 天之後最近的），各取最近 n 個。"""
+    today = date.today()
+    dtes = sorted(((datetime.strptime(e, '%Y%m%d').date() - today).days, e) for e in exps)
+    wk = [e for dd, e in dtes if 1 <= dd <= 14][:n]
+    mon = [e for dd, e in dtes if 15 <= dd <= 60][:n] or [e for dd, e in dtes if dd > 14][:n]
+    return wk, mon
+
+
 def collect_fx(ib, label, sym, dry):
     """回傳 CSV 一列（字串）或 None。欄位與指數相同：spot 欄放的是該到期日標的期貨價。"""
     futs = fx_underlyings(ib, sym)
@@ -139,25 +150,30 @@ def collect_fx(ib, label, sym, dry):
                 continue
             for e in ch.expirations:
                 by_exp.setdefault(e, (fut, ch))
-    wk, mon = pick_expiries(sorted(by_exp))
+    wk_c, mon_c = expiry_candidates(sorted(by_exp))
     print(f"{label}: futures {[f.lastTradeDateOrContractMonth[:8] for f in futs]}  "
-          f"wk {wk}  mon {mon}  ({len(by_exp)} expiries)")
+          f"wk {wk_c}  mon {mon_c}  ({len(by_exp)} expiries)")
     if dry:
         print(f"  expiries: {sorted(by_exp)[:12]}")
     res = {}
-    for tag, exp in (('wk', wk), ('mon', mon)):
-        if not exp:
+    for tag, cands in (('wk', wk_c), ('mon', mon_c)):
+        for i, exp in enumerate(cands):
+            fut, ch = by_exp[exp]
+            [tk] = ib.reqTickers(fut)
+            spot = mid_or_last(tk) or tk.close
+            if not spot or spot != spot:               # None／NaN：延遲報價沒灌進來
+                print(f"  {label} {tag} {exp}: 標的期貨 {fut.localSymbol} 沒有報價")
+                continue
+            r = atm_pair_iv(ib, label, fut, FX_EXCH, exp, spot, [ch], dry, fop=True,
+                            max_strikes=6 if i == 0 else FX_FALLBACK_STRIKES)
+            if r:
+                if i:
+                    print(f"  {label} {tag}: 改用備援到期日 {exp}（{cands[0]} 拿不到 IV）")
+                res[tag] = (exp, spot, r)
+                break
+            print(f"  {label} {tag} {exp}: 拿不到 ATM IV")
+        if tag not in res:
             return None
-        fut, ch = by_exp[exp]
-        [tk] = ib.reqTickers(fut)
-        spot = mid_or_last(tk) or tk.close
-        if not spot or spot != spot:               # None／NaN：延遲報價沒灌進來
-            print(f"  {label} {tag}: 標的期貨 {fut.localSymbol} 沒有報價，跳過")
-            return None
-        r = atm_pair_iv(ib, label, fut, FX_EXCH, exp, spot, [ch], dry, fop=True)
-        if not r:
-            return None
-        res[tag] = (exp, spot, r)
     (we, wspot, (wiv, wk_k)), (me, _, (miv, mk_k)) = res['wk'], res['mon']
     dte_w = (datetime.strptime(we, '%Y%m%d').date() - date.today()).days
     dte_m = (datetime.strptime(me, '%Y%m%d').date() - date.today()).days
