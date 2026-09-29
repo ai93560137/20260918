@@ -9,7 +9,8 @@
 #   canary/tg_daily.txt      Telegram 短訊(工作流有設 TG 密鑰時發送)
 #
 # 報告內容:
-#   0. 日期對照:報告日 / 燈色日 D / 前一列 D−1 / 適用日(D 之後第一個交易日);每個燈號都寫明「用哪幾天、跟哪幾天比」
+#   0. 日期對照:報告日(香港日期)/ 應有燈色日 / 燈色日 D / 前一列 D−1 / 適用日(D 之後第一個交易日);
+#      每個燈號都寫明「用哪幾天、跟哪幾天比」。報告日一律用香港日期:工作流 22:30 UTC 跑,已是香港翌日 06:30
 #   1. 三軸燈色(短期軸/災難軸/黃)+ 與前一列的變化(標明兩個日期)+ 連續天數(標明起日)
 #   2. 距離門檻多遠(斜率 = 同日兩鳥相減;黃鳥 = 值日 vs 自身 252 交易日窗口 p90,標明窗口起迄)
 #   3. 試用層(無警報權)與觀察名單 W1 的當日讀數(只記錄,不行動)
@@ -129,6 +130,29 @@ def dz(d):
     return f"{d.isoformat()[5:]}({WEEKDAY_ZH[d.weekday()]})"
 
 
+HKT = timezone(timedelta(hours=8), "HKT")   # 香港無夏令時間,固定 +8 即精確
+
+
+def hk_today():
+    return datetime.now(HKT).date()
+
+
+def prev_weekday(d):
+    """d 之前(不含 d)最後一個週一至週五。香港早上報告時,應有燈色日 = 報告日的前一個美股交易日。"""
+    d -= timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return d
+
+
+def utc_stamp_to_hkt(stamp):
+    """'2026-09-27T22:35Z' → datetime(香港時間);解析失敗回 None。"""
+    try:
+        return datetime.strptime(stamp, "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc).astimezone(HKT)
+    except (TypeError, ValueError):
+        return None
+
+
 def next_weekday(d):
     """d 之後第一個週一至週五(交易所假期不在此估,遇假期順延)。"""
     d += timedelta(days=1)
@@ -241,7 +265,9 @@ def verify_previous(rows, sent, today):
         return ["首次產出,沒有前一則訊息可驗(明天起每天回驗昨天發出的訊息)"], done
     S = sent[-1]
     ld = S["light_date"]
-    lines.append(f"對象:{dz(S['report_date'])} 發出、燈色日 {dz(ld)} 的訊息(生成 {S['generated_at_utc']})")
+    sent_hk = utc_stamp_to_hkt(S.get("generated_at_utc"))
+    sent_txt = f"{dz(sent_hk.date())} {sent_hk:%H:%M} 香港" if sent_hk else dz(S["report_date"])
+    lines.append(f"對象:{sent_txt} 發出、燈色日 {dz(ld)} 的訊息(生成 {S['generated_at_utc']})")
     cur = by_date.get(ld)
     if cur is None:
         lines.append(f"⚠️ 燈色日 {dz(ld)} 這一列今天在表中消失了(上游重建了日線?)——昨日訊息無從對照")
@@ -319,7 +345,8 @@ def verify_previous(rows, sent, today):
 def build_report(rows, health, today, sent=None):
     last, prev = rows[-1], (rows[-2] if len(rows) > 1 else None)
     d_last = date.fromisoformat(last["date"])
-    stale_us = business_days_between(d_last, today)
+    expected_d = prev_weekday(today)                                   # 應有燈色日(香港早上 = 前一個美股交易日)
+    stale_us = business_days_between(d_last, expected_d) if d_last < expected_d else 0
     warnings = []
     D, D1 = dz(d_last), (dz(prev["date"]) if prev else "—")          # 燈色日、前一列
     d_apply = next_weekday(d_last)                                     # 適用日(lag=1)
@@ -433,14 +460,16 @@ def build_report(rows, health, today, sent=None):
             latest_by_bird[b] = "—"
     for b in BIRDS:
         lb = latest_by_bird[b]
-        gap = business_days_between(date.fromisoformat(lb), today) if lb != "—" else None
+        gap = (business_days_between(date.fromisoformat(lb), expected_d) if date.fromisoformat(lb) < expected_d else 0) \
+            if lb != "—" else None
         fresh.append((b, lb, gap))
         if b in US_BIRDS and gap is not None and gap > 1:
-            warnings.append(f"{b} 最後日期 {lb},落後報告日 {today} 共 {gap} 個交易日")
+            warnings.append(f"{b} 最後日期 {lb},落後應有燈色日 {expected_d} 共 {gap} 個交易日")
         if b in ("axvi", "vhsi") and gap is not None and gap > 2:
-            warnings.append(f"{b} 最後日期 {lb},落後報告日 {today} 共 {gap} 個交易日(亞洲時段允許 1–2 日)")
-    if stale_us > 1:
-        warnings.append(f"燈色表最新列 {last['date']},距報告日 {today} 共 {stale_us} 個交易日,上游可能未更新")
+            warnings.append(f"{b} 最後日期 {lb},落後應有燈色日 {expected_d} 共 {gap} 個交易日(亞洲時段允許 1–2 日)")
+    if stale_us >= 1:
+        warnings.append(f"燈色表最新列 {dz(d_last)} ≠ 應有燈色日 {dz(expected_d)},差 {stale_us} 個交易日:"
+                        f"上游未更新,或其間為美股假期(假期則屬正常);燈色沿用 {dz(d_last)}")
     holiday_like = [r["date"] for r in rows[-30:] if r["vix"] != "" and r["vix9d"] == "" and r["vix3m"] == ""]
     for hd in holiday_like:
         warnings.append(f"{dz(hd)} 有 VIX 值但無 VIX9D、VIX3M(疑似美股假期只剩一根 bar):該列燈色空白,"
@@ -476,7 +505,8 @@ def build_report(rows, health, today, sent=None):
 
     # ---- Markdown
     md = [f"# 金絲雀每日總結 — 燈色日 {last['date']}",
-          f"產生於 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')};"
+          f"產生於 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+          f"(香港 {datetime.now(HKT).strftime('%Y-%m-%d %H:%M')});"
           f"此燈色只能用於 **{last['date']} 之後**的交易日(lag=1),第一個適用日 **{d_apply.isoformat()}**。\n"]
     if warnings:
         md.append("## ⚠️ 警告\n")
@@ -484,7 +514,8 @@ def build_report(rows, health, today, sent=None):
         md.append("")
     md.append("## 0. 日期對照(每個燈號用哪幾天、跟哪幾天比)\n")
     md.append("| 角色 | 日期 | 用途 |\n|---|---|---|")
-    md.append(f"| 報告日 | {dz(today)} | 產出本報告;「新鮮度」的落後交易日以此日起算 |")
+    md.append(f"| 報告日 | {dz(today)} | 產出本報告的香港日期(工作流 22:30 UTC 執行,已是香港翌日早上) |")
+    md.append(f"| 應有燈色日 | {dz(expected_d)} | 報告日之前最後一個美股交易日;「新鮮度」落後交易日以此日起算,燈色日 D 應等於它 |")
     md.append(f"| 燈色日 D | **{D}** | 所有正式燈以 D 當日收盤計算:短期軸 = D 的 VIX9D − D 的 VIX;災難軸 = D 的 VIX − D 的 VIX3M;"
               f"黃 = 各鳥 D 值 vs 各鳥自身截至 D 的 {WINDOW} 交易日 p90(含 D) |")
     md.append(f"| 前一列 D−1 | {D1} | 「變化」欄 = 該燈上一個有值的列(通常即 D−1,空白則再往前,括號內寫明日期)對 D 列;"
@@ -512,7 +543,7 @@ def build_report(rows, health, today, sent=None):
         md.append(f"| 觀察 W1:VVIX/VIX < p10 | {w1txt} | {w1_cmp} | — | 樣本外累積中(自 2026-09-27) |")
     md.append("")
     md.append("## 4. 數據新鮮度\n")
-    md.append(f"| 鳥 | 最後日期 | 落後交易日(至報告日 {dz(today)}) |\n|---|---|---|")
+    md.append(f"| 鳥 | 最後日期 | 落後交易日(至應有燈色日 {dz(expected_d)}) |\n|---|---|---|")
     for b, lb, gap in fresh:
         md.append(f"| {b} | {lb} | {'—' if gap is None else gap} |")
     md.append("")
@@ -535,8 +566,8 @@ def build_report(rows, health, today, sent=None):
     a_s, a_d = last["axis_short"], last["axis_disaster"]
     ylit = [n for n, flag, _, _ in yparts if last[flag] == "1"]
     weekend_note = ""
-    if stale_us == 0 and today.weekday() in (5, 6, 0) and today != d_last:
-        weekend_note = f"(今天{'週六' if today.weekday() == 5 else '週日' if today.weekday() == 6 else '週一早上'}無新美股收盤,燈色沿用 {last['date']})"
+    if stale_us == 0 and today.weekday() in (6, 0):
+        weekend_note = f"(香港今天{'週日' if today.weekday() == 6 else '週一早上'},美股尚無新收盤,燈色沿用 {last['date']})"
 
     # 白話總結
     if a_s == "" and a_d == "":
@@ -569,7 +600,7 @@ def build_report(rows, health, today, sent=None):
           f"• 黃燈 = 各鳥 D 的值,對比該鳥自己截至 D 的 {WINDOW} 個交易日 p90(窗口起迄見距門檻)",
           f"• 「變化」= 該燈上一個有值的列(通常是前一列 {D1})對 燈色日 {D},括號內寫明兩個日期;連續天數括注起日,途中無資料列不計並列出",
           f"• 亞洲鳥 AXVI / VHSI 若 {D} 列無值,不計入 {D} 黃燈,只括注最近值日期",
-          f"• 報告日 {dz(today)};適用日 {dz(d_apply)} = D 之後第一個交易日",
+          f"• 報告日 {dz(today)}(香港);應有燈色日 {dz(expected_d)};適用日 {dz(d_apply)} = D 之後第一個交易日",
           "",
           "🚦 三軸",
           f"{L.get(a_s, '❔')} 短期軸(一週 vs 一月保險):{a_s or '無資料'},{run('axis_short')}"
@@ -589,7 +620,7 @@ def build_report(rows, health, today, sent=None):
         tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}|{w1_cmp}")
     tg += ["",
            "🩺 數據與健康",
-           f"• 新鮮度(各鳥最後日期,落後至報告日 {dz(today)} 的交易日數):"
+           f"• 新鮮度(各鳥最後日期,落後至應有燈色日 {dz(expected_d)} 的交易日數):"
            + "、".join(f"{b} {lb}(落後 {'—' if gap is None else gap})" for b, lb, gap in fresh if b in ("vix", "vvix", "move", "axvi", "vhsi")),
            "• 健康檢查:" + ("全過 ✅" if all(ok for _, _, ok in checks) else "有未過 ❌,見下"),
            ]
@@ -664,11 +695,11 @@ def append_sent(sent, row, posthoc_done):
 def main():
     ap = argparse.ArgumentParser(description="金絲雀每日總結報告")
     ap.add_argument("--health", nargs="*", default=[], help="工作流步驟狀態,如 refresh=ok build=ok labs=skipped")
-    ap.add_argument("--today", default=None, help="覆寫今日日期(YYYY-MM-DD),測試用")
+    ap.add_argument("--today", default=None, help="覆寫報告日(香港日期,YYYY-MM-DD),測試用")
     ap.add_argument("--dry-run", action="store_true", help="只寫 DAILY_REPORT.md / tg_daily.txt,不動 daily_log / sent_log")
     args = ap.parse_args()
     health = dict(h.split("=", 1) for h in args.health if "=" in h)
-    today = date.fromisoformat(args.today) if args.today else datetime.now(timezone.utc).date()
+    today = date.fromisoformat(args.today) if args.today else hk_today()   # 報告日 = 香港日期
 
     rows = load_table()
     sent = load_sent()
