@@ -30,9 +30,9 @@ import sys
 from datetime import date, datetime
 
 try:
-    from ib_async import IB, Commodity, ContFuture, Index, Stock
+    from ib_async import IB, ContFuture, Index, Stock
 except ImportError:  # 舊環境可能只裝了 ib_insync（API 相同）
-    from ib_insync import IB, Commodity, ContFuture, Index, Stock
+    from ib_insync import IB, ContFuture, Index, Stock
 
 FIELDS = ["date", "open", "high", "low", "close", "volume"]
 

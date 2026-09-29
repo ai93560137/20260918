@@ -122,7 +122,6 @@ def main():
               "move_norm", "move_norm_pct252", "vix_z20", "vix_ts"):
         L.append(f"| {k} | {last[k]:.2f} |")
     L += ["", "## 規則觸發頻率", "", "| 規則 | 觸發天數 | 占比 | 獨立事件數 |", "|---|---|---|---|"]
-    n = len(next(iter(masks.values())))
     for name, m in masks.items():
         L.append(f"| {name} | {int(m.sum())} | {m.mean() * 100:.1f}% | {episodes(m)} |")
 
