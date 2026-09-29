@@ -19,6 +19,7 @@
 #   python3 scripts/ibkr_vol_export.py --probe            # 只搜尋 MOVE 等合約，不下載
 #   python3 scripts/ibkr_vol_export.py                    # 全部下載到 data/vol/
 #   python3 scripts/ibkr_vol_export.py --port 4002        # IB Gateway 模擬帳戶
+#   python3 scripts/ibkr_vol_export.py --backfill --only tlt qqq spy gld   # 重抓最長歷史
 # 連線參數也可用環境變數：IB_HOST、IB_PORT（預設 4001 = Gateway 真實帳戶）、IB_CLIENT_ID。
 # clientId 預設 77，避免和交易程式的連線撞號。只讀取行情，不會下單。
 # =============================================================================
@@ -29,9 +30,9 @@ import sys
 from datetime import date, datetime
 
 try:
-    from ib_async import IB, Commodity, ContFuture, Index, Stock
+    from ib_async import IB, ContFuture, Index, Stock
 except ImportError:  # 舊環境可能只裝了 ib_insync（API 相同）
-    from ib_insync import IB, Commodity, ContFuture, Index, Stock
+    from ib_insync import IB, ContFuture, Index, Stock
 
 FIELDS = ["date", "open", "high", "low", "close", "volume"]
 
@@ -44,6 +45,9 @@ SERIES = [
     ("tlt_iv", lambda: Stock("TLT", "SMART", "USD"), "OPTION_IMPLIED_VOLATILITY", "TLT 30 天隱含波動率"),
     ("tlt_hv", lambda: Stock("TLT", "SMART", "USD"), "HISTORICAL_VOLATILITY", "TLT 30 天歷史波動率"),
     ("ief_iv", lambda: Stock("IEF", "SMART", "USD"), "OPTION_IMPLIED_VOLATILITY", "IEF 30 天隱含波動率"),
+    ("qqq", lambda: Stock("QQQ", "SMART", "USD"), "ADJUSTED_LAST", "QQQ 還原價（NQ/MNQ 的長歷史替代）"),
+    ("spy", lambda: Stock("SPY", "SMART", "USD"), "ADJUSTED_LAST", "SPY 還原價"),
+    ("gld", lambda: Stock("GLD", "SMART", "USD"), "ADJUSTED_LAST", "GLD（黃金的長歷史替代）"),
     ("zn", lambda: ContFuture("ZN", "CBOT", currency="USD"), "TRADES", "10 年公債期貨"),
     ("zb", lambda: ContFuture("ZB", "CBOT", currency="USD"), "TRADES", "30 年公債期貨"),
     ("nq", lambda: ContFuture("NQ", "CME", currency="USD"), "TRADES", "那斯達克 100 期貨"),
@@ -117,6 +121,7 @@ def main():
     ap.add_argument("--out", default="data/vol")
     ap.add_argument("--probe", action="store_true", help="只搜尋合約，不下載")
     ap.add_argument("--only", nargs="*", help="只抓這些檔名（例：vix tlt_iv）")
+    ap.add_argument("--backfill", action="store_true", help="不管已有資料，重抓最長歷史（和舊資料合併）")
     args = ap.parse_args()
 
     ib = IB()
@@ -149,13 +154,20 @@ def main():
             contract = mk()
             if contract.conId == 0:
                 ib.qualifyContracts(contract)
-            dur = duration_for(rows)
-            try:
-                new = fetch(ib, contract, what, dur)
-            except Exception:  # noqa: BLE001 — 有些資料類型不接受太長的期間，縮短重試
-                if not dur.endswith("Y"):
-                    raise
-                new = fetch(ib, contract, what, "10 Y")
+            dur = "30 Y" if args.backfill else duration_for(rows)
+            # 有些資料類型不接受太長的期間（報錯或回空），逐步縮短重試
+            tries = [dur] + ([d for d in ("20 Y", "15 Y", "10 Y", "5 Y") if d != dur] if dur.endswith("Y") else [])
+            new, err = {}, None
+            for d in tries:
+                try:
+                    new = fetch(ib, contract, what, d)
+                except Exception as e:  # noqa: BLE001
+                    err = e
+                    continue
+                if new:
+                    break
+            if not new and err:
+                raise err
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ {name}（{label}）失敗：{e}")
             failed.append(name)
