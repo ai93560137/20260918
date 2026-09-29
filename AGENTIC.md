@@ -159,6 +159,66 @@ Claude Code 的 Routines 可以每天固定時間開一個新工作階段執行�
 
 ---
 
+## VM：ib-data 與 claude-ops（2026-09-29 建立）
+
+### 為什麼有兩台 VM
+- **`ib-data`**（`asia-east2-a`＝**香港**，e2-small，Debian 12）：跑 IB Gateway（IBC 自動登入）與外匯／指數的 IV 採集。
+- **Claude 不支援香港**：在 ib-data 上安裝 Claude Code 會得到「App unavailable in region」的網頁，就算硬裝也連不上。
+  **不要用 VPN 或代理去繞過**，那違反使用規定。支援地區以 https://www.anthropic.com/supported-countries 為準（台灣、新加坡、日本、南韓、美國都支援）。
+- **`claude-ops`**（`asia-east1-b`＝台灣，e2-small，Debian 12，**不綁服務帳戶**、沒有任何 GCP 權限）：專門跑一個 Claude Code，
+  用手機 App／claude.ai/code 遙控（Remote Control），再用低權限使用者 `ssh` 進 ib-data「唯讀查看」。
+
+### 誰能做什麼
+| 角色 | 能做 | 不能做 |
+|---|---|---|
+| **雲端工作階段**（有 `GCP_SA_KEY` 的那個 Claude） | Cloud Run、日誌、bucket、GitHub、改程式開 PR | 不連進 ib-data，也不對它執行指令 |
+| **claude-ops 上的 Claude**（手機遙控） | `ssh ibdata` 讀 `/srv/ibshare`；每條會執行程式的指令都先問使用者 | 讀 ib-data 其他檔案、sudo、改排程、連 IB API 下單 |
+| **使用者** | 用瀏覽器 SSH 進 ib-data 做任何需要改動的事（改排程、改設定、重啟 Gateway） | — |
+
+### claude-ops 怎麼運作
+- systemd 使用者服務 `claude-rc`（`~/.config/systemd/user/claude-rc.service`，已 `enable`＋`loginctl enable-linger`）
+  在 tmux 裡執行 `claude remote-control --permission-mode manual --name claude-ops`，工作目錄 `~/work`。
+- `~/work/CLAUDE.md` 是給那個 Claude 的規則（只查看、不 sudo、不讀其他使用者檔案、不下單、不印金鑰）。
+- 手機 App 的 Code 分頁會看到名為 `claude-ops` 的工作階段。**權限模式**：讀取類指令與寫入 `~/work` 內的檔案不會問；
+  執行程式、連網路的指令（例如 `ssh`、`curl`）會跳出詢問。這一點已實測（`curl`、`ssh ibdata whoami` 都有詢問）。
+- ⚠️ 尚未做過「重開機後自動恢復」的實測；重開後若手機看不到 `claude-ops`，SSH 進去跑 `systemctl --user status claude-rc`。
+
+### claude-ops → ib-data 的連線與隔離
+- `claude-ops:~/.ssh/config` 有 `Host ibdata`（使用者 `claudeops`、金鑰 `~/.ssh/ib_data_claudeops`，無密碼）。
+- ib-data 端 `claudeops` 的 `authorized_keys` 用 `from="10.140.0.2"`（只允許 claude-ops 的內部 IP）、`no-port-forwarding`、
+  `no-agent-forwarding`、`no-X11-forwarding`。`claudeops` **沒有 sudo**。
+- 使用者 `hengkychansinghing` 的家目錄 `700`、`~/ibc/config.ini`（IB 帳密）`600`。
+  這是**硬性**隔離；`CLAUDE.md` 的規則只是軟性的第二道防線。
+- **共享資料夾 `/srv/ibshare`**（擁有者 `hengkychansinghing:claudeops`，`2750`）：`~/ibshare_sync.sh` 由 cron 每 5 分鐘複製
+  `ib_daily.log`、`fx_autopush.log`、`fx_status.txt`、`ib_iv_log_tail.csv`、`health.txt`（主機負載、磁碟、進程名稱、監聽埠、排程）。
+  **不複製**任何設定檔、`ibc/`、`Jts/`、`ibgw.log`。要分享新檔案，先確認裡面沒有帳密，再改 `ibshare_sync.sh`。
+- IB Gateway API（4002）用 iptables 限制為只接受本機：
+  `iptables -I INPUT -p tcp --dport 4002 ! -s 127.0.0.1 -j DROP`，並用 `@reboot` cron 重新套用（尚未實測重開機）。
+
+### 改動 claudeops 權限或家目錄權限後，必跑這個檢查
+在 claude-ops 的 SSH 視窗（使用者自己跑，不要交給 Claude）：
+```bash
+ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config.ini 2>&1 | head -1; ls /home/hengkychansinghing 2>&1 | head -1'
+```
+**三行都必須是拒絕**：`sudo: a password is required`、兩行 `Permission denied`。任何一行印出內容，立刻停止，先修權限。
+（建立當天這個檢查抓到過問題：家目錄 `755`、`config.ini` 不是 `600`，已修正。）
+
+### IBKR 戶口
+- 目前 ib-data 登入的是一個**真實（live）戶口**，但因名字問題**已不能入金**，餘額約 4 美元；`config.ini` 的 `TradingMode=live`、`ReadOnlyApi` 為空。
+- 將來入金會用**另一個 IBKR 戶口**。**使用新戶口之前**先過這份清單，不要直接接到現有 Gateway：
+  1. API 設成唯讀（`ReadOnlyApi=yes`），除非那台機器真的要下單；
+  2. 4002／4001 只接受本機連線，重開機後仍有效；
+  3. 移除 claude-ops 的授權金鑰，或確定 `claudeops` 碰不到 API；
+  4. 交易程式與資料採集分開（不同帳號或不同機器）。
+
+### 常見狀況
+| 症狀 | 處理 |
+|---|---|
+| `claude: command not found`，但裝好了 | 指令要**全小寫**（手機輸入常把第一個字母變大寫）；仍找不到就 `~/.local/bin/claude --version`，再把 `~/.local/bin` 加進 `PATH` |
+| 貼指令貼到錯的機器 | 貼之前看提示符：`@claude-ops`（台灣）或 `@ib-data`（香港，有 IB 帳密） |
+| 遠端桌面畫面上的文字不能複製 | 從對話複製指令貼進去；要搬檔案用 SSH 視窗上方的「上傳檔案／下載檔案」（`.ssh` 資料夾內的檔案要先複製到家目錄才能下載）。**永遠不要搬私鑰** |
+| 雲端環境連不到 `*.run.app` | 環境設定 → Network access → **Custom**，Allowed domains 加 `*.run.app`，並勾選「Also include default list of common package managers」 |
+
 ## 收回權限
 
 ```bash
@@ -170,6 +230,13 @@ gcloud iam service-accounts disable claude-agent@專案ID.iam.gserviceaccount.co
 ```
 
 同時到 Claude 雲端環境設定刪掉 `GCP_SA_KEY`。
+
+**收回 claude-ops 對 ib-data 的存取**（在 ib-data 上）：
+```bash
+sudo rm -f /home/claudeops/.ssh/authorized_keys      # 金鑰立刻失效
+# 更徹底：sudo deluser claudeops
+```
+要停掉 claude-ops 的遙控：在 claude-ops 上 `systemctl --user disable --now claude-rc`，或直接在主控台停止／刪除該 VM。
 
 ## 疑難排解
 
