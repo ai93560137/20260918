@@ -136,7 +136,8 @@ if g.get('h1') is not None:
             ghit = ('dn', glo, f'🥇🔻 黃金觸及通道下軌!\n現貨 {gpx:,.1f} ≤ 下軌 {glo:,.1f}(即時)')
         print(f'gold px={gpx:,.1f} rails=[{glo:,.1f}, {gup:,.1f}] hit={ghit and ghit[0]}')
         if ghit:
-            gkey = f'{ghit[0]}:{ghit[1]:.1f}:{now:%Y-%m-%d}'
+            # 現貨口徑下軌隨基差每次抓取微動,鍵不含軌價,否則同日同向會重複警報
+            gkey = f'{ghit[0]}:{now:%Y-%m-%d}'
             if st.get('au') == gkey:
                 print('gold already alerted; skip')
             else:
