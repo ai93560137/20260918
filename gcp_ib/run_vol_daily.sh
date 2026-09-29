@@ -49,8 +49,9 @@ else
 fi
 
 # 4) 匯出（增量：已有 CSV 只補最近幾天；只讀 IB，不下單）
+#    一次性回補：VOL_EXPORT_ARGS="--backfill --only tlt qqq spy gld" bash run_vol_daily.sh
 mkdir -p data/vol
-if ! IB_PORT="$PORT" python3 "$EXPORT" --out data/vol; then
+if ! IB_PORT="$PORT" python3 "$EXPORT" --out data/vol ${VOL_EXPORT_ARGS:-}; then
   echo "❌ 匯出沒有任何資料（多半是 IB Gateway 沒登入），本次不提交"
   exit 1
 fi
