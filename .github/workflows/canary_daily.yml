@@ -78,14 +78,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
+          # tg_daily.txt 也要提交:它是當天真正發出的 Telegram 全文(sent_log.csv 的 tg_sha1 指向它)。
+          # 用 GITHUB_TOKEN 推送不會觸發 canary_broadcast.yml(GitHub 防遞迴),不會重發。
+          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/tg_daily.txt canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
+          HKD=$(TZ=Asia/Hong_Kong date +%F)   # 報告日 = 香港日期(22:30 UTC 已是香港翌日 06:30)
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
-          git commit -q -m "chore(canary): 每日燈色表與總結 $(date -u +%F)"
+          git commit -q -m "chore(canary): 每日燈色表與總結 $HKD(香港)"
           for i in 1 2 3 4 5; do
             git push origin "HEAD:$BRANCH" && exit 0
             sleep $((i * 5))
-            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(canary): 每日燈色表與總結 $(date -u +%F)" || exit 0; }
+            git pull --rebase -X theirs origin "$BRANCH" || { git rebase --abort; git fetch origin "$BRANCH"; git reset --mixed FETCH_HEAD; add_out; git commit -q -m "chore(canary): 每日燈色表與總結 $HKD(香港)" || exit 0; }
           done
           echo "push 重試 5 次仍失敗" && exit 1
 
