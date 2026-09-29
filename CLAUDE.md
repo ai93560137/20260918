@@ -55,6 +55,16 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 6. 改完 `main.py` 要部署時，先跑 `python3 -m unittest scripts/test_gcp_agent.py`（工具本身的測試）與
    `python3 backtest.py --help`（確認模組還能匯入），再部署。
 
+## VM（ib-data／claude-ops）規則
+
+- 香港不在 Claude 的支援地區，所以香港的 `ib-data` 不能裝 Claude；台灣的 `claude-ops` 跑另一個 Claude 用手機遙控。**不要用 VPN／代理繞過地區限制。**
+- 你（雲端工作階段）**不要嘗試 SSH 進 ib-data**，也不要幫使用者建立「遠端執行指令」的通道；需要在 ib-data 上做的事，
+  由使用者用瀏覽器 SSH 執行，你一步一步教（先看提示符是 `@ib-data` 還是 `@claude-ops`）。
+- 任何改動 `claudeops` 使用者、`/srv/ibshare`、家目錄或 `config.ini` 權限的建議，都要附上 `AGENTIC.md`「必跑這個檢查」那一條，並要求使用者貼回結果，
+  **三行都拒絕才算通過**。
+- 使用者提到要用**新的、有資金的 IBKR 戶口**時，先提醒 `AGENTIC.md`「IBKR 戶口」的入金前檢查清單。
+- 架構與細節見 `AGENTIC.md`「VM：ib-data 與 claude-ops」。
+
 ## 專案慣例
 
 - 語言：說明文件、commit 訊息、給使用者的回覆用繁體中文；程式註解中英皆可。
