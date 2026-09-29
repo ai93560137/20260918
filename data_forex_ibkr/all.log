@@ -1,207 +1,260 @@
-2026-09-25 22:41:18 == job=probe 連線 port 4002
-2026-09-25 22:41:19 EUR：6EZ6 conId 532281583
-2026-09-25 22:41:21   probe EUR TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:41:34   probe EUR BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:41:46   probe EUR OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 19 根（最早 2026-08-26）
-2026-09-25 22:41:59   probe EUR HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:42:11 JPY：6JZ6 conId 532281568
-2026-09-25 22:42:12   probe JPY TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:42:26   probe JPY BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:42:38   probe JPY OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 19 根（最早 2026-08-26）
-2026-09-25 22:42:50   probe JPY HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:43:02 GBP：6BZ6 conId 532281525
-2026-09-25 22:43:03   probe GBP TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:43:17   probe GBP BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:43:29   probe GBP OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 19 根（最早 2026-08-26）
-2026-09-25 22:43:41   probe GBP HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:43:53 CHF：6SZ6 conId 532281496
-2026-09-25 22:43:54   probe CHF TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:44:08   probe CHF BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:44:20   probe CHF OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 19 根（最早 2026-08-26）
-2026-09-25 22:44:32   probe CHF HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:44:44 AUD：6AZ6 conId 532281530
-2026-09-25 22:44:46   probe AUD TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:44:59   probe AUD BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:45:11   probe AUD OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 19 根（最早 2026-08-26）
-2026-09-25 22:45:23   probe AUD HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:45:35 CAD：6CZ6 conId 532513476
-2026-09-25 22:45:37   probe CAD TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:45:50   probe CAD BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:46:02   probe CAD OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 18 根（最早 2026-08-26）
-2026-09-25 22:46:15   probe CAD HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:46:26 NZD：6NZ6 conId 791943497
-2026-09-25 22:46:28   probe NZD TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:46:41   probe NZD BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:46:53   probe NZD OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 19 根（最早 2026-08-26）
-2026-09-25 22:47:06   probe NZD HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:47:17 MXN：MXPU6 conId 785319006
-2026-09-25 22:47:20   probe MXN TRADES 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:47:33   probe MXN BID_ASK 1 day × 1 M → 22 根（最早 2026-08-26）
-2026-09-25 22:47:45   probe MXN OPTION_IMPLIED_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:47:57   probe MXN HISTORICAL_VOLATILITY 1 day × 1 M → 21 根（最早 2026-08-26）
-2026-09-25 22:48:11   probe EURUSD MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:48:24   probe EURUSD BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:48:36   probe GBPUSD MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:48:48   probe GBPUSD BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:49:01   probe AUDUSD MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:49:13   probe AUDUSD BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:49:26   probe NZDUSD MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:49:38   probe NZDUSD BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:49:50   probe USDJPY MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:50:02   probe USDJPY BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:50:15   probe USDCHF MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:50:27   probe USDCHF BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:50:39   probe USDCAD MIDPOINT 5 mins × 1 W → 1425 根
-2026-09-25 22:50:52   probe USDCAD BID_ASK 5 mins × 1 W → 1425 根
-2026-09-25 22:51:03 == 完成
+nohup: ignoring input
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
 2026-09-29 00:10:00 == job=iv 連線 port 4002
 2026-09-29 00:10:01 EUR：6EZ6 conId 532281583
 2026-09-29 00:10:10   fut_EUR_D1_option_implied_volatility.csv.gz：+241 筆（共 241），最早 2025-09-29 00:00:00
+Error 10339, reqId 5: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:10:21   fut_EUR_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 6: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:10:32   fut_EUR_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 7: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:10:43   fut_EUR_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:10:56   fut_EUR_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 9: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:11:07   fut_EUR_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 10: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:11:18   fut_EUR_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 11: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:11:29   fut_EUR_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:11:41 JPY：6JZ6 conId 532281568
 2026-09-29 00:11:43   fut_JPY_D1_option_implied_volatility.csv.gz：+236 筆（共 236），最早 2025-09-29 00:00:00
+Error 10339, reqId 14: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:11:54   fut_JPY_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 15: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:12:05   fut_JPY_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 16: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:12:16   fut_JPY_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:12:29   fut_JPY_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 18: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:12:40   fut_JPY_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 19: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:12:51   fut_JPY_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 20: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:13:02   fut_JPY_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:13:13 GBP：6BZ6 conId 532281525
 2026-09-29 00:13:16   fut_GBP_D1_option_implied_volatility.csv.gz：+237 筆（共 237），最早 2025-09-29 00:00:00
+Error 10339, reqId 23: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:13:27   fut_GBP_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 24: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:13:38   fut_GBP_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 25: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:13:49   fut_GBP_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:14:02   fut_GBP_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 27: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:14:13   fut_GBP_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 28: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:14:24   fut_GBP_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 29: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:14:35   fut_GBP_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:14:46 CHF：6SZ6 conId 532281496
 2026-09-29 00:14:48   fut_CHF_D1_option_implied_volatility.csv.gz：+238 筆（共 238），最早 2025-09-29 00:00:00
+Error 10339, reqId 32: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:14:59   fut_CHF_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 33: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:15:10   fut_CHF_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 34: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:15:21   fut_CHF_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:15:34   fut_CHF_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 36: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:15:45   fut_CHF_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 37: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:15:56   fut_CHF_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 38: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:16:07   fut_CHF_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:16:19 AUD：6AZ6 conId 532281530
 2026-09-29 00:16:21   fut_AUD_D1_option_implied_volatility.csv.gz：+238 筆（共 238），最早 2025-09-29 00:00:00
+Error 10339, reqId 41: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:16:32   fut_AUD_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 42: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:16:43   fut_AUD_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 43: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:16:54   fut_AUD_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:17:07   fut_AUD_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 45: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:17:18   fut_AUD_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 46: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:17:29   fut_AUD_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 47: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:17:40   fut_AUD_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:17:52 CAD：6CZ6 conId 532513476
 2026-09-29 00:17:54   fut_CAD_D1_option_implied_volatility.csv.gz：+233 筆（共 233），最早 2025-09-29 00:00:00
+Error 10339, reqId 50: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:18:05   fut_CAD_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 51: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:18:16   fut_CAD_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 52: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:18:27   fut_CAD_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:18:40   fut_CAD_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 54: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:18:51   fut_CAD_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 55: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:19:02   fut_CAD_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 56: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:19:13   fut_CAD_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:19:24 NZD：6NZ6 conId 791943497
 2026-09-29 00:19:26   fut_NZD_D1_option_implied_volatility.csv.gz：+237 筆（共 237），最早 2025-09-29 00:00:00
+Error 10339, reqId 59: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:19:37   fut_NZD_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 60: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:19:48   fut_NZD_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 61: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:19:59   fut_NZD_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:20:13   fut_NZD_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 63: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:20:24   fut_NZD_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 64: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:20:35   fut_NZD_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 65: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:20:46   fut_NZD_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:20:57 MXN：MXPV6 conId 876880658
 2026-09-29 00:21:10   fut_MXN_D1_option_implied_volatility.csv.gz：+243 筆（共 243），最早 2025-10-07 00:00:00
+Error 10339, reqId 68: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:21:21   fut_MXN_D1_option_implied_volatility.csv.gz：空回應（第 1 次），end=20251006 23:59:59 UTC
+Error 10339, reqId 69: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:21:32   fut_MXN_D1_option_implied_volatility.csv.gz：空回應（第 2 次），end=20251006 23:59:59 UTC
+Error 10339, reqId 70: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:21:43   fut_MXN_D1_option_implied_volatility.csv.gz：空回應（第 3 次），end=20251006 23:59:59 UTC
 2026-09-29 00:21:58   fut_MXN_D1_historical_volatility.csv.gz：+250 筆（共 250），最早 2025-09-29 00:00:00
+Error 10339, reqId 72: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:22:09   fut_MXN_D1_historical_volatility.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 73: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:22:20   fut_MXN_D1_historical_volatility.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 74: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:22:31   fut_MXN_D1_historical_volatility.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:22:42 == 完成
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
 2026-09-29 00:23:13 == job=fut 連線 port 4002
 2026-09-29 00:23:13 EUR：6EZ6 conId 532281583
 2026-09-29 00:23:16   fut_EUR_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 5: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:23:27   fut_EUR_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 6: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:23:38   fut_EUR_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 7: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:23:49   fut_EUR_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:24:03   fut_EUR_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 9: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:24:14   fut_EUR_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 10: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:24:25   fut_EUR_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 11: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281583, symbol='EUR', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6EZ6', tradingClass='6E')
 2026-09-29 00:24:36   fut_EUR_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:24:47 JPY：6JZ6 conId 532281568
 2026-09-29 00:24:49   fut_JPY_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 14: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:25:00   fut_JPY_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 15: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:25:11   fut_JPY_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 16: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:25:22   fut_JPY_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:25:36   fut_JPY_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 18: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:25:47   fut_JPY_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 19: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:25:58   fut_JPY_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 20: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281568, symbol='JPY', lastTradeDateOrContractMonth='20261214', multiplier='12500000', exchange='CME', currency='USD', localSymbol='6JZ6', tradingClass='6J')
 2026-09-29 00:26:09   fut_JPY_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:26:20 GBP：6BZ6 conId 532281525
 2026-09-29 00:26:22   fut_GBP_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 23: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:26:33   fut_GBP_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 24: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:26:44   fut_GBP_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 25: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:26:55   fut_GBP_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:27:09   fut_GBP_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 27: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:27:20   fut_GBP_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 28: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:27:31   fut_GBP_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 29: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281525, symbol='GBP', lastTradeDateOrContractMonth='20261214', multiplier='62500', exchange='CME', currency='USD', localSymbol='6BZ6', tradingClass='6B')
 2026-09-29 00:27:42   fut_GBP_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:27:53 CHF：6SZ6 conId 532281496
 2026-09-29 00:27:55   fut_CHF_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 32: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:28:06   fut_CHF_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 33: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:28:17   fut_CHF_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 34: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:28:28   fut_CHF_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:28:42   fut_CHF_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 36: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:28:53   fut_CHF_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 37: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:29:04   fut_CHF_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 38: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281496, symbol='CHF', lastTradeDateOrContractMonth='20261214', multiplier='125000', exchange='CME', currency='USD', localSymbol='6SZ6', tradingClass='6S')
 2026-09-29 00:29:15   fut_CHF_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:29:27 AUD：6AZ6 conId 532281530
 2026-09-29 00:29:29   fut_AUD_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 41: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:29:40   fut_AUD_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 42: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:29:51   fut_AUD_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 43: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:30:02   fut_AUD_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:30:16   fut_AUD_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 45: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:30:27   fut_AUD_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 46: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:30:38   fut_AUD_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 47: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532281530, symbol='AUD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6AZ6', tradingClass='6A')
 2026-09-29 00:30:49   fut_AUD_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:31:00 CAD：6CZ6 conId 532513476
 2026-09-29 00:31:02   fut_CAD_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 50: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:31:13   fut_CAD_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 51: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:31:24   fut_CAD_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 52: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:31:35   fut_CAD_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:31:49   fut_CAD_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 54: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:32:00   fut_CAD_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 55: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:32:11   fut_CAD_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 56: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=532513476, symbol='CAD', lastTradeDateOrContractMonth='20261215', multiplier='100000', exchange='CME', currency='USD', localSymbol='6CZ6', tradingClass='6C')
 2026-09-29 00:32:22   fut_CAD_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:32:33 NZD：6NZ6 conId 791943497
 2026-09-29 00:32:35   fut_NZD_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 59: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:32:46   fut_NZD_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 60: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:32:57   fut_NZD_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 61: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:33:08   fut_NZD_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:33:23   fut_NZD_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 63: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:33:34   fut_NZD_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 64: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:33:45   fut_NZD_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 65: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=791943497, symbol='NZD', lastTradeDateOrContractMonth='20261214', multiplier='100000', exchange='CME', currency='USD', localSymbol='6NZ6', tradingClass='6N')
 2026-09-29 00:33:56   fut_NZD_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:34:07 MXN：MXPV6 conId 876880658
 2026-09-29 00:34:11   fut_MXN_D1_trades.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 68: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:34:22   fut_MXN_D1_trades.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 69: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:34:33   fut_MXN_D1_trades.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 70: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:34:44   fut_MXN_D1_trades.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:35:02   fut_MXN_D1_bid_ask.csv.gz：+253 筆（共 253），最早 2025-09-29 00:00:00
+Error 10339, reqId 72: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:35:13   fut_MXN_D1_bid_ask.csv.gz：空回應（第 1 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 73: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:35:24   fut_MXN_D1_bid_ask.csv.gz：空回應（第 2 次），end=20250928 23:59:59 UTC
+Error 10339, reqId 74: Setting end date/time for continuous future security type is not allowed., contract: ContFuture(conId=876880658, symbol='MXP', lastTradeDateOrContractMonth='20261030', multiplier='2500', exchange='CME', currency='USD', localSymbol='MXPV6', tradingClass='MXP')
 2026-09-29 00:35:35   fut_MXN_D1_bid_ask.csv.gz：空回應（第 3 次），end=20250928 23:59:59 UTC
 2026-09-29 00:35:46 == 完成
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
 2026-09-29 00:36:17 == job=spot5m 連線 port 4002
 2026-09-29 00:36:20   spot_EURUSD_M5_bid_ask.csv.gz：+1181 筆（共 1181），最早 2026-09-22 21:15:00
 2026-09-29 00:36:32   spot_EURUSD_M5_bid_ask.csv.gz：+1425 筆（共 2606），最早 2026-09-15 21:15:00
