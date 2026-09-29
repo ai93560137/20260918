@@ -47,7 +47,6 @@ SERIES = [
     ("zn", lambda: ContFuture("ZN", "CBOT", currency="USD"), "TRADES", "10 年公債期貨"),
     ("zb", lambda: ContFuture("ZB", "CBOT", currency="USD"), "TRADES", "30 年公債期貨"),
     ("nq", lambda: ContFuture("NQ", "CME", currency="USD"), "TRADES", "那斯達克 100 期貨"),
-    ("xauusd", lambda: Commodity("XAUUSD", "SMART", "USD"), "MIDPOINT", "倫敦金"),
 ]
 
 
