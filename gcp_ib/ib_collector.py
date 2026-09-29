@@ -16,13 +16,22 @@ import math
 import sys
 from datetime import date, datetime
 
-from ib_insync import IB, Index, Option
+from ib_insync import IB, Future, FuturesOption, Index, Option
 
 MARKETS = [
     # (標籤, Index 參數, 期權 exchange, tradingClass 候選——None=用 reqSecDefOptParams 全部)
     ('N225', dict(symbol='N225', exchange='OSE.JPN', currency='JPY'), 'OSE.JPN'),
     ('ESTX50', dict(symbol='ESTX50', exchange='EUREX', currency='EUR'), 'EUREX'),
 ]
+
+# P2（2026-09-29）：CME 外匯期貨期權。標的是期貨（不是指數），所以另走 collect_fx()。
+# (市場標籤, IB 期貨 symbol)。標籤沿用 Globex 代碼，寫進同一個 ib_iv_log.csv 的 market 欄。
+FX_MARKETS = [
+    ('6E', 'EUR'),
+    ('6J', 'JPY'),
+]
+FX_EXCH = 'CME'
+FX_PRICE_DECIMALS = 7        # 6E ~1.17、6J ~0.0067（日圓 5 位小數只剩 3 位有效數字）；指數用的 .1f 會把它抹平
 
 
 def mid_or_last(t):
@@ -77,7 +86,7 @@ def pick_expiries(exps):
     return wk, mon
 
 
-def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry):
+def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry, fop=False):
     """ATM (c+p)/2 IV。月權行使價網格較疏（如 Eurex 週權 5 點/月權 25 點），
     同一鏈的 strikes 是全到期聯集——挑中的檔位不一定在該到期掛牌，
     所以按距離試最多 6 檔，qualify 不到就跳下一檔。"""
@@ -87,8 +96,13 @@ def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry):
     for strike in sorted(ch.strikes, key=lambda k: abs(k - spot))[:6]:
         ivs = []
         for right in ('C', 'P'):
-            o = Option(und.symbol, expiry, strike, right, opt_exch,
-                       currency=und.currency, tradingClass=ch.tradingClass)
+            if fop:   # 期貨期權：要帶 multiplier，否則同代碼多個合約會 ambiguous
+                o = FuturesOption(und.symbol, expiry, strike, right, opt_exch,
+                                  multiplier=ch.multiplier, currency=und.currency,
+                                  tradingClass=ch.tradingClass)
+            else:
+                o = Option(und.symbol, expiry, strike, right, opt_exch,
+                           currency=und.currency, tradingClass=ch.tradingClass)
             try:
                 if not ib.qualifyContracts(o):
                     break
@@ -103,6 +117,53 @@ def atm_pair_iv(ib, label, und, opt_exch, expiry, spot, chains, dry):
         if len(ivs) == 2:
             return (round(sum(ivs) / 2, 2), strike)
     return None
+
+
+def fx_underlyings(ib, sym, n=3):
+    """最近 n 個尚未到期的 CME 外匯期貨（期權掛在不同季月期貨底下，週權／月權的標的不一定是同一支）。"""
+    cds = ib.reqContractDetails(Future(sym, exchange=FX_EXCH, currency='USD'))
+    today = date.today().strftime('%Y%m%d')
+    futs = sorted((cd.contract for cd in cds
+                   if cd.contract.lastTradeDateOrContractMonth[:8] > today),
+                  key=lambda c: c.lastTradeDateOrContractMonth)
+    return futs[:n]
+
+
+def collect_fx(ib, label, sym, dry):
+    """回傳 CSV 一列（字串）或 None。欄位與指數相同：spot 欄放的是該到期日標的期貨價。"""
+    futs = fx_underlyings(ib, sym)
+    by_exp = {}                                    # 期權到期日 -> (標的期貨, 該標的的期權鏈)
+    for fut in futs:
+        for ch in ib.reqSecDefOptParams(fut.symbol, FX_EXCH, 'FUT', fut.conId):
+            if ch.exchange != FX_EXCH:
+                continue
+            for e in ch.expirations:
+                by_exp.setdefault(e, (fut, ch))
+    wk, mon = pick_expiries(sorted(by_exp))
+    print(f"{label}: futures {[f.lastTradeDateOrContractMonth[:8] for f in futs]}  "
+          f"wk {wk}  mon {mon}  ({len(by_exp)} expiries)")
+    if dry:
+        print(f"  expiries: {sorted(by_exp)[:12]}")
+    res = {}
+    for tag, exp in (('wk', wk), ('mon', mon)):
+        if not exp:
+            return None
+        fut, ch = by_exp[exp]
+        [tk] = ib.reqTickers(fut)
+        spot = mid_or_last(tk) or tk.close
+        if not spot or spot != spot:               # None／NaN：延遲報價沒灌進來
+            print(f"  {label} {tag}: 標的期貨 {fut.localSymbol} 沒有報價，跳過")
+            return None
+        r = atm_pair_iv(ib, label, fut, FX_EXCH, exp, spot, [ch], dry, fop=True)
+        if not r:
+            return None
+        res[tag] = (exp, spot, r)
+    (we, wspot, (wiv, wk_k)), (me, _, (miv, mk_k)) = res['wk'], res['mon']
+    dte_w = (datetime.strptime(we, '%Y%m%d').date() - date.today()).days
+    dte_m = (datetime.strptime(me, '%Y%m%d').date() - date.today()).days
+    d = FX_PRICE_DECIMALS
+    return (f"{date.today()},{label},{wspot:.{d}f},{we},{dte_w},{wk_k:.{d}f},{wiv},"
+            f"{me},{dte_m},{mk_k:.{d}f},{miv},{round(miv - wiv, 2)}")
 
 
 def main():
@@ -133,6 +194,15 @@ def main():
                 dte_m = (datetime.strptime(mon, '%Y%m%d').date() - date.today()).days
                 rows.append(f"{date.today()},{label},{spot:.1f},{wk},{dte_w},{w[1]:.0f},{w[0]},"
                             f"{mon},{dte_m},{m[1]:.0f},{m[0]},{round(m[0] - w[0], 2)}")
+        except Exception as e:
+            print(f"{label} ERR: {e}")
+    for label, sym in FX_MARKETS:                        # P2：外匯期貨期權（任何錯誤都不影響上面的指數）
+        try:
+            row = collect_fx(ib, label, sym, a.dry)
+            if row:
+                rows.append(row)
+            else:
+                print(f"{label}: 沒有湊齊週／月兩腿的 ATM IV，本次不寫入")
         except Exception as e:
             print(f"{label} ERR: {e}")
     ib.disconnect()
