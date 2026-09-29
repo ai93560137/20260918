@@ -132,7 +132,7 @@ def scan_futures():
     day_session = 9 * 60 + 30 <= mins <= 16 * 60
     LINES.append("| 月份 | 買 | 賣 | 價差 | 結算 | OI |")
     LINES.append("|---|---:|---:|---:|---:|---:|")
-    prev_se = None
+    prev_se, prev_con = None, None
     front, front_live = None, False
     front_note = ''
     for i, row in enumerate(d.get('futureslist', [])[:4]):
@@ -153,9 +153,9 @@ def scan_futures():
         # 只警報前兩個月 + 僅日盤快照：遠月/夜盤報價稀疏，價差寬是流動性現象
         if spr is not None and spr > 30 and i < 2 and day_session:
             ALERTS.append(f"期貨 {row['con']} 價差 {spr:.0f} 點（異常寬）")
-        if prev_se and se and se < prev_se - 60:
+        if prev_se and se and se < prev_se - 60 and not hsi_fut_expired_today(prev_con):
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
-        prev_se = se
+        prev_se, prev_con = se, row['con']
     if front:
         DIGEST.append(f"HSI 期貨(近月{'中間價' if front_live else '昨結'}) {front:,.0f}{front_note}")
     return front
@@ -192,10 +192,6 @@ def scan_options(hv, front=None):
         else:
             K, civ, piv = min(ivs, key=lambda x: abs(x[1] - x[2]))
         atm = (civ + piv) / 2
-        if not FIRST_ATM:
-            FIRST_ATM.update(mon=mon, K=K, iv=atm, civ=civ, piv=piv)
-        MONTH_IVS.append((mon, atm))
-        LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
         # 到期前 5 天內的月份：剩餘天數太短，IV 對 HV20 的比較沒有意義，只顯示不警報
         try:
             m0 = datetime.strptime(mon, '%b-%y').date()
@@ -203,6 +199,13 @@ def scan_options(hv, front=None):
             expiring = (month_end - date.today()).days <= 5
         except ValueError:
             expiring = False
+        # 到期月 IV 在最後一天會失真（9/29 收市 Sep IV 22.4 vs Oct 15.8）：
+        # 不當 delta 參考 IV、也不進港金絲雀斜率
+        if not expiring:
+            if not FIRST_ATM:
+                FIRST_ATM.update(mon=mon, K=K, iv=atm, civ=civ, piv=piv)
+            MONTH_IVS.append((mon, atm))
+        LINES.append(f"\n## 期權 {mon}（{d.get('lastupd')}）  ATM≈{K:.0f}  IV {atm:.1f}%")
         if hv:
             prem = atm - hv
             tag = '（到期月·不評估）' if expiring else '（均+2.4）'
