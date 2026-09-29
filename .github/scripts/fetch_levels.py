@@ -264,7 +264,46 @@ def gold_levels():
         log.append(f'{sym} daily: df={len(df)} rows, {len(rows)} valid{raw}')
         return rows[-3:]
 
-    rows = daily('GC=F')                       # Yahoo 無 XAU 現貨,期貨日線最可靠
+    def hourly_sessions(sym):
+        # Yahoo 期貨日線的日期標註不穩定(週日晚開盤段會標成週日、行會時有時無),
+        # 改用 1 小時 K 線自行按 CME 交易日聚合:18:00 ET 開盤的時段屬次一交易日,
+        # 故 trade_date = (ET 時間 + 6 小時) 的日期。
+        df = yf.download(sym, period='15d', interval='1h', progress=False, auto_adjust=False)
+        if hasattr(df.columns, 'levels'):
+            df.columns = df.columns.get_level_values(0)
+        idx = df.index.tz_convert(ET) if df.index.tzinfo else df.index.tz_localize('UTC').tz_convert(ET)
+        agg = {}
+        for ts, (_, r) in zip(idx, df.iterrows()):
+            try:
+                h, l = float(r['High']), float(r['Low'])
+            except (TypeError, ValueError):
+                continue
+            if not 1500 < l <= h < 6000:
+                continue
+            d = (ts.to_pydatetime() + timedelta(hours=6)).date()
+            if d in agg:
+                agg[d] = (max(agg[d][0], h), min(agg[d][1], l), agg[d][2] + 1)
+            else:
+                agg[d] = (h, l, 1)
+        rows = [(d, h, l) for d, (h, l, n) in sorted(agg.items())
+                if d <= cutoff and d.weekday() < 5 and n >= 12 and l < h]
+        log.append(f'{sym} hourly-sessions: {[(str(d), round(h,1), round(l,1)) for d, h, l in rows[-4:]]}')
+        return rows[-3:]
+
+    try:
+        rows = hourly_sessions('GC=F')
+    except Exception as e:
+        log.append(f'GC=F hourly fail: {e}')
+        rows = []
+    try:
+        drows = daily('GC=F')                  # 日線只作對照記錄
+        log.append(f'GC=F daily(對照): {[(str(d), round(h,1), round(l,1)) for d, h, l in drows]}')
+    except Exception as e:
+        drows = []
+        log.append(f'GC=F daily fail: {e}')
+    if len(rows) < 3:
+        log.append('小時聚合不足 3 日,退回日線')
+        rows = drows
     if len(rows) < 3:
         raise RuntimeError(f'only {len(rows)} completed days')
 
