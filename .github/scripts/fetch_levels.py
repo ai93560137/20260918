@@ -361,7 +361,7 @@ def gold_levels():
             out[f'h{n}'], out[f'l{n}'] = round(h, 1), round(l, 1)
         out['quote'] = {'px': round(spot[1], 1), 'kind': '現貨即時',
                         'asof': datetime.now(HKT).strftime('%m-%d %H:%M HKT')}
-        out['src'] = f'XAUUSD 現貨(期貨日線+基差 {basis:+.1f} 換算,{spot[0]})'
+        out['src'] = f'XAUUSD 現貨(期貨1h聚合+基差 {basis:+.1f} 換算,{spot[0]})'
         fut['basis'] = round(basis, 1)
         log.append(f'basis={basis:+.1f} (spot {spot[1]:.1f} via {spot[0]} − fut {fut_now[0]:.1f})')
     else:
