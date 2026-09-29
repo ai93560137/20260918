@@ -165,7 +165,7 @@ Claude Code 的 Routines 可以每天固定時間開一個新工作階段執行�
 - **`ib-data`**（`asia-east2-a`＝**香港**，e2-small，Debian 12）：跑 IB Gateway（IBC 自動登入）與外匯／指數的 IV 採集。
 - **Claude 不支援香港**：在 ib-data 上安裝 Claude Code 會得到「App unavailable in region」的網頁，就算硬裝也連不上。
   **不要用 VPN 或代理去繞過**，那違反使用規定。支援地區以 https://www.anthropic.com/supported-countries 為準（台灣、新加坡、日本、南韓、美國都支援）。
-- **`claude-ops`**（`asia-east1-b`＝台灣，e2-small，Debian 12，**不綁服務帳戶**、沒有任何 GCP 權限）：專門跑一個 Claude Code，
+- **`claude-ops`**（`asia-east1-b`＝台灣，e2-small，Debian 13，**不綁服務帳戶**、沒有任何 GCP 權限）：專門跑一個 Claude Code，
   用手機 App／claude.ai/code 遙控（Remote Control），再用低權限使用者 `ssh` 進 ib-data「唯讀查看」。
 
 ### 誰能做什麼
@@ -181,7 +181,8 @@ Claude Code 的 Routines 可以每天固定時間開一個新工作階段執行�
 - `~/work/CLAUDE.md` 是給那個 Claude 的規則（只查看、不 sudo、不讀其他使用者檔案、不下單、不印金鑰）。
 - 手機 App 的 Code 分頁會看到名為 `claude-ops` 的工作階段。**權限模式**：讀取類指令與寫入 `~/work` 內的檔案不會問；
   執行程式、連網路的指令（例如 `ssh`、`curl`）會跳出詢問。這一點已實測（`curl`、`ssh ibdata whoami` 都有詢問）。
-- ⚠️ 尚未做過「重開機後自動恢復」的實測；重開後若手機看不到 `claude-ops`，SSH 進去跑 `systemctl --user status claude-rc`。
+- 已實測（2026-09-29 15:11 HKT 重開機）：重開後手機自動連得上，`hostname` 正常回覆，`curl` 仍然先跳出詢問。
+  萬一哪天連不上，SSH 進去跑 `systemctl --user status claude-rc --no-pager | head -12; tmux ls`。
 
 ### claude-ops → ib-data 的連線與隔離
 - `claude-ops:~/.ssh/config` 有 `Host ibdata`（使用者 `claudeops`、金鑰 `~/.ssh/ib_data_claudeops`，無密碼）。
@@ -194,6 +195,23 @@ Claude Code 的 Routines 可以每天固定時間開一個新工作階段執行�
   **不複製**任何設定檔、`ibc/`、`Jts/`、`ibgw.log`。要分享新檔案，先確認裡面沒有帳密，再改 `ibshare_sync.sh`。
 - IB Gateway API（4002）用 iptables 限制為只接受本機：
   `iptables -I INPUT -p tcp --dport 4002 ! -s 127.0.0.1 -j DROP`，並用 `@reboot` cron 重新套用（尚未實測重開機）。
+
+### 資料搬運與自動化（不要把 GitHub 憑證交給 claudeops）
+- `claudeops` 沒有任何 GitHub 憑證，所以**它產生的檔案推不上 GitHub**，這是刻意的。要把資料交出去，由使用者用 `hengkychansinghing`
+  （已有推送設定，每日採集就是用它）操作。**不要靠瀏覽器 SSH 視窗的「下載檔案」搬檔案**（實測常常下載不到）。
+- 一次性手動推送的做法（2026-09-29 推 `data/vol` 到 `claude/us-intl-data-stock-market-vgt0yi` 就是這樣做的）：
+  暫存 `git worktree` → `sudo cp` 檔案過來 → `git add` → 關鍵字掃描（password／token／secret／api key）→ 使用者輸入完整的 `yes` 才 commit＋push → 清掉暫存。
+- **長期要重複做的事，一律做成使用者帳號的 cron，不要每次靠人或 AI 手動跑**。IBKR 波動率日線（VIX、TLT／IEF 隱含波動率、ZN／ZB／NQ…）
+  已寫成 `gcp_ib/run_vol_daily.sh`（PR #23）：平日 UTC 22:30 增量匯出、推到**專用資料分支 `data/ibkr-vol`**（獨立資料 repo `~/ibkr-vol-data`，只含 `data/vol/`，
+  與程式分支分開，取用方式：`git fetch origin data/ibkr-vol && git checkout origin/data/ibkr-vol -- data/vol`）。
+  匯出程式是固定的一份複本，不直接執行別的分支。**啟用前**要在 VM 上手動跑一次（第一次會下載完整歷史），再加 cron；尚未對真實 IB 跑過。
+- 已知資料缺口：IBKR 取不到 **MOVE**（缺 NYBOT 指數行情訂閱），用 `tlt_iv`、`ief_iv` 搭配 `tnx` 替代；XAUUSD 由 MT5 提供，不在這條匯出裡。
+- 外匯期權每日採集（`gcp_ib/run_daily.sh`，平日 UTC 07:35，含 6E／6J）：2026-09-29 第一次執行時 6J 缺列（剩 1 天的週權當下沒有報價）；
+  PR #22 已加上「某一腿拿不到 IV 就改試下一個到期日」與失敗原因日誌。若 6J 之後**每天**都缺，代表延遲行情對這些週權本來就沒有 IV，需要另外處理。
+- 跨 session 通知：**離線的雲端 session 用 `SendMessage` 傳不到**（`ListAgents` 不會列出）。改在該分支對應的 PR 留言
+  （例如 `claude/us-intl-data-stock-market-vgt0yi` 對應 PR #7），對方下次啟動或使用者打開 PR 時看得到。
+- ib-data 上的 IB Gateway 是 **live 模式**（`TradingMode=live`，戶口餘額約 4 美元、不能入金），但使用埠 **4002**；
+  部分腳本註解把 4002 稱為「模擬帳戶」，那只是說明文字，不代表實際模式。
 
 ### 改動 claudeops 權限或家目錄權限後，必跑這個檢查
 在 claude-ops 的 SSH 視窗（使用者自己跑，不要交給 Claude）：
