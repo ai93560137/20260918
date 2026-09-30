@@ -106,17 +106,27 @@ def hv20():
     return float(r.tail(20).std() * np.sqrt(252) * 100)
 
 
-def hsi_fut_expired_today(con):
-    """con 如 'Sep-26'。恒指期貨最後交易日 = 該月倒數第二個營業日（未計港股假期）；
-    今日 >= 該日 → 視為到期日/已到期，報價不可當現價。"""
+def hsi_last_td(con):
+    """con 如 'Sep-26'。恒指期貨/期權最後交易日 = 該月倒數第二個營業日（未計港股假期）。"""
     try:
         m0 = datetime.strptime(con, '%b-%y').date()
     except ValueError:
-        return False
+        return None
     bd = [d.date() for d in pd.bdate_range(m0.replace(day=1),
           date(m0.year, m0.month, calendar.monthrange(m0.year, m0.month)[1]))]
-    last_td = bd[-2] if len(bd) >= 2 else bd[-1]
-    return date.today() >= last_td
+    return bd[-2] if len(bd) >= 2 else bd[-1]
+
+
+def hsi_fut_expired_today(con):
+    """今日 >= 最後交易日 → 到期日/已到期，報價不可當現價。"""
+    ltd = hsi_last_td(con)
+    return ltd is not None and date.today() >= ltd
+
+
+def hsi_settled(con):
+    """今日 > 最後交易日 → 已結算，快照庫裡的舊檔只是殘影，整月跳過。"""
+    ltd = hsi_last_td(con)
+    return ltd is not None and date.today() > ltd
 
 
 def scan_futures():
@@ -177,6 +187,8 @@ def scan_options(hv, front=None):
         except ValueError:
             return datetime.max
     for mon, (_, f) in sorted(latest_by_mon.items(), key=mon_key):
+        if hsi_settled(mon):     # 已結算月份（如 9/30 的 Sep-26）：快照是舊殘影，跳過
+            continue
         d = json.load(open(f))['data']
         rows = d.get('optionlist', [])
         if not rows:
