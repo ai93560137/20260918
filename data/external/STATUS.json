@@ -1,7 +1,6 @@
 {
   "gcp": {
     "days": [
-      "2026-09-20",
       "2026-09-21",
       "2026-09-22",
       "2026-09-23",
@@ -10,42 +9,43 @@
       "2026-09-26",
       "2026-09-27",
       "2026-09-28",
-      "2026-09-29"
+      "2026-09-29",
+      "2026-09-30"
     ],
     "errors": [],
-    "files_changed": 5,
+    "files_changed": 6,
     "ok": true,
     "rows_fetched": {
-      "futu_k_5m/US.QQQ": 198,
-      "futu_options/US.QQQ": 3380,
-      "mt5_m1/XAUUSD": 1528
+      "futu_k_5m/US.QQQ": 276,
+      "futu_options/US.QQQ": 6220,
+      "mt5_m1/XAUUSD": 2857
     },
     "unknown_sources": []
   },
   "ibkr": {
     "files": 11,
-    "files_changed": 0,
+    "files_changed": 1,
     "missing": [],
     "not_yet": [
       "tradingview/data_external/ib_daily_sample.csv"
     ],
     "ok": true,
     "source_branch": "claude/dazzling-curie-f3xzb8",
-    "source_commit": "b801b7fc02152566054289babf2ae963c28934c0 2026-09-28T20:18:21Z"
+    "source_commit": "2316f2305f837816f7c84952f78173f2a07b01ae 2026-09-29T23:54:25Z"
   },
-  "run_utc": "2026-09-29 00:31:50",
+  "run_utc": "2026-09-30 00:34:15",
   "series": {
     "futu/US.QQQ/K_5M": {
-      "latest_date": "2026-09-28",
+      "latest_date": "2026-09-29",
       "rows": 78
     },
     "futu/US.QQQ/options": {
-      "latest_date": "2026-09-28",
-      "rows": 1320
+      "latest_date": "2026-09-29",
+      "rows": 1310
     },
     "mt5/XAUUSD/M1": {
-      "latest_date": "2026-09-29",
-      "rows": 149
+      "latest_date": "2026-09-30",
+      "rows": 153
     }
   }
 }
