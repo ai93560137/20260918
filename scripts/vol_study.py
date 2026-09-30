@@ -33,7 +33,7 @@ VOL = "data/vol"
 OUT = "data/vol/study"
 DUR = {"ief_iv": 7.5, "tlt_iv": 16.5}
 # 回測標的（檔案存在才用）：(檔名, 顯示名稱)
-TARGETS = [("tlt", "TLT"), ("qqq", "QQQ"), ("spy", "SPY"), ("gld", "GLD"), ("nq", "NQ 期貨")]
+TARGETS = [("tlt", "TLT"), ("qqq", "QQQ（對應 MNQ）"), ("spy", "SPY"), ("gld", "GLD（對應黃金）")]
 HORIZONS = [1, 5, 20]
 
 
@@ -46,7 +46,7 @@ def load(name):
 
 
 def build():
-    iv = pd.concat({k: load(k) / d * 1e4 for k, d in DUR.items()}, axis=1)
+    iv = pd.concat({k: load(k) / d * 1e4 for k, d in DUR.items()}, axis=1, sort=True)
     move = iv.mean(axis=1).dropna()
     move = move[move.index >= "2012-10-01"]  # IBKR 的 IV 在 2006–2012 有 6 年空窗
     vix, vix3m, tnx = load("vix"), load("vix3m"), load("tnx")
