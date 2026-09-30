@@ -32,6 +32,16 @@ def num(x):
     except (TypeError, ValueError):
         return None
 
+def front_row(qd):
+    """即月合約行:列表首個有雙邊報價或有高低的行。轉月後過期合約可能仍排在首行
+    (數值為 '-'),直接取 [0] 會拿到空行、夜市高低因此漏記。"""
+    rows = qd.get('futureslist') or []
+    for r in rows:
+        vals = [str(r.get(k, '')).replace(',', '') for k in ('bd', 'as', 'hi', 'lo')]
+        if any(v.replace('.', '', 1).isdigit() for v in vals):
+            return r
+    return rows[0] if rows else {}
+
 
 def hsi_levels():
     page = S.get('https://www.hkex.com.hk/Market-Data/Futures-and-Options-Prices/'
@@ -120,7 +130,7 @@ def hsi_levels():
         try:
             q0 = call('getderivativesfutures', ats='HSI', type=0)
             qd0 = (q0 or {}).get('data', {})
-            row0 = (qd0.get('futureslist') or [{}])[0]
+            row0 = front_row(qd0)
             log.append('futureslist[0] raw: ' + json.dumps(
                 {k: row0.get(k) for k in sorted(row0)}, ensure_ascii=False)[:700])
             hi_q, lo_q = num(row0.get('hi')), num(row0.get('lo'))
@@ -193,7 +203,7 @@ def hsi_levels():
             try:
                 q = call('getderivativesfutures', ats='HSI', type=typ)
                 qd = (q or {}).get('data', {})
-                row = (qd.get('futureslist') or [{}])[0]
+                row = front_row(qd)
                 bd, as_, se = num(row.get('bd')), num(row.get('as')), num(row.get('se'))
                 lu = str(qd.get('lastupd', ''))
                 m = re.match(r'(\d{2})/(\d{2})/(\d{4})\s+(\d{2}):(\d{2})', lu)

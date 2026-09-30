@@ -31,6 +31,16 @@ def num(x):
     except (TypeError, ValueError):
         return None
 
+def front_row(qd):
+    """即月合約行:列表首個有雙邊報價或有高低的行。轉月後過期合約可能仍排在首行
+    (數值為 '-'),直接取 [0] 會拿到空行、夜市高低因此漏記。"""
+    rows = qd.get('futureslist') or []
+    for r in rows:
+        vals = [str(r.get(k, '')).replace(',', '') for k in ('bd', 'as', 'hi', 'lo')]
+        if any(v.replace('.', '', 1).isdigit() for v in vals):
+            return r
+    return rows[0] if rows else {}
+
 
 # ---- 恒指報價(HKEX 15分鐘延遲);失敗或呆滯只跳過恒指,黃金照查 ----
 best = None                                     # (ts, mid, tag)
@@ -50,7 +60,7 @@ if h.get('h1') is not None:
                 body = S.get(u, timeout=30).text
                 d = json.loads(re.search(r'^j\((.*)\)\s*$', body, re.S).group(1))
                 qd = d.get('data', {})
-                row = (qd.get('futureslist') or [{}])[0]
+                row = front_row(qd)
                 bd, as_ = num(row.get('bd')), num(row.get('as'))
                 lu = str(qd.get('lastupd', ''))
                 m = re.match(r'(\d{2})/(\d{2})/(\d{4})\s+(\d{2}):(\d{2})', lu)
