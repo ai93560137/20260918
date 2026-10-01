@@ -145,9 +145,20 @@ def scan_futures():
     prev_se, prev_con = None, None
     front, front_live = None, False
     front_note = ''
+    # 休市日（如 10/1 國慶）：端點仍回上一日 16:29 收市快照，買賣價是收市瞬間的寬價差殘影
+    # （10/1 實測 24,406/24,500，中間價 24,453 vs 收市成交 24,592）→ 改用最後成交價並註明
+    stale = False
+    ms = re.match(r'\s*(\d{1,2})/(\d{1,2})/(\d{4})', str(d.get('lastupd', '')))
+    if ms:
+        from datetime import timedelta
+        hk_today = (datetime.utcnow() + timedelta(hours=8)).date()
+        stale = date(int(ms.group(3)), int(ms.group(2)), int(ms.group(1))) < hk_today
     for i, row in enumerate(d.get('futureslist', [])[:4]):
         bd, as_, se = num(row['bd']), num(row['as']), num(row['se'])
         spr = as_ - bd if bd and as_ else None
+        if stale:
+            bd = as_ = None
+            se = num(row.get('ls')) or se
         if front is None and hsi_fut_expired_today(row['con']):
             # 到期日當天：該月期貨價被「當日 5 分鐘指數均值」結算機制黏住、成交極薄，
             # 不代表市況（2026-09-29 實測 80 分鐘不動）→ front 改用下一個月合約
@@ -167,6 +178,8 @@ def scan_futures():
             ALERTS.append(f"期貨曲線倒掛：{row['con']} 結算 {se:.0f} < 前月 {prev_se:.0f}")
         prev_se, prev_con = se, row['con']
     if front:
+        if stale:
+            front_note += '（今日休市，沿用上一交易日收市價）'
         DIGEST.append(f"HSI 期貨(近月{'中間價' if front_live else '昨結'}) {front:,.0f}{front_note}")
     return front
 
