@@ -30,6 +30,19 @@ if not h or mark is None:
     print('no position or no quote; skip')
     raise SystemExit(0)
 
+# 非交易日(港股假期/週末)不結算:mark 必須是今天日市收市報價
+if not (str(q.get('asof', '')).startswith(datetime.now(HKT).strftime('%d/%m/%Y'))
+        and '日市' in str(q.get('kind', ''))):
+    print(f"quote not today's day close ({q.get('kind')} {q.get('asof')}); 非交易日不結算")
+    if os.path.exists(LINE):
+        old = open(LINE, encoding='utf-8').read().split('\n')
+        if old and today not in old[0]:
+            last = old[0].split('(')[-1].rstrip(')')
+            old[0] = f'📒 前向測試:{today} 休市不結算(以下為 {last} 結算)'
+            with open(LINE, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(old))
+    raise SystemExit(0)
+
 pos, entry, pv = h['pos'], h['entry'], h.get('point_value', 50)
 open_pnl = round((mark - entry) * pos * pv)
 realized, fees = h.get('realized', 0), h.get('fees', 0)
