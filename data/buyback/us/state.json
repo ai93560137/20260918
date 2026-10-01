@@ -248,7 +248,8 @@
   "2026-06",
   "2026-07",
   "2026-08",
-  "2026-09"
+  "2026-09",
+  "2026-10"
  ],
  "months": {
   "2006-01": {
@@ -1740,16 +1741,22 @@
    "with_time": 81
   },
   "2026-09": {
-   "fetched": "2026-09-30",
-   "filings": 144,
+   "fetched": "2026-10-01",
+   "filings": 146,
    "new": 29,
    "with_time": 29
+  },
+  "2026-10": {
+   "fetched": "2026-10-01",
+   "filings": 7,
+   "new": 2,
+   "with_time": 2
   }
  },
  "summary": {
-  "months_done": 249,
-  "months_total": 249,
-  "new_events": 16524
+  "months_done": 250,
+  "months_total": 250,
+  "new_events": 16526
  },
  "version": 4
 }
