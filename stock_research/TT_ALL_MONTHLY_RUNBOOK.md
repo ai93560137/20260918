@@ -26,6 +26,9 @@
 > - 港日美：`vcp_fullmarket.yml` 有 `refresh` 輸入，設 `true` 即全部重抓（約 1 小時）。
 > - 台韓澳加印新：`oos_fullmarket.yml` **沒有 refresh 輸入**（腳本 `fetch_full_market.py` 本身支援 `--refresh-all`，只是工作流沒接出來）。要在 gifted-carson 分支的工作流加一個 `refresh` 輸入（照抄 vcp 的寫法），之後每月觸發 r1、r2 時設 `true`。改之前這六國月底無法更新。
 > - 檢查方法：`python3 scripts/get_market_data.py` 後看各市場檔案最後一日；`tt_all_signal.py` 不加 `--force` 會拒絕非月底數據，這是正確的防線。
+> - **港日美的基準 ETF 與指數不在 Release，在 git 的 `data/equities/<市場>/`**（2800.HK、^HSI、SPY、^GSPC、1321.T、^N225），由 gifted-carson 分支的每日抓取工作流更新。本分支那份不會自己更新，日曆就停在舊日子（2026-10-01 停在 09-23／09-24，名單被拒）。出名單前先取最新版（只取這六個資料夾，不合併分支）：
+>   `git fetch origin claude/gifted-carson-v2tvhw && git checkout origin/claude/gifted-carson-v2tvhw -- data/equities/hk/2800.HK data/equities/hk/_HSI data/equities/us/SPY data/equities/us/_GSPC data/equities/jp/1321.T data/equities/jp/_N225`
+>   其餘六國的 ETF 在 Release 的 data_full/ 裡，跟個股一起更新。
 
 完成後 Release 附件的日期會更新。沒做這步，名單會停在舊日期（腳本會因為「不是月底」拒絕出名單）。
 
