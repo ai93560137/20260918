@@ -19,8 +19,13 @@
 這兩個 workflow 在預設分支上有登記，Claude session 可以直接用 GitHub API（`actions_run_trigger`，ref = `claude/gifted-carson-v2tvhw`）觸發，不必人手到 GitHub 按；`oos_fullmarket.yml` 有 concurrency，r1 與 r2 要先後觸發。
 
 在 GitHub → Actions 手動觸發兩個 workflow（它們固定 checkout `claude/gifted-carson-v2tvhw`，不用改分支）：
-1. `vcp_fullmarket.yml`：market = `all`、backtest = `false` → 港日美，上傳 Release `fullmarket-data`
+1. `vcp_fullmarket.yml`：market = `all`、backtest = `false`、**refresh = `true`** → 港日美，上傳 Release `fullmarket-data`
 2. `oos_fullmarket.yml`：market = `r1`（台韓澳）再一次 `r2`（加印新），或逐個市場 → 上傳 Release `oos-data`
+
+> **⚠️ 2026-10-01 發現**：兩個工作流的抓價步驟都是「缺的才抓」——已有檔案的股票**不會更新**。不加 refresh 跑完會顯示成功，但數據停在上次抓的日子（九月底那次停在 09-18～09-23）。
+> - 港日美：`vcp_fullmarket.yml` 有 `refresh` 輸入，設 `true` 即全部重抓（約 1 小時）。
+> - 台韓澳加印新：`oos_fullmarket.yml` **沒有 refresh 輸入**（腳本 `fetch_full_market.py` 本身支援 `--refresh-all`，只是工作流沒接出來）。要在 gifted-carson 分支的工作流加一個 `refresh` 輸入（照抄 vcp 的寫法），之後每月觸發 r1、r2 時設 `true`。改之前這六國月底無法更新。
+> - 檢查方法：`python3 scripts/get_market_data.py` 後看各市場檔案最後一日；`tt_all_signal.py` 不加 `--force` 會拒絕非月底數據，這是正確的防線。
 
 完成後 Release 附件的日期會更新。沒做這步，名單會停在舊日期（腳本會因為「不是月底」拒絕出名單）。
 
