@@ -23,6 +23,22 @@ S = requests.Session()
 S.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                   'Referer': 'https://www.hkex.com.hk/'})
 
+# 港交所全日休市日(週末以外)。假期不是交易日:不生成日線、夜市記錄順延到下一交易日。
+# 每年年底按港交所公布的交易日曆補入翌年;未列入的假期會被誤當交易日(10-01 實測)。
+HK_HOLIDAYS = {'2026-10-01', '2026-10-19', '2026-12-25', '2027-01-01'}
+
+
+def hk_td(d):
+    return d.weekday() < 5 and str(d) not in HK_HOLIDAYS
+
+
+def hk_prev_td(d):
+    d -= timedelta(days=1)
+    while not hk_td(d):
+        d -= timedelta(days=1)
+    return d
+
+
 result = {'fetched_at': datetime.now(HKT).strftime('%Y-%m-%d %H:%M HKT')}
 
 
@@ -82,6 +98,8 @@ def hsi_levels():
     now_hk = datetime.now(HKT)
     cutoff = now_hk.date() if (now_hk.hour, now_hk.minute) >= (16, 35) else \
         (now_hk.date() - timedelta(days=1))
+    if not hk_td(cutoff):                                  # 週末/假期:退到上一交易日
+        cutoff = hk_prev_td(cutoff)
     for r in rows[-4:]:                                    # 除錯:源序列尾部原樣記錄
         ts = datetime.fromtimestamp(r[0] / 1000, tz=HKT)
         log.append(f'raw {ts:%Y-%m-%d %H:%M} h={r[2]} l={r[3]}')
@@ -94,8 +112,8 @@ def hsi_levels():
     # 用日內數據按 HKEX 交易日窗口(前一交易日 17:10 夜市起 → 當日 16:35)聚合。
     agg_note = ''
     if days and days[-1][0] < cutoff and cutoff.weekday() < 5:
-        back = 3 if cutoff.weekday() == 0 else 1            # 週一的夜市始於上週五
-        w0 = datetime.combine(cutoff - timedelta(days=back),
+        # 夜市始於上一交易日傍晚(週一→上週五;假期後→假期前一日)
+        w0 = datetime.combine(hk_prev_td(cutoff),
                               datetime.min.time(), tzinfo=HKT) + timedelta(hours=17, minutes=10)
         w1 = datetime.combine(cutoff, datetime.min.time(), tzinfo=HKT) + timedelta(hours=16, minutes=35)
         # 逐組嘗試,以「窗口內夠多根」為準——小 span 的緩衝在深夜會滑出目標窗口
@@ -219,7 +237,7 @@ def hsi_levels():
                     nh, nl = num(row.get('hi')), num(row.get('lo'))
                     if nh and nl and 15000 < nl <= nh < 40000:
                         nd = ts.date() + timedelta(days=1 if ts.hour >= 12 else 0)
-                        while nd.weekday() >= 5:
+                        while not hk_td(nd):
                             nd += timedelta(days=1)
                         out['night'] = {'date': str(nd), 'h': nh, 'l': nl, 'asof': lu}
                         log.append(f"night session saved: {out['night']}")
