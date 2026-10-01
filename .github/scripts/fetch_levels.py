@@ -143,7 +143,10 @@ def hsi_levels():
                     prev = json.load(open(f'{OUT}/levels.json', encoding='utf-8'))
                     n = (prev.get('hsi') or {}).get('night') or {}
                     nh, nl = num(n.get('h')), num(n.get('l'))
-                    if n.get('date') == str(cutoff) and nh and nl and 15000 < nl <= nh < 40000:
+                    # 夜市記錄日期按「翌曆日」推算,遇港股假期(如 10-01)會早於真正所屬交易日;
+                    # 故接受 (上一完整日, cutoff] 區間內的記錄
+                    nd_ok = str(days[-1][0]) < str(n.get('date', '')) <= str(cutoff)
+                    if nd_ok and nh and nl and 15000 < nl <= nh < 40000:
                         hi_q, lo_q = max(hi_q, nh), min(lo_q, nl)
                         agg_note = '(當日=收市報價+昨夜市合併)'
                         log.append(f'night merged {n}')
@@ -297,7 +300,8 @@ def gold_levels():
                 agg[d] = (h, l, 1)
         rows = [(d, h, l) for d, (h, l, n) in sorted(agg.items())
                 if d <= cutoff and d.weekday() < 5 and n >= 12 and l < h]
-        log.append(f'{sym} hourly-sessions: {[(str(d), round(h,1), round(l,1)) for d, h, l in rows[-4:]]}')
+        log.append(f'{sym} hourly-sessions: {[(str(d), round(h,1), round(l,1)) for d, h, l in rows[-4:]]}'
+                   f' bars/day={[(str(d), n) for d, (_, _, n) in sorted(agg.items())[-4:]]}')
         return rows[-3:]
 
     try:
@@ -311,6 +315,13 @@ def gold_levels():
     except Exception as e:
         drows = []
         log.append(f'GC=F daily fail: {e}')
+    # Yahoo 1h 數據有時滯後(10-01 實測:09-30 已收市 7 小時,1h 仍缺該日),
+    # 小時聚合最後一日早於 cutoff 時,用日線補上較新的日子
+    if rows and drows and rows[-1][0] < cutoff:
+        newer = [r for r in drows if r[0] > rows[-1][0]]
+        if newer:
+            log.append(f'小時聚合缺 {[str(r[0]) for r in newer]},以日線補')
+            rows = (rows + newer)[-3:]
     if len(rows) < 3:
         log.append('小時聚合不足 3 日,退回日線')
         rows = drows
