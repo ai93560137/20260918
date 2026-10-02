@@ -31,7 +31,9 @@ f = lambda v: f'{v:,.0f}'
 q = h.get('quote') or {}
 px = q.get('px')
 quote_line = (f"💰 現價:{f(px)}({q.get('kind', '')} · {q.get('asof', '')},延遲≥15分鐘)\n"
-              f"↕️ 距上軌 {f(up - px)} 點 · 距下軌 {f(px - lo)} 點\n") if px else ''
+              + (f"⚡ 已升穿上軌 {f(px - up)} 點(今日上軌已觸發)\n" if px >= up else
+                 f"⚡ 已跌穿下軌 {f(lo - px)} 點(今日下軌已觸發)\n" if px <= lo else
+                 f"↕️ 距上軌 {f(up - px)} 點 · 距下軌 {f(px - lo)} 點\n")) if px else ''
 
 msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
 🕐 {d.get('fetched_at', '')}
@@ -68,7 +70,9 @@ if g.get('h1') is not None:
     gq = g.get('quote') or {}
     gpx = gq.get('px')
     gq_line = (f"💰 現價:{g1(gpx)}({gq.get('kind', '')} · {gq.get('asof', '')})\n"
-               f"↕️ 距上軌 {g1(gup - gpx)} · 距下軌 {g1(gpx - glo)}\n") if gpx else ''
+               + (f"⚡ 已升穿現貨上軌 {g1(gpx - gup)}\n" if gpx >= gup else
+                  f"⚡ 已跌穿現貨下軌 {g1(glo - gpx)}\n" if gpx <= glo else
+                  f"↕️ 距上軌 {g1(gup - gpx)} · 距下軌 {g1(gpx - glo)}\n")) if gpx else ''
     fu = g.get('fut') or {}
     if fu.get('h1') is not None:
         fup = max(fu['h1'], fu['h2'], fu['h3'])
