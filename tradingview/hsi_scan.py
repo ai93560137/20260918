@@ -179,7 +179,7 @@ def scan_futures():
         prev_se, prev_con = se, row['con']
     if front:
         if stale:
-            front_note += '（今日休市，沿用上一交易日收市價）'
+            front_note += '（休市/收市後，沿用最後成交價）'
         DIGEST.append(f"HSI 期貨(近月{'中間價' if front_live else '昨結'}) {front:,.0f}{front_note}")
     return front
 
