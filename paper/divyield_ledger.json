@@ -1,8 +1,86 @@
 {
  "rules": "DIVYIELD_CC_BACKTEST.md 第二部分",
- "started": {},
+ "started": {
+  "hk": "2026-10",
+  "us": "2026-10"
+ },
  "periods": {
-  "hk": [],
-  "us": []
+  "hk": [
+   {
+    "month": "2026-10",
+    "signal_date": "2026-09-30",
+    "entry": "2026-10-02",
+    "universe": "現行恒指成分股（scripts/universe_hsi_live.txt）",
+    "n_members": 85,
+    "basket": [
+     "0101.HK",
+     "0241.HK",
+     "0288.HK",
+     "0322.HK",
+     "0941.HK",
+     "1044.HK",
+     "1378.HK",
+     "1876.HK",
+     "1928.HK",
+     "6862.HK"
+    ],
+    "created_utc": "2026-10-02T09:06:20+00:00"
+   }
+  ],
+  "us": [
+   {
+    "month": "2026-10",
+    "signal_date": "2026-09-30",
+    "entry": "2026-10-01",
+    "universe": "S&P 500 名單（universes/sp500/membership.csv）",
+    "n_members": 503,
+    "basket": [
+     "CCI",
+     "EIX",
+     "GIS",
+     "HST",
+     "KHC",
+     "MO",
+     "O",
+     "PGR",
+     "UPS",
+     "VICI"
+    ],
+    "created_utc": "2026-10-02T09:06:36+00:00",
+    "options": {
+     "CCI": {
+      "status": "無 20–45 日到期系列"
+     },
+     "EIX": {
+      "status": "無 20–45 日到期系列"
+     },
+     "GIS": {
+      "status": "無 20–45 日到期系列"
+     },
+     "HST": {
+      "status": "無 20–45 日到期系列"
+     },
+     "KHC": {
+      "status": "行使價 ≥ 1.05 倍沒有有效買賣價"
+     },
+     "MO": {
+      "status": "行使價 ≥ 1.05 倍沒有有效買賣價"
+     },
+     "O": {
+      "status": "無 20–45 日到期系列"
+     },
+     "PGR": {
+      "status": "行使價 ≥ 1.05 倍沒有有效買賣價"
+     },
+     "UPS": {
+      "status": "行使價 ≥ 1.05 倍沒有有效買賣價"
+     },
+     "VICI": {
+      "status": "無 20–45 日到期系列"
+     }
+    },
+    "options_done": true
+   }
+  ]
  }
 }
