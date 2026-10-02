@@ -17,6 +17,7 @@ import requests
 HKT = timezone(timedelta(hours=8))
 ET = timezone(timedelta(hours=-4))          # 夏令;冬令差 1 小時對「排除未完日」判斷無影響
 OUT = 'tradingview/data_external'
+HIST = f'{OUT}/hsi_days.json'               # 已採納的恒指日線記錄(防 EOD 序列倒退)
 log = []
 
 S = requests.Session()
@@ -108,6 +109,19 @@ def hsi_levels():
         d = datetime.fromtimestamp(r[0] / 1000, tz=HKT).date()
         if d <= cutoff:                                    # 只要已完結的日
             days.append((d, float(r[2]), float(r[3])))     # (date, high, low)
+    # 已知日線記錄補缺:HKEX EOD 序列會倒退(10-02 實測:前一天還有 09-30,翌日序列尾部
+    # 只到 09-29)。hsi_days.json 存每次採納過的日子,EOD 有則以 EOD 為準,缺則用記錄補。
+    try:
+        hist = json.load(open(HIST, encoding='utf-8'))
+    except Exception:
+        hist = {}
+    eod_dates = {d for d, _, _ in days}
+    for ds, v in sorted(hist.items()):
+        d = datetime.strptime(ds, '%Y-%m-%d').date()
+        if d not in eod_dates and days and days[0][0] < d <= cutoff and hk_td(d):
+            days.append((d, float(v[0]), float(v[1])))
+            log.append(f'hist fill {ds}: h={v[0]} l={v[1]} ({v[2] if len(v) > 2 else "?"})')
+    days.sort()
     # 傍晚補位:EOD 序列常晚半天才補當天的行。若 cutoff 日已完結但序列缺行,
     # 用日內數據按 HKEX 交易日窗口(前一交易日 17:10 夜市起 → 當日 16:35)聚合。
     agg_note = ''
@@ -209,6 +223,13 @@ def hsi_levels():
     days = days[-3:]
     if len(days) < 3:
         raise RuntimeError(f'only {len(days)} completed days')
+    for d, h, l in days:                                    # 更新已知日線記錄
+        prev_src = (hist.get(str(d)) or [None, None, None])[2:3]
+        src_tag = 'eod' if d in eod_dates else (prev_src[0] if prev_src and prev_src[0] == 'eod' else 'prov')
+        hist[str(d)] = [round(h), round(l), src_tag]
+    keep = sorted(hist)[-30:]
+    with open(HIST, 'w', encoding='utf-8') as f:
+        json.dump({k: hist[k] for k in keep}, f, indent=0)
     days.reverse()                                          # [0]=最近一日
     out = {}
     for n, (d, h, l) in enumerate(days, 1):

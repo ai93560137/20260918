@@ -26,7 +26,7 @@ jobs:
         run: |
           git config user.name 'levels-bot'
           git config user.email 'actions@github.com'
-          git add tradingview/data_external/levels.json
+          git add tradingview/data_external/levels.json tradingview/data_external/hsi_days.json
           git commit -m "data: levels.json $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
           git pull --rebase origin "${GITHUB_REF_NAME}" || true
           git push
