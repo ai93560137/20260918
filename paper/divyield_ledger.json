@@ -24,7 +24,120 @@
      "1928.HK",
      "6862.HK"
     ],
-    "created_utc": "2026-10-02T09:06:20+00:00"
+    "created_utc": "2026-10-02T09:06:20+00:00",
+    "options": {
+     "0101.HK": {
+      "status": "沒有股票期權"
+     },
+     "0241.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 2.815,
+      "strike": 2.96,
+      "premium": 0.06,
+      "hkex_iv": 0.37,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.31805334138934666,
+      "model_premium": 0.040406583488444434,
+      "real_over_model": 1.4849065379942092
+     },
+     "0288.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 6.63,
+      "strike": 7.0,
+      "premium": 0.09,
+      "hkex_iv": 0.3,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.27687075747113815,
+      "model_premium": 0.05826379619431901,
+      "real_over_model": 1.544698524274589
+     },
+     "0322.HK": {
+      "status": "沒有股票期權"
+     },
+     "0941.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 78.85,
+      "strike": 85.0,
+      "premium": 0.05,
+      "hkex_iv": 0.15,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.08726669807703821,
+      "model_premium": 0.00018683027072035306,
+      "real_over_model": 267.62258496558
+     },
+     "1044.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 19.5,
+      "strike": 21.0,
+      "premium": 0.11,
+      "hkex_iv": 0.25,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.25224558757899823,
+      "model_premium": 0.08680488641028192,
+      "real_over_model": 1.2672097683543613
+     },
+     "1378.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 21.16,
+      "strike": 23.0,
+      "premium": 0.28,
+      "hkex_iv": 0.37,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.39611127150955117,
+      "model_premium": 0.27870632514027516,
+      "real_over_model": 1.0046417133126553
+     },
+     "1876.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 5.675,
+      "strike": 6.0,
+      "premium": 0.07,
+      "hkex_iv": 0.29,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.2852597301309183,
+      "model_premium": 0.05766802771808847,
+      "real_over_model": 1.2138441831615376
+     },
+     "1928.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 11.38,
+      "strike": 12.0,
+      "premium": 0.16,
+      "hkex_iv": 0.3,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.2539104644069834,
+      "model_premium": 0.09136701056695404,
+      "real_over_model": 1.7511791072856815
+     },
+     "6862.HK": {
+      "status": "ok",
+      "expiry": "2026-10-29",
+      "spot": 9.195,
+      "strike": 9.75,
+      "premium": 0.11,
+      "hkex_iv": 0.29,
+      "source": "港交所結算價",
+      "captured_utc": "2026-10-02T21:42+00:00",
+      "model_iv": 0.34236988584615796,
+      "model_premium": 0.1314169942139743,
+      "real_over_model": 0.8370302536435816
+     }
+    },
+    "options_done": true
    }
   ],
   "us": [
