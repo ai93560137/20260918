@@ -1,0 +1,23 @@
+date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,longest_months,streak_window,streak_longest,yahoo_ticker
+2026-10-02,jp,日股,6,工業,6302.JP,住友重機械工業,6216,6177,19.8,6,1,1,6302.T
+2026-10-02,jp,日股,3,工業,6302.JP,住友重機械工業,6216,6177,19.8,6,1,1,6302.T
+2026-10-02,us,美股,12,科技,CRWD,CrowdStrike,270.04,269.3,75.9,12,1,1,CRWD
+2026-10-02,us,美股,12,科技,HPE,Hewlett Packard Enterprise,69.33,67.101,88.8,12,1,1,HPE
+2026-10-02,us,美股,12,科技,KEYS,Keysight Technologies,384.64,376.675,27.1,12,1,1,KEYS
+2026-10-02,us,美股,12,科技,NTAP,NetApp,226.27,216.81,63.6,12,1,1,NTAP
+2026-10-02,us,美股,9,科技,CRWD,CrowdStrike,270.04,269.3,75.9,12,1,1,CRWD
+2026-10-02,us,美股,9,科技,HPE,Hewlett Packard Enterprise,69.33,67.101,88.8,12,1,1,HPE
+2026-10-02,us,美股,9,科技,KEYS,Keysight Technologies,384.64,376.675,27.1,12,1,1,KEYS
+2026-10-02,us,美股,9,科技,NTAP,NetApp,226.27,216.81,63.6,12,1,1,NTAP
+2026-10-02,us,美股,6,科技,CRWD,CrowdStrike,270.04,269.3,75.9,12,1,1,CRWD
+2026-10-02,us,美股,6,科技,HPE,Hewlett Packard Enterprise,69.33,67.101,88.8,12,1,1,HPE
+2026-10-02,us,美股,6,科技,KEYS,Keysight Technologies,384.64,376.675,27.1,12,1,1,KEYS
+2026-10-02,us,美股,6,科技,NTAP,NetApp,226.27,216.81,63.6,12,1,1,NTAP
+2026-10-02,us,美股,3,科技,ADI,Analog Devices,417.15,406.19,16.6,3,1,1,ADI
+2026-10-02,us,美股,3,科技,CRWD,CrowdStrike,270.04,269.3,75.9,12,1,1,CRWD
+2026-10-02,us,美股,3,科技,HPE,Hewlett Packard Enterprise,69.33,67.101,88.8,12,1,1,HPE
+2026-10-02,us,美股,3,科技,KEYS,Keysight Technologies,384.64,376.675,27.1,12,2,1,KEYS
+2026-10-02,us,美股,3,科技,LITE,Lumentum,1085.42,1078.04,45.6,3,2,2,LITE
+2026-10-02,us,美股,3,科技,MRVL,Marvell Technology,272.29,270.28,63.2,3,2,2,MRVL
+2026-10-02,us,美股,3,科技,NTAP,NetApp,226.27,216.81,63.6,12,1,1,NTAP
+2026-10-02,us,美股,3,科技,TER,Teradyne,449.04,444.17,34.1,3,1,1,TER
