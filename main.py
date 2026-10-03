@@ -55,6 +55,18 @@
 #     Futu 支援多代號（futu/snapshots/<代號>.json，?view=futu&format=json&symbol=）。
 #   * 2026-09-27 — [R96] kline_type=K_DAY 的封包（本地腳本 v4 的每日日線抽樣，給數據
 #     品質比對用）只按日封存，不覆蓋控制台與 ?view=futu 的即時快照。
+#   * 2026-10-04 — [R97] 即月期貨（代號以 _FRONT 結尾，例 HK.HSI_FRONT）的「交易日 K」
+#     （kline_type=K_SESSION，本地腳本 v7 合成：09:00 至翌日 09:00，日市＋當晚夜市算同一天）
+#     按日封存並合併成一條序列 futu/daily/<代號>.json，不覆蓋即時快照；新頁面 ?view=futu_range
+#     （&symbol=，預設 HK.HSI_FRONT）顯示過去一年每日波幅與最新 OHLC，&format=json 讀數據。
+#     只存、只顯示，不影響下單。
+#   * 2026-10-04 — [R98] 波幅頁加 HAR 波幅預測：當天預測與 80% 區間、逐日前推回測（誤差、區間命中率）、
+#     圖上預測線；每個交易日第一包 K_SESSION 到達時把當天預測記到 futu/forecast/<代號>.json
+#     （實時紀錄，事後對照）。只顯示，不影響下單。
+#   * 2026-10-04 — [R99] 每個交易日四個時點：開市前預測當天波幅與高位／低位（ref ± 過去中位比例 × HAR 波幅），
+#     12:00、16:30、03:00 檢討（由 5 分 K 封存按時間截取，排程晚到也不影響）。
+#     ?view=futu_range&report=preopen|noon|close|night（&format=text）給 GitHub 排程發 Telegram；
+#     檢討存 futu/reviews/<代號>.json；本地腳本送來的港股交易日曆存 futu/calendar/HK.json。只顯示，不影響下單。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2056,7 +2068,7 @@ def handle_futu_data(payload):
         "options": options,
         "warnings": warnings,
     }
-    daily = snapshot["kline_type"].upper() == "K_DAY"   # [R96] 日線抽樣只封存，不蓋掉控制台的即時快照
+    daily = snapshot["kline_type"].upper() in ("K_DAY", "K_SESSION")   # [R96][R97] 日線只封存，不蓋掉即時快照
     try:
         if not daily:
             text = json.dumps(snapshot, ensure_ascii=False)
@@ -2066,6 +2078,11 @@ def handle_futu_data(payload):
         log_event(f"⚠️ [Futu 行情寫入失敗] {exc}", severity="ERROR", component="futu")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
     warnings.extend(futu_archive(snapshot))
+    if isinstance(payload.get("trading_calendar"), dict):              # [R99] 本地腳本送來的港股交易日曆
+        warnings.extend(futu_calendar_save(payload["trading_calendar"]))
+    if snapshot["kline_type"].upper() == "K_SESSION" and symbol.endswith(FUTU_SERIES_SUFFIX):
+        warnings.extend(futu_daily_merge(symbol, bars, snapshot["source"]))
+        warnings.extend(futu_forecast_log(symbol, bars))            # [R98] 當天預測只記一次
 
     log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
               f"收 {fmt_num(latest.get('close'))}）期權 {len(options)} 檔（IV 有值 {len(ivs)}）",
@@ -2118,6 +2135,696 @@ def futu_age_sec(snap, now=None):
     return None if received is None else max(0.0, (now or now_ts()) - received)
 
 
+# =============================================================================
+# 📏 即月期貨日線序列與波幅頁  [R97]
+# =============================================================================
+FUTU_DAILY_DIR = "futu/daily"
+FUTU_SERIES_SUFFIX = "_FRONT"                    # 本地腳本 v6 的即月期貨別名
+FUTU_DAILY_KEEP = 800                            # 約三年交易日
+FUTU_RANGE_DEFAULT = "HK.HSI_FRONT"
+FUTU_SESSION_CUT_HOUR = 9                        # 交易日 = 09:00 至翌日 09:00（日市＋當晚夜市）
+HK_TZ = ZoneInfo("Asia/Hong_Kong")
+
+
+def futu_session_today(now=None):
+    """現在屬於哪個交易日（香港時間 09:00 前算前一天）。"""
+    hk = (now or datetime.now(timezone.utc)).astimezone(HK_TZ)
+    return (hk - timedelta(hours=FUTU_SESSION_CUT_HOUR)).strftime("%Y-%m-%d")
+
+
+def futu_daily_file(symbol):
+    return f"{FUTU_DAILY_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def futu_daily_merge(symbol, bars, source):
+    """日 K 依日期合併進 futu/daily/<代號>.json（後到的蓋掉同一天）。回傳警告清單。"""
+    rows = [{**bar, "time_key": bar["time_key"][:10], "source": source}
+            for bar in bars if ARCHIVE_DATE_RE.match(bar["time_key"][:10])]
+    if not rows:
+        return []
+
+    def mutate(existing):
+        merged = {row.get("time_key"): row for row in (existing if isinstance(existing, list) else [])
+                  if isinstance(row, dict)}
+        before = dict(merged)
+        merged.update({row["time_key"]: row for row in rows})
+        if merged == before:
+            return None, len(merged)
+        ordered = [merged[key] for key in sorted(merged)][-FUTU_DAILY_KEEP:]
+        return ordered, len(ordered)
+
+    try:
+        gcs_update(futu_daily_file(symbol), mutate, default_factory=list)
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [Futu 日線序列寫入失敗] {exc}", severity="WARNING", component="futu")
+        return ["日線序列寫入失敗（按日封存已存，下一次推送會補）"]
+
+
+def futu_range_rows(bars):
+    """交易日 K → 每天一列（含昨收算出的波幅%、真實波幅、漲跌）。"""
+    rows, prev_close = [], None
+    for bar in bars:
+        o, h, l, c = (to_float(bar.get(k)) for k in ("open", "high", "low", "close"))
+        day = str(bar.get("time_key", ""))[:10]
+        if None in (o, h, l, c) or not ARCHIVE_DATE_RE.match(day):
+            continue
+        rng = h - l
+        tr = max(h, prev_close) - min(l, prev_close) if prev_close else rng
+        rows.append({"date": day, "open": o, "high": h, "low": l, "close": c,
+                     "volume": to_float(bar.get("volume")), "source": bar.get("source") or "",
+                     "range": round(rng, 2), "true_range": round(tr, 2),
+                     "range_pct": round(rng / prev_close * 100, 3) if prev_close else None,
+                     "prev_close": prev_close,
+                     "change": round(c - prev_close, 2) if prev_close else None})
+        prev_close = c
+    return rows
+
+
+# ---- HAR 波幅預測  [R98] ------------------------------------------------------
+# 回測（research/hsi_futures_range/）：恒指指數 2012 起 3,628 天，HAR（對數）對 20 日平均顯著較好
+# （Diebold-Mariano p<0.001），80% 區間命中 81%；期貨 194 天各策略分不出高下。
+# ln r_t = b0 + b1·ln r_{t−1} + b5·ln 平均(r_{t−5..t−1}) + b22·ln 平均(r_{t−22..t−1})，r = 波幅 ÷ 昨收。
+# 每天只用之前的數據重新擬合（擴展視窗），預測 = exp(擬合值) × 殘差平滑係數，80% 區間 = 殘差 10%／90% 分位。
+HAR_MIN_DAYS = 60
+HAR_RESID_WINDOW = 500
+
+
+def _solve_linear(a, y):
+    """小型線性方程組（高斯消去，部分選主元）。奇異 → None。"""
+    n = len(y)
+    m = [list(a[i]) + [y[i]] for i in range(n)]
+    for col in range(n):
+        pivot = max(range(col, n), key=lambda i: abs(m[i][col]))
+        if abs(m[pivot][col]) < 1e-12:
+            return None
+        m[col], m[pivot] = m[pivot], m[col]
+        for i in range(col + 1, n):
+            f = m[i][col] / m[col][col]
+            for j in range(col, n + 1):
+                m[i][j] -= f * m[col][j]
+    x = [0.0] * n
+    for i in range(n - 1, -1, -1):
+        x[i] = (m[i][n] - sum(m[i][j] * x[j] for j in range(i + 1, n))) / m[i][i]
+    return x
+
+
+def _quantile(sorted_values, q):
+    pos = (len(sorted_values) - 1) * q
+    lo = int(math.floor(pos))
+    hi = min(lo + 1, len(sorted_values) - 1)
+    return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * (pos - lo)
+
+
+def har_forecasts(rows, last_n=None):
+    """rows：已完結的交易日（依日期）。逐日前推：位置 t 的預測只用 t 之前的列。
+    回傳 {位置 t: (預測點數, 80% 下限, 80% 上限)}；t = len(rows) 是下一個交易日。
+    last_n：只算最後 last_n 個位置（擬合仍用全部歷史）。"""
+    keep = [i for i, row in enumerate(rows) if row.get("range_pct") and row["range_pct"] > 0]
+    n = len(keep)
+    if n < HAR_MIN_DAYS:
+        return {}
+    r = [rows[i]["range_pct"] / 100 for i in keep]
+    lr = [math.log(x) for x in r]
+
+    def feat(t):
+        return [1.0, lr[t - 1], math.log(sum(r[t - 5:t]) / 5), math.log(sum(r[t - 22:t]) / 22)]
+
+    xtx = [[0.0] * 4 for _ in range(4)]
+    xty = [0.0] * 4
+    feats, out = {}, {}
+    first = max(HAR_MIN_DAYS, n + 1 - last_n) if last_n else HAR_MIN_DAYS
+    for t in range(22, n + 1):
+        if t >= first:
+            beta = _solve_linear(xtx, xty)
+            if beta is not None:
+                start = max(22, t - HAR_RESID_WINDOW)
+                res = sorted(lr[s] - sum(a * b for a, b in zip(feats[s], beta)) for s in range(start, t))
+                smear = sum(math.exp(e) for e in res) / len(res)
+                fitted = sum(a * b for a, b in zip(feat(t), beta))
+                ref = rows[keep[t]]["prev_close"] if t < n else rows[-1]["close"]     # 昨收
+                out[keep[t] if t < n else len(rows)] = (round(math.exp(fitted) * smear * ref, 1),
+                                   round(math.exp(fitted + _quantile(res, 0.10)) * ref, 1),
+                                   round(math.exp(fitted + _quantile(res, 0.90)) * ref, 1))
+        if t < n:
+            x = feats[t] = feat(t)
+            for i in range(4):
+                xty[i] += x[i] * lr[t]
+                for j in range(4):
+                    xtx[i][j] += x[i] * x[j]
+    return out
+
+
+def futu_range_stats(bars, today):
+    """交易日 K（已排序）→ 每天的波幅與過去一年的統計。today：目前的交易日 YYYY-MM-DD。
+    波幅 = 高 − 低；真實波幅 TR = max(高, 昨收) − min(低, 昨收)；波幅% = 波幅 ÷ 昨收。
+    日期 ≥ today 的最後一根還在交易（日市或當晚夜市未完），不進平均。"""
+    since = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=365)).strftime("%Y-%m-%d")
+    all_rows = futu_range_rows(bars)
+    all_partial = bool(all_rows) and all_rows[-1]["date"] >= today
+    completed = all_rows[:-1] if all_partial else all_rows
+    shown = sum(1 for row in completed if row["date"] >= since)
+    har = har_forecasts(completed, last_n=shown + 1)              # [R98] 逐日前推的 HAR 預測
+    for i, row in enumerate(completed):
+        if i in har:
+            row["forecast"], row["forecast_lo"], row["forecast_hi"] = har[i]
+    nxt = har.get(len(completed))
+    if all_partial and nxt:
+        all_rows[-1]["forecast"], all_rows[-1]["forecast_lo"], all_rows[-1]["forecast_hi"] = nxt
+    rows = [row for row in all_rows if row["date"] >= since]
+    partial = all_partial
+    done = rows[:-1] if partial else rows
+    ranges = sorted(row["range"] for row in done)
+
+    def avg(values):
+        return round(sum(values) / len(values), 2) if values else None
+
+    last = done[-1] if done else None
+    summary = {
+        "days": len(done),
+        "first_date": done[0]["date"] if done else None,
+        "last_date": last["date"] if last else None,
+        "avg_range": avg(ranges),
+        "median_range": (ranges[len(ranges) // 2] if len(ranges) % 2 else
+                         round((ranges[len(ranges) // 2 - 1] + ranges[len(ranges) // 2]) / 2, 2)) if ranges else None,
+        "avg_range_20": avg([row["range"] for row in done[-20:]]),
+        "atr_14": avg([row["true_range"] for row in done[-14:]]),
+        "avg_range_pct": avg([row["range_pct"] for row in done if row["range_pct"] is not None]),
+        "max_range": max(done, key=lambda row: row["range"]) if done else None,
+        "min_range": min(done, key=lambda row: row["range"]) if done else None,
+        "year_high": max((row["high"] for row in done), default=None),
+        "year_low": min((row["low"] for row in done), default=None),
+        "last_range_percentile": (round(sum(1 for r in ranges if r <= last["range"]) / len(ranges) * 100)
+                                  if last and ranges else None),
+    }
+    tested = [row for row in done if row.get("forecast")]
+    errors = [row["forecast"] - row["range"] for row in tested]
+    backtest = {
+        "days": len(tested),
+        "mae": avg([abs(e) for e in errors]),
+        "bias": avg(errors),
+        "coverage_80": (round(sum(1 for row in tested if row["forecast_lo"] <= row["range"] <= row["forecast_hi"])
+                              / len(tested) * 100) if tested else None),
+    }
+    forecast = None
+    if nxt:
+        forecast = {"date": all_rows[-1]["date"] if all_partial else "next", "range": nxt[0], "lo": nxt[1], "hi": nxt[2],
+                    "ref_close": completed[-1]["close"] if completed else None, "model": "HAR(1,5,22) 對數"}
+    return {"rows": rows, "partial": partial, "summary": summary, "forecast": forecast, "backtest": backtest}
+
+
+FUTU_FORECAST_DIR = "futu/forecast"
+FUTU_FORECAST_KEEP = 1000
+
+
+def futu_forecast_file(symbol):
+    return f"{FUTU_FORECAST_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def futu_forecast_log(symbol, bars, now=None):
+    """目前交易日的第一包交易日 K 到達時，若開市前沒記到預測，補記一次（之後不改）。回傳警告清單。"""
+    today = futu_session_today(now)
+    if not any(str(bar.get("time_key", ""))[:10] == today for bar in bars):
+        return []
+    try:
+        futu_forecast_record(symbol, today)
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [波幅預測紀錄失敗] {exc}", severity="WARNING", component="futu")
+        return ["波幅預測紀錄失敗（下一包會再試）"]
+
+
+def futu_forecast_track(log, rows):
+    """實時紀錄對照實際：只算已完結的交易日。"""
+    actual = {row["date"]: row["range"] for row in rows}
+    by_date = {row["date"]: row for row in rows}
+    pairs = [(e, actual[e["date"]]) for e in log if isinstance(e, dict) and e.get("date") in actual]
+    if not pairs:
+        return {"days": 0, "entries": [e for e in log if isinstance(e, dict)][-10:]}
+    errs = [e["range"] - a for e, a in pairs]
+    out = {"days": len(pairs), "mae": round(sum(abs(x) for x in errs) / len(errs), 1),
+           "bias": round(sum(errs) / len(errs), 1),
+           "coverage_80": round(sum(1 for e, a in pairs if e["lo"] <= a <= e["hi"]) / len(pairs) * 100),
+           "entries": [e for e in log if isinstance(e, dict)][-10:]}
+    hl = [(e, by_date[e["date"]]) for e, _ in pairs if e.get("high") is not None]     # [R99] 高低位
+    if hl:
+        out.update(hl_days=len(hl),
+                   high_mae=round(sum(abs(e["high"] - row["high"]) for e, row in hl) / len(hl), 1),
+                   low_mae=round(sum(abs(e["low"] - row["low"]) for e, row in hl) / len(hl), 1))
+    return out
+
+
+# ---- 高低位預測與四個時點的檢討  [R99] ----------------------------------------
+HL_MIN_DAYS = 120                               # 估高低位比例至少要這麼多天的逐日前推預測
+FUTU_CALENDAR_FILE = "futu/calendar/HK.json"
+FUTU_REVIEW_DIR = "futu/reviews"
+FUTU_REVIEW_KEEP = 2000
+WEEKDAY_ZH = "一二三四五六日"
+REVIEW_KINDS = {                                # 種類：(圖示, 標題, 截止時間)
+    "noon": ("🕛", "午市收市檢討", "12:00"),
+    "close": ("🕟", "日市收市檢討", "16:30"),
+    "night": ("🌙", "全日收市檢討（日市＋夜市）", None),
+}
+PREOPEN_WINDOW = ("03:05", "09:15")             # 開市前預測只在這段時間記錄（前一天夜市已收、今天未開）
+
+
+def futu_review_file(symbol):
+    return f"{FUTU_REVIEW_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def futu_calendar_save(cal):
+    """{'from', 'to', 'days': [...]} → futu/calendar/HK.json（內容沒變就不寫）。回傳警告清單。"""
+    days = sorted({d for d in (cal.get("days") or []) if isinstance(d, str) and ARCHIVE_DATE_RE.match(d)})
+    start, end = str(cal.get("from", "")), str(cal.get("to", ""))
+    if not (ARCHIVE_DATE_RE.match(start) and ARCHIVE_DATE_RE.match(end)):
+        return []
+    new = {"market": "HK", "from": start, "to": end, "days": days}
+
+    def mutate(existing):
+        old = {k: existing.get(k) for k in new} if isinstance(existing, dict) else {}
+        return (None, 0) if old == new else ({**new, "updated_utc": fmt_utc()}, 1)
+
+    try:
+        gcs_update(FUTU_CALENDAR_FILE, mutate, default_factory=dict)
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [交易日曆寫入失敗] {exc}", severity="WARNING", component="futu")
+        return ["交易日曆寫入失敗"]
+
+
+def futu_trading_day(day, calendar):
+    """日曆涵蓋的日子照日曆；沒涵蓋（腳本未更新）就把週一至五當交易日。"""
+    if isinstance(calendar, dict) and str(calendar.get("from", "9")) <= day <= str(calendar.get("to", "")):
+        return day in set(calendar.get("days") or [])
+    return datetime.strptime(day, "%Y-%m-%d").weekday() < 5
+
+
+def futu_session_of(time_key):
+    """5 分 K 時間 → 交易日（09:00 前算前一天）。"""
+    t = datetime.strptime(str(time_key)[:19], "%Y-%m-%d %H:%M:%S")
+    return (t - timedelta(hours=FUTU_SESSION_CUT_HOUR)).strftime("%Y-%m-%d")
+
+
+def futu_day_forecast(completed, target):
+    """completed：target 之前已完結的交易日。回傳波幅與高位／低位預測；數據不足 → None。
+    高位 = 昨收 + a×R̂，低位 = 昨收 − b×R̂；a、b = 過去每天（高−昨收）÷R̂、（昨收−低）÷R̂ 的中位數（逐日前推），
+    80% 區間取同一組比例的 10%／90% 分位。回測見 research/hsi_futures_range/RESULTS.md。"""
+    har = har_forecasts(completed)
+    nxt = har.get(len(completed))
+    if not nxt:
+        return None
+    rng, lo, hi = nxt
+    ref = completed[-1]["close"]
+    out = {"date": target, "range": rng, "lo": lo, "hi": hi, "ref_close": ref,
+           "model": "HAR(1,5,22) 對數", "days_used": len(completed)}
+    ups, downs = [], []
+    for i, row in enumerate(completed):
+        f = har.get(i)
+        if f and row.get("prev_close"):
+            ups.append((row["high"] - row["prev_close"]) / f[0])
+            downs.append((row["prev_close"] - row["low"]) / f[0])
+    if len(ups) >= HL_MIN_DAYS:
+        su, sd = sorted(ups), sorted(downs)
+        out.update(high=round(ref + _quantile(su, 0.5) * rng), high_lo=round(ref + _quantile(su, 0.1) * rng),
+                   high_hi=round(ref + _quantile(su, 0.9) * rng), low=round(ref - _quantile(sd, 0.5) * rng),
+                   low_lo=round(ref - _quantile(sd, 0.9) * rng), low_hi=round(ref - _quantile(sd, 0.1) * rng))
+    return out
+
+
+def futu_series_rows(symbol):
+    series = gcs_read_json(futu_daily_file(symbol), [])
+    return futu_range_rows(sorted((b for b in series if isinstance(b, dict)),
+                                  key=lambda b: str(b.get("time_key", ""))))
+
+
+def futu_logged_forecast(symbol, day):
+    log = gcs_read_json(futu_forecast_file(symbol), [])
+    return next((e for e in reversed(log if isinstance(log, list) else [])
+                 if isinstance(e, dict) and e.get("date") == day), None)
+
+
+def futu_forecast_record(symbol, target):
+    """記下 target 那天開始前的預測（每天一次、之後不改）。已有就回傳舊的；數據不足 → None。"""
+    old = futu_logged_forecast(symbol, target)
+    if old:
+        return old
+    completed = [row for row in futu_series_rows(symbol) if row["date"] < target]
+    fc = futu_day_forecast(completed, target)
+    if not fc:
+        return None
+    fc["made_utc"] = fmt_utc()
+
+    def mutate(existing):
+        items = [e for e in (existing if isinstance(existing, list) else []) if isinstance(e, dict)]
+        if any(e.get("date") == target for e in items):
+            return None, len(items)
+        items = sorted(items + [fc], key=lambda e: e["date"])[-FUTU_FORECAST_KEEP:]
+        return items, len(items)
+
+    gcs_update(futu_forecast_file(symbol), mutate, default_factory=list)
+    log_event(f"🔮 [波幅預測] {symbol} {target} HAR {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"
+              + (f" 高 {fc['high']:,} 低 {fc['low']:,}" if fc.get("high") is not None else ""),
+              component="futu", symbol=symbol)
+    return futu_logged_forecast(symbol, target) or fc
+
+
+def futu_session_5m(symbol, day):
+    """某交易日的 5 分 K（日市＋當晚夜市，含翌日凌晨），只取有成交的，依時間排序。"""
+    nxt = (datetime.strptime(day, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    bars = []
+    for d in (day, nxt):
+        bars += [b for b in gcs_read_json(archive_blob_name("futu_k_5m", symbol, d), []) if isinstance(b, dict)]
+    out = {b["time_key"]: b for b in bars if b.get("time_key") and to_float(b.get("volume"))
+           and futu_session_of(b["time_key"]) == day}
+    return [out[k] for k in sorted(out)]
+
+
+def _day_label(day):
+    d = datetime.strptime(day, "%Y-%m-%d")
+    return f"{d.month}-{d.day:02d}（{WEEKDAY_ZH[d.weekday()]}）"
+
+
+def _ohlc(bars):
+    return (bars[0]["open"], max(b["high"] for b in bars), min(b["low"] for b in bars), bars[-1]["close"])
+
+
+def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
+    """高位（upper=True）／低位的比較句。final：全日收市，報誤差與是否在 80% 區間。"""
+    if final:
+        ok = band_lo <= actual <= band_hi
+        return (f"{name} {actual:,.0f}，預測 {fc:,.0f}（誤差 {actual - fc:+,.0f}），"
+                f"{'✅ 在' if ok else '❌ 不在'} 80% 區間 {band_lo:,.0f}–{band_hi:,.0f}")
+    beyond = actual >= fc if upper else actual <= fc
+    edge = band_hi if upper else band_lo
+    out_of_band = actual > band_hi if upper else actual < band_lo
+    if beyond:
+        return (f"{name} {actual:,.0f}：已{'越過' if upper else '跌穿'}預測 {fc:,.0f}"
+                + (f"，並超出 80% 區間（{edge:,.0f}）" if out_of_band else f"（80% 區間到 {edge:,.0f}）"))
+    return f"{name} {actual:,.0f}：未到預測 {fc:,.0f}（差 {abs(fc - actual):,.0f} 點）"
+
+
+def futu_preopen_text(fc, day, contract, summary):
+    lines = [f"📏 恒指即月期貨 {_day_label(day)} 開市前預測",
+             f"參考：上個交易日收市 {fc['ref_close']:,.0f}" + (f"（{contract}）" if contract else ""),
+             f"全日波幅（日市＋夜市）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
+    if fc.get("high") is not None:
+        lines += [f"高位：約 {fc['high']:,.0f}（80%：{fc['high_lo']:,.0f}–{fc['high_hi']:,.0f}）",
+                  f"低位：約 {fc['low']:,.0f}（80%：{fc['low_lo']:,.0f}–{fc['low_hi']:,.0f}）"]
+    if summary:
+        lines.append(f"近 20 日平均波幅 {summary.get('avg_range_20') or 0:,.0f} 點；"
+                     f"模型過去一年平均誤差 ±{summary.get('bt_mae') or 0:,.0f} 點")
+    lines.append("統計估計，不是交易建議。")
+    return "\n".join(lines)
+
+
+def futu_review(kind, day, fc, bars, track=None):
+    """四個時點中的三個檢討；沒有這一天的 K 線（休市）→ None。"""
+    icon, title, cut = REVIEW_KINDS[kind]
+    seg = [b for b in bars if b["time_key"] <= f"{day} {cut}:00"] if cut else bars
+    if not seg:
+        return None
+    o, h, l, c = _ohlc(seg)
+    rng = h - l
+    label = {"noon": "上午", "close": "日市", "night": "全日"}[kind]
+    lines = [f"{icon} 恒指即月期貨 {_day_label(day)} {title}",
+             f"{label}：開 {o:,.0f}　高 {h:,.0f}　低 {l:,.0f}　收 {c:,.0f}"]
+    if kind == "night":
+        day_seg = [b for b in bars if b["time_key"] <= f"{day} 16:30:00"]
+        night_seg = [b for b in bars if b["time_key"] > f"{day} 16:30:00"]
+        if day_seg and night_seg:
+            lines.append(f"日市 高 {max(b['high'] for b in day_seg):,.0f} 低 {min(b['low'] for b in day_seg):,.0f}；"
+                         f"夜市 高 {max(b['high'] for b in night_seg):,.0f} 低 {min(b['low'] for b in night_seg):,.0f}")
+    numbers = {"open": o, "high": h, "low": l, "close": c, "range": rng, "bars": len(seg)}
+    if fc:
+        if kind == "night":
+            ok = fc["lo"] <= rng <= fc["hi"]
+            lines.append(f"全日波幅 {rng:,.0f} 點，預測 {fc['range']:,.0f}（誤差 {rng - fc['range']:+,.0f}），"
+                         f"{'✅ 在' if ok else '❌ 不在'} 80% 區間 {fc['lo']:,.0f}–{fc['hi']:,.0f}")
+            numbers.update(range_error=round(rng - fc["range"], 1), range_in_band=ok)
+        else:
+            lines.append(f"波幅 {rng:,.0f} 點，已走全日預測 {fc['range']:,.0f} 的 {rng / fc['range'] * 100:.0f}%")
+            numbers["used_pct"] = round(rng / fc["range"] * 100, 1)
+        if fc.get("high") is not None:
+            final = kind == "night"
+            lines.append(_level_line("高位", h, fc["high"], fc["high_lo"], fc["high_hi"], True, final))
+            lines.append(_level_line("低位", l, fc["low"], fc["low_lo"], fc["low_hi"], False, final))
+            if final:
+                numbers.update(high_error=round(h - fc["high"], 1), low_error=round(l - fc["low"], 1))
+    else:
+        lines.append(f"波幅 {rng:,.0f} 點（這一天沒有開市前預測紀錄）")
+    if kind == "night" and track and track.get("days"):
+        tail = (f"；高位 ±{track['high_mae']:,.0f}、低位 ±{track['low_mae']:,.0f}" if track.get("hl_days") else "")
+        lines.append(f"實時紀錄 {track['days']} 天：波幅誤差 ±{track['mae']:,.0f}，命中 {track['coverage_80']}%{tail}")
+    lines.append("統計估計，不是交易建議。")
+    return {"date": day, "kind": kind, "made_utc": fmt_utc(), "text": "\n".join(lines), **numbers}
+
+
+def futu_review_save(symbol, review):
+    def mutate(existing):
+        items = [e for e in (existing if isinstance(existing, list) else []) if isinstance(e, dict)
+                 and not (e.get("date") == review["date"] and e.get("kind") == review["kind"])]
+        items = sorted(items + [review], key=lambda e: (e["date"], list(REVIEW_KINDS).index(e["kind"])))
+        return items[-FUTU_REVIEW_KEEP:], len(items)
+    gcs_update(futu_review_file(symbol), mutate, default_factory=list)
+
+
+def futu_report(symbol, kind, now=None):
+    """GitHub 排程呼叫：回 {'status': ok|skip, 'text': ...}。"""
+    now_hk = (now or datetime.now(timezone.utc)).astimezone(HK_TZ)
+    hhmm = now_hk.strftime("%H:%M")
+    rows = futu_series_rows(symbol)
+    snap = read_futu_snapshot(symbol)
+    contract = str(snap.get("source") or "").partition(":")[2] if isinstance(snap, dict) else ""
+    if kind == "preopen":
+        day = now_hk.strftime("%Y-%m-%d")
+        if not futu_trading_day(day, gcs_read_json(FUTU_CALENDAR_FILE, {})):
+            return {"status": "skip", "reason": f"{day} 不是交易日"}
+        if PREOPEN_WINDOW[0] <= hhmm < PREOPEN_WINDOW[1]:
+            fc = futu_forecast_record(symbol, day)
+        else:                                       # 不在時段內只預覽、不記錄（前一天夜市可能未收）
+            fc = futu_logged_forecast(symbol, day) or futu_day_forecast([r for r in rows if r["date"] < day], day)
+        if not fc:
+            return {"status": "skip", "reason": f"已完結交易日不足 {HAR_MIN_DAYS} 天"}
+        stats = futu_range_stats([dict(time_key=r["date"] + " 00:00:00", **{k: r[k] for k in
+                                  ("open", "high", "low", "close", "volume", "source")}) for r in rows if r["date"] < day], day)
+        summary = {"avg_range_20": stats["summary"].get("avg_range_20"), "bt_mae": stats["backtest"].get("mae")}
+        return {"status": "ok", "kind": kind, "date": day, "forecast": fc,
+                "text": futu_preopen_text(fc, day, contract, summary)}
+    if kind not in REVIEW_KINDS:
+        return {"status": "error", "reason": "report 只接受 preopen、noon、close、night"}
+    day = futu_session_today(now)
+    bars = futu_session_5m(symbol, day)
+    fc = futu_logged_forecast(symbol, day)
+    log = gcs_read_json(futu_forecast_file(symbol), [])
+    done = [r for r in rows if r["date"] <= day] if kind == "night" else [r for r in rows if r["date"] < day]
+    track = futu_forecast_track(log if isinstance(log, list) else [], done) if kind == "night" else None
+    review = futu_review(kind, day, fc, bars, track)
+    if not review:
+        return {"status": "skip", "reason": f"{day} 沒有 5 分 K（休市或推送停了）"}
+    futu_review_save(symbol, review)
+    return {"status": "ok", **review}
+
+
+def futu_range_data(symbol):
+    symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
+    bars = gcs_read_json(futu_daily_file(symbol), [])
+    bars = sorted((b for b in bars if isinstance(b, dict)), key=lambda b: str(b.get("time_key", "")))
+    today = futu_session_today()
+    data = futu_range_stats(bars, today)
+    snap = read_futu_snapshot(symbol)
+    snap_bars = (snap.get("bars") or []) if isinstance(snap, dict) and not snap.get("error") else []
+    traded = [b for b in snap_bars if to_float(b.get("volume"))]       # 略過開市前成交量 0 的佔位 K 線
+    five = (traded or snap_bars or [{}])[-1]
+    age = futu_age_sec(snap) if snap and not snap.get("error") else None
+    log = gcs_read_json(futu_forecast_file(symbol), [])
+    done_rows = data["rows"][:-1] if data["partial"] else data["rows"]
+    data["live_track"] = futu_forecast_track(log if isinstance(log, list) else [], done_rows)
+    logged = next((e for e in reversed(log if isinstance(log, list) else [])
+                   if isinstance(e, dict) and e.get("date") == today), None)
+    if logged:                                                   # 當天已記錄的預測優先（不會因為事後補數據而變）
+        data["forecast"] = {**logged, "logged": True}
+    elif data.get("forecast"):                                   # [R99] 未記錄：即時算，含高位／低位
+        all_rows = futu_range_rows(bars)
+        completed = [r for r in all_rows if r["date"] < today] if data["partial"] else all_rows
+        full = futu_day_forecast(completed, data["forecast"]["date"])
+        if full:
+            data["forecast"] = full
+    review_day = data["rows"][-1]["date"] if data["rows"] else None
+    reviews = gcs_read_json(futu_review_file(symbol), [])
+    data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
+                       if isinstance(e, dict) and e.get("date") == review_day]
+    data.update({"symbol": symbol, "today_hk": today,
+                 "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
+                 "latest_5m": five or None,
+                 "latest_5m_age_sec": None if age is None else int(age)})
+    return data
+
+
+def handle_futu_range_get(req):
+    if req.args.get("report"):                                   # [R99] 四個時點的預測／檢討
+        symbol = _futu_text(req.args.get("symbol"), 32).upper() or FUTU_RANGE_DEFAULT
+        try:
+            result = futu_report(symbol, req.args.get("report"))
+        except StorageError as exc:
+            print(f"⚠️ [Futu 報告失敗] {exc}", flush=True)
+            result = {"status": "error", "reason": "storage"}
+        if req.args.get("format") == "text":
+            body = result.get("text") or f"[{result.get('status')}] {result.get('reason', '')}"
+            return body, (200 if result["status"] in ("ok", "skip") else 503), {"Content-Type": "text/plain; charset=utf-8"}
+        return _json_response(result, 200 if result["status"] in ("ok", "skip") else 503)
+    try:
+        data = futu_range_data(req.args.get("symbol"))
+    except StorageError as exc:
+        print(f"⚠️ [Futu 波幅讀取失敗] {exc}", flush=True)
+        if req.args.get("format") == "json":
+            return _json_response({"status": "error", "message": "storage read failed"}, 503)
+        return html_page("即月期貨波幅", "<div class='banner' style='background:#fff3cd; color:#856404;'>"
+                                         "⚠️ 讀取失敗，請查看 Cloud Logging。</div>"), 503
+    if req.args.get("format") == "json":
+        return _json_response({"status": "ok" if data["rows"] else "empty", **data}, 200)
+    return build_futu_range_page(data)
+
+
+def futu_range_chart(rows):
+    """每日波幅柱狀圖＋20 日平均線（單一 y 軸），每根柱有原生提示框。"""
+    if len(rows) < 2:
+        return ""
+    w, h, pad_l, pad_b, pad_t = 1000, 260, 52, 26, 12
+    top = max(row["range"] for row in rows) * 1.08 or 1
+    step = (w - pad_l - 8) / len(rows)
+    bar_w = max(1.0, step - 2)                   # 柱間留 2px 空隙
+    y = lambda v: pad_t + (h - pad_t - pad_b) * (1 - v / top)
+    ticks = [top / 4 * i for i in range(5)]
+    grid = "".join(f"<line x1='{pad_l}' x2='{w - 8}' y1='{y(t):.1f}' y2='{y(t):.1f}' stroke='#e9ecef'/>"
+                   f"<text x='{pad_l - 6}' y='{y(t) + 4:.1f}' text-anchor='end' font-size='11' fill='#6c757d'>{t:,.0f}</text>"
+                   for t in ticks)
+    bars, avg_pts = [], []
+    for i, row in enumerate(rows):
+        x = pad_l + i * step + 1
+        top_y = y(row["range"])
+        pct = "—" if row["range_pct"] is None else f"{row['range_pct']:.2f}%"
+        bars.append(f"<rect x='{x:.1f}' y='{top_y:.1f}' width='{bar_w:.1f}' height='{max(0.5, h - pad_b - top_y):.1f}' "
+                    f"rx='{min(2.0, bar_w / 2):.1f}' fill='#4f83cc'><title>{esc(row['date'])}  波幅 {row['range']:,.0f}（{pct}）"
+                    f"\n開 {row['open']:,.0f}  高 {row['high']:,.0f}  低 {row['low']:,.0f}  收 {row['close']:,.0f}"
+                    + (f"\nHAR 預測 {row['forecast']:,.0f}（80%：{row['forecast_lo']:,.0f}–{row['forecast_hi']:,.0f}）"
+                       if row.get("forecast") else "") + "</title></rect>")
+        window = [r["range"] for r in rows[max(0, i - 19):i + 1]]
+        if len(window) == 20:
+            avg_pts.append(f"{x + bar_w / 2:.1f},{y(sum(window) / 20):.1f}")
+    line = (f"<polyline points='{' '.join(avg_pts)}' fill='none' stroke='#161616' stroke-width='2'/>"
+            if len(avg_pts) > 1 else "")
+    har_pts = [f"{pad_l + i * step + 1 + bar_w / 2:.1f},{y(min(row['forecast'], top)):.1f}"
+               for i, row in enumerate(rows) if row.get("forecast")]
+    if len(har_pts) > 1:                          # [R98] HAR 預測線（虛線，跟平均線用線型區分）
+        line += (f"<polyline points='{' '.join(har_pts)}' fill='none' stroke='#d97706' stroke-width='2' "
+                 f"stroke-dasharray='5 3'/>")
+    months, labels = set(), []
+    for i, row in enumerate(rows):
+        if row["date"][:7] not in months:
+            months.add(row["date"][:7])
+            if i and pad_l + i * step < w - 40:          # 太靠右邊的月份標籤會被切掉，略過
+                labels.append(f"<text x='{pad_l + i * step:.1f}' y='{h - 8}' font-size='11' fill='#6c757d'>{row['date'][2:7]}</text>")
+    legend = ("<div style='display:flex; gap:16px; font-size:12px; color:#6c757d; margin-bottom:6px;'>"
+              "<span><span style='display:inline-block; width:10px; height:10px; background:#4f83cc; border-radius:2px;'></span> 每日波幅（高−低）</span>"
+              "<span><span style='display:inline-block; width:14px; height:2px; background:#161616; vertical-align:middle;'></span> 20 日平均</span>"
+              "<span><span style='display:inline-block; width:14px; border-top:2px dashed #d97706; vertical-align:middle;'></span> HAR 預測（當天開始前）</span></div>")
+    return (f"{legend}<svg viewBox='0 0 {w} {h}' style='width:100%; height:auto;' role='img' "
+            f"aria-label='過去一年每日波幅柱狀圖'>{grid}{''.join(bars)}{line}{''.join(labels)}</svg>")
+
+
+def build_futu_range_page(data):
+    rows, s, symbol = data["rows"], data["summary"], data["symbol"]
+    nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
+           f"<h1 class='page-title'>📏 即月期貨波幅（{esc(symbol)}）</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
+    if not rows:
+        body = nav + ("<div class='section'>還沒有交易日 K 數據。本地執行 push_to_gcp.py（v7）的 "
+                      f"<span class='mono'>--backfill {esc(symbol)}</span> 補一年歷史，之後每 5 分鐘會自動更新。</div>")
+        return html_page("即月期貨波幅", body)
+    latest = rows[-1]
+    five = data.get("latest_5m") or {}
+    age = data.get("latest_5m_age_sec")
+    stale = age is None or age > FUTU_STALE_SEC
+    status = ("<span class='neg'>⚠️ 推送可能已停止</span>" if stale
+              else f"<span class='pos'>{esc(countdown_text(age))} 前更新</span>")
+    tag = "（交易中）" if data["partial"] else "（已完結）"
+    pct = lambda v: "—" if v is None else f"{v:.2f}%"
+    fc, bt, lt = data.get("forecast"), data.get("backtest") or {}, data.get("live_track") or {}
+    if fc:
+        fc_title = (f"{esc(fc['date'])} 預測波幅（HAR）" if fc.get("date") != "next" else "下一個交易日預測波幅（HAR）")
+        so_far = ""
+        if data["partial"] and fc.get("date") == latest["date"] and fc.get("range"):
+            so_far = f"・已走 {latest['range'] / fc['range'] * 100:.0f}%（{fmt_num(latest['range'], '{:,.0f}')} 點）"
+        logged = f"・{esc(str(fc.get('made_utc', ''))[11:16])} UTC 已記錄" if fc.get("logged") else ""
+        hl = (f"<br>高位約 <b>{fmt_num(fc['high'], '{:,.0f}')}</b>（{fmt_num(fc['high_lo'], '{:,.0f}')}–{fmt_num(fc['high_hi'], '{:,.0f}')}）"
+              f"<br>低位約 <b>{fmt_num(fc['low'], '{:,.0f}')}</b>（{fmt_num(fc['low_lo'], '{:,.0f}')}–{fmt_num(fc['low_hi'], '{:,.0f}')}）"
+              if fc.get("high") is not None else "")
+        fc_card = (f"<div class='card'><div class='card-title'>{fc_title}</div>"
+                   f"<div class='card-value'>{fmt_num(fc['range'], '{:,.0f}')}</div>"
+                   f"<div class='card-desc'>80% 機會 {fmt_num(fc['lo'], '{:,.0f}')}–{fmt_num(fc['hi'], '{:,.0f}')} 點"
+                   f"・參考收市 {fmt_num(fc.get('ref_close'), '{:,.0f}')}{so_far}{logged}{hl}</div></div>")
+    else:
+        fc_card = ("<div class='card'><div class='card-title'>預測波幅（HAR）</div><div class='card-small'>數據不足</div>"
+                   f"<div class='card-desc'>至少要 {HAR_MIN_DAYS} 個已完結交易日</div></div>")
+    live = (f"實時紀錄 {lt['days']} 天：誤差 {fmt_num(lt.get('mae'), '{:,.0f}')} 點、命中 {lt.get('coverage_80')}%"
+            + (f"、高位 ±{fmt_num(lt.get('high_mae'), '{:,.0f}')}、低位 ±{fmt_num(lt.get('low_mae'), '{:,.0f}')}" if lt.get("hl_days") else "")
+            if lt.get("days") else "實時紀錄：從今天起每天累積")
+    bt_card = (f"<div class='card'><div class='card-title'>預測準確度（逐日前推回測 {bt.get('days') or 0} 天）</div>"
+               f"<div class='card-value'>±{fmt_num(bt.get('mae'), '{:,.0f}')}</div>"
+               f"<div class='card-desc'>平均誤差（點）・80% 區間命中 {bt.get('coverage_80') if bt.get('coverage_80') is not None else '—'}%"
+               f"・偏差 {fmt_num(bt.get('bias'), '{:+,.0f}')}<br>{live}</div></div>")
+    cards = f"""
+    <div class='grid'>{fc_card}{bt_card}
+      <div class='card'><div class='card-title'>最新交易日 {esc(latest['date'])}{tag}</div>
+        <div class='card-small'>開 {fmt_num(latest['open'], '{:,.0f}')}　高 {fmt_num(latest['high'], '{:,.0f}')}<br>低 {fmt_num(latest['low'], '{:,.0f}')}　收 {fmt_num(latest['close'], '{:,.0f}')}</div>
+        <div class='card-desc'>波幅 {fmt_num(latest['range'], '{:,.0f}')}（{pct(latest['range_pct'])}）・合約 {esc(data.get('contract') or '—')}</div></div>
+      <div class='card'><div class='card-title'>最新 5 分 K（香港時間）</div><div class='card-value'>{fmt_num(five.get('close'), '{:,.0f}')}</div>
+        <div class='card-desc'>{esc(five.get('time_key', '—'))}・{status}</div></div>
+      <div class='card'><div class='card-title'>一年平均波幅</div><div class='card-value'>{fmt_num(s['avg_range'], '{:,.0f}')}</div>
+        <div class='card-desc'>中位數 {fmt_num(s['median_range'], '{:,.0f}')}・平均 {pct(s['avg_range_pct'])}</div></div>
+      <div class='card'><div class='card-title'>近 20 日平均波幅</div><div class='card-value'>{fmt_num(s['avg_range_20'], '{:,.0f}')}</div>
+        <div class='card-desc'>ATR(14) {fmt_num(s['atr_14'], '{:,.0f}')}</div></div>
+      <div class='card'><div class='card-title'>{esc(s['last_date'] or '—')} 波幅在一年中的位置</div><div class='card-value'>{'—' if s['last_range_percentile'] is None else str(s['last_range_percentile']) + '%'}</div>
+        <div class='card-desc'>≤ 這個波幅的日子佔比</div></div>
+      <div class='card'><div class='card-title'>一年最大／最小波幅</div>
+        <div class='card-small'>{fmt_num((s['max_range'] or {}).get('range'), '{:,.0f}')}（{esc((s['max_range'] or {}).get('date', '—'))}）<br>{fmt_num((s['min_range'] or {}).get('range'), '{:,.0f}')}（{esc((s['min_range'] or {}).get('date', '—'))}）</div>
+        <div class='card-desc'>一年高 {fmt_num(s['year_high'], '{:,.0f}')}・低 {fmt_num(s['year_low'], '{:,.0f}')}</div></div>
+    </div>"""
+    table_rows = "".join(
+        f"<tr><td>{esc(r['date'])}</td><td>{fmt_num(r['open'], '{:,.0f}')}</td><td>{fmt_num(r['high'], '{:,.0f}')}</td>"
+        f"<td>{fmt_num(r['low'], '{:,.0f}')}</td><td>{fmt_num(r['close'], '{:,.0f}')}</td>"
+        f"<td class='{pnl_class(r['change'])}'>{fmt_num(r['change'], '{:+,.0f}')}</td>"
+        f"<td><b>{fmt_num(r['range'], '{:,.0f}')}</b></td><td>{pct(r['range_pct'])}</td>"
+        f"<td>{fmt_num(r['true_range'], '{:,.0f}')}</td>"
+        f"<td>{fmt_num(r.get('forecast'), '{:,.0f}')}</td>"
+        f"<td class='muted'>{(fmt_num(r.get('forecast_lo'), '{:,.0f}') + '–' + fmt_num(r.get('forecast_hi'), '{:,.0f}')) if r.get('forecast') else '—'}</td>"
+        f"<td class='{'' if not r.get('forecast') else ('pos' if r['forecast_lo'] <= r['range'] <= r['forecast_hi'] else 'neg')}'>"
+        f"{fmt_num((r['range'] - r['forecast']) if r.get('forecast') else None, '{:+,.0f}')}</td>"
+        f"<td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
+        for r in reversed(rows))
+    review_html = "".join(f"<div class='log-card'><div class='log-ctx' style='white-space:pre-wrap;'>{esc(e.get('text', ''))}</div></div>"
+                          for e in data.get("reviews") or [])
+    reviews = (f"<div class='section'><h2>{esc(latest['date'])} 的檢討（12:00／16:30／03:00）</h2>{review_html}"
+               f"<div class='muted' style='font-size:12px;'>每個交易日 08:2x 開市前預測、12:0x、16:3x、03:1x 檢討，同時發 Telegram。</div></div>"
+               if review_html else "")
+    body = nav + cards + reviews + f"""
+    <div class='section'><h2>過去一年每日波幅（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
+      {futu_range_chart(rows)}
+    </div>
+    <div class='section'><h2>每日 OHLC 與波幅</h2>
+      <div class='scroll' style='max-height:520px;'><table>
+        <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>真實波幅</th><th>HAR 預測</th><th>80% 區間</th><th>實際−預測</th><th>合約</th></tr>
+        {table_rows}</table></div>
+      <div class='muted' style='font-size:12px; margin-top:10px; line-height:1.6;'>
+        交易日 = 香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00 算同一天
+        （由 5 分／60 分 K 合成，跟 Futu 自己的日 K 不同）。即月期貨：最後交易日當天轉下月，不做價差調整，轉月日會有跳空。
+        波幅 = 高 − 低；波幅% = 波幅 ÷ 昨收；真實波幅 = max(高, 昨收) − min(低, 昨收)。還在交易的一天不計入平均。
+        HAR 預測：ln(波幅%) 對 前一天、前 5 天平均、前 22 天平均 回歸，每天只用之前的數據重新擬合（逐日前推，沒有偷看答案），
+        80% 區間取殘差的 10%／90% 分位；綠色 = 實際落在區間內。回測見 research/hsi_futures_range/。統計估計，不是交易建議。
+        只存、只顯示，不進電閘、不影響下單。原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></div>
+    </div>"""
+    return html_page(f"即月期貨波幅 {symbol}", body)
+
+
 def handle_futu_api_get(symbol=None):
     snap = read_futu_snapshot(_futu_text(symbol, 32).upper() or None)
     if snap.get("error"):
@@ -2164,7 +2871,7 @@ def futu_dashboard_html():
       <div class='card'><div class='card-title'>期權</div><div class='card-small'>{len(snap.get('options') or [])} 檔</div></div>
     </div>
     <div class='section' style='margin-bottom:24px;'>{table}
-      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a></div>
+      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a>・<a href='?view=futu_range'>📏 恒指即月期貨一年波幅</a></div>
     </div>"""
 
 
@@ -4919,6 +5626,8 @@ def handle_get(req):
         return handle_futu_api_get(req.args.get("symbol"))
     if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取
         return handle_archive_api_get(req)
+    if view in ("futu_range", "hsi_range"):                      # [R97] 即月期貨一年波幅與最新 OHLC
+        return handle_futu_range_get(req)
     if view == "info":
         return build_info_page()
     if view == "reset":

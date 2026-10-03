@@ -146,8 +146,9 @@ def futu_to_web(code):
     if market == "HK":
         if sym == "800000":
             return "hk", "_HSI"
-        return "hk", f"{int(sym):04d}.HK" if sym.isdigit() else sym
-    return None, None
+        if sym.isdigit():
+            return "hk", f"{int(sym):04d}.HK"
+    return None, None                                  # 期貨（HK.HSI_FRONT）等網站沒有的代號：不比對
 
 
 def web_to_futu(market, ticker):
@@ -491,7 +492,7 @@ def canonical(instrument):
         return "us/_GSPC"
     if "." in instrument and instrument.split(".", 1)[0] in ("US", "HK"):
         market, ticker = futu_to_web(instrument)
-        return f"{market}/{ticker}"
+        return f"{market}/{ticker}" if market else instrument
     return instrument if "/" in instrument else ("hk/" if instrument.endswith(".HK") or instrument == "_HSI"
                                                   else "us/") + instrument
 
