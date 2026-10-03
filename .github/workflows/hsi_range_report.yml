@@ -1,0 +1,83 @@
+name: hsi-range-report
+# 恒指即月期貨每日四個時點（香港時間）：
+#   07:53 開市前預測當天波幅與高位／低位（日市 09:15 開市）
+#   12:07 午市收市檢討、16:37 日市收市檢討、03:13 全日（日市＋夜市）收市檢討
+# 數字由 GCP（main.py R99）的 ?view=futu_range&report=… 算好，這裡只負責取回並發 Telegram。
+# 檢討只看該時點以前的 5 分 K，排程晚到也不影響內容；休市日 GCP 回 skip，不發訊息。
+# 排程 workflow 只在預設分支生效。統計估計，不是交易建議，不影響下單。
+on:
+  schedule:
+    - cron: '53 23 * * 0-4'   # 07:53 HKT 週一至五：開市前預測
+    - cron: '7 4 * * 1-5'     # 12:07 HKT 週一至五：午市收市檢討
+    - cron: '37 8 * * 1-5'    # 16:37 HKT 週一至五：日市收市檢討
+    - cron: '13 19 * * 1-5'   # 03:13 HKT 週二至六：全日收市檢討
+  workflow_dispatch:
+    inputs:
+      report:
+        description: preopen / noon / close / night
+        required: true
+        default: preopen
+      send:
+        description: 是否發 Telegram（no = 只在紀錄裡看文字）
+        required: false
+        default: 'yes'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hsi-range-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: fetch report from GCP
+        id: fetch
+        env:
+          ZHUGE_GCP_URL: ${{ secrets.ZHUGE_GCP_URL }}
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL: ${{ github.event.inputs.report }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, time, urllib.parse, urllib.request
+          kinds = {"53 23 * * 0-4": "preopen", "7 4 * * 1-5": "noon", "37 8 * * 1-5": "close", "13 19 * * 1-5": "night"}
+          kind = os.environ.get("MANUAL") or kinds.get(os.environ.get("SCHEDULE", ""), "")
+          if kind not in ("preopen", "noon", "close", "night"):
+              sys.exit(f"不認得的報告種類：{kind!r}")
+          base = os.environ.get("ZHUGE_GCP_URL", "").strip().rstrip("/")
+          if not base:
+              sys.exit("GitHub Secret ZHUGE_GCP_URL 沒設")
+          url = f"{base}/?" + urllib.parse.urlencode({"view": "futu_range", "report": kind})
+          last = None
+          for attempt in range(3):                       # Cloud Run 冷啟動或暫時錯誤：重試兩次
+              try:
+                  with urllib.request.urlopen(url, timeout=60) as resp:
+                      data = json.loads(resp.read().decode("utf-8"))
+                  break
+              except Exception as exc:                   # 不印網址（在 Secret 裡）
+                  last = f"{type(exc).__name__}: {str(exc)[:120]}"
+                  time.sleep(10 * (attempt + 1))
+          else:
+              sys.exit(f"取不到報告：{last}")
+          print(f"報告 {kind}：{data.get('status')} {data.get('reason', '')}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"status={data.get('status')}\n")
+          if data.get("status") == "ok":
+              open("report.txt", "w", encoding="utf-8").write(data.get("text", ""))
+              print(data.get("text", ""))
+          elif data.get("status") != "skip":
+              sys.exit(f"GCP 回 {data.get('status')}：{data.get('reason')}")
+          PY
+
+      - name: send Telegram
+        if: steps.fetch.outputs.status == 'ok' && github.event.inputs.send != 'no'
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text@report.txt" > /dev/null
+          echo "已發 Telegram"

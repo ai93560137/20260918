@@ -151,6 +151,21 @@ check("轉月後只送轉月日起的 5 分 K（不蓋掉 10-28 舊合約封存�
 check("轉月後日 K 也只送轉月日起", [b["time_key"][:10] for b in kd[0]["data"]] == ["2026-10-29"])
 check("舊合約退訂", any(c == ("HK.HSI2610",) for c, _ in pusher.ctx.unsubs), pusher.ctx.unsubs)
 
+print("=== [v8] 交易日曆 ===")
+pc = push.FutuPusher(); pc.ctx = FakeCtx(LISTING, trading_days=["2026-10-28", "2026-10-29", "2026-10-30", "2026-11-02"])
+ok, sent = run(pc, "2026-10-28")
+cal = sent[0].get("trading_calendar") if sent else None
+check("封包附上港股交易日曆（今天起 40 天）", cal and cal["from"] == "2026-10-28" and cal["to"] == "2026-12-07"
+      and cal["days"] == ["2026-10-28", "2026-10-29", "2026-10-30", "2026-11-02"], cal)
+calls = []
+pc.ctx.request_trading_days = lambda **k: calls.append(1) or (ft.RET_OK, [])
+run(pc, "2026-10-28")
+check("同一天只查一次", calls == [])
+pb = push.FutuPusher(); pb.ctx = FakeCtx(LISTING)
+pb.ctx.request_trading_days = lambda **k: (ft.RET_ERROR, "no permission")
+ok, sent = run(pb, "2026-10-28")
+check("查不到日曆照樣推送、不附日曆", ok and sent and "trading_calendar" not in sent[0])
+
 print("=== 即時視窗只有 60 根：交易日 K 用歷史 5 分 K ===")
 class Win60(FakeCtx):
     def get_cur_kline(self, code, num, ktype):             # 即時視窗只剩下午，日市開盤已被切掉

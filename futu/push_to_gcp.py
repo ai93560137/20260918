@@ -52,6 +52,9 @@
   最後交易日用港股交易日曆推算（該月倒數第二個交易日）。過期合約 Futu 拿不到時，那一段改用 Futu 主連
   （HK.HSImain）代替，並在合約欄註明。每張合約佔一個「30 天內歷史 K 線」額度（共約 14 個，上限 100）。
 
+[v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
+  GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
+
 執行：
   python push_to_gcp.py                  # 常駐
   python push_to_gcp.py --once           # 只推一次，用來測試
@@ -70,7 +73,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "7"
+SCRIPT_VERSION = "8"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -223,6 +226,7 @@ class FutuPusher:
         self.daily_done = None                        # 已完成日線抽樣的香港日期
         self.pending_unsub = []                       # [(訂閱時間, [代號…])]
         self.front = {}                               # [v6] 別名 → {day, code, last_trade, start}
+        self.calendar = None                          # [v8] (查詢日, {from, to, days})
 
     def connect(self):
         if self.ctx is None:
@@ -463,6 +467,24 @@ class FutuPusher:
         else:
             log(f"  ⚠️ 舊合約 {code} 退訂失敗（不影響推送）：{err}")
 
+    def trading_calendar(self):
+        """[v8] 今天起 40 天的港股交易日，每天查一次；查不到回 None（不影響推送）。"""
+        today = datetime.now(HK_TZ).strftime("%Y-%m-%d")
+        if self.calendar and self.calendar[0] == today:
+            return self.calendar[1]
+        end = (date.fromisoformat(today) + timedelta(days=40)).isoformat()
+        try:
+            ret, days = self.ctx.request_trading_days(market=ft.TradeDateMarket.HK, start=today, end=end)
+        except Exception as exc:
+            log(f"  ⚠️ 交易日曆取得失敗：{str(exc)[:60]}")
+            return None
+        if ret != ft.RET_OK:
+            log(f"  ⚠️ 交易日曆取得失敗：{str(days)[:60]}")
+            return None
+        cal = {"from": today, "to": end, "days": sorted(str(d.get("time", ""))[:10] for d in days)}
+        self.calendar = (today, cal)
+        return cal
+
     def run_front(self, alias):
         log(f"向 OpenD {OPEND_HOST}:{OPEND_PORT} 取 {alias}（即月期貨）行情…")
         try:
@@ -487,6 +509,9 @@ class FutuPusher:
             return True
         base = {"action": "futu_data", "token": TOKEN, "source": f"futu_opend:{code}",
                 "script_version": SCRIPT_VERSION, "symbol": alias, "options": []}
+        cal = self.trading_calendar()
+        if cal:
+            base["trading_calendar"] = cal
         ok = True
         if bars:
             ok = self.post({**base, "kline_type": "K_5M", "data": bars,
