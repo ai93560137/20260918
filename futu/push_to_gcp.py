@@ -52,6 +52,11 @@
   最後交易日用港股交易日曆推算（該月倒數第二個交易日）。過期合約 Futu 拿不到時，那一段改用 Futu 主連
   （HK.HSImain）代替，並在合約欄註明。每張合約佔一個「30 天內歷史 K 線」額度（共約 14 個，上限 100）。
 
+[v9] 匯出日內 K 線（給「當天高位／低位是否已出現」的回測，GCP main.py R100 起只封存、不蓋即時快照）：
+  python push_to_gcp.py --export-intraday HK.HSI_FRONT              # 預設 1100 天的 15 分 K
+  python push_to_gcp.py --export-intraday HK.HSI_FRONT 1100 K_60M   # 15 分 K 拿不到時改 60 分 K
+  轉月規則、主連代替、0.6 秒間隔都跟 --backfill 一樣；存 GCS archive/futu_k_15m/HK.HSI_FRONT/<日期>.json。
+
 [v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
   GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
 
@@ -73,7 +78,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "8"
+SCRIPT_VERSION = "9"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -101,6 +106,8 @@ FRONT_5M_COUNT = 300                                  # [v7] 即月期貨每輪�
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 BACKFILL_DAYS = 380
 BACKFILL_CHUNK = 15                                   # 每包日 K 根數（GCP 每天一個封存檔，包小一點才不逾時）
+INTRADAY_CHUNK = 400                                  # [v9] 日內 K 線每包根數（GCP 每包最多收 500 根）
+INTRADAY_KTYPES = ("K_15M", "K_30M", "K_60M")
 BACKFILL_PACE_SEC = 0.6                               # 回補時每次向 Futu 取歷史／交易日曆之間的間隔（避開頻率限制）
 SUBS_USED = len(SYMBOLS)
 DAILY_BATCH = max(5, min(100 - SUBS_USED - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
@@ -541,7 +548,10 @@ class FutuPusher:
             raise RuntimeError(str(df)[:120])
         return session_bars(bars_from_df(df), complete_only=False) if not df.empty else []
 
-    def backfill_front(self, alias, days=BACKFILL_DAYS):
+    def front_history(self, alias, days, fetch, day_of, unit):
+        """逐月按轉月規則取歷史：每張合約只取「上一張最後交易日」到「自己最後交易日前一天」的交易日；
+        過期合約拿不到就那一段用主連代替。fetch(代號, 起, 止) → K 線；day_of(K 線) → 交易日。
+        回 ([(K 線, 來源)], 註記)。"""
         self.connect()
         info = self.resolve_front(alias)
         product = FRONT_RE.match(alias).group(1)
@@ -570,38 +580,63 @@ class FutuPusher:
         for code, seg_start, seg_end in segments:
             source = f"futu_opend:{code}"
             try:
-                bars = self.history_sessions(code, seg_start, far_end if code == info["code"] else seg_end)
+                bars = fetch(code, seg_start, far_end if code == info["code"] else seg_end)
             except Exception as exc:
                 bars, err = [], exc
             else:
                 err = None if bars else "沒有數據"
             if err:                                    # 過期合約拿不到 → 這一段用主連代替
                 try:
-                    bars = self.history_sessions(f"HK.{product}main", seg_start, seg_end)
+                    bars = fetch(f"HK.{product}main", seg_start, seg_end)
                     source = f"futu_opend:HK.{product}main(代{code[-4:]})"
                     notes.append(f"{code} 拿不到（{str(err)[:40]}），用主連代替")
                 except Exception as exc:
                     notes.append(f"{code} 與主連都拿不到：{str(exc)[:60]}")
                     bars = []
-            keep = [b for b in bars if seg_start <= b["time_key"][:10]
-                    and (code == info["code"] or b["time_key"][:10] < seg_end)]
-            log(f"  {code}：{seg_start} 至 {seg_end if code != info['code'] else '今天'}，{len(keep)} 個交易日"
-                + ("（主連代替）" if "main" in source else ""))
+            keep = [b for b in bars if seg_start <= day_of(b) and (code == info["code"] or day_of(b) < seg_end)]
+            log(f"  {code}：{seg_start} 至 {seg_end if code != info['code'] else '今天'}，"
+                f"{len(keep)} {unit}（{len({day_of(b) for b in keep})} 個交易日）" + ("（主連代替）" if "main" in source else ""))
             all_bars.extend((b, source) for b in keep)
-        all_bars = [x for x in all_bars if x[0]["time_key"][:10] >= first.isoformat()]
+        return [x for x in all_bars if day_of(x[0]) >= first.isoformat()], notes
+
+    def push_history(self, alias, items, kline_type, chunk):
+        """[(K 線, 來源)] 分包推送（同一包只放同一張合約）。回推送成功的根數。"""
         ok = 0
-        for i in range(0, len(all_bars), BACKFILL_CHUNK):
-            chunk = all_bars[i:i + BACKFILL_CHUNK]
-            for source in dict.fromkeys(src for _, src in chunk):      # 同一包只放同一張合約
-                bars = [b for b, src in chunk if src == source]
+        for i in range(0, len(items), chunk):
+            part = items[i:i + chunk]
+            for source in dict.fromkeys(src for _, src in part):
+                bars = [b for b, src in part if src == source]
                 if self.post({"action": "futu_data", "token": TOKEN, "source": source[:32],
-                              "script_version": SCRIPT_VERSION, "symbol": alias, "kline_type": "K_SESSION",
+                              "script_version": SCRIPT_VERSION, "symbol": alias, "kline_type": kline_type,
                               "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                               "data": bars, "options": []}, quiet=True):
                     ok += len(bars)
-        log(f"📚 {alias} 回補完成：推送 {ok}／{len(all_bars)} 個交易日 K（日市＋夜市）"
+        return ok
+
+    def backfill_front(self, alias, days=BACKFILL_DAYS):
+        items, notes = self.front_history(alias, days, self.history_sessions, lambda b: b["time_key"][:10], "個交易日 K")
+        ok = self.push_history(alias, items, "K_SESSION", BACKFILL_CHUNK)
+        log(f"📚 {alias} 回補完成：推送 {ok}／{len(items)} 個交易日 K（日市＋夜市）"
             + (f"；{'；'.join(notes)}" if notes else ""))
-        return ok == len(all_bars) and bool(all_bars)
+        return ok == len(items) and bool(items)
+
+    # ---- [v9] 匯出日內 K 線（給「高低位是否已出現」的回測） ---------------------
+    def history_intraday(self, code, start, end, ktype):
+        time.sleep(BACKFILL_PACE_SEC)
+        ret, df, _ = self.ctx.request_history_kline(code, start=start, end=end, ktype=getattr(ft.KLType, ktype),
+                                                    max_count=None)
+        if ret != ft.RET_OK:
+            raise RuntimeError(str(df)[:120])
+        return [b for b in bars_from_df(df.sort_values("time_key")) if b.get("volume")] if not df.empty else []
+
+    def export_intraday(self, alias, days=BACKFILL_DAYS, ktype="K_15M"):
+        items, notes = self.front_history(alias, days,
+                                          lambda c, s, e: self.history_intraday(c, s, e, ktype),
+                                          lambda b: session_date(b["time_key"]), f"根 {ktype}")
+        ok = self.push_history(alias, items, ktype, INTRADAY_CHUNK)
+        log(f"📦 {alias} 日內 {ktype} 匯出完成：推送 {ok}／{len(items)} 根，"
+            f"{len({session_date(b['time_key']) for b, _ in items})} 個交易日" + (f"；{'；'.join(notes)}" if notes else ""))
+        return ok == len(items) and bool(items)
 
     def run_symbol(self, symbol):
         if FRONT_RE.match(symbol):
@@ -699,6 +734,24 @@ def futures(product):
 
 
 def main():
+    if "--export-intraday" in sys.argv[1:]:
+        idx = sys.argv.index("--export-intraday")
+        args = sys.argv[idx + 1:idx + 4]
+        alias = (args[0] if args else "HK.HSI_FRONT").upper()
+        days = int(args[1]) if len(args) > 1 and args[1].isdigit() else 1100
+        ktype = (args[2] if len(args) > 2 else "K_15M").upper()
+        if not FRONT_RE.match(alias) or ktype not in INTRADAY_KTYPES:
+            print(f"用法：--export-intraday HK.HSI_FRONT [天數] [{'|'.join(INTRADAY_KTYPES)}]", file=sys.stderr)
+            return 2
+        if not GCP_URL or not TOKEN:
+            print("請先設定環境變數 ZHUGE_GCP_URL 與 WEBHOOK_SECRET_TOKEN（見檔案開頭說明）。", file=sys.stderr)
+            return 2
+        pusher = FutuPusher()
+        log(f"📦 匯出 {alias} 過去 {days} 天的 {ktype}（v{SCRIPT_VERSION}）→ {GCP_URL}")
+        try:
+            return 0 if pusher.export_intraday(alias, days, ktype) else 1
+        finally:
+            pusher.close()
     if "--backfill" in sys.argv[1:]:
         idx = sys.argv.index("--backfill")
         args = sys.argv[idx + 1:idx + 3]

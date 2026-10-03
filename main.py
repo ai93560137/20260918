@@ -67,6 +67,8 @@
 #     12:00、16:30、03:00 檢討（由 5 分 K 封存按時間截取，排程晚到也不影響）。
 #     ?view=futu_range&report=preopen|noon|close|night（&format=text）給 GitHub 排程發 Telegram；
 #     檢討存 futu/reviews/<代號>.json；本地腳本送來的港股交易日曆存 futu/calendar/HK.json。只顯示，不影響下單。
+#   * 2026-10-04 — [R100] 只有 5 分 K（或舊版沒標類型的封包）會更新即時快照；其他 K 線（日 K、交易日 K、
+#     本地腳本 v9 匯出的 15／30／60 分 K 歷史）一律只按日封存，給「高低位是否已出現」的回測用。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2068,7 +2070,7 @@ def handle_futu_data(payload):
         "options": options,
         "warnings": warnings,
     }
-    daily = snapshot["kline_type"].upper() in ("K_DAY", "K_SESSION")   # [R96][R97] 日線只封存，不蓋掉即時快照
+    daily = snapshot["kline_type"].upper() not in ("", "K_5M")    # [R96][R97][R100] 只有 5 分 K 更新即時快照
     try:
         if not daily:
             text = json.dumps(snapshot, ensure_ascii=False)
