@@ -2226,7 +2226,9 @@ def futu_range_data(symbol):
     today = futu_session_today()
     data = futu_range_stats(bars, today)
     snap = read_futu_snapshot(symbol)
-    five = (snap.get("bars") or [{}])[-1] if isinstance(snap, dict) and not snap.get("error") else {}
+    snap_bars = (snap.get("bars") or []) if isinstance(snap, dict) and not snap.get("error") else []
+    traded = [b for b in snap_bars if to_float(b.get("volume"))]       # 略過開市前成交量 0 的佔位 K 線
+    five = (traded or snap_bars or [{}])[-1]
     age = futu_age_sec(snap) if snap and not snap.get("error") else None
     data.update({"symbol": symbol, "today_hk": today,
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",

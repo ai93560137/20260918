@@ -124,6 +124,11 @@ check("hsi_range 是同一頁", client.get("/?view=hsi_range").status_code == 20
 j = client.get("/?view=futu_range&format=json").get_json()
 check("JSON 有 rows 與 summary", j["status"] == "ok" and j["rows"] and j["summary"]["avg_range"] == 200, j.get("summary"))
 check("JSON 帶合約與最新 5 分 K", j["contract"] == "HK.HSI2610" and j["latest_5m"]["close"] == 23845)
+client.post("/", json=packet([{"time_key": "2026-10-03 02:55:00", "open": 1, "high": 2, "low": 0.5, "close": 23845, "volume": 5},
+                              {"time_key": "2026-10-05 09:20:00", "open": 23845, "high": 23845, "low": 23845, "close": 23845,
+                               "volume": 0}], kline="K_5M"))
+j = client.get("/?view=futu_range&format=json").get_json()
+check("最新 5 分 K 略過開市前的佔位 K 線", j["latest_5m"]["time_key"] == "2026-10-03 02:55:00", j["latest_5m"])
 check("控制台的 Futu 區塊連到波幅頁", "?view=futu_range" in main.futu_dashboard_html())
 check("八頁導覽列不變（站內頁另有一致性檢查）", "futu_range" not in str(main.PAGE_LINKS))
 e = client.get("/?view=futu_range&symbol=<script>").get_data(as_text=True)
