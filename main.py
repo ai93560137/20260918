@@ -69,6 +69,10 @@
 #     檢討存 futu/reviews/<代號>.json；本地腳本送來的港股交易日曆存 futu/calendar/HK.json。只顯示，不影響下單。
 #   * 2026-10-04 — [R100] 只有 5 分 K（或舊版沒標類型的封包）會更新即時快照；其他 K 線（日 K、交易日 K、
 #     本地腳本 v9 匯出的 15／30／60 分 K 歷史）一律只按日封存，給「高低位是否已出現」的回測用。
+#   * 2026-10-04 — [R101] 「今日／本週／本月的高位、低位已出現」三個策略（A 耗盡回落、B 機率法、C 時間點，
+#     參數用回測最好那組）：每包即月期貨 5 分 K 到達時重算，任一策略第一次觸發就記到 futu/signals/<代號>.json，
+#     ?view=futu_range&report=signals 給 GitHub 排程發 Telegram（&ack= 標記已發）；四次報告與波幅頁列出三個策略的現況。
+#     回測見 research/hsi_futures_range/HIGH_LOW_IN_REPORT.md。只顯示，不影響下單。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2085,6 +2089,8 @@ def handle_futu_data(payload):
     if snapshot["kline_type"].upper() == "K_SESSION" and symbol.endswith(FUTU_SERIES_SUFFIX):
         warnings.extend(futu_daily_merge(symbol, bars, snapshot["source"]))
         warnings.extend(futu_forecast_log(symbol, bars))            # [R98] 當天預測只記一次
+    if not daily and symbol.endswith(FUTU_SERIES_SUFFIX):            # [R101] 高低位是否已出現
+        warnings.extend(futu_peak_update(symbol))
 
     log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
               f"收 {fmt_num(latest.get('close'))}）期權 {len(options)} 檔（IV 有值 {len(ivs)}）",
@@ -2525,7 +2531,7 @@ def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
     return f"{name} {actual:,.0f}：未到預測 {fc:,.0f}（差 {abs(fc - actual):,.0f} 點）"
 
 
-def futu_preopen_text(fc, day, contract, summary):
+def futu_preopen_text(fc, day, contract, summary, peak=None):
     lines = [f"📏 恒指即月期貨 {_day_label(day)} 開市前預測",
              f"參考：上個交易日收市 {fc['ref_close']:,.0f}" + (f"（{contract}）" if contract else ""),
              f"全日波幅（日市＋夜市）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
@@ -2535,11 +2541,12 @@ def futu_preopen_text(fc, day, contract, summary):
     if summary:
         lines.append(f"近 20 日平均波幅 {summary.get('avg_range_20') or 0:,.0f} 點；"
                      f"模型過去一年平均誤差 ±{summary.get('bt_mae') or 0:,.0f} 點")
+    lines += peak or []
     lines.append("統計估計，不是交易建議。")
     return "\n".join(lines)
 
 
-def futu_review(kind, day, fc, bars, track=None):
+def futu_review(kind, day, fc, bars, track=None, peak=None):
     """四個時點中的三個檢討；沒有這一天的 K 線（休市）→ None。"""
     icon, title, cut = REVIEW_KINDS[kind]
     seg = [b for b in bars if b["time_key"] <= f"{day} {cut}:00"] if cut else bars
@@ -2577,6 +2584,7 @@ def futu_review(kind, day, fc, bars, track=None):
     if kind == "night" and track and track.get("days"):
         tail = (f"；高位 ±{track['high_mae']:,.0f}、低位 ±{track['low_mae']:,.0f}" if track.get("hl_days") else "")
         lines.append(f"實時紀錄 {track['days']} 天：波幅誤差 ±{track['mae']:,.0f}，命中 {track['coverage_80']}%{tail}")
+    lines += peak or []
     lines.append("統計估計，不是交易建議。")
     return {"date": day, "kind": kind, "made_utc": fmt_utc(), "text": "\n".join(lines), **numbers}
 
@@ -2611,7 +2619,7 @@ def futu_report(symbol, kind, now=None):
                                   ("open", "high", "low", "close", "volume", "source")}) for r in rows if r["date"] < day], day)
         summary = {"avg_range_20": stats["summary"].get("avg_range_20"), "bt_mae": stats["backtest"].get("mae")}
         return {"status": "ok", "kind": kind, "date": day, "forecast": fc,
-                "text": futu_preopen_text(fc, day, contract, summary)}
+                "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now))}
     if kind not in REVIEW_KINDS:
         return {"status": "error", "reason": "report 只接受 preopen、noon、close、night"}
     day = futu_session_today(now)
@@ -2620,11 +2628,336 @@ def futu_report(symbol, kind, now=None):
     log = gcs_read_json(futu_forecast_file(symbol), [])
     done = [r for r in rows if r["date"] <= day] if kind == "night" else [r for r in rows if r["date"] < day]
     track = futu_forecast_track(log if isinstance(log, list) else [], done) if kind == "night" else None
-    review = futu_review(kind, day, fc, bars, track)
+    review = futu_review(kind, day, fc, bars, track, futu_peak_lines(symbol, now))
     if not review:
         return {"status": "skip", "reason": f"{day} 沒有 5 分 K（休市或推送停了）"}
     futu_review_save(symbol, review)
     return {"status": "ok", **review}
+
+
+
+# ---- 高低位是否已出現：A 耗盡回落、B 機率法、C 時間點  [R101] ----------------------
+# 回測（research/hsi_futures_range/HIGH_LOW_IN_REPORT.md，2023-12 至 2026-10 的 15 分 K）：
+# B 在日、週、月都校準良好（準確率 ≈ 1 − p）；A、C 準確率 82–100%，但只在約四成的段會觸發。
+PEAK_A = (0.8, 0.5)                              # 已走 ≥ 0.8×R̂ 且回落 ≥ 0.5×R̂
+PEAK_B = 0.05                                    # 再創新高（低）機率 < 5%
+PEAK_C_BETA = 0.4                                # 到時間點時回落 ≥ 0.4×R̂
+PEAK_C_CUT = {"day": "16:30", "week": 4, "month": 15}   # 日 16:30；週第 4 個、月第 15 個交易日收市
+PEAK_KINDS = ("day", "week", "month")
+PEAK_ZH = {"day": "今日", "week": "本週", "month": "本月"}
+PEAK_STRAT_ZH = {"A": "A 耗盡回落", "B": "B 機率法", "C": "C 時間點"}
+FUTU_SIGNAL_DIR = "futu/signals"
+FUTU_SIGNAL_KEEP = 3000
+# 各 15 分鐘時段佔一個交易日變異的比例（2025-09 至 2026-10 的 250 個交易日估；鍵是 K 線結束時間）
+PEAK_PROFILE_15M = {
+    "09:30": 0.0609,
+    "09:45": 0.13309,
+    "10:00": 0.04394,
+    "10:15": 0.0399,
+    "10:30": 0.03277,
+    "10:45": 0.02775,
+    "11:00": 0.02391,
+    "11:15": 0.0185,
+    "11:30": 0.01814,
+    "11:45": 0.01386,
+    "12:00": 0.00612,
+    "13:15": 0.03183,
+    "13:30": 0.0177,
+    "13:45": 0.01765,
+    "14:00": 0.0181,
+    "14:15": 0.01493,
+    "14:30": 0.00984,
+    "14:45": 0.01133,
+    "15:00": 0.00723,
+    "15:15": 0.01311,
+    "15:30": 0.00881,
+    "15:45": 0.00669,
+    "16:00": 0.00599,
+    "16:15": 0.00898,
+    "16:30": 0.00668,
+    "17:15": 0.01056,
+    "17:30": 0.0203,
+    "17:45": 0.00474,
+    "18:00": 0.00459,
+    "18:15": 0.0063,
+    "18:30": 0.00373,
+    "18:45": 0.00447,
+    "19:00": 0.0026,
+    "19:15": 0.03589,
+    "19:30": 0.00484,
+    "19:45": 0.00474,
+    "20:00": 0.00391,
+    "20:15": 0.00523,
+    "20:30": 0.00723,
+    "20:45": 0.01292,
+    "21:00": 0.00526,
+    "21:15": 0.00645,
+    "21:30": 0.00528,
+    "21:45": 0.02831,
+    "22:00": 0.01787,
+    "22:15": 0.0133,
+    "22:30": 0.01029,
+    "22:45": 0.0215,
+    "23:00": 0.01764,
+    "23:15": 0.02055,
+    "23:30": 0.02087,
+    "23:45": 0.01169,
+    "00:00": 0.00949,
+    "00:15": 0.00673,
+    "00:30": 0.00794,
+    "00:45": 0.00899,
+    "01:00": 0.00561,
+    "01:15": 0.00839,
+    "01:30": 0.00756,
+    "01:45": 0.00633,
+    "02:00": 0.00499,
+    "02:15": 0.00803,
+    "02:30": 0.00435,
+    "02:45": 0.0051,
+    "03:00": 0.00769,
+}
+# 固定參數的回測準確率（B 用全部樣本；A、C 用後半段測試期）：期間/邊/策略
+PEAK_ACCURACY = {
+    "day/high/A": 0.912,
+    "day/high/B": 0.958,
+    "day/high/C": 0.897,
+    "day/low/A": 0.923,
+    "day/low/B": 0.949,
+    "day/low/C": 0.931,
+    "week/high/A": 0.971,
+    "week/high/B": 0.95,
+    "week/high/C": 1.0,
+    "week/low/A": 0.941,
+    "week/low/B": 0.957,
+    "week/low/C": 1.0,
+    "month/high/A": 0.818,
+    "month/high/B": 0.97,
+    "month/high/C": 0.833,
+    "month/low/A": 0.818,
+    "month/low/B": 1.0,
+    "month/low/C": 0.9,
+}
+
+
+def futu_signal_file(symbol):
+    return f"{FUTU_SIGNAL_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def _session_minutes(time_key):
+    """交易日內的分鐘數（09:00 = 0，翌日 03:00 = 1080）。"""
+    t = str(time_key)[11:16] if len(str(time_key)) > 5 else str(time_key)
+    return ((int(t[:2]) - 9) % 24) * 60 + int(t[3:5])
+
+
+def peak_remaining_share(time_key):
+    """這根 K 線收市後，當天還剩的變異比例（按 15 分鐘時段比例，時段內按時間攤分）。"""
+    t = _session_minutes(time_key)
+    total = 0.0
+    for slot, share in PEAK_PROFILE_15M.items():
+        end = _session_minutes(slot)
+        if end > t:
+            total += share * min(1.0, (end - t) / 15)
+    return total
+
+
+def _peak_key(day, kind):
+    if kind == "day":
+        return day
+    d = datetime.strptime(day, "%Y-%m-%d")
+    if kind == "week":
+        y, w, _ = d.isocalendar()
+        return f"{y}-W{w:02d}"
+    return day[:7]
+
+
+def _peak_future_days(today, kind, calendar):
+    """這段時間在 today 之後還有哪些交易日（交易日曆；沒涵蓋就把週一至五當交易日）。"""
+    if kind == "day":
+        return []
+    out, d = [], datetime.strptime(today, "%Y-%m-%d")
+    for _ in range(31):
+        d += timedelta(days=1)
+        day = d.strftime("%Y-%m-%d")
+        if _peak_key(day, kind) != _peak_key(today, kind):
+            break
+        if futu_trading_day(day, calendar):
+            out.append(day)
+    return out
+
+
+def futu_peak_status(symbol, now=None):
+    """今日／本週／本月的高位、低位是否已出現：三個策略的現況。數據不足 → None。"""
+    now = now or datetime.now(timezone.utc)
+    now_hk = now.astimezone(HK_TZ)
+    today = futu_session_today(now)
+    rows = futu_series_rows(symbol)
+    completed = [r for r in rows if r["date"] < today]
+    if len(completed) < HAR_MIN_DAYS:
+        return None
+    har = har_forecasts(completed)
+    nxt = har.get(len(completed))
+    if not nxt:
+        return None
+    fc_by_date = {completed[i]["date"]: v[0] for i, v in har.items() if i < len(completed)}
+    fc_today, ref = nxt[0], completed[-1]["close"]
+    calendar = gcs_read_json(FUTU_CALENDAR_FILE, {})
+    bars = futu_session_5m(symbol, today)
+    trading_today = bool(bars) or futu_trading_day(today, calendar)
+    ended = now_hk.strftime("%Y-%m-%d %H:%M") >= (datetime.strptime(today, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d 03:00")
+    price = bars[-1]["close"] if bars else ref
+    rem_today = 0.0 if (ended or not trading_today) else (peak_remaining_share(bars[-1]["time_key"]) if bars else 1.0)
+    sigma_day = fc_today / 1.596 / ref
+    out = {"today": today, "asof": bars[-1]["time_key"] if bars else None, "price": price, "periods": {}}
+    for kind in PEAK_KINDS:
+        key = _peak_key(today, kind)
+        prior = [r for r in completed if _peak_key(r["date"], kind) == key] if kind != "day" else []
+        sessions = [r["date"] for r in prior] + ([today] if trading_today else [])
+        highs = [r["high"] for r in prior] + [b["high"] for b in bars]
+        lows = [r["low"] for r in prior] + [b["low"] for b in bars]
+        if not sessions or not highs:
+            continue
+        future = _peak_future_days(today, kind, calendar)
+        n = len(sessions) + len(future)
+        r_first = fc_today if sessions[0] == today else fc_by_date.get(sessions[0])
+        if not r_first:
+            continue
+        big_r = r_first * math.sqrt(n)
+        rem = rem_today + len(future)
+        hs, ls = max(highs), min(lows)
+        # C：到時間點時的高低與收市
+        cut = PEAK_C_CUT[kind]
+        c_state = None                                             # None = 未到
+        if kind == "day":
+            upto = [b for b in bars if b["time_key"] <= f"{today} {cut}:00"]
+            if bars and bars[-1]["time_key"] >= f"{today} {cut}:00" and upto:
+                c_state = (max(b["high"] for b in upto), min(b["low"] for b in upto), upto[-1]["close"])
+        else:
+            done = [(r["high"], r["low"], r["close"]) for r in prior]
+            if ended and bars:
+                done.append((max(b["high"] for b in bars), min(b["low"] for b in bars), bars[-1]["close"]))
+            if len(done) >= cut:
+                first = done[:cut]
+                c_state = (max(x[0] for x in first), min(x[1] for x in first), first[-1][2])
+        period = {"key": key, "sessions_done": len(prior) + (1 if ended and trading_today else 0), "sessions": n,
+                  "R": round(big_r, 1), "over": rem <= 0}
+        for side in ("high", "low"):
+            ext = hs if side == "high" else ls
+            dist = (hs - price) if side == "high" else (price - ls)
+            if rem <= 0:
+                prob = 0.0
+            else:
+                sig = sigma_day * math.sqrt(rem) * price
+                prob = math.erfc(dist / sig / math.sqrt(2)) if dist > 0 and sig > 0 else 1.0
+            c_ok = None
+            if c_state:
+                c_dist = (c_state[0] - c_state[2]) if side == "high" else (c_state[2] - c_state[1])
+                c_ok = c_dist >= PEAK_C_BETA * big_r
+            period[side] = {"ext": ext, "dist": round(dist, 1), "prob": round(prob, 4),
+                            "A": (hs - ls) >= PEAK_A[0] * big_r and dist >= PEAK_A[1] * big_r,
+                            "B": dist > 0 and prob < PEAK_B, "C": c_ok}
+        out["periods"][kind] = period
+    return out
+
+
+def _peak_signal_text(kind, side, strat, period, s, price):
+    zh = "高位" if side == "high" else "低位"
+    acc = PEAK_ACCURACY.get(f"{kind}/{side}/{strat}")
+    lines = [f"⚠️ 恒指即月期貨 {PEAK_ZH[kind]}{zh}可能已出現｜{PEAK_STRAT_ZH[strat]}",
+             f"{PEAK_ZH[kind]}{zh} {s['ext']:,.0f}，現價 {price:,.0f}（離{zh} {s['dist']:,.0f} 點）",
+             f"B 機率法：之後再創新{'高' if side == 'high' else '低'}的機率 {s['prob'] * 100:.0f}%"]
+    if acc is not None:
+        lines.append(f"回測：這類通知 {acc:.0%} 準確（{ {'day': '交易日', 'week': '週', 'month': '月'}[kind]}{zh}，{PEAK_STRAT_ZH[strat]}）")
+    lines.append("統計判斷，不是交易建議。")
+    return "\n".join(lines)
+
+
+def futu_peak_update(symbol, now=None):
+    """每包 5 分 K 到達時重算；任一策略第一次觸發就記一筆通知（同一段、同一邊、同一策略只記一次）。"""
+    try:
+        st = futu_peak_status(symbol, now)
+        if not st:
+            return []
+        fresh = []
+        for kind, per in st["periods"].items():
+            if per["over"]:
+                continue
+            for side in ("high", "low"):
+                s = per[side]
+                for strat in ("A", "B", "C"):
+                    if s[strat]:
+                        fresh.append({"id": f"{kind}:{per['key']}:{side}:{strat}", "kind": kind, "key": per["key"],
+                                      "side": side, "strat": strat, "asof": st["asof"], "price": st["price"],
+                                      "ext": s["ext"], "dist": s["dist"], "prob": s["prob"], "made_utc": fmt_utc(),
+                                      "sent": False, "text": _peak_signal_text(kind, side, strat, per, s, st["price"])})
+        if not fresh:
+            return []
+
+        def mutate(existing):
+            items = [e for e in (existing if isinstance(existing, list) else []) if isinstance(e, dict)]
+            seen = {e.get("id") for e in items}
+            add = [f for f in fresh if f["id"] not in seen]
+            if not add:
+                return None, 0
+            return (items + add)[-FUTU_SIGNAL_KEEP:], len(add)
+
+        added = gcs_update(futu_signal_file(symbol), mutate, default_factory=list)
+        if added:
+            log_event(f"⚠️ [高低位已出現] {symbol} 新通知 {added} 則", component="futu", symbol=symbol)
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [高低位判斷失敗] {exc}", severity="WARNING", component="futu")
+        return ["高低位判斷失敗（下一包會再算）"]
+
+
+def futu_signals_report(symbol, ack=None):
+    """排程取未發的通知；ack=逗號分隔的 id → 標記已發。"""
+    if ack:
+        ids = {x for x in str(ack).split(",") if x}
+
+        def mutate(existing):
+            items = [e for e in (existing if isinstance(existing, list) else []) if isinstance(e, dict)]
+            hit = 0
+            for e in items:
+                if e.get("id") in ids and not e.get("sent"):
+                    e["sent"], e["sent_utc"] = True, fmt_utc()
+                    hit += 1
+            return (items, hit) if hit else (None, 0)
+
+        n = gcs_update(futu_signal_file(symbol), mutate, default_factory=list)
+        return {"status": "ok", "acked": n}
+    items = gcs_read_json(futu_signal_file(symbol), [])
+    pending = [{"id": e["id"], "text": e["text"]} for e in (items if isinstance(items, list) else [])
+               if isinstance(e, dict) and not e.get("sent")]
+    return {"status": "ok", "signals": pending}
+
+
+def futu_peak_lines(symbol, now=None):
+    """四次報告用：今日／本週／本月三個策略的現況（數據不足 → 空）。"""
+    try:
+        st = futu_peak_status(symbol, now)
+        sig = gcs_read_json(futu_signal_file(symbol), [])
+    except StorageError:
+        return []
+    if not st or not st["periods"]:
+        return []
+    fired = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
+    lines = ["高低位是否已出現（A 耗盡回落｜B 再創新高機率｜C 時間點）"]
+    for kind, per in st["periods"].items():
+        parts = []
+        for side in ("high", "low"):
+            s, zh = per[side], ("高" if side == "high" else "低")
+
+            def mark(strat):
+                e = fired.get(f"{kind}:{per['key']}:{side}:{strat}")
+                if not e:
+                    return "—" if strat != "C" or s["C"] is not None else "未到"
+                beyond = s["ext"] > e["ext"] if side == "high" else s["ext"] < e["ext"]
+                return "❌已再創新" + zh if beyond else "✅"
+            b_fired = " ✅" if fired.get(f"{kind}:{per['key']}:{side}:B") else ""
+            parts.append(f"{zh} {s['ext']:,.0f}：A {mark('A')}｜B {s['prob'] * 100:.0f}%{b_fired}｜C {mark('C')}")
+        tail = "（已結束）" if per["over"] else f"（已收市 {per['sessions_done']}／{per['sessions']} 個交易日）" if kind != "day" else ""
+        lines.append(f"{PEAK_ZH[kind]}{tail} " + "；".join(parts))
+    return lines
 
 
 def futu_range_data(symbol):
@@ -2651,6 +2984,7 @@ def futu_range_data(symbol):
         full = futu_day_forecast(completed, data["forecast"]["date"])
         if full:
             data["forecast"] = full
+    data["peak_lines"] = futu_peak_lines(symbol)                  # [R101]
     review_day = data["rows"][-1]["date"] if data["rows"] else None
     reviews = gcs_read_json(futu_review_file(symbol), [])
     data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
@@ -2666,7 +3000,13 @@ def handle_futu_range_get(req):
     if req.args.get("report"):                                   # [R99] 四個時點的預測／檢討
         symbol = _futu_text(req.args.get("symbol"), 32).upper() or FUTU_RANGE_DEFAULT
         try:
-            result = futu_report(symbol, req.args.get("report"))
+            kind = req.args.get("report")
+            if kind == "signals":                                    # [R101] 排程取未發的通知
+                result = futu_signals_report(symbol, req.args.get("ack"))
+            elif kind == "peak":
+                result = {"status": "ok", **(futu_peak_status(symbol) or {})}
+            else:
+                result = futu_report(symbol, kind)
         except StorageError as exc:
             print(f"⚠️ [Futu 報告失敗] {exc}", flush=True)
             result = {"status": "error", "reason": "storage"}
@@ -2808,7 +3148,14 @@ def build_futu_range_page(data):
     reviews = (f"<div class='section'><h2>{esc(latest['date'])} 的檢討（12:00／16:30／03:00）</h2>{review_html}"
                f"<div class='muted' style='font-size:12px;'>每個交易日 08:2x 開市前預測、12:0x、16:3x、03:1x 檢討，同時發 Telegram。</div></div>"
                if review_html else "")
-    body = nav + cards + reviews + f"""
+    peak = data.get("peak_lines") or []
+    peak_html = (f"<div class='section'><h2>{esc(peak[0])}</h2>"
+                 + "".join(f"<div class='log-line'>{esc(line)}</div>" for line in peak[1:])
+                 + "<div class='muted' style='font-size:12px; margin-top:8px;'>A：已走 ≥ 0.8 個預期波幅且回落 ≥ 0.5 個；"
+                   "B：之後再創新高（低）的機率，低於 5% 觸發；C：今日 16:30、本週第 4 個、本月第 15 個交易日收市時回落 ≥ 0.4 個預期波幅。"
+                   "任一策略第一次觸發會發 Telegram。回測見 research/hsi_futures_range/HIGH_LOW_IN_REPORT.md。</div></div>"
+                 if peak else "")
+    body = nav + cards + peak_html + reviews + f"""
     <div class='section'><h2>過去一年每日波幅（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
       {futu_range_chart(rows)}
     </div>
