@@ -1,6 +1,6 @@
 # 波動率與利率日線（IBKR）
 
-由 `scripts/ibkr_vol_export.py` 於 2026-10-03 12:17 產生。資料來自 IBKR，僅供個人研究使用。
+由 `scripts/ibkr_vol_export.py` 於 2026-10-03 12:23 產生。資料來自 IBKR，僅供個人研究使用。
 
 | 檔案 | 內容 | IB whatToShow | 起 | 迄 | 筆數 |
 |---|---|---|---|---|---|
