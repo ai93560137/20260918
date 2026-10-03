@@ -62,8 +62,22 @@ def delta_report(front, hsi_expiry):
         d = straddle_delta(front, K, FIRST_ATM.get('civ') or FIRST_ATM['iv'],
                            (exp - today).days, FIRST_ATM.get('piv'))
         if d is not None:
-            act = f" → 對沖 {abs(d * qty):.0f} 手" if abs(d * qty) > 0.5 else "（無動作）"
-            DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}")
+            # 已建倉的 MHI 期貨對沖（position.json 的 hedges：side=sell/buy、qty 手數；1 手 MHI 期貨 = Δ 1.0）
+            hedge = 0.0
+            if os.path.exists(pos_f):
+                for hd in p.get('hedges', []):
+                    hedge += (hd.get('qty', 1)) * (-1 if hd.get('side') == 'sell' else 1)
+            net = d * qty + hedge
+            if hedge:
+                if abs(net) > 0.5:
+                    side = '賣' if net > 0 else '買'
+                    act = f" → 再{side} {round(abs(net)):.0f} 手 MHI 期貨"
+                else:
+                    act = "（已對沖，無動作）"
+                DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f} 對沖 {hedge:+.0f} → 淨Δ {net:+.2f}（{K:.0f} {tag}）{act}")
+            else:
+                act = f" → 賣 1 手 MHI 期貨" if d * qty > 0.5 else (" → 買 1 手 MHI 期貨" if d * qty < -0.5 else "（無動作）")
+                DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}")
     # MES（期貨價取 ES=F 延遲價）
     fq = os.path.join(BASE, 'us_futures_quote.json')
     if not os.path.exists(fq):
