@@ -50,3 +50,31 @@
 「外部數據來源（MT5／Futu／IBKR）：見預設分支 data/external/README.md，取法用 git archive」，
 commit 並推回本分支（不要開 PR）。做完回報你加在哪個檔、哪一行。
 ```
+
+---
+
+# 通知各分支：GCP 現行程式 R96（只讀參考）
+
+要讓分支看懂 GCP 怎麼收、怎麼存外部數據時，把下面 ```text 框內整段貼到該分支的 session。
+
+```text
+【參考：GCP 現行程式 R96（只讀，不要改、不要部署）】
+
+Cloud Run 上 zhuge-risk-manager 現在跑的是 R96，原始碼在預設分支。取法（不用合併、不影響本分支）：
+  git fetch origin claude/gcp-trading-v12-rewrite-bz75t2
+  git show origin/claude/gcp-trading-v12-rewrite-bz75t2:main.py > /tmp/main_R96.py
+  grep -n "\[R9[4-6]\]" /tmp/main_R96.py        # R94–R96 新增的段落
+
+只看某一版改了什麼：
+  git show 8142dc55 -- main.py    # R94：收下 Futu 推送的行情
+  git show 4d283790 -- main.py    # R95：MT5／Futu 按日封存，多代號快照
+  git show 48c59625 -- main.py    # R96：Futu 日線抽樣只封存，不蓋即時快照
+
+重點函式：handle_futu_data、futu_archive、archive_merge、archive_mt5_bar、handle_archive_api_get。
+部署說明：預設分支的 DEPLOY.md 附錄 C、D。
+
+規矩：
+- 只讀參考。本分支不要複製 main.py 去改，也不要自己部署；要改 GCP 先問我，由預設分支統一改、統一部署。
+- 要用 GCP 收到的數據，一律讀預設分支的 data/external/（見 README.md），不要直接打 Cloud Run 網址。
+  網址和權杖不會寫進 repo。
+```
