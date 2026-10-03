@@ -204,7 +204,10 @@ Claude Code 的 Routines 可以每天固定時間開一個新工作階段執行�
 - **長期要重複做的事，一律做成使用者帳號的 cron，不要每次靠人或 AI 手動跑**。IBKR 波動率日線（VIX、TLT／IEF 隱含波動率、ZN／ZB／NQ…）
   已寫成 `gcp_ib/run_vol_daily.sh`（PR #23）：平日 UTC 22:30 增量匯出、推到**專用資料分支 `data/ibkr-vol`**（獨立資料 repo `~/ibkr-vol-data`，只含 `data/vol/`，
   與程式分支分開，取用方式：`git fetch origin data/ibkr-vol && git checkout origin/data/ibkr-vol -- data/vol`）。
-  匯出程式是固定的一份複本，不直接執行別的分支。**啟用前**要在 VM 上手動跑一次（第一次會下載完整歷史），再加 cron；尚未對真實 IB 跑過。
+  匯出程式是固定的一份複本（目前為 `364cb1eb` 版，含 QQQ／SPY／GLD 長歷史），不直接執行別的分支。
+  2026-09-29 已在 ib-data 實跑並加入 cron；一次性長歷史回補用 `VOL_EXPORT_ARGS="--backfill --only tlt qqq spy gld" bash gcp_ib/run_vol_daily.sh`。
+  排程中斷後（例如 Gateway 停擺）重跑一次 `bash ~/20260918/gcp_ib/run_vol_daily.sh` 就會自動補齊缺的日子；
+  但外匯 IV 日誌只記當天快照，**停擺期間的日子補不回來**。
 - 已知資料缺口：IBKR 取不到 **MOVE**（缺 NYBOT 指數行情訂閱），用 `tlt_iv`、`ief_iv` 搭配 `tnx` 替代；XAUUSD 由 MT5 提供，不在這條匯出裡。
 - 外匯期權每日採集（`gcp_ib/run_daily.sh`，平日 UTC 07:35，含 6E／6J）：2026-09-29 第一次執行時 6J 缺列（剩 1 天的週權當下沒有報價）；
   PR #22 已加上「某一腿拿不到 IV 就改試下一個到期日」與失敗原因日誌。若 6J 之後**每天**都缺，代表延遲行情對這些週權本來就沒有 IV，需要另外處理。
@@ -229,10 +232,20 @@ ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config
   3. 移除 claude-ops 的授權金鑰，或確定 `claudeops` 碰不到 API；
   4. 交易程式與資料採集分開（不同帳號或不同機器）。
 
+### IB Gateway 重啟後卡在「免責聲明」（2026-10-03 實際發生）
+- **症狀**：所有採集一起停（`data/ibkr-vol` 與外匯 IV 日誌不再有新日期），但 VM 還開著。2026-09-30 到 10-02 因此缺三天。
+  Gateway 重啟後停在登入後的免責聲明，沒人按「接受」就不會開 API 連線。
+- **確認**：先在 claude-ops 看 `ssh ibdata 'tail -15 /srv/ibshare/health.txt; tail -8 /srv/ibshare/ib_daily.log'`。
+- **處理**：用 VNC 到 ib-data 的 Gateway 視窗按接受。畫面上要看到 API Server `connected`、Market Data Farm 與 Historical Data Farm 都是 `ON`。
+  之後在 ib-data 以 `hengkychansinghing` 手動跑一次 `bash ~/20260918/gcp_ib/run_vol_daily.sh` 補日線。
+- **安全**：VNC 只能經 **SSH 通道連本機**（`localhost:5900`），**不要對外開 5900 埠**；用完關掉視窗並 `pkill x11vnc`，不要常駐。
+  這個步驟由使用者自己做，不要交給 claudeops（它不該碰 Gateway 畫面或帳密）。
+
 ### 常見狀況
 | 症狀 | 處理 |
 |---|---|
 | `claude: command not found`，但裝好了 | 指令要**全小寫**（手機輸入常把第一個字母變大寫）；仍找不到就 `~/.local/bin/claude --version`，再把 `~/.local/bin` 加進 `PATH` |
+| 採集突然全停、資料日期不再更新 | 多半是 Gateway 卡在免責聲明，見上一節「IB Gateway 重啟後卡在免責聲明」 |
 | 貼指令貼到錯的機器 | 貼之前看提示符：`@claude-ops`（台灣）或 `@ib-data`（香港，有 IB 帳密） |
 | 遠端桌面畫面上的文字不能複製 | 從對話複製指令貼進去；要搬檔案用 SSH 視窗上方的「上傳檔案／下載檔案」（`.ssh` 資料夾內的檔案要先複製到家目錄才能下載）。**永遠不要搬私鑰** |
 | 雲端環境連不到 `*.run.app` | 環境設定 → Network access → **Custom**，Allowed domains 加 `*.run.app`，並勾選「Also include default list of common package managers」 |
