@@ -134,6 +134,54 @@ check("八頁導覽列不變（站內頁另有一致性檢查）", "futu_range" 
 e = client.get("/?view=futu_range&symbol=<script>").get_data(as_text=True)
 check("代號會跳脫", "<script>" not in e)
 
+print("\n=== R98：HAR 波幅預測 ===")
+import random as _rnd
+_rnd.seed(7)
+def noisy(n, start="2025-01-02"):
+    out, d, c = [], date.fromisoformat(start), 24000.0
+    while len(out) < n:
+        if d.weekday() < 5:
+            rng = abs(_rnd.gauss(400, 120)) + 50
+            lo = c - rng * _rnd.random(); out.append({"time_key": f"{d} 00:00:00", "open": c, "high": lo + rng,
+                                                      "low": lo, "close": lo + rng * _rnd.random(), "volume": 1})
+            c = out[-1]["close"]
+        d += timedelta(days=1)
+    return out
+rows = main.futu_range_rows(noisy(120))
+har = main.har_forecasts(rows)
+check("不足 60 天不預測", main.har_forecasts(rows[:50]) == {})
+check("60 天後每天都有預測，下一天也有", 100 in har and len(rows) in har and 30 not in har, sorted(har)[:3])
+check("區間包住預測", all(lo < f < hi for f, lo, hi in har.values()))
+changed = [dict(r) for r in rows]; changed[110] = dict(changed[110], range_pct=changed[110]["range_pct"] * 5)
+har2 = main.har_forecasts(changed)
+check("逐日前推：改第 110 天不影響之前的預測", all(har[t] == har2[t] for t in har if t <= 110)
+      and har[111] != har2[111])
+check("last_n 只算最後幾天、結果一樣", main.har_forecasts(rows, last_n=5) == {t: v for t, v in har.items() if t >= len(rows) - 4})
+z = [dict(r) for r in rows]; z[80] = dict(z[80], range_pct=0.0, range=0.0)
+check("波幅 0 的日子略過、不出錯", len(rows) in main.har_forecasts(z))
+st = main.futu_range_stats(noisy(120), "2026-01-01")
+check("統計帶預測與回測", st["forecast"] and st["forecast"]["date"] == "next" and st["backtest"]["days"] > 0
+      and 0 <= st["backtest"]["coverage_80"] <= 100, st["backtest"])
+
+FAKE.clear()
+today = main.futu_session_today()
+hist = noisy(100, "2025-12-01")
+hist = [b for b in hist if b["time_key"][:10] < today][-90:]
+client.post("/", json=packet(hist))
+fk = main.futu_forecast_file("HK.HSI_FRONT")
+check("回補舊日子不寫實時紀錄", fk not in FAKE)
+live = [{"time_key": f"{today} 00:00:00", "open": 24000, "high": 24100, "low": 23950, "close": 24050, "volume": 5}]
+client.post("/", json=packet(live))
+log1 = json.loads(FAKE[fk][0])
+check("當天第一包交易日 K 寫入預測", len(log1) == 1 and log1[0]["date"] == today and log1[0]["lo"] < log1[0]["range"] < log1[0]["hi"], log1)
+client.post("/", json=packet([dict(live[0], high=26000)]))
+check("同一天不重寫（記錄不因之後的數據改變）", json.loads(FAKE[fk][0]) == log1)
+j = client.get("/?view=futu_range&format=json").get_json()
+check("頁面用已記錄的預測", j["forecast"]["logged"] and j["forecast"]["range"] == log1[0]["range"], j.get("forecast"))
+h = client.get("/?view=futu_range").get_data(as_text=True)
+check("頁面有預測卡、準確度卡、預測欄與預測線", "預測波幅（HAR）" in h and "預測準確度" in h and "HAR 預測</th>" in h
+      and "stroke-dasharray" in h)
+
 from datetime import datetime as _dt, timezone as _tz
 check("交易日：香港 08:59 算前一天、09:00 起算當天",
       main.futu_session_today(_dt(2026, 10, 6, 0, 59, tzinfo=_tz.utc)) == "2026-10-05"     # 香港 08:59

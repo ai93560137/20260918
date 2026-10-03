@@ -20,6 +20,7 @@ spec = importlib.util.spec_from_file_location(
     "push_to_gcp", Path(__file__).resolve().parent.parent / "futu" / "push_to_gcp.py")
 push = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(push)
+push.BACKFILL_PACE_SEC = 0                       # 測試不用等
 
 OK = FAIL = 0
 def check(name, cond, extra=""):

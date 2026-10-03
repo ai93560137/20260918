@@ -45,7 +45,8 @@
   實際合約代號記在快照的 source（futu_opend:HK.HSI2610）。期貨不取期權（恒指期權看 HK.800000）。
 
 [v7] 補一年歷史（給 GCP 的 ?view=futu_range 波幅頁，main.py R97 起）：
-  python push_to_gcp.py --backfill HK.HSI_FRONT        # 預設回補 380 天，可加天數：--backfill HK.HSI_FRONT 500
+  python push_to_gcp.py --backfill HK.HSI_FRONT        # 預設回補 380 天，可加天數：--backfill HK.HSI_FRONT 1100
+  每次向 Futu 取資料之間停 0.6 秒，避開頻率限制；補三年約需兩三分鐘。
   逐月取每張合約的歷史 60 分 K，合成交易日 K（09:00 至翌日 09:00），按同一條規則接起來：
   每張合約只取「上一張的最後交易日」到「自己最後交易日的前一天」；
   最後交易日用港股交易日曆推算（該月倒數第二個交易日）。過期合約 Futu 拿不到時，那一段改用 Futu 主連
@@ -97,6 +98,7 @@ FRONT_5M_COUNT = 300                                  # [v7] 即月期貨每輪�
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 BACKFILL_DAYS = 380
 BACKFILL_CHUNK = 15                                   # 每包日 K 根數（GCP 每天一個封存檔，包小一點才不逾時）
+BACKFILL_PACE_SEC = 0.6                               # 回補時每次向 Futu 取歷史／交易日曆之間的間隔（避開頻率限制）
 SUBS_USED = len(SYMBOLS)
 DAILY_BATCH = max(5, min(100 - SUBS_USED - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
 DAILY_ANCHORS = ["HK.800000", "US.SPY", "US.QQQ"]
@@ -507,6 +509,7 @@ class FutuPusher:
     # ---- [v7] 補一年即月期貨日 K -----------------------------------------
     def history_sessions(self, code, start, end):
         """歷史 60 分 K → 交易日 K。end 要多含一天，才拿得到最後一晚 00:00–03:00 的夜市。"""
+        time.sleep(BACKFILL_PACE_SEC)
         ret, df, _ = self.ctx.request_history_kline(code, start=start, end=end, ktype=ft.KLType.K_60M,
                                                     max_count=None)
         if ret != ft.RET_OK:
@@ -529,6 +532,7 @@ class FutuPusher:
         def last_trade_of(year, month):
             if (year, month) not in cache:
                 try:
+                    time.sleep(BACKFILL_PACE_SEC)
                     cache[(year, month)] = self.last_trading_day_before_month_end(year, month)
                 except Exception as exc:               # 日曆查不到（太久以前）→ 用平日近似，並記下
                     cache[(year, month)] = second_last_weekday(year, month)
