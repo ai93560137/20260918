@@ -149,5 +149,49 @@ pusher.ctx = FakeCtx([("HK.HSImain", "")])
 ok, sent = run(pusher, "2026-10-03")
 check("找不到合約 → 這一輪失敗、不推送", ok is False and sent == [])
 
+print("=== [v7] 補一年歷史 ===")
+from datetime import date as _date, timedelta as _td
+WEEKDAYS = [(_date(2026, 7, 1) + _td(days=i)).isoformat() for i in range(0, 100)
+            if (_date(2026, 7, 1) + _td(days=i)).weekday() < 5]
+
+
+class HistCtx(FakeCtx):
+    def request_history_kline(self, code, start, end, ktype, max_count=None):
+        self.hist = getattr(self, "hist", []) + [code]
+        if code == "HK.HSI2608":
+            return ft.RET_ERROR, "no data for expired", None
+        base = {"HK.HSImain": 30000, "HK.HSI2609": 26000, "HK.HSI2610": 24000}[code]
+        days = [d for d in WEEKDAYS if start <= d <= min(end, "2026-10-05")]   # 最新一根是下個交易日（夜市）
+        return ft.RET_OK, kline(code, [f"{d} 00:00:00" for d in days], base), None
+
+
+check("平日近似最後交易日", push.second_last_weekday(2026, 8) == "2026-08-28"
+      and push.second_last_weekday(2026, 10) == "2026-10-29")
+segs = push.backfill_segments("HSI", [(2026, 8), (2026, 9), (2026, 10)], push.second_last_weekday,
+                              ("HK.HSI2610", "2026-10-29"))
+check("每張合約管上一張最後交易日到自己最後交易日",
+      segs == [("HK.HSI2608", "2026-07-30", "2026-08-28"), ("HK.HSI2609", "2026-08-28", "2026-09-29"),
+               ("HK.HSI2610", "2026-09-29", "2026-10-29")], segs)
+
+pusher = push.FutuPusher()
+pusher.ctx = HistCtx(LISTING, trading_days=WEEKDAYS)
+push.datetime = type("DT", (), {"now": staticmethod(Clock("2026-10-04").now),
+                                "fromisoformat": staticmethod(datetime.fromisoformat)})
+sent = []
+pusher.post = lambda packet, quiet=False: sent.append(packet) or True
+ok = pusher.backfill_front("HK.HSI_FRONT", 40)
+rows = [(b["time_key"][:10], p["source"]) for p in sent for b in p["data"]]
+dates = [d for d, _ in rows]
+src = dict(rows)
+check("回補成功、全部是日 K、固定代號", ok and sent and all(p["kline_type"] == "K_DAY" and p["symbol"] == "HK.HSI_FRONT"
+                                            for p in sent), len(sent))
+check("日期不重複、由 40 天前到最新", len(dates) == len(set(dates)) and dates[0] == "2026-08-25"
+      and dates[-1] == "2026-10-05", (dates[:2], dates[-2:]))
+check("轉月邊界正確（最後交易日當天屬下一張）",
+      src["2026-08-27"].endswith("HK.HSImain(代2608)") and src["2026-08-28"] == "futu_opend:HK.HSI2609"
+      and src["2026-09-28"] == "futu_opend:HK.HSI2609" and src["2026-09-29"] == "futu_opend:HK.HSI2610", src)
+check("過期合約拿不到 → 用主連代替該段", "HK.HSImain" in pusher.ctx.hist)
+check("每包不超過 15 根、同一包只有一張合約", all(len(p["data"]) <= push.BACKFILL_CHUNK for p in sent))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

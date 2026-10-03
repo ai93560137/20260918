@@ -55,6 +55,9 @@
 #     Futu 支援多代號（futu/snapshots/<代號>.json，?view=futu&format=json&symbol=）。
 #   * 2026-09-27 — [R96] kline_type=K_DAY 的封包（本地腳本 v4 的每日日線抽樣，給數據
 #     品質比對用）只按日封存，不覆蓋控制台與 ?view=futu 的即時快照。
+#   * 2026-10-04 — [R97] 即月期貨（代號以 _FRONT 結尾，例 HK.HSI_FRONT）的日 K 另外合併成
+#     一條序列 futu/daily/<代號>.json；新頁面 ?view=futu_range（&symbol=，預設 HK.HSI_FRONT）
+#     顯示過去一年每日波幅與最新 OHLC，&format=json 讀數據。只存、只顯示，不影響下單。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2066,6 +2069,8 @@ def handle_futu_data(payload):
         log_event(f"⚠️ [Futu 行情寫入失敗] {exc}", severity="ERROR", component="futu")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
     warnings.extend(futu_archive(snapshot))
+    if daily and symbol.endswith(FUTU_SERIES_SUFFIX):
+        warnings.extend(futu_daily_merge(symbol, bars, snapshot["source"]))
 
     log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
               f"收 {fmt_num(latest.get('close'))}）期權 {len(options)} 檔（IV 有值 {len(ivs)}）",
@@ -2118,6 +2123,219 @@ def futu_age_sec(snap, now=None):
     return None if received is None else max(0.0, (now or now_ts()) - received)
 
 
+# =============================================================================
+# 📏 即月期貨日線序列與波幅頁  [R97]
+# =============================================================================
+FUTU_DAILY_DIR = "futu/daily"
+FUTU_SERIES_SUFFIX = "_FRONT"                    # 本地腳本 v6 的即月期貨別名
+FUTU_DAILY_KEEP = 800                            # 約三年交易日
+FUTU_RANGE_DEFAULT = "HK.HSI_FRONT"
+HK_TZ = ZoneInfo("Asia/Hong_Kong")
+
+
+def futu_daily_file(symbol):
+    return f"{FUTU_DAILY_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def futu_daily_merge(symbol, bars, source):
+    """日 K 依日期合併進 futu/daily/<代號>.json（後到的蓋掉同一天）。回傳警告清單。"""
+    rows = [{**bar, "time_key": bar["time_key"][:10], "source": source}
+            for bar in bars if ARCHIVE_DATE_RE.match(bar["time_key"][:10])]
+    if not rows:
+        return []
+
+    def mutate(existing):
+        merged = {row.get("time_key"): row for row in (existing if isinstance(existing, list) else [])
+                  if isinstance(row, dict)}
+        before = dict(merged)
+        merged.update({row["time_key"]: row for row in rows})
+        if merged == before:
+            return None, len(merged)
+        ordered = [merged[key] for key in sorted(merged)][-FUTU_DAILY_KEEP:]
+        return ordered, len(ordered)
+
+    try:
+        gcs_update(futu_daily_file(symbol), mutate, default_factory=list)
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [Futu 日線序列寫入失敗] {exc}", severity="WARNING", component="futu")
+        return ["日線序列寫入失敗（按日封存已存，下一次推送會補）"]
+
+
+def futu_range_stats(bars, today):
+    """日 K（已排序）→ 每天的波幅與過去一年的統計。today：香港日期 YYYY-MM-DD。
+    波幅 = 高 − 低；真實波幅 TR = max(高, 昨收) − min(低, 昨收)；波幅% = 波幅 ÷ 昨收。
+    日期 ≥ today 的最後一根視為未收市（Futu 期貨日 K 含前一晚夜市），不進平均。"""
+    since = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=365)).strftime("%Y-%m-%d")
+    rows, prev_close = [], None
+    for bar in bars:
+        o, h, l, c = (to_float(bar.get(k)) for k in ("open", "high", "low", "close"))
+        day = str(bar.get("time_key", ""))[:10]
+        if None in (o, h, l, c) or not ARCHIVE_DATE_RE.match(day):
+            continue
+        rng = h - l
+        tr = max(h, prev_close) - min(l, prev_close) if prev_close else rng
+        rows.append({"date": day, "open": o, "high": h, "low": l, "close": c,
+                     "volume": to_float(bar.get("volume")), "source": bar.get("source") or "",
+                     "range": round(rng, 2), "true_range": round(tr, 2),
+                     "range_pct": round(rng / prev_close * 100, 3) if prev_close else None,
+                     "change": round(c - prev_close, 2) if prev_close else None})
+        prev_close = c
+    rows = [row for row in rows if row["date"] >= since]
+    partial = bool(rows) and rows[-1]["date"] >= today
+    done = rows[:-1] if partial else rows
+    ranges = sorted(row["range"] for row in done)
+
+    def avg(values):
+        return round(sum(values) / len(values), 2) if values else None
+
+    last = done[-1] if done else None
+    summary = {
+        "days": len(done),
+        "first_date": done[0]["date"] if done else None,
+        "last_date": last["date"] if last else None,
+        "avg_range": avg(ranges),
+        "median_range": (ranges[len(ranges) // 2] if len(ranges) % 2 else
+                         round((ranges[len(ranges) // 2 - 1] + ranges[len(ranges) // 2]) / 2, 2)) if ranges else None,
+        "avg_range_20": avg([row["range"] for row in done[-20:]]),
+        "atr_14": avg([row["true_range"] for row in done[-14:]]),
+        "avg_range_pct": avg([row["range_pct"] for row in done if row["range_pct"] is not None]),
+        "max_range": max(done, key=lambda row: row["range"]) if done else None,
+        "min_range": min(done, key=lambda row: row["range"]) if done else None,
+        "year_high": max((row["high"] for row in done), default=None),
+        "year_low": min((row["low"] for row in done), default=None),
+        "last_range_percentile": (round(sum(1 for r in ranges if r <= last["range"]) / len(ranges) * 100)
+                                  if last and ranges else None),
+    }
+    return {"rows": rows, "partial": partial, "summary": summary}
+
+
+def futu_range_data(symbol):
+    symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
+    bars = gcs_read_json(futu_daily_file(symbol), [])
+    bars = sorted((b for b in bars if isinstance(b, dict)), key=lambda b: str(b.get("time_key", "")))
+    today = datetime.now(HK_TZ).strftime("%Y-%m-%d")
+    data = futu_range_stats(bars, today)
+    snap = read_futu_snapshot(symbol)
+    five = (snap.get("bars") or [{}])[-1] if isinstance(snap, dict) and not snap.get("error") else {}
+    age = futu_age_sec(snap) if snap and not snap.get("error") else None
+    data.update({"symbol": symbol, "today_hk": today,
+                 "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
+                 "latest_5m": five or None,
+                 "latest_5m_age_sec": None if age is None else int(age)})
+    return data
+
+
+def handle_futu_range_get(req):
+    try:
+        data = futu_range_data(req.args.get("symbol"))
+    except StorageError as exc:
+        print(f"⚠️ [Futu 波幅讀取失敗] {exc}", flush=True)
+        if req.args.get("format") == "json":
+            return _json_response({"status": "error", "message": "storage read failed"}, 503)
+        return html_page("即月期貨波幅", "<div class='banner' style='background:#fff3cd; color:#856404;'>"
+                                         "⚠️ 讀取失敗，請查看 Cloud Logging。</div>"), 503
+    if req.args.get("format") == "json":
+        return _json_response({"status": "ok" if data["rows"] else "empty", **data}, 200)
+    return build_futu_range_page(data)
+
+
+def futu_range_chart(rows):
+    """每日波幅柱狀圖＋20 日平均線（單一 y 軸），每根柱有原生提示框。"""
+    if len(rows) < 2:
+        return ""
+    w, h, pad_l, pad_b, pad_t = 1000, 260, 52, 26, 12
+    top = max(row["range"] for row in rows) * 1.08 or 1
+    step = (w - pad_l - 8) / len(rows)
+    bar_w = max(1.0, step - 2)                   # 柱間留 2px 空隙
+    y = lambda v: pad_t + (h - pad_t - pad_b) * (1 - v / top)
+    ticks = [top / 4 * i for i in range(5)]
+    grid = "".join(f"<line x1='{pad_l}' x2='{w - 8}' y1='{y(t):.1f}' y2='{y(t):.1f}' stroke='#e9ecef'/>"
+                   f"<text x='{pad_l - 6}' y='{y(t) + 4:.1f}' text-anchor='end' font-size='11' fill='#6c757d'>{t:,.0f}</text>"
+                   for t in ticks)
+    bars, avg_pts = [], []
+    for i, row in enumerate(rows):
+        x = pad_l + i * step + 1
+        top_y = y(row["range"])
+        pct = "—" if row["range_pct"] is None else f"{row['range_pct']:.2f}%"
+        bars.append(f"<rect x='{x:.1f}' y='{top_y:.1f}' width='{bar_w:.1f}' height='{max(0.5, h - pad_b - top_y):.1f}' "
+                    f"rx='{min(2.0, bar_w / 2):.1f}' fill='#4f83cc'><title>{esc(row['date'])}  波幅 {row['range']:,.0f}（{pct}）"
+                    f"\n開 {row['open']:,.0f}  高 {row['high']:,.0f}  低 {row['low']:,.0f}  收 {row['close']:,.0f}</title></rect>")
+        window = [r["range"] for r in rows[max(0, i - 19):i + 1]]
+        if len(window) == 20:
+            avg_pts.append(f"{x + bar_w / 2:.1f},{y(sum(window) / 20):.1f}")
+    line = (f"<polyline points='{' '.join(avg_pts)}' fill='none' stroke='#161616' stroke-width='2'/>"
+            if len(avg_pts) > 1 else "")
+    months, labels = set(), []
+    for i, row in enumerate(rows):
+        if row["date"][:7] not in months:
+            months.add(row["date"][:7])
+            if i and pad_l + i * step < w - 40:          # 太靠右邊的月份標籤會被切掉，略過
+                labels.append(f"<text x='{pad_l + i * step:.1f}' y='{h - 8}' font-size='11' fill='#6c757d'>{row['date'][2:7]}</text>")
+    legend = ("<div style='display:flex; gap:16px; font-size:12px; color:#6c757d; margin-bottom:6px;'>"
+              "<span><span style='display:inline-block; width:10px; height:10px; background:#4f83cc; border-radius:2px;'></span> 每日波幅（高−低）</span>"
+              "<span><span style='display:inline-block; width:14px; height:2px; background:#161616; vertical-align:middle;'></span> 20 日平均</span></div>")
+    return (f"{legend}<svg viewBox='0 0 {w} {h}' style='width:100%; height:auto;' role='img' "
+            f"aria-label='過去一年每日波幅柱狀圖'>{grid}{''.join(bars)}{line}{''.join(labels)}</svg>")
+
+
+def build_futu_range_page(data):
+    rows, s, symbol = data["rows"], data["summary"], data["symbol"]
+    nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
+           f"<h1 class='page-title'>📏 即月期貨波幅（{esc(symbol)}）</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
+    if not rows:
+        body = nav + ("<div class='section'>還沒有日 K 數據。本地執行 push_to_gcp.py（v7）的 "
+                      f"<span class='mono'>--backfill {esc(symbol)}</span> 補一年歷史，之後每 5 分鐘會自動更新。</div>")
+        return html_page("即月期貨波幅", body)
+    latest = rows[-1]
+    five = data.get("latest_5m") or {}
+    age = data.get("latest_5m_age_sec")
+    stale = age is None or age > FUTU_STALE_SEC
+    status = ("<span class='neg'>⚠️ 推送可能已停止</span>" if stale
+              else f"<span class='pos'>{esc(countdown_text(age))} 前更新</span>")
+    tag = "（進行中，含前一晚夜市）" if data["partial"] else "（已收市）"
+    pct = lambda v: "—" if v is None else f"{v:.2f}%"
+    cards = f"""
+    <div class='grid'>
+      <div class='card'><div class='card-title'>最新日 K {esc(latest['date'])}{tag}</div>
+        <div class='card-small'>開 {fmt_num(latest['open'], '{:,.0f}')}　高 {fmt_num(latest['high'], '{:,.0f}')}<br>低 {fmt_num(latest['low'], '{:,.0f}')}　收 {fmt_num(latest['close'], '{:,.0f}')}</div>
+        <div class='card-desc'>波幅 {fmt_num(latest['range'], '{:,.0f}')}（{pct(latest['range_pct'])}）・合約 {esc(data.get('contract') or '—')}</div></div>
+      <div class='card'><div class='card-title'>最新 5 分 K（香港時間）</div><div class='card-value'>{fmt_num(five.get('close'), '{:,.0f}')}</div>
+        <div class='card-desc'>{esc(five.get('time_key', '—'))}・{status}</div></div>
+      <div class='card'><div class='card-title'>一年平均波幅</div><div class='card-value'>{fmt_num(s['avg_range'], '{:,.0f}')}</div>
+        <div class='card-desc'>中位數 {fmt_num(s['median_range'], '{:,.0f}')}・平均 {pct(s['avg_range_pct'])}</div></div>
+      <div class='card'><div class='card-title'>近 20 日平均波幅</div><div class='card-value'>{fmt_num(s['avg_range_20'], '{:,.0f}')}</div>
+        <div class='card-desc'>ATR(14) {fmt_num(s['atr_14'], '{:,.0f}')}</div></div>
+      <div class='card'><div class='card-title'>{esc(s['last_date'] or '—')} 波幅在一年中的位置</div><div class='card-value'>{'—' if s['last_range_percentile'] is None else str(s['last_range_percentile']) + '%'}</div>
+        <div class='card-desc'>≤ 這個波幅的日子佔比</div></div>
+      <div class='card'><div class='card-title'>一年最大／最小波幅</div>
+        <div class='card-small'>{fmt_num((s['max_range'] or {}).get('range'), '{:,.0f}')}（{esc((s['max_range'] or {}).get('date', '—'))}）<br>{fmt_num((s['min_range'] or {}).get('range'), '{:,.0f}')}（{esc((s['min_range'] or {}).get('date', '—'))}）</div>
+        <div class='card-desc'>一年高 {fmt_num(s['year_high'], '{:,.0f}')}・低 {fmt_num(s['year_low'], '{:,.0f}')}</div></div>
+    </div>"""
+    table_rows = "".join(
+        f"<tr><td>{esc(r['date'])}</td><td>{fmt_num(r['open'], '{:,.0f}')}</td><td>{fmt_num(r['high'], '{:,.0f}')}</td>"
+        f"<td>{fmt_num(r['low'], '{:,.0f}')}</td><td>{fmt_num(r['close'], '{:,.0f}')}</td>"
+        f"<td class='{pnl_class(r['change'])}'>{fmt_num(r['change'], '{:+,.0f}')}</td>"
+        f"<td><b>{fmt_num(r['range'], '{:,.0f}')}</b></td><td>{pct(r['range_pct'])}</td>"
+        f"<td>{fmt_num(r['true_range'], '{:,.0f}')}</td><td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
+        for r in reversed(rows))
+    body = nav + cards + f"""
+    <div class='section'><h2>過去一年每日波幅（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
+      {futu_range_chart(rows)}
+    </div>
+    <div class='section'><h2>每日 OHLC 與波幅</h2>
+      <div class='scroll' style='max-height:520px;'><table>
+        <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>真實波幅</th><th>合約</th></tr>
+        {table_rows}</table></div>
+      <div class='muted' style='font-size:12px; margin-top:10px; line-height:1.6;'>
+        即月期貨：最後交易日當天轉下月（本地腳本 v6 起），不做價差調整，轉月日會有跳空。
+        Futu 的期貨日 K 按交易日計，包含前一晚 17:15 起的夜市。波幅 = 高 − 低；波幅% = 波幅 ÷ 昨收；
+        真實波幅 = max(高, 昨收) − min(低, 昨收)。未收市的一根不計入平均。
+        只存、只顯示，不進電閘、不影響下單。原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></div>
+    </div>"""
+    return html_page(f"即月期貨波幅 {symbol}", body)
+
+
 def handle_futu_api_get(symbol=None):
     snap = read_futu_snapshot(_futu_text(symbol, 32).upper() or None)
     if snap.get("error"):
@@ -2164,7 +2382,7 @@ def futu_dashboard_html():
       <div class='card'><div class='card-title'>期權</div><div class='card-small'>{len(snap.get('options') or [])} 檔</div></div>
     </div>
     <div class='section' style='margin-bottom:24px;'>{table}
-      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a></div>
+      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a>・<a href='?view=futu_range'>📏 恒指即月期貨一年波幅</a></div>
     </div>"""
 
 
@@ -4919,6 +5137,8 @@ def handle_get(req):
         return handle_futu_api_get(req.args.get("symbol"))
     if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取
         return handle_archive_api_get(req)
+    if view in ("futu_range", "hsi_range"):                      # [R97] 即月期貨一年波幅與最新 OHLC
+        return handle_futu_range_get(req)
     if view == "info":
         return build_info_page()
     if view == "reset":

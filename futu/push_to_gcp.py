@@ -43,6 +43,12 @@
   實際合約代號記在快照的 source（futu_opend:HK.HSI2610）。期貨不取期權（恒指期權看 HK.800000）。
   日期以 Futu 的 time_key（香港時間）為準；夜市 17:15 後的 5 分 K 算當天日期。
 
+[v7] 補一年歷史（給 GCP 的 ?view=futu_range 波幅頁，main.py R97 起）：
+  python push_to_gcp.py --backfill HK.HSI_FRONT        # 預設回補 380 天，可加天數：--backfill HK.HSI_FRONT 500
+  逐月取每張合約的歷史日 K，按同一條規則接起來：每張合約只取「上一張的最後交易日」到「自己最後交易日的前一天」；
+  最後交易日用港股交易日曆推算（該月倒數第二個交易日）。過期合約 Futu 拿不到時，那一段改用 Futu 主連
+  （HK.HSImain）代替，並在合約欄註明。每張合約佔一個「30 天內歷史 K 線」額度（共約 14 個，上限 100）。
+
 執行：
   python push_to_gcp.py                  # 常駐
   python push_to_gcp.py --once           # 只推一次，用來測試
@@ -61,7 +67,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "6"
+SCRIPT_VERSION = "7"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -85,6 +91,8 @@ DAILY_BARS = max(5, min(100, int(os.environ.get("FUTU_DAILY_BARS", "20"))))
 DAILY_MAX = max(1, min(1000, int(os.environ.get("FUTU_DAILY_MAX", "60"))))
 FRONT_RE = re.compile(r"^HK\.([A-Z]{2,4})_FRONT$")   # [v6] 即月期貨別名，例 HK.HSI_FRONT
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+BACKFILL_DAYS = 380
+BACKFILL_CHUNK = 15                                   # 每包日 K 根數（GCP 每天一個封存檔，包小一點才不逾時）
 SUBS_USED = len(SYMBOLS) + sum(1 for x in SYMBOLS if FRONT_RE.match(x))   # 即月期貨多訂一個日 K
 DAILY_BATCH = max(5, min(100 - SUBS_USED - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
 DAILY_ANCHORS = ["HK.800000", "US.SPY", "US.QQQ"]
@@ -139,6 +147,34 @@ def prev_month(code, back=1):
     """HK.HSI2610 → (2026, 9)：上一個月份合約的年月；back=0 → 合約本身的年月。"""
     year, month = 2000 + int(code[-4:-2]), int(code[-2:]) - back
     return (year, month) if month >= 1 else (year - 1, month + 12)
+
+
+def month_add(year, month, n):
+    month += n
+    return year + (month - 1) // 12, (month - 1) % 12 + 1
+
+
+def second_last_weekday(year, month):
+    """交易日曆拿不到時的近似：該月倒數第二個週一至五（不扣公眾假期）。"""
+    day = date(*month_add(year, month, 1), 1) - timedelta(days=1)
+    found = []
+    while len(found) < 2:
+        if day.weekday() < 5:
+            found.append(day)
+        day -= timedelta(days=1)
+    return found[1].isoformat()
+
+
+def backfill_segments(product, months, last_trade_of, front):
+    """months：[(年, 月)] 由舊到新，最後一個是即月合約的月份；last_trade_of(年, 月) → 最後交易日。
+    front：(代號, 即月最後交易日)。回 [(代號, 起日含, 止日不含)]：每張合約管「上一張最後交易日」到「自己最後交易日」。"""
+    segments = []
+    for year, month in months:
+        code = f"HK.{product}{year % 100:02d}{month:02d}"
+        start = last_trade_of(*month_add(year, month, -1))
+        end = front[1] if code == front[0] else last_trade_of(year, month)
+        segments.append((code, start, end))
+    return segments
 
 
 def bars_from_df(df):
@@ -422,6 +458,75 @@ class FutuPusher:
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, quiet=True) and ok
         return ok
 
+    # ---- [v7] 補一年即月期貨日 K -----------------------------------------
+    def history_daily(self, code, start, end):
+        ret, df, _ = self.ctx.request_history_kline(code, start=start, end=end, ktype=ft.KLType.K_DAY,
+                                                    max_count=None)
+        if ret != ft.RET_OK:
+            raise RuntimeError(str(df)[:120])
+        return bars_from_df(df.sort_values("time_key")) if not df.empty else []
+
+    def backfill_front(self, alias, days=BACKFILL_DAYS):
+        self.connect()
+        info = self.resolve_front(alias)
+        product = FRONT_RE.match(alias).group(1)
+        today = datetime.now(HK_TZ).date()
+        first = today - timedelta(days=days)
+        fy, fm = prev_month(info["code"], 0)
+        months, (y, m) = [], (first.year, first.month)
+        while (y, m) <= (fy, fm):
+            months.append((y, m))
+            y, m = month_add(y, m, 1)
+        cache, notes = {}, []
+
+        def last_trade_of(year, month):
+            if (year, month) not in cache:
+                try:
+                    cache[(year, month)] = self.last_trading_day_before_month_end(year, month)
+                except Exception as exc:               # 日曆查不到（太久以前）→ 用平日近似，並記下
+                    cache[(year, month)] = second_last_weekday(year, month)
+                    notes.append(f"{year}-{month:02d} 交易日曆查不到（{str(exc)[:40]}），最後交易日用平日近似")
+            return cache[(year, month)]
+
+        segments = backfill_segments(product, months, last_trade_of, (info["code"], info["last_trade"]))
+        far_end = (today + timedelta(days=10)).isoformat()
+        all_bars = []
+        for code, seg_start, seg_end in segments:
+            source = f"futu_opend:{code}"
+            try:
+                bars = self.history_daily(code, seg_start, far_end if code == info["code"] else seg_end)
+            except Exception as exc:
+                bars, err = [], exc
+            else:
+                err = None if bars else "沒有數據"
+            if err:                                    # 過期合約拿不到 → 這一段用主連代替
+                try:
+                    bars = self.history_daily(f"HK.{product}main", seg_start, seg_end)
+                    source = f"futu_opend:HK.{product}main(代{code[-4:]})"
+                    notes.append(f"{code} 拿不到（{str(err)[:40]}），用主連代替")
+                except Exception as exc:
+                    notes.append(f"{code} 與主連都拿不到：{str(exc)[:60]}")
+                    bars = []
+            keep = [b for b in bars if seg_start <= b["time_key"][:10]
+                    and (code == info["code"] or b["time_key"][:10] < seg_end)]
+            log(f"  {code}：{seg_start} 至 {seg_end if code != info['code'] else '今天'}，{len(keep)} 根"
+                + ("（主連代替）" if "main" in source else ""))
+            all_bars.extend((b, source) for b in keep)
+        all_bars = [x for x in all_bars if x[0]["time_key"][:10] >= first.isoformat()]
+        ok = 0
+        for i in range(0, len(all_bars), BACKFILL_CHUNK):
+            chunk = all_bars[i:i + BACKFILL_CHUNK]
+            for source in dict.fromkeys(src for _, src in chunk):      # 同一包只放同一張合約
+                bars = [b for b, src in chunk if src == source]
+                if self.post({"action": "futu_data", "token": TOKEN, "source": source[:32],
+                              "script_version": SCRIPT_VERSION, "symbol": alias, "kline_type": "K_DAY",
+                              "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                              "data": bars, "options": []}, quiet=True):
+                    ok += len(bars)
+        log(f"📚 {alias} 回補完成：推送 {ok}／{len(all_bars)} 根日 K"
+            + (f"；{'；'.join(notes)}" if notes else ""))
+        return ok == len(all_bars) and bool(all_bars)
+
     def run_symbol(self, symbol):
         if FRONT_RE.match(symbol):
             return self.run_front(symbol)
@@ -518,6 +623,23 @@ def futures(product):
 
 
 def main():
+    if "--backfill" in sys.argv[1:]:
+        idx = sys.argv.index("--backfill")
+        args = sys.argv[idx + 1:idx + 3]
+        alias = (args[0] if args else "HK.HSI_FRONT").upper()
+        days = int(args[1]) if len(args) > 1 and args[1].isdigit() else BACKFILL_DAYS
+        if not FRONT_RE.match(alias):
+            print("--backfill 只接受即月期貨別名，例如 HK.HSI_FRONT", file=sys.stderr)
+            return 2
+        if not GCP_URL or not TOKEN:
+            print("請先設定環境變數 ZHUGE_GCP_URL 與 WEBHOOK_SECRET_TOKEN（見檔案開頭說明）。", file=sys.stderr)
+            return 2
+        pusher = FutuPusher()
+        log(f"📚 回補 {alias} 過去 {days} 天的日 K（v{SCRIPT_VERSION}）→ {GCP_URL}")
+        try:
+            return 0 if pusher.backfill_front(alias, days) else 1
+        finally:
+            pusher.close()
     if "--futures" in sys.argv[1:]:
         idx = sys.argv.index("--futures")
         return futures(sys.argv[idx + 1] if idx + 1 < len(sys.argv) else "HSI")
