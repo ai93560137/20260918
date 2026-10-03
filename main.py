@@ -55,9 +55,11 @@
 #     Futu 支援多代號（futu/snapshots/<代號>.json，?view=futu&format=json&symbol=）。
 #   * 2026-09-27 — [R96] kline_type=K_DAY 的封包（本地腳本 v4 的每日日線抽樣，給數據
 #     品質比對用）只按日封存，不覆蓋控制台與 ?view=futu 的即時快照。
-#   * 2026-10-04 — [R97] 即月期貨（代號以 _FRONT 結尾，例 HK.HSI_FRONT）的日 K 另外合併成
-#     一條序列 futu/daily/<代號>.json；新頁面 ?view=futu_range（&symbol=，預設 HK.HSI_FRONT）
-#     顯示過去一年每日波幅與最新 OHLC，&format=json 讀數據。只存、只顯示，不影響下單。
+#   * 2026-10-04 — [R97] 即月期貨（代號以 _FRONT 結尾，例 HK.HSI_FRONT）的「交易日 K」
+#     （kline_type=K_SESSION，本地腳本 v7 合成：09:00 至翌日 09:00，日市＋當晚夜市算同一天）
+#     按日封存並合併成一條序列 futu/daily/<代號>.json，不覆蓋即時快照；新頁面 ?view=futu_range
+#     （&symbol=，預設 HK.HSI_FRONT）顯示過去一年每日波幅與最新 OHLC，&format=json 讀數據。
+#     只存、只顯示，不影響下單。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2059,7 +2061,7 @@ def handle_futu_data(payload):
         "options": options,
         "warnings": warnings,
     }
-    daily = snapshot["kline_type"].upper() == "K_DAY"   # [R96] 日線抽樣只封存，不蓋掉控制台的即時快照
+    daily = snapshot["kline_type"].upper() in ("K_DAY", "K_SESSION")   # [R96][R97] 日線只封存，不蓋掉即時快照
     try:
         if not daily:
             text = json.dumps(snapshot, ensure_ascii=False)
@@ -2069,7 +2071,7 @@ def handle_futu_data(payload):
         log_event(f"⚠️ [Futu 行情寫入失敗] {exc}", severity="ERROR", component="futu")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
     warnings.extend(futu_archive(snapshot))
-    if daily and symbol.endswith(FUTU_SERIES_SUFFIX):
+    if snapshot["kline_type"].upper() == "K_SESSION" and symbol.endswith(FUTU_SERIES_SUFFIX):
         warnings.extend(futu_daily_merge(symbol, bars, snapshot["source"]))
 
     log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
@@ -2130,7 +2132,14 @@ FUTU_DAILY_DIR = "futu/daily"
 FUTU_SERIES_SUFFIX = "_FRONT"                    # 本地腳本 v6 的即月期貨別名
 FUTU_DAILY_KEEP = 800                            # 約三年交易日
 FUTU_RANGE_DEFAULT = "HK.HSI_FRONT"
+FUTU_SESSION_CUT_HOUR = 9                        # 交易日 = 09:00 至翌日 09:00（日市＋當晚夜市）
 HK_TZ = ZoneInfo("Asia/Hong_Kong")
+
+
+def futu_session_today(now=None):
+    """現在屬於哪個交易日（香港時間 09:00 前算前一天）。"""
+    hk = (now or datetime.now(timezone.utc)).astimezone(HK_TZ)
+    return (hk - timedelta(hours=FUTU_SESSION_CUT_HOUR)).strftime("%Y-%m-%d")
 
 
 def futu_daily_file(symbol):
@@ -2163,9 +2172,9 @@ def futu_daily_merge(symbol, bars, source):
 
 
 def futu_range_stats(bars, today):
-    """日 K（已排序）→ 每天的波幅與過去一年的統計。today：香港日期 YYYY-MM-DD。
+    """交易日 K（已排序）→ 每天的波幅與過去一年的統計。today：目前的交易日 YYYY-MM-DD。
     波幅 = 高 − 低；真實波幅 TR = max(高, 昨收) − min(低, 昨收)；波幅% = 波幅 ÷ 昨收。
-    日期 ≥ today 的最後一根視為未收市（Futu 期貨日 K 含前一晚夜市），不進平均。"""
+    日期 ≥ today 的最後一根還在交易（日市或當晚夜市未完），不進平均。"""
     since = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=365)).strftime("%Y-%m-%d")
     rows, prev_close = [], None
     for bar in bars:
@@ -2214,7 +2223,7 @@ def futu_range_data(symbol):
     symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
     bars = gcs_read_json(futu_daily_file(symbol), [])
     bars = sorted((b for b in bars if isinstance(b, dict)), key=lambda b: str(b.get("time_key", "")))
-    today = datetime.now(HK_TZ).strftime("%Y-%m-%d")
+    today = futu_session_today()
     data = futu_range_stats(bars, today)
     snap = read_futu_snapshot(symbol)
     five = (snap.get("bars") or [{}])[-1] if isinstance(snap, dict) and not snap.get("error") else {}
@@ -2284,7 +2293,7 @@ def build_futu_range_page(data):
     nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
            f"<h1 class='page-title'>📏 即月期貨波幅（{esc(symbol)}）</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
     if not rows:
-        body = nav + ("<div class='section'>還沒有日 K 數據。本地執行 push_to_gcp.py（v7）的 "
+        body = nav + ("<div class='section'>還沒有交易日 K 數據。本地執行 push_to_gcp.py（v7）的 "
                       f"<span class='mono'>--backfill {esc(symbol)}</span> 補一年歷史，之後每 5 分鐘會自動更新。</div>")
         return html_page("即月期貨波幅", body)
     latest = rows[-1]
@@ -2293,11 +2302,11 @@ def build_futu_range_page(data):
     stale = age is None or age > FUTU_STALE_SEC
     status = ("<span class='neg'>⚠️ 推送可能已停止</span>" if stale
               else f"<span class='pos'>{esc(countdown_text(age))} 前更新</span>")
-    tag = "（進行中，含前一晚夜市）" if data["partial"] else "（已收市）"
+    tag = "（交易中）" if data["partial"] else "（已完結）"
     pct = lambda v: "—" if v is None else f"{v:.2f}%"
     cards = f"""
     <div class='grid'>
-      <div class='card'><div class='card-title'>最新日 K {esc(latest['date'])}{tag}</div>
+      <div class='card'><div class='card-title'>最新交易日 {esc(latest['date'])}{tag}</div>
         <div class='card-small'>開 {fmt_num(latest['open'], '{:,.0f}')}　高 {fmt_num(latest['high'], '{:,.0f}')}<br>低 {fmt_num(latest['low'], '{:,.0f}')}　收 {fmt_num(latest['close'], '{:,.0f}')}</div>
         <div class='card-desc'>波幅 {fmt_num(latest['range'], '{:,.0f}')}（{pct(latest['range_pct'])}）・合約 {esc(data.get('contract') or '—')}</div></div>
       <div class='card'><div class='card-title'>最新 5 分 K（香港時間）</div><div class='card-value'>{fmt_num(five.get('close'), '{:,.0f}')}</div>
@@ -2328,9 +2337,9 @@ def build_futu_range_page(data):
         <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>真實波幅</th><th>合約</th></tr>
         {table_rows}</table></div>
       <div class='muted' style='font-size:12px; margin-top:10px; line-height:1.6;'>
-        即月期貨：最後交易日當天轉下月（本地腳本 v6 起），不做價差調整，轉月日會有跳空。
-        Futu 的期貨日 K 按交易日計，包含前一晚 17:15 起的夜市。波幅 = 高 − 低；波幅% = 波幅 ÷ 昨收；
-        真實波幅 = max(高, 昨收) − min(低, 昨收)。未收市的一根不計入平均。
+        交易日 = 香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00 算同一天
+        （由 5 分／60 分 K 合成，跟 Futu 自己的日 K 不同）。即月期貨：最後交易日當天轉下月，不做價差調整，轉月日會有跳空。
+        波幅 = 高 − 低；波幅% = 波幅 ÷ 昨收；真實波幅 = max(高, 昨收) − min(低, 昨收)。還在交易的一天不計入平均。
         只存、只顯示，不進電閘、不影響下單。原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></div>
     </div>"""
     return html_page(f"即月期貨波幅 {symbol}", body)

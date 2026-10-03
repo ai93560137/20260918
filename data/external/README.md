@@ -34,7 +34,7 @@ IBKR 的原始資料在雲垂分支 `claude/dazzling-curie-f3xzb8`，這裡是�
 - 目前帳戶的行情權限：港股股票／期權／期貨 LV1、美股股票 LV3、美股期權 LV1、加密貨幣 LV1。美國指數、CME、COMEX、A 股、新加坡、日本、馬來西亞都**沒有**權限。
 - 額度：股票期貨訂閱 100 個、30 天內歷史 K 線 100 個代號；期權各 20 個。
 - 期權只取最近到期日（跳過當天到期）、最接近現價的 5 個行使價。要改範圍就改腳本的 `ATM_STRIKES` 環境變數。
-- 恒指即月期貨（腳本 v6 起）：`FUTU_SYMBOLS` 加 `HK.HSI_FRONT`（小型恒指 `HK.MHI_FRONT`、國企 `HK.HHI_FRONT` 同理）。腳本每天向 Futu 查合約清單，取最後交易日在今天之後最近的一張；**最後交易日當天（香港日期）就轉下月**。5 分 K 存在 `futu/HK.HSI_FRONT/K_5M/`，日 K 存在 `futu/_K_DAY/`（`code` = `HK.HSI_FRONT`），是一條不做價差調整的連續序列；轉月當天會有一個跳空（新舊合約價差）。實際合約記在 GCP 快照的 `source`，也可用最後交易日規則反推。網站沒有期貨數據，品質比對只做內部 OHLC 檢查。在 OpenD 電腦跑 `python push_to_gcp.py --futures HSI` 可看合約清單與今天的即月。一年歷史用 v7 的 `--backfill HK.HSI_FRONT` 補一次；GCP（R97 起）把日 K 另存成 `futu/daily/HK.HSI_FRONT.json`，網頁 `?view=futu_range` 顯示過去一年每日波幅與最新 OHLC（`&format=json` 讀數據）。
+- 恒指即月期貨（腳本 v6 起）：`FUTU_SYMBOLS` 加 `HK.HSI_FRONT`（小型恒指 `HK.MHI_FRONT`、國企 `HK.HHI_FRONT` 同理）。腳本每天向 Futu 查合約清單，取最後交易日在今天之後最近的一張；**最後交易日當天就轉下月**。**交易日 = 香港時間 09:00 至翌日 09:00**（日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00 算同一天，v7 起；跟 Futu 自己的日 K 相反，Futu 把前一晚夜市算進今天），選合約與轉月都按交易日。5 分 K 存在 `futu/HK.HSI_FRONT/K_5M/`（檔名是時鐘日期），腳本合成的交易日 K 存在 `futu/HK.HSI_FRONT/K_SESSION/`，是一條不做價差調整的連續序列，轉月當天會有跳空。實際合約記在 GCP 快照的 `source`。網站沒有期貨數據，品質比對只做內部 OHLC 檢查。在 OpenD 電腦跑 `python push_to_gcp.py --futures HSI` 可看合約清單與今天的即月；一年歷史用 v7 的 `--backfill HK.HSI_FRONT` 補一次（由 60 分 K 合成）；GCP（R97 起）把交易日 K 另存成 `futu/daily/HK.HSI_FRONT.json`，網頁 `?view=futu_range` 顯示過去一年每日波幅與最新 OHLC（`&format=json` 讀數據）。
 
 **IBKR：雲垂負責。**
 - 程式在雲垂分支 `gcp_ib/`（VM 設定、每日採集）與 `scripts/ib_stock_verify.py`（股票覆核）。

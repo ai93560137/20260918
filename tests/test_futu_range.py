@@ -58,20 +58,21 @@ def day_bars(start, n, base=24000.0, step=10.0, rng=200.0):
     return out
 
 
-def packet(bars, source="futu_opend:HK.HSI2610", symbol="HK.HSI_FRONT", kline="K_DAY"):
+def packet(bars, source="futu_opend:HK.HSI2610", symbol="HK.HSI_FRONT", kline="K_SESSION"):
     return {"action": "futu_data", "token": "tok", "source": source, "script_version": "7",
             "symbol": symbol, "kline_type": kline, "timestamp": "2026-10-04 01:00:00", "data": bars, "options": []}
 
 
-print("\n=== R97：日 K 合併成一條序列 ===")
+print("\n=== R97：交易日 K（K_SESSION）合併成一條序列 ===")
 FAKE.clear()
 series = main.futu_daily_file("HK.HSI_FRONT")
 r = client.post("/", json=packet(day_bars("2026-09-01", 15)))
-check("日 K 封包照樣 stored", r.get_json().get("status") == "stored", r.get_json())
+check("交易日 K 封包 stored", r.get_json().get("status") == "stored", r.get_json())
+check("按日封存在 futu_k_session", any(k.startswith("archive/futu_k_session/HK.HSI_FRONT/") for k in FAKE))
 rows = json.loads(FAKE[series][0])
 check("寫進 futu/daily/HK.HSI_FRONT.json，日期只留年月日", len(rows) == 15 and rows[0]["time_key"] == "2026-09-01", rows[:1])
 check("每列記下合約來源", rows[0]["source"] == "futu_opend:HK.HSI2610")
-check("日 K 不蓋即時快照", main.FUTU_SNAPSHOT_FILE not in FAKE)
+check("交易日 K 不蓋即時快照", main.FUTU_SNAPSHOT_FILE not in FAKE)
 upd = day_bars("2026-09-15", 3, base=99999)
 client.post("/", json=packet(upd, source="futu_opend:HK.HSI2611"))
 rows = json.loads(FAKE[series][0])
@@ -80,7 +81,9 @@ check("同一天後到的蓋掉、不重複", len(rows) == 15 and by["2026-09-15
       and by["2026-09-15"]["source"].endswith("2611"), len(rows))
 check("依日期排序", [r["time_key"] for r in rows] == sorted(r["time_key"] for r in rows))
 client.post("/", json=packet(day_bars("2026-09-01", 3), symbol="US.AAPL"))
-check("非 _FRONT 代號（日線抽樣）不建序列", main.futu_daily_file("US.AAPL") not in FAKE)
+check("非 _FRONT 代號不建序列", main.futu_daily_file("US.AAPL") not in FAKE)
+client.post("/", json=packet(day_bars("2026-10-01", 2, base=11111), kline="K_DAY"))
+check("Futu 自己的日 K（前一晚夜市算今天）不進序列", all(r["close"] != 11111 for r in json.loads(FAKE[series][0])))
 client.post("/", json=packet(day_bars("2026-09-01", 3), kline="K_5M"))
 check("5 分 K 不進日線序列", len(json.loads(FAKE[series][0])) == 15)
 
@@ -98,7 +101,7 @@ gap[2].update(open=25000, high=25100, low=24950, close=25050)          # 跳空�
 g = main.futu_range_stats(gap, "2026-10-04")["rows"]
 check("跳空：真實波幅 > 波幅", g[2]["true_range"] == 25100 - gap[1]["close"] and g[2]["range"] == 150, g[2])
 part = main.futu_range_stats(day_bars("2026-09-28", 6), "2026-10-04")      # 最後一根 10-05 > 今天
-check("今天以後的一根算進行中、不進平均", part["partial"] and part["summary"]["last_date"] == "2026-10-02"
+check("目前交易日以後的一根算交易中、不進平均", part["partial"] and part["summary"]["last_date"] == "2026-10-02"
       and part["rows"][-1]["date"] == "2026-10-05", part["summary"])
 check("百分位在 0–100", 0 <= part["summary"]["last_range_percentile"] <= 100)
 check("沒有數據不會壞", main.futu_range_stats([], "2026-10-04")["summary"]["avg_range"] is None)
@@ -115,7 +118,7 @@ client.post("/", json=packet([{"time_key": "2026-10-03 02:55:00", "open": 1, "hi
 r = client.get("/?view=futu_range")
 html_text = r.get_data(as_text=True)
 check("頁面 200", r.status_code == 200, r.status_code)
-check("有最新 OHLC、圖、表", "最新日 K" in html_text and "<svg" in html_text and "每日 OHLC 與波幅" in html_text)
+check("有最新 OHLC、圖、表", "最新交易日" in html_text and "<svg" in html_text and "每日 OHLC 與波幅" in html_text)
 check("顯示合約與最新 5 分 K", "HK.HSI2610" in html_text and "23,845" in html_text)
 check("hsi_range 是同一頁", client.get("/?view=hsi_range").status_code == 200)
 j = client.get("/?view=futu_range&format=json").get_json()
@@ -125,6 +128,12 @@ check("控制台的 Futu 區塊連到波幅頁", "?view=futu_range" in main.futu
 check("八頁導覽列不變（站內頁另有一致性檢查）", "futu_range" not in str(main.PAGE_LINKS))
 e = client.get("/?view=futu_range&symbol=<script>").get_data(as_text=True)
 check("代號會跳脫", "<script>" not in e)
+
+from datetime import datetime as _dt, timezone as _tz
+check("交易日：香港 08:59 算前一天、09:00 起算當天",
+      main.futu_session_today(_dt(2026, 10, 6, 0, 59, tzinfo=_tz.utc)) == "2026-10-05"     # 香港 08:59
+      and main.futu_session_today(_dt(2026, 10, 6, 1, 0, tzinfo=_tz.utc)) == "2026-10-06"  # 香港 09:00
+      and main.futu_session_today(_dt(2026, 10, 5, 18, 30, tzinfo=_tz.utc)) == "2026-10-05")  # 香港 02:30 夜市
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

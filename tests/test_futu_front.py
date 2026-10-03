@@ -9,7 +9,7 @@ import pandas as pd
 # ---- 假的 futu 模組（repo 的 futu/ 資料夾會被當成命名空間套件，要先蓋掉）
 ft = types.ModuleType("futu")
 ft.RET_OK, ft.RET_ERROR = 0, -1
-ft.KLType = types.SimpleNamespace(K_5M="K_5M", K_DAY="K_DAY")
+ft.KLType = types.SimpleNamespace(K_5M="K_5M", K_60M="K_60M", K_DAY="K_DAY")
 ft.SubType = types.SimpleNamespace(K_5M="K_5M", K_DAY="K_DAY")
 ft.Market = types.SimpleNamespace(HK="HK", US="US")
 ft.SecurityType = types.SimpleNamespace(FUTURE="FUTURE", IDX="IDX")
@@ -91,15 +91,15 @@ class FakeCtx:
 
 class Clock:
     """把腳本的 datetime.now 換成固定的香港時間。"""
-    def __init__(self, day):
-        self.day = day
+    def __init__(self, day, hhmm="09:30"):
+        self.day, self.hhmm = day, hhmm
 
     def now(self, tz=None):
-        return datetime.fromisoformat(f"{self.day} 09:30:00").replace(tzinfo=tz)
+        return datetime.fromisoformat(f"{self.day} {self.hhmm}:00").replace(tzinfo=tz)
 
 
-def run(pusher, day):
-    push.datetime = type("DT", (), {"now": staticmethod(Clock(day).now),
+def run(pusher, day, hhmm="09:30"):
+    push.datetime = type("DT", (), {"now": staticmethod(Clock(day, hhmm).now),
                                     "fromisoformat": staticmethod(datetime.fromisoformat)})
     sent = []
     pusher.post = lambda packet, quiet=False: sent.append(packet) or True
@@ -107,24 +107,43 @@ def run(pusher, day):
     return ok, sent
 
 
+print("=== [v7] 交易日 = 09:00 至翌日 09:00 ===")
+check("夜市 00:00–03:00 算前一個交易日", push.session_date("2026-10-03 02:55:00") == "2026-10-02"
+      and push.session_date("2026-10-02 23:55:00") == "2026-10-02" and push.session_date("2026-10-05 09:20:00") == "2026-10-05")
+B = lambda t, o, h, l, c, v=10: {"time_key": t, "open": o, "high": h, "low": l, "close": c, "volume": v}
+sess = push.session_bars([B("2026-10-02 09:20:00", 100, 105, 99, 101), B("2026-10-02 16:30:00", 101, 103, 98, 102),
+                          B("2026-10-02 17:20:00", 102, 104, 100, 103), B("2026-10-03 02:55:00", 103, 110, 97, 108),
+                          B("2026-10-05 09:20:00", 108, 108, 108, 108, 0)])
+check("日市＋當晚夜市合成一根：開＝日市開、收＝夜市收、高低含夜市",
+      sess == [{"time_key": "2026-10-02 00:00:00", "open": 100, "high": 110, "low": 97, "close": 108, "volume": 40}], sess)
+check("開市前的佔位 K 線（成交量 0）不算", all(not x["time_key"].startswith("2026-10-05") for x in sess))
+cut = push.session_bars([B("2026-10-02 23:00:00", 1, 2, 0.5, 1), B("2026-10-05 09:20:00", 5, 6, 4, 5)])
+check("視窗最前面被切掉一截的交易日丟掉（不蓋完整封存）", [x["time_key"][:10] for x in cut] == ["2026-10-05"], cut)
+check("回補模式不丟", len(push.session_bars([B("2026-10-02 23:00:00", 1, 2, 0.5, 1)], complete_only=False)) == 1)
+
 print("=== 推送（最後交易日 2026-10-29 轉月）===")
 pusher = push.FutuPusher()
 pusher.ctx = FakeCtx(LISTING)
 ok, sent = run(pusher, "2026-10-28")
 k5 = [p for p in sent if p["kline_type"] == "K_5M"]
-kd = [p for p in sent if p["kline_type"] == "K_DAY"]
+kd = [p for p in sent if p["kline_type"] == "K_SESSION"]
 check("轉月前一天：送當月合約、固定代號", ok and k5 and k5[0]["symbol"] == "HK.HSI_FRONT"
       and k5[0]["source"] == "futu_opend:HK.HSI2610", sent)
 check("轉月前：從上一張最後交易日起的 K 線都送（舊合約期間不重疊）",
       [b["time_key"] for b in k5[0]["data"]][0] == "2026-10-28 15:55:00")
-check("日 K 也用固定代號推送", kd and kd[0]["symbol"] == "HK.HSI_FRONT" and len(kd[0]["data"]) == 3)
+check("交易日 K（K_SESSION）用固定代號推送，被視窗切掉的 10-28 不送", kd and kd[0]["symbol"] == "HK.HSI_FRONT"
+      and [x["time_key"][:10] for x in kd[0]["data"]] == ["2026-10-29"], kd)
+check("不再送 Futu 日 K", not any(p["kline_type"] == "K_DAY" for p in sent))
 check("期貨不送期權", all(p["options"] == [] for p in sent))
-check("訂閱 5 分 K 與日 K", (("HK.HSI2610",), ("K_5M",)) in pusher.ctx.subs
-      and (("HK.HSI2610",), ("K_DAY",)) in pusher.ctx.subs)
+check("只訂 5 分 K", pusher.ctx.subs == [(("HK.HSI2610",), ("K_5M",))], pusher.ctx.subs)
+
+p2 = push.FutuPusher(); p2.ctx = FakeCtx(LISTING)
+run(p2, "2026-10-29", "01:00")
+check("最後交易日凌晨 01:00 的夜市仍屬前一交易日 → 還是舊合約", p2.front["HK.HSI_FRONT"]["code"] == "HK.HSI2610", p2.front)
 
 ok, sent = run(pusher, "2026-10-29")
 k5 = [p for p in sent if p["kline_type"] == "K_5M"]
-kd = [p for p in sent if p["kline_type"] == "K_DAY"]
+kd = [p for p in sent if p["kline_type"] == "K_SESSION"]
 check("最後交易日當天：改送下月合約", ok and k5[0]["source"] == "futu_opend:HK.HSI2611", sent)
 check("轉月後只送轉月日起的 5 分 K（不蓋掉 10-28 舊合約封存）",
       all(b["time_key"] >= "2026-10-29" for b in k5[0]["data"]) and len(k5[0]["data"]) == 2, k5[0]["data"])
@@ -160,9 +179,16 @@ class HistCtx(FakeCtx):
         self.hist = getattr(self, "hist", []) + [code]
         if code == "HK.HSI2608":
             return ft.RET_ERROR, "no data for expired", None
+        assert ktype == "K_60M", ktype
         base = {"HK.HSImain": 30000, "HK.HSI2609": 26000, "HK.HSI2610": 24000}[code]
-        days = [d for d in WEEKDAYS if start <= d <= min(end, "2026-10-05")]   # 最新一根是下個交易日（夜市）
-        return ft.RET_OK, kline(code, [f"{d} 00:00:00" for d in days], base), None
+        rows = []
+        for d in WEEKDAYS:                                   # 每個交易日：日市、晚上夜市、翌日凌晨夜市各一根
+            nxt = (_date.fromisoformat(d) + _td(days=1)).isoformat()
+            for t, bump in ((f"{d} 10:15:00", 0), (f"{d} 18:15:00", 50), (f"{nxt} 01:15:00", 80)):
+                if start <= t[:10] <= end and d <= "2026-10-02":
+                    rows.append({"time_key": t, "open": base, "high": base + 5 + bump, "low": base - 5,
+                                 "close": base + 1, "volume": 10})
+        return ft.RET_OK, pd.DataFrame(rows), None
 
 
 check("平日近似最後交易日", push.second_last_weekday(2026, 8) == "2026-08-28"
@@ -183,10 +209,12 @@ ok = pusher.backfill_front("HK.HSI_FRONT", 40)
 rows = [(b["time_key"][:10], p["source"]) for p in sent for b in p["data"]]
 dates = [d for d, _ in rows]
 src = dict(rows)
-check("回補成功、全部是日 K、固定代號", ok and sent and all(p["kline_type"] == "K_DAY" and p["symbol"] == "HK.HSI_FRONT"
+check("回補成功、全部是交易日 K、固定代號", ok and sent and all(p["kline_type"] == "K_SESSION" and p["symbol"] == "HK.HSI_FRONT"
                                             for p in sent), len(sent))
 check("日期不重複、由 40 天前到最新", len(dates) == len(set(dates)) and dates[0] == "2026-08-25"
-      and dates[-1] == "2026-10-05", (dates[:2], dates[-2:]))
+      and dates[-1] == "2026-10-02", (dates[:2], dates[-2:]))
+hi = {b["time_key"][:10]: b["high"] for p in sent for b in p["data"]}
+check("交易日高位含翌日凌晨的夜市", hi["2026-09-29"] == 24000 + 85 and hi["2026-09-25"] == 26000 + 85, hi.get("2026-09-29"))
 check("轉月邊界正確（最後交易日當天屬下一張）",
       src["2026-08-27"].endswith("HK.HSImain(代2608)") and src["2026-08-28"] == "futu_opend:HK.HSI2609"
       and src["2026-09-28"] == "futu_opend:HK.HSI2609" and src["2026-09-29"] == "futu_opend:HK.HSI2610", src)
