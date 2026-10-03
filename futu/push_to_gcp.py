@@ -468,7 +468,12 @@ class FutuPusher:
             info = self.resolve_front(alias)
             code, start = info["code"], info["start"]
             bars = [b for b in self.fetch_bars(code, count=FRONT_5M_COUNT) if session_date(b["time_key"]) >= start]
-            days = session_bars(bars)
+            try:                                       # 即時 K 線最多只給 60 根（5 小時），不夠一個交易日 → 用歷史 5 分 K
+                recent = self.recent_5m(code, info["day"])
+            except Exception as exc:
+                log(f"  ⚠️ 歷史 5 分 K 取得失敗（{str(exc)[:60]}），交易日 K 改用即時視窗")
+                recent = bars
+            days = session_bars([b for b in recent if session_date(b["time_key"]) >= start])
         except Exception as exc:
             log(f"🔴 OpenD 取數失敗：{exc}（下一輪重新連線）")
             self.close()
@@ -488,6 +493,16 @@ class FutuPusher:
             ok = self.post({**base, "kline_type": "K_SESSION", "data": days,
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, quiet=True) and ok
         return ok
+
+    def recent_5m(self, code, today):
+        """前一個與目前交易日的完整 5 分 K（歷史 K 線不受即時視窗 60 根的限制）。"""
+        day = date.fromisoformat(today)
+        ret, df, _ = self.ctx.request_history_kline(code, start=(day - timedelta(days=1)).isoformat(),
+                                                    end=(day + timedelta(days=1)).isoformat(),
+                                                    ktype=KTYPE, max_count=None)
+        if ret != ft.RET_OK:
+            raise RuntimeError(str(df)[:120])
+        return bars_from_df(df.sort_values("time_key")) if not df.empty else []
 
     # ---- [v7] 補一年即月期貨日 K -----------------------------------------
     def history_sessions(self, code, start, end):

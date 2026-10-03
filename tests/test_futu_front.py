@@ -150,6 +150,25 @@ check("轉月後只送轉月日起的 5 分 K（不蓋掉 10-28 舊合約封存�
 check("轉月後日 K 也只送轉月日起", [b["time_key"][:10] for b in kd[0]["data"]] == ["2026-10-29"])
 check("舊合約退訂", any(c == ("HK.HSI2610",) for c, _ in pusher.ctx.unsubs), pusher.ctx.unsubs)
 
+print("=== 即時視窗只有 60 根：交易日 K 用歷史 5 分 K ===")
+class Win60(FakeCtx):
+    def get_cur_kline(self, code, num, ktype):             # 即時視窗只剩下午，日市開盤已被切掉
+        return ft.RET_OK, kline(code, ["2026-10-28 14:00:00", "2026-10-28 15:00:00"], 24000)
+
+    def request_history_kline(self, code, start, end, ktype, max_count=None):
+        self.hist_args = (start, end, ktype)
+        return ft.RET_OK, kline(code, ["2026-10-27 23:00:00", "2026-10-28 09:20:00", "2026-10-28 14:00:00",
+                                       "2026-10-28 15:00:00"], 24000), None
+pw = push.FutuPusher(); pw.ctx = Win60(LISTING)
+ok, sent = run(pw, "2026-10-28", "15:05")
+kd = [p for p in sent if p["kline_type"] == "K_SESSION"]
+check("交易日 K 由歷史 5 分 K 合成（日市開盤仍在）", ok and kd and [x["time_key"][:10] for x in kd[0]["data"]] == ["2026-10-28"], sent)
+check("歷史範圍 = 前一天到後一天、5 分 K", pw.ctx.hist_args == ("2026-10-27", "2026-10-29", "K_5M"), pw.ctx.hist_args)
+pw2 = push.FutuPusher(); pw2.ctx = Win60(LISTING)
+pw2.ctx.request_history_kline = lambda *a, **k: (ft.RET_ERROR, "quota", None)
+ok, sent = run(pw2, "2026-10-28", "15:05")
+check("歷史拿不到 → 退回即時視窗（被切掉的一天不送）", ok and not any(p["kline_type"] == "K_SESSION" for p in sent), sent)
+
 print("=== 上一張已下架：用交易日曆推轉月日 ===")
 pusher = push.FutuPusher()
 pusher.ctx = FakeCtx([x for x in LISTING if x[0] != "HK.HSI2610"],
