@@ -9,7 +9,7 @@ import pandas as pd
 # ---- 假的 futu 模組（repo 的 futu/ 資料夾會被當成命名空間套件，要先蓋掉）
 ft = types.ModuleType("futu")
 ft.RET_OK, ft.RET_ERROR = 0, -1
-ft.KLType = types.SimpleNamespace(K_5M="K_5M", K_60M="K_60M", K_DAY="K_DAY")
+ft.KLType = types.SimpleNamespace(K_5M="K_5M", K_15M="K_15M", K_30M="K_30M", K_60M="K_60M", K_DAY="K_DAY")
 ft.SubType = types.SimpleNamespace(K_5M="K_5M", K_DAY="K_DAY")
 ft.Market = types.SimpleNamespace(HK="HK", US="US")
 ft.SecurityType = types.SimpleNamespace(FUTURE="FUTURE", IDX="IDX")
@@ -255,6 +255,41 @@ check("轉月邊界正確（最後交易日當天屬下一張）",
       and src["2026-09-28"] == "futu_opend:HK.HSI2609" and src["2026-09-29"] == "futu_opend:HK.HSI2610", src)
 check("過期合約拿不到 → 用主連代替該段", "HK.HSImain" in pusher.ctx.hist)
 check("每包不超過 15 根、同一包只有一張合約", all(len(p["data"]) <= push.BACKFILL_CHUNK for p in sent))
+
+print("=== [v9] 匯出日內 K 線 ===")
+class IntraCtx(HistCtx):
+    def request_history_kline(self, code, start, end, ktype, max_count=None):
+        self.kt = ktype
+        if code == "HK.HSI2608":
+            return ft.RET_ERROR, "Unknown stock", None
+        base = {"HK.HSImain": 30000, "HK.HSI2609": 26000, "HK.HSI2610": 24000}[code]
+        rows = []
+        for d in WEEKDAYS:
+            if d > "2026-10-02":
+                continue
+            nxt = (_date.fromisoformat(d) + _td(days=1)).isoformat()
+            for t, v in ((f"{d} 09:15:00", 0), (f"{d} 09:30:00", 5), (f"{d} 12:00:00", 5), (f"{d} 16:30:00", 5),
+                         (f"{d} 23:00:00", 5), (f"{nxt} 03:00:00", 5)):
+                if start <= t[:10] <= end:
+                    rows.append({"time_key": t, "open": base, "high": base + 9, "low": base - 9, "close": base, "volume": v})
+        return ft.RET_OK, pd.DataFrame(rows), None
+
+pi = push.FutuPusher(); pi.ctx = IntraCtx(LISTING, trading_days=WEEKDAYS)
+push.datetime = type("DT", (), {"now": staticmethod(Clock("2026-10-04").now),
+                                "fromisoformat": staticmethod(datetime.fromisoformat)})
+sent = []
+pi.post = lambda packet, quiet=False: sent.append(packet) or True
+ok = pi.export_intraday("HK.HSI_FRONT", 40, "K_15M")
+bars = [(b["time_key"], p["source"]) for p in sent for b in p["data"]]
+check("匯出成功、kline_type 是 K_15M、向 Futu 要 15 分 K", ok and all(p["kline_type"] == "K_15M" for p in sent) and pi.ctx.kt == "K_15M")
+check("每包 ≤ 400 根", all(len(p["data"]) <= push.INTRADAY_CHUNK for p in sent))
+check("成交量 0 的 K 線不送", not any(t.endswith("09:15:00") for t, _ in bars))
+src = dict(bars)
+check("轉月按交易日：09-29 凌晨 03:00 屬 09-28 交易日 → 2609；09-29 日市 → 2610",
+      src["2026-09-29 03:00:00"] == "futu_opend:HK.HSI2609" and src["2026-09-29 09:30:00"] == "futu_opend:HK.HSI2610", 
+      (src.get("2026-09-29 03:00:00"), src.get("2026-09-29 09:30:00")))
+check("過期合約那段用主連", src["2026-08-27 12:00:00"].endswith("HK.HSImain(代2608)"))
+check("40 天前的交易日之前不送", min(t for t, _ in bars) >= "2026-08-25")
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

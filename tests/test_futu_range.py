@@ -87,6 +87,17 @@ check("Futu 自己的日 K（前一晚夜市算今天）不進序列", all(r["cl
 client.post("/", json=packet(day_bars("2026-09-01", 3), kline="K_5M"))
 check("5 分 K 不進日線序列", len(json.loads(FAKE[series][0])) == 15)
 
+FAKE.clear()
+r = client.post("/", json=packet([{"time_key": "2026-10-02 09:30:00", "open": 1, "high": 2, "low": 0.5, "close": 1.5, "volume": 3}],
+                                 kline="K_15M"))
+check("[R100] 15 分 K 歷史：stored、只封存", r.get_json()["status"] == "stored"
+      and "archive/futu_k_15m/HK.HSI_FRONT/2026-10-02.json" in FAKE)
+check("[R100] 15 分 K 不蓋即時快照、不進交易日序列", main.FUTU_SNAPSHOT_FILE not in FAKE
+      and main.futu_symbol_file("HK.HSI_FRONT") not in FAKE and main.futu_daily_file("HK.HSI_FRONT") not in FAKE)
+client.post("/", json=packet([{"time_key": "2026-10-02 09:30:00", "open": 1, "high": 2, "low": 0.5, "close": 1.5, "volume": 3}],
+                             kline="K_5M"))
+check("[R100] 5 分 K 照樣更新即時快照", main.futu_symbol_file("HK.HSI_FRONT") in FAKE)
+
 print("\n=== R97：波幅統計 ===")
 bars = day_bars("2025-09-01", 300)
 stats = main.futu_range_stats(bars, "2026-10-04")
