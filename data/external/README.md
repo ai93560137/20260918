@@ -26,7 +26,8 @@ IBKR 的原始資料在雲垂分支 `claude/dazzling-curie-f3xzb8`，這裡是�
 **MT5：只有 CFD。**
 - 目前只有 XAUUSD。EA 送的是它掛載那張圖表的商品，而 `main.py` 把收到的 M1 一律當 XAUUSD 處理。
 - 要加別的 CFD 商品，要另寫一個只送數據的 EA，並在 `main.py` 加收件與封存。找預設分支（GCP 交易系統）改。
-- 歷史：這裡從 R95 部署那天開始累積。更早的 XAUUSD M1 在蛇蟠分支 `claude/forex-data-testing-w4q3m2` 的 `data/XAUUSD_M1_*.csv.gz`（同一家券商的 MT5 匯出，2022-08 起）。
+- 歷史：這裡從 R95 部署那天開始累積。更早的 XAUUSD M1 在外匯分支 `claude/forex-data-testing-w4q3m2`（session「外匯數據測試」）的 `data/XAUUSD_M1_*.csv.gz`（同一家券商的 MT5 匯出，2022-08 起）。
+- 蛇蟠陣（session「恆指黃金突破K」，分支 `claude/gifted-carson-v2tvhw`）用黃金通道，可拿 MT5 M1 合成日高日低對照。
 
 **Futu：改環境變數就能換商品，不用改程式。**
 - 在跑 OpenD 的電腦設 `FUTU_SYMBOLS`，逗號分隔，例如 `US.QQQ,US.SPY,HK.800000`。每個代號都會各自封存。
