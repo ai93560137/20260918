@@ -33,24 +33,35 @@
     setx FUTU_DAILY 0                            # 關掉日線抽樣
   清單讀不到就只抓錨點 HK.800000、US.SPY、US.QQQ 和 FUTU_DAILY_EXTRA。
 
+[v6] 即月期貨（最後交易日當天轉下月）：
+  FUTU_SYMBOLS 放 HK.HSI_FRONT（也可 HK.MHI_FRONT、HK.HHI_FRONT），例如
+    setx FUTU_SYMBOLS "US.QQQ,HK.800000,HK.HSI_FRONT"
+  每天第一輪向 Futu 查港股期貨清單，取「最後交易日在今天之後」最近的一張月份合約
+  （例 HK.HSI2610）；最後交易日當天（香港日期）起就改取下月。
+  5 分 K 與日 K 都用固定代號 HK.HSI_FRONT 推上 GCP，封存成一條連續序列；
+  轉月後只送轉月日（上一張的最後交易日）以後的 K 線，不會蓋掉前幾天舊合約的封存。
+  實際合約代號記在快照的 source（futu_opend:HK.HSI2610）。期貨不取期權（恒指期權看 HK.800000）。
+  日期以 Futu 的 time_key（香港時間）為準；夜市 17:15 後的 5 分 K 算當天日期。
+
 執行：
   python push_to_gcp.py                  # 常駐
   python push_to_gcp.py --once           # 只推一次，用來測試
   python push_to_gcp.py --once --daily   # 立刻跑一次日線抽樣（不看時段），用來測試
   python push_to_gcp.py --search 波幅    # 查指數代號（例如 VHSI），不推送、不需設 GCP 網址
+  python push_to_gcp.py --futures HSI    # 列出 HSI 期貨合約與最後交易日、今天的即月是哪張，不推送
 """
 import math
 import os
 import re
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "5"
+SCRIPT_VERSION = "6"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -72,7 +83,10 @@ DAILY_ENABLED = os.environ.get("FUTU_DAILY", "1").strip() != "0"
 DAILY_WINDOW_MIN = (16 * 60 + 30, 21 * 60)          # 香港時間 16:30–21:00
 DAILY_BARS = max(5, min(100, int(os.environ.get("FUTU_DAILY_BARS", "20"))))
 DAILY_MAX = max(1, min(1000, int(os.environ.get("FUTU_DAILY_MAX", "60"))))
-DAILY_BATCH = max(5, min(100 - len(SYMBOLS) - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
+FRONT_RE = re.compile(r"^HK\.([A-Z]{2,4})_FRONT$")   # [v6] 即月期貨別名，例 HK.HSI_FRONT
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+SUBS_USED = len(SYMBOLS) + sum(1 for x in SYMBOLS if FRONT_RE.match(x))   # 即月期貨多訂一個日 K
+DAILY_BATCH = max(5, min(100 - SUBS_USED - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
 DAILY_ANCHORS = ["HK.800000", "US.SPY", "US.QQQ"]
 DAILY_EXTRA = [x.strip().upper() for x in os.environ.get("FUTU_DAILY_EXTRA", "").split(",") if x.strip()]
 SAMPLE_URL = os.environ.get(
@@ -96,12 +110,50 @@ def num(value):
     return result if math.isfinite(result) else None
 
 
+# ---- [v6] 即月期貨 --------------------------------------------------------
+def month_contracts(rows, product):
+    """Futu 港股期貨清單 [(代號, last_trade_time)] → 該產品的月份合約 [(最後交易日, 代號)]，依日期排序。
+    主連（HK.HSImain）等沒有最後交易日的代號會被略過。"""
+    pattern = re.compile(rf"^HK\.{re.escape(product)}\d{{4}}$")
+    out = []
+    for code, last_trade in rows:
+        digits = re.sub(r"\D", "", str(last_trade or ""))[:8]          # 2026-10-29／20261029／帶時間都接受
+        code, last_trade = str(code), f"{digits[:4]}-{digits[4:6]}-{digits[6:8]}"
+        if pattern.match(code) and len(digits) == 8 and DATE_RE.match(last_trade):
+            out.append((last_trade, code))
+    return sorted(set(out))
+
+
+def pick_front(contracts, today):
+    """即月 = 最後交易日「在今天之後」最近的一張；最後交易日當天就轉下月。
+    回 (代號, 最後交易日, 上一張的最後交易日或 None)；找不到 → (None, None, None)。"""
+    for i, (last_trade, code) in enumerate(contracts):
+        if last_trade > today:
+            prev = contracts[i - 1] if i > 0 else None
+            prev_ok = prev is not None and prev_month(prev[1], 0) == prev_month(code)   # 必須正好是上個月那張
+            return code, last_trade, (prev[0] if prev_ok else None)
+    return None, None, None
+
+
+def prev_month(code, back=1):
+    """HK.HSI2610 → (2026, 9)：上一個月份合約的年月；back=0 → 合約本身的年月。"""
+    year, month = 2000 + int(code[-4:-2]), int(code[-2:]) - back
+    return (year, month) if month >= 1 else (year - 1, month + 12)
+
+
+def bars_from_df(df):
+    return [{"time_key": str(row["time_key"]), "open": num(row["open"]), "high": num(row["high"]),
+             "low": num(row["low"]), "close": num(row["close"]), "volume": num(row["volume"])}
+            for _, row in df.iterrows()]
+
+
 class FutuPusher:
     def __init__(self):
         self.ctx = None
         self.subscribed = set()
         self.daily_done = None                        # 已完成日線抽樣的香港日期
         self.pending_unsub = []                       # [(訂閱時間, [代號…])]
+        self.front = {}                               # [v6] 別名 → {day, code, last_trade, start}
 
     def connect(self):
         if self.ctx is None:
@@ -119,26 +171,24 @@ class FutuPusher:
                 self.pending_unsub = []
 
     # ---- K 線 -------------------------------------------------------------
-    def fetch_bars(self, symbol):
-        if symbol not in self.subscribed:
-            ret, err = self.ctx.subscribe([symbol], [SUBTYPE], subscribe_push=False)
+    def fetch_bars(self, symbol, ktype=KTYPE, subtype=SUBTYPE, count=BAR_COUNT):
+        if (symbol, subtype) not in self.subscribed:
+            ret, err = self.ctx.subscribe([symbol], [subtype], subscribe_push=False)
             if ret == ft.RET_OK:
-                self.subscribed.add(symbol)
+                self.subscribed.add((symbol, subtype))
             else:
-                log(f"  ⚠️ 訂閱 {symbol} 5 分 K 失敗：{err}；改用歷史 K 線")
-        if symbol in self.subscribed:
-            ret, df = self.ctx.get_cur_kline(symbol, num=BAR_COUNT, ktype=KTYPE)
+                log(f"  ⚠️ 訂閱 {symbol} {subtype} 失敗：{err}；改用歷史 K 線")
+        if (symbol, subtype) in self.subscribed:
+            ret, df = self.ctx.get_cur_kline(symbol, num=count, ktype=ktype)
         else:
-            start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+            days = 7 if ktype == KTYPE else count * 2 + 10
+            start = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
             end = datetime.now().strftime("%Y-%m-%d")
             ret, df, _ = self.ctx.request_history_kline(symbol, start=start, end=end,
-                                                        ktype=KTYPE, max_count=None)
+                                                        ktype=ktype, max_count=None)
         if ret != ft.RET_OK:
             raise RuntimeError(f"K 線取得失敗：{df}")
-        df = df.sort_values("time_key").tail(BAR_COUNT)
-        return [{"time_key": str(row["time_key"]), "open": num(row["open"]), "high": num(row["high"]),
-                 "low": num(row["low"]), "close": num(row["close"]), "volume": num(row["volume"])}
-                for _, row in df.iterrows()]
+        return bars_from_df(df.sort_values("time_key").tail(count))
 
     # ---- 期權 -------------------------------------------------------------
     def fetch_options(self, symbol, spot):
@@ -246,10 +296,7 @@ class FutuPusher:
                 if ret != ft.RET_OK or df.empty:
                     failed.append(f"{code}（日 K：{str(df)[:60]}）")
                     continue
-                df = df.sort_values("time_key")
-                bars = [{"time_key": str(row["time_key"]), "open": num(row["open"]), "high": num(row["high"]),
-                         "low": num(row["low"]), "close": num(row["close"]), "volume": num(row["volume"])}
-                        for _, row in df.iterrows()]
+                bars = bars_from_df(df.sort_values("time_key"))
                 if self.post({"action": "futu_data", "token": TOKEN, "source": "futu_opend",
                               "script_version": SCRIPT_VERSION, "symbol": code, "kline_type": "K_DAY",
                               "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -291,13 +338,99 @@ class FutuPusher:
                 keep.append((started, codes))
         self.pending_unsub = keep
 
+    # ---- [v6] 即月期貨 -----------------------------------------------------
+    def last_trading_day_before_month_end(self, year, month):
+        """港交所月份合約的最後交易日 = 該月倒數第二個港股交易日。"""
+        first = date(year, month, 1)
+        last = (first + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        ret, days = self.ctx.request_trading_days(market=ft.TradeDateMarket.HK,
+                                                  start=first.isoformat(), end=last.isoformat())
+        if ret != ft.RET_OK:
+            raise RuntimeError(f"交易日曆取得失敗：{days}")
+        dates = sorted(str(d.get("time", ""))[:10] for d in days)
+        if len(dates) < 2:
+            raise RuntimeError(f"{year}-{month:02d} 交易日不足兩天")
+        return dates[-2]
+
+    def resolve_front(self, alias):
+        """每個香港日期查一次：即月合約、它的最後交易日、可以送的最早 K 線日期（轉月日）。"""
+        today = datetime.now(HK_TZ).strftime("%Y-%m-%d")
+        cached = self.front.get(alias)
+        if cached and cached["day"] == today:
+            return cached
+        product = FRONT_RE.match(alias).group(1)
+        ret, df = self.ctx.get_stock_basicinfo(ft.Market.HK, ft.SecurityType.FUTURE)
+        if ret != ft.RET_OK:
+            raise RuntimeError(f"港股期貨清單取得失敗：{df}")
+        contracts = month_contracts(zip(df["code"], df["last_trade_time"]), product)
+        code, last_trade, prev_last = pick_front(contracts, today)
+        if code is None:
+            seen = [c for c in df["code"].astype(str) if c.startswith(f"HK.{product}")][:8]
+            raise RuntimeError(f"找不到 {product} 的即月合約（Futu 列出的：{seen or '無'}）")
+        if prev_last is None:                          # 上一張已下架：用交易日曆推它的最後交易日
+            try:
+                prev_last = self.last_trading_day_before_month_end(*prev_month(code))
+            except Exception as exc:                   # 推不出來就只送今天的 K 線，最保守
+                log(f"  ⚠️ 推算轉月日失敗（{exc}），只送今天的 K 線")
+        start = prev_last if prev_last and prev_last <= today else today
+        info = {"day": today, "code": code, "last_trade": last_trade, "start": start}
+        old = cached["code"] if cached else None
+        if old != code:
+            log(f"  🔁 {alias} → {code}（最後交易日 {last_trade}；K 線從 {start} 起算）"
+                + (f"，由 {old} 轉月" if old else ""))
+            if old:
+                self.drop_subscriptions(old)
+        self.front[alias] = info
+        return info
+
+    def drop_subscriptions(self, code):
+        subs = [s for c, s in self.subscribed if c == code]
+        if not subs:
+            return
+        ret, err = self.ctx.unsubscribe([code], subs)
+        if ret == ft.RET_OK:
+            self.subscribed -= {(code, s) for s in subs}
+        else:
+            log(f"  ⚠️ 舊合約 {code} 退訂失敗（不影響推送）：{err}")
+
+    def run_front(self, alias):
+        log(f"向 OpenD {OPEND_HOST}:{OPEND_PORT} 取 {alias}（即月期貨）行情…")
+        try:
+            self.connect()
+            info = self.resolve_front(alias)
+            code, start = info["code"], info["start"]
+            bars = [b for b in self.fetch_bars(code) if b["time_key"][:10] >= start]
+            days = [b for b in self.fetch_bars(code, ft.KLType.K_DAY, ft.SubType.K_DAY, DAILY_BARS)
+                    if b["time_key"][:10] >= start]
+        except Exception as exc:
+            log(f"🔴 OpenD 取數失敗：{exc}（下一輪重新連線）")
+            self.close()
+            return False
+        log(f"  {code}：5 分 K {len(bars)} 根，最新 {bars[-1]['time_key'] if bars else '—'}（香港）"
+            f"收 {bars[-1]['close'] if bars else '—'}；日 K {len(days)} 根")
+        if not bars and not days:
+            log("  ℹ️ 轉月後還沒有 K 線，下一輪再推")
+            return True
+        base = {"action": "futu_data", "token": TOKEN, "source": f"futu_opend:{code}",
+                "script_version": SCRIPT_VERSION, "symbol": alias, "options": []}
+        ok = True
+        if bars:
+            ok = self.post({**base, "kline_type": "K_5M", "data": bars,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+        if days:
+            ok = self.post({**base, "kline_type": "K_DAY", "data": days,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, quiet=True) and ok
+        return ok
+
     def run_symbol(self, symbol):
+        if FRONT_RE.match(symbol):
+            return self.run_front(symbol)
         log(f"向 OpenD {OPEND_HOST}:{OPEND_PORT} 取 {symbol} 行情…")
         try:
             self.connect()
             bars = self.fetch_bars(symbol)
             spot = bars[-1]["close"] if bars else None
-            log(f"  K 線 {len(bars)} 根，最新 {bars[-1]['time_key'] if bars else '—'}（美東）收 {spot}")
+            log(f"  K 線 {len(bars)} 根，最新 {bars[-1]['time_key'] if bars else '—'}（交易所時間）收 {spot}")
             options = []
             if spot is not None:
                 try:
@@ -364,7 +497,30 @@ def search(keyword):
     return 0
 
 
+def futures(product):
+    """列出港股期貨裡 <product> 的合約、最後交易日，以及今天的即月。只讀，不推送。"""
+    product = product.strip().upper() or "HSI"
+    ctx = ft.OpenQuoteContext(host=OPEND_HOST, port=OPEND_PORT)
+    try:
+        ret, df = ctx.get_stock_basicinfo(ft.Market.HK, ft.SecurityType.FUTURE)
+        if ret != ft.RET_OK:
+            print(f"查不到港股期貨清單：{str(df)[:120]}")
+            return 1
+        hits = df[df["code"].astype(str).str.startswith(f"HK.{product}")]
+        for _, row in hits.iterrows():
+            print(f"  {row['code']}\t最後交易日 {str(row.get('last_trade_time') or '—')[:10]}\t{row.get('name', '')}")
+        today = datetime.now(HK_TZ).strftime("%Y-%m-%d")
+        code, last_trade, _ = pick_front(month_contracts(zip(df["code"], df["last_trade_time"]), product), today)
+        print(f"今天（{today}）的即月：{code or '找不到'}" + (f"，最後交易日 {last_trade}" if code else ""))
+    finally:
+        ctx.close()
+    return 0
+
+
 def main():
+    if "--futures" in sys.argv[1:]:
+        idx = sys.argv.index("--futures")
+        return futures(sys.argv[idx + 1] if idx + 1 < len(sys.argv) else "HSI")
     if "--search" in sys.argv[1:]:
         idx = sys.argv.index("--search")
         return search(sys.argv[idx + 1] if idx + 1 < len(sys.argv) else "")
