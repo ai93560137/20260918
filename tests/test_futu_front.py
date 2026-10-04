@@ -297,13 +297,18 @@ class ProbeCtx:
         self.vhsi_days, self.calls = vhsi_days, []
     def get_stock_basicinfo(self, market, kind):
         assert kind == "IDX"
-        return ft.RET_OK, pd.DataFrame([{"code": "HK.800000", "name": "恒生指數"},
-                                        {"code": "HK.800125", "name": "恒指波幅指數"},
+        return ft.RET_OK, pd.DataFrame([{"code": "HK.800000", "name": "恒生指數"},        # 實際清單（2026-10-04 探測）
+                                        {"code": "HK.800125", "name": "HSI Volatility Index"},
+                                        {"code": "HK.800755", "name": "Hang Seng Low Volatility Index"},
+                                        {"code": "HK.800870", "name": "HSCEI Volatility Index"},
                                         {"code": "HK.800700", "name": "恒生科技指數"}])
     def request_history_kline(self, code, start, end, ktype, max_count=None):
         self.calls.append((code, ktype))
         if code == "HK.800125":
             return ft.RET_OK, kline(code, [f"2026-09-{d:02d} 00:00:00" for d in range(1, 1 + self.vhsi_days)], 20), None
+        if code in ("HK.800755", "HK.800870"):                   # 低波幅股票指數根數更多，v10 會誤揀它
+            return ft.RET_OK, kline(code, [f"2026-08-{d:02d} 00:00:00" for d in range(1, 31)]
+                                    + [f"2026-09-{d:02d} 00:00:00" for d in range(1, 31)], 8000), None
         if code.startswith("HK.HSI26"):
             return (ft.RET_OK, kline(code, ["2026-09-30 00:00:00", "2026-10-02 00:00:00"], 100), None) \
                 if "1009" in code else (ft.RET_ERROR, "no history", None)
@@ -329,7 +334,16 @@ check("--push：VHSI 日 K 分包推成 K_DAY", pp.probe_iv(push=True) == 0 and 
       and all(p["symbol"] == "HK.800125" and p["kline_type"] == "K_DAY" for p in sent)
       and sum(len(p["data"]) for p in sent) == 30 and all(len(p["data"]) <= push.BACKFILL_CHUNK for p in sent))
 pp.ctx = ProbeCtx(vhsi_days=0); sent.clear()
-check("VHSI 沒有歷史 → 失敗、不推送", pp.probe_iv(push=True) == 1 and sent == [])
+check("[v11] VHSI 沒有歷史 → 失敗、不推送（不會改推 HSCEI 波幅或低波幅股票指數）",
+      pp.probe_iv(push=True) == 1 and sent == [])
+check("[v11] 低波幅股票指數不算波幅指數", push.FutuPusher.vhsi_rank("Hang Seng Low Volatility Index") is None
+      and push.FutuPusher.vhsi_rank("HSI Volatility Index") == 0 and push.FutuPusher.vhsi_rank("恒指波幅指數") == 0
+      and push.FutuPusher.vhsi_rank("HSCEI Volatility Index") == 1)
+pp.ctx = ProbeCtx(); sent.clear()
+check("[v11] 指定代號就只用那個", pp.probe_iv(push=True, code="HK.800125") == 0 and pp.ctx.calls[0] == ("HK.800125", "K_DAY")
+      and all(p["symbol"] == "HK.800125" for p in sent))
+pp.ctx = ProbeCtx(); sent.clear()
+check("[v11] 指定代號取不到 → 失敗、不推送", pp.probe_iv(push=True, code="HK.999999") == 1 and sent == [])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

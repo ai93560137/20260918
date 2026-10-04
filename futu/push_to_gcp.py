@@ -64,6 +64,8 @@
   python push_to_gcp.py --probe-iv               # 找恒指波幅指數（VHSI）代號、看日 K 歷史有多長；看恒指期權有沒有歷史 K 線
   python push_to_gcp.py --probe-iv --push        # 同上，再把 VHSI 過去 1100 天的日 K 推上 GCP
                                                  # （存 GCS archive/futu_k_day/<代號>/<日期>.json，不影響即時快照）
+  python push_to_gcp.py --probe-iv --push HK.800125   # [v11] 直接指定代號（不用自動揀）
+  [v11] 自動揀只認名稱是「HSI Volatility Index／恒指波幅指數」的（v10 會誤揀 Low Volatility 股票指數）。
   輸出整段貼回給 Claude 即可；沒有 --push 不會推任何東西。
 
 執行：
@@ -84,7 +86,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "10"
+SCRIPT_VERSION = "11"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -654,7 +656,17 @@ class FutuPusher:
             return None, str(df)[:120]
         return ([] if df.empty else bars_from_df(df.sort_values("time_key"))), ""
 
-    def probe_iv(self, push=False, days=1100):
+    @staticmethod
+    def vhsi_rank(name):
+        """0 = 恒指波幅指數本身；1 = 其他波幅指數（如 HSCEI Volatility）；None = 低波幅股票指數等，不要。"""
+        name = str(name)
+        if re.search(r"low\s*vol|低波", name, re.I):
+            return None
+        if re.match(r"^\s*(HSI|恒指|恒生指數)\s*(Volatility|波幅)", name, re.I):
+            return 0
+        return 1 if re.search(r"volatility|波幅|VHSI", name, re.I) else None
+
+    def probe_iv(self, push=False, days=1100, code=None):
         """回傳 0 = 找到 VHSI 而且有歷史（--push 時也推成功）。"""
         self.connect()
         log(f"🔎 [1/3] 找恒指波幅指數（港股指數名稱含 波幅／VHSI／Volatility）")
@@ -669,16 +681,23 @@ class FutuPusher:
             log(f"  {row['code']}\t{row['name']}")
         if hits.empty:
             log("  ❌ 找不到；可試 --search 波幅 或 --search VHSI")
+        if code:                                                  # [v11] 指定代號
+            candidates = [(0, code)]
+        else:                                                     # [v11] 只自動揀恒指波幅指數；其他波幅指數只列出參考
+            candidates = sorted((r, str(c)) for c, n in zip(hits["code"], hits["name"])
+                                if (r := self.vhsi_rank(n)) is not None)[:3]
         vhsi, vhsi_bars = None, []
-        for code in [str(c) for c in hits["code"].head(5)]:
-            bars, err = self.probe_history(code, days)
+        for rank, cand in candidates:
+            bars, err = self.probe_history(cand, days)
             if bars is None:
-                log(f"  {code}：日 K 取不到（{err}）")
+                log(f"  {cand}：日 K 取不到（{err}）")
                 continue
-            log(f"  {code}：日 K {len(bars)} 根" + (f"，{bars[0]['time_key'][:10]} 至 {bars[-1]['time_key'][:10]}，"
+            log(f"  {cand}：日 K {len(bars)} 根" + (f"，{bars[0]['time_key'][:10]} 至 {bars[-1]['time_key'][:10]}，"
                                                    f"最新收 {bars[-1]['close']}" if bars else ""))
-            if len(bars) > len(vhsi_bars):
-                vhsi, vhsi_bars = code, bars
+            if bars and vhsi is None and rank == 0:               # 不按根數揀（v10 因此揀錯）
+                vhsi, vhsi_bars = cand, bars
+        if vhsi is None:
+            log("  ❌ 沒有自動認得的恒指波幅指數歷史；確認代號後用 --probe-iv HK.800125 指定")
 
         log("🔎 [2/3] 恒指期權（HK.800000）的到期日")
         ret, exp = self.ctx.get_option_expiration_date(code="HK.800000")
@@ -822,7 +841,8 @@ def main():
         pusher = FutuPusher()
         log(f"🔎 方向一數據探測（v{SCRIPT_VERSION}）" + ("，會推送 VHSI 日 K" if "--push" in sys.argv[1:] else "，只讀"))
         try:
-            return pusher.probe_iv(push="--push" in sys.argv[1:])
+            code = next((a.upper() for a in sys.argv[1:] if CODE_RE.match(a.upper())), None)
+            return pusher.probe_iv(push="--push" in sys.argv[1:], code=code)
         finally:
             pusher.close()
     if "--export-intraday" in sys.argv[1:]:
