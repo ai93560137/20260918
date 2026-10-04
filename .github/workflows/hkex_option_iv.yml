@@ -1,0 +1,56 @@
+name: hkex-option-iv
+# 港交所每日報告：恒指期權每個系列的結算價與引伸波幅（scripts/hkex_option_iv.py）。
+# 雲端工作階段連不到 hkex.com.hk，所以在這裡下載，結果 commit 回觸發時的分支（data/hkex_options/）。
+# 只有手動觸發，不排程、不發訊息。
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: probe（試網址、存樣本）或 fetch（逐日下載並解析）
+        required: true
+        default: probe
+      start:
+        description: probe 的日期／fetch 的開始日（YYYY-MM-DD）
+        required: true
+        default: '2026-10-02'
+      end:
+        description: fetch 的結束日
+        required: false
+        default: '2026-10-03'
+      products:
+        description: fetch 的產品代號（逗號分隔）
+        required: false
+        default: hsio
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hkex-option-iv
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: run
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "probe" ]; then
+            python3 scripts/hkex_option_iv.py probe "${{ github.event.inputs.start }}"
+          else
+            python3 scripts/hkex_option_iv.py fetch "${{ github.event.inputs.start }}" "${{ github.event.inputs.end }}" --products "${{ github.event.inputs.products }}"
+          fi
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/hkex_options/
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -m "data: 港交所恒指期權每日報告（${{ github.event.inputs.mode }} ${{ github.event.inputs.start }}）[skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1
