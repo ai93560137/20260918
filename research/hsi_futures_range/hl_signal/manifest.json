@@ -1,0 +1,73 @@
+{
+ "generated_utc": "2026-10-04 05:47:10",
+ "git_head": "01cda5fa8536e2bd7c1911b04748fb844847ba30",
+ "script_sha256": "17e02d7800b996d417d26fe35f8cf23bc2e2a902442efe1f4ed19b44c18952cd",
+ "engine_sha256": {
+  "snake_week.py": "f47f221d39c231d4dd6b1d37695ae835b1882d1c319e989fda4bb270d29df66c",
+  "high_low_in.py": "6839f590cb4cf3f366a835c5321e0253e764fdd365c7b37fda14762d0364e6d2",
+  "hl_both.py": "34f78ee0446564769b7497fab4de643a6029be95db5a10e22f07fdcbc55658ff"
+ },
+ "input": {
+  "bars": 46868,
+  "bars_sha256": "4f9c7f6ee197b0196aebda02f2daef68e3a035fe0262cfc025a228433641b4d0",
+  "daily": 739,
+  "daily_sha256": "ea884e7c10076b582b140f291c96ff07ee4b266864f514c2dee8c663b8d9af6f"
+ },
+ "params": {
+  "cost_per_round_trip": 3.0,
+  "stop_band_q": 0.95,
+  "rr": 2.0,
+  "signals": {
+   "B": [
+    "B",
+    0.05
+   ],
+   "A": [
+    "A",
+    0.8,
+    0.5
+   ],
+   "C": [
+    "C",
+    "16:30",
+    0.4
+   ]
+  }
+ },
+ "trigger_days": {
+  "B": 460,
+  "A": 133,
+  "C": 29
+ },
+ "days_with_levels": 559,
+ "configs": {
+  "B_S": {
+   "trades": 106,
+   "net_total": 4608.94
+  },
+  "B_F": {
+   "trades": 74,
+   "net_total": 2272.24
+  },
+  "A_S": {
+   "trades": 62,
+   "net_total": 7592.59
+  },
+  "A_F": {
+   "trades": 48,
+   "net_total": -3855.63
+  },
+  "C_S": {
+   "trades": 21,
+   "net_total": -370.71
+  },
+  "C_F": {
+   "trades": 0,
+   "net_total": 0
+  },
+  "S0": {
+   "trades": 127,
+   "net_total": -948.58
+  }
+ }
+}

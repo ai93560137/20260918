@@ -123,6 +123,35 @@ def verify(bars, daily_k, out):
         up, dn = max(hi_s[x] for x in prev), min(lo_s[x] for x in prev)
         exp = max(up, b["open"]) if side > 0 else min(dn, b["open"])
         T.check("S1 蛇反手", abs(px - exp) <= EPS and b["low"] - EPS <= px <= b["high"] + EPS, f"{t} {side} {px} vs {exp}")
+    # ---- G 高低位已出現訊號（hl_signal 才有 signals.csv）：由原始 K 線重算
+    sig_rows = read(out / "signals.csv") if (out / "signals.csv").exists() else []
+    day_bars = {d["date"]: d["bars"] for d in days}
+    sig_at = defaultdict(dict)
+    for r in sig_rows:
+        bs = day_bars.get(r["date"], [])
+        i = int(r["bar_index"])
+        tag = f"{r['date']} {r['signal']} {r['side']}"
+        if i >= len(bs) or bs[i]["time_key"] != r["time_key"]:
+            T.check("G1 訊號 K 線存在", False, tag); continue
+        R, side, k = float(r["R"]), r["side"], r["signal"]
+        hs = max(b["high"] for b in bs[:i + 1]); ls = min(b["low"] for b in bs[:i + 1]); c = bs[i]["close"]
+        ext = hs if side == "high" else ls
+        dist = (hs - c) if side == "high" else (c - ls)
+        T.check("G1 訊號當時的極值與距離（由 K 線重算）", abs(ext - float(r["ext"])) <= EPS and abs(dist - float(r["dist"])) <= EPS, tag)
+        if k == "A":
+            cond = lambda j: (max(b["high"] for b in bs[:j + 1]) - min(b["low"] for b in bs[:j + 1]) >= 0.8 * R) and \
+                ((max(b["high"] for b in bs[:j + 1]) - bs[j]["close"]) if side == "high" else (bs[j]["close"] - min(b["low"] for b in bs[:j + 1]))) >= 0.5 * R
+            T.check("G2 A 訊號：條件成立且是第一次", cond(i) and not any(cond(j) for j in range(i)), tag)
+        elif k == "C":
+            T.check("G2 C 訊號：16:30 那根、回落 ≥ 0.4R̂", r["time_key"][11:16] == "16:30" and r["time_key"][:10] == r["date"]
+                    and dist >= 0.4 * R - EPS, tag)
+        else:
+            ref = float(ld[r["date"]]["ref"])
+            sig = R / 1.596 / ref * math.sqrt(float(r["rem"])) * c
+            prob = math.erfc(dist / sig / math.sqrt(2))
+            T.check("G2 B 訊號：σ 與機率重算、機率 < 5%", abs(sig - float(r["sigma_pts"])) <= 1e-6 * sig + EPS
+                    and abs(prob - float(r["prob"])) <= 1e-6 and prob < 0.05 and dist > 0, tag)
+        sig_at[(r["date"], k)][side] = i
     # ---- T 逐筆
     last_bar_of_week = {}
     for k, idx in groups.items():
@@ -204,6 +233,19 @@ def verify(bars, daily_k, out):
                 else:
                     pxok = abs(ep - max(ph, eb["open"])) <= EPS
                 T.check("T5 高低都現後才入（第二個位被碰到那一根）", not (hb and lb) and he and le and pxok, tag)
+                T.check("T5 止蝕固定（1:2 準確）", len(path_) == 1, tag)
+            elif r["entry_type"] == "訊號都現後入":                 # [hl_signal] 兩個訊號都亮那根的下一根開市
+                k = name.split("_")[0]
+                got = sig_at.get((day_of[et], k), {})
+                ok = "high" in got and "low" in got
+                if ok:
+                    dbars = day_bars[day_of[et]]
+                    j = max(got["high"], got["low"]) + 1
+                    ok = j < len(dbars) and dbars[j]["time_key"] == et and abs(ep - eb["open"]) <= EPS
+                    if ok and name.endswith("_F"):
+                        last = "high" if got["high"] > got["low"] else ("low" if got["low"] > got["high"] else None)
+                        ok = last is not None and side == (1 if last == "low" else -1)
+                T.check("T5 訊號都現後才入（下一根開市；F 方向正確）", ok, tag)
                 T.check("T5 止蝕固定（1:2 準確）", len(path_) == 1, tag)
             elif r["entry_type"] == "空手・開市再入":
                 T.check("T5 開市再入＝當天第一根開市價", abs(ep - eb["open"]) <= EPS

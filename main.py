@@ -91,6 +91,7 @@
 #   * 2026-10-04 — [R111] 方向二卡加「跟蛇持倉多日＋週範圍止蝕」20 組回測結論（snake_week.py，附逐筆紀錄與獨立核對）。
 #   * 2026-10-04 — [R112] 方向二卡加「日範圍止蝕」20 組回測結論（snake_week.py --stop day）。
 #   * 2026-10-04 — [R113] 方向二卡加「預測高低位都出現後入・1:2 RRR」回測結論（hl_both.py）。
+#   * 2026-10-04 — [R114] 方向二卡加訊號版（高位／低位已出現都亮後入・1:2 RRR）回測結論（hl_signal.py）。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -3476,6 +3477,8 @@ MONEY_FADE = {                                  # 方向二回測摘要（fade_p
         "前後半段和三年都賺（t 1.34，未顯著），建議先紙上交易。",
         "🎯 預測高低位都出現後才入、1:2 RRR：只有 9% 日子出現、約 40 筆；跟蛇每筆 +56 點（好過開市就入），"
         "但樣本太少、不及蛇本身，反向回歸則虧。",
+        "📶 訊號版（「高位已出現」「低位已出現」都亮後才入、跟蛇、1:2）：🅰️ 耗盡回落每筆 +122 點、三年都賺"
+        "（t 1.33，後半段轉負，未顯著）；🅱️ 機率法 +44 點。建議與蛇本身並排紙上交易。",
     ],
 }
 
