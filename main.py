@@ -77,10 +77,13 @@
 #     Telegram 訊息開頭加【風揚陣】，波幅頁標題與控制台連結加陣名。只改顯示文字。
 #   * 2026-10-04 — [R103] 波幅頁改版給投資人看：今日／本週／本月三個區塊，各自顯示預測波幅（週、月 = 第一天
 #     HAR × √交易日數 × 校準比例）、已走幾成、目前高低，以及 A／B／C 三個訊號的白話狀態；統計、明細表、說明收進下方。
+#   * 2026-10-04 — [R104] 日／週／月過去每一次預測的誤差與命中率（逐日／逐段前推重算，日有實時紀錄就用紀錄）；
+#     三張卡片各顯示過去 7 次預測與全部歷史的命中率，?view=futu_range&report=accuracy 給全部紀錄。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
 # =============================================================================
+import bisect
 import hashlib
 import html
 import json
@@ -2297,7 +2300,7 @@ def futu_range_stats(bars, today):
     all_partial = bool(all_rows) and all_rows[-1]["date"] >= today
     completed = all_rows[:-1] if all_partial else all_rows
     shown = sum(1 for row in completed if row["date"] >= since)
-    har = har_forecasts(completed, last_n=shown + 1)              # [R98] 逐日前推的 HAR 預測
+    har = har_forecasts(completed)                                # [R98] 逐日前推的 HAR 預測（[R104] 全部歷史，給命中率用）
     for i, row in enumerate(completed):
         if i in har:
             row["forecast"], row["forecast_lo"], row["forecast_hi"] = har[i]
@@ -2343,7 +2346,8 @@ def futu_range_stats(bars, today):
     if nxt:
         forecast = {"date": all_rows[-1]["date"] if all_partial else "next", "range": nxt[0], "lo": nxt[1], "hi": nxt[2],
                     "ref_close": completed[-1]["close"] if completed else None, "model": "HAR(1,5,22) 對數"}
-    return {"rows": rows, "partial": partial, "summary": summary, "forecast": forecast, "backtest": backtest}
+    return {"rows": rows, "partial": partial, "summary": summary, "forecast": forecast, "backtest": backtest,
+            "_completed": completed, "_har": har}
 
 
 FUTU_FORECAST_DIR = "futu/forecast"
@@ -2971,6 +2975,87 @@ def futu_peak_lines(symbol, now=None, status=None, signals=None):
     return lines
 
 
+# ---- 日／週／月：過去每一次預測的誤差與命中率  [R104] ----------------------------
+# 全部用逐日／逐段前推重算（只用當時已知的數據），日的部分有開市前實時紀錄就用紀錄（那是當天真正發出的預測）。
+# 命中 = 實際落在 80% 區間內；理想命中率 ≈ 80%。週、月的比例（PERIOD_RANGE_RATIO）在這裡也逐段前推重估，
+# 前 PERIOD_CAL_MIN 段只用來估比例、不計分。
+ACC_SHOW = 7
+PERIOD_CAL_MIN = 12
+
+
+def _acc_summary(recs, extra=()):
+    done = [r for r in recs if r.get("hit") is not None]
+    errs = [r["err"] for r in done]
+    out = {"n": len(done), "hits": sum(1 for r in done if r["hit"]),
+           "hit_rate": round(sum(1 for r in done if r["hit"]) / len(done) * 100) if done else None,
+           "mae": round(sum(abs(e) for e in errs) / len(errs), 1) if errs else None,
+           "bias": round(sum(errs) / len(errs), 1) if errs else None,
+           "recent": done[-ACC_SHOW:]}
+    out["recent_hits"] = sum(1 for r in out["recent"] if r["hit"])
+    for key in extra:                                             # 日：高位、低位的 80% 區間命中率
+        vals = [r[key] for r in done if r.get(key) is not None]
+        out[f"{key}_n"] = len(vals)
+        out[f"{key}_rate"] = round(sum(vals) / len(vals) * 100) if vals else None
+    return out
+
+
+def futu_accuracy(completed, har, log=None, open_keys=None):
+    """completed：已完結的交易日；har：har_forecasts(completed)；log：開市前實時紀錄；
+    open_keys：{種類: 還沒結束的那段 key}，那段不計分。回傳 {day|week|month: 摘要＋records}。"""
+    logged = {e["date"]: e for e in (log or []) if isinstance(e, dict) and e.get("date") and e.get("range")}
+    open_keys = open_keys or {}
+    day, ups, downs = [], [], []
+    for i, row in enumerate(completed):
+        f = har.get(i)
+        if not f or not row.get("prev_close"):
+            continue
+        rec = {"key": row["date"], "forecast": f[0], "lo": f[1], "hi": f[2], "live": False}
+        if len(ups) >= HL_MIN_DAYS:
+            ref = row["prev_close"]
+            rec.update(high_lo=ref + _quantile(ups, 0.1) * f[0], high_hi=ref + _quantile(ups, 0.9) * f[0],
+                       low_lo=ref - _quantile(downs, 0.9) * f[0], low_hi=ref - _quantile(downs, 0.1) * f[0])
+        bisect.insort(ups, (row["high"] - row["prev_close"]) / f[0])
+        bisect.insort(downs, (row["prev_close"] - row["low"]) / f[0])
+        e = logged.get(row["date"])
+        if e and None not in (e.get("lo"), e.get("hi")):          # 當天真正發出的預測
+            rec.update(forecast=e["range"], lo=e["lo"], hi=e["hi"], live=True)
+            if e.get("high_lo") is not None:
+                rec.update(high_lo=e["high_lo"], high_hi=e["high_hi"], low_lo=e["low_lo"], low_hi=e["low_hi"])
+        actual = row["range"]
+        rec.update(actual=actual, err=round(actual - rec["forecast"], 1), hit=rec["lo"] <= actual <= rec["hi"],
+                   hit_high=(rec["high_lo"] <= row["high"] <= rec["high_hi"]) if "high_lo" in rec else None,
+                   hit_low=(rec["low_lo"] <= row["low"] <= rec["low_hi"]) if "low_lo" in rec else None)
+        for k in ("forecast", "lo", "hi", "high_lo", "high_hi", "low_lo", "low_hi"):
+            if rec.get(k) is not None:
+                rec[k] = round(rec[k], 1)
+        day.append(rec)
+    out = {"day": {**_acc_summary(day, ("hit_high", "hit_low")), "records": day}}
+    for kind in ("week", "month"):
+        groups = {}
+        for i, row in enumerate(completed):
+            groups.setdefault(_peak_key(row["date"], kind), []).append(i)
+        recs, ratios = [], []
+        for key, idx in groups.items():
+            if key == open_keys.get(kind):
+                continue
+            f = har.get(idx[0])
+            if not f:
+                continue
+            big_r = f[0] * math.sqrt(len(idx))
+            actual = max(completed[i]["high"] for i in idx) - min(completed[i]["low"] for i in idx)
+            rec = {"key": key, "first": completed[idx[0]]["date"], "sessions": len(idx), "R": round(big_r, 1),
+                   "actual": round(actual, 1), "hit": None}
+            if len(ratios) >= PERIOD_CAL_MIN:
+                srt = sorted(ratios)
+                rec.update(forecast=round(big_r * _quantile(srt, 0.5)), lo=round(big_r * _quantile(srt, 0.1)),
+                           hi=round(big_r * _quantile(srt, 0.9)))
+                rec.update(err=round(actual - rec["forecast"], 1), hit=rec["lo"] <= actual <= rec["hi"])
+            ratios.append(actual / big_r)
+            recs.append(rec)
+        out[kind] = {**_acc_summary(recs), "records": recs}
+    return out
+
+
 def futu_range_data(symbol):
     symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
     bars = gcs_read_json(futu_daily_file(symbol), [])
@@ -2996,6 +3081,11 @@ def futu_range_data(symbol):
         if full:
             data["forecast"] = full
     data["peak"] = futu_peak_status(symbol)                       # [R101][R103] 算一次，頁面與文字共用
+    periods = (data["peak"] or {}).get("periods") or {}
+    open_keys = {k: _peak_key(today, k) for k in PEAK_KINDS}       # [R104] 還沒結束的那段不計分
+    open_keys.update({k: (None if p["over"] else p["key"]) for k, p in periods.items()})
+    data["accuracy"] = futu_accuracy(data.pop("_completed"), data.pop("_har"),
+                                     log if isinstance(log, list) else [], open_keys)
     sig = gcs_read_json(futu_signal_file(symbol), [])
     data["signals"] = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
     data["peak_lines"] = futu_peak_lines(symbol, status=data["peak"], signals=sig)
@@ -3019,6 +3109,10 @@ def handle_futu_range_get(req):
                 result = futu_signals_report(symbol, req.args.get("ack"))
             elif kind == "peak":
                 result = {"status": "ok", **(futu_peak_status(symbol) or {})}
+            elif kind == "accuracy":                                 # [R104] 日／週／月過去每一次預測的誤差
+                acc = futu_range_data(symbol)["accuracy"]
+                result = {"status": "ok", "symbol": symbol,
+                          **{k: {**v, "recent": None} for k, v in acc.items()}}
             else:
                 result = futu_report(symbol, kind)
         except StorageError as exc:
@@ -3105,6 +3199,10 @@ FY_CSS = """<style>
 .fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
 .fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
 .fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.fy-hist { margin-top:14px; padding-top:10px; border-top:2px solid #eef1f4; } .fy-hist h3 { font-size:14px; margin:0 0 6px; }
+.fy-hist table { width:100%; border-collapse:collapse; font-size:12.5px; } .fy-hist th { font-weight:600; color:var(--muted); text-align:right; padding:3px 4px; }
+.fy-hist td { text-align:right; padding:4px; border-bottom:1px solid #f1f3f5; white-space:nowrap; } .fy-hist td:first-child, .fy-hist th:first-child { text-align:left; }
+.fy-rate { font-size:13px; line-height:1.6; margin-bottom:6px; }
 details.fy-more { background:var(--card); border-radius:16px; padding:14px 18px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); }
 details.fy-more summary { cursor:pointer; font-weight:700; }
 </style>"""
@@ -3153,7 +3251,41 @@ def _fy_signal_lines(kind, per, side, fired):
     return [f"🅰️ 耗盡回落{acc('A')}：{a_txt}", f"🅱️ 機率法{acc('B')}：{b_txt}", f"🅲 時間點{acc('C')}：{c_txt}"]
 
 
-def _fy_period_card(kind, per, fc, fired, today_label, waiting=None):
+def _fy_hist_label(kind, rec):
+    if kind == "day":
+        d = datetime.strptime(rec["key"], "%Y-%m-%d")
+        return f"{rec['key'][5:]}（{WEEKDAY_ZH[d.weekday()]}）"
+    if kind == "week":
+        return f"{rec['first'][5:]} 起"
+    return rec["key"]
+
+
+def _fy_history(kind, acc):
+    """[R104] 過去 7 次預測對實際，加全部歷史的命中率。"""
+    if not acc or not acc.get("n"):
+        return ""
+    unit = {"day": "天", "week": "週", "month": "個月"}[kind]
+    ok = lambda v: "—" if v is None else ("✅" if v else "❌")
+    rate = (f"🎯 <b>命中率 {acc['hit_rate']}%</b>（過去 {acc['n']} {unit}，實際落在 80% 區間；理想約 80%）<br>"
+            f"🕖 近 {len(acc['recent'])} 次命中 {acc['recent_hits']}／{len(acc['recent'])}・平均誤差 ±{_n(acc['mae'])} 點"
+            f"（{'預測偏低' if acc['bias'] > 0 else '預測偏高'} {_n(abs(acc['bias']))} 點）")
+    if kind == "day" and acc.get("hit_high_rate") is not None:
+        rate += f"<br>🎯 預測高位命中 {acc['hit_high_rate']}%・預測低位命中 {acc['hit_low_rate']}%（{acc['hit_high_n']} 天）"
+    head = "<tr><th>" + {"day": "交易日", "week": "週", "month": "月"}[kind] + "</th><th>預測</th><th>實際</th><th>誤差</th><th>命中</th>"
+    head += "<th>高</th><th>低</th></tr>" if kind == "day" else "</tr>"
+    body = ""
+    for r in reversed(acc["recent"]):
+        body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
+                 f"<td title='80% 區間 {_n(r['lo'])}–{_n(r['hi'])}'>{_n(r['forecast'])}</td><td><b>{_n(r['actual'])}</b></td>"
+                 f"<td class='{'pos' if r['err'] >= 0 else 'neg'}'>{r['err']:+,.0f}</td><td>{ok(r['hit'])}</td>")
+        body += f"<td>{ok(r.get('hit_high'))}</td><td>{ok(r.get('hit_low'))}</td></tr>" if kind == "day" else "</tr>"
+    note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。高、低 = 實際高位、低位是否落在預測的 80% 區間。"
+            if kind == "day" else "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
+    return (f"<div class='fy-hist'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
+            f"<table>{head}{body}</table><div class='fy-note'>{note}</div></div>")
+
+
+def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None):
     icon, title, css = PERIOD_TITLE[kind]
     if per:
         done = (f"已收市 {per['sessions_done']}／{per['sessions']} 個交易日" if kind != "day" else "日市＋當晚夜市")
@@ -3181,10 +3313,11 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None):
                         + "".join(f"<div class='fy-sig'>{esc(x)}</div>" for x in lines) + "</div>")
     elif waiting:
         html.append(f"<div class='fy-note'>{esc(waiting)}</div>")
+    html.append(_fy_history(kind, acc))
     if kind == "week":
-        html.append("<div class='fy-note'>週預測 = 第一天預測 × √交易日數（已校準）；回測誤差約 ±310 點，80% 區間命中 79%。</div>")
+        html.append("<div class='fy-note'>週預測 = 第一天預測 × √交易日數（按過去數據校準）。</div>")
     elif kind == "month":
-        html.append("<div class='fy-note'>月預測同理；回測誤差約 ±760 點，80% 區間只命中 71%（樣本 21 個月），僅供參考。</div>")
+        html.append("<div class='fy-note'>月預測同理；月的樣本少，命中率僅供參考。</div>")
     html.append("</div>")
     return "".join(html)
 
@@ -3215,12 +3348,14 @@ def build_futu_range_page(data):
     day_fc = fc if fc else None
     today_label = (f"{esc(fc['date'])}" if fc and fc.get("date") not in (None, "next") else "下一個交易日")
     waiting = "⏳ 09:15 開市後開始判斷高低位是否已出現。" if "day" not in periods else None
+    accs = data.get("accuracy") or {}
     cards = ("<div class='fy-grid'>"
-             + _fy_period_card("day", periods.get("day"), day_fc, data.get("signals") or {}, today_label, waiting)
+             + _fy_period_card("day", periods.get("day"), day_fc, data.get("signals") or {}, today_label, waiting,
+                               accs.get("day"))
              + _fy_period_card("week", periods.get("week"), (periods.get("week") or {}).get("forecast"),
-                               data.get("signals") or {}, "本週未開始")
+                               data.get("signals") or {}, "本週未開始", acc=accs.get("week"))
              + _fy_period_card("month", periods.get("month"), (periods.get("month") or {}).get("forecast"),
-                               data.get("signals") or {}, "本月未開始")
+                               data.get("signals") or {}, "本月未開始", acc=accs.get("month"))
              + "</div>")
     review_html = "".join(f"<div class='log-card'><div class='log-ctx' style='white-space:pre-wrap;'>{esc(e.get('text', ''))}</div></div>"
                           for e in data.get("reviews") or [])

@@ -199,5 +199,49 @@ check("交易日：香港 08:59 算前一天、09:00 起算當天",
       and main.futu_session_today(_dt(2026, 10, 6, 1, 0, tzinfo=_tz.utc)) == "2026-10-06"  # 香港 09:00
       and main.futu_session_today(_dt(2026, 10, 5, 18, 30, tzinfo=_tz.utc)) == "2026-10-05")  # 香港 02:30 夜市
 
+# ---- [R104] 日／週／月過去每一次預測的誤差與命中率 ----
+long_rows = main.futu_range_rows(noisy(420, "2024-06-03"))
+lhar = main.har_forecasts(long_rows)
+acc = main.futu_accuracy(long_rows, lhar)
+d = acc["day"]
+check("日：每個有預測的交易日一筆", len(d["records"]) == len([t for t in lhar if t < len(long_rows)]), len(d["records"]))
+check("日：誤差 = 實際 − 預測、命中 = 落在 80% 區間",
+      all(r["err"] == round(r["actual"] - r["forecast"], 1) and r["hit"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in d["records"]))
+check("日：命中率與次數一致", d["n"] == len(d["records"]) and d["hit_rate"] == round(d["hits"] / d["n"] * 100))
+check("日：近 7 次是最後 7 筆", d["recent"] == d["records"][-7:] and d["recent_hits"] == sum(r["hit"] for r in d["recent"]))
+hl = [r for r in d["records"] if r["hit_high"] is not None]
+check("日：高低位要累積 120 天才評分", len(hl) == len(d["records"]) - main.HL_MIN_DAYS and d["hit_high_n"] == len(hl), len(hl))
+w = acc["week"]
+scored = [r for r in w["records"] if r["hit"] is not None]
+check("週：前 12 段只估比例、不評分", len(w["records"]) - len(scored) == main.PERIOD_CAL_MIN and w["n"] == len(scored))
+check("週：預測 = 第一天 HAR × √日數 × 之前的比例中位數",
+      all(r["lo"] <= r["forecast"] <= r["hi"] and r["hit"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in scored), scored[:1])
+check("月：有紀錄", acc["month"]["records"] and all(len(r["key"]) == 7 for r in acc["month"]["records"]))
+late = [dict(r) for r in long_rows]; late[-1] = dict(late[-1], high=late[-1]["high"] + 5000, range=late[-1]["range"] + 5000)
+acc2 = main.futu_accuracy(late, main.har_forecasts(late))
+check("逐日前推：改最後一天不影響之前的預測", [r["forecast"] for r in acc2["day"]["records"][:-1]]
+      == [r["forecast"] for r in d["records"][:-1]] and
+      [r.get("forecast") for r in acc2["week"]["records"][:-1]] == [r.get("forecast") for r in w["records"][:-1]])
+last_week = w["records"][-1]["key"]
+check("還沒結束的那段不計分", all(r["key"] != last_week for r in
+                                 main.futu_accuracy(long_rows, lhar, open_keys={"week": last_week})["week"]["records"]))
+day0 = d["records"][-1]["key"]
+acc3 = main.futu_accuracy(long_rows, lhar, [{"date": day0, "range": 1.0, "lo": 0.5, "hi": 2.0}])
+r3 = acc3["day"]["records"][-1]
+check("有開市前實時紀錄就用紀錄", r3["live"] and r3["forecast"] == 1.0 and r3["hit"] is False
+      and not acc3["day"]["records"][-2]["live"], r3)
+hh = main._fy_history("day", d)
+check("頁面：過去 7 次＋命中率＋高低位", "過去 7 次預測" in hh and f"命中率 {d['hit_rate']}%" in hh and hh.count("<tr>") == 8
+      and "預測高位命中" in hh)
+check("頁面：週沒有高低欄、沒數據就不顯示", "<th>高</th>" not in main._fy_history("week", w) and main._fy_history("day", {"n": 0}) == "")
+FAKE.clear()
+client.post("/", json=packet([b for b in noisy(420, "2024-06-03") if b["time_key"][:10] < today]))
+ja = client.get("/?view=futu_range&report=accuracy").get_json()
+check("?report=accuracy 給全部紀錄", ja["status"] == "ok" and ja["day"]["n"] > 100 and ja["week"]["records"]
+      and ja["day"]["recent"] is None, {k: ja.get(k) for k in ("status",)})
+hp = client.get("/?view=futu_range").get_data(as_text=True)
+check("波幅頁三張卡都有過去幾次預測", hp.count("📜 過去 ") == 3 and "📜 過去 7 次預測" in hp, hp.count("📜 過去"))
+check("JSON 不帶內部欄位", "_har" not in client.get("/?view=futu_range&format=json").get_json())
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

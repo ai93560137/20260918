@@ -74,6 +74,7 @@
 - **JSON**：
   - `?view=futu_range&format=json`：一年的交易日、預測、回測。
   - `?view=futu_range&report=peak`：今日、本週、本月 A／B／C 的現況。
+  - `?view=futu_range&report=accuracy`：日、週、月過去每一次預測的誤差與命中率（命中 = 實際落在 80% 區間）。
   - `?view=futu_range&report=preopen|noon|close|night&format=text`：四次報告的文字。
 - **研究**：`research/hsi_futures_range/` 的 `backtest.py`、`high_low_in.py` 可以重跑回測（要 `GCP_SA_KEY`）。
 - **每日彙整**：預設分支 `data/external/futu/HK.HSI_FRONT/` 每天同步最近 10 天的 5 分 K 和交易日 K。
