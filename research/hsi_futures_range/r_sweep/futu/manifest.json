@@ -1,14 +1,14 @@
 {
- "generated_utc": "2026-10-04 06:49:33",
- "git_head": "98b274d50c54953ab5d7e6d66b9951c0a86b2686",
+ "generated_utc": "2026-10-04 09:29:19",
+ "git_head": "8d8cab72cf7dceccd3fed09deb3813da44e2f749",
  "source": "futu",
- "script_sha256": "cbf69e3dd4addeecb0ee86c434a1c977ef1bff16760a46e04a191a84923fb37a",
+ "script_sha256": "18d766a6b479027ed2cf1c5dbeb112fdde9cd07b6d34f3ba5b0f6c3bf0c77301",
  "engine_sha256": {
   "snake_week.py": "f47f221d39c231d4dd6b1d37695ae835b1882d1c319e989fda4bb270d29df66c",
   "high_low_in.py": "6839f590cb4cf3f366a835c5321e0253e764fdd365c7b37fda14762d0364e6d2",
   "hl_both.py": "f6fd2c4f7dec862a60e4d06c8393c7fd377113054fca5e49b5c6ffa8269c5f6d",
   "hl_signal.py": "5a14d1df4f5b73654e028d7a368fe5c301c6aeabaf2096de2f46972dd9831a19",
-  "hk50_cfd.py": "01f337f4922a707ede1f469da4a23bdfea59707cc5906a06fe21f9bd217f5a27"
+  "hk50_cfd.py": "7175f6c6192e9ed21d3daaccbd65a8affd2d9c05872bc9193ac8e56123bd894b"
  },
  "input": {
   "bars": 46868,
@@ -22,6 +22,9 @@
   "cost_per_round_trip": 3.0,
   "stop_band_q": 0.95,
   "rr_grid": [
+   0.25,
+   0.5,
+   0.75,
    1.0,
    1.5,
    2.0,
@@ -38,6 +41,18 @@
   "C": 29
  },
  "configs": {
+  "A_S_R0.25": {
+   "trades": 101,
+   "net_total": 4429.99
+  },
+  "A_S_R0.5": {
+   "trades": 82,
+   "net_total": 2123.22
+  },
+  "A_S_R0.75": {
+   "trades": 78,
+   "net_total": 2437.25
+  },
   "A_S_R1": {
    "trades": 78,
    "net_total": 2865.48
@@ -69,6 +84,18 @@
   "A_S_R無": {
    "trades": 52,
    "net_total": 6771.51
+  },
+  "B_S_R0.25": {
+   "trades": 206,
+   "net_total": 1556.99
+  },
+  "B_S_R0.5": {
+   "trades": 166,
+   "net_total": 7434.24
+  },
+  "B_S_R0.75": {
+   "trades": 144,
+   "net_total": 1279.03
   },
   "B_S_R1": {
    "trades": 132,
@@ -102,6 +129,18 @@
    "trades": 88,
    "net_total": 7014.42
   },
+  "A_F_R0.25": {
+   "trades": 105,
+   "net_total": 10.27
+  },
+  "A_F_R0.5": {
+   "trades": 89,
+   "net_total": -157.19
+  },
+  "A_F_R0.75": {
+   "trades": 79,
+   "net_total": -2789.83
+  },
   "A_F_R1": {
    "trades": 70,
    "net_total": -3626.73
@@ -134,6 +173,18 @@
    "trades": 18,
    "net_total": -4240.38
   },
+  "B_F_R0.25": {
+   "trades": 213,
+   "net_total": -6527.59
+  },
+  "B_F_R0.5": {
+   "trades": 154,
+   "net_total": -140.76
+  },
+  "B_F_R0.75": {
+   "trades": 140,
+   "net_total": 1072.02
+  },
   "B_F_R1": {
    "trades": 111,
    "net_total": 5216.14
@@ -165,6 +216,18 @@
   "B_F_R無": {
    "trades": 12,
    "net_total": 3090.8
+  },
+  "S0_R0.25": {
+   "trades": 362,
+   "net_total": -2788.27
+  },
+  "S0_R0.5": {
+   "trades": 258,
+   "net_total": 3818.25
+  },
+  "S0_R0.75": {
+   "trades": 200,
+   "net_total": 409.02
   },
   "S0_R1": {
    "trades": 167,
