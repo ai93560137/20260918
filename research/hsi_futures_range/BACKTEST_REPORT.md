@@ -116,3 +116,4 @@
 - 波幅、高低位預測：`research/hsi_futures_range/RESULTS.md`、`backtest.py`
 - 高低位已出現：`research/hsi_futures_range/HIGH_LOW_IN_REPORT.md`、`high_low_in.py`
 - 風揚陣手冊：`research/hsi_futures_range/FENGYANG.md`
+- 用來賺錢的四個方向與方向二盈虧回測：`research/hsi_futures_range/MONEY_REPORT.md`、`fade_pnl.py`
