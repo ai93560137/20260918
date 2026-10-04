@@ -167,6 +167,12 @@ def verify(bars, daily_k, out):
                 ok = xt in last_bar_of_week and abs(xp - xb["close"]) <= EPS
             elif why == "週目標":
                 ok = (xb["high"] >= xp - EPS) if side > 0 else (xb["low"] <= xp + EPS)
+            elif why.endswith("R 止賺"):                       # [hl_both] 固定倍數目標
+                tg = float(r["initial_target"])
+                ok = (abs(xp - tg) <= EPS and ((xb["high"] >= tg - EPS) if side > 0 else (xb["low"] <= tg + EPS))) or \
+                     (abs(xp - xb["open"]) <= EPS and ((xb["open"] >= tg - EPS) if side > 0 else (xb["open"] <= tg + EPS)))
+                rr = float(why.split("R")[0])
+                ok = ok and abs(tg - (ep + side * rr * abs(ep - float(r["initial_stop"])))) <= EPS
             elif why == "數據完結":
                 ok = xt == allbars[-1]["time_key"]
             else:
@@ -184,6 +190,21 @@ def verify(bars, daily_k, out):
                 lv = ld[day_of[et]]
                 level = float(lv["pred_low"] if side > 0 else lv["pred_high"])
                 T.check("T5 回調掛單價不差過預測位", (ep <= level + EPS) if side > 0 else (ep >= level - EPS), tag)
+            elif r["entry_type"] == "高低都現後入":                 # [hl_both] 第二個預測位被碰到的那一根
+                lv = ld[day_of[et]]
+                ph, pl = float(lv["pred_high"]), float(lv["pred_low"])
+                dbars = days[[d["date"] for d in days].index(day_of[et])]["bars"]
+                before_ = [b for b in dbars if b["time_key"] < et]
+                hb, lb = any(b["high"] >= ph for b in before_), any(b["low"] <= pl for b in before_)
+                he, le = hb or eb["high"] >= ph, lb or eb["low"] <= pl
+                if not hb and not lb and eb["high"] >= ph and eb["low"] <= pl:
+                    pxok = abs(ep - eb["close"]) <= EPS
+                elif hb and not lb:
+                    pxok = abs(ep - min(pl, eb["open"])) <= EPS
+                else:
+                    pxok = abs(ep - max(ph, eb["open"])) <= EPS
+                T.check("T5 高低都現後才入（第二個位被碰到那一根）", not (hb and lb) and he and le and pxok, tag)
+                T.check("T5 止蝕固定（1:2 準確）", len(path_) == 1, tag)
             elif r["entry_type"] == "空手・開市再入":
                 T.check("T5 開市再入＝當天第一根開市價", abs(ep - eb["open"]) <= EPS
                         and days[[d["date"] for d in days].index(day_of[et])]["bars"][0]["time_key"] == et, tag)

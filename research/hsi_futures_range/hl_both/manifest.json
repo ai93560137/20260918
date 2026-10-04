@@ -1,0 +1,36 @@
+{
+ "generated_utc": "2026-10-04 05:39:27",
+ "git_head": "699c7a2e4669b7802a9ac4a3c939fcc57c1aa332",
+ "script_sha256": "34f78ee0446564769b7497fab4de643a6029be95db5a10e22f07fdcbc55658ff",
+ "engine_sha256": "f47f221d39c231d4dd6b1d37695ae835b1882d1c319e989fda4bb270d29df66c",
+ "input": {
+  "bars": 46868,
+  "bars_sha256": "4f9c7f6ee197b0196aebda02f2daef68e3a035fe0262cfc025a228433641b4d0",
+  "daily": 739,
+  "daily_sha256": "ea884e7c10076b582b140f291c96ff07ee4b266864f514c2dee8c663b8d9af6f"
+ },
+ "params": {
+  "cost_per_round_trip": 3.0,
+  "stop_band_q": 0.95,
+  "rr": 2.0,
+  "configs": {
+   "S": "跟蛇蟠陣方向（蛇反手也平倉）",
+   "F": "反向回歸（最後碰低位買、碰高位沽，不理蛇）",
+   "S0": "對照：跟蛇、開市就入（不等高低位都出現）"
+  }
+ },
+ "configs": {
+  "S": {
+   "trades": 40,
+   "net_total": 2260.94
+  },
+  "F": {
+   "trades": 39,
+   "net_total": -1849.46
+  },
+  "S0": {
+   "trades": 127,
+   "net_total": -948.58
+  }
+ }
+}
