@@ -75,6 +75,8 @@
 #     回測見 research/hsi_futures_range/HIGH_LOW_IN_REPORT.md。只顯示，不影響下單。
 #   * 2026-10-04 — [R102] 這套恒指即月期貨波幅系統在八陣登記為「風揚陣」（research/hsi_futures_range/FENGYANG.md）：
 #     Telegram 訊息開頭加【風揚陣】，波幅頁標題與控制台連結加陣名。只改顯示文字。
+#   * 2026-10-04 — [R103] 波幅頁改版給投資人看：今日／本週／本月三個區塊，各自顯示預測波幅（週、月 = 第一天
+#     HAR × √交易日數 × 校準比例）、已走幾成、目前高低，以及 A／B／C 三個訊號的白話狀態；統計、明細表、說明收進下方。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2649,6 +2651,9 @@ PEAK_C_CUT = {"day": "16:30", "week": 4, "month": 15}   # 日 16:30；週第 4 �
 PEAK_KINDS = ("day", "week", "month")
 PEAK_ZH = {"day": "今日", "week": "本週", "month": "本月"}
 PEAK_STRAT_ZH = {"A": "A 耗盡回落", "B": "B 機率法", "C": "C 時間點"}
+# 週、月預測波幅 = 第一天 HAR 預測 × √交易日數 × 比例；比例取 2023-12 至 2026-09 實際 ÷ 預測 的 10%／50%／90% 分位
+# （逐段前推回測：週 MAE 312 點、80% 區間命中 79%（130 週）；月 MAE 763 點、命中 71%（21 個月））
+PERIOD_RANGE_RATIO = {"week": (0.627, 0.957, 1.537), "month": (0.665, 1.038, 1.671)}
 FUTU_SIGNAL_DIR = "futu/signals"
 FUTU_SIGNAL_KEEP = 3000
 # 各 15 分鐘時段佔一個交易日變異的比例（2025-09 至 2026-10 的 250 個交易日估；鍵是 K 線結束時間）
@@ -2842,7 +2847,10 @@ def futu_peak_status(symbol, now=None):
                 first = done[:cut]
                 c_state = (max(x[0] for x in first), min(x[1] for x in first), first[-1][2])
         period = {"key": key, "sessions_done": len(prior) + (1 if ended and trading_today else 0), "sessions": n,
-                  "R": round(big_r, 1), "over": rem <= 0}
+                  "R": round(big_r, 1), "over": rem <= 0, "range": round(hs - ls, 1), "first": sessions[0]}
+        if kind in PERIOD_RANGE_RATIO:                                # [R103] 週、月的預測波幅（已校準）
+            q10, q50, q90 = PERIOD_RANGE_RATIO[kind]
+            period["forecast"] = {"range": round(big_r * q50), "lo": round(big_r * q10), "hi": round(big_r * q90)}
         for side in ("high", "low"):
             ext = hs if side == "high" else ls
             dist = (hs - price) if side == "high" else (price - ls)
@@ -2934,11 +2942,11 @@ def futu_signals_report(symbol, ack=None):
     return {"status": "ok", "signals": pending}
 
 
-def futu_peak_lines(symbol, now=None):
+def futu_peak_lines(symbol, now=None, status=None, signals=None):
     """四次報告用：今日／本週／本月三個策略的現況（數據不足 → 空）。"""
     try:
-        st = futu_peak_status(symbol, now)
-        sig = gcs_read_json(futu_signal_file(symbol), [])
+        st = status if status is not None else futu_peak_status(symbol, now)
+        sig = signals if signals is not None else gcs_read_json(futu_signal_file(symbol), [])
     except StorageError:
         return []
     if not st or not st["periods"]:
@@ -2987,7 +2995,10 @@ def futu_range_data(symbol):
         full = futu_day_forecast(completed, data["forecast"]["date"])
         if full:
             data["forecast"] = full
-    data["peak_lines"] = futu_peak_lines(symbol)                  # [R101]
+    data["peak"] = futu_peak_status(symbol)                       # [R101][R103] 算一次，頁面與文字共用
+    sig = gcs_read_json(futu_signal_file(symbol), [])
+    data["signals"] = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
+    data["peak_lines"] = futu_peak_lines(symbol, status=data["peak"], signals=sig)
     review_day = data["rows"][-1]["date"] if data["rows"] else None
     reviews = gcs_read_json(futu_review_file(symbol), [])
     data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
@@ -3077,104 +3088,203 @@ def futu_range_chart(rows):
             f"aria-label='過去一年每日波幅柱狀圖'>{grid}{''.join(bars)}{line}{''.join(labels)}</svg>")
 
 
+FY_CSS = """<style>
+.fy-hero { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; background:var(--card); border-radius:14px;
+           padding:14px 18px; margin-bottom:18px; box-shadow:0 4px 15px rgba(0,0,0,.04); font-size:14px; }
+.fy-hero b { font-size:20px; }
+.fy-legend { font-size:12px; color:var(--muted); margin:-8px 0 18px; }
+.fy-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-bottom:24px; }
+.fy-card { background:var(--card); border-radius:16px; padding:18px 18px 14px; box-shadow:0 4px 15px rgba(0,0,0,.04);
+           border-top:4px solid var(--primary); }
+.fy-card.week { border-top-color:#0aa06e; } .fy-card.month { border-top-color:#6d5bd0; }
+.fy-card h2 { font-size:17px; margin:0 0 2px; } .fy-sub { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.fy-big { font-size:28px; font-weight:800; line-height:1.1; } .fy-band { font-size:13px; color:var(--muted); }
+.fy-row { display:flex; justify-content:space-between; gap:8px; font-size:14px; padding:6px 0; border-bottom:1px dashed #e9ecef; }
+.fy-bar { height:8px; background:#eef1f4; border-radius:4px; overflow:hidden; margin:4px 0 2px; }
+.fy-bar > div { height:100%; background:var(--primary); border-radius:4px; }
+.fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
+.fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
+.fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+details.fy-more { background:var(--card); border-radius:16px; padding:14px 18px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); }
+details.fy-more summary { cursor:pointer; font-weight:700; }
+</style>"""
+PERIOD_TITLE = {"day": ("📅", "今日", ""), "week": ("🗓️", "本週", "week"), "month": ("🈷️", "本月", "month")}
+PEAK_CUT_TEXT = {"day": "16:30", "week": "第 4 個交易日收市", "month": "第 15 個交易日收市"}
+
+
+def _n(v):
+    return "—" if v is None else f"{v:,.0f}"
+
+
+def _fy_signal_lines(kind, per, side, fired):
+    """一邊（高位或低位）的 A／B／C 白話狀態。"""
+    s, R = per[side], per["R"]
+    high = side == "high"
+    zh, new = ("高位", "新高") if high else ("低位", "新低")
+
+    def fired_text(strat):
+        e = fired.get(f"{kind}:{per['key']}:{side}:{strat}")
+        if not e:
+            return None
+        when = str(e.get("asof") or e.get("made_utc") or "")[5:16]
+        beyond = s["ext"] > e["ext"] if high else s["ext"] < e["ext"]
+        if beyond:
+            return f"❌ {when} 曾通知，之後又創{new}（判斷錯）"
+        return f"✅ {when} 已通知（當時{zh} {_n(e['ext'])}），至今未再創{new}"
+
+    def acc(strat):
+        a = PEAK_ACCURACY.get(f"{kind}/{side}/{strat}")
+        return f"（回測準確 {a:.0%}）" if a is not None else ""
+
+    if per["over"]:                                               # 已結束：只說有沒有通知過
+        return [f"{icon} {name}{acc(k)}：{fired_text(k) or '— 這段沒有觸發'}"
+                for k, icon, name in (("A", "🅰️", "耗盡回落"), ("B", "🅱️", "機率法"), ("C", "🅲", "時間點"))]
+    a_txt = fired_text("A") or (
+        "✅ 條件已達成" if s["A"] else
+        f"⏳ 未觸發：已走 {per['range'] / R * 100:.0f}% 預期波幅（要 ≥ 80%），"
+        f"離{zh} {_n(s['dist'])} 點（要 ≥ {_n(PEAK_A[1] * R)} 點）")
+    b_txt = fired_text("B") or (
+        f"✅ 之後再創{new}的機率只有 {s['prob'] * 100:.0f}%" if s["B"] else
+        f"⏳ 之後再創{new}的機率 {s['prob'] * 100:.0f}%（低於 5% 才通知）")
+    if s["C"] is None:
+        c_txt = f"⏳ {PEAK_CUT_TEXT[kind]}才判斷（屆時要離{zh} ≥ {_n(PEAK_C_BETA * R)} 點）"
+    else:
+        c_txt = fired_text("C") or ("✅ 條件已達成" if s["C"] else f"✖️ {PEAK_CUT_TEXT[kind]}時離{zh}不夠遠，這段不觸發")
+    return [f"🅰️ 耗盡回落{acc('A')}：{a_txt}", f"🅱️ 機率法{acc('B')}：{b_txt}", f"🅲 時間點{acc('C')}：{c_txt}"]
+
+
+def _fy_period_card(kind, per, fc, fired, today_label, waiting=None):
+    icon, title, css = PERIOD_TITLE[kind]
+    if per:
+        done = (f"已收市 {per['sessions_done']}／{per['sessions']} 個交易日" if kind != "day" else "日市＋當晚夜市")
+        sub = f"{done}" + ("・🏁 已結束" if per["over"] else "")
+    else:
+        sub = today_label
+    html = [f"<div class='fy-card {css}'><h2>{icon} {title}</h2><div class='fy-sub'>{esc(sub)}</div>"]
+    if fc:
+        html.append(f"<div>🔮 預測波幅</div><div class='fy-big'>{_n(fc['range'])} 點</div>"
+                    f"<div class='fy-band'>80% 機會落在 {_n(fc['lo'])}–{_n(fc['hi'])} 點</div>")
+        if fc.get("high") is not None:
+            html.append(f"<div class='fy-row'><span>🎯 預測高位</span><b>{_n(fc['high'])}</b></div>"
+                        f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>")
+    if per:
+        used = per["range"] / fc["range"] * 100 if fc and fc.get("range") else None
+        html.append(f"<div class='fy-row'><span>📏 已走</span><b>{_n(per['range'])} 點"
+                    + (f"（{used:.0f}%）" if used is not None else "") + "</b></div>")
+        if used is not None:
+            html.append(f"<div class='fy-bar'><div style='width:{min(used, 100):.0f}%'></div></div>")
+        html.append(f"<div class='fy-row'><span>⬆️ 目前高位</span><b>{_n(per['high']['ext'])}</b></div>"
+                    f"<div class='fy-row'><span>⬇️ 目前低位</span><b>{_n(per['low']['ext'])}</b></div>")
+        for side, head in (("high", "⬆️ 高位已出現了嗎？"), ("low", "⬇️ 低位已出現了嗎？")):
+            lines = _fy_signal_lines(kind, per, side, fired)
+            html.append(f"<div class='fy-side'><h3>{head}</h3>"
+                        + "".join(f"<div class='fy-sig'>{esc(x)}</div>" for x in lines) + "</div>")
+    elif waiting:
+        html.append(f"<div class='fy-note'>{esc(waiting)}</div>")
+    if kind == "week":
+        html.append("<div class='fy-note'>週預測 = 第一天預測 × √交易日數（已校準）；回測誤差約 ±310 點，80% 區間命中 79%。</div>")
+    elif kind == "month":
+        html.append("<div class='fy-note'>月預測同理；回測誤差約 ±760 點，80% 區間只命中 71%（樣本 21 個月），僅供參考。</div>")
+    html.append("</div>")
+    return "".join(html)
+
+
 def build_futu_range_page(data):
     rows, s, symbol = data["rows"], data["summary"], data["symbol"]
     nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
-           f"<h1 class='page-title'>📏 風揚陣・即月期貨波幅（{esc(symbol)}）</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
+           f"<h1 class='page-title'>🌬️ 風揚陣・恒指即月期貨波幅</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
     if not rows:
-        body = nav + ("<div class='section'>還沒有交易日 K 數據。本地執行 push_to_gcp.py（v7）的 "
-                      f"<span class='mono'>--backfill {esc(symbol)}</span> 補一年歷史，之後每 5 分鐘會自動更新。</div>")
-        return html_page("風揚陣・即月期貨波幅", body)
+        body = nav + ("<div class='section'>還沒有交易日 K 數據。本地執行 push_to_gcp.py 的 "
+                      f"<span class='mono'>--backfill {esc(symbol)}</span> 補歷史，之後每 5 分鐘會自動更新。</div>")
+        return html_page("風揚陣・即月期貨波幅", body, head_extra=FY_CSS)
     latest = rows[-1]
     five = data.get("latest_5m") or {}
     age = data.get("latest_5m_age_sec")
     stale = age is None or age > FUTU_STALE_SEC
-    status = ("<span class='neg'>⚠️ 推送可能已停止</span>" if stale
-              else f"<span class='pos'>{esc(countdown_text(age))} 前更新</span>")
-    tag = "（交易中）" if data["partial"] else "（已完結）"
+    peak = data.get("peak") or {}
+    periods = peak.get("periods") or {}
+    trading = data["partial"] and not stale
+    state = "🟢 交易中" if trading else ("⚠️ 推送可能已停止" if data["partial"] else "🌙 休市／未開市")
+    hero = (f"<div class='fy-hero'><span>💹 現價 <b>{_n(five.get('close') or peak.get('price'))}</b></span>"
+            f"<span>📄 合約 {esc(data.get('contract') or '—')}</span>"
+            f"<span>⏱️ {esc(countdown_text(age)) + ' 前更新' if age is not None else '—'}</span>"
+            f"<span>{state}</span></div>"
+            "<div class='fy-legend'>🅰️ 耗盡回落｜🅱️ 機率法｜🅲 時間點　✅ 已通知／已達成　⏳ 未到　❌ 通知後又破　"
+            "交易日 = 日市 09:15–16:30 ＋ 當晚夜市至翌日 03:00</div>")
+    fc = data.get("forecast")
+    day_fc = fc if fc else None
+    today_label = (f"{esc(fc['date'])}" if fc and fc.get("date") not in (None, "next") else "下一個交易日")
+    waiting = "⏳ 09:15 開市後開始判斷高低位是否已出現。" if "day" not in periods else None
+    cards = ("<div class='fy-grid'>"
+             + _fy_period_card("day", periods.get("day"), day_fc, data.get("signals") or {}, today_label, waiting)
+             + _fy_period_card("week", periods.get("week"), (periods.get("week") or {}).get("forecast"),
+                               data.get("signals") or {}, "本週未開始")
+             + _fy_period_card("month", periods.get("month"), (periods.get("month") or {}).get("forecast"),
+                               data.get("signals") or {}, "本月未開始")
+             + "</div>")
+    review_html = "".join(f"<div class='log-card'><div class='log-ctx' style='white-space:pre-wrap;'>{esc(e.get('text', ''))}</div></div>"
+                          for e in data.get("reviews") or [])
+    reviews = (f"<details class='fy-more' open><summary>🧾 {esc(latest['date'])} 的檢討（12:00／16:30／03:00）</summary>{review_html}</details>"
+               if review_html else "")
+    bt, lt = data.get("backtest") or {}, data.get("live_track") or {}
+    live = (f"實時紀錄 {lt['days']} 天：誤差 ±{_n(lt.get('mae'))} 點、命中 {lt.get('coverage_80')}%" if lt.get("days")
+            else "實時紀錄：從開始運作起每天累積")
     pct = lambda v: "—" if v is None else f"{v:.2f}%"
-    fc, bt, lt = data.get("forecast"), data.get("backtest") or {}, data.get("live_track") or {}
-    if fc:
-        fc_title = (f"{esc(fc['date'])} 預測波幅（HAR）" if fc.get("date") != "next" else "下一個交易日預測波幅（HAR）")
-        so_far = ""
-        if data["partial"] and fc.get("date") == latest["date"] and fc.get("range"):
-            so_far = f"・已走 {latest['range'] / fc['range'] * 100:.0f}%（{fmt_num(latest['range'], '{:,.0f}')} 點）"
-        logged = f"・{esc(str(fc.get('made_utc', ''))[11:16])} UTC 已記錄" if fc.get("logged") else ""
-        hl = (f"<br>高位約 <b>{fmt_num(fc['high'], '{:,.0f}')}</b>（{fmt_num(fc['high_lo'], '{:,.0f}')}–{fmt_num(fc['high_hi'], '{:,.0f}')}）"
-              f"<br>低位約 <b>{fmt_num(fc['low'], '{:,.0f}')}</b>（{fmt_num(fc['low_lo'], '{:,.0f}')}–{fmt_num(fc['low_hi'], '{:,.0f}')}）"
-              if fc.get("high") is not None else "")
-        fc_card = (f"<div class='card'><div class='card-title'>{fc_title}</div>"
-                   f"<div class='card-value'>{fmt_num(fc['range'], '{:,.0f}')}</div>"
-                   f"<div class='card-desc'>80% 機會 {fmt_num(fc['lo'], '{:,.0f}')}–{fmt_num(fc['hi'], '{:,.0f}')} 點"
-                   f"・參考收市 {fmt_num(fc.get('ref_close'), '{:,.0f}')}{so_far}{logged}{hl}</div></div>")
-    else:
-        fc_card = ("<div class='card'><div class='card-title'>預測波幅（HAR）</div><div class='card-small'>數據不足</div>"
-                   f"<div class='card-desc'>至少要 {HAR_MIN_DAYS} 個已完結交易日</div></div>")
-    live = (f"實時紀錄 {lt['days']} 天：誤差 {fmt_num(lt.get('mae'), '{:,.0f}')} 點、命中 {lt.get('coverage_80')}%"
-            + (f"、高位 ±{fmt_num(lt.get('high_mae'), '{:,.0f}')}、低位 ±{fmt_num(lt.get('low_mae'), '{:,.0f}')}" if lt.get("hl_days") else "")
-            if lt.get("days") else "實時紀錄：從今天起每天累積")
-    bt_card = (f"<div class='card'><div class='card-title'>預測準確度（逐日前推回測 {bt.get('days') or 0} 天）</div>"
-               f"<div class='card-value'>±{fmt_num(bt.get('mae'), '{:,.0f}')}</div>"
-               f"<div class='card-desc'>平均誤差（點）・80% 區間命中 {bt.get('coverage_80') if bt.get('coverage_80') is not None else '—'}%"
-               f"・偏差 {fmt_num(bt.get('bias'), '{:+,.0f}')}<br>{live}</div></div>")
-    cards = f"""
-    <div class='grid'>{fc_card}{bt_card}
-      <div class='card'><div class='card-title'>最新交易日 {esc(latest['date'])}{tag}</div>
-        <div class='card-small'>開 {fmt_num(latest['open'], '{:,.0f}')}　高 {fmt_num(latest['high'], '{:,.0f}')}<br>低 {fmt_num(latest['low'], '{:,.0f}')}　收 {fmt_num(latest['close'], '{:,.0f}')}</div>
-        <div class='card-desc'>波幅 {fmt_num(latest['range'], '{:,.0f}')}（{pct(latest['range_pct'])}）・合約 {esc(data.get('contract') or '—')}</div></div>
-      <div class='card'><div class='card-title'>最新 5 分 K（香港時間）</div><div class='card-value'>{fmt_num(five.get('close'), '{:,.0f}')}</div>
-        <div class='card-desc'>{esc(five.get('time_key', '—'))}・{status}</div></div>
-      <div class='card'><div class='card-title'>一年平均波幅</div><div class='card-value'>{fmt_num(s['avg_range'], '{:,.0f}')}</div>
-        <div class='card-desc'>中位數 {fmt_num(s['median_range'], '{:,.0f}')}・平均 {pct(s['avg_range_pct'])}</div></div>
-      <div class='card'><div class='card-title'>近 20 日平均波幅</div><div class='card-value'>{fmt_num(s['avg_range_20'], '{:,.0f}')}</div>
-        <div class='card-desc'>ATR(14) {fmt_num(s['atr_14'], '{:,.0f}')}</div></div>
-      <div class='card'><div class='card-title'>{esc(s['last_date'] or '—')} 波幅在一年中的位置</div><div class='card-value'>{'—' if s['last_range_percentile'] is None else str(s['last_range_percentile']) + '%'}</div>
-        <div class='card-desc'>≤ 這個波幅的日子佔比</div></div>
-      <div class='card'><div class='card-title'>一年最大／最小波幅</div>
-        <div class='card-small'>{fmt_num((s['max_range'] or {}).get('range'), '{:,.0f}')}（{esc((s['max_range'] or {}).get('date', '—'))}）<br>{fmt_num((s['min_range'] or {}).get('range'), '{:,.0f}')}（{esc((s['min_range'] or {}).get('date', '—'))}）</div>
-        <div class='card-desc'>一年高 {fmt_num(s['year_high'], '{:,.0f}')}・低 {fmt_num(s['year_low'], '{:,.0f}')}</div></div>
+    stats = f"""
+    <div class='grid'>
+      <div class='card'><div class='card-title'>🎯 預測準確度（回測 {bt.get('days') or 0} 天）</div><div class='card-value'>±{_n(bt.get('mae'))}</div>
+        <div class='card-desc'>平均誤差（點）・80% 區間命中 {bt.get('coverage_80') if bt.get('coverage_80') is not None else '—'}%<br>{esc(live)}</div></div>
+      <div class='card'><div class='card-title'>📊 一年平均波幅</div><div class='card-value'>{_n(s['avg_range'])}</div>
+        <div class='card-desc'>中位數 {_n(s['median_range'])}・平均 {pct(s['avg_range_pct'])}</div></div>
+      <div class='card'><div class='card-title'>📉 近 20 日平均波幅</div><div class='card-value'>{_n(s['avg_range_20'])}</div>
+        <div class='card-desc'>ATR(14) {_n(s['atr_14'])}</div></div>
+      <div class='card'><div class='card-title'>📌 {esc(s['last_date'] or '—')} 波幅位置</div><div class='card-value'>{'—' if s['last_range_percentile'] is None else str(s['last_range_percentile']) + '%'}</div>
+        <div class='card-desc'>一年中 ≤ 這個波幅的日子佔比</div></div>
+      <div class='card'><div class='card-title'>🗂️ 最新交易日 {esc(latest['date'])}{'（交易中）' if data['partial'] else '（已完結）'}</div>
+        <div class='card-small'>開 {_n(latest['open'])}　高 {_n(latest['high'])}<br>低 {_n(latest['low'])}　收 {_n(latest['close'])}</div>
+        <div class='card-desc'>波幅 {_n(latest['range'])}（{pct(latest['range_pct'])}）</div></div>
+      <div class='card'><div class='card-title'>🏔️ 一年最大／最小波幅</div>
+        <div class='card-small'>{_n((s['max_range'] or {}).get('range'))}（{esc((s['max_range'] or {}).get('date', '—'))}）<br>{_n((s['min_range'] or {}).get('range'))}（{esc((s['min_range'] or {}).get('date', '—'))}）</div>
+        <div class='card-desc'>一年高 {_n(s['year_high'])}・低 {_n(s['year_low'])}</div></div>
     </div>"""
     table_rows = "".join(
-        f"<tr><td>{esc(r['date'])}</td><td>{fmt_num(r['open'], '{:,.0f}')}</td><td>{fmt_num(r['high'], '{:,.0f}')}</td>"
-        f"<td>{fmt_num(r['low'], '{:,.0f}')}</td><td>{fmt_num(r['close'], '{:,.0f}')}</td>"
+        f"<tr><td>{esc(r['date'])}</td><td>{_n(r['open'])}</td><td>{_n(r['high'])}</td>"
+        f"<td>{_n(r['low'])}</td><td>{_n(r['close'])}</td>"
         f"<td class='{pnl_class(r['change'])}'>{fmt_num(r['change'], '{:+,.0f}')}</td>"
-        f"<td><b>{fmt_num(r['range'], '{:,.0f}')}</b></td><td>{pct(r['range_pct'])}</td>"
-        f"<td>{fmt_num(r['true_range'], '{:,.0f}')}</td>"
-        f"<td>{fmt_num(r.get('forecast'), '{:,.0f}')}</td>"
-        f"<td class='muted'>{(fmt_num(r.get('forecast_lo'), '{:,.0f}') + '–' + fmt_num(r.get('forecast_hi'), '{:,.0f}')) if r.get('forecast') else '—'}</td>"
+        f"<td><b>{_n(r['range'])}</b></td><td>{pct(r['range_pct'])}</td>"
+        f"<td>{_n(r.get('forecast'))}</td>"
+        f"<td class='muted'>{(_n(r.get('forecast_lo')) + '–' + _n(r.get('forecast_hi'))) if r.get('forecast') else '—'}</td>"
         f"<td class='{'' if not r.get('forecast') else ('pos' if r['forecast_lo'] <= r['range'] <= r['forecast_hi'] else 'neg')}'>"
+        f"{'—' if not r.get('forecast') else ('✅' if r['forecast_lo'] <= r['range'] <= r['forecast_hi'] else '❌')} "
         f"{fmt_num((r['range'] - r['forecast']) if r.get('forecast') else None, '{:+,.0f}')}</td>"
         f"<td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
         for r in reversed(rows))
-    review_html = "".join(f"<div class='log-card'><div class='log-ctx' style='white-space:pre-wrap;'>{esc(e.get('text', ''))}</div></div>"
-                          for e in data.get("reviews") or [])
-    reviews = (f"<div class='section'><h2>{esc(latest['date'])} 的檢討（12:00／16:30／03:00）</h2>{review_html}"
-               f"<div class='muted' style='font-size:12px;'>每個交易日 08:2x 開市前預測、12:0x、16:3x、03:1x 檢討，同時發 Telegram。</div></div>"
-               if review_html else "")
-    peak = data.get("peak_lines") or []
-    peak_html = (f"<div class='section'><h2>{esc(peak[0])}</h2>"
-                 + "".join(f"<div class='log-line'>{esc(line)}</div>" for line in peak[1:])
-                 + "<div class='muted' style='font-size:12px; margin-top:8px;'>A：已走 ≥ 0.8 個預期波幅且回落 ≥ 0.5 個；"
-                   "B：之後再創新高（低）的機率，低於 5% 觸發；C：今日 16:30、本週第 4 個、本月第 15 個交易日收市時回落 ≥ 0.4 個預期波幅。"
-                   "任一策略第一次觸發會發 Telegram。回測見 research/hsi_futures_range/HIGH_LOW_IN_REPORT.md。</div></div>"
-                 if peak else "")
-    body = nav + cards + peak_html + reviews + f"""
-    <div class='section'><h2>過去一年每日波幅（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
+    body = nav + hero + cards + reviews + f"""
+    <div class='section-header'>📊 過去一年</div>
+    {stats}
+    <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
       {futu_range_chart(rows)}
     </div>
-    <div class='section'><h2>每日 OHLC 與波幅</h2>
-      <div class='scroll' style='max-height:520px;'><table>
-        <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>真實波幅</th><th>HAR 預測</th><th>80% 區間</th><th>實際−預測</th><th>合約</th></tr>
+    <details class='fy-more'><summary>📋 每日 OHLC 與波幅明細</summary>
+      <div class='scroll' style='max-height:520px; margin-top:10px;'><table>
+        <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>HAR 預測</th><th>80% 區間</th><th>實際−預測</th><th>合約</th></tr>
         {table_rows}</table></div>
-      <div class='muted' style='font-size:12px; margin-top:10px; line-height:1.6;'>
-        交易日 = 香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00 算同一天
-        （由 5 分／60 分 K 合成，跟 Futu 自己的日 K 不同）。即月期貨：最後交易日當天轉下月，不做價差調整，轉月日會有跳空。
-        波幅 = 高 − 低；波幅% = 波幅 ÷ 昨收；真實波幅 = max(高, 昨收) − min(低, 昨收)。還在交易的一天不計入平均。
-        HAR 預測：ln(波幅%) 對 前一天、前 5 天平均、前 22 天平均 回歸，每天只用之前的數據重新擬合（逐日前推，沒有偷看答案），
-        80% 區間取殘差的 10%／90% 分位；綠色 = 實際落在區間內。回測見 research/hsi_futures_range/。統計估計，不是交易建議。
-        只存、只顯示，不進電閘、不影響下單。原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></div>
-    </div>"""
-    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body)
+    </details>
+    <details class='fy-more'><summary>ℹ️ 怎樣算的</summary>
+      <div class='fy-note' style='font-size:13px;'>
+        <p>📅 <b>交易日</b> = 香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00（跟富途日 K 不同）。
+        即月期貨在最後交易日當天轉下月，不做價差調整。</p>
+        <p>🔮 <b>波幅預測（HAR）</b>：用前 1 天、前 5 天、前 22 天的波幅預測今天，每天只用之前的數據重新計算；80% 區間來自過去的預測誤差。
+        高位 ≈ 昨收 + 0.43 × 預測波幅，低位 ≈ 昨收 − 0.39 × 預測波幅。週、月 = 第一天預測 × √交易日數（已按過去數據校準）。</p>
+        <p>🅰️ <b>耗盡回落</b>：已走 ≥ 80% 預期波幅，而且離高（低）位 ≥ 50% 預期波幅。
+        🅱️ <b>機率法</b>：按剩餘時間估「之後再創新高（低）」的機率，低於 5% 就通知；回測中機率與實際命中一致。
+        🅲 <b>時間點</b>：今日 16:30、本週第 4 個、本月第 15 個交易日收市時，離高（低）位 ≥ 40% 預期波幅。
+        任一訊號第一次出現就發 Telegram（每 15 分鐘送一次）。</p>
+        <p>⚠️ 統計估計，不是交易建議；只顯示，不影響下單。3 年回測見 research/hsi_futures_range/BACKTEST_REPORT.md。
+        原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></p>
+      </div>
+    </details>"""
+    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS)
 
 
 def handle_futu_api_get(symbol=None):
