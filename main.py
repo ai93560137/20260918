@@ -93,6 +93,10 @@
 #   * 2026-10-04 — [R113] 方向二卡加「預測高低位都出現後入・1:2 RRR」回測結論（hl_both.py）。
 #   * 2026-10-04 — [R114] 方向二卡加訊號版（高位／低位已出現都亮後入・1:2 RRR）回測結論（hl_signal.py）。
 #   * 2026-10-04 — [R115] 方向二卡加 R 測試結論（r_sweep.py，Futu＋HK50 差價合約）。
+#   * 2026-10-04 — [R116] 📒 紙上交易：回測挑出的三條策略（🐍 蛇蟠陣、🅱️＋跟蛇＋3R、🅰️＋跟蛇＋2R）跟實時 5 分 K 走，
+#     每包 K 線到達時記入市／出場，狀態與逐筆紀錄存 futu/paper/<代號>.json，通知經 report=signals 一起發 Telegram；
+#     波幅頁加「📒 紙上交易」區，?view=futu_range&report=paper 給統計與逐筆；開市前預測多記九成日範圍邊（edge95）。
+#     只是紙上紀錄，不接下單。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2112,6 +2116,7 @@ def handle_futu_data(payload):
         warnings.extend(futu_forecast_log(symbol, bars))            # [R98] 當天預測只記一次
     if not daily and symbol.endswith(FUTU_SERIES_SUFFIX):            # [R101] 高低位是否已出現
         warnings.extend(futu_peak_update(symbol))
+        warnings.extend(futu_paper_update(symbol))                   # [R116] 紙上交易跟新 K 線走
 
     log_event(f"📡 [Futu 行情] {symbol} K線 {len(bars)} 根（最新 {latest.get('time_key', '—')} "
               f"收 {fmt_num(latest.get('close'))}）期權 {len(options)} 檔（IV 有值 {len(ivs)}）",
@@ -2478,7 +2483,9 @@ def futu_day_forecast(completed, target):
         su, sd = sorted(ups), sorted(downs)
         out.update(high=round(ref + _quantile(su, 0.5) * rng), high_lo=round(ref + _quantile(su, 0.1) * rng),
                    high_hi=round(ref + _quantile(su, 0.9) * rng), low=round(ref - _quantile(sd, 0.5) * rng),
-                   low_lo=round(ref - _quantile(sd, 0.9) * rng), low_hi=round(ref - _quantile(sd, 0.1) * rng))
+                   low_lo=round(ref - _quantile(sd, 0.9) * rng), low_hi=round(ref - _quantile(sd, 0.1) * rng),
+                   high_edge95=round(ref + _quantile(su, 0.95) * rng),            # [R116] 九成日範圍邊（紙上交易止蝕）
+                   low_edge95=round(ref - _quantile(sd, 0.95) * rng))
     return out
 
 
@@ -2642,7 +2649,7 @@ def futu_report(symbol, kind, now=None):
                                   ("open", "high", "low", "close", "volume", "source")}) for r in rows if r["date"] < day], day)
         summary = {"avg_range_20": stats["summary"].get("avg_range_20"), "bt_mae": stats["backtest"].get("mae")}
         return {"status": "ok", "kind": kind, "date": day, "forecast": fc,
-                "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now))}
+                "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now) + futu_paper_lines(symbol))}
     if kind not in REVIEW_KINDS:
         return {"status": "error", "reason": "report 只接受 preopen、noon、close、night"}
     day = futu_session_today(now)
@@ -2651,7 +2658,8 @@ def futu_report(symbol, kind, now=None):
     log = gcs_read_json(futu_forecast_file(symbol), [])
     done = [r for r in rows if r["date"] <= day] if kind == "night" else [r for r in rows if r["date"] < day]
     track = futu_forecast_track(log if isinstance(log, list) else [], done) if kind == "night" else None
-    review = futu_review(kind, day, fc, bars, track, futu_peak_lines(symbol, now))
+    review = futu_review(kind, day, fc, bars, track,
+                         futu_peak_lines(symbol, now) + futu_paper_lines(symbol, bars[-1]["close"] if bars else None))
     if not review:
         return {"status": "skip", "reason": f"{day} 沒有 5 分 K（休市或推送停了）"}
     futu_review_save(symbol, review)
@@ -2943,20 +2951,35 @@ def futu_signals_report(symbol, ack=None):
     if ack:
         ids = {x for x in str(ack).split(",") if x}
 
-        def mutate(existing):
-            items = [e for e in (existing if isinstance(existing, list) else []) if isinstance(e, dict)]
+        def mark(items):
             hit = 0
             for e in items:
-                if e.get("id") in ids and not e.get("sent"):
+                if isinstance(e, dict) and e.get("id") in ids and not e.get("sent"):
                     e["sent"], e["sent_utc"] = True, fmt_utc()
                     hit += 1
+            return hit
+
+        def mutate(existing):
+            items = [e for e in (existing if isinstance(existing, list) else []) if isinstance(e, dict)]
+            hit = mark(items)
             return (items, hit) if hit else (None, 0)
 
+        def mutate_paper(existing):                                 # [R116] 紙上交易的通知放在狀態檔裡
+            if not isinstance(existing, dict) or not existing.get("notices"):
+                return None, 0
+            hit = mark(existing["notices"])
+            return (existing, hit) if hit else (None, 0)
+
         n = gcs_update(futu_signal_file(symbol), mutate, default_factory=list)
+        if any(x.startswith("paper:") for x in ids):
+            n += gcs_update(futu_paper_file(symbol), mutate_paper, default_factory=dict)
         return {"status": "ok", "acked": n}
     items = gcs_read_json(futu_signal_file(symbol), [])
     pending = [{"id": e["id"], "text": e["text"]} for e in (items if isinstance(items, list) else [])
                if isinstance(e, dict) and not e.get("sent")]
+    paper = futu_paper_state(symbol)                                 # [R116]
+    pending += [{"id": e["id"], "text": e["text"]} for e in (paper or {}).get("notices", [])
+                if isinstance(e, dict) and not e.get("sent")]
     return {"status": "ok", "signals": pending}
 
 
@@ -3121,6 +3144,340 @@ def futu_iv_compare(fc, now=None):
     return out if ("iv" in out or "vhsi" in out) else None
 
 
+# ---- 📒 紙上交易：三條策略跟實時 5 分 K 走，逐筆記錄  [R116] -------------------------------
+# 回測挑出來的三條（規格與回測見 research/hsi_futures_range/PAPER_TRADING.md）：
+#   SNAKE   🐍 蛇蟠陣本身：前 3 個蛇日（日市屬當天、夜市屬翌日）的最高／最低做通道，觸價反手、永遠在場；
+#           止損單成交（開市已越過用開市價），每個蛇日每個方向最多一次。
+#   B_S_R3  🅱️ 機率法「高位已出現」「低位已出現」都亮後的下一根開市入，方向跟蛇當時持倉，止蝕 = 九成日範圍邊
+#           （固定），3R 止賺，蛇反手就平倉，可持倉多日；一天最多一筆。
+#   A_S_R2  🅰️ 耗盡回落同上，2R 止賺。
+# 每包即月期貨 5 分 K 到達時處理新 K 線；狀態、逐筆紀錄與待發通知存 futu/paper/<代號>.json，
+# 通知跟高低位通知一起由 ?view=futu_range&report=signals 給排程發 Telegram。
+# 第一次啟動用之前 PAPER_BOOT_DAYS 個交易日的 K 線（5 分 K 不夠就用 15 分 K 封存）把蛇的持倉算出來，那段不記交易、不發通知。
+# 只是紙上紀錄，不接任何下單。
+PAPER_DIR = "futu/paper"
+PAPER_VERSION = 1
+PAPER_COST = 3.0                                 # 每筆來回成本（點），跟回測相同
+PAPER_SNAKE_N = 3                                # 蛇蟠陣：前 3 個蛇日通道
+PAPER_BOOT_DAYS = 12                             # 第一次啟動回看的交易日數
+PAPER_BOOT_MIN_BARS = 20                         # 一個交易日的 5 分 K 少於這個數就改用 15 分 K 封存
+PAPER_KEEP = 2000
+PAPER_NOTICE_KEEP = 300
+PAPER_STRATS = {                                 # 名稱 → 顯示名、用哪個訊號、止賺倍數（None = 蛇本身）
+    "SNAKE": {"zh": "🐍 蛇蟠陣", "signal": None, "rr": None, "css": "",
+              "desc": "前 3 個蛇日的最高／最低做通道，觸價反手、永遠在場（回測 36 年有效，近年優勢變小）"},
+    "B_S_R3": {"zh": "🅱️＋跟蛇＋3R", "signal": "B", "rr": 3.0, "css": "week",
+               "desc": "機率法「高位已現」「低位已現」都亮後下一根開市入，方向跟蛇，止蝕九成日範圍邊，3R 止賺，蛇反手就平"},
+    "A_S_R2": {"zh": "🅰️＋跟蛇＋2R", "signal": "A", "rr": 2.0, "css": "month",
+               "desc": "耗盡回落兩邊都亮後同樣規則入市，2R 止賺"},
+}
+PAPER_TAG = f"📒{FENGYANG_TAG}紙上交易"
+PAPER_SIDE_ZH = {1: "做多", -1: "做空", 0: "空手"}
+
+
+def futu_paper_file(symbol):
+    return f"{PAPER_DIR}/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def _paper_new_state(symbol):
+    return {"version": PAPER_VERSION, "symbol": symbol, "started_utc": fmt_utc(), "last_bar": None, "last_session": None,
+            "snake": {"pos": 0, "px": None, "entry_time": None, "cur": None, "hist": [], "used": [],
+                      "phase": None, "session": None, "upper": None, "lower": None, "boot": False},
+            "open": {}, "trades": [], "notices": [], "day": {"date": None, "levels": None, "done": []}}
+
+
+def _paper_phase(bar, session):
+    """蛇日的兩段：日市（09:00–16:59，屬當天）、夜市（屬下一個蛇日）。"""
+    t = bar["time_key"]
+    return "day" if t[:10] == session and "09:00" <= t[11:16] < "17:00" else "night"
+
+
+def _paper_hhmm(time_key):
+    return f"{time_key[5:10]} {time_key[11:16]}"
+
+
+def _paper_trade(strat, side, entry_time, entry_px, exit_time, exit_px, why, cost, stop=None, target=None, boot=False):
+    gross = (exit_px - entry_px) * side
+    risk = abs(entry_px - stop) if stop is not None else None
+    return {"strat": strat, "side": side, "entry_time": entry_time, "entry_price": entry_px, "stop": stop, "target": target,
+            "exit_time": exit_time, "exit_price": exit_px, "exit_reason": why, "gross": round(gross, 1), "cost": cost,
+            "net": round(gross - cost, 1), "risk": risk,
+            "r_multiple": round((gross - cost) / risk, 3) if risk else None, "boot": boot}
+
+
+def _paper_stats(trades):
+    nets = [t["net"] for t in trades]
+    if not nets:
+        return {"n": 0}
+    wins, losses = [x for x in nets if x > 0], [x for x in nets if x <= 0]
+    eq = peak = dd = 0.0
+    for x in nets:
+        eq += x
+        peak = max(peak, eq)
+        dd = max(dd, peak - eq)
+    aw = sum(wins) / len(wins) if wins else None
+    al = sum(losses) / len(losses) if losses else None
+    rs = [t["r_multiple"] for t in trades if t.get("r_multiple") is not None]
+    return {"n": len(nets), "win": len(wins) / len(nets), "avg_win": aw, "avg_loss": al,
+            "rrr": (aw / -al) if aw and al else None, "mean": sum(nets) / len(nets), "total": sum(nets), "dd": dd,
+            "R": sum(rs) / len(rs) if rs else None}
+
+
+def _paper_snake_step(st, b, session, cost, live):
+    """一根 K 線：日市收完就換蛇日，再按通道觸價反手。回傳這根的反手 [(新持倉, 成交價, 被平掉那筆的紀錄或 None)]。"""
+    sn = st["snake"]
+    phase = _paper_phase(b, session)
+    if sn["phase"] == "day" and (phase == "night" or session != sn["session"]):
+        if sn["cur"]:
+            sn["hist"] = (sn["hist"] + [sn["cur"]])[-PAPER_SNAKE_N:]
+        sn["cur"], sn["used"] = None, []
+        if len(sn["hist"]) >= PAPER_SNAKE_N:
+            sn["upper"], sn["lower"] = max(h for h, _ in sn["hist"]), min(l for _, l in sn["hist"])
+    sn["phase"], sn["session"] = phase, session
+    flips = []
+    if sn["upper"] is not None:
+        for side in (("down", "up") if sn["pos"] > 0 else ("up", "down")):
+            if side == "up" and sn["pos"] <= 0 and "up" not in sn["used"] and b["high"] >= sn["upper"]:
+                fill, new = max(sn["upper"], b["open"]), 1
+            elif side == "down" and sn["pos"] >= 0 and "down" not in sn["used"] and b["low"] <= sn["lower"]:
+                fill, new = min(sn["lower"], b["open"]), -1
+            else:
+                continue
+            closed = None
+            if sn["pos"] and live:
+                closed = _paper_trade("SNAKE", sn["pos"], sn["entry_time"], sn["px"], b["time_key"], fill, "蛇反手", cost,
+                                      boot=sn.get("boot", False))
+            sn.update(pos=new, px=fill, entry_time=b["time_key"], boot=not live)
+            sn["used"].append(side)
+            flips.append((new, fill, closed))
+    sn["cur"] = [b["high"], b["low"]] if not sn["cur"] else [max(sn["cur"][0], b["high"]), min(sn["cur"][1], b["low"])]
+    return flips
+
+
+def _paper_exit(tr, b, flips):
+    """持倉管理（與 hl_signal.simulate 相同）：回傳 (出場價, 原因) 或 None。"""
+    s, stop, tg, rr = tr["side"], tr["stop"], tr["target"], tr["rr"]
+    if (b["open"] - stop) * s <= 0:
+        return b["open"], "止蝕（跳空）"
+    if tg is not None and (b["open"] - tg) * s >= 0:
+        return b["open"], f"{rr:g}R 止賺"
+    hit = (b["low"] <= stop) if s > 0 else (b["high"] >= stop)
+    against = [f for f in flips if f[0] == -s]
+    if hit or against:
+        c = ([(stop, "止蝕")] if hit else []) + ([(against[0][1], "蛇反手")] if against else [])
+        return min(c, key=lambda x: x[0] * s)
+    if tg is not None and ((b["high"] >= tg) if s > 0 else (b["low"] <= tg)):
+        return tg, f"{rr:g}R 止賺"
+    return None
+
+
+def _paper_trigger(signals, session):
+    """今天每個訊號兩邊都亮了嗎？→ {訊號: 後亮那邊的 K 線時間}。"""
+    out = {}
+    for strat, cfg in PAPER_STRATS.items():
+        k = cfg["signal"]
+        if not k:
+            continue
+        hi = signals.get(f"day:{session}:high:{k}")
+        lo = signals.get(f"day:{session}:low:{k}")
+        if hi and lo and hi.get("asof") and lo.get("asof"):
+            out[strat] = max(str(hi["asof"]), str(lo["asof"]))
+    return out
+
+
+def _paper_notice(st, kind, strat, time_key, text):
+    st["notices"] = (st["notices"] + [{"id": f"paper:{strat}:{kind}:{time_key}", "strat": strat, "kind": kind,
+                                       "made_utc": fmt_utc(), "sent": False, "text": text}])[-PAPER_NOTICE_KEEP:]
+
+
+def _paper_totals(st, strat):
+    s = _paper_stats([t for t in st["trades"] if t["strat"] == strat])
+    return f"策略累計 {s['n']} 筆 {s['total']:+,.0f} 點" if s["n"] else "策略第一筆"
+
+
+def _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, cost):
+    """純函數：把新 K 線跑過三條策略，直接改 st。boot 裡的交易日是啟動期（只算蛇的持倉，不記交易、不發通知）。"""
+    zh = {k: v["zh"] for k, v in PAPER_STRATS.items()}
+    for session in sessions:
+        live = session not in boot
+        if st["day"].get("date") != session:
+            st["day"] = {"date": session, "levels": levels_by.get(session), "done": []}
+        elif not st["day"].get("levels") and levels_by.get(session):
+            st["day"]["levels"] = levels_by[session]
+        lv, trig = st["day"].get("levels") or {}, trig_by.get(session, {})
+        for b in bars_by.get(session, []):
+            t = b["time_key"]
+            if st["last_bar"] and t <= st["last_bar"]:
+                continue
+            prev = st["last_bar"] if st["last_session"] == session else None
+            pos_before = st["snake"]["pos"]
+            flips = _paper_snake_step(st, b, session, cost, live)
+            if live:
+                for new, fill, closed in flips:
+                    if closed:
+                        st["trades"] = (st["trades"] + [closed])[-PAPER_KEEP:]
+                    txt = (f"{PAPER_TAG} {zh['SNAKE']}：{'反手' if closed else ''}{PAPER_SIDE_ZH[new]} {fill:,.0f}（{_paper_hhmm(t)}）\n"
+                           f"通道 {st['snake']['upper']:,.0f}／{st['snake']['lower']:,.0f}"
+                           + (f"；上一筆 {closed['net']:+,.0f} 點，{_paper_totals(st, 'SNAKE')}" if closed else "")
+                           + "\n紙上紀錄，不是真實下單。")
+                    _paper_notice(st, "flip", "SNAKE", t, txt)
+            for strat, cfg in PAPER_STRATS.items():
+                if not cfg["signal"]:
+                    continue
+                tr = st["open"].get(strat)
+                later = trig.get(strat)
+                if (not tr and live and later and strat not in st["day"]["done"] and t > later and (prev is None or prev <= later)
+                        and pos_before and lv.get("high_edge95") is not None):
+                    st["day"]["done"].append(strat)
+                    side, px = pos_before, b["open"]
+                    stop = lv["low_edge95"] if side > 0 else lv["high_edge95"]
+                    if (stop - px) * side < 0:
+                        risk = abs(px - stop)
+                        tr = {"side": side, "entry_time": t, "entry_price": px, "stop": stop, "risk": risk, "rr": cfg["rr"],
+                              "target": px + side * cfg["rr"] * risk, "session": session, "snake_at_entry": pos_before}
+                        st["open"][strat] = tr
+                        _paper_notice(st, "entry", strat, t,
+                                      f"{PAPER_TAG} {zh[strat]}：{PAPER_SIDE_ZH[side]} {px:,.0f}（{_paper_hhmm(t)}）\n"
+                                      f"止蝕 {stop:,.0f}（九成日範圍邊）・目標 {tr['target']:,.0f}（{cfg['rr']:g}R）・風險 {risk:,.0f} 點\n"
+                                      f"兩邊「{'機率法' if cfg['signal'] == 'B' else '耗盡回落'}」訊號都已亮；蛇蟠陣目前{PAPER_SIDE_ZH[side]}。"
+                                      "紙上紀錄，不是真實下單。")
+                if tr:
+                    done = _paper_exit(tr, b, flips)
+                    if done:
+                        px, why = done
+                        rec = _paper_trade(strat, tr["side"], tr["entry_time"], tr["entry_price"], t, px, why, cost,
+                                           tr["stop"], tr["target"])
+                        st["trades"] = (st["trades"] + [rec])[-PAPER_KEEP:]
+                        st["open"].pop(strat, None)
+                        if strat not in st["day"]["done"]:
+                            st["day"]["done"].append(strat)
+                        _paper_notice(st, "exit", strat, t,
+                                      f"{PAPER_TAG} {zh[strat]}：平倉 {px:,.0f}（{_paper_hhmm(t)}）{why}\n"
+                                      f"{PAPER_SIDE_ZH[tr['side']]} {tr['entry_price']:,.0f} → {px:,.0f}：{rec['net']:+,.0f} 點"
+                                      f"（{rec['r_multiple']:+.2f}R）；{_paper_totals(st, strat)}。")
+            st["last_bar"], st["last_session"] = t, session
+    return st
+
+
+def _paper_levels(symbol, session, rows_fn):
+    """那天的九成日範圍邊：開市前紀錄有就用紀錄，沒有就即時算（R116 起才記 edge95）。"""
+    fc = futu_logged_forecast(symbol, session)
+    if not fc or fc.get("high_edge95") is None:
+        fc = futu_day_forecast([r for r in rows_fn() if r["date"] < session], session) or {}
+    if fc.get("high_edge95") is None:
+        return None
+    return {k: fc.get(k) for k in ("high_edge95", "low_edge95", "high", "low", "range", "ref_close")}
+
+
+def _paper_session_bars(symbol, session, boot):
+    bars = futu_session_5m(symbol, session)
+    if boot and len(bars) < PAPER_BOOT_MIN_BARS:                 # 5 分 K 封存不夠（剛開始推送）→ 15 分 K
+        nxt = (datetime.strptime(session, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        alt = {}
+        for d in (session, nxt):
+            for b in gcs_read_json(archive_blob_name("futu_k_15m", symbol, d), []):
+                if isinstance(b, dict) and b.get("time_key") and to_float(b.get("volume")) and futu_session_of(b["time_key"]) == session:
+                    alt[b["time_key"]] = b
+        if len(alt) > len(bars):
+            bars = [alt[k] for k in sorted(alt)]
+    return bars
+
+
+def futu_paper_update(symbol, now=None):
+    """每包 5 分 K 到達時：把新 K 線跑過三條策略，狀態寫回 futu/paper/<代號>.json。回傳警告清單。"""
+    try:
+        today = futu_session_today(now)
+        prev = gcs_read_json(futu_paper_file(symbol), {})
+        fresh = not (isinstance(prev, dict) and prev.get("version") == PAPER_VERSION)
+        rows = []
+
+        def rows_fn():
+            if not rows:
+                rows.extend(futu_series_rows(symbol))
+            return rows
+        if fresh or prev.get("last_session") != today:
+            dates = sorted({r["date"] for r in rows_fn()} | {today})
+            if fresh:
+                sessions = dates[max(0, dates.index(today) - PAPER_BOOT_DAYS):]
+            else:
+                last = prev.get("last_session") or today
+                sessions = [d for d in dates if last <= d <= today]
+        else:
+            sessions = [today]
+        boot = {s for s in sessions if fresh and s < today}
+        bars_by = {s: _paper_session_bars(symbol, s, s in boot) for s in sessions}
+        if not any(bars_by.values()):
+            return []
+        day = prev.get("day") or {}
+        levels_by = {}
+        if day.get("date") == today and day.get("levels"):
+            levels_by[today] = day["levels"]
+        else:
+            lv = _paper_levels(symbol, today, rows_fn)
+            if lv:
+                levels_by[today] = lv
+        sig = gcs_read_json(futu_signal_file(symbol), [])
+        signals = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
+        trig_by = {today: _paper_trigger(signals, today)}
+
+        def mutate(existing):
+            st = existing if (isinstance(existing, dict) and existing.get("version") == PAPER_VERSION) else _paper_new_state(symbol)
+            before = len(st["notices"]), len(st["trades"]), st["last_bar"]
+            _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, PAPER_COST)
+            if (len(st["notices"]), len(st["trades"]), st["last_bar"]) == before:
+                return None, 0
+            return st, len(st["notices"]) - before[0]
+
+        added = gcs_update(futu_paper_file(symbol), mutate, default_factory=dict)
+        if added:
+            log_event(f"📒 [紙上交易] {symbol} 新通知 {added} 則", component="futu", symbol=symbol)
+        return []
+    except StorageError as exc:
+        log_event(f"⚠️ [紙上交易更新失敗] {exc}", severity="WARNING", component="futu")
+        return ["紙上交易更新失敗（下一包會再算）"]
+
+
+def futu_paper_state(symbol):
+    st = gcs_read_json(futu_paper_file(symbol), {})
+    return st if isinstance(st, dict) and st.get("version") == PAPER_VERSION else None
+
+
+def futu_paper_report(symbol):
+    st = futu_paper_state(symbol)
+    if not st:
+        return {"status": "empty", "symbol": symbol, "message": "紙上交易還沒開始（等第一包 5 分 K）"}
+    stats = {k: _paper_stats([t for t in st["trades"] if t["strat"] == k]) for k in PAPER_STRATS}
+    return {"status": "ok", "symbol": symbol, "started_utc": st["started_utc"], "last_bar": st["last_bar"],
+            "snake": st["snake"], "open": st["open"], "stats": stats, "trades": st["trades"][-200:],
+            "pending_notices": sum(1 for e in st["notices"] if not e.get("sent")), "cost": PAPER_COST}
+
+
+def futu_paper_lines(symbol, price=None, st=None):
+    """四次報告用：三條策略的持倉與累計。"""
+    try:
+        st = st if st is not None else futu_paper_state(symbol)
+    except StorageError:
+        return []
+    if not st:
+        return []
+    parts = []
+    sn = st["snake"]
+    for strat, cfg in PAPER_STRATS.items():
+        if strat == "SNAKE":
+            pos, px, since = sn["pos"], sn["px"], sn["entry_time"]
+        else:
+            tr = st["open"].get(strat) or {}
+            pos, px, since = tr.get("side", 0), tr.get("entry_price"), tr.get("entry_time")
+        s = _paper_stats([t for t in st["trades"] if t["strat"] == strat])
+        acc = f"累計 {s['n']} 筆 {s['total']:+,.0f}" if s["n"] else "未有完成交易"
+        if pos and px is not None:
+            flo = f"，浮動 {(price - px) * pos:+,.0f}" if price else ""
+            parts.append(f"{cfg['zh']} {PAPER_SIDE_ZH[pos]} {px:,.0f}（{_paper_hhmm(since)} 起{flo}）；{acc}")
+        else:
+            parts.append(f"{cfg['zh']} 空手；{acc}")
+    return ["📒 紙上交易（不下單）：" + "｜".join(parts)]
+
+
 def futu_range_data(symbol):
     symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
     bars = gcs_read_json(futu_daily_file(symbol), [])
@@ -3154,6 +3511,7 @@ def futu_range_data(symbol):
     sig = gcs_read_json(futu_signal_file(symbol), [])
     data["signals"] = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
     data["peak_lines"] = futu_peak_lines(symbol, status=data["peak"], signals=sig)
+    data["paper"] = futu_paper_state(symbol)                          # [R116] 紙上交易
     review_day = data["rows"][-1]["date"] if data["rows"] else None
     reviews = gcs_read_json(futu_review_file(symbol), [])
     data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
@@ -3181,6 +3539,8 @@ def handle_futu_range_get(req):
                 result = futu_signals_report(symbol, req.args.get("ack"))
             elif kind == "peak":
                 result = {"status": "ok", **(futu_peak_status(symbol) or {})}
+            elif kind == "paper":                                    # [R116] 紙上交易狀態、統計、逐筆紀錄
+                result = futu_paper_report(symbol)
             elif kind == "accuracy":                                 # [R104] 日／週／月過去每一次預測的誤差
                 acc = futu_range_data(symbol)["accuracy"]
                 result = {"status": "ok", "symbol": symbol,
@@ -3192,8 +3552,8 @@ def handle_futu_range_get(req):
             result = {"status": "error", "reason": "storage"}
         if req.args.get("format") == "text":
             body = result.get("text") or f"[{result.get('status')}] {result.get('reason', '')}"
-            return body, (200 if result["status"] in ("ok", "skip") else 503), {"Content-Type": "text/plain; charset=utf-8"}
-        return _json_response(result, 200 if result["status"] in ("ok", "skip") else 503)
+            return body, (200 if result["status"] in ("ok", "skip", "empty") else 503), {"Content-Type": "text/plain; charset=utf-8"}
+        return _json_response(result, 200 if result["status"] in ("ok", "skip", "empty") else 503)
     try:
         data = futu_range_data(req.args.get("symbol"))
     except StorageError as exc:
@@ -3558,6 +3918,64 @@ def _fy_money(data):
             f"<div class='fy-grid'>{''.join(cards)}</div>")
 
 
+def _fy_paper(data):
+    """[R116] 📒 紙上交易：三條策略的持倉、今日訊號、累計與最近交易。"""
+    st = data.get("paper")
+    price = (data.get("latest_5m") or {}).get("close")
+    head = ("<div class='section-header'>📒 紙上交易（三條策略，跟實時 5 分 K 走）</div>"
+            "<div class='fy-legend'>回測挑出來的三條，每包 5 分 K 到達時按規則記入市、出場，入市和出場都發 Telegram；"
+            f"每筆扣 {PAPER_COST:g} 點成本、1 張；只是紀錄，不下單。規則見 research/hsi_futures_range/PAPER_TRADING.md。</div>")
+    if not st:
+        return head + ("<div class='section'>⏳ 等第一包即月期貨 5 分 K 到達就開始"
+                       f"（第一次會先用之前 {PAPER_BOOT_DAYS} 個交易日算出蛇蟠陣的持倉）。</div>")
+    cards, sn, sigs = [], st["snake"], data.get("signals") or {}
+    day = st.get("day") or {}
+    today, lv = day.get("date"), day.get("levels") or {}
+    for strat, cfg in PAPER_STRATS.items():
+        trades = [t for t in st["trades"] if t["strat"] == strat]
+        s = _paper_stats(trades)
+        if strat == "SNAKE":
+            pos, px, since = sn["pos"], sn["px"], sn["entry_time"]
+            detail = (f"<div class='fy-row'><span>📏 通道（前 {PAPER_SNAKE_N} 個蛇日高／低）</span><b>{_n(sn['upper'])}／{_n(sn['lower'])}</b></div>"
+                      if sn.get("upper") is not None else f"<div class='fy-note'>⏳ 要先有 {PAPER_SNAKE_N} 個完整蛇日才有通道。</div>")
+        else:
+            tr = st["open"].get(strat) or {}
+            pos, px, since = tr.get("side", 0), tr.get("entry_price"), tr.get("entry_time")
+            if tr:
+                detail = (f"<div class='fy-row'><span>🛡️ 止蝕（九成日範圍邊）</span><b>{_n(tr['stop'])}</b></div>"
+                          f"<div class='fy-row'><span>🎯 目標（{cfg['rr']:g}R）</span><b>{_n(tr['target'])}</b></div>")
+            else:
+                k = cfg["signal"]
+                hi, lo = sigs.get(f"day:{today}:high:{k}"), sigs.get(f"day:{today}:low:{k}")
+                detail = (f"<div class='fy-sig'>今日訊號：高位已現 {'✅' if hi else '⏳'}　低位已現 {'✅' if lo else '⏳'}"
+                          + ("　→ 兩邊都亮，下一根開市跟蛇入市" if hi and lo and strat not in day.get("done", []) else "") + "</div>"
+                          + (f"<div class='fy-row'><span>📐 今日止蝕位（做多／做空）</span>"
+                             f"<b>{_n(lv.get('low_edge95'))}／{_n(lv.get('high_edge95'))}</b></div>" if lv.get("high_edge95") is not None else ""))
+        if pos and px is not None:
+            flo = (price - px) * pos if price else None
+            status = (f"<div class='fy-big'>{PAPER_SIDE_ZH[pos]} <span style='font-size:18px'>{_n(px)}</span></div>"
+                      f"<div class='fy-band'>{esc(_paper_hhmm(since))} 起"
+                      + (f"・浮動 <b class='{pnl_class(flo)}'>{flo:+,.0f}</b> 點" if flo is not None else "") + "</div>")
+        else:
+            status = "<div class='fy-big'>空手</div><div class='fy-band'>等訊號</div>"
+        if s["n"]:
+            r_txt = f"・{s['R']:+.2f}R" if s.get("R") is not None else ""
+            stat = (f"<div class='fy-row'><span>📊 累計</span><b>{s['n']} 筆・{s['total']:+,.0f} 點</b></div>"
+                    f"<div class='fy-row'><span>每筆／勝率／RRR</span><b>{s['mean']:+,.0f}・{s['win']:.0%}・{_n2(s['rrr'])}</b></div>"
+                    f"<div class='fy-row'><span>最大回撤{'／每筆 R' if r_txt else ''}</span><b>{_n(s['dd'])}{r_txt}</b></div>")
+            rows = "".join(f"<tr><td>{esc(_paper_hhmm(t['entry_time']))}</td><td>{PAPER_SIDE_ZH[t['side']]}</td><td>{_n(t['entry_price'])}</td>"
+                           f"<td>{_n(t['exit_price'])}</td><td>{esc(t['exit_reason'])}</td>"
+                           f"<td class='{pnl_class(t['net'])}'>{t['net']:+,.0f}</td></tr>" for t in reversed(trades[-5:]))
+            stat += (f"<div class='fy-hist'><h3>最近 {min(5, len(trades))} 筆</h3><table>"
+                     f"<tr><th>入市</th><th>方向</th><th>入</th><th>出</th><th>原因</th><th>淨點數</th></tr>{rows}</table></div>")
+        else:
+            stat = "<div class='fy-note'>還沒有完成的交易。</div>"
+        cards.append(f"<div class='fy-card {cfg['css']}'><h2>{cfg['zh']}</h2><div class='fy-sub'>{esc(cfg['desc'])}</div>"
+                     f"{status}{detail}{stat}</div>")
+    asof = f"最新處理到 {esc(_paper_hhmm(st['last_bar']))}" if st.get("last_bar") else "還沒處理過 K 線"
+    return head + f"<div class='fy-grid'>{''.join(cards)}</div><div class='fy-legend'>{asof}・逐筆紀錄 JSON：?view=futu_range&amp;report=paper</div>"
+
+
 def build_futu_range_page(data):
     rows, s, symbol = data["rows"], data["summary"], data["symbol"]
     nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
@@ -3633,7 +4051,7 @@ def build_futu_range_page(data):
         f"{fmt_num((r['range'] - r['forecast']) if r.get('forecast') else None, '{:+,.0f}')}</td>"
         f"<td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
         for r in reversed(rows))
-    body = nav + hero + cards + reviews + _fy_money(data) + f"""
+    body = nav + hero + cards + reviews + _fy_paper(data) + _fy_money(data) + f"""
     <div class='section-header'>📊 過去一年</div>
     {stats}
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
