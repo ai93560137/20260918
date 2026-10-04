@@ -120,6 +120,7 @@ main.futu_peak_update(SYM, now=hk("2026-10-05 16:35"))
 sig = json.loads(FAKE[main.futu_signal_file(SYM)][0])
 ids = {e["id"] for e in sig}
 check("今日高位 A、B、C 各一則", {"day:2026-10-05:high:A", "day:2026-10-05:high:B", "day:2026-10-05:high:C"} <= ids, ids)
+check("[R102] 通知開頭有陣名", sig[0]["text"].startswith("⚠️【風揚陣】"), sig[0]["text"][:20])
 check("訊息含高位、現價、機率、回測準確率", all(k in sig[0]["text"] for k in ("高位可能已出現", "現價", "機率", "回測", "不是交易建議")), sig[0]["text"])
 main.futu_peak_update(SYM, now=hk("2026-10-05 16:40"))
 check("同一段同一邊同一策略只記一次", len(json.loads(FAKE[main.futu_signal_file(SYM)][0])) == len(sig))
@@ -167,6 +168,8 @@ pre = main.futu_report(SYM, "preopen", now=hk("2026-10-06 07:53"))
 check("開市前預測附本週／本月現況", "本週" in pre["text"] and "本月" in pre["text"], pre["text"])
 page = client.get("/?view=futu_range").get_data(as_text=True)
 check("頁面有高低位是否已出現區塊", "高低位是否已出現" in page)
+check("[R102] 訊息與頁面都有陣名", noon["text"].startswith("🕛【風揚陣】") and pre["text"].startswith("📏【風揚陣】")
+      and "風揚陣・即月期貨波幅" in page)
 calls = []
 orig = main.futu_peak_update
 main.futu_peak_update = lambda symbol, now=None: calls.append(symbol) or []
