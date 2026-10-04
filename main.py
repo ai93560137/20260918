@@ -85,6 +85,8 @@
 #   * 2026-10-04 — [R107] 方向一用 VHSI（HK.800125）合成回測：VHSI ÷ 預測 ≥ 1.2 時賣週期權有正回報（待真實報價校準）；
 #     卡片即時顯示 VHSI ÷ 預測與是否達標（本地 FUTU_SYMBOLS 要加 HK.800125）。
 #   * 2026-10-04 — [R108] 過去 7 次預測表加「預計範圍」；「80% 區間／命中」改成白話「預計範圍（十次有八次落在這裡）／落在範圍內」。
+#   * 2026-10-04 — [R109] 今日卡的過去 7 次：改列預測高位／低位與預計範圍，高、低都落在範圍內才算 ✅（週、月照舊看波幅）。
+#     另：方向二卡加一行「預先在預測高低位掛單、止蝕在範圍外」的回測結論（band_limit.py，每筆約 0）。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2998,10 +3000,14 @@ def _acc_summary(recs, extra=()):
            "bias": round(sum(errs) / len(errs), 1) if errs else None,
            "recent": done[-ACC_SHOW:]}
     out["recent_hits"] = sum(1 for r in out["recent"] if r["hit"])
-    for key in extra:                                             # 日：高位、低位的 80% 區間命中率
-        vals = [r[key] for r in done if r.get(key) is not None]
+    for key in extra:                                             # 日：波幅、高位、低位各自落在預計範圍的比率
+        vals = [r[key] for r in recs if r.get(key) is not None]
         out[f"{key}_n"] = len(vals)
         out[f"{key}_rate"] = round(sum(vals) / len(vals) * 100) if vals else None
+    for key in ("err_high", "err_low"):                           # [R109] 日：高位、低位平均差
+        vals = [abs(r[key]) for r in done if r.get(key) is not None]
+        if vals:
+            out[key.replace("err", "mae")] = round(sum(vals) / len(vals), 1)
     return out
 
 
@@ -3018,7 +3024,8 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
         rec = {"key": row["date"], "forecast": f[0], "lo": f[1], "hi": f[2], "live": False}
         if len(ups) >= HL_MIN_DAYS:
             ref = row["prev_close"]
-            rec.update(high_lo=ref + _quantile(ups, 0.1) * f[0], high_hi=ref + _quantile(ups, 0.9) * f[0],
+            rec.update(high=ref + _quantile(ups, 0.5) * f[0], low=ref - _quantile(downs, 0.5) * f[0],
+                       high_lo=ref + _quantile(ups, 0.1) * f[0], high_hi=ref + _quantile(ups, 0.9) * f[0],
                        low_lo=ref - _quantile(downs, 0.9) * f[0], low_hi=ref - _quantile(downs, 0.1) * f[0])
         bisect.insort(ups, (row["high"] - row["prev_close"]) / f[0])
         bisect.insort(downs, (row["prev_close"] - row["low"]) / f[0])
@@ -3026,16 +3033,23 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
         if e and None not in (e.get("lo"), e.get("hi")):          # 當天真正發出的預測
             rec.update(forecast=e["range"], lo=e["lo"], hi=e["hi"], live=True)
             if e.get("high_lo") is not None:
-                rec.update(high_lo=e["high_lo"], high_hi=e["high_hi"], low_lo=e["low_lo"], low_hi=e["low_hi"])
+                rec.update(high=e.get("high"), low=e.get("low"), high_lo=e["high_lo"], high_hi=e["high_hi"],
+                           low_lo=e["low_lo"], low_hi=e["low_hi"])
         actual = row["range"]
-        rec.update(actual=actual, err=round(actual - rec["forecast"], 1), hit=rec["lo"] <= actual <= rec["hi"],
-                   hit_high=(rec["high_lo"] <= row["high"] <= rec["high_hi"]) if "high_lo" in rec else None,
-                   hit_low=(rec["low_lo"] <= row["low"] <= rec["low_hi"]) if "low_lo" in rec else None)
-        for k in ("forecast", "lo", "hi", "high_lo", "high_hi", "low_lo", "low_hi"):
+        hl = "high_lo" in rec and rec.get("high") is not None
+        rec.update(actual=actual, err=round(actual - rec["forecast"], 1),
+                   hit_range=rec["lo"] <= actual <= rec["hi"],
+                   actual_high=row["high"], actual_low=row["low"],
+                   hit_high=(rec["high_lo"] <= row["high"] <= rec["high_hi"]) if hl else None,
+                   hit_low=(rec["low_lo"] <= row["low"] <= rec["low_hi"]) if hl else None,
+                   err_high=round(row["high"] - rec["high"], 1) if hl else None,
+                   err_low=round(row["low"] - rec["low"], 1) if hl else None)
+        rec["hit"] = (rec["hit_high"] and rec["hit_low"]) if hl else None     # [R109] 日：高、低都落在預計範圍才算 ✅
+        for k in ("forecast", "lo", "hi", "high", "low", "high_lo", "high_hi", "low_lo", "low_hi"):
             if rec.get(k) is not None:
                 rec[k] = round(rec[k], 1)
         day.append(rec)
-    out = {"day": {**_acc_summary(day, ("hit_high", "hit_low")), "records": day}}
+    out = {"day": {**_acc_summary(day, ("hit_range", "hit_high", "hit_low")), "records": day}}
     for kind in ("week", "month"):
         groups = {}
         for i, row in enumerate(completed):
@@ -3256,6 +3270,8 @@ FY_CSS = """<style>
 .fy-hist td { text-align:right; padding:4px; border-bottom:1px solid #f1f3f5; white-space:nowrap; } .fy-hist td:first-child, .fy-hist th:first-child { text-align:left; }
 .fy-rate { font-size:13px; line-height:1.6; margin-bottom:6px; }
 .fy-rng { font-size:11px; color:var(--muted); font-weight:400; }
+.fy-hist.day table { font-size:11.5px; } .fy-hist.day td, .fy-hist.day th { padding:4px 2px; }
+.fy-hist.day .fy-rng { font-size:10px; }
 details.fy-more { background:var(--card); border-radius:16px; padding:14px 18px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); }
 details.fy-more summary { cursor:pointer; font-weight:700; }
 </style>"""
@@ -3325,40 +3341,59 @@ def _fy_period_dates(kind, day):
 def _fy_hist_label(kind, rec):
     if kind == "day":
         d = datetime.strptime(rec["key"], "%Y-%m-%d")
-        return f"{rec['key'][5:]}（{WEEKDAY_ZH[d.weekday()]}）"
+        return f"{rec['key'][5:]}{WEEKDAY_ZH[d.weekday()]}"
     if kind == "week":
         return f"{rec['first'][5:]} 起"
     return rec["key"]
 
 
 def _fy_history(kind, acc):
-    """[R104] 過去 7 次預測對實際，加全部歷史的命中率。"""
+    """[R104] 過去 7 次預測對實際，加全部歷史落在預計範圍的比率。
+    [R109] 日：預測高位、低位各有預計範圍，兩邊都落在範圍內才算 ✅；週、月只預測波幅，看波幅。"""
     if not acc or not acc.get("n"):
         return ""
     unit = {"day": "天", "week": "週", "month": "個月"}[kind]
     ok = lambda v: "—" if v is None else ("✅" if v else "❌")
-    # [R108] 用一般人看得明的講法：「80% 區間」→「預計範圍（十次有八次落在這裡）」，「命中」→「落在範圍內」
-    rate = (f"🎯 <b>落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次；目標約八成）<br>"
-            f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次落在範圍內・預測與實際平均差 {_n(acc['mae'])} 點"
-            f"（整體{'預測偏低' if acc['bias'] > 0 else '預測偏高'} {_n(abs(acc['bias']))} 點）")
-    if kind == "day" and acc.get("hit_high_rate") is not None:
-        rate += (f"<br>🎯 高位落在預計範圍 {acc['hit_high_rate']}%・低位 {acc['hit_low_rate']}%"
-                 f"（{acc['hit_high_n']} 天）")
-    head = ("<tr><th>" + {"day": "交易日", "week": "週", "month": "月"}[kind] + "</th>"
-            "<th>預測<br><span class='fy-rng'>預計範圍</span></th><th>實際</th><th>差距</th><th>結果</th>")
-    head += "<th>高</th><th>低</th></tr>" if kind == "day" else "</tr>"
+    label = {"day": "交易日", "week": "週", "month": "月"}[kind]
     body = ""
-    for r in reversed(acc["recent"]):
-        body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
-                 f"<td>{_n(r['forecast'])}<br><span class='fy-rng'>{_n(r['lo'])}–{_n(r['hi'])}</span></td>"
-                 f"<td><b>{_n(r['actual'])}</b></td>"
-                 f"<td class='{'pos' if r['err'] >= 0 else 'neg'}'>{r['err']:+,.0f}</td><td>{ok(r['hit'])}</td>")
-        body += f"<td>{ok(r.get('hit_high'))}</td><td>{ok(r.get('hit_low'))}</td></tr>" if kind == "day" else "</tr>"
-    legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次實際波幅會落在這裡。"
-              "✅ = 實際落在範圍內；❌ = 跑出範圍（比上限大或比下限細都算）。差距 = 實際 − 預測。</div>")
-    note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。高、低 = 實際高位、低位有沒有落在預測高位、低位的預計範圍。"
-            if kind == "day" else "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
-    return (f"<div class='fy-hist'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
+    if kind == "day":
+        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} 天中 {acc['hits']} 次）<br>"
+                f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次・預測高位平均差 {_n(acc.get('mae_high'))} 點、"
+                f"低位 {_n(acc.get('mae_low'))} 點<br>"
+                f"📏 各自計：高位 {acc.get('hit_high_rate')}%・低位 {acc.get('hit_low_rate')}%・"
+                f"全日波幅 {acc.get('hit_range_rate')}%（{acc.get('hit_range_n')} 天）")
+
+        def side(pred, lo, hi, actual):
+            mark = " ↑" if actual > hi else (" ↓" if actual < lo else "")
+            return (f"<td>{_n(pred)}<br><span class='fy-rng'>{_n(lo)}–{_n(hi)}</span></td>"
+                    f"<td><b class='{'neg' if mark else ''}'>{_n(actual)}{mark}</b></td>")
+
+        head = (f"<tr><th>{label}</th><th>預測高<br><span class='fy-rng'>預計範圍</span></th><th>實際高</th>"
+                "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th><th>結果</th></tr>")
+        for r in reversed(acc["recent"]):
+            body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
+                     + side(r["high"], r["high_lo"], r["high_hi"], r["actual_high"])
+                     + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + f"<td>{ok(r['hit'])}</td></tr>")
+        legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次會落在這裡。"
+                  "✅ = 實際高位和低位都落在各自的預計範圍；任何一邊跑出範圍 = ❌"
+                  "（紅字：↑ 高過上限、↓ 低過下限）。高、低各自約八成，兩邊同時中約三分之二屬正常。</div>")
+        note = "📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。"
+    else:
+        # [R108] 白話：「80% 區間」→「預計範圍（十次有八次落在這裡）」，「命中」→「落在範圍內」
+        rate = (f"🎯 <b>落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次；目標約八成）<br>"
+                f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次落在範圍內・預測與實際平均差 {_n(acc['mae'])} 點"
+                f"（整體{'預測偏低' if acc['bias'] > 0 else '預測偏高'} {_n(abs(acc['bias']))} 點）")
+        head = (f"<tr><th>{label}</th><th>預測<br><span class='fy-rng'>預計範圍</span></th>"
+                "<th>實際</th><th>差距</th><th>結果</th></tr>")
+        for r in reversed(acc["recent"]):
+            body += (f"<tr><td>{esc(_fy_hist_label(kind, r))}</td>"
+                     f"<td>{_n(r['forecast'])}<br><span class='fy-rng'>{_n(r['lo'])}–{_n(r['hi'])}</span></td>"
+                     f"<td><b>{_n(r['actual'])}</b></td>"
+                     f"<td class='{'pos' if r['err'] >= 0 else 'neg'}'>{r['err']:+,.0f}</td><td>{ok(r['hit'])}</td></tr>")
+        legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次實際波幅會落在這裡。"
+                  "✅ = 實際落在範圍內；❌ = 跑出範圍（比上限大或比下限細都算）。差距 = 實際 − 預測。</div>")
+        note = "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。"
+    return (f"<div class='fy-hist {'day' if kind == 'day' else ''}'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
             f"<table>{head}{body}</table>{legend}<div class='fy-note'>{note}</div></div>")
 
 
@@ -3427,6 +3462,8 @@ MONEY_FADE = {                                  # 方向二回測摘要（fade_p
         "🎯 前半段挑最好的參數（每筆 +15 至 +35 點），後半段六組有五組變負：過度擬合。",
         "🗓️ 週：沽空邊後半段有賺，但同時間無條件沽空也賺，部分組合賺更多——功勞是那段時間恒指偏弱，不是訊號。",
         "👉 用法改為「不追」提示：高位已現就不要再追買，低位已現就不要再追沽。",
+        "📌 另測：預先在預測高位掛沽、預測低位掛買，止蝕放在預計範圍外邊——止蝕率只有約一成，"
+        "但每筆平均約 0（範圍說明價格大概不會去哪，不會說它會去哪），要配合 🐍 蛇蟠陣判斷方向。",
     ],
 }
 
