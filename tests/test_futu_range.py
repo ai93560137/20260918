@@ -231,8 +231,11 @@ r3 = acc3["day"]["records"][-1]
 check("有開市前實時紀錄就用紀錄", r3["live"] and r3["forecast"] == 1.0 and r3["hit"] is False
       and not acc3["day"]["records"][-2]["live"], r3)
 hh = main._fy_history("day", d)
-check("頁面：過去 7 次＋命中率＋高低位", "過去 7 次預測" in hh and f"命中率 {d['hit_rate']}%" in hh and hh.count("<tr>") == 8
-      and "預測高位命中" in hh)
+check("頁面：過去 7 次＋落在範圍比率＋高低位（白話）", "過去 7 次預測" in hh and f"落在預計範圍：{d['hit_rate']}%" in hh
+      and f"中 {d['hits']} 次" in hh and hh.count("<tr>") == 8 and "高位落在預計範圍" in hh and "命中" not in hh)
+r0 = d["recent"][-1]
+check("[R108] 表上每列有預計範圍、解釋十次有八次", f"{r0['lo']:,.0f}–{r0['hi']:,.0f}" in hh and "十次有八次" in hh
+      and hh.count("class='fy-rng'") == 8)
 check("頁面：週沒有高低欄、沒數據就不顯示", "<th>高</th>" not in main._fy_history("week", w) and main._fy_history("day", {"n": 0}) == "")
 FAKE.clear()
 client.post("/", json=packet([b for b in noisy(420, "2024-06-03") if b["time_key"][:10] < today]))
