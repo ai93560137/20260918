@@ -84,6 +84,7 @@
 #     方向二放盈虧回測結論（不賺錢，research/hsi_futures_range/MONEY_REPORT.md）、方向三四顯示今天的止蝕／倉位與波幅位置。
 #   * 2026-10-04 — [R107] 方向一用 VHSI（HK.800125）合成回測：VHSI ÷ 預測 ≥ 1.2 時賣週期權有正回報（待真實報價校準）；
 #     卡片即時顯示 VHSI ÷ 預測與是否達標（本地 FUTU_SYMBOLS 要加 HK.800125）。
+#   * 2026-10-04 — [R108] 過去 7 次預測表加「預計範圍」；「80% 區間／命中」改成白話「預計範圍（十次有八次落在這裡）／落在範圍內」。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -3254,6 +3255,7 @@ FY_CSS = """<style>
 .fy-hist table { width:100%; border-collapse:collapse; font-size:12.5px; } .fy-hist th { font-weight:600; color:var(--muted); text-align:right; padding:3px 4px; }
 .fy-hist td { text-align:right; padding:4px; border-bottom:1px solid #f1f3f5; white-space:nowrap; } .fy-hist td:first-child, .fy-hist th:first-child { text-align:left; }
 .fy-rate { font-size:13px; line-height:1.6; margin-bottom:6px; }
+.fy-rng { font-size:11px; color:var(--muted); font-weight:400; }
 details.fy-more { background:var(--card); border-radius:16px; padding:14px 18px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); }
 details.fy-more summary { cursor:pointer; font-weight:700; }
 </style>"""
@@ -3335,23 +3337,29 @@ def _fy_history(kind, acc):
         return ""
     unit = {"day": "天", "week": "週", "month": "個月"}[kind]
     ok = lambda v: "—" if v is None else ("✅" if v else "❌")
-    rate = (f"🎯 <b>命中率 {acc['hit_rate']}%</b>（過去 {acc['n']} {unit}，實際落在 80% 區間；理想約 80%）<br>"
-            f"🕖 近 {len(acc['recent'])} 次命中 {acc['recent_hits']}／{len(acc['recent'])}・平均誤差 ±{_n(acc['mae'])} 點"
-            f"（{'預測偏低' if acc['bias'] > 0 else '預測偏高'} {_n(abs(acc['bias']))} 點）")
+    # [R108] 用一般人看得明的講法：「80% 區間」→「預計範圍（十次有八次落在這裡）」，「命中」→「落在範圍內」
+    rate = (f"🎯 <b>落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次；目標約八成）<br>"
+            f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次落在範圍內・預測與實際平均差 {_n(acc['mae'])} 點"
+            f"（整體{'預測偏低' if acc['bias'] > 0 else '預測偏高'} {_n(abs(acc['bias']))} 點）")
     if kind == "day" and acc.get("hit_high_rate") is not None:
-        rate += f"<br>🎯 預測高位命中 {acc['hit_high_rate']}%・預測低位命中 {acc['hit_low_rate']}%（{acc['hit_high_n']} 天）"
-    head = "<tr><th>" + {"day": "交易日", "week": "週", "month": "月"}[kind] + "</th><th>預測</th><th>實際</th><th>誤差</th><th>命中</th>"
+        rate += (f"<br>🎯 高位落在預計範圍 {acc['hit_high_rate']}%・低位 {acc['hit_low_rate']}%"
+                 f"（{acc['hit_high_n']} 天）")
+    head = ("<tr><th>" + {"day": "交易日", "week": "週", "month": "月"}[kind] + "</th>"
+            "<th>預測<br><span class='fy-rng'>預計範圍</span></th><th>實際</th><th>差距</th><th>結果</th>")
     head += "<th>高</th><th>低</th></tr>" if kind == "day" else "</tr>"
     body = ""
     for r in reversed(acc["recent"]):
         body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
-                 f"<td title='80% 區間 {_n(r['lo'])}–{_n(r['hi'])}'>{_n(r['forecast'])}</td><td><b>{_n(r['actual'])}</b></td>"
+                 f"<td>{_n(r['forecast'])}<br><span class='fy-rng'>{_n(r['lo'])}–{_n(r['hi'])}</span></td>"
+                 f"<td><b>{_n(r['actual'])}</b></td>"
                  f"<td class='{'pos' if r['err'] >= 0 else 'neg'}'>{r['err']:+,.0f}</td><td>{ok(r['hit'])}</td>")
         body += f"<td>{ok(r.get('hit_high'))}</td><td>{ok(r.get('hit_low'))}</td></tr>" if kind == "day" else "</tr>"
-    note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。高、低 = 實際高位、低位是否落在預測的 80% 區間。"
+    legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次實際波幅會落在這裡。"
+              "✅ = 實際落在範圍內；❌ = 跑出範圍（比上限大或比下限細都算）。差距 = 實際 − 預測。</div>")
+    note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。高、低 = 實際高位、低位有沒有落在預測高位、低位的預計範圍。"
             if kind == "day" else "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
     return (f"<div class='fy-hist'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
-            f"<table>{head}{body}</table><div class='fy-note'>{note}</div></div>")
+            f"<table>{head}{body}</table>{legend}<div class='fy-note'>{note}</div></div>")
 
 
 def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, day=None):
@@ -3368,7 +3376,7 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
             + (f" <span class='fy-date'>{esc(dates)}</span>" if dates else "") + f"</h2><div class='fy-sub'>{esc(sub)}</div>"]
     if fc:
         html.append(f"<div>🔮 預測波幅</div><div class='fy-big'>{_n(fc['range'])} 點</div>"
-                    f"<div class='fy-band'>80% 機會落在 {_n(fc['lo'])}–{_n(fc['hi'])} 點</div>")
+                    f"<div class='fy-band'>📐 預計範圍 {_n(fc['lo'])}–{_n(fc['hi'])} 點（十次有八次落在這裡）</div>")
         if fc.get("high") is not None:
             html.append(f"<div class='fy-row'><span>🎯 預測高位</span><b>{_n(fc['high'])}</b></div>"
                         f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>")
@@ -3390,7 +3398,7 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
     if kind == "week":
         html.append("<div class='fy-note'>週預測 = 第一天預測 × √交易日數（按過去數據校準）。</div>")
     elif kind == "month":
-        html.append("<div class='fy-note'>月預測同理；月的樣本少，命中率僅供參考。</div>")
+        html.append("<div class='fy-note'>月預測同理；月的樣本少，結果僅供參考。</div>")
     html.append("</div>")
     return "".join(html)
 
@@ -3538,13 +3546,13 @@ def build_futu_range_page(data):
     reviews = (f"<details class='fy-more' open><summary>🧾 {esc(latest['date'])} 的檢討（12:00／16:30／03:00）</summary>{review_html}</details>"
                if review_html else "")
     bt, lt = data.get("backtest") or {}, data.get("live_track") or {}
-    live = (f"實時紀錄 {lt['days']} 天：誤差 ±{_n(lt.get('mae'))} 點、命中 {lt.get('coverage_80')}%" if lt.get("days")
+    live = (f"實時紀錄 {lt['days']} 天：平均差 {_n(lt.get('mae'))} 點、落在預計範圍 {lt.get('coverage_80')}%" if lt.get("days")
             else "實時紀錄：從開始運作起每天累積")
     pct = lambda v: "—" if v is None else f"{v:.2f}%"
     stats = f"""
     <div class='grid'>
       <div class='card'><div class='card-title'>🎯 預測準確度（回測 {bt.get('days') or 0} 天）</div><div class='card-value'>±{_n(bt.get('mae'))}</div>
-        <div class='card-desc'>平均誤差（點）・80% 區間命中 {bt.get('coverage_80') if bt.get('coverage_80') is not None else '—'}%<br>{esc(live)}</div></div>
+        <div class='card-desc'>預測與實際平均差（點）・落在預計範圍 {bt.get('coverage_80') if bt.get('coverage_80') is not None else '—'}%<br>{esc(live)}</div></div>
       <div class='card'><div class='card-title'>📊 一年平均波幅</div><div class='card-value'>{_n(s['avg_range'])}</div>
         <div class='card-desc'>中位數 {_n(s['median_range'])}・平均 {pct(s['avg_range_pct'])}</div></div>
       <div class='card'><div class='card-title'>📉 近 20 日平均波幅</div><div class='card-value'>{_n(s['avg_range_20'])}</div>
@@ -3578,14 +3586,14 @@ def build_futu_range_page(data):
     </div>
     <details class='fy-more'><summary>📋 每日 OHLC 與波幅明細</summary>
       <div class='scroll' style='max-height:520px; margin-top:10px;'><table>
-        <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>HAR 預測</th><th>80% 區間</th><th>實際−預測</th><th>合約</th></tr>
+        <tr><th>交易日</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌</th><th>波幅</th><th>波幅%</th><th>HAR 預測</th><th>預計範圍（八成）</th><th>實際−預測</th><th>合約</th></tr>
         {table_rows}</table></div>
     </details>
     <details class='fy-more'><summary>ℹ️ 怎樣算的</summary>
       <div class='fy-note' style='font-size:13px;'>
         <p>📅 <b>交易日</b> = 香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00（跟富途日 K 不同）。
         即月期貨在最後交易日當天轉下月，不做價差調整。</p>
-        <p>🔮 <b>波幅預測（HAR）</b>：用前 1 天、前 5 天、前 22 天的波幅預測今天，每天只用之前的數據重新計算；80% 區間來自過去的預測誤差。
+        <p>🔮 <b>波幅預測（HAR）</b>：用前 1 天、前 5 天、前 22 天的波幅預測今天，每天只用之前的數據重新計算；預計範圍（十次有八次落在這裡，即統計上的 80% 區間）來自過去的預測誤差。
         高位 ≈ 昨收 + 0.43 × 預測波幅，低位 ≈ 昨收 − 0.39 × 預測波幅。週、月 = 第一天預測 × √交易日數（已按過去數據校準）。</p>
         <p>🅰️ <b>耗盡回落</b>：已走 ≥ 80% 預期波幅，而且離高（低）位 ≥ 50% 預期波幅。
         🅱️ <b>機率法</b>：按剩餘時間估「之後再創新高（低）」的機率，低於 5% 就通知；回測中機率與實際命中一致。
