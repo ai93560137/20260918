@@ -73,6 +73,8 @@
 #     參數用回測最好那組）：每包即月期貨 5 分 K 到達時重算，任一策略第一次觸發就記到 futu/signals/<代號>.json，
 #     ?view=futu_range&report=signals 給 GitHub 排程發 Telegram（&ack= 標記已發）；四次報告與波幅頁列出三個策略的現況。
 #     回測見 research/hsi_futures_range/HIGH_LOW_IN_REPORT.md。只顯示，不影響下單。
+#   * 2026-10-04 — [R102] 這套恒指即月期貨波幅系統在八陣登記為「風揚陣」（research/hsi_futures_range/FENGYANG.md）：
+#     Telegram 訊息開頭加【風揚陣】，波幅頁標題與控制台連結加陣名。只改顯示文字。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2216,6 +2218,7 @@ def futu_range_rows(bars):
 # 每天只用之前的數據重新擬合（擴展視窗），預測 = exp(擬合值) × 殘差平滑係數，80% 區間 = 殘差 10%／90% 分位。
 HAR_MIN_DAYS = 60
 HAR_RESID_WINDOW = 500
+FENGYANG_TAG = "【風揚陣】"                      # [R102] 八陣登記名，Telegram 訊息開頭
 
 
 def _solve_linear(a, y):
@@ -2532,7 +2535,7 @@ def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
 
 
 def futu_preopen_text(fc, day, contract, summary, peak=None):
-    lines = [f"📏 恒指即月期貨 {_day_label(day)} 開市前預測",
+    lines = [f"📏{FENGYANG_TAG}恒指即月期貨 {_day_label(day)} 開市前預測",
              f"參考：上個交易日收市 {fc['ref_close']:,.0f}" + (f"（{contract}）" if contract else ""),
              f"全日波幅（日市＋夜市）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
     if fc.get("high") is not None:
@@ -2555,7 +2558,7 @@ def futu_review(kind, day, fc, bars, track=None, peak=None):
     o, h, l, c = _ohlc(seg)
     rng = h - l
     label = {"noon": "上午", "close": "日市", "night": "全日"}[kind]
-    lines = [f"{icon} 恒指即月期貨 {_day_label(day)} {title}",
+    lines = [f"{icon}{FENGYANG_TAG}恒指即月期貨 {_day_label(day)} {title}",
              f"{label}：開 {o:,.0f}　高 {h:,.0f}　低 {l:,.0f}　收 {c:,.0f}"]
     if kind == "night":
         day_seg = [b for b in bars if b["time_key"] <= f"{day} 16:30:00"]
@@ -2862,7 +2865,7 @@ def futu_peak_status(symbol, now=None):
 def _peak_signal_text(kind, side, strat, period, s, price):
     zh = "高位" if side == "high" else "低位"
     acc = PEAK_ACCURACY.get(f"{kind}/{side}/{strat}")
-    lines = [f"⚠️ 恒指即月期貨 {PEAK_ZH[kind]}{zh}可能已出現｜{PEAK_STRAT_ZH[strat]}",
+    lines = [f"⚠️{FENGYANG_TAG}恒指即月期貨 {PEAK_ZH[kind]}{zh}可能已出現｜{PEAK_STRAT_ZH[strat]}",
              f"{PEAK_ZH[kind]}{zh} {s['ext']:,.0f}，現價 {price:,.0f}（離{zh} {s['dist']:,.0f} 點）",
              f"B 機率法：之後再創新{'高' if side == 'high' else '低'}的機率 {s['prob'] * 100:.0f}%"]
     if acc is not None:
@@ -3020,7 +3023,7 @@ def handle_futu_range_get(req):
         print(f"⚠️ [Futu 波幅讀取失敗] {exc}", flush=True)
         if req.args.get("format") == "json":
             return _json_response({"status": "error", "message": "storage read failed"}, 503)
-        return html_page("即月期貨波幅", "<div class='banner' style='background:#fff3cd; color:#856404;'>"
+        return html_page("風揚陣・即月期貨波幅", "<div class='banner' style='background:#fff3cd; color:#856404;'>"
                                          "⚠️ 讀取失敗，請查看 Cloud Logging。</div>"), 503
     if req.args.get("format") == "json":
         return _json_response({"status": "ok" if data["rows"] else "empty", **data}, 200)
@@ -3077,11 +3080,11 @@ def futu_range_chart(rows):
 def build_futu_range_page(data):
     rows, s, symbol = data["rows"], data["summary"], data["symbol"]
     nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
-           f"<h1 class='page-title'>📏 即月期貨波幅（{esc(symbol)}）</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
+           f"<h1 class='page-title'>📏 風揚陣・即月期貨波幅（{esc(symbol)}）</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
     if not rows:
         body = nav + ("<div class='section'>還沒有交易日 K 數據。本地執行 push_to_gcp.py（v7）的 "
                       f"<span class='mono'>--backfill {esc(symbol)}</span> 補一年歷史，之後每 5 分鐘會自動更新。</div>")
-        return html_page("即月期貨波幅", body)
+        return html_page("風揚陣・即月期貨波幅", body)
     latest = rows[-1]
     five = data.get("latest_5m") or {}
     age = data.get("latest_5m_age_sec")
@@ -3171,7 +3174,7 @@ def build_futu_range_page(data):
         80% 區間取殘差的 10%／90% 分位；綠色 = 實際落在區間內。回測見 research/hsi_futures_range/。統計估計，不是交易建議。
         只存、只顯示，不進電閘、不影響下單。原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></div>
     </div>"""
-    return html_page(f"即月期貨波幅 {symbol}", body)
+    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body)
 
 
 def handle_futu_api_get(symbol=None):
@@ -3220,7 +3223,7 @@ def futu_dashboard_html():
       <div class='card'><div class='card-title'>期權</div><div class='card-small'>{len(snap.get('options') or [])} 檔</div></div>
     </div>
     <div class='section' style='margin-bottom:24px;'>{table}
-      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a>・<a href='?view=futu_range'>📏 恒指即月期貨一年波幅</a></div>
+      <div class='muted' style='font-size:12px; margin-top:8px;'>只存、只顯示：Futu 行情不進電閘、不進錦囊、不影響下單。原始 JSON：<a href='?view=futu&format=json'>?view=futu&amp;format=json</a>・<a href='?view=futu_range'>📏 風揚陣：恒指即月期貨波幅</a></div>
     </div>"""
 
 
