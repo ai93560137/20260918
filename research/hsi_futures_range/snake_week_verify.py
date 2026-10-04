@@ -242,7 +242,7 @@ def verify(bars, daily_k, out):
                     dbars = day_bars[day_of[et]]
                     j = max(got["high"], got["low"]) + 1
                     ok = j < len(dbars) and dbars[j]["time_key"] == et and abs(ep - eb["open"]) <= EPS
-                    if ok and name.endswith("_F"):
+                    if ok and name.split("_")[1] == "F":
                         last = "high" if got["high"] > got["low"] else ("low" if got["low"] > got["high"] else None)
                         ok = last is not None and side == (1 if last == "low" else -1)
                 T.check("T5 訊號都現後才入（下一根開市；F 方向正確）", ok, tag)

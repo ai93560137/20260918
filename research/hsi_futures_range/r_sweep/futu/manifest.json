@@ -1,0 +1,202 @@
+{
+ "generated_utc": "2026-10-04 06:49:33",
+ "git_head": "98b274d50c54953ab5d7e6d66b9951c0a86b2686",
+ "source": "futu",
+ "script_sha256": "cbf69e3dd4addeecb0ee86c434a1c977ef1bff16760a46e04a191a84923fb37a",
+ "engine_sha256": {
+  "snake_week.py": "f47f221d39c231d4dd6b1d37695ae835b1882d1c319e989fda4bb270d29df66c",
+  "high_low_in.py": "6839f590cb4cf3f366a835c5321e0253e764fdd365c7b37fda14762d0364e6d2",
+  "hl_both.py": "f6fd2c4f7dec862a60e4d06c8393c7fd377113054fca5e49b5c6ffa8269c5f6d",
+  "hl_signal.py": "5a14d1df4f5b73654e028d7a368fe5c301c6aeabaf2096de2f46972dd9831a19",
+  "hk50_cfd.py": "01f337f4922a707ede1f469da4a23bdfea59707cc5906a06fe21f9bd217f5a27"
+ },
+ "input": {
+  "bars": 46868,
+  "bars_sha256": "4f9c7f6ee197b0196aebda02f2daef68e3a035fe0262cfc025a228433641b4d0",
+  "daily": 739,
+  "daily_sha256": "ea884e7c10076b582b140f291c96ff07ee4b266864f514c2dee8c663b8d9af6f",
+  "first_bar": "2023-09-29 09:30:00",
+  "last_bar": "2026-10-03 03:00:00"
+ },
+ "params": {
+  "cost_per_round_trip": 3.0,
+  "stop_band_q": 0.95,
+  "rr_grid": [
+   1.0,
+   1.5,
+   2.0,
+   3.0,
+   4.0,
+   5.0,
+   8.0,
+   0.0
+  ]
+ },
+ "trigger_days": {
+  "B": 460,
+  "A": 133,
+  "C": 29
+ },
+ "configs": {
+  "A_S_R1": {
+   "trades": 78,
+   "net_total": 2865.48
+  },
+  "A_S_R1.5": {
+   "trades": 67,
+   "net_total": 7944.99
+  },
+  "A_S_R2": {
+   "trades": 62,
+   "net_total": 7592.59
+  },
+  "A_S_R3": {
+   "trades": 58,
+   "net_total": 5463.44
+  },
+  "A_S_R4": {
+   "trades": 57,
+   "net_total": 5632.6
+  },
+  "A_S_R5": {
+   "trades": 56,
+   "net_total": 5961.5
+  },
+  "A_S_R8": {
+   "trades": 53,
+   "net_total": 5719.39
+  },
+  "A_S_R無": {
+   "trades": 52,
+   "net_total": 6771.51
+  },
+  "B_S_R1": {
+   "trades": 132,
+   "net_total": 2205.97
+  },
+  "B_S_R1.5": {
+   "trades": 111,
+   "net_total": 6384.34
+  },
+  "B_S_R2": {
+   "trades": 106,
+   "net_total": 4608.94
+  },
+  "B_S_R3": {
+   "trades": 99,
+   "net_total": 7782.32
+  },
+  "B_S_R4": {
+   "trades": 93,
+   "net_total": 5649.11
+  },
+  "B_S_R5": {
+   "trades": 93,
+   "net_total": 6513.77
+  },
+  "B_S_R8": {
+   "trades": 91,
+   "net_total": 7628.11
+  },
+  "B_S_R無": {
+   "trades": 88,
+   "net_total": 7014.42
+  },
+  "A_F_R1": {
+   "trades": 70,
+   "net_total": -3626.73
+  },
+  "A_F_R1.5": {
+   "trades": 60,
+   "net_total": -5456.13
+  },
+  "A_F_R2": {
+   "trades": 48,
+   "net_total": -3855.63
+  },
+  "A_F_R3": {
+   "trades": 40,
+   "net_total": -5006.26
+  },
+  "A_F_R4": {
+   "trades": 34,
+   "net_total": -1166.7
+  },
+  "A_F_R5": {
+   "trades": 21,
+   "net_total": 1341.52
+  },
+  "A_F_R8": {
+   "trades": 22,
+   "net_total": -246.04
+  },
+  "A_F_R無": {
+   "trades": 18,
+   "net_total": -4240.38
+  },
+  "B_F_R1": {
+   "trades": 111,
+   "net_total": 5216.14
+  },
+  "B_F_R1.5": {
+   "trades": 86,
+   "net_total": 8931.6
+  },
+  "B_F_R2": {
+   "trades": 74,
+   "net_total": 2272.24
+  },
+  "B_F_R3": {
+   "trades": 48,
+   "net_total": -7064.93
+  },
+  "B_F_R4": {
+   "trades": 39,
+   "net_total": -3012.89
+  },
+  "B_F_R5": {
+   "trades": 45,
+   "net_total": -6926.58
+  },
+  "B_F_R8": {
+   "trades": 40,
+   "net_total": -10388.72
+  },
+  "B_F_R無": {
+   "trades": 12,
+   "net_total": 3090.8
+  },
+  "S0_R1": {
+   "trades": 167,
+   "net_total": -97.2
+  },
+  "S0_R1.5": {
+   "trades": 137,
+   "net_total": 1698.0
+  },
+  "S0_R2": {
+   "trades": 127,
+   "net_total": -948.58
+  },
+  "S0_R3": {
+   "trades": 117,
+   "net_total": 2654.48
+  },
+  "S0_R4": {
+   "trades": 109,
+   "net_total": 712.35
+  },
+  "S0_R5": {
+   "trades": 108,
+   "net_total": 972.72
+  },
+  "S0_R8": {
+   "trades": 104,
+   "net_total": 2063.43
+  },
+  "S0_R無": {
+   "trades": 102,
+   "net_total": 2706.01
+  }
+ }
+}

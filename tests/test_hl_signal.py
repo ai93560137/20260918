@@ -83,5 +83,21 @@ b = {r["side"]: r for r in rows if r["signal"] == "B"}
 check("B：高位已現（離高 195、機率 < 5%）、低位已現各有一根", "high" in b and "low" in b
       and float(b["high"]["prob"]) < 0.05 and float(b["low"]["prob"]) < 0.05, b)
 
+print("=== R 測試：不設目標（rr = 0）、其他倍數 ===")
+_, trig = hs.signals([d0], LV)                         # 上面 B 一節換了 trig，這裡重算 d0 的
+d1 = mk(D[1], [(1015, 1500, 1010, 1490)])
+allb = {b["time_key"]: 1 for d in (d0, d1) for b in d["bars"]}
+tr = hs.simulate([d0, d1], LV, WL, allb, {}, trig["A"], "S", rr=0.0)
+check("rr = 0 → 不設目標，碰到 1500 也不止賺（數據完結）", tr[0]["initial_target"] is None and tr[0]["exit_reason"] == "數據完結")
+tr = hs.simulate([d0, d1], LV, WL, allb, {}, trig["A"], "S", rr=3.0)
+check("rr = 3 → 目標 1015 + 3×115 = 1360，原因寫「3R 止賺」", tr[0]["initial_target"] == 1360 and tr[0]["exit_reason"] == "3R 止賺")
+
+print("=== HK50 差價合約：券商時間 → 香港時間 ===")
+import hk50_cfd as hk
+check("冬令（2024-03-04，UTC+2）03:15 開市那根 → 香港 09:30 收市", hk.broker_to_hk("2024.03.04 03:15:00") == "2024-03-04 09:30:00")
+check("夏令（2024-03-11，UTC+3）04:15 → 香港 09:30", hk.broker_to_hk("2024.03.11 04:15:00") == "2024-03-11 09:30:00")
+check("夏令最後一根 21:45 → 香港翌日 03:00（屬前一個交易日）", hk.broker_to_hk("2024.06.03 21:45:00") == "2024-06-04 03:00:00"
+      and hk.session_of("2024-06-04 03:00:00") == "2024-06-03")
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
