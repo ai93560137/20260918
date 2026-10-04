@@ -254,5 +254,30 @@ for v in ("welcome", "info", "dashboard", "jinnang_sheet", "jinnang_tracker"):
     page = client.get(f"/?view={v}").get_data(as_text=True)
     check(f"?view={v} 導覽列有風揚陣連結", "?view=futu_range" in page and "🌬️ 風揚陣波幅" in page)
 
+# ---- [R106] 💰 四個方向 ----
+check("波幅頁有四個方向與方向二結論", "💰 怎樣用來賺錢（四個方向）" in hp and hp.count("方向") >= 4
+      and "回測不賺錢" in hp and "MONEY_REPORT.md" in hp)
+from datetime import datetime as _dt2, timezone as _tz2
+def opt_snap(time_key):
+    opts = [{"code": f"HK.HSI261009{t}{k}000", "option_type": t, "expiry": "2026-10-09", "strike": k, "iv": iv}
+            for k, ivs in ((23900, (20.0, 22.0)), (24000, (24.0, 26.0))) for t, iv in zip(("CALL", "PUT"), ivs)]
+    main.gcs_write_text(main.futu_symbol_file("HK.800000"), json.dumps(
+        {"symbol": "HK.800000", "bars": [{"time_key": time_key, "close": 23940}], "options": opts,
+         "received_ts": 0, "received_utc": "x"}))
+fc0 = {"range": 400.0, "ref_close": 24000.0}
+opt_snap("2026-10-05 10:30:00")
+ivc = main.futu_iv_compare(fc0, now=_dt2(2026, 10, 5, 2, 40, tzinfo=_tz2.utc))          # 香港 10:40
+har_vol = 400 / 1.596 / 24000 * 252 ** 0.5 * 100
+check("方向一：取最近行使價的 Call／Put 平均 IV、預測換成年化", ivc["strike"] == 23900 and ivc["iv"] == 21.0
+      and abs(ivc["har_vol"] - round(har_vol, 1)) < 1e-9 and ivc["ratio"] == round(21.0 / har_vol, 2) and ivc["fresh"], ivc)
+check("方向一：最新 K 線超過 20 分鐘（休市）→ 不比較",
+      main.futu_iv_compare(fc0, now=_dt2(2026, 10, 5, 9, 0, tzinfo=_tz2.utc))["fresh"] is False)
+check("方向一：沒有預測 → 只有 IV", main.futu_iv_compare(None)["har_vol"] is None)
+money = main._fy_money({"forecast": fc0, "summary": {"avg_range": 460}, "rows": [{"forecast": x} for x in (300, 350, 500, 600)],
+                        "iv_compare": ivc})
+check("方向一卡顯示 IV、預測、比值與判斷", "21.0%" in money and "IV ÷ 預測" in money and ("偏貴" in money or "偏平" in money or "差不多" in money))
+check("方向三：止蝕 ½ 預測、倉位係數", "200 點" in money and "1.15 倍" in money)
+check("方向四：預測在一年中的位置", "50%" in money and "不是小波幅日" in money)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

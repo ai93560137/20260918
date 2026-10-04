@@ -60,6 +60,12 @@
 [v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
   GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
 
+[v10] 查方向一（拿波幅預測跟期權比）能用的歷史數據，只讀：
+  python push_to_gcp.py --probe-iv               # 找恒指波幅指數（VHSI）代號、看日 K 歷史有多長；看恒指期權有沒有歷史 K 線
+  python push_to_gcp.py --probe-iv --push        # 同上，再把 VHSI 過去 1100 天的日 K 推上 GCP
+                                                 # （存 GCS archive/futu_k_day/<代號>/<日期>.json，不影響即時快照）
+  輸出整段貼回給 Claude 即可；沒有 --push 不會推任何東西。
+
 執行：
   python push_to_gcp.py                  # 常駐
   python push_to_gcp.py --once           # 只推一次，用來測試
@@ -78,7 +84,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "9"
+SCRIPT_VERSION = "10"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -638,6 +644,84 @@ class FutuPusher:
             f"{len({session_date(b['time_key']) for b, _ in items})} 個交易日" + (f"；{'；'.join(notes)}" if notes else ""))
         return ok == len(items) and bool(items)
 
+    # ---- [v10] 方向一的數據探測：VHSI 歷史、恒指期權歷史 K 線 -------------------
+    def probe_history(self, code, days, ktype="K_DAY"):
+        end = datetime.now(HK_TZ).date()
+        time.sleep(BACKFILL_PACE_SEC)
+        ret, df, _ = self.ctx.request_history_kline(code, start=(end - timedelta(days=days)).isoformat(),
+                                                    end=end.isoformat(), ktype=getattr(ft.KLType, ktype), max_count=None)
+        if ret != ft.RET_OK:
+            return None, str(df)[:120]
+        return ([] if df.empty else bars_from_df(df.sort_values("time_key"))), ""
+
+    def probe_iv(self, push=False, days=1100):
+        """回傳 0 = 找到 VHSI 而且有歷史（--push 時也推成功）。"""
+        self.connect()
+        log(f"🔎 [1/3] 找恒指波幅指數（港股指數名稱含 波幅／VHSI／Volatility）")
+        ret, df = self.ctx.get_stock_basicinfo(ft.Market.HK, ft.SecurityType.IDX)
+        if ret != ft.RET_OK:
+            log(f"  ❌ 查不到港股指數清單：{str(df)[:120]}")
+            return 1
+        names = df["name"].astype(str)
+        hits = df[names.str.contains("波幅|VHSI|Volatility", case=False, regex=True)
+                  | df["code"].astype(str).str.contains("VHSI", case=False, regex=False)]
+        for _, row in hits.head(10).iterrows():
+            log(f"  {row['code']}\t{row['name']}")
+        if hits.empty:
+            log("  ❌ 找不到；可試 --search 波幅 或 --search VHSI")
+        vhsi, vhsi_bars = None, []
+        for code in [str(c) for c in hits["code"].head(5)]:
+            bars, err = self.probe_history(code, days)
+            if bars is None:
+                log(f"  {code}：日 K 取不到（{err}）")
+                continue
+            log(f"  {code}：日 K {len(bars)} 根" + (f"，{bars[0]['time_key'][:10]} 至 {bars[-1]['time_key'][:10]}，"
+                                                   f"最新收 {bars[-1]['close']}" if bars else ""))
+            if len(bars) > len(vhsi_bars):
+                vhsi, vhsi_bars = code, bars
+
+        log("🔎 [2/3] 恒指期權（HK.800000）的到期日")
+        ret, exp = self.ctx.get_option_expiration_date(code="HK.800000")
+        expiries = []
+        if ret == ft.RET_OK and not exp.empty:
+            expiries = [str(x)[:10] for x in exp["strike_time"]]
+            log(f"  共 {len(expiries)} 個：{'、'.join(expiries[:8])}" + ("…" if len(expiries) > 8 else ""))
+        else:
+            log(f"  ❌ 查不到：{str(exp)[:120]}")
+
+        log("🔎 [3/3] 期權本身有沒有歷史 K 線（最近一個、最遠一個到期日的價平 Call）")
+        time.sleep(BACKFILL_PACE_SEC)
+        ret, snap = self.ctx.get_market_snapshot(["HK.800000"])
+        spot = num(snap.iloc[0]["last_price"]) if ret == ft.RET_OK and not snap.empty else None
+        for expiry in dict.fromkeys(expiries[:1] + expiries[-1:]):
+            time.sleep(BACKFILL_PACE_SEC)
+            ret, chain = self.ctx.get_option_chain(code="HK.800000", start=expiry, end=expiry)
+            if ret != ft.RET_OK or chain.empty or spot is None:
+                log(f"  {expiry}：期權鏈取不到（{str(chain)[:80] if ret != ft.RET_OK else '空的或沒有現價'}）")
+                continue
+            calls = chain[chain["option_type"].astype(str).str.upper() == "CALL"].copy()
+            if calls.empty:
+                log(f"  {expiry}：沒有 Call")
+                continue
+            calls["gap"] = (calls["strike_price"].astype(float) - spot).abs()
+            code = str(calls.sort_values("gap").iloc[0]["code"])
+            bars, err = self.probe_history(code, 400)
+            log(f"  {expiry} 價平 {code}：" + (f"日 K 取不到（{err}）" if bars is None else
+                                               f"日 K {len(bars)} 根" + (f"，{bars[0]['time_key'][:10]} 起" if bars else "")))
+        log("  （已到期的期權 Futu 通常拿不到；期權 K 線也不含 IV，所以歷史 IV 主要靠 VHSI）")
+
+        if not vhsi_bars:
+            return 1
+        if not push:
+            log(f"✅ VHSI 用 {vhsi}（{len(vhsi_bars)} 根）。要推上 GCP：加 --push 再跑一次。")
+            return 0
+        if not GCP_URL or not TOKEN:
+            log("❌ 要推送請先設定 ZHUGE_GCP_URL 與 WEBHOOK_SECRET_TOKEN。")
+            return 2
+        ok = self.push_history(vhsi, [(b, "futu_opend") for b in vhsi_bars], "K_DAY", BACKFILL_CHUNK)
+        log(f"📤 {vhsi} 日 K 推送 {ok}／{len(vhsi_bars)} 根 → GCS archive/futu_k_day/{vhsi}/")
+        return 0 if ok == len(vhsi_bars) else 1
+
     def run_symbol(self, symbol):
         if FRONT_RE.match(symbol):
             return self.run_front(symbol)
@@ -734,6 +818,13 @@ def futures(product):
 
 
 def main():
+    if "--probe-iv" in sys.argv[1:]:
+        pusher = FutuPusher()
+        log(f"🔎 方向一數據探測（v{SCRIPT_VERSION}）" + ("，會推送 VHSI 日 K" if "--push" in sys.argv[1:] else "，只讀"))
+        try:
+            return pusher.probe_iv(push="--push" in sys.argv[1:])
+        finally:
+            pusher.close()
     if "--export-intraday" in sys.argv[1:]:
         idx = sys.argv.index("--export-intraday")
         args = sys.argv[idx + 1:idx + 4]

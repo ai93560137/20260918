@@ -80,6 +80,8 @@
 #   * 2026-10-04 — [R104] 日／週／月過去每一次預測的誤差與命中率（逐日／逐段前推重算，日有實時紀錄就用紀錄）；
 #     三張卡片各顯示過去 7 次預測與全部歷史的命中率，?view=futu_range&report=accuracy 給全部紀錄。
 #   * 2026-10-04 — [R105] 今日／本週／本月卡片標題加日期（休市日今日卡改稱「下個交易日」）；每頁導覽列加「🌬️ 風揚陣波幅」。
+#   * 2026-10-04 — [R106] 波幅頁加「💰 怎樣用來賺錢（四個方向）」：方向一比較恒指週期權價平 IV 與預測年化波幅、
+#     方向二放盈虧回測結論（不賺錢，research/hsi_futures_range/MONEY_REPORT.md）、方向三四顯示今天的止蝕／倉位與波幅位置。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -3057,6 +3059,39 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
     return out
 
 
+# ---- 「怎樣用來賺錢」四個方向  [R106] ---------------------------------------------
+# 方向二的數字來自 research/hsi_futures_range/fade_pnl.py（MONEY_REPORT.md）；其餘三個方向未回測，只顯示今天的數字。
+FUTU_IV_SYMBOL = "HK.800000"                    # 恒指週期權（本地腳本每 5 分鐘推價平附近 10 檔）
+RANGE_TO_SIGMA = 1.596                          # 布朗運動：期望波幅 ≈ 1.596 × σ
+
+
+def futu_iv_compare(fc, now=None):
+    """方向一：恒指期權價平 IV 對風揚陣預測的年化波幅。沒有期權或預測 → None。
+    最新 K 線離現在超過 20 分鐘（休市、週末）→ fresh=False，報價不可信。"""
+    snap = read_futu_snapshot(FUTU_IV_SYMBOL)
+    if not isinstance(snap, dict) or snap.get("error"):
+        return None
+    bars = snap.get("bars") or []
+    spot = to_float(bars[-1].get("close")) if bars else None
+    opts = [o for o in snap.get("options") or [] if to_float(o.get("iv")) and to_float(o.get("strike"))]
+    if not spot or not opts:
+        return None
+    strike = min({o["strike"] for o in opts}, key=lambda k: abs(k - spot))
+    ivs = [o["iv"] for o in opts if o["strike"] == strike]
+    iv = sum(ivs) / len(ivs)
+    har = None
+    if fc and fc.get("range") and fc.get("ref_close"):
+        har = fc["range"] / RANGE_TO_SIGMA / fc["ref_close"] * math.sqrt(252) * 100
+    now_hk = (now or datetime.now(timezone.utc)).astimezone(HK_TZ).replace(tzinfo=None)
+    try:
+        lag = (now_hk - datetime.strptime(str(bars[-1]["time_key"])[:16], "%Y-%m-%d %H:%M")).total_seconds()
+    except ValueError:
+        lag = None
+    return {"iv": round(iv, 1), "strike": strike, "expiry": opts[0].get("expiry"), "spot": spot,
+            "har_vol": round(har, 1) if har else None, "ratio": round(iv / har, 2) if har else None,
+            "fresh": lag is not None and -600 <= lag <= 1200}
+
+
 def futu_range_data(symbol):
     symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
     bars = gcs_read_json(futu_daily_file(symbol), [])
@@ -3100,6 +3135,7 @@ def futu_range_data(symbol):
         nxt += timedelta(days=1)
         if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar) or nxt.year > 2100:
             break
+    data["iv_compare"] = futu_iv_compare(data.get("forecast"))     # [R106] 方向一：期權 IV 對預測波幅
     data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"),
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
                  "latest_5m": five or None,
@@ -3351,6 +3387,83 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
     return "".join(html)
 
 
+MONEY_FADE = {                                  # 方向二回測摘要（fade_pnl.py，2023-12 至 2026-10，15 分 K）
+    "status": "❌ 回測不賺錢・不建議用",
+    "lines": [
+        "📉 交易日：A／B／C 之後反向做，不扣成本每筆 −4 至 +7 點（t 值都 < 1，等於零）；扣 3 點成本後幾乎全虧。",
+        "🔍 原因：「頂底已現」判斷很準（B 約 96%），但通知時價格已離高位約 230 點，之後升跌各半——頂已見不代表會回頭。",
+        "🎯 前半段挑最好的參數（每筆 +15 至 +35 點），後半段六組有五組變負：過度擬合。",
+        "🗓️ 週：沽空邊後半段有賺，但同時間無條件沽空也賺，部分組合賺更多——功勞是那段時間恒指偏弱，不是訊號。",
+        "👉 用法改為「不追」提示：高位已現就不要再追買，低位已現就不要再追沽。",
+    ],
+}
+
+
+def _fy_money(data):
+    """[R106] 💰 四個方向：狀態＋今天的數字。全部只是研究，不接下單。"""
+    fc = data.get("forecast") or {}
+    rng = fc.get("range")
+    s = data.get("summary") or {}
+    ivc = data.get("iv_compare")
+    cards = []
+
+    def card(icon, title, status, body, css=""):
+        cards.append(f"<div class='fy-card {css}'><h2>{icon} {title}</h2><div class='fy-sub'>{status}</div>{body}</div>")
+
+    # 一、賣波幅（期權）
+    if ivc and ivc.get("har_vol"):
+        verdict = ("期權偏貴（IV 高於預測）→ 賣方有利" if ivc["ratio"] >= 1.15 else
+                   "期權偏平（IV 低於預測）→ 不宜賣" if ivc["ratio"] <= 0.9 else "差不多，沒有明顯優勢")
+        now_txt = (f"<div class='fy-row'><span>📈 週期權價平 IV（{esc(ivc.get('expiry') or '')} 到期，行使價 {_n(ivc['strike'])}）</span><b>{ivc['iv']:.1f}%</b></div>"
+                   f"<div class='fy-row'><span>🔮 風揚陣預測（年化）</span><b>{ivc['har_vol']:.1f}%</b></div>"
+                   f"<div class='fy-row'><span>⚖️ IV ÷ 預測</span><b>{ivc['ratio']:.2f}</b></div>"
+                   + (f"<div class='fy-sig'>👉 {verdict}</div>" if ivc.get("fresh") else
+                      "<div class='fy-note'>⏸️ 現在休市，期權報價停在上一次，暫不比較。</div>"))
+    else:
+        now_txt = "<div class='fy-note'>⏳ 等 Futu 推恒指期權（HK.800000）才有今天的比較。</div>"
+    card("💹", "方向一：賣波幅（期權）", "🔎 查數據中・未回測",
+         "<div class='fy-sig'>期權價格裡有市場預期的波幅（IV）。IV 長期高於實際波幅時，賣期權就能賺這個差價；"
+         "IV 明顯高於風揚陣預測才賣，行使價放在 80% 區間外。</div>" + now_txt +
+         "<div class='fy-note'>⚠️ 賺小蝕大：20% 的日子會穿區間，要硬止蝕、細倉。歷史 IV 要等 Futu 的恒指波幅指數（VHSI）數據才能回測。"
+         "之後會跟 ☁️ 雲垂陣（期權）共用。</div>", "month")
+    # 二、反向做（日內）
+    if MONEY_FADE:
+        body = "".join(f"<div class='fy-sig'>{esc(x)}</div>" for x in MONEY_FADE["lines"])
+        status = MONEY_FADE["status"]
+    else:
+        body, status = "<div class='fy-note'>回測進行中。</div>", "🧪 回測中"
+    card("🔄", "方向二：頂底已現 → 反向做", status,
+         "<div class='fy-sig'>當天（或本週）已走完預測波幅，A／B／C 確認高位或低位已出現 → 在區間邊緣反向做，止蝕放在高（低）位之外。</div>"
+         + body + "<div class='fy-note'>3 年 15 分 K 回測，每筆扣 3 點成本；恒指期貨每點 HK$50，小型恒指 HK$10。"
+         "詳見 research/hsi_futures_range/MONEY_REPORT.md。</div>", "week")
+    # 三、風險管理
+    avg = s.get("avg_range")
+    if rng:
+        size = f"{avg / rng:.2f} 倍" if avg else "—"
+        today = (f"<div class='fy-row'><span>🛡️ 示例止蝕（½ 個預測波幅）</span><b>{_n(rng / 2)} 點</b></div>"
+                 f"<div class='fy-row'><span>⚖️ 倉位係數（一年平均 ÷ 今日預測）</span><b>{size}</b></div>")
+    else:
+        today = ""
+    card("🛡️", "方向三：管理風險", "💡 建議・未回測",
+         "<div class='fy-sig'>不直接賺錢，但令其他策略更穩：止蝕距離跟預測波幅走（大波幅日放寬、小波幅日收窄）；"
+         "倉位按預測波幅調整，令每天風險差不多。</div>" + today +
+         "<div class='fy-note'>之後會接到 🐍 蛇蟠陣：預測高位遠低於通道上軌時，當天突破機會較低，可以不追。</div>")
+    # 四、小波幅日做突破
+    past = sorted(r["forecast"] for r in data.get("rows") or [] if r.get("forecast"))
+    if rng and past:
+        pct = sum(1 for x in past if x <= rng) / len(past) * 100
+        flag = "✅ 屬於小波幅日（≤ 20%）" if pct <= 20 else "— 不是小波幅日"
+        today = (f"<div class='fy-row'><span>📊 今日預測在一年中的位置</span><b>{pct:.0f}%</b></div>"
+                 f"<div class='fy-sig'>{flag}</div>")
+    else:
+        today = ""
+    card("🚀", "方向四：小波幅日做突破", "💡 想法・未回測",
+         "<div class='fy-sig'>預測波幅特別小（一年中最低 20%）的日子，之後常有大波動；配合突破策略，突破才追。</div>" + today)
+    return ("<div class='section-header'>💰 怎樣用來賺錢（四個方向）</div>"
+            "<div class='fy-legend'>全部是研究，不接下單；只有方向二做了盈虧回測。下單以券商即時報價為準。</div>"
+            f"<div class='fy-grid'>{''.join(cards)}</div>")
+
+
 def build_futu_range_page(data):
     rows, s, symbol = data["rows"], data["summary"], data["symbol"]
     nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
@@ -3426,7 +3539,7 @@ def build_futu_range_page(data):
         f"{fmt_num((r['range'] - r['forecast']) if r.get('forecast') else None, '{:+,.0f}')}</td>"
         f"<td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
         for r in reversed(rows))
-    body = nav + hero + cards + reviews + f"""
+    body = nav + hero + cards + reviews + _fy_money(data) + f"""
     <div class='section-header'>📊 過去一年</div>
     {stats}
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>

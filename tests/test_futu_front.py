@@ -291,5 +291,45 @@ check("轉月按交易日：09-29 凌晨 03:00 屬 09-28 交易日 → 2609；09
 check("過期合約那段用主連", src["2026-08-27 12:00:00"].endswith("HK.HSImain(代2608)"))
 check("40 天前的交易日之前不送", min(t for t, _ in bars) >= "2026-08-25")
 
+print("=== [v10] --probe-iv：VHSI 與期權歷史 ===")
+class ProbeCtx:
+    def __init__(self, vhsi_days=30):
+        self.vhsi_days, self.calls = vhsi_days, []
+    def get_stock_basicinfo(self, market, kind):
+        assert kind == "IDX"
+        return ft.RET_OK, pd.DataFrame([{"code": "HK.800000", "name": "恒生指數"},
+                                        {"code": "HK.800125", "name": "恒指波幅指數"},
+                                        {"code": "HK.800700", "name": "恒生科技指數"}])
+    def request_history_kline(self, code, start, end, ktype, max_count=None):
+        self.calls.append((code, ktype))
+        if code == "HK.800125":
+            return ft.RET_OK, kline(code, [f"2026-09-{d:02d} 00:00:00" for d in range(1, 1 + self.vhsi_days)], 20), None
+        if code.startswith("HK.HSI26"):
+            return (ft.RET_OK, kline(code, ["2026-09-30 00:00:00", "2026-10-02 00:00:00"], 100), None) \
+                if "1009" in code else (ft.RET_ERROR, "no history", None)
+        return ft.RET_ERROR, "unexpected", None
+    def get_option_expiration_date(self, code):
+        return ft.RET_OK, pd.DataFrame({"strike_time": ["2026-10-09", "2026-10-30", "2027-03-30"]})
+    def get_market_snapshot(self, codes):
+        return ft.RET_OK, pd.DataFrame([{"code": "HK.800000", "last_price": 23831.0}])
+    def get_option_chain(self, code, start, end):
+        tag = start.replace("-", "")[2:]
+        return ft.RET_OK, pd.DataFrame([{"code": f"HK.HSI{tag}C{k}000", "option_type": "CALL", "strike_price": k}
+                                        for k in (23600, 23800, 24000)])
+    def close(self):
+        pass
+
+pp = push.FutuPusher(); pp.ctx = ProbeCtx()
+sent = []; pp.post = lambda packet, quiet=False: sent.append(packet) or True
+check("只讀：找到 VHSI、不推送", pp.probe_iv(push=False) == 0 and sent == [])
+check("期權探測最近與最遠到期的價平 Call",
+      ("HK.HSI261009C23800000", "K_DAY") in pp.ctx.calls and ("HK.HSI270330C23800000", "K_DAY") in pp.ctx.calls, pp.ctx.calls)
+pp.ctx = ProbeCtx(); push.GCP_URL, push.TOKEN = "https://x", "t"
+check("--push：VHSI 日 K 分包推成 K_DAY", pp.probe_iv(push=True) == 0 and sent
+      and all(p["symbol"] == "HK.800125" and p["kline_type"] == "K_DAY" for p in sent)
+      and sum(len(p["data"]) for p in sent) == 30 and all(len(p["data"]) <= push.BACKFILL_CHUNK for p in sent))
+pp.ctx = ProbeCtx(vhsi_days=0); sent.clear()
+check("VHSI 沒有歷史 → 失敗、不推送", pp.probe_iv(push=True) == 1 and sent == [])
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
