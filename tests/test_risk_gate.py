@@ -317,9 +317,9 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
     for m in must:
         check(f"{f} 含「{m}」", m in txt)
 
-print("\n=== 10d. 八頁導覽列一致（含一個站外連結）===")
+print("\n=== 10d. 九頁導覽列一致（含一個站外連結）===")
 VIEWS = [v for v, _ in main.PAGE_LINKS]
-check(f"main.py 的 PAGE_LINKS 有 8 頁（{len(VIEWS)}）", len(VIEWS) == 8, VIEWS)
+check(f"main.py 的 PAGE_LINKS 有 9 頁（{len(VIEWS)}）", len(VIEWS) == 9, VIEWS)
 EXTERNAL = [v for v in VIEWS if v.startswith("http")]
 check("其中剛好一個是站外連結（八陣圖）", len(EXTERNAL) == 1, EXTERNAL)
 check("站外連結就是 BAZHENTU_URL", EXTERNAL == [main.BAZHENTU_URL], EXTERNAL)
@@ -328,7 +328,7 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
     self_view = f[:-5] if f.startswith("jinnang") else f[:-5] + "_app"
     # 當前頁不該連到自己（下面另有一項專門檢查），所以從必須出現的清單裡排除
     miss = [v for v in VIEWS if v != self_view and v not in txt]
-    check(f"{f} 連到其餘 7 頁", not miss, f"缺 {miss}")
+    check(f"{f} 連到其餘 8 頁", not miss, f"缺 {miss}")
     check(f"{f} 的站外連結有 target=_blank", 'target="_blank"' in txt or "target: '_blank'" in txt
           or 'out.target = "_blank"' in txt, f)
 
@@ -354,7 +354,7 @@ def _linked(html, view):
 for v in ("jinnang_sheet", "jinnang_tracker"):
     html = body_of(get("?view=" + v))
     miss = [x for x in VIEWS if x != v and not _linked(html, x)]
-    check(f"?view={v} 實際輸出含其餘 7 個連結", not miss, f"缺 {miss}")
+    check(f"?view={v} 實際輸出含其餘 8 個連結", not miss, f"缺 {miss}")
 
 # 七頁的導覽列要用同一組 class（統一外觀）
 mainsrc = io.open("/home/user/20260918/main.py", encoding="utf-8").read()

@@ -141,7 +141,7 @@ client.post("/", json=packet([{"time_key": "2026-10-03 02:55:00", "open": 1, "hi
 j = client.get("/?view=futu_range&format=json").get_json()
 check("最新 5 分 K 略過開市前的佔位 K 線", j["latest_5m"]["time_key"] == "2026-10-03 02:55:00", j["latest_5m"])
 check("控制台的 Futu 區塊連到波幅頁", "?view=futu_range" in main.futu_dashboard_html())
-check("八頁導覽列不變（站內頁另有一致性檢查）", "futu_range" not in str(main.PAGE_LINKS))
+check("導覽列有風揚陣（R105，使用者要求每頁頂都有）", ("futu_range", "🌬️ 風揚陣波幅") in main.PAGE_LINKS)
 e = client.get("/?view=futu_range&symbol=<script>").get_data(as_text=True)
 check("代號會跳脫", "<script>" not in e)
 
@@ -242,6 +242,17 @@ check("?report=accuracy 給全部紀錄", ja["status"] == "ok" and ja["day"]["n"
 hp = client.get("/?view=futu_range").get_data(as_text=True)
 check("波幅頁三張卡都有過去幾次預測", hp.count("📜 過去 ") == 3 and "📜 過去 7 次預測" in hp, hp.count("📜 過去"))
 check("JSON 不帶內部欄位", "_har" not in client.get("/?view=futu_range&format=json").get_json())
+
+# ---- [R105] 卡片標題日期、每頁導覽列有風揚陣 ----
+check("日期：今日／本週（週一至五）／本月",
+      main._fy_period_dates("day", "2026-10-05") == "10月5日（一）"
+      and main._fy_period_dates("week", "2026-10-04") == "9月28日（一） 至 10月2日（五）"
+      and main._fy_period_dates("month", "2026-10-02") == "2026年10月" and main._fy_period_dates("day", "next") == "")
+check("波幅頁三張卡片標題都有日期", hp.count("class='fy-date'") == 3, hp.count("fy-date"))
+check("波幅頁導覽列：風揚陣是目前這頁", "nav-current'>🌬️ 風揚陣波幅<" in hp)
+for v in ("welcome", "info", "dashboard", "jinnang_sheet", "jinnang_tracker"):
+    page = client.get(f"/?view={v}").get_data(as_text=True)
+    check(f"?view={v} 導覽列有風揚陣連結", "?view=futu_range" in page and "🌬️ 風揚陣波幅" in page)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
