@@ -41,6 +41,7 @@ OK = FAIL = 0
 
 # ↑ 與 test_futu_peak.py 相同的假 GCS。
 # [R116] 📒 紙上交易：蛇蟠陣通道反手、🅱️／🅰️ 訊號都亮後跟蛇入市、止蝕／止賺／蛇反手離場、通知與頁面。
+# [R118] 波幅開閘：R̂ ÷ 250 日中位 ≥ 1.2 → 開閘日入市 2 張，固定 1 張與開閘雙倍兩條並記；預測、報告、通知、頁面顯示開閘與否。
 import random
 from datetime import date, datetime, timedelta, timezone
 
@@ -113,6 +114,13 @@ s = main._paper_stats([{"net": 100, "r_multiple": 1.0}, {"net": -50, "r_multiple
 check("統計：4 筆、勝率 50%、每筆 +50、RRR 3、回撤 100、R +0.5", s["n"] == 4 and s["win"] == 0.5 and s["mean"] == 50 and s["rrr"] == 3.0
       and s["dd"] == 100 and s["R"] == 0.5, s)
 check("沒交易 → n 0", main._paper_stats([]) == {"n": 0})
+s = main._paper_stats([{"net": 100, "lots": 2, "r_multiple": 1.0}, {"net": -50, "r_multiple": -0.5}, {"net": -50, "lots": 1, "r_multiple": -0.5}])
+check("[R118] 統計兩條並記：固定 1 張 0、開閘雙倍 +100、開閘日 1 筆 +100、其餘 −100、雙倍回撤 100", s["total"] == 0 and s["total_tilt"] == 100
+      and s["gate_n"] == 1 and s["gate_total"] == 100 and s["rest_total"] == -100 and s["dd"] == 100 and s["dd_tilt"] == 100, s)
+check("[R118] 張數：開閘 2 張、未開閘 1 張、沒指標 1 張", main._paper_lots({"gate_open": True, "gate_ratio": 1.3}) == (2, 1.3)
+      and main._paper_lots({"gate_open": False, "gate_ratio": 0.9}) == (1, 0.9) and main._paper_lots(None) == (1, None))
+check("[R118] 開閘文字", "⚡ 今日開閘" in main._paper_gate_text({"gate_open": True, "gate_ratio": 1.3}) and "2 張" in main._paper_gate_text({"gate_open": True, "gate_ratio": 1.3})
+      and "未開閘" in main._paper_gate_text({"gate_open": False, "gate_ratio": 0.9}) and "未有" in main._paper_gate_text({}))
 check("蛇日：日市屬當天、夜市屬下一個", main._paper_phase(bar("2026-10-05 16:30:00", 1, 1, 1, 1), "2026-10-05") == "day"
       and main._paper_phase(bar("2026-10-05 17:20:00", 1, 1, 1, 1), "2026-10-05") == "night"
       and main._paper_phase(bar("2026-10-06 02:00:00", 1, 1, 1, 1), "2026-10-05") == "night")
@@ -123,6 +131,14 @@ put(main.futu_daily_file(SYM), sessions(300))
 rows = main.futu_series_rows(SYM)
 fc = main.futu_day_forecast(rows, "2026-10-05")
 check("high_edge95 ≥ high_hi、low_edge95 ≤ low_lo", fc["high_edge95"] >= fc["high_hi"] and fc["low_edge95"] <= fc["low_lo"], fc)
+check("[R118] 預測多記 250 日中位、R̂ 比值、開閘", fc.get("rhat_med250", 0) > 0 and abs(fc["gate_ratio"] - fc["range"] / fc["rhat_med250"]) < 0.01
+      and fc["gate_open"] == (fc["range"] >= main.PAPER_GATE_TH * fc["rhat_med250"]) and isinstance(fc["gate_open"], bool),
+      {k: fc.get(k) for k in ("range", "rhat_med250", "gate_ratio", "gate_open")})
+fc_short = main.futu_day_forecast(rows[-80:], "2026-10-05")
+check("[R118] 歷史預測不足 60 天 → 沒有開閘指標", fc_short and "gate_ratio" not in fc_short, fc_short and fc_short.keys())
+txt = main.futu_preopen_text(fc, "2026-10-05", "HSI2610", None, [])
+check("[R118] 開市前預測文字有開閘一行", "波幅開閘：" in txt and ("今日開閘" in txt or "今日未開閘" in txt) and "250 日 R̂ 中位" in txt, txt)
+check("[R118] 沒指標時預測文字不出開閘行", "波幅開閘" not in main.futu_preopen_text(fc_short, "2026-10-05", "", None, []))
 
 print("\n=== 第一次啟動：用之前的交易日算出蛇的持倉（啟動期不記交易、不發通知） ===")
 put(main.FUTU_CALENDAR_FILE, {"from": "2026-10-05", "to": "2026-11-13", "days": ["2026-10-05", "2026-10-06", "2026-10-07"]})
@@ -148,7 +164,8 @@ check("今日還沒有九成範圍邊（沒有紀錄、新版即時算）→ 有
 print("\n=== 今日：蛇反手做空、🅱️ 兩邊都亮 → 下一根開市跟蛇沽、3R 止賺 ===")
 put(main.futu_forecast_file(SYM), [{"date": "2026-10-05", "range": 500, "lo": 300, "hi": 800, "ref_close": 24440,
                                     "high": 24650, "high_lo": 24550, "high_hi": 24680, "low": 24250, "low_lo": 24000, "low_hi": 24350,
-                                    "high_edge95": 24700, "low_edge95": 23900, "made_utc": "x"}])
+                                    "high_edge95": 24700, "low_edge95": 23900, "made_utc": "x",
+                                    "rhat_med250": 400, "gate_ratio": 1.25, "gate_open": True}])        # [R118] 今日開閘
 put(main.futu_paper_file(SYM), {**st, "day": {"date": "2026-10-05", "levels": None, "done": []}})   # 模擬沒算到 → 這包補上紀錄的值
 today = [bar("2026-10-05 09:20:00", 24450, 24500, 24400, 24480),
          bar("2026-10-05 09:40:00", 24400, 24450, 24250, 24300),       # 跌穿 24,300 → 蛇反手做空 24,300
@@ -160,9 +177,12 @@ put(main.futu_signal_file(SYM), [{"id": "day:2026-10-05:high:B", "asof": "2026-1
 main.futu_paper_update(SYM, now=hk("2026-10-05 11:05"))
 st = state()
 check("補上紀錄的九成邊 24,700／23,900", st["day"]["levels"]["high_edge95"] == 24700 and st["day"]["levels"]["low_edge95"] == 23900, st["day"])
+check("[R118] 紀錄的開閘指標也補上", st["day"]["levels"]["gate_open"] is True and st["day"]["levels"]["gate_ratio"] == 1.25, st["day"])
 check("蛇反手做空 24,300；多倉平掉 −303（啟動期入市那筆）", st["snake"]["pos"] == -1 and st["snake"]["px"] == 24300 and len(st["trades"]) == 1
       and st["trades"][0]["net"] == -303 and st["trades"][0]["boot"] is True and st["trades"][0]["exit_reason"] == "蛇反手", st["trades"])
+check("[R118] 啟動期入的多倉 1 張；開閘日反手的新空倉 2 張", st["trades"][0]["lots"] == 1 and st["snake"]["lots"] == 2 and st["snake"]["gate"] == 1.25, st["snake"])
 check("反手有通知", len(st["notices"]) == 1 and "反手做空 24,300" in st["notices"][0]["text"] and st["notices"][0]["id"].startswith("paper:SNAKE:flip:"), st["notices"])
+check("[R118] 反手通知寫 ×2 張與開閘", "×2 張" in st["notices"][0]["text"] and "⚡ 今日開閘" in st["notices"][0]["text"], st["notices"][0]["text"])
 check("兩邊 11:00 才都亮 → 還沒入市", not st["open"])
 put(arch("2026-10-05"), today + [bar("2026-10-05 12:00:00", 24220, 24260, 24150, 24180)])
 main.futu_paper_update(SYM, now=hk("2026-10-05 12:05"))
@@ -171,6 +191,8 @@ tr = st["open"].get("B_S_R3")
 check("12:00 開市跟蛇沽 24,220；止蝕 24,700；目標 24,220 − 3×480 = 22,780", tr and tr["side"] == -1 and tr["entry_price"] == 24220
       and tr["stop"] == 24700 and tr["target"] == 22780 and tr["snake_at_entry"] == -1, tr)
 check("入市通知", any(e["kind"] == "entry" and "做空 24,220" in e["text"] and "3R" in e["text"] for e in st["notices"]), [e["text"] for e in st["notices"]])
+check("[R118] 開閘日入市 2 張、通知寫明", tr["lots"] == 2 and tr["gate"] == 1.25
+      and any(e["kind"] == "entry" and "×2 張" in e["text"] and "今日開閘" in e["text"] for e in st["notices"]), tr)
 check("🅰️ 沒訊號 → 空手", "A_S_R2" not in st["open"])
 rep = client.get("/?view=futu_range&report=signals").get_json()
 ids = {s["id"] for s in rep["signals"]}
@@ -189,6 +211,9 @@ check("14:00 碰 22,780 → 3R 止賺 +1,437（+2.99R）", len(t3) == 1 and t3[0
       and abs(t3[0]["r_multiple"] - 2.994) < 0.01 and t3[0]["exit_reason"] == "3R 止賺", t3)
 check("平倉後空手、今日不再入", "B_S_R3" not in st["open"] and "B_S_R3" in st["day"]["done"])
 check("出場通知含累計", any(e["kind"] == "exit" and "+1,437" in e["text"] and "累計 1 筆" in e["text"] for e in st["notices"]))
+check("[R118] 出場紀錄 2 張、通知寫雙倍 +2,874", t3[0]["lots"] == 2
+      and any(e["kind"] == "exit" and "×2 張 = +2,874" in e["text"] and "開閘雙倍 +2,874" in e["text"] for e in st["notices"]),
+      [e["text"] for e in st["notices"] if e["kind"] == "exit"])
 n_before = (len(st["notices"]), len(st["trades"]))
 main.futu_paper_update(SYM, now=hk("2026-10-05 14:10"))
 check("同樣的 K 線再跑一次 → 不變（冪等）", (len(state()["notices"]), len(state()["trades"])) == n_before)
@@ -220,10 +245,18 @@ print("\n=== 報告、頁面、四次報告的一行 ===")
 rep = client.get("/?view=futu_range&report=paper").get_json()
 check("report=paper：三條統計、逐筆、持倉", rep["status"] == "ok" and rep["stats"]["SNAKE"]["n"] == 2 and rep["stats"]["B_S_R3"]["total"] == 1437
       and rep["stats"]["A_S_R2"]["n"] == 1 and len(rep["trades"]) == 4 and rep["snake"]["pos"] == 1, rep.get("stats"))
+check("[R118] 兩條帳：蛇 固定 −656／雙倍 −1,009（第二筆 2 張）；🅱️ +1,437／+2,874；🅰️ −473／−946",
+      rep["stats"]["SNAKE"]["total"] == -656 and rep["stats"]["SNAKE"]["total_tilt"] == -1009 and rep["stats"]["SNAKE"]["gate_n"] == 1
+      and rep["stats"]["B_S_R3"]["total_tilt"] == 2874 and rep["stats"]["A_S_R2"]["total_tilt"] == -946, rep["stats"])
+check("[R118] report=paper 給今日開閘", rep["gate"]["gate_open"] is True and rep["gate"]["gate_ratio"] == 1.25 and rep["gate"]["threshold"] == 1.2
+      and "今日開閘" in rep["gate"]["text"], rep["gate"])
 page = client.get("/?view=futu_range").get_data(as_text=True)
 check("頁面有紙上交易區、三條策略、最近交易", all(x in page for x in ("📒 紙上交易", "🐍 蛇蟠陣", "🅱️＋跟蛇＋3R", "🅰️＋跟蛇＋2R", "3R 止賺", "最新處理到 10-05 17:20")))
+check("[R118] 頁面顯示今日開閘、兩條帳、張數欄", all(x in page for x in ("⚡ 今日開閘（R̂ ÷ 250 日中位 1.25 ≥ 1.2）→ 2 張", "開閘雙倍累計", "累計（固定 1 張）",
+                                                                 "+2,874", "<th>張</th>", "⚡2")), [x for x in ("⚡ 今日開閘", "開閘雙倍累計", "+2,874", "⚡2") if x not in page])
 lines = main.futu_paper_lines(SYM, 24700.0)
 check("報告一行：三條持倉與累計", len(lines) == 1 and "🐍 蛇蟠陣 做多 24,650" in lines[0] and "浮動 +50" in lines[0] and "🅱️＋跟蛇＋3R 空手；累計 1 筆 +1,437" in lines[0], lines)
+check("[R118] 報告一行有今日開閘、張數、雙倍累計", "⚡ 今日開閘" in lines[0] and "做多 24,650×2 張" in lines[0] and "（開閘雙倍 +2,874）" in lines[0], lines)
 rev = main.futu_report(SYM, "close", now=hk("2026-10-05 16:37"))
 check("16:30 檢討含紙上交易一行", rev["status"] == "ok" and "📒 紙上交易" in rev["text"], rev.get("text", "")[-200:])
 
@@ -234,6 +267,14 @@ st = state()
 check("換日：day.date 10-06、done 清空、蛇仍做多", st["day"]["date"] == "2026-10-06" and st["day"]["done"] == [] and st["snake"]["pos"] == 1
       and st["last_session"] == "2026-10-06", st["day"])
 check("空手策略沒有新訊號 → 沒入市", not st["open"])
+lv6 = st["day"]["levels"]
+check("[R118] 新交易日沒有紀錄 → 即時算的 levels 含開閘指標", lv6 and "gate_ratio" in lv6 and lv6.get("rhat_med250"), lv6)
+# R118 之前的狀態：今日 levels 沒有開閘欄 → 下一包補上（舊 edge95 由即時算的取代）
+put(main.futu_paper_file(SYM), {**st, "day": {"date": "2026-10-06", "levels": {"high_edge95": 1, "low_edge95": 2}, "done": []}})
+put(arch("2026-10-06"), [bar("2026-10-06 09:20:00", 24600, 24620, 24550, 24580), bar("2026-10-06 09:25:00", 24580, 24600, 24560, 24590)])
+main.futu_paper_update(SYM, now=hk("2026-10-06 09:30"))
+lv6b = state()["day"]["levels"]
+check("[R118] 舊版 levels 沒有開閘欄 → 補上", "gate_ratio" in lv6b and lv6b["high_edge95"] == lv6["high_edge95"], lv6b)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
