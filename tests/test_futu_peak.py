@@ -182,5 +182,34 @@ client.post("/", json={"action": "futu_data", "token": "tok", "symbol": "US.QQQ"
 main.futu_peak_update = orig
 check("只有即月期貨的 5 分 K 會觸發重算", calls == [SYM], calls)
 
+print("\n=== [R103] 投資人版頁面：今日／本週／本月三個區塊 ===")
+FAKE.clear()
+put(main.futu_daily_file(SYM), sessions(300))
+ref = json.loads(FAKE[main.futu_daily_file(SYM)][0])[-1]["close"]
+put(main.FUTU_CALENDAR_FILE, {"from": "2026-10-05", "to": "2026-11-13",
+                              "days": ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"]})
+put(main.archive_blob_name("futu_k_5m", SYM, "2026-10-05"), day_bars if False else
+    [bar("2026-10-05 09:20:00", ref, ref + 300, ref - 20, ref + 250), bar("2026-10-05 11:00:00", ref + 250, ref + 260, ref + 100, ref + 120)])
+st = main.futu_peak_status(SYM, now=hk("2026-10-05 11:05"))
+wk = st["periods"]["week"]
+q = main.PERIOD_RANGE_RATIO["week"]
+check("本週預測波幅 = R × 校準比例", wk["forecast"]["range"] == round(wk["R"] * q[1]) and wk["forecast"]["lo"] < wk["forecast"]["range"] < wk["forecast"]["hi"], wk.get("forecast"))
+check("今日沒有週月的校準預測（今日用 HAR 預測）", "forecast" not in st["periods"]["day"])
+lines = main._fy_signal_lines("day", st["periods"]["day"], "high", {})
+check("白話：A 寫出已走幾成與要求", lines[0].startswith("🅰️ 耗盡回落") and "要 ≥ 80%" in lines[0], lines[0])
+check("白話：B 寫出機率", lines[1].startswith("🅱️ 機率法") and "機率" in lines[1] and "%" in lines[1], lines[1])
+check("白話：C 未到時寫出判斷時間", lines[2].startswith("🅲 時間點") and "16:30" in lines[2], lines[2])
+fired = {f"day:2026-10-05:high:B": {"ext": ref + 300, "asof": "2026-10-05 10:30:00"}}
+check("已通知且未破 → ✅", "✅" in main._fy_signal_lines("day", st["periods"]["day"], "high", fired)[1])
+fired2 = {f"day:2026-10-05:high:B": {"ext": ref + 100, "asof": "2026-10-05 10:30:00"}}
+check("通知後又創新高 → ❌", "❌" in main._fy_signal_lines("day", st["periods"]["day"], "high", fired2)[1])
+over = dict(st["periods"]["day"], over=True)
+check("已結束的段只說有沒有觸發", all("這段沒有觸發" in x for x in main._fy_signal_lines("day", over, "high", {})))
+main.futu_peak_status = lambda symbol, now=None, _o=main.futu_peak_status: _o(symbol, now or hk("2026-10-05 11:05"))
+page = client.get("/?view=futu_range").get_data(as_text=True)
+check("頁面有今日／本週／本月三個區塊", all(k in page for k in ("📅 今日", "🗓️ 本週", "🈷️ 本月")))
+check("每個區塊下有 A／B／C 白話", page.count("⬆️ 高位已出現了嗎？") == 3 and page.count("🅱️ 機率法") >= 6)
+check("明細表與說明收起來", "<details class='fy-more'><summary>📋" in page and "ℹ️ 怎樣算的" in page)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -190,7 +190,7 @@ check("同一天不重寫（記錄不因之後的數據改變）", json.loads(FA
 j = client.get("/?view=futu_range&format=json").get_json()
 check("頁面用已記錄的預測", j["forecast"]["logged"] and j["forecast"]["range"] == log1[0]["range"], j.get("forecast"))
 h = client.get("/?view=futu_range").get_data(as_text=True)
-check("頁面有預測卡、準確度卡、預測欄與預測線", "預測波幅（HAR）" in h and "預測準確度" in h and "HAR 預測</th>" in h
+check("頁面有預測卡、準確度卡、預測欄與預測線", "🔮 預測波幅" in h and "預測準確度" in h and "HAR 預測</th>" in h
       and "stroke-dasharray" in h)
 
 from datetime import datetime as _dt, timezone as _tz

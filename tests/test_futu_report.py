@@ -146,7 +146,7 @@ check("JSON 回狀態", j["status"] in ("ok", "skip"), j)
 put(main.futu_daily_file(SYM), json.loads(FAKE[main.futu_daily_file(SYM)][0]) +
     [{"time_key": "2026-10-05 00:00:00", "open": ref, "high": B + 10, "low": fc["low_lo"] - 50, "close": ref - 180, "volume": 1}])
 page = client.get("/?view=futu_range").get_data(as_text=True)
-check("頁面顯示高低位預測", "高位約" in page and "低位約" in page)
+check("頁面顯示高低位預測", "🎯 預測高位" in page and "🎯 預測低位" in page)
 check("頁面顯示最新一天的檢討", "的檢討（12:00／16:30／03:00）" in page and "午市收市檢討" in page and "全日收市檢討" in page)
 check("交易日歸屬：凌晨 02:55 屬前一天、09:20 屬當天",
       main.futu_session_of("2026-10-06 02:55:00") == "2026-10-05" and main.futu_session_of("2026-10-06 09:20:00") == "2026-10-06")
