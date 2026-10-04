@@ -8,6 +8,7 @@
      有 → 真正的「狀態」效應；沒有 → 只是「利潤跟波幅成正比、成本不變」。
   4. 36 年恒指日線：蛇蟠陣（N=3 日通道）用 20 日波幅 ÷ 250 日波幅 ≥ 門檻 開閘，按年代看高低兩組。
 數據：Futu 15 分 K（2024-06 起）、HK50 差價合約（2022-08 起）、恒指日線 1990 起。成本 3 點（日線 2bp）。
+2026-10-04 修正：蛇的分組日改為入市日（原本誤用出場日），蛇那幾節的數字因此改變；🅱️🅰️ 一直都是按入市日。
 用法：python3 research/hsi_futures_range/vol_gate.py --json 15 分 K 快取 --hsi hsi.csv
 輸出：research/hsi_futures_range/vol_gate/REPORT.md
 """
@@ -43,13 +44,16 @@ def prep(bars, daily):
 
 
 def snake_trades(days):
+    """蛇的每筆按**入市日**分組。snake_run 記的日期是反手（出場）那天，入市日 = 上一筆的出場日；第一筆沒有入市日不計。
+    （2026-10-04 修正：原本用紀錄的日期即出場日分組，令「開閘」看起來對蛇很有效；見 gate_tilt.py 的核對。）"""
     _, _, tr = sb.snake_run(sb.snake_days(days), COST)
     by = {d["date"]: d for d in days}
     out = []
-    for i, (d, side, pnl) in enumerate(tr):
+    for i in range(1, len(tr)):
+        d, (_, side, pnl) = tr[i - 1][0], tr[i]
         if d not in by:
             continue
-        out.append({"date": d, "side": side, "net": pnl, "day": by[d]})
+        out.append({"date": d, "side": side, "net": pnl, "day": by[d], "exit_date": tr[i][0]})
     return out
 
 

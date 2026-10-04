@@ -99,7 +99,7 @@
 #     只是紙上紀錄，不接下單。
 #   * 2026-10-04 — [R117] 方向一卡改用真實數據結論（港交所週／月期權結算價與 IV，research/hsi_futures_range/vrp_real.py）。只改顯示文字。
 #   * 2026-10-04 — [R118] 📒 紙上交易加「波幅開閘」：今日 R̂ ÷ 過去 250 日 R̂ 中位 ≥ 1.2 就開閘，開閘日入市記 2 張、其餘 1 張，
-#     固定 1 張與開閘雙倍兩條並記（research/hsi_futures_range/vol_gate.py：蛇／🅱️ 的利潤集中在開閘日）。開市前預測多記
+#     固定 1 張與開閘雙倍兩條並記（research/hsi_futures_range/vol_gate.py：🅱️／🅰️ 的利潤集中在開閘日入市的交易，蛇沒有）。開市前預測多記
 #     rhat_med250／gate_ratio／gate_open；預測、四次報告、入市通知與波幅頁都顯示今日開閘與否。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
@@ -3987,7 +3987,7 @@ def _fy_paper(data):
             f"每筆扣 {PAPER_COST:g} 點成本；只是紀錄，不下單。規則見 research/hsi_futures_range/PAPER_TRADING.md。<br>"
             f"⚡ <b>波幅開閘</b>（R118）：今日 HAR 預測 R̂ ÷ 過去 {PAPER_GATE_LOOKBACK} 日 R̂ 中位 ≥ {PAPER_GATE_TH:g} 就開閘，"
             f"開閘日入市記 {PAPER_GATE_LOTS} 張、其餘 1 張；每條策略「固定 1 張」與「開閘雙倍」兩條帳並記"
-            "（回測：蛇／🅱️ 的利潤集中在開閘日，research/hsi_futures_range/vol_gate/REPORT.md）。</div>")
+            "（回測：🅱️／🅰️ 的利潤集中在開閘日入市的交易、蛇沒有，research/hsi_futures_range/vol_gate/REPORT.md、gate_tilt/REPORT.md）。</div>")
     if not st:
         return head + ("<div class='section'>⏳ 等第一包即月期貨 5 分 K 到達就開始"
                        f"（第一次會先用之前 {PAPER_BOOT_DAYS} 個交易日算出蛇蟠陣的持倉）。</div>")
