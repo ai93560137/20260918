@@ -302,7 +302,7 @@ main.gcs_write_text(main.futu_symbol_file("HK.800125"), json.dumps(
 ivv = main.futu_iv_compare(fc0, now=_dt2(2026, 10, 5, 2, 40, tzinfo=_tz2.utc))
 check("方向一：讀 VHSI 快照，算 VHSI ÷ 預測", ivv["vhsi"] == 25.0 and ivv["vhsi_ratio"] == round(25.0 / ivv["har_vol"], 2), ivv)
 m_hi = main._fy_money({"forecast": fc0, "summary": {}, "rows": [], "iv_compare": ivv})
-check("方向一：比值 ≥ 1.2 → 符合賣出條件", ivv["vhsi_ratio"] >= 1.2 and "符合回測的賣出條件" in m_hi and "VHSI ÷ 預測" in m_hi)
+check("方向一：比值 ≥ 1.2 → 達到合成回測的賣出條件（R117 字眼）", ivv["vhsi_ratio"] >= 1.2 and "合成回測的賣出條件" in m_hi and "VHSI ÷ 預測" in m_hi)
 m_lo = main._fy_money({"forecast": fc0, "summary": {}, "rows": [], "iv_compare": dict(ivv, vhsi_ratio=1.05)})
 check("方向一：比值 < 1.2 → 不賣", "回測中這種週不賣" in m_lo)
 main.gcs_write_text(main.futu_symbol_file("HK.800000"), json.dumps({"symbol": "HK.800000", "bars": [], "options": []}))

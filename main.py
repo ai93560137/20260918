@@ -97,6 +97,7 @@
 #     每包 K 線到達時記入市／出場，狀態與逐筆紀錄存 futu/paper/<代號>.json，通知經 report=signals 一起發 Telegram；
 #     波幅頁加「📒 紙上交易」區，?view=futu_range&report=paper 給統計與逐筆；開市前預測多記九成日範圍邊（edge95）。
 #     只是紙上紀錄，不接下單。
+#   * 2026-10-04 — [R117] 方向一卡改用真實數據結論（港交所週／月期權結算價與 IV，research/hsi_futures_range/vrp_real.py）。只改顯示文字。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -3809,13 +3810,18 @@ def _n2(v):
 
 
 MONEY_SELL = {                                  # [R107] 方向一合成回測摘要（vol_premium.py，2024-05 至 2026-10，125 週，每腳成本 4 點）
-    "status": "🧪 合成回測有正回報・待真實報價校準",
+    "status": "📊 真實數據 1 年：每週沽 1σ 勒式 +55 點、84% 週賺・利潤集中在 2026 上半年",
     "lines": [
         "📊 VHSI 平均 22.9%，實際波動約 19.5%：市場長期高估波幅，賣方有優勢。",
         "💵 每週沽價平跨式：平均 +86 點、68% 週數賺；但最差一週 −2,096 點（2024 年 9 月救市急升），2024 年整體虧。",
         f"🎯 只在 VHSI ÷ 預測 ≥ {VHSI_SELL_RATIO} 時賣（約四週一次，37 週）：跨式平均 +188 點、最差 −597；"
         "鐵鷹（1σ 沽、2σ 買保護）平均 +69 點、最差 −362，三年每年都賺。",
         "🧭 前半段挑門檻、後半段測試（28 週）：四種賣法平均都賺。",
+        "📊 [R117] 真實數據（港交所週期權結算價與 IV，2025-10 至 2026-10，51 週）：價平 IV 平均 18.3%，比 VHSI 低 15%、"
+        "幾乎等於風揚陣預測；每週沽價平跨式 +63 點（61% 週賺、最差 −825），沽 1σ 勒式 +55 點（84% 週賺、最差 −472、t 2.85），"
+        "鐵鷹 +17；月期權跨式每月 −127。利潤集中在 2026 年 1 至 5 月，2025 年第四季與 2026 年下半年跨式都虧。",
+        "⚠️ 「VHSI ÷ 預測 ≥ 1.2 才賣」在真實數據上對跨式沒幫助（+5），對鐵鷹略好（+27）；週期權 IV 對預測的比值也沒有預測力。"
+        "港交所只保留 12 個月報告，之後每週自動續抓，累積到 2 年再定。",
     ],
 }
 
@@ -3865,8 +3871,8 @@ def _fy_money(data):
             ok = ivc.get("vhsi_ratio") is not None and ivc["vhsi_ratio"] >= VHSI_SELL_RATIO
             now_txt += (f"<div class='fy-row'><span>📈 VHSI（{esc(ivc.get('vhsi_time') or '')}）</span><b>{ivc['vhsi']:.1f}%</b></div>"
                         f"<div class='fy-row'><span>⚖️ VHSI ÷ 預測</span><b>{_n2(ivc.get('vhsi_ratio'))}</b></div>"
-                        + (f"<div class='fy-sig'>✅ 達到 {VHSI_SELL_RATIO}：符合回測的賣出條件（鐵鷹較安全）</div>" if ok else
-                           f"<div class='fy-sig'>⏸️ 未到 {VHSI_SELL_RATIO}：回測中這種週不賣</div>"))
+                        + (f"<div class='fy-sig'>✅ 達到 {VHSI_SELL_RATIO}：合成回測的賣出條件（真實 1 年數據：對鐵鷹略有幫助、對跨式沒有）</div>" if ok else
+                           f"<div class='fy-sig'>⏸️ 未到 {VHSI_SELL_RATIO}：合成回測中這種週不賣（真實數據顯示這個門檻作用不大）</div>"))
         else:
             now_txt += ("<div class='fy-note'>➕ 本地腳本 FUTU_SYMBOLS 加上 HK.800125（VHSI），這裡就會即時判斷賣不賣。</div>")
         if ivc.get("iv") is not None:

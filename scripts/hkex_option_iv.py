@@ -1,7 +1,8 @@
 """港交所衍生產品每日報告：恒指期權（含週期權）每個系列的結算價與引伸波幅，給風揚陣方向一（賣波幅）校準用。
 
 Futu 期權歷史 K 線只有十幾根、不含 IV；港交所每日報告（www.hkex.com.hk/eng/stat/dmstat/dayrpt/<產品><yymmdd>.htm）
-有每個系列的 OPEN／HIGH／LOW／SETTLE／IV／VOLUME／OI，歷史可回溯多年。雲端工作階段連不到 hkex.com.hk，
+有每個系列的 OPEN／HIGH／LOW／SETTLE／IV／VOLUME／OI；**網站只保留約 12 個月**（2026-10 試過：2025-10-02 之前全部 404），
+所以 workflow 每週排程續抓，讓數據往後累積。雲端工作階段連不到 hkex.com.hk，
 由 GitHub Actions（.github/workflows/hkex_option_iv.yml）跑這個腳本，再把結果 commit 回分支。
 
 用法：

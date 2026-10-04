@@ -1,8 +1,10 @@
 name: hkex-option-iv
 # 港交所每日報告：恒指期權每個系列的結算價與引伸波幅（scripts/hkex_option_iv.py）。
 # 雲端工作階段連不到 hkex.com.hk，所以在這裡下載，結果 commit 回觸發時的分支（data/hkex_options/）。
-# 只有手動觸發，不排程、不發訊息。
+# 港交所網站只保留約 12 個月的報告，所以每週六排程續抓最近兩週（只在預設分支生效），結果 commit 回預設分支；不發訊息。
 on:
+  schedule:
+    - cron: '17 2 * * 6'     # 週六 10:17 HKT
   workflow_dispatch:
     inputs:
       mode:
@@ -36,11 +38,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: run
+        env:
+          MODE: ${{ github.event.inputs.mode }}
+          START: ${{ github.event.inputs.start }}
+          END: ${{ github.event.inputs.end }}
+          PRODUCTS: ${{ github.event.inputs.products }}
         run: |
-          if [ "${{ github.event.inputs.mode }}" = "probe" ]; then
-            python3 scripts/hkex_option_iv.py probe "${{ github.event.inputs.start }}"
+          if [ -z "$MODE" ]; then                      # 排程：續抓最近 14 天
+            MODE=fetch; START=$(date -u -d '14 days ago' +%F); END=$(date -u +%F); PRODUCTS=hsio,hsiwo
+          fi
+          if [ "$MODE" = "probe" ]; then
+            python3 scripts/hkex_option_iv.py probe "$START"
           else
-            python3 scripts/hkex_option_iv.py fetch "${{ github.event.inputs.start }}" "${{ github.event.inputs.end }}" --products "${{ github.event.inputs.products }}"
+            python3 scripts/hkex_option_iv.py fetch "$START" "$END" --products "$PRODUCTS"
           fi
       - name: commit
         run: |
@@ -48,7 +58,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/hkex_options/
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
-          git commit -m "data: 港交所恒指期權每日報告（${{ github.event.inputs.mode }} ${{ github.event.inputs.start }}）[skip-tg]"
+          git commit -m "data: 港交所恒指期權每日報告（${{ github.event.inputs.mode || 'schedule' }} ${{ github.event.inputs.start || '' }}）[skip-tg]"
           for i in 1 2 3; do
             git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
             sleep 5
