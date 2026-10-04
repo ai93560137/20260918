@@ -78,3 +78,29 @@ Cloud Run 上 zhuge-risk-manager 現在跑的是 R96，原始碼在預設分支�
 - 要用 GCP 收到的數據，一律讀預設分支的 data/external/（見 README.md），不要直接打 Cloud Run 網址。
   網址和權杖不會寫進 repo。
 ```
+
+---
+
+# 通知各分支：八陣新增「風揚陣」（2026-10-04）
+
+要讓其他陣知道風揚陣時，把下面 ```text 框內整段貼到該分支的 session。
+
+```text
+【通知：八陣新增風揚陣】
+
+風揚陣看恒指即月期貨的「風勢」，只讀價、只發通知、不下單：
+- 每個交易日 07:53 開市前預測當天波幅、高位、低位（附 80% 區間）
+- 12:00、16:30、03:00 檢討實際對預測
+- 開市後每 5 分鐘判斷今日／本週／本月的高位、低位是否已出現（A 耗盡回落、B 機率法、C 時間點），觸發就發 Telegram
+
+手冊（取法、數據、方法、回測、跟各陣的關係）：
+  git fetch origin claude/gcp-trading-v12-rewrite-bz75t2
+  git show origin/claude/gcp-trading-v12-rewrite-bz75t2:research/hsi_futures_range/FENGYANG.md
+
+注意：風揚陣的「交易日」= 日市＋當晚夜市（09:00 至翌日 09:00），跟富途日 K（前一晚夜市＋今日日市）不同，
+比較高低位前要先對齊。網頁與 JSON 在 Cloud Run 的 ?view=futu_range（網址問使用者，不寫進 repo）。
+
+請做一件事：在本分支的交接文件或 README 加一行
+「風揚陣（恒指即月期貨波幅與高低位）：見預設分支 research/hsi_futures_range/FENGYANG.md」，
+commit 並推回本分支（不要開 PR）。做完回報你加在哪個檔、哪一行。
+```
