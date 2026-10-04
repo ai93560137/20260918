@@ -31,12 +31,12 @@
 | 角色 | 負責 | 不負責 |
 |---|---|---|
 | 使用者 | 本機 Futu 腳本與環境變數、Cloud Run 部署、GitHub Secret、IBKR 帳密；**核可**已知原因登記；決定擴充 | 手動改數據 |
-| 預設分支（本 session） | 彙整、比對、閘門、抽樣清單、本 SOP 與程式 | 修別的分支的上游 |
+| 預設分支（本 session，兼風揚陣） | 彙整、比對、閘門、抽樣清單、本 SOP 與程式；風揚陣的預測、檢討與通知 | 修別的分支的上游 |
 | 雲垂 | IBKR VM：採集、每日抽樣（附錄 B）、查 IB 口徑 | 改 `data/external/` |
 | 金絲雀 | 用 PASS 的數據分析，列出缺什麼 | 給新數據警報權、改抓取設定 |
 | 蛇蟠陣、鳥翔、外匯 | 取用；修自己的上游（例如鳥翔的 Nasdaq 快照） | 改 `data/external/` |
 
-**代號與分支對照**（2026-09-27 核對）
+**代號與分支對照**（2026-09-27 核對，2026-10-04 加風揚陣）
 
 | 代號 | Claude session | 分支 | 與外部數據的關係 |
 |---|---|---|---|
@@ -45,6 +45,7 @@
 | 蛇蟠陣 | 恆指黃金突破K 2 days b4策略-蛇蟠陣 | `claude/gifted-carson-v2tvhw` | 恒指期貨與黃金通道；可對照 MT5 黃金、Futu 恒指 |
 | 鳥翔 | 股票研究-鳥翔 IBKR VM | `claude/stock-research-k9nzau`（網站日線與 Actions 在 `claude/gifted-carson-v2tvhw`） | 網站日線、Nasdaq 第二來源、IBKR 股票覆核 |
 | 外匯 | 外匯數據測試 | `claude/forex-data-testing-w4q3m2` | XAUUSD MT5 歷史匯出、Dukascopy；做過蛇蟠陣外匯延伸測試 |
+| 風揚陣 | FUTU GCP恆指波幅 | 預設分支 `claude/gcp-trading-v12-rewrite-bz75t2`（工作分支 `claude/epic-ramanujan-kp1l1v`）；手冊 `research/hsi_futures_range/FENGYANG.md` | 恒指即月期貨（Futu `HK.HSI_FRONT`）的交易日波幅與高低位預測、「高低位已出現」通知；2026-10-04 登記 |
 
 ---
 
