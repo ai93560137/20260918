@@ -79,6 +79,7 @@
 #     HAR × √交易日數 × 校準比例）、已走幾成、目前高低，以及 A／B／C 三個訊號的白話狀態；統計、明細表、說明收進下方。
 #   * 2026-10-04 — [R104] 日／週／月過去每一次預測的誤差與命中率（逐日／逐段前推重算，日有實時紀錄就用紀錄）；
 #     三張卡片各顯示過去 7 次預測與全部歷史的命中率，?view=futu_range&report=accuracy 給全部紀錄。
+#   * 2026-10-04 — [R105] 今日／本週／本月卡片標題加日期（休市日今日卡改稱「下個交易日」）；每頁導覽列加「🌬️ 風揚陣波幅」。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -3093,7 +3094,13 @@ def futu_range_data(symbol):
     reviews = gcs_read_json(futu_review_file(symbol), [])
     data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
                        if isinstance(e, dict) and e.get("date") == review_day]
-    data.update({"symbol": symbol, "today_hk": today,
+    calendar = gcs_read_json(FUTU_CALENDAR_FILE, {})             # [R105] 卡片標題的日期：下一個交易日
+    nxt = datetime.strptime(today, "%Y-%m-%d")
+    while not data["partial"]:
+        nxt += timedelta(days=1)
+        if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar) or nxt.year > 2100:
+            break
+    data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"),
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
                  "latest_5m": five or None,
                  "latest_5m_age_sec": None if age is None else int(age)})
@@ -3191,7 +3198,7 @@ FY_CSS = """<style>
 .fy-card { background:var(--card); border-radius:16px; padding:18px 18px 14px; box-shadow:0 4px 15px rgba(0,0,0,.04);
            border-top:4px solid var(--primary); }
 .fy-card.week { border-top-color:#0aa06e; } .fy-card.month { border-top-color:#6d5bd0; }
-.fy-card h2 { font-size:17px; margin:0 0 2px; } .fy-sub { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.fy-card h2 { font-size:17px; margin:0 0 2px; } .fy-date { font-size:14px; font-weight:600; color:var(--muted); margin-left:4px; } .fy-sub { font-size:12px; color:var(--muted); margin-bottom:12px; }
 .fy-big { font-size:28px; font-weight:800; line-height:1.1; } .fy-band { font-size:13px; color:var(--muted); }
 .fy-row { display:flex; justify-content:space-between; gap:8px; font-size:14px; padding:6px 0; border-bottom:1px dashed #e9ecef; }
 .fy-bar { height:8px; background:#eef1f4; border-radius:4px; overflow:hidden; margin:4px 0 2px; }
@@ -3251,6 +3258,24 @@ def _fy_signal_lines(kind, per, side, fired):
     return [f"🅰️ 耗盡回落{acc('A')}：{a_txt}", f"🅱️ 機率法{acc('B')}：{b_txt}", f"🅲 時間點{acc('C')}：{c_txt}"]
 
 
+def _fy_md(day):
+    d = datetime.strptime(day, "%Y-%m-%d")
+    return f"{d.month}月{d.day}日（{WEEKDAY_ZH[d.weekday()]}）"
+
+
+def _fy_period_dates(kind, day):
+    """[R105] 卡片標題旁的日期：今日 = 那個交易日；本週 = 週一至週五；本月 = 年月。"""
+    if not day or not ARCHIVE_DATE_RE.match(day):
+        return ""
+    if kind == "day":
+        return _fy_md(day)
+    d = datetime.strptime(day, "%Y-%m-%d")
+    if kind == "week":
+        mon = d - timedelta(days=d.weekday())
+        return f"{_fy_md(mon.strftime('%Y-%m-%d'))} 至 {_fy_md((mon + timedelta(days=4)).strftime('%Y-%m-%d'))}"
+    return f"{d.year}年{d.month}月"
+
+
 def _fy_hist_label(kind, rec):
     if kind == "day":
         d = datetime.strptime(rec["key"], "%Y-%m-%d")
@@ -3285,14 +3310,18 @@ def _fy_history(kind, acc):
             f"<table>{head}{body}</table><div class='fy-note'>{note}</div></div>")
 
 
-def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None):
+def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, day=None):
     icon, title, css = PERIOD_TITLE[kind]
+    dates = _fy_period_dates(kind, day)
+    if kind == "day" and not per and today_label.startswith("下一個交易日"):      # 休市日顯示的是下一個交易日
+        title = "下個交易日"
     if per:
         done = (f"已收市 {per['sessions_done']}／{per['sessions']} 個交易日" if kind != "day" else "日市＋當晚夜市")
         sub = f"{done}" + ("・🏁 已結束" if per["over"] else "")
     else:
         sub = today_label
-    html = [f"<div class='fy-card {css}'><h2>{icon} {title}</h2><div class='fy-sub'>{esc(sub)}</div>"]
+    html = [f"<div class='fy-card {css}'><h2>{icon} {title}"
+            + (f" <span class='fy-date'>{esc(dates)}</span>" if dates else "") + f"</h2><div class='fy-sub'>{esc(sub)}</div>"]
     if fc:
         html.append(f"<div>🔮 預測波幅</div><div class='fy-big'>{_n(fc['range'])} 點</div>"
                     f"<div class='fy-band'>80% 機會落在 {_n(fc['lo'])}–{_n(fc['hi'])} 點</div>")
@@ -3346,16 +3375,19 @@ def build_futu_range_page(data):
             "交易日 = 日市 09:15–16:30 ＋ 當晚夜市至翌日 03:00</div>")
     fc = data.get("forecast")
     day_fc = fc if fc else None
-    today_label = (f"{esc(fc['date'])}" if fc and fc.get("date") not in (None, "next") else "下一個交易日")
+    day_date = ((periods.get("day") or {}).get("first")
+                or (fc.get("date") if fc and fc.get("date") not in (None, "next") else data.get("next_day")))
+    period_day = peak.get("today") or day_date                     # [R105] 本週／本月以目前交易日所在的那段為準
+    today_label = "日市＋當晚夜市" if fc and fc.get("date") not in (None, "next") else "下一個交易日（開市前預測）"
     waiting = "⏳ 09:15 開市後開始判斷高低位是否已出現。" if "day" not in periods else None
     accs = data.get("accuracy") or {}
     cards = ("<div class='fy-grid'>"
              + _fy_period_card("day", periods.get("day"), day_fc, data.get("signals") or {}, today_label, waiting,
-                               accs.get("day"))
+                               accs.get("day"), day_date)
              + _fy_period_card("week", periods.get("week"), (periods.get("week") or {}).get("forecast"),
-                               data.get("signals") or {}, "本週未開始", acc=accs.get("week"))
+                               data.get("signals") or {}, "本週未開始", acc=accs.get("week"), day=period_day)
              + _fy_period_card("month", periods.get("month"), (periods.get("month") or {}).get("forecast"),
-                               data.get("signals") or {}, "本月未開始", acc=accs.get("month"))
+                               data.get("signals") or {}, "本月未開始", acc=accs.get("month"), day=period_day)
              + "</div>")
     review_html = "".join(f"<div class='log-card'><div class='log-ctx' style='white-space:pre-wrap;'>{esc(e.get('text', ''))}</div></div>"
                           for e in data.get("reviews") or [])
@@ -4478,6 +4510,7 @@ PAGE_LINKS = [
     ("order_app", "🧾 送單參數"),
     ("jinnang_sheet", "🗒️ 錦囊執行單"),
     ("jinnang_tracker", "✅ 錦囊九十筆"),
+    ("futu_range", "🌬️ 風揚陣波幅"),                       # [R105] 每頁頂都能到風揚陣
     (BAZHENTU_URL, "⚔️ 八陣圖指令台"),
     ("dashboard", "⚙️ 控制台"),
 ]
