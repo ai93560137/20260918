@@ -1,7 +1,6 @@
 {
   "gcp": {
     "days": [
-      "2026-09-24",
       "2026-09-25",
       "2026-09-26",
       "2026-09-27",
@@ -10,14 +9,24 @@
       "2026-09-30",
       "2026-10-01",
       "2026-10-02",
-      "2026-10-03"
+      "2026-10-03",
+      "2026-10-04"
     ],
     "errors": [],
-    "files_changed": 5,
+    "files_changed": 40,
     "ok": true,
     "rows_fetched": {
-      "futu_k_5m/US.QQQ": 510,
-      "futu_options/US.QQQ": 14770,
+      "futu_k_15m/HK.HSI_FRONT": 338,
+      "futu_k_5m/HK.800000": 120,
+      "futu_k_5m/HK.800125": 120,
+      "futu_k_5m/HK.HSI_FRONT": 299,
+      "futu_k_5m/US.QQQ": 468,
+      "futu_k_60m/HK.HSI_FRONT": 89,
+      "futu_k_day/HK.800125": 5,
+      "futu_k_day/HK.HSI_FRONT": 3,
+      "futu_k_session/HK.HSI_FRONT": 5,
+      "futu_options/HK.800000": 1800,
+      "futu_options/US.QQQ": 17920,
       "mt5_m1/XAUUSD": 6835
     },
     "unknown_sources": []
@@ -31,17 +40,49 @@
     ],
     "ok": true,
     "source_branch": "claude/dazzling-curie-f3xzb8",
-    "source_commit": "f03f49a19cd0c23a206d4a271a0b7253e5444db9 2026-10-02T20:17:47Z"
+    "source_commit": "5f3a68c8d3f49d177a4e8160d4949894c0d2523b 2026-10-03T05:51:50Z"
   },
-  "run_utc": "2026-10-03 00:31:46",
+  "run_utc": "2026-10-04 03:44:47",
   "series": {
+    "futu/HK.800000/K_5M": {
+      "latest_date": "2026-10-02",
+      "rows": 66
+    },
+    "futu/HK.800000/options": {
+      "latest_date": "2026-10-02",
+      "rows": 1800
+    },
+    "futu/HK.800125/K_5M": {
+      "latest_date": "2026-10-02",
+      "rows": 66
+    },
+    "futu/HK.HSI_FRONT/K_15M": {
+      "latest_date": "2026-10-03",
+      "rows": 13
+    },
+    "futu/HK.HSI_FRONT/K_5M": {
+      "latest_date": "2026-10-03",
+      "rows": 37
+    },
+    "futu/HK.HSI_FRONT/K_60M": {
+      "latest_date": "2026-10-03",
+      "rows": 4
+    },
+    "futu/HK.HSI_FRONT/K_SESSION": {
+      "latest_date": "2026-10-02",
+      "rows": 1
+    },
     "futu/US.QQQ/K_5M": {
       "latest_date": "2026-10-02",
       "rows": 78
     },
     "futu/US.QQQ/options": {
       "latest_date": "2026-10-02",
-      "rows": 1320
+      "rows": 4470
+    },
+    "futu/_K_DAY": {
+      "latest_date": "2026-10-02",
+      "rows": 2
     },
     "mt5/XAUUSD/M1": {
       "latest_date": "2026-10-02",
