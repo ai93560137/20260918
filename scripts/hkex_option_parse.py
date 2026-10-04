@@ -40,7 +40,7 @@ def parse(text, day, product):
         m = ROW_RE.match(line)
         if not m:
             continue
-        toks = m.group(4).replace("|", " ").split()
+        toks = [t if t != "-" else "0" for t in m.group(4).replace("|", " ").split()]   # 新掛牌系列前一日欄位是「-」
         if len(toks) != len(FIELDS) or not all(NUM_RE.match(t) for t in toks):
             skipped += 1
             continue
