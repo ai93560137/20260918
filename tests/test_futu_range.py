@@ -275,7 +275,18 @@ check("方向一：最新 K 線超過 20 分鐘（休市）→ 不比較",
 check("方向一：沒有預測 → 只有 IV", main.futu_iv_compare(None)["har_vol"] is None)
 money = main._fy_money({"forecast": fc0, "summary": {"avg_range": 460}, "rows": [{"forecast": x} for x in (300, 350, 500, 600)],
                         "iv_compare": ivc})
-check("方向一卡顯示 IV、預測、比值與判斷", "21.0%" in money and "IV ÷ 預測" in money and ("偏貴" in money or "偏平" in money or "差不多" in money))
+check("方向一卡：沒有 VHSI → 提示加 HK.800125；週期權 IV 只作參考", "HK.800125" in money and "21.0%" in money
+      and "合成回測" in money)
+main.gcs_write_text(main.futu_symbol_file("HK.800125"), json.dumps(
+    {"symbol": "HK.800125", "bars": [{"time_key": "2026-10-05 10:30:00", "close": 25.0}], "options": []}))
+ivv = main.futu_iv_compare(fc0, now=_dt2(2026, 10, 5, 2, 40, tzinfo=_tz2.utc))
+check("方向一：讀 VHSI 快照，算 VHSI ÷ 預測", ivv["vhsi"] == 25.0 and ivv["vhsi_ratio"] == round(25.0 / ivv["har_vol"], 2), ivv)
+m_hi = main._fy_money({"forecast": fc0, "summary": {}, "rows": [], "iv_compare": ivv})
+check("方向一：比值 ≥ 1.2 → 符合賣出條件", ivv["vhsi_ratio"] >= 1.2 and "符合回測的賣出條件" in m_hi and "VHSI ÷ 預測" in m_hi)
+m_lo = main._fy_money({"forecast": fc0, "summary": {}, "rows": [], "iv_compare": dict(ivv, vhsi_ratio=1.05)})
+check("方向一：比值 < 1.2 → 不賣", "回測中這種週不賣" in m_lo)
+main.gcs_write_text(main.futu_symbol_file("HK.800000"), json.dumps({"symbol": "HK.800000", "bars": [], "options": []}))
+check("方向一：只有 VHSI、沒有期權也能比較", main.futu_iv_compare(fc0)["vhsi"] == 25.0)
 check("方向三：止蝕 ½ 預測、倉位係數", "200 點" in money and "1.15 倍" in money)
 check("方向四：預測在一年中的位置", "50%" in money and "不是小波幅日" in money)
 
