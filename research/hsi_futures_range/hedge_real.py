@@ -74,12 +74,55 @@ def time_left(tk, session, dates, expiry):
     return later + frac
 
 
-def simulate(week, bars, ivmap, dates, hsi, band, night, stop_mult):
-    """回傳 dict：期權盈虧、對沖盈虧、對沖成本、交易次數、最壞路徑。"""
+def week_of(d):
+    y, w, _ = datetime.strptime(d, "%Y-%m-%d").isocalendar()
+    return f"{y}-W{w:02d}"
+
+
+def load_levels(root):
+    out = {"day": {}, "week": {}}
+    for r in csv.DictReader(open(root / "levels_daily.csv", encoding="utf-8")):
+        out["day"][r["date"]] = {k: float(r[k]) for k in ("pred_high", "pred_low", "high_edge_0.9", "low_edge_0.9")}
+    for r in csv.DictReader(open(root / "levels_weekly.csv", encoding="utf-8")):
+        out["week"][r["week"]] = {k: float(r[k]) for k in ("pred_high", "pred_low", "high_edge_0.9", "low_edge_0.9")}
+    return out
+
+
+def load_oqp(root):
+    oqp = defaultdict(dict)                                  # (date, expiry) → {(strike, cp): 結算價}
+    for f in sorted((Path(root) / "series").glob("hsiwo_*.csv.gz")):
+        with io.TextIOWrapper(gzip.open(f, "rb"), encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                oqp[(r["date"], r["expiry"])][(int(r["strike"]), r["cp"])] = float(r["oqp"])
+    return oqp
+
+
+def simulate(week, bars, ivmap, dates, hsi, band, night, stop_mult, levels=None, range_mode=None, strike_mode=None, series=None):
+    """回傳 dict：期權盈虧、對沖盈虧、對沖成本、交易次數、最壞路徑。
+    range_mode：'day'／'week' = 不看 Delta 門檻，指數走出風揚陣預測範圍（九成邊）就對沖到中性，回到預測高低位之內就拆掉對沖。
+    strike_mode：'week' = 兩腳行使價改放在風揚陣下週預測範圍的九成邊（最接近的掛牌行使價），權利金用當天真實結算價。"""
     d0, e = week["entry"], week["expiry"]
     kp, kc = int(float(week["kp"])), int(float(week["kc"]))
     credit = float(week["strangle_credit"])
     F0 = float(week["forward"])
+    if strike_mode:
+        srs = (series or {}).get((d0, e), {})
+        if strike_mode == "week":                            # 風揚陣下週預測範圍的九成邊
+            wl = (levels or {}).get("week", {}).get(week_of(e))
+            if not wl:
+                return None
+            lo_t, hi_t = wl["low_edge_0.9"], wl["high_edge_0.9"]
+        else:                                                # 對照：IV 的 m 倍 σ（同樣更遠的行使價）
+            m = float(strike_mode.replace("sigma", ""))
+            sig = float(week["iv"]) / 100 * math.sqrt(float(week["days"]) / 252) * F0
+            lo_t, hi_t = F0 - m * sig, F0 + m * sig
+        if not srs:
+            return None
+        kp = max((k for k, c in srs if c == "P" and k <= lo_t and srs[(k, "P")] > 0), default=None)
+        kc = min((k for k, c in srs if c == "C" and k >= hi_t and srs[(k, "C")] > 0), default=None)
+        if kp is None or kc is None:
+            return None
+        credit = srs[(kp, "P")] + srs[(kc, "C")]
     seg = [b for b in bars if d0 < b["time_key"][:10] <= e and (b["time_key"][:10] < e or b["time_key"][11:16] <= DAY_END)]
     seg = [b for b in seg if session_of(b["time_key"]) > d0]
     if not seg:
@@ -118,8 +161,17 @@ def simulate(week, bars, ivmap, dates, hsi, band, night, stop_mult):
             if intrinsic >= stop_mult * credit:
                 stopped = (tk, S, intrinsic)
                 break
-        if band is not None and abs(net + hedge) > band:
+        target = None
+        if range_mode:
+            lv = (levels or {}).get(range_mode, {}).get(s if range_mode == "day" else week_of(s))
+            if lv:
+                if S > lv["high_edge_0.9"] or S < lv["low_edge_0.9"]:
+                    target = -round(net / 0.2) * 0.2                       # 走出預測範圍：對沖到中性
+                elif lv["pred_low"] <= S <= lv["pred_high"] and hedge:
+                    target = 0.0                                            # 回到預測高低位之內：拆掉對沖
+        elif band is not None and abs(net + hedge) > band:
             target = -round(net / 0.2) * 0.2
+        if target is not None and abs(target - hedge) > 1e-9:
             lots = abs(target - hedge) / 0.2
             cost += lots * HEDGE_COST_HKD
             trades += int(round(lots))
@@ -137,7 +189,7 @@ def simulate(week, bars, ivmap, dates, hsi, band, night, stop_mult):
         trades += int(round(abs(hedge) / 0.2))
     opt_pnl -= 2 * OPT_COST_HKD
     total = opt_pnl + hedge_pnl - cost
-    return {"opt": opt_pnl, "hedge": hedge_pnl, "cost": cost, "trades": trades, "total": total,
+    return {"opt": opt_pnl, "hedge": hedge_pnl, "cost": cost, "trades": trades, "total": total, "credit": credit, "kp": kp, "kc": kc,
             "stopped": bool(stopped), "max_abs_delta": max_abs_delta}
 
 
@@ -166,18 +218,27 @@ def main():
     bars = sorted(json.load(open(a.json))["bars"], key=lambda b: b["time_key"])
     hsi = load_hsi(a.hsi); dates = sorted(hsi)
     ivmap = load_series(a.opt)
+    levels = load_levels(HERE / "r_sweep" / "futu")
+    oqp = load_oqp(a.opt)
     weeks = [r for r in csv.DictReader(open(OUT / "weekly.csv", encoding="utf-8")) if r.get("kp") and r.get("kc")]
     configs = [("不對沖", None, True, 0), ("對沖門檻 0.5", 0.5, True, 0), ("對沖門檻 0.3", 0.3, True, 0), ("對沖門檻 0.2", 0.2, True, 0),
                ("對沖門檻 0.1", 0.1, True, 0), ("門檻 0.3・只日市對沖", 0.3, False, 0), ("門檻 0.2・只日市對沖", 0.2, False, 0),
-               ("不對沖・2 倍權利金止蝕", None, True, 2.0), ("門檻 0.3・2 倍權利金止蝕", 0.3, True, 2.0)]
+               ("不對沖・2 倍權利金止蝕", None, True, 2.0), ("門檻 0.3・2 倍權利金止蝕", 0.3, True, 2.0),
+               ("風揚陣日範圍對沖（出九成邊才對沖）", None, True, 0, "day"), ("風揚陣週範圍對沖", None, True, 0, "week"),
+               ("行使價 = 週預測九成邊・不對沖", None, True, 0, None, "week"), ("行使價 = 週預測九成邊・門檻 0.5", 0.5, True, 0, None, "week"),
+               ("行使價 = 週預測九成邊・日範圍對沖", None, True, 0, "day", "week"),
+               ("對照：行使價 = 1.5σ・不對沖", None, True, 0, None, "sigma1.5"), ("對照：行使價 = 2σ・不對沖", None, True, 0, None, "sigma2"),
+               ("對照：行使價 = 1.5σ・門檻 0.5", 0.5, True, 0, None, "sigma1.5")]
     res = {c[0]: [] for c in configs}
     ledger = []
     for w in weeks:
         row = {"entry": w["entry"], "expiry": w["expiry"], "kp": w["kp"], "kc": w["kc"], "credit": w["strangle_credit"]}
-        for name, band, night, stop in configs:
-            r = simulate(w, bars, ivmap, dates, hsi, band, night, stop)
+        for name, band, night, stop, *extra in configs:
+            rm, sm = (extra + [None, None])[:2]
+            r = simulate(w, bars, ivmap, dates, hsi, band, night, stop, levels, rm, sm, oqp)
             if r is None:
                 continue
+            r["entry"] = w["entry"]
             res[name].append(r)
             key = name.replace("・", "_").replace(" ", "")
             row[f"{key}_total_pts"] = round(r["total"] / BIG, 1)
@@ -199,18 +260,25 @@ def main():
          "| 設定 " + HEAD[1:], "|---|---|---|---|---|---|---|---|"]
     for name, *_ in configs:
         L.append(f"| {name} " + fmt(st([r["total"] for r in res[name]])))
-    L += ["", "## 拆開看：期權本身、對沖盈虧、對沖成本、每週交易次數（平均，大合約點）", "", "| 設定 | 期權 | 對沖盈虧 | 對沖成本 | 合計 | 每週對沖次數 | 止蝕週數 |", "|---|---|---|---|---|---|---|"]
+    L += ["", "## 行使價離遠期價多遠（平均 %，Put／Call）", ""]
+    for name, *_ in configs:
+        rs = res[name]
+        if rs and all(r.get("kp") for r in rs):
+            dp = np.mean([(float(w["forward"]) - r["kp"]) / float(w["forward"]) * 100 for w, r in zip(weeks, rs)]) if len(rs) == len(weeks) else float("nan")
+            dc = np.mean([(r["kc"] - float(w["forward"])) / float(w["forward"]) * 100 for w, r in zip(weeks, rs)]) if len(rs) == len(weeks) else float("nan")
+            L.append(f"- {name}：Put −{dp:.2f}%、Call +{dc:.2f}%、權利金 {np.mean([r['credit'] for r in rs]):.0f} 點")
+    L += ["", "## 拆開看：期權本身、對沖盈虧、對沖成本、每週交易次數（平均，大合約點）", "", "| 設定 | 權利金 | 期權 | 對沖盈虧 | 對沖成本 | 合計 | 每週對沖次數 | 止蝕週數 |", "|---|---|---|---|---|---|---|---|"]
     for name, *_ in configs:
         rs = res[name]
         if rs:
-            L.append(f"| {name} | {np.mean([r['opt'] for r in rs]) / BIG:+.0f} | {np.mean([r['hedge'] for r in rs]) / BIG:+.0f} | "
+            L.append(f"| {name} | {np.mean([r['credit'] for r in rs]):.0f} | {np.mean([r['opt'] for r in rs]) / BIG:+.0f} | {np.mean([r['hedge'] for r in rs]) / BIG:+.0f} | "
                      f"{-np.mean([r['cost'] for r in rs]) / BIG:+.1f} | {np.mean([r['total'] for r in rs]) / BIG:+.0f} | "
                      f"{np.mean([r['trades'] for r in rs]):.1f} | {sum(r['stopped'] for r in rs)} |")
     L += ["", "## 分段（每週平均，大合約點）", "", "| 設定 | 2025Q4 | 2026H1 | 2026H2 |", "|---|---|---|---|"]
     for name, *_ in configs:
         parts = []
         for a_, b_ in (("2025-10", "2026-01"), ("2026-01", "2026-06"), ("2026-06", "2026-10")):
-            sel = [r["total"] for w, r in zip(weeks, res[name]) if a_ <= w["entry"][:7] < b_] if len(res[name]) == len(weeks) else []
+            sel = [r["total"] for r in res[name] if a_ <= r["entry"][:7] < b_]
             parts.append(f"{np.mean(sel) / BIG:+.0f}" if sel else "—")
         L.append(f"| {name} | " + " | ".join(parts) + " |")
     text = "\n".join(L) + "\n"
