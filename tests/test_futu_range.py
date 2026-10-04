@@ -205,10 +205,17 @@ lhar = main.har_forecasts(long_rows)
 acc = main.futu_accuracy(long_rows, lhar)
 d = acc["day"]
 check("日：每個有預測的交易日一筆", len(d["records"]) == len([t for t in lhar if t < len(long_rows)]), len(d["records"]))
-check("日：誤差 = 實際 − 預測、命中 = 落在 80% 區間",
-      all(r["err"] == round(r["actual"] - r["forecast"], 1) and r["hit"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in d["records"]))
-check("日：命中率與次數一致", d["n"] == len(d["records"]) and d["hit_rate"] == round(d["hits"] / d["n"] * 100))
-check("日：近 7 次是最後 7 筆", d["recent"] == d["records"][-7:] and d["recent_hits"] == sum(r["hit"] for r in d["recent"]))
+check("日：波幅差距 = 實際 − 預測、波幅落在範圍另計",
+      all(r["err"] == round(r["actual"] - r["forecast"], 1) and r["hit_range"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in d["records"]))
+check("[R109] 日：高、低都落在各自預計範圍才算 ✅",
+      all(r["hit"] == ((r["high_lo"] <= r["actual_high"] <= r["high_hi"]) and (r["low_lo"] <= r["actual_low"] <= r["low_hi"]))
+          for r in d["records"] if r["hit"] is not None)
+      and all(r["hit"] is None for r in d["records"][:main.HL_MIN_DAYS]))
+check("日：比率與次數一致；波幅另計全部日子", d["n"] == len(d["records"]) - main.HL_MIN_DAYS
+      and d["hit_rate"] == round(d["hits"] / d["n"] * 100) and d["hit_range_n"] == len(d["records"])
+      and d["hit_rate"] <= min(d["hit_high_rate"], d["hit_low_rate"]))
+check("日：高位、低位平均差", d["mae_high"] == round(sum(abs(r["err_high"]) for r in d["records"] if r["err_high"] is not None) / d["n"], 1))
+check("日：近 7 次是最後 7 筆", d["recent"] == d["records"][-7:] and d["recent_hits"] == sum(bool(r["hit"]) for r in d["recent"]))
 hl = [r for r in d["records"] if r["hit_high"] is not None]
 check("日：高低位要累積 120 天才評分", len(hl) == len(d["records"]) - main.HL_MIN_DAYS and d["hit_high_n"] == len(hl), len(hl))
 w = acc["week"]
@@ -228,14 +235,24 @@ check("還沒結束的那段不計分", all(r["key"] != last_week for r in
 day0 = d["records"][-1]["key"]
 acc3 = main.futu_accuracy(long_rows, lhar, [{"date": day0, "range": 1.0, "lo": 0.5, "hi": 2.0}])
 r3 = acc3["day"]["records"][-1]
-check("有開市前實時紀錄就用紀錄", r3["live"] and r3["forecast"] == 1.0 and r3["hit"] is False
+check("有開市前實時紀錄就用紀錄", r3["live"] and r3["forecast"] == 1.0 and r3["hit_range"] is False
       and not acc3["day"]["records"][-2]["live"], r3)
+acc4 = main.futu_accuracy(long_rows, lhar, [{"date": day0, "range": 1.0, "lo": 0.5, "hi": 2.0, "high": 1, "low": 0,
+                                             "high_lo": 0, "high_hi": 2, "low_lo": -1, "low_hi": 1}])
+check("[R109] 實時紀錄的高低位範圍也照用（實際高位超出 → ❌）", acc4["day"]["records"][-1]["high_hi"] == 2
+      and acc4["day"]["records"][-1]["hit"] is False)
 hh = main._fy_history("day", d)
-check("頁面：過去 7 次＋落在範圍比率＋高低位（白話）", "過去 7 次預測" in hh and f"落在預計範圍：{d['hit_rate']}%" in hh
-      and f"中 {d['hits']} 次" in hh and hh.count("<tr>") == 8 and "高位落在預計範圍" in hh and "命中" not in hh)
+check("[R109] 今日表：高、低都落在預計範圍的比率（白話）", "過去 7 次預測" in hh and f"高、低都落在預計範圍：{d['hit_rate']}%" in hh
+      and f"中 {d['hits']} 次" in hh and hh.count("<tr>") == 8 and "各自計：高位" in hh and "命中" not in hh
+      and "三分之二" in hh)
 r0 = d["recent"][-1]
-check("[R108] 表上每列有預計範圍、解釋十次有八次", f"{r0['lo']:,.0f}–{r0['hi']:,.0f}" in hh and "十次有八次" in hh
-      and hh.count("class='fy-rng'") == 8)
+check("[R109] 今日表每列有預測高／低與各自預計範圍", f"{r0['high_lo']:,.0f}–{r0['high_hi']:,.0f}" in hh
+      and f"{r0['low_lo']:,.0f}–{r0['low_hi']:,.0f}" in hh and "十次有八次" in hh and hh.count("class='fy-rng'") == 16
+      and "實際高" in hh and "實際低" in hh)
+hw = main._fy_history("week", w)
+r1 = w["recent"][-1]
+check("[R108] 週表每列有預計範圍、目標約八成", f"{r1['lo']:,.0f}–{r1['hi']:,.0f}" in hw and "目標約八成" in hw
+      and hw.count("class='fy-rng'") == len(w["recent"]) + 1)
 check("頁面：週沒有高低欄、沒數據就不顯示", "<th>高</th>" not in main._fy_history("week", w) and main._fy_history("day", {"n": 0}) == "")
 FAKE.clear()
 client.post("/", json=packet([b for b in noisy(420, "2024-06-03") if b["time_key"][:10] < today]))
