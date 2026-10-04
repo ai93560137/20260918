@@ -43,7 +43,7 @@ def simulate(days, daily, weekly, before, flips, mode, q=0.95, rr=2.0, cost=3.0)
         if (stop - px) * side >= 0:
             return None
         risk = abs(px - stop)
-        tg = px + side * rr * risk
+        tg = px + side * rr * risk if rr else None                     # rr = 0 → 不設目標
         return {"side": side, "entry_date": d["date"], "entry_time": t, "entry_price": px, "entry_type": kind,
                 "snake_at_entry": before.get(t), "week": wl["week"], "week_anchor": wl["anchor"], "week_R": wl["R_week"],
                 "initial_stop": stop, "stop": stop, "target": tg, "initial_target": tg, "stop_path": [(t, stop)], "bars": 0}
@@ -55,7 +55,7 @@ def simulate(days, daily, weekly, before, flips, mode, q=0.95, rr=2.0, cost=3.0)
         if not entry_bar:
             if (b["open"] - stop) * s <= 0:
                 close(tr, b["open"], t, d, "止蝕（跳空）"); return None
-            if (b["open"] - tg) * s >= 0:
+            if tg is not None and (b["open"] - tg) * s >= 0:
                 close(tr, b["open"], t, d, f"{rr:g}R 止賺"); return None
         hit_stop = (b["low"] <= stop) if s > 0 else (b["high"] >= stop)
         against = [f for f in flips.get(b["time_key"], []) if f[0] == -s] if (mode != "F" and not entry_bar) else []
@@ -63,7 +63,7 @@ def simulate(days, daily, weekly, before, flips, mode, q=0.95, rr=2.0, cost=3.0)
             c = ([(stop, "止蝕" if not entry_bar else "止蝕（同一根）")] if hit_stop else []) + ([(against[0][1], "蛇反手")] if against else [])
             px, why = min(c, key=lambda x: x[0] * s)
             close(tr, px, t, d, why); return None
-        if (b["high"] >= tg) if s > 0 else (b["low"] <= tg):
+        if tg is not None and ((b["high"] >= tg) if s > 0 else (b["low"] <= tg)):
             close(tr, tg, t, d, f"{rr:g}R 止賺"); return None
         return tr
 
