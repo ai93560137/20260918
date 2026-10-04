@@ -18,13 +18,15 @@
 |---|---|---|
 | 恒指週期權即時 IV、Greeks | ✅ 有 | 本地腳本每 5 分鐘推 `HK.800000` 價平附近 10 檔（GCS `futu/snapshots/HK.800000.json`），封存從 2026-10-03 起（`archive/futu_options/HK.800000/`）。休市時報價停在上一次，IV 不可信（例如週末 Call 9%、Put 25%）。 |
 | 已到期期權的歷史 | ❌ 很可能沒有 | Futu 不提供已到期合約的歷史（期貨已證實）；期權 K 線也不含 IV。 |
-| 恒指波幅指數 VHSI 歷史 | ❓ 要你跑一次 | VHSI = 恒指期權 30 日 IV，是回測方向一最好的代替品。雲端容器連不到 HKEX、恒指公司、Yahoo（網絡政策擋住），只能從你電腦的 Futu 拿。 |
+| 恒指波幅指數 VHSI 歷史 | ✅ 有 | **HK.800125（HSI Volatility Index）**：日 K 738 根，2023-10-03 至 2026-10-02，2026-10-02 收 19.33（2026-10-04 用 `--probe-iv` 探測）。VHSI = 恒指期權 30 日 IV，是回測方向一最好的代替品。另有 HSCEI Volatility Index（HK.800870）。 |
+| 現存期權的歷史 K 線 | ⚠️ 很短 | 2026-10-02 到期的價平 Call 只有 10 根（9-18 起）；2031-12 到期的 88 根（2026-05-29 起）。不夠回測，也不含 IV。 |
 
 **請在裝了 Futu OpenD 的電腦跑（推送腳本 v10）：**
 
 ```
 python push_to_gcp.py --probe-iv          # 只讀：找 VHSI 代號、看日 K 歷史多長、看期權有沒有歷史 K 線
-python push_to_gcp.py --probe-iv --push   # 有 VHSI 的話，把過去 1100 天日 K 推上 GCS（archive/futu_k_day/<代號>/）
+python push_to_gcp.py --probe-iv --push HK.800125   # 把 VHSI 過去 1100 天日 K 推上 GCS（archive/futu_k_day/HK.800125/）
+# v10 自動揀會誤揀 HK.800755（Hang Seng Low Volatility Index，股票指數），v11 已改正；指定代號最穩陣。
 ```
 
 有 VHSI 之後的回測計劃：
