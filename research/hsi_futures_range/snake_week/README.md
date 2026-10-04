@@ -5,6 +5,7 @@
 - 程式：`research/hsi_futures_range/snake_week.py`（模擬）、`snake_week_verify.py`（獨立核對）。
 - 測試：`tests/test_snake_week.py`（用人造 K 線逐條驗證規則）。
 - 結果：本資料夾的 `REPORT.md`；結論摘要見 `../MONEY_REPORT.md` 第二之四節。
+- 日範圍止蝕版本（同一程式加 `--stop day`）：`../snake_day/`，只寫不同之處。
 
 ---
 

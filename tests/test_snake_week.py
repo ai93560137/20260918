@@ -144,5 +144,23 @@ d2, w2 = sw.levels(mod)
 check("日：少於 120 天不出預測位", min(d1) == base[120]["date"])
 check("改最後一天不影響任何一天的預測位（只用之前的數據）", d1 == d2)
 
+print("=== 日範圍止蝕（--stop day） ===")
+def run_d(days, before, flips, entry, ex, daily, **k):
+    return sw.simulate(days, daily, {W1: wlv(W1), W2: wlv(W2)}, before, flips, entry, 0.9, ex, 0.0, stop_src="day")
+days = [day(D[0], bar(f"{D[0]} 09:15:00", 1000, 1010, 995, 1005)),
+        day(D[1], bar(f"{D[1]} 09:15:00", 1005, 1010, 935, 940)),
+        day(D[2], bar(f"{D[2]} 09:15:00", 940, 945, 905, 910))]
+before = {b["time_key"]: 1 for d in days for b in d["bars"]}
+daily = {D[0]: dlv(D[0], low_edge=960), D[1]: dlv(D[1], low_edge=930), D[2]: dlv(D[2], low_edge=950)}
+tr = run_d(days, before, {}, "A", "1", daily)
+check("① 初始止蝕＝入市當天日範圍邊 960、第二天重設 930（可放鬆）→ 第二天低 935 不觸發", tr[0]["initial_stop"] == 960
+      and [round(x) for _, x in tr[0]["stop_path"]][:2] == [960, 930], tr[0]["stop_path"])
+check("① 第三天重設 950，開市 940 已低過 → 跳空止蝕 940", tr[0]["exit_reason"] == "止蝕（跳空）" and tr[0]["exit_price"] == 940)
+tr = run_d(days, before, {}, "A", "4", daily)
+check("④ 只收緊：第二天仍 960 → 低 935 觸發止蝕 960", tr[0]["exit_price"] == 960 and tr[0]["exit_date"] == D[1]
+      and [round(x) for _, x in tr[0]["stop_path"]] == [960])
+check("日範圍止蝕比週範圍近（同一筆：週 800、日 960）",
+      run(days, before, {}, "A", "1", daily=daily)[0]["initial_stop"] == 800)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

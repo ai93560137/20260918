@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-10-04 05:32:14",
+ "generated_utc": "2026-10-04 05:32:20",
  "git_head": "72e2ab2926e3134fe4735ab69ebde9774b57c698",
  "script_sha256": "f47f221d39c231d4dd6b1d37695ae835b1882d1c319e989fda4bb270d29df66c",
  "input": {
@@ -11,7 +11,7 @@
   "last_bar": "2026-10-03 03:00:00"
  },
  "params": {
-  "stop_source": "week",
+  "stop_source": "day",
   "cost_per_round_trip": 3.0,
   "day_min": 120,
   "week_min": 20,
@@ -35,103 +35,103 @@
  "configs": {
   "A_90_1": {
    "label": "跟蛇同時入・八成範圍・①蛇反手",
-   "trades": 101,
-   "net_total": 7892.87
+   "trades": 124,
+   "net_total": 5787.51
   },
   "A_90_2": {
    "label": "跟蛇同時入・八成範圍・②週末平倉",
-   "trades": 219,
-   "net_total": 3751.87
+   "trades": 237,
+   "net_total": 2286.51
   },
   "A_90_3": {
    "label": "跟蛇同時入・八成範圍・③週目標",
-   "trades": 228,
-   "net_total": 7657.73
+   "trades": 249,
+   "net_total": 4892.36
   },
   "A_90_4": {
    "label": "跟蛇同時入・八成範圍・④移動止蝕（不理蛇反手）",
-   "trades": 99,
-   "net_total": -3714.85
+   "trades": 111,
+   "net_total": -2345.31
   },
   "A_90_5": {
    "label": "跟蛇同時入・八成範圍・⑤移動止蝕＋蛇反手",
-   "trades": 131,
-   "net_total": 4618.83
+   "trades": 132,
+   "net_total": 5208.04
   },
   "A_95_1": {
    "label": "跟蛇同時入・九成範圍・①蛇反手",
-   "trades": 101,
-   "net_total": 7793.87
+   "trades": 111,
+   "net_total": 8971.77
   },
   "A_95_2": {
    "label": "跟蛇同時入・九成範圍・②週末平倉",
-   "trades": 219,
-   "net_total": 3652.87
+   "trades": 226,
+   "net_total": 4832.77
   },
   "A_95_3": {
    "label": "跟蛇同時入・九成範圍・③週目標",
-   "trades": 228,
-   "net_total": 7558.72
+   "trades": 238,
+   "net_total": 8736.63
   },
   "A_95_4": {
    "label": "跟蛇同時入・九成範圍・④移動止蝕（不理蛇反手）",
-   "trades": 75,
-   "net_total": 2028.21
+   "trades": 86,
+   "net_total": 450.97
   },
   "A_95_5": {
    "label": "跟蛇同時入・九成範圍・⑤移動止蝕＋蛇反手",
    "trades": 114,
-   "net_total": 8610.64
+   "net_total": 8599.28
   },
   "B_90_1": {
    "label": "等回調到預測位才入・八成範圍・①蛇反手",
-   "trades": 97,
-   "net_total": 3366.91
+   "trades": 130,
+   "net_total": 2765.45
   },
   "B_90_2": {
    "label": "等回調到預測位才入・八成範圍・②週末平倉",
-   "trades": 159,
-   "net_total": 393.46
+   "trades": 182,
+   "net_total": -4853.43
   },
   "B_90_3": {
    "label": "等回調到預測位才入・八成範圍・③週目標",
-   "trades": 152,
-   "net_total": 242.96
+   "trades": 179,
+   "net_total": -1204.7
   },
   "B_90_4": {
    "label": "等回調到預測位才入・八成範圍・④移動止蝕（不理蛇反手）",
-   "trades": 89,
-   "net_total": 2788.6
+   "trades": 122,
+   "net_total": 852.37
   },
   "B_90_5": {
    "label": "等回調到預測位才入・八成範圍・⑤移動止蝕＋蛇反手",
-   "trades": 123,
-   "net_total": 2057.94
+   "trades": 140,
+   "net_total": 3141.73
   },
   "B_95_1": {
    "label": "等回調到預測位才入・九成範圍・①蛇反手",
-   "trades": 97,
-   "net_total": 3267.9
+   "trades": 112,
+   "net_total": 6006.63
   },
   "B_95_2": {
    "label": "等回調到預測位才入・九成範圍・②週末平倉",
-   "trades": 159,
-   "net_total": 68.83
+   "trades": 168,
+   "net_total": -908.6
   },
   "B_95_3": {
    "label": "等回調到預測位才入・九成範圍・③週目標",
-   "trades": 152,
-   "net_total": 143.96
+   "trades": 171,
+   "net_total": 3407.72
   },
   "B_95_4": {
    "label": "等回調到預測位才入・九成範圍・④移動止蝕（不理蛇反手）",
-   "trades": 69,
-   "net_total": 85.18
+   "trades": 97,
+   "net_total": -20.62
   },
   "B_95_5": {
    "label": "等回調到預測位才入・九成範圍・⑤移動止蝕＋蛇反手",
-   "trades": 109,
-   "net_total": 2802.31
+   "trades": 121,
+   "net_total": 3477.69
   }
  }
 }

@@ -89,6 +89,7 @@
 #     另：方向二卡加一行「預先在預測高低位掛單、止蝕在範圍外」的回測結論（band_limit.py，每筆約 0）。
 #   * 2026-10-04 — [R110] 方向二卡加「蛇蟠陣定方向＋預測位掛單」回測結論（snake_band.py，每筆 −12.5 點、RRR 0.90）。
 #   * 2026-10-04 — [R111] 方向二卡加「跟蛇持倉多日＋週範圍止蝕」20 組回測結論（snake_week.py，附逐筆紀錄與獨立核對）。
+#   * 2026-10-04 — [R112] 方向二卡加「日範圍止蝕」20 組回測結論（snake_week.py --stop day）。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -3470,6 +3471,8 @@ MONEY_FADE = {                                  # 方向二回測摘要（fade_p
         "蛇的優勢在持倉多日追趨勢，每天收市平倉就拿不到。",
         "🐍 跟蛇持倉多日、週預計範圍止蝕（20 組）：都跑不贏蛇本身（每筆約 +76 點）；週止蝕平均離約 1,300 點，"
         "蛇自己的反手先到，幾乎用不上。只有「週目標止賺」前後半段都賺，未顯著。",
+        "🐍 改用日預計範圍（九成）止蝕：略好過蛇本身（每筆 +81 點）；加週目標止賺最穩——回撤最小、"
+        "前後半段和三年都賺（t 1.34，未顯著），建議先紙上交易。",
     ],
 }
 

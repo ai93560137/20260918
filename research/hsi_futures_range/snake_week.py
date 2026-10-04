@@ -100,8 +100,9 @@ def levels(days):
 
 
 # ---- 模擬 -----------------------------------------------------------------------
-def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost):
+def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost, stop_src="week"):
     """days：[{date, bars, ...}]（依時間）；before：K 線 → 該根之前的蛇持倉；flips：K 線 → [(新持倉, 成交價)]。
+    stop_src：week = 止蝕用週預計範圍邊（snake_week/README.md）；day = 用當天的日預計範圍邊（snake_day/README.md）。
     規則與優先次序見 README.md 第二節。回傳逐筆交易（dict）。"""
     trades, tr = [], None
     last_week = None
@@ -110,8 +111,8 @@ def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost):
         return trades
     edge_key = lambda side: f"{'low' if side > 0 else 'high'}_edge_{qs}"
 
-    def open_trade(side, px, t, d, kind, wl):
-        stop = wl[edge_key(side)]
+    def open_trade(side, px, t, d, kind, wl, lv):
+        stop = (wl if stop_src == "week" else lv)[edge_key(side)]
         if (stop - px) * side >= 0:
             return None                                           # 止蝕不在正確一邊：不做
         target = None
@@ -166,12 +167,16 @@ def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost):
                 if tr:
                     s = tr["side"]
                     new = tr["stop"]
-                    if new_week:
-                        cand = wl[edge_key(s)]
-                        new = (max(new, cand) if s > 0 else min(new, cand)) if ex in TRAIL else cand
-                    if ex in TRAIL and tr["entry_date"] != d["date"]:
+                    if stop_src == "week":
+                        if new_week:
+                            cand = wl[edge_key(s)]
+                            new = (max(new, cand) if s > 0 else min(new, cand)) if ex in TRAIL else cand
+                        if ex in TRAIL and tr["entry_date"] != d["date"]:
+                            cand = lv[edge_key(s)]
+                            new = max(new, cand) if s > 0 else min(new, cand)
+                    elif tr["entry_date"] != d["date"]:                   # day：每天重設為當天日範圍邊（④⑤只收緊）
                         cand = lv[edge_key(s)]
-                        new = max(new, cand) if s > 0 else min(new, cand)
+                        new = (max(new, cand) if s > 0 else min(new, cand)) if ex in TRAIL else cand
                     if new != tr["stop"]:
                         tr["stop"] = new
                         tr["stop_path"].append((t, new))
@@ -179,7 +184,7 @@ def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost):
                         tg = wl["pred_high" if s > 0 else "pred_low"]
                         tr["target"] = tg if (tg - tr["entry_price"]) * s > 0 else None
                 elif entry == "A" and snake != 0:
-                    tr = open_trade(snake, b["open"], t, d, "空手・開市再入", wl)
+                    tr = open_trade(snake, b["open"], t, d, "空手・開市再入", wl, lv)
                     entered_today = tr is not None
             # (2)(3) 持倉：跳空止蝕 → 盤中止蝕／蛇反手（取較差價）→ 目標
             if tr:
@@ -202,7 +207,7 @@ def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost):
             if not tr:
                 if entry == "A" and fl:
                     side, px = fl[-1]                                   # 這根最後一次反手後的方向
-                    tr = open_trade(side, px, t, d, "蛇反手跟入", wl)
+                    tr = open_trade(side, px, t, d, "蛇反手跟入", wl, lv)
                     if tr:
                         entered_today = True
                         tr = same_bar_after_entry(tr, b, t, d)
@@ -211,7 +216,7 @@ def simulate(days, daily, weekly, before, flips, entry, qs, ex, cost):
                     touched = (b["low"] <= level) if snake > 0 else (b["high"] >= level)
                     if touched:
                         px = min(level, b["open"]) if snake > 0 else max(level, b["open"])
-                        tr = open_trade(snake, px, t, d, "回調掛單成交", wl)
+                        tr = open_trade(snake, px, t, d, "回調掛單成交", wl, lv)
                         entered_today = True
                         if tr:
                             tr = same_bar_after_entry(tr, b, t, d)
@@ -316,17 +321,17 @@ def build(bars, daily_k, cost):
     return days, sdays, before, flips, snake_trades, dl, wl
 
 
-def run_all(days, dl, wl, before, flips, cost):
+def run_all(days, dl, wl, before, flips, cost, stop_src="week"):
     out = {}
     for entry in ENTRIES:
         for qs in QS:
             for ex in EXITS:
-                trs = simulate(days, dl, wl, before, flips, entry, qs, ex, cost)
+                trs = simulate(days, dl, wl, before, flips, entry, qs, ex, cost, stop_src)
                 out[(entry, qs, ex)] = add_sessions(trs, days)
     return out
 
 
-def report(res, days, dl, wl, snake_trades, cost, manifest):
+def report(res, days, dl, wl, snake_trades, cost, manifest, stop_src="week"):
     start = min((t["entry_date"] for trs in res.values() for t in trs), default=days[0]["date"])
     end = days[-1]["date"]
     st = [t for t in snake_trades if t[0] >= start]
@@ -337,7 +342,7 @@ def report(res, days, dl, wl, snake_trades, cost, manifest):
                   f"總 {sp.sum():+,.0f} 點") if len(sp) else "—"
     tradable = [d["date"] for d in days if d["date"] >= start]
     mid = tradable[len(tradable) // 2]
-    L = [f"# 跟蛇蟠陣持倉多日＋週預計範圍止蝕：20 組回測結果", "",
+    L = [f"# 跟蛇蟠陣持倉多日＋{'週' if stop_src == 'week' else '日'}預計範圍止蝕：20 組回測結果", "",
          f"- 期間：{start} 至 {end}（可交易 {len(tradable)} 個交易日；前半段到 {mid} 前、後半段 {mid} 起）",
          f"- 成本：每筆來回 {cost:g} 點；1 張；點數（恒指每點 HK$50、小型恒指 HK$10）",
          f"- 輸入數據 SHA-256：15 分 K `{manifest['input']['bars_sha256'][:16]}…`、交易日 K `{manifest['input']['daily_sha256'][:16]}…`",
@@ -379,16 +384,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", help="15 分 K 快取 {bars, daily}（high_low_in.py 同格式）")
     ap.add_argument("--cost", type=float, default=COST)
-    ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--stop", choices=("week", "day"), default="week", help="止蝕用週或日預計範圍邊")
+    ap.add_argument("--out", help="輸出目錄（預設 week → snake_week/、day → snake_day/）")
     ap.add_argument("--verify", action="store_true", help="只核對已輸出的紀錄（需要同一份輸入數據）")
     a = ap.parse_args()
     bars, daily_k = load(a.json)
-    out = Path(a.out)
+    out = Path(a.out) if a.out else (OUT if a.stop == "week" else HERE / "snake_day")
     if a.verify:
         import snake_week_verify as v
         sys.exit(v.verify(bars, daily_k, out))
     days, sdays, before, flips, snake_trades, dl, wl = build(bars, daily_k, a.cost)
-    res = run_all(days, dl, wl, before, flips, a.cost)
+    res = run_all(days, dl, wl, before, flips, a.cost, a.stop)
     (out / "trades").mkdir(parents=True, exist_ok=True)
     for (e, qs, ex), trs in res.items():
         write_ledger(out / "trades" / f"{cfg_name(e, qs, ex)}.csv", cfg_name(e, qs, ex), trs)
@@ -408,13 +414,13 @@ def main():
                 "input": {"bars": len(bars), "bars_sha256": sha256_json(sorted(bars, key=lambda b: b["time_key"])),
                           "daily": len(daily_k), "daily_sha256": sha256_json(sorted(daily_k, key=lambda b: str(b["time_key"]))),
                           "first_bar": min(b["time_key"] for b in bars), "last_bar": max(b["time_key"] for b in bars)},
-                "params": {"cost_per_round_trip": a.cost, "day_min": DAY_MIN, "week_min": WEEK_MIN, "bands": list(QS),
+                "params": {"stop_source": a.stop, "cost_per_round_trip": a.cost, "day_min": DAY_MIN, "week_min": WEEK_MIN, "bands": list(QS),
                            "snake_lookback": sb.LOOKBACK, "entries": ENTRIES, "exits": EXITS},
                 "configs": {cfg_name(e, qs, ex): {"label": cfg_label(e, qs, ex), "trades": len(trs),
                                                   "net_total": round(sum(t["net"] for t in trs), 2)}
                             for (e, qs, ex), trs in res.items()}}
     json.dump(manifest, open(out / "manifest.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    text = report(res, days, dl, wl, snake_trades, a.cost, manifest)
+    text = report(res, days, dl, wl, snake_trades, a.cost, manifest, a.stop)
     (out / "REPORT.md").write_text(text, encoding="utf-8")
     print(text)
 
