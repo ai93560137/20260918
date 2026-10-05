@@ -1,0 +1,37 @@
+name: es-daily-push
+# [R127] ES 標普 500 期貨日線 → 風揚陣 ES 頁。每個交易日 CME 收市（紐約 17:00）後約 70 分鐘跑：夏令 22:10 UTC、冬令 23:10 UTC（兩個都排，腳本自己判斷收市了沒）。
+# 需要 GitHub Secret：ZHUGE_GCP_URL、ZHUGE_WEBHOOK_TOKEN。第一次手動 dispatch days=6000 補 26 年歷史。
+on:
+  schedule:
+    - cron: '10 22 * * 1-5'
+    - cron: '10 23 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 抓最近幾天（6000 = 全部歷史）
+        required: false
+        default: '30'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: es-daily-push
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q yfinance pandas requests
+      - name: push
+        env:
+          ZHUGE_GCP_URL: ${{ secrets.ZHUGE_GCP_URL }}
+          ZHUGE_WEBHOOK_TOKEN: ${{ secrets.ZHUGE_WEBHOOK_TOKEN }}
+          DAYS: ${{ github.event.inputs.days }}
+        run: python3 scripts/es_daily_push.py --days "${DAYS:-30}"

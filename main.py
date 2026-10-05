@@ -104,6 +104,10 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
+#     美股用紐約時間、交易日 = CME 全段（前一天 18:00 至 17:00，日期取收市那天）、不用港股日曆、開市前紀錄時段 18:00–19:00 ET。
+#     數據由 GitHub Actions（es_daily_push.yml，yfinance ES=F 日線）以 K_SESSION 封包每日推入；沒有 5 分 K，所以沒有日內訊號、
+#     紙上交易與四個方向（頁上註明）。所有頁頂連結加「🇺🇸 ES 波幅」。
 #   * 2026-10-05 — [R126] ✓ 的門檻按時間長度分：今日 1%、本週 2%、本月 4%（HL_OK_PCT_BY；誤差約與交易日數的平方根成正比，
 #     真實數據高位誤差中位日 0.52%、週 1.2%、月 2.1%；用這三個門檻，高低都在門檻內的比率日 65%、週 60%、月 59%）。
 #   * 2026-10-05 — [R125] 過去 7 次表：實際高／低下面的差距加百分比（差距 ÷ 預測）；綠字 ✓ 改為「相差 1% 以內」才給，
@@ -2200,12 +2204,41 @@ FUTU_DAILY_KEEP = 800                            # 約三年交易日
 FUTU_RANGE_DEFAULT = "HK.HSI_FRONT"
 FUTU_SESSION_CUT_HOUR = 9                        # 交易日 = 09:00 至翌日 09:00（日市＋當晚夜市）
 HK_TZ = ZoneInfo("Asia/Hong_Kong")
+NY_TZ = ZoneInfo("America/New_York")
+# [R127] 市場設定：代號前綴 → 時區、交易日切法、文字。shift = 把當地時間加多少小時後取日期就是交易日
+#   HK：09:00 起算同一天（日市＋當晚夜市）→ shift −9；US：CME 全段 18:00（前一天）至 17:00，日期取收市那天 → shift +6。
+MARKETS = {
+    "HK": {"tz": HK_TZ, "shift": -9, "calendar": True, "preopen": ("03:05", "09:15"), "end": (1, "03:00"),
+           "zh": "恒指即月期貨", "title": "🌬️ 風揚陣・恒指即月期貨波幅", "view": "futu_range", "icon": "🌬️",
+           "session_zh": "日市＋當晚夜市", "hours_zh": "交易日 = 日市 09:15–16:30 ＋ 當晚夜市至翌日 03:00",
+           "day_zh": "香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00（跟富途日 K 不同）",
+           "open_zh": "09:15 開市後", "unit_zh": "恒指期貨每點 HK$50，小型恒指 HK$10", "intraday": True},
+    "US": {"tz": NY_TZ, "shift": 6, "calendar": False, "preopen": ("18:00", "19:00"), "end": (0, "17:00"),
+           "zh": "ES 標普 500 期貨", "title": "🇺🇸 風揚陣・ES 標普 500 期貨波幅", "view": "es_range", "icon": "🇺🇸",
+           "session_zh": "CME 全段 23 小時", "hours_zh": "交易日 = CME 全段：紐約時間前一天 18:00 至當天 17:00（香港 06:00／07:00 至翌日 05:00／06:00）",
+           "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 yfinance 的連續合約日線，轉月不做價差調整",
+           "open_zh": "有 5 分 K 推送後", "unit_zh": "ES 每點 US$50，小型 MES US$5", "intraday": False},
+}
+ES_SYMBOL = "US.ES_FRONT"
 
 
-def futu_session_today(now=None):
-    """現在屬於哪個交易日（香港時間 09:00 前算前一天）。"""
-    hk = (now or datetime.now(timezone.utc)).astimezone(HK_TZ)
-    return (hk - timedelta(hours=FUTU_SESSION_CUT_HOUR)).strftime("%Y-%m-%d")
+def futu_market(symbol=None):
+    return MARKETS["US" if str(symbol or "").upper().startswith("US.") else "HK"]
+
+
+def futu_session_today(now=None, symbol=None):
+    """現在屬於哪個交易日（HK：香港時間 09:00 前算前一天；US：紐約時間 18:00 起算下一天）。"""
+    m = futu_market(symbol)
+    t = (now or datetime.now(timezone.utc)).astimezone(m["tz"])
+    return (t + timedelta(hours=m["shift"])).strftime("%Y-%m-%d")
+
+
+def futu_session_end_passed(day, now, symbol=None):
+    """[R127] 交易日 day 的收市時間過了沒有（HK：翌日 03:00 香港時間；US：當天 17:00 紐約時間）。"""
+    m = futu_market(symbol)
+    t = (now or datetime.now(timezone.utc)).astimezone(m["tz"])
+    end = (datetime.strptime(day, "%Y-%m-%d") + timedelta(days=m["end"][0])).strftime("%Y-%m-%d") + " " + m["end"][1]
+    return t.strftime("%Y-%m-%d %H:%M") >= end
 
 
 def futu_daily_file(symbol):
@@ -2401,7 +2434,7 @@ def futu_forecast_file(symbol):
 
 def futu_forecast_log(symbol, bars, now=None):
     """目前交易日的第一包交易日 K 到達時，若開市前沒記到預測，補記一次（之後不改）。回傳警告清單。"""
-    today = futu_session_today(now)
+    today = futu_session_today(now, symbol)
     if not any(str(bar.get("time_key", ""))[:10] == today for bar in bars):
         return []
     try:
@@ -2485,10 +2518,10 @@ def futu_trading_day(day, calendar):
     return datetime.strptime(day, "%Y-%m-%d").weekday() < 5
 
 
-def futu_session_of(time_key):
-    """5 分 K 時間 → 交易日（09:00 前算前一天）。"""
+def futu_session_of(time_key, symbol=None):
+    """5 分 K 時間（當地時間）→ 交易日（HK：09:00 前算前一天；US：18:00 起算下一天）。"""
     t = datetime.strptime(str(time_key)[:19], "%Y-%m-%d %H:%M:%S")
-    return (t - timedelta(hours=FUTU_SESSION_CUT_HOUR)).strftime("%Y-%m-%d")
+    return (t + timedelta(hours=futu_market(symbol)["shift"])).strftime("%Y-%m-%d")
 
 
 def futu_day_forecast(completed, target):
@@ -2568,7 +2601,7 @@ def futu_session_5m(symbol, day):
     for d in (day, nxt):
         bars += [b for b in gcs_read_json(archive_blob_name("futu_k_5m", symbol, d), []) if isinstance(b, dict)]
     out = {b["time_key"]: b for b in bars if b.get("time_key") and to_float(b.get("volume"))
-           and futu_session_of(b["time_key"]) == day}
+           and futu_session_of(b["time_key"], symbol) == day}
     return [out[k] for k in sorted(out)]
 
 
@@ -2667,16 +2700,17 @@ def futu_review_save(symbol, review):
 
 def futu_report(symbol, kind, now=None):
     """GitHub 排程呼叫：回 {'status': ok|skip, 'text': ...}。"""
-    now_hk = (now or datetime.now(timezone.utc)).astimezone(HK_TZ)
+    market = futu_market(symbol)                                      # [R127]
+    now_hk = (now or datetime.now(timezone.utc)).astimezone(market["tz"])
     hhmm = now_hk.strftime("%H:%M")
     rows = futu_series_rows(symbol)
     snap = read_futu_snapshot(symbol)
     contract = str(snap.get("source") or "").partition(":")[2] if isinstance(snap, dict) else ""
     if kind == "preopen":
-        day = now_hk.strftime("%Y-%m-%d")
-        if not futu_trading_day(day, gcs_read_json(FUTU_CALENDAR_FILE, {})):
+        day = futu_session_today(now, symbol) if not market["calendar"] else now_hk.strftime("%Y-%m-%d")
+        if not futu_trading_day(day, gcs_read_json(FUTU_CALENDAR_FILE, {}) if market["calendar"] else {}):
             return {"status": "skip", "reason": f"{day} 不是交易日"}
-        if PREOPEN_WINDOW[0] <= hhmm < PREOPEN_WINDOW[1]:
+        if market["preopen"][0] <= hhmm < market["preopen"][1]:
             fc = futu_forecast_record(symbol, day)
         else:                                       # 不在時段內只預覽、不記錄（前一天夜市可能未收）
             fc = futu_logged_forecast(symbol, day) or futu_day_forecast([r for r in rows if r["date"] < day], day)
@@ -2689,7 +2723,7 @@ def futu_report(symbol, kind, now=None):
                 "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now) + futu_paper_lines(symbol))}
     if kind not in REVIEW_KINDS:
         return {"status": "error", "reason": "report 只接受 preopen、noon、close、night"}
-    day = futu_session_today(now)
+    day = futu_session_today(now, symbol)
     bars = futu_session_5m(symbol, day)
     fc = futu_logged_forecast(symbol, day)
     log = gcs_read_json(futu_forecast_file(symbol), [])
@@ -2859,8 +2893,9 @@ def _peak_future_days(today, kind, calendar):
 def futu_peak_status(symbol, now=None):
     """今日／本週／本月的高位、低位是否已出現：三個策略的現況。數據不足 → None。"""
     now = now or datetime.now(timezone.utc)
-    now_hk = now.astimezone(HK_TZ)
-    today = futu_session_today(now)
+    market = futu_market(symbol)                                      # [R127]
+    now_hk = now.astimezone(market["tz"])
+    today = futu_session_today(now, symbol)
     rows = futu_series_rows(symbol)
     completed = [r for r in rows if r["date"] < today]
     if len(completed) < HAR_MIN_DAYS:
@@ -2871,10 +2906,10 @@ def futu_peak_status(symbol, now=None):
         return None
     fc_by_date = {completed[i]["date"]: v[0] for i, v in har.items() if i < len(completed)}
     fc_today, ref = nxt[0], completed[-1]["close"]
-    calendar = gcs_read_json(FUTU_CALENDAR_FILE, {})
+    calendar = gcs_read_json(FUTU_CALENDAR_FILE, {}) if market["calendar"] else {}
     bars = futu_session_5m(symbol, today)
     trading_today = bool(bars) or futu_trading_day(today, calendar)
-    ended = now_hk.strftime("%Y-%m-%d %H:%M") >= (datetime.strptime(today, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d 03:00")
+    ended = futu_session_end_passed(today, now, symbol)
     price = bars[-1]["close"] if bars else ref
     rem_today = 0.0 if (ended or not trading_today) else (peak_remaining_share(bars[-1]["time_key"]) if bars else 1.0)
     sigma_day = fc_today / 1.596 / ref
@@ -3534,7 +3569,7 @@ def _paper_session_bars(symbol, session, boot):
         alt = {}
         for d in (session, nxt):
             for b in gcs_read_json(archive_blob_name("futu_k_15m", symbol, d), []):
-                if isinstance(b, dict) and b.get("time_key") and to_float(b.get("volume")) and futu_session_of(b["time_key"]) == session:
+                if isinstance(b, dict) and b.get("time_key") and to_float(b.get("volume")) and futu_session_of(b["time_key"], symbol) == session:
                     alt[b["time_key"]] = b
         if len(alt) > len(bars):
             bars = [alt[k] for k in sorted(alt)]
@@ -3544,7 +3579,7 @@ def _paper_session_bars(symbol, session, boot):
 def futu_paper_update(symbol, now=None):
     """每包 5 分 K 到達時：把新 K 線跑過三條策略，狀態寫回 futu/paper/<代號>.json。回傳警告清單。"""
     try:
-        today = futu_session_today(now)
+        today = futu_session_today(now, symbol)
         prev = gcs_read_json(futu_paper_file(symbol), {})
         fresh = not (isinstance(prev, dict) and prev.get("version") == PAPER_VERSION)
         rows = []
@@ -3644,7 +3679,7 @@ def futu_range_data(symbol):
     symbol = _futu_text(symbol, 32).upper() or FUTU_RANGE_DEFAULT
     bars = gcs_read_json(futu_daily_file(symbol), [])
     bars = sorted((b for b in bars if isinstance(b, dict)), key=lambda b: str(b.get("time_key", "")))
-    today = futu_session_today()
+    today = futu_session_today(symbol=symbol)
     data = futu_range_stats(bars, today)
     snap = read_futu_snapshot(symbol)
     snap_bars = (snap.get("bars") or []) if isinstance(snap, dict) and not snap.get("error") else []
@@ -3711,9 +3746,9 @@ def futu_range_data(symbol):
     return data
 
 
-def handle_futu_range_get(req):
+def handle_futu_range_get(req, default_symbol=FUTU_RANGE_DEFAULT):
     if req.args.get("report"):                                   # [R99] 四個時點的預測／檢討
-        symbol = _futu_text(req.args.get("symbol"), 32).upper() or FUTU_RANGE_DEFAULT
+        symbol = _futu_text(req.args.get("symbol"), 32).upper() or default_symbol
         try:
             kind = req.args.get("report")
             if kind == "signals":                                    # [R101] 排程取未發的通知
@@ -3736,7 +3771,7 @@ def handle_futu_range_get(req):
             return body, (200 if result["status"] in ("ok", "skip", "empty") else 503), {"Content-Type": "text/plain; charset=utf-8"}
         return _json_response(result, 200 if result["status"] in ("ok", "skip", "empty") else 503)
     try:
-        data = futu_range_data(req.args.get("symbol"))
+        data = futu_range_data(req.args.get("symbol") or default_symbol)
     except StorageError as exc:
         print(f"⚠️ [Futu 波幅讀取失敗] {exc}", flush=True)
         if req.args.get("format") == "json":
@@ -4209,12 +4244,15 @@ def _fy_paper(data):
 
 def build_futu_range_page(data):
     rows, s, symbol = data["rows"], data["summary"], data["symbol"]
+    m = futu_market(symbol)                                           # [R127] 市場設定（恒指／ES）
     nav = (f"<div class='nav'><div class='brand'><div class='brand-logo'>{BRAND_LOGO_SVG}</div>"
-           f"<h1 class='page-title'>🌬️ 風揚陣・恒指即月期貨波幅</h1></div>{page_nav('futu_range', extra=[('?view=dashboard', '📡 回 Futu 行情')])}</div>")
+           f"<h1 class='page-title'>{m['title']}</h1></div>"
+           f"{page_nav(m['view'], extra=[('?view=dashboard', '📡 回 Futu 行情')] if m['intraday'] else [])}</div>")
     if not rows:
-        body = nav + ("<div class='section'>還沒有交易日 K 數據。本地執行 push_to_gcp.py 的 "
-                      f"<span class='mono'>--backfill {esc(symbol)}</span> 補歷史，之後每 5 分鐘會自動更新。</div>")
-        return html_page("風揚陣・即月期貨波幅", body, head_extra=FY_CSS)
+        hint = (f"本地執行 push_to_gcp.py 的 <span class='mono'>--backfill {esc(symbol)}</span> 補歷史，之後每 5 分鐘會自動更新。" if m["intraday"]
+                else "GitHub Actions 的 es_daily_push.yml 每個交易日收市後推入 yfinance 的 ES 連續合約日線；第一次要手動 dispatch 補歷史。")
+        body = nav + f"<div class='section'>還沒有交易日 K 數據。{hint}</div>"
+        return html_page(m["title"], body, head_extra=FY_CSS)
     latest = rows[-1]
     five = data.get("latest_5m") or {}
     age = data.get("latest_5m_age_sec")
@@ -4222,20 +4260,25 @@ def build_futu_range_page(data):
     peak = data.get("peak") or {}
     periods = peak.get("periods") or {}
     trading = data["partial"] and not stale
-    state = "🟢 交易中" if trading else ("⚠️ 推送可能已停止" if data["partial"] else "🌙 休市／未開市")
-    hero = (f"<div class='fy-hero'><span>💹 現價 <b>{_n(five.get('close') or peak.get('price'))}</b></span>"
-            f"<span>📄 合約 {esc(data.get('contract') or '—')}</span>"
-            f"<span>⏱️ {esc(countdown_text(age)) + ' 前更新' if age is not None else '—'}</span>"
+    if m["intraday"]:
+        state = "🟢 交易中" if trading else ("⚠️ 推送可能已停止" if data["partial"] else "🌙 休市／未開市")
+        upd = f"⏱️ {esc(countdown_text(age)) + ' 前更新' if age is not None else '—'}"
+    else:                                                             # [R127] 只有日線：顯示最新收市日
+        state = "📅 每日收市後更新（沒有日內 5 分 K）"
+        upd = f"🗂️ 最新收市日 {esc(latest['date'])}"
+    hero = (f"<div class='fy-hero'><span>💹 {'現價' if m['intraday'] else '最新收市'} <b>{_n(five.get('close') or peak.get('price') or latest['close'])}</b></span>"
+            f"<span>📄 合約 {esc(data.get('contract') or (latest['source'].partition(':')[2] if latest.get('source') else '—'))}</span>"
+            f"<span>{upd}</span>"
             f"<span>{state}</span></div>"
-            "<div class='fy-legend'>🅰️ 耗盡回落｜🅱️ 機率法｜🅲 時間點　✅ 已通知／已達成　⏳ 未到　❌ 通知後又破　"
-            "交易日 = 日市 09:15–16:30 ＋ 當晚夜市至翌日 03:00</div>")
+            f"<div class='fy-legend'>🅰️ 耗盡回落｜🅱️ 機率法｜🅲 時間點　✅ 已通知／已達成　⏳ 未到　❌ 通知後又破　{m['hours_zh']}</div>")
     fc = data.get("forecast")
     day_fc = fc if fc else None
     day_date = ((periods.get("day") or {}).get("first")
                 or (fc.get("date") if fc and fc.get("date") not in (None, "next") else data.get("next_day")))
     period_day = peak.get("today") or day_date                     # [R105] 本週／本月以目前交易日所在的那段為準
-    today_label = "日市＋當晚夜市" if fc and fc.get("date") not in (None, "next") else "下一個交易日（開市前預測）"
-    waiting = "⏳ 09:15 開市後開始判斷高低位是否已出現。" if "day" not in periods else None
+    today_label = m["session_zh"] if fc and fc.get("date") not in (None, "next") else "下一個交易日（開市前預測）"
+    waiting = (f"⏳ {m['open_zh']}開始判斷高低位是否已出現。" if m["intraday"] else
+               "ℹ️ ES 暫時只有日線，沒有日內「已走」與高低位訊號；預測、預計範圍與過去紀錄照常。") if "day" not in periods else None
     accs = data.get("accuracy") or {}
     cards = ("<div class='fy-grid'>"
              + _fy_period_card("day", periods.get("day"), day_fc, data.get("signals") or {}, today_label, waiting,
@@ -4282,7 +4325,11 @@ def build_futu_range_page(data):
         f"{fmt_num((r['range'] - r['forecast']) if r.get('forecast') else None, '{:+,.0f}')}</td>"
         f"<td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
         for r in reversed(rows))
-    body = nav + hero + cards + reviews + _fy_paper(data) + _fy_money(data) + f"""
+    extras = (_fy_paper(data) + _fy_money(data)) if m["intraday"] else (                 # [R127] ES 沒有 5 分 K
+        "<div class='section-header'>📒 紙上交易／💰 四個方向</div>"
+        "<div class='fy-legend'>ES 暫時只有每日收市後的日線，紙上交易、高低位訊號與期權方向要等有 5 分 K 推送才開；"
+        "研究結果見 research/us_futures/（NQ 差價合約 4.2 年：蛇蟠陣無效，波幅預測比恒指準）。</div>")
+    body = nav + hero + cards + reviews + extras + f"""
     <div class='section-header'>📊 過去一年</div>
     {stats}
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
@@ -4295,7 +4342,7 @@ def build_futu_range_page(data):
     </details>
     <details class='fy-more'><summary>ℹ️ 怎樣算的</summary>
       <div class='fy-note' style='font-size:13px;'>
-        <p>📅 <b>交易日</b> = 香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00（跟富途日 K 不同）。
+        <p>📅 <b>交易日</b> = {m['day_zh']}。
         即月期貨在最後交易日當天轉下月，不做價差調整。</p>
         <p>🔮 <b>波幅預測（HAR）</b>：用前 1 天、前 5 天、前 22 天的波幅預測今天，每天只用之前的數據重新計算；預計範圍（十次有八次落在這裡，即統計上的 80% 區間）來自過去的預測誤差。
         高位 ≈ 昨收 + 0.43 × 預測波幅，低位 ≈ 昨收 − 0.39 × 預測波幅。週、月 = 第一天預測 × √交易日數（已按過去數據校準）。</p>
@@ -5367,6 +5414,7 @@ PAGE_LINKS = [
     ("jinnang_sheet", "🗒️ 錦囊執行單"),
     ("jinnang_tracker", "✅ 錦囊九十筆"),
     ("futu_range", "🌬️ 風揚陣波幅"),                       # [R105] 每頁頂都能到風揚陣
+    ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
     (BAZHENTU_URL, "⚔️ 八陣圖指令台"),
     ("dashboard", "⚙️ 控制台"),
 ]
@@ -7114,6 +7162,8 @@ def handle_get(req):
         return handle_archive_api_get(req)
     if view in ("futu_range", "hsi_range"):                      # [R97] 即月期貨一年波幅與最新 OHLC
         return handle_futu_range_get(req)
+    if view == "es_range":                                       # [R127] ES 標普 500 期貨，同一套程式
+        return handle_futu_range_get(req, default_symbol=ES_SYMBOL)
     if view == "info":
         return build_info_page()
     if view == "reset":
