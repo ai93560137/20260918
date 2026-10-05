@@ -104,6 +104,7 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-05 — [R121] 過去 7 次表：實際高／實際低落在範圍內 → 綠字加 ✓，跑出範圍照舊紅字加 ↑／↓；拿走「結果」欄（日、週、月）。
 #   * 2026-10-05 — [R120] 本週／本月卡與今日卡同一套項目：加預測高位／低位與預計範圍（週、月的（高−段首昨收）÷R、（段首昨收−低）÷R
 #     比例逐段前推校準，PERIOD_CAL_MIN 段後才評分），過去 7 次表同樣列預測高／實際高／預測低／實際低，✅ = 兩邊都落在範圍。
 #   * New GCS objects (legacy files are left untouched):
@@ -3811,7 +3812,6 @@ def _fy_history(kind, acc):
     if not acc or not acc.get("n"):
         return ""
     unit = {"day": "天", "week": "週", "month": "個月"}[kind]
-    ok = lambda v: "—" if v is None else ("✅" if v else "❌")
     label = {"day": "交易日", "week": "週", "month": "月"}[kind]
     body = ""
     if acc.get("hit_high_n") and all(r.get("high") is not None for r in acc["recent"]):   # [R120] 日、週、月同一格式
@@ -3822,20 +3822,20 @@ def _fy_history(kind, acc):
                 f"📏 各自計：高位 {acc.get('hit_high_rate')}%・低位 {acc.get('hit_low_rate')}%・"
                 f"{rng_zh} {acc.get('hit_range_rate')}%（{acc.get('hit_range_n')} {unit}）")
 
-        def side(pred, lo, hi, actual):
-            mark = " ↑" if actual > hi else (" ↓" if actual < lo else "")
+        def side(pred, lo, hi, actual):                               # [R121] 中 → 綠字 ✓；跑出範圍 → 紅字 ↑／↓
+            mark = " ↑" if actual > hi else (" ↓" if actual < lo else " ✓")
             return (f"<td>{_n(pred)}<br><span class='fy-rng'>{_n(lo)}–{_n(hi)}</span></td>"
-                    f"<td><b class='{'neg' if mark else ''}'>{_n(actual)}{mark}</b></td>")
+                    f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(actual)}{mark}</b></td>")
 
         head = (f"<tr><th>{label}</th><th>預測高<br><span class='fy-rng'>預計範圍</span></th><th>實際高</th>"
-                "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th><th>結果</th></tr>")
+                "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th></tr>")
         for r in reversed(acc["recent"]):
             body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
                      + side(r["high"], r["high_lo"], r["high_hi"], r["actual_high"])
-                     + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + f"<td>{ok(r['hit'])}</td></tr>")
+                     + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + "</tr>")
         legend = (f"<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，{HL_BAND_ZH}（每邊約 96%）。"
-                  "✅ = 實際高位和低位都落在各自的預計範圍；任何一邊跑出範圍 = ❌"
-                  "（紅字：↑ 高過上限、↓ 低過下限）。兩邊同時中約九成屬正常"
+                  "綠字 ✓ = 實際落在預計範圍；紅字 = 跑出範圍（↑ 高過上限、↓ 低過下限）。"
+                  "「高、低都落在預計範圍」= 同一天兩邊都是綠字。兩邊同時中約九成屬正常"
                   + ("；範圍比 10-05 前寬約七成（R119）。" if kind == "day" else "；週、月的段數少，比率會較波動。") + "</div>")
         note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。" if kind == "day" else
                 "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
@@ -3845,14 +3845,15 @@ def _fy_history(kind, acc):
                 f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次落在範圍內・預測與實際平均差 {_n(acc['mae'])} 點"
                 f"（整體{'預測偏低' if acc['bias'] > 0 else '預測偏高'} {_n(abs(acc['bias']))} 點）")
         head = (f"<tr><th>{label}</th><th>預測<br><span class='fy-rng'>預計範圍</span></th>"
-                "<th>實際</th><th>差距</th><th>結果</th></tr>")
+                "<th>實際</th><th>差距</th></tr>")
         for r in reversed(acc["recent"]):
+            mark = " ↑" if r["actual"] > r["hi"] else (" ↓" if r["actual"] < r["lo"] else " ✓")     # [R121]
             body += (f"<tr><td>{esc(_fy_hist_label(kind, r))}</td>"
                      f"<td>{_n(r['forecast'])}<br><span class='fy-rng'>{_n(r['lo'])}–{_n(r['hi'])}</span></td>"
-                     f"<td><b>{_n(r['actual'])}</b></td>"
-                     f"<td class='{'pos' if r['err'] >= 0 else 'neg'}'>{r['err']:+,.0f}</td><td>{ok(r['hit'])}</td></tr>")
+                     f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(r['actual'])}{mark}</b></td>"
+                     f"<td class='{'pos' if r['err'] >= 0 else 'neg'}'>{r['err']:+,.0f}</td></tr>")
         legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次實際波幅會落在這裡。"
-                  "✅ = 實際落在範圍內；❌ = 跑出範圍（比上限大或比下限細都算）。差距 = 實際 − 預測。</div>")
+                  "綠字 ✓ = 實際落在範圍內；紅字 = 跑出範圍（↑ 比上限大、↓ 比下限細）。差距 = 實際 − 預測。</div>")
         note = "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。"
     return (f"<div class='fy-hist {'day' if '實際高' in head else ''}'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
             f"<table>{head}{body}</table>{legend}<div class='fy-note'>{note}</div></div>")
