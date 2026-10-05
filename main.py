@@ -104,6 +104,8 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-05 — [R125] 過去 7 次表：實際高／低下面的差距加百分比（差距 ÷ 預測）；綠字 ✓ 改為「相差 1% 以內」才給，
+#     超過 1% 紅字（↑ 實際較高、↓ 較低）；統計行加「高、低都在 1% 內」的比率（HL_OK_PCT）。預計範圍與落在範圍的統計不變。
 #   * 2026-10-05 — [R124] 本週／本月卡加「🔄 最新預測」（邊走邊改）：已出現的高／低 ＋ 剩餘日子的預測（今日 R̂ × √剩餘日數 × 過去比例），
 #     比例用過去各段每一天的「（之後的高 − 當日收）÷ 剩餘預測」逐段前推校準；段首的原始預測照舊留在表裡計分。
 #     更新後範圍的分位 ROLL_BAND_Q（週 2%、月 5%）。真實數據（逐段前推，走到一半時評分）：週範圍寬 2,114 → 867 點、高低都中 97%；
@@ -2433,6 +2435,7 @@ HL_MIN_DAYS = 120                               # 估高低位比例至少要這
 HL_BAND_Q = 0.02                                # [R119] 高位／低位預計範圍的分位（2%／98% → 每邊約 96%、兩邊同時約 92%）
 HL_BAND_ZH = "二十次有十九次落在這裡"            # 白話（每邊）
 HL_BAND_Q_PERIOD = 0.01                         # [R123] 本週／本月用 1%／99% 分位（段數少，約等於歷史極值）
+HL_OK_PCT = 1.0                                 # [R125] 實際與預測相差這個百分比以內才算 ✓
 
 
 def _hl_band_q(kind):
@@ -3072,6 +3075,12 @@ def _acc_summary(recs, extra=()):
         vals = [abs(r[key]) for r in done if r.get(key) is not None]
         if vals:
             out[key.replace("err", "mae")] = round(sum(vals) / len(vals), 1)
+    hl = [r for r in done if r.get("err_high") is not None and r.get("high") and r.get("low")]
+    if hl:                                                         # [R125] 高、低都在 1% 內的比率
+        ok = [abs(r["err_high"]) / r["high"] * 100 <= HL_OK_PCT and abs(r["err_low"]) / r["low"] * 100 <= HL_OK_PCT for r in hl]
+        out["within_n"] = len(ok); out["within_rate"] = round(sum(ok) / len(ok) * 100)
+        out["recent_within"] = sum(1 for r in out["recent"] if r.get("err_high") is not None and r.get("high")
+                                   and abs(r["err_high"]) / r["high"] * 100 <= HL_OK_PCT and abs(r["err_low"]) / r["low"] * 100 <= HL_OK_PCT)
     return out
 
 
@@ -3893,18 +3902,20 @@ def _fy_history(kind, acc):
     body = ""
     if acc.get("hit_high_n") and all(r.get("high") is not None for r in acc["recent"]):   # [R120] 日、週、月同一格式
         rng_zh = {"day": "全日波幅", "week": "全週波幅", "month": "全月波幅"}[kind]
-        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次）<br>"
-                f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次・預測高位平均差 {_n(acc.get('mae_high'))} 點、"
-                f"低位 {_n(acc.get('mae_low'))} 點<br>"
+        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次）"
+                + (f"・<b>都在 {HL_OK_PCT:g}% 內：{acc['within_rate']}%</b>" if acc.get("within_rate") is not None else "") + "<br>"
+                f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次落在範圍、{acc.get('recent_within', 0)} 次在 {HL_OK_PCT:g}% 內・"
+                f"預測高位平均差 {_n(acc.get('mae_high'))} 點、低位 {_n(acc.get('mae_low'))} 點<br>"
                 f"📏 各自計：高位 {acc.get('hit_high_rate')}%・低位 {acc.get('hit_low_rate')}%・"
                 f"{rng_zh} {acc.get('hit_range_rate')}%（{acc.get('hit_range_n')} {unit}）")
 
-        def side(pred, lo, hi, actual):                               # [R121] 中 → 綠字 ✓；跑出範圍 → 紅字 ↑／↓
-            mark = " ↑" if actual > hi else (" ↓" if actual < lo else " ✓")
+        def side(pred, lo, hi, actual):                               # [R125] 相差 1% 內 → 綠字 ✓；超過 → 紅字 ↑／↓
             diff = actual - pred                                          # [R122] 實際 − 預測：高 → 綠、低 → 紅
+            pct = diff / pred * 100 if pred else 0.0
+            mark = " ✓" if abs(pct) <= HL_OK_PCT else (" ↑" if diff > 0 else " ↓")
             return (f"<td>{_n(pred)}<br><span class='fy-rng'>{_n(lo)}–{_n(hi)}</span></td>"
                     f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(actual)}{mark}</b>"
-                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}</span></td>")
+                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}（{pct:+.2f}%）</span></td>")
 
         head = (f"<tr><th>{label}</th><th>預測高<br><span class='fy-rng'>預計範圍</span></th><th>實際高</th>"
                 "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th></tr>")
@@ -3914,9 +3925,9 @@ def _fy_history(kind, acc):
                      + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + "</tr>")
         band_zh = f"{HL_BAND_ZH}（每邊約 96%）" if kind == "day" else "按過去各段的極端比例定（1%／99% 分位，每邊約 95%）"
         legend = (f"<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，{band_zh}。"
-                  "綠字 ✓ = 實際落在預計範圍；紅字 = 跑出範圍（↑ 高過上限、↓ 低過下限）。"
-                  "實際下面的小字 = 實際 − 預測（綠 = 實際比預測高、紅 = 比預測低）。"
-                  "「高、低都落在預計範圍」= 同一天兩邊都是綠字。兩邊同時中約九成屬正常"
+                  f"綠字 ✓ = 實際與預測相差 {HL_OK_PCT:g}% 以內；紅字 = 相差超過 {HL_OK_PCT:g}%（↑ 實際較高、↓ 實際較低）。"
+                  "實際下面的小字 = 實際 − 預測（點數與百分比；綠 = 實際比預測高、紅 = 比預測低）。"
+                  "「落在預計範圍」另計：兩邊同時落在範圍約九成屬正常"
                   + ("；範圍比 10-05 前寬約七成（R119）。" if kind == "day" else "；週、月的段數少，比率會較波動。") + "</div>")
         note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。" if kind == "day" else
                 "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
