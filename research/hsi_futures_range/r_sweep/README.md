@@ -49,3 +49,5 @@ python3 research/hsi_futures_range/r_sweep.py --source futu [--json 15 分 K 快
 python3 research/hsi_futures_range/r_sweep.py --source hk50
 python3 research/hsi_futures_range/r_sweep.py --source futu|hk50 --verify
 ```
+
+2026-10-04 補：R 格加 0.25／0.5／0.75（高勝率小 R）；`--q 0.9` 用八成日範圍邊止蝕，輸出到 `r_sweep/<來源>_q90/`（獨立核對只支援 0.95）。

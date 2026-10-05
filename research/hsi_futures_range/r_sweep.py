@@ -23,7 +23,7 @@ import hl_signal as hs                                   # noqa: E402
 import hl_both as hb                                     # noqa: E402
 import hk50_cfd                                          # noqa: E402
 
-RRS = (1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 8.0, 0.0)
+RRS = (0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 8.0, 0.0)      # 用戶 2026-10-04：高勝率＋小 R（1:0.5）也可以正期望值
 STRATS = ("A_S", "B_S", "A_F", "B_F")
 SRC_ZH = {"futu": "恒指即月期貨（Futu）", "hk50": "HK50 差價合約（蛇蟠陣分支）"}
 
@@ -38,7 +38,7 @@ def load(source, path):
     return sw.load(path)
 
 
-def run(source, bars, daily_k, cost):
+def run(source, bars, daily_k, cost, q=0.95):
     days, sdays, before, flips, snake_trades, dl, wl = sw.build(bars, daily_k, cost)
     rows, trig = hs.signals(days, dl)
     res = {}
@@ -46,13 +46,13 @@ def run(source, bars, daily_k, cost):
         k, dr = strat.split("_")
         for rr in RRS:
             res[f"{strat}_{rr_tag(rr)}"] = sw.add_sessions(
-                hs.simulate(days, dl, wl, before, flips, trig[k], dr, 0.95, rr, cost), days)
+                hs.simulate(days, dl, wl, before, flips, trig[k], dr, q, rr, cost), days)
     for rr in RRS:
-        res[f"S0_{rr_tag(rr)}"] = sw.add_sessions(hb.simulate(days, dl, wl, before, flips, "S0", 0.95, rr, cost), days)
+        res[f"S0_{rr_tag(rr)}"] = sw.add_sessions(hb.simulate(days, dl, wl, before, flips, "S0", q, rr, cost), days)
     return days, before, flips, snake_trades, dl, wl, rows, trig, res
 
 
-def write(out, source, bars, daily_k, cost, days, flips, snake_trades, dl, wl, rows, trig, res):
+def write(out, source, bars, daily_k, cost, days, flips, snake_trades, dl, wl, rows, trig, res, q=0.95):
     (out / "trades").mkdir(parents=True, exist_ok=True)
     for name, trs in res.items():
         sw.write_ledger(out / "trades" / f"{name}.csv", name, trs)
@@ -71,14 +71,14 @@ def write(out, source, bars, daily_k, cost, days, flips, snake_trades, dl, wl, r
                 "input": {"bars": len(bars), "bars_sha256": sw.sha256_json(sorted(bars, key=lambda b: b["time_key"])),
                           "daily": len(daily_k), "daily_sha256": sw.sha256_json(sorted(daily_k, key=lambda b: str(b["time_key"]))),
                           "first_bar": bars[0]["time_key"], "last_bar": bars[-1]["time_key"]},
-                "params": {"cost_per_round_trip": cost, "stop_band_q": 0.95, "rr_grid": list(RRS)},
+                "params": {"cost_per_round_trip": cost, "stop_band_q": q, "rr_grid": list(RRS)},
                 "trigger_days": {k: len(v) for k, v in trig.items()},
                 "configs": {m: {"trades": len(t), "net_total": round(sum(x["net"] for x in t), 2)} for m, t in res.items()}}
     json.dump(manifest, open(out / "manifest.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     return manifest
 
 
-def report(source, days, snake_trades, res, manifest, cost):
+def report(source, days, snake_trades, res, manifest, cost, q=0.95):
     start = min(t["entry_date"] for trs in res.values() for t in trs)
     tradable = [d["date"] for d in days if d["date"] >= start]
     mid = tradable[len(tradable) // 2]
@@ -86,7 +86,7 @@ def report(source, days, snake_trades, res, manifest, cost):
     years = sorted({t["entry_date"][:4] for trs in res.values() for t in trs})
     L = [f"# R 測試：{SRC_ZH[source]}", "",
          f"- 期間：{start} 至 {days[-1]['date']}（{len(tradable)} 個交易日；前半段到 {mid} 前）；成本每筆 {cost:g} 點；1 張",
-         "- 規則同 hl_signal（九成日範圍止蝕、固定；可持倉多日；S 跟蛇反手平倉）；只改止賺倍數 R（R無 = 不設目標）",
+         f"- 規則同 hl_signal（{'九成' if q == 0.95 else '八成'}日範圍止蝕 q={q}、固定；可持倉多日；S 跟蛇反手平倉）；只改止賺倍數 R（R無 = 不設目標）",
          f"- 輸入 SHA-256：15 分 K `{manifest['input']['bars_sha256'][:16]}…`（{manifest['input']['first_bar']} → {manifest['input']['last_bar']}）",
          f"- 觸發日：" + "、".join(f"{k} {v} 天" for k, v in manifest["trigger_days"].items()),
          "", f"**蛇蟠陣本身（同期）**：{len(sp)} 筆、每筆 {sp.mean():+.1f} 點、勝率 {(sp > 0).mean():.0%}、"
@@ -116,15 +116,16 @@ def main():
     ap.add_argument("--json", help="futu：15 分 K 快取 {bars, daily}")
     ap.add_argument("--cost", type=float, default=3.0)
     ap.add_argument("--verify", action="store_true")
+    ap.add_argument("--q", type=float, default=0.95, help="止蝕用哪個日範圍邊（0.95 九成、0.9 八成）；非 0.95 輸出到 r_sweep/<來源>_q<q>/，獨立核對只支援 0.95")
     a = ap.parse_args()
-    out = HERE / "r_sweep" / a.source
+    out = HERE / "r_sweep" / (a.source if a.q == 0.95 else f"{a.source}_q{int(round(a.q * 100))}")
     bars, daily_k = load(a.source, a.json)
     if a.verify:
         import snake_week_verify as v
         sys.exit(v.verify(bars, daily_k, out))
-    days, before, flips, snake_trades, dl, wl, rows, trig, res = run(a.source, bars, daily_k, a.cost)
-    manifest = write(out, a.source, bars, daily_k, a.cost, days, flips, snake_trades, dl, wl, rows, trig, res)
-    text = report(a.source, days, snake_trades, res, manifest, a.cost)
+    days, before, flips, snake_trades, dl, wl, rows, trig, res = run(a.source, bars, daily_k, a.cost, a.q)
+    manifest = write(out, a.source, bars, daily_k, a.cost, days, flips, snake_trades, dl, wl, rows, trig, res, a.q)
+    text = report(a.source, days, snake_trades, res, manifest, a.cost, a.q)
     (out / "REPORT.md").write_text(text, encoding="utf-8")
     print(text)
 

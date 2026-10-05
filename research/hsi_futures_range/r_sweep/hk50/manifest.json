@@ -1,8 +1,8 @@
 {
- "generated_utc": "2026-10-04 06:50:12",
- "git_head": "98b274d50c54953ab5d7e6d66b9951c0a86b2686",
+ "generated_utc": "2026-10-04 09:29:27",
+ "git_head": "8d8cab72cf7dceccd3fed09deb3813da44e2f749",
  "source": "hk50",
- "script_sha256": "cbf69e3dd4addeecb0ee86c434a1c977ef1bff16760a46e04a191a84923fb37a",
+ "script_sha256": "18d766a6b479027ed2cf1c5dbeb112fdde9cd07b6d34f3ba5b0f6c3bf0c77301",
  "engine_sha256": {
   "snake_week.py": "f47f221d39c231d4dd6b1d37695ae835b1882d1c319e989fda4bb270d29df66c",
   "high_low_in.py": "6839f590cb4cf3f366a835c5321e0253e764fdd365c7b37fda14762d0364e6d2",
@@ -22,6 +22,9 @@
   "cost_per_round_trip": 3.0,
   "stop_band_q": 0.95,
   "rr_grid": [
+   0.25,
+   0.5,
+   0.75,
    1.0,
    1.5,
    2.0,
@@ -38,6 +41,18 @@
   "C": 43
  },
  "configs": {
+  "A_S_R0.25": {
+   "trades": 152,
+   "net_total": 2079.99
+  },
+  "A_S_R0.5": {
+   "trades": 131,
+   "net_total": 794.79
+  },
+  "A_S_R0.75": {
+   "trades": 117,
+   "net_total": -1861.64
+  },
   "A_S_R1": {
    "trades": 114,
    "net_total": 442.71
@@ -69,6 +84,18 @@
   "A_S_R無": {
    "trades": 80,
    "net_total": 5828.98
+  },
+  "B_S_R0.25": {
+   "trades": 289,
+   "net_total": -3355.18
+  },
+  "B_S_R0.5": {
+   "trades": 238,
+   "net_total": 809.69
+  },
+  "B_S_R0.75": {
+   "trades": 205,
+   "net_total": 81.53
   },
   "B_S_R1": {
    "trades": 187,
@@ -102,6 +129,18 @@
    "trades": 130,
    "net_total": 5609.07
   },
+  "A_F_R0.25": {
+   "trades": 152,
+   "net_total": -5091.28
+  },
+  "A_F_R0.5": {
+   "trades": 135,
+   "net_total": -4318.85
+  },
+  "A_F_R0.75": {
+   "trades": 112,
+   "net_total": -12003.11
+  },
   "A_F_R1": {
    "trades": 101,
    "net_total": -15524.09
@@ -134,6 +173,18 @@
    "trades": 36,
    "net_total": -9865.79
   },
+  "B_F_R0.25": {
+   "trades": 317,
+   "net_total": -9131.62
+  },
+  "B_F_R0.5": {
+   "trades": 253,
+   "net_total": 2227.89
+  },
+  "B_F_R0.75": {
+   "trades": 216,
+   "net_total": 4960.11
+  },
   "B_F_R1": {
    "trades": 185,
    "net_total": 1087.24
@@ -165,6 +216,18 @@
   "B_F_R無": {
    "trades": 12,
    "net_total": -69.18
+  },
+  "S0_R0.25": {
+   "trades": 543,
+   "net_total": -2069.26
+  },
+  "S0_R0.5": {
+   "trades": 391,
+   "net_total": 5652.75
+  },
+  "S0_R0.75": {
+   "trades": 308,
+   "net_total": 3424.07
   },
   "S0_R1": {
    "trades": 255,

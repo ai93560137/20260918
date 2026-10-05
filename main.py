@@ -97,6 +97,15 @@
 #     每包 K 線到達時記入市／出場，狀態與逐筆紀錄存 futu/paper/<代號>.json，通知經 report=signals 一起發 Telegram；
 #     波幅頁加「📒 紙上交易」區，?view=futu_range&report=paper 給統計與逐筆；開市前預測多記九成日範圍邊（edge95）。
 #     只是紙上紀錄，不接下單。
+#   * 2026-10-04 — [R117] 方向一卡改用真實數據結論（港交所週／月期權結算價與 IV，research/hsi_futures_range/vrp_real.py）。只改顯示文字。
+#   * 2026-10-04 — [R118] 📒 紙上交易加「波幅開閘」：今日 R̂ ÷ 過去 250 日 R̂ 中位 ≥ 1.2 就開閘，開閘日入市記 2 張、其餘 1 張，
+#     固定 1 張與開閘雙倍兩條並記（research/hsi_futures_range/vol_gate.py：🅱️／🅰️ 的利潤集中在開閘日入市的交易，蛇沒有）。開市前預測多記
+#     rhat_med250／gate_ratio／gate_open；預測、四次報告、入市通知與波幅頁都顯示今日開閘與否。
+#   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
+#     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
+#     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-05 — [R120] 本週／本月卡與今日卡同一套項目：加預測高位／低位與預計範圍（週、月的（高−段首昨收）÷R、（段首昨收−低）÷R
+#     比例逐段前推校準，PERIOD_CAL_MIN 段後才評分），過去 7 次表同樣列預測高／實際高／預測低／實際低，✅ = 兩邊都落在範圍。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2412,6 +2421,8 @@ def futu_forecast_track(log, rows):
 
 # ---- 高低位預測與四個時點的檢討  [R99] ----------------------------------------
 HL_MIN_DAYS = 120                               # 估高低位比例至少要這麼多天的逐日前推預測
+HL_BAND_Q = 0.02                                # [R119] 高位／低位預計範圍的分位（2%／98% → 每邊約 96%、兩邊同時約 92%）
+HL_BAND_ZH = "二十次有十九次落在這裡"            # 白話（每邊）
 FUTU_CALENDAR_FILE = "futu/calendar/HK.json"
 FUTU_REVIEW_DIR = "futu/reviews"
 FUTU_REVIEW_KEEP = 2000
@@ -2464,7 +2475,7 @@ def futu_session_of(time_key):
 def futu_day_forecast(completed, target):
     """completed：target 之前已完結的交易日。回傳波幅與高位／低位預測；數據不足 → None。
     高位 = 昨收 + a×R̂，低位 = 昨收 − b×R̂；a、b = 過去每天（高−昨收）÷R̂、（昨收−低）÷R̂ 的中位數（逐日前推），
-    80% 區間取同一組比例的 10%／90% 分位。回測見 research/hsi_futures_range/RESULTS.md。"""
+    預計範圍取同一組比例的 HL_BAND_Q／1−HL_BAND_Q 分位（R119 起 2%／98%）。回測見 research/hsi_futures_range/RESULTS.md。"""
     har = har_forecasts(completed)
     nxt = har.get(len(completed))
     if not nxt:
@@ -2473,6 +2484,10 @@ def futu_day_forecast(completed, target):
     ref = completed[-1]["close"]
     out = {"date": target, "range": rng, "lo": lo, "hi": hi, "ref_close": ref,
            "model": "HAR(1,5,22) 對數", "days_used": len(completed)}
+    past = [har[i][0] for i in range(max(0, len(completed) - PAPER_GATE_LOOKBACK), len(completed)) if i in har]
+    if len(past) >= PAPER_GATE_MIN_DAYS:                              # [R118] 波幅開閘：今日 R̂ ÷ 過去 250 日 R̂ 中位
+        med = _quantile(sorted(past), 0.5)
+        out.update(rhat_med250=round(med, 1), gate_ratio=round(rng / med, 3), gate_open=bool(rng >= PAPER_GATE_TH * med))
     ups, downs = [], []
     for i, row in enumerate(completed):
         f = har.get(i)
@@ -2481,9 +2496,10 @@ def futu_day_forecast(completed, target):
             downs.append((row["prev_close"] - row["low"]) / f[0])
     if len(ups) >= HL_MIN_DAYS:
         su, sd = sorted(ups), sorted(downs)
-        out.update(high=round(ref + _quantile(su, 0.5) * rng), high_lo=round(ref + _quantile(su, 0.1) * rng),
-                   high_hi=round(ref + _quantile(su, 0.9) * rng), low=round(ref - _quantile(sd, 0.5) * rng),
-                   low_lo=round(ref - _quantile(sd, 0.9) * rng), low_hi=round(ref - _quantile(sd, 0.1) * rng),
+        q = HL_BAND_Q
+        out.update(high=round(ref + _quantile(su, 0.5) * rng), high_lo=round(ref + _quantile(su, q) * rng),
+                   high_hi=round(ref + _quantile(su, 1 - q) * rng), low=round(ref - _quantile(sd, 0.5) * rng),
+                   low_lo=round(ref - _quantile(sd, 1 - q) * rng), low_hi=round(ref - _quantile(sd, q) * rng), band_q=q,
                    high_edge95=round(ref + _quantile(su, 0.95) * rng),            # [R116] 九成日範圍邊（紙上交易止蝕）
                    low_edge95=round(ref - _quantile(sd, 0.95) * rng))
     return out
@@ -2547,17 +2563,17 @@ def _ohlc(bars):
 
 
 def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
-    """高位（upper=True）／低位的比較句。final：全日收市，報誤差與是否在 80% 區間。"""
+    """高位（upper=True）／低位的比較句。final：全日收市，報誤差與是否在預計範圍。"""
     if final:
         ok = band_lo <= actual <= band_hi
         return (f"{name} {actual:,.0f}，預測 {fc:,.0f}（誤差 {actual - fc:+,.0f}），"
-                f"{'✅ 在' if ok else '❌ 不在'} 80% 區間 {band_lo:,.0f}–{band_hi:,.0f}")
+                f"{'✅ 在' if ok else '❌ 不在'} 預計範圍 {band_lo:,.0f}–{band_hi:,.0f}")
     beyond = actual >= fc if upper else actual <= fc
     edge = band_hi if upper else band_lo
     out_of_band = actual > band_hi if upper else actual < band_lo
     if beyond:
         return (f"{name} {actual:,.0f}：已{'越過' if upper else '跌穿'}預測 {fc:,.0f}"
-                + (f"，並超出 80% 區間（{edge:,.0f}）" if out_of_band else f"（80% 區間到 {edge:,.0f}）"))
+                + (f"，並超出預計範圍（{edge:,.0f}）" if out_of_band else f"（預計範圍到 {edge:,.0f}）"))
     return f"{name} {actual:,.0f}：未到預測 {fc:,.0f}（差 {abs(fc - actual):,.0f} 點）"
 
 
@@ -2565,9 +2581,11 @@ def futu_preopen_text(fc, day, contract, summary, peak=None):
     lines = [f"📏{FENGYANG_TAG}恒指即月期貨 {_day_label(day)} 開市前預測",
              f"參考：上個交易日收市 {fc['ref_close']:,.0f}" + (f"（{contract}）" if contract else ""),
              f"全日波幅（日市＋夜市）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
+    if fc.get("gate_ratio") is not None:                                # [R118]
+        lines.append(f"波幅開閘：{_paper_gate_text(fc)}（過去 {PAPER_GATE_LOOKBACK} 日 R̂ 中位 {fc['rhat_med250']:,.0f} 點；紙上交易今日張數）")
     if fc.get("high") is not None:
-        lines += [f"高位：約 {fc['high']:,.0f}（80%：{fc['high_lo']:,.0f}–{fc['high_hi']:,.0f}）",
-                  f"低位：約 {fc['low']:,.0f}（80%：{fc['low_lo']:,.0f}–{fc['low_hi']:,.0f}）"]
+        lines += [f"高位：約 {fc['high']:,.0f}（預計範圍 {fc['high_lo']:,.0f}–{fc['high_hi']:,.0f}）",
+                  f"低位：約 {fc['low']:,.0f}（預計範圍 {fc['low_lo']:,.0f}–{fc['low_hi']:,.0f}，{HL_BAND_ZH}）"]
     if summary:
         lines.append(f"近 20 日平均波幅 {summary.get('avg_range_20') or 0:,.0f} 點；"
                      f"模型過去一年平均誤差 ±{summary.get('bt_mae') or 0:,.0f} 點")
@@ -3053,15 +3071,16 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
         rec = {"key": row["date"], "forecast": f[0], "lo": f[1], "hi": f[2], "live": False}
         if len(ups) >= HL_MIN_DAYS:
             ref = row["prev_close"]
+            q = HL_BAND_Q
             rec.update(high=ref + _quantile(ups, 0.5) * f[0], low=ref - _quantile(downs, 0.5) * f[0],
-                       high_lo=ref + _quantile(ups, 0.1) * f[0], high_hi=ref + _quantile(ups, 0.9) * f[0],
-                       low_lo=ref - _quantile(downs, 0.9) * f[0], low_hi=ref - _quantile(downs, 0.1) * f[0])
+                       high_lo=ref + _quantile(ups, q) * f[0], high_hi=ref + _quantile(ups, 1 - q) * f[0],
+                       low_lo=ref - _quantile(downs, 1 - q) * f[0], low_hi=ref - _quantile(downs, q) * f[0])
         bisect.insort(ups, (row["high"] - row["prev_close"]) / f[0])
         bisect.insort(downs, (row["prev_close"] - row["low"]) / f[0])
         e = logged.get(row["date"])
         if e and None not in (e.get("lo"), e.get("hi")):          # 當天真正發出的預測
             rec.update(forecast=e["range"], lo=e["lo"], hi=e["hi"], live=True)
-            if e.get("high_lo") is not None:
+            if e.get("high_lo") is not None and e.get("band_q") == HL_BAND_Q:     # [R119] 舊紀錄（80% 範圍）改用重算的
                 rec.update(high=e.get("high"), low=e.get("low"), high_lo=e["high_lo"], high_hi=e["high_hi"],
                            low_lo=e["low_lo"], low_hi=e["low_hi"])
         actual = row["range"]
@@ -3083,7 +3102,7 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
         groups = {}
         for i, row in enumerate(completed):
             groups.setdefault(_peak_key(row["date"], kind), []).append(i)
-        recs, ratios = [], []
+        recs, ratios, pups, pdowns = [], [], [], []
         for key, idx in groups.items():
             if key == open_keys.get(kind):
                 continue
@@ -3091,18 +3110,37 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
             if not f:
                 continue
             big_r = f[0] * math.sqrt(len(idx))
-            actual = max(completed[i]["high"] for i in idx) - min(completed[i]["low"] for i in idx)
+            p_high, p_low = max(completed[i]["high"] for i in idx), min(completed[i]["low"] for i in idx)
+            actual = p_high - p_low
+            ref = completed[idx[0]].get("prev_close")                  # [R120] 段首的昨收
             rec = {"key": key, "first": completed[idx[0]]["date"], "sessions": len(idx), "R": round(big_r, 1),
-                   "actual": round(actual, 1), "hit": None}
+                   "actual": round(actual, 1), "actual_high": p_high, "actual_low": p_low, "hit": None, "hit_range": None}
             if len(ratios) >= PERIOD_CAL_MIN:
                 srt = sorted(ratios)
                 rec.update(forecast=round(big_r * _quantile(srt, 0.5)), lo=round(big_r * _quantile(srt, 0.1)),
                            hi=round(big_r * _quantile(srt, 0.9)))
-                rec.update(err=round(actual - rec["forecast"], 1), hit=rec["lo"] <= actual <= rec["hi"])
+                rec.update(err=round(actual - rec["forecast"], 1), hit_range=rec["lo"] <= actual <= rec["hi"])
+                rec["hit"] = rec["hit_range"]
+                if ref and len(pups) >= PERIOD_CAL_MIN:                   # [R120] 週、月的高位／低位與預計範圍（同今日卡）
+                    hl = _hl_levels(ref, big_r, sorted(pups), sorted(pdowns))
+                    rec.update(hl, hit_high=hl["high_lo"] <= p_high <= hl["high_hi"], hit_low=hl["low_lo"] <= p_low <= hl["low_hi"],
+                               err_high=round(p_high - hl["high"], 1), err_low=round(p_low - hl["low"], 1))
+                    rec["hit"] = rec["hit_high"] and rec["hit_low"]
             ratios.append(actual / big_r)
+            if ref:
+                pups.append((p_high - ref) / big_r); pdowns.append((ref - p_low) / big_r)
             recs.append(rec)
-        out[kind] = {**_acc_summary(recs), "records": recs}
+        out[kind] = {**_acc_summary(recs, ("hit_range", "hit_high", "hit_low")), "records": recs,
+                     "cal": ({"ups": sorted(pups), "downs": sorted(pdowns)} if len(pups) >= PERIOD_CAL_MIN else None)}
     return out
+
+
+def _hl_levels(ref, big_r, ups_sorted, downs_sorted):
+    """[R120] 由昨收、預測波幅與過去比例算預測高位／低位與預計範圍（HL_BAND_Q）。"""
+    q = HL_BAND_Q
+    return {"high": round(ref + _quantile(ups_sorted, 0.5) * big_r), "high_lo": round(ref + _quantile(ups_sorted, q) * big_r),
+            "high_hi": round(ref + _quantile(ups_sorted, 1 - q) * big_r), "low": round(ref - _quantile(downs_sorted, 0.5) * big_r),
+            "low_lo": round(ref - _quantile(downs_sorted, 1 - q) * big_r), "low_hi": round(ref - _quantile(downs_sorted, q) * big_r)}
 
 
 # ---- 「怎樣用來賺錢」四個方向  [R106] ---------------------------------------------
@@ -3173,6 +3211,27 @@ PAPER_STRATS = {                                 # 名稱 → 顯示名、用哪
 }
 PAPER_TAG = f"📒{FENGYANG_TAG}紙上交易"
 PAPER_SIDE_ZH = {1: "做多", -1: "做空", 0: "空手"}
+PAPER_GATE_TH = 1.2                              # [R118] 開閘門檻：今日 R̂ ÷ 過去 250 日 R̂ 中位 ≥ 1.2（vol_gate.py）
+PAPER_GATE_LOOKBACK = 250
+PAPER_GATE_MIN_DAYS = 60                         # 歷史預測少於這麼多天就沒有開閘指標（一律 1 張）
+PAPER_GATE_LOTS = 2                              # 開閘日入市的張數（其餘 1 張）
+PAPER_LEVEL_KEYS = ("high_edge95", "low_edge95", "high", "low", "range", "ref_close", "rhat_med250", "gate_ratio", "gate_open")
+
+
+def _paper_lots(lv):
+    """[R118] 今日入市張數與開閘比值：開閘 → 2 張，否則（含沒有指標）1 張。"""
+    lv = lv or {}
+    return (PAPER_GATE_LOTS if lv.get("gate_open") else 1), lv.get("gate_ratio")
+
+
+def _paper_gate_text(lv):
+    lv = lv or {}
+    r = lv.get("gate_ratio")
+    if r is None:
+        return "開閘指標未有（歷史預測不足）→ 1 張"
+    if lv.get("gate_open"):
+        return f"⚡ 今日開閘（R̂ ÷ {PAPER_GATE_LOOKBACK} 日中位 {r:.2f} ≥ {PAPER_GATE_TH:g}）→ {PAPER_GATE_LOTS} 張"
+    return f"🚪 今日未開閘（R̂ ÷ {PAPER_GATE_LOOKBACK} 日中位 {r:.2f} < {PAPER_GATE_TH:g}）→ 1 張"
 
 
 def futu_paper_file(symbol):
@@ -3196,13 +3255,24 @@ def _paper_hhmm(time_key):
     return f"{time_key[5:10]} {time_key[11:16]}"
 
 
-def _paper_trade(strat, side, entry_time, entry_px, exit_time, exit_px, why, cost, stop=None, target=None, boot=False):
+def _paper_trade(strat, side, entry_time, entry_px, exit_time, exit_px, why, cost, stop=None, target=None, boot=False,
+                 lots=1, gate=None):
     gross = (exit_px - entry_px) * side
     risk = abs(entry_px - stop) if stop is not None else None
     return {"strat": strat, "side": side, "entry_time": entry_time, "entry_price": entry_px, "stop": stop, "target": target,
             "exit_time": exit_time, "exit_price": exit_px, "exit_reason": why, "gross": round(gross, 1), "cost": cost,
             "net": round(gross - cost, 1), "risk": risk,
-            "r_multiple": round((gross - cost) / risk, 3) if risk else None, "boot": boot}
+            "r_multiple": round((gross - cost) / risk, 3) if risk else None, "boot": boot,
+            "lots": lots, "gate": gate}                                  # [R118] 入市日張數（開閘 2、否則 1）與 R̂ 比值
+
+
+def _paper_dd(xs):
+    eq = peak = dd = 0.0
+    for x in xs:
+        eq += x
+        peak = max(peak, eq)
+        dd = max(dd, peak - eq)
+    return dd
 
 
 def _paper_stats(trades):
@@ -3210,21 +3280,22 @@ def _paper_stats(trades):
     if not nets:
         return {"n": 0}
     wins, losses = [x for x in nets if x > 0], [x for x in nets if x <= 0]
-    eq = peak = dd = 0.0
-    for x in nets:
-        eq += x
-        peak = max(peak, eq)
-        dd = max(dd, peak - eq)
     aw = sum(wins) / len(wins) if wins else None
     al = sum(losses) / len(losses) if losses else None
     rs = [t["r_multiple"] for t in trades if t.get("r_multiple") is not None]
+    lots = [t.get("lots") or 1 for t in trades]                         # [R118] 開閘雙倍那條帳：淨點數 × 入市日張數
+    tilt = [x * k for x, k in zip(nets, lots)]
+    gate = [x for x, k in zip(nets, lots) if k > 1]
     return {"n": len(nets), "win": len(wins) / len(nets), "avg_win": aw, "avg_loss": al,
-            "rrr": (aw / -al) if aw and al else None, "mean": sum(nets) / len(nets), "total": sum(nets), "dd": dd,
-            "R": sum(rs) / len(rs) if rs else None}
+            "rrr": (aw / -al) if aw and al else None, "mean": sum(nets) / len(nets), "total": sum(nets), "dd": _paper_dd(nets),
+            "R": sum(rs) / len(rs) if rs else None,
+            "total_tilt": sum(tilt), "dd_tilt": _paper_dd(tilt), "gate_n": len(gate), "gate_total": sum(gate),
+            "rest_total": sum(nets) - sum(gate)}
 
 
-def _paper_snake_step(st, b, session, cost, live):
-    """一根 K 線：日市收完就換蛇日，再按通道觸價反手。回傳這根的反手 [(新持倉, 成交價, 被平掉那筆的紀錄或 None)]。"""
+def _paper_snake_step(st, b, session, cost, live, lv=None):
+    """一根 K 線：日市收完就換蛇日，再按通道觸價反手。回傳這根的反手 [(新持倉, 成交價, 被平掉那筆的紀錄或 None)]。
+    lv：這個交易日的九成邊與開閘指標（新持倉的張數照它記）。"""
     sn = st["snake"]
     phase = _paper_phase(b, session)
     if sn["phase"] == "day" and (phase == "night" or session != sn["session"]):
@@ -3246,8 +3317,9 @@ def _paper_snake_step(st, b, session, cost, live):
             closed = None
             if sn["pos"] and live:
                 closed = _paper_trade("SNAKE", sn["pos"], sn["entry_time"], sn["px"], b["time_key"], fill, "蛇反手", cost,
-                                      boot=sn.get("boot", False))
-            sn.update(pos=new, px=fill, entry_time=b["time_key"], boot=not live)
+                                      boot=sn.get("boot", False), lots=sn.get("lots") or 1, gate=sn.get("gate"))
+            lots, gate = _paper_lots(lv)
+            sn.update(pos=new, px=fill, entry_time=b["time_key"], boot=not live, lots=lots, gate=gate)
             sn["used"].append(side)
             flips.append((new, fill, closed))
     sn["cur"] = [b["high"], b["low"]] if not sn["cur"] else [max(sn["cur"][0], b["high"]), min(sn["cur"][1], b["low"])]
@@ -3292,7 +3364,7 @@ def _paper_notice(st, kind, strat, time_key, text):
 
 def _paper_totals(st, strat):
     s = _paper_stats([t for t in st["trades"] if t["strat"] == strat])
-    return f"策略累計 {s['n']} 筆 {s['total']:+,.0f} 點" if s["n"] else "策略第一筆"
+    return (f"策略累計 {s['n']} 筆 {s['total']:+,.0f} 點（開閘雙倍 {s['total_tilt']:+,.0f}）" if s["n"] else "策略第一筆")
 
 
 def _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, cost):
@@ -3302,8 +3374,8 @@ def _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, cost):
         live = session not in boot
         if st["day"].get("date") != session:
             st["day"] = {"date": session, "levels": levels_by.get(session), "done": []}
-        elif not st["day"].get("levels") and levels_by.get(session):
-            st["day"]["levels"] = levels_by[session]
+        elif levels_by.get(session) and (not st["day"].get("levels") or "gate_ratio" not in st["day"]["levels"]):
+            st["day"]["levels"] = levels_by[session]                  # 沒算到、或 R118 前的舊紀錄沒有開閘指標 → 補上
         lv, trig = st["day"].get("levels") or {}, trig_by.get(session, {})
         for b in bars_by.get(session, []):
             t = b["time_key"]
@@ -3311,15 +3383,18 @@ def _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, cost):
                 continue
             prev = st["last_bar"] if st["last_session"] == session else None
             pos_before = st["snake"]["pos"]
-            flips = _paper_snake_step(st, b, session, cost, live)
+            flips = _paper_snake_step(st, b, session, cost, live, lv)
             if live:
                 for new, fill, closed in flips:
                     if closed:
                         st["trades"] = (st["trades"] + [closed])[-PAPER_KEEP:]
-                    txt = (f"{PAPER_TAG} {zh['SNAKE']}：{'反手' if closed else ''}{PAPER_SIDE_ZH[new]} {fill:,.0f}（{_paper_hhmm(t)}）\n"
+                    txt = (f"{PAPER_TAG} {zh['SNAKE']}：{'反手' if closed else ''}{PAPER_SIDE_ZH[new]} {fill:,.0f}（{_paper_hhmm(t)}）"
+                           f"×{st['snake']['lots']} 張\n"
                            f"通道 {st['snake']['upper']:,.0f}／{st['snake']['lower']:,.0f}"
-                           + (f"；上一筆 {closed['net']:+,.0f} 點，{_paper_totals(st, 'SNAKE')}" if closed else "")
-                           + "\n紙上紀錄，不是真實下單。")
+                           + (f"；上一筆 {closed['net']:+,.0f} 點" + (f"（×{closed['lots']} 張 = {closed['net'] * closed['lots']:+,.0f}）"
+                                                                    if (closed.get("lots") or 1) > 1 else "")
+                              + f"，{_paper_totals(st, 'SNAKE')}" if closed else "")
+                           + f"\n{_paper_gate_text(lv)}\n紙上紀錄，不是真實下單。")
                     _paper_notice(st, "flip", "SNAKE", t, txt)
             for strat, cfg in PAPER_STRATS.items():
                 if not cfg["signal"]:
@@ -3333,20 +3408,22 @@ def _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, cost):
                     stop = lv["low_edge95"] if side > 0 else lv["high_edge95"]
                     if (stop - px) * side < 0:
                         risk = abs(px - stop)
+                        lots, gate = _paper_lots(lv)
                         tr = {"side": side, "entry_time": t, "entry_price": px, "stop": stop, "risk": risk, "rr": cfg["rr"],
-                              "target": px + side * cfg["rr"] * risk, "session": session, "snake_at_entry": pos_before}
+                              "target": px + side * cfg["rr"] * risk, "session": session, "snake_at_entry": pos_before,
+                              "lots": lots, "gate": gate}
                         st["open"][strat] = tr
                         _paper_notice(st, "entry", strat, t,
-                                      f"{PAPER_TAG} {zh[strat]}：{PAPER_SIDE_ZH[side]} {px:,.0f}（{_paper_hhmm(t)}）\n"
+                                      f"{PAPER_TAG} {zh[strat]}：{PAPER_SIDE_ZH[side]} {px:,.0f}（{_paper_hhmm(t)}）×{lots} 張\n"
                                       f"止蝕 {stop:,.0f}（九成日範圍邊）・目標 {tr['target']:,.0f}（{cfg['rr']:g}R）・風險 {risk:,.0f} 點\n"
-                                      f"兩邊「{'機率法' if cfg['signal'] == 'B' else '耗盡回落'}」訊號都已亮；蛇蟠陣目前{PAPER_SIDE_ZH[side]}。"
-                                      "紙上紀錄，不是真實下單。")
+                                      f"兩邊「{'機率法' if cfg['signal'] == 'B' else '耗盡回落'}」訊號都已亮；蛇蟠陣目前{PAPER_SIDE_ZH[side]}。\n"
+                                      f"{_paper_gate_text(lv)}\n紙上紀錄，不是真實下單。")
                 if tr:
                     done = _paper_exit(tr, b, flips)
                     if done:
                         px, why = done
                         rec = _paper_trade(strat, tr["side"], tr["entry_time"], tr["entry_price"], t, px, why, cost,
-                                           tr["stop"], tr["target"])
+                                           tr["stop"], tr["target"], lots=tr.get("lots") or 1, gate=tr.get("gate"))
                         st["trades"] = (st["trades"] + [rec])[-PAPER_KEEP:]
                         st["open"].pop(strat, None)
                         if strat not in st["day"]["done"]:
@@ -3354,19 +3431,21 @@ def _paper_run(st, sessions, bars_by, levels_by, trig_by, boot, cost):
                         _paper_notice(st, "exit", strat, t,
                                       f"{PAPER_TAG} {zh[strat]}：平倉 {px:,.0f}（{_paper_hhmm(t)}）{why}\n"
                                       f"{PAPER_SIDE_ZH[tr['side']]} {tr['entry_price']:,.0f} → {px:,.0f}：{rec['net']:+,.0f} 點"
-                                      f"（{rec['r_multiple']:+.2f}R）；{_paper_totals(st, strat)}。")
+                                      f"（{rec['r_multiple']:+.2f}R）"
+                                      + (f"×{rec['lots']} 張 = {rec['net'] * rec['lots']:+,.0f} 點" if rec["lots"] > 1 else "")
+                                      + f"；{_paper_totals(st, strat)}。")
             st["last_bar"], st["last_session"] = t, session
     return st
 
 
 def _paper_levels(symbol, session, rows_fn):
-    """那天的九成日範圍邊：開市前紀錄有就用紀錄，沒有就即時算（R116 起才記 edge95）。"""
+    """那天的九成日範圍邊與開閘指標：開市前紀錄有就用紀錄，沒有就即時算（R116 起才記 edge95、R118 起才記 gate_*）。"""
     fc = futu_logged_forecast(symbol, session)
-    if not fc or fc.get("high_edge95") is None:
+    if not fc or fc.get("high_edge95") is None or "gate_ratio" not in fc:
         fc = futu_day_forecast([r for r in rows_fn() if r["date"] < session], session) or {}
     if fc.get("high_edge95") is None:
         return None
-    return {k: fc.get(k) for k in ("high_edge95", "low_edge95", "high", "low", "range", "ref_close")}
+    return {k: fc.get(k) for k in PAPER_LEVEL_KEYS}
 
 
 def _paper_session_bars(symbol, session, boot):
@@ -3410,7 +3489,7 @@ def futu_paper_update(symbol, now=None):
             return []
         day = prev.get("day") or {}
         levels_by = {}
-        if day.get("date") == today and day.get("levels"):
+        if day.get("date") == today and day.get("levels") and "gate_ratio" in day["levels"]:
             levels_by[today] = day["levels"]
         else:
             lv = _paper_levels(symbol, today, rows_fn)
@@ -3447,9 +3526,13 @@ def futu_paper_report(symbol):
     if not st:
         return {"status": "empty", "symbol": symbol, "message": "紙上交易還沒開始（等第一包 5 分 K）"}
     stats = {k: _paper_stats([t for t in st["trades"] if t["strat"] == k]) for k in PAPER_STRATS}
+    lv = (st.get("day") or {}).get("levels") or {}
     return {"status": "ok", "symbol": symbol, "started_utc": st["started_utc"], "last_bar": st["last_bar"],
             "snake": st["snake"], "open": st["open"], "stats": stats, "trades": st["trades"][-200:],
-            "pending_notices": sum(1 for e in st["notices"] if not e.get("sent")), "cost": PAPER_COST}
+            "pending_notices": sum(1 for e in st["notices"] if not e.get("sent")), "cost": PAPER_COST,
+            "gate": {"date": (st.get("day") or {}).get("date"), "threshold": PAPER_GATE_TH, "lookback": PAPER_GATE_LOOKBACK,
+                     "lots_open": PAPER_GATE_LOTS, "text": _paper_gate_text(lv),
+                     **{k: lv.get(k) for k in ("rhat_med250", "gate_ratio", "gate_open", "range")}}}   # [R118]
 
 
 def futu_paper_lines(symbol, price=None, st=None):
@@ -3464,18 +3547,18 @@ def futu_paper_lines(symbol, price=None, st=None):
     sn = st["snake"]
     for strat, cfg in PAPER_STRATS.items():
         if strat == "SNAKE":
-            pos, px, since = sn["pos"], sn["px"], sn["entry_time"]
+            pos, px, since, lots = sn["pos"], sn["px"], sn["entry_time"], sn.get("lots") or 1
         else:
             tr = st["open"].get(strat) or {}
-            pos, px, since = tr.get("side", 0), tr.get("entry_price"), tr.get("entry_time")
+            pos, px, since, lots = tr.get("side", 0), tr.get("entry_price"), tr.get("entry_time"), tr.get("lots") or 1
         s = _paper_stats([t for t in st["trades"] if t["strat"] == strat])
-        acc = f"累計 {s['n']} 筆 {s['total']:+,.0f}" if s["n"] else "未有完成交易"
+        acc = f"累計 {s['n']} 筆 {s['total']:+,.0f}（開閘雙倍 {s['total_tilt']:+,.0f}）" if s["n"] else "未有完成交易"
         if pos and px is not None:
             flo = f"，浮動 {(price - px) * pos:+,.0f}" if price else ""
-            parts.append(f"{cfg['zh']} {PAPER_SIDE_ZH[pos]} {px:,.0f}（{_paper_hhmm(since)} 起{flo}）；{acc}")
+            parts.append(f"{cfg['zh']} {PAPER_SIDE_ZH[pos]} {px:,.0f}×{lots} 張（{_paper_hhmm(since)} 起{flo}）；{acc}")
         else:
             parts.append(f"{cfg['zh']} 空手；{acc}")
-    return ["📒 紙上交易（不下單）：" + "｜".join(parts)]
+    return [f"📒 紙上交易（不下單）{_paper_gate_text((st.get('day') or {}).get('levels'))}：" + "｜".join(parts)]
 
 
 def futu_range_data(symbol):
@@ -3508,6 +3591,15 @@ def futu_range_data(symbol):
     open_keys.update({k: (None if p["over"] else p["key"]) for k, p in periods.items()})
     data["accuracy"] = futu_accuracy(data.pop("_completed"), data.pop("_har"),
                                      log if isinstance(log, list) else [], open_keys)
+    for kind in ("week", "month"):                                   # [R120] 本週／本月的預測高位／低位（同今日卡）
+        per, cal = periods.get(kind), (data["accuracy"].get(kind) or {}).get("cal")
+        if not per or not per.get("forecast") or not cal:
+            continue
+        ref = next((r.get("prev_close") for r in done_rows if r["date"] == per["first"]), None)
+        if ref is None and per["first"] == today and done_rows:
+            ref = done_rows[-1]["close"]
+        if ref:
+            per["forecast"].update(_hl_levels(ref, per["R"], cal["ups"], cal["downs"]), band_q=HL_BAND_Q)
     sig = gcs_read_json(futu_signal_file(symbol), [])
     data["signals"] = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
     data["peak_lines"] = futu_peak_lines(symbol, status=data["peak"], signals=sig)
@@ -3722,12 +3814,13 @@ def _fy_history(kind, acc):
     ok = lambda v: "—" if v is None else ("✅" if v else "❌")
     label = {"day": "交易日", "week": "週", "month": "月"}[kind]
     body = ""
-    if kind == "day":
-        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} 天中 {acc['hits']} 次）<br>"
+    if acc.get("hit_high_n") and all(r.get("high") is not None for r in acc["recent"]):   # [R120] 日、週、月同一格式
+        rng_zh = {"day": "全日波幅", "week": "全週波幅", "month": "全月波幅"}[kind]
+        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次）<br>"
                 f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次・預測高位平均差 {_n(acc.get('mae_high'))} 點、"
                 f"低位 {_n(acc.get('mae_low'))} 點<br>"
                 f"📏 各自計：高位 {acc.get('hit_high_rate')}%・低位 {acc.get('hit_low_rate')}%・"
-                f"全日波幅 {acc.get('hit_range_rate')}%（{acc.get('hit_range_n')} 天）")
+                f"{rng_zh} {acc.get('hit_range_rate')}%（{acc.get('hit_range_n')} {unit}）")
 
         def side(pred, lo, hi, actual):
             mark = " ↑" if actual > hi else (" ↓" if actual < lo else "")
@@ -3740,10 +3833,12 @@ def _fy_history(kind, acc):
             body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
                      + side(r["high"], r["high_lo"], r["high_hi"], r["actual_high"])
                      + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + f"<td>{ok(r['hit'])}</td></tr>")
-        legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次會落在這裡。"
+        legend = (f"<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，{HL_BAND_ZH}（每邊約 96%）。"
                   "✅ = 實際高位和低位都落在各自的預計範圍；任何一邊跑出範圍 = ❌"
-                  "（紅字：↑ 高過上限、↓ 低過下限）。高、低各自約八成，兩邊同時中約三分之二屬正常。</div>")
-        note = "📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。"
+                  "（紅字：↑ 高過上限、↓ 低過下限）。兩邊同時中約九成屬正常"
+                  + ("；範圍比 10-05 前寬約七成（R119）。" if kind == "day" else "；週、月的段數少，比率會較波動。") + "</div>")
+        note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。" if kind == "day" else
+                "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
     else:
         # [R108] 白話：「80% 區間」→「預計範圍（十次有八次落在這裡）」，「命中」→「落在範圍內」
         rate = (f"🎯 <b>落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次；目標約八成）<br>"
@@ -3759,7 +3854,7 @@ def _fy_history(kind, acc):
         legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次實際波幅會落在這裡。"
                   "✅ = 實際落在範圍內；❌ = 跑出範圍（比上限大或比下限細都算）。差距 = 實際 − 預測。</div>")
         note = "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。"
-    return (f"<div class='fy-hist {'day' if kind == 'day' else ''}'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
+    return (f"<div class='fy-hist {'day' if '實際高' in head else ''}'><h3>📜 過去 {len(acc['recent'])} 次預測</h3><div class='fy-rate'>{rate}</div>"
             f"<table>{head}{body}</table>{legend}<div class='fy-note'>{note}</div></div>")
 
 
@@ -3780,7 +3875,9 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
                     f"<div class='fy-band'>📐 預計範圍 {_n(fc['lo'])}–{_n(fc['hi'])} 點（十次有八次落在這裡）</div>")
         if fc.get("high") is not None:
             html.append(f"<div class='fy-row'><span>🎯 預測高位</span><b>{_n(fc['high'])}</b></div>"
-                        f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>")
+                        + (f"<div class='fy-band'>📐 預計範圍 {_n(fc['high_lo'])}–{_n(fc['high_hi'])}</div>" if fc.get("high_lo") is not None else "")
+                        + f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>"
+                        + (f"<div class='fy-band'>📐 預計範圍 {_n(fc['low_lo'])}–{_n(fc['low_hi'])}（{HL_BAND_ZH}）</div>" if fc.get("low_lo") is not None else ""))
     if per:
         used = per["range"] / fc["range"] * 100 if fc and fc.get("range") else None
         html.append(f"<div class='fy-row'><span>📏 已走</span><b>{_n(per['range'])} 點"
@@ -3809,13 +3906,18 @@ def _n2(v):
 
 
 MONEY_SELL = {                                  # [R107] 方向一合成回測摘要（vol_premium.py，2024-05 至 2026-10，125 週，每腳成本 4 點）
-    "status": "🧪 合成回測有正回報・待真實報價校準",
+    "status": "📊 真實數據 1 年：每週沽 1σ 勒式 +55 點、84% 週賺・利潤集中在 2026 上半年",
     "lines": [
         "📊 VHSI 平均 22.9%，實際波動約 19.5%：市場長期高估波幅，賣方有優勢。",
         "💵 每週沽價平跨式：平均 +86 點、68% 週數賺；但最差一週 −2,096 點（2024 年 9 月救市急升），2024 年整體虧。",
         f"🎯 只在 VHSI ÷ 預測 ≥ {VHSI_SELL_RATIO} 時賣（約四週一次，37 週）：跨式平均 +188 點、最差 −597；"
         "鐵鷹（1σ 沽、2σ 買保護）平均 +69 點、最差 −362，三年每年都賺。",
         "🧭 前半段挑門檻、後半段測試（28 週）：四種賣法平均都賺。",
+        "📊 [R117] 真實數據（港交所週期權結算價與 IV，2025-10 至 2026-10，51 週）：價平 IV 平均 18.3%，比 VHSI 低 15%、"
+        "幾乎等於風揚陣預測；每週沽價平跨式 +63 點（61% 週賺、最差 −825），沽 1σ 勒式 +55 點（84% 週賺、最差 −472、t 2.85），"
+        "鐵鷹 +17；月期權跨式每月 −127。利潤集中在 2026 年 1 至 5 月，2025 年第四季與 2026 年下半年跨式都虧。",
+        "⚠️ 「VHSI ÷ 預測 ≥ 1.2 才賣」在真實數據上對跨式沒幫助（+5），對鐵鷹略好（+27）；週期權 IV 對預測的比值也沒有預測力。"
+        "港交所只保留 12 個月報告，之後每週自動續抓，累積到 2 年再定。",
     ],
 }
 
@@ -3865,8 +3967,8 @@ def _fy_money(data):
             ok = ivc.get("vhsi_ratio") is not None and ivc["vhsi_ratio"] >= VHSI_SELL_RATIO
             now_txt += (f"<div class='fy-row'><span>📈 VHSI（{esc(ivc.get('vhsi_time') or '')}）</span><b>{ivc['vhsi']:.1f}%</b></div>"
                         f"<div class='fy-row'><span>⚖️ VHSI ÷ 預測</span><b>{_n2(ivc.get('vhsi_ratio'))}</b></div>"
-                        + (f"<div class='fy-sig'>✅ 達到 {VHSI_SELL_RATIO}：符合回測的賣出條件（鐵鷹較安全）</div>" if ok else
-                           f"<div class='fy-sig'>⏸️ 未到 {VHSI_SELL_RATIO}：回測中這種週不賣</div>"))
+                        + (f"<div class='fy-sig'>✅ 達到 {VHSI_SELL_RATIO}：合成回測的賣出條件（真實 1 年數據：對鐵鷹略有幫助、對跨式沒有）</div>" if ok else
+                           f"<div class='fy-sig'>⏸️ 未到 {VHSI_SELL_RATIO}：合成回測中這種週不賣（真實數據顯示這個門檻作用不大）</div>"))
         else:
             now_txt += ("<div class='fy-note'>➕ 本地腳本 FUTU_SYMBOLS 加上 HK.800125（VHSI），這裡就會即時判斷賣不賣。</div>")
         if ivc.get("iv") is not None:
@@ -3924,13 +4026,21 @@ def _fy_paper(data):
     price = (data.get("latest_5m") or {}).get("close")
     head = ("<div class='section-header'>📒 紙上交易（三條策略，跟實時 5 分 K 走）</div>"
             "<div class='fy-legend'>回測挑出來的三條，每包 5 分 K 到達時按規則記入市、出場，入市和出場都發 Telegram；"
-            f"每筆扣 {PAPER_COST:g} 點成本、1 張；只是紀錄，不下單。規則見 research/hsi_futures_range/PAPER_TRADING.md。</div>")
+            f"每筆扣 {PAPER_COST:g} 點成本；只是紀錄，不下單。規則見 research/hsi_futures_range/PAPER_TRADING.md。<br>"
+            f"⚡ <b>波幅開閘</b>（R118）：今日 HAR 預測 R̂ ÷ 過去 {PAPER_GATE_LOOKBACK} 日 R̂ 中位 ≥ {PAPER_GATE_TH:g} 就開閘，"
+            f"開閘日入市記 {PAPER_GATE_LOTS} 張、其餘 1 張；每條策略「固定 1 張」與「開閘雙倍」兩條帳並記"
+            "（回測：🅱️／🅰️ 的利潤集中在開閘日入市的交易、蛇沒有，research/hsi_futures_range/vol_gate/REPORT.md、gate_tilt/REPORT.md）。</div>")
     if not st:
         return head + ("<div class='section'>⏳ 等第一包即月期貨 5 分 K 到達就開始"
                        f"（第一次會先用之前 {PAPER_BOOT_DAYS} 個交易日算出蛇蟠陣的持倉）。</div>")
     cards, sn, sigs = [], st["snake"], data.get("signals") or {}
     day = st.get("day") or {}
     today, lv = day.get("date"), day.get("levels") or {}
+    gate_cls = "pos" if lv.get("gate_open") else ("neg" if lv.get("gate_ratio") is not None else "")
+    gate_box = (f"<div class='section'><b class='{gate_cls}'>{esc(_paper_gate_text(lv))}</b>"
+                + (f"　今日 R̂ {_n(lv.get('range'))} 點／{PAPER_GATE_LOOKBACK} 日中位 {_n(lv.get('rhat_med250'))} 點"
+                   if lv.get("gate_ratio") is not None else "")
+                + (f"　（{esc(_day_label(today))}）" if today else "") + "</div>")
     for strat, cfg in PAPER_STRATS.items():
         trades = [t for t in st["trades"] if t["strat"] == strat]
         s = _paper_stats(trades)
@@ -3953,27 +4063,36 @@ def _fy_paper(data):
                              f"<b>{_n(lv.get('low_edge95'))}／{_n(lv.get('high_edge95'))}</b></div>" if lv.get("high_edge95") is not None else ""))
         if pos and px is not None:
             flo = (price - px) * pos if price else None
-            status = (f"<div class='fy-big'>{PAPER_SIDE_ZH[pos]} <span style='font-size:18px'>{_n(px)}</span></div>"
+            lots = (sn.get("lots") if strat == "SNAKE" else (st["open"].get(strat) or {}).get("lots")) or 1
+            status = (f"<div class='fy-big'>{PAPER_SIDE_ZH[pos]} <span style='font-size:18px'>{_n(px)}</span>"
+                      f" <span style='font-size:13px'>×{lots} 張</span></div>"
                       f"<div class='fy-band'>{esc(_paper_hhmm(since))} 起"
-                      + (f"・浮動 <b class='{pnl_class(flo)}'>{flo:+,.0f}</b> 點" if flo is not None else "") + "</div>")
+                      + (f"・浮動 <b class='{pnl_class(flo)}'>{flo:+,.0f}</b> 點" + (f"（×{lots} = {flo * lots:+,.0f}）" if lots > 1 else "")
+                         if flo is not None else "") + "</div>")
         else:
             status = "<div class='fy-big'>空手</div><div class='fy-band'>等訊號</div>"
         if s["n"]:
             r_txt = f"・{s['R']:+.2f}R" if s.get("R") is not None else ""
-            stat = (f"<div class='fy-row'><span>📊 累計</span><b>{s['n']} 筆・{s['total']:+,.0f} 點</b></div>"
+            stat = (f"<div class='fy-row'><span>📊 累計（固定 1 張）</span><b>{s['n']} 筆・{s['total']:+,.0f} 點</b></div>"
                     f"<div class='fy-row'><span>每筆／勝率／RRR</span><b>{s['mean']:+,.0f}・{s['win']:.0%}・{_n2(s['rrr'])}</b></div>"
-                    f"<div class='fy-row'><span>最大回撤{'／每筆 R' if r_txt else ''}</span><b>{_n(s['dd'])}{r_txt}</b></div>")
+                    f"<div class='fy-row'><span>最大回撤{'／每筆 R' if r_txt else ''}</span><b>{_n(s['dd'])}{r_txt}</b></div>"
+                    f"<div class='fy-row'><span>⚡ 開閘雙倍累計／回撤</span><b class='{pnl_class(s['total_tilt'])}'>{s['total_tilt']:+,.0f}</b>"
+                    f"<b>／{_n(s['dd_tilt'])}</b></div>"
+                    f"<div class='fy-row'><span>開閘日入市 {s['gate_n']} 筆／其餘 {s['n'] - s['gate_n']} 筆（1 張）</span>"
+                    f"<b>{s['gate_total']:+,.0f}／{s['rest_total']:+,.0f}</b></div>")
             rows = "".join(f"<tr><td>{esc(_paper_hhmm(t['entry_time']))}</td><td>{PAPER_SIDE_ZH[t['side']]}</td><td>{_n(t['entry_price'])}</td>"
                            f"<td>{_n(t['exit_price'])}</td><td>{esc(t['exit_reason'])}</td>"
-                           f"<td class='{pnl_class(t['net'])}'>{t['net']:+,.0f}</td></tr>" for t in reversed(trades[-5:]))
+                           f"<td class='{pnl_class(t['net'])}'>{t['net']:+,.0f}</td><td>{'⚡2' if (t.get('lots') or 1) > 1 else '1'}</td></tr>"
+                           for t in reversed(trades[-5:]))
             stat += (f"<div class='fy-hist'><h3>最近 {min(5, len(trades))} 筆</h3><table>"
-                     f"<tr><th>入市</th><th>方向</th><th>入</th><th>出</th><th>原因</th><th>淨點數</th></tr>{rows}</table></div>")
+                     f"<tr><th>入市</th><th>方向</th><th>入</th><th>出</th><th>原因</th><th>淨點數</th><th>張</th></tr>{rows}</table></div>")
         else:
             stat = "<div class='fy-note'>還沒有完成的交易。</div>"
         cards.append(f"<div class='fy-card {cfg['css']}'><h2>{cfg['zh']}</h2><div class='fy-sub'>{esc(cfg['desc'])}</div>"
                      f"{status}{detail}{stat}</div>")
     asof = f"最新處理到 {esc(_paper_hhmm(st['last_bar']))}" if st.get("last_bar") else "還沒處理過 K 線"
-    return head + f"<div class='fy-grid'>{''.join(cards)}</div><div class='fy-legend'>{asof}・逐筆紀錄 JSON：?view=futu_range&amp;report=paper</div>"
+    return (head + gate_box + f"<div class='fy-grid'>{''.join(cards)}</div>"
+            f"<div class='fy-legend'>{asof}・逐筆紀錄 JSON：?view=futu_range&amp;report=paper</div>")
 
 
 def build_futu_range_page(data):

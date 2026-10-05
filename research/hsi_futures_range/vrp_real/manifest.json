@@ -1,0 +1,19 @@
+{
+ "generated_utc": "2026-10-04 09:32:27",
+ "cost_leg": 4.0,
+ "script_sha256": "97f68ba25bfbab528ce21627411fa8e872a378f3d192fc9b224ef19dfbb2023a",
+ "weeks": 51,
+ "months": 12,
+ "inputs": {
+  "atm_iv.csv": "bd97e50282a7a5abb40019a8741fb14d35f40b98e210de0e6c356e165951a100",
+  "hsi": "8194fdeeab116a9d8b80a193485016af3387eb59617e117a5a4607a4640390ca",
+  "vhsi": "58b9980b3395da3bcfd24d1a02b1bb55bdaf8692f8f980825e4b7ec358e3bcc2",
+  "futu_daily": "746fbbc2ae3dec44d6a33c081418f22fe9e2545b5804589d4d9eca9901ea8edf",
+  "series": {
+   "hsio_2025.csv.gz": "bbd6846c96e2e7be081314cc2d482ff7fde6a893c8053ebc8e3c456c93608543",
+   "hsio_2026.csv.gz": "d4d3755d6e608d0dc1c2cedc5cff6d01a01712c3ac3f05469e745851c79d3a07",
+   "hsiwo_2025.csv.gz": "ff61f1a2dc1f80055e1db51043c28cdf8b6c57212dc4fe675b3051edf5deaaf9",
+   "hsiwo_2026.csv.gz": "5790c08c5e2cdff0665239d600c5a327cba7190658d755617e5a9b46e8cc5358"
+  }
+ }
+}
