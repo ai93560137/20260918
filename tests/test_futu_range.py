@@ -238,16 +238,20 @@ r3 = acc3["day"]["records"][-1]
 check("有開市前實時紀錄就用紀錄", r3["live"] and r3["forecast"] == 1.0 and r3["hit_range"] is False
       and not acc3["day"]["records"][-2]["live"], r3)
 acc4 = main.futu_accuracy(long_rows, lhar, [{"date": day0, "range": 1.0, "lo": 0.5, "hi": 2.0, "high": 1, "low": 0,
-                                             "high_lo": 0, "high_hi": 2, "low_lo": -1, "low_hi": 1}])
+                                             "high_lo": 0, "high_hi": 2, "low_lo": -1, "low_hi": 1, "band_q": main.HL_BAND_Q}])
 check("[R109] 實時紀錄的高低位範圍也照用（實際高位超出 → ❌）", acc4["day"]["records"][-1]["high_hi"] == 2
       and acc4["day"]["records"][-1]["hit"] is False)
+acc5 = main.futu_accuracy(long_rows, lhar, [{"date": day0, "range": 1.0, "lo": 0.5, "hi": 2.0, "high": 1, "low": 0,
+                                             "high_lo": 0, "high_hi": 2, "low_lo": -1, "low_hi": 1}])
+check("[R119] 舊紀錄沒有 band_q（80% 範圍）→ 高低位範圍改用逐日前推重算", acc5["day"]["records"][-1]["high_hi"] != 2
+      and acc5["day"]["records"][-1]["live"] is True, acc5["day"]["records"][-1])
 hh = main._fy_history("day", d)
 check("[R109] 今日表：高、低都落在預計範圍的比率（白話）", "過去 7 次預測" in hh and f"高、低都落在預計範圍：{d['hit_rate']}%" in hh
       and f"中 {d['hits']} 次" in hh and hh.count("<tr>") == 8 and "各自計：高位" in hh and "命中" not in hh
-      and "三分之二" in hh)
+      and "約九成" in hh)
 r0 = d["recent"][-1]
 check("[R109] 今日表每列有預測高／低與各自預計範圍", f"{r0['high_lo']:,.0f}–{r0['high_hi']:,.0f}" in hh
-      and f"{r0['low_lo']:,.0f}–{r0['low_hi']:,.0f}" in hh and "十次有八次" in hh and hh.count("class='fy-rng'") == 16
+      and f"{r0['low_lo']:,.0f}–{r0['low_hi']:,.0f}" in hh and "二十次有十九次" in hh and hh.count("class='fy-rng'") == 16
       and "實際高" in hh and "實際低" in hh)
 hw = main._fy_history("week", w)
 r1 = w["recent"][-1]

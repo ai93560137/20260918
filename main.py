@@ -101,6 +101,9 @@
 #   * 2026-10-04 — [R118] 📒 紙上交易加「波幅開閘」：今日 R̂ ÷ 過去 250 日 R̂ 中位 ≥ 1.2 就開閘，開閘日入市記 2 張、其餘 1 張，
 #     固定 1 張與開閘雙倍兩條並記（research/hsi_futures_range/vol_gate.py：🅱️／🅰️ 的利潤集中在開閘日入市的交易，蛇沒有）。開市前預測多記
 #     rhat_med250／gate_ratio／gate_open；預測、四次報告、入市通知與波幅頁都顯示今日開閘與否。
+#   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
+#     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
+#     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
 #   * New GCS objects (legacy files are left untouched):
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
@@ -2416,6 +2419,8 @@ def futu_forecast_track(log, rows):
 
 # ---- 高低位預測與四個時點的檢討  [R99] ----------------------------------------
 HL_MIN_DAYS = 120                               # 估高低位比例至少要這麼多天的逐日前推預測
+HL_BAND_Q = 0.02                                # [R119] 高位／低位預計範圍的分位（2%／98% → 每邊約 96%、兩邊同時約 92%）
+HL_BAND_ZH = "二十次有十九次落在這裡"            # 白話（每邊）
 FUTU_CALENDAR_FILE = "futu/calendar/HK.json"
 FUTU_REVIEW_DIR = "futu/reviews"
 FUTU_REVIEW_KEEP = 2000
@@ -2468,7 +2473,7 @@ def futu_session_of(time_key):
 def futu_day_forecast(completed, target):
     """completed：target 之前已完結的交易日。回傳波幅與高位／低位預測；數據不足 → None。
     高位 = 昨收 + a×R̂，低位 = 昨收 − b×R̂；a、b = 過去每天（高−昨收）÷R̂、（昨收−低）÷R̂ 的中位數（逐日前推），
-    80% 區間取同一組比例的 10%／90% 分位。回測見 research/hsi_futures_range/RESULTS.md。"""
+    預計範圍取同一組比例的 HL_BAND_Q／1−HL_BAND_Q 分位（R119 起 2%／98%）。回測見 research/hsi_futures_range/RESULTS.md。"""
     har = har_forecasts(completed)
     nxt = har.get(len(completed))
     if not nxt:
@@ -2489,9 +2494,10 @@ def futu_day_forecast(completed, target):
             downs.append((row["prev_close"] - row["low"]) / f[0])
     if len(ups) >= HL_MIN_DAYS:
         su, sd = sorted(ups), sorted(downs)
-        out.update(high=round(ref + _quantile(su, 0.5) * rng), high_lo=round(ref + _quantile(su, 0.1) * rng),
-                   high_hi=round(ref + _quantile(su, 0.9) * rng), low=round(ref - _quantile(sd, 0.5) * rng),
-                   low_lo=round(ref - _quantile(sd, 0.9) * rng), low_hi=round(ref - _quantile(sd, 0.1) * rng),
+        q = HL_BAND_Q
+        out.update(high=round(ref + _quantile(su, 0.5) * rng), high_lo=round(ref + _quantile(su, q) * rng),
+                   high_hi=round(ref + _quantile(su, 1 - q) * rng), low=round(ref - _quantile(sd, 0.5) * rng),
+                   low_lo=round(ref - _quantile(sd, 1 - q) * rng), low_hi=round(ref - _quantile(sd, q) * rng), band_q=q,
                    high_edge95=round(ref + _quantile(su, 0.95) * rng),            # [R116] 九成日範圍邊（紙上交易止蝕）
                    low_edge95=round(ref - _quantile(sd, 0.95) * rng))
     return out
@@ -2555,17 +2561,17 @@ def _ohlc(bars):
 
 
 def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
-    """高位（upper=True）／低位的比較句。final：全日收市，報誤差與是否在 80% 區間。"""
+    """高位（upper=True）／低位的比較句。final：全日收市，報誤差與是否在預計範圍。"""
     if final:
         ok = band_lo <= actual <= band_hi
         return (f"{name} {actual:,.0f}，預測 {fc:,.0f}（誤差 {actual - fc:+,.0f}），"
-                f"{'✅ 在' if ok else '❌ 不在'} 80% 區間 {band_lo:,.0f}–{band_hi:,.0f}")
+                f"{'✅ 在' if ok else '❌ 不在'} 預計範圍 {band_lo:,.0f}–{band_hi:,.0f}")
     beyond = actual >= fc if upper else actual <= fc
     edge = band_hi if upper else band_lo
     out_of_band = actual > band_hi if upper else actual < band_lo
     if beyond:
         return (f"{name} {actual:,.0f}：已{'越過' if upper else '跌穿'}預測 {fc:,.0f}"
-                + (f"，並超出 80% 區間（{edge:,.0f}）" if out_of_band else f"（80% 區間到 {edge:,.0f}）"))
+                + (f"，並超出預計範圍（{edge:,.0f}）" if out_of_band else f"（預計範圍到 {edge:,.0f}）"))
     return f"{name} {actual:,.0f}：未到預測 {fc:,.0f}（差 {abs(fc - actual):,.0f} 點）"
 
 
@@ -2576,8 +2582,8 @@ def futu_preopen_text(fc, day, contract, summary, peak=None):
     if fc.get("gate_ratio") is not None:                                # [R118]
         lines.append(f"波幅開閘：{_paper_gate_text(fc)}（過去 {PAPER_GATE_LOOKBACK} 日 R̂ 中位 {fc['rhat_med250']:,.0f} 點；紙上交易今日張數）")
     if fc.get("high") is not None:
-        lines += [f"高位：約 {fc['high']:,.0f}（80%：{fc['high_lo']:,.0f}–{fc['high_hi']:,.0f}）",
-                  f"低位：約 {fc['low']:,.0f}（80%：{fc['low_lo']:,.0f}–{fc['low_hi']:,.0f}）"]
+        lines += [f"高位：約 {fc['high']:,.0f}（預計範圍 {fc['high_lo']:,.0f}–{fc['high_hi']:,.0f}）",
+                  f"低位：約 {fc['low']:,.0f}（預計範圍 {fc['low_lo']:,.0f}–{fc['low_hi']:,.0f}，{HL_BAND_ZH}）"]
     if summary:
         lines.append(f"近 20 日平均波幅 {summary.get('avg_range_20') or 0:,.0f} 點；"
                      f"模型過去一年平均誤差 ±{summary.get('bt_mae') or 0:,.0f} 點")
@@ -3063,15 +3069,16 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
         rec = {"key": row["date"], "forecast": f[0], "lo": f[1], "hi": f[2], "live": False}
         if len(ups) >= HL_MIN_DAYS:
             ref = row["prev_close"]
+            q = HL_BAND_Q
             rec.update(high=ref + _quantile(ups, 0.5) * f[0], low=ref - _quantile(downs, 0.5) * f[0],
-                       high_lo=ref + _quantile(ups, 0.1) * f[0], high_hi=ref + _quantile(ups, 0.9) * f[0],
-                       low_lo=ref - _quantile(downs, 0.9) * f[0], low_hi=ref - _quantile(downs, 0.1) * f[0])
+                       high_lo=ref + _quantile(ups, q) * f[0], high_hi=ref + _quantile(ups, 1 - q) * f[0],
+                       low_lo=ref - _quantile(downs, 1 - q) * f[0], low_hi=ref - _quantile(downs, q) * f[0])
         bisect.insort(ups, (row["high"] - row["prev_close"]) / f[0])
         bisect.insort(downs, (row["prev_close"] - row["low"]) / f[0])
         e = logged.get(row["date"])
         if e and None not in (e.get("lo"), e.get("hi")):          # 當天真正發出的預測
             rec.update(forecast=e["range"], lo=e["lo"], hi=e["hi"], live=True)
-            if e.get("high_lo") is not None:
+            if e.get("high_lo") is not None and e.get("band_q") == HL_BAND_Q:     # [R119] 舊紀錄（80% 範圍）改用重算的
                 rec.update(high=e.get("high"), low=e.get("low"), high_lo=e["high_lo"], high_hi=e["high_hi"],
                            low_lo=e["low_lo"], low_hi=e["low_hi"])
         actual = row["range"]
@@ -3795,9 +3802,9 @@ def _fy_history(kind, acc):
             body += (f"<tr><td>{'📝 ' if r.get('live') else ''}{esc(_fy_hist_label(kind, r))}</td>"
                      + side(r["high"], r["high_lo"], r["high_hi"], r["actual_high"])
                      + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + f"<td>{ok(r['hit'])}</td></tr>")
-        legend = ("<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，十次有八次會落在這裡。"
+        legend = (f"<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，{HL_BAND_ZH}（每邊約 96%）。"
                   "✅ = 實際高位和低位都落在各自的預計範圍；任何一邊跑出範圍 = ❌"
-                  "（紅字：↑ 高過上限、↓ 低過下限）。高、低各自約八成，兩邊同時中約三分之二屬正常。</div>")
+                  "（紅字：↑ 高過上限、↓ 低過下限）。兩邊同時中約九成屬正常；範圍比 10-05 前寬約七成（R119）。</div>")
         note = "📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。"
     else:
         # [R108] 白話：「80% 區間」→「預計範圍（十次有八次落在這裡）」，「命中」→「落在範圍內」
@@ -3835,7 +3842,9 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
                     f"<div class='fy-band'>📐 預計範圍 {_n(fc['lo'])}–{_n(fc['hi'])} 點（十次有八次落在這裡）</div>")
         if fc.get("high") is not None:
             html.append(f"<div class='fy-row'><span>🎯 預測高位</span><b>{_n(fc['high'])}</b></div>"
-                        f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>")
+                        + (f"<div class='fy-band'>📐 預計範圍 {_n(fc['high_lo'])}–{_n(fc['high_hi'])}</div>" if fc.get("high_lo") is not None else "")
+                        + f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>"
+                        + (f"<div class='fy-band'>📐 預計範圍 {_n(fc['low_lo'])}–{_n(fc['low_hi'])}（{HL_BAND_ZH}）</div>" if fc.get("low_lo") is not None else ""))
     if per:
         used = per["range"] / fc["range"] * 100 if fc and fc.get("range") else None
         html.append(f"<div class='fy-row'><span>📏 已走</span><b>{_n(per['range'])} 點"

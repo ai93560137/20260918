@@ -130,7 +130,8 @@ FAKE.clear()
 put(main.futu_daily_file(SYM), sessions(300))
 rows = main.futu_series_rows(SYM)
 fc = main.futu_day_forecast(rows, "2026-10-05")
-check("high_edge95 ≥ high_hi、low_edge95 ≤ low_lo", fc["high_edge95"] >= fc["high_hi"] and fc["low_edge95"] <= fc["low_lo"], fc)
+check("high_edge95 > high、low_edge95 < low（R119 起預計範圍 98% 分位比 edge95 更闊）", fc["high"] < fc["high_edge95"] <= fc["high_hi"]
+      and fc["low_lo"] <= fc["low_edge95"] < fc["low"] and fc["band_q"] == main.HL_BAND_Q, fc)
 check("[R118] 預測多記 250 日中位、R̂ 比值、開閘", fc.get("rhat_med250", 0) > 0 and abs(fc["gate_ratio"] - fc["range"] / fc["rhat_med250"]) < 0.01
       and fc["gate_open"] == (fc["range"] >= main.PAPER_GATE_TH * fc["rhat_med250"]) and isinstance(fc["gate_open"], bool),
       {k: fc.get(k) for k in ("range", "rhat_med250", "gate_ratio", "gate_open")})
