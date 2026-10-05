@@ -263,8 +263,8 @@ r0 = d["recent"][-1]
 check("[R109] 今日表每列有預測高／低與各自預計範圍", f"{r0['high_lo']:,.0f}–{r0['high_hi']:,.0f}" in hh
       and f"{r0['low_lo']:,.0f}–{r0['low_hi']:,.0f}" in hh and "二十次有十九次" in hh and hh.count("class='fy-rng'") == 16
       and "實際高" in hh and "實際低" in hh)
-ok1 = lambda r: abs(r["err_high"]) / r["high"] * 100 <= main.HL_OK_PCT
-ok2 = lambda r: abs(r["err_low"]) / r["low"] * 100 <= main.HL_OK_PCT
+ok1 = lambda r: abs(r["err_high"]) / r["high"] * 100 <= main.HL_OK_PCT_BY['day']
+ok2 = lambda r: abs(r["err_low"]) / r["low"] * 100 <= main.HL_OK_PCT_BY['day']
 check("[R121][R125] 表：相差 1% 內綠字 ✓、超過紅字 ↑／↓、沒有結果欄", "<th>結果</th>" not in hh and "class='pos'>" in hh
       and hh.count("<b class='pos'>") + hh.count("<b class='neg'>") == 2 * len(d["recent"])
       and hh.count("<b class='pos'>") == sum(ok1(r) + ok2(r) for r in d["recent"]), hh[:400])
@@ -272,6 +272,7 @@ dh = r0["actual_high"] - r0["high"]
 check("[R122][R125] 實際下面有「實際 − 預測」點數與百分比，高綠低紅", f"<span class='fy-rng {main.pnl_class(dh)}'>{dh:+,.0f}<br>{dh / r0['high'] * 100:+.2f}%</span>" in hh
       and hh.count("class='fy-rng pos'") + hh.count("class='fy-rng neg'") + hh.count("class='fy-rng muted'") == 2 * len(d["recent"]), hh[:400])
 check("[R125] 統計行有「都在 1% 內」", d.get("within_rate") is not None and f"都在 1% 內：{d['within_rate']}%" in hh
+      and "都在 2% 內" in main._fy_history("week", w) and "都在 4% 內" in main._fy_history("month", acc["month"])
       and d["within_rate"] == round(sum(ok1(r) and ok2(r) for r in d["records"] if r.get("err_high") is not None) / d["within_n"] * 100), d.get("within_rate"))
 hw = main._fy_history("week", w)
 r1 = w["recent"][-1]
