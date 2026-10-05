@@ -1,0 +1,80 @@
+name: dukascopy-m15
+# Dukascopy 免費歷史數據（CFD，近 23 小時交易）：USA500.IDX（標普 500）、USATECH.IDX（納指 100）、USA30.IDX（道指）等的 15 分 K。
+# 雲端工作階段連不到 datafeed.dukascopy.com，所以在這裡用 dukascopy-node 下載，轉成 csv.gz commit 回觸發時的分支（data/dukascopy/）。
+# 時間戳是 UTC（K 線開市時間）；之後由 research/us_futures/dukascopy_cfd.py 轉成紐約時間並切成 CME 全段交易日。
+on:
+  workflow_dispatch:
+    inputs:
+      instrument:
+        description: dukascopy-node 代號（usa500idxusd＝標普 500、usatechidxusd＝納指 100、usa30idxusd＝道指）
+        required: true
+        default: usa500idxusd
+      from:
+        description: 開始日（YYYY-MM-DD）
+        required: true
+        default: '2015-01-01'
+      to:
+        description: 結束日（YYYY-MM-DD，不含）
+        required: true
+        default: '2026-10-05'
+      timeframe:
+        description: m15／h1／d1
+        required: false
+        default: m15
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dukascopy-m15
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: download
+        env:
+          INS: ${{ github.event.inputs.instrument }}
+          FROM: ${{ github.event.inputs.from }}
+          TO: ${{ github.event.inputs.to }}
+          TF: ${{ github.event.inputs.timeframe }}
+        run: |
+          mkdir -p data/dukascopy dl
+          npx --yes dukascopy-node@latest -i "$INS" -from "$FROM" -to "$TO" -t "$TF" -p ask -v true -f csv -dir dl -fn "${INS}_${TF}" -r 5 -b 10
+          ls -la dl
+          f=$(ls dl/*.csv | head -1)
+          python3 - "$f" "data/dukascopy/${INS}_${TF}.csv.gz" <<'PY'
+          import csv, gzip, sys
+          from datetime import datetime, timezone
+          src, dst = sys.argv[1], sys.argv[2]
+          rows = list(csv.DictReader(open(src, encoding="utf-8")))
+          with gzip.open(dst, "wt", encoding="utf-8", newline="") as fh:
+              w = csv.writer(fh); w.writerow(["time_utc", "open", "high", "low", "close", "volume"])
+              n = 0
+              for r in rows:
+                  ts = int(r["timestamp"]) / 1000
+                  if not r.get("open") or float(r["high"]) < float(r["low"]):
+                      continue
+                  w.writerow([datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), r["open"], r["high"], r["low"], r["close"], r.get("volume", "")])
+                  n += 1
+          print(f"{dst}: {n} 列（原始 {len(rows)}），{rows[0]['timestamp'] if rows else '-'} → {rows[-1]['timestamp'] if rows else '-'}")
+          PY
+          ls -la data/dukascopy
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/dukascopy/
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -m "data: Dukascopy ${{ github.event.inputs.instrument }} ${{ github.event.inputs.timeframe }}（${{ github.event.inputs.from }} → ${{ github.event.inputs.to }}）[skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1
