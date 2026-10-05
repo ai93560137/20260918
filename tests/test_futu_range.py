@@ -222,7 +222,12 @@ w = acc["week"]
 scored = [r for r in w["records"] if r["hit"] is not None]
 check("週：前 12 段只估比例、不評分", len(w["records"]) - len(scored) == main.PERIOD_CAL_MIN and w["n"] == len(scored))
 check("週：預測 = 第一天 HAR × √日數 × 之前的比例中位數",
-      all(r["lo"] <= r["forecast"] <= r["hi"] and r["hit"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in scored), scored[:1])
+      all(r["lo"] <= r["forecast"] <= r["hi"] and r["hit_range"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in scored), scored[:1])
+whl = [r for r in scored if r.get("high") is not None]
+check("[R120] 週：有預測高位／低位與預計範圍，✅ = 兩邊都落在範圍", len(whl) >= len(scored) - 1
+      and all(r["high_lo"] <= r["high"] <= r["high_hi"] and r["low_lo"] <= r["low"] <= r["low_hi"]
+              and r["hit"] == ((r["high_lo"] <= r["actual_high"] <= r["high_hi"]) and (r["low_lo"] <= r["actual_low"] <= r["low_hi"])) for r in whl)
+      and w["hit_high_n"] == len(whl) and w.get("cal") and len(w["cal"]["ups"]) >= main.PERIOD_CAL_MIN, whl[:1])
 check("月：有紀錄", acc["month"]["records"] and all(len(r["key"]) == 7 for r in acc["month"]["records"]))
 late = [dict(r) for r in long_rows]; late[-1] = dict(late[-1], high=late[-1]["high"] + 5000, range=late[-1]["range"] + 5000)
 acc2 = main.futu_accuracy(late, main.har_forecasts(late))
@@ -255,9 +260,11 @@ check("[R109] 今日表每列有預測高／低與各自預計範圍", f"{r0['hi
       and "實際高" in hh and "實際低" in hh)
 hw = main._fy_history("week", w)
 r1 = w["recent"][-1]
-check("[R108] 週表每列有預計範圍、目標約八成", f"{r1['lo']:,.0f}–{r1['hi']:,.0f}" in hw and "目標約八成" in hw
-      and hw.count("class='fy-rng'") == len(w["recent"]) + 1)
-check("頁面：週沒有高低欄、沒數據就不顯示", "<th>高</th>" not in main._fy_history("week", w) and main._fy_history("day", {"n": 0}) == "")
+check("[R120] 週表與今日表同一格式：預測高／實際高／預測低／實際低、全週波幅", f"{r1['high_lo']:,.0f}–{r1['high_hi']:,.0f}" in hw
+      and "實際高" in hw and "實際低" in hw and "全週波幅" in hw and "高、低都落在預計範圍" in hw
+      and hw.count("class='fy-rng'") == 2 * len(w["recent"]) + 2, hw[:300])
+check("頁面：沒數據就不顯示", main._fy_history("day", {"n": 0}) == "")
+check("[R120] 月表同一格式", "實際高" in main._fy_history("month", acc["month"]) and "全月波幅" in main._fy_history("month", acc["month"]))
 FAKE.clear()
 client.post("/", json=packet([b for b in noisy(420, "2024-06-03") if b["time_key"][:10] < today]))
 ja = client.get("/?view=futu_range&report=accuracy").get_json()

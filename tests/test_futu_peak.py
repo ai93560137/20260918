@@ -167,7 +167,7 @@ check("午市檢討附三個策略現況", "高低位是否已出現" in noon["t
 pre = main.futu_report(SYM, "preopen", now=hk("2026-10-06 07:53"))
 check("開市前預測附本週／本月現況", "本週" in pre["text"] and "本月" in pre["text"], pre["text"])
 page = client.get("/?view=futu_range").get_data(as_text=True)
-check("頁面有高低位是否已出現區塊", "高低位是否已出現" in page)
+check("頁面有高低位是否已出現區塊（開市前是等待文字、開市後是三張卡）", "高位已出現了嗎" in page or "高低位是否已出現" in page)
 check("[R102] 訊息與頁面都有陣名", noon["text"].startswith("🕛【風揚陣】") and pre["text"].startswith("📏【風揚陣】")
       and "風揚陣・即月期貨波幅" in page)
 calls = []
