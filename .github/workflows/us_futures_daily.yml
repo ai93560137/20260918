@@ -1,0 +1,47 @@
+name: us-futures-daily
+# 美國指數期貨連續合約日線（ES、NQ、YM）與指數（SPX、NDX、DJI），yfinance 抓整段歷史，commit 回觸發時的分支（data/us_futures/）。
+# 雲端工作階段連不到 Yahoo、富途沒有 CME 權限，所以在這裡抓。排程每週六一次（只在預設分支生效）；不發訊息。
+on:
+  schedule:
+    - cron: '47 2 * * 6'     # 週六 10:47 HKT
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: 逗號分隔的 Yahoo 代號
+        required: false
+        default: 'ES=F,NQ=F,YM=F,^GSPC,^NDX,^DJI'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: us-futures-daily
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: deps
+        run: pip install -q yfinance pandas
+      - name: fetch
+        env:
+          SYMBOLS: ${{ github.event.inputs.symbols }}
+        run: python3 scripts/us_futures_daily.py --symbols "${SYMBOLS:-ES=F,NQ=F,YM=F,^GSPC,^NDX,^DJI}"
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/us_futures/
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -m "data: 美國指數期貨日線（ES／NQ／YM＋指數，yfinance）[skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1
