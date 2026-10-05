@@ -3915,7 +3915,7 @@ def _fy_history(kind, acc):
             mark = " ✓" if abs(pct) <= HL_OK_PCT else (" ↑" if diff > 0 else " ↓")
             return (f"<td>{_n(pred)}<br><span class='fy-rng'>{_n(lo)}–{_n(hi)}</span></td>"
                     f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(actual)}{mark}</b>"
-                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}（{pct:+.2f}%）</span></td>")
+                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}<br>{pct:+.2f}%</span></td>")
 
         head = (f"<tr><th>{label}</th><th>預測高<br><span class='fy-rng'>預計範圍</span></th><th>實際高</th>"
                 "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th></tr>")

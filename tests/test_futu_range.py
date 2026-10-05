@@ -269,7 +269,7 @@ check("[R121][R125] 表：相差 1% 內綠字 ✓、超過紅字 ↑／↓、沒
       and hh.count("<b class='pos'>") + hh.count("<b class='neg'>") == 2 * len(d["recent"])
       and hh.count("<b class='pos'>") == sum(ok1(r) + ok2(r) for r in d["recent"]), hh[:400])
 dh = r0["actual_high"] - r0["high"]
-check("[R122][R125] 實際下面有「實際 − 預測」點數與百分比，高綠低紅", f"<span class='fy-rng {main.pnl_class(dh)}'>{dh:+,.0f}（{dh / r0['high'] * 100:+.2f}%）</span>" in hh
+check("[R122][R125] 實際下面有「實際 − 預測」點數與百分比，高綠低紅", f"<span class='fy-rng {main.pnl_class(dh)}'>{dh:+,.0f}<br>{dh / r0['high'] * 100:+.2f}%</span>" in hh
       and hh.count("class='fy-rng pos'") + hh.count("class='fy-rng neg'") + hh.count("class='fy-rng muted'") == 2 * len(d["recent"]), hh[:400])
 check("[R125] 統計行有「都在 1% 內」", d.get("within_rate") is not None and f"都在 1% 內：{d['within_rate']}%" in hh
       and d["within_rate"] == round(sum(ok1(r) and ok2(r) for r in d["records"] if r.get("err_high") is not None) / d["within_n"] * 100), d.get("within_rate"))
