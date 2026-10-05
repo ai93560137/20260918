@@ -224,6 +224,11 @@ check("週：前 12 段只估比例、不評分", len(w["records"]) - len(scored
 check("週：預測 = 第一天 HAR × √日數 × 之前的比例中位數",
       all(r["lo"] <= r["forecast"] <= r["hi"] and r["hit_range"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in scored), scored[:1])
 whl = [r for r in scored if r.get("high") is not None]
+lv = main._roll_levels(100, 90, 95, 10, [-0.5, 0.0, 0.5, 1.0, 2.0], [-0.5, 0.0, 0.5, 1.0, 2.0], 0.1)
+check("[R124] 最新預測：已出現的高／低與「現價 ± 比例 × 剩餘預測」取較極端", lv["high"] == 100 and lv["high_hi"] == 95 + 1.6 * 10
+      and lv["low"] == 90 and lv["low_lo"] == 95 - 1.6 * 10 and lv["high_lo"] == 100 and lv["low_hi"] == 90, lv)
+check("[R124] 週：有邊走邊改的比例與走到一半的評分", w.get("cal_roll") and len(w["cal_roll"]["ups"]) >= main.ROLL_MIN_SAMPLES
+      and w["roll_mid"] and w["roll_mid"]["n"] > 0 and 0 <= w["roll_mid"]["hit_rate"] <= 100, w.get("roll_mid"))
 check("[R120] 週：有預測高位／低位與預計範圍，✅ = 兩邊都落在範圍", len(whl) >= len(scored) - 1
       and all(r["high_lo"] <= r["high"] <= r["high_hi"] and r["low_lo"] <= r["low"] <= r["low_hi"]
               and r["hit"] == ((r["high_lo"] <= r["actual_high"] <= r["high_hi"]) and (r["low_lo"] <= r["actual_low"] <= r["low_hi"])) for r in whl)
