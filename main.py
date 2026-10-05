@@ -104,6 +104,7 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-05 — [R122] 過去 7 次表：實際高／實際低下面多一行「實際 − 預測」的差距，實際比預測高 → 綠字、低 → 紅字（日、週、月）。
 #   * 2026-10-05 — [R121] 過去 7 次表：實際高／實際低落在範圍內 → 綠字加 ✓，跑出範圍照舊紅字加 ↑／↓；拿走「結果」欄（日、週、月）。
 #   * 2026-10-05 — [R120] 本週／本月卡與今日卡同一套項目：加預測高位／低位與預計範圍（週、月的（高−段首昨收）÷R、（段首昨收−低）÷R
 #     比例逐段前推校準，PERIOD_CAL_MIN 段後才評分），過去 7 次表同樣列預測高／實際高／預測低／實際低，✅ = 兩邊都落在範圍。
@@ -3824,8 +3825,10 @@ def _fy_history(kind, acc):
 
         def side(pred, lo, hi, actual):                               # [R121] 中 → 綠字 ✓；跑出範圍 → 紅字 ↑／↓
             mark = " ↑" if actual > hi else (" ↓" if actual < lo else " ✓")
+            diff = actual - pred                                          # [R122] 實際 − 預測：高 → 綠、低 → 紅
             return (f"<td>{_n(pred)}<br><span class='fy-rng'>{_n(lo)}–{_n(hi)}</span></td>"
-                    f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(actual)}{mark}</b></td>")
+                    f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(actual)}{mark}</b>"
+                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}</span></td>")
 
         head = (f"<tr><th>{label}</th><th>預測高<br><span class='fy-rng'>預計範圍</span></th><th>實際高</th>"
                 "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th></tr>")
@@ -3835,6 +3838,7 @@ def _fy_history(kind, acc):
                      + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + "</tr>")
         legend = (f"<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，{HL_BAND_ZH}（每邊約 96%）。"
                   "綠字 ✓ = 實際落在預計範圍；紅字 = 跑出範圍（↑ 高過上限、↓ 低過下限）。"
+                  "實際下面的小字 = 實際 − 預測（綠 = 實際比預測高、紅 = 比預測低）。"
                   "「高、低都落在預計範圍」= 同一天兩邊都是綠字。兩邊同時中約九成屬正常"
                   + ("；範圍比 10-05 前寬約七成（R119）。" if kind == "day" else "；週、月的段數少，比率會較波動。") + "</div>")
         note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。" if kind == "day" else
