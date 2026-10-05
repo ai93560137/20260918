@@ -100,8 +100,15 @@ elif px is not None and px <= lo:
     hit = ('dn', lo, f'🔔🔻 恒指觸及通道下軌!\n報價 {px:,.0f} ≤ 下軌 {lo:,.0f}({tag},{ts:%H:%M},延遲15分鐘)')
 if px is not None:
     print(f'hsi px={px:,.0f} rails=[{lo:,.0f}, {up:,.0f}] hit={hit and hit[0]}')
+# 防重發鍵用「港交所交易日」而非自然日:夜市(17:00 後至凌晨)屬下一交易日,
+# 否則同一夜市段跨過午夜會再發一次(10-02 晚 → 10-03 00:05 實測重複)。
+# 假期表同 fetch_levels.py 的 HK_HOLIDAYS,兩處需同步維護。
+HK_HOLIDAYS = {'2026-10-01', '2026-10-19', '2026-12-25', '2027-01-01'}
+td = now.date() + timedelta(days=1 if now.hour >= 17 else 0)
+while td.weekday() >= 5 or str(td) in HK_HOLIDAYS:
+    td += timedelta(days=1)
 if hit:
-    key = f'{hit[0]}:{hit[1]:.0f}:{now:%Y-%m-%d}'
+    key = f'{hit[0]}:{hit[1]:.0f}:{td}'
     if st.get('hsi') == key:
         print('hsi already alerted; skip')
     else:
