@@ -104,6 +104,14 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-05 — [R126] ✓ 的門檻按時間長度分：今日 1%、本週 2%、本月 4%（HL_OK_PCT_BY；誤差約與交易日數的平方根成正比，
+#     真實數據高位誤差中位日 0.52%、週 1.2%、月 2.1%；用這三個門檻，高低都在門檻內的比率日 65%、週 60%、月 59%）。
+#   * 2026-10-05 — [R125] 過去 7 次表：實際高／低下面的差距加百分比（差距 ÷ 預測）；綠字 ✓ 改為「相差 1% 以內」才給，
+#     超過 1% 紅字（↑ 實際較高、↓ 較低）；統計行加「高、低都在 1% 內」的比率（HL_OK_PCT）。預計範圍與落在範圍的統計不變。
+#   * 2026-10-05 — [R124] 本週／本月卡加「🔄 最新預測」（邊走邊改）：已出現的高／低 ＋ 剩餘日子的預測（今日 R̂ × √剩餘日數 × 過去比例），
+#     比例用過去各段每一天的「（之後的高 − 當日收）÷ 剩餘預測」逐段前推校準；段首的原始預測照舊留在表裡計分。
+#     更新後範圍的分位 ROLL_BAND_Q（週 2%、月 5%）。真實數據（逐段前推，走到一半時評分）：週範圍寬 2,114 → 867 點、高低都中 97%；
+#     月 4,082 → 1,647 點、96%；高位平均差週 159 點、月 193 點。
 #   * 2026-10-05 — [R123] 本週／本月的高位／低位預計範圍再擴闊：分位由 2% 改 1%（HL_BAND_Q_PERIOD）。逐段前推：週兩邊同時 87% → 89%
 #     （高 95%、低 92%，平均範圍寬 1,666 → 2,114 點）；月 73% → 82%（只有 22 段，1% 分位等於歷史極值）。今日不變（2%）。
 #     注意：擴闊範圍只提高「落在範圍內」的比率，不會縮小實際與預測的差距（週高位平均差 365 點、月 807 點是預測本身的誤差）。
@@ -2429,6 +2437,7 @@ HL_MIN_DAYS = 120                               # 估高低位比例至少要這
 HL_BAND_Q = 0.02                                # [R119] 高位／低位預計範圍的分位（2%／98% → 每邊約 96%、兩邊同時約 92%）
 HL_BAND_ZH = "二十次有十九次落在這裡"            # 白話（每邊）
 HL_BAND_Q_PERIOD = 0.01                         # [R123] 本週／本月用 1%／99% 分位（段數少，約等於歷史極值）
+HL_OK_PCT_BY = {"day": 1.0, "week": 2.0, "month": 4.0}   # [R125][R126] 實際與預測相差這個百分比以內才算 ✓
 
 
 def _hl_band_q(kind):
@@ -2901,7 +2910,8 @@ def futu_peak_status(symbol, now=None):
                 first = done[:cut]
                 c_state = (max(x[0] for x in first), min(x[1] for x in first), first[-1][2])
         period = {"key": key, "sessions_done": len(prior) + (1 if ended and trading_today else 0), "sessions": n,
-                  "R": round(big_r, 1), "over": rem <= 0, "range": round(hs - ls, 1), "first": sessions[0]}
+                  "R": round(big_r, 1), "over": rem <= 0, "range": round(hs - ls, 1), "first": sessions[0],
+                  "rem": round(rem, 3), "r_today": round(fc_today, 1), "price": price}      # [R124] 給最新預測用
         if kind in PERIOD_RANGE_RATIO:                                # [R103] 週、月的預測波幅（已校準）
             q10, q50, q90 = PERIOD_RANGE_RATIO[kind]
             period["forecast"] = {"range": round(big_r * q50), "lo": round(big_r * q10), "hi": round(big_r * q90)}
@@ -3046,9 +3056,11 @@ def futu_peak_lines(symbol, now=None, status=None, signals=None):
 # 前 PERIOD_CAL_MIN 段只用來估比例、不計分。
 ACC_SHOW = 7
 PERIOD_CAL_MIN = 12
+ROLL_MIN_SAMPLES = 30                           # [R124] 邊走邊改的比例至少要這麼多個（段 × 日）樣本
+ROLL_BAND_Q = {"week": 0.02, "month": 0.05}     # [R124] 更新後範圍的分位（走到一半時：週 867 點寬／97%、月 1,647 點／96%）
 
 
-def _acc_summary(recs, extra=()):
+def _acc_summary(recs, extra=(), ok_pct=1.0):
     done = [r for r in recs if r.get("hit") is not None]
     errs = [r["err"] for r in done]
     out = {"n": len(done), "hits": sum(1 for r in done if r["hit"]),
@@ -3065,6 +3077,12 @@ def _acc_summary(recs, extra=()):
         vals = [abs(r[key]) for r in done if r.get(key) is not None]
         if vals:
             out[key.replace("err", "mae")] = round(sum(vals) / len(vals), 1)
+    hl = [r for r in done if r.get("err_high") is not None and r.get("high") and r.get("low")]
+    if hl:                                                         # [R125] 高、低都在門檻內的比率（門檻按日／週／月）
+        ok = [abs(r["err_high"]) / r["high"] * 100 <= ok_pct and abs(r["err_low"]) / r["low"] * 100 <= ok_pct for r in hl]
+        out["within_n"] = len(ok); out["within_rate"] = round(sum(ok) / len(ok) * 100); out["ok_pct"] = ok_pct
+        out["recent_within"] = sum(1 for r in out["recent"] if r.get("err_high") is not None and r.get("high")
+                                   and abs(r["err_high"]) / r["high"] * 100 <= ok_pct and abs(r["err_low"]) / r["low"] * 100 <= ok_pct)
     return out
 
 
@@ -3107,7 +3125,7 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
             if rec.get(k) is not None:
                 rec[k] = round(rec[k], 1)
         day.append(rec)
-    out = {"day": {**_acc_summary(day, ("hit_range", "hit_high", "hit_low")), "records": day}}
+    out = {"day": {**_acc_summary(day, ("hit_range", "hit_high", "hit_low"), HL_OK_PCT_BY["day"]), "records": day}}
     for kind in ("week", "month"):
         groups = {}
         for i, row in enumerate(completed):
@@ -3140,9 +3158,60 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
             if ref:
                 pups.append((p_high - ref) / big_r); pdowns.append((ref - p_low) / big_r)
             recs.append(rec)
-        out[kind] = {**_acc_summary(recs, ("hit_range", "hit_high", "hit_low")), "records": recs,
-                     "cal": ({"ups": sorted(pups), "downs": sorted(pdowns)} if len(pups) >= PERIOD_CAL_MIN else None)}
+        roll = _roll_calibrate(completed, har, groups, open_keys.get(kind), ROLL_BAND_Q[kind])      # [R124]
+        out[kind] = {**_acc_summary(recs, ("hit_range", "hit_high", "hit_low"), HL_OK_PCT_BY[kind]), "records": recs,
+                     "cal": ({"ups": sorted(pups), "downs": sorted(pdowns)} if len(pups) >= PERIOD_CAL_MIN else None),
+                     "cal_roll": roll["cal"], "roll_mid": roll["mid"]}
     return out
+
+
+def _roll_calibrate(completed, har, groups, open_key, q):
+    """[R124] 邊走邊改的比例：每段每一天 k（已走 k 日）記 (之後的最高 − 當日收) ÷ (翌日 R̂ × √剩餘日數)、(當日收 − 之後的最低) ÷ 同一數。
+    逐段前推；另在每段走到一半時用之前各段的比例評分（高、低都落在更新後的範圍）。回傳 {cal, mid}。"""
+    ups, downs, mid = [], [], []
+    n_periods = 0
+    for key, idx in groups.items():
+        if key == open_key or len(idx) < 2:
+            continue
+        n = len(idx)
+        rows_p = [completed[i] for i in idx]
+        this_ups, this_downs = [], []
+        k_mid = n // 2
+        for k in range(1, n):
+            f = har.get(idx[k])
+            if not f:
+                continue
+            c = rows_p[k - 1]["close"]
+            r_rem = f[0] * math.sqrt(n - k)
+            rem_hi = max(r["high"] for r in rows_p[k:]); rem_lo = min(r["low"] for r in rows_p[k:])
+            this_ups.append((rem_hi - c) / r_rem); this_downs.append((c - rem_lo) / r_rem)
+            if k == k_mid and n_periods >= PERIOD_CAL_MIN and len(ups) >= ROLL_MIN_SAMPLES:
+                hs = max(r["high"] for r in rows_p[:k]); ls = min(r["low"] for r in rows_p[:k])
+                lv = _roll_levels(hs, ls, c, r_rem, sorted(ups), sorted(downs), q)
+                p_hi = max(r["high"] for r in rows_p); p_lo = min(r["low"] for r in rows_p)
+                mid.append({"hit_high": lv["high_lo"] <= p_hi <= lv["high_hi"], "hit_low": lv["low_lo"] <= p_lo <= lv["low_hi"],
+                            "width": (lv["high_hi"] - lv["high_lo"] + lv["low_hi"] - lv["low_lo"]) / 2,
+                            "err_high": p_hi - lv["high"], "err_low": p_lo - lv["low"]})
+        ups += this_ups; downs += this_downs
+        n_periods += 1
+    cal = {"ups": sorted(ups), "downs": sorted(downs)} if n_periods >= PERIOD_CAL_MIN and len(ups) >= ROLL_MIN_SAMPLES else None
+    summary = None
+    if mid:
+        summary = {"n": len(mid), "hit_rate": round(sum(m["hit_high"] and m["hit_low"] for m in mid) / len(mid) * 100),
+                   "hit_high_rate": round(sum(m["hit_high"] for m in mid) / len(mid) * 100),
+                   "hit_low_rate": round(sum(m["hit_low"] for m in mid) / len(mid) * 100),
+                   "width": round(sum(m["width"] for m in mid) / len(mid)),
+                   "mae_high": round(sum(abs(m["err_high"]) for m in mid) / len(mid), 1),
+                   "mae_low": round(sum(abs(m["err_low"]) for m in mid) / len(mid), 1)}
+    return {"cal": cal, "mid": summary}
+
+
+def _roll_levels(hs, ls, c, r_rem, ups_sorted, downs_sorted, q):
+    """[R124] 最新預測：已出現的高／低 與 「當日收 ± 比例 × 剩餘預測」取較極端的一邊。"""
+    up = lambda p: max(hs, c + _quantile(ups_sorted, p) * r_rem)
+    dn = lambda p: min(ls, c - _quantile(downs_sorted, p) * r_rem)
+    return {"high": round(up(0.5)), "high_lo": round(up(q)), "high_hi": round(up(1 - q)),
+            "low": round(dn(0.5)), "low_lo": round(dn(1 - q)), "low_hi": round(dn(q))}
 
 
 def _hl_levels(ref, big_r, ups_sorted, downs_sorted, q=None):
@@ -3610,6 +3679,16 @@ def futu_range_data(symbol):
             ref = done_rows[-1]["close"]
         if ref:
             per["forecast"].update(_hl_levels(ref, per["R"], cal["ups"], cal["downs"], _hl_band_q(kind)), band_q=_hl_band_q(kind))
+        roll = (data["accuracy"].get(kind) or {}).get("cal_roll")                       # [R124] 最新預測（邊走邊改）
+        if roll and per.get("rem") is not None and per.get("high") and per.get("low"):
+            hs, ls, price = per["high"]["ext"], per["low"]["ext"], per["price"]
+            if per["rem"] <= 0:
+                per["forecast"]["roll"] = {"high": hs, "high_lo": hs, "high_hi": hs, "low": ls, "low_lo": ls, "low_hi": ls, "done": True}
+            else:
+                r_rem = per["r_today"] * math.sqrt(per["rem"])
+                per["forecast"]["roll"] = {**_roll_levels(hs, ls, price, r_rem, roll["ups"], roll["downs"], ROLL_BAND_Q[kind]),
+                                           "done": False, "r_rem": round(r_rem)}
+            per["forecast"]["roll_mid"] = (data["accuracy"].get(kind) or {}).get("roll_mid")
     sig = gcs_read_json(futu_signal_file(symbol), [])
     data["signals"] = {e.get("id"): e for e in (sig if isinstance(sig, list) else []) if isinstance(e, dict)}
     data["peak_lines"] = futu_peak_lines(symbol, status=data["peak"], signals=sig)
@@ -3822,21 +3901,24 @@ def _fy_history(kind, acc):
         return ""
     unit = {"day": "天", "week": "週", "month": "個月"}[kind]
     label = {"day": "交易日", "week": "週", "month": "月"}[kind]
+    okp = HL_OK_PCT_BY[kind]                                          # [R126] ✓ 的門檻按日／週／月
     body = ""
     if acc.get("hit_high_n") and all(r.get("high") is not None for r in acc["recent"]):   # [R120] 日、週、月同一格式
         rng_zh = {"day": "全日波幅", "week": "全週波幅", "month": "全月波幅"}[kind]
-        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次）<br>"
-                f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次・預測高位平均差 {_n(acc.get('mae_high'))} 點、"
-                f"低位 {_n(acc.get('mae_low'))} 點<br>"
+        rate = (f"🎯 <b>高、低都落在預計範圍：{acc['hit_rate']}%</b>（{acc['n']} {unit}中 {acc['hits']} 次）"
+                + (f"・<b>都在 {okp:g}% 內：{acc['within_rate']}%</b>" if acc.get("within_rate") is not None else "") + "<br>"
+                f"🕖 近 {len(acc['recent'])} 次有 {acc['recent_hits']} 次落在範圍、{acc.get('recent_within', 0)} 次在 {okp:g}% 內・"
+                f"預測高位平均差 {_n(acc.get('mae_high'))} 點、低位 {_n(acc.get('mae_low'))} 點<br>"
                 f"📏 各自計：高位 {acc.get('hit_high_rate')}%・低位 {acc.get('hit_low_rate')}%・"
                 f"{rng_zh} {acc.get('hit_range_rate')}%（{acc.get('hit_range_n')} {unit}）")
 
-        def side(pred, lo, hi, actual):                               # [R121] 中 → 綠字 ✓；跑出範圍 → 紅字 ↑／↓
-            mark = " ↑" if actual > hi else (" ↓" if actual < lo else " ✓")
+        def side(pred, lo, hi, actual):                               # [R125] 相差 1% 內 → 綠字 ✓；超過 → 紅字 ↑／↓
             diff = actual - pred                                          # [R122] 實際 − 預測：高 → 綠、低 → 紅
+            pct = diff / pred * 100 if pred else 0.0
+            mark = " ✓" if abs(pct) <= okp else (" ↑" if diff > 0 else " ↓")
             return (f"<td>{_n(pred)}<br><span class='fy-rng'>{_n(lo)}–{_n(hi)}</span></td>"
                     f"<td><b class='{'pos' if mark == ' ✓' else 'neg'}'>{_n(actual)}{mark}</b>"
-                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}</span></td>")
+                    f"<br><span class='fy-rng {pnl_class(diff)}'>{diff:+,.0f}<br>{pct:+.2f}%</span></td>")
 
         head = (f"<tr><th>{label}</th><th>預測高<br><span class='fy-rng'>預計範圍</span></th><th>實際高</th>"
                 "<th>預測低<br><span class='fy-rng'>預計範圍</span></th><th>實際低</th></tr>")
@@ -3846,9 +3928,10 @@ def _fy_history(kind, acc):
                      + side(r["low"], r["low_lo"], r["low_hi"], r["actual_low"]) + "</tr>")
         band_zh = f"{HL_BAND_ZH}（每邊約 96%）" if kind == "day" else "按過去各段的極端比例定（1%／99% 分位，每邊約 95%）"
         legend = (f"<div class='fy-note'>📐 <b>預計範圍</b>：按過去預測的準繩，{band_zh}。"
-                  "綠字 ✓ = 實際落在預計範圍；紅字 = 跑出範圍（↑ 高過上限、↓ 低過下限）。"
-                  "實際下面的小字 = 實際 − 預測（綠 = 實際比預測高、紅 = 比預測低）。"
-                  "「高、低都落在預計範圍」= 同一天兩邊都是綠字。兩邊同時中約九成屬正常"
+                  f"綠字 ✓ = 實際與預測相差 {okp:g}% 以內（今日 1%、本週 2%、本月 4%，按時間長度放寬）；"
+                  f"紅字 = 相差超過 {okp:g}%（↑ 實際較高、↓ 實際較低）。"
+                  "實際下面的小字 = 實際 − 預測（點數與百分比；綠 = 實際比預測高、紅 = 比預測低）。"
+                  "「落在預計範圍」另計：兩邊同時落在範圍約九成屬正常"
                   + ("；範圍比 10-05 前寬約七成（R119）。" if kind == "day" else "；週、月的段數少，比率會較波動。") + "</div>")
         note = ("📝 = 開市前實時紀錄；其餘為逐日前推重算（只用當時已知的數據）。" if kind == "day" else
                 "逐段前推重算：每段只用之前的數據預測，比例也只用之前已完結的段估計。")
@@ -3892,6 +3975,21 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
                         + (f"<div class='fy-band'>📐 預計範圍 {_n(fc['high_lo'])}–{_n(fc['high_hi'])}</div>" if fc.get("high_lo") is not None else "")
                         + f"<div class='fy-row'><span>🎯 預測低位</span><b>{_n(fc['low'])}</b></div>"
                         + (f"<div class='fy-band'>📐 預計範圍 {_n(fc['low_lo'])}–{_n(fc['low_hi'])}（{HL_BAND_ZH if kind == 'day' else '按過去極端比例，每邊約 95%'}）</div>" if fc.get("low_lo") is not None else ""))
+        rl = fc.get("roll")                                               # [R124] 本週／本月：邊走邊改的最新預測
+        if rl and per:
+            done_zh = f"已收市 {per['sessions_done']}／{per['sessions']} 個交易日"
+            if rl.get("done"):
+                html.append(f"<div class='fy-row'><span>🔄 最新預測</span><b>🏁 已結束：高 {_n(rl['high'])}／低 {_n(rl['low'])}</b></div>")
+            else:
+                html.append(f"<div class='fy-row'><span>🔄 最新預測高位（{done_zh}）</span><b>{_n(rl['high'])}</b></div>"
+                            f"<div class='fy-band'>📐 更新後範圍 {_n(rl['high_lo'])}–{_n(rl['high_hi'])}</div>"
+                            f"<div class='fy-row'><span>🔄 最新預測低位</span><b>{_n(rl['low'])}</b></div>"
+                            f"<div class='fy-band'>📐 更新後範圍 {_n(rl['low_lo'])}–{_n(rl['low_hi'])}</div>")
+            rm = fc.get("roll_mid")
+            html.append("<div class='fy-note'>🔄 最新預測 = 已出現的高／低，加上「現價 ± 剩餘日子的預測波幅 × 過去比例」；每包 K 線更新，"
+                        "範圍隨日子過去收窄。上面「預測高位／低位」是段首定一次的原始預測，過去 7 次表按它計分。"
+                        + (f"過去各段走到一半時，最新預測的範圍平均寬 {rm['width']:,} 點、高低都中 {rm['hit_rate']}%"
+                           f"（高位平均差 {_n(rm['mae_high'])}、低位 {_n(rm['mae_low'])} 點）。" if rm else "") + "</div>")
     if per:
         used = per["range"] / fc["range"] * 100 if fc and fc.get("range") else None
         html.append(f"<div class='fy-row'><span>📏 已走</span><b>{_n(per['range'])} 點"

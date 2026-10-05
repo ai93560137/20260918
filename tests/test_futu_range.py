@@ -224,6 +224,11 @@ check("週：前 12 段只估比例、不評分", len(w["records"]) - len(scored
 check("週：預測 = 第一天 HAR × √日數 × 之前的比例中位數",
       all(r["lo"] <= r["forecast"] <= r["hi"] and r["hit_range"] == (r["lo"] <= r["actual"] <= r["hi"]) for r in scored), scored[:1])
 whl = [r for r in scored if r.get("high") is not None]
+lv = main._roll_levels(100, 90, 95, 10, [-0.5, 0.0, 0.5, 1.0, 2.0], [-0.5, 0.0, 0.5, 1.0, 2.0], 0.1)
+check("[R124] 最新預測：已出現的高／低與「現價 ± 比例 × 剩餘預測」取較極端", lv["high"] == 100 and lv["high_hi"] == 95 + 1.6 * 10
+      and lv["low"] == 90 and lv["low_lo"] == 95 - 1.6 * 10 and lv["high_lo"] == 100 and lv["low_hi"] == 90, lv)
+check("[R124] 週：有邊走邊改的比例與走到一半的評分", w.get("cal_roll") and len(w["cal_roll"]["ups"]) >= main.ROLL_MIN_SAMPLES
+      and w["roll_mid"] and w["roll_mid"]["n"] > 0 and 0 <= w["roll_mid"]["hit_rate"] <= 100, w.get("roll_mid"))
 check("[R120] 週：有預測高位／低位與預計範圍，✅ = 兩邊都落在範圍", len(whl) >= len(scored) - 1
       and all(r["high_lo"] <= r["high"] <= r["high_hi"] and r["low_lo"] <= r["low"] <= r["low_hi"]
               and r["hit"] == ((r["high_lo"] <= r["actual_high"] <= r["high_hi"]) and (r["low_lo"] <= r["actual_low"] <= r["low_hi"])) for r in whl)
@@ -258,11 +263,17 @@ r0 = d["recent"][-1]
 check("[R109] 今日表每列有預測高／低與各自預計範圍", f"{r0['high_lo']:,.0f}–{r0['high_hi']:,.0f}" in hh
       and f"{r0['low_lo']:,.0f}–{r0['low_hi']:,.0f}" in hh and "二十次有十九次" in hh and hh.count("class='fy-rng'") == 16
       and "實際高" in hh and "實際低" in hh)
-check("[R121] 表：中的綠字 ✓、跑出的紅字 ↑／↓、沒有結果欄", "<th>結果</th>" not in hh and "class='pos'>" in hh and " ✓" in hh
+ok1 = lambda r: abs(r["err_high"]) / r["high"] * 100 <= main.HL_OK_PCT_BY['day']
+ok2 = lambda r: abs(r["err_low"]) / r["low"] * 100 <= main.HL_OK_PCT_BY['day']
+check("[R121][R125] 表：相差 1% 內綠字 ✓、超過紅字 ↑／↓、沒有結果欄", "<th>結果</th>" not in hh and "class='pos'>" in hh
       and hh.count("<b class='pos'>") + hh.count("<b class='neg'>") == 2 * len(d["recent"])
-      and hh.count("<b class='pos'>") == sum(bool(r["hit_high"]) + bool(r["hit_low"]) for r in d["recent"]), hh[:400])
-check("[R122] 實際下面有「實際 − 預測」小字，高綠低紅", f"<span class='fy-rng {main.pnl_class(r0['actual_high'] - r0['high'])}'>{r0['actual_high'] - r0['high']:+,.0f}</span>" in hh
+      and hh.count("<b class='pos'>") == sum(ok1(r) + ok2(r) for r in d["recent"]), hh[:400])
+dh = r0["actual_high"] - r0["high"]
+check("[R122][R125] 實際下面有「實際 − 預測」點數與百分比，高綠低紅", f"<span class='fy-rng {main.pnl_class(dh)}'>{dh:+,.0f}<br>{dh / r0['high'] * 100:+.2f}%</span>" in hh
       and hh.count("class='fy-rng pos'") + hh.count("class='fy-rng neg'") + hh.count("class='fy-rng muted'") == 2 * len(d["recent"]), hh[:400])
+check("[R125] 統計行有「都在 1% 內」", d.get("within_rate") is not None and f"都在 1% 內：{d['within_rate']}%" in hh
+      and "都在 2% 內" in main._fy_history("week", w) and "都在 4% 內" in main._fy_history("month", acc["month"])
+      and d["within_rate"] == round(sum(ok1(r) and ok2(r) for r in d["records"] if r.get("err_high") is not None) / d["within_n"] * 100), d.get("within_rate"))
 hw = main._fy_history("week", w)
 r1 = w["recent"][-1]
 check("[R120] 週表與今日表同一格式：預測高／實際高／預測低／實際低、全週波幅", f"{r1['high_lo']:,.0f}–{r1['high_hi']:,.0f}" in hw
