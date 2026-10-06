@@ -60,6 +60,10 @@ class HTF:
         S, D = m.adj.shape
         idx = pd.Index(m.cal)
         self.ci = {d: j for j, d in enumerate(m.cal)}
+        # 基準 ETF 數據錯誤防護：指數 ETF 單日 |報酬| > 50% 只可能是分拆未調整／錯列（1321.T 2026-10-05、0050.TW 2014-01-02）→ 記 0
+        for j in np.nonzero(np.abs(m.etf_ret) > 0.5)[0]:
+            print(f"[{market}] 基準 ETF {m.cal[j]} 單日報酬 {m.etf_ret[j]:+.1%} 判為數據錯誤，記 0", file=sys.stderr)
+            m.etf_ret[j] = 0.0
         self.raw = {}
         mom = {w: np.full((S, D), np.nan, dtype=np.float32) for w in MOM_WINDOWS}
         for s, t in enumerate(m.tickers):
