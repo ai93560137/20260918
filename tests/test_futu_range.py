@@ -188,7 +188,11 @@ check("當天第一包交易日 K 寫入預測", len(log1) == 1 and log1[0]["dat
 client.post("/", json=packet([dict(live[0], high=26000)]))
 check("同一天不重寫（記錄不因之後的數據改變）", json.loads(FAKE[fk][0]) == log1)
 j = client.get("/?view=futu_range&format=json").get_json()
-check("頁面用已記錄的預測", j["forecast"]["logged"] and j["forecast"]["range"] == log1[0]["range"], j.get("forecast"))
+if j.get("after_close"):          # [R128] 03:00–09:00 跑這個測試：今天已收市，頁面改顯示下一個交易日的預測
+    check("頁面用已記錄的預測（收市後 → 下一個交易日、原交易日已完結）", j["forecast"]["date"] == j["today_hk"] == j["next_day"] > today
+          and not j["partial"] and j["rows"][-1]["date"] == today, {k: j.get(k) for k in ("today_hk", "next_day", "partial")})
+else:
+    check("頁面用已記錄的預測", j["forecast"]["logged"] and j["forecast"]["range"] == log1[0]["range"], j.get("forecast"))
 h = client.get("/?view=futu_range").get_data(as_text=True)
 check("頁面有預測卡、準確度卡、預測欄與預測線", "🔮 預測波幅" in h and "預測準確度" in h and "HAR 預測</th>" in h
       and "stroke-dasharray" in h)

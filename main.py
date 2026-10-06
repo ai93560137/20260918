@@ -104,6 +104,8 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-06 — [R128] 收市後、下一個交易日未開（恒指 03:00–09:00）：波幅頁改顯示下一個交易日的開市前預測，最新交易日標「已完結」、
+#     狀態「休市／未開市」（之前要到 09:00 才換日，07:53 記下的預測在頁上看不到，而且推送仍在所以誤標「交易中」）。
 #   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
 #     美股用紐約時間、交易日 = CME 全段（前一天 18:00 至 17:00，日期取收市那天）、不用港股日曆、開市前紀錄時段 18:00–19:00 ET。
 #     數據由 GitHub Actions（es_daily_push.yml，yfinance ES=F 日線）以 K_SESSION 封包每日推入；沒有 5 分 K，所以沒有日內訊號、
@@ -3680,6 +3682,16 @@ def futu_range_data(symbol):
     bars = gcs_read_json(futu_daily_file(symbol), [])
     bars = sorted((b for b in bars if isinstance(b, dict)), key=lambda b: str(b.get("time_key", "")))
     today = futu_session_today(symbol=symbol)
+    market = futu_market(symbol)
+    calendar = gcs_read_json(FUTU_CALENDAR_FILE, {}) if market["calendar"] else {}
+    after_close = False                                              # [R128] 收市後、下一個交易日未開 → 以下一個交易日為「今日」
+    if futu_session_end_passed(today, None, symbol) and any(str(b.get("time_key", ""))[:10] == today for b in bars):
+        nxt = datetime.strptime(today, "%Y-%m-%d")
+        for _ in range(10):
+            nxt += timedelta(days=1)
+            if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar):
+                break
+        today, after_close = nxt.strftime("%Y-%m-%d"), True
     data = futu_range_stats(bars, today)
     snap = read_futu_snapshot(symbol)
     snap_bars = (snap.get("bars") or []) if isinstance(snap, dict) and not snap.get("error") else []
@@ -3696,11 +3708,14 @@ def futu_range_data(symbol):
     elif data.get("forecast"):                                   # [R99] 未記錄：即時算，含高位／低位
         all_rows = futu_range_rows(bars)
         completed = [r for r in all_rows if r["date"] < today] if data["partial"] else all_rows
-        full = futu_day_forecast(completed, data["forecast"]["date"])
+        full = futu_day_forecast(completed, today if after_close else data["forecast"]["date"])   # [R128] 收市後 → 下一個交易日
         if full:
             data["forecast"] = full
     data["peak"] = futu_peak_status(symbol)                       # [R101][R103] 算一次，頁面與文字共用
     periods = (data["peak"] or {}).get("periods") or {}
+    if after_close and "day" in periods:                            # [R128] 已收市的那天不再當「今日」卡
+        periods = {k: v for k, v in periods.items() if k != "day"}
+        data["peak"] = {**data["peak"], "periods": periods}
     open_keys = {k: _peak_key(today, k) for k in PEAK_KINDS}       # [R104] 還沒結束的那段不計分
     open_keys.update({k: (None if p["over"] else p["key"]) for k, p in periods.items()})
     data["accuracy"] = futu_accuracy(data.pop("_completed"), data.pop("_har"),
@@ -3732,14 +3747,13 @@ def futu_range_data(symbol):
     reviews = gcs_read_json(futu_review_file(symbol), [])
     data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
                        if isinstance(e, dict) and e.get("date") == review_day]
-    calendar = gcs_read_json(FUTU_CALENDAR_FILE, {})             # [R105] 卡片標題的日期：下一個交易日
-    nxt = datetime.strptime(today, "%Y-%m-%d")
-    while not data["partial"]:
+    nxt = datetime.strptime(today, "%Y-%m-%d")                       # [R105] 卡片標題的日期：下一個交易日
+    while not data["partial"] and not after_close:                   # [R128] 收市後 today 已是下一個交易日
         nxt += timedelta(days=1)
         if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar) or nxt.year > 2100:
             break
     data["iv_compare"] = futu_iv_compare(data.get("forecast"))     # [R106] 方向一：期權 IV 對預測波幅
-    data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"),
+    data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"), "after_close": after_close,
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
                  "latest_5m": five or None,
                  "latest_5m_age_sec": None if age is None else int(age)})
