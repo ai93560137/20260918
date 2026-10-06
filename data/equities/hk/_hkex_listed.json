@@ -1,5 +1,5 @@
 {
- "asof": "06/10/2026",
+ "asof": "07/10/2026",
  "listed": {
   "0001.HK": {
    "category": "股本",
@@ -13541,11 +13541,6 @@
    "name_en": "UBKUASO@EP2703A",
    "name_zh": "快手瑞銀七三沽A"
   },
-  "15123.HK": {
-   "category": "衍生權證",
-   "name_en": "BI-TTI @EC2610A",
-   "name_zh": "創科中銀六十購A"
-  },
   "15124.HK": {
    "category": "衍生權證",
    "name_en": "UBLENOV@EP2701A",
@@ -25581,35 +25576,405 @@
    "name_en": "JPGEELY@EC2704A",
    "name_zh": "吉利摩通七四購A"
   },
+  "17995.HK": {
+   "category": "衍生權證",
+   "name_en": "MBTENCT@EC2704A",
+   "name_zh": "騰訊麥銀七四購A"
+  },
+  "17996.HK": {
+   "category": "衍生權證",
+   "name_en": "MB-PAHT@EC2708A",
+   "name_zh": "平醫麥銀七八購A"
+  },
   "17997.HK": {
    "category": "衍生權證",
    "name_en": "JP-NCI @EC2611A",
    "name_zh": "新保摩通六甲購A"
+  },
+  "17998.HK": {
+   "category": "衍生權證",
+   "name_en": "MBCLIFE@EC2708A",
+   "name_zh": "中壽麥銀七八購A"
+  },
+  "17999.HK": {
+   "category": "衍生權證",
+   "name_en": "JPBAIDU@EC2705A",
+   "name_zh": "百度摩通七五購A"
   },
   "1800.HK": {
    "category": "股本",
    "name_en": "CHINA COMM CONS",
    "name_zh": "中國交通建設"
   },
+  "18000.HK": {
+   "category": "衍生權證",
+   "name_en": "JP-GEG @EC2705A",
+   "name_zh": "銀河摩通七五購A"
+  },
+  "18001.HK": {
+   "category": "衍生權證",
+   "name_en": "JP-HSBC@EC2704B",
+   "name_zh": "匯豐摩通七四購B"
+  },
+  "18002.HK": {
+   "category": "衍生權證",
+   "name_en": "JPSANDS@EC2704A",
+   "name_zh": "金沙摩通七四購A"
+  },
+  "18003.HK": {
+   "category": "衍生權證",
+   "name_en": "SG-AIA @EC2709A",
+   "name_zh": "友邦法興七九購A"
+  },
+  "18004.HK": {
+   "category": "衍生權證",
+   "name_en": "SG-HSBC@EC2705B",
+   "name_zh": "匯豐法興七五購B"
+  },
+  "18005.HK": {
+   "category": "衍生權證",
+   "name_en": "SG-GEG @EC2706A",
+   "name_zh": "銀河法興七六購A"
+  },
+  "18006.HK": {
+   "category": "衍生權證",
+   "name_en": "SGXIAMI@EC2704A",
+   "name_zh": "小米法興七四購A"
+  },
+  "18007.HK": {
+   "category": "衍生權證",
+   "name_en": "SG-HSI @EC2704A",
+   "name_zh": "恒指法興七四購A"
+  },
+  "18008.HK": {
+   "category": "衍生權證",
+   "name_en": "SG-HKEX@EC2704B",
+   "name_zh": "港交法興七四購B"
+  },
+  "18009.HK": {
+   "category": "衍生權證",
+   "name_en": "CI-AIA @EC2706A",
+   "name_zh": "友邦信證七六購A"
+  },
   "1801.HK": {
    "category": "股本",
    "name_en": "INNOVENT BIO",
    "name_zh": "信達生物"
+  },
+  "18010.HK": {
+   "category": "衍生權證",
+   "name_en": "CIALIBA@EC2705A",
+   "name_zh": "阿里信證七五購A"
+  },
+  "18011.HK": {
+   "category": "衍生權證",
+   "name_en": "JPTENCT@EC2703F",
+   "name_zh": "騰訊摩通七三購F"
+  },
+  "18012.HK": {
+   "category": "衍生權證",
+   "name_en": "BI-HSBC@EC2704B",
+   "name_zh": "匯豐中銀七四購B"
+  },
+  "18013.HK": {
+   "category": "衍生權證",
+   "name_en": "BI-HSBC@EC2706A",
+   "name_zh": "匯豐中銀七六購A"
+  },
+  "18014.HK": {
+   "category": "衍生權證",
+   "name_en": "BITENCT@EC2706D",
+   "name_zh": "騰訊中銀七六購D"
+  },
+  "18015.HK": {
+   "category": "衍生權證",
+   "name_en": "BIXIAMI@EC2704B",
+   "name_zh": "小米中銀七四購B"
+  },
+  "18016.HK": {
+   "category": "衍生權證",
+   "name_en": "BIPOMRT@EC2704A",
+   "name_zh": "泡瑪中銀七四購A"
+  },
+  "18017.HK": {
+   "category": "衍生權證",
+   "name_en": "BIUBTEC@EC2704A",
+   "name_zh": "優必中銀七四購A"
+  },
+  "18018.HK": {
+   "category": "衍生權證",
+   "name_en": "BI-SMIC@EP2704A",
+   "name_zh": "中芯中銀七四沽A"
   },
   "1802.HK": {
    "category": "股本",
    "name_en": "WENYE GROUP",
    "name_zh": "文業集團"
   },
+  "18020.HK": {
+   "category": "衍生權證",
+   "name_en": "SG-ICBC@EC2712A",
+   "name_zh": "工行法興七乙購A"
+  },
+  "18021.HK": {
+   "category": "衍生權證",
+   "name_en": "HS-SMIC@EC2704A",
+   "name_zh": "中芯匯豐七四購A"
+  },
+  "18022.HK": {
+   "category": "衍生權證",
+   "name_en": "HSCLIFE@EC2704A",
+   "name_zh": "中壽匯豐七四購A"
+  },
+  "18023.HK": {
+   "category": "衍生權證",
+   "name_en": "HS-AIA @EC2704B",
+   "name_zh": "友邦匯豐七四購B"
+  },
+  "18024.HK": {
+   "category": "衍生權證",
+   "name_en": "MB-AIA @EC2704A",
+   "name_zh": "友邦麥銀七四購A"
+  },
+  "18025.HK": {
+   "category": "衍生權證",
+   "name_en": "MB-ZTE @EC2705A",
+   "name_zh": "中興麥銀七五購A"
+  },
+  "18026.HK": {
+   "category": "衍生權證",
+   "name_en": "MB-WPC @EC2705A",
+   "name_zh": "濰柴麥銀七五購A"
+  },
+  "18027.HK": {
+   "category": "衍生權證",
+   "name_en": "UB-AIA @EC2706A",
+   "name_zh": "友邦瑞銀七六購A"
+  },
+  "18028.HK": {
+   "category": "衍生權證",
+   "name_en": "UBXIAMI@EC2707A",
+   "name_zh": "小米瑞銀七七購A"
+  },
+  "18029.HK": {
+   "category": "衍生權證",
+   "name_en": "UB-HSBC@EC2709A",
+   "name_zh": "匯豐瑞銀七九購A"
+  },
   "1803.HK": {
    "category": "股本",
    "name_en": "BJ SPORTS & ENT",
    "name_zh": "北京體育文化"
   },
+  "18030.HK": {
+   "category": "衍生權證",
+   "name_en": "BIPINAN@EC2706A",
+   "name_zh": "平安中銀七六購A"
+  },
   "18031.HK": {
    "category": "衍生權證",
    "name_en": "CTAVICN@EC2610A",
    "name_zh": "中科花旗六十購A"
+  },
+  "18032.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-HSBC@EC2704A",
+   "name_zh": "匯豐摩利七四購A"
+  },
+  "18033.HK": {
+   "category": "衍生權證",
+   "name_en": "MSKUASO@EC2704A",
+   "name_zh": "快手摩利七四購A"
+  },
+  "18034.HK": {
+   "category": "衍生權證",
+   "name_en": "MSBEONE@EC2704A",
+   "name_zh": "百濟摩利七四購A"
+  },
+  "18035.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-CCB @EC2705A",
+   "name_zh": "建行摩利七五購A"
+  },
+  "18036.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-PSBC@EC2704A",
+   "name_zh": "郵銀摩利七四購A"
+  },
+  "18037.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-AGBK@EC2704A",
+   "name_zh": "農行摩利七四購A"
+  },
+  "18038.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-HKEX@EC2704A",
+   "name_zh": "港交摩利七四購A"
+  },
+  "18039.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-ICBC@EC2704A",
+   "name_zh": "工行摩利七四購A"
+  },
+  "18041.HK": {
+   "category": "衍生權證",
+   "name_en": "MS-HSBC@EC2704B",
+   "name_zh": "匯豐摩利七四購B"
+  },
+  "18042.HK": {
+   "category": "衍生權證",
+   "name_en": "GJXIAMI@EC2704A",
+   "name_zh": "小米國君七四購A"
+  },
+  "18043.HK": {
+   "category": "衍生權證",
+   "name_en": "GJALIBA@EC2704A",
+   "name_zh": "阿里國君七四購A"
+  },
+  "18044.HK": {
+   "category": "衍生權證",
+   "name_en": "GJTENCT@EC2704C",
+   "name_zh": "騰訊國君七四購C"
+  },
+  "18045.HK": {
+   "category": "衍生權證",
+   "name_en": "GJGEELY@EC2704A",
+   "name_zh": "吉利國君七四購A"
+  },
+  "18046.HK": {
+   "category": "衍生權證",
+   "name_en": "GJ-CATL@EC2704C",
+   "name_zh": "寧德國君七四購C"
+  },
+  "18048.HK": {
+   "category": "衍生權證",
+   "name_en": "GJ-AIA @EC2704B",
+   "name_zh": "友邦國君七四購B"
+  },
+  "18049.HK": {
+   "category": "衍生權證",
+   "name_en": "GJ-HSBC@EC2704A",
+   "name_zh": "匯豐國君七四購A"
+  },
+  "18050.HK": {
+   "category": "衍生權證",
+   "name_en": "JPPOMRT@EC2704A",
+   "name_zh": "泡瑪摩通七四購A"
+  },
+  "18051.HK": {
+   "category": "衍生權證",
+   "name_en": "BP-BOCL@EC2705A",
+   "name_zh": "中行法巴七五購A"
+  },
+  "18052.HK": {
+   "category": "衍生權證",
+   "name_en": "HU-SPA @EC2706A",
+   "name_zh": "太A華泰七六購A"
+  },
+  "18055.HK": {
+   "category": "衍生權證",
+   "name_en": "BP-ICBC@EC2709A",
+   "name_zh": "工行法巴七九購A"
+  },
+  "18056.HK": {
+   "category": "衍生權證",
+   "name_en": "BP-HSBC@EC2707A",
+   "name_zh": "匯豐法巴七七購A"
+  },
+  "18057.HK": {
+   "category": "衍生權證",
+   "name_en": "HUTRAHK@EC2706A",
+   "name_zh": "盈富華泰七六購A"
+  },
+  "18058.HK": {
+   "category": "衍生權證",
+   "name_en": "HU-CCB @EC2705A",
+   "name_zh": "建行華泰七五購A"
+  },
+  "18059.HK": {
+   "category": "衍生權證",
+   "name_en": "BPMTUAN@EC2704B",
+   "name_zh": "美團法巴七四購B"
+  },
+  "18060.HK": {
+   "category": "衍生權證",
+   "name_en": "HU-AIA @EC2710A",
+   "name_zh": "友邦華泰七十購A"
+  },
+  "18061.HK": {
+   "category": "衍生權證",
+   "name_en": "BP-CCB @EC2708A",
+   "name_zh": "建行法巴七八購A"
+  },
+  "18062.HK": {
+   "category": "衍生權證",
+   "name_en": "CI-HSBC@EC2706A",
+   "name_zh": "匯豐信證七六購A"
+  },
+  "18063.HK": {
+   "category": "衍生權證",
+   "name_en": "BP-AIA @EC2705A",
+   "name_zh": "友邦法巴七五購A"
+  },
+  "18065.HK": {
+   "category": "衍生權證",
+   "name_en": "CI-CMB @EC2704A",
+   "name_zh": "招行信證七四購A"
+  },
+  "18067.HK": {
+   "category": "衍生權證",
+   "name_en": "BPXIAMI@EC2705A",
+   "name_zh": "小米法巴七五購A"
+  },
+  "18069.HK": {
+   "category": "衍生權證",
+   "name_en": "CI-CTWR@EC2709A",
+   "name_zh": "鐵塔信證七九購A"
+  },
+  "18070.HK": {
+   "category": "衍生權證",
+   "name_en": "CT-AIA @EC2704A",
+   "name_zh": "友邦花旗七四購A"
+  },
+  "18071.HK": {
+   "category": "衍生權證",
+   "name_en": "CTRMGEN@EC2704A",
+   "name_zh": "榮昌花旗七四購A"
+  },
+  "18072.HK": {
+   "category": "衍生權證",
+   "name_en": "CTAKESO@EC2703A",
+   "name_zh": "康方花旗七三購A"
+  },
+  "18073.HK": {
+   "category": "衍生權證",
+   "name_en": "CTPINAN@EC2704A",
+   "name_zh": "平安花旗七四購A"
+  },
+  "18074.HK": {
+   "category": "衍生權證",
+   "name_en": "CTTENCT@EC2704A",
+   "name_zh": "騰訊花旗七四購A"
+  },
+  "18075.HK": {
+   "category": "衍生權證",
+   "name_en": "CT-GEG @EC2704A",
+   "name_zh": "銀河花旗七四購A"
+  },
+  "18076.HK": {
+   "category": "衍生權證",
+   "name_en": "CTBAIDU@EC2704A",
+   "name_zh": "百度花旗七四購A"
+  },
+  "18077.HK": {
+   "category": "衍生權證",
+   "name_en": "CT-HSI @EC2706A",
+   "name_zh": "恒指花旗七六購A"
+  },
+  "18078.HK": {
+   "category": "衍生權證",
+   "name_en": "CT-HSBC@EC2704B",
+   "name_zh": "匯豐花旗七四購B"
   },
   "1808.HK": {
    "category": "股本",
@@ -26391,11 +26756,6 @@
    "name_en": "DALIPAL HLDG",
    "name_zh": "達力普控股"
   },
-  "19213.HK": {
-   "category": "衍生權證",
-   "name_en": "MS-TTI @EC2610A",
-   "name_zh": "創科摩利六十購A"
-  },
   "19225.HK": {
    "category": "衍生權證",
    "name_en": "MBCTIHK@EC2610A",
@@ -26416,11 +26776,6 @@
    "name_en": "JIUJIUWANG",
    "name_zh": "久久王"
   },
-  "19275.HK": {
-   "category": "衍生權證",
-   "name_en": "CT-TTI @EC2610A",
-   "name_zh": "創科花旗六十購A"
-  },
   "1928.HK": {
    "category": "股本",
    "name_en": "SANDS CHINA LTD",
@@ -26435,11 +26790,6 @@
    "category": "股本",
    "name_en": "CHOW TAI FOOK",
    "name_zh": "周大福"
-  },
-  "19292.HK": {
-   "category": "衍生權證",
-   "name_en": "UB-TTI @EC2610A",
-   "name_zh": "創科瑞銀六十購A"
   },
   "19296.HK": {
    "category": "衍生權證",
@@ -30741,11 +31091,6 @@
    "name_en": "AUTOSTREETS",
    "name_zh": "汽車街"
   },
-  "24430.HK": {
-   "category": "衍生權證",
-   "name_en": "HUFOPHA@EC2610A",
-   "name_zh": "復醫華泰六十購A"
-  },
   "24443.HK": {
    "category": "衍生權證",
    "name_en": "HS-YOFC@EC2611A",
@@ -30910,11 +31255,6 @@
    "category": "衍生權證",
    "name_en": "DSALIBA@EC2611A",
    "name_zh": "阿里星展六甲購A"
-  },
-  "24565.HK": {
-   "category": "衍生權證",
-   "name_en": "GJ-HSBC@EC2610A",
-   "name_zh": "匯豐國君六十購A"
   },
   "2457.HK": {
    "category": "股本",
@@ -31166,20 +31506,10 @@
    "name_en": "TIANJUDIHE",
    "name_zh": "天聚地合"
   },
-  "24795.HK": {
-   "category": "衍生權證",
-   "name_en": "HUZIJIN@EP2610A",
-   "name_zh": "紫金華泰六十沽A"
-  },
   "24796.HK": {
    "category": "衍生權證",
    "name_en": "CT-MTRC@EC2610A",
    "name_zh": "港鐵花旗六十購A"
-  },
-  "24799.HK": {
-   "category": "衍生權證",
-   "name_en": "HU-MCC @EC2610A",
-   "name_zh": "中冶華泰六十購A"
   },
   "2480.HK": {
    "category": "股本",
@@ -32245,11 +32575,6 @@
    "category": "衍生權證",
    "name_en": "HSXIAMI@EC2712A",
    "name_zh": "小米匯豐七乙購A"
-  },
-  "25577.HK": {
-   "category": "衍生權證",
-   "name_en": "HU-YOFC@EC2610A",
-   "name_zh": "長飛華泰六十購A"
   },
   "25578.HK": {
    "category": "衍生權證",
@@ -35981,11 +36306,6 @@
    "name_en": "HUPOMRT@EC2611A",
    "name_zh": "泡瑪華泰六甲購A"
   },
-  "27694.HK": {
-   "category": "衍生權證",
-   "name_en": "GJPOMRT@EC2610A",
-   "name_zh": "泡瑪國君六十購A"
-  },
   "27695.HK": {
    "category": "衍生權證",
    "name_en": "MS-HSI @EC2612A",
@@ -36175,11 +36495,6 @@
    "category": "衍生權證",
    "name_en": "GJKUASO@EC2611B",
    "name_zh": "快手國君六甲購B"
-  },
-  "27787.HK": {
-   "category": "衍生權證",
-   "name_en": "GJPOMRT@EC2610B",
-   "name_zh": "泡瑪國君六十購B"
   },
   "27788.HK": {
    "category": "衍生權證",
@@ -41950,6 +42265,11 @@
    "category": "衍生權證",
    "name_en": "BPINBIO@EC2612A",
    "name_zh": "信藥法巴六乙購A"
+  },
+  "2944.HK": {
+   "category": "股本",
+   "name_en": "UNI HEALTH RTS",
+   "name_zh": "大健康國際股權"
   },
   "29442.HK": {
    "category": "衍生權證",
@@ -69341,11 +69661,6 @@
    "name_en": "UB#PINANRP2804F",
    "name_zh": "平安瑞銀八四熊F"
   },
-  "64010.HK": {
-   "category": "牛熊證",
-   "name_en": "JP#YOFC RP2812C",
-   "name_zh": "長飛摩通八乙熊C"
-  },
   "64012.HK": {
    "category": "牛熊證",
    "name_en": "GJ#HSI  RP2804V",
@@ -70526,11 +70841,6 @@
    "name_en": "CI#HSI  RP28079",
    "name_zh": "恒指信證八七熊9"
   },
-  "64691.HK": {
-   "category": "牛熊證",
-   "name_en": "BP#TENCTRC2705M",
-   "name_zh": "騰訊法巴七五牛M"
-  },
   "64692.HK": {
    "category": "牛熊證",
    "name_en": "BP#MTUANRC2702C",
@@ -70666,30 +70976,10 @@
    "name_en": "UB#HSI  RC27092",
    "name_zh": "恒指瑞銀七九牛2"
   },
-  "64766.HK": {
-   "category": "牛熊證",
-   "name_en": "BP#HSI  RC2707L",
-   "name_zh": "恒指法巴七七牛L"
-  },
   "64769.HK": {
    "category": "牛熊證",
    "name_en": "HS#CNOOCRC2806A",
    "name_zh": "海油匯豐八六牛A"
-  },
-  "64771.HK": {
-   "category": "牛熊證",
-   "name_en": "BP#HSI  RC2707M",
-   "name_zh": "恒指法巴七七牛M"
-  },
-  "64772.HK": {
-   "category": "牛熊證",
-   "name_en": "BP#HSI  RC2811Y",
-   "name_zh": "恒指法巴八甲牛Y"
-  },
-  "64773.HK": {
-   "category": "牛熊證",
-   "name_en": "CI#HSI  RC28097",
-   "name_zh": "恒指信證八九牛7"
   },
   "64775.HK": {
    "category": "牛熊證",
@@ -70711,25 +71001,10 @@
    "name_en": "BI#CATL RP2812B",
    "name_zh": "寧德中銀八乙熊B"
   },
-  "64791.HK": {
-   "category": "牛熊證",
-   "name_en": "CI#HSI  RC2807E",
-   "name_zh": "恒指信證八七牛E"
-  },
-  "64793.HK": {
-   "category": "牛熊證",
-   "name_en": "DS#HSI  RC2809T",
-   "name_zh": "恒指星展八九牛T"
-  },
   "64794.HK": {
    "category": "牛熊證",
    "name_en": "DS#HSI  RP2901V",
    "name_zh": "恒指星展九一熊V"
-  },
-  "64797.HK": {
-   "category": "牛熊證",
-   "name_en": "DS#HSI  RC2809L",
-   "name_zh": "恒指星展八九牛L"
   },
   "64798.HK": {
    "category": "牛熊證",
@@ -70796,11 +71071,6 @@
    "name_en": "SG#BAIDURC2706A",
    "name_zh": "百度法興七六牛A"
   },
-  "64837.HK": {
-   "category": "牛熊證",
-   "name_en": "BI#XIAMIRC2702D",
-   "name_zh": "小米中銀七二牛D"
-  },
   "64838.HK": {
    "category": "牛熊證",
    "name_en": "CI#HSI  RP2807D",
@@ -70846,11 +71116,6 @@
    "name_en": "UB#HSI  RP2808T",
    "name_zh": "恒指瑞銀八八熊T"
   },
-  "64878.HK": {
-   "category": "牛熊證",
-   "name_en": "GJ#HSI  RC2810J",
-   "name_zh": "恒指國君八十牛J"
-  },
   "64883.HK": {
    "category": "牛熊證",
    "name_en": "GJ#HSI  RC2810M",
@@ -70875,11 +71140,6 @@
    "category": "牛熊證",
    "name_en": "UB#TENCTRC2706U",
    "name_zh": "騰訊瑞銀七六牛U"
-  },
-  "64888.HK": {
-   "category": "牛熊證",
-   "name_en": "UB#HSI  RC28074",
-   "name_zh": "恒指瑞銀八七牛4"
   },
   "64891.HK": {
    "category": "牛熊證",
@@ -70915,11 +71175,6 @@
    "category": "牛熊證",
    "name_en": "UB#HSI  RP2812S",
    "name_zh": "恒指瑞銀八乙熊S"
-  },
-  "64917.HK": {
-   "category": "牛熊證",
-   "name_en": "UB#HSI  RC28075",
-   "name_zh": "恒指瑞銀八七牛5"
   },
   "64920.HK": {
    "category": "牛熊證",
@@ -70971,20 +71226,10 @@
    "name_en": "UB#HUAHORC2612A",
    "name_zh": "華虹瑞銀六乙牛A"
   },
-  "64940.HK": {
-   "category": "牛熊證",
-   "name_en": "UB#HSI  RC28078",
-   "name_zh": "恒指瑞銀八七牛8"
-  },
   "64941.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2807B",
    "name_zh": "恒指瑞銀八七牛B"
-  },
-  "64943.HK": {
-   "category": "牛熊證",
-   "name_en": "UB#HSI  RC28106",
-   "name_zh": "恒指瑞銀八十牛6"
   },
   "64944.HK": {
    "category": "牛熊證",
@@ -71051,11 +71296,6 @@
    "name_en": "UB#XIAMIRP2812Y",
    "name_zh": "小米瑞銀八乙熊Y"
   },
-  "64977.HK": {
-   "category": "牛熊證",
-   "name_en": "MS#HSI  RC28116",
-   "name_zh": "恒指摩利八甲牛6"
-  },
   "64978.HK": {
    "category": "牛熊證",
    "name_en": "JP#HSI  RC2803O",
@@ -71081,30 +71321,10 @@
    "name_en": "MS#HSI  RP28124",
    "name_zh": "恒指摩利八乙熊4"
   },
-  "64987.HK": {
-   "category": "牛熊證",
-   "name_en": "MS#HSI  RC28117",
-   "name_zh": "恒指摩利八甲牛7"
-  },
-  "64988.HK": {
-   "category": "牛熊證",
-   "name_en": "CT#HSI  RC2812S",
-   "name_zh": "恒指花旗八乙牛S"
-  },
-  "64989.HK": {
-   "category": "牛熊證",
-   "name_en": "HS#HSI  RC2810E",
-   "name_zh": "恒指匯豐八十牛E"
-  },
   "64991.HK": {
    "category": "牛熊證",
    "name_en": "BP#TENCTRP2807Y",
    "name_zh": "騰訊法巴八七熊Y"
-  },
-  "64992.HK": {
-   "category": "牛熊證",
-   "name_en": "HS#HSI  RC2810H",
-   "name_zh": "恒指匯豐八十牛H"
   },
   "64994.HK": {
    "category": "牛熊證",
@@ -71161,25 +71381,10 @@
    "name_en": "SG#HSI  RP2904P",
    "name_zh": "恒指法興九四熊P"
   },
-  "65008.HK": {
-   "category": "牛熊證",
-   "name_en": "SG#HSI  RC2811J",
-   "name_zh": "恒指法興八甲牛J"
-  },
   "65011.HK": {
    "category": "牛熊證",
    "name_en": "SG#JDCOMRP2812J",
    "name_zh": "京東法興八乙熊J"
-  },
-  "65013.HK": {
-   "category": "牛熊證",
-   "name_en": "SG#HSI  RC2812S",
-   "name_zh": "恒指法興八乙牛S"
-  },
-  "65014.HK": {
-   "category": "牛熊證",
-   "name_en": "SG#HSI  RC28125",
-   "name_zh": "恒指法興八乙牛5"
   },
   "65015.HK": {
    "category": "牛熊證",
@@ -71296,16 +71501,6 @@
    "name_en": "MS#HSI  RP2804L",
    "name_zh": "恒指摩利八四熊L"
   },
-  "65045.HK": {
-   "category": "牛熊證",
-   "name_en": "JP#HSI  RC2810B",
-   "name_zh": "恒指摩通八十牛B"
-  },
-  "65046.HK": {
-   "category": "牛熊證",
-   "name_en": "JP#HSI  RC2810H",
-   "name_zh": "恒指摩通八十牛H"
-  },
   "65052.HK": {
    "category": "牛熊證",
    "name_en": "UB#KINGBRP2701C",
@@ -71315,11 +71510,6 @@
    "category": "牛熊證",
    "name_en": "JP#HSI  RC2810M",
    "name_zh": "恒指摩通八十牛M"
-  },
-  "65057.HK": {
-   "category": "牛熊證",
-   "name_en": "JP#HSI  RC28106",
-   "name_zh": "恒指摩通八十牛6"
   },
   "65058.HK": {
    "category": "牛熊證",
@@ -71351,6 +71541,31 @@
    "name_en": "JP#HSI  RP29031",
    "name_zh": "恒指摩通九三熊1"
   },
+  "65066.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RC28096",
+   "name_zh": "恒指匯豐八九牛6"
+  },
+  "65068.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RC2809A",
+   "name_zh": "恒指匯豐八九牛A"
+  },
+  "65071.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RC2809I",
+   "name_zh": "恒指匯豐八九牛I"
+  },
+  "65072.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RC2809M",
+   "name_zh": "恒指匯豐八九牛M"
+  },
+  "65073.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RP2902T",
+   "name_zh": "恒指匯豐九二熊T"
+  },
   "65076.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2710G",
@@ -71360,6 +71575,21 @@
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2711M",
    "name_zh": "恒指瑞銀七甲牛M"
+  },
+  "65081.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2809M",
+   "name_zh": "恒指摩通八九牛M"
+  },
+  "65082.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC28097",
+   "name_zh": "恒指摩通八九牛7"
+  },
+  "65083.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2810A",
+   "name_zh": "恒指摩通八十牛A"
   },
   "65086.HK": {
    "category": "牛熊證",
@@ -71375,6 +71605,11 @@
    "category": "牛熊證",
    "name_en": "CI#HSI  RP2811M",
    "name_zh": "恒指信證八甲熊M"
+  },
+  "65091.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2810N",
+   "name_zh": "恒指摩通八十牛N"
   },
   "65092.HK": {
    "category": "牛熊證",
@@ -71406,10 +71641,20 @@
    "name_en": "BP#HSI  RC2807C",
    "name_zh": "恒指法巴八七牛C"
   },
+  "65103.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC28095",
+   "name_zh": "恒指摩通八九牛5"
+  },
   "65104.HK": {
    "category": "牛熊證",
    "name_en": "UB#BYD  RC2612B",
    "name_zh": "比迪瑞銀六乙牛B"
+  },
+  "65108.HK": {
+   "category": "牛熊證",
+   "name_en": "BI#HSI  RC2809G",
+   "name_zh": "恒指中銀八九牛G"
   },
   "65111.HK": {
    "category": "牛熊證",
@@ -71441,10 +71686,40 @@
    "name_en": "UB#MTUANRC2702B",
    "name_zh": "美團瑞銀七二牛B"
   },
+  "65119.HK": {
+   "category": "牛熊證",
+   "name_en": "BI#HSI  RP2904M",
+   "name_zh": "恒指中銀九四熊M"
+  },
+  "65120.HK": {
+   "category": "牛熊證",
+   "name_en": "BI#HSI  RP2904L",
+   "name_zh": "恒指中銀九四熊L"
+  },
+  "65121.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RC2811I",
+   "name_zh": "恒指星展八甲牛I"
+  },
   "65122.HK": {
    "category": "牛熊證",
    "name_en": "JP#HSI  RC28124",
    "name_zh": "恒指摩通八乙牛4"
+  },
+  "65123.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RC2811K",
+   "name_zh": "恒指星展八甲牛K"
+  },
+  "65124.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RC28116",
+   "name_zh": "恒指星展八甲牛6"
+  },
+  "65125.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RP2902C",
+   "name_zh": "恒指星展九二熊C"
   },
   "65126.HK": {
    "category": "牛熊證",
@@ -71456,20 +71731,50 @@
    "name_en": "JP#MTUANRC2611E",
    "name_zh": "美團摩通六甲牛E"
   },
+  "65131.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RP2902K",
+   "name_zh": "恒指星展九二熊K"
+  },
   "65134.HK": {
    "category": "牛熊證",
    "name_en": "CI#HSI  RP2811O",
    "name_zh": "恒指信證八甲熊O"
+  },
+  "65136.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RP2902N",
+   "name_zh": "恒指星展九二熊N"
   },
   "65137.HK": {
    "category": "牛熊證",
    "name_en": "HS#HSI  RP2802G",
    "name_zh": "恒指匯豐八二熊G"
   },
+  "65138.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC2707T",
+   "name_zh": "恒指法巴七七牛T"
+  },
+  "65141.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RP2902O",
+   "name_zh": "恒指星展九二熊O"
+  },
+  "65142.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC2707U",
+   "name_zh": "恒指法巴七七牛U"
+  },
   "65143.HK": {
    "category": "牛熊證",
    "name_en": "UB#PINANRC27101",
    "name_zh": "平安瑞銀七十牛1"
+  },
+  "65145.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RC28118",
+   "name_zh": "恒指星展八甲牛8"
   },
   "65147.HK": {
    "category": "牛熊證",
@@ -71486,6 +71791,11 @@
    "name_en": "UB#HSI  RC2711N",
    "name_zh": "恒指瑞銀七甲牛N"
   },
+  "65151.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC28111",
+   "name_zh": "恒指法巴八甲牛1"
+  },
   "65154.HK": {
    "category": "牛熊證",
    "name_en": "JP#TENCTRC26117",
@@ -71496,20 +71806,70 @@
    "name_en": "CI#HSI  RP2811P",
    "name_zh": "恒指信證八甲熊P"
   },
+  "65158.HK": {
+   "category": "牛熊證",
+   "name_en": "DS#HSI  RC2811Y",
+   "name_zh": "恒指星展八甲牛Y"
+  },
+  "65159.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC2811E",
+   "name_zh": "恒指法巴八甲牛E"
+  },
+  "65160.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC2811J",
+   "name_zh": "恒指法巴八甲牛J"
+  },
+  "65161.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC2811L",
+   "name_zh": "恒指法巴八甲牛L"
+  },
   "65162.HK": {
    "category": "牛熊證",
    "name_en": "JP#XIAMIRP2809J",
    "name_zh": "小米摩通八九熊J"
+  },
+  "65164.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RC2811R",
+   "name_zh": "恒指法巴八甲牛R"
   },
   "65165.HK": {
    "category": "牛熊證",
    "name_en": "JP#CLIFERC2809A",
    "name_zh": "中壽摩通八九牛A"
   },
+  "65167.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#TENCTRC2705N",
+   "name_zh": "騰訊法巴七五牛N"
+  },
+  "65170.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#TENCTRP2907B",
+   "name_zh": "騰訊法巴九七熊B"
+  },
+  "65171.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSBC RC2805Y",
+   "name_zh": "匯豐法巴八五牛Y"
+  },
   "65172.HK": {
    "category": "牛熊證",
    "name_en": "UB#ALIBARP2811F",
    "name_zh": "阿里瑞銀八甲熊F"
+  },
+  "65173.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#XIAMIRC2702B",
+   "name_zh": "小米法巴七二牛B"
+  },
+  "65174.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#PINANRC2809F",
+   "name_zh": "平安法巴八九牛F"
   },
   "65175.HK": {
    "category": "牛熊證",
@@ -71525,6 +71885,11 @@
    "category": "牛熊證",
    "name_en": "UB#CHQG RP2812B",
    "name_zh": "中宏瑞銀八乙熊B"
+  },
+  "65183.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HUAHORP2901D",
+   "name_zh": "華虹法巴九一熊D"
   },
   "65184.HK": {
    "category": "牛熊證",
@@ -71561,6 +71926,11 @@
    "name_en": "JP#TENCTRC26118",
    "name_zh": "騰訊摩通六甲牛8"
   },
+  "65191.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP29069",
+   "name_zh": "恒指法巴九六熊9"
+  },
   "65198.HK": {
    "category": "牛熊證",
    "name_en": "CI#HSI  RP2811Q",
@@ -71570,6 +71940,11 @@
    "category": "牛熊證",
    "name_en": "HS#CSPC RP2712A",
    "name_zh": "石藥匯豐七乙熊A"
+  },
+  "65203.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP2906A",
+   "name_zh": "恒指法巴九六熊A"
   },
   "65204.HK": {
    "category": "牛熊證",
@@ -71601,10 +71976,20 @@
    "name_en": "JP#HKEX RC2810B",
    "name_zh": "港交摩通八十牛B"
   },
+  "65216.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP2906B",
+   "name_zh": "恒指法巴九六熊B"
+  },
   "65217.HK": {
    "category": "牛熊證",
    "name_en": "UB#BAIDURP2812A",
    "name_zh": "百度瑞銀八乙熊A"
+  },
+  "65219.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP2906C",
+   "name_zh": "恒指法巴九六熊C"
   },
   "65225.HK": {
    "category": "牛熊證",
@@ -71621,15 +72006,45 @@
    "name_en": "SG#HKEX RP28122",
    "name_zh": "港交法興八乙熊2"
   },
+  "65231.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP2906O",
+   "name_zh": "恒指法巴九六熊O"
+  },
   "65233.HK": {
    "category": "牛熊證",
    "name_en": "SG#SMIC RC2612B",
    "name_zh": "中芯法興六乙牛B"
   },
+  "65238.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP2906P",
+   "name_zh": "恒指法巴九六熊P"
+  },
   "65246.HK": {
    "category": "牛熊證",
    "name_en": "HU#TENCTRC2701A",
    "name_zh": "騰訊華泰七一牛A"
+  },
+  "65249.HK": {
+   "category": "牛熊證",
+   "name_en": "BP#HSI  RP2905S",
+   "name_zh": "恒指法巴九五熊S"
+  },
+  "65253.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#BYD  RP2812G",
+   "name_zh": "比迪匯豐八乙熊G"
+  },
+  "65257.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#KUASORP2812H",
+   "name_zh": "快手匯豐八乙熊H"
+  },
+  "65259.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#XIAMIRP2812L",
+   "name_zh": "小米匯豐八乙熊L"
   },
   "65264.HK": {
    "category": "牛熊證",
@@ -71645,6 +72060,11 @@
    "category": "牛熊證",
    "name_en": "SG#TENCTRC2701I",
    "name_zh": "騰訊法興七一牛I"
+  },
+  "65269.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HKEX RP2812B",
+   "name_zh": "港交匯豐八乙熊B"
   },
   "65271.HK": {
    "category": "牛熊證",
@@ -71671,6 +72091,11 @@
    "name_en": "HS#HSI  RC2803E",
    "name_zh": "恒指匯豐八三牛E"
   },
+  "65278.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#GEELYRC2703B",
+   "name_zh": "吉利匯豐七三牛B"
+  },
   "65279.HK": {
    "category": "牛熊證",
    "name_en": "BP#HSI  RP28121",
@@ -71686,6 +72111,11 @@
    "name_en": "HS#HKEX RC2611E",
    "name_zh": "港交匯豐六甲牛E"
   },
+  "65282.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#SMIC RC2707B",
+   "name_zh": "中芯匯豐七七牛B"
+  },
   "65284.HK": {
    "category": "牛熊證",
    "name_en": "HS#XIAMIRP2812K",
@@ -71695,6 +72125,11 @@
    "category": "牛熊證",
    "name_en": "HS#KB LHRC2702B",
    "name_zh": "建板匯豐七二牛B"
+  },
+  "65288.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#TENCTRP2812P",
+   "name_zh": "騰訊匯豐八乙熊P"
   },
   "65291.HK": {
    "category": "牛熊證",
@@ -71710,6 +72145,11 @@
    "category": "牛熊證",
    "name_en": "GJ#HSI  RC2711K",
    "name_zh": "恒指國君七甲牛K"
+  },
+  "65298.HK": {
+   "category": "牛熊證",
+   "name_en": "CI#HSI  RC2810D",
+   "name_zh": "恒指信證八十牛D"
   },
   "65299.HK": {
    "category": "牛熊證",
@@ -71731,6 +72171,11 @@
    "name_en": "SG#HSI  RC27097",
    "name_zh": "恒指法興七九牛7"
   },
+  "65309.HK": {
+   "category": "牛熊證",
+   "name_en": "CI#HSI  RC2810I",
+   "name_zh": "恒指信證八十牛I"
+  },
   "65311.HK": {
    "category": "牛熊證",
    "name_en": "SG#HSI  RC27098",
@@ -71741,6 +72186,21 @@
    "name_en": "JP#ALIBARP2808Q",
    "name_zh": "阿里摩通八八熊Q"
   },
+  "65313.HK": {
+   "category": "牛熊證",
+   "name_en": "CI#HSI  RC2810F",
+   "name_zh": "恒指信證八十牛F"
+  },
+  "65314.HK": {
+   "category": "牛熊證",
+   "name_en": "CI#HSI  RP2902L",
+   "name_zh": "恒指信證九二熊L"
+  },
+  "65316.HK": {
+   "category": "牛熊證",
+   "name_en": "CI#HSI  RP2902W",
+   "name_zh": "恒指信證九二熊W"
+  },
   "65318.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSI  RP2803Z",
@@ -71750,6 +72210,11 @@
    "category": "牛熊證",
    "name_en": "BI#TENCTRC26123",
    "name_zh": "騰訊中銀六乙牛3"
+  },
+  "65320.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#BAIDURC2703I",
+   "name_zh": "百度摩通七三牛I"
   },
   "65321.HK": {
    "category": "牛熊證",
@@ -71766,10 +72231,30 @@
    "name_en": "UB#HSI  RP2808C",
    "name_zh": "恒指瑞銀八八熊C"
   },
+  "65324.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#BYD  RC2707E",
+   "name_zh": "比迪摩通七七牛E"
+  },
+  "65325.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#XIAMIRP2812M",
+   "name_zh": "小米摩通八乙熊M"
+  },
+  "65329.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#TENCTRP2812Z",
+   "name_zh": "騰訊摩通八乙熊Z"
+  },
   "65330.HK": {
    "category": "牛熊證",
    "name_en": "SG#HSBC RC2812A",
    "name_zh": "匯豐法興八乙牛A"
+  },
+  "65333.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#TENCTRC2706K",
+   "name_zh": "騰訊摩通七六牛K"
   },
   "65334.HK": {
    "category": "牛熊證",
@@ -71791,10 +72276,25 @@
    "name_en": "JP#ICBC RC2709A",
    "name_zh": "工行摩通七九牛A"
   },
+  "65339.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RP2904F",
+   "name_zh": "恒指摩通九四熊F"
+  },
+  "65342.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2810Q",
+   "name_zh": "恒指摩通八十牛Q"
+  },
   "65343.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSBC RC2806C",
    "name_zh": "匯豐瑞銀八六牛C"
+  },
+  "65346.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RP2904G",
+   "name_zh": "恒指摩通九四熊G"
   },
   "65347.HK": {
    "category": "牛熊證",
@@ -71811,10 +72311,25 @@
    "name_en": "SG#HSI  RC2707P",
    "name_zh": "恒指法興七七牛P"
   },
+  "65355.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2810R",
+   "name_zh": "恒指摩通八十牛R"
+  },
+  "65360.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RC28097",
+   "name_zh": "恒指匯豐八九牛7"
+  },
   "65361.HK": {
    "category": "牛熊證",
    "name_en": "SG#PINANRC2710P",
    "name_zh": "平安法興七十牛P"
+  },
+  "65363.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RP2904H",
+   "name_zh": "恒指摩通九四熊H"
   },
   "65364.HK": {
    "category": "牛熊證",
@@ -71826,10 +72341,20 @@
    "name_en": "SG#XIAMIRP28126",
    "name_zh": "小米法興八乙熊6"
   },
+  "65366.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RP2902U",
+   "name_zh": "恒指匯豐九二熊U"
+  },
   "65370.HK": {
    "category": "牛熊證",
    "name_en": "HU#HSI  RC2709A",
    "name_zh": "恒指華泰七九牛A"
+  },
+  "65373.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RP2904I",
+   "name_zh": "恒指摩通九四熊I"
   },
   "65377.HK": {
    "category": "牛熊證",
@@ -71841,10 +72366,20 @@
    "name_en": "HU#HSI  RC26125",
    "name_zh": "恒指華泰六乙牛5"
   },
+  "65380.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RC2809Q",
+   "name_zh": "恒指匯豐八九牛Q"
+  },
   "65382.HK": {
    "category": "牛熊證",
    "name_en": "CT#HSTECRC2612C",
    "name_zh": "恒科花旗六乙牛C"
+  },
+  "65384.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2810S",
+   "name_zh": "恒指摩通八十牛S"
   },
   "65386.HK": {
    "category": "牛熊證",
@@ -71856,6 +72391,21 @@
    "name_en": "SG#BAIDURP2810B",
    "name_zh": "百度法興八十熊B"
   },
+  "65389.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RP2902J",
+   "name_zh": "恒指匯豐九二熊J"
+  },
+  "65391.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RP2904J",
+   "name_zh": "恒指摩通九四熊J"
+  },
+  "65394.HK": {
+   "category": "牛熊證",
+   "name_en": "HS#HSI  RP2902K",
+   "name_zh": "恒指匯豐九二熊K"
+  },
   "65395.HK": {
    "category": "牛熊證",
    "name_en": "GJ#HSI  RC2712O",
@@ -71865,6 +72415,16 @@
    "category": "牛熊證",
    "name_en": "JP#HSI  RP2812D",
    "name_zh": "恒指摩通八乙熊D"
+  },
+  "65398.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RP2904K",
+   "name_zh": "恒指摩通九四熊K"
+  },
+  "65399.HK": {
+   "category": "牛熊證",
+   "name_en": "JP#HSI  RC2810T",
+   "name_zh": "恒指摩通八十牛T"
   },
   "65403.HK": {
    "category": "牛熊證",
@@ -71876,6 +72436,26 @@
    "name_en": "SG#CMB  RC2708F",
    "name_zh": "招行法興七八牛F"
   },
+  "65407.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RC28122",
+   "name_zh": "恒指摩利八乙牛2"
+  },
+  "65409.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RC28123",
+   "name_zh": "恒指摩利八乙牛3"
+  },
+  "65413.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RC28127",
+   "name_zh": "恒指摩利八乙牛7"
+  },
+  "65416.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RC2812B",
+   "name_zh": "恒指摩利八乙牛B"
+  },
   "65421.HK": {
    "category": "牛熊證",
    "name_en": "SG#HSI  RP2904L",
@@ -71885,6 +72465,21 @@
    "category": "牛熊證",
    "name_en": "JP#ALIBARP2808T",
    "name_zh": "阿里摩通八八熊T"
+  },
+  "65424.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RC28121",
+   "name_zh": "恒指摩利八乙牛1"
+  },
+  "65425.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RP28123",
+   "name_zh": "恒指摩利八乙熊3"
+  },
+  "65426.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RC28128",
+   "name_zh": "恒指摩利八乙牛8"
   },
   "65427.HK": {
    "category": "牛熊證",
@@ -71901,15 +72496,70 @@
    "name_en": "CI#HSI  RC2810Y",
    "name_zh": "恒指信證八十牛Y"
   },
+  "65430.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RP28126",
+   "name_zh": "恒指摩利八乙熊6"
+  },
   "65431.HK": {
    "category": "牛熊證",
    "name_en": "SG#HSI  RP2903F",
    "name_zh": "恒指法興九三熊F"
   },
+  "65432.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RP28127",
+   "name_zh": "恒指摩利八乙熊7"
+  },
+  "65433.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RP28128",
+   "name_zh": "恒指摩利八乙熊8"
+  },
   "65434.HK": {
    "category": "牛熊證",
    "name_en": "JP#HSI  RP2810M",
    "name_zh": "恒指摩通八十熊M"
+  },
+  "65435.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSI  RP2812G",
+   "name_zh": "恒指摩利八乙熊G"
+  },
+  "65437.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSBC RP2801A",
+   "name_zh": "匯豐摩利八一熊A"
+  },
+  "65438.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HSBC RC2704C",
+   "name_zh": "匯豐摩利七四牛C"
+  },
+  "65439.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HKEX RP2812C",
+   "name_zh": "港交摩利八乙熊C"
+  },
+  "65441.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HKEX RC2809A",
+   "name_zh": "港交摩利八九牛A"
+  },
+  "65443.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#HKEX RC2809B",
+   "name_zh": "港交摩利八九牛B"
+  },
+  "65444.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#TENCTRP2811M",
+   "name_zh": "騰訊摩利八甲熊M"
+  },
+  "65446.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#TENCTRC2702E",
+   "name_zh": "騰訊摩利七二牛E"
   },
   "65447.HK": {
    "category": "牛熊證",
@@ -71921,15 +72571,30 @@
    "name_en": "JP#CCB  RC2805B",
    "name_zh": "建行摩通八五牛B"
   },
-  "65454.HK": {
+  "65453.HK": {
    "category": "牛熊證",
-   "name_en": "UB#HKEX RC2610N",
-   "name_zh": "港交瑞銀六十牛N"
+   "name_en": "HU#HSI  RC2810N",
+   "name_zh": "恒指華泰八十牛N"
+  },
+  "65458.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RC2810O",
+   "name_zh": "恒指華泰八十牛O"
   },
   "65460.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2707E",
    "name_zh": "恒指瑞銀七七牛E"
+  },
+  "65461.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RC2810P",
+   "name_zh": "恒指華泰八十牛P"
+  },
+  "65462.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RC2810Q",
+   "name_zh": "恒指華泰八十牛Q"
   },
   "65463.HK": {
    "category": "牛熊證",
@@ -71940,6 +72605,11 @@
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2709Q",
    "name_zh": "恒指瑞銀七九牛Q"
+  },
+  "65465.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RP2902D",
+   "name_zh": "恒指華泰九二熊D"
   },
   "65466.HK": {
    "category": "牛熊證",
@@ -71966,6 +72636,11 @@
    "name_en": "UB#MTUANRP2808A",
    "name_zh": "美團瑞銀八八熊A"
   },
+  "65471.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RP2902E",
+   "name_zh": "恒指華泰九二熊E"
+  },
   "65474.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSBC RC2712D",
@@ -71976,10 +72651,40 @@
    "name_en": "UB#CNOOCRC2610Z",
    "name_zh": "海油瑞銀六十牛Z"
   },
+  "65479.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RP2902F",
+   "name_zh": "恒指華泰九二熊F"
+  },
+  "65480.HK": {
+   "category": "牛熊證",
+   "name_en": "HU#HSI  RP2902G",
+   "name_zh": "恒指華泰九二熊G"
+  },
+  "65481.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#TENCTRP2811N",
+   "name_zh": "騰訊摩利八甲熊N"
+  },
   "65483.HK": {
    "category": "牛熊證",
    "name_en": "JP#BOCL RC2709A",
    "name_zh": "中行摩通七九牛A"
+  },
+  "65485.HK": {
+   "category": "牛熊證",
+   "name_en": "MS#ALIBARP2812C",
+   "name_zh": "阿里摩利八乙熊C"
+  },
+  "65487.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#TENCTRC2707B",
+   "name_zh": "騰訊瑞銀七七牛B"
+  },
+  "65489.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#TENCTRC2707C",
+   "name_zh": "騰訊瑞銀七七牛C"
   },
   "65491.HK": {
    "category": "牛熊證",
@@ -72031,6 +72736,16 @@
    "name_en": "SG#KB LHRC2703C",
    "name_zh": "建板法興七三牛C"
   },
+  "65515.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#TENCTRC2706V",
+   "name_zh": "騰訊瑞銀七六牛V"
+  },
+  "65516.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#AIA  RC2707D",
+   "name_zh": "友邦瑞銀七七牛D"
+  },
   "65519.HK": {
    "category": "牛熊證",
    "name_en": "CI#HSI  RP2811Z",
@@ -72040,6 +72755,16 @@
    "category": "牛熊證",
    "name_en": "CI#HSI  RP2810I",
    "name_zh": "恒指信證八十熊I"
+  },
+  "65521.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HUAHORC2703E",
+   "name_zh": "華虹瑞銀七三牛E"
+  },
+  "65522.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#ZIJINRC2707C",
+   "name_zh": "紫金瑞銀七七牛C"
   },
   "65526.HK": {
    "category": "牛熊證",
@@ -72066,6 +72791,26 @@
    "name_en": "HS#HSI  RC2803I",
    "name_zh": "恒指匯豐八三牛I"
   },
+  "65535.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#BAIDURC2703A",
+   "name_zh": "百度瑞銀七三牛A"
+  },
+  "65536.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#ALIBARC2703K",
+   "name_zh": "阿里瑞銀七三牛K"
+  },
+  "65537.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC28097",
+   "name_zh": "恒指瑞銀八九牛7"
+  },
+  "65538.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC28093",
+   "name_zh": "恒指瑞銀八九牛3"
+  },
   "65539.HK": {
    "category": "牛熊證",
    "name_en": "SG#HSTECRC2612G",
@@ -72086,50 +72831,160 @@
    "name_en": "HS#HKEX RC2710K",
    "name_zh": "港交匯豐七十牛K"
   },
+  "65547.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC2808M",
+   "name_zh": "恒指瑞銀八八牛M"
+  },
   "65548.HK": {
    "category": "牛熊證",
    "name_en": "SG#HSTECRC2612H",
    "name_zh": "恒科法興六乙牛H"
+  },
+  "65549.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC2808N",
+   "name_zh": "恒指瑞銀八八牛N"
+  },
+  "65551.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC2808O",
+   "name_zh": "恒指瑞銀八八牛O"
+  },
+  "65552.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC2808P",
+   "name_zh": "恒指瑞銀八八牛P"
+  },
+  "65553.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RP2902N",
+   "name_zh": "恒指瑞銀九二熊N"
   },
   "65554.HK": {
    "category": "牛熊證",
    "name_en": "BI#HSI  RC2712Z",
    "name_zh": "恒指中銀七乙牛Z"
   },
+  "65555.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RP2903M",
+   "name_zh": "恒指瑞銀九三熊M"
+  },
   "65556.HK": {
    "category": "牛熊證",
    "name_en": "UB#TENCTRC2611H",
    "name_zh": "騰訊瑞銀六甲牛H"
+  },
+  "65557.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RP2903N",
+   "name_zh": "恒指瑞銀九三熊N"
   },
   "65558.HK": {
    "category": "牛熊證",
    "name_en": "UB#TENCTRC2611I",
    "name_zh": "騰訊瑞銀六甲牛I"
   },
+  "65559.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSBC RP2810A",
+   "name_zh": "匯豐瑞銀八十熊A"
+  },
   "65560.HK": {
    "category": "牛熊證",
    "name_en": "UB#MTUANRC2611E",
    "name_zh": "美團瑞銀六甲牛E"
+  },
+  "65562.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#GEELYRP2811B",
+   "name_zh": "吉利瑞銀八甲熊B"
+  },
+  "65563.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HKEX RP2812Q",
+   "name_zh": "港交瑞銀八乙熊Q"
+  },
+  "65564.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HKEX RC2704H",
+   "name_zh": "港交瑞銀七四牛H"
+  },
+  "65566.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#BYD  RC2707B",
+   "name_zh": "比迪瑞銀七七牛B"
+  },
+  "65567.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#AIA  RP2812K",
+   "name_zh": "友邦瑞銀八乙熊K"
+  },
+  "65568.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC2810B",
+   "name_zh": "恒指瑞銀八十牛B"
   },
   "65569.HK": {
    "category": "牛熊證",
    "name_en": "UB#TENCTRC2706I",
    "name_zh": "騰訊瑞銀七六牛I"
   },
+  "65570.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RC2810M",
+   "name_zh": "恒指瑞銀八十牛M"
+  },
+  "65571.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RP2903O",
+   "name_zh": "恒指瑞銀九三熊O"
+  },
   "65574.HK": {
    "category": "牛熊證",
    "name_en": "SG#HKEX RC2704Z",
    "name_zh": "港交法興七四牛Z"
+  },
+  "65578.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RP2903P",
+   "name_zh": "恒指瑞銀九三熊P"
+  },
+  "65579.HK": {
+   "category": "牛熊證",
+   "name_en": "UB#HSI  RP2903Q",
+   "name_zh": "恒指瑞銀九三熊Q"
+  },
+  "65583.HK": {
+   "category": "牛熊證",
+   "name_en": "GJ#HSI  RC2810N",
+   "name_zh": "恒指國君八十牛N"
   },
   "65585.HK": {
    "category": "牛熊證",
    "name_en": "HS#XIAMIRP2712K",
    "name_zh": "小米匯豐七乙熊K"
   },
+  "65588.HK": {
+   "category": "牛熊證",
+   "name_en": "GJ#HSI  RC2810X",
+   "name_zh": "恒指國君八十牛X"
+  },
+  "65590.HK": {
+   "category": "牛熊證",
+   "name_en": "GJ#HSI  RP2903M",
+   "name_zh": "恒指國君九三熊M"
+  },
   "65591.HK": {
    "category": "牛熊證",
    "name_en": "CT#HSI  RC2711N",
    "name_zh": "恒指花旗七甲牛N"
+  },
+  "65595.HK": {
+   "category": "牛熊證",
+   "name_en": "GJ#HSI  RP29034",
+   "name_zh": "恒指國君九三熊4"
   },
   "65596.HK": {
    "category": "牛熊證",
@@ -72146,10 +73001,25 @@
    "name_en": "CI#HSI  RP2807M",
    "name_zh": "恒指信證八七熊M"
   },
+  "65600.HK": {
+   "category": "牛熊證",
+   "name_en": "CT#HSI  RC2810O",
+   "name_zh": "恒指花旗八十牛O"
+  },
   "65601.HK": {
    "category": "牛熊證",
    "name_en": "DS#HSI  RP2903Y",
    "name_zh": "恒指星展九三熊Y"
+  },
+  "65602.HK": {
+   "category": "牛熊證",
+   "name_en": "CT#HSI  RC28093",
+   "name_zh": "恒指花旗八九牛3"
+  },
+  "65604.HK": {
+   "category": "牛熊證",
+   "name_en": "CT#HSI  RP2902J",
+   "name_zh": "恒指花旗九二熊J"
   },
   "65605.HK": {
    "category": "牛熊證",
@@ -72166,6 +73036,21 @@
    "name_en": "BI#HSI  RP2804W",
    "name_zh": "恒指中銀八四熊W"
   },
+  "65613.HK": {
+   "category": "牛熊證",
+   "name_en": "CT#HSI  RP2904I",
+   "name_zh": "恒指花旗九四熊I"
+  },
+  "65615.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP2902Z",
+   "name_zh": "恒指法興九二熊Z"
+  },
+  "65619.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2812V",
+   "name_zh": "恒指法興八乙牛V"
+  },
   "65621.HK": {
    "category": "牛熊證",
    "name_en": "HS#JDCOMRP2808A",
@@ -72175,6 +73060,16 @@
    "category": "牛熊證",
    "name_en": "UB#HSI  RP2810B",
    "name_zh": "恒指瑞銀八十熊B"
+  },
+  "65633.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2812W",
+   "name_zh": "恒指法興八乙牛W"
+  },
+  "65636.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2811N",
+   "name_zh": "恒指法興八甲牛N"
   },
   "65638.HK": {
    "category": "牛熊證",
@@ -72241,6 +73136,11 @@
    "name_en": "HS#ALIBARP2711Q",
    "name_zh": "阿里匯豐七甲熊Q"
   },
+  "65667.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC28122",
+   "name_zh": "恒指法興八乙牛2"
+  },
   "65668.HK": {
    "category": "牛熊證",
    "name_en": "BP#HSI  RP2803K",
@@ -72250,6 +73150,21 @@
    "category": "牛熊證",
    "name_en": "UB#HSI  RP2812N",
    "name_zh": "恒指瑞銀八乙熊N"
+  },
+  "65671.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2811O",
+   "name_zh": "恒指法興八甲牛O"
+  },
+  "65672.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP2901I",
+   "name_zh": "恒指法興九一熊I"
+  },
+  "65673.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP29036",
+   "name_zh": "恒指法興九三熊6"
   },
   "65678.HK": {
    "category": "牛熊證",
@@ -72266,10 +73181,25 @@
    "name_en": "UB#PINANRC27102",
    "name_zh": "平安瑞銀七十牛2"
   },
+  "65686.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP29038",
+   "name_zh": "恒指法興九三熊8"
+  },
   "65691.HK": {
    "category": "牛熊證",
    "name_en": "DS#XIAMIRP2712C",
    "name_zh": "小米星展七乙熊C"
+  },
+  "65692.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP2901M",
+   "name_zh": "恒指法興九一熊M"
+  },
+  "65696.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP28124",
+   "name_zh": "恒指法興八乙熊4"
   },
   "65699.HK": {
    "category": "牛熊證",
@@ -72286,6 +73216,11 @@
    "name_en": "UB#HSI  RC27102",
    "name_zh": "恒指瑞銀七十牛2"
   },
+  "65702.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RP2901N",
+   "name_zh": "恒指法興九一熊N"
+  },
   "65703.HK": {
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2711R",
@@ -72295,6 +73230,16 @@
    "category": "牛熊證",
    "name_en": "UB#HSI  RC2711S",
    "name_zh": "恒指瑞銀七甲牛S"
+  },
+  "65706.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSBC RP2812A",
+   "name_zh": "匯豐法興八乙熊A"
+  },
+  "65711.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#TENCTRP2810A",
+   "name_zh": "騰訊法興八十熊A"
   },
   "65713.HK": {
    "category": "牛熊證",
@@ -72366,6 +73311,16 @@
    "name_en": "HS#PINANRP2802C",
    "name_zh": "平安匯豐八二熊C"
   },
+  "65741.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#AIA  RC2709A",
+   "name_zh": "友邦法興七九牛A"
+  },
+  "65745.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HUAHORC2709A",
+   "name_zh": "華虹法興七九牛A"
+  },
   "65751.HK": {
    "category": "牛熊證",
    "name_en": "BI#HSBC RC2612A",
@@ -72386,6 +73341,16 @@
    "name_en": "HS#TENCTRC2702C",
    "name_zh": "騰訊匯豐七二牛C"
   },
+  "65770.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSTECRC2708A",
+   "name_zh": "恒科法興七八牛A"
+  },
+  "65771.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSTECRC2709A",
+   "name_zh": "恒科法興七九牛A"
+  },
   "65778.HK": {
    "category": "牛熊證",
    "name_en": "BI#HKEX RC2610A",
@@ -72396,10 +73361,20 @@
    "name_en": "HS#TENCTRC2702D",
    "name_zh": "騰訊匯豐七二牛D"
   },
+  "65782.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HKEX RP2811B",
+   "name_zh": "港交法興八甲熊B"
+  },
   "65787.HK": {
    "category": "牛熊證",
    "name_en": "MS#HSI  RP28022",
    "name_zh": "恒指摩利八二熊2"
+  },
+  "65793.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#LENOVRC2709A",
+   "name_zh": "聯想法興七九牛A"
   },
   "65795.HK": {
    "category": "牛熊證",
@@ -72425,6 +73400,26 @@
    "category": "牛熊證",
    "name_en": "HS#HSI  RC27092",
    "name_zh": "恒指匯豐七九牛2"
+  },
+  "65801.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2812R",
+   "name_zh": "恒指法興八乙牛R"
+  },
+  "65802.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2812Y",
+   "name_zh": "恒指法興八乙牛Y"
+  },
+  "65804.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC2811U",
+   "name_zh": "恒指法興八甲牛U"
+  },
+  "65805.HK": {
+   "category": "牛熊證",
+   "name_en": "SG#HSI  RC28112",
+   "name_zh": "恒指法興八甲牛2"
   },
   "65813.HK": {
    "category": "牛熊證",
@@ -80663,7 +81658,7 @@
   },
   "8143.HK": {
    "category": "股本",
-   "name_en": "GF HEALTHCARE",
+   "name_en": "GF HEALTH-NEW",
    "name_zh": "金威醫療"
   },
   "8146.HK": {
@@ -83633,7 +84628,7 @@
   },
   "8567.HK": {
    "category": "股本",
-   "name_en": "GF HEALTHCARE",
+   "name_en": "GF HEALTH-OLD",
    "name_zh": "金威醫療"
   },
   "8572.HK": {
@@ -83655,6 +84650,11 @@
    "category": "股本",
    "name_en": "CB GLOBAL",
    "name_zh": "朗華國際集團"
+  },
+  "8585.HK": {
+   "category": "股本",
+   "name_en": "CAPITAL FIN",
+   "name_zh": "首都金融控股"
   },
   "85904.HK": {
    "category": "債券",
