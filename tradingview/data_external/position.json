@@ -16,5 +16,15 @@
  "notional_hkd": 250000,
  "stop_buyback_pts": 2216,
  "note": "部位止損：跨式買回總價 >= 2216 點（2x 權利金）即平倉；帳戶硬止損權益 < HK$750,000",
- "hedges": []
+ "hedges": [
+  {
+   "side": "sell",
+   "qty": 1,
+   "price": 24252.0,
+   "contract": "MHI Oct-26 (MHI2610)",
+   "date": "2026-10-06",
+   "time_hkt": "未回報（16:05 指令後，16:30 前）",
+   "source": "富途持倉截圖 10/6"
+  }
+ ]
 }
