@@ -27,10 +27,65 @@ futu_vs_web,5分K合成日線,US.QQQ,2026-10-01,low,futu_5m,736.25,web_yahoo,736
 futu_vs_web,5分K合成日線,US.QQQ,2026-10-01,open,futu_5m,742.51,web_yahoo,742.51,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,5分K合成日線,US.QQQ,2026-10-01,volume,futu_5m,32605107.0,web_yahoo,35728900.0,-3123793.0,-8.743,ℹ️,口徑不同，只記錄
 futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,close,futu_5m,749.58,web_yahoo,749.58,0.0,0.0,✅,
-futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,high,futu_5m,754.54,web_yahoo,754.53,0.01,0.0013,❌,
-futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,low,futu_5m,747.53,web_yahoo,747.535,-0.005,-0.0007,❌,
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,high,futu_5m,754.54,web_yahoo,754.54,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,low,futu_5m,747.53,web_yahoo,747.53,0.0,0.0,✅,
 futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,open,futu_5m,751.31,web_yahoo,751.31,0.0,0.0,ℹ️,口徑不同，只記錄
-futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,volume,futu_5m,27845460.0,web_yahoo,34175024.0,-6329564.0,-18.521,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-02,volume,futu_5m,27845460.0,web_yahoo,34467100.0,-6621640.0,-19.2115,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-05,close,futu_5m,756.2,web_yahoo,756.2,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-05,high,futu_5m,756.915,web_yahoo,756.915,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-05,low,futu_5m,749.08,web_yahoo,749.08,0.0,0.0,✅,
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-05,open,futu_5m,749.35,web_yahoo,749.34,0.01,0.0013,ℹ️,口徑不同，只記錄
+futu_vs_web,5分K合成日線,US.QQQ,2026-10-05,volume,futu_5m,12378661.0,web_yahoo,25442148.0,-13063487.0,-51.3458,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00002,2026-09-28,open,futu_kday,76.45,web_yahoo,76.45,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-28,high,futu_kday,77.5,web_yahoo,77.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-28,low,futu_kday,76.3,web_yahoo,76.3,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-28,close,futu_kday,76.55,web_yahoo,76.55,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-28,volume,futu_kday,4749051.0,web_yahoo,4749051.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00002,2026-09-29,open,futu_kday,76.95,web_yahoo,76.95,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-29,high,futu_kday,76.95,web_yahoo,76.95,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-29,low,futu_kday,76.1,web_yahoo,76.1,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-29,close,futu_kday,76.5,web_yahoo,76.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-29,volume,futu_kday,3975862.0,web_yahoo,3975862.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00002,2026-09-30,open,futu_kday,76.5,web_yahoo,76.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-30,high,futu_kday,76.75,web_yahoo,76.75,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-30,low,futu_kday,75.95,web_yahoo,75.95,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-30,close,futu_kday,76.7,web_yahoo,76.7,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-09-30,volume,futu_kday,5081340.0,web_yahoo,5081340.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00002,2026-10-02,open,futu_kday,76.35,web_yahoo,76.35,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-02,high,futu_kday,76.6,web_yahoo,76.6,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-02,low,futu_kday,75.6,web_yahoo,75.6,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-02,close,futu_kday,75.75,web_yahoo,75.75,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-02,volume,futu_kday,3545232.0,web_yahoo,3545232.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00002,2026-10-05,open,futu_kday,75.75,web_yahoo,75.75,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-05,high,futu_kday,75.9,web_yahoo,75.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-05,low,futu_kday,75.2,web_yahoo,75.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-05,close,futu_kday,75.65,web_yahoo,75.65,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00002,2026-10-05,volume,futu_kday,2412175.0,web_yahoo,2412175.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00005,2026-09-28,open,futu_kday,157.9,web_yahoo,157.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-28,high,futu_kday,160.8,web_yahoo,160.8,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-28,low,futu_kday,157.9,web_yahoo,157.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-28,close,futu_kday,158.9,web_yahoo,158.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-28,volume,futu_kday,12819424.0,web_yahoo,12819424.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00005,2026-09-29,open,futu_kday,159.2,web_yahoo,159.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-29,high,futu_kday,159.9,web_yahoo,159.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-29,low,futu_kday,157.8,web_yahoo,157.8,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-29,close,futu_kday,159.0,web_yahoo,159.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-29,volume,futu_kday,10730754.0,web_yahoo,10730754.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00005,2026-09-30,open,futu_kday,157.4,web_yahoo,157.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-30,high,futu_kday,158.2,web_yahoo,158.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-30,low,futu_kday,156.4,web_yahoo,156.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-30,close,futu_kday,158.0,web_yahoo,158.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-09-30,volume,futu_kday,7997112.0,web_yahoo,7997112.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00005,2026-10-02,open,futu_kday,149.3,web_yahoo,149.3,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-02,high,futu_kday,151.2,web_yahoo,151.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-02,low,futu_kday,148.8,web_yahoo,148.8,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-02,close,futu_kday,149.5,web_yahoo,149.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-02,volume,futu_kday,24964374.0,web_yahoo,24964374.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00005,2026-10-05,open,futu_kday,150.0,web_yahoo,150.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-05,high,futu_kday,150.3,web_yahoo,150.3,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-05,low,futu_kday,147.6,web_yahoo,147.6,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-05,close,futu_kday,149.9,web_yahoo,149.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00005,2026-10-05,volume,futu_kday,11889096.0,web_yahoo,11889096.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.00135,2026-09-28,open,futu_kday,7.57,web_yahoo,7.57,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00135,2026-09-28,high,futu_kday,7.68,web_yahoo,7.68,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00135,2026-09-28,low,futu_kday,7.515,web_yahoo,7.515,0.0,0.0,✅,
@@ -71,6 +126,11 @@ futu_vs_web,日線抽樣,HK.00144,2026-10-02,high,futu_kday,17.08,web_yahoo,17.0
 futu_vs_web,日線抽樣,HK.00144,2026-10-02,low,futu_kday,16.83,web_yahoo,16.83,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00144,2026-10-02,close,futu_kday,17.02,web_yahoo,17.02,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00144,2026-10-02,volume,futu_kday,3614406.0,web_yahoo,3614406.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00144,2026-10-05,open,futu_kday,16.93,web_yahoo,16.93,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00144,2026-10-05,high,futu_kday,17.11,web_yahoo,17.11,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00144,2026-10-05,low,futu_kday,16.76,web_yahoo,16.76,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00144,2026-10-05,close,futu_kday,17.09,web_yahoo,17.09,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00144,2026-10-05,volume,futu_kday,2527082.0,web_yahoo,2527082.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.00151,2026-09-28,open,futu_kday,2.72,web_yahoo,2.72,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00151,2026-09-28,high,futu_kday,2.805,web_yahoo,2.805,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00151,2026-09-28,low,futu_kday,2.72,web_yahoo,2.72,0.0,0.0,✅,
@@ -111,6 +171,31 @@ futu_vs_web,日線抽樣,HK.00288,2026-10-02,high,futu_kday,6.67,web_yahoo,6.67,
 futu_vs_web,日線抽樣,HK.00288,2026-10-02,low,futu_kday,6.48,web_yahoo,6.48,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00288,2026-10-02,close,futu_kday,6.63,web_yahoo,6.63,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00288,2026-10-02,volume,futu_kday,74003854.0,web_yahoo,74003854.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00857,2026-09-28,open,futu_kday,9.495,web_yahoo,9.495,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-28,high,futu_kday,9.865,web_yahoo,9.865,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-28,low,futu_kday,9.4,web_yahoo,9.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-28,close,futu_kday,9.7,web_yahoo,9.7,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-28,volume,futu_kday,102604056.0,web_yahoo,102604056.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00857,2026-09-29,open,futu_kday,9.755,web_yahoo,9.755,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-29,high,futu_kday,9.765,web_yahoo,9.765,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-29,low,futu_kday,9.62,web_yahoo,9.62,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-29,close,futu_kday,9.71,web_yahoo,9.71,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-29,volume,futu_kday,119399776.0,web_yahoo,119399776.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00857,2026-09-30,open,futu_kday,9.57,web_yahoo,9.57,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-30,high,futu_kday,9.71,web_yahoo,9.71,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-30,low,futu_kday,9.51,web_yahoo,9.51,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-30,close,futu_kday,9.665,web_yahoo,9.665,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-09-30,volume,futu_kday,77633849.0,web_yahoo,77633849.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00857,2026-10-02,open,futu_kday,9.5,web_yahoo,9.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-02,high,futu_kday,9.595,web_yahoo,9.595,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-02,low,futu_kday,9.485,web_yahoo,9.485,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-02,close,futu_kday,9.515,web_yahoo,9.515,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-02,volume,futu_kday,31567437.0,web_yahoo,31567437.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00857,2026-10-05,open,futu_kday,9.605,web_yahoo,9.605,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-05,high,futu_kday,9.605,web_yahoo,9.605,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-05,low,futu_kday,9.445,web_yahoo,9.445,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-05,close,futu_kday,9.565,web_yahoo,9.565,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00857,2026-10-05,volume,futu_kday,24083012.0,web_yahoo,24083012.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.00881,2026-09-28,open,futu_kday,2.91,web_yahoo,2.91,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00881,2026-09-28,high,futu_kday,2.95,web_yahoo,2.95,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00881,2026-09-28,low,futu_kday,2.79,web_yahoo,2.79,0.0,0.0,✅,
@@ -151,6 +236,11 @@ futu_vs_web,日線抽樣,HK.00939,2026-10-02,high,futu_kday,9.75,web_yahoo,9.75,
 futu_vs_web,日線抽樣,HK.00939,2026-10-02,low,futu_kday,9.51,web_yahoo,9.51,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00939,2026-10-02,close,futu_kday,9.555,web_yahoo,9.555,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00939,2026-10-02,volume,futu_kday,171972384.0,web_yahoo,171972384.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00939,2026-10-05,open,futu_kday,9.59,web_yahoo,9.59,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00939,2026-10-05,high,futu_kday,9.62,web_yahoo,9.62,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00939,2026-10-05,low,futu_kday,9.455,web_yahoo,9.455,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00939,2026-10-05,close,futu_kday,9.51,web_yahoo,9.51,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00939,2026-10-05,volume,futu_kday,70339180.0,web_yahoo,70339180.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.00992,2026-09-28,open,futu_kday,37.16,web_yahoo,37.16,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00992,2026-09-28,high,futu_kday,37.3,web_yahoo,37.3,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00992,2026-09-28,low,futu_kday,35.28,web_yahoo,35.28,0.0,0.0,✅,
@@ -171,6 +261,11 @@ futu_vs_web,日線抽樣,HK.00992,2026-10-02,high,futu_kday,35.24,web_yahoo,35.2
 futu_vs_web,日線抽樣,HK.00992,2026-10-02,low,futu_kday,33.74,web_yahoo,33.74,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00992,2026-10-02,close,futu_kday,34.32,web_yahoo,34.32,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.00992,2026-10-02,volume,futu_kday,55548652.0,web_yahoo,55548652.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.00992,2026-10-05,open,futu_kday,34.8,web_yahoo,34.8,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00992,2026-10-05,high,futu_kday,36.5,web_yahoo,36.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00992,2026-10-05,low,futu_kday,34.74,web_yahoo,34.74,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00992,2026-10-05,close,futu_kday,35.92,web_yahoo,35.92,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.00992,2026-10-05,volume,futu_kday,47589145.0,web_yahoo,47589145.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.01038,2026-09-28,open,futu_kday,65.0,web_yahoo,65.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01038,2026-09-28,high,futu_kday,66.15,web_yahoo,66.15,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01038,2026-09-28,low,futu_kday,65.0,web_yahoo,65.0,0.0,0.0,✅,
@@ -191,6 +286,11 @@ futu_vs_web,日線抽樣,HK.01038,2026-10-02,high,futu_kday,65.8,web_yahoo,65.8,
 futu_vs_web,日線抽樣,HK.01038,2026-10-02,low,futu_kday,64.45,web_yahoo,64.45,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01038,2026-10-02,close,futu_kday,64.9,web_yahoo,64.9,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01038,2026-10-02,volume,futu_kday,1245741.0,web_yahoo,1245741.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.01038,2026-10-05,open,futu_kday,64.9,web_yahoo,64.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01038,2026-10-05,high,futu_kday,65.45,web_yahoo,65.45,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01038,2026-10-05,low,futu_kday,64.35,web_yahoo,64.35,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01038,2026-10-05,close,futu_kday,64.85,web_yahoo,64.85,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01038,2026-10-05,volume,futu_kday,817928.0,web_yahoo,817928.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.01288,2026-09-28,open,futu_kday,6.535,web_yahoo,6.535,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01288,2026-09-28,high,futu_kday,6.715,web_yahoo,6.715,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01288,2026-09-28,low,futu_kday,6.51,web_yahoo,6.51,0.0,0.0,✅,
@@ -211,6 +311,11 @@ futu_vs_web,日線抽樣,HK.01288,2026-10-02,high,futu_kday,6.57,web_yahoo,6.57,
 futu_vs_web,日線抽樣,HK.01288,2026-10-02,low,futu_kday,6.43,web_yahoo,6.43,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01288,2026-10-02,close,futu_kday,6.46,web_yahoo,6.46,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01288,2026-10-02,volume,futu_kday,52270437.0,web_yahoo,52270437.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.01288,2026-10-05,open,futu_kday,6.44,web_yahoo,6.44,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01288,2026-10-05,high,futu_kday,6.515,web_yahoo,6.515,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01288,2026-10-05,low,futu_kday,6.415,web_yahoo,6.415,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01288,2026-10-05,close,futu_kday,6.485,web_yahoo,6.485,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01288,2026-10-05,volume,futu_kday,20680610.0,web_yahoo,20680610.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.01997,2026-09-28,open,futu_kday,30.88,web_yahoo,30.88,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01997,2026-09-28,high,futu_kday,31.32,web_yahoo,31.32,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01997,2026-09-28,low,futu_kday,30.5,web_yahoo,30.5,0.0,0.0,✅,
@@ -231,6 +336,11 @@ futu_vs_web,日線抽樣,HK.01997,2026-10-02,high,futu_kday,30.26,web_yahoo,30.2
 futu_vs_web,日線抽樣,HK.01997,2026-10-02,low,futu_kday,29.22,web_yahoo,29.22,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01997,2026-10-02,close,futu_kday,29.98,web_yahoo,29.98,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.01997,2026-10-02,volume,futu_kday,3698037.0,web_yahoo,3698037.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.01997,2026-10-05,open,futu_kday,30.0,web_yahoo,30.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01997,2026-10-05,high,futu_kday,30.0,web_yahoo,30.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01997,2026-10-05,low,futu_kday,29.22,web_yahoo,29.22,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01997,2026-10-05,close,futu_kday,29.46,web_yahoo,29.46,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.01997,2026-10-05,volume,futu_kday,2661078.0,web_yahoo,2661078.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.02007,2026-09-28,open,futu_kday,0.182,web_yahoo,0.182,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02007,2026-09-28,high,futu_kday,0.186,web_yahoo,0.186,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02007,2026-09-28,low,futu_kday,0.177,web_yahoo,0.177,0.0,0.0,✅,
@@ -271,6 +381,11 @@ futu_vs_web,日線抽樣,HK.02269,2026-10-02,high,futu_kday,55.85,web_yahoo,55.8
 futu_vs_web,日線抽樣,HK.02269,2026-10-02,low,futu_kday,53.85,web_yahoo,53.85,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02269,2026-10-02,close,futu_kday,54.55,web_yahoo,54.55,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02269,2026-10-02,volume,futu_kday,14187622.0,web_yahoo,14187622.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.02269,2026-10-05,open,futu_kday,54.65,web_yahoo,54.65,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02269,2026-10-05,high,futu_kday,55.7,web_yahoo,55.7,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02269,2026-10-05,low,futu_kday,54.2,web_yahoo,54.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02269,2026-10-05,close,futu_kday,55.4,web_yahoo,55.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02269,2026-10-05,volume,futu_kday,11286814.0,web_yahoo,11286814.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.02359,2026-09-28,open,futu_kday,209.6,web_yahoo,209.6,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02359,2026-09-28,high,futu_kday,210.8,web_yahoo,210.8,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02359,2026-09-28,low,futu_kday,204.0,web_yahoo,204.0,0.0,0.0,✅,
@@ -291,6 +406,11 @@ futu_vs_web,日線抽樣,HK.02359,2026-10-02,high,futu_kday,211.4,web_yahoo,211.
 futu_vs_web,日線抽樣,HK.02359,2026-10-02,low,futu_kday,206.8,web_yahoo,206.8,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02359,2026-10-02,close,futu_kday,210.0,web_yahoo,210.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02359,2026-10-02,volume,futu_kday,3210713.0,web_yahoo,3210713.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.02359,2026-10-05,open,futu_kday,210.0,web_yahoo,210.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02359,2026-10-05,high,futu_kday,213.2,web_yahoo,213.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02359,2026-10-05,low,futu_kday,208.2,web_yahoo,208.2,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02359,2026-10-05,close,futu_kday,212.4,web_yahoo,212.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02359,2026-10-05,volume,futu_kday,1674999.0,web_yahoo,1674999.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.02388,2026-09-28,open,futu_kday,51.15,web_yahoo,51.15,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02388,2026-09-28,high,futu_kday,52.6,web_yahoo,52.6,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02388,2026-09-28,low,futu_kday,51.15,web_yahoo,51.15,0.0,0.0,✅,
@@ -311,6 +431,11 @@ futu_vs_web,日線抽樣,HK.02388,2026-10-02,high,futu_kday,51.65,web_yahoo,51.6
 futu_vs_web,日線抽樣,HK.02388,2026-10-02,low,futu_kday,50.5,web_yahoo,50.5,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02388,2026-10-02,close,futu_kday,50.7,web_yahoo,50.7,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.02388,2026-10-02,volume,futu_kday,12313489.0,web_yahoo,12313489.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.02388,2026-10-05,open,futu_kday,50.7,web_yahoo,50.7,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02388,2026-10-05,high,futu_kday,50.85,web_yahoo,50.85,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02388,2026-10-05,low,futu_kday,50.15,web_yahoo,50.15,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02388,2026-10-05,close,futu_kday,50.5,web_yahoo,50.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.02388,2026-10-05,volume,futu_kday,5576408.0,web_yahoo,5576408.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.03328,2026-09-28,open,futu_kday,8.195,web_yahoo,8.195,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.03328,2026-09-28,high,futu_kday,8.365,web_yahoo,8.365,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.03328,2026-09-28,low,futu_kday,8.195,web_yahoo,8.195,0.0,0.0,✅,
@@ -331,6 +456,11 @@ futu_vs_web,日線抽樣,HK.03328,2026-10-02,high,futu_kday,8.25,web_yahoo,8.25,
 futu_vs_web,日線抽樣,HK.03328,2026-10-02,low,futu_kday,8.14,web_yahoo,8.14,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.03328,2026-10-02,close,futu_kday,8.22,web_yahoo,8.22,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.03328,2026-10-02,volume,futu_kday,13734624.0,web_yahoo,13734624.0,0.0,0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.03328,2026-10-05,open,futu_kday,8.215,web_yahoo,8.215,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.03328,2026-10-05,high,futu_kday,8.29,web_yahoo,8.29,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.03328,2026-10-05,low,futu_kday,8.13,web_yahoo,8.13,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.03328,2026-10-05,close,futu_kday,8.19,web_yahoo,8.19,0.0,0.0,✅,
+futu_vs_web,日線抽樣,HK.03328,2026-10-05,volume,futu_kday,7482692.0,web_yahoo,7482692.0,0.0,0.0,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,HK.03968,2026-09-28,open,futu_kday,50.6,web_yahoo,50.6,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.03968,2026-09-28,high,futu_kday,51.65,web_yahoo,51.65,0.0,0.0,✅,
 futu_vs_web,日線抽樣,HK.03968,2026-09-28,low,futu_kday,50.6,web_yahoo,50.6,0.0,0.0,✅,
@@ -430,7 +560,12 @@ futu_vs_web,日線抽樣,HK.800000,2026-10-02,open,futu_kday,24099.73,web_yahoo,
 futu_vs_web,日線抽樣,HK.800000,2026-10-02,high,futu_kday,24099.73,web_yahoo,24099.7305,-0.0005,-0.0,✅,
 futu_vs_web,日線抽樣,HK.800000,2026-10-02,low,futu_kday,23865.33,web_yahoo,23865.3301,-0.0001,-0.0,✅,
 futu_vs_web,日線抽樣,HK.800000,2026-10-02,close,futu_kday,23972.29,web_yahoo,23972.2891,0.0009,0.0,✅,
-futu_vs_web,日線抽樣,HK.800000,2026-10-02,volume,futu_kday,0.0,web_yahoo,0.0,0.0,,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.800000,2026-10-02,volume,futu_kday,0.0,web_yahoo,1987400000.0,-1987400000.0,-100.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,HK.800000,2026-10-05,open,futu_kday,23963.41,web_yahoo,23963.4102,-0.0002,-0.0,✅,
+futu_vs_web,日線抽樣,HK.800000,2026-10-05,high,futu_kday,24040.34,web_yahoo,24040.3398,0.0002,0.0,✅,
+futu_vs_web,日線抽樣,HK.800000,2026-10-05,low,futu_kday,23835.68,web_yahoo,23835.6797,0.0003,0.0,✅,
+futu_vs_web,日線抽樣,HK.800000,2026-10-05,close,futu_kday,24040.34,web_yahoo,24040.3398,0.0002,0.0,✅,
+futu_vs_web,日線抽樣,HK.800000,2026-10-05,volume,futu_kday,0.0,web_yahoo,0.0,0.0,,ℹ️,口徑不同，只記錄
 canary_inputs,恒指,HK.800000,2026-09-28,open,futu_kday,24554.58,canary_hsi,24554.580078125,-7.8e-05,-0.0,✅,
 canary_inputs,恒指,HK.800000,2026-09-28,high,futu_kday,24767.22,canary_hsi,24767.220703125,-0.000703,-0.0,✅,
 canary_inputs,恒指,HK.800000,2026-09-28,low,futu_kday,24554.58,canary_hsi,24554.580078125,-7.8e-05,-0.0,✅,
@@ -443,7 +578,14 @@ canary_inputs,恒指,HK.800000,2026-09-30,open,futu_kday,24393.88,canary_hsi,243
 canary_inputs,恒指,HK.800000,2026-09-30,high,futu_kday,24637.65,canary_hsi,24637.650390625,-0.000391,-0.0,✅,
 canary_inputs,恒指,HK.800000,2026-09-30,low,futu_kday,24332.64,canary_hsi,24332.640625,-0.000625,-0.0,✅,
 canary_inputs,恒指,HK.800000,2026-09-30,close,futu_kday,24613.27,canary_hsi,24613.26953125,0.000469,0.0,✅,
-canary_inputs,恒指,HK.800000,2026-10-02,close,futu_kday,23972.29,canary_hsi,,,,⏭️,金絲雀還沒有這一天（亞洲鳥慢一日，見手冊 §9.1）
+canary_inputs,恒指,HK.800000,2026-10-02,open,futu_kday,24099.73,canary_hsi,24099.73046875,-0.000469,-0.0,✅,
+canary_inputs,恒指,HK.800000,2026-10-02,high,futu_kday,24099.73,canary_hsi,24099.73046875,-0.000469,-0.0,✅,
+canary_inputs,恒指,HK.800000,2026-10-02,low,futu_kday,23865.33,canary_hsi,23865.330078125,-7.8e-05,-0.0,✅,
+canary_inputs,恒指,HK.800000,2026-10-02,close,futu_kday,23972.29,canary_hsi,23972.2890625,0.000938,0.0,✅,
+canary_inputs,恒指,HK.800000,2026-10-05,open,futu_kday,23963.41,canary_hsi,23963.41015625,-0.000156,-0.0,✅,
+canary_inputs,恒指,HK.800000,2026-10-05,high,futu_kday,24040.34,canary_hsi,24005.470703125,34.869297,0.1453,❌,第三來源：canary 24005.470703125、web_yahoo 24040.3398
+canary_inputs,恒指,HK.800000,2026-10-05,low,futu_kday,23835.68,canary_hsi,23835.6796875,0.000313,0.0,✅,
+canary_inputs,恒指,HK.800000,2026-10-05,close,futu_kday,24040.34,canary_hsi,23968.529296875,71.810703,0.2996,❌,第三來源：canary 23968.529296875、web_yahoo 24040.3398
 futu_vs_web,日線抽樣,HK.800125,2026-09-25,close,futu_kday,18.31,web_yahoo,,,,⏭️,網站沒有這一天（超出網站最新日期或無此代號）
 futu_vs_web,日線抽樣,HK.800125,2026-09-28,close,futu_kday,18.03,web_yahoo,,,,⏭️,網站沒有這一天（超出網站最新日期或無此代號）
 futu_vs_web,日線抽樣,HK.800125,2026-09-29,close,futu_kday,17.69,web_yahoo,,,,⏭️,網站沒有這一天（超出網站最新日期或無此代號）
@@ -470,10 +612,10 @@ futu_vs_web,日線抽樣,US.BALL,2026-10-01,low,futu_kday,55.11,web_yahoo,55.11,
 futu_vs_web,日線抽樣,US.BALL,2026-10-01,close,futu_kday,56.5,web_yahoo,56.5,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.BALL,2026-10-01,volume,futu_kday,3375190.0,web_yahoo,3375200.0,-10.0,-0.0003,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.BALL,2026-10-02,open,futu_kday,56.87,web_yahoo,56.87,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.BALL,2026-10-02,high,futu_kday,57.215,web_yahoo,57.215,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.BALL,2026-10-02,high,futu_kday,57.215,web_yahoo,57.22,-0.005,-0.0087,❌,
 futu_vs_web,日線抽樣,US.BALL,2026-10-02,low,futu_kday,56.34,web_yahoo,56.34,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.BALL,2026-10-02,close,futu_kday,56.37,web_yahoo,56.37,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.BALL,2026-10-02,volume,futu_kday,1863976.0,web_yahoo,1860650.0,3326.0,0.1788,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.BALL,2026-10-02,volume,futu_kday,1863976.0,web_yahoo,1864000.0,-24.0,-0.0013,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.CDNS,2026-09-28,open,futu_kday,319.0,web_yahoo,319.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CDNS,2026-09-28,high,futu_kday,329.3505,web_yahoo,329.35,0.0005,0.0002,✅,
 futu_vs_web,日線抽樣,US.CDNS,2026-09-28,low,futu_kday,317.8901,web_yahoo,317.89,0.0001,0.0,✅,
@@ -495,10 +637,10 @@ futu_vs_web,日線抽樣,US.CDNS,2026-10-01,low,futu_kday,337.85,web_yahoo,337.8
 futu_vs_web,日線抽樣,US.CDNS,2026-10-01,close,futu_kday,350.73,web_yahoo,350.73,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CDNS,2026-10-01,volume,futu_kday,3284434.0,web_yahoo,3283900.0,534.0,0.0163,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.CDNS,2026-10-02,open,futu_kday,356.5,web_yahoo,356.5,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.CDNS,2026-10-02,high,futu_kday,356.51,web_yahoo,356.5,0.01,0.0028,❌,
+futu_vs_web,日線抽樣,US.CDNS,2026-10-02,high,futu_kday,356.51,web_yahoo,356.51,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CDNS,2026-10-02,low,futu_kday,341.76,web_yahoo,341.76,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CDNS,2026-10-02,close,futu_kday,351.35,web_yahoo,351.35,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.CDNS,2026-10-02,volume,futu_kday,2098092.0,web_yahoo,2093620.0,4472.0,0.2136,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.CDNS,2026-10-02,volume,futu_kday,2098092.0,web_yahoo,2098000.0,92.0,0.0044,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.CSGP,2026-09-28,open,futu_kday,27.675,web_yahoo,27.68,-0.005,-0.0181,❌,
 futu_vs_web,日線抽樣,US.CSGP,2026-09-28,high,futu_kday,27.75,web_yahoo,27.75,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CSGP,2026-09-28,low,futu_kday,26.85,web_yahoo,26.85,0.0,0.0,✅,
@@ -519,11 +661,11 @@ futu_vs_web,日線抽樣,US.CSGP,2026-10-01,high,futu_kday,28.23,web_yahoo,28.23
 futu_vs_web,日線抽樣,US.CSGP,2026-10-01,low,futu_kday,27.095,web_yahoo,27.1,-0.005,-0.0185,❌,
 futu_vs_web,日線抽樣,US.CSGP,2026-10-01,close,futu_kday,27.72,web_yahoo,27.72,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CSGP,2026-10-01,volume,futu_kday,4630485.0,web_yahoo,4630400.0,85.0,0.0018,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.CSGP,2026-10-02,open,futu_kday,27.48,web_yahoo,27.66,-0.18,-0.6508,❌,
+futu_vs_web,日線抽樣,US.CSGP,2026-10-02,open,futu_kday,27.48,web_yahoo,27.48,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CSGP,2026-10-02,high,futu_kday,27.81,web_yahoo,27.81,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CSGP,2026-10-02,low,futu_kday,27.15,web_yahoo,27.15,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CSGP,2026-10-02,close,futu_kday,27.38,web_yahoo,27.38,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.CSGP,2026-10-02,volume,futu_kday,3741484.0,web_yahoo,3736399.0,5085.0,0.1361,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.CSGP,2026-10-02,volume,futu_kday,3741484.0,web_yahoo,3741500.0,-16.0,-0.0004,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.CZR,2026-09-28,open,futu_kday,29.6,web_yahoo,29.6,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-09-28,high,futu_kday,29.6595,web_yahoo,29.66,-0.0005,-0.0017,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-09-28,low,futu_kday,29.57,web_yahoo,29.57,0.0,0.0,✅,
@@ -544,11 +686,11 @@ futu_vs_web,日線抽樣,US.CZR,2026-10-01,high,futu_kday,29.665,web_yahoo,29.66
 futu_vs_web,日線抽樣,US.CZR,2026-10-01,low,futu_kday,29.575,web_yahoo,29.575,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-10-01,close,futu_kday,29.62,web_yahoo,29.62,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-10-01,volume,futu_kday,3214542.0,web_yahoo,3214500.0,42.0,0.0013,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.CZR,2026-10-02,open,futu_kday,29.65,web_yahoo,29.62,0.03,0.1013,❌,
+futu_vs_web,日線抽樣,US.CZR,2026-10-02,open,futu_kday,29.65,web_yahoo,29.65,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-10-02,high,futu_kday,29.69,web_yahoo,29.69,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-10-02,low,futu_kday,29.6,web_yahoo,29.6,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.CZR,2026-10-02,close,futu_kday,29.65,web_yahoo,29.65,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.CZR,2026-10-02,volume,futu_kday,4497981.0,web_yahoo,4138666.0,359315.0,8.6819,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.CZR,2026-10-02,volume,futu_kday,4497981.0,web_yahoo,4498000.0,-19.0,-0.0004,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.DLTR,2026-09-28,open,futu_kday,112.9,web_yahoo,112.9,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.DLTR,2026-09-28,high,futu_kday,116.89,web_yahoo,116.89,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.DLTR,2026-09-28,low,futu_kday,112.25,web_yahoo,112.25,0.0,0.0,✅,
@@ -570,10 +712,10 @@ futu_vs_web,日線抽樣,US.DLTR,2026-10-01,low,futu_kday,113.97,web_yahoo,113.9
 futu_vs_web,日線抽樣,US.DLTR,2026-10-01,close,futu_kday,114.43,web_yahoo,114.43,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.DLTR,2026-10-01,volume,futu_kday,1886890.0,web_yahoo,1886900.0,-10.0,-0.0005,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.DLTR,2026-10-02,open,futu_kday,114.58,web_yahoo,114.58,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.DLTR,2026-10-02,high,futu_kday,115.225,web_yahoo,115.225,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.DLTR,2026-10-02,low,futu_kday,111.12,web_yahoo,111.13,-0.01,-0.009,❌,
+futu_vs_web,日線抽樣,US.DLTR,2026-10-02,high,futu_kday,115.225,web_yahoo,115.23,-0.005,-0.0043,❌,
+futu_vs_web,日線抽樣,US.DLTR,2026-10-02,low,futu_kday,111.12,web_yahoo,111.12,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.DLTR,2026-10-02,close,futu_kday,112.16,web_yahoo,112.16,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.DLTR,2026-10-02,volume,futu_kday,1626734.0,web_yahoo,1620651.0,6083.0,0.3753,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.DLTR,2026-10-02,volume,futu_kday,1626734.0,web_yahoo,1625800.0,934.0,0.0574,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.FHN,2026-09-28,open,futu_kday,23.41,web_yahoo,23.41,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FHN,2026-09-28,high,futu_kday,23.41,web_yahoo,23.41,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FHN,2026-09-28,low,futu_kday,23.13,web_yahoo,23.13,0.0,0.0,✅,
@@ -598,7 +740,7 @@ futu_vs_web,日線抽樣,US.FHN,2026-10-02,open,futu_kday,23.15,web_yahoo,23.15,
 futu_vs_web,日線抽樣,US.FHN,2026-10-02,high,futu_kday,23.45,web_yahoo,23.45,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FHN,2026-10-02,low,futu_kday,23.13,web_yahoo,23.13,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FHN,2026-10-02,close,futu_kday,23.42,web_yahoo,23.42,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.FHN,2026-10-02,volume,futu_kday,5094929.0,web_yahoo,5093660.0,1269.0,0.0249,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.FHN,2026-10-02,volume,futu_kday,5094929.0,web_yahoo,5094900.0,29.0,0.0006,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.FTNT,2026-09-28,open,futu_kday,170.7,web_yahoo,170.7,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FTNT,2026-09-28,high,futu_kday,176.905,web_yahoo,176.91,-0.005,-0.0028,❌,
 futu_vs_web,日線抽樣,US.FTNT,2026-09-28,low,futu_kday,169.56,web_yahoo,169.56,0.0,0.0,✅,
@@ -623,7 +765,7 @@ futu_vs_web,日線抽樣,US.FTNT,2026-10-02,open,futu_kday,182.09,web_yahoo,182.
 futu_vs_web,日線抽樣,US.FTNT,2026-10-02,high,futu_kday,183.09,web_yahoo,183.09,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FTNT,2026-10-02,low,futu_kday,180.04,web_yahoo,180.04,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.FTNT,2026-10-02,close,futu_kday,180.95,web_yahoo,180.95,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.FTNT,2026-10-02,volume,futu_kday,3412775.0,web_yahoo,3403414.0,9361.0,0.275,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.FTNT,2026-10-02,volume,futu_kday,3412775.0,web_yahoo,3412200.0,575.0,0.0169,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.GILD,2026-09-28,open,futu_kday,149.795,web_yahoo,149.8,-0.005,-0.0033,❌,
 futu_vs_web,日線抽樣,US.GILD,2026-09-28,high,futu_kday,152.74,web_yahoo,152.74,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GILD,2026-09-28,low,futu_kday,149.41,web_yahoo,149.41,0.0,0.0,✅,
@@ -648,7 +790,7 @@ futu_vs_web,日線抽樣,US.GILD,2026-10-02,open,futu_kday,147.65,web_yahoo,147.
 futu_vs_web,日線抽樣,US.GILD,2026-10-02,high,futu_kday,148.0,web_yahoo,148.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GILD,2026-10-02,low,futu_kday,144.0,web_yahoo,144.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GILD,2026-10-02,close,futu_kday,144.74,web_yahoo,144.74,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.GILD,2026-10-02,volume,futu_kday,5044221.0,web_yahoo,4786436.0,257785.0,5.3857,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.GILD,2026-10-02,volume,futu_kday,5044221.0,web_yahoo,5043900.0,321.0,0.0064,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.GOOGL,2026-09-28,open,futu_kday,340.7,web_yahoo,340.7,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GOOGL,2026-09-28,high,futu_kday,343.59,web_yahoo,343.59,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GOOGL,2026-09-28,low,futu_kday,339.56,web_yahoo,339.56,0.0,0.0,✅,
@@ -669,11 +811,36 @@ futu_vs_web,日線抽樣,US.GOOGL,2026-10-01,high,futu_kday,353.22,web_yahoo,353
 futu_vs_web,日線抽樣,US.GOOGL,2026-10-01,low,futu_kday,335.5108,web_yahoo,335.51,0.0008,0.0002,❌,
 futu_vs_web,日線抽樣,US.GOOGL,2026-10-01,close,futu_kday,338.24,web_yahoo,338.24,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GOOGL,2026-10-01,volume,futu_kday,33269338.0,web_yahoo,33269300.0,38.0,0.0001,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,open,futu_kday,341.315,web_yahoo,341.315,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,open,futu_kday,341.315,web_yahoo,341.32,-0.005,-0.0015,❌,
 futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,high,futu_kday,345.77,web_yahoo,345.77,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,low,futu_kday,341.16,web_yahoo,341.16,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,close,futu_kday,343.5,web_yahoo,343.5,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,volume,futu_kday,23772148.0,web_yahoo,22734069.0,1038079.0,4.5662,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.GOOGL,2026-10-02,volume,futu_kday,23772148.0,web_yahoo,23738200.0,33948.0,0.143,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.IFF,2026-09-28,open,futu_kday,84.52,web_yahoo,84.52,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-28,high,futu_kday,86.37,web_yahoo,86.37,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-28,low,futu_kday,84.001,web_yahoo,84.0,0.001,0.0012,❌,
+futu_vs_web,日線抽樣,US.IFF,2026-09-28,close,futu_kday,85.72,web_yahoo,85.72,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-28,volume,futu_kday,1863468.0,web_yahoo,1863500.0,-32.0,-0.0017,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.IFF,2026-09-29,open,futu_kday,85.57,web_yahoo,85.57,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-29,high,futu_kday,86.51,web_yahoo,86.51,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-29,low,futu_kday,85.08,web_yahoo,85.08,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-29,close,futu_kday,85.25,web_yahoo,85.25,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-29,volume,futu_kday,1455975.0,web_yahoo,1456000.0,-25.0,-0.0017,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.IFF,2026-09-30,open,futu_kday,85.68,web_yahoo,85.68,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-30,high,futu_kday,85.715,web_yahoo,85.72,-0.005,-0.0058,❌,
+futu_vs_web,日線抽樣,US.IFF,2026-09-30,low,futu_kday,83.47,web_yahoo,83.47,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-30,close,futu_kday,83.48,web_yahoo,83.48,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-09-30,volume,futu_kday,1912333.0,web_yahoo,1903200.0,9133.0,0.4799,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.IFF,2026-10-01,open,futu_kday,83.0,web_yahoo,83.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-01,high,futu_kday,83.64,web_yahoo,83.64,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-01,low,futu_kday,81.54,web_yahoo,81.54,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-01,close,futu_kday,83.12,web_yahoo,83.12,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-01,volume,futu_kday,1816202.0,web_yahoo,1816200.0,2.0,0.0001,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.IFF,2026-10-02,open,futu_kday,83.84,web_yahoo,83.84,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-02,high,futu_kday,84.1699,web_yahoo,84.17,-0.0001,-0.0001,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-02,low,futu_kday,82.41,web_yahoo,82.41,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-02,close,futu_kday,82.42,web_yahoo,82.42,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.IFF,2026-10-02,volume,futu_kday,1857040.0,web_yahoo,1857000.0,40.0,0.0022,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.J,2026-09-28,open,futu_kday,137.4,web_yahoo,137.4,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.J,2026-09-28,high,futu_kday,138.89,web_yahoo,138.89,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.J,2026-09-28,low,futu_kday,136.15,web_yahoo,136.15,0.0,0.0,✅,
@@ -695,10 +862,10 @@ futu_vs_web,日線抽樣,US.J,2026-10-01,low,futu_kday,136.19,web_yahoo,136.19,0
 futu_vs_web,日線抽樣,US.J,2026-10-01,close,futu_kday,139.79,web_yahoo,139.79,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.J,2026-10-01,volume,futu_kday,998431.0,web_yahoo,998400.0,31.0,0.0031,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.J,2026-10-02,open,futu_kday,138.57,web_yahoo,138.57,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.J,2026-10-02,high,futu_kday,140.7,web_yahoo,140.49,0.21,0.1495,❌,
+futu_vs_web,日線抽樣,US.J,2026-10-02,high,futu_kday,140.7,web_yahoo,140.7,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.J,2026-10-02,low,futu_kday,136.9,web_yahoo,136.9,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.J,2026-10-02,close,futu_kday,138.06,web_yahoo,138.06,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.J,2026-10-02,volume,futu_kday,771988.0,web_yahoo,769091.0,2897.0,0.3767,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.J,2026-10-02,volume,futu_kday,771988.0,web_yahoo,772000.0,-12.0,-0.0016,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.JNJ,2026-09-28,open,futu_kday,270.17,web_yahoo,270.17,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.JNJ,2026-09-28,high,futu_kday,273.78,web_yahoo,273.78,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.JNJ,2026-09-28,low,futu_kday,269.27,web_yahoo,269.27,0.0,0.0,✅,
@@ -723,7 +890,7 @@ futu_vs_web,日線抽樣,US.JNJ,2026-10-02,open,futu_kday,259.38,web_yahoo,259.3
 futu_vs_web,日線抽樣,US.JNJ,2026-10-02,high,futu_kday,259.38,web_yahoo,259.38,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.JNJ,2026-10-02,low,futu_kday,255.12,web_yahoo,255.12,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.JNJ,2026-10-02,close,futu_kday,256.03,web_yahoo,256.03,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.JNJ,2026-10-02,volume,futu_kday,10942146.0,web_yahoo,10176696.0,765450.0,7.5216,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.JNJ,2026-10-02,volume,futu_kday,10942146.0,web_yahoo,10940400.0,1746.0,0.016,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.LVS,2026-09-28,open,futu_kday,38.87,web_yahoo,38.87,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LVS,2026-09-28,high,futu_kday,39.29,web_yahoo,39.29,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LVS,2026-09-28,low,futu_kday,38.42,web_yahoo,38.42,0.0,0.0,✅,
@@ -745,10 +912,10 @@ futu_vs_web,日線抽樣,US.LVS,2026-10-01,low,futu_kday,36.475,web_yahoo,36.48,
 futu_vs_web,日線抽樣,US.LVS,2026-10-01,close,futu_kday,36.69,web_yahoo,36.69,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LVS,2026-10-01,volume,futu_kday,6299251.0,web_yahoo,6296100.0,3151.0,0.05,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.LVS,2026-10-02,open,futu_kday,36.89,web_yahoo,36.89,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.LVS,2026-10-02,high,futu_kday,36.98,web_yahoo,36.97,0.01,0.027,❌,
+futu_vs_web,日線抽樣,US.LVS,2026-10-02,high,futu_kday,36.98,web_yahoo,36.98,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LVS,2026-10-02,low,futu_kday,36.21,web_yahoo,36.21,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LVS,2026-10-02,close,futu_kday,36.23,web_yahoo,36.23,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.LVS,2026-10-02,volume,futu_kday,7318115.0,web_yahoo,7314268.0,3847.0,0.0526,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.LVS,2026-10-02,volume,futu_kday,7318115.0,web_yahoo,7317600.0,515.0,0.007,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.LYV,2026-09-28,open,futu_kday,170.89,web_yahoo,170.89,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LYV,2026-09-28,high,futu_kday,174.0,web_yahoo,174.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LYV,2026-09-28,low,futu_kday,170.71,web_yahoo,170.71,0.0,0.0,✅,
@@ -773,7 +940,7 @@ futu_vs_web,日線抽樣,US.LYV,2026-10-02,open,futu_kday,167.9,web_yahoo,167.9,
 futu_vs_web,日線抽樣,US.LYV,2026-10-02,high,futu_kday,169.46,web_yahoo,169.46,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LYV,2026-10-02,low,futu_kday,166.59,web_yahoo,166.59,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.LYV,2026-10-02,close,futu_kday,168.77,web_yahoo,168.77,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.LYV,2026-10-02,volume,futu_kday,2070680.0,web_yahoo,2068689.0,1991.0,0.0962,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.LYV,2026-10-02,volume,futu_kday,2070680.0,web_yahoo,2070700.0,-20.0,-0.001,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MDB,2026-09-28,open,futu_kday,311.345,web_yahoo,311.345,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDB,2026-09-28,high,futu_kday,344.3016,web_yahoo,344.302,-0.0004,-0.0001,✅,
 futu_vs_web,日線抽樣,US.MDB,2026-09-28,low,futu_kday,300.0,web_yahoo,300.0,0.0,0.0,✅,
@@ -794,11 +961,11 @@ futu_vs_web,日線抽樣,US.MDB,2026-10-01,high,futu_kday,355.65,web_yahoo,355.6
 futu_vs_web,日線抽樣,US.MDB,2026-10-01,low,futu_kday,342.0,web_yahoo,342.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDB,2026-10-01,close,futu_kday,351.73,web_yahoo,351.73,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDB,2026-10-01,volume,futu_kday,2625715.0,web_yahoo,2622900.0,2815.0,0.1073,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.MDB,2026-10-02,open,futu_kday,353.265,web_yahoo,354.6,-1.335,-0.3765,❌,
+futu_vs_web,日線抽樣,US.MDB,2026-10-02,open,futu_kday,353.265,web_yahoo,353.265,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDB,2026-10-02,high,futu_kday,360.83,web_yahoo,360.83,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MDB,2026-10-02,low,futu_kday,336.36,web_yahoo,336.5,-0.14,-0.0416,❌,
+futu_vs_web,日線抽樣,US.MDB,2026-10-02,low,futu_kday,336.36,web_yahoo,336.36,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDB,2026-10-02,close,futu_kday,357.96,web_yahoo,357.96,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MDB,2026-10-02,volume,futu_kday,2697263.0,web_yahoo,2682941.0,14322.0,0.5338,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.MDB,2026-10-02,volume,futu_kday,2697263.0,web_yahoo,2685300.0,11963.0,0.4455,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MDT,2026-09-28,open,futu_kday,88.315,web_yahoo,88.32,-0.005,-0.0057,❌,
 futu_vs_web,日線抽樣,US.MDT,2026-09-28,high,futu_kday,89.53,web_yahoo,89.53,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDT,2026-09-28,low,futu_kday,87.52,web_yahoo,87.52,0.0,0.0,✅,
@@ -821,9 +988,9 @@ futu_vs_web,日線抽樣,US.MDT,2026-10-01,close,futu_kday,86.44,web_yahoo,86.44
 futu_vs_web,日線抽樣,US.MDT,2026-10-01,volume,futu_kday,29277980.0,web_yahoo,29277400.0,580.0,0.002,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MDT,2026-10-02,open,futu_kday,86.55,web_yahoo,86.55,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDT,2026-10-02,high,futu_kday,87.94,web_yahoo,87.94,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MDT,2026-10-02,low,futu_kday,85.59,web_yahoo,85.6,-0.01,-0.0117,❌,
+futu_vs_web,日線抽樣,US.MDT,2026-10-02,low,futu_kday,85.59,web_yahoo,85.59,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MDT,2026-10-02,close,futu_kday,86.38,web_yahoo,86.38,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MDT,2026-10-02,volume,futu_kday,35366014.0,web_yahoo,34596650.0,769364.0,2.2238,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.MDT,2026-10-02,volume,futu_kday,35366014.0,web_yahoo,35364700.0,1314.0,0.0037,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MI,2026-09-28,open,futu_kday,2.4,web_yahoo,2.4,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MI,2026-09-28,high,futu_kday,2.4,web_yahoo,2.4,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MI,2026-09-28,low,futu_kday,2.27,web_yahoo,2.27,0.0,0.0,✅,
@@ -846,9 +1013,9 @@ futu_vs_web,日線抽樣,US.MI,2026-10-01,close,futu_kday,0.885,web_yahoo,0.885,
 futu_vs_web,日線抽樣,US.MI,2026-10-01,volume,futu_kday,456356.0,web_yahoo,456400.0,-44.0,-0.0096,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MI,2026-10-02,open,futu_kday,0.89,web_yahoo,0.89,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MI,2026-10-02,high,futu_kday,0.894,web_yahoo,0.894,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MI,2026-10-02,low,futu_kday,0.73,web_yahoo,0.7331,-0.0031,-0.4229,❌,
+futu_vs_web,日線抽樣,US.MI,2026-10-02,low,futu_kday,0.73,web_yahoo,0.73,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MI,2026-10-02,close,futu_kday,0.894,web_yahoo,0.894,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MI,2026-10-02,volume,futu_kday,222012.0,web_yahoo,177346.0,44666.0,25.1858,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.MI,2026-10-02,volume,futu_kday,222012.0,web_yahoo,181000.0,41012.0,22.6586,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MOH,2026-09-28,open,futu_kday,191.0,web_yahoo,191.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MOH,2026-09-28,high,futu_kday,192.05,web_yahoo,192.05,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MOH,2026-09-28,low,futu_kday,187.155,web_yahoo,187.16,-0.005,-0.0027,❌,
@@ -873,7 +1040,7 @@ futu_vs_web,日線抽樣,US.MOH,2026-10-02,open,futu_kday,181.52,web_yahoo,181.5
 futu_vs_web,日線抽樣,US.MOH,2026-10-02,high,futu_kday,190.15,web_yahoo,190.15,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MOH,2026-10-02,low,futu_kday,178.0,web_yahoo,178.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MOH,2026-10-02,close,futu_kday,189.54,web_yahoo,189.54,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MOH,2026-10-02,volume,futu_kday,625098.0,web_yahoo,625022.0,76.0,0.0122,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.MOH,2026-10-02,volume,futu_kday,625098.0,web_yahoo,625100.0,-2.0,-0.0003,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.MRVL,2026-09-28,open,futu_kday,259.65,web_yahoo,259.65,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MRVL,2026-09-28,high,futu_kday,261.7814,web_yahoo,261.78,0.0014,0.0005,❌,
 futu_vs_web,日線抽樣,US.MRVL,2026-09-28,low,futu_kday,248.1415,web_yahoo,248.14,0.0015,0.0006,❌,
@@ -894,11 +1061,36 @@ futu_vs_web,日線抽樣,US.MRVL,2026-10-01,high,futu_kday,270.2799,web_yahoo,27
 futu_vs_web,日線抽樣,US.MRVL,2026-10-01,low,futu_kday,257.58,web_yahoo,257.58,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MRVL,2026-10-01,close,futu_kday,268.08,web_yahoo,268.08,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MRVL,2026-10-01,volume,futu_kday,19030170.0,web_yahoo,19030200.0,-30.0,-0.0002,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.MRVL,2026-10-02,open,futu_kday,278.0,web_yahoo,278.18,-0.18,-0.0647,❌,
+futu_vs_web,日線抽樣,US.MRVL,2026-10-02,open,futu_kday,278.0,web_yahoo,278.0,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.MRVL,2026-10-02,high,futu_kday,280.0,web_yahoo,280.0,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MRVL,2026-10-02,low,futu_kday,271.587,web_yahoo,271.587,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.MRVL,2026-10-02,low,futu_kday,271.587,web_yahoo,271.59,-0.003,-0.0011,❌,
 futu_vs_web,日線抽樣,US.MRVL,2026-10-02,close,futu_kday,272.29,web_yahoo,272.29,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.MRVL,2026-10-02,volume,futu_kday,15905528.0,web_yahoo,14725646.0,1179882.0,8.0124,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.MRVL,2026-10-02,volume,futu_kday,15905528.0,web_yahoo,15858100.0,47428.0,0.2991,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.NI,2026-09-28,open,futu_kday,39.38,web_yahoo,39.38,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-28,high,futu_kday,39.44,web_yahoo,39.44,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-28,low,futu_kday,39.05,web_yahoo,39.05,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-28,close,futu_kday,39.1,web_yahoo,39.1,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-28,volume,futu_kday,6001381.0,web_yahoo,6001400.0,-19.0,-0.0003,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.NI,2026-09-29,open,futu_kday,38.96,web_yahoo,38.96,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-29,high,futu_kday,39.565,web_yahoo,39.57,-0.005,-0.0126,❌,
+futu_vs_web,日線抽樣,US.NI,2026-09-29,low,futu_kday,38.869,web_yahoo,38.87,-0.001,-0.0026,❌,
+futu_vs_web,日線抽樣,US.NI,2026-09-29,close,futu_kday,39.32,web_yahoo,39.32,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-29,volume,futu_kday,6415197.0,web_yahoo,6415200.0,-3.0,-0.0,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.NI,2026-09-30,open,futu_kday,39.32,web_yahoo,39.32,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-30,high,futu_kday,39.5483,web_yahoo,39.55,-0.0017,-0.0043,❌,
+futu_vs_web,日線抽樣,US.NI,2026-09-30,low,futu_kday,38.98,web_yahoo,38.98,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-30,close,futu_kday,39.0,web_yahoo,39.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-09-30,volume,futu_kday,6946773.0,web_yahoo,6946800.0,-27.0,-0.0004,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.NI,2026-10-01,open,futu_kday,38.98,web_yahoo,38.98,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-10-01,high,futu_kday,39.535,web_yahoo,39.54,-0.005,-0.0126,❌,
+futu_vs_web,日線抽樣,US.NI,2026-10-01,low,futu_kday,38.42,web_yahoo,38.42,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-10-01,close,futu_kday,39.5,web_yahoo,39.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-10-01,volume,futu_kday,5787547.0,web_yahoo,5787500.0,47.0,0.0008,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.NI,2026-10-02,open,futu_kday,39.76,web_yahoo,39.76,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-10-02,high,futu_kday,40.005,web_yahoo,40.01,-0.005,-0.0125,❌,
+futu_vs_web,日線抽樣,US.NI,2026-10-02,low,futu_kday,39.375,web_yahoo,39.38,-0.005,-0.0127,❌,
+futu_vs_web,日線抽樣,US.NI,2026-10-02,close,futu_kday,39.43,web_yahoo,39.43,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.NI,2026-10-02,volume,futu_kday,4190878.0,web_yahoo,4190900.0,-22.0,-0.0005,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.ORCL,2026-09-28,open,futu_kday,132.725,web_yahoo,132.73,-0.005,-0.0038,❌,
 futu_vs_web,日線抽樣,US.ORCL,2026-09-28,high,futu_kday,135.69,web_yahoo,135.69,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.ORCL,2026-09-28,low,futu_kday,131.58,web_yahoo,131.58,0.0,0.0,✅,
@@ -923,7 +1115,57 @@ futu_vs_web,日線抽樣,US.ORCL,2026-10-02,open,futu_kday,142.09,web_yahoo,142.
 futu_vs_web,日線抽樣,US.ORCL,2026-10-02,high,futu_kday,144.86,web_yahoo,144.86,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.ORCL,2026-10-02,low,futu_kday,140.26,web_yahoo,140.26,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.ORCL,2026-10-02,close,futu_kday,142.3,web_yahoo,142.3,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.ORCL,2026-10-02,volume,futu_kday,35409321.0,web_yahoo,30193711.0,5215610.0,17.2738,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.ORCL,2026-10-02,volume,futu_kday,35409321.0,web_yahoo,35330300.0,79021.0,0.2237,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.ORLY,2026-09-28,open,futu_kday,85.85,web_yahoo,85.85,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-28,high,futu_kday,87.02,web_yahoo,87.02,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-28,low,futu_kday,85.6,web_yahoo,85.6,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-28,close,futu_kday,86.51,web_yahoo,86.51,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-28,volume,futu_kday,4478518.0,web_yahoo,4478500.0,18.0,0.0004,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.ORLY,2026-09-29,open,futu_kday,85.85,web_yahoo,85.85,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-29,high,futu_kday,86.48,web_yahoo,86.48,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-29,low,futu_kday,85.33,web_yahoo,85.33,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-29,close,futu_kday,86.07,web_yahoo,86.07,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-29,volume,futu_kday,3675702.0,web_yahoo,3675700.0,2.0,0.0001,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.ORLY,2026-09-30,open,futu_kday,86.3,web_yahoo,86.3,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-30,high,futu_kday,86.755,web_yahoo,86.76,-0.005,-0.0058,❌,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-30,low,futu_kday,85.0801,web_yahoo,85.08,0.0001,0.0001,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-30,close,futu_kday,85.41,web_yahoo,85.41,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-09-30,volume,futu_kday,4140130.0,web_yahoo,4132100.0,8030.0,0.1943,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.ORLY,2026-10-01,open,futu_kday,85.32,web_yahoo,85.32,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-01,high,futu_kday,85.745,web_yahoo,85.75,-0.005,-0.0058,❌,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-01,low,futu_kday,83.9,web_yahoo,83.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-01,close,futu_kday,85.03,web_yahoo,85.03,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-01,volume,futu_kday,4297461.0,web_yahoo,4297100.0,361.0,0.0084,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.ORLY,2026-10-02,open,futu_kday,85.725,web_yahoo,85.73,-0.005,-0.0058,❌,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-02,high,futu_kday,85.725,web_yahoo,85.73,-0.005,-0.0058,❌,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-02,low,futu_kday,84.435,web_yahoo,84.44,-0.005,-0.0059,❌,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-02,close,futu_kday,84.9,web_yahoo,84.9,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.ORLY,2026-10-02,volume,futu_kday,3772714.0,web_yahoo,3772500.0,214.0,0.0057,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PDD,2026-09-28,open,futu_kday,77.5,web_yahoo,77.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-28,high,futu_kday,78.935,web_yahoo,78.94,-0.005,-0.0063,❌,
+futu_vs_web,日線抽樣,US.PDD,2026-09-28,low,futu_kday,77.41,web_yahoo,77.41,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-28,close,futu_kday,78.49,web_yahoo,78.49,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-28,volume,futu_kday,4024533.0,web_yahoo,4024500.0,33.0,0.0008,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PDD,2026-09-29,open,futu_kday,78.49,web_yahoo,78.49,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-29,high,futu_kday,78.56,web_yahoo,78.56,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-29,low,futu_kday,77.02,web_yahoo,77.02,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-29,close,futu_kday,77.5,web_yahoo,77.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-29,volume,futu_kday,4749833.0,web_yahoo,4744100.0,5733.0,0.1208,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PDD,2026-09-30,open,futu_kday,77.65,web_yahoo,77.65,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-30,high,futu_kday,78.225,web_yahoo,78.23,-0.005,-0.0064,❌,
+futu_vs_web,日線抽樣,US.PDD,2026-09-30,low,futu_kday,77.29,web_yahoo,77.29,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-30,close,futu_kday,77.94,web_yahoo,77.94,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-09-30,volume,futu_kday,6191074.0,web_yahoo,6185500.0,5574.0,0.0901,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PDD,2026-10-01,open,futu_kday,78.34,web_yahoo,78.34,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-01,high,futu_kday,78.74,web_yahoo,78.74,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-01,low,futu_kday,76.31,web_yahoo,76.31,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-01,close,futu_kday,76.5,web_yahoo,76.5,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-01,volume,futu_kday,5035718.0,web_yahoo,5029800.0,5918.0,0.1177,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PDD,2026-10-02,open,futu_kday,76.3,web_yahoo,76.3,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-02,high,futu_kday,76.3,web_yahoo,76.3,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-02,low,futu_kday,74.72,web_yahoo,74.72,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-02,close,futu_kday,75.38,web_yahoo,75.38,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PDD,2026-10-02,volume,futu_kday,6771517.0,web_yahoo,6229200.0,542317.0,8.706,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.PFE,2026-09-28,open,futu_kday,28.62,web_yahoo,28.62,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFE,2026-09-28,high,futu_kday,28.87,web_yahoo,28.87,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFE,2026-09-28,low,futu_kday,28.39,web_yahoo,28.39,0.0,0.0,✅,
@@ -944,11 +1186,11 @@ futu_vs_web,日線抽樣,US.PFE,2026-10-01,high,futu_kday,28.585,web_yahoo,28.59
 futu_vs_web,日線抽樣,US.PFE,2026-10-01,low,futu_kday,28.075,web_yahoo,28.08,-0.005,-0.0178,❌,
 futu_vs_web,日線抽樣,US.PFE,2026-10-01,close,futu_kday,28.12,web_yahoo,28.12,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFE,2026-10-01,volume,futu_kday,30494158.0,web_yahoo,30494200.0,-42.0,-0.0001,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.PFE,2026-10-02,open,futu_kday,28.145,web_yahoo,28.145,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.PFE,2026-10-02,high,futu_kday,28.16,web_yahoo,28.145,0.015,0.0533,❌,
+futu_vs_web,日線抽樣,US.PFE,2026-10-02,open,futu_kday,28.145,web_yahoo,28.15,-0.005,-0.0178,❌,
+futu_vs_web,日線抽樣,US.PFE,2026-10-02,high,futu_kday,28.16,web_yahoo,28.16,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFE,2026-10-02,low,futu_kday,27.44,web_yahoo,27.44,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFE,2026-10-02,close,futu_kday,27.8,web_yahoo,27.8,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.PFE,2026-10-02,volume,futu_kday,35007893.0,web_yahoo,34914894.0,92999.0,0.2664,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PFE,2026-10-02,volume,futu_kday,35007893.0,web_yahoo,34996100.0,11793.0,0.0337,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.PFG,2026-09-28,open,futu_kday,115.04,web_yahoo,115.04,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFG,2026-09-28,high,futu_kday,116.55,web_yahoo,116.55,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFG,2026-09-28,low,futu_kday,114.3,web_yahoo,114.3,0.0,0.0,✅,
@@ -970,10 +1212,60 @@ futu_vs_web,日線抽樣,US.PFG,2026-10-01,low,futu_kday,110.05,web_yahoo,110.05
 futu_vs_web,日線抽樣,US.PFG,2026-10-01,close,futu_kday,112.24,web_yahoo,112.24,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFG,2026-10-01,volume,futu_kday,1273320.0,web_yahoo,1273300.0,20.0,0.0016,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.PFG,2026-10-02,open,futu_kday,112.24,web_yahoo,112.24,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.PFG,2026-10-02,high,futu_kday,112.37,web_yahoo,112.35,0.02,0.0178,❌,
+futu_vs_web,日線抽樣,US.PFG,2026-10-02,high,futu_kday,112.37,web_yahoo,112.37,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFG,2026-10-02,low,futu_kday,111.53,web_yahoo,111.53,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.PFG,2026-10-02,close,futu_kday,111.96,web_yahoo,111.96,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.PFG,2026-10-02,volume,futu_kday,1097316.0,web_yahoo,1094883.0,2433.0,0.2222,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PFG,2026-10-02,volume,futu_kday,1097316.0,web_yahoo,1097300.0,16.0,0.0015,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PH,2026-09-28,open,futu_kday,973.23,web_yahoo,973.23,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-28,high,futu_kday,983.92,web_yahoo,983.92,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-28,low,futu_kday,962.53,web_yahoo,962.53,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-28,close,futu_kday,969.55,web_yahoo,969.55,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-28,volume,futu_kday,675030.0,web_yahoo,675000.0,30.0,0.0044,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PH,2026-09-29,open,futu_kday,972.43,web_yahoo,972.43,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-29,high,futu_kday,978.535,web_yahoo,978.54,-0.005,-0.0005,❌,
+futu_vs_web,日線抽樣,US.PH,2026-09-29,low,futu_kday,960.99,web_yahoo,960.99,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-29,close,futu_kday,970.37,web_yahoo,970.37,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-29,volume,futu_kday,391409.0,web_yahoo,390300.0,1109.0,0.2841,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PH,2026-09-30,open,futu_kday,972.4,web_yahoo,972.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-30,high,futu_kday,972.4,web_yahoo,972.4,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-30,low,futu_kday,955.42,web_yahoo,955.42,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-30,close,futu_kday,955.42,web_yahoo,955.42,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-09-30,volume,futu_kday,679697.0,web_yahoo,675000.0,4697.0,0.6959,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PH,2026-10-01,open,futu_kday,951.78,web_yahoo,951.78,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-01,high,futu_kday,967.975,web_yahoo,967.98,-0.005,-0.0005,❌,
+futu_vs_web,日線抽樣,US.PH,2026-10-01,low,futu_kday,946.72,web_yahoo,946.72,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-01,close,futu_kday,965.88,web_yahoo,965.88,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-01,volume,futu_kday,498579.0,web_yahoo,498600.0,-21.0,-0.0042,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PH,2026-10-02,open,futu_kday,976.94,web_yahoo,976.94,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-02,high,futu_kday,983.96,web_yahoo,983.96,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-02,low,futu_kday,966.55,web_yahoo,966.55,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-02,close,futu_kday,972.55,web_yahoo,972.55,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PH,2026-10-02,volume,futu_kday,344682.0,web_yahoo,344600.0,82.0,0.0238,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PLD,2026-09-28,open,futu_kday,133.09,web_yahoo,133.09,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-28,high,futu_kday,134.34,web_yahoo,134.34,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-28,low,futu_kday,132.22,web_yahoo,132.22,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-28,close,futu_kday,132.44,web_yahoo,132.44,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-28,volume,futu_kday,3045484.0,web_yahoo,3045500.0,-16.0,-0.0005,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PLD,2026-09-29,open,futu_kday,131.71,web_yahoo,131.71,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-29,high,futu_kday,133.19,web_yahoo,133.19,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-29,low,futu_kday,130.71,web_yahoo,130.71,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-29,close,futu_kday,132.61,web_yahoo,132.61,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-29,volume,futu_kday,4146858.0,web_yahoo,4146800.0,58.0,0.0014,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PLD,2026-09-30,open,futu_kday,133.07,web_yahoo,133.07,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-30,high,futu_kday,133.14,web_yahoo,133.14,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-30,low,futu_kday,129.69,web_yahoo,129.69,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-30,close,futu_kday,129.84,web_yahoo,129.84,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-09-30,volume,futu_kday,6121187.0,web_yahoo,6121200.0,-13.0,-0.0002,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PLD,2026-10-01,open,futu_kday,128.0,web_yahoo,128.0,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-10-01,high,futu_kday,128.93,web_yahoo,128.93,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-10-01,low,futu_kday,127.29,web_yahoo,127.29,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-10-01,close,futu_kday,128.18,web_yahoo,128.18,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-10-01,volume,futu_kday,5399160.0,web_yahoo,5399100.0,60.0,0.0011,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.PLD,2026-10-02,open,futu_kday,128.555,web_yahoo,128.56,-0.005,-0.0039,❌,
+futu_vs_web,日線抽樣,US.PLD,2026-10-02,high,futu_kday,129.79,web_yahoo,129.79,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-10-02,low,futu_kday,128.125,web_yahoo,128.13,-0.005,-0.0039,❌,
+futu_vs_web,日線抽樣,US.PLD,2026-10-02,close,futu_kday,128.91,web_yahoo,128.91,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.PLD,2026-10-02,volume,futu_kday,3823815.0,web_yahoo,3823800.0,15.0,0.0004,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.POM,2026-09-28,open,futu_kday,0.9528,web_yahoo,0.953,-0.0002,-0.021,✅,
 futu_vs_web,日線抽樣,US.POM,2026-09-28,high,futu_kday,0.9849,web_yahoo,0.985,-0.0001,-0.0102,✅,
 futu_vs_web,日線抽樣,US.POM,2026-09-28,low,futu_kday,0.8661,web_yahoo,0.866,0.0001,0.0115,✅,
@@ -994,11 +1286,11 @@ futu_vs_web,日線抽樣,US.POM,2026-10-01,high,futu_kday,0.9911,web_yahoo,0.991
 futu_vs_web,日線抽樣,US.POM,2026-10-01,low,futu_kday,0.8401,web_yahoo,0.84,0.0001,0.0119,✅,
 futu_vs_web,日線抽樣,US.POM,2026-10-01,close,futu_kday,0.92,web_yahoo,0.92,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.POM,2026-10-01,volume,futu_kday,19863.0,web_yahoo,19300.0,563.0,2.9171,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.POM,2026-10-02,open,futu_kday,0.877627,web_yahoo,0.8776,2.7e-05,0.0031,✅,
-futu_vs_web,日線抽樣,US.POM,2026-10-02,high,futu_kday,0.8855,web_yahoo,0.8855,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.POM,2026-10-02,open,futu_kday,0.877627,web_yahoo,0.878,-0.000373,-0.0425,✅,
+futu_vs_web,日線抽樣,US.POM,2026-10-02,high,futu_kday,0.8855,web_yahoo,0.886,-0.0005,-0.0564,❌,
 futu_vs_web,日線抽樣,US.POM,2026-10-02,low,futu_kday,0.86,web_yahoo,0.86,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.POM,2026-10-02,close,futu_kday,0.86,web_yahoo,0.86,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.POM,2026-10-02,volume,futu_kday,6924.0,web_yahoo,4543.0,2381.0,52.4103,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.POM,2026-10-02,volume,futu_kday,6924.0,web_yahoo,4900.0,2024.0,41.3061,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.QQQ,2026-09-28,open,futu_kday,740.455,web_yahoo,740.46,-0.005,-0.0007,❌,
 futu_vs_web,日線抽樣,US.QQQ,2026-09-28,high,futu_kday,741.42,web_yahoo,741.42,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.QQQ,2026-09-28,low,futu_kday,731.63,web_yahoo,731.63,0.0,0.0,✅,
@@ -1020,10 +1312,10 @@ futu_vs_web,日線抽樣,US.QQQ,2026-10-01,low,futu_kday,736.25,web_yahoo,736.25
 futu_vs_web,日線抽樣,US.QQQ,2026-10-01,close,futu_kday,742.03,web_yahoo,742.03,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.QQQ,2026-10-01,volume,futu_kday,35728920.0,web_yahoo,35728900.0,20.0,0.0001,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.QQQ,2026-10-02,open,futu_kday,751.31,web_yahoo,751.31,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.QQQ,2026-10-02,high,futu_kday,754.54,web_yahoo,754.53,0.01,0.0013,❌,
-futu_vs_web,日線抽樣,US.QQQ,2026-10-02,low,futu_kday,747.53,web_yahoo,747.535,-0.005,-0.0007,❌,
+futu_vs_web,日線抽樣,US.QQQ,2026-10-02,high,futu_kday,754.54,web_yahoo,754.54,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.QQQ,2026-10-02,low,futu_kday,747.53,web_yahoo,747.53,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.QQQ,2026-10-02,close,futu_kday,749.58,web_yahoo,749.58,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.QQQ,2026-10-02,volume,futu_kday,34498919.0,web_yahoo,34175024.0,323895.0,0.9478,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.QQQ,2026-10-02,volume,futu_kday,34498919.0,web_yahoo,34467100.0,31819.0,0.0923,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.RYAAY,2026-09-28,open,futu_kday,54.54,web_yahoo,54.54,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.RYAAY,2026-09-28,high,futu_kday,55.69,web_yahoo,55.69,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.RYAAY,2026-09-28,low,futu_kday,54.37,web_yahoo,54.37,0.0,0.0,✅,
@@ -1045,10 +1337,10 @@ futu_vs_web,日線抽樣,US.RYAAY,2026-10-01,low,futu_kday,53.29,web_yahoo,53.29
 futu_vs_web,日線抽樣,US.RYAAY,2026-10-01,close,futu_kday,54.18,web_yahoo,54.18,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.RYAAY,2026-10-01,volume,futu_kday,2743223.0,web_yahoo,2743200.0,23.0,0.0008,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,open,futu_kday,55.51,web_yahoo,55.51,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,high,futu_kday,55.775,web_yahoo,55.775,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,high,futu_kday,55.775,web_yahoo,55.78,-0.005,-0.009,❌,
 futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,low,futu_kday,54.56,web_yahoo,54.56,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,close,futu_kday,55.05,web_yahoo,55.05,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,volume,futu_kday,1636406.0,web_yahoo,1636393.0,13.0,0.0008,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.RYAAY,2026-10-02,volume,futu_kday,1636406.0,web_yahoo,1636400.0,6.0,0.0004,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SEDG,2026-09-28,open,futu_kday,32.58,web_yahoo,32.58,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SEDG,2026-09-28,high,futu_kday,32.58,web_yahoo,32.58,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SEDG,2026-09-28,low,futu_kday,31.37,web_yahoo,31.37,0.0,0.0,✅,
@@ -1070,10 +1362,10 @@ futu_vs_web,日線抽樣,US.SEDG,2026-10-01,low,futu_kday,29.6,web_yahoo,29.6,0.
 futu_vs_web,日線抽樣,US.SEDG,2026-10-01,close,futu_kday,30.87,web_yahoo,30.87,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SEDG,2026-10-01,volume,futu_kday,3388228.0,web_yahoo,3385200.0,3028.0,0.0894,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SEDG,2026-10-02,open,futu_kday,31.72,web_yahoo,31.72,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SEDG,2026-10-02,high,futu_kday,33.34,web_yahoo,33.33,0.01,0.03,❌,
+futu_vs_web,日線抽樣,US.SEDG,2026-10-02,high,futu_kday,33.34,web_yahoo,33.34,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SEDG,2026-10-02,low,futu_kday,31.57,web_yahoo,31.57,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SEDG,2026-10-02,close,futu_kday,33.09,web_yahoo,33.09,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SEDG,2026-10-02,volume,futu_kday,2525515.0,web_yahoo,2523680.0,1835.0,0.0727,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.SEDG,2026-10-02,volume,futu_kday,2525515.0,web_yahoo,2524500.0,1015.0,0.0402,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SHLD,2026-09-28,open,futu_kday,61.01,web_yahoo,61.01,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SHLD,2026-09-28,high,futu_kday,61.385,web_yahoo,61.385,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SHLD,2026-09-28,low,futu_kday,60.715,web_yahoo,60.715,0.0,0.0,✅,
@@ -1095,10 +1387,10 @@ futu_vs_web,日線抽樣,US.SHLD,2026-10-01,low,futu_kday,59.94,web_yahoo,59.94,
 futu_vs_web,日線抽樣,US.SHLD,2026-10-01,close,futu_kday,60.14,web_yahoo,60.14,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SHLD,2026-10-01,volume,futu_kday,1262283.0,web_yahoo,1262100.0,183.0,0.0145,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SHLD,2026-10-02,open,futu_kday,60.55,web_yahoo,60.55,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SHLD,2026-10-02,high,futu_kday,60.69,web_yahoo,60.66,0.03,0.0495,❌,
+futu_vs_web,日線抽樣,US.SHLD,2026-10-02,high,futu_kday,60.69,web_yahoo,60.69,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SHLD,2026-10-02,low,futu_kday,60.02,web_yahoo,60.02,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SHLD,2026-10-02,close,futu_kday,60.23,web_yahoo,60.23,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SHLD,2026-10-02,volume,futu_kday,902241.0,web_yahoo,902127.0,114.0,0.0126,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.SHLD,2026-10-02,volume,futu_kday,902241.0,web_yahoo,902200.0,41.0,0.0045,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SPY,2026-09-28,open,futu_kday,768.35,web_yahoo,768.35,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SPY,2026-09-28,high,futu_kday,769.54,web_yahoo,769.54,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SPY,2026-09-28,low,futu_kday,763.715,web_yahoo,763.72,-0.005,-0.0007,❌,
@@ -1121,9 +1413,9 @@ futu_vs_web,日線抽樣,US.SPY,2026-10-01,close,futu_kday,763.99,web_yahoo,763.
 futu_vs_web,日線抽樣,US.SPY,2026-10-01,volume,futu_kday,47708058.0,web_yahoo,47708100.0,-42.0,-0.0001,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SPY,2026-10-02,open,futu_kday,770.58,web_yahoo,770.58,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SPY,2026-10-02,high,futu_kday,772.65,web_yahoo,772.65,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SPY,2026-10-02,low,futu_kday,767.145,web_yahoo,767.145,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.SPY,2026-10-02,low,futu_kday,767.145,web_yahoo,767.15,-0.005,-0.0007,❌,
 futu_vs_web,日線抽樣,US.SPY,2026-10-02,close,futu_kday,769.64,web_yahoo,769.64,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SPY,2026-10-02,volume,futu_kday,46335295.0,web_yahoo,45857487.0,477808.0,1.0419,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.SPY,2026-10-02,volume,futu_kday,46335295.0,web_yahoo,46306400.0,28895.0,0.0624,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.SWKS,2026-09-28,open,futu_kday,89.4,web_yahoo,89.4,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SWKS,2026-09-28,high,futu_kday,89.875,web_yahoo,89.88,-0.005,-0.0056,❌,
 futu_vs_web,日線抽樣,US.SWKS,2026-09-28,low,futu_kday,85.69,web_yahoo,85.69,0.0,0.0,✅,
@@ -1144,11 +1436,36 @@ futu_vs_web,日線抽樣,US.SWKS,2026-10-01,high,futu_kday,86.62,web_yahoo,86.62
 futu_vs_web,日線抽樣,US.SWKS,2026-10-01,low,futu_kday,82.74,web_yahoo,82.74,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SWKS,2026-10-01,close,futu_kday,83.16,web_yahoo,83.16,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SWKS,2026-10-01,volume,futu_kday,5064870.0,web_yahoo,5064300.0,570.0,0.0113,ℹ️,口徑不同，只記錄
-futu_vs_web,日線抽樣,US.SWKS,2026-10-02,open,futu_kday,83.92,web_yahoo,83.8,0.12,0.1432,❌,
-futu_vs_web,日線抽樣,US.SWKS,2026-10-02,high,futu_kday,86.535,web_yahoo,86.535,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.SWKS,2026-10-02,open,futu_kday,83.92,web_yahoo,83.92,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.SWKS,2026-10-02,high,futu_kday,86.535,web_yahoo,86.54,-0.005,-0.0058,❌,
 futu_vs_web,日線抽樣,US.SWKS,2026-10-02,low,futu_kday,82.08,web_yahoo,82.08,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.SWKS,2026-10-02,close,futu_kday,85.03,web_yahoo,85.03,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.SWKS,2026-10-02,volume,futu_kday,8733618.0,web_yahoo,8731391.0,2227.0,0.0255,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.SWKS,2026-10-02,volume,futu_kday,8733618.0,web_yahoo,8733500.0,118.0,0.0014,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.UIS,2026-09-28,open,futu_kday,2.27,web_yahoo,2.27,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-28,high,futu_kday,2.27,web_yahoo,2.27,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-28,low,futu_kday,2.1608,web_yahoo,2.16,0.0008,0.037,❌,
+futu_vs_web,日線抽樣,US.UIS,2026-09-28,close,futu_kday,2.24,web_yahoo,2.24,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-28,volume,futu_kday,822397.0,web_yahoo,822400.0,-3.0,-0.0004,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.UIS,2026-09-29,open,futu_kday,2.23,web_yahoo,2.23,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-29,high,futu_kday,2.285,web_yahoo,2.29,-0.005,-0.2183,❌,
+futu_vs_web,日線抽樣,US.UIS,2026-09-29,low,futu_kday,2.23,web_yahoo,2.23,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-29,close,futu_kday,2.28,web_yahoo,2.28,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-29,volume,futu_kday,475434.0,web_yahoo,475400.0,34.0,0.0072,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.UIS,2026-09-30,open,futu_kday,2.28,web_yahoo,2.28,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-30,high,futu_kday,2.345,web_yahoo,2.35,-0.005,-0.2128,❌,
+futu_vs_web,日線抽樣,US.UIS,2026-09-30,low,futu_kday,2.28,web_yahoo,2.28,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-30,close,futu_kday,2.31,web_yahoo,2.31,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-09-30,volume,futu_kday,613699.0,web_yahoo,613700.0,-1.0,-0.0002,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.UIS,2026-10-01,open,futu_kday,2.34,web_yahoo,2.34,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-10-01,high,futu_kday,2.3565,web_yahoo,2.36,-0.0035,-0.1483,❌,
+futu_vs_web,日線抽樣,US.UIS,2026-10-01,low,futu_kday,2.245,web_yahoo,2.25,-0.005,-0.2222,❌,
+futu_vs_web,日線抽樣,US.UIS,2026-10-01,close,futu_kday,2.31,web_yahoo,2.31,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-10-01,volume,futu_kday,502024.0,web_yahoo,502000.0,24.0,0.0048,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.UIS,2026-10-02,open,futu_kday,2.35,web_yahoo,2.35,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-10-02,high,futu_kday,2.35,web_yahoo,2.35,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-10-02,low,futu_kday,2.25,web_yahoo,2.25,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-10-02,close,futu_kday,2.28,web_yahoo,2.28,0.0,0.0,✅,
+futu_vs_web,日線抽樣,US.UIS,2026-10-02,volume,futu_kday,782356.0,web_yahoo,782400.0,-44.0,-0.0056,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.VRTX,2026-09-28,open,futu_kday,524.27,web_yahoo,524.27,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.VRTX,2026-09-28,high,futu_kday,529.89,web_yahoo,529.89,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.VRTX,2026-09-28,low,futu_kday,521.16,web_yahoo,521.16,0.0,0.0,✅,
@@ -1173,7 +1490,7 @@ futu_vs_web,日線抽樣,US.VRTX,2026-10-02,open,futu_kday,509.5,web_yahoo,509.5
 futu_vs_web,日線抽樣,US.VRTX,2026-10-02,high,futu_kday,509.5,web_yahoo,509.5,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.VRTX,2026-10-02,low,futu_kday,499.95,web_yahoo,499.95,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.VRTX,2026-10-02,close,futu_kday,504.73,web_yahoo,504.73,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.VRTX,2026-10-02,volume,futu_kday,939658.0,web_yahoo,936622.0,3036.0,0.3241,ℹ️,口徑不同，只記錄
+futu_vs_web,日線抽樣,US.VRTX,2026-10-02,volume,futu_kday,939658.0,web_yahoo,939600.0,58.0,0.0062,ℹ️,口徑不同，只記錄
 futu_vs_web,日線抽樣,US.WELL,2026-09-28,open,futu_kday,234.41,web_yahoo,234.41,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.WELL,2026-09-28,high,futu_kday,234.82,web_yahoo,234.82,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.WELL,2026-09-28,low,futu_kday,231.3536,web_yahoo,231.35,0.0036,0.0016,❌,
@@ -1198,11 +1515,7 @@ futu_vs_web,日線抽樣,US.WELL,2026-10-02,open,futu_kday,226.87,web_yahoo,226.
 futu_vs_web,日線抽樣,US.WELL,2026-10-02,high,futu_kday,229.93,web_yahoo,229.93,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.WELL,2026-10-02,low,futu_kday,225.36,web_yahoo,225.36,0.0,0.0,✅,
 futu_vs_web,日線抽樣,US.WELL,2026-10-02,close,futu_kday,227.71,web_yahoo,227.71,0.0,0.0,✅,
-futu_vs_web,日線抽樣,US.WELL,2026-10-02,volume,futu_kday,2646797.0,web_yahoo,2637780.0,9017.0,0.3418,ℹ️,口徑不同，只記錄
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,open,canary,25807.609375,web_yahoo,25807.6094,-2.5e-05,-0.0,✅,
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,high,canary,26009.4609375,web_yahoo,26009.4609,3.8e-05,0.0,✅,
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,low,canary,25807.609375,web_yahoo,25807.6094,-2.5e-05,-0.0,✅,
-canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-21,close,canary,26009.4609375,web_yahoo,26009.4609,3.8e-05,0.0,✅,
+futu_vs_web,日線抽樣,US.WELL,2026-10-02,volume,futu_kday,2646797.0,web_yahoo,2646800.0,-3.0,-0.0001,ℹ️,口徑不同，只記錄
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,open,canary,25780.119140625,web_yahoo,25780.1191,4.1e-05,0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,high,canary,25780.119140625,web_yahoo,25780.1191,4.1e-05,0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-08-24,low,canary,25430.939453125,web_yahoo,25430.9395,-4.7e-05,-0.0,✅,
@@ -1315,11 +1628,14 @@ canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-30,high,canary,24637.650390625,web_yahoo,24637.6504,-9e-06,-0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-30,low,canary,24332.640625,web_yahoo,24332.6406,2.5e-05,0.0,✅,
 canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-09-30,close,canary,24613.26953125,web_yahoo,24613.2695,3.1e-05,0.0,✅,
-canary_inputs,hsi_daily.csv,_HSI,2026-10-02,date,canary,,web_yahoo,,,,⏭️,金絲雀最新只到 2026-09-30（亞洲鳥慢一日屬手冊 §9.1 已知）
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,open,canary,7665.68017578125,web_yahoo,7665.6802,-2.4e-05,-0.0,✅,
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,high,canary,7697.10986328125,web_yahoo,7697.1099,-3.7e-05,-0.0,✅,
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,low,canary,7660.06005859375,web_yahoo,7660.0601,-4.1e-05,-0.0,✅,
-canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-21,close,canary,7674.3701171875,web_yahoo,7674.3701,1.7e-05,0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-02,open,canary,24099.73046875,web_yahoo,24099.7305,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-02,high,canary,24099.73046875,web_yahoo,24099.7305,-3.1e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-02,low,canary,23865.330078125,web_yahoo,23865.3301,-2.2e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-02,close,canary,23972.2890625,web_yahoo,23972.2891,-3.8e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-05,open,canary,23963.41015625,web_yahoo,23963.4102,-4.4e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-05,high,canary,24005.470703125,web_yahoo,24040.3398,-34.869097,-0.145,❌,第三來源：canary_hsi 24005.470703125、futu 24040.34
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-05,low,canary,23835.6796875,web_yahoo,23835.6797,-1.3e-05,-0.0,✅,
+canary_inputs,hsi_daily.csv（同源 Yahoo：只驗抄錄與日期）,_HSI,2026-10-05,close,canary,23968.529296875,web_yahoo,24040.3398,-71.810503,-0.2987,❌,第三來源：canary_hsi 23968.529296875、futu 24040.34
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,open,canary,7663.3798828125,web_yahoo,7663.3799,-1.7e-05,-0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,high,canary,7670.2998046875,web_yahoo,7670.2998,5e-06,0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-08-24,low,canary,7638.169921875,web_yahoo,7638.1699,2.2e-05,0.0,✅,
@@ -1436,6 +1752,7 @@ canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-10-02,high,canary,7754.669921875,web_yahoo,7754.6699,2.2e-05,0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-10-02,low,canary,7700.509765625,web_yahoo,7700.5098,-3.4e-05,-0.0,✅,
 canary_inputs,spx_daily.csv（同源 Yahoo：只驗抄錄與日期）,_GSPC,2026-10-02,close,canary,7722.72021484375,web_yahoo,7722.7202,1.5e-05,0.0,✅,
+canary_inputs,spx_daily.csv,_GSPC,2026-10-05,date,canary,,web_yahoo,,,,⏭️,金絲雀最新只到 2026-10-02（亞洲鳥慢一日屬手冊 §9.1 已知）
 canary_inputs,IBKR 獨立來源,ib_daily_sample.csv,,all,ibkr,,canary,,,,⏭️,雲垂還沒開始每日抽樣（見 SOP 附錄 B）
 ibkr_vs_web,股票收市,au_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,au 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
 ibkr_vs_web,股票收市,ca_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,ca 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
@@ -1491,225 +1808,228 @@ ibkr_vs_web,股票收市,kr_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,kr 的網站
 ibkr_vs_web,股票收市,sg_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,sg 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
 ibkr_vs_web,股票收市,tw_2026-09-23.csv,,all,ibkr,,web,,,,⏭️,tw 的網站日線不在鳥翔分支 data/equities（在 GitHub Release），本輪不比
 ibkr_vs_web,股票收市,us_2026-09-21.csv,,coverage,ibkr,,web,,,,⏭️,121／191 檔不在網站日線（鳥翔分支 data/equities），未比
-ibkr_vs_web,股票收市,ANET,2026-09-21,close,ibkr,205.42,web_yahoo,205.42,0.0,0.0,✅,
-ibkr_vs_web,股票收市,ANET,2026-09-22,open,ibkr,204.35,web_yahoo,204.35,0.0,0.0,✅,
-ibkr_vs_web,股票收市,ANET,2026-09-22,close,ibkr,205.19,web_yahoo,205.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AAPL,2026-09-21,close,ibkr,338.98,web_yahoo,338.98,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AAPL,2026-09-22,open,ibkr,340.14,web_yahoo,340.14,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AAPL,2026-09-22,close,ibkr,339.75,web_yahoo,339.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-21,close,ibkr,383.0,web_yahoo,383.0,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-22,open,ibkr,382.19,web_yahoo,382.19,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ADI,2026-09-22,close,ibkr,390.37,web_yahoo,390.37,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMG,2026-09-21,close,ibkr,364.66,web_yahoo,364.66,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMG,2026-09-22,open,ibkr,366.04,web_yahoo,366.04,0.0,0.0,✅,
+ibkr_vs_web,股票收市,AMG,2026-09-22,close,ibkr,360.28,web_yahoo,360.28,0.0,0.0,✅,
 ibkr_vs_web,股票收市,APH,2026-09-21,close,ibkr,80.72,web_yahoo,80.72,0.0,0.0,✅,
 ibkr_vs_web,股票收市,APH,2026-09-22,open,ibkr,80.19,web_yahoo,80.19,0.0,0.0,✅,
 ibkr_vs_web,股票收市,APH,2026-09-22,close,ibkr,82.84,web_yahoo,82.84,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DE,2026-09-21,close,ibkr,684.73,web_yahoo,684.73,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DE,2026-09-22,open,ibkr,688.73,web_yahoo,688.73,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DE,2026-09-22,close,ibkr,703.12,web_yahoo,703.12,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DELL,2026-09-21,close,ibkr,575.31,web_yahoo,575.31,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DELL,2026-09-22,open,ibkr,569.8,web_yahoo,569.8,0.0,0.0,✅,
-ibkr_vs_web,股票收市,DELL,2026-09-22,close,ibkr,548.92,web_yahoo,548.92,0.0,0.0,✅,
-ibkr_vs_web,股票收市,ELV,2026-09-21,close,ibkr,409.31,web_yahoo,409.31,0.0,0.0,✅,
-ibkr_vs_web,股票收市,ELV,2026-09-22,open,ibkr,412.07,web_yahoo,412.07,0.0,0.0,✅,
-ibkr_vs_web,股票收市,ELV,2026-09-22,close,ibkr,402.43,web_yahoo,402.43,0.0,0.0,✅,
+ibkr_vs_web,股票收市,BBY,2026-09-21,close,ibkr,93.22,web_yahoo,93.22,0.0,0.0,✅,
+ibkr_vs_web,股票收市,BBY,2026-09-22,open,ibkr,94.42,web_yahoo,94.42,0.0,0.0,✅,
+ibkr_vs_web,股票收市,BBY,2026-09-22,close,ibkr,94.82,web_yahoo,94.82,0.0,0.0,✅,
+ibkr_vs_web,股票收市,C,2026-09-21,close,ibkr,135.05,web_yahoo,135.05,0.0,0.0,✅,
+ibkr_vs_web,股票收市,C,2026-09-22,open,ibkr,134.87,web_yahoo,134.87,0.0,0.0,✅,
+ibkr_vs_web,股票收市,C,2026-09-22,close,ibkr,132.47,web_yahoo,132.47,0.0,0.0,✅,
+ibkr_vs_web,股票收市,EQIX,2026-09-21,close,ibkr,1057.26,web_yahoo,1057.26,0.0,0.0,✅,
+ibkr_vs_web,股票收市,EQIX,2026-09-22,open,ibkr,1051.91,web_yahoo,1051.91,0.0,0.0,✅,
+ibkr_vs_web,股票收市,EQIX,2026-09-22,close,ibkr,1059.26,web_yahoo,1059.26,0.0,0.0,✅,
 ibkr_vs_web,股票收市,EXPD,2026-09-21,close,ibkr,192.15,web_yahoo,192.15,0.0,0.0,✅,
 ibkr_vs_web,股票收市,EXPD,2026-09-22,open,ibkr,192.33,web_yahoo,192.33,0.0,0.0,✅,
 ibkr_vs_web,股票收市,EXPD,2026-09-22,close,ibkr,187.51,web_yahoo,187.51,0.0,0.0,✅,
-ibkr_vs_web,股票收市,FFIV,2026-09-21,close,ibkr,450.1,web_yahoo,450.1,0.0,0.0,✅,
-ibkr_vs_web,股票收市,FFIV,2026-09-22,open,ibkr,447.19,web_yahoo,447.19,0.0,0.0,✅,
-ibkr_vs_web,股票收市,FFIV,2026-09-22,close,ibkr,453.33,web_yahoo,453.33,0.0,0.0,✅,
-ibkr_vs_web,股票收市,GOOG,2026-09-21,close,ibkr,350.87,web_yahoo,350.87,0.0,0.0,✅,
-ibkr_vs_web,股票收市,GOOG,2026-09-22,open,ibkr,353.24,web_yahoo,353.24,0.0,0.0,✅,
-ibkr_vs_web,股票收市,GOOG,2026-09-22,close,ibkr,347.41,web_yahoo,347.41,0.0,0.0,✅,
-ibkr_vs_web,股票收市,IFF,2026-09-21,close,ibkr,83.6,web_yahoo,83.6,0.0,0.0,✅,
-ibkr_vs_web,股票收市,IFF,2026-09-22,open,ibkr,84.81,web_yahoo,84.97,-0.16,-0.1883,❌,
-ibkr_vs_web,股票收市,IFF,2026-09-22,close,ibkr,85.79,web_yahoo,85.79,0.0,0.0,✅,
+ibkr_vs_web,股票收市,FTNT,2026-09-21,close,ibkr,175.23,web_yahoo,175.23,0.0,0.0,✅,
+ibkr_vs_web,股票收市,FTNT,2026-09-22,open,ibkr,176.14,web_yahoo,176.09,0.05,0.0284,❌,
+ibkr_vs_web,股票收市,FTNT,2026-09-22,close,ibkr,174.26,web_yahoo,174.26,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HPE,2026-09-21,close,ibkr,61.75,web_yahoo,61.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HPE,2026-09-22,open,ibkr,61.75,web_yahoo,61.75,0.0,0.0,✅,
+ibkr_vs_web,股票收市,HPE,2026-09-22,close,ibkr,61.03,web_yahoo,61.03,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ILMN,2026-09-21,close,ibkr,238.82,web_yahoo,238.82,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ILMN,2026-09-22,open,ibkr,237.09,web_yahoo,237.09,0.0,0.0,✅,
+ibkr_vs_web,股票收市,ILMN,2026-09-22,close,ibkr,247.46,web_yahoo,247.46,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INCY,2026-09-21,close,ibkr,124.65,web_yahoo,124.65,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INCY,2026-09-22,open,ibkr,124.72,web_yahoo,124.72,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INCY,2026-09-22,close,ibkr,126.93,web_yahoo,126.93,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INTC,2026-09-21,close,ibkr,121.78,web_yahoo,121.78,0.0,0.0,✅,
+ibkr_vs_web,股票收市,INTC,2026-09-22,open,ibkr,120.07,web_yahoo,120.15,-0.08,-0.0666,❌,
+ibkr_vs_web,股票收市,INTC,2026-09-22,close,ibkr,123.86,web_yahoo,123.86,0.0,0.0,✅,
 ibkr_vs_web,股票收市,JNJ,2026-09-21,close,ibkr,269.47,web_yahoo,269.47,0.0,0.0,✅,
 ibkr_vs_web,股票收市,JNJ,2026-09-22,open,ibkr,268.04,web_yahoo,267.51,0.53,0.1981,❌,
 ibkr_vs_web,股票收市,JNJ,2026-09-22,close,ibkr,269.19,web_yahoo,269.19,0.0,0.0,✅,
-ibkr_vs_web,股票收市,KEYS,2026-09-21,close,ibkr,342.03,web_yahoo,342.03,0.0,0.0,✅,
-ibkr_vs_web,股票收市,KEYS,2026-09-22,open,ibkr,339.89,web_yahoo,339.89,0.0,0.0,✅,
-ibkr_vs_web,股票收市,KEYS,2026-09-22,close,ibkr,347.32,web_yahoo,347.32,0.0,0.0,✅,
 ibkr_vs_web,股票收市,KO,2026-09-21,close,ibkr,87.12,web_yahoo,87.12,0.0,0.0,✅,
 ibkr_vs_web,股票收市,KO,2026-09-22,open,ibkr,87.6,web_yahoo,87.6,0.0,0.0,✅,
 ibkr_vs_web,股票收市,KO,2026-09-22,close,ibkr,88.61,web_yahoo,88.61,0.0,0.0,✅,
-ibkr_vs_web,股票收市,MRK,2026-09-21,close,ibkr,149.5,web_yahoo,149.5,0.0,0.0,✅,
-ibkr_vs_web,股票收市,MRK,2026-09-22,open,ibkr,148.69,web_yahoo,148.69,0.0,0.0,✅,
-ibkr_vs_web,股票收市,MRK,2026-09-22,close,ibkr,150.91,web_yahoo,150.91,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MPC,2026-09-21,close,ibkr,402.38,web_yahoo,402.38,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MPC,2026-09-22,open,ibkr,391.68,web_yahoo,391.68,0.0,0.0,✅,
+ibkr_vs_web,股票收市,MPC,2026-09-22,close,ibkr,389.68,web_yahoo,389.68,0.0,0.0,✅,
 ibkr_vs_web,股票收市,NBIS,2026-09-21,close,ibkr,232.8,web_yahoo,232.8,0.0,0.0,✅,
 ibkr_vs_web,股票收市,NBIS,2026-09-22,open,ibkr,233.24,web_yahoo,233.24,0.0,0.0,✅,
 ibkr_vs_web,股票收市,NBIS,2026-09-22,close,ibkr,236.12,web_yahoo,236.12,0.0,0.0,✅,
 ibkr_vs_web,股票收市,NDSN,2026-09-21,close,ibkr,314.35,web_yahoo,314.35,0.0,0.0,✅,
 ibkr_vs_web,股票收市,NDSN,2026-09-22,open,ibkr,315.27,web_yahoo,315.27,0.0,0.0,✅,
 ibkr_vs_web,股票收市,NDSN,2026-09-22,close,ibkr,319.67,web_yahoo,319.67,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NEM,2026-09-21,close,ibkr,123.05,web_yahoo,123.05,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NEM,2026-09-22,open,ibkr,123.23,web_yahoo,123.23,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NEM,2026-09-22,close,ibkr,127.26,web_yahoo,127.26,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NTAP,2026-09-21,close,ibkr,198.15,web_yahoo,198.15,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NTAP,2026-09-22,open,ibkr,197.73,web_yahoo,197.73,0.0,0.0,✅,
-ibkr_vs_web,股票收市,NTAP,2026-09-22,close,ibkr,192.91,web_yahoo,192.91,0.0,0.0,✅,
-ibkr_vs_web,股票收市,RVTY,2026-09-21,close,ibkr,143.59,web_yahoo,143.59,0.0,0.0,✅,
-ibkr_vs_web,股票收市,RVTY,2026-09-22,open,ibkr,143.12,web_yahoo,143.12,0.0,0.0,✅,
-ibkr_vs_web,股票收市,RVTY,2026-09-22,close,ibkr,143.31,web_yahoo,143.31,0.0,0.0,✅,
-ibkr_vs_web,股票收市,STX,2026-09-21,close,ibkr,877.33,web_yahoo,877.33,0.0,0.0,✅,
-ibkr_vs_web,股票收市,STX,2026-09-22,open,ibkr,857.69,web_yahoo,857.69,0.0,0.0,✅,
-ibkr_vs_web,股票收市,STX,2026-09-22,close,ibkr,919.84,web_yahoo,919.84,0.0,0.0,✅,
-ibkr_vs_web,股票收市,VTRS,2026-09-21,close,ibkr,17.1,web_yahoo,17.1,0.0,0.0,✅,
-ibkr_vs_web,股票收市,VTRS,2026-09-22,open,ibkr,17.1,web_yahoo,17.1,0.0,0.0,✅,
-ibkr_vs_web,股票收市,VTRS,2026-09-22,close,ibkr,17.18,web_yahoo,17.18,0.0,0.0,✅,
-web_vs_web,Nasdaq↔Yahoo,AME,2026-09-28,close,web_nasdaq,250.74,web_yahoo,251.67,-0.93,-0.3695,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,APA,2026-09-28,close,web_nasdaq,42.74,web_yahoo,42.33,0.41,0.9686,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,APC,2026-09-28,close,web_nasdaq,16.23,web_yahoo,16.11,0.12,0.7449,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,ARM,2026-09-28,close,web_nasdaq,310.32,web_yahoo,283.33,26.99,9.526,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,AVY,2026-09-28,close,web_nasdaq,170.34,web_yahoo,171.89,-1.55,-0.9017,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,BMRN,2026-09-28,close,web_nasdaq,60.26,web_yahoo,59.46,0.8,1.3454,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,BNY,2026-09-28,close,web_nasdaq,150.15,web_yahoo,148.44,1.71,1.152,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,BX,2026-09-28,close,web_nasdaq,118.42,web_yahoo,114.56,3.86,3.3694,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,CLX,2026-09-28,close,web_nasdaq,83.8,web_yahoo,81.42,2.38,2.9231,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,DVA,2026-09-28,close,web_nasdaq,178.47,web_yahoo,178.07,0.4,0.2246,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,ENPH,2026-09-28,close,web_nasdaq,32.4,web_yahoo,30.91,1.49,4.8204,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,ESS,2026-09-28,close,web_nasdaq,271.61,web_yahoo,273.01,-1.4,-0.5128,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,EVRG,2026-09-28,close,web_nasdaq,78.04,web_yahoo,77.91,0.13,0.1669,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,EXPD,2026-09-28,close,web_nasdaq,187.46,web_yahoo,188.58,-1.12,-0.5939,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,GNW,2026-09-28,close,web_nasdaq,9.43,web_yahoo,9.38,0.05,0.533,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,GOOGL,2026-09-28,close,web_nasdaq,343.92,web_yahoo,342.75,1.17,0.3414,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25；第三來源：futu 342.75
-web_vs_web,Nasdaq↔Yahoo,HII,2026-09-28,close,web_nasdaq,264.02,web_yahoo,257.05,6.97,2.7115,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,J,2026-09-28,close,web_nasdaq,138.37,web_yahoo,138.37,0.0,0.0,✅,快照 quotes_2026-09-28.json
-web_vs_web,Nasdaq↔Yahoo,LB,2026-09-28,close,web_nasdaq,81.38,web_yahoo,80.72,0.66,0.8176,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,MMI,2026-09-28,close,web_nasdaq,29.75,web_yahoo,28.95,0.8,2.7634,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,MTG,2026-09-28,close,web_nasdaq,28.48,web_yahoo,28.35,0.13,0.4586,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,NOW,2026-09-28,close,web_nasdaq,135.62,web_yahoo,131.45,4.17,3.1723,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,OI,2026-09-28,close,web_nasdaq,5.86,web_yahoo,5.78,0.08,1.3841,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,POM,2026-09-28,close,web_nasdaq,1.04,web_yahoo,0.91,0.13,14.2857,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25；第三來源：futu 0.91
-web_vs_web,Nasdaq↔Yahoo,ROL,2026-09-28,close,web_nasdaq,30.03,web_yahoo,30.59,-0.56,-1.8307,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,SLM,2026-09-28,close,web_nasdaq,23.66,web_yahoo,22.9,0.76,3.3188,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,TDG,2026-09-28,close,web_nasdaq,1116.2,web_yahoo,1109.22,6.98,0.6293,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,TXN,2026-09-28,close,web_nasdaq,278.07,web_yahoo,278.31,-0.24,-0.0862,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,TYL,2026-09-28,close,web_nasdaq,325.57,web_yahoo,324.02,1.55,0.4784,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,ULTA,2026-09-28,close,web_nasdaq,545.2,web_yahoo,549.13,-3.93,-0.7157,❌,快照 quotes_2026-09-28.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-25
-web_vs_web,Nasdaq↔Yahoo,ACGL,2026-09-29,close,web_nasdaq,94.9,web_yahoo,95.12,-0.22,-0.2313,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,AFL,2026-09-29,close,web_nasdaq,113.55,web_yahoo,113.66,-0.11,-0.0968,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,AIV,2026-09-29,close,web_nasdaq,2.14,web_yahoo,2.06,0.08,3.8835,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,AMD,2026-09-29,close,web_nasdaq,607.87,web_yahoo,607.57,0.3,0.0494,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,AYI,2026-09-29,close,web_nasdaq,305.91,web_yahoo,308.79,-2.88,-0.9327,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,BEN,2026-09-29,close,web_nasdaq,32.68,web_yahoo,32.67,0.01,0.0306,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,BMY,2026-09-29,close,web_nasdaq,63.88,web_yahoo,62.86,1.02,1.6227,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,BRO,2026-09-29,close,web_nasdaq,60.24,web_yahoo,60.6,-0.36,-0.5941,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,BXP,2026-09-29,close,web_nasdaq,62.43,web_yahoo,61.71,0.72,1.1667,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+ibkr_vs_web,股票收市,PANW,2026-09-21,close,ibkr,371.76,web_yahoo,371.76,0.0,0.0,✅,
+ibkr_vs_web,股票收市,PANW,2026-09-22,open,ibkr,374.85,web_yahoo,374.8,0.05,0.0133,❌,
+ibkr_vs_web,股票收市,PANW,2026-09-22,close,ibkr,374.57,web_yahoo,374.57,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRGP,2026-09-21,close,ibkr,289.36,web_yahoo,289.36,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRGP,2026-09-22,open,ibkr,284.6,web_yahoo,284.6,0.0,0.0,✅,
+ibkr_vs_web,股票收市,TRGP,2026-09-22,close,ibkr,282.15,web_yahoo,282.15,0.0,0.0,✅,
+web_vs_web,Nasdaq↔Yahoo,ABT,2026-09-29,close,web_nasdaq,100.98,web_yahoo,100.95,0.03,0.0297,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,APP,2026-09-29,close,web_nasdaq,308.24,web_yahoo,305.66,2.58,0.8441,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,BG,2026-09-29,close,web_nasdaq,109.06,web_yahoo,108.14,0.92,0.8507,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,BKNG,2026-09-29,close,web_nasdaq,163.87,web_yahoo,162.34,1.53,0.9425,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
 web_vs_web,Nasdaq↔Yahoo,COF,2026-09-29,close,web_nasdaq,196.46,web_yahoo,196.46,0.0,0.0,✅,快照 quotes_2026-09-29.json
-web_vs_web,Nasdaq↔Yahoo,CRL,2026-09-29,close,web_nasdaq,294.59,web_yahoo,295.96,-1.37,-0.4629,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,DGX,2026-09-29,close,web_nasdaq,237.62,web_yahoo,231.97,5.65,2.4357,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,DOV,2026-09-29,close,web_nasdaq,191.48,web_yahoo,189.7,1.78,0.9383,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,ECHO,2026-09-29,close,web_nasdaq,89.22,web_yahoo,89.89,-0.67,-0.7454,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,FAST,2026-09-29,close,web_nasdaq,50.49,web_yahoo,49.96,0.53,1.0608,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,FCX,2026-09-29,close,web_nasdaq,71.96,web_yahoo,70.79,1.17,1.6528,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,FTI,2026-09-29,close,web_nasdaq,70.62,web_yahoo,68.85,1.77,2.5708,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,JBL,2026-09-29,close,web_nasdaq,318.93,web_yahoo,318.84,0.09,0.0282,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,KDP,2026-09-29,close,web_nasdaq,31.46,web_yahoo,31.03,0.43,1.3858,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,KO,2026-09-29,close,web_nasdaq,87.18,web_yahoo,86.84,0.34,0.3915,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,KVUE,2026-09-29,close,web_nasdaq,17.88,web_yahoo,17.91,-0.03,-0.1675,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,LOGI,2026-09-29,close,web_nasdaq,100.33,web_yahoo,100.67,-0.34,-0.3377,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,DVA,2026-09-29,close,web_nasdaq,178.07,web_yahoo,175.19,2.88,1.6439,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,FFIV,2026-09-29,close,web_nasdaq,435.56,web_yahoo,438.07,-2.51,-0.573,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,FIS,2026-09-29,close,web_nasdaq,34.31,web_yahoo,33.35,0.96,2.8786,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,FOX,2026-09-29,close,web_nasdaq,56.55,web_yahoo,55.83,0.72,1.2896,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,HST,2026-09-29,close,web_nasdaq,22.66,web_yahoo,22.44,0.22,0.9804,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,IFF,2026-09-29,close,web_nasdaq,85.72,web_yahoo,85.25,0.47,0.5513,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28；第三來源：futu 85.25
+web_vs_web,Nasdaq↔Yahoo,IPGP,2026-09-29,close,web_nasdaq,77.23,web_yahoo,78.52,-1.29,-1.6429,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,LH,2026-09-29,close,web_nasdaq,309.57,web_yahoo,308.81,0.76,0.2461,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
 web_vs_web,Nasdaq↔Yahoo,MAC,2026-09-29,close,web_nasdaq,22.57,web_yahoo,22.89,-0.32,-1.398,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,MMI,2026-09-29,close,web_nasdaq,28.95,web_yahoo,29.04,-0.09,-0.3099,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
 web_vs_web,Nasdaq↔Yahoo,MPC,2026-09-29,close,web_nasdaq,389.44,web_yahoo,392.03,-2.59,-0.6607,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,MTB,2026-09-29,close,web_nasdaq,220.44,web_yahoo,217.5,2.94,1.3517,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,MUR,2026-09-29,close,web_nasdaq,36.65,web_yahoo,35.95,0.7,1.9471,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,NWSA,2026-09-29,close,web_nasdaq,29.1,web_yahoo,28.52,0.58,2.0337,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,RIG,2026-09-29,close,web_nasdaq,5.28,web_yahoo,5.21,0.07,1.3436,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,TEL,2026-09-29,close,web_nasdaq,214.71,web_yahoo,212.59,2.12,0.9972,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,TFC,2026-09-29,close,web_nasdaq,47.09,web_yahoo,46.44,0.65,1.3997,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
-web_vs_web,Nasdaq↔Yahoo,ACGL,2026-09-30,close,web_nasdaq,95.12,web_yahoo,92.36,2.76,2.9883,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,ADP,2026-09-30,close,web_nasdaq,261.8,web_yahoo,258.06,3.74,1.4493,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,AKAM,2026-09-30,close,web_nasdaq,108.45,web_yahoo,106.35,2.1,1.9746,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,AMD,2026-09-30,close,web_nasdaq,607.57,web_yahoo,611.76,-4.19,-0.6849,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,ATI,2026-09-30,close,web_nasdaq,188.95,web_yahoo,189.4,-0.45,-0.2376,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,CMCSA,2026-09-30,close,web_nasdaq,21.6,web_yahoo,21.76,-0.16,-0.7353,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,CPRT,2026-09-30,close,web_nasdaq,27.14,web_yahoo,27.28,-0.14,-0.5132,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,CRL,2026-09-30,close,web_nasdaq,295.96,web_yahoo,295.01,0.95,0.322,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,D,2026-09-30,close,web_nasdaq,60.64,web_yahoo,60.52,0.12,0.1983,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,ECL,2026-09-30,close,web_nasdaq,277.87,web_yahoo,274.58,3.29,1.1982,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,ON,2026-09-29,close,web_nasdaq,75.65,web_yahoo,75.95,-0.3,-0.395,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,RRC,2026-09-29,close,web_nasdaq,37.86,web_yahoo,36.88,0.98,2.6573,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,SIRI,2026-09-29,close,web_nasdaq,25.94,web_yahoo,25.76,0.18,0.6988,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,TAP,2026-09-29,close,web_nasdaq,36.27,web_yahoo,36.01,0.26,0.722,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,TCOM,2026-09-29,close,web_nasdaq,39.9,web_yahoo,38.64,1.26,3.2609,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,TDC,2026-09-29,close,web_nasdaq,28.55,web_yahoo,28.69,-0.14,-0.488,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,TER,2026-09-29,close,web_nasdaq,401.3,web_yahoo,403.02,-1.72,-0.4268,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,VRSK,2026-09-29,close,web_nasdaq,167.77,web_yahoo,165.94,1.83,1.1028,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,WAB,2026-09-29,close,web_nasdaq,292.37,web_yahoo,291.23,1.14,0.3914,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,WELL,2026-09-29,close,web_nasdaq,232.96,web_yahoo,232.9,0.06,0.0258,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28；第三來源：futu 232.9
+web_vs_web,Nasdaq↔Yahoo,WMB,2026-09-29,close,web_nasdaq,68.98,web_yahoo,68.63,0.35,0.51,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,WU,2026-09-29,close,web_nasdaq,6.12,web_yahoo,5.97,0.15,2.5126,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,XYL,2026-09-29,close,web_nasdaq,100.91,web_yahoo,100.93,-0.02,-0.0198,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,ZBH,2026-09-29,close,web_nasdaq,91.62,web_yahoo,91.34,0.28,0.3065,❌,快照 quotes_2026-09-29.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-28
+web_vs_web,Nasdaq↔Yahoo,ADSK,2026-09-30,close,web_nasdaq,203.18,web_yahoo,209.0,-5.82,-2.7847,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,AMAT,2026-09-30,close,web_nasdaq,512.01,web_yahoo,511.38,0.63,0.1232,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,AMT,2026-09-30,close,web_nasdaq,167.35,web_yahoo,163.69,3.66,2.2359,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,ANF,2026-09-30,close,web_nasdaq,133.59,web_yahoo,134.69,-1.1,-0.8167,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,AYI,2026-09-30,close,web_nasdaq,308.79,web_yahoo,309.81,-1.02,-0.3292,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,BMY,2026-09-30,close,web_nasdaq,62.86,web_yahoo,62.4,0.46,0.7372,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,BNY,2026-09-30,close,web_nasdaq,146.98,web_yahoo,144.63,2.35,1.6248,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,CAT,2026-09-30,close,web_nasdaq,826.64,web_yahoo,810.79,15.85,1.9549,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,CME,2026-09-30,close,web_nasdaq,263.22,web_yahoo,261.98,1.24,0.4733,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,CRH,2026-09-30,close,web_nasdaq,84.53,web_yahoo,82.8,1.73,2.0894,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,CRWV,2026-09-30,close,web_nasdaq,85.93,web_yahoo,87.12,-1.19,-1.3659,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,DG,2026-09-30,close,web_nasdaq,122.64,web_yahoo,119.58,3.06,2.559,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,DYN,2026-09-30,close,web_nasdaq,16.21,web_yahoo,16.11,0.1,0.6207,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,ERIE,2026-09-30,close,web_nasdaq,222.43,web_yahoo,219.15,3.28,1.4967,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,ETN,2026-09-30,close,web_nasdaq,433.27,web_yahoo,429.71,3.56,0.8285,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
 web_vs_web,Nasdaq↔Yahoo,EXR,2026-09-30,close,web_nasdaq,133.49,web_yahoo,131.51,1.98,1.5056,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,FCX,2026-09-30,close,web_nasdaq,70.79,web_yahoo,70.0,0.79,1.1286,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,FICO,2026-09-30,close,web_nasdaq,617.87,web_yahoo,592.47,25.4,4.2871,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,HIG,2026-09-30,close,web_nasdaq,125.85,web_yahoo,122.36,3.49,2.8522,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,HONA,2026-09-30,close,web_nasdaq,155.44,web_yahoo,154.97,0.47,0.3033,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,HRB,2026-09-30,close,web_nasdaq,40.58,web_yahoo,40.85,-0.27,-0.661,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,LH,2026-09-30,close,web_nasdaq,308.81,web_yahoo,308.11,0.7,0.2272,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,LW,2026-09-30,close,web_nasdaq,43.27,web_yahoo,41.69,1.58,3.7899,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,MAR,2026-09-30,close,web_nasdaq,361.62,web_yahoo,355.67,5.95,1.6729,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,META,2026-09-30,close,web_nasdaq,738.79,web_yahoo,725.18,13.61,1.8768,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,MOS,2026-09-30,close,web_nasdaq,22.42,web_yahoo,21.65,0.77,3.5566,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,MTB,2026-09-30,close,web_nasdaq,217.5,web_yahoo,217.6,-0.1,-0.046,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,MTD,2026-09-30,close,web_nasdaq,1537.33,web_yahoo,1510.95,26.38,1.7459,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,NEM,2026-09-30,close,web_nasdaq,117.09,web_yahoo,115.34,1.75,1.5173,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,PRGO,2026-09-30,close,web_nasdaq,15.0,web_yahoo,14.76,0.24,1.626,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,PTON,2026-09-30,close,web_nasdaq,5.04,web_yahoo,4.99,0.05,1.002,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,STLD,2026-09-30,close,web_nasdaq,221.9,web_yahoo,221.61,0.29,0.1309,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,STX,2026-09-30,close,web_nasdaq,913.45,web_yahoo,922.34,-8.89,-0.9639,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,TDG,2026-09-30,close,web_nasdaq,1099.79,web_yahoo,1082.6,17.19,1.5878,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,WM,2026-09-30,close,web_nasdaq,207.09,web_yahoo,203.92,3.17,1.5545,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
-web_vs_web,Nasdaq↔Yahoo,ADP,2026-10-01,close,web_nasdaq,258.06,web_yahoo,263.96,-5.9,-2.2352,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,AWK,2026-10-01,close,web_nasdaq,129.47,web_yahoo,127.86,1.61,1.2592,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,CMCSA,2026-10-01,close,web_nasdaq,21.76,web_yahoo,21.7,0.06,0.2765,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,CMG,2026-10-01,close,web_nasdaq,31.95,web_yahoo,32.32,-0.37,-1.1448,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,CRL,2026-10-01,close,web_nasdaq,295.01,web_yahoo,286.83,8.18,2.8519,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,DIS,2026-10-01,close,web_nasdaq,104.9,web_yahoo,101.33,3.57,3.5231,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,ENPH,2026-10-01,close,web_nasdaq,32.99,web_yahoo,32.82,0.17,0.518,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,HUM,2026-09-30,close,web_nasdaq,386.87,web_yahoo,381.57,5.3,1.389,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,LBTYA,2026-09-30,close,web_nasdaq,9.26,web_yahoo,9.13,0.13,1.4239,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,MCK,2026-09-30,close,web_nasdaq,864.82,web_yahoo,853.81,11.01,1.2895,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,MPWR,2026-09-30,close,web_nasdaq,1355.99,web_yahoo,1347.22,8.77,0.651,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,NBR,2026-09-30,close,web_nasdaq,77.28,web_yahoo,78.12,-0.84,-1.0753,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,NOV,2026-09-30,close,web_nasdaq,18.98,web_yahoo,18.73,0.25,1.3348,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,PVH,2026-09-30,close,web_nasdaq,75.74,web_yahoo,74.05,1.69,2.2822,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,RF,2026-09-30,close,web_nasdaq,26.89,web_yahoo,26.88,0.01,0.0372,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,SBUX,2026-09-30,close,web_nasdaq,95.43,web_yahoo,93.96,1.47,1.5645,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,TEAM,2026-09-30,close,web_nasdaq,175.96,web_yahoo,179.29,-3.33,-1.8573,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,TFC,2026-09-30,close,web_nasdaq,46.44,web_yahoo,46.3,0.14,0.3024,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,URI,2026-09-30,close,web_nasdaq,1014.54,web_yahoo,1000.78,13.76,1.3749,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,WELL,2026-09-30,close,web_nasdaq,232.9,web_yahoo,230.24,2.66,1.1553,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29；第三來源：futu 230.24
+web_vs_web,Nasdaq↔Yahoo,WST,2026-09-30,close,web_nasdaq,376.63,web_yahoo,370.76,5.87,1.5832,❌,快照 quotes_2026-09-30.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-29
+web_vs_web,Nasdaq↔Yahoo,AEP,2026-10-01,close,web_nasdaq,118.64,web_yahoo,119.75,-1.11,-0.9269,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,ALL,2026-10-01,close,web_nasdaq,221.86,web_yahoo,224.41,-2.55,-1.1363,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,BSX,2026-10-01,close,web_nasdaq,43.65,web_yahoo,43.23,0.42,0.9715,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,C,2026-10-01,close,web_nasdaq,129.48,web_yahoo,127.0,2.48,1.9528,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,CAH,2026-10-01,close,web_nasdaq,222.5,web_yahoo,230.09,-7.59,-3.2987,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,CFG,2026-10-01,close,web_nasdaq,63.76,web_yahoo,63.7,0.06,0.0942,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,CHKP,2026-10-01,close,web_nasdaq,128.35,web_yahoo,130.73,-2.38,-1.8205,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,CMS,2026-10-01,close,web_nasdaq,63.08,web_yahoo,63.64,-0.56,-0.8799,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,CTVA,2026-10-01,close,web_nasdaq,77.65,web_yahoo,12.57,65.08,517.7407,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,EBAY,2026-10-01,close,web_nasdaq,106.05,web_yahoo,105.89,0.16,0.1511,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
 web_vs_web,Nasdaq↔Yahoo,EQIX,2026-10-01,close,web_nasdaq,1011.58,web_yahoo,1012.33,-0.75,-0.0741,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,FBIN,2026-10-01,close,web_nasdaq,38.05,web_yahoo,38.52,-0.47,-1.2201,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,GEN,2026-10-01,close,web_nasdaq,22.02,web_yahoo,22.25,-0.23,-1.0337,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,GL,2026-10-01,close,web_nasdaq,165.65,web_yahoo,165.83,-0.18,-0.1085,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,IEX,2026-10-01,close,web_nasdaq,227.98,web_yahoo,229.85,-1.87,-0.8136,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,KBH,2026-10-01,close,web_nasdaq,46.47,web_yahoo,46.54,-0.07,-0.1504,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,LRCX,2026-10-01,close,web_nasdaq,328.51,web_yahoo,340.1,-11.59,-3.4078,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,ORCL,2026-10-01,close,web_nasdaq,137.3,web_yahoo,138.07,-0.77,-0.5577,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30；第三來源：futu 138.07
-web_vs_web,Nasdaq↔Yahoo,PPG,2026-10-01,close,web_nasdaq,104.33,web_yahoo,104.67,-0.34,-0.3248,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,PRU,2026-10-01,close,web_nasdaq,113.58,web_yahoo,113.13,0.45,0.3978,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,PTC,2026-10-01,close,web_nasdaq,140.3,web_yahoo,146.47,-6.17,-4.2125,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,FCPT,2026-10-01,close,web_nasdaq,21.76,web_yahoo,21.42,0.34,1.5873,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,GNW,2026-10-01,close,web_nasdaq,8.97,web_yahoo,9.31,-0.34,-3.652,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,HRL,2026-10-01,close,web_nasdaq,19.94,web_yahoo,19.96,-0.02,-0.1002,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,IVZ,2026-10-01,close,web_nasdaq,30.16,web_yahoo,30.42,-0.26,-0.8547,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,M,2026-10-01,close,web_nasdaq,22.77,web_yahoo,22.76,0.01,0.0439,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,MOS,2026-10-01,close,web_nasdaq,21.65,web_yahoo,21.55,0.1,0.464,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,MTCH,2026-10-01,close,web_nasdaq,40.15,web_yahoo,40.13,0.02,0.0498,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,NI,2026-10-01,close,web_nasdaq,39.0,web_yahoo,39.5,-0.5,-1.2658,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30；第三來源：futu 39.5
+web_vs_web,Nasdaq↔Yahoo,NWS,2026-10-01,close,web_nasdaq,31.72,web_yahoo,31.45,0.27,0.8585,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,PNC,2026-10-01,close,web_nasdaq,222.26,web_yahoo,220.75,1.51,0.684,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,RDDT,2026-10-01,close,web_nasdaq,142.44,web_yahoo,149.53,-7.09,-4.7415,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
 web_vs_web,Nasdaq↔Yahoo,REG,2026-10-01,close,web_nasdaq,71.88,web_yahoo,71.8,0.08,0.1114,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,ROP,2026-10-01,close,web_nasdaq,349.41,web_yahoo,362.59,-13.18,-3.635,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,SHW,2026-10-01,close,web_nasdaq,323.27,web_yahoo,320.78,2.49,0.7762,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,SIRI,2026-10-01,close,web_nasdaq,25.88,web_yahoo,25.64,0.24,0.936,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,SOLS,2026-10-01,close,web_nasdaq,56.32,web_yahoo,56.98,-0.66,-1.1583,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,STE,2026-10-01,close,web_nasdaq,210.01,web_yahoo,209.34,0.67,0.3201,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,TKO,2026-10-01,close,web_nasdaq,179.72,web_yahoo,176.04,3.68,2.0904,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,TT,2026-10-01,close,web_nasdaq,451.98,web_yahoo,458.94,-6.96,-1.5165,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,TTD,2026-10-01,close,web_nasdaq,12.17,web_yahoo,12.1,0.07,0.5785,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,UAA,2026-10-01,close,web_nasdaq,4.46,web_yahoo,4.64,-0.18,-3.8793,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,WU,2026-10-01,close,web_nasdaq,5.9,web_yahoo,6.02,-0.12,-1.9934,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,ZS,2026-10-01,close,web_nasdaq,199.42,web_yahoo,198.78,0.64,0.322,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
-web_vs_web,Nasdaq↔Yahoo,ALK,2026-10-02,close,web_nasdaq,39.49,web_yahoo,39.53,-0.04,-0.1012,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,BIDU,2026-10-02,close,web_nasdaq,85.59,web_yahoo,84.32,1.27,1.5062,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,SIG,2026-10-01,close,web_nasdaq,102.33,web_yahoo,104.25,-1.92,-1.8417,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,STI,2026-10-01,close,web_nasdaq,6.455,web_yahoo,6.16,0.295,4.789,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,STT,2026-10-01,close,web_nasdaq,174.59,web_yahoo,174.62,-0.03,-0.0172,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,SYF,2026-10-01,close,web_nasdaq,70.97,web_yahoo,71.51,-0.54,-0.7551,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,UHS,2026-10-01,close,web_nasdaq,174.26,web_yahoo,175.07,-0.81,-0.4627,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,UPS,2026-10-01,close,web_nasdaq,93.44,web_yahoo,93.89,-0.45,-0.4793,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,USB,2026-10-01,close,web_nasdaq,57.76,web_yahoo,57.36,0.4,0.6974,❌,快照 quotes_2026-10-01.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-09-30
+web_vs_web,Nasdaq↔Yahoo,AMCR,2026-10-02,close,web_nasdaq,41.81,web_yahoo,41.86,-0.05,-0.1194,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,BATRK,2026-10-02,close,web_nasdaq,52.25,web_yahoo,52.03,0.22,0.4228,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,BF-B,2026-10-02,close,web_nasdaq,25.97,web_yahoo,26.16,-0.19,-0.7263,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
 web_vs_web,Nasdaq↔Yahoo,BLDR,2026-10-02,close,web_nasdaq,57.35,web_yahoo,56.25,1.1,1.9556,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,CLF,2026-10-02,close,web_nasdaq,11.47,web_yahoo,11.32,0.15,1.3251,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,COTY,2026-10-02,close,web_nasdaq,2.65,web_yahoo,2.66,-0.01,-0.3759,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,CPAY,2026-10-02,close,web_nasdaq,389.73,web_yahoo,394.6,-4.87,-1.2342,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,CSGP,2026-10-02,close,web_nasdaq,27.72,web_yahoo,27.38,0.34,1.2418,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01；第三來源：futu 27.38
-web_vs_web,Nasdaq↔Yahoo,DAL,2026-10-02,close,web_nasdaq,84.13,web_yahoo,84.09,0.04,0.0476,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,DUK,2026-10-02,close,web_nasdaq,113.74,web_yahoo,114.13,-0.39,-0.3417,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,FCX,2026-10-02,close,web_nasdaq,69.28,web_yahoo,72.04,-2.76,-3.8312,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,FLEX,2026-10-02,close,web_nasdaq,112.78,web_yahoo,116.61,-3.83,-3.2845,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,FTV,2026-10-02,close,web_nasdaq,55.84,web_yahoo,57.47,-1.63,-2.8363,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,HOG,2026-10-02,close,web_nasdaq,24.83,web_yahoo,24.55,0.28,1.1405,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,HST,2026-10-02,close,web_nasdaq,22.51,web_yahoo,22.56,-0.05,-0.2216,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,IEX,2026-10-02,close,web_nasdaq,229.85,web_yahoo,232.99,-3.14,-1.3477,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,CVNA,2026-10-02,close,web_nasdaq,63.04,web_yahoo,63.77,-0.73,-1.1447,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,DD,2026-10-02,close,web_nasdaq,129.2,web_yahoo,129.98,-0.78,-0.6001,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,FANG,2026-10-02,close,web_nasdaq,185.51,web_yahoo,184.71,0.8,0.4331,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,FTNT,2026-10-02,close,web_nasdaq,178.72,web_yahoo,180.95,-2.23,-1.2324,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01；第三來源：futu 180.95
+web_vs_web,Nasdaq↔Yahoo,HIG,2026-10-02,close,web_nasdaq,125.74,web_yahoo,126.05,-0.31,-0.2459,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,HRL,2026-10-02,close,web_nasdaq,19.96,web_yahoo,20.25,-0.29,-1.4321,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
 web_vs_web,Nasdaq↔Yahoo,IQV,2026-10-02,close,web_nasdaq,260.72,web_yahoo,258.21,2.51,0.9721,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,KMX,2026-10-02,close,web_nasdaq,55.89,web_yahoo,54.92,0.97,1.7662,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,LNC,2026-10-02,close,web_nasdaq,39.73,web_yahoo,40.3,-0.57,-1.4144,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,MDB,2026-10-02,close,web_nasdaq,351.73,web_yahoo,357.96,-6.23,-1.7404,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01；第三來源：futu 357.96
+web_vs_web,Nasdaq↔Yahoo,JCI,2026-10-02,close,web_nasdaq,151.77,web_yahoo,156.24,-4.47,-2.861,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,MBI,2026-10-02,close,web_nasdaq,4.29,web_yahoo,4.4,-0.11,-2.5,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,MRK,2026-10-02,close,web_nasdaq,143.81,web_yahoo,144.3,-0.49,-0.3396,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,MS,2026-10-02,close,web_nasdaq,188.01,web_yahoo,190.31,-2.3,-1.2086,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
 web_vs_web,Nasdaq↔Yahoo,NAVI,2026-10-02,close,web_nasdaq,9.11,web_yahoo,9.19,-0.08,-0.8705,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,NEE,2026-10-02,close,web_nasdaq,76.35,web_yahoo,76.83,-0.48,-0.6248,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,NI,2026-10-02,close,web_nasdaq,39.5,web_yahoo,39.43,0.07,0.1775,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,ORCL,2026-10-02,close,web_nasdaq,138.07,web_yahoo,142.3,-4.23,-2.9726,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01；第三來源：futu 142.3
-web_vs_web,Nasdaq↔Yahoo,PH,2026-10-02,close,web_nasdaq,965.88,web_yahoo,972.55,-6.67,-0.6858,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,REGN,2026-10-02,close,web_nasdaq,734.81,web_yahoo,735.2,-0.39,-0.053,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,SIRI,2026-10-02,close,web_nasdaq,25.64,web_yahoo,25.72,-0.08,-0.311,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,TSCO,2026-10-02,close,web_nasdaq,31.73,web_yahoo,31.09,0.64,2.0585,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,TTWO,2026-10-02,close,web_nasdaq,203.62,web_yahoo,202.73,0.89,0.439,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,VTR,2026-10-02,close,web_nasdaq,83.73,web_yahoo,84.01,-0.28,-0.3333,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
-web_vs_web,Nasdaq↔Yahoo,XYL,2026-10-02,close,web_nasdaq,100.88,web_yahoo,101.79,-0.91,-0.894,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,NTAP,2026-10-02,close,web_nasdaq,215.05,web_yahoo,226.27,-11.22,-4.9587,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,NVR,2026-10-02,close,web_nasdaq,6126.38,web_yahoo,5993.8501,132.5299,2.2111,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,OI,2026-10-02,close,web_nasdaq,5.65,web_yahoo,5.6,0.05,0.8929,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,PDD,2026-10-02,close,web_nasdaq,76.5,web_yahoo,75.38,1.12,1.4858,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01；第三來源：futu 75.38
+web_vs_web,Nasdaq↔Yahoo,PHM,2026-10-02,close,web_nasdaq,116.35,web_yahoo,115.73,0.62,0.5357,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,PODD,2026-10-02,close,web_nasdaq,130.79,web_yahoo,131.69,-0.9,-0.6834,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,PTON,2026-10-02,close,web_nasdaq,4.97,web_yahoo,4.92,0.05,1.0163,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,QCOM,2026-10-02,close,web_nasdaq,182.09,web_yahoo,184.87,-2.78,-1.5038,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,ROK,2026-10-02,close,web_nasdaq,442.45,web_yahoo,454.35,-11.9,-2.6191,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,SBAC,2026-10-02,close,web_nasdaq,158.02,web_yahoo,158.49,-0.47,-0.2965,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,SIG,2026-10-02,close,web_nasdaq,104.25,web_yahoo,100.58,3.67,3.6488,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,SSP,2026-10-02,close,web_nasdaq,2.64,web_yahoo,2.74,-0.1,-3.6496,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,SYY,2026-10-02,close,web_nasdaq,77.77,web_yahoo,77.49,0.28,0.3613,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,UNP,2026-10-02,close,web_nasdaq,272.42,web_yahoo,278.28,-5.86,-2.1058,❌,快照 quotes_2026-10-02.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-01
+web_vs_web,Nasdaq↔Yahoo,APC,2026-10-05,close,web_nasdaq,15.5,web_yahoo,15.77,-0.27,-1.7121,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,ASH,2026-10-05,close,web_nasdaq,69.52,web_yahoo,68.78,0.74,1.0759,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,ASML,2026-10-05,close,web_nasdaq,1867.31,web_yahoo,1859.86,7.45,0.4006,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,AXP,2026-10-05,close,web_nasdaq,302.78,web_yahoo,304.02,-1.24,-0.4079,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,BATRK,2026-10-05,close,web_nasdaq,52.03,web_yahoo,52.17,-0.14,-0.2684,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,BLK,2026-10-05,close,web_nasdaq,1059.63,web_yahoo,1066.45,-6.82,-0.6395,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,CBOE,2026-10-05,close,web_nasdaq,271.26,web_yahoo,277.47,-6.21,-2.2381,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,COP,2026-10-05,close,web_nasdaq,126.75,web_yahoo,128.4,-1.65,-1.285,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,DXCM,2026-10-05,close,web_nasdaq,85.36,web_yahoo,86.9,-1.54,-1.7722,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,ECL,2026-10-05,close,web_nasdaq,273.7,web_yahoo,277.07,-3.37,-1.2163,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,FDXF,2026-10-05,close,web_nasdaq,112.89,web_yahoo,111.58,1.31,1.174,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,LBTYA,2026-10-05,close,web_nasdaq,8.92,web_yahoo,8.99,-0.07,-0.7786,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,LHX,2026-10-05,close,web_nasdaq,236.6,web_yahoo,236.88,-0.28,-0.1182,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,MKC,2026-10-05,close,web_nasdaq,44.67,web_yahoo,45.54,-0.87,-1.9104,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,MLM,2026-10-05,close,web_nasdaq,482.27,web_yahoo,485.5,-3.23,-0.6653,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,MSI,2026-10-05,close,web_nasdaq,447.41,web_yahoo,455.37,-7.96,-1.748,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,NKTR,2026-10-05,close,web_nasdaq,43.58,web_yahoo,42.22,1.36,3.2212,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,NOV,2026-10-05,close,web_nasdaq,18.8,web_yahoo,19.51,-0.71,-3.6392,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,NWS,2026-10-05,close,web_nasdaq,31.65,web_yahoo,32.0,-0.35,-1.0938,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,PAYX,2026-10-05,close,web_nasdaq,98.94,web_yahoo,99.78,-0.84,-0.8419,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,PG,2026-10-05,close,web_nasdaq,144.91,web_yahoo,145.94,-1.03,-0.7058,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,PODD,2026-10-05,close,web_nasdaq,131.69,web_yahoo,135.62,-3.93,-2.8978,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,PSA,2026-10-05,close,web_nasdaq,283.81,web_yahoo,281.66,2.15,0.7633,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,PYPL,2026-10-05,close,web_nasdaq,52.8,web_yahoo,54.41,-1.61,-2.959,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,REGN,2026-10-05,close,web_nasdaq,735.2,web_yahoo,726.47,8.73,1.2017,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,TEL,2026-10-05,close,web_nasdaq,220.36,web_yahoo,218.93,1.43,0.6532,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,USB,2026-10-05,close,web_nasdaq,57.51,web_yahoo,57.27,0.24,0.4191,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,WSM,2026-10-05,close,web_nasdaq,232.3,web_yahoo,238.7,-6.4,-2.6812,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,ZBRA,2026-10-05,close,web_nasdaq,375.86,web_yahoo,375.66,0.2,0.0532,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
+web_vs_web,Nasdaq↔Yahoo,ZION,2026-10-05,close,web_nasdaq,63.17,web_yahoo,63.28,-0.11,-0.1738,❌,快照 quotes_2026-10-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-10-02
 internal,5分K OHLC,HK.800000,2026-09-30,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.800000,2026-10-02,ohlc,futu_5m,,,,,,✅,全部合理
+internal,5分K OHLC,HK.800000,2026-10-05,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.800125,2026-09-30,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.800125,2026-10-02,ohlc,futu_5m,,,,,,✅,全部合理
+internal,5分K OHLC,HK.800125,2026-10-05,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.HSI_FRONT,2026-09-30,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.HSI_FRONT,2026-10-01,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.HSI_FRONT,2026-10-02,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.HSI_FRONT,2026-10-03,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,HK.HSI_FRONT,2026-10-05,ohlc,futu_5m,,,,,,✅,全部合理
+internal,5分K OHLC,HK.HSI_FRONT,2026-10-06,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-09-24,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-09-25,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-09-28,ohlc,futu_5m,,,,,,✅,全部合理
@@ -1717,17 +2037,21 @@ internal,5分K OHLC,US.QQQ,2026-09-29,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-09-30,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-10-01,ohlc,futu_5m,,,,,,✅,全部合理
 internal,5分K OHLC,US.QQQ,2026-10-02,ohlc,futu_5m,,,,,,✅,全部合理
+internal,5分K OHLC,US.QQQ,2026-10-05,ohlc,futu_5m,,,,,,✅,全部合理
 internal,MT5 M1 OHLC,XAUUSD,2026-09-25,ohlc,mt5,,,,,,✅,1 根，高低不合 0，四價相同 0
 internal,MT5 M1 OHLC,XAUUSD,2026-09-28,ohlc,mt5,,,,,,✅,1378 根，高低不合 0，四價相同 0
 internal,MT5 M1 OHLC,XAUUSD,2026-09-29,ohlc,mt5,,,,,,✅,1325 根，高低不合 0，四價相同 0
 internal,MT5 M1 OHLC,XAUUSD,2026-09-30,ohlc,mt5,,,,,,✅,1378 根，高低不合 0，四價相同 0
 internal,MT5 M1 OHLC,XAUUSD,2026-10-01,ohlc,mt5,,,,,,✅,1378 根，高低不合 0，四價相同 0
 internal,MT5 M1 OHLC,XAUUSD,2026-10-02,ohlc,mt5,,,,,,✅,1376 根，高低不合 0，四價相同 0
-internal,MT5 M1 OHLC,XAUUSD,2026-10-05,ohlc,mt5,,,,,,✅,155 根，高低不合 0，四價相同 0
-internal,期權清洗規則（手冊 §10）,HK.800000,2026-10-02,rules,futu_options,,,,,,ℹ️,bid>0 1915/4240；價差≤20%中價 0/4240；|delta| 0.10–0.90 4240/4240
+internal,MT5 M1 OHLC,XAUUSD,2026-10-05,ohlc,mt5,,,,,,✅,1378 根，高低不合 0，四價相同 0
+internal,MT5 M1 OHLC,XAUUSD,2026-10-06,ohlc,mt5,,,,,,✅,156 根，高低不合 0，四價相同 0
+internal,期權清洗規則（手冊 §10）,HK.800000,2026-10-02,rules,futu_options,,,,,,ℹ️,bid>0 1915/4280；價差≤20%中價 0/4280；|delta| 0.10–0.90 4280/4280
+internal,期權清洗規則（手冊 §10）,HK.800000,2026-10-05,rules,futu_options,,,,,,ℹ️,bid>0 2192/2770；價差≤20%中價 1631/2770；|delta| 0.10–0.90 2770/2770
 internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-25,rules,futu_options,,,,,,ℹ️,bid>0 2060/2060；價差≤20%中價 2060/2060；|delta| 0.10–0.90 2060/2060
 internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-28,rules,futu_options,,,,,,ℹ️,bid>0 2840/2850；價差≤20%中價 2840/2850；|delta| 0.10–0.90 2850/2850
 internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-29,rules,futu_options,,,,,,ℹ️,bid>0 2830/2840；價差≤20%中價 2830/2840；|delta| 0.10–0.90 2840/2840
 internal,期權清洗規則（手冊 §10）,US.QQQ,2026-09-30,rules,futu_options,,,,,,ℹ️,bid>0 2840/2850；價差≤20%中價 2840/2850；|delta| 0.10–0.90 2850/2850
 internal,期權清洗規則（手冊 §10）,US.QQQ,2026-10-01,rules,futu_options,,,,,,ℹ️,bid>0 2840/2850；價差≤20%中價 2840/2850；|delta| 0.10–0.90 2850/2850
-internal,期權清洗規則（手冊 §10）,US.QQQ,2026-10-02,rules,futu_options,,,,,,ℹ️,bid>0 6900/6910；價差≤20%中價 6900/6910；|delta| 0.10–0.90 6910/6910
+internal,期權清洗規則（手冊 §10）,US.QQQ,2026-10-02,rules,futu_options,,,,,,ℹ️,bid>0 8400/8410；價差≤20%中價 8400/8410；|delta| 0.10–0.90 8410/8410
+internal,期權清洗規則（手冊 §10）,US.QQQ,2026-10-05,rules,futu_options,,,,,,ℹ️,bid>0 1300/1310；價差≤20%中價 1300/1310；|delta| 0.10–0.90 1310/1310
