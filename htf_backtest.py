@@ -188,7 +188,7 @@ class HTF:
         for k, px, at_close, u in legs:
             f_out = rw["adj"][k] / rw["close"][k]
             out.append({"b": self.cal_j(rw["dlist"][k]), "k": k, "out_adj": px * f_out, "at_close": at_close, "u": u})
-        return {"s": s, "p": p, "a": self.ci[rw["dlist"][p]], "fill": fill, "in_adj": fill * f_in, "legs": out,
+        return {"s": s, "p": p, "a": self.cal_j(rw["dlist"][p]), "fill": fill, "in_adj": fill * f_in, "legs": out,
                 "info": info or {}}
 
     def cal_j(self, d) -> int:
@@ -218,6 +218,8 @@ class HTF:
                     if not rw["close"][p] > P or p + 1 >= len(rw["close"]):
                         continue
                     pe = p + 1
+                    if rw["jarr"][pe] < 0:          # 次日是個股有、日曆沒有的日子（例：日本假期）→ 跳過
+                        continue
                     fill = rw["open"][pe] if rw["open"][pe] == rw["open"][pe] and rw["open"][pe] > 0 else rw["close"][pe]
                     adr = rw["adr"][p]
                 else:
