@@ -106,9 +106,28 @@ def num(s):
         return None
 
 
+def snap_time(f):
+    """快照檔的數據時間（內含 lastupd 'dd/mm/yyyy HH:MM'）。quotes/（Actions，檔名 UTC）與
+    quotes_colab/（GCP，檔名 HKT）的檔名時區不同，不能按檔名排序，必須按數據時間。"""
+    try:
+        lu = str(json.load(open(f))['data'].get('lastupd', ''))
+        m = re.match(r'\s*(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2})', lu)
+        if m:
+            return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)),
+                            int(m.group(4)), int(m.group(5)))
+    except Exception:
+        pass
+    return datetime.fromtimestamp(os.path.getmtime(f))
+
+
+def snap_files(pattern):
+    return (glob.glob(os.path.join(BASE, 'quotes', pattern))
+            + glob.glob(os.path.join(BASE, 'quotes_colab', pattern)))
+
+
 def latest(pattern):
-    fs = sorted(glob.glob(os.path.join(BASE, 'quotes', pattern)))
-    return fs[-1] if fs else None
+    fs = snap_files(pattern)
+    return max(fs, key=snap_time) if fs else None
 
 
 def hv20():
@@ -201,11 +220,11 @@ def scan_futures():
 def scan_options(hv, front=None):
     # 每個月份取時間戳最新的一份（檔名字母排序會讓 Sep 排最後，不能直接取尾三個）
     latest_by_mon = {}
-    for f in glob.glob(os.path.join(BASE, 'quotes', 'options_*.json')):
+    for f in snap_files('options_*.json'):
         m = re.search(r'options_([^_]+)_(\d{8}_\d{4})', os.path.basename(f))
         if not m:
             continue
-        mon, ts = m.group(1), m.group(2)
+        mon, ts = m.group(1), snap_time(f)
         if mon not in latest_by_mon or ts > latest_by_mon[mon][0]:
             latest_by_mon[mon] = (ts, f)
     def mon_key(kv):
