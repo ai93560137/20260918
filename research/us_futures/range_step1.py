@@ -1,10 +1,11 @@
-"""NQ（NAS100 差價合約，CME 全段 23 小時交易日）第一步：波幅預測、高低位校準、蛇蟠陣（2026-10-05）。
+"""美股指數期貨第一步（CME 全段 23 小時交易日）：波幅預測、高低位校準、蛇蟠陣（2026-10-05）。
+來源：--src nas100（MT5 NAS100 差價合約 15 分 K，2022-08 起）或 usa500（Dukascopy USA500.IDX 差價合約 15 分 K，全段數據 2018-04 起）。
 
 與恒指同一套程式：HAR(1,5,22) 對數波幅預測（main.har_forecasts）、高低位 = 昨收 ± 比例 × R̂（main.futu_accuracy，逐日前推，
 預計範圍 2%／98% 分位）、週／月同理；蛇蟠陣 = 前 N 個交易日最高／最低做通道，15 分 K 觸價反手（snake_band.snake_run）。
 成本：蛇每筆來回 1.5 點（NQ 一跳 0.25 點 = 5 美元，加佣金與滑點）。
-用法：python3 research/us_futures/nq_range.py
-輸出：research/us_futures/nq_range/REPORT.md、daily_forecast.csv（每天預測高低與實際）、snake_trades.csv
+用法：python3 research/us_futures/range_step1.py --src usa500
+輸出：research/us_futures/<src>_range/REPORT.md、daily_forecast.csv（每天預測高低與實際）、snake_trades.csv
 """
 import csv, math, os, sys, types
 from pathlib import Path
@@ -21,10 +22,11 @@ _e = types.ModuleType("google.api_core.exceptions"); _e.PreconditionFailed = typ
 _ac = types.ModuleType("google.api_core"); _ac.exceptions = _e; sys.modules["google.api_core"] = _ac; sys.modules["google.api_core.exceptions"] = _e
 import main                                                      # noqa: E402
 import snake_band as sb                                          # noqa: E402
-import nas100_cfd                                                # noqa: E402
+import nas100_cfd, dukascopy_cfd                                 # noqa: E402
+import argparse                                                  # noqa: E402
 
-OUT = HERE / "nq_range"
-SNAKE_COST = 1.5
+SRC = {"nas100": {"zh": "NQ（NAS100 差價合約，MT5）", "cost": 1.5, "load": lambda: nas100_cfd.load(), "hsi_pct": "恒指期貨對照 2.0% 左右"},
+       "usa500": {"zh": "ES（USA500.IDX 差價合約，Dukascopy）", "cost": 0.75, "load": lambda: dukascopy_cfd.load("usa500idxusd"), "hsi_pct": "恒指期貨對照 2.0%、NQ 1.85%"}}
 
 
 def acc_line(kind, a, unit):
@@ -41,15 +43,17 @@ def snake_stats(trades, dates_by_year=None):
 
 
 def main_():
-    bars, daily = nas100_cfd.load()
+    ap = argparse.ArgumentParser(); ap.add_argument("--src", default="nas100", choices=list(SRC)); a = ap.parse_args()
+    cfg = SRC[a.src]; OUT = HERE / f"{a.src}_range"; SNAKE_COST = cfg["cost"]
+    bars, daily = cfg["load"]()
     rows = main.futu_range_rows(daily)
     har = main.har_forecasts(rows)
     acc = main.futu_accuracy(rows, har)
     yrs = (len(rows)) / 252
-    L = ["# NQ（NAS100 差價合約，CME 全段 23 小時）：波幅預測、高低位、蛇蟠陣（nq_range.py）", "",
-         f"- {daily[0]['time_key'][:10]} 至 {daily[-1]['time_key'][:10]}，{len(daily)} 個交易日（{yrs:.1f} 年）；一天 = 券商日 01:00–00:00 = 紐約 18:00–17:00；"
+    L = [f"# {cfg['zh']}，CME 全段 23 小時：波幅預測、高低位、蛇蟠陣（range_step1.py --src {a.src}）", "",
+         f"- {daily[0]['time_key'][:10]} 至 {daily[-1]['time_key'][:10]}，{len(daily)} 個交易日（{yrs:.1f} 年）；一天 = CME 全段，紐約前一天 18:00 至當天 17:00；"
          f"平均全日波幅 {np.mean([r['range'] for r in rows]):,.0f} 點（{np.mean([r['range_pct'] for r in rows if r['range_pct']]):.2f}%），"
-         f"恒指期貨對照 2.0% 左右。", "",
+         f"{cfg['hsi_pct']}。", "",
          "## 一、HAR 波幅預測與高低位（與恒指同一程式、逐日前推）", "",
          "| 期間 | 段數 | 波幅落在 80% 範圍 | 高、低都落在預計範圍 | 高／低各自 | 高／低平均差（點） | 高、低都在門檻內（門檻） |", "|---|---|---|---|---|---|---|"]
     for kind, unit in (("day", "天"), ("week", "週"), ("month", "月")):
@@ -70,7 +74,7 @@ def main_():
     for b in bars:
         by.setdefault(b["session"], []).append(b)
     sdays = [(k, sorted(v, key=lambda b: b["time_key"])) for k, v in sorted(by.items())]
-    L += ["", "## 二、蛇蟠陣（前 N 個交易日高／低通道，15 分 K 觸價反手，成本每筆 1.5 點）", "",
+    L += ["", f"## 二、蛇蟠陣（前 N 個交易日高／低通道，15 分 K 觸價反手，成本每筆 {SNAKE_COST:g} 點）", "",
           "| N | 筆 | 每筆（點） | 每筆（%） | 勝率 | 平均賺／蝕 | RRR | t | 總點數 | 最大回撤 |", "|---|---|---|---|---|---|---|---|---|---|"]
     lvl = np.mean([r["close"] for r in rows])
     trades3 = None

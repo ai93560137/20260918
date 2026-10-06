@@ -12,7 +12,7 @@ on:
       from:
         description: 開始日（YYYY-MM-DD）
         required: true
-        default: '2015-01-01'
+        default: '2016-01-01'
       to:
         description: 結束日（YYYY-MM-DD，不含）
         required: true
@@ -45,26 +45,14 @@ jobs:
           TO: ${{ github.event.inputs.to }}
           TF: ${{ github.event.inputs.timeframe }}
         run: |
+          set -x
           mkdir -p data/dukascopy dl
-          npx --yes dukascopy-node@latest -i "$INS" -from "$FROM" -to "$TO" -t "$TF" -p ask -v true -f csv -dir dl -fn "${INS}_${TF}" -r 5 -b 10
+          npx --yes dukascopy-node@latest --help | head -60 || true
+          npx --yes dukascopy-node@latest -i "$INS" -from "$FROM" -to "$TO" -t "$TF" -p ask -v -f csv -dir dl -fn "${INS}_${TF}" -ch
           ls -la dl
           f=$(ls dl/*.csv | head -1)
-          python3 - "$f" "data/dukascopy/${INS}_${TF}.csv.gz" <<'PY'
-          import csv, gzip, sys
-          from datetime import datetime, timezone
-          src, dst = sys.argv[1], sys.argv[2]
-          rows = list(csv.DictReader(open(src, encoding="utf-8")))
-          with gzip.open(dst, "wt", encoding="utf-8", newline="") as fh:
-              w = csv.writer(fh); w.writerow(["time_utc", "open", "high", "low", "close", "volume"])
-              n = 0
-              for r in rows:
-                  ts = int(r["timestamp"]) / 1000
-                  if not r.get("open") or float(r["high"]) < float(r["low"]):
-                      continue
-                  w.writerow([datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), r["open"], r["high"], r["low"], r["close"], r.get("volume", "")])
-                  n += 1
-          print(f"{dst}: {n} 列（原始 {len(rows)}），{rows[0]['timestamp'] if rows else '-'} → {rows[-1]['timestamp'] if rows else '-'}")
-          PY
+          head -3 "$f"
+          python3 scripts/dukascopy_to_csv.py "$f" "data/dukascopy/${INS}_${TF}.csv.gz"
           ls -la data/dukascopy
       - name: commit
         run: |
