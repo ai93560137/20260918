@@ -1,16 +1,14 @@
 # 數據品質日報（2026-10-06）
 
-由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）51 份（最新 2026-10-05），公司名紀錄 112 檔。
+由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）52 份（最新 2026-10-06），公司名紀錄 112 檔。
 
-**🔴 嚴重 1 項 ｜ 🟡 注意 2 項 ｜ ✅ 已確認 38 項**
+**🔴 嚴重 0 項 ｜ 🟡 注意 2 項 ｜ ✅ 已確認 38 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
 ## 🔴 嚴重（會污染回測，先處理）
 
-| 代碼 | 檢查 | 說明 |
-|---|---|---|
-| 0669.HK | hkex_name_changed | 港交所名稱 2026-10-02「TECHTRONIC IND」→ 2026-10-05「TECHTRONIC-100」（改名或代碼被重用） |
+（無）
 
 ## 🟡 注意
 
