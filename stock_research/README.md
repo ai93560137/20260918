@@ -17,6 +17,7 @@
 | `VCP_FULLMARKET_BACKTEST.md` | VCP 全市場：品質檢查、XV、五日 EMA、Minervini 忠實版 |
 | `AIBA_PPP_BACKTEST.md` | 相場師朗 PPP 中的下半身（逆下半身／五日 EMA 出場） |
 | `OOS_VALIDATION.md` | 樣本外兩輪：台韓澳、加印新 |
+| `HTF_BACKTEST.md` | Qullamaggie 高漲旗型（HTF）：日線程式化定義、港日美台四市場預先登記與結果 |
 | `EXPECTANCY_REVIEW.md` | 期望值／RRR／總回報覆核（描述性） |
 
 ## 2. 程式與輸出（路徑不變）
@@ -30,6 +31,7 @@
 | `aiba_ppp.py` + `.github/workflows/aiba_verify.yml` → `research/aiba_ppp/` | 相場流 PPP／下半身／逆下半身（還原 K 線、SMA）全市場回測；`--trades-only` 先出逐筆明細不看績效、抽樣交給 Actions 核對第二來源 |
 | `scripts/expectancy_report.py` → `research/expectancy/` | 已判決策略預設格的期望值、RRR、獲利因子、累計／年化／MDD vs ETF（一個市場一次重建數據，全部策略共用）|
 | `scripts/get_market_data.py` + `MARKET_DATA_CATALOG.md` | 一鍵下載 9 個市場日線並重建品質排除檔；數據目錄、注意事項、策略×市場已驗證矩陣 |
+| `htf_backtest.py` → `research/htf/` | HTF（高漲旗型）引擎：動能前 2% ＋ 旗桿 ≥ G ＋ 旗面 ≤ D 量縮、盤中突破樞紐點成交、ADR→當日低點停損、第 3 日減半、10MA 出場、大市 10/20MA 過濾、同日隨機動能股對照、四市場合併檢定 |
 | `oos_backtest.py` + `scripts/build_oos_pools.py` + `.github/workflows/oos_fullmarket.yml` → `research/oos/` | 樣本外新市場（台 .TW/.TWO、韓 .KS/.KQ、澳 .AX）候選池、抓數據（Release `oos-data`）、凍結規格回測、漲停鎖死跳過、三市場合併 alpha 檢定 |
 
 ## 3. 怎樣拿到數據（雲端 session／其他分支）
