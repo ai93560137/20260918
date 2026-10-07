@@ -1,0 +1,2 @@
+ticker,date,factor,source,note
+1321.T,2026-10-05,0.01,price+volume jump,2026-10-05 起 Yahoo 按 1:100 分拆報價（10-02 收 71040、10-05 開 723.3；成交量 23 萬→3203 萬）；舊列未調、actions.csv 未記；鳥翔分支 2026-10-07 登記

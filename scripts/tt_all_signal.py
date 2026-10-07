@@ -87,6 +87,13 @@ def run(mk: str, force: bool) -> None:
     if not month_end and not force:
         print(f"[{mk}] 最新數據 {d} 不是當月最後一個交易日，不出名單", file=sys.stderr)
         return
+    # 防線（2026-10-07）：基準 ETF 近 260 日任何一日漲跌 > 40% = 多半是拆股漏調（1321.T 2026-10-05 1:100），
+    # 大市過濾會被假跌判成持現金。不出名單，先在 universes/<市場>/adjustments.csv 或 etf_fixes.csv 登記再跑。
+    er = np.asarray(m.etf_ret[max(0, j - 259):j + 1], dtype=float)
+    if np.nanmax(np.abs(er)) > 0.40 if er.size else False:
+        k = int(np.nanargmax(np.abs(er))) + max(0, j - 259)
+        print(f"[{mk}] ⛔ 基準 {ETF[mk]} 在 {m.cal[k]} 單日 {m.etf_ret[k]:+.1%}，疑似拆股漏調，不出名單（先登記調整）", file=sys.stderr)
+        return
     ok = bool(x.mkt_ok[j])
     # 候選池含基準 ETF 與指數代號（build_oos_pools 的 EXTRA，例 ^STI／ES3.SI）——不是股票，剔除
     import newhigh_backtest as nb
