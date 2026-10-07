@@ -8,7 +8,7 @@
 
 輸入：`analysis/htf/ibkr_intraday_request.csv`（欄位 `market,ticker,signal_date,entry_date`；港 374、台 624、美 2,855 筆）。
 **隨機對照清單**（主清單跑完後接著抓，同一格式）：`analysis/htf/ibkr_intraday_control_hk.csv`（396 筆）、`ibkr_intraday_control_tw.csv`（659 筆）；
-美股對照清單另行補上。這是「同一天隨機挑一檔前 2% 動能股」（seed 0）的股票日，用來看盤中執行是否同樣改善對照組。
+`ibkr_intraday_control_us.csv`（2,947 筆）。這是「同一天隨機挑一檔前 2% 動能股」（seed 0）的股票日，用來看盤中執行是否同樣改善對照組。
 
 每一列抓 **entry_date 當天**（只需這一天；之後的日子日線高低價已夠用）的 **5 分 K、只含正常交易時段（useRTH=True）、TRADES**：
 
