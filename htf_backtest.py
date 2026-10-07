@@ -74,6 +74,7 @@ class HTF:
             low = pd.concat([df["Low"].where(df["Low"] > 0).fillna(close), close], axis=1).min(axis=1)
             for w in MOM_WINDOWS:
                 mom[w][s] = (adj / adj.shift(w) - 1).reindex(idx).to_numpy(dtype=np.float32)
+            vol_s = df["Volume"].astype(float)
             dl = list(df.index)
             self.raw[s] = {"dates": {d: i for i, d in enumerate(dl)}, "dlist": dl,
                            "jarr": np.array([self.ci.get(d, -1) for d in dl], dtype=np.int64),
@@ -82,7 +83,12 @@ class HTF:
                            "vol": df["Volume"].to_numpy(dtype=float), "adj": adj.to_numpy(dtype=float),
                            "adr": (high / low - 1).rolling(ADR_N).mean().to_numpy(dtype=float),
                            "ma10": adj.rolling(10).mean().to_numpy(dtype=float),
-                           "ma20": adj.rolling(20).mean().to_numpy(dtype=float)}
+                           "ma20": adj.rolling(20).mean().to_numpy(dtype=float),
+                           # 以下給 ep_backtest.py（Episodic Pivot）用；HTF 不讀
+                           "ma50": adj.rolling(50).mean().to_numpy(dtype=float),
+                           "avgvol50": vol_s.rolling(50).mean().shift(1).to_numpy(dtype=float),
+                           "r60": (adj / adj.shift(60) - 1).to_numpy(dtype=float),
+                           "hi252prev": adj.shift(1).rolling(252).max().to_numpy(dtype=float)}
         # 動能篩選：每天宇宙內各窗口報酬的百分位（97／98／99 三個版本，98 判決用）
         self.mom_ok = {q: np.zeros((S, D), dtype=bool) for q in (97, 98, 99)}
         for j in range(D):
@@ -154,12 +160,13 @@ class HTF:
               file=sys.stderr)
 
     # ---------- 出場模擬 ----------
-    def simulate(self, s: int, p: int, fill: float, adr: float, trail: str = "ma10", adr_stop: bool = True) -> list:
-        """回傳各腿 [(出場 raw 索引, 出場原始價, 是否收市出場, 單位)]。"""
+    def simulate(self, s: int, p: int, fill: float, adr: float, trail: str = "ma10", adr_stop: bool = True,
+                 stop0: float | None = None) -> list:
+        """回傳各腿 [(出場 raw 索引, 出場原始價, 是否收市出場, 單位)]。stop0：指定初始停損（EP 用：跳空回補價），不給就用 ADR。"""
         rw = self.raw[s]
         high, low, close, opn, adj, ma = (rw[k] for k in ("high", "low", "close", "open", "adj", trail))
         n = len(close)
-        stop = fill * (1 - adr) if adr_stop else -math.inf
+        stop = (fill * (1 - adr) if adr_stop else -math.inf) if stop0 is None else stop0
         o0 = opn[p] if opn[p] == opn[p] and opn[p] > 0 else fill
         pre_fill_low = o0 < fill and low[p] == o0        # 低點就是開市價、而成交在開市之後 → 低點發生在成交前
         if low[p] <= stop and not pre_fill_low:
@@ -437,11 +444,11 @@ def pooled(series: list[dict]) -> pd.Series:
     return pd.DataFrame([pd.Series(s) for s in series]).T.sort_index().mean(axis=1)
 
 
-def pool_all(markets=MARKETS) -> None:
-    R = {mk: json.loads((OUT / f"{mk}.json").read_text(encoding="utf-8")) for mk in markets}
-    RN = {mk: json.load(gzip.open(OUT / f"{mk}_random.json.gz", "rt", encoding="utf-8")) for mk in markets}
-    real = tstat_series(pooled([R[mk]["abn"]["HTF"] for mk in markets]))
-    drop10 = tstat_series(pooled([R[mk]["abn"]["HTF_drop10"] for mk in markets]))
+def pool_all(markets=MARKETS, out: Path = OUT, key: str = "HTF") -> None:
+    R = {mk: json.loads((out / f"{mk}.json").read_text(encoding="utf-8")) for mk in markets}
+    RN = {mk: json.load(gzip.open(out / f"{mk}_random.json.gz", "rt", encoding="utf-8")) for mk in markets}
+    real = tstat_series(pooled([R[mk]["abn"][key] for mk in markets]))
+    drop10 = tstat_series(pooled([R[mk]["abn"][key + "_drop10"] for mk in markets]))
     n = min(len(RN[mk]) for mk in markets)
     rt = sorted(tstat_series(pooled([RN[mk][i] for mk in markets])) for i in range(n))
     pct = sum(x < real for x in rt) / n if n else float("nan")
@@ -462,7 +469,7 @@ def pool_all(markets=MARKETS) -> None:
                                         for mk in markets}}
     print(f"合併 alpha t {real:.2f}  去前10筆 {drop10:.2f}  隨機第 {pct:.0%} 百分位（中位 {out['random_median']:.2f}）  "
           f"alpha>0 市場 {pos}/{len(markets)}  四地絕對回報都正 {abs_pos}  → {v}", file=sys.stderr)
-    (OUT / "pooled.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
+    (out / "pooled.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
 
 
 def main() -> None:
