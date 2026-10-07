@@ -444,9 +444,9 @@ def pooled(series: list[dict]) -> pd.Series:
     return pd.DataFrame([pd.Series(s) for s in series]).T.sort_index().mean(axis=1)
 
 
-def pool_all(markets=MARKETS, out: Path = OUT, key: str = "HTF") -> None:
-    R = {mk: json.loads((out / f"{mk}.json").read_text(encoding="utf-8")) for mk in markets}
-    RN = {mk: json.load(gzip.open(out / f"{mk}_random.json.gz", "rt", encoding="utf-8")) for mk in markets}
+def pool_all(markets=MARKETS, out_dir: Path = OUT, key: str = "HTF") -> None:
+    R = {mk: json.loads((out_dir / f"{mk}.json").read_text(encoding="utf-8")) for mk in markets}
+    RN = {mk: json.load(gzip.open(out_dir / f"{mk}_random.json.gz", "rt", encoding="utf-8")) for mk in markets}
     real = tstat_series(pooled([R[mk]["abn"][key] for mk in markets]))
     drop10 = tstat_series(pooled([R[mk]["abn"][key + "_drop10"] for mk in markets]))
     n = min(len(RN[mk]) for mk in markets)
@@ -469,7 +469,7 @@ def pool_all(markets=MARKETS, out: Path = OUT, key: str = "HTF") -> None:
                                         for mk in markets}}
     print(f"合併 alpha t {real:.2f}  去前10筆 {drop10:.2f}  隨機第 {pct:.0%} 百分位（中位 {out['random_median']:.2f}）  "
           f"alpha>0 市場 {pos}/{len(markets)}  四地絕對回報都正 {abs_pos}  → {v}", file=sys.stderr)
-    (out / "pooled.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
+    (out_dir / "pooled.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
 
 
 def main() -> None:
