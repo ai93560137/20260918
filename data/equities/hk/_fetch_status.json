@@ -48,7 +48,7 @@
   "shares_rows": 547
  },
  "0005.HK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -189,7 +189,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2000-01-04",
   "kept_tail": 0,
   "last": "2026-10-08",
@@ -221,7 +221,7 @@
   "shares_rows": 578
  },
  "0151.HK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -297,7 +297,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2000-01-04",
   "kept_tail": 0,
   "last": "2026-10-08",
@@ -329,7 +329,7 @@
   "shares_rows": 378
  },
  "0316.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -357,7 +357,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2002-09-23",
   "kept_tail": 0,
   "last": "2026-10-08",
@@ -365,7 +365,7 @@
   "shares_rows": 369
  },
  "0386.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -454,11 +454,11 @@
   "shares_rows": 676
  },
  "0836.HK": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2003-11-12",
   "kept_tail": 0,
   "last": "2026-10-08",
@@ -502,7 +502,7 @@
   "shares_rows": 530
  },
  "0883.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -610,7 +610,7 @@
   "shares_rows": 550
  },
  "1044.HK": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -718,7 +718,7 @@
   "shares_rows": 170
  },
  "1211.HK": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 3e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -730,7 +730,7 @@
   "shares_rows": 1476
  },
  "1288.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 0.020077,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -754,7 +754,7 @@
   "shares_rows": 814
  },
  "1339.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -778,7 +778,7 @@
   "shares_rows": 542
  },
  "1398.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.020381,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -850,7 +850,7 @@
   "shares_rows": 538
  },
  "1929.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -878,7 +878,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2018-06-21",
   "kept_tail": 0,
   "last": "2026-10-08",
@@ -886,7 +886,7 @@
   "shares_rows": 606
  },
  "2007.HK": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -970,7 +970,7 @@
   "shares_rows": 490
  },
  "2313.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -1054,7 +1054,7 @@
   "shares_rows": 566
  },
  "2600.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -1066,7 +1066,7 @@
   "shares_rows": 1559
  },
  "2601.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
@@ -1118,9 +1118,9 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2008-01-02",
-  "kept_tail": 0,
+  "kept_tail": 1,
   "last": "2026-10-08",
   "rows": 4623,
   "shares_rows": 72
@@ -1358,9 +1358,9 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-08",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
-  "kept_tail": 0,
+  "kept_tail": 1,
   "last": "2026-10-08",
   "rows": 7831,
   "shares_rows": 0
