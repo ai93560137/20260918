@@ -201,6 +201,7 @@ def main():
     ap.add_argument("--pace", type=float, default=2.5)
     ap.add_argument("--market", nargs="+", default=ORDER)
     ap.add_argument("--probe", action="store_true")
+    ap.add_argument("--horizon", nargs="*", default=[], help="預設地平線，如 us=2004-01-26 tw=2023-05-29；更舊的列直接 beyond_horizon 不請求")
     ap.add_argument("--no-prune", action="store_true")
     ap.add_argument("--prune-after", type=int, default=40)
     ap.add_argument("--push-every", type=int, default=400)
@@ -224,7 +225,7 @@ def main():
         oldest_ok = None
         nodata_run = 0
         init_fail = 0
-        horizon = None
+        horizon = dict(h.split('=', 1) for h in a.horizon).get(mk)
         for i, r in enumerate(rows):
             t, d = r["ticker"], r["entry_date"]
             path = OUT / f"{mk}_{t}_{d}.csv"
