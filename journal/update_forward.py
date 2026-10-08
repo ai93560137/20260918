@@ -74,6 +74,17 @@ line = (f"📒 前向測試({today})\n"
         f"持倉:{'空' if pos < 0 else '多'} {abs(pos)} 張 @ {entry:,}(mark {mark:,})\n"
         f"今日損益 {sign(day_chg)} · 浮動 {sign(open_pnl)} · 已實現 {sign(realized)}\n"
         f"權益 {equity:,.0f}(本金 {p['capital']:,},含費用 −{fees:,})")
+# 承諾資金/帳戶資金分開(RULES.md):帳戶淨值 = 承諾權益 − 場外儲備,檢查補倉觸發線
+fd = p.get('funding') or {}
+if fd.get('active'):
+    lots = max(1, int(equity // 1_500_000))
+    acct = equity - fd.get('reserve', 0)
+    line += f"\n🏦 帳戶 {acct:,.0f}(場外儲備 {fd.get('reserve', 0):,.0f};觸發線 {200_000 * lots:,})"
+    if acct < 200_000 * lots:
+        line += (f"\n⚠️ 需補倉 {300_000 * lots - acct:,.0f} 到帳戶"
+                 f"(下一交易日 12:00 前;富途通知較早則以富途為準)")
+    elif acct > 400_000 * lots:
+        line += f"\n💡 月底可提回儲備 {acct - 300_000 * lots:,.0f}(只在每月最後交易日執行)"
 with open(LINE, 'w', encoding='utf-8') as f:
     f.write(line)
 print(line)
