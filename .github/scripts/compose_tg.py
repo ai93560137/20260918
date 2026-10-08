@@ -35,6 +35,23 @@ quote_line = (f"💰 現價:{f(px)}({q.get('kind', '')} · {q.get('asof', '')},�
                  f"⚡ 已跌穿下軌 {f(lo - px)} 點(今日下軌已觸發)\n" if px <= lo else
                  f"↕️ 距上軌 {f(up - px)} 點 · 距下軌 {f(px - lo)} 點\n")) if px else ''
 
+# 張數:journal/position.json 的 hsi.target_big(大合約當量,RULES.md 資金管理)與實際持倉 pos
+try:
+    ph = (json.load(open('journal/position.json', encoding='utf-8')).get('hsi') or {})
+except Exception:
+    ph = {}
+n = int(ph.get('target_big') or 1)
+pos = int(ph.get('pos') or 0)
+if pos < 0:
+    act = (f"📌 目前實倉:空 {-pos} 張 → 價 ≥ {f(up)} 買入 {n - pos} 張"
+           f"(平空 {-pos}＋開多 {n})\n")
+elif pos > 0:
+    act = (f"📌 目前實倉:多 {pos} 張 → 價 ≤ {f(lo)} 賣出 {n + pos} 張"
+           f"(平多 {pos}＋開空 {n})\n")
+else:
+    act = f"📌 目前實倉:空手 → 升破 {f(up)} 買入 {n} 張 ／ 跌破 {f(lo)} 賣出 {n} 張\n"
+mini = ",小恒指等值 ×5" if n > 1 else ''
+
 msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
 🕐 {d.get('fetched_at', '')}
 
@@ -46,14 +63,15 @@ msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
 📈 通道上軌:{f(up)}({up_d})
 📉 通道下軌:{f(lo)}({lo_d})
 {quote_line}
-🧭 今日指令(每次 1 張)
+🧭 今日指令(目標 {n} 張大恒指當量{mini})
+{act}── 一般情況 ──
 🈳 空手:
- ① 價 ≥ {f(up)} → 市價買入 1 張(開多倉)
- ② 價 ≤ {f(lo)} → 市價賣出 1 張(開空倉)
-🐂 持 1 張多倉:
- ▶ 價 ≤ {f(lo)} → 市價賣出 2 張(平多＋反手做空)
-🐻 持 1 張空倉:
- ▶ 價 ≥ {f(up)} → 市價買入 2 張(平空＋反手做多)
+ ① 價 ≥ {f(up)} → 市價買入 {n} 張(開多倉)
+ ② 價 ≤ {f(lo)} → 市價賣出 {n} 張(開空倉)
+🐂 持 {n} 張多倉:
+ ▶ 價 ≤ {f(lo)} → 市價賣出 {2 * n} 張(平多＋反手做空)
+🐻 持 {n} 張空倉:
+ ▶ 價 ≥ {f(up)} → 市價買入 {2 * n} 張(平空＋反手做多)
 
 ⚠️ 成交以券商實時價為準
 🌐 恒指指令台:https://claude.ai/artifact/Qovghgidoao32zWai3gffX
