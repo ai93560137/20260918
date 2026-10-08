@@ -1,4 +1,4 @@
-"""[R127] ES 波幅頁：市場設定（紐約時間、CME 全段交易日）、?view=es_range 路由、頂部連結、K_SESSION 封包入庫與開市前紀錄。"""
+"""[R127][R130] ES 波幅頁：市場設定（紐約時間、CME 全段交易日）、?view=es_range 路由、頂部連結、K_SESSION 封包入庫與開市前紀錄。"""
 import json, os, sys, types
 os.environ.setdefault("WEBHOOK_SECRET_TOKEN", "tok")
 sys.path.insert(0, "/home/user/20260918")
@@ -51,6 +51,53 @@ check("中午只預覽不記錄", r3["status"] == "ok" and not main.futu_logged_
 r4 = main.futu_report(ES, "preopen", now=ny("2026-10-10 18:30"))      # 週六 18:30 → 交易日 10-11（週日）不是交易日
 check("週末不是交易日 → skip", r4["status"] == "skip", r4)
 check("恒指的開市前時段照舊（香港 07:53）", main.futu_report("HK.HSI_FRONT", "preopen", now=hk("2026-10-05 07:53"))["status"] in ("ok", "skip"))
+
+
+print("\n=== [R130] ES 日內：交易日分鐘、變異比例、C 時間點、5 分 K 跨日讀取、蛇日、頁面 ===")
+check("交易日分鐘：US 18:05 = 5、翌日 17:00 = 1380；HK 09:15 = 15 不變", main._session_minutes("2026-10-04 18:05:00", ES) == 5
+      and main._session_minutes("2026-10-05 17:00:00", ES) == 1380 and main._session_minutes("2026-10-05 09:15:00") == 15)
+check("US 變異比例表 89 格、加總 1；剛開市幾乎全剩、16:45 後所剩無幾", abs(sum(main.PEAK_PROFILE_15M_US.values()) - 1) < 1e-3 and len(main.PEAK_PROFILE_15M_US) == 89
+      and main.peak_remaining_share("2026-10-04 18:05:00", ES) > 0.95 and main.peak_remaining_share("2026-10-05 16:45:00", ES) < 0.05,
+      (main.peak_remaining_share("2026-10-04 18:05:00", ES), main.peak_remaining_share("2026-10-05 16:45:00", ES)))
+check("HK 的剩餘比例照舊用恒指表", abs(main.peak_remaining_share("2026-10-05 09:30:00") - (1 - main.PEAK_PROFILE_15M["09:30"])) < 1e-3)
+check("蛇日：US 不分日夜全算 day；HK 夜市仍是 night", main._paper_phase({"time_key": "2026-10-04 20:00:00"}, "2026-10-05", ES) == "day"
+      and main._paper_phase({"time_key": "2026-10-05 20:00:00"}, "2026-10-05", "HK.HSI_FRONT") == "night")
+check("回測準確率按市場：ES 日 B 高 96.5%、恒指 95.8%", main._peak_acc(ES, "day/high/B") == 0.965 and main._peak_acc("HK.HSI_FRONT", "day/high/B") == 0.958)
+# 10-05（週一）交易日：10-04 18:05 起到 10-05 10:00 的 5 分 K，封存按當地日期分兩檔
+ref = series[-1]["close"]
+five, px, t = [], ref, datetime(2026, 10, 4, 18, 0)
+import random as _r; _r.seed(5)
+while t < datetime(2026, 10, 5, 10, 0):
+    t += timedelta(minutes=5); px += _r.gauss(0, 1.2)
+    five.append(bar(t.strftime("%Y-%m-%d %H:%M:%S"), px, px + 1.5, px - 1.5, px + 0.3))
+for d in ("2026-10-04", "2026-10-05"):
+    put(main.archive_blob_name("futu_k_5m", ES, d), [b for b in five if b["time_key"][:10] == d])
+got = main.futu_session_5m(ES, "2026-10-05")
+check("5 分 K 跨日讀取：10-05 交易日 = 10-04 18:05 起全部 192 根", len(got) == len(five) == 192 and got[0]["time_key"] == "2026-10-04 18:05:00", (len(got), len(five)))
+check("10-04（週日）交易日沒有 K", main.futu_session_5m(ES, "2026-10-04") == [])
+st = main.futu_peak_status(ES, now=ny("2026-10-05 10:00"))
+per = (st or {}).get("periods", {}).get("day")
+check("高低位狀態：今日 10-05、現價 = 最後一根收市、10:00 未到 C 時間點、剩餘比例在 0–1", st and st["today"] == "2026-10-05" and per and st["price"] == five[-1]["close"]
+      and per["high"]["C"] is None and 0 < per["rem"] < 1, (st or {}).get("today"))
+check("本週卡：10-05 是週首日，段長 = 本週交易日數 5", (st["periods"].get("week") or {}).get("sessions") == 5 and st["periods"]["week"]["first"] == "2026-10-05", st["periods"].get("week"))
+# 走到 16:00（RTH 收市）：C 時間點已到
+more, t = [], datetime(2026, 10, 5, 10, 0)
+while t < datetime(2026, 10, 5, 16, 0):
+    t += timedelta(minutes=5); px += _r.gauss(0, 1.2)
+    more.append(bar(t.strftime("%Y-%m-%d %H:%M:%S"), px, px + 1.5, px - 1.5, px + 0.3))
+put(main.archive_blob_name("futu_k_5m", ES, "2026-10-05"), [b for b in five if b["time_key"][:10] == "2026-10-05"] + more)
+st2 = main.futu_peak_status(ES, now=ny("2026-10-05 16:00"))
+check("16:00：C 時間點已判斷（True／False 而不是 None）", st2 and st2["periods"]["day"]["high"]["C"] in (True, False) and st2["periods"]["day"]["low"]["C"] in (True, False))
+txt = main._peak_signal_text("day", "high", "B", st2["periods"]["day"], st2["periods"]["day"]["high"], st2["price"], ES)
+check("通知文字用 ES 名稱與 ES 回測準確率", "ES 標普 500 期貨" in txt and "96% 準確" in txt and "恒指" not in txt, txt)
+r5 = client.post("/", json={"action": "futu_data", "token": "tok", "symbol": ES, "kline_type": "K_5M", "source": "mt5_cfd:US500", "data": five + more})
+check("K_5M 封包 200 stored", r5.status_code == 200 and r5.get_json().get("status") == "stored", r5.get_data(as_text=True)[:200])
+page5 = client.get("/?view=es_range").get_data(as_text=True)
+check("有 5 分 K 快照後：ES 頁顯示現價、合約 US500、紙上交易區，不再說「暫時只有日線」", "💹 現價" in page5 and "US500" in page5
+      and "📒 紙上交易" in page5 and "暫時只有日線" not in page5)
+lines_c = main._fy_signal_lines("day", st["periods"]["day"], "high", {}, ES)
+check("ES 日卡的 C 時間點寫 16:00（恒指 16:30）", any("16:00才判斷" in x for x in lines_c) and any("16:30" in x for x in main._fy_signal_lines("day", st["periods"]["day"], "high", {}, "HK.HSI_FRONT")), lines_c)
+check("恒指頁不受影響", "恒指即月期貨波幅" in client.get("/?view=futu_range").get_data(as_text=True))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
