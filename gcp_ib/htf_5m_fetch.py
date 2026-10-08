@@ -79,12 +79,19 @@ class Fetcher:
         if key in self.contracts:
             return self.contracts[key]
         sym, exch, cur = to_ib(mk, ticker)
-        self.errors.clear()
-        try:
-            res = self.ib.qualifyContracts(Stock(sym, exch, cur))
-            c = res[0] if res else f"no_contract: {self.last_error()}"
-        except Exception as e:
-            c = f"qualify_error: {e}"
+        # 台股上櫃（.TWO）：probe 證實 TWSE 找不到，改試 TPEX（櫃買）；都不行就記 no_contract
+        cands = [(exch, cur)] if not ticker.endswith(".TWO") else [("TPEX", cur), ("TWSE", cur)]
+        c = None
+        for ex, cu in cands:
+            self.errors.clear()
+            try:
+                res = self.ib.qualifyContracts(Stock(sym, ex, cu))
+                if res:
+                    c = res[0]
+                    break
+                c = f"no_contract: {self.last_error()}"
+            except Exception as e:
+                c = f"qualify_error: {e}"
         self.contracts[key] = c
         time.sleep(0.3)
         return c
