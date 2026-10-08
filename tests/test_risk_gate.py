@@ -192,6 +192,25 @@ res = main.execute_signal({"signal": "SELL", "price": 4300.0, "kind": "FIRST",
                           {"locked": False, "known": True})
 check("空單被擋", res["status"] == "long_only_rejected", res)
 
+print("\n=== 8b. 錦囊進場（tp_distance=None）要能送到券商，不能 KeyError ===")
+FAKE.clear()
+_sent = []
+class _Resp:
+    ok = True; status_code = 200; text = "ok"
+_real_post, _real_review = main.requests.post, main.ai_review_session.review
+main.requests.post = lambda url, json=None, timeout=None: (_sent.append(json), _Resp())[1]
+main.ai_review_session.review = lambda meta: (True, "測試放行")
+try:
+    res = main.execute_signal({"signal": "BUY", "price": 4300.0, "kind": "FIRST", "ticker": "XAUUSD",
+                               "direction": "UP", "sl_distance": 40.0, "tp_distance": None,
+                               "atr_m15": 8.0, "max_lots": 1.0, "exposure": 0.0},
+                              {"m15_ohlc": {"close": 4300.0, "atr_m15": 8.0}}, {}, 50.0,
+                              {"locked": False, "known": True}, frozenset({"ai"}))
+finally:
+    main.requests.post, main.ai_review_session.review = _real_post, _real_review
+check("沒有 TP 的錦囊單成功送出", res.get("status") == "success", res)
+check("送給券商的封包沒有 TP 欄位", len(_sent) == 1 and not any(k.startswith("tp_distance") for k in _sent[0]), _sent)
+
 print("\n=== 9. 心跳端到端 ===")
 FAKE.clear()
 resp = post({"action": "check_gate", "token": "tok", **good})

@@ -5195,8 +5195,11 @@ def execute_signal(candidate, payload, m15_levels, rsi, news, bypass=frozenset()
                   signal=signal, price=price, ai_reason=ai_verdict["reason"][:200])
 
     order = build_order(candidate, params)
-    summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{order['sl_distance_price']} "
-               f"TP:{order['tp_distance_price']} | 持倉 {candidate['exposure']:.2f}/{candidate['max_lots']:.2f} 手")
+    # 錦囊進場 tp_distance=None → build_order 不送 TP 欄位；摘要不能直接讀欄位，否則 KeyError、單送不出去。
+    sl_txt = order.get("sl_distance_price", order.get("sl_distance"))
+    tp_txt = order.get("tp_distance_price", order.get("tp_distance", "無"))
+    summary = (f"{label} {signal} {candidate['ticker']} @ {price:.2f} | SL:{sl_txt} "
+               f"TP:{tp_txt} | 持倉 {candidate['exposure']:.2f}/{candidate['max_lots']:.2f} 手")
 
     print(f"🚀 [實盤下單 JSON] {json.dumps(order, ensure_ascii=False)}", flush=True)
     sent_at = now_ts()
