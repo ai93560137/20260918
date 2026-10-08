@@ -1,0 +1,276 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>八陣圖策略書</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1B2327; --muted:#5D6B70;
+  --pos:#0B8A78; --neg:#C24B40; --line:#DFE5E3; --chip:#E9EEEC; --warn-bg:#F7F1E4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121619; --surface:#1D2429; --ink:#E7ECEA; --muted:#97A4A9;
+    --pos:#2AA093; --neg:#D45F53; --line:#323C42; --chip:#283238; --warn-bg:#2B2A22;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121619; --surface:#1D2429; --ink:#E7ECEA; --muted:#97A4A9;
+  --pos:#2AA093; --neg:#D45F53; --line:#323C42; --chip:#283238; --warn-bg:#2B2A22;
+}
+body{background:var(--bg); color:var(--ink); margin:0; padding-block:0 48px; padding-inline:16px;
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  font-size:15px; line-height:1.65;}
+.wrap{max-width:900px; margin:0 auto;}
+h1,h2{font-family:'Noto Serif TC','Noto Sans TC',serif; text-wrap:balance; margin:0;}
+h1{font-size:34px; font-weight:900; letter-spacing:.02em;}
+h2{font-size:19px; font-weight:700; margin:44px 0 14px; padding-top:20px; border-top:1px solid var(--line);}
+.sub{color:var(--muted); margin:6px 0 0;}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
+.chip{background:var(--chip); border-radius:999px; padding:3px 12px; font-size:12.5px; color:var(--muted);}
+.chip b{color:var(--ink); font-weight:500;}
+header{padding-block:40px 8px;}
+.eyebrow{font-size:12px; letter-spacing:.18em; color:var(--muted); text-transform:uppercase; margin-bottom:10px;}
+.num{font-variant-numeric:tabular-nums;}
+.tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:18px;}
+@media (max-width:640px){.tiles{grid-template-columns:repeat(2,1fr);}}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 14px;}
+.tile .v{font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+.tile .k{font-size:12px; color:var(--muted); margin-top:2px;}
+.pos{color:var(--pos);} .neg{color:var(--neg);}
+table{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:14px;}
+th{font-size:12px; color:var(--muted); font-weight:500; text-align:right; padding:6px 10px; border-bottom:1px solid var(--line);}
+th:first-child,td:first-child{text-align:left; padding-left:0;}
+td{padding:6px 10px; text-align:right; border-bottom:1px solid var(--line);}
+tr:last-child td{border-bottom:none;}
+.tbl-scroll{overflow-x:auto;}
+ul{margin:8px 0; padding-left:22px;} li{margin:4px 0;}
+.note{font-size:13px; color:var(--muted);}
+.risk{background:var(--warn-bg); border-radius:8px; padding:16px 18px; margin-top:12px;}
+.risk h3{margin:0 0 6px; font-size:15px;}
+.risk p{margin:4px 0;}
+.chart-box{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 12px 6px; margin-top:10px; position:relative;}
+.chart-title{font-size:13px; color:var(--muted); margin:0 4px 6px;}
+#tip{position:absolute; pointer-events:none; background:var(--ink); color:var(--bg);
+  font-size:12.5px; padding:5px 9px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-120%);}
+.kv{display:grid; grid-template-columns:1fr 1fr; gap:8px 28px; margin-top:6px;}
+@media (max-width:640px){.kv{grid-template-columns:1fr;}}
+.kv div{display:flex; justify-content:space-between; border-bottom:1px dashed var(--line); padding:5px 0; gap:12px;}
+.kv span:first-child{color:var(--muted);}
+footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted);}
+</style>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Strategy Fact Sheet · 2026-10-08 更新</div>
+  <h1>智能諸葛亮 · 八陣圖</h1>
+  <p class="sub">系統化趨勢跟隨策略 · 全機械化執行 · 多空雙向</p>
+  <div class="chips">
+    <span class="chip">主商品 <b>恒指期貨 HSI1!</b></span>
+    <span class="chip">驗證區間 <b>2018-03 → 2026-09（8.5 年）</b></span>
+    <span class="chip">狀態 <b>模擬盤驗證期</b></span>
+    <span class="chip">定性 <b>有希望・未證實（t = 1.58）</b></span>
+  </div>
+</header>
+
+<h2>核心指標（HSI1!，本金 150 萬 HKD，固定 1 張大恒指）</h2>
+<div class="tiles">
+  <div class="tile"><div class="v pos">+75.5%</div><div class="k">總報酬（8.5 年，淨額 +1,132,860 HKD）</div></div>
+  <div class="tile"><div class="v">≈ 6.9%</div><div class="k">年化報酬</div></div>
+  <div class="tile"><div class="v neg">23.75%</div><div class="k">最大回撤（543,732 HKD）</div></div>
+  <div class="tile"><div class="v">1.26</div><div class="k">獲利因子</div></div>
+  <div class="tile"><div class="v pos">+2,997</div><div class="k">期望值／筆（HKD／張）</div></div>
+  <div class="tile"><div class="v">39.5%</div><div class="k">勝率（378 筆，約 44 筆／年）</div></div>
+  <div class="tile"><div class="v">1.93 : 1</div><div class="k">盈虧比 RR（平均獲利 ÷ 平均虧損）</div></div>
+  <div class="tile"><div class="v">1.58</div><div class="k">t 值（有希望・未證實，門檻 2.0）</div></div>
+  <div class="tile"><div class="v">0.002</div><div class="k">與恒指相關係數（同期恒指 −23.2%）</div></div>
+  <div class="tile"><div class="v">0</div><div class="k">Margin call 次數（槓桿 10 倍模擬下）</div></div>
+  <div class="tile"><div class="v neg">11 筆</div><div class="k">最長連虧（−251,305 HKD）</div></div>
+  <div class="tile"><div class="v">92%</div><div class="k">水下時間（權益低於前高的時間佔比）</div></div>
+  <div class="tile"><div class="v pos">+210,545</div><div class="k">最大單筆獲利（HKD）</div></div>
+  <div class="tile"><div class="v neg">−49,155</div><div class="k">最大單筆虧損（HKD）</div></div>
+</div>
+<p class="note">成本假設：佣金 HKD 55／邊、滑點 1 tick、保證金 10%；TradingView 深度回測，逐筆清單經獨立引擎複核。</p>
+
+<h2>期望值與盈虧比拆解（每張・每筆）</h2>
+<div class="tbl-scroll"><table>
+  <tr><th>組成</th><th>數值</th><th>說明</th></tr>
+  <tr><td>勝率</td><td class="num">39.5%</td><td class="note" style="text-align:right">378 筆中 149 筆獲利</td></tr>
+  <tr><td>平均獲利（勝方）</td><td class="pos num">+36,192 HKD</td><td class="note" style="text-align:right">≈ 724 點</td></tr>
+  <tr><td>平均虧損（敗方）</td><td class="neg num">−18,777 HKD</td><td class="note" style="text-align:right">≈ 376 點</td></tr>
+  <tr><td>盈虧比 RR</td><td class="num"><b>1.93 : 1</b></td><td class="note" style="text-align:right">賺時賺的 ≈ 虧時虧的兩倍——輸多次、贏大次</td></tr>
+  <tr><td>期望值／筆</td><td class="pos num"><b>+2,997 HKD</b></td><td class="note" style="text-align:right">= 39.5% × 36,192 − 60.5% × 18,777（≈ 60 點／筆）</td></tr>
+  <tr><td>年均筆數</td><td class="num">≈ 44 筆</td><td class="note" style="text-align:right">訊號每日更新，平均持倉約 8 個交易日</td></tr>
+  <tr><td>年均淨利（期望）</td><td class="pos num"><b>≈ +132,000 HKD／張</b></td><td class="note" style="text-align:right">對本金 150 萬 ≈ 8.8%／年（單利）；複利年化 6.9%</td></tr>
+</table></div>
+<p class="note">解讀：這是典型趨勢跟隨的期望值結構——勝率不足四成，靠 1.93 倍的盈虧比把期望值做正。
+代價寫在風險揭露：六成交易是虧的、連虧 11 筆是歷史常態，期望值以「年」為單位兌現。任何一筆的結果無意義，只有全部執行才有期望值。</p>
+
+<h2>資金效率：承諾資金與帳戶資金分開（2026-10-08 起）</h2>
+<p class="note" style="margin-top:0">張數仍按承諾資金計算（每 150 萬配 1 張），<b>風險與上表完全相同</b>；改變的只是資金存放位置——
+券商帳戶只放保證金與緩衝，其餘留在投資人手上的場外儲備，觸及補倉線才撥入。</p>
+<div class="tiles">
+  <div class="tile"><div class="v">150 萬</div><div class="k">承諾資金（計算張數的基數）</div></div>
+  <div class="tile"><div class="v">30 萬</div><div class="k">券商帳戶資金（每張）</div></div>
+  <div class="tile"><div class="v">120 萬</div><div class="k">場外儲備（T+1 可動用現金）</div></div>
+  <div class="tile"><div class="v pos">≈ 44%</div><div class="k">帳戶資金年回報（效率指標）</div></div>
+</div>
+<div class="tbl-scroll"><table style="margin-top:14px">
+  <tr><th>口徑（8.5 年回測，每張）</th><th>年均淨利</th><th>分母</th><th>年回報</th></tr>
+  <tr><td>承諾資金回報（策略真實績效，可與回測及其他基金比較）</td><td class="pos num">≈ +132,000</td><td class="num">1,500,000</td><td class="num"><b>≈ 8.8%</b></td></tr>
+  <tr><td>帳戶資金回報（資金效率指標）</td><td class="pos num">≈ +132,000</td><td class="num">300,000</td><td class="num"><b>≈ 44%</b></td></tr>
+  <tr><td>承諾資金回報 ＋ 儲備利息（假設儲備年息 3%）</td><td class="pos num">≈ +168,000</td><td class="num">1,500,000</td><td class="num"><b>≈ 11.2%</b></td></tr>
+</table></div>
+<div class="kv" style="margin-top:14px">
+  <div><span>補倉觸發線</span><span class="num">帳戶淨值 &lt; 20 萬／張（約 1.5 倍保證金）</span></div>
+  <div><span>補倉時限</span><span class="num">下一交易日 12:00 前補回 30 萬／張</span></div>
+  <div><span>利潤提回</span><span class="num">月底帳戶 &gt; 40 萬／張時，超出 30 萬部分提回儲備</span></div>
+  <div><span>策略硬停損</span><span class="num">承諾資金跌破 100 萬（−33%）停開新倉、重審</span></div>
+  <div><span>歷史最深回撤需補入</span><span class="num">約 54 萬（儲備 120 萬可覆蓋約 2.2 倍）</span></div>
+  <div><span>帳戶資金期初</span><span class="num">2026-10-08 起，30 萬 ＋ 儲備 120 萬</span></div>
+</div>
+<div class="risk">
+  <h3>帳戶資金回報不是更高的績效</h3>
+  <p>44% 只是把同一筆淨利除以較小的分母；承諾資金的 120 萬仍然承擔全部風險，最深回撤時須如期補入。
+  <b>補倉必須準時到帳</b>：若被券商強制平倉而漏掉趨勢大單（前 10 筆貢獻總利潤 129%），策略期望值會被摧毀——這是本安排唯一新增的風險，
+  因此儲備只可存放隨時可動用的現金，不可投入股票等會同時下跌的資產。</p>
+</div>
+
+<h2>策略概要</h2>
+<ul>
+  <li><b>類型</b>：系統化趨勢跟隨，多空雙向；訊號每日更新一次，年均約 44 筆，平均持倉約 8 個交易日。</li>
+  <li><b>執行</b>：規則完全機械化，訂單由預設條件單自動觸發，無任何主觀判斷；具體訊號邏輯為專有資訊，不對外披露。</li>
+  <li><b>資金管理</b>：雪球制——每 150 萬承諾資金配 1 張，月底核算；淨值翻倍前不加碼，永不中途加減倉。券商帳戶只放每張 30 萬，其餘為場外儲備（見上節）。</li>
+</ul>
+<h2>按年表現</h2>
+<div class="chart-box">
+  <p class="chart-title">年度淨損益（萬 HKD／張，按平倉年歸屬）</p>
+  <svg id="ychart" viewBox="0 0 720 260" width="100%" role="img" aria-label="2018 至 2026 年度淨損益長條圖"></svg>
+</div>
+<div class="tbl-scroll"><table style="margin-top:14px">
+  <tr><th>年份</th><th>淨損益 (HKD)</th><th>筆數</th><th>勝率</th></tr>
+  <tr><td>2018（3 月起）</td><td class="pos num">+306,122</td><td class="num">30</td><td class="num">53%</td></tr>
+  <tr><td>2019</td><td class="pos num">+130,200</td><td class="num">40</td><td class="num">42%</td></tr>
+  <tr><td>2020</td><td class="neg num">−112,720</td><td class="num">54</td><td class="num">30%</td></tr>
+  <tr><td>2021</td><td class="pos num">+185,380</td><td class="num">44</td><td class="num">45%</td></tr>
+  <tr><td>2022</td><td class="pos num">+249,350</td><td class="num">40</td><td class="num">38%</td></tr>
+  <tr><td>2023</td><td class="neg num">−113,750</td><td class="num">50</td><td class="num">34%</td></tr>
+  <tr><td>2024</td><td class="pos num">+187,230</td><td class="num">44</td><td class="num">39%</td></tr>
+  <tr><td>2025</td><td class="pos num">+268,785</td><td class="num">43</td><td class="num">42%</td></tr>
+  <tr><td>2026（至 9 月）</td><td class="pos num">+10,890</td><td class="num">32</td><td class="num">41%</td></tr>
+</table></div>
+<p class="note">9 個年份 7 正 2 負；最差年份回吐本金 7.6%。同期恒指買入持有為 <span class="neg">−23.2%</span>，策略超額 +97.3 個百分點、相關係數 0.002——報酬來源與大盤漲跌無關。</p>
+
+<h2>交易結構</h2>
+<div class="kv">
+  <div><span>平均獲利／平均虧損</span><span class="num">36,192 ／ 18,777（1.93 : 1）</span></div>
+  <div><span>最大單筆獲利／虧損</span><span class="num">+210,545 ／ −49,155</span></div>
+  <div><span>多頭腿／空頭腿淨利</span><span class="num pos">+392,328 ／ +740,478（兩邊皆正）</span></div>
+  <div><span>手續費佔毛利</span><span class="num">0.39%</span></div>
+  <div><span>平均持倉</span><span class="num">約 8 個交易日</span></div>
+  <div><span>參數穩健性</span><span class="num">相鄰參數區間全域為正，現行參數非孤立最優點</span></div>
+</div>
+
+<h2>風險揭露（與績效同等重要）</h2>
+<div class="risk">
+  <h3>統計顯著性不足</h3>
+  <p>378 筆的 t 值為 <b>1.58</b>，未達 95% 顯著水準。正式定性為「有希望、未證實」——目前數據無法排除結果出於運氣的可能。此為本策略仍處模擬盤驗證期、未接受外部資金的原因。</p>
+</div>
+<div class="risk">
+  <h3>獲利高度集中，絕不容許漏單</h3>
+  <p>獲利前 5 筆貢獻總利潤的 <b>75%</b>；前 10 筆貢獻 <b>129%</b>——漏掉最好的 10 筆，8.5 年整體轉為虧損。策略必須全自動、無遺漏執行，任何選擇性跟單都會摧毀期望值。</p>
+</div>
+<div class="risk">
+  <h3>長期水下與連虧是常態</h3>
+  <p><b>92%</b> 的時間權益低於前高；最長連虧 <b>11 筆</b>（−251,305 HKD）；歷史最深回撤 543,732 HKD 自 2025 年 8 月高峰起、<b>至今尚未收復</b>。期望值以「年」為單位兌現，非按月發放：曾有 35 個月無新高。</p>
+</div>
+<div class="risk">
+  <h3>優勢依賴成交質量（已設證偽機制）</h3>
+  <p>對照實驗顯示：同一訊號在較差的成交方式下即轉為虧損——策略毛優勢對執行價格高度敏感。實盤逐筆監測成交滑價：近 20 筆平均滑價超出既定門檻即<b>停止開新倉並重審策略</b>。</p>
+</div>
+<div class="risk">
+  <h3>回測非未來保證</h3>
+  <p>全部數字基於歷史數據與既定成本假設。市場結構改變（波動性格、流動性、費率）可使策略失效；本文件不構成投資建議。</p>
+</div>
+
+<h2>次要配置：黃金 XAUUSD（樣本較短，僅供參考）</h2>
+<div class="kv">
+  <div><span>驗證區間</span><span class="num">2022-08 → 2026-09（4.1 年，M1 逐根）</span></div>
+  <div><span>總損益（1 oz）</span><span class="num pos">+2,659 USD（≈ 同期買入持有）</span></div>
+  <div><span>獲利因子／勝率</span><span class="num">1.78 ／ 44.6%（166 筆）</span></div>
+  <div><span>最大回撤</span><span class="num">3.6%（對比買入持有大一個量級的回撤）</span></div>
+  <div><span>按年</span><span class="num">五年四正（−117 / +291 / +355 / +1,409 / +635）</span></div>
+  <div><span>注意</span><span class="num">優勢集中於多頭側；獲利一半來自 2025 金價大多頭</span></div>
+</div>
+
+<h2>執行與治理</h2>
+<ul>
+  <li><b>每日對帳</b>：持倉、掛單、成交逐日與策略核對並留痕（log 版本化保存）；任何偏離當日糾正並記錄為違規。</li>
+  <li><b>驗證關卡</b>：模擬盤連續兩週 100% 無違規 + 滑價達標，方進入實盤；實盤先以最小單位（小恒指／微型金）運行。</li>
+  <li><b>已測遍的替代方案</b>：多種出場模型與參數變體已系統性測試完畢，全部劣於現行配置；實驗記錄完整保存，參數凍結不再調整。</li>
+</ul>
+
+<footer>
+  數據來源：HKEX HSI1! TradingView Deep Backtesting（2018-03-08 → 2026-09-21）逐筆交易清單，經自建回測引擎（MT5 M1 數據，2022-08 → 2026-09）獨立複核；兩者按年方向一致率 4/5。
+  回測假設：本金 1,500,000 HKD、固定 1 張大恒指（HKD 50／點）、佣金 55／邊、滑點 1 tick、保證金 10%。
+  本文件僅供指定收件人參考，不構成任何證券或期貨之要約、招攬或投資建議；過往表現不代表未來結果。
+</footer>
+</div>
+
+<script>
+(function(){
+  var data = [
+    {y:"2018", v:306122, n:30, w:53},{y:"2019", v:130200, n:40, w:42},
+    {y:"2020", v:-112720, n:54, w:30},{y:"2021", v:185380, n:44, w:45},
+    {y:"2022", v:249350, n:40, w:38},{y:"2023", v:-113750, n:50, w:34},
+    {y:"2024", v:187230, n:44, w:39},{y:"2025", v:268785, n:43, w:42},
+    {y:"2026", v:10890, n:32, w:41}];
+  var svg = document.getElementById("ychart");
+  var W=720, H=260, padL=16, padR=8, padT=26, padB=26;
+  var maxV=32, minV=-14;  // 萬 HKD 刻度範圍
+  var span=maxV-minV, plotH=H-padT-padB, plotW=W-padL-padR;
+  function yPix(v){ return padT + (maxV - v/10000) / span * plotH; }
+  var zero = yPix(0);
+  var css = getComputedStyle(document.documentElement);
+  var C = function(n){ return css.getPropertyValue(n).trim(); };
+  var s = "";
+  [30,20,10,0,-10].forEach(function(g){
+    var gy = padT + (maxV-g)/span*plotH;
+    s += '<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+gy+'" y2="'+gy+'" stroke="'+C('--line')+'" stroke-width="'+(g===0?1.6:1)+'"/>';
+    s += '<text x="'+padL+'" y="'+(gy-4)+'" font-size="10" fill="'+C('--muted')+'">'+(g>0?'+':'')+g+(g?' 萬':'')+'</text>';
+  });
+  var bw = plotW/data.length, barW = Math.min(46, bw*0.55);
+  data.forEach(function(d,i){
+    var x = padL + bw*i + (bw-barW)/2;
+    var top = yPix(Math.max(d.v,0)), bot = yPix(Math.min(d.v,0));
+    var h = Math.max(bot-top, 2), r = Math.min(4, h);
+    var col = d.v>=0 ? C('--pos') : C('--neg');
+    var p;
+    if(d.v>=0){
+      p = 'M'+x+' '+bot+' V'+(top+r)+' Q'+x+' '+top+' '+(x+r)+' '+top+' H'+(x+barW-r)+
+          ' Q'+(x+barW)+' '+top+' '+(x+barW)+' '+(top+r)+' V'+bot+' Z';
+    } else {
+      p = 'M'+x+' '+top+' V'+(bot-r)+' Q'+x+' '+bot+' '+(x+r)+' '+bot+' H'+(x+barW-r)+
+          ' Q'+(x+barW)+' '+bot+' '+(x+barW)+' '+(bot-r)+' V'+top+' Z';
+    }
+    s += '<path d="'+p+'" fill="'+col+'" data-i="'+i+'" tabindex="0" style="cursor:default"/>';
+    var ly = d.v>=0 ? top-6 : bot+13;
+    s += '<text x="'+(x+barW/2)+'" y="'+ly+'" font-size="10.5" text-anchor="middle" fill="'+C('--ink')+'" font-weight="600">'+
+         (d.v>=0?'+':'−')+Math.abs(d.v/10000).toFixed(1)+'</text>';
+    s += '<text x="'+(x+barW/2)+'" y="'+(H-8)+'" font-size="11" text-anchor="middle" fill="'+C('--muted')+'">'+d.y+'</text>';
+  });
+  svg.innerHTML = s;
+  var box = svg.parentElement, tip = document.createElement('div');
+  tip.id='tip'; tip.hidden=true; box.appendChild(tip);
+  svg.addEventListener('mousemove', function(e){
+    var t = e.target.closest('[data-i]');
+    if(!t){ tip.hidden=true; return; }
+    var d = data[+t.getAttribute('data-i')];
+    tip.textContent = d.y+' 年：'+(d.v>=0?'+':'−')+Math.abs(d.v).toLocaleString()+' HKD · '+d.n+' 筆 · 勝率 '+d.w+'%';
+    var r = box.getBoundingClientRect();
+    tip.style.left = (e.clientX - r.left)+'px';
+    tip.style.top  = (e.clientY - r.top)+'px';
+    tip.hidden = false;
+  });
+  svg.addEventListener('mouseleave', function(){ tip.hidden=true; });
+})();
+</script>
+
+</body></html>

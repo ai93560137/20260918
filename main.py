@@ -111,6 +111,8 @@
 #   * 2026-10-08 — [R129] 只有日線的市場（ES）：交易日進行中但還沒有今天的 K（日線收市後才推）→ 預測與卡標題用今天，不再跳到下一個交易日。
 #   * 2026-10-06 — [R128] 收市後、下一個交易日未開（恒指 03:00–09:00）：波幅頁改顯示下一個交易日的開市前預測，最新交易日標「已完結」、
 #     狀態「休市／未開市」（之前要到 09:00 才換日，07:53 記下的預測在頁上看不到，而且推送仍在所以誤標「交易中」）。
+#   * 2026-10-09 — [R132] 📄 八陣圖策略書（投資人展示頁）改由本服務託管：?view=factsheet 供應 factsheet.html（靜態、不讀任何狀態），
+#     投資人用 tnt-hk.com 網址直接開、不用登入 Claude。內容只含回測指標與風險揭露，不含進出場規則；不放進頁頂導覽列（只給連結）。
 #   * 2026-10-08 — [R131] ⚔️ 八陣圖指令台改由本服務託管（?view=bazhentu，bazhentu.html），tnt-hk.com 直接開、不用登入 Claude；
 #     通道數據 ?view=bazhentu&format=json 轉發蛇蟠陣分支 levels.json（公開 repo），快取 120 秒、GCS 後備。商品加小恒指、實倉改數字輸入。
 #   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
@@ -5572,6 +5574,13 @@ BAZHENTU_CACHE_SEC = 120
 _bazhentu_cache = {"ts": 0.0, "data": None}
 
 
+FACTSHEET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "factsheet.html")   # [R132]
+
+
+def serve_factsheet():
+    return _serve_static_html(FACTSHEET_FILE, "八陣圖策略書")
+
+
 def serve_bazhentu():
     return _serve_static_html(BAZHENTU_FILE, "八陣圖指令台")
 
@@ -7361,6 +7370,8 @@ def handle_get(req):
         return handle_bazhentu_api_get()
     if view == "bazhentu":                                       # [R131] 八陣圖指令台（蛇蟠陣人手掛單）
         return serve_bazhentu()
+    if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
+        return serve_factsheet()
     if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
         return handle_futu_api_get(req.args.get("symbol"))
     if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取

@@ -46,7 +46,7 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 1. **這個系統會對真實帳戶送單。** 部署與改環境變數前先跑 dry-run，把「將會做什麼」告訴使用者；
    只有使用者明確要求部署／修改時才加 `--yes`。讀取類命令（status / logs / state / check）可自由執行。
 2. 部署前一定先做 `python3 -m py_compile main.py` 與 `deploy` dry-run 的來源檢查；部署檔案
-   （`main.py`、`requirements.txt`、`gates.html`、`order.html`、`jinnang_sheet.html`、`jinnang_tracker.html`、`bazhentu.html`）必須完整。
+   （`main.py`、`requirements.txt`、`gates.html`、`order.html`、`jinnang_sheet.html`、`jinnang_tracker.html`、`bazhentu.html`、`factsheet.html`）必須完整。
    `futu/`、`tests/`、`scripts/`、`data/` 不部署（見 `.gcloudignore`）。
 3. 不要印出、記錄或 commit 任何金鑰與權杖（`WEBHOOK_SECRET_TOKEN`、`WEBHOOK_API_KEY`、`GCP_SA_KEY`）。
    `gcp_agent.py` 對含 TOKEN/SECRET/KEY 的值、以及網址的查詢參數（例如 `BROKER_API_URL` 的 `?t=…`）會自動遮罩，請保持。
