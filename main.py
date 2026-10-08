@@ -104,6 +104,7 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-08 — [R129] 只有日線的市場（ES）：交易日進行中但還沒有今天的 K（日線收市後才推）→ 預測與卡標題用今天，不再跳到下一個交易日。
 #   * 2026-10-06 — [R128] 收市後、下一個交易日未開（恒指 03:00–09:00）：波幅頁改顯示下一個交易日的開市前預測，最新交易日標「已完結」、
 #     狀態「休市／未開市」（之前要到 09:00 才換日，07:53 記下的預測在頁上看不到，而且推送仍在所以誤標「交易中」）。
 #   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
@@ -3692,6 +3693,8 @@ def futu_range_data(symbol):
             if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar):
                 break
         today, after_close = nxt.strftime("%Y-%m-%d"), True
+    in_session = (not after_close and futu_trading_day(today, calendar) and not futu_session_end_passed(today, None, symbol)
+                  and not any(str(b.get("time_key", ""))[:10] == today for b in bars))     # [R129] 今天在進行中但還沒有 K
     data = futu_range_stats(bars, today)
     snap = read_futu_snapshot(symbol)
     snap_bars = (snap.get("bars") or []) if isinstance(snap, dict) and not snap.get("error") else []
@@ -3708,7 +3711,7 @@ def futu_range_data(symbol):
     elif data.get("forecast"):                                   # [R99] 未記錄：即時算，含高位／低位
         all_rows = futu_range_rows(bars)
         completed = [r for r in all_rows if r["date"] < today] if data["partial"] else all_rows
-        full = futu_day_forecast(completed, today if after_close else data["forecast"]["date"])   # [R128] 收市後 → 下一個交易日
+        full = futu_day_forecast(completed, today if (after_close or in_session) else data["forecast"]["date"])   # [R128][R129]
         if full:
             data["forecast"] = full
     data["peak"] = futu_peak_status(symbol)                       # [R101][R103] 算一次，頁面與文字共用
@@ -3748,7 +3751,7 @@ def futu_range_data(symbol):
     data["reviews"] = [e for e in (reviews if isinstance(reviews, list) else [])
                        if isinstance(e, dict) and e.get("date") == review_day]
     nxt = datetime.strptime(today, "%Y-%m-%d")                       # [R105] 卡片標題的日期：下一個交易日
-    while not data["partial"] and not after_close:                   # [R128] 收市後 today 已是下一個交易日
+    while not data["partial"] and not after_close and not in_session:   # [R128][R129] today 已是要顯示的交易日
         nxt += timedelta(days=1)
         if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar) or nxt.year > 2100:
             break
