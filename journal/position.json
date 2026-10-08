@@ -13,8 +13,9 @@
   },
   "mgc": null,
   "funding": {
-    "active": false,
+    "active": true,
     "reserve": 1200000,
-    "note": "承諾資金/帳戶分開(RULES.md)。reserve=場外儲備現值,每次轉帳後更新(補倉 in:減;提回 out:加);帳戶淨值=權益−reserve。投資人實際把資金移出帳戶後把 active 改 true"
+    "note": "承諾資金/帳戶分開(RULES.md)。reserve=場外儲備現值,每次轉帳後更新(補倉 in:減;提回 out:加);帳戶淨值=權益−reserve。投資人實際把資金移出帳戶後把 active 改 true",
+    "start_date": "2026-10-08"
   }
 }
