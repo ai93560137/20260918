@@ -545,9 +545,14 @@ void CreateDashboard()
 
 void UpdateDashboard()
 {
+   // [R94] 面板也只看自己的持倉。帳戶上別的 EA 開的單不算我們的。
    string targetedSymbol = "";
    int totalPositions = PositionsTotal();
-   if(totalPositions > 0) targetedSymbol = PositionGetSymbol(0); 
+   for(int k = totalPositions - 1; k >= 0; k--)
+   {
+      ulong tk = PositionGetTicket(k);
+      if(tk > 0 && IsManaged(tk)) { targetedSymbol = _Symbol; break; }
+   }
    
    if(targetedSymbol == "")
    {
@@ -696,26 +701,31 @@ void CheckCloudGate()
    string currency = AccountInfoString(ACCOUNT_CURRENCY);
    if(currency == "") currency = "HKD";
 
-   string targetedSymbol = "NONE";
+   // [R94] 回報的是【這個 EA 自己的商品】，不是「帳戶上第一個持倉」。
+   //
+   //       舊寫法 targetedSymbol = PositionGetSymbol(0) 取的是帳戶第一個持倉。
+   //       PositionsTotal() 是整個帳戶的，不分圖表 —— 同一個帳戶上只要有別的
+   //       EA 開了單（實際發生過：LTC Server 在 GBPUSD/USDCHF），我們的 EA 就會
+   //       把商品名、K 線、buy_lots、sell_lots 全部報成那一邊的，GCP 的商品名
+   //       比對因此擋單（R86），M15 歷史也被寫進別的商品的 K 線。
+   //
+   //       關倉那條路早就有 IsManaged() 過濾，回報這條路沒有。補上。
+   string targetedSymbol = _Symbol;
    double buyLots = 0.0, sellLots = 0.0;
    int totalPositions = PositionsTotal();
-   
-   if(totalPositions > 0)
+
+   for(int i = totalPositions - 1; i >= 0; i--)
    {
-      targetedSymbol = PositionGetSymbol(0);
-      for(int i = totalPositions - 1; i >= 0; i--)
-      {
-         if(PositionGetSymbol(i) == targetedSymbol)
-         {
-            double volume = PositionGetDouble(POSITION_VOLUME);
-            long type = PositionGetInteger(POSITION_TYPE);
-            if(type == POSITION_TYPE_BUY) buyLots += volume;
-            else if(type == POSITION_TYPE_SELL) sellLots += volume;
-         }
-      }
+      ulong t = PositionGetTicket(i);
+      if(t <= 0) continue;
+      if(!IsManaged(t)) continue;                 // 只數自己的（magic + 商品）
+      double volume = PositionGetDouble(POSITION_VOLUME);
+      long type = PositionGetInteger(POSITION_TYPE);
+      if(type == POSITION_TYPE_BUY) buyLots += volume;
+      else if(type == POSITION_TYPE_SELL) sellLots += volume;
    }
    double netLots = buyLots - sellLots;
-   string ohlc_symbol = (targetedSymbol != "NONE") ? targetedSymbol : _Symbol;
+   string ohlc_symbol = _Symbol;                  // K 線一律取自己掛的那個商品
    
    MqlRates rates[];
    ArraySetAsSeries(rates, true);
@@ -798,9 +808,14 @@ void SendTargetHitToCloud()
    string currency = AccountInfoString(ACCOUNT_CURRENCY);
    if(currency == "") currency = "HKD";
 
+   // [R94] 同上：面板也只看自己的持倉，不看帳戶上別的 EA 開的單。
    string targetedSymbol = "NONE";
-   if(PositionsTotal() > 0) targetedSymbol = PositionGetSymbol(0);
-   
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong t = PositionGetTicket(i);
+      if(t > 0 && IsManaged(t)) { targetedSymbol = _Symbol; break; }
+   }
+
    // 🎯 完美補上這裡的 daily_pnl，防止獲利瞬間 UI 閃退回 0.0
    double daily_pnl = GetDailyRealizedPnL();
 
@@ -973,18 +988,22 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
          }
       }
 
-      string targetedSymbol = (trans.symbol != "") ? trans.symbol : "";
+      // [R94] 這個帳戶上可能有別的 EA（實際發生過：LTC Server 在 GBPUSD/USDCHF）。
+      //       它們的成交也會觸發 OnTradeTransaction —— 不過濾就會把別人的單
+      //       當成我們的回報給 GCP，寫進 trade_history。
+      if(trans.symbol != "" && trans.symbol != _Symbol) return;
+
+      string targetedSymbol = _Symbol;
       double lastPrice = trans.price;
       int totalPositions = PositionsTotal();
       double buyLots = 0, sellLots = 0;
-      
-      if(targetedSymbol == "" && totalPositions > 0) targetedSymbol = PositionGetSymbol(0);
-      
-      if(targetedSymbol != "" && totalPositions > 0)
+
+      if(totalPositions > 0)
       {
          for(int i = totalPositions - 1; i >= 0; i--)
          {
-            if(PositionGetSymbol(i) == targetedSymbol)
+            ulong tk2 = PositionGetTicket(i);
+            if(tk2 > 0 && IsManaged(tk2))
             {
                double volume = PositionGetDouble(POSITION_VOLUME);
                long type = PositionGetInteger(POSITION_TYPE);
