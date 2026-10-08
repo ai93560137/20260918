@@ -3251,3 +3251,630 @@
 2026-10-08 12:46:29 us NSP 2000-01-03: beyond_horizon（早於 2004-01-26）
 2026-10-08 12:46:29 us SKM 2000-01-03: beyond_horizon（早於 2004-01-26）
 2026-10-08 12:46:29 us VIAV 2000-01-03: beyond_horizon（早於 2004-01-26）
+2026-10-08 12:46:32   已 push（us 完成）
+2026-10-08 12:46:32 == tw：624 列（新→舊）==
+2026-10-08 12:46:36 tw 3406.TW 2026-09-09: ok 55 根  [1/624]
+2026-10-08 12:46:39 tw 3374.TWO 2026-09-07: ok 54 根  [2/624]
+2026-10-08 12:46:43 tw 3441.TWO 2026-09-03: ok 54 根  [3/624]
+2026-10-08 12:46:47 tw 3231.TW 2026-08-14: ok 55 根  [4/624]
+2026-10-08 12:46:50 tw 6693.TWO 2026-07-06: ok 54 根  [5/624]
+2026-10-08 12:46:54 tw 1303.TW 2026-07-01: ok 55 根  [6/624]
+2026-10-08 12:46:58 tw 6127.TWO 2026-06-25: ok 54 根  [7/624]
+2026-10-08 12:47:01 tw 6548.TWO 2026-06-23: ok 54 根  [8/624]
+2026-10-08 12:47:05 tw 3026.TW 2026-06-10: ok 55 根  [9/624]
+2026-10-08 12:47:08 tw 4973.TWO 2026-06-10: ok 54 根  [10/624]
+2026-10-08 12:47:12 tw 2478.TW 2026-06-08: ok 55 根  [11/624]
+2026-10-08 12:47:16 tw 7610.TW 2026-05-28: ok 55 根  [12/624]
+2026-10-08 12:47:19 tw 6715.TW 2026-05-18: ok 55 根  [13/624]
+2026-10-08 12:47:20 tw 6274.TWO 2026-05-14: no_contract: 200:No security definition has been found for the request
+2026-10-08 12:47:24 tw 6217.TWO 2026-05-13: ok 54 根  [15/624]
+2026-10-08 12:47:27 tw 6861.TW 2026-05-13: ok 55 根  [16/624]
+2026-10-08 12:47:31 tw 6531.TW 2026-05-12: ok 55 根  [17/624]
+2026-10-08 12:47:35 tw 7734.TWO 2026-05-12: ok 54 根  [18/624]
+2026-10-08 12:47:38 tw 7734.TWO 2026-05-05: ok 54 根  [19/624]
+2026-10-08 12:47:41 tw 3167.TW 2026-04-27: ok 55 根  [20/624]
+2026-10-08 12:47:44 tw 7610.TW 2026-04-22: ok 55 根  [21/624]
+2026-10-08 12:47:47 tw 6217.TWO 2026-04-20: ok 54 根  [22/624]
+2026-10-08 12:47:51 tw 6147.TWO 2026-04-17: ok 54 根  [23/624]
+2026-10-08 12:47:54 tw 2485.TW 2026-04-14: ok 55 根  [24/624]
+2026-10-08 12:47:58 tw 6187.TWO 2026-04-13: ok 54 根  [25/624]
+2026-10-08 12:48:01 tw 6217.TWO 2026-03-06: ok 54 根  [26/624]
+2026-10-08 12:48:04 tw 6515.TW 2026-03-06: ok 55 根  [27/624]
+2026-10-08 12:48:08 tw 6949.TW 2026-02-25: ok 51 根  [28/624]
+2026-10-08 12:48:12 tw 3491.TWO 2026-02-23: ok 54 根  [29/624]
+2026-10-08 12:48:15 tw 6683.TWO 2026-02-11: ok 54 根  [30/624]
+2026-10-08 12:48:19 tw 3081.TWO 2026-02-10: ok 54 根  [31/624]
+2026-10-08 12:48:22 tw 3491.TWO 2026-02-02: ok 54 根  [32/624]
+2026-10-08 12:48:25 tw 2485.TW 2026-01-28: ok 55 根  [33/624]
+2026-10-08 12:48:28 tw 2344.TW 2026-01-27: ok 55 根  [34/624]
+2026-10-08 12:48:31 tw 2344.TW 2026-01-19: ok 55 根  [35/624]
+2026-10-08 12:48:35 tw 8021.TW 2026-01-19: ok 55 根  [36/624]
+2026-10-08 12:48:38 tw 2337.TW 2026-01-16: ok 55 根  [37/624]
+2026-10-08 12:48:42 tw 2408.TW 2026-01-16: ok 55 根  [38/624]
+2026-10-08 12:48:46 tw 3006.TW 2026-01-16: ok 55 根  [39/624]
+2026-10-08 12:48:49 tw 3481.TW 2026-01-14: ok 55 根  [40/624]
+2026-10-08 12:48:53 tw 4989.TW 2026-01-14: ok 55 根  [41/624]
+2026-10-08 12:48:57 tw 5498.TWO 2026-01-13: ok 54 根  [42/624]
+2026-10-08 12:49:00 tw 6265.TWO 2026-01-08: ok 54 根  [43/624]
+2026-10-08 12:49:03 tw 8021.TW 2026-01-07: ok 55 根  [44/624]
+2026-10-08 12:49:07 tw 8110.TW 2026-01-02: ok 55 根  [45/624]
+2026-10-08 12:49:10 tw 4971.TWO 2025-12-31: ok 54 根  [46/624]
+2026-10-08 12:49:14 tw 8043.TWO 2025-12-24: ok 54 根  [47/624]
+2026-10-08 12:49:18 tw 7769.TW 2025-12-17: ok 55 根  [48/624]
+2026-10-08 12:49:21 tw 5498.TWO 2025-12-15: ok 54 根  [49/624]
+2026-10-08 12:49:24 tw 6163.TWO 2025-12-15: ok 54 根  [50/624]
+2026-10-08 12:49:27 tw 8021.TW 2025-12-10: ok 55 根  [51/624]
+2026-10-08 12:49:31 tw 3260.TWO 2025-11-10: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3260@TPEX Trades
+2026-10-08 12:49:34 tw 4967.TW 2025-11-03: ok 55 根  [53/624]
+2026-10-08 12:49:38 tw 6223.TWO 2025-10-28: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6223@TPEX Trades
+2026-10-08 12:49:42 tw 8996.TW 2025-10-28: ok 55 根  [55/624]
+2026-10-08 12:49:45 tw 4967.TW 2025-10-27: ok 55 根  [56/624]
+2026-10-08 12:49:47 tw 6515.TW 2025-10-27: ok 55 根  [57/624]
+2026-10-08 12:49:51 tw 1504.TW 2025-10-21: ok 55 根  [58/624]
+2026-10-08 12:49:55 tw 4768.TWO 2025-10-21: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 4768@TPEX Trades
+2026-10-08 12:49:58 tw 2408.TW 2025-10-07: ok 55 根  [60/624]
+2026-10-08 12:50:01 tw 5314.TWO 2025-09-22: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5314@TPEX Trades
+2026-10-08 12:50:05 tw 6739.TWO 2025-09-16: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6739@TPEX Trades
+2026-10-08 12:50:08 tw 8033.TW 2025-08-14: ok 55 根  [63/624]
+2026-10-08 12:50:12 tw 2316.TW 2025-08-12: ok 55 根  [64/624]
+2026-10-08 12:50:16 tw 5475.TWO 2025-08-12: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5475@TPEX Trades
+2026-10-08 12:50:19 tw 8210.TW 2025-08-08: ok 55 根  [66/624]
+2026-10-08 12:50:22 tw 3167.TW 2025-08-04: ok 55 根  [67/624]
+2026-10-08 12:50:22 tw 6274.TWO 2025-07-31: no_contract: 200:No security definition has been found for the request
+2026-10-08 12:50:26 tw 3661.TW 2025-07-24: ok 55 根  [69/624]
+2026-10-08 12:50:30 tw 3708.TW 2025-07-23: ok 55 根  [70/624]
+2026-10-08 12:50:33 tw 5439.TWO 2025-07-22: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5439@TPEX Trades
+2026-10-08 12:50:36 tw 3167.TW 2025-07-11: ok 55 根  [72/624]
+2026-10-08 12:50:40 tw 3535.TW 2025-07-11: ok 55 根  [73/624]
+2026-10-08 12:50:42 tw 5439.TWO 2025-07-09: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5439@TPEX Trades
+2026-10-08 12:50:46 tw 6499.TWO 2025-07-08: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6499@TPEX Trades
+2026-10-08 12:50:49 tw 6739.TWO 2025-07-07: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6739@TPEX Trades
+2026-10-08 12:50:52 tw 8210.TW 2025-07-07: ok 55 根  [77/624]
+2026-10-08 12:50:55 tw 3131.TWO 2025-06-24: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3131@TPEX Trades
+2026-10-08 12:50:59 tw 3017.TW 2025-05-21: ok 55 根  [79/624]
+2026-10-08 12:51:02 tw 6558.TW 2025-02-19: ok 55 根  [80/624]
+2026-10-08 12:51:06 tw 6191.TW 2025-02-06: ok 55 根  [81/624]
+2026-10-08 12:51:09 tw 6215.TW 2025-02-06: ok 55 根  [82/624]
+2026-10-08 12:51:13 tw 8937.TWO 2025-01-20: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8937@TPEX Trades
+2026-10-08 12:51:16 tw 4991.TWO 2025-01-10: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 4991@TPEX Trades
+2026-10-08 12:51:20 tw 8114.TW 2025-01-07: ok 55 根  [85/624]
+2026-10-08 12:51:24 tw 3019.TW 2024-12-31: ok 55 根  [86/624]
+2026-10-08 12:51:27 tw 4571.TW 2024-12-31: ok 55 根  [87/624]
+2026-10-08 12:51:31 tw 6442.TW 2024-12-27: ok 55 根  [88/624]
+2026-10-08 12:51:35 tw 4540.TW 2024-12-26: ok 55 根  [89/624]
+2026-10-08 12:51:38 tw 6781.TW 2024-12-26: ok 55 根  [90/624]
+2026-10-08 12:51:41 tw 5314.TWO 2024-12-17: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5314@TPEX Trades
+2026-10-08 12:51:44 tw 8937.TWO 2024-10-29: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8937@TPEX Trades
+2026-10-08 12:51:47 tw 2399.TW 2024-10-23: ok 55 根  [93/624]
+2026-10-08 12:51:51 tw 6609.TWO 2024-10-15: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6609@TPEX Trades
+2026-10-08 12:51:54 tw 3167.TW 2024-10-09: ok 55 根  [95/624]
+2026-10-08 12:51:57 tw 6706.TW 2024-10-07: ok 55 根  [96/624]
+2026-10-08 12:52:00 tw 6187.TWO 2024-10-04: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6187@TPEX Trades
+2026-10-08 12:52:03 tw 4563.TWO 2024-10-01: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 4563@TPEX Trades
+2026-10-08 12:52:07 tw 6530.TWO 2024-10-01: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6530@TPEX Trades
+2026-10-08 12:52:11 tw 1540.TW 2024-09-26: ok 55 根  [100/624]
+2026-10-08 12:52:14 tw 1784.TWO 2024-07-18: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 1784@TPEX Trades
+2026-10-08 12:52:18 tw 6869.TW 2024-07-15: ok 55 根  [102/624]
+2026-10-08 12:52:20 tw 1784.TWO 2024-07-08: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 1784@TPEX Trades
+2026-10-08 12:52:24 tw 6640.TWO 2024-07-01: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6640@TPEX Trades
+2026-10-08 12:52:27 tw 3312.TW 2024-06-27: ok 55 根  [105/624]
+2026-10-08 12:52:31 tw 6451.TW 2024-06-27: ok 55 根  [106/624]
+2026-10-08 12:52:35 tw 2486.TW 2024-06-26: ok 55 根  [107/624]
+2026-10-08 12:52:38 tw 6442.TW 2024-06-21: ok 55 根  [108/624]
+2026-10-08 12:52:40 tw 3312.TW 2024-06-18: ok 55 根  [109/624]
+2026-10-08 12:52:44 tw 8096.TWO 2024-06-14: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8096@TPEX Trades
+2026-10-08 12:52:47 tw 2486.TW 2024-06-04: ok 55 根  [111/624]
+2026-10-08 12:52:50 tw 2359.TW 2024-05-30: ok 55 根  [112/624]
+2026-10-08 12:52:54 tw 2609.TW 2024-05-27: ok 55 根  [113/624]
+2026-10-08 12:52:58 tw 2615.TW 2024-05-27: ok 55 根  [114/624]
+2026-10-08 12:53:01 tw 8089.TWO 2024-05-24: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8089@TPEX Trades
+2026-10-08 12:53:04 tw 3491.TWO 2024-05-15: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3491@TPEX Trades
+2026-10-08 12:53:07 tw 2359.TW 2024-04-12: ok 55 根  [117/624]
+2026-10-08 12:53:10 tw 1503.TW 2024-04-09: ok 55 根  [118/624]
+2026-10-08 12:53:14 tw 6535.TWO 2024-04-03: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6535@TPEX Trades
+2026-10-08 12:53:17 tw 5225.TW 2024-04-01: ok 55 根  [120/624]
+2026-10-08 12:53:21 tw 5432.TWO 2024-03-28: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5432@TPEX Trades
+2026-10-08 12:53:24 tw 4909.TWO 2024-03-27: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 4909@TPEX Trades
+2026-10-08 12:53:28 tw 1519.TW 2024-03-22: ok 55 根  [123/624]
+2026-10-08 12:53:31 tw 6535.TWO 2024-03-21: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6535@TPEX Trades
+2026-10-08 12:53:34 tw 6805.TW 2024-03-01: ok 55 根  [125/624]
+2026-10-08 12:53:38 tw 2465.TW 2024-02-27: ok 55 根  [126/624]
+2026-10-08 12:53:41 tw 8096.TWO 2024-02-27: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8096@TPEX Trades
+2026-10-08 12:53:44 tw 6113.TWO 2024-02-26: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6113@TPEX Trades
+2026-10-08 12:53:48 tw 6462.TWO 2024-02-26: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6462@TPEX Trades
+2026-10-08 12:53:51 tw 1519.TW 2024-02-19: ok 55 根  [130/624]
+2026-10-08 12:53:54 tw 5426.TWO 2024-02-19: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5426@TPEX Trades
+2026-10-08 12:53:57 tw 6805.TW 2024-01-31: ok 55 根  [132/624]
+2026-10-08 12:54:00 tw 8089.TWO 2024-01-31: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8089@TPEX Trades
+2026-10-08 12:54:03 tw 3228.TWO 2024-01-26: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3228@TPEX Trades
+2026-10-08 12:54:06 tw 3228.TWO 2024-01-03: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3228@TPEX Trades
+2026-10-08 12:54:09 tw 5521.TW 2024-01-02: ok 55 根  [136/624]
+2026-10-08 12:54:13 tw 6139.TW 2024-01-02: ok 55 根  [137/624]
+2026-10-08 12:54:17 tw 8054.TWO 2024-01-02: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 8054@TPEX Trades
+2026-10-08 12:54:20 tw 6139.TW 2023-12-12: ok 55 根  [139/624]
+2026-10-08 12:54:23 tw 2543.TW 2023-12-01: ok 55 根  [140/624]
+2026-10-08 12:54:26 tw 3228.TWO 2023-11-30: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3228@TPEX Trades
+2026-10-08 12:54:29 tw 8210.TW 2023-11-30: ok 55 根  [142/624]
+2026-10-08 12:54:32 tw 3545.TW 2023-11-28: ok 55 根  [143/624]
+2026-10-08 12:54:36 tw 3122.TWO 2023-11-23: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3122@TPEX Trades
+2026-10-08 12:54:39 tw 2465.TW 2023-11-21: ok 55 根  [145/624]
+2026-10-08 12:54:42 tw 3036.TW 2023-10-17: ok 55 根  [146/624]
+2026-10-08 12:54:45 tw 1519.TW 2023-07-27: ok 55 根  [147/624]
+2026-10-08 12:54:49 tw 3363.TWO 2023-07-26: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3363@TPEX Trades
+2026-10-08 12:54:52 tw 2388.TW 2023-07-21: ok 55 根  [149/624]
+2026-10-08 12:54:55 tw 3231.TW 2023-07-21: ok 55 根  [150/624]
+2026-10-08 12:54:59 tw 4979.TWO 2023-07-21: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 4979@TPEX Trades
+2026-10-08 12:55:02 tw 1519.TW 2023-06-16: ok 55 根  [152/624]
+2026-10-08 12:55:05 tw 3693.TWO 2023-06-15: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3693@TPEX Trades
+2026-10-08 12:55:09 tw 2421.TW 2023-06-09: ok 55 根  [154/624]
+2026-10-08 12:55:12 tw 6235.TW 2023-06-09: ok 55 根  [155/624]
+2026-10-08 12:55:16 tw 3058.TW 2023-06-06: ok 55 根  [156/624]
+2026-10-08 12:55:19 tw 6625.TW 2023-06-05: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6625@TWSE Trades
+2026-10-08 12:55:23 tw 6122.TWO 2023-06-01: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6122@TPEX Trades
+2026-10-08 12:55:26 tw 6139.TW 2023-05-29: ok 55 根  [159/624]
+2026-10-08 12:55:30 tw 2453.TW 2023-04-17: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 2453@TWSE Trades
+2026-10-08 12:55:33 tw 3661.TW 2023-04-11: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3661@TWSE Trades
+2026-10-08 12:55:36 tw 2482.TW 2023-04-06: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 2482@TWSE Trades
+2026-10-08 12:55:39 tw 6235.TW 2023-04-06: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6235@TWSE Trades
+2026-10-08 12:55:42 tw 2482.TW 2023-02-15: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:55:45 tw 4763.TW 2023-02-15: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:55:48 tw 8996.TW 2023-02-08: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:55:52 tw 3027.TW 2023-01-31: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:55:55 tw 6620.TWO 2023-01-31: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6620@TPEX Trades
+2026-10-08 12:55:59 tw 1529.TW 2023-01-30: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:02 tw 1795.TW 2022-12-05: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 1795@TWSE Trades
+2026-10-08 12:56:06 tw 2468.TW 2022-12-05: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:09 tw 8996.TW 2022-12-01: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:12 tw 6133.TW 2022-11-29: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:16 tw 3443.TW 2022-11-28: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:20 tw 6472.TW 2022-11-23: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6472@TWSE Trades
+2026-10-08 12:56:22 tw 2468.TW 2022-11-21: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:26 tw 3289.TWO 2022-11-21: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3289@TPEX Trades
+2026-10-08 12:56:29 tw 5258.TW 2022-08-25: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5258@TWSE Trades
+2026-10-08 12:56:33 tw 3205.TWO 2022-08-16: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3205@TPEX Trades
+2026-10-08 12:56:36 tw 2364.TW 2022-08-12: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:40 tw 6118.TWO 2022-08-11: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6118@TPEX Trades
+2026-10-08 12:56:43 tw 2388.TW 2022-08-10: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:45 tw 6715.TW 2022-08-09: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6715@TWSE Trades
+2026-10-08 12:56:49 tw 3362.TWO 2022-08-08: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3362@TPEX Trades
+2026-10-08 12:56:52 tw 6133.TW 2022-08-04: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:56:55 tw 3265.TWO 2022-06-10: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3265@TPEX Trades
+2026-10-08 12:56:58 tw 5258.TW 2022-06-10: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5258@TWSE Trades
+2026-10-08 12:57:01 tw 6470.TWO 2022-06-08: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6470@TPEX Trades
+2026-10-08 12:57:05 tw 3558.TWO 2022-06-02: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3558@TPEX Trades
+2026-10-08 12:57:08 tw 3443.TW 2022-06-01: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:57:11 tw 3624.TWO 2022-01-18: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3624@TPEX Trades
+2026-10-08 12:57:15 tw 3687.TWO 2022-01-04: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3687@TPEX Trades
+2026-10-08 12:57:18 tw 3508.TWO 2022-01-03: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3508@TPEX Trades
+2026-10-08 12:57:21 tw 6118.TWO 2022-01-03: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 6118@TPEX Trades
+2026-10-08 12:57:24 tw 3687.TWO 2021-12-28: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 3687@TPEX Trades
+2026-10-08 12:57:27 tw 1611.TW 2021-12-22: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:57:31 tw 3701.TW 2021-11-24: no_data: 162:Historical Market Data Service error message:No market data permissions for TAI STK
+2026-10-08 12:57:34 tw 5351.TWO 2021-11-16: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5351@TPEX Trades
+2026-10-08 12:57:38 tw 5227.TWO 2021-11-15: no_data: 162:Historical Market Data Service error message:HMDS query returned no data: 5227@TPEX Trades
+2026-10-08 12:57:38 ** tw：連續 40 次無數據且都早於最舊成功日 2023-05-29 → 地平線 = 2023-05-29，更舊的列跳過
+2026-10-08 12:57:38 tw 3141.TWO 2021-11-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3701.TW 2021-11-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2498.TW 2021-11-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1727.TW 2021-11-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2013.TW 2021-09-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3675.TWO 2021-09-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2013.TW 2021-09-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2032.TW 2021-07-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2486.TW 2021-07-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6509.TWO 2021-07-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2032.TW 2021-07-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3141.TWO 2021-07-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3530.TW 2021-06-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3530.TW 2021-06-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2609.TW 2021-06-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2636.TW 2021-06-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2615.TW 2021-06-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2465.TW 2021-06-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2609.TW 2021-04-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6589.TW 2021-04-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2399.TW 2021-03-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2465.TW 2021-03-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3552.TWO 2021-02-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3552.TWO 2021-01-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4961.TW 2021-01-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3149.TW 2021-01-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6237.TWO 2021-01-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3704.TW 2021-01-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2028.TW 2021-01-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2009.TW 2021-01-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3552.TWO 2020-12-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3481.TW 2020-12-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3481.TW 2020-12-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3666.TWO 2020-12-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6533.TW 2020-12-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3666.TWO 2020-12-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3228.TWO 2020-12-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6150.TWO 2020-12-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6617.TWO 2020-12-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3580.TWO 2020-11-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3580.TWO 2020-11-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4976.TW 2020-11-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2399.TW 2020-11-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6125.TWO 2020-10-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2331.TW 2020-10-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6233.TWO 2020-10-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4934.TW 2020-09-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6237.TWO 2020-09-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3540.TWO 2020-08-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1589.TW 2020-08-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3540.TWO 2020-08-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3669.TW 2020-07-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4968.TW 2020-07-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6104.TWO 2020-07-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6223.TWO 2020-07-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6683.TWO 2020-07-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4102.TWO 2020-07-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6547.TWO 2020-07-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3661.TW 2020-07-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6547.TWO 2020-07-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4743.TWO 2020-07-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2417.TW 2020-06-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4133.TW 2020-06-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3218.TWO 2020-06-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4171.TWO 2020-06-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6531.TW 2020-06-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4171.TWO 2020-05-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1515.TW 2020-05-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2368.TW 2020-04-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3373.TWO 2020-04-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3406.TW 2019-12-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2409.TW 2019-12-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6510.TWO 2019-12-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3653.TW 2019-11-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4908.TWO 2019-11-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3680.TWO 2019-11-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 9935.TW 2019-11-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4935.TW 2019-11-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6510.TWO 2019-11-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3661.TW 2019-11-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6538.TWO 2019-11-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8086.TWO 2019-11-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2504.TW 2019-11-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3661.TW 2019-11-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 9935.TW 2019-11-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2327.TW 2019-10-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3218.TWO 2019-10-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6510.TWO 2019-10-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 9802.TW 2019-10-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4968.TW 2019-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3324.TWO 2019-10-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3479.TWO 2019-10-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8046.TW 2019-10-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4935.TW 2019-10-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8086.TWO 2019-10-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2316.TW 2019-09-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6510.TWO 2019-09-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3479.TWO 2019-09-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3661.TW 2019-09-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2316.TW 2019-09-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4935.TW 2019-09-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6213.TW 2019-09-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6510.TWO 2019-09-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6213.TW 2019-07-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6278.TW 2019-07-29: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3293.TWO 2019-07-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6213.TW 2019-07-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4968.TW 2019-07-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1736.TW 2019-07-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6415.TW 2019-07-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8924.TWO 2019-07-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3293.TWO 2019-06-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2207.TW 2019-06-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4968.TW 2019-06-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2316.TW 2019-04-29: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3535.TW 2019-04-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4728.TWO 2019-04-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3483.TWO 2019-04-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3105.TWO 2019-04-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4953.TWO 2019-04-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6462.TWO 2019-04-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6245.TWO 2019-03-29: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5340.TWO 2019-03-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6462.TWO 2019-03-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4728.TWO 2019-03-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3338.TW 2019-03-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4536.TW 2019-03-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6278.TW 2019-03-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3338.TW 2019-02-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6426.TW 2019-02-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6278.TW 2019-02-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6290.TWO 2019-02-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3324.TWO 2019-02-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6558.TW 2019-02-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4536.TW 2019-01-29: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3322.TWO 2019-01-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4953.TWO 2019-01-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6266.TWO 2019-01-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6160.TWO 2018-09-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6155.TW 2018-07-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6127.TWO 2018-06-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3707.TWO 2018-06-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3016.TW 2018-06-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2478.TW 2018-06-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2492.TW 2018-06-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3624.TWO 2018-06-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3563.TW 2018-05-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2327.TW 2018-05-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2478.TW 2018-05-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2492.TW 2018-05-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6615.TWO 2018-05-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4540.TW 2018-03-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3563.TW 2018-01-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1815.TWO 2018-01-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8489.TWO 2018-01-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3508.TWO 2017-11-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4943.TW 2017-11-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1515.TW 2017-10-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2337.TW 2017-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8924.TWO 2017-10-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1526.TW 2017-10-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4739.TW 2017-10-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6290.TWO 2017-10-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5285.TW 2017-09-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3413.TW 2017-08-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6411.TWO 2017-07-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6456.TW 2017-07-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1218.TW 2017-07-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5263.TWO 2017-07-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2399.TW 2017-07-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4912.TW 2017-07-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3018.TW 2017-07-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4943.TW 2017-07-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4912.TW 2017-06-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2231.TW 2017-06-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3018.TW 2017-06-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6165.TW 2017-05-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3580.TWO 2017-05-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6426.TW 2017-05-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3661.TW 2017-05-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3031.TW 2017-04-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6426.TW 2017-03-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2337.TW 2017-03-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4903.TWO 2017-03-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3313.TWO 2017-02-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3313.TWO 2017-02-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6182.TWO 2017-02-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3532.TW 2017-01-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6182.TWO 2017-01-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2331.TW 2017-01-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6488.TWO 2017-01-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6220.TWO 2016-12-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3483.TWO 2016-10-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6548.TWO 2016-10-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6220.TWO 2016-10-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1569.TWO 2016-10-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6116.TW 2016-10-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8436.TWO 2016-10-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2439.TW 2016-09-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3374.TWO 2016-09-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5269.TW 2016-09-29: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2328.TW 2016-09-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2328.TW 2016-09-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8358.TWO 2016-09-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8444.TWO 2016-09-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3236.TWO 2016-08-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8444.TWO 2016-08-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8444.TWO 2016-08-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6230.TW 2016-08-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2016-08-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1563.TW 2016-08-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3535.TW 2016-08-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2016-07-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4935.TW 2016-07-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4916.TW 2016-07-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8358.TWO 2016-07-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2488.TW 2016-07-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 9911.TW 2016-07-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4534.TWO 2016-07-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1527.TW 2016-07-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3324.TWO 2016-07-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3527.TWO 2016-07-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2488.TW 2016-06-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2488.TW 2016-06-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3450.TW 2016-04-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8038.TWO 2016-03-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3289.TWO 2016-03-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6230.TW 2016-03-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2419.TW 2016-02-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6158.TWO 2016-02-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3324.TWO 2016-02-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5245.TWO 2016-02-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1541.TW 2015-11-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4426.TW 2015-11-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3234.TWO 2015-11-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8433.TWO 2015-11-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5315.TWO 2015-10-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3234.TWO 2015-10-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6143.TWO 2015-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2015-10-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4426.TW 2015-10-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1541.TW 2015-10-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8433.TWO 2015-10-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3081.TWO 2015-09-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3205.TWO 2015-09-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3523.TWO 2015-09-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6446.TW 2015-09-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1707.TW 2015-05-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3708.TW 2015-05-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5474.TWO 2015-04-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8431.TWO 2015-04-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8086.TWO 2015-03-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8016.TW 2015-03-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3532.TW 2015-02-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3081.TWO 2015-02-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4979.TWO 2015-01-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8234.TWO 2014-09-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5392.TWO 2014-09-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1225.TW 2014-09-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2327.TW 2014-08-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2390.TW 2014-07-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 9944.TW 2014-07-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3048.TW 2014-07-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3289.TWO 2014-07-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6104.TWO 2014-07-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5457.TWO 2014-06-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3529.TWO 2014-06-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3289.TWO 2014-06-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2231.TW 2014-06-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3289.TWO 2014-05-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2408.TW 2014-05-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3008.TW 2014-05-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3623.TWO 2014-05-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3293.TWO 2014-05-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2014-05-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2014-04-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3032.TW 2014-04-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4915.TW 2014-04-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3006.TW 2014-04-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3289.TWO 2014-04-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3594.TWO 2014-04-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3664.TWO 2014-04-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3289.TWO 2014-04-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2014-04-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1583.TW 2014-04-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1795.TW 2014-03-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1583.TW 2014-03-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5263.TWO 2014-03-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5263.TWO 2014-03-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1795.TW 2014-03-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3541.TWO 2014-03-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1589.TW 2013-12-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2642.TW 2013-12-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6146.TWO 2013-12-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8074.TWO 2013-12-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2206.TW 2013-10-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1589.TW 2013-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2206.TW 2013-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3229.TW 2013-10-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2356.TW 2013-10-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4726.TWO 2013-10-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8916.TWO 2013-10-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8916.TWO 2013-09-06: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2356.TW 2013-07-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3498.TWO 2013-07-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3006.TW 2013-05-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6116.TW 2013-05-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3338.TW 2013-05-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3450.TW 2013-04-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8996.TW 2013-02-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2390.TW 2013-02-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3131.TWO 2013-02-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3680.TWO 2013-02-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6230.TW 2013-02-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8996.TW 2013-02-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5306.TW 2013-02-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2514.TW 2013-01-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2514.TW 2012-12-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3373.TWO 2012-09-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6143.TWO 2012-09-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3058.TW 2012-09-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2514.TW 2012-09-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4919.TW 2012-09-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3607.TW 2012-08-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3680.TWO 2012-08-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3548.TWO 2012-07-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2449.TW 2012-06-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3176.TWO 2012-03-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6245.TWO 2012-03-22: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5306.TW 2012-03-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3019.TW 2012-03-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8076.TWO 2012-03-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3265.TWO 2012-03-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2425.TW 2012-02-29: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3047.TW 2012-01-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3293.TWO 2012-01-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2227.TW 2012-01-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8299.TWO 2012-01-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1231.TW 2011-07-28: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3211.TWO 2011-07-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3441.TWO 2011-07-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3632.TWO 2011-07-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2474.TW 2011-05-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3013.TW 2011-04-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2049.TW 2011-04-11: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3013.TW 2011-04-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1308.TW 2011-02-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1304.TW 2011-02-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1304.TW 2011-01-25: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1308.TW 2011-01-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1414.TW 2011-01-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1414.TW 2010-12-27: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2367.TW 2010-12-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2516.TW 2010-12-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4523.TWO 2010-12-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8044.TWO 2010-12-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2516.TW 2010-12-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1414.TW 2010-12-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1718.TW 2010-11-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3406.TW 2010-11-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1304.TW 2010-10-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1466.TW 2010-10-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1476.TW 2010-10-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4105.TWO 2010-10-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1795.TW 2010-09-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1466.TW 2010-09-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1476.TW 2010-09-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5530.TWO 2010-09-17: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6269.TW 2010-09-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1440.TW 2010-08-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2707.TW 2010-08-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3043.TW 2010-08-12: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6210.TWO 2010-08-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2609.TW 2010-08-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3043.TW 2010-07-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2915.TW 2010-04-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5530.TWO 2010-04-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3013.TW 2010-04-08: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1815.TWO 2010-04-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3029.TW 2010-04-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3013.TW 2010-03-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3533.TW 2010-01-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1702.TW 2010-01-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3029.TW 2010-01-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3029.TW 2010-01-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6223.TWO 2010-01-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8070.TW 2009-12-30: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3523.TWO 2009-12-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6150.TWO 2009-12-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6197.TW 2009-11-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3450.TW 2009-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8070.TW 2009-10-23: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 1558.TW 2009-10-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3095.TWO 2009-10-21: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3306.TWO 2009-10-19: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2428.TW 2009-10-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3095.TWO 2009-10-07: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3038.TW 2009-10-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3164.TW 2009-10-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6126.TWO 2009-10-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2455.TW 2009-10-01: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6143.TWO 2009-09-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6290.TWO 2009-09-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3533.TW 2009-09-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3305.TW 2009-09-04: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3533.TW 2009-09-03: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2545.TW 2009-07-31: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2545.TW 2009-07-20: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2455.TW 2009-07-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5531.TW 2009-06-02: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2383.TW 2009-05-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3260.TWO 2009-05-14: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8299.TWO 2009-05-05: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3083.TWO 2009-04-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 5381.TWO 2009-04-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2388.TW 2009-04-15: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2545.TW 2009-04-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6156.TWO 2009-04-10: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 3038.TW 2009-04-09: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 6235.TW 2009-03-26: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8261.TW 2009-03-24: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 8299.TWO 2009-03-18: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 4105.TWO 2009-02-16: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2033.TW 2009-01-13: beyond_horizon（早於 2023-05-29）
+2026-10-08 12:57:38 tw 2033.TW 2009-01-06: beyond_horizon（早於 2023-05-29）
