@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-08 — [R131] ES 的四次 Telegram 報告（.github/workflows/es_range_report.yml，紐約時間 18:07 開市前預測、09:37 隔夜時段檢討、
+#     16:07 RTH 收市檢討、17:07 全日收市檢討）：檢討的截止時間、標題、分段（隔夜／RTH）與文字的市場名稱都由 MARKETS['reviews'] 決定，
+#     恒指的 12:00／16:30／03:00 不變。
 #   * 2026-10-08 — [R130] 日內引擎按市場切換（為 ES 5 分 K 推送做準備）：交易日起點（HK 09:00／US 18:00）、15 分鐘變異比例
 #     （US 用 Dukascopy USA500 最近 250 日）、C 時間點（US 16:00 RTH 收市）、回測準確率（research/us_futures/hl_signal_us）、通知文字的市場名稱、
 #     蛇日切法（US 整段一天不分日夜）、5 分 K 封存跨日讀取（US 前一天 18:00 起）都由 MARKETS 決定；ES 頁有 5 分 K 快照就顯示現價、
@@ -2217,12 +2220,20 @@ NY_TZ = ZoneInfo("America/New_York")
 MARKETS = {
     "HK": {"key": "HK", "tz": HK_TZ, "shift": -9, "calendar": True, "preopen": ("03:05", "09:15"), "end": (1, "03:00"),
            "start_hour": 9, "c_cut_day": "16:30", "snake_split": True,                 # [R130] 交易日起點、C 時間點、蛇日分日市／夜市
+           "reviews": {"noon": ("🕛", "午市收市檢討", "12:00"), "close": ("🕟", "日市收市檢討", "16:30"),      # [R131] 三次檢討
+                       "night": ("🌙", "全日收市檢討（日市＋夜市）", None)},
+           "review_label": {"noon": "上午", "close": "日市", "night": "全日"}, "night_split": ("16:30", "日市", "夜市"),
+           "reviews_zh": "12:00／16:30／03:00",
            "zh": "恒指即月期貨", "title": "🌬️ 風揚陣・恒指即月期貨波幅", "view": "futu_range", "icon": "🌬️",
            "session_zh": "日市＋當晚夜市", "hours_zh": "交易日 = 日市 09:15–16:30 ＋ 當晚夜市至翌日 03:00",
            "day_zh": "香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00（跟富途日 K 不同）",
            "open_zh": "09:15 開市後", "unit_zh": "恒指期貨每點 HK$50，小型恒指 HK$10", "intraday": True},
     "US": {"key": "US", "tz": NY_TZ, "shift": 6, "calendar": False, "preopen": ("18:00", "19:00"), "end": (0, "17:00"),
            "start_hour": 18, "c_cut_day": "16:00", "snake_split": False,               # [R130] 整段 23 小時當一天；C 看 16:00 RTH 收市
+           "reviews": {"noon": ("🕤", "隔夜時段檢討（前一天 18:00 至 09:30 ET）", "09:30"), "close": ("🕓", "RTH 收市檢討（至 16:00 ET）", "16:00"),
+                       "night": ("🌙", "全日收市檢討（CME 全段）", None)},                              # [R131]
+           "review_label": {"noon": "隔夜時段", "close": "開市至 RTH 收市", "night": "全日"}, "night_split": ("09:30", "隔夜", "日間（RTH＋尾段）"),
+           "reviews_zh": "09:30／16:00／17:00 ET",
            "zh": "ES 標普 500 期貨", "title": "🇺🇸 風揚陣・ES 標普 500 期貨波幅", "view": "es_range", "icon": "🇺🇸",
            "session_zh": "CME 全段 23 小時", "hours_zh": "交易日 = CME 全段：紐約時間前一天 18:00 至當天 17:00（香港 06:00／07:00 至翌日 05:00／06:00）",
            "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 yfinance 的連續合約日線，轉月不做價差調整",
@@ -2643,10 +2654,11 @@ def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
     return f"{name} {actual:,.0f}：未到預測 {fc:,.0f}（差 {abs(fc - actual):,.0f} 點）"
 
 
-def futu_preopen_text(fc, day, contract, summary, peak=None):
-    lines = [f"📏{FENGYANG_TAG}恒指即月期貨 {_day_label(day)} 開市前預測",
+def futu_preopen_text(fc, day, contract, summary, peak=None, symbol=None):
+    m = futu_market(symbol)                                                # [R131] 市場名稱與時段文字
+    lines = [f"📏{FENGYANG_TAG}{m['zh']} {_day_label(day)} 開市前預測",
              f"參考：上個交易日收市 {fc['ref_close']:,.0f}" + (f"（{contract}）" if contract else ""),
-             f"全日波幅（日市＋夜市）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
+             f"全日波幅（{m['session_zh']}）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
     if fc.get("gate_ratio") is not None:                                # [R118]
         lines.append(f"波幅開閘：{_paper_gate_text(fc)}（過去 {PAPER_GATE_LOOKBACK} 日 R̂ 中位 {fc['rhat_med250']:,.0f} 點；紙上交易今日張數）")
     if fc.get("high") is not None:
@@ -2660,23 +2672,25 @@ def futu_preopen_text(fc, day, contract, summary, peak=None):
     return "\n".join(lines)
 
 
-def futu_review(kind, day, fc, bars, track=None, peak=None):
-    """四個時點中的三個檢討；沒有這一天的 K 線（休市）→ None。"""
-    icon, title, cut = REVIEW_KINDS[kind]
+def futu_review(kind, day, fc, bars, track=None, peak=None, symbol=None):
+    """四個時點中的三個檢討；沒有這一天的 K 線（休市）→ None。[R131] 截止時間、標題、分段按市場（MARKETS['reviews']）。"""
+    m = futu_market(symbol)
+    icon, title, cut = m["reviews"][kind]
     seg = [b for b in bars if b["time_key"] <= f"{day} {cut}:00"] if cut else bars
     if not seg:
         return None
     o, h, l, c = _ohlc(seg)
     rng = h - l
-    label = {"noon": "上午", "close": "日市", "night": "全日"}[kind]
-    lines = [f"{icon}{FENGYANG_TAG}恒指即月期貨 {_day_label(day)} {title}",
+    label = m["review_label"][kind]
+    lines = [f"{icon}{FENGYANG_TAG}{m['zh']} {_day_label(day)} {title}",
              f"{label}：開 {o:,.0f}　高 {h:,.0f}　低 {l:,.0f}　收 {c:,.0f}"]
     if kind == "night":
-        day_seg = [b for b in bars if b["time_key"] <= f"{day} 16:30:00"]
-        night_seg = [b for b in bars if b["time_key"] > f"{day} 16:30:00"]
+        split, zh_a, zh_b = m["night_split"]
+        day_seg = [b for b in bars if b["time_key"] <= f"{day} {split}:00"]
+        night_seg = [b for b in bars if b["time_key"] > f"{day} {split}:00"]
         if day_seg and night_seg:
-            lines.append(f"日市 高 {max(b['high'] for b in day_seg):,.0f} 低 {min(b['low'] for b in day_seg):,.0f}；"
-                         f"夜市 高 {max(b['high'] for b in night_seg):,.0f} 低 {min(b['low'] for b in night_seg):,.0f}")
+            lines.append(f"{zh_a} 高 {max(b['high'] for b in day_seg):,.0f} 低 {min(b['low'] for b in day_seg):,.0f}；"
+                         f"{zh_b} 高 {max(b['high'] for b in night_seg):,.0f} 低 {min(b['low'] for b in night_seg):,.0f}")
     numbers = {"open": o, "high": h, "low": l, "close": c, "range": rng, "bars": len(seg)}
     if fc:
         if kind == "night":
@@ -2734,7 +2748,7 @@ def futu_report(symbol, kind, now=None):
                                   ("open", "high", "low", "close", "volume", "source")}) for r in rows if r["date"] < day], day)
         summary = {"avg_range_20": stats["summary"].get("avg_range_20"), "bt_mae": stats["backtest"].get("mae")}
         return {"status": "ok", "kind": kind, "date": day, "forecast": fc,
-                "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now) + futu_paper_lines(symbol))}
+                "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now) + futu_paper_lines(symbol), symbol)}
     if kind not in REVIEW_KINDS:
         return {"status": "error", "reason": "report 只接受 preopen、noon、close、night"}
     day = futu_session_today(now, symbol)
@@ -2744,7 +2758,7 @@ def futu_report(symbol, kind, now=None):
     done = [r for r in rows if r["date"] <= day] if kind == "night" else [r for r in rows if r["date"] < day]
     track = futu_forecast_track(log if isinstance(log, list) else [], done) if kind == "night" else None
     review = futu_review(kind, day, fc, bars, track,
-                         futu_peak_lines(symbol, now) + futu_paper_lines(symbol, bars[-1]["close"] if bars else None))
+                         futu_peak_lines(symbol, now) + futu_paper_lines(symbol, bars[-1]["close"] if bars else None), symbol)
     if not review:
         return {"status": "skip", "reason": f"{day} 沒有 5 分 K（休市或推送停了）"}
     futu_review_save(symbol, review)
@@ -4442,7 +4456,7 @@ def build_futu_range_page(data):
              + "</div>")
     review_html = "".join(f"<div class='log-card'><div class='log-ctx' style='white-space:pre-wrap;'>{esc(e.get('text', ''))}</div></div>"
                           for e in data.get("reviews") or [])
-    reviews = (f"<details class='fy-more' open><summary>🧾 {esc(latest['date'])} 的檢討（12:00／16:30／03:00）</summary>{review_html}</details>"
+    reviews = (f"<details class='fy-more' open><summary>🧾 {esc(latest['date'])} 的檢討（{m['reviews_zh']}）</summary>{review_html}</details>"
                if review_html else "")
     bt, lt = data.get("backtest") or {}, data.get("live_track") or {}
     live = (f"實時紀錄 {lt['days']} 天：平均差 {_n(lt.get('mae'))} 點、落在預計範圍 {lt.get('coverage_80')}%" if lt.get("days")

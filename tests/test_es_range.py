@@ -99,5 +99,25 @@ lines_c = main._fy_signal_lines("day", st["periods"]["day"], "high", {}, ES)
 check("ES 日卡的 C 時間點寫 16:00（恒指 16:30）", any("16:00才判斷" in x for x in lines_c) and any("16:30" in x for x in main._fy_signal_lines("day", st["periods"]["day"], "high", {}, "HK.HSI_FRONT")), lines_c)
 check("恒指頁不受影響", "恒指即月期貨波幅" in client.get("/?view=futu_range").get_data(as_text=True))
 
+
+print("\n=== [R131] ES 四次報告（紐約時間）===")
+allbars = five + more                                                   # 10-04 18:05 → 10-05 16:00
+rp = main.futu_report(ES, "noon", now=ny("2026-10-05 09:37"))
+seg = [b for b in allbars if b["time_key"] <= "2026-10-05 09:30:00"]
+check("09:37 隔夜時段檢討：ES 名稱、標題、高低 = 09:30 前的 K", rp["status"] == "ok" and "ES 標普 500 期貨" in rp["text"] and "隔夜時段檢討" in rp["text"]
+      and rp["high"] == max(b["high"] for b in seg) and rp["low"] == min(b["low"] for b in seg) and "恒指" not in rp["text"], rp)
+rp2 = main.futu_report(ES, "close", now=ny("2026-10-05 16:07"))
+check("16:07 RTH 收市檢討", rp2["status"] == "ok" and "RTH 收市檢討" in rp2["text"] and rp2["bars"] == len(allbars), rp2.get("text", rp2)[:200])
+rp3 = main.futu_report(ES, "night", now=ny("2026-10-05 17:07"))
+check("17:07 全日收市檢討：CME 全段、隔夜／日間分段", rp3["status"] == "ok" and "全日收市檢討（CME 全段）" in rp3["text"] and "隔夜 高" in rp3["text"] and "日間（RTH＋尾段） 高" in rp3["text"], rp3.get("text", rp3)[:300])
+check("三次檢討存檔、ES 頁摘要用 ET 時點（頁面只在那天有日線時顯示）", len([e for e in main.gcs_read_json(main.futu_review_file(ES), []) if e["date"] == "2026-10-05"]) == 3
+      and main.futu_market(ES)["reviews_zh"] == "09:30／16:00／17:00 ET")
+rp4 = main.futu_report(ES, "preopen", now=ny("2026-10-05 18:07"))
+check("18:07 開市前預測：記 10-06、CME 全段文字", rp4["status"] == "ok" and rp4["date"] == "2026-10-06" and "開市前預測" in rp4["text"] and "CME 全段 23 小時" in rp4["text"]
+      and main.futu_logged_forecast(ES, "2026-10-06"), rp4.get("text", rp4)[:200])
+check("週日 17:07 沒有 K → skip；週六晚 18:07 的開市前（交易日 = 週日）→ skip", main.futu_report(ES, "night", now=ny("2026-10-04 17:07"))["status"] == "skip"
+      and main.futu_report(ES, "preopen", now=ny("2026-10-03 18:07"))["status"] == "skip")
+check("恒指檢討標題不變", main.futu_market("HK.HSI_FRONT")["reviews"]["close"][1] == "日市收市檢討" and main.futu_market("HK.HSI_FRONT")["reviews"]["noon"][2] == "12:00")
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

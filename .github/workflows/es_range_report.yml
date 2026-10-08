@@ -1,0 +1,98 @@
+name: es-range-report
+# [R131] ES 標普 500 期貨（代號 US.ES_FRONT，?view=es_range）每日四個時點（紐約時間）：
+#   18:07 開市前預測（CME 全段 18:00 開市，交易日 = 前一天 18:00 至當天 17:00，日期取收市那天）
+#   09:37 隔夜時段檢討（18:00–09:30）、16:07 RTH 收市檢討（至 16:00）、17:07 全日收市檢討
+# 數字由 GCP（main.py R131）的 ?view=es_range&report=… 算好，這裡只負責取回並發 Telegram。
+# GitHub 排程是 UTC，紐約有夏令／冬令：每個時點放兩條 cron（相差 1 小時），由紐約時間決定這次是哪一種報告，
+# 不在任何時段內就靜靜結束；休市日（週末、沒有 5 分 K）GCP 回 skip，不發訊息。需要本地 futu/mt5_push.py 在推 5 分 K。
+# 排程 workflow 只在預設分支生效。統計估計，不是交易建議，不影響下單。
+on:
+  schedule:
+    - cron: '7 22 * * 0-5'    # 18:07 ET 夏令（preopen）／17:07 ET 冬令（night）
+    - cron: '7 23 * * 0-5'    # 18:07 ET 冬令（preopen）／19:07 ET 夏令（略過）
+    - cron: '37 13 * * 1-6'   # 09:37 ET 夏令（noon）／08:37 ET 冬令（略過）
+    - cron: '37 14 * * 1-6'   # 09:37 ET 冬令（noon）／10:37 ET 夏令（略過）
+    - cron: '7 20 * * 1-5'    # 16:07 ET 夏令（close）／15:07 ET 冬令（略過）
+    - cron: '7 21 * * 1-5'    # 16:07 ET 冬令（close）／17:07 ET 夏令（night）
+  workflow_dispatch:
+    inputs:
+      report:
+        description: preopen / noon / close / night
+        required: true
+        default: preopen
+      send:
+        description: 是否發 Telegram（no = 只在紀錄裡看文字）
+        required: false
+        default: 'yes'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: es-range-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: fetch report from GCP
+        id: fetch
+        env:
+          ZHUGE_GCP_URL: ${{ secrets.ZHUGE_GCP_URL }}
+          MANUAL: ${{ github.event.inputs.report }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, time, urllib.parse, urllib.request
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          ny = datetime.now(timezone.utc).astimezone(ZoneInfo("America/New_York"))
+          hm, wd = ny.strftime("%H:%M"), ny.weekday()                 # 0 = 週一
+          kind = os.environ.get("MANUAL") or ""
+          if not kind:                                                # 排程：按紐約時間決定
+              if "18:00" <= hm < "19:00" and wd in (6, 0, 1, 2, 3):   # 週日至週四晚：下一個交易日的開市前預測
+                  kind = "preopen"
+              elif "09:30" <= hm < "10:30" and wd < 5:
+                  kind = "noon"
+              elif "16:00" <= hm < "17:00" and wd < 5:
+                  kind = "close"
+              elif "17:00" <= hm < "18:00" and wd < 5:
+                  kind = "night"
+          out = open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8")
+          if kind not in ("preopen", "noon", "close", "night"):
+              print(f"紐約時間 {ny.strftime('%a %H:%M')} 不是任何報告時點，略過")
+              out.write("status=skip\n"); sys.exit(0)
+          base = os.environ.get("ZHUGE_GCP_URL", "").strip().rstrip("/")
+          if not base:
+              sys.exit("GitHub Secret ZHUGE_GCP_URL 沒設")
+          url = f"{base}/?" + urllib.parse.urlencode({"view": "es_range", "report": kind})
+          last = None
+          for attempt in range(3):                       # Cloud Run 冷啟動或暫時錯誤：重試兩次
+              try:
+                  with urllib.request.urlopen(url, timeout=60) as resp:
+                      data = json.loads(resp.read().decode("utf-8"))
+                  break
+              except Exception as exc:                   # 不印網址（在 Secret 裡）
+                  last = f"{type(exc).__name__}: {str(exc)[:120]}"
+                  time.sleep(10 * (attempt + 1))
+          else:
+              sys.exit(f"取不到報告：{last}")
+          print(f"報告 {kind}（紐約 {ny.strftime('%a %H:%M')}）：{data.get('status')} {data.get('reason', '')}")
+          out.write(f"status={data.get('status')}\n")
+          if data.get("status") == "ok":
+              open("report.txt", "w", encoding="utf-8").write(data.get("text", ""))
+              print(data.get("text", ""))
+          elif data.get("status") != "skip":
+              sys.exit(f"GCP 回 {data.get('status')}：{data.get('reason')}")
+          PY
+
+      - name: send Telegram
+        if: steps.fetch.outputs.status == 'ok' && github.event.inputs.send != 'no'
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text@report.txt" > /dev/null
+          echo "已發 Telegram"
