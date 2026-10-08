@@ -1,5 +1,5 @@
 name: hsi-peak-signal
-# 恒指即月期貨「今日／本週／本月的高位、低位可能已出現」通知。
+# 恒指即月期貨（與 [R130] ES）「今日／本週／本月的高位、低位可能已出現」通知；紙上交易通知也在這裡發。
 # GCP（main.py R101）每 5 分鐘用 A 耗盡回落、B 機率法、C 時間點三個策略判斷，第一次觸發就記一則；
 # 這裡每 15 分鐘取未發的通知、發 Telegram、再回報已發（&ack=）。通知本身在高位後幾小時才出現，15 分鐘延遲影響不大。
 # UTC 週一至五全天 = 香港週一 08:00 至週六 08:00，涵蓋日市與夜市。排程只在預設分支生效。統計判斷，不影響下單。
@@ -38,8 +38,8 @@ jobs:
           if not base:
               sys.exit("GitHub Secret ZHUGE_GCP_URL 沒設")
 
-          def get(params):
-              url = f"{base}/?" + urllib.parse.urlencode({"view": "futu_range", **params})
+          def get(params, view="futu_range"):
+              url = f"{base}/?" + urllib.parse.urlencode({"view": view, **params})
               last = None
               for attempt in range(3):                       # Cloud Run 冷啟動或暫時錯誤：重試兩次
                   try:
@@ -50,23 +50,24 @@ jobs:
                       time.sleep(10 * (attempt + 1))
               sys.exit(f"取不到通知：{last}")
 
-          data = get({"report": "signals"})
-          signals = data.get("signals") or []
-          print(f"未發通知 {len(signals)} 則")
-          if os.environ.get("SEND") == "no":
+          for view in ("futu_range", "es_range"):           # [R130] 恒指頁與 ES 頁各自的通知（ES 要有 5 分 K 推送才會有）
+              data = get({"report": "signals"}, view)
+              signals = data.get("signals") or []
+              print(f"{view}：未發通知 {len(signals)} 則")
+              if os.environ.get("SEND") == "no":
+                  for s in signals:
+                      print("---\n" + s["text"])
+                  continue
+              sent = []
               for s in signals:
-                  print("---\n" + s["text"])
-              sys.exit(0)
-          sent = []
-          for s in signals:
-              body = urllib.parse.urlencode({"chat_id": os.environ["TG_CHAT_ID"], "text": s["text"]}).encode()
-              req = urllib.request.Request(f"https://api.telegram.org/bot{os.environ['TG_BOT_TOKEN']}/sendMessage", data=body)
-              try:
-                  urllib.request.urlopen(req, timeout=30).read()
-                  sent.append(s["id"])
-              except Exception as exc:                       # 發不出的留到下一輪再發
-                  print(f"Telegram 失敗：{type(exc).__name__}")
-          if sent:
-              print(get({"report": "signals", "ack": ",".join(sent)}))
-          print(f"已發 {len(sent)} 則")
+                  body = urllib.parse.urlencode({"chat_id": os.environ["TG_CHAT_ID"], "text": s["text"]}).encode()
+                  req = urllib.request.Request(f"https://api.telegram.org/bot{os.environ['TG_BOT_TOKEN']}/sendMessage", data=body)
+                  try:
+                      urllib.request.urlopen(req, timeout=30).read()
+                      sent.append(s["id"])
+                  except Exception as exc:                       # 發不出的留到下一輪再發
+                      print(f"Telegram 失敗：{type(exc).__name__}")
+              if sent:
+                  print(get({"report": "signals", "ack": ",".join(sent)}, view))
+              print(f"{view}：已發 {len(sent)} 則")
           PY

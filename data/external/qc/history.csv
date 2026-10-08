@@ -54,3 +54,8 @@ run_date,family,status,match,match_independent,info,skip,known,fail
 2026-10-07,web_vs_web,FAIL,1,1,0,0,0,149
 2026-10-07,canary_inputs,PASS,256,20,0,3,0,0
 2026-10-07,internal,PASS,33,33,11,0,0,0
+2026-10-08,futu_vs_web,FAIL,1789,1789,496,6,0,151
+2026-10-08,ibkr_vs_web,FAIL,91,91,0,9,0,14
+2026-10-08,web_vs_web,FAIL,2,2,0,0,0,148
+2026-10-08,canary_inputs,PASS,260,24,0,3,0,0
+2026-10-08,internal,PASS,38,38,13,0,0,0
