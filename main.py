@@ -104,7 +104,7 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
-#   * 2026-10-08 — [R131] ES 的四次 Telegram 報告（.github/workflows/es_range_report.yml，紐約時間 18:07 開市前預測、09:37 隔夜時段檢討、
+#   * 2026-10-08 — [R133] ES 的四次 Telegram 報告（.github/workflows/es_range_report.yml，紐約時間 18:07 開市前預測、09:37 隔夜時段檢討、
 #     16:07 RTH 收市檢討、17:07 全日收市檢討）：檢討的截止時間、標題、分段（隔夜／RTH）與文字的市場名稱都由 MARKETS['reviews'] 決定，
 #     恒指的 12:00／16:30／03:00 不變。
 #   * 2026-10-08 — [R130] 日內引擎按市場切換（為 ES 5 分 K 推送做準備）：交易日起點（HK 09:00／US 18:00）、15 分鐘變異比例
@@ -2224,7 +2224,7 @@ NY_TZ = ZoneInfo("America/New_York")
 MARKETS = {
     "HK": {"key": "HK", "tz": HK_TZ, "shift": -9, "calendar": True, "preopen": ("03:05", "09:15"), "end": (1, "03:00"),
            "start_hour": 9, "c_cut_day": "16:30", "snake_split": True,                 # [R130] 交易日起點、C 時間點、蛇日分日市／夜市
-           "reviews": {"noon": ("🕛", "午市收市檢討", "12:00"), "close": ("🕟", "日市收市檢討", "16:30"),      # [R131] 三次檢討
+           "reviews": {"noon": ("🕛", "午市收市檢討", "12:00"), "close": ("🕟", "日市收市檢討", "16:30"),      # [R133] 三次檢討
                        "night": ("🌙", "全日收市檢討（日市＋夜市）", None)},
            "review_label": {"noon": "上午", "close": "日市", "night": "全日"}, "night_split": ("16:30", "日市", "夜市"),
            "reviews_zh": "12:00／16:30／03:00",
@@ -2235,7 +2235,7 @@ MARKETS = {
     "US": {"key": "US", "tz": NY_TZ, "shift": 6, "calendar": False, "preopen": ("18:00", "19:00"), "end": (0, "17:00"),
            "start_hour": 18, "c_cut_day": "16:00", "snake_split": False,               # [R130] 整段 23 小時當一天；C 看 16:00 RTH 收市
            "reviews": {"noon": ("🕤", "隔夜時段檢討（前一天 18:00 至 09:30 ET）", "09:30"), "close": ("🕓", "RTH 收市檢討（至 16:00 ET）", "16:00"),
-                       "night": ("🌙", "全日收市檢討（CME 全段）", None)},                              # [R131]
+                       "night": ("🌙", "全日收市檢討（CME 全段）", None)},                              # [R133]
            "review_label": {"noon": "隔夜時段", "close": "開市至 RTH 收市", "night": "全日"}, "night_split": ("09:30", "隔夜", "日間（RTH＋尾段）"),
            "reviews_zh": "09:30／16:00／17:00 ET",
            "zh": "ES 標普 500 期貨", "title": "🇺🇸 風揚陣・ES 標普 500 期貨波幅", "view": "es_range", "icon": "🇺🇸",
@@ -2659,7 +2659,7 @@ def _level_line(name, actual, fc, band_lo, band_hi, upper, final):
 
 
 def futu_preopen_text(fc, day, contract, summary, peak=None, symbol=None):
-    m = futu_market(symbol)                                                # [R131] 市場名稱與時段文字
+    m = futu_market(symbol)                                                # [R133] 市場名稱與時段文字
     lines = [f"📏{FENGYANG_TAG}{m['zh']} {_day_label(day)} 開市前預測",
              f"參考：上個交易日收市 {fc['ref_close']:,.0f}" + (f"（{contract}）" if contract else ""),
              f"全日波幅（{m['session_zh']}）：約 {fc['range']:,.0f} 點（80%：{fc['lo']:,.0f}–{fc['hi']:,.0f}）"]
@@ -2677,7 +2677,7 @@ def futu_preopen_text(fc, day, contract, summary, peak=None, symbol=None):
 
 
 def futu_review(kind, day, fc, bars, track=None, peak=None, symbol=None):
-    """四個時點中的三個檢討；沒有這一天的 K 線（休市）→ None。[R131] 截止時間、標題、分段按市場（MARKETS['reviews']）。"""
+    """四個時點中的三個檢討；沒有這一天的 K 線（休市）→ None。[R133] 截止時間、標題、分段按市場（MARKETS['reviews']）。"""
     m = futu_market(symbol)
     icon, title, cut = m["reviews"][kind]
     seg = [b for b in bars if b["time_key"] <= f"{day} {cut}:00"] if cut else bars

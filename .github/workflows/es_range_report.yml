@@ -1,8 +1,8 @@
 name: es-range-report
-# [R131] ES 標普 500 期貨（代號 US.ES_FRONT，?view=es_range）每日四個時點（紐約時間）：
+# [R133] ES 標普 500 期貨（代號 US.ES_FRONT，?view=es_range）每日四個時點（紐約時間）：
 #   18:07 開市前預測（CME 全段 18:00 開市，交易日 = 前一天 18:00 至當天 17:00，日期取收市那天）
 #   09:37 隔夜時段檢討（18:00–09:30）、16:07 RTH 收市檢討（至 16:00）、17:07 全日收市檢討
-# 數字由 GCP（main.py R131）的 ?view=es_range&report=… 算好，這裡只負責取回並發 Telegram。
+# 數字由 GCP（main.py R133）的 ?view=es_range&report=… 算好，這裡只負責取回並發 Telegram。
 # GitHub 排程是 UTC，紐約有夏令／冬令：每個時點放兩條 cron（相差 1 小時），由紐約時間決定這次是哪一種報告，
 # 不在任何時段內就靜靜結束；休市日（週末、沒有 5 分 K）GCP 回 skip，不發訊息。需要本地 futu/mt5_push.py 在推 5 分 K。
 # 排程 workflow 只在預設分支生效。統計估計，不是交易建議，不影響下單。

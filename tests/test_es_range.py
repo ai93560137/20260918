@@ -100,7 +100,7 @@ check("ES 日卡的 C 時間點寫 16:00（恒指 16:30）", any("16:00才判斷
 check("恒指頁不受影響", "恒指即月期貨波幅" in client.get("/?view=futu_range").get_data(as_text=True))
 
 
-print("\n=== [R131] ES 四次報告（紐約時間）===")
+print("\n=== [R133] ES 四次報告（紐約時間）===")
 allbars = five + more                                                   # 10-04 18:05 → 10-05 16:00
 rp = main.futu_report(ES, "noon", now=ny("2026-10-05 09:37"))
 seg = [b for b in allbars if b["time_key"] <= "2026-10-05 09:30:00"]
