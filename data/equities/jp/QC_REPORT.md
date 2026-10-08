@@ -1,8 +1,8 @@
-# JP 數據品質報告（2026-10-07）
+# JP 數據品質報告（2026-10-08）
 
-市場最新交易日 2026-10-07；現任成分股 225 檔（n225）；有數據 265 檔；第二來源快照 11 份、比對 2475 筆收市價。
+市場最新交易日 2026-10-08；現任成分股 225 檔（n225）；有數據 265 檔；第二來源快照 12 份、比對 2481 筆收市價。
 
-**🔴 39 嚴重 / 🟡 5 注意 / ✅ 6 已確認**
+**🔴 39 嚴重 / 🟡 224 注意 / ✅ 2 已確認**
 
 
 ## 🔴 嚴重
@@ -49,6 +49,225 @@
 
 ## 🟡 注意
 
+- `1808.T` no_second_source：現任成分股沒有第二來源報價
+- `1812.T` no_second_source：現任成分股沒有第二來源報價
+- `1925.T` no_second_source：現任成分股沒有第二來源報價
+- `1928.T` no_second_source：現任成分股沒有第二來源報價
+- `1963.T` no_second_source：現任成分股沒有第二來源報價
+- `2002.T` no_second_source：現任成分股沒有第二來源報價
+- `2269.T` no_second_source：現任成分股沒有第二來源報價
+- `2282.T` no_second_source：現任成分股沒有第二來源報價
+- `2413.T` no_second_source：現任成分股沒有第二來源報價
+- `2432.T` no_second_source：現任成分股沒有第二來源報價
+- `2501.T` no_second_source：現任成分股沒有第二來源報價
+- `2502.T` no_second_source：現任成分股沒有第二來源報價
+- `2503.T` no_second_source：現任成分股沒有第二來源報價
+- `2768.T` no_second_source：現任成分股沒有第二來源報價
+- `2801.T` no_second_source：現任成分股沒有第二來源報價
+- `2802.T` no_second_source：現任成分股沒有第二來源報價
+- `285A.T` no_second_source：現任成分股沒有第二來源報價
+- `2871.T` no_second_source：現任成分股沒有第二來源報價
+- `2914.T` no_second_source：現任成分股沒有第二來源報價
+- `3086.T` no_second_source：現任成分股沒有第二來源報價
+- `3092.T` no_second_source：現任成分股沒有第二來源報價
+- `3099.T` no_second_source：現任成分股沒有第二來源報價
+- `3289.T` no_second_source：現任成分股沒有第二來源報價
+- `3382.T` no_second_source：現任成分股沒有第二來源報價
+- `3401.T` no_second_source：現任成分股沒有第二來源報價
+- `3402.T` no_second_source：現任成分股沒有第二來源報價
+- `3405.T` no_second_source：現任成分股沒有第二來源報價
+- `3407.T` no_second_source：現任成分股沒有第二來源報價
+- `3436.T` no_second_source：現任成分股沒有第二來源報價
+- `3659.T` no_second_source：現任成分股沒有第二來源報價
+- `3697.T` no_second_source：現任成分股沒有第二來源報價
+- `3861.T` no_second_source：現任成分股沒有第二來源報價
+- `4004.T` no_second_source：現任成分股沒有第二來源報價
+- `4005.T` no_second_source：現任成分股沒有第二來源報價
+- `4021.T` no_second_source：現任成分股沒有第二來源報價
+- `4042.T` no_second_source：現任成分股沒有第二來源報價
+- `4043.T` no_second_source：現任成分股沒有第二來源報價
+- `4061.T` no_second_source：現任成分股沒有第二來源報價
+- `4063.T` no_second_source：現任成分股沒有第二來源報價
+- `4151.T` no_second_source：現任成分股沒有第二來源報價
+- `4183.T` no_second_source：現任成分股沒有第二來源報價
+- `4188.T` no_second_source：現任成分股沒有第二來源報價
+- `4208.T` no_second_source：現任成分股沒有第二來源報價
+- `4307.T` no_second_source：現任成分股沒有第二來源報價
+- `4324.T` no_second_source：現任成分股沒有第二來源報價
+- `4385.T` no_second_source：現任成分股沒有第二來源報價
+- `4452.T` no_second_source：現任成分股沒有第二來源報價
+- `4502.T` no_second_source：現任成分股沒有第二來源報價
+- `4503.T` no_second_source：現任成分股沒有第二來源報價
+- `4506.T` no_second_source：現任成分股沒有第二來源報價
+- `4507.T` no_second_source：現任成分股沒有第二來源報價
+- `4519.T` no_second_source：現任成分股沒有第二來源報價
+- `4523.T` no_second_source：現任成分股沒有第二來源報價
+- `4543.T` no_second_source：現任成分股沒有第二來源報價
+- `4568.T` no_second_source：現任成分股沒有第二來源報價
+- `4578.T` no_second_source：現任成分股沒有第二來源報價
+- `4661.T` no_second_source：現任成分股沒有第二來源報價
+- `4689.T` no_second_source：現任成分股沒有第二來源報價
+- `4704.T` no_second_source：現任成分股沒有第二來源報價
+- `4751.T` no_second_source：現任成分股沒有第二來源報價
+- `4755.T` no_second_source：現任成分股沒有第二來源報價
+- `4901.T` no_second_source：現任成分股沒有第二來源報價
+- `4902.T` no_second_source：現任成分股沒有第二來源報價
+- `4911.T` no_second_source：現任成分股沒有第二來源報價
+- `5019.T` no_second_source：現任成分股沒有第二來源報價
+- `5020.T` no_second_source：現任成分股沒有第二來源報價
+- `5101.T` no_second_source：現任成分股沒有第二來源報價
+- `5108.T` no_second_source：現任成分股沒有第二來源報價
+- `5201.T` no_second_source：現任成分股沒有第二來源報價
+- `5214.T` no_second_source：現任成分股沒有第二來源報價
+- `5233.T` no_second_source：現任成分股沒有第二來源報價
+- `5301.T` no_second_source：現任成分股沒有第二來源報價
+- `5332.T` no_second_source：現任成分股沒有第二來源報價
+- `5333.T` no_second_source：現任成分股沒有第二來源報價
+- `5401.T` no_second_source：現任成分股沒有第二來源報價
+- `5406.T` no_second_source：現任成分股沒有第二來源報價
+- `5411.T` no_second_source：現任成分股沒有第二來源報價
+- `543A.T` no_second_source：現任成分股沒有第二來源報價
+- `5631.T` no_second_source：現任成分股沒有第二來源報價
+- `5706.T` no_second_source：現任成分股沒有第二來源報價
+- `5711.T` no_second_source：現任成分股沒有第二來源報價
+- `5713.T` no_second_source：現任成分股沒有第二來源報價
+- `5714.T` no_second_source：現任成分股沒有第二來源報價
+- `5801.T` no_second_source：現任成分股沒有第二來源報價
+- `5802.T` no_second_source：現任成分股沒有第二來源報價
+- `5803.T` no_second_source：現任成分股沒有第二來源報價
+- `5831.T` no_second_source：現任成分股沒有第二來源報價
+- `6098.T` no_second_source：現任成分股沒有第二來源報價
+- `6103.T` no_second_source：現任成分股沒有第二來源報價
+- `6113.T` no_second_source：現任成分股沒有第二來源報價
+- `6146.T` no_second_source：現任成分股沒有第二來源報價
+- `6178.T` no_second_source：現任成分股沒有第二來源報價
+- `6273.T` no_second_source：現任成分股沒有第二來源報價
+- `6301.T` no_second_source：現任成分股沒有第二來源報價
+- `6302.T` no_second_source：現任成分股沒有第二來源報價
+- `6305.T` no_second_source：現任成分股沒有第二來源報價
+- `6326.T` no_second_source：現任成分股沒有第二來源報價
+- `6361.T` no_second_source：現任成分股沒有第二來源報價
+- `6367.T` no_second_source：現任成分股沒有第二來源報價
+- `6471.T` no_second_source：現任成分股沒有第二來源報價
+- `6472.T` no_second_source：現任成分股沒有第二來源報價
+- `6473.T` no_second_source：現任成分股沒有第二來源報價
+- `6479.T` no_second_source：現任成分股沒有第二來源報價
+- `6501.T` no_second_source：現任成分股沒有第二來源報價
+- `6503.T` no_second_source：現任成分股沒有第二來源報價
+- `6504.T` no_second_source：現任成分股沒有第二來源報價
+- `6506.T` no_second_source：現任成分股沒有第二來源報價
+- `6526.T` no_second_source：現任成分股沒有第二來源報價
+- `6532.T` no_second_source：現任成分股沒有第二來源報價
+- `6594.T` no_second_source：現任成分股沒有第二來源報價
+- `6645.T` no_second_source：現任成分股沒有第二來源報價
+- `6701.T` no_second_source：現任成分股沒有第二來源報價
+- `6702.T` no_second_source：現任成分股沒有第二來源報價
+- `6723.T` no_second_source：現任成分股沒有第二來源報價
+- `6724.T` no_second_source：現任成分股沒有第二來源報價
+- `6752.T` no_second_source：現任成分股沒有第二來源報價
+- `6753.T` no_second_source：現任成分股沒有第二來源報價
+- `6758.T` no_second_source：現任成分股沒有第二來源報價
+- `6762.T` no_second_source：現任成分股沒有第二來源報價
+- `6770.T` no_second_source：現任成分股沒有第二來源報價
+- `6841.T` no_second_source：現任成分股沒有第二來源報價
+- `6857.T` no_second_source：現任成分股沒有第二來源報價
+- `6861.T` no_second_source：現任成分股沒有第二來源報價
+- `6902.T` no_second_source：現任成分股沒有第二來源報價
+- `6920.T` no_second_source：現任成分股沒有第二來源報價
+- `6954.T` no_second_source：現任成分股沒有第二來源報價
+- `6963.T` no_second_source：現任成分股沒有第二來源報價
+- `6971.T` no_second_source：現任成分股沒有第二來源報價
+- `6976.T` no_second_source：現任成分股沒有第二來源報價
+- `6981.T` no_second_source：現任成分股沒有第二來源報價
+- `6988.T` no_second_source：現任成分股沒有第二來源報價
+- `7004.T` no_second_source：現任成分股沒有第二來源報價
+- `7011.T` no_second_source：現任成分股沒有第二來源報價
+- `7012.T` no_second_source：現任成分股沒有第二來源報價
+- `7013.T` no_second_source：現任成分股沒有第二來源報價
+- `7186.T` no_second_source：現任成分股沒有第二來源報價
+- `7201.T` no_second_source：現任成分股沒有第二來源報價
+- `7202.T` no_second_source：現任成分股沒有第二來源報價
+- `7203.T` no_second_source：現任成分股沒有第二來源報價
+- `7211.T` no_second_source：現任成分股沒有第二來源報價
+- `7261.T` no_second_source：現任成分股沒有第二來源報價
+- `7267.T` no_second_source：現任成分股沒有第二來源報價
+- `7269.T` no_second_source：現任成分股沒有第二來源報價
+- `7270.T` no_second_source：現任成分股沒有第二來源報價
+- `7272.T` no_second_source：現任成分股沒有第二來源報價
+- `7453.T` no_second_source：現任成分股沒有第二來源報價
+- `7532.T` no_second_source：現任成分股沒有第二來源報價
+- `7731.T` no_second_source：現任成分股沒有第二來源報價
+- `7733.T` no_second_source：現任成分股沒有第二來源報價
+- `7735.T` no_second_source：現任成分股沒有第二來源報價
+- `7741.T` no_second_source：現任成分股沒有第二來源報價
+- `7751.T` no_second_source：現任成分股沒有第二來源報價
+- `7752.T` no_second_source：現任成分股沒有第二來源報價
+- `7832.T` no_second_source：現任成分股沒有第二來源報價
+- `7911.T` no_second_source：現任成分股沒有第二來源報價
+- `7912.T` no_second_source：現任成分股沒有第二來源報價
+- `7951.T` no_second_source：現任成分股沒有第二來源報價
+- `7974.T` no_second_source：現任成分股沒有第二來源報價
+- `8001.T` no_second_source：現任成分股沒有第二來源報價
+- `8002.T` no_second_source：現任成分股沒有第二來源報價
+- `8015.T` no_second_source：現任成分股沒有第二來源報價
+- `8031.T` no_second_source：現任成分股沒有第二來源報價
+- `8035.T` no_second_source：現任成分股沒有第二來源報價
+- `8053.T` no_second_source：現任成分股沒有第二來源報價
+- `8058.T` no_second_source：現任成分股沒有第二來源報價
+- `8233.T` no_second_source：現任成分股沒有第二來源報價
+- `8252.T` no_second_source：現任成分股沒有第二來源報價
+- `8253.T` no_second_source：現任成分股沒有第二來源報價
+- `8267.T` no_second_source：現任成分股沒有第二來源報價
+- `8304.T` no_second_source：現任成分股沒有第二來源報價
+- `8306.T` no_second_source：現任成分股沒有第二來源報價
+- `8308.T` no_second_source：現任成分股沒有第二來源報價
+- `8309.T` no_second_source：現任成分股沒有第二來源報價
+- `8316.T` no_second_source：現任成分股沒有第二來源報價
+- `8331.T` no_second_source：現任成分股沒有第二來源報價
+- `8354.T` no_second_source：現任成分股沒有第二來源報價
+- `8411.T` no_second_source：現任成分股沒有第二來源報價
+- `8591.T` no_second_source：現任成分股沒有第二來源報價
+- `8601.T` no_second_source：現任成分股沒有第二來源報價
+- `8604.T` no_second_source：現任成分股沒有第二來源報價
+- `8630.T` no_second_source：現任成分股沒有第二來源報價
+- `8697.T` no_second_source：現任成分股沒有第二來源報價
+- `8725.T` no_second_source：現任成分股沒有第二來源報價
+- `8750.T` no_second_source：現任成分股沒有第二來源報價
+- `8766.T` no_second_source：現任成分股沒有第二來源報價
+- `8795.T` no_second_source：現任成分股沒有第二來源報價
+- `8801.T` no_second_source：現任成分股沒有第二來源報價
+- `8802.T` no_second_source：現任成分股沒有第二來源報價
+- `8804.T` no_second_source：現任成分股沒有第二來源報價
+- `8830.T` no_second_source：現任成分股沒有第二來源報價
+- `9001.T` no_second_source：現任成分股沒有第二來源報價
+- `9005.T` no_second_source：現任成分股沒有第二來源報價
+- `9007.T` no_second_source：現任成分股沒有第二來源報價
+- `9008.T` no_second_source：現任成分股沒有第二來源報價
+- `9009.T` no_second_source：現任成分股沒有第二來源報價
+- `9020.T` no_second_source：現任成分股沒有第二來源報價
+- `9021.T` no_second_source：現任成分股沒有第二來源報價
+- `9022.T` no_second_source：現任成分股沒有第二來源報價
+- `9064.T` no_second_source：現任成分股沒有第二來源報價
+- `9101.T` no_second_source：現任成分股沒有第二來源報價
+- `9104.T` no_second_source：現任成分股沒有第二來源報價
+- `9107.T` no_second_source：現任成分股沒有第二來源報價
+- `9147.T` no_second_source：現任成分股沒有第二來源報價
+- `9201.T` no_second_source：現任成分股沒有第二來源報價
+- `9202.T` no_second_source：現任成分股沒有第二來源報價
+- `9432.T` no_second_source：現任成分股沒有第二來源報價
+- `9433.T` no_second_source：現任成分股沒有第二來源報價
+- `9434.T` no_second_source：現任成分股沒有第二來源報價
+- `9501.T` no_second_source：現任成分股沒有第二來源報價
+- `9502.T` no_second_source：現任成分股沒有第二來源報價
+- `9503.T` no_second_source：現任成分股沒有第二來源報價
+- `9531.T` no_second_source：現任成分股沒有第二來源報價
+- `9532.T` no_second_source：現任成分股沒有第二來源報價
+- `9602.T` no_second_source：現任成分股沒有第二來源報價
+- `9735.T` no_second_source：現任成分股沒有第二來源報價
+- `9766.T` no_second_source：現任成分股沒有第二來源報價
+- `9843.T` no_second_source：現任成分股沒有第二來源報價
+- `9983.T` no_second_source：現任成分股沒有第二來源報價
+- `9984.T` no_second_source：現任成分股沒有第二來源報價
 - `1332.T` xcheck_history：全量歷史比對 1/252 筆收市差 >1%（最大 1.1%，yahoo.co.jp 月線全段 + 最近 20 日）；例 2024-03-29 我們 971.1 vs 對方 960.1（-1.1%）
 - `4021.T` xcheck_history：全量歷史比對 1/252 筆收市差 >1%（最大 1.8%，yahoo.co.jp 月線全段 + 最近 20 日）；例 2012-07-31 我們 812.964 vs 對方 828（+1.8%）
 - `4506.T` xcheck_history：全量歷史比對 1/252 筆收市差 >1%（最大 1.5%，yahoo.co.jp 月線全段 + 最近 20 日）；例 2024-03-29 我們 404 vs 對方 398（-1.5%）
@@ -59,10 +278,6 @@
 
 - `8303.T` spike_rows_dropped：載入時濾掉 12 根垃圾列（成交量 0、價格跳 >5 倍），例 2023-09-27 收市 5.532e+10（SBI 新生銀行 2023-09 下市、2025-12 重新上市；Yahoo 在下市日與空窗期塞了 553 億圓/成交量 0 的垃圾列，載入時已濾掉（持倉期間下市按最後有效收市 2,798 圓結算））
 - `8303.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 100.00%（Yahoo 股息數據錯誤（每股 2 億日圓）；重算時自動忽略 >= 股價的股息，錯的是 yfinance 的 Adj Close，不是我們的（2026-09-22 查））
-- `2914.T` name_mismatch：Yahoo!ファイナンス「ＪＴ」vs JPX「日本たばこ産業」（通稱 vs 正式名：ＪＴ = 日本たばこ産業）
-- `6301.T` name_mismatch：Yahoo!ファイナンス「コマツ」vs JPX「小松製作所」（通稱 vs 正式名：コマツ = 小松製作所）
-- `6701.T` name_mismatch：Yahoo!ファイナンス「ＮＥＣ」vs JPX「日本電気」（通稱 vs 正式名：ＮＥＣ = 日本電気）
-- `7267.T` name_mismatch：Yahoo!ファイナンス「ホンダ」vs JPX「本田技研工業」（通稱 vs 正式名：ホンダ = 本田技研工業）
 
 ## 🔎 全量歷史比對（第二來源整段歷史 vs yfinance）
 
