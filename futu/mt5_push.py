@@ -34,7 +34,7 @@ import argparse, csv, json, os, sys, time, urllib.error, urllib.request
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-SCRIPT_VERSION = "mt5-1"
+SCRIPT_VERSION = "mt5-2"
 NY = ZoneInfo("America/New_York")
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
@@ -147,12 +147,18 @@ class Feed:
         env = os.environ.get("MT5_UTC_OFFSET")
         if env not in (None, ""):
             return int(env)
+        if not self.mt5.symbol_select(symbol, True):                 # 先加進市場觀察，否則 symbol_info_tick 會是 None
+            raise RuntimeError(f"MT5 沒有代號 {symbol}（市場觀察加不進去；MT5_SYMBOLS 的代號要跟 MT5 裡一模一樣）：{self.mt5.last_error()}")
         tick = self.mt5.symbol_info_tick(symbol)
-        off = broker_offset_hours(int(tick.time)) if tick else None
+        if not tick or not tick.time:
+            raise RuntimeError(f"MT5 沒有 {symbol} 的報價（{self.mt5.last_error()}）；在 MT5 市場觀察把它顯示出來再試")
+        off = broker_offset_hours(int(tick.time))
         if off is not None:
             self.offset = off
         if self.offset is None:
-            raise RuntimeError("推算不到券商時差（休市中沒有即時報價）；請設 MT5_UTC_OFFSET，例如 setx MT5_UTC_OFFSET 3")
+            diff = (int(tick.time) - time.time()) / 3600
+            raise RuntimeError(f"推算不到券商時差：最新報價時間比電腦時鐘快 {diff:+.2f} 小時，不是整點"
+                               f"（休市中報價不是即時的，或電腦時鐘不準）；請設 MT5_UTC_OFFSET（券商時間比 UTC 快幾小時，例 setx MT5_UTC_OFFSET 3）")
         return self.offset
 
     def rates(self, symbol, count=None, days=None):
@@ -258,7 +264,7 @@ def main():
                 else:
                     feed.push(alias, symbol, rates_to_bars(feed.rates(symbol, count=max(BAR_COUNT, SESSION_DAYS * 300)), off))
         except Exception as exc:                                     # 任何錯誤都不讓守護進程死掉
-            log(f"🔴 {exc}（{PUSH_INTERVAL_SEC} 秒後重試）")
+            log(f"🔴 {exc}" + ("" if (a.once or a.backfill) else f"（{PUSH_INTERVAL_SEC} 秒後重試）"))
             if feed.mt5:
                 try:
                     feed.mt5.shutdown()
