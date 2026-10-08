@@ -50,7 +50,7 @@ elif pos > 0:
            f"(平多 {pos}＋開空 {n})\n")
 else:
     act = f"📌 目前實倉:空手 → 升破 {f(up)} 買入 {n} 張 ／ 跌破 {f(lo)} 賣出 {n} 張\n"
-mini = ",小恒指等值 ×5" if n > 1 else ''
+mini = ",大恒指當量;小恒指等值 ×5" if n > 1 else ''
 
 msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
 🕐 {d.get('fetched_at', '')}
@@ -63,7 +63,7 @@ msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
 📈 通道上軌:{f(up)}({up_d})
 📉 通道下軌:{f(lo)}({lo_d})
 {quote_line}
-🧭 今日指令(目標 {n} 張大恒指當量{mini})
+🧭 今日指令(每次 {n} 張{mini})
 {act}── 一般情況 ──
 🈳 空手:
  ① 價 ≥ {f(up)} → 市價買入 {n} 張(開多倉)
