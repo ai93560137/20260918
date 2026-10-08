@@ -67,7 +67,7 @@ except ImportError:  # pragma: no cover
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEPLOY_FILES = ("main.py", "requirements.txt", "gates.html", "order.html",
-                "jinnang_sheet.html", "jinnang_tracker.html")
+                "jinnang_sheet.html", "jinnang_tracker.html", "bazhentu.html")
 ENTRY_POINT = "receive_tradingview_signal"
 DEFAULT_RUNTIME = "python312"
 DEFAULT_MEMORY = "512Mi"
