@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-09 — [R134] ES 頁加「💰 怎樣用來賺錢（四個方向）」：方向二用 ES 8 年 15 分 K 回測（research/us_futures/fade_us.py：反向做不賺，
+#     同恒指）；方向一（ES 期權／VIX）未回測、沒有 VIX 餵價，只列出做法；方向三、四用 ES 的預測與單位（每點 US$50，MES US$5）。
+#     恒指頁方向一加「每週沽 1σ 勒式」實際規則的連結（research/hsi_futures_range/STRANGLE_1SIGMA.md）。
 #   * 2026-10-08 — [R133] ES 的四次 Telegram 報告（.github/workflows/es_range_report.yml，紐約時間 18:07 開市前預測、09:37 隔夜時段檢討、
 #     16:07 RTH 收市檢討、17:07 全日收市檢討）：檢討的截止時間、標題、分段（隔夜／RTH）與文字的市場名稱都由 MARKETS['reviews'] 決定，
 #     恒指的 12:00／16:30／03:00 不變。
@@ -4234,6 +4237,22 @@ MONEY_SELL = {                                  # [R107] 方向一合成回測�
         "鐵鷹 +17；月期權跨式每月 −127。利潤集中在 2026 年 1 至 5 月，2025 年第四季與 2026 年下半年跨式都虧。",
         "⚠️ 「VHSI ÷ 預測 ≥ 1.2 才賣」在真實數據上對跨式沒幫助（+5），對鐵鷹略好（+27）；週期權 IV 對預測的比值也沒有預測力。"
         "港交所只保留 12 個月報告，之後每週自動續抓，累積到 2 年再定。",
+        "📘 實際操作規則（每週五 16:30 後沽下週到期 1σ 勒式、持有到期、不對沖；變體與資金建議）：research/hsi_futures_range/STRANGLE_1SIGMA.md。",
+    ],
+}
+
+
+MONEY_FADE_US = {                               # [R134] 方向二在 ES 的回測摘要（research/us_futures/fade_us.py，2018-07 至 2026-10，15 分 K，成本 0.75 點）
+    "status": "❌ 回測不賺錢・不建議用（與恒指相同）",
+    "lines": [
+        "📉 交易日（2,000 天）：A／B／C 之後反向做，每筆 −1.4 至 +0.3 點（扣 0.75 點成本），高位沽空全部虧，低位買入約等於零；"
+        "C 16:00 反向做最差（每筆 −1.4 點、t −6）：RTH 收市後最後一小時幾乎不動，權利金般的小利潤蓋不過成本。",
+        "🔍 原因與恒指一樣：「頂底已現」判斷很準（B 約 96%），但通知時價格已離極值約 36 點（半個 R̂），之後升跌各半。",
+        "🗓️ 週（424 週）：高位沽空全部虧（A −10 點、B −4 點）；低位買入 C 第 4 天 +2.8 點、B +1.0 點（t < 1，等於零），"
+        "而且同時間無條件買入也賺——是美股長期向上的功勞，不是訊號。",
+        "🎯 前半段挑最好的參數（每筆 +2 至 +12 點），後半段大多變負或與基準無異：過度擬合。",
+        "👉 用法同恒指：「不追」提示——高位已現不再追買、低位已現不再追沽。",
+        "🐍 蛇蟠陣在 ES／NQ 沒有優勢（usa500_range／nas100_range），所以恒指那套「訊號＋跟蛇」在美股沒有基礎，未測。",
     ],
 }
 
@@ -4264,12 +4283,14 @@ MONEY_FADE = {                                  # 方向二回測摘要（fade_p
 }
 
 
-def _fy_money(data):
-    """[R106] 💰 四個方向：狀態＋今天的數字。全部只是研究，不接下單。"""
+def _fy_money(data, symbol=None):
+    """[R106] 💰 四個方向：狀態＋今天的數字。全部只是研究，不接下單。[R134] ES 用自己的回測與單位。"""
     fc = data.get("forecast") or {}
     rng = fc.get("range")
     s = data.get("summary") or {}
     ivc = data.get("iv_compare")
+    m = futu_market(symbol)
+    us = m["key"] == "US"
     cards = []
 
     def card(icon, title, status, body, css=""):
@@ -4277,7 +4298,18 @@ def _fy_money(data):
 
     # 一、賣波幅（期權）  [R107] 用 VHSI 判斷（回測用的就是它），週期權 IV 只作參考
     now_txt = ""
-    if ivc and ivc.get("har_vol"):
+    if us:                                                            # [R134] ES：沒有期權／VIX 餵價，只列做法
+        har = (fc["range"] / RANGE_TO_SIGMA / fc["ref_close"] * math.sqrt(252) * 100) if fc.get("range") and fc.get("ref_close") else None
+        now_txt = (f"<div class='fy-row'><span>🔮 風揚陣預測（年化）</span><b>{har:.1f}%</b></div>" if har else
+                   "<div class='fy-note'>⏳ 等開市前預測。</div>")
+        now_txt += "<div class='fy-note'>➕ 對照用 VIX（CBOE 30 日 IV）；VIX ÷ 預測明顯高於 1 才考慮賣。VIX 餵價與 ES 期權結算價未接，未回測。</div>"
+        card("💹", "方向一：賣波幅（期權）", "💡 做法同恒指・ES 未回測",
+             "<div class='fy-sig'>ES 期權（週一／三／五到期的週期權，每點 US$50）IV 長期高於實際波幅，沽 1σ 勒式持有到期是恒指真實數據上最穩的賣法"
+             "（每週 +55 點、84% 週賺）；ES 要先用 CME 結算價重跑同一回測。</div>"
+             "<div class='fy-sig'>📘 恒指的實際操作規則：research/hsi_futures_range/STRANGLE_1SIGMA.md（行使價 = 遠期價 ± 價平 IV × √(交易日數 ÷ 252) × 遠期價，"
+             "往外取整；不對沖、持有到期）。</div>" + now_txt +
+             "<div class='fy-note'>⚠️ 賺小蝕大，要細倉；美股事件週（聯儲議息、非農、CPI）比恒指多，先避開。</div>", "month")
+    elif ivc and ivc.get("har_vol"):
         now_txt += f"<div class='fy-row'><span>🔮 風揚陣預測（年化）</span><b>{ivc['har_vol']:.1f}%</b></div>"
         if ivc.get("vhsi"):
             ok = ivc.get("vhsi_ratio") is not None and ivc["vhsi_ratio"] >= VHSI_SELL_RATIO
@@ -4293,21 +4325,21 @@ def _fy_money(data):
     else:
         now_txt = "<div class='fy-note'>⏳ 等開市前預測與 Futu 數據。</div>"
     body = "".join(f"<div class='fy-sig'>{esc(x)}</div>" for x in MONEY_SELL["lines"])
-    card("💹", "方向一：賣波幅（期權）", MONEY_SELL["status"],
+    if not us:
+        card("💹", "方向一：賣波幅（期權）", MONEY_SELL["status"],
          "<div class='fy-sig'>期權價格裡有市場預期的波幅（IV）。IV 長期高於實際波幅，賣期權就能賺這個差價；"
          "VHSI 明顯高於風揚陣預測才賣。</div>" + body + now_txt +
          "<div class='fy-note'>⚠️ 賺小蝕大，要細倉、優先用有保護的鐵鷹。合成回測用 VHSI（30 日 IV）代替週期權 IV，"
-         "要先用真實週期權報價校準幾星期。詳見 MONEY_REPORT.md。之後跟 ☁️ 雲垂陣共用。</div>", "month")
+             "要先用真實週期權報價校準幾星期。詳見 MONEY_REPORT.md。之後跟 ☁️ 雲垂陣共用。</div>", "month")
     # 二、反向做（日內）
-    if MONEY_FADE:
-        body = "".join(f"<div class='fy-sig'>{esc(x)}</div>" for x in MONEY_FADE["lines"])
-        status = MONEY_FADE["status"]
-    else:
-        body, status = "<div class='fy-note'>回測進行中。</div>", "🧪 回測中"
-    card("🔄", "方向二：頂底已現 → 反向做", status,
+    fade = MONEY_FADE_US if us else MONEY_FADE                        # [R134]
+    body = "".join(f"<div class='fy-sig'>{esc(x)}</div>" for x in fade["lines"])
+    note = ("8 年 15 分 K 回測（Dukascopy USA500 差價合約），每筆扣 0.75 點成本；ES 每點 US$50，小型 MES US$5。"
+            "詳見 research/us_futures/fade_us/REPORT.md。" if us else
+            "3 年 15 分 K 回測，每筆扣 3 點成本；恒指期貨每點 HK$50，小型恒指 HK$10。詳見 research/hsi_futures_range/MONEY_REPORT.md。")
+    card("🔄", "方向二：頂底已現 → 反向做", fade["status"],
          "<div class='fy-sig'>當天（或本週）已走完預測波幅，A／B／C 確認高位或低位已出現 → 在區間邊緣反向做，止蝕放在高（低）位之外。</div>"
-         + body + "<div class='fy-note'>3 年 15 分 K 回測，每筆扣 3 點成本；恒指期貨每點 HK$50，小型恒指 HK$10。"
-         "詳見 research/hsi_futures_range/MONEY_REPORT.md。</div>", "week")
+         + body + f"<div class='fy-note'>{note}</div>", "week")
     # 三、風險管理
     avg = s.get("avg_range")
     if rng:
@@ -4319,7 +4351,8 @@ def _fy_money(data):
     card("🛡️", "方向三：管理風險", "💡 建議・未回測",
          "<div class='fy-sig'>不直接賺錢，但令其他策略更穩：止蝕距離跟預測波幅走（大波幅日放寬、小波幅日收窄）；"
          "倉位按預測波幅調整，令每天風險差不多。</div>" + today +
-         "<div class='fy-note'>之後會接到 🐍 蛇蟠陣：預測高位遠低於通道上軌時，當天突破機會較低，可以不追。</div>")
+         ("<div class='fy-note'>ES 每點 US$50、MES US$5：½ 個預測波幅的止蝕以 1 張 MES 計約 US$" + (f"{rng / 2 * 5:,.0f}" if rng else "—") + "。</div>" if us else
+          "<div class='fy-note'>之後會接到 🐍 蛇蟠陣：預測高位遠低於通道上軌時，當天突破機會較低，可以不追。</div>"))
     # 四、小波幅日做突破
     past = sorted(r["forecast"] for r in data.get("rows") or [] if r.get("forecast"))
     if rng and past:
@@ -4331,8 +4364,10 @@ def _fy_money(data):
         today = ""
     card("🚀", "方向四：小波幅日做突破", "💡 想法・未回測",
          "<div class='fy-sig'>預測波幅特別小（一年中最低 20%）的日子，之後常有大波動；配合突破策略，突破才追。</div>" + today)
+    legend = ("全部是研究，不接下單；方向二做了 ES 盈虧回測，方向一只有恒指真實數據，三、四未回測。下單以券商即時報價為準。" if us else
+              "全部是研究，不接下單；方向一、二做了盈虧回測，三、四未回測。下單以券商即時報價為準。")
     return ("<div class='section-header'>💰 怎樣用來賺錢（四個方向）</div>"
-            "<div class='fy-legend'>全部是研究，不接下單；方向一、二做了盈虧回測，三、四未回測。下單以券商即時報價為準。</div>"
+            f"<div class='fy-legend'>{legend}</div>"
             f"<div class='fy-grid'>{''.join(cards)}</div>")
 
 
@@ -4495,7 +4530,7 @@ def build_futu_range_page(data):
         f"{fmt_num((r['range'] - r['forecast']) if r.get('forecast') else None, '{:+,.0f}')}</td>"
         f"<td class='muted'>{esc(r['source'].partition(':')[2] or r['source'])}</td></tr>"
         for r in reversed(rows))
-    extras = (_fy_paper(data) + (_fy_money(data) if m["intraday"] else "")) if intraday else (   # [R127][R130] ES 沒有 5 分 K
+    extras = (_fy_paper(data) + _fy_money(data, symbol)) if intraday else (                    # [R127][R130][R134] ES 沒有 5 分 K
         "<div class='section-header'>📒 紙上交易／💰 四個方向</div>"
         "<div class='fy-legend'>ES 暫時只有每日收市後的日線，紙上交易與高低位訊號要等有 5 分 K 推送才開（本地執行 futu/mt5_push.py）；"
         "研究結果見 research/us_futures/（ES 8 年、NQ 4 年：蛇蟠陣無效，波幅預測與高低位訊號比恒指準）。</div>")

@@ -119,5 +119,14 @@ check("週日 17:07 沒有 K → skip；週六晚 18:07 的開市前（交易日
       and main.futu_report(ES, "preopen", now=ny("2026-10-03 18:07"))["status"] == "skip")
 check("恒指檢討標題不變", main.futu_market("HK.HSI_FRONT")["reviews"]["close"][1] == "日市收市檢討" and main.futu_market("HK.HSI_FRONT")["reviews"]["noon"][2] == "12:00")
 
+
+print("\n=== [R134] ES 頁四個方向 ===")
+page_m = client.get("/?view=es_range").get_data(as_text=True)
+check("ES 頁有四個方向、方向二用 ES 回測、單位 US$50、方向一寫未回測", "怎樣用來賺錢（四個方向）" in page_m and "fade_us" in page_m
+      and "ES 每點 US$50" in page_m and "ES 未回測" in page_m and "VHSI 明顯高於" not in page_m)
+sec_h = main._fy_money({"forecast": {}, "summary": {}, "rows": []}, "HK.HSI_FRONT")
+check("恒指的四個方向照舊（VHSI 規則、恒指回測），並加 1σ 勒式規則書連結", "STRANGLE_1SIGMA" in sec_h and "VHSI 明顯高於" in sec_h
+      and main.MONEY_FADE["status"] in sec_h and "fade_us" not in sec_h and "US$50" not in sec_h)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
