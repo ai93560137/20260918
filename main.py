@@ -111,7 +111,7 @@
 #   * 2026-10-08 — [R129] 只有日線的市場（ES）：交易日進行中但還沒有今天的 K（日線收市後才推）→ 預測與卡標題用今天，不再跳到下一個交易日。
 #   * 2026-10-06 — [R128] 收市後、下一個交易日未開（恒指 03:00–09:00）：波幅頁改顯示下一個交易日的開市前預測，最新交易日標「已完結」、
 #     狀態「休市／未開市」（之前要到 09:00 才換日，07:53 記下的預測在頁上看不到，而且推送仍在所以誤標「交易中」）。
-#   * 2026-10-08 — [R129] ⚔️ 八陣圖指令台改由本服務託管（?view=bazhentu，bazhentu.html），tnt-hk.com 直接開、不用登入 Claude；
+#   * 2026-10-08 — [R131] ⚔️ 八陣圖指令台改由本服務託管（?view=bazhentu，bazhentu.html），tnt-hk.com 直接開、不用登入 Claude；
 #     通道數據 ?view=bazhentu&format=json 轉發蛇蟠陣分支 levels.json（公開 repo），快取 120 秒、GCS 後備。商品加小恒指、實倉改數字輸入。
 #   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
 #     美股用紐約時間、交易日 = CME 全段（前一天 18:00 至 17:00，日期取收市那天）、不用港股日曆、開市前紀錄時段 18:00–19:00 ET。
@@ -5556,7 +5556,7 @@ CHART_SCRIPT = """
 
 # 每一頁頁頂都有同一組連結，current 那一項不做連結
 # [R91] 八陣圖指令台（大恒指人手掛單）原本住在 claude.ai 的 artifact 上（要登入 Claude 才看到）。
-# [R129] 改由本服務託管：?view=bazhentu 供應 bazhentu.html；通道數據不再用 artifact 的 db，
+# [R131] 改由本服務託管：?view=bazhentu 供應 bazhentu.html；通道數據不再用 artifact 的 db，
 #        改由 ?view=bazhentu&format=json 轉發蛇蟠陣分支（公開 repo）的 levels.json，
 #        記憶體快取 BAZHENTU_CACHE_SEC 秒，GitHub 抓不到時退回 GCS 上一份。使用者從 tnt-hk.com 直接開，不用登入。
 BAZHENTU_URL = "https://claude.ai/artifact/Qovghgidoao32zWai3gffX"       # 舊 artifact，僅供查考
@@ -5613,7 +5613,7 @@ PAGE_LINKS = [
     ("jinnang_tracker", "✅ 錦囊九十筆"),
     ("futu_range", "🌬️ 風揚陣波幅"),                       # [R105] 每頁頂都能到風揚陣
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
-    ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R129] 改為本服務託管
+    ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dashboard", "⚙️ 控制台"),
 ]
 
@@ -7354,9 +7354,9 @@ def handle_get(req):
         return serve_jinnang_sheet()
     if view == "jinnang_tracker":                                # 錦囊九十筆進度表
         return serve_jinnang_tracker()
-    if view == "bazhentu" and req.args.get("format") == "json":  # [R129] 指令台通道數據
+    if view == "bazhentu" and req.args.get("format") == "json":  # [R131] 指令台通道數據
         return handle_bazhentu_api_get()
-    if view == "bazhentu":                                       # [R129] 八陣圖指令台（蛇蟠陣人手掛單）
+    if view == "bazhentu":                                       # [R131] 八陣圖指令台（蛇蟠陣人手掛單）
         return serve_bazhentu()
     if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
         return handle_futu_api_get(req.args.get("symbol"))

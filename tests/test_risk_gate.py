@@ -317,7 +317,7 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
     for m in must:
         check(f"{f} 含「{m}」", m in txt)
 
-print("\n=== 10d. 十頁導覽列一致（[R129] 八陣圖指令台改為站內頁）===")
+print("\n=== 10d. 十頁導覽列一致（[R131] 八陣圖指令台改為站內頁）===")
 VIEWS = [v for v, _ in main.PAGE_LINKS]
 check(f"main.py 的 PAGE_LINKS 有 10 頁（{len(VIEWS)}）", len(VIEWS) == 10, VIEWS)
 EXTERNAL = [v for v in VIEWS if v.startswith("http")]
@@ -330,7 +330,7 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
     check(f"{f} 連到其餘 9 頁", not miss, f"缺 {miss}")
     check(f"{f} 不再連到舊 artifact", "claude.ai/artifact" not in txt, f)
 
-print("\n=== 10e. page_nav：[R129] 八陣圖指令台是站內頁，page_nav 仍保留站外連結能力（R91）===")
+print("\n=== 10e. page_nav：[R131] 八陣圖指令台是站內頁，page_nav 仍保留站外連結能力（R91）===")
 nav = main.page_nav("welcome")
 check("指令台是站內連結", "href='?view=bazhentu'" in nav, nav[:400])
 check("沒有把網址接在 ?view= 後面", "?view=https" not in nav, nav[:400])
