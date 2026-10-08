@@ -106,6 +106,8 @@
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
 #   * 2026-10-06 — [R128] 收市後、下一個交易日未開（恒指 03:00–09:00）：波幅頁改顯示下一個交易日的開市前預測，最新交易日標「已完結」、
 #     狀態「休市／未開市」（之前要到 09:00 才換日，07:53 記下的預測在頁上看不到，而且推送仍在所以誤標「交易中」）。
+#   * 2026-10-08 — [R129] ⚔️ 八陣圖指令台改由本服務託管（?view=bazhentu，bazhentu.html），tnt-hk.com 直接開、不用登入 Claude；
+#     通道數據 ?view=bazhentu&format=json 轉發蛇蟠陣分支 levels.json（公開 repo），快取 120 秒、GCS 後備。商品加小恒指、實倉改數字輸入。
 #   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
 #     美股用紐約時間、交易日 = CME 全段（前一天 18:00 至 17:00，日期取收市那天）、不用港股日曆、開市前紀錄時段 18:00–19:00 ET。
 #     數據由 GitHub Actions（es_daily_push.yml，yfinance ES=F 日線）以 K_SESSION 封包每日推入；沒有 5 分 K，所以沒有日內訊號、
@@ -5415,10 +5417,54 @@ CHART_SCRIPT = """
 
 
 # 每一頁頁頂都有同一組連結，current 那一項不做連結
-# [R91] 八陣圖指令台（大恒指人手掛單）住在 claude.ai 的 artifact 上，不在這裡託管 ——
-#       它用 window.claude.use("db") 自動載入每日高低點，那個執行環境只有 artifact 有。
-#       導覽列上開一個連出去的口就好。
-BAZHENTU_URL = "https://claude.ai/artifact/Qovghgidoao32zWai3gffX"
+# [R91] 八陣圖指令台（大恒指人手掛單）原本住在 claude.ai 的 artifact 上（要登入 Claude 才看到）。
+# [R129] 改由本服務託管：?view=bazhentu 供應 bazhentu.html；通道數據不再用 artifact 的 db，
+#        改由 ?view=bazhentu&format=json 轉發蛇蟠陣分支（公開 repo）的 levels.json，
+#        記憶體快取 BAZHENTU_CACHE_SEC 秒，GitHub 抓不到時退回 GCS 上一份。使用者從 tnt-hk.com 直接開，不用登入。
+BAZHENTU_URL = "https://claude.ai/artifact/Qovghgidoao32zWai3gffX"       # 舊 artifact，僅供查考
+BAZHENTU_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bazhentu.html")
+BAZHENTU_LEVELS_URL = os.environ.get(
+    "BAZHENTU_LEVELS_URL",
+    "https://raw.githubusercontent.com/ai93560137/20260918/claude/gifted-carson-v2tvhw/tradingview/data_external/levels.json")
+BAZHENTU_LEVELS_GCS = "bazhentu/levels.json"                              # GitHub 抓不到時的後備
+BAZHENTU_CACHE_SEC = 120
+_bazhentu_cache = {"ts": 0.0, "data": None}
+
+
+def serve_bazhentu():
+    return _serve_static_html(BAZHENTU_FILE, "八陣圖指令台")
+
+
+def handle_bazhentu_api_get():
+    """指令台的通道數據：GitHub raw → 記憶體快取 → GCS 後備。只讀，不碰電閘與下單。"""
+    now = now_ts()
+    cached = _bazhentu_cache["data"]
+    if cached is not None and now - _bazhentu_cache["ts"] < BAZHENTU_CACHE_SEC:
+        return _json_response(cached, 200)
+    data = None
+    try:
+        response = requests.get(BAZHENTU_LEVELS_URL, timeout=8, headers={"Cache-Control": "no-cache"})
+        if response.ok:
+            body = response.json()
+            if isinstance(body, dict) and isinstance(body.get("hsi"), dict):
+                body.pop("log", None)                                     # 抓取日誌不用給瀏覽器
+                body["served_from"] = "github"
+                data = body
+                try:
+                    gcs_write_text(BAZHENTU_LEVELS_GCS, json.dumps(body, ensure_ascii=False))
+                except Exception as exc:                                  # 後備寫不進去不影響回應
+                    print(f"⚠️ [八陣圖 levels 後備寫入失敗] {exc}", flush=True)
+    except Exception as exc:
+        print(f"⚠️ [八陣圖 levels 抓取失敗] {exc}", flush=True)
+    if data is None:
+        fallback = gcs_read_json(BAZHENTU_LEVELS_GCS, None)
+        if isinstance(fallback, dict):
+            fallback["served_from"] = "gcs 後備（GitHub 暫時抓不到）"
+            data = fallback
+    if data is None:
+        return _json_response({"status": "error", "message": "levels.json 抓不到，也沒有後備副本"}, 503)
+    _bazhentu_cache.update(ts=now, data=data)
+    return _json_response(data, 200)
 
 PAGE_LINKS = [
     ("welcome", "🏠 首頁"),
@@ -5429,7 +5475,7 @@ PAGE_LINKS = [
     ("jinnang_tracker", "✅ 錦囊九十筆"),
     ("futu_range", "🌬️ 風揚陣波幅"),                       # [R105] 每頁頂都能到風揚陣
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
-    (BAZHENTU_URL, "⚔️ 八陣圖指令台"),
+    ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R129] 改為本服務託管
     ("dashboard", "⚙️ 控制台"),
 ]
 
@@ -7170,6 +7216,10 @@ def handle_get(req):
         return serve_jinnang_sheet()
     if view == "jinnang_tracker":                                # 錦囊九十筆進度表
         return serve_jinnang_tracker()
+    if view == "bazhentu" and req.args.get("format") == "json":  # [R129] 指令台通道數據
+        return handle_bazhentu_api_get()
+    if view == "bazhentu":                                       # [R129] 八陣圖指令台（蛇蟠陣人手掛單）
+        return serve_bazhentu()
     if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
         return handle_futu_api_get(req.args.get("symbol"))
     if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取
