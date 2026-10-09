@@ -97,8 +97,12 @@ footer{font-size:11px; color:var(--muted); margin-top:22px; line-height:1.7;}
         <option value="mhi">小恒指 MHI（10/點）</option>
       </select></div>
     <div><label for="qty">每次下單手數（規則：淨值 ÷ 10 萬＝小恒指張數；5 張小＝1 張大）</label><input id="qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
-    <div><label for="pos">目前實倉（+多 −空 0空手）</label>
-      <input id="pos" type="number" min="-99" max="99" step="1" value="0" inputmode="numeric"></div>
+    <div><label for="posSide">目前實倉（方向 ＋ 張數；手機鍵盤沒有負號，所以分開選）</label>
+      <div style="display:flex; gap:8px;">
+        <select id="posSide" aria-label="持倉方向"><option value="0">空手</option><option value="1">多</option><option value="-1">空</option></select>
+        <input id="posQty" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="持倉張數" style="max-width:110px;">
+      </div>
+      <input id="pos" type="hidden" value="0"></div>
   </div>
 </section>
 
@@ -145,7 +149,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var ids = ["inst","qty","pos","h1","l1","h2","l2","h3","l3"];
+  var ids = ["inst","qty","posSide","posQty","h1","l1","h2","l2","h3","l3"];
   var cloudQuote = null;   // 雲端延遲報價 {px,kind,asof}(由 db 載入)
   var liveQ = null;        // 即時報價(瀏覽器直連騰訊 hf_HSI,60 秒刷新)
 
@@ -155,7 +159,18 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       ids.forEach(function(k){ if(s[k] !== undefined && s[k] !== "") $(k).value = s[k]; });
     }catch(e){}
     if(!$("inst").value) $("inst").value = "hsi";   // 舊儲存值對應已下架選項時回退
-    if(!$("pos").value) $("pos").value = "0";
+    try{                                                  // 舊儲存值（pos = +多 −空）→ 新的方向＋張數
+      var s0 = JSON.parse(localStorage.getItem("bzt") || "{}");
+      if(s0.pos !== undefined && s0.posSide === undefined){ var p0 = parseInt(s0.pos, 10) || 0;
+        $("posSide").value = p0 > 0 ? "1" : (p0 < 0 ? "-1" : "0"); $("posQty").value = String(Math.abs(p0)); }
+    }catch(e){}
+    if(!$("posQty").value) $("posQty").value = "0";
+    syncPos();
+  }
+  function syncPos(){                                     // pos = 方向 × 張數（0 = 空手）
+    var side = parseInt($("posSide").value, 10) || 0, q = Math.max(0, Math.round(parseFloat($("posQty").value) || 0));
+    $("pos").value = String(side === 0 ? 0 : side * q);
+    return side * q;
   }
   function save(){
     try{
@@ -203,7 +218,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
     }
 
     var qty = Math.max(1, Math.round(num("qty") || 1));
-    var pos = Math.round(num("pos") || 0);
+    var pos = syncPos();
     var longOnly = $("inst").value === "etf";
     $("dirTxt").textContent = longOnly ? "只做多（ETF）" : "多空雙向";
     $("posTxt").textContent = pos > 0 ? "+" + pos + " 張（多）" : pos < 0 ? pos + " 張（空）" : "空手";

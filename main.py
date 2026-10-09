@@ -104,6 +104,8 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-09 — [R136] 操作箱的狀態分三種：操作日 16:30 前「今天就是操作日」、16:30 後到下週第一個交易日開市前「操作時段：現在可以沽」、
+#     其後「下次操作：下週五」；每種都寫明今天的日期。八陣圖指令台「目前實倉」改為 多／空／空手 ＋ 張數（手機鍵盤打不到負號）。
 #   * 2026-10-09 — [R135] 波幅頁加「📘 方向一實際操作」橫向箱（_fy_howto）：下次操作日、六個步驟配今天的數字（遠期價、價平 IV、σ點、
 #     建議行使價、到期日、權利金門檻）、資金與變體；恒指用 Futu 週期權 IV（沒有就用風揚陣預測），ES 標明未回測。
 #     頁頂「⏱️ x 分鐘前更新」改為「⏱️ 10-09（五）14:35 更新（2 分鐘前）」。
@@ -4306,15 +4308,29 @@ def _strangle_plan(data, symbol=None, now=None):
         return [x for x in (start + timedelta(days=i) for i in range(5)) if futu_trading_day(x.strftime("%Y-%m-%d"), cal)]
     this_week = week_days(d)
     cut = "16:30" if not us else "16:15"                                  # 恒指日市收市 16:30；ES 期權週五 16:15 ET 到期
-    op = this_week[-1] if this_week else None
-    done_today = op is not None and op.strftime("%Y-%m-%d") == today and local.strftime("%H:%M") >= cut
-    if op is None or op < d or done_today:
+    op = this_week[-1] if this_week else None                           # 週末時 op 在今天之前：仍是這一輪的操作日（操作時段）
+    if op is None:
         op = (week_days(d + timedelta(days=7)) or [None])[-1]
     if op is None:
         return None
     expiry_week = week_days(op + timedelta(days=7))
     if not expiry_week:
         return None
+    # [R136] 操作時段 = 操作日收市後，到到期週第一個交易日開市前（HK 09:15；US 前一天 18:00 ET）；過了就輪到下週
+    hhmm = local.strftime("%H:%M")
+    first = expiry_week[0]
+    win_end = (first.strftime("%Y-%m-%d") + " 09:15") if not us else ((first - timedelta(days=1)).strftime("%Y-%m-%d") + " 18:00")
+    now_key = today + " " + hhmm
+    if now_key >= win_end:
+        op = expiry_week[-1]
+        expiry_week = week_days(op + timedelta(days=7))
+        if not expiry_week:
+            return None
+        phase = "upcoming"
+    elif now_key >= op.strftime("%Y-%m-%d") + " " + cut:
+        phase = "window"
+    else:
+        phase = "today" if op.strftime("%Y-%m-%d") == today else "upcoming"
     expiry, n = expiry_week[-1], len(expiry_week)
     five = data.get("latest_5m") or {}
     rows = data.get("rows") or []
@@ -4327,7 +4343,8 @@ def _strangle_plan(data, symbol=None, now=None):
     iv_src = "Futu 週期權價平 IV" if iv else ("風揚陣預測（年化）代替，開倉時以券商報價為準" if har_vol else None)
     vol = iv or har_vol
     step = 25 if us else 50
-    out = {"op": op.strftime("%Y-%m-%d"), "op_is_today": op.strftime("%Y-%m-%d") == today, "cut": cut, "expiry": expiry.strftime("%Y-%m-%d"),
+    out = {"op": op.strftime("%Y-%m-%d"), "op_is_today": phase == "today", "phase": phase, "today": today, "win_end": win_end,
+           "cut": cut, "expiry": expiry.strftime("%Y-%m-%d"),
            "n": n, "F": F, "iv": iv, "iv_expiry": ivc.get("expiry") if iv else None, "har_vol": har_vol, "vol": vol, "vol_src": iv_src, "step": step}
     if F and vol:
         sig = vol / 100 * math.sqrt(n / 252) * F
@@ -4349,8 +4366,14 @@ def _fy_howto(data, symbol=None, now=None):
         return ""
     unit = "US$50" if us else "HK$50"
     inst = "ES 週期權（週五到期，每點 US$50）" if us else "恒指週期權（HSIWO，每點 HK$50）"
-    status = (f"✅ 今天 {esc(_day_label(p['op']))} 就是操作日：{p['cut']} 收市後照下面做" if p["op_is_today"] else
-              f"⏰ 下次操作：{esc(_day_label(p['op']))} {p['cut']} 收市後（沽 {esc(_day_label(p['expiry']))} 到期的那個系列）")
+    today_txt = f"今天 {esc(_day_label(p['today']))}"
+    if p["phase"] == "today":
+        status = f"✅ {today_txt} 就是操作日：{p['cut']} 收市後照下面做（沽 {esc(_day_label(p['expiry']))} 到期的那個系列）"
+    elif p["phase"] == "window":
+        status = (f"✅ 操作時段（{esc(_day_label(p['op']))} {p['cut']} 收市後 至 {esc(_day_label(p['win_end'][:10]))} {p['win_end'][11:]} 開市前）："
+                  f"{today_txt}，現在可以沽 {esc(_day_label(p['expiry']))} 到期的那個系列")
+    else:
+        status = (f"⏰ {today_txt}；下次操作 {esc(_day_label(p['op']))} {p['cut']} 收市後（沽 {esc(_day_label(p['expiry']))} 到期的那個系列）")
     f_txt = f"{_n(p['F'])}（{'即月期貨現價' if p['F'] else '—'}）" if p["F"] else "— 等 5 分 K"
     if p["iv"]:
         iv_txt = f"價平 IV <b>{p['iv']:.1f}%</b>（{esc(p['vol_src'])}，{esc(p['iv_expiry'] or '')} 到期）"
@@ -4386,7 +4409,7 @@ def _fy_howto(data, symbol=None, now=None):
             f"事件週（{'聯儲議息、非農、CPI' if us else '聯儲議息、港府預算案'}）可以不沽。挑時機（VHSI ÷ 預測）回測沒有幫助，所以每週都沽。 {alt} "
             f"完整規則：research/hsi_futures_range/STRANGLE_1SIGMA.md")
     return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
-            f"<div class='fy-howto-status{' today' if p['op_is_today'] else ''}'>{status}</div>"
+            f"<div class='fy-howto-status{' today' if p['phase'] in ('today', 'window') else ''}'>{status}</div>"
             "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>"
             f"<div class='fy-note'>{note}</div></div>")
 
