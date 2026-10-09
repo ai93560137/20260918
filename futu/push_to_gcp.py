@@ -67,6 +67,10 @@
   連續 RAW_EMPTY_STOP 個月拿不到就停（= Futu 歷史的盡頭）。每個月取完就推，記憶體只放一個月。
   存 GCS archive/futu_k_1m/HK.HSIMAIN/<日期>.json（跟 HK.HSI_FRONT 分開）。重跑不會重複（按時間合併）。
 
+[v14] 地載陣前向測試（GCP main.py R137，?view=dizai）：常駐推送即月期貨時，每輪多推 1 分 K（K_1M），
+  只存封存、不蓋 5 分 K 即時快照。第一輪推前一個與目前交易日全部，之後只推最近 FRONT_1M_RECENT_MIN 分鐘。
+  不想推可設 setx FUTU_FRONT_1M 0。
+
 [v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
   GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
 
@@ -96,7 +100,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "13"
+SCRIPT_VERSION = "14"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -120,6 +124,8 @@ DAILY_BARS = max(5, min(100, int(os.environ.get("FUTU_DAILY_BARS", "20"))))
 DAILY_MAX = max(1, min(1000, int(os.environ.get("FUTU_DAILY_MAX", "60"))))
 FRONT_RE = re.compile(r"^HK\.([A-Z]{2,4})_FRONT$")   # [v6] 即月期貨別名，例 HK.HSI_FRONT
 SESSION_CUT_HOUR = 9                                  # [v7] 交易日 = 09:00 至翌日 09:00（日市＋當晚夜市）
+FRONT_1M_ENABLED = os.environ.get("FUTU_FRONT_1M", "1").strip() != "0"   # [v14] 即月期貨每輪也推 1 分 K
+FRONT_1M_RECENT_MIN = 20                              # [v14] 之後每輪只重推最近 20 分鐘（含正在形成的那根）
 FRONT_5M_COUNT = 300                                  # [v7] 即月期貨每輪取 5 分 K 根數（一個交易日約 192 根）
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 BACKFILL_DAYS = 380
@@ -256,6 +262,7 @@ class FutuPusher:
         self.pending_unsub = []                       # [(訂閱時間, [代號…])]
         self.front = {}                               # [v6] 別名 → {day, code, last_trade, start}
         self.calendar = None                          # [v8] (查詢日, {from, to, days})
+        self.last_1m = {}                             # [v14] 別名 → 已推到的 1 分 K time_key
 
     def connect(self):
         if self.ctx is None:
@@ -548,6 +555,40 @@ class FutuPusher:
         if days:
             ok = self.post({**base, "kline_type": "K_SESSION", "data": days,
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, quiet=True) and ok
+        if FRONT_1M_ENABLED:
+            self.push_front_1m(alias, code, info["day"], start, base)
+        return ok
+
+    def push_front_1m(self, alias, code, today, start, base):
+        """[v14] 前一個與目前交易日的 1 分 K → K_1M 封包（地載陣前向測試）。失敗只記一行，不影響 5 分 K。"""
+        try:
+            day = date.fromisoformat(today)
+            ret, df, _ = self.ctx.request_history_kline(code, start=(day - timedelta(days=4)).isoformat(),
+                                                        end=(day + timedelta(days=1)).isoformat(),
+                                                        ktype=ft.KLType.K_1M, max_count=None)
+            if ret != ft.RET_OK:
+                raise RuntimeError(str(df)[:120])
+            bars = [b for b in (bars_from_df(df.sort_values("time_key")) if not df.empty else [])
+                    if b.get("volume") and session_date(b["time_key"]) >= start]
+        except Exception as exc:
+            log(f"  ⚠️ 1 分 K 取得失敗（{str(exc)[:60]}），下一輪再推")
+            return False
+        sessions = sorted({session_date(b["time_key"]) for b in bars})
+        keep = set(sessions[-2:])                                   # 前一個與目前交易日（RSI 熱身＋上日收市）
+        bars = [b for b in bars if session_date(b["time_key"]) in keep]
+        last = self.last_1m.get(alias)
+        if last:
+            cut = (datetime.fromisoformat(last) - timedelta(minutes=FRONT_1M_RECENT_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+            bars = [b for b in bars if b["time_key"] >= cut]
+        if not bars:
+            return True
+        ok = True
+        for i in range(0, len(bars), INTRADAY_CHUNK):
+            ok = self.post({**base, "kline_type": "K_1M", "data": bars[i:i + INTRADAY_CHUNK],
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, quiet=True) and ok
+        if ok:
+            self.last_1m[alias] = bars[-1]["time_key"]
+        log(f"  1 分 K {len(bars)} 根（至 {bars[-1]['time_key'][5:16]}）{'已推' if ok else '⚠️ 推送失敗，下一輪重推'}")
         return ok
 
     def recent_5m(self, code, today):

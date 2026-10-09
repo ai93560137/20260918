@@ -172,6 +172,8 @@ class Win60(FakeCtx):
         return ft.RET_OK, kline(code, ["2026-10-28 14:00:00", "2026-10-28 15:00:00"], 24000)
 
     def request_history_kline(self, code, start, end, ktype, max_count=None):
+        if ktype == "K_1M":                                 # [v14] 1 分 K 另有測試
+            return ft.RET_OK, pd.DataFrame(), None
         self.hist_args = (start, end, ktype)
         return ft.RET_OK, kline(code, ["2026-10-27 23:00:00", "2026-10-28 09:20:00", "2026-10-28 14:00:00",
                                        "2026-10-28 15:00:00"], 24000), None
@@ -313,6 +315,34 @@ finally:
     push.FutuPusher.export_intraday, push.GCP_URL, push.TOKEN, sys.argv = real_export, real_url, real_token, real_argv
 check("命令列：K_1M 不寫天數預設 365 天；寫了照用；不寫週期仍是 1100 天 15 分 K；K_5M 不收",
       calls == [("HK.HSI_FRONT", 365, "K_1M"), ("HK.HSI_FRONT", 200, "K_1M"), ("HK.HSI_FRONT", 1100, "K_15M"), ("rc", 2)], calls)
+
+print("=== [v14] 常駐推送即月期貨時多推 1 分 K（地載陣前向測試）===")
+class OneMin(Win60):
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.one_args = []
+    def request_history_kline(self, code, start, end, ktype, max_count=None):
+        if ktype != "K_1M":
+            return super().request_history_kline(code, start, end, ktype, max_count)
+        self.one_args.append((code, start, end))
+        times = ["2026-10-23 10:00:00", "2026-10-26 10:00:00", "2026-10-27 02:59:00", "2026-10-28 09:16:00",
+                 "2026-10-28 14:40:00", "2026-10-28 14:59:00", "2026-10-28 15:00:00"]
+        df = kline(code, times, 24000)
+        df.loc[df["time_key"] == "2026-10-28 09:16:00", "volume"] = 0
+        return ft.RET_OK, df, None
+po = push.FutuPusher(); po.ctx = OneMin(LISTING)
+ok, sent = run(po, "2026-10-28", "15:05")
+k1 = [b["time_key"] for p in sent if p["kline_type"] == "K_1M" for b in p["data"]]
+check("K_1M 封包：前一個與目前交易日（10-26 夜市 02:59 屬 10-26），不送成交量 0、不送更早的",
+      k1 == ["2026-10-26 10:00:00", "2026-10-27 02:59:00", "2026-10-28 14:40:00", "2026-10-28 14:59:00", "2026-10-28 15:00:00"], k1)
+check("向 Futu 取即月合約的 1 分 K（往前 4 天，蓋過週末／假期）", po.ctx.one_args[0] == ("HK.HSI2610", "2026-10-24", "2026-10-29"), po.ctx.one_args)
+ok, sent = run(po, "2026-10-28", "15:10")
+k1 = [b["time_key"] for p in sent if p["kline_type"] == "K_1M" for b in p["data"]]
+check("第二輪只重推最近 20 分鐘（含正在形成那根）", k1 == ["2026-10-28 14:40:00", "2026-10-28 14:59:00", "2026-10-28 15:00:00"], k1)
+push.FRONT_1M_ENABLED = False
+ok, sent = run(po, "2026-10-28", "15:15")
+check("FUTU_FRONT_1M=0 → 不推 1 分 K", not [p for p in sent if p["kline_type"] == "K_1M"], [p["kline_type"] for p in sent])
+push.FRONT_1M_ENABLED = True
 
 print("=== [v13] --export-raw：單一代號逐月、有多少抓多少 ===")
 class RawCtx:
