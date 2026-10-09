@@ -56,6 +56,10 @@
   python push_to_gcp.py --export-intraday HK.HSI_FRONT              # 預設 1100 天的 15 分 K
   python push_to_gcp.py --export-intraday HK.HSI_FRONT 1100 K_60M   # 15 分 K 拿不到時改 60 分 K
   轉月規則、主連代替、0.6 秒間隔都跟 --backfill 一樣；存 GCS archive/futu_k_15m/HK.HSI_FRONT/<日期>.json。
+  [v12] 也可匯出 1 分 K（存 archive/futu_k_1m/HK.HSI_FRONT/<日期>.json）：
+  python push_to_gcp.py --export-intraday HK.HSI_FRONT 365 K_1M     # K_1M 不寫天數時預設 365 天
+  一個交易日（日市＋夜市）約 1000 根 1 分 K，一年約 25 萬根、約 650 包，要跑一陣子；
+  整段先放在記憶體再推，所以天數別開太大。Futu 1 分 K 歷史可能比 15 分 K 短，拿不到的那幾天就是空的。
 
 [v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
   GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
@@ -86,7 +90,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "11"
+SCRIPT_VERSION = "12"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -115,7 +119,8 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 BACKFILL_DAYS = 380
 BACKFILL_CHUNK = 15                                   # 每包日 K 根數（GCP 每天一個封存檔，包小一點才不逾時）
 INTRADAY_CHUNK = 400                                  # [v9] 日內 K 線每包根數（GCP 每包最多收 500 根）
-INTRADAY_KTYPES = ("K_15M", "K_30M", "K_60M")
+INTRADAY_KTYPES = ("K_1M", "K_15M", "K_30M", "K_60M")   # [v12] 加 K_1M
+INTRADAY_DEFAULT_DAYS = {"K_1M": 365}                # [v12] 1 分 K 量大，預設少取；其他 1100 天
 BACKFILL_PACE_SEC = 0.6                               # 回補時每次向 Futu 取歷史／交易日曆之間的間隔（避開頻率限制）
 SUBS_USED = len(SYMBOLS)
 DAILY_BATCH = max(5, min(100 - SUBS_USED - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
@@ -849,8 +854,8 @@ def main():
         idx = sys.argv.index("--export-intraday")
         args = sys.argv[idx + 1:idx + 4]
         alias = (args[0] if args else "HK.HSI_FRONT").upper()
-        days = int(args[1]) if len(args) > 1 and args[1].isdigit() else 1100
-        ktype = (args[2] if len(args) > 2 else "K_15M").upper()
+        ktype = next((a for a in args[1:] if not a.isdigit()), "K_15M").upper()   # [v12] 可省略天數：HK.HSI_FRONT K_1M
+        days = int(args[1]) if len(args) > 1 and args[1].isdigit() else INTRADAY_DEFAULT_DAYS.get(ktype, 1100)
         if not FRONT_RE.match(alias) or ktype not in INTRADAY_KTYPES:
             print(f"用法：--export-intraday HK.HSI_FRONT [天數] [{'|'.join(INTRADAY_KTYPES)}]", file=sys.stderr)
             return 2

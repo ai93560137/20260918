@@ -9,7 +9,7 @@ import pandas as pd
 # ---- 假的 futu 模組（repo 的 futu/ 資料夾會被當成命名空間套件，要先蓋掉）
 ft = types.ModuleType("futu")
 ft.RET_OK, ft.RET_ERROR = 0, -1
-ft.KLType = types.SimpleNamespace(K_5M="K_5M", K_15M="K_15M", K_30M="K_30M", K_60M="K_60M", K_DAY="K_DAY")
+ft.KLType = types.SimpleNamespace(K_1M="K_1M", K_5M="K_5M", K_15M="K_15M", K_30M="K_30M", K_60M="K_60M", K_DAY="K_DAY")
 ft.SubType = types.SimpleNamespace(K_5M="K_5M", K_DAY="K_DAY")
 ft.Market = types.SimpleNamespace(HK="HK", US="US")
 ft.SecurityType = types.SimpleNamespace(FUTURE="FUTURE", IDX="IDX")
@@ -290,6 +290,29 @@ check("轉月按交易日：09-29 凌晨 03:00 屬 09-28 交易日 → 2609；09
       (src.get("2026-09-29 03:00:00"), src.get("2026-09-29 09:30:00")))
 check("過期合約那段用主連", src["2026-08-27 12:00:00"].endswith("HK.HSImain(代2608)"))
 check("40 天前的交易日之前不送", min(t for t, _ in bars) >= "2026-08-25")
+
+print("=== [v12] 1 分 K 匯出 ===")
+pi = push.FutuPusher(); pi.ctx = IntraCtx(LISTING, trading_days=WEEKDAYS)
+sent = []
+pi.post = lambda packet, quiet=False: sent.append(packet) or True
+ok = pi.export_intraday("HK.HSI_FRONT", 40, "K_1M")
+check("K_1M 匯出成功、kline_type 是 K_1M、向 Futu 要 1 分 K",
+      ok and sent and all(p["kline_type"] == "K_1M" for p in sent) and pi.ctx.kt == "K_1M")
+
+calls = []
+real_export, real_url, real_token, real_argv = push.FutuPusher.export_intraday, push.GCP_URL, push.TOKEN, sys.argv
+push.FutuPusher.export_intraday = lambda self, alias, days, ktype: calls.append((alias, days, ktype)) or True
+push.GCP_URL, push.TOKEN = "https://example.invalid/", "t"
+try:
+    for argv in (["--export-intraday", "HK.HSI_FRONT", "K_1M"], ["--export-intraday", "HK.HSI_FRONT", "200", "k_1m"],
+                 ["--export-intraday", "HK.HSI_FRONT"], ["--export-intraday", "HK.HSI_FRONT", "K_5M"]):
+        sys.argv = ["push_to_gcp.py", *argv]
+        rc = push.main()
+        if rc: calls.append(("rc", rc))
+finally:
+    push.FutuPusher.export_intraday, push.GCP_URL, push.TOKEN, sys.argv = real_export, real_url, real_token, real_argv
+check("命令列：K_1M 不寫天數預設 365 天；寫了照用；不寫週期仍是 1100 天 15 分 K；K_5M 不收",
+      calls == [("HK.HSI_FRONT", 365, "K_1M"), ("HK.HSI_FRONT", 200, "K_1M"), ("HK.HSI_FRONT", 1100, "K_15M"), ("rc", 2)], calls)
 
 print("=== [v10] --probe-iv：VHSI 與期權歷史 ===")
 class ProbeCtx:
