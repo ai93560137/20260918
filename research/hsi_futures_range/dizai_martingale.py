@@ -2,7 +2,7 @@
 
 規則（使用者 2026-10-09 定）：
   入場  逆市訊號（dizai_search.signals：RSI 穿越／轉向、當日升跌門檻、時段），下一根開市 1 張；同一時間只持一組；每日最多開 1 組。
-  加倉  比最近一次入場／加倉價再逆向 g × ATR20（入場時的平均全日波幅）→ 第一次加 1 張（共 2 張）、第二次加 2 張（共 4 張），最多 2 次。
+  加倉  比最近一次入場／加倉價再逆向 g × ATR20（入場時的平均全日波幅），或入場價的固定百分比（step_pct）→ 第一次加 1 張（共 2 張）、第二次加 2 張（共 4 張），最多 2 次。
   止賺  價格到「平均成本 ± tp 點」（有利方向）→ 全部平倉。沒加過倉時就是入場價 ± tp。
   止蝕  價格到「平均成本 ∓ 1000 點」（不利方向）→ 全部平倉。
   留倉  不在 03:00 平倉；一直持有到止賺或止蝕（數據結束仍未平的，按最後收市價計浮動盈虧）。
@@ -37,7 +37,8 @@ def first_hit(arr, start, cond_fn, chunk=4096):
     return BIG
 
 
-def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0):
+def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None):
+    """step_pct：加倉間距用入場價的百分比（例 0.01 = 1%）；None → 用 g_atr × ATR20。"""
     o, h, l, c, sid = D["o"], D["h"], D["l"], D["c"], D["sid"]
     n = len(o)
     trades, busy_until, opened_day = [], -1, set()
@@ -46,7 +47,7 @@ def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0):
         if e <= busy_until or e >= n or sid[e] != sid[i] or sid[i] in opened_day:
             continue
         opened_day.add(sid[i])
-        step = g_atr * D["atr"][i]
+        step = step_pct * o[e] if step_pct else g_atr * D["atr"][i]
         lots, avg, last = 1, o[e], o[e]
         fills = [(int(e), "open", float(o[e]), 1)]
         realized_cost = cost
