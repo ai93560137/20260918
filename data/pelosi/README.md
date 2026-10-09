@@ -1,6 +1,6 @@
 # 佩洛西（Nancy Pelosi）股票交易追蹤
 
-更新時間：2026-10-09 08:37 UTC　｜　申報 66 份　｜　交易 227 筆
+更新時間：2026-10-09 12:41 UTC　｜　申報 66 份　｜　交易 227 筆
 
 數據源：[House Clerk 財務披露](https://disclosures-clerk.house.gov/FinancialDisclosure)（Periodic Transaction Report）。交易多由配偶 Paul Pelosi 帳戶進行；申報可延遲至交易後 45 天，金額只有區間。漲跌幅為正股自交易日收盤至最新收盤（Yahoo，僅供參考）。
 
@@ -38,7 +38,7 @@
 | CRM | 5 | 2 | 2022-12-20 | +77.3% |
 | GOOG | 2 | 0 | 2022-09-16 | +232.8% |
 | MU | 1 | 1 | 2022-09-16 | +1860.0% |
-| WBD | 0 | 0 | 2022-04-11 | +24.9% |
+| WBD | 0 | 0 | 2022-04-11 | +0.0% |
 | AXP | 3 | 0 | 2022-01-21 | +94.1% |
 | REOF XX, llC | 1 | 0 | 2021-12-22 | — |
 | WORK | 1 | 1 | 2021-07-22 | — |
@@ -157,7 +157,7 @@
 | 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | MSFT | Microsoft Corporation | 買入 | $50,001 - $100,000 | 10 張 Call 行使價 $180 到期 2023-06-16 | +101.3% |
 | 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | MSFT | Microsoft Corporation | 買入 | $250,001 - $500,000 | 40 張 Call 行使價 $180 到期 2023-06-16 | +101.3% |
 | 2022-05-13 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | AAPL | Apple Inc. | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $80 到期 2023-03-17 | +131.4% |
-| 2022-04-11 | [2022-05-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020916.pdf) | WBD | Warner Bros. Discovery, Inc. - Series A | 交換 | $50,001 - $100,000 | 2419 shares received as the result of a spinoff of AT&T (T)  | +24.9% |
+| 2022-04-11 | [2022-05-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020916.pdf) | WBD | Warner Bros. Discovery, Inc. - Series A | 交換 | $50,001 - $100,000 | 2419 shares received as the result of a spinoff of AT&T (T)  | +0.0% |
 | 2022-03-17 | [2022-03-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020662.pdf) | TSLA | Tesla, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 25 call options (2,500 shares) expiring 3/18/22 at | +29.1% |
 | 2022-01-27 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $250,001 - $500,000 | Purchased 10,000 units in a global asset management firm pro | — |
 | 2022-01-27 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $250,001 - $500,000 | Purchased 10,000 units in a global asset management firm pro | — |
