@@ -128,5 +128,24 @@ sec_h = main._fy_money({"forecast": {}, "summary": {}, "rows": []}, "HK.HSI_FRON
 check("恒指的四個方向照舊（VHSI 規則、恒指回測），並加 1σ 勒式規則書連結", "STRANGLE_1SIGMA" in sec_h and "VHSI 明顯高於" in sec_h
       and main.MONEY_FADE["status"] in sec_h and "fade_us" not in sec_h and "US$50" not in sec_h)
 
+
+print("\n=== [R135] 方向一實際操作箱、頁頂更新時間 ===")
+HK = "HK.HSI_FRONT"
+base = {"calendar": {}, "latest_5m": {"close": 24144.0, "time_key": "2026-10-08 14:35:00"}, "rows": [], "forecast": {"range": 420.0, "ref_close": 24100.0},
+        "iv_compare": {"iv": 18.3, "fresh": True, "expiry": "2026-10-17", "har_vol": 19.0}, "accuracy": {}}
+pl = main._strangle_plan(base, HK, now=hk("2026-10-08 14:00"))
+check("週四：下次操作週五 10-09、沽 10-16 到期、5 個交易日", pl["op"] == "2026-10-09" and not pl["op_is_today"] and pl["expiry"] == "2026-10-16" and pl["n"] == 5, pl)
+check("σ點 = 0.183×√(5/252)×24,144 ≈ 622；Put 往下取 23,500、Call 往上取 24,800", abs(pl["sigma"] - 622) < 2 and pl["put"] == 23500 and pl["call"] == 24800, (pl.get("sigma"), pl.get("put"), pl.get("call")))
+pl2 = main._strangle_plan(base, HK, now=hk("2026-10-09 10:00"))
+pl3 = main._strangle_plan(base, HK, now=hk("2026-10-09 17:00"))
+check("週五 10:00 = 今天操作日；16:30 後 → 下次是 10-16、沽 10-23 到期", pl2["op_is_today"] and pl3["op"] == "2026-10-16" and pl3["expiry"] == "2026-10-23", (pl2["op"], pl3["op"], pl3["expiry"]))
+stale = {**base, "iv_compare": {"iv": 18.3, "fresh": False, "har_vol": 19.0}}
+pl4 = main._strangle_plan(stale, HK, now=hk("2026-10-08 14:00"))
+check("期權報價不新鮮 → 改用風揚陣預測年化 19.0%", pl4["iv"] is None and pl4["vol"] == 19.0 and "風揚陣" in pl4["vol_src"])
+html_h = main._fy_howto(base, HK, now=hk("2026-10-08 14:00"))
+check("恒指操作箱：六步、下次操作日、建議行使價、資金、規則書", all(x in html_h for x in ("第 1 步", "第 6 步", "下次操作：10-09（五） 16:30", "23,500", "24,800", "HK$250,000", "STRANGLE_1SIGMA")), html_h[:300])
+page_box = client.get("/?view=es_range").get_data(as_text=True)
+check("ES 頁有操作箱（標明未回測）與頁頂日期時間", "方向一實際操作：每週沽 ES 週期權" in page_box and "ES 未回測" in page_box and "更新（" in page_box and "⏱️ 10-05（一） 16:00 更新" in page_box)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
