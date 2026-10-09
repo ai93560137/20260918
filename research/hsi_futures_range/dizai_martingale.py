@@ -37,8 +37,8 @@ def first_hit(arr, start, cond_fn, chunk=4096):
     return BIG
 
 
-def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None):
-    """step_pct：加倉間距用入場價的百分比（例 0.01 = 1%）；None → 用 g_atr × ATR20。"""
+def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, step_pts=None):
+    """加倉間距：step_pts（固定點數）＞ step_pct（入場價百分比，例 0.01 = 1%）＞ g_atr × ATR20。"""
     o, h, l, c, sid = D["o"], D["h"], D["l"], D["c"], D["sid"]
     n = len(o)
     trades, busy_until, opened_day = [], -1, set()
@@ -47,7 +47,7 @@ def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None):
         if e <= busy_until or e >= n or sid[e] != sid[i] or sid[i] in opened_day:
             continue
         opened_day.add(sid[i])
-        step = step_pct * o[e] if step_pct else g_atr * D["atr"][i]
+        step = step_pts if step_pts else (step_pct * o[e] if step_pct else g_atr * D["atr"][i])
         lots, avg, last = 1, o[e], o[e]
         fills = [(int(e), "open", float(o[e]), 1)]
         realized_cost = cost
