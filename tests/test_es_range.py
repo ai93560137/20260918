@@ -138,12 +138,19 @@ check("週四：下次操作週五 10-09、沽 10-16 到期、5 個交易日", p
 check("σ點 = 0.183×√(5/252)×24,144 ≈ 622；Put 往下取 23,500、Call 往上取 24,800", abs(pl["sigma"] - 622) < 2 and pl["put"] == 23500 and pl["call"] == 24800, (pl.get("sigma"), pl.get("put"), pl.get("call")))
 pl2 = main._strangle_plan(base, HK, now=hk("2026-10-09 10:00"))
 pl3 = main._strangle_plan(base, HK, now=hk("2026-10-09 17:00"))
-check("週五 10:00 = 今天操作日；16:30 後 → 下次是 10-16、沽 10-23 到期", pl2["op_is_today"] and pl3["op"] == "2026-10-16" and pl3["expiry"] == "2026-10-23", (pl2["op"], pl3["op"], pl3["expiry"]))
+pl5 = main._strangle_plan(base, HK, now=hk("2026-10-11 20:00"))
+pl6 = main._strangle_plan(base, HK, now=hk("2026-10-12 09:20"))
+check("[R136] 週五 10:00 = 今天操作日；週五 17:00 與週日 = 操作時段（沽 10-16 到期）；週一 09:20 後 → 下次 10-16、沽 10-23",
+      pl2["phase"] == "today" and pl3["phase"] == "window" and pl3["expiry"] == "2026-10-16" and pl6["phase"] == "window"[:0] + "upcoming"
+      and pl5["phase"] == "window" and pl6["op"] == "2026-10-16" and pl6["expiry"] == "2026-10-23" and pl3["win_end"] == "2026-10-12 09:15",
+      [(x["phase"], x["op"], x["expiry"]) for x in (pl2, pl3, pl5, pl6)])
+html_w = main._fy_howto(base, HK, now=hk("2026-10-09 17:00"))
+check("操作時段的狀態列寫明今天與時段", "操作時段（10-09（五） 16:30 收市後 至 10-12（一） 09:15 開市前）" in html_w and "今天 10-09（五）" in html_w, html_w[:400])
 stale = {**base, "iv_compare": {"iv": 18.3, "fresh": False, "har_vol": 19.0}}
 pl4 = main._strangle_plan(stale, HK, now=hk("2026-10-08 14:00"))
 check("期權報價不新鮮 → 改用風揚陣預測年化 19.0%", pl4["iv"] is None and pl4["vol"] == 19.0 and "風揚陣" in pl4["vol_src"])
 html_h = main._fy_howto(base, HK, now=hk("2026-10-08 14:00"))
-check("恒指操作箱：六步、下次操作日、建議行使價、資金、規則書", all(x in html_h for x in ("第 1 步", "第 6 步", "下次操作：10-09（五） 16:30", "23,500", "24,800", "HK$250,000", "STRANGLE_1SIGMA")), html_h[:300])
+check("恒指操作箱：六步、下次操作日、建議行使價、資金、規則書", all(x in html_h for x in ("第 1 步", "第 6 步", "今天 10-08（四）；下次操作 10-09（五） 16:30", "23,500", "24,800", "HK$250,000", "STRANGLE_1SIGMA")), html_h[:300])
 page_box = client.get("/?view=es_range").get_data(as_text=True)
 check("ES 頁有操作箱（標明未回測）與頁頂日期時間", "方向一實際操作：每週沽 ES 週期權" in page_box and "ES 未回測" in page_box and "更新（" in page_box and "⏱️ 10-05（一） 16:00 更新" in page_box)
 
