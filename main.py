@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-09 — [R135] 波幅頁加「📘 方向一實際操作」橫向箱（_fy_howto）：下次操作日、六個步驟配今天的數字（遠期價、價平 IV、σ點、
+#     建議行使價、到期日、權利金門檻）、資金與變體；恒指用 Futu 週期權 IV（沒有就用風揚陣預測），ES 標明未回測。
+#     頁頂「⏱️ x 分鐘前更新」改為「⏱️ 10-09（五）14:35 更新（2 分鐘前）」。
 #   * 2026-10-09 — [R134] ES 頁加「💰 怎樣用來賺錢（四個方向）」：方向二用 ES 8 年 15 分 K 回測（research/us_futures/fade_us.py：反向做不賺，
 #     同恒指）；方向一（ES 期權／VIX）未回測、沒有 VIX 餵價，只列出做法；方向三、四用 ES 的預測與單位（每點 US$50，MES US$5）。
 #     恒指頁方向一加「每週沽 1σ 勒式」實際規則的連結（research/hsi_futures_range/STRANGLE_1SIGMA.md）。
@@ -3911,6 +3914,7 @@ def futu_range_data(symbol):
             break
     data["iv_compare"] = futu_iv_compare(data.get("forecast"))     # [R106] 方向一：期權 IV 對預測波幅
     data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"), "after_close": after_close,
+                 "calendar": calendar,                                        # [R135] 給操作箱算操作日與到期日
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
                  "latest_5m": five or None,
                  "latest_5m_age_sec": None if age is None else int(age)})
@@ -4018,6 +4022,10 @@ FY_CSS = """<style>
 .fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
 .fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
 .fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.fy-howto { background:var(--card); border-radius:16px; padding:18px 20px 14px; margin-bottom:18px; box-shadow:0 4px 15px rgba(0,0,0,.04); border-left:5px solid #2f6fed; }
+.fy-howto h2 { font-size:17px; margin:0 0 2px; } .fy-howto-status { font-size:14px; font-weight:600; margin:8px 0 10px; padding:8px 12px; border-radius:10px; background:#eef4ff; }
+.fy-howto-status.today { background:#e7f7ec; } .fy-steps { margin:0; padding-left:20px; } .fy-steps li { font-size:13.5px; line-height:1.6; margin:6px 0; }
+.fy-steps b { color:#2f6fed; } .fy-steps .num { font-weight:700; }
 .fy-hist { margin-top:14px; padding-top:10px; border-top:2px solid #eef1f4; } .fy-hist h3 { font-size:14px; margin:0 0 6px; }
 .fy-hist table { width:100%; border-collapse:collapse; font-size:12.5px; } .fy-hist th { font-weight:600; color:var(--muted); text-align:right; padding:3px 4px; }
 .fy-hist td { text-align:right; padding:4px; border-bottom:1px solid #f1f3f5; white-space:nowrap; } .fy-hist td:first-child, .fy-hist th:first-child { text-align:left; }
@@ -4283,6 +4291,106 @@ MONEY_FADE = {                                  # 方向二回測摘要（fade_p
 }
 
 
+def _strangle_plan(data, symbol=None, now=None):
+    """[R135] 方向一實際操作的數字：操作日、到期日、交易日數、遠期價、IV、σ點、建議行使價、變體行使價。"""
+    m = futu_market(symbol)
+    us = m["key"] == "US"
+    now = now or datetime.now(timezone.utc)
+    local = now.astimezone(m["tz"])
+    cal = data.get("calendar") or {}
+    today = local.strftime("%Y-%m-%d")
+    d = datetime.strptime(today, "%Y-%m-%d")
+
+    def week_days(any_day):
+        start = any_day - timedelta(days=any_day.weekday())
+        return [x for x in (start + timedelta(days=i) for i in range(5)) if futu_trading_day(x.strftime("%Y-%m-%d"), cal)]
+    this_week = week_days(d)
+    cut = "16:30" if not us else "16:15"                                  # 恒指日市收市 16:30；ES 期權週五 16:15 ET 到期
+    op = this_week[-1] if this_week else None
+    done_today = op is not None and op.strftime("%Y-%m-%d") == today and local.strftime("%H:%M") >= cut
+    if op is None or op < d or done_today:
+        op = (week_days(d + timedelta(days=7)) or [None])[-1]
+    if op is None:
+        return None
+    expiry_week = week_days(op + timedelta(days=7))
+    if not expiry_week:
+        return None
+    expiry, n = expiry_week[-1], len(expiry_week)
+    five = data.get("latest_5m") or {}
+    rows = data.get("rows") or []
+    F = to_float(five.get("close")) or (to_float(rows[-1].get("close")) if rows and isinstance(rows[-1], dict) else None)
+    ivc = data.get("iv_compare") or {}
+    fc = data.get("forecast") or {}
+    har_vol = ivc.get("har_vol") or ((fc["range"] / RANGE_TO_SIGMA / fc["ref_close"] * math.sqrt(252) * 100)
+                                     if fc.get("range") and fc.get("ref_close") else None)
+    iv = ivc.get("iv") if (ivc.get("iv") and ivc.get("fresh")) else None
+    iv_src = "Futu 週期權價平 IV" if iv else ("風揚陣預測（年化）代替，開倉時以券商報價為準" if har_vol else None)
+    vol = iv or har_vol
+    step = 25 if us else 50
+    out = {"op": op.strftime("%Y-%m-%d"), "op_is_today": op.strftime("%Y-%m-%d") == today, "cut": cut, "expiry": expiry.strftime("%Y-%m-%d"),
+           "n": n, "F": F, "iv": iv, "iv_expiry": ivc.get("expiry") if iv else None, "har_vol": har_vol, "vol": vol, "vol_src": iv_src, "step": step}
+    if F and vol:
+        sig = vol / 100 * math.sqrt(n / 252) * F
+        out.update(sigma=sig, put_raw=F - sig, call_raw=F + sig,
+                   put=int(math.floor((F - sig) / step) * step), call=int(math.ceil((F + sig) / step) * step))
+    cal_w = ((data.get("accuracy") or {}).get("week") or {}).get("cal")
+    if cal_w and fc.get("range") and fc.get("ref_close"):              # 變體：下週預測範圍的九成邊（5%／95% 分位）
+        lv = _hl_levels(fc["ref_close"], fc["range"] * math.sqrt(n) * PERIOD_RANGE_RATIO["week"][1], cal_w["ups"], cal_w["downs"], 0.05)
+        out.update(alt_put=int(math.floor(lv["low_lo"] / step) * step), alt_call=int(math.ceil(lv["high_hi"] / step) * step))
+    return out
+
+
+def _fy_howto(data, symbol=None, now=None):
+    """[R135] 📘 方向一實際操作：橫向箱，告訴使用者這週該做什麼（配今天的數字）。"""
+    m = futu_market(symbol)
+    us = m["key"] == "US"
+    p = _strangle_plan(data, symbol, now)
+    if not p:
+        return ""
+    unit = "US$50" if us else "HK$50"
+    inst = "ES 週期權（週五到期，每點 US$50）" if us else "恒指週期權（HSIWO，每點 HK$50）"
+    status = (f"✅ 今天 {esc(_day_label(p['op']))} 就是操作日：{p['cut']} 收市後照下面做" if p["op_is_today"] else
+              f"⏰ 下次操作：{esc(_day_label(p['op']))} {p['cut']} 收市後（沽 {esc(_day_label(p['expiry']))} 到期的那個系列）")
+    f_txt = f"{_n(p['F'])}（{'即月期貨現價' if p['F'] else '—'}）" if p["F"] else "— 等 5 分 K"
+    if p["iv"]:
+        iv_txt = f"價平 IV <b>{p['iv']:.1f}%</b>（{esc(p['vol_src'])}，{esc(p['iv_expiry'] or '')} 到期）"
+    elif p["vol"]:
+        iv_txt = f"價平 IV 未有即時報價 → 先用{esc(p['vol_src'])} <b>{p['vol']:.1f}%</b>"
+    else:
+        iv_txt = "價平 IV：從券商取（Call、Put 平均）"
+    if p.get("sigma"):
+        sig_txt = (f"{p['vol'] / 100:.3f} × √({p['n']}/252) × {_n(p['F'])} = <b>{_n(p['sigma'])} 點</b>")
+        strike_txt = (f"Put：{_n(p['F'])} − {_n(p['sigma'])} = {_n(p['put_raw'])} → 往下取 <b>{_n(p['put'])}</b>；"
+                      f"Call：{_n(p['F'])} + {_n(p['sigma'])} = {_n(p['call_raw'])} → 往上取 <b>{_n(p['call'])}</b>"
+                      f"（行使價間距 {p['step']} 點，取最近有掛牌的）")
+        sell_txt = f"沽 1 張 Put <b>{_n(p['put'])}</b> ＋ 1 張 Call <b>{_n(p['call'])}</b>（{esc(_day_label(p['expiry']))} 到期）"
+        hold_txt = (f"結算價在 {_n(p['put'])}–{_n(p['call'])} 之間 = 全收權利金；出了範圍每點賠 {unit}。")
+    else:
+        sig_txt = strike_txt = sell_txt = hold_txt = "等有現價與 IV 才算得出"
+    alt = (f"📎 變體（更穩，回測 +39 點／週、96% 週賺、最差 −144）：行使價改用下週預測範圍的九成邊 Put <b>{_n(p['alt_put'])}</b>／Call <b>{_n(p['alt_call'])}</b>。"
+           if p.get("alt_put") else "")
+    head = ("📘 方向一實際操作：每週沽 ES 週期權 1σ 勒式（做法同恒指，ES 未回測）" if us else "📘 方向一實際操作：每週沽恒指週期權 1σ 勒式")
+    sub = ("恒指真實數據 51 週：每週 +55 點、84% 週賺、最差一週 −472 點、t 2.85；ES 要先用 CME 結算價重跑回測。統計估計，不是交易建議；先紙上交易。" if us else
+           "真實結算價回測 51 週（2025-10 至 2026-09）：每週 +55 點、84% 週賺、最差一週 −472 點、最大回撤 472、t 2.85。統計估計，不是交易建議；先紙上交易。")
+    steps = [
+        f"<b>第 1 步 查兩個數</b>：{esc(_day_label(p['expiry']))} 到期的{inst}的價平 IV（Call、Put 平均）與遠期價 F（≈ 即月期貨價）。"
+        f"現在：F ≈ <b>{f_txt}</b>；{iv_txt}。",
+        f"<b>第 2 步 算 σ點</b> ＝ IV × √(到期前交易日數 ÷ 252) × F。到期週有 {p['n']} 個交易日 → {sig_txt}。",
+        f"<b>第 3 步 定行使價</b>：{strike_txt}。",
+        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金目標 ≥ 80 點（回測平均 119 點）；少於 60 點代表 IV 太低，這週不沽。",
+        f"<b>第 5 步 持有到期</b>：不對沖、不中途平倉、不加倉。{esc(_day_label(p['expiry']))} 現金結算：{hold_txt}",
+        f"<b>第 6 步 記錄</b>：到期後記下結算價與淨利（權利金 − 賠付 − 每腳 4 點成本），寫進 research/hsi_futures_range/PAPER_TRADING.md；"
+        f"到期當天 {p['cut']} 後開下一週的倉。",
+    ]
+    note = (f"🛡️ 資金：每張準備 {'US$' if us else 'HK$'}{'30,000' if us else '250,000'} 以上（最差一週 −472 點 = {unit} × 472）；虧損週後下週照常沽 1 張。"
+            f"事件週（{'聯儲議息、非農、CPI' if us else '聯儲議息、港府預算案'}）可以不沽。挑時機（VHSI ÷ 預測）回測沒有幫助，所以每週都沽。 {alt} "
+            f"完整規則：research/hsi_futures_range/STRANGLE_1SIGMA.md")
+    return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
+            f"<div class='fy-howto-status{' today' if p['op_is_today'] else ''}'>{status}</div>"
+            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>"
+            f"<div class='fy-note'>{note}</div></div>")
+
+
 def _fy_money(data, symbol=None):
     """[R106] 💰 四個方向：狀態＋今天的數字。全部只是研究，不接下單。[R134] ES 用自己的回測與單位。"""
     fc = data.get("forecast") or {}
@@ -4368,6 +4476,7 @@ def _fy_money(data, symbol=None):
               "全部是研究，不接下單；方向一、二做了盈虧回測，三、四未回測。下單以券商即時報價為準。")
     return ("<div class='section-header'>💰 怎樣用來賺錢（四個方向）</div>"
             f"<div class='fy-legend'>{legend}</div>"
+            + _fy_howto(data, symbol) +                                       # [R135] 方向一實際操作（橫向箱）
             f"<div class='fy-grid'>{''.join(cards)}</div>")
 
 
@@ -4467,7 +4576,9 @@ def build_futu_range_page(data):
     trading = data["partial"] and not stale
     if intraday:
         state = "🟢 交易中" if trading else ("⚠️ 推送可能已停止" if data["partial"] else "🌙 休市／未開市")
-        upd = f"⏱️ {esc(countdown_text(age)) + ' 前更新' if age is not None else '—'}"
+        tk = str(five.get("time_key") or "")                              # [R135] 日期時間 ＋ 多久前
+        upd = (f"⏱️ {esc(_day_label(tk[:10]))} {esc(tk[11:16])} 更新（{esc(countdown_text(age))} 前）" if age is not None and len(tk) >= 16
+               else f"⏱️ {esc(countdown_text(age)) + ' 前更新' if age is not None else '—'}")
     else:                                                             # [R127] 只有日線：顯示最新收市日
         state = "📅 每日收市後更新（沒有日內 5 分 K）"
         upd = f"🗂️ 最新收市日 {esc(latest['date'])}"
