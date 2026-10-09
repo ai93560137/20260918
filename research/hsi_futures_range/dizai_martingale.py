@@ -37,7 +37,7 @@ def first_hit(arr, start, cond_fn, chunk=4096):
     return BIG
 
 
-def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, step_pts=None):
+def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, step_pts=None, add_lots=ADD_LOTS):
     """加倉間距：step_pts（固定點數）＞ step_pct（入場價百分比，例 0.01 = 1%）＞ g_atr × ATR20。"""
     o, h, l, c, sid = D["o"], D["h"], D["l"], D["c"], D["sid"]
     n = len(o)
@@ -56,7 +56,7 @@ def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, 
         tp_from = e                                          # 止賺最早從這根開始
         worst = 0.0
         while True:
-            add_lv = last - side * step if adds_done < len(ADD_LOTS) else None
+            add_lv = last - side * step if adds_done < len(add_lots) else None
             sl_lv = avg - side * sl_pts
             tp_lv = avg + side * tp_pts
             if side > 0:
@@ -71,7 +71,8 @@ def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, 
             if j_adv == BIG and j_tp == BIG:                 # 數據結束仍持倉
                 x = c[-1]
                 pnl = lots * side * (x - avg) - realized_cost - lots * cost
-                trades.append({"sid": int(sid[i]), "side": side, "pnl": float(pnl), "reason": "open", "lots": lots,
+                mae = float((h[e:].max() - avg) if side < 0 else (avg - l[e:].min()))
+                trades.append({"sid": int(sid[i]), "side": side, "pnl": float(pnl), "reason": "open", "lots": lots, "mae": mae,
                                "adds": adds_done, "days": int(sid[-1] - sid[i]), "fills": fills})
                 busy_until = n
                 break
@@ -79,7 +80,7 @@ def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, 
                 j = j_adv
                 if j_add <= j_sl:                            # 加倉（比止蝕近，先到）
                     px = o[j] if (j > e and side * (o[j] - add_lv) < 0) else add_lv
-                    q = ADD_LOTS[adds_done]
+                    q = add_lots[adds_done]
                     avg = (avg * lots + px * q) / (lots + q)
                     lots += q
                     last = px
@@ -96,7 +97,8 @@ def simulate_mg(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, 
                 reason = "tp"
             pnl = lots * side * (px - avg) - realized_cost - lots * cost
             fills.append((int(j), reason, float(px), 0))
-            trades.append({"sid": int(sid[i]), "side": side, "pnl": float(pnl), "reason": reason, "lots": lots,
+            mae = float((h[e:j + 1].max() - avg) if side < 0 else (avg - l[e:j + 1].min()))
+            trades.append({"sid": int(sid[i]), "side": side, "pnl": float(pnl), "reason": reason, "lots": lots, "mae": mae,
                            "adds": adds_done, "days": int(sid[j] - sid[i]), "fills": fills})
             busy_until = j
             break
