@@ -152,3 +152,99 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def simulate_mg_rev(D, sigs, g_atr, tp_pts, sl_pts=1000.0, cost=1.0, step_pct=None, step_pts=None,
+                    add_lots=ADD_LOTS, rev_frac=0.5, rev_mode="same"):
+    """加倍攤平＋鎖倉反手（使用者 2026-10-10）：加滿倉後，價格再逆向到「平均成本 ∓ rev_frac × 止蝕點數」
+    （止蝕之前）就鎖倉反手：開反方向 2 倍份量（例：沽 1 張大期 → 買 10 張小期），淨持倉由 N 張變反方向 N 張。
+    回測上等同在該價平掉原倉、反方向開 N 張；成本按實際份量：反手開 2N、最後全部平 3N（每張每邊 cost）。
+    rev_mode：
+      same    反手倉賺 tp 點（由反手價起計）或逆向 sl 點 → 全部平倉（整體多數仍虧，只是少虧）
+      recover 反手倉賺夠抵銷之前虧損再多 tp 點（每張）→ 全部平倉；逆向 sl 點 → 全部平倉
+    反手後不再加倉、不再反手。未加滿倉前照原規則（加倉、止賺、止蝕）。"""
+    o, h, l, c, sid = D["o"], D["h"], D["l"], D["c"], D["sid"]
+    n = len(o)
+    trades, busy_until, opened_day = [], -1, set()
+    for i, side in sigs:
+        e = i + 1
+        if e <= busy_until or e >= n or sid[e] != sid[i] or sid[i] in opened_day:
+            continue
+        opened_day.add(sid[i])
+        step = step_pts if step_pts else (step_pct * o[e] if step_pct else g_atr * D["atr"][i])
+        lots, avg, last, adds_done = 1, o[e], o[e], 0
+        paid = cost
+        k = tp_from = e
+        phase, side2, px2, loss1 = 1, None, None, 0.0
+        result = None
+        while True:
+            if phase == 1:
+                full = adds_done >= len(add_lots)
+                add_lv = None if full else last - side * step
+                rev_lv = avg - side * rev_frac * sl_pts if full else None
+                sl_lv, tp_lv = avg - side * sl_pts, avg + side * tp_pts
+                adv = lambda arr, lv: first_hit(arr, k, (lambda s, t: arr[s:t] <= lv) if side > 0 else (lambda s, t: arr[s:t] >= lv))
+                arr_adv = l if side > 0 else h
+                j_sl = adv(arr_adv, sl_lv)
+                j_add = adv(arr_adv, add_lv) if add_lv is not None else BIG
+                j_rev = adv(arr_adv, rev_lv) if rev_lv is not None else BIG
+                j_tp = first_hit(h if side > 0 else l, tp_from,
+                                 (lambda s, t: h[s:t] >= tp_lv) if side > 0 else (lambda s, t: l[s:t] <= tp_lv))
+                j_adv = min(j_sl, j_add, j_rev)
+                if j_adv == BIG and j_tp == BIG:
+                    result = (lots * side * (c[-1] - avg) - paid - lots * cost, "open", n - 1)
+                    break
+                if j_adv <= j_tp:
+                    j = j_adv
+                    gap = lambda lv: o[j] if (j > e and side * (o[j] - lv) < 0) else lv
+                    if j_add == j_adv and j_add <= min(j_sl, j_rev):
+                        px = gap(add_lv)
+                        q = add_lots[adds_done]
+                        avg = (avg * lots + px * q) / (lots + q)
+                        lots += q
+                        last, adds_done = px, adds_done + 1
+                        paid += q * cost
+                        k, tp_from = j, max(tp_from, j + 1)
+                        continue
+                    if j_rev <= j_sl:                         # 鎖倉反手
+                        px = gap(rev_lv)
+                        loss1 = lots * side * (px - avg)
+                        paid += 2 * lots * cost
+                        phase, side2, px2 = 2, -side, px
+                        k, tp_from = j, j + 1
+                        continue
+                    px = gap(sl_lv)
+                    result = (lots * side * (px - avg) - paid - lots * cost, "sl", j)
+                    break
+                j = j_tp
+                px = o[j] if (j > e and side * (o[j] - tp_lv) > 0) else tp_lv
+                result = (lots * side * (px - avg) - paid - lots * cost, "tp", j)
+                break
+            # phase 2：淨持倉 side2 × lots，由 px2 起計
+            if rev_mode == "same":
+                tp2 = px2 + side2 * tp_pts
+            else:
+                tp2 = px2 + side2 * (tp_pts + max(0.0, -loss1) / lots)
+            sl2 = px2 - side2 * sl_pts
+            close_cost = 3 * lots * cost
+            j_sl = first_hit(l if side2 > 0 else h, k,
+                             (lambda s, t: l[s:t] <= sl2) if side2 > 0 else (lambda s, t: h[s:t] >= sl2))
+            j_tp = first_hit(h if side2 > 0 else l, tp_from,
+                             (lambda s, t: h[s:t] >= tp2) if side2 > 0 else (lambda s, t: l[s:t] <= tp2))
+            if j_sl == BIG and j_tp == BIG:
+                result = (loss1 + lots * side2 * (c[-1] - px2) - paid - close_cost, "rev_open", n - 1)
+                break
+            if j_sl <= j_tp:
+                j = j_sl
+                px = o[j] if side2 * (o[j] - sl2) < 0 else sl2
+                result = (loss1 + lots * side2 * (px - px2) - paid - close_cost, "rev_sl", j)
+            else:
+                j = j_tp
+                px = o[j] if side2 * (o[j] - tp2) > 0 else tp2
+                result = (loss1 + lots * side2 * (px - px2) - paid - close_cost, "rev_tp", j)
+            break
+        pnl, reason, j = result
+        trades.append({"sid": int(sid[i]), "side": side, "pnl": float(pnl), "reason": reason, "lots": lots,
+                       "adds": adds_done, "days": int(sid[min(j, n - 1)] - sid[i]), "mae": 0.0, "fills": []})
+        busy_until = j
+    return trades
