@@ -1,8 +1,8 @@
-# JP 數據品質報告（2026-10-08）
+# JP 數據品質報告（2026-10-09）
 
-市場最新交易日 2026-10-08；現任成分股 225 檔（n225）；有數據 265 檔；第二來源快照 12 份、比對 2481 筆收市價。
+市場最新交易日 2026-10-09；現任成分股 225 檔（n225）；有數據 265 檔；第二來源快照 13 份、比對 2560 筆收市價。
 
-**🔴 39 嚴重 / 🟡 224 注意 / ✅ 2 已確認**
+**🔴 39 嚴重 / 🟡 152 注意 / ✅ 3 已確認**
 
 
 ## 🔴 嚴重
@@ -49,79 +49,7 @@
 
 ## 🟡 注意
 
-- `1808.T` no_second_source：現任成分股沒有第二來源報價
-- `1812.T` no_second_source：現任成分股沒有第二來源報價
-- `1925.T` no_second_source：現任成分股沒有第二來源報價
-- `1928.T` no_second_source：現任成分股沒有第二來源報價
-- `1963.T` no_second_source：現任成分股沒有第二來源報價
-- `2002.T` no_second_source：現任成分股沒有第二來源報價
-- `2269.T` no_second_source：現任成分股沒有第二來源報價
-- `2282.T` no_second_source：現任成分股沒有第二來源報價
-- `2413.T` no_second_source：現任成分股沒有第二來源報價
-- `2432.T` no_second_source：現任成分股沒有第二來源報價
-- `2501.T` no_second_source：現任成分股沒有第二來源報價
-- `2502.T` no_second_source：現任成分股沒有第二來源報價
-- `2503.T` no_second_source：現任成分股沒有第二來源報價
-- `2768.T` no_second_source：現任成分股沒有第二來源報價
-- `2801.T` no_second_source：現任成分股沒有第二來源報價
-- `2802.T` no_second_source：現任成分股沒有第二來源報價
-- `285A.T` no_second_source：現任成分股沒有第二來源報價
-- `2871.T` no_second_source：現任成分股沒有第二來源報價
-- `2914.T` no_second_source：現任成分股沒有第二來源報價
-- `3086.T` no_second_source：現任成分股沒有第二來源報價
-- `3092.T` no_second_source：現任成分股沒有第二來源報價
-- `3099.T` no_second_source：現任成分股沒有第二來源報價
-- `3289.T` no_second_source：現任成分股沒有第二來源報價
-- `3382.T` no_second_source：現任成分股沒有第二來源報價
-- `3401.T` no_second_source：現任成分股沒有第二來源報價
-- `3402.T` no_second_source：現任成分股沒有第二來源報價
-- `3405.T` no_second_source：現任成分股沒有第二來源報價
-- `3407.T` no_second_source：現任成分股沒有第二來源報價
-- `3436.T` no_second_source：現任成分股沒有第二來源報價
-- `3659.T` no_second_source：現任成分股沒有第二來源報價
-- `3697.T` no_second_source：現任成分股沒有第二來源報價
-- `3861.T` no_second_source：現任成分股沒有第二來源報價
-- `4004.T` no_second_source：現任成分股沒有第二來源報價
-- `4005.T` no_second_source：現任成分股沒有第二來源報價
-- `4021.T` no_second_source：現任成分股沒有第二來源報價
-- `4042.T` no_second_source：現任成分股沒有第二來源報價
-- `4043.T` no_second_source：現任成分股沒有第二來源報價
-- `4061.T` no_second_source：現任成分股沒有第二來源報價
-- `4063.T` no_second_source：現任成分股沒有第二來源報價
-- `4151.T` no_second_source：現任成分股沒有第二來源報價
-- `4183.T` no_second_source：現任成分股沒有第二來源報價
-- `4188.T` no_second_source：現任成分股沒有第二來源報價
-- `4208.T` no_second_source：現任成分股沒有第二來源報價
-- `4307.T` no_second_source：現任成分股沒有第二來源報價
-- `4324.T` no_second_source：現任成分股沒有第二來源報價
-- `4385.T` no_second_source：現任成分股沒有第二來源報價
-- `4452.T` no_second_source：現任成分股沒有第二來源報價
-- `4502.T` no_second_source：現任成分股沒有第二來源報價
-- `4503.T` no_second_source：現任成分股沒有第二來源報價
-- `4506.T` no_second_source：現任成分股沒有第二來源報價
-- `4507.T` no_second_source：現任成分股沒有第二來源報價
-- `4519.T` no_second_source：現任成分股沒有第二來源報價
-- `4523.T` no_second_source：現任成分股沒有第二來源報價
-- `4543.T` no_second_source：現任成分股沒有第二來源報價
-- `4568.T` no_second_source：現任成分股沒有第二來源報價
-- `4578.T` no_second_source：現任成分股沒有第二來源報價
-- `4661.T` no_second_source：現任成分股沒有第二來源報價
-- `4689.T` no_second_source：現任成分股沒有第二來源報價
-- `4704.T` no_second_source：現任成分股沒有第二來源報價
-- `4751.T` no_second_source：現任成分股沒有第二來源報價
-- `4755.T` no_second_source：現任成分股沒有第二來源報價
-- `4901.T` no_second_source：現任成分股沒有第二來源報價
-- `4902.T` no_second_source：現任成分股沒有第二來源報價
-- `4911.T` no_second_source：現任成分股沒有第二來源報價
-- `5019.T` no_second_source：現任成分股沒有第二來源報價
-- `5020.T` no_second_source：現任成分股沒有第二來源報價
-- `5101.T` no_second_source：現任成分股沒有第二來源報價
-- `5108.T` no_second_source：現任成分股沒有第二來源報價
-- `5201.T` no_second_source：現任成分股沒有第二來源報價
-- `5214.T` no_second_source：現任成分股沒有第二來源報價
-- `5233.T` no_second_source：現任成分股沒有第二來源報價
-- `5301.T` no_second_source：現任成分股沒有第二來源報價
-- `5332.T` no_second_source：現任成分股沒有第二來源報價
+- `1321.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 629174.60%
 - `5333.T` no_second_source：現任成分股沒有第二來源報價
 - `5401.T` no_second_source：現任成分股沒有第二來源報價
 - `5406.T` no_second_source：現任成分股沒有第二來源報價
@@ -278,6 +206,7 @@
 
 - `8303.T` spike_rows_dropped：載入時濾掉 12 根垃圾列（成交量 0、價格跳 >5 倍），例 2023-09-27 收市 5.532e+10（SBI 新生銀行 2023-09 下市、2025-12 重新上市；Yahoo 在下市日與空窗期塞了 553 億圓/成交量 0 的垃圾列，載入時已濾掉（持倉期間下市按最後有效收市 2,798 圓結算））
 - `8303.T` adj_mismatch：重算 AdjClose 與 yfinance 最大差 100.00%（Yahoo 股息數據錯誤（每股 2 億日圓）；重算時自動忽略 >= 股價的股息，錯的是 yfinance 的 Adj Close，不是我們的（2026-09-22 查））
+- `2914.T` name_mismatch：Yahoo!ファイナンス「ＪＴ」vs JPX「日本たばこ産業」（通稱 vs 正式名：ＪＴ = 日本たばこ産業）
 
 ## 🔎 全量歷史比對（第二來源整段歷史 vs yfinance）
 
