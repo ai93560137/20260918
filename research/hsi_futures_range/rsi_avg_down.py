@@ -17,7 +17,8 @@
   沿路徑逐個觸發掛單；跳空（前收到今開）觸發的單一律以開市價成交。
   成本：每張每次成交扣 --cost 點（預設 1 點，含佣金、徵費與滑點）。恒指每點 HK$50。
 
-數據：GCS archive/futu_k_1m/HK.HSI_FRONT/<日期>.json（本地腳本 v12 --export-intraday … K_1M）。
+數據：GCS archive/futu_k_1m/HK.HSI_FRONT/<日期>.json（本地腳本 v12 --export-intraday … K_1M）；
+  或 --symbol HK.HSIMAIN：主連 1 分 K 長歷史（本地腳本 v13 --export-raw HK.HSImain K_1M）。
   即月合約按最後交易日轉月拼接；轉月日價差會令留倉的單有跳動（--session-close 不受影響）。
 
 用法：
@@ -243,6 +244,8 @@ def summarize(trades, label):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", help="本地快取（不存在就從 GCS 下載後寫入）")
+    ap.add_argument("--symbol", default="HK.HSI_FRONT", help="GCS 封存代號；主連長歷史用 HK.HSIMAIN（本地腳本 v13 --export-raw）")
+    ap.add_argument("--from-date", help="只用這天（交易日）之後的數據，例 2019-01-01")
     ap.add_argument("--move-pct", type=float, default=1.0)
     ap.add_argument("--rsi-n", type=int, default=14)
     ap.add_argument("--rsi-hi", type=float, default=80)
@@ -261,10 +264,12 @@ def main():
     if p.json and Path(p.json).exists():
         raw = json.loads(Path(p.json).read_text())
     else:
-        raw = load_gcs()
+        raw = load_gcs(symbol=p.symbol.upper())
         if p.json:
             Path(p.json).write_text(json.dumps(raw))
     bars = clean(raw)
+    if p.from_date:
+        bars = [b for b in bars if session_of(b["time_key"]) >= p.from_date]
     days = sorted(set(session_of(b["time_key"]) for b in bars))
     print(f"1 分 K {len(bars)} 根，{len(days)} 個交易日（{days[0]} 至 {days[-1]}）")
 

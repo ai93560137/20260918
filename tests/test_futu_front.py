@@ -314,6 +314,55 @@ finally:
 check("命令列：K_1M 不寫天數預設 365 天；寫了照用；不寫週期仍是 1100 天 15 分 K；K_5M 不收",
       calls == [("HK.HSI_FRONT", 365, "K_1M"), ("HK.HSI_FRONT", 200, "K_1M"), ("HK.HSI_FRONT", 1100, "K_15M"), ("rc", 2)], calls)
 
+print("=== [v13] --export-raw：單一代號逐月、有多少抓多少 ===")
+class RawCtx:
+    """2026-08 至 2026-10 有數據（每月 2 根，其中 1 根成交量 0）；2026-07 第一次撞頻率限制；更早沒有。"""
+    def __init__(self):
+        self.calls, self.failed = [], False
+    def request_history_kline(self, code, start, end, ktype, max_count=None):
+        self.calls.append((code, start, end, ktype))
+        if start == "2026-07-01" and not self.failed:
+            self.failed = True
+            return ft.RET_ERROR, "frequency limit", None
+        if start < "2026-08-01":
+            return ft.RET_OK, pd.DataFrame(), None
+        rows = [{"time_key": f"{start[:7]}-15 10:00:00", "open": 1, "high": 2, "low": 0.5, "close": 1.5, "volume": 7},
+                {"time_key": f"{start[:7]}-15 10:01:00", "open": 1, "high": 2, "low": 0.5, "close": 1.5, "volume": 0}]
+        return ft.RET_OK, pd.DataFrame(rows), None
+    def close(self): pass
+
+push.RAW_RETRY_SEC = 0
+pr = push.FutuPusher(); pr.ctx = RawCtx()
+sent = []
+pr.post = lambda packet, quiet=False: sent.append(packet) or True
+ok, total, earliest = pr.export_raw("HK.HSImain", "K_1M", (2026, 10))
+check("逐月往前：2026-10、09、08 各 1 根（成交量 0 不送），共 3 根", ok == total == 3 and earliest == (2026, 8), (ok, total, earliest))
+check("向 Futu 用原代號 HK.HSImain；推上 GCP 的代號是 HK.HSIMAIN、kline_type K_1M",
+      all(c[0] == "HK.HSImain" and c[3] == "K_1M" for c in pr.ctx.calls)
+      and all(p["symbol"] == "HK.HSIMAIN" and p["kline_type"] == "K_1M" for p in sent), sent[:1])
+check("每個月取完就推（3 包）", len(sent) == 3)
+months = [c[1][:7] for c in pr.ctx.calls]
+check("頻率限制會重試；連續 3 個月沒數據（07、06、05）就停", months == ["2026-10", "2026-09", "2026-08", "2026-07", "2026-07", "2026-06", "2026-05"], months)
+check("每月範圍：1 號至月底", pr.ctx.calls[0][1:3] == ("2026-10-01", "2026-10-31") and pr.ctx.calls[1][1:3] == ("2026-09-01", "2026-09-30"))
+
+calls = []
+real_raw, real_close, real_url, real_token, real_argv = (push.FutuPusher.export_raw, push.FutuPusher.close,
+                                                        push.GCP_URL, push.TOKEN, sys.argv)
+push.FutuPusher.export_raw = lambda self, code, ktype, start=None: calls.append((code, ktype, start)) or (1, 1, (2020, 1))
+push.FutuPusher.close = lambda self: None
+push.GCP_URL, push.TOKEN = "https://example.invalid/", "t"
+rcs = []
+try:
+    for argv in (["--export-raw", "HK.HSImain"], ["--export-raw", "HK.HSImain", "K_1M", "2019-03"],
+                 ["--export-raw", "HK.HSImain", "K_1M", "2019-13"], ["--export-raw", "HK.HSImain", "K_5M"]):
+        sys.argv = ["push_to_gcp.py", *argv]
+        rcs.append(push.main())
+finally:
+    push.FutuPusher.export_raw, push.FutuPusher.close = real_raw, real_close
+    push.GCP_URL, push.TOKEN, sys.argv = real_url, real_token, real_argv
+check("命令列：預設 K_1M 由這個月起；可指定起始月；月份錯、週期錯 → 用法錯誤",
+      calls == [("HK.HSImain", "K_1M", None), ("HK.HSImain", "K_1M", (2019, 3))] and rcs == [0, 0, 2, 2], (calls, rcs))
+
 print("=== [v10] --probe-iv：VHSI 與期權歷史 ===")
 class ProbeCtx:
     def __init__(self, vhsi_days=30):

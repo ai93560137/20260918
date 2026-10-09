@@ -61,6 +61,12 @@
   一個交易日（日市＋夜市）約 1000 根 1 分 K，一年約 25 萬根、約 650 包，要跑一陣子；
   整段先放在記憶體再推，所以天數別開太大。Futu 1 分 K 歷史可能比 15 分 K 短，拿不到的那幾天就是空的。
 
+[v13] 單一代號「有多少抓多少」（例如主連，不轉月拼接）：
+  python push_to_gcp.py --export-raw HK.HSImain K_1M             # 由這個月往前，逐月取、取完即推
+  python push_to_gcp.py --export-raw HK.HSImain K_1M 2019-03     # 中途斷了：由 2019-03 再往前接著抓
+  連續 RAW_EMPTY_STOP 個月拿不到就停（= Futu 歷史的盡頭）。每個月取完就推，記憶體只放一個月。
+  存 GCS archive/futu_k_1m/HK.HSIMAIN/<日期>.json（跟 HK.HSI_FRONT 分開）。重跑不會重複（按時間合併）。
+
 [v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
   GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
 
@@ -90,7 +96,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "12"
+SCRIPT_VERSION = "13"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -121,6 +127,9 @@ BACKFILL_CHUNK = 15                                   # 每包日 K 根數（GCP
 INTRADAY_CHUNK = 400                                  # [v9] 日內 K 線每包根數（GCP 每包最多收 500 根）
 INTRADAY_KTYPES = ("K_1M", "K_15M", "K_30M", "K_60M")   # [v12] 加 K_1M
 INTRADAY_DEFAULT_DAYS = {"K_1M": 365}                # [v12] 1 分 K 量大，預設少取；其他 1100 天
+RAW_EMPTY_STOP = 3                                    # [v13] --export-raw 連續幾個月沒數據就停
+RAW_MAX_MONTHS = 360                                  # [v13] 最多往前 30 年
+RAW_RETRY_SEC = 35                                    # [v13] 撞到頻率限制時等多久再試（Futu 30 秒視窗）
 BACKFILL_PACE_SEC = 0.6                               # 回補時每次向 Futu 取歷史／交易日曆之間的間隔（避開頻率限制）
 SUBS_USED = len(SYMBOLS)
 DAILY_BATCH = max(5, min(100 - SUBS_USED - 5, int(os.environ.get("FUTU_DAILY_BATCH", "50"))))   # 訂閱額度 100
@@ -651,6 +660,52 @@ class FutuPusher:
             f"{len({session_date(b['time_key']) for b, _ in items})} 個交易日" + (f"；{'；'.join(notes)}" if notes else ""))
         return ok == len(items) and bool(items)
 
+    # ---- [v13] 單一代號逐月匯出（有多少抓多少） ------------------------------
+    def history_month(self, code, year, month, ktype):
+        """一個月的日內 K（去掉成交量 0）。頻率限制等錯誤重試兩次；仍失敗就拋出。"""
+        start = date(year, month, 1)
+        end = date(*month_add(year, month, 1), 1) - timedelta(days=1)
+        for attempt in range(3):
+            try:
+                return self.history_intraday(code, start.isoformat(), end.isoformat(), ktype)
+            except Exception as exc:
+                if attempt == 2:
+                    raise
+                log(f"  {year}-{month:02d} 取數失敗（{str(exc)[:60]}），{RAW_RETRY_SEC} 秒後再試")
+                time.sleep(RAW_RETRY_SEC)
+
+    def export_raw(self, code, ktype, start_month=None):
+        """由 start_month（預設這個月）往前逐月取 code 的日內 K，取完一個月就推。
+        連續 RAW_EMPTY_STOP 個月沒數據就停。回 (推送成功根數, 總根數, 最早月份)。"""
+        self.connect()
+        today = datetime.now(HK_TZ).date()
+        y, m = start_month or (today.year, today.month)
+        symbol = code.upper()
+        empty, total, ok, earliest = 0, 0, 0, None
+        for _ in range(RAW_MAX_MONTHS):
+            try:
+                bars = self.history_month(code, y, m, ktype)
+            except Exception as exc:
+                log(f"  {y}-{m:02d}：取不到（{str(exc)[:80]}）")
+                bars = []
+            if bars:
+                empty = 0
+                earliest = (y, m)
+                total += len(bars)
+                got = self.push_history(symbol, [(b, f"futu_opend:{code}") for b in bars], ktype, INTRADAY_CHUNK)
+                ok += got
+                days = len({session_date(b["time_key"]) for b in bars})
+                log(f"  {y}-{m:02d}：{len(bars)} 根 {ktype}（{days} 個交易日），推送 {got}"
+                    + ("" if got == len(bars) else f"  ⚠️ 有 {len(bars) - got} 根沒推成功，之後用 {y}-{m:02d} 重跑")
+                    + f"｜累計 {ok}／{total}")
+            else:
+                empty += 1
+                log(f"  {y}-{m:02d}：沒有數據（連續 {empty} 個月）")
+                if empty >= RAW_EMPTY_STOP:
+                    break
+            y, m = month_add(y, m, -1)
+        return ok, total, earliest
+
     # ---- [v10] 方向一的數據探測：VHSI 歷史、恒指期權歷史 K 線 -------------------
     def probe_history(self, code, days, ktype="K_DAY"):
         end = datetime.now(HK_TZ).date()
@@ -868,6 +923,31 @@ def main():
             return 0 if pusher.export_intraday(alias, days, ktype) else 1
         finally:
             pusher.close()
+    if "--export-raw" in sys.argv[1:]:                               # [v13]
+        idx = sys.argv.index("--export-raw")
+        args = sys.argv[idx + 1:idx + 4]
+        code = args[0] if args else "HK.HSImain"
+        ktype = (args[1] if len(args) > 1 else "K_1M").upper()
+        start = None
+        if len(args) > 2:
+            mm = re.match(r"^(\d{4})-(\d{2})$", args[2])
+            start = (int(mm.group(1)), int(mm.group(2))) if mm and 1 <= int(mm.group(2)) <= 12 else "bad"
+        if not CODE_RE.match(code.upper()) or ktype not in INTRADAY_KTYPES or start == "bad":
+            print(f"用法：--export-raw HK.HSImain [{'|'.join(INTRADAY_KTYPES)}] [由哪個月往前，例 2019-03]", file=sys.stderr)
+            return 2
+        if not GCP_URL or not TOKEN:
+            print("請先設定環境變數 ZHUGE_GCP_URL 與 WEBHOOK_SECRET_TOKEN（見檔案開頭說明）。", file=sys.stderr)
+            return 2
+        pusher = FutuPusher()
+        log(f"📦 匯出 {code} 的 {ktype}，由 {'%d-%02d' % start if start else '這個月'} 往前、有多少抓多少"
+            f"（v{SCRIPT_VERSION}）→ {GCP_URL}")
+        try:
+            ok, total, earliest = pusher.export_raw(code, ktype, start)
+        finally:
+            pusher.close()
+        log(f"📦 {code} {ktype} 匯出完成：推送 {ok}／{total} 根，最早 "
+            + ("%d-%02d" % earliest if earliest else "—（一個月都拿不到）"))
+        return 0 if total and ok == total else 1
     if "--backfill" in sys.argv[1:]:
         idx = sys.argv.index("--backfill")
         args = sys.argv[idx + 1:idx + 3]
