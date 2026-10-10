@@ -19,6 +19,12 @@ git fetch origin claude/beautiful-hypatia-8qrgjj
 git checkout origin/claude/beautiful-hypatia-8qrgjj -- gcp_ib/futu_positions_quote.py tradingview/risk_report.py
 ```
 
+第一次用（部機冇 `tradingview\data_external\risk_book.json`）再加呢句：
+
+```powershell
+git checkout origin/claude/beautiful-hypatia-8qrgjj -- tradingview/data_external/risk_book.json
+```
+
 ## 2. 核對 OpenD 登入身份（OpenD 登入 ID 改好之後先跑）
 
 ```powershell
@@ -51,6 +57,8 @@ python gcp_ib\futu_positions_quote.py --fixed
 python tradingview\risk_report.py --md tradingview\out\risk_report_live.md
 ```
 
+硬止損按幾個戶口合計權益計：知道合計數就加 `--combined-equity 812000`（換成實數，HKD）。
+
 ## 6. 畀 Claude 覆核：複製輸出貼入對話（冇帳號、冇密碼）
 
 ```powershell
@@ -66,6 +74,11 @@ python gcp_ib\futu_positions_quote.py --codes HK.MHI2610 HK.MHI261029C25000000 H
 ```powershell
 python gcp_ib\futu_positions_quote.py --chain 2026-10-29 24800 25200
 ```
+
+```powershell
+python gcp_ib\futu_positions_quote.py --deals HK.MHI2610 --since 2026-10-01
+```
+（成交時間係 UTC，加 8 個鐘＝香港時間）
 
 ## API 始終讀唔到持倉
 

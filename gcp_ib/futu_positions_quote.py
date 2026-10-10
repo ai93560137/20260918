@@ -432,7 +432,8 @@ def main():
     if not rows:
         print("（富途 API 冇讀到持倉，改用 position.json 嘅固定持倉）")
         rows = fixed_holdings()
-    by = quotes([r["code"] for r in rows] + UNDERLYING_CODES)
+    by = quotes([r["code"] for r in rows])
+    by.update(quotes([c for c in UNDERLYING_CODES if c not in by], quiet=True))   # 標的：冇權限唔使報錯
     rows = pnl(rows, by)
     show(rows)
     for acc in accounts:

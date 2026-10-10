@@ -71,6 +71,7 @@ def load(book_path, quotes_path=None):
     Q = dict(qf.get("quotes", {}))
     for r in qf.get("positions", []):          # 舊格式：只有 positions 行
         Q.setdefault(r["code"], {k: r.get(k) for k in ("bid", "ask", "mid", "last", "quote_time")})
+    FP = {r["code"]: r for r in qf.get("positions", [])}
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
     val = date.fromisoformat(b["valuation_date"])
@@ -105,6 +106,11 @@ def load(book_path, quotes_path=None):
             p["basis"] = f"parity（冇{'賣' if p['qty'] < 0 else '買'}價；{other['id']} {o_px:g}）"
         elif p["last"]:
             p["close_px"], p["basis"] = p["last"], f"最後成交（冇{'賣' if p['qty'] < 0 else '買'}價）@ {p['qtime']}"
+        elif (FP.get(p["code"]) or {}).get("futu_pl") is not None:
+            # 冇報價（例如 CME 期權冇行情權限）：由富途持倉盈虧反推富途用緊嘅估值
+            pl = FP[p["code"]]["futu_pl"]
+            p["close_px"] = p["open"] - pl / (abs(p["qty"]) * p["mult"]) * (1 if p["qty"] < 0 else -1)
+            p["basis"] = "富途持倉估值（由持倉盈虧反推；冇行情權限）"
         else:
             p["close_px"], p["basis"] = p["price"], "截圖價" + ("（冇富途代碼）" if not p["code"] else "")
     for p in b["positions"]:
@@ -200,6 +206,8 @@ def main():
     ap.add_argument("--book", default=str(HERE / "data_external" / "risk_book.json"))
     dq = HERE / "data_external" / "futu_positions.json"
     ap.add_argument("--quotes", default=str(dq) if dq.exists() else "", help="futu_positions_quote.py 輸出（真實買賣價）")
+    ap.add_argument("--combined-equity", type=float, default=None,
+                    help="幾個戶口合計權益 HKD（硬止損按合計計）；唔填＝book 假設 NAV＋持倉盈虧")
     ap.add_argument("--md", default="")
     a = ap.parse_args()
     b, fx = load(a.book, a.quotes or None)
@@ -207,19 +215,21 @@ def main():
     tot0, grp0 = pnl_hkd(b, fx, {})
     totm, _ = pnl_hkd(b, fx, {}, px="mid")
     acc = next((x for x in b["accounts"] if (x.get("total_assets") or 0) > 0 and x.get("currency", "HKD") == "HKD"), None)
-    eq0 = acc["total_assets"] if acc else nav + tot0
+    eq0 = a.combined_equity if a.combined_equity else nav + tot0
     budget = eq0 - hs
     L = []
     P = L.append
     P(f"# 持倉風險報告")
     P(f"持倉：{b['asof']}（{b['source']}）")
     P(f"報價：{'富途 OpenD 快照 ' + b['quotes_fetched'] + ' HKT' if b['quotes_fetched'] else '冇報價檔 → 用截圖價（未係真實買賣價）'}")
-    if acc and eq0 < hs:
-        P(f"\n> ⚠ **富途期貨戶口實際權益 HK${eq0:,.0f} 已經低於硬止損 HK${hs:,.0f}**（假設 NAV HK${nav:,.0f} 唔係呢個戶口嘅數）。"
-          "請確認硬止損係按邊個戶口／合計權益計；下面壓力測試以實際權益為起點。\n")
     P(f"硬止損：權益 < HK${hs:,.0f}。"
-      + (f"**實際權益（富途）HK${eq0:,.0f}**" if acc else f"權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}")
-      + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}\n")
+      + (f"**合計權益（你提供）HK${eq0:,.0f}**" if a.combined_equity else f"合計權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}（用 --combined-equity 填實數）")
+      + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}")
+    if acc:
+        cush = acc["total_assets"] - (acc.get("maintenance_margin") or 0)
+        P(f"富途期貨戶口：權益 HK${acc['total_assets']:,.0f}，維持保證金 HK${acc.get('maintenance_margin') or 0:,.0f}，"
+          f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
+    P("")
 
     P("## 1. 價格來源（每腿）")
     P("| 持倉 | 富途代碼 | 買價 | 賣價 | 中間價 | 最後成交 | 報價時間 HKT | 用嚟平倉嘅價 | 來源 |")
@@ -277,8 +287,9 @@ def main():
 
     P("## 7. 壓力測試")
     P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")
-    P("| 情景 | 盈虧變動 HKD | 權益 HKD | 離硬止損 | 舊規則權益 | 備註 |")
-    P("|---|---:|---:|---:|---:|---|")
+    P("| 情景 | 盈虧變動 HKD | 合計權益 HKD | 離硬止損 | 舊規則權益 | 富途保證金緩衝* | 備註 |")
+    P("|---|---:|---:|---:|---:|---:|---|")
+    cush0 = (acc["total_assets"] - (acc.get("maintenance_margin") or 0)) if acc else None
     for name, sh, va, dd in (
         ("ES −2%", {"ES": -.02}, 0, 0), ("ES −3%", {"ES": -.03}, 0, 0), ("ES −5%", {"ES": -.05}, 0, 0),
         ("ES +3%", {"ES": .03}, 0, 0),
@@ -297,8 +308,9 @@ def main():
         d, eq = t - tot0, eq0 + t - tot0
         gap = eq - hs
         note = "⚠ 已觸硬止損" if gap < 0 else ("⚠ 近硬止損" if gap < 0.3 * budget else "")
-        P(f"| {name} | {d:+,.0f} | {eq:,.0f} | {gap:+,.0f} | {eq0 + t_old - tot0:,.0f} | {note} |")
-    P("")
+        cu = "—" if cush0 is None else f"{cush0 + d:,.0f}"
+        P(f"| {name} | {d:+,.0f} | {eq:,.0f} | {gap:+,.0f} | {eq0 + t_old - tot0:,.0f} | {cu} | {note} |")
+    P("\n*富途保證金緩衝＝富途戶口權益＋變動 − 現時維持保證金；未計保證金本身隨市況上升，實際更緊。\n")
 
     P("## 8. 觸及硬止損所需變動（單一市場）")
     for und, sign, lab in (("ES", -1, "ES 下跌"), ("ES", 1, "ES 上升"), ("HSI", 1, "HSI 上升"), ("HSI", -1, "HSI 下跌")):
