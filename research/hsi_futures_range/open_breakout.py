@@ -42,7 +42,7 @@ def day_slices(D):
     return out
 
 
-def simulate(D, days, x, stop, exit_, rsi_rule, direction):
+def simulate(D, days, x, stop, exit_, rsi_rule, direction, allow=None):
     o, h, l, c, rsi = D["o"], D["h"], D["l"], D["c"], D["rsi"]
     res = []                                                 # (交易日索引, 盈虧點, 原因, side)
     for k, s, e in days:
@@ -58,6 +58,8 @@ def simulate(D, days, x, stop, exit_, rsi_rule, direction):
             continue
         brk = 1 if (jd is None or (ju is not None and ju < jd)) else -1
         j = ju if brk > 0 else jd
+        if allow is not None and not allow(k, brk):
+            continue
         lv = up if brk > 0 else dn
         px = o[j] if (j > s and brk * (o[j] - lv) > 0) else lv
         if j == s:
