@@ -87,9 +87,10 @@ def main():
                 if ret != RET_OK:
                     print(f"{label}：snapshot 失敗：{snap}")
                     continue
-                snap = snap.merge(ch[["code", "strike_price", "option_type"]], on="code", how="left").sort_values(["strike_price", "option_type"])
+                px = snap[[c for c in ("code", "name", "bid_price", "ask_price", "last_price", "update_time") if c in snap.columns]]
+                out = ch[["code", "strike_price", "option_type"]].merge(px, on="code", how="left").sort_values(["strike_price", "option_type"])
                 print(f"--- {label}恒指期權 {exp} ---")
-                print(snap[[c for c in ("code", "name", "strike_price", "option_type", "bid_price", "ask_price", "last_price", "update_time") if c in snap.columns]].to_string(index=False))
+                print(out.to_string(index=False))
         finally:
             q.close()
         return
