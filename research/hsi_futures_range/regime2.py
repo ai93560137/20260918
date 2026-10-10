@@ -7,6 +7,8 @@
 參數組每個跑一次全期，再按年切開（換參數時舊倉照舊規則平倉，跟實際略有出入）。
 
 用法：python3 research/hsi_futures_range/regime2.py --json /tmp/hsimain.json
+     python3 research/hsi_futures_range/regime2.py --json /tmp/hsimain.json --select 2027   # 每年 1 月：用前兩年選選法 b 的參數，
+                                                                                            # 印出 main.DIZAI_HENG_PICKS 的一行
 """
 import argparse, itertools, json, sys
 from pathlib import Path
@@ -18,7 +20,7 @@ import dizai_search as ds                                   # noqa: E402
 import rsi_avg_down as rad                                  # noqa: E402
 import rsi_basic as rb                                      # noqa: E402
 
-YEARS = [str(y) for y in range(2018, 2027)]
+YEARS = [str(y) for y in range(2018, 2031)]
 PH = {"P1": ("2018", "2020"), "P2": ("2021", "2023"), "P3": ("2024", "2026")}
 YRS = {"P1": 2.25, "P2": 3.0, "P3": 2.78}
 
@@ -42,11 +44,45 @@ def fmt(Y):
     return "  ".join(f"{p} {phase(Y, p)['ann']:+6.0f}（虧{phase(Y, p)['loss']}，深{phase(Y, p)['worst']:5.0f}）" for p in PH)
 
 
+def grid_keys():
+    """(說明, 參數 dict) 全部 1,280 組。"""
+    out = []
+    for (trig, (hi, lo), move), tpp, (sname, sp), al, dst in itertools.product(
+            itertools.product(("cross", "confirm"), ((70, 30), (75, 25), (80, 20), (85, 15)), (0.01, 0.02)),
+            (0.001, 0.0015, 0.002, 0.003, 0.005), (("ATR", None), ("1%", 0.01), ("2%", 0.02)), ((), (1, 1, 1, 1)), (None, 0.02, 0.03, 0.05)):
+        if not al and sname != "ATR":
+            continue
+        key = (f"{rb.NAME[trig]}{hi}/{lo} ≥{move:.0%} 賺{tpp:.2%}" + (f" 加倉1→5 間距{sname}" if al else " 不加倉")
+               + (f" 災難{dst:.0%}" if dst else " 無止蝕"))
+        out.append((key, {"trig": trig, "hi": hi, "lo": lo, "move": move, "tp_pct": tpp, "add_lots": al,
+                          "step_pct": sp if al else None, "dstop_pct": dst}))
+    return out
+
+
+def select(D, year):
+    """選法 b：用 year−2、year−1 兩年，選「盈虧 ÷ 最深浮虧」最高的一組。"""
+    tr = [str(int(year) - 2), str(int(year) - 1)]
+    best = None
+    for key, p in grid_keys():
+        Y = by_year(rb.run_adds(D, rb.signals(D, p["hi"], p["lo"], p["trig"], p["move"]), None, p["add_lots"],
+                                tp_pct=p["tp_pct"], step_pct=p["step_pct"], dstop_pct=p["dstop_pct"], entry_day=True))
+        sc = sum(Y[y]["pnl"] for y in tr if y in Y) / max(1.0, -min(Y[y]["worst"] for y in tr if y in Y))
+        if best is None or sc > best[0]:
+            best = (sc, key, p)
+    sc, key, p = best
+    print(f"{year} 選中：{key}（訓練 {tr[0]}–{tr[1]}，分數 {sc:.2f}）")
+    print(f'    "{year}": {{"trig": "{p["trig"]}", "hi": {p["hi"]}, "lo": {p["lo"]}, "move": {p["move"]}, "tp_pct": {p["tp_pct"]}, '
+          f'"add_lots": {tuple(p["add_lots"])}, "step_pct": {p["step_pct"]}, "dstop_pct": {p["dstop_pct"]}, "train": "{tr[0]}–{tr[1]}"}},')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", required=True)
+    ap.add_argument("--select", metavar="YEAR", help="只做每年選參（選法 b），印出 DIZAI_HENG_PICKS 一行")
     a = ap.parse_args()
     D = ds.prepare(rad.clean(json.loads(Path(a.json).read_text())))
+    if a.select:
+        return select(D, a.select)
     sigs = {}
     for trig, (hi, lo), move in itertools.product(("cross", "confirm"), ((70, 30), (75, 25), (80, 20), (85, 15)), (0.01, 0.02)):
         sigs[trig, hi, lo, move] = rb.signals(D, hi, lo, trig, move)
