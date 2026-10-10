@@ -1,5 +1,5 @@
-"""[R137] ⛰️ 地載陣：main.py 前向測試引擎跟回測（research/hsi_futures_range/rsi_avg_down.py 收市平倉版）逐筆一致；
-推 K_1M → 重算當天 → 頁面與 JSON。"""
+"""[R138] ⛰️ 地載陣（升跌 ≥ 2% 逆市＋加倍攤平＋留倉）兩組前向測試：main.py 引擎跟回測
+（research/hsi_futures_range/dizai_martingale.simulate_mg）逐筆一致；分段推進＝一次推進；推 K_1M → 更新 → 頁面與 JSON。"""
 import json, os, sys, types
 
 os.environ.setdefault("WEBHOOK_SECRET_TOKEN", "tok")
@@ -37,11 +37,11 @@ sys.modules["google.api_core"] = api_core; sys.modules["google.api_core.exceptio
 
 import main
 
-import argparse, json, random
+import json, random
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-sys.path.insert(0, str(Path("/home/user/20260918/research/hsi_futures_range")))
-import rsi_avg_down as research                   # noqa: E402
+sys.path.insert(0, "/home/user/20260918/research/hsi_futures_range")
+import dizai_search as ds, rsi_avg_down as rad, dizai_martingale as mg, dizai_filters as fl   # noqa: E402
 
 OK = FAIL = 0
 def check(name, cond, extra=""):
@@ -50,125 +50,131 @@ def check(name, cond, extra=""):
     else: FAIL += 1; print(f"  ❌ {name} {extra}")
 
 SYM = "HK.HSI_FRONT"
-random.seed(7)
+random.seed(3)
 
 
-def minutes_of(day):
-    """一個交易日的 1 分 K 時間：日市 09:16–12:00、13:01–16:30，夜市 17:16–翌日 03:00。"""
-    d = datetime.strptime(day, "%Y-%m-%d")
-    out, t = [], d.replace(hour=9, minute=16)
-    while t <= d.replace(hour=16, minute=30):
-        if not (d.replace(hour=12, minute=0) < t <= d.replace(hour=13, minute=0)):
-            out.append(t)
-        t += timedelta(minutes=1)
-    t = d.replace(hour=17, minute=16)
-    while t <= d + timedelta(days=1, hours=3):
-        out.append(t)
-        t += timedelta(minutes=1)
-    return [x.strftime("%Y-%m-%d %H:%M:%S") for x in out]
-
-
-def make_days(n, start="2026-08-03", px=24000.0):
-    """n 個平日交易日的隨機遊走 1 分 K；每天開市跳空、日內有趨勢，好讓 1% 開閘與加倉都會發生。"""
-    days, d, bars = [], datetime.strptime(start, "%Y-%m-%d"), []
-    while len(days) < n:
+def make(n_days=110, start="2026-03-02", px=24000.0):
+    """平日交易日、每日 09:16 起 330 根 1 分 K；每天有隨機趨勢，令 2% 升跌、加倉、止賺、止蝕都會出現。"""
+    bars, days, d = [], [], datetime.strptime(start, "%Y-%m-%d")
+    while len(days) < n_days:
         if d.weekday() < 5:
-            day = d.strftime("%Y-%m-%d")
-            days.append(day)
-            px *= 1 + random.gauss(0, 0.008)
-            drift = random.gauss(0, 0.6)
-            for t in minutes_of(day):
+            day = d.strftime("%Y-%m-%d"); days.append(day)
+            px *= 1 + random.gauss(0, 0.006)
+            drift = random.choice([-1, 1]) * abs(random.gauss(0, 2.2))
+            t = d.replace(hour=9, minute=16)
+            for k in range(330):
                 o = px
-                px = max(1000.0, px + drift + random.gauss(0, 11))
-                hi, lo = max(o, px) + abs(random.gauss(0, 4)), min(o, px) - abs(random.gauss(0, 4))
-                bars.append({"time_key": t, "open": round(o), "high": round(hi), "low": round(lo),
-                             "close": round(px), "volume": 10})
+                px = max(5000.0, px + drift + random.gauss(0, 14))
+                hi, lo = max(o, px) + abs(random.gauss(0, 5)), min(o, px) - abs(random.gauss(0, 5))
+                bars.append({"time_key": (t + timedelta(minutes=k)).strftime("%Y-%m-%d %H:%M:%S"),
+                             "open": round(o), "high": round(hi), "low": round(lo), "close": round(px), "volume": 10})
         d += timedelta(days=1)
     return days, bars
 
 
-days, bars = make_days(40)
-print("=== 1. 引擎跟回測逐筆一致（40 個交易日的模擬 1 分 K）===")
-q = argparse.Namespace(rsi_n=14, rsi_hi=80, rsi_lo=20, move_pct=0.01, same_dir=False, session_close=True,
-                       sl_pct=0.02, step=300, cost=1.0)
-ref, _ = research.run(research.clean(bars), q)
-by_day = {}
-for b in research.clean(bars):
-    by_day.setdefault(research.session_of(b["time_key"]), []).append(b)
-mine = []
-for i, day in enumerate(days):
-    if i == 0:
-        continue
-    prev = by_day[days[i - 1]]
-    res = main.dizai_simulate(by_day[day], [b["close"] for b in prev][-main.DIZAI_WARM:], prev[-1]["close"], True)
-    mine += res["trades"]
-    check_open = res["position"] is None
-KEYS = ("entry_time", "side", "entry", "exit_time", "reason", "exit", "max_lots", "adds", "reduces", "pnl_pts")
-RND = lambda t: tuple(round(t[k], 1) if k == "exit" else t[k] for k in KEYS)
-a = [RND(t) for t in ref]
-b = [RND(t) for t in mine]
-check(f"回測 {len(a)} 筆、引擎 {len(b)} 筆，逐筆相同", a == b and len(a) >= 10,
-      next(((x, y) for x, y in zip(a, b) if x != y), (len(a), len(b))))
-check("有加倉、減倉、止賺、收市平倉的單（規則都走過）",
-      any(t["adds"] for t in mine) and any(t["reduces"] for t in mine)
-      and {"tp", "close"} <= {t["reason"] for t in mine}, {t["reason"] for t in mine})
-check("收市後沒有未平倉", check_open)
+days, raw = make()
+bars = rad.clean(raw)
+D = ds.prepare(bars); F = fl.day_features(D)
+rows = [{"date": d, "high": float(D["h"][s:e].max()), "low": float(D["l"][s:e].min()), "close": float(D["c"][e - 1])}
+        for d, s, e in zip(D["days"], D["starts"], D["ends"])]
+tk = D["tk"]
 
-print("=== 2. 未收市：最後一根不強制平倉，持倉帶止賺／止蝕／加倉位 ===")
-day = next(d for d in days[1:] for t in mine if t["entry_time"][:10] == d and t["reason"] == "close")
-prev = by_day[days[days.index(day) - 1]]
-cut = [b for b in by_day[day] if b["time_key"] < next(t["exit_time"] for t in mine if t["entry_time"][:10] == day and t["reason"] == "close")]
-res = main.dizai_simulate(cut, [b["close"] for b in prev][-main.DIZAI_WARM:], prev[-1]["close"], False)
-pos = res["position"]
-check("持倉中：有方向、張數、平均成本、止賺、止蝕、加倉位", pos and pos["lots"] >= 1 and pos["tp"] and pos["sl"] and pos["add_at"], pos)
-if pos:
-    s = 1 if pos["side"] == "買" else -1
-    check("止蝕 = 平均成本逆向 2%；加倉位在逆向", abs(pos["sl"] - pos["avg"] * (1 - s * 0.02)) < 0.2 and s * (pos["avg"] - pos["add_at"]) > 0, pos)
+print("=== 1. 引擎跟回測逐筆一致（兩組）===")
+st = main.dizai_new_state(days[0])
+main.dizai_advance(st, bars, main._dz_ctx_fn(rows))
+SPEC = {"steady": ("confirm", 0.75, 30, 1000, None), "bold": ("cross", 1.0, 150, 3000, "run5_3")}
+total_trades = 0
+for key, (trig, g, tp, sl, flt) in SPEC.items():
+    p = main.DIZAI_VARIANTS[key]
+    check(f"{key} 參數跟回測一樣", (p["trig"], p["g_atr"], p["tp"], p["sl"], bool(p["run5"])) == (trig, g, tp, sl, bool(flt)))
+    sig = ds.signals(D, "fade", trig, 0.02, "all")
+    if flt:
+        sig = [(i, s) for i, s in sig if fl.keep(F, D, i, s, flt)]
+    ref = [x for x in mg.simulate_mg(D, sig, g, tp, sl_pts=sl) if x["reason"] != "open"]
+    a = [(tk[x["fills"][0][0]], x["side"], x["reason"], x["lots"], round(x["pnl"], 1)) for x in ref]
+    b = [(t["entry_tk"], 1 if t["side"] == "買" else -1, t["reason"], t["lots"], round(t["pnl"], 1)) for t in st["variants"][key]["trades"]]
+    check(f"{key}：回測 {len(a)} 筆、引擎 {len(b)} 筆，逐筆相同", a == b and len(a) >= 3,
+          next(((x, y) for x, y in zip(a, b) if x != y), (len(a), len(b))))
+    total_trades += len(a)
+allt = [t for v in st["variants"].values() for t in v["trades"]]
+check("規則都走過：有加滿 4 張、有止賺、有止蝕", any(t["lots"] == 4 for t in allt) and {"tp", "sl"} <= {t["reason"] for t in allt},
+      sorted({(t["reason"], t["lots"]) for t in allt}))
 
-print("=== 3. 推 K_1M → 重算當天 → 狀態檔、頁面、JSON ===")
+print("=== 2. 分段推進 = 一次推進 ===")
+st2 = main.dizai_new_state(days[0])
+cuts = sorted(random.sample(range(1, len(bars)), 25))
+for a_, b_ in zip([0] + cuts, cuts + [len(bars)]):
+    st2 = json.loads(json.dumps(st2))                         # 每段之間存一次 JSON（像寫回 GCS）
+    main.dizai_advance(st2, bars[a_:b_], main._dz_ctx_fn(rows))
+check("分 26 段推進（中間經過 JSON 存取）跟一次推進的交易與持倉完全一樣",
+      json.dumps(st2["variants"], sort_keys=True) == json.dumps(json.loads(json.dumps(st["variants"])), sort_keys=True))
+
+print("=== 3. 推 K_1M → dizai_update → 頁面與 JSON ===")
 client = main.app.test_client()
-d1, d2 = days[-2], days[-1]
-raw_by = {}
-for b in bars:                                    # 推原始 K 線（帶成交量；成交量 0／空的會被引擎剔除）
-    raw_by.setdefault(research.session_of(b["time_key"]), []).append(b)
-for day in (d1, d2):
-    rows = raw_by[day]
-    for k in range(0, len(rows), 400):
-        r = client.post("/", json={"action": "futu_data", "token": "tok", "source": "futu_opend:HK.HSI2610",
-                                   "symbol": SYM, "kline_type": "K_1M", "data": rows[k:k + 400]})
-        assert r.status_code == 200, r.get_data(as_text=True)
-check("1 分 K 只封存、不蓋即時 5 分 K 快照", main.read_futu_snapshot(SYM) in ({}, None) or main.read_futu_snapshot(SYM).get("kline_type") != "K_1M")
+FAKE.clear()
 HK = timezone(timedelta(hours=8))
-now_mid = datetime.strptime(d2 + " 14:00", "%Y-%m-%d %H:%M").replace(tzinfo=HK)
+last3 = days[-3:]
+main.gcs_write_text(main.futu_daily_file(SYM), json.dumps(
+    [{"time_key": r["date"] + " 00:00:00", "open": r["close"], "high": r["high"], "low": r["low"], "close": r["close"]} for r in rows[:-1]]))
+by = {}
+for b in raw:
+    by.setdefault(b["time_key"][:10], []).append(b)
+for day in last3[:2]:
+    for k in range(0, len(by[day]), 400):
+        r = client.post("/", json={"action": "futu_data", "token": "tok", "symbol": SYM, "kline_type": "K_1M",
+                                   "source": "futu_opend:HK.HSI2610", "data": by[day][k:k + 400]})
+        assert r.status_code == 200, r.get_data(as_text=True)
+check("推 K_1M 時已自動推進（第一次：前兩個交易日熱身）", main.dizai_state(SYM) is not None)
 FAKE.pop(main.dizai_file(SYM), None)
-main.dizai_update(SYM, now=now_mid)
-st = main.dizai_state(SYM)
-check("今天未收市：記下 prev_close（上一交易日收市）、未定案", st and st["sessions"][d2]["prev_close"] == by_day[d1][-1]["close"]
-      and st["sessions"][d2]["final"] is False and st["start"] == d2, st and {k: v for k, v in st["sessions"][d2].items() if k != "tail"})
-now_after = datetime.strptime(d2, "%Y-%m-%d").replace(tzinfo=HK) + timedelta(days=1, hours=3, minutes=5)
-main.dizai_update(SYM, now=now_after)
-st = main.dizai_state(SYM)
-exp = [t for t in mine if research.session_of(t["entry_time"]) == d2]
-got = st["sessions"][d2]
-check("收市後再算：定案，交易跟回測一致", got["final"] and [RND(t) for t in got["trades"]] == [RND(t) for t in exp],
-      (got["final"], len(got["trades"]), len(exp)))
-data = main.dizai_data(SYM, now=now_after)
-check("JSON：今日策略有開閘線 = 上日收市 ±1%", data["status"] == "ok" and data["today"]["gate_up"] == round(got["prev_close"] * 1.01)
-      and data["today"]["gate_down"] == round(got["prev_close"] * 0.99), data.get("today"))
-check("JSON：統計只算已收市的日子", data["stats"]["days"] == 1 and data["stats"]["trades"] == len(exp), data["stats"])
-r = client.get("/?view=dizai")
-html = r.get_data(as_text=True)
-check("頁面 200、有名稱、今日策略、前向測試、規則、免責", r.status_code == 200 and all(x in html for x in
-      ("⛰️ 地載陣", "今日策略", "前向測試", "陣法（規則）", "不構成任何投資建議")), html[:300])
-check("頁面不用登入（公開）、導覽列有地載陣", "nav-current'>⛰️ 地載陣" in html)
-r = client.get("/?view=dizai&format=json")
-check("?view=dizai&format=json 回 JSON", r.status_code == 200 and r.get_json()["status"] == "ok")
-check("JSON 不含熱身收市價（tail）", all("tail" not in d for d in r.get_json()["days"]))
+now = datetime.strptime(last3[-1] + " 12:00", "%Y-%m-%d %H:%M").replace(tzinfo=HK)
+part = by[last3[-1]][:120]
+main.gcs_write_text(main.archive_blob_name("futu_k_1m", SYM, last3[-1]), json.dumps(part))
+main.dizai_update(SYM, now=now)
+s1 = main.dizai_state(SYM)
+check("第一次：開始日 = 今天、最新一根（可能未收完）不處理", s1 and s1["start"] == last3[-1] and s1["last_bar"] == part[-2]["time_key"],
+      s1 and (s1["start"], s1["last_bar"]))
+check("前兩個交易日只熱身 RSI、不交易", s1 and s1["rsi"].get("value") is not None and not any(
+      t["entry_tk"] < last3[-1] for v in s1["variants"].values() for t in v["trades"]))
+part2 = by[last3[-1]][:200]
+main.gcs_write_text(main.archive_blob_name("futu_k_1m", SYM, last3[-1]), json.dumps(part2))
+main.dizai_update(SYM, now=now)
+s2 = main.dizai_state(SYM)
+check("第二次：接着推進到新的倒數第二根", s2["last_bar"] == part2[-2]["time_key"], s2["last_bar"])
+main.dizai_update(SYM, now=now)
+check("沒有新 K 線 → 不變", main.dizai_state(SYM)["last_bar"] == part2[-2]["time_key"])
+data = main.dizai_data(SYM, now=now)
+pl = data["plans"]["bold"]
+check("今日策略：開閘線 = 上日收市 ±2%、加倉間距 = 1 × ATR20", pl["gate_up"] == round(pl["prev_close"] * 1.02)
+      and pl["gate_down"] == round(pl["prev_close"] * 0.98) and abs(pl["step"] - pl["atr"]) < 0.11, pl)
+check("穩的間距 = 0.75 × ATR20", abs(data["plans"]["steady"]["step"] - 0.75 * data["plans"]["steady"]["atr"]) < 0.11)
+html = client.get("/?view=dizai").get_data(as_text=True)
+check("頁面：兩組、今日策略、前向、八年回測、curve fitting 警告、免責", all(x in html for x in
+      ("地載・穩", "地載・進", "今日策略", "前向測試", "八年回測", "curve fitting", "不構成任何投資建議", "RRR")), html[:300])
+check("頁面公開、導覽列有地載陣", "nav-current'>⛰️ 地載陣" in html)
+j = client.get("/?view=dizai&format=json").get_json()
+check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold"}
+      and all("worst_rrr" in v for v in j["stats"].values()))
 
-print("=== 4. 沒有數據時 ===")
+print("=== 4. 持倉顯示 ===")
+pos_st = None
+st3 = main.dizai_new_state(days[0])
+for b in bars:
+    main.dizai_advance(st3, [b], main._dz_ctx_fn(rows))
+    if st3["variants"]["bold"]["pos"] and st3["variants"]["bold"]["pos"]["adds"] >= 1:
+        pos_st = json.loads(json.dumps(st3)); break
+check("找到一個加過倉的持倉時刻", pos_st is not None)
+if pos_st:
+    pos_st["mark"] = {"time": pos_st["last_bar"], "price": [x for x in bars if x["time_key"] == pos_st["last_bar"]][0]["close"]}
+    plan = main.dizai_plan("bold", pos_st["variants"]["bold"], main.dizai_day_ctx(rows, pos_st["last_sess"]), pos_st["mark"], pos_st["last_sess"])
+    pp = plan["position"]
+    s_ = 1 if pp["side"] == "買" else -1
+    check("持倉：止賺 = 平均成本 ±150、止蝕 = 平均成本 ∓3000、下次加 2 張", pp["tp"] == round(pp["avg"] + s_ * 150, 1)
+          and pp["sl"] == round(pp["avg"] - s_ * 3000, 1) and pp["next_add_lots"] == 2 and pp["lots"] == 2, pp)
+
+print("=== 5. 沒有數據 ===")
 FAKE.pop(main.dizai_file(SYM), None)
 html = client.get("/?view=dizai").get_data(as_text=True)
-check("空狀態頁面提示等本地腳本 v14", "v14" in html and "陣法（規則）" in html)
+check("空狀態頁面提示等本地腳本 v14、仍列兩組回測", "v14" in html and "地載・進" in html and "八年回測" in html)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

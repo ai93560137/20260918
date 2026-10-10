@@ -38,6 +38,8 @@ def day_features(D):
     ma20 = np.full(nd, np.nan)
     vol_ratio = np.full(nd, np.nan)
     ret5 = np.full(nd, np.nan)
+    ret10 = np.full(nd, np.nan)
+    prev_move = np.full(nd, np.nan)
     for k in range(nd):
         if k >= 20:
             ma20[k] = dc[k - 20:k].mean()                    # 到上日為止
@@ -45,9 +47,13 @@ def day_features(D):
             vol_ratio[k] = atr_d[k] / np.nanmedian(atr_d[k - 250:k])
         if k >= 6:
             ret5[k] = dc[k - 1] / dc[k - 6] - 1             # 上日收市對 5 日前收市
+        if k >= 11:
+            ret10[k] = dc[k - 1] / dc[k - 11] - 1
+        if k >= 2:
+            prev_move[k] = dc[k - 1] / dc[k - 2] - 1        # 上一個交易日的升跌
     prev_close = np.r_[np.nan, dc[:-1]]
     weekday = np.array([date.fromisoformat(d).weekday() for d in days])
-    return {"ma20": ma20, "vol_ratio": vol_ratio, "ret5": ret5, "prev_close": prev_close, "open": do, "weekday": weekday}
+    return {"ma20": ma20, "vol_ratio": vol_ratio, "ret5": ret5, "ret10": ret10, "prev_move": prev_move, "atr_d": atr_d, "prev_close": prev_close, "open": do, "weekday": weekday}
 
 
 def keep(F, D, i, side, name):
@@ -72,6 +78,24 @@ def keep(F, D, i, side, name):
     if name in ("gap_only", "intraday_only"):
         gap = abs(F["open"][d] - pc) >= 0.5 * abs(c - pc)
         return gap if name == "gap_only" else not gap
+    if "&" in name:
+        return all(keep(F, D, i, side, n) for n in name.split("&"))
+    if name.startswith("run10_"):
+        x = float(name[6:]) / 100
+        r = F["ret10"][d]
+        return not ((side < 0 and r >= x) or (side > 0 and r <= -x))
+    if name.startswith("madist_"):                            # 上日收市離 20 日均線 ≥ x × ATR20（同方向）不做
+        x = float(name[7:])
+        if np.isnan(F["ma20"][d]):
+            return False
+        dist = (pc - F["ma20"][d]) / F["atr_d"][d]
+        return not ((side < 0 and dist >= x) or (side > 0 and dist <= -x))
+    if name == "no_prev2":                                    # 上一個交易日也同方向升跌 ≥ 2% 不做
+        m = F["prev_move"][d]
+        return not ((side < 0 and m >= 0.02) or (side > 0 and m <= -0.02))
+    if name == "no_first_hour":                               # 日市開市第一小時（09:15–10:15）不入場
+        t = D["tk"][i][11:16]
+        return not ("09:00" <= t < "10:15")
     if name.startswith("run5_"):
         x = float(name[5:]) / 100
         r = F["ret5"][d]
@@ -81,6 +105,8 @@ def keep(F, D, i, side, name):
 
 FILTERS = ("none", "trend_with", "trend_against", "vol_lo", "vol_hi", "no_mon", "no_fri",
            "gap_only", "intraday_only", "run5_3", "run5_5")
+FILTERS2 = ("none", "run5_3", "run5_2", "run10_4", "run10_6", "madist_2", "madist_3", "no_prev2", "no_first_hour",
+            "run5_3&run10_4", "run5_3&madist_2", "run5_3&no_prev2", "run5_3&no_first_hour", "run5_2&madist_2")
 
 
 def rrr(trades, sl, lots_max=4):
@@ -98,6 +124,7 @@ def main():
     ap.add_argument("--move", type=float, default=BASE["move"])
     ap.add_argument("--g", type=float, default=BASE["g"])
     ap.add_argument("--tp", type=float, default=BASE["tp"])
+    ap.add_argument("--set2", action="store_true", help="用第二批條件（FILTERS2）")
     a = ap.parse_args()
     BASE.update(trig=a.trig, move=a.move, g=a.g, tp=a.tp)
     D = ds.prepare(rad.clean(json.loads(Path(a.json).read_text())))
@@ -108,7 +135,7 @@ def main():
           f"間距 {BASE['g']} × ATR20／1→2→4／止賺 {BASE['tp']:.0f}／留倉\n")
     print("條件            筆數 ｜無止蝕時最遠逆向（最大／第 2／第 3，點）＞1000 ＞2000｜"
           "止蝕 1000：勝率 實際RRR 最壞RRR 每筆（訓｜測） 總｜止蝕 2000：勝率 每筆 總｜止蝕 3000：勝率 每筆 總")
-    for name in FILTERS:
+    for name in (FILTERS2 if a.set2 else FILTERS):
         s2 = [(i, sd) for i, sd in sig if keep(F, D, i, sd, name)]
         t_inf = mg.simulate_mg(D, s2, BASE["g"], BASE["tp"], sl_pts=1e9, add_lots=BASE["lots"])
         mae = sorted((x["mae"] for x in t_inf), reverse=True)
