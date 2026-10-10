@@ -323,6 +323,19 @@ def main():
                 break
         F0 = b["underlyings"][und]["F"]
         P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）" if hit else "50% 內唔觸及"))
+    if acc and acc.get("maintenance_margin"):
+        cush0 = acc["total_assets"] - acc["maintenance_margin"]
+        P(f"\n富途保證金緩衝（HK${cush0:,.0f}）跌穿 0 所需變動（保證金當不變；實際會更早）：")
+        for und, sign, lab in (("ES", -1, "ES 下跌"), ("HSI", 1, "HSI 上升"), ("HSI", -1, "HSI 下跌")):
+            hit = None
+            for k in range(1, 101):
+                r = sign * k / 200
+                t, _ = pnl_hkd(b, fx, {und: r})
+                if cush0 + t - tot0 < 0:
+                    hit = r
+                    break
+            F0 = b["underlyings"][und]["F"]
+            P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）" if hit else "50% 內唔跌穿"))
     P("")
 
     P("## 9. 雙市場格（權益 HKD；✗＝低於硬止損）")
