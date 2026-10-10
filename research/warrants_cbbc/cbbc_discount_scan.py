@@ -147,8 +147,9 @@ def demo() -> None:
 def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: str, borrow_rate: float) -> None:
     try:
         import futu as ft  # type: ignore
-    except ImportError:
-        sys.exit("需要 pip install futu-api，並在本機跑 Futu OpenD")
+        ft.OpenQuoteContext
+    except (ImportError, AttributeError):
+        sys.exit("需要 pip install futu-api 並在本機跑 Futu OpenD；不要在 repo 根目錄用互動模式跑（repo 的 futu/ 資料夾會蓋掉套件）")
     ctx = ft.OpenQuoteContext(host=host, port=port)
     try:
         is_index = owner == "HK.800000"
@@ -164,10 +165,11 @@ def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: st
             req.type_list = [wtype]
             req.sort_field = ft.SortField.STREET_RATE
             req.ascend = False
-            ret, (page_count, df) = ctx.get_warrant(owner, req)
+            ret, data = ctx.get_warrant(owner, req)
             if ret != ft.RET_OK:
-                print(f"get_warrant 失敗：{df}", file=sys.stderr)
+                print(f"get_warrant 失敗：{data}", file=sys.stderr)
                 continue
+            df, _last_page, _all_count = data        # futu-api 10.x：(DataFrame, last_page, all_count)
             for _, r in df.iterrows():
                 ask = float(r.get("ask_price") or 0)
                 if ask <= 0 or float(r.get("recovery_price") or 0) <= 0:
