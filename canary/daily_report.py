@@ -325,11 +325,19 @@ def verify_previous(rows, sent, today):
             n_now = streak_info(rows, key, last[key])[0]
             expect = int(S[sk]) + 1 if S.get(key, "") == last[key] else 1
             lines.append(f"{'✅' if n_now == expect else '⚠️'} {key} 連續天數:昨日 {S[sk]} → 今日 {n_now}(預期 {expect})")
-    # 後驗:凡 sent 列的燈色日 D 已有 D+5 個 SPX 交易日、且尚未後驗者
+    # 後驗:凡 sent 列的燈色日 D 已有 D+5 個 SPX 交易日、且尚未後驗者。
+    # 週末與假期會有好幾則訊息沿用同一個燈色日(例:10-02(五) 被週六、週日、週一三則沿用),
+    # 後驗只看燈色日,所以同一個燈色日只印一行,但三列都標記完成。
+    posthoc_seen = {}
     for row in sent:
         if row.get("posthoc_done") == "1":
             continue
+        if row["light_date"] in posthoc_seen:
+            if posthoc_seen[row["light_date"]]:
+                done.append(row["generated_at_utc"])
+            continue
         ph = spx_fwd5(row["light_date"])
+        posthoc_seen[row["light_date"]] = ph is not None
         if ph is None:
             continue
         ratio = (ph["rv"] / ph["median"]) if (ph["median"] and ph["rv"] is not None) else None
