@@ -2,7 +2,7 @@ name: Canary daily（金絲雀每日燈色表 + 總結報告）
 
 # 每個交易日美股收盤後,從雲垂陣分支拉六隻鳥日線 → 重產 canary/canary_daily.csv →
 # 產出 canary/DAILY_REPORT.md、追加 canary/daily_log.csv → 提交回本分支 → 有 TG 密鑰則發 Telegram。
-# 週六另跑 yellow_lab.py / red_lab.py 重產兩份考核報告(需 pandas + tabulate)。
+# 週六(或距上次考核 ≥ 7 天)另跑 yellow_lab.py / red_lab.py 重產兩份考核報告(需 pandas + tabulate)。
 # 上游 fetch-quotes 約 20:17 UTC 提交當日收盤,本工作流排 22:30 UTC(香港 06:30),**每天**跑(使用者要求每天有 Telegram 報告;
 # 週日、週一早上無新收盤時報告會標明「燈色沿用」)。
 # 注意:GitHub 的 schedule 只對預設分支上的工作流生效;本檔在合併前只能手動 workflow_dispatch。
@@ -48,13 +48,18 @@ jobs:
           fi
           echo "refresh=$STATUS_REFRESH" >> "$GITHUB_OUTPUT"
 
-      - name: Labs (Saturday or on request)
+      - name: Labs (Saturday, overdue, or on request)
         id: labs
         env:
           WANT: ${{ inputs.run_labs }}
         run: |
           DOW=$(date -u +%u)
-          if [ "$DOW" = "6" ] || [ "$WANT" = "true" ]; then
+          # 考核報告的日期寫在第一行(yellow_lab / red_lab 用 date.today() 寫入)。
+          # 排程偶爾被 GitHub 延到 UTC 週日,單看「週六」會整週跳過;距上次考核 ≥ 7 天也要跑。
+          LAST=$(grep -m1 -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' canary/YELLOW_UPGRADE.md || echo 1970-01-01)
+          AGE=$(( ( $(date -u +%s) - $(date -u -d "$LAST" +%s) ) / 86400 ))
+          echo "上次考核 $LAST,距今 $AGE 天;今天 UTC 星期 $DOW"
+          if [ "$DOW" = "6" ] || [ "$AGE" -ge 7 ] || [ "$WANT" = "true" ]; then
             pip install -q pandas tabulate
             STATUS=ok
             ( cd canary && python3 yellow_lab.py > /tmp/yellow.log 2>&1 ) || STATUS=fail
