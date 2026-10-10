@@ -174,7 +174,8 @@ for k, t in ex.items():
     print(f"--- {k} ---\n{t}")
 t0 = st["trades"][0]
 o0 = next(e for e in st["notices"] if e["kind"] == "open")
-check("開倉通知的價位 = 交易紀錄的入場價", f"@ {t0['entry']:,.0f}" in o0["text"], o0["text"])
+check("開倉通知（落單格式）：市價約 = 入場價、止賺限價、止蝕止損、下次加倉", f"市價（約 {t0['entry']:,.0f}" in o0["text"]
+      and "止賺：限價" in o0["text"] and "止蝕：止損" in o0["text"] and "下次加倉：限價" in o0["text"], o0["text"])
 seg = main.dizai_heng_new_state(days[0])
 for a_, b_ in zip([0] + cuts, cuts + [len(bars)]):
     seg = json.loads(json.dumps(seg)); main.dizai_heng_advance(seg, bars[a_:b_], main._dz_ctx_fn(rows))

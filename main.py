@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-10 — [R146] 落單格式 Telegram：突破V、穩60、進NQ 加通知；五個成份（衡、缺、突破V、穩60、進NQ）的開倉／加倉／
+#     平倉通知改成落單格式——方向、張數（穩60 已乘地載・合的 2 份）、市價或掛單價、止賺限價、止蝕止損、下次加倉價與張數、
+#     改單提示、所屬組合。穩60／進NQ 的通知存地載陣狀態檔（id dz:），突破V 存 dizai/tupo/（id tupo:）。
 #   * 2026-10-10 — [R145] 🧩 地載・合（整體組合）前向測試，分「不含衡」（缺×1＋突破V×1＋穩60×2＋進NQ×1）與「含衡」（再加衡×1）
 #     兩個版本並排比較（research/hsi_futures_range/portfolio.py）。新成份：地載・穩60（60 分 RSI，DIZAI_VARIANTS）、
 #     突破V（開市突破 ±0.25%、上日 VHSI > 一年 75 分位、1R 止賺、收市平倉，dizai/tupo/；VHSI 歷史 = repo 每日更新的
@@ -3245,6 +3248,10 @@ def futu_signals_report(symbol, ack=None):
             n += dizai_heng_ack(symbol, ids)
         if any(x.startswith("que:") for x in ids):                   # [R143] 地載・缺
             n += dizai_heng_ack(symbol, ids, dizai_que_file(symbol))
+        if any(x.startswith("tupo:") for x in ids):                  # [R146] 突破V
+            n += dizai_heng_ack(symbol, ids, dizai_tupo_file(symbol))
+        if any(x.startswith("dz:") for x in ids):                    # [R146] 穩60、進NQ
+            n += dizai_heng_ack(symbol, ids, dizai_file(symbol))
         return {"status": "ok", "acked": n}
     items = gcs_read_json(futu_signal_file(symbol), [])
     pending = [{"id": e["id"], "text": e["text"]} for e in (items if isinstance(items, list) else [])
@@ -3254,6 +3261,8 @@ def futu_signals_report(symbol, ack=None):
                 if isinstance(e, dict) and not e.get("sent")]
     pending += dizai_heng_pending(symbol)                            # [R142]
     pending += dizai_heng_pending(symbol, dizai_que_file(symbol))    # [R143]
+    pending += dizai_heng_pending(symbol, dizai_tupo_file(symbol))   # [R146]
+    pending += dizai_heng_pending(symbol, dizai_file(symbol))        # [R146]
     return {"status": "ok", "signals": pending}
 
 
@@ -4188,9 +4197,18 @@ def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None, nq_fn=None
                             "nq_move": pend.get("nq_move"),
                             "fills": [{"time": tk, "kind": "open", "price": bar["open"], "lots": 1, "avg": bar["open"]}]}
                 v["last_open_sess"] = sess
+                if key in DIZAI_NOTIFY:                                 # [R146] 落單格式通知
+                    _dz_heng_notice(st, "open", tk, _dz_var_open_text(key, p, v["pos"]), prefix="dz")
             pos = v["pos"]
             if pos is not None:
+                adds_before = pos["adds"]
                 res = _dz_position_bar(pos, p, bar)
+                if key in DIZAI_NOTIFY and pos["adds"] > adds_before:
+                    adds_fills = [f_ for f_ in pos["fills"] if f_["kind"] == "add"][-(pos["adds"] - adds_before):]
+                    for i_, f_ in enumerate(adds_fills):
+                        n_add = adds_before + i_ + 1
+                        snap = {**pos, "adds": n_add, "lots": f_["lots"], "avg": f_["avg"], "last": f_["price"]}
+                        _dz_heng_notice(st, "add", tk, _dz_var_add_text(key, p, snap, p["add_lots"][n_add - 1], f_["price"]), prefix="dz")
                 oc = DIZAI_OPTION
                 if (key == oc["variant"] and vol_fn and "opt" not in pos and pos["lots"] >= oc["trig_lots"]
                         and vol_fn(tk)):                        # [R139] 加到 2 張：這根收市買期權（紙上）
@@ -4216,6 +4234,8 @@ def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None, nq_fn=None
                     v["trades"].append(trade)
                     v["trades"] = v["trades"][-DIZAI_TRADES_KEEP:]
                     v["pos"] = None
+                    if key in DIZAI_NOTIFY:
+                        _dz_heng_notice(st, reason, tk, _dz_var_exit_text(key, trade, v["trades"]), prefix="dz")
             r_now, r_prev, ok_same = (r60, prev60, same60 and is59) if p.get("tf") == 60 else (rsi, prev_rsi, same)
             if (v["pos"] is None and ok_same and ctx and r_now is not None and r_prev is not None
                     and v.get("last_open_sess") != sess):
@@ -4330,7 +4350,9 @@ def dizai_update(symbol=DIZAI_SYMBOL, now=None):
         dizai_heng_flush(symbol)                              # [R142] Telegram 通知
         dizai_que_update(symbol, bars, rows, today)           # [R143] 地載・缺
         dizai_heng_flush(symbol, path=dizai_que_file(symbol))
-        dizai_tupo_update(symbol, bars, rows, today)          # [R145] 突破V（不發通知）
+        dizai_heng_flush(symbol, path=dizai_file(symbol))     # [R146] 穩60、進NQ 通知（存在地載陣狀態檔）
+        dizai_tupo_update(symbol, bars, rows, today)          # [R145] 突破V
+        dizai_heng_flush(symbol, path=dizai_tupo_file(symbol))
         return []
     except StorageError as exc:
         log_event(f"⚠️ [地載陣更新失敗] {exc}", severity="WARNING", component="dizai")
@@ -4562,21 +4584,49 @@ def _dz_heng_notice(st, kind, tk, text, prefix="heng"):
     st["notices"] = st["notices"][-DIZAI_HENG_NOTICES_KEEP:]
 
 
+def _dz_order_block(side, lots, tp, sl, nxt=None, nxt_lots=None, can_add=False):
+    """[R146] 落單格式：止賺（限價）、止蝕（止損）、下次加倉（限價）。side = 持倉方向，lots = 實際張數。"""
+    close = "沽出" if side > 0 else "買回"
+    lines = [f"止賺：限價{close} {lots:g} 張 @ {tp:,.0f}" if tp is not None else "止賺：不設（收市平倉）",
+             f"止蝕：止損{close} {lots:g} 張 @ {sl:,.0f}" if sl is not None else "止蝕：不設"]
+    if nxt is not None:
+        lines.append(f"下次加倉：限價{'買' if side > 0 else '沽'} {nxt_lots:g} 張 @ {nxt:,.0f}")
+    else:
+        lines.append("下次加倉：已加滿" if can_add else "下次加倉：不加倉")
+    return lines
+
+
+def _dz_combo_line(key):
+    return {"heng": "組合：只計入地載・合（含衡）・衡 × 1",
+            "que": "組合：地載・合兩個版本・缺 × 1",
+            "tupo": "組合：地載・合兩個版本・突破V × 1",
+            "steady60": "組合：地載・合兩個版本・穩60 × 2（張數已乘 2）",
+            "bold_nq": "組合：地載・合兩個版本・進NQ × 1"}.get(key, "")
+
+
+def _dz_exit_lines(tag, reason, side, lots, avg, exit_px, pnl, entry_tk, exit_tk, ys):
+    head = {"tp": "✅ 止賺（紙上）", "sl": "🛑 止蝕（紙上）"}.get(reason, "🔚 收市平倉（紙上）")
+    how = {"tp": "止賺限價單成交", "sl": "止蝕止損單成交"}.get(reason, "市價")
+    return [f"{tag}{head}",
+            f"平倉：{'沽出' if side > 0 else '買回'} {lots:g} 張 @ {exit_px:,.0f}（{how}；取消其餘掛單）",
+            f"本筆：{'好倉' if side > 0 else '淡倉'}平均 {avg:,.0f} → {exit_px:,.0f}，{pnl:+,.0f} 點（HK${pnl * DIZAI_POINT_HKD:+,.0f}，已扣成本）"
+            + (f"・持倉 {_dz_hold_text(entry_tk, exit_tk)}" if entry_tk else ""),
+            f"今年累計：{len(ys)} 筆・勝 {sum(1 for t in ys if t['pnl'] > 0)}・{sum(t['pnl'] for t in ys):+,.0f} 點"]
+
+
 def _dz_heng_open_text(pos):
     side, o = pos["side"], pos["entry"]
     tp, sl = pos["avg"] + side * pos["tp"], pos["avg"] * (1 - side * pos["dstop_pct"]) if pos.get("dstop_pct") else None
     p = pos.get("params") or {}
-    lines = [f"{DIZAI_HENG_TAG}🔔 開倉訊號（紙上）",
-             f"{'買' if side > 0 else '沽'} 1 張 恒指即月 @ {o:,.0f}",
-             f"時間：{pos['entry_tk'][5:16]}（香港）",
-             f"原因：當日{'升' if pos['chg'] > 0 else '跌'} {abs(pos['chg']) * 100:.2f}%（上日收 {pos.get('prev_close', 0):,.0f}）",
-             f"　　　{_dz_heng_trig_text(p, side).split(' → ')[0] if p else 'RSI 訊號'}（{pos.get('rsi', 0):.1f}）",
-             f"止賺：{tp:,.0f}（{side * (tp - o):+,.0f} 點）"]
-    if sl is not None:
-        lines.append(f"災難止蝕：{sl:,.0f}（{side * (sl - o):+,.0f} 點）")
+    nxt = pos["last"] - side * pos["step"] if pos["adds"] < len(pos["add_lots"]) else None
+    lines = [f"{DIZAI_HENG_TAG}🔔 開倉（紙上）",
+             f"落單：{'買' if side > 0 else '沽'} 1 張・市價（約 {o:,.0f}，{pos['entry_tk'][5:16]}）"]
+    lines += _dz_order_block(side, 1, tp, sl, nxt, pos["add_lots"][0] if nxt is not None else None, bool(pos["add_lots"]))
+    lines += [f"原因：當日{'升' if pos['chg'] > 0 else '跌'} {abs(pos['chg']) * 100:.2f}%（上日收 {pos.get('prev_close', 0):,.0f}）；"
+              f"{_dz_heng_trig_text(p, side).split(' → ')[0] if p else 'RSI 訊號'}（{pos.get('rsi', 0):.1f}）"]
     if p:
         lines.append(f"今年規則：{_dz_heng_rule_short(p)}")
-    lines.append("⚠️ 紙上前向測試，不是落盤指示")
+    lines += [_dz_combo_line("heng"), "⚠️ 紙上前向測試，不是落盤指示"]
     return "\n".join(lines)
 
 
@@ -4585,29 +4635,70 @@ def _dz_heng_add_text(pos, q, px):
     nxt = pos["last"] - side * pos["step"] if pos["adds"] < len(pos["add_lots"]) else None
     sl = pos["avg"] * (1 - side * pos["dstop_pct"]) if pos.get("dstop_pct") else None
     return "\n".join([f"{DIZAI_HENG_TAG}➕ 加倉（紙上）",
-                      f"{'買' if side > 0 else '沽'} +{q} 張 @ {px:,.0f} → 共 {pos['lots']} 張，平均成本 {pos['avg']:,.0f}",
-                      f"新止賺：{pos['avg'] + side * pos['tp']:,.0f}" + (f"　止蝕：{sl:,.0f}" if sl is not None else ""),
-                      (f"下次加倉：{nxt:,.0f}（加 {pos['add_lots'][pos['adds']]} 張）" if nxt is not None else "已加滿")])
+                      f"成交：{'買' if side > 0 else '沽'} +{q} 張 @ {px:,.0f}（加倉限價單）→ 共 {pos['lots']} 張，平均成本 {pos['avg']:,.0f}",
+                      "改單：取消舊的止賺、止蝕，按新平均成本重掛："]
+                     + _dz_order_block(side, pos["lots"], pos["avg"] + side * pos["tp"], sl, nxt,
+                                       pos["add_lots"][pos["adds"]] if nxt is not None else None, True))
 
 
 def _dz_heng_exit_text(trade, trades):
     yr = trade["exit_tk"][:4]
     ys = [t for t in trades if t["exit_tk"][:4] == yr]
-    pnl = trade["pnl"]
-    head = "✅ 止賺平倉（紙上）" if trade["reason"] == "tp" else "🛑 災難止蝕（紙上）"
-    return "\n".join([f"{DIZAI_HENG_TAG}{head}",
-                      f"{trade['side']} {trade['lots']} 張：{trade['avg']:,.0f} → {trade['exit']:,.0f}",
-                      f"{pnl:+,.0f} 點（HK${pnl * DIZAI_POINT_HKD:+,.0f}，已扣成本）・持倉 {_dz_hold_text(trade['entry_tk'], trade['exit_tk'])}",
-                      f"今年累計：{len(ys)} 筆・勝 {sum(1 for t in ys if t['pnl'] > 0)}・{sum(t['pnl'] for t in ys):+,.0f} 點"])
+    side = 1 if trade["side"] == "買" else -1
+    return "\n".join(_dz_exit_lines(DIZAI_HENG_TAG, trade["reason"], side, trade["lots"], trade["avg"], trade["exit"], trade["pnl"],
+                                    trade["entry_tk"], trade["exit_tk"], ys))
 
 
 def _dz_heng_gate_text(p, side, price, chg, prev_close):
     o = price
     return "\n".join([f"{DIZAI_HENG_TAG}🚪 開閘提醒",
                       f"恒指即月 {price:,.0f}，當日{'升' if chg > 0 else '跌'} {abs(chg) * 100:.2f}%（上日收 {prev_close:,.0f}）",
-                      f"現在開始等 RSI 訊號：{_dz_heng_trig_text(p, side)}",
-                      f"止賺約 {o * p['tp_pct']:,.0f} 點" + (f"・災難止蝕約 {o * p['dstop_pct']:,.0f} 點" if p.get("dstop_pct") else "・不設止蝕"),
+                      f"預備：{_dz_heng_trig_text(p, side)}（現在不用掛單，等「🔔 開倉」通知才市價落單）",
+                      f"屆時止賺約 {o * p['tp_pct']:,.0f} 點" + (f"・災難止蝕約 {o * p['dstop_pct']:,.0f} 點" if p.get("dstop_pct") else "・不設止蝕"),
                       "⚠️ 紙上前向測試，不是落盤指示"])
+
+
+# [R146] 地載陣引擎裏要發通知的組別：標籤、份數（地載・合的權重，落單張數 = 每份張數 × 份數）
+DIZAI_NOTIFY = {"steady60": ("【地載陣・穩60】", 2), "bold_nq": ("【地載陣・進NQ】", 1)}
+
+
+def _dz_var_open_text(key, p, pos):
+    tag, w = DIZAI_NOTIFY[key]
+    side, o = pos["side"], pos["entry"]
+    nxt = pos["last"] - side * pos["step"] if pos["adds"] < len(p["add_lots"]) else None
+    lines = [f"{tag}🔔 開倉（紙上）",
+             f"落單：{'買' if side > 0 else '沽'} {pos['lots'] * w:g} 張・市價（約 {o:,.0f}，{pos['entry_tk'][5:16]}）"]
+    lines += _dz_order_block(side, pos["lots"] * w, pos["avg"] + side * p["tp"], pos["avg"] - side * p["sl"], nxt,
+                             p["add_lots"][pos["adds"]] * w if nxt is not None else None, True)
+    if p["trig"] == "confirm":
+        why = "由 80 以上跌回" if side < 0 else "由 20 以下升回"
+    else:
+        why = "向上穿 80" if side < 0 else "向下穿 20"
+    lines += [f"原因：當日{'升' if pos['chg'] > 0 else '跌'} {abs(pos['chg']) * 100:.2f}%；{'60 分 K' if p.get('tf') == 60 else '1 分 K'} RSI {why}"
+              + ("；Nasdaq 未同方向" if p.get("nq") else ""),
+              "可留倉過夜；隔日掛單失效的話，每朝按網頁價位重掛",
+              _dz_combo_line(key), "⚠️ 紙上前向測試，不是落盤指示"]
+    return "\n".join(lines)
+
+
+def _dz_var_add_text(key, p, pos, q, px):
+    tag, w = DIZAI_NOTIFY[key]
+    side = pos["side"]
+    nxt = pos["last"] - side * pos["step"] if pos["adds"] < len(p["add_lots"]) else None
+    return "\n".join([f"{tag}➕ 加倉（紙上）",
+                      f"成交：{'買' if side > 0 else '沽'} +{q * w:g} 張 @ {px:,.0f}（加倉限價單）→ 共 {pos['lots'] * w:g} 張，平均成本 {pos['avg']:,.0f}",
+                      "改單：取消舊的止賺、止蝕，按新平均成本重掛："]
+                     + _dz_order_block(side, pos["lots"] * w, pos["avg"] + side * p["tp"], pos["avg"] - side * p["sl"], nxt,
+                                       p["add_lots"][pos["adds"]] * w if nxt is not None else None, True))
+
+
+def _dz_var_exit_text(key, trade, trades):
+    tag, w = DIZAI_NOTIFY[key]
+    ys = [t for t in trades if t["exit_tk"][:4] == trade["exit_tk"][:4]]
+    ys = [{"pnl": t["pnl"] * w} for t in ys]
+    side = 1 if trade["side"] == "買" else -1
+    return "\n".join(_dz_exit_lines(tag, trade["reason"], side, trade["lots"] * w, trade["avg"], trade["exit"], trade["pnl"] * w,
+                                    trade["entry_tk"], trade["exit_tk"], ys) + [_dz_combo_line(key)])
 
 
 def tg_send(text):
@@ -4925,12 +5016,9 @@ def _dz_que_close(st, tk, px, reason, cfg=None):
     st["trades"] = st["trades"][-DIZAI_TRADES_KEEP:]
     if cfg.get("notify", True):
         ys = [t for t in st["trades"] if t["exit_tk"][:4] == tk[:4]]
-        head = {"sl": "🛑 止蝕（紙上）", "tp": "✅ 止賺（紙上）"}.get(reason, "🔚 收市平倉（紙上）")
-        _dz_heng_notice(st, reason, tk, "\n".join([
-            f"{cfg['tag']}{head}",
-            f"{'買' if side > 0 else '沽'} 1 張：{pos['entry']:,.0f} → {px:,.0f}",
-            f"{pnl:+,.0f} 點（HK${pnl * DIZAI_POINT_HKD:+,.0f}，已扣成本）",
-            f"今年累計：{len(ys)} 筆・勝 {sum(1 for t in ys if t['pnl'] > 0)}・{sum(t['pnl'] for t in ys):+,.0f} 點"]), prefix=cfg["prefix"])
+        _dz_heng_notice(st, reason, tk, "\n".join(
+            _dz_exit_lines(cfg["tag"], reason, side, 1, pos["entry"], px, pnl, pos["entry_tk"], tk, ys) + [_dz_combo_line(cfg["prefix"])]),
+            prefix=cfg["prefix"])
     st["pos"] = None
 
 
@@ -4959,6 +5047,15 @@ def dizai_que_advance(st, bars, ctx_fn, nq_move_fn, symbol=DIZAI_SYMBOL, cfg=Non
                 day.update(prev_close=ctx["prev_close"], gap=round(bar["open"] / ctx["prev_close"] - 1, 5),
                            vhsi=None if vv is None else round(vv[0], 2), vhsi_p75=None if vv is None else round(vv[1], 2))
                 day["ok"] = vv is not None and vv[0] > vv[1]
+                if day["ok"] and note:                              # [R146] 突破V：今日開閘，預先掛 OCO
+                    up, dn = bar["open"] * (1 + q["x"]), bar["open"] * (1 - q["x"])
+                    dist = 2 * q["x"] * bar["open"]
+                    _dz_heng_notice(st, "gate", tk, "\n".join([
+                        f"{q['tag']}🚪 今日開閘",
+                        f"上日 VHSI {vv[0]:.2f}（一年 75 分位 {vv[1]:.2f}）；開市 {bar['open']:,.0f}",
+                        f"掛 OCO：買入止損 1 張 @ {up:,.0f}；沽出止損 1 張 @ {dn:,.0f}（一張成交即取消另一張）",
+                        f"成交後：止蝕掛另一邊突破位；止賺 = 入場 ± {dist:,.0f} 點；16:29 未出場就市價平倉",
+                        _dz_combo_line(q["prefix"]), "⚠️ 紙上前向測試，不是落盤指示"]), prefix=q["prefix"])
             elif ctx:
                 gap = bar["open"] / ctx["prev_close"] - 1
                 nq = nq_move_fn(st.get("prev_day_last"), tk) if st.get("prev_day_last") else None
@@ -4972,8 +5069,10 @@ def dizai_que_advance(st, bars, ctx_fn, nq_move_fn, symbol=DIZAI_SYMBOL, cfg=Non
                         f"開市 {bar['open']:,.0f}，跳空 {gap * 100:+.2f}%（上日收 {ctx['prev_close']:,.0f}）；Nasdaq 隔夜 {nq * 100:+.2f}%",
                         (f"只做向下突破：跌穿 {dn:,.0f} 就沽 1 張（先升穿 {up:,.0f} 則今日不做）" if allow == "沽"
                          else f"只做向上突破：升穿 {up:,.0f} 就買 1 張（先跌穿 {dn:,.0f} 則今日不做）"),
-                        f"止蝕約 {bar['open'] * 2 * q['x']:,.0f} 點（對面），日市收市平倉",
-                        "⚠️ 紙上前向測試，不是落盤指示"]), prefix=q["prefix"])
+                        f"可預先掛：{'沽出' if allow == '沽' else '買入'}止損單 1 張 @ {(dn if allow == '沽' else up):,.0f}"
+                        f"（先{'升穿' if allow == '沽' else '跌穿'} {(up if allow == '沽' else dn):,.0f} 就取消）；或等「🔔 開倉」通知才市價落單",
+                        f"止蝕約 {bar['open'] * 2 * q['x']:,.0f} 點（對面），不設止賺，日市收市平倉",
+                        _dz_combo_line(q["prefix"]), "⚠️ 紙上前向測試，不是落盤指示"]), prefix=q["prefix"])
             st["day"] = day
         if in_day and day and day.get("sess") == sess:
             pos = st["pos"]
@@ -4996,14 +5095,19 @@ def dizai_que_advance(st, bars, ctx_fn, nq_move_fn, symbol=DIZAI_SYMBOL, cfg=Non
                                            "tp": px + brk * q["tp_r"] * dist if q.get("tp_r") else None,
                                            "gap": day.get("gap"), "nq": day.get("nq")}
                         if note:
-                            _dz_heng_notice(st, "open", tk, "\n".join([
-                                f"{q['tag']}🔔 開倉訊號（紙上）",
-                                f"{'買' if brk > 0 else '沽'} 1 張 恒指即月 @ {px:,.0f}",
-                                f"時間：{tk[5:16]}（香港）",
-                                f"原因：開市跳空 {day['gap'] * 100:+.2f}%、Nasdaq 隔夜 {day['nq'] * 100:+.2f}%，{'升' if brk > 0 else '跌'}穿開市 ±0.25%"
-                                + (f"（RSI {prev_rsi:.1f}）" if prev_rsi is not None else ""),
-                                f"止蝕：{pos['sl']:,.0f}（{-dist:+,.0f} 點）；不設止賺，日市收市平倉",
-                                "⚠️ 紙上前向測試，不是落盤指示"]), prefix=q["prefix"])
+                            if q.get("filter") == "vhsi":
+                                head = [f"{q['tag']}🔔 開倉（紙上）",
+                                        f"成交：{'買' if brk > 0 else '沽'} 1 張 @ {px:,.0f}（{'買入' if brk > 0 else '沽出'}止損單觸發，{tk[5:16]}）；取消另一張",
+                                        "改單：掛以下兩張："]
+                                why = []
+                            else:
+                                head = [f"{q['tag']}🔔 開倉（紙上）",
+                                        f"落單：{'買' if brk > 0 else '沽'} 1 張・市價（約 {px:,.0f}，{tk[5:16]}）"]
+                                why = [f"原因：開市跳空 {day['gap'] * 100:+.2f}%、Nasdaq 隔夜 {day['nq'] * 100:+.2f}%，{'升' if brk > 0 else '跌'}穿開市 ±0.25%"
+                                       + (f"（RSI {prev_rsi:.1f}）" if prev_rsi is not None else "")]
+                            _dz_heng_notice(st, "open", tk, "\n".join(
+                                head + _dz_order_block(brk, 1, pos["tp"], pos["sl"]) + why
+                                + ["16:29 未出場就市價平倉", _dz_combo_line(q["prefix"]), "⚠️ 紙上前向測試，不是落盤指示"]), prefix=q["prefix"])
                         if (bar["low"] <= pos["sl"]) if brk > 0 else (bar["high"] >= pos["sl"]):   # 入場那根先查止蝕
                             _dz_que_close(st, tk, pos["sl"], "sl", q)
                     day["last_tk"], day["last_close"] = tk, bar["close"]
@@ -5127,7 +5231,7 @@ def _dz_que_html(qd):
 
 # ======== [R145] 突破V（開市突破 ＋ VHSI 篩選）與 🧩 地載・合 ========
 DIZAI_TUPO = {**DIZAI_QUE, "filter": "vhsi", "nq_opp": False, "rsi_hi": None, "rsi_lo": None, "gap": None, "tp_r": 1,
-              "tag": "【地載陣・突破V】", "prefix": "tupo", "notify": False}
+              "tag": "【地載陣・突破V】", "prefix": "tupo", "notify": True}
 DIZAI_TUPO_BT = {"n": 506, "win": 0.561, "avg_win": 113, "avg_loss": 113, "ann": 870, "mdd": -1823, "sharpe": 0.97,
                  "by_year": {"2018": 176, "2019": 633, "2020": 2252, "2021": 1525, "2022": -498, "2023": 173, "2024": 146, "2025": 1037, "2026": 1558}}
 DIZAI_VHSI_CSV_URL = os.environ.get(
@@ -5301,7 +5405,8 @@ def _dz_he_html(he):
     return f"""
     <div class='section' style='border-top:5px solid #0f766e'>
       <h2>🧩 地載・合　<span class='muted' style='font-size:13px'>整體組合・兩個版本並排比較</span></h2>
-      <p style='font-size:13px'>五個成份的每日盈虧互相幾乎無關（相關系數 −0.06 至 0.05），合在一起回撤互相抵消。
+      <p style='font-size:13px'>五個成份都會發「落單格式」Telegram（方向、張數、市價或掛單價、止賺、止蝕、下次加倉；穩60 張數已乘 2 份）。
+        五個成份的每日盈虧互相幾乎無關（相關系數 −0.06 至 0.05），合在一起回撤互相抵消。
         「不含衡」= 缺 × 1 ＋ 突破V × 1 ＋ 穩60 × 2 ＋ 進NQ × 1；「含衡」再加地載・衡 × 1。份數只用 2021–2023 年挑選。
         合併盈虧按平倉時間累計（點 × 份數，每點 HK$50）。注意：缺、突破V、穩60、進NQ 的條件是看過全期數據定的，回測 2024 起並非完全樣本外。</p>
       <div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(300px,1fr))'>{cols}</div>
@@ -5324,7 +5429,7 @@ def _dz_tupo_html(td):
     bt = DIZAI_TUPO_BT
     return f"""
     <div class='section' style='border-top:5px solid #7c3aed'>
-      <h2>⚡ 突破V　<span class='muted' style='font-size:13px'>開市突破 ±0.25%・上日 VHSI 高於一年 75 分位・1R 止賺・收市平倉（地載・合成份，不發通知）</span></h2>
+      <h2>⚡ 突破V　<span class='muted' style='font-size:13px'>開市突破 ±0.25%・上日 VHSI 高於一年 75 分位・1R 止賺・收市平倉（地載・合成份）</span></h2>
       {today}
       <p style='font-size:13px'>前向：{st['trades']} 筆、勝率 {_dz_n(st['win_rate'] * 100 if st.get('win_rate') is not None else None, '{:.1f}%')}、
         總盈虧 <span class='{pnl_class(st['total_pts'])}'>{st['total_pts']:+,.0f} 點</span>（HK${st['total_hkd']:+,}）。
@@ -5554,8 +5659,8 @@ def strategies_data(now=None):
         v = ((dz or {}).get("variants") or {}).get(k) or {}
         ps = v.get("pos")
         rows.append({"key": f"dz_{k}", "name": p["name"], "group": "紙上", "market": "恒指", "real": False,
-                     "style": "逆市：升跌 2% 後 RSI 反做，加倉" + ("（Nasdaq 篩選）" if p.get("nq") else ""), "hold": "可多日",
-                     "notify": "網頁", "link": "?view=dizai",
+                     "style": "逆市：升跌 2% 後 RSI 反做，加倉" + ("（Nasdaq 篩選）" if p.get("nq") else "") + ("（60 分 RSI）" if p.get("tf") == 60 else ""),
+                     "hold": "可多日", "notify": "Telegram（即時）" if k in DIZAI_NOTIFY else "網頁", "link": "?view=dizai",
                      "pos": _sp(None, 0, "前向測試未開始") if dz is None else
                      (_sp(ps["side"], ps["lots"], f"平均成本 {ps['avg']:,.0f}", ps.get("entry_tk")) if ps else _sp(0, 0))})
     for key, name, path, style, hold in (("heng", "地載・衡", dizai_heng_file(DIZAI_SYMBOL), "逆市：升跌 1–2% 後 RSI 反做，2% 災難止蝕", "通常一日內"),
@@ -5571,7 +5676,7 @@ def strategies_data(now=None):
     st_t = safe(lambda: gcs_read_json(dizai_tupo_file(DIZAI_SYMBOL), {}))
     ps_t = (st_t or {}).get("pos") if isinstance(st_t, dict) else None
     rows.append({"key": "tupo", "name": "突破V", "group": "紙上", "market": "恒指", "real": False, "style": "順勢：開市突破，VHSI 偏高才做",
-                 "hold": "即日", "notify": "網頁", "link": "?view=dizai",
+                 "hold": "即日", "notify": "Telegram（即時）", "link": "?view=dizai",
                  "pos": _sp(None, 0, "前向測試未開始") if not (isinstance(st_t, dict) and st_t.get("version")) else
                  (_sp(ps_t["side"], 1, f"入場 {ps_t['entry']:,.0f}", ps_t.get("entry_tk")) if ps_t else _sp(0, 0))})
     he = safe(lambda: dizai_he_data(DIZAI_SYMBOL))

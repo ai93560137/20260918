@@ -132,6 +132,15 @@ ref60 = [x for x in dm.run_seq(D60, dm.tf_signals(D60, "confirm", 60), 0.75, 30,
 a60 = [(D60["tk"][x["fills"][0][0]], x["side"], x["reason"], x["lots"], round(x["pnl"], 1)) for x in ref60]
 b60 = [(t_["entry_tk"], 1 if t_["side"] == "買" else -1, t_["reason"], t_["lots"], round(t_["pnl"], 1)) for t_ in st60["variants"]["steady60"]["trades"]]
 check(f"穩60：研究 {len(a60)} 筆、引擎 {len(b60)} 筆，逐筆相同", a60 == b60 and len(a60) >= 3, (a60[:3], b60[:3]))
+nk = [n_["kind"] for n_ in st60.get("notices") or []]
+n60 = [t_ for t_ in st60["variants"]["steady60"]["trades"]]
+check("[R146] 穩60 落單通知：每筆開倉／平倉一則、加倉有通知、張數已乘 2", nk.count("open") >= len(n60) and nk.count("tp") + nk.count("sl") >= len(n60)
+      and all("2 張" in n_["text"] or "4 張" in n_["text"] or "8 張" in n_["text"] for n_ in st60["notices"] if "穩60" in n_["text"] and n_["kind"] == "open"),
+      {k_: nk.count(k_) for k_ in set(nk)})
+o60 = next(n_["text"] for n_ in st60["notices"] if "穩60" in n_["text"] and n_["kind"] == "open")
+print("--- 穩60 open ---\n" + o60)
+a_ = next((n_["text"] for n_ in st60["notices"] if n_["kind"] == "add"), None)
+if a_: print("--- add ---\n" + a_)
 
 print("=== 2. 分段推進 = 一次推進 ===")
 st2 = main.dizai_new_state(days[0])
