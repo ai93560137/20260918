@@ -87,7 +87,8 @@ def load(book_path, quotes_path=None):
     for p in b["positions"]:
         p["code"] = derive_code(p)
         q = Q.get(p["code"]) or {} if p["code"] else {}
-        p.update(bid=q.get("bid"), ask=q.get("ask"), mid=q.get("mid"), last=q.get("last"), qtime=q.get("quote_time"))
+        ok = lambda x: x if x and x > 0 else None          # 冇行情權限時富途回傳 0
+        p.update(bid=ok(q.get("bid")), ask=ok(q.get("ask")), mid=ok(q.get("mid")), last=ok(q.get("last")), qtime=q.get("quote_time") or None)
         if p["type"] in ("call", "put"):
             p["T"] = max((date.fromisoformat(p["exp"]) - val).days, 0.5) / 365
     for p in b["positions"]:
@@ -259,7 +260,7 @@ def main():
         if p["type"] == "fut":
             continue
         n = p["K"] * p["mult"] * fx[p["ccy"]]
-        P(f"- {p['id']}：名義 HK${n:,.0f}（{n / nav:.1f}× NAV），{p['exp']}（{round(p['T'] * 365)} 天），IV {p['iv'] * 100:.1f}%（{p['iv_src']}）"
+        P(f"- {p['id']}：名義 HK${n:,.0f}（{n / eq0:.1f}× 合計權益），{p['exp']}（{round(p['T'] * 365)} 天），IV {p['iv'] * 100:.1f}%（{p['iv_src']}）"
           + (f"；{p['settle']}" if p.get("settle") else (
               "；到期 ITM 交收成期貨（實物）" if p["und"] == "ES" else "；現金結算")))
     P("")
@@ -362,7 +363,9 @@ def main():
             P(f"  - {r['und']} {lab}" + (f" {abs(hit) * 100:.1f}%（≈ {b['underlyings'][r['und']]['F'] * (1 + hit):,.0f}）就超出界線" if hit else " 20% 內唔超出"))
     hs_all = gk["HSI"]["dpts"] / 10
     P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
-    P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則；EW P7750 名義 3.8× NAV，係觸硬止損嘅主因。")
+    ew = next((p for p in b["positions"] if p["id"].startswith("EW")), None)
+    P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"
+      + (f"；EW P7750 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
     P("")
 
     P("## 11. 假設與限制")

@@ -277,7 +277,8 @@ def quote_dict(by):
         bid, ask = (bid if price_ok(bid) else None), (ask if price_ok(ask) else None)
         d[code] = {"name": str(s.get("name", "")), "bid": bid, "ask": ask,
                    "mid": round((bid + ask) / 2, 4) if bid and ask else None,
-                   "last": num(s.get("last_price")), "quote_time": str(s.get("update_time"))}
+                   "last": num(s.get("last_price")) if price_ok(num(s.get("last_price"))) else None,
+                   "quote_time": str(s.get("update_time") or "") or None}
     return d
 
 
@@ -330,14 +331,18 @@ def pnl(rows, by):
         bid = num(s.get("bid_price")) if s is not None else None
         ask = num(s.get("ask_price")) if s is not None else None
         last = num(s.get("last_price")) if s is not None else None
+        last = last if price_ok(last) else None          # 冇行情權限時富途回傳 0，唔可以當成交價
         r.update(bid=bid if price_ok(bid) else None, ask=ask if price_ok(ask) else None, last=last,
                  quote_time=str(s.get("update_time")) if s is not None else None)
         r["mid"] = round((r["bid"] + r["ask"]) / 2, 2) if r["bid"] and r["ask"] else None
         # 平倉價：空倉用賣價買回，多倉用買價沽出；冇單邊價就用最後成交，並標注
         q, op = r["qty"], r["open_price"]
         side_px, why = (r["ask"], "ask") if q < 0 else (r["bid"], "bid")
-        if side_px is None:
+        if side_px is None and last is not None:
             side_px, why = last, "last（冇" + ("賣" if q < 0 else "買") + "價）"
+        if side_px is None and r.get("futu_pl") is not None and op is not None and mult_of(r["code"])[0]:
+            side_px = op - r["futu_pl"] / (abs(q) * mult_of(r["code"])[0]) * (1 if q < 0 else -1)
+            why = "富途持倉估值（冇行情）"
         m, cur = mult_of(r["code"])
         r["close_basis"], r["close_price"] = why, side_px
         if op is not None and side_px is not None:
