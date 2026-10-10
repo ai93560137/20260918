@@ -79,3 +79,8 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 使用者部機 `gcp_ib/auto_risk.py --every 15`（啟動資料夾 `ZhugeAutoRisk.cmd`）→ `action=futu_risk` → GCS `futu/risk/latest.json`、`futu/risk/history/<日期>.json`（私人，冇公開頁面）。
 - Cloud Run 修訂 `zhuge-risk-manager-00271-nz5`（R147）；出事退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00270-z5d --yes`。
 - 定時任務「四陣持倉風險通報」（平日 09:45／12:45／16:45／21:45 HKT）喺本工作階段讀 `futu/risk/latest.json`，有變先通知風雲蛇地四陣；16:45 發每日摘要；鳥翔唔通知。
+
+## 2026-10-11 風揚陣回覆
+- HSI 10/16 週權 C24900／P23750 係風揚陣「方向一」真實倉（10/10 01:44 HKT 開），規則：持有到期、唔止損、唔對沖、唔加倉；10/16 現金結算後 16:30 再開下一輪，開倉前會睇 `futu/risk/latest.json` 嘅 `metrics.cushion`。
+- 10/1 起 MHI2610 即日交易唔係風揚陣嘅（仲未知係邊個）。EW P7750 開倉計劃仍然未知。
+- 各陣真實持倉登記：repo 根目錄 `POSITIONS.md`（風揚陣 PR #66）。

@@ -281,7 +281,9 @@ def build(book, quotes=None, combined_equity=None):
         bb = sum(px[i] for i in s["legs"])
         M["stop_use"][name] = bb / s["stop_buyback"]
         P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）")
-    P("- HSI 週權 strangle、EW P7750：**冇止損規則**（唔係雲垂陣劇本）\n")
+    P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
+      "research/hsi_futures_range/STRANGLE_1SIGMA.md）")
+    P("- EW P7750：**冇登記止損規則**（開倉計劃未知）\n")
 
     P("## 7. 壓力測試")
     P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")
