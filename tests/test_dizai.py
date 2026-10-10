@@ -148,11 +148,12 @@ check("今日策略：開閘線 = 上日收市 ±2%、加倉間距 = 1 × ATR20"
       and pl["gate_down"] == round(pl["prev_close"] * 0.98) and abs(pl["step"] - pl["atr"]) < 0.11, pl)
 check("穩的間距 = 0.75 × ATR20", abs(data["plans"]["steady"]["step"] - 0.75 * data["plans"]["steady"]["atr"]) < 0.11)
 html = client.get("/?view=dizai").get_data(as_text=True)
-check("頁面：兩組、今日策略、前向、八年回測、curve fitting 警告、免責、期權保護、Sharpe", all(x in html for x in
-      ("地載・穩", "地載・進", "今日策略", "前向測試", "八年回測", "curve fitting", "不構成任何投資建議", "RRR", "期權保護", "Sharpe")), html[:300])
+check("頁面：四組、今日策略、前向、八年回測、curve fitting 警告、免責、期權保護、Sharpe、Nasdaq 篩選", all(x in html for x in
+      ("地載・穩", "地載・進", "地載・穩＋Nasdaq", "地載・進＋Nasdaq", "Nasdaq 篩選", "今日策略", "前向測試", "八年回測", "curve fitting",
+       "不構成任何投資建議", "RRR", "期權保護", "Sharpe")), html[:300])
 check("頁面公開、導覽列有地載陣", "nav-current'>⛰️ 地載陣" in html)
 j = client.get("/?view=dizai&format=json").get_json()
-check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold", "bold_protected"}
+check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold", "steady_nq", "bold_nq", "bold_protected"}
       and all("worst_rrr" in v for v in j["stats"].values()))
 
 print("=== 4. 持倉顯示 ===")
@@ -197,6 +198,47 @@ check("連期權盈虧 = 期貨 + 期權", abs(t_["pnl_protected"] - (t_["pnl"] 
 check("穩不買期權", not any("opt" in t for t in st4["variants"]["steady"]["trades"]))
 check("BS：平價 Call = 平價 Put（r = 0）、到期 = 內在值", abs(main._dz_bs(24000, 24000, 0.05, 0.2, True) - main._dz_bs(24000, 24000, 0.05, 0.2, False)) < 1e-6
       and main._dz_bs(24500, 24000, 0, 0.2, True) == 500 and main._dz_bs(24500, 24000, 0, 0.2, False) == 0)
+
+print("=== 4c. [R140] Nasdaq 篩選：引擎跟 research dizai_cross 一致；GCS 的 Nasdaq 5 分 K 讀取 ===")
+import dizai_cross as dc, dizai_more as dm
+from datetime import timedelta as _td
+rng = random.Random(5)
+t0 = datetime.strptime(days[0], "%Y-%m-%d") - _td(days=3)
+ut, uc, px = [], [], 15000.0
+for k in range(int((len(days) + 60) * 1.5 * 96)):              # 15 分 K（UTC 收市時間）
+    px *= 1 + rng.gauss(0, 0.002)
+    ut.append(((t0 + _td(minutes=15 * (k + 1))) - dc.EPOCH).total_seconds() / 60)
+    uc.append(px)
+ut, uc = np.array(ut), np.array(uc)
+def nq_fn(utc):
+    k = np.searchsorted(ut, (utc - dc.EPOCH).total_seconds() / 60, "right") - 1
+    return None if k < 0 else (float(uc[k]), dc.EPOCH + _td(minutes=float(ut[k])))
+st5 = main.dizai_new_state(days[0])
+main.dizai_advance(st5, bars, main._dz_ctx_fn(rows), nq_fn=nq_fn)
+for key, trig, g, tp, sl, f5 in (("steady_nq", "confirm", 0.75, 30, 1000, None), ("bold_nq", "cross", 1.0, 150, 1500, "run5_3")):
+    sig = dm.tf_signals(D, trig, 1)
+    if f5: sig = [(i, s_) for i, s_ in sig if fl.keep(F, D, i, s_, f5)]
+    allsig = len(sig)
+    feat = dc.features(D, sig, (ut, uc)); sig = [(i, s_) for i, s_ in sig if dc.keep(feat, i, s_, "oppo")]
+    ref = dm.run_seq(D, sig, g, tp, sl)
+    a_ = [(tk[x["fills"][0][0]], x["side"], x["reason"], x["lots"], round(x["pnl"], 1)) for x in ref]
+    b_ = [(t["entry_tk"], 1 if t["side"] == "買" else -1, t["reason"], t["lots"], round(t["pnl"], 1)) for t in st5["variants"][key]["trades"]]
+    check(f"{key}：Nasdaq 擋走部分訊號（{len(sig)}／{allsig}），引擎 {len(b_)} 筆跟回測逐筆相同", a_ == b_ and len(sig) < allsig and len(a_) >= 1,
+          next(((x, y) for x, y in zip(a_, b_) if x != y), (len(a_), len(b_))))
+check("沒有 nq_fn（數據未到）→ Nasdaq 組照做，跟同參數不篩選一樣",
+      [t["pnl"] for t in st["variants"]["steady_nq"]["trades"]] == [t["pnl"] for t in st["variants"]["steady"]["trades"]])
+FAKE.clear()
+nqb = [{"time_key": "2026-10-09 15:55:00", "open": 1, "high": 1, "low": 1, "close": 31000.0, "volume": 1},
+       {"time_key": "2026-10-09 16:00:00", "open": 1, "high": 1, "low": 1, "close": 31100.0, "volume": 1}]
+client.post("/", json={"action": "futu_data", "token": "tok", "symbol": "US.NQ_FRONT", "kline_type": "K_5M",
+                       "source": "mt5_cfd:NAS100ft", "data": nqb, "options": []})
+fn = main.dizai_nq_fn()
+r1 = fn(datetime(2026, 10, 9, 19, 58))                          # 紐約 15:58（夏令 UTC−4）→ 只可用 15:55 那根
+r2 = fn(datetime(2026, 10, 10, 1, 30))                          # 紐約 21:30 → 16:00 那根
+check("GCS 的 Nasdaq 5 分 K：紐約時間轉 UTC，只取已收完的", r1 and r1[0] == 31000.0 and r2 and r2[0] == 31100.0
+      and r2[1] == datetime(2026, 10, 9, 20, 0), (r1, r2))
+check("Nasdaq 升跌：同一段時間、太舊就 None", abs(main.dizai_nq_move(fn, "2026-10-10 03:57:00", "2026-10-10 09:29:00") - (31100 / 31000 - 1)) < 1e-12
+      and main.dizai_nq_move(fn, "2026-10-01 03:00:00", "2026-10-20 10:00:00") is None)
 
 print("=== 5. 沒有數據 ===")
 FAKE.pop(main.dizai_file(SYM), None)

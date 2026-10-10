@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-10 — [R140] 地載陣加兩組跨市場篩選：地載・穩＋Nasdaq、地載・進＋Nasdaq（止蝕 1,500）——訊號出現時，Nasdaq（MT5 推送的
+#     NAS100 5 分 K，US.NQ_FRONT）同一段時間（恒指上一個交易日最後一根 → 訊號那根）有同方向走就不逆市；沒有數據照做。頁面四組並列，
+#     列出現在 Nasdaq 升跌與今天沽／買會否被擋（research/hsi_futures_range/dizai_cross.py）。
 #   * 2026-10-10 — [R139] 地載・進加「期權保護（紙上）」：加到 2 張時買同數量價外 1 × ATR20、14 日的 Call（沽單）／Put（好單），
 #     平倉時賣回；Black-Scholes＋Futu 推送的 VHSI 估價，買賣各扣 max(2 點, 5%)。頁面列預備／已買的期權、期權盈虧、連期權的前向統計，
 #     兩組的八年 Sharpe 與最大回撤（research/hsi_futures_range/dizai_options.py）。
@@ -3953,7 +3956,13 @@ DIZAI_VARIANTS = {
                "add_lots": (1, 2), "run5": None},
     "bold": {"name": "地載・進", "trig": "cross", "move": 0.02, "g_atr": 1.0, "tp": 150.0, "sl": 3000.0,
              "add_lots": (1, 2), "run5": 0.03},
+    # [R140] 跨市場篩選：Nasdaq 同一段時間（恒指上一個交易日最後一根 → 訊號那根收市）有同方向走就不逆市
+    "steady_nq": {"name": "地載・穩＋Nasdaq", "trig": "confirm", "move": 0.02, "g_atr": 0.75, "tp": 30.0, "sl": 1000.0,
+                  "add_lots": (1, 2), "run5": None, "nq": True},
+    "bold_nq": {"name": "地載・進＋Nasdaq", "trig": "cross", "move": 0.02, "g_atr": 1.0, "tp": 150.0, "sl": 1500.0,
+                "add_lots": (1, 2), "run5": 0.03, "nq": True},
 }
+DIZAI_NQ_SYMBOL = "US.NQ_FRONT"                       # [R140] MT5 推送的 NAS100 差價合約 5 分 K（紐約時間、收市時間）
 DIZAI_BACKTEST = {                                    # 八年主連 1 分 K（2018-10-04 至 2026-10-09），每張每邊扣 1 點
     "steady": {"n": 298, "win": 1.0, "avg_win": 33.3, "n_sl": 0, "worst_rrr": 0.0083, "exp_train": 34.1, "exp_test": 31.6,
                "total": 9920, "max_mae": 979, "max_days": 7, "full_adds": 9,
@@ -3965,6 +3974,15 @@ DIZAI_BACKTEST = {                                    # 八年主連 1 分 K（2
              "sharpe": 0.78, "sharpe_train": 0.84, "sharpe_test": 0.68, "mdd_hkd": -525388, "ann_hkd": 269475,
              "by_year": {"2018": 842, "2019": 2850, "2020": 6311, "2021": 3158, "2022": 10096, "2023": 7104,
                          "2024": 5541, "2025": 4171, "2026": 3285}},
+    # [R140] research/hsi_futures_range/dizai_cross.py（Dukascopy Nasdaq 15 分 K）
+    "steady_nq": {"n": 73, "win": 1.0, "avg_win": 29.5, "n_sl": 0, "worst_rrr": 0.0074, "exp_train": 30.1, "exp_test": 28.8,
+                  "total": 2156, "max_mae": 564, "max_days": 4, "full_adds": 1,
+                  "sharpe": 0.43, "sharpe_train": 0.30, "sharpe_test": 2.11, "mdd_hkd": -72175, "ann_hkd": 13393,
+                  "by_year": {"2019": 84, "2020": 140, "2021": 112, "2022": 560, "2023": 308, "2024": 616, "2025": 224, "2026": 112}},
+    "bold_nq": {"n": 54, "win": 1.0, "avg_win": 197.3, "n_sl": 0, "worst_rrr": 0.0329, "exp_train": 191.0, "exp_test": 205.9,
+                "total": 10656, "max_mae": 986, "max_days": 12, "full_adds": 2,
+                "sharpe": 0.99, "sharpe_train": 0.79, "sharpe_test": 1.46, "mdd_hkd": -90350, "ann_hkd": 66195,
+                "by_year": {"2019": 592, "2020": 444, "2021": 592, "2022": 2516, "2023": 1776, "2024": 3256, "2025": 888, "2026": 592}},
 }
 
 
@@ -4088,19 +4106,38 @@ def dizai_new_state(start):
                                             for k in DIZAI_VARIANTS}}
 
 
-def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None):
+def _dz_hk_to_utc(tk, plus_min=1):
+    """恒指 1 分 K 時間（香港）→ UTC 的收市時間。"""
+    return datetime.strptime(tk, "%Y-%m-%d %H:%M:%S") - timedelta(hours=8) + timedelta(minutes=plus_min)
+
+
+def dizai_nq_move(nq_fn, t0_tk, t1_tk):
+    """[R140] Nasdaq 由 t0（恒指上一個交易日最後一根）到 t1（訊號那根）的升跌；只用已收完的 K 線。
+    nq_fn(utc) → (收市價, 那根收市的 UTC 時間) 或 None。任何一端沒有數據或太舊 → None。"""
+    if not nq_fn or not t0_tk:
+        return None
+    t0, t1 = _dz_hk_to_utc(t0_tk), _dz_hk_to_utc(t1_tk)
+    a, b = nq_fn(t0), nq_fn(t1)
+    if not a or not b or b[1] < t1 - timedelta(hours=24) or a[1] < t0 - timedelta(days=3):
+        return None
+    return b[0] / a[0] - 1
+
+
+def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None, nq_fn=None):
     """按時間逐根推進兩組（bars 已排序、而且都比 st['last_bar'] 新）。st['start'] 之前的交易日只推進 RSI（熱身）。
     vol_fn(time_key) → 引伸波幅（小數，例 0.2）：有就做地載・進的期權保護紙上計算（[R139]）。"""
     for bar in bars:
         tk = bar["time_key"]
         sess = futu_session_of(tk, symbol)
         same = st.get("last_sess") == sess
+        if st.get("last_sess") and not same:                # [R140] 上一個交易日最後一根（Nasdaq 比較的起點）
+            st["prev_sess_last"] = st["last_bar"]
         prev_rsi = st["rsi"].get("value")
         rsi = _dz_rsi_step(st["rsi"], bar["close"])
         trading = sess >= st["start"]
         ctx = ctx_fn(sess) if trading else None
         for key, p in DIZAI_VARIANTS.items():
-            v = st["variants"][key]
+            v = st["variants"].setdefault(key, {"pos": None, "pending": None, "last_open_sess": None, "trades": []})
             pend, v["pending"] = v.get("pending"), None
             if not trading:
                 continue
@@ -4108,6 +4145,7 @@ def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None):
                 v["pos"] = {"side": pend["side"], "lots": 1, "avg": bar["open"], "last": bar["open"], "adds": 0,
                             "step": p["g_atr"] * pend["atr"], "paid": DIZAI_COST, "signal_tk": pend["tk"],
                             "entry_tk": tk, "entry": bar["open"], "chg": pend["chg"], "atr": pend["atr"],
+                            "nq_move": pend.get("nq_move"),
                             "fills": [{"time": tk, "kind": "open", "price": bar["open"], "lots": 1, "avg": bar["open"]}]}
                 v["last_open_sess"] = sess
             pos = v["pos"]
@@ -4125,7 +4163,7 @@ def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None):
                     reason, px = res
                     pos["fills"].append({"time": tk, "kind": reason, "price": round(px, 1), "lots": 0, "avg": round(pos["avg"], 1)})
                     trade = {"side": "買" if pos["side"] > 0 else "沽", "signal_tk": pos["signal_tk"],
-                             "entry_tk": pos["entry_tk"], "entry": pos["entry"], "chg": pos["chg"],
+                             "entry_tk": pos["entry_tk"], "entry": pos["entry"], "chg": pos["chg"], "nq_move": pos.get("nq_move"),
                              "exit_tk": tk, "exit": round(px, 1), "reason": reason, "lots": pos["lots"],
                              "adds": pos["adds"], "avg": round(pos["avg"], 1), "step": round(pos["step"], 1),
                              "pnl": round(_dz_pnl(pos, px), 1), "fills": pos["fills"]}
@@ -4149,8 +4187,14 @@ def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None):
                 r5 = ctx.get("ret5")
                 if side and p.get("run5") and r5 is not None and ((side < 0 and r5 >= p["run5"]) or (side > 0 and r5 <= -p["run5"])):
                     side = 0                                    # 過去 5 日已同方向走 ≥ 3%：不逆市
+                nq_move = None
+                if side and p.get("nq"):                        # [R140] Nasdaq 同方向走 → 不逆市
+                    nq_move = dizai_nq_move(nq_fn, st.get("prev_sess_last"), tk)
+                    if nq_move is not None and nq_move * (1 if side < 0 else -1) > 0:
+                        side = 0
                 if side:
-                    v["pending"] = {"side": side, "sess": sess, "tk": tk, "atr": ctx["atr"], "chg": round(chg, 5)}
+                    v["pending"] = {"side": side, "sess": sess, "tk": tk, "atr": ctx["atr"], "chg": round(chg, 5),
+                                    "nq_move": None if nq_move is None else round(nq_move, 5)}
         st["last_bar"], st["last_sess"] = tk, sess
     return st
 
@@ -4171,6 +4215,33 @@ def dizai_vol_fn():
     bars = snap.get("bars") if isinstance(snap, dict) else None
     v = to_float(bars[-1].get("close")) if bars else None
     return (lambda tk: v / 100.0) if v and 5 < v < 150 else None
+
+
+def dizai_nq_fn():
+    """[R140] Nasdaq 5 分 K（GCS 封存，紐約時間、收市時間）→ nq_fn(utc) = 該時間或之前最後一根收完的 (收市, UTC 時間)。"""
+    cache = {}
+
+    def bars_of(ny_day):
+        if ny_day not in cache:
+            rows = []
+            for b in gcs_read_json(archive_blob_name("futu_k_5m", DIZAI_NQ_SYMBOL, ny_day), []):
+                c, t = to_float((b or {}).get("close")), str((b or {}).get("time_key") or "")
+                if c and len(t) >= 19:
+                    utc = datetime.strptime(t[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=NY_TZ).astimezone(timezone.utc).replace(tzinfo=None)
+                    rows.append((utc, c))
+            cache[ny_day] = sorted(rows)
+        return cache[ny_day]
+
+    def fn(utc):
+        ny = utc.replace(tzinfo=timezone.utc).astimezone(NY_TZ)
+        for k in range(0, 5):                               # 由當天往前找（週末、假期）
+            d = (ny - timedelta(days=k)).strftime("%Y-%m-%d")
+            got = [(t, c) for t, c in bars_of(d) if t <= utc]
+            if got:
+                t, c = got[-1]
+                return c, t
+        return None
+    return fn
 
 
 def dizai_update(symbol=DIZAI_SYMBOL, now=None):
@@ -4204,7 +4275,7 @@ def dizai_update(symbol=DIZAI_SYMBOL, now=None):
             todo = [b for b in bars if b["time_key"] < newest and (not st.get("last_bar") or b["time_key"] > st["last_bar"])]
             if not todo:
                 return None, 0
-            dizai_advance(st, todo, _dz_ctx_fn(rows), symbol, vol_fn=dizai_vol_fn())
+            dizai_advance(st, todo, _dz_ctx_fn(rows), symbol, vol_fn=dizai_vol_fn(), nq_fn=dizai_nq_fn())
             st["mark"] = {"time": bars[-1]["time_key"], "price": bars[-1]["close"]}
             st["updated_utc"] = fmt_utc()
             return st, len(todo)
@@ -4314,9 +4385,19 @@ def dizai_data(symbol=DIZAI_SYMBOL, now=None):
     out = {"status": "ok", **base, "start": st.get("start"), "last_bar": st.get("last_bar"), "mark": mark,
            "rsi": round(st["rsi"]["value"], 1) if st.get("rsi", {}).get("value") is not None else None,
            "plans": {}, "stats": {}, "trades": {}}
+    nq_now = None
+    if mark and st.get("prev_sess_last") and futu_session_of(mark["time"], symbol) == today:
+        try:
+            nq_now = dizai_nq_move(dizai_nq_fn(), st["prev_sess_last"], mark["time"])
+        except StorageError:
+            nq_now = None
+    out["nq_now"] = nq_now
     for k, p in DIZAI_VARIANTS.items():
-        v = st["variants"][k]
+        v = st["variants"].get(k) or {"pos": None, "pending": None, "last_open_sess": None, "trades": []}
         out["plans"][k] = dizai_plan(k, v, ctx, mark, today, vol_now)
+        if p.get("nq"):                                      # [R140] 現在 Nasdaq 由上個恒指交易日收市至今的升跌
+            m_ = out["nq_now"]
+            out["plans"][k]["nq"] = {"move": m_, "block_short": m_ is not None and m_ > 0, "block_long": m_ is not None and m_ < 0}
         out["stats"][k] = dizai_stats(v["trades"], p)
         if k == DIZAI_OPTION["variant"]:
             out["stats"][k + "_protected"] = dizai_stats(v["trades"], p, "pnl_protected")
@@ -4359,13 +4440,27 @@ def _dz_option_html(k, data):
             + "".join(f"<div style='font-size:13px; margin-top:4px'>{x}</div>" for x in lines) + "</div>")
 
 
+def _dz_nq_row(p, plan):
+    """[R140] Nasdaq 篩選那一行。"""
+    if not p.get("nq"):
+        return ""
+    nq = plan.get("nq") or {}
+    m_ = nq.get("move")
+    now = ("（現在沒有數據：Nasdaq 推送未到或今日未開市，沒有數據時照做）" if m_ is None else
+           f"現在 Nasdaq 由上個恒指交易日收市至今 <b class='{pnl_class(m_)}'>{m_ * 100:+.2f}%</b>"
+           + ("，<span class='neg'>今天升 2% 也不沽</span>" if nq.get("block_short") else "")
+           + ("，<span class='neg'>今天跌 2% 也不買</span>" if nq.get("block_long") else ""))
+    return (f"<tr><th>Nasdaq 篩選</th><td>同一段時間 Nasdaq <b>同方向</b>走（恒指升、Nasdaq 也升）就不逆市；"
+            f"沒走或反方向才照 RSI 做。{now}</td></tr>")
+
+
 def _dz_variant_html(k, data):
     p = DIZAI_VARIANTS[k]
     plan = data["plans"][k]
     bt = DIZAI_BACKTEST[k]
     st = data.get("stats", {}).get(k) or dizai_stats([], p)
     max_lots = 1 + sum(p["add_lots"])
-    color = "#198754" if k == "steady" else "#d97706"
+    color = {"steady": "#198754", "bold": "#d97706", "steady_nq": "#0d9488", "bold_nq": "#6f42c1"}.get(k, "#6c757d")
     # 今日策略
     if plan.get("prev_close") is None:
         today_html = "<p class='muted'>交易日 K 未夠 20 日，今天不交易。</p>"
@@ -4386,6 +4481,7 @@ def _dz_variant_html(k, data):
             + (" <span class='neg'>（今天不沽：過去 5 日已升 ≥ 3%）</span>" if blk.get("short") else "") + f"""</td></tr>
           <tr><th>跌 2% 開閘線</th><td><b>{_dz_n(plan['gate_down'])}</b> 或以下，RSI {trig_zh_l} → 買 1 張"""\
             + (" <span class='neg'>（今天不買：過去 5 日已跌 ≥ 3%）</span>" if blk.get("long") else "") + f"""</td></tr>
+          {_dz_nq_row(p, plan)}
           <tr><th>加倉間距</th><td>{_dz_n(plan['step'])} 點（{p['g_atr']} × 過去 20 日平均全日波幅 {_dz_n(plan['atr'])}）：逆向一次加 1 張、再逆向加 2 張</td></tr>
           <tr><th>出場</th><td>平均成本有利 {p['tp']:.0f} 點全平（止賺）；平均成本逆向 {p['sl']:.0f} 點全平（止蝕，4 張約 −{p['sl'] * max_lots:,.0f} 點）</td></tr>
         </table>"""
@@ -4422,7 +4518,7 @@ def _dz_variant_html(k, data):
     return f"""
     <div class='section' style='border-top:5px solid {color}'>
       <h2>{esc(p['name'])}　<span class='muted' style='font-size:13px'>RSI {'轉向' if p['trig'] == 'confirm' else '穿越'}・升跌 ≥ 2%・間距 {p['g_atr']} × ATR20・
-          1→2→4 張・止賺 {p['tp']:.0f}・止蝕 {p['sl']:,.0f}{'・過去 5 日同向 ≥ 3% 不做' if p.get('run5') else ''}・留倉</span></h2>
+          1→2→4 張・止賺 {p['tp']:.0f}・止蝕 {p['sl']:,.0f}{'・過去 5 日同向 ≥ 3% 不做' if p.get('run5') else ''}{'・Nasdaq 同向不做' if p.get('nq') else ''}・留倉</span></h2>
       <h3 style='font-size:15px'>📅 今日策略</h3>{today_html}
       {_dz_option_html(k, data)}
       <h3 style='font-size:15px; margin-top:18px'>📒 前向測試（{esc(data.get('start') or '未開始')} 起）</h3>{fwd}{trades_html}
@@ -4444,18 +4540,19 @@ def build_dizai_page(data):
     nav = page_nav("dizai")
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>⛰️ 地載陣・恒指升跌 2% 逆市加倍攤平</h1></div>{nav}</div>"
             "<p class='muted'>八陣之「地載」：大地承載萬物。恒指即月期貨當日升或跌 2% 以上、1 分 K RSI 出現訊號就逆市入場；"
-            "逆向再走就加倍承托（1→2→4 張），價格回到平均成本附近就全部平倉；留倉直到止賺或止蝕。兩組參數同時做紙上前向測試。"
+            "逆向再走就加倍承托（1→2→4 張），價格回到平均成本附近就全部平倉；留倉直到止賺或止蝕。"
+            "四組同時做紙上前向測試：穩、進，以及加上 Nasdaq 跨市場篩選（美股同方向走就不逆市）的兩組。"
             f"數據：富途恒指即月期貨 1 分 K，每 5 分鐘更新。最新 {esc((data.get('mark') or {}).get('time', '—')[5:16])}"
             f"（香港）・RSI(14) {_dz_n(data.get('rsi'), '{:.1f}')}</p>")
     warn = ("<div class='section' style='border-left:5px solid #dc3545'><b>⚠️ 先讀這段</b><ul style='margin:8px 0 0 18px; font-size:13px'>"
             "<li>兩組參數都是用 2018–2026 八年數據<b>刻意挑出來的（curve fitting）</b>，八年零止蝕不代表將來不會止蝕。</li>"
-            "<li>這是「贏小錢、偶爾輸大錢」的策略：勝率接近 100%，但一次止蝕（4 張）約 −4,000 點（穩）或 −12,000 點（進），"
-            "要贏約 120 筆（穩）或 53 筆（進）才補回。八年之中兩組都曾經只差 21 點／306 點就觸發。</li>"
+            "<li>這是「贏小錢、偶爾輸大錢」的策略：勝率接近 100%，但一次止蝕（4 張）約 −4,000 點（穩）、−12,000 點（進）、"
+            "−6,000 點（進＋Nasdaq，止蝕 1,500）。八年之中穩、進曾經只差 21 點／306 點就觸發；加 Nasdaq 篩選後最遠逆向 564／986 點。</li>"
             "<li>留倉可長達幾星期，會跨越轉月；實際操作要轉倉，並預留 4 張恒指的保證金與承受浮虧的資金。</li>"
             "<li>這是研究用的紙上交易，不是真實下單，也不構成任何投資建議。期貨有槓桿，可能損失多於本金。</li></ul></div>")
     if data.get("status") != "ok":
         head += "<div class='section'>前向測試還沒有數據：等本地推送腳本 v14 開始推 1 分 K（每 5 分鐘一次）。</div>"
-    body = head + warn + _dz_variant_html("steady", data) + _dz_variant_html("bold", data) + \
+    body = head + warn + "".join(_dz_variant_html(k, data) for k in DIZAI_VARIANTS) + \
         "<p class='muted' style='font-size:12px'>JSON：<a href='?view=dizai&amp;format=json'>?view=dizai&amp;format=json</a>・" \
         "規則與回測：research/hsi_futures_range/RSI_AVG_DOWN_REPORT.md</p>"
     return html_page("地載陣・恒指逆市加倍攤平", body, head_extra="<meta http-equiv='refresh' content='60'>")
