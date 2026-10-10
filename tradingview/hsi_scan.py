@@ -68,16 +68,28 @@ def delta_report(front, hsi_expiry):
                 for hd in p.get('hedges', []):
                     hedge += (hd.get('qty', 1)) * (-1 if hd.get('side') == 'sell' else 1)
             net = d * qty + hedge
+            # 對沖記錄新鮮度：position.json 的 hedge_verified_hkt（由富途 API／截圖核實嘅時間）超過 20 小時或冇填就警告
+            stale = ''
+            if os.path.exists(pos_f):
+                from datetime import timedelta, timezone
+                now_hkt = (datetime.now(timezone.utc) + timedelta(hours=8)).replace(tzinfo=None)
+                try:
+                    age = (now_hkt - datetime.strptime(p.get('hedge_verified_hkt', ''), '%Y-%m-%d %H:%M')).total_seconds() / 3600
+                except ValueError:
+                    age = None
+                if age is None or age > 20:
+                    stale = ("  ⚠ 對沖記錄未核實（冇填核實時間）" if age is None else f"  ⚠ 對沖記錄 {age:.0f} 小時前先核實")
+                    stale += "，請以富途持倉為準"
             if hedge:
                 if abs(net) > 0.5:
                     side = '賣' if net > 0 else '買'
                     act = f" → 再{side} {round(abs(net)):.0f} 手 MHI 期貨"
                 else:
                     act = "（已對沖，無動作）"
-                DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f} 對沖 {hedge:+.0f} → 淨Δ {net:+.2f}（{K:.0f} {tag}）{act}")
+                DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f} 對沖 {hedge:+.0f} → 淨Δ {net:+.2f}（{K:.0f} {tag}）{act}{stale}")
             else:
                 act = f" → 賣 1 手 MHI 期貨" if d * qty > 0.5 else (" → 買 1 手 MHI 期貨" if d * qty < -0.5 else "（無動作）")
-                DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}")
+                DIGEST.append(f"HSI 跨式Δ {d * qty:+.2f}（{K:.0f} {tag}）{act}{stale}")
     # MES（期貨價取 ES=F 延遲價）
     fq = os.path.join(BASE, 'us_futures_quote.json')
     if not os.path.exists(fq):
