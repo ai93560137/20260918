@@ -100,7 +100,10 @@ def main():
     L = []
     P = L.append
     P(f"# 持倉風險報告（資料時點 {b['asof']}）")
-    P(f"NAV 假設 HK${nav:,.0f}；硬止損權益 < HK${hs:,.0f}（可承受總虧損 HK${budget:,.0f}）；USD/HKD {fx['USD']}\n")
+    P(f"NAV 假設 HK${nav:,.0f}；硬止損權益 < HK${hs:,.0f}（可承受總虧損 HK${budget:,.0f}）；USD/HKD {fx['USD']}")
+    if b.get("nav_note"):
+        P(f"⚠ {b['nav_note']}")
+    P("")
 
     P("## 1. 現況盈虧（Futu 現價＝最後成交）")
     tot, grp = pnl_hkd(b, fx, {})
@@ -132,8 +135,11 @@ def main():
 
     P("## 5. 壓力測試（即時重估，唔計時間流逝）")
     P("下跌時 IV 每跌 1% 加 0.5 vol pt（偏斜近似）。**總盈虧＝由開倉起計；權益＝NAV＋總盈虧。**\n")
-    P("| 情景 | 總盈虧 HKD | 權益 HKD | 離硬止損 | 備註 |")
-    P("|---|---:|---:|---:|---|")
+    mg = b.get("margin")
+    buf0 = (mg["equity_hkd"] - mg["maintenance_hkd"]) if mg else None
+    t0, _ = pnl_hkd(b, fx, {})
+    P("| 情景 | 總盈虧 HKD | 權益 HKD | 離硬止損 | 保證金緩衝 | 備註 |")
+    P("|---|---:|---:|---:|---:|---|")
     rows = []
     for name, sh, va in (
         ("現況", {}, 0),
@@ -151,8 +157,11 @@ def main():
         eq = nav + t
         gap = eq - hs
         note = "⚠ 已觸硬止損" if gap < 0 else ("⚠ 近硬止損" if gap < 0.3 * budget else "")
+        buf = (buf0 + t - t0) if buf0 is not None else None
+        if buf is not None and buf < 0:
+            note = (note + " " if note else "") + "⚠ 保證金緩衝蝕光"
         rows.append((name, t, eq, gap))
-        P(f"| {name} | {t:+,.0f} | {eq:,.0f} | {gap:+,.0f} | {note} |")
+        P(f"| {name} | {t:+,.0f} | {eq:,.0f} | {gap:+,.0f} | {'-' if buf is None else format(buf, '+,.0f')} | {note} |")
     P("")
 
     P("## 6. 觸及硬止損所需變動（逐單一市場掃描）")
@@ -167,6 +176,19 @@ def main():
         F0 = b["underlyings"][und]["F"]
         P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）觸硬止損" if hit else "50% 內唔觸及"))
     P("")
+    if buf0 is not None:
+        P(f"## 6b. 觸及保證金緩衝所需變動（緩衝 HK${buf0:,.0f}，保證金假設不變；跌市時保證金會加，實際更早）")
+        for und, sign, lab in (("ES", -1, "ES 下跌"), ("HSI", 1, "HSI 上升"), ("HSI", -1, "HSI 下跌")):
+            hit = None
+            for k in range(1, 101):
+                r_ = sign * k / 200
+                t, _ = pnl_hkd(b, fx, {und: r_})
+                if buf0 + t - t0 < 0:
+                    hit = r_
+                    break
+            F0 = b["underlyings"][und]["F"]
+            P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）蝕光緩衝" if hit else "50% 內唔蝕光"))
+        P("")
     P("## 7. 假設與限制")
     P("- 壓力測試只做即時重估，冇計時間價值消耗、冇計保證金追繳、冇計滑價及夜市流動性。")
     P("- Put 現價 stale、EW 到期日待確認、對沖腳開倉價待確認（見 risk_book.json 各 flag）。")
