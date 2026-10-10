@@ -41,13 +41,16 @@ def positions(ctx_cls, label, **kw):
         if ret != RET_OK:
             print(f"{label}: get_acc_list 失敗：{accs}")
             return rows
+        print(f"{label}: 搵到 {len(accs)} 個帳戶")
         for _, a in accs.iterrows():
+            print(f"  帳戶類型={a.get('acc_type')} 環境={a.get('trd_env')} 市場權限={a.get('trdmarket_auth')} 狀態={a.get('acc_status')}")
             if str(a.get("trd_env")) != "REAL":
                 continue
             ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=int(a["acc_id"]))
             if ret != RET_OK:
                 print(f"{label}: 持倉查詢失敗（帳戶類型 {a.get('acc_type')}）：{df}")
                 continue
+            print(f"  → 持倉查詢成功，{len(df)} 行")
             for _, r in df.iterrows():
                 if (num(r.get("qty")) or 0) == 0:
                     continue
