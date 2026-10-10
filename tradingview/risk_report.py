@@ -19,7 +19,7 @@ from pathlib import Path
 
 N = lambda x: 0.5 * (1 + erf(x / sqrt(2)))
 HERE = Path(__file__).resolve().parent
-DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ESmain", "US.ES2612", "US.MESmain", "US.MES2612"]}
+DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ES2612", "US.ESmain", "US.MES2612", "US.MESmain"]}
 LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「手」單位
 # 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
 PLAYBOOK = {"雲垂陣 HSI 月跨式＋對沖": {"und": "HSI", "groups": ["HSI 月跨式", "MHI2610 對沖"], "band": 0.5}}
@@ -48,6 +48,14 @@ def derive_code(p):
     """富途代碼：book 有就用；恒指／MHI 按已驗證格式推算；標普期貨期權未知 → None。"""
     if p.get("code"):
         return p["code"]
+    if p["und"] == "ES":                 # 富途格式（2026-10-10 API 確認）：US.EW2610P7750x0、US.EX32610C7830x0
+        cp, ym, K = "C" if p["type"] == "call" else "P", p["exp"][2:4] + p["exp"][5:7], int(p["K"])
+        if p["id"].startswith("EW"):
+            return f"US.EW{ym}{cp}{K}x0"
+        if p["id"].startswith("MES"):
+            wk = (int(p["exp"][8:10]) - 1) // 7 + 1        # 第幾個星期五 → EX1–EX4
+            return f"US.EX{wk}{ym}{cp}{K}x0"
+        return None
     if p["und"] != "HSI":
         return None
     if p["type"] == "fut":
@@ -206,6 +214,9 @@ def main():
     P(f"# 持倉風險報告")
     P(f"持倉：{b['asof']}（{b['source']}）")
     P(f"報價：{'富途 OpenD 快照 ' + b['quotes_fetched'] + ' HKT' if b['quotes_fetched'] else '冇報價檔 → 用截圖價（未係真實買賣價）'}")
+    if acc and eq0 < hs:
+        P(f"\n> ⚠ **富途期貨戶口實際權益 HK${eq0:,.0f} 已經低於硬止損 HK${hs:,.0f}**（假設 NAV HK${nav:,.0f} 唔係呢個戶口嘅數）。"
+          "請確認硬止損係按邊個戶口／合計權益計；下面壓力測試以實際權益為起點。\n")
     P(f"硬止損：權益 < HK${hs:,.0f}。"
       + (f"**實際權益（富途）HK${eq0:,.0f}**" if acc else f"權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}")
       + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}\n")

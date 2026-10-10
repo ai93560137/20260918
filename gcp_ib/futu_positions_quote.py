@@ -15,6 +15,7 @@ history_order_list_query / order_list_query / history_deal_list_query / get_mark
   python gcp_ib\\futu_positions_quote.py --chain 2026-10-29 24800 25200   # 查恒指期權鏈買賣盤
   python gcp_ib\\futu_positions_quote.py --codes HK.MHI2610              # 查指定合約買賣盤
   python gcp_ib\\futu_positions_quote.py --probe-us                       # 搵 MES／EW 標普期貨期權代碼
+  python gcp_ib\\futu_positions_quote.py --deals HK.MHI2610 --since 2026-10-01   # 某合約嘅成交紀錄
 輸出 tradingview/data_external/futu_positions.json（已 .gitignore，唔會 commit）。
 """
 import argparse
@@ -32,7 +33,8 @@ OUT = ROOT / "tradingview" / "data_external" / "futu_positions.json"
 HKT = timezone(timedelta(hours=8))
 HOST, PORT = "127.0.0.1", 11111
 # 每點價值（貨幣）。未知合約只顯示點數盈虧。
-MULT = (("HK.MHI", 10, "HKD"), ("HK.HSI", 50, "HKD"), ("HK.MCH", 10, "HKD"))
+MULT = (("HK.MHI", 10, "HKD"), ("HK.HSI", 50, "HKD"), ("HK.MCH", 10, "HKD"),
+        ("US.EW", 50, "USD"), ("US.EX", 5, "USD"), ("US.MES", 5, "USD"), ("US.ES", 50, "USD"))  # EW＝E-mini 月底；EX1-4＝MES 週五
 
 
 def num(x):
@@ -191,6 +193,26 @@ def read_holdings(since):
         finally:
             ctx.close()
     return rows, accounts
+
+
+def deals(codes, since):
+    """列出指定合約嘅成交（時間、買賣、數量、價）。只讀；唔印帳號。"""
+    end = datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S")
+    for label, ctx in contexts():
+        try:
+            for a in real_accounts(ctx):
+                if str(a.get("acc_status", "ACTIVE")) == "DISABLED":
+                    continue
+                for code in codes:
+                    ret, dl = ctx.history_deal_list_query(code=code, start=f"{since} 00:00:00", end=end,
+                                                          trd_env=TrdEnv.REAL, acc_id=int(a["acc_id"]))
+                    if ret != RET_OK or dl.empty:
+                        continue
+                    print(f"--- {label} {code}：{len(dl)} 筆 ---")
+                    cols = [c for c in ("create_time", "trd_side", "qty", "price", "status") if c in dl.columns]
+                    print(dl.sort_values(cols[0])[cols].to_string(index=False))
+        finally:
+            ctx.close()
 
 
 def fixed_holdings():
@@ -390,8 +412,11 @@ def main():
     ap.add_argument("--chain", nargs=3, metavar=("EXPIRY", "KLO", "KHI"))
     ap.add_argument("--codes", nargs="*", default=[])
     ap.add_argument("--probe-us", action="store_true", help="搵 MES／EW 標普期貨期權嘅富途代碼")
+    ap.add_argument("--deals", nargs="+", metavar="CODE", help="列出指定合約由 --since 起嘅成交")
     a = ap.parse_args()
 
+    if a.deals:
+        return deals(a.deals, a.since)
     if a.probe_us:
         return probe_us()
     if a.chain:
