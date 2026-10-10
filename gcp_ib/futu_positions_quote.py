@@ -138,6 +138,11 @@ def fixed_holdings():
         if q:
             rows.append({"source": "position.json", "account": "固定", "code": code, "name": code, "qty": q,
                          "open_price": px.get(code), "futu_pl": None})
+    extra = ROOT / "tradingview" / "data_external" / "positions_extra.json"
+    if extra.exists():
+        for w in json.loads(extra.read_text(encoding="utf-8")).get("hsi_weekly", []):
+            rows.append({"source": "positions_extra.json", "account": "固定", "code": w["code"], "name": w["name"],
+                         "qty": w["qty"], "open_price": w["open_price"], "futu_pl": None})
     return rows
 
 

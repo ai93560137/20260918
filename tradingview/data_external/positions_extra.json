@@ -1,0 +1,13 @@
+{
+ "note": "2026-10-10 使用者貼出富途期貨持倉截圖才發現嘅額外持倉（之前冇向 Claude 報告）。數字全部來自截圖；來源 Futu 現價＝最後成交。到期日／合約規格待使用者確認。",
+ "source": "富途期貨持倉截圖 2026-10-10 18:5x HKT",
+ "hsi_weekly": [
+  {"code": "HK.HSI261016C24900000", "name": "恒生指數 261016 C24900", "qty": -1, "open_price": 36.0, "mult": 50, "ccy": "HKD", "futu_last": 36.0, "futu_delta": -6.3453, "sold": "截圖顯示今日賣出 1"},
+  {"code": "HK.HSI261016P23750000", "name": "恒生指數 261016 P23750", "qty": -1, "open_price": 46.0, "mult": 50, "ccy": "HKD", "futu_last": 46.0, "futu_delta": 8.4256, "sold": "截圖顯示今日賣出 1"}
+ ],
+ "us_extra": [
+  {"code": "EW2610P7750x0", "name": "標普500期貨期權 EW2610 P7750（疑似 E-mini 月底到期 EOM，約 10/30，待確認）", "qty": -1, "open_price": 68.0, "mult": 50, "ccy": "USD", "futu_last": 47.0, "futu_delta": 15.2558, "futu_pl_usd": 1050.0}
+ ],
+ "futu_screenshot_totals_hkd": {"today_pl": 7959.31, "holding_pl": 12770.97},
+ "mhi2610_hedge_discrepancy": "截圖開倉價 24,200、未實現 -1,650（HK$）；position.json 記錄 10/6 賣 24,252。兩者唔一致，待使用者確認成交紀錄。"
+}
