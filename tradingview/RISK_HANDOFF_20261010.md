@@ -74,3 +74,8 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 硬止損「權益 < HK$75 萬」按**幾個戶口合計**計，維持不變；其他戶口冇持倉。出報告用 `--combined-equity <合計 HKD>`（實數唔寫入 repo）。
 - 實際最先受限係富途期貨戶口保證金緩衝（報告 §8 有跌穿 0 所需變動）；使用者決定唔預先轉資金入富途。
 - 已向風、雲、蛇、地四陣發通報同更正（按合計權益計，硬止損唔再近，主要風險係富途保證金）。
+
+## 自動化（2026-10-11 部署 R147）
+- 使用者部機 `gcp_ib/auto_risk.py --every 15`（啟動資料夾 `ZhugeAutoRisk.cmd`）→ `action=futu_risk` → GCS `futu/risk/latest.json`、`futu/risk/history/<日期>.json`（私人，冇公開頁面）。
+- Cloud Run 修訂 `zhuge-risk-manager-00271-nz5`（R147）；出事退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00270-z5d --yes`。
+- 定時任務「四陣持倉風險通報」（平日 09:45／12:45／16:45／21:45 HKT）喺本工作階段讀 `futu/risk/latest.json`，有變先通知風雲蛇地四陣；16:45 發每日摘要；鳥翔唔通知。
