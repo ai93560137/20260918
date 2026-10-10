@@ -65,5 +65,30 @@ with tempfile.TemporaryDirectory() as d:
     check("--backfill：交易日 K 一包、啟動期 5 分 K 分包", "K_SESSION US.ES_FRONT 3 根" in out2 and "K_5M US.ES_FRONT" in out2, out2[-400:])
     check("日誌不含權杖字樣", "token" not in out + out2)
 
+print("\n=== [R141] --export-m1：M1 歷史逐月匯出 ===")
+check("紐約 + 7 慣例：夏令券商 01:00 → 紐約 18:01 收市", m.to_ny_close_rule(ep("2026-10-06 01:00"), 1) == "2026-10-05 18:01:00")
+check("冬令（1 月）券商 UTC+2 也是紐約 + 7", m.to_ny_close_rule(ep("2026-01-06 01:00"), 1) == "2026-01-05 18:01:00"
+      and m.to_ny_close(ep("2026-01-06 01:00"), 2, 1) == "2026-01-05 18:01:00")
+check("現時慣例時差：夏令 3、冬令 2", m.ny_rule_offset(datetime(2026, 10, 6, tzinfo=UTC)) == 3 and m.ny_rule_offset(datetime(2026, 1, 6, tzinfo=UTC)) == 2)
+check("逐月往前跨年", list(m.months_back("2026-02", 4)) == [(2026, 2), (2026, 1), (2025, 12), (2025, 11)])
+def fake_month(y, mo):                        # 2026-09、2026-10 各有兩天 M1；之前沒有
+    if (y, mo) not in ((2026, 10), (2026, 9)):
+        return []
+    out, t = [], ep(f"{y}-{mo:02d}-07 01:00")   # 週三 01:00 券商 = 紐約週二 18:00
+    for _ in range(2 * 1440):
+        out.append({"time": t, "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "tick_volume": 1}); t += 60
+    return out
+bars1 = m.rates_to_bars(fake_month(2026, 10), None, minutes=1, ny_rule=True)
+check("M1 每個交易日 1380 根（23 小時），休市 17:01–18:00 略過", len(bars1) == 2 * 1380 and not any("17:01:00" <= b["time_key"][11:] <= "18:00:00" for b in bars1), len(bars1))
+sent = []
+f = m.Feed(dry_run=True)
+f.post = lambda pk, quiet=False: sent.append(pk) or True
+f.export_m1("US.ES_FRONT", "SP500ft", "2026-10", fake_month)
+check("K_1M 每包 ≤ 400 根、全部推出", all(p["kline_type"] == "K_1M" and len(p["data"]) <= 400 for p in sent)
+      and sum(len(p["data"]) for p in sent) == 2 * 2 * 1380 and sent[0]["symbol"] == "US.ES_FRONT", len(sent))
+calls = []
+f.export_m1("US.ES_FRONT", "SP500ft", "2026-10", lambda y, mo: calls.append((y, mo)) or fake_month(y, mo))
+check("抓 2026-10、09，再 3 個空月後停", calls == [(2026, 10), (2026, 9), (2026, 8), (2026, 7), (2026, 6)], calls)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

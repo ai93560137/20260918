@@ -20,6 +20,12 @@
                                                # 最近 12 個交易日另外推 5 分 K（紙上交易啟動期用）
 之後長跑：
     python mt5_push.py                         # 每 5 分鐘一輪；Ctrl+C 停
+1 分 K 歷史（研究用，R141；只封存到 archive/futu_k_1m/<別名>/，不影響波幅頁與紙上交易）：
+    python mt5_push.py --export-m1 --symbol SP500ft          # 由本月起逐月往前抓 M1，每月抓完即推；連續 3 個月沒數據就停
+    python mt5_push.py --export-m1 2024-05 --symbol SP500ft  # 中斷後由某月續抓
+    先在 MT5「工具 → 選項 → 圖表 → 圖表最大K線數」設「Unlimited」並重開 MT5，否則只拿得到最近一段。
+    時間換算用「券商時間 = 紐約時間 + 7 小時」（紐約收市券商的慣例，夏令 UTC+3／冬令 UTC+2），跨夏令冬令都準；
+    現時時差不符合這個慣例時會停下並提示。
 離線檢查（不用 MT5、不連 GCP）：
     python mt5_push.py --csv NAS100_M5.csv --utc-offset 3 --dry-run
 
@@ -34,7 +40,7 @@ import argparse, csv, json, os, sys, time, urllib.error, urllib.request
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-SCRIPT_VERSION = "mt5-2"
+SCRIPT_VERSION = "mt5-3"
 NY = ZoneInfo("America/New_York")
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
@@ -46,6 +52,10 @@ BOOT_SESSIONS = 12                       # --backfill 時另外推 5 分 K 的�
 CHUNK = 400                              # 每個封包最多幾根（main.FUTU_MAX_BARS）
 HTTP_TIMEOUT_SEC = 60
 BAR_MINUTES = 5
+NY_SHIFT_H = 7                           # 紐約收市券商：券商時間 = 紐約時間 + 7 小時（夏令冬令都一樣）
+EXPORT_EMPTY_STOP = 3                    # --export-m1：連續幾個月沒數據就停
+EXPORT_MAX_MONTHS = 240
+EXPORT_SLEEP_SEC = 0.3
 UTC = timezone.utc
 
 
@@ -68,6 +78,26 @@ def to_ny_close(broker_epoch, offset_h, minutes=BAR_MINUTES):
     return (t + timedelta(minutes=minutes)).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def to_ny_close_rule(broker_epoch, minutes=BAR_MINUTES):
+    """券商時間戳（K 線開市）→ 紐約收市時間字串，用「券商 = 紐約 + 7 小時」慣例（歷史數據跨夏令冬令用這個）。"""
+    t = datetime.fromtimestamp(broker_epoch, UTC).replace(tzinfo=None) - timedelta(hours=NY_SHIFT_H)
+    return (t + timedelta(minutes=minutes)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def ny_rule_offset(now=None):
+    """「券商 = 紐約 + 7」慣例下，現時券商時間比 UTC 快幾小時（夏令 3、冬令 2）。"""
+    now = now or datetime.now(UTC)
+    return NY_SHIFT_H + int(now.astimezone(NY).utcoffset().total_seconds() // 3600)
+
+
+def months_back(start, n=EXPORT_MAX_MONTHS):
+    """'YYYY-MM' 起往前的 (年, 月) 序列。"""
+    y, m = (int(x) for x in start.split("-"))
+    for _ in range(n):
+        yield y, m
+        y, m = (y, m - 1) if m > 1 else (y - 1, 12)
+
+
 def session_of(time_key):
     """紐約時間（收市）→ CME 交易日：18:00 起算下一天（跟 main.MARKETS['US'] 相同）。"""
     t = datetime.strptime(time_key[:19], "%Y-%m-%d %H:%M:%S")
@@ -84,11 +114,12 @@ def in_session(time_key):
     return wd < 5
 
 
-def rates_to_bars(rates, offset_h):
-    """MT5 copy_rates 的列（time／open／high／low／close／tick_volume）→ 封包用的 K 線（紐約收市時間、依時間排序、去重）。"""
+def rates_to_bars(rates, offset_h, minutes=BAR_MINUTES, ny_rule=False):
+    """MT5 copy_rates 的列（time／open／high／low／close／tick_volume）→ 封包用的 K 線（紐約收市時間、依時間排序、去重）。
+    ny_rule=True：不用固定時差，改用「券商 = 紐約 + 7 小時」（offset_h 不用）。"""
     out = {}
     for r in rates:
-        tk = to_ny_close(int(r["time"]), offset_h)
+        tk = to_ny_close_rule(int(r["time"]), minutes) if ny_rule else to_ny_close(int(r["time"]), offset_h, minutes)
         if not in_session(tk):
             continue
         vol = float(r.get("tick_volume") or r.get("real_volume") or r.get("volume") or 0) or 1.0
@@ -174,6 +205,44 @@ class Feed:
             raise RuntimeError(f"MT5 取不到 {symbol} 的 M5：{mt5.last_error()}")
         return [{k: r[k] for k in ("time", "open", "high", "low", "close", "tick_volume")} for r in arr]
 
+    def m1_month(self, symbol, y, m):
+        """券商時間 y 年 m 月整月的 M1（MT5 把傳入的 UTC datetime 當券商時間比較）；沒有 → []。"""
+        mt5 = self.mt5
+        if not mt5.symbol_select(symbol, True):
+            raise RuntimeError(f"MT5 沒有代號 {symbol}（市場觀察加不進去）")
+        nxt = datetime(y + (m == 12), m % 12 + 1, 1, tzinfo=UTC)
+        arr = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, datetime(y, m, 1, tzinfo=UTC), nxt)
+        if arr is None or not len(arr):
+            return []
+        return [{k: r[k] for k in ("time", "open", "high", "low", "close", "tick_volume")} for r in arr]
+
+    def export_m1(self, alias, symbol, start, fetch):
+        """由 start（YYYY-MM）逐月往前：fetch(y, m) → M1 列 → K_1M 每 CHUNK 根一包推上去；連續 EXPORT_EMPTY_STOP 個月沒數據就停。"""
+        empty, total, months, ok = 0, 0, 0, True
+        for y, m in months_back(start):
+            bars = rates_to_bars(fetch(y, m), None, minutes=1, ny_rule=True)
+            if not bars:
+                empty += 1
+                log(f"  {symbol} {y}-{m:02d}：沒有數據（連續 {empty} 個月）")
+                if empty >= EXPORT_EMPTY_STOP:
+                    break
+                continue
+            empty = 0
+            sent = 0
+            for i in range(0, len(bars), CHUNK):
+                if self.post(self.packet(alias, symbol, "K_1M", bars[i:i + CHUNK]), quiet=True):
+                    sent += len(bars[i:i + CHUNK])
+                else:
+                    ok = False
+                if not self.dry_run:
+                    time.sleep(EXPORT_SLEEP_SEC)
+            total += sent
+            months += 1
+            log(f"  {symbol} → {alias} {y}-{m:02d}：{len(bars)} 根，已推 {sent}（紐約 {bars[0]['time_key'][:16]} → {bars[-1]['time_key'][:16]}）"
+                + ("" if sent == len(bars) else "  ⚠️ 有封包失敗，之後用這個月份續抓"))
+        log(f"✅ {symbol} 匯出完：{months} 個月、{total} 根 1 分 K" + ("" if ok else "（有失敗的封包，見上面）"))
+        return ok
+
     def post(self, packet, quiet=False):
         if self.dry_run:
             log(f"  （dry-run）{packet['kline_type']} {packet['symbol']} {len(packet['data'])} 根，"
@@ -243,20 +312,43 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="不連 GCP，只印會推什麼")
     ap.add_argument("--csv", help="離線：讀 MT5 匯出的 M5 CSV 代替連線 MT5（配合 --utc-offset）")
     ap.add_argument("--utc-offset", type=int, help="券商時間比 UTC 快幾小時（--csv 必填；連線時可代替 MT5_UTC_OFFSET）")
+    ap.add_argument("--export-m1", nargs="?", const="", metavar="YYYY-MM", help="逐月往前匯出 M1 歷史（推成 K_1M 封存）；可給起始月份續抓")
+    ap.add_argument("--symbol", help="只處理這個券商代號（要在 MT5_SYMBOLS 裡，例 SP500ft）")
     a = ap.parse_args()
     feed = Feed(dry_run=a.dry_run, utc_offset=a.utc_offset)
+    symbols = [s for s in SYMBOLS if not a.symbol or s[0].lower() == a.symbol.lower()]
+    if not symbols:
+        sys.exit(f"--symbol {a.symbol} 不在 MT5_SYMBOLS（{','.join(s for s, _ in SYMBOLS)}）")
+    if a.export_m1 is not None:
+        start = a.export_m1 or datetime.now(UTC).strftime("%Y-%m")
+        try:
+            datetime.strptime(start, "%Y-%m")
+        except ValueError:
+            sys.exit(f"--export-m1 的月份要是 YYYY-MM：{start}")
+        feed.connect()
+        try:
+            for symbol, alias in symbols:
+                off = a.utc_offset if a.utc_offset is not None else feed.offset_for(symbol)
+                want = ny_rule_offset()
+                if off != want:
+                    sys.exit(f"券商時差 UTC{off:+d} 不符合「紐約 + 7」慣例（現時應為 UTC{want:+d}）；歷史換算會錯，先停下。")
+                log(f"{symbol} → {alias}：由 {start} 起逐月往前匯出 M1（券商 = 紐約 + 7 小時）")
+                feed.export_m1(alias, symbol, start, lambda y, m, s=symbol: feed.m1_month(s, y, m))
+        finally:
+            feed.mt5.shutdown()
+        return
     if a.csv:
         if a.utc_offset is None:
             sys.exit("--csv 要配合 --utc-offset（券商時間比 UTC 快幾小時）")
         bars = rates_to_bars(read_csv(a.csv), a.utc_offset)
-        symbol, alias = SYMBOLS[0]
+        symbol, alias = symbols[0]
         log(f"CSV {a.csv}：{len(bars)} 根（紐約收市時間 {bars[0]['time_key'] if bars else '—'} → {bars[-1]['time_key'] if bars else '—'}）")
         (feed.backfill(alias, symbol, bars, a.backfill) if a.backfill else feed.push(alias, symbol, bars))
         return
     while True:
         try:
             feed.connect()
-            for symbol, alias in SYMBOLS:
+            for symbol, alias in symbols:
                 off = a.utc_offset if a.utc_offset is not None else feed.offset_for(symbol)
                 feed.offset = off
                 if a.backfill:
