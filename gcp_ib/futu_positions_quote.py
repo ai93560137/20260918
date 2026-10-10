@@ -9,6 +9,7 @@ history_deal_list_query / get_market_snapshot / get_option_chain；不 unlock_tr
   2. 如果讀到 0 行：用成交紀錄（history_deal_list_query，由 --since 起）反推淨持倉
 用法：
   python gcp_ib\\futu_positions_quote.py                 # 讀持倉 → 報價 → 盈虧，寫 futu_positions.json
+  python gcp_ib\\futu_positions_quote.py --fixed        # 直接按 position.json 查 MHI 期權＋對沖期貨報價計盈虧
   python gcp_ib\\futu_positions_quote.py --diagnose      # 印出各帳戶資料來源診斷（市值、持倉行數、成交筆數）
   python gcp_ib\\futu_positions_quote.py --push          # 完成後 commit+push 結果（要你已登入 git）
   python gcp_ib\\futu_positions_quote.py --chain 2026-10-29 24800 25200   # 查恒指期權鏈買賣盤
@@ -113,6 +114,33 @@ def read_holdings(since, diagnose):
     return rows
 
 
+def fixed_holdings():
+    """持倉 API 讀唔到時用：按 repo 嘅 tradingview/data_external/position.json 組出 HSI 持倉（MHI 期權兩腿＋對沖期貨）。"""
+    import re
+    pos = json.loads((ROOT / "tradingview" / "data_external" / "position.json").read_text(encoding="utf-8"))
+    ymd = pos["expiry"][2:].replace("-", "")
+    k = int(round(pos["strike"] * 1000))
+    rows = []
+    for cp, key in (("C", "call_sold"), ("P", "put_sold")):
+        rows.append({"source": "position.json", "account": "固定", "code": f"HK.MHI{ymd}{cp}{k:08d}", "name": f"MHI {ymd} {pos['strike']} {cp}",
+                     "qty": -pos["qty"], "open_price": pos["legs"][key], "futu_pl": None})
+    net, px = {}, {}
+    for h in pos.get("hedges", []):
+        m = re.search(r"\((MHI\d{4})\)", h.get("contract", ""))
+        if not m:
+            continue
+        code = "HK." + m.group(1)
+        sign = -1 if h["side"] == "sell" else 1
+        net[code] = net.get(code, 0) + sign * h["qty"]
+        if sign == -1 or code not in px:
+            px[code] = h["price"]
+    for code, q in net.items():
+        if q:
+            rows.append({"source": "position.json", "account": "固定", "code": code, "name": code, "qty": q,
+                         "open_price": px.get(code), "futu_pl": None})
+    return rows
+
+
 def quotes(codes):
     q = OpenQuoteContext(host=HOST, port=PORT)
     try:
@@ -207,6 +235,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--since", default="2026-09-01", help="成交紀錄起日（反推持倉用）")
     ap.add_argument("--diagnose", action="store_true")
+    ap.add_argument("--fixed", action="store_true", help="唔讀富途持倉，直接按 position.json 查報價計盈虧")
     ap.add_argument("--push", action="store_true")
     ap.add_argument("--chain", nargs=3, metavar=("EXPIRY", "KLO", "KHI"))
     ap.add_argument("--codes", nargs="*", default=[])
@@ -219,9 +248,10 @@ def main():
             print(c, s.get("name"), "買", s.get("bid_price"), "賣", s.get("ask_price"), "最後", s.get("last_price"), s.get("update_time"))
         return
 
-    rows = read_holdings(a.since, a.diagnose)
+    rows = [] if a.fixed else read_holdings(a.since, a.diagnose)
     if not rows:
-        sys.exit("持倉同成交紀錄都冇讀到（用 --diagnose 睇每個帳戶嘅情況）")
+        print("（富途 API 冇讀到持倉，改用 position.json 嘅固定持倉）")
+        rows = fixed_holdings()
     rows = pnl(rows, quotes([r["code"] for r in rows]))
     show(rows)
     out = {"fetched_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S"), "positions": rows}
