@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-10 — [R144] 🧭 策略總表（?view=strategies，&format=json）：真錢（錦囊 v4 黃金、蛇蟠陣大恒指人手）與紙上
+#     （風揚陣三條、地載陣四組、地載・衡、地載・缺）共 7 類策略一表，即時讀各自狀態檔列出現時持倉方向；同一商品
+#     有好有淡就標「方向相反」，提醒同一戶口會對銷。蛇蟠陣實倉只在使用者瀏覽器（指令台），這裏列蛇蟠陣訊號方向。
 #   * 2026-10-10 — [R143] 地載・缺（開市跳空突破）前向測試：日市 09:15 開市相對上日收市跳空 ≥ 0.5%、Nasdaq 隔夜（上日日市收市 →
 #     今日開市）有數據時，等先升／跌 0.25% 那邊突破；突破方向要跟 Nasdaq 隔夜相反、入場前一根 RSI 不在極端（買 < 70／沽 > 30）
 #     才入場 1 張；止蝕在對面（0.5%），日市收市平倉。每日最多一筆。獨立狀態檔 dizai/que/，跟研究 open_breakout.simulate 逐筆一致；
@@ -5247,6 +5250,135 @@ def handle_dizai_get(req):
     return build_dizai_page(data)
 
 
+# ======== [R144] 🧭 策略總表 ========
+def _sp(side, lots=1, detail="", since=None):
+    return {"side": side, "lots": lots, "detail": detail, "since": since}
+
+
+def strategies_data(now=None):
+    """全部策略的現時持倉方向（side：1 多、-1 空、0 空手、None 不知道）。各來源讀不到就標 None，不影響其他列。"""
+    rows = []
+
+    def safe(fn):
+        try:
+            return fn()
+        except (StorageError, KeyError, TypeError, ValueError) as exc:
+            print(f"⚠️ [策略總表] {type(exc).__name__}: {str(exc)[:80]}", flush=True)
+            return None
+
+    snap = safe(read_account_snapshot) or {}
+    gate = safe(lambda: gcs_read_json(GATE_STATE_FILE, {})) or {}
+    net = to_float(snap.get("net_lots"))
+    lock = (gate.get("hard_lock") or {}).get("reason") if isinstance(gate.get("hard_lock"), dict) else None
+    rows.append({"key": "jinnang", "name": "錦囊 v4", "group": "真錢", "market": "黃金 XAUUSD", "real": True,
+                 "style": "順勢：M15 區間突破，只做多", "hold": "10 根 M15（2.5 小時）", "notify": "—", "link": "?view=jinnang_tracker",
+                 "pos": _sp(None if net is None else (1 if net > 0 else -1 if net < 0 else 0), abs(net or 0),
+                            (f"淨 {net:+g} 手（買 {snap.get('buy_lots', 0):g}／沽 {snap.get('sell_lots', 0):g}）" if net is not None else "沒有 MT5 戶口快照")
+                            + (f"・電閘硬鎖：{lock}" if lock else ""), snap.get("received_utc"))})
+
+    paper_hk = safe(lambda: futu_paper_state(DIZAI_SYMBOL))
+    sn = (paper_hk or {}).get("snake") or {}
+    rows.append({"key": "snake_real", "name": "蛇蟠陣（八陣圖指令台）", "group": "真錢", "market": "恒指大期", "real": True,
+                 "style": "順勢：3 日通道，觸價反手，永遠在場", "hold": "多日", "notify": "指令台", "link": "?view=bazhentu",
+                 "pos": _sp(sn.get("pos") if paper_hk else None, sn.get("lots") or 1,
+                            "訊號方向（你的實倉只記在指令台瀏覽器，這裏看不到）", sn.get("entry_time")), "signal_only": True})
+    for sym, mk in ((DIZAI_SYMBOL, "恒指"), ("US.ES_FRONT", "ES")):
+        st = paper_hk if sym == DIZAI_SYMBOL else safe(lambda: futu_paper_state("US.ES_FRONT"))
+        for strat, cfg in PAPER_STRATS.items():
+            if st is None:
+                pos = _sp(None, 0, "紙上交易未開始")
+            elif strat == "SNAKE":
+                s_ = st.get("snake") or {}
+                pos = _sp(s_.get("pos", 0), s_.get("lots") or 1, f"通道 {_dz_n(s_.get('upper'))}／{_dz_n(s_.get('lower'))}", s_.get("entry_time"))
+            else:
+                tr = (st.get("open") or {}).get(strat)
+                pos = _sp(tr["side"], tr.get("lots") or 1, f"入場 {tr['entry_price']:,.0f}・止蝕 {tr['stop']:,.0f}・目標 {tr['target']:,.0f}",
+                          tr.get("entry_time")) if tr else _sp(0, 0)
+            rows.append({"key": f"fy_{strat}_{mk}", "name": f"風揚陣 {cfg['zh']}", "group": "紙上", "market": mk, "real": False,
+                         "style": "順勢（跟蛇方向）", "hold": "多日", "notify": "Telegram（約 15 分鐘）",
+                         "link": "?view=futu_range" if mk == "恒指" else "?view=es_range", "pos": pos})
+
+    dz = safe(lambda: dizai_state(DIZAI_SYMBOL))
+    for k, p in DIZAI_VARIANTS.items():
+        v = ((dz or {}).get("variants") or {}).get(k) or {}
+        ps = v.get("pos")
+        rows.append({"key": f"dz_{k}", "name": p["name"], "group": "紙上", "market": "恒指", "real": False,
+                     "style": "逆市：升跌 2% 後 RSI 反做，加倉" + ("（Nasdaq 篩選）" if p.get("nq") else ""), "hold": "可多日",
+                     "notify": "網頁", "link": "?view=dizai",
+                     "pos": _sp(None, 0, "前向測試未開始") if dz is None else
+                     (_sp(ps["side"], ps["lots"], f"平均成本 {ps['avg']:,.0f}", ps.get("entry_tk")) if ps else _sp(0, 0))})
+    for key, name, path, style, hold in (("heng", "地載・衡", dizai_heng_file(DIZAI_SYMBOL), "逆市：升跌 1–2% 後 RSI 反做，2% 災難止蝕", "通常一日內"),
+                                         ("que", "地載・缺", dizai_que_file(DIZAI_SYMBOL), "順勢：開市跳空後反方向突破", "即日")):
+        st = safe(lambda: gcs_read_json(path, {}))
+        ps = (st or {}).get("pos") if isinstance(st, dict) else None
+        started = isinstance(st, dict) and bool(st.get("version"))
+        rows.append({"key": key, "name": name, "group": "紙上", "market": "恒指", "real": False, "style": style, "hold": hold,
+                     "notify": "Telegram（即時）", "link": "?view=dizai",
+                     "pos": _sp(None, 0, "前向測試未開始") if not started else
+                     (_sp(ps["side"], ps.get("lots", 1), f"入場 {ps['entry']:,.0f}", ps.get("entry_tk")) if ps else _sp(0, 0))})
+
+    conflicts = []
+    under = lambda r: "恒指" if r["market"].startswith("恒指") else r["market"]
+    for mk in sorted({under(r) for r in rows}):
+        longs = [r["name"] for r in rows if under(r) == mk and r["pos"]["side"] == 1]
+        shorts = [r["name"] for r in rows if under(r) == mk and r["pos"]["side"] == -1]
+        if longs and shorts:
+            conflicts.append({"market": mk, "long": longs, "short": shorts,
+                              "real": any(r["real"] for r in rows if under(r) == mk and r["pos"]["side"] in (1, -1))})
+    return {"status": "ok", "updated_utc": fmt_utc(), "rows": rows, "conflicts": conflicts,
+            "summary": {"long": sum(1 for r in rows if r["pos"]["side"] == 1), "short": sum(1 for r in rows if r["pos"]["side"] == -1),
+                        "flat": sum(1 for r in rows if r["pos"]["side"] == 0), "unknown": sum(1 for r in rows if r["pos"]["side"] is None)}}
+
+
+def build_strategies_page(data):
+    side_zh = {1: ("做多", "pos"), -1: ("做空", "neg"), 0: ("空手", "muted"), None: ("不知道", "muted")}
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>🧭 策略總表</h1></div>{page_nav('strategies')}</div>"
+            "<p class='muted'>全部策略與現時持倉方向，每 60 秒更新。真錢策略排最前；同一商品有策略做多、有策略做空時會標出來——"
+            "放在同一個期貨戶口，好倉淡倉會互相對銷。</p>")
+    sm = data["summary"]
+    cards = (f"<div class='grid'><div class='card'><div class='card-title'>做多</div><div class='card-value pos'>{sm['long']}</div></div>"
+             f"<div class='card'><div class='card-title'>做空</div><div class='card-value neg'>{sm['short']}</div></div>"
+             f"<div class='card'><div class='card-title'>空手</div><div class='card-value'>{sm['flat']}</div></div>"
+             f"<div class='card'><div class='card-title'>未有數據</div><div class='card-value muted'>{sm['unknown']}</div></div></div>")
+    if data["conflicts"]:
+        warn = "".join(f"<li><b>{esc(c['market'])}</b>：做多 {esc('、'.join(c['long']))}；做空 {esc('、'.join(c['short']))}</li>" for c in data["conflicts"])
+        conflict = (f"<div class='section' style='border-left:5px solid #dc3545'><b>⚠️ 方向相反</b><ul style='margin:6px 0 0 18px'>{warn}</ul>"
+                    "<p class='muted' style='font-size:12px;margin-top:6px'>紙上策略不受影響；如果其中有真錢策略、或將來把紙上策略落實盤，"
+                    "放在同一戶口會對銷，請分開戶口或分合約。</p></div>")
+    else:
+        conflict = "<div class='section' style='border-left:5px solid #198754'>✅ 現時沒有同一商品方向相反的策略。</div>"
+    trs = ""
+    for r in data["rows"]:
+        zh, cls = side_zh.get(r["pos"]["side"], side_zh[None])
+        lots = r["pos"].get("lots") or 0
+        pos_txt = f"<b class='{cls}'>{zh}</b>" + (f" × {lots:g}" if r["pos"]["side"] in (1, -1) and lots else "")
+        if r.get("signal_only") and r["pos"]["side"] is not None:
+            pos_txt = f"訊號 {pos_txt}"
+        since = r["pos"].get("since")
+        trs += (f"<tr><td><a href='{esc(r['link'])}'>{esc(r['name'])}</a></td>"
+                f"<td>{'<span class=neg>🔴 真錢</span>' if r['real'] else '📒 紙上'}</td><td>{esc(r['market'])}</td>"
+                f"<td>{pos_txt}<div class='muted' style='font-size:11px'>{esc(r['pos'].get('detail') or '')}"
+                + (f"（{esc(str(since)[5:16])}）" if since else "") + "</div></td>"
+                f"<td style='font-size:12px'>{esc(r['style'])}</td><td style='font-size:12px'>{esc(r['hold'])}</td>"
+                f"<td style='font-size:12px'>{esc(r['notify'])}</td></tr>")
+    table = (f"<div class='section'><div class='scroll'><table><tr><th>策略</th><th>類別</th><th>商品</th><th>現時持倉</th>"
+             f"<th>方向風格</th><th>持倉時間</th><th>通知</th></tr>{trs}</table></div>"
+             f"<p class='muted' style='font-size:12px'>更新 {esc(data['updated_utc'])} UTC・JSON：<a href='?view=strategies&amp;format=json'>?view=strategies&amp;format=json</a></p></div>")
+    notes = ("<div class='section'><b>使用提醒</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
+             "<li>真錢策略之間不會衝突：錦囊做黃金、蛇蟠陣做恒指；但兩者共用資金與保證金。</li>"
+             "<li>蛇蟠陣（順勢）與地載陣（逆市）在大升大跌日方向經常相反；地載陣落實盤時，請用另一個戶口或子戶口。</li>"
+             "<li>地載陣幾組條件相近、經常同日同向，只是互相對照；實盤只選一組（建議地載・衡）。</li>"
+             "<li>雲垂陣（賣期權）在其他分支，不在這個服務，未列入。</li></ul></div>")
+    return html_page("策略總表", head + cards + conflict + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
+
+
+def handle_strategies_get(req):
+    data = strategies_data()
+    if req.args.get("format") == "json":
+        return _json_response(data)
+    return build_strategies_page(data)
+
+
 def handle_futu_range_get(req, default_symbol=FUTU_RANGE_DEFAULT):
     if req.args.get("report"):                                   # [R99] 四個時點的預測／檢討
         symbol = _futu_text(req.args.get("symbol"), 32).upper() or default_symbol
@@ -7134,6 +7266,7 @@ PAGE_LINKS = [
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
+    ("strategies", "🧭 策略總表"),                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
 ]
 
@@ -8878,6 +9011,8 @@ def handle_get(req):
         return handle_bazhentu_api_get()
     if view == "bazhentu":                                       # [R131] 八陣圖指令台（蛇蟠陣人手掛單）
         return serve_bazhentu()
+    if view == "strategies":                                     # [R144] 🧭 策略總表
+        return handle_strategies_get(req)
     if view == "dizai":                                          # [R137] 地載陣：今日策略＋前向測試（&format=json）
         return handle_dizai_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
