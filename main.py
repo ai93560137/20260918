@@ -104,6 +104,10 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R147] action=futu_risk：本地 gcp_ib/auto_risk.py 定時推富途持倉風險（權益、保證金緩衝、止損用量、雲垂 Δ、
+#     警報、報告全文）→ 驗權杖後存 futu/risk/latest.json，逐次指標按日記 futu/risk/history/<日期>.json。
+#     持倉屬私人資料：唔放 archive/（?view=archive 公開讀得到），亦冇任何 GET 頁面；只可以用服務帳戶讀
+#     （scripts/gcp_agent.py cat --object futu/risk/latest.json）。只存，唔進電閘、唔影響任何下單。
 #   * 2026-10-10 — [R146] 落單格式 Telegram：突破V、穩60、進NQ 加通知；五個成份（衡、缺、突破V、穩60、進NQ）的開倉／加倉／
 #     平倉通知改成落單格式——方向、張數（穩60 已乘地載・合的 2 份）、市價或掛單價、止賺限價、止蝕止損、下次加倉價與張數、
 #     改單提示、所屬組合。穩60／進NQ 的通知存地載陣狀態檔（id dz:），突破V 存 dizai/tupo/（id tupo:）。
@@ -2210,6 +2214,69 @@ def handle_futu_data(payload):
     return jsonify({"status": "stored", "symbol": symbol, "bars": len(bars),
                     "latest_time": latest.get("time_key"), "latest_close": latest.get("close"),
                     "options": len(options), "iv_count": len(ivs), "warnings": warnings}), 200
+
+
+# =============================================================================
+# [R147] 富途持倉風險（gcp_ib/auto_risk.py 推上嚟）。只存、唔顯示、唔影響下單。
+# =============================================================================
+FUTU_RISK_FILE = "futu/risk/latest.json"
+FUTU_RISK_HISTORY_DIR = "futu/risk/history"
+FUTU_RISK_MAX_REPORT = 60000
+FUTU_RISK_METRIC_KEYS = ("quotes_fetched", "pnl", "equity", "hard_stop", "gap", "futu_equity", "cushion")
+
+
+def _futu_risk_clean_metrics(raw):
+    raw = raw if isinstance(raw, dict) else {}
+    out = {}
+    for key in FUTU_RISK_METRIC_KEYS:
+        value = raw.get(key)
+        out[key] = _futu_text(value, 32) if key == "quotes_fetched" else to_float(value)
+    for key in ("stop_use", "margin_hit"):
+        src = raw.get(key) if isinstance(raw.get(key), dict) else {}
+        out[key] = {_futu_text(k, 40): to_float(v) for k, v in list(src.items())[:10]}
+    src = raw.get("delta") if isinstance(raw.get("delta"), dict) else {}
+    out["delta"] = {_futu_text(k, 60): [to_float(x) for x in (v if isinstance(v, (list, tuple)) else [v])[:2]]
+                    for k, v in list(src.items())[:10]}
+    return out
+
+
+def handle_futu_risk(payload):
+    """權杖已在 _dispatch_post 驗過。存最新一份＋按日記指標。沒內容 → 422；寫不進 GCS → 503。"""
+    metrics = _futu_risk_clean_metrics(payload.get("metrics"))
+    report = payload.get("report") if isinstance(payload.get("report"), str) else ""
+    if metrics.get("equity") is None and not report:
+        return jsonify({"status": "error", "message": "futu_risk: missing metrics/report"}), 422
+    alerts = payload.get("alerts") if isinstance(payload.get("alerts"), dict) else {}
+    alerts = {_futu_text(k, 60): _futu_text(v, 200) for k, v in list(alerts.items())[:20]}
+    positions = [row for row in (payload.get("positions") or [])[:50] if isinstance(row, dict)]
+    run_hkt = _futu_text(payload.get("run_hkt"), 19)
+    doc = {"run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
+           "script_version": _futu_text(payload.get("script_version"), 16),
+           "metrics": metrics, "alerts": alerts, "positions": positions,
+           "report": report[:FUTU_RISK_MAX_REPORT]}
+    try:
+        gcs_write_text(FUTU_RISK_FILE, json.dumps(doc, ensure_ascii=False, default=str))
+    except StorageError as exc:
+        log_event(f"⚠️ [富途風險寫入失敗] {exc}", severity="ERROR", component="futu_risk")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    warnings = []
+    day = run_hkt[:10] if ARCHIVE_DATE_RE.match(run_hkt[:10]) else fmt_utc(fmt="%Y-%m-%d")
+    row = {"run_hkt": run_hkt or doc["received_utc"], **{k: metrics.get(k) for k in FUTU_RISK_METRIC_KEYS},
+           "delta": metrics["delta"], "stop_use": metrics["stop_use"], "alerts": sorted(alerts)}
+
+    def mutate(existing):
+        rows = [r for r in (existing if isinstance(existing, list) else []) if isinstance(r, dict)
+                and r.get("run_hkt") != row["run_hkt"]]
+        return rows + [row], len(rows) + 1
+
+    try:
+        gcs_update(f"{FUTU_RISK_HISTORY_DIR}/{day}.json", mutate, default_factory=list)
+    except StorageError as exc:
+        warnings.append("按日紀錄寫入失敗（最新一份已存）")
+        log_event(f"⚠️ [富途風險紀錄失敗] {exc}", severity="WARNING", component="futu_risk")
+    log_event(f"🛡️ [富途持倉風險] {run_hkt} 權益 {fmt_num(metrics.get('equity'))} 緩衝 {fmt_num(metrics.get('cushion'))} "
+              f"警報 {len(alerts)}", severity="WARNING" if alerts else "INFO", component="futu_risk")
+    return jsonify({"status": "stored", "run_hkt": run_hkt, "alerts": len(alerts), "warnings": warnings}), 200
 
 
 def futu_symbol_file(symbol):
@@ -9470,6 +9537,8 @@ def _dispatch_post(payload):
         return jsonify({"status": "success", "message": "TV levels received but intentionally ignored."}), 200
     if action == "futu_data":                        # [R94] 本地 Futu OpenD 推上來的行情
         return handle_futu_data(payload)
+    if action == "futu_risk":                        # [R147] 本地 auto_risk.py 推上來的持倉風險（私人，只存）
+        return handle_futu_risk(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -9499,7 +9568,7 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") != "futu_data":        # [R94] Futu 封包大且每 5 分鐘一次，另存
+    if payload.get("action") not in ("futu_data", "futu_risk"):   # [R94][R147] Futu 封包大／持倉私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()

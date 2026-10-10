@@ -114,12 +114,23 @@ python gcp_ib\auto_risk.py --once
 python gcp_ib\auto_risk.py --every 15
 ```
 
-想開機登入就自動跑（Windows 工作排程器；要停用：`schtasks /Delete /TN ZhugeAutoRisk /F`）：
+推上 GCP（四個陣經 Claude 自動收到；存私人 bucket `futu/risk/`，冇公開頁面）：同 `futu/push_to_gcp.py` 用同一對設定，設過就唔使再設：
+
+```powershell
+setx ZHUGE_GCP_URL "https://zhuge-risk-manager-1056099871997.europe-west1.run.app/"
+setx WEBHOOK_SECRET_TOKEN "同 Cloud Run 一樣嘅權杖"
+```
+
+開機登入就自動跑（唔使管理員權限；放一個 .cmd 入「啟動」資料夾；要停用就刪咗個檔）：
 
 ```powershell
 $py = (Get-Command python).Source
-schtasks /Create /TN ZhugeAutoRisk /SC ONLOGON /RL LIMITED /TR "`"$py`" `"$PWD\gcp_ib\auto_risk.py`" --every 15"
+$startup = [Environment]::GetFolderPath("Startup")
+"@echo off`r`ncd /d `"$PWD`"`r`nset PYTHONIOENCODING=utf-8`r`n`"$py`" gcp_ib\auto_risk.py --every 15`r`n" | Set-Content "$startup\ZhugeAutoRisk.cmd" -Encoding ascii
+Get-Content "$startup\ZhugeAutoRisk.cmd"
 ```
+
+（`schtasks /SC ONLOGON` 要管理員權限，會出 `Access is denied`，所以改用啟動資料夾。）
 
 睇最新結果：
 

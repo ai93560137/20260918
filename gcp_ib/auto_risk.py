@@ -10,6 +10,8 @@
   setx ZHUGE_COMBINED_EQUITY 2520339     # 幾個戶口合計權益 HKD（硬止損按合計計）
   setx TG_BOT_TOKEN "…"                 # 選填：有就發 Telegram 警報（同 repo 其他通知同一個 bot）
   setx TG_CHAT_ID "…"
+  setx ZHUGE_GCP_URL "https://…run.app/"   # 選填：有就每次推上 GCP（main.py R147 action=futu_risk，存私人 bucket）
+  setx WEBHOOK_SECRET_TOKEN "…"            #        同 futu/push_to_gcp.py 用同一對設定
   選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 100000）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）
 
 輸出（全部喺 tradingview/out/，已 .gitignore，唔會 commit）：
@@ -24,6 +26,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -49,7 +52,9 @@ def weekend_closed(t):
 def fetch():
     """跑 futu_positions_quote.py 更新 futu_positions.json。回傳 (成功, 錯誤訊息)。"""
     r = subprocess.run([sys.executable, str(ROOT / "gcp_ib" / "futu_positions_quote.py")], cwd=ROOT,
-                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180,
+                       env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     if r.returncode:
         return False, (r.stderr or r.stdout).strip().splitlines()[-1:] or ["未知錯誤"]
     if "富途 API 冇讀到持倉" in r.stdout:
@@ -88,6 +93,34 @@ def telegram(text):
         return False
 
 
+SCRIPT_VERSION = "R147"
+
+
+def push_gcp(t, M, cur, txt):
+    """推上 Cloud Run（action=futu_risk）。冇設 ZHUGE_GCP_URL／WEBHOOK_SECRET_TOKEN 就跳過。回傳狀態文字。"""
+    url, tok = os.environ.get("ZHUGE_GCP_URL"), os.environ.get("WEBHOOK_SECRET_TOKEN")
+    if not url or not tok:
+        return "（冇設 ZHUGE_GCP_URL／WEBHOOK_SECRET_TOKEN，唔推 GCP）"
+    try:
+        fp = json.loads((ROOT / "tradingview" / "data_external" / "futu_positions.json").read_text(encoding="utf-8"))
+        positions = [{k: r.get(k) for k in ("code", "name", "qty", "open_price", "bid", "ask", "last", "quote_time", "futu_pl")}
+                     for r in fp.get("positions", [])]
+    except Exception:
+        positions = []
+    body = {"action": "futu_risk", "token": tok, "run_hkt": t.strftime("%Y-%m-%d %H:%M"),
+            "script_version": SCRIPT_VERSION, "metrics": M, "alerts": cur, "positions": positions, "report": txt}
+    req = urllib.request.Request(url, data=json.dumps(body, ensure_ascii=False, default=list).encode("utf-8"),
+                                 headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            res = json.loads(r.read().decode("utf-8") or "{}")
+        return "GCP ✅ 已存" if res.get("status") == "stored" else f"GCP ⚠ 回應 {res.get('status')}"
+    except urllib.error.HTTPError as e:
+        return f"GCP ❌ HTTP {e.code}"
+    except Exception as e:        # 唔好印網址同權杖
+        return f"GCP ❌ {e.__class__.__name__}"
+
+
 def cycle(equity, cushion_line, stop_line):
     t = now_hkt()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -123,6 +156,8 @@ def cycle(equity, cushion_line, stop_line):
     line = (f"[{t:%m-%d %H:%M} HKT] 盈虧 {M['pnl']:+,.0f}｜合計權益 {M['equity']:,.0f}｜富途緩衝 "
             f"{M.get('cushion', 0):,.0f}｜雲垂 Δ {next(iter(M['delta'].values()), (0, 0))[0]:+.2f}" if M else f"[{t:%m-%d %H:%M} HKT]")
     print(line + ("｜警報：" + "；".join(cur.values()) if cur else "｜冇警報"))
+    if M:
+        print("  → " + push_gcp(t, M, cur, txt))
     if new_on or cleared:
         msg = ["【諸葛亮持倉風險（自動）】" + f"{t:%m-%d %H:%M} HKT"]
         msg += list(new_on.values())
