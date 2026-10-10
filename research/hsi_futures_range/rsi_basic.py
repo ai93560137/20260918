@@ -96,7 +96,7 @@ def main():
                   f"   {sum(x['days'] >= 1 for x in t):6d} {max(x['days'] for x in t):6d}   {sum(x['pnl'] for x in t):+10.0f}  {detail}")
 
 
-def run_adds(D, sigs, tp, add_lots=(), step_atr=0.75, max_days=None):
+def run_adds(D, sigs, tp, add_lots=(), step_atr=0.75, max_days=None, entry_day=False):
     """加倉版：不設止蝕；止賺由平均成本起計；到期（或數據尾）收市價平倉。"""
     o, h, l, c, sid, ends, atr = D["o"], D["h"], D["l"], D["c"], D["sid"], D["ends"], D["atr"]
     n, trades, busy = len(o), [], -1
@@ -133,7 +133,7 @@ def run_adds(D, sigs, tp, add_lots=(), step_atr=0.75, max_days=None):
             out, reason = (o[j] if (j > tp_from and side * (o[j] - tgt) > 0) else tgt), "tp"
             break
         trades.append({"pnl": lots * side * (out - avg) - 2 * COST * lots, "reason": reason, "lots": lots,
-                       "worst": float(worst), "days": int(sid[j] - sid[e]), "year": D["days"][sid[j]][:4]})
+                       "worst": float(worst), "days": int(sid[j] - sid[e]), "year": D["days"][sid[j]][:4], "entry": D["days"][sid[e]]})
         busy = j
     return trades
 
