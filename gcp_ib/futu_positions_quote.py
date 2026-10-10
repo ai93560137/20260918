@@ -14,6 +14,8 @@ history_order_list_query / order_list_query / history_deal_list_query / get_mark
   python gcp_ib\\futu_positions_quote.py --push          # 完成後 commit+push 結果到目前分支（repo 公開，持倉會公開！）
   python gcp_ib\\futu_positions_quote.py --chain 2026-10-29 24800 25200   # 查恒指期權鏈買賣盤
   python gcp_ib\\futu_positions_quote.py --codes HK.MHI2610              # 查指定合約買賣盤
+  python gcp_ib\\futu_positions_quote.py --probe-us                       # 搵 MES／EW 標普期貨期權代碼
+輸出 tradingview/data_external/futu_positions.json（已 .gitignore，唔會 commit）。
 """
 import argparse
 import json
@@ -139,7 +141,8 @@ def diagnose(since):
 
 
 def read_holdings(since):
-    rows = []
+    """回傳 (持倉行, 帳戶資金摘要)。資金摘要唔包帳號。"""
+    rows, accounts = [], []
     seen = set()
     for label, ctx in contexts():
         try:
@@ -148,6 +151,13 @@ def read_holdings(since):
                 if str(a.get("acc_status", "ACTIVE")) == "DISABLED" or acc_id in seen:
                     continue
                 seen.add(acc_id)
+                r0, info = ctx.accinfo_query(trd_env=TrdEnv.REAL, acc_id=acc_id, refresh_cache=True)
+                if r0 == RET_OK and len(info):
+                    row = info.iloc[0]
+                    accounts.append({"account": label, "currency": str(row.get("currency", "HKD")),
+                                     **{k: num(row.get(k)) for k in ("total_assets", "cash", "market_val", "initial_margin",
+                                                                      "maintenance_margin", "unrealized_pl", "risk_status")
+                                        if k in info.columns}})
                 ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=acc_id, refresh_cache=True)
                 end = datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S")
                 ret2, dl = ctx.history_deal_list_query(start=f"{since} 00:00:00", end=end, trd_env=TrdEnv.REAL, acc_id=acc_id)
@@ -180,7 +190,7 @@ def read_holdings(since):
                                      "open_price": round(amt / n, 2) if n else None, "futu_pl": None})
         finally:
             ctx.close()
-    return rows
+    return rows, accounts
 
 
 def fixed_holdings():
@@ -215,13 +225,75 @@ def fixed_holdings():
     return rows
 
 
-def quotes(codes):
+def quotes(codes, quiet=False):
+    """逐批查快照；有一個代碼錯就改為逐個查，唔會因為一個壞代碼成批失敗。"""
+    codes = [c for c in dict.fromkeys(codes) if c]
+    out = {}
+    if not codes:
+        return out
     q = OpenQuoteContext(host=HOST, port=PORT)
     try:
         ret, snap = q.get_market_snapshot(codes)
-        if ret != RET_OK:
-            sys.exit(f"get_market_snapshot 失敗：{snap}")
-        return {s["code"]: s for _, s in snap.iterrows()}
+        if ret == RET_OK:
+            return {s["code"]: s for _, s in snap.iterrows()}
+        for c in codes:
+            ret, snap = q.get_market_snapshot([c])
+            if ret == RET_OK and len(snap):
+                out[c] = snap.iloc[0]
+            elif not quiet:
+                print(f"  報價失敗 {c}：{snap}")
+        return out
+    finally:
+        q.close()
+
+
+def quote_dict(by):
+    """快照 → 可寫入 JSON 嘅精簡報價（買／賣／中間／最後＋報價時間）。"""
+    d = {}
+    for code, s in by.items():
+        bid, ask = num(s.get("bid_price")), num(s.get("ask_price"))
+        bid, ask = (bid if price_ok(bid) else None), (ask if price_ok(ask) else None)
+        d[code] = {"name": str(s.get("name", "")), "bid": bid, "ask": ask,
+                   "mid": round((bid + ask) / 2, 4) if bid and ask else None,
+                   "last": num(s.get("last_price")), "quote_time": str(s.get("update_time"))}
+    return d
+
+
+# 標的期貨候選代碼（第一個有價嘅做 F）
+UNDERLYING_CODES = ["HK.MHI2610", "HK.HSImain", "US.ESmain", "US.ES2612", "US.MESmain", "US.MES2612"]
+
+
+def probe_us():
+    """搵標普期貨期權（MES 週權、EW 月底）嘅富途代碼。只讀報價。"""
+    from futu import Market, SecurityType
+    q = OpenQuoteContext(host=HOST, port=PORT)
+    try:
+        print("1) 美國期貨代碼（get_stock_basicinfo，篩 ES／MES）")
+        ret, df = q.get_stock_basicinfo(Market.US, SecurityType.FUTURE)
+        if ret == RET_OK:
+            m = df[df["code"].str.contains(r"\.(?:M?ES)", regex=True)]
+            print(m[[c for c in ("code", "name", "lot_size", "listing_date") if c in m.columns]].head(30).to_string(index=False)
+                  if len(m) else "   冇 ES／MES")
+        else:
+            print(f"   失敗：{df}")
+        print("2) 期貨快照")
+        for c, s in quote_dict(quotes(UNDERLYING_CODES[2:], quiet=True)).items():
+            print(f"   {c} {s['name']} 買 {s['bid']} 賣 {s['ask']} 最後 {s['last']} {s['quote_time']}")
+        print("3) 期貨期權鏈（get_option_chain 對期貨標的；行使價 7700–7900）")
+        for und in UNDERLYING_CODES[2:]:
+            for st, en in (("2026-10-16", "2026-10-16"), ("2026-10-30", "2026-10-30")):
+                try:
+                    ret, ch = q.get_option_chain(code=und, start=st, end=en)
+                except Exception as e:
+                    print(f"   {und} {st}：例外 {e}")
+                    continue
+                if ret != RET_OK:
+                    print(f"   {und} {st}：{ch}")
+                    continue
+                ch = ch[(ch["strike_price"] >= 7700) & (ch["strike_price"] <= 7900)]
+                print(f"   {und} {st}：{len(ch)} 隻" + ("" if ch.empty else "\n" + ch[["code", "strike_price", "option_type"]].head(12).to_string(index=False)))
+        print("搵到代碼就用：python gcp_ib\\futu_positions_quote.py --codes <代碼>；搵唔到報告會用模型價（Black-76）。")
+        print("另一條路：OpenD 登入 ID 改啱之後，持倉 API 會直接回傳 EW／MES 持倉嘅正確代碼。")
     finally:
         q.close()
 
@@ -270,6 +342,9 @@ def show(rows):
 
 
 def push():
+    if input("repo 係公開嘅，push 會公開你嘅持倉。真係要 push？輸入 yes：").strip().lower() != "yes":
+        print("冇 push")
+        return
     br = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     for c in (["git", "add", str(OUT)],
               ["git", "commit", "-q", "-m", "data: 富途持倉報價快照"],
@@ -314,8 +389,11 @@ def main():
     ap.add_argument("--push", action="store_true")
     ap.add_argument("--chain", nargs=3, metavar=("EXPIRY", "KLO", "KHI"))
     ap.add_argument("--codes", nargs="*", default=[])
+    ap.add_argument("--probe-us", action="store_true", help="搵 MES／EW 標普期貨期權嘅富途代碼")
     a = ap.parse_args()
 
+    if a.probe_us:
+        return probe_us()
     if a.chain:
         return chain(a.chain[0], float(a.chain[1]), float(a.chain[2]))
     if a.codes:
@@ -325,13 +403,18 @@ def main():
 
     if a.diagnose:
         return diagnose(a.since)
-    rows = [] if a.fixed else read_holdings(a.since)
+    rows, accounts = ([], []) if a.fixed else read_holdings(a.since)
     if not rows:
         print("（富途 API 冇讀到持倉，改用 position.json 嘅固定持倉）")
         rows = fixed_holdings()
-    rows = pnl(rows, quotes([r["code"] for r in rows]))
+    by = quotes([r["code"] for r in rows] + UNDERLYING_CODES)
+    rows = pnl(rows, by)
     show(rows)
-    out = {"fetched_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S"), "positions": rows}
+    for acc in accounts:
+        print(f"資金（{acc['account']}，{acc.get('currency')}）：權益 {acc.get('total_assets')}，"
+              f"初始保證金 {acc.get('initial_margin')}，維持保證金 {acc.get('maintenance_margin')}")
+    out = {"fetched_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S"), "positions": rows,
+           "quotes": quote_dict(by), "accounts": accounts}
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"\n已寫入 {OUT}")
     if a.push:

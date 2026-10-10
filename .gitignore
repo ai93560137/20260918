@@ -11,3 +11,6 @@ _equities/
 claude-agent-*.json
 gcp-key*.json
 .config/
+# 持倉／報價／風險報告結果（repo 公開，唔 commit）
+tradingview/data_external/futu_positions.json
+tradingview/out/

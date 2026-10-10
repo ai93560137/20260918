@@ -1,0 +1,72 @@
+# 富途持倉 → 報價 → 風險報告：PowerShell 操作手冊
+
+全部只讀：唔落單、唔 unlock_trade、唔改單。報價只作監控，落單以富途即時價為準。
+結果檔（`futu_positions.json`、`tradingview/out/`）喺本分支已 `.gitignore`；你部機嘅分支未必有，**唔好 `git add` 佢哋**；要畀 Claude 睇就貼內容入對話。
+
+每個區塊獨立複製，喺 repo 資料夾入面跑（`<你的 repo 路徑>` 換成你部機嘅路徑）。
+
+## 0. 準備（每次開 PowerShell 跑一次）
+
+```powershell
+cd <你的 repo 路徑>
+$env:PYTHONIOENCODING = "utf-8"
+```
+
+## 1. 攞最新版工具（只取兩個程式檔，唔會郁你嘅持倉檔）
+
+```powershell
+git fetch origin claude/beautiful-hypatia-8qrgjj
+git checkout origin/claude/beautiful-hypatia-8qrgjj -- gcp_ib/futu_positions_quote.py tradingview/risk_report.py
+```
+
+## 2. 核對 OpenD 登入身份（OpenD 登入 ID 改好之後先跑）
+
+```powershell
+python gcp_ib\futu_positions_quote.py --diagnose
+```
+
+對照：App「我的」牛牛號尾 3 位 ↔「OpenD 登入用戶 ID」；App 期貨帳戶卡號尾 4 位 ↔「卡號」；資金唔再係 0。
+
+## 3. 搵標普期貨期權（MES 週權、EW 月底）嘅富途代碼
+
+```powershell
+python gcp_ib\futu_positions_quote.py --probe-us
+```
+
+## 4. 讀持倉＋報價（寫 tradingview\data_external\futu_positions.json）
+
+```powershell
+python gcp_ib\futu_positions_quote.py
+```
+
+API 仲係讀唔到持倉時，改用固定持倉：
+
+```powershell
+python gcp_ib\futu_positions_quote.py --fixed
+```
+
+## 5. 出風險報告（本機）
+
+```powershell
+python tradingview\risk_report.py --md tradingview\out\risk_report_live.md
+```
+
+## 6. 畀 Claude 覆核：複製輸出貼入對話（冇帳號、冇密碼）
+
+```powershell
+Get-Content tradingview\data_external\futu_positions.json -Encoding utf8
+```
+
+## 單獨查價
+
+```powershell
+python gcp_ib\futu_positions_quote.py --codes HK.MHI2610 HK.MHI261029C25000000 HK.MHI261029P25000000 HK.HSI261016C24900000 HK.HSI261016P23750000
+```
+
+```powershell
+python gcp_ib\futu_positions_quote.py --chain 2026-10-29 24800 25200
+```
+
+## API 始終讀唔到持倉
+
+富途 App →「持倉 → 期貨」截圖貼入對話，Claude 解析做 `risk_book.json` 格式（只喺本機用，唔 commit）。

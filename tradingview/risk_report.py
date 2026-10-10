@@ -1,17 +1,28 @@
 #!/usr/bin/env python3
-"""持倉風險報告：讀 data_external/risk_book.json → 重估 Greeks → 壓力測試 → 對照 HK$750,000 硬止損。
-純計算，不連任何券商。用 Black-76（期貨期權），IV 由現價逐腿反推（每腿各自 IV＝現時嘅斜率快照）。
-現價唔可靠嘅腿可以喺 book 寫 "mark": {"method": "parity", "call": "<同行使價 Call id>"}，改用 put-call parity 定價。
-用法：python3 risk_report.py [--book data_external/risk_book.json] [--md risk_report.md]
+"""持倉風險報告：讀 data_external/risk_book.json（＋可選 futu_positions.json 真實報價）→ 重估 Greeks → 壓力測試 → 對照硬止損。
+純計算，不連任何券商。Black-76（期貨期權）。
+
+定價規則（每腿）：
+  平倉價：空倉用「賣價」買回、多倉用「買價」沽出（主數字）；「中間價」做對照。
+  冇單邊價 → 同行使價另一邊 parity（P = C + (K − F)）→ 最後成交 → 截圖價；每個價都標明來源同報價時間。
+  IV 由中間價反推（冇中間價就用平倉價）。
+斜率：每個標的用各腿 (ln K/F, IV) 擬合斜率；壓力情景固定行使價 IV 按「IV 變動 = 斜率 × ln(F新/F舊)」（跌市升 vol），
+  另列舊規則（每跌 1% 加 0.5 vol）對照。
+用法：python3 risk_report.py [--book …] [--quotes data_external/futu_positions.json] [--md out/risk_report_live.md]
 """
 import argparse
 import json
+import re
 from datetime import date
 from math import erf, log, sqrt
 from pathlib import Path
 
 N = lambda x: 0.5 * (1 + erf(x / sqrt(2)))
 HERE = Path(__file__).resolve().parent
+DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ESmain", "US.ES2612", "US.MESmain", "US.MES2612"]}
+LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「手」單位
+# 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
+PLAYBOOK = {"雲垂陣 HSI 月跨式＋對沖": {"und": "HSI", "groups": ["HSI 月跨式", "MHI2610 對沖"], "band": 0.5}}
 
 
 def b76(F, K, s, T, cp):
@@ -33,46 +44,101 @@ def implied(price, F, K, T, cp):
     return m
 
 
-def load(book_path):
+def derive_code(p):
+    """富途代碼：book 有就用；恒指／MHI 按已驗證格式推算；標普期貨期權未知 → None。"""
+    if p.get("code"):
+        return p["code"]
+    if p["und"] != "HSI":
+        return None
+    if p["type"] == "fut":
+        m = re.search(r"(MHI|HSI)(\d{4})", p["id"])
+        return f"HK.{m.group(1)}{m.group(2)}" if m else None
+    root = "MHI" if p["id"].startswith("MHI") else "HSI"
+    return f"HK.{root}{p['exp'][2:].replace('-', '')}{'C' if p['type'] == 'call' else 'P'}{int(p['K'] * 1000):08d}"
+
+
+def load(book_path, quotes_path=None):
     b = json.loads(Path(book_path).read_text(encoding="utf-8"))
+    qf = json.loads(Path(quotes_path).read_text(encoding="utf-8")) if quotes_path else {}
+    Q = dict(qf.get("quotes", {}))
+    for r in qf.get("positions", []):          # 舊格式：只有 positions 行
+        Q.setdefault(r["code"], {k: r.get(k) for k in ("bid", "ask", "mid", "last", "quote_time")})
+    b["quotes_fetched"] = qf.get("fetched_hkt")
+    b["accounts"] = qf.get("accounts", [])
     val = date.fromisoformat(b["valuation_date"])
-    fx = b["fx"]
+    for u, d in b["underlyings"].items():
+        d["F_src"] = f"截圖／book（{d.get('note', '')}）"
+        for c in d.get("codes", DEFAULT_UND_CODES.get(u, [])):
+            q = Q.get(c) or {}
+            px, lab = (q.get("mid"), "中間價") if q.get("mid") else (q.get("last"), "最後成交")
+            if px:
+                d["F"], d["F_src"] = px, f"{c} {lab} @ {q.get('quote_time')}"
+                break
     by_id = {p["id"]: p for p in b["positions"]}
     for p in b["positions"]:
-        p["mark_px"] = p["price"]
+        p["code"] = derive_code(p)
+        q = Q.get(p["code"]) or {} if p["code"] else {}
+        p.update(bid=q.get("bid"), ask=q.get("ask"), mid=q.get("mid"), last=q.get("last"), qtime=q.get("quote_time"))
         if p["type"] in ("call", "put"):
             p["T"] = max((date.fromisoformat(p["exp"]) - val).days, 0.5) / 365
     for p in b["positions"]:
-        mk = p.get("mark")
-        if mk and mk.get("method") == "parity":
-            # 期貨期權 parity（折現 < 0.5%，忽略）：P = C + (K − F)；C = P − (K − F)
+        side = p["ask"] if p["qty"] < 0 else p["bid"]
+        if side:
+            p["close_px"], p["basis"] = side, ("賣價" if p["qty"] < 0 else "買價") + f" @ {p['qtime']}"
+            continue
+        stale = any(w in p.get("flag", "") for w in ("冇賣價", "冇買價", "stale"))
+        other = next((o for o in b["positions"] if o is not p and o["und"] == p["und"] and o.get("K") == p.get("K")
+                      and o.get("exp") == p.get("exp") and o["type"] in ("call", "put") and o["type"] != p["type"]), None)
+        has_q = bool(p["bid"] or p["ask"] or p["last"])           # 有報價但欠一邊
+        if p["type"] in ("call", "put") and other and (has_q or stale):
             F = b["underlyings"][p["und"]]["F"]
-            other = by_id[mk["call"]]["price"]
-            p["mark_px"] = other + (p["K"] - F) if p["type"] == "put" else other - (p["K"] - F)
+            o_px = (other["ask"] if other["qty"] < 0 else other["bid"]) or other.get("mid") or other.get("last") or other["price"]
+            p["close_px"] = o_px + (p["K"] - F) if p["type"] == "put" else o_px - (p["K"] - F)
+            p["basis"] = f"parity（冇{'賣' if p['qty'] < 0 else '買'}價；{other['id']} {o_px:g}）"
+        elif p["last"]:
+            p["close_px"], p["basis"] = p["last"], f"最後成交（冇{'賣' if p['qty'] < 0 else '買'}價）@ {p['qtime']}"
+        else:
+            p["close_px"], p["basis"] = p["price"], "截圖價" + ("（冇富途代碼）" if not p["code"] else "")
     for p in b["positions"]:
         if p["type"] in ("call", "put"):
             F = b["underlyings"][p["und"]]["F"]
-            p["iv"] = implied(p["mark_px"], F, p["K"], p["T"], p["type"])
-            if p["mark_px"] != p["price"]:
-                p["iv_raw"] = implied(p["price"], F, p["K"], p["T"], p["type"])
-    return b, fx
+            p["iv"] = implied(p["mid"] or p["close_px"], F, p["K"], p["T"], p["type"])
+            p["iv_src"] = "中間價" if p["mid"] else "平倉價"
+    b["skew"] = {}
+    for u in b["underlyings"]:
+        F = b["underlyings"][u]["F"]
+        pts = [(log(p["K"] / F), p["iv"]) for p in b["positions"] if p["und"] == u and p["type"] != "fut"]
+        xs = {round(x, 6) for x, _ in pts}
+        if len(xs) >= 2:
+            mx, my = sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts)
+            sl = sum((x - mx) * (y - my) for x, y in pts) / sum((x - mx) ** 2 for x, _ in pts)
+            b["skew"][u] = (min(0.0, max(-3.0, sl)), f"擬合 {len(pts)} 腿")
+        else:
+            b["skew"][u] = (-0.5, "預設")
+    return b, b["fx"]
 
 
 def value(p, F, iv_shift=0.0, days=0.0):
     if p["type"] == "fut":
         return F
-    return b76(F, p["K"], p["iv"] + iv_shift, p["T"] - days / 365, p["type"])
+    return b76(F, p["K"], max(p["iv"] + iv_shift, p["iv"] * 0.5), p["T"] - days / 365, p["type"])
 
 
-def pnl_hkd(b, fx, shocks, vol_down=0.5, vol_add=0.0, days=0.0):
-    """shocks: {'HSI': pct, 'ES': pct}；days：時間前推日數。回傳總盈虧(HKD)、分組盈虧。"""
+def pnl_hkd(b, fx, shocks, vol_add=0.0, days=0.0, skew="fit", px="close"):
+    """shocks: {'HSI': pct, 'ES': pct}。skew='fit' 用擬合斜率；'old' 用每跌 1% 加 0.5 vol；px='close'/'mid' 現況標價。"""
     tot, grp = 0.0, {}
     for p in b["positions"]:
         F0 = b["underlyings"][p["und"]]["F"]
         r = shocks.get(p["und"], 0.0)
-        F = F0 * (1 + r)
-        shift = vol_add + (max(0.0, -r) * vol_down if p["type"] != "fut" else 0.0)
-        v = value(p, F, shift, days)
+        if not shocks and not vol_add and not days:          # 現況：直接用報價
+            v = p["close_px"] if px == "close" else (p["mid"] or p["close_px"])
+        else:
+            if skew == "fit":
+                sh = b["skew"][p["und"]][0] * log(1 + r)
+            else:
+                sh = max(0.0, -r) * 0.5
+            v = value(p, F0 * (1 + r), vol_add + sh, days)
+            v += p["close_px"] - value(p, F0)                # 模型同平倉價之間嘅差（買賣差）保留
         x = (v - p["open"]) * p["qty"] * p["mult"] * fx[p["ccy"]]
         tot += x
         g = p.get("group", p["id"])
@@ -81,14 +147,14 @@ def pnl_hkd(b, fx, shocks, vol_down=0.5, vol_add=0.0, days=0.0):
 
 
 def greeks(b, fx):
-    out = {}
+    out, grp = {}, {}
     for p in b["positions"]:
         F0 = b["underlyings"][p["und"]]["F"]
         h = 0.005
-        up = (value(p, F0 * (1 + h)) - value(p, F0 * (1 - h))) / (2 * F0 * h)      # 每點價格變動 Δ
+        up = (value(p, F0 * (1 + h)) - value(p, F0 * (1 - h))) / (2 * F0 * h)
         gam = (value(p, F0 * (1 + h)) - 2 * value(p, F0) + value(p, F0 * (1 - h))) / ((F0 * h) ** 2)
-        veg = (value(p, F0, 0.01) - value(p, F0)) if p["type"] != "fut" else 0.0   # 每 +1 vol pt
-        th = (value(p, F0, 0, 1) - value(p, F0)) if p["type"] != "fut" else 0.0    # 每過 1 曆日
+        veg = (value(p, F0, 0.01) - value(p, F0)) if p["type"] != "fut" else 0.0
+        th = (value(p, F0, 0, 1) - value(p, F0)) if p["type"] != "fut" else 0.0
         k = p["qty"] * p["mult"] * fx[p["ccy"]]
         o = out.setdefault(p["und"], {"d1pct": 0.0, "dpts": 0.0, "vega": 0.0, "gamma1pct": 0.0, "theta": 0.0})
         o["dpts"] += up * k
@@ -96,134 +162,181 @@ def greeks(b, fx):
         o["vega"] += veg * k
         o["theta"] += th * k
         o["gamma1pct"] += gam * k * (F0 * 0.01) ** 2 * 0.5
-    return out
+        unit, m, cur = LOT[p["und"]]
+        g = p.get("group", p["id"])
+        grp[g] = grp.get(g, (p["und"], 0.0))[0], grp.get(g, (p["und"], 0.0))[1] + up * k / (m * fx[cur])
+    return out, grp
+
+
+def group_delta_at(b, fx, und, groups, r):
+    """標的變動 r 之後，指定組別嘅淨 Δ（手）。"""
+    unit, m, cur = LOT[und]
+    tot = 0.0
+    for p in b["positions"]:
+        if p["und"] != und or p.get("group", p["id"]) not in groups:
+            continue
+        F = b["underlyings"][und]["F"] * (1 + r)
+        sh = b["skew"][und][0] * log(1 + r)
+        h = 0.005
+        d = (value(p, F * (1 + h), sh) - value(p, F * (1 - h), sh)) / (2 * F * h)
+        tot += d * p["qty"] * p["mult"] / m
+    return tot
+
+
+def f(x, nd=2):
+    return "—" if x is None else (f"{x:,.{nd}f}".rstrip("0").rstrip(".") if isinstance(x, float) else str(x))
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--book", default=str(HERE / "data_external" / "risk_book.json"))
+    dq = HERE / "data_external" / "futu_positions.json"
+    ap.add_argument("--quotes", default=str(dq) if dq.exists() else "", help="futu_positions_quote.py 輸出（真實買賣價）")
     ap.add_argument("--md", default="")
     a = ap.parse_args()
-    b, fx = load(a.book)
+    b, fx = load(a.book, a.quotes or None)
     nav, hs = b["nav_hkd"], b["hard_stop_equity_hkd"]
-    budget = nav - hs
+    tot0, grp0 = pnl_hkd(b, fx, {})
+    totm, _ = pnl_hkd(b, fx, {}, px="mid")
+    acc = next((x for x in b["accounts"] if (x.get("total_assets") or 0) > 0 and x.get("currency", "HKD") == "HKD"), None)
+    eq0 = acc["total_assets"] if acc else nav + tot0
+    budget = eq0 - hs
     L = []
     P = L.append
-    P(f"# 持倉風險報告（資料時點 {b['asof']}）")
-    P(f"NAV 假設 HK${nav:,.0f}；硬止損權益 < HK${hs:,.0f}（可承受總虧損 HK${budget:,.0f}）；USD/HKD {fx['USD']}\n")
+    P(f"# 持倉風險報告")
+    P(f"持倉：{b['asof']}（{b['source']}）")
+    P(f"報價：{'富途 OpenD 快照 ' + b['quotes_fetched'] + ' HKT' if b['quotes_fetched'] else '冇報價檔 → 用截圖價（未係真實買賣價）'}")
+    P(f"硬止損：權益 < HK${hs:,.0f}。"
+      + (f"**實際權益（富途）HK${eq0:,.0f}**" if acc else f"權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}")
+      + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}\n")
 
-    P("## 1. 現況盈虧")
-    tot, grp = pnl_hkd(b, fx, {})
-    raw_hkd = sum((p["price"] - p["open"]) * p["qty"] * p["mult"] for p in b["positions"] if p["ccy"] == "HKD")
-    raw_usd = sum((p["price"] - p["open"]) * p["qty"] * p["mult"] for p in b["positions"] if p["ccy"] == "USD")
-    for g, v in grp.items():
-        P(f"- {g}：{v:+,.0f} HKD")
-    P(f"- **模型標價合共 {tot:+,.0f} HKD**（stale 腿用 parity）")
-    P(f"- 純用 Futu 最後成交價：HKD 腿 {raw_hkd:+,.0f}、USD 腿 {raw_usd:+,.2f} USD → @{fx['USD']} 合共 {raw_hkd + raw_usd * fx['USD']:+,.0f} HKD")
-    fs = b.get("futu_screenshot", {}).get("holding_pl_hkd")
-    if fs and raw_usd:
-        P(f"- 對帳：Futu 截圖 {fs:+,.2f}；用最後成交價反推 Futu 匯率 ≈ {(fs - raw_hkd) / raw_usd:.4f}。"
-          "差額全部來自 ① stale 腿改用模型標價 ② 匯率")
+    P("## 1. 價格來源（每腿）")
+    P("| 持倉 | 富途代碼 | 買價 | 賣價 | 中間價 | 最後成交 | 報價時間 HKT | 用嚟平倉嘅價 | 來源 |")
+    P("|---|---|---:|---:|---:|---:|---|---:|---|")
     for p in b["positions"]:
-        if p["mark_px"] != p["price"]:
-            P(f"  - {p['id']}：最後成交 {p['price']:g} → 標價 {p['mark_px']:g}（{p['mark']['method']}；"
-              f"影響 {(p['mark_px'] - p['price']) * p['qty'] * p['mult'] * fx[p['ccy']]:+,.0f} HKD）")
+        P(f"| {p['id']} | {p['code'] or '未知'} | {f(p['bid'])} | {f(p['ask'])} | {f(p['mid'])} | {f(p['last'])} | {p['qtime'] or '—'} "
+          f"| {p['close_px']:,.2f} | {p['basis']} |")
+    for u, d in b["underlyings"].items():
+        P(f"- 標的 {u}：F = {d['F']:,.2f}（{d['F_src']}）")
     P("")
 
-    P("## 2. 名義值、到期、交收")
+    P("## 2. 現況盈虧（由開倉起計）")
+    for g, v in grp0.items():
+        P(f"- {g}：{v:+,.0f} HKD")
+    P(f"- **合共（空倉用賣價買回）{tot0:+,.0f} HKD**；用中間價 {totm:+,.0f} HKD（差額＝買賣差成本 {totm - tot0:,.0f}）")
+    fs = b.get("futu_screenshot", {}).get("holding_pl_hkd") or 12770.97
+    P(f"- 對照：Futu 截圖持倉盈虧 +{fs:,.0f}（Futu 用最後成交價計，唔係平倉價）")
+    if acc:
+        P(f"- 保證金（富途）：初始 {f(acc.get('initial_margin'), 0)}、維持 {f(acc.get('maintenance_margin'), 0)}、現金 {f(acc.get('cash'), 0)}"
+          + (f"；權益 / 維持保證金 = {acc['total_assets'] / acc['maintenance_margin']:.2f} 倍" if acc.get("maintenance_margin") else ""))
+    else:
+        P("- 保證金：未攞到（要 OpenD 登入 ID 改啱後先讀到富途資金）")
+    P("")
+
+    P("## 3. 名義值、到期、交收")
     for p in b["positions"]:
         if p["type"] == "fut":
             continue
         n = p["K"] * p["mult"] * fx[p["ccy"]]
-        iv = f"IV {p['iv'] * 100:.1f}%" + (f"（stale 價反推 {p['iv_raw'] * 100:.1f}%）" if "iv_raw" in p else "")
-        P(f"- {p['id']}：名義 HK${n:,.0f}（{n / nav:.1f}× NAV），{p['exp']}（{round(p['T'] * 365)} 天），{iv}"
-          + (f"；交收 {p['settle']}" if p.get("settle") else "")
-          + (f"  ⚠ {p['flag']}" if p.get("flag") else ""))
+        P(f"- {p['id']}：名義 HK${n:,.0f}（{n / nav:.1f}× NAV），{p['exp']}（{round(p['T'] * 365)} 天），IV {p['iv'] * 100:.1f}%（{p['iv_src']}）"
+          + (f"；{p['settle']}" if p.get("settle") else (
+              "；到期 ITM 交收成期貨（實物）" if p["und"] == "ES" else "；現金結算")))
     P("")
-    ew = next((p for p in b["positions"] if p["id"].startswith("EW")), None)
-    if ew:
-        P("### 2b. EW 到期日合理性（同一現價、唔同到期日反推 IV）")
-        F = b["underlyings"][ew["und"]]["F"]
-        val = date.fromisoformat(b["valuation_date"])
-        ref = [f"{p['id']} {p['iv'] * 100:.1f}%" for p in b["positions"] if p["und"] == ew["und"] and p is not ew and p["type"] != "fut"]
-        for d in ("2026-10-16", "2026-10-23", "2026-10-30", "2026-11-20"):
-            T = (date.fromisoformat(d) - val).days / 365
-            P(f"- 若到期 {d}：IV {implied(ew['price'], F, ew['K'], T, ew['type']) * 100:.1f}%")
-        P(f"- 參考同標的：{'、'.join(ref)}。價外 1.4% 嘅 put 有正斜率，IV 應略高於價平但唔會翻倍 → 10/30 最吻合；"
-          "Δ 對到期日唔敏感（價格固定時 σ√T 不變），所以 Futu Δ 不能用嚟分辨到期日。\n")
 
-    P("## 3. Greeks（合共，HKD）")
-    for u, o in greeks(b, fx).items():
-        P(f"- {u}：Δ 每 1% 變動 {o['d1pct']:+,.0f}；每點 {o['dpts']:+,.1f}；Γ 效應（1% 變動）{o['gamma1pct']:+,.0f}；"
+    P("## 4. IV 斜率")
+    for u, (sl, src) in b["skew"].items():
+        P(f"- {u}：dIV/dln(K/F) = {sl:+.2f}（{src}）→ 標的每跌 1%，固定行使價 IV 約升 {-sl * 1:.2f} vol pt（舊規則 0.5）")
+    P("- ⚠ 擬合混合咗唔同到期日（週權／月權），期限結構會令斜率偏大或偏細；只作近似。\n")
+
+    P("## 5. Greeks（合共，HKD）")
+    gk, gd = greeks(b, fx)
+    for u, o in gk.items():
+        unit, m, cur = LOT[u]
+        P(f"- {u}：Δ 每 1% {o['d1pct']:+,.0f}；＝ {o['dpts'] / (m * fx[cur]):+.2f} 手 {unit}；Γ 效應（1%）{o['gamma1pct']:+,.0f}；"
           f"Vega 每 +1 vol {o['vega']:+,.0f}；Θ 每日 {o['theta']:+,.0f}")
+    P("- 分組 Δ（手）：" + "；".join(f"{g} {d:+.2f} {LOT[u][0]}" for g, (u, d) in gd.items()))
     P("")
 
-    P("## 4. 止損線（買回總價 ≥ 2×權利金）")
-    px = {p["id"]: p["mark_px"] for p in b["positions"]}
+    P("## 6. 止損線（買回總價 ≥ 2×權利金，用平倉價）")
+    px = {p["id"]: p["close_px"] for p in b["positions"]}
     for name, s in b["stops"].items():
         bb = sum(px[i] for i in s["legs"])
-        P(f"- {name}：買回約 {bb:.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%；權利金 {s['credit']}）")
-    P("- HSI 週權 strangle、EW P7750：**冇登記止損規則**（開倉計劃喺其他分支，見 RISK_HANDOFF）")
-    P("")
+        P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）")
+    P("- HSI 週權 strangle、EW P7750：**冇止損規則**（唔係雲垂陣劇本）\n")
 
-    P("## 5. 壓力測試（即時重估）")
-    P("下跌時每跌 1% 加 0.5 vol pt（偏斜近似）。**總盈虧＝由開倉起計；權益＝NAV＋總盈虧。**\n")
-    P("| 情景 | 總盈虧 HKD | 權益 HKD | 離硬止損 | 備註 |")
-    P("|---|---:|---:|---:|---|")
+    P("## 7. 壓力測試")
+    P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")
+    P("| 情景 | 盈虧變動 HKD | 權益 HKD | 離硬止損 | 舊規則權益 | 備註 |")
+    P("|---|---:|---:|---:|---:|---|")
     for name, sh, va, dd in (
-        ("現況", {}, 0, 0),
         ("ES −2%", {"ES": -.02}, 0, 0), ("ES −3%", {"ES": -.03}, 0, 0), ("ES −5%", {"ES": -.05}, 0, 0),
         ("ES +3%", {"ES": .03}, 0, 0),
         ("HSI +2%", {"HSI": .02}, 0, 0), ("HSI +3%", {"HSI": .03}, 0, 0), ("HSI +5%", {"HSI": .05}, 0, 0),
         ("HSI −3%", {"HSI": -.03}, 0, 0), ("HSI −5%", {"HSI": -.05}, 0, 0),
         ("兩邊同跌 −3%", {"HSI": -.03, "ES": -.03}, 0, 0),
-        ("兩邊同跌 −5%", {"HSI": -.05, "ES": -.05}, 0, 0),
         ("HSI +3%、ES −3%", {"HSI": .03, "ES": -.03}, 0, 0),
         ("IV 全面 +5 vol", {}, .05, 0),
         ("ES −3% 且 IV +5 vol", {"ES": -.03}, .05, 0),
         ("價不變，過 3 日（週一收市）", {}, 0, 3),
-        ("價不變，過 6 日（10/16 週權到期）", {}, 0, 6),
+        ("價不變，過 6 日（10/16 到期）", {}, 0, 6),
         ("過 3 日且 ES −3%", {"ES": -.03}, 0, 3),
     ):
         t, _ = pnl_hkd(b, fx, sh, vol_add=va, days=dd)
-        gap = nav + t - hs
+        t_old, _ = pnl_hkd(b, fx, sh, vol_add=va, days=dd, skew="old")
+        d, eq = t - tot0, eq0 + t - tot0
+        gap = eq - hs
         note = "⚠ 已觸硬止損" if gap < 0 else ("⚠ 近硬止損" if gap < 0.3 * budget else "")
-        P(f"| {name} | {t:+,.0f} | {nav + t:,.0f} | {gap:+,.0f} | {note} |")
+        P(f"| {name} | {d:+,.0f} | {eq:,.0f} | {gap:+,.0f} | {eq0 + t_old - tot0:,.0f} | {note} |")
     P("")
 
-    P("## 6. 觸及硬止損所需變動（逐單一市場掃描）")
+    P("## 8. 觸及硬止損所需變動（單一市場）")
     for und, sign, lab in (("ES", -1, "ES 下跌"), ("ES", 1, "ES 上升"), ("HSI", 1, "HSI 上升"), ("HSI", -1, "HSI 下跌")):
         hit = None
         for k in range(1, 101):
             r = sign * k / 200
             t, _ = pnl_hkd(b, fx, {und: r})
-            if nav + t < hs:
+            if eq0 + t - tot0 < hs:
                 hit = r
                 break
         F0 = b["underlyings"][und]["F"]
-        P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）觸硬止損" if hit else "50% 內唔觸及"))
+        P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）" if hit else "50% 內唔觸及"))
     P("")
 
-    P("## 7. 雙市場格（權益 HKD；✗＝低於硬止損）")
+    P("## 9. 雙市場格（權益 HKD；✗＝低於硬止損）")
     steps = (-.05, -.04, -.03, -.02, -.01, 0, .01, .02, .03)
     P("| HSI ＼ ES | " + " | ".join(f"{s * 100:+.0f}%" for s in steps) + " |")
     P("|---|" + "---:|" * len(steps))
     for h in (-.05, -.03, -.01, 0, .01, .03, .05):
         cells = []
         for e in steps:
-            t, _ = pnl_hkd(b, fx, {"HSI": h, "ES": e})
-            cells.append(f"{(nav + t) / 1000:,.0f}k" + (" ✗" if nav + t < hs else ""))
+            t, _ = pnl_hkd(b, fx, {"HSI": h, "ES": e}) if (h or e) else (tot0, None)
+            eq = eq0 + t - tot0
+            cells.append(f"{eq / 1000:,.0f}k" + (" ✗" if eq < hs else ""))
         P(f"| HSI {h * 100:+.0f}% | " + " | ".join(cells) + " |")
     P("")
 
-    P("## 8. 假設與限制")
-    P("- 每腿 IV 由現價各自反推（已包含當刻斜率）；壓力情景用固定斜率近似（跌 1% 加 0.5 vol），未模擬 sticky-delta。")
-    P("- 冇計保證金追繳（SPAN 由交易所／券商計，請以富途「維持保證金」為準）、冇計滑價及夜市流動性。")
-    P("- MES／EW 到期 ITM 會交收成期貨（實物），唔係現金結算；到期前要決定平倉或轉倉。")
-    P("- 對沖腳舊倉買回價未知 → 已實現盈虧未計（見 position.json hedge_history）。")
+    P("## 10. 同劇本衝突")
+    pb = b.get("playbook", PLAYBOOK)
+    for name, r in pb.items():
+        d0 = group_delta_at(b, fx, r["und"], r["groups"], 0)
+        st = "❌ 超出" if abs(d0) > r["band"] else ("⚠ 接近" if abs(d0) > 0.8 * r["band"] else "✅ 界線內")
+        P(f"- {name}：淨 Δ {d0:+.2f} 手（界線 ±{r['band']}）{st}")
+        for sign, lab in ((1, "上升"), (-1, "下跌")):
+            hit = next((sign * k / 1000 for k in range(1, 201) if abs(group_delta_at(b, fx, r["und"], r["groups"], sign * k / 1000)) > r["band"]), None)
+            P(f"  - {r['und']} {lab}" + (f" {abs(hit) * 100:.1f}%（≈ {b['underlyings'][r['und']]['F'] * (1 + hit):,.0f}）就超出界線" if hit else " 20% 內唔超出"))
+    hs_all = gk["HSI"]["dpts"] / 10
+    P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
+    P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則；EW P7750 名義 3.8× NAV，係觸硬止損嘅主因。")
+    P("")
+
+    P("## 11. 假設與限制")
+    P("- 模型同報價之間嘅差（買賣差）喺壓力情景保留不變；夜市買賣差通常較闊。")
+    P("- 冇計保證金追繳時點、滑價、跳空；MES／EW 到期 ITM 交收成期貨。")
+    P("- 對沖腳舊倉買回價未知 → 已實現盈虧未計。EW／MES 冇富途代碼時用截圖價。")
     txt = "\n".join(L)
     print(txt)
     if a.md:
+        Path(a.md).parent.mkdir(parents=True, exist_ok=True)
         Path(a.md).write_text(txt + "\n", encoding="utf-8")
 
 
