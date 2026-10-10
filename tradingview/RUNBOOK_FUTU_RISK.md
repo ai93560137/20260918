@@ -83,3 +83,47 @@ python gcp_ib\futu_positions_quote.py --deals HK.MHI2610 --since 2026-10-01
 ## API 始終讀唔到持倉
 
 富途 App →「持倉 → 期貨」截圖貼入對話，Claude 解析做 `risk_book.json` 格式（只喺本機用，唔 commit）。
+
+## 7. 自動：定時讀持倉＋報價＋計風險（`gcp_ib\auto_risk.py`）
+
+只讀、唔落單。結果寫喺 `tradingview\out\`（`risk_report_live.md`、`risk_history.csv`），唔會 commit。
+警報（富途保證金緩衝 < 10 萬、止損用量 ≥ 80%、雲垂 Δ 超 ±0.5、合計權益低過硬止損、讀富途失敗）只喺**出現／解除**時先發 Telegram。
+
+第一次設定（設完要關咗 PowerShell 再開）：
+
+```powershell
+setx ZHUGE_COMBINED_EQUITY 2520339
+```
+
+想收 Telegram 就再設（同其他通知用同一個 bot；token 只放喺你部機，唔好貼入對話）：
+
+```powershell
+setx TG_BOT_TOKEN "你的 bot token"
+setx TG_CHAT_ID "你的 chat id"
+```
+
+先試一次：
+
+```powershell
+python gcp_ib\auto_risk.py --once
+```
+
+之後開住一個 PowerShell 視窗一直跑（每 15 分鐘；週末自動停；Ctrl+C 停止）：
+
+```powershell
+python gcp_ib\auto_risk.py --every 15
+```
+
+想開機登入就自動跑（Windows 工作排程器；要停用：`schtasks /Delete /TN ZhugeAutoRisk /F`）：
+
+```powershell
+$py = (Get-Command python).Source
+schtasks /Create /TN ZhugeAutoRisk /SC ONLOGON /RL LIMITED /TR "`"$py`" `"$PWD\gcp_ib\auto_risk.py`" --every 15"
+```
+
+睇最新結果：
+
+```powershell
+Get-Content tradingview\out\risk_report_live.md -Encoding utf8 | Select-Object -First 12
+Get-Content tradingview\out\risk_history.csv -Tail 5
+```

@@ -202,32 +202,28 @@ def f(x, nd=2):
     return "—" if x is None else (f"{x:,.{nd}f}".rstrip("0").rstrip(".") if isinstance(x, float) else str(x))
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--book", default=str(HERE / "data_external" / "risk_book.json"))
-    dq = HERE / "data_external" / "futu_positions.json"
-    ap.add_argument("--quotes", default=str(dq) if dq.exists() else "", help="futu_positions_quote.py 輸出（真實買賣價）")
-    ap.add_argument("--combined-equity", type=float, default=None,
-                    help="幾個戶口合計權益 HKD（硬止損按合計計）；唔填＝book 假設 NAV＋持倉盈虧")
-    ap.add_argument("--md", default="")
-    a = ap.parse_args()
-    b, fx = load(a.book, a.quotes or None)
+def build(book, quotes=None, combined_equity=None):
+    """出報告。回傳 (報告文字, 主要指標 dict)；auto_risk.py 用指標判斷警報。"""
+    b, fx = load(book, quotes or None)
+    M = {"stop_use": {}, "delta": {}, "margin_hit": {}}
     nav, hs = b["nav_hkd"], b["hard_stop_equity_hkd"]
     tot0, grp0 = pnl_hkd(b, fx, {})
     totm, _ = pnl_hkd(b, fx, {}, px="mid")
     acc = next((x for x in b["accounts"] if (x.get("total_assets") or 0) > 0 and x.get("currency", "HKD") == "HKD"), None)
-    eq0 = a.combined_equity if a.combined_equity else nav + tot0
+    eq0 = combined_equity if combined_equity else nav + tot0
     budget = eq0 - hs
+    M.update(quotes_fetched=b["quotes_fetched"], pnl=tot0, equity=eq0, hard_stop=hs, gap=budget)
     L = []
     P = L.append
     P(f"# 持倉風險報告")
     P(f"持倉：{b['asof']}（{b['source']}）")
     P(f"報價：{'富途 OpenD 快照 ' + b['quotes_fetched'] + ' HKT' if b['quotes_fetched'] else '冇報價檔 → 用截圖價（未係真實買賣價）'}")
     P(f"硬止損：權益 < HK${hs:,.0f}。"
-      + (f"**合計權益（你提供）HK${eq0:,.0f}**" if a.combined_equity else f"合計權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}（用 --combined-equity 填實數）")
+      + (f"**合計權益（你提供）HK${eq0:,.0f}**" if combined_equity else f"合計權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}（用 --combined-equity 填實數）")
       + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}")
     if acc:
         cush = acc["total_assets"] - (acc.get("maintenance_margin") or 0)
+        M.update(futu_equity=acc["total_assets"], cushion=cush)
         P(f"富途期貨戶口：權益 HK${acc['total_assets']:,.0f}，維持保證金 HK${acc.get('maintenance_margin') or 0:,.0f}，"
           f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
     P("")
@@ -283,6 +279,7 @@ def main():
     px = {p["id"]: p["close_px"] for p in b["positions"]}
     for name, s in b["stops"].items():
         bb = sum(px[i] for i in s["legs"])
+        M["stop_use"][name] = bb / s["stop_buyback"]
         P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）")
     P("- HSI 週權 strangle、EW P7750：**冇止損規則**（唔係雲垂陣劇本）\n")
 
@@ -336,6 +333,7 @@ def main():
                     hit = r
                     break
             F0 = b["underlyings"][und]["F"]
+            M["margin_hit"][lab] = hit
             P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）" if hit else "50% 內唔跌穿"))
     P("")
 
@@ -356,6 +354,7 @@ def main():
     pb = b.get("playbook", PLAYBOOK)
     for name, r in pb.items():
         d0 = group_delta_at(b, fx, r["und"], r["groups"], 0)
+        M["delta"][name] = (d0, r["band"])
         st = "❌ 超出" if abs(d0) > r["band"] else ("⚠ 接近" if abs(d0) > 0.8 * r["band"] else "✅ 界線內")
         P(f"- {name}：淨 Δ {d0:+.2f} 手（界線 ±{r['band']}）{st}")
         for sign, lab in ((1, "上升"), (-1, "下跌")):
@@ -373,7 +372,19 @@ def main():
     P("- 冇計保證金追繳時點、滑價、跳空；MES／EW 到期 ITM 交收成期貨。")
     P("- 只計持倉由開倉起嘅盈虧；已平倉嘅已實現盈虧（例如 10/6 對沖 10/7 以 23,987 買回）唔計，查成交用 --deals。")
     P("- 冇報價嘅腿（例如 CME 期權冇行情權限）用富途持倉估值或截圖價，即係上一個收市價，唔係即時價。")
-    txt = "\n".join(L)
+    return "\n".join(L), M
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--book", default=str(HERE / "data_external" / "risk_book.json"))
+    dq = HERE / "data_external" / "futu_positions.json"
+    ap.add_argument("--quotes", default=str(dq) if dq.exists() else "", help="futu_positions_quote.py 輸出（真實買賣價）")
+    ap.add_argument("--combined-equity", type=float, default=None,
+                    help="幾個戶口合計權益 HKD（硬止損按合計計）；唔填＝book 假設 NAV＋持倉盈虧")
+    ap.add_argument("--md", default="")
+    a = ap.parse_args()
+    txt, _ = build(a.book, a.quotes, a.combined_equity)
     print(txt)
     if a.md:
         Path(a.md).parent.mkdir(parents=True, exist_ok=True)
