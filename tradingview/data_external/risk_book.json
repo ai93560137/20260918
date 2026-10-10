@@ -1,0 +1,147 @@
+{
+ "asof": "2026-10-10 18:55 HKT",
+ "source": "富途期貨持倉截圖（使用者貼出）。price＝Futu 現價（最後成交）；open＝開倉價。",
+ "nav_hkd": 800000,
+ "hard_stop_equity_hkd": 750000,
+ "fx": {
+  "USD": 7.85,
+  "HKD": 1.0
+ },
+ "valuation_date": "2026-10-10",
+ "underlyings": {
+  "HSI": {
+   "F": 24365,
+   "note": "MHI2610 夜市收市 24,363/24,365（Futu，10/10 02:59 HKT）"
+  },
+  "ES": {
+   "F": 7862,
+   "note": "ES 期貨 10/9 16:00 ET 收市（延遲價）"
+  }
+ },
+ "positions": [
+  {
+   "id": "MHI2610 對沖",
+   "und": "HSI",
+   "type": "fut",
+   "qty": -1,
+   "mult": 10,
+   "ccy": "HKD",
+   "open": 24200,
+   "price": 24365,
+   "flag": "使用者確認：平咗 10/6 舊倉（24,252）再喺 24,200 重新賣；舊倉買回價待補（影響已實現盈虧，未計入）"
+  },
+  {
+   "id": "MHI 10/29 C25000",
+   "und": "HSI",
+   "type": "call",
+   "K": 25000,
+   "exp": "2026-10-29",
+   "qty": -1,
+   "mult": 10,
+   "ccy": "HKD",
+   "open": 600,
+   "price": 118,
+   "group": "HSI 月跨式"
+  },
+  {
+   "id": "MHI 10/29 P25000",
+   "und": "HSI",
+   "type": "put",
+   "K": 25000,
+   "exp": "2026-10-29",
+   "qty": -1,
+   "mult": 10,
+   "ccy": "HKD",
+   "open": 508,
+   "price": 728,
+   "group": "HSI 月跨式",
+   "flag": "Put 現價 728 係 10/9 21:51 最後成交，夜市冇賣價；IV 用 Call IV＋0.7 估"
+  },
+  {
+   "id": "HSI 10/16 C24900",
+   "und": "HSI",
+   "type": "call",
+   "K": 24900,
+   "exp": "2026-10-16",
+   "qty": -1,
+   "mult": 50,
+   "ccy": "HKD",
+   "open": 36,
+   "price": 36,
+   "group": "HSI 週權 strangle",
+   "flag": "新倉，現價＝開倉價；使用者話係其他分支叫佢開（我睇唔到嗰邊嘅計劃／止損規則）"
+  },
+  {
+   "id": "HSI 10/16 P23750",
+   "und": "HSI",
+   "type": "put",
+   "K": 23750,
+   "exp": "2026-10-16",
+   "qty": -1,
+   "mult": 50,
+   "ccy": "HKD",
+   "open": 46,
+   "price": 46,
+   "group": "HSI 週權 strangle",
+   "flag": "新倉，現價＝開倉價；使用者話係其他分支叫佢開（我睇唔到嗰邊嘅計劃／止損規則）"
+  },
+  {
+   "id": "MES 10/16 C7830",
+   "und": "ES",
+   "type": "call",
+   "K": 7830,
+   "exp": "2026-10-16",
+   "qty": -1,
+   "mult": 5,
+   "ccy": "USD",
+   "open": 88.75,
+   "price": 58.75,
+   "group": "MES 跨式"
+  },
+  {
+   "id": "MES 10/16 P7830",
+   "und": "ES",
+   "type": "put",
+   "K": 7830,
+   "exp": "2026-10-16",
+   "qty": -1,
+   "mult": 5,
+   "ccy": "USD",
+   "open": 89.75,
+   "price": 29.0,
+   "group": "MES 跨式"
+  },
+  {
+   "id": "EW2610 P7750",
+   "und": "ES",
+   "type": "put",
+   "K": 7750,
+   "exp": "2026-10-30",
+   "qty": -1,
+   "mult": 50,
+   "ccy": "USD",
+   "open": 68,
+   "price": 47,
+   "group": "標普 E-mini put",
+   "flag": "到期日 10/30 係推測（EW＝疑似月底到期 EOM），待確認；使用者話係其他分支叫佢開（我睇唔到嗰邊嘅計劃／止損規則）"
+  }
+ ],
+ "stops": {
+  "HSI 月跨式": {
+   "credit": 1108,
+   "stop_buyback": 2216,
+   "legs": [
+    "MHI 10/29 C25000",
+    "MHI 10/29 P25000"
+   ]
+  },
+  "MES 跨式": {
+   "credit": 178.5,
+   "stop_buyback": 357,
+   "legs": [
+    "MES 10/16 C7830",
+    "MES 10/16 P7830"
+   ]
+  }
+ }
+}
