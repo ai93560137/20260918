@@ -100,6 +100,39 @@ allt = [t for v in st["variants"].values() for t in v["trades"]]
 check("規則都走過：有加滿 4 張、有止賺、有止蝕", any(t["lots"] == 4 for t in allt) and {"tp", "sl"} <= {t["reason"] for t in allt},
       sorted({(t["reason"], t["lots"]) for t in allt}))
 
+print("=== 1b. [R145] 地載・穩60（60 分 RSI）跟研究 dizai_more.tf_signals＋run_seq 一致 ===")
+import dizai_more as dm
+_st = random.getstate()
+random.seed(21)
+def make60(n_days=160, start="2025-06-02", px=24000.0):
+    """每日 09:16 起 600 根 1 分 K（跨幾個小時），一半日子先急升／急跌再回頭，令 60 分 RSI 會到 80／20 再轉向。"""
+    out, dd, d = [], [], datetime.strptime(start, "%Y-%m-%d")
+    while len(dd) < n_days:
+        if d.weekday() < 5:
+            dd.append(d.strftime("%Y-%m-%d"))
+            px *= 1 + random.gauss(0, 0.004)
+            sgn, strong = random.choice([-1, 1]), random.random() < 0.5
+            t = d.replace(hour=9, minute=16)
+            for k in range(600):
+                o = px
+                drift = (sgn * 2.2 if k < 300 else -sgn * 1.6) if strong else random.gauss(0, 0.3)
+                px = max(5000.0, px + drift + random.gauss(0, 10))
+                out.append({"time_key": (t + timedelta(minutes=k)).strftime("%Y-%m-%d %H:%M:%S"), "open": round(o),
+                            "high": round(max(o, px) + abs(random.gauss(0, 4))), "low": round(min(o, px) - abs(random.gauss(0, 4))),
+                            "close": round(px), "volume": 10})
+        d += timedelta(days=1)
+    return dd, out
+d60, raw60 = make60()
+random.setstate(_st)
+b60s = rad.clean(raw60); D60 = ds.prepare(b60s)
+rows60 = [{"date": d_, "high": float(D60["h"][s_:e_].max()), "low": float(D60["l"][s_:e_].min()), "close": float(D60["c"][e_ - 1])}
+          for d_, s_, e_ in zip(D60["days"], D60["starts"], D60["ends"])]
+st60 = main.dizai_new_state(d60[0]); main.dizai_advance(st60, b60s, main._dz_ctx_fn(rows60))
+ref60 = [x for x in dm.run_seq(D60, dm.tf_signals(D60, "confirm", 60), 0.75, 30, 1000) if x["reason"] != "open"]
+a60 = [(D60["tk"][x["fills"][0][0]], x["side"], x["reason"], x["lots"], round(x["pnl"], 1)) for x in ref60]
+b60 = [(t_["entry_tk"], 1 if t_["side"] == "買" else -1, t_["reason"], t_["lots"], round(t_["pnl"], 1)) for t_ in st60["variants"]["steady60"]["trades"]]
+check(f"穩60：研究 {len(a60)} 筆、引擎 {len(b60)} 筆，逐筆相同", a60 == b60 and len(a60) >= 3, (a60[:3], b60[:3]))
+
 print("=== 2. 分段推進 = 一次推進 ===")
 st2 = main.dizai_new_state(days[0])
 cuts = sorted(random.sample(range(1, len(bars)), 25))
@@ -153,7 +186,7 @@ check("頁面：四組、今日策略、前向、八年回測、curve fitting �
        "不構成任何投資建議", "RRR", "期權保護", "Sharpe")), html[:300])
 check("頁面公開、導覽列有地載陣", "nav-current'>⛰️ 地載陣" in html)
 j = client.get("/?view=dizai&format=json").get_json()
-check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold", "steady_nq", "bold_nq", "bold_protected"}
+check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold", "steady_nq", "bold_nq", "steady60", "bold_protected"}
       and all("worst_rrr" in v for v in j["stats"].values()))
 
 print("=== 4. 持倉顯示 ===")
