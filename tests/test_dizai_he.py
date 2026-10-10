@@ -96,7 +96,14 @@ a = [(D["days"][r[0]], r[3], r[2], round(r[1], 1)) for r in ref]
 b = [(main.futu_session_of(t["entry_tk"], SYM), 1 if t["side"] == "買" else -1, t["reason"], round(t["pnl"], 1)) for t in st["trades"]]
 check(f"研究 {len(a)} 筆、引擎 {len(b)} 筆，逐筆相同", a == b and len(a) >= 10, next(((x, y) for x, y in zip(a, b) if x != y), (len(a), len(b))))
 check("止賺、止蝕、收市都出現", {"tp", "sl", "close"} <= {t["reason"] for t in st["trades"]}, {t["reason"] for t in st["trades"]})
-check("突破V 不產生通知", not st.get("notices"))
+kinds = [n_["kind"] for n_ in st.get("notices") or []]
+check("突破V 通知：開閘（OCO）、開倉、平倉都有，數目對得上", kinds.count("open") == len(st["trades"]) + (1 if st["pos"] else 0)
+      and kinds.count("tp") + kinds.count("sl") + kinds.count("close") == len(st["trades"]) and kinds.count("gate") >= kinds.count("open"),
+      {k_: kinds.count(k_) for k_ in set(kinds)})
+g_ = next(n_["text"] for n_ in st["notices"] if n_["kind"] == "gate"); o_ = next(n_["text"] for n_ in st["notices"] if n_["kind"] == "open")
+check("突破V 落單格式：OCO 兩張止損單、成交後止賺限價／止蝕止損", "掛 OCO" in g_ and "買入止損 1 張" in g_ and "沽出止損 1 張" in g_
+      and "止賺：限價" in o_ and "止蝕：止損" in o_ and o_.startswith("【地載陣・突破V】"), (g_, o_))
+print("--- 突破V gate ---\n" + g_ + "\n--- 突破V open ---\n" + o_)
 check("VHSI 一年 75 分位跟 numpy 一樣", abs(main._pct_linear(list(range(1, 253)), 75) - float(np.percentile(np.arange(1, 253), 75))) < 1e-9)
 rowsv = [(f"2025-{(i // 28) + 1:02d}-{(i % 28) + 1:02d}", 10 + (i % 17)) for i in range(300)]
 fv = main.dizai_vhsi_fn(rowsv)
