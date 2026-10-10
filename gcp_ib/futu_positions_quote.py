@@ -46,7 +46,7 @@ def positions(ctx_cls, label, **kw):
             print(f"  帳戶類型={a.get('acc_type')} 環境={a.get('trd_env')} 市場權限={a.get('trdmarket_auth')} 狀態={a.get('acc_status')}")
             if str(a.get("trd_env")) != "REAL":
                 continue
-            ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=int(a["acc_id"]))
+            ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=int(a["acc_id"]), refresh_cache=True)
             if ret != RET_OK:
                 print(f"{label}: 持倉查詢失敗（帳戶類型 {a.get('acc_type')}）：{df}")
                 continue
@@ -66,7 +66,17 @@ def positions(ctx_cls, label, **kw):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-push", action="store_true")
+    ap.add_argument("--codes", nargs="*", default=[], help="備用：唔讀持倉，直接查指定合約代碼嘅買賣盤，如 HK.MHI2610")
     a = ap.parse_args()
+
+    if a.codes:
+        q = OpenQuoteContext(host="127.0.0.1", port=11111)
+        try:
+            ret, snap = q.get_market_snapshot(a.codes)
+            print(snap[[c for c in ("code", "name", "bid_price", "ask_price", "last_price", "update_time") if c in snap.columns]] if ret == RET_OK else snap)
+        finally:
+            q.close()
+        return
 
     rows = positions(OpenFutureTradeContext, "期貨帳戶")
     rows += positions(OpenSecTradeContext, "證券帳戶-HK", filter_trdmarket=TrdMarket.HK)
