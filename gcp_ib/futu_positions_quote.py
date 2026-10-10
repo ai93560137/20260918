@@ -2,6 +2,7 @@
 """富途持倉買賣盤快照：讀你嘅持倉 → 取每個合約嘅買價／賣價／中間價 → 寫 tradingview/data_external/futu_positions.json 並 push。
 跑在使用者嘅 GCP VM（OpenD 同機），不在沙盒。純讀取：只用 position_list_query + get_market_snapshot，
 不 unlock_trade、不落單、不改單。帳戶號碼唔會寫入輸出檔。
+逐個真實帳戶（期貨／證券）讀持倉；同一合約出現多次會重覆列出。
 前置：VM 已裝 OpenD 並登入（登入／驗證碼你自己喺 VM 做，唔好貼畀 Claude）；pip install futu-api。
 用法：python3 gcp_ib/futu_positions_quote.py [--no-push]
 """
@@ -27,25 +28,33 @@ def num(x):
         return None
 
 
-def positions(ctx_cls, market):
+def positions(ctx_cls, label, **kw):
+    """逐個真實帳戶讀持倉（唔假設邊個帳戶，因為 HSI/MHI 期權通常喺期貨帳戶，唔喺證券帳戶）。"""
     rows = []
     try:
-        ctx = ctx_cls(filter_trdmarket=market, host="127.0.0.1", port=11111)
+        ctx = ctx_cls(host="127.0.0.1", port=11111, **kw)
     except Exception as e:
-        print(f"{market}: 開唔到交易 context：{e}")
+        print(f"{label}: 開唔到交易 context：{e}")
         return rows
     try:
-        ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL)
+        ret, accs = ctx.get_acc_list()
         if ret != RET_OK:
-            print(f"{market}: position_list_query 失敗：{df}")
+            print(f"{label}: get_acc_list 失敗：{accs}")
             return rows
-        for _, r in df.iterrows():
-            if (num(r.get("qty")) or 0) == 0:
+        for _, a in accs.iterrows():
+            if str(a.get("trd_env")) != "REAL":
                 continue
-            rows.append({"market": str(market), "code": r["code"], "name": r.get("stock_name", ""),
-                         "side": str(r.get("position_side", "")), "qty": num(r.get("qty")),
-                         "cost_price": num(r.get("cost_price")), "pl_val": num(r.get("pl_val")),
-                         "nominal_price": num(r.get("nominal_price"))})
+            ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=int(a["acc_id"]))
+            if ret != RET_OK:
+                print(f"{label}: 持倉查詢失敗（帳戶類型 {a.get('acc_type')}）：{df}")
+                continue
+            for _, r in df.iterrows():
+                if (num(r.get("qty")) or 0) == 0:
+                    continue
+                rows.append({"account": label, "code": r["code"], "name": r.get("stock_name", ""),
+                             "side": str(r.get("position_side", "")), "qty": num(r.get("qty")),
+                             "cost_price": num(r.get("cost_price")), "pl_val": num(r.get("pl_val")),
+                             "nominal_price": num(r.get("nominal_price"))})
     finally:
         ctx.close()
     return rows
@@ -56,11 +65,9 @@ def main():
     ap.add_argument("--no-push", action="store_true")
     a = ap.parse_args()
 
-    rows = positions(OpenSecTradeContext, TrdMarket.HK)
-    try:
-        rows += positions(OpenFutureTradeContext, TrdMarket.FUTURES)
-    except Exception as e:
-        print(f"期貨帳戶：{e}")
+    rows = positions(OpenFutureTradeContext, "期貨帳戶")
+    rows += positions(OpenSecTradeContext, "證券帳戶-HK", filter_trdmarket=TrdMarket.HK)
+    rows += positions(OpenSecTradeContext, "證券帳戶-US", filter_trdmarket=TrdMarket.US)
     if not rows:
         sys.exit("冇讀到持倉（OpenD 有冇登入？）")
 
