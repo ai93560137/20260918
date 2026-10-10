@@ -13,7 +13,7 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from futu import OpenQuoteContext, OpenSecTradeContext, OpenFutureTradeContext, RET_OK, TrdEnv, TrdMarket
+from futu import IndexOptionType, OpenQuoteContext, OpenSecTradeContext, OpenFutureTradeContext, RET_OK, TrdEnv, TrdMarket
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tradingview" / "data_external" / "futu_positions.json"
@@ -66,8 +66,33 @@ def positions(ctx_cls, label, **kw):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-push", action="store_true")
+    ap.add_argument("--chain", nargs=3, metavar=("EXPIRY", "KLO", "KHI"), help="列出恒指期權（標準＋小型）指定到期日同行使價範圍嘅買賣盤，如 --chain 2026-10-29 24800 25200")
     ap.add_argument("--codes", nargs="*", default=[], help="備用：唔讀持倉，直接查指定合約代碼嘅買賣盤，如 HK.MHI2610")
     a = ap.parse_args()
+
+    if a.chain:
+        exp, klo, khi = a.chain[0], float(a.chain[1]), float(a.chain[2])
+        q = OpenQuoteContext(host="127.0.0.1", port=11111)
+        try:
+            for label, t in (("標準", IndexOptionType.NORMAL), ("小型", IndexOptionType.SMALL)):
+                ret, ch = q.get_option_chain(code="HK.800000", start=exp, end=exp, index_option_type=t)
+                if ret != RET_OK:
+                    print(f"{label}：get_option_chain 失敗：{ch}")
+                    continue
+                ch = ch[(ch["strike_price"] >= klo) & (ch["strike_price"] <= khi)]
+                if ch.empty:
+                    print(f"{label}：呢個到期日／範圍冇合約")
+                    continue
+                ret, snap = q.get_market_snapshot(list(ch["code"]))
+                if ret != RET_OK:
+                    print(f"{label}：snapshot 失敗：{snap}")
+                    continue
+                snap = snap.merge(ch[["code", "strike_price", "option_type"]], on="code", how="left").sort_values(["strike_price", "option_type"])
+                print(f"--- {label}恒指期權 {exp} ---")
+                print(snap[[c for c in ("code", "name", "strike_price", "option_type", "bid_price", "ask_price", "last_price", "update_time") if c in snap.columns]].to_string(index=False))
+        finally:
+            q.close()
+        return
 
     if a.codes:
         q = OpenQuoteContext(host="127.0.0.1", port=11111)
