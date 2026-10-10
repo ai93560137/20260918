@@ -2,6 +2,9 @@
 
     python3 research/warrants_cbbc/cbbc_discount_scan.py --demo          # 離線：自我檢查 ＋ 假想掃描
     python3 research/warrants_cbbc/cbbc_discount_scan.py --live          # 在裝有 Futu OpenD 的電腦上跑（127.0.0.1:11111）
+    python3 research/warrants_cbbc/cbbc_discount_scan.py --live --owner HK.00700   # 股票牛熊證：內在值用正股價，對沖＝借股沽空
+
+恒指產品 F＝期指價（含持有成本）；股票產品 F＝正股價，另加 --borrow（年化借貨費率）把沽空成本算進淨利。
 
 定義（以指數點計，R＝換股比率）：
     牛證內在值 = F − K，熊證內在值 = K − F
@@ -73,18 +76,21 @@ def hedged_pnl_pts(c: Cbbc, fut: float, knocked_out: bool, fut_exit: float | Non
     return (fut_exit - fut) + residual - (c.strike - fut - d)
 
 
-def round_trip_cost_pts(c: Cbbc, fut_spread_pts: float = 1.0) -> float:
-    """來回成本（點）：牛熊證一格差價 ＋ 期指差價 ＋ 法定費用與佣金（約 0.1% 成交額）。"""
+def round_trip_cost_pts(c: Cbbc, fut_spread_pts: float = 1.0, fut: float | None = None, borrow_rate: float = 0.0) -> float:
+    """來回成本（點）：牛熊證一格差價 ＋ 對沖腿差價 ＋ 法定費用與佣金（約 0.1% 成交額）
+    ＋（股票產品）借股沽空到期的借貨費 ＝ 正股價 × 年率 × 剩餘日／365。"""
     one_tick = tick_size(c.ask) * c.ratio
     fees = 0.001 * c.ask * c.ratio
-    return one_tick + fut_spread_pts + fees
+    borrow = (fut or 0.0) * borrow_rate * c.days_left / 365.0
+    return one_tick + fut_spread_pts + fees + borrow
 
 
-def scan(cbbcs: list[Cbbc], fut: float, min_dist_pct: float = 3.0, min_street: float = 0.5) -> list[dict]:
+def scan(cbbcs: list[Cbbc], fut: float, min_dist_pct: float = 3.0, min_street: float = 0.5,
+         hedge_spread_pts: float = 1.0, borrow_rate: float = 0.0) -> list[dict]:
     rows = []
     for c in cbbcs:
         d = discount_pts(c, fut)
-        net = d - round_trip_cost_pts(c)
+        net = d - round_trip_cost_pts(c, hedge_spread_pts, fut, borrow_rate)
         rows.append({
             "code": c.code, "issuer": c.issuer, "type": "牛" if c.bull else "熊",
             "ask": c.ask, "intrinsic": intrinsic_pts(c, fut), "discount": d,
@@ -138,24 +144,27 @@ def demo() -> None:
     print("6xxx6 比率 20,000 → 一格＝20 點，80 點折讓仍有淨利；6xxx2 以期指計是 10 點溢價（正常），證明 6xxx1 的折讓不是條款造成而是街貨重。")
 
 
-def live(host: str, port: int, min_dist_pct: float, min_street: float) -> None:
+def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: str, borrow_rate: float) -> None:
     try:
         import futu as ft  # type: ignore
     except ImportError:
         sys.exit("需要 pip install futu-api，並在本機跑 Futu OpenD")
     ctx = ft.OpenQuoteContext(host=host, port=port)
     try:
-        ret, snap = ctx.get_market_snapshot(["HK.HSImain"])
+        is_index = owner == "HK.800000"
+        ref_code = "HK.HSImain" if is_index else owner      # 恒指用期指，個股用正股
+        ret, snap = ctx.get_market_snapshot([ref_code])
         if ret != ft.RET_OK:
-            sys.exit(f"期指快照失敗：{snap}")
+            sys.exit(f"{ref_code} 快照失敗：{snap}")
         fut = float(snap.loc[0, "last_price"])
+        hedge_spread = 1.0 if is_index else 0.01 * fut      # 個股沽空腿差價估 1%（一兩格＋價位規則）
         cbbcs: list[Cbbc] = []
         for wtype, bull in ((ft.WrtType.BULL, True), (ft.WrtType.BEAR, False)):
             req = ft.WarrantDataFilter()
             req.type_list = [wtype]
             req.sort_field = ft.SortField.STREET_RATE
             req.ascend = False
-            ret, (page_count, df) = ctx.get_warrant("HK.800000", req)
+            ret, (page_count, df) = ctx.get_warrant(owner, req)
             if ret != ft.RET_OK:
                 print(f"get_warrant 失敗：{df}", file=sys.stderr)
                 continue
@@ -168,7 +177,8 @@ def live(host: str, port: int, min_dist_pct: float, min_street: float) -> None:
                 cbbcs.append(Cbbc(str(r["stock"]), str(r.get("issuer", "?")), bull,
                                   float(r["strike_price"]), float(r["recovery_price"]), float(r["conversion_ratio"]),
                                   ask, float(r.get("street_rate") or 0) / 100.0, (mat - dt.date.today()).days))
-        rows = [r for r in scan(cbbcs, fut, min_dist_pct, min_street) if r["discount"] > 0]
+        rows = [r for r in scan(cbbcs, fut, min_dist_pct, min_street, hedge_spread, 0.0 if is_index else borrow_rate)
+                if r["discount"] > 0]
         print_rows(rows[:40], fut)
     finally:
         ctx.close()
@@ -182,9 +192,11 @@ def main() -> None:
     p.add_argument("--port", type=int, default=11111)
     p.add_argument("--min-dist", type=float, default=3.0, help="距收回價最少 %%（預設 3）")
     p.add_argument("--min-street", type=float, default=0.5, help="街貨比例下限 0–1（預設 0.5）")
+    p.add_argument("--owner", default="HK.800000", help="相關資產：HK.800000＝恒指（預設），或個股如 HK.00700")
+    p.add_argument("--borrow", type=float, default=0.01, help="個股借貨費年率（預設 0.01＝1%%），恒指不用")
     a = p.parse_args()
     if a.live:
-        live(a.host, a.port, a.min_dist, a.min_street)
+        live(a.host, a.port, a.min_dist, a.min_street, a.owner, a.borrow)
     else:
         demo()
 
