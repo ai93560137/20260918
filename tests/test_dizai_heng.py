@@ -154,5 +154,67 @@ check("頁面：地載・衡在最上方、規則、今日策略、前向、滾�
 j = client.get("/?view=dizai&format=json").get_json()
 check("JSON 端點有 heng", j.get("heng", {}).get("params", {}).get("trig") == "cross")
 
+print("=== 5. [R142] Telegram 通知 ===")
+p = CASES["穿越 70/30 ≥1% 0.5% 加倉1% 止蝕2%"]
+main.DIZAI_HENG_PICKS = {YEAR: {**p, "train": "測試"}}
+st = main.dizai_heng_new_state(days[0]); main.dizai_heng_advance(st, bars, main._dz_ctx_fn(rows))
+kinds = [e["kind"] for e in st["notices"]]
+check("每筆交易都有開倉與平倉通知；有加倉、止賺、止蝕、開閘", kinds.count("open") == len(st["trades"]) + (1 if st["pos"] else 0)
+      and kinds.count("tp") + kinds.count("sl") == len(st["trades"]) and {"gate", "add", "tp", "sl"} <= set(kinds),
+      {k: kinds.count(k) for k in set(kinds)})
+gates = {}
+for e in st["notices"]:
+    if e["kind"] == "gate":
+        gates.setdefault(main.futu_session_of(e["time"], SYM), []).append(e["text"])
+check("開閘提醒每日每方向最多一次", all(len(v) <= 2 for v in gates.values()) and gates, max(len(v) for v in gates.values()))
+check("全部以【地載陣・衡】開頭、開倉／開閘註明紙上", all(e["text"].startswith("【地載陣・衡】") for e in st["notices"])
+      and all("不是落盤指示" in e["text"] for e in st["notices"] if e["kind"] in ("open", "gate")))
+ex = {k: next(e["text"] for e in st["notices"] if e["kind"] == k) for k in ("gate", "open", "add", "tp", "sl")}
+for k, t in ex.items():
+    print(f"--- {k} ---\n{t}")
+t0 = st["trades"][0]
+o0 = next(e for e in st["notices"] if e["kind"] == "open")
+check("開倉通知的價位 = 交易紀錄的入場價", f"@ {t0['entry']:,.0f}" in o0["text"], o0["text"])
+seg = main.dizai_heng_new_state(days[0])
+for a_, b_ in zip([0] + cuts, cuts + [len(bars)]):
+    seg = json.loads(json.dumps(seg)); main.dizai_heng_advance(seg, bars[a_:b_], main._dz_ctx_fn(rows))
+check("分段推進的通知跟一次推進一樣", [e["text"] for e in seg["notices"]] == [e["text"] for e in st["notices"]])
+
+FAKE.clear()
+st["last_bar"] = bars[-1]["time_key"]
+recent = [e for e in st["notices"] if e["time"] >= (datetime.strptime(st["last_bar"], "%Y-%m-%d %H:%M:%S") - timedelta(minutes=60)).strftime("%Y-%m-%d %H:%M:%S")]
+st["notices"] = st["notices"][-6:] if not recent else st["notices"]
+main.gcs_write_text(main.dizai_heng_file(SYM), json.dumps(st))
+os.environ.pop("TG_BOT_TOKEN", None); os.environ.pop("TG_CHAT_ID", None)
+got = []
+n = main.dizai_heng_flush(SYM, send=lambda t: got.append(t) or True)
+h = main.gcs_read_json(main.dizai_heng_file(SYM), {})
+fresh = [e for e in h["notices"] if not e.get("sent")]
+check("沒設 TG 環境變數：Cloud Run 不發；太舊的標記不發；新的留給 GitHub 排程", n == 0 and not got
+      and all(e.get("via") == "stale" for e in h["notices"] if e.get("sent")), (n, len(got)))
+sig = client.get(f"/?view=futu_range&report=signals").get_json()
+ids = [x["id"] for x in sig["signals"] if x["id"].startswith("heng:")]
+check("report=signals 給出未發的地載・衡通知", ids == [e["id"] for e in fresh], (ids, [e["id"] for e in fresh]))
+if ids:
+    client.get(f"/?view=futu_range&report=signals&ack={ids[0]}")
+    h = main.gcs_read_json(main.dizai_heng_file(SYM), {})
+    check("ack 後標記已發（via github）", next(e for e in h["notices"] if e["id"] == ids[0]).get("via") == "github")
+# 直接發
+for e in h["notices"]:
+    e["sent"] = False; e.pop("via", None)
+h["notices"][-1]["time"] = h["last_bar"]
+main.gcs_write_text(main.dizai_heng_file(SYM), json.dumps(h))
+os.environ["TG_BOT_TOKEN"], os.environ["TG_CHAT_ID"] = "x", "y"
+got = []
+n = main.dizai_heng_flush(SYM, send=lambda t: got.append(t) or True)
+h = main.gcs_read_json(main.dizai_heng_file(SYM), {})
+check("有 TG 環境變數：直接發新的、標記 via cloud_run；report=signals 不再給（免重複）",
+      n >= 1 and got and all(e.get("sent") for e in h["notices"]) and any(e.get("via") == "cloud_run" for e in h["notices"])
+      and not [x for x in client.get("/?view=futu_range&report=signals").get_json()["signals"] if x["id"].startswith("heng:")], (n, len(got)))
+got2 = []
+main.dizai_heng_flush(SYM, send=lambda t: got2.append(t) or True)
+check("已發的不會再發", not got2)
+os.environ.pop("TG_BOT_TOKEN"); os.environ.pop("TG_CHAT_ID")
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

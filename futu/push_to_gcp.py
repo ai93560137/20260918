@@ -71,6 +71,10 @@
   只存封存、不蓋 5 分 K 即時快照。第一輪推前一個與目前交易日全部，之後只推最近 FRONT_1M_RECENT_MIN 分鐘。
   不想推可設 setx FUTU_FRONT_1M 0。
 
+[v15] 1 分 K 每分鐘推（地載・衡 Telegram 通知要即時）：兩輪完整推送之間（PUSH_INTERVAL_SEC，預設 300 秒），
+  每分鐘過 FRONT_1M_FAST_OFFSET 秒（5）只推一次即月期貨的 1 分 K（最近 20 分鐘），不查期權鏈、不推 5 分 K。
+  不想每分鐘推可設 setx FUTU_FRONT_1M_FAST 0（回到每輪才推）。
+
 [v8] 港股交易日曆：每天第一次推即月期貨時，附上 Futu 的港股交易日（今天起 40 天），
   GCP（main.py R99）用來判斷開市前預測要不要發（假期不發）。
 
@@ -100,7 +104,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "14"
+SCRIPT_VERSION = "15"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 # [v3] 多代號：改這個環境變數就能決定 Futu 取哪些商品，不用改程式。
@@ -125,6 +129,8 @@ DAILY_MAX = max(1, min(1000, int(os.environ.get("FUTU_DAILY_MAX", "60"))))
 FRONT_RE = re.compile(r"^HK\.([A-Z]{2,4})_FRONT$")   # [v6] 即月期貨別名，例 HK.HSI_FRONT
 SESSION_CUT_HOUR = 9                                  # [v7] 交易日 = 09:00 至翌日 09:00（日市＋當晚夜市）
 FRONT_1M_ENABLED = os.environ.get("FUTU_FRONT_1M", "1").strip() != "0"   # [v14] 即月期貨每輪也推 1 分 K
+FRONT_1M_FAST = FRONT_1M_ENABLED and os.environ.get("FUTU_FRONT_1M_FAST", "1").strip() != "0"   # [v15] 每分鐘推 1 分 K
+FRONT_1M_FAST_OFFSET = 5                             # [v15] 每分鐘過幾秒才取（等剛收的那根入庫）
 FRONT_1M_RECENT_MIN = 20                              # [v14] 之後每輪只重推最近 20 分鐘（含正在形成的那根）
 FRONT_5M_COUNT = 300                                  # [v7] 即月期貨每輪取 5 分 K 根數（一個交易日約 192 根）
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -263,6 +269,7 @@ class FutuPusher:
         self.front = {}                               # [v6] 別名 → {day, code, last_trade, start}
         self.calendar = None                          # [v8] (查詢日, {from, to, days})
         self.last_1m = {}                             # [v14] 別名 → 已推到的 1 分 K time_key
+        self.front_info = {}                          # [v15] 別名 → (合約, 交易日, 起始, 封包基本欄位)，每分鐘推 1 分 K 用
 
     def connect(self):
         if self.ctx is None:
@@ -556,8 +563,19 @@ class FutuPusher:
             ok = self.post({**base, "kline_type": "K_SESSION", "data": days,
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, quiet=True) and ok
         if FRONT_1M_ENABLED:
+            self.front_info[alias] = (code, info["day"], start, base)
             self.push_front_1m(alias, code, info["day"], start, base)
         return ok
+
+    def fast_front_1m(self):
+        """[v15] 兩輪之間每分鐘：只推即月期貨最近的 1 分 K（用上一輪認得的合約與交易日）。"""
+        for alias, (code, day, start, base) in list(self.front_info.items()):
+            try:
+                self.connect()
+                self.push_front_1m(alias, code, day, start, {**base, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+            except Exception as exc:
+                log(f"  ⚠️ 每分鐘 1 分 K 失敗（{str(exc)[:60]}），下一分鐘再試")
+                self.close()
 
     def push_front_1m(self, alias, code, today, start, base):
         """[v14] 前一個與目前交易日的 1 分 K → K_1M 封包（地載陣前向測試）。失敗只記一行，不影響 5 分 K。"""
@@ -1028,12 +1046,32 @@ def main():
                     time.sleep(UNSUB_AFTER_SEC)
                     pusher.release_daily_subs()
                 return 0 if ok else 1
-            time.sleep(INTERVAL_SEC)
+            wait_with_fast_1m(pusher, INTERVAL_SEC)
     except KeyboardInterrupt:
         log("收到 Ctrl+C，結束。")
         return 0
     finally:
         pusher.close()
+
+
+def fast_1m_times(start, interval, offset=FRONT_1M_FAST_OFFSET):
+    """[v15] start 之後、start + interval 之前，每分鐘過 offset 秒的時刻（epoch 秒）。"""
+    end, out = start + interval, []
+    t = (int(start // 60) + 1) * 60 + offset
+    while t < end - 1:
+        out.append(t)
+        t += 60
+    return out
+
+
+def wait_with_fast_1m(pusher, interval, clock=time.time, sleep=time.sleep):
+    """[v15] 等下一輪完整推送；中間每分鐘推一次 1 分 K（FRONT_1M_FAST 關掉就單純睡）。"""
+    start = clock()
+    if FRONT_1M_FAST and pusher.front_info:
+        for t in fast_1m_times(start, interval):
+            sleep(max(0.0, t - clock()))
+            pusher.fast_front_1m()
+    sleep(max(0.0, start + interval - clock()))
 
 
 if __name__ == "__main__":

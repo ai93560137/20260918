@@ -104,6 +104,10 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-10 — [R142] 地載・衡 Telegram 通知：開閘提醒（當日升／跌到開閘線，每日每方向一次）、開倉、加倉、止賺、災難止蝕。
+#     通知記在 dizai/heng/ 狀態檔；Cloud Run 有 TG_BOT_TOKEN／TG_CHAT_ID 就在推進後直接發（約 1–2 分鐘），
+#     沒有就經 ?view=futu_range&report=signals 由 GitHub 排程 hsi-peak-signal 代發（約 15 分鐘）。落後最新 K 線超過
+#     DIZAI_HENG_STALE_MIN 分鐘的通知（例如斷線後補算）不發，只記錄。
 #   * 2026-10-10 — [R141] 地載・衡（滾動選參、災難止蝕 2%）前向測試：每年 1 月只用前兩年數據、由 1,280 組參數選「盈虧 ÷ 最深浮虧」
 #     最高的一組用一整年（DIZAI_HENG_PICKS；research/hsi_futures_range/regime2.py --select YEAR）。RSI 上下限／穿越轉向／升跌開閘／
 #     止賺 %／加倉／災難止蝕都跟當年參數走；持倉沿用開倉時的參數。獨立狀態檔 dizai/heng/，跟研究 rsi_basic.run_adds 逐筆一致；
@@ -3225,6 +3229,8 @@ def futu_signals_report(symbol, ack=None):
         n = gcs_update(futu_signal_file(symbol), mutate, default_factory=list)
         if any(x.startswith("paper:") for x in ids):
             n += gcs_update(futu_paper_file(symbol), mutate_paper, default_factory=dict)
+        if any(x.startswith("heng:") for x in ids):                  # [R142] 地載・衡
+            n += dizai_heng_ack(symbol, ids)
         return {"status": "ok", "acked": n}
     items = gcs_read_json(futu_signal_file(symbol), [])
     pending = [{"id": e["id"], "text": e["text"]} for e in (items if isinstance(items, list) else [])
@@ -3232,6 +3238,7 @@ def futu_signals_report(symbol, ack=None):
     paper = futu_paper_state(symbol)                                 # [R116]
     pending += [{"id": e["id"], "text": e["text"]} for e in (paper or {}).get("notices", [])
                 if isinstance(e, dict) and not e.get("sent")]
+    pending += dizai_heng_pending(symbol)                            # [R142]
     return {"status": "ok", "signals": pending}
 
 
@@ -4288,6 +4295,7 @@ def dizai_update(symbol=DIZAI_SYMBOL, now=None):
         if n:
             log_event(f"⛰️ [地載陣] {symbol} 推進 {n} 根 1 分 K", component="dizai", symbol=symbol)
         dizai_heng_update(symbol, bars, rows, today)          # [R141] 地載・衡（獨立狀態檔）
+        dizai_heng_flush(symbol)                              # [R142] Telegram 通知
         return []
     except StorageError as exc:
         log_event(f"⚠️ [地載陣更新失敗] {exc}", severity="WARNING", component="dizai")
@@ -4418,6 +4426,9 @@ def dizai_data(symbol=DIZAI_SYMBOL, now=None):
 # 由平均成本起計。add_lots：每次加倉張數（() = 不加倉）；step_pct：加倉間距 = 入場價 × %（None = 0.75 × ATR20）。
 # dstop_pct：災難止蝕 = 平均成本逆向該 %。同一時間只持一組倉；不限每日次數；不限持倉時間。
 DIZAI_HENG_VERSION = 1
+DIZAI_HENG_TAG = "【地載陣・衡】"                       # [R142] Telegram 訊息開頭
+DIZAI_HENG_STALE_MIN = 60                              # [R142] 通知落後最新 K 線超過這麼多分鐘就不發
+DIZAI_HENG_NOTICES_KEEP = 300
 DIZAI_HENG_PICKS = {
     "2026": {"trig": "cross", "hi": 75, "lo": 25, "move": 0.02, "tp_pct": 0.003, "add_lots": (), "step_pct": None,
              "dstop_pct": 0.02, "train": "2024–2025"},
@@ -4465,6 +4476,7 @@ def _dz_heng_bar(pos, bar):
             pos["last"], pos["adds"] = px, pos["adds"] + 1
             pos["fills"].append({"time": bar["time_key"], "kind": "add", "price": round(px, 1), "lots": pos["lots"],
                                  "avg": round(pos["avg"], 1)})
+            pos.setdefault("_adds_now", []).append((q, px))
             added = True
             continue
         if sl_lv is not None and hit(sl_lv):
@@ -4477,6 +4489,156 @@ def _dz_heng_bar(pos, bar):
     if (h >= tp_lv) if side > 0 else (l <= tp_lv):
         return "tp", (o if (not no_gap_tp and side * (o - tp_lv) > 0) else tp_lv)
     return None
+
+
+def _dz_heng_rule_short(p):
+    trig = "穿越" if p["trig"] == "cross" else "轉向"
+    adds = "不加倉" if not p["add_lots"] else f"加倉至 {1 + sum(p['add_lots'])} 張"
+    stop = f"止蝕 {p['dstop_pct'] * 100:g}%" if p.get("dstop_pct") else "不設止蝕"
+    return f"{trig} {p['hi']}/{p['lo']}・升跌 ≥ {p['move'] * 100:g}%・止賺 {p['tp_pct'] * 100:g}%・{adds}・{stop}"
+
+
+def _dz_heng_trig_text(p, side):
+    if p["trig"] == "cross":
+        return f"1 分 K RSI 向上穿 {p['hi']} → 沽 1 張" if side < 0 else f"1 分 K RSI 向下穿 {p['lo']} → 買 1 張"
+    return f"1 分 K RSI 由 {p['hi']} 以上跌回 → 沽 1 張" if side < 0 else f"1 分 K RSI 由 {p['lo']} 以下升回 → 買 1 張"
+
+
+def _dz_hold_text(a, b):
+    try:
+        mins = (datetime.strptime(b, "%Y-%m-%d %H:%M:%S") - datetime.strptime(a, "%Y-%m-%d %H:%M:%S")).total_seconds() / 60
+    except ValueError:
+        return "—"
+    if mins < 60:
+        return f"{mins:.0f} 分鐘"
+    if mins < 24 * 60:
+        return f"{mins / 60:.1f} 小時"
+    return f"{mins / 1440:.1f} 日"
+
+
+def _dz_heng_notice(st, kind, tk, text):
+    n = st.setdefault("notice_seq", 0) + 1
+    st["notice_seq"] = n
+    st.setdefault("notices", []).append({"id": f"heng:{n}", "kind": kind, "time": tk, "text": text, "sent": False})
+    st["notices"] = st["notices"][-DIZAI_HENG_NOTICES_KEEP:]
+
+
+def _dz_heng_open_text(pos):
+    side, o = pos["side"], pos["entry"]
+    tp, sl = pos["avg"] + side * pos["tp"], pos["avg"] * (1 - side * pos["dstop_pct"]) if pos.get("dstop_pct") else None
+    p = pos.get("params") or {}
+    lines = [f"{DIZAI_HENG_TAG}🔔 開倉訊號（紙上）",
+             f"{'買' if side > 0 else '沽'} 1 張 恒指即月 @ {o:,.0f}",
+             f"時間：{pos['entry_tk'][5:16]}（香港）",
+             f"原因：當日{'升' if pos['chg'] > 0 else '跌'} {abs(pos['chg']) * 100:.2f}%（上日收 {pos.get('prev_close', 0):,.0f}）",
+             f"　　　{_dz_heng_trig_text(p, side).split(' → ')[0] if p else 'RSI 訊號'}（{pos.get('rsi', 0):.1f}）",
+             f"止賺：{tp:,.0f}（{side * (tp - o):+,.0f} 點）"]
+    if sl is not None:
+        lines.append(f"災難止蝕：{sl:,.0f}（{side * (sl - o):+,.0f} 點）")
+    if p:
+        lines.append(f"今年規則：{_dz_heng_rule_short(p)}")
+    lines.append("⚠️ 紙上前向測試，不是落盤指示")
+    return "\n".join(lines)
+
+
+def _dz_heng_add_text(pos, q, px):
+    side = pos["side"]
+    nxt = pos["last"] - side * pos["step"] if pos["adds"] < len(pos["add_lots"]) else None
+    sl = pos["avg"] * (1 - side * pos["dstop_pct"]) if pos.get("dstop_pct") else None
+    return "\n".join([f"{DIZAI_HENG_TAG}➕ 加倉（紙上）",
+                      f"{'買' if side > 0 else '沽'} +{q} 張 @ {px:,.0f} → 共 {pos['lots']} 張，平均成本 {pos['avg']:,.0f}",
+                      f"新止賺：{pos['avg'] + side * pos['tp']:,.0f}" + (f"　止蝕：{sl:,.0f}" if sl is not None else ""),
+                      (f"下次加倉：{nxt:,.0f}（加 {pos['add_lots'][pos['adds']]} 張）" if nxt is not None else "已加滿")])
+
+
+def _dz_heng_exit_text(trade, trades):
+    yr = trade["exit_tk"][:4]
+    ys = [t for t in trades if t["exit_tk"][:4] == yr]
+    pnl = trade["pnl"]
+    head = "✅ 止賺平倉（紙上）" if trade["reason"] == "tp" else "🛑 災難止蝕（紙上）"
+    return "\n".join([f"{DIZAI_HENG_TAG}{head}",
+                      f"{trade['side']} {trade['lots']} 張：{trade['avg']:,.0f} → {trade['exit']:,.0f}",
+                      f"{pnl:+,.0f} 點（HK${pnl * DIZAI_POINT_HKD:+,.0f}，已扣成本）・持倉 {_dz_hold_text(trade['entry_tk'], trade['exit_tk'])}",
+                      f"今年累計：{len(ys)} 筆・勝 {sum(1 for t in ys if t['pnl'] > 0)}・{sum(t['pnl'] for t in ys):+,.0f} 點"])
+
+
+def _dz_heng_gate_text(p, side, price, chg, prev_close):
+    o = price
+    return "\n".join([f"{DIZAI_HENG_TAG}🚪 開閘提醒",
+                      f"恒指即月 {price:,.0f}，當日{'升' if chg > 0 else '跌'} {abs(chg) * 100:.2f}%（上日收 {prev_close:,.0f}）",
+                      f"現在開始等 RSI 訊號：{_dz_heng_trig_text(p, side)}",
+                      f"止賺約 {o * p['tp_pct']:,.0f} 點" + (f"・災難止蝕約 {o * p['dstop_pct']:,.0f} 點" if p.get("dstop_pct") else "・不設止蝕"),
+                      "⚠️ 紙上前向測試，不是落盤指示"])
+
+
+def tg_send(text):
+    """[R142] 直接發 Telegram（Cloud Run 環境變數 TG_BOT_TOKEN／TG_CHAT_ID）。沒設或失敗 → False。不記錄權杖。"""
+    token, chat = os.environ.get("TG_BOT_TOKEN", "").strip(), os.environ.get("TG_CHAT_ID", "").strip()
+    if not token or not chat:
+        return False
+    try:
+        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat, "text": text}, timeout=10)
+        return r.status_code == 200
+    except Exception as exc:                               # 不印網址（含權杖）
+        print(f"⚠️ [Telegram 發送失敗] {type(exc).__name__}", flush=True)
+        return False
+
+
+def tg_direct():
+    return bool(os.environ.get("TG_BOT_TOKEN", "").strip() and os.environ.get("TG_CHAT_ID", "").strip())
+
+
+def dizai_heng_flush(symbol, send=tg_send):
+    """[R142] 推進後：太舊的通知標記不發；Cloud Run 可直接發 Telegram 就發未發的通知並標記。回傳發出數目。"""
+    st = gcs_read_json(dizai_heng_file(symbol), {})
+    notices = (st or {}).get("notices") or [] if isinstance(st, dict) else []
+    last = (st or {}).get("last_bar") if isinstance(st, dict) else None
+    if not notices or not last:
+        return 0
+    cut = (datetime.strptime(last, "%Y-%m-%d %H:%M:%S") - timedelta(minutes=DIZAI_HENG_STALE_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    stale = {e["id"] for e in notices if not e.get("sent") and e.get("time", "") < cut}
+    sent = set()
+    if tg_direct():
+        for e in notices:
+            if not e.get("sent") and e["id"] not in stale and send(e["text"]):
+                sent.add(e["id"])
+    if not stale and not sent:
+        return 0
+
+    def mutate(existing):
+        if not isinstance(existing, dict):
+            return None, 0
+        hit = 0
+        for e in existing.get("notices") or []:
+            if e.get("id") in sent and not e.get("sent"):
+                e.update(sent=True, sent_utc=fmt_utc(), via="cloud_run"); hit += 1
+            elif e.get("id") in stale and not e.get("sent"):
+                e.update(sent=True, sent_utc=fmt_utc(), via="stale"); hit += 1
+        return (existing, hit) if hit else (None, 0)
+
+    gcs_update(dizai_heng_file(symbol), mutate, default_factory=dict)
+    return len(sent)
+
+
+def dizai_heng_pending(symbol):
+    """[R142] 給 report=signals（GitHub 排程代發）：Cloud Run 自己會發時不給，避免重複。"""
+    if tg_direct() or symbol != DIZAI_SYMBOL:
+        return []
+    st = gcs_read_json(dizai_heng_file(symbol), {})
+    return [{"id": e["id"], "text": e["text"]} for e in ((st or {}).get("notices") or [] if isinstance(st, dict) else [])
+            if isinstance(e, dict) and not e.get("sent")]
+
+
+def dizai_heng_ack(symbol, ids):
+    def mutate(existing):
+        if not isinstance(existing, dict):
+            return None, 0
+        hit = 0
+        for e in existing.get("notices") or []:
+            if e.get("id") in ids and not e.get("sent"):
+                e.update(sent=True, sent_utc=fmt_utc(), via="github"); hit += 1
+        return (existing, hit) if hit else (None, 0)
+    return gcs_update(dizai_heng_file(symbol), mutate, default_factory=dict)
 
 
 def dizai_heng_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL):
@@ -4495,10 +4657,14 @@ def dizai_heng_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL):
             st["pos"] = {"side": pend["side"], "lots": 1, "avg": o, "last": o, "adds": 0, "entry": o, "entry_tk": tk,
                          "signal_tk": pend["tk"], "chg": pend["chg"], "rsi": pend["rsi"], "year": pend["year"],
                          "tp": p["tp_pct"] * o, "step": step, "add_lots": list(p["add_lots"]), "dstop_pct": p.get("dstop_pct"),
+                         "prev_close": pend.get("prev_close"), "params": p,
                          "fills": [{"time": tk, "kind": "open", "price": o, "lots": 1, "avg": o}]}
+            _dz_heng_notice(st, "open", tk, _dz_heng_open_text(st["pos"]))
         pos = st["pos"]
         if trading and pos is not None:
             res = _dz_heng_bar(pos, bar)
+            for q, apx in pos.pop("_adds_now", []):
+                _dz_heng_notice(st, "add", tk, _dz_heng_add_text(pos, q, apx))
             if res:
                 reason, px = res
                 pos["fills"].append({"time": tk, "kind": reason, "price": round(px, 1), "lots": 0, "avg": round(pos["avg"], 1)})
@@ -4508,9 +4674,19 @@ def dizai_heng_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL):
                                      "pnl": round(pos["lots"] * pos["side"] * (px - pos["avg"]) - 2 * DIZAI_COST * pos["lots"], 1),
                                      "fills": pos["fills"]})
                 st["trades"] = st["trades"][-DIZAI_TRADES_KEEP:]
+                _dz_heng_notice(st, reason, tk, _dz_heng_exit_text(st["trades"][-1], st["trades"]))
                 st["pos"] = None
         p = dizai_heng_params(sess) if trading else None
         ctx = ctx_fn(sess) if p else None
+        if ctx and same:                                    # [R142] 開閘提醒：當日每個方向第一次到開閘線
+            chg_now = bar["close"] / ctx["prev_close"] - 1
+            g = st.get("gate") if (st.get("gate") or {}).get("sess") == sess else {"sess": sess}
+            gside = -1 if chg_now >= p["move"] else (1 if chg_now <= -p["move"] else 0)
+            key = "up" if gside < 0 else "down"
+            if gside and not g.get(key):
+                g[key] = tk
+                _dz_heng_notice(st, "gate", tk, _dz_heng_gate_text(p, gside, bar["close"], chg_now, ctx["prev_close"]))
+            st["gate"] = g
         if st["pos"] is None and same and ctx and rsi is not None and prev_rsi is not None:
             hi, lo = p["hi"], p["lo"]
             if p["trig"] == "cross":
@@ -4521,7 +4697,7 @@ def dizai_heng_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL):
             side = -1 if (hi_x and chg >= p["move"]) else (1 if (lo_x and chg <= -p["move"]) else 0)
             if side:
                 st["pending"] = {"side": side, "sess": sess, "tk": tk, "atr": ctx["atr"], "chg": round(chg, 5),
-                                 "rsi": round(rsi, 1), "year": sess[:4], "params": p}
+                                 "rsi": round(rsi, 1), "year": sess[:4], "params": p, "prev_close": ctx["prev_close"]}
         st["last_bar"], st["last_sess"] = tk, sess
     return st
 
@@ -4596,8 +4772,9 @@ def _dz_heng_rule(p):
             f"每逆向 {p['step_pct'] * 100:g}% 加 {p['add_lots'][0]} 張，最多 {1 + sum(p['add_lots'])} 張" if p.get("step_pct")
             else f"每逆向 0.75 × ATR20 加 1 張，最多 {1 + sum(p['add_lots'])} 張")
     return (f"當日升跌 ≥ {p['move'] * 100:g}% 才開閘；1 分 K {trig}（下一分鐘開市入場）；{adds}；"
-            f"止賺 = 平均成本 ± 入場價 {p['tp_pct'] * 100:g}%；災難止蝕 = 平均成本逆向 {p['dstop_pct'] * 100:g}%。"
-            f"（{p['train']} 兩年數據選出）")
+            f"止賺 = 平均成本 ± 入場價 {p['tp_pct'] * 100:g}%；"
+            + (f"災難止蝕 = 平均成本逆向 {p['dstop_pct'] * 100:g}%。" if p.get("dstop_pct") else "不設止蝕。")
+            + f"（{p['train']} 兩年數據選出）")
 
 
 def _dz_heng_html(h):
@@ -4615,7 +4792,8 @@ def _dz_heng_html(h):
                       f"<table><tr><th style='width:130px'>升開閘線</th><td><b>{_dz_n(g['up'])}</b> 或以上才考慮沽</td></tr>"
                       f"<tr><th>跌開閘線</th><td><b>{_dz_n(g['down'])}</b> 或以下才考慮買</td></tr>"
                       f"<tr><th>止賺</th><td>約 {_dz_n(g['prev_close'] * p['tp_pct'])} 點（入場價 × {p['tp_pct'] * 100:g}%）</td></tr>"
-                      f"<tr><th>災難止蝕</th><td>約 {_dz_n(g['prev_close'] * p['dstop_pct'])} 點（平均成本 × {p['dstop_pct'] * 100:g}%）</td></tr></table>")
+                      + (f"<tr><th>災難止蝕</th><td>約 {_dz_n(g['prev_close'] * p['dstop_pct'])} 點（平均成本 × {p['dstop_pct'] * 100:g}%）</td></tr>"
+                         if p.get("dstop_pct") else "<tr><th>止蝕</th><td>不設</td></tr>") + "</table>")
     else:
         today_html = "<p class='muted'>" + ("今年參數未選定，暫停開新倉。" if not p else "交易日 K 未夠 20 日，今天不交易。") + "</p>"
     pos = h.get("position")

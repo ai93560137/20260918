@@ -344,6 +344,28 @@ ok, sent = run(po, "2026-10-28", "15:15")
 check("FUTU_FRONT_1M=0 → 不推 1 分 K", not [p for p in sent if p["kline_type"] == "K_1M"], [p["kline_type"] for p in sent])
 push.FRONT_1M_ENABLED = True
 
+print("=== [v15] 兩輪之間每分鐘推 1 分 K ===")
+check("每分鐘過 5 秒、在下一輪之前：300 秒內 5 次", push.fast_1m_times(1000.0, 300) == [1025, 1085, 1145, 1205, 1265], push.fast_1m_times(1000.0, 300))
+check("時間不夠一分鐘 → 不推", push.fast_1m_times(1000.0, 20) == [])
+check("run_front 記下合約與交易日", po.front_info.get("HK.HSI_FRONT", (None,))[0] == "HK.HSI2610", po.front_info)
+fast_sent = []
+po.post = lambda packet, quiet=False: fast_sent.append(packet) or True
+po.last_1m["HK.HSI_FRONT"] = "2026-10-28 15:00:00"
+po.fast_front_1m()
+check("每分鐘那次只推 K_1M（最近 20 分鐘）", fast_sent and all(p["kline_type"] == "K_1M" for p in fast_sent)
+      and [b["time_key"] for p in fast_sent for b in p["data"]] == ["2026-10-28 14:40:00", "2026-10-28 14:59:00", "2026-10-28 15:00:00"],
+      [p["kline_type"] for p in fast_sent])
+clock = {"t": 1000.0}; calls = []
+po.fast_front_1m = lambda: calls.append(clock["t"])
+def _sleep(x): clock["t"] += x
+push.wait_with_fast_1m(po, 300, clock=lambda: clock["t"], sleep=_sleep)
+check("等下一輪時中間推 5 次、總共等 300 秒", calls == [1025, 1085, 1145, 1205, 1265] and clock["t"] == 1300, (calls, clock["t"]))
+calls.clear(); clock["t"] = 1000.0
+push.FRONT_1M_FAST = False
+push.wait_with_fast_1m(po, 300, clock=lambda: clock["t"], sleep=_sleep)
+check("FUTU_FRONT_1M_FAST=0 → 單純等 300 秒", calls == [] and clock["t"] == 1300)
+push.FRONT_1M_FAST = True
+
 print("=== [v13] --export-raw：單一代號逐月、有多少抓多少 ===")
 class RawCtx:
     """2026-08 至 2026-10 有數據（每月 2 根，其中 1 根成交量 0）；2026-07 第一次撞頻率限制；更早沒有。"""
