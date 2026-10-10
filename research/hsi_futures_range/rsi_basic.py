@@ -96,27 +96,40 @@ def main():
                   f"   {sum(x['days'] >= 1 for x in t):6d} {max(x['days'] for x in t):6d}   {sum(x['pnl'] for x in t):+10.0f}  {detail}")
 
 
-def run_adds(D, sigs, tp, add_lots=(), step_atr=0.75, max_days=None, entry_day=False):
-    """加倉版：不設止蝕；止賺由平均成本起計；到期（或數據尾）收市價平倉。"""
+def run_adds(D, sigs, tp, add_lots=(), step_atr=0.75, max_days=None, entry_day=False, tp_pct=None, step_pct=None, dstop_pct=None):
+    """加倉版：止賺由平均成本起計；到期（或數據尾）收市價平倉。
+    tp_pct／step_pct：止賺、加倉間距改用入場價的 %（代替點數／ATR）；dstop_pct：災難止蝕，平均成本逆向該 % 全部平倉。"""
     o, h, l, c, sid, ends, atr = D["o"], D["h"], D["l"], D["c"], D["sid"], D["ends"], D["atr"]
     n, trades, busy = len(o), [], -1
     for i, side in sigs:
         e = i + 1
         if e <= busy or e >= n or np.isnan(atr[i]):
             continue
-        step = step_atr * atr[i]
+        step = step_pct * o[e] if step_pct else step_atr * atr[i]
+        if tp_pct:
+            tp = tp_pct * o[e]
         lots, avg, last, adds, k, tp_from = 1, o[e], o[e], 0, e, e
         dl = ends[min(sid[e] + max_days - 1, len(ends) - 1)] - 1 if max_days else n - 1
         worst = 0.0
         while True:
             add_lv = last - side * step if adds < len(add_lots) else None
             tgt = avg + side * tp
+            sl_lv = avg - side * dstop_pct * avg if dstop_pct else None
             if side > 0:
                 j_add = mg.first_hit(l, k, lambda s, t: l[s:t] <= add_lv) if add_lv is not None else mg.BIG
+                j_sl = mg.first_hit(l, k, lambda s, t: l[s:t] <= sl_lv) if sl_lv is not None else mg.BIG
                 j_tp = mg.first_hit(h, tp_from, lambda s, t: h[s:t] >= tgt)
             else:
                 j_add = mg.first_hit(h, k, lambda s, t: h[s:t] >= add_lv) if add_lv is not None else mg.BIG
+                j_sl = mg.first_hit(h, k, lambda s, t: h[s:t] >= sl_lv) if sl_lv is not None else mg.BIG
                 j_tp = mg.first_hit(l, tp_from, lambda s, t: l[s:t] <= tgt)
+            if j_sl < j_add and j_sl <= j_tp and j_sl <= dl:  # 災難止蝕（比加倉先到）
+                j = j_sl
+                adverse = l[k:j + 1].min() if side > 0 else h[k:j + 1].max()
+                worst = min(worst, lots * side * (adverse - avg))
+                out, reason = (o[j] if (j > e and side * (o[j] - sl_lv) < 0) else sl_lv), "sl"
+                break
+            j_add = j_add if j_add <= j_sl else mg.BIG
             j = min(j_add, j_tp)
             seg_end = min(j, dl)
             adverse = l[k:seg_end + 1].min() if side > 0 else h[k:seg_end + 1].max()
