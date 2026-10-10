@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-10 — [R139] 地載・進加「期權保護（紙上）」：加到 2 張時買同數量價外 1 × ATR20、14 日的 Call（沽單）／Put（好單），
+#     平倉時賣回；Black-Scholes＋Futu 推送的 VHSI 估價，買賣各扣 max(2 點, 5%)。頁面列預備／已買的期權、期權盈虧、連期權的前向統計，
+#     兩組的八年 Sharpe 與最大回撤（research/hsi_futures_range/dizai_options.py）。
 #   * 2026-10-10 — [R138] ⛰️ 地載陣改為「升跌 ≥ 2% 逆市＋加倍攤平（1→2→4 張）＋留倉」兩組前向測試：地載・穩（RSI 轉向、間距 0.75 × ATR20、
 #     止賺 30、止蝕 1000）與地載・進（RSI 穿越、間距 1 × ATR20、止賺 150、止蝕 3000、過去 5 日同向 ≥ 3% 不做）。逐根推進 1 分 K（最新一根下一包才算），
 #     RSI 與持倉狀態存 dizai/forward/（version 2）；頁面列今日開閘線、持倉加倉／止賺／止蝕價、前向勝率與 RRR、八年回測與安全邊際。
@@ -3954,17 +3957,51 @@ DIZAI_VARIANTS = {
 DIZAI_BACKTEST = {                                    # 八年主連 1 分 K（2018-10-04 至 2026-10-09），每張每邊扣 1 點
     "steady": {"n": 298, "win": 1.0, "avg_win": 33.3, "n_sl": 0, "worst_rrr": 0.0083, "exp_train": 34.1, "exp_test": 31.6,
                "total": 9920, "max_mae": 979, "max_days": 7, "full_adds": 9,
+               "sharpe": 0.58, "sharpe_train": 0.68, "sharpe_test": 0.43, "mdd_hkd": -153038, "ann_hkd": 61623,
                "by_year": {"2018": 196, "2019": 700, "2020": 1664, "2021": 774, "2022": 2330, "2023": 1317,
                            "2024": 1379, "2025": 1084, "2026": 476}},
     "bold": {"n": 192, "win": 1.0, "avg_win": 225.9, "n_sl": 0, "worst_rrr": 0.0188, "exp_train": 230.0, "exp_test": 213.1,
              "total": 43380, "max_mae": 2694, "max_days": 70, "full_adds": 22,
+             "sharpe": 0.78, "sharpe_train": 0.84, "sharpe_test": 0.68, "mdd_hkd": -525388, "ann_hkd": 269475,
              "by_year": {"2018": 842, "2019": 2850, "2020": 6311, "2021": 3158, "2022": 10096, "2023": 7104,
                          "2024": 5541, "2025": 4171, "2026": 3285}},
 }
 
 
+# [R139] 地載・進的期權保護（紙上）：加到 2 張時買同數量期權（沽單 Call、好單 Put），行使價 = 當時價格 ± 1 × ATR20，14 日；
+# 平倉時按模型價值賣回。估價 = Black-Scholes（r = 0），引伸波幅 = VHSI；買、賣各扣 max(2 點, 5% 權利金)。
+# 回測：research/hsi_futures_range/dizai_options.py（八年 Sharpe 0.78 → 0.83、最大回撤 −HK$52.5 萬 → −HK$34.1 萬）。
+DIZAI_OPTION = {"variant": "bold", "trig_lots": 2, "otm_atr": 1.0, "tenor_days": 14.0, "vhsi_symbol": "HK.800125"}
+DIZAI_OPTION_BT = {"buys": 42, "net_cost_pts": -11849, "sharpe": 0.83, "sharpe_train": 0.84, "sharpe_test": 0.82,
+                   "ann_hkd": 195873, "mdd_hkd": -341255, "calmar": 0.57,
+                   "base": {"sharpe": 0.78, "sharpe_train": 0.84, "sharpe_test": 0.68, "ann_hkd": 269475, "mdd_hkd": -525388,
+                            "calmar": 0.51}}
+
+
 def dizai_file(symbol):
     return f"dizai/forward/{ARCHIVE_SAFE_RE.sub('_', symbol)}.json"
+
+
+def _dz_bs(S, K, T, vol, call):
+    """Black-Scholes（r = 0）。T 以年計；到期或沒有波幅 → 內在值。"""
+    if T <= 1e-9 or not vol or vol <= 0:
+        return max(0.0, S - K) if call else max(0.0, K - S)
+    sd = vol * math.sqrt(T)
+    d1 = (math.log(S / K) + 0.5 * sd * sd) / sd
+    nd = lambda x: 0.5 * (1 + math.erf(x / math.sqrt(2)))
+    return S * nd(d1) - K * nd(d1 - sd) if call else K * nd(sd - d1) - S * nd(-d1)
+
+
+def _dz_spread(prem):
+    return max(2.0, 0.05 * prem)
+
+
+def _dz_days(a, b):
+    return (datetime.strptime(b, "%Y-%m-%d %H:%M:%S") - datetime.strptime(a, "%Y-%m-%d %H:%M:%S")).total_seconds() / 86400
+
+
+def _dz_opt_value(opt, S, tk, vol):
+    return _dz_bs(S, opt["K"], max(opt["tenor"] - _dz_days(opt["buy_tk"], tk), 0.0) / 365.0, vol or opt["vol"], opt["call"])
 
 
 def futu_session_kbars(symbol, day, source):
@@ -4051,8 +4088,9 @@ def dizai_new_state(start):
                                             for k in DIZAI_VARIANTS}}
 
 
-def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL):
-    """按時間逐根推進兩組（bars 已排序、而且都比 st['last_bar'] 新）。st['start'] 之前的交易日只推進 RSI（熱身）。"""
+def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL, vol_fn=None):
+    """按時間逐根推進兩組（bars 已排序、而且都比 st['last_bar'] 新）。st['start'] 之前的交易日只推進 RSI（熱身）。
+    vol_fn(time_key) → 引伸波幅（小數，例 0.2）：有就做地載・進的期權保護紙上計算（[R139]）。"""
     for bar in bars:
         tk = bar["time_key"]
         sess = futu_session_of(tk, symbol)
@@ -4069,19 +4107,35 @@ def dizai_advance(st, bars, ctx_fn, symbol=DIZAI_SYMBOL):
             if pend and v["pos"] is None and pend["sess"] == sess:   # 訊號下一根開市入場（同一交易日）
                 v["pos"] = {"side": pend["side"], "lots": 1, "avg": bar["open"], "last": bar["open"], "adds": 0,
                             "step": p["g_atr"] * pend["atr"], "paid": DIZAI_COST, "signal_tk": pend["tk"],
-                            "entry_tk": tk, "entry": bar["open"], "chg": pend["chg"],
+                            "entry_tk": tk, "entry": bar["open"], "chg": pend["chg"], "atr": pend["atr"],
                             "fills": [{"time": tk, "kind": "open", "price": bar["open"], "lots": 1, "avg": bar["open"]}]}
                 v["last_open_sess"] = sess
-            if v["pos"] is not None:
-                res = _dz_position_bar(v["pos"], p, bar)
+            pos = v["pos"]
+            if pos is not None:
+                res = _dz_position_bar(pos, p, bar)
+                oc = DIZAI_OPTION
+                if (key == oc["variant"] and vol_fn and "opt" not in pos and pos["lots"] >= oc["trig_lots"]
+                        and vol_fn(tk)):                        # [R139] 加到 2 張：這根收市買期權（紙上）
+                    vol, S, call = vol_fn(tk), bar["close"], pos["side"] < 0
+                    K = S - pos["side"] * oc["otm_atr"] * pos.get("atr", pos["step"] / p["g_atr"])
+                    prem = _dz_bs(S, K, oc["tenor_days"] / 365.0, vol, call)
+                    pos["opt"] = {"call": call, "K": K, "buy_tk": tk, "lots": pos["lots"], "S": S, "vol": vol,
+                                  "premium": prem, "cost": pos["lots"] * (prem + _dz_spread(prem)), "tenor": oc["tenor_days"]}
                 if res:
-                    pos, (reason, px) = v["pos"], res
+                    reason, px = res
                     pos["fills"].append({"time": tk, "kind": reason, "price": round(px, 1), "lots": 0, "avg": round(pos["avg"], 1)})
-                    v["trades"].append({"side": "買" if pos["side"] > 0 else "沽", "signal_tk": pos["signal_tk"],
-                                        "entry_tk": pos["entry_tk"], "entry": pos["entry"], "chg": pos["chg"],
-                                        "exit_tk": tk, "exit": round(px, 1), "reason": reason, "lots": pos["lots"],
-                                        "adds": pos["adds"], "avg": round(pos["avg"], 1), "step": round(pos["step"], 1),
-                                        "pnl": round(_dz_pnl(pos, px), 1), "fills": pos["fills"]})
+                    trade = {"side": "買" if pos["side"] > 0 else "沽", "signal_tk": pos["signal_tk"],
+                             "entry_tk": pos["entry_tk"], "entry": pos["entry"], "chg": pos["chg"],
+                             "exit_tk": tk, "exit": round(px, 1), "reason": reason, "lots": pos["lots"],
+                             "adds": pos["adds"], "avg": round(pos["avg"], 1), "step": round(pos["step"], 1),
+                             "pnl": round(_dz_pnl(pos, px), 1), "fills": pos["fills"]}
+                    if "opt" in pos:                            # 平倉時按模型價值賣回
+                        o_ = pos["opt"]
+                        pe = _dz_opt_value(o_, bar["close"], tk, vol_fn(tk) if vol_fn else None)
+                        proceeds = o_["lots"] * max(0.0, pe - (_dz_spread(pe) if pe > 0 else 0.0))
+                        trade["opt"] = {**o_, "exit_tk": tk, "exit_value": pe, "pnl": proceeds - o_["cost"]}
+                        trade["pnl_protected"] = round(trade["pnl"] + proceeds - o_["cost"], 1)
+                    v["trades"].append(trade)
                     v["trades"] = v["trades"][-DIZAI_TRADES_KEEP:]
                     v["pos"] = None
             if (v["pos"] is None and same and ctx and rsi is not None and prev_rsi is not None
@@ -4109,6 +4163,14 @@ def _dz_ctx_fn(rows):
             cache[day] = dizai_day_ctx(rows, day)
         return cache[day]
     return fn
+
+
+def dizai_vol_fn():
+    """[R139] 引伸波幅 = Futu 推送的最新 VHSI（HK.800125）÷ 100；拿不到 → None（不做期權紙上計算）。"""
+    snap = read_futu_snapshot(DIZAI_OPTION["vhsi_symbol"])
+    bars = snap.get("bars") if isinstance(snap, dict) else None
+    v = to_float(bars[-1].get("close")) if bars else None
+    return (lambda tk: v / 100.0) if v and 5 < v < 150 else None
 
 
 def dizai_update(symbol=DIZAI_SYMBOL, now=None):
@@ -4142,7 +4204,7 @@ def dizai_update(symbol=DIZAI_SYMBOL, now=None):
             todo = [b for b in bars if b["time_key"] < newest and (not st.get("last_bar") or b["time_key"] > st["last_bar"])]
             if not todo:
                 return None, 0
-            dizai_advance(st, todo, _dz_ctx_fn(rows), symbol)
+            dizai_advance(st, todo, _dz_ctx_fn(rows), symbol, vol_fn=dizai_vol_fn())
             st["mark"] = {"time": bars[-1]["time_key"], "price": bars[-1]["close"]}
             st["updated_utc"] = fmt_utc()
             return st, len(todo)
@@ -4161,8 +4223,9 @@ def dizai_state(symbol=DIZAI_SYMBOL):
     return st if isinstance(st, dict) and st.get("version") == DIZAI_VERSION else None
 
 
-def dizai_stats(trades, p):
-    pnl = [t["pnl"] for t in trades]
+def dizai_stats(trades, p, field="pnl"):
+    """field = "pnl"（只計期貨）或 "pnl_protected"（[R139] 連期權保護；沒有買期權的那筆用 pnl）。"""
+    pnl = [t.get(field, t["pnl"]) for t in trades]
     eq = peak = mdd = 0.0
     for x in pnl:
         eq += x
@@ -4179,7 +4242,7 @@ def dizai_stats(trades, p):
             "total_hkd": round(sum(pnl) * DIZAI_POINT_HKD), "max_dd_pts": round(mdd, 1)}
 
 
-def dizai_plan(key, v, ctx, mark, today):
+def dizai_plan(key, v, ctx, mark, today, vol_now=None):
     """今天這一組的策略：開閘線、5 日條件、現況、持倉的加倉／止賺／止蝕價位。"""
     p = DIZAI_VARIANTS[key]
     plan = {"key": key, "name": p["name"], "params": {**p, "add_lots": list(p["add_lots"])}}
@@ -4208,6 +4271,28 @@ def dizai_plan(key, v, ctx, mark, today):
             "float_pts": round(_dz_pnl(pos, mark["price"]), 1) if mark else None,
             "loss_if_sl_now": round(-pos["lots"] * p["sl"] - pos["paid"] - pos["lots"] * DIZAI_COST, 1),
             "fills": pos["fills"]}
+    oc = DIZAI_OPTION
+    if key == oc["variant"]:                                # [R139] 期權保護（紙上）
+        vol = vol_now
+        opt = {"vol": vol, "tenor_days": oc["tenor_days"], "otm_atr": oc["otm_atr"], "trig_lots": oc["trig_lots"]}
+        if pos and pos.get("opt"):
+            o_ = pos["opt"]
+            val = _dz_opt_value(o_, mark["price"], mark["time"], vol) if mark else None
+            opt["held"] = {"type": "Call" if o_["call"] else "Put", "K": round(o_["K"]), "lots": o_["lots"],
+                           "buy_tk": o_["buy_tk"], "premium": round(o_["premium"], 1), "cost_pts": round(o_["cost"], 1),
+                           "value": round(val, 1) if val is not None else None,
+                           "pnl_pts": round(o_["lots"] * val - o_["cost"], 1) if val is not None else None,
+                           "expiry_days_left": round(max(o_["tenor"] - _dz_days(o_["buy_tk"], mark["time"]), 0), 1) if mark else None}
+        elif pos and pos["lots"] < oc["trig_lots"] and plan["position"]["next_add"] is not None:
+            S = plan["position"]["next_add"]
+            call = pos["side"] < 0
+            K = S - pos["side"] * oc["otm_atr"] * pos.get("atr", pos["step"] / p["g_atr"])
+            lots = pos["lots"] + plan["position"]["next_add_lots"]
+            prem = _dz_bs(S, K, oc["tenor_days"] / 365.0, vol, call) if vol else None
+            opt["plan"] = {"at": round(S), "type": "Call" if call else "Put", "K": round(K), "lots": lots,
+                           "premium_est": round(prem, 1) if prem is not None else None,
+                           "cost_est_pts": round(lots * (prem + _dz_spread(prem)), 1) if prem is not None else None}
+        plan["option"] = opt
     return plan
 
 
@@ -4218,23 +4303,60 @@ def dizai_data(symbol=DIZAI_SYMBOL, now=None):
     ctx = dizai_day_ctx(rows, today)
     base = {"symbol": symbol, "today": today, "backtest": DIZAI_BACKTEST,
             "variants": {k: {**p, "add_lots": list(p["add_lots"])} for k, p in DIZAI_VARIANTS.items()}}
+    vf = dizai_vol_fn()
+    vol_now = vf("") if vf else None
+    base["vol_now"] = vol_now
+    base["option_bt"] = DIZAI_OPTION_BT
     if not st:
         return {"status": "empty", **base,
-                "plans": {k: dizai_plan(k, {}, ctx, None, today) for k in DIZAI_VARIANTS}}
+                "plans": {k: dizai_plan(k, {}, ctx, None, today, vol_now) for k in DIZAI_VARIANTS}}
     mark = st.get("mark")
     out = {"status": "ok", **base, "start": st.get("start"), "last_bar": st.get("last_bar"), "mark": mark,
            "rsi": round(st["rsi"]["value"], 1) if st.get("rsi", {}).get("value") is not None else None,
            "plans": {}, "stats": {}, "trades": {}}
     for k, p in DIZAI_VARIANTS.items():
         v = st["variants"][k]
-        out["plans"][k] = dizai_plan(k, v, ctx, mark, today)
+        out["plans"][k] = dizai_plan(k, v, ctx, mark, today, vol_now)
         out["stats"][k] = dizai_stats(v["trades"], p)
+        if k == DIZAI_OPTION["variant"]:
+            out["stats"][k + "_protected"] = dizai_stats(v["trades"], p, "pnl_protected")
         out["trades"][k] = list(reversed(v["trades"]))[:200]
     return out
 
 
 def _dz_n(x, spec="{:,.0f}"):
     return "—" if x is None else spec.format(x)
+
+
+def _dz_option_html(k, data):
+    """[R139] 地載・進的期權保護（紙上）。"""
+    oc = DIZAI_OPTION
+    if k != oc["variant"]:
+        return ""
+    opt = (data["plans"].get(k) or {}).get("option") or {}
+    vol = data.get("vol_now")
+    bt = DIZAI_OPTION_BT
+    sp = data.get("stats", {}).get(k + "_protected")
+    lines = [f"規則：持倉加到 {oc['trig_lots']} 張時，買同數量的期權——沽單買<b>認購（Call）</b>、好單買<b>認沽（Put）</b>；"
+             f"行使價 = 當時價格 ± {oc['otm_atr']:g} × 過去 20 日平均全日波幅（價外，取最接近的上市行使價），約 {oc['tenor_days']:.0f} 日後到期；"
+             "平倉（止賺或止蝕）時一併賣出。"]
+    lines.append(f"估價：Black-Scholes，引伸波幅用 VHSI（現在 {_dz_n(vol * 100 if vol else None, '{:.1f}')}），買賣各扣 max(2 點, 5%) 差價——只是估算，實際以報價為準。")
+    if opt.get("held"):
+        h = opt["held"]
+        lines.append(f"<b>已買（紙上）</b>：{h['type']} 行使價 {h['K']:,} × {h['lots']} 張，{esc(h['buy_tk'][5:16])} 買入每張 {h['premium']:,.0f} 點；"
+                     f"現值約 {_dz_n(h['value'], '{:,.0f}')} 點、期權盈虧 <span class='{pnl_class(h['pnl_pts'])}'>{_dz_n(h['pnl_pts'], '{:+,.0f}')} 點</span>，"
+                     f"剩約 {_dz_n(h['expiry_days_left'], '{:.0f}')} 日到期")
+    elif opt.get("plan"):
+        pl = opt["plan"]
+        lines.append(f"<b>預備</b>：如價格到 {pl['at']:,}（加到 {pl['lots']} 張），就買 {pl['type']} 行使價約 {pl['K']:,} × {pl['lots']} 張，"
+                     f"估計每張 {_dz_n(pl['premium_est'], '{:,.0f}')} 點（共約 {_dz_n(pl['cost_est_pts'], '{:,.0f}')} 點）")
+    if sp and sp["trades"]:
+        lines.append(f"前向（連期權）：{sp['trades']} 筆、總盈虧 <span class='{pnl_class(sp['total_pts'])}'>{sp['total_pts']:+,.0f} 點</span>（HK${sp['total_hkd']:+,}）")
+    lines.append(f"八年回測：Sharpe {bt['base']['sharpe']} → <b>{bt['sharpe']}</b>（前五年 {bt['sharpe_train']}／後三年 {bt['sharpe_test']}），"
+                 f"最大回撤 −HK${-bt['base']['mdd_hkd']:,} → <b>−HK${-bt['mdd_hkd']:,}</b>，年化 HK${bt['base']['ann_hkd']:,} → HK${bt['ann_hkd']:,}"
+                 f"（八年買 {bt['buys']} 次、期權淨成本約 {-bt['net_cost_pts']:,} 點）")
+    return ("<div class='level-box' style='margin-top:14px; border-left:4px solid #6f42c1;'><div class='card-title'>🛡️ 期權保護（紙上）</div>"
+            + "".join(f"<div style='font-size:13px; margin-top:4px'>{x}</div>" for x in lines) + "</div>")
 
 
 def _dz_variant_html(k, data):
@@ -4302,6 +4424,7 @@ def _dz_variant_html(k, data):
       <h2>{esc(p['name'])}　<span class='muted' style='font-size:13px'>RSI {'轉向' if p['trig'] == 'confirm' else '穿越'}・升跌 ≥ 2%・間距 {p['g_atr']} × ATR20・
           1→2→4 張・止賺 {p['tp']:.0f}・止蝕 {p['sl']:,.0f}{'・過去 5 日同向 ≥ 3% 不做' if p.get('run5') else ''}・留倉</span></h2>
       <h3 style='font-size:15px'>📅 今日策略</h3>{today_html}
+      {_dz_option_html(k, data)}
       <h3 style='font-size:15px; margin-top:18px'>📒 前向測試（{esc(data.get('start') or '未開始')} 起）</h3>{fwd}{trades_html}
       <h3 style='font-size:15px; margin-top:18px'>🧪 八年回測（過度擬合的參數）</h3>
       <table>
@@ -4310,6 +4433,8 @@ def _dz_variant_html(k, data):
         <tr><th>RRR</th><td>實際：八年沒有輸過，算不出；最壞 {bt['worst_rrr']}（平均贏 {bt['avg_win']} ÷ 4 張止蝕 {p['sl'] * max_lots:,.0f}）
             → 一次止蝕要贏約 {p['sl'] * max_lots / bt['avg_win']:.0f} 筆才補回</td></tr>
         <tr><th>安全邊際</th><td>最遠逆向 {bt['max_mae']:,} 點，離止蝕只差 <b class='neg'>{p['sl'] - bt['max_mae']:,.0f} 點</b>；最長持倉 {bt['max_days']} 個交易日</td></tr>
+        <tr><th>Sharpe／最大回撤</th><td>{bt.get('sharpe', '—')}（前五年 {bt.get('sharpe_train', '—')}／後三年 {bt.get('sharpe_test', '—')}）；
+            連浮虧最大回撤（收市計）−HK${-bt.get('mdd_hkd', 0):,}；年化 HK${bt.get('ann_hkd', 0):,}</td></tr>
         <tr><th>逐年</th><td style='font-size:12px'>{esc(years)}</td></tr>
       </table>
     </div>"""

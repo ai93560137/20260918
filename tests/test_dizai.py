@@ -148,11 +148,11 @@ check("今日策略：開閘線 = 上日收市 ±2%、加倉間距 = 1 × ATR20"
       and pl["gate_down"] == round(pl["prev_close"] * 0.98) and abs(pl["step"] - pl["atr"]) < 0.11, pl)
 check("穩的間距 = 0.75 × ATR20", abs(data["plans"]["steady"]["step"] - 0.75 * data["plans"]["steady"]["atr"]) < 0.11)
 html = client.get("/?view=dizai").get_data(as_text=True)
-check("頁面：兩組、今日策略、前向、八年回測、curve fitting 警告、免責", all(x in html for x in
-      ("地載・穩", "地載・進", "今日策略", "前向測試", "八年回測", "curve fitting", "不構成任何投資建議", "RRR")), html[:300])
+check("頁面：兩組、今日策略、前向、八年回測、curve fitting 警告、免責、期權保護、Sharpe", all(x in html for x in
+      ("地載・穩", "地載・進", "今日策略", "前向測試", "八年回測", "curve fitting", "不構成任何投資建議", "RRR", "期權保護", "Sharpe")), html[:300])
 check("頁面公開、導覽列有地載陣", "nav-current'>⛰️ 地載陣" in html)
 j = client.get("/?view=dizai&format=json").get_json()
-check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold"}
+check("JSON：兩組的勝率／RRR 統計與持倉", j["status"] == "ok" and set(j["stats"]) == {"steady", "bold", "bold_protected"}
       and all("worst_rrr" in v for v in j["stats"].values()))
 
 print("=== 4. 持倉顯示 ===")
@@ -170,6 +170,33 @@ if pos_st:
     s_ = 1 if pp["side"] == "買" else -1
     check("持倉：止賺 = 平均成本 ±150、止蝕 = 平均成本 ∓3000、下次加 2 張", pp["tp"] == round(pp["avg"] + s_ * 150, 1)
           and pp["sl"] == round(pp["avg"] - s_ * 3000, 1) and pp["next_add_lots"] == 2 and pp["lots"] == 2, pp)
+
+print("=== 4b. [R139] 地載・進的期權保護（紙上）跟回測一致 ===")
+import dizai_options as do
+import numpy as np
+from datetime import datetime as _dt
+class _V:                                             # 固定 VHSI 22
+    def at(self, day): return 0.22
+D["tday"] = np.array([(do.bar_time(t) - _dt(2000, 1, 1)).total_seconds() / 86400 for t in D["tk"]])
+st4 = main.dizai_new_state(days[0])
+main.dizai_advance(st4, bars, main._dz_ctx_fn(rows), vol_fn=lambda tk: 0.22)
+sig = [(i, s_) for i, s_ in ds.signals(D, "fade", "cross", 0.02, "all") if fl.keep(F, D, i, s_, "run5_3")]
+ref = [x for x in mg.simulate_mg(D, sig, 1.0, 150, sl_pts=3000) if x["reason"] != "open"]
+mine = st4["variants"]["bold"]["trades"]
+same_opt = True
+for x, t in zip(ref, mine):
+    x["sl_pts"] = 3000
+    _, net, nb = do.protect_series(D, [x], _V(), 2, 1.0, 14)
+    same_opt &= (nb == ("opt" in t)) and abs(net - t.get("opt", {}).get("pnl", 0.0)) < 0.01
+check("加到 2 張就買期權、每筆期權盈虧跟 research protect_series 一樣", same_opt and any("opt" in t for t in mine))
+check("期權不影響期貨部分（跟沒有 vol_fn 時逐筆相同）", [t["pnl"] for t in mine] == [t["pnl"] for t in st["variants"]["bold"]["trades"]])
+t_ = next(t for t in mine if "opt" in t)
+check("沽單買 Call、好單買 Put；行使價在價外 1 × ATR20", t_["opt"]["call"] == (t_["side"] == "沽")
+      and ((t_["opt"]["K"] > t_["opt"]["S"]) if t_["opt"]["call"] else (t_["opt"]["K"] < t_["opt"]["S"])))
+check("連期權盈虧 = 期貨 + 期權", abs(t_["pnl_protected"] - (t_["pnl"] + t_["opt"]["pnl"])) < 0.11)
+check("穩不買期權", not any("opt" in t for t in st4["variants"]["steady"]["trades"]))
+check("BS：平價 Call = 平價 Put（r = 0）、到期 = 內在值", abs(main._dz_bs(24000, 24000, 0.05, 0.2, True) - main._dz_bs(24000, 24000, 0.05, 0.2, False)) < 1e-6
+      and main._dz_bs(24500, 24000, 0, 0.2, True) == 500 and main._dz_bs(24500, 24000, 0, 0.2, False) == 0)
 
 print("=== 5. 沒有數據 ===")
 FAKE.pop(main.dizai_file(SYM), None)
