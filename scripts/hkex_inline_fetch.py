@@ -10,6 +10,7 @@
   python3 scripts/hkex_inline_fetch.py urls <網址1,網址2,...>   # 任意網址（hkex.com.hk）存到 sample/，CSV 印前幾行、HTML 印連結
   python3 scripts/hkex_inline_fetch.py survey 2019-07-01 2026-10-10 --step 14   # 每隔 N 天抽一天的行情報告，數 @L 行 → survey.csv（找界內證存在的年代）
   python3 scripts/hkex_inline_fetch.py wayback                # 從 web.archive.org 抓歷年 iwFullList.csv 快照（含上下限價、到期、收市價）→ iw_fulllist_history.csv.gz
+  python3 scripts/hkex_inline_fetch.py wayback-dayquot [--from 2019 --to 2026]   # archive.org 存過的每日行情檔，逐個下載抽 @L 行 → quotes_raw_<年>.csv.gz
 
 quotes 只存原始行（date, code, name, raw_line），欄位解析交給 research/warrants_cbbc/inline_history.py 在本機做，
 這樣格式猜錯也不用重抓。
@@ -308,6 +309,73 @@ def wayback():
         print(f"寫入 iw_fulllist_history.csv.gz：{len(rows)} 列，{len(caps_seen)} 個快照日")
 
 
+def wayback_dayquot(year_from, year_to):
+    """CDX 列出 archive.org 存過的 d<yymmdd>e.htm，逐個下載（id_ 原始內容）抽 @L 行，寫進 quotes_raw_<年>.csv.gz 與 survey.csv。"""
+    import json
+    OUT.mkdir(parents=True, exist_ok=True)
+    caps = []
+    for host in ("www.hkex.com.hk", "hkex.com.hk"):
+        cdx = (f"https://web.archive.org/cdx/search/cdx?url={host}/eng/stat/smstat/dayquot/d&matchType=prefix&output=txt"
+               f"&fl=original%2Ctimestamp%2Cstatuscode&filter=statuscode:200&from={year_from}&to={year_to}&limit=2000")
+        st, raw = get(cdx, timeout=180)
+        print(f"CDX {host}: HTTP {st} {len(raw)} bytes")
+        if st != 200:
+            continue
+        for line in raw.decode("utf-8", "replace").splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and re.search(r"/d(\d{6})e\.htm$", parts[0]):
+                caps.append((parts[0], parts[1]))
+    # 每個交易日只留一個快照
+    by_day = {}
+    for orig, ts in caps:
+        yymmdd_ = re.search(r"/d(\d{6})e\.htm$", orig).group(1)
+        by_day.setdefault(yymmdd_, (orig, ts))
+    print(f"archive.org 有 {len(by_day)} 個不同交易日的行情檔")
+    index_path = OUT / "survey.csv"
+    seen = {}
+    if index_path.exists():
+        with open(index_path, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                seen[r["date"]] = r
+    rows_by_year = {}
+    for yymmdd_, (orig, ts) in sorted(by_day.items()):
+        day = date(2000 + int(yymmdd_[:2]), int(yymmdd_[2:4]), int(yymmdd_[4:6])).isoformat()
+        if seen.get(day, {}).get("status") == "ok":
+            continue
+        url = f"https://web.archive.org/web/{ts}id_/{orig}"
+        st, raw = get(url, timeout=180)
+        if st != 200 or len(raw) < 1000:
+            print(f"{day}: HTTP {st} {len(raw)} bytes")
+            seen[day] = {"date": day, "status": f"wb_http{st}", "n_inline": "", "n_hsi": "", "bytes": len(raw)}
+            time.sleep(1.0)
+            continue
+        inl = inline_lines(to_text(raw))
+        hsi = [x for x in inl if "HSI" in x[1].upper()]
+        seen[day] = {"date": day, "status": "ok", "n_inline": len(inl), "n_hsi": len(hsi), "bytes": len(raw)}
+        rows_by_year.setdefault(day[:4], []).extend((day, c, n, l) for c, n, l in inl)
+        print(f"{day}: @L {len(inl)} 行，HSI {len(hsi)}（{len(raw)} bytes，快照 {ts}）")
+        time.sleep(1.0)
+    with open(index_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["date", "status", "n_inline", "n_hsi", "bytes"])
+        w.writeheader()
+        for k in sorted(seen):
+            w.writerow(seen[k])
+    for year, rows in rows_by_year.items():
+        path = OUT / f"quotes_raw_{year}.csv.gz"
+        existing = []
+        if path.exists():
+            with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+                existing = list(csv.reader(f))[1:]
+        have = {(r[0], r[1]) for r in existing}
+        merged = existing + [list(r) for r in rows if (r[0], r[1]) not in have]
+        merged.sort(key=lambda r: (r[0], r[1]))
+        with gzip.open(path, "wt", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["date", "code", "name", "raw_line"])
+            w.writerows(merged)
+        print(f"寫入 {path.name}：{len(merged)} 行")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -317,6 +385,7 @@ def main():
     u = sub.add_parser("urls"); u.add_argument("urls")
     sv = sub.add_parser("survey"); sv.add_argument("start"); sv.add_argument("end"); sv.add_argument("--step", type=int, default=14)
     sub.add_parser("wayback")
+    wd = sub.add_parser("wayback-dayquot"); wd.add_argument("--from", dest="yfrom", default="2019"); wd.add_argument("--to", dest="yto", default="2026")
     a = ap.parse_args()
     if a.cmd == "probe":
         probe(a.day)
@@ -328,6 +397,8 @@ def main():
         survey(a.start, a.end, a.step)
     elif a.cmd == "wayback":
         wayback()
+    elif a.cmd == "wayback-dayquot":
+        wayback_dayquot(a.yfrom, a.yto)
     else:
         terms()
 
