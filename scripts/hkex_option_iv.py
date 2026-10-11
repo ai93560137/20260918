@@ -95,7 +95,9 @@ def main():
     f.add_argument("--products", default="hsio", help="港交所報告代號，逗號分隔；yahoo:<代號> 代表改抓 Yahoo 日線（例 yahoo:^HSTECH,yahoo:3033.HK）")
     a = ap.parse_args()
     if a.cmd == "probe":
-        probe(a.day, [p for p in a.products.split(",") if p] or None)
+        # workflow 的 probe 步驟只傳日期，但把 inputs.products 放在環境變數 PRODUCTS；兩個來源都接受
+        plist = [p for p in (a.products or os.environ.get("PRODUCTS", "")).split(",") if p]
+        probe(a.day, plist or None)
     else:
         items = [p for p in a.products.split(",") if p]
         for t in [p[6:] for p in items if p.startswith("yahoo:")]:
