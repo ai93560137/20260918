@@ -237,6 +237,14 @@ def scan_live(host: str, port: int, owner: str = "HK.800000", min_dist_pct: floa
         ctx.close()
 
 
+def _num(v) -> float:
+    """Futu 快照沒有報價時給字串 'N/A'；一律轉成 0。"""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _futures_curve(ft, ctx, log=print) -> dict:
     """恒指期貨各合約月的即時價 {到期日: 中間價}。先用 get_referencestock_list(HK.800000, FUTURE)，
     拿不到就猜代號 HK.HSI<yymm>（近 12 個月 ＋ 之後 6 個 12 月）。任何一步失敗都只記 log、回空 dict。"""
@@ -266,7 +274,7 @@ def _futures_curve(ft, ctx, log=print) -> dict:
                 continue
             y, m = 2000 + int(tail[:2]), int(tail[2:])
             exp = (dt.date(y + (m == 12), (m % 12) + 1, 1) - dt.timedelta(days=2))   # 月底倒數第二日近似
-            bid, ask, last = (float(r.get(k) or 0) for k in ("bid_price", "ask_price", "last_price"))
+            bid, ask, last = (_num(r.get(k)) for k in ("bid_price", "ask_price", "last_price"))
             px = (bid + ask) / 2 if bid > 0 and ask > 0 else last
             if px > 0:
                 curve[exp.isoformat()] = px
