@@ -14,6 +14,7 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
 | `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
 | `FX_COST_MODEL.md` | 外匯 swap 加價與點差的公開證據（IBKR 分層、Saxo 等級、CME 期貨路徑）與各口徑對策略的影響；之後登記的成本從這裡取 |
+| `EURUSD_L1_PLAYBOOK.md` | EURUSD 倫敦上午做空（09–12 UTC）操作手冊：規則、載具與成本、倉位表、證偽監測、開倉前登記 |
 | `FX_EXPLORATORY_SCAN.md` | **探索性 curve fitting**（使用者指示取消 Bonferroni）：日線 1,032 條規則海選輸給純雜訊；日內 2,100 時窗海選找到 **EURUSD 倫敦上午（09–12 UTC）下跌 +1.9 基點／日、毛 t 7.15**，經 HistData 跨來源與 2000–2003 樣本外確認（t 2.62）；淨約 2.4%／年（1 倍名義）、夏普 0.7–1.1，近年轉弱；另有已衰退的亞洲時段上漲。前向監測規則已登記 |
 | `FX_DOLLAR_CALENDAR_BACKTEST.md` | 美元利差擇時（t −0.06，第 47 百分位）與日曆／時段規律 22 格掃描（最大 |t| 2.65，漂移 < 1 基點 < 成本 1.8 基點）→ **全部 ☠️** |
 | `FX_EUR_VRP_BACKTEST.md` | 歐元波動溢價（賣 21 日 EUR/USD 方差，EVZ 為行使價近似，烽燧響應）：t 3.33 但最差單期 21 倍平均（上限 20）、成本 1.0 波動點即歸零 → **🔍** |
