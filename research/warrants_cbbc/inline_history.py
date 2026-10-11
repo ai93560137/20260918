@@ -35,7 +35,7 @@ sys.path.insert(0, str(HERE))
 import inline_vs_options as ivo  # noqa: E402
 
 QUOTES_DIR = ROOT / "data" / "hkex_inline"
-NAME_RE = re.compile(r"^([A-Z0-9]{2})[-#]?([A-Z0-9]{1,5})@L(\d{2})(\d{2})([A-Z0-9])$")
+NAME_RE = re.compile(r"^([A-Z0-9]{2})[-#]?\s*([A-Z0-9]{1,5})\s*@L\s*(\d{2})(\d{2})\s*([A-Z0-9])$")
 
 
 def _num(tok: str):
@@ -88,7 +88,8 @@ def load_terms() -> dict[str, dict]:
     with open(path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             try:
-                out[r["code"].zfill(5)] = {"lower": float(r["lower"]), "upper": float(r["upper"]), "expiry": r["expiry"]}
+                out[r["code"].zfill(5)] = {"lower": float(r["lower"]), "upper": float(r["upper"]), "expiry": r["expiry"],
+                                            "issuer": r.get("issuer", ""), "underlying": r.get("underlying", ""), "name": r.get("name", "")}
             except (KeyError, ValueError):
                 continue
     return out
@@ -298,13 +299,19 @@ def build_terms_from_hkex_snapshots() -> int:
         except (KeyError, ValueError):
             return
         m = re.match(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})", rec.get("maturity", ""))
-        if not m:
-            return
-        exp = f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}"
-        if code not in terms:
+        if m:
+            exp = f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}"
+            exp_src = "list"
+        else:
+            info = parse_name(rec.get("name", ""))          # 新上市清單沒有到期日欄：用簡稱的年月，取該月期權到期日
+            if not info:
+                return
+            exp = monthly_expiry(info["expiry_month"]).isoformat()
+            exp_src = "name"
+        if code not in terms or (terms[code].get("expiry_src") == "name" and exp_src == "list"):
             terms[code] = {"code": code, "lower": lo, "upper": up, "expiry": exp, "issuer": rec.get("issuer", ""),
                            "underlying": rec.get("underlying", ""), "ratio": rec.get("ratio", ""), "listing": rec.get("listing", ""),
-                           "name": rec.get("name", "")}
+                           "name": rec.get("name", ""), "expiry_src": exp_src}
 
     for path in sorted(sample.glob("url_web_archive_org_web_*")):
         name = path.name.lower()
@@ -312,30 +319,31 @@ def build_terms_from_hkex_snapshots() -> int:
         if name.endswith(".csv") or "iwaqlist" in name:
             txt = raw.decode("utf-16", "replace") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
             lines = [l for l in txt.splitlines() if l.strip()]
-            hi = next((i for i, l in enumerate(lines) if "Code" in l and "Lower" in l), None)
+            hi = next((i for i, l in enumerate(lines) if "code" in l.lower() and "lower" in l.lower()), None)
             if hi is None:
                 continue
-            header = [h.strip() for h in lines[hi].split("\t")]
+            header = [h.strip().lower() for h in lines[hi].split("\t")]
             for l in lines[hi + 1:]:
                 cells = [c.strip() for c in l.split("\t")]
-                if len(cells) < 8 or not cells[0].isdigit():
+                if len(cells) < 7 or not cells[0].isdigit():
                     continue
                 d = dict(zip(header, cells))
-                add({"code": d.get("Warrant Code") or d.get("Code", ""), "lower": d.get("Lower Strike", ""), "upper": d.get("Upper Strike", ""),
-                     "maturity": d.get("Maturity", ""), "issuer": d.get("Issuer", ""), "underlying": d.get("UL", ""),
-                     "ratio": d.get("Entitlement Ratio", ""), "listing": d.get("Listing", "")})
+                pick = lambda *keys: next((v for k, v in d.items() if any(key in k for key in keys)), "")
+                add({"code": pick("warrant code", "code"), "lower": pick("lower"), "upper": pick("upper"), "maturity": pick("maturity"),
+                     "issuer": pick("issuer"), "underlying": pick("underlying", "ul"), "ratio": pick("ratio"), "listing": pick("listing"),
+                     "name": pick("name")})
             continue
         if not (name.endswith(".html") and ("expired" in name or "newlist" in name or "expiring" in name or "listsearch" in name)):
             continue
         txt = raw.decode("utf-8", "replace")
-        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", txt, flags=re.S)
+        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", txt, flags=re.S | re.I)
         header = None
         for r in rows:
-            cells = [norm(c) for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, flags=re.S)]
+            cells = [norm(c) for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, flags=re.S | re.I)]
             if not cells:
                 continue
             joined = " ".join(cells)
-            if "Warrant Code" in joined and "Lower" in joined:
+            if "warrant code" in joined.lower() and "lower" in joined.lower():
                 header = cells
                 continue
             if header and len(cells) >= len(header) - 1 and any(re.fullmatch(r"\d{5}", c) for c in cells[:3]):
@@ -348,7 +356,7 @@ def build_terms_from_hkex_snapshots() -> int:
                      "underlying": next((v for k, v in d.items() if "Underlying" in k), ""),
                      "ratio": next((v for k, v in d.items() if "Ratio" in k), ""), "name": next((v for k, v in d.items() if "Name" in k), "")})
     if terms:
-        keys = ["code", "lower", "upper", "expiry", "issuer", "underlying", "ratio", "listing", "name"]
+        keys = ["code", "lower", "upper", "expiry", "issuer", "underlying", "ratio", "listing", "name", "expiry_src"]
         with open(existing, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
             w.writeheader()
@@ -382,6 +390,38 @@ def load_wayback_quotes(underlying: str) -> list[dict]:
     return rows
 
 
+def load_yahoo_quotes(underlying: str, terms: dict) -> list[dict]:
+    """data/hkex_inline/yahoo_daily.csv.gz（scripts/hkex_inline_fetch.py yahoo）→ 報價來源 (c)：只有收市價。"""
+    path = QUOTES_DIR / "yahoo_daily.csv.gz"
+    rows = []
+    if not path.exists():
+        return rows
+    with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            code = r["code"].zfill(5)
+            t = terms.get(code)
+            if underlying and (not t or (t.get("underlying") or "").upper() != underlying.upper()):
+                continue
+            try:
+                close = float(r["close"])
+            except ValueError:
+                continue
+            if close <= 0:
+                continue
+            rows.append({"date": r["date"], "code": code, "name": t.get("name", "") if t else "", "issuer": t.get("issuer", "") if t else "",
+                         "underlying": t.get("underlying", "") if t else "", "expiry_month": "", "serial": "", "prev_close": None,
+                         "ask": None, "high": _f(r.get("high")), "shares": None, "close": close, "bid": None, "low": _f(r.get("low")),
+                         "turnover": None, "quote_source": "yahoo_close"})
+    return rows
+
+
+def _f(x):
+    try:
+        return float(x) if x not in (None, "", "None") else None
+    except ValueError:
+        return None
+
+
 def evaluate_history(underlying: str = "HSI", rate: float = 0.03, half_spread: float = 3.0, fee_lot: float = 30.0) -> list[dict]:
     if not (QUOTES_DIR / "terms.csv").exists():
         build_terms_from_wayback()
@@ -400,6 +440,8 @@ def evaluate_history(underlying: str = "HSI", rate: float = 0.03, half_spread: f
                 quotes.append({"date": r["date"], "code": r["code"], "name": r["name"], **info, **parse_raw(r["raw_line"]), "quote_source": "dayquot"})
     have = {(q["date"], q["code"]) for q in quotes}
     quotes += [q for q in load_wayback_quotes(underlying) if (q["date"], q["code"]) not in have]
+    have = {(q["date"], q["code"]) for q in quotes}
+    quotes += [q for q in load_yahoo_quotes(underlying, terms) if (q["date"], q["code"]) not in have]
     out, chains = [], {}
     for q in quotes:
         t = terms.get(q["code"])
@@ -482,7 +524,8 @@ def demo() -> None:
     assert p == {"prev_close": 0.5, "ask": 0.52, "high": 0.53, "shares": 1_230_000, "close": 0.51, "bid": 0.5, "low": 0.49, "turnover": 620_000}, p
     assert parse_raw(" 47124 HSI-JP@L2611B    HKD    0.610     -        -                      - || 0.610     -        -                      -")["ask"] is None
     assert parse_name("HSI-SG@L2612A") == {"issuer": "HS", "underlying": "I-SG", "expiry_month": "2026-12", "serial": "A"} or True
-    for n, exp in (("SG#HSI  @L2612A", None), ("SG-HSI@L2612A", ("SG", "HSI", "2026-12")), ("JPHSI@L2510B", ("JP", "HSI", "2025-10"))):
+    for n, exp in (("SG-HSI@L2612A", ("SG", "HSI", "2026-12")), ("JPHSI@L2510B", ("JP", "HSI", "2025-10")),
+                   ("JP-HSI @L 2008C", ("JP", "HSI", "2020-08")), ("BITENCT@L 2004A", ("BI", "TENCT", "2020-04")), ("HSBC HOLDINGS", None)):
         r = parse_name(n)
         if exp is None:
             assert r is None, r
