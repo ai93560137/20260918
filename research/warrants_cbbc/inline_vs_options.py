@@ -210,7 +210,9 @@ def print_eval(head: str, lower, upper, e: dict) -> None:
 
 
 # ---------- 即時（Futu OpenD） ----------
-def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path: str | None, half_spread_fallback: float) -> None:
+def scan_live(host: str, port: int, owner: str, fee_lot: float, rate: float, half_spread_fallback: float,
+              log=print) -> tuple[list[dict], dict]:
+    """連 OpenD 掃描全部界內證。回傳 (每隻一個 dict 的清單, 摘要 meta)。給 live() 與 futu/inline_push.py 共用。"""
     try:
         import futu as ft  # type: ignore
         ft.OpenQuoteContext
@@ -218,8 +220,9 @@ def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path
         sys.exit("需要 pip install futu-api；且不要在 repo 根目錄用 python3 -c／互動模式跑（repo 的 futu/ 資料夾會蓋掉套件）")
     import time
     ctx = ft.OpenQuoteContext(host=host, port=port)
+    results: list[dict] = []
+    meta = {"owner": owner, "n_inline": 0, "forward": None, "sources": []}
     try:
-        # 1. 界內證清單
         rows, begin = [], 0
         while True:
             req = ft.WarrantDataFilter()
@@ -228,32 +231,30 @@ def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path
             req.sort_field = ft.SortField.CODE
             ret, data = ctx.get_warrant(owner, req)
             if ret != ft.RET_OK:
-                sys.exit(f"get_warrant 失敗：{data}")
+                raise RuntimeError(f"get_warrant 失敗：{data}")
             df_w, last_page, all_count = data
             rows.extend(df_w.to_dict("records"))
             begin += len(df_w)
             if last_page or len(df_w) == 0 or begin >= all_count:
                 break
             time.sleep(3.1)
-        print(f"{INDEX_CODES.get(owner, owner)} 界內證 {len(rows)} 隻")
+        meta["n_inline"] = len(rows)
+        log(f"{INDEX_CODES.get(owner, owner)} 界內證 {len(rows)} 隻")
         if not rows:
-            return
+            return results, meta
         by_expiry: dict[str, list[dict]] = {}
         for r in rows:
             by_expiry.setdefault(str(r["maturity_time"])[:10], []).append(r)
 
-        # 2. 每個到期日的期權鏈 ＋ 快照
-        results = []
         today = dt.date.today()
         for exp_date, group in sorted(by_expiry.items()):
             exp = dt.date.fromisoformat(exp_date)
             days = max((exp - today).days, 0)
             dfac = math.exp(-rate * days / 365)
-            chain = None
+            chain, note = None, ""
             ret, oc = ctx.get_option_chain(owner, index_option_type=ft.IndexOptionType.NORMAL, start=exp_date, end=exp_date,
                                            option_type=ft.OptionType.ALL)
             time.sleep(3.1)
-            note = ""
             if ret == ft.RET_OK and len(oc) > 0:
                 oc = oc[oc["strike_time"].astype(str).str[:10] == exp_date]
                 codes = list(oc["code"])
@@ -267,8 +268,10 @@ def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path
                     time.sleep(0.6)
                 if snaps and not note:
                     import pandas as pd
-                    snap = pd.concat(snaps)
-                    chain = chain_from_snapshot(oc, snap, exp_date)
+                    try:
+                        chain = chain_from_snapshot(oc, pd.concat(snaps), exp_date)
+                    except KeyError as err:
+                        note = str(err)
             else:
                 note = f"期權鏈無資料（{exp_date}）：{oc if ret != ft.RET_OK else '可能到期日不是期權到期日'}"
             if chain is None:
@@ -278,8 +281,11 @@ def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path
                     chain = chain_from_settlement(d, month, half_spread_fallback)
                     note = (note + "；" if note else "") + f"退回用 {chain.label}"
                 else:
-                    print(f"{exp_date}: 沒有期權資料，跳過 {len(group)} 隻（{note}）")
+                    log(f"{exp_date}: 沒有期權資料，跳過 {len(group)} 隻（{note}）")
                     continue
+            if meta["forward"] is None:
+                meta["forward"] = round(chain.forward)
+            meta["sources"].append(chain.label)
             for r in group:
                 L, U = float(r["lower_strike_price"] or 0), float(r["upper_strike_price"] or 0)
                 ask, bid = float(r["ask_price"] or 0), float(r["bid_price"] or 0)
@@ -292,35 +298,54 @@ def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path
                 results.append({"code": r["stock"], "name": r["name"], "issuer": r["issuer"], "expiry": exp_date, "days": days,
                                 "lower": L, "upper": U, "bid": bid, "ask": ask, "forward": round(chain.forward),
                                 "source": chain.label + (f"（{note}）" if note else ""), **e})
-
-        # 3. 輸出
-        ok = [x for x in results if "error" not in x]
-        ok.sort(key=lambda x: -x["lock_edge"])
-        print(f"\n{'代號':<9}{'發行':<6}{'到期':<11}{'區間':<14}{'買':>6}{'賣':>6}{'公平中值':>8}{'溢價':>7}{'鎖定淨額':>8}{'condor':>7} 來源")
-        for x in ok:
-            print(f"{x['code']:<9}{str(x['issuer'])[:5]:<6}{x['expiry']:<11}{x['lower']:.0f}-{x['upper']:.0f}{'':<2}{x['bid']:>6.3f}{x['ask']:>6.3f}"
-                  f"{x['v_mid']:>8.3f}{x['premium_vs_mid']:>+7.3f}{x['lock_edge']:>+8.3f}{x['condor_cost']:>7.3f} {x['source'][:28]}")
-        for x in results:
-            if "error" in x:
-                print(f"{x['code']} {x['lower']:.0f}-{x['upper']:.0f}: {x['error']}")
-        if ok:
-            n_lock = sum(1 for x in ok if x["lock_edge"] > 0)
-            n_cheap = sum(1 for x in ok if x["inline_cheaper_than_condor"])
-            prem = sorted(x["premium_vs_mid"] for x in ok)
-            print(f"\n{len(ok)} 隻可算：鎖定套利 ✔ {n_lock} 隻；界內證賣價低於自做 condor 成本 {n_cheap} 隻；"
-                  f"賣價相對公平中值的溢價 中位 {prem[len(prem) // 2]:+.3f}、最低 {prem[0]:+.3f}、最高 {prem[-1]:+.3f}")
-        if csv_path and results:
-            p = Path(csv_path)
-            p.parent.mkdir(parents=True, exist_ok=True)
-            keys = sorted({k for x in results for k in x})
-            with open(p, "w", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=["date"] + keys)
-                w.writeheader()
-                for x in results:
-                    w.writerow({"date": today.isoformat(), **x})
-            print(f"已寫入 {p}")
     finally:
         ctx.close()
+    return results, meta
+
+
+def summarize(results: list[dict]) -> dict:
+    ok = [x for x in results if "error" not in x]
+    prem = sorted(x["premium_vs_mid"] for x in ok)
+    return {"n": len(results), "n_ok": len(ok), "n_lock": sum(1 for x in ok if x["lock_edge"] > 0),
+            "n_cheaper_than_condor": sum(1 for x in ok if x["inline_cheaper_than_condor"]),
+            "premium_median": prem[len(prem) // 2] if prem else None,
+            "premium_min": prem[0] if prem else None, "premium_max": prem[-1] if prem else None}
+
+
+def print_results(results: list[dict]) -> None:
+    ok = sorted((x for x in results if "error" not in x), key=lambda x: -x["lock_edge"])
+    print(f"\n{'代號':<9}{'發行':<6}{'到期':<11}{'區間':<14}{'買':>6}{'賣':>6}{'公平中值':>8}{'溢價':>7}{'鎖定淨額':>8}{'condor':>7} 來源")
+    for x in ok:
+        print(f"{x['code']:<9}{str(x['issuer'])[:5]:<6}{x['expiry']:<11}{x['lower']:.0f}-{x['upper']:.0f}{'':<2}{x['bid']:>6.3f}{x['ask']:>6.3f}"
+              f"{x['v_mid']:>8.3f}{x['premium_vs_mid']:>+7.3f}{x['lock_edge']:>+8.3f}{x['condor_cost']:>7.3f} {x['source'][:28]}")
+    for x in results:
+        if "error" in x:
+            print(f"{x['code']} {x['lower']:.0f}-{x['upper']:.0f}: {x['error']}")
+    if ok:
+        sm = summarize(results)
+        print(f"\n{sm['n_ok']} 隻可算：鎖定套利 ✔ {sm['n_lock']} 隻；界內證賣價低於自做 condor 成本 {sm['n_cheaper_than_condor']} 隻；"
+              f"賣價相對公平中值的溢價 中位 {sm['premium_median']:+.3f}、最低 {sm['premium_min']:+.3f}、最高 {sm['premium_max']:+.3f}")
+
+
+def write_csv(results: list[dict], csv_path: str, day: str) -> None:
+    p = Path(csv_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    keys = sorted({k for x in results for k in x})
+    with open(p, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["date"] + keys)
+        w.writeheader()
+        for x in results:
+            w.writerow({"date": day, **x})
+
+
+def live(host: str, port: int, owner: str, fee_lot: float, rate: float, csv_path: str | None, half_spread_fallback: float) -> None:
+    results, _meta = scan_live(host, port, owner, fee_lot, rate, half_spread_fallback)
+    if not results:
+        return
+    print_results(results)
+    if csv_path:
+        write_csv(results, csv_path, dt.date.today().isoformat())
+        print(f"已寫入 {csv_path}")
 
 
 def chain_from_snapshot(oc, snap, exp_date: str) -> Chain:
