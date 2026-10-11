@@ -94,3 +94,8 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 富途保證金緩衝警報（雲垂陣轉達使用者指示）：< 6 萬通知、< 2 萬危急（可能追繳／強平）、同級每再跌 1 萬再發、回 8 萬以上解除；狀態 `futu/risk/margin_alert.json`。
 - 風險模型改用富途實際 MHI 淨手數（人手即日倉計入）。
 - 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00272-njs --yes`
+
+## Telegram bot（2026-10-11 使用者確認）
+- **@HC_Gold_Signal_bot**＝Cloud Run 環境變數 `TG_BOT_TOKEN`：地載陣落單通知（R142）；R149／R151 富途風險、保證金、未配對警報亦經呢個 bot 發（使用者話唔使另設）。
+- **@HC_HK_Signal_bot**＝GitHub Actions secrets `TG_BOT_TOKEN`：金絲雀、恒指／ES 波幅報告、高低位訊號、債市、佩洛西、股票數據等 workflow。
+- 將來想富途警報改用 HK bot：喺 Cloud Run 加 `TG_HK_BOT_TOKEN`／`TG_HK_CHAT_ID`（`tg_send_hk` 會自動用），唔使改程式。
