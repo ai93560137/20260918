@@ -14,6 +14,8 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `DATA_QC.md` | 品質總表（起迄、缺口、尖刺、D1 日界、點差、波幅÷點差入場券、Yahoo／FRED 差）；`data_qc/<PAIR>_qc.md` 逐商品細節 |
 | `VERDICTS.md` | 外匯策略判決（格式同 RESEARCH_HANDBOOK.md 第二節）；不要再寫進共用手冊 |
 | `FX_COST_MODEL.md` | 外匯 swap 加價與點差的公開證據（IBKR 分層、Saxo 等級、CME 期貨路徑）與各口徑對策略的影響；之後登記的成本從這裡取 |
+| `FX_EUR_VRP_BACKTEST.md` | 歐元波動溢價（賣 21 日 EUR/USD 方差，EVZ 為行使價近似，烽燧響應）：t 3.33 但最差單期 21 倍平均（上限 20）、成本 1.0 波動點即歸零 → **🔍** |
+| `SNAKE_COIL_USDJPY_IBKR.md` | 蛇蟠陣 USDJPY 以 IBKR 成本重算：t 0.36（原 1.07）→ **☠️ 維持**；融資加價是主要成本 |
 | `IBKR_DATA_QC.md` | IBKR 外匯數據驗收（2026-10-11）：現貨 5 分鐘 BID_ASK 通過；期貨 IV／HV 只有 1 年（深度上限）、MXN 作廢 → 波動溢價無法判決，只能前向記錄；IB 點差約 Dukascopy 的 0.5–1 倍 |
 | `IBKR_DATA_REQUEST.md` | 給雲垂分支（GCP VM 上的 IB Gateway）的數據需求：CME 外匯期貨隱含波動歷史（波動溢價用）、IDEALPRO 5 分鐘 BID_ASK（日內點差用）；腳本 `scripts/ib_fx_history.py` |
 | `FX_COT_OOS_BACKTEST.md` | CFTC 持倉反向再登記：F1 1990–2003 樣本外（FRED 價格）t −1.52、F3 週頻 1.41 → **☠️ 路線關閉** |
@@ -75,6 +77,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 
 | 日期 | 事項 |
 |---|---|
+| 2026-10-11（續） | **歐元波動溢價預先登記並跑完：V1 t 3.33，但最差單期 21 倍（上限 20）、成本 1.0 波動點即歸零、30 日窗 1.37、5 分鐘口徑 2.31 → 🔍**；烽燧響應沒有改善（V0 t 3.54）。**蛇蟠陣 USDJPY IBKR 成本重算：t 0.36 → ☠️ 維持**（佣金吃掉點差優勢，永遠在場每年付約 144 pips 融資加價）。更正：IB 隱含波動與 EVZ 無重疊，無法互相核對 |
 | 2026-10-11 | **IBKR 外匯數據驗收**：雲垂分支交付 7 個貨幣對 5 分鐘 BID_ASK（2 年）與 8 個 CME 外匯期貨的 IV／HV／TRADES／BID_ASK 日線（只有 1 年，IB 深度上限；MXN 合約解析錯整組作廢）。結論：現貨點差比 Dukascopy 窄（約 0.5–1 倍）、期貨隱含利差與 FRED 只差 0–0.25%（支持機構口徑 0.25%）、**波動溢價無法用 1 年 IV 判決**。見 IBKR_DATA_QC.md。另：在本分支加入實倉登記規矩（總指揮），6E／6J 每日採集已在雲垂分支運行 |
 | 2026-09-25（七） | **路線 A 寬宇宙全部 ☠️**：14 個貨幣利差 t −0.51、價值 −0.82、三因子 −1.30（機構口徑），零售更差，加價 0% 仍負；只含新增貨幣、剔除 TRY 都救不回。Dukascopy 新興市場數據：BRL INR KRW 沒有、CZK RON ILS THB 2016 起、ZAR 2003 整段錯、限流要抓三次。**三條路走完：A、B 全 ☠️，C 只是前向記錄** |
 | 2026-09-25（六） | 使用者批准 COT 反向再登記：獨立樣本 1990–2003（FRED H.10 價格、G7＋MXN）**t −1.52**、週頻 2003–2026 週報酬 t 1.41 → 合併 ☠️，COT 路線關閉。發現並修正 COT 載入的合約對齊問題（E3 0.77 → 0.78）。引擎新增 FRED 單一價來源、日曆窗 z、週頻調倉。em1 組六個商品被 Dukascopy 限流誤判為無數據，探測已改為分清 404 與限流，重抓中 |
