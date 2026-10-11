@@ -1,0 +1,57 @@
+name: hkex-inline
+# 港交所證券市場每日行情報告裡的界內證行（scripts/hkex_inline_fetch.py）。
+# 雲端工作階段連不到 hkex.com.hk，所以在這裡下載，結果 commit 回觸發時的分支（data/hkex_inline/）。手動觸發。
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: probe（存樣本）／quotes（逐日抽 @L 行）／terms（試抓條款清單頁）
+        required: true
+        default: probe
+      start:
+        description: probe 的日期／quotes 的開始日（YYYY-MM-DD）
+        required: true
+        default: '2026-10-09'
+      end:
+        description: quotes 的結束日
+        required: false
+        default: '2026-10-10'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hkex-inline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: run
+        env:
+          MODE: ${{ github.event.inputs.mode }}
+          START: ${{ github.event.inputs.start }}
+          END: ${{ github.event.inputs.end }}
+        run: |
+          if [ "$MODE" = "probe" ]; then
+            python3 scripts/hkex_inline_fetch.py probe "$START"
+          elif [ "$MODE" = "terms" ]; then
+            python3 scripts/hkex_inline_fetch.py terms
+          else
+            python3 scripts/hkex_inline_fetch.py quotes "$START" "$END"
+          fi
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/hkex_inline/
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -m "data: 港交所界內證每日行情（${{ github.event.inputs.mode }} ${{ github.event.inputs.start }}）[skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1
