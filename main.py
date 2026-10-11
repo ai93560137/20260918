@@ -107,7 +107,7 @@
 #   * 2026-10-11 — [R152] 📊 基金報告（?view=fund_report，&format=json）：本地 gcp_ib/futu_pnl_export.py 推富途成交、手續費、
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
-#     資金流水按月按類別列出做對數。只顯示，唔影響下單。
+#     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
 #     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
 #     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
@@ -2502,6 +2502,7 @@ def futu_real_view(now=None):
 FUTU_PNL_FILE = "futu/pnl/latest.json"
 FUND_REPORT_START = os.environ.get("FUND_REPORT_START", "2026-09-01")
 FUTU_USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
+FUND_REPORT_SHOW_FLOWS = os.environ.get("FUND_REPORT_SHOW_FLOWS", "0") == "1"   # 資金流水含入／出金金額，預設唔公開
 FUTU_DEAL_TZ_HOURS = float(os.environ.get("FUTU_DEAL_TZ_HOURS", "8") or 8)     # 富途成交時間加幾多個鐘＝香港時間（實測 UTC）
 FUTU_PRODUCTS = (   # (代碼正則, 產品, 每點價值)
     (r"^HK\.MHI\d{4}$", "MHI 小型恒指期貨", 10),
@@ -2646,7 +2647,8 @@ def futu_pnl_report(doc, start=None, today=None):
     products = sorted({e["product"] for e in rows})
     return {"status": "ok", "start": str(start), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
             "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out,
-            "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())],
+            "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())]
+            if FUND_REPORT_SHOW_FLOWS else [],
             "warnings": warnings + [str(n) for n in doc.get("notes") or []]}
 
 
