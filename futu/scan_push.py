@@ -1,4 +1,4 @@
-"""前向測試：恒指牛熊證折讓 ＋ 恒指窩輪 vs 期權 IV ＋ 界內證，定時掃描、本地存 CSV、推上 GCP（R149 action=scan_push）。
+"""前向測試：恒指牛熊證折讓 ＋ 恒指窩輪 vs 期權 IV ＋ 界內證，定時掃描、本地存 CSV、推上 GCP（R150 action=scan_push）。
 
 在裝有 Futu OpenD 的電腦上（PowerShell，在 repo 資料夾）：
   python futu\\scan_push.py --once --force          # 立刻跑一輪（週末拿到的是上個交易日收市報價）
@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tradingview" / "out" / "scan"
 HKT = timezone(timedelta(hours=8))
-SCRIPT_VERSION = "R149"
+SCRIPT_VERSION = "R150"
 sys.path.insert(0, str(ROOT / "research" / "warrants_cbbc"))
 import cbbc_discount_scan as cds  # noqa: E402
 import warrant_iv_scan as wis  # noqa: E402

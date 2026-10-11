@@ -104,7 +104,7 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
-#   * 2026-10-11 — [R149] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
+#   * 2026-10-11 — [R150] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
 #     每輪把掃描列與摘要推上來，按 kind 存 futu/scan/<kind>/latest.json、runs/<日期>/<時分>.json、history/<日期>.json（摘要）。
 #     ?view=scan&kind=cbbc|warrant|inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
 #   * 2026-10-11 — [R148] action=inline_scan：本地 futu/inline_push.py 定時掃描恒指界內證對恒指期權的公平價
@@ -2364,7 +2364,7 @@ def handle_inline_scan(payload):
 
 
 # =============================================================================
-# [R149] 前向測試掃描（futu/scan_push.py 推上嚟）：kind 任意英數，列的欄位任意（數字／字串／布林），只存。
+# [R150] 前向測試掃描（futu/scan_push.py 推上嚟）：kind 任意英數，列的欄位任意（數字／字串／布林），只存。
 # =============================================================================
 SCAN_DIR = "futu/scan"
 SCAN_MAX_ROWS = 500
@@ -9647,7 +9647,7 @@ def handle_get(req):
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）
         return handle_inline_api_get(req)
-    if view == "scan":                                           # [R149] 前向測試掃描（&kind=）
+    if view == "scan":                                           # [R150] 前向測試掃描（&kind=）
         return handle_scan_api_get(req)
     if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
         return handle_futu_api_get(req.args.get("symbol"))
@@ -9738,7 +9738,7 @@ def _dispatch_post(payload):
         return handle_futu_risk(payload)
     if action == "inline_scan":                      # [R148] 本地 inline_push.py 推上來的界內證掃描（只存）
         return handle_inline_scan(payload)
-    if action == "scan_push":                        # [R149] 本地 scan_push.py 推上來的前向測試掃描（只存）
+    if action == "scan_push":                        # [R150] 本地 scan_push.py 推上來的前向測試掃描（只存）
         return handle_scan_push(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
@@ -9769,7 +9769,7 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push"):   # [R94][R147][R148][R149] Futu 封包大／私人，唔入 webhook 日誌
+    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
