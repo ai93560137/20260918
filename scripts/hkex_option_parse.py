@@ -6,6 +6,7 @@
 輸出（只進 git 的是解析後、壓縮過的檔）：
   data/hkex_options/series/<產品>_<年>.csv.gz   每日、每個到期、遠期價 ±12% 內的系列（夠算價平、偏斜、鐵鷹）
   data/hkex_options/atm_iv.csv                   每日、每個到期一行：遠期價（買賣權平價）、價平行使價、C／P 結算價、跨式、IV、量、未平倉
+  data/hkex_options/futures/hsif_<年>.csv.gz   恒指期貨每日、每個合約月的結算價／量／OI（parse_futures；遠月給長年期牛熊證比價）
   data/hkex_options/index.csv                    每日每產品的下載狀態（ok／none＝假期或沒報告／error），重跑時略過已完成的
 遠期價：取 |C−P| 最小的行使價 K，F = K + C − P（兩邊結算價都 > 0 才算）。
 """
@@ -23,6 +24,29 @@ ATM_COLS = ("date", "product", "expiry", "forward", "atm_strike", "call_oqp", "p
             "n_series", "vol_total", "oi_total")
 BAND = 0.12
 MONTHS = {m: i for i, m in enumerate(("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"), 1)}
+
+
+FUT_ROW_RE = re.compile(r"^\s*([A-Z]{3}-\d{2})\s+(.*)$")
+FUT_FIELDS = ("aht_open", "aht_high", "aht_low", "aht_close", "aht_vol", "open", "high", "low", "vol", "settle", "settle_chg",
+              "c_high", "c_low", "c_vol", "oi", "oi_chg")
+FUT_COLS = ("date", "product", "expiry", "settle", "settle_chg", "open", "high", "low", "vol", "oi", "oi_chg", "aht_close", "aht_vol")
+
+
+def parse_futures(text, day, product):
+    """恒指期貨報告（hsif）：每個合約月一行——夜市 開高低收量 | 日市 開高低 量 結算 變動 | 合約高低 量 OI OI變動。
+    回傳 (列清單, 跳過行數)；全部合約月都保留（遠月 DEC-27…DEC-31 給長年期牛熊證比價用）。"""
+    rows, skipped = [], 0
+    for line in text.splitlines():
+        m = FUT_ROW_RE.match(line)
+        if not m or m.group(1)[:3] not in MONTHS:
+            continue
+        toks = [t.replace(",", "") if t != "-" else "0" for t in m.group(2).replace("|", " ").split()]
+        if len(toks) != len(FUT_FIELDS) or not all(NUM_RE.match(t) for t in toks):
+            skipped += 1
+            continue
+        v = dict(zip(FUT_FIELDS, (int(t) for t in toks)))
+        rows.append({"date": day, "product": product, "expiry": expiry_key(m.group(1)), **v})
+    return rows, skipped
 
 
 def expiry_key(label):
@@ -95,6 +119,16 @@ def fetch(start, end, products, out, get, to_text, base="https://www.hkex.com.hk
     atm_path = out / "atm_iv.csv"
     atm_all = {(r["date"], r["product"], r["expiry"]): r for r in _read_csv(atm_path)}
     series_cache = {}
+    fut_cache = {}
+
+    def fut_file(product, year):
+        return out / "futures" / f"{product}_{year}.csv.gz"
+
+    def fut_rows(product, year):
+        key = (product, year)
+        if key not in fut_cache:
+            fut_cache[key] = {(r["date"], r["expiry"]): r for r in _read_csv(fut_file(product, year), gz=True)}
+        return fut_cache[key]
 
     def series_file(product, year):
         return out / "series" / f"{product}_{year}.csv.gz"
@@ -123,6 +157,18 @@ def fetch(start, end, products, out, get, to_text, base="https://www.hkex.com.hk
                     index[(day, p)] = {"date": day, "product": p, "status": f"error:{code}", "rows": 0, "skipped": 0}
                     n_err += 1
                     print(f"⚠️ {day} {p}: HTTP {code}", flush=True)
+                elif p.endswith("f"):                                 # 期貨報告（hsif / mhif …）
+                    frows, skipped = parse_futures(to_text(raw), day, p)
+                    if not frows:
+                        index[(day, p)] = {"date": day, "product": p, "status": "error:parse", "rows": 0, "skipped": skipped}
+                        n_err += 1
+                        print(f"⚠️ {day} {p}: 解析不到任何合約月（{len(raw)} bytes）", flush=True)
+                    else:
+                        rows = fut_rows(p, day[:4])
+                        for r in frows:
+                            rows[(r["date"], r["expiry"])] = r
+                        index[(day, p)] = {"date": day, "product": p, "status": "ok", "rows": len(frows), "skipped": skipped}
+                        n_ok += 1
                 else:
                     keep, atm, skipped = parse(to_text(raw), day, p)
                     if not atm:
@@ -141,6 +187,8 @@ def fetch(start, end, products, out, get, to_text, base="https://www.hkex.com.hk
         d += timedelta(days=1)
         if d.day == 1 or d > last:                                  # 每月寫一次，中途失敗也保得住
             _flush(out, idx_path, index, atm_path, atm_all, series_cache, series_file)
+            for (p, y), rows in fut_cache.items():
+                _write_csv(fut_file(p, y), [rows[k] for k in sorted(rows)], FUT_COLS, gz=True)
     print(f"完成：下載 {n_ok} 份、沒有報告 {n_none}、錯誤 {n_err}、已存在略過 {n_skip}")
 
 
@@ -153,6 +201,12 @@ def _flush(out, idx_path, index, atm_path, atm_all, series_cache, series_file):
 
 if __name__ == "__main__":                                          # 本機測試：python3 hkex_option_parse.py 樣本.txt 2026-10-02 hsio
     text = Path(sys.argv[1]).read_text(encoding="utf-8")
+    if sys.argv[3].endswith("f"):
+        frows, skipped = parse_futures(text, sys.argv[2], sys.argv[3])
+        print(f"合約月 {len(frows)} 列、跳過 {skipped} 行")
+        for r in frows:
+            print(r)
+        sys.exit(0)
     keep, atm, skipped = parse(text, sys.argv[2], sys.argv[3])
     print(f"系列 {len(keep)} 列（遠期 ±{BAND:.0%}）、到期 {len(atm)} 個、跳過 {skipped} 行")
     for a in atm:

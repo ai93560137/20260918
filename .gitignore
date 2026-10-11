@@ -14,3 +14,4 @@ gcp-key*.json
 # 持倉／報價／風險報告結果（repo 公開，唔 commit）
 tradingview/data_external/futu_positions.json
 tradingview/out/
+research/warrants_cbbc/backtest_hist.csv

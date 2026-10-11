@@ -16,6 +16,14 @@ on:
         description: quotes 的結束日
         required: false
         default: '2026-10-10'
+      urls:
+        description: mode=urls 時，逗號分隔的 hkex.com.hk 網址
+        required: false
+        default: ''
+      step:
+        description: mode=survey 時，每隔幾天抽一天
+        required: false
+        default: '14'
 
 permissions:
   contents: write
@@ -35,9 +43,27 @@ jobs:
           MODE: ${{ github.event.inputs.mode }}
           START: ${{ github.event.inputs.start }}
           END: ${{ github.event.inputs.end }}
+          URLS: ${{ github.event.inputs.urls }}
+          STEP: ${{ github.event.inputs.step }}
         run: |
           if [ "$MODE" = "probe" ]; then
             python3 scripts/hkex_inline_fetch.py probe "$START"
+          elif [ "$MODE" = "urls" ]; then
+            python3 scripts/hkex_inline_fetch.py urls "$URLS"
+          elif [ "$MODE" = "survey" ]; then
+            python3 scripts/hkex_inline_fetch.py survey "$START" "$END" --step "${STEP:-14}"
+          elif [ "$MODE" = "wayback" ]; then
+            python3 scripts/hkex_inline_fetch.py wayback
+          elif [ "$MODE" = "hkex-monthly-probe" ]; then
+            python3 scripts/hkex_inline_fetch.py hkex-monthly --probe --products "${URLS:-cbbc}" --months 9
+          elif [ "$MODE" = "hkex-monthly" ]; then
+            python3 scripts/hkex_inline_fetch.py hkex-monthly --products "${URLS:-cbbc,dwrc}" --months "${STEP:-1-12,cur}" --ul HSI
+          elif [ "$MODE" = "mce" ]; then
+            python3 scripts/hkex_inline_fetch.py mce
+          elif [ "$MODE" = "yahoo" ]; then
+            python3 scripts/hkex_inline_fetch.py yahoo --codes "$URLS"
+          elif [ "$MODE" = "wayback-dayquot" ]; then
+            python3 scripts/hkex_inline_fetch.py wayback-dayquot --from "${START:0:4}" --to "${END:0:4}"
           elif [ "$MODE" = "terms" ]; then
             python3 scripts/hkex_inline_fetch.py terms
           else
@@ -47,7 +73,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/hkex_inline/
+          git add data/hkex_inline/ data/hkex_sp/
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -m "data: 港交所界內證每日行情（${{ github.event.inputs.mode }} ${{ github.event.inputs.start }}）[skip-tg]"
           for i in 1 2 3; do

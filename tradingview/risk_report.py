@@ -22,6 +22,9 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ES2612", "US.ESmain", "US.MES2612", "US.MESmain"]}
 LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「手」單位
 # 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
+# 止損規則（book 冇寫先用呢度；持倉唔喺 book 就略過）
+DEFAULT_STOPS = {"EW P7750": {"credit": 68, "stop_buyback": 136, "legs": ["EW2610 P7750"],
+                              "note": "使用者人手開；2026-10-11 定：買回價 ≥ 136 點（2× 權利金）"}}
 PLAYBOOK = {"雲垂陣 HSI 月跨式＋對沖": {"und": "HSI", "groups": ["HSI 月跨式", "MHI2610 對沖"], "band": 0.5}}
 
 
@@ -72,6 +75,20 @@ def load(book_path, quotes_path=None):
     for r in qf.get("positions", []):          # 舊格式：只有 positions 行
         Q.setdefault(r["code"], {k: r.get(k) for k in ("bid", "ask", "mid", "last", "quote_time")})
     FP = {r["code"]: r for r in qf.get("positions", [])}
+    # 富途實際恒指期貨淨手數 vs book（例如人手即日 MHI）：多出／少咗嘅當一條「人手」期貨腿計入模型
+    b["fut_lots"] = {}
+    for code, r in FP.items():
+        m = re.match(r"^HK\.(MHI|HSI)\d{4}$", code)
+        if not m or not r.get("qty"):
+            continue
+        b["fut_lots"][code] = r["qty"]
+        booked = sum(p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p) == code)
+        extra = r["qty"] - booked
+        if extra:
+            b["positions"].append({"id": f"{code[3:]} 人手（富途實際 {r['qty']:+g}、book {booked:+g}）", "und": "HSI",
+                                   "type": "fut", "qty": extra, "mult": 10 if m.group(1) == "MHI" else 50, "ccy": "HKD",
+                                   "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or 0,
+                                   "code": code, "group": "恒指期貨人手"})
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
     val = date.fromisoformat(b["valuation_date"])
@@ -223,9 +240,12 @@ def build(book, quotes=None, combined_equity=None):
       + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}")
     if acc:
         cush = acc["total_assets"] - (acc.get("maintenance_margin") or 0)
-        M.update(futu_equity=acc["total_assets"], cushion=cush)
+        M.update(futu_equity=acc["total_assets"], cushion=cush, maintenance_margin=acc.get("maintenance_margin"))
         P(f"富途期貨戶口：權益 HK${acc['total_assets']:,.0f}，維持保證金 HK${acc.get('maintenance_margin') or 0:,.0f}，"
           f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
+    M["mhi_lots"] = dict(b["fut_lots"]) or {
+        derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
+    P("恒指期貨淨手數（富途實際）：" + "、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()))
     P("")
 
     P("## 1. 價格來源（每腿）")
@@ -277,11 +297,27 @@ def build(book, quotes=None, combined_equity=None):
 
     P("## 6. 止損線（買回總價 ≥ 2×權利金，用平倉價）")
     px = {p["id"]: p["close_px"] for p in b["positions"]}
-    for name, s in b["stops"].items():
+    byid = {p["id"]: p for p in b["positions"]}
+    stops = {**{k: v for k, v in DEFAULT_STOPS.items() if all(l in byid for l in v["legs"])}, **b["stops"]}
+    for name, s in stops.items():
         bb = sum(px[i] for i in s["legs"])
         M["stop_use"][name] = bb / s["stop_buyback"]
-        P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）")
-    P("- HSI 週權 strangle、EW P7750：**冇止損規則**（唔係雲垂陣劇本）\n")
+        und = byid[s["legs"][0]]["und"]
+        F0 = b["underlyings"][und]["F"]
+        trig = []
+        for sign, lab in ((-1, "跌"), (1, "升")):          # 標的郁幾多，模型買回價會到止損（固定斜率、即時重估）
+            for k in range(1, 301):
+                r = sign * k / 1000
+                v = sum(value(byid[i], F0 * (1 + r), b["skew"][und][0] * log(1 + r)) + byid[i]["close_px"] - value(byid[i], F0)
+                        for i in s["legs"])
+                if v >= s["stop_buyback"]:
+                    trig.append(f"{und} {lab} {k / 10:.1f}%（≈ {F0 * (1 + r):,.0f}）")
+                    break
+        P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）"
+          + (f"；觸發約需 {'、或 '.join(trig)}" if trig else "；標的升跌 30% 內唔觸發")
+          + (f"（{s['note']}）" if s.get("note") else ""))
+    P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
+      "research/hsi_futures_range/STRANGLE_1SIGMA.md）\n")
 
     P("## 7. 壓力測試")
     P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")

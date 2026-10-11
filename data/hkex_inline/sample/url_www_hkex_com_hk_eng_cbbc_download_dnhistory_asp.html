@@ -1,0 +1,228 @@
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html class="market-hkex">
+<head>
+    <title>Hong Kong Exchanges and Clearing Limited</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta http-equiv="Content-language" content="eng">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <link type="text/css" rel="stylesheet" href="/nonCMS/css/main.css" />
+    <link type="text/css" rel="stylesheet" href="/nonCMS/css/sprc_noncms.css" />
+</head>
+<body>
+    <script language="javaScript" src="/nonCMS/script/noncmshead.js"></script>
+    <!-- Leftmenu start -->
+    <script language="javaScript" src="/nonCMS/script/noncmsleftmenu.js"></script>
+    <!-- Content start -->
+    <main class="nav-content-wrap">
+<div class="main-content">
+    <div class="section__title-left-border">
+        Download Historical Data</div>
+    <br />
+    <div class="content-margin">
+        <span class="cbbctitle" id="span3"><u>
+            By CBBC</u></span>
+    </div>
+    <div class="content-margin">
+        <form id="form1" name="formSearch" onsubmit="return CheckAll(this)" action="dnresult.asp"
+        method="post">
+        
+        <input type="hidden" name="sessionToken" value="OtAp8i1BebUsrz77QnMZ" />
+        <table cellspacing="0" cellpadding="5" border="0">
+            <tbody>
+                <tr>
+                    <td class="cbbctitle">
+                        CBBC Code:
+                    </td>
+                    <td>
+                        <input maxlength="5" size="10" name="txtCBBCCode">
+                    </td>
+                </tr>
+                <tr>
+                    <td class="cbbctitle" valign="top">
+                        Trade Date:
+                    </td>
+                    <td>
+                        <table cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td>
+                                    <input maxlength="8" size="10" name="txtFromDate" value="11092026">&nbsp;
+                                </td>
+                                <td class="cbbctitle">
+                                    &nbsp;<b>To</b>&nbsp;
+                                </td>
+                                <td>
+                                    <input maxlength="8" size="10" name="txtToDate" value="11102026">&nbsp;
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="cbbctext">
+                                    (ddmmyyyy)&nbsp;
+                                </td>
+                                <td>
+                                    &nbsp;
+                                </td>
+                                <td class="cbbctext">
+                                    (ddmmyyyy)&nbsp;
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="cbbctitle" colspan="3" align="center">
+                                    Period (Max. of past 12 months)
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        &nbsp;
+                    </td>
+                    <td>
+                        <input type="submit" class="button-default" name="submit" value="Submit" />
+                        <input type="button" class="button-default" onclick="form1.reset();" value="Clear" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </form>
+    </div>
+</div>
+</main>
+<!-- Content end -->
+<script language="javaScript" src="/nonCMS/script/noncmsfoot.js"></script>
+<script language="javaScript" src="/nonCMS/script/vendor.js"></script>
+<script language="javaScript" src="/nonCMS/script/main.js"></script>
+<script language="javaScript" src="/nonCMS/script/sprc_common.js"></script>
+<script type="text/javascript" nonce="a0b07cb52939f95440086bc672ac2dbd" src="/vqeN8YmBP/S9-AKmp3g/Gpz30DG39Qz5/B1p4AQ/YjJ7R/FJfe2kU?v=93995d71-0451-26a8-5782-ed8c0e631732" defer></script></body>
+</html>
+<script language="javascript">		
+		function isPosInteger(inputVal) {
+			inputStr = inputVal.toString()
+			for (var i = 0; i < inputStr.length; i++) {
+				var oneChar = inputStr.charAt(i)
+				if (oneChar < "0" || oneChar > "9") {
+					return false
+				}
+			}
+			return true
+		}	
+		
+		function CheckAll(form)	{
+			var cbbccode = form.txtCBBCCode.value;
+			var fromdate = form.txtFromDate.value;
+			var todate = form.txtToDate.value;
+			var year;
+			var month;
+			var day;
+			
+			if (cbbccode == "") {
+				alert("Invalid CBBC Code, please try again.");
+				form.txtCBBCCode.focus();
+				return(false);
+			}
+			
+			if (!isPosInteger(cbbccode)) {
+				alert("Invalid CBBC Code, please try again.");
+				form.txtCBBCCode.focus();
+				return(false);
+			}
+			
+			if (fromdate.length != 8) {
+				alert("Invalid date, please try again.");
+				form.txtFromDate.focus();
+				return(false);
+			}
+			
+			if (todate.length != 8) {
+				alert("Invalid date, please try again.");
+				form.txtToDate.focus();
+				return(false);
+			}
+			
+			if (fromdate != "") {
+				day = parseInt(fromdate.substring(0,2), 10);
+				month = parseInt(fromdate.substring(2,4), 10);
+				year = parseInt(fromdate.substring(4,8), 10);
+				
+				if (!(day >= 1 && day <= 31)) {
+					alert("Invalid date, please try again.");
+					form.txtFromDate.focus();
+					return(false);
+				}
+				if (!(month >= 1 && month <= 12)) {
+					alert("Invalid date, please try again.");
+					form.txtFromDate.focus();
+					return(false);
+				}
+				if (!(year >= 2016 && year <= 2026)) {
+					alert("Invalid date, please try again.");
+					form.txtFromDate.focus();
+					return(false);
+				}
+				
+				fromdate = fromdate.substring(4,8) + fromdate.substring(2,4) + fromdate.substring(0,2);
+
+				if (fromdate < "20251011")
+				{
+					alert("Invalid date, please try again.");
+					form.txtFromDate.focus();
+					return(false);
+				}
+			}
+
+			if (todate != "") {			
+				day = parseInt(todate.substring(0,2), 10);
+				month = parseInt(todate.substring(2,4), 10);
+				year = parseInt(todate.substring(4,8), 10);
+				
+				if (!(day >= 1 && day <= 31)) {
+					alert("Invalid date, please try again.");
+					form.txtToDate.focus();
+					return(false);
+				}
+				if (!(month >= 1 && month <= 12)) {
+					alert("Invalid date, please try again.");
+					form.txtToDate.focus();
+					return(false);
+				}
+				if (!(year >= 2025 && year <= 2027)) {
+					alert("Invalid date, please try again.");
+					form.txtToDate.focus();
+					return(false);
+				}
+				
+				todate = todate.substring(4,8) + todate.substring(2,4) + todate.substring(0,2);
+				
+				if (todate > "20261011")
+				{
+					alert("Invalid date, please try again.");
+					form.txtToDate.focus();
+					return(false);
+				}		
+			}
+
+			if (fromdate > todate)
+			{
+				alert("Invalid date, please try again.");
+				form.txtFromDate.focus();
+				return(false);
+			}					
+					
+			return(true);
+		}
+			
+		function openWin(url, name) {
+			var win;
+			win = window.open(url, name)
+
+			if (win.focus != null)
+				win.focus();
+		}
+</script>
