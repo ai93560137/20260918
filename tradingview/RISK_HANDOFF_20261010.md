@@ -111,3 +111,8 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R153：每日自動基金報告匯出
 - `gcp_ib/auto_risk.py` 每日 05:30 HKT 後喺背景跑 `futu_pnl_export.py`（唔阻風險循環）；失敗每日最多 3 次；`--no-pnl` 關。唔使改 Cloud Run。步驟見 `RUNBOOK_FUTU_RISK.md` §8。
+
+## 2026-10-12 R154：metrics.delta_parts（雲垂對沖通報用）
+- `risk_report.build` 加 `M["delta_parts"]` = {straddle＝雲垂月跨式 Δ（唔含對沖）, net_with_hedge＝含對沖淨 Δ, hsi_all＝恒指全部淨 Δ（連週權、人手倉）}，單位 MHI 手。
+- `main.py` `_futu_risk_clean_metrics` 保留 `delta_parts` 存入 `futu/risk/latest.json`；`auto_risk.py` 版本 R154（照推 metrics）。MHI2610 實際淨手數＝`metrics.mhi_lots`（R149 起）。
+- 用途：定時任務「雲垂對沖狀態通報」（平日 14:35／15:55 HKT＋10/12 09:50）。
