@@ -119,17 +119,23 @@ def fetch_urls(urls):
     """任意網址存樣本（限 hkex.com.hk）。CSV 印前 8 行與行數；HTML 印含 csv/xls/htm/asp 的連結。"""
     (OUT / "sample").mkdir(parents=True, exist_ok=True)
     for i, url in enumerate(u.strip() for u in urls.split(",") if u.strip()):
-        if "hkex.com.hk" not in url:
-            print(f"skip（只抓 hkex.com.hk）：{url}")
+        if "hkex.com.hk" not in url and "web.archive.org" not in url:
+            print(f"skip（只抓 hkex.com.hk／web.archive.org）：{url}")
             continue
         st, raw = get(url)
         print(f"url[{i}]: HTTP {st} {len(raw)} bytes  {url}")
         if st != 200 or not raw:
             continue
-        name = re.sub(r"[^A-Za-z0-9]+", "_", url.split("hkex.com.hk/")[-1])[:90]
-        ext = ".csv" if url.lower().endswith(".csv") else (".xls" if ".xls" in url.lower() else ".html")
+        name = re.sub(r"[^A-Za-z0-9]+", "_", url.split("://", 1)[-1])[:90]
+        ext = ".csv" if url.lower().endswith(".csv") else (".xls" if ".xls" in url.lower() else (".txt" if "cdx/search" in url else ".html"))
         (OUT / "sample" / f"url_{name}{ext}").write_bytes(raw[:2_000_000])
-        if ext == ".csv":
+        if ext == ".txt":
+            txt = raw.decode("utf-8", "replace")
+            lines = txt.splitlines()
+            print(f"   {len(lines)} 行")
+            for l in lines[:80]:
+                print("   | " + l[:220])
+        elif ext == ".csv":
             txt = raw.decode("utf-16", "replace") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
             lines = txt.splitlines()
             print(f"   CSV {len(lines)} 行")
