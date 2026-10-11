@@ -1,0 +1,4963 @@
+
+
+
+
+
+
+	股息期貨
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    window.onload = function () {
+        browserCheck("Browser Incompatible");
+        antiClickJack("www.hkgem.com,www.hkex.com.hk,www.hkexgroup.com,sc.hkex.com.hk,sc.hkexnews.hk,www.hkexnews.hk"); 
+    };    
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+
+
+
+
+
+
+        
+        
+
+
+    
+      ! function(o, c) {
+        var n = c.documentElement,
+          t = " w-mod-";
+        n.className += t + "js", ("ontouchstart" in o || o.DocumentTouch && c instanceof DocumentTouch) && (n.className += t + "touch")
+      }(window, document);
+    
+    
+  .section_container_in.breadcrumb a:hover,
+  .section_container_in.breadcrumb a:focus {
+    color: #fff !important;
+  }
+blockquote {
+    font-size: inherit !important;
+}
+
+
+	
+
+	
+	
+	
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-51785376-1');
+	
+
+
+	
+
+
+    
+        (function () {
+            var didInit = false;
+            function initMunchkin() {
+                if (didInit === false) {
+                    didInit = true;
+                    Munchkin.init('381-CPX-988', {"wsInfo":"j1RQ"});
+                }
+            }
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.async = true;
+            s.src = '//munchkin.marketo.net/munchkin.js';
+            s.onreadystatechange = function () {
+                if (this.readyState == 'complete' || this.readyState == 'loaded') {
+                    initMunchkin();
+                }
+            };
+            s.onload = initMunchkin;
+            document.getElementsByTagName('head')[0].appendChild(s);
+        })();
+    
+
+   
+     
+
+      
+
+
+
+
+
+//
+
+
+
+
+
+
+
+	
+	
+	
+	
+	
+	
+
+			
+				
+			
+
+          
+
+
+
+        
+            
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    var $ = jQuery.noConflict();
+    (function ($) {
+        $(function () {
+            if (typeof (LabCI) === "undefined") LabCI = {};
+
+            // For returning the access token
+            LabCI.getToken = function () {
+                // ----- THIS IS A SAMPLE IMPLEMENTATION -----
+                //return "Base64-AES-Encrypted-Token";
+                return "evLtsLsBNAUVTPxtGqVeG1aSqbr8ye7IS2V2CcJgwVPZUbZfxCW23m1Y5aqwwWj%2b";
+            };
+
+            // For returning the current UI language
+            LabCI.getLang = function () {
+                // ----- THIS IS A SAMPLE IMPLEMENTATION -----
+                return "zh_HK";
+            };
+        });
+    })(jQuery);
+
+
+
+    
+
+    
+    
+        
+            
+                
+                    
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+(function($) {
+
+$(function() {
+    var _WP_PATH = "/lhkexw/";
+    jQuery.loadScript = function(url, nocache) { return jQuery.ajax({ url:_WP_PATH+url, dataType:"script", async:true, method:"GET", ifModified:nocache?false:true }); };
+    jQuery.loadCSS = function(url) {
+        if (document.createStyleSheet) try { document.createStyleSheet(_WP_PATH+url); } catch (e) { }
+        else $("").appendTo("#lhkexw-quotereits");
+    };
+
+    let commonrc = "js/commonrc_en.js";
+    let marketmarquee = "js/marketmarquee_en.js";
+    // Common Resources
+    if (LabCI.getLang()==="zh_HK"){
+        commonrc = "js/commonrc_zh_HK.js";
+        marketmarquee = "js/marketmarquee_zh_HK.js"
+    }else if(LabCI.getLang()==="chn"){
+        commonrc = "js/commonrc_chn.js";
+        marketmarquee = "js/marketmarquee_chn.js";
+    }
+
+    $.when(
+        $.loadScript(commonrc),
+        $.loadScript(marketmarquee)
+    ).done(function() {
+        // Turn on/off debug logger, default is off
+        LabCI.Utils.CONSOLELOGGER.isdebug = true;
+        LabCI.WP.marketMarquee = LabCI.WP["createmarketmarquee"].call(this).init(LabCI.getLang()).show({});
+    });
+});
+
+})(jQuery);
+
+
+
+
+    
+        
+            
+                 
+                    
+                 
+                    
+                 
+            
+        
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function($) {
+
+$(function() {
+    var _WP_PATH = "/lhkexw/";
+    jQuery.loadScript = function(url, nocache) { return jQuery.ajax({ url:_WP_PATH+url, dataType:"script", async:true, method:"GET", ifModified:nocache?false:true }); };
+    jQuery.loadCSS = function(url) {
+        if (document.createStyleSheet) try { document.createStyleSheet(_WP_PATH+url); } catch (e) { }
+    };
+
+    let commonrc = "js/commonrc_en.js";
+    let marketdetail = "js/marketdetail_en.js";
+    let marketturnover = "js/marketturnover_en.js";
+    let marketsecurities = "js/marketsecurities_en.js";
+    let marketsearch = "js/marketsearch_en.js";
+    let marketderivatives = "js/marketderivatives_en.js";
+    // Common Resources
+    if (LabCI.getLang()==="zh_HK"){
+        commonrc = "js/commonrc_zh_HK.js";
+        marketdetail = "js/marketdetail_zh_HK.js";
+        marketturnover = "js/marketturnover_zh_HK.js";
+        marketsecurities = "js/marketsecurities_zh_HK.js";
+        marketsearch = "js/marketsearch_zh_HK.js";
+        marketderivatives = "js/marketderivatives_zh_HK.js";
+    }else if(LabCI.getLang()==="chn"){
+        commonrc = "js/commonrc_chn.js";
+        marketdetail = "js/marketdetail_chn.js";
+        marketturnover = "js/marketturnover_chn.js";
+        marketsecurities = "js/marketsecurities_chn.js";
+        marketsearch = "js/marketsearch_chn.js";
+        marketderivatives = "js/marketderivatives_chn.js";
+    }
+
+    $.when(
+        $.loadScript(commonrc),
+        $.loadScript(marketdetail),
+        $.loadScript(marketturnover),
+        $.loadScript(marketsecurities),
+        $.loadScript(marketsearch),
+        $.loadScript(marketderivatives)
+    ).done(function() {
+        // Turn on/off debug logger, default is off
+        LabCI.Utils.CONSOLELOGGER.isdebug = true;
+        LabCI.WP["createmarketdetailpageobj"].call(this).init(LabCI.getLang()).show({});
+    });
+
+});
+
+})(jQuery);
+
+
+
+
+    
+        
+            
+                
+                    
+                        
+                    
+                    
+                        
+                            Market Turnover
+                            
+                                
+                                    
+                                        
+                                            
+                                            
+                                        
+                                        
+                                            
+                                            
+                                        
+                                    
+                                    -
+                                    
+                                        
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                                
+                                                
+                                                  
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                        
+                                    
+                                    -
+                                
+                                
+                                    
+                                        
+                                        
+                                            
+                                            
+                                                                          
+                                        
+                                    
+                                    
+                                        
+                                            
+                                        
+                                        
+                                            
+                                                
+                                                
+                                                
+                                                    
+                                                
+                                            
+                                            
+                                            
+                                                
+                                                
+                                            
+                                        
+                                    
+                                    
+                                        
+                                            
+                                        
+                                        
+                                            
+                                                
+                                                
+                                                
+                                                    
+                                                
+                                            
+                                            
+                                            
+                                                
+                                                
+                                            
+                                        
+                                    
+                                    -
+                                
+                            
+                        
+                    
+                    
+                        
+                            
+                                
+                                
+                                    ||||||  
+                                
+                            
+                            
+                                
+                                    
+                                        
+                                        
+                                            
+                                        
+                                    
+                                
+                            
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                    
+                                
+                                
+                                    -
+                                    
+                                
+                            
+                            
+                                
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                                
+                                
+                                
+                            
+                        
+                    
+                    
+                        
+                            
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                    
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                                    
+                                        
+                                    
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                            
+                            
+                                
+                                    
+                                    
+                                    -
+                                
+                                
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                                
+                                
+                                
+                                    
+                                        
+                                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                    -
+                                
+                            
+                        
+                    
+                
+            
+        
+    
+
+                
+            
+        
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+        
+            
+                
+                
+                    
+                        
+                    
+                
+                
+                
+            
+            
+                
+                
+            
+        
+    
+        
+        
+            
+                EN
+                
+                    简
+            
+        
+
+        
+        
+        
+            
+            
+                關於香港交易所
+            
+            
+            
+            
+                
+                    
+                        關於我們
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        投資者關係
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        企業管治
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        可持續發展
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        媒體中心
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        招聘欄
+                        
+                    
+                
+            
+                
+        
+            
+        
+            
+            
+                相關網站: 倫敦金屬交易所
+            
+            
+            
+            
+                
+                    
+                        香港交易所集團
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        倫敦金屬交易所
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        債券通
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        QME
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        披露易
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        中華交易服務
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Client Connect
+                        
+                    
+                
+            
+                
+        
+            
+
+        
+        
+        
+            
+                最新市場動態
+                
+            
+        
+        
+        
+
+        
+        
+                
+                    
+                        
+                        
+                            
+                                產品
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        證券產品
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    股本證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    交易所買賣產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    結構性產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    房地產投資信託基金
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    債務證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        衍生產品
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    股票指數產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    個股
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    匯率產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    利率產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    大宗商品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        場外衍生產品
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    場外結算合資格衍生產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    利率掉期合約
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    不交收遠期外匯合約
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    交叉貨幣掉期
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    外滙合約
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        尋找合作夥伴
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        MSCI指數期貨及期權
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        香港可持續及綠色交易所
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                服務
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        交易
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            概覽
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            系統設施
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    衍生產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            概覽
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            系統設施
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        基礎設施
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    設備託管服務
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    SDNet/2
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        數據及指數服務
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    實時數據產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    歷史數據
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    系統設施
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    指數服務
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        規則, 表格及收費
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    規則
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    表格
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    收費
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        結算
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            概覽
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            系統設施
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            風險管理
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            中央對手方披露文件  
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    衍生產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            概覽
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            系統設施
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            風險管理
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            中央對手方披露文件  
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    場外衍生產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            概覽
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            系統設施
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            風險管理概覽
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            中央對手方披露文件  
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        交收及存管
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    交收 — 證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    存管處服務
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    無紙證券市場
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    共用代理人服務 
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    有關證劵納入中央結算系統
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    PFMI
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    香港中央結算(代理人)有限公司持有的未領取的權益
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        平台系統
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    公司行動訊息標準化
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Client Connect
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    FINI - 香港IPO新時代 
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    領航星衍生產品平台
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    領航星現貨平台 
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    綜合基金平台  
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    香港交易所聯訊通
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    收市後交易時段數碼支付應用
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        通告及告示
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        成為參與者
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        香港金融大會堂
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                市場
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        首次公開招股
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    選擇香港交易所
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    GEM
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Southeast Asia Listing Insights
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                         互聯互通
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    滬港通及深港通
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    債券通
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        商品
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    倫敦金屬交易所
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    前海聯合交易中心
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        香港交易所推動可持續金融發展
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Core Climate
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    香港可持續及綠色交易所
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        香港交易所生物科技生態圈
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        特專科技公司上市
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Core Climate
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                上市監管
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        按角色探索
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    潛在申請人
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    上市發行人
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    董事
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        上市規則與資料
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    上市規則
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    上市指引
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    清單、表格和模板
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    上市規則執行
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        新聞和出版
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    最新消息
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    上市通訊
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    報告
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    上市諮詢
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        可持續發展及企業管治常規
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    ESG Academy
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    董事會多元匯
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    企業管治常規
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    聚焦股東價值
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    INED Corner
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        資源中心
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        有關上市科 & 聯絡
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                新聞
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        企業新聞
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        監管通訊
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        市場通訊
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        市場諮詢
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        新聞中心
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        香港交易所日曆
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        資料研究
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                互聯互通機制
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        互聯互通十週年
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        滬港通及深港通
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        債券通
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        互換通
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        每日數據
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        市場概況
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        合資格股份
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                市場數據
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        股票行情查詢
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        證券價格
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    股本證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    交易所買賣產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    衍生權證
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    界內證
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    牛熊證
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    房地產投資信託基金
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    債務證券
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        期貨期權價格 
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    股票指數產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    股票產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    匯率產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    利率產品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    商品
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        統計數據
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    綜合報告
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    證券市場統計數據
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    衍生產品市場
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    參與者統計數據
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    結算,交收及存管服務
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        披露易
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        訊息提示
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        市場數據服務
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+
+    
+	    
+	    
+	    
+	    
+	    
+	    
+    
+    
+
+    
+        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+                    
+            
+
+            
+                
+                
+                    
+                        
+                        
+                            關於香港交易所
+                                
+                            
+                            
+                            
+                            
+                                關於我們
+                            
+                                
+                            
+                                投資者關係
+                            
+                                
+                            
+                                企業管治
+                            
+                                
+                            
+                                可持續發展
+                            
+                                
+                            
+                                媒體中心
+                            
+                                
+                            
+                                招聘欄
+                            
+                                
+                                        
+                        
+                            
+                        
+                            相關網站: 倫敦金屬交易所
+                                
+                            
+                            
+                            
+                            
+                                香港交易所集團
+                            
+                                
+                            
+                                倫敦金屬交易所
+                            
+                                
+                            
+                                債券通
+                            
+                                
+                            
+                                QME
+                            
+                                
+                            
+                                披露易
+                            
+                                
+                            
+                                中華交易服務
+                            
+                                
+                            
+                                Client Connect
+                            
+                                
+                                        
+                        
+                            
+                    
+                    
+                                    
+                        
+                            EN
+
+                            
+                                简
+                                        
+                        
+                            
+                            
+                        
+                    
+                    
+                    
+                        
+                        
+                    
+                       
+
+                
+                
+                    
+                        
+                            
+                                
+                            
+                            
+                                
+                            
+                        
+
+                        
+                            
+                                
+                                
+                            
+                        
+                    
+                
+
+                    
+                
+                    
+                        
+                            產品證券產品股本證券交易所買賣產品結構性產品房地產投資信託基金債務證券衍生產品股票指數產品個股匯率產品利率產品大宗商品場外衍生產品場外結算合資格衍生產品利率掉期合約不交收遠期外匯合約交叉貨幣掉期外滙合約尋找合作夥伴搜尋目錄尋找經紀、交易及結算所參與者、資訊供應商及更多信息MSCI指數期貨及期權香港交易所推出39隻MSCI股票指數期貨及期權產品香港可持續及綠色交易所與持份者攜手建設可持續金融服務交易證券概覽系統設施衍生產品概覽系統設施基礎設施設備託管服務SDNet/2數據及指數服務實時數據產品歷史數據系統設施指數服務規則, 表格及收費規則表格收費結算證券概覽系統設施風險管理中央對手方披露文件  衍生產品概覽系統設施風險管理中央對手方披露文件  場外衍生產品概覽系統設施風險管理概覽中央對手方披露文件  交收及存管交收 — 證券存管處服務無紙證券市場共用代理人服務 有關證劵納入中央結算系統PFMI香港中央結算(代理人)有限公司持有的未領取的權益平台系統公司行動訊息標準化Client ConnectFINI - 香港IPO新時代 領航星衍生產品平台領航星現貨平台 綜合基金平台  香港交易所聯訊通收市後交易時段數碼支付應用通告及告示
+閱覽香港交易所向交易所參與者及結算所參與者、市場數據供應商及設備託管服務生態圈成員機構發布的重要信息
+成為參與者
+透過香港交易所連通香港金融市場
+香港金融大會堂香港金融大會堂座落於香港金融中心核心地段，是香港的金融地標。市場首次公開招股選擇香港交易所GEMSoutheast Asia Listing Insights 互聯互通滬港通及深港通債券通商品倫敦金屬交易所前海聯合交易中心香港交易所推動可持續金融發展Core Climate香港可持續及綠色交易所香港交易所生物科技生態圈香港交易所的平台提供豐富的生物科技投資機遇，包括多元的上市公司及一系列投資產品特專科技公司上市為特專科技公司提供新的上市途徑Core Climate香港交易所全新碳市場上市監管按角色探索潛在申請人上市發行人董事上市規則與資料上市規則上市指引清單、表格和模板上市規則執行新聞和出版最新消息上市通訊報告上市諮詢可持續發展及企業管治常規ESG Academy董事會多元匯企業管治常規聚焦股東價值INED Corner資源中心包含網上培訓的中央資源平台有關上市科 & 聯絡有關上市科的資料, 包括上市委員會成員及上市科的聯絡方法新聞企業新聞監管通訊市場通訊市場諮詢新聞中心 一覽香港交易所最新新聞及通訊香港交易所日曆訂閱香港交易所日曆，輕鬆掌握交易及結算資訊和公眾假期等信息資料研究香港交易所就其證券及衍生產品市場所做的調查及研究報告互聯互通機制互聯互通十週年滬港通及深港通債券通互換通每日數據滬股通及深股通每日數據市場概況查看香港、上海和深圳證券市場的市值、上市公司數量等資訊合資格股份滬港通及深港通合資格股份名單市場數據$('.mega-menu .forMobileQuoteLookup #mobile_quotelookup').load('/lhkexw/ui/powersearchm.html');證券價格股本證券交易所買賣產品衍生權證界內證牛熊證房地產投資信託基金債務證券期貨期權價格 股票指數產品股票產品匯率產品利率產品商品統計數據綜合報告證券市場統計數據衍生產品市場參與者統計數據結算,交收及存管服務披露易
+透過監管存檔及披露專用中央平台閱覽上市公司公告及更多的其他信息
+訊息提示
+登記接收有關公司公告或網站最新消息的電郵通知
+市場數據服務
+資訊供應商可向香港交易所的市場數據服務部登記，洽商量購市場數據服務事宜
+
+                        
+                    
+                
+                
+            
+
+            
+            
+                
+                    
+                    
+			        
+                
+            
+        
+    
+
+    
+    if (checkMode() != 'pageeditor') {
+		
+	    var $searchData = $(".topbar_search_data");	
+	    var msgEntKeyword = $searchData.attr("data-search-empty-msg");
+
+	    function validateGlobalSearchKeyword(device) {
+		    if (device == 'desktop') {
+			    if ($("#inputSearch").val() == "") {
+				    alert(msgEntKeyword);
+				    return false;
+			    } else {
+				    redirect(encodeURIComponent($("#inputSearch").val()));
+			    }
+		    }
+	    }
+
+	    function redirect(keyword) {
+		    setTimeout(function () {
+			    var pageUrl = $searchData.attr("data-search-result-page");
+			    var filterUrl = $searchData.attr("data-search-filter-path");
+			    var trCallbackFunction = $searchData.attr("data-search-callback");
+			    if ($('.market-hkex .header-result table tr:nth-child(1) td:nth-child(1)').length > 0)
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl + "&sym=" + $('.market-hkex .header-result table tr:nth-child(1) td:nth-child(1)').html() + "&callback=" + trCallbackFunction + "&qid=" + Date.now();
+			    else if ($('.market-hkex .headermm-result table tr:nth-child(1) td:nth-child(1)').length > 0)
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl + "&sym=" + $('.market-hkex .headermm-result table tr:nth-child(1) td:nth-child(1)').html() + "&callback=" + trCallbackFunction + "&qid=" + Date.now();
+			    else if ($('.market-hkex .headerm-result table tr:nth-child(1) td:nth-child(1)').length > 0)
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl + "&sym=" + $('.market-hkex .headerm-result table tr:nth-child(1) td:nth-child(1)').html() + "&callback=" + trCallbackFunction + "&qid=" + Date.now();
+			    else
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl;
+		    }, 500);
+	    }
+
+	    function GlobalSearch(e,device) {
+		    if (e.keyCode == 13 || e.which == 13) {
+			    validateGlobalSearchKeyword(device);
+			    return false;
+		    } else {
+			    return true;
+		    }
+	    }
+
+	    function hideLanguageButton(lang) {
+	    }
+    }
+
+    function getParameterByName(name) {
+	    var url = window.location.href;
+	    url = url.split("#").join("&");
+	    name = name.replace(/[\[\]]/g, "\\$&");
+	    var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
+		    results = regex.exec(url);
+	    if (!results) return null;
+	    if (!results[2]) return '';
+	    return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    (function ($) {
+	    $("#inputSearchBtn").click(function () {
+		    validateGlobalSearchKeyword($("#inputSearchBtn").attr("data-device"));
+		    return false;
+        });
+    }) (jQuery);
+    
+
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+
+
+    
+        
+        
+            
+                香港交易所 - 產品
+            
+        
+        
+        
+            
+                衍生產品
+            
+        
+        
+        
+            
+                股票指數產品
+            
+        
+        
+        
+            
+                恒生指數 (HSI)
+            
+        
+        
+        
+            
+                股息期貨
+            
+        
+        
+    
+
+
+    
+
+    
+    
+    
+        
+        
+            股息期貨
+        
+        
+    
+    
+
+
+
+
+    
+	    
+		    
+	    
+    
+
+
+
+
+    
+
+
+    
+
+
+
+    
+
+
+    function createCookie(name, value, days) {
+        if (typeof days !== 'undefined') {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            var expires = "; expires=" + date.toGMTString();
+        }
+        else var expires = "";
+        var secureCookie = "";
+        if (location.protocol == "https:") {
+            secureCookie = " Secure;"
+        }
+        document.cookie = name + "=" + value + expires + ";" + secureCookie + " path=/;";
+    }
+    function getCookie(cname) {
+      var name = cname + "=";
+      var ca = document.cookie.split(';');
+      for(var i = 0; i 
+
+          
+          
+
+
+    
+        
+
+
+     
+                股票指數產品恒生指數 (HSI)恒生指數 (HSI)恒生指數 (HSI)恒生指數期貨恒生指數期權恒生指數期貨期權 (實物交收)每周恒生指數期權恒生指數總股息累計指數期貨恒生指數淨股息累計指數期貨小型恒生指數期貨小型恒生指數期權股息期貨恒指波幅指數期貨恒生中國企業指數恒生中國企業指數恒生中國企業指數期貨恒生中國企業指數期權恒生中國企業指數期貨期權（實物交收)每周中國企業指數期權恒生中國企業指數總股息累計指數期貨恒生中國企業指數淨股息累計指數期貨小型恒生中國企業指數期貨小型恒生中國企業指數期權恒生科技指數期貨及期權恒生科技指數期貨及期權恒生科技指數期貨期權恒生科技指數期貨恒生科技指數期權每周恒生科技指數期權恒生生物科技指數恒生生物科技指數恒生生物科技指數期貨MSCI 指數行業指數行業指數行業指數期貨中華交易服務中國120指數中華交易服務中國120指數中華交易服務中國120指數期貨
+
+            
+    
+    
+        
+
+        
+            
+                股息期貨
+            
+        
+
+        
+			
+                
+				什麼是股息期貨？
+股息期貨是一種以計算股票指數成份股在一個曆年所派發股息為基礎的期貨合約，如12月份合約。
+股息期貨讓股票投資者 根據對預期股息的看法進行交易，作有關股息表現的風險對沖或從套戥機會中獲利。
+買賣股息期貨的優點
+標準化特色
+每種股息期貨合約均基於由指數公司計算的股息點指數作為標準。
+減低交易對手風險
+香港交易所的附屬公司，香港期貨結算有限公司擔任每宗交易的中央交易對手，因此減低交易對手風險。
+低交易費用
+由於交易成本低，有助提高投資者交易的成本效益。
+隱藏經紀代號
+HKATS電子交易系統並無顯示交易雙方經紀代號。
+靈活度高
+大手交易設施令投資者與買賣對手自行議定的大額交並經由結算所進行結算。
+莊家提供持續流通量
+莊家於交易時間內提供持續的雙向報價，以維持市場流通量。
+股息點指數作為相關指數
+股息期貨的最後結算價基於恒生指數有限公司計算的恒指股息點指數及恒生國企股息點指數的指數水平。
+股息點指數量度相關指數所有成份股每年的總現金股息，並以指數點表示。指數每日計算並於每年十二月最後的第二個交易日被重設為零。
+除一般現金股息外，以下股息亦將計入股息點指數內：
+1. 可以股票代替的現金股息;
+2. 可以現金代替的股票股息。
+(請參閱恒生指數有限公司的網站有關指數計算方法及最新指數水平)
+ 
+				
+			
+            
+            
+                
+            
+            
+        
+
+        
+            
+            更新日期 2026年5月7日
+        
+
+
+
+    var param = "&product=DHS";
+    if (location.href.indexOf(param) == -1) {
+        if (param != "") {
+            location.hash = param;
+        }
+    }
+
+
+
+    
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    (function($) {
+
+        $(function() {
+            var _WP_PATH = "/lhkexw/";
+            jQuery.loadScript = function(url, nocache) { jQuery.ajax({ url:_WP_PATH+url, dataType:"script", async:false, method:"GET", ifModified:nocache?false:true }); };
+            jQuery.loadCSS = function(url) {
+                if (document.createStyleSheet) try { document.createStyleSheet(_WP_PATH+url); } catch (e) { }
+                else $("").appendTo("#lhkexw-productderivative");
+            };
+
+// Index PageObj & Resources
+//$.loadScript("js/topranking.js");
+
+// Common Resources
+            if (LabCI.getLang()==="zh_HK"){
+                $.loadScript("js/commonrc_zh_HK.js");
+                $.loadScript("js/derivative_zh_HK.js");
+                $.loadScript("js/productderivatives_zh_HK.js");
+
+            }else if(LabCI.getLang()==="chn"){
+                $.loadScript("js/commonrc_chn.js");
+                $.loadScript("js/derivative_chn.js");
+                $.loadScript("js/productderivatives_chn.js");
+            }else {
+                $.loadScript("js/commonrc_en.js");
+                $.loadScript("js/derivative_en.js");
+                $.loadScript("js/productderivatives_en.js");
+            }
+
+// Turn on/off debug logger, default is off
+            LabCI.Utils.CONSOLELOGGER.isdebug = true;
+            LabCI.WP["createproductderivativepageobj"].call(this).init(LabCI.getLang()).show({});
+        });
+    })(jQuery);
+
+
+    
+        
+            
+        
+        
+        
+        
+            
+                
+                    
+                        
+                        
+                        
+                        
+                        
+                    
+                
+				
+                
+
+                
+                    
+                        
+                        
+                        
+                    
+                
+				
+                
+                    
+                        
+                            
+                            
+                             ()
+                        
+                        
+                            
+                                
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                
+                            
+                            
+                            
+                            
+                            
+                                
+                                -
+                            
+                        
+                    
+                    
+                        
+                            
+                        
+                        
+                            
+                                
+                                
+                            
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            
+                                            
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    
+                                                    
+                                                
+                                                
+                                                
+                                                    
+                                                    
+                                                
+                                                
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                        
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                        
+                                        
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                        
+                                    
+                                
+                            
+                            
+                                
+                                    
+                                    
+                                        -
+                                    
+                                    -
+                                    - (-)
+                                    
+                                        
+                                            
+                                            -
+                                        
+                                        
+                                            
+                                            -
+                                        
+                                        
+                                            
+                                            -
+                                        
+                                    
+
+                                
+                                
+                                    
+                                        
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                    
+                                    
+                                    
+                                
+                            
+                        
+                        
+                            
+                            
+                            
+                                
+                                -
+                            
+                        
+                    
+                    
+                        
+                            
+                        
+                        
+                            
+                                
+                                
+                            
+                        
+                        
+                            
+                                
+                                    
+                                    
+                                        
+                                            
+                                            
+                                        
+                                    
+                                
+                                
+                                    
+                                    
+                                        
+                                        
+                                        
+                                        
+                                    
+                                    
+                                        
+                                            
+                                                
+                                                
+                                            
+                                        
+                                    
+                                
+                            
+                            
+                        
+                        
+                            
+                                 
+                                    
+                                        
+                                        
+                                            -
+                                            -
+                                            -
+                                        
+                                        
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                        
+                                        
+                                    
+                                
+                            
+                        
+                        
+                            
+                            
+                            
+                                
+                                -
+                            
+                        
+                    
+                
+            
+        
+    
+
+
+
+    
+
+    
+        合約概要
+    
+    
+        
+            
+            
+    
+        
+            
+            合約
+            
+            
+            恒指股息點指數期貨
+            
+            
+            恒生國企股息點指數期貨
+            
+        
+    
+    
+        
+            
+            相關指數
+            
+            
+            恒指股息點指數
+            
+            
+            
+            恒生國企股息點指數
+            
+        
+        
+            
+            HKATS 代碼
+             
+            
+            DHS
+            DHH
+        
+        
+            
+            合約乘數
+            
+            
+            每指數點港幣50元
+            
+            
+        
+        
+            
+            合約月份
+            
+            
+            最近五個12月份合約月份
+            
+            
+        
+        
+            
+            最低價格波幅
+            
+            
+            0.01個指數點
+            
+            
+        
+        
+            
+            交易時間 
+            
+            
+            
+            上午9時15分至中午12時正及下午1時正至4時30分
+            
+            
+        
+        
+            
+            最後交易日
+            
+            合約月份的倒數第三個交易日
+        
+        
+            
+            最後結算日
+            
+            
+            最後交易日之後的第二個交易日  
+            
+            
+        
+        
+            
+            最後結算價
+            
+            
+            採用相關指數在最後交易日之後的香港營業日當天所報的指數，準確至2個小數位。
+             
+            
+        
+        
+            
+            交易所費用
+            
+            
+            
+            港幣$3.00
+            
+            
+            港幣$1.50
+            
+        
+        
+            
+            徵費
+            
+            
+            證監會徵費及投資者賠償徵費根據「證券及期貨條例」不時規定的收費率或金額繳付
+             
+            
+        
+    
+
+
+ 請到香港交易所網站「規刖與監管」內的「期交所規則、規例及程序」查閱詳盡的合約細則。
+
+
+
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+        按金表
+    
+    
+        
+            
+            
+    期貨合約按金水平 - 現行
+    期貨合約按金水平 - 先前
+    客戶按金估算參考表 (香港期貨結算有限公司) - 現行
+    
+    
+    香港期貨結算有限公司 - 先前
+    
+
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+
+                
+                    交易費用及佣金
+                
+                
+                    恒生國企股息期貨交易所費用每邊每張合約港幣$1.50證監會徵費每邊每張合約港幣$0.54投資者賠償徵費*每邊每張合約港幣$0.00 總額每邊每張合約港幣$2.04 佣金商議 * 以上費用不時作出修改。 恒指股息期貨交易所費用每邊每張合約港幣$3.00證監會徵費每邊每張合約港幣$0.54投資者賠償徵費*每邊每張合約港幣$0.00 總額每邊每張合約港幣$3.54佣金商議 * 以上費用不時作出修改。
+                
+                
+            
+
+    
+        網上衍生產品交易
+    
+    
+        
+            
+            
+下列交易所參與者提供網上衍生產品交易服務。
+(產品：指數期貨及期權 / 貨幣期貨 / 商品期貨 / 利率期貨)
+
+
+
+
+    
+        
+            
+            交易所參與者名稱
+            
+            聯絡電話號碼
+            
+            電郵
+        
+    
+    
+        
+            
+            中銀國際證券有限公司
+            
+            (852) 2121-0088
+            
+            service@bocigroup.com
+        
+        
+            
+            交銀國際證券有限公司 
+            
+            (852) 2297-9888 
+            
+            enquiry@bocomgroup.com 
+        
+        
+            
+            耀才期貨及商品有限公司
+            
+            (852) 2537-1371
+            
+            broker@bsgroup.com.hk
+        
+        
+            
+            時富商品有限公司
+            
+            (852) 2663-8888
+            
+            hotline@cashon-line.com
+        
+        
+            東航國際金融(香港)有限公司
+            (852) 3971 1052
+            cescapital@kiiik.com
+        
+        
+            招銀國際期貨有限公司 
+            (852) 3761 8788 
+            futures@cmbi.com.hk
+        
+        
+            中一期貨有限公司
+            (852) 3897-2000 
+            cnfservice@cnfirst.com.hk 
+        
+        
+            長江證券期貨(香港)有限公司
+            (852) 2823-0389
+            futuresCS@cjsc.com.hk
+        
+        
+            
+            致富期貨商品有限公司
+            
+            (852) 2500-9128
+            
+            futures_dept@chiefgroup.com.hk
+        
+        
+            
+            創興商品期貨有限公司 
+            
+            (852) 3768-9988 
+            
+            info@chcf.com.hk 
+        
+        
+            周生生期貨有限公司
+            (852) 2581-7338
+            cs.trade@338.net
+        
+        
+            
+            恒豐期貨有限公司
+            
+            (852) 2147-9898
+            
+            maggie.lam@christfund.com
+            una.zhao@christfund.com 
+        
+        
+            
+            信達國際期貨有限公司
+            
+            (852) 2235-7789
+            
+            cs@cinda.com.hk
+        
+        
+            中信証券期貨(香港)有限公司
+            (852) 2237-6899
+            info@citics.com.hk
+        
+        
+            
+            京華山一期貨(香港)有限公司
+            
+            (852) 2166-3888
+            
+            info@cpy.com.hk
+        
+        
+            
+            群益期貨(香港)有限公司
+            
+            (852) 2105-1299
+            
+            futures@e-capital.com.hk
+        
+        
+            
+            東亞期貨有限公司
+            
+            (852) 3608-8181
+            
+            info@eafutures.com.hk
+        
+        
+            
+            英皇期貨有限公司
+            
+            (852) 2919-2919
+            
+            efl.cs@emperor.com.hk
+        
+        
+            
+            名匯期貨有限公司
+            
+            (852) 2152-3321
+            
+            services@enlighten.com.hk
+        
+        
+            
+            駿溢環球金融集團有限公司
+            
+            (852) 2844-9868
+            
+            jannylee@excalibur.com.hk 
+        
+        
+            財華證券有限公司
+            (852) 2169-0088
+            cs@finet365.com
+        
+        
+            
+            第一上海期貨有限公司
+            
+            (852) 2532-1580
+            
+            cs@mystockhk.com
+        
+        
+            
+            富士香港商品有限公司
+            
+            (852) 2559-1041
+            
+            sales@fujihk.com
+            admin@fujihk.com
+        
+        
+            
+            富昌期貨有限公司
+            
+            (852) 2121-8333
+            
+            cs@fulbright.com.hk
+        
+        
+            格林大華期貨(香港)有限公司
+            (852) 3192-1000
+            cs@greenfutures.com.hk
+        
+        
+            
+            廣發期貨(香港)有限公司
+            
+            (852) 3719-1199
+            
+            futurescs@gfgroup.com.hk 
+        
+        
+            
+            灝天環球投資有限公司
+            
+            (852) 3420-1000
+            
+            enquiry@glorysky.ws
+        
+        
+            金道投資(香港)有限公司
+            (852) 3719-9733
+            cs@gwtrade.hk
+        
+        
+            
+            高銀(證券)有限公司 
+            
+            (852) 3960-7827 
+            
+            enquiry@goldinequities.hk
+        
+        
+            
+            大唐投資(期貨)有限公司
+            
+            (852) 3550-6988
+            
+            cs@grandfg.com
+        
+        
+            國浩期貨商品有限公司
+            (852) 2218-2818
+            info@guococap.com
+        
+        
+            
+            國泰君安期貨(香港)有限公司
+            
+            (852) 2509-9277
+            
+            futures@gtjas.com.hk
+        
+        
+            
+            國元期貨(香港)有限公司
+            
+            (852) 3769-6888
+            
+            gyzq@gyzq.com.hk
+        
+        
+            海通國際期貨有限公司
+            
+            (852) 3583-3388
+            
+            csdept@htisec.com
+        
+        
+            
+            亨達期貨有限公司
+            
+            (852) 2523-7571 
+            
+            thomasmo@hantec.hk 
+        
+        
+            香港國際期貨有限公司
+            (852) 2853-8027
+            enquiry@hnahki.com
+        
+        
+            
+            一通投資者有限公司
+            
+            (852) 3741-0373
+            
+            info@i-access.com
+        
+        
+            工銀國際期貨有限公司
+            (852) 2683-6216
+            freeman.to@icbci.com.hk
+        
+        
+            證星國際期貨有限公司
+            (852) 3900-1701
+            cs@istartrade.com
+        
+        
+            
+            嘉信期貨有限公司
+            
+            (852) 2815-8033
+            
+            cs@kaisergroup.com.hk
+        
+        
+            
+            高信商品期貨有限公司
+            
+            (852) 2810-9062
+            
+            admin@ktg.com.hk
+        
+        
+            
+            凱基期貨(香港)有限公司
+            
+            (852) 2878-5555
+            
+            info@kgia.com
+        
+        
+            金英期貨(香港)有限公司
+            (852) 2268-0660
+            cs@kimeng.com.hk
+        
+        
+            
+            滙富金融服務有限公司
+            
+            (852) 2283-7373
+            
+            customerservice@sunwahkingsway.com
+        
+        
+            萬兆豐國際證券有限公司
+            (852) 3750-8898
+            cs@misl.com.hk
+        
+        
+            峰滙金融集團有限公司
+            (852) 3192-1108
+            simpson.yam@mayfairpacific.com
+        
+        
+            東方滙富期貨有限公司
+            (852) 2879-9868
+            admin@o-wealth.com 
+        
+        
+            
+            平和金融有限公司
+            
+            (852) 2822-8338
+            
+            info@pt123.com
+        
+        
+            
+            輝立商品(香港)有限公司
+            
+            (852) 2277-6611
+            
+            futures@phillip.com.hk
+        
+        
+            
+            寶生期貨有限公司
+            
+            (852) 2815-4655
+            
+            psf@bochk.com
+        
+        
+            
+            信誠期貨有限公司
+            
+            (852) 2143-3999
+            
+            samng@pru.com.hk
+        
+        
+            
+            華富嘉洛證券有限公司
+            
+            (852) 2847-2203
+            
+            qscs@quamgroup.com
+        
+        
+            興業金融期貨有限公司
+            (852) 2103 5657
+            rhb.hk.customer.service@rhbgroup.com
+        
+        
+            滙信理財有限公司
+            (852) 2823-2828
+            cs@realink.com.hk 
+        
+        
+            新富期貨有限公司
+            (852) 2853-2128
+            futures@sanfull.com.hk 
+        
+        
+            上商期貨有限公司
+            (852) 2207-2837
+            contact@shacomfutures.com.hk
+        
+        
+            
+            申銀萬國期貨(香港)有限公司 
+            
+            (852) 2250-8298 
+            
+            customer.service@sywg.com.hk 
+        
+        
+            天順期貨有限公司
+            (852) 2907-2300
+            cs@sws.hk
+        
+        
+            南華期貨有限公司
+            (852) 2111-2222
+            hotline@sctrade.com
+        
+        
+            永豐金證券(亞洲) 有限公司
+            (852) 2523-6685
+            cs.asia@sinopac.com
+        
+        
+            常滙商品期貨有限公司
+            (852) 2509-4384
+            bennylo@stockwellonline.com
+        
+        
+            
+            實德期貨及外滙有限公司
+            
+            (852) 2598-1027
+            
+            enquiry@successfn.com
+        
+        
+            
+            新鴻基期貨有限公司
+            
+            (852) 2822-5001
+            
+            cs@shkf.com
+            futures.trader@shkf.com
+        
+        
+            乾立亨期貨有限公司
+            (852) 2111 2666
+            settlement@premierqhk.com
+        
+        
+            康和證券(香港)有限公司
+            (852) 3405-7305
+            fdealer@concordcapital.com.hk
+        
+        
+            電訊數碼證券有限公司
+            (852) 8118-1133
+            ftcontact@tdsecurities.com.hk
+        
+        
+            
+            滙澤證券有限公司
+            
+            (852) 2905-9529
+            
+            info@tgshk.com 
+        
+        
+            天大証券有限公司
+            (852) 3972-0688
+            enquiry@tiandafinancial.com
+        
+        
+            
+            添華證券香港有限公司
+            
+            (852) 2156-7907
+            
+            sales@interactivebrokers.com.hk
+        
+        
+            
+            天行聯合證券有限公司
+            
+            (852) 2740-9688
+            (852) 2179-3992
+            
+            cs@simsen.com
+        
+        
+            美建期貨有限公司
+            (852) 2545 3298
+            upc@upbest.com
+        
+        
+            
+            滙盈期貨有限公司
+            
+            (852) 2913-6332
+            
+            N/A
+        
+        
+            
+            永豐期貨有限公司
+            
+            (852) 2303-8690
+            
+            cs@wfgold.com 
+        
+        
+            元大寶來證券(香港)有限公司
+            (852) 3555 7878
+            hk.services.brk@yuanta.com
+        
+        
+            美高期貨有限公司
+            (852) 3944 8008
+            metrocap@metrocap.com.hk
+        
+        
+            
+            
+            
+            中國邁科期貨國際有限公司
+             
+            (852) 2885 2968
+            
+            cs@maike.com.hk
+        
+    
+
+
+
+
+ 
+
+
+
+
+    
+    
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+
+
+
+
+免責條文：
+香港交易及結算所有限公司竭力確保其提供之資料準確可靠，惟不保證該等資料絕對正確。亦不對由於任何資料不確或遺漏所引起之損失或損害負上責任(不論是民事侵權行為責任或合約責任或其他)。
+ 
+
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+        莊家 / 流通量提供者名單
+    
+    
+        
+            
+            股市指數產品 股市指數產品市場有流通量提供者及三類莊家，包括：-主要莊家及- 持續報價莊家及 回應報價莊家。 有關莊家責任要求及奬勵的詳情，可參閱網頁 以下為流通量提供者、主要莊家、持續報價莊家及回應報價莊家的參與者名單:
+ 
+
+ 莊家代號 / 流通量提供者代號BNP
+CCF
+CFT
+CTD
+FLW
+GHF
+IBG
+IMC
+JST
+KGI
+MPF
+NHA
+NHT
+OPT
+ORN
+SGS
+SQH
+UTR
+YKR
+
+恒生中國企業指數期貨期權(實物交收)
+
+
+
+PMD
+
+
+
+SMW
+
+
+PMD
+
+PMD
+SMW
+
+
+CMD
+
+PMD
+
+
+恒生指數期貨期權(實物交收)
+
+
+
+PMD
+
+
+
+SMW
+
+
+PMD
+
+PMD
+SMW
+
+
+CMD
+
+
+
+
+恒生指數期權
+CMD
+CMD
+
+PMD
+
+
+CMD
+SMW
+
+
+SMD
+
+SMW
+SMW
+
+
+CMD
+
+PMD
+
+
+恒生科技指數期貨期權(實物交收)
+
+
+
+CMD
+
+
+
+PMD
+
+
+PMD
+
+PMD
+PMD
+
+
+CMD
+
+
+
+
+恒生科技指數期權
+
+
+
+CMD
+
+
+CMD
+PMD
+
+
+PMD
+
+PMD
+PMD
+
+
+CMD
+
+
+
+
+恒生中國企業指數期權
+CMD
+CMD
+
+PMD
+
+
+CMD
+SMW
+
+
+SMD
+
+SMW
+SMW
+
+
+CMD
+
+
+
+
+恒生生物科技指數期貨
+
+
+CLD
+
+CLD
+
+
+
+
+
+
+
+CLD
+CLD
+
+
+
+CLD
+
+
+
+恒生國企股息點指數期貨
+CMD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+恒指股息點指數期貨
+CMD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+小型恒生中國企業指數期權
+
+
+
+CMD
+
+
+CMD
+CMW
+
+
+CMD
+
+CMW
+CMW
+
+
+
+
+
+
+
+小型恒生指數期權
+
+
+
+CMD
+
+
+CMD
+CMW
+
+
+CMD
+
+CMW
+CMW
+
+
+
+
+CMD
+
+
+MSCI 亞洲除日本淨總回報指數期貨
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI 中國 A50 互聯互通（美元）指數期貨
+
+
+CLW
+
+CLD
+
+
+
+
+CLW
+
+CLN
+CLD
+
+CLD
+CLW
+
+
+
+
+
+MSCI 中國淨總收益(美元)指數期貨
+
+
+CLW
+
+
+
+
+
+CLD
+
+CLN
+
+CLD
+
+
+
+
+
+
+
+
+MSCI 新興市場亞洲淨總回報（美元）指數期貨
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI 香港淨總回報（美元）指數期貨
+
+
+
+
+CLD
+
+
+
+CLD
+
+CLD
+
+
+
+
+
+
+
+
+
+
+MSCI 印度淨總回報（美元）指數期貨
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI 馬來西亞淨總回報（美元）指數期貨
+
+
+
+
+CLD
+
+
+
+
+
+CLD
+
+
+
+
+
+
+
+
+
+
+MSCI 台灣（美元）指數期貨
+
+
+
+
+CLD
+CLW
+
+
+
+
+
+
+
+
+
+
+
+CLW
+
+
+
+MSCI 台灣淨總回報（美元）指數期貨
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI 泰國淨總回報（美元）指數期貨
+
+
+
+
+
+
+
+
+CLD
+
+
+
+
+
+
+
+
+
+
+
+
+每周恒生中國企業指數期權
+
+
+
+CMD
+
+
+
+CMW
+
+
+CMD
+
+CMD
+CMW
+
+
+CMD
+
+
+
+
+每周恒生指數期權
+CMD
+
+
+CMD
+
+
+
+CMW
+
+
+CMD
+
+CMD
+CMW
+
+
+CMD
+
+CMD
+
+
+每周恒生科技指數期權
+
+
+
+CLD
+
+
+
+CLD
+
+
+CLD
+
+CLD
+CLD
+
+
+CLD
+
+
+
+C – 表示持續報價Q – 表示回應報價P – 表示主要莊家 (持續報價及回應報價)S – 表示持續報價、回應報價及/或主要莊家M – 表示莊家L – 表示流通量提供者B – 表示莊家及流通量提供者D – 表示T時段N – 表示T +1時段W – 表示T及T +1時段
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+        莊家的責任及獎勵
+    
+    
+        
+            
+            有關莊家責任要求及奬勵的詳情，可參閱網頁
+
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+        莊家聯絡資料
+    
+    
+        
+            
+            股息期貨
+
+
+ 莊家
+電郵
+電話
+法國巴黎期貨(香港)有限公司
+eqd_panasia_flow@asia.bnpparibas.com
++852 2108-5639
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+    
+        
+             
+   快速連結衍生市場產品訊息代碼交易日誌交易時間颱風、極端情況及黑色暴雨期間的安排
+ 
+   
+
+-->
+    
+        
+            出版物
+        
+        
+            認識股息期貨認識股息期貨
+            
+                
+            
+        
+        
+            認識股息期貨
+        
+        
+            下載
+        
+    
+-->
+
+    var msgEntKeyword = "請輸入搜索範圍";
+    function faqSearchEvent(e) {
+        if (e.which == 13 || e.keyCode == 13) {
+            validateFaqSearch();
+            return false;
+        }
+        return true;
+    };
+    function validateFaqSearch() {
+        if ($("#faqWidgetInput").val().trim() == "") {
+            alert(msgEntKeyword);
+            return false;
+        }
+        faqSearch();
+    }
+    function faqSearch() {
+        var pageUrl = "/Global/Exchange/FAQ/Top-Questions?sc_lang=zh-HK";
+        window.location = pageUrl + "&search=" + encodeURIComponent($("#faqWidgetInput").val().trim());
+    }
+
+
+-->
+    
+    
+        
+            常問問題
+        
+        
+            
+                輸入問題，關鍵詞或主題
+            
+            
+            查看所有常問問題
+        
+    
+    
+-->
+    
+
+
+
+          
+      
+
+
+//
+
+
+	  
+      
+
+
+    
+        
+            
+                
+            
+            
+                if (browserAllow()) { 
+                    document.write('');
+                }
+            
+            
+            
+                注意聯絡我們招聘欄常問問題投資產品短片市場系統狀態網站地圖詞彙香港交易所訂閲中心使用條款私隱聲明Cookie通知RSS Feed
+            
+            
+            
+                ©2017-26 香港交易及結算所有限公司版權所有，翻印必究
+            
+
+
+        
+    
+
+
+
+
+
+        
+            
+        
+        
+
+
+
+
+
+
+
+      
+	    
+      
+	  
+        
+        
+        
+    
+
+	
+			setTimeout(function()
+			{
+			$(document).ready(function () {
+		    if (typeof $readMoreJS !== "undefined") { 
+			    $readMoreJS.init({moreLink: "閱讀更多", lessLink: "顯示較少"});
+		    }
+			$('a[target="_blank"]').attr('rel', 'noreferrer noopener');
+			});
+			},2000);
+	
+
+	
+
+
+if(!window.adobeDataLayer) {window.adobeDataLayer = window.adobeDataLayer || [];}
+adobeDataLayer.push({
+event: 'pageview',
+environment:'production', //using to identify the correct environment and send the server call to correct report suite
+site_code: 'HKEXMarket' // using to identify the site code if several environments are under same URL
+});
+
+
+
+
+
