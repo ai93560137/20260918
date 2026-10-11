@@ -12,6 +12,10 @@
   python3 scripts/hkex_inline_fetch.py wayback                # 從 web.archive.org 抓歷年 iwFullList.csv 快照（含上下限價、到期、收市價）→ iw_fulllist_history.csv.gz
   python3 scripts/hkex_inline_fetch.py wayback-dayquot [--from 2019 --to 2026]   # archive.org 存過的每日行情檔，逐個下載抽 @L 行 → quotes_raw_<年>.csv.gz
       （結果：archive.org 把大頁面截在 1 MB，24 MB 的行情檔只剩開頭，界內證那段（47xxx）看不到；這條路不通）
+  python3 scripts/hkex_inline_fetch.py hkex-monthly --probe            # 港交所「按月下載全部牛熊證／窩輪歷史數據」：先看一個 zip 的結構
+  python3 scripts/hkex_inline_fetch.py hkex-monthly [--products cbbc,dwrc] [--months 1-12,cur] [--ul HSI]
+      → data/hkex_sp/<product>_<yyyymm>_<UL>.csv.gz（只留指定相關資產的列；已到期產品也在）
+  python3 scripts/hkex_inline_fetch.py mce                              # 港交所被收回牛熊證紀錄（mcehistical.xls，其實是 HTML 表）→ data/hkex_sp/mce_history.csv.gz
   python3 scripts/hkex_inline_fetch.py yahoo [--codes 47553,47891]   # Yahoo Finance 圖表 API 拉 <code>.HK 的歷史日線（退市窩輪常仍保留）→ yahoo_daily.csv.gz
       不給 --codes 就用 data/hkex_inline/terms.csv 裡全部代號
 
@@ -139,7 +143,7 @@ def fetch_urls(urls):
             continue
         name = re.sub(r"[^A-Za-z0-9]+", "_", url.split("://", 1)[-1])[:90]
         ext = ".csv" if url.lower().endswith(".csv") else (".xls" if ".xls" in url.lower() else (".txt" if "cdx/search" in url else ".html"))
-        (OUT / "sample" / f"url_{name}{ext}").write_bytes(raw[:2_000_000])
+        (OUT / "sample" / f"url_{name}{ext}").write_bytes(raw[:(60_000_000 if ext in (".xls", ".csv") else 2_000_000)])
         if ext == ".txt":
             txt = raw.decode("utf-8", "replace")
             lines = txt.splitlines()
@@ -443,6 +447,103 @@ def yahoo(codes_arg):
     print(f"Yahoo：成功 {ok}、失敗 {fail}；寫入 {path.name} 共 {len(rows)} 列")
 
 
+SP_OUT = Path(__file__).resolve().parents[1] / "data" / "hkex_sp"
+MONTHLY_BASE = {"cbbc": "https://www.hkex.com.hk/eng/cbbc/download/", "dwrc": "https://www.hkex.com.hk/eng/dwrc/download/"}
+
+
+def _decode_table(raw):
+    txt = raw.decode("utf-16", "replace") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
+    return [l for l in txt.splitlines() if l.strip()]
+
+
+def hkex_monthly(products, months, ul, probe=False):
+    """01.zip–12.zip ＝ 該月份（過去 12 個月內），dnCSV.asp ＝ 本月至今。zip 內是 CSV（tab 或逗號分隔）。
+    只保留 UL 欄等於 ul 的列（ul='ALL' 全留）。"""
+    import io
+    import zipfile
+    SP_OUT.mkdir(parents=True, exist_ok=True)
+    today = date.today()
+    for product in products:
+        base = MONTHLY_BASE[product]
+        for m in months:
+            url = base + ("dnCSV.asp" if m == "cur" else f"{int(m):02d}.zip")
+            st, raw = get(url, timeout=300)
+            print(f"{product} {m}: HTTP {st} {len(raw)} bytes  {url}")
+            if st != 200 or len(raw) < 100:
+                continue
+            members = []
+            if raw[:2] == b"PK":
+                zf = zipfile.ZipFile(io.BytesIO(raw))
+                for info in zf.infolist():
+                    members.append((info.filename, zf.read(info.filename)))
+            else:
+                members.append(("dnCSV", raw))
+            for fname, body in members:
+                lines = _decode_table(body)
+                if probe:
+                    print(f"   檔 {fname}: {len(body)} bytes, {len(lines)} 行")
+                    for l in lines[:6]:
+                        print("   | " + l[:240])
+                    continue
+                if not lines:
+                    continue
+                sep = "\t" if lines[0].count("\t") >= lines[0].count(",") else ","
+                header = [h.strip() for h in lines[0].split(sep)]
+                hl = [h.lower() for h in header]
+                i_ul = next((i for i, h in enumerate(hl) if h in ("ul", "underlying", "underlying code")), None)
+                i_date = next((i for i, h in enumerate(hl) if "date" in h), None)
+                kept = []
+                for l in lines[1:]:
+                    cells = [c.strip() for c in l.split(sep)]
+                    if len(cells) < len(header) - 2:
+                        continue
+                    if ul != "ALL" and i_ul is not None and cells[i_ul].upper() != ul.upper():
+                        continue
+                    kept.append(cells)
+                # 以資料裡的年月命名；拿不到就用月份推算
+                ym = None
+                if i_date is not None and kept:
+                    mm = re.match(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})|(\d{4})-(\d{2})-(\d{2})", kept[0][i_date])
+                    if mm:
+                        ym = f"{mm.group(3)}{int(mm.group(2)):02d}" if mm.group(3) else f"{mm.group(4)}{mm.group(5)}"
+                if ym is None:
+                    if m == "cur":
+                        ym = today.strftime("%Y%m")
+                    else:
+                        yr = today.year if int(m) <= today.month else today.year - 1
+                        ym = f"{yr}{int(m):02d}"
+                out = SP_OUT / f"{product}_{ym}_{ul}.csv.gz"
+                with gzip.open(out, "wt", encoding="utf-8", newline="") as f:
+                    w = csv.writer(f)
+                    w.writerow(header)
+                    w.writerows(kept)
+                print(f"   {fname}: {len(lines) - 1} 列 → 留 {len(kept)} 列（UL={ul}）→ {out.name}")
+            time.sleep(2.0)
+
+
+def mce():
+    """被收回牛熊證紀錄：mcehistical.xls 其實是 HTML 表格。解析 <tr>/<td> 成 CSV。"""
+    import html as _html
+    SP_OUT.mkdir(parents=True, exist_ok=True)
+    st, raw = get("https://www.hkex.com.hk/eng/cbbc/mce/mcehistical.xls", timeout=300)
+    print(f"mce: HTTP {st} {len(raw)} bytes")
+    if st != 200 or not raw:
+        return
+    txt = raw.decode("utf-8", "replace") if raw[:2] not in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-16", "replace")
+    rows = []
+    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", txt, flags=re.S | re.I):
+        cells = [re.sub(r"\s+", " ", _html.unescape(re.sub(r"<[^>]+>", " ", c))).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, flags=re.S | re.I)]
+        if cells:
+            rows.append(cells)
+    print(f"   {len(rows)} 列；前 3 列：")
+    for r in rows[:3]:
+        print("   | " + " | ".join(r)[:240])
+    if rows:
+        with gzip.open(SP_OUT / "mce_history.csv.gz", "wt", encoding="utf-8", newline="") as f:
+            csv.writer(f).writerows(rows)
+        print(f"   → mce_history.csv.gz")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -454,6 +555,9 @@ def main():
     sub.add_parser("wayback")
     wd = sub.add_parser("wayback-dayquot"); wd.add_argument("--from", dest="yfrom", default="2019"); wd.add_argument("--to", dest="yto", default="2026")
     ya = sub.add_parser("yahoo"); ya.add_argument("--codes", default="")
+    hm = sub.add_parser("hkex-monthly"); hm.add_argument("--probe", action="store_true"); hm.add_argument("--products", default="cbbc,dwrc")
+    hm.add_argument("--months", default="1-12,cur"); hm.add_argument("--ul", default="HSI")
+    sub.add_parser("mce")
     a = ap.parse_args()
     if a.cmd == "probe":
         probe(a.day)
@@ -469,6 +573,22 @@ def main():
         wayback_dayquot(a.yfrom, a.yto)
     elif a.cmd == "yahoo":
         yahoo(a.codes)
+    elif a.cmd == "hkex-monthly":
+        months = []
+        for part in a.months.split(","):
+            part = part.strip()
+            if part == "cur":
+                months.append("cur")
+            elif "-" in part:
+                lo_, hi_ = part.split("-")
+                months.extend(str(i) for i in range(int(lo_), int(hi_) + 1))
+            elif part:
+                months.append(part)
+        if a.probe:
+            months = months[:1]
+        hkex_monthly([p.strip() for p in a.products.split(",") if p.strip()], months, a.ul.upper(), a.probe)
+    elif a.cmd == "mce":
+        mce()
     else:
         terms()
 
