@@ -1,0 +1,764 @@
+{
+ "spot": {
+  "EURUSD": {
+   "rows": 149516,
+   "first": "2024-09-17 21:15:00",
+   "last": "2026-09-29 00:35:00",
+   "weekday_missing": 0.0169,
+   "hd_median_diff_pip": 0.24,
+   "best_shift_min": 0,
+   "overlap_rows": 143292,
+   "spread_median_pip": 0.0,
+   "spread_mean_pip": 0.295,
+   "spread_mean_12_16": 0.194,
+   "price_grid_pip": 0.5,
+   "spread_12_16": 0.0,
+   "spread_21_22": 0.5,
+   "spread_p95_pip": 0.5,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.5,
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.0,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0,
+    "7": 0.0,
+    "8": 0.0,
+    "9": 0.0,
+    "10": 0.0,
+    "11": 0.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0,
+    "15": 0.0,
+    "16": 0.0,
+    "17": 0.0,
+    "18": 0.0,
+    "19": 0.0,
+    "20": 0.0,
+    "21": 1.5,
+    "22": 0.5,
+    "23": 0.5
+   },
+   "spread_by_year": {
+    "2024": 0.0,
+    "2025": 0.5,
+    "2026": 0.0
+   },
+   "dukascopy_median_3y": 0.3
+  },
+  "GBPUSD": {
+   "rows": 149521,
+   "first": "2024-09-17 21:15:00",
+   "last": "2026-09-29 01:00:00",
+   "weekday_missing": 0.0169,
+   "hd_median_diff_pip": 0.3,
+   "best_shift_min": 0,
+   "overlap_rows": 143206,
+   "spread_median_pip": 0.5,
+   "spread_mean_pip": 0.635,
+   "spread_mean_12_16": 0.375,
+   "price_grid_pip": 0.5,
+   "spread_12_16": 0.5,
+   "spread_21_22": 1.5,
+   "spread_p95_pip": 1.0,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.5,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.5,
+    "6": 0.5,
+    "7": 0.5,
+    "8": 0.5,
+    "9": 0.5,
+    "10": 0.5,
+    "11": 0.5,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.5,
+    "15": 0.5,
+    "16": 0.5,
+    "17": 0.5,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.5,
+    "21": 4.5,
+    "22": 1.0,
+    "23": 0.5
+   },
+   "spread_by_year": {
+    "2024": 0.5,
+    "2025": 0.5,
+    "2026": 0.5
+   },
+   "dukascopy_median_3y": 0.8
+  },
+  "AUDUSD": {
+   "rows": 149526,
+   "first": "2024-09-17 21:15:00",
+   "last": "2026-09-29 01:25:00",
+   "weekday_missing": 0.0169,
+   "hd_median_diff_pip": 0.38,
+   "best_shift_min": 0,
+   "overlap_rows": 143114,
+   "spread_median_pip": 0.5,
+   "spread_mean_pip": 0.362,
+   "spread_mean_12_16": 0.247,
+   "price_grid_pip": 0.5,
+   "spread_12_16": 0.0,
+   "spread_21_22": 0.5,
+   "spread_p95_pip": 0.5,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.5,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.5,
+    "6": 0.5,
+    "7": 0.5,
+    "8": 0.5,
+    "9": 0.5,
+    "10": 0.0,
+    "11": 0.0,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.0,
+    "15": 0.0,
+    "16": 0.0,
+    "17": 0.0,
+    "18": 0.0,
+    "19": 0.0,
+    "20": 0.5,
+    "21": 2.0,
+    "22": 0.5,
+    "23": 0.5
+   },
+   "spread_by_year": {
+    "2024": 0.5,
+    "2025": 0.5,
+    "2026": 0.5
+   },
+   "dukascopy_median_3y": 1.0
+  },
+  "NZDUSD": {
+   "rows": 149395,
+   "first": "2024-09-17 19:15:00",
+   "last": "2026-09-29 01:45:00",
+   "weekday_missing": 0.0182,
+   "hd_median_diff_pip": 0.38,
+   "best_shift_min": 0,
+   "overlap_rows": 143093,
+   "spread_median_pip": 0.5,
+   "spread_mean_pip": 0.531,
+   "spread_mean_12_16": 0.32,
+   "price_grid_pip": 0.5,
+   "spread_12_16": 0.5,
+   "spread_21_22": 1.5,
+   "spread_p95_pip": 1.0,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.5,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.5,
+    "6": 0.5,
+    "7": 0.5,
+    "8": 0.5,
+    "9": 0.5,
+    "10": 0.5,
+    "11": 0.5,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.5,
+    "15": 0.5,
+    "16": 0.5,
+    "17": 0.5,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.5,
+    "21": 3.0,
+    "22": 1.0,
+    "23": 0.5
+   },
+   "spread_by_year": {
+    "2024": 0.5,
+    "2025": 0.5,
+    "2026": 0.5
+   },
+   "dukascopy_median_3y": 1.1
+  },
+  "USDJPY": {
+   "rows": 149535,
+   "first": "2024-09-17 21:15:00",
+   "last": "2026-09-29 02:10:00",
+   "weekday_missing": 0.0169,
+   "hd_median_diff_pip": 0.29,
+   "best_shift_min": 0,
+   "overlap_rows": 143124,
+   "spread_median_pip": 0.5,
+   "spread_mean_pip": 0.653,
+   "spread_mean_12_16": 0.466,
+   "price_grid_pip": 0.05,
+   "spread_12_16": 0.45,
+   "spread_21_22": 1.2,
+   "spread_p95_pip": 1.1,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.55,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.45,
+    "6": 0.45,
+    "7": 0.45,
+    "8": 0.45,
+    "9": 0.45,
+    "10": 0.45,
+    "11": 0.45,
+    "12": 0.45,
+    "13": 0.45,
+    "14": 0.45,
+    "15": 0.45,
+    "16": 0.45,
+    "17": 0.45,
+    "18": 0.45,
+    "19": 0.45,
+    "20": 0.5,
+    "21": 2.75,
+    "22": 1.05,
+    "23": 0.6
+   },
+   "spread_by_year": {
+    "2024": 0.55,
+    "2025": 0.5,
+    "2026": 0.45
+   },
+   "dukascopy_median_3y": 0.6
+  },
+  "USDCHF": {
+   "rows": 149540,
+   "first": "2024-09-17 21:15:00",
+   "last": "2026-09-29 02:35:00",
+   "weekday_missing": 0.0169,
+   "hd_median_diff_pip": 0.3,
+   "best_shift_min": 0,
+   "overlap_rows": 143297,
+   "spread_median_pip": 0.5,
+   "spread_mean_pip": 0.735,
+   "spread_mean_12_16": 0.389,
+   "price_grid_pip": 0.5,
+   "spread_12_16": 0.5,
+   "spread_21_22": 1.5,
+   "spread_p95_pip": 1.5,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.5,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.5,
+    "6": 0.5,
+    "7": 0.5,
+    "8": 0.5,
+    "9": 0.5,
+    "10": 0.5,
+    "11": 0.5,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.5,
+    "15": 0.5,
+    "16": 0.5,
+    "17": 0.5,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.5,
+    "21": 5.0,
+    "22": 1.5,
+    "23": 0.5
+   },
+   "spread_by_year": {
+    "2024": 0.5,
+    "2025": 0.5,
+    "2026": 0.5
+   },
+   "dukascopy_median_3y": 0.9
+  },
+  "USDCAD": {
+   "rows": 149545,
+   "first": "2024-09-17 21:15:00",
+   "last": "2026-09-29 03:00:00",
+   "weekday_missing": 0.0169,
+   "hd_median_diff_pip": 0.46,
+   "best_shift_min": 0,
+   "overlap_rows": 143185,
+   "spread_median_pip": 0.5,
+   "spread_mean_pip": 0.612,
+   "spread_mean_12_16": 0.417,
+   "price_grid_pip": 0.5,
+   "spread_12_16": 0.5,
+   "spread_21_22": 1.0,
+   "spread_p95_pip": 1.0,
+   "negative": 0,
+   "spread_by_hour": {
+    "0": 0.5,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.5,
+    "6": 0.5,
+    "7": 0.5,
+    "8": 0.5,
+    "9": 0.5,
+    "10": 0.5,
+    "11": 0.5,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.5,
+    "15": 0.5,
+    "16": 0.5,
+    "17": 0.5,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.5,
+    "21": 2.5,
+    "22": 1.0,
+    "23": 0.5
+   },
+   "spread_by_year": {
+    "2024": 0.5,
+    "2025": 0.5,
+    "2026": 0.5
+   },
+   "dukascopy_median_3y": 1.2
+  }
+ },
+ "fut": {
+  "EUR": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": 208.3,
+   "basis_end_bp": 32.6,
+   "roll_yield_pct": 1.74,
+   "r2": 0.967,
+   "rate_diff_pct": 1.75,
+   "gap_pct": -0.01
+  },
+  "GBP": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": 1.3,
+   "basis_end_bp": 4.3,
+   "roll_yield_pct": -0.1,
+   "r2": 0.102,
+   "rate_diff_pct": 0.03,
+   "gap_pct": -0.14
+  },
+  "AUD": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": -29.3,
+   "basis_end_bp": -10.1,
+   "roll_yield_pct": -0.27,
+   "r2": 0.228,
+   "rate_diff_pct": -0.35,
+   "gap_pct": 0.08
+  },
+  "NZD": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": 153.4,
+   "basis_end_bp": 24.0,
+   "roll_yield_pct": 1.29,
+   "r2": 0.908,
+   "rate_diff_pct": 1.13,
+   "gap_pct": 0.16
+  },
+  "JPY": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": 386.8,
+   "basis_end_bp": 65.9,
+   "roll_yield_pct": 3.25,
+   "r2": 0.984,
+   "rate_diff_pct": 2.57,
+   "gap_pct": 0.68
+  },
+  "CHF": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": 499.5,
+   "basis_end_bp": 94.8,
+   "roll_yield_pct": 4.07,
+   "r2": 0.992,
+   "rate_diff_pct": 3.82,
+   "gap_pct": 0.25
+  },
+  "CAD": {
+   "rows": 253,
+   "first": "2025-09-29",
+   "last": "2026-09-29",
+   "basis_start_bp": 198.9,
+   "basis_end_bp": 39.9,
+   "roll_yield_pct": 1.63,
+   "r2": 0.983,
+   "rate_diff_pct": 1.53,
+   "gap_pct": 0.1
+  },
+  "MXN": {
+   "rows": 253,
+   "invalid": "IB 的 MXP 連續合約解析成價格 1–3 的另一個商品（墨西哥披索期貨約 0.055），整組 MXN 檔作廢"
+  }
+ },
+ "vol": {
+  "EUR": {
+   "iv_rows": 241,
+   "iv_bad": 49,
+   "iv_first": "2025-12-09",
+   "iv_last": "2026-09-29",
+   "iv_median": 5.56,
+   "iv_min": 4.37,
+   "iv_max": 19.13,
+   "iv_roll_jump_median": 0.2,
+   "iv_daily_jump_median": 0.16,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.78,
+   "hv_minus_rv_median": 0.37
+  },
+  "GBP": {
+   "iv_rows": 237,
+   "iv_bad": 0,
+   "iv_first": "2025-09-29",
+   "iv_last": "2026-09-29",
+   "iv_median": 6.51,
+   "iv_min": 4.6,
+   "iv_max": 19.05,
+   "iv_roll_jump_median": 0.16,
+   "iv_daily_jump_median": 0.16,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.81,
+   "hv_minus_rv_median": 0.23
+  },
+  "AUD": {
+   "iv_rows": 238,
+   "iv_bad": 0,
+   "iv_first": "2025-09-29",
+   "iv_last": "2026-09-29",
+   "iv_median": 7.86,
+   "iv_min": 5.16,
+   "iv_max": 19.13,
+   "iv_roll_jump_median": 0.36,
+   "iv_daily_jump_median": 0.24,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.85,
+   "hv_minus_rv_median": 0.47
+  },
+  "NZD": {
+   "iv_rows": 237,
+   "iv_bad": 0,
+   "iv_first": "2025-09-29",
+   "iv_last": "2026-09-28",
+   "iv_median": 8.41,
+   "iv_min": 4.21,
+   "iv_max": 19.53,
+   "iv_roll_jump_median": 0.16,
+   "iv_daily_jump_median": 0.16,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.8,
+   "hv_minus_rv_median": 0.16
+  },
+  "JPY": {
+   "iv_rows": 236,
+   "iv_bad": 0,
+   "iv_first": "2025-09-29",
+   "iv_last": "2026-09-29",
+   "iv_median": 8.14,
+   "iv_min": 4.94,
+   "iv_max": 19.1,
+   "iv_roll_jump_median": 0.54,
+   "iv_daily_jump_median": 0.33,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.85,
+   "hv_minus_rv_median": 0.58
+  },
+  "CHF": {
+   "iv_rows": 238,
+   "iv_bad": 0,
+   "iv_first": "2025-09-29",
+   "iv_last": "2026-09-29",
+   "iv_median": 6.83,
+   "iv_min": 2.94,
+   "iv_max": 13.49,
+   "iv_roll_jump_median": 0.2,
+   "iv_daily_jump_median": 0.24,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.82,
+   "hv_minus_rv_median": 0.42
+  },
+  "CAD": {
+   "iv_rows": 233,
+   "iv_bad": 0,
+   "iv_first": "2025-09-29",
+   "iv_last": "2026-09-29",
+   "iv_median": 4.29,
+   "iv_min": 3.57,
+   "iv_max": 19.13,
+   "iv_roll_jump_median": 0.12,
+   "iv_daily_jump_median": 0.08,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.81,
+   "hv_minus_rv_median": 0.26
+  },
+  "MXN": {
+   "iv_rows": 243,
+   "iv_bad": 78,
+   "iv_first": "2025-10-29",
+   "iv_last": "2026-09-28",
+   "iv_median": 74.61,
+   "iv_min": 39.69,
+   "iv_max": 98.42,
+   "iv_roll_jump_median": 2.78,
+   "iv_daily_jump_median": 2.38,
+   "hv_rows": 250,
+   "hv_vs_rv_corr": 0.28,
+   "hv_minus_rv_median": 61.14
+  }
+ },
+ "coverage": {
+  "fut_AUD_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_AUD_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_AUD_D1_option_implied_volatility": {
+   "rows": 238,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_AUD_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_CAD_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_CAD_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_CAD_D1_option_implied_volatility": {
+   "rows": 233,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_CAD_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_CHF_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_CHF_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_CHF_D1_option_implied_volatility": {
+   "rows": 238,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_CHF_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_EUR_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_EUR_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_EUR_D1_option_implied_volatility": {
+   "rows": 241,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_EUR_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_GBP_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_GBP_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_GBP_D1_option_implied_volatility": {
+   "rows": 237,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_GBP_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_JPY_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_JPY_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_JPY_D1_option_implied_volatility": {
+   "rows": 236,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_JPY_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_MXN_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_MXN_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_MXN_D1_option_implied_volatility": {
+   "rows": 243,
+   "first": "2025-10-07 00:00",
+   "last": "2026-09-28 00:00"
+  },
+  "fut_MXN_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_NZD_D1_bid_ask": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "fut_NZD_D1_historical_volatility": {
+   "rows": 250,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-25 00:00"
+  },
+  "fut_NZD_D1_option_implied_volatility": {
+   "rows": 237,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-28 00:00"
+  },
+  "fut_NZD_D1_trades": {
+   "rows": 253,
+   "first": "2025-09-29 00:00",
+   "last": "2026-09-29 00:00"
+  },
+  "spot_AUDUSD_M5_bid_ask": {
+   "rows": 149526,
+   "first": "2024-09-17 21:15",
+   "last": "2026-09-29 01:25"
+  },
+  "spot_EURUSD_M5_bid_ask": {
+   "rows": 149516,
+   "first": "2024-09-17 21:15",
+   "last": "2026-09-29 00:35"
+  },
+  "spot_GBPUSD_M5_bid_ask": {
+   "rows": 149521,
+   "first": "2024-09-17 21:15",
+   "last": "2026-09-29 01:00"
+  },
+  "spot_NZDUSD_M5_bid_ask": {
+   "rows": 149395,
+   "first": "2024-09-17 19:15",
+   "last": "2026-09-29 01:45"
+  },
+  "spot_USDCAD_M5_bid_ask": {
+   "rows": 149545,
+   "first": "2024-09-17 21:15",
+   "last": "2026-09-29 03:00"
+  },
+  "spot_USDCHF_M5_bid_ask": {
+   "rows": 149540,
+   "first": "2024-09-17 21:15",
+   "last": "2026-09-29 02:35"
+  },
+  "spot_USDJPY_M5_bid_ask": {
+   "rows": 149535,
+   "first": "2024-09-17 21:15",
+   "last": "2026-09-29 02:10"
+  }
+ },
+ "vol_vs_collector": [
+  {
+   "date": "2026-09-29",
+   "market": "6E",
+   "collector_mon_iv": 5.66,
+   "collector_mon_dte": 15,
+   "ib_series_iv": 5.48
+  },
+  {
+   "date": "2026-10-06",
+   "market": "6E",
+   "collector_mon_iv": 6.02,
+   "collector_mon_dte": 15,
+   "ib_series_iv": null
+  },
+  {
+   "date": "2026-10-06",
+   "market": "6J",
+   "collector_mon_iv": 7.62,
+   "collector_mon_dte": 15,
+   "ib_series_iv": null
+  }
+ ]
+}

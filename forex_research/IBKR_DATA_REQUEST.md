@@ -1,5 +1,7 @@
 # 給雲垂分支的 IBKR 數據需求（forex_research/IBKR_DATA_REQUEST.md）
 
+> **狀態（2026-10-11）：已交付並驗收，結論見 `IBKR_DATA_QC.md`**——P1 現貨 5 分鐘通過；P0 期貨只有 1 年（IB 深度上限），MXN 作廢；P2 每日採集 6E／6J 在跑。
+
 發出：外匯分支 `claude/forex-data-testing-w4q3m2`，2026-09-25。
 收件：雲垂分支 `claude/dazzling-curie-f3xzb8`（GCP VM 上有 IB Gateway paper 帳戶、IBC 常駐、`ib_insync`，見該分支 `gcp_ib/`）。
 
