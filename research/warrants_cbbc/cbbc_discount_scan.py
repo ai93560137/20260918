@@ -18,6 +18,7 @@ import argparse
 import sys
 from dataclasses import dataclass
 
+FUND_RATE = 0.035   # 價金資金成本年率（買牛熊證要先付價金、期指不用；比價時扣掉）
 TICK = [(0.25, 0.001), (0.50, 0.005), (10.0, 0.010), (20.0, 0.020), (100.0, 0.050)]
 
 
@@ -117,8 +118,10 @@ def scan(cbbcs: list[Cbbc], fut: float, min_dist_pct: float = 3.0, min_street: f
         fm = futures_at(curve, c.maturity) if curve else None
         fwd_c = implied_forward(c)
         edge_match = None if fm is None else ((fm - fwd_c) if c.bull else (fwd_c - fm))
+        funding = c.ask * c.ratio * FUND_RATE * max(c.days_left, 0) / 365.0
         rows.append({
             "maturity": c.maturity, "fwd_cbbc": fwd_c, "fut_match": fm, "edge_match": edge_match,
+            "edge_match_net": None if edge_match is None else edge_match - funding,
             "code": c.code, "issuer": c.issuer, "type": "牛" if c.bull else "熊",
             "ask": c.ask, "intrinsic": intrinsic_pts(c, fut), "discount": d,
             "net_if_held": net, "normal_prem": issuer_normal_premium_pts(c), "dist_call%": distance_to_call_pct(c, fut),
@@ -131,12 +134,12 @@ def scan(cbbcs: list[Cbbc], fut: float, min_dist_pct: float = 3.0, min_street: f
 
 def print_rows(rows: list[dict], fut: float) -> None:
     print(f"期指 F = {fut:,.0f}")
-    print(f"{'代號':<9}{'發行':<5}{'類':<3}{'賣價':>7}{'內在':>7}{'折讓':>7}{'淨利*':>7}{'正常溢價':>9}{'距收回%':>8}{'街貨%':>7}{'最大虧':>8}{'對同月期指':>10}  候選")
+    print(f"{'代號':<9}{'發行':<5}{'類':<3}{'賣價':>7}{'內在':>7}{'折讓':>7}{'淨利*':>7}{'正常溢價':>9}{'距收回%':>8}{'街貨%':>7}{'最大虧':>8}{'對同月期指淨':>11}  候選")
     for r in rows:
-        em = r.get("edge_match")
+        em = r.get("edge_match_net")
         print(f"{r['code']:<9}{r['issuer']:<5}{r['type']:<3}{r['ask']:>7.3f}{r['intrinsic']:>7.0f}{r['discount']:>7.0f}"
               f"{r['net_if_held']:>7.0f}{r['normal_prem']:>9.0f}{r['dist_call%']:>8.2f}{r['street%']:>7.0f}{r['max_loss']:>8.0f}"
-              f"{(f'{em:+.0f}' if em is not None else '—'):>10}  {'✔' if r['candidate'] else ''}")
+              f"{(f'{em:+.0f}' if em is not None else '—'):>11}  {'✔' if r['candidate'] else ''}")
     print("* 淨利＝折讓 − 來回成本（一格差價＋期指 1 點＋費用），單位：指數點／每份；持有到期且沒被收回、牛熊證到期日＝期指結算日的情況。")
     print("  到期日不同時要另扣期指轉倉／基差；以期指計的內在值已含持有成本，所以不扣財務費用（發行商正常溢價見 normal_prem 欄，只作對照）。")
 

@@ -87,14 +87,14 @@ def run_cbbc(owner, t):
     pos = [r for r in rows if r["discount"] > 0]
     cand = [r for r in rows if r["candidate"]]
     # 第 4 項：對同到期期指的差價（edge_match > 0 ＝ 牛熊證比同月期指便宜），只看距收回價 ≥15%、一年以上
-    em = [r for r in rows if r.get("edge_match") is not None]
+    em = [r for r in rows if r.get("edge_match_net") is not None]
     far = sorted([r for r in em if r["dist_call%"] >= 15 and str(r.get("maturity", ""))[:4] >= str(t.year + 1)],
-                 key=lambda r: -r["edge_match"])
+                 key=lambda r: -r["edge_match_net"])
     summary = {"n": len(rows), "n_discount": len(pos), "n_candidate": len(cand), "forward": meta["forward"],
                "best_code": cand[0]["code"] if cand else "", "best_net": cand[0]["net_if_held"] if cand else None,
                "futures_curve": meta.get("futures_curve") or {}, "n_edge_match": len(em),
-               "n_edge_match_far_pos": sum(1 for r in far if r["edge_match"] > 30),
-               "best_edge_match": ({k: far[0].get(k) for k in ("code", "issuer", "type", "ask", "maturity", "fwd_cbbc", "fut_match", "edge_match", "dist_call%", "street%")}
+               "n_edge_match_far_pos": sum(1 for r in far if r["edge_match_net"] > 30),
+               "best_edge_match": ({k: far[0].get(k) for k in ("code", "issuer", "type", "ask", "maturity", "fwd_cbbc", "fut_match", "edge_match", "edge_match_net", "dist_call%", "street%")}
                                    if far else None)}
     cds.print_rows(pos[:15], meta["forward"])
     if far:

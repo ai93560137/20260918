@@ -6,6 +6,9 @@
   edge_bear = F_bear − F_fut(T)   > 0 ＝ 熊證便宜 → 買熊證 ＋ 買該月期指
 
 只看當日有成交的牛熊證（沒成交的收市價會陳舊）。資料：data/hkex_sp/cbbc_*_HSI.csv.gz。
+
+注意：牛熊證的價金是今天付、期指不用付，所以直接比 F_cbbc 與 F_fut 會高估牛證的便宜——要扣掉價金到到期日的資金成本：
+  edge_net = edge − 市價×R × rate × 剩餘日/365（--rate 預設 3.5%，港元一年期存款／HIBOR 水平）。
 """
 from __future__ import annotations
 
@@ -47,7 +50,7 @@ def fut_at(curve: pd.DataFrame, target: pd.Timestamp) -> float | None:
     return float(np.interp(t, x, y))
 
 
-def build(cb: pd.DataFrame, fut: pd.DataFrame) -> pd.DataFrame:
+def build(cb: pd.DataFrame, fut: pd.DataFrame, rate: float = 0.035) -> pd.DataFrame:
     cb = cb[(cb["volume"] > 0) & (cb["close"] > 0) & cb["strike"].notna()].copy()
     cb["maturity"] = pd.to_datetime(cb["Maturity Date"], errors="coerce")
     cb = cb[cb["maturity"].notna()]
@@ -64,7 +67,9 @@ def build(cb: pd.DataFrame, fut: pd.DataFrame) -> pd.DataFrame:
             if fm is None:
                 continue
             edge = (fm - r["fwd_cbbc"]) if r["sign"] > 0 else (r["fwd_cbbc"] - fm)
-            rows.append({"date": d, "code": r["code"], "issuer": r["issuer"], "bull": r["sign"] > 0, "maturity": r["maturity"],
+            days = (r["maturity"] - d).days
+            funding = r["close"] * r["ratio"] * rate * days / 365.0
+            rows.append({"edge_net": edge - funding, "funding_pts": funding,"date": d, "code": r["code"], "issuer": r["issuer"], "bull": r["sign"] > 0, "maturity": r["maturity"],
                          "days": (r["maturity"] - d).days, "strike": r["strike"], "call": r["call"], "close": r["close"],
                          "ratio": r["ratio"], "fwd_cbbc": r["fwd_cbbc"], "fut_match": fm, "front": front,
                          "carry_pts": fm - front, "edge_pts": edge, "buffer": abs(r["call"] - r["strike"]),
@@ -81,27 +86,36 @@ def report(df: pd.DataFrame) -> str:
         L.append(f"\n[{'牛證' if bull else '熊證'}] edge_pts（>0 ＝ 比同到期期指便宜）按年期：")
         t = sub.groupby("yr_b", observed=True).agg(n=("edge_pts", "size"), codes=("code", "nunique"), med=("edge_pts", "median"),
                                                   p25=("edge_pts", lambda x: x.quantile(.25)), p75=("edge_pts", lambda x: x.quantile(.75)),
-                                                  carry=("carry_pts", "median"), pos=("edge_pts", lambda x: (x > 30).mean()))
+                                                  carry=("carry_pts", "median"), fund=("funding_pts", "median"),
+                                                  net=("edge_net", "median"), net90=("edge_net", lambda x: x.quantile(.9)),
+                                                  pos=("edge_net", lambda x: (x > 30).mean()))
         for b, r in t.iterrows():
             L.append(f"  {b:>5}: n={int(r['n']):6d} 隻={int(r['codes']):4d}  edge 中位 {r['med']:+6.0f} [{r['p25']:+.0f},{r['p75']:+.0f}]  "
-                     f"期指 carry 中位 {r['carry']:+5.0f}  edge>30 點比例 {r['pos']:.0%}")
+                     f"期指 carry {r['carry']:+5.0f}  價金資金成本 {r['fund']:5.0f}  → edge_net 中位 {r['net']:+5.0f}  P90 {r['net90']:+5.0f}  net>30 比例 {r['pos']:.0%}")
         lng = sub[sub["days"] > 365]
         if len(lng):
             L.append("  一年以上、按發行商：")
-            t2 = lng.groupby("issuer").agg(n=("edge_pts", "size"), med=("edge_pts", "median"), p90=("edge_pts", lambda x: x.quantile(.9))).sort_values("med", ascending=False)
+            t2 = lng.groupby("issuer").agg(n=("edge_net", "size"), med=("edge_net", "median"), p90=("edge_net", lambda x: x.quantile(.9))).sort_values("med", ascending=False)
             for iss, r in t2.iterrows():
                 if r["n"] >= 30:
-                    L.append(f"    {iss}: n={int(r['n'])}  中位 {r['med']:+.0f}  P90 {r['p90']:+.0f}")
-            # 最佳機會：edge 大且距收回價遠
-            best = lng[(lng["dist_call_pct"] >= 15)].sort_values("edge_pts", ascending=False).head(12)
-            L.append("  一年以上、距收回價 ≥15%、edge 最大的 12 筆：")
+                    L.append(f"    {iss}: n={int(r['n'])}  edge_net 中位 {r['med']:+.0f}  P90 {r['p90']:+.0f}")
+            # 最佳機會：edge_net 大且距收回價遠
+            best = lng[(lng["dist_call_pct"] >= 15)].sort_values("edge_net", ascending=False).head(12)
+            L.append("  一年以上、距收回價 ≥15%、edge_net 最大的 12 筆：")
             for _, r in best.iterrows():
-                L.append(f"    {r['date'].date()} {r['code']} {r['issuer']} 到期 {r['maturity'].date()} K={r['strike']:.0f} 收 {r['close']:.3f}×{r['ratio']:.0f} "
-                         f"F_cbbc={r['fwd_cbbc']:.0f} F_fut={r['fut_match']:.0f} edge={r['edge_pts']:+.0f} 緩衝 {r['buffer']:.0f} 成交 {r['turnover']:,.0f}")
-            # 同一隻的 edge 持續性：日均 edge 的分佈
-            per = lng.groupby("code")["edge_pts"].agg(["size", "median"])
+                L.append(f"    {r['date'].date()} {int(r['code'])} {r['issuer']} 到期 {r['maturity'].date()} K={r['strike']:.0f} 收 {r['close']:.3f}×{r['ratio']:.0f} "
+                         f"F_cbbc={r['fwd_cbbc']:.0f} F_fut={r['fut_match']:.0f} edge={r['edge_pts']:+.0f} 資金 {r['funding_pts']:.0f} net={r['edge_net']:+.0f} 緩衝 {r['buffer']:.0f} 成交 {r['turnover']:,.0f}")
+            # 同一隻的 edge 持續性：日均 edge_net 的分佈
+            lng = lng[lng["dist_call_pct"] >= 15]          # 近收回價的牛熊證 F_cbbc 被敲出機率壓低，不算便宜
+            per = lng.groupby("code")["edge_net"].agg(["size", "median"])
             per = per[per["size"] >= 10]
-            L.append(f"  一年以上、≥10 個成交日的 {len(per)} 隻：每隻 edge 中位的分佈 P10 {per['median'].quantile(.1):+.0f} / 中位 {per['median'].median():+.0f} / P90 {per['median'].quantile(.9):+.0f}")
+            L.append(f"  一年以上、距收回價 ≥15%、≥10 個成交日的 {len(per)} 隻：每隻 edge_net 中位的分佈 P10 {per['median'].quantile(.1):+.0f} / 中位 {per['median'].median():+.0f} / P90 {per['median'].quantile(.9):+.0f}；"
+                     f"中位 >100 點的 {int((per['median'] > 100).sum())} 隻、>300 點的 {int((per['median'] > 300).sum())} 隻")
+            top = per[per["median"] > 300].sort_values("median", ascending=False).head(10)
+            for code, r in top.iterrows():
+                x = lng[lng["code"] == code]
+                L.append(f"    {int(code)} {x['issuer'].iloc[0]} 到期 {x['maturity'].iloc[0].date()} K={x['strike'].iloc[0]:.0f}：{int(r['size'])} 個成交日，edge_net 中位 {r['median']:+.0f}，"
+                         f"日均成交 {x['turnover'].median():,.0f}，最近 {x['date'].max().date()} net {x.sort_values('date')['edge_net'].iloc[-1]:+.0f}")
     # 牛＋熊同發行商同到期：F_bear − F_bull ＝ 發行商來回財務費用
     pair = df.groupby(["date", "issuer", "maturity", "bull"])["fwd_cbbc"].median().unstack("bull")
     pair = pair.dropna()
@@ -119,11 +133,12 @@ def report(df: pd.DataFrame) -> str:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv")
+    ap.add_argument("--rate", type=float, default=0.035, help="價金資金成本年率（預設 0.035）")
     a = ap.parse_args()
     fut = load_futures()
-    print(f"期指結算：{fut['date'].nunique()} 日、合約月 {sorted(fut['expiry'].unique())[-6:]} …")
+    print(f"期指結算：{fut['date'].nunique()} 日、合約月 {sorted(fut['expiry'].unique())[-6:]} …；價金資金成本 {a.rate:.2%}")
     cb = load_cbbc()
-    df = build(cb, fut)
+    df = build(cb, fut, a.rate)
     print(report(df))
     if a.csv:
         df.to_csv(a.csv, index=False)
