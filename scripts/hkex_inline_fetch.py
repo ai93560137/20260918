@@ -518,11 +518,13 @@ def hkex_monthly(products, months, ul, probe=False):
                 tok = ul.upper()
                 kept = []
                 for cells in data_rows:
+                    if len(cells) < len(header) - 2:
+                        continue
                     if tok != "ALL":
-                        if i_ul is not None:
+                        if i_ul is not None and i_ul < len(cells):
                             if cells[i_ul].strip().upper() != tok:
                                 continue
-                        elif i_name is not None:
+                        elif i_name is not None and i_name < len(cells):
                             nm = cells[i_name].upper()
                             if not (f"#{tok}" in nm or f"-{tok}" in nm or nm.startswith(tok) or f" {tok}" in nm):
                                 continue
