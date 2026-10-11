@@ -2491,7 +2491,11 @@ def futu_real_view(now=None):
         ms = {}
     if isinstance(ms, dict) and ms.get("active"):
         account.append("⛔ 戶口保證金危急（可能被追繳）" if ms.get("level") == "critical" else "⚠ 戶口保證金偏緊")
-    return {"run_hkt": run_hkt, "age_min": None if age is None else round(age), "stale": age is None or age > 60,
+    hk_now = now or datetime.now(HK_TZ)
+    wd = hk_now.weekday()                                             # 星期六 06:00 至星期一 06:00 休市，使用者部機唔推
+    weekend = (wd == 5 and hk_now.hour >= 6) or wd == 6 or (wd == 0 and hk_now.hour < 6)
+    return {"run_hkt": run_hkt, "age_min": None if age is None else round(age), "weekend": weekend,
+            "stale": (age is None or age > 60) and not weekend,
             "teams": [t for t in teams.values() if t["rows"] or t["team"] in ("雲垂陣", "風揚陣・方向一")],
             "account_alerts": account}
 
@@ -6479,6 +6483,7 @@ def build_futu_real_section(fr):
     f = lambda v, d=2: "—" if v is None else (f"{v:,.{d}f}".rstrip("0").rstrip(".") if d else f"{v:,.0f}")
     age = fr.get("age_min")
     fresh = (f"<span class='neg'>⚠ 數據已經 {age:,} 分鐘冇更新</span>" if fr.get("stale") and age is not None
+             else "週末休市，星期一 06:00 起恢復更新" if fr.get("weekend")
              else f"{age} 分鐘前" if age is not None else "")
     acc = "".join(f"<div>{esc(a)}</div>" for a in fr.get("account_alerts") or [])
     out = (f"<div class='section'><b>💼 富途實倉（按陣）</b>"
