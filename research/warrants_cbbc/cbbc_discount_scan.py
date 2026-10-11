@@ -152,46 +152,62 @@ def _warrant_request_cls(ft):
     return cls
 
 
-def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: str, borrow_rate: float) -> None:
+def scan_live(host: str, port: int, owner: str = "HK.800000", min_dist_pct: float = 3.0, min_street: float = 0.5,
+              borrow_rate: float = 0.01, log=print) -> tuple[list[dict], dict]:
+    """連 OpenD 掃描該相關資產全部牛熊證。回傳 (rows, meta)；rows 含 discount>0 與否全部（給前向測試存檔），candidate 欄標候選。"""
     try:
         import futu as ft  # type: ignore
         ft.OpenQuoteContext
     except (ImportError, AttributeError):
         sys.exit("需要 pip install futu-api 並在本機跑 Futu OpenD；不要在 repo 根目錄用互動模式跑（repo 的 futu/ 資料夾會蓋掉套件）")
+    import datetime as dt
+    import time
     ctx = ft.OpenQuoteContext(host=host, port=port)
     try:
         is_index = owner == "HK.800000"
-        ref_code = "HK.HSImain" if is_index else owner      # 恒指用期指，個股用正股
+        ref_code = "HK.HSImain" if is_index else owner
         ret, snap = ctx.get_market_snapshot([ref_code])
         if ret != ft.RET_OK:
-            sys.exit(f"{ref_code} 快照失敗：{snap}")
+            raise RuntimeError(f"{ref_code} 快照失敗：{snap}")
         fut = float(snap.loc[0, "last_price"])
-        hedge_spread = 1.0 if is_index else 0.01 * fut      # 個股沽空腿差價估 1%（一兩格＋價位規則）
+        hedge_spread = 1.0 if is_index else 0.01 * fut
         cbbcs: list[Cbbc] = []
         for wtype, bull in ((ft.WrtType.BULL, True), (ft.WrtType.BEAR, False)):
-            req = _warrant_request_cls(ft)()
-            req.type_list = [wtype]
-            req.sort_field = ft.SortField.STREET_RATE
-            req.ascend = False
-            ret, data = ctx.get_warrant(owner, req)
-            if ret != ft.RET_OK:
-                print(f"get_warrant 失敗：{data}", file=sys.stderr)
-                continue
-            df, _last_page, _all_count = data        # futu-api 10.x：(DataFrame, last_page, all_count)
-            for _, r in df.iterrows():
-                ask = float(r.get("ask_price") or 0)
-                if ask <= 0 or float(r.get("recovery_price") or 0) <= 0:
-                    continue
-                import datetime as dt
-                mat = dt.date.fromisoformat(str(r["maturity_time"])[:10])
-                cbbcs.append(Cbbc(str(r["stock"]), str(r.get("issuer", "?")), bull,
-                                  float(r["strike_price"]), float(r["recovery_price"]), float(r["conversion_ratio"]),
-                                  ask, float(r.get("street_rate") or 0) / 100.0, (mat - dt.date.today()).days))
-        rows = [r for r in scan(cbbcs, fut, min_dist_pct, min_street, hedge_spread, 0.0 if is_index else borrow_rate)
-                if r["discount"] > 0]
-        print_rows(rows[:40], fut)
+            begin = 0
+            while True:
+                req = _warrant_request_cls(ft)()
+                req.type_list = [wtype]
+                req.begin, req.num = begin, 200
+                req.sort_field = ft.SortField.CODE
+                ret, data = ctx.get_warrant(owner, req)
+                if ret != ft.RET_OK:
+                    raise RuntimeError(f"get_warrant 失敗：{data}")
+                df, last_page, all_count = data
+                for _, r in df.iterrows():
+                    ask = float(r.get("ask_price") or 0)
+                    if ask <= 0 or float(r.get("recovery_price") or 0) <= 0:
+                        continue
+                    mat = dt.date.fromisoformat(str(r["maturity_time"])[:10])
+                    cbbcs.append(Cbbc(str(r["stock"]), str(r.get("issuer", "?")), bull,
+                                      float(r["strike_price"]), float(r["recovery_price"]), float(r["conversion_ratio"]),
+                                      ask, float(r.get("street_rate") or 0) / 100.0, (mat - dt.date.today()).days))
+                begin += len(df)
+                if last_page or len(df) == 0 or begin >= all_count:
+                    break
+                time.sleep(3.1)
+            time.sleep(3.1)
+        log(f"{owner} 牛熊證（有賣價）{len(cbbcs)} 隻，參考價 {fut:,.2f}")
+        rows = scan(cbbcs, fut, min_dist_pct, min_street, hedge_spread, 0.0 if is_index else borrow_rate)
+        return rows, {"owner": owner, "forward": fut, "n": len(rows)}
     finally:
         ctx.close()
+
+
+def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: str, borrow_rate: float) -> None:
+    rows, meta = scan_live(host, port, owner, min_dist_pct, min_street, borrow_rate)
+    print_rows([r for r in rows if r["discount"] > 0][:40], meta["forward"])
+    n_c = sum(1 for r in rows if r["candidate"])
+    print(f"\n{len(rows)} 隻；折讓 > 0 的 {sum(1 for r in rows if r['discount'] > 0)} 隻；候選（淨利 > 0、距收回價 ≥ {min_dist_pct}%、街貨 ≥ {min_street:.0%}）{n_c} 隻")
 
 
 def main() -> None:

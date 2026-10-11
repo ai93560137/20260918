@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R149] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
+#     每輪把掃描列與摘要推上來，按 kind 存 futu/scan/<kind>/latest.json、runs/<日期>/<時分>.json、history/<日期>.json（摘要）。
+#     ?view=scan&kind=cbbc|warrant|inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
 #   * 2026-10-11 — [R148] action=inline_scan：本地 futu/inline_push.py 定時掃描恒指界內證對恒指期權的公平價
 #     （research/warrants_cbbc/inline_vs_options.py --live 的結果：每隻買賣價、公平價區間、相對中值溢價、鎖定套利淨額、
 #     自做 condor 成本）→ 驗權杖後存 futu/inline/latest.json、每次全文 futu/inline/runs/<日期>/<時分>.json、
@@ -2358,6 +2361,97 @@ def handle_inline_scan(payload):
               f"{summary['n_cheaper_than_condor']}，溢價中位 {summary['premium_median']}", component="inline_scan")
     return jsonify({"status": "stored", "run_hkt": run_hkt, "n": summary["n"], "n_lock": summary["n_lock"],
                     "warnings": warnings}), 200
+
+
+# =============================================================================
+# [R149] 前向測試掃描（futu/scan_push.py 推上嚟）：kind 任意英數，列的欄位任意（數字／字串／布林），只存。
+# =============================================================================
+SCAN_DIR = "futu/scan"
+SCAN_MAX_ROWS = 500
+SCAN_MAX_KEYS = 40
+SCAN_KIND_RE = re.compile(r"^[a-z0-9_]{1,24}$")
+
+
+def _scan_clean_row(raw):
+    if not isinstance(raw, dict):
+        return None
+    out = {}
+    for k, v in list(raw.items())[:SCAN_MAX_KEYS]:
+        k = _futu_text(k, 40)
+        if not k:
+            continue
+        if isinstance(v, bool):
+            out[k] = v
+        elif isinstance(v, (int, float)):
+            out[k] = v if math.isfinite(v) else None
+        elif v is None:
+            out[k] = None
+        else:
+            out[k] = _futu_text(v, 80)
+    return out or None
+
+
+def handle_scan_push(payload):
+    kind = _futu_text(payload.get("kind"), 24).lower()
+    if not SCAN_KIND_RE.match(kind):
+        return jsonify({"status": "error", "message": "scan_push: bad kind"}), 422
+    rows = [r for r in (_scan_clean_row(x) for x in (payload.get("rows") or [])[:SCAN_MAX_ROWS]) if r]
+    summary = _scan_clean_row(payload.get("summary")) or {}
+    if not rows and not summary:
+        return jsonify({"status": "error", "message": "scan_push: no rows/summary"}), 422
+    run_hkt = _futu_text(payload.get("run_hkt"), 16)
+    summary = {"run_hkt": run_hkt, "n": len(rows), **summary}
+    doc = {"kind": kind, "run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
+           "script_version": _futu_text(payload.get("script_version"), 16), "owner": _futu_text(payload.get("owner"), 16),
+           "note": _futu_text(payload.get("note"), 200), "summary": summary, "rows": rows}
+    text = json.dumps(doc, ensure_ascii=False, default=str)
+    try:
+        gcs_write_text(f"{SCAN_DIR}/{kind}/latest.json", text)
+    except StorageError as exc:
+        log_event(f"⚠️ [掃描寫入失敗] {kind} {exc}", severity="ERROR", component="scan_push")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    warnings = []
+    day = run_hkt[:10] if ARCHIVE_DATE_RE.match(run_hkt[:10]) else fmt_utc(fmt="%Y-%m-%d")
+    hhmm = re.sub(r"\D", "", run_hkt[11:16]) or fmt_utc(fmt="%H%M")
+    try:
+        gcs_write_text(f"{SCAN_DIR}/{kind}/runs/{day}/{hhmm}.json", text)
+    except StorageError as exc:
+        warnings.append("每次全文寫入失敗（最新一份已存）")
+        log_event(f"⚠️ [掃描全文寫入失敗] {kind} {exc}", severity="WARNING", component="scan_push")
+
+    def mutate(existing):
+        kept = [r for r in (existing if isinstance(existing, list) else []) if isinstance(r, dict)
+                and r.get("run_hkt") != summary["run_hkt"]]
+        return kept + [summary], len(kept) + 1
+
+    try:
+        gcs_update(f"{SCAN_DIR}/{kind}/history/{day}.json", mutate, default_factory=list)
+    except StorageError as exc:
+        warnings.append("按日摘要寫入失敗（最新一份已存）")
+        log_event(f"⚠️ [掃描摘要寫入失敗] {kind} {exc}", severity="WARNING", component="scan_push")
+    log_event(f"🔎 [前向掃描] {kind} {run_hkt} {len(rows)} 列 {json.dumps(summary, ensure_ascii=False)[:200]}", component="scan_push")
+    return jsonify({"status": "stored", "kind": kind, "run_hkt": run_hkt, "n": len(rows), "warnings": warnings}), 200
+
+
+def handle_scan_api_get(req):
+    """?view=scan&kind=cbbc&format=json → 最新；&date=YYYY-MM-DD → 該日逐次摘要。"""
+    kind = _futu_text(req.args.get("kind"), 24).lower()
+    if not SCAN_KIND_RE.match(kind):
+        return _json_response({"status": "error", "message": "kind 須為英數底線"}, 400)
+    day = _futu_text(req.args.get("date"), 10)
+    try:
+        if day:
+            if not ARCHIVE_DATE_RE.match(day):
+                return _json_response({"status": "error", "message": "date 格式須為 YYYY-MM-DD"}, 400)
+            data = gcs_read_json(f"{SCAN_DIR}/{kind}/history/{day}.json", [])
+            return _json_response({"status": "ok" if data else "empty", "kind": kind, "date": day, "runs": data}, 200)
+        doc = gcs_read_json(f"{SCAN_DIR}/{kind}/latest.json", None)
+    except StorageError:
+        return _json_response({"status": "error", "message": "storage read failed"}, 503)
+    if not doc:
+        return _json_response({"status": "empty", "kind": kind, "message": "尚未收到此類掃描"}, 200)
+    age = None if doc.get("received_ts") is None else int(now_ts() - doc["received_ts"])
+    return _json_response({"status": "ok", "age_sec": age, **doc}, 200)
 
 
 def handle_inline_api_get(req):
@@ -9553,6 +9647,8 @@ def handle_get(req):
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）
         return handle_inline_api_get(req)
+    if view == "scan":                                           # [R149] 前向測試掃描（&kind=）
+        return handle_scan_api_get(req)
     if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
         return handle_futu_api_get(req.args.get("symbol"))
     if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取
@@ -9642,6 +9738,8 @@ def _dispatch_post(payload):
         return handle_futu_risk(payload)
     if action == "inline_scan":                      # [R148] 本地 inline_push.py 推上來的界內證掃描（只存）
         return handle_inline_scan(payload)
+    if action == "scan_push":                        # [R149] 本地 scan_push.py 推上來的前向測試掃描（只存）
+        return handle_scan_push(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -9671,7 +9769,7 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan"):   # [R94][R147][R148] Futu 封包大／私人，唔入 webhook 日誌
+    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push"):   # [R94][R147][R148][R149] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
