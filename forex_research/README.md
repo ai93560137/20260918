@@ -58,6 +58,9 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 - 已判決不重測；判決追加到 `forex_research/VERDICTS.md`
 - 不 force-push、不 rebase 別人的 commit，合併用 `git pull --no-rebase`；不開 PR 除非使用者要求；commit 不寫模型名
 - Telegram token 只在 GitHub Secrets（TG_BOT_TOKEN／TG_CHAT_ID），不寫進程式或對話；不用 `.github/tg_outbox.txt`
+- **實倉登記與總指揮（2026-10-11 使用者確認）**：總指揮工作階段 `session_01N1jfpEJciBkfAgwtd4QxgU`（分支 `claude/beautiful-hypatia-8qrgjj`）監控富途實倉並配對到各陣。
+  外匯陣若要在富途戶口開實倉：**開倉之前**先在預設分支 `claude/gcp-trading-v12-rewrite-bz75t2` 的 `POSITIONS.md` 登記，並用 send_message 通知上述工作階段；
+  部署 `main.py` 只用預設分支最新版。這只是登記與協調，落單權在使用者。目前外匯陣沒有任何實倉（路線 C 只是紙上前向記錄）。
 - **烽燧響應規則（登記日期 2026-09-26；烽燧 = 雲垂陣 CANARY_PLAYBOOK.md §2 的紅／深紅／黃燈，本分支只取用不改閾值）**：
   - 路線 C 前向記錄（利差 top2／top3、三因子，`forex_research/forward/`）：**紅、深紅、黃皆不改倉位，只在該月記錄欄標註燈色**。
     依據：FX_NEW_INFO_BACKTEST.md E2——VIX 過濾利差籃子 t 0.21 低於不過濾的 0.81，避開崩跌也避開反彈；月頻籃子對烽火不反應是經回測的決定，不是沒想過。
