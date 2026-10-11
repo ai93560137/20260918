@@ -75,6 +75,20 @@ def load(book_path, quotes_path=None):
     for r in qf.get("positions", []):          # 舊格式：只有 positions 行
         Q.setdefault(r["code"], {k: r.get(k) for k in ("bid", "ask", "mid", "last", "quote_time")})
     FP = {r["code"]: r for r in qf.get("positions", [])}
+    # 富途實際恒指期貨淨手數 vs book（例如人手即日 MHI）：多出／少咗嘅當一條「人手」期貨腿計入模型
+    b["fut_lots"] = {}
+    for code, r in FP.items():
+        m = re.match(r"^HK\.(MHI|HSI)\d{4}$", code)
+        if not m or not r.get("qty"):
+            continue
+        b["fut_lots"][code] = r["qty"]
+        booked = sum(p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p) == code)
+        extra = r["qty"] - booked
+        if extra:
+            b["positions"].append({"id": f"{code[3:]} 人手（富途實際 {r['qty']:+g}、book {booked:+g}）", "und": "HSI",
+                                   "type": "fut", "qty": extra, "mult": 10 if m.group(1) == "MHI" else 50, "ccy": "HKD",
+                                   "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or 0,
+                                   "code": code, "group": "恒指期貨人手"})
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
     val = date.fromisoformat(b["valuation_date"])
@@ -226,9 +240,12 @@ def build(book, quotes=None, combined_equity=None):
       + f"；離硬止損 HK${budget:,.0f}；USD/HKD {fx['USD']}")
     if acc:
         cush = acc["total_assets"] - (acc.get("maintenance_margin") or 0)
-        M.update(futu_equity=acc["total_assets"], cushion=cush)
+        M.update(futu_equity=acc["total_assets"], cushion=cush, maintenance_margin=acc.get("maintenance_margin"))
         P(f"富途期貨戶口：權益 HK${acc['total_assets']:,.0f}，維持保證金 HK${acc.get('maintenance_margin') or 0:,.0f}，"
           f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
+    M["mhi_lots"] = dict(b["fut_lots"]) or {
+        derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
+    P("恒指期貨淨手數（富途實際）：" + "、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()))
     P("")
 
     P("## 1. 價格來源（每腿）")

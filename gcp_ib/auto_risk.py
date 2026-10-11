@@ -12,7 +12,7 @@
   setx TG_CHAT_ID "…"
   setx ZHUGE_GCP_URL "https://…run.app/"   # 選填：有就每次推上 GCP（main.py R147 action=futu_risk，存私人 bucket）
   setx WEBHOOK_SECRET_TOKEN "…"            #        同 futu/push_to_gcp.py 用同一對設定
-  選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 100000）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）
+  選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 60000；Cloud Run 另有逐級 Telegram）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）
 
 輸出（全部喺 tradingview/out/，已 .gitignore，唔會 commit）：
   risk_report_live.md   最新報告
@@ -177,7 +177,7 @@ def main():
     ap.add_argument("--combined-equity", type=float, default=float(os.environ.get("ZHUGE_COMBINED_EQUITY", 0)) or None)
     ap.add_argument("--weekend", action="store_true", help="週末都照跑（預設週末唔跑）")
     a = ap.parse_args()
-    cushion_line = float(os.environ.get("ZHUGE_ALERT_CUSHION", 100000))
+    cushion_line = float(os.environ.get("ZHUGE_ALERT_CUSHION", 60000))
     stop_line = float(os.environ.get("ZHUGE_ALERT_STOP", 0.8))
     if not a.combined_equity:
         print("⚠ 冇設合計權益（setx ZHUGE_COMBINED_EQUITY …），硬止損會用 book 假設 NAV 計")
