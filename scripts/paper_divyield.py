@@ -119,30 +119,55 @@ def rv63(px, t, d):
 
 
 # ───────────────────────── 真實期權報價 ─────────────────────────
+RETRY_DAYS = 5          # 建倉後最多重試抓報價的曆日數（第 2、3 點）
+MIN_MODEL_FRAC = 0.0005 # 模型權利金 < 股價 0.05% 不計入「實收 ÷ 模型」（第 4 點）
+
+
+def pick_expiry(exps: list[date], day: date):
+    """20–45 日內最接近 30 日；沒有就取至少 14 日、最接近 30 日的系列（2026-10-11 修訂第 1 點）。"""
+    inside = [e for e in exps if 20 <= (e - day).days <= 45]
+    pool = inside or [e for e in exps if (e - day).days >= 14]
+    if not pool:
+        return None, None
+    e = min(pool, key=lambda x: abs((x - day).days - 30))
+    return e, ("20–45 日" if inside else "後備：最接近 30 日（≥14 日）")
+
+
 def capture_us(tickers: list[str], day: date) -> dict:
+    """status：ok／retry（暫時抓不到，下次再試）／final 原因（不會再有）。"""
     import yfinance as yf
     out = {}
     for t in tickers:
         try:
             tk = yf.Ticker(t.replace(".", "-"))
             spot = float(tk.fast_info["last_price"])
-            exps = [e for e in tk.options if 20 <= (date.fromisoformat(e) - day).days <= 45]
-            if not exps:
-                out[t] = {"status": "無 20–45 日到期系列"}
+            e, rule = pick_expiry([date.fromisoformat(x) for x in tk.options], day)
+            if e is None:
+                out[t] = {"status": "無可用到期系列", "final": True}
                 continue
-            e = min(exps, key=lambda x: abs((date.fromisoformat(x) - day).days - 30))
-            calls = tk.option_chain(e).calls
+            calls = tk.option_chain(e.isoformat()).calls
             cands = calls[calls["strike"] >= KC * spot].sort_values("strike")
-            got = None
+            got, any_bid = None, False
             for _, r in cands.iterrows():
                 bid, ask = float(r.get("bid") or 0), float(r.get("ask") or 0)
+                any_bid |= bid > 0
                 if bid > 0 and ask > 0:
-                    got = dict(strike=float(r["strike"]), bid=bid, ask=ask, premium=(bid + ask) / 2)
+                    got = dict(strike=float(r["strike"]), bid=bid, ask=ask, premium=(bid + ask) / 2, source="yfinance 中間價")
                     break
             if not got:
-                out[t] = {"status": "行使價 ≥ 1.05 倍沒有有效買賣價"}
+                # 非交易時段買賣價常為 0：退回建倉日或之後的最後成交價（2026-10-11 修訂第 2 點）
+                for _, r in cands.iterrows():
+                    last = float(r.get("lastPrice") or 0)
+                    ltd = r.get("lastTradeDate")
+                    ltd = ltd.date() if hasattr(ltd, "date") else None
+                    if last > 0 and ltd and ltd >= day:
+                        got = dict(strike=float(r["strike"]), premium=last, last_trade=str(ltd), source="yfinance 最後成交價")
+                        break
+            if not got:
+                out[t] = {"status": "買賣價為 0 且建倉後無成交（可能非交易時段）" if not any_bid
+                          else "行使價 ≥ 1.05 倍沒有有效買賣價", "final": any_bid}
                 continue
-            out[t] = dict(status="ok", expiry=e, spot=spot, source="yfinance 中間價",
+            out[t] = dict(status="ok", expiry=e.isoformat(), expiry_rule=rule, spot=spot,
                           captured_utc=datetime.now(timezone.utc).isoformat(timespec="minutes"), **got)
         except Exception as ex:  # noqa: BLE001
             out[t] = {"status": f"抓取失敗 {ex!r}"[:120]}
@@ -178,20 +203,19 @@ def capture_hk(tickers: list[str], day: date) -> dict | None:
     out = {}
     for t in tickers:
         if t not in classes:
-            out[t] = {"status": "沒有股票期權"}
+            out[t] = {"status": "沒有股票期權", "final": True}
             continue
         spot, rows = classes[t]
-        exps = sorted({e for e, *_ in rows if 20 <= (e - day).days <= 45})
-        if not exps:
-            out[t] = {"status": "無 20–45 日到期系列"}
+        e, rule = pick_expiry(sorted({ee for ee, *_ in rows}), day)
+        if e is None:
+            out[t] = {"status": "無可用到期系列", "final": True}
             continue
-        e = min(exps, key=lambda x: abs((x - day).days - 30))
         cands = sorted((k, p, iv) for ee, k, p, iv in rows if ee == e and k >= KC * spot and p > 0)
         if not cands:
-            out[t] = {"status": "行使價 ≥ 1.05 倍沒有結算價"}
+            out[t] = {"status": "行使價 ≥ 1.05 倍沒有結算價", "final": True}
             continue
         k, p, iv = cands[0]
-        out[t] = dict(status="ok", expiry=str(e), spot=spot, strike=k, premium=p, hkex_iv=iv / 100,
+        out[t] = dict(status="ok", expiry=str(e), expiry_rule=rule, spot=spot, strike=k, premium=p, hkex_iv=iv / 100,
                       source="港交所結算價", captured_utc=datetime.now(timezone.utc).isoformat(timespec="minutes"))
     return out
 
@@ -313,23 +337,41 @@ def run_market(led, px, market, offline):
 
 
 def capture(p, px, market, base):
+    """抓報價；已成功的保留，暫時失敗的下次再試；建倉後 RETRY_DAYS 曆日或全部有結果才標記完成。"""
     if p.get("options_done"):
         return
     day = date.fromisoformat(p["entry"])
-    got = capture_hk(p["basket"], day) if market == "hk" else capture_us(p["basket"], day)
-    if got is None:
+    have = p.get("options", {})
+    todo = [t for t in p["basket"] if not (have.get(t, {}).get("status") == "ok" or have.get(t, {}).get("final"))]
+    if not todo:
+        p["options_done"] = True
         return
-    for t, o in got.items():
-        if o.get("status") == "ok" and px.series(t) and day in px.series(t):
-            mp = model_premium(px, t, day, o["spot"], o["strike"], o["expiry"], MKT[market]["rho"], base)
-            rv = rv63(px, t, day)
-            if rv:
-                o["model_iv"] = MKT[market]["rho"] * rv
-            if mp:
-                o["model_premium"] = mp
-                o["real_over_model"] = o["premium"] / mp
-    p["options"] = got
-    p["options_done"] = True
+    got = capture_hk(todo, day) if market == "hk" else capture_us(todo, day)
+    if got is not None:
+        for t, o in got.items():
+            if o.get("status") == "ok" and px.series(t) and day in px.series(t):
+                mp = model_premium(px, t, day, o["spot"], o["strike"], o["expiry"], MKT[market]["rho"], base)
+                rv = rv63(px, t, day)
+                if rv:
+                    o["model_iv"] = MKT[market]["rho"] * rv
+                if mp:
+                    o["model_premium"] = mp
+                    if mp >= MIN_MODEL_FRAC * o["spot"]:
+                        o["real_over_model"] = o["premium"] / mp
+                    else:
+                        o["ratio_excluded"] = "模型權利金 < 股價 0.05%，不計入比例"
+            have[t] = o
+        p["options"] = have
+    attempts = p.setdefault("capture_attempts", [])
+    attempts.append(datetime.now(timezone.utc).isoformat(timespec="minutes"))
+    left = [t for t in p["basket"] if not (have.get(t, {}).get("status") == "ok" or have.get(t, {}).get("final"))]
+    today = datetime.now(timezone.utc).date()
+    if not left or (today - day).days > RETRY_DAYS:
+        p["options_done"] = True
+        for t in left:
+            have.setdefault(t, {})["final"] = True
+            have[t]["status"] = (have[t].get("status") or "未抓到") + f"（重試 {RETRY_DAYS} 日後放棄）"
+        p["options"] = have
 
 
 def finish_pending(led, px):
@@ -398,11 +440,22 @@ def report(led):
             lines += [f"**{p['month']} 持倉**：" + "、".join(p["basket"]), ""]
             for t, o in sorted(p.get("options", {}).items()):
                 if o.get("status") == "ok":
-                    rm = f"、實收÷模型 {o['real_over_model']:.2f}" if "real_over_model" in o else ""
+                    rm = (f"、實收÷模型 {o['real_over_model']:.2f}" if "real_over_model" in o
+                          else f"、{o['ratio_excluded']}" if "ratio_excluded" in o else "")
+                    if o.get("source", "").endswith("最後成交價"):
+                        rm += f"（最後成交 {o.get('last_trade')}）"
+                    if o.get("expiry_rule", "").startswith("後備"):
+                        rm += "（到期系列：後備規則）"
                     lines.append(f"- {t}：{o['expiry']} 到期、行使價 {o['strike']}、權利金 {o['premium']:.3f}（{o['source']}）{rm}")
                 else:
                     lines.append(f"- {t}：{o.get('status')}")
             lines.append("")
+    lines += ["## 修訂紀錄", "",
+              "- 2026-10-11（使用者批准）：① 20–45 日內沒有到期系列時，改取 ≥ 14 日、最接近 30 日的系列；"
+              "② 美股買賣價為 0（非交易時段）時下次再抓，並可退回建倉日或之後的最後成交價；"
+              "③ 抓不到的不再標記完成，建倉後 5 個曆日內每次執行都重試；④ 模型權利金 < 股價 0.05% 的不計入「實收 ÷ 模型」（追溯套用）。",
+              "- **2026-10 美股（USC）10 檔全部沒有真實報價**（舊規則：月度到期只有 15 日與 50 日、抓取時買賣價為 0，且失敗後不重試）；"
+              "該月賣 call 版照不賣 call 計，缺口無法補回。11 月起適用新規則。", ""]
     REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -421,6 +474,17 @@ def update_irx() -> None:
     p.write_text("Date,Close\n" + "".join(f"{d},{v}\n" for d, v in sorted(old.items())), encoding="utf-8")
 
 
+def migrate(led) -> None:
+    """2026-10-11 修訂第 4 點追溯：舊紀錄中模型權利金過小的不計入比例。"""
+    for per in led["periods"].values():
+        for p in per:
+            for o in p.get("options", {}).values():
+                mp, sp = o.get("model_premium"), o.get("spot")
+                if mp and sp and mp < MIN_MODEL_FRAC * sp and "real_over_model" in o:
+                    o["real_over_model_raw"] = o.pop("real_over_model")
+                    o["ratio_excluded"] = "模型權利金 < 股價 0.05%，不計入比例"
+
+
 def run(offline: bool = False) -> None:
     PAPER_DIR.mkdir(exist_ok=True)
     if not offline:
@@ -429,6 +493,7 @@ def run(offline: bool = False) -> None:
         except Exception as ex:  # noqa: BLE001
             print(f"^IRX 更新失敗（模型權利金用舊利率）：{ex!r}")
     led = load()
+    migrate(led)
     px = Prices()
     for market in ("hk", "us"):
         try:
