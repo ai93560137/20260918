@@ -8,6 +8,8 @@
   python3 scripts/hkex_inline_fetch.py quotes 2025-10-01 2026-10-10   # 逐日下載，抽 @L 行 → data/hkex_inline/quotes_raw_<年>.csv.gz
   python3 scripts/hkex_inline_fetch.py terms                 # 試抓界內證條款清單（候選網址，存樣本給人看）
   python3 scripts/hkex_inline_fetch.py urls <網址1,網址2,...>   # 任意網址（hkex.com.hk）存到 sample/，CSV 印前幾行、HTML 印連結
+  python3 scripts/hkex_inline_fetch.py survey 2019-07-01 2026-10-10 --step 14   # 每隔 N 天抽一天的行情報告，數 @L 行 → survey.csv（找界內證存在的年代）
+  python3 scripts/hkex_inline_fetch.py wayback                # 從 web.archive.org 抓歷年 iwFullList.csv 快照（含上下限價、到期、收市價）→ iw_fulllist_history.csv.gz
 
 quotes 只存原始行（date, code, name, raw_line），欄位解析交給 research/warrants_cbbc/inline_history.py 在本機做，
 這樣格式猜錯也不用重抓。
@@ -196,6 +198,110 @@ def quotes(start, end):
             w.writerow([k, done[k]])
 
 
+def survey(start, end, step):
+    """抽樣：每 step 天取一個交易日（遇週末往後挪），記錄 @L 總行數與 HSI 行數，並把 @L 行存起來。"""
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "survey.csv"
+    seen = {}
+    if path.exists():
+        with open(path, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                seen[r["date"]] = r
+    d0, d1 = date.fromisoformat(start), date.fromisoformat(end)
+    d = d0
+    lines_out = []
+    while d <= d1:
+        probe_day = d
+        while probe_day.weekday() >= 5:
+            probe_day += timedelta(days=1)
+        key = probe_day.isoformat()
+        if key not in seen:
+            st, raw = get(DAYQUOT.format(yymmdd=yymmdd(probe_day)))
+            if st == 200 and len(raw) > 1000:
+                inl = inline_lines(to_text(raw))
+                hsi = [x for x in inl if "HSI" in x[1].upper()]
+                seen[key] = {"date": key, "status": "ok", "n_inline": len(inl), "n_hsi": len(hsi), "bytes": len(raw)}
+                lines_out.extend((key, c, n, l) for c, n, l in inl)
+                print(f"{key}: @L {len(inl)} 行，HSI {len(hsi)}")
+            else:
+                seen[key] = {"date": key, "status": f"http{st}", "n_inline": "", "n_hsi": "", "bytes": len(raw)}
+                print(f"{key}: HTTP {st}")
+            time.sleep(0.7)
+        d += timedelta(days=step)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["date", "status", "n_inline", "n_hsi", "bytes"])
+        w.writeheader()
+        for k in sorted(seen):
+            w.writerow(seen[k])
+    if lines_out:
+        lp = OUT / "survey_lines.csv.gz"
+        existing = []
+        if lp.exists():
+            with gzip.open(lp, "rt", encoding="utf-8", newline="") as f:
+                existing = list(csv.reader(f))[1:]
+        have = {(r[0], r[1]) for r in existing}
+        merged = existing + [list(r) for r in lines_out if (r[0], r[1]) not in have]
+        merged.sort(key=lambda r: (r[0], r[1]))
+        with gzip.open(lp, "wt", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["date", "code", "name", "raw_line"])
+            w.writerows(merged)
+        print(f"寫入 {lp.name}：{len(merged)} 行")
+
+
+WAYBACK_TARGETS = ("www.hkex.com.hk/eng/iwrc/search/iwFullList.csv", "www.hkex.com.hk/chi/iwrc/search/iwFullList.csv")
+
+
+def wayback():
+    """web.archive.org 的 CDX 索引列出 iwFullList.csv 的所有快照，逐個下載、解析成列（加 capture 日期）。"""
+    import json
+    OUT.mkdir(parents=True, exist_ok=True)
+    rows, caps_seen = [], set()
+    for target in WAYBACK_TARGETS:
+        cdx = f"https://web.archive.org/cdx/search/cdx?url={target}&output=json&fl=timestamp,statuscode,length&filter=statuscode:200&collapse=timestamp:8"
+        st, raw = get(cdx, timeout=120)
+        print(f"CDX {target}: HTTP {st} {len(raw)} bytes")
+        if st != 200 or not raw:
+            continue
+        try:
+            caps = json.loads(raw.decode("utf-8", "replace"))[1:]
+        except ValueError:
+            print("   CDX 不是 JSON：" + raw[:200].decode("utf-8", "replace"))
+            continue
+        print(f"   {len(caps)} 個快照（每天最多一個）：{caps[0][0] if caps else ''} … {caps[-1][0] if caps else ''}")
+        for ts, _st, _len in caps:
+            if ts[:8] in caps_seen:
+                continue
+            url = f"https://web.archive.org/web/{ts}id_/https://{target}"
+            st2, body = get(url, timeout=120)
+            if st2 != 200 or not body:
+                print(f"   {ts}: HTTP {st2}")
+                time.sleep(1.0)
+                continue
+            txt = body.decode("utf-16", "replace") if body[:2] in (b"\xff\xfe", b"\xfe\xff") else body.decode("utf-8", "replace")
+            lines = [l for l in txt.splitlines() if l.strip()]
+            header_i = next((i for i, l in enumerate(lines) if "Code" in l and "Lower" in l), None)
+            n = 0
+            if header_i is not None:
+                header = [h.strip() for h in lines[header_i].split("\t")]
+                for l in lines[header_i + 1:]:
+                    cells = [c.strip() for c in l.split("\t")]
+                    if len(cells) < 8 or not cells[0].isdigit():
+                        continue
+                    rows.append({"capture": ts[:8], **dict(zip(header, cells))})
+                    n += 1
+            caps_seen.add(ts[:8])
+            print(f"   {ts}: {len(body)} bytes，{n} 隻")
+            time.sleep(1.0)
+    if rows:
+        keys = ["capture"] + sorted({k for r in rows for k in r if k != "capture"})
+        with gzip.open(OUT / "iw_fulllist_history.csv.gz", "wt", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=keys)
+            w.writeheader()
+            w.writerows(rows)
+        print(f"寫入 iw_fulllist_history.csv.gz：{len(rows)} 列，{len(caps_seen)} 個快照日")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -203,6 +309,8 @@ def main():
     q = sub.add_parser("quotes"); q.add_argument("start"); q.add_argument("end")
     sub.add_parser("terms")
     u = sub.add_parser("urls"); u.add_argument("urls")
+    sv = sub.add_parser("survey"); sv.add_argument("start"); sv.add_argument("end"); sv.add_argument("--step", type=int, default=14)
+    sub.add_parser("wayback")
     a = ap.parse_args()
     if a.cmd == "probe":
         probe(a.day)
@@ -210,6 +318,10 @@ def main():
         quotes(a.start, a.end)
     elif a.cmd == "urls":
         fetch_urls(a.urls)
+    elif a.cmd == "survey":
+        survey(a.start, a.end, a.step)
+    elif a.cmd == "wayback":
+        wayback()
     else:
         terms()
 

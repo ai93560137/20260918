@@ -20,6 +20,10 @@ on:
         description: mode=urls 時，逗號分隔的 hkex.com.hk 網址
         required: false
         default: ''
+      step:
+        description: mode=survey 時，每隔幾天抽一天
+        required: false
+        default: '14'
 
 permissions:
   contents: write
@@ -40,11 +44,16 @@ jobs:
           START: ${{ github.event.inputs.start }}
           END: ${{ github.event.inputs.end }}
           URLS: ${{ github.event.inputs.urls }}
+          STEP: ${{ github.event.inputs.step }}
         run: |
           if [ "$MODE" = "probe" ]; then
             python3 scripts/hkex_inline_fetch.py probe "$START"
           elif [ "$MODE" = "urls" ]; then
             python3 scripts/hkex_inline_fetch.py urls "$URLS"
+          elif [ "$MODE" = "survey" ]; then
+            python3 scripts/hkex_inline_fetch.py survey "$START" "$END" --step "${STEP:-14}"
+          elif [ "$MODE" = "wayback" ]; then
+            python3 scripts/hkex_inline_fetch.py wayback
           elif [ "$MODE" = "terms" ]; then
             python3 scripts/hkex_inline_fetch.py terms
           else
