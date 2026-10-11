@@ -291,36 +291,91 @@ def run_market(mk: str, time_n: int = 0) -> None:
         f"隨機對照第 {pct:.0%}；共評估 {res['n_evaluated'] + pre['n_evaluated']} 組，{time.time() - t0:.0f} 秒")
 
 
+def eval_batch(mk: str, cfg_path: str, out_path: str) -> None:
+    """子程序：載入一個市場，評估一批參數組，輸出各組月度超額報酬（共用組搜尋用，避免四市場同時佔記憶體）。"""
+    cfgs = json.loads(Path(cfg_path).read_text(encoding="utf-8"))
+    x = CF(mk)
+    out = {}
+    for c in cfgs:
+        tr = x.ctrades(c)
+        out[key(c)] = None if len(tr) < MIN_TRADES else x.abn(x.daily(tr, c["risk"])[0])
+    Path(out_path).write_text(json.dumps(out), encoding="utf-8")
+
+
 def run_common() -> None:
+    """四市場共用一組參數：目標 = 四市場月度超額報酬平均的 t（同原 pool_all）。分輪：每輪把待評估組交給各市場子程序。"""
+    import subprocess
     log = lambda s: print(s, file=sys.stderr, flush=True)  # noqa: E731
-    xs = {}
-    for mk in H.MARKETS:
-        xs[mk] = CF(mk)
-    abn_cache = {}
+    tmp = OUT / "_common_tmp"
+    tmp.mkdir(parents=True, exist_ok=True)
+    abn = {mk: {} for mk in H.MARKETS}
 
-    def abn_of(mk, c):
-        k = mk + key(c)
-        if k not in abn_cache:
-            x = xs[mk]
-            tr = x.ctrades(c)
-            abn_cache[k] = None if len(tr) < MIN_TRADES else x.abn(x.daily(tr, c["risk"])[0])
-        return abn_cache[k]
+    def evaluate(cfgs: list[dict]) -> None:
+        todo = [c for c in {key(c): c for c in cfgs}.values() if key(c) not in abn["hk"]]
+        if not todo:
+            return
+        (tmp / "cfgs.json").write_text(json.dumps(todo), encoding="utf-8")
+        t0 = time.time()
+        def cmd(mk):
+            return [sys.executable, str(Path(__file__)), "--eval-batch", mk, str(tmp / "cfgs.json"), str(tmp / f"{mk}.json")]
+        p_us = subprocess.Popen(cmd("us"))
+        for mk in ("hk", "jp", "tw"):
+            subprocess.run(cmd(mk), check=True)
+        if p_us.wait() != 0:
+            raise RuntimeError("us 子程序失敗")
+        for mk in H.MARKETS:
+            abn[mk].update(json.loads((tmp / f"{mk}.json").read_text(encoding="utf-8")))
+        log(f"  評估 {len(todo)} 組，{time.time() - t0:.0f} 秒")
 
-    def pooled_t(c):
-        a = [abn_of(mk, c) for mk in H.MARKETS]
+    def pooled_t(c: dict) -> float:
+        a = [abn[mk][key(c)] for mk in H.MARKETS]
         if any(v is None for v in a):
             return float("nan")
         return H.tstat_series(H.pooled(a))
 
-    res = search(pooled_t, "四市場共用", log)
-    best = res["best"]
-    per = {mk: xs[mk].score(best) for mk in H.MARKETS}
-    for v in per.values():
-        v.pop("by_year", None)
-    out = {"search": res, "best": best, "pooled_t": res["best_score"], "per_market": per,
-           "default_pooled_t": pooled_t(DEFAULT)}
+    cfgs = rand_configs(N_RANDOM, SEED) + [DEFAULT]
+    evaluate(cfgs)
+    sc = {key(c): pooled_t(c) for c in cfgs}
+    ranked = sorted(((v, k) for k, v in sc.items() if v == v), reverse=True)
+    current = [json.loads(k) for _, k in ranked[:5]]
+    cur_v = [v for v, _ in ranked[:5]]
+    starts_v = list(cur_v)
+    rnd_n = 0
+    while True:
+        rnd_n += 1
+        nbrs = []
+        for c in current:
+            for p, vals in SPACE.items():
+                for v in vals:
+                    if v != c[p]:
+                        nbrs.append(dict(c, **{p: v}))
+        evaluate(nbrs)
+        moved = False
+        for i, c in enumerate(current):
+            best_c, best_v = c, cur_v[i]
+            for p, vals in SPACE.items():
+                for v in vals:
+                    if v == c[p]:
+                        continue
+                    n_ = dict(c, **{p: v})
+                    t = pooled_t(n_)
+                    if t == t and t > best_v + 1e-9:
+                        best_c, best_v = n_, t
+            if best_c is not c:
+                current[i], cur_v[i], moved = best_c, best_v, True
+        log(f"  第 {rnd_n} 輪上升：{[round(v, 2) for v in cur_v]}")
+        if not moved:
+            break
+    k = int(np.argmax(cur_v))
+    best = current[k]
+    per = {}
+    for mk in H.MARKETS:
+        per[mk] = {"alpha_t": H.tstat_series(abn[mk][key(best)]) if abn[mk][key(best)] else None}
+    out = {"best": best, "pooled_t": cur_v[k], "starts": starts_v, "ends": cur_v, "default_pooled_t": pooled_t(DEFAULT),
+           "random_median": float(np.median([v for v, _ in ranked])), "n_evaluated": len(abn["hk"]),
+           "per_market_abn_t": per}
     (OUT / "common.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
-    log(f"共用組合併 alpha t {res['best_score']:.2f}（預設 {out['default_pooled_t']:.2f}）")
+    log(f"共用組合併 t {cur_v[k]:.2f}（預設 {out['default_pooled_t']:.2f}）：{best}")
 
 
 def main() -> None:
@@ -328,8 +383,11 @@ def main() -> None:
     a.add_argument("--market", choices=H.MARKETS)
     a.add_argument("--common", action="store_true")
     a.add_argument("--time", type=int, default=0)
+    a.add_argument("--eval-batch", nargs=3, metavar=("MARKET", "CFGS", "OUT"))
     args = a.parse_args()
-    if args.common:
+    if args.eval_batch:
+        eval_batch(*args.eval_batch)
+    elif args.common:
         run_common()
     else:
         run_market(args.market, args.time)
