@@ -2262,6 +2262,8 @@ def _futu_risk_clean_metrics(raw):
         out[key] = {_futu_text(k, 40): to_float(v) for k, v in list(src.items())[:10]}
     src = raw.get("mhi_lots") if isinstance(raw.get("mhi_lots"), dict) else {}
     out["mhi_lots"] = {_futu_text(k, 24): to_float(v) for k, v in list(src.items())[:6]}
+    src = raw.get("delta_parts") if isinstance(raw.get("delta_parts"), dict) else {}      # [R154] 三個 Δ
+    out["delta_parts"] = {_futu_text(k, 24): to_float(v) for k, v in list(src.items())[:6]}
     src = raw.get("delta") if isinstance(raw.get("delta"), dict) else {}
     out["delta"] = {_futu_text(k, 60): [to_float(x) for x in (v if isinstance(v, (list, tuple)) else [v])[:2]]
                     for k, v in list(src.items())[:10]}

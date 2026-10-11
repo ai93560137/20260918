@@ -397,6 +397,9 @@ def build(book, quotes=None, combined_equity=None):
             hit = next((sign * k / 1000 for k in range(1, 201) if abs(group_delta_at(b, fx, r["und"], r["groups"], sign * k / 1000)) > r["band"]), None)
             P(f"  - {r['und']} {lab}" + (f" {abs(hit) * 100:.1f}%（≈ {b['underlyings'][r['und']]['F'] * (1 + hit):,.0f}）就超出界線" if hit else " 20% 內唔超出"))
     hs_all = gk["HSI"]["dpts"] / 10
+    M["delta_parts"] = {"straddle": group_delta_at(b, fx, "HSI", ["HSI 月跨式"], 0),     # [R154] 雲垂月跨式 Δ（唔含對沖）
+                        "net_with_hedge": next(iter(M["delta"].values()), (None,))[0],   # 含對沖淨 Δ
+                        "hsi_all": hs_all}                                               # 恒指全部淨 Δ（連週權、人手倉）
     P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
     ew = next((p for p in b["positions"] if p["id"].startswith("EW")), None)
     P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"

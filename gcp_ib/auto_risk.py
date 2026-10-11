@@ -95,7 +95,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R153"
+SCRIPT_VERSION = "R154"
 PNL_HOUR = (5, 30)        # 香港時間：恒指夜市 03:00 收、美期權 04:00–05:00 收之後先匯出
 PNL_MAX_TRIES = 3
 _pnl_proc = None
