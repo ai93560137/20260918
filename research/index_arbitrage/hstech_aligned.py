@@ -74,6 +74,18 @@ def main():
         corr = cov / (st.pstdev([p[0] for p in common]) * st.pstdev([p[1] for p in common]))
         s1 = [x["resid"] for x in r1]; s2 = [x["resid"] for x in r2]
         L.append(f"| {lab} | {st.pstdev(s1):.3f} | {ar1(r1):+.2f} | {sum(abs(e) >= 0.3 for e in s1)} | {st.pstdev(s2):.3f} | {ar1(r2):+.2f} | {corr:.2f} | {st.pstdev([p[0] - p[1] for p in common]):.3f} |")
+    # 對指數本身（Futu HK.800700 60 分 K 的 16:00 收市；2024-11 起）：指數層面 vs ETF 層面的拆分
+    sub = [r for r in rows if r.get("idx1600")]
+    if sub:
+        L += ["", f"## 對恒生科技指數本身（{sub[0]['date']} 至 {sub[-1]['date']}，{len(sub)} 個交易日，三者同一區間）", "",
+              "| 期貨取價 | 期貨對指數：殘差 σ % | φ | 期貨對 3033：殘差 σ % | 期貨對 3067：殘差 σ % |", "|---|---|---|---|---|"]
+        for price, lab in (("f1600", "16:00"), ("mid", "16:00 與 16:15 平均"), ("f1630", "16:30")):
+            ri = residuals(sub, price, "idx1600"); r1 = residuals(sub, price, "etf3033"); r2 = residuals(sub, price, "etf3067")
+            L.append(f"| {lab} | {st.pstdev([x['resid'] for x in ri]):.3f} | {ar1(ri):+.2f} | {st.pstdev([x['resid'] for x in r1]):.3f} | {st.pstdev([x['resid'] for x in r2]):.3f} |")
+        for etf, lab in (("etf3033", "3033"), ("etf3067", "3067")):
+            ratio = [math.log(float(r[etf]) / float(r["idx1600"])) for r in sub if r[etf]]
+            dl = [ratio[i + 1] - ratio[i] for i in range(len(ratio) - 1)]
+            L.append(f"- {lab} 對指數的比率日變動 σ {st.pstdev(dl) * 100:.3f}%（ETF 折溢價自己的日噪音；含派息日跳動）")
     n1615 = [float(r["f1615"]) - float(r["f1600"]) for r in rows]; n1630 = [float(r["f1630"]) - float(r["f1600"]) for r in rows]
     spot = st.mean(float(r["f1600"]) for r in rows)
     L += ["", f"- 期貨自己 16:00→16:15 的移動 σ {st.pstdev(n1615):.1f} 點（{st.pstdev(n1615) / spot * 100:.3f}%）、16:00→16:30 σ {st.pstdev(n1630):.1f} 點（{st.pstdev(n1630) / spot * 100:.3f}%）",
