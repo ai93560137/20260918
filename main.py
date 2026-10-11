@@ -107,6 +107,11 @@
 #   * 2026-10-11 — [R150] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
 #     每輪把掃描列與摘要推上來，按 kind 存 futu/scan/<kind>/latest.json、runs/<日期>/<時分>.json、history/<日期>.json（摘要）。
 #     ?view=scan&kind=cbbc|warrant|inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
+#   * 2026-10-11 — [R149] action=futu_risk 代發 Telegram：同上一份 futu/risk/latest.json 比較，警報出現、升級（⚠→⛔）或解除先發
+#     （用 R142 tg_send，權杖只喺 Cloud Run）；本地腳本自己發過（client_telegram=true）就唔重複。只通知，唔影響下單。
+#     另加富途期貨戶口保證金緩衝警報（權益 − 維持保證金）：< 6 萬即時通知、< 2 萬升級「危急」（可能被追繳／強平），
+#     同一級每再跌 1 萬先再發，回到 8 萬以上先解除（門檻可用環境變數 FUTU_MARGIN_WARN／_CRIT／_CLEAR／_STEP 改）。
+#     狀態存 futu/risk/margin_alert.json。通知列權益、維持保證金、緩衝、MHI 淨手數、蝕光緩衝要恒指／ES 郁幾多。
 #   * 2026-10-11 — [R148] action=inline_scan：本地 futu/inline_push.py 定時掃描恒指界內證對恒指期權的公平價
 #     （research/warrants_cbbc/inline_vs_options.py --live 的結果：每隻買賣價、公平價區間、相對中值溢價、鎖定套利淨額、
 #     自做 condor 成本）→ 驗權杖後存 futu/inline/latest.json、每次全文 futu/inline/runs/<日期>/<時分>.json、
@@ -2229,7 +2234,13 @@ def handle_futu_data(payload):
 FUTU_RISK_FILE = "futu/risk/latest.json"
 FUTU_RISK_HISTORY_DIR = "futu/risk/history"
 FUTU_RISK_MAX_REPORT = 60000
-FUTU_RISK_METRIC_KEYS = ("quotes_fetched", "pnl", "equity", "hard_stop", "gap", "futu_equity", "cushion")
+FUTU_RISK_METRIC_KEYS = ("quotes_fetched", "pnl", "equity", "hard_stop", "gap", "futu_equity", "cushion",
+                         "maintenance_margin")
+FUTU_MARGIN_STATE_FILE = "futu/risk/margin_alert.json"                 # [R149] 保證金緩衝警報狀態
+FUTU_MARGIN_WARN = _env_int("FUTU_MARGIN_WARN", 60000)
+FUTU_MARGIN_CRIT = _env_int("FUTU_MARGIN_CRIT", 20000)
+FUTU_MARGIN_CLEAR = _env_int("FUTU_MARGIN_CLEAR", 80000)
+FUTU_MARGIN_STEP = max(1, _env_int("FUTU_MARGIN_STEP", 10000))
 
 
 def _futu_risk_clean_metrics(raw):
@@ -2241,6 +2252,8 @@ def _futu_risk_clean_metrics(raw):
     for key in ("stop_use", "margin_hit"):
         src = raw.get(key) if isinstance(raw.get(key), dict) else {}
         out[key] = {_futu_text(k, 40): to_float(v) for k, v in list(src.items())[:10]}
+    src = raw.get("mhi_lots") if isinstance(raw.get("mhi_lots"), dict) else {}
+    out["mhi_lots"] = {_futu_text(k, 24): to_float(v) for k, v in list(src.items())[:6]}
     src = raw.get("delta") if isinstance(raw.get("delta"), dict) else {}
     out["delta"] = {_futu_text(k, 60): [to_float(x) for x in (v if isinstance(v, (list, tuple)) else [v])[:2]]
                     for k, v in list(src.items())[:10]}
@@ -2257,6 +2270,11 @@ def handle_futu_risk(payload):
     alerts = {_futu_text(k, 60): _futu_text(v, 200) for k, v in list(alerts.items())[:20]}
     positions = [row for row in (payload.get("positions") or [])[:50] if isinstance(row, dict)]
     run_hkt = _futu_text(payload.get("run_hkt"), 19)
+    try:                                                              # [R149] 上一份嘅警報，用嚟判斷要唔要發 Telegram
+        prev = gcs_read_json(FUTU_RISK_FILE, {})
+        prev_alerts = prev.get("alerts") if isinstance(prev, dict) and isinstance(prev.get("alerts"), dict) else {}
+    except StorageError:
+        prev_alerts = None                                            # 讀唔到就唔發，免得重複轟炸
     doc = {"run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
            "script_version": _futu_text(payload.get("script_version"), 16),
            "metrics": metrics, "alerts": alerts, "positions": positions,
@@ -2281,9 +2299,103 @@ def handle_futu_risk(payload):
     except StorageError as exc:
         warnings.append("按日紀錄寫入失敗（最新一份已存）")
         log_event(f"⚠️ [富途風險紀錄失敗] {exc}", severity="WARNING", component="futu_risk")
+    sent = None
+    margin_sent = futu_margin_alert(run_hkt, metrics, warnings)
+    if prev_alerts is not None and not payload.get("client_telegram"):
+        text = futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts)
+        if text:
+            sent = tg_send(text)
+            if not sent:
+                warnings.append("Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
     log_event(f"🛡️ [富途持倉風險] {run_hkt} 權益 {fmt_num(metrics.get('equity'))} 緩衝 {fmt_num(metrics.get('cushion'))} "
               f"警報 {len(alerts)}", severity="WARNING" if alerts else "INFO", component="futu_risk")
-    return jsonify({"status": "stored", "run_hkt": run_hkt, "alerts": len(alerts), "warnings": warnings}), 200
+    return jsonify({"status": "stored", "run_hkt": run_hkt, "alerts": len(alerts), "telegram": sent,
+                    "margin_telegram": margin_sent,
+                    "warnings": warnings}), 200
+
+
+def futu_margin_alert(run_hkt, metrics, warnings):
+    """[R149] 富途期貨戶口保證金緩衝警報（有遲滯、逐級、每跌一格先再發）。回傳有冇發 Telegram（None＝唔使發）。"""
+    cushion = metrics.get("cushion")
+    if cushion is None:
+        return None
+    try:
+        state = gcs_read_json(FUTU_MARGIN_STATE_FILE, {})
+    except StorageError as exc:
+        warnings.append("保證金警報狀態讀取失敗（今次唔發）")
+        log_event(f"⚠️ [保證金警報狀態] {exc}", severity="WARNING", component="futu_risk")
+        return None
+    state = state if isinstance(state, dict) else {}
+    active, level, last = state.get("active"), state.get("level"), to_float(state.get("last_sent_cushion"))
+    new_level = "critical" if cushion < FUTU_MARGIN_CRIT else "warn"
+    kind = None
+    if not active:
+        if cushion < FUTU_MARGIN_WARN:
+            kind, active, level = "start", True, new_level
+    elif cushion >= FUTU_MARGIN_CLEAR:
+        kind, active, level = "clear", False, None
+    elif new_level == "critical" and level != "critical":
+        kind, level = "escalate", "critical"
+    elif last is not None and cushion <= last - FUTU_MARGIN_STEP:
+        kind, level = "step", new_level if level != "critical" or new_level == "critical" else level
+    if kind is None:
+        return None
+    text = futu_margin_text(kind, level, run_hkt, metrics)
+    sent = tg_send(text)
+    if not sent:
+        warnings.append("保證金警報 Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
+    new_state = {"active": active, "level": level, "last_sent_cushion": cushion if active else None,
+                 "last_kind": kind, "last_run_hkt": run_hkt, "updated_utc": fmt_utc(), "telegram": sent}
+    try:
+        gcs_write_text(FUTU_MARGIN_STATE_FILE, json.dumps(new_state, ensure_ascii=False))
+    except StorageError as exc:
+        warnings.append("保證金警報狀態寫入失敗")
+        log_event(f"⚠️ [保證金警報狀態] {exc}", severity="WARNING", component="futu_risk")
+    log_event(f"🧯 [保證金緩衝警報] {kind} {level} 緩衝 {fmt_num(cushion, '{:,.0f}')}", severity="WARNING",
+              component="futu_risk", telegram=sent)
+    return sent
+
+
+def futu_margin_text(kind, level, run_hkt, metrics):
+    n = lambda v: fmt_num(v, "{:,.0f}")
+    head = {"start": "⚠ 富途保證金緩衝偏低", "step": "⚠ 富途保證金緩衝再跌", "escalate": "⛔ 危急：富途保證金緩衝",
+            "clear": "✅ 已解除：富途保證金緩衝回升"}[kind]
+    if level == "critical" and kind == "step":
+        head = "⛔ 危急：富途保證金緩衝再跌"
+    lines = [f"【{head}】{run_hkt} HKT",
+             f"權益 HK${n(metrics.get('futu_equity'))}｜維持保證金 HK${n(metrics.get('maintenance_margin'))}｜"
+             f"緩衝 HK${n(metrics.get('cushion'))}"]
+    lots = metrics.get("mhi_lots") or {}
+    if lots:
+        lines.append("恒指期貨淨手數：" + "、".join(f"{k.replace('HK.', '')} {v:+g}" for k, v in lots.items() if v is not None))
+    hit = metrics.get("margin_hit") or {}
+    dist = [f"{k}約 {abs(v) * 100:.1f}%" for k, v in hit.items() if isinstance(v, (int, float))]
+    if dist and kind != "clear":
+        lines.append("蝕光緩衝要：" + "；".join(dist) + "（保證金當不變，實際會更早）")
+    if level == "critical" and kind != "clear":
+        lines.append("‼️ 可能被追繳保證金／強制平倉。")
+    if kind != "clear":
+        lines.append(f"（< {FUTU_MARGIN_WARN:,} 通知、< {FUTU_MARGIN_CRIT:,} 危急；每再跌 {FUTU_MARGIN_STEP:,} 再發；"
+                     f"回到 {FUTU_MARGIN_CLEAR:,} 以上解除）")
+    lines.append("只係警報，唔會落單；平倉／減倉由你人手做。")
+    return "\n".join(lines)
+
+
+def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
+    """[R149] 警報有變（新出現、⚠→⛔ 升級、解除）先回傳通知文字；冇變回傳 ""。比較用「鍵＋級別」，百分比變唔算。"""
+    level = lambda v: "⛔" if str(v).startswith(("⛔", "❌")) else "⚠"
+    alerts = {k: v for k, v in alerts.items() if not k.startswith("margin")}            # 保證金另有 futu_margin_alert
+    prev_alerts = {k: v for k, v in prev_alerts.items() if not k.startswith("margin")}
+    new = [v for k, v in alerts.items() if k not in prev_alerts or level(prev_alerts[k]) != level(v)]
+    cleared = [k for k in prev_alerts if k not in alerts]
+    if not new and not cleared:
+        return ""
+    delta = next(iter((metrics.get("delta") or {}).values()), [None])[0]
+    lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除：{k}" for k in cleared]
+    lines.append(f"合計權益 {fmt_num(metrics.get('equity'), '{:,.0f}')}｜富途保證金緩衝 {fmt_num(metrics.get('cushion'), '{:,.0f}')}"
+                 + (f"｜雲垂 Δ {delta:+.2f}" if isinstance(delta, (int, float)) else ""))
+    lines.append("只係監控，唔係落單指令；落單以富途即時價為準。")
+    return "\n".join(lines)
 
 
 # =============================================================================
