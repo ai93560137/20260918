@@ -6475,6 +6475,19 @@ def build_strategies_page(data):
     return html_page("策略總表", head + cards + conflict + real + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
 
 
+def futu_quote_time_hkt(code, qt, has_px):
+    """[R151] 富途快照時間 → 香港時間（港股／港期係香港時間；美國合約係美東時間，要轉）。冇報價就講原因。"""
+    if not qt:
+        return "冇行情權限（用富途估值）" if str(code).startswith("US.") and not has_px else "—"
+    try:
+        t = datetime.strptime(str(qt)[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return esc(str(qt)[:16])
+    if str(code).startswith("US."):
+        t = t.replace(tzinfo=ZoneInfo("America/New_York")).astimezone(HK_TZ)
+    return t.strftime("%m-%d %H:%M") + " HKT"
+
+
 def build_futu_real_section(fr):
     """[R151] 💼 富途實倉（按陣）：每陣一格，配對唔到嘅入「未配對」。"""
     if not fr:
@@ -6498,12 +6511,13 @@ def build_futu_real_section(fr):
             f"<td>{esc(r['use'])}</td><td class='{'neg' if r['qty'] < 0 else 'pos'}'>{'沽' if r['qty'] < 0 else '買'} {abs(r['qty']):g}</td>"
             f"<td>{f(r['open_price'])}</td><td>{f(r['bid'])}／{f(r['ask'])}／{f(r['last'])}</td>"
             f"<td class='{'pos' if (r['futu_pl'] or 0) >= 0 else 'neg'}'>{f(r['futu_pl'], 0)} {r['ccy']}</td>"
-            f"<td style='font-size:11px'>{esc((r['quote_time'] or '')[5:16])}</td></tr>" for r in t["rows"])
+            f"<td style='font-size:11px'>{futu_quote_time_hkt(r['code'], r['quote_time'], any(r.get(k) for k in ('bid', 'ask', 'last')))}</td></tr>"
+            for r in t["rows"])
         out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
                 f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
                 + (f"；{stops}" if stops else "") + f"</span>{alerts}"
                 + (f"<div class='scroll'><table><tr><th>合約</th><th>用途</th><th>持倉</th><th>開倉價</th><th>買／賣／最後</th>"
-                   f"<th>持倉盈虧</th><th>報價時間</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
+                   f"<th>持倉盈虧</th><th>報價時間（香港）</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
                 + "</div>")
     return out + "</div>"
 
