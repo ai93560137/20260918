@@ -82,26 +82,56 @@ def push(kind, rows, summary, meta, t):
         return f"GCP ❌ {e.__class__.__name__}"
 
 
+WATCH_CBBC = {"HK.50316", "HK.50488", "HK.50677", "HK.65111"}   # 第十節第 4 項點名的 2028 年牛證
+
+
+def _select_rows(rows, t, limit=500):
+    """伺服器只存前 500 列；長年期熊證的大折讓會佔滿名額，所以分配：監察名單全進、
+    長年期（明年以後）距收回價 ≥15% 的牛證按對期指淨差前 180、同條件熊證前 60、其餘按折讓淨利補滿。"""
+    def key(r, k):
+        v = r.get(k)
+        return -1e9 if v is None else v
+    far = [r for r in rows if r["dist_call%"] >= 15 and str(r.get("maturity", ""))[:4] >= str(t.year + 1)]
+    far_bull = sorted([r for r in far if r["type"] == "牛"], key=lambda r: -max(key(r, "edge_match_net"), key(r, "edge_match_hkex_net")))
+    far_bear = sorted([r for r in far if r["type"] == "熊"], key=lambda r: -max(key(r, "edge_match_net"), key(r, "edge_match_hkex_net")))
+    picked, seen = [], set()
+    for group in ([r for r in rows if r["code"] in WATCH_CBBC], far_bull[:180], far_bear[:60], rows):
+        for r in group:
+            if r["code"] not in seen and len(picked) < limit:
+                picked.append(r)
+                seen.add(r["code"])
+    return picked
+
+
 def run_cbbc(owner, t):
     rows, meta = cds.scan_live(OPEND_HOST, OPEND_PORT, owner, log=log)
     pos = [r for r in rows if r["discount"] > 0]
     cand = [r for r in rows if r["candidate"]]
-    # 第 4 項：對同到期期指的差價（edge_match > 0 ＝ 牛熊證比同月期指便宜），只看距收回價 ≥15%、一年以上
-    em = [r for r in rows if r.get("edge_match_net") is not None]
-    far = sorted([r for r in em if r["dist_call%"] >= 15 and str(r.get("maturity", ""))[:4] >= str(t.year + 1)],
-                 key=lambda r: -r["edge_match_net"])
+    # 第 4 項：對同到期期指的差價（>0 ＝ 牛熊證比同月期指便宜），只看距收回價 ≥15%、明年以後到期
+    far = [r for r in rows if r["dist_call%"] >= 15 and str(r.get("maturity", ""))[:4] >= str(t.year + 1)]
+    far_live = sorted([r for r in far if r.get("edge_match_net") is not None], key=lambda r: -r["edge_match_net"])
+    far_hkex = sorted([r for r in far if r.get("edge_match_hkex_net") is not None], key=lambda r: -r["edge_match_hkex_net"])
+    keys = ("code", "issuer", "type", "ask", "maturity", "fwd_cbbc", "fut_match", "fut_hkex", "edge_match_net", "edge_match_hkex_net", "dist_call%", "street%")
+    watch = {r["code"]: {k: r.get(k) for k in keys} for r in rows if r["code"] in WATCH_CBBC}
     summary = {"n": len(rows), "n_discount": len(pos), "n_candidate": len(cand), "forward": meta["forward"],
                "best_code": cand[0]["code"] if cand else "", "best_net": cand[0]["net_if_held"] if cand else None,
-               "futures_curve": meta.get("futures_curve") or {}, "n_edge_match": len(em),
-               "n_edge_match_far_pos": sum(1 for r in far if r["edge_match_net"] > 30),
-               "best_edge_match": ({k: far[0].get(k) for k in ("code", "issuer", "type", "ask", "maturity", "fwd_cbbc", "fut_match", "edge_match", "edge_match_net", "dist_call%", "street%")}
-                                   if far else None)}
+               "n_curve_live": len(meta.get("futures_curve") or {}), "n_curve_hkex": len(meta.get("futures_curve_hkex") or {}),
+               "n_far_live_pos": sum(1 for r in far_live if r["edge_match_net"] > 30),
+               "n_far_hkex_pos": sum(1 for r in far_hkex if r["edge_match_hkex_net"] > 30),
+               "best_live": ({k: far_live[0].get(k) for k in keys} if far_live else None),
+               "best_hkex": ({k: far_hkex[0].get(k) for k in keys} if far_hkex else None),
+               "watch": watch}
     cds.print_rows(pos[:15], meta["forward"])
-    if far:
-        log("對同到期期指最便宜的長年期牛熊證（距收回價 ≥15%）：")
-        cds.print_rows(far[:10], meta["forward"])
-    log(f"牛熊證：{len(rows)} 隻，折讓>0 {len(pos)}，候選 {len(cand)}，有同月期指比價 {len(em)}，長年期且比期指便宜 >30 點 {summary['n_edge_match_far_pos']}")
-    return rows, summary, meta
+    top = far_live[:10] if far_live else far_hkex[:10]
+    if top:
+        log("長年期（距收回價 ≥15%）對同到期期指最便宜的 10 隻：")
+        cds.print_rows(top, meta["forward"])
+    if watch:
+        log("監察名單：")
+        cds.print_rows(list(r for r in rows if r["code"] in WATCH_CBBC), meta["forward"])
+    log(f"牛熊證：{len(rows)} 隻，折讓>0 {len(pos)}，候選 {len(cand)}；期指曲線 即時 {summary['n_curve_live']} 月／港交所 {summary['n_curve_hkex']} 月；"
+        f"長年期比期指便宜 >30 點：即時 {summary['n_far_live_pos']}、港交所 {summary['n_far_hkex_pos']}")
+    return _select_rows(rows, t), summary, meta
 
 
 def run_warrant(owner, t):

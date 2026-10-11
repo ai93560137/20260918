@@ -110,18 +110,22 @@ def round_trip_cost_pts(c: Cbbc, fut_spread_pts: float = 1.0, fut: float | None 
 
 
 def scan(cbbcs: list[Cbbc], fut: float, min_dist_pct: float = 3.0, min_street: float = 0.5,
-         hedge_spread_pts: float = 1.0, borrow_rate: float = 0.0, curve: dict | None = None) -> list[dict]:
+         hedge_spread_pts: float = 1.0, borrow_rate: float = 0.0, curve: dict | None = None,
+         curve_hkex: dict | None = None) -> list[dict]:
     rows = []
     for c in cbbcs:
         d = discount_pts(c, fut)
         net = d - round_trip_cost_pts(c, hedge_spread_pts, fut, borrow_rate)
         fm = futures_at(curve, c.maturity) if curve else None
+        fh = futures_at(curve_hkex, c.maturity) if curve_hkex else None
         fwd_c = implied_forward(c)
         edge_match = None if fm is None else ((fm - fwd_c) if c.bull else (fwd_c - fm))
+        edge_hkex = None if fh is None else ((fh - fwd_c) if c.bull else (fwd_c - fh))
         funding = c.ask * c.ratio * FUND_RATE * max(c.days_left, 0) / 365.0
         rows.append({
             "maturity": c.maturity, "fwd_cbbc": fwd_c, "fut_match": fm, "edge_match": edge_match,
             "edge_match_net": None if edge_match is None else edge_match - funding,
+            "fut_hkex": fh, "edge_match_hkex_net": None if edge_hkex is None else edge_hkex - funding,
             "code": c.code, "issuer": c.issuer, "type": "牛" if c.bull else "熊",
             "ask": c.ask, "intrinsic": intrinsic_pts(c, fut), "discount": d,
             "net_if_held": net, "normal_prem": issuer_normal_premium_pts(c), "dist_call%": distance_to_call_pct(c, fut),
@@ -134,12 +138,13 @@ def scan(cbbcs: list[Cbbc], fut: float, min_dist_pct: float = 3.0, min_street: f
 
 def print_rows(rows: list[dict], fut: float) -> None:
     print(f"期指 F = {fut:,.0f}")
-    print(f"{'代號':<9}{'發行':<5}{'類':<3}{'賣價':>7}{'內在':>7}{'折讓':>7}{'淨利*':>7}{'正常溢價':>9}{'距收回%':>8}{'街貨%':>7}{'最大虧':>8}{'對同月期指淨':>11}  候選")
+    print(f"{'代號':<9}{'發行':<5}{'類':<3}{'賣價':>7}{'內在':>7}{'折讓':>7}{'淨利*':>7}{'正常溢價':>9}{'距收回%':>8}{'街貨%':>7}{'最大虧':>8}{'對同月期指淨':>11}{'對港交所淨':>10}  候選")
     for r in rows:
         em = r.get("edge_match_net")
+        eh = r.get("edge_match_hkex_net")
         print(f"{r['code']:<9}{r['issuer']:<5}{r['type']:<3}{r['ask']:>7.3f}{r['intrinsic']:>7.0f}{r['discount']:>7.0f}"
               f"{r['net_if_held']:>7.0f}{r['normal_prem']:>9.0f}{r['dist_call%']:>8.2f}{r['street%']:>7.0f}{r['max_loss']:>8.0f}"
-              f"{(f'{em:+.0f}' if em is not None else '—'):>11}  {'✔' if r['candidate'] else ''}")
+              f"{(f'{em:+.0f}' if em is not None else '—'):>11}{(f'{eh:+.0f}' if eh is not None else '—'):>10}  {'✔' if r['candidate'] else ''}")
     print("* 淨利＝折讓 − 來回成本（一格差價＋期指 1 點＋費用），單位：指數點／每份；持有到期且沒被收回、牛熊證到期日＝期指結算日的情況。")
     print("  到期日不同時要另扣期指轉倉／基差；以期指計的內在值已含持有成本，所以不扣財務費用（發行商正常溢價見 normal_prem 欄，只作對照）。")
 
@@ -204,6 +209,7 @@ def scan_live(host: str, port: int, owner: str = "HK.800000", min_dist_pct: floa
         fut = float(snap.loc[0, "last_price"])
         hedge_spread = 1.0 if is_index else 0.01 * fut
         curve = _futures_curve(ft, ctx, log) if is_index else None
+        curve_hkex = hkex_settlement_curve(fut, log) if is_index else None
         cbbcs: list[Cbbc] = []
         for wtype, bull in ((ft.WrtType.BULL, True), (ft.WrtType.BEAR, False)):
             begin = 0
@@ -231,8 +237,8 @@ def scan_live(host: str, port: int, owner: str = "HK.800000", min_dist_pct: floa
                 time.sleep(3.1)
             time.sleep(3.1)
         log(f"{owner} 牛熊證（有賣價）{len(cbbcs)} 隻，參考價 {fut:,.2f}")
-        rows = scan(cbbcs, fut, min_dist_pct, min_street, hedge_spread, 0.0 if is_index else borrow_rate, curve)
-        return rows, {"owner": owner, "forward": fut, "n": len(rows), "futures_curve": curve or {}}
+        rows = scan(cbbcs, fut, min_dist_pct, min_street, hedge_spread, 0.0 if is_index else borrow_rate, curve, curve_hkex)
+        return rows, {"owner": owner, "forward": fut, "n": len(rows), "futures_curve": curve or {}, "futures_curve_hkex": curve_hkex or {}}
     finally:
         ctx.close()
 
@@ -243,6 +249,39 @@ def _num(v) -> float:
         return float(v)
     except (TypeError, ValueError):
         return 0.0
+
+
+def hkex_settlement_curve(front_live: float | None = None, log=print) -> dict:
+    """港交所最近一日的期指各合約月結算價（data/hkex_options/futures/hsif_<年>.csv.gz，GitHub Actions 每週續抓）。
+    遠月幾乎沒成交，交易所結算價是理論值，但比 Futu 的陳舊成交價可靠；給 front_live 時整條曲線平移到即時前月水平。"""
+    import csv
+    import datetime as dt
+    import glob
+    import gzip
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2] / "data" / "hkex_options" / "futures"
+    rows = []
+    for fn in sorted(glob.glob(str(root / "hsif_*.csv.gz"))):
+        with gzip.open(fn, "rt", encoding="utf-8") as fh:
+            rows += [r for r in csv.DictReader(fh) if r.get("settle") not in (None, "", "0")]
+    if not rows:
+        log("沒有港交所期指結算資料（data/hkex_options/futures/）")
+        return {}
+    last_day = max(r["date"] for r in rows)
+    pts = {}
+    for r in rows:
+        if r["date"] != last_day:
+            continue
+        y, m = int(r["expiry"][:4]), int(r["expiry"][5:7])
+        exp = dt.date(y + (m == 12), (m % 12) + 1, 1) - dt.timedelta(days=2)
+        pts[exp.isoformat()] = float(r["settle"])
+    shift = 0.0
+    if front_live and pts:
+        front_key = min(pts)
+        shift = front_live - pts[front_key]
+    curve = {k: v + shift for k, v in pts.items()}
+    log(f"港交所 {last_day} 結算曲線 {len(curve)} 個合約月（平移 {shift:+.0f} 點到即時前月）：" + ", ".join(f"{k[:7]}={v:,.0f}" for k, v in sorted(curve.items())))
+    return curve
 
 
 def _futures_curve(ft, ctx, log=print) -> dict:
@@ -262,6 +301,7 @@ def _futures_curve(ft, ctx, log=print) -> dict:
         months |= {(today.year + i, 12) for i in range(1, 7)}
         codes = [f"HK.HSI{y % 100:02d}{m:02d}" for y, m in sorted(months)]
     curve: dict = {}
+    stale: dict = {}
     try:
         ret, snap = ctx.get_market_snapshot(codes[:60])
         if ret != ft.RET_OK:
@@ -275,13 +315,16 @@ def _futures_curve(ft, ctx, log=print) -> dict:
             y, m = 2000 + int(tail[:2]), int(tail[2:])
             exp = (dt.date(y + (m == 12), (m % 12) + 1, 1) - dt.timedelta(days=2))   # 月底倒數第二日近似
             bid, ask, last = (_num(r.get(k)) for k in ("bid_price", "ask_price", "last_price"))
-            px = (bid + ask) / 2 if bid > 0 and ask > 0 else last
-            if px > 0:
-                curve[exp.isoformat()] = px
+            if bid > 0 and ask > 0:
+                curve[exp.isoformat()] = (bid + ask) / 2
+            elif last > 0:
+                stale[exp.isoformat()] = last          # 遠月沒有買賣價時 last_price 多半是幾週前的舊成交，不能內插
     except Exception as exc:  # noqa: BLE001
         log(f"期指曲線失敗：{exc}")
         return {}
-    log(f"期指曲線 {len(curve)} 個合約月：" + ", ".join(f"{k[:7]}={v:,.0f}" for k, v in sorted(curve.items())))
+    log(f"期指曲線（有買賣價）{len(curve)} 個合約月：" + ", ".join(f"{k[:7]}={v:,.0f}" for k, v in sorted(curve.items())))
+    if stale:
+        log(f"  只有舊成交價、不採用 {len(stale)} 個：" + ", ".join(f"{k[:7]}={v:,.0f}" for k, v in sorted(stale.items())))
     return curve
 
 
