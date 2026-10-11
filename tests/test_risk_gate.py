@@ -338,7 +338,7 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
 
 print("\n=== 10d. 十二頁導覽列一致（[R131] 八陣圖指令台改為站內頁；[R137] 加地載陣；[R144] 加策略總表）===")
 VIEWS = [v for v, _ in main.PAGE_LINKS]
-check(f"main.py 的 PAGE_LINKS 有 12 頁（{len(VIEWS)}）", len(VIEWS) == 12, VIEWS)
+check(f"main.py 的 PAGE_LINKS 有 13 頁（{len(VIEWS)}）", len(VIEWS) == 13, VIEWS)
 EXTERNAL = [v for v in VIEWS if v.startswith("http")]
 check("沒有站外連結（八陣圖指令台已改為 ?view=bazhentu）", EXTERNAL == [] and "bazhentu" in VIEWS, VIEWS)
 for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html", "bazhentu.html"):
@@ -346,7 +346,7 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
     self_view = f[:-5] if f.startswith(("jinnang", "bazhentu")) else f[:-5] + "_app"
     # 當前頁不該連到自己（下面另有一項專門檢查），所以從必須出現的清單裡排除
     miss = [v for v in VIEWS if v != self_view and v not in txt]
-    check(f"{f} 連到其餘 11 頁", not miss, f"缺 {miss}")
+    check(f"{f} 連到其餘 12 頁", not miss, f"缺 {miss}")
     check(f"{f} 不再連到舊 artifact", "claude.ai/artifact" not in txt, f)
 
 print("\n=== 10e. page_nav：[R131] 八陣圖指令台是站內頁，page_nav 仍保留站外連結能力（R91）===")
@@ -369,7 +369,7 @@ def _linked(html, view):
 for v in ("jinnang_sheet", "jinnang_tracker", "bazhentu"):
     html = body_of(get("?view=" + v))
     miss = [x for x in VIEWS if x != v and not _linked(html, x)]
-    check(f"?view={v} 實際輸出含其餘 9 個連結", not miss, f"缺 {miss}")
+    check(f"?view={v} 實際輸出含其餘 10 個連結", not miss, f"缺 {miss}")
 
 # 七頁的導覽列要用同一組 class（統一外觀）
 mainsrc = io.open("/home/user/20260918/main.py", encoding="utf-8").read()
