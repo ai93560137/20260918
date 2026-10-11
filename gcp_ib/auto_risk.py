@@ -93,7 +93,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R147"
+SCRIPT_VERSION = "R149"
 
 
 def push_gcp(t, M, cur, txt):
@@ -108,7 +108,8 @@ def push_gcp(t, M, cur, txt):
     except Exception:
         positions = []
     body = {"action": "futu_risk", "token": tok, "run_hkt": t.strftime("%Y-%m-%d %H:%M"),
-            "script_version": SCRIPT_VERSION, "metrics": M, "alerts": cur, "positions": positions, "report": txt}
+            "script_version": SCRIPT_VERSION, "metrics": M, "alerts": cur, "positions": positions, "report": txt,
+            "client_telegram": bool(os.environ.get("TG_BOT_TOKEN") and os.environ.get("TG_CHAT_ID"))}  # 本機發就唔使 Cloud Run 再發
     req = urllib.request.Request(url, data=json.dumps(body, ensure_ascii=False, default=list).encode("utf-8"),
                                  headers={"Content-Type": "application/json"}, method="POST")
     try:
@@ -166,7 +167,7 @@ def cycle(equity, cushion_line, stop_line):
             msg.append(line.split("] ", 1)[-1])
         msg.append("只係監控，唔係落單指令；落單以富途即時價為準。")
         sent = telegram("\n".join(msg))
-        print("  → Telegram 已發" if sent else "  →（冇設 TG_BOT_TOKEN／TG_CHAT_ID，只喺呢度顯示）")
+        print("  → Telegram 已發（本機）" if sent else "  →（本機冇設 Telegram；推上 GCP 之後由 Cloud Run 代發）")
 
 
 def main():

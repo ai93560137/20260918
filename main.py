@@ -104,6 +104,8 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R149] action=futu_risk 代發 Telegram：同上一份 futu/risk/latest.json 比較，警報出現、升級（⚠→⛔）或解除先發
+#     （用 R142 tg_send，權杖只喺 Cloud Run）；本地腳本自己發過（client_telegram=true）就唔重複。只通知，唔影響下單。
 #   * 2026-10-11 — [R148] action=inline_scan：本地 futu/inline_push.py 定時掃描恒指界內證對恒指期權的公平價
 #     （research/warrants_cbbc/inline_vs_options.py --live 的結果：每隻買賣價、公平價區間、相對中值溢價、鎖定套利淨額、
 #     自做 condor 成本）→ 驗權杖後存 futu/inline/latest.json、每次全文 futu/inline/runs/<日期>/<時分>.json、
@@ -2254,6 +2256,11 @@ def handle_futu_risk(payload):
     alerts = {_futu_text(k, 60): _futu_text(v, 200) for k, v in list(alerts.items())[:20]}
     positions = [row for row in (payload.get("positions") or [])[:50] if isinstance(row, dict)]
     run_hkt = _futu_text(payload.get("run_hkt"), 19)
+    try:                                                              # [R149] 上一份嘅警報，用嚟判斷要唔要發 Telegram
+        prev = gcs_read_json(FUTU_RISK_FILE, {})
+        prev_alerts = prev.get("alerts") if isinstance(prev, dict) and isinstance(prev.get("alerts"), dict) else {}
+    except StorageError:
+        prev_alerts = None                                            # 讀唔到就唔發，免得重複轟炸
     doc = {"run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
            "script_version": _futu_text(payload.get("script_version"), 16),
            "metrics": metrics, "alerts": alerts, "positions": positions,
@@ -2278,9 +2285,32 @@ def handle_futu_risk(payload):
     except StorageError as exc:
         warnings.append("按日紀錄寫入失敗（最新一份已存）")
         log_event(f"⚠️ [富途風險紀錄失敗] {exc}", severity="WARNING", component="futu_risk")
+    sent = None
+    if prev_alerts is not None and not payload.get("client_telegram"):
+        text = futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts)
+        if text:
+            sent = tg_send(text)
+            if not sent:
+                warnings.append("Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
     log_event(f"🛡️ [富途持倉風險] {run_hkt} 權益 {fmt_num(metrics.get('equity'))} 緩衝 {fmt_num(metrics.get('cushion'))} "
               f"警報 {len(alerts)}", severity="WARNING" if alerts else "INFO", component="futu_risk")
-    return jsonify({"status": "stored", "run_hkt": run_hkt, "alerts": len(alerts), "warnings": warnings}), 200
+    return jsonify({"status": "stored", "run_hkt": run_hkt, "alerts": len(alerts), "telegram": sent,
+                    "warnings": warnings}), 200
+
+
+def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
+    """[R149] 警報有變（新出現、⚠→⛔ 升級、解除）先回傳通知文字；冇變回傳 ""。比較用「鍵＋級別」，百分比變唔算。"""
+    level = lambda v: "⛔" if str(v).startswith(("⛔", "❌")) else "⚠"
+    new = [v for k, v in alerts.items() if k not in prev_alerts or level(prev_alerts[k]) != level(v)]
+    cleared = [k for k in prev_alerts if k not in alerts]
+    if not new and not cleared:
+        return ""
+    delta = next(iter((metrics.get("delta") or {}).values()), [None])[0]
+    lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除：{k}" for k in cleared]
+    lines.append(f"合計權益 {fmt_num(metrics.get('equity'), '{:,.0f}')}｜富途保證金緩衝 {fmt_num(metrics.get('cushion'), '{:,.0f}')}"
+                 + (f"｜雲垂 Δ {delta:+.2f}" if isinstance(delta, (int, float)) else ""))
+    lines.append("只係監控，唔係落單指令；落單以富途即時價為準。")
+    return "\n".join(lines)
 
 
 # =============================================================================
