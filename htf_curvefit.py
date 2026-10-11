@@ -11,7 +11,6 @@
 import argparse
 import json
 import math
-import pickle
 import random
 import sys
 import time
@@ -288,9 +287,6 @@ def run_market(mk: str, time_n: int = 0) -> None:
                               "p95": float(np.percentile(rnd, 95)) if rnd else None},
            "neighbours": nb_scores}
     (OUT / f"{mk}.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
-    # 給共用組搜尋用：快取候選與數據
-    with open(OUT / f"{mk}_engine.pkl", "wb") as f:
-        pickle.dump(x, f)
     log(f"[{mk}] 最佳 alpha t {real:.2f}（預設 {default_ev['alpha_t']:.2f}）；前段選參 → 後段 t {pre_best_ev['t_post']:.2f}；"
         f"隨機對照第 {pct:.0%}；共評估 {res['n_evaluated'] + pre['n_evaluated']} 組，{time.time() - t0:.0f} 秒")
 
@@ -299,8 +295,7 @@ def run_common() -> None:
     log = lambda s: print(s, file=sys.stderr, flush=True)  # noqa: E731
     xs = {}
     for mk in H.MARKETS:
-        with open(OUT / f"{mk}_engine.pkl", "rb") as f:
-            xs[mk] = pickle.load(f)
+        xs[mk] = CF(mk)
     abn_cache = {}
 
     def abn_of(mk, c):
