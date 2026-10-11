@@ -100,6 +100,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - **@HC_HK_Signal_bot**＝GitHub Actions secrets `TG_BOT_TOKEN`：金絲雀、恒指／ES 波幅報告、高低位訊號、債市、佩洛西、股票數據等 workflow。
 - 將來想富途警報改用 HK bot：喺 Cloud Run 加 `TG_HK_BOT_TOKEN`／`TG_HK_CHAT_ID`（`tg_send_hk` 會自動用），唔使改程式。
 
-## 2026-10-11 部署 R151（修訂 00275-q4x，基於 R150）
+## 2026-10-11 部署 R151（修訂 00275-q4x，基於 R150；SpaceX 券商贈送規則 00276-sh2）
 - 策略總表「💼 富途實倉（按陣）」上線；配對規則 `FUTU_TEAM_RULES`（main.py）。
-- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00274-tnv --yes`
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00275-q4x --yes`（00276 之前）
