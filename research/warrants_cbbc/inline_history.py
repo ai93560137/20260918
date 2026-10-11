@@ -275,6 +275,88 @@ def build_terms_from_wayback() -> int:
     return len(terms)
 
 
+def build_terms_from_hkex_snapshots() -> int:
+    """data/hkex_inline/sample/ 裡 archive.org 抓回的港交所 expired.htm／newlist.htm／expiring.htm（HTML 表格）與 iwAQList.csv
+    → 併入 terms.csv。表頭含 Warrant Code / Lower Strike / Upper Strike / Maturity Date（D-M-Y）。回傳新增筆數。"""
+    import html as _html
+    sample = QUOTES_DIR / "sample"
+    terms = {}
+    existing = QUOTES_DIR / "terms.csv"
+    if existing.exists():
+        with open(existing, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                terms[r["code"]] = r
+    before = len(terms)
+
+    def norm(x):
+        return re.sub(r"\s+", " ", _html.unescape(re.sub(r"<[^>]+>", " ", x))).strip()
+
+    def add(rec):
+        code = rec.get("code", "").strip().zfill(5)
+        try:
+            lo = float(rec["lower"].replace(",", "")); up = float(rec["upper"].replace(",", ""))
+        except (KeyError, ValueError):
+            return
+        m = re.match(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})", rec.get("maturity", ""))
+        if not m:
+            return
+        exp = f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}"
+        if code not in terms:
+            terms[code] = {"code": code, "lower": lo, "upper": up, "expiry": exp, "issuer": rec.get("issuer", ""),
+                           "underlying": rec.get("underlying", ""), "ratio": rec.get("ratio", ""), "listing": rec.get("listing", ""),
+                           "name": rec.get("name", "")}
+
+    for path in sorted(sample.glob("url_web_archive_org_web_*")):
+        name = path.name.lower()
+        raw = path.read_bytes()
+        if name.endswith(".csv") or "iwaqlist" in name:
+            txt = raw.decode("utf-16", "replace") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
+            lines = [l for l in txt.splitlines() if l.strip()]
+            hi = next((i for i, l in enumerate(lines) if "Code" in l and "Lower" in l), None)
+            if hi is None:
+                continue
+            header = [h.strip() for h in lines[hi].split("\t")]
+            for l in lines[hi + 1:]:
+                cells = [c.strip() for c in l.split("\t")]
+                if len(cells) < 8 or not cells[0].isdigit():
+                    continue
+                d = dict(zip(header, cells))
+                add({"code": d.get("Warrant Code") or d.get("Code", ""), "lower": d.get("Lower Strike", ""), "upper": d.get("Upper Strike", ""),
+                     "maturity": d.get("Maturity", ""), "issuer": d.get("Issuer", ""), "underlying": d.get("UL", ""),
+                     "ratio": d.get("Entitlement Ratio", ""), "listing": d.get("Listing", "")})
+            continue
+        if not (name.endswith(".html") and ("expired" in name or "newlist" in name or "expiring" in name or "listsearch" in name)):
+            continue
+        txt = raw.decode("utf-8", "replace")
+        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", txt, flags=re.S)
+        header = None
+        for r in rows:
+            cells = [norm(c) for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, flags=re.S)]
+            if not cells:
+                continue
+            joined = " ".join(cells)
+            if "Warrant Code" in joined and "Lower" in joined:
+                header = cells
+                continue
+            if header and len(cells) >= len(header) - 1 and any(re.fullmatch(r"\d{5}", c) for c in cells[:3]):
+                d = dict(zip(header, cells))
+                code = next((c for c in cells[:3] if re.fullmatch(r"\d{5}", c)), "")
+                lo = next((v for k, v in d.items() if "Lower" in k), "")
+                up = next((v for k, v in d.items() if "Upper" in k), "")
+                mat = next((v for k, v in d.items() if "Maturity" in k), "")
+                add({"code": code, "lower": lo, "upper": up, "maturity": mat, "issuer": d.get("Issuer", ""),
+                     "underlying": next((v for k, v in d.items() if "Underlying" in k), ""),
+                     "ratio": next((v for k, v in d.items() if "Ratio" in k), ""), "name": next((v for k, v in d.items() if "Name" in k), "")})
+    if terms:
+        keys = ["code", "lower", "upper", "expiry", "issuer", "underlying", "ratio", "listing", "name"]
+        with open(existing, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
+            w.writeheader()
+            for k in sorted(terms):
+                w.writerow({kk: terms[k].get(kk, "") for kk in keys})
+    return len(terms) - before
+
+
 def load_wayback_quotes(underlying: str) -> list[dict]:
     """Wayback 快照裡每個代號每個快照日的收市價（沒有買賣價），當作報價來源 (b)。"""
     path = QUOTES_DIR / "iw_fulllist_history.csv.gz"
@@ -434,7 +516,8 @@ def main() -> None:
         fit_params()
         return
     n = build_terms_from_wayback()
-    print(f"條款：{n} 隻（來自 Wayback 快照）")
+    n2 = build_terms_from_hkex_snapshots()
+    print(f"條款：Wayback 全表 {n} 隻 ＋ 港交所到期／新上市清單快照 {n2} 隻 → {QUOTES_DIR / 'terms.csv'}")
     rows = evaluate_history(a.underlying)
     print(summarize(rows))
     if rows:
