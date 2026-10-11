@@ -6,7 +6,12 @@
   data/hkex_options/series/hsio_<年>.csv.gz 恒指期權官方結算價（scripts/hkex_option_iv.py）
 
     python3 research/warrants_cbbc/inline_history.py --demo
+    python3 research/warrants_cbbc/inline_history.py --fit            # 用現有 12 個月期權資料擬合：ATM IV／VHSI 比例、偏斜曲線
     python3 research/warrants_cbbc/inline_history.py [--underlying HSI] [--out data/hkex_inline/premium_history.csv]
+
+公平價來源（按優先）：(1) 當日恒指期權官方結算價（只有最近 12 個月）；(2) 模型後備：恒指日線收市 ＋ VHSI × 擬合比例當 ATM IV
+＋ 擬合偏斜 → Black-Scholes 合成期權鏈（2003 年起都有）。輸出每列標 chain_source。
+報價來源：(a) 每日行情 @L 行（買賣價、收市）；(b) Wayback 的 iwFullList.csv 快照（只有收市價，條款齊全）。
 
 每日行情格式（2026-10-09 樣本）：
    47123 HSI-SG@L2612A    HKD    0.500    0.520    0.530             1,230,000   ← CODE NAME CUR PRV.CLO ASK HIGH SHARES
@@ -89,36 +94,271 @@ def load_terms() -> dict[str, dict]:
     return out
 
 
+HSI_DAILY = ROOT / "canary" / "data_external" / "hsi_daily.csv"
+VHSI_DAILY = ROOT / "canary" / "data_external" / "vhsi_daily.csv"
+ATM_IV = ROOT / "data" / "hkex_options" / "atm_iv.csv"
+SERIES_DIR = ROOT / "data" / "hkex_options" / "series"
+PARAMS_FILE = QUOTES_DIR / "model_params.json"
+STEP = 200
+
+
+def _load_close(path: Path) -> dict[str, float]:
+    out = {}
+    if not path.exists():
+        return out
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            try:
+                out[r["Date"][:10]] = float(r["Close"])
+            except (KeyError, ValueError):
+                continue
+    return out
+
+
+def _prev_available(series: dict[str, float], day: str) -> float | None:
+    """當日沒有就往前找最多 5 天。"""
+    d = dt.date.fromisoformat(day)
+    for _ in range(6):
+        v = series.get(d.isoformat())
+        if v is not None:
+            return v
+        d -= dt.timedelta(days=1)
+    return None
+
+
+def monthly_expiry(month: str) -> dt.date:
+    """恒指期權到期日＝該月最後一個營業日的前一個營業日（不計假期）。month='2026-10'。"""
+    y, m = int(month[:4]), int(month[5:7])
+    d = (dt.date(y + (m == 12), (m % 12) + 1, 1) - dt.timedelta(days=1))
+    biz = []
+    while len(biz) < 2:
+        if d.weekday() < 5:
+            biz.append(d)
+        d -= dt.timedelta(days=1)
+    return biz[1]
+
+
+def _N(x: float) -> float:
+    return 0.5 * (1 + math.erf(x / math.sqrt(2)))
+
+
+def fit_params(verbose: bool = True) -> dict:
+    """用 data/hkex_options 的 12 個月資料擬合兩樣：
+    k = 期權 ATM IV ÷ VHSI（取剩餘 15–45 日的到期），偏斜 iv(K)/iv_atm = 1 + a·z + b·z²，z = ln(K/F)/(σ_atm √T)。"""
+    import json
+    vhsi = _load_close(VHSI_DAILY)
+    ratios = []
+    if ATM_IV.exists():
+        with open(ATM_IV, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r["product"] != "hsio" or len(r["expiry"]) != 7:
+                    continue
+                days = (monthly_expiry(r["expiry"]) - dt.date.fromisoformat(r["date"])).days
+                v = _prev_available(vhsi, r["date"])
+                try:
+                    iv = (float(r["iv_call"]) + float(r["iv_put"])) / 2
+                except ValueError:
+                    continue
+                if 15 <= days <= 45 and v and iv > 0:
+                    ratios.append(iv / v)
+    k = sorted(ratios)[len(ratios) // 2] if ratios else 0.88
+    # 偏斜：逐 (date, expiry) 取價外側 IV
+    xs, ys = [], []
+    atm = {}
+    if ATM_IV.exists():
+        with open(ATM_IV, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r["product"] == "hsio":
+                    try:
+                        atm[(r["date"], r["expiry"])] = (float(r["forward"]), (float(r["iv_call"]) + float(r["iv_put"])) / 2)
+                    except ValueError:
+                        pass
+    for path in sorted(SERIES_DIR.glob("hsio_*.csv.gz")):
+        with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                key = (r["date"], r["expiry"])
+                if key not in atm or len(r["expiry"]) != 7:
+                    continue
+                F, iv_atm = atm[key]
+                k_ = int(r["strike"])
+                if (r["cp"] == "P") != (k_ < F) or iv_atm <= 0:
+                    continue
+                try:
+                    iv = float(r["iv"])
+                except ValueError:
+                    continue
+                days = (monthly_expiry(r["expiry"]) - dt.date.fromisoformat(r["date"])).days
+                if iv <= 0 or days < 5 or days > 120:
+                    continue
+                T = days / 365
+                z = math.log(k_ / F) / (iv_atm / 100 * math.sqrt(T))
+                if abs(z) > 3:
+                    continue
+                xs.append(z)
+                ys.append(iv / iv_atm)
+    a = b = 0.0
+    if len(xs) > 50:
+        # 最小平方：y − 1 = a z + b z²
+        import statistics
+        Sxx = sum(x * x for x in xs); Sxxx = sum(x ** 3 for x in xs); Sxxxx = sum(x ** 4 for x in xs)
+        Sxy = sum(x * (y - 1) for x, y in zip(xs, ys)); Sxxy = sum(x * x * (y - 1) for x, y in zip(xs, ys))
+        det = Sxx * Sxxxx - Sxxx * Sxxx
+        if det:
+            a = (Sxy * Sxxxx - Sxxy * Sxxx) / det
+            b = (Sxx * Sxxy - Sxxx * Sxy) / det
+    params = {"k_atm_over_vhsi": round(k, 4), "skew_a": round(a, 4), "skew_b": round(b, 4), "n_ratio": len(ratios), "n_skew": len(xs)}
+    QUOTES_DIR.mkdir(parents=True, exist_ok=True)
+    PARAMS_FILE.write_text(json.dumps(params, ensure_ascii=False, indent=1), encoding="utf-8")
+    if verbose:
+        print(f"ATM IV ÷ VHSI 中位 {k:.3f}（{len(ratios)} 天）；偏斜 iv/iv_atm = 1 {a:+.4f} z {b:+.4f} z²（{len(xs)} 點）→ {PARAMS_FILE.name}")
+    return params
+
+
+def load_params() -> dict:
+    import json
+    if PARAMS_FILE.exists():
+        return json.loads(PARAMS_FILE.read_text(encoding="utf-8"))
+    return fit_params(verbose=False)
+
+
+_SERIES_CACHE: dict = {}
+
+
+def chain_from_model(day: str, expiry: dt.date, half_spread: float, params: dict | None = None):
+    """沒有結算價時的後備：F ＝ 恒指收市（忽略持有成本），σ(K) ＝ k·VHSI·(1 + a z + b z²)，BS 合成 200 點格的 call 鏈。"""
+    params = params or load_params()
+    if "hsi" not in _SERIES_CACHE:
+        _SERIES_CACHE["hsi"] = _load_close(HSI_DAILY)
+        _SERIES_CACHE["vhsi"] = _load_close(VHSI_DAILY)
+    F = _prev_available(_SERIES_CACHE["hsi"], day)
+    v = _prev_available(_SERIES_CACHE["vhsi"], day)
+    if not F or not v:
+        return None
+    T = max((expiry - dt.date.fromisoformat(day)).days, 1) / 365
+    s_atm = params["k_atm_over_vhsi"] * v / 100
+    a, b = params["skew_a"], params["skew_b"]
+    k0 = int(round(F / STEP) * STEP)
+    strikes = [k0 + i * STEP for i in range(-25, 26)]
+    bid, ask = {}, {}
+    for K in strikes:
+        z = math.log(K / F) / (s_atm * math.sqrt(T))
+        sig = max(0.05, s_atm * (1 + a * z + b * z * z))
+        st = sig * math.sqrt(T)
+        d1 = (math.log(F / K) + 0.5 * st * st) / st
+        c = F * _N(d1) - K * _N(d1 - st)
+        bid[K], ask[K] = c - half_spread, c + half_spread
+    return ivo.Chain(strikes, bid, ask, F, f"模型（恒指收市 {F:,.0f}、VHSI {v:.1f}×{params['k_atm_over_vhsi']}）")
+
+
+def build_terms_from_wayback() -> int:
+    """iw_fulllist_history.csv.gz → terms.csv（每個代號取最後一次快照的條款）。回傳筆數。"""
+    path = QUOTES_DIR / "iw_fulllist_history.csv.gz"
+    if not path.exists():
+        return 0
+    terms = {}
+    with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            code = (r.get("Warrant Code") or r.get("Code") or "").strip().zfill(5)
+            try:
+                lo, up = float(r["Lower Strike"].replace(",", "")), float(r["Upper Strike"].replace(",", ""))
+                dd, mm, yy = r["Maturity"].strip().split("-")
+                exp = f"{yy}-{mm}-{dd}"
+            except (KeyError, ValueError):
+                continue
+            terms[code] = {"code": code, "lower": lo, "upper": up, "expiry": exp, "issuer": r.get("Issuer", ""),
+                           "underlying": r.get("UL", ""), "ratio": r.get("Entitlement Ratio", ""), "listing": r.get("Listing", "")}
+    if terms:
+        with open(QUOTES_DIR / "terms.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=["code", "lower", "upper", "expiry", "issuer", "underlying", "ratio", "listing"])
+            w.writeheader()
+            w.writerows(terms[k] for k in sorted(terms))
+    return len(terms)
+
+
+def load_wayback_quotes(underlying: str) -> list[dict]:
+    """Wayback 快照裡每個代號每個快照日的收市價（沒有買賣價），當作報價來源 (b)。"""
+    path = QUOTES_DIR / "iw_fulllist_history.csv.gz"
+    rows = []
+    if not path.exists():
+        return rows
+    with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            if underlying and (r.get("UL") or "").strip().upper() != underlying.upper():
+                continue
+            try:
+                close = float((r.get("Closing Price") or "").replace(",", ""))
+            except ValueError:
+                continue
+            if close <= 0:
+                continue
+            cap = r["capture"]
+            day = f"{cap[:4]}-{cap[4:6]}-{cap[6:8]}"
+            code = (r.get("Warrant Code") or r.get("Code") or "").strip().zfill(5)
+            rows.append({"date": day, "code": code, "name": "", "issuer": r.get("Issuer", ""), "underlying": r.get("UL", ""),
+                         "expiry_month": "", "serial": "", "prev_close": None, "ask": None, "high": None, "shares": None,
+                         "close": close, "bid": None, "low": None, "turnover": None, "quote_source": "wayback_close"})
+    return rows
+
+
 def evaluate_history(underlying: str = "HSI", rate: float = 0.03, half_spread: float = 3.0, fee_lot: float = 30.0) -> list[dict]:
-    quotes = load_quotes(underlying)
+    if not (QUOTES_DIR / "terms.csv").exists():
+        build_terms_from_wayback()
     terms = load_terms()
+    params = load_params()
+    quotes = [{**q, "quote_source": "dayquot"} for q in load_quotes(underlying)]
+    # survey 抽樣的行也算每日行情
+    survey_lines = QUOTES_DIR / "survey_lines.csv.gz"
+    if survey_lines.exists():
+        seen = {(q["date"], q["code"]) for q in quotes}
+        with gzip.open(survey_lines, "rt", encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                info = parse_name(r["name"])
+                if not info or (underlying and info["underlying"] != underlying.upper()) or (r["date"], r["code"]) in seen:
+                    continue
+                quotes.append({"date": r["date"], "code": r["code"], "name": r["name"], **info, **parse_raw(r["raw_line"]), "quote_source": "dayquot"})
+    have = {(q["date"], q["code"]) for q in quotes}
+    quotes += [q for q in load_wayback_quotes(underlying) if (q["date"], q["code"]) not in have]
     out, chains = [], {}
     for q in quotes:
         t = terms.get(q["code"])
-        if not t or q["ask"] is None:
-            out.append({**q, "note": "缺條款" if not t else "沒有賣價"})
+        px = q["ask"] if q["ask"] is not None else q["close"]
+        if not t:
+            out.append({**q, "note": "缺條款"})
             continue
-        key = (q["date"], q["expiry_month"])
+        if px is None:
+            out.append({**q, "note": "沒有價格"})
+            continue
+        expiry = dt.date.fromisoformat(t["expiry"])
+        month = t["expiry"][:7]
+        key = (q["date"], month)
         if key not in chains:
+            ch, src = None, ""
             try:
-                chains[key] = ivo.chain_from_settlement(q["date"], q["expiry_month"], half_spread)
+                ch, src = ivo.chain_from_settlement(q["date"], month, half_spread), "settlement"
             except SystemExit:
-                chains[key] = None
-        ch = chains[key]
+                pass
+            if ch is None:
+                ch, src = chain_from_model(q["date"], expiry, half_spread, params), "model"
+            chains[key] = (ch, src)
+        ch, src = chains[key]
         if ch is None:
-            out.append({**q, "note": "當日沒有期權結算價"})
+            out.append({**q, "note": "沒有期權結算價也沒有恒指／VHSI"})
             continue
-        days = max((dt.date.fromisoformat(t["expiry"]) - dt.date.fromisoformat(q["date"])).days, 0)
+        days = max((expiry - dt.date.fromisoformat(q["date"])).days, 0)
+        if days <= 0:
+            out.append({**q, "note": "已到期"})
+            continue
         df = math.exp(-rate * days / 365)
         try:
-            e = ivo.evaluate(ch, t["lower"], t["upper"], q["ask"], fee_lot, df)
+            e = ivo.evaluate(ch, t["lower"], t["upper"], px, fee_lot, df)
         except KeyError as err:
             out.append({**q, "note": str(err)})
             continue
-        mid_px = (q["bid"] + q["ask"]) / 2 if q["bid"] else q["ask"]
+        mid_px = (q["bid"] + q["ask"]) / 2 if (q["bid"] and q["ask"]) else (q["close"] if q["close"] else px)
         out.append({**q, "lower": t["lower"], "upper": t["upper"], "expiry": t["expiry"], "days": days, "forward": round(ch.forward),
-                    "v_lo": e["v_lo"], "v_mid": e["v_mid"], "v_hi": e["v_hi"], "premium_ask": e["premium_vs_mid"],
-                    "premium_mid": mid_px - e["v_mid"], "lock_edge": e["lock_edge"], "condor_cost": e["condor_cost"], "note": ""})
+                    "chain_source": src, "v_lo": e["v_lo"], "v_mid": e["v_mid"], "v_hi": e["v_hi"], "price_used": px,
+                    "premium_ask": e["premium_vs_mid"], "premium_mid": mid_px - e["v_mid"], "lock_edge": e["lock_edge"],
+                    "condor_cost": e["condor_cost"], "note": ""})
     return out
 
 
@@ -129,15 +369,29 @@ def summarize(rows: list[dict]) -> str:
         for r in rows:
             reasons[r.get("note")] = reasons.get(r.get("note"), 0) + 1
         return f"沒有可算的列。原因分佈：{reasons}"
-    prem = sorted(r["premium_mid"] for r in ok)
-    q = lambda p: prem[min(len(prem) - 1, int(p * len(prem)))]
-    lock = sum(1 for r in ok if r["lock_edge"] > 0)
-    cheap = sum(1 for r in ok if r["ask"] < r["condor_cost"])
-    days = sorted({r["date"] for r in ok})
-    codes = {r["code"] for r in ok}
-    return (f"{len(ok)} 個「日×證」樣本，{len(days)} 個交易日（{days[0]}–{days[-1]}），{len(codes)} 隻。\n"
-            f"界內證中價 − 期權公平價中值：中位 {q(0.5):+.3f}，10% {q(0.1):+.3f}，90% {q(0.9):+.3f}，最低 {prem[0]:+.3f}，最高 {prem[-1]:+.3f}\n"
-            f"鎖定套利 ✔（賣價）：{lock} 個樣本（{lock / len(ok):.1%}）；賣價低於自做 condor 成本：{cheap} 個（{cheap / len(ok):.1%}）")
+    def block(sub, label):
+        prem = sorted(r["premium_mid"] for r in sub)
+        q = lambda p: prem[min(len(prem) - 1, int(p * len(prem)))]
+        lock = sum(1 for r in sub if r["lock_edge"] > 0)
+        cheap = sum(1 for r in sub if r["price_used"] < r["condor_cost"])
+        days = sorted({r["date"] for r in sub})
+        return (f"[{label}] {len(sub)} 個「日×證」樣本，{len(days)} 個交易日（{days[0]}–{days[-1]}），{len({r['code'] for r in sub})} 隻；"
+                f"界內證價 − 期權公平價中值：中位 {q(0.5):+.3f}，10% {q(0.1):+.3f}，90% {q(0.9):+.3f}；"
+                f"鎖定 ✔ {lock}（{lock / len(sub):.1%}）；價格低於自做 condor {cheap}（{cheap / len(sub):.1%}）")
+    lines = [block(ok, "全部")]
+    for src in sorted({r["chain_source"] for r in ok}):
+        lines.append(block([r for r in ok if r["chain_source"] == src], f"公平價來源={src}"))
+    for qs in sorted({r["quote_source"] for r in ok}):
+        lines.append(block([r for r in ok if r["quote_source"] == qs], f"報價來源={qs}"))
+    for y in sorted({r["date"][:4] for r in ok}):
+        lines.append(block([r for r in ok if r["date"][:4] == y], y))
+    skipped = {}
+    for r in rows:
+        if r.get("note"):
+            skipped[r["note"]] = skipped.get(r["note"], 0) + 1
+    if skipped:
+        lines.append(f"略過：{skipped}")
+    return "\n".join(lines)
 
 
 def demo() -> None:
@@ -152,18 +406,35 @@ def demo() -> None:
             assert r is None, r
         else:
             assert (r["issuer"], r["underlying"], r["expiry_month"]) == exp, (n, r)
+    # 模型鏈：平偏斜時無模型界要夾住 BS 精確值
+    p0 = {"k_atm_over_vhsi": 1.0, "skew_a": 0.0, "skew_b": 0.0}
+    _SERIES_CACHE["hsi"] = {"2026-10-09": 24_000.0}
+    _SERIES_CACHE["vhsi"] = {"2026-10-09": 20.0}
+    ch = chain_from_model("2026-10-09", dt.date(2026, 10, 29), 0.0, p0)
+    T = 20 / 365; st = 0.20 * math.sqrt(T)
+    exact = _N((math.log(24_000 / 23_400) - 0.5 * st * st) / st) - _N((math.log(24_000 / 25_000) - 0.5 * st * st) / st)
+    lo, mid, hi = ivo.inline_prob_bounds(ch, 23_400, 25_000)
+    assert lo <= exact <= hi and abs(mid - exact) < 0.01, (lo, exact, hi)
+    _SERIES_CACHE.clear()
+    assert monthly_expiry("2026-10") == dt.date(2026, 10, 29) and monthly_expiry("2026-11") == dt.date(2026, 11, 27)
     print("自我檢查通過。")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--demo", action="store_true")
+    ap.add_argument("--fit", action="store_true", help="重新擬合 ATM IV／VHSI 比例與偏斜")
     ap.add_argument("--underlying", default="HSI")
     ap.add_argument("--out", default=str(QUOTES_DIR / "premium_history.csv"))
     a = ap.parse_args()
     if a.demo:
         demo()
         return
+    if a.fit:
+        fit_params()
+        return
+    n = build_terms_from_wayback()
+    print(f"條款：{n} 隻（來自 Wayback 快照）")
     rows = evaluate_history(a.underlying)
     print(summarize(rows))
     if rows:
