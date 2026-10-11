@@ -218,6 +218,37 @@ def _warrant_request_cls(ft):
 
 
 # ---------- 即時（Futu OpenD） ----------
+
+def _diagnose_zero(ctx, ft, owner, log):
+    """抓到 0 隻時：(1) 該相關資產下全部輪證按類型計數；(2) 全市場界內證數目與相關資產分佈。幫忙分辨是查詢方式錯還是市場上沒有。"""
+    import time
+    try:
+        req = _warrant_request_cls(ft)()
+        req.begin, req.num = 0, 200
+        ret, data = ctx.get_warrant(owner, req)
+        if ret == ft.RET_OK:
+            df, last_page, all_count = data
+            by_type = df["type"].astype(str).value_counts().to_dict() if len(df) else {}
+            log(f"  診斷：{owner} 下全部輪證共 {all_count} 隻（首頁 {len(df)} 隻的類型分佈 {by_type}）")
+        else:
+            log(f"  診斷：{owner} 全部輪證查詢失敗：{data}")
+        time.sleep(3.1)
+        req = _warrant_request_cls(ft)()
+        req.type_list = [ft.WrtType.INLINE]
+        req.begin, req.num = 0, 200
+        ret, data = ctx.get_warrant("", req)          # 空字串＝不限相關資產
+        if ret == ft.RET_OK:
+            df, last_page, all_count = data
+            owners = df["stock_owner"].astype(str).value_counts().head(10).to_dict() if len(df) else {}
+            log(f"  診斷：全市場界內證共 {all_count} 隻；相關資產分佈（首頁）{owners}")
+            if len(df):
+                cols = [c for c in ("stock", "name", "stock_owner", "lower_strike_price", "upper_strike_price", "maturity_time", "bid_price", "ask_price") if c in df.columns]
+                log("  診斷：前 5 隻 " + df[cols].head(5).to_dict("records").__repr__())
+        else:
+            log(f"  診斷：全市場界內證查詢失敗：{data}")
+    except Exception as exc:
+        log(f"  診斷失敗：{exc.__class__.__name__}: {exc}")
+
 def scan_live(host: str, port: int, owner: str, fee_lot: float, rate: float, half_spread_fallback: float,
               log=print) -> tuple[list[dict], dict]:
     """連 OpenD 掃描全部界內證。回傳 (每隻一個 dict 的清單, 摘要 meta)。給 live() 與 futu/inline_push.py 共用。"""
@@ -249,6 +280,7 @@ def scan_live(host: str, port: int, owner: str, fee_lot: float, rate: float, hal
         meta["n_inline"] = len(rows)
         log(f"{INDEX_CODES.get(owner, owner)} 界內證 {len(rows)} 隻")
         if not rows:
+            _diagnose_zero(ctx, ft, owner, log)
             return results, meta
         by_expiry: dict[str, list[dict]] = {}
         for r in rows:
