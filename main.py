@@ -107,6 +107,7 @@
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
 #     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
 #     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
+#     富途風險／總指揮 Telegram 改用 @HC_HK_Signal_bot（TG_HK_BOT_TOKEN／TG_HK_CHAT_ID）；地載陣照用 TG_BOT_TOKEN（@HC_Gold_Signal_bot）。
 #   * 2026-10-11 — [R150] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
 #     每輪把掃描列與摘要推上來，按 kind 存 futu/scan/<kind>/latest.json、runs/<日期>/<時分>.json、history/<日期>.json（摘要）。
 #     ?view=scan&kind=cbbc|warrant|inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
@@ -2308,12 +2309,12 @@ def handle_futu_risk(payload):
     margin_sent = futu_margin_alert(run_hkt, metrics, warnings)
     unmatched = [r for r in futu_team_assign(positions) if r["team"] == FUTU_TEAM_UNMATCHED]    # [R151]
     new_unmatched = [r for r in unmatched if prev_unmatched is not None and r["code"] not in prev_unmatched]
-    if new_unmatched and not tg_send(futu_unmatched_text(run_hkt, new_unmatched)):
+    if new_unmatched and not tg_send_hk(futu_unmatched_text(run_hkt, new_unmatched)):
         warnings.append("未配對持倉 Telegram 未發出")
     if prev_alerts is not None and not payload.get("client_telegram"):
         text = futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts)
         if text:
-            sent = tg_send(text)
+            sent = tg_send_hk(text)
             if not sent:
                 warnings.append("Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
     log_event(f"🛡️ [富途持倉風險] {run_hkt} 權益 {fmt_num(metrics.get('equity'))} 緩衝 {fmt_num(metrics.get('cushion'))} "
@@ -2350,7 +2351,7 @@ def futu_margin_alert(run_hkt, metrics, warnings):
     if kind is None:
         return None
     text = futu_margin_text(kind, level, run_hkt, metrics)
-    sent = tg_send(text)
+    sent = tg_send_hk(text)
     if not sent:
         warnings.append("保證金警報 Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
     new_state = {"active": active, "level": level, "last_sent_cushion": cushion if active else None,
@@ -5198,6 +5199,20 @@ def tg_send(text):
         return r.status_code == 200
     except Exception as exc:                               # 不印網址（含權杖）
         print(f"⚠️ [Telegram 發送失敗] {type(exc).__name__}", flush=True)
+        return False
+
+
+def tg_send_hk(text):
+    """[R151] 富途持倉風險／總指揮通知用 @HC_HK_Signal_bot（TG_HK_BOT_TOKEN／TG_HK_CHAT_ID）；
+    未設就退返 tg_send（TG_BOT_TOKEN，地載陣嘅 @HC_Gold_Signal_bot），唔會冇通知。不記錄權杖。"""
+    token, chat = os.environ.get("TG_HK_BOT_TOKEN", "").strip(), os.environ.get("TG_HK_CHAT_ID", "").strip()
+    if not token or not chat:
+        return tg_send(text)
+    try:
+        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat, "text": text}, timeout=10)
+        return r.status_code == 200
+    except Exception as exc:                               # 不印網址（含權杖）
+        print(f"⚠️ [Telegram（HK bot）發送失敗] {type(exc).__name__}", flush=True)
         return False
 
 
