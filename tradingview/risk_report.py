@@ -189,6 +189,25 @@ def main():
             F0 = b["underlyings"][und]["F"]
             P(f"- {lab}：" + (f"約 {abs(hit) * 100:.1f}%（{und} ≈ {F0 * (1 + hit):,.0f}）蝕光緩衝" if hit else "50% 內唔蝕光"))
         P("")
+    if buf0 is not None and mg.get("mhi_lot_maintenance_hkd"):
+        lot = mg["mhi_lot_maintenance_hkd"]
+        P(f"## 6c. MHI2610 加手對保證金緩衝（單手維持保證金 HK${lot:,}；現時已持 1 手對沖；未計淨額抵銷，保守）")
+        P("| 額外空頭手數（MHI2610） | 保證金緩衝 | 恒指升幾多 % 蝕光緩衝（逐步重估） |")
+        P("|---:|---:|---:|")
+        F0h = b["underlyings"]["HSI"]["F"]
+        for k in (0, 2, 4, 6, 9, 11):
+            buf = buf0 - k * lot
+            up = None
+            if buf > 0:
+                for j in range(1, 201):
+                    r_ = j / 400
+                    t, _ = pnl_hkd(b, fx, {"HSI": r_})
+                    if buf + t - t0 - k * F0h * r_ * 10 < 0:
+                        up = r_
+                        break
+            P(f"| {k}（共 {k + 1} 手） | {buf:+,.0f} | " + ("已蝕光" if buf <= 0 else (f"約 {up * 100:.1f}%" if up else "50% 內唔蝕光")) + " |")
+        P(f"緩衝蝕光嘅額外手數約 {buf0 / lot:.1f} 手（單靠保證金，未計價格變動）。")
+        P("")
     P("## 7. 假設與限制")
     P("- 壓力測試只做即時重估，冇計時間價值消耗、冇計保證金追繳、冇計滑價及夜市流動性。")
     P("- Put 現價 stale、EW 到期日待確認、對沖腳開倉價待確認（見 risk_book.json 各 flag）。")
