@@ -54,6 +54,8 @@ jobs:
             python3 scripts/hkex_inline_fetch.py survey "$START" "$END" --step "${STEP:-14}"
           elif [ "$MODE" = "wayback" ]; then
             python3 scripts/hkex_inline_fetch.py wayback
+          elif [ "$MODE" = "yahoo" ]; then
+            python3 scripts/hkex_inline_fetch.py yahoo --codes "$URLS"
           elif [ "$MODE" = "wayback-dayquot" ]; then
             python3 scripts/hkex_inline_fetch.py wayback-dayquot --from "${START:0:4}" --to "${END:0:4}"
           elif [ "$MODE" = "terms" ]; then

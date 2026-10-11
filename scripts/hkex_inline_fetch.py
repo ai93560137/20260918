@@ -11,6 +11,9 @@
   python3 scripts/hkex_inline_fetch.py survey 2019-07-01 2026-10-10 --step 14   # 每隔 N 天抽一天的行情報告，數 @L 行 → survey.csv（找界內證存在的年代）
   python3 scripts/hkex_inline_fetch.py wayback                # 從 web.archive.org 抓歷年 iwFullList.csv 快照（含上下限價、到期、收市價）→ iw_fulllist_history.csv.gz
   python3 scripts/hkex_inline_fetch.py wayback-dayquot [--from 2019 --to 2026]   # archive.org 存過的每日行情檔，逐個下載抽 @L 行 → quotes_raw_<年>.csv.gz
+      （結果：archive.org 把大頁面截在 1 MB，24 MB 的行情檔只剩開頭，界內證那段（47xxx）看不到；這條路不通）
+  python3 scripts/hkex_inline_fetch.py yahoo [--codes 47553,47891]   # Yahoo Finance 圖表 API 拉 <code>.HK 的歷史日線（退市窩輪常仍保留）→ yahoo_daily.csv.gz
+      不給 --codes 就用 data/hkex_inline/terms.csv 裡全部代號
 
 quotes 只存原始行（date, code, name, raw_line），欄位解析交給 research/warrants_cbbc/inline_history.py 在本機做，
 這樣格式猜錯也不用重抓。
@@ -376,6 +379,63 @@ def wayback_dayquot(year_from, year_to):
         print(f"寫入 {path.name}：{len(merged)} 行")
 
 
+def yahoo(codes_arg):
+    """Yahoo Finance：https://query1.finance.yahoo.com/v8/finance/chart/<code>.HK?range=max&interval=1d → 日線（含退市後仍保留的歷史）。"""
+    import json
+    OUT.mkdir(parents=True, exist_ok=True)
+    if codes_arg:
+        codes = [c.strip().zfill(5) for c in codes_arg.split(",") if c.strip()]
+    else:
+        tp = OUT / "terms.csv"
+        if not tp.exists():
+            sys.exit("沒有 --codes 也沒有 terms.csv")
+        with open(tp, newline="", encoding="utf-8") as f:
+            codes = sorted({r["code"].zfill(5) for r in csv.DictReader(f)})
+    path = OUT / "yahoo_daily.csv.gz"
+    existing = []
+    if path.exists():
+        with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+            existing = list(csv.reader(f))[1:]
+    done = {r[1] for r in existing}
+    rows = list(existing)
+    ok = fail = 0
+    for code in codes:
+        if code in done:
+            continue
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}.HK?range=max&interval=1d&events=div%2Csplit"
+        st, raw = get(url, timeout=60)
+        n = 0
+        if st == 200 and raw:
+            try:
+                res = json.loads(raw.decode("utf-8", "replace"))["chart"]["result"]
+                if res:
+                    r0 = res[0]
+                    ts = r0.get("timestamp") or []
+                    q = r0["indicators"]["quote"][0]
+                    for i, t in enumerate(ts):
+                        d = date.fromtimestamp(t + 8 * 3600).isoformat()
+                        c = q["close"][i]
+                        if c is None:
+                            continue
+                        rows.append([d, code, q["open"][i], q["high"][i], q["low"][i], c, q["volume"][i]])
+                        n += 1
+            except (KeyError, ValueError, TypeError) as exc:
+                print(f"{code}: 解析失敗 {exc}")
+        if n:
+            ok += 1
+            print(f"{code}: {n} 根日線 {rows[-n][0]} → {rows[-1][0]}")
+        else:
+            fail += 1
+            print(f"{code}: HTTP {st}，0 根（{raw[:120].decode('utf-8', 'replace') if raw else ''}）")
+        time.sleep(1.5)
+    rows.sort(key=lambda r: (r[1], r[0]))
+    with gzip.open(path, "wt", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["date", "code", "open", "high", "low", "close", "volume"])
+        w.writerows(rows)
+    print(f"Yahoo：成功 {ok}、失敗 {fail}；寫入 {path.name} 共 {len(rows)} 列")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -386,6 +446,7 @@ def main():
     sv = sub.add_parser("survey"); sv.add_argument("start"); sv.add_argument("end"); sv.add_argument("--step", type=int, default=14)
     sub.add_parser("wayback")
     wd = sub.add_parser("wayback-dayquot"); wd.add_argument("--from", dest="yfrom", default="2019"); wd.add_argument("--to", dest="yto", default="2026")
+    ya = sub.add_parser("yahoo"); ya.add_argument("--codes", default="")
     a = ap.parse_args()
     if a.cmd == "probe":
         probe(a.day)
@@ -399,6 +460,8 @@ def main():
         wayback()
     elif a.cmd == "wayback-dayquot":
         wayback_dayquot(a.yfrom, a.yto)
+    elif a.cmd == "yahoo":
+        yahoo(a.codes)
     else:
         terms()
 
