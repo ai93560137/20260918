@@ -108,3 +108,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - `?view=fund_report`：富途已實現盈虧（先入先出），2026-09-01 起按產品分月／季／年；資料由 `gcp_ib/futu_pnl_export.py` 推（action=futu_pnl → `futu/pnl/latest.json`）。
 - 資金流水只可逐日查（clearing_date）；預設唔喺公開頁顯示（`FUND_REPORT_SHOW_FLOWS=1` 先開）。
 - 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00276-sh2 --yes`（00277 之前）；產品表修正＋週末休市顯示：00278-bbb（退回 00277-f48）
+
+## 2026-10-12 R153：每日自動基金報告匯出
+- `gcp_ib/auto_risk.py` 每日 05:30 HKT 後喺背景跑 `futu_pnl_export.py`（唔阻風險循環）；失敗每日最多 3 次；`--no-pnl` 關。唔使改 Cloud Run。步驟見 `RUNBOOK_FUTU_RISK.md` §8。
