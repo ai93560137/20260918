@@ -144,6 +144,14 @@ def demo() -> None:
     print("6xxx6 比率 20,000 → 一格＝20 點，80 點折讓仍有淨利；6xxx2 以期指計是 10 點溢價（正常），證明 6xxx1 的折讓不是條款造成而是街貨重。")
 
 
+def _warrant_request_cls(ft):
+    """futu-api 10.x 把 get_warrant 的篩選物件匯出成 WarrantRequest（舊版叫 WarrantDataFilter）。"""
+    cls = getattr(ft, "WarrantRequest", None) or getattr(ft, "WarrantDataFilter", None)
+    if cls is None:
+        from futu.quote.quote_get_warrant import Request as cls  # type: ignore
+    return cls
+
+
 def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: str, borrow_rate: float) -> None:
     try:
         import futu as ft  # type: ignore
@@ -161,7 +169,7 @@ def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: st
         hedge_spread = 1.0 if is_index else 0.01 * fut      # 個股沽空腿差價估 1%（一兩格＋價位規則）
         cbbcs: list[Cbbc] = []
         for wtype, bull in ((ft.WrtType.BULL, True), (ft.WrtType.BEAR, False)):
-            req = ft.WarrantDataFilter()
+            req = _warrant_request_cls(ft)()
             req.type_list = [wtype]
             req.sort_field = ft.SortField.STREET_RATE
             req.ascend = False

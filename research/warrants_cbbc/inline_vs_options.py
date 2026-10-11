@@ -209,6 +209,14 @@ def print_eval(head: str, lower, upper, e: dict) -> None:
           f"四腳：沽C{e['sell_call']} 買C{e['buy_call']} 買C{e['buy_call2']} 沽C{e['sell_call2']}，每組對應 {e['inline_per_set']:,.0f} 份界內證")
 
 
+def _warrant_request_cls(ft):
+    """futu-api 10.x 把 get_warrant 的篩選物件匯出成 WarrantRequest（舊版叫 WarrantDataFilter）。"""
+    cls = getattr(ft, "WarrantRequest", None) or getattr(ft, "WarrantDataFilter", None)
+    if cls is None:
+        from futu.quote.quote_get_warrant import Request as cls  # type: ignore
+    return cls
+
+
 # ---------- 即時（Futu OpenD） ----------
 def scan_live(host: str, port: int, owner: str, fee_lot: float, rate: float, half_spread_fallback: float,
               log=print) -> tuple[list[dict], dict]:
@@ -225,7 +233,7 @@ def scan_live(host: str, port: int, owner: str, fee_lot: float, rate: float, hal
     try:
         rows, begin = [], 0
         while True:
-            req = ft.WarrantDataFilter()
+            req = _warrant_request_cls(ft)()
             req.type_list = [ft.WrtType.INLINE]
             req.begin, req.num = begin, 200
             req.sort_field = ft.SortField.CODE
