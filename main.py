@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
+#     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
+#     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
 #   * 2026-10-11 — [R150] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
 #     每輪把掃描列與摘要推上來，按 kind 存 futu/scan/<kind>/latest.json、runs/<日期>/<時分>.json、history/<日期>.json（摘要）。
 #     ?view=scan&kind=cbbc|warrant|inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
@@ -2273,8 +2276,10 @@ def handle_futu_risk(payload):
     try:                                                              # [R149] 上一份嘅警報，用嚟判斷要唔要發 Telegram
         prev = gcs_read_json(FUTU_RISK_FILE, {})
         prev_alerts = prev.get("alerts") if isinstance(prev, dict) and isinstance(prev.get("alerts"), dict) else {}
+        prev_unmatched = {r["code"] for r in futu_team_assign((prev or {}).get("positions") if isinstance(prev, dict) else [])
+                          if r["team"] == FUTU_TEAM_UNMATCHED}
     except StorageError:
-        prev_alerts = None                                            # 讀唔到就唔發，免得重複轟炸
+        prev_alerts = prev_unmatched = None                           # 讀唔到就唔發，免得重複轟炸
     doc = {"run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
            "script_version": _futu_text(payload.get("script_version"), 16),
            "metrics": metrics, "alerts": alerts, "positions": positions,
@@ -2301,6 +2306,10 @@ def handle_futu_risk(payload):
         log_event(f"⚠️ [富途風險紀錄失敗] {exc}", severity="WARNING", component="futu_risk")
     sent = None
     margin_sent = futu_margin_alert(run_hkt, metrics, warnings)
+    unmatched = [r for r in futu_team_assign(positions) if r["team"] == FUTU_TEAM_UNMATCHED]    # [R151]
+    new_unmatched = [r for r in unmatched if prev_unmatched is not None and r["code"] not in prev_unmatched]
+    if new_unmatched and not tg_send(futu_unmatched_text(run_hkt, new_unmatched)):
+        warnings.append("未配對持倉 Telegram 未發出")
     if prev_alerts is not None and not payload.get("client_telegram"):
         text = futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts)
         if text:
@@ -2362,7 +2371,7 @@ def futu_margin_text(kind, level, run_hkt, metrics):
             "clear": "✅ 已解除：富途保證金緩衝回升"}[kind]
     if level == "critical" and kind == "step":
         head = "⛔ 危急：富途保證金緩衝再跌"
-    lines = [f"【{head}】{run_hkt} HKT",
+    lines = [f"【{head}｜影響同一富途戶口全部陣】{run_hkt} HKT",
              f"權益 HK${n(metrics.get('futu_equity'))}｜維持保證金 HK${n(metrics.get('maintenance_margin'))}｜"
              f"緩衝 HK${n(metrics.get('cushion'))}"]
     lots = metrics.get("mhi_lots") or {}
@@ -2381,6 +2390,111 @@ def futu_margin_text(kind, level, run_hkt, metrics):
     return "\n".join(lines)
 
 
+# =============================================================================
+# [R151] 總指揮：富途實倉按陣配對。新陣開實倉要喺 POSITIONS.md 登記，再由總指揮加規則。
+# =============================================================================
+FUTU_TEAM_MANUAL = "使用者人手"
+FUTU_TEAM_UNMATCHED = "未配對"
+FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
+    "雲垂陣": {"icon": "☁️", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
+              "stop": "跨式買回總價 ≥ 2× 權利金"},
+    "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
+    FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 136 點"},
+    FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
+}
+FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當使用者人手)
+    (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
+    (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
+    (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
+    (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
+    (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
+)
+FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
+
+
+def futu_alert_team(key):
+    """警報鍵 → 陣（保證金、硬止損係成個戶口）。"""
+    if key in FUTU_ALERT_TEAMS:
+        return FUTU_ALERT_TEAMS[key]
+    if key.startswith("delta:") and "雲垂" in key:
+        return "雲垂陣"
+    if key.startswith(("margin", "hard_stop")):
+        return "全部陣（同一富途戶口）"
+    return "總指揮"
+
+
+def futu_team_assign(positions):
+    """富途持倉 → [{team, use, code, name, qty, ...}]。有手數上限嘅規則（例如 MHI 對沖 1 手），超出部分歸使用者人手。"""
+    out = []
+    for p in positions or []:
+        if not isinstance(p, dict):
+            continue
+        code, qty = _futu_text(p.get("code"), 40), to_float(p.get("qty"))
+        if not code or not qty:
+            continue
+        base = {"code": code, "name": _futu_text(p.get("name"), 60), "open_price": to_float(p.get("open_price")),
+                "bid": to_float(p.get("bid")), "ask": to_float(p.get("ask")), "last": to_float(p.get("last")),
+                "quote_time": _futu_text(p.get("quote_time"), 23), "ccy": "USD" if code.startswith("US.") else "HKD"}
+        pl = to_float(p.get("futu_pl"))
+        for rx, team, use, cap in FUTU_TEAM_RULES:
+            if re.match(rx, code):
+                take = qty if cap is None else math.copysign(min(abs(qty), cap), qty)
+                out.append({**base, "team": team, "use": use, "qty": take,
+                            "futu_pl": None if pl is None else round(pl * take / qty, 2)})
+                if take != qty:
+                    out.append({**base, "team": FUTU_TEAM_MANUAL, "use": f"{use.split(' ')[0]} 期貨即日（超出 {cap:g} 手）",
+                                "qty": qty - take, "futu_pl": None if pl is None else round(pl * (qty - take) / qty, 2)})
+                break
+        else:
+            out.append({**base, "team": FUTU_TEAM_UNMATCHED, "use": "—", "qty": qty, "futu_pl": pl})
+    return out
+
+
+def futu_real_view(now=None):
+    """[R151] 策略總表用：富途實倉按陣分組＋公開版警報（唔含權益、保證金金額）。"""
+    doc = gcs_read_json(FUTU_RISK_FILE, {})
+    if not isinstance(doc, dict) or not doc.get("positions"):
+        return None
+    run_hkt = _futu_text(doc.get("run_hkt"), 19)
+    try:
+        age = ((now or datetime.now(HK_TZ)) - datetime.strptime(run_hkt[:16], "%Y-%m-%d %H:%M").replace(tzinfo=HK_TZ)).total_seconds() / 60
+    except ValueError:
+        age = None
+    metrics = doc.get("metrics") if isinstance(doc.get("metrics"), dict) else {}
+    teams = {name: {"team": name, **meta, "rows": [], "stops": [], "alerts": []} for name, meta in FUTU_TEAMS.items()}
+    for r in futu_team_assign(doc.get("positions")):
+        teams[r["team"]]["rows"].append(r)
+    for name, use in (metrics.get("stop_use") or {}).items():
+        t = FUTU_ALERT_TEAMS.get(f"stop:{name}")
+        if t in teams and isinstance(use, (int, float)):
+            teams[t]["stops"].append({"name": name, "use": round(use, 3)})
+    account = []
+    for k, v in (doc.get("alerts") or {}).items():
+        if k.startswith("margin"):
+            continue                                              # 用保證金警報狀態（公開版唔顯示金額）
+        if k.startswith("hard_stop"):
+            account.append("⛔ 觸及合計權益硬止損")
+            continue
+        t = futu_alert_team(k)
+        (teams[t]["alerts"] if t in teams else account).append(_futu_text(v, 120))
+    try:
+        ms = gcs_read_json(FUTU_MARGIN_STATE_FILE, {})
+    except StorageError:
+        ms = {}
+    if isinstance(ms, dict) and ms.get("active"):
+        account.append("⛔ 戶口保證金危急（可能被追繳）" if ms.get("level") == "critical" else "⚠ 戶口保證金偏緊")
+    return {"run_hkt": run_hkt, "age_min": None if age is None else round(age), "stale": age is None or age > 60,
+            "teams": [t for t in teams.values() if t["rows"] or t["team"] in ("雲垂陣", "風揚陣・方向一")],
+            "account_alerts": account}
+
+
+def futu_unmatched_text(run_hkt, rows):
+    lines = [f"【總指揮｜發現未配對持倉】{run_hkt} HKT"]
+    lines += [f"❓ {r['code']} {r['name']} 數量 {r['qty']:+g}" for r in rows]
+    lines.append("請喺 POSITIONS.md 登記係邊個陣開，總指揮會加配對規則。只係通知，唔會落單。")
+    return "\n".join(lines)
+
+
 def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
     """[R149] 警報有變（新出現、⚠→⛔ 升級、解除）先回傳通知文字；冇變回傳 ""。比較用「鍵＋級別」，百分比變唔算。"""
     level = lambda v: "⛔" if str(v).startswith(("⛔", "❌")) else "⚠"
@@ -2391,7 +2505,8 @@ def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
     if not new and not cleared:
         return ""
     delta = next(iter((metrics.get("delta") or {}).values()), [None])[0]
-    lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除：{k}" for k in cleared]
+    new = [f"〔{futu_alert_team(k)}〕{v}" for k, v in alerts.items() if v in new]
+    lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除〔{futu_alert_team(k)}〕：{k}" for k in cleared]
     lines.append(f"合計權益 {fmt_num(metrics.get('equity'), '{:,.0f}')}｜富途保證金緩衝 {fmt_num(metrics.get('cushion'), '{:,.0f}')}"
                  + (f"｜雲垂 Δ {delta:+.2f}" if isinstance(delta, (int, float)) else ""))
     lines.append("只係監控，唔係落單指令；落單以富途即時價為準。")
@@ -6057,6 +6172,7 @@ def strategies_data(now=None):
         rows.append({"key": f"he_{hk}", "name": hv["name"], "group": "紙上", "market": "恒指（組合淨倉）", "real": False, "aggregate": True,
                      "style": "整體組合（各成份淨額）", "hold": "—", "notify": "網頁", "link": "?view=dizai",
                      "pos": _sp(1 if net > 0 else -1 if net < 0 else 0, abs(net), "＋".join(f"{p['zh']}×{p['w']}" for p in hv["parts"].values()))})
+    futu_real = safe(futu_real_view)                                 # [R151] 富途實倉按陣
     conflicts = []
     under = lambda r: "恒指" if r["market"].startswith("恒指") else r["market"]
     for mk in sorted({under(r) for r in rows}):
@@ -6065,7 +6181,7 @@ def strategies_data(now=None):
         if longs and shorts:
             conflicts.append({"market": mk, "long": longs, "short": shorts,
                               "real": any(r["real"] for r in rows if under(r) == mk and r["pos"]["side"] in (1, -1))})
-    return {"status": "ok", "updated_utc": fmt_utc(), "rows": rows, "conflicts": conflicts,
+    return {"status": "ok", "updated_utc": fmt_utc(), "rows": rows, "conflicts": conflicts, "futu_real": futu_real,
             "summary": {"long": sum(1 for r in rows if r["pos"]["side"] == 1), "short": sum(1 for r in rows if r["pos"]["side"] == -1),
                         "flat": sum(1 for r in rows if r["pos"]["side"] == 0), "unknown": sum(1 for r in rows if r["pos"]["side"] is None)}}
 
@@ -6104,12 +6220,45 @@ def build_strategies_page(data):
     table = (f"<div class='section'><div class='scroll'><table><tr><th>策略</th><th>類別</th><th>商品</th><th>現時持倉</th>"
              f"<th>方向風格</th><th>持倉時間</th><th>通知</th></tr>{trs}</table></div>"
              f"<p class='muted' style='font-size:12px'>更新 {esc(data['updated_utc'])} UTC・JSON：<a href='?view=strategies&amp;format=json'>?view=strategies&amp;format=json</a></p></div>")
+    real = build_futu_real_section(data.get("futu_real"))
     notes = ("<div class='section'><b>使用提醒</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
              "<li>真錢策略之間不會衝突：錦囊做黃金、蛇蟠陣做恒指；但兩者共用資金與保證金。</li>"
              "<li>蛇蟠陣（順勢）與地載陣（逆市）在大升大跌日方向經常相反；地載陣落實盤時，請用另一個戶口或子戶口。</li>"
              "<li>地載陣幾組條件相近、經常同日同向，只是互相對照；實盤只選一組（建議地載・衡）。</li>"
-             "<li>雲垂陣（賣期權）在其他分支，不在這個服務，未列入。</li></ul></div>")
-    return html_page("策略總表", head + cards + conflict + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
+             "<li>雲垂陣（賣期權）、風揚陣・方向一（週權勒式）嘅富途實倉見上面「💼 富途實倉（按陣）」。</li></ul></div>")
+    return html_page("策略總表", head + cards + conflict + real + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
+
+
+def build_futu_real_section(fr):
+    """[R151] 💼 富途實倉（按陣）：每陣一格，配對唔到嘅入「未配對」。"""
+    if not fr:
+        return ("<div class='section'><b>💼 富途實倉（按陣）</b><p class='muted'>未有數據"
+                "（使用者部機 auto_risk 未推上嚟）。</p></div>")
+    f = lambda v, d=2: "—" if v is None else (f"{v:,.{d}f}".rstrip("0").rstrip(".") if d else f"{v:,.0f}")
+    age = fr.get("age_min")
+    fresh = (f"<span class='neg'>⚠ 數據已經 {age:,} 分鐘冇更新</span>" if fr.get("stale") and age is not None
+             else f"{age} 分鐘前" if age is not None else "")
+    acc = "".join(f"<div>{esc(a)}</div>" for a in fr.get("account_alerts") or [])
+    out = (f"<div class='section'><b>💼 富途實倉（按陣）</b>"
+           f"<p class='muted' style='font-size:12px'>富途期貨戶口實際持倉，每 15 分鐘更新；更新 {esc(fr.get('run_hkt') or '—')} HKT（{fresh}）。"
+           "價格只作監控，冇行情權限嘅美國期權用富途持倉估值。由總指揮按規則配對去各陣。</p>"
+           + (f"<div style='border-left:5px solid #dc3545; padding-left:8px; margin:6px 0'>{acc}</div>" if acc else ""))
+    for t in fr.get("teams") or []:
+        stops = "、".join(f"{esc(s['name'])} 用咗 {s['use'] * 100:.0f}%" for s in t.get("stops") or [])
+        alerts = "".join(f"<div class='neg'>{esc(a)}</div>" for a in t.get("alerts") or [])
+        trs = "".join(
+            f"<tr><td>{esc(r['code'].replace('HK.', '').replace('US.', ''))}<div class='muted' style='font-size:11px'>{esc(r['name'])}</div></td>"
+            f"<td>{esc(r['use'])}</td><td class='{'neg' if r['qty'] < 0 else 'pos'}'>{'沽' if r['qty'] < 0 else '買'} {abs(r['qty']):g}</td>"
+            f"<td>{f(r['open_price'])}</td><td>{f(r['bid'])}／{f(r['ask'])}／{f(r['last'])}</td>"
+            f"<td class='{'pos' if (r['futu_pl'] or 0) >= 0 else 'neg'}'>{f(r['futu_pl'], 0)} {r['ccy']}</td>"
+            f"<td style='font-size:11px'>{esc((r['quote_time'] or '')[5:16])}</td></tr>" for r in t["rows"])
+        out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
+                f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
+                + (f"；{stops}" if stops else "") + f"</span>{alerts}"
+                + (f"<div class='scroll'><table><tr><th>合約</th><th>用途</th><th>持倉</th><th>開倉價</th><th>買／賣／最後</th>"
+                   f"<th>持倉盈虧</th><th>報價時間</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
+                + "</div>")
+    return out + "</div>"
 
 
 def handle_strategies_get(req):
