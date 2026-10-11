@@ -456,6 +456,29 @@ def _decode_table(raw):
     return [l for l in txt.splitlines() if l.strip()]
 
 
+def _parse_monthly_body(body):
+    """zip 內的 .xls 其實是 big5 HTML 表格（<table><tr><td>…）；也容許純 CSV／tab。回傳 (header, rows)。"""
+    import html as _html
+    head = body[:200].lower()
+    if b"<html" in head or b"<table" in head:
+        txt = body.decode("big5", "replace")
+        rows = []
+        for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", txt, flags=re.S | re.I):
+            cells = [_html.unescape(re.sub(r"<[^>]+>", "", c)).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, flags=re.S | re.I)]
+            if cells:
+                rows.append(cells)
+        if not rows:
+            return [], []
+        return [h.strip() for h in rows[0]], rows[1:]
+    lines = _decode_table(body)
+    if not lines:
+        return [], []
+    sep = "\t" if lines[0].count("\t") >= lines[0].count(",") else ","
+    header = [h.strip() for h in lines[0].split(sep)]
+    rows = [[c.strip() for c in l.split(sep)] for l in lines[1:]]
+    return header, [r for r in rows if len(r) >= len(header) - 2]
+
+
 def hkex_monthly(products, months, ul, probe=False):
     """01.zip–12.zip ＝ 該月份（過去 12 個月內），dnCSV.asp ＝ 本月至今。zip 內是 CSV（tab 或逗號分隔）。
     只保留 UL 欄等於 ul 的列（ul='ALL' 全留）。"""
@@ -479,31 +502,34 @@ def hkex_monthly(products, months, ul, probe=False):
             else:
                 members.append(("dnCSV", raw))
             for fname, body in members:
-                lines = _decode_table(body)
+                header, data_rows = _parse_monthly_body(body)
                 if probe:
-                    print(f"   檔 {fname}: {len(body)} bytes, {len(lines)} 行")
-                    for l in lines[:6]:
-                        print("   | " + l[:240])
+                    print(f"   檔 {fname}: {len(body)} bytes, {len(data_rows)} 列；欄位 {header}")
+                    for r in data_rows[:4]:
+                        print("   | " + " | ".join(r)[:240])
                     continue
-                if not lines:
+                if not header:
+                    print(f"   檔 {fname}: 解析不到表格")
                     continue
-                sep = "\t" if lines[0].count("\t") >= lines[0].count(",") else ","
-                header = [h.strip() for h in lines[0].split(sep)]
                 hl = [h.lower() for h in header]
                 i_ul = next((i for i, h in enumerate(hl) if h in ("ul", "underlying", "underlying code")), None)
+                i_name = next((i for i, h in enumerate(hl) if "name" in h), None)
                 i_date = next((i for i, h in enumerate(hl) if "date" in h), None)
+                tok = ul.upper()
                 kept = []
-                for l in lines[1:]:
-                    cells = [c.strip() for c in l.split(sep)]
-                    if len(cells) < len(header) - 2:
-                        continue
-                    if ul != "ALL" and i_ul is not None and cells[i_ul].upper() != ul.upper():
-                        continue
+                for cells in data_rows:
+                    if tok != "ALL":
+                        if i_ul is not None:
+                            if cells[i_ul].strip().upper() != tok:
+                                continue
+                        elif i_name is not None:
+                            nm = cells[i_name].upper()
+                            if not (f"#{tok}" in nm or f"-{tok}" in nm or nm.startswith(tok) or f" {tok}" in nm):
+                                continue
                     kept.append(cells)
-                # 以資料裡的年月命名；拿不到就用月份推算
                 ym = None
                 if i_date is not None and kept:
-                    mm = re.match(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})|(\d{4})-(\d{2})-(\d{2})", kept[0][i_date])
+                    mm = re.match(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})|(\d{4})-(\d{2})-(\d{2})", kept[0][i_date].strip())
                     if mm:
                         ym = f"{mm.group(3)}{int(mm.group(2)):02d}" if mm.group(3) else f"{mm.group(4)}{mm.group(5)}"
                 if ym is None:
@@ -517,7 +543,7 @@ def hkex_monthly(products, months, ul, probe=False):
                     w = csv.writer(f)
                     w.writerow(header)
                     w.writerows(kept)
-                print(f"   {fname}: {len(lines) - 1} 列 → 留 {len(kept)} 列（UL={ul}）→ {out.name}")
+                print(f"   {fname}: {len(data_rows)} 列 → 留 {len(kept)} 列（UL={ul}）→ {out.name}")
             time.sleep(2.0)
 
 
