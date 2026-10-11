@@ -92,19 +92,29 @@ def build_events(k: pd.DataFrame, hmap: dict, basis: pd.Series, horizons=(1, 2, 
         lo_spot = (g["low"] - bs).to_numpy()
         hi_spot = (g["high"] - bs).to_numpy()
         close = g["close"].to_numpy()
+        opn = g["open"].to_numpy()
+        vol = g["volume"].to_numpy(float)
         logc = np.log(close)
         run_lo, run_hi = pc, pc
         day_close = logc[-1]
+        cum_bull = cum_bear = 0.0
+        tot_bull, tot_bear = float(bull.sum()), float(bear.sum())
         for j in range(len(g)):
             new_lo, new_hi = lo_spot[j] < run_lo, hi_spot[j] > run_hi
-            base = {"date": d, "time": g.loc[j, "time"], "bar": j, "gap_open": j == 0}
+            base = {"date": d, "time": g.loc[j, "time"], "bar": j, "gap_open": j == 0, "bar_vol": vol[j],
+                    "abs_r1": abs(logc[j + 1] - logc[j]) if j + 1 < len(g) else np.nan,
+                    "range1": (g.loc[j + 1, "high"] - g.loc[j + 1, "low"]) if j + 1 < len(g) else np.nan}
             fut = {f"r{hz}": (logc[j + hz] - logc[j]) if j + hz < len(g) else np.nan for hz in horizons}
             fut["r_close"] = day_close - logc[j]
+            fut["r_gap"] = (np.log(opn[j + 1]) - logc[j]) if j + 1 < len(g) else np.nan          # 到下一根開盤
+            fut["r_next_oc"] = (logc[j + 1] - np.log(opn[j + 1])) if j + 1 < len(g) else np.nan  # 下一根開到收
             if new_lo:
                 hit = bull[(bull.index >= lo_spot[j]) & (bull.index < run_lo)]
                 s = float(hit.sum())
+                cum_bull += s
                 # 方向對齊：跌破牛證 → 強制沽；「續跌」為正
-                ev.append({**base, "side": "bull", "S": s, "n_levels": int(len(hit)), "move_pts": run_lo - lo_spot[j],
+                ev.append({**base, "side": "bull", "S": s, "cum_S": cum_bull, "S_rel": s / tot_bull if tot_bull else 0.0,
+                           "n_levels": int(len(hit)), "move_pts": run_lo - lo_spot[j],
                            "bar_ret": logc[j] - (logc[j - 1] if j else np.log(pc + bs)),
                            **{kk: -v for kk, v in fut.items()},
                            "near_S": float(bull[(bull.index < lo_spot[j]) & (bull.index >= lo_spot[j] - 100)].sum())})
@@ -112,7 +122,9 @@ def build_events(k: pd.DataFrame, hmap: dict, basis: pd.Series, horizons=(1, 2, 
             if new_hi:
                 hit = bear[(bear.index <= hi_spot[j]) & (bear.index > run_hi)]
                 s = float(hit.sum())
-                ev.append({**base, "side": "bear", "S": s, "n_levels": int(len(hit)), "move_pts": hi_spot[j] - run_hi,
+                cum_bear += s
+                ev.append({**base, "side": "bear", "S": s, "cum_S": cum_bear, "S_rel": s / tot_bear if tot_bear else 0.0,
+                           "n_levels": int(len(hit)), "move_pts": hi_spot[j] - run_hi,
                            "bar_ret": -(logc[j] - (logc[j - 1] if j else np.log(pc + bs))),
                            **fut,
                            "near_S": float(bear[(bear.index > hi_spot[j]) & (bear.index <= hi_spot[j] + 100)].sum())})
