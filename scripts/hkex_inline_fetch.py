@@ -7,6 +7,7 @@
   python3 scripts/hkex_inline_fetch.py probe 2026-10-09      # 存當日報告樣本 ＋ 幾個候選的界內證清單頁，印 @L 行數
   python3 scripts/hkex_inline_fetch.py quotes 2025-10-01 2026-10-10   # 逐日下載，抽 @L 行 → data/hkex_inline/quotes_raw_<年>.csv.gz
   python3 scripts/hkex_inline_fetch.py terms                 # 試抓界內證條款清單（候選網址，存樣本給人看）
+  python3 scripts/hkex_inline_fetch.py urls <網址1,網址2,...>   # 任意網址（hkex.com.hk）存到 sample/，CSV 印前幾行、HTML 印連結
 
 quotes 只存原始行（date, code, name, raw_line），欄位解析交給 research/warrants_cbbc/inline_history.py 在本機做，
 這樣格式猜錯也不用重抓。
@@ -108,6 +109,38 @@ def terms():
         time.sleep(0.8)
 
 
+def fetch_urls(urls):
+    """任意網址存樣本（限 hkex.com.hk）。CSV 印前 8 行與行數；HTML 印含 csv/xls/htm/asp 的連結。"""
+    (OUT / "sample").mkdir(parents=True, exist_ok=True)
+    for i, url in enumerate(u.strip() for u in urls.split(",") if u.strip()):
+        if "hkex.com.hk" not in url:
+            print(f"skip（只抓 hkex.com.hk）：{url}")
+            continue
+        st, raw = get(url)
+        print(f"url[{i}]: HTTP {st} {len(raw)} bytes  {url}")
+        if st != 200 or not raw:
+            continue
+        name = re.sub(r"[^A-Za-z0-9]+", "_", url.split("hkex.com.hk/")[-1])[:90]
+        ext = ".csv" if url.lower().endswith(".csv") else (".xls" if ".xls" in url.lower() else ".html")
+        (OUT / "sample" / f"url_{name}{ext}").write_bytes(raw[:2_000_000])
+        if ext == ".csv":
+            txt = raw.decode("utf-16", "replace") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
+            lines = txt.splitlines()
+            print(f"   CSV {len(lines)} 行")
+            for l in lines[:8]:
+                print("   | " + l[:220])
+        elif ext == ".html":
+            txt = raw.decode("utf-8", "replace")
+            links = sorted(set(re.findall(r"""href=["']([^"']*\.(?:csv|xls|xlsx|zip|htm|asp)[^"']*)["']""", txt, re.I)))
+            for l in links[:60]:
+                print("   link: " + l[:200])
+            body = re.sub(r"<script.*?</script>", "", txt, flags=re.S)
+            body = re.sub(r"<[^>]+>", " ", body)
+            body = re.sub(r"\s+", " ", body)
+            print("   text: " + body[:600])
+        time.sleep(0.8)
+
+
 def quotes(start, end):
     OUT.mkdir(parents=True, exist_ok=True)
     d0, d1 = date.fromisoformat(start), date.fromisoformat(end)
@@ -165,11 +198,14 @@ def main():
     p = sub.add_parser("probe"); p.add_argument("day")
     q = sub.add_parser("quotes"); q.add_argument("start"); q.add_argument("end")
     sub.add_parser("terms")
+    u = sub.add_parser("urls"); u.add_argument("urls")
     a = ap.parse_args()
     if a.cmd == "probe":
         probe(a.day)
     elif a.cmd == "quotes":
         quotes(a.start, a.end)
+    elif a.cmd == "urls":
+        fetch_urls(a.urls)
     else:
         terms()
 

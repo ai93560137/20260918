@@ -16,6 +16,10 @@ on:
         description: quotes 的結束日
         required: false
         default: '2026-10-10'
+      urls:
+        description: mode=urls 時，逗號分隔的 hkex.com.hk 網址
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -35,9 +39,12 @@ jobs:
           MODE: ${{ github.event.inputs.mode }}
           START: ${{ github.event.inputs.start }}
           END: ${{ github.event.inputs.end }}
+          URLS: ${{ github.event.inputs.urls }}
         run: |
           if [ "$MODE" = "probe" ]; then
             python3 scripts/hkex_inline_fetch.py probe "$START"
+          elif [ "$MODE" = "urls" ]; then
+            python3 scripts/hkex_inline_fetch.py urls "$URLS"
           elif [ "$MODE" = "terms" ]; then
             python3 scripts/hkex_inline_fetch.py terms
           else
