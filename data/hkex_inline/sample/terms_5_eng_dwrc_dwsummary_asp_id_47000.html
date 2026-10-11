@@ -1,0 +1,142 @@
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html class="market-hkex">
+<head>
+    <title>Hong Kong Exchanges and Clearing Limited</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta http-equiv="Content-language" content="eng">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<link type="text/css" rel="stylesheet" href="/nonCMS/css/main.css" />
+    <link type="text/css" rel="stylesheet" href="/nonCMS/css/sprc_noncms.css" />
+</head>
+<body>
+    <script language="javaScript" src="/nonCMS/script/noncmshead.js"></script>
+    <!-- Leftmenu start -->
+    <script language="javaScript" src="/nonCMS/script/noncmsleftmenu.js"></script>
+    <!-- Content start -->
+    <main class="nav-content-wrap">
+<div class="main-content">
+    <div class="section__title-left-border">
+        Derivative Warrant Summary</div>
+    <br />
+    <div class="content-margin">
+        <table cellspacing="0" cellpadding="0" width="100%" border="0">
+            <tr>
+                <td class="dwtitle">
+                    Updated:
+                    9 October 2026
+                </td>
+                <td align="right">
+                    <a onclick="printScreen('printlink');" id="printlink">
+                        <img src="/noncms/image/print.gif" alt="Print friendly" />
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <form id="Form2" name="form2" method="post" action="https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en">
+    <input type="hidden" name="txt_stock_code" value="" />
+    <input type="hidden" name="sel_DateOfReleaseFrom_y" value="" />
+    <input type="hidden" name="sel_DateOfReleaseFrom_m" value="" />
+    <input type="hidden" name="sel_DateOfReleaseFrom_d" value="" />
+    <input type="hidden" name="sel_DateOfReleaseTo_y" value="" />
+    <input type="hidden" name="sel_DateOfReleaseTo_m" value="" />
+    <input type="hidden" name="sel_DateOfReleaseTo_d" value="" />
+    <input type="hidden" name="IsFromNewList" value="False" />
+    <!--///// EPS NPA (William @ 01 Dec 2006) /////-->
+    <input type="hidden" name="sel_tier_1" value="" />
+    <input type="hidden" name="sel_tier_2_group" value="" />
+    <input type="hidden" name="sel_tier_2" value="" />
+	<input type="hidden" name="status" value="" />
+	<input type="hidden" name="lang" value="" />
+    <!--\\\\\ EPS NPA (William @ 01 Dec 2006) \\\\\-->
+    </form>
+    <div class="content-margin" style="overflow: auto;">
+        <table cellspacing="0" cellpadding="5" border="0" id="bodytable" class="stock-summary">
+            <tbody>
+                
+            </tbody>
+        </table>
+    </div>
+</div>
+<script language="javascript">
+			function openBaseDoc(form, stock_code, fr_year, to_year, month, day)
+			{
+				form.txt_stock_code.value = '';
+
+				form.sel_DateOfReleaseFrom_y.value = fr_year;
+				form.sel_DateOfReleaseFrom_m.value = month;
+				form.sel_DateOfReleaseFrom_d.value = day;
+
+				form.sel_DateOfReleaseTo_y.value = to_year;
+				form.sel_DateOfReleaseTo_m.value = month;
+				form.sel_DateOfReleaseTo_d.value = day;
+
+				form.sel_tier_1.value = "5";
+				form.sel_tier_2_group.value = "23";
+				form.sel_tier_2.value = "180";
+
+				form.action = "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en";
+				form.target = "_blank";
+				form.submit();
+			}
+			
+			function openListDoc(form, stock_code, year, month, day)
+			{
+
+				form.txt_stock_code.value = stock_code;
+
+				form.sel_DateOfReleaseFrom_y.value =  year;
+				form.sel_DateOfReleaseFrom_m.value = month;
+				form.sel_DateOfReleaseFrom_d.value = day;
+
+				form.sel_DateOfReleaseTo_y.value = "2026";
+				form.sel_DateOfReleaseTo_m.value = "10";
+				form.sel_DateOfReleaseTo_d.value = "11";
+
+				form.sel_tier_1.value = "-2";
+				form.sel_tier_2_group.value = "-2";
+				form.sel_tier_2.value = "-2";												
+
+				form.action = "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en";
+				form.target = "_blank";
+				form.submit();
+			}
+
+			function openDeListDoc(form, stock_code, year, month, day)
+			{
+				form.txt_stock_code.value = stock_code;
+
+				form.sel_DateOfReleaseFrom_y.value =  year;
+				form.sel_DateOfReleaseFrom_m.value = month;
+				form.sel_DateOfReleaseFrom_d.value = day;
+
+				form.sel_DateOfReleaseTo_y.value = "2026";
+				form.sel_DateOfReleaseTo_m.value = "10";
+				form.sel_DateOfReleaseTo_d.value = "11";
+
+				form.sel_tier_1.value = "-2";
+				form.sel_tier_2_group.value = "-2";
+				form.sel_tier_2.value = "-2";
+				form.status.value = "I";
+
+				form.action = "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en";
+				form.target = "_blank";
+				form.submit();
+			}
+
+</script>
+</main>
+<!-- Content end -->
+<script language="javaScript" src="/nonCMS/script/noncmsfoot.js"></script>
+<script language="javaScript" src="/nonCMS/script/vendor.js"></script>
+<script language="javaScript" src="/nonCMS/script/main.js"></script>
+<script language="javaScript" src="/nonCMS/script/sprc_common.js"></script>
+<script type="text/javascript" nonce="f63c4179444ffe4a5f52ba42abb2e382" src="/vqeN8YmBP/S9-AKmp3g/Gpz30DG39Qz5/B1p4AQ/HxpxS/BYVI2YU?v=6512dabf-9713-b0df-a234-845f559e1722" defer></script></body>
+</html>
