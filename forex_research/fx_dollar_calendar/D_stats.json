@@ -1,0 +1,155 @@
+{
+ "inst": {
+  "D1": {
+   "months": 279,
+   "t": -0.06,
+   "t_weekly": -0.06,
+   "ann_return_pct": -0.09,
+   "ann_vol_pct": 7.26,
+   "sharpe": -0.01,
+   "max_dd_pct": -36.09,
+   "pos_years": "12/24",
+   "worst_year": [
+    "2008",
+    -18.98
+   ],
+   "best_year_share": null,
+   "t_before_split": -0.36,
+   "t_from_split": 0.33,
+   "ret_before_split_pct": -10.2,
+   "ret_from_split_pct": 7.9,
+   "pairs_positive": "3/7",
+   "pair_contrib_pct": {
+    "USDJPY": 8.66,
+    "NZDUSD": 1.98,
+    "AUDUSD": 1.04,
+    "USDCHF": -2.11,
+    "USDCAD": -2.96,
+    "GBPUSD": -4.42,
+    "EURUSD": -4.46
+   },
+   "yearly_pct": {
+    "2003": 8.3,
+    "2004": 6.5,
+    "2005": 0.2,
+    "2006": -5.2,
+    "2007": -8.3,
+    "2008": -19.0,
+    "2009": 11.5,
+    "2010": 6.5,
+    "2011": 0.7,
+    "2012": 1.7,
+    "2013": -4.3,
+    "2014": -8.8,
+    "2015": -8.2,
+    "2016": 9.7,
+    "2017": -6.6,
+    "2018": 5.3,
+    "2019": -0.3,
+    "2020": -6.1,
+    "2021": 4.5,
+    "2022": 7.6,
+    "2023": -0.7,
+    "2024": 9.0,
+    "2025": -6.0,
+    "2026": -0.1
+   }
+  },
+  "always_long_foreign": {
+   "t": -0.11,
+   "ann_return_pct": -0.17,
+   "sharpe": -0.02,
+   "max_dd_pct": -39.11,
+   "t_before_split": 0.57,
+   "t_from_split": -0.86
+  },
+  "always_short_foreign": {
+   "t": -0.11,
+   "ann_return_pct": -0.18,
+   "sharpe": -0.02,
+   "max_dd_pct": -35.89
+  },
+  "D1_minus_always_long_t": 0.04
+ },
+ "retail": {
+  "D1": {
+   "months": 279,
+   "t": -0.51,
+   "t_weekly": -0.53,
+   "ann_return_pct": -0.78,
+   "ann_vol_pct": 7.26,
+   "sharpe": -0.11,
+   "max_dd_pct": -39.0,
+   "pos_years": "10/24",
+   "worst_year": [
+    "2008",
+    -19.7
+   ],
+   "best_year_share": null,
+   "t_before_split": -0.64,
+   "t_from_split": -0.02,
+   "ret_before_split_pct": -18.5,
+   "ret_from_split_pct": -0.4,
+   "pairs_positive": "1/7",
+   "pair_contrib_pct": {
+    "USDJPY": 6.29,
+    "NZDUSD": -0.4,
+    "AUDUSD": -1.33,
+    "USDCHF": -4.49,
+    "USDCAD": -5.33,
+    "GBPUSD": -6.79,
+    "EURUSD": -6.84
+   },
+   "yearly_pct": {
+    "2003": 7.9,
+    "2004": 5.7,
+    "2005": -0.5,
+    "2006": -5.9,
+    "2007": -9.0,
+    "2008": -19.7,
+    "2009": 10.8,
+    "2010": 5.8,
+    "2011": -0.0,
+    "2012": 1.0,
+    "2013": -5.0,
+    "2014": -9.5,
+    "2015": -8.9,
+    "2016": 9.0,
+    "2017": -7.4,
+    "2018": 4.5,
+    "2019": -1.0,
+    "2020": -6.9,
+    "2021": 3.8,
+    "2022": 6.9,
+    "2023": -1.5,
+    "2024": 8.3,
+    "2025": -6.7,
+    "2026": -0.6
+   }
+  },
+  "always_long_foreign": {
+   "t": -0.56,
+   "ann_return_pct": -0.86,
+   "sharpe": -0.12,
+   "max_dd_pct": -44.69,
+   "t_before_split": 0.28,
+   "t_from_split": -1.21
+  },
+  "always_short_foreign": {
+   "t": -0.56,
+   "ann_return_pct": -0.87,
+   "sharpe": -0.12,
+   "max_dd_pct": -39.42
+  },
+  "D1_minus_always_long_t": 0.04
+ },
+ "random_shift_t": {
+  "percentiles": {
+   "2.5": -1.81,
+   "50": 0.01,
+   "97.5": 1.19
+  },
+  "D1_inst_t": -0.06,
+  "D1_percentile": 47.1
+ }
+}
