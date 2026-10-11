@@ -60,12 +60,16 @@ def to_text(raw):
 
 
 def inline_lines(txt):
-    """回傳 (code, name, raw_line)。報告裡一隻證券可能跨兩行（名稱太長時），這裡只取以 5 位代號開頭且名稱含 @L 的行。"""
+    """回傳 (code, name, raw_line)。報告裡每隻證券佔兩行：
+    第一行 CODE NAME CUR PRV.CLO ASK HIGH SHARES，第二行 CLOSING BID LOW TURNOVER（2026-10-09 樣本），
+    所以 raw_line 把兩行用 ' || ' 接起來，欄位解析留給本機。"""
     out = []
-    for line in txt.splitlines():
+    lines = txt.splitlines()
+    for i, line in enumerate(lines):
         m = INLINE_RE.match(line)
         if m:
-            out.append((m.group(1), m.group(2), line.rstrip()))
+            nxt = lines[i + 1].rstrip() if i + 1 < len(lines) and not INLINE_RE.match(lines[i + 1]) else ""
+            out.append((m.group(1), m.group(2), line.rstrip() + " || " + nxt.strip()))
     return out
 
 
