@@ -2396,11 +2396,13 @@ def futu_margin_text(kind, level, run_hkt, metrics):
 # =============================================================================
 FUTU_TEAM_MANUAL = "使用者人手"
 FUTU_TEAM_UNMATCHED = "未配對"
+FUTU_TEAM_GIFT = "券商贈送"
 FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
     "雲垂陣": {"icon": "☁️", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
               "stop": "跨式買回總價 ≥ 2× 權利金"},
     "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
     FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 136 點"},
+    FUTU_TEAM_GIFT: {"icon": "🎁", "desc": "券商推廣送嘅股票（唔係交易策略）", "stop": "—"},
     FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
 }
 FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當使用者人手)
@@ -2409,6 +2411,7 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
+    (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
 )
 FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
 
