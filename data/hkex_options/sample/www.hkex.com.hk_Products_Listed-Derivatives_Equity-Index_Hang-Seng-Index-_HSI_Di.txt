@@ -180,7 +180,7 @@ blockquote {
             LabCI.getToken = function () {
                 // ----- THIS IS A SAMPLE IMPLEMENTATION -----
                 //return "Base64-AES-Encrypted-Token";
-                return "evLtsLsBNAUVTPxtGqVeG1aSqbr8ye7IS2V2CcJgwVOFQAQtF1TJSVuumNGR75eE";
+                return "evLtsLsBNAUVTPxtGqVeG1aSqbr8ye7IS2V2CcJgwVOTi4mggFrNXFpG1gVeh2Jk";
             };
 
             // For returning the current UI language
