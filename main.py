@@ -104,6 +104,14 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R152] 📊 基金報告（?view=fund_report，&format=json）：本地 gcp_ib/futu_pnl_export.py 推富途成交、手續費、
+#     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
+#     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
+#     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
+#     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
+#     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
+#     富途風險／總指揮 Telegram 改用 @HC_HK_Signal_bot（TG_HK_BOT_TOKEN／TG_HK_CHAT_ID）；地載陣照用 TG_BOT_TOKEN（@HC_Gold_Signal_bot）。
 #   * 2026-10-11 — [R150] action=scan_push：本地 futu/scan_push.py 前向測試（恒指牛熊證折讓、恒指窩輪 vs 期權 IV、界內證）
 #     每輪把掃描列與摘要推上來，按 kind 存 futu/scan/<kind>/latest.json、runs/<日期>/<時分>.json、history/<日期>.json（摘要）。
 #     ?view=scan&kind=cbbc|warrant|inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
@@ -210,7 +218,7 @@ import random
 import re
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import functions_framework
@@ -2273,8 +2281,10 @@ def handle_futu_risk(payload):
     try:                                                              # [R149] 上一份嘅警報，用嚟判斷要唔要發 Telegram
         prev = gcs_read_json(FUTU_RISK_FILE, {})
         prev_alerts = prev.get("alerts") if isinstance(prev, dict) and isinstance(prev.get("alerts"), dict) else {}
+        prev_unmatched = {r["code"] for r in futu_team_assign((prev or {}).get("positions") if isinstance(prev, dict) else [])
+                          if r["team"] == FUTU_TEAM_UNMATCHED}
     except StorageError:
-        prev_alerts = None                                            # 讀唔到就唔發，免得重複轟炸
+        prev_alerts = prev_unmatched = None                           # 讀唔到就唔發，免得重複轟炸
     doc = {"run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
            "script_version": _futu_text(payload.get("script_version"), 16),
            "metrics": metrics, "alerts": alerts, "positions": positions,
@@ -2301,10 +2311,14 @@ def handle_futu_risk(payload):
         log_event(f"⚠️ [富途風險紀錄失敗] {exc}", severity="WARNING", component="futu_risk")
     sent = None
     margin_sent = futu_margin_alert(run_hkt, metrics, warnings)
+    unmatched = [r for r in futu_team_assign(positions) if r["team"] == FUTU_TEAM_UNMATCHED]    # [R151]
+    new_unmatched = [r for r in unmatched if prev_unmatched is not None and r["code"] not in prev_unmatched]
+    if new_unmatched and not tg_send_hk(futu_unmatched_text(run_hkt, new_unmatched)):
+        warnings.append("未配對持倉 Telegram 未發出")
     if prev_alerts is not None and not payload.get("client_telegram"):
         text = futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts)
         if text:
-            sent = tg_send(text)
+            sent = tg_send_hk(text)
             if not sent:
                 warnings.append("Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
     log_event(f"🛡️ [富途持倉風險] {run_hkt} 權益 {fmt_num(metrics.get('equity'))} 緩衝 {fmt_num(metrics.get('cushion'))} "
@@ -2341,7 +2355,7 @@ def futu_margin_alert(run_hkt, metrics, warnings):
     if kind is None:
         return None
     text = futu_margin_text(kind, level, run_hkt, metrics)
-    sent = tg_send(text)
+    sent = tg_send_hk(text)
     if not sent:
         warnings.append("保證金警報 Telegram 未發出（Cloud Run 冇設 TG_BOT_TOKEN／TG_CHAT_ID 或者發送失敗）")
     new_state = {"active": active, "level": level, "last_sent_cushion": cushion if active else None,
@@ -2362,7 +2376,7 @@ def futu_margin_text(kind, level, run_hkt, metrics):
             "clear": "✅ 已解除：富途保證金緩衝回升"}[kind]
     if level == "critical" and kind == "step":
         head = "⛔ 危急：富途保證金緩衝再跌"
-    lines = [f"【{head}】{run_hkt} HKT",
+    lines = [f"【{head}｜影響同一富途戶口全部陣】{run_hkt} HKT",
              f"權益 HK${n(metrics.get('futu_equity'))}｜維持保證金 HK${n(metrics.get('maintenance_margin'))}｜"
              f"緩衝 HK${n(metrics.get('cushion'))}"]
     lots = metrics.get("mhi_lots") or {}
@@ -2381,6 +2395,338 @@ def futu_margin_text(kind, level, run_hkt, metrics):
     return "\n".join(lines)
 
 
+# =============================================================================
+# [R151] 總指揮：富途實倉按陣配對。新陣開實倉要喺 POSITIONS.md 登記，再由總指揮加規則。
+# =============================================================================
+FUTU_TEAM_MANUAL = "使用者人手"
+FUTU_TEAM_UNMATCHED = "未配對"
+FUTU_TEAM_GIFT = "券商贈送"
+FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
+    "雲垂陣": {"icon": "☁️", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
+              "stop": "跨式買回總價 ≥ 2× 權利金"},
+    "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
+    FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 136 點"},
+    FUTU_TEAM_GIFT: {"icon": "🎁", "desc": "券商推廣送嘅股票（唔係交易策略）", "stop": "—"},
+    FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
+}
+FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當使用者人手)
+    (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
+    (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
+    (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
+    (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
+    (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
+    (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
+)
+FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
+
+
+def futu_alert_team(key):
+    """警報鍵 → 陣（保證金、硬止損係成個戶口）。"""
+    if key in FUTU_ALERT_TEAMS:
+        return FUTU_ALERT_TEAMS[key]
+    if key.startswith("delta:") and "雲垂" in key:
+        return "雲垂陣"
+    if key.startswith(("margin", "hard_stop")):
+        return "全部陣（同一富途戶口）"
+    return "總指揮"
+
+
+def futu_team_assign(positions):
+    """富途持倉 → [{team, use, code, name, qty, ...}]。有手數上限嘅規則（例如 MHI 對沖 1 手），超出部分歸使用者人手。"""
+    out = []
+    for p in positions or []:
+        if not isinstance(p, dict):
+            continue
+        code, qty = _futu_text(p.get("code"), 40), to_float(p.get("qty"))
+        if not code or not qty:
+            continue
+        base = {"code": code, "name": _futu_text(p.get("name"), 60), "open_price": to_float(p.get("open_price")),
+                "bid": to_float(p.get("bid")), "ask": to_float(p.get("ask")), "last": to_float(p.get("last")),
+                "quote_time": _futu_text(p.get("quote_time"), 23), "ccy": "USD" if code.startswith("US.") else "HKD"}
+        pl = to_float(p.get("futu_pl"))
+        for rx, team, use, cap in FUTU_TEAM_RULES:
+            if re.match(rx, code):
+                take = qty if cap is None else math.copysign(min(abs(qty), cap), qty)
+                out.append({**base, "team": team, "use": use, "qty": take,
+                            "futu_pl": None if pl is None else round(pl * take / qty, 2)})
+                if take != qty:
+                    out.append({**base, "team": FUTU_TEAM_MANUAL, "use": f"{use.split(' ')[0]} 期貨即日（超出 {cap:g} 手）",
+                                "qty": qty - take, "futu_pl": None if pl is None else round(pl * (qty - take) / qty, 2)})
+                break
+        else:
+            out.append({**base, "team": FUTU_TEAM_UNMATCHED, "use": "—", "qty": qty, "futu_pl": pl})
+    return out
+
+
+def futu_real_view(now=None):
+    """[R151] 策略總表用：富途實倉按陣分組＋公開版警報（唔含權益、保證金金額）。"""
+    doc = gcs_read_json(FUTU_RISK_FILE, {})
+    if not isinstance(doc, dict) or not doc.get("positions"):
+        return None
+    run_hkt = _futu_text(doc.get("run_hkt"), 19)
+    try:
+        age = ((now or datetime.now(HK_TZ)) - datetime.strptime(run_hkt[:16], "%Y-%m-%d %H:%M").replace(tzinfo=HK_TZ)).total_seconds() / 60
+    except ValueError:
+        age = None
+    metrics = doc.get("metrics") if isinstance(doc.get("metrics"), dict) else {}
+    teams = {name: {"team": name, **meta, "rows": [], "stops": [], "alerts": []} for name, meta in FUTU_TEAMS.items()}
+    for r in futu_team_assign(doc.get("positions")):
+        teams[r["team"]]["rows"].append(r)
+    for name, use in (metrics.get("stop_use") or {}).items():
+        t = FUTU_ALERT_TEAMS.get(f"stop:{name}")
+        if t in teams and isinstance(use, (int, float)):
+            teams[t]["stops"].append({"name": name, "use": round(use, 3)})
+    account = []
+    for k, v in (doc.get("alerts") or {}).items():
+        if k.startswith("margin"):
+            continue                                              # 用保證金警報狀態（公開版唔顯示金額）
+        if k.startswith("hard_stop"):
+            account.append("⛔ 觸及合計權益硬止損")
+            continue
+        t = futu_alert_team(k)
+        (teams[t]["alerts"] if t in teams else account).append(_futu_text(v, 120))
+    try:
+        ms = gcs_read_json(FUTU_MARGIN_STATE_FILE, {})
+    except StorageError:
+        ms = {}
+    if isinstance(ms, dict) and ms.get("active"):
+        account.append("⛔ 戶口保證金危急（可能被追繳）" if ms.get("level") == "critical" else "⚠ 戶口保證金偏緊")
+    hk_now = now or datetime.now(HK_TZ)
+    wd = hk_now.weekday()                                             # 星期六 06:00 至星期一 06:00 休市，使用者部機唔推
+    weekend = (wd == 5 and hk_now.hour >= 6) or wd == 6 or (wd == 0 and hk_now.hour < 6)
+    return {"run_hkt": run_hkt, "age_min": None if age is None else round(age), "weekend": weekend,
+            "stale": (age is None or age > 60) and not weekend,
+            "teams": [t for t in teams.values() if t["rows"] or t["team"] in ("雲垂陣", "風揚陣・方向一")],
+            "account_alerts": account}
+
+
+# =============================================================================
+# [R152] 📊 基金報告：富途已實現盈虧（先入先出），由 FUND_REPORT_START 起按產品分月／季／年。
+# =============================================================================
+FUTU_PNL_FILE = "futu/pnl/latest.json"
+FUND_REPORT_START = os.environ.get("FUND_REPORT_START", "2026-09-01")
+FUTU_USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
+FUND_REPORT_SHOW_FLOWS = os.environ.get("FUND_REPORT_SHOW_FLOWS", "0") == "1"   # 資金流水含入／出金金額，預設唔公開
+FUTU_DEAL_TZ_HOURS = float(os.environ.get("FUTU_DEAL_TZ_HOURS", "8") or 8)     # 富途成交時間加幾多個鐘＝香港時間（實測 UTC）
+FUTU_PRODUCTS = (   # (代碼正則, 產品, 每點價值)
+    (r"^HK\.MHI\d{4}$", "MHI 小型恒指期貨", 10),
+    (r"^HK\.HSI\d{4}$", "HSI 恒指期貨", 50),
+    (r"^HK\.MHI\d{6}[CP]\d+$", "MHI 小型恒指期權", 10),
+    (r"^HK\.HSI\d{6}[CP]\d+$", "HSI 恒指期權", 50),
+    (r"^US\.EX\d{5}[CP]\d+x\d$", "MES 微型標普週期權", 5),
+    (r"^US\.EW\d{4}[CP]\d+x\d$", "ES 標普月底期權", 50),
+    (r"^US\.MES\d{4}$", "MES 微型標普期貨", 5),
+    (r"^US\.ES\d{4}$", "ES 標普期貨", 50),
+    (r"^US\.MNQ\d{4}$", "MNQ 微型納指期貨", 2),
+    (r"^US\.NQ\d{4}$", "NQ 納指期貨", 20),
+    (r"^US\.[A-Z]+\d{6}[CP]\d+$", "美股期權", 100),
+    (r"^US\.[A-Z.]+$", "美股", 1),
+    (r"^HK\.\d{5}$", "港股", 1),
+)
+
+
+def futu_product(code):
+    for rx, name, mult in FUTU_PRODUCTS:
+        if re.match(rx, code or ""):
+            return name, mult
+    return "其他", 1
+
+
+def futu_expiry(code):
+    """期權到期日（推算）；期貨／股票回傳 None。"""
+    m = re.match(r"^HK\.(?:MHI|HSI)(\d{2})(\d{2})(\d{2})[CP]", code or "")
+    if m:
+        return date(2000 + int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"^US\.EX(\d)(\d{2})(\d{2})[CP]", code or "")             # 第 n 個星期五
+    if m:
+        d = date(2000 + int(m.group(2)), int(m.group(3)), 1)
+        d += timedelta(days=(4 - d.weekday()) % 7)
+        return d + timedelta(weeks=int(m.group(1)) - 1)
+    m = re.match(r"^US\.EW(\d{2})(\d{2})[CP]", code or "")                 # 月底最後營業日
+    if m:
+        y, mo = 2000 + int(m.group(1)), int(m.group(2))
+        d = date(y + mo // 12, mo % 12 + 1, 1) - timedelta(days=1)
+        while d.weekday() >= 5:
+            d -= timedelta(days=1)
+        return d
+    return None
+
+
+def handle_futu_pnl(payload):
+    """權杖已在 _dispatch_post 驗過。存最新一份原始成交（私人 bucket），報告即時計。"""
+    deals = [d for d in (payload.get("deals") or [])[:20000] if isinstance(d, dict) and d.get("code")]
+    if not deals:
+        return jsonify({"status": "error", "message": "futu_pnl: no deals"}), 422
+    doc = {k: payload.get(k) for k in ("since", "fetched_hkt", "script_version", "fees", "cash_flows", "positions", "notes")}
+    doc.update(deals=deals, received_utc=fmt_utc())
+    try:
+        gcs_write_text(FUTU_PNL_FILE, json.dumps(doc, ensure_ascii=False, default=str))
+    except StorageError as exc:
+        log_event(f"⚠️ [基金報告數據寫入失敗] {exc}", severity="ERROR", component="futu_pnl")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    log_event(f"📊 [基金報告數據] 成交 {len(deals)} 筆（{_futu_text(payload.get('since'), 10)} 起）", component="futu_pnl")
+    return jsonify({"status": "stored", "deals": len(deals)}), 200
+
+
+def futu_pnl_report(doc, start=None, today=None):
+    """先入先出計每個合約嘅已實現盈虧；回傳按產品 × 月／季／年嘅毛利、手續費、淨額（港幣）。"""
+    start = date.fromisoformat(start or FUND_REPORT_START)
+    today = today or datetime.now(HK_TZ).date()
+    fx = lambda ccy: FUTU_USD_HKD if ccy == "USD" else 1.0
+    events, warnings = [], []
+    open_now = {p.get("code"): to_float(p.get("qty")) for p in doc.get("positions") or [] if isinstance(p, dict)}
+    deals = []
+    for d in doc.get("deals") or []:
+        try:
+            t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S") + timedelta(hours=FUTU_DEAL_TZ_HOURS)
+        except (KeyError, ValueError):
+            continue
+        q, px = to_float(d.get("qty")), to_float(d.get("price"))
+        if not q or px is None:
+            continue
+        sign = 1 if str(d.get("side", "")).upper() in ("BUY", "BUY_BACK") else -1
+        deals.append((t, d["code"], sign * q, px, str(d.get("order_id"))))
+    deals.sort()
+    fees = doc.get("fees") or {}
+    fee_seen = set()
+    lots = {}
+    last_deal = {}
+    for t, code, q, px, oid in deals:
+        last_deal[code] = t.date()
+        prod, mult = futu_product(code)
+        ccy = "USD" if code.startswith("US.") else "HKD"
+        if oid not in fee_seen and to_float(fees.get(oid)):
+            fee_seen.add(oid)
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy)})
+        book = lots.setdefault(code, [])
+        while q and book and (book[0][0] > 0) != (q > 0):
+            lq, lp = book[0]
+            take = min(abs(q), abs(lq))
+            pnl = (px - lp) * take * mult * (1 if lq > 0 else -1)
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0})
+            lq = lq - take if lq > 0 else lq + take
+            q = q + take if q < 0 else q - take
+            if lq:
+                book[0] = (lq, lp)
+            else:
+                book.pop(0)
+        if q:
+            book.append((q, px))
+    for code, book in lots.items():
+        net = sum(lq for lq, _ in book)
+        if not net:
+            continue
+        held = open_now.get(code)
+        exp = futu_expiry(code)
+        if held is not None and abs(held - net) < 1e-9:
+            continue                                                  # 仲持有，未實現
+        if exp and exp < today and held is None:
+            prod, mult = futu_product(code)
+            ccy = "USD" if code.startswith("US.") else "HKD"
+            pnl = sum(-lp * lq * mult for lq, lp in book)             # 當到期歸零（價外）
+            events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True})
+            warnings.append(f"{code}：冇平倉成交，當 {exp} 到期歸零計（{pnl * fx(ccy):+,.0f} 港幣）；如到期價內請核對結算價")
+        else:
+            if last_deal.get(code) and last_deal[code] < start:
+                warnings.append(f"{code}：數據起始日之前已有倉，盈虧未必準；成交全部喺 {start} 之前，唔影響報告期")
+            else:
+                warnings.append(f"{code}：成交推算淨倉 {net:+g}，富途現有持倉 {held if held is not None else 0:+g}，"
+                                "唔夾（可能起始日之前已有倉）；呢個合約嘅盈虧未必準")
+    rows = [e for e in events if e["date"] >= start]
+    period = {"month": lambda d: d.strftime("%Y-%m"), "quarter": lambda d: f"{d.year}Q{(d.month - 1) // 3 + 1}",
+              "year": lambda d: str(d.year)}
+    out = {}
+    for name, key in period.items():
+        tab = {}
+        for e in rows:
+            k = key(e["date"])
+            for prod in (e["product"], "合計"):
+                c = tab.setdefault(k, {}).setdefault(prod, {"gross": 0.0, "fee": 0.0, "net": 0.0, "n": 0})
+                c["gross"] += e["gross"]
+                c["fee"] += e["fee"]
+                c["net"] += e["gross"] - e["fee"]
+                c["n"] += 1 if e["gross"] else 0
+        out[name] = {k: {p: {m: round(v, 2) if m != "n" else v for m, v in c.items()} for p, c in sorted(v.items())}
+                     for k, v in sorted(tab.items())}
+    flows = {}
+    for f in doc.get("cash_flows") or []:
+        if not isinstance(f, dict) or not str(f.get("date", ""))[:7] or str(f.get("date")) < str(start):
+            continue
+        amt = to_float(f.get("amount")) or 0.0
+        amt = -abs(amt) if "OUT" in str(f.get("dir", "")).upper() else amt
+        k = (str(f["date"])[:7], f"{f.get('type')}（{f.get('ccy')}）")
+        flows[k] = flows.get(k, 0.0) + amt
+    products = sorted({e["product"] for e in rows})
+    return {"status": "ok", "start": str(start), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
+            "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out,
+            "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())]
+            if FUND_REPORT_SHOW_FLOWS else [],
+            "warnings": warnings + [str(n) for n in doc.get("notes") or []]}
+
+
+def build_fund_report_page(r):
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>{page_nav('fund_report')}</div>"
+            f"<p class='muted'>富途戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
+            f"數據 {esc(r.get('fetched_hkt') or '—')} HKT（成交 {r['deals']} 筆，由 {esc(r.get('since') or '—')} 起攞，用嚟搵開倉成本）。</p>")
+    n = lambda v: f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+,.0f}</span>"
+    body = ""
+    yr = r["periods"].get("year") or {}
+    tot = sum(v.get("合計", {}).get("net", 0) for v in yr.values())
+    body += (f"<div class='grid'><div class='card'><div class='card-title'>已實現淨盈虧（港幣，{esc(r['start'])} 起）</div>"
+             f"<div class='card-value'>{n(tot)}</div></div>"
+             f"<div class='card'><div class='card-title'>手續費</div><div class='card-value'>"
+             f"{sum(v.get('合計', {}).get('fee', 0) for v in yr.values()):,.0f}</div></div></div>")
+    for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
+        tab = r["periods"].get(name) or {}
+        if not tab:
+            continue
+        keys = list(tab)
+        cols = r["products"] + ["合計"]
+        trs = "".join(f"<tr><td>{esc(p)}</td>" + "".join(
+            f"<td>{n(tab[k][p]['net'])}</td>" if p in tab[k] else "<td class='muted'>—</td>" for k in keys) + "</tr>" for p in cols)
+        fee = "<tr><td class='muted'>其中手續費</td>" + "".join(
+            f"<td class='muted'>{tab[k].get('合計', {}).get('fee', 0):,.0f}</td>" for k in keys) + "</tr>"
+        body += (f"<div class='section'><b>{zh}已實現淨盈虧（港幣，已扣手續費）</b><div class='scroll'><table>"
+                 f"<tr><th>產品</th>{''.join(f'<th>{esc(k)}</th>' for k in keys)}</tr>{trs}{fee}</table></div></div>")
+    if r["cash_flows"]:
+        trs = "".join(f"<tr><td>{esc(c['month'])}</td><td>{esc(c['type'])}</td><td>{c['amount']:+,.2f}</td></tr>" for c in r["cash_flows"])
+        body += ("<div class='section'><b>富途資金流水（對數用，原幣）</b><div class='scroll'><table>"
+                 f"<tr><th>月份</th><th>類別</th><th>金額</th></tr>{trs}</table></div></div>")
+    notes = "".join(f"<li>{esc(w)}</li>" for w in r["warnings"])
+    body += ("<div class='section'><b>注意事項</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
+             "<li>只計已平倉（已實現）盈虧；未平倉持倉嘅浮動盈虧見策略總表「💼 富途實倉」。</li>"
+             "<li>手續費按富途每張單嘅收費，計喺第一筆成交嗰日。</li>"
+             f"<li>富途成交時間加 {FUTU_DEAL_TZ_HOURS:g} 個鐘當香港時間（實測）；月份按香港時間分。</li>"
+             f"{notes}</ul></div>")
+    return html_page("基金報告", head + body + f"<p class='muted' style='font-size:12px'>JSON：<a href='?view=fund_report&amp;format=json'>"
+                     "?view=fund_report&amp;format=json</a></p>")
+
+
+def handle_fund_report_get(req):
+    try:
+        doc = gcs_read_json(FUTU_PNL_FILE, {})
+    except StorageError as exc:
+        log_event(f"⚠️ [基金報告讀取失敗] {exc}", severity="ERROR", component="futu_pnl")
+        doc = None
+    if not doc or not doc.get("deals"):
+        r = {"status": "empty", "message": "未有富途成交數據（使用者部機跑 gcp_ib/futu_pnl_export.py 推上嚟）"}
+        if req.args.get("format") == "json":
+            return _json_response(r)
+        return html_page("基金報告", f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>"
+                                    f"{page_nav('fund_report')}</div><p class='muted'>{esc(r['message'])}</p>")
+    r = futu_pnl_report(doc, req.args.get("start"))
+    if req.args.get("format") == "json":
+        return _json_response(r)
+    return build_fund_report_page(r)
+
+
+def futu_unmatched_text(run_hkt, rows):
+    lines = [f"【總指揮｜發現未配對持倉】{run_hkt} HKT"]
+    lines += [f"❓ {r['code']} {r['name']} 數量 {r['qty']:+g}" for r in rows]
+    lines.append("請喺 POSITIONS.md 登記係邊個陣開，總指揮會加配對規則。只係通知，唔會落單。")
+    return "\n".join(lines)
+
+
 def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
     """[R149] 警報有變（新出現、⚠→⛔ 升級、解除）先回傳通知文字；冇變回傳 ""。比較用「鍵＋級別」，百分比變唔算。"""
     level = lambda v: "⛔" if str(v).startswith(("⛔", "❌")) else "⚠"
@@ -2391,7 +2737,8 @@ def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
     if not new and not cleared:
         return ""
     delta = next(iter((metrics.get("delta") or {}).values()), [None])[0]
-    lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除：{k}" for k in cleared]
+    new = [f"〔{futu_alert_team(k)}〕{v}" for k, v in alerts.items() if v in new]
+    lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除〔{futu_alert_team(k)}〕：{k}" for k in cleared]
     lines.append(f"合計權益 {fmt_num(metrics.get('equity'), '{:,.0f}')}｜富途保證金緩衝 {fmt_num(metrics.get('cushion'), '{:,.0f}')}"
                  + (f"｜雲垂 Δ {delta:+.2f}" if isinstance(delta, (int, float)) else ""))
     lines.append("只係監控，唔係落單指令；落單以富途即時價為準。")
@@ -5086,6 +5433,20 @@ def tg_send(text):
         return False
 
 
+def tg_send_hk(text):
+    """[R151] 富途持倉風險／總指揮通知用 @HC_HK_Signal_bot（TG_HK_BOT_TOKEN／TG_HK_CHAT_ID）；
+    未設就退返 tg_send（TG_BOT_TOKEN，地載陣嘅 @HC_Gold_Signal_bot），唔會冇通知。不記錄權杖。"""
+    token, chat = os.environ.get("TG_HK_BOT_TOKEN", "").strip(), os.environ.get("TG_HK_CHAT_ID", "").strip()
+    if not token or not chat:
+        return tg_send(text)
+    try:
+        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat, "text": text}, timeout=10)
+        return r.status_code == 200
+    except Exception as exc:                               # 不印網址（含權杖）
+        print(f"⚠️ [Telegram（HK bot）發送失敗] {type(exc).__name__}", flush=True)
+        return False
+
+
 def tg_direct():
     return bool(os.environ.get("TG_BOT_TOKEN", "").strip() and os.environ.get("TG_CHAT_ID", "").strip())
 
@@ -6057,6 +6418,7 @@ def strategies_data(now=None):
         rows.append({"key": f"he_{hk}", "name": hv["name"], "group": "紙上", "market": "恒指（組合淨倉）", "real": False, "aggregate": True,
                      "style": "整體組合（各成份淨額）", "hold": "—", "notify": "網頁", "link": "?view=dizai",
                      "pos": _sp(1 if net > 0 else -1 if net < 0 else 0, abs(net), "＋".join(f"{p['zh']}×{p['w']}" for p in hv["parts"].values()))})
+    futu_real = safe(futu_real_view)                                 # [R151] 富途實倉按陣
     conflicts = []
     under = lambda r: "恒指" if r["market"].startswith("恒指") else r["market"]
     for mk in sorted({under(r) for r in rows}):
@@ -6065,7 +6427,7 @@ def strategies_data(now=None):
         if longs and shorts:
             conflicts.append({"market": mk, "long": longs, "short": shorts,
                               "real": any(r["real"] for r in rows if under(r) == mk and r["pos"]["side"] in (1, -1))})
-    return {"status": "ok", "updated_utc": fmt_utc(), "rows": rows, "conflicts": conflicts,
+    return {"status": "ok", "updated_utc": fmt_utc(), "rows": rows, "conflicts": conflicts, "futu_real": futu_real,
             "summary": {"long": sum(1 for r in rows if r["pos"]["side"] == 1), "short": sum(1 for r in rows if r["pos"]["side"] == -1),
                         "flat": sum(1 for r in rows if r["pos"]["side"] == 0), "unknown": sum(1 for r in rows if r["pos"]["side"] is None)}}
 
@@ -6104,12 +6466,60 @@ def build_strategies_page(data):
     table = (f"<div class='section'><div class='scroll'><table><tr><th>策略</th><th>類別</th><th>商品</th><th>現時持倉</th>"
              f"<th>方向風格</th><th>持倉時間</th><th>通知</th></tr>{trs}</table></div>"
              f"<p class='muted' style='font-size:12px'>更新 {esc(data['updated_utc'])} UTC・JSON：<a href='?view=strategies&amp;format=json'>?view=strategies&amp;format=json</a></p></div>")
+    real = build_futu_real_section(data.get("futu_real"))
     notes = ("<div class='section'><b>使用提醒</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
              "<li>真錢策略之間不會衝突：錦囊做黃金、蛇蟠陣做恒指；但兩者共用資金與保證金。</li>"
              "<li>蛇蟠陣（順勢）與地載陣（逆市）在大升大跌日方向經常相反；地載陣落實盤時，請用另一個戶口或子戶口。</li>"
              "<li>地載陣幾組條件相近、經常同日同向，只是互相對照；實盤只選一組（建議地載・衡）。</li>"
-             "<li>雲垂陣（賣期權）在其他分支，不在這個服務，未列入。</li></ul></div>")
-    return html_page("策略總表", head + cards + conflict + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
+             "<li>雲垂陣（賣期權）、風揚陣・方向一（週權勒式）嘅富途實倉見上面「💼 富途實倉（按陣）」。</li></ul></div>")
+    return html_page("策略總表", head + cards + conflict + real + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
+
+
+def futu_quote_time_hkt(code, qt, has_px):
+    """[R151] 富途快照時間 → 香港時間（港股／港期係香港時間；美國合約係美東時間，要轉）。冇報價就講原因。"""
+    if not qt:
+        return "冇行情權限（用富途估值）" if str(code).startswith("US.") and not has_px else "—"
+    try:
+        t = datetime.strptime(str(qt)[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return esc(str(qt)[:16])
+    if str(code).startswith("US."):
+        t = t.replace(tzinfo=ZoneInfo("America/New_York")).astimezone(HK_TZ)
+    return t.strftime("%m-%d %H:%M") + " HKT"
+
+
+def build_futu_real_section(fr):
+    """[R151] 💼 富途實倉（按陣）：每陣一格，配對唔到嘅入「未配對」。"""
+    if not fr:
+        return ("<div class='section'><b>💼 富途實倉（按陣）</b><p class='muted'>未有數據"
+                "（使用者部機 auto_risk 未推上嚟）。</p></div>")
+    f = lambda v, d=2: "—" if v is None else (f"{v:,.{d}f}".rstrip("0").rstrip(".") if d else f"{v:,.0f}")
+    age = fr.get("age_min")
+    fresh = (f"<span class='neg'>⚠ 數據已經 {age:,} 分鐘冇更新</span>" if fr.get("stale") and age is not None
+             else "週末休市，星期一 06:00 起恢復更新" if fr.get("weekend")
+             else f"{age} 分鐘前" if age is not None else "")
+    acc = "".join(f"<div>{esc(a)}</div>" for a in fr.get("account_alerts") or [])
+    out = (f"<div class='section'><b>💼 富途實倉（按陣）</b>"
+           f"<p class='muted' style='font-size:12px'>富途期貨戶口實際持倉，每 15 分鐘更新；更新 {esc(fr.get('run_hkt') or '—')} HKT（{fresh}）。"
+           "價格只作監控，冇行情權限嘅美國期權用富途持倉估值。由總指揮按規則配對去各陣。</p>"
+           + (f"<div style='border-left:5px solid #dc3545; padding-left:8px; margin:6px 0'>{acc}</div>" if acc else ""))
+    for t in fr.get("teams") or []:
+        stops = "、".join(f"{esc(s['name'])} 用咗 {s['use'] * 100:.0f}%" for s in t.get("stops") or [])
+        alerts = "".join(f"<div class='neg'>{esc(a)}</div>" for a in t.get("alerts") or [])
+        trs = "".join(
+            f"<tr><td>{esc(r['code'].replace('HK.', '').replace('US.', ''))}<div class='muted' style='font-size:11px'>{esc(r['name'])}</div></td>"
+            f"<td>{esc(r['use'])}</td><td class='{'neg' if r['qty'] < 0 else 'pos'}'>{'沽' if r['qty'] < 0 else '買'} {abs(r['qty']):g}</td>"
+            f"<td>{f(r['open_price'])}</td><td>{f(r['bid'])}／{f(r['ask'])}／{f(r['last'])}</td>"
+            f"<td class='{'pos' if (r['futu_pl'] or 0) >= 0 else 'neg'}'>{f(r['futu_pl'], 0)} {r['ccy']}</td>"
+            f"<td style='font-size:11px'>{futu_quote_time_hkt(r['code'], r['quote_time'], any(r.get(k) for k in ('bid', 'ask', 'last')))}</td></tr>"
+            for r in t["rows"])
+        out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
+                f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
+                + (f"；{stops}" if stops else "") + f"</span>{alerts}"
+                + (f"<div class='scroll'><table><tr><th>合約</th><th>用途</th><th>持倉</th><th>開倉價</th><th>買／賣／最後</th>"
+                   f"<th>持倉盈虧</th><th>報價時間（香港）</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
+                + "</div>")
+    return out + "</div>"
 
 
 def handle_strategies_get(req):
@@ -8006,7 +8416,8 @@ PAGE_LINKS = [
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
-    ("strategies", "🧭 策略總表"),                          # [R144] 全部策略與現時持倉方向
+    ("strategies", "🧭 策略總表"),
+    ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
 ]
 
@@ -9751,6 +10162,8 @@ def handle_get(req):
         return handle_bazhentu_api_get()
     if view == "bazhentu":                                       # [R131] 八陣圖指令台（蛇蟠陣人手掛單）
         return serve_bazhentu()
+    if view == "fund_report":                                    # [R152] 📊 基金報告
+        return handle_fund_report_get(req)
     if view == "strategies":                                     # [R144] 🧭 策略總表
         return handle_strategies_get(req)
     if view == "dizai":                                          # [R137] 地載陣：今日策略＋前向測試（&format=json）
@@ -9846,6 +10259,8 @@ def _dispatch_post(payload):
         return jsonify({"status": "success", "message": "TV levels received but intentionally ignored."}), 200
     if action == "futu_data":                        # [R94] 本地 Futu OpenD 推上來的行情
         return handle_futu_data(payload)
+    if action == "futu_pnl":                         # [R152] 本地 futu_pnl_export.py 推上來的成交／手續費／資金流水
+        return handle_futu_pnl(payload)
     if action == "futu_risk":                        # [R147] 本地 auto_risk.py 推上來的持倉風險（私人，只存）
         return handle_futu_risk(payload)
     if action == "inline_scan":                      # [R148] 本地 inline_push.py 推上來的界內證掃描（只存）
@@ -9881,7 +10296,7 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()

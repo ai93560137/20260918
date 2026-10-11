@@ -94,3 +94,17 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 富途保證金緩衝警報（雲垂陣轉達使用者指示）：< 6 萬通知、< 2 萬危急（可能追繳／強平）、同級每再跌 1 萬再發、回 8 萬以上解除；狀態 `futu/risk/margin_alert.json`。
 - 風險模型改用富途實際 MHI 淨手數（人手即日倉計入）。
 - 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00272-njs --yes`
+
+## Telegram bot（2026-10-11 使用者確認）
+- **@HC_Gold_Signal_bot**＝Cloud Run 環境變數 `TG_BOT_TOKEN`：地載陣落單通知（R142）；R149／R151 富途風險、保證金、未配對警報亦經呢個 bot 發（使用者話唔使另設）。
+- **@HC_HK_Signal_bot**＝GitHub Actions secrets `TG_BOT_TOKEN`：金絲雀、恒指／ES 波幅報告、高低位訊號、債市、佩洛西、股票數據等 workflow。
+- 將來想富途警報改用 HK bot：喺 Cloud Run 加 `TG_HK_BOT_TOKEN`／`TG_HK_CHAT_ID`（`tg_send_hk` 會自動用），唔使改程式。
+
+## 2026-10-11 部署 R151（修訂 00275-q4x，基於 R150；SpaceX 券商贈送規則 00276-sh2）
+- 策略總表「💼 富途實倉（按陣）」上線；配對規則 `FUTU_TEAM_RULES`（main.py）。
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00275-q4x --yes`（00276 之前）
+
+## 2026-10-11 部署 R152 📊 基金報告（修訂 00277-f48）
+- `?view=fund_report`：富途已實現盈虧（先入先出），2026-09-01 起按產品分月／季／年；資料由 `gcp_ib/futu_pnl_export.py` 推（action=futu_pnl → `futu/pnl/latest.json`）。
+- 資金流水只可逐日查（clearing_date）；預設唔喺公開頁顯示（`FUND_REPORT_SHOW_FLOWS=1` 先開）。
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00276-sh2 --yes`（00277 之前）；產品表修正＋週末休市顯示：00278-bbb（退回 00277-f48）
