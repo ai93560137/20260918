@@ -7,7 +7,8 @@
   canary/data_external/hsi_daily.csv             恒指收市（牛熊證內在值用）
 
     python3 research/warrants_cbbc/backtest_hist.py --demo
-    python3 research/warrants_cbbc/backtest_hist.py [--dir tradingview/out/warrant_hist] [--out research/warrants_cbbc/backtest_hist.csv]
+    python3 research/warrants_cbbc/backtest_hist.py --source hkex      # 港交所按月檔 data/hkex_sp/{cbbc,dwrc}_<yyyymm>_HSI.csv.gz（含已到期，12 個月）
+    python3 research/warrants_cbbc/backtest_hist.py --source futu [--dir tradingview/out/warrant_hist]
 
 窩輪：公平價 ＝ 同到期月、同行使價的期權結算價（沒有同行使價 → 相鄰兩個行使價結算價線性插值）÷ 換股比率。
       溢價% ＝ 窩輪收市 ÷ 公平價 − 1。只看到期日落在期權到期月的窩輪（恒指窩輪到期日＝期貨結算日，兩邊同日 EAS 結算）。
@@ -44,6 +45,31 @@ def load_option_settle() -> dict[tuple[str, str], dict[tuple[int, str], float]]:
                 except ValueError:
                     continue
     return out
+
+
+ATM_IV = ROOT / "data" / "hkex_options" / "atm_iv.csv"
+
+
+def load_front_forward() -> dict[str, float]:
+    """每天最近到期（≥ 當日）的恒指期權遠期價（買賣權平價）≈ 即月期指。牛熊證內在值用它，不用現貨（現貨與期指有基差）。"""
+    best: dict[str, tuple[str, float]] = {}
+    if not ATM_IV.exists():
+        return {}
+    with open(ATM_IV, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["product"] != "hsio" or len(r["expiry"]) != 7:
+                continue
+            try:
+                fwd = float(r["forward"])
+            except ValueError:
+                continue
+            exp = r["expiry"]
+            if exp < r["date"][:7]:
+                continue
+            cur = best.get(r["date"])
+            if cur is None or exp < cur[0]:
+                best[r["date"]] = (exp, fwd)
+    return {d: v[1] for d, v in best.items()}
 
 
 def load_hsi() -> dict[str, float]:
@@ -85,6 +111,98 @@ def load_kline(d: Path, code: str) -> list[dict]:
         return []
     with open(p, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+
+HKEX_SP = ROOT / "data" / "hkex_sp"
+
+
+def _f(x):
+    try:
+        return float(str(x).replace(",", ""))
+    except (ValueError, TypeError):
+        return None
+
+
+def iter_hkex_rows():
+    """港交所按月檔 → 統一欄位：date, code, type, issuer, strike, ratio, expiry, close, high, low, os_pct, iv_issuer, delta_issuer, call_level, turnover。"""
+    for path in sorted(HKEX_SP.glob("dwrc_*_HSI.csv.gz")) + sorted(HKEX_SP.glob("cbbc_*_HSI.csv.gz")):
+        with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
+            rd = csv.reader(f)
+            hdr = next(rd, None)
+            if not hdr:
+                continue
+            hl = [h.lower() for h in hdr]
+            def col(*names):
+                for n in names:                                   # 先找完全相同，再找開頭相同（避免 "strike" 命中 "strike currency"）
+                    for i, h in enumerate(hl):
+                        if h == n:
+                            return i
+                for n in names:
+                    for i, h in enumerate(hl):
+                        if h.startswith(n) and "currency" not in h:
+                            return i
+                return None
+            i_code, i_date, i_close = col("warrant code", "cbbc code"), col("trade date"), col("closing price")
+            i_high, i_low, i_os, i_iss, i_cp = col("day high"), col("day low"), col("% of issue"), col("issuer"), col("call/put", "bull/bear")
+            i_mat, i_strike, i_ratio, i_iv, i_delta, i_call, i_to = col("maturity"), col("strike level", "strike"), col("ent. ratio"), col("implied"), col("delta"), col("call level"), col("turnover")
+            need = (i_code, i_date, i_close, i_mat, i_strike, i_ratio)
+            if any(i is None for i in need):
+                continue                                    # 本月空檔或格式不同
+            for r in rd:
+                if len(r) <= max(need):
+                    continue
+                typ = r[i_cp].strip().upper() if i_cp is not None else ""
+                mat = r[i_mat].strip().replace("/", "-")
+                if len(mat) < 10:
+                    continue
+                yield {"date": r[i_date].strip().replace("/", "-"), "code": r[i_code].strip(), "type": typ, "issuer": r[i_iss].strip() if i_iss is not None else "",
+                       "strike": _f(r[i_strike]), "ratio": _f(r[i_ratio]), "expiry": mat[:10], "close": _f(r[i_close]),
+                       "high": _f(r[i_high]) if i_high is not None else None, "low": _f(r[i_low]) if i_low is not None else None,
+                       "os_pct": _f(r[i_os]) if i_os is not None else None, "iv_issuer": _f(r[i_iv]) if i_iv is not None else None,
+                       "delta_issuer": _f(r[i_delta]) if i_delta is not None else None, "call_level": _f(r[i_call]) if i_call is not None else None,
+                       "turnover": _f(r[i_to]) if i_to is not None else None}
+
+
+def run_hkex() -> list[dict]:
+    settle = load_option_settle()
+    hsi = load_hsi()
+    fwd_map = load_front_forward()
+    rows = []
+    for u in iter_hkex_rows():
+        K, R, close, typ = u["strike"], u["ratio"], u["close"], u["type"]
+        if not K or not R or close is None or close <= 0:
+            continue
+        try:
+            days = (dt.date.fromisoformat(u["expiry"]) - dt.date.fromisoformat(u["date"])).days
+        except ValueError:
+            continue
+        if days <= 0:
+            continue
+        base = {k: u[k] for k in ("date", "code", "type", "issuer", "strike", "ratio", "expiry", "close", "high", "low", "os_pct", "turnover")}
+        base["days"] = days
+        if typ in ("CALL", "PUT"):
+            chain = settle.get((u["date"], u["expiry"][:7]))
+            if not chain:
+                rows.append({**base, "note": "當日無期權結算價"})
+                continue
+            fair_pts, src = option_fair(chain, K, "C" if typ == "CALL" else "P")
+            if fair_pts is None or fair_pts <= 0:
+                rows.append({**base, "note": src})
+                continue
+            rows.append({**base, "fair_pts": fair_pts, "fair_price": fair_pts / R, "premium_pct": (close * R / fair_pts - 1) * 100,
+                         "iv_issuer": u["iv_issuer"], "delta_issuer": u["delta_issuer"], "fair_src": src, "note": ""})
+        elif typ in ("BULL", "BEAR"):
+            S = hsi.get(u["date"])
+            F = fwd_map.get(u["date"]) or S
+            if not S:
+                rows.append({**base, "note": "當日無恒指收市"})
+                continue
+            intrinsic = (F - K) if typ == "BULL" else (K - F)
+            call_lv = u["call_level"] or 0
+            rows.append({**base, "hsi": S, "fwd": F, "call_level": call_lv, "intrinsic_pts": intrinsic, "discount_pts": intrinsic - close * R,
+                         "discount_pct": (intrinsic - close * R) / intrinsic * 100 if intrinsic > 0 else None,
+                         "dist_call_pct": abs(S - call_lv) / S * 100 if call_lv else None, "note": ""})
+    return rows
 
 
 def run(d: Path) -> list[dict]:
@@ -155,14 +273,25 @@ def summarize(rows: list[dict]) -> str:
             sub = [r["premium_pct"] for r in w if r["issuer"] == iss]
             if len(sub) >= 30:
                 out.append(f"   發行商 {iss}: {len(sub)} 個，溢價中位 {q(sub, .5):+.1f}%")
+    if w:
+        for label, lo_, hi_ in (("|Δ| <0.2", 0, 0.2), ("0.2–0.5", 0.2, 0.5), ("0.5–0.8", 0.5, 0.8), ("≥0.8", 0.8, 1.01)):
+            sub = [r["premium_pct"] for r in w if r.get("delta_issuer") is not None and lo_ <= abs(r["delta_issuer"]) < hi_]
+            if sub:
+                out.append(f"   {label}: {len(sub)} 個，溢價中位 {q(sub, .5):+.1f}%，負溢價 {sum(1 for p in sub if p < 0) / len(sub):.1%}")
+        traded = [r["premium_pct"] for r in w if (r.get("turnover") or 0) > 0]
+        if traded:
+            out.append(f"   當日有成交的 {len(traded)} 個：溢價中位 {q(traded, .5):+.1f}%，負溢價 {sum(1 for p in traded if p < 0) / len(traded):.1%}")
     if c:
-        far = [r for r in c if r.get("dist_call_pct") is not None and r["dist_call_pct"] >= 3 and r["intrinsic_pts"] > 0]
-        near = [r for r in c if r.get("dist_call_pct") is not None and r["dist_call_pct"] < 3 and r["intrinsic_pts"] > 0]
         out.append(f"[牛熊證] {len(c)} 個日×證（{len({r['code'] for r in c})} 隻）")
-        for label, sub in (("距收回價 ≥3%", far), ("距收回價 <3%", near)):
+        for label, lo_, hi_ in (("距收回價 <1%", 0, 1), ("1–3%", 1, 3), ("3–8%", 3, 8), ("≥8%", 8, 1e9)):
+            sub = [r for r in c if r.get("dist_call_pct") is not None and lo_ <= r["dist_call_pct"] < hi_ and r["intrinsic_pts"] > 0]
             if sub:
                 dsc = [r["discount_pts"] for r in sub]
-                out.append(f"   {label}: {len(sub)} 個，折讓中位 {q(dsc, .5):+.0f} 點，90% {q(dsc, .9):+.0f} 點，折讓 >10 點佔 {sum(1 for x in dsc if x > 10) / len(dsc):.1%}，>30 點佔 {sum(1 for x in dsc if x > 30) / len(dsc):.1%}")
+                out.append(f"   {label}: {len(sub)} 個，折讓中位 {q(dsc, .5):+.0f} 點，90% {q(dsc, .9):+.0f}，>10 點佔 {sum(1 for x in dsc if x > 10) / len(dsc):.1%}，>30 點佔 {sum(1 for x in dsc if x > 30) / len(dsc):.1%}，>100 點佔 {sum(1 for x in dsc if x > 100) / len(dsc):.1%}")
+        traded = [r for r in c if (r.get("turnover") or 0) > 0 and r["intrinsic_pts"] > 0]
+        if traded:
+            dsc = [r["discount_pts"] for r in traded]
+            out.append(f"   當日有成交的 {len(traded)} 個：折讓中位 {q(dsc, .5):+.0f} 點，>30 點佔 {sum(1 for x in dsc if x > 30) / len(dsc):.1%}")
     skipped = defaultdict(int)
     for r in rows:
         if r.get("note"):
@@ -186,16 +315,20 @@ def demo() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--demo", action="store_true")
+    ap.add_argument("--source", choices=("hkex", "futu"), default="hkex")
     ap.add_argument("--dir", default=str(ROOT / "tradingview" / "out" / "warrant_hist"))
     ap.add_argument("--out", default=str(ROOT / "research" / "warrants_cbbc" / "backtest_hist.csv"))
     a = ap.parse_args()
     if a.demo:
         demo()
         return
-    d = Path(a.dir)
-    if not (d / "universe.csv").exists():
-        raise SystemExit(f"找不到 {d / 'universe.csv'}：先在 OpenD 電腦跑 python futu\\warrant_hist_pull.py --limit N")
-    rows = run(d)
+    if a.source == "hkex":
+        rows = run_hkex()
+    else:
+        d = Path(a.dir)
+        if not (d / "universe.csv").exists():
+            raise SystemExit(f"找不到 {d / 'universe.csv'}：先在 OpenD 電腦跑 python futu\\warrant_hist_pull.py --limit N")
+        rows = run(d)
     print(summarize(rows))
     keys = sorted({k for r in rows for k in r})
     with open(a.out, "w", newline="", encoding="utf-8") as f:
