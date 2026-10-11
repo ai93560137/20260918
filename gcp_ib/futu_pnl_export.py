@@ -12,6 +12,8 @@
 import argparse
 import json
 import os
+import re
+import time
 import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
@@ -26,6 +28,12 @@ OUT = ROOT / "tradingview" / "out" / "futu_pnl_export.json"
 HKT = timezone(timedelta(hours=8))
 CHUNK_DAYS = 30
 SCRIPT_VERSION = "R152"
+FLOW_FROM = date(2026, 9, 1)          # 資金流水只對報告期（富途要逐日查，太早嘅唔使）
+
+
+def mask(text):
+    """唔印帳號：6 位以上嘅數字只留尾 4 位。"""
+    return re.sub(r"\d{6,}", lambda m: "…" + m.group(0)[-4:], str(text))
 
 
 def chunks(start, end):
@@ -51,24 +59,32 @@ def fetch(since):
                     ret, df = ctx.history_deal_list_query(start=f"{s} 00:00:00", end=f"{e} 23:59:59",
                                                           trd_env=TrdEnv.REAL, acc_id=acc)
                     if ret != RET_OK:
-                        notes.append(f"{label} 成交 {s}–{e} 失敗：{str(df)[:120]}")
+                        notes.append(f"{label} 成交 {s}–{e} 失敗：{mask(df)[:120]}")
                         continue
                     for _, r in df.iterrows():
                         deals.append({"account": label, "deal_id": str(r.get("deal_id")), "order_id": str(r.get("order_id")),
                                       "code": r.get("code"), "name": r.get("stock_name", ""), "side": str(r.get("trd_side")),
                                       "qty": num(r.get("qty")), "price": num(r.get("price")),
                                       "time": str(r.get("create_time")), "status": str(r.get("status", ""))})
-                    try:
-                        ret, cf = ctx.get_acc_cash_flow(trd_env=TrdEnv.REAL, acc_id=acc, start=str(s), end=str(e))
-                    except TypeError:                     # 舊版 futu-api 冇 start／end
-                        ret, cf = -1, "futu-api 太舊（冇 get_acc_cash_flow start/end）"
-                    if ret == RET_OK:
-                        for _, r in cf.iterrows():
-                            flows.append({"account": label, "date": str(r.get("clearing_date")), "ccy": str(r.get("currency")),
-                                          "type": str(r.get("cashflow_type")), "dir": str(r.get("cashflow_direction")),
-                                          "amount": num(r.get("cashflow_amount")), "remark": str(r.get("cashflow_remark"))[:80]})
-                    else:
-                        notes.append(f"{label} 資金流水 {s}–{e}：{str(cf)[:120]}")
+                d = max(since, FLOW_FROM)
+                while d <= today:                         # 富途只准逐日（clearing_date）查資金流水
+                    if d.weekday() < 5:
+                        try:
+                            ret, cf = ctx.get_acc_cash_flow(clearing_date=str(d), trd_env=TrdEnv.REAL, acc_id=acc)
+                        except Exception as e:
+                            ret, cf = -1, e.__class__.__name__
+                        if ret == RET_OK:
+                            for _, r in cf.iterrows():
+                                flows.append({"account": label, "date": str(r.get("clearing_date")), "ccy": str(r.get("currency")),
+                                              "type": str(r.get("cashflow_type")), "dir": str(r.get("cashflow_direction")),
+                                              "amount": num(r.get("cashflow_amount")), "remark": mask(r.get("cashflow_remark"))[:80]})
+                        elif "frequent" in str(cf).lower() or "頻繁" in str(cf):
+                            time.sleep(30)                # 撞頻率限制：等一陣再試同一日
+                            continue
+                        else:
+                            notes.append(f"{label} 資金流水 {d}：{mask(cf)[:120]}")
+                        time.sleep(float(os.environ.get("FUTU_FLOW_SLEEP", "1.0")))
+                    d += timedelta(days=1)
                 ids = sorted({d["order_id"] for d in deals if d["account"] == label and d["order_id"] not in fees})
                 for i in range(0, len(ids), 400):
                     try:
@@ -79,7 +95,7 @@ def fetch(since):
                         for _, r in fd.iterrows():
                             fees[str(r.get("order_id"))] = num(r.get("fee_amount"))
                     else:
-                        notes.append(f"{label} 手續費查詢失敗：{str(fd)[:120]}")
+                        notes.append(f"{label} 手續費查詢失敗：{mask(fd)[:120]}")
                 ret, pf = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=acc, refresh_cache=True)
                 if ret == RET_OK:
                     for _, r in pf.iterrows():
