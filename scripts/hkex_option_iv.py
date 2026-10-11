@@ -9,7 +9,7 @@ Futu 期權歷史 K 線只有十幾根、不含 IV；港交所每日報告（www
   python3 scripts/hkex_option_iv.py probe 2026-10-02            # 試幾個產品代號的網址，存樣本到 data/hkex_options/sample/
   python3 scripts/hkex_option_iv.py fetch 2023-10-01 2026-10-03 # 逐日下載（只存解析後的 CSV，原始檔不進 git）
 """
-import argparse, gzip, os, re, sys, time, urllib.request
+import argparse, gzip, os, re, sys, time, urllib.parse, urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -40,10 +40,10 @@ def to_text(raw):
     return txt.replace("&nbsp;", " ").replace("&amp;", "&")
 
 
-def probe(day):
+def probe(day, products=None):
     d = date.fromisoformat(day)
     (OUT / "sample").mkdir(parents=True, exist_ok=True)
-    for p in PRODUCTS:
+    for p in (products or PRODUCTS):
         url = f"{BASE}{p}{yymmdd(d)}.htm"
         st, raw = get(url)
         print(f"{p}: HTTP {st} {len(raw)} bytes  {url}")
@@ -56,17 +56,54 @@ def probe(day):
         time.sleep(0.5)
 
 
+def fetch_yahoo(ticker, start, end):
+    """Yahoo Finance 日線（給指數／ETF 現貨：^HSTECH、3033.HK、7200.HK …），存 data/hkex_options/yahoo/<代號>.csv。
+    雲端工作階段連不到 Yahoo，所以也放在這個 workflow 跑。期貨對現貨的基差研究（research/index_arbitrage）用。"""
+    import json, calendar
+    from datetime import datetime, timezone
+    t0 = calendar.timegm(datetime.fromisoformat(start).replace(tzinfo=timezone.utc).timetuple())
+    t1 = calendar.timegm(datetime.fromisoformat(end).replace(tzinfo=timezone.utc).timetuple()) + 86400
+    url = (f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ticker)}"
+           f"?period1={t0}&period2={t1}&interval=1d&events=div,splits")
+    st, raw = get(url)
+    if st != 200:
+        print(f"yahoo {ticker}: HTTP {st} {raw[:200]!r}"); return
+    res = json.loads(raw)["chart"]["result"][0]
+    q = res["indicators"]["quote"][0]; adj = res["indicators"].get("adjclose", [{}])[0].get("adjclose", [])
+    divs = {int(k): v.get("amount") for k, v in (res.get("events", {}).get("dividends") or {}).items()}
+    (OUT / "yahoo").mkdir(parents=True, exist_ok=True)
+    path = OUT / "yahoo" / f"{ticker.replace('^', '_')}.csv"
+    n = 0
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("date,open,high,low,close,adjclose,volume,dividend\n")
+        for i, ts in enumerate(res["timestamp"]):
+            if q["close"][i] is None:
+                continue
+            day = datetime.fromtimestamp(ts + 8 * 3600, tz=timezone.utc).strftime("%Y-%m-%d")   # 時間戳是 HKT 開市，+8h 取日期
+            div = next((v for k, v in divs.items() if abs(k - ts) < 86400), "")
+            fh.write(f"{day},{q['open'][i]},{q['high'][i]},{q['low'][i]},{q['close'][i]},{adj[i] if i < len(adj) else ''},{q['volume'][i]},{div}\n")
+            n += 1
+    print(f"yahoo {ticker}: {n} 列 → {path}")
+    time.sleep(1.0)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("probe"); s.add_argument("day")
-    f = sub.add_parser("fetch"); f.add_argument("start"); f.add_argument("end"); f.add_argument("--products", default="hsio")
+    s = sub.add_parser("probe"); s.add_argument("day"); s.add_argument("--products", default="")
+    f = sub.add_parser("fetch"); f.add_argument("start"); f.add_argument("end")
+    f.add_argument("--products", default="hsio", help="港交所報告代號，逗號分隔；yahoo:<代號> 代表改抓 Yahoo 日線（例 yahoo:^HSTECH,yahoo:3033.HK）")
     a = ap.parse_args()
     if a.cmd == "probe":
-        probe(a.day)
+        probe(a.day, [p for p in a.products.split(",") if p] or None)
     else:
-        import hkex_option_parse as hp                                  # 解析器在看過樣本後才寫（第二階段）
-        hp.fetch(a.start, a.end, a.products.split(","), OUT, get, to_text)
+        items = [p for p in a.products.split(",") if p]
+        for t in [p[6:] for p in items if p.startswith("yahoo:")]:
+            fetch_yahoo(t, a.start, a.end)
+        hkex = [p for p in items if not p.startswith("yahoo:")]
+        if hkex:
+            import hkex_option_parse as hp                              # 解析器在看過樣本後才寫（第二階段）
+            hp.fetch(a.start, a.end, hkex, OUT, get, to_text)
 
 
 if __name__ == "__main__":
