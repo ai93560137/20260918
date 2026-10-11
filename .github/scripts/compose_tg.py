@@ -120,6 +120,14 @@ try:
 except OSError:
     pass
 
+# 待辦提醒:journal/tg_reminder.txt 有內容就放在訊息最頂,直到對帳後刪除該檔
+try:
+    rem = open('journal/tg_reminder.txt', encoding='utf-8').read().strip()
+    if rem:
+        msg = rem + '\n\n' + msg
+except OSError:
+    pass
+
 with open(a.out, 'w', encoding='utf-8') as fp:
     fp.write(msg)
 print(msg)
