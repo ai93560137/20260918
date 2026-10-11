@@ -102,7 +102,13 @@ def main():
         items = [p for p in a.products.split(",") if p]
         for t in [p[6:] for p in items if p.startswith("yahoo:")]:
             fetch_yahoo(t, a.start, a.end)
-        hkex = [p for p in items if not p.startswith("yahoo:")]
+        for u in [p[4:] for p in items if p.startswith("url:")]:        # 任意網址：原文存 sample/，用來找報告索引與產品代號
+            st_, raw = get(u if u.startswith("http") else "https://" + u)
+            name = re.sub(r"[^A-Za-z0-9._-]+", "_", u.split("://")[-1])[:80]
+            (OUT / "sample").mkdir(parents=True, exist_ok=True)
+            (OUT / "sample" / f"{name}.txt").write_text(to_text(raw) if st_ == 200 else f"HTTP {st_}", encoding="utf-8")
+            print(f"url {u}: HTTP {st_} {len(raw)} bytes")
+        hkex = [p for p in items if not p.startswith(("yahoo:", "url:"))]
         if hkex:
             import hkex_option_parse as hp                              # 解析器在看過樣本後才寫（第二階段）
             hp.fetch(a.start, a.end, hkex, OUT, get, to_text)
