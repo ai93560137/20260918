@@ -107,6 +107,9 @@ def main():
             name = re.sub(r"[^A-Za-z0-9._-]+", "_", u.split("://")[-1])[:80]
             (OUT / "sample").mkdir(parents=True, exist_ok=True)
             (OUT / "sample" / f"{name}.txt").write_text(to_text(raw) if st_ == 200 else f"HTTP {st_}", encoding="utf-8")
+            if st_ == 200:                                              # 另存所有連結（to_text 會把 <a href> 剝掉）
+                links = sorted(set(re.findall(r"href=[\"']([^\"'#]+)", raw.decode("utf-8", "replace"))))
+                (OUT / "sample" / f"{name}.links.txt").write_text("\n".join(links), encoding="utf-8")
             print(f"url {u}: HTTP {st_} {len(raw)} bytes")
         hkex = [p for p in items if not p.startswith(("yahoo:", "url:"))]
         if hkex:
