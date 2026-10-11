@@ -104,6 +104,10 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R152] 📊 基金報告（?view=fund_report，&format=json）：本地 gcp_ib/futu_pnl_export.py 推富途成交、手續費、
+#     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
+#     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
+#     資金流水按月按類別列出做對數。只顯示，唔影響下單。
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
 #     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
 #     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
@@ -214,7 +218,7 @@ import random
 import re
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import functions_framework
@@ -2490,6 +2494,216 @@ def futu_real_view(now=None):
     return {"run_hkt": run_hkt, "age_min": None if age is None else round(age), "stale": age is None or age > 60,
             "teams": [t for t in teams.values() if t["rows"] or t["team"] in ("雲垂陣", "風揚陣・方向一")],
             "account_alerts": account}
+
+
+# =============================================================================
+# [R152] 📊 基金報告：富途已實現盈虧（先入先出），由 FUND_REPORT_START 起按產品分月／季／年。
+# =============================================================================
+FUTU_PNL_FILE = "futu/pnl/latest.json"
+FUND_REPORT_START = os.environ.get("FUND_REPORT_START", "2026-09-01")
+FUTU_USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
+FUTU_DEAL_TZ_HOURS = float(os.environ.get("FUTU_DEAL_TZ_HOURS", "8") or 8)     # 富途成交時間加幾多個鐘＝香港時間（實測 UTC）
+FUTU_PRODUCTS = (   # (代碼正則, 產品, 每點價值)
+    (r"^HK\.MHI\d{4}$", "MHI 小型恒指期貨", 10),
+    (r"^HK\.HSI\d{4}$", "HSI 恒指期貨", 50),
+    (r"^HK\.MHI\d{6}[CP]\d+$", "MHI 小型恒指期權", 10),
+    (r"^HK\.HSI\d{6}[CP]\d+$", "HSI 恒指期權", 50),
+    (r"^US\.EX\d{5}[CP]\d+x\d$", "MES 微型標普週期權", 5),
+    (r"^US\.EW\d{4}[CP]\d+x\d$", "ES 標普月底期權", 50),
+    (r"^US\.MES\d{4}$", "MES 微型標普期貨", 5),
+    (r"^US\.ES\d{4}$", "ES 標普期貨", 50),
+    (r"^US\.[A-Z.]+$", "美股", 1),
+    (r"^HK\.\d{5}$", "港股", 1),
+)
+
+
+def futu_product(code):
+    for rx, name, mult in FUTU_PRODUCTS:
+        if re.match(rx, code or ""):
+            return name, mult
+    return "其他", 1
+
+
+def futu_expiry(code):
+    """期權到期日（推算）；期貨／股票回傳 None。"""
+    m = re.match(r"^HK\.(?:MHI|HSI)(\d{2})(\d{2})(\d{2})[CP]", code or "")
+    if m:
+        return date(2000 + int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"^US\.EX(\d)(\d{2})(\d{2})[CP]", code or "")             # 第 n 個星期五
+    if m:
+        d = date(2000 + int(m.group(2)), int(m.group(3)), 1)
+        d += timedelta(days=(4 - d.weekday()) % 7)
+        return d + timedelta(weeks=int(m.group(1)) - 1)
+    m = re.match(r"^US\.EW(\d{2})(\d{2})[CP]", code or "")                 # 月底最後營業日
+    if m:
+        y, mo = 2000 + int(m.group(1)), int(m.group(2))
+        d = date(y + mo // 12, mo % 12 + 1, 1) - timedelta(days=1)
+        while d.weekday() >= 5:
+            d -= timedelta(days=1)
+        return d
+    return None
+
+
+def handle_futu_pnl(payload):
+    """權杖已在 _dispatch_post 驗過。存最新一份原始成交（私人 bucket），報告即時計。"""
+    deals = [d for d in (payload.get("deals") or [])[:20000] if isinstance(d, dict) and d.get("code")]
+    if not deals:
+        return jsonify({"status": "error", "message": "futu_pnl: no deals"}), 422
+    doc = {k: payload.get(k) for k in ("since", "fetched_hkt", "script_version", "fees", "cash_flows", "positions", "notes")}
+    doc.update(deals=deals, received_utc=fmt_utc())
+    try:
+        gcs_write_text(FUTU_PNL_FILE, json.dumps(doc, ensure_ascii=False, default=str))
+    except StorageError as exc:
+        log_event(f"⚠️ [基金報告數據寫入失敗] {exc}", severity="ERROR", component="futu_pnl")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    log_event(f"📊 [基金報告數據] 成交 {len(deals)} 筆（{_futu_text(payload.get('since'), 10)} 起）", component="futu_pnl")
+    return jsonify({"status": "stored", "deals": len(deals)}), 200
+
+
+def futu_pnl_report(doc, start=None, today=None):
+    """先入先出計每個合約嘅已實現盈虧；回傳按產品 × 月／季／年嘅毛利、手續費、淨額（港幣）。"""
+    start = date.fromisoformat(start or FUND_REPORT_START)
+    today = today or datetime.now(HK_TZ).date()
+    fx = lambda ccy: FUTU_USD_HKD if ccy == "USD" else 1.0
+    events, warnings = [], []
+    open_now = {p.get("code"): to_float(p.get("qty")) for p in doc.get("positions") or [] if isinstance(p, dict)}
+    deals = []
+    for d in doc.get("deals") or []:
+        try:
+            t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S") + timedelta(hours=FUTU_DEAL_TZ_HOURS)
+        except (KeyError, ValueError):
+            continue
+        q, px = to_float(d.get("qty")), to_float(d.get("price"))
+        if not q or px is None:
+            continue
+        sign = 1 if str(d.get("side", "")).upper() in ("BUY", "BUY_BACK") else -1
+        deals.append((t, d["code"], sign * q, px, str(d.get("order_id"))))
+    deals.sort()
+    fees = doc.get("fees") or {}
+    fee_seen = set()
+    lots = {}
+    for t, code, q, px, oid in deals:
+        prod, mult = futu_product(code)
+        ccy = "USD" if code.startswith("US.") else "HKD"
+        if oid not in fee_seen and to_float(fees.get(oid)):
+            fee_seen.add(oid)
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy)})
+        book = lots.setdefault(code, [])
+        while q and book and (book[0][0] > 0) != (q > 0):
+            lq, lp = book[0]
+            take = min(abs(q), abs(lq))
+            pnl = (px - lp) * take * mult * (1 if lq > 0 else -1)
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0})
+            lq = lq - take if lq > 0 else lq + take
+            q = q + take if q < 0 else q - take
+            if lq:
+                book[0] = (lq, lp)
+            else:
+                book.pop(0)
+        if q:
+            book.append((q, px))
+    for code, book in lots.items():
+        net = sum(lq for lq, _ in book)
+        if not net:
+            continue
+        held = open_now.get(code)
+        exp = futu_expiry(code)
+        if held is not None and abs(held - net) < 1e-9:
+            continue                                                  # 仲持有，未實現
+        if exp and exp < today and held is None:
+            prod, mult = futu_product(code)
+            ccy = "USD" if code.startswith("US.") else "HKD"
+            pnl = sum(-lp * lq * mult for lq, lp in book)             # 當到期歸零（價外）
+            events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True})
+            warnings.append(f"{code}：冇平倉成交，當 {exp} 到期歸零計（{pnl * fx(ccy):+,.0f} 港幣）；如到期價內請核對結算價")
+        else:
+            warnings.append(f"{code}：成交推算淨倉 {net:+g}，富途現有持倉 {held if held is not None else 0:+g}，"
+                            "唔夾（可能起始日之前已有倉）；呢個合約嘅盈虧未必準")
+    rows = [e for e in events if e["date"] >= start]
+    period = {"month": lambda d: d.strftime("%Y-%m"), "quarter": lambda d: f"{d.year}Q{(d.month - 1) // 3 + 1}",
+              "year": lambda d: str(d.year)}
+    out = {}
+    for name, key in period.items():
+        tab = {}
+        for e in rows:
+            k = key(e["date"])
+            for prod in (e["product"], "合計"):
+                c = tab.setdefault(k, {}).setdefault(prod, {"gross": 0.0, "fee": 0.0, "net": 0.0, "n": 0})
+                c["gross"] += e["gross"]
+                c["fee"] += e["fee"]
+                c["net"] += e["gross"] - e["fee"]
+                c["n"] += 1 if e["gross"] else 0
+        out[name] = {k: {p: {m: round(v, 2) if m != "n" else v for m, v in c.items()} for p, c in sorted(v.items())}
+                     for k, v in sorted(tab.items())}
+    flows = {}
+    for f in doc.get("cash_flows") or []:
+        if not isinstance(f, dict) or not str(f.get("date", ""))[:7] or str(f.get("date")) < str(start):
+            continue
+        amt = to_float(f.get("amount")) or 0.0
+        amt = -abs(amt) if "OUT" in str(f.get("dir", "")).upper() else amt
+        k = (str(f["date"])[:7], f"{f.get('type')}（{f.get('ccy')}）")
+        flows[k] = flows.get(k, 0.0) + amt
+    products = sorted({e["product"] for e in rows})
+    return {"status": "ok", "start": str(start), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
+            "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out,
+            "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())],
+            "warnings": warnings + [str(n) for n in doc.get("notes") or []]}
+
+
+def build_fund_report_page(r):
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>{page_nav('fund_report')}</div>"
+            f"<p class='muted'>富途戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
+            f"數據 {esc(r.get('fetched_hkt') or '—')} HKT（成交 {r['deals']} 筆，由 {esc(r.get('since') or '—')} 起攞，用嚟搵開倉成本）。</p>")
+    n = lambda v: f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+,.0f}</span>"
+    body = ""
+    yr = r["periods"].get("year") or {}
+    tot = sum(v.get("合計", {}).get("net", 0) for v in yr.values())
+    body += (f"<div class='grid'><div class='card'><div class='card-title'>已實現淨盈虧（港幣，{esc(r['start'])} 起）</div>"
+             f"<div class='card-value'>{n(tot)}</div></div>"
+             f"<div class='card'><div class='card-title'>手續費</div><div class='card-value'>"
+             f"{sum(v.get('合計', {}).get('fee', 0) for v in yr.values()):,.0f}</div></div></div>")
+    for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
+        tab = r["periods"].get(name) or {}
+        if not tab:
+            continue
+        keys = list(tab)
+        cols = r["products"] + ["合計"]
+        trs = "".join(f"<tr><td>{esc(p)}</td>" + "".join(
+            f"<td>{n(tab[k][p]['net'])}</td>" if p in tab[k] else "<td class='muted'>—</td>" for k in keys) + "</tr>" for p in cols)
+        fee = "<tr><td class='muted'>其中手續費</td>" + "".join(
+            f"<td class='muted'>{tab[k].get('合計', {}).get('fee', 0):,.0f}</td>" for k in keys) + "</tr>"
+        body += (f"<div class='section'><b>{zh}已實現淨盈虧（港幣，已扣手續費）</b><div class='scroll'><table>"
+                 f"<tr><th>產品</th>{''.join(f'<th>{esc(k)}</th>' for k in keys)}</tr>{trs}{fee}</table></div></div>")
+    if r["cash_flows"]:
+        trs = "".join(f"<tr><td>{esc(c['month'])}</td><td>{esc(c['type'])}</td><td>{c['amount']:+,.2f}</td></tr>" for c in r["cash_flows"])
+        body += ("<div class='section'><b>富途資金流水（對數用，原幣）</b><div class='scroll'><table>"
+                 f"<tr><th>月份</th><th>類別</th><th>金額</th></tr>{trs}</table></div></div>")
+    notes = "".join(f"<li>{esc(w)}</li>" for w in r["warnings"])
+    body += ("<div class='section'><b>注意事項</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
+             "<li>只計已平倉（已實現）盈虧；未平倉持倉嘅浮動盈虧見策略總表「💼 富途實倉」。</li>"
+             "<li>手續費按富途每張單嘅收費，計喺第一筆成交嗰日。</li>"
+             f"<li>富途成交時間加 {FUTU_DEAL_TZ_HOURS:g} 個鐘當香港時間（實測）；月份按香港時間分。</li>"
+             f"{notes}</ul></div>")
+    return html_page("基金報告", head + body + f"<p class='muted' style='font-size:12px'>JSON：<a href='?view=fund_report&amp;format=json'>"
+                     "?view=fund_report&amp;format=json</a></p>")
+
+
+def handle_fund_report_get(req):
+    try:
+        doc = gcs_read_json(FUTU_PNL_FILE, {})
+    except StorageError as exc:
+        log_event(f"⚠️ [基金報告讀取失敗] {exc}", severity="ERROR", component="futu_pnl")
+        doc = None
+    if not doc or not doc.get("deals"):
+        r = {"status": "empty", "message": "未有富途成交數據（使用者部機跑 gcp_ib/futu_pnl_export.py 推上嚟）"}
+        if req.args.get("format") == "json":
+            return _json_response(r)
+        return html_page("基金報告", f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>"
+                                    f"{page_nav('fund_report')}</div><p class='muted'>{esc(r['message'])}</p>")
+    r = futu_pnl_report(doc, req.args.get("start"))
+    if req.args.get("format") == "json":
+        return _json_response(r)
+    return build_fund_report_page(r)
 
 
 def futu_unmatched_text(run_hkt, rows):
@@ -8173,7 +8387,8 @@ PAGE_LINKS = [
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
-    ("strategies", "🧭 策略總表"),                          # [R144] 全部策略與現時持倉方向
+    ("strategies", "🧭 策略總表"),
+    ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
 ]
 
@@ -9918,6 +10133,8 @@ def handle_get(req):
         return handle_bazhentu_api_get()
     if view == "bazhentu":                                       # [R131] 八陣圖指令台（蛇蟠陣人手掛單）
         return serve_bazhentu()
+    if view == "fund_report":                                    # [R152] 📊 基金報告
+        return handle_fund_report_get(req)
     if view == "strategies":                                     # [R144] 🧭 策略總表
         return handle_strategies_get(req)
     if view == "dizai":                                          # [R137] 地載陣：今日策略＋前向測試（&format=json）
@@ -10013,6 +10230,8 @@ def _dispatch_post(payload):
         return jsonify({"status": "success", "message": "TV levels received but intentionally ignored."}), 200
     if action == "futu_data":                        # [R94] 本地 Futu OpenD 推上來的行情
         return handle_futu_data(payload)
+    if action == "futu_pnl":                         # [R152] 本地 futu_pnl_export.py 推上來的成交／手續費／資金流水
+        return handle_futu_pnl(payload)
     if action == "futu_risk":                        # [R147] 本地 auto_risk.py 推上來的持倉風險（私人，只存）
         return handle_futu_risk(payload)
     if action == "inline_scan":                      # [R148] 本地 inline_push.py 推上來的界內證掃描（只存）
@@ -10048,7 +10267,7 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
