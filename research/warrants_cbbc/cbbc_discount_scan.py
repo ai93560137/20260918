@@ -144,11 +144,20 @@ def demo() -> None:
     print("6xxx6 比率 20,000 → 一格＝20 點，80 點折讓仍有淨利；6xxx2 以期指計是 10 點溢價（正常），證明 6xxx1 的折讓不是條款造成而是街貨重。")
 
 
+def _warrant_request_cls(ft):
+    """futu-api 10.x 把 get_warrant 的篩選物件匯出成 WarrantRequest（舊版叫 WarrantDataFilter）。"""
+    cls = getattr(ft, "WarrantRequest", None) or getattr(ft, "WarrantDataFilter", None)
+    if cls is None:
+        from futu.quote.quote_get_warrant import Request as cls  # type: ignore
+    return cls
+
+
 def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: str, borrow_rate: float) -> None:
     try:
         import futu as ft  # type: ignore
-    except ImportError:
-        sys.exit("需要 pip install futu-api，並在本機跑 Futu OpenD")
+        ft.OpenQuoteContext
+    except (ImportError, AttributeError):
+        sys.exit("需要 pip install futu-api 並在本機跑 Futu OpenD；不要在 repo 根目錄用互動模式跑（repo 的 futu/ 資料夾會蓋掉套件）")
     ctx = ft.OpenQuoteContext(host=host, port=port)
     try:
         is_index = owner == "HK.800000"
@@ -160,14 +169,15 @@ def live(host: str, port: int, min_dist_pct: float, min_street: float, owner: st
         hedge_spread = 1.0 if is_index else 0.01 * fut      # 個股沽空腿差價估 1%（一兩格＋價位規則）
         cbbcs: list[Cbbc] = []
         for wtype, bull in ((ft.WrtType.BULL, True), (ft.WrtType.BEAR, False)):
-            req = ft.WarrantDataFilter()
+            req = _warrant_request_cls(ft)()
             req.type_list = [wtype]
             req.sort_field = ft.SortField.STREET_RATE
             req.ascend = False
-            ret, (page_count, df) = ctx.get_warrant(owner, req)
+            ret, data = ctx.get_warrant(owner, req)
             if ret != ft.RET_OK:
-                print(f"get_warrant 失敗：{df}", file=sys.stderr)
+                print(f"get_warrant 失敗：{data}", file=sys.stderr)
                 continue
+            df, _last_page, _all_count = data        # futu-api 10.x：(DataFrame, last_page, all_count)
             for _, r in df.iterrows():
                 ask = float(r.get("ask_price") or 0)
                 if ask <= 0 or float(r.get("recovery_price") or 0) <= 0:

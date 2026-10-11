@@ -104,6 +104,10 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-11 — [R148] action=inline_scan：本地 futu/inline_push.py 定時掃描恒指界內證對恒指期權的公平價
+#     （research/warrants_cbbc/inline_vs_options.py --live 的結果：每隻買賣價、公平價區間、相對中值溢價、鎖定套利淨額、
+#     自做 condor 成本）→ 驗權杖後存 futu/inline/latest.json、每次全文 futu/inline/runs/<日期>/<時分>.json、
+#     按日摘要 futu/inline/history/<日期>.json。?view=inline&format=json 讀最新（&date= 讀某日摘要）。只存、不影響下單。
 #   * 2026-10-11 — [R147] action=futu_risk：本地 gcp_ib/auto_risk.py 定時推富途持倉風險（權益、保證金緩衝、止損用量、雲垂 Δ、
 #     警報、報告全文）→ 驗權杖後存 futu/risk/latest.json，逐次指標按日記 futu/risk/history/<日期>.json。
 #     持倉屬私人資料：唔放 archive/（?view=archive 公開讀得到），亦冇任何 GET 頁面；只可以用服務帳戶讀
@@ -2277,6 +2281,101 @@ def handle_futu_risk(payload):
     log_event(f"🛡️ [富途持倉風險] {run_hkt} 權益 {fmt_num(metrics.get('equity'))} 緩衝 {fmt_num(metrics.get('cushion'))} "
               f"警報 {len(alerts)}", severity="WARNING" if alerts else "INFO", component="futu_risk")
     return jsonify({"status": "stored", "run_hkt": run_hkt, "alerts": len(alerts), "warnings": warnings}), 200
+
+
+# =============================================================================
+# [R148] 界內證 vs 恒指期權掃描（futu/inline_push.py 推上嚟）。只存、只讀、唔影響下單。
+# =============================================================================
+INLINE_FILE = "futu/inline/latest.json"
+INLINE_RUNS_DIR = "futu/inline/runs"
+INLINE_HISTORY_DIR = "futu/inline/history"
+INLINE_MAX_ROWS = 400
+INLINE_ROW_FLOATS = ("lower", "upper", "bid", "ask", "forward", "days", "p_lo", "p_mid", "p_hi", "v_lo", "v_mid", "v_hi",
+                     "sell_sub", "opt_fees", "lock_threshold", "condor_cost", "inline_cost", "premium_vs_mid", "lock_edge",
+                     "sell_call", "buy_call", "buy_call2", "sell_call2", "inline_per_set")
+INLINE_ROW_TEXTS = (("code", 16), ("name", 40), ("issuer", 20), ("expiry", 10), ("source", 80), ("error", 120))
+
+
+def _inline_clean_row(raw):
+    if not isinstance(raw, dict):
+        return None
+    row = {k: _futu_text(raw.get(k), n) for k, n in INLINE_ROW_TEXTS if raw.get(k) is not None}
+    if not row.get("code"):
+        return None
+    for k in INLINE_ROW_FLOATS:
+        if raw.get(k) is not None:
+            row[k] = to_float(raw.get(k))
+    if raw.get("inline_cheaper_than_condor") is not None:
+        row["inline_cheaper_than_condor"] = bool(raw.get("inline_cheaper_than_condor"))
+    return row
+
+
+def handle_inline_scan(payload):
+    """權杖已在 _dispatch_post 驗過。存最新一份、每次全文、按日摘要。沒內容 → 422；寫不進 GCS → 503。"""
+    rows = [r for r in (_inline_clean_row(x) for x in (payload.get("rows") or [])[:INLINE_MAX_ROWS]) if r]
+    if not rows:
+        return jsonify({"status": "error", "message": "inline_scan: no rows"}), 422
+    run_hkt = _futu_text(payload.get("run_hkt"), 16)
+    ok_rows = [r for r in rows if r.get("lock_edge") is not None]
+    prem = sorted(r["premium_vs_mid"] for r in ok_rows if r.get("premium_vs_mid") is not None)
+    summary = {"run_hkt": run_hkt, "n": len(rows), "n_ok": len(ok_rows),
+               "n_lock": sum(1 for r in ok_rows if r["lock_edge"] > 0),
+               "n_cheaper_than_condor": sum(1 for r in ok_rows if r.get("inline_cheaper_than_condor")),
+               "premium_median": prem[len(prem) // 2] if prem else None,
+               "premium_min": prem[0] if prem else None, "premium_max": prem[-1] if prem else None,
+               "forward": to_float(payload.get("forward")),
+               "best": [{"code": r["code"], "lock_edge": r["lock_edge"], "lower": r.get("lower"), "upper": r.get("upper"),
+                         "expiry": r.get("expiry")} for r in sorted(ok_rows, key=lambda r: -r["lock_edge"])[:3]]}
+    doc = {"run_hkt": run_hkt, "received_utc": fmt_utc(), "received_ts": now_ts(),
+           "script_version": _futu_text(payload.get("script_version"), 16), "owner": _futu_text(payload.get("owner"), 16),
+           "source": _futu_text(payload.get("source"), 120), "summary": summary, "rows": rows}
+    text = json.dumps(doc, ensure_ascii=False, default=str)
+    try:
+        gcs_write_text(INLINE_FILE, text)
+    except StorageError as exc:
+        log_event(f"⚠️ [界內證掃描寫入失敗] {exc}", severity="ERROR", component="inline_scan")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    warnings = []
+    day = run_hkt[:10] if ARCHIVE_DATE_RE.match(run_hkt[:10]) else fmt_utc(fmt="%Y-%m-%d")
+    hhmm = re.sub(r"\D", "", run_hkt[11:16]) or fmt_utc(fmt="%H%M")
+    try:
+        gcs_write_text(f"{INLINE_RUNS_DIR}/{day}/{hhmm}.json", text)
+    except StorageError as exc:
+        warnings.append("每次全文寫入失敗（最新一份已存）")
+        log_event(f"⚠️ [界內證掃描全文寫入失敗] {exc}", severity="WARNING", component="inline_scan")
+
+    def mutate(existing):
+        kept = [r for r in (existing if isinstance(existing, list) else []) if isinstance(r, dict)
+                and r.get("run_hkt") != summary["run_hkt"]]
+        return kept + [summary], len(kept) + 1
+
+    try:
+        gcs_update(f"{INLINE_HISTORY_DIR}/{day}.json", mutate, default_factory=list)
+    except StorageError as exc:
+        warnings.append("按日摘要寫入失敗（最新一份已存）")
+        log_event(f"⚠️ [界內證掃描摘要寫入失敗] {exc}", severity="WARNING", component="inline_scan")
+    log_event(f"📐 [界內證掃描] {run_hkt} {summary['n']} 隻，鎖定 ✔ {summary['n_lock']}，比 condor 便宜 "
+              f"{summary['n_cheaper_than_condor']}，溢價中位 {summary['premium_median']}", component="inline_scan")
+    return jsonify({"status": "stored", "run_hkt": run_hkt, "n": summary["n"], "n_lock": summary["n_lock"],
+                    "warnings": warnings}), 200
+
+
+def handle_inline_api_get(req):
+    """?view=inline&format=json → 最新一次掃描；&date=YYYY-MM-DD → 該日逐次摘要。"""
+    day = _futu_text(req.args.get("date"), 10)
+    try:
+        if day:
+            if not ARCHIVE_DATE_RE.match(day):
+                return _json_response({"status": "error", "message": "date 格式須為 YYYY-MM-DD"}, 400)
+            data = gcs_read_json(f"{INLINE_HISTORY_DIR}/{day}.json", [])
+            return _json_response({"status": "ok" if data else "empty", "date": day, "runs": data}, 200)
+        doc = gcs_read_json(INLINE_FILE, None)
+    except StorageError:
+        return _json_response({"status": "error", "message": "storage read failed"}, 503)
+    if not doc:
+        return _json_response({"status": "empty", "message": "尚未收到界內證掃描"}, 200)
+    age = None if doc.get("received_ts") is None else int(now_ts() - doc["received_ts"])
+    return _json_response({"status": "ok", "age_sec": age, **doc}, 200)
 
 
 def futu_symbol_file(symbol):
@@ -9452,6 +9551,8 @@ def handle_get(req):
         return handle_dizai_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
+    if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）
+        return handle_inline_api_get(req)
     if view == "futu" and req.args.get("format") == "json":      # [R94] 最新 Futu 行情（&symbol= 指定代號）
         return handle_futu_api_get(req.args.get("symbol"))
     if view == "archive" and req.args.get("format") == "json":   # [R95] 按日封存，給每日彙整拉取
@@ -9539,6 +9640,8 @@ def _dispatch_post(payload):
         return handle_futu_data(payload)
     if action == "futu_risk":                        # [R147] 本地 auto_risk.py 推上來的持倉風險（私人，只存）
         return handle_futu_risk(payload)
+    if action == "inline_scan":                      # [R148] 本地 inline_push.py 推上來的界內證掃描（只存）
+        return handle_inline_scan(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -9568,7 +9671,7 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") not in ("futu_data", "futu_risk"):   # [R94][R147] Futu 封包大／持倉私人，唔入 webhook 日誌
+    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan"):   # [R94][R147][R148] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
