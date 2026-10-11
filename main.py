@@ -2513,6 +2513,9 @@ FUTU_PRODUCTS = (   # (代碼正則, 產品, 每點價值)
     (r"^US\.EW\d{4}[CP]\d+x\d$", "ES 標普月底期權", 50),
     (r"^US\.MES\d{4}$", "MES 微型標普期貨", 5),
     (r"^US\.ES\d{4}$", "ES 標普期貨", 50),
+    (r"^US\.MNQ\d{4}$", "MNQ 微型納指期貨", 2),
+    (r"^US\.NQ\d{4}$", "NQ 納指期貨", 20),
+    (r"^US\.[A-Z]+\d{6}[CP]\d+$", "美股期權", 100),
     (r"^US\.[A-Z.]+$", "美股", 1),
     (r"^HK\.\d{5}$", "港股", 1),
 )
@@ -2583,7 +2586,9 @@ def futu_pnl_report(doc, start=None, today=None):
     fees = doc.get("fees") or {}
     fee_seen = set()
     lots = {}
+    last_deal = {}
     for t, code, q, px, oid in deals:
+        last_deal[code] = t.date()
         prod, mult = futu_product(code)
         ccy = "USD" if code.startswith("US.") else "HKD"
         if oid not in fee_seen and to_float(fees.get(oid)):
@@ -2618,8 +2623,11 @@ def futu_pnl_report(doc, start=None, today=None):
             events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True})
             warnings.append(f"{code}：冇平倉成交，當 {exp} 到期歸零計（{pnl * fx(ccy):+,.0f} 港幣）；如到期價內請核對結算價")
         else:
-            warnings.append(f"{code}：成交推算淨倉 {net:+g}，富途現有持倉 {held if held is not None else 0:+g}，"
-                            "唔夾（可能起始日之前已有倉）；呢個合約嘅盈虧未必準")
+            if last_deal.get(code) and last_deal[code] < start:
+                warnings.append(f"{code}：數據起始日之前已有倉，盈虧未必準；成交全部喺 {start} 之前，唔影響報告期")
+            else:
+                warnings.append(f"{code}：成交推算淨倉 {net:+g}，富途現有持倉 {held if held is not None else 0:+g}，"
+                                "唔夾（可能起始日之前已有倉）；呢個合約嘅盈虧未必準")
     rows = [e for e in events if e["date"] >= start]
     period = {"month": lambda d: d.strftime("%Y-%m"), "quarter": lambda d: f"{d.year}Q{(d.month - 1) // 3 + 1}",
               "year": lambda d: str(d.year)}

@@ -78,12 +78,12 @@ def fetch(since):
                                 flows.append({"account": label, "date": str(r.get("clearing_date")), "ccy": str(r.get("currency")),
                                               "type": str(r.get("cashflow_type")), "dir": str(r.get("cashflow_direction")),
                                               "amount": num(r.get("cashflow_amount")), "remark": mask(r.get("cashflow_remark"))[:80]})
-                        elif "frequent" in str(cf).lower() or "頻繁" in str(cf):
+                        elif "frequen" in str(cf).lower() or "頻繁" in str(cf) or "频繁" in str(cf):
                             time.sleep(30)                # 撞頻率限制：等一陣再試同一日
                             continue
                         else:
                             notes.append(f"{label} 資金流水 {d}：{mask(cf)[:120]}")
-                        time.sleep(float(os.environ.get("FUTU_FLOW_SLEEP", "1.0")))
+                        time.sleep(float(os.environ.get("FUTU_FLOW_SLEEP", "1.6")))
                     d += timedelta(days=1)
                 ids = sorted({d["order_id"] for d in deals if d["account"] == label and d["order_id"] not in fees})
                 for i in range(0, len(ids), 400):
