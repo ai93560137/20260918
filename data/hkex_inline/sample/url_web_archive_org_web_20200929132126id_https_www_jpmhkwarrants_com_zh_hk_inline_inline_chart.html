@@ -1,0 +1,1933 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>圖表分析 - 摩根大通認股證 | 牛熊證 | 界內證</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="keywords" content="">
+    <meta name="description" content="" />
+    <meta name="Abstract" content="" />
+    <meta name="Owner" content="" />
+    <meta name="Publisher" content="" />
+
+    <!--FB share-->
+    <meta property="og:description" content="" />
+    <meta property="og:title" content="圖表分析 - 摩根大通認股證 | 牛熊證 | 界內證"/>
+    <meta property="og:site_name" content="" />
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content=""/>
+    <meta property="og:image" content="https://www.jpmhkwarrants.com/home/images/fb_image.jpg" />
+
+    <!--CSS-->
+    <link rel="shortcut icon" href="/home/images/favicon.ico" type="image/x-icon; charset=binary">
+    <link href="/home/css/jphk_style.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/home/css/jquery.mobilemenu.css">
+	<link rel="stylesheet" href="/home/css/jquery.autocomplete.css" type="text/css">
+	
+    <!--Javascript-->
+    <script type="text/javascript" src="/home/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/home/js/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="/home/js/jquery.sticky-kit.js"></script>
+    <script type="text/javascript" src="/home/js/jphk_general.js"></script>
+	<script type="text/javascript" src="/home/js/jquery.mobilemenu.js" id="mobilemenu"></script>
+	<script type="text/javascript" src="/home/js/jquery.cookie.js"></script>
+	<script type="text/javascript" src="/home/js/jquery.autocomplete.js"></script>
+
+<script>
+$(document).ready(function() {
+	initAutoComplete("#search_code", ".realtime_search_area");
+	initAutoComplete("#search_code_mobile", ".mobile_search_area");
+});
+</script>
+	
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-T4RHZFJ');</script>
+<!-- End Google Tag Manager -->
+
+    <!--Plugin-->
+    <script type="text/javascript">
+        var lang = "zh_hk";
+        
+
+        var isSameOrigin = '';
+        $(document).ready(function () {
+            $("#inline.menu_dropdown a").addClass("current");
+            //		   if(typeof code!=="undefined"){
+            // 				updateQuickSearch(0, code);
+            // 		   }else if(typeof ucode!=="undefined"){
+            // 				updateQuickSearch(0, ucode);
+            // 		   }else{
+            updateQuickSearch(0);
+            // 		   }
+            $("#mobile_search_area button").click(function () {
+                location.href = genURL($("#search_code_mobile").val());
+            });
+
+            $("#search_code_mobile").keypress(function (e) {
+                if ((e.which == 13) && ($("#search_code_mobile").val() != "")) {
+                    console.log("enter1");
+                    $('#mobile_search_area button').trigger("click");
+                }
+            });
+
+
+            var version = $.cookie("version");
+            if (!$(".mobile_header").is(":hidden") && version == "desktop") {
+                changeToDesktop();
+            }
+
+
+            var agreeStr = printAgreeCook();
+            //console.log(showAgreeP);
+			if(!$("body").hasClass("apps")){
+				showAgree(agreeStr);
+			}
+        });
+
+        function updateQuickSearch(terms, code) {
+            path = '';
+            if (typeof code !== "undefined") {
+                path = '/terms/' + terms + '/code/' + code;
+            }
+
+            if(typeof isSameOrigin !== "undefined" && isSameOrigin*1 == 0){
+                
+                path = path + '/delay/1';
+            }
+            $.ajax({
+                url: "/zh_hk/ajax/terms_quick_search" + path, cache: false, success: function (html) {
+                    $("#terms_quick_search").html(html);
+                    if (terms == 1 || $(".product_quote_area #search_input").length == 0) {
+                        $(".quick_search [type=text]").select();
+                    }
+                },complete: function(XMLHttpRequest, textStatus) { $(".ac_results").hide(); }
+            });
+        }
+        function changeToDesktop() {
+            var cssLink = $('link[href*="/home/css/jphk_style.css"]');
+            cssLink.replaceWith('<link href="/home/css/jphk_style_desktop.css" rel="stylesheet" type="text/css" />');
+            $("#changeToMobileBtn").show();
+            $.cookie("version", "desktop", { path: '/' });
+        }
+        function changeToMobile() {
+            //var cssLink = $('link[href*="/home/css/jphk_style_desktop.css"]');
+            //cssLink.replaceWith('<link href="/home/css/jphk_style.css" rel="stylesheet" type="text/css" />');
+            //$("#changeToMobileBtn").hide();
+            $.cookie("version", "", { path: '/' });
+            location.reload();
+        }
+
+        function printAgreeCook()
+        {
+            var agreeCook=getCookie("agree");
+            //
+
+            if(agreeCook=="YES")
+            {
+                agreeCook="N";
+            }
+            else{
+                agreeCook="Y";
+            }
+            return agreeCook;
+        }
+        function showAgree(need) {
+            if (need == "Y") {
+                //Y stand for show question box
+                $.blockUI({ message: $('#question') });
+                $('.button_area #enter').click(function () {
+                    $.ajax({
+                        url: '/zh_hk/ajax/home_agree',
+                        data: 'action=agree',
+                        dataType: 'json',
+                        type: 'post',
+                        async: false,
+                        cache: false,
+                        complete: function () {
+                            $.unblockUI();
+                        }
+                    });
+                });
+            }
+            if (need == "N") {
+                $.ajax({
+                    url: '/zh_hk/ajax/home_agree',
+                    data: 'action=agree',
+                    dataType: 'json',
+                    type: 'post',
+                    async: false,
+                    cache: false,
+                    complete: function () {
+
+                    }
+                });
+            }
+        }
+
+
+        function getCookie(NameOfCookie) {
+            if (document.cookie.length > 0) {
+                begin = document.cookie.indexOf(NameOfCookie + '=');
+                if (begin != -1) {
+                    begin += NameOfCookie.length + 1;
+                    end = document.cookie.indexOf(';', begin);
+                    if (end == -1) end = document.cookie.length;
+                    return unescape(document.cookie.substring(begin, end));
+                }
+            }
+            return null;
+        }
+
+        function setCookie(NameOfCookie, value, expiredays) {
+            var ExpireDate = new Date();
+            ExpireDate.setTime(ExpireDate.getTime() + (expiredays * 3600 * 1000));
+            document.cookie = NameOfCookie + '=' + escape(value) + ';path=/;' + ((expiredays == null) ? '' : '; expires=0');// + ExpireDate.toGMTString());
+        }
+
+        function checkcookies() {
+            skey = getCookie('agree');
+            if (skey == null) {
+                setCookie('agree', 'YES', 12);
+            }
+        }
+
+    </script>
+    
+    <script>
+		$(window).ready(function(){
+			$.mobilemenu()
+		});
+	</script>
+    <script>
+	$(function () {
+		$('[data-toggle]').on('click', function () {
+			var id = $(this).data("toggle"),
+				$object = $(id),
+				className = "open";
+			if ($object) {
+				if ($object.hasClass(className)) {
+					$object.removeClass(className)
+				} else {
+					$object.addClass(className)
+				}
+			}
+		});
+	});
+	</script>
+        
+    <script>
+	$(document).ready(function(){
+
+    $('#mobile_search_area,#bottom_menu_search_on,#bottom_menu_calendar_on').css('opacity','1');
+    $('#mobile_search_area,#bottom_menu_search_on,#bottom_menu_calendar_on').css('display','none');
+
+		$("button.search_menu_button").click(function(){
+			$("button.search_menu_button").toggleClass("active");
+		});
+
+    $("#mobilemenu").on('click',function(){
+        $('#bottom_menu_calendar_on,#bottom_menu_search_on,#mobile_search_area').hide();
+    })
+
+		$('button.search_menu_button').on('click', function() {
+				$('#mobile_search_area').toggle();
+
+		});
+
+		$('.bottom_menu li.search').on('click', function() {
+				$('#bottom_menu_search_on').toggle();
+        $('#bottom_menu_calendar_on').hide();
+		});
+
+		$('.bottom_menu li.calendar').on('click', function() {
+				$('#bottom_menu_calendar_on').toggle();
+        $('#bottom_menu_search_on').hide();
+		});
+
+	});	
+	</script>
+	
+	<script src="/home/js/jquery.blockUI.js" type="text/javascript"></script>
+        
+    <script>
+	$(document).ready(function(){
+		$('#commentyes').click(function() {  
+			if ($("input[name=cbAccept]:checked").val() == "Y"){
+				$("#cb_agree").val("Y");
+				var serializedData = $('#commentform').serialize();
+				var strURL = "/cgi/comment_box.cgi";
+				$.ajax({url:strURL,data: serializedData,type: "POST",cache:false, success: function(responseText){
+					resetCommentBox();
+					$("#cb_comment").val("閣下的意見已成功發送，多謝支持。");
+				}});
+			}else{
+				$.unblockUI(); 
+			}
+		}); 
+		$('#commentno').click(function() { 
+			//resetCommentBox(); 
+			$.unblockUI(); 
+		}); 
+	});	
+	function commentgosubmit(btn){
+		var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+
+		if ($("#cb_comment").val()==""){
+			alert("請輸入意見");
+		}else if (document.commentform.subscribe.checked && document.commentform.receiveEmail.value.length == 0){
+			alert("請輸入電郵地址");
+		}else if ($("#cb_email").val()!="" > 0 && !reg.test($("#cb_email").val())){
+			alert("請輸入有效的電郵地址");
+		}/*else if($("#cb_capt_input").val()==""){
+			alert("請輸入驗證碼");
+		}else if(checkCaptcha($("#cb_capt_input").val(),$("#cb_capt_auth").val())=="0"){
+			alert("請輸入正確的驗證碼");
+		}*/else{
+			showConfirm2();
+		}
+	}
+	function showConfirm2() {
+		var _left = ($(window).width() - 800)/2;
+		var _top = ($(window).height() - 680)/2;
+		$.blockUI({ message: $('#confirm'), css: { left: _left+'px', top: _top+'px', width: '800px' } });
+	}
+	function resetCommentBox(){
+		$.unblockUI(); 
+		$("#cb_comment").val("");
+		$("#cb_email").val("");
+		$("#cb_subscribe").prop( "checked", false );
+	}
+	</script>    
+
+    
+</head>
+<body class="zh_hk ">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T4RHZFJ" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<!--
+Start of Floodlight Tag: Please do not remove
+Activity name of this tag: JP Morgan_HK_Counter_N/A_-_Landing Page
+URL of the webpage where the tag is expected to be placed: https://jpmhkwarrants.com/zh_hk/inline/search?
+This tag must be placed between the <body> and </body> tags, as close as possible to the opening tag.
+Creation Date: 10/02/2019
+-->
+<script type="text/javascript">
+var axel = Math.random() + "";
+var a = axel * 10000000000000;
+document.write('<iframe src="https://9509656.fls.doubleclick.net/activityi;src=9509656;type=landi0;cat=jpmor0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;ord=' + a + '?" width="1" height="1" frameborder="0" style="display:none"></iframe>');
+</script>
+<noscript>
+<iframe src="https://9509656.fls.doubleclick.net/activityi;src=9509656;type=landi0;cat=jpmor0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;ord=1?" width="1" height="1" frameborder="0" style="display:none"></iframe>
+</noscript>
+<!-- End of Floodlight Tag: Please do not remove -->
+
+
+    <div id="page" class="inside">
+    
+    <div id="question" style="display: none; cursor: default">
+            <h3>摩根大通香港認股證 | 牛熊證 | 界內證</h3>
+
+            <div class="disclaimer">
+
+                <div class="scroll">
+                    <p>摩根大通證券（亞太）有限公司（「摩根大通」）在本網站以電子方式存取有關證券及市場的若干文件及資訊。於進入本網站之前，摩根大通要求閣下細閱以下規管閣下進入及使用本網站的重要條款及條件以及免責聲明，並承諾閣下接納有關條款、條件及免責聲明。倘閣下同意，請點擊「進入網站」。倘閣下不同意，請點擊「離開網站」。
+                    </p>
+                    <p>我已閱讀下文並同意其所載條款及條件。</p>
+                    <div class="tl">並無意見建議受信關係 </div>
+
+                    <p>本網站的資料及資訊僅供作參考及討論用途，並無意作爲買賣任何證券或金融工具（包括本網站（定義見下文）所述在香港聯合交易所有限公司上市的認股權證、牛熊證或其他結構性産品）（「結構性産品」）的要約、邀請、誘因、意見、建議或遊說，亦不構成任何有關金融工具或交易策略之交易或任何於本網站所述交易的官方確認或估值。任何有關價格的資訊純熟指示性質並不代表摩根大通或其任何聯屬公司將以該價格進行交易。本網站的內容概不構成任何合約或承擔的基本部份。本網站或本網站的任何資料不應詮釋爲任何種類或形式的廣告、誘因或陳述。本網站的任何資訊並無考慮任何特定使用者的具體需要。
+                    </p>
+
+                    <p>本網站提供的資料及資訊不應被視為投資、稅務、法律、會計、規例或任何其他意見。摩根大通或其任何聯屬公司概不就任何於結構性産品的投資承擔任何受信責任或法律責任。閣下於進行任何投資前應自行評估結構性産品所涉風險。
+                    </p>
+
+                    <div class="tl">僅限香港居民使用 </div>
+
+                    <p>本網站僅針對及僅爲香港居民設立。本網站無意在發佈或使用本網站可能違反當地法律的任何司法權區或國家向當地的任何人士或實體分發或供彼等使用。倘閣下自本網站下載的任何資訊違反閣下現正居住國家的任何法律，摩根大通概不承擔任何責任。所有産品及服務並不一定在所有地區提供。本網站的資訊及資料可予變動，使用者不得依賴或按有關資訊及資料行事。
+                    </p>
+
+                    <p>「本網站」指摩根大通證券（亞太）有限公司有關結構性産品的網站以及網站所載的全部資訊及資料。網站若干部份或頁面可能載有獨立且附加於此等條款及條件以及免責聲明的條款及條件或免責聲明。如有衝突，附加條款及條件或免責聲明將規限該等部份或頁面。
+                    </p>
+
+                    <div class="tl">結構性産品的風險因素 </div>
+
+                    <p>本結構性產品並無抵押品。如發行人及擔保人無力償債或違約，投資者可能無法收回部份或全部應收款項。認股權證及可贖回牛熊證爲涉及衍生工具的結構性産品。除非閣下完全瞭解及願意承擔所涉風險，否則切勿投資上述產品。
+                    </p>
+
+                    <p>結構性產品的價格可急升亦可急跌，投資者或會損失所有投資。可贖回牛熊證具有強制贖回機制，並可能會提早終止，屆時，(i)N類可贖回牛熊證的投資者將不獲發任何金額；(ii)R類可贖回牛熊證的剩餘價格可能爲零。結構性產品於第二交易市場的流通性亦無法預料的。J.P.
+                        Morgan Broking (Hong Kong) Limited
+                        為認股權證及牛熊證及/或交易期權的莊家及流通量提供者亦可能為結構性產品的唯一流通量提供者。本網站中的任何意見，預測或估計僅代表發佈資料當日的判斷，摩根大通不保證未來事件或表現將與本網站中的任何意見，預測或估計一致。閣下應注意實際結果可能與本網站中發表的預測有重大差別。過往表現並不代表將來的表現。摩根大通並非投資者的顧問或信託人，亦不會負責決定投資該金融工具是否合法或適合任何準買家。
+                    </p>
+
+                    <p>因此，閣下應為自己作風險評估並確保閣下明白結構性産品的性質及風險，並應（如適用）諮詢閣下的法律、稅務、會計、財務及其他專業顧問，以確保投資於結構性産品的任何決定對閣下的具體情況及財務狀況爲合適。
+                    </p>
+
+                    <p>投資結構性産品前，閣下應仔細審閱及明白載於基本上市文件（包括任何增編）及相關推出公佈及補充上市文件中的條款及條件，連同發行人的財務報表及其他資料。</p>
+
+                    <p>發行人及其聯屬公司（「J.P. Morgan
+                        Group」）為一間提供全方位服務的證券公司及一間從事多種證券交易及經紀活動的商業投資銀行，並且向廣大客戶提供投資銀行、資產管理、融資、財務顧問服務。因此，J.P. Morgan Group
+                        可能就閣下向我們購入的證券從中潛在利益衝突。尤其是J.P. Morgan
+                        Group可能就交易所買賣基金的股份作為認可參與者或參與證券商，作為交易所買賣基金股份的莊家或大宗股票承購人，對交易所買賣基金的組建作出注資，並可能於交易所買賣基金的股份中擁有重大權益。該等活動可能對閣下可能購入的證券表現造成負面影響。J.P.Morgan
+                        Group的活動可能為其帶來豐厚回報，同時令交易所買賣基金的股份價值下跌。</p>
+
+                    <p>J.P. Morgan
+                        Group不論作爲自營買賣商、代理人或莊家，可能持有自營買賣倉盤，並可能於結構性産品持有好倉或淡倉或其他權益，並可能隨時在公開市場上或以其他方式購買及或出售結構性産品。J.P.
+                        Morgan
+                        Group可能涉及其他財務、投資及專業活動例如為結構性産品相關股份的公司提供意見或貸款或參與該公司的責任承保或重租，該等活動可能引發有關證券或結構性産品（即本網站的主題）的利益或利益衝突。
+                    </p>
+                    
+                    <p>Nasdaq®, Nasdaq-100 Index®, 是Nasdaq, Inc. （Nasdaq, Inc.及其關聯公司此後簡稱為 “Nasdaq”）的註冊商標，並已授權予摩根大通證券（亞太）有限公司使用。Nasdaq尚未認證該結構性產品的合法性或適用性。該產品不由Nasdaq發行、代言、出售或推廣。Nasdaq對該產品不做任何擔保，也不承擔任何責任。</p>
+
+                    <div class="tl">本網站的Cookies用途 </div>
+
+                    <p>爲持續改善本網站及爲網站使用者提供更佳服務，摩根大通可能使用軟體工具或「cookies」收集有關網站訪客瀏覽活動的資料。Cookie爲一項技術，有時被稱爲文字檔，乃由網頁伺服器（網站）向網頁瀏覽器（訪客的電腦）發出，令瀏覽器記下若干資料。Cookie所持有的資料僅供發出該cookie的人士閱覽。
+                    </p>
+                    <p>Cookie可分爲兩種：session cookies及persistent cookies。</p>
+
+                    <p>舉例而言，session cookies乃用作維持網站的安全，並將所輸入的資料傳送予網站的其他頁面，避免再度輸入相同資料。 Persistent
+                        cookies乃用作於每次瀏覽發出cookie的網站時追蹤瀏覽習慣。可能收集的資料包括到訪網站日期及時間、所瀏覽的頁面、於網站所用時間以及緊接及緊隨瀏覽摩根大通網站前後到訪的網站。</p>
+
+                    <p>倘摩根大通要求閣下登入網站時輸入密碼，謹爲閣下的安全而使用cookies。摩根大通或任何其聯屬公司亦收集集合所得資料，以供統計及評估用途。</p>
+
+                    <p>變更互聯網瀏覽軟體的設定一般可停用cookies，亦可變更設定以接受特定cookies。倘cookies被停用，則表示網站內部份服務或實際上全部服務或許不能使用。</p>
+
+                    <p>倘閣下透過本網站向摩根大通提供任何個人資料，已收集的個人資料可能由摩根大通或JPMorgan Chase & Co 集團公司的任何成
+                        員公司及其聯屬公司及代理人（包括以欠缺或實施較歐盟標準爲低的保護資料法的國家爲基地的公司）處理，以輔助營運、設計及或營銷摩根大通及或摩根大通集團架構（「本集團」）內任何其他公司的現有及未來産品及服務。
+                    </p>
+
+                    <div class="tl">網站使用者的私隱 </div>
+
+                    <p>摩根大通致力保護客戶私隱，並將採取所有合理程式確保閣下的個人資料妥爲保存，避免出現未經授權使用、遺失、披露或銷毀的情況。除明確規定外，閣下的個人資料僅以閣下同意的方式使用。</p>
+
+                    <p>閣下亦可依願取得摩根大通所持有關閣下的個人資料副本。摩根大通可能就此向閣下收取法律准予的費用。請閱讀摩根大通的私隱政策，以瞭解閣下使用本網站時閣下的個人資料會如何處理。</p>
+
+                    <div class="tl">超連結</div>
+
+                    <p>本網站亦載有由第三方控制或提供的網站連結。摩根大通並無審閱且概不就使用與本網站連結的任何網站內資訊或其刊載或提供的資料、産品或服務或私隱慣例所産生的任何損失承擔責任（不論疏忽或其他方式）。在不損害上文的一般規定以及香港法律所准許最大程度的原則下，摩根大通概不就第三方網站資料的任何干擾、不正確、錯誤或遺漏（不論原因）或就此産生的任何形式的損害向任何人士承擔責任。
+                    </p>
+
+                    <p>透過建立與第三方網站的連結，摩根大通並非認同或推薦該網站提供的任何産品或服務，摩根大通亦概不就該等網站所提供或刊登廣告的産品或服務的任何失當負責。有關第三方實行的私隱政策可能與摩根大通的不同，而第三方網站可能較本網站提供較低保障。請審閱有關第三方網站可能載有的條款及條件、相關免責聲明及私隱政策。
+                    </p>
+
+                    <div class="tl">第三方提供的資料</div>
+
+                    <p>摩根大通並無審閱且概不就路透社或第三方提供及經本網站發佈的任何資訊或資料承擔責任。任何該內容乃路透社或第三方資訊提供者的知識産物。在未經路透社或該第三方資訊提供者事先書面同意的情況下，明確禁止複製、重新發佈或重新分發（包括以高速存取、編制或類似方式）該內容。路透社概不就內容的任何錯誤或延誤或依賴有關內容而採取的任何行動承擔責任。路透社、Reuters
+                        Dotted Logo及Sphere Logo乃全球Reuters Group公司的商標及注冊商標。有關其他Reuters Services詳情，請瀏覽路透社公衆網站
+                        http://www.reuters.com.</p>
+
+                    <p>任何由信報財經新聞有限公司（信報財經新聞）提供的內容或資料
+                        ，僅供參考用途。摩根大通並無審閱或驗證此內容或資料且概不就信報財經新聞提供及經本網站發佈的任何內容或資料承擔責任。有關內容或資料不得以任何方式或形式進行複制、存儲、下載、傳輸、重新發佈、發放或傳遞，也不得以任何方式進行編制。如閣下需要獲取更多資訊，請聯繫信報財經新聞。
+                    </p>
+
+
+                    <div class="tl">許可 </div>
+
+                    <p>摩根大通謹此向閣下授出不可轉讓的非獨家許可，僅供閣下內部使用本網站所載任何應用程式（「該系統」），以便向摩根大通及或本集團獲取若干報告及服務，以及與摩根大通及或本集團進行業務。閣下同意不得將該系統轉讓、再許可、出租、出讓、分時、租賃、轉易、複製、翻譯、轉換爲另一程式語言、解編、反向組譯、修改或變更以供任何用途。閣下同意以信託形式爲摩根大通持有且並無向任何其他方披露、或准許任何其他方查核、複製或使用該系統或該系統所載、相關、往返傳送或來源的任何資訊（統稱「資料」）。閣下同意及授權摩根大通透過該系統傳送若干機密資料。閣下確認該系統及資料乃摩根大通的獨有財産，而摩根大通保留及擁有該系統及資料的所有權及全面擁有權。閣下使用該系統（包括不限於對摩根大通的任何通訊、指示、指令或透過該系統進行的其他交易）乃受此等一切條款及條件及免責聲明以及適用法律及法規所限。
+                    </p>
+
+                    <p>倘該系統出現錯誤或失效，作爲閣下的唯一及全部補救方法以及按摩根大通的選擇代替本文所述任何其他補救方法，摩根大通可選擇提供錯誤修正、錯誤修復或更換該系統，惟任何有關錯誤修正、錯誤修復或更換須根據此等條款及條件、本協定（包括免責聲明及責任限制）項下所載的相同條款及條件提供。
+                    </p>
+
+                    <div class="tl">摩根大通的評論</div>
+
+                    <p>所有摩根大通於本網站的評論乃由摩根大通編制，僅供參考用途，並不構成任何要約、建議、提呈出售或招攬購買任何産品，亦並不構成摩根大通進行任何交易之承諾。本網站所載的任何意見、預測或估計乃爲發佈該評論當日的判斷，摩根大通並不保證未來業績或事件將與任何該等意見、預測或估計一致。閣下應注意實際結果可能與本網站中發表的預測有重大差別。過往表現並不代表將來的表現。
+                    </p>
+
+                    <p>如本網站所載的評論或資料引用J.P. Morgan Group的研究報告，該評論或意見乃由摩根大通銷售及交易部人員而非J.P. Morgan
+                        Group的研究部所編制。因此該評論或資料的編制並無按照促進研究的獨立性的相關法規包括但不限於有關禁止於投資研究散播前進行交易的法例。本網站所載的評論或資料並不構成亦無意構成研究報告。<br />
+                        除非另有所指，任何於本網站所載的評論或意見純熟來自個別編制人及或特定的銷售及交易部門而可能與其他J.P. Morgan Group的部門包括研究部的意見或看法不同。</p>
+
+                    <p>本網站（包括所載的評論或資料）並不構成亦無意構成於任何地區適用的法律和法規下定義的「研究報告」、「投資研究」或「獨立研究」。</p>
+
+                    <div class="tl">責任限制 </div>
+
+                    <p>閣下同意遵守載於此等使用條款及條件以及本網站其他地方（如適用）中有關閣下使用本網站的條件。摩根大通概不就有關本網站、任何超連結網站或閣下未能使用有關網站，或有關運作或傳送的任何無法執行、錯誤、遺漏、干擾、欠妥、延誤、電腦病毒或線路或系統故障而導致的任何損害（包括（但不限於）直接或間接、特別、附帶或相應而生的損害）、損失或開支承擔責任。此等服務可能屬於摩根大通控制範圍以外或由第三方提供，在此情況下，摩根大通概不就其內容或提供此等額外服務的任何延誤、干擾或錯誤承擔責任。
+                    </p>
+
+                    <div class="tl">版權 </div>
+
+                    <p>在本網站可取得的若干資料乃相關新聞及資訊服務提供者或向相關服務提供者提供有關資料的第三方或摩根大通的知識産物。有關資料乃受版權及其他知識産權法所保護，而資訊服務提供者或第三方或摩根大通（視乎情況而定）擁有全部擁有權。本網站版權所有。除非獲摩根大通及或（如有關）可能擁有有關商標及標誌的第三方書面批准，否則嚴禁使用本網站展示任何商標及標誌。閣下進入本網站時，僅可使用來自本網站的資料作閣下個人及非商業用途。有關使用將按照此等使用條款及條件以及本網站其他部份所載的規定（如有）。閣下不得複製、分發或重新分發資料（包括以高速存取、編制或類似方式）或出售、轉售、重新傳送或以其他方式令任何第三方可以任何方式獲取來自本網站的資料。數量乃按「現況」提供。摩根大通或任何第三方概不向閣下或任何第三方就(i)透過本網站向閣下提供的資料或任何其他資料的任何不準確或不完整或傳遞的延誤、干擾、錯誤或遺漏；或(ii)閣下或任何第三方依賴有關資料所作出的任何決定或採取的行動而直接、間接或相應産生的任何損失或損害承擔責任。第三方或摩根大通概不就業務收益虧損、溢利損失或任何懲罰性、間接、相應而生、特別或類似損害（不論以合約、侵權或其他方式）承擔責任，即使知悉閣下或任何第三方可能招致有關損害。
+                    </p>
+
+                    <div class="tl">有關指數的資料 </div>
+
+                    <p>除上述免責聲明外，載於有關上市或發售文件內有關與結構性産品相關的各種指數的免責聲明及責任限制均適用於本網站的使用，且應納入本免責聲明內。摩根大通或任何提供本網站資料或數據的第三者，無論在任何情況下都不會爲其提供的相關指數資料承擔任何責任。
+                    </p>
+
+
+                    <div class="tl">並無核查 </div>
+
+                    <p>本網站的資料乃依據摩根大通認爲可靠的公開來源所取得的資訊。然而，摩根大通並無核查有關資料，而有關資料可能並不完整或準確。本網站提供的資料所載的意見、估計及其他資訊可在未事先通知的情況下更改或撤回。
+                    </p>
+
+                    <p>摩根大通並無任何責任更新或保持本網站資訊有效。摩根大通或其聯繫或關連人士及╱或聯屬公司、其董事、高級職員及╱或雇員（包括參與編制或發佈本網站資料的人士）或任何資訊提供者概不就本網站所載資料的真實性、準確性、完整性、足夠或合理程度或任何有關資料適用作任何用途發表任何明示或隱含的陳述或保證。
+                    </p>
+
+                    <p>倘有關資訊包括定價水平、披露資料、估值、於本網站刊發的其他分析或表現數據，本網站所載的資訊及數據乃按反映真誠決定的假設及參數而編制，或取自相信爲可靠的來源。所採用的假設及參數並非可能合理挑選的唯一假設及參數，因此，概不保證有關報價、披露或分析的準確性、合理程度或完整性。任何資訊服務提供者、第三方或吾等或任何聯屬公司概不保證資料的計算結果，而有關計算結果可能並不完整。任何資訊服務提供者、第三方或摩根大通概不就任何資料作特定用途的準確性、足夠程度、質量或適合程度、不受時間影響的程度、並無侵犯行爲、所有權作出任何保證，且一切有關保證乃明確摒除法律下不包括的所有保證。
+                    </p>
+
+                    <p>本網站所載的定價分析工具或定價模型僅供參考用途。該工具或模型乃基於某些假設及當時之市場情況，並根據公認的財務原則運作。以其他模型或不同假設爲基準的估值可能出現不同結果。摩根大通明確表示概不就(i)該模型或估計的準確性；(ii)計算或發佈估值的任何錯誤或遺漏；及(iii)依賴或使用有關估值而承擔任何責任。因此，任何該工具或模型所計算的結果純粹供參考用途，閣下不應依賴或使用該工具或模型所得出的結果。
+                    </p>
+
+                    <p>摩根大通概不就未來達致任何指標性回報或表現作出陳述或保證。有關資訊並不構成摩根大通的投資意見，並僅供參考用途。閣下須就使用自本網站取得的任何資料或因其使用而導致的任何結果承擔一切風險。閣下有責任確認透過互聯網接收的任何資訊的完整性。
+                    </p>
+
+                    <div class="tl">有關使用本網站的風險</div>
+
+                    <p>透過互聯網傳送資料並不安全，並可能出現摩根大通控制範圍以外的干擾、傳送延誤或任意中斷延誤。本網站所載資訊可能會被攔截、遺失、銷毀或傳送延誤，從而可能延誤提供摩根大通的服務及執行閣下的命令。儘管摩根大通已作出合理努力將有關風險降至最低，摩根大通概不保證本網站可供使用或産生的任何通訊並無病毒、破壞程式或其他有害部份。
+                    </p>
+
+                    <p>閣下確認任何資訊服務提供者、第三方或摩根大通概不就傳送導致的任何損失向閣下或任何第三方承擔責任。任何資訊服務提供者、第三方或摩根大通概不就任何相應而生的損失承擔責任，包括但不限於因使用該系統的延誤或損失而造成的特別、附帶、直接或間接損害。摩根大通概不就閣下使用該系統而導致閣下的電腦、軟體、數據機、電話或其他財産的任何損害承擔責任。摩根大通概不就未經授權各方對閣下電腦系統的任何干擾承擔任何責任。摩根大通明確提醒閣下有關病毒及黑客可能作出攻擊的風險。
+                    </p>
+
+                    <p>任何價值或價格乃計算至提供當日的營業時間結束時或另行列明的時間，僅供參考用途，並純粹擬供閣下使用。價格或價值未必反映根據規管摩根大通貿易關係的任何協定(i)訂立新交易的實際條款；(ii)現有交易清算或解除的實際條款；或(iii)對於指定提前終止日期後應付金額的計算或估計，且摩根大通概不保證其完整性或準確性。
+                    </p>
+
+                    <p>任何估值均採用以公認財務原則及有關未來市況的合理估計爲基準的專有模型計算所得。以其他模型或不同假設爲基準的估值可能出現不同結果。摩根大通明確表示概不就(i)作出估值所用的模型或估計的準確性；(ii)計算或發佈估值的任何錯誤或遺漏；及(iii)依賴或使用有關估值而承擔任何責任。謹請注意，於計算若干工具的全部未來現金流量的現值時，可能需要對未來市況作出估計。在此情況下，摩根大通的計算乃根據吾等的內部政策及模型，使用摩根大通對相關未來市況的最佳合理估計而進行。
+                    </p>
+
+                    <p>閣下確認摩根大通並無提供法律意見或稅務意見。然而，本網站可能呈列有關投資於結構性産品的一般稅務及遺産規劃的資料及原則。此等一般資料及原則未必適用於閣下的具體情況及財務狀況。閣下同意此等原則未必適用於閣下的具體情況或考慮閣下的綜合稅務或遺産規劃情況。
+                    </p>
+
+
+                    <div class="tl">稅務考慮因素 </div>
+
+                    <p>投資與多項稅務事宜有關。閣下於作出任何投資前，應諮詢稅務顧問有關閣下的特定情況。本網站所呈列的資訊無意提供稅務、法律或投資意見，對所有人士或所有類型的結構性産品、證券或交易未必一概準確。</p>
+
+                    <p>有關購買、擁有及處置結構性産品的若干稅務考慮因素的呈列內容僅屬一般性質，並無針對根據全部適用法律投資於衍生證券的所有潛在稅務後果。所呈列的概要乃根據本文據當日有效的條約、法律、法規、規則及決定，全部條約、法律、法規、規則及決定均可予變更。
+                    </p>
+
+                    <p>具體而言，投資者須就每次發行活動參考有關個別工具的全部條款以厘定確實稅務待遇。該等條款於相關披露中訂明，並受於相關時間適用的稅務法律及慣例所限。投資者應就購買、擁有、行使及處置結構性産品衍生證券的稅務後果諮詢其稅務顧問。
+                    </p>
+
+
+                    <div class="tl">規管法律及司法管轄 </div>
+
+                    <p>此等「免責聲明以及條款及條件」的條款受中華人民共和國香港特別行政區法律規管，並按其詮釋。閣下同意就本網站引起的任何事宜或爭議接受香港法院的司法管轄</p>
+
+
+                    <div class="tl">網絡私隱政策</div>
+
+                    <p><strong>私隱原則</strong></p>
+
+                    <p>您的私隱對我們至關重要。本《網絡私隱政策》說明您在瀏覽或使用摩根大通所提供與本政策有關或提述本政策的當前及其他網絡服務（統稱我們的｢網絡服務｣）時，我們如何收集、共享、使用及保護您的個人資料。然而，務請垂注，本《網絡私隱政策》並非我們就所有產品及服務的私隱原則所提出的獨家聲明。我們或會視乎您從我們獲得的金融產品或服務，或我們與您進行業務往來所處的司法權區，而應用其他私隱原則或政策。您可使用《網絡私隱政策》的網頁(https://www.jpmorgan.com/pages/privacy)提供的鏈結查閱若干該等政策。
+                    </p>
+
+                    <ul class="point">
+                        <li><strong>我們保護您的資料。</strong><br />我們有責任嚴格保護您資料的私隱及保密性，其中包括個人資料。我們維繫符合適用法律準則的實物、電子及程序保護措施，保證有關資料不被擅自查閱及使用、修改及銷毀。我們認為我們的僱員均有責任遵守有關資料私隱及保密性的相關政策、程序、規則及規例。
+                        </li>
+                        <li><strong>我們致力僅為適當用途收集、使用及保留客戶資料。</strong>
+                            <ul>
+                                <li>當您瀏覽或使用我們的網絡服務時，我們可能收集您的個人資料的類別包括您的姓名、電郵地址、郵寄地址、電話號碼、賬號、有限地址資料（例如，郵政編碼，其有助您找到附近的摩根大通辦事處）、用戶名稱及密碼。我們亦可能在您使用我們的網絡服務並提供有關資料時，收集我們認為對日常業務合理必要的支付卡資料、社會保障號碼、駕駛牌照號碼（或同類資料）。
+                                </li>
+                                <li>除上述個人資料外，我們可能收集有關您使用我們網絡服務的若干資料。例如，我們可能採集您連接網絡服務所使用裝置的IP地址，您所使用操作系統及瀏覽器的類別，以及有關您之前瀏覽網站的資料、您使用我們網絡服務的內容及您之後瀏覽網站的資料。如我們的Cookies政策所詳釋，我們或我們的第三方合作夥伴可能使用cookies（以及網絡信標或其他技術）收集及保存有關您瀏覽或使用我們網絡服務的各種資料。我們其後可能按法例許可或要求將我們從網絡上收集到的使用習慣及其他資料與有關您的個人資料相關聯。
+                                </li>
+                                <li>我們亦可能從其他在線及離線渠道收集有關您的資料，包括在商業上可供使用的第三方資源，例如信用報告機構。我們可能將該資料與我們根據本《網絡私隱政策》收集到有關您的個人及其他資料結合。
+                                </li>
+                                <li>我們可能使用我們從您處收集的資料協助我們提供網絡服務；管理、評估及改善我們的業務（包括開發新產品及服務、改進現有產品及服務、進行數據分析以及執行會計、審計及其他內部職能）；管理我們的風險；營銷我們的服務及產品；以及遵守及執行適用法例及規例、相關行業標準、合約責任及我們的政策。在適用法例及規例許可的情況下，我們亦可能將我們集中或匿名（如此不會識別任何單一客戶）收集的資料作各種商業用途。
+                                </li>
+                            </ul>
+                        </li>
+                        <li><strong>即使您出門在外，我們也會尊重並保護您的私隱。</strong><br />為使您能更方便使用我們部分產品及服務，摩根大通為您提供流動裝置應用程式及流動裝置優化網站。在您透過您的流動裝置與我們互動時，我們可能收集有關您的資料，如唯一裝置識別碼、您的屏幕解析度及其他裝置設定、您的位置資料及有關您如何使用流動裝置的分析資料。我們在收集若干資料（如精確的地理位置資料）前可能徵求您的允許。
+                        </li>
+                        <li><strong>當我們認為共享個人資料將提升我們向您提供的服務及產品時，或基於合法及常規事務理由，我們會與附屬公司及他人共享個人資料。</strong><br />
+                            <ul>
+                                <li>當我們認為共享個人資料將提升我們所提供的服務時，我們會與附屬公司及業務單位共享個人資料，惟僅會在符合法例、任何適用保密協議以及我們的政策及慣例等情況下進行。</li>
+                                <li>我們可能按法例要求或許可披露我們所擁有關於您的資料。例如，在我們真誠認為按相關法律規定有必要披露相關資料時，我們可能與監管機構及執法人員共享資料。我們可能在適當時候與第三方共享資料，以保障不被欺騙或核證或執行我們的使用條款、我們的其他權利或其他適用政策。
+                                </li>
+                                <li>我們不時與其他公司訂立協議，以向我們提供服務，或向您提供適用服務及產品。根據該等協議，該等公司有可能獲取您的個人資料，但彼等須保護有關資料，且僅可用作我們指定的用途。
+                                </li>
+                                <li>倘獲得您的同意，我們可能與任何人士或實體共享您的個人資料。</li>
+                            </ul>
+                        </li>
+                        <li><strong>在我們視為必要、適當或符合法律或監管責任時，我們可能向全球任何國家或透過此等國家傳送、移交或處理資料。</strong><br />作為一家全球企業，無論您身在何處，我們都致力為您提供最優質的金融產品及服務。為此，我們可能與位於您所在國家境外的摩根大通公司旗下的成員公司或服務供應商共享您的個人資料。即使這些國家的資料保護法律或不及您所在國家嚴苛，摩根大通仍會採取適當措施確保您的個人資料按本《網絡私隱政策》所述妥為處理。
+                        </li>
+                        <li><strong>我們向您提供有關個人資料共享的相關及適當選擇。</strong><br />我們可能就與附屬公司及第三方共享個人資料向您提供各種選擇。有關您的個人資料共享的選擇將於您從我們獲得的金融產品或服務所收到的私隱政策或通知內詳述。
+                        </li>
+                        <li><strong>您可查閱及更正我們所存檔有關您的資料。</strong><br />保持您的最新賬戶資料十分重要。您可通過登入及進入｢客戶中心｣一欄核查或更新若干賬戶資料。若您無法於網絡更改錯誤資料，或您希望離線修改，請使用您的賬戶結單、記錄或其他賬戶資料中列示的聯繫方式聯絡您的摩根大通客戶代表。
+                        </li>
+                        <li><strong>對出於廣告用途收集有關您在不同時間及不同網站的個人網絡活動資料，我們尊重您的決定。</strong><br />摩根大通不允許非聯屬第三方在您使用我們的網絡服務時收集有關您的個人網絡活動資料。我們不會使用於非聯屬網站收集的個人資料對您作出與您瀏覽行為有關的廣告活動。若我們日後從事此項業務，我們將提供適當通知及選擇，以便您決定是否退出此項資料收集。
+                        </li>
+                        <li><strong>我們將通知您我們的私隱政策及慣例變動。</strong><br />我們可能不時修改本《網絡私隱政策》。倘若如此，我們將以適當方式通知您，例如，在本網頁登載標有新｢最近更新｣日期的經修訂政策。除另有指明外，所有變動將於登載時生效。
+                        </li>
+                    </ul>
+
+                    <div class="tl">更新終止 </div>
+
+                    <p>儘管摩根大通並無承諾定期更新本網站，摩根大通可能透過於本網站刊載更新版本，以不時修改此等免責聲明以及條款及條件。摩根大通亦保留限制、干擾或終止本網站的權利。閣下將不會收到任何其他形式的通知。
+                    </p>
+
+
+                    <div class="tl"> 語言 </div>
+
+                    <p>此等條款及條件的中文譯本與英文版本如有歧義，概以英文版本爲准。</p>
+                </div>
+
+            </div>
+
+            <div class="option">
+                <div class="tl">請確保包括以下自我聲明： </div>
+                <p>如點擊以下「進入網站」，表示閣下確認於進入本網站之時爲香港合法居民。摩根大通對於就合法居住的國家地點提供虛假聲明的個人或實體獲分發或提供資訊及資料概不承擔任何責任。</p>
+            </div>
+
+            <div class="button_area">
+                <input id="enter" value="進入網站" class="button" type="button">
+                <input id="leave" value="離開網站" class="button" type="button">
+            </div>
+        </div>
+
+        <!-- header -->
+        <div class="header">
+            <div class="content">
+                <div class="top">
+                
+                    <div class="logo"><a href="/zh_hk/index"><img src="/home/images/logo_header.jpg" width="132" height="50" /></a></div>
+                    
+                    <div class="title">
+                    <div class="txt">摩根大通認股證 | 牛熊證 | 界內證</div> 
+                    <div class="warning">無抵押結構性產品</div>
+                    </div>
+                    
+                    <div class="setting">
+                        <div class="lang">
+                            <!--a href="javascript:void(0);" class="lang_button">繁體中文</a>
+                       <div class="lang_inside">
+                       	<ul>
+                       		<li><a href="javascript:changeLanguage('zh_cn');">简体中文</a></li>
+                       		<li><a href="javascript:changeLanguage('en_hk');">English</a></li>
+                       	</ul>
+                       </div-->
+                            <div class="lang_button">
+                                <ul>
+                                    <li><a href="javascript:changeLanguage('zh_cn');">简</a></li>
+                                    <li><a href="javascript:changeLanguage('en_hk');">EN</a></li>
+                                    <li class="mobile_button"><a id="changeToMobileBtn" style="display:none;" href="javascript:changeToMobile();">手機版</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!--div class="mobile_url"><a href="/mobile/ch/home.cgi">手機版(舊)</a></div-->
+
+                        <!--div class="tutorial">
+                	<a href="javascript:void(0);" class="tutorial_button">通識入門</a>
+					<div class="tutorial_inside">
+						<ul>
+							<li><a href="/zh_hk/education/page/1">認股證牛熊證教學</a></li>
+							<li><a href="/home/pdf/2020_faq_c.pdf" target="_blank">常問問題</a></li>
+						</ul>
+					</div>
+                </div-->
+                    </div>
+                    
+                    <div class="img"><img src="/home/images/img_six_years.jpg" width="260" border="0" /><br /><a href="javascript:void(0)" class="tooltip tooltipstered" data-tooltip-content="#tooltip_header" style="float:left;"><img src="/home/images/img_six_years_button_c.jpg" width="90" /></a></div>                    
+                    
+                    <div class="tooltip_templates">
+                        <span id="tooltip_header">
+                            資料來源: 港交所網頁及彭博。<br />每隻認股證的名義價值計算方法 = 每日淨買賣數量/換股比率x相關資產收市價x匯率(如適用)
+                        </span>
+                    </div>
+
+                </div>
+                <div class="menu_area">
+                    <div class="scroll_logo"><a href="/zh_hk/index"><img src="/home/images/logo_header_scroll.jpg"
+                                width="80" height="31" /></a></div>
+                    <div class="menu">
+                        <ul>
+                            <li id="main_page"><a href="/zh_hk/index">主頁</a></li>
+                            <li id="market_statistics">
+                                <a href="javascript:void(0);">大市導航</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part">
+                                                <div class="subject">大市動向</div>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/realtime-sector/hot">即市版塊表現</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/result-announcements">業績公佈</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/market-statistics/adr">美國預託證券ADR</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/market-statistics/realtime-sector/trend/">個股走勢</a>
+                                                </li>
+                                                <!--li class="tl"><a href="/zh_hk/market-statistics/realtime-sector/trend/label/topturnover">個股走勢</a></li-->
+                                            </div>
+                                            <div class="part middle">
+                                                <div class="subject">輪證市場倉位</div>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/money-flow/index">輪證資金流向</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-outstanding/">牛熊證街貨分佈圖</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/money-flow/etf">指數與ETF資金流向</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/hsi-cbbc-band">恒指牛熊證加權通道</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/money-flow-momentum">資金動力圖</a>
+                                                </li>
+                                            </div>
+                                            <div class="part middle">
+                                                <div class="subject">新聞及評論</div>
+                                                <li class="tl news"><a href="/zh_hk/market-statistics/news">即時新聞</a>
+                                                </li>
+                                                <!--li class="tl"><a href="/zh_hk/market-statistics/commentary/jp-commentary">摩根大通評論</a></li-->
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/commentary/market-focus">輪證焦點</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/commentary/newsletter">每日導航(PDF)</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/commentary/article">通悉大市</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/commentary/video">摩根大通輪證頻道</a>
+                                                </li>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li>
+                            <!--li id="stock_analysis">
+                                <a href="javascript:void(0);">個股分析</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part">
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/underlying/underlying-terms">資料及數據</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/underlying/underlying-chart">圖表分析</a>
+                                                </li>
+                                            </div>
+                                            <div class="part no_bg">
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/underlying/underlying-money-flow/">個股輪證資金流</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/underlying/underlying-cnhk-moneyflow/">港股通資金流</a>
+                                                </li>
+                                            </div>
+                                            <div class="part news">
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/realtime-sector/trend/">個股走勢</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/underlying/underlying-news/">相關新聞</a>
+                                                </li>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li-->
+                            <li id="warrant">
+                                <a href="javascript:void(0);">認股證</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part middle">
+                                                <div class="subject">搜尋及查詢</div>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/tools/search/type/wnt">認股證搜尋</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/warrant/warrant-expiring">即將到期認股證</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/warrant/warrant-settlement">結算價查詢</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/warrant/warrant-new-listing">即將上市認股證</a></li>
+                                            </div>
+                                            <div class="part middle">
+                                                <div class="subject">分析工具</div>
+                                                <li class="tl"><a href="/zh_hk/warrant/warrant-terms">資料及數據</a></li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/money-flow/wnt">認股證資金流向</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/warrant/warrant-calculator">計算機</a>
+                                                </li>
+                                            </div>
+                                            <div class="part">
+                                                <div class="subject">公告</div>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/warrant/warrant-announcement">認股證公告</a></li>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li>
+                            <li id="cbbc">
+                                <a href="javascript:void(0);">牛熊證</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part middle">
+                                                <div class="subject">搜尋及查詢</div>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/tools/search/type/cbbc">牛熊證搜尋</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-residual-value">剩餘價值速查</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-expiring">即將到期牛熊證</a></li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-settlement">結算價查詢</a></li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-callback">近日收回之牛熊證</a></li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-new-listing">即將上市牛熊證</a></li>
+                                            </div>
+                                            <div class="part middle">
+                                                <div class="subject">分析工具</div>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-terms">資料及數據</a></li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-outstanding/">牛熊證街貨分佈圖</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-calculator">計算機</a></li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/market-statistics/money-flow/cbbc">牛熊證資金流向</a>
+                                                </li>
+                                            </div>
+                                            <div class="part">
+                                                <div class="subject">公告</div>
+                                                <li class="tl"><a href="/zh_hk/cbbc/cbbc-announcement">牛熊證公告</a></li>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li>
+							<li id="inline">
+                                <a href="javascript:void(0);">界內證</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part middle">
+                                                <div class="subject">搜尋及查詢</div>
+                                                <li class="tl"><a href="/zh_hk/inline/search">界內證速查</a></li>
+                                                <li class="tl"><a href="/zh_hk/market-statistics/tools/search/type/inline?wtype=inline">界內證搜尋</a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-expiring">即將到期界內證</a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-new-listing">即將上市界內證</a></li>
+                                                <li class="tl"><a href="/zh_hk/education/inline/page/1">界內證教學 </a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-settlement">結算價查詢</a></li> 
+
+                                            </div>
+                                            <div class="part middle">
+                                                <div class="subject">分析工具</div>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-terms">資料及數據</a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-calculator">計算機</a>
+                                                </li>
+                                            </div>
+                                            <div class="part">
+                                                <div class="subject">公告</div>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-announcement">界內證公告</a></li>
+                                            </div>
+											                                         					
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li>							
+                            <li id="stock_connect">
+                                <a href="javascript:void(0);">深港、滬港通</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part">
+                                                <li class="tl"><a
+                                                        href="/zh_hk/stock-connect/cnhk-quota-balance">港股通額度餘額記錄</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/stock-connect/top10-turnover">每日滬股、深股通十大成交資金流</a>
+                                                </li>
+                                            </div>
+                                            <div class="part">
+                                                <li class="tl"><a
+                                                        href="/zh_hk/stock-connect/nb-quota-balance">滬股、深股通額度餘額記錄</a>
+                                                </li>
+                                                <li class="tl"><a
+                                                        href="/zh_hk/stock-connect/cnhk-holding-ratio">港股通持倉紀錄</a>
+                                                </li>
+                                            </div>
+                                            <div class="part">
+                                                <li class="tl"><a
+                                                        href="/zh_hk/stock-connect/cnhk-top10-turnover">每日港股通十大成交資金流</a>
+                                                </li>
+                                                <li class="tl"><a href="/zh_hk/stock-connect/ahdata">AH股差價 </a></li>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li>
+                            <li id="tutorial">
+                                <a href="javascript:void(0);">通識入門</a>
+                                <ul style="display:none;">
+                                    <div class="content">
+                                        <div class="full">
+                                            <div class="part">
+                                                <li class="tl"><a href="/zh_hk/education/inline/page/1">界內證教學 </a></li>
+                                            </div>
+                                            <div class="part">
+                                                <li class="tl"><a href="/zh_hk/education/page/1">認股證牛熊證教學</a></li>
+                                            </div>
+                                            <div class="part">
+                                                <li class="tl"><a href="/home/pdf/2020_faq_c.pdf" target="_blank">常問問題</a></li>
+                                            </div>
+                                            <div class="part">
+                                            	<li class="tl"><a href="/home/pdf/principles_c.pdf" target="_blank">流通量供應的業界準則</a></li>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ul>
+                            </li>
+							<li id="newecon">
+								<a href="/zh_hk/newecon">新經濟專頁</a>
+                            </li>
+                            <li id="uswarrant">
+								<a href="/zh_hk/us-index">追蹤美股</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- mobile -->
+
+        <div id="mobilemenu" class="mobile_only">
+            <div class="mobilemenu-wrapper">
+                <div class="mobilemenu-trigger">
+                    <button class="trigger">
+                        <span class="box">
+                            <span class="bar top"></span>
+                            <span class="bar middle"></span>
+                            <span class="bar bottom"></span>
+                        </span>
+                    </button>
+                </div>
+                <div class="mobilemenu-view">
+                    <div class="mobile_menu">
+                        <ul class="navaccordion">
+                            <li id="main_page"><a href="/zh_hk/index">主頁</a></li>
+                            <li id="mobile_menu_market_statistics">
+                                <a href="javascript:void(0);" class="hide"
+                                    data-toggle="#mobile_menu_market_statistics">大市導航</a>
+                                <ul class="mobile_sub_menu">
+                                    <div class="subject">大市動向</div>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/realtime-sector/hot"
+                                            class="current">即市版塊表現</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/result-announcements"
+                                            class="current">業績公佈</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/adr" class="current">美國預託證券ADR</a>
+                                    </li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/realtime-sector/trend/">個股走勢</a>
+                                    </li>
+                                    <!--li class="tl"><a href="/zh_hk/market-statistics/realtime-sector/trend/label/topturnover" class="current">個股走勢</a></li-->
+
+                                    <div class="subject">輪證市場倉位</div>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/money-flow/index"
+                                            class="current">輪證資金流向</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-outstanding/" class="current">牛熊證街貨分佈圖</a>
+                                    </li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/money-flow/etf"
+                                            class="current">指數與ETF資金流向</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/hsi-cbbc-band"
+                                            class="current">恒指牛熊證加權通道</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/money-flow-momentum"
+                                            class="current">資金動力圖</a></li>
+
+                                    <div class="subject">新聞及評論</div>
+                                    <li class="tl news"><a href="/zh_hk/market-statistics/news" class="current">即時新聞</a>
+                                    </li>
+                                    <!--li class="tl"><a href="/zh_hk/market-statistics/commentary/jp-commentary" class="current">摩根大通評論</a></li-->
+                                    <li class="tl"><a href="/zh_hk/market-statistics/commentary/market-focus"
+                                            class="current">輪證焦點</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/commentary/newsletter"
+                                            class="current">每日導航(PDF)</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/commentary/article"
+                                            class="current">通悉大市</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/commentary/video"
+                                            class="current">摩根大通輪證頻道</a></li>
+                                </ul>
+                            </li>
+                            <!--li id="mobile_menu_stock_analysis">
+                                <a href="javascript:void(0);" class="hide"
+                                    data-toggle="#mobile_menu_stock_analysis">個股分析</a>
+                                <ul class="mobile_sub_menu">
+                                    <li class="tl"><a
+                                            href="/zh_hk/market-statistics/underlying/underlying-terms">資料及數據</a></li>
+                                    <li class="tl"><a
+                                            href="/zh_hk/market-statistics/underlying/underlying-chart">圖表分析</a></li>
+                                    <li class="tl"><a
+                                            href="/zh_hk/market-statistics/underlying/underlying-money-flow/">個股輪證資金流</a>
+                                    </li>
+                                    <li class="tl"><a
+                                            href="/zh_hk/market-statistics/underlying/underlying-cnhk-moneyflow/">港股通資金流</a>
+                                    </li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/realtime-sector/trend/">個股走勢</a>
+                                    </li>
+                                    <li class="tl"><a
+                                            href="/zh_hk/market-statistics/underlying/underlying-news/">相關新聞</a></li>
+                                </ul>
+                            </li-->
+                            <li id="mobile_menu_warrant">
+                                <a href="javascript:void(0);" class="hide" data-toggle="#mobile_menu_warrant">認股證</a>
+                                <ul class="mobile_sub_menu">
+                                    <div class="subject">搜尋及查詢</div>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/tools/search/type/wnt">認股證搜尋</a>
+                                    </li>
+                                    <li class="tl"><a href="/zh_hk/warrant/warrant-expiring">即將到期認股證</a></li>
+                                    <li class="tl"><a href="/zh_hk/warrant/warrant-settlement">結算價查詢</a></li>
+                                    <li class="tl"><a href="/zh_hk/warrant/warrant-new-listing">即將上市認股證</a></li>
+
+                                    <div class="subject">分析工具</div>
+                                    <li class="tl"><a href="/zh_hk/warrant/warrant-terms">資料及數據</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/money-flow/wnt">認股證資金流向</a></li>
+                                    <li class="tl"><a href="/zh_hk/warrant/warrant-calculator">計算機</a></li>
+
+                                    <div class="subject">公告</div>
+                                    <li class="tl"><a href="/zh_hk/warrant/warrant-announcement">認股證公告</a></li>
+                                </ul>
+                            </li>
+                            <li id="mobile_menu_cbbc">
+                                <a href="javascript:void(0);" class="hide" data-toggle="#mobile_menu_cbbc">牛熊證</a>
+                                <ul class="mobile_sub_menu">
+                                    <div class="subject">搜尋及查詢</div>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/tools/search/type/cbbc">牛熊證搜尋</a>
+                                    </li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-residual-value">剩餘價值速查</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-expiring">即將到期牛熊證</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-settlement">結算價查詢</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-callback">近日收回之牛熊證</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-new-listing">即將上市牛熊證</a></li>
+
+                                    <div class="subject">分析工具</div>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-terms">資料及數據</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-outstanding/">牛熊證街貨分佈圖</a></li>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-calculator">計算機</a></li>
+                                    <li class="tl"><a href="/zh_hk/market-statistics/money-flow/cbbc">牛熊證資金流向</a></li>
+
+                                    <div class="subject">公告</div>
+                                    <li class="tl"><a href="/zh_hk/cbbc/cbbc-announcement">牛熊證公告</a></li>
+                                </ul>
+                            </li>
+                            <li id="mobile_menu_inline">
+                                <a href="javascript:void(0);" class="hide"
+                                    data-toggle="#mobile_menu_inline">界內證</a>
+									<ul class="mobile_sub_menu">
+                                                <div class="subject">搜尋及查詢</div>
+                                                <li class="tl"><a href="/zh_hk/inline/search">界內證速查</a></li>
+                                                <li class="tl"><a href="/zh_hk/market-statistics/tools/search/type/inline?wtype=inline">界內證搜尋</a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-expiring">即將到期界內證</a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-new-listing">即將上市界內證</a></li>
+												<li class="tl"><a href="/zh_hk/education/inline/page/1">界內證教學</a></li> 
+                                                <li class="tl"><a href="/zh_hk/inline/inline-settlement">結算價查詢</a></li> 
+
+                                                <div class="subject">分析工具</div>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-terms">資料及數據</a></li>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-calculator">計算機</a></li>
+                                  
+                                                <div class="subject">公告</div>
+                                                <li class="tl"><a href="/zh_hk/inline/inline-announcement">界內證公告</a></li>
+                                	</ul>
+                            </li>
+                            <li id="mobile_menu_stock_connect">
+                                <a href="javascript:void(0);" class="hide"
+                                    data-toggle="#mobile_menu_stock_connect">深港、滬港通</a>
+                                <ul class="mobile_sub_menu">
+                                    <li class="tl"><a href="/zh_hk/stock-connect/cnhk-quota-balance">港股通額度餘額記錄</a></li>
+                                    <li class="tl"><a href="/zh_hk/stock-connect/nb-quota-balance">滬股、深股通額度餘額記錄</a></li>
+                                    <li class="tl"><a href="/zh_hk/stock-connect/cnhk-holding-ratio">港股通持倉紀錄</a></li>
+                                    <li class="tl"><a href="/zh_hk/stock-connect/cnhk-top10-turnover">每日港股通十大成交資金流</a>
+                                    </li>
+                                    <li class="tl"><a href="/zh_hk/stock-connect/ahdata">AH股差價 </a></li>
+                                    <li class="tl"><a href="/zh_hk/stock-connect/top10-turnover">每日滬股、深股通十大成交資金流</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li id="mobile_menu_tutorial">
+                                <a href="javascript:void(0);" class="hide" data-toggle="#mobile_menu_tutorial">通識入門</a>
+                                <ul class="mobile_sub_menu">
+                                	<li class="tl"><a href="/zh_hk/education/inline/page/1">界內證教學</a></li> 
+                                    <li class="tl"><a href="/zh_hk/education/page/1">認股證牛熊證教學</a></li>
+                                    <li class="tl"><a href="/home/pdf/2020_faq_c.pdf" target="_blank">常問問題</a></li>
+                                    <li class="tl"><a href="/home/pdf/principles_c.pdf" target="_blank">流通量供應的業界準則</a></li>                                  
+                                </ul>
+                            </li>
+                            
+                            <li id="mobile_menu_newecon">
+								<a href="/zh_hk/newecon">新經濟專頁</a>
+                            </li>
+                            
+                            <li id="mobile_menu_uswarrant">
+								<a href="/zh_hk/us-index">追蹤美股</a>
+                            </li>
+                            
+                            <li id="mobile_menu_other">
+                                <a href="javascript:void(0);" class="hide" data-toggle="#mobile_menu_other">其他</a>
+                                <ul class="mobile_sub_menu">
+                                    <li class="tl"><a href="/zh_hk/about/sitemap">網站指南</a></li>
+                                    <li class="tl"><a href="/zh_hk/about/contact">聯絡我們</a></li>
+                                    <li class="tl"><a href="/zh_hk/about">關於我們</a></li>
+                                    <li class="tl"><a href="/zh_hk/disclaimer">免責聲明</a></li>
+                                    <li class="tl"><a href="/zh_hk/privacy-policy">私隱政策聲明</a></li>
+                                    <li class="tl"><a
+                                            href="https://www.jpmorganchase.com/corporate/investor-relations/investor-relations.htm"
+                                            target="_blank">投資者關係</a></li>
+                                    <li class="tl"><a href="https://www.jpmorgan.com/country/HK/EN/privacy"
+                                            target="blank">在線隱私政策</a></li>
+                                    <li class="tl"><a href="https://www.jpmorgan.com/country/HK/en/terms"
+                                            target="_blank">使用條款</a></li>
+                                    <li class="tl"><a href="https://www.jpmorgan.com/country/HK/EN/disclosures"
+                                            target="_blank">信息披露</a></li>
+                                    <li class="tl"><a href="https://www.jpmorgan.com/country/HK/EN/cookies"
+                                            target="_blank">Cookie政策</a></li>
+                                    <li class="tl"><a href="https://careers.jpmorgan.com/careers/global/en/home"
+                                            target="_blank">求職</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <div class="lang">
+                            <div class="tl">語言:</div>
+                            <ul>
+                                <li class="current"><a href="javascript:changeLanguage('zh_hk');">繁</a></li>
+                                <li><a href="javascript:changeLanguage('zh_cn');">简</a></li>
+                                <li><a href="javascript:changeLanguage('en_hk');">EN</a></li>
+                                <li class="desktop_button"><a href="javascript:changeToDesktop();">桌面版</a></li>
+                            </ul>
+                        </div>
+                        <div class="tools">
+                            <ul>
+                                <li>
+                                    <div class="menu_focus_box">
+                                        <a href="javascript:void(0);"
+                                            onclick="javascript:$('.os_over_box,.focus_box').hide();$('.jp_pick,.os_box,.hk_top10_box').show();$('.os_box').css('bottom','39px');$('.hk_top10_box').css('bottom','210px');">即時焦點</a>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="menu_comment_box">
+                                        <a href="javascript:void(0);"
+                                            onclick="javascript:$('.message_box').show();">意見箱</a>
+                                    </div>
+                                </li>
+                            </ul>
+                            <ul>
+                                <li>
+                                    <div class="menu_os_box">
+                                        <a href="javascript:void(0);"
+                                            onclick="javascript:$('.os_over_box,.os_box').hide();$('.os_related,.focus_box,.hk_top10_box').show();$('.os_box').css('bottom','');$('.hk_top10_box').css('bottom','190px');">高街貨輪證</a>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="menu_hk_top10_box">
+                                        <a href="javascript:void(0);"
+                                            onclick="javascript:$('.os_over_box,.hk_top10_box').hide();$('.hk_top10,.focus_box,.os_box').show();$('.os_box').css('bottom','');">港股十大</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile_header mobile_only">
+            <div class="logo"><a href="/zh_hk/index"><img src="/home/images/logo_header.jpg" width="132"
+                        height="50"></a></div>
+        </div>
+		
+        <div class="desktop_button mobile_only"><a href="javascript:changeToDesktop();">桌面版</a></div>
+        
+        <div id="mobilesearch" class="mobile_only">
+            <button class="search_menu_button">搜尋</button>
+            <div id="mobile_search_area" class="search_area">
+                <input id="search_code_mobile" name="input" type="text" placeholder="請輸入輪證及正股編號"
+                    onclick="javascript: this.value='';"> <button class="search">搜尋</button>
+            </div>
+        </div>
+		
+		<div class="os_over_box jp_pick" style="display:none;">
+	<div class="tl">摩根大通輪證</div>
+	<button class="close" onclick="javascript:$('.os_over_box').hide();javascript:$('.focus_box').show();">關閉</button>
+	<div class="table">
+		<table width="100%" border="0" cellspacing="0" cellpadding="0">
+			<colgroup>
+				<col width="60%">
+				<col width="">
+				<col width="25px">
+			</colgroup>
+			<thead>
+				<tr>
+					<th>摩根大通產品</th>
+					<th class="line">現價</th>
+					<th>&nbsp;</th>
+				</tr>
+			</thead>
+		</table>
+		<div class="scroll">
+			<table width="100%" border="0" cellspacing="0" cellpadding="0">
+				<colgroup>
+					<col width="60%">
+					<col width="">
+				</colgroup>
+				<tbody>
+					<tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/15717">15717 中移(購)</a></td>
+			<td>0.073</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/27960">27960 鐵塔(購)</a></td>
+			<td>0.105</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/22729">22729 信藥(購)</a></td>
+			<td>0.125</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/24902">24902 中油(購)</a></td>
+			<td>0.069</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/27472">27472 九毛(購)</a></td>
+			<td>0.250</td>
+			</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="timer">最後更新時間:2020-09-29 16:35</div>
+	</div>
+</div> 
+		<div class="os_over_box os_related" style="display: none">
+	<div class="tl">街貨量逾80%輪證<span></span></div>
+	<div class="t2">投資者宜留意市場供求或令輪證的價格偏離合理價格</div>
+    <button class="close" onclick="javascript:$('.os_over_box').hide();javascript:$('.os_box,.focus_box').show();">關閉</button>
+    <div class="table">
+    	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <colgroup>
+        <col width="60%">
+        <col width="">
+        <col width="25px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>摩根大通產品</th>
+            <th class="line">街貨量<br>(百份比)</th>
+            <th>&nbsp;</th>
+          </tr>
+        </thead>
+        </table>
+        <div class="scroll">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+		<colgroup>
+        <col width="60%">
+        <col width="">
+        </colgroup>
+		<tbody>
+          <tr><th colspan="2">認股證</th></tr><tr class="">
+			<td class="put"><a href="/zh_hk/warrant/warrant-terms/code/13663">13663 美團(沽)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/20270">20270 瑞聲(購)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/25494">25494 綠藥(購)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/24166">24166 恒指(購)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/22907">22907 恒指(購)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="put"><a href="/zh_hk/warrant/warrant-terms/code/24355">24355 恒指(沽)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/12217">12217 鐵塔(購)</a></td>
+			<td>100.0%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/23821">23821 恒指(購)</a></td>
+			<td>93.8%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/17902">17902 鐵塔(購)</a></td>
+			<td>93.5%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/21406">21406 中壽(購)</a></td>
+			<td>91.5%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/16506">16506 吉利(購)</a></td>
+			<td>90.1%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/25108">25108 鐵塔(購)</a></td>
+			<td>86.4%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/23227">23227 舜光(購)</a></td>
+			<td>83.2%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/17652">17652 中行(購)</a></td>
+			<td>82.3%</td>
+			</tr><tr class="">
+			<td class="call"><a href="/zh_hk/warrant/warrant-terms/code/25922">25922 匯豐(購)</a></td>
+			<td>82.1%</td>
+			</tr>
+		</tbody>
+        </table>
+        </div>
+        <div class="timer">最後更新時間:2020-09-29 16:46</div>
+    </div>
+</div> 
+        <style>
+.os_over_box .table table tbody tr td:first-child a{ word-break:break-all; white-space:nowrap; text-overflow:ellipsis; -o-text-overflow:ellipsis; overflow:hidden; width:130px; float:left;}
+@media only screen and (max-width: 767px){
+.os_over_box .table table tbody tr td:first-child a{ width:auto; }
+.os_over_box .table table thead tr th:last-child{ display:none;}
+}
+</style>
+<div class="os_over_box hk_top10" style="display: none">
+	<div class="tl">港股十大<span></span></div>
+    <button class="close" onclick="javascript:$('.os_over_box').hide();javascript:$('.hk_top10_box').show();">關閉</button>
+    <div class="table">
+    	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <colgroup>
+        <col width="64%">
+        <col width="">
+        <col width="20px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>十大成交</th>
+            <th class="line">摩根大通<br />產品</th>
+            <th>&nbsp;</th>
+          </tr>
+        </thead>
+        </table>
+        <div class="scroll">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+		<colgroup>
+        <col width="64%">
+        <col width="">
+        </colgroup>
+		<tbody>
+          
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/0700">0700 騰訊控股</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/16073" target="_blank">16073(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/9988">9988 阿里巴巴－ＳＷ</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/26676" target="_blank">26676(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/1299">1299 友邦保險</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/16806" target="_blank">16806(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/3690">3690 美團點評－Ｗ</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/27682" target="_blank">27682(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/1810">1810 小米集團－Ｗ</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/27687" target="_blank">27687(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/2318">2318 中國平安</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/27681" target="_blank">27681(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/0005">0005 匯豐控股</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/27691" target="_blank">27691(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/0939">0939 建設銀行</td>
+				<td><span class="call"><a href="/zh_hk/warrant/warrant-terms/code/28186" target="_blank">28186(<span class='call'>購</span>)</a></span></td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/9616">9616 東軟教育</td>
+				<td>&nbsp;</td>
+			</tr>
+		
+			<tr>
+				<td><a href="/zh_hk/market-statistics/underlying/underlying-terms/code/2057">2057 中通快遞－ＳＷ</td>
+				<td>&nbsp;</td>
+			</tr>
+		
+		</tbody>
+        </table>
+        </div>
+        <div class="timer">最後更新時間:2020-09-29 16:05</div>
+    </div>
+</div> 
+
+<div class="message_box" style="display:none" >
+	<div class="close"><a href="javascript:void(0);" onclick="javascript:$('.message_box').hide();"><img src="/home/images/icon_message_box_close.jpg" width="16" height="16" /></a></div>
+	<div class="tl">意見箱</div>
+	<div class="txt">
+		<p class="large">若閣下對摩通產品或網站內容等有任何意見，歡迎填寫以下表格。</p>
+		<p>此表格僅為提供意見之用， 要求報價請致電熱線2800 7878。有意與我們交流請電郵至 <a href="mailto:jpm_warrants@jpmorgan.com">jpm_warrants@jpmorgan.com</a></p>
+	</div>
+
+	<form id="commentform" name="commentform" onSubmit="return false;">
+		<input type="hidden" id="cb_agree" name="agree" />
+		<div class="message_area">
+			<label>意見:</label>
+			<textarea id="cb_comment" name="comment" cols="" rows="3" placeholder="*必須填寫"></textarea>
+			<label>電郵：</label>
+			<input id="cb_email" name="receiveEmail" type="text" placeholder="如欲訂閱摩通輪證資訊" />
+			<div class="agree_box">
+				<input id="cb_subscribe" name="subscribe" type="checkbox" value="Y" />本人欲以電郵訂閱摩通輪證及有關資訊
+			</div>
+			<button onclick="commentgosubmit()">送出</button>
+		</div>
+	</form>
+
+</div>
+
+
+<!-- nav -->
+<div class="nav"><div class="content"><div class="navigate_area"><link rel="stylesheet" type="text/css" href="/home/css/slick.css"/>
+<script type="text/javascript" src="/home/js/slick.min.js"></script>
+<script>
+	$(document).ready(function() {
+		// slick carousel
+		$('.vertical_new').slick({
+			vertical: true,
+			verticalSwiping: true,
+			infinite: true,
+			autoplay: true,
+			autoplaySpeed: 8000,
+			dots: false,
+			arrows: false,
+		});
+		
+		$(".pointer").click(function(){
+			var url = $(this).find(".url").text();
+			if(url!=""){
+				location.href=url;
+			}
+		});
+	});
+</script>
+<div class="vertical_new">
+	<div class="news"><span class="time">13:13</span><span class="news pointer">【焦點個股】信義光能創上市新高 光伏玻璃價格近日持續上升 信光購 <a href="/zh_hk/warrant/warrant-terms/code/22432" class="call"><b>22432</b></a><span class="url" style="display:none;">/zh_hk/market-statistics/underlying/underlying-terms/code/968</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7144">更多</a></div><div class="news"><span class="time">09:20</span><span class="news pointer">【匯豐資金流】匯豐上日抽升9% 淡倉錄約1300萬淨流入  匯豐購 <a href="/zh_hk/warrant/warrant-terms/code/27691" class="call"><b>27691</b></a>/沽 <a href="/zh_hk/warrant/warrant-terms/code/27852" class="put"><b>27852</b></a><span class="url" style="display:none;">/zh_hk/market-statistics/underlying/underlying-terms/code/5</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7143">更多</a></div><div class="news"><span class="time">09:18</span><span class="news pointer">【北水暫停】南向港股通今日起暫停 至下周五(10月9日)恢復 <span class="url" style="display:none;">/zh_hk/stock-connect/cnhk-top10-turnover</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7142">更多</a></div><div class="news"><span class="time">09:14</span><span class="news pointer">【吉利回A】吉利在上海科創板上市申請獲批  吉利購 <a href="/zh_hk/warrant/warrant-terms/code/28066" class="call"><b>28066</b></a>/沽 <a href="/zh_hk/warrant/warrant-terms/code/16502" class="put"><b>16502</b></a><span class="url" style="display:none;">/zh_hk/market-statistics/underlying/underlying-terms/code/175</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7141">更多</a></div><div class="news"><span class="time">09:09</span><span class="news pointer">【人行政策】人民銀行指穩健的貨幣政策要更靈活適度 保持流動性合理充裕 建行購 <a href="/zh_hk/warrant/warrant-terms/code/28186" class="call"><b>28186</b></a>/沽 <a href="/zh_hk/warrant/warrant-terms/code/27338" class="put"><b>27338</b></a> 工行購 <a href="/zh_hk/warrant/warrant-terms/code/26316" class="call"><b>26316</b></a>/購 <a href="/zh_hk/warrant/warrant-terms/code/28192" class="call"><b>28192</b></a><span class="url" style="display:none;">/zh_hk/market-statistics/underlying/underlying-terms/code/939</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7140">更多</a></div><div class="news"><span class="time">09:06</span><span class="news pointer">【金價回升】美元回軟及歐央行表明必要時將推更多貨幣政策 紐約期金收市升0.86% Ｓ金購 <a href="/zh_hk/warrant/warrant-terms/code/16818" class="call"><b>16818</b></a>/沽 <a href="/zh_hk/warrant/warrant-terms/code/20113" class="put"><b>20113</b></a> 紫金購 <a href="/zh_hk/warrant/warrant-terms/code/17444" class="call"><b>17444</b></a>/購 <a href="/zh_hk/warrant/warrant-terms/code/28193" class="call"><b>28193</b></a><span class="url" style="display:none;">/zh_hk/market-statistics/underlying/underlying-terms/code/2840</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7139">更多</a></div><div class="news"><span class="time">09:04</span><span class="news pointer">【美股表現】三大指數續升 標普500及納斯達克100指數3連升  納指購 <a href="/zh_hk/warrant/warrant-terms/code/10147" class="call"><b>10147</b></a>/沽 <a href="/zh_hk/warrant/warrant-terms/code/10159" class="put"><b>10159</b></a> 標指購 <a href="/zh_hk/warrant/warrant-terms/code/10148" class="call"><b>10148</b></a>/沽 <a href="/zh_hk/warrant/warrant-terms/code/10158" class="put"><b>10158</b></a><span class="url" style="display:none;">/zh_hk/us-index</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7138">更多</a></div><div class="news"><span class="time">13:21</span><span class="news pointer">【恒生科指】恒生科指重上7千點 軟件股跑贏 金蝶購 <a href="/zh_hk/warrant/warrant-terms/code/16799" class="call"><b>16799</b></a> 金軟購 <a href="/zh_hk/warrant/warrant-terms/code/15519" class="call"><b>15519</b></a><span class="url" style="display:none;">/zh_hk/market-statistics/underlying/underlying-terms/code/268</span></span><span class="more"><a href="/zh_hk/market-statistics/commentary/market-focus/uid/7145">更多</a></div>
+</div> <div class="tl">圖表分析</div></div></div></div>
+
+<div id="chart" class="inside_content inline_product">
+	<div class="content">
+       
+			<div class="left_area" id="left_scroll">
+			<div class="left_part">
+				<div id="terms_quick_search">
+				</div>
+				<div class="side_menu" style="display:none;">
+					 
+				</div>
+			</div>
+			</div>
+		
+       
+       
+<script src="/home/js/highstock/highstock-all.js"></script>
+<script src="/home/js/highstock/plugin/highstock-oxymoronic-candlesticks-master/oxymoronic-candlesticks.js"></script>
+<script src="/home/js/highstock/plugin/annotations-master/annotations.js"></script>
+<script src="/home/js/highstock/plugin/dbpower-highchart-functions/functions.js"></script>
+<script type="text/javascript" src="/zh_hk/chartjs/termsChart"></script>
+<script type="text/javascript" src="/home/js/termsChartControl.js"></script>
+
+<script type="text/javascript">
+var ucode = '';
+var code = '';
+var wtype_en = 'inline';
+$(document).ready(function() {
+	updateRealTimeBox();	
+	termsChart.init("",initChart,navigatorUpdated);
+	$("select.picker").change(function(){	
+		 $("#"+$(this).attr("for")).find(".technical_setting").hide();
+		 $("#"+$(this).attr("for")).find("div[data-type='"+$(this).val()+"_setting']").show();
+	   });
+   
+	 $(".checkbox-sma").click(function(){
+	 	var malines = [10,20,50,100,250];
+		 var index =$(".moving_average input[type='checkbox']").index(this);
+		 
+		 if(!$('.checkbox-sma').eq(0).prop("checked")){
+		 	termsChart.addMAline("",0);
+		 }
+		 if ($(this).prop("checked")){
+		  	termsChart.addMAline("sma-"+malines[index],index);
+		}else{
+		   termsChart.addMAline("",index);
+		}
+	  });
+	  
+	$(".technical_option button.apply").click(function(){
+			 var settingContainer = $(this).parents(".technical_setting");
+			 var id = settingContainer.attr("data-type").replace("_setting","");
+			 var index = ($(this).parents(".technical_option").attr("id").replace("technical_picker","")*1)-1;
+     
+			 if (id == "bol" || id == "sar"){		
+			  termsChart.addMAline(id+"-"+settingContainer.find("input:eq(0)").val()+"-"+settingContainer.find("input:eq(1)").val(),0);
+			  termsChart.addMAline("",[1,2,3,4]);
+			   $('.checkbox-sma').attr('checked', false);
+			}else if (id == "vol"){
+			  termsChart.addSeries("vol",index);
+			}else if (id == "turnover"){
+			  termsChart.addSeries("turnover",index);
+			}else if (id == "os"){
+			  termsChart.addSeries("os",index);
+			}else if (id == "rsi"){
+			  termsChart.addSeries("rsi-"+settingContainer.find("input:eq(0)").val(),index);
+			}else if (id == "macd"){
+			  termsChart.addSeries("macd-"+settingContainer.find("input:eq(0)").val()+"-"+settingContainer.find("input:eq(1)").val()+"-"+settingContainer.find("input:eq(2)").val(),index);
+			}
+			$(this).parents(".setting_box_menu").hide();
+	  });
+	  
+	$("#downloadChart").click(function(){
+		 downloadChart(code);
+	});
+});
+
+function updateRealTimeBox(){
+	$.ajax({url: "/zh_hk/ajax/terms-real-time-box/code/"+code+"/type/inline",cache: false,success: function(html){
+		$("#real_time_box").html(html);
+	}});
+}
+</script>
+<div class="right_area">
+	<div id="real_time_box"></div>
+	<div class="tabs_area no_top_space">
+		<ul class="tabs_break three">
+		  <li><a href="/zh_hk/inline/inline-terms/code/">資料及數據</a></li>
+		  <li class="current"><a href="/zh_hk/inline/inline-chart/code/">圖表分析</a></li>
+		  <li><a href="/zh_hk/inline/inline-calculator/code/">計算機</a></li>               
+	  </ul>
+	</div>
+
+	<div class="adv_chart_area">
+            	<div class="sub_tabs_area">
+                	<div class="period">
+                        <ul class="sub_tabs">
+                            <li><a href="javascript:changePeriod('5min',1)">即市</a></li>
+							<li class="current"><a href="javascript:changePeriod('day',12)">1年</a></li>
+							<li><a href="javascript:changePeriod('day',120)">最大</a></li>
+                        </ul>
+                    </div>
+                    <div class="chart_type">
+                    	<ul class="sub_tabs">
+							<li class="line"><a href="javascript:changeChartType('line');" id="line"></a></li>
+							<li class="candle current"><a href="javascript:changeChartType('candlestick');" id="candlestick"></a></li>
+							<li class="bar"><a href="javascript:changeChartType('ohlc');" id="ohlc"></a></li>                         
+                    	</ul>
+                    </div>
+                </div>
+       	  		<div class="option_area">
+                	<div class="main_option">
+                        <label>主圖表(相關資產)</label>
+                       <select name="" class="picker" for="technical_picker0">
+							<option selected="selected" value="sma">移動平均線</option>
+							<option value="bol">保歷加通道</option>
+						</select>
+                      <div id="technical_picker0" class="technical_option moving_average">
+						<div class="technical_setting" data-type="sma_setting">
+							<label class="ten"><input class="checkbox-sma" type="checkbox" id="checkbox-sma-10" /> 10天</label>
+							<label class="twenty"><input class="checkbox-sma" type="checkbox" id="checkbox-sma-20" /> 20天</label>
+							<label class="fifty"><input class="checkbox-sma" type="checkbox" id="checkbox-sma-50" /> 50天</label>
+							<label class="hundred"><input class="checkbox-sma" type="checkbox" id="checkbox-sma-100" /> 100天</label>
+							<label class="twohundredfive"><input class="checkbox-sma" type="checkbox" id="checkbox-sma-250" /> 250天</label>
+						</div>
+						<div class="technical_setting" data-type="bol_setting" style="display:none;">
+							<label>平均日數 <input name="" type="text" value="14"/></label>
+							<label>標準差  <input name="" type="text" value="2"/></label>
+							<button class="submit apply">提交</button>
+						</div>
+					</div>
+                    </div>
+                    <div class="sub_option">
+                        <div class="left">
+                        	<label>輔助圖表(相關資產)</label>
+                            <select name="" class="picker" for="technical_picker1">
+                              <option selected="selected" value="turnover">成交金額</option>
+                              <!--<option>街貨量</option>-->
+                              
+                             <option value="rsi">相對強弱指數</option>
+                              <option value="macd">移動平均匯聚背馳指標</option>
+                              <!--
+                              <option>威廉指數</option>
+                              <option>動力指標</option>
+                              -->
+                            </select>
+                        	<div id="technical_picker1" class="technical_option">
+								<div class="technical_setting" data-type="turnover_setting">
+									<button class="submit apply">提交</button>
+								</div>
+								<div class="technical_setting" data-type="rsi_setting" style="display:none;">
+									<input name="" type="text" value="14"/>
+									<button class="submit apply">提交</button>
+								</div>
+								<div class="technical_setting" data-type="macd_setting" style="display:none;">
+									<input name="" type="text" value="26"/>
+									<input name="" type="text" value="12"/>
+									<input name="" type="text" value="9"/>
+									<button class="submit apply">提交</button>
+								</div>
+							</div>
+                        </div>
+                        <div class="right">
+                        	<label>輔助圖表(界內證)</label>
+                            <select name="" class="picker" for="technical_picker2">
+                              <option selected="selected" value="turnover">成交金額</option>
+                              <option value="os">街貨量</option>
+                              <!--
+                              <option selected="selected">相對強弱指數</option>
+                              <option>威廉指數</option>
+                              <option>動力指標</option>
+                              -->
+                            </select>
+                            <div id="technical_picker2" class="technical_option">
+								<div class="technical_setting" data-type="turnover_setting">
+									<button class="submit apply">提交</button>
+								</div>
+								<div class="technical_setting" data-type="os_setting" style="display:none;">
+									<button class="submit apply">提交</button>
+								</div>								
+							</div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="chart_area">
+                  <div class="tool">
+                   	<div class="tl">工具</div>
+                   	  <ul>
+                       	  <li><img src="/home/images/icon_adv_chart_move.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_circle.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_line.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_arrow.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_box.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_txt.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_vline.png" width="31" height="31" /></li>
+                          <li><img src="/home/images/icon_adv_chart_hline.png" width="31" height="31" /></li>
+                          <li class="clearAll"><img src="/home/images/icon_adv_chart_delete.png" width="31" height="31" /></li>
+                          <li class="removelast"><img src="/home/images/icon_adv_chart_rubber.png" width="31" height="31" /></li>
+						  <li class="download"><img src="/home/images/icon_adv_chart_download.png" width="31" height="31"></li>
+                          <!--
+                          <li id="downloadChart"><img src="/home/images/icon_adv_chart_download.png" width="31" height="31"></li>
+                          -->
+                      </ul>
+                    </div>
+                    <!--
+                    <div class="chart"><img src="/home/images/demo_adv_warrant_chart.jpg" width="949" height="475" /></div>              
+                    -->
+                     <div class="chart" id="termsChartContainer" style="width:945px;height:475;"></div>      
+            </div>
+          </div>
+  <div class="timer" id="stime_chart">最後更新時間:2018-04-15 16:30</div>
+
+	<div class="border dashed"></div>
+	
+	<script type="text/javascript">
+$(document).ready(function() {
+	$("#rp_ucode").val(ucode);
+	
+	getType(wtype_en);
+	updateTable();
+	
+	$("#order_1_inline").change(function(){
+		$("#order1").val($(this).val());
+		if($("input[name=desc_1_inline]").is(":checked")){
+			updateTable();
+		}
+	});
+	
+	$("#order_2_inline").change(function(){
+		$("#order2").val($(this).val());
+		if($("input[name=desc_2_inline]").is(":checked")){
+			updateTable();
+		}
+	});
+	
+	$("input[name=desc_1_inline]").change(function(){
+		changeOrder(1, $(this).val());
+	});
+	
+	$("input[name=desc_2_inline]").change(function(){
+		changeOrder(2, $(this).val());
+	});
+});
+
+function updateTable(){
+	var serializedData = $('#search_form').serialize();
+	$.ajax({url: "/"+lang+"/ajax/related-product-result",type: "POST",data: serializedData,cache: false,success: function(html){
+		$("#search_result").html(html);
+	}});
+}
+
+function getType(wtype){
+	$("#rp_type").val("inline");
+	$("#order1").val($("#order_1_inline").val());
+	$("#order2").val($("#order_2_inline").val());
+	$("#desc1").val($("input[name=desc_1_inline]:checked").val());
+	$("#desc2").val($("input[name=desc_2_inline]:checked").val());
+}
+
+function changeOrder(type, val){
+	$("#desc"+type).val(val);
+	$(".label_order_"+type+"_"+$("#rp_type").val()).removeClass("current");
+	$("#label_order_"+type+"_"+val+"_"+$("#rp_type").val()).addClass("current");
+	if($("#order"+type).val() != ""){
+		updateTable();
+	}
+}
+
+function changeOrder2(type, val){
+	$("#label_order_"+type+"_"+val+"_"+$("#rp_type").val()+" input").trigger("click");
+}
+</script>
+<div class="related_product">
+
+	<form id="search_form" method="post" action="/zh_hk/ajax/warrant-search-result">
+	<input type="hidden" id="rp_ucode" name="ucode" value="" />
+	<input type="hidden" id="rp_type" name="type" value="" />
+	<input type="hidden" id="rp_wtype" name="wtype" value="L" />
+	<input type="hidden" id="order1" name="order1" value="" />
+	<input type="hidden" id="desc1" name="desc1" value="" />
+	<input type="hidden" id="order2" name="order2" value="" />
+	<input type="hidden" id="desc2" name="desc2" value="" />
+	</form>
+    
+    <div class="jp_remark_area">      
+	<div class="sub_tabs_area">
+		<ul class="sub_tabs">
+			<li id="tab_inline"><a href="#">摩根大通相關界內證</a></li>
+		</ul>
+	</div>
+    <div class="jp_remark"><span></span> 摩根大通精選 </div>
+    </div>
+	
+  <div id="option_inline" class="option_area no_border">
+		<div class="left blue">
+			<label class="tl">排序:</label>
+			<span class="description"><span class="blue"></span>首選</span>
+			<select name="order_1_inline" id="order_1_inline">
+				<!--option value="">請選擇</option-->
+				<option value="1">編號</option>
+                <option value="2">下限價</option>
+				<option value="3">上限價</option>
+				
+				<option value="4">潛在回報率(%) </option>
+				<option value="5">現價(港元)</option>
+				<option value="6">到期日(年-月-日)</option>
+				<option value="7" selected>成交額</option>
+			</select>
+			<label id="label_order_1_0_inline" class="ascending label_order_1_inline"><input name="desc_1_inline" type="radio" value="0" /> 遞增排序</label>
+			<label id="label_order_1_1_inline" class="descending label_order_1_inline current"><input name="desc_1_inline" type="radio" value="1" checked /> 遞減排序</label>
+		</div>
+		<div class="right brown">
+			<span class="description"><span class="brown"></span>次選</span>
+			<select name="order_2_inline" id="order_2_inline">
+				<option value="">請選擇</option>
+				<option value="1">編號</option>
+                <option value="2">下限價</option>
+				<option value="3">上限價</option>
+			
+				<option value="4">潛在回報率(%) </option>
+				<option value="5">現價(港元)</option>
+				<option value="6">到期日(年-月-日)</option>
+				<option value="7">成交額</option>
+			</select>
+			<label id="label_order_2_0_inline" class="ascending label_order_2_inline"><input name="desc_2_inline" type="radio" value="0" /> 遞增排序</label>
+			<label id="label_order_2_1_inline" class="descending label_order_2_inline current"><input name="desc_2_inline" type="radio" value="1" /> 遞減排序</label>
+		</div>
+  </div>
+  <div id="search_result"></div>
+	
+</div> 	
+	<div class="disc">界內證自2019年7月起新推出市場，並無在聯交所上市的類似產品可資比較。</div>
+	<div class="tooltip_templates">
+		<span id="tooltip_content">
+			
+		</span>
+	</div>
+</div>
+       
+   </div>
+   
+</div>
+
+<div class="inside_shortcut">
+	<div class="content">
+		<div class="shortcut_area">
+			<div class="tl">捷徑</div>
+			<a href="/zh_hk/cbbc/cbbc-outstanding/" class="links">牛熊證街貨分佈圖 </a><a href="/zh_hk/market-statistics/tools/search/" class="links">認股證牛熊證搜尋 </a><a href="/zh_hk/stock-connect/cnhk-top10-turnover" class="links">港股通十大成交資金流 </a><a href="/zh_hk/market-statistics/realtime-sector/hot" class="links">即市版塊表現 </a><a href="/zh_hk/market-statistics/money-flow/etf" class="links">指數與ETF資金流向</a><a href="/zh_hk/market-statistics/underlying/underlying-money-flow/" class="links">個股資金流</a><a href="/zh_hk/market-statistics/news" class="links">即時新聞</a><a href="/zh_hk/stock-connect/cnhk-holding-ratio" class="links">港股通持倉紀錄</a><a href="/zh_hk/market-statistics/money-flow-momentum" class="links">資金動力圖</a><a href="/zh_hk/market-statistics/hsi-cbbc-band" class="links">恒指牛熊證加權通道 </a>
+            </div>
+	</div>
+</div>
+
+<div class="mobile_only year_img">
+        <div class="img"><img src="/home/images/img_six_years_mobile.jpg" border="0"><br><a href="javascript:void(0)" class="tooltip tooltipstered" data-tooltip-content="#tooltip_header" style="float:left;"><img src="/home/images/img_six_years_button_mobile.jpg"></a></div>
+         
+        </div>
+
+
+<div class="footer new_style">
+	<div class="content">
+		<div class="navigate">
+				<a href="/zh_hk/index">主頁</a> 
+				&nbsp;/&nbsp; 界內證 &nbsp;/&nbsp; 分析工具 &nbsp;/&nbsp; <span>圖表分析</span></div>
+       <div class="top">
+           <div class="logo"><img src="/home/images/logo_footer.jpg" width="94" height="56" /></div>
+           <div class="loaction"><a href="javascript:void(0);">香港</a></div>
+           <div class="setting">
+                <!--div class="lang">
+                	<a href="javascript:void(0);" class="lang_button">繁體中文</a>
+					<div class="lang_inside">
+						<ul>
+							<li><a href="javascript:void(0);">简体中文</a></li>
+							<li><a href="javascript:void(0);">English</a></li>
+						</ul>
+					</div>
+                </div-->
+                
+                
+                <div class="links">
+                	<a href="/zh_hk/privacy-policy">私隱政策聲明</a>
+                </div>
+                <div class="links">
+                	<a href="/zh_hk/disclaimer">免責聲明</a>
+                </div>
+                <div class="links">
+                	<a href="/zh_hk/about">關於我們</a>
+                </div>
+                <div class="links">
+                    <a href="/zh_hk/about/contact">聯絡我們</a>
+                </div>
+                <div class="links">
+                    <a href="/zh_hk/about/sitemap">網站指南</a>
+                </div>
+            </div>
+            
+            <div class="jp_info_area">
+                    	<div class="jp_info">
+                    		<ul>
+								<li>摩根大通上市衍生產品熱線: <span>+852 2800 7878</span></li>
+								<li>電郵: <a href="mailto:jpm_warrants@jpmorgan.com">jpm_warrants@jpmorgan.com</a></li>
+							</ul>
+                    	</div>
+                    </div>
+            
+        </div>
+        <div class="bottom">
+        	<div class="links">
+               <ul>
+                   <li><a href="https://www.jpmorganchase.com/corporate/investor-relations/investor-relations.htm" target="_blank">投資者關係</a></li>
+                   <li><a href="https://www.jpmorgan.com/country/HK/EN/privacy" target="blank">在線隱私政策</a></li>
+                   <li><a href="https://www.jpmorgan.com/country/HK/en/terms" target="_blank">使用條款</a></li>
+                   <li><a href="https://www.jpmorgan.com/country/HK/EN/disclosures" target="_blank">信息披露</a></li>
+                   <li><a href="https://www.jpmorgan.com/country/HK/EN/cookies" target="_blank">Cookie政策</a></li>
+                   <li><a href="https://careers.jpmorgan.com/careers/global/en/home" target="_blank">求職</a></li>                    
+               </ul>
+           </div>
+           <div class="warning mobile_only">無抵押結構性產品</div>
+           <div class="copyright">Copyright © <span id="footeryear">2017</span> JPMorgan Chase & Co. All rights reserved.</div>
+           <div class="db_disclaimer">資訊由財經智珠網提供 [<a href="javascript:void(0);" onclick="window.open('/home/html/dbpower_disclaimer_c.html', '', 'width=400, height=320')">免責聲明</a>]</div>
+       </div>
+   </div>
+</div>
+
+<div class="mobile_only bottom_menu">
+            <ul>
+                <li class="two_lines search">
+                    <a href="javascript:void(0);">輪證<br />搜尋</a>
+                    <div id="bottom_menu_search_on">
+                        <ul>
+                            <li><a href="/zh_hk/market-statistics/tools/search/type/wnt">認股證</a></li>
+                            <li><a href="/zh_hk/market-statistics/tools/search/type/cbbc">牛熊證</a></li>
+                            <li><a href="/zh_hk/inline/search">界內證</a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="two_lines news"><a href="/zh_hk/market-statistics/news">即時<br />新聞</a></li>
+                <li class="two_lines cbbc_os"><a href="/zh_hk/cbbc/cbbc-outstanding/">牛熊證<br />街貨分佈</a></li>
+                <li class="two_lines inline_9618"><a href="/zh_hk/newecon">新經濟股<br />專頁</a></li>
+                <li class="two_lines us_warrant"><a href="/zh_hk/us-index/">追蹤<br />美股</a></li>
+            </ul>
+        </div>
+
+</div>
+
+<div id="confirm" style="display:none;">
+	<h3>注意： </h3>
+	<div class="agreement">
+		<p>閣下於意見箱提供之內容將不被視為報價要求或投訴。<br> 若要求報價，請致電認股證牛熊證熱線 2800 7878。<br> 若有興趣與我們交流，請電郵至 <a href="mailto:jpm_warrants@jpmorgan.com">jpm_warrants@jpmorgan.com</a>。</p>
+		<div class="tl">收集個人資料聲明:</div>
+		<p><strong>摩根大通</strong> <br /> 上述個人資料收集為自願性質，閣下可自行決定提供閣下的個人資料與否。閣下在此提供的個人資料（姓名及電郵）由摩根大通證券(亞太)有限公司（“摩根大通”）收集。除非取得閣下的同意（或不反對通知），否則摩根大通並不會使用閣下的個人資料。</p>
+		<p> 閣下的個人資料將會用作或移轉予摩根大通及/或其附屬公司不定期作為推廣或宣傳產品及服務之用途。摩根大通亦可能把閣下的個人資料用作資料分析。閣下的個人資料或會轉移至摩根大通及/或其附屬公司的服務提供者(如資訊科技服務公司)為上述目的處理閣下的個人資料。有關服務提供者雖根據與摩根大通或其附屬公司的合約條款保障閣下的個人資料。閣下的個人資料亦可能根據法律規定或應監管機構之安排，轉移至監管機構。</p>
+		<p>閣下有權要求查閱及更正閣下的個人資料，有關要求須以書面形式向摩根大通亞洲上市衍生產品銷售部代表提出。此外，如閣下於日後任何時間不欲繼續收取摩根大通及/或其附屬公司的任何產品或服務的宣傳或推廣，亦請以書面形式向摩根大通亞洲上市衍生產品銷售部代表提出。就上述要求，請閣下電郵至：
+		<a href="mailto:jpm_warrants@jpmorgan.com">jpm_warrants@jpmorgan.com</a></p>
+		<p> 閣下可於<a href="http://jpmhkwarrants.com/zh_hk/privacy-policy" target="_blank">http://jpmhkwarrants.com/zh_hk/privacy-policy</a>查閱完整私隱政策聲明。</p>
+	</div>
+	<div class="option">
+		<input type="radio" value="Y" name="cbAccept" id="commentAccept" checked=""> <label for="commentAccept">本人明白上述個人資料收集為自願性質，並同意其中所述之收集目的和使用。</label><br> 
+		<input type="radio" value="N" name="cbAccept" id="commentAccept2"> <label for="commentAccept2">本人不同意就上述目的之個人資料收集及使用，並不希望日後被摩根大通聯絡，或接收任何資訊。</label>
+	</div>
+	<div class="button_area">
+		<input type="button" id="commentyes" value="確認" class="button" checked="">
+		<input type="button" id="commentno" value="返回" class="button">
+		<div class="button_area">
+		</div>
+
+
+
+
+		<div id="question2_thanks" class="edm" style="display:none;">
+			<h3>訂閱摩通窩輪/牛熊證資訊</h3>
+			<div id="question2_thanks_content" class="disclaimer"></div>
+			<div class="button_area">
+				<input id="subscribe_close" value="關閉" class="button" type="button">
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-77862832-2', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+<!-- Google Code for JP Warrants_All Pages -->
+<!-- Google Code for Remarketing Tag -->
+<!--------------------------------------------------
+Remarketing tags may not be associated with personally identifiable information or placed on pages related to sensitive categories. See more information and instructions on how to setup the tag on: http://google.com/ads/remarketingsetup
+--------------------------------------------------->
+<script type="text/javascript">
+    /* <![CDATA[ */
+    var google_conversion_id = 974954251;
+    var google_conversion_label = "IlUdCLHG93UQi77y0AM";
+    var google_custom_params = window.google_tag_params;
+    var google_remarketing_only = true;
+    /* ]]> */
+</script>
+<script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js">
+</script>
+<noscript>
+    <div style="display:inline;">
+        <img height="1" width="1" style="border-style:none;" alt="" src="//googleads.g.doubleclick.net/pagead/viewthroughconversion/974954251/?value=1.00&amp;label=IlUdCLHG93UQi77y0AM&amp;guid=ON&amp;script=0"/>
+    </div>
+</noscript>
+
+</body>
+</html>
