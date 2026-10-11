@@ -52,7 +52,14 @@ def get(url, timeout=60):
     req = urllib.request.Request(url, headers=UA)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.status, resp.read()
+            body = resp.read()
+            if body[:2] == b"\x1f\x8b":                                  # archive.org 的 id_ 原始內容有時是 gzip
+                import gzip as _gz
+                try:
+                    body = _gz.decompress(body)
+                except OSError:
+                    pass
+            return resp.status, body
     except urllib.error.HTTPError as exc:
         return exc.code, b""
     except Exception as exc:
