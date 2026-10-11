@@ -67,6 +67,32 @@ def append_rows(path: Path, rows: list[dict], key: tuple[str, ...]) -> int:
     return len(new)
 
 
+def lead_windows(end: str) -> None:
+    """探索性線索 L1（EURUSD 空 09→12 UTC）、L2（EURUSD 多 01→06 UTC）的前向記錄：2026-10-12 起每個平日的窗報酬（基點，已乘預測方向）。
+    登記與監測規則：forex_research/FX_EXPLORATORY_SCAN.md 第三部分；時窗與方向寫死，不得調整。"""
+    import numpy as np
+    d = ROOT / "data_forex" / "EURUSD"
+    b = pd.read_csv(d / "EURUSD_H1.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
+    a = pd.read_csv(d / "EURUSD_H1_ask.csv.gz", parse_dates=["Time"]).set_index("Time")["Close"]
+    j = pd.concat([b.rename("b"), a.rename("a")], axis=1, sort=True).dropna()
+    mid = (j.b + j.a) / 2
+    mid.index = mid.index + pd.Timedelta(hours=1)                       # 收市時間
+    days = pd.bdate_range("2026-10-12", end)
+    days = days[days <= mid.index[-1].normalize()]
+    if not len(days):
+        print("lead_windows：還沒有 2026-10-12 之後的 H1 數據")
+        return
+    def px(h):
+        t = (days + pd.Timedelta(hours=h)).values
+        ix = np.clip(np.searchsorted(mid.index.values, t, side="right") - 1, 0, len(mid) - 1)
+        return mid.values[ix], mid.index.values[ix]
+    p1, p6, p9, p12 = px(1)[0], px(6)[0], px(9)[0], px(12)[0]
+    rows = [{"date": str(dd.date()), "L1_short_09_12_bp": round(float(-np.log(p12[i] / p9[i]) * 1e4), 3), "L2_long_01_06_bp": round(float(np.log(p6[i] / p1[i]) * 1e4), 3)}
+            for i, dd in enumerate(days)]
+    n = append_rows(OUT / "lead_windows.csv", rows, ("date",))
+    print(f"lead_windows.csv 新增 {n} 列（H1 到 {mid.index[-1]}）")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--asof", default="", help="以這天（含）之前的數據算；預設全部")
@@ -122,6 +148,7 @@ def main() -> None:
     for r in pnl_rows:
         print(f"  {r['strategy']:13} 上月 {r['ret_pct']:+.2f}%")
 
+    lead_windows(end)
     if args.no_futures:
         return
     try:
