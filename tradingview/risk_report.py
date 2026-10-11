@@ -22,6 +22,9 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ES2612", "US.ESmain", "US.MES2612", "US.MESmain"]}
 LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「手」單位
 # 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
+# 止損規則（book 冇寫先用呢度；持倉唔喺 book 就略過）
+DEFAULT_STOPS = {"EW P7750": {"credit": 68, "stop_buyback": 136, "legs": ["EW2610 P7750"],
+                              "note": "使用者人手開；2026-10-11 定：買回價 ≥ 136 點（2× 權利金）"}}
 PLAYBOOK = {"雲垂陣 HSI 月跨式＋對沖": {"und": "HSI", "groups": ["HSI 月跨式", "MHI2610 對沖"], "band": 0.5}}
 
 
@@ -277,13 +280,27 @@ def build(book, quotes=None, combined_equity=None):
 
     P("## 6. 止損線（買回總價 ≥ 2×權利金，用平倉價）")
     px = {p["id"]: p["close_px"] for p in b["positions"]}
-    for name, s in b["stops"].items():
+    byid = {p["id"]: p for p in b["positions"]}
+    stops = {**{k: v for k, v in DEFAULT_STOPS.items() if all(l in byid for l in v["legs"])}, **b["stops"]}
+    for name, s in stops.items():
         bb = sum(px[i] for i in s["legs"])
         M["stop_use"][name] = bb / s["stop_buyback"]
-        P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）")
+        und = byid[s["legs"][0]]["und"]
+        F0 = b["underlyings"][und]["F"]
+        trig = []
+        for sign, lab in ((-1, "跌"), (1, "升")):          # 標的郁幾多，模型買回價會到止損（固定斜率、即時重估）
+            for k in range(1, 301):
+                r = sign * k / 1000
+                v = sum(value(byid[i], F0 * (1 + r), b["skew"][und][0] * log(1 + r)) + byid[i]["close_px"] - value(byid[i], F0)
+                        for i in s["legs"])
+                if v >= s["stop_buyback"]:
+                    trig.append(f"{und} {lab} {k / 10:.1f}%（≈ {F0 * (1 + r):,.0f}）")
+                    break
+        P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）"
+          + (f"；觸發約需 {'、或 '.join(trig)}" if trig else "；標的升跌 30% 內唔觸發")
+          + (f"（{s['note']}）" if s.get("note") else ""))
     P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
-      "research/hsi_futures_range/STRANGLE_1SIGMA.md）")
-    P("- EW P7750：使用者自己人手開（唔屬任何陣），**冇登記止損規則**\n")
+      "research/hsi_futures_range/STRANGLE_1SIGMA.md）\n")
 
     P("## 7. 壓力測試")
     P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")
