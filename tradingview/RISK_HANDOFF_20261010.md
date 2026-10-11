@@ -103,3 +103,8 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 ## 2026-10-11 部署 R151（修訂 00275-q4x，基於 R150；SpaceX 券商贈送規則 00276-sh2）
 - 策略總表「💼 富途實倉（按陣）」上線；配對規則 `FUTU_TEAM_RULES`（main.py）。
 - 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00275-q4x --yes`（00276 之前）
+
+## 2026-10-11 部署 R152 📊 基金報告（修訂 00277-f48）
+- `?view=fund_report`：富途已實現盈虧（先入先出），2026-09-01 起按產品分月／季／年；資料由 `gcp_ib/futu_pnl_export.py` 推（action=futu_pnl → `futu/pnl/latest.json`）。
+- 資金流水只可逐日查（clearing_date）；預設唔喺公開頁顯示（`FUND_REPORT_SHOW_FLOWS=1` 先開）。
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00276-sh2 --yes`
