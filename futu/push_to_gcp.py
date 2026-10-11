@@ -153,6 +153,7 @@ SAMPLE_URL = os.environ.get(
     "claude/gcp-trading-v12-rewrite-bz75t2/data/external/qc/futu_sample.txt")
 UNSUB_AFTER_SEC = 70                                  # Futu 規定訂閱滿 1 分鐘才能退訂
 CODE_RE = re.compile(r"^(US|HK)\.[A-Z0-9][A-Z0-9.]{0,11}$")
+INDEX_CODE_RE = re.compile(r"^HK\.8\d{5}$")             # [v16] 港股指數（800000 恒指、800700 科指…）成交量恆為 0，不能用成交量過濾
 
 
 def log(message):
@@ -708,7 +709,8 @@ class FutuPusher:
                                                     max_count=None)
         if ret != ft.RET_OK:
             raise RuntimeError(str(df)[:120])
-        return [b for b in bars_from_df(df.sort_values("time_key")) if b.get("volume")] if not df.empty else []
+        keep_all = bool(INDEX_CODE_RE.match(code.upper()))                 # [v16] 指數沒有成交量，全部保留
+        return [b for b in bars_from_df(df.sort_values("time_key")) if keep_all or b.get("volume")] if not df.empty else []
 
     def export_intraday(self, alias, days=BACKFILL_DAYS, ktype="K_15M"):
         items, notes = self.front_history(alias, days,
