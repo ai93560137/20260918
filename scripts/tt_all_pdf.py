@@ -105,13 +105,35 @@ def md_to_html(md: str) -> str:
 
 
 def main() -> None:
+    global SRC, HTML_OUT, PDF_OUT
+    import argparse
+    a = argparse.ArgumentParser()
+    a.add_argument("--src", default=None, help="其他說明書（例 stock_research/HTF_INVESTOR_BRIEF.md）；預設鳥翔")
+    a.add_argument("--title", default=None)
+    a.add_argument("--sub", default=None)
+    a.add_argument("--badges", nargs="*", default=None)
+    args = a.parse_args()
+    if args.src:
+        SRC = ROOT / args.src
+        HTML_OUT, PDF_OUT = SRC.with_suffix(".html"), SRC.with_suffix(".pdf")
     md = SRC.read_text(encoding="utf-8")
     body = md_to_html(md)
+    if args.src:
+        badges = "".join(f'<span class="badge">{html.escape(b)}</span>' for b in (args.badges or []))
+        cover = f"""<div class="cover"><h1>{html.escape(args.title or SRC.stem)}</h1>
+<div class="sub">{html.escape(args.sub or '')} · {date.today().isoformat()}</div><p>{badges}</p></div>"""
+        foot = '<div class="foot">本文件為研究記錄與回測結果的整理，不構成投資建議。回測數據來自 Yahoo Finance 日線（候選池只含現存股票，存在倖存者偏差），全部扣除交易成本；參數由全期數據擬合選出，未來表現不保證與回測一致。</div>'
+        doc = f'<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>{html.escape(args.title or "")}</title><style>{CSS}</style></head><body>{cover}{body}{foot}</body></html>'
+        return render(doc)
     cover = f"""<div class="cover"><h1>鳥翔 · 趨勢模板全部等權策略</h1>
 <div class="sub">投資人說明書 · {date.today().isoformat()} · 陣名「鳥翔」已對號、正式發名待前向驗證</div>
 <p><span class="badge">回測 🔍 有希望未證實</span><span class="badge">9 市場 · 2005–2026</span><span class="badge">衛星倉 ≤ 10%</span></p></div>"""
     foot = '<div class="foot">本文件為研究記錄與回測結果的整理，不構成投資建議。回測數據來自 Yahoo Finance 日線（候選池只含現存股票，存在倖存者偏差），全部扣除交易成本；未來表現不保證與回測一致。研究方法與全部判決見倉庫 stock_research/ 資料夾。</div>'
     doc = f'<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>鳥翔 投資人說明書</title><style>{CSS}</style></head><body>{cover}{body}{foot}</body></html>'
+    render(doc)
+
+
+def render(doc: str) -> None:
     HTML_OUT.write_text(doc, encoding="utf-8")
     if not CHROME:
         print("找不到 Chromium，只輸出 HTML", file=sys.stderr)

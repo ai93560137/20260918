@@ -27,7 +27,7 @@ import htf_curvefit as C  # noqa: E402
 
 OUT = ROOT / "analysis" / "htf_daily"
 FWD_START = date(2026, 10, 13)          # 前向紀錄由這天（含）之後入場的交易算起
-BASE = 0.10                              # 每筆基本資金比例（可執行口徑）；風險倉位 × w
+BASE = 0.20                              # 每筆基本資金比例（與 HTF_INVESTOR_BRIEF 主表一致）；風險倉位 × w
 NAME = {"hk": "港股", "tw": "台股", "jp": "日股"}
 TRAIL_TXT = {"ma10": "10 日線", "ma20": "20 日線", "ma50": "50 日線"}
 
@@ -228,7 +228,7 @@ def tg(metas: list[dict]) -> str:
         for pz in m_["positions"]:
             L.append("　持倉：" + pz)
     L += ["", "掛單 = 明天盤中升穿觸發價才買（買入停損單）；開市已高於觸發價 × (1+追價上限) 就取消。",
-          "每筆資金 = 10% × 權重（按波幅，見 CSV alloc_pct）；總曝險不超過 100%。",
+          "每筆資金 = 20% × 權重（按波幅，見 CSV alloc_pct）；總曝險不超過 100%。",
           "明細：analysis/htf_daily/<市場>_orders_<日期>.csv、<市場>_positions.csv"]
     return "\n".join(L)[:3900] + "\n"
 
