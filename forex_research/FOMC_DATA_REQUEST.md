@@ -79,3 +79,11 @@ git push origin claude/dazzling-curie-f3xzb8
 - 第 2 步會印每年「排定 N，非排定 M」，排定不是 8 的年份會標 ←，外匯分支會對原始 HTML 複核。
 - 第 3 步預期多數舊合約「無資料」（IB 只保留已到期約 2 年）；這就是我們要的答案。
 - FirstRate ZQ 日線的價格與起始年份請你在瀏覽器看一眼 `https://firstratedata.com/i/futures/ZQ`，把兩個數字告訴我即可，不用買。
+
+## 7. 進度（2026-10-12 19:30 UTC）
+
+| 項目 | 狀態 |
+|---|---|
+| 論文摘錄 | **未完成**：AUT 對 curl 回 403；等使用者用瀏覽器下載 PDF 上傳到 VM `~/papers/` 後跑 `paper_excerpt.py`（見第 6 節 B） |
+| FOMC 日曆 | **完成**：VM 抓回原始頁（`data_forex_rates/fomc/raw/`，28 頁），外匯分支離線解析 `scripts/fomc_calendar_parse.py` → `data_forex_rates/fomc/fomc_announcements.csv`（1994→2027，每年排定 8 次；2020 的 3/17–18 取消）。排定會議數：1994–2015 論文樣本 176、2003-08→2026-08 184、2008-01→2026-08 149。聲明時間：2016 起逐篇抓到「For release at」；之前新聞稿只寫 For immediate release，用時代規則欄 `statement_time_rule`（1994–2011-03 14:15；2011-04→2012 有記者會 12:30／無 14:15；2013 起 14:00）。VM 版解析（統計聲明連結）在 1994–1999 少算、2021 起多算，已由離線版取代 |
+| ZQ 試拉 | **深度確認**：IB 只列出已到期約 2 個月內的合約（最早 ZQ 2025-09），每個合約本身有 3 年日線（如 ZQ 2026-03 自 2023-04 起）；連續合約與 `_status.txt` 因第二次執行 clientId 43 撞號而沒寫。結論同預期：**IB 不能提供 2003–2024 的 ZQ**，照使用者決定走 2008 起樣本，待 FirstRate 報價（使用者看 `firstratedata.com/i/futures/ZQ`）。選配：用 `includeExpired=True` 明示 2024-01→2025-08 各月再試一次，最多再多 1–2 年，不改變結論 |

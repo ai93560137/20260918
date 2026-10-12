@@ -39,7 +39,7 @@ def panel_links(seg: str) -> tuple[str, int]:
     url = ""
     for href, text in re.findall(r'<a[^>]+href="([^"]+)"[^>]*>(.*?)</a>', seg, re.S | re.I):
         tx = strip(text).strip().lower()
-        if re.search(r"(?:19|20)\d{6}", href) and re.search(r"monetary\d{8}a\.htm|/fomc/\d{8}default\.htm|/fomc/\d{8}DEFAULT\.htm|/boarddocs/press/(?:general|monetary)/\d{4}/\d{8}", href, re.I) and tx in ("statement", "html", "press release"):
+        if re.search(r"(?:19|20)\d{6}", href) and re.search(r"monetary\d{8}a\.htm|/press/monetary/\d{8}a\.htm|/fomc/\d{8}default\.htm|/boarddocs/press/(?:general|monetary)/\d{4}/\d{8}", href, re.I) and tx in ("statement", "html", "press release"):
             url = href if href.startswith("http") else "https://www.federalreserve.gov" + href
             break
     pc = 1 if re.search(r"press conference", seg, re.I) else 0
