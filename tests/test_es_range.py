@@ -22,7 +22,7 @@ check("收市過了沒：US 當天 17:00、HK 翌日 03:00", main.futu_session_e
 print("\n=== 封包入庫（K_SESSION）與頁面 ===")
 FAKE.clear()
 page0 = client.get("/?view=es_range").get_data(as_text=True)
-check("沒數據：ES 頁標題與提示", "ES 標普 500 期貨波幅" in page0 and "es_daily_push" in page0, page0[:300])
+check("沒數據：ES 頁標題與提示（[R158] 改為 mt5_push 補歷史）", "ES 標普 500 期貨波幅" in page0 and "SP500ft:US.ES_FRONT" in page0, page0[:300])
 days = sessions(300, end="2026-10-02")
 for b in days:
     b["source"] = "yfinance:ES=F"
