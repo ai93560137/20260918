@@ -29,7 +29,9 @@
 
 ### 0. 數據（全部已在倉庫或已指定來源）
 
-- 匯率：Dukascopy／HistData M1（UTC）EURUSD、USDCHF、USDJPY、GBPUSD（`data_forex/`，2003-08 起；HistData 年檔 bid、Dukascopy 近期 bid＋ask）。取**整點前最後一根 M1 收市**作該時點價。
+- 匯率：Dukascopy／HistData M1（UTC）EURUSD、USDCHF、USDJPY、GBPUSD（`data_forex/`，2003-08 起；HistData 年檔 bid、Dukascopy 近期 bid＋ask）。取**時點前最後一根 M1 收市（10 分鐘內）**作該時點價。
+  - **數據缺陷揭露（2026-10-12 跑數前機制檢查發現）**：HistData 2023-02 → 2023-07 年檔在全部四個貨幣對約 92 個平日缺整個奇數小時（09、11、…、21 UTC），不是市場因素；另 2003-08-08／12（資料起點）與 2004-03-16（USDCHF）單日缺價。受影響的排定會議：2003-08-12、2004-03-16、2023-03-22、05-03、06-14、07-26。
+  - **來源優先序（寫死）**：該日若有 Dukascopy M1 bid 補抓檔（`data_forex_rates/fomc/m1_fill/`，只補上述缺價日的進出場日，`fx_fomc_fill.yml`）則優先，否則用 HistData；兩來源同為 bid 中價口徑（IBKR_DATA_QC 曾核對 HistData 與 Dukascopy 買價中位差 0.24–0.46 pip，對兩日報酬影響 < 0.5 基點）。補抓後仍缺的事件列為缺值並報告，不用 H1 收市代替。
 - FOMC 日曆：`data_forex_rates/fomc/fomc_announcements.csv`（聯準會原始頁離線解析；1994–2015 排定 176 次與論文吻合；`scheduled=1` 才用；2020-03-18 取消）。公告時間欄：2016 起逐篇抓到的 `statement_time_et`；之前用 `statement_time_rule`（1994–2011-03 14:15；2011-04→2012 有記者會 12:30、無 14:15；2013 起 14:00）。
 - 聯邦基金期貨 ZQ 日結算（**數據來源在取得任何數據前寫死，2026-10-12 補充**）：
   - **FirstRate Data**（£199.95 買斷）逐月個別合約 1 日檔：readme 寫 ZQZ08 → ZQZ24（2008-12 → 2024-12 合約）；日線 close 經樣本檔判斷為結算價（10-08 盤中最後成交 96.1175、日線 close 96.115）；零成交日省略。
