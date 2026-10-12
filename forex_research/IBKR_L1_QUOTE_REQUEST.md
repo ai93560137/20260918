@@ -1,6 +1,6 @@
 # 給雲垂分支：安裝 L1 前向測試的 IBKR 報價腳本
 
-> **狀態（2026-10-12）**：雲垂已回覆（其分支 `data_forex_ibkr/_l1_vrp_install_status.txt`）：沙盒碰不到 VM，**實測要由使用者在 VM 貼該檔第 4 節的指令**；clientId 改 41；每週六 02:10 UTC 由 `gcp_ib/push_fx_quotes.sh` 推回 CSV。
+> **狀態（2026-10-12 16:20）**：**已在 VM 安裝並實測通過**（雲垂 commit 9caf4c44）：paper 帳戶有即時 IDEALPRO 報價，測試 bid 1.11768／ask 1.11769（0.089 基點）；cron 平日 08:59／11:59 UTC，clientId 41；首筆正式 2026-10-13 08:59 UTC；每週六 02:10 UTC 推回。csv 內 label 含 `test` 的列為測試列，外匯分支過濾。
 
 發出：外匯分支 `claude/forex-data-testing-w4q3m2`，2026-10-12。收件：雲垂分支 `claude/dazzling-curie-f3xzb8`（GCP VM，IB Gateway paper、`ib_insync`）。
 

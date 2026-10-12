@@ -1,6 +1,6 @@
 # 給雲垂分支：安裝 6E 期權報價快照腳本
 
-> **狀態（2026-10-12）**：雲垂已回覆並修了三處（行使價按距離最多試 6 檔、Greeks 等待 12→20 秒、期貨參考價加 close 備援、dry run 加診斷），修改版已同步回本分支 `scripts/`；沙盒碰不到 VM，**真實 IB 的 dry run 要由使用者在 VM 貼其狀態檔第 4 節的指令**，輸出會追加到該檔。
+> **狀態（2026-10-12 16:20）**：**已在 VM 安裝並實測通過**（雲垂 commit 9caf4c44）：dry run 選到 6EZ6／2EU 20261113／1.12，半價差 0.0758 波動點；cron 平日 14:00 UTC，clientId 32，首筆正式快照 2026-10-13，每週六 02:10 UTC 推回。**待雲垂再拉一次腳本**：外匯分支 13f00916 之後又修了合約選法（窗內優先月權 EUU、每列加 trading_class 欄），請在 2026-10-13 14:00 UTC 前 `git checkout origin/claude/forex-data-testing-w4q3m2 -- scripts/ib_fx_option_snapshot.py` 並 commit 到雲垂分支。
 
 發出：外匯分支 `claude/forex-data-testing-w4q3m2`，2026-10-12。收件：雲垂分支 `claude/dazzling-curie-f3xzb8`（GCP VM，IB Gateway paper、`ib_insync`）。
 登記：`FX_EUR_VRP_IBKR.md`（歐元方差賣方 IBKR 版）。

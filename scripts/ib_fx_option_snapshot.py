@@ -12,6 +12,8 @@
   kind=scan  ：今天的 ATM 跨式（到期日離今天 21–35 日曆日、取最接近 30 者）。A 階段量買賣價差。
   kind=track ：若有 vrp_position.json，記該持倉兩腿與標的期貨。B 階段紙上損益用。
 延遲報價（type 3）的 bid／ask 同步延遲，買賣價差仍有效；不要拿 IV 水平和別的來源比。
+合約選法（2026-10-12 修正，首筆正式快照之前）：21–35 日曆日窗內**優先標準月權 tradingClass EUU**，取最接近 30 天者；窗內沒有 EUU 才退到週權取最接近 30 天。
+  理由：VM 首次 dry run 顯示原規則「只看最接近 30 天」選到週權 2EU（32 天）而非月權 EUU（25 天）；方差互換的複製與 EVZ 口徑都以標準月權為準，流動性也最好。每列記 trading_class。
 
 雲垂分支安裝註記（2026-10-12，未經真實 IB 驗證前先依 gcp_ib/ib_collector.py 的經驗修了三處）：
   1. 鏈上 strikes 是該 tradingClass 全到期的聯集，最接近的一檔不一定在選到的到期日掛牌
@@ -35,7 +37,8 @@ EXCH = "CME"
 SYMBOL = "EUR"
 MIN_DTE, MAX_DTE, TARGET_DTE = 21, 35, 30
 STRIKE_TRIES = 6                      # 同 ib_collector.atm_pair_iv：按距離最多試 6 檔行使價
-COLS = ["utc_time", "kind", "expiry", "dte", "strike", "fut_symbol", "fut_bid", "fut_ask", "fut_last",
+PREFER_TCLASS = "EUU"                 # 2026-10-12 修正：窗內優先取標準月權（EUU），沒有才退到週權（1EU–5EU／MO／WE／TU／SU）
+COLS = ["utc_time", "kind", "expiry", "dte", "strike", "trading_class", "fut_symbol", "fut_bid", "fut_ask", "fut_last",
         "c_bid", "c_ask", "c_last", "c_iv", "c_bid_iv", "c_ask_iv", "c_delta", "c_gamma", "c_vega",
         "p_bid", "p_ask", "p_last", "p_iv", "p_bid_iv", "p_ask_iv", "p_delta", "p_gamma", "p_vega",
         "straddle_bid", "straddle_ask", "half_spread_vol"]
@@ -88,7 +91,7 @@ def pick_option(ib, futs, verbose=False):
                 dte = (datetime.strptime(e[:8], "%Y%m%d").date() - today).days
                 if MIN_DTE <= dte <= MAX_DTE:
                     win.append((e, dte))
-                    key = abs(dte - TARGET_DTE)
+                    key = (0 if ch.tradingClass == PREFER_TCLASS else 1, abs(dte - TARGET_DTE))   # 先月權、再最接近 30 天
                     if best is None or key < best[0]:
                         best = (key, fut, e, dte, ch.tradingClass, ch.multiplier, sorted(ch.strikes))
             if verbose:
@@ -149,6 +152,7 @@ def snapshot(ib, fut, expiry, dte, strikes, tclass, mult, kind, now, legs=None):
     ts = [ib.reqMktData(x, "", False, False) for x in (fut, c, p)]
     wait_quotes(ib, ts[1:])
     row = make_row(kind, now, fut, ts[0], expiry, dte, strike, ts[1], ts[2])
+    row["trading_class"] = tclass
     for x in (fut, c, p):
         ib.cancelMktData(x)
     return row, (c, p), strike
