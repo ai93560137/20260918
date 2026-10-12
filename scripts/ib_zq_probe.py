@@ -18,12 +18,26 @@ def main() -> None:
     ap.add_argument("--port", type=int, default=4002)
     ap.add_argument("--client-id", type=int, default=43)
     ap.add_argument("--pace", type=float, default=11.0, help="每個歷史請求間隔秒（IB 節流）")
+    ap.add_argument("--months", nargs="*", default=[], help="明示到期月 YYYYMM（含已到期，includeExpired），例如 202501 202502 … 202508；不給則用 reqContractDetails 列出的")
     a = ap.parse_args()
     from ib_insync import IB, ContFuture, Future
     a.out.mkdir(parents=True, exist_ok=True)
     ib = IB(); ib.connect("127.0.0.1", a.port, clientId=a.client_id, timeout=20)
-    cds = ib.reqContractDetails(Future("ZQ", exchange="CBOT", currency="USD", includeExpired=True))
-    cons = sorted((cd.contract for cd in cds), key=lambda c: c.lastTradeDateOrContractMonth)
+    if a.months:
+        cons = []
+        for m in a.months:
+            c = Future("ZQ", lastTradeDateOrContractMonth=m, exchange="CBOT", currency="USD", includeExpired=True)
+            try:
+                q = ib.qualifyContracts(c)
+                if q:
+                    cons.append(q[0]); print(f"  {m}: qualify 成功 {q[0].localSymbol}")
+                else:
+                    print(f"  {m}: qualify 失敗（IB 不再認得）")
+            except Exception as e:
+                print(f"  {m}: 例外 {e!r}")
+    else:
+        cds = ib.reqContractDetails(Future("ZQ", exchange="CBOT", currency="USD", includeExpired=True))
+        cons = sorted((cd.contract for cd in cds), key=lambda c: c.lastTradeDateOrContractMonth)
     print(f"IB 認得 {len(cons)} 個 ZQ 合約：{cons[0].lastTradeDateOrContractMonth if cons else '-'} → {cons[-1].lastTradeDateOrContractMonth if cons else '-'}")
     status = [f"# ZQ 試拉 {date.today()}；IB 認得 {len(cons)} 個合約"]
     today = date.today().strftime("%Y%m%d")
@@ -58,7 +72,8 @@ def main() -> None:
         line = f"連續合約失敗 {e!r}"
     print(line); status.append(line)
     status.append("結算價核對：IB 日線 Close 是否等於 CME 結算，待人工對照最近 3 個合約各 20 天（CME 網站需瀏覽器）。")
-    (a.out / "_status.txt").write_text("\n".join(status) + "\n", encoding="utf-8")
+    with open(a.out / "_status.txt", "a", encoding="utf-8") as fh:
+        fh.write("\n".join(status) + "\n")
     ib.disconnect()
 
 
