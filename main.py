@@ -7015,7 +7015,7 @@ def htf_data():
 
 def build_htf_page(data):
     nav = page_nav("htf")
-    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📈 HTF 每日掛單</h1></div>{nav}</div>"
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📈 鳥翔 HTF 每日掛單</h1></div>{nav}</div>"
     if data.get("status") != "ok":
         return html_page("HTF 每日掛單", head + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
     f = lambda v, nd: "—" if v is None else f"{v:,.{nd}f}"
@@ -7081,7 +7081,7 @@ def build_htf_page(data):
              "<li>在富途開實倉前，先在預設分支 POSITIONS.md 登記（陣名「HTF」＋代號）並通知總指揮。</li></ol></div>")
     foot = (f"<p class='muted' style='font-size:12px'>參數由全期數據擬合選出（曲線擬合），未來表現大概率低於回測。證偽：前向 100 筆平均虧損，或回撤超過 {HTF_STOP_DD}，即停。不構成投資建議。"
             f"　讀取 {esc(data['fetched_utc'])} UTC・JSON：<a href='?view=htf&amp;format=json'>?view=htf&amp;format=json</a></p>")
-    body = head + print_toolbar_html("📈 HTF 每日掛單") + warn + top + secs + rules + foot
+    body = head + print_toolbar_html("📈 鳥翔 HTF 每日掛單") + warn + top + secs + rules + foot
     return html_page("HTF 每日掛單", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,600000)}else{location.reload()}},600000)</script>")
 
 
@@ -9196,7 +9196,7 @@ PAGE_LINKS = [
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
     ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
-    ("htf", "📈 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
+    ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
