@@ -17,6 +17,7 @@ RESEARCH_HANDBOOK.md（方法論鐵律、已判決結論庫——外匯已有判
 | `FX_L1_FORWARD.md` | **L1 前向測試協議**（2026-10-12 起）：每日自動記錄 EURUSD 09→12 UTC 紙上成交（Dukascopy M1 bid／ask，賣 bid、買 ask），狀態報告 `forward/L1_STATUS.md`；250／500／1,000 日監測規則 |
 | `IBKR_L1_QUOTE_REQUEST.md` | 給雲垂的單檔請求：VM 上 cron 每平日 08:59／11:59 UTC 記 IBKR EURUSD 即時 bid／ask（`scripts/ib_l1_quote.py`），作 L1 前向測試的點差第二來源 |
 | `FX_EUR_VRP_IBKR.md` | **歐元方差賣方 IBKR 期權版登記**（2026-10-12）：A 階段量 6E ATM 跨式真實半價差（≤0.35 成立／0.35–0.60 邊際／>0.60 否決）、B 階段前向紙上賣方、C 階段 IB 七貨幣 IV 回溯（只能支持／不矛盾／矛盾，不給 ✅）；`IBKR_VRP_SNAPSHOT_REQUEST.md` 是給雲垂的安裝請求 |
+| `XAUUSD_LONG_FORWARD.md` | **XAUUSD 只做多前向對照協議**（2026-10-13 起）：`xau_long_forward.yml` 每日補抓 Dukascopy M1 快取、自 2026-06-01 錨點重跑蛇蟠陣 sar N=3 多頭腿，兩個點差口徑（0.30／0.65）並列、空頭腿對照、journal 黃金列對照；狀態 `forward/XAU_LONG_STATUS.md`。**沒有可達的「前向確認」里程碑**，只能證偽與量滑價 |
 | `FX_L1_OTHER_PAIRS.md` | L1 倫敦上午規律在其他外匯對：9/11 方向性成立（歐元交叉盤全同向），貨幣分解 = 歐元賣壓（t −6.75）＋美元走強；但其他對成本高、淨為負，組合與 EURUSD 相關 0.97 → **EURUSD 是唯一可交易表達** |
 | `EURUSD_L1_PLAYBOOK.md` | EURUSD 倫敦上午做空（09–12 UTC）操作手冊：規則、載具與成本、倉位表、證偽監測、開倉前登記 |
 | `FX_EXPLORATORY_SCAN.md` | **探索性 curve fitting**（使用者指示取消 Bonferroni）：日線 1,032 條規則海選輸給純雜訊；日內 2,100 時窗海選找到 **EURUSD 倫敦上午（09–12 UTC）下跌 +1.9 基點／日、毛 t 7.15**，經 HistData 跨來源與 2000–2003 樣本外確認（t 2.62）；淨約 2.4%／年（1 倍名義）、夏普 0.7–1.1，近年轉弱；另有已衰退的亞洲時段上漲。前向監測規則已登記 |
