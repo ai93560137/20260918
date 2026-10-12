@@ -3029,6 +3029,21 @@ MARKETS = {
 ES_SYMBOL = "US.ES_FRONT"
 
 
+# [R159] 風揚陣各波幅頁配色（今日／本週／本月卡頂邊、進度條、標題）：恒指用預設藍綠紫，ES、NQ 各用另一組，一眼分得出。
+FY_THEMES = {"US": ("#d9480f", "#f08c00", "#a61e4d"),      # ES：橙／琥珀／洋紅
+             "NQ": ("#0b7285", "#1098ad", "#364fc7")}      # NQ：青／淺青／靛
+
+
+def fy_theme_css(key):
+    t = FY_THEMES.get(key)
+    if not t:
+        return ""
+    d, w, mo = t
+    return (f"<style>.fy-card{{border-top-color:{d}}} .fy-card.week{{border-top-color:{w}}} .fy-card.month{{border-top-color:{mo}}} "
+            f".fy-bar > div{{background:{d}}} .fy-steps b{{color:{d}}} .fy-howto{{border-left-color:{d}}} "
+            f".fy-hero{{border-left:6px solid {d}}} .page-title{{color:{d}}}</style>")
+
+
 def futu_market(symbol=None):
     return MARKETS["US" if str(symbol or "").upper().startswith("US.") else "HK"]
 
@@ -7522,7 +7537,7 @@ def build_futu_range_page(data):
         原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></p>
       </div>
     </details>"""
-    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + PRINT_CSS)
+    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + fy_theme_css(m["key"]) + PRINT_CSS)
 
 
 def handle_futu_api_get(symbol=None):
@@ -8635,8 +8650,8 @@ PAGE_LINKS = [
     ("order_app", "🧾 送單參數"),
     ("jinnang_sheet", "🗒️ 錦囊執行單"),
     ("jinnang_tracker", "✅ 錦囊九十筆"),
-    ("futu_range", "🌬️ 風揚陣波幅"),                       # [R105] 每頁頂都能到風揚陣
-    ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
+    ("futu_range", "🌬️ 風揚陣恆指波幅"),                       # [R105] 每頁頂都能到風揚陣
+    ("es_range", "🇺🇸 風揚陣ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
     ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
