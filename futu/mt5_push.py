@@ -10,7 +10,7 @@
   Windows（設一次，重開命令列生效）：
     setx ZHUGE_GCP_URL "https://你的服務.run.app/"
     setx WEBHOOK_SECRET_TOKEN "跟 Cloud Run 環境變數相同的權杖"
-  選填：MT5_SYMBOLS（券商代號:GCP 別名，逗號分隔；預設 US500:US.ES_FRONT；例 US500:US.ES_FRONT,USTEC:US.NQ_FRONT）、
+  選填：MT5_SYMBOLS（券商代號:GCP 別名，逗號分隔；預設 US500:US.ES_FRONT；例 SP500ft:US.ES_FRONT,NAS100ft:US.NQ_FRONT → NQ 進 ?view=nq_range 頁）、
         MT5_PATH（terminal64.exe 路徑，終端機沒開時用）、MT5_LOGIN／MT5_PASSWORD／MT5_SERVER（終端機已登入就不用）、
         MT5_UTC_OFFSET（券商時間比 UTC 快幾小時；不設就由最新報價自動推算，休市時沿用上一次）、
         PUSH_INTERVAL_SEC（300）、BAR_COUNT（120）、SESSION_DAYS（每輪推最近幾個交易日的 K_SESSION，預設 3）

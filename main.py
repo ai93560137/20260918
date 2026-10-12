@@ -189,6 +189,9 @@
 #     狀態「休市／未開市」（之前要到 09:00 才換日，07:53 記下的預測在頁上看不到，而且推送仍在所以誤標「交易中」）。
 #   * 2026-10-09 — [R132] 📄 八陣圖策略書（投資人展示頁）改由本服務託管：?view=factsheet 供應 factsheet.html（靜態、不讀任何狀態），
 #     投資人用 tnt-hk.com 網址直接開、不用登入 Claude。內容只含回測指標與風險揭露，不含進出場規則；不放進頁頂導覽列（只給連結）。
+#   * 2026-10-12 — [R158] 🇺🇸 NQ 波幅頁（?view=nq_range，代號 US.NQ_FRONT）：版面與 ES 頁完全相同（MARKETS["NQ"] 複製 US 設定，
+#     key 仍是 US → 時區、交易日切法、高低位分布、四次檢討都跟 ES），只換名稱、每點 US$20、週期權行使價間距 100、對照用 VXN。
+#     futu_market() 看代號前綴 US.NQ／US.MNQ。數據由本機 futu/mt5_push.py（MT5_SYMBOLS 加 NAS100ft:US.NQ_FRONT）每 5 分鐘推入。
 #   * 2026-10-08 — [R131] ⚔️ 八陣圖指令台改由本服務託管（?view=bazhentu，bazhentu.html），tnt-hk.com 直接開、不用登入 Claude；
 #     通道數據 ?view=bazhentu&format=json 轉發蛇蟠陣分支 levels.json（公開 repo），快取 120 秒、GCS 後備。商品加小恒指、實倉改數字輸入。
 #   * 2026-10-05 — [R127] 🇺🇸 ES 波幅頁（?view=es_range，代號 US.ES_FRONT）：與風揚陣恒指頁同一套程式，加「市場設定」（MARKETS）——
@@ -3032,9 +3035,19 @@ MARKETS = {
            "zh": "ES 標普 500 期貨", "title": "🇺🇸 風揚陣・ES 標普 500 期貨波幅", "view": "es_range", "icon": "🇺🇸",
            "session_zh": "CME 全段 23 小時", "hours_zh": "交易日 = CME 全段：紐約時間前一天 18:00 至當天 17:00（香港 06:00／07:00 至翌日 05:00／06:00）",
            "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 yfinance 的連續合約日線，轉月不做價差調整",
-           "open_zh": "有 5 分 K 推送後", "unit_zh": "ES 每點 US$50，小型 MES US$5", "intraday": False},
+           "open_zh": "有 5 分 K 推送後", "unit_zh": "ES 每點 US$50，小型 MES US$5", "intraday": False,
+           "short": "ES", "pt_zh": "US$50", "opt_zh": "ES 週期權（週五到期，每點 US$50）", "step": 25, "iv_ref": "VIX（CBOE 30 日 IV）", "cap_zh": "US$30,000",
+           "events_zh": "聯儲議息、非農、CPI", "empty_hint": "本地執行 futu/mt5_push.py --backfill 400 補歷史（MT5_SYMBOLS 含 SP500ft:US.ES_FRONT），之後每 5 分鐘自動更新。"},
 }
+# [R158] 🇺🇸 NQ 納指 100 期貨：與 ES 共用整套美股設定（key 仍是 US → 時區、交易日、高低位分布、檢討都一樣），只換名稱、單位、期權文字。
+MARKETS["NQ"] = {**MARKETS["US"],
+                 "zh": "NQ 納指 100 期貨", "title": "🇺🇸 風揚陣・NQ 納指 100 期貨波幅", "view": "nq_range",
+                 "unit_zh": "NQ 每點 US$20，微型 MNQ US$2", "short": "NQ", "pt_zh": "US$20",
+                 "opt_zh": "NQ 週期權（週五到期，每點 US$20）", "step": 100, "iv_ref": "VXN（CBOE 納指 100 30 日 IV）", "cap_zh": "US$30,000",
+                 "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 MT5 的 NAS100 CFD 5 分 K 合成",
+                 "empty_hint": "本地執行 futu/mt5_push.py --backfill 400 補歷史（MT5_SYMBOLS 含 NAS100ft:US.NQ_FRONT），之後每 5 分鐘自動更新。"}
 ES_SYMBOL = "US.ES_FRONT"
+NQ_SYMBOL = "US.NQ_FRONT"                                   # [R158]
 
 
 # [R159] 風揚陣各波幅頁配色（今日／本週／本月卡頂邊、進度條、標題）：恒指用預設藍綠紫，ES、NQ 各用另一組，一眼分得出。
@@ -3053,7 +3066,10 @@ def fy_theme_css(key):
 
 
 def futu_market(symbol=None):
-    return MARKETS["US" if str(symbol or "").upper().startswith("US.") else "HK"]
+    sym = str(symbol or "").upper()
+    if sym.startswith("US.NQ") or sym.startswith("US.MNQ"):       # [R158] 納指 100 期貨：美股設定、NQ 文字
+        return MARKETS["NQ"]
+    return MARKETS["US" if sym.startswith("US.") else "HK"]
 
 
 def futu_session_today(now=None, symbol=None):
@@ -7460,7 +7476,7 @@ def _strangle_plan(data, symbol=None, now=None):
     iv = ivc.get("iv") if (ivc.get("iv") and ivc.get("fresh")) else None
     iv_src = "Futu 週期權價平 IV" if iv else ("風揚陣預測（年化）代替，開倉時以券商報價為準" if har_vol else None)
     vol = iv or har_vol
-    step = 25 if us else 50
+    step = m.get("step") or (25 if us else 50)                          # [R158] ES 25、NQ 100、恒指 50
     out = {"op": op.strftime("%Y-%m-%d"), "op_is_today": phase == "today", "phase": phase, "today": today, "win_end": win_end,
            "cut": cut, "expiry": expiry.strftime("%Y-%m-%d"),
            "n": n, "F": F, "iv": iv, "iv_expiry": ivc.get("expiry") if iv else None, "har_vol": har_vol, "vol": vol, "vol_src": iv_src, "step": step}
@@ -7482,8 +7498,9 @@ def _fy_howto(data, symbol=None, now=None):
     p = _strangle_plan(data, symbol, now)
     if not p:
         return ""
-    unit = "US$50" if us else "HK$50"
-    inst = "ES 週期權（週五到期，每點 US$50）" if us else "恒指週期權（HSIWO，每點 HK$50）"
+    unit = m.get("pt_zh") or ("US$50" if us else "HK$50")
+    inst = m.get("opt_zh") or ("ES 週期權（週五到期，每點 US$50）" if us else "恒指週期權（HSIWO，每點 HK$50）")
+    short = m.get("short") or ("ES" if us else "恒指")
     today_txt = f"今天 {esc(_day_label(p['today']))}"
     if p["phase"] == "today":
         status = f"✅ {today_txt} 就是操作日：{p['cut']} 收市後照下面做（沽 {esc(_day_label(p['expiry']))} 到期的那個系列）"
@@ -7510,8 +7527,8 @@ def _fy_howto(data, symbol=None, now=None):
         sig_txt = strike_txt = sell_txt = hold_txt = "等有現價與 IV 才算得出"
     alt = (f"📎 變體（更穩，回測 +39 點／週、96% 週賺、最差 −144）：行使價改用下週預測範圍的九成邊 Put <b>{_n(p['alt_put'])}</b>／Call <b>{_n(p['alt_call'])}</b>。"
            if p.get("alt_put") else "")
-    head = ("📘 方向一實際操作：每週沽 ES 週期權 1σ 勒式（做法同恒指，ES 未回測）" if us else "📘 方向一實際操作：每週沽恒指週期權 1σ 勒式")
-    sub = ("恒指真實數據 51 週：每週 +55 點、84% 週賺、最差一週 −472 點、t 2.85；ES 要先用 CME 結算價重跑回測。統計估計，不是交易建議；先紙上交易。" if us else
+    head = (f"📘 方向一實際操作：每週沽 {short} 週期權 1σ 勒式（做法同恒指，{short} 未回測）" if us else "📘 方向一實際操作：每週沽恒指週期權 1σ 勒式")
+    sub = (f"恒指真實數據 51 週：每週 +55 點、84% 週賺、最差一週 −472 點、t 2.85；{short} 要先用 CME 結算價重跑回測。統計估計，不是交易建議；先紙上交易。" if us else
            "真實結算價回測 51 週（2025-10 至 2026-09）：每週 +55 點、84% 週賺、最差一週 −472 點、最大回撤 472、t 2.85。統計估計，不是交易建議；先紙上交易。")
     steps = [
         f"<b>第 1 步 查兩個數</b>：{esc(_day_label(p['expiry']))} 到期的{inst}的價平 IV（Call、Put 平均）與遠期價 F（≈ 即月期貨價）。"
@@ -7523,8 +7540,8 @@ def _fy_howto(data, symbol=None, now=None):
         f"<b>第 6 步 記錄</b>：到期後記下結算價與淨利（權利金 − 賠付 − 每腳 4 點成本），寫進 research/hsi_futures_range/PAPER_TRADING.md；"
         f"到期當天 {p['cut']} 後開下一週的倉。",
     ]
-    note = (f"🛡️ 資金：每張準備 {'US$' if us else 'HK$'}{'30,000' if us else '250,000'} 以上（最差一週 −472 點 = {unit} × 472）；虧損週後下週照常沽 1 張。"
-            f"事件週（{'聯儲議息、非農、CPI' if us else '聯儲議息、港府預算案'}）可以不沽。挑時機（VHSI ÷ 預測）回測沒有幫助，所以每週都沽。 {alt} "
+    note = (f"🛡️ 資金：每張準備 {m.get('cap_zh') or ('US$30,000' if us else 'HK$250,000')} 以上（最差一週 −472 點 = {unit} × 472）；虧損週後下週照常沽 1 張。"
+            f"事件週（{m.get('events_zh') or ('聯儲議息、非農、CPI' if us else '聯儲議息、港府預算案')}）可以不沽。挑時機（VHSI ÷ 預測）回測沒有幫助，所以每週都沽。 {alt} "
             f"完整規則：research/hsi_futures_range/STRANGLE_1SIGMA.md")
     return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
             f"<div class='fy-howto-status{' today' if p['phase'] in ('today', 'window') else ''}'>{status}</div>"
@@ -7551,10 +7568,11 @@ def _fy_money(data, symbol=None):
         har = (fc["range"] / RANGE_TO_SIGMA / fc["ref_close"] * math.sqrt(252) * 100) if fc.get("range") and fc.get("ref_close") else None
         now_txt = (f"<div class='fy-row'><span>🔮 風揚陣預測（年化）</span><b>{har:.1f}%</b></div>" if har else
                    "<div class='fy-note'>⏳ 等開市前預測。</div>")
-        now_txt += "<div class='fy-note'>➕ 對照用 VIX（CBOE 30 日 IV）；VIX ÷ 預測明顯高於 1 才考慮賣。VIX 餵價與 ES 期權結算價未接，未回測。</div>"
-        card("💹", "方向一：賣波幅（期權）", "💡 做法同恒指・ES 未回測",
-             "<div class='fy-sig'>ES 期權（週一／三／五到期的週期權，每點 US$50）IV 長期高於實際波幅，沽 1σ 勒式持有到期是恒指真實數據上最穩的賣法"
-             "（每週 +55 點、84% 週賺）；ES 要先用 CME 結算價重跑同一回測。</div>"
+        short, ivr = m.get("short", "ES"), m.get("iv_ref", "VIX（CBOE 30 日 IV）")                      # [R158] ES／NQ 文字
+        now_txt += f"<div class='fy-note'>➕ 對照用 {ivr}；{ivr[:3]} ÷ 預測明顯高於 1 才考慮賣。{ivr[:3]} 餵價與 {short} 期權結算價未接，未回測。</div>"
+        card("💹", "方向一：賣波幅（期權）", f"💡 做法同恒指・{short} 未回測",
+             f"<div class='fy-sig'>{short} 期權（週一／三／五到期的週期權，每點 {m.get('pt_zh', 'US$50')}）IV 長期高於實際波幅，沽 1σ 勒式持有到期是恒指真實數據上最穩的賣法"
+             f"（每週 +55 點、84% 週賺）；{short} 要先用 CME 結算價重跑同一回測。</div>"
              "<div class='fy-sig'>📘 恒指的實際操作規則：research/hsi_futures_range/STRANGLE_1SIGMA.md（行使價 = 遠期價 ± 價平 IV × √(交易日數 ÷ 252) × 遠期價，"
              "往外取整；不對沖、持有到期）。</div>" + now_txt +
              "<div class='fy-note'>⚠️ 賺小蝕大，要細倉；美股事件週（聯儲議息、非農、CPI）比恒指多，先避開。</div>", "month")
@@ -7706,7 +7724,7 @@ def build_futu_range_page(data):
            f"{page_nav(m['view'], extra=[('?view=dashboard', '📡 回 Futu 行情')] if m['intraday'] else [])}</div>")
     if not rows:
         hint = (f"本地執行 push_to_gcp.py 的 <span class='mono'>--backfill {esc(symbol)}</span> 補歷史，之後每 5 分鐘會自動更新。" if m["intraday"]
-                else "GitHub Actions 的 es_daily_push.yml 每個交易日收市後推入 yfinance 的 ES 連續合約日線；第一次要手動 dispatch 補歷史。")
+                else esc(m.get("empty_hint") or "GitHub Actions 的 es_daily_push.yml 每個交易日收市後推入 yfinance 的 ES 連續合約日線；第一次要手動 dispatch 補歷史。"))
         body = nav + f"<div class='section'>還沒有交易日 K 數據。{hint}</div>"
         return html_page(m["title"], body, head_extra=FY_CSS)
     latest = rows[-1]
@@ -7735,7 +7753,7 @@ def build_futu_range_page(data):
     period_day = peak.get("today") or day_date                     # [R105] 本週／本月以目前交易日所在的那段為準
     today_label = m["session_zh"] if fc and fc.get("date") not in (None, "next") else "下一個交易日（開市前預測）"
     waiting = (f"⏳ {m['open_zh']}開始判斷高低位是否已出現。" if intraday else
-               "ℹ️ ES 暫時只有日線，沒有日內「已走」與高低位訊號；預測、預計範圍與過去紀錄照常。") if "day" not in periods else None
+               f"ℹ️ {m['short']} 暫時只有日線，沒有日內「已走」與高低位訊號；預測、預計範圍與過去紀錄照常。") if "day" not in periods else None
     accs = data.get("accuracy") or {}
     cards = ("<div class='fy-grid'>"
              + _fy_period_card("day", periods.get("day"), day_fc, data.get("signals") or {}, today_label, waiting,
@@ -7784,7 +7802,7 @@ def build_futu_range_page(data):
         for r in reversed(rows))
     extras = (_fy_paper(data) + _fy_money(data, symbol)) if intraday else (                    # [R127][R130][R134] ES 沒有 5 分 K
         "<div class='section-header'>📒 紙上交易／💰 四個方向</div>"
-        "<div class='fy-legend'>ES 暫時只有每日收市後的日線，紙上交易與高低位訊號要等有 5 分 K 推送才開（本地執行 futu/mt5_push.py）；"
+        f"<div class='fy-legend'>{m['short']} 暫時只有每日收市後的日線，紙上交易與高低位訊號要等有 5 分 K 推送才開（本地執行 futu/mt5_push.py）；"
         "研究結果見 research/us_futures/（ES 8 年、NQ 4 年：蛇蟠陣無效，波幅預測與高低位訊號比恒指準）。</div>")
     body = nav + print_toolbar_html(m['title']) + hero + cards + reviews + extras + f"""
     <div class='section-header'>📊 過去一年</div>
@@ -8926,6 +8944,7 @@ PAGE_LINKS = [
     ("jinnang_tracker", "✅ 錦囊九十筆"),
     ("futu_range", "🌬️ 風揚陣恆指波幅"),                       # [R105] 每頁頂都能到風揚陣
     ("es_range", "🇺🇸 風揚陣ES 波幅"),                            # [R127] ES 標普 500 期貨
+    ("nq_range", "🇺🇸 風揚陣NQ 波幅"),                            # [R158] NQ 納指 100 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
     ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
@@ -10738,6 +10757,8 @@ def handle_get(req):
         return handle_futu_range_get(req)
     if view == "es_range":                                       # [R127] ES 標普 500 期貨，同一套程式
         return handle_futu_range_get(req, default_symbol=ES_SYMBOL)
+    if view == "nq_range":                                       # [R158] NQ 納指 100 期貨，同一套程式
+        return handle_futu_range_get(req, default_symbol=NQ_SYMBOL)
     if view == "info":
         return build_info_page()
     if view == "reset":
