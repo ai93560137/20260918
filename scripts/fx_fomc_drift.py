@@ -46,12 +46,14 @@ def tdays_before(d: date, n: int) -> date:
 
 
 # ---------- 數據 ----------
-def load_calendar() -> pd.DataFrame:
+def load_calendar(end: str = END) -> pd.DataFrame:
+    """排定 FOMC 公告（scheduled=1）；end 預設回測終點，前向傳 None 取全部（含未來）。"""
     c = pd.read_csv(ROOT / "data_forex_rates" / "fomc" / "fomc_announcements.csv", dtype=str)
     c = c[c["scheduled"] == "1"].copy()
     c["date"] = pd.to_datetime(c["date"]).dt.date
     c["ann_time"] = [parse_time(a) or rule_to_time(b) for a, b in zip(c["statement_time_et"].fillna(""), c["statement_time_rule"].fillna("14:00"))]
-    return c[(c["date"] >= pd.Timestamp(START).date()) & (c["date"] <= pd.Timestamp(END).date())].reset_index(drop=True)
+    hi = pd.Timestamp(end).date() if end else date(2099, 12, 31)
+    return c[(c["date"] >= pd.Timestamp(START).date()) & (c["date"] <= hi)].reset_index(drop=True)
 
 
 def parse_time(s: str):
@@ -78,7 +80,7 @@ def load_target() -> pd.Series:
     lo = pd.read_csv(d / "DFEDTARL.csv", parse_dates=["Date"]).set_index("Date")["Value"]
     mid = ((u + lo) / 2).dropna()
     s = pd.concat([t[t.index < mid.index.min()], mid]).sort_index()
-    idx = pd.date_range(s.index.min(), pd.Timestamp(END) + pd.Timedelta(days=5))
+    idx = pd.date_range(s.index.min(), max(pd.Timestamp(END), pd.Timestamp.today().normalize()) + pd.Timedelta(days=400))
     return s.reindex(idx).ffill()
 
 
