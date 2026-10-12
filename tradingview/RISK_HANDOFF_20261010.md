@@ -175,3 +175,4 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 使用者要求「闊度和排版要和風揚一致」。`jinnang_sheet.html`／`jinnang_tracker.html`：頁首標誌＋標題＋導覽列包入 `.topnav`
   白色卡（同 BASE_CSS `.nav`：padding 15px 20px、圓角 12px、陰影），`.wrap` 闊度 860／880px → 1050px（同 `.container`），
   去掉導覽列 `margin-bottom:-28px`；列印時整個卡隱藏。未部署。
+- 2026-10-12 部署：R170 → 修訂 `zhuge-risk-manager-00293-ffx`（來源 `9dbd4bb4b`），五頁 200，兩頁 .topnav 線上確認。退回：`rollback --to zhuge-risk-manager-00292-txn --yes`。
