@@ -138,3 +138,24 @@ Get-Content "$startup\ZhugeAutoRisk.cmd"
 Get-Content tradingview\out\risk_report_live.md -Encoding utf8 | Select-Object -First 12
 Get-Content tradingview\out\risk_history.csv -Tail 5
 ```
+
+## 8. 每日自動匯出基金報告（R153，`auto_risk.py` 內建）
+
+`auto_risk.py --every 15` 每日香港時間 05:30 之後第一次循環，會喺背景跑一次 `futu_pnl_export.py`（推 `action=futu_pnl` → 📊 基金報告）。
+成功先記低（`tradingview\out\pnl_export_state.json`），失敗每日最多試 3 次；輸出喺 `tradingview\out\pnl_export_last.log`。週末唔跑（星期六 05:30 嗰次會跑，包埋星期五夜市）。唔想要就加 `--no-pnl`。
+
+更新（攞新版之後要重開 auto_risk）：
+
+```powershell
+git fetch origin claude/beautiful-hypatia-8qrgjj
+git checkout origin/claude/beautiful-hypatia-8qrgjj -- gcp_ib/auto_risk.py gcp_ib/futu_pnl_export.py
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object CommandLine -like "*auto_risk.py*" | ForEach-Object { Stop-Process -Id $_.ProcessId }
+Start-Process "$([Environment]::GetFolderPath('Startup'))\ZhugeAutoRisk.cmd"
+```
+
+查結果：
+
+```powershell
+Get-Content tradingview\out\pnl_export_state.json -Encoding utf8
+Get-Content tradingview\out\pnl_export_last.log -Encoding utf8 -Tail 5
+```

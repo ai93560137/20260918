@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html class="market-hkex">
+<head>
+    <title>Inline Warrant Search</title>
+    <meta name="description" content="A search engine to find information about Inline Warrants listed on HKEX's markets." />
+    <meta name="keywords" content="Search for Inline Warrants information, search for IW information, list of Inline Warrants, Inline Warrants search, all Inline Warrants, IW search, list of IW, all IW" />
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta http-equiv="Content-language" content="eng">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<link type="text/css" rel="stylesheet" href="/nonCMS/css/main.css" />
+    <link type="text/css" rel="stylesheet" href="/nonCMS/css/sprc_noncms.css" />
+</head>
+<body>
+    <script language="javaScript" src="/nonCMS/script/noncmshead.js"></script>
+    <!-- Leftmenu start -->
+    <script language="javaScript" src="/nonCMS/script/noncmsleftmenu.js"></script>
+    <!-- Content start -->
+    <main class="nav-content-wrap">
+<div class="section__title-left-border">
+    Product Search</div>
+<div class="main-content">
+    <div class="content-margin">
+        <form id="form1" name="formSearch" onsubmit="return CheckAll(this)" action="iwlist.asp" autocomplete="off" method="post">
+        
+        <input type="hidden" name="sessionToken" value="XNlQAGzHGBqEzVMRlDMI" />
+        <table class="list-search" cellspacing="0" cellpadding="0" border="0">
+            <tbody>
+                <tr>
+                    <td class="dwtitle">
+                        Product Type:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap productSelect">
+                            <select id="productSelect" size="3" autocomplete="off" onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
+                                <option value="/eng/dwrc/search/listsearch.asp">Derivative Warrants</option>
+                                <option value="/eng/cbbc/search/listsearch.asp">Callable Bull / Bear Contracts</option>
+                                <option value="/eng/iwrc/search/listsearch.asp" selected>Inline Warrants</option>
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="productSelectTitle" >
+                        <br>Inline Warrant Search<br><br>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Warrant Code:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="5" size="10" name="txtIWCode" />&nbsp;</div><div class="autowrap">(If specified, the following criteria will be ignored)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle" valign="top">
+                        Underlying:
+                    </td>
+                    <td class="dwtext longSelect">
+                        <!-- <SELECT name="lstUnderlying" style="width:500px;"> -->
+                        <select name="lstUnderlying" id="lstUnderlying">
+                            <option value="" selected>
+                                All</option>
+                            
+                        </select><br>
+                        <div class="autowrap">(please specify either issuer or underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Issuer:
+                    </td>
+                    <td class="dwtext longSelect">
+                        <select name="lstIssuer" id="lstIssuer">
+                            <option value="" selected>
+                                All</option>
+                            
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Listing*:
+                    </td>
+                    <td class="dwtext shortSelect">
+                        <select name="lstListingDate">
+                            <option value="" selected>
+                                All</option>
+                            <option value="0">
+                                <=1 month</option>
+                            <option value="1">
+                                >1 - 3 months</option>
+                            <option value="3">
+                                >3 - 6 months</option>
+                            <option value="6">
+                                >6 months</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Maturity*:
+                    </td>
+                    <td class="dwtext shortSelect">
+                        <select name="lstMaturityDate">
+                            <option value="" selected>
+                                All</option>
+                            <option value="0">
+                                <=1 month</option>
+                            <option value="1">
+                                >1 - 3 months</option>
+                            <option value="3">
+                                >3 - 6 months</option>
+                            <option value="6">
+                                >6 months</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Lower and Upper Strikes*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="10" size="10" name="txtFromStrike">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="10" size="10" name="txtToStrike">&nbsp;</div><div class="autowrap">(If specified, please select underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Delta
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="7" size="10" name="txtFromDelta">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="7" size="10" name="txtToDelta">&nbsp;</div><div class="autowrap">(If specified, please select underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Implied Volatility
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="7" size="10" name="txtFromImplVol">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="7" size="10" name="txtToImplVol">&nbsp;</div><div class="autowrap">(If specified, please select underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Outstanding Quantity
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <input type="text" maxlength="5" size="10" name="txtFromOutstanding">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="5" size="10" name="txtToOutstanding">
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td style="text-align:left;">
+                        <div class="list-search-button">
+                            <input type="submit" value="Search" name="submit" class="button-default" />&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="button" value="Clear" class="button-default" onclick="form1.reset();" />
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        * -
+                        Optional
+                    </td>
+                    <td class="dwtitle">
+                        <a target="_blank" name="downloadlink" class="button-default" href="/eng/iwrc/search/iwFullList.csv">
+                            Download full list</a>
+                   </td>
+                </tr>
+            </tbody>
+        </table>
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+    function isPosInteger(inputVal) {
+        inputStr = inputVal.toString()
+        for (var i = 0; i < inputStr.length; i++) {
+            var oneChar = inputStr.charAt(i)
+            if (oneChar < "0" || oneChar > "9") {
+                return false
+            }
+        }
+        return true
+    }
+
+    function isNumber(inputVal) {
+        inputStr = inputVal.toString()
+        for (var i = 0; i < inputStr.length; i++) {
+            var oneChar = inputStr.charAt(i)
+            if (inputStr.length == 1 && oneChar == "-")
+                return false
+
+            if (i != 0 && oneChar == "-")
+                return false
+
+            if (!(oneChar == "-" || oneChar == "." || oneChar == "0" || oneChar == "1" || oneChar == "2" || oneChar == "3" || oneChar == "4" || oneChar == "5" || oneChar == "6" || oneChar == "7" || oneChar == "8" || oneChar == "9")) {
+                return false
+            }
+        }
+        return true
+    }
+
+    function CheckAll(form) {
+        var iwcode = form.txtIWCode.value;
+        var issuer = form.lstIssuer.options[form.lstIssuer.selectedIndex].value;
+        var underlying = form.lstUnderlying.options[form.lstUnderlying.selectedIndex].value;
+        var listing = form.lstListingDate.options[form.lstListingDate.selectedIndex].value;
+        var maturity = form.lstMaturityDate.options[form.lstMaturityDate.selectedIndex].value;
+        var fromstrike = form.txtFromStrike.value;
+        var tostrike = form.txtToStrike.value;
+        var fromdelta = form.txtFromDelta.value;
+        var todelta = form.txtToDelta.value;
+        var fromimpvol = form.txtFromImplVol.value;
+        var toimpvol = form.txtToImplVol.value;
+        var fromoutst = form.txtFromOutstanding.value;
+        var tooutst = form.txtToOutstanding.value;
+
+        if (!isPosInteger(iwcode)) {
+            alert("Invalid Warrant Code, please try again.");
+            form.txtIWCode.focus();
+            return (false);
+        }
+
+        if (iwcode == "") {
+
+            if (issuer == "" && underlying == "") {
+                alert("Please enter Warrant Code or select Issuer or Underlying.");
+                form.txtIWCode.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromstrike)) {
+                alert("Invalid number - Lower and Upper Strikes.");
+                form.txtFromStrike.focus();
+                return (false);
+            }
+
+            if (!isNumber(tostrike)) {
+                alert("Invalid number - Lower and Upper Strikes.");
+                form.txtToStrike.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromdelta)) {
+                alert("Invalid number - Delta.");
+                form.txtFromDelta.focus();
+                return (false);
+            }
+
+            if (!isNumber(todelta)) {
+                alert("Invalid number - Delta.");
+                form.txtToDelta.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromimpvol)) {
+                alert("Invalid number - Implied Volatility.");
+                form.txtFromImplVol.focus();
+                return (false);
+            }
+
+            if (!isNumber(toimpvol)) {
+                alert("Invalid number - Implied Volatility.");
+                form.txtToImplVol.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromoutst)) {
+                alert("Invalid number - Outstanding Quantity.");
+                form.txtFromOutstanding.focus();
+                return (false);
+            }
+
+            if (!isNumber(tooutst)) {
+                alert("Invalid number - Outstanding Quantity.");
+                form.txtToOutstanding.focus();
+                return (false);
+            }
+
+            if ((listing != "" || maturity != "" || fromoutst != "" || tooutst != "") && (issuer == "" && underlying == "")) {
+                alert("Please select Issuer or Underlying.");
+                form.lstIssuer.focus();
+                return (false);
+            }
+
+            if ((fromstrike != "" || tostrike != "" || fromdelta != "" || todelta != "" || fromimpvol != "" || toimpvol != "") && (underlying == "")) {
+                alert("Please select Underlying.");
+                form.lstUnderlying.focus();
+                return (false);
+            }
+
+            if (fromstrike != "" && tostrike != "") {
+                if (parseFloat(fromstrike) > parseFloat(tostrike)) {
+                    alert("Invalid range - Lower and Upper Strikes.");
+                    form.txtFromStrike.focus();
+                    return (false);
+                }
+            }
+
+            if (fromdelta != "" && todelta != "") {
+                if (parseFloat(fromdelta) > parseFloat(todelta)) {
+                    alert("Invalid range - Delta.");
+                    form.txtFromDelta.focus();
+                    return (false);
+                }
+            }
+
+            if (fromimpvol != "" && toimpvol != "") {
+                if (parseFloat(fromimpvol) > parseFloat(toimpvol)) {
+                    alert("Invalid range - Implied Volatility.");
+                    form.txtFromImplVol.focus();
+                    return (false);
+                }
+            }
+
+            if (fromoutst != "" && tooutst != "") {
+                if (parseFloat(fromoutst) > parseFloat(tooutst)) {
+                    alert("Invalid range - Outstanding Quantity.");
+                    form.txtFromOutstanding.focus();
+                    return (false);
+                }
+            }
+        }
+
+        return (true);
+    }
+</script>
+</main>
+<!-- Content end -->
+<script language="javaScript" src="/nonCMS/script/noncmsfoot.js"></script>
+<script language="javaScript" src="/nonCMS/script/vendor.js"></script>
+<script language="javaScript" src="/nonCMS/script/main.js"></script>
+<script language="javaScript" src="/nonCMS/script/sprc_common.js"></script>
+<script type="text/javascript" nonce="a0cf344cffe6b5788dd75b6e1023629c" src="/vqeN8YmBP/S9-AKmp3g/Gpz30DG39Qz5/B1p4AQ/HxpxS/BYVI2YU?v=52366c8b-97b8-61e1-cd6f-7897f53f1722" defer></script></body>
+</html>
+<script language="javascript">   
+    function resizeSelection() {
+        var width = $("#form1").width() - $(".list-search tr:eq(2) td:eq(0)").width() - 5;
+        $("#lstUnderlying").css("max-width", width);
+        $("#lstIssuer").css("max-width", width);
+    }
+
+    function refreshProductSelect(){
+        $('#productSelect option[value="/eng/iwrc/search/listsearch.asp"]').prop("selected", true);
+    }
+	
+    $(window).resize(
+        function(){
+            resizeSelection();
+        }
+    )
+    
+    $(document).ready(
+        function(){
+            resizeSelection();
+        }
+    )
+
+    window.onpageshow = function(event) {        
+        refreshProductSelect();
+    };
+    
+</script>

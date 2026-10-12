@@ -79,3 +79,49 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 使用者部機 `gcp_ib/auto_risk.py --every 15`（啟動資料夾 `ZhugeAutoRisk.cmd`）→ `action=futu_risk` → GCS `futu/risk/latest.json`、`futu/risk/history/<日期>.json`（私人，冇公開頁面）。
 - Cloud Run 修訂 `zhuge-risk-manager-00271-nz5`（R147）；出事退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00270-z5d --yes`。
 - 定時任務「四陣持倉風險通報」（平日 09:45／12:45／16:45／21:45 HKT）喺本工作階段讀 `futu/risk/latest.json`，有變先通知風雲蛇地四陣；16:45 發每日摘要；鳥翔唔通知。
+
+## 2026-10-11 風揚陣回覆
+- HSI 10/16 週權 C24900／P23750 係風揚陣「方向一」真實倉（10/10 01:44 HKT 開），規則：持有到期、唔止損、唔對沖、唔加倉；10/16 現金結算後 16:30 再開下一輪，開倉前會睇 `futu/risk/latest.json` 嘅 `metrics.cushion`。
+- 10/1 起 MHI2610 即日交易唔係風揚陣嘅（仲未知係邊個）。EW P7750 開倉計劃仍然未知。
+- 各陣真實持倉登記：repo 根目錄 `POSITIONS.md`（風揚陣 PR #66）。
+
+## 2026-10-11 使用者確認
+- EW2610 P7750：使用者自己人手開，唔係任何陣／工作階段叫開；冇止損規則。
+- 10/1 起 MHI2610 即日多手交易：使用者自己人手做。會即時改變恒指淨 Δ 同富途保證金緩衝；auto_risk 每 15 分鐘會影到。
+
+## 2026-10-11 部署 R149（修訂 00273-gzd）
+- Cloud Run 代發 Telegram：警報出現、升級（⚠→⛔）或解除先發（權杖只喺 Cloud Run）。
+- 富途保證金緩衝警報（雲垂陣轉達使用者指示）：< 6 萬通知、< 2 萬危急（可能追繳／強平）、同級每再跌 1 萬再發、回 8 萬以上解除；狀態 `futu/risk/margin_alert.json`。
+- 風險模型改用富途實際 MHI 淨手數（人手即日倉計入）。
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00272-njs --yes`
+
+## Telegram bot（2026-10-11 使用者確認）
+- **@HC_Gold_Signal_bot**＝Cloud Run 環境變數 `TG_BOT_TOKEN`：地載陣落單通知（R142）；R149／R151 富途風險、保證金、未配對警報亦經呢個 bot 發（使用者話唔使另設）。
+- **@HC_HK_Signal_bot**＝GitHub Actions secrets `TG_BOT_TOKEN`：金絲雀、恒指／ES 波幅報告、高低位訊號、債市、佩洛西、股票數據等 workflow。
+- 將來想富途警報改用 HK bot：喺 Cloud Run 加 `TG_HK_BOT_TOKEN`／`TG_HK_CHAT_ID`（`tg_send_hk` 會自動用），唔使改程式。
+
+## 2026-10-11 部署 R151（修訂 00275-q4x，基於 R150；SpaceX 券商贈送規則 00276-sh2）
+- 策略總表「💼 富途實倉（按陣）」上線；配對規則 `FUTU_TEAM_RULES`（main.py）。
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00275-q4x --yes`（00276 之前）
+
+## 2026-10-11 部署 R152 📊 基金報告（修訂 00277-f48）
+- `?view=fund_report`：富途已實現盈虧（先入先出），2026-09-01 起按產品分月／季／年；資料由 `gcp_ib/futu_pnl_export.py` 推（action=futu_pnl → `futu/pnl/latest.json`）。
+- 資金流水只可逐日查（clearing_date）；預設唔喺公開頁顯示（`FUND_REPORT_SHOW_FLOWS=1` 先開）。
+- 退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00276-sh2 --yes`（00277 之前）；產品表修正＋週末休市顯示：00278-bbb（退回 00277-f48）
+
+## 2026-10-12 R153：每日自動基金報告匯出
+- `gcp_ib/auto_risk.py` 每日 05:30 HKT 後喺背景跑 `futu_pnl_export.py`（唔阻風險循環）；失敗每日最多 3 次；`--no-pnl` 關。唔使改 Cloud Run。步驟見 `RUNBOOK_FUTU_RISK.md` §8。
+
+## 2026-10-12 R154：metrics.delta_parts（雲垂對沖通報用）
+- `risk_report.build` 加 `M["delta_parts"]` = {straddle＝雲垂月跨式 Δ（唔含對沖）, net_with_hedge＝含對沖淨 Δ, hsi_all＝恒指全部淨 Δ（連週權、人手倉）}，單位 MHI 手。
+- `main.py` `_futu_risk_clean_metrics` 保留 `delta_parts` 存入 `futu/risk/latest.json`；`auto_risk.py` 版本 R154（照推 metrics）。MHI2610 實際淨手數＝`metrics.mhi_lots`（R149 起）。
+- 用途：定時任務「雲垂對沖狀態通報」（平日 14:35／15:55 HKT＋10/12 09:50）。
+
+## 2026-10-12 R155：策略總表雲垂陣顯示 Δ 預算
+- `?view=strategies` 💼 富途實倉 雲垂陣：對沖行用途改為「MHI 期貨 Δ 對沖 −1.00」（對沖本身 Δ）；陣標題下加一行「月跨式／期貨對沖／含對沖淨 Δ（界線 ±0.5）＋預算（再加／再減最多幾多）＋恒指全部淨 Δ」。資料來自 metrics.delta_parts（R154）；舊版 auto_risk 冇 delta_parts 時只顯示含對沖淨 Δ。
+
+## 2026-10-12 R156：HSI2610 配對蛇蟠陣
+- 使用者確認：富途 `HK.HSI2610` +1 手（15:46 HKT 前後出現）係蛇蟠陣人手倉。`FUTU_TEAM_RULES` 加 `^HK\.HSI\d{4}$` → 蛇蟠陣「大恒指期貨（人手）」，`FUTU_TEAMS` 加 🐍 蛇蟠陣；`POSITIONS.md` 已登記。恒指全部淨 Δ 由約 −0.26 變 +4.9（大恒指 1 手≈5 MHI 手）；雲垂含對沖淨 Δ 唔受影響。
+
+## 2026-10-12 R157：風揚陣波幅頁、地載陣頁「列印成 PDF」
+- `?view=futu_range`（風揚陣恒指波幅，ES 頁共用）同 `?view=dizai`（地載陣）各加「🖨️ 列印成 PDF」按鈕（window.print，列印視窗揀「另存為 PDF」）；`PRINT_CSS`：A4、導覽列／按鈕隱藏、區塊／卡片／表格列／圖唔喺中間斷開（放唔落就去下一頁）、捲動框全部展開、列印標題行帶香港時間。地載陣頁改用 JS 定時重載（列印中唔重載）。

@@ -1,0 +1,427 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html class="market-hkex">
+<head>
+    <title>界內證搜尋</title>
+    <meta name="description" content="此網頁提供搜尋在香港交易所市場上市的界內證資料。" />
+    <meta name="keywords" content="搜尋界內證資料, 界內證名單, 界內證" />
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=big5">
+    <meta http-equiv="Content-language" content="ZH-TW">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<link type="text/css" rel="stylesheet" href="/nonCMS/css/main.css" />
+    <link type="text/css" rel="stylesheet" href="/nonCMS/css/sprc_noncms.css" />
+</head>
+<body>
+    <script language="javaScript" src="/nonCMS/script/noncmshead.js"></script>
+    <!-- Leftmenu start -->
+    <script language="javaScript" src="/nonCMS/script/noncmsleftmenu.js"></script>
+    <!-- Content start -->
+    <main class="nav-content-wrap">
+<div class="section__title-left-border">
+    界內證搜尋</div>
+<div class="main-content">
+    <div class="content-margin">
+        <form id="form1" name="formSearch" onsubmit="return CheckAll(this)" action="iwlist_c.asp"
+        method="post">
+        
+        <input type="hidden" name="sessionToken" value="1Tb11qf7aYWhbB6QE0No" />
+        <table class="list-search" cellspacing="0" cellpadding="0" border="0">
+            <tbody>
+                <tr>
+                    <td colspan="2" class="dwtext" align="right">
+                        <a target="_blank" name="downloadlink" class="button-default" href="/eng/iwrc/search/iwFullList.csv">
+                            下載全部記錄</a>(只提供英文版)
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        權證代號:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="5" size="10" name="txtIWCode" />&nbsp;</div><div class="autowrap">(如選用此項, 以下任何輸入將不作考慮)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle" valign="top">
+                        正股:
+                    </td>
+                    <td class="dwtext">
+                        <!-- <SELECT name="lstUnderlying" style="width:500px;"> -->
+                        <select name="lstUnderlying" id="lstUnderlying">
+                            <option value="" selected>
+                                所有</option>
+                            
+                            <option value="00700">
+                                00700
+                                -
+                                騰訊控股
+                            </option>
+                            
+                            <option value="00939">
+                                00939
+                                -
+                                建設銀行
+                            </option>
+                            
+                            <option value="00941">
+                                00941
+                                -
+                                中國移動
+                            </option>
+                            
+                            <option value="01299">
+                                01299
+                                -
+                                友邦保險
+                            </option>
+                            
+                            <option value="02318">
+                                02318
+                                -
+                                中國平安
+                            </option>
+                            
+                            <option value="HSI">
+                                HSI
+                                -
+                                恒生指數
+                            </option>
+                            
+                        </select><br>
+                        <div class="autowrap">(請選擇發行商或正股)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        發行商:
+                    </td>
+                    <td class="dwtext">
+                        <select name="lstIssuer" id="lstIssuer">
+                            <option value="" selected>
+                                所有</option>
+                            
+                            <option value="BI">
+                                BI
+                                -
+                                中銀國際亞洲有限公司
+                            </option>
+                            
+                            <option value="BP">
+                                BP
+                                -
+                                BNP Paribas Issuance B.V.
+                            </option>
+                            
+                            <option value="HS">
+                                HS
+                                -
+                                香港上海匯豐銀行有限公司
+                            </option>
+                            
+                            <option value="HT">
+                                HT
+                                -
+                                海通國際證券有限公司
+                            </option>
+                            
+                            <option value="JP">
+                                JP
+                                -
+                                J.P. Morgan Structured Products B.V.
+                            </option>
+                            
+                            <option value="SG">
+                                SG
+                                -
+                                SG Issuer
+                            </option>
+                            
+                            <option value="VT">
+                                VT
+                                -
+                                Bank Vontobel AG
+                            </option>
+                            
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        上市日*:
+                    </td>
+                    <td class="dwtext">
+                        <select name="lstListingDate">
+                            <option value="" selected>
+                                所有</option>
+                            <option value="0">
+                                <=一個月</option>
+                            <option value="1">
+                                >一至三個月</option>
+                            <option value="3">
+                                >三至六個月</option>
+                            <option value="6">
+                                >六個月</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        到期日*:
+                    </td>
+                    <td class="dwtext">
+                        <select name="lstMaturityDate">
+                            <option value="" selected>
+                                所有</option>
+                            <option value="0">
+                                <=一個月</option>
+                            <option value="1">
+                                >一至三個月</option>
+                            <option value="3">
+                                >三至六個月</option>
+                            <option value="6">
+                                >六個月</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        下限價和上限價*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="10" size="10" name="txtFromStrike">&nbsp;<b>至&nbsp;</b><input type="text"
+                            maxlength="10" size="10" name="txtToStrike">&nbsp;</div><div class="autowrap">(如選用此項, 請訂明正股)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        對沖值
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="7" size="10" name="txtFromDelta">&nbsp;<b>至&nbsp;</b><input type="text"
+                            maxlength="7" size="10" name="txtToDelta">&nbsp;</div><div class="autowrap">(如選用此項, 請訂明正股)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        引申波幅
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="7" size="10" name="txtFromImplVol">&nbsp;<b>至&nbsp;</b><input type="text"
+                            maxlength="7" size="10" name="txtToImplVol">&nbsp;</div><div class="autowrap">(如選用此項, 請訂明正股)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        街貨量所佔百分比
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <input type="text" maxlength="5" size="10" name="txtFromOutstanding">&nbsp;<b>至&nbsp;</b><input type="text"
+                            maxlength="5" size="10" name="txtToOutstanding">
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td style="text-align:left;">
+                        <div class="list-search-button">
+                            <input type="submit" value="搜尋" name="submit" class="button-default" />&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="button" value="清除" class="button-default" onclick="form1.reset();" />
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="dwtitle">
+                        * -
+                        非必須填寫
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+    function isPosInteger(inputVal) {
+        inputStr = inputVal.toString()
+        for (var i = 0; i < inputStr.length; i++) {
+            var oneChar = inputStr.charAt(i)
+            if (oneChar < "0" || oneChar > "9") {
+                return false
+            }
+        }
+        return true
+    }
+
+    function isNumber(inputVal) {
+        inputStr = inputVal.toString()
+        for (var i = 0; i < inputStr.length; i++) {
+            var oneChar = inputStr.charAt(i)
+            if (inputStr.length == 1 && oneChar == "-")
+                return false
+
+            if (i != 0 && oneChar == "-")
+                return false
+
+            if (!(oneChar == "-" || oneChar == "." || oneChar == "0" || oneChar == "1" || oneChar == "2" || oneChar == "3" || oneChar == "4" || oneChar == "5" || oneChar == "6" || oneChar == "7" || oneChar == "8" || oneChar == "9")) {
+                return false
+            }
+        }
+        return true
+    }
+
+    function CheckAll(form) {
+        var iwcode = form.txtIWCode.value;
+        var issuer = form.lstIssuer.options[form.lstIssuer.selectedIndex].value;
+        var underlying = form.lstUnderlying.options[form.lstUnderlying.selectedIndex].value;
+        var listing = form.lstListingDate.options[form.lstListingDate.selectedIndex].value;
+        var maturity = form.lstMaturityDate.options[form.lstMaturityDate.selectedIndex].value;
+        var fromstrike = form.txtFromStrike.value;
+        var tostrike = form.txtToStrike.value;
+        var fromdelta = form.txtFromDelta.value;
+        var todelta = form.txtToDelta.value;
+        var fromimpvol = form.txtFromImplVol.value;
+        var toimpvol = form.txtToImplVol.value;
+        var fromoutst = form.txtFromOutstanding.value;
+        var tooutst = form.txtToOutstanding.value;
+
+        if (!isPosInteger(iwcode)) {
+            alert("權證代號無效, 請重新輸入.");
+            form.txtIWCode.focus();
+            return (false);
+        }
+
+        if (iwcode == "") {
+
+            if (issuer == "" && underlying == "") {
+                alert("請輸入權證代號或選擇發行商或正股.");
+                form.txtIWCode.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromstrike)) {
+                alert("數值無效, 請重新輸入下限價和上限價.");
+                form.txtFromStrike.focus();
+                return (false);
+            }
+
+            if (!isNumber(tostrike)) {
+                alert("數值無效, 請重新輸入下限價和上限價.");
+                form.txtToStrike.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromdelta)) {
+                alert("數值無效, 請重新輸入對沖值.");
+                form.txtFromDelta.focus();
+                return (false);
+            }
+
+            if (!isNumber(todelta)) {
+                alert("數值無效, 請重新輸入對沖值.");
+                form.txtToDelta.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromimpvol)) {
+                alert("數值無效, 請重新輸入引申波幅.");
+                form.txtFromImplVol.focus();
+                return (false);
+            }
+
+            if (!isNumber(toimpvol)) {
+                alert("數值無效, 請重新輸入引申波幅.");
+                form.txtToImplVol.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromoutst)) {
+                alert("數值無效, 請重新輸入街貨量所佔百分比.");
+                form.txtFromOutstanding.focus();
+                return (false);
+            }
+
+            if (!isNumber(tooutst)) {
+                alert("數值無效, 請重新輸入街貨量所佔百分比.");
+                form.txtToOutstanding.focus();
+                return (false);
+            }
+
+            if ((listing != "" || maturity != "" || fromoutst != "" || tooutst != "") && (issuer == "" && underlying == "")) {
+                alert("請選擇發行商或正股.");
+                form.lstIssuer.focus();
+                return (false);
+            }
+
+            if ((fromstrike != "" || tostrike != "" || fromdelta != "" || todelta != "" || fromimpvol != "" || toimpvol != "") && (underlying == "")) {
+                alert("請選擇正股.");
+                form.lstUnderlying.focus();
+                return (false);
+            }
+
+            if (fromstrike != "" && tostrike != "") {
+                if (parseFloat(fromstrike) > parseFloat(tostrike)) {
+                    alert("數值無效 - 下限價和上限價.");
+                    form.txtFromStrike.focus();
+                    return (false);
+                }
+            }
+
+            if (fromdelta != "" && todelta != "") {
+                if (parseFloat(fromdelta) > parseFloat(todelta)) {
+                    alert("數值無效 - 對沖值.");
+                    form.txtFromDelta.focus();
+                    return (false);
+                }
+            }
+
+            if (fromimpvol != "" && toimpvol != "") {
+                if (parseFloat(fromimpvol) > parseFloat(toimpvol)) {
+                    alert("數值無效 - 引申波幅.");
+                    form.txtFromImplVol.focus();
+                    return (false);
+                }
+            }
+
+            if (fromoutst != "" && tooutst != "") {
+                if (parseFloat(fromoutst) > parseFloat(tooutst)) {
+                    alert("數值無效 - 街貨量所佔百分比.");
+                    form.txtFromOutstanding.focus();
+                    return (false);
+                }
+            }
+        }
+
+        return (true);
+    }
+</script>
+</main>
+<!-- Content end -->
+<script language="javaScript" src="/nonCMS/script/noncmsfoot.js"></script>
+<script language="javaScript" src="/nonCMS/script/vendor.js"></script>
+<script language="javaScript" src="/nonCMS/script/main.js"></script>
+<script language="javaScript" src="/nonCMS/script/sprc_common.js"></script>
+</body>
+</html>
+<script language="javascript">   
+    function resizeSelection() {
+        var width = $("#form1").width() - $(".list-search tr:eq(1) td:eq(0)").width() - 5;
+        $("#lstUnderlying").css("max-width", width);
+        $("#lstIssuer").css("max-width", width);
+    }
+
+    $(window).resize(
+        function(){
+            resizeSelection();
+        }
+    )
+    
+    $(document).ready(
+        function(){
+            resizeSelection();
+        }
+    )
+</script>

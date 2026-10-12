@@ -1,0 +1,2526 @@
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html class="market-hkex">
+<head>
+    <title>Derivative Warrant Search</title>
+    <meta name="description" content="A search engine to find information about derivative warrants listed on HKEX's markets." />
+    <meta name="keywords" content="Search for derivative warrant information, search for DW information, list of derivative warrants, derivative warrants search, all derivatives warrants, DW search, list of DW, all DW" />
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta http-equiv="Content-language" content="eng">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<link type="text/css" rel="stylesheet" href="/nonCMS/css/main.css" />
+    <link type="text/css" rel="stylesheet" href="/nonCMS/css/sprc_noncms.css" />
+</head>
+<body>
+    <script language="javaScript" src="/nonCMS/script/noncmshead.js"></script>
+    <!-- Leftmenu start -->
+    <script language="javaScript" src="/nonCMS/script/noncmsleftmenu.js"></script>
+    <!-- Content start -->
+    <main class="nav-content-wrap">
+<div class="section__title-left-border">
+    Product Search</div>
+<div class="main-content">
+    <div class="content-margin">
+        <form id="form1" name="formSearch" onsubmit="return CheckAll(this)" action="dwlist.asp" autocomplete="off" method="post">
+        
+        <input type="hidden" name="sessionToken" value="FpgQigAomkZI7ZkZJeKA" />
+        <table class="list-search" cellspacing="0" cellpadding="0" border="0">
+            <tbody>
+                <tr>
+                    <td class="dwtitle">
+                        Product Type:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap productSelect">
+                    		<select id="productSelect" size="3" autocomplete="off" onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
+                                <option value="/eng/dwrc/search/listsearch.asp" selected>Derivative Warrants</option>
+                                <option value="/eng/cbbc/search/listsearch.asp">Callable Bull / Bear Contracts</option>
+                                <option value="/eng/iwrc/search/listsearch.asp">Inline Warrants</option>
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="productSelectTitle" >
+                        <br>Derivative Warrant Search<br><br>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Warrant Code:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="5" size="10" name="txtDWCode" />&nbsp;</div><div class="autowrap">(If specified, the following criteria will be ignored)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle" valign="top">
+                        Underlying:
+                    </td>
+                    <td class="dwtext longSelect">
+                        <!-- <SELECT name="lstUnderlying" style="width:500px;"> -->
+                        <select name="lstUnderlying" id="lstUnderlying">
+                            <option value="" selected>
+                                All</option>
+                            
+                            <option value="00001">
+                                00001
+                                -
+                                CKH HOLDINGS
+                            </option>
+                            
+                            <option value="00002">
+                                00002
+                                -
+                                CLP HOLDINGS
+                            </option>
+                            
+                            <option value="00003">
+                                00003
+                                -
+                                HK & CHINA GAS
+                            </option>
+                            
+                            <option value="00005">
+                                00005
+                                -
+                                HSBC HOLDINGS
+                            </option>
+                            
+                            <option value="00006">
+                                00006
+                                -
+                                POWER ASSETS
+                            </option>
+                            
+                            <option value="00012">
+                                00012
+                                -
+                                HENDERSON LAND
+                            </option>
+                            
+                            <option value="00016">
+                                00016
+                                -
+                                SHK PPT
+                            </option>
+                            
+                            <option value="00017">
+                                00017
+                                -
+                                NEW WORLD DEV
+                            </option>
+                            
+                            <option value="00019">
+                                00019
+                                -
+                                SWIRE PACIFIC A
+                            </option>
+                            
+                            <option value="00020">
+                                00020
+                                -
+                                SENSETIME-W
+                            </option>
+                            
+                            <option value="00027">
+                                00027
+                                -
+                                GALAXY ENT
+                            </option>
+                            
+                            <option value="00066">
+                                00066
+                                -
+                                MTR CORPORATION
+                            </option>
+                            
+                            <option value="00100">
+                                00100
+                                -
+                                MINIMAX-W
+                            </option>
+                            
+                            <option value="00123">
+                                00123
+                                -
+                                YUEXIU PROPERTY
+                            </option>
+                            
+                            <option value="00135">
+                                00135
+                                -
+                                KUNLUN ENERGY
+                            </option>
+                            
+                            <option value="00144">
+                                00144
+                                -
+                                CHINA MER PORT
+                            </option>
+                            
+                            <option value="00148">
+                                00148
+                                -
+                                KINGBOARD HLDG
+                            </option>
+                            
+                            <option value="00168">
+                                00168
+                                -
+                                TSINGTAO BREW
+                            </option>
+                            
+                            <option value="00175">
+                                00175
+                                -
+                                GEELY AUTO
+                            </option>
+                            
+                            <option value="00179">
+                                00179
+                                -
+                                JOHNSON ELEC H
+                            </option>
+                            
+                            <option value="00189">
+                                00189
+                                -
+                                DONGYUE GROUP
+                            </option>
+                            
+                            <option value="00220">
+                                00220
+                                -
+                                U-PRESID CHINA
+                            </option>
+                            
+                            <option value="00241">
+                                00241
+                                -
+                                ALI HEALTH
+                            </option>
+                            
+                            <option value="00257">
+                                00257
+                                -
+                                EB ENVIRONMENT
+                            </option>
+                            
+                            <option value="00267">
+                                00267
+                                -
+                                CITIC
+                            </option>
+                            
+                            <option value="00268">
+                                00268
+                                -
+                                KINGDEE INT'L
+                            </option>
+                            
+                            <option value="00270">
+                                00270
+                                -
+                                GUANGDONG INV
+                            </option>
+                            
+                            <option value="00285">
+                                00285
+                                -
+                                BYD ELECTRONIC
+                            </option>
+                            
+                            <option value="00288">
+                                00288
+                                -
+                                WH GROUP
+                            </option>
+                            
+                            <option value="00290">
+                                00290
+                                -
+                                GOFINTECH QUANT
+                            </option>
+                            
+                            <option value="00291">
+                                00291
+                                -
+                                CHINA RES BEER
+                            </option>
+                            
+                            <option value="00293">
+                                00293
+                                -
+                                CATHAY PAC AIR
+                            </option>
+                            
+                            <option value="00300">
+                                00300
+                                -
+                                MIDEA GROUP
+                            </option>
+                            
+                            <option value="00316">
+                                00316
+                                -
+                                OOIL
+                            </option>
+                            
+                            <option value="00322">
+                                00322
+                                -
+                                TINGYI
+                            </option>
+                            
+                            <option value="00325">
+                                00325
+                                -
+                                BLOKS
+                            </option>
+                            
+                            <option value="00354">
+                                00354
+                                -
+                                CHINASOFT INT'L
+                            </option>
+                            
+                            <option value="00358">
+                                00358
+                                -
+                                JIANGXI COPPER
+                            </option>
+                            
+                            <option value="00371">
+                                00371
+                                -
+                                BJ ENT WATER
+                            </option>
+                            
+                            <option value="00384">
+                                00384
+                                -
+                                CHINA GAS HOLD
+                            </option>
+                            
+                            <option value="00386">
+                                00386
+                                -
+                                SINOPEC CORP
+                            </option>
+                            
+                            <option value="00388">
+                                00388
+                                -
+                                HKEX
+                            </option>
+                            
+                            <option value="00390">
+                                00390
+                                -
+                                CHINA RAILWAY
+                            </option>
+                            
+                            <option value="00425">
+                                00425
+                                -
+                                MINTH GROUP
+                            </option>
+                            
+                            <option value="00522">
+                                00522
+                                -
+                                ASMPT
+                            </option>
+                            
+                            <option value="00576">
+                                00576
+                                -
+                                ZHEJIANGEXPRESS
+                            </option>
+                            
+                            <option value="00586">
+                                00586
+                                -
+                                CONCH VENTURE
+                            </option>
+                            
+                            <option value="00625">
+                                00625
+                                -
+                                SHEIN-W
+                            </option>
+                            
+                            <option value="00631">
+                                00631
+                                -
+                                SANY INT'L
+                            </option>
+                            
+                            <option value="00656">
+                                00656
+                                -
+                                FOSUN INTL
+                            </option>
+                            
+                            <option value="00669">
+                                00669
+                                -
+                                TECHTRONIC-100
+                            </option>
+                            
+                            <option value="00670">
+                                00670
+                                -
+                                CHINA EAST AIR
+                            </option>
+                            
+                            <option value="00688">
+                                00688
+                                -
+                                CHINA OVERSEAS
+                            </option>
+                            
+                            <option value="00696">
+                                00696
+                                -
+                                TRAVELSKY TECH
+                            </option>
+                            
+                            <option value="00697">
+                                00697
+                                -
+                                SHOUCHENG
+                            </option>
+                            
+                            <option value="00700">
+                                00700
+                                -
+                                TENCENT
+                            </option>
+                            
+                            <option value="00728">
+                                00728
+                                -
+                                CHINA TELECOM
+                            </option>
+                            
+                            <option value="00753">
+                                00753
+                                -
+                                AIR CHINA
+                            </option>
+                            
+                            <option value="00762">
+                                00762
+                                -
+                                CHINA UNICOM
+                            </option>
+                            
+                            <option value="00763">
+                                00763
+                                -
+                                ZTE
+                            </option>
+                            
+                            <option value="00772">
+                                00772
+                                -
+                                CHINA LIT
+                            </option>
+                            
+                            <option value="00780">
+                                00780
+                                -
+                                TONGCHENGTRAVEL
+                            </option>
+                            
+                            <option value="00788">
+                                00788
+                                -
+                                CHINA TOWER
+                            </option>
+                            
+                            <option value="00800">
+                                00800
+                                -
+                                WERIDE-W
+                            </option>
+                            
+                            <option value="00823">
+                                00823
+                                -
+                                LINK REIT
+                            </option>
+                            
+                            <option value="00836">
+                                00836
+                                -
+                                CHINA RES POWER
+                            </option>
+                            
+                            <option value="00853">
+                                00853
+                                -
+                                MICROPORT
+                            </option>
+                            
+                            <option value="00857">
+                                00857
+                                -
+                                PETROCHINA
+                            </option>
+                            
+                            <option value="00868">
+                                00868
+                                -
+                                XINYI GLASS
+                            </option>
+                            
+                            <option value="00880">
+                                00880
+                                -
+                                SJM HOLDINGS
+                            </option>
+                            
+                            <option value="00881">
+                                00881
+                                -
+                                ZHONGSHENG HLDG
+                            </option>
+                            
+                            <option value="00883">
+                                00883
+                                -
+                                CNOOC
+                            </option>
+                            
+                            <option value="00902">
+                                00902
+                                -
+                                HUANENG POWER
+                            </option>
+                            
+                            <option value="00914">
+                                00914
+                                -
+                                CONCH CEMENT
+                            </option>
+                            
+                            <option value="00916">
+                                00916
+                                -
+                                CHINA LONGYUAN
+                            </option>
+                            
+                            <option value="00939">
+                                00939
+                                -
+                                CCB
+                            </option>
+                            
+                            <option value="00941">
+                                00941
+                                -
+                                CHINA MOBILE
+                            </option>
+                            
+                            <option value="00960">
+                                00960
+                                -
+                                LONGFOR GROUP
+                            </option>
+                            
+                            <option value="00966">
+                                00966
+                                -
+                                CHINA TAIPING
+                            </option>
+                            
+                            <option value="00968">
+                                00968
+                                -
+                                XINYI SOLAR
+                            </option>
+                            
+                            <option value="00981">
+                                00981
+                                -
+                                SMIC
+                            </option>
+                            
+                            <option value="00991">
+                                00991
+                                -
+                                DATANG POWER
+                            </option>
+                            
+                            <option value="00992">
+                                00992
+                                -
+                                LENOVO GROUP
+                            </option>
+                            
+                            <option value="00998">
+                                00998
+                                -
+                                CITIC BANK
+                            </option>
+                            
+                            <option value="01024">
+                                01024
+                                -
+                                KUAISHOU-W
+                            </option>
+                            
+                            <option value="01030">
+                                01030
+                                -
+                                SEAZEN
+                            </option>
+                            
+                            <option value="01038">
+                                01038
+                                -
+                                CKI HOLDINGS
+                            </option>
+                            
+                            <option value="01044">
+                                01044
+                                -
+                                HENGAN INT'L
+                            </option>
+                            
+                            <option value="01055">
+                                01055
+                                -
+                                CHINA SOUTH AIR
+                            </option>
+                            
+                            <option value="01066">
+                                01066
+                                -
+                                WEIGAO GROUP
+                            </option>
+                            
+                            <option value="01070">
+                                01070
+                                -
+                                TCL ELECTRONICS
+                            </option>
+                            
+                            <option value="01072">
+                                01072
+                                -
+                                DONGFANG ELEC
+                            </option>
+                            
+                            <option value="01088">
+                                01088
+                                -
+                                CHINA SHENHUA
+                            </option>
+                            
+                            <option value="01093">
+                                01093
+                                -
+                                CSPC PHARMA
+                            </option>
+                            
+                            <option value="01099">
+                                01099
+                                -
+                                SINOPHARM
+                            </option>
+                            
+                            <option value="01109">
+                                01109
+                                -
+                                CHINA RES LAND
+                            </option>
+                            
+                            <option value="01113">
+                                01113
+                                -
+                                CK ASSET
+                            </option>
+                            
+                            <option value="01114">
+                                01114
+                                -
+                                BRILLIANCE CHI
+                            </option>
+                            
+                            <option value="01128">
+                                01128
+                                -
+                                WYNN MACAU
+                            </option>
+                            
+                            <option value="01133">
+                                01133
+                                -
+                                HARBIN ELECTRIC
+                            </option>
+                            
+                            <option value="01138">
+                                01138
+                                -
+                                COSCO SHIP ENGY
+                            </option>
+                            
+                            <option value="01157">
+                                01157
+                                -
+                                ZOOMLION
+                            </option>
+                            
+                            <option value="01164">
+                                01164
+                                -
+                                CGN MINING
+                            </option>
+                            
+                            <option value="01171">
+                                01171
+                                -
+                                YANKUANG ENERGY
+                            </option>
+                            
+                            <option value="01177">
+                                01177
+                                -
+                                SBP GROUP
+                            </option>
+                            
+                            <option value="01179">
+                                01179
+                                -
+                                HWORLD-S
+                            </option>
+                            
+                            <option value="01186">
+                                01186
+                                -
+                                CHINA RAIL CONS
+                            </option>
+                            
+                            <option value="01193">
+                                01193
+                                -
+                                CHINA RES GAS
+                            </option>
+                            
+                            <option value="01208">
+                                01208
+                                -
+                                MMG
+                            </option>
+                            
+                            <option value="01209">
+                                01209
+                                -
+                                CHINA RES MIXC
+                            </option>
+                            
+                            <option value="01211">
+                                01211
+                                -
+                                BYD COMPANY
+                            </option>
+                            
+                            <option value="01258">
+                                01258
+                                -
+                                CHINFMINING
+                            </option>
+                            
+                            <option value="01276">
+                                01276
+                                -
+                                HENGRUI PHARMA
+                            </option>
+                            
+                            <option value="01288">
+                                01288
+                                -
+                                ABC
+                            </option>
+                            
+                            <option value="01299">
+                                01299
+                                -
+                                AIA
+                            </option>
+                            
+                            <option value="01316">
+                                01316
+                                -
+                                NEXTEER
+                            </option>
+                            
+                            <option value="01318">
+                                01318
+                                -
+                                MAO GEPING
+                            </option>
+                            
+                            <option value="01336">
+                                01336
+                                -
+                                NCI
+                            </option>
+                            
+                            <option value="01339">
+                                01339
+                                -
+                                PICC GROUP
+                            </option>
+                            
+                            <option value="01347">
+                                01347
+                                -
+                                HUA HONG GRACE
+                            </option>
+                            
+                            <option value="01357">
+                                01357
+                                -
+                                MEITU
+                            </option>
+                            
+                            <option value="01359">
+                                01359
+                                -
+                                CHINA CINDA
+                            </option>
+                            
+                            <option value="01364">
+                                01364
+                                -
+                                GUMING
+                            </option>
+                            
+                            <option value="01368">
+                                01368
+                                -
+                                XTEP INT'L
+                            </option>
+                            
+                            <option value="01378">
+                                01378
+                                -
+                                CHINAHONGQIAO
+                            </option>
+                            
+                            <option value="01385">
+                                01385
+                                -
+                                SHANGHAI FUDAN
+                            </option>
+                            
+                            <option value="01398">
+                                01398
+                                -
+                                ICBC
+                            </option>
+                            
+                            <option value="01415">
+                                01415
+                                -
+                                COWELL
+                            </option>
+                            
+                            <option value="01428">
+                                01428
+                                -
+                                BRIGHT SMART
+                            </option>
+                            
+                            <option value="01478">
+                                01478
+                                -
+                                Q TECH
+                            </option>
+                            
+                            <option value="01519">
+                                01519
+                                -
+                                J&T EXPRESS-W
+                            </option>
+                            
+                            <option value="01530">
+                                01530
+                                -
+                                3SBIO
+                            </option>
+                            
+                            <option value="01548">
+                                01548
+                                -
+                                GENSCRIPT BIO
+                            </option>
+                            
+                            <option value="01618">
+                                01618
+                                -
+                                MCC
+                            </option>
+                            
+                            <option value="01651">
+                                01651
+                                -
+                                TSUGAMI CHINA
+                            </option>
+                            
+                            <option value="01658">
+                                01658
+                                -
+                                PSBC
+                            </option>
+                            
+                            <option value="01698">
+                                01698
+                                -
+                                TME-SW
+                            </option>
+                            
+                            <option value="01729">
+                                01729
+                                -
+                                TIME INTERCON
+                            </option>
+                            
+                            <option value="01766">
+                                01766
+                                -
+                                CRRC
+                            </option>
+                            
+                            <option value="01772">
+                                01772
+                                -
+                                GANFENGLITHIUM
+                            </option>
+                            
+                            <option value="01776">
+                                01776
+                                -
+                                GF SEC
+                            </option>
+                            
+                            <option value="01787">
+                                01787
+                                -
+                                SD GOLD
+                            </option>
+                            
+                            <option value="01788">
+                                01788
+                                -
+                                GUOTAI JUNAN I
+                            </option>
+                            
+                            <option value="01797">
+                                01797
+                                -
+                                EAST BUY
+                            </option>
+                            
+                            <option value="01798">
+                                01798
+                                -
+                                DATANG RENEW
+                            </option>
+                            
+                            <option value="01800">
+                                01800
+                                -
+                                CHINA COMM CONS
+                            </option>
+                            
+                            <option value="01801">
+                                01801
+                                -
+                                INNOVENT BIO
+                            </option>
+                            
+                            <option value="01810">
+                                01810
+                                -
+                                XIAOMI-W
+                            </option>
+                            
+                            <option value="01816">
+                                01816
+                                -
+                                CGN POWER
+                            </option>
+                            
+                            <option value="01818">
+                                01818
+                                -
+                                ZHAOJIN MINING
+                            </option>
+                            
+                            <option value="01833">
+                                01833
+                                -
+                                PA GOODDOCTOR
+                            </option>
+                            
+                            <option value="01860">
+                                01860
+                                -
+                                MOBVISTA
+                            </option>
+                            
+                            <option value="01866">
+                                01866
+                                -
+                                CHINA XLX FERT
+                            </option>
+                            
+                            <option value="01876">
+                                01876
+                                -
+                                BUD APAC
+                            </option>
+                            
+                            <option value="01880">
+                                01880
+                                -
+                                CTG DUTY-FREE
+                            </option>
+                            
+                            <option value="01888">
+                                01888
+                                -
+                                KB LAMINATES
+                            </option>
+                            
+                            <option value="01898">
+                                01898
+                                -
+                                CHINA COAL
+                            </option>
+                            
+                            <option value="01919">
+                                01919
+                                -
+                                COSCO SHIP HOLD
+                            </option>
+                            
+                            <option value="01928">
+                                01928
+                                -
+                                SANDS CHINA LTD
+                            </option>
+                            
+                            <option value="01929">
+                                01929
+                                -
+                                CHOW TAI FOOK
+                            </option>
+                            
+                            <option value="01951">
+                                01951
+                                -
+                                JXR
+                            </option>
+                            
+                            <option value="01952">
+                                01952
+                                -
+                                EVEREST MED
+                            </option>
+                            
+                            <option value="01988">
+                                01988
+                                -
+                                MINSHENG BANK
+                            </option>
+                            
+                            <option value="01997">
+                                01997
+                                -
+                                WHARF REIC
+                            </option>
+                            
+                            <option value="02013">
+                                02013
+                                -
+                                WEIMOB INC
+                            </option>
+                            
+                            <option value="02015">
+                                02015
+                                -
+                                LI AUTO-W
+                            </option>
+                            
+                            <option value="02018">
+                                02018
+                                -
+                                AAC TECH
+                            </option>
+                            
+                            <option value="02020">
+                                02020
+                                -
+                                ANTA SPORTS
+                            </option>
+                            
+                            <option value="02026">
+                                02026
+                                -
+                                PONY-W
+                            </option>
+                            
+                            <option value="02050">
+                                02050
+                                -
+                                SANHUA
+                            </option>
+                            
+                            <option value="02057">
+                                02057
+                                -
+                                ZTO EXPRESS-W
+                            </option>
+                            
+                            <option value="02096">
+                                02096
+                                -
+                                SIMCERE PHARMA
+                            </option>
+                            
+                            <option value="02097">
+                                02097
+                                -
+                                MIXUE GROUP
+                            </option>
+                            
+                            <option value="02099">
+                                02099
+                                -
+                                CHINAGOLDINTL
+                            </option>
+                            
+                            <option value="02145">
+                                02145
+                                -
+                                CHICMAX
+                            </option>
+                            
+                            <option value="02162">
+                                02162
+                                -
+                                KEYMED BIO-B
+                            </option>
+                            
+                            <option value="02171">
+                                02171
+                                -
+                                CARSGEN-B
+                            </option>
+                            
+                            <option value="02186">
+                                02186
+                                -
+                                LUYE PHARMA
+                            </option>
+                            
+                            <option value="02196">
+                                02196
+                                -
+                                FOSUN PHARMA
+                            </option>
+                            
+                            <option value="02202">
+                                02202
+                                -
+                                CHINA VANKE
+                            </option>
+                            
+                            <option value="02208">
+                                02208
+                                -
+                                GOLDWIND
+                            </option>
+                            
+                            <option value="02228">
+                                02228
+                                -
+                                XTALPI
+                            </option>
+                            
+                            <option value="02238">
+                                02238
+                                -
+                                GAC GROUP
+                            </option>
+                            
+                            <option value="02252">
+                                02252
+                                -
+                                MEDBOT-B
+                            </option>
+                            
+                            <option value="02259">
+                                02259
+                                -
+                                ZIJIN GOLD INTL
+                            </option>
+                            
+                            <option value="02268">
+                                02268
+                                -
+                                WUXI XDC
+                            </option>
+                            
+                            <option value="02269">
+                                02269
+                                -
+                                WUXI BIO
+                            </option>
+                            
+                            <option value="02276">
+                                02276
+                                -
+                                CONANT OPTICAL
+                            </option>
+                            
+                            <option value="02282">
+                                02282
+                                -
+                                MGM CHINA
+                            </option>
+                            
+                            <option value="02313">
+                                02313
+                                -
+                                SHENZHOU INTL
+                            </option>
+                            
+                            <option value="02318">
+                                02318
+                                -
+                                PING AN
+                            </option>
+                            
+                            <option value="02319">
+                                02319
+                                -
+                                MENGNIU DAIRY
+                            </option>
+                            
+                            <option value="02328">
+                                02328
+                                -
+                                PICC P&C
+                            </option>
+                            
+                            <option value="02331">
+                                02331
+                                -
+                                LI NING
+                            </option>
+                            
+                            <option value="02333">
+                                02333
+                                -
+                                GWMOTOR
+                            </option>
+                            
+                            <option value="02338">
+                                02338
+                                -
+                                WEICHAI POWER
+                            </option>
+                            
+                            <option value="02343">
+                                02343
+                                -
+                                PACIFIC BASIN
+                            </option>
+                            
+                            <option value="02357">
+                                02357
+                                -
+                                AVICHINA
+                            </option>
+                            
+                            <option value="02359">
+                                02359
+                                -
+                                WUXI APPTEC
+                            </option>
+                            
+                            <option value="02367">
+                                02367
+                                -
+                                GIANT BIOGENE
+                            </option>
+                            
+                            <option value="02380">
+                                02380
+                                -
+                                CHINA POWER
+                            </option>
+                            
+                            <option value="02382">
+                                02382
+                                -
+                                SUNNY OPTICAL
+                            </option>
+                            
+                            <option value="02388">
+                                02388
+                                -
+                                BOC HONG KONG
+                            </option>
+                            
+                            <option value="02400">
+                                02400
+                                -
+                                XD INC
+                            </option>
+                            
+                            <option value="02423">
+                                02423
+                                -
+                                BEKE-W
+                            </option>
+                            
+                            <option value="02432">
+                                02432
+                                -
+                                DOBOT
+                            </option>
+                            
+                            <option value="02475">
+                                02475
+                                -
+                                LUXSHARE ICT
+                            </option>
+                            
+                            <option value="02476">
+                                02476
+                                -
+                                VGT
+                            </option>
+                            
+                            <option value="02498">
+                                02498
+                                -
+                                ROBOSENSE
+                            </option>
+                            
+                            <option value="02513">
+                                02513
+                                -
+                                Z.AI
+                            </option>
+                            
+                            <option value="02525">
+                                02525
+                                -
+                                HESAI-W
+                            </option>
+                            
+                            <option value="02533">
+                                02533
+                                -
+                                BLACK SESAME
+                            </option>
+                            
+                            <option value="02577">
+                                02577
+                                -
+                                INNOSCIENCE
+                            </option>
+                            
+                            <option value="02588">
+                                02588
+                                -
+                                BOC AVIATION
+                            </option>
+                            
+                            <option value="02600">
+                                02600
+                                -
+                                CHALCO
+                            </option>
+                            
+                            <option value="02601">
+                                02601
+                                -
+                                CPIC
+                            </option>
+                            
+                            <option value="02607">
+                                02607
+                                -
+                                SH PHARMA
+                            </option>
+                            
+                            <option value="02611">
+                                02611
+                                -
+                                GTHT
+                            </option>
+                            
+                            <option value="02618">
+                                02618
+                                -
+                                JD LOGISTICS
+                            </option>
+                            
+                            <option value="02628">
+                                02628
+                                -
+                                CHINA LIFE
+                            </option>
+                            
+                            <option value="02688">
+                                02688
+                                -
+                                ENN ENERGY
+                            </option>
+                            
+                            <option value="02689">
+                                02689
+                                -
+                                ND PAPER
+                            </option>
+                            
+                            <option value="02714">
+                                02714
+                                -
+                                MUYUAN
+                            </option>
+                            
+                            <option value="02727">
+                                02727
+                                -
+                                SH ELECTRIC
+                            </option>
+                            
+                            <option value="02800">
+                                02800
+                                -
+                                TRACKER FUND
+                            </option>
+                            
+                            <option value="02822">
+                                02822
+                                -
+                                CSOP A50 ETF
+                            </option>
+                            
+                            <option value="02823">
+                                02823
+                                -
+                                ISHARES A50
+                            </option>
+                            
+                            <option value="02828">
+                                02828
+                                -
+                                HSCEI ETF
+                            </option>
+                            
+                            <option value="02840">
+                                02840
+                                -
+                                SPDR GOLD TRT
+                            </option>
+                            
+                            <option value="02883">
+                                02883
+                                -
+                                CHINA OILFIELD
+                            </option>
+                            
+                            <option value="02888">
+                                02888
+                                -
+                                STANCHART
+                            </option>
+                            
+                            <option value="02899">
+                                02899
+                                -
+                                ZIJIN MINING
+                            </option>
+                            
+                            <option value="03033">
+                                03033
+                                -
+                                CSOP HS TECH
+                            </option>
+                            
+                            <option value="03069">
+                                03069
+                                -
+                                CAM HSBIOTECH
+                            </option>
+                            
+                            <option value="03188">
+                                03188
+                                -
+                                CAM CSI300
+                            </option>
+                            
+                            <option value="03191">
+                                03191
+                                -
+                                GX CN SEMICON
+                            </option>
+                            
+                            <option value="03288">
+                                03288
+                                -
+                                HAITIAN FLAV
+                            </option>
+                            
+                            <option value="03308">
+                                03308
+                                -
+                                ZJ INNOLIGHT
+                            </option>
+                            
+                            <option value="03320">
+                                03320
+                                -
+                                CHINARES PHARMA
+                            </option>
+                            
+                            <option value="03323">
+                                03323
+                                -
+                                CNBM
+                            </option>
+                            
+                            <option value="03328">
+                                03328
+                                -
+                                BANKCOMM
+                            </option>
+                            
+                            <option value="03339">
+                                03339
+                                -
+                                LONKING
+                            </option>
+                            
+                            <option value="03347">
+                                03347
+                                -
+                                TIGERMED
+                            </option>
+                            
+                            <option value="03393">
+                                03393
+                                -
+                                WASION HOLDINGS
+                            </option>
+                            
+                            <option value="03606">
+                                03606
+                                -
+                                FUYAO GLASS
+                            </option>
+                            
+                            <option value="03690">
+                                03690
+                                -
+                                MEITUAN-W
+                            </option>
+                            
+                            <option value="03692">
+                                03692
+                                -
+                                HANSOH PHARMA
+                            </option>
+                            
+                            <option value="03750">
+                                03750
+                                -
+                                CATL
+                            </option>
+                            
+                            <option value="03759">
+                                03759
+                                -
+                                PHARMARON
+                            </option>
+                            
+                            <option value="03800">
+                                03800
+                                -
+                                GCL TECH
+                            </option>
+                            
+                            <option value="03808">
+                                03808
+                                -
+                                SINOTRUK
+                            </option>
+                            
+                            <option value="03888">
+                                03888
+                                -
+                                KINGSOFT
+                            </option>
+                            
+                            <option value="03896">
+                                03896
+                                -
+                                KINGSOFT CLOUD
+                            </option>
+                            
+                            <option value="03898">
+                                03898
+                                -
+                                TIMES ELECTRIC
+                            </option>
+                            
+                            <option value="03900">
+                                03900
+                                -
+                                GREENTOWN CHINA
+                            </option>
+                            
+                            <option value="03908">
+                                03908
+                                -
+                                CICC
+                            </option>
+                            
+                            <option value="03931">
+                                03931
+                                -
+                                CALB
+                            </option>
+                            
+                            <option value="03968">
+                                03968
+                                -
+                                CM BANK
+                            </option>
+                            
+                            <option value="03986">
+                                03986
+                                -
+                                GIGADEVICE
+                            </option>
+                            
+                            <option value="03988">
+                                03988
+                                -
+                                BANK OF CHINA
+                            </option>
+                            
+                            <option value="03993">
+                                03993
+                                -
+                                CMOC
+                            </option>
+                            
+                            <option value="03998">
+                                03998
+                                -
+                                BOSIDENG
+                            </option>
+                            
+                            <option value="06030">
+                                06030
+                                -
+                                CITIC SEC
+                            </option>
+                            
+                            <option value="06055">
+                                06055
+                                -
+                                CTIHK
+                            </option>
+                            
+                            <option value="06060">
+                                06060
+                                -
+                                ZA ONLINE
+                            </option>
+                            
+                            <option value="06066">
+                                06066
+                                -
+                                CSC
+                            </option>
+                            
+                            <option value="06078">
+                                06078
+                                -
+                                HYGEIA HEALTH
+                            </option>
+                            
+                            <option value="06082">
+                                06082
+                                -
+                                BIREN TECH
+                            </option>
+                            
+                            <option value="06088">
+                                06088
+                                -
+                                FIT HON TENG
+                            </option>
+                            
+                            <option value="06098">
+                                06098
+                                -
+                                CG SERVICES
+                            </option>
+                            
+                            <option value="06099">
+                                06099
+                                -
+                                CMSC
+                            </option>
+                            
+                            <option value="06160">
+                                06160
+                                -
+                                BEONE MEDICINES
+                            </option>
+                            
+                            <option value="06181">
+                                06181
+                                -
+                                LAOPU GOLD
+                            </option>
+                            
+                            <option value="06186">
+                                06186
+                                -
+                                CHINA FEIHE
+                            </option>
+                            
+                            <option value="06613">
+                                06613
+                                -
+                                LENS
+                            </option>
+                            
+                            <option value="06618">
+                                06618
+                                -
+                                JD HEALTH
+                            </option>
+                            
+                            <option value="06682">
+                                06682
+                                -
+                                PHANCY
+                            </option>
+                            
+                            <option value="06690">
+                                06690
+                                -
+                                HAIER SMARTHOME
+                            </option>
+                            
+                            <option value="06693">
+                                06693
+                                -
+                                CHIFENG GOLD
+                            </option>
+                            
+                            <option value="06809">
+                                06809
+                                -
+                                MONTAGE TECH
+                            </option>
+                            
+                            <option value="06855">
+                                06855
+                                -
+                                ASCENTAGE
+                            </option>
+                            
+                            <option value="06862">
+                                06862
+                                -
+                                HAIDILAO
+                            </option>
+                            
+                            <option value="06869">
+                                06869
+                                -
+                                YOFC
+                            </option>
+                            
+                            <option value="06881">
+                                06881
+                                -
+                                CGS
+                            </option>
+                            
+                            <option value="06886">
+                                06886
+                                -
+                                HTSC
+                            </option>
+                            
+                            <option value="06936">
+                                06936
+                                -
+                                SF HOLDING
+                            </option>
+                            
+                            <option value="06969">
+                                06969
+                                -
+                                SMOORE INTL
+                            </option>
+                            
+                            <option value="06990">
+                                06990
+                                -
+                                SKB BIO
+                            </option>
+                            
+                            <option value="09618">
+                                09618
+                                -
+                                JD-SW
+                            </option>
+                            
+                            <option value="09626">
+                                09626
+                                -
+                                BILIBILI-W
+                            </option>
+                            
+                            <option value="09633">
+                                09633
+                                -
+                                NONGFU SPRING
+                            </option>
+                            
+                            <option value="09660">
+                                09660
+                                -
+                                HORIZONROBOT-W
+                            </option>
+                            
+                            <option value="09688">
+                                09688
+                                -
+                                ZAI LAB
+                            </option>
+                            
+                            <option value="09696">
+                                09696
+                                -
+                                TIANQI LITHIUM
+                            </option>
+                            
+                            <option value="09698">
+                                09698
+                                -
+                                GDS-SW
+                            </option>
+                            
+                            <option value="09863">
+                                09863
+                                -
+                                LEAPMOTOR
+                            </option>
+                            
+                            <option value="09866">
+                                09866
+                                -
+                                NIO-SW
+                            </option>
+                            
+                            <option value="09868">
+                                09868
+                                -
+                                XPENG-W
+                            </option>
+                            
+                            <option value="09880">
+                                09880
+                                -
+                                UBTECH ROBOTICS
+                            </option>
+                            
+                            <option value="09888">
+                                09888
+                                -
+                                BIDU-W
+                            </option>
+                            
+                            <option value="09896">
+                                09896
+                                -
+                                MNSO
+                            </option>
+                            
+                            <option value="09901">
+                                09901
+                                -
+                                NEW ORIENTAL-S
+                            </option>
+                            
+                            <option value="09911">
+                                09911
+                                -
+                                NEWBORNTOWN
+                            </option>
+                            
+                            <option value="09926">
+                                09926
+                                -
+                                AKESO
+                            </option>
+                            
+                            <option value="09927">
+                                09927
+                                -
+                                SERES
+                            </option>
+                            
+                            <option value="09961">
+                                09961
+                                -
+                                TRIP.COM-S
+                            </option>
+                            
+                            <option value="09973">
+                                09973
+                                -
+                                CHERY AUTO
+                            </option>
+                            
+                            <option value="09988">
+                                09988
+                                -
+                                BABA-W
+                            </option>
+                            
+                            <option value="09992">
+                                09992
+                                -
+                                POP MART
+                            </option>
+                            
+                            <option value="09995">
+                                09995
+                                -
+                                REMEGEN
+                            </option>
+                            
+                            <option value="09999">
+                                09999
+                                -
+                                NTES
+                            </option>
+                            
+                            <option value="ALP">
+                                ALP
+                                -
+                                Alphabet Inc.
+                            </option>
+                            
+                            <option value="AMD">
+                                AMD
+                                -
+                                Advanced Micro Devices, Inc.
+                            </option>
+                            
+                            <option value="AMZN">
+                                AMZN
+                                -
+                                Amazon.com, Inc.
+                            </option>
+                            
+                            <option value="AUH">
+                                AUH
+                                -
+                                Australian Dollar / HK Dollar
+                            </option>
+                            
+                            <option value="BDCM">
+                                BDCM
+                                -
+                                Broadcom Inc
+                            </option>
+                            
+                            <option value="CNH">
+                                CNH
+                                -
+                                US Dollar / CNH
+                            </option>
+                            
+                            <option value="CYH">
+                                CYH
+                                -
+                                CNH / HK Dollar
+                            </option>
+                            
+                            <option value="DJI">
+                                DJI
+                                -
+                                Dow Jones Industrial Average
+                            </option>
+                            
+                            <option value="EUH">
+                                EUH
+                                -
+                                Euro / HK Dollar
+                            </option>
+                            
+                            <option value="EUR">
+                                EUR
+                                -
+                                Euro / US Dollar
+                            </option>
+                            
+                            <option value="GBH">
+                                GBH
+                                -
+                                British Pound Sterling / HK Dollar
+                            </option>
+                            
+                            <option value="GBP">
+                                GBP
+                                -
+                                British Pound Sterling / US Dollar
+                            </option>
+                            
+                            <option value="GOLD">
+                                GOLD
+                                -
+                                One Fine Troy Oz of Gold
+                            </option>
+                            
+                            <option value="HSCEI">
+                                HSCEI
+                                -
+                                Hang Seng China Enterprises Index
+                            </option>
+                            
+                            <option value="HSI">
+                                HSI
+                                -
+                                Hang Seng Index
+                            </option>
+                            
+                            <option value="HSTEC">
+                                HSTEC
+                                -
+                                Hang Seng TECH Index
+                            </option>
+                            
+                            <option value="META">
+                                META
+                                -
+                                Meta Platforms, Inc.
+                            </option>
+                            
+                            <option value="MU">
+                                MU
+                                -
+                                Micron Technology, Inc.
+                            </option>
+                            
+                            <option value="NDX">
+                                NDX
+                                -
+                                NASDAQ-100 Index
+                            </option>
+                            
+                            <option value="NIK">
+                                NIK
+                                -
+                                Nikkei 225 Index
+                            </option>
+                            
+                            <option value="NVDA">
+                                NVDA
+                                -
+                                Nvidia Corporation
+                            </option>
+                            
+                            <option value="OIL">
+                                OIL
+                                -
+                                Oil Futures Contract
+                            </option>
+                            
+                            <option value="PLTR">
+                                PLTR
+                                -
+                                Palantir Technologies Inc
+                            </option>
+                            
+                            <option value="SILVER">
+                                SILVER
+                                -
+                                One Troy Ounce of Silver
+                            </option>
+                            
+                            <option value="SPX">
+                                SPX
+                                -
+                                S&P 500 Index
+                            </option>
+                            
+                            <option value="TSLA">
+                                TSLA
+                                -
+                                Tesla, Inc.
+                            </option>
+                            
+                            <option value="YEH">
+                                YEH
+                                -
+                                Japanese Yen (x100)/HK Dollar
+                            </option>
+                            
+                            <option value="YEN">
+                                YEN
+                                -
+                                US Dollar / Japanese Yen
+                            </option>
+                            
+                        </select><br>
+                        <div class="autowrap">(please specify either issuer or underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Issuer:
+                    </td>
+                    <td class="dwtext longSelect">
+                        <select name="lstIssuer" id="lstIssuer">
+                            <option value="" selected>
+                                All</option>
+                            
+                            <option value="BI">
+                                BI
+                                -
+                                BOCI Asia Ltd.
+                            </option>
+                            
+                            <option value="BP">
+                                BP
+                                -
+                                BNP Paribas Issuance B.V.
+                            </option>
+                            
+                            <option value="CI">
+                                CI
+                                -
+                                CITIC Securities Brokerage (HK) Ltd.
+                            </option>
+                            
+                            <option value="CT">
+                                CT
+                                -
+                                Citigroup Global Markets Europe AG
+                            </option>
+                            
+                            <option value="DS">
+                                DS
+                                -
+                                DBS Bank Ltd.
+                            </option>
+                            
+                            <option value="GJ">
+                                GJ
+                                -
+                                Guotai Junan Securities (Hong Kong) Ltd.
+                            </option>
+                            
+                            <option value="HS">
+                                HS
+                                -
+                                Hongkong and Shanghai Banking Corporation Ltd., The
+                            </option>
+                            
+                            <option value="HU">
+                                HU
+                                -
+                                Huatai Financial Holdings (Hong Kong) Ltd.
+                            </option>
+                            
+                            <option value="JP">
+                                JP
+                                -
+                                J.P. Morgan Structured Products B.V.
+                            </option>
+                            
+                            <option value="KS">
+                                KS
+                                -
+                                Korea Investment & Securities Asia Ltd.
+                            </option>
+                            
+                            <option value="MB">
+                                MB
+                                -
+                                Macquarie Bank Ltd.
+                            </option>
+                            
+                            <option value="MS">
+                                MS
+                                -
+                                Morgan Stanley Asia Products Ltd.
+                            </option>
+                            
+                            <option value="SG">
+                                SG
+                                -
+                                SG Issuer
+                            </option>
+                            
+                            <option value="UB">
+                                UB
+                                -
+                                UBS AG
+                            </option>
+                            
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Call/Put*:
+                    </td>
+                    <td class="dwtext shortSelect">
+                        <select name="lstCallPut">
+                            <option value="" selected>
+                                All</option>
+                            <option value="Call">
+                                Call</option>
+                            <option value="Put">
+                                Put</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Warrant Type*:
+                    </td>
+                    <td class="dwtext shortSelect">
+                        <select name="lstDWType">
+                            <option value="" selected>
+                                All</option>
+                            <option value="Standard">
+                                Standard</option>
+                            <option value="Exotic">
+                                Exotic</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Listing*:
+                    </td>
+                    <td class="dwtext shortSelect">
+                        <select name="lstListingDate">
+                            <option value="" selected>
+                                All</option>
+                            <option value="0">
+                                <=1 month</option>
+                            <option value="1">
+                                >1 - 3 months</option>
+                            <option value="3">
+                                >3 - 6 months</option>
+                            <option value="6">
+                                >6 months</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Maturity*:
+                    </td>
+                    <td class="dwtext shortSelect">
+                        <select name="lstMaturityDate">
+                            <option value="" selected>
+                                All</option>
+                            <option value="0">
+                                <=1 month</option>
+                            <option value="1">
+                                >1 - 3 months</option>
+                            <option value="3">
+                                >3 - 6 months</option>
+                            <option value="6">
+                                >6 months</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Strike*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="10" size="10" name="txtFromStrike">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="10" size="10" name="txtToStrike">&nbsp;</div><div class="autowrap">(If specified, please select underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Delta
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="7" size="10" name="txtFromDelta">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="7" size="10" name="txtToDelta">&nbsp;</div><div class="autowrap">(If specified, please select underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Implied Volatility
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <div class="autowrap"><input type="text" maxlength="7" size="10" name="txtFromImplVol">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="7" size="10" name="txtToImplVol">&nbsp;</div><div class="autowrap">(If specified, please select underlying)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        Outstanding Quantity
+                        (%)*:
+                    </td>
+                    <td class="dwtext">
+                        <input type="text" maxlength="5" size="10" name="txtFromOutstanding">&nbsp;<b>To&nbsp;</b><input type="text"
+                            maxlength="5" size="10" name="txtToOutstanding">
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td style="text-align:left;">
+                        <div class="list-search-button">
+                            <input type="submit" value="Search" name="submit" class="button-default" />&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="button" value="Clear" class="button-default" onclick="form1.reset();" />
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="dwtitle">
+                        * -
+                        Optional
+                    </td>
+                    <td class="dwtitle">
+                        <a target="_blank" name="downloadlink" class="button-default" href="/eng/dwrc/search/dwFullList.csv">
+                            Download full list</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+    function isPosInteger(inputVal) {
+        inputStr = inputVal.toString()
+        for (var i = 0; i < inputStr.length; i++) {
+            var oneChar = inputStr.charAt(i)
+            if (oneChar < "0" || oneChar > "9") {
+                return false
+            }
+        }
+        return true
+    }
+
+    function isNumber(inputVal) {
+        inputStr = inputVal.toString()
+        for (var i = 0; i < inputStr.length; i++) {
+            var oneChar = inputStr.charAt(i)
+            if (inputStr.length == 1 && oneChar == "-")
+                return false
+
+            if (i != 0 && oneChar == "-")
+                return false
+
+            if (!(oneChar == "-" || oneChar == "." || oneChar == "0" || oneChar == "1" || oneChar == "2" || oneChar == "3" || oneChar == "4" || oneChar == "5" || oneChar == "6" || oneChar == "7" || oneChar == "8" || oneChar == "9")) {
+                return false
+            }
+        }
+        return true
+    }
+
+    function CheckAll(form) {
+        var dwcode = form.txtDWCode.value;
+        var issuer = form.lstIssuer.options[form.lstIssuer.selectedIndex].value;
+        var underlying = form.lstUnderlying.options[form.lstUnderlying.selectedIndex].value;
+        var callput = form.lstCallPut.options[form.lstCallPut.selectedIndex].value;
+        var dwtype = form.lstDWType.options[form.lstDWType.selectedIndex].value;
+        var listing = form.lstListingDate.options[form.lstListingDate.selectedIndex].value;
+        var maturity = form.lstMaturityDate.options[form.lstMaturityDate.selectedIndex].value;
+        var fromstrike = form.txtFromStrike.value;
+        var tostrike = form.txtToStrike.value;
+        var fromdelta = form.txtFromDelta.value;
+        var todelta = form.txtToDelta.value;
+        var fromimpvol = form.txtFromImplVol.value;
+        var toimpvol = form.txtToImplVol.value;
+        var fromoutst = form.txtFromOutstanding.value;
+        var tooutst = form.txtToOutstanding.value;
+
+        if (!isPosInteger(dwcode)) {
+            alert("Invalid Warrant Code, please try again.");
+            form.txtDWCode.focus();
+            return (false);
+        }
+
+        if (dwcode == "") {
+
+            if (issuer == "" && underlying == "") {
+                alert("Please enter Warrant Code or select Issuer or Underlying.");
+                form.txtDWCode.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromstrike)) {
+                alert("Invalid number - Strike.");
+                form.txtFromStrike.focus();
+                return (false);
+            }
+
+            if (!isNumber(tostrike)) {
+                alert("Invalid number - Strike.");
+                form.txtToStrike.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromdelta)) {
+                alert("Invalid number - Delta.");
+                form.txtFromDelta.focus();
+                return (false);
+            }
+
+            if (!isNumber(todelta)) {
+                alert("Invalid number - Delta.");
+                form.txtToDelta.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromimpvol)) {
+                alert("Invalid number - Implied Volatility.");
+                form.txtFromImplVol.focus();
+                return (false);
+            }
+
+            if (!isNumber(toimpvol)) {
+                alert("Invalid number - Implied Volatility.");
+                form.txtToImplVol.focus();
+                return (false);
+            }
+
+            if (!isNumber(fromoutst)) {
+                alert("Invalid number - Outstanding Quantity.");
+                form.txtFromOutstanding.focus();
+                return (false);
+            }
+
+            if (!isNumber(tooutst)) {
+                alert("Invalid number - Outstanding Quantity.");
+                form.txtToOutstanding.focus();
+                return (false);
+            }
+
+            if ((callput != "" || dwtype != "" || listing != "" || maturity != "" || fromoutst != "" || tooutst != "") && (issuer == "" && underlying == "")) {
+                alert("Please select Issuer or Underlying.");
+                form.lstIssuer.focus();
+                return (false);
+            }
+
+            if ((fromstrike != "" || tostrike != "" || fromdelta != "" || todelta != "" || fromimpvol != "" || toimpvol != "") && (underlying == "")) {
+                alert("Please select Underlying.");
+                form.lstUnderlying.focus();
+                return (false);
+            }
+
+            if (fromstrike != "" && tostrike != "") {
+                if (parseFloat(fromstrike) > parseFloat(tostrike)) {
+                    alert("Invalid range - Strike.");
+                    form.txtFromStrike.focus();
+                    return (false);
+                }
+            }
+
+            if (fromdelta != "" && todelta != "") {
+                if (parseFloat(fromdelta) > parseFloat(todelta)) {
+                    alert("Invalid range - Delta.");
+                    form.txtFromDelta.focus();
+                    return (false);
+                }
+            }
+
+            if (fromimpvol != "" && toimpvol != "") {
+                if (parseFloat(fromimpvol) > parseFloat(toimpvol)) {
+                    alert("Invalid range - Implied Volatility.");
+                    form.txtFromImplVol.focus();
+                    return (false);
+                }
+            }
+
+            if (fromoutst != "" && tooutst != "") {
+                if (parseFloat(fromoutst) > parseFloat(tooutst)) {
+                    alert("Invalid range - Outstanding Quantity.");
+                    form.txtFromOutstanding.focus();
+                    return (false);
+                }
+            }
+        }
+
+        return (true);
+    }
+</script>
+</main>
+<!-- Content end -->
+<script language="javaScript" src="/nonCMS/script/noncmsfoot.js"></script>
+<script language="javaScript" src="/nonCMS/script/vendor.js"></script>
+<script language="javaScript" src="/nonCMS/script/main.js"></script>
+<script language="javaScript" src="/nonCMS/script/sprc_common.js"></script>
+<script type="text/javascript" nonce="8a7de3505af42b7c1f37f67b1c1fd441" src="/vqeN8YmBP/S9-AKmp3g/Gpz30DG39Qz5/B1p4AQ/HxpxS/BYVI2YU?v=99af8de8-ded2-7555-f7fb-d2b9ca4f1722" defer></script></body>
+</html>
+<script language="javascript">   
+    function resizeSelection() {
+        var width = $("#form1").width() - $(".list-search tr:eq(2) td:eq(0)").width() - 5;
+        $("#lstUnderlying").css("max-width", width);
+        $("#lstIssuer").css("max-width", width);
+    }
+
+    function refreshProductSelect(){
+        $('#productSelect option[value="/eng/dwrc/search/listsearch.asp"]').prop("selected", true);
+    }
+	
+    $(window).resize(
+        function(){
+            resizeSelection();
+        }
+    )
+    
+    $(document).ready(
+        function(){
+            resizeSelection();
+        }
+    )
+
+    window.onpageshow = function(event) {        
+        refreshProductSelect();
+    };
+    
+</script>

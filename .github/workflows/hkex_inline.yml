@@ -1,0 +1,83 @@
+name: hkex-inline
+# 港交所證券市場每日行情報告裡的界內證行（scripts/hkex_inline_fetch.py）。
+# 雲端工作階段連不到 hkex.com.hk，所以在這裡下載，結果 commit 回觸發時的分支（data/hkex_inline/）。手動觸發。
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: probe（存樣本）／quotes（逐日抽 @L 行）／terms（試抓條款清單頁）
+        required: true
+        default: probe
+      start:
+        description: probe 的日期／quotes 的開始日（YYYY-MM-DD）
+        required: true
+        default: '2026-10-09'
+      end:
+        description: quotes 的結束日
+        required: false
+        default: '2026-10-10'
+      urls:
+        description: mode=urls 時，逗號分隔的 hkex.com.hk 網址
+        required: false
+        default: ''
+      step:
+        description: mode=survey 時，每隔幾天抽一天
+        required: false
+        default: '14'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hkex-inline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: run
+        env:
+          MODE: ${{ github.event.inputs.mode }}
+          START: ${{ github.event.inputs.start }}
+          END: ${{ github.event.inputs.end }}
+          URLS: ${{ github.event.inputs.urls }}
+          STEP: ${{ github.event.inputs.step }}
+        run: |
+          if [ "$MODE" = "probe" ]; then
+            python3 scripts/hkex_inline_fetch.py probe "$START"
+          elif [ "$MODE" = "urls" ]; then
+            python3 scripts/hkex_inline_fetch.py urls "$URLS"
+          elif [ "$MODE" = "survey" ]; then
+            python3 scripts/hkex_inline_fetch.py survey "$START" "$END" --step "${STEP:-14}"
+          elif [ "$MODE" = "wayback" ]; then
+            python3 scripts/hkex_inline_fetch.py wayback
+          elif [ "$MODE" = "hkex-monthly-probe" ]; then
+            python3 scripts/hkex_inline_fetch.py hkex-monthly --probe --products "${URLS:-cbbc}" --months 9
+          elif [ "$MODE" = "hkex-monthly" ]; then
+            python3 scripts/hkex_inline_fetch.py hkex-monthly --products "${URLS:-cbbc,dwrc}" --months "${STEP:-1-12,cur}" --ul HSI
+          elif [ "$MODE" = "mce" ]; then
+            python3 scripts/hkex_inline_fetch.py mce
+          elif [ "$MODE" = "yahoo" ]; then
+            python3 scripts/hkex_inline_fetch.py yahoo --codes "$URLS"
+          elif [ "$MODE" = "wayback-dayquot" ]; then
+            python3 scripts/hkex_inline_fetch.py wayback-dayquot --from "${START:0:4}" --to "${END:0:4}"
+          elif [ "$MODE" = "terms" ]; then
+            python3 scripts/hkex_inline_fetch.py terms
+          else
+            python3 scripts/hkex_inline_fetch.py quotes "$START" "$END"
+          fi
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/hkex_inline/ data/hkex_sp/
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -m "data: 港交所界內證每日行情（${{ github.event.inputs.mode }} ${{ github.event.inputs.start }}）[skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1

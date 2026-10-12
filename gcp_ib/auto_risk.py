@@ -5,6 +5,8 @@
 用法（PowerShell，喺 repo 資料夾）：
   python gcp_ib\\auto_risk.py --once                 # 跑一次
   python gcp_ib\\auto_risk.py --every 15             # 每 15 分鐘一次，視窗開住就一直跑（Ctrl+C 停）
+  每日香港時間 05:30 之後第一次循環會喺背景跑一次 futu_pnl_export.py（基金報告，R152）；
+  成功先記低，失敗每日最多試 3 次。唔想要就加 --no-pnl。
 
 設定（環境變數，用 setx 設一次，重開 PowerShell 生效；唔好寫入 repo）：
   setx ZHUGE_COMBINED_EQUITY 2520339     # 幾個戶口合計權益 HKD（硬止損按合計計）
@@ -12,7 +14,7 @@
   setx TG_CHAT_ID "…"
   setx ZHUGE_GCP_URL "https://…run.app/"   # 選填：有就每次推上 GCP（main.py R147 action=futu_risk，存私人 bucket）
   setx WEBHOOK_SECRET_TOKEN "…"            #        同 futu/push_to_gcp.py 用同一對設定
-  選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 100000）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）
+  選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 60000；Cloud Run 另有逐級 Telegram）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）
 
 輸出（全部喺 tradingview/out/，已 .gitignore，唔會 commit）：
   risk_report_live.md   最新報告
@@ -93,7 +95,48 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R147"
+SCRIPT_VERSION = "R154"
+PNL_HOUR = (5, 30)        # 香港時間：恒指夜市 03:00 收、美期權 04:00–05:00 收之後先匯出
+PNL_MAX_TRIES = 3
+_pnl_proc = None
+
+
+def pnl_daily(t):
+    """每日一次喺背景跑 futu_pnl_export.py（推 action=futu_pnl）。唔阻住風險循環；結果記喺 pnl_export_state.json。"""
+    global _pnl_proc
+    state_f = OUT / "pnl_export_state.json"
+    try:
+        st = json.loads(state_f.read_text(encoding="utf-8"))
+    except Exception:
+        st = {}
+    if _pnl_proc is not None:
+        if _pnl_proc.poll() is None:
+            return
+        out = (OUT / "pnl_export_last.log").read_text(encoding="utf-8", errors="replace")
+        ok = _pnl_proc.returncode == 0 and "GCP ✅" in out
+        if ok:
+            st["done"] = st.get("running_day")
+        st["last"] = {"day": st.get("running_day"), "ok": ok, "end_hkt": t.strftime("%Y-%m-%d %H:%M")}
+        print(f"  → 基金報告匯出{'✅ 完成' if ok else '❌ 失敗（睇 tradingview/out/pnl_export_last.log）'}")
+        _pnl_proc = None
+        state_f.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+        return
+    day = t.strftime("%Y-%m-%d")
+    if (t.hour, t.minute) < PNL_HOUR or st.get("done") == day:
+        return
+    tries = st.get("tries", {}) if st.get("tries_day") == day else {}
+    if tries.get("n", 0) >= PNL_MAX_TRIES:
+        return
+    tries["n"] = tries.get("n", 0) + 1
+    st.update({"tries_day": day, "tries": tries, "running_day": day})
+    state_f.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+    log = (OUT / "pnl_export_last.log").open("w", encoding="utf-8")
+    _pnl_proc = subprocess.Popen([sys.executable, str(ROOT / "gcp_ib" / "futu_pnl_export.py")], cwd=ROOT,
+                                 stdout=log, stderr=subprocess.STDOUT,
+                                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    log.close()                   # 子程序有自己一份
+    print(f"  → 基金報告匯出已喺背景開始（今日第 {tries['n']} 次）")
 
 
 def push_gcp(t, M, cur, txt):
@@ -108,7 +151,8 @@ def push_gcp(t, M, cur, txt):
     except Exception:
         positions = []
     body = {"action": "futu_risk", "token": tok, "run_hkt": t.strftime("%Y-%m-%d %H:%M"),
-            "script_version": SCRIPT_VERSION, "metrics": M, "alerts": cur, "positions": positions, "report": txt}
+            "script_version": SCRIPT_VERSION, "metrics": M, "alerts": cur, "positions": positions, "report": txt,
+            "client_telegram": bool(os.environ.get("TG_BOT_TOKEN") and os.environ.get("TG_CHAT_ID"))}  # 本機發就唔使 Cloud Run 再發
     req = urllib.request.Request(url, data=json.dumps(body, ensure_ascii=False, default=list).encode("utf-8"),
                                  headers={"Content-Type": "application/json"}, method="POST")
     try:
@@ -166,7 +210,7 @@ def cycle(equity, cushion_line, stop_line):
             msg.append(line.split("] ", 1)[-1])
         msg.append("只係監控，唔係落單指令；落單以富途即時價為準。")
         sent = telegram("\n".join(msg))
-        print("  → Telegram 已發" if sent else "  →（冇設 TG_BOT_TOKEN／TG_CHAT_ID，只喺呢度顯示）")
+        print("  → Telegram 已發（本機）" if sent else "  →（本機冇設 Telegram；推上 GCP 之後由 Cloud Run 代發）")
 
 
 def main():
@@ -175,8 +219,9 @@ def main():
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--combined-equity", type=float, default=float(os.environ.get("ZHUGE_COMBINED_EQUITY", 0)) or None)
     ap.add_argument("--weekend", action="store_true", help="週末都照跑（預設週末唔跑）")
+    ap.add_argument("--no-pnl", action="store_true", help="唔做每日基金報告匯出")
     a = ap.parse_args()
-    cushion_line = float(os.environ.get("ZHUGE_ALERT_CUSHION", 100000))
+    cushion_line = float(os.environ.get("ZHUGE_ALERT_CUSHION", 60000))
     stop_line = float(os.environ.get("ZHUGE_ALERT_STOP", 0.8))
     if not a.combined_equity:
         print("⚠ 冇設合計權益（setx ZHUGE_COMBINED_EQUITY …），硬止損會用 book 假設 NAV 計")
@@ -186,6 +231,11 @@ def main():
                 cycle(a.combined_equity, cushion_line, stop_line)
             except Exception as e:
                 print(f"[{now_hkt():%m-%d %H:%M}] 出錯：{e.__class__.__name__}: {e}")
+        if not (a.once or a.no_pnl) and (a.weekend or not weekend_closed(now_hkt()) or _pnl_proc is not None):
+            try:
+                pnl_daily(now_hkt())
+            except Exception as e:
+                print(f"[{now_hkt():%m-%d %H:%M}] 基金報告匯出出錯：{e.__class__.__name__}")
         if a.once:
             return
         time.sleep(max(1.0, a.every) * 60)
