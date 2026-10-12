@@ -1,0 +1,86 @@
+name: HTF daily（港台日 全期參數 每日訊號）
+
+# 本分支獨立跑（非預設分支不能排程／手動觸發，所以用 push 觸發）：
+# 往 analysis/htf_daily/run_request.txt 追加一行並 push 即跑（每個交易日收市後由 Claude 排程推一次）。
+# 數據：Actions 快取（本分支）→ 沒有就從 Release 還原 → 增量抓到今天（只改 runner 本機，不上傳 Release）。
+on:
+  push:
+    branches: [claude/stock-research-k9nzau]
+    paths: ['analysis/htf_daily/run_request.txt']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: htf-daily
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      TZ: Asia/Hong_Kong
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install -q yfinance pandas numpy requests lxml html5lib
+      - name: Restore data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data_full
+          key: htfdata-v1-${{ github.run_id }}
+          restore-keys: htfdata-v1-
+      - name: Restore from Release if cache empty
+        run: |
+          for M in hk jp; do
+            [ "$(ls data_full/$M/*.csv.gz 2>/dev/null | wc -l)" -gt 0 ] || { gh release download fullmarket-data -p "$M.tar" -D /tmp && tar -xf /tmp/$M.tar; }
+          done
+          [ "$(ls data_full/tw/*.csv.gz 2>/dev/null | wc -l)" -gt 0 ] || { gh release download oos-data -p "tw.tar" -D /tmp && tar -xf /tmp/tw.tar; }
+          for M in hk jp tw; do echo "$M：$(ls data_full/$M/*.csv.gz | wc -l) 檔"; done
+      - name: Latest pools and HK/JP benchmark series from gifted-carson
+        run: |
+          git fetch -q origin claude/gifted-carson-v2tvhw
+          git checkout origin/claude/gifted-carson-v2tvhw -- universes/full/hk_pool.txt universes/full/jp_pool.txt universes/full/tw_pool.txt \
+            data/equities/hk/2800.HK data/equities/hk/_HSI data/equities/jp/1321.T data/equities/jp/_N225
+          git reset -q
+      - name: Incremental update
+        run: |
+          for M in hk tw jp; do python3 scripts/htf_update_data.py --market $M; done
+      - name: Save data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data_full
+          key: htfdata-v1-${{ github.run_id }}
+      - name: Signals
+        run: python3 scripts/htf_daily.py --market hk tw jp
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/htf_daily
+          git reset -q analysis/htf_daily/_qc 2>/dev/null || true
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(htf): 每日訊號 $(date +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 5))
+            git pull --no-rebase -q origin ${GITHUB_REF_NAME} || true
+          done
+          exit 1
+      - name: Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          [ -s analysis/htf_daily/tg_htf.txt ] || { echo "沒有摘要"; exit 0; }
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then echo "::warning::TG secrets 沒設"; exit 0; fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "text=$(cat analysis/htf_daily/tg_htf.txt)" > /dev/null
+          echo "telegram sent"
