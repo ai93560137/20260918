@@ -131,6 +131,28 @@ def settle_at(zq: dict[str, pd.Series], ym: str, d: date, lookback: int = 3):
 
 
 # ---------- 匯率 ----------
+LON = ZoneInfo("Europe/London")
+
+
+def hd_dst_fix(df: pd.DataFrame) -> pd.DataFrame:
+    """HistData 年檔（2019 起）在「美國已夏令、歐洲未夏令」的錯位週（3 月第二個週日 → 3 月最後週日；10 月最後週日 → 11 月第一個週日）
+    原始時間戳仍是 UTC−5，倉庫以 America/New_York 轉 UTC 後標籤早 1 小時（DATA_QC.md 2026-10-12 補充；FOMC 公告尖峰與週五收市皆驗證）。
+    這裡把那些週的標籤加 60 分鐘；Dukascopy 檔不經此函數。"""
+    if df.empty or df.Time.dt.year.max() < 2019:
+        return df
+    days = pd.DatetimeIndex(df.Time.dt.normalize().unique())
+    noon = days + pd.Timedelta(hours=12)
+    us = np.array([bool(t.tz_localize("UTC").tz_convert(ET).dst()) for t in noon])
+    eu = np.array([bool(t.tz_localize("UTC").tz_convert(LON).dst()) for t in noon])
+    bad = set(days[us & ~eu & (days.year >= 2019)])
+    if not bad:
+        return df
+    m = df.Time.dt.normalize().isin(bad)
+    df = df.copy()
+    df.loc[m, "Time"] = df.loc[m, "Time"] + pd.Timedelta(minutes=60)
+    return df
+
+
 class M1Cache:
     def __init__(self):
         self.c = {}
@@ -142,7 +164,7 @@ class M1Cache:
             f = d / f"{pair}_M1_{year}.csv.gz"
             parts = []
             if f.exists():
-                parts.append(pd.read_csv(f, usecols=["Time", "Close"], parse_dates=["Time"]))
+                parts.append(hd_dst_fix(pd.read_csv(f, usecols=["Time", "Close"], parse_dates=["Time"])))
             fr = d / f"{pair}_M1_recent.csv.gz"
             if fr.exists():
                 r = pd.read_csv(fr, usecols=["Time", "Close"], parse_dates=["Time"])
