@@ -45,3 +45,37 @@
 - commit 到雲垂分支：`data_forex_ibkr/_papers/…excerpts.md`、`data_forex_ibkr/fomc/…`、`data_forex_ibkr/zq/…`、更新 `data_forex_ibkr/_status.txt`（ZQ 深度、結算價對照、FirstRate 報價）。commit 訊息 `data(fomc): Karnaukh 摘錄／FOMC 日曆／ZQ 試拉`。
 - 外匯分支收到摘錄後才寫登記 `forex_research/FX_FOMC_DRIFT_BACKTEST.md`（規格以論文為準；帳本新增「FOMC 事件樣本」一列，第一次 t ≥ 2.5）；候選 2、3 之後再議。
 - 不要用這些數據跑任何回測；不要把 `data_forex_ibkr/` 合併回其他分支。
+
+## 6. 使用者直接在 VM 跑（2026-10-12，提示符 `@ib-data`；一次貼完，約 15–25 分鐘，大部分是 IB 節流等待）
+
+腳本在外匯分支：`scripts/paper_excerpt.py`（PDF → 關鍵詞選段逐字摘錄，全文不進 git）、`scripts/fomc_calendar_fetch.py`（聯準會逐年頁＋日曆頁，存原始 HTML、解析聲明日期、逐篇抓「For release at」時間）、`scripts/ib_zq_probe.py`（IB 試拉 ZQ 含已到期合約與連續合約）。
+
+```bash
+cd ~/20260918 && git pull --rebase origin claude/dazzling-curie-f3xzb8
+git fetch origin claude/forex-data-testing-w4q3m2
+git checkout origin/claude/forex-data-testing-w4q3m2 -- scripts/paper_excerpt.py scripts/fomc_calendar_fetch.py scripts/ib_zq_probe.py
+mkdir -p data_forex_ibkr/_papers data_forex_ibkr/fomc data_forex_ibkr/zq ~/papers
+
+# 1. 論文：PDF 留在 ~/papers（不進 git），只 commit 摘錄
+curl -fsSL -A "Mozilla/5.0" -o ~/papers/Karnaukh_DollarAheadFOMC.pdf \
+  "https://acfr.aut.ac.nz/__data/assets/pdf_file/0019/190315/DollarAheadFOMC_NinaKarnaukh.pdf" \
+  && ls -la ~/papers/ || echo "AUT 下載失敗：請用瀏覽器從 SSRN 3221318 下載後放到 ~/papers/Karnaukh_DollarAheadFOMC.pdf 再跑下一行"
+command -v pdftotext >/dev/null || sudo -n apt-get install -y poppler-utils 2>/dev/null || echo "沒有 pdftotext，腳本會改用 pypdf"
+python3 scripts/paper_excerpt.py ~/papers/Karnaukh_DollarAheadFOMC.pdf data_forex_ibkr/_papers/Karnaukh_DollarAheadFOMC_excerpts.md
+
+# 2. FOMC 日曆 1994→2027（約 300 個網頁請求，每個隔 0.7 秒 ≈ 4–5 分鐘）
+python3 scripts/fomc_calendar_fetch.py --out data_forex_ibkr/fomc 2>&1 | tee data_forex_ibkr/fomc/_fetch.log
+
+# 3. IB 試拉 ZQ（clientId 43；每合約隔 11 秒，約 40 個合約 ≈ 8 分鐘）
+python3 scripts/ib_zq_probe.py --out data_forex_ibkr/zq --client-id 43 2>&1 | tee data_forex_ibkr/zq/_probe.log
+
+# 4. 推回雲垂分支
+git add data_forex_ibkr/_papers data_forex_ibkr/fomc data_forex_ibkr/zq
+git commit -m "data(fomc): Karnaukh 摘錄／FOMC 日曆／ZQ 試拉"
+git push origin claude/dazzling-curie-f3xzb8
+```
+
+- 第 1 步若 AUT 連不上，用瀏覽器從 SSRN 下載 PDF 放到 `~/papers/` 後只重跑 `python3 scripts/paper_excerpt.py …` 那行。
+- 第 2 步會印每年「排定 N，非排定 M」，排定不是 8 的年份會標 ←，外匯分支會對原始 HTML 複核。
+- 第 3 步預期多數舊合約「無資料」（IB 只保留已到期約 2 年）；這就是我們要的答案。
+- FirstRate ZQ 日線的價格與起始年份請你在瀏覽器看一眼 `https://firstratedata.com/i/futures/ZQ`，把兩個數字告訴我即可，不用買。
