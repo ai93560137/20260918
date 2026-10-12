@@ -67,8 +67,19 @@ for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
             last = pd.Timestamp(d.Date.max()).strftime('%Y-%m-%d')
             # 最後一列屬今日而且抓取時間未到收市＋緩衝 → partial；屬舊日或已過收市時間 → 視為 final（保留舊列時沿用舊標記）
             fin = not (last == now_utc.strftime('%Y-%m-%d') and (now_utc.hour, now_utc.minute) < (hh, mm))
-            asia_status[fname] = {'last_date': last, 'last_row': 'final' if fin else 'partial',
-                                  'fetched_utc': now_utc.strftime('%Y-%m-%d %H:%M'), 'kept_dates': kept}
+            status, fetched = ('final' if fin else 'partial'), now_utc.strftime('%Y-%m-%d %H:%M')
+            if last in kept:                      # 最後一列係保留落嚟嘅舊列：沿用上次紀錄嘅 final/partial，唔可以因為今次抓得夠遲就當 final
+                prev = {}
+                try:
+                    prev = json.load(open(f'{OUT}/asia_daily_status.json', encoding='utf-8')).get(fname, {})
+                except Exception:
+                    pass
+                if prev.get('last_date') == last:
+                    status, fetched = prev.get('last_row', 'partial'), prev.get('row_fetched_utc') or prev.get('fetched_utc', fetched)
+                else:
+                    status, fetched = 'partial', 'unknown'
+            asia_status[fname] = {'last_date': last, 'last_row': status, 'row_fetched_utc': fetched,
+                                  'run_utc': now_utc.strftime('%Y-%m-%d %H:%M'), 'kept_dates': kept}
     except Exception as e:
         log.append(f"{sym} ERR: {e!r}")
 

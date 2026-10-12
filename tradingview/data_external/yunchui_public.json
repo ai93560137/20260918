@@ -1,5 +1,5 @@
 {
- "updated_hkt": "2026-10-12 17:53",
+ "updated_hkt": "2026-10-13 00:17",
  "strategy": {
   "name": "雲垂陣",
   "icon": "☁️",
@@ -48,7 +48,7 @@
  ],
  "status": {
   "hsi": {
-   "front": 24260.0,
+   "front": 24251.0,
    "straddle_delta": 0.62,
    "hedge_lots": -1.0,
    "net_delta": -0.38,
@@ -57,8 +57,8 @@
    "hedge_source": "富途 API（總指揮通報）"
   },
   "mes": {
-   "es": 7883.0,
-   "straddle_delta": -0.44,
+   "es": 7867.0,
+   "straddle_delta": -0.32,
    "band": 0.5
   }
  },
