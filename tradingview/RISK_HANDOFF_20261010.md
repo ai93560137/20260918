@@ -156,3 +156,11 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 ## 2026-10-12 R166：蛇蟠陣頁（bazhentu.html）版面改同雲垂陣一樣、綠色主色
 - 使用者要求：排版、字體、格式同雲垂陣（BASE_CSS：.nav 品牌列＋導覽、.section 卡片、系統字體）一致，主色改綠（`--snake:#1b7f4f`；雲垂陣係藍）。JS、所有欄位 id、localStorage、levels.json 自動套用邏輯原封不動；舊版深色模式同 Noto Serif 字體移除（同雲垂陣一樣冇）。
 - 2026-10-12 R165／R166 部署：第一次 Cloud Build 失敗（main.py 用咗 Python 3.12 先容許嘅 f-string 巢狀同款引號；Cloud Run 係 3.11，本機 3.13 編譯過咗），修正後修訂 `zhuge-risk-manager-00290-lpq`。之後部署前用 `python3.11 -m py_compile main.py`（已寫入 CLAUDE.md）。
+
+## 2026-10-12 R167：導覽「📈 HTF 掛單」改「📈 鳥翔 HTF 掛單」
+- 使用者要求；`PAGE_LINKS`＋五個靜態頁；HTF 頁標題同列印標題一併改「鳥翔 HTF 每日掛單」。路由 `?view=htf` 不變。
+
+## 2026-10-12 R168：首頁移除六個大按鈕
+- 使用者要求「6 個大按鈕已不合用」。`render_welcome_page` 不再輸出 `<div class='tiles'>`；導覽列已涵蓋全部 17 頁。
+  `HUB_TILES`／`HUB_ICONS` 保留備用。與 R167 同在 PR #89，未部署；上線後退回目標 `zhuge-risk-manager-00290-lpq`。
+- 2026-10-12 部署：R167＋R168 → 修訂 `zhuge-risk-manager-00291-vgl`（來源 `ecdca4f04`），五頁 200。退回：`rollback --to zhuge-risk-manager-00290-lpq --yes`。
