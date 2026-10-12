@@ -20,6 +20,9 @@ on:
         default: 'false'
   schedule:
     - cron: '40 1 * * 2-6'
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths: ['.github/workflows/fx_l1_forward.yml', 'scripts/fx_l1_forward.py', 'scripts/fx_l1_report.py']
 
 permissions:
   contents: write
