@@ -1,0 +1,115 @@
+<title>HTF 每日掛單</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap">
+<style>
+/* 版面：一張交易櫃台的「明日掛單單」——摘要在上，三個市場各一節：掛單 → 持倉 → 已平倉；規則與風險在最後 */
+:root{
+  --bg:#F3F5F7; --paper:#FFFFFF; --ink:#16202A; --muted:#5B6773; --rule:#D9DEE4; --row:#F7F9FA;
+  --accent:#2F4B8F; --accent-soft:#E6EBF6; --buy:#1D6B47; --buy-soft:#E3F1EA; --sell:#A3271B; --sell-soft:#F8E6E3;
+  --warn:#8A5A00; --warn-soft:#FBF0D9;
+  --f-display:"Barlow Condensed","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-data:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161C; --paper:#18202A; --ink:#E6EAEE; --muted:#9AA6B2; --rule:#2A3542; --row:#1C2530;
+  --accent:#8EA8E8; --accent-soft:#232F48; --buy:#6FCB9C; --buy-soft:#173326; --sell:#F08A7E; --sell-soft:#3A1E1B;
+  --warn:#E8B95C; --warn-soft:#3A2D12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161C; --paper:#18202A; --ink:#E6EAEE; --muted:#9AA6B2; --rule:#2A3542; --row:#1C2530;
+  --accent:#8EA8E8; --accent-soft:#232F48; --buy:#6FCB9C; --buy-soft:#173326; --sell:#F08A7E; --sell-soft:#3A1E1B;
+  --warn:#E8B95C; --warn-soft:#3A2D12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:10px}
+.eyebrow{font-family:var(--f-data);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,40px);letter-spacing:.01em;margin:0;line-height:1.1;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:24px;margin:0;letter-spacing:.02em}
+h3{font-size:14px;font-weight:600;margin:0;color:var(--muted);letter-spacing:.04em}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;gap:10px;align-items:baseline;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:8px 12px}
+.chip b{font-family:var(--f-display);font-size:18px;font-weight:600}
+.chip span{font-size:13px;color:var(--muted)}
+.num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+section.mk{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:18px 18px 8px;display:grid;gap:14px;min-width:0}
+.mk-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.meta{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.buy{background:var(--buy-soft);color:var(--buy)}
+.pill.sell{background:var(--sell-soft);color:var(--sell)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.idle{background:var(--accent-soft);color:var(--accent)}
+.block{display:grid;gap:6px;min-width:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-weight:600;font-size:12px;color:var(--muted);text-align:right;padding:6px 8px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--rule);text-align:right;white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tbody tr:nth-child(even){background:var(--row)}
+td.tk{font-family:var(--f-data);font-weight:600}
+td.tk small{display:block;font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:12px;white-space:normal}
+td.trig{font-weight:700;color:var(--accent)}
+td.stop{color:var(--sell)}
+.empty{color:var(--muted);font-size:14px;padding:6px 0 10px}
+.note{font-size:13px;color:var(--muted);max-width:75ch}
+.rules{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:18px;display:grid;gap:12px}
+.rules ol{margin:0;padding-left:1.3em;display:grid;gap:4px;max-width:75ch}
+.foot{font-size:12px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media print{
+  @page{size:A4;margin:12mm 11mm 14mm}
+  body{background:#fff;color:#000;font-size:11pt;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .wrap{max-width:none;gap:10pt}
+  section.mk,.rules{border-color:#bbb;break-inside:auto}
+  .mk-head,h2,h3{break-after:avoid}
+  thead{display:table-header-group}
+  tr,.chip,.rules li{break-inside:avoid}
+  .tbl{overflow:visible}
+  td,th{white-space:normal}
+}
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">High Tight Flag · 港台日 · 全期參數</div>
+    <h1>HTF 每日掛單　2026-10-12</h1>
+    <p class="lede">每個交易日收市後更新。掛單用買入停損單：明天盤中升穿觸發價才成交，開市已高於上限就取消。下單後即設停損；持倉每天看「明天要做」。產生時間 2026-10-12 17:52（香港時間）。</p>
+    <div class="chips"><div class="chip"><b>港股</b><span>掛單 <span class="num">1</span>　持倉 <span class="num">0</span>　已平倉 <span class="num">0</span></span></div><div class="chip"><b>台股</b><span>掛單 <span class="num">9</span>　持倉 <span class="num">0</span>　已平倉 <span class="num">0</span></span></div><div class="chip"><b>日股</b><span>掛單 <span class="num">1</span>　持倉 <span class="num">0</span>　已平倉 <span class="num">0</span></span></div></div>
+  </header>
+  
+<section class="mk" id="hk">
+  <div class="mk-head"><h2>港股</h2><div class="meta">數據至 2026-10-12（HKD）　<span class="pill idle">不用大市過濾</span></div></div>
+  <div class="block"><h3>明日掛單（1 隻，按距離觸發價由近到遠）</h3><div class="tbl"><table><thead><tr><th>代號</th><th>今天收市</th><th>觸發價（買入停損單）</th><th>距收市</th><th>開市高於此就取消</th><th>停損（若在觸發價成交）</th><th>ADR</th><th>資金</th></tr></thead><tbody><tr><td class="tk">2510.HK</td><td class="num">13.70</td><td class="num trig">14.96</td><td class="num">+9.2%</td><td class="num">15.71</td><td class="num stop">14.04</td><td class="num">4.1%</td><td class="num">24%</td></tr></tbody></table></div></div>
+  <div class="block"><h3>持倉與明天動作（0 筆）</h3><p class="empty">沒有持倉。</p></div>
+  <div class="block"><h3>前向已平倉</h3><p class="empty">前向紀錄由 2026-10-13 起入場的交易算起，暫時未有平倉。</p></div>
+  <p class="note">本市場參數：旗桿 ≥ 100%、旗面回落 ≤ 20%、動能全市場前 2%、追價上限 5%、停損 1.5 × ADR、第 3 日收市賣一半、收市破 50 日線翌日開市賣、最長 60 日。</p>
+</section>
+<section class="mk" id="tw">
+  <div class="mk-head"><h2>台股</h2><div class="meta">數據至 2026-10-12（TWD）　<span class="pill buy">大市過濾 ✓ 可開新倉</span></div></div>
+  <div class="block"><h3>明日掛單（9 隻，按距離觸發價由近到遠）</h3><div class="tbl"><table><thead><tr><th>代號</th><th>今天收市</th><th>觸發價（買入停損單）</th><th>距收市</th><th>開市高於此就取消</th><th>停損（若在觸發價成交）</th><th>ADR</th><th>資金</th></tr></thead><tbody><tr><td class="tk">2305.TW</td><td class="num">71.10</td><td class="num trig">72.50</td><td class="num">+2.0%</td><td class="num">73.95</td><td class="num stop">63.42</td><td class="num">8.3%</td><td class="num">12%</td></tr><tr><td class="tk">3498.TWO</td><td class="num">248.0</td><td class="num trig">257.0</td><td class="num">+3.6%</td><td class="num">262.1</td><td class="num stop">228.1</td><td class="num">7.5%</td><td class="num">13%</td></tr><tr><td class="tk">3653.TW</td><td class="num">7,160</td><td class="num trig">7,440</td><td class="num">+3.9%</td><td class="num">7,589</td><td class="num stop">6,800</td><td class="num">5.7%</td><td class="num">17%</td></tr><tr><td class="tk">3605.TW</td><td class="num">179.0</td><td class="num trig">190.5</td><td class="num">+6.4%</td><td class="num">194.3</td><td class="num stop">168.9</td><td class="num">7.6%</td><td class="num">13%</td></tr><tr><td class="tk">6933.TW</td><td class="num">382.5</td><td class="num trig">413.0</td><td class="num">+8.0%</td><td class="num">421.3</td><td class="num stop">365.5</td><td class="num">7.7%</td><td class="num">13%</td></tr><tr><td class="tk">3094.TW</td><td class="num">67.90</td><td class="num trig">73.50</td><td class="num">+8.2%</td><td class="num">74.97</td><td class="num stop">65.96</td><td class="num">6.8%</td><td class="num">15%</td></tr><tr><td class="tk">3008.TW</td><td class="num">7,325</td><td class="num trig">7,995</td><td class="num">+9.2%</td><td class="num">8,155</td><td class="num stop">7,332</td><td class="num">5.5%</td><td class="num">18%</td></tr><tr><td class="tk">1709.TW</td><td class="num">58.60</td><td class="num trig">66.30</td><td class="num">+13.1%</td><td class="num">67.63</td><td class="num stop">58.71</td><td class="num">7.6%</td><td class="num">13%</td></tr><tr><td class="tk">2221.TWO</td><td class="num">173.0</td><td class="num trig">198.0</td><td class="num">+14.4%</td><td class="num">202.0</td><td class="num stop">174.7</td><td class="num">7.8%</td><td class="num">13%</td></tr></tbody></table></div></div>
+  <div class="block"><h3>持倉與明天動作（0 筆）</h3><p class="empty">沒有持倉。</p></div>
+  <div class="block"><h3>前向已平倉</h3><p class="empty">前向紀錄由 2026-10-13 起入場的交易算起，暫時未有平倉。</p></div>
+  <p class="note">本市場參數：旗桿 ≥ 100%、旗面回落 ≤ 35%、動能全市場前 3%、追價上限 2%、停損 1.5 × ADR、不賣一半、收市破 20 日線翌日開市賣、最長 60 日。</p>
+</section>
+<section class="mk" id="jp">
+  <div class="mk-head"><h2>日股</h2><div class="meta">數據至 2026-10-09（JPY）　<span class="pill idle">不用大市過濾</span></div></div>
+  <div class="block"><h3>明日掛單（1 隻，按距離觸發價由近到遠）</h3><div class="tbl"><table><thead><tr><th>代號</th><th>今天收市</th><th>觸發價（買入停損單）</th><th>距收市</th><th>開市高於此就取消</th><th>停損（若在觸發價成交）</th><th>ADR</th><th>資金</th></tr></thead><tbody><tr><td class="tk">6862.T</td><td class="num">5,160</td><td class="num trig">5,910</td><td class="num">+14.5%</td><td class="num">6,028</td><td class="num stop">5,287</td><td class="num">7.0%</td><td class="num">14%</td></tr></tbody></table></div></div>
+  <div class="block"><h3>持倉與明天動作（0 筆）</h3><p class="empty">沒有持倉。</p></div>
+  <div class="block"><h3>前向已平倉</h3><p class="empty">前向紀錄由 2026-10-13 起入場的交易算起，暫時未有平倉。</p></div>
+  <p class="note">本市場參數：旗桿 ≥ 100%、旗面回落 ≤ 35%、動能全市場前 1%、追價上限 2%、停損 1.5 × ADR、第 3 日收市賣一半、收市破 10 日線翌日開市賣、最長 252 日。</p>
+</section>
+  <section class="rules">
+    <h2>怎樣照做</h2>
+    <ol>
+      <li>掛單：在觸發價掛買入停損單（stop order）。開市價已高於「開市高於此就取消」，當天不買。</li>
+      <li>成交後即設停損：成交價 −（停損倍數 × ADR）；表內停損按「剛好在觸發價成交」計，實際以成交價重算。</li>
+      <li>資金：每筆 = 20% × 波幅權重（表內「資金」欄），三個市場合計曝險不超過 100%。</li>
+      <li>持倉照「明天要做」：持有、收市賣一半（之後停損移到成本）、或翌日開市全數賣出。</li>
+      <li>在富途開實倉前，先在預設分支 POSITIONS.md 登記並通知總指揮。</li>
+    </ol>
+    <p class="note">每日 PDF 版隨 Telegram 一併發送（同一份內容，自動分頁，表格不會從中間斷開）。</p>
+  </section>
+  <p class="foot">參數由 2009–2026 全期數據擬合選出（曲線擬合），未來表現大概率低於回測。回測與風險說明見投資人說明書 HTF_INVESTOR_BRIEF.pdf；證偽：前向 100 筆平均虧損，或回撤超過 −32%，即停。不構成投資建議。</p>
+</div>

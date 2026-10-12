@@ -59,12 +59,16 @@ jobs:
           key: htfdata-v1-${{ github.run_id }}
       - name: Signals
         run: python3 scripts/htf_daily.py --market hk tw jp
+      - name: Page and PDF
+        run: |
+          sudo apt-get install -y -qq fonts-noto-cjk > /dev/null 2>&1 || true
+          python3 scripts/htf_page.py --names --pdf
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add analysis/htf_daily
-          git reset -q analysis/htf_daily/_qc 2>/dev/null || true
+          git reset -q analysis/htf_daily/_qc analysis/htf_daily/htf_daily.pdf 2>/dev/null || true
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "chore(htf): 每日訊號 $(date +%F)"
           for i in 1 2 3 4 5; do
@@ -84,3 +88,8 @@ jobs:
             --data-urlencode "chat_id=${TG_CHAT_ID}" \
             --data-urlencode "text=$(cat analysis/htf_daily/tg_htf.txt)" > /dev/null
           echo "telegram sent"
+          if [ -s analysis/htf_daily/htf_daily.pdf ]; then
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+              -F "chat_id=${TG_CHAT_ID}" -F "caption=HTF 每日掛單 PDF $(date +%F)" \
+              -F "document=@analysis/htf_daily/htf_daily.pdf;filename=HTF_daily_$(date +%F).pdf" > /dev/null && echo "pdf sent"
+          fi
