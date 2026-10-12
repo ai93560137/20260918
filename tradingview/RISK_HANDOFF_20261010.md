@@ -155,3 +155,4 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R166：蛇蟠陣頁（bazhentu.html）版面改同雲垂陣一樣、綠色主色
 - 使用者要求：排版、字體、格式同雲垂陣（BASE_CSS：.nav 品牌列＋導覽、.section 卡片、系統字體）一致，主色改綠（`--snake:#1b7f4f`；雲垂陣係藍）。JS、所有欄位 id、localStorage、levels.json 自動套用邏輯原封不動；舊版深色模式同 Noto Serif 字體移除（同雲垂陣一樣冇）。
+- 2026-10-12 R165／R166 部署：第一次 Cloud Build 失敗（main.py 用咗 Python 3.12 先容許嘅 f-string 巢狀同款引號；Cloud Run 係 3.11，本機 3.13 編譯過咗），修正後修訂 `zhuge-risk-manager-00290-lpq`。之後部署前用 `python3.11 -m py_compile main.py`（已寫入 CLAUDE.md）。
