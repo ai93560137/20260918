@@ -1,121 +1,158 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>八陣圖策略書</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
-<style>
-:root{
-  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1B2327; --muted:#5D6B70;
-  --pos:#0B8A78; --neg:#C24B40; --line:#DFE5E3; --chip:#E9EEEC; --warn-bg:#F7F1E4;
+<!DOCTYPE html><html lang='zh-HK'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>八陣圖策略書</title><style>
+:root { --primary:#0f62fe; --success:#198754; --danger:#dc3545; --warning:#d97706; --bg:#f4f7fb; --card:#fff; --text:#161616; --muted:#6c757d; }
+* { box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); padding:20px 15px; margin:0; }
+.container { max-width:1050px; margin:0 auto; }
+.nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:24px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
+.nav a { color:var(--primary); text-decoration:none; font-weight:bold; font-size:14px; margin-left:15px; }
+.nav-links { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.nav-link { display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px; font-weight:700;
+            text-decoration:none; color:var(--primary); background:#eef4ff; white-space:nowrap; }
+.nav-link:hover { background:#dbe7ff; }
+.nav-current { background:#0f62fe; color:#fff; cursor:default; }
+.brand { display:flex; align-items:center; gap:10px; min-width:0; }
+.brand-logo { width:34px; height:34px; flex-shrink:0; }
+.brand-logo svg { width:100%; height:100%; display:block; }
+.page-title { font-size:18px; font-weight:bold; margin:0; }
+.grid { display:grid; gap:16px; margin-bottom:24px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+.card { background:var(--card); padding:20px; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); }
+.card-title { font-size:13px; color:var(--muted); margin-bottom:8px; font-weight:600; }
+.card-value { font-size:24px; font-weight:bold; }
+.card-small { font-size:16px; font-weight:bold; }
+.card-desc { font-size:12px; color:#adb5bd; margin-top:8px; }
+.section { background:var(--card); padding:25px; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,.04); margin-bottom:24px; }
+.section-header { font-size:16px; font-weight:700; margin:30px 0 15px; padding-bottom:10px; border-bottom:2px solid #e9ecef; }
+h2 { font-size:17px; margin:0 0 16px; }
+.pos { color:var(--success)!important; } .neg { color:var(--danger)!important; } .muted { color:var(--muted)!important; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #f1f3f5; }
+th { color:var(--muted); font-weight:600; background:#f8f9fa; position:sticky; top:0; }
+.scroll { max-height:350px; overflow:auto; }
+.mono { font-family:"Courier New",Courier,monospace; white-space:pre-wrap; }
+.log-box { background:#f8f9fa; border-left:4px solid var(--primary); padding:12px 16px; border-radius:0 8px 8px 0; max-height:300px; overflow-y:auto; }
+.log-line { margin-bottom:6px; font-size:13px; border-bottom:1px dashed #e9ecef; padding-bottom:4px; }
+.log-card { background:#f8f9fa; border-left:4px solid var(--primary); padding:14px 18px; margin-bottom:12px; border-radius:0 8px 8px 0; }
+.log-ctx { color:#495057; line-height:1.6; font-size:13px; margin-bottom:8px; word-break:break-word; }
+.log-res { font-weight:bold; font-size:14px; padding-top:8px; border-top:1px dashed #dee2e6; }
+.badge { padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px; }
+.badge-high { background:#f8d7da; color:#721c24; } .badge-medium { background:#fff3cd; color:#856404; }
+.badge-imminent { background:var(--danger); color:#fff; animation:blink 1.5s infinite; }
+@keyframes blink { 50% { opacity:.5; } }
+.btn { display:inline-block; padding:14px 24px; border-radius:8px; margin:6px; font-weight:bold; color:#fff; text-decoration:none; }
+.btn-open { background:var(--success); } .btn-lock { background:var(--danger); } .btn-primary { background:var(--primary); } .btn-dark { background:#212529; }
+.banner { padding:12px; margin-bottom:20px; border-radius:8px; font-weight:bold; }
+.level-box { background:#f8f9fa; padding:16px; border-radius:8px; }
+
+/* 策略書專用(沿用 BASE_CSS 色系) */
+:root { --line:#dee2e6; --pos:#198754; --neg:#dc3545; --ink:#161616; }
+.nav-date { font-size:12px; color:var(--muted); letter-spacing:.06em; }
+.lead { margin:0 0 12px; font-size:15px; color:#343a40; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.chip { display:inline-block; padding:6px 12px; border-radius:20px; font-size:12.5px; color:var(--primary); background:#eef4ff; }
+.chip b { color:var(--text); font-weight:700; }
+.num { font-variant-numeric:tabular-nums; }
+.card-value { font-variant-numeric:tabular-nums; }
+.grid { grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+.section p, .section li { font-size:14px; line-height:1.7; }
+.note { font-size:12.5px; color:var(--muted); }
+th:first-child, td:first-child { padding-left:0; }
+.tbl-scroll th:not(:first-child), .tbl-scroll td:not(:first-child) { text-align:right; }
+.tbl-scroll { overflow-x:auto; }
+ul { margin:8px 0; padding-left:22px; }
+.risk { background:#fff8e6; border-left:4px solid var(--warning); padding:14px 18px; margin-top:12px; border-radius:0 8px 8px 0; }
+.risk h3 { margin:0 0 6px; font-size:15px; }
+.risk p { margin:4px 0; font-size:13.5px; }
+.chart-box { background:#f8f9fa; border-radius:12px; padding:16px 12px 6px; margin-top:10px; position:relative; }
+.chart-title { font-size:13px; color:var(--muted); margin:0 4px 6px; }
+#tip { position:absolute; pointer-events:none; background:#161616; color:#fff; font-size:12.5px; padding:5px 9px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-120%); }
+.kv { display:grid; grid-template-columns:1fr 1fr; gap:6px 28px; }
+.kv div { display:flex; justify-content:space-between; border-bottom:1px dashed #e9ecef; padding:7px 0; gap:12px; font-size:13.5px; }
+.kv span:first-child { color:var(--muted); }
+footer { margin:8px 0 24px; padding:0 4px; font-size:12px; color:var(--muted); line-height:1.7; }
+@media (max-width:640px) { .kv { grid-template-columns:1fr; } .nav-date { width:100%; } .section { padding:18px; } }
+/* 列印(同 main.py PRINT_CSS) */
+.print-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:-10px 0 16px; }
+.print-btn { background:#0f62fe; color:#fff; border:0; border-radius:20px; padding:9px 18px; font-size:14px; font-weight:700; cursor:pointer; }
+.print-btn:hover { background:#0b4fd1; }
+.print-hint { font-size:12px; color:var(--muted); }
+.print-only { display:none; }
+@page { size:A4; margin:12mm; }
+@media print {
+  html, body { background:#fff !important; padding:0 !important; }
+  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; font-size:12px; }
+  .container { max-width:none !important; width:100% !important; }
+  .print-bar, #tip { display:none !important; }
+  .print-only { display:block !important; margin:0 0 8px; font-size:11px; color:#555; }
+  .section, .card, .grid > *, .risk, .chart-box, table, tr, svg, h2, h3, li, .kv div { break-inside:avoid; page-break-inside:avoid; }
+  h1, h2, h3 { break-after:avoid; page-break-after:avoid; }
+  .section, .card { box-shadow:none !important; border:1px solid #d0d5dd; }
+  .section.print-flow { break-inside:auto !important; page-break-inside:auto !important; }
+  .tbl-scroll { overflow:visible !important; }
+  a { color:inherit; text-decoration:none; }
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#121619; --surface:#1D2429; --ink:#E7ECEA; --muted:#97A4A9;
-    --pos:#2AA093; --neg:#D45F53; --line:#323C42; --chip:#283238; --warn-bg:#2B2A22;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#121619; --surface:#1D2429; --ink:#E7ECEA; --muted:#97A4A9;
-  --pos:#2AA093; --neg:#D45F53; --line:#323C42; --chip:#283238; --warn-bg:#2B2A22;
-}
-body{background:var(--bg); color:var(--ink); margin:0; padding-block:0 48px; padding-inline:16px;
-  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
-  font-size:15px; line-height:1.65;}
-.wrap{max-width:900px; margin:0 auto;}
-h1,h2{font-family:'Noto Serif TC','Noto Sans TC',serif; text-wrap:balance; margin:0;}
-h1{font-size:34px; font-weight:900; letter-spacing:.02em;}
-h2{font-size:19px; font-weight:700; margin:44px 0 14px; padding-top:20px; border-top:1px solid var(--line);}
-.sub{color:var(--muted); margin:6px 0 0;}
-.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
-.chip{background:var(--chip); border-radius:999px; padding:3px 12px; font-size:12.5px; color:var(--muted);}
-.chip b{color:var(--ink); font-weight:500;}
-header{padding-block:40px 8px;}
-.eyebrow{font-size:12px; letter-spacing:.18em; color:var(--muted); text-transform:uppercase; margin-bottom:10px;}
-.num{font-variant-numeric:tabular-nums;}
-.tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:18px;}
-@media (max-width:640px){.tiles{grid-template-columns:repeat(2,1fr);}}
-.tile{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 14px;}
-.tile .v{font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
-.tile .k{font-size:12px; color:var(--muted); margin-top:2px;}
-.pos{color:var(--pos);} .neg{color:var(--neg);}
-table{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:14px;}
-th{font-size:12px; color:var(--muted); font-weight:500; text-align:right; padding:6px 10px; border-bottom:1px solid var(--line);}
-th:first-child,td:first-child{text-align:left; padding-left:0;}
-td{padding:6px 10px; text-align:right; border-bottom:1px solid var(--line);}
-tr:last-child td{border-bottom:none;}
-.tbl-scroll{overflow-x:auto;}
-ul{margin:8px 0; padding-left:22px;} li{margin:4px 0;}
-.note{font-size:13px; color:var(--muted);}
-.risk{background:var(--warn-bg); border-radius:8px; padding:16px 18px; margin-top:12px;}
-.risk h3{margin:0 0 6px; font-size:15px;}
-.risk p{margin:4px 0;}
-.chart-box{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 12px 6px; margin-top:10px; position:relative;}
-.chart-title{font-size:13px; color:var(--muted); margin:0 4px 6px;}
-#tip{position:absolute; pointer-events:none; background:var(--ink); color:var(--bg);
-  font-size:12.5px; padding:5px 9px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-120%);}
-.kv{display:grid; grid-template-columns:1fr 1fr; gap:8px 28px; margin-top:6px;}
-@media (max-width:640px){.kv{grid-template-columns:1fr;}}
-.kv div{display:flex; justify-content:space-between; border-bottom:1px dashed var(--line); padding:5px 0; gap:12px;}
-.kv span:first-child{color:var(--muted);}
-/* 列印成 PDF（樣式沿用 main.py PRINT_CSS；A4、區塊不斷開、放不下自動換頁） */
-.print-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 0;}
-.print-btn{background:#0f62fe;color:#fff;border:0;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-.print-btn:hover{background:#0b4fd1;}
-.print-hint{font-size:12px;color:var(--muted);}
-.print-only{display:none;}
-@page{size:A4;margin:12mm;}
-@media print{
-  :root,:root[data-theme="dark"]{--bg:#FFFFFF;--surface:#FFFFFF;--ink:#1B2327;--muted:#5D6B70;--pos:#0B8A78;--neg:#C24B40;--line:#DFE5E3;--chip:#E9EEEC;--warn-bg:#F7F1E4;}
-  html,body{background:#fff !important;}
-  body{padding:0 !important;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .wrap{max-width:none;}
-  .print-bar,#tip{display:none !important;}
-  .print-only{display:block !important;margin:0 0 8px;font-size:11px;color:#555;}
-  header{padding-block:0 4px;}
-  .tile,.risk,.chart-box,.kv div,table,tr,svg,h2,li,.tbl-scroll{break-inside:avoid;page-break-inside:avoid;}
-  h1,h2,h3{break-after:avoid;page-break-after:avoid;}
-  h2{margin-top:22px;}
-  .tbl-scroll{overflow:visible !important;}
-  .tiles{grid-template-columns:repeat(4,1fr) !important;}
-  svg{max-width:100%;height:auto;}
-  a{color:inherit;text-decoration:none;}
-}
-footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted);}
-</style>
-<div class="wrap">
-<header>
-  <div class="eyebrow">Strategy Fact Sheet · 2026-10-08 更新</div>
-  <h1>智能諸葛亮 · 八陣圖</h1>
-  <p class="sub">系統化趨勢跟隨策略 · 全機械化執行 · 多空雙向</p>
-  <div class="chips">
+</style></head>
+<body><div class='container'>
+<div class='nav'><div class='brand'><div class='brand-logo'><svg viewBox='0 0 64 64' role='img' aria-label='智能諸葛亮' focusable='false'>
+  <defs>
+    <linearGradient id='zgBadge' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#6aa9ff'/><stop offset='46%' stop-color='#0f62fe'/>
+      <stop offset='100%' stop-color='#0aa06e'/>
+    </linearGradient>
+    <linearGradient id='zgVisor' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#17356f'/><stop offset='100%' stop-color='#0b1f45'/>
+    </linearGradient>
+    <linearGradient id='zgSpark' x1='0' y1='1' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#ffd166'/><stop offset='100%' stop-color='#ff8c1a'/>
+    </linearGradient>
+  </defs>
+  <rect x='2' y='2' width='60' height='60' rx='18' fill='url(#zgBadge)'/>
+  <rect x='2' y='2' width='60' height='60' rx='18' fill='none' stroke='#ffffff' stroke-opacity='.22' stroke-width='1.5'/>
+  <path d='M32 16.5v-4' stroke='#ffffff' stroke-width='2.6' stroke-linecap='round'/>
+  <circle cx='32' cy='9.5' r='4.6' fill='#ffffff' fill-opacity='.28'/>
+  <circle cx='32' cy='9.5' r='3' fill='url(#zgSpark)'/>
+  <path d='M22 48h20a7 7 0 0 1 7 7v3H15v-3a7 7 0 0 1 7-7z' fill='#ffffff' fill-opacity='.72'/>
+  <rect x='8.5' y='26' width='5.5' height='11' rx='2.75' fill='#ffffff' fill-opacity='.8'/>
+  <rect x='50' y='26' width='5.5' height='11' rx='2.75' fill='#ffffff' fill-opacity='.8'/>
+  <rect x='13' y='16' width='38' height='33' rx='13' fill='#ffffff'/>
+  <rect x='18.5' y='21.5' width='27' height='18' rx='9' fill='url(#zgVisor)'/>
+  <circle cx='26.5' cy='28.8' r='3.5' fill='#8fe3ff'/><circle cx='25.4' cy='27.6' r='1.25' fill='#ffffff'/>
+  <circle cx='37.5' cy='28.8' r='3.5' fill='#8fe3ff'/><circle cx='36.4' cy='27.6' r='1.25' fill='#ffffff'/>
+  <path d='M27.6 34.4q4.4 3.4 8.8 0' fill='none' stroke='#8fe3ff' stroke-width='2.1' stroke-linecap='round'/>
+  <circle cx='16.6' cy='34.5' r='2.1' fill='#ff8c1a' fill-opacity='.5'/>
+  <circle cx='47.4' cy='34.5' r='2.1' fill='#ff8c1a' fill-opacity='.5'/>
+  <circle cx='24.6' cy='55' r='1.9' fill='#0aa06e' fill-opacity='.75'/>
+  <path d='M29.6 55h12' stroke='#0f62fe' stroke-opacity='.32' stroke-width='2.4' stroke-linecap='round'/>
+</svg></div><h1 class='page-title'>📘 智能諸葛亮 · 八陣圖策略書</h1></div><span class='nav-date'>Strategy Fact Sheet · 2026-10-08 更新</span></div>
+<div class="print-bar"><button class="print-btn" type="button" onclick="window.print()">🖨️ 列印成 PDF</button><span class="print-hint">撳完喺列印視窗「目的地」揀「另存為 PDF」；內容放唔落一頁會自動去下一頁，區塊唔會斷開。</span></div>
+  <div class="print-only">八陣圖策略書　列印時間（香港）：<span id="print-time"></span></div>
+<script>(function(){function t(){var e=document.getElementById("print-time");if(e)e.textContent=new Date().toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",hour12:false})+" HKT";}window.addEventListener("beforeprint",t);})();</script>
+<div class='section'><p class='lead'>系統化趨勢跟隨策略 · 全機械化執行 · 多空雙向</p><div class='chips'>
     <span class="chip">主商品 <b>恒指期貨 HSI1!</b></span>
     <span class="chip">驗證區間 <b>2018-03 → 2026-09（8.5 年）</b></span>
     <span class="chip">狀態 <b>模擬盤驗證期</b></span>
     <span class="chip">定性 <b>有希望・未證實（t = 1.58）</b></span>
-  </div>
-  <div class="print-bar"><button class="print-btn" type="button" onclick="window.print()">🖨️ 列印成 PDF</button><span class="print-hint">撳完喺列印視窗「目的地」揀「另存為 PDF」；內容放唔落一頁會自動去下一頁，區塊唔會斷開。</span></div>
-  <div class="print-only">八陣圖策略書　列印時間（香港）：<span id="print-time"></span></div>
-<script>(function(){function t(){var e=document.getElementById("print-time");if(e)e.textContent=new Date().toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",hour12:false})+" HKT";}window.addEventListener("beforeprint",t);})();</script>
-</header>
+  </div></div>
 
-<h2>核心指標（HSI1!，本金 150 萬 HKD，固定 1 張大恒指）</h2>
-<div class="tiles">
-  <div class="tile"><div class="v pos">+75.5%</div><div class="k">總報酬（8.5 年，淨額 +1,132,860 HKD）</div></div>
-  <div class="tile"><div class="v">≈ 6.9%</div><div class="k">年化報酬</div></div>
-  <div class="tile"><div class="v neg">23.75%</div><div class="k">最大回撤（543,732 HKD）</div></div>
-  <div class="tile"><div class="v">1.26</div><div class="k">獲利因子</div></div>
-  <div class="tile"><div class="v pos">+2,997</div><div class="k">期望值／筆（HKD／張）</div></div>
-  <div class="tile"><div class="v">39.5%</div><div class="k">勝率（378 筆，約 44 筆／年）</div></div>
-  <div class="tile"><div class="v">1.93 : 1</div><div class="k">盈虧比 RR（平均獲利 ÷ 平均虧損）</div></div>
-  <div class="tile"><div class="v">1.58</div><div class="k">t 值（有希望・未證實，門檻 2.0）</div></div>
-  <div class="tile"><div class="v">0.002</div><div class="k">與恒指相關係數（同期恒指 −23.2%）</div></div>
-  <div class="tile"><div class="v">0</div><div class="k">Margin call 次數（槓桿 10 倍模擬下）</div></div>
-  <div class="tile"><div class="v neg">11 筆</div><div class="k">最長連虧（−251,305 HKD）</div></div>
-  <div class="tile"><div class="v">92%</div><div class="k">水下時間（權益低於前高的時間佔比）</div></div>
-  <div class="tile"><div class="v pos">+210,545</div><div class="k">最大單筆獲利（HKD）</div></div>
-  <div class="tile"><div class="v neg">−49,155</div><div class="k">最大單筆虧損（HKD）</div></div>
+
+<div class='section'><h2>核心指標（HSI1!，本金 150 萬 HKD，固定 1 張大恒指）</h2>
+<div class="grid">
+  <div class="card"><div class="card-title">總報酬（8.5 年，淨額 +1,132,860 HKD）</div><div class="card-value pos">+75.5%</div></div>
+  <div class="card"><div class="card-title">年化報酬</div><div class="card-value ">≈ 6.9%</div></div>
+  <div class="card"><div class="card-title">最大回撤（543,732 HKD）</div><div class="card-value neg">23.75%</div></div>
+  <div class="card"><div class="card-title">獲利因子</div><div class="card-value ">1.26</div></div>
+  <div class="card"><div class="card-title">期望值／筆（HKD／張）</div><div class="card-value pos">+2,997</div></div>
+  <div class="card"><div class="card-title">勝率（378 筆，約 44 筆／年）</div><div class="card-value ">39.5%</div></div>
+  <div class="card"><div class="card-title">盈虧比 RR（平均獲利 ÷ 平均虧損）</div><div class="card-value ">1.93 : 1</div></div>
+  <div class="card"><div class="card-title">t 值（有希望・未證實，門檻 2.0）</div><div class="card-value ">1.58</div></div>
+  <div class="card"><div class="card-title">與恒指相關係數（同期恒指 −23.2%）</div><div class="card-value ">0.002</div></div>
+  <div class="card"><div class="card-title">Margin call 次數（槓桿 10 倍模擬下）</div><div class="card-value ">0</div></div>
+  <div class="card"><div class="card-title">最長連虧（−251,305 HKD）</div><div class="card-value neg">11 筆</div></div>
+  <div class="card"><div class="card-title">水下時間（權益低於前高的時間佔比）</div><div class="card-value ">92%</div></div>
+  <div class="card"><div class="card-title">最大單筆獲利（HKD）</div><div class="card-value pos">+210,545</div></div>
+  <div class="card"><div class="card-title">最大單筆虧損（HKD）</div><div class="card-value neg">−49,155</div></div>
 </div>
-<p class="note">成本假設：佣金 HKD 55／邊、滑點 1 tick、保證金 10%；TradingView 深度回測，逐筆清單經獨立引擎複核。</p>
-
-<h2>期望值與盈虧比拆解（每張・每筆）</h2>
+<p class="note">成本假設：佣金 HKD 55／邊、滑點 1 tick、保證金 10%；TradingView 深度回測，逐筆清單經獨立引擎複核。</p></div>
+<div class='section'><h2>期望值與盈虧比拆解（每張・每筆）</h2>
 <div class="tbl-scroll"><table>
   <tr><th>組成</th><th>數值</th><th>說明</th></tr>
   <tr><td>勝率</td><td class="num">39.5%</td><td class="note" style="text-align:right">378 筆中 149 筆獲利</td></tr>
@@ -127,16 +164,15 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
   <tr><td>年均淨利（期望）</td><td class="pos num"><b>≈ +132,000 HKD／張</b></td><td class="note" style="text-align:right">對本金 150 萬 ≈ 8.8%／年（單利）；複利年化 6.9%</td></tr>
 </table></div>
 <p class="note">解讀：這是典型趨勢跟隨的期望值結構——勝率不足四成，靠 1.93 倍的盈虧比把期望值做正。
-代價寫在風險揭露：六成交易是虧的、連虧 11 筆是歷史常態，期望值以「年」為單位兌現。任何一筆的結果無意義，只有全部執行才有期望值。</p>
-
-<h2>資金效率：承諾資金與帳戶資金分開（2026-10-08 起）</h2>
+代價寫在風險揭露：六成交易是虧的、連虧 11 筆是歷史常態，期望值以「年」為單位兌現。任何一筆的結果無意義，只有全部執行才有期望值。</p></div>
+<div class='section'><h2>資金效率：承諾資金與帳戶資金分開（2026-10-08 起）</h2>
 <p class="note" style="margin-top:0">張數仍按承諾資金計算（每 150 萬配 1 張），<b>風險與上表完全相同</b>；改變的只是資金存放位置——
 券商帳戶只放保證金與緩衝，其餘留在投資人手上的場外儲備，觸及補倉線才撥入。</p>
-<div class="tiles">
-  <div class="tile"><div class="v">150 萬</div><div class="k">承諾資金（計算張數的基數）</div></div>
-  <div class="tile"><div class="v">30 萬</div><div class="k">券商帳戶資金（每張）</div></div>
-  <div class="tile"><div class="v">120 萬</div><div class="k">場外儲備（T+1 可動用現金）</div></div>
-  <div class="tile"><div class="v pos">≈ 44%</div><div class="k">帳戶資金年回報（效率指標）</div></div>
+<div class="grid">
+  <div class="card"><div class="card-title">承諾資金（計算張數的基數）</div><div class="card-value ">150 萬</div></div>
+  <div class="card"><div class="card-title">券商帳戶資金（每張）</div><div class="card-value ">30 萬</div></div>
+  <div class="card"><div class="card-title">場外儲備（T+1 可動用現金）</div><div class="card-value ">120 萬</div></div>
+  <div class="card"><div class="card-title">帳戶資金年回報（效率指標）</div><div class="card-value pos">≈ 44%</div></div>
 </div>
 <div class="tbl-scroll"><table style="margin-top:14px">
   <tr><th>口徑（8.5 年回測，每張）</th><th>年均淨利</th><th>分母</th><th>年回報</th></tr>
@@ -157,15 +193,14 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
   <p>44% 只是把同一筆淨利除以較小的分母；承諾資金的 120 萬仍然承擔全部風險，最深回撤時須如期補入。
   <b>補倉必須準時到帳</b>：若被券商強制平倉而漏掉趨勢大單（前 10 筆貢獻總利潤 129%），策略期望值會被摧毀——這是本安排唯一新增的風險，
   因此儲備只可存放隨時可動用的現金，不可投入股票等會同時下跌的資產。</p>
-</div>
-
-<h2>策略概要</h2>
+</div></div>
+<div class='section'><h2>策略概要</h2>
 <ul>
   <li><b>類型</b>：系統化趨勢跟隨，多空雙向；訊號每日更新一次，年均約 44 筆，平均持倉約 8 個交易日。</li>
   <li><b>執行</b>：規則完全機械化，訂單由預設條件單自動觸發，無任何主觀判斷；具體訊號邏輯為專有資訊，不對外披露。</li>
   <li><b>資金管理</b>：雪球制——每 150 萬承諾資金配 1 張，月底核算；淨值翻倍前不加碼，永不中途加減倉。券商帳戶只放每張 30 萬，其餘為場外儲備（見上節）。</li>
-</ul>
-<h2>按年表現</h2>
+</ul></div>
+<div class='section print-flow'><h2>按年表現</h2>
 <div class="chart-box">
   <p class="chart-title">年度淨損益（萬 HKD／張，按平倉年歸屬）</p>
   <svg id="ychart" viewBox="0 0 720 260" width="100%" role="img" aria-label="2018 至 2026 年度淨損益長條圖"></svg>
@@ -182,9 +217,8 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
   <tr><td>2025</td><td class="pos num">+268,785</td><td class="num">43</td><td class="num">42%</td></tr>
   <tr><td>2026（至 9 月）</td><td class="pos num">+10,890</td><td class="num">32</td><td class="num">41%</td></tr>
 </table></div>
-<p class="note">9 個年份 7 正 2 負；最差年份回吐本金 7.6%。同期恒指買入持有為 <span class="neg">−23.2%</span>，策略超額 +97.3 個百分點、相關係數 0.002——報酬來源與大盤漲跌無關。</p>
-
-<h2>交易結構</h2>
+<p class="note">9 個年份 7 正 2 負；最差年份回吐本金 7.6%。同期恒指買入持有為 <span class="neg">−23.2%</span>，策略超額 +97.3 個百分點、相關係數 0.002——報酬來源與大盤漲跌無關。</p></div>
+<div class='section'><h2>交易結構</h2>
 <div class="kv">
   <div><span>平均獲利／平均虧損</span><span class="num">36,192 ／ 18,777（1.93 : 1）</span></div>
   <div><span>最大單筆獲利／虧損</span><span class="num">+210,545 ／ −49,155</span></div>
@@ -192,9 +226,8 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
   <div><span>手續費佔毛利</span><span class="num">0.39%</span></div>
   <div><span>平均持倉</span><span class="num">約 8 個交易日</span></div>
   <div><span>參數穩健性</span><span class="num">相鄰參數區間全域為正，現行參數非孤立最優點</span></div>
-</div>
-
-<h2>風險揭露（與績效同等重要）</h2>
+</div></div>
+<div class='section print-flow'><h2>風險揭露（與績效同等重要）</h2>
 <div class="risk">
   <h3>統計顯著性不足</h3>
   <p>378 筆的 t 值為 <b>1.58</b>，未達 95% 顯著水準。正式定性為「有希望、未證實」——目前數據無法排除結果出於運氣的可能。此為本策略仍處模擬盤驗證期、未接受外部資金的原因。</p>
@@ -214,9 +247,8 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
 <div class="risk">
   <h3>回測非未來保證</h3>
   <p>全部數字基於歷史數據與既定成本假設。市場結構改變（波動性格、流動性、費率）可使策略失效；本文件不構成投資建議。</p>
-</div>
-
-<h2>次要配置：黃金 XAUUSD（樣本較短，僅供參考）</h2>
+</div></div>
+<div class='section'><h2>次要配置：黃金 XAUUSD（樣本較短，僅供參考）</h2>
 <div class="kv">
   <div><span>驗證區間</span><span class="num">2022-08 → 2026-09（4.1 年，M1 逐根）</span></div>
   <div><span>總損益（1 oz）</span><span class="num pos">+2,659 USD（≈ 同期買入持有）</span></div>
@@ -224,22 +256,19 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
   <div><span>最大回撤</span><span class="num">3.6%（對比買入持有大一個量級的回撤）</span></div>
   <div><span>按年</span><span class="num">五年四正（−117 / +291 / +355 / +1,409 / +635）</span></div>
   <div><span>注意</span><span class="num">優勢集中於多頭側；獲利一半來自 2025 金價大多頭</span></div>
-</div>
-
-<h2>執行與治理</h2>
+</div></div>
+<div class='section'><h2>執行與治理</h2>
 <ul>
   <li><b>每日對帳</b>：持倉、掛單、成交逐日與策略核對並留痕（log 版本化保存）；任何偏離當日糾正並記錄為違規。</li>
   <li><b>驗證關卡</b>：模擬盤連續兩週 100% 無違規 + 滑價達標，方進入實盤；實盤先以最小單位（小恒指／微型金）運行。</li>
   <li><b>已測遍的替代方案</b>：多種出場模型與參數變體已系統性測試完畢，全部劣於現行配置；實驗記錄完整保存，參數凍結不再調整。</li>
-</ul>
-
+</ul></div>
 <footer>
   數據來源：HKEX HSI1! TradingView Deep Backtesting（2018-03-08 → 2026-09-21）逐筆交易清單，經自建回測引擎（MT5 M1 數據，2022-08 → 2026-09）獨立複核；兩者按年方向一致率 4/5。
   回測假設：本金 1,500,000 HKD、固定 1 張大恒指（HKD 50／點）、佣金 55／邊、滑點 1 tick、保證金 10%。
   本文件僅供指定收件人參考，不構成任何證券或期貨之要約、招攬或投資建議；過往表現不代表未來結果。
 </footer>
 </div>
-
 <script>
 (function(){
   var data = [
@@ -298,5 +327,4 @@ footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font
   svg.addEventListener('mouseleave', function(){ tip.hidden=true; });
 })();
 </script>
-
 </body></html>
