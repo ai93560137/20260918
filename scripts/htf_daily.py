@@ -9,6 +9,10 @@
   - 初始停損 = 成交價 ×（1 − 停損倍數 × ADR20）；入場當日收市後上移到當日最低；賣一半後移到成本（回測口徑）
   - 前向持倉（FWD_START 起入場）每天從頭重算狀態，不靠記憶狀態
 輸出 analysis/htf_daily/：<市場>_orders_<日期>.csv、<市場>_positions.csv、<市場>_closed.csv、<市場>_latest.json、tg_htf.txt、log.csv
+
+⚠️ 下游依賴（2026-10-12）：總指揮（分支 claude/beautiful-hypatia-8qrgjj，Cloud Run ?view=htf 與策略總表 htf_<市場> 四行，R165）
+直接讀這些檔：檔名規則（orders 帶日期）、欄位名、「（無）」空檔格式、latest.json 的 date／n_orders／n_open／n_closed／mkt_filter／mkt_ok／params。
+改任何格式前先用 send_message 通知總指揮 session_01N1jfpEJciBkfAgwtd4QxgU。
 """
 import argparse
 import csv
