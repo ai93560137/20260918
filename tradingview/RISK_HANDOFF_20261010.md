@@ -136,3 +136,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 數據：預設分支 `canary/` 四個檔（`CANARY_RAW_BASE` 可改）；記憶體快取 30 分鐘、GCS `canary/` 後備（canary_daily.csv 只存最後 40 列）；讀唔到就顯示上次成功版本同讀取時間；過香港 07:30 而最後報告日≠今日就黃字「今日金絲雀未更新」。
 - `tests/test_canary_page.py`（33 項，假抓取）＋ `tests/fixtures_canary/`（真實檔案節錄）。`canary/` 目錄、canary_daily.yml、canary_broadcast.yml 由金絲雀工作階段負責，本改動冇碰。
 - 同批：風揚陣導覽改名（風揚陣恆指波幅／風揚陣ES 波幅；NQ 頁待 epic-ramanujan 合併後同樣改名）、ES／NQ 頁配色同恒指分開（`FY_THEMES`）。
+
+## 2026-10-12 R161：錦囊九十筆頁加「🖨️ 列印成 PDF」
+- 靜態 `jinnang_tracker.html`（`?view=jinnang_tracker`）加按鈕＋列印樣式（A4、導覽列／按鈕／編輯面板隱藏、輪次格同區塊唔斷開、放唔落就換頁、列印一律淺色、頁頂列印時間香港時間）；唔改 main.py、唔動 localStorage／資料邏輯。`test_risk_gate` 加檢查。
