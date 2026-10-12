@@ -365,6 +365,12 @@ for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html
           f'class="nav-link nav-current" aria-current="page">✅ {cur}<' in txt
           or f'class="nav-link nav-current" aria-current="page">🗒️ {cur}<' in txt)
     check(f"{f} 沒有連到自己", f'href="?view={f[:-5]}"' not in txt)
+    # [R169] 頁首：品牌標誌＋頁面標題（與 main.py 其餘頁面一致），列印時隱藏
+    check(f"{f} 有品牌頁首", '<div class="brand-head"><div class="brand-logo"><svg' in txt
+          and f'<h1 class="page-title">' in txt and f"{cur}</h1>" in txt)
+    check(f"{f} 頁首喺導覽列之前", txt.index('class="brand-head"') < txt.index('<nav class="nav-links"'))
+    check(f"{f} 列印時隱藏頁首", ".brand-head" in txt.split("@media print", 1)[1].split("}", 3)[0] or "brand-head{display:none" in txt
+          or ",.brand-head," in txt or ", .brand-head{" in txt)
 # 兩頁實際 serve 出來要含全部連結
 # [R91] 站外連結是完整網址，不會長成 ?view=...，所以兩種要分開比。
 def _linked(html, view):
