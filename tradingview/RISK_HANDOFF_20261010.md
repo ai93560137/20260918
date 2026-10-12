@@ -139,3 +139,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R161：錦囊九十筆頁加「🖨️ 列印成 PDF」
 - 靜態 `jinnang_tracker.html`（`?view=jinnang_tracker`）加按鈕＋列印樣式（A4、導覽列／按鈕／編輯面板隱藏、輪次格同區塊唔斷開、放唔落就換頁、列印一律淺色、頁頂列印時間香港時間）；唔改 main.py、唔動 localStorage／資料邏輯。`test_risk_gate` 加檢查。
+
+## 2026-10-12 R162：策略總表加「🖨️ 列印成 PDF」
+- `?view=strategies` 加按鈕＋列印樣式；總表同「💼 富途實倉」兩個長區塊容許跨頁（`.print-flow`），一個陣嘅標題＋表格作一塊（`.print-keep`）、表格列唔斷；自動重載改 JS（列印中唔重載）。

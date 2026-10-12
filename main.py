@@ -104,6 +104,7 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-12 — [R162] 🧭 策略總表（?view=strategies）加「🖨️ 列印成 PDF」按鈕（PRINT_CSS／print_toolbar_html）；自動重載由 meta refresh 改 JS（列印中唔重載）。
 #   * 2026-10-12 — [R160] 🐤 金絲雀頁（?view=canary，&format=json）：只顯示金絲雀工作流產出（預設分支 canary/ 四個檔，CANARY_RAW_BASE 可改），
 #     記憶體快取 30 分鐘、GCS canary/ 後備；頂部日期卡、三軸、黃鳥、試用層／W1（無警報權）、最近 30 日表、T−1 回驗原文、發送紀錄、全文；
 #     過香港 07:30 仍未更新就黃字提示。唔重算燈色、唔入電閘、唔影響下單。
@@ -6978,7 +6979,7 @@ def build_strategies_page(data):
                 + (f"（{esc(str(since)[5:16])}）" if since else "") + "</div></td>"
                 f"<td style='font-size:12px'>{esc(r['style'])}</td><td style='font-size:12px'>{esc(r['hold'])}</td>"
                 f"<td style='font-size:12px'>{esc(r['notify'])}</td></tr>")
-    table = (f"<div class='section'><div class='scroll'><table><tr><th>策略</th><th>類別</th><th>商品</th><th>現時持倉</th>"
+    table = (f"<div class='section print-flow'><div class='scroll'><table class='print-flow'><tr><th>策略</th><th>類別</th><th>商品</th><th>現時持倉</th>"
              f"<th>方向風格</th><th>持倉時間</th><th>通知</th></tr>{trs}</table></div>"
              f"<p class='muted' style='font-size:12px'>更新 {esc(data['updated_utc'])} UTC・JSON：<a href='?view=strategies&amp;format=json'>?view=strategies&amp;format=json</a></p></div>")
     real = build_futu_real_section(data.get("futu_real"))
@@ -6987,7 +6988,9 @@ def build_strategies_page(data):
              "<li>蛇蟠陣（順勢）與地載陣（逆市）在大升大跌日方向經常相反；地載陣落實盤時，請用另一個戶口或子戶口。</li>"
              "<li>地載陣幾組條件相近、經常同日同向，只是互相對照；實盤只選一組（建議地載・衡）。</li>"
              "<li>雲垂陣（賣期權）、風揚陣・方向一（週權勒式）嘅富途實倉見上面「💼 富途實倉（按陣）」。</li></ul></div>")
-    return html_page("策略總表", head + cards + conflict + real + table + notes, head_extra="<meta http-equiv='refresh' content='60'>")
+    # [R162] 🖨️ 列印成 PDF（PRINT_CSS）；唔用 meta refresh（列印視窗開住會重載）→ 改 JS，列印中唔重載
+    return html_page("策略總表", head + print_toolbar_html("🧭 策略總表") + cards + conflict + real + table + notes,
+                     head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,60000)}else{location.reload()}},60000)</script>")
 
 
 def futu_quote_time_hkt(code, qt, has_px):
@@ -7026,7 +7029,7 @@ def build_futu_real_section(fr):
              else "週末休市，星期一 06:00 起恢復更新" if fr.get("weekend")
              else f"{age} 分鐘前" if age is not None else "")
     acc = "".join(f"<div>{esc(a)}</div>" for a in fr.get("account_alerts") or [])
-    out = (f"<div class='section'><b>💼 富途實倉（按陣）</b>"
+    out = (f"<div class='section print-flow'><b>💼 富途實倉（按陣）</b>"
            f"<p class='muted' style='font-size:12px'>富途期貨戶口實際持倉，每 15 分鐘更新；更新 {esc(fr.get('run_hkt') or '—')} HKT（{fresh}）。"
            "價格只作監控，冇行情權限嘅美國期權用富途持倉估值。由總指揮按規則配對去各陣。</p>"
            + (f"<div style='border-left:5px solid #dc3545; padding-left:8px; margin:6px 0'>{acc}</div>" if acc else ""))
@@ -7040,7 +7043,7 @@ def build_futu_real_section(fr):
             f"<td class='{'pos' if (r['futu_pl'] or 0) >= 0 else 'neg'}'>{f(r['futu_pl'], 0)} {r['ccy']}</td>"
             f"<td style='font-size:11px'>{futu_quote_time_hkt(r['code'], r['quote_time'], any(r.get(k) for k in ('bid', 'ask', 'last')))}</td></tr>"
             for r in t["rows"])
-        out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
+        out += (f"<div class='print-keep' style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
                 + (f" <a href='{esc(t['link'])}' style='font-size:12px'>→ 詳細頁</a>" if t.get("link") else "")
                 + f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
                 + (f"；{stops}" if stops else "") + f"</span>{alerts}" + futu_delta_budget_html(t.get("delta"))
@@ -9001,6 +9004,8 @@ PRINT_CSS = """<style>
   td, th { white-space:normal !important; }
   svg { max-width:100%; height:auto; }
   a { color:inherit; text-decoration:none; }
+  .print-keep { break-inside:avoid; page-break-inside:avoid; }   /* 一個陣嘅標題＋表格作一塊，標題唔孤立 */
+  .print-flow { break-inside:auto !important; page-break-inside:auto !important; }   /* 好長嘅區塊（例：策略總表）：區塊內可跨頁，但表格列、小標題仍然唔斷 */
 }
 </style>"""
 
