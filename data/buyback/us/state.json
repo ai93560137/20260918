@@ -1741,22 +1741,22 @@
    "with_time": 81
   },
   "2026-09": {
-   "fetched": "2026-10-09",
+   "fetched": "2026-10-12",
    "filings": 146,
    "new": 29,
    "with_time": 29
   },
   "2026-10": {
-   "fetched": "2026-10-09",
-   "filings": 37,
-   "new": 9,
-   "with_time": 9
+   "fetched": "2026-10-12",
+   "filings": 29,
+   "new": 6,
+   "with_time": 6
   }
  },
  "summary": {
   "months_done": 250,
   "months_total": 250,
-  "new_events": 16533
+  "new_events": 16530
  },
  "version": 4
 }
