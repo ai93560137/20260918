@@ -358,7 +358,7 @@ check("指令台是站內連結", "href='?view=bazhentu'" in nav, nav[:400])
 check("沒有把網址接在 ?view= 後面", "?view=https" not in nav, nav[:400])
 check("站內連結照舊", "href='?view=jinnang_tracker'" in nav, nav[:400])
 nav_bz = main.page_nav("bazhentu")
-check("指令台頁自己那格標成 nav-current", "nav-current'>⚔️ 八陣圖指令台" in nav_bz, nav_bz[:400])
+check("指令台頁自己那格標成 nav-current", "nav-current'>🐍 蛇蟠陣" in nav_bz, nav_bz[:400])
 for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html", "錦囊九十筆")):
     txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
     check(f"{f} 自己那格標成 current",
