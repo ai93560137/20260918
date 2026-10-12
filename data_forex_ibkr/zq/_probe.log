@@ -1,2 +1,32 @@
 Error 326, reqId -1: Unable to connect as the client id is already in use. Retry with a unique client id.
 Peer closed connection. clientId 43 already in use?
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
+Error 200, reqId 3: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202501', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202501', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 4: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202502', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202502', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 5: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202503', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202503', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 6: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202504', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202504', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 7: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202505', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202505', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 8: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202506', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202506', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 9: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202507', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202507', exchange='CBOT', currency='USD', includeExpired=True)
+Error 200, reqId 10: No security definition has been found for the request, contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202508', exchange='CBOT', currency='USD', includeExpired=True)
+Unknown contract: Future(symbol='ZQ', lastTradeDateOrContractMonth='202508', exchange='CBOT', currency='USD', includeExpired=True)
+  202501: qualify 失敗（IB 不再認得）
+  202502: qualify 失敗（IB 不再認得）
+  202503: qualify 失敗（IB 不再認得）
+  202504: qualify 失敗（IB 不再認得）
+  202505: qualify 失敗（IB 不再認得）
+  202506: qualify 失敗（IB 不再認得）
+  202507: qualify 失敗（IB 不再認得）
+  202508: qualify 失敗（IB 不再認得）
+IB 認得 0 個 ZQ 合約：- → -
+連續合約 ContFuture: 1490 根 2020-12-01 → 2026-10-12（回溯調整價，只看深度）
