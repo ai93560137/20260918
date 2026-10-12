@@ -48,7 +48,7 @@ SERIES = {
 INFO_SERIES = {
     "10y": [f"IRLTLT01{k}M156N" for k in ["US", "EZ", "GB", "JP", "CH", "AU", "NZ", "CA", "MX", "ZA", "TR", "PL", "HU", "CZ",
                                           "SE", "NO", "DK", "IL", "KR", "IN", "BR", "CN"]],
-    "us_daily": ["DGS2", "DGS10", "DGS1", "DFF"],
+    "us_daily": ["DGS2", "DGS10", "DGS1", "DFF", "DFEDTAR", "DFEDTARU", "DFEDTARL"],
     "vol": ["VIXCLS", "EVZCLS", "VXEEMCLS", "OVXCLS"],
 }
 # 貨幣 → BIS 實質有效匯率（寬口徑 broad 61 國、窄口徑 narrow 27 國）；歐元用歐元區 XM
