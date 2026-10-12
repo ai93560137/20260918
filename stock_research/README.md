@@ -23,6 +23,8 @@
 | `ETF_TIMING_BACKTEST.md` | ETF 擇時：VCP 突破日後持有 ETF 一季 vs 純 MA 過濾 vs 隨機日，9 國預先登記與結果：☠️（VCP 日對 ETF 無擇時資訊；MA 日頻過濾扣成本跑輸持有） |
 | `TT_MOMENTUM_BACKTEST.md` | 趨勢模板動量組合（月底選 20 檔、大市過濾、等權持一月）9 國登記與結果：第一輪 20 檔排序：只是動量 beta（合併 3.13、相對等權 1.85）、排序有害；**第二輪全部等權：🔍（合併 4.59、相對等權 3.21、十條全過）**；含數據斷點規則與基準 ETF 修正 |
 | `TT_ALL_MONTHLY_RUNBOOK.md` | 月底操作手冊：更新數據 → 出名單 → 檢查 → 發布網頁 → Telegram → 下單 → 記錄成交 → 每月覆核與證偽 |
+| `HTF_INVESTOR_BRIEF.pdf` / `.md` | HTF 全期參數 投資人說明書（3 頁）：年化、RRR、最大回撤；回測口徑 vs 可執行口徑（每筆 20% × 波幅權重、港台日共用資金：年化 +40.7%、回撤 −21%）；規則、每日執行、風險、證偽條件 |
+| （HTF 每日訊號） | 港台日全期參數每日掛單與持倉指令：`scripts/htf_daily.py`、數據 `scripts/htf_update_data.py`、工作流 `.github/workflows/htf_daily.yml`（push `analysis/htf_daily/run_request.txt` 觸發）；輸出 `analysis/htf_daily/`；前向紀錄由 2026-10-13 入場算起 |
 | `HTF_CURVEFIT.md` | HTF 曲線擬合版（使用者 2026-10-11 指示）：14 參數搜尋、樣本內港 3.58／台 3.35／日 2.57／美 1.48、共用組合併 3.45；全期參數規格表；程式 `htf_curvefit.py`、結果 `research/htf_curvefit/` |
 | `IBKR_DATA_REQUEST.md` | 給雲垂分支（GCP VM + IB Gateway）的數據需求：用 `scripts/ib_stock_verify.py` 抓月底名單的訊號日收市與下一交易日開市，回傳 `data_stock_ibkr/`；鳥翔分支跑 `tt_all_verify.py --ibkr` 當第三把尺。首次結果：美澳港新台主板可比，加日無權限（第 7 節）；第 8 節定案不買訂閱，加拿大改用多倫多交易所網站當免費第二來源 |
 | （烽燧響應登記） | 鳥翔對金絲雀燈色的預先登記：紅／深紅／黃皆不行動，只記錄（`scripts/tt_all_beacon.py` → `analysis/tt_all/beacon_log.csv`）；登記日 2026-09-26；全文在 RESEARCH_HANDBOOK.md §五 鳥翔段與 TT_ALL_MONTHLY_RUNBOOK.md 第 3d 步 |
