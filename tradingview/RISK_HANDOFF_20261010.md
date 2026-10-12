@@ -169,3 +169,4 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 使用者要求兩頁加上同「核心控制台」一樣嘅頁首（品牌標誌＋頁面標題）。`jinnang_sheet.html`／`jinnang_tracker.html`
   喺導覽列前加 `.brand-head`（logo SVG＋`<h1 class="page-title">`），CSS 同 BASE_CSS 嘅 `.brand/.brand-logo/.page-title` 一致；
   列印時隱藏。未部署。
+- 2026-10-12 部署：R169 → 修訂 `zhuge-risk-manager-00292-txn`（來源 `f518d119f`），五頁 200，兩頁頁首線上確認。退回：`rollback --to zhuge-risk-manager-00291-vgl --yes`。
