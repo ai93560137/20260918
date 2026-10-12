@@ -17,7 +17,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "analysis" / "htf_daily"
-MKS = [("hk", "港股", "HKD"), ("tw", "台股", "TWD"), ("jp", "日股", "JPY")]
+MKS = [("hk", "港股", "HKD"), ("tw", "台股", "TWD"), ("jp", "日股", "JPY"), ("us", "美股", "USD")]
+FIT_T = {"hk": 3.58, "tw": 3.35, "jp": 2.57, "us": 1.48}   # 全期擬合 alpha t（research/htf_curvefit/<市場>.json）
 TRAIL = {"ma10": "10 日線", "ma20": "20 日線", "ma50": "50 日線"}
 NAMES_P = OUT / "names.json"
 
@@ -217,7 +218,7 @@ def section(mk: str, name: str, cur: str, names: dict) -> str:
   <div class="block"><h3>明日掛單（{len(orders)} 隻，按距離觸發價由近到遠）</h3>{t_orders}</div>
   <div class="block"><h3>持倉與明天動作（{len(pos)} 筆）</h3>{t_pos}</div>
   <div class="block"><h3>前向已平倉</h3>{t_closed}</div>
-  <p class="note">本市場參數：{spec}。</p>
+  <p class="note">本市場參數：{spec}。全期擬合 alpha t {FIT_T[mk]:.2f}{'（低於 1.5，相鄰參數全部不到 1.5，屬孤峰；使用者 2026-10-12 要求照樣加入）' if FIT_T[mk] < 1.5 else ''}。</p>
 </section>"""
 
 
@@ -241,7 +242,7 @@ def build() -> str:
 <style>{CSS}</style>
 <div class="wrap">
   <header>
-    <div class="eyebrow">High Tight Flag · 港台日 · 全期參數</div>
+    <div class="eyebrow">High Tight Flag · 港台日美 · 全期參數</div>
     <h1>HTF 每日掛單　{d}</h1>
     <p class="lede">每個交易日收市後更新。掛單用買入停損單：明天盤中升穿觸發價才成交，開市已高於上限就取消。下單後即設停損；持倉每天看「明天要做」。產生時間 {now}（香港時間）。</p>
     <div class="chips">{''.join(chips)}</div>
@@ -250,9 +251,9 @@ def build() -> str:
   <section class="rules">
     <h2>怎樣照做</h2>
     <ol>
-      <li>掛單：在觸發價掛買入停損單（stop order）。開市價已高於「開市高於此就取消」，當天不買。</li>
+      <li>掛單：在觸發價掛買入停損單（stop order）。開市價已高於「開市高於此就取消」，當天不買。美股名單在香港時間傍晚出，當晚美股開市執行。</li>
       <li>成交後即設停損：成交價 −（停損倍數 × ADR）；表內停損按「剛好在觸發價成交」計，實際以成交價重算。</li>
-      <li>資金：每筆 = 20% × 波幅權重（表內「資金」欄），三個市場合計曝險不超過 100%。</li>
+      <li>資金：每筆 = 20% × 波幅權重（表內「資金」欄），四個市場合計曝險不超過 100%。</li>
       <li>持倉照「明天要做」：持有、收市賣一半（之後停損移到成本）、或翌日開市全數賣出。</li>
       <li>在富途開實倉前，先在預設分支 POSITIONS.md 登記並通知總指揮。</li>
     </ol>

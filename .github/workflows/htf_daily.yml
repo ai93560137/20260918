@@ -1,4 +1,4 @@
-name: HTF daily（港台日 全期參數 每日訊號）
+name: HTF daily（港台日美 全期參數 每日訊號）
 
 # 本分支獨立跑（非預設分支不能排程／手動觸發，所以用 push 觸發）：
 # 往 analysis/htf_daily/run_request.txt 追加一行並 push 即跑（每個交易日收市後由 Claude 排程推一次）。
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   daily:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 200
     env:
       TZ: Asia/Hong_Kong
       GH_TOKEN: ${{ github.token }}
@@ -37,20 +37,20 @@ jobs:
           restore-keys: htfdata-v1-
       - name: Restore from Release if cache empty
         run: |
-          for M in hk jp; do
+          for M in hk jp us; do
             [ "$(ls data_full/$M/*.csv.gz 2>/dev/null | wc -l)" -gt 0 ] || { gh release download fullmarket-data -p "$M.tar" -D /tmp && tar -xf /tmp/$M.tar; }
           done
           [ "$(ls data_full/tw/*.csv.gz 2>/dev/null | wc -l)" -gt 0 ] || { gh release download oos-data -p "tw.tar" -D /tmp && tar -xf /tmp/tw.tar; }
-          for M in hk jp tw; do echo "$M：$(ls data_full/$M/*.csv.gz | wc -l) 檔"; done
+          for M in hk jp tw us; do echo "$M：$(ls data_full/$M/*.csv.gz | wc -l) 檔"; done
       - name: Latest pools and HK/JP benchmark series from gifted-carson
         run: |
           git fetch -q origin claude/gifted-carson-v2tvhw
-          git checkout origin/claude/gifted-carson-v2tvhw -- universes/full/hk_pool.txt universes/full/jp_pool.txt universes/full/tw_pool.txt \
-            data/equities/hk/2800.HK data/equities/hk/_HSI data/equities/jp/1321.T data/equities/jp/_N225
+          git checkout origin/claude/gifted-carson-v2tvhw -- universes/full/hk_pool.txt universes/full/jp_pool.txt universes/full/tw_pool.txt universes/full/us_pool.txt \
+            data/equities/hk/2800.HK data/equities/hk/_HSI data/equities/jp/1321.T data/equities/jp/_N225 data/equities/us/SPY data/equities/us/_GSPC
           git reset -q
       - name: Incremental update
         run: |
-          for M in hk tw jp; do python3 scripts/htf_update_data.py --market $M; done
+          for M in hk tw jp us; do python3 scripts/htf_update_data.py --market $M; done
       - name: Save data cache
         if: always()
         uses: actions/cache/save@v4
@@ -58,7 +58,7 @@ jobs:
           path: data_full
           key: htfdata-v1-${{ github.run_id }}
       - name: Signals
-        run: python3 scripts/htf_daily.py --market hk tw jp
+        run: python3 scripts/htf_daily.py --market hk tw jp us
       - name: Page and PDF
         run: |
           sudo apt-get install -y -qq fonts-noto-cjk > /dev/null 2>&1 || true

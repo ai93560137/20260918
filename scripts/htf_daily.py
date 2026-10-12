@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HTF 全期參數 每日訊號（港台日；參數 = research/htf_curvefit/<市場>.json 的全期最佳；使用者 2026-10-12 指示）。
+"""HTF 全期參數 每日訊號（港台日美；美股 2026-10-12 使用者要求加入；參數 = research/htf_curvefit/<市場>.json 的全期最佳；使用者 2026-10-12 指示）。
 
     python3 scripts/htf_daily.py --market hk tw jp            # 出明日買入觸發價 + 前向持倉出場指令 + Telegram 摘要
     python3 scripts/htf_daily.py --market hk --selftest 20    # 機制自檢：歷史 20 個交易日，「當日候選」必須涵蓋回測下一日的全部入場
@@ -28,7 +28,7 @@ import htf_curvefit as C  # noqa: E402
 OUT = ROOT / "analysis" / "htf_daily"
 FWD_START = date(2026, 10, 13)          # 前向紀錄由這天（含）之後入場的交易算起
 BASE = 0.20                              # 每筆基本資金比例（與 HTF_INVESTOR_BRIEF 主表一致）；風險倉位 × w
-NAME = {"hk": "港股", "tw": "台股", "jp": "日股"}
+NAME = {"hk": "港股", "tw": "台股", "jp": "日股", "us": "美股"}
 TRAIL_TXT = {"ma10": "10 日線", "ma20": "20 日線", "ma50": "50 日線"}
 
 
@@ -235,7 +235,7 @@ def tg(metas: list[dict]) -> str:
 
 def main() -> None:
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    a.add_argument("--market", nargs="+", default=["hk", "tw", "jp"], choices=list(NAME))
+    a.add_argument("--market", nargs="+", default=["hk", "tw", "jp", "us"], choices=list(NAME))
     a.add_argument("--selftest", type=int, default=0)
     args = a.parse_args()
     metas = []
