@@ -1,0 +1,52 @@
+## 檔案清單（2026-10-12 19:37:30 UTC）
+-rw-r--r-- 1 hengkychansinghing hengkychansinghing 52364 Oct  9 21:40 /home/hengkychansinghing/frd_sample/ZQ_5min_sample.csv
+-rw-r--r-- 1 hengkychansinghing hengkychansinghing 2207 Oct  9 21:40 /home/hengkychansinghing/frd_sample/_readme_documentation.txt
+-rw-r--r-- 1 hengkychansinghing hengkychansinghing 684 Oct  9 21:40 /home/hengkychansinghing/frd_sample/ZQ_1day_sample.csv
+-rw-r--r-- 1 hengkychansinghing hengkychansinghing 10635 Oct  9 21:40 /home/hengkychansinghing/frd_sample/ZQ_1hour_sample.csv
+-rw-r--r-- 1 hengkychansinghing hengkychansinghing 91073 Oct  9 21:40 /home/hengkychansinghing/frd_sample/ZQ_1min_sample.csv
+-rw-r--r-- 1 hengkychansinghing hengkychansinghing 18055 Oct  9 21:40 /home/hengkychansinghing/frd_sample/ZQ_30min_sample.csv
+
+## 每個檔的前 3 行與後 2 行
+=== /home/hengkychansinghing/frd_sample/ZQ_5min_sample.csv (982 行)
+timestamp,open,high,low,close,volume
+2026-09-24 01:35:00,96.105,96.105,96.105,96.105,9
+2026-09-24 03:55:00,96.1,96.1,96.1,96.1,101
+...
+2026-10-09 16:20:00,96.1175,96.1175,96.1175,96.1175,3
+2026-10-09 16:55:00,96.1175,96.1175,96.1175,96.1175,500
+=== /home/hengkychansinghing/frd_sample/_readme_documentation.txt (52 行)
+ZQ Futures Historical Dataset
+=================================== 
+
+...
+___________________________
+copyright FirstRateData.com=== /home/hengkychansinghing/frd_sample/ZQ_1day_sample.csv (13 行)
+timestamp,open,high,low,close,volume,open interest
+2026-09-24,96.105,96.105,96.1,96.105,55385,720037
+2026-09-25,96.1,96.11,96.1,96.11,63642,705210
+...
+2026-10-08,96.1175,96.1175,96.1125,96.115,196564,724750
+2026-10-09,96.1175,96.1175,96.115,96.115,19370,0
+=== /home/hengkychansinghing/frd_sample/ZQ_1hour_sample.csv (197 行)
+timestamp,open,high,low,close,volume
+2026-09-24 01:00:00,96.105,96.105,96.105,96.105,9
+2026-09-24 03:00:00,96.1,96.1,96.1,96.1,101
+...
+2026-10-09 15:00:00,96.1175,96.1175,96.115,96.1175,169
+2026-10-09 16:00:00,96.1175,96.1175,96.1175,96.1175,507
+=== /home/hengkychansinghing/frd_sample/ZQ_1min_sample.csv (1715 行)
+timestamp,open,high,low,close,volume
+2026-09-24 01:36:00,96.105,96.105,96.105,96.105,9
+2026-09-24 03:56:00,96.1,96.1,96.1,96.1,1
+...
+2026-10-09 16:58:00,96.1175,96.1175,96.1175,96.1175,5
+2026-10-09 16:59:00,96.1175,96.1175,96.1175,96.1175,495
+=== /home/hengkychansinghing/frd_sample/ZQ_30min_sample.csv (336 行)
+timestamp,open,high,low,close,volume
+2026-09-24 01:30:00,96.105,96.105,96.105,96.105,9
+2026-09-24 03:30:00,96.1,96.1,96.1,96.1,101
+...
+2026-10-09 16:00:00,96.1175,96.1175,96.1175,96.1175,7
+2026-10-09 16:30:00,96.1175,96.1175,96.1175,96.1175,500
+
+## 壓縮包內其他檔（說明檔等）
