@@ -163,3 +163,4 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 ## 2026-10-12 R168：首頁移除六個大按鈕
 - 使用者要求「6 個大按鈕已不合用」。`render_welcome_page` 不再輸出 `<div class='tiles'>`；導覽列已涵蓋全部 17 頁。
   `HUB_TILES`／`HUB_ICONS` 保留備用。與 R167 同在 PR #89，未部署；上線後退回目標 `zhuge-risk-manager-00290-lpq`。
+- 2026-10-12 部署：R167＋R168 → 修訂 `zhuge-risk-manager-00291-vgl`（來源 `ecdca4f04`），五頁 200。退回：`rollback --to zhuge-risk-manager-00290-lpq --yes`。
