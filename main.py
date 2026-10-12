@@ -6365,7 +6365,7 @@ def _sp(side, lots=1, detail="", since=None):
 
 
 # =============================================================================
-# [R158] ☁️ 雲垂陣頁（?view=yunchui；&format=json）：雲垂陣工作階段維護公開 JSON，本頁讀取＋疊上富途即時 Δ。
+# [R159] ☁️ 雲垂陣頁（?view=yunchui；&format=json）：雲垂陣工作階段維護公開 JSON，本頁讀取＋疊上富途即時 Δ。
 # 唔顯示權益、保證金、帳戶資料。只係資訊，唔落單。
 # =============================================================================
 YUNCHUI_URL = os.environ.get(
@@ -8639,7 +8639,7 @@ PAGE_LINKS = [
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
-    ("yunchui", "☁️ 雲垂陣"),                               # [R158] 賣跨式＋期貨 Δ 對沖（公開）
+    ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
@@ -10430,7 +10430,7 @@ def handle_get(req):
         return handle_strategies_get(req)
     if view == "dizai":                                          # [R137] 地載陣：今日策略＋前向測試（&format=json）
         return handle_dizai_get(req)
-    if view == "yunchui":                                        # [R158] ☁️ 雲垂陣（&format=json）
+    if view == "yunchui":                                        # [R159] ☁️ 雲垂陣（&format=json）
         return handle_yunchui_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
