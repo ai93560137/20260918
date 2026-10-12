@@ -7048,7 +7048,7 @@ def build_htf_page(data):
                     + orow + "</tbody></table></div>") if orow else "<p class='muted'>明天沒有掛單。</p>"
         prow = "".join(
             "<tr>" + tk(p["ticker"], p["name"]) + f"<td>{esc(str(p['entry_date'] or '—'))}</td><td>{f(p['fill'], _htf_price_nd(p['fill']))}</td>"
-            f"<td>{esc(str(p['held_days'] or '—'))}</td><td>{'—' if p['units'] is None else f'{p['units']:g}'}</td><td>{f(p['close'], _htf_price_nd(p['fill']))}</td>"
+            f"<td>{esc(str(p['held_days'] or '—'))}</td><td>{'—' if p['units'] is None else format(p['units'], 'g')}</td><td>{f(p['close'], _htf_price_nd(p['fill']))}</td>"
             f"<td class='neg'>{f(p['stop_tomorrow'], _htf_price_nd(p['fill']))}</td><td class='{'pos' if (p['pnl_pct'] or 0) >= 0 else 'neg'}'>{pct(p['pnl_pct'])}</td>"
             f"<td><span style='padding:2px 8px; border-radius:10px; font-size:12px; background:"
             + {"sell": "#f8d7da; color:#842029", "half": "#fff3cd; color:#664d03", "hold": "#e9ecef; color:#495057"}[p["action_kind"]]
