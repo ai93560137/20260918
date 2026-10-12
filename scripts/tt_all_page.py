@@ -208,6 +208,7 @@ def build(markets: list[str]) -> str:
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>{CSS}</style>
 <div class="wrap" id="top">
+  <p class="note" style="font-size:15px">鳥翔網頁已合併（2026-10-12）：每日 HTF 掛單與月底名單現在在同一頁 —— <a href="https://claude.ai/artifact/HcFBUwqBgLTQuuhZiTmEu1">https://claude.ai/artifact/HcFBUwqBgLTQuuhZiTmEu1</a>。本頁不再更新。</p>
   <header>
     <h1>鳥翔 · 趨勢模板全部等權 · 月底名單</h1>
     <p class="sub">數據日 {date}。等級：試行 = 回測相對等權顯著（港、新、加、印、澳）；觀察 = 日、美；不建議 = 台、韓（回測 alpha 不顯著，只作記錄）。月底收市選股，下一交易日開市等權買入，持有一個月不動。大市過濾未通過的市場整月持現金。規格凍結於 stock_research/TT_MOMENTUM_BACKTEST.md 第三部分；回測判定「有希望、未經前向驗證」，只作衛星倉。</p>

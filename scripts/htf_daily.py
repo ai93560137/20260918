@@ -222,7 +222,7 @@ def selftest_market(x: C.CF, c: dict, jT: int, ndays: int) -> None:
 
 
 def tg(metas: list[dict]) -> str:
-    L = [f"🚩 HTF 全期參數｜每日訊號 {max(m_['date'] for m_ in metas)}", "（樣本內曲線擬合參數；使用者 2026-10-12 指示上線前向紀錄）", ""]
+    L = [f"🕊 鳥翔｜HTF 每日掛單 {max(m_['date'] for m_ in metas)}", "（高漲旗型，全期擬合參數；鳥翔每日一腿，月底名單另發）", ""]
     for m_ in metas:
         mk = m_["market"]
         filt = "" if not m_["mkt_filter"] else ("｜大市過濾 ✅" if m_["mkt_ok"] else "｜大市過濾 ⛔ 明天不開新倉")

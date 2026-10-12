@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HTF 每日掛單網頁 + PDF（2026-10-12）。讀 analysis/htf_daily/ 的 latest.json 與 CSV → index.html；--pdf 另出 PDF（Chromium headless）。
+"""鳥翔網頁 + PDF（2026-10-12；使用者決定 HTF 每日掛單併入鳥翔：上半 HTF 每日掛單、下半鳥翔月底名單）。讀 analysis/htf_daily/ 的 latest.json 與 CSV → index.html；--pdf 另出 PDF（Chromium headless）。
 
     python3 scripts/htf_page.py            # → analysis/htf_daily/index.html
     python3 scripts/htf_page.py --pdf      # 另出 analysis/htf_daily/htf_daily.pdf（Actions 內發 Telegram 用）
@@ -77,6 +77,13 @@ td.stop{color:var(--sell)}
 .note{font-size:13px;color:var(--muted);max-width:75ch}
 .rules{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:18px;display:grid;gap:12px}
 .rules ol{margin:0;padding-left:1.3em;display:grid;gap:4px;max-width:75ch}
+details.ml{border-top:1px solid var(--rule);padding-top:6px}
+details.ml>summary{cursor:pointer;font-weight:600;padding:6px 0;list-style:none}
+details.ml>summary::-webkit-details-marker{display:none}
+details.ml>summary::before{content:"▸ ";color:var(--accent)}
+details.ml[open]>summary::before{content:"▾ "}
+.part{font-family:var(--f-data);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+.star{color:var(--warn)}
 .foot{font-size:12px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -90,6 +97,9 @@ a{color:var(--accent)}
   tr,.chip,.rules li{break-inside:avoid}
   .tbl{overflow:visible}
   td,th{white-space:normal}
+  td.num,th{white-space:nowrap}
+  .wrap,section.mk,.block,.rules{display:block}
+  .wrap>*+*,section.mk>*+*,.block>*+*,.rules>*+*{margin-top:8pt}
 }
 """
 
@@ -222,7 +232,58 @@ def section(mk: str, name: str, cur: str, names: dict) -> str:
 </section>"""
 
 
-def build() -> str:
+TT = ROOT / "analysis" / "tt_all"
+TT_MKS = ["hk", "sg", "ca", "in", "au", "us", "jp", "tw", "kr"]
+TT_LIVE = {"hk", "sg", "ca", "in", "au"}
+
+
+def monthly(pdf: bool) -> str:
+    """鳥翔・月底名單（趨勢模板全部等權）：讀 analysis/tt_all/<市場>_latest.json 與名單 CSV。"""
+    metas = []
+    for mk in TT_MKS:
+        p = TT / f"{mk}_latest.json"
+        if p.exists():
+            metas.append(json.loads(p.read_text(encoding="utf-8")))
+    if not metas:
+        return ""
+    rows, lists = [], []
+    for m in metas:
+        live = m["market"] in TT_LIVE
+        stale = m.get("test") or not m.get("month_end", True)
+        st = ('<span class="pill buy">✓ 持股</span>' if m["market_ok"] else '<span class="pill sell">✗ 持現金</span>')
+        if stale:
+            st += ' <span class="pill warn">未更新（測試名單）</span>'
+        chg = "—" if m.get("n_enter") is None else f"+{m['n_enter']} −{m['n_leave']}"
+        rows.append(f'<tr><td class="l">{html.escape(m["name"])}</td><td class="l">{html.escape(m.get("tier", ""))}{"（實盤）" if live else ""}</td>'
+                    f'<td class="num l">{m["date"]}</td><td class="l">{st}</td><td class="num">{m["n"]}</td><td class="num">{chg}</td>'
+                    f'<td class="num">{m["etf_vs_ma50"] * 100:+.1f}% ／ {m["etf_vs_ma200"] * 100:+.1f}%</td></tr>')
+        lp = TT / f'{m["market"]}_{m["date"]}.csv'
+        if pdf and not (live and m["market_ok"] and not stale):
+            continue                     # PDF 只展開「實盤市場、持股中、當月正式名單」，其餘看網頁
+        if lp.exists():
+            lr = list(csv.DictReader(lp.read_text(encoding="utf-8").splitlines()))
+            body = "".join(
+                f'<tr><td class="l">{"<span class=star>★</span>" if r.get("in40") == "1" and m["n"] > m.get("cap", 40) else ""}</td>'
+                f'<td class="tk">{html.escape(r["ticker"])}<small>{html.escape(r.get("name", ""))}</small></td>'
+                f'<td class="num">{float(r["close"]):,.{price_nd(float(r["close"]))}f}</td><td class="num">{pct(r["ret252"], 0)}</td>'
+                f'<td class="num">{float(r["rs"]):.0f}</td><td class="num">{pct(r["above_200ma_pct"])}</td></tr>' for r in lr)
+            lists.append(f'<details class="ml"{" open" if pdf else ""}><summary>{html.escape(m["name"])}　{m["date"]}　{m["n"]} 檔'
+                         f'{"（★ = 40 檔版抽中）" if m["n"] > m.get("cap", 40) else ""}</summary><div class="tbl"><table><thead><tr><th></th><th>代號</th>'
+                         f'<th>收市</th><th>252 日報酬</th><th>RS 百分位</th><th>對 200 日線</th></tr></thead><tbody>{body}</tbody></table></div></details>')
+    return f"""
+  <div class="part">第二部分 · 每月</div>
+  <section class="mk" id="monthly">
+    <div class="mk-head"><h2>鳥翔・月底名單（趨勢模板全部等權）</h2><div class="meta">每月最後一個交易日收市後更新</div></div>
+    <p class="note">月底把通過趨勢模板（收市 &gt; 50 &gt; 150 &gt; 200 日線、RS ≥ 70）的股票全部等權買入，持有到下月底；指數 ETF 在 50 及 200 日線之下就整月持現金。
+    下一交易日開市買入；超過 40 檔用 40 檔版（★）。實盤只做港、新、加、印、澳。</p>
+    <div class="tbl"><table><thead><tr><th class="l">市場</th><th class="l">等級</th><th class="l">訊號日</th><th class="l">狀態</th><th>通過模板</th><th>較上月</th><th>ETF 對 50／200 日線</th></tr></thead>
+    <tbody>{''.join(rows)}</tbody></table></div>
+    {''.join(lists)}
+    {'<p class="note">PDF 只列實盤市場（港新加印澳）中持股、且是當月正式名單的完整清單；其他市場的完整名單在網頁上逐個展開。</p>' if pdf else ''}
+  </section>"""
+
+
+def build(pdf: bool = False) -> str:
     names = load_names()
     secs, chips, dates = [], [], []
     for mk, name, cur in MKS:
@@ -241,17 +302,18 @@ def build() -> str:
     except Exception:  # noqa: BLE001
         stop_dd = "說明書所列水平"
     d = max(dates) if dates else "—"
-    return f"""<title>HTF 每日掛單</title>
+    return f"""<title>鳥翔</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap">
 <style>{CSS}</style>
 <div class="wrap">
   <header>
-    <div class="eyebrow">High Tight Flag · 港台日美 · 全期參數</div>
-    <h1>HTF 每日掛單　{d}</h1>
+    <div class="eyebrow">鳥翔 · 每日 HTF 掛單 ＋ 月底名單</div>
+    <h1>鳥翔　{d}</h1>
     <p class="lede">每個交易日收市後更新。掛單用買入停損單：明天盤中升穿觸發價才成交，開市已高於上限就取消。下單後即設停損；持倉每天看「明天要做」。產生時間 {now}（香港時間）。</p>
     <div class="chips">{''.join(chips)}</div>
   </header>
+  <div class="part">第一部分 · 每日 · HTF 高漲旗型（港台日美，全期參數）</div>
   {''.join(secs)}
   <section class="rules">
     <h2>怎樣照做</h2>
@@ -264,6 +326,7 @@ def build() -> str:
     </ol>
     <p class="note">每日 PDF 版隨 Telegram 一併發送（同一份內容，自動分頁，表格不會從中間斷開）。</p>
   </section>
+  {monthly(pdf)}
   <p class="foot">參數由全期數據擬合選出（曲線擬合），未來表現大概率低於回測。回測與風險說明見投資人說明書 HTF_INVESTOR_BRIEF.pdf；證偽：前向 100 筆平均虧損，或回撤超過 {stop_dd}，即停。不構成投資建議。</p>
 </div>"""
 
@@ -287,7 +350,7 @@ def main() -> None:
     print(OUT / "index.html", file=sys.stderr)
     if args.pdf:
         doc = OUT / "_print.html"
-        doc.write_text('<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"></head><body>' + page + "</body></html>", encoding="utf-8")
+        doc.write_text('<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"></head><body>' + build(pdf=True) + "</body></html>", encoding="utf-8")
         chrome = os.environ.get("CHROME") or next((str(p) for p in [Path("/usr/bin/google-chrome"), Path("/usr/bin/chromium"),
                                                                      *Path("/opt/pw-browsers").glob("chromium-*/chrome-linux/chrome")] if p.exists()), None)
         if not chrome:
