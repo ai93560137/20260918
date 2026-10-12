@@ -1,0 +1,32 @@
+{
+ "market": "hk",
+ "date": "2026-10-12",
+ "params": {
+  "adr_min": 0.0,
+  "chase": 0.05,
+  "d": 0.2,
+  "flag_max": 40,
+  "g": 1.0,
+  "hold": 60,
+  "ma20": true,
+  "mkt": false,
+  "mom_q": 98,
+  "partial": 3,
+  "risk": true,
+  "stop": 1.5,
+  "trail": "ma50",
+  "vol": 1.0
+ },
+ "n_orders": 1,
+ "n_open": 0,
+ "n_closed": 0,
+ "mkt_ok": false,
+ "mkt_filter": false,
+ "fwd_start": "2026-10-13",
+ "closed_avg": null,
+ "closed_win": null,
+ "orders_top": [
+  "2510.HK 觸發 14.96（距收市 +9.2%）"
+ ],
+ "positions": []
+}

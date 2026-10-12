@@ -1,0 +1,32 @@
+{
+ "market": "jp",
+ "date": "2026-10-09",
+ "params": {
+  "adr_min": 0.03,
+  "chase": 0.02,
+  "d": 0.35,
+  "flag_max": 40,
+  "g": 1.0,
+  "hold": 252,
+  "ma20": true,
+  "mkt": false,
+  "mom_q": 99,
+  "partial": 3,
+  "risk": true,
+  "stop": 1.5,
+  "trail": "ma10",
+  "vol": 0.8
+ },
+ "n_orders": 1,
+ "n_open": 0,
+ "n_closed": 0,
+ "mkt_ok": true,
+ "mkt_filter": false,
+ "fwd_start": "2026-10-13",
+ "closed_avg": null,
+ "closed_win": null,
+ "orders_top": [
+  "6862.T 觸發 5910（距收市 +14.5%）"
+ ],
+ "positions": []
+}
