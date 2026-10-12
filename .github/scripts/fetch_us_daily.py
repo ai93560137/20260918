@@ -11,6 +11,30 @@ import yfinance as yf
 OUT = 'tradingview/data_external'
 os.makedirs(OUT, exist_ok=True)
 log = []
+KEEP_DAYS = 5          # 舊檔有、新抓冇嘅日子，喺最近 N 個曆日內就保留（Yahoo 暫缺，唔好刪）
+# 亞洲市場收市時間（UTC，含 5 分鐘緩衝）：喺呢個時間之前抓到嘅「當日」一列係收市前嘅數，標 partial
+ASIA_FINAL_UTC = {'vhsi_daily.csv': (8, 15), 'hsi_daily.csv': (8, 15), 'n225_daily.csv': (6, 15)}
+asia_status = {}
+
+
+def merge_keep(old_path, d, now_utc, fname, log):
+    """新抓到嘅數據優先；舊檔有而新抓冇、且屬最近 KEEP_DAYS 個曆日內嘅日子 → 保留，並寫 log。
+    傳回 (合併後 DataFrame, 保留嘅日期清單)。"""
+    d = d.copy()
+    d['Date'] = pd.to_datetime(d['Date']).dt.tz_localize(None).dt.normalize()
+    if not os.path.exists(old_path):
+        return d, []
+    old = pd.read_csv(old_path)
+    old['Date'] = pd.to_datetime(old['Date']).dt.tz_localize(None).dt.normalize()
+    cutoff = pd.Timestamp(now_utc.date()) - pd.Timedelta(days=KEEP_DAYS)
+    missing = old[(~old['Date'].isin(d['Date'])) & (old['Date'] >= cutoff)]
+    kept = [x.strftime('%Y-%m-%d') for x in missing['Date']]
+    if len(missing):
+        d = pd.concat([d, missing[[c for c in d.columns if c in missing.columns]]], ignore_index=True)
+        d = d.sort_values('Date').reset_index(drop=True)
+        for k in kept:
+            log.append(f"KEEP {fname} {k}（Yahoo 暫缺，保留舊檔嗰一列）")
+    return d, kept
 
 for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
                    ('^VIX', 'vix_daily.csv'), ('^GSPC', 'spx_daily.csv'),
@@ -34,8 +58,17 @@ for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
             if len(d) < n_old * 0.9:
                 log.append(f"SKIP {fname}: fetched {len(d)} < 90% of existing {n_old}")
                 continue
+        now_utc = datetime.now(timezone.utc)
+        d, kept = merge_keep(old, d, now_utc, fname, log)
         d.to_csv(old, index=False)
         log.append(f"SAVED {fname}: {len(d)} rows -> {d.Date.max()}")
+        if fname in ASIA_FINAL_UTC:
+            hh, mm = ASIA_FINAL_UTC[fname]
+            last = pd.Timestamp(d.Date.max()).strftime('%Y-%m-%d')
+            # 最後一列屬今日而且抓取時間未到收市＋緩衝 → partial；屬舊日或已過收市時間 → 視為 final（保留舊列時沿用舊標記）
+            fin = not (last == now_utc.strftime('%Y-%m-%d') and (now_utc.hour, now_utc.minute) < (hh, mm))
+            asia_status[fname] = {'last_date': last, 'last_row': 'final' if fin else 'partial',
+                                  'fetched_utc': now_utc.strftime('%Y-%m-%d %H:%M'), 'kept_dates': kept}
     except Exception as e:
         log.append(f"{sym} ERR: {e!r}")
 
@@ -102,6 +135,10 @@ if fut:
     fut['fetched_utc'] = datetime.now(timezone.utc).isoformat(timespec='minutes')
     with open(f'{OUT}/us_futures_quote.json', 'w') as f:
         json.dump(fut, f, ensure_ascii=False, indent=1)
+
+if asia_status:
+    with open(f'{OUT}/asia_daily_status.json', 'w', encoding='utf-8') as f:
+        json.dump(asia_status, f, ensure_ascii=False, indent=1)
 
 with open(f'{OUT}/fetch_us_log.txt', 'w') as f:
     f.write('\n'.join(log))
