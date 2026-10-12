@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HTF 投資人口徑：由 investor_<mk>_series.json.gz 算每筆 10%／20%／33% 與「港台日共用一筆資金」組合。2026-10-12
+"""HTF 投資人口徑：由 investor_<mk>_series.json.gz 算每筆 10%／20%／33% 與「港台日美共用一筆資金」組合。2026-10-12
 輸出 research/htf_curvefit/investor_mix.json。"""
 import gzip
 import json
@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 OUT = Path(__file__).resolve().parent.parent / "research" / "htf_curvefit"
-MKS = ["hk", "tw", "jp"]
+MKS = ["hk", "tw", "jp", "us"]   # 美股 2026-10-12 使用者要求加入
 
 
 def stats(r: pd.Series) -> dict:

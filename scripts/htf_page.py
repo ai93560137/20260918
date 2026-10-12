@@ -235,6 +235,11 @@ def build() -> str:
                      f'　已平倉 <span class="num">{m["n_closed"]}</span></span></div>')
         secs.append(section(mk, name, cur, names))
     now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
+    try:
+        mix = json.loads((ROOT / "research" / "htf_curvefit" / "investor_mix.json").read_text(encoding="utf-8"))
+        stop_dd = f"{1.5 * mix['20%']['combined']['mdd'] * 100:.0f}%"
+    except Exception:  # noqa: BLE001
+        stop_dd = "說明書所列水平"
     d = max(dates) if dates else "—"
     return f"""<title>HTF 每日掛單</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -259,7 +264,7 @@ def build() -> str:
     </ol>
     <p class="note">每日 PDF 版隨 Telegram 一併發送（同一份內容，自動分頁，表格不會從中間斷開）。</p>
   </section>
-  <p class="foot">參數由 2009–2026 全期數據擬合選出（曲線擬合），未來表現大概率低於回測。回測與風險說明見投資人說明書 HTF_INVESTOR_BRIEF.pdf；證偽：前向 100 筆平均虧損，或回撤超過 −32%，即停。不構成投資建議。</p>
+  <p class="foot">參數由全期數據擬合選出（曲線擬合），未來表現大概率低於回測。回測與風險說明見投資人說明書 HTF_INVESTOR_BRIEF.pdf；證偽：前向 100 筆平均虧損，或回撤超過 {stop_dd}，即停。不構成投資建議。</p>
 </div>"""
 
 
