@@ -349,6 +349,9 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
     check(f"{f} 連到其餘 15 頁", not miss, f"缺 {miss}")
     check(f"{f} 不再連到舊 artifact", "claude.ai/artifact" not in txt, f)
 
+_trk = io.open("/home/user/20260918/jinnang_tracker.html", encoding="utf-8").read()
+check("錦囊九十筆頁有「列印成 PDF」按鈕、列印樣式（A4、區塊不斷開）", "列印成 PDF" in _trk and "window.print()" in _trk and "@page{size:A4" in _trk and "break-inside:avoid" in _trk)
+
 print("\n=== 10e. page_nav：[R131] 八陣圖指令台是站內頁，page_nav 仍保留站外連結能力（R91）===")
 nav = main.page_nav("welcome")
 check("指令台是站內連結", "href='?view=bazhentu'" in nav, nav[:400])

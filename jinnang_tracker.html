@@ -135,6 +135,28 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
 .nav-link:hover{background:var(--nav-hover)}
 .nav-current{background:var(--nav-on-bg); color:var(--nav-on-fg); cursor:default}
 .nav-link:focus-visible{outline:2px solid var(--nav-on-bg); outline-offset:2px}
+/* 列印成 PDF（樣式沿用 main.py PRINT_CSS；A4、區塊不斷開、放不下自動換頁；列印一律用淺色） */
+.print-bar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:-12px}
+.print-btn{background:#0F62FE; color:#fff; border:0; border-radius:20px; padding:9px 18px; font-size:14px; font-weight:700; cursor:pointer}
+.print-btn:hover{background:#0B4FD1; border:0}
+.print-hint{font-size:12px; color:var(--muted)}
+.print-only{display:none}
+@page{size:A4; margin:12mm}
+@media print{
+  :root,:root[data-theme="dark"]{
+    --paper:#FFFFFF; --field:#FFFFFF; --ink:#16191D; --muted:#555D66; --line:#C9CFD6; --hair:#E6EAEE;
+    --accent:#2C6B7A; --accent-soft:#E4EFF1; --stop:#A8382F; --stop-soft:#F6E6E4; --ok:#3A6E4E; --ok-soft:#E4EFE8}
+  html,body{background:#fff !important}
+  body{font-size:12px; line-height:1.55; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .wrap{max-width:none; padding-block:0; gap:18px}
+  .nav-links,.print-bar,dialog,#dbnote{display:none !important}
+  .print-only{display:block !important; font-size:11px; color:#555; margin:0}
+  .hero,.norms,.norm,.round,.rhead,.slot,.banner,footer,section > p,h2,li{break-inside:avoid; page-break-inside:avoid}
+  h1,h2,h3,.rhead{break-after:avoid; page-break-after:avoid}
+  .round{margin-top:10px}
+  .count{font-size:56px}
+  a{color:inherit; text-decoration:none}
+}
 </style>
 
 <div class="wrap">
@@ -156,6 +178,10 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
   <a class="nav-link" href="?view=fund_report">📊 基金報告</a>
   <a class="nav-link" href="?view=dashboard">⚙️ 控制台</a>
 </nav>
+
+<div class="print-bar"><button class="print-btn" type="button" onclick="window.print()">🖨️ 列印成 PDF</button><span class="print-hint">撳完喺列印視窗「目的地」揀「另存為 PDF」；內容放唔落一頁會自動去下一頁，區塊唔會斷開。</span></div>
+<div class="print-only">錦囊九十筆 · 人手下單訓練　列印時間（香港）：<span id="print-time"></span></div>
+<script>(function(){function t(){var e=document.getElementById("print-time");if(e)e.textContent=new Date().toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",hour12:false})+" HKT";}window.addEventListener("beforeprint",t);})();</script>
 
 <div class="hero">
   <div>
