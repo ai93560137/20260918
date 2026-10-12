@@ -33,7 +33,7 @@ js = client.get("/?view=nq_range&format=json").get_json()
 check("JSON 代號是 US.NQ_FRONT、有 200 天以上、有預測", js["symbol"] == NQ and len(js["rows"]) >= 200 and bool(js.get("forecast")), str(js)[:200])
 check("ES 的日線沒被 NQ 封包影響", client.get("/?view=es_range&format=json").get_json()["status"] == "empty")
 page = client.get("/?view=nq_range").get_data(as_text=True)
-check("NQ 頁：標題、單位文字、列印按鈕", "NQ 納指 100 期貨波幅" in page and "NQ 每點 US$20" in page and "print_toolbar" in page or "列印" in page, page[:200])
+check("NQ 頁：標題、US$20 文字、列印按鈕", "NQ 納指 100 期貨波幅" in page and "US$20" in page and "列印" in page, page[:200])
 check("頁上沒有 ES 的名字殘留在 NQ 專屬文字", "ES 暫時只有" not in page and "NQ 暫時只有" in page)
 
 print("\n=== 方向一文字（5 分 K 後）===")
