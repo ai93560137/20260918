@@ -28,7 +28,7 @@
 body{background:var(--paper); color:var(--ink); margin:0; font-size:15px; line-height:1.7;
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; -webkit-font-smoothing:antialiased}
 .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
-.wrap{max-width:880px; margin:0 auto; padding-inline:16px; padding-block:36px 72px;
+.wrap{max-width:1050px; margin:0 auto; padding-inline:16px; padding-block:36px 72px;
   display:flex; flex-direction:column; gap:32px}
 .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em;
   text-transform:uppercase; color:var(--accent); font-weight:600}
@@ -127,14 +127,16 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* R169 頁首：品牌標誌＋頁面標題，與 main.py 其餘頁面的 .brand / .brand-logo / .page-title 一致 */
-.brand-head{display:flex; align-items:center; gap:10px; min-width:0; margin-bottom:14px}
+.topnav{display:flex; flex-direction:column; gap:10px; padding:15px 20px; background:var(--field);
+  border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.brand-head{display:flex; align-items:center; gap:10px; min-width:0}
 .brand-head .brand-logo{width:34px; height:34px; flex-shrink:0}
 .brand-head .brand-logo svg{width:100%; height:100%; display:block}
 .brand-head .page-title{font-size:18px; font-weight:bold; margin:0; color:var(--ink)}
 
 /* 導覽列：與 main.py 的其餘五頁完全一致（.nav-links / .nav-link / .nav-current）。
    顏色抽成變數，只為了深色模式能換掉 —— 淺色模式的值跟那五頁一模一樣。 */
-.nav-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:-28px}
+.nav-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
 .nav-link{display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px;
   font-weight:700; text-decoration:none; color:var(--nav-fg); background:var(--nav-bg);
   white-space:nowrap}
@@ -155,7 +157,7 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
   html,body{background:#fff !important}
   body{font-size:12px; line-height:1.55; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   .wrap{max-width:none; padding-block:0; gap:18px}
-  .nav-links,.brand-head,.print-bar,dialog,#dbnote{display:none !important}
+  .nav-links,.brand-head,.topnav,.print-bar,dialog,#dbnote{display:none !important}
   .print-only{display:block !important; font-size:11px; color:#555; margin:0}
   .hero,.norms,.norm,.round,.rhead,.slot,.banner,footer,section > p,h2,li{break-inside:avoid; page-break-inside:avoid}
   h1,h2,h3,.rhead{break-after:avoid; page-break-after:avoid}
@@ -166,6 +168,7 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
 </style>
 
 <div class="wrap">
+<div class="topnav">
 <div class="brand-head"><div class="brand-logo"><svg viewBox='0 0 64 64' role='img' aria-label='智能諸葛亮' focusable='false'>
   <defs>
     <linearGradient id='zgBadge' x1='0' y1='0' x2='1' y2='1'>
@@ -216,6 +219,7 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted); f
   <a class="nav-link" href="?view=fund_report">📊 基金報告</a>
   <a class="nav-link" href="?view=dashboard">⚙️ 控制台</a>
 </nav>
+</div>
 
 <div class="print-bar"><button class="print-btn" type="button" onclick="window.print()">🖨️ 列印成 PDF</button><span class="print-hint">撳完喺列印視窗「目的地」揀「另存為 PDF」；內容放唔落一頁會自動去下一頁，區塊唔會斷開。</span></div>
 <div class="print-only">錦囊九十筆 · 人手下單訓練　列印時間（香港）：<span id="print-time"></span></div>
