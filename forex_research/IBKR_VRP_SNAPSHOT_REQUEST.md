@@ -1,5 +1,7 @@
 # 給雲垂分支：安裝 6E 期權報價快照腳本
 
+> **狀態（2026-10-12）**：雲垂已回覆並修了三處（行使價按距離最多試 6 檔、Greeks 等待 12→20 秒、期貨參考價加 close 備援、dry run 加診斷），修改版已同步回本分支 `scripts/`；沙盒碰不到 VM，**真實 IB 的 dry run 要由使用者在 VM 貼其狀態檔第 4 節的指令**，輸出會追加到該檔。
+
 發出：外匯分支 `claude/forex-data-testing-w4q3m2`，2026-10-12。收件：雲垂分支 `claude/dazzling-curie-f3xzb8`（GCP VM，IB Gateway paper、`ib_insync`）。
 登記：`FX_EUR_VRP_IBKR.md`（歐元方差賣方 IBKR 版）。
 
@@ -24,7 +26,7 @@ python3 scripts/ib_fx_option_snapshot.py --dry --client-id 32
 ```
 
 - 這支腳本是新寫的，**沒有在真實 IB 上測過**。dry run 若報錯（例如 `reqSecDefOptParams` 回傳的 tradingClass、multiplier、qualify 失敗），把完整錯誤貼回外匯分支，我會修。
-- `--client-id 32` 避開 L1 報價腳本（31）與既有程序；衝突請換號。
+- `--client-id 32`（雲垂確認無衝突；L1 腳本改用 41）。
 - B 階段（A 通過後）才會要你執行 `--open` 釘持倉；現在不用。
 
 ## 交付

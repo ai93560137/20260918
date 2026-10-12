@@ -5,6 +5,9 @@
     # 59 8  * * 1-5  cd <repo> && python3 scripts/ib_l1_quote.py --label 0859
     # 59 11 * * 1-5  cd <repo> && python3 scripts/ib_l1_quote.py --label 1159
 
+雲垂分支安裝註記（2026-10-12）：外匯分支原定 clientId 31，但 31 已是 gcp_ib/htf_5m_fetch.py 的預設號，
+改為 41（既有：17 ib_collector、23 ib_fx_history、24 ib_stock_verify、31 htf_5m_fetch、77 ibkr_vol_export）。
+
 在 08:59 與 11:59 UTC 各記一次 EURUSD IDEALPRO 的 bid／ask（即時報價（IDEALPRO 外匯通常免訂閱；--delayed 只作連線測試）），追加到 data_forex_ibkr/l1_quotes.csv。
 用途：前向測試的「真實可成交點差」第二來源，與 Dukascopy M1 紙上成交對照。不下單。
 """
@@ -20,7 +23,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=4002)
     ap.add_argument("--label", required=True)
-    ap.add_argument("--client-id", type=int, default=31)
+    ap.add_argument("--client-id", type=int, default=41)
     ap.add_argument("--delayed", action="store_true", help="用延遲報價（15 分鐘前；與 09:00／12:00 不對時，僅作連線測試）")
     args = ap.parse_args()
     from ib_insync import IB, Forex

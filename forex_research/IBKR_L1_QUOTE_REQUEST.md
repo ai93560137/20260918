@@ -1,5 +1,7 @@
 # 給雲垂分支：安裝 L1 前向測試的 IBKR 報價腳本
 
+> **狀態（2026-10-12）**：雲垂已回覆（其分支 `data_forex_ibkr/_l1_vrp_install_status.txt`）：沙盒碰不到 VM，**實測要由使用者在 VM 貼該檔第 4 節的指令**；clientId 改 41；每週六 02:10 UTC 由 `gcp_ib/push_fx_quotes.sh` 推回 CSV。
+
 發出：外匯分支 `claude/forex-data-testing-w4q3m2`，2026-10-12。收件：雲垂分支 `claude/dazzling-curie-f3xzb8`（GCP VM，IB Gateway paper、`ib_insync`）。
 
 ## 做什麼
@@ -15,18 +17,18 @@ git fetch origin claude/forex-data-testing-w4q3m2
 git checkout origin/claude/forex-data-testing-w4q3m2 -- scripts/ib_l1_quote.py
 
 # 2. 連線測試（延遲報價，確認 Gateway 通；此行會寫入 label=test_delayed）
-python3 scripts/ib_l1_quote.py --label test --delayed --client-id 31
+python3 scripts/ib_l1_quote.py --label test --delayed --client-id 41
 
 # 3. 即時報價測試（外匯 IDEALPRO 通常免訂閱；若 bid／ask 為空代表沒即時權限，請回報，不要改用延遲）
-python3 scripts/ib_l1_quote.py --label test --client-id 31
+python3 scripts/ib_l1_quote.py --label test --client-id 41
 
 # 4. crontab（VM 時區須為 UTC；或改成對應本地時間）
-59 8  * * 1-5  cd <repo> && python3 scripts/ib_l1_quote.py --label 0859 >> data_forex_ibkr/l1_quote.log 2>&1
-59 11 * * 1-5  cd <repo> && python3 scripts/ib_l1_quote.py --label 1159 >> data_forex_ibkr/l1_quote.log 2>&1
+59 8  * * 1-5  cd <repo> && python3 scripts/ib_l1_quote.py --label 0859 --client-id 41 >> data_forex_ibkr/l1_quote.log 2>&1
+59 11 * * 1-5  cd <repo> && python3 scripts/ib_l1_quote.py --label 1159 --client-id 41 >> data_forex_ibkr/l1_quote.log 2>&1
 ```
 
 注意：
-- `--client-id 31` 避開你們既有程序的 clientId；若衝突請換號。
+- `--client-id 41` 避開你們既有程序的 clientId；若衝突請換號。
 - 腳本等 5 秒取樣，所以實際時間約 08:59:05／11:59:05，csv 的 `utc_time` 已記真實時間。
 - 把測試列（label 含 `test`）從 `l1_quotes.csv` 刪掉再開 cron，或保留亦可（外匯分支會過濾）。
 
