@@ -104,6 +104,12 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-12 — [R160] 🐤 金絲雀頁（?view=canary，&format=json）：只顯示金絲雀工作流產出（預設分支 canary/ 四個檔，CANARY_RAW_BASE 可改），
+#     記憶體快取 30 分鐘、GCS canary/ 後備；頂部日期卡、三軸、黃鳥、試用層／W1（無警報權）、最近 30 日表、T−1 回驗原文、發送紀錄、全文；
+#     過香港 07:30 仍未更新就黃字提示。唔重算燈色、唔入電閘、唔影響下單。
+#   * 2026-10-12 — [R159] ☁️ 雲垂陣頁（?view=yunchui）：公開 JSON＋富途即時 Δ 預算、持倉卡、事件、更正紀錄；同日：風揚陣導覽改名
+#     「風揚陣恆指波幅」「風揚陣ES 波幅」、ES／NQ 頁配色同恒指分開（FY_THEMES）、R157 風揚陣／地載陣頁「列印成 PDF」（PRINT_CSS）、
+#     R153–R156 見 tradingview/RISK_HANDOFF_20261010.md。
 #   * 2026-10-11 — [R152] 📊 基金報告（?view=fund_report，&format=json）：本地 gcp_ib/futu_pnl_export.py 推富途成交、手續費、
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
@@ -212,8 +218,10 @@
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
 # =============================================================================
 import bisect
+import csv
 import hashlib
 import html
+import io
 import json
 import math
 import os
@@ -2407,7 +2415,7 @@ FUTU_TEAM_MANUAL = "使用者人手"
 FUTU_TEAM_UNMATCHED = "未配對"
 FUTU_TEAM_GIFT = "券商贈送"
 FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
-    "雲垂陣": {"icon": "☁️", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
+    "雲垂陣": {"icon": "☁️", "link": "?view=yunchui", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
               "stop": "跨式買回總價 ≥ 2× 權利金"},
     "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
     "蛇蟠陣": {"icon": "🐍", "desc": "順勢：3 日通道，觸價反手、永遠在場；使用者人手落大恒指期貨（八陣圖指令台）",
@@ -3040,6 +3048,21 @@ MARKETS["NQ"] = {**MARKETS["US"],
                  "empty_hint": "本地執行 futu/mt5_push.py --backfill 400 補歷史（MT5_SYMBOLS 含 NAS100ft:US.NQ_FRONT），之後每 5 分鐘自動更新。"}
 ES_SYMBOL = "US.ES_FRONT"
 NQ_SYMBOL = "US.NQ_FRONT"                                   # [R158]
+
+
+# [R159] 風揚陣各波幅頁配色（今日／本週／本月卡頂邊、進度條、標題）：恒指用預設藍綠紫，ES、NQ 各用另一組，一眼分得出。
+FY_THEMES = {"es_range": ("#d9480f", "#f08c00", "#a61e4d"),   # ES：橙／琥珀／洋紅
+             "nq_range": ("#0b7285", "#1098ad", "#364fc7")}   # NQ：青／淺青／靛（按頁面 view；NQ 市場 key 仍是 US）
+
+
+def fy_theme_css(key):
+    t = FY_THEMES.get(key)
+    if not t:
+        return ""
+    d, w, mo = t
+    return (f"<style>.fy-card{{border-top-color:{d}}} .fy-card.week{{border-top-color:{w}}} .fy-card.month{{border-top-color:{mo}}} "
+            f".fy-bar > div{{background:{d}}} .fy-steps b{{color:{d}}} .fy-howto{{border-left-color:{d}}} "
+            f".fy-hero{{border-left:6px solid {d}}} .page-title{{color:{d}}}</style>")
 
 
 def futu_market(symbol=None):
@@ -6380,6 +6403,462 @@ def _sp(side, lots=1, detail="", since=None):
     return {"side": side, "lots": lots, "detail": detail, "since": since}
 
 
+# =============================================================================
+# [R159] ☁️ 雲垂陣頁（?view=yunchui；&format=json）：雲垂陣工作階段維護公開 JSON，本頁讀取＋疊上富途即時 Δ。
+# 唔顯示權益、保證金、帳戶資料。只係資訊，唔落單。
+# =============================================================================
+YUNCHUI_URL = os.environ.get(
+    "YUNCHUI_PUBLIC_URL",
+    "https://raw.githubusercontent.com/ai93560137/20260918/claude/dazzling-curie-f3xzb8/tradingview/data_external/yunchui_public.json")
+YUNCHUI_GCS = "yunchui/public.json"                                       # GitHub 抓不到時的後備
+YUNCHUI_CACHE_SEC = 120
+_yunchui_cache = {"ts": 0.0, "data": None}
+
+
+def yunchui_public_json():
+    """GitHub raw → 記憶體快取 → GCS 後備（同八陣圖 levels.json 做法）。回傳 (dict, 來源文字) 或 None。"""
+    now = now_ts()
+    cached = _yunchui_cache["data"]
+    if cached is not None and now - _yunchui_cache["ts"] < YUNCHUI_CACHE_SEC:
+        return cached
+    result = None
+    try:
+        response = requests.get(YUNCHUI_URL, timeout=8, headers={"Cache-Control": "no-cache"})
+        if response.ok:
+            body = response.json()
+            if isinstance(body, dict) and isinstance(body.get("strategy"), dict) and isinstance(body.get("positions"), list):
+                result = (body, "github")
+                try:
+                    gcs_write_text(YUNCHUI_GCS, json.dumps(body, ensure_ascii=False))
+                except Exception as exc:                                  # 後備寫不進去不影響顯示
+                    print(f"⚠️ [雲垂陣 後備寫入失敗] {exc}", flush=True)
+    except Exception as exc:
+        print(f"⚠️ [雲垂陣 公開 JSON 抓取失敗] {exc}", flush=True)
+    if result is None:
+        try:
+            fallback = gcs_read_json(YUNCHUI_GCS, None)
+        except Exception:
+            fallback = None
+        if isinstance(fallback, dict) and isinstance(fallback.get("strategy"), dict):
+            result = (fallback, "gcs 後備（GitHub 暫時抓不到）")
+    if result is not None:
+        _yunchui_cache.update(ts=now, data=result)
+    return result
+
+
+def yunchui_data():
+    """公開 JSON＋富途即時 Δ／止損用量／對沖手數（有就用即時，冇先退回 JSON）。"""
+    pub = yunchui_public_json()
+    if pub is None:
+        return {"status": "error", "message": "雲垂陣公開數據抓不到，也沒有後備副本"}
+    body, served = pub
+    status = body.get("status") if isinstance(body.get("status"), dict) else {}
+    hsi = status.get("hsi") if isinstance(status.get("hsi"), dict) else {}
+    mes = status.get("mes") if isinstance(status.get("mes"), dict) else {}
+    try:
+        fr = futu_real_view()
+    except Exception as exc:
+        print(f"⚠️ [雲垂陣 即時數據讀取失敗] {exc}", flush=True)
+        fr = None
+    team = next((t for t in (fr or {}).get("teams") or [] if t.get("team") == "雲垂陣"), None) or {}
+    live = team.get("delta") if isinstance(team.get("delta"), dict) else None
+    band = (live or {}).get("band") or to_float(hsi.get("band")) or 0.5
+    if live:
+        net, straddle, hedge, hsi_all = live["net"], live.get("straddle"), live.get("hedge"), live.get("hsi_all")
+        when = (fr or {}).get("run_hkt")
+    else:
+        net, straddle, hsi_all = to_float(hsi.get("net_delta")), to_float(hsi.get("straddle_delta")), None
+        hedge = to_float(hsi.get("hedge_lots"))                          # 1 手 MHI 期貨＝Δ 1 手
+        when = hsi.get("hedge_verified_hkt") or body.get("updated_hkt")
+    delta = {"source": "live" if live else "json", "time_hkt": when, "band": band, "net": net, "straddle": straddle, "hedge": hedge,
+             "hsi_all": hsi_all, "room_up": None if net is None else band - net, "room_down": None if net is None else net + band,
+             "stale": bool(live and (fr or {}).get("stale")), "weekend": bool(live and (fr or {}).get("weekend")),
+             "age_min": (fr or {}).get("age_min") if live else None,
+             "mes_straddle": to_float(mes.get("straddle_delta")), "mes_es": to_float(mes.get("es")), "hsi_front": to_float(hsi.get("front"))}
+    live_hedge_lots = next((r["qty"] for r in team.get("rows") or [] if str(r.get("use", "")).startswith("MHI 期貨 Δ 對沖")), None)
+    stops = {x["name"]: x["use"] for x in team.get("stops") or []}
+    return {"status": "ok", "served_from": served, "updated_hkt": body.get("updated_hkt"), "strategy": body.get("strategy"),
+            "positions": body.get("positions"), "events": body.get("events") or [], "corrections": body.get("corrections") or [],
+            "delta": delta, "hedge_lots_live": live_hedge_lots, "stop_use": stops, "live_run_hkt": (fr or {}).get("run_hkt")}
+
+
+def _yc_bar(d):
+    """含對沖淨 Δ 對 ±界線嘅橫條：中間係 0，標記係現時淨 Δ。"""
+    net, band = d.get("net"), d.get("band") or 0.5
+    if net is None:
+        return "<p class='muted'>暫時冇淨 Δ 數字。</p>"
+    pct = max(0.0, min(100.0, (net + band) / (2 * band) * 100))
+    use = abs(net) / band
+    color = "#dc3545" if use > 1 else ("#d97706" if use >= 0.8 else "#198754")
+    up, down = d["room_up"], d["room_down"]
+    return (f"<div style='position:relative; height:16px; background:#eef1f4; border-radius:8px; margin:10px 0 4px'>"
+            f"<div style='position:absolute; left:50%; top:-3px; bottom:-3px; width:2px; background:#6c757d'></div>"
+            f"<div style='position:absolute; left:calc({pct:.1f}% - 7px); top:1px; width:14px; height:14px; border-radius:50%; background:{color}'></div></div>"
+            f"<div style='display:flex; justify-content:space-between; font-size:11px; color:#6c757d'><span>−{band:g}</span><span>0</span><span>+{band:g}</span></div>"
+            f"<div style='font-size:13px; margin-top:6px'>預算：Δ 再加最多 <b>{max(up, 0):.2f}</b> 手、再減最多 <b>{max(down, 0):.2f}</b> 手"
+            + ("　<b class='neg'>⚠ 已超出界線</b>" if use > 1 else "") + "</div>")
+
+
+def _yc_num(v, nd=2, sign=False):
+    return "—" if not isinstance(v, (int, float)) else (f"{v:+,.{nd}f}" if sign else f"{v:,.{nd}f}")
+
+
+def build_yunchui_page(data):
+    nav = page_nav("yunchui")
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>☁️ 雲垂陣・賣跨式＋期貨 Δ 對沖</h1></div>{nav}</div>")
+    if data.get("status") != "ok":
+        return html_page("雲垂陣", head + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    st = data["strategy"] if isinstance(data.get("strategy"), dict) else {}
+    d = data["delta"]
+    rules = "".join(f"<li>{esc(str(x))}</li>" for x in (st.get("rules") or []))
+    intro = (f"<div class='section'><h2>{esc(str(st.get('icon') or '☁️'))} {esc(str(st.get('name') or '雲垂陣'))}</h2>"
+             f"<p>{esc(str(st.get('summary') or ''))}</p><b>規則</b><ul style='margin:6px 0 0 18px; font-size:13px; line-height:1.7'>{rules}</ul></div>")
+    # Δ 預算
+    if d["source"] == "live":
+        note = (f"即時（富途持倉）：{esc(str(d.get('time_hkt') or '—'))} HKT"
+                + (f"（{d['age_min']} 分鐘前）" if d.get("age_min") is not None else "")
+                + ("　<span class='neg'>⚠ 數據已過期</span>" if d.get("stale") else "")
+                + ("　週末休市，星期一 06:00 起恢復更新" if d.get("weekend") else ""))
+    else:
+        note = f"<span class='neg'>非即時</span>：沿用日報時點 {esc(str(d.get('time_hkt') or '—'))} HKT（富途即時數據暫時冇）"
+    cls = "neg" if d.get("net") is not None and abs(d["net"]) > d["band"] else ""
+    delta_html = (
+        f"<div class='section'><h2>📐 Δ 預算（單位：MHI 手）</h2><p class='muted' style='font-size:12px'>{note}</p>"
+        "<div class='grid'>"
+        f"<div class='card'><div class='card-title'>月跨式 Δ（唔含對沖）</div><div class='card-value'>{_yc_num(d.get('straddle'), 2, True)}</div></div>"
+        f"<div class='card'><div class='card-title'>MHI 期貨對沖 Δ</div><div class='card-value'>{_yc_num(d.get('hedge'), 2, True)}</div></div>"
+        f"<div class='card'><div class='card-title'>含對沖淨 Δ（界線 ±{d['band']:g}）</div><div class='card-value {cls}'>{_yc_num(d.get('net'), 2, True)}</div></div>"
+        f"<div class='card'><div class='card-title'>MES 跨式 Δ（日報）</div><div class='card-value'>{_yc_num(d.get('mes_straddle'), 2, True)}</div>"
+        f"<div class='card-desc'>標普 {_yc_num(d.get('mes_es'), 0)}・日報時點 {esc(str(data.get('updated_hkt') or '—'))} HKT</div></div>"
+        "</div>" + _yc_bar(d)
+        + ("<p class='muted' style='font-size:12px'>恒指全部淨 Δ " + _yc_num(d['hsi_all'], 2, True)
+           + " 手 MHI（連風揚陣週權、蛇蟠陣人手倉）；唔屬雲垂對沖規則。</p>" if d.get("hsi_all") is not None else "")
+        + "</div>")
+    # 持倉卡
+    cards = ""
+    for p in data["positions"]:
+        if not isinstance(p, dict):
+            continue
+        pid = str(p.get("id") or "")
+        rows = []
+        add = lambda k, v: rows.append(f"<tr><th style='width:42%'>{esc(k)}</th><td>{v}</td></tr>")
+        add("合約", esc(str(p.get("instrument") or "—")))
+        if p.get("net_lots") is not None:                               # 期貨對沖
+            lots = data.get("hedge_lots_live")
+            add("淨手數", (f"<b class='{'neg' if lots < 0 else 'pos'}'>{lots:+g}</b>（富途即時）" if isinstance(lots, (int, float))
+                          else f"{p.get('net_lots'):+g}（記錄）"))
+            add("開倉價", _yc_num(to_float(p.get("open_price")), 0))
+            add("開倉時間", esc(str(p.get("opened_hkt") or "—")) + " HKT")
+        else:
+            add("行使價", _yc_num(to_float(p.get("strike")), 0))
+            add("到期日", esc(str(p.get("expiry") or "—")))
+            add("張數", "沽 " + esc(str(p.get("qty") or "—")) + "（Call＋Put）")
+            cred = f"{_yc_num(to_float(p.get('credit_pts')), 1)} 點" if p.get("credit_pts") is not None else "—"
+            cred += (f"（HK${p['credit_hkd']:,.0f}）" if isinstance(p.get("credit_hkd"), (int, float)) else
+                     f"（US${p['credit_usd']:,.1f}）" if isinstance(p.get("credit_usd"), (int, float)) else "")
+            add("收取權利金", cred)
+            add("止損線", f"跨式買回總價 ≥ <b>{_yc_num(to_float(p.get('stop_buyback_pts')), 1)} 點</b>（權利金 2 倍）")
+            use = data["stop_use"].get(pid)
+            if use is not None:
+                add("止損用量", f"<b>{use * 100:.0f}%</b>（富途即時）")
+            add("建倉日", esc(str(p.get("entry_date") or "—")))
+            iv = p.get("entry_atm_iv") if p.get("entry_atm_iv") is not None else p.get("entry_iv")
+            if iv is not None:
+                add("入場 IV", f"{_yc_num(to_float(iv), 2)}%")
+        cards += f"<div class='card'><div class='card-title' style='font-size:15px'>{esc(pid)}</div><table style='width:100%'>{''.join(rows)}</table></div>"
+    pos_html = f"<div class='section'><h2>📌 持倉</h2><div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(280px,1fr))'>{cards}</div></div>"
+    # 事件、更正
+    ev = "".join(f"<li style='margin:6px 0'><b>{esc(str(e.get('date') or ''))}</b>　{esc(str(e.get('text') or ''))}</li>"
+                 for e in data["events"] if isinstance(e, dict))
+    events_html = (f"<div class='section'><h2>🕒 事件時間線</h2><ul style='margin:0 0 0 18px; font-size:13px; line-height:1.6'>{ev}</ul></div>"
+                   if ev else "")
+    corr = "".join(f"<div style='margin:8px 0; white-space:pre-wrap; font-size:13px; line-height:1.7'><b>{esc(str(c.get('date') or ''))}</b>　{esc(str(c.get('text') or ''))}</div>"
+                   for c in data["corrections"] if isinstance(c, dict))
+    corr_html = (f"<div class='section' style='border-left:5px solid #dc3545'><h2>📝 更正紀錄</h2>{corr}</div>" if corr else "")
+    foot = (f"<p class='muted' style='font-size:12px'>{esc(str(st.get('disclaimer') or '只作資訊展示，唔係投資建議。'))}"
+            f"　公開數據更新 {esc(str(data.get('updated_hkt') or '—'))} HKT（來源：{esc(str(data.get('served_from') or ''))}）・"
+            "JSON：<a href='?view=yunchui&amp;format=json'>?view=yunchui&amp;format=json</a></p>")
+    body = (head + print_toolbar_html("☁️ 雲垂陣・賣跨式＋期貨 Δ 對沖") + intro + delta_html + pos_html + events_html + corr_html + foot)
+    return html_page("雲垂陣", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,120000)}else{location.reload()}},120000)</script>")
+
+
+def handle_yunchui_get(req):
+    try:
+        data = yunchui_data()
+    except Exception as exc:
+        log_event(f"⚠️ [雲垂陣頁失敗] {exc}", severity="WARNING", component="yunchui")
+        data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
+    if req.args.get("format") == "json":
+        return _json_response(data, 200 if data.get("status") == "ok" else 503)
+    return build_yunchui_page(data)
+
+
+# =============================================================================
+# [R160] 🐤 金絲雀頁（?view=canary；&format=json）：只顯示金絲雀工作流產出嘅數字（唔重算燈色），唔影響下單、唔入電閘。
+# 數據：預設分支 canary/ 底下 tg_daily.txt、canary_daily.csv、sent_log.csv、daily_log.csv（GitHub 工作流每日 HKT 06:30 更新）。
+# 記憶體快取 30 分鐘；讀唔到就顯示上次成功版本同讀取時間（GCS canary/ 後備）。
+# =============================================================================
+CANARY_RAW_BASE = os.environ.get(
+    "CANARY_RAW_BASE", "https://raw.githubusercontent.com/ai93560137/20260918/claude/gcp-trading-v12-rewrite-bz75t2/canary").rstrip("/")
+CANARY_FILES = ("tg_daily.txt", "canary_daily.csv", "sent_log.csv", "daily_log.csv")
+CANARY_CACHE_SEC = 1800
+CANARY_KEEP_ROWS = 40                                       # 後備只存 canary_daily.csv 最後幾列
+_canary_cache = {"ts": 0.0, "data": None}
+CANARY_WD = "一二三四五六日"
+CANARY_FOOTER = "這是市場風險的天氣預報，不是買賣建議。金絲雀預測震盪，不預測漲跌。"
+LIGHT_ICON = {"綠": "🟢", "紅": "🔴", "深紅": "🔴", "黃": "🟡", "走平": "⚪", "灰": "⚪"}
+
+
+def canary_date(text):
+    """YYYY-MM-DD → MM-DD(星期)；格式唔啱就原樣。"""
+    try:
+        d = datetime.strptime(str(text)[:10], "%Y-%m-%d")
+        return f"{d:%m-%d}({CANARY_WD[d.weekday()]})"
+    except ValueError:
+        return str(text or "—")
+
+
+def canary_hkt(utc_text):
+    """2026-10-11T22:38Z → 10-12(一) 06:38 HKT。"""
+    try:
+        t = datetime.strptime(str(utc_text)[:16], "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc).astimezone(HK_TZ)
+        return f"{canary_date(t.strftime('%Y-%m-%d'))} {t:%H:%M} HKT"
+    except ValueError:
+        return str(utc_text or "—")
+
+
+def _canary_parse_csv(text):
+    return list(csv.DictReader(io.StringIO(text or "")))
+
+
+def canary_fetch():
+    """四個檔案：GitHub raw → 記憶體快取（30 分鐘）→ GCS 後備。回傳 {files, fetched_utc, stale_files}；全冇就 None。"""
+    now = now_ts()
+    cached = _canary_cache["data"]
+    if cached is not None and now - _canary_cache["ts"] < CANARY_CACHE_SEC:
+        return cached
+    files, stale, ok_any = {}, [], False
+    prev = cached["files"] if cached else {}
+    for name in CANARY_FILES:
+        text = None
+        try:
+            r = requests.get(f"{CANARY_RAW_BASE}/{name}", timeout=10, headers={"Cache-Control": "no-cache"})
+            if r.ok and r.text.strip():
+                text = r.text
+                ok_any = True
+                try:
+                    keep = text
+                    if name == "canary_daily.csv":
+                        lines = text.splitlines()
+                        keep = "\n".join(lines[:1] + lines[-CANARY_KEEP_ROWS:])
+                    gcs_write_text(f"canary/{name}", keep)
+                except Exception as exc:                          # 後備寫唔入唔影響顯示
+                    print(f"⚠️ [金絲雀 後備寫入失敗] {name} {exc}", flush=True)
+        except Exception as exc:
+            print(f"⚠️ [金絲雀 抓取失敗] {name} {exc}", flush=True)
+        if text is None:
+            text = prev.get(name)                                  # 上次成功版本
+            if text is None:
+                try:
+                    fb = gcs_read_text(f"canary/{name}")
+                except Exception:
+                    fb = None
+                text = fb if isinstance(fb, str) and fb.strip() else None
+            if text is not None:
+                stale.append(name)
+        if text is not None:
+            files[name] = text
+    if not files:
+        return None
+    fetched = (cached or {}).get("fetched_utc") if (stale and cached and not ok_any) else fmt_utc()
+    data = {"files": files, "fetched_utc": fetched, "stale_files": stale}
+    if ok_any or cached is None:
+        _canary_cache.update(ts=now, data=data)
+    return data
+
+
+def _cf(v):
+    try:
+        return float(v) if str(v).strip() != "" else None
+    except ValueError:
+        return None
+
+
+def _canary_blocks(tg):
+    """tg_daily.txt 以空行分段；回傳 [(首行, 全文)]。"""
+    return [(b.split("\n", 1)[0], b) for b in re.split(r"\n\s*\n", tg or "") if b.strip()]
+
+
+def canary_data(now=None):
+    pack = canary_fetch()
+    if pack is None:
+        return {"status": "error", "message": "金絲雀數據讀不到，也沒有上次成功的版本。"}
+    f = pack["files"]
+    daily = _canary_parse_csv(f.get("canary_daily.csv"))
+    sent = _canary_parse_csv(f.get("sent_log.csv"))
+    dlog = _canary_parse_csv(f.get("daily_log.csv"))
+    tg = f.get("tg_daily.txt") or ""
+    if not daily or not sent:
+        return {"status": "error", "message": "金絲雀數據格式不完整，請稍後再試。"}
+    last_sent, last = sent[-1], daily[-1]
+    D = last_sent.get("light_date") or last.get("date")
+    drow = next((r for r in reversed(daily) if r.get("date") == D), last)
+    didx = daily.index(drow)
+    prev = daily[didx - 1] if didx > 0 else None
+
+    def latest_val(col):
+        for r in reversed(daily[:didx + 1]):
+            if r.get(col, "").strip() != "":
+                return r
+        return None
+
+    def axis(name, a, b, slope, light_col, streak_col, label, minus_desc):
+        va, vb, sv = _cf(drow.get(a)), _cf(drow.get(b)), _cf(drow.get(slope))
+        pv = _cf(prev.get(slope)) if prev else None
+        return {"key": name, "label": label, "light": drow.get(light_col) or "—", "date": drow.get("date"), "a": va, "b": vb,
+                "diff": sv, "a_name": a.upper(), "b_name": b.upper(), "streak_days": last_sent.get(streak_col),
+                "prev_date": prev.get("date") if prev else None, "prev_diff": pv, "desc": minus_desc}
+
+    axes = [axis("short", "vix9d", "vix", "slope_9d", "axis_short", "streak_short", "短期軸（一週 vs 一月保險）", "VIX9D − VIX，>0 紅"),
+            axis("disaster", "vix", "vix3m", "slope_3m", "axis_disaster", "streak_disaster", "災難軸（一月 vs 三月保險）", "VIX − VIX3M，>0 深紅")]
+    birds = []
+    for name, col, p90, flag, asia in (("VVIX", "vvix", "vvix_p90", "yellow_vvix", False), ("MOVE", "move", "move_p90", "yellow_move", False),
+                                       ("AXVI", "axvi", "axvi_p90", "yellow_axvi", True), ("VHSI（試用）", "vhsi", "vhsi_p90", "trial_yellow_vhsi", True)):
+        v, p = _cf(drow.get(col)), _cf(drow.get(p90))
+        entry = {"name": name, "asia": asia, "value_date": drow.get("date") if v is not None else None, "value": v, "p90": p,
+                 "gap_pct": (v / p - 1) * 100 if v is not None and p else None, "lit": drow.get(flag) == "1" if v is not None else None,
+                 "counted": v is not None, "trial": "試用" in name}
+        if v is None:
+            lr = latest_val(col)
+            if lr:
+                entry.update(last_date=lr.get("date"), last_value=_cf(lr.get(col)), last_p90=_cf(lr.get(p90)))
+        birds.append(entry)
+    trial = [{"name": n, "lit": drow.get(c) == "1" if drow.get(c, "").strip() != "" else None}
+             for n, c in (("黃×2（三隻黃鳥亮數 ≥ 2）", "trial_yellow2"), ("深黃 VVIX p95", "trial_deep_yellow"), ("紅相對深度 p90", "trial_red_deep"),
+                          ("9D 對 3M 倒掛", "trial_red_9d3m"), ("黃 VHSI p90", "trial_yellow_vhsi"))]
+    w1 = next((r for r in reversed(dlog) if r.get("date") == D), dlog[-1] if dlog else {})
+    w1_info = {"lit": w1.get("w1_fear_spike") == "1" if w1 else None, "ratio": _cf(w1.get("vvix_vix_ratio")), "p10": _cf(w1.get("ratio_p10"))}
+    blocks = _canary_blocks(tg)
+    cite = [b for first, b in blocks if first.startswith("🔁") or first.startswith("📐")]
+    rows30 = []
+    for r in reversed(daily[-30:]):
+        rows30.append({"date": r.get("date"), "slope_9d": _cf(r.get("slope_9d")), "slope_3m": _cf(r.get("slope_3m")),
+                       "vvix_over_p90": (_cf(r.get("vvix")), _cf(r.get("vvix_p90"))), "move_over_p90": (_cf(r.get("move")), _cf(r.get("move_p90"))),
+                       "axvi_over_p90": (_cf(r.get("axvi")), _cf(r.get("axvi_p90"))), "axis_short": r.get("axis_short"),
+                       "axis_disaster": r.get("axis_disaster"), "yellow": r.get("yellow")})
+    t = (now or datetime.now(HK_TZ)).astimezone(HK_TZ)
+    today = t.strftime("%Y-%m-%d")
+    outdated = (t.hour, t.minute) >= (7, 30) and last_sent.get("report_date") != today
+    top = {"report_date": last_sent.get("report_date"), "light_date": D, "apply_date": last_sent.get("apply_date_pred"),
+           "generated_hkt": canary_hkt(last_sent.get("generated_at_utc")), "light_note": "此燈色用於燈色日之後嘅交易日（lag=1）",
+           "outdated": outdated, "today_hkt": today}
+    return {"status": "ok", "top": top, "axes": axes, "birds": birds, "trial": trial, "w1": w1_info, "rows30": rows30,
+            "cite": cite, "sent_log": list(reversed(sent[-10:])), "tg_daily": tg, "fetched_utc": pack["fetched_utc"],
+            "stale_files": pack["stale_files"], "yellow": {"light": drow.get("light") or drow.get("yellow"), "count": drow.get("yellow_count"),
+                                                            "streak": last_sent.get("streak_yellow")}}
+
+
+def canary_json(data):
+    if data.get("status") != "ok":
+        return data
+    return {k: data[k] for k in ("status", "top", "axes", "birds", "yellow", "rows30", "fetched_utc", "stale_files")}
+
+
+def _cn(v, nd=2, sign=False):
+    return "—" if not isinstance(v, (int, float)) else (f"{v:+,.{nd}f}" if sign else f"{v:,.{nd}f}")
+
+
+def build_canary_page(data):
+    nav = page_nav("canary")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐤 金絲雀・市場風險天氣預報</h1></div>{nav}</div>"
+    if data.get("status") != "ok":
+        return html_page("金絲雀", head + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    top = data["top"]
+    warn = ""
+    if top["outdated"]:
+        warn += ("<div class='section' style='border-left:5px solid #d97706; background:#fff8e1'><b style='color:#b45309'>"
+                 f"⚠ 今日金絲雀未更新</b>：最後一份報告日 {esc(canary_date(top['report_date']))}，今日係 {esc(canary_date(top['today_hkt']))}（過咗香港 07:30）。</div>")
+    if data["stale_files"]:
+        warn += ("<div class='section' style='border-left:5px solid #dc3545'>⚠ 暫時讀唔到最新檔案（"
+                 f"{esc('、'.join(data['stale_files']))}），顯示上次成功版本；讀取時間 {esc(canary_hkt(data['fetched_utc']))}。</div>")
+    cards = ("<div class='grid'>"
+             f"<div class='card'><div class='card-title'>報告日（香港）</div><div class='card-value'>{esc(canary_date(top['report_date']))}</div>"
+             f"<div class='card-desc'>發出 {esc(top['generated_hkt'])}</div></div>"
+             f"<div class='card'><div class='card-title'>燈色日 D</div><div class='card-value'>{esc(canary_date(top['light_date']))}</div></div>"
+             f"<div class='card'><div class='card-title'>適用日</div><div class='card-value'>{esc(canary_date(top['apply_date']))}</div></div>"
+             f"<div class='card'><div class='card-title'>黃燈（側翼鳥）</div><div class='card-value'>{LIGHT_ICON.get(data['yellow']['light'] or '', '')} {esc(str(data['yellow']['light'] or '—'))}</div>"
+             f"<div class='card-desc'>亮 {esc(str(data['yellow']['count'] or '—'))} 隻・連續 {esc(str(data['yellow']['streak'] or '—'))} 日</div></div></div>"
+             f"<p class='muted' style='font-size:13px'>⏰ 此燈色用於燈色日 D（{esc(canary_date(top['light_date']))}）之後嘅交易日（lag=1），第一個適用日 {esc(canary_date(top['apply_date']))}。"
+             "只顯示金絲雀工作流產出嘅數字，唔重算燈色；唔影響下單、唔入電閘。</p>")
+    ax = ""
+    for a in data["axes"]:
+        chg = ""
+        if a["prev_date"] and a["prev_diff"] is not None:
+            chg = f"；變化：{esc(canary_date(a['prev_date']))} {_cn(a['prev_diff'], 2, True)} → {esc(canary_date(a['date']))} {_cn(a['diff'], 2, True)}"
+        ax += (f"<div class='card'><div class='card-title'>{esc(a['label'])}</div>"
+               f"<div class='card-value'>{LIGHT_ICON.get(a['light'], '')} {esc(a['light'])}</div>"
+               f"<div class='card-desc' style='color:#495057'>連續 {esc(str(a['streak_days'] or '—'))} 日<br>"
+               f"{esc(canary_date(a['date']))}：{esc(a['a_name'])} {_cn(a['a'])} − 同日 {esc(a['b_name'])} {_cn(a['b'])} = <b>{_cn(a['diff'], 2, True)}</b>"
+               f"（{esc(a['desc'])}）{chg}</div></div>")
+    axes_html = f"<div class='section'><h2>🚦 三軸（燈色日 {esc(canary_date(top['light_date']))}）</h2><div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(320px,1fr))'>{ax}</div></div>"
+    brs = ""
+    for b in data["birds"]:
+        if b["counted"]:
+            state = "亮" if b["lit"] else "滅"
+            gap = f"{b['gap_pct']:+.1f}%" if b["gap_pct"] is not None else "—"
+            brs += (f"<tr><td>{esc(b['name'])}</td><td>{esc(canary_date(b['value_date']))}</td><td>{_cn(b['value'])}</td><td>{_cn(b['p90'])}</td>"
+                    f"<td>{gap}</td><td>{'🟡' if b['lit'] else '⚪'} {state}</td></tr>")
+        else:
+            last = (f"；最近值 {esc(canary_date(b.get('last_date')))} {_cn(b.get('last_value'))}（p90 {_cn(b.get('last_p90'))}）"
+                    if b.get("last_date") else "")
+            brs += (f"<tr><td>{esc(b['name'])}</td><td colspan='5'><b>{esc(canary_date(top['light_date']))} 列冇值，不計入 D 燈色</b>{last}</td></tr>")
+    birds_html = ("<div class='section'><h2>🐦 黃鳥（各鳥值 vs 自身 252 交易日 p90）</h2><div class='scroll'><table>"
+                  "<tr><th>鳥</th><th>值日</th><th>值</th><th>p90</th><th>距門檻</th><th>狀態</th></tr>" + brs + "</table></div>"
+                  "<p class='muted' style='font-size:12px'>亞洲鳥（AXVI、VHSI）D 列冇值就唔計入 D 燈色；VHSI 係試用層。</p></div>")
+    tr = "".join(f"<tr><td>{esc(t['name'])}</td><td>{'—' if t['lit'] is None else ('亮' if t['lit'] else '滅')}</td></tr>" for t in data["trial"])
+    w1 = data["w1"]
+    tr += (f"<tr><td>W1 VVIX/VIX &lt; p10（恐慌尖峰觀察）</td><td>{'—' if w1['lit'] is None else ('亮' if w1['lit'] else '滅')}"
+           f"（比率 {_cn(w1['ratio'])} vs p10 {_cn(w1['p10'])}）</td></tr>")
+    trial_html = ("<div class='section'><h2>🧪 試用層與觀察名單 W1</h2><p><b>無警報權，只記錄。</b></p>"
+                  f"<div class='scroll'><table><tr><th>項目</th><th>狀態</th></tr>{tr}</table></div></div>")
+
+    def cell(pair):
+        v, p = pair
+        return "—" if v is None else (f"{v:,.1f}" + (f" / {p:,.1f}" if p else ""))
+    t30 = "".join(
+        f"<tr><td>{esc(canary_date(r['date']))}</td><td>{_cn(r['slope_9d'], 2, True)}</td><td>{_cn(r['slope_3m'], 2, True)}</td>"
+        f"<td>{cell(r['vvix_over_p90'])}</td><td>{cell(r['move_over_p90'])}</td><td>{cell(r['axvi_over_p90'])}</td>"
+        f"<td>{LIGHT_ICON.get(r['axis_short'] or '', '')} {esc(r['axis_short'] or '—')}</td><td>{LIGHT_ICON.get(r['axis_disaster'] or '', '')} {esc(r['axis_disaster'] or '—')}</td>"
+        f"<td>{esc(r['yellow'] or '—')}</td></tr>" for r in data["rows30"])
+    table_html = ("<div class='section'><h2>📅 最近 30 個交易日</h2><div class='scroll'><table>"
+                  "<tr><th>日期</th><th>slope_9d</th><th>slope_3m</th><th>VVIX／p90</th><th>MOVE／p90</th><th>AXVI／p90</th>"
+                  f"<th>短期軸</th><th>災難軸</th><th>黃</th></tr>{t30}</table></div></div>")
+    cite = "".join(f"<pre style='white-space:pre-wrap; font-size:12.5px; line-height:1.6; margin:8px 0'>{esc(b)}</pre>" for b in data["cite"])
+    cite_html = (f"<div class='section'><h2>🔁 T−1 回驗／📐 後驗（引用今日訊息原文）</h2>{cite or '<p class=muted>今日訊息冇呢兩段。</p>'}</div>")
+    sl = "".join(f"<tr><td>{esc(canary_date(r.get('report_date')))}</td><td>{esc(canary_date(r.get('light_date')))}</td>"
+                 f"<td style='font-family:monospace'>{esc(r.get('tg_sha1') or '—')}</td></tr>" for r in data["sent_log"])
+    sent_html = ("<div class='section'><h2>📮 發送紀錄（最近 10 次）</h2><div class='scroll'><table>"
+                 f"<tr><th>報告日</th><th>燈色日</th><th>tg_sha1</th></tr>{sl}</table></div></div>")
+    full_html = ("<details class='fy-more'><summary>📨 今日 Telegram 全文（tg_daily.txt）</summary>"
+                 f"<pre style='white-space:pre-wrap; font-size:12.5px; line-height:1.6; margin-top:10px'>{esc(data['tg_daily'])}</pre></details>")
+    foot = (f"<p class='muted' style='font-size:12px'>{esc(CANARY_FOOTER)}　讀取時間 {esc(canary_hkt(data['fetched_utc']))}・"
+            "JSON：<a href='?view=canary&amp;format=json'>?view=canary&amp;format=json</a></p>")
+    body = (head + warn + print_toolbar_html("🐤 金絲雀・市場風險天氣預報") + f"<div class='section'>{cards}</div>" + axes_html + birds_html
+            + trial_html + table_html + cite_html + sent_html + full_html + foot)
+    return html_page("金絲雀", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,600000)}else{location.reload()}},600000)</script>")
+
+
+def handle_canary_get(req):
+    try:
+        data = canary_data()
+    except Exception as exc:
+        log_event(f"⚠️ [金絲雀頁失敗] {exc}", severity="WARNING", component="canary")
+        data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
+    if req.args.get("format") == "json":
+        return _json_response(canary_json(data), 200 if data.get("status") == "ok" else 503)
+    return build_canary_page(data)
+
+
 def strategies_data(now=None):
     """全部策略的現時持倉方向（side：1 多、-1 空、0 空手、None 不知道）。各來源讀不到就標 None，不影響其他列。"""
     rows = []
@@ -6562,7 +7041,8 @@ def build_futu_real_section(fr):
             f"<td style='font-size:11px'>{futu_quote_time_hkt(r['code'], r['quote_time'], any(r.get(k) for k in ('bid', 'ask', 'last')))}</td></tr>"
             for r in t["rows"])
         out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
-                f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
+                + (f" <a href='{esc(t['link'])}' style='font-size:12px'>→ 詳細頁</a>" if t.get("link") else "")
+                + f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
                 + (f"；{stops}" if stops else "") + f"</span>{alerts}" + futu_delta_budget_html(t.get("delta"))
                 + (f"<div class='scroll'><table><tr><th>合約</th><th>用途</th><th>持倉</th><th>開倉價</th><th>買／賣／最後</th>"
                    f"<th>持倉盈虧</th><th>報價時間（香港）</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
@@ -7246,7 +7726,7 @@ def build_futu_range_page(data):
         hint = (f"本地執行 push_to_gcp.py 的 <span class='mono'>--backfill {esc(symbol)}</span> 補歷史，之後每 5 分鐘會自動更新。" if m["intraday"]
                 else esc(m.get("empty_hint") or "GitHub Actions 的 es_daily_push.yml 每個交易日收市後推入 yfinance 的 ES 連續合約日線；第一次要手動 dispatch 補歷史。"))
         body = nav + f"<div class='section'>還沒有交易日 K 數據。{hint}</div>"
-        return html_page(m["title"], body, head_extra=FY_CSS)
+        return html_page(m["title"], body, head_extra=FY_CSS + fy_theme_css(m["view"]))
     latest = rows[-1]
     age = data.get("latest_5m_age_sec")
     stale = age is None or age > FUTU_STALE_SEC
@@ -7349,7 +7829,7 @@ def build_futu_range_page(data):
         原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></p>
       </div>
     </details>"""
-    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + PRINT_CSS)
+    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + fy_theme_css(m["view"]) + PRINT_CSS)
 
 
 def handle_futu_api_get(symbol=None):
@@ -8462,11 +8942,13 @@ PAGE_LINKS = [
     ("order_app", "🧾 送單參數"),
     ("jinnang_sheet", "🗒️ 錦囊執行單"),
     ("jinnang_tracker", "✅ 錦囊九十筆"),
-    ("futu_range", "🌬️ 風揚陣波幅"),                       # [R105] 每頁頂都能到風揚陣
-    ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
-    ("nq_range", "🇺🇸 NQ 波幅"),                            # [R158] NQ 納指 100 期貨
+    ("futu_range", "🌬️ 風揚陣恆指波幅"),                       # [R105] 每頁頂都能到風揚陣
+    ("es_range", "🇺🇸 風揚陣ES 波幅"),                            # [R127] ES 標普 500 期貨
+    ("nq_range", "🇺🇸 風揚陣NQ 波幅"),                            # [R158] NQ 納指 100 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
+    ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
+    ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
@@ -10257,6 +10739,10 @@ def handle_get(req):
         return handle_strategies_get(req)
     if view == "dizai":                                          # [R137] 地載陣：今日策略＋前向測試（&format=json）
         return handle_dizai_get(req)
+    if view == "yunchui":                                        # [R159] ☁️ 雲垂陣（&format=json）
+        return handle_yunchui_get(req)
+    if view == "canary":                                         # [R160] 🐤 金絲雀（&format=json）
+        return handle_canary_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）

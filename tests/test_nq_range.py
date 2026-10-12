@@ -22,13 +22,15 @@ FAKE.clear()
 page0 = client.get("/?view=nq_range").get_data(as_text=True)
 check("沒數據：NQ 頁標題與 mt5_push 提示", "NQ 納指 100 期貨波幅" in page0 and "NAS100ft:US.NQ_FRONT" in page0, page0[:300])
 for v in ("futu_range", "es_range", "welcome"):
-    check(f"{v} 頁頂有 NQ 連結", "href='?view=nq_range'>🇺🇸 NQ 波幅" in client.get(f"/?view={v}").get_data(as_text=True))
-check("NQ 頁頂目前頁是 NQ、有 ES 連結", "nav-current'>🇺🇸 NQ 波幅" in page0 and "href='?view=es_range'>🇺🇸 ES 波幅" in page0)
+    check(f"{v} 頁頂有 NQ 連結", "href='?view=nq_range'>🇺🇸 風揚陣NQ 波幅" in client.get(f"/?view={v}").get_data(as_text=True))
+check("NQ 頁頂目前頁是 NQ、有 ES 連結", "nav-current'>🇺🇸 風揚陣NQ 波幅" in page0 and "href='?view=es_range'>🇺🇸 風揚陣ES 波幅" in page0)
 days = sessions(300, end="2026-10-09")
 for b in days:
     b["source"] = "mt5_cfd:NAS100ft"
 r = client.post("/", json={"action": "futu_data", "token": "tok", "symbol": NQ, "kline_type": "K_SESSION", "source": "mt5_cfd:NAS100ft", "data": days})
 check("NQ K_SESSION 封包 200", r.status_code == 200, r.get_data(as_text=True)[:200])
+check("NQ 頁配色（青色主題）同 ES、恒指頁唔同", "#0b7285" in client.get("/?view=nq_range").get_data(as_text=True) and "#0b7285" not in client.get("/?view=es_range").get_data(as_text=True)
+      and "#0b7285" not in client.get("/?view=futu_range").get_data(as_text=True))
 js = client.get("/?view=nq_range&format=json").get_json()
 check("JSON 代號是 US.NQ_FRONT、有 200 天以上、有預測", js["symbol"] == NQ and len(js["rows"]) >= 200 and bool(js.get("forecast")), str(js)[:200])
 check("ES 的日線沒被 NQ 封包影響", client.get("/?view=es_range&format=json").get_json()["status"] == "empty")
