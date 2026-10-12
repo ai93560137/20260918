@@ -71,7 +71,9 @@ c = d["conflicts"]
 check("恒指方向相反：做多含蛇蟠陣、做空含地載・衡，並標有真錢", len(c) == 1 and c[0]["market"] == "恒指" and "地載・衡" in c[0]["short"]
       and any("蛇蟠陣" in x for x in c[0]["long"]) and c[0]["real"], c)
 html = client.get("/?view=strategies").get_data(as_text=True)
-check("頁面：⚠️ 方向相反、真錢標記、每 60 秒更新", "⚠️ 方向相反" in html and "🔴 真錢" in html and "content='60'" in html)
+check("頁面：⚠️ 方向相反、真錢標記、每 60 秒更新（R162 改 JS，列印中唔重載）", "⚠️ 方向相反" in html and "🔴 真錢" in html
+      and "60000" in html and "window.__printing" in html and "http-equiv='refresh'" not in html)
+check("頁面：🖨️ 列印成 PDF 按鈕、列印樣式（導覽列隱藏、區塊不斷開）", "列印成 PDF" in html and "@media print" in html and "break-inside:avoid" in html and "print-flow" in html and "print-keep" in html)
 j = client.get("/?view=strategies&format=json").get_json()
 check("JSON 一致", j["summary"] == d["summary"] and len(j["rows"]) == len(d["rows"]))
 
