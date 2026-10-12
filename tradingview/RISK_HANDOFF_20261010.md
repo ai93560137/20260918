@@ -130,3 +130,9 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 雲垂陣工作階段請求（使用者指示）：`?view=yunchui`（&format=json），風格同地載陣。資料：雲垂陣分支 `claude/dazzling-curie-f3xzb8` 的 `tradingview/data_external/yunchui_public.json`（公開 raw，快取 120 秒、GCS `yunchui/public.json` 後備；可用環境變數 `YUNCHUI_PUBLIC_URL` 改位置）。
 - 即時 Δ（月跨式／對沖／含對沖淨 Δ／恒指全部）、止損用量、對沖手數優先用 `futu/risk/latest.json`（R154 `delta_parts`、`futu_real_view`），標 HKT；冇即時值先退回 JSON 日報時點並標「非即時」。
 - 版面：策略簡介＋規則、Δ 預算條（±0.5）、持倉卡（行使價、到期、權利金、止損線）、事件時間線、更正紀錄（原文全文）；🖨️ 列印成 PDF（R157）；`page_nav` 同五個靜態頁導覽加「☁️ 雲垂陣」；策略總表雲垂陣一格加「→ 詳細頁」連結。唔顯示權益、保證金、帳戶資料。
+
+## 2026-10-12 R160：🐤 金絲雀頁（?view=canary）
+- 金絲雀工作階段（session_01KucjwzRvueynnK5qm26y9g）請求，使用者確認「做金絲雀頁」、策略總表頂部唔加燈色。只顯示金絲雀工作流產出（唔重算燈色），唔影響下單、唔入電閘。
+- 數據：預設分支 `canary/` 四個檔（`CANARY_RAW_BASE` 可改）；記憶體快取 30 分鐘、GCS `canary/` 後備（canary_daily.csv 只存最後 40 列）；讀唔到就顯示上次成功版本同讀取時間；過香港 07:30 而最後報告日≠今日就黃字「今日金絲雀未更新」。
+- `tests/test_canary_page.py`（33 項，假抓取）＋ `tests/fixtures_canary/`（真實檔案節錄）。`canary/` 目錄、canary_daily.yml、canary_broadcast.yml 由金絲雀工作階段負責，本改動冇碰。
+- 同批：風揚陣導覽改名（風揚陣恆指波幅／風揚陣ES 波幅；NQ 頁待 epic-ramanujan 合併後同樣改名）、ES／NQ 頁配色同恒指分開（`FY_THEMES`）。
