@@ -142,3 +142,17 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R162：策略總表加「🖨️ 列印成 PDF」
 - `?view=strategies` 加按鈕＋列印樣式；總表同「💼 富途實倉」兩個長區塊容許跨頁（`.print-flow`），一個陣嘅標題＋表格作一塊（`.print-keep`）、表格列唔斷；自動重載改 JS（列印中唔重載）。
+
+## 2026-10-12 R164：導覽「八陣圖指令台」改名「蛇蟠陣」
+- 使用者要求：`PAGE_LINKS` 同五個靜態頁導覽 `⚔️ 八陣圖指令台` → `🐍 蛇蟠陣`（頁面 `?view=bazhentu` 不變）。
+## 2026-10-12 部署紀錄（蛇蟠陣工作階段要求，使用者貼入）
+- R163（策略書頁版面，#87，`7cec29501`）已部署：修訂 `zhuge-risk-manager-00288-6qk`；factsheet 頁有列印按鈕、導覽列；welcome／yunchui／strategies 200。
+
+## 2026-10-12 R165：📈 HTF 每日掛單頁（?view=htf）＋策略總表四行
+- 鳥翔分支（`claude/stock-research-k9nzau`）請求，使用者確認「做 HTF 頁」。讀該分支 `analysis/htf_daily/`（公開 raw，`HTF_RAW_BASE` 可改）：`<mk>_latest.json`、`<mk>_orders_<date>.csv`、`<mk>_positions.csv`、`<mk>_closed.csv`、`names.json`；記憶體快取 30 分鐘、GCS `htf/` 後備（orders 用固定 key）；讀唔到用上次成功版本並標明。唔重算訊號、唔落單、冇改該分支。
+- 頁面：四市場摘要卡、每市場（數據日、貨幣、大市過濾狀態）明日掛單（按 dist_pct 排）、持倉（賣出紅／賣一半黃／持有灰）、前向已平倉（筆數、平均、最近 15）、參數行（美股標 alpha t 1.48 孤峰）、怎樣照做、證偽頁尾；🖨️ 列印（長區塊可跨頁、表頭每頁重印）。策略總表加 `htf_hk/tw/jp/us` 四行（n_open>0 → 做多、lots=n_open）。
+- `tests/test_htf_page.py`（33 項，假抓取）＋ `tests/fixtures_htf/`；導覽頁數 17。
+
+## 2026-10-12 R166：蛇蟠陣頁（bazhentu.html）版面改同雲垂陣一樣、綠色主色
+- 使用者要求：排版、字體、格式同雲垂陣（BASE_CSS：.nav 品牌列＋導覽、.section 卡片、系統字體）一致，主色改綠（`--snake:#1b7f4f`；雲垂陣係藍）。JS、所有欄位 id、localStorage、levels.json 自動套用邏輯原封不動；舊版深色模式同 Noto Serif 字體移除（同雲垂陣一樣冇）。
+- 2026-10-12 R165／R166 部署：第一次 Cloud Build 失敗（main.py 用咗 Python 3.12 先容許嘅 f-string 巢狀同款引號；Cloud Run 係 3.11，本機 3.13 編譯過咗），修正後修訂 `zhuge-risk-manager-00290-lpq`。之後部署前用 `python3.11 -m py_compile main.py`（已寫入 CLAUDE.md）。

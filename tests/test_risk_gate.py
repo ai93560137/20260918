@@ -336,9 +336,9 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
     for m in must:
         check(f"{f} 含「{m}」", m in txt)
 
-print("\n=== 10d. 十六頁導覽列一致（[R131] 八陣圖指令台改為站內頁；[R137] 加地載陣；[R144] 加策略總表）===")
+print("\n=== 10d. 十七頁導覽列一致（[R131] 八陣圖指令台改為站內頁；[R137] 加地載陣；[R144] 加策略總表）===")
 VIEWS = [v for v, _ in main.PAGE_LINKS]
-check(f"main.py 的 PAGE_LINKS 有 16 頁（{len(VIEWS)}）", len(VIEWS) == 16, VIEWS)
+check(f"main.py 的 PAGE_LINKS 有 17 頁（{len(VIEWS)}）", len(VIEWS) == 17, VIEWS)
 EXTERNAL = [v for v in VIEWS if v.startswith("http")]
 check("沒有站外連結（八陣圖指令台已改為 ?view=bazhentu）", EXTERNAL == [] and "bazhentu" in VIEWS, VIEWS)
 for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html", "bazhentu.html"):
@@ -346,7 +346,7 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
     self_view = f[:-5] if f.startswith(("jinnang", "bazhentu")) else f[:-5] + "_app"
     # 當前頁不該連到自己（下面另有一項專門檢查），所以從必須出現的清單裡排除
     miss = [v for v in VIEWS if v != self_view and v not in txt]
-    check(f"{f} 連到其餘 15 頁", not miss, f"缺 {miss}")
+    check(f"{f} 連到其餘 16 頁", not miss, f"缺 {miss}")
     check(f"{f} 不再連到舊 artifact", "claude.ai/artifact" not in txt, f)
 
 _trk = io.open("/home/user/20260918/jinnang_tracker.html", encoding="utf-8").read()
@@ -358,7 +358,7 @@ check("指令台是站內連結", "href='?view=bazhentu'" in nav, nav[:400])
 check("沒有把網址接在 ?view= 後面", "?view=https" not in nav, nav[:400])
 check("站內連結照舊", "href='?view=jinnang_tracker'" in nav, nav[:400])
 nav_bz = main.page_nav("bazhentu")
-check("指令台頁自己那格標成 nav-current", "nav-current'>⚔️ 八陣圖指令台" in nav_bz, nav_bz[:400])
+check("指令台頁自己那格標成 nav-current", "nav-current'>🐍 蛇蟠陣" in nav_bz, nav_bz[:400])
 for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html", "錦囊九十筆")):
     txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
     check(f"{f} 自己那格標成 current",

@@ -104,6 +104,9 @@
 #   * 2026-10-05 — [R119] 預測高位／低位的「預計範圍」由 80%（10%／90% 分位）改為 96%（2%／98% 分位，HL_BAND_Q）：
 #     逐日前推 558 天，高、低各自命中 96%、兩邊同時 92%（原本 80%／67%），平均範圍由 494 點擴到 849 點。
 #     開市前紀錄多記 band_q；舊紀錄（80% 範圍）在準繩統計裡改用逐日前推重算，令全部歷史同一口徑。全日波幅的預計範圍不變（80%）。
+#   * 2026-10-12 — [R165] 📈 HTF 每日掛單頁（?view=htf，&format=json）：讀鳥翔分支 analysis/htf_daily/（HTF_RAW_BASE 可改）港台日美四市場嘅
+#     明日掛單、持倉、前向已平倉、參數，快取 30 分鐘、GCS htf/ 後備；策略總表加 htf_<市場> 四行；🖨️ 列印（表頭每頁重印）。只讀、唔重算、唔落單。
+#   * 2026-10-12 — [R164] 導覽「⚔️ 八陣圖指令台」改名「🐍 蛇蟠陣」（頁面 ?view=bazhentu 不變）。
 #   * 2026-10-12 — [R162] 🧭 策略總表（?view=strategies）加「🖨️ 列印成 PDF」按鈕（PRINT_CSS／print_toolbar_html）；自動重載由 meta refresh 改 JS（列印中唔重載）。
 #   * 2026-10-12 — [R160] 🐤 金絲雀頁（?view=canary，&format=json）：只顯示金絲雀工作流產出（預設分支 canary/ 四個檔，CANARY_RAW_BASE 可改），
 #     記憶體快取 30 分鐘、GCS canary/ 後備；頂部日期卡、三軸、黃鳥、試用層／W1（無警報權）、最近 30 日表、T−1 回驗原文、發送紀錄、全文；
@@ -6860,6 +6863,239 @@ def handle_canary_get(req):
     return build_canary_page(data)
 
 
+# =============================================================================
+# [R165] 📈 HTF 每日掛單頁（?view=htf；&format=json）＋策略總表四行：鳥翔分支（claude/stock-research-k9nzau）每個交易日
+# 17:13 HKT 跑 GitHub Actions，約 18:05 前把 analysis/htf_daily/ 結果 commit 入該分支；本頁只讀該分支（公開 raw），
+# 唔重算訊號、唔落單。記憶體快取 30 分鐘、GCS htf/ 後備；讀唔到就用上次成功版本並標明。
+# =============================================================================
+HTF_RAW_BASE = os.environ.get(
+    "HTF_RAW_BASE", "https://raw.githubusercontent.com/ai93560137/20260918/claude/stock-research-k9nzau/analysis/htf_daily").rstrip("/")
+HTF_MARKETS = (("hk", "港股", "HKD"), ("tw", "台股", "TWD"), ("jp", "日股", "JPY"), ("us", "美股", "USD"))
+HTF_FIT_T = {"hk": 3.58, "tw": 3.35, "jp": 2.57, "us": 1.48}      # 全期擬合 alpha t（research/htf_curvefit/<市場>.json）
+HTF_TRAIL = {"ma10": "10 日線", "ma20": "20 日線", "ma50": "50 日線"}
+HTF_CACHE_SEC = 1800
+HTF_STOP_DD = "−33%"
+_htf_cache = {}                                                   # 檔名 → {"ts", "text", "stale"}
+
+
+def _htf_get(name, key=None):
+    """單一檔案：GitHub raw → 記憶體快取 → 上次成功版本 → GCS 後備。回傳 (text, stale) 或 (None, True)。"""
+    key = key or name
+    now = now_ts()
+    c = _htf_cache.get(key)
+    if c and now - c["ts"] < HTF_CACHE_SEC and c.get("text") is not None:
+        return c["text"], c.get("stale", False)
+    text = None
+    try:
+        r = requests.get(f"{HTF_RAW_BASE}/{name}", timeout=8, headers={"Cache-Control": "no-cache"})
+        if r.ok and r.text.strip():
+            text = r.text
+            try:
+                gcs_write_text(f"htf/{key}", text)
+            except Exception as exc:                              # 後備寫唔入唔影響顯示
+                print(f"⚠️ [HTF 後備寫入失敗] {key} {exc}", flush=True)
+    except Exception as exc:
+        print(f"⚠️ [HTF 抓取失敗] {name} {exc}", flush=True)
+    if text is not None:
+        _htf_cache[key] = {"ts": now, "text": text, "stale": False}
+        return text, False
+    if c and c.get("text") is not None:                           # 上次成功版本
+        _htf_cache[key] = {**c, "ts": now, "stale": True}
+        return c["text"], True
+    try:
+        fb = gcs_read_text(f"htf/{key}")
+    except Exception:
+        fb = None
+    if isinstance(fb, str) and fb.strip():
+        _htf_cache[key] = {"ts": now, "text": fb, "stale": True}
+        return fb, True
+    return None, True
+
+
+def _htf_csv(text):
+    if not text or text.strip().startswith("（無）"):
+        return []
+    return list(csv.DictReader(io.StringIO(text)))
+
+
+def _htf_latest(mk):
+    text, stale = _htf_get(f"{mk}_latest.json")
+    if not text:
+        return None, stale
+    try:
+        d = json.loads(text)
+        return (d if isinstance(d, dict) and d.get("date") else None), stale
+    except ValueError:
+        return None, stale
+
+
+def htf_summary():
+    """策略總表用：四個市場嘅 n_open／n_orders／date（只抓 4 個小 JSON）。"""
+    out = {}
+    for mk, zh, cur in HTF_MARKETS:
+        d, stale = _htf_latest(mk)
+        out[mk] = None if d is None else {"date": d.get("date"), "n_open": int(to_float(d.get("n_open")) or 0),
+                                          "n_orders": int(to_float(d.get("n_orders")) or 0), "stale": stale}
+    return out
+
+
+def _htf_price_nd(v):
+    return 0 if v >= 1000 else (1 if v >= 100 else (2 if v >= 10 else 3))
+
+
+def _htf_spec(c):
+    try:
+        return (f"旗桿 ≥ {float(c['g']):.0%}、旗面回落 ≤ {float(c['d']):.0%}、動能全市場前 {100 - int(c['mom_q'])}%、追價上限 {float(c['chase']):.0%}、"
+                f"停損 {c['stop']} × ADR、" + ("不賣一半" if not c.get("partial") else f"第 {c['partial']} 日收市賣一半")
+                + f"、收市破 {HTF_TRAIL.get(c.get('trail'), c.get('trail'))}翌日開市賣、最長 {c['hold']} 日")
+    except (KeyError, TypeError, ValueError):
+        return "—"
+
+
+def htf_data():
+    names_text, _ = _htf_get("names.json")
+    try:
+        names = json.loads(names_text) if names_text else {}
+    except ValueError:
+        names = {}
+    markets, stale_any, dates = [], False, []
+    for mk, zh, cur in HTF_MARKETS:
+        d, stale = _htf_latest(mk)
+        if d is None:
+            markets.append({"key": mk, "name": zh, "ccy": cur, "ok": False, "stale": stale})
+            stale_any = True
+            continue
+        date = str(d.get("date"))
+        dates.append(date)
+        c = d.get("params") if isinstance(d.get("params"), dict) else {}
+        o_text, s1 = _htf_get(f"{mk}_orders_{date}.csv", key=f"{mk}_orders.csv")
+        p_text, s2 = _htf_get(f"{mk}_positions.csv")
+        c_text, s3 = _htf_get(f"{mk}_closed.csv")
+        stale = stale or s1 or s2 or s3
+        stale_any = stale_any or stale
+        orders = []
+        for r in _htf_csv(o_text):
+            try:
+                orders.append({"ticker": r["ticker"], "name": names.get(r["ticker"], ""), "close": float(r["close"]), "pivot": float(r["pivot"]),
+                               "dist_pct": float(r["dist_pct"]), "max_open": float(r["max_open"]), "stop": float(r["stop_if_fill_at_pivot"]),
+                               "adr": float(r["adr"]), "alloc_pct": float(r["alloc_pct"])})
+            except (KeyError, TypeError, ValueError):
+                continue
+        orders.sort(key=lambda x: x["dist_pct"])
+        positions = []
+        for r in _htf_csv(p_text):
+            try:
+                a = str(r.get("action") or "")
+                positions.append({"ticker": r["ticker"], "name": names.get(r["ticker"], ""), "entry_date": r.get("entry_date"), "fill": float(r["fill"]),
+                                  "held_days": r.get("held_days"), "units": to_float(r.get("units")), "close": to_float(r.get("close")),
+                                  "stop_tomorrow": to_float(r.get("stop_tomorrow")), "pnl_pct": to_float(r.get("pnl_pct")), "action": a,
+                                  "action_kind": "sell" if a.startswith(("明天開市全數賣出", "明天收市全數賣出")) else ("half" if a.startswith("明天收市賣一半") else "hold")})
+            except (KeyError, TypeError, ValueError):
+                continue
+        closed = []
+        for r in _htf_csv(c_text):
+            try:
+                closed.append({"ticker": r["ticker"], "name": names.get(r["ticker"], ""), "entry_date": r.get("entry_date"),
+                               "exit_date": r.get("exit_date"), "ret_gross": float(r["ret_gross"]), "exits": r.get("exits", "")})
+            except (KeyError, TypeError, ValueError):
+                continue
+        rets = [x["ret_gross"] for x in closed]
+        mkt_filter = bool(c.get("mkt"))
+        markets.append({"key": mk, "name": zh, "ccy": cur, "ok": True, "stale": stale, "date": date,
+                        "n_orders": len(orders), "n_open": len(positions), "n_closed": len(closed),
+                        "mkt_filter": mkt_filter, "mkt_ok": bool(d.get("mkt_ok")), "fwd_start": d.get("fwd_start"),
+                        "params": c, "spec": _htf_spec(c), "fit_t": HTF_FIT_T.get(mk),
+                        "orders": orders, "positions": positions,
+                        "closed": {"n": len(closed), "avg": (sum(rets) / len(rets)) if rets else None,
+                                   "win": sum(1 for x in rets if x > 0), "recent": closed[-15:][::-1]}})
+    if not dates:
+        return {"status": "error", "message": "HTF 數據讀不到，也沒有上次成功的版本。"}
+    return {"status": "ok", "latest_date": max(dates), "markets": markets, "stale": stale_any, "fetched_utc": fmt_utc()}
+
+
+def build_htf_page(data):
+    nav = page_nav("htf")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📈 HTF 每日掛單</h1></div>{nav}</div>"
+    if data.get("status") != "ok":
+        return html_page("HTF 每日掛單", head + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    f = lambda v, nd: "—" if v is None else f"{v:,.{nd}f}"
+    pct = lambda v, nd=1, sign=True: "—" if v is None else (f"{v * 100:+.{nd}f}%" if sign else f"{v * 100:.{nd}f}%")
+    tk = lambda t, n: f"<td><b>{esc(t)}</b>" + (f"<div class='muted' style='font-size:11px'>{esc(n)}</div>" if n else "") + "</td>"
+    chips = "".join(
+        f"<div class='card'><div class='card-title'>{esc(m['name'])}</div>"
+        + (f"<div class='card-small'>掛單 {m['n_orders']}・持倉 {m['n_open']}・已平倉 {m['n_closed']}</div><div class='card-desc'>數據至 {esc(m['date'])}</div>"
+           if m["ok"] else "<div class='card-small muted'>讀不到</div>") + "</div>" for m in data["markets"])
+    warn = ("<div class='section' style='border-left:5px solid #dc3545'>⚠ 部分檔案暫時讀唔到最新，顯示上次成功版本。</div>" if data["stale"] else "")
+    top = (f"<div class='section'><h2>HTF 每日掛單　{esc(data['latest_date'])}</h2>"
+           "<p class='muted' style='font-size:13px'>HTF 高漲旗型（全期參數，曲線擬合版）紙上前向紀錄；每個交易日收市後由鳥翔分支更新（約 18:05 HKT 前）。"
+           "掛單用買入停損單：明天盤中升穿觸發價才成交，開市已高於上限就取消。只係資訊，唔係落單指令。</p>"
+           f"<div class='grid'>{chips}</div></div>")
+    secs = ""
+    for m in data["markets"]:
+        if not m["ok"]:
+            secs += f"<div class='section print-flow'><h2>{esc(m['name'])}</h2><p class='muted'>暫時讀唔到呢個市場嘅數據。</p></div>"
+            continue
+        if m["mkt_filter"]:
+            pill = ("<span class='pos'>大市過濾 ✓ 可開新倉</span>" if m["mkt_ok"] else "<span class='neg'>大市過濾 ✗ 明天不開新倉</span>")
+        else:
+            pill = "<span class='muted'>不用大市過濾</span>"
+        orow = "".join(
+            "<tr>" + tk(o["ticker"], o["name"]) + f"<td>{f(o['close'], _htf_price_nd(o['pivot']))}</td><td><b>{f(o['pivot'], _htf_price_nd(o['pivot']))}</b></td>"
+            f"<td>{pct(o['dist_pct'])}</td><td>{f(o['max_open'], _htf_price_nd(o['pivot']))}</td><td class='neg'>{f(o['stop'], _htf_price_nd(o['pivot']))}</td>"
+            f"<td>{pct(o['adr'], 1, False)}</td><td>{pct(o['alloc_pct'], 0, False)}</td></tr>" for o in m["orders"])
+        t_orders = ("<div class='scroll'><table class='print-flow'><thead><tr><th>代號</th><th>今天收市</th><th>觸發價（買入停損單）</th><th>距收市</th>"
+                    "<th>開市高於此就取消</th><th>停損（若在觸發價成交）</th><th>ADR</th><th>資金</th></tr></thead><tbody>"
+                    + orow + "</tbody></table></div>") if orow else "<p class='muted'>明天沒有掛單。</p>"
+        prow = "".join(
+            "<tr>" + tk(p["ticker"], p["name"]) + f"<td>{esc(str(p['entry_date'] or '—'))}</td><td>{f(p['fill'], _htf_price_nd(p['fill']))}</td>"
+            f"<td>{esc(str(p['held_days'] or '—'))}</td><td>{'—' if p['units'] is None else format(p['units'], 'g')}</td><td>{f(p['close'], _htf_price_nd(p['fill']))}</td>"
+            f"<td class='neg'>{f(p['stop_tomorrow'], _htf_price_nd(p['fill']))}</td><td class='{'pos' if (p['pnl_pct'] or 0) >= 0 else 'neg'}'>{pct(p['pnl_pct'])}</td>"
+            f"<td><span style='padding:2px 8px; border-radius:10px; font-size:12px; background:"
+            + {"sell": "#f8d7da; color:#842029", "half": "#fff3cd; color:#664d03", "hold": "#e9ecef; color:#495057"}[p["action_kind"]]
+            + f"'>{esc(p['action'])}</span></td></tr>" for p in m["positions"])
+        t_pos = ("<div class='scroll'><table class='print-flow'><thead><tr><th>代號</th><th>入場日</th><th>成交價</th><th>已持有（日）</th><th>剩餘份數</th>"
+                 "<th>今天收市</th><th>明天停損</th><th>浮動</th><th>明天要做</th></tr></thead><tbody>" + prow + "</tbody></table></div>") if prow else "<p class='muted'>沒有持倉。</p>"
+        cl = m["closed"]
+        if cl["n"]:
+            crow = "".join("<tr>" + tk(x["ticker"], x["name"]) + f"<td>{esc(str(x['entry_date'] or ''))}</td><td>{esc(str(x['exit_date'] or ''))}</td>"
+                           f"<td class='{'pos' if x['ret_gross'] >= 0 else 'neg'}'>{pct(x['ret_gross'])}</td><td style='font-size:12px'>{esc(x['exits'])}</td></tr>"
+                           for x in cl["recent"])
+            t_closed = (f"<p class='muted' style='font-size:13px'>前向已平倉 {cl['n']} 筆，平均 {pct(cl['avg'])}（未扣成本），賺錢 {cl['win']} 筆。最近 15 筆：</p>"
+                        "<div class='scroll'><table class='print-flow'><thead><tr><th>代號</th><th>入場</th><th>出場</th><th>回報</th><th>明細</th></tr></thead><tbody>"
+                        + crow + "</tbody></table></div>")
+        else:
+            t_closed = f"<p class='muted'>前向紀錄由 {esc(str(m['fwd_start'] or '—'))} 起入場的交易算起，暫時未有平倉。</p>"
+        fit = m["fit_t"]
+        fit_txt = (f"全期擬合 alpha t {fit:.2f}" + ("（低於 1.5，屬孤峰）" if fit is not None and fit < 1.5 else "")) if fit is not None else ""
+        secs += (f"<div class='section print-flow'><div class='print-keep'><h2>{esc(m['name'])}</h2>"
+                 f"<p class='muted' style='font-size:13px'>數據至 {esc(m['date'])}（{esc(m['ccy'])}）　{pill}</p></div>"
+                 f"<div class='print-keep'><h3 style='font-size:15px'>明日掛單（{m['n_orders']} 隻，按距離觸發價由近到遠）</h3></div>{t_orders}"
+                 f"<div class='print-keep'><h3 style='font-size:15px; margin-top:16px'>持倉與明天動作（{m['n_open']} 筆）</h3></div>{t_pos}"
+                 f"<div class='print-keep'><h3 style='font-size:15px; margin-top:16px'>前向已平倉</h3></div>{t_closed}"
+                 f"<p class='muted' style='font-size:12px; margin-top:10px'>本市場參數：{esc(m['spec'])}。{esc(fit_txt)}</p></div>")
+    rules = ("<div class='section'><h2>怎樣照做</h2><ol style='font-size:13.5px; line-height:1.7; margin:6px 0 0 20px'>"
+             "<li>掛單：在觸發價掛買入停損單（stop order）。開市價已高於「開市高於此就取消」，當天不買。美股名單在香港時間傍晚出，當晚美股開市執行。</li>"
+             "<li>成交後即設停損：成交價 −（停損倍數 × ADR）；表內停損按「剛好在觸發價成交」計，實際以成交價重算。</li>"
+             "<li>資金：每筆 = 20% × 波幅權重（表內「資金」欄），四個市場合計曝險不超過 100%。</li>"
+             "<li>持倉照「明天要做」：持有、收市賣一半（之後停損移到成本）、或翌日開市全數賣出。</li>"
+             "<li>在富途開實倉前，先在預設分支 POSITIONS.md 登記（陣名「HTF」＋代號）並通知總指揮。</li></ol></div>")
+    foot = (f"<p class='muted' style='font-size:12px'>參數由全期數據擬合選出（曲線擬合），未來表現大概率低於回測。證偽：前向 100 筆平均虧損，或回撤超過 {HTF_STOP_DD}，即停。不構成投資建議。"
+            f"　讀取 {esc(data['fetched_utc'])} UTC・JSON：<a href='?view=htf&amp;format=json'>?view=htf&amp;format=json</a></p>")
+    body = head + print_toolbar_html("📈 HTF 每日掛單") + warn + top + secs + rules + foot
+    return html_page("HTF 每日掛單", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,600000)}else{location.reload()}},600000)</script>")
+
+
+def handle_htf_get(req):
+    try:
+        data = htf_data()
+    except Exception as exc:
+        log_event(f"⚠️ [HTF 頁失敗] {exc}", severity="WARNING", component="htf")
+        data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
+    if req.args.get("format") == "json":
+        return _json_response(data, 200 if data.get("status") == "ok" else 503)
+    return build_htf_page(data)
+
+
 def strategies_data(now=None):
     """全部策略的現時持倉方向（side：1 多、-1 空、0 空手、None 不知道）。各來源讀不到就標 None，不影響其他列。"""
     rows = []
@@ -6934,6 +7170,14 @@ def strategies_data(now=None):
         rows.append({"key": f"he_{hk}", "name": hv["name"], "group": "紙上", "market": "恒指（組合淨倉）", "real": False, "aggregate": True,
                      "style": "整體組合（各成份淨額）", "hold": "—", "notify": "網頁", "link": "?view=dizai",
                      "pos": _sp(1 if net > 0 else -1 if net < 0 else 0, abs(net), "＋".join(f"{p['zh']}×{p['w']}" for p in hv["parts"].values()))})
+    htf = safe(htf_summary) or {}                                      # [R165] HTF 高漲旗型（港台日美），鳥翔分支每日更新
+    for mk, zh, _cur in HTF_MARKETS:
+        h = htf.get(mk)
+        rows.append({"key": f"htf_{mk}", "name": f"HTF 高漲旗型（{zh}）", "group": "紙上", "market": zh, "real": False,
+                     "style": "順勢：高漲旗型突破（買入停損單），只做多", "hold": "數日至 60 日（日股最長 252 日）",
+                     "notify": "Telegram（每日收市後，文字＋PDF）", "link": "?view=htf",
+                     "pos": _sp(None, 0, "讀不到 HTF 數據") if h is None else
+                     _sp(1 if h["n_open"] > 0 else 0, h["n_open"], f"持倉 {h['n_open']} 筆・明日掛單 {h['n_orders']} 隻（數據至 {h['date']}）")})
     futu_real = safe(futu_real_view)                                 # [R151] 富途實倉按陣
     conflicts = []
     under = lambda r: "恒指" if r["market"].startswith("恒指") else r["market"]
@@ -8948,10 +9192,11 @@ PAGE_LINKS = [
     ("futu_range", "🌬️ 風揚陣恆指波幅"),                       # [R105] 每頁頂都能到風揚陣
     ("es_range", "🇺🇸 風揚陣ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("nq_range", "🇺🇸 風揚陣NQ 波幅"),                            # [R158] NQ 納指 100 期貨
-    ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
+    ("bazhentu", "🐍 蛇蟠陣"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
     ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
+    ("htf", "📈 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
@@ -9004,7 +9249,8 @@ PRINT_CSS = """<style>
   td, th { white-space:normal !important; }
   svg { max-width:100%; height:auto; }
   a { color:inherit; text-decoration:none; }
-  .print-keep { break-inside:avoid; page-break-inside:avoid; }   /* 一個陣嘅標題＋表格作一塊，標題唔孤立 */
+  .print-keep { break-inside:avoid; page-break-inside:avoid; }
+  thead { display:table-header-group; }   /* 表頭每頁重印 */   /* 一個陣嘅標題＋表格作一塊，標題唔孤立 */
   .print-flow { break-inside:auto !important; page-break-inside:auto !important; }   /* 好長嘅區塊（例：策略總表）：區塊內可跨頁，但表格列、小標題仍然唔斷 */
 }
 </style>"""
@@ -10748,6 +10994,8 @@ def handle_get(req):
         return handle_yunchui_get(req)
     if view == "canary":                                         # [R160] 🐤 金絲雀（&format=json）
         return handle_canary_get(req)
+    if view == "htf":                                            # [R165] 📈 HTF 每日掛單（&format=json）
+        return handle_htf_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）
