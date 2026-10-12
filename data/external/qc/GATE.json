@@ -1,5 +1,5 @@
 {
-  "run_date": "2026-10-11",
+  "run_date": "2026-10-12",
   "families": {
     "futu_vs_web": {
       "status": "FAIL",
@@ -39,8 +39,8 @@
     },
     "internal": {
       "status": "PASS",
-      "match": 57,
-      "match_independent": 57,
+      "match": 61,
+      "match_independent": 61,
       "info": 17,
       "skip": 0,
       "known": 0,
