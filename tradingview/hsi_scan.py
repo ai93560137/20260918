@@ -14,7 +14,7 @@ import json
 import os
 import re
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import math
 
@@ -129,6 +129,12 @@ def snap_time(f):
                             int(m.group(4)), int(m.group(5)))
     except Exception:
         pass
+    # 無 lastupd：用檔名時間（CI 新 checkout 時 mtime＝checkout 時刻，會令舊檔變「最新」，
+    # 2026-10-12 實測揀中 Sep-26 舊快照）。quotes/ 檔名係 UTC → +8h；quotes_colab/ 係 HKT
+    m = re.search(r'_(\d{8})_(\d{4})\.json$', os.path.basename(f))
+    if m:
+        t = datetime.strptime(m.group(1) + m.group(2), '%Y%m%d%H%M')
+        return t + timedelta(hours=8) if os.sep + 'quotes' + os.sep in f else t
     return datetime.fromtimestamp(os.path.getmtime(f))
 
 
