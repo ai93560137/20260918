@@ -2407,6 +2407,8 @@ FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
     "雲垂陣": {"icon": "☁️", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
               "stop": "跨式買回總價 ≥ 2× 權利金"},
     "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
+    "蛇蟠陣": {"icon": "🐍", "desc": "順勢：3 日通道，觸價反手、永遠在場；使用者人手落大恒指期貨（八陣圖指令台）",
+              "stop": "按通道反手（人手執行）"},
     FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 136 點"},
     FUTU_TEAM_GIFT: {"icon": "🎁", "desc": "券商推廣送嘅股票（唔係交易策略）", "stop": "—"},
     FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
@@ -2416,6 +2418,7 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
+    (r"^HK\.HSI\d{4}$", "蛇蟠陣", "大恒指期貨（人手）", None),                 # 2026-10-12 使用者確認：HSI2610 +1 係蛇蟠陣人手倉
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
 )
