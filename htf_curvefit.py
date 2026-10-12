@@ -27,6 +27,7 @@ OUT = ROOT / "research" / "htf_curvefit"
 SEED = 20261011
 N_RANDOM = 400
 MIN_TRADES = 100
+PRE_SELECT = False   # 使用者 2026-10-12：不用前段選參、後段驗證
 SPACE = {
     "g": [0.15, 0.25, 0.40, 0.60, 1.00],
     "d": [0.10, 0.15, 0.20, 0.25, 0.35],
@@ -261,9 +262,11 @@ def run_market(mk: str, time_n: int = 0) -> None:
     best = res["best"]
     best_ev = x.score(best)
     default_ev = x.score(DEFAULT)
-    # 參考：前段選參、後段驗證
-    pre = search(lambda c: x.score(c, pre_only=True)["alpha_t"], f"{mk} 前段", log)
-    pre_best_ev = x.score(pre["best"])
+    # 使用者 2026-10-12：只找整個時期的參數，不做前段選參、後段驗證（--pre-select 才跑）
+    pre = pre_best_ev = None
+    if PRE_SELECT:
+        pre = search(lambda c: x.score(c, pre_only=True)["alpha_t"], f"{mk} 前段", log)
+        pre_best_ev = x.score(pre["best"])
     # 參考：最佳組隨機對照 50 次
     real = best_ev["alpha_t"]
     rnd = []
@@ -282,13 +285,13 @@ def run_market(mk: str, time_n: int = 0) -> None:
                 c = dict(best, **{p: vals[jj]})
                 nb_scores[f"{p}={vals[jj]}"] = full_t(c)
     out = {"market": mk, "search": res, "best_eval": best_ev, "default_eval": default_ev,
-           "pre_select": {"best": pre["best"], "pre_t": pre["best_score"], "full_eval": pre_best_ev},
+           "pre_select": {"best": pre["best"], "pre_t": pre["best_score"], "full_eval": pre_best_ev} if pre else None,
            "random_control": {"n": len(rnd), "pctl": pct, "median": float(np.median(rnd)) if rnd else None,
                               "p95": float(np.percentile(rnd, 95)) if rnd else None},
            "neighbours": nb_scores}
     (OUT / f"{mk}.json").write_text(json.dumps(out, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
-    log(f"[{mk}] 最佳 alpha t {real:.2f}（預設 {default_ev['alpha_t']:.2f}）；前段選參 → 後段 t {pre_best_ev['t_post']:.2f}；"
-        f"隨機對照第 {pct:.0%}；共評估 {res['n_evaluated'] + pre['n_evaluated']} 組，{time.time() - t0:.0f} 秒")
+    log(f"[{mk}] 全期最佳 alpha t {real:.2f}（預設 {default_ev['alpha_t']:.2f}）；隨機對照第 {pct:.0%}；"
+        f"共評估 {res['n_evaluated']} 組，{time.time() - t0:.0f} 秒")
 
 
 def eval_batch(mk: str, cfg_path: str, out_path: str) -> None:
@@ -384,7 +387,10 @@ def main() -> None:
     a.add_argument("--common", action="store_true")
     a.add_argument("--time", type=int, default=0)
     a.add_argument("--eval-batch", nargs=3, metavar=("MARKET", "CFGS", "OUT"))
+    a.add_argument("--pre-select", action="store_true", help="另做前段選參、後段驗證（使用者已決定不用，預設關）")
     args = a.parse_args()
+    global PRE_SELECT
+    PRE_SELECT = args.pre_select
     if args.eval_batch:
         eval_batch(*args.eval_batch)
     elif args.common:
