@@ -69,6 +69,7 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 - 已判決不重測；判決追加到 `forex_research/VERDICTS.md`
 - 不 force-push、不 rebase 別人的 commit，合併用 `git pull --no-rebase`；不開 PR 除非使用者要求；commit 不寫模型名
 - Telegram token 只在 GitHub Secrets（TG_BOT_TOKEN／TG_CHAT_ID），不寫進程式或對話；不用 `.github/tg_outbox.txt`
+- **即時看板**（2026-10-12 起）：https://claude.ai/artifact/9CmGxetY5xrTauHC2fLFTt ——每次開啟直接讀本分支 `forex_research/forward/` 的記錄檔（L1、XAUUSD 只做多、路線 C），算法與狀態檔相同；頁面是 claude.ai 私人 artifact，分享由使用者在頁面 Share 選單操作。倉庫公開，所以頁面不需權杖。
 - **實倉登記與總指揮（2026-10-11 使用者確認）**：總指揮工作階段 `session_01N1jfpEJciBkfAgwtd4QxgU`（分支 `claude/beautiful-hypatia-8qrgjj`）監控富途實倉並配對到各陣。
   外匯陣若要在富途戶口開實倉：**開倉之前**先在預設分支 `claude/gcp-trading-v12-rewrite-bz75t2` 的 `POSITIONS.md` 登記，並用 send_message 通知上述工作階段；
   部署 `main.py` 只用預設分支最新版。這只是登記與協調，落單權在使用者。目前外匯陣沒有任何實倉（路線 C 只是紙上前向記錄）。
