@@ -2404,7 +2404,7 @@ FUTU_TEAM_MANUAL = "使用者人手"
 FUTU_TEAM_UNMATCHED = "未配對"
 FUTU_TEAM_GIFT = "券商贈送"
 FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
-    "雲垂陣": {"icon": "☁️", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
+    "雲垂陣": {"icon": "☁️", "link": "?view=yunchui", "desc": "賣出 MHI 月跨式＋MHI 期貨 Δ 對沖（淨 Δ 界線 ±0.5 手）；MES 週權跨式",
               "stop": "跨式買回總價 ≥ 2× 權利金"},
     "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
     "蛇蟠陣": {"icon": "🐍", "desc": "順勢：3 日通道，觸價反手、永遠在場；使用者人手落大恒指期貨（八陣圖指令台）",
@@ -6364,6 +6364,196 @@ def _sp(side, lots=1, detail="", since=None):
     return {"side": side, "lots": lots, "detail": detail, "since": since}
 
 
+# =============================================================================
+# [R158] ☁️ 雲垂陣頁（?view=yunchui；&format=json）：雲垂陣工作階段維護公開 JSON，本頁讀取＋疊上富途即時 Δ。
+# 唔顯示權益、保證金、帳戶資料。只係資訊，唔落單。
+# =============================================================================
+YUNCHUI_URL = os.environ.get(
+    "YUNCHUI_PUBLIC_URL",
+    "https://raw.githubusercontent.com/ai93560137/20260918/claude/dazzling-curie-f3xzb8/tradingview/data_external/yunchui_public.json")
+YUNCHUI_GCS = "yunchui/public.json"                                       # GitHub 抓不到時的後備
+YUNCHUI_CACHE_SEC = 120
+_yunchui_cache = {"ts": 0.0, "data": None}
+
+
+def yunchui_public_json():
+    """GitHub raw → 記憶體快取 → GCS 後備（同八陣圖 levels.json 做法）。回傳 (dict, 來源文字) 或 None。"""
+    now = now_ts()
+    cached = _yunchui_cache["data"]
+    if cached is not None and now - _yunchui_cache["ts"] < YUNCHUI_CACHE_SEC:
+        return cached
+    result = None
+    try:
+        response = requests.get(YUNCHUI_URL, timeout=8, headers={"Cache-Control": "no-cache"})
+        if response.ok:
+            body = response.json()
+            if isinstance(body, dict) and isinstance(body.get("strategy"), dict) and isinstance(body.get("positions"), list):
+                result = (body, "github")
+                try:
+                    gcs_write_text(YUNCHUI_GCS, json.dumps(body, ensure_ascii=False))
+                except Exception as exc:                                  # 後備寫不進去不影響顯示
+                    print(f"⚠️ [雲垂陣 後備寫入失敗] {exc}", flush=True)
+    except Exception as exc:
+        print(f"⚠️ [雲垂陣 公開 JSON 抓取失敗] {exc}", flush=True)
+    if result is None:
+        try:
+            fallback = gcs_read_json(YUNCHUI_GCS, None)
+        except Exception:
+            fallback = None
+        if isinstance(fallback, dict) and isinstance(fallback.get("strategy"), dict):
+            result = (fallback, "gcs 後備（GitHub 暫時抓不到）")
+    if result is not None:
+        _yunchui_cache.update(ts=now, data=result)
+    return result
+
+
+def yunchui_data():
+    """公開 JSON＋富途即時 Δ／止損用量／對沖手數（有就用即時，冇先退回 JSON）。"""
+    pub = yunchui_public_json()
+    if pub is None:
+        return {"status": "error", "message": "雲垂陣公開數據抓不到，也沒有後備副本"}
+    body, served = pub
+    status = body.get("status") if isinstance(body.get("status"), dict) else {}
+    hsi = status.get("hsi") if isinstance(status.get("hsi"), dict) else {}
+    mes = status.get("mes") if isinstance(status.get("mes"), dict) else {}
+    try:
+        fr = futu_real_view()
+    except Exception as exc:
+        print(f"⚠️ [雲垂陣 即時數據讀取失敗] {exc}", flush=True)
+        fr = None
+    team = next((t for t in (fr or {}).get("teams") or [] if t.get("team") == "雲垂陣"), None) or {}
+    live = team.get("delta") if isinstance(team.get("delta"), dict) else None
+    band = (live or {}).get("band") or to_float(hsi.get("band")) or 0.5
+    if live:
+        net, straddle, hedge, hsi_all = live["net"], live.get("straddle"), live.get("hedge"), live.get("hsi_all")
+        when = (fr or {}).get("run_hkt")
+    else:
+        net, straddle, hsi_all = to_float(hsi.get("net_delta")), to_float(hsi.get("straddle_delta")), None
+        hedge = to_float(hsi.get("hedge_lots"))                          # 1 手 MHI 期貨＝Δ 1 手
+        when = hsi.get("hedge_verified_hkt") or body.get("updated_hkt")
+    delta = {"source": "live" if live else "json", "time_hkt": when, "band": band, "net": net, "straddle": straddle, "hedge": hedge,
+             "hsi_all": hsi_all, "room_up": None if net is None else band - net, "room_down": None if net is None else net + band,
+             "stale": bool(live and (fr or {}).get("stale")), "weekend": bool(live and (fr or {}).get("weekend")),
+             "age_min": (fr or {}).get("age_min") if live else None,
+             "mes_straddle": to_float(mes.get("straddle_delta")), "mes_es": to_float(mes.get("es")), "hsi_front": to_float(hsi.get("front"))}
+    live_hedge_lots = next((r["qty"] for r in team.get("rows") or [] if str(r.get("use", "")).startswith("MHI 期貨 Δ 對沖")), None)
+    stops = {x["name"]: x["use"] for x in team.get("stops") or []}
+    return {"status": "ok", "served_from": served, "updated_hkt": body.get("updated_hkt"), "strategy": body.get("strategy"),
+            "positions": body.get("positions"), "events": body.get("events") or [], "corrections": body.get("corrections") or [],
+            "delta": delta, "hedge_lots_live": live_hedge_lots, "stop_use": stops, "live_run_hkt": (fr or {}).get("run_hkt")}
+
+
+def _yc_bar(d):
+    """含對沖淨 Δ 對 ±界線嘅橫條：中間係 0，標記係現時淨 Δ。"""
+    net, band = d.get("net"), d.get("band") or 0.5
+    if net is None:
+        return "<p class='muted'>暫時冇淨 Δ 數字。</p>"
+    pct = max(0.0, min(100.0, (net + band) / (2 * band) * 100))
+    use = abs(net) / band
+    color = "#dc3545" if use > 1 else ("#d97706" if use >= 0.8 else "#198754")
+    up, down = d["room_up"], d["room_down"]
+    return (f"<div style='position:relative; height:16px; background:#eef1f4; border-radius:8px; margin:10px 0 4px'>"
+            f"<div style='position:absolute; left:50%; top:-3px; bottom:-3px; width:2px; background:#6c757d'></div>"
+            f"<div style='position:absolute; left:calc({pct:.1f}% - 7px); top:1px; width:14px; height:14px; border-radius:50%; background:{color}'></div></div>"
+            f"<div style='display:flex; justify-content:space-between; font-size:11px; color:#6c757d'><span>−{band:g}</span><span>0</span><span>+{band:g}</span></div>"
+            f"<div style='font-size:13px; margin-top:6px'>預算：Δ 再加最多 <b>{max(up, 0):.2f}</b> 手、再減最多 <b>{max(down, 0):.2f}</b> 手"
+            + ("　<b class='neg'>⚠ 已超出界線</b>" if use > 1 else "") + "</div>")
+
+
+def _yc_num(v, nd=2, sign=False):
+    return "—" if not isinstance(v, (int, float)) else (f"{v:+,.{nd}f}" if sign else f"{v:,.{nd}f}")
+
+
+def build_yunchui_page(data):
+    nav = page_nav("yunchui")
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>☁️ 雲垂陣・賣跨式＋期貨 Δ 對沖</h1></div>{nav}</div>")
+    if data.get("status") != "ok":
+        return html_page("雲垂陣", head + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    st = data["strategy"] if isinstance(data.get("strategy"), dict) else {}
+    d = data["delta"]
+    rules = "".join(f"<li>{esc(str(x))}</li>" for x in (st.get("rules") or []))
+    intro = (f"<div class='section'><h2>{esc(str(st.get('icon') or '☁️'))} {esc(str(st.get('name') or '雲垂陣'))}</h2>"
+             f"<p>{esc(str(st.get('summary') or ''))}</p><b>規則</b><ul style='margin:6px 0 0 18px; font-size:13px; line-height:1.7'>{rules}</ul></div>")
+    # Δ 預算
+    if d["source"] == "live":
+        note = (f"即時（富途持倉）：{esc(str(d.get('time_hkt') or '—'))} HKT"
+                + (f"（{d['age_min']} 分鐘前）" if d.get("age_min") is not None else "")
+                + ("　<span class='neg'>⚠ 數據已過期</span>" if d.get("stale") else "")
+                + ("　週末休市，星期一 06:00 起恢復更新" if d.get("weekend") else ""))
+    else:
+        note = f"<span class='neg'>非即時</span>：沿用日報時點 {esc(str(d.get('time_hkt') or '—'))} HKT（富途即時數據暫時冇）"
+    cls = "neg" if d.get("net") is not None and abs(d["net"]) > d["band"] else ""
+    delta_html = (
+        f"<div class='section'><h2>📐 Δ 預算（單位：MHI 手）</h2><p class='muted' style='font-size:12px'>{note}</p>"
+        "<div class='grid'>"
+        f"<div class='card'><div class='card-title'>月跨式 Δ（唔含對沖）</div><div class='card-value'>{_yc_num(d.get('straddle'), 2, True)}</div></div>"
+        f"<div class='card'><div class='card-title'>MHI 期貨對沖 Δ</div><div class='card-value'>{_yc_num(d.get('hedge'), 2, True)}</div></div>"
+        f"<div class='card'><div class='card-title'>含對沖淨 Δ（界線 ±{d['band']:g}）</div><div class='card-value {cls}'>{_yc_num(d.get('net'), 2, True)}</div></div>"
+        f"<div class='card'><div class='card-title'>MES 跨式 Δ（日報）</div><div class='card-value'>{_yc_num(d.get('mes_straddle'), 2, True)}</div>"
+        f"<div class='card-desc'>標普 {_yc_num(d.get('mes_es'), 0)}・日報時點 {esc(str(data.get('updated_hkt') or '—'))} HKT</div></div>"
+        "</div>" + _yc_bar(d)
+        + ("<p class='muted' style='font-size:12px'>恒指全部淨 Δ " + _yc_num(d['hsi_all'], 2, True)
+           + " 手 MHI（連風揚陣週權、蛇蟠陣人手倉）；唔屬雲垂對沖規則。</p>" if d.get("hsi_all") is not None else "")
+        + "</div>")
+    # 持倉卡
+    cards = ""
+    for p in data["positions"]:
+        if not isinstance(p, dict):
+            continue
+        pid = str(p.get("id") or "")
+        rows = []
+        add = lambda k, v: rows.append(f"<tr><th style='width:42%'>{esc(k)}</th><td>{v}</td></tr>")
+        add("合約", esc(str(p.get("instrument") or "—")))
+        if p.get("net_lots") is not None:                               # 期貨對沖
+            lots = data.get("hedge_lots_live")
+            add("淨手數", (f"<b class='{'neg' if lots < 0 else 'pos'}'>{lots:+g}</b>（富途即時）" if isinstance(lots, (int, float))
+                          else f"{p.get('net_lots'):+g}（記錄）"))
+            add("開倉價", _yc_num(to_float(p.get("open_price")), 0))
+            add("開倉時間", esc(str(p.get("opened_hkt") or "—")) + " HKT")
+        else:
+            add("行使價", _yc_num(to_float(p.get("strike")), 0))
+            add("到期日", esc(str(p.get("expiry") or "—")))
+            add("張數", "沽 " + esc(str(p.get("qty") or "—")) + "（Call＋Put）")
+            cred = f"{_yc_num(to_float(p.get('credit_pts')), 1)} 點" if p.get("credit_pts") is not None else "—"
+            cred += (f"（HK${p['credit_hkd']:,.0f}）" if isinstance(p.get("credit_hkd"), (int, float)) else
+                     f"（US${p['credit_usd']:,.1f}）" if isinstance(p.get("credit_usd"), (int, float)) else "")
+            add("收取權利金", cred)
+            add("止損線", f"跨式買回總價 ≥ <b>{_yc_num(to_float(p.get('stop_buyback_pts')), 1)} 點</b>（權利金 2 倍）")
+            use = data["stop_use"].get(pid)
+            if use is not None:
+                add("止損用量", f"<b>{use * 100:.0f}%</b>（富途即時）")
+            add("建倉日", esc(str(p.get("entry_date") or "—")))
+            iv = p.get("entry_atm_iv") if p.get("entry_atm_iv") is not None else p.get("entry_iv")
+            if iv is not None:
+                add("入場 IV", f"{_yc_num(to_float(iv), 2)}%")
+        cards += f"<div class='card'><div class='card-title' style='font-size:15px'>{esc(pid)}</div><table style='width:100%'>{''.join(rows)}</table></div>"
+    pos_html = f"<div class='section'><h2>📌 持倉</h2><div class='grid' style='grid-template-columns:repeat(auto-fit,minmax(280px,1fr))'>{cards}</div></div>"
+    # 事件、更正
+    ev = "".join(f"<li style='margin:6px 0'><b>{esc(str(e.get('date') or ''))}</b>　{esc(str(e.get('text') or ''))}</li>"
+                 for e in data["events"] if isinstance(e, dict))
+    events_html = (f"<div class='section'><h2>🕒 事件時間線</h2><ul style='margin:0 0 0 18px; font-size:13px; line-height:1.6'>{ev}</ul></div>"
+                   if ev else "")
+    corr = "".join(f"<div style='margin:8px 0; white-space:pre-wrap; font-size:13px; line-height:1.7'><b>{esc(str(c.get('date') or ''))}</b>　{esc(str(c.get('text') or ''))}</div>"
+                   for c in data["corrections"] if isinstance(c, dict))
+    corr_html = (f"<div class='section' style='border-left:5px solid #dc3545'><h2>📝 更正紀錄</h2>{corr}</div>" if corr else "")
+    foot = (f"<p class='muted' style='font-size:12px'>{esc(str(st.get('disclaimer') or '只作資訊展示，唔係投資建議。'))}"
+            f"　公開數據更新 {esc(str(data.get('updated_hkt') or '—'))} HKT（來源：{esc(str(data.get('served_from') or ''))}）・"
+            "JSON：<a href='?view=yunchui&amp;format=json'>?view=yunchui&amp;format=json</a></p>")
+    body = (head + print_toolbar_html("☁️ 雲垂陣・賣跨式＋期貨 Δ 對沖") + intro + delta_html + pos_html + events_html + corr_html + foot)
+    return html_page("雲垂陣", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,120000)}else{location.reload()}},120000)</script>")
+
+
+def handle_yunchui_get(req):
+    try:
+        data = yunchui_data()
+    except Exception as exc:
+        log_event(f"⚠️ [雲垂陣頁失敗] {exc}", severity="WARNING", component="yunchui")
+        data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
+    if req.args.get("format") == "json":
+        return _json_response(data, 200 if data.get("status") == "ok" else 503)
+    return build_yunchui_page(data)
+
+
 def strategies_data(now=None):
     """全部策略的現時持倉方向（side：1 多、-1 空、0 空手、None 不知道）。各來源讀不到就標 None，不影響其他列。"""
     rows = []
@@ -6546,7 +6736,8 @@ def build_futu_real_section(fr):
             f"<td style='font-size:11px'>{futu_quote_time_hkt(r['code'], r['quote_time'], any(r.get(k) for k in ('bid', 'ask', 'last')))}</td></tr>"
             for r in t["rows"])
         out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
-                f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
+                + (f" <a href='{esc(t['link'])}' style='font-size:12px'>→ 詳細頁</a>" if t.get("link") else "")
+                + f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
                 + (f"；{stops}" if stops else "") + f"</span>{alerts}" + futu_delta_budget_html(t.get("delta"))
                 + (f"<div class='scroll'><table><tr><th>合約</th><th>用途</th><th>持倉</th><th>開倉價</th><th>買／賣／最後</th>"
                    f"<th>持倉盈虧</th><th>報價時間（香港）</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
@@ -8448,6 +8639,7 @@ PAGE_LINKS = [
     ("es_range", "🇺🇸 ES 波幅"),                            # [R127] ES 標普 500 期貨
     ("bazhentu", "⚔️ 八陣圖指令台"),                       # [R131] 改為本服務託管
     ("dizai", "⛰️ 地載陣"),                                 # [R137] 1 分 K RSI 逆市前向測試（公開）
+    ("yunchui", "☁️ 雲垂陣"),                               # [R158] 賣跨式＋期貨 Δ 對沖（公開）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
@@ -10238,6 +10430,8 @@ def handle_get(req):
         return handle_strategies_get(req)
     if view == "dizai":                                          # [R137] 地載陣：今日策略＋前向測試（&format=json）
         return handle_dizai_get(req)
+    if view == "yunchui":                                        # [R158] ☁️ 雲垂陣（&format=json）
+        return handle_yunchui_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）

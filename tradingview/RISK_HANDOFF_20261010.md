@@ -125,3 +125,8 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R157：風揚陣波幅頁、地載陣頁「列印成 PDF」
 - `?view=futu_range`（風揚陣恒指波幅，ES 頁共用）同 `?view=dizai`（地載陣）各加「🖨️ 列印成 PDF」按鈕（window.print，列印視窗揀「另存為 PDF」）；`PRINT_CSS`：A4、導覽列／按鈕隱藏、區塊／卡片／表格列／圖唔喺中間斷開（放唔落就去下一頁）、捲動框全部展開、列印標題行帶香港時間。地載陣頁改用 JS 定時重載（列印中唔重載）。
+
+## 2026-10-12 R158：☁️ 雲垂陣頁（?view=yunchui）
+- 雲垂陣工作階段請求（使用者指示）：`?view=yunchui`（&format=json），風格同地載陣。資料：雲垂陣分支 `claude/dazzling-curie-f3xzb8` 的 `tradingview/data_external/yunchui_public.json`（公開 raw，快取 120 秒、GCS `yunchui/public.json` 後備；可用環境變數 `YUNCHUI_PUBLIC_URL` 改位置）。
+- 即時 Δ（月跨式／對沖／含對沖淨 Δ／恒指全部）、止損用量、對沖手數優先用 `futu/risk/latest.json`（R154 `delta_parts`、`futu_real_view`），標 HKT；冇即時值先退回 JSON 日報時點並標「非即時」。
+- 版面：策略簡介＋規則、Δ 預算條（±0.5）、持倉卡（行使價、到期、權利金、止損線）、事件時間線、更正紀錄（原文全文）；🖨️ 列印成 PDF（R157）；`page_nav` 同五個靜態頁導覽加「☁️ 雲垂陣」；策略總表雲垂陣一格加「→ 詳細頁」連結。唔顯示權益、保證金、帳戶資料。
