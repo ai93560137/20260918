@@ -9437,6 +9437,7 @@ HUB_TILES = [
 
 
 def render_welcome_page():
+    # [R168] 使用者 2026-10-12：首頁六個大按鈕已不合用，只留品牌列＋導覽列（HUB_TILES／HUB_ICONS 保留，未用）
     tiles = "".join(
         f"<a class='tile' href='{href}' title='{esc(label)}（{esc(sub)}）' aria-label='{esc(label)}，{esc(sub)}'>"
         f"<span style='color:{color}; display:flex;'>{HUB_ICONS[icon]}</span>"
@@ -9454,7 +9455,6 @@ def render_welcome_page():
         </div>
       </div>
       {page_nav("welcome")}
-      <div class='tiles'>{tiles}</div>
       <div class='hub-foot'>&copy; 2026 AI Trading Lab</div>
     </div>"""
     return html_page("智能諸葛亮 AI 量化交易系統", body, head_extra=WELCOME_CSS)
