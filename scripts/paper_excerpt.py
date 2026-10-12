@@ -56,6 +56,8 @@ def main() -> None:
     ap.add_argument("out", type=Path)
     ap.add_argument("--max-lines", type=int, default=900)
     a = ap.parse_args()
+    if not a.pdf.exists() or a.pdf.stat().st_size < 10_000 or a.pdf.read_bytes()[:4] != b"%PDF":
+        sys.exit(f"找不到有效的 PDF：{a.pdf}（不存在、太小或不是 PDF）。請先用瀏覽器下載後放到該路徑再跑。")
     pages = pages_from_pdf(a.pdf)
     L = [f"# 摘錄：{a.pdf.name}（逐字，標頁碼；全文留在 VM 不進 git）", "", "```", info(a.pdf).strip(), "```", "",
          f"共 {len(pages)} 頁；關鍵詞選段，第 1–2 頁全文。登記用，見 forex_research/FOMC_DATA_REQUEST.md 第 1 節。", ""]
