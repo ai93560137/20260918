@@ -152,3 +152,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 鳥翔分支（`claude/stock-research-k9nzau`）請求，使用者確認「做 HTF 頁」。讀該分支 `analysis/htf_daily/`（公開 raw，`HTF_RAW_BASE` 可改）：`<mk>_latest.json`、`<mk>_orders_<date>.csv`、`<mk>_positions.csv`、`<mk>_closed.csv`、`names.json`；記憶體快取 30 分鐘、GCS `htf/` 後備（orders 用固定 key）；讀唔到用上次成功版本並標明。唔重算訊號、唔落單、冇改該分支。
 - 頁面：四市場摘要卡、每市場（數據日、貨幣、大市過濾狀態）明日掛單（按 dist_pct 排）、持倉（賣出紅／賣一半黃／持有灰）、前向已平倉（筆數、平均、最近 15）、參數行（美股標 alpha t 1.48 孤峰）、怎樣照做、證偽頁尾；🖨️ 列印（長區塊可跨頁、表頭每頁重印）。策略總表加 `htf_hk/tw/jp/us` 四行（n_open>0 → 做多、lots=n_open）。
 - `tests/test_htf_page.py`（33 項，假抓取）＋ `tests/fixtures_htf/`；導覽頁數 17。
+
+## 2026-10-12 R166：蛇蟠陣頁（bazhentu.html）版面改同雲垂陣一樣、綠色主色
+- 使用者要求：排版、字體、格式同雲垂陣（BASE_CSS：.nav 品牌列＋導覽、.section 卡片、系統字體）一致，主色改綠（`--snake:#1b7f4f`；雲垂陣係藍）。JS、所有欄位 id、localStorage、levels.json 自動套用邏輯原封不動；舊版深色模式同 Noto Serif 字體移除（同雲垂陣一樣冇）。
