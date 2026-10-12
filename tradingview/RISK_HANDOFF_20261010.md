@@ -159,3 +159,7 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R167：導覽「📈 HTF 掛單」改「📈 鳥翔 HTF 掛單」
 - 使用者要求；`PAGE_LINKS`＋五個靜態頁；HTF 頁標題同列印標題一併改「鳥翔 HTF 每日掛單」。路由 `?view=htf` 不變。
+
+## 2026-10-12 R168：首頁移除六個大按鈕
+- 使用者要求「6 個大按鈕已不合用」。`render_welcome_page` 不再輸出 `<div class='tiles'>`；導覽列已涵蓋全部 17 頁。
+  `HUB_TILES`／`HUB_ICONS` 保留備用。與 R167 同在 PR #89，未部署；上線後退回目標 `zhuge-risk-manager-00290-lpq`。
