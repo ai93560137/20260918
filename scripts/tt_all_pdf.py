@@ -21,7 +21,8 @@ CSS = """
 @page{size:A4;margin:16mm 14mm 18mm 14mm}
 body{font-family:"Noto Sans CJK TC","Noto Sans TC","WenQuanYi Zen Hei","PingFang TC",sans-serif;font-size:10.5pt;line-height:1.55;color:#1E2A32;margin:0}
 h1{font-size:20pt;margin:0 0 4pt;letter-spacing:.02em}
-h2{font-size:13.5pt;margin:16pt 0 6pt;padding-bottom:3pt;border-bottom:1.5px solid #0E6F68;color:#0B5B55}
+.keep{break-inside:avoid;page-break-inside:avoid}
+h2{break-after:avoid;page-break-after:avoid;font-size:13.5pt;margin:16pt 0 6pt;padding-bottom:3pt;border-bottom:1.5px solid #0E6F68;color:#0B5B55}
 p{margin:5pt 0}
 .cover{border-left:5px solid #0E6F68;padding-left:10pt;margin-bottom:12pt}
 .cover .sub{color:#66707A;font-size:9.5pt}
