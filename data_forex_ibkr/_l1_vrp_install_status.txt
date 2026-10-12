@@ -1,0 +1,109 @@
+# L1 報價與 6E 期權快照腳本：安裝狀態（雲垂分支 claude/dazzling-curie-f3xzb8）
+# 2026-10-12，回覆外匯分支 forex_research/IBKR_L1_QUOTE_REQUEST.md 與 IBKR_VRP_SNAPSHOT_REQUEST.md
+
+## 0. 結論（先看這段）
+
+- 本工作階段是 GitHub 雲端沙盒：沒有 IB Gateway、沒有 ib_insync 可連的埠、沒有 gcloud 認證、沒有 crontab，
+  **無法直接操作 VM**（和 2026-09-25 第一份 IBKR 數據需求時一樣，實跑要由使用者在 VM 上貼指令）。
+- 已做：兩支腳本取進本分支 scripts/，離線用假 IB 跑過全部分支路徑；修了 1 處 clientId 衝突、3 處 6E 腳本的
+  合約解析／報價等待問題；新增每週推回 CSV 的 gcp_ib/push_fx_quotes.sh；整理好 VM 一鍵貼上區塊（第 4 節）。
+- 待使用者在 VM 執行第 4 節後，dry run 的真實輸出會自動追加到本檔末尾並 commit（同一個 commit 訊息）。
+- 尚未上 crontab（要等 VM 實測通過）。
+- 不需要花錢：兩支都走延遲或 IDEALPRO 免費即時報價；若 L1 即時 bid／ask 為空，只回報、不買訂閱、不改延遲。
+
+## 1. dry run 輸出
+
+- 真實 IB：**尚未執行**（沙盒連不到 Gateway）。執行第 4 節後，輸出會追加在本檔「## VM 實測」之後。
+- 離線假 IB（沙盒，驗證邏輯用，不是行情）：
+  - ib_l1_quote.py：有價 → 寫一列 `label,bid,ask,spread_bp`；無價（即時無權限）→ bid／ask／spread 空字串、不當掉；
+    --delayed 的 label 自動加 `_delayed`。
+  - ib_fx_option_snapshot.py --dry：列出 4 支期貨、各 tradingClass 的到期日、選到 30 天到期、ATM 候選行使價、
+    最近一檔不掛牌時自動退到第二檔，印出 `scan <到期> <行使價> 半價差(波動點)= … 認購 bid/ask 認沽 bid/ask`；
+    正式跑寫 31 欄 CSV；--dry 不寫檔。
+
+## 2. clientId
+
+| 號 | 用途 | 備註 |
+|---|---|---|
+| 17 | gcp_ib/ib_collector.py（每日 07:35 UTC） | 既有 |
+| 23 | scripts/ib_fx_history.py | 既有（一次性） |
+| 24 | scripts/ib_stock_verify.py | 既有（一次性） |
+| 31 | gcp_ib/htf_5m_fetch.py 預設 | 既有（批次，10/08 已跑完，但仍可能重跑）→ **與外匯分支原定的 L1 腳本 31 相撞** |
+| 77 | gcp_ib/ibkr_vol_export.py（每日 22:30 UTC） | 既有 |
+| **41** | scripts/ib_l1_quote.py | **改號**：預設值由 31 改為 41，cron 也明寫 --client-id 41 |
+| 32 | scripts/ib_fx_option_snapshot.py | 無衝突，照用 |
+
+排程時間互不重疊：07:35（collector）→ 08:59／11:59（L1）→ 14:00（6E 期權）→ 22:30（vol export）→ 約 23:50 Gateway 每日重啟。
+
+## 3. VM 時區
+
+- 依 gcp_ib/setup_vm.sh 的 cron 註解「UTC 07:35（HKT 15:35）」及所有既有 _status.txt／log 的時間戳，VM 為 **UTC**；
+  第 4 節的指令會印 `date +%Z` 再確認一次。若不是 UTC，crontab 的小時要換算（08:59／11:59／14:00 UTC）。
+
+## 4. 在 VM 上貼的指令（提示符須是 @ib-data，不是 Cloud Shell；全程只讀 IB、不下單）
+
+### 4A. 更新程式、實測、把輸出追加到本檔
+```bash
+cd ~/20260918 && git pull --rebase origin claude/dazzling-curie-f3xzb8
+git config rebase.autostash true      # 這兩個 CSV 被 cron 每天追加後工作樹會髒；沒有這行 run_daily.sh 的 pull --rebase 會中止
+S=data_forex_ibkr/_l1_vrp_install_status.txt
+{
+  echo; echo "## VM 實測（$(date -u '+%F %T') UTC；主機 $(hostname)；系統時區 $(date +%Z)）"
+  echo; echo "### 既有 crontab"; crontab -l 2>/dev/null | grep -v '^#'
+  echo; echo "### 1a. ib_l1_quote.py --delayed（連線測試）"
+  python3 scripts/ib_l1_quote.py --label test --delayed --client-id 41 2>&1
+  echo; echo "### 1b. ib_l1_quote.py 即時（bid／ask 為空＝paper 無即時外匯權限：只回報，不買訂閱、不改延遲）"
+  python3 scripts/ib_l1_quote.py --label test --client-id 41 2>&1
+  echo; echo "### 2. ib_fx_option_snapshot.py --dry（期望一行 scan <到期> <行使價> 半價差(波動點)= 0.1–0.5，認購認沽 bid/ask 都有值）"
+  timeout 600 python3 scripts/ib_fx_option_snapshot.py --dry --client-id 32 2>&1
+  echo; echo "### l1_quotes.csv（測試列）"; cat data_forex_ibkr/l1_quotes.csv 2>/dev/null
+} 2>&1 | tee -a "$S"
+```
+
+### 4B. 實測通過才上 crontab（L1 與 6E 可分開裝：1b 沒即時價就先別裝前兩行，等外匯分支決定）
+```bash
+( crontab -l 2>/dev/null | grep -v 'ib_l1_quote\|ib_fx_option_snapshot\|push_fx_quotes'
+  echo '59 8  * * 1-5 cd $HOME/20260918 && python3 scripts/ib_l1_quote.py --label 0859 --client-id 41 >> data_forex_ibkr/l1_quote.log 2>&1'
+  echo '59 11 * * 1-5 cd $HOME/20260918 && python3 scripts/ib_l1_quote.py --label 1159 --client-id 41 >> data_forex_ibkr/l1_quote.log 2>&1'
+  echo '0 14  * * 1-5 cd $HOME/20260918 && python3 scripts/ib_fx_option_snapshot.py --client-id 32 >> data_forex_ibkr/vrp_snapshot.log 2>&1'
+  echo '10 2  * * 6   bash $HOME/20260918/gcp_ib/push_fx_quotes.sh >> $HOME/ib_fx_push.log 2>&1'
+) | crontab -
+{ echo; echo "### 4B. crontab 已安裝（$(date -u '+%F %T') UTC）"; crontab -l | grep 'ib_l1_quote\|ib_fx_option_snapshot\|push_fx_quotes'; } | tee -a data_forex_ibkr/_l1_vrp_install_status.txt
+```
+
+### 4C. 把實測結果推回本分支（外匯分支會 git fetch 讀）
+```bash
+cd ~/20260918
+git add data_forex_ibkr/_l1_vrp_install_status.txt
+git commit -m "ops(ibkr): L1 報價與 6E 期權快照腳本安裝狀態"
+git push origin claude/dazzling-curie-f3xzb8
+```
+
+- 兩個 CSV 之後由每週六 02:10 UTC 的 gcp_ib/push_fx_quotes.sh 推回（訊息固定 `data(ibkr): L1 報價快照` ／ `data(ibkr): 6E 期權快照`），
+  也可隨時手動 `bash ~/20260918/gcp_ib/push_fx_quotes.sh`。log 檔不進 git。
+- 4A 寫入的 label=test／test_delayed 測試列留在 l1_quotes.csv 裡（外匯分支說會過濾）；要刪可 `sed -i '/,test/d' data_forex_ibkr/l1_quotes.csv`。
+- 現階段**不要**執行 `--open`（B 階段釘持倉用）。
+
+## 5. 改了什麼（相對外匯分支的原版）
+
+### scripts/ib_l1_quote.py
+- 預設 `--client-id` 31 → **41**（理由見第 2 節），docstring 加註。其餘未動。
+
+### scripts/ib_fx_option_snapshot.py（原版未在真實 IB 上測過，依 gcp_ib/ib_collector.py 的 6E 實戰經驗先修三處）
+1. **行使價回退**：`reqSecDefOptParams` 回的 strikes 是該 tradingClass 全到期的聯集，最接近 ATM 的一檔不一定在選到的到期日掛牌。
+   原版只試一檔，qualify 失敗就 `snapshot()` 回 None → **不印任何訊息、不寫任何列**（cron 下會以為一切正常）。
+   現在按距離最多試 6 檔（同 `ib_collector.atm_pair_iv` 的 max_strikes=6），每次失敗都印出到期／行使價／tradingClass／multiplier，
+   全失敗也印一行說明；`--open` 釘的是實際 qualify 到的行使價。
+2. **Greeks 等待時間** 12 秒 → 20 秒：collector 的排障記錄是延遲報價約 16 秒才灌進 modelGreeks（`half_spread_vol` 需要 vega）。
+3. **標的期貨參考價**：延遲 `last` 可能是 nan，加 `close` 作最後備援（collector 同法），並輪詢最多 10 秒而非固定睡 5 秒。
+4. `--dry` 多印診斷：找到的期貨、每個 tradingClass 的到期日與落在 21–35 天內者、選到的到期／tradingClass／multiplier、
+   期貨 last/bid/ask/close、ATM 候選行使價。
+- 未改：到期日選法（21–35 天取最接近 30）、CSV 欄位、半價差公式、`--open`／`--close`／track 邏輯、clientId 32。
+
+### 新增 gcp_ib/push_fx_quotes.sh
+- 每週把兩個 CSV 各自一個 commit 推回本分支（訊息固定），只 add 這兩個檔；沒變動就略過；push 失敗退避重試 4 次。
+- 設 `rebase.autostash true`：**重要**，否則 CSV 被 cron 追加後工作樹髒掉，既有 `run_daily.sh` 的 `git pull --rebase`
+  會以「You have unstaged changes」中止（`set -e`），07:35 的指數／6E／6J IV 採集會跟著壞。
+
+### 未動的東西
+- gcp_ib/ib_collector.py、run_daily.sh、既有 cron 全部沒改；沒有合併外匯分支；沒用這些數據跑任何回測；沒碰帳戶設定。
