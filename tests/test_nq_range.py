@@ -29,7 +29,7 @@ for b in days:
     b["source"] = "mt5_cfd:NAS100ft"
 r = client.post("/", json={"action": "futu_data", "token": "tok", "symbol": NQ, "kline_type": "K_SESSION", "source": "mt5_cfd:NAS100ft", "data": days})
 check("NQ K_SESSION 封包 200", r.status_code == 200, r.get_data(as_text=True)[:200])
-check("NQ 頁配色（青色主題）同 ES、恒指頁唔同", "#0b7285" in page0 and "#0b7285" not in client.get("/?view=es_range").get_data(as_text=True)
+check("NQ 頁配色（青色主題）同 ES、恒指頁唔同", "#0b7285" in client.get("/?view=nq_range").get_data(as_text=True) and "#0b7285" not in client.get("/?view=es_range").get_data(as_text=True)
       and "#0b7285" not in client.get("/?view=futu_range").get_data(as_text=True))
 js = client.get("/?view=nq_range&format=json").get_json()
 check("JSON 代號是 US.NQ_FRONT、有 200 天以上、有預測", js["symbol"] == NQ and len(js["rows"]) >= 200 and bool(js.get("forecast")), str(js)[:200])

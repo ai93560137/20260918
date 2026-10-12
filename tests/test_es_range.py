@@ -37,8 +37,8 @@ check("ES 頁頂部連結：ES 是目前頁、恒指可點", "nav-current'>🇺�
 check("恒指頁與首頁頂部有 ES 連結", "href='?view=es_range'>🇺🇸 風揚陣ES 波幅" in client.get("/?view=futu_range").get_data(as_text=True)
       and "href='?view=es_range'>🇺🇸 風揚陣ES 波幅" in client.get("/?view=welcome").get_data(as_text=True))
 hk_page = client.get("/?view=futu_range").get_data(as_text=True)
-check("ES 頁配色同恒指頁唔同（橙色主題；恒指頁冇）", "#d9480f" in page and "#d9480f" not in hk_page and main.fy_theme_css("US") and not main.fy_theme_css("HK"))
-check("ES、NQ 兩組配色互相唔同", main.FY_THEMES["US"] != main.FY_THEMES["NQ"] and not set(main.FY_THEMES["US"]) & set(main.FY_THEMES["NQ"]))
+check("ES 頁配色同恒指頁唔同（橙色主題；恒指頁冇）", "#d9480f" in page and "#d9480f" not in hk_page and main.fy_theme_css("es_range") and not main.fy_theme_css("futu_range"))
+check("ES、NQ 兩組配色互相唔同", main.FY_THEMES["es_range"] != main.FY_THEMES["nq_range"] and not set(main.FY_THEMES["es_range"]) & set(main.FY_THEMES["nq_range"]))
 js = client.get("/?view=es_range&format=json").get_json()
 check("format=json：代號 US.ES_FRONT、有預測", js["symbol"] == ES and js.get("forecast") and js["forecast"].get("range"), js.get("symbol"))
 for f in ("gates.html", "order.html", "jinnang_sheet.html", "jinnang_tracker.html"):

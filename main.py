@@ -3051,8 +3051,8 @@ NQ_SYMBOL = "US.NQ_FRONT"                                   # [R158]
 
 
 # [R159] 風揚陣各波幅頁配色（今日／本週／本月卡頂邊、進度條、標題）：恒指用預設藍綠紫，ES、NQ 各用另一組，一眼分得出。
-FY_THEMES = {"US": ("#d9480f", "#f08c00", "#a61e4d"),      # ES：橙／琥珀／洋紅
-             "NQ": ("#0b7285", "#1098ad", "#364fc7")}      # NQ：青／淺青／靛
+FY_THEMES = {"es_range": ("#d9480f", "#f08c00", "#a61e4d"),   # ES：橙／琥珀／洋紅
+             "nq_range": ("#0b7285", "#1098ad", "#364fc7")}   # NQ：青／淺青／靛（按頁面 view；NQ 市場 key 仍是 US）
 
 
 def fy_theme_css(key):
@@ -7726,7 +7726,7 @@ def build_futu_range_page(data):
         hint = (f"本地執行 push_to_gcp.py 的 <span class='mono'>--backfill {esc(symbol)}</span> 補歷史，之後每 5 分鐘會自動更新。" if m["intraday"]
                 else esc(m.get("empty_hint") or "GitHub Actions 的 es_daily_push.yml 每個交易日收市後推入 yfinance 的 ES 連續合約日線；第一次要手動 dispatch 補歷史。"))
         body = nav + f"<div class='section'>還沒有交易日 K 數據。{hint}</div>"
-        return html_page(m["title"], body, head_extra=FY_CSS)
+        return html_page(m["title"], body, head_extra=FY_CSS + fy_theme_css(m["view"]))
     latest = rows[-1]
     age = data.get("latest_5m_age_sec")
     stale = age is None or age > FUTU_STALE_SEC
@@ -7829,7 +7829,7 @@ def build_futu_range_page(data):
         原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></p>
       </div>
     </details>"""
-    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + fy_theme_css(m["key"]) + PRINT_CSS)
+    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + fy_theme_css(m["view"]) + PRINT_CSS)
 
 
 def handle_futu_api_get(symbol=None):
