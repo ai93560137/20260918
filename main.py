@@ -6339,10 +6339,11 @@ def build_dizai_page(data):
         head += "<div class='section'>前向測試還沒有數據：等本地推送腳本 v14 開始推 1 分 K（每 5 分鐘一次）。</div>"
     heng = ((_dz_he_html(data["he"]) if data.get("he") else "") + (_dz_heng_html(data["heng"]) if data.get("heng") else "")
             + (_dz_que_html(data["que"]) if data.get("que") else "") + (_dz_tupo_html(data["tupo"]) if data.get("tupo") else ""))
-    body = head + heng + warn + "".join(_dz_variant_html(k, data) for k in DIZAI_VARIANTS) + \
+    body = head + print_toolbar_html("⛰️ 地載陣・恒指升跌 2% 逆市加倍攤平") + heng + warn + "".join(_dz_variant_html(k, data) for k in DIZAI_VARIANTS) + \
         "<p class='muted' style='font-size:12px'>JSON：<a href='?view=dizai&amp;format=json'>?view=dizai&amp;format=json</a>・" \
         "規則與回測：research/hsi_futures_range/RSI_AVG_DOWN_REPORT.md</p>"
-    return html_page("地載陣・恒指逆市加倍攤平", body, head_extra="<meta http-equiv='refresh' content='60'>")
+    # [R157] 唔用 meta refresh（列印視窗開住時會重載）；列印中就唔重載
+    return html_page("地載陣・恒指逆市加倍攤平", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,60000)}else{location.reload()}},60000)</script>")
 
 
 def handle_dizai_get(req):
@@ -7305,7 +7306,7 @@ def build_futu_range_page(data):
         "<div class='section-header'>📒 紙上交易／💰 四個方向</div>"
         "<div class='fy-legend'>ES 暫時只有每日收市後的日線，紙上交易與高低位訊號要等有 5 分 K 推送才開（本地執行 futu/mt5_push.py）；"
         "研究結果見 research/us_futures/（ES 8 年、NQ 4 年：蛇蟠陣無效，波幅預測與高低位訊號比恒指準）。</div>")
-    body = nav + hero + cards + reviews + extras + f"""
+    body = nav + print_toolbar_html(m['title']) + hero + cards + reviews + extras + f"""
     <div class='section-header'>📊 過去一年</div>
     {stats}
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
@@ -7330,7 +7331,7 @@ def build_futu_range_page(data):
         原始數據：<a href='?view=futu_range&amp;format=json&amp;symbol={esc(symbol)}'>JSON</a></p>
       </div>
     </details>"""
-    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS)
+    return html_page(f"風揚陣・即月期貨波幅 {symbol}", body, head_extra=FY_CSS + PRINT_CSS)
 
 
 def handle_futu_api_get(symbol=None):
@@ -8473,6 +8474,44 @@ def html_page(title, body, head_extra=""):
             f"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
             f"<title>{esc(title)}</title><style>{BASE_CSS}</style>{head_extra}</head>"
             f"<body><div class='container'>{body}</div></body></html>")
+
+
+# [R157] 投資人列印：「列印成 PDF」按鈕（瀏覽器列印視窗揀「另存為 PDF」）＋列印版面。
+# 區塊、卡片、表格列、圖都唔喺中間斷開，放唔落就去下一頁；導覽列同按鈕列印時隱藏。
+PRINT_CSS = """<style>
+.print-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:-10px 0 16px; }
+.print-btn { background:#0f62fe; color:#fff; border:0; border-radius:20px; padding:9px 18px; font-size:14px; font-weight:700; cursor:pointer; }
+.print-btn:hover { background:#0b4fd1; }
+.print-hint { font-size:12px; color:var(--muted); }
+.print-only { display:none; }
+@page { size:A4; margin:12mm; }
+@media print {
+  html, body { background:#fff !important; padding:0 !important; }
+  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; font-size:12px; }
+  .container { max-width:none !important; width:100% !important; }
+  .nav, .nav-links, .print-bar, .no-print { display:none !important; }
+  .print-only { display:block !important; margin:0 0 8px; font-size:11px; color:#555; }
+  .section, .fy-card, .fy-hero, .fy-howto, .fy-hist, details.fy-more, .card, .grid > *, .fy-grid > *,
+  table, tr, svg, img, figure, h2, h3, li, .fy-row, .fy-sig { break-inside:avoid; page-break-inside:avoid; }
+  h1, h2, h3, summary { break-after:avoid; page-break-after:avoid; }
+  .section, .fy-card, .fy-howto, details.fy-more, .card { box-shadow:none !important; border:1px solid #d0d5dd; }
+  .scroll { overflow:visible !important; max-height:none !important; }
+  table { width:100% !important; }
+  td, th { white-space:normal !important; }
+  svg { max-width:100%; height:auto; }
+  a { color:inherit; text-decoration:none; }
+}
+</style>"""
+
+
+def print_toolbar_html(title):
+    """按鈕＋列印時先出嘅標題行（列印時間用香港時間）。"""
+    return (f"<div class='print-bar'><button class='print-btn' type='button' onclick='window.print()'>🖨️ 列印成 PDF</button>"
+            "<span class='print-hint'>撳完喺列印視窗「目的地」揀「另存為 PDF」；內容放唔落一頁就會自動去下一頁，唔會斷開。</span></div>"
+            f"<div class='print-only'>{esc(title)}　列印時間（香港）：<span id='print-time'></span></div>"
+            "<script>(function(){function t(){var e=document.getElementById('print-time');if(e)e.textContent="
+            "new Date().toLocaleString('zh-HK',{timeZone:'Asia/Hong_Kong',hour12:false})+' HKT';window.__printing=true}"
+            "window.addEventListener('beforeprint',t);window.addEventListener('afterprint',function(){window.__printing=false});})();</script>")
 
 
 def pnl_class(value):
