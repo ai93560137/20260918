@@ -41,7 +41,7 @@
 ## 4. 選配：IBKR 真實報價（雲垂 VM）
 
 `scripts/ib_l1_quote.py` 在 08:59、11:59 UTC 各記一次 EURUSD IDEALPRO bid／ask 到 `data_forex_ibkr/l1_quotes.csv`（只讀，不下單），
-作為點差的第二來源（見腳本頂端的 crontab 範例）。交付方式同 IBKR_DATA_REQUEST.md。
+作為點差的第二來源（見腳本頂端的 crontab 範例）。安裝與交付指令見 `IBKR_L1_QUOTE_REQUEST.md`（給雲垂的單檔請求）。
 
 ## 5. 失敗與改版
 
