@@ -43,13 +43,13 @@ except Exception:
 n = int(ph.get('target_big') or 1)
 pos = int(ph.get('pos') or 0)
 if pos < 0:
-    act = (f"📌 目前實倉:空 {-pos} 張 → 價 ≥ {f(up)} 買入 {n - pos} 張"
+    act = (f"📌 紙上倉位:空 {-pos} 張 → 價 ≥ {f(up)} 買入 {n - pos} 張"
            f"(平空 {-pos}＋開多 {n})\n")
 elif pos > 0:
-    act = (f"📌 目前實倉:多 {pos} 張 → 價 ≤ {f(lo)} 賣出 {n + pos} 張"
+    act = (f"📌 紙上倉位:多 {pos} 張 → 價 ≤ {f(lo)} 賣出 {n + pos} 張"
            f"(平多 {pos}＋開空 {n})\n")
 else:
-    act = f"📌 目前實倉:空手 → 升破 {f(up)} 買入 {n} 張 ／ 跌破 {f(lo)} 賣出 {n} 張\n"
+    act = f"📌 紙上倉位:空手 → 升破 {f(up)} 買入 {n} 張 ／ 跌破 {f(lo)} 賣出 {n} 張\n"
 mini = ",大恒指當量;小恒指等值 ×5" if n > 1 else ''
 
 msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
