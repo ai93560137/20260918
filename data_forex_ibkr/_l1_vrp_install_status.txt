@@ -297,3 +297,13 @@ utc_time,label,bid,ask,spread_bp
 10 2  * * 6   bash $HOME/20260918/gcp_ib/push_fx_quotes.sh >> $HOME/ib_fx_push.log 2>&1
 
 ### 附記：10/07 起 07:35 採集中斷的兩個原因已處理——(1) Gateway 10141 模擬帳免責聲明對話框，已用 xdotool 點掉；(2) htf_5m/_status.txt 未提交改動擋住 pull --rebase，已設 rebase.autostash。
+
+### 4D. 10141 免責聲明自動點掉 cron 已安裝（2026-10-12 14:12 UTC，使用者要求）
+*/10 * * * * bash $HOME/20260918/gcp_ib/dismiss_paper_warning.sh >> $HOME/ib_warning_click.log 2>&1
+只在標題正好 Warning 且大小 501x260 的視窗才點「I understand and accept」；其他框不碰、只記 log。手動跑一次無輸出（目前無框）。
+
+## 安裝結論（2026-10-12）
+- L1：paper 帳戶有即時 IDEALPRO 外匯報價（測試點差 0.089 基點），平日 08:59／11:59 UTC 寫 l1_quotes.csv，clientId 41。
+- 6E：合約解析一次到位（6EZ6、到期 20261113、tradingClass 2EU、行使價 1.12），半價差 0.0758 波動點；平日 14:00 UTC 寫 vrp_snapshots.csv，clientId 32。
+- 每週六 02:10 UTC push_fx_quotes.sh 推回兩個 CSV；VM 時區 UTC；既有 07:35 採集的中斷原因（10141 對話框、髒工作樹）已一併修復。
+- 未執行 --open；未花錢；未改 ib_collector.py 與既有 cron。
