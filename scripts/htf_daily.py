@@ -233,7 +233,7 @@ def tg(metas: list[dict]) -> str:
             L.append("　持倉：" + pz)
     L += ["", "掛單 = 明天盤中升穿觸發價才買（買入停損單）；開市已高於觸發價 × (1+追價上限) 就取消。",
           "每筆資金 = 20% × 權重（按波幅，見 CSV alloc_pct）；總曝險不超過 100%。",
-          "網頁（可列印成 PDF）：https://zhuge-risk-manager-1056099871997.europe-west1.run.app/?view=htf",
+          "網頁（可列印成 PDF）：https://tnt-hk.com/?view=htf",
           "明細：analysis/htf_daily/<市場>_orders_<日期>.csv、<市場>_positions.csv"]
     return "\n".join(L)[:3900] + "\n"
 

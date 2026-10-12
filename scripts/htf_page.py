@@ -324,7 +324,7 @@ def build(pdf: bool = False) -> str:
       <li>持倉照「明天要做」：持有、收市賣一半（之後停損移到成本）、或翌日開市全數賣出。</li>
       <li>在富途開實倉前，先在預設分支 POSITIONS.md 登記並通知總指揮。</li>
     </ol>
-    <p class="note">每日 PDF 版隨 Telegram 一併發送（同一份內容，自動分頁，表格不會從中間斷開）。</p>
+    <p class="note">每日 PDF 版隨 Telegram 一併發送（同一份內容，自動分頁，表格不會從中間斷開）。網站版（可直接列印成 PDF）：<a href="https://tnt-hk.com/?view=htf">tnt-hk.com/?view=htf</a></p>
   </section>
   {monthly(pdf)}
   <p class="foot">參數由全期數據擬合選出（曲線擬合），未來表現大概率低於回測。回測與風險說明見投資人說明書 HTF_INVESTOR_BRIEF.pdf；證偽：前向 100 筆平均虧損，或回撤超過 {stop_dd}，即停。不構成投資建議。</p>
