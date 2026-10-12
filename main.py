@@ -2478,6 +2478,20 @@ def futu_real_view(now=None):
         t = FUTU_ALERT_TEAMS.get(f"stop:{name}")
         if t in teams and isinstance(use, (int, float)):
             teams[t]["stops"].append({"name": name, "use": round(use, 3)})
+    dp = metrics.get("delta_parts") if isinstance(metrics.get("delta_parts"), dict) else {}
+    d_net, d_str = dp.get("net_with_hedge"), dp.get("straddle")
+    d_first = next(iter((metrics.get("delta") or {}).values()), None)     # 舊版 auto_risk 冇 delta_parts：退而用含對沖淨 Δ
+    if d_net is None and isinstance(d_first, (list, tuple)) and d_first:
+        d_net = d_first[0]
+    band = d_first[1] if isinstance(d_first, (list, tuple)) and len(d_first) > 1 and d_first[1] else 0.5
+    if isinstance(d_net, (int, float)):                                        # [R155] 雲垂陣 Δ 預算：界線 ±band
+        hedge = d_net - d_str if isinstance(d_str, (int, float)) else None
+        teams["雲垂陣"]["delta"] = {"band": band, "net": d_net, "straddle": d_str, "hedge": hedge,
+                                    "room_up": band - d_net, "room_down": d_net + band, "hsi_all": dp.get("hsi_all")}
+        if hedge is not None:
+            for r in teams["雲垂陣"]["rows"]:
+                if r["use"] == "MHI 期貨 Δ 對沖":
+                    r["use"] = f"MHI 期貨 Δ 對沖 {-abs(hedge) if r['qty'] < 0 else abs(hedge):+.2f}"
     account = []
     for k, v in (doc.get("alerts") or {}).items():
         if k.startswith("margin"):
@@ -6490,6 +6504,18 @@ def futu_quote_time_hkt(code, qt, has_px):
     return t.strftime("%m-%d %H:%M") + " HKT"
 
 
+def futu_delta_budget_html(d):
+    """[R155] 雲垂陣 Δ 預算：月跨式 Δ、對沖 Δ、含對沖淨 Δ（界線 ±band），同仲有幾多空間。"""
+    if not d:
+        return ""
+    g = lambda v: "—" if not isinstance(v, (int, float)) else f"{v:+.2f}"
+    cls = "neg" if abs(d["net"]) > d["band"] else ""
+    return (f"<div style='font-size:13px; margin:4px 0'>Δ（MHI 手）：月跨式 {g(d.get('straddle'))}｜期貨對沖 {g(d.get('hedge'))}｜"
+            f"<b class='{cls}'>含對沖淨 {g(d['net'])}</b>（界線 ±{d['band']:g}）"
+            f"｜預算：再加 Δ 最多 {max(d['room_up'], 0):.2f}、再減最多 {max(d['room_down'], 0):.2f}"
+            + (f"｜恒指全部淨 {g(d.get('hsi_all'))}（連週權、人手倉）" if d.get("hsi_all") is not None else "") + "</div>")
+
+
 def build_futu_real_section(fr):
     """[R151] 💼 富途實倉（按陣）：每陣一格，配對唔到嘅入「未配對」。"""
     if not fr:
@@ -6517,7 +6543,7 @@ def build_futu_real_section(fr):
             for r in t["rows"])
         out += (f"<div style='margin-top:10px'><b>{t['icon']} {esc(t['team'])}</b>"
                 f"<span class='muted' style='font-size:12px'>　{esc(t['desc'])}；止損：{esc(t['stop'])}"
-                + (f"；{stops}" if stops else "") + f"</span>{alerts}"
+                + (f"；{stops}" if stops else "") + f"</span>{alerts}" + futu_delta_budget_html(t.get("delta"))
                 + (f"<div class='scroll'><table><tr><th>合約</th><th>用途</th><th>持倉</th><th>開倉價</th><th>買／賣／最後</th>"
                    f"<th>持倉盈虧</th><th>報價時間（香港）</th></tr>{trs}</table></div>" if trs else "<div class='muted'>而家冇實倉。</div>")
                 + "</div>")

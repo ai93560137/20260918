@@ -116,3 +116,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - `risk_report.build` 加 `M["delta_parts"]` = {straddle＝雲垂月跨式 Δ（唔含對沖）, net_with_hedge＝含對沖淨 Δ, hsi_all＝恒指全部淨 Δ（連週權、人手倉）}，單位 MHI 手。
 - `main.py` `_futu_risk_clean_metrics` 保留 `delta_parts` 存入 `futu/risk/latest.json`；`auto_risk.py` 版本 R154（照推 metrics）。MHI2610 實際淨手數＝`metrics.mhi_lots`（R149 起）。
 - 用途：定時任務「雲垂對沖狀態通報」（平日 14:35／15:55 HKT＋10/12 09:50）。
+
+## 2026-10-12 R155：策略總表雲垂陣顯示 Δ 預算
+- `?view=strategies` 💼 富途實倉 雲垂陣：對沖行用途改為「MHI 期貨 Δ 對沖 −1.00」（對沖本身 Δ）；陣標題下加一行「月跨式／期貨對沖／含對沖淨 Δ（界線 ±0.5）＋預算（再加／再減最多幾多）＋恒指全部淨 Δ」。資料來自 metrics.delta_parts（R154）；舊版 auto_risk 冇 delta_parts 時只顯示含對沖淨 Δ。
