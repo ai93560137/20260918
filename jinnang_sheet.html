@@ -34,7 +34,7 @@ body{
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   font-size:15px; line-height:1.72; -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:860px; margin:0 auto; padding-inline:16px; padding-block:40px 72px;
+.wrap{max-width:1050px; margin:0 auto; padding-inline:16px; padding-block:40px 72px;
   display:flex; flex-direction:column; gap:44px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   font-variant-numeric:tabular-nums}
@@ -168,19 +168,21 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
   .wrap{padding-block:0; gap:26px; max-width:none}
   section{break-inside:avoid}
   .card{break-inside:avoid}
-  .noprint, .nav-links, .brand-head{display:none}
+  .noprint, .nav-links, .brand-head, .topnav{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* R169 頁首：品牌標誌＋頁面標題，與 main.py 其餘頁面的 .brand / .brand-logo / .page-title 一致 */
-.brand-head{display:flex; align-items:center; gap:10px; min-width:0; margin-bottom:14px}
+.topnav{display:flex; flex-direction:column; gap:10px; padding:15px 20px; background:var(--field);
+  border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.brand-head{display:flex; align-items:center; gap:10px; min-width:0}
 .brand-head .brand-logo{width:34px; height:34px; flex-shrink:0}
 .brand-head .brand-logo svg{width:100%; height:100%; display:block}
 .brand-head .page-title{font-size:18px; font-weight:bold; margin:0; color:var(--ink)}
 
 /* 導覽列：與 main.py 的其餘五頁完全一致（.nav-links / .nav-link / .nav-current）。
    顏色抽成變數，只為了深色模式能換掉 —— 淺色模式的值跟那五頁一模一樣。 */
-.nav-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:-28px}
+.nav-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
 .nav-link{display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px;
   font-weight:700; text-decoration:none; color:var(--nav-fg); background:var(--nav-bg);
   white-space:nowrap}
@@ -190,6 +192,7 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
 </style>
 
 <div class="wrap">
+<div class="topnav">
 <div class="brand-head"><div class="brand-logo"><svg viewBox='0 0 64 64' role='img' aria-label='智能諸葛亮' focusable='false'>
   <defs>
     <linearGradient id='zgBadge' x1='0' y1='0' x2='1' y2='1'>
@@ -240,6 +243,7 @@ footer{border-top:1px solid var(--line); padding-top:16px; color:var(--muted);
   <a class="nav-link" href="?view=fund_report">📊 基金報告</a>
   <a class="nav-link" href="?view=dashboard">⚙️ 控制台</a>
 </nav>
+</div>
 
 <header>
   <div class="masthead">
