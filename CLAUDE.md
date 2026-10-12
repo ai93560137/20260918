@@ -75,6 +75,10 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
   按陣配對（`main.py` 的 `FUTU_TEAM_RULES`，策略總表「💼 富途實倉」）、風險警報與通知各陣。喺富途戶口開新實倉前，先登記 `POSITIONS.md`
   並用 `send_message` 通知總指揮加配對規則；配對唔到嘅會入「未配對」並發 Telegram。
 - **各陣真實持倉登記在 `POSITIONS.md`**：開倉、平倉要更新並合併到預設分支；開新一輪前先讀它與 GCS `futu/risk/latest.json`（富途即時持倉與按金緩衝）。
+- **交易想法登記在 `IDEAS.md`**：先登記（假說、預先登記成功標準、資料區間）後回測；棄用必寫原因。開新實倉前先把該想法改成「實倉」。
+  每週 workflow `screener_scorecard.yml` 產生 `research/screener_scorecard/SCORECARD.md`（篩選器前瞻命中率對照隨機成分股）與
+  `research/divergence/DIVERGENCE.md`（實倉／紙上對回測期望的偏離燈號，期望登記在 `expectations.json`）；判決變了就回 `IDEAS.md` 改狀態。
+  `research/harness_learning/` 是論文 arXiv:2609.35738 的修訂迴圈實作，評分卡的 `*_report.txt` 就是給 proposer 讀的執行報告。
 
 ## 檢查指令
 

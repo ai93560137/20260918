@@ -1,0 +1,60 @@
+Screener: newhighs   horizon: 10 trading days   entry: next open, exit: close
+Score (hit rate, excess>0): 0.284 on 95 scored picks (98 pending, 0 no data); mean excess -3.7%, median -4.2%, t -4.74
+Control 港股 (all constituents, same days): hit 0.474 mean excess -0.3% n=340
+Control 日股 (all constituents, same days): hit 0.232 mean excess -5.2% n=1575
+Control 美股 (all constituents, same days): hit 0.296 mean excess -2.3% n=6012
+
+--- FAILED 1 ---
+Pick: 2026-09-18 日股 6594.JP ニデック
+Features: window=3, sector=工業, pct_above_ma200=17.7, streak=1
+Return 10d: -26.2%  Excess: -31.6%
+
+--- FAILED 2 ---
+Pick: 2026-09-17 美股 ARE Alexandria Real Estate Equities
+Features: window=6, sector=地產, pct_above_ma200=14.3, streak=1
+Return 10d: -16.5%  Excess: -17.3%
+
+--- FAILED 3 ---
+Pick: 2026-09-14 日股 8001.JP 伊藤忠商事
+Features: window=12, sector=工業, pct_above_ma200=17.7, streak=1
+Return 10d: -7.0%  Excess: -15.2%
+
+--- FAILED 4 ---
+Pick: 2026-09-14 日股 9532.JP 大阪瓦斯
+Features: window=3, sector=公用, pct_above_ma200=6.6, streak=2
+Return 10d: -6.9%  Excess: -15.0%
+
+--- FAILED 5 ---
+Pick: 2026-09-17 日股 9101.JP 日本郵船
+Features: window=12, sector=工業, pct_above_ma200=34.8, streak=1
+Return 10d: -6.3%  Excess: -14.5%
+
+--- FAILED 6 ---
+Pick: 2026-09-11 日股 9532.JP 大阪瓦斯
+Features: window=3, sector=公用, pct_above_ma200=5.4, streak=1
+Return 10d: -6.2%  Excess: -14.5%
+
+--- FAILED 7 ---
+Pick: 2026-09-14 日股 9434.JP ソフトバンク
+Features: window=12, sector=通訊/互聯網, pct_above_ma200=15.3, streak=3
+Return 10d: -5.8%  Excess: -13.9%
+
+--- FAILED 8 ---
+Pick: 2026-09-14 日股 9432.JP ＮＴＴ
+Features: window=12, sector=通訊/互聯網, pct_above_ma200=15.9, streak=1
+Return 10d: -4.8%  Excess: -12.9%
+
+--- BEST 1 ---
+Pick: 2026-09-09 日股 5301.JP 東海カーボン
+Features: window=12, sector=原材料, pct_above_ma200=52.2, streak=1
+Return 10d: +20.0%  Excess: +18.9%
+
+--- BEST 2 ---
+Pick: 2026-09-10 日股 5301.JP 東海カーボン
+Features: window=12, sector=原材料, pct_above_ma200=53.2, streak=2
+Return 10d: +21.3%  Excess: +17.4%
+
+--- BEST 3 ---
+Pick: 2026-09-24 美股 MRNA Moderna
+Features: window=12, sector=醫療, pct_above_ma200=207.3, streak=1
+Return 10d: +15.2%  Excess: +13.9%

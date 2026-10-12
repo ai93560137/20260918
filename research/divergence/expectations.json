@@ -1,0 +1,45 @@
+{
+  "_readme": "各策略的回測期望，供 scripts/strategy_divergence.py 比對實倉／紙上結果。數字抄自各回測文件，改這裡要附來源。",
+  "snake_hsi": {
+    "name": "🐍 蛇蟠陣 HSI 3 日通道 sar（紙上前向測試）",
+    "unit": "HKD",
+    "bt_source": "DONCHIAN_BACKTEST.md（分支 claude/gifted-carson-v2tvhw）補充：HSI1! TradingView Deep Backtesting 8.5 年，含佣金與滑點",
+    "bt_n": 378,
+    "bt_mean": 2997,
+    "bt_std": 36909,
+    "bt_t": 1.58,
+    "bt_max_dd_pct": 23.75,
+    "extra_rule": "實際成交價 − 通道價 的平均滑價 > 5 點（超出 1 tick 假設）即觸發重審（DONCHIAN_BACKTEST.md）"
+  },
+  "strangle_1sigma": {
+    "name": "🌬️ 風揚陣方向一 每週沽恒指週期權 1σ 勒式",
+    "unit": "點",
+    "bt_source": "research/hsi_futures_range/STRANGLE_1SIGMA.md 二、回測成績（51 週，不挑時機，港交所官方結算價）",
+    "bt_n": 51,
+    "bt_mean": 55,
+    "bt_median": 93,
+    "bt_t": 2.85,
+    "bt_std": null,
+    "bt_max_dd": 472
+  },
+  "yunchui_straddle": {
+    "name": "☁️ 雲垂陣 MHI 月跨式＋期貨對沖、MES 跨式",
+    "note": "分支 claude/dazzling-curie-f3xzb8；預設分支找不到回測期望（每筆平均／標準差／最大回撤），請該陣補登記",
+    "stop_use_keys": ["HSI 月跨式", "MES 跨式"]
+  },
+  "manual_es_put": {
+    "name": "✋ 使用者人手 EW2610 P7,750",
+    "note": "人手交易，無回測；只看止損線使用率",
+    "stop_use_keys": ["EW P7750"]
+  },
+  "xauusd_v12": {
+    "name": "智能諸葛亮 XAUUSD v12（strict K=1.0、TP=3R）",
+    "bt_source": "BACKTEST.md 2026-01-02 → 09-16 全期間掃描，TP=3R 重跑",
+    "bt_n": 173,
+    "bt_win_rate": 0.31,
+    "bt_pf": 1.12,
+    "bt_return_pct": 3.0,
+    "bt_max_dd_pct": 6.8,
+    "note": "GCS logs/ 只有最後一筆送單與 webhook payload，沒有成交帳本；要比對需接 webhooktrade 成交記錄"
+  }
+}
