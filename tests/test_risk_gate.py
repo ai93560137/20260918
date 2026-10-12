@@ -1,5 +1,5 @@
 """main.py 風控電閘改動的回歸測試。用假的 GCS（記憶體）跑，不碰雲端。"""
-import io, json, os, sys, types, time
+import io, json, os, re, sys, types, time
 
 os.environ.setdefault("GCP_SECRET_TOKEN", "tok")
 sys.path.insert(0, "/home/user/20260918")
@@ -369,8 +369,8 @@ for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html
     check(f"{f} 有品牌頁首", '<div class="brand-head"><div class="brand-logo"><svg' in txt
           and f'<h1 class="page-title">' in txt and f"{cur}</h1>" in txt)
     check(f"{f} 頁首喺導覽列之前", txt.index('class="brand-head"') < txt.index('<nav class="nav-links"'))
-    check(f"{f} 列印時隱藏頁首", ".brand-head" in txt.split("@media print", 1)[1].split("}", 3)[0] or "brand-head{display:none" in txt
-          or ",.brand-head," in txt or ", .brand-head{" in txt)
+    check(f"{f} 列印時隱藏頁首",
+          re.search(r"@media print[\s\S]*?\.brand-head[^{}]*\{[^}]*display:none", txt) is not None)
 # 兩頁實際 serve 出來要含全部連結
 # [R91] 站外連結是完整網址，不會長成 ?view=...，所以兩種要分開比。
 def _linked(html, view):
