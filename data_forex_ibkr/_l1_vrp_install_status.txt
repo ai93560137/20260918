@@ -307,3 +307,13 @@ utc_time,label,bid,ask,spread_bp
 - 6E：合約解析一次到位（6EZ6、到期 20261113、tradingClass 2EU、行使價 1.12），半價差 0.0758 波動點；平日 14:00 UTC 寫 vrp_snapshots.csv，clientId 32。
 - 每週六 02:10 UTC push_fx_quotes.sh 推回兩個 CSV；VM 時區 UTC；既有 07:35 採集的中斷原因（10141 對話框、髒工作樹）已一併修復。
 - 未執行 --open；未花錢；未改 ib_collector.py 與既有 cron。
+
+## 2026-10-12 16:25 UTC 追記：6E 快照合約選法已同步外匯分支（月權 EUU 優先）
+- scripts/ib_fx_option_snapshot.py 取自外匯分支 commit d138d045：21–35 天窗內優先 tradingClass EUU、再取最接近 30 天；沒有 EUU 才退到週權。
+  每列新增 trading_class 欄（CSV 30 欄 → 31 欄；vrp_snapshots.csv 尚未建立，無相容問題）。雲垂先前三處修改保留。
+- 沙盒假 IB 驗證：EUU 20261106（25 天）與 2EU 20261113（32 天）並存時選 EUU；10/13 首筆正式快照預期為 EUU 20261106。
+- VM 取得新版的途徑有兩條，10/13 14:00 UTC 前必然已更新：(1) gcp_ib/ib-trigger 看門狗每 10 分鐘 pull 本分支（10/12 14:10 已觀察到它自動拉下 dismiss_paper_warning.sh）；
+  (2) run_daily.sh 07:35 UTC 的 pull --rebase（rebase.autostash 已設）。
+  保險起見，使用者可在 VM 貼一行確認：
+    cd ~/20260918 && git pull --rebase origin claude/dazzling-curie-f3xzb8 && grep -c PREFER_TCLASS scripts/ib_fx_option_snapshot.py
+  印出 2 即為新版。
