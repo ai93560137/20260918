@@ -107,3 +107,193 @@ git push origin claude/dazzling-curie-f3xzb8
 
 ### 未動的東西
 - gcp_ib/ib_collector.py、run_daily.sh、既有 cron 全部沒改；沒有合併外匯分支；沒用這些數據跑任何回測；沒碰帳戶設定。
+
+## VM 實測（2026-10-12 13:49:36 UTC；主機 ib-data；系統時區 UTC）
+
+### 既有 crontab
+*/10 * * * * bash $HOME/ib_watch.sh
+*/5 * * * * bash $HOME/ib_keepalive.sh
+35 7 * * 1-5 bash $HOME/20260918/gcp_ib/run_daily.sh >> $HOME/ib_daily.log 2>&1
+*/5 * * * * bash $HOME/ibshare_sync.sh
+@reboot sudo -n iptables -I INPUT -p tcp --dport 4002 ! -s 127.0.0.1 -j DROP
+30 22 * * 1-5 bash $HOME/20260918/gcp_ib/run_vol_daily.sh >> $HOME/ib_vol_daily.log 2>&1
+
+### 1a. ib_l1_quote.py --delayed（連線測試）
+Error 10141, reqId -1: Paper trading disclaimer must first be accepted for API connection.
+Peer closed connection. clientId 41 already in use?
+API connection failed: TimeoutError()
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 490, in wait_for
+    return fut.result()
+           ^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 684, in _wrap_awaitable
+    return (yield from awaitable.__await__())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/hengkychansinghing/20260918/scripts/ib_l1_quote.py", line 55, in <module>
+    main()
+  File "/home/hengkychansinghing/20260918/scripts/ib_l1_quote.py", line 31, in main
+    ib.connect("127.0.0.1", args.port, clientId=args.client_id, timeout=20)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 279, in connect
+    return self._run(self.connectAsync(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 318, in _run
+    return util.run(*awaitables, timeout=self.RequestTimeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/util.py", line 341, in run
+    result = loop.run_until_complete(task)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 1748, in connectAsync
+    await self.client.connectAsync(host, port, clientId, timeout)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/client.py", line 217, in connectAsync
+    await asyncio.wait_for(self.apiStart, timeout)
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 492, in wait_for
+    raise exceptions.TimeoutError() from exc
+TimeoutError
+
+### 1b. ib_l1_quote.py 即時（bid／ask 為空＝paper 無即時外匯權限：只回報，不買訂閱、不改延遲）
+Error 10141, reqId -1: Paper trading disclaimer must first be accepted for API connection.
+Peer closed connection. clientId 41 already in use?
+API connection failed: TimeoutError()
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 490, in wait_for
+    return fut.result()
+           ^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 684, in _wrap_awaitable
+    return (yield from awaitable.__await__())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/hengkychansinghing/20260918/scripts/ib_l1_quote.py", line 55, in <module>
+    main()
+  File "/home/hengkychansinghing/20260918/scripts/ib_l1_quote.py", line 31, in main
+    ib.connect("127.0.0.1", args.port, clientId=args.client_id, timeout=20)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 279, in connect
+    return self._run(self.connectAsync(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 318, in _run
+    return util.run(*awaitables, timeout=self.RequestTimeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/util.py", line 341, in run
+    result = loop.run_until_complete(task)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 1748, in connectAsync
+    await self.client.connectAsync(host, port, clientId, timeout)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/client.py", line 217, in connectAsync
+    await asyncio.wait_for(self.apiStart, timeout)
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 492, in wait_for
+    raise exceptions.TimeoutError() from exc
+TimeoutError
+
+### 2. ib_fx_option_snapshot.py --dry（期望一行 scan <到期> <行使價> 半價差(波動點)= 0.1–0.5，認購認沽 bid/ask 都有值）
+Error 10141, reqId -1: Paper trading disclaimer must first be accepted for API connection.
+Peer closed connection. clientId 32 already in use?
+API connection failed: TimeoutError()
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 490, in wait_for
+    return fut.result()
+           ^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 684, in _wrap_awaitable
+    return (yield from awaitable.__await__())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/hengkychansinghing/20260918/scripts/ib_fx_option_snapshot.py", line 241, in <module>
+    main()
+  File "/home/hengkychansinghing/20260918/scripts/ib_fx_option_snapshot.py", line 170, in main
+    ib.connect("127.0.0.1", args.port, clientId=args.client_id, timeout=20)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 279, in connect
+    return self._run(self.connectAsync(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 318, in _run
+    return util.run(*awaitables, timeout=self.RequestTimeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/util.py", line 341, in run
+    result = loop.run_until_complete(task)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/ib.py", line 1748, in connectAsync
+    await self.client.connectAsync(host, port, clientId, timeout)
+  File "/home/hengkychansinghing/.local/lib/python3.11/site-packages/ib_insync/client.py", line 217, in connectAsync
+    await asyncio.wait_for(self.apiStart, timeout)
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 492, in wait_for
+    raise exceptions.TimeoutError() from exc
+TimeoutError
+
+### l1_quotes.csv（測試列）
+
+## VM 實測第 2 次（2026-10-12 13:57:15 UTC；已點掉 10141 免責聲明）
+
+### 1a. ib_l1_quote.py --delayed（連線測試）
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
+test 1.11761 1.11762
+
+### 1b. ib_l1_quote.py 即時
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
+test 1.11768 1.11769
+
+### 2. ib_fx_option_snapshot.py --dry
+Error 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+Error 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+open orders request timed out
+completed orders request timed out
+Error 10090, reqId 13: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.EUR DEC'26 (6EZ6) /TOP/ALL, contract: FuturesOption(conId=931167737, symbol='EUR', lastTradeDateOrContractMonth='20261113', strike=1.12, right='C', multiplier='125000', exchange='CME', currency='USD', localSymbol='2EUX6 C1120', tradingClass='2EU')
+Error 10090, reqId 14: Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is available.EUR DEC'26 (6EZ6) /TOP/ALL, contract: FuturesOption(conId=931167834, symbol='EUR', lastTradeDateOrContractMonth='20261113', strike=1.12, right='P', multiplier='125000', exchange='CME', currency='USD', localSymbol='2EUX6 P1120', tradingClass='2EU')
+  期貨： [('6EV6', '20261019', 881167137), ('6EX6', '20261116', 881167147), ('6EZ6', '20261214', 532281583), ('6EF7', '20270115', 881167140)]
+  鏈 6EZ6 tradingClass=TU2 multiplier=125000 1 個到期 43 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=SU3 multiplier=125000 1 個到期 40 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=MO3 multiplier=125000 1 個到期 48 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=MO2 multiplier=125000 1 個到期 52 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=MO1 multiplier=125000 1 個到期 40 檔行使價；21–35 天內：[('20261102', 21)]
+  鏈 6EZ6 tradingClass=TU3 multiplier=125000 1 個到期 40 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=SU4 multiplier=125000 1 個到期 38 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=MO4 multiplier=125000 1 個到期 44 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=WE3 multiplier=125000 1 個到期 45 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=4EU multiplier=125000 1 個到期 49 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=WE2 multiplier=125000 1 個到期 49 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=5EU multiplier=125000 1 個到期 45 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=EUU multiplier=125000 2 個到期 81 檔行使價；21–35 天內：[('20261106', 25)]
+  鏈 6EZ6 tradingClass=WE1 multiplier=125000 1 個到期 38 檔行使價；21–35 天內：[('20261104', 23)]
+  鏈 6EZ6 tradingClass=2EU multiplier=125000 1 個到期 40 檔行使價；21–35 天內：[('20261113', 32)]
+  鏈 6EZ6 tradingClass=3EU multiplier=125000 1 個到期 54 檔行使價；21–35 天內：[]
+  鏈 6EZ6 tradingClass=WE4 multiplier=125000 1 個到期 43 檔行使價；21–35 天內：[]
+  選到：6EZ6 到期 20261113（32 天）tradingClass=2EU multiplier=125000；期貨 last=1.1208 bid=1.1207 ask=1.12075 close=1.12315 → 參考價 1.1208
+  ATM 候選行使價（按距離）：[1.12, 1.1225, 1.1175, 1.125, 1.115, 1.1275]
+2026-10-12 13:58:29 scan 20261113 1.12 半價差(波動點)= 0.0758 bid/ask 認購 0.0089 0.0091 認沽 0.0082 0.0084
+
+### l1_quotes.csv（測試列）
+utc_time,label,bid,ask,spread_bp
+2026-10-12 13:57:42,test_delayed,1.11761,1.11762,0.089
+2026-10-12 13:58:08,test,1.11768,1.11769,0.089
+
+### 4B. crontab 已安裝（2026-10-12 14:00:26 UTC）
+59 8  * * 1-5 cd $HOME/20260918 && python3 scripts/ib_l1_quote.py --label 0859 --client-id 41 >> data_forex_ibkr/l1_quote.log 2>&1
+59 11 * * 1-5 cd $HOME/20260918 && python3 scripts/ib_l1_quote.py --label 1159 --client-id 41 >> data_forex_ibkr/l1_quote.log 2>&1
+0 14  * * 1-5 cd $HOME/20260918 && python3 scripts/ib_fx_option_snapshot.py --client-id 32 >> data_forex_ibkr/vrp_snapshot.log 2>&1
+10 2  * * 6   bash $HOME/20260918/gcp_ib/push_fx_quotes.sh >> $HOME/ib_fx_push.log 2>&1
+
+### 附記：10/07 起 07:35 採集中斷的兩個原因已處理——(1) Gateway 10141 模擬帳免責聲明對話框，已用 xdotool 點掉；(2) htf_5m/_status.txt 未提交改動擋住 pull --rebase，已設 rebase.autostash。
