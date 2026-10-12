@@ -69,7 +69,8 @@
       "captured_utc": "2026-10-02T21:42+00:00",
       "model_iv": 0.08726669807703821,
       "model_premium": 0.00018683027072035306,
-      "real_over_model": 267.62258496558
+      "real_over_model_raw": 267.62258496558,
+      "ratio_excluded": "模型權利金 < 股價 0.05%，不計入比例"
      },
      "1044.HK": {
       "status": "ok",
