@@ -129,13 +129,13 @@ date,scheduled,statement_time_et,statement_time_rule,press_conference,heading,so
 2007-06-18,1,,14:15,0,June 27-28 Meeting - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20070618a.htm,
 2007-08-07,1,,14:15,0,August 7 Meeting - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20070807a.htm,
 2007-08-10,0,,,0,August 10 Conference Call - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20070810a.htm,unscheduled
-2007-08-16,0,,,0,August 16 Conference Call - 2007,,unscheduled
+2007-08-16,0,,,0,August 16 Conference Call - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20070817b.htm,unscheduled
 2007-09-18,1,,14:15,0,September 18 Meeting - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20070918a.htm,
 2007-10-31,1,,14:15,0,October 30-31 Meeting - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20071031a.htm,
 2007-12-06,0,,,0,December 6 Conference Call - 2007,,unscheduled
 2007-12-11,1,,14:15,0,December 11 Meeting - 2007,https://www.federalreserve.gov/newsevents/press/monetary/20071211a.htm,
 2008-01-09,0,,,0,January 9 Conference Call - 2008,,unscheduled
-2008-01-21,0,,,0,January 21 Conference Call - 2008,,unscheduled
+2008-01-21,0,,,0,January 21 Conference Call - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20080122b.htm,unscheduled
 2008-01-30,1,,14:15,0,January 29-30 Meeting - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20080130a.htm,
 2008-03-10,0,,,0,March 10 Conference Call - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20080311a.htm,unscheduled
 2008-03-18,1,,14:15,0,March 18 Meeting - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20080318a.htm,
@@ -147,7 +147,7 @@ date,scheduled,statement_time_et,statement_time_rule,press_conference,heading,so
 2008-09-29,0,,,0,September 29 Conference Call - 2008,,unscheduled
 2008-10-07,0,,,0,October 7 Conference Call - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20081008a.htm,unscheduled
 2008-10-29,1,,14:15,0,October 28-29 Meeting - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20081029a.htm,
-2008-12-16,0,,,0,December 15-16 Meeting - 2008,,no_statement_link
+2008-12-16,1,,14:15,0,December 15-16 Meeting - 2008,https://www.federalreserve.gov/newsevents/press/monetary/20081216b.htm,
 2009-01-16,0,,,0,January 16 Conference Call - 2009,,unscheduled
 2009-01-28,1,,14:15,0,January 27-28 Meeting - 2009,https://www.federalreserve.gov/newsevents/press/monetary/20090128a.htm,
 2009-02-07,0,,,0,February 7 Conference Call - 2009,,unscheduled
@@ -250,7 +250,7 @@ date,scheduled,statement_time_et,statement_time_rule,press_conference,heading,so
 2020-03-02,0,,,1,March 2 (unscheduled) Meeting - 2020,https://www.federalreserve.gov/newsevents/pressreleases/monetary20200303a.htm,unscheduled
 2020-03-15,0,5:00 p.m. EDT,,1,March 15 (unscheduled) Meeting - 2020,https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm,unscheduled
 2020-03-18,0,,,0,March 17-18 (cancelled) Meeting - 2020,,cancelled
-2020-03-19,0,9:00 a.m. EDT,,0,March 19 (notation vote) - 2020,,unscheduled
+2020-03-19,0,9:00 a.m. EDT,,0,March 19 (notation vote) - 2020,https://www.federalreserve.gov/newsevents/pressreleases/monetary20200319b.htm,unscheduled
 2020-03-23,0,8:00 a.m. EDT,,0,March 23 (notation vote) - 2020,https://www.federalreserve.gov/newsevents/pressreleases/monetary20200323a.htm,unscheduled
 2020-03-31,0,8:30 a.m. EDT,,0,March 31 (notation vote) - 2020,https://www.federalreserve.gov/newsevents/pressreleases/monetary20200331a.htm,unscheduled
 2020-04-29,1,2:00 p.m. EDT,14:00,1,April 28-29 Meeting - 2020,https://www.federalreserve.gov/newsevents/pressreleases/monetary20200429a.htm,
