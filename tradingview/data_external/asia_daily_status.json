@@ -1,0 +1,24 @@
+{
+ "vhsi_daily.csv": {
+  "last_date": "2026-10-12",
+  "last_row": "final",
+  "fetched_utc": "2026-10-12 16:16",
+  "kept_dates": [
+   "2026-10-12"
+  ]
+ },
+ "hsi_daily.csv": {
+  "last_date": "2026-10-12",
+  "last_row": "final",
+  "fetched_utc": "2026-10-12 16:16",
+  "kept_dates": [
+   "2026-10-12"
+  ]
+ },
+ "n225_daily.csv": {
+  "last_date": "2026-10-09",
+  "last_row": "final",
+  "fetched_utc": "2026-10-12 16:16",
+  "kept_dates": []
+ }
+}
