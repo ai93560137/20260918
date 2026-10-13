@@ -1,6 +1,9 @@
 # 交接：外匯 VM 安裝工作階段（雲垂分支上的「外匯 IB 報價管線」）
 
 原工作階段：`session_01SHVCr19iNooiT5rp8BxD5t`（標題「雲垂：安裝外匯分支的兩支 IB 報價快照腳本」）。寫於 2026-10-13。
+接手工作階段：`session_01YcJyu1yjZaFQTtY37WuQYH`（「💱 外匯 VM 安裝（新，接手 2026-10-14）」），2026-10-14 起由它負責。
+
+**2026-10-14 使用者決定**：外匯研究線（外匯數據測試 session `session_01Svsn6w1kkBJS3v6cXoGoXN`）已停、不開接手，但 VM 上的 L1／6E／ZQ 採集**繼續**，由本工作階段負責（使用者原話：「VM 上的外匯數據採集還要繼續, 轉到外匯（VM 安裝）新工作階段」）。採集出問題直接在對話告訴使用者；預設分支 07:30 流水線心跳不含 VM，VM 健康靠本工作階段在使用者來找時看狀態檔與 log。
 分支：`claude/dazzling-curie-f3xzb8`（與雲垂陣共用，**只動下列外匯相關檔**，雲垂的股指檔案不要碰）。
 
 ## a. 負責什麼、使用者原話與規矩
@@ -17,23 +20,26 @@
 |---|---|---|
 | `59 8 * * 1-5`、`59 11 * * 1-5` | `scripts/ib_l1_quote.py --label 0859/1159 --client-id 41`：EURUSD IDEALPRO 即時 bid／ask | `data_forex_ibkr/l1_quotes.csv`、`l1_quote.log` |
 | `0 14 * * 1-5` | `scripts/ib_fx_option_snapshot.py --client-id 32`：6E 近月 ATM 跨式（月權 EUU 優先） | `data_forex_ibkr/vrp_snapshots.csv`、`vrp_snapshot.log` |
+| `30 23 * * 1-5` | `scripts/ib_zq_daily.py --client-id 45 --push`：ZQ 聯邦基金期貨本月＋後 3 個月合約最近 10 天日線（Close＝結算），按 (date, contract) 去重合併；**腳本自己 commit＋push**（訊息 `data(zq): ZQ 每日結算`），不經 push_fx_quotes.sh。pre-FOMC 美元漂移前向用；首個關鍵日 10-23（五）結算＝10-28 FOMC 的 t−3 | `data_forex_ibkr/zq/zq_daily.csv`、`zq/zq_daily.log`（log 不進 git） |
 | `10 2 * * 6` | `gcp_ib/push_fx_quotes.sh`：兩個 CSV 各一個 commit 推回本分支（訊息 `data(ibkr): L1 報價快照`／`data(ibkr): 6E 期權快照`） | `~/ib_fx_push.log` |
 | `*/10 * * * *` | `gcp_ib/dismiss_paper_warning.sh`：Gateway 的模擬帳免責聲明框（標題 Warning、501×260）出現就點掉 | `~/ib_warning_click.log` |
 
-- clientId 表：17 ib_collector、23 ib_fx_history、24 ib_stock_verify、31 htf_5m_fetch、32 6E 快照、41 L1、77 ibkr_vol_export。
+- clientId 表：17 ib_collector、23 ib_fx_history、24 ib_stock_verify、31 htf_5m_fetch、32 6E 快照、41 L1、45 ZQ 每日、77 ibkr_vol_export。
+- ZQ 安裝依據：外匯分支 `forex_research/IBKR_ZQ_DAILY_REQUEST.md`（協議 `FX_FOMC_DRIFT_FORWARD.md`）；本分支 10-12 20:31、23:30 UTC 已有 `data(zq)` commit，證實 cron 在跑。`data_forex_ibkr/zq/_status.txt` 記 ZQ 試拉結果（IB 日線 Close 是否等於 CME 結算仍待人工核對）。
 - VM repo 設了 `git config rebase.autostash true`（否則 CSV 被追加後工作樹髒，`run_daily.sh` 的 `pull --rebase` 會中止）。
 - 狀態檔：`data_forex_ibkr/_l1_vrp_install_status.txt`（安裝全紀錄、VM 實測輸出、改動說明）。
 
 ## c. Routine／send_later
 
 - 本工作階段建立的一次性觸發都已發完（PR #91 安全網已刪；10-13 14:20 的 6E 首筆檢查已觸發）。
-- 外匯分支會用 poke-only routine `trig_01RYyrFDQFkSdepHwdDAEScc`（「外匯陣 → 雲垂 通知」）喚醒本工作階段；接手後請它改指向新工作階段。
-- 另有其他工作階段的 `trig_01FTWXBqXqUv3s89YmUF7apo`（10-14 08:00 檢查 IV 採集，提到 claude-ops／`ssh ibdata`／`/srv/ibshare`）——那是另一套 VM 作業方式，不是本工作建立的，但與 07:35 採集有關。
+- poke-only routine `trig_01RYyrFDQFkSdepHwdDAEScc`（「外匯陣 → 雲垂 通知」）**不搬**：外匯數據測試已停，不會再有人觸發（SOP 顧問 10-14 確認）。
+- 另有「GCP agent」工作階段的 `trig_01FTWXBqXqUv3s89YmUF7apo`（10-14 檢查 IV 採集，提到 claude-ops／`ssh ibdata`／`/srv/ibshare`）——不是本工作建立的，由 SOP 顧問處理，本工作階段不用管。
 
 ## d. 誰找我、我找誰
 
-- 我 → 外匯分支 `session_01Svsn6w1kkBJS3v6cXoGoXN`：用 create_trigger（persistent_session_id，run_once_at）送通知；請求文件寫在本分支 `data_forex_ibkr/_requests_to_forex_2026-10-12.md`。
-- 外匯分支 → 我：`trig_01RYyrFDQFkSdepHwdDAEScc`，或在它分支寫 `forex_research/IBKR_*_REQUEST.md` 請求文件。
+- 外匯分支 `session_01Svsn6w1kkBJS3v6cXoGoXN`：2026-10-14 起已停，不再收發通知。
+- 新雲垂 `session_01RkzmKXKixbBkCNqEjhubCK`：同一分支的推送若撞到雲垂 commit，用 send_message 協調（各陣 id 以預設分支 `handoff/SESSIONS.md` 為準）。
+- 可改的外匯檔：`gcp_ib/push_fx_quotes.sh`、`gcp_ib/dismiss_paper_warning.sh`、`scripts/ib_l1_quote.py`、`scripts/ib_fx_option_snapshot.py`、`scripts/ib_zq_daily.py`、`data_forex_ibkr/`；雲垂陣的檔不碰。
 - 預設分支 SOP 顧問 `session_01BzZsgkBzxEaLV6CYPW67i6`：發交接要求。
 
 ## e. 進行中／未完成／已知坑
