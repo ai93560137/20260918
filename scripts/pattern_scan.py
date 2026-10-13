@@ -106,6 +106,10 @@ def fetch_yahoo(sym: str) -> pd.DataFrame:
     return clean(df)
 
 
+def file_key(sym: str) -> str:
+    return sym.replace("=F", "").replace("=X", "").replace("^", "IDX_")
+
+
 def load_csv(path: Path) -> pd.DataFrame:
     return clean(pd.read_csv(path, index_col=0, parse_dates=True))
 
@@ -453,8 +457,8 @@ def run_scan(a) -> int:
     for sym in syms:
         try:
             if a.csv_dir:
-                p = Path(a.csv_dir) / (sym.replace("=F", "").replace("^", "IDX_") + "_daily.csv")
-                df = load_csv(p)
+                base = Path(a.csv_dir) / (file_key(sym) + "_daily.csv")
+                df = load_csv(base if base.exists() else base.with_suffix(".csv.gz"))
             else:
                 df = fetch_yahoo(sym)
             df = df[df.index.date < today]  # 只用已收市 K 線
@@ -560,10 +564,10 @@ def run_scan(a) -> int:
 
 def run_backtest(a) -> int:
     """逐日重播：每日用當時已有嘅數據搵形態、照預先登記規則計成績。事後參考，唔算預先登記。"""
-    files = sorted(Path(a.csv_dir).glob("*_daily.csv"))
+    files = sorted(Path(a.csv_dir).glob("*_daily.csv*"))
     if a.symbols:
-        want = {s.replace("=F", "").replace("^", "IDX_") for s in a.symbols.split(",")}
-        files = [f for f in files if f.name.replace("_daily.csv", "") in want]
+        want = {file_key(s) for s in a.symbols.split(",")}
+        files = [f for f in files if f.name.split("_daily.csv")[0] in want]
     by_pat: dict[str, list[float]] = {}
     by_grade: dict[str, list[float]] = {"🟢": [], "🟡": []}
     for f in files:

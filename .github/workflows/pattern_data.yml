@@ -1,0 +1,43 @@
+name: Pattern data（形態掃描回測用歷史日線）
+
+# 抓 pattern_scan 產品池嘅全部歷史日線（yfinance），commit 回觸發分支 data/pattern_scan/。
+# 推送呢個檔或者 scripts/pattern_data.py 會自動跑一次（研究分支用）；之後要更新就手動觸發。不發訊息。
+on:
+  push:
+    paths:
+      - '.github/workflows/pattern_data.yml'
+      - 'scripts/pattern_data.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pattern-data
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: deps
+        run: pip install -q yfinance pandas
+      - name: fetch
+        run: python3 scripts/pattern_data.py
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/pattern_scan/
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -m "data: 形態掃描產品池歷史日線（yfinance）[skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1
