@@ -1,6 +1,7 @@
 {
   "_readme": "scripts/ops_heartbeat.py 的設定。must_be_active：這些 workflow 被停用（含手動）也當 🔴，直到恢復排程；其他手動停用的只標 ⚪。",
-  "must_be_active": {
-    "es_daily_push.yml": "風揚陣 ES 頁日線推送（R127）；10-06／07 排程失敗後 10-08 手動停用；使用者 2026-10-13 指示交風揚陣修好再恢復"
+  "must_be_active": {},
+  "retired": {
+    "es_daily_push.yml": "風揚陣 2026-10-13 核實：10-08 起刻意停用，不是故障。ES／NQ 日線改由本機 futu/mt5_push.py（MT5 SP500ft／NAS100ft 5 分 K 合成）推入，GCS futu/daily/US.ES_FRONT.json、US.NQ_FRONT.json 每日更新；兩個來源會互相覆蓋同一天日 K，所以不要恢復排程。10-06／07 失敗原因：GitHub Secret ZHUGE_WEBHOOK_TOKEN 未設。"
   }
 }
