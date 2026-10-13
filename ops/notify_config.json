@@ -9,7 +9,8 @@
   "deals": {
     "yunchui_prefixes": ["HK.MHI", "US.MES", "US.EX", "US.EW"],
     "day_run_min_fetched_hkt": "16:35",
-    "night_run_min_fetched_hkt": "03:05"
+    "night_run_min_fetched_hkt": "03:05",
+    "status_object": "ops/deals_status.json"
   },
   "state_object": "ops/notify_state.json"
 }

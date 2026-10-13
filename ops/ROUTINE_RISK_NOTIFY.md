@@ -4,6 +4,8 @@
 > 改 prompt 請同步改 Routine）。設計：讀兩個檔、比對、發訊息、寫回狀態，一輪結束。
 > 排程：平日 09:45／12:45／16:45／21:45 HKT。原 persistent Routine（trig_01LRrZMZ5mVnFqBYtAFqXxcW）由總指揮停用。
 > 對沖狀態（14:35／15:55）與成交通報（17:10／03:40）已由 GitHub Actions `ops_notify.yml` 接手，本 Routine 不再做。
+> 16:45 摘要的「當日平倉」改引用 GCS `ops/deals_status.json`（Actions 17:10 跑完寫；`summary_text` 一句即可）；該檔日期不是今天就寫「成交紀錄由 Actions 17:10 另發」。
+> 總指揮 2026-10-13 已停用舊 Routine 四個，啟用本 v2（trig_014UUQeZ5rPhXEXVrWVBveRu）。
 
 ---
 
@@ -27,6 +29,7 @@ python3 scripts/gcp_agent.py cat --object ops/risk_notify_state.json
 - `yunchui_delta` 對今次 `metrics.delta_parts.net_with_hedge`：變化 ≥ 0.1 手 → 「雲垂含對沖淨 Δ 變化」
 - `cushion` 對今次 `metrics.cushion`：變化 ≥ HK$20,000 → 「富途保證金緩衝變化」
 - `stop_use` 每一項：跨過 80%（上次 < 0.8、今次 ≥ 0.8，或反向）→ 「止損用量跨 80%」
+- `mhi_lots` 任何合約手數與上次 `mhi_lots` 不同（持倉變動）→ 「持倉變動」。這是最重要的一條：10/13 的四次 HSI2610／MHI2610 變動只有它捉得到，Δ 與緩衝門檻都會漏。觸發時除了通報四陣，**在本對話多留一句給使用者**：「HK.XXX 由 A 變 B（富途開倉價 …，見 positions 內該合約 open_price），請確認係邊個陣；POSITIONS.md 仍記 …」（讀 repo 的 POSITIONS.md 對應列）。
 有任何一項觸發，或現在是 16:45 那一輪（16:30–17:15 之間都算），才發訊息；否則靜默。
 
 **第 4 步：發訊息**（用 send_message，每則結尾加「只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準」，不含帳號、權杖）

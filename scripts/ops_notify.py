@@ -120,21 +120,21 @@ def compose_hedge(risk: dict | None, state: dict, cfg: dict, now: datetime) -> t
         actual = 0.0 if actual is None else float(actual)
         other = actual - float(decl)
         short = code.split(".")[-1]
-        lines.append(f"{short} 實際淨 {fmt_lots(actual)}｜雲垂對沖 {fmt_lots(decl)}／其他 {fmt_lots(other)}")
+        lines.append(f"{short} 實際淨手數 {fmt_lots(actual)}｜雲垂對沖申報 {fmt_lots(decl)}／其他 {fmt_lots(other)}")
         prev = (state.get("hedge") or {}).get(code)
         if prev is not None and float(prev) != actual:
-            changed.append(f"{short} 淨手數有變動：上次 {fmt_lots(prev)} → 今次 {fmt_lots(actual)}，請雲垂與使用者確認係咪對沖變動")
+            changed.append(f"⚠ {short} 淨手數有變動：上次 {fmt_lots(prev)}，今次 {fmt_lots(actual)}，請雲垂同使用者確認係咪對沖變動")
         state.setdefault("hedge", {})[code] = actual
     dp = m.get("delta_parts") or {}
     if dp:
-        delta_txt = (f"Δ（MHI 手，界線 ±{limit:g}）：跨式 {fmt_delta(dp.get('straddle'))}｜含對沖淨 {fmt_delta(dp.get('net_with_hedge'))}"
-                     f"｜恒指全部 {fmt_delta(dp.get('hsi_all'))}")
+        delta_txt = (f"Δ 月跨式 {fmt_delta(dp.get('straddle'))}、含對沖淨 {fmt_delta(dp.get('net_with_hedge'))}、"
+                     f"恒指全部 {fmt_delta(dp.get('hsi_all'))}（MHI 手，界線 ±{limit:g}）")
     else:
         d = m.get("delta") or {}
         first = next(iter(d.values()), None)
         net = first[0] if isinstance(first, list) and first else None
-        delta_txt = f"Δ（MHI 手，界線 ±{limit:g}）：含對沖淨 {fmt_delta(net)}｜跨式 —｜恒指全部 —（auto_risk 未升級 R154）"
-    head = f"{'⚠️ 數據過期（auto_risk 可能停咗）' if stale else '🛡️'} 對沖狀態 {now.strftime('%H:%M')} HKT｜數據 {run_hkt}"
+        delta_txt = f"Δ 月跨式 —、含對沖淨 {fmt_delta(net)}、恒指全部 —（MHI 手，界線 ±{limit:g}；auto_risk 未升級 R154）"
+    head = f"🛡️ 對沖狀態 {now.strftime('%H:%M')} HKT｜數據 {run_hkt}" + ("｜⚠ 數據過期（auto_risk 可能停咗）" if stale else "")
     msg = "\n".join([head, *lines, delta_txt, *changed, FOOTER])
     state["hedge_last_run_hkt"] = run_hkt
     return msg, state
@@ -200,7 +200,12 @@ def compose_deals(files: dict[str, dict | None], state: dict, cfg: dict, now: da
         parts += ["平倉：", *closed_lines]
     if other:
         parts += [f"其他合約（非雲垂）{len(other)} 筆：", *other[:10]]
-    parts.append("（只係資訊、唔係落單指令；已實現盈虧未計佣金／費用，以富途 App 為準）")
+    parts.append("（平倉按 FIFO 配對、未計佣金／費用，以富途 App 為準。只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準。）")
+    state["deals"]["status"] = {"date": today, "run_hkt": now.strftime("%Y-%m-%d %H:%M"), "run_kind": run_kind,
+                                "closed": [c for day in sorted(files) for c in ((files[day] or {}).get("closed") or [])
+                                           if is_yunchui(str(c.get("code")), cfg)],
+                                "n_yunchui_deals": len(yun), "n_other_deals": len(other),
+                                "summary_text": "；".join(closed_lines) if closed_lines else "雲垂合約今日無平倉"}
     return "\n".join(parts), state, reminder
 
 
@@ -251,6 +256,9 @@ def main() -> int:
         if not a.dry_run:
             send_telegram(msg)
             gcs_put(cfg["state_object"], json.dumps(state, ensure_ascii=False, indent=1))
+            status = (state.get("deals") or {}).get("status")
+            if status:
+                gcs_put(cfg["deals"].get("status_object", "ops/deals_status.json"), json.dumps(status, ensure_ascii=False, indent=1))
     elif not reminder:
         print("沒有新成交，靜默。")
     return 0
