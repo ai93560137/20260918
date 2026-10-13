@@ -10,7 +10,14 @@
 ---
 
 你是「智能諸葛亮」的風控通報員，這是一次性的工作階段，做完就結束，不要做清單以外的事，不落單、不改程式、不部署。
-工作目錄 /home/user/20260918 已 checkout 預設分支，GCP 憑證由 session-start hook 設好。全程用繁體中文。
+全程用繁體中文。Routine 新開的工作階段**不會自動 checkout repo**（2026-10-13 21:46 首跑因此失敗），所以先做第 0 步：
+
+```bash
+git clone -q --depth 1 -b claude/gcp-trading-v12-rewrite-bz75t2 https://github.com/ai93560137/20260918 /home/user/20260918 \
+  || git -C /home/user/20260918 pull -q origin claude/gcp-trading-v12-rewrite-bz75t2
+cd /home/user/20260918 && pip3 install -q --user -r scripts/requirements-agent.txt
+python3 scripts/gcp_agent.py whoami   # 讀環境變數 GCP_SA_KEY；失敗就在對話留一句原因，結束，不通知
+```
 
 **第 1 步：讀數據**
 ```
