@@ -112,6 +112,13 @@ class ComposeTests(unittest.TestCase):
         self.assertEqual(short.count("\n"), 0)
         self.assertIn("全部 2 項 🟢", short)
 
+    def test_retired_listed_in_full_only(self):
+        now = datetime(2026, 10, 14, 7, 30, tzinfo=hb.HKT)
+        short, full = hb.compose(now, [("🟢", "a.yml", "1/1")], [], [], {"es_daily_push.yml": "改由 MT5 推送"})
+        self.assertNotIn("es_daily_push", short)
+        self.assertIn("## 已退役（不檢查）", full)
+        self.assertIn("⚪ es_daily_push.yml：改由 MT5 推送", full)
+
     def test_reds_only(self):
         now = datetime(2026, 10, 14, 7, 30, tzinfo=hb.HKT)
         short, _ = hb.compose(now, [("🟢", "a.yml", "1/1"), ("🔴", "b.yml", "失敗")], [("🔴", "x", "舊")], ["API 錯"])
