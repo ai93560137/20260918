@@ -1,8 +1,8 @@
 Screener: newhighs   horizon: 10 trading days   entry: next open, exit: close
-Score (hit rate, excess>0): 0.284 on 95 scored picks (98 pending, 0 no data); mean excess -3.7%, median -4.2%, t -4.74
+Score (hit rate, excess>0): 0.286 on 98 scored picks (109 pending, 0 no data); mean excess -3.8%, median -4.2%, t -4.80
 Control 港股 (all constituents, same days): hit 0.474 mean excess -0.3% n=340
 Control 日股 (all constituents, same days): hit 0.232 mean excess -5.2% n=1575
-Control 美股 (all constituents, same days): hit 0.296 mean excess -2.3% n=6012
+Control 美股 (all constituents, same days): hit 0.313 mean excess -2.1% n=6525
 
 --- FAILED 1 ---
 Pick: 2026-09-18 日股 6594.JP ニデック
@@ -40,9 +40,9 @@ Features: window=12, sector=通訊/互聯網, pct_above_ma200=15.3, streak=3
 Return 10d: -5.8%  Excess: -13.9%
 
 --- FAILED 8 ---
-Pick: 2026-09-14 日股 9432.JP ＮＴＴ
-Features: window=12, sector=通訊/互聯網, pct_above_ma200=15.9, streak=1
-Return 10d: -4.8%  Excess: -12.9%
+Pick: 2026-09-25 美股 QCOM QUALCOMM
+Features: window=3, sector=科技, pct_above_ma200=20.5, streak=1
+Return 10d: -12.4%  Excess: -13.5%
 
 --- BEST 1 ---
 Pick: 2026-09-09 日股 5301.JP 東海カーボン
