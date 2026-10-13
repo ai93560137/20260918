@@ -56,7 +56,7 @@ LOG_FIELDS = ["date", "axis_short", "axis_disaster", "yellow", "yellow_count",
               "trial_yellow2", "trial_deep_yellow", "trial_red_deep", "trial_red_9d3m", "trial_yellow_vhsi",
               "w1_fear_spike", "vvix_vix_ratio", "ratio_p10",
               "vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi", "slope_9d", "slope_3m",
-              "stale_us_days", "stale_print", "generated_at_utc"]
+              "stale_us_days", "stale_print", "generated_at_utc", "move_carried"]
 
 # sent_log.csv:T 日發出的訊息「當時說了什麼」。次日拿最後一列對照重產的表,驗 T−1 訊息正確與否。
 COMPARE_VALUES = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi", "slope_9d", "slope_3m",
@@ -65,7 +65,10 @@ COMPARE_LIGHTS = ["axis_short", "axis_disaster", "yellow", "yellow_count", "yell
                   "trial_yellow2", "trial_deep_yellow", "trial_red_deep", "trial_red_9d3m", "trial_yellow_vhsi"]
 SENT_FIELDS = (["report_date", "generated_at_utc", "light_date", "apply_date_pred",
                 "streak_short", "streak_disaster", "streak_yellow", "stale_print", "stale_detail", "tg_sha1", "posthoc_done"]
-               + COMPARE_LIGHTS + COMPARE_VALUES)
+               + COMPARE_LIGHTS + COMPARE_VALUES + ["move_carried"])
+# MOVE 沿用(2026-10-13 使用者決定):債市休市日 MOVE 無值,燈色表沿用前一列的值計黃燈,
+# move_carried 記下沿用自哪一天。受影響的欄位(回驗時沿用值換實值、或舊訊息當時未沿用,屬補值不屬修訂):
+MOVE_CARRY_KEYS = {"move", "move_p90", "yellow_move", "yellow", "yellow_count", "trial_yellow2"}
 
 
 # ----------------------------------------------------------------------------- 讀表
@@ -272,12 +275,17 @@ def verify_previous(rows, sent, today):
     if cur is None:
         lines.append(f"⚠️ 燈色日 {dz(ld)} 這一列今天在表中消失了(上游重建了日線?)——昨日訊息無從對照")
         return lines, done
-    filled, revised, relit = [], [], []
+    filled, revised, relit, carry = [], [], [], []
+    # 昨日訊息用了沿用的 MOVE、今天換成實值;或昨日訊息當時 MOVE 無值、今天的表按沿用規則補上
+    move_carry_case = (S.get("move_carried", "") != "" and cur.get("move_carried", "") == "") or \
+                      (S.get("move", "") == "" and cur.get("move_carried", "") != "")
     for k in COMPARE_VALUES:
         old, new = S.get(k, ""), cur.get(k, "")
         if old == new:
             continue
-        if old == "" and new != "":
+        if move_carry_case and k in MOVE_CARRY_KEYS:
+            carry.append(f"{k} {old or '—'} → {new or '—'}")
+        elif old == "" and new != "":
             filled.append(f"{k} 補值 {new}")
         else:
             revised.append(f"{k} {old or '—'} → {new or '—'}")
@@ -285,7 +293,9 @@ def verify_previous(rows, sent, today):
         old, new = S.get(k, ""), cur.get(k, "")
         if old == new:
             continue
-        if old == "" and new != "":
+        if move_carry_case and k in MOVE_CARRY_KEYS:
+            carry.append(f"{k} {word(old) if old else '—'} → {word(new) if new else '—'}")
+        elif old == "" and new != "":
             filled.append(f"{k} 補判 {word(new)}")
         else:
             relit.append(f"{k} {word(old) if old else '—'} → {word(new) if new else '—'}")
@@ -295,7 +305,11 @@ def verify_previous(rows, sent, today):
         lines.append("❌ 燈色改判(昨日訊息的燈色在事後看是錯的):" + ";".join(relit))
     if filled:
         lines.append("ℹ️ 補值(昨日訊息當時未到的亞洲鳥今天補進來,昨日訊息在當時資訊下正確):" + ";".join(filled))
-    if not (revised or relit or filled):
+    if carry:
+        why = (f"昨日訊息沿用 {dz(S['move_carried'])} 的 MOVE,今天換成實值" if S.get("move_carried")
+               else f"昨日訊息當時 MOVE 無值;按沿用規則(債市休市日沿用前一交易日)今天補上 {dz(cur['move_carried'])} 的值")
+        lines.append(f"ℹ️ MOVE 沿用({why},昨日訊息在當時資訊與規則下正確):" + ";".join(carry))
+    if not (revised or relit or filled or carry):
         lines.append(f"✅ 燈色日 {dz(ld)} 的全部讀數與燈色,與今天重產的表逐欄一致({len(COMPARE_VALUES)} 個數值、{len(COMPARE_LIGHTS)} 個燈)")
     # 呆值有沒有被真值取代(stale_detail = "bird@YYYY-MM-DD@值";呆值列未必是燈色日,按它自己的日期查)
     for item in filter(None, S.get("stale_detail", "").split(";")):
@@ -323,6 +337,10 @@ def verify_previous(rows, sent, today):
             if last[key] == "" or S.get(sk, "") == "":
                 continue
             n_now = streak_info(rows, key, last[key])[0]
+            if key == "yellow" and move_carry_case:
+                lines.append(f"ℹ️ yellow 連續天數:昨日 {S[sk]} → 今日 {n_now}"
+                             f"(MOVE 沿用改變了燈色日 {dz(ld)} 的黃燈,連續天數按今天的表重算)")
+                continue
             expect = int(S[sk]) + 1 if S.get(key, "") == last[key] else 1
             lines.append(f"{'✅' if n_now == expect else '⚠️'} {key} 連續天數:昨日 {S[sk]} → 今日 {n_now}(預期 {expect})")
     # 後驗:凡 sent 列的燈色日 D 已有 D+5 個 SPX 交易日、且尚未後驗者。
@@ -421,7 +439,11 @@ def build_report(rows, health, today, sent=None):
             return f"{name}:無資料"
         v, p = f(r[col]), f(r.get(pcol))
         win = win_text(window_span(bird, r["date"]), name.split("(")[0])
-        if r["date"] == last["date"]:
+        carried = r.get(f"{col}_carried", "") if r["date"] == last["date"] else ""
+        if carried:
+            win = win_text(window_span(bird, carried), name.split("(")[0])
+            head = f"{name}:{D} 無值(債市休市或未公佈),沿用 {dz(carried)} 值 {v:.2f}"
+        elif r["date"] == last["date"]:
             head = f"{name}:{D} 值 {v:.2f}"
         else:
             head = f"{name}:{D} 列無值,不計入 {D} 燈色;最近 {dz(r['date'])} 值 {v:.2f}"
@@ -461,7 +483,7 @@ def build_report(rows, health, today, sent=None):
     latest_by_bird = {}
     for b in BIRDS:
         for r in reversed(rows):
-            if r.get(b, "") != "":
+            if r.get(b, "") != "" and not r.get(f"{b}_carried", ""):
                 latest_by_bird[b] = r["date"]
                 break
         else:
@@ -482,6 +504,9 @@ def build_report(rows, health, today, sent=None):
     for hd in holiday_like:
         warnings.append(f"{dz(hd)} 有 VIX 值但無 VIX9D、VIX3M(疑似美股假期只剩一根 bar):該列燈色空白,"
                         f"不計入連續天數、不作「變化」的比較基準")
+    if last.get("move_carried", ""):
+        warnings.append(f"MOVE {D} 無值(美國債市休市或未公佈):按規則沿用 {dz(last['move_carried'])} 的值與 p90 計黃燈"
+                        f"(只沿用一個交易日;2026-10-13 使用者決定)")
     stale = stale_prints()
     for b, dt, c, pdt, pc in stale:
         warnings.append(f"{b} {dz(dt)} 疑似呆值:開高低收四價相同({c:.2f})且等於前一列 {dz(pdt)} 收盤({pc:.2f}),"
@@ -572,7 +597,8 @@ def build_report(rows, health, today, sent=None):
     # ---- Telegram 每日總結(白話、emoji;每天必發,含週末)
     L = {"綠": "🟢", "走平": "⚪", "紅": "🔴", "深紅": "🟣", "": "❔"}
     a_s, a_d = last["axis_short"], last["axis_disaster"]
-    ylit = [n for n, flag, _, _ in yparts if last[flag] == "1"]
+    ylit = [n + (f"(沿用 {dz(last['move_carried'])})" if n == "MOVE" and last.get("move_carried") else "")
+            for n, flag, _, _ in yparts if last[flag] == "1"]
     weekend_note = ""
     if stale_us == 0 and today.weekday() in (6, 0):
         weekend_note = f"(香港今天{'週日' if today.weekday() == 6 else '週一早上'},美股尚無新收盤,燈色沿用 {last['date']})"
@@ -657,6 +683,7 @@ def build_report(rows, health, today, sent=None):
         "stale_us_days": str(stale_us),
         "stale_print": ";".join(b for b, *_ in stale),
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+        "move_carried": last.get("move_carried", ""),
     }
     sent_row = {
         "report_date": today.isoformat(), "generated_at_utc": log_row["generated_at_utc"],
@@ -669,6 +696,7 @@ def build_report(rows, health, today, sent=None):
         "tg_sha1": hashlib.sha1(tg_text.encode("utf-8")).hexdigest()[:12],
         "posthoc_done": "0",
         **{k: last.get(k, "") for k in COMPARE_LIGHTS + COMPARE_VALUES},
+        "move_carried": last.get("move_carried", ""),
     }
     return "\n".join(md) + "\n", tg_text, log_row, warnings, sent_row, posthoc_done
 

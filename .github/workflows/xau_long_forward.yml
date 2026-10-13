@@ -1,0 +1,64 @@
+name: XAUUSD long-only forward（蛇蟠陣只做多前向紙上記錄，每日）
+
+# 規則：蛇蟠陣 sar N=3 多頭腿 on XAUUSD（forex_research/XAUUSD_LONG_FORWARD.md）。
+# 每天 02:10 UTC（週二至週六）補抓前一個 UTC 日的 Dukascopy M1 到快取 forex_research/forward/xau_m1/，
+# 自錨點 2026-06-01 重跑引擎，重寫 xau_long_trades.csv／xau_both_trades.csv／xau_long_daily.csv／XAU_LONG_STATUS.md。
+# dry=true 只印出、不 commit。
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'true = 只印出不 commit'
+        required: false
+        default: 'false'
+      max_days:
+        description: '本次最多補抓幾個交易日（預設 40）'
+        required: false
+        default: '40'
+  schedule:
+    - cron: '10 2 * * 2-6'
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths: ['.github/workflows/xau_long_forward.yml', 'scripts/xau_long_forward.py']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xau-long-forward
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/forex-data-testing-w4q3m2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests pandas numpy
+      - name: Fetch, rerun engine, report
+        run: |
+          OUT="forex_research/forward"
+          if [ "${{ inputs.dry }}" = "true" ]; then cp -r forex_research/forward /tmp/xau_dry; OUT="/tmp/xau_dry"; fi
+          python3 scripts/xau_long_forward.py --out "$OUT" --max-days "${{ inputs.max_days || '40' }}"
+      - name: Commit
+        if: ${{ inputs.dry != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          FILES="forex_research/forward/xau_m1 forex_research/forward/xau_long_trades.csv forex_research/forward/xau_both_trades.csv forex_research/forward/xau_long_daily.csv forex_research/forward/xau_fetch_status.json forex_research/forward/XAU_LONG_STATUS.md"
+          git add $FILES
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "forward(xau): 只做多每日紙上記錄 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/forex-data-testing-w4q3m2 && exit 0
+            sleep $((i * 7)); git fetch origin claude/forex-data-testing-w4q3m2; git reset --mixed FETCH_HEAD
+            git add $FILES
+            git diff --cached --quiet && exit 0
+            git commit -q -m "forward(xau): 只做多每日紙上記錄 $(date -u +%F)"
+          done
+          exit 1
