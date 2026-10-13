@@ -5,7 +5,7 @@
 # crontab 例（UTC；東京收盤後+法蘭克福盤中）：  35 7 * * 1-5  bash /path/to/gcp_ib/run_daily.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-git pull --rebase -q origin claude/dazzling-curie-f3xzb8
+git pull --rebase --autostash -q origin claude/dazzling-curie-f3xzb8
 python3 gcp_ib/ib_collector.py --port "${IB_PORT:-4002}"
 git add tradingview/data_external/ib_iv_log.csv
 git diff --cached --quiet || {
