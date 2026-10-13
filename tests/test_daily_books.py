@@ -116,6 +116,7 @@ check("2 手 → 名義 97% 超額", any("名義" in w for w in why4), why4)
 R5 = json.loads(json.dumps(RISK)); R5["positions"][0]["futu_pl"] = -70000
 why5, _ = db.manual_limits(R5, {"closed": []})
 check("單日虧損 2.3% → 超額", any("單日虧損" in w for w in why5), why5)
+check("MHI2611 全部歸人手（唔當雲垂對沖）", db.split_by_cap("HK.MHI2611", -10) == [(db.TEAM_MANUAL, -10)], db.split_by_cap("HK.MHI2611", -10))
 check("MHI 超出對沖上限歸人手", db.split_by_cap("HK.MHI2610", -3) == [("雲垂陣", -1), (db.TEAM_MANUAL, -2)])
 
 print("\n=== 私隱：公開版冇金額、Actions 日誌只印字數 ===")

@@ -44,6 +44,7 @@ USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
 TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED = "使用者人手", "券商贈股", "未配對"
 TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最多手數；超出當使用者人手）
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
+    (r"^HK\.MHI2611$", TEAM_MANUAL, "MHI2611 小期（人手）", None),   # 2026-10-14 使用者確認；雲垂轉倉去 2611 前要改
     (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
