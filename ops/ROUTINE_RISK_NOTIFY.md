@@ -20,11 +20,13 @@ python3 scripts/gcp_agent.py cat --object ops/risk_notify_state.json
 **第 2 步：新鮮度**
 `run_hkt`（香港時間）比現在舊超過 60 分鐘 → 不通知四陣，只在本對話留一句「auto_risk 可能停咗（部機熄咗或 OpenD 斷線），數據停在 <run_hkt>」，然後跳到第 5 步寫狀態。
 
-**第 3 步：比對上次狀態**（`ops/risk_notify_state.json` 的 `last` 欄）
-- `alerts`：新出現或消失的鍵 → 「新警報／警報解除」
-- `metrics.delta_parts.net_with_hedge`：變化 ≥ 0.1 手 → 「雲垂含對沖淨 Δ 變化」
-- `metrics.cushion`：變化 ≥ HK$20,000 → 「富途保證金緩衝變化」
-- `metrics.stop_use` 每一項：跨過 80%（上次 < 0.8、今次 ≥ 0.8，或反向）→ 「止損用量跨 80%」
+**第 3 步：比對上次狀態**（`ops/risk_notify_state.json` 是平的 JSON，欄位由總指揮定：
+`last_notified_run_hkt`、`last_checked_run_hkt`、`alerts`（list）、`yunchui_delta`（= metrics.delta_parts.net_with_hedge）、
+`cushion`、`stop_use`（dict）、`hsi_all`、`mhi_lots`（dict）、`note`）
+- `alerts`：今次 `alerts` 的鍵與上次 list 比，新出現或消失 → 「新警報／警報解除」
+- `yunchui_delta` 對今次 `metrics.delta_parts.net_with_hedge`：變化 ≥ 0.1 手 → 「雲垂含對沖淨 Δ 變化」
+- `cushion` 對今次 `metrics.cushion`：變化 ≥ HK$20,000 → 「富途保證金緩衝變化」
+- `stop_use` 每一項：跨過 80%（上次 < 0.8、今次 ≥ 0.8，或反向）→ 「止損用量跨 80%」
 有任何一項觸發，或現在是 16:45 那一輪（16:30–17:15 之間都算），才發訊息；否則靜默。
 
 **第 4 步：發訊息**（用 send_message，每則結尾加「只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準」，不含帳號、權杖）
@@ -33,10 +35,11 @@ python3 scripts/gcp_agent.py cat --object ops/risk_notify_state.json
 - 16:45 那輪不論有無變化都發「每日收市摘要」給四陣（同上分流），並加一句「成交紀錄由 Actions 17:10 另發」。
 - 訊息短：一行時間（run_hkt）、一行數字、一行變化。不要長文。
 
-**第 5 步：寫回狀態**
-把今次的 `run_hkt`、`alerts`、`metrics.cushion`、`metrics.delta_parts`、`metrics.stop_use`、`metrics.mhi_lots` 存成 JSON：
+**第 5 步：寫回狀態**（沿用同一格式，不要改欄名；`note` 一句話寫今次做了什麼）
 ```
-{"last": {...}, "updated_hkt": "<現在 HKT>", "notified": true/false}
+{"last_notified_run_hkt": "<有發訊息才更新，否則沿用上次>", "last_checked_run_hkt": "<今次 run_hkt>",
+ "alerts": [<今次 alerts 的鍵>], "yunchui_delta": <net_with_hedge>, "cushion": <cushion>,
+ "stop_use": {<今次 stop_use>}, "hsi_all": <hsi_all>, "mhi_lots": {<今次 mhi_lots>}, "note": "<一句>"}
 ```
 寫入：`python3 scripts/gcp_agent.py put --object ops/risk_notify_state.json --file -`（stdin 餵 JSON）。
 
