@@ -316,7 +316,7 @@ def judge_freshness(items, now: datetime) -> list[tuple[str, str, str]]:
         if age > limit:
             out.append(("🔴", name, f"最新 {t:%m-%d %H:%M}，已 {age:.0f} 小時（上限 {limit:.0f}）｜{src}"))
         else:
-            out.append(("🟢", name, f"最新 {t:%m-%d %H:%M}（{age:.1f} 小時）"))
+            out.append(("🟢", name, f"最新 {t:%m-%d %H:%M}（{'盤中，未收市' if age < 0 else f'{age:.1f} 小時'}）"))
     return out
 
 
