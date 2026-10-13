@@ -181,7 +181,7 @@
 | 3 每日對帳表 | ✅ 每日 17:20 HKT | 總指揮（R173） | `scripts/daily_books.py`、`ops_daily_books.yml`、`research/reconcile/<日>.md` |
 | 4 事件日曆 | ⏳ 未做 | 預設分支＋風揚 | — |
 | 5 逐日損益帳 | ✅ 每日一列按陣拆分（私人，不進 repo） | 總指揮（R173） | GCS `ops/books/pnl_daily.csv` |
-| 6 流水線心跳 | ⏳ 未做 | 預設分支 | — |
+| 6 流水線心跳 | ✅ 每日 07:30 HKT → Telegram（全綠一行、有紅只列紅項） | 預設分支 | `scripts/ops_heartbeat.py`、`ops_heartbeat.yml`；排程 workflow 應跑／實跑／失敗＋13 個數據來源新鮮度；Routine 的 last_run 仍由總指揮每週看 |
 | 7 週報／檢討會 | ⏳ 未做 | 預設分支 | — |
 | 8 人手交易額度 | ✅ NAV 50%／單日虧損 2%，超額只通報 | 總指揮（R173） | `RISK_LADDER.md` |
 | 9 月報 | ⏳ 等缺口 5 累積一個月 | 預設分支 | — |

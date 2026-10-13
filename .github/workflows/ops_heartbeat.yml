@@ -1,0 +1,57 @@
+name: Ops heartbeat（流水線心跳，每日 07:30 HKT → Telegram）
+
+# FUND_SOP 缺口 6：看昨天所有排程 workflow 有沒有跑、有沒有失敗，以及各數據來源有沒有更新。
+# 全綠只發一行；有紅只列紅項。全文寫 step summary 與 GCS ops/heartbeat/latest.txt。規則見 scripts/ops_heartbeat.py 檔頭。
+on:
+  schedule:
+    - cron: '30 23 * * *'    # 07:30 HKT 每日（週末放寬新鮮度，但 workflow 失敗照報）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只印不發、不寫 GCS（true/false）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  actions: read      # 讀 schedule run 紀錄
+  id-token: write    # WIF 讀 GCS
+
+concurrency:
+  group: ops-heartbeat
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Hong_Kong
+      GCP_PROJECT: sacred-alliance-453716-b7
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch other strategy branches（只讀檔案日期）
+        run: git fetch --depth 1 origin claude/gifted-carson-v2tvhw claude/dazzling-curie-f3xzb8
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q -r scripts/requirements-agent.txt pyyaml
+
+      - name: Heartbeat
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          if [ "$DRY" = "true" ]; then python3 scripts/ops_heartbeat.py --dry-run; else python3 scripts/ops_heartbeat.py; fi
