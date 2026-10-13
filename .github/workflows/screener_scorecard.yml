@@ -42,6 +42,16 @@ jobs:
       - name: Screener scorecard
         run: python3 scripts/screener_scorecard.py --src _src --out research/screener_scorecard --as-of "$(date +%F)"
 
+      - name: Fetch XAUUSD realized-PnL ledger from GCS（有 GCP_SA_KEY 才做）
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ]; then echo "沒有 GCP_SA_KEY secret，略過 XAUUSD 帳本（沿用 repo 內的舊檔）"; exit 0; fi
+          pip install -q -r scripts/requirements-agent.txt
+          python3 scripts/gcp_agent.py cat --object logs/trade_ledger.json > /tmp/ledger.json || { echo "::warning::讀不到 logs/trade_ledger.json（main.py R171 未部署或尚無平倉）"; exit 0; }
+          python3 -c "import json,sys; d=json.load(open('/tmp/ledger.json')); assert isinstance(d,list); json.dump(d, open('research/divergence/xau_trade_ledger.json','w'), ensure_ascii=False, indent=1)" \
+            && echo "XAUUSD 帳本 $(python3 -c "import json; print(len(json.load(open('research/divergence/xau_trade_ledger.json'))))") 列"
+
       - name: Strategy divergence
         run: python3 scripts/strategy_divergence.py --journal _src/journal --out research/divergence --as-of "$(date +%F)"
 
@@ -50,7 +60,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BR="${GITHUB_REF_NAME}"
-          add_out() { git add research/screener_scorecard research/divergence/DIVERGENCE.md; }
+          add_out() { git add research/screener_scorecard research/divergence/DIVERGENCE.md; [ -f research/divergence/xau_trade_ledger.json ] && git add research/divergence/xau_trade_ledger.json; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           MSG="chore(scorecard): 篩選器評分卡＋偏離監控 $(date +%F)"

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import os
 import sys
 import tempfile
@@ -146,3 +147,38 @@ class DivergenceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LedgerTests(unittest.TestCase):
+    def test_read_ledger_csv_pct_and_hkd(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "ledger.csv"
+            p.write_text("cycle_open,cycle_close,instrument,contract,premium_pts,buyback_pts,net_pnl_hkd,nominal_hkd,note\n"
+                         "2026-09-22,2026-10-29,MHI,x,1108,900,2080,250000,\n"
+                         "2026-10-30,,MHI,x,1000,,,250000,持倉中\n"
+                         "2026-09-22,2026-10-16,MES,x,178.5,120,\"3,050\",305000,\n")
+            hk = sd.read_ledger_csv(p, "MHI", "HKD／月", 250000)
+            self.assertEqual(hk["opened"], 2)
+            self.assertEqual(hk["settled"], [2080.0])
+            us = sd.read_ledger_csv(p, "MES", "% 名義／月", 305000)
+            self.assertAlmostEqual(us["settled"][0], 1.0)
+            self.assertIn("error", sd.read_ledger_csv(Path(td) / "nope.csv", "MHI", "HKD", None))
+
+    def test_read_xau_ledger_filters_kind(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "xau.json"
+            p.write_text(json.dumps([
+                {"t": "2026-10-20 01:00:00", "kind": "trade", "delta": -120.5, "balance": 22879.5, "equity": 22879.5},
+                {"t": "2026-10-15 01:00:00", "kind": "transfer", "delta": 5000, "balance": 23000, "equity": 23000},
+                {"t": "2026-10-14 01:00:00", "kind": "trade", "delta": 300.0, "balance": 18000, "equity": 18000},
+            ]))
+            x = sd.read_xau_ledger(p)
+            self.assertEqual(x["trades"], [300.0, -120.5])      # 按時間排序，只留 trade
+            self.assertEqual(x["wins"], 1)
+            self.assertEqual(x["other_kinds"]["transfer"], 1)
+            self.assertIn("error", sd.read_xau_ledger(Path(td) / "nope.json"))
+
+    def test_win_rate_z(self):
+        self.assertIsNone(sd.win_rate_z(0, 0, 0.3))
+        self.assertAlmostEqual(sd.win_rate_z(3, 10, 0.3), 0.0)
+        self.assertLess(sd.win_rate_z(1, 10, 0.3), 0)

@@ -461,6 +461,8 @@ AI_THINKING_BUDGET = _env_int("AI_THINKING_BUDGET", 0)                # [R14] 0 
 # --- Storage ---------------------------------------------------------------------
 BUCKET_NAME = "zhuge-risk-manager-bucket"
 ACCOUNT_FILE = "mt5_account_snapshot.txt"
+TRADE_LEDGER_FILE = "logs/trade_ledger.json"     # [R171] 每次 MT5 balance 變動一列：已實現盈虧帳本（給 research/divergence）
+TRADE_LEDGER_MAX = 2000
 GATE_STATE_FILE = "zhuge_gate_state.json"
 PYRAMID_STATE_FILE = "pyramid_state.json"
 DECISION_LOG_FILE = "gcp_decision_log.json"
@@ -840,6 +842,57 @@ def read_account_snapshot():
     except StorageError as exc:
         print(f"⚠️ [戶口快照讀取失敗] {exc}", flush=True)
         return {}
+
+
+def balance_change_record(prev, cur):
+    """[R171] 兩次心跳之間 MT5 balance 變了 → 一列帳本記錄；沒變或資料不全回 None。
+
+    balance 只在平倉（已實現盈虧）、出入金或 credit 變動時改變，所以 delta 就是這段期間
+    的已實現盈虧。kind：credit 變動同額 → "credit"；上一次心跳有持倉或浮動盈虧 → "trade"；
+    否則 → "transfer"（出入金）。research/divergence 只拿 kind == "trade" 的列比對回測。
+    """
+    b0, b1 = to_float(prev.get("balance")), to_float(cur.get("balance"))
+    if b0 is None or b1 is None or abs(b1 - b0) < 0.005:
+        return None
+    delta = round(b1 - b0, 2)
+    c0, c1 = to_float(prev.get("credit")), to_float(cur.get("credit"))
+    credit_delta = round(c1 - c0, 2) if c0 is not None and c1 is not None else None
+    had_position = bool(to_float(prev.get("net_lots")) or to_float(prev.get("buy_lots"))
+                        or to_float(prev.get("sell_lots")) or to_float(prev.get("floating")))
+    if credit_delta is not None and abs(credit_delta - delta) < 0.005:
+        kind = "credit"
+    elif had_position:
+        kind = "trade"
+    else:
+        kind = "transfer"
+    return {"t": cur.get("received_utc") or fmt_utc(), "kind": kind, "delta": delta,
+            "balance_prev": round(b0, 2), "balance": round(b1, 2), "credit_delta": credit_delta,
+            "equity": to_float(cur.get("equity")), "daily_pnl": to_float(cur.get("daily_pnl")),
+            "net_lots_prev": to_float(prev.get("net_lots")), "net_lots": to_float(cur.get("net_lots")),
+            "symbol": prev.get("symbol") if had_position else cur.get("symbol")}
+
+
+def record_balance_change(prev, cur):
+    """把 balance_change_record 的結果加到 GCS 帳本（最新在前，最多 TRADE_LEDGER_MAX 列）。寫入失敗只印警告。"""
+    rec = balance_change_record(prev or {}, cur or {})
+    if rec is None:
+        return None
+
+    def mutate(rows):
+        rows = rows if isinstance(rows, list) else []
+        if rows and rows[0].get("t") == rec["t"] and rows[0].get("balance") == rec["balance"]:
+            return None, None                                      # 同一次心跳重送
+        rows.insert(0, rec)
+        return rows[:TRADE_LEDGER_MAX], None
+
+    try:
+        gcs_update(TRADE_LEDGER_FILE, mutate, default_factory=list, reset_on_corrupt=True)
+    except StorageError as exc:
+        print(f"⚠️ [成交帳本寫入失敗] {exc}", flush=True)
+    if rec["kind"] == "trade":
+        log_decision(f"🧾 [已實現] {rec['delta']:+,.2f} {cur.get('currency') or ''}（balance {rec['balance_prev']:,.2f} → {rec['balance']:,.2f}）",
+                     key="realized")
+    return rec
 
 
 # =============================================================================
@@ -8977,7 +9030,9 @@ def handle_heartbeat(payload, can_trade):
 
     # 2) M15 levels (writer path) and account snapshot.
     m15_levels = mtf_levels_session.ingest(m15_ohlc) if m15_ohlc else mtf_levels_session.read_levels()
+    prev_snapshot = read_account_snapshot()                                              # [R171]
     snapshot = save_account_snapshot(payload, m15_ohlc, m15_levels)
+    record_balance_change(prev_snapshot, snapshot)                                       # [R171] 已實現盈虧帳本
 
     warn = broker_symbol_mismatch(snapshot)                                              # [R83]
     if warn:

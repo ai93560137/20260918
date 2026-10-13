@@ -22,15 +22,12 @@
     "bt_std": null,
     "bt_max_dd": 472
   },
-  "yunchui_straddle": {
-    "name": "☁️ 雲垂陣 MHI 月跨式＋期貨對沖、MES 跨式",
-    "note": "分支 claude/dazzling-curie-f3xzb8；預設分支找不到回測期望（每筆平均／標準差／最大回撤），請該陣補登記",
-    "stop_use_keys": ["HSI 月跨式", "MES 跨式"]
-  },
   "manual_es_put": {
     "name": "✋ 使用者人手 EW2610 P7,750",
     "note": "人手交易，無回測；只看止損線使用率",
-    "stop_use_keys": ["EW P7750"]
+    "stop_use_keys": [
+      "EW P7750"
+    ]
   },
   "xauusd_v12": {
     "name": "智能諸葛亮 XAUUSD v12（strict K=1.0、TP=3R）",
@@ -40,6 +37,50 @@
     "bt_pf": 1.12,
     "bt_return_pct": 3.0,
     "bt_max_dd_pct": 6.8,
-    "note": "GCS logs/ 只有最後一筆送單與 webhook payload，沒有成交帳本；要比對需接 webhooktrade 成交記錄"
+    "note": "每筆平均 = 回測總報酬 3.0% ÷ 173 筆 ≈ 0.017% 淨值；回測沒有逐筆標準差，只比勝率與回撤",
+    "live": {
+      "type": "xau_ledger_jsonl",
+      "path": "research/divergence/xau_trade_ledger.json",
+      "note": "由 main.py handle_heartbeat（R171）在 MT5 balance 變動時寫 GCS logs/trade_ledger.json；workflow 用 gcp_agent.py cat 抓下來"
+    },
+    "bt_mean_per_trade_pct": 0.0173
+  },
+  "yunchui_hsi_straddle": {
+    "name": "☁️ 雲垂陣 小型恒指 ATM 月跨式＋期指 Δ 對沖（1 組，名義 HK$250k）",
+    "unit": "HKD／月",
+    "bt_source": "分支 claude/dazzling-curie-f3xzb8 tradingview/HSI_HANDOFF.md §10.8d（23 年、279 月，整數手對沖版 t 約 3）；§10.8c 全成本 CFD 版月均 +710、t 2.75、勝率 69%",
+    "bt_n": 279,
+    "bt_mean": 1060,
+    "bt_t": 3.0,
+    "bt_std": null,
+    "bt_win_rate": 0.74,
+    "bt_worst_month": -36243,
+    "bt_max_dd": 48359,
+    "nominal_hkd": 250000,
+    "live_rules": "持有到現金結算；買回總價 ≥ 2,216 點（2× 權利金）止損；|Δ| > 0.5 手用 MHI 拉回；單月虧超過名義 20% → 停；帳戶權益 < HK$750,000 硬止損",
+    "live": {
+      "type": "ledger_csv",
+      "path": "research/divergence/ledger_yunchui.csv",
+      "filter_instrument": "MHI"
+    }
+  },
+  "yunchui_mes_straddle": {
+    "name": "☁️ 雲垂陣 MES 月度 ATM 對沖跨式（1 組，名義 ≈ HK$305k）",
+    "unit": "% 名義／月",
+    "bt_source": "分支 claude/dazzling-curie-f3xzb8 tradingview/US_VRP_NOTES.md 動態退出測試（ES 440 月，止損 −100% 權利金那列，等於現行「買回 ≥ 2× 權利金」規則）；SOP 預期月均 +0.9% 名義",
+    "bt_n": 440,
+    "bt_mean": 0.68,
+    "bt_t": 9.2,
+    "bt_std": null,
+    "bt_win_rate": 0.84,
+    "bt_worst_month": -9.9,
+    "bt_max_dd": null,
+    "nominal_hkd": 305000,
+    "live_rules": "到期日美東 16:00 前買回；買回總價 ≥ 357 點（2× 權利金）止損；|Δ| > 0.5 用 MES 期貨對沖；VIX − HV20 < 0 暫停新賣出",
+    "live": {
+      "type": "ledger_csv",
+      "path": "research/divergence/ledger_yunchui.csv",
+      "filter_instrument": "MES"
+    }
   }
 }
