@@ -17,9 +17,9 @@
 | HTF 交易策略指南（動能 ORB） | 🚫 不換（使用者 10-14：已冇用） | `session_01AA5xBGBfBex9d23T23TQFY` | `claude/momentum-orb-research` | — | — |
 | 外匯（VM 安裝；L1／6E／ZQ 採集繼續，使用者 10-14 決定） | `session_01YcJyu1yjZaFQTtY37WuQYH` | `session_01SHVCr19iNooiT5rp8BxD5t` | `claude/dazzling-curie-f3xzb8` | `handoff/外匯_VM安裝.md` | — |
 | 外匯陣（數據測試） | 🚫 不換（使用者 10-14：已冇用） | `session_01Svsn6w1kkBJS3v6cXoGoXN` | `claude/forex-data-testing-w4q3m2` | — | 10-14 檢查提醒已停用；前向測試照由 Actions 跑 |
-| GCP agent／IV 採集 | ⏳ | `session_01QECdg96y2dtk2skzrBNpVL` | `claude/gcp-agent-whoami-status-hswp4h` | ⏳ | ⏳ |
+| GCP／VM／IBKR 資料採集（IV 日誌、claude-ops） | `session_01Mv7vE7k7oogpkK9fkBrLcm` | `session_01QECdg96y2dtk2skzrBNpVL` | `claude/gcp-agent-whoami-status-hswp4h` | `handoff/GCP_VM_IV採集.md` | ✅ |
 | 指數套利 | 🚫 不換（使用者 10-14：已冇用） | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | — | — |
-| XAUUSD GCP and TV | ⏳ | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | ⏳ | — |
+| 🥇 XAUUSD GCP and TV | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
 | SOP 顧問／預設分支 | ⏳ | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
 | claude-ops（使用者 VM，台灣） | `session_01J4dioYdtebaEyoaDwGJotM`（不換） | — | — | — | — |
