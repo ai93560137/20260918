@@ -1,6 +1,6 @@
 {
  "market": "tw",
- "date": "2026-10-12",
+ "date": "2026-10-13",
  "params": {
   "adr_min": 0.03,
   "chase": 0.02,
@@ -17,23 +17,14 @@
   "trail": "ma20",
   "vol": 1.0
  },
- "n_orders": 9,
+ "n_orders": 0,
  "n_open": 0,
  "n_closed": 0,
- "mkt_ok": true,
+ "mkt_ok": false,
  "mkt_filter": true,
  "fwd_start": "2026-10-13",
  "closed_avg": null,
  "closed_win": null,
- "orders_top": [
-  "2305.TW 觸發 72.5（距收市 +2.0%）",
-  "3498.TWO 觸發 257（距收市 +3.6%）",
-  "3653.TW 觸發 7440（距收市 +3.9%）",
-  "3605.TW 觸發 190.5（距收市 +6.4%）",
-  "6933.TW 觸發 413（距收市 +8.0%）",
-  "3094.TW 觸發 73.5（距收市 +8.2%）",
-  "3008.TW 觸發 7995（距收市 +9.1%）",
-  "1709.TW 觸發 66.3（距收市 +13.1%）"
- ],
+ "orders_top": [],
  "positions": []
 }
