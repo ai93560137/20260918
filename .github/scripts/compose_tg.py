@@ -54,13 +54,13 @@ else:
 rp = ph.get('real_pos')
 if rp is not None and int(rp) != pos:
     rp = int(rp)
-    side = f"多 {rp}" if rp > 0 else (f"空 {-rp}" if rp < 0 else "空手")
+    side = f"多 {rp} 張" if rp > 0 else (f"空 {-rp} 張" if rp < 0 else "空手")
     legs = []
     if rp < n:
         legs.append(f"價 ≥ {f(up)} 買入 {n - rp} 張")
     if rp > -n:
         legs.append(f"價 ≤ {f(lo)} 賣出 {n + rp} 張")
-    act += f"⚠️ 真倉(富途):{side} 張,與紙上相反 → {' ／ '.join(legs) or '不用掛單'}\n"
+    act += f"⚠️ 真倉(富途):{side},與紙上不同 → {' ／ '.join(legs) or '不用掛單'}\n"
 mini = ",大恒指當量;小恒指等值 ×5" if n > 1 else ''
 
 msg = f"""🐍 八陣圖 · 蛇蟠陣 · 大恒指 HSI
