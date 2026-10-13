@@ -1,7 +1,7 @@
 Screener: newhighs   horizon: 10 trading days   entry: next open, exit: close
-Score (hit rate, excess>0): 0.286 on 98 scored picks (109 pending, 0 no data); mean excess -3.8%, median -4.2%, t -4.80
+Score (hit rate, excess>0): 0.283 on 99 scored picks (108 pending, 0 no data); mean excess -3.7%, median -4.2%, t -4.83
 Control 港股 (all constituents, same days): hit 0.474 mean excess -0.3% n=340
-Control 日股 (all constituents, same days): hit 0.232 mean excess -5.2% n=1575
+Control 日股 (all constituents, same days): hit 0.238 mean excess -4.9% n=1800
 Control 美股 (all constituents, same days): hit 0.313 mean excess -2.1% n=6525
 
 --- FAILED 1 ---
