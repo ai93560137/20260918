@@ -71,6 +71,7 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 - 時間：日誌與報表以香港時間（UTC+8）顯示；`main.py` 內部用 UTC 與美東時間。
 - GitHub Actions 的排程 workflow 只在預設分支生效；部署用的 `gcp_deploy.yml` 是手動觸發。
 - 部署教學在 `DEPLOY.md`；讓 Claude 代管 GCP 的設定在 `AGENTIC.md`；策略與回測在 `BACKTEST.md`、`research/`。
+- 全基金的每日流程盤點、各陣工作階段與排程總表、SOP 缺口與優先順序在 `FUND_SOP.md`（2026-10-13 SOP 顧問報告）。
 - **總指揮**：工作階段 `session_01N1jfpEJciBkfAgwtd4QxgU`（分支 `claude/beautiful-hypatia-8qrgjj`，2026-10-11 使用者委任）負責富途實倉監控、
   按陣配對（`main.py` 的 `FUTU_TEAM_RULES`，策略總表「💼 富途實倉」）、風險警報與通知各陣。喺富途戶口開新實倉前，先登記 `POSITIONS.md`
   並用 `send_message` 通知總指揮加配對規則；配對唔到嘅會入「未配對」並發 Telegram。
