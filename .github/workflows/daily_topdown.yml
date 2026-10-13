@@ -114,6 +114,7 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
+          if [ -f config/telegram_paused ]; then echo "Telegram 已暫停（分支 claude/gifted-carson-v2tvhw 的 config/telegram_paused；刪掉該檔即恢復）"; exit 0; fi
           # 總覽一則 + 每個市場一則（名單長時會再切，每則 < 4096 字），依序發送
           ls analysis/tg_parts/part_*.txt > /dev/null 2>&1 || { echo "沒有摘要"; exit 1; }
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then

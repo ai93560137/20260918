@@ -1,0 +1,5 @@
+# Telegram 暫停開關（使用者 2026-10-13 指示「每天 Telegram 先停止發送」）
+# 這個檔存在 → 每日由上而下分析（daily_topdown）、美日股品質日報／警報（fetch_equities）、
+# 港股品質日報／警報與低波動模擬盤換倉通知（fetch_stock_data）全部不發 Telegram；數據、分析照常產生與 commit。
+# 恢復發送：刪掉這個檔並 push 到 claude/gifted-carson-v2tvhw。
+# 開關由預設分支 claude/gcp-trading-v12-rewrite-bz75t2 上三個工作流程的 Telegram 步驟讀取。
