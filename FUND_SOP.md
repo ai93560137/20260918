@@ -8,7 +8,7 @@
 
 ### 1.1 人員（工作階段）
 
-> 2026-10-14 起各陣換新工作階段；以下為新 id，**最新以 `handoff/SESSIONS.md` 為準**（地載、外匯、高息、預設分支未換完）。
+> 2026-10-14 起各陣換新工作階段；以下為新 id，**最新以 `handoff/SESSIONS.md` 為準**（2026-10-14 05:10 全部換完；HTF 策略指南、股票套利、指數套利、外匯數據測試已停用唔換）。
 
 | 角色 | 工作階段 | 分支 | 職責 |
 |---|---|---|---|
@@ -21,7 +21,7 @@
 | 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
 | 外匯 VM 採集 | `session_01YcJyu1yjZaFQTtY37WuQYH` | `claude/dazzling-curie-f3xzb8` | VM 上 L1 EURUSD 報價、6E 期權快照、ZQ 每日結算採集（使用者 10-14：繼續）；外匯研究線工作階段已停 |
 | 高息紙上 | `session_01GZ86daPoYtbG3bQk5svCx3` | gifted-carson `paper/` | 月度高息＋備兌模擬盤 |
-| 預設分支（登記簿／流水線） | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
+| 預設分支（登記簿／流水線） | `session_012caA3uVCQjRHHryN5HnMrn` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
 
 ### 1.2 自動化（執行者 × 時間）
 

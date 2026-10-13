@@ -1,7 +1,7 @@
 # 各陣工作階段對照表（2026-10-14 起換新工作階段）
 
 > **以本表為準**。send_message 前先讀本表（`git fetch origin claude/gcp-trading-v12-rewrite-bz75t2 && git show origin/claude/gcp-trading-v12-rewrite-bz75t2:handoff/SESSIONS.md`）。
-> 舊工作階段保留（唔封存），但 Routine 已／將改綁新工作階段；舊嘅收到訊息請轉交新嘅。由 SOP 顧問維護。
+> 舊工作階段保留（唔封存），但 Routine 已／將改綁新工作階段；舊嘅收到訊息請轉交新嘅。由 SOP 顧問（新 `session_012caA3uVCQjRHHryN5HnMrn`）維護。
 > ⚠ 唔好用 fire_trigger 手動觸發綁定新工作階段嘅 Routine：實測會另開一個冇 repo 嘅空白工作階段；排程時間到自動觸發就正常（2026-10-14 04:27 已驗證）。要即時做就直接 send_message 畀該陣。
 
 | 陣／工作 | 新 session（現用） | 舊 session（保留） | 分支 | 交接文件 | Routine 已搬 |
@@ -21,5 +21,5 @@
 | 指數套利 | 🚫 不換（使用者 10-14：已冇用） | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | — | — |
 | 🥇 XAUUSD GCP and TV | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
-| SOP 顧問／預設分支 | ⏳ | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
+| 🧭 SOP 顧問／預設分支 | `session_012caA3uVCQjRHHryN5HnMrn` | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
 | claude-ops（使用者 VM，台灣） | `session_01J4dioYdtebaEyoaDwGJotM`（不換） | — | — | — | — |
