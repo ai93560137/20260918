@@ -145,6 +145,7 @@ RRR(年化÷最壞月):SPX 0.22→0.91、HSI 0.19→0.49。
 | tradingview/canary_lab.py | 候選鳥考核腳本(含淘汰者) | — |
 | tradingview/canary_pnl_lab.py | 利潤定價回測(§4 的來源) | — |
 | tradingview/gamma_lab.py | 長 gamma 全滅 + 週度短 gamma 敏感度 | — |
+| calendar/events.csv(預設分支) | 事件日曆;金絲雀每日訊息「🗓️ 未來 24 小時事件」只列「影響陣」含金絲雀的與美國休市日(2026-10-13 使用者加) | 每日 07:00 香港(scripts/event_calendar.py) |
 
 ## 7. 給他分支的測試建議
 

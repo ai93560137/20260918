@@ -7,10 +7,25 @@
 > 16:45 摘要的「當日平倉」改引用 GCS `ops/deals_status.json`（Actions 17:10 跑完寫；`summary_text` 一句即可）；該檔日期不是今天就寫「成交紀錄由 Actions 17:10 另發」。
 > 總指揮 2026-10-13 已停用舊 Routine 四個，啟用本 v2（trig_014UUQeZ5rPhXEXVrWVBveRu）。
 
+> **⛔ 2026-10-13 22:20 擱置（v2 停用，舊 Routine trig_01LRrZMZ5mVnFqBYtAFqXxcW 已由總指揮重新啟用）。**
+> 「每次新開工作階段」嘅 Routine 實測兩個硬限制，prompt 改唔到：
+> 1. 新工作階段冇 checkout repo（`sources` 空，`create_trigger` 冇參數可設）；叫佢自己 `git clone` 再跑 `gcp_agent.py`，
+>    自動權限分類器會拒絕（執行外部 repo 程式碼），21:46 首跑同 22:19 試跑都係咁失敗。
+> 2. 新工作階段冇 `send_message` 工具，就算讀到數據都通知唔到四陣。
+> 要再試，要喺 claude.ai 網頁建 Routine 時揀 repo（令佢有 checkout、權限照 repo 設定），並確認 send_message 可用；
+> 或者改做法：純 Python（GitHub Actions）判斷變化＋發 Telegram，四陣改由總指揮轉達。以下 prompt 保留作紀錄。
+
 ---
 
 你是「智能諸葛亮」的風控通報員，這是一次性的工作階段，做完就結束，不要做清單以外的事，不落單、不改程式、不部署。
-工作目錄 /home/user/20260918 已 checkout 預設分支，GCP 憑證由 session-start hook 設好。全程用繁體中文。
+全程用繁體中文。Routine 新開的工作階段**不會自動 checkout repo**（2026-10-13 21:46 首跑因此失敗），所以先做第 0 步：
+
+```bash
+git clone -q --depth 1 -b claude/gcp-trading-v12-rewrite-bz75t2 https://github.com/ai93560137/20260918 /home/user/20260918 \
+  || git -C /home/user/20260918 pull -q origin claude/gcp-trading-v12-rewrite-bz75t2
+cd /home/user/20260918 && pip3 install -q --user -r scripts/requirements-agent.txt
+python3 scripts/gcp_agent.py whoami   # 讀環境變數 GCP_SA_KEY；失敗就在對話留一句原因，結束，不通知
+```
 
 **第 1 步：讀數據**
 ```

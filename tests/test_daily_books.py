@@ -116,6 +116,7 @@ check("2 手 → 名義 97% 超額", any("名義" in w for w in why4), why4)
 R5 = json.loads(json.dumps(RISK)); R5["positions"][0]["futu_pl"] = -70000
 why5, _ = db.manual_limits(R5, {"closed": []})
 check("單日虧損 2.3% → 超額", any("單日虧損" in w for w in why5), why5)
+check("MHI2611 全部歸人手（唔當雲垂對沖）", db.split_by_cap("HK.MHI2611", -10) == [(db.TEAM_MANUAL, -10)], db.split_by_cap("HK.MHI2611", -10))
 check("MHI 超出對沖上限歸人手", db.split_by_cap("HK.MHI2610", -3) == [("雲垂陣", -1), (db.TEAM_MANUAL, -2)])
 
 print("\n=== 私隱：公開版冇金額、Actions 日誌只印字數 ===")
@@ -136,6 +137,35 @@ with contextlib.redirect_stdout(buf):
     os.environ.pop("GITHUB_ACTIONS"); db.print_private("本機 HK$1")
 out = buf.getvalue()
 check("Actions 唔印金額、本機照印", "3,000,000" not in out and "Actions 日誌公開" in out and "本機 HK$1" in out, out)
+
+print("\n=== 補倉／提款 ===")
+def tu(c, night=False):
+    R = json.loads(json.dumps(RISK)); R["metrics"]["cushion"] = c
+    lv, why = db.ladder_level(R, "", (), night=night)
+    return lv, why, db.topup_advice(R, lv, why, night)
+lv, why, t = tu(140000)
+check("緩衝 140k（Ⓑ）→ 建議入金 4 萬補到 18 萬", lv == "B" and t and "HK$40,000" in t[0] and "HK$180,000" in t[0] and "17:15 前" in t[0], t)
+lv, why, t = tu(95000)
+check("緩衝 95k（Ⓒ）→ 30 分鐘內入金 9 萬可代替減半", lv == "C" and "30 分鐘內" in t[0] and "HK$90,000" in t[0], t)
+lv, why, t = tu(55000)
+check("緩衝 55k（Ⓓ）→ 唔接受補倉代替全平", lv == "D" and "唔接受補倉代替全平" in t[0], t)
+lv, why, t = tu(140000, night=True)
+check("夜盤 140k（Ⓒ）→ 目標 27 萬、入金 13 萬", lv == "C" and "HK$130,000" in t[0] and "HK$270,000" in t[0], t)
+R3b = json.loads(json.dumps(RISK)); R3b["metrics"]["stop_use"]["HSI 月跨式"] = 0.85
+lv3b, why3b = db.ladder_level(R3b, "", (), night=False)
+t3b = db.topup_advice(R3b, lv3b, why3b, False)
+check("止損用量觸發 Ⓒ → 補倉唔解決", any("補倉唔解決" in x for x in t3b) and not any("入金 HK$" in x for x in t3b), t3b)
+lv, why, t = tu(400000)
+check("Ⓐ 緩衝 40 萬 → 可提款上限 10 萬", lv == "A" and t and t[0].startswith("🏧") and "HK$100,000" in t[0], t)
+lv, why, t = tu(250000)
+check("Ⓐ 緩衝 25 萬（< 30 萬）→ 冇提款額", t == [], t)
+pub_t, priv_t = db.tail_sections("A", [], [], info_pub, False, ["🏧 可提款上限 HK$100,000"])
+check("提款上限只放私人版", "可提款" not in pub_t and "HK$100,000" in priv_t)
+_, _, t = tu(140000)
+pub_t, priv_t = db.tail_sections("B", ["Ⓑ 停開新倉：富途保證金緩衝 HK$140,000 < 150,000"], [], info_pub, False, t)
+check("補倉建議公開版冇金額、私人版有", "💰 補倉" in pub_t and "HK$" not in pub_t and "HK$40,000" in priv_t, pub_t)
+check("公開版最後一行照舊", pub_t.strip().splitlines()[-1].startswith("額度內 ✅"))
+check("Ⓒ 訊息附補倉建議", "30 分鐘內" in db.ladder_message("C", ["x"], date(2026, 10, 13), tu(95000)[2]))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

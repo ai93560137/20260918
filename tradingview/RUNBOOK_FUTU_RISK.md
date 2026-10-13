@@ -92,7 +92,7 @@ python gcp_ib\futu_positions_quote.py --deals HK.MHI2610 --since 2026-10-01
 第一次設定（設完要關咗 PowerShell 再開）：
 
 ```powershell
-setx ZHUGE_COMBINED_EQUITY 2520339
+setx ZHUGE_COMBINED_EQUITY 7800000   # 示例：1,000,000 USD × 7.8 = HK$7,800,000，換成你幾個戶口嘅合計權益（HKD）
 ```
 
 想收 Telegram 就再設（同其他通知用同一個 bot；token 只放喺你部機，唔好貼入對話）：

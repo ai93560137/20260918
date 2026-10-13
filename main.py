@@ -2321,6 +2321,7 @@ FUTU_MARGIN_STATE_FILE = "futu/risk/margin_alert.json"                 # [R149] 
 FUTU_MARGIN_WARN = _env_int("FUTU_MARGIN_WARN", 60000)
 FUTU_MARGIN_CRIT = _env_int("FUTU_MARGIN_CRIT", 20000)
 FUTU_MARGIN_CLEAR = _env_int("FUTU_MARGIN_CLEAR", 80000)
+FUTU_MARGIN_FLATTEN = _env_int("FUTU_MARGIN_FLATTEN", 60000)   # [R175] RISK_LADDER Ⓓ：低過呢條唔接受補倉代替全平
 FUTU_MARGIN_STEP = max(1, _env_int("FUTU_MARGIN_STEP", 10000))
 
 
@@ -2445,6 +2446,19 @@ def futu_margin_alert(run_hkt, metrics, warnings):
     return sent
 
 
+def futu_topup_line(cushion, level):
+    """[R175] 補倉建議（RISK_LADDER.md §5）：補到 FUTU_MARGIN_CLEAR，向上取整到 1 萬。只係資訊。"""
+    c = to_float(cushion)
+    if c is None or c >= FUTU_MARGIN_WARN:
+        return None
+    amt = int(-(-(FUTU_MARGIN_CLEAR - c) // 10000) * 10000)
+    if c < FUTU_MARGIN_FLATTEN:
+        return f"💰 補倉：已穿 Ⓓ 線（{FUTU_MARGIN_FLATTEN:,}），唔接受補倉代替全平；平倉後再入金 HK${amt:,} 補返緩衝。"
+    if level == "critical":
+        return f"💰 補倉：30 分鐘內入金 HK${amt:,}（緩衝補到 {FUTU_MARGIN_CLEAR:,}）可代替 Ⓒ 減半；做唔到就照減半。"
+    return f"💰 補倉：建議入金 HK${amt:,}（緩衝補到 {FUTU_MARGIN_CLEAR:,}）或減倉釋放同等保證金；夜盤前完成。"
+
+
 def futu_margin_text(kind, level, run_hkt, metrics):
     n = lambda v: fmt_num(v, "{:,.0f}")
     head = {"start": "⚠ 富途保證金緩衝偏低", "step": "⚠ 富途保證金緩衝再跌", "escalate": "⛔ 危急：富途保證金緩衝",
@@ -2463,6 +2477,9 @@ def futu_margin_text(kind, level, run_hkt, metrics):
         lines.append("蝕光緩衝要：" + "；".join(dist) + "（保證金當不變，實際會更早）")
     if level == "critical" and kind != "clear":
         lines.append("‼️ 可能被追繳保證金／強制平倉。")
+    topup = futu_topup_line(metrics.get("cushion"), level) if kind != "clear" else None
+    if topup:
+        lines.append(topup)
     if kind != "clear":
         lines.append(f"（< {FUTU_MARGIN_WARN:,} 通知、< {FUTU_MARGIN_CRIT:,} 危急；每再跌 {FUTU_MARGIN_STEP:,} 再發；"
                      f"回到 {FUTU_MARGIN_CLEAR:,} 以上解除）")
@@ -2488,6 +2505,7 @@ FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
 }
 FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當使用者人手)
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
+    (r"^HK\.MHI2611$", FUTU_TEAM_MANUAL, "MHI2611 小期（人手）", None),       # 2026-10-14 使用者確認 −10 係人手；雲垂轉倉去 2611 前要改
     (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),

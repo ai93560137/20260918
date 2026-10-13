@@ -122,5 +122,22 @@ check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
 check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
 check("SCRIPT_VERSION R172", auto_risk.SCRIPT_VERSION == "R172")
 
+print("\n=== [R175] 保證金警報附補倉建議 ===")
+W, C, F, CL = main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR
+main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR = 150000, 100000, 60000, 180000
+check("緩衝 140k warn → 入金 4 萬", "入金 HK$40,000" in main.futu_topup_line(140000, "warn"))
+check("緩衝 95k critical → 30 分鐘內 9 萬代替減半", "30 分鐘內入金 HK$90,000" in main.futu_topup_line(95000, "critical"))
+check("緩衝 55k → 唔接受補倉代替全平", "唔接受補倉代替全平" in main.futu_topup_line(55000, "critical"))
+check("緩衝 160k → 冇補倉建議", main.futu_topup_line(160000, "warn") is None)
+txt = main.futu_margin_text("start", "warn", "now", {"cushion": 140000})
+check("警報文字有補倉一行", "💰 補倉" in txt and "唔會落單" in txt, txt)
+check("解除訊息冇補倉", "💰" not in main.futu_margin_text("clear", None, "now", {"cushion": 190000}))
+main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR = W, C, F, CL
+
+print("\n=== 配對：MHI2611 全部歸人手，MHI2610 1 手係雲垂對沖 ===")
+a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}])
+check("MHI2611 −10 → 使用者人手", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611"] == [(main.FUTU_TEAM_MANUAL, -10)], a)
+check("MHI2610 −1 → 雲垂對沖", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("雲垂陣", -1)], a)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

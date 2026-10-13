@@ -44,6 +44,7 @@ USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
 TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED = "使用者人手", "券商贈股", "未配對"
 TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最多手數；超出當使用者人手）
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
+    (r"^HK\.MHI2611$", TEAM_MANUAL, "MHI2611 小期（人手）", None),   # 2026-10-14 使用者確認；雲垂轉倉去 2611 前要改
     (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
@@ -63,6 +64,11 @@ LADDER = {
 NIGHT_FACTOR = 1.5   # 夜盤（17:15–03:00 HKT）無人：緩衝／離硬止損線 ×1.5、止損用量線 ÷1.5 更保守（使用者 2026-10-13 定）
 MANUAL_LIMITS = {"notional_pct_nav": 0.50, "daily_loss_pct_nav": 0.02}   # 人手交易額度（缺口 8，使用者 2026-10-13 同意）：超額只通報
 POINT_VALUE = {r"^HK\.HSI\d{4}$": 50, r"^HK\.MHI\d{4}$": 10, r"^US\.EW": 50, r"^US\.EX": 5, r"^US\.MES\d{4}$": 5, r"^US\.ES\d{4}$": 50}
+# 補倉／提款（使用者 2026-10-13：本金隨時可入金、隨時可提款；本金金額只放私人，唔入公開 repo）
+TOPUP = {"target_hkd": 180_000,        # 補倉補到緩衝 ≥ 此線（＝FUTU_MARGIN_CLEAR）；夜盤 ×NIGHT_FACTOR
+         "round_hkd": 10_000,          # 建議金額向上取整
+         "c_minutes": 30,              # 緩衝觸發 Ⓒ：30 分鐘內補到目標可代替減半
+         "withdraw_floor_mult": 2}     # 提款後緩衝要 ≥ Ⓑ 線 × 2，而且當時係 Ⓐ
 LEVEL_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3}
 LEVEL_NAME = {"A": "Ⓐ 觀察", "B": "Ⓑ 停開新倉", "C": "Ⓒ 減半", "D": "Ⓓ 全平"}
 FOOTER = "（只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準）"
@@ -459,6 +465,35 @@ def ladder_level(risk: dict | None, divergence_md: str = "", escalated_teams: tu
     return level, why
 
 
+def topup_advice(risk: dict | None, level: str, why: list[str], night: bool) -> list[str]:
+    """補倉／提款建議（只係資訊）。緩衝 < Ⓑ 線先建議補倉；Ⓓ 唔接受補倉代替平倉；
+    硬止損／止損用量／偏離觸發嘅等級，補倉唔解決（入金唔會推遠硬止損，見 RISK_LADDER.md §5）。"""
+    m = (risk or {}).get("metrics") or {}
+    cushion = num(m.get("cushion"))
+    if cushion is None:
+        return []
+    lines = ladder_lines(night)["cushion_hkd"]
+    target = TOPUP["target_hkd"] * (NIGHT_FACTOR if night else 1)
+    out = []
+    if cushion < lines["B"]:
+        amt = -(-(target - cushion) // TOPUP["round_hkd"]) * TOPUP["round_hkd"]
+        if cushion < lines["D"]:
+            out.append(f"💰 補倉：緩衝已穿 Ⓓ 線，唔接受補倉代替全平；平倉後再入金 HK${amt:,.0f} 補返緩衝到 HK${target:,.0f}")
+        elif cushion < lines["C"]:
+            out.append(f"💰 補倉：{TOPUP['c_minutes']} 分鐘內入金 HK${amt:,.0f}（緩衝補到 HK${target:,.0f}）可代替減半；做唔到就照減半")
+        else:
+            out.append(f"💰 補倉：建議入金 HK${amt:,.0f}（緩衝補到 HK${target:,.0f}）或減倉釋放同等保證金；"
+                       f"{'下一個日盤開市前' if night else '今日夜盤 17:15 前'}完成")
+    other = [w for w in why if "保證金緩衝" not in w and not w.startswith(LEVEL_NAME["B"])]
+    if other and any(w.startswith((LEVEL_NAME["C"], LEVEL_NAME["D"])) for w in other):
+        out.append("💰 補倉唔解決：硬止損／止損用量觸發嘅 Ⓒ／Ⓓ 照執行（入金唔可以用嚟攤平虧損倉）")
+    if level == "A" and not out:
+        room = cushion - lines["B"] * TOPUP["withdraw_floor_mult"]
+        if room > 0:
+            out.append(f"🏧 可提款上限 HK${room // TOPUP['round_hkd'] * TOPUP['round_hkd']:,.0f}（提款後緩衝 ≥ HK${lines['B'] * TOPUP['withdraw_floor_mult']:,.0f}）；提款／入金後要同步改硬止損線")
+    return out
+
+
 def manual_limits(risk: dict | None, deals: dict | None) -> tuple[list[str], dict]:
     """人手交易額度：名義 ≤ NAV 50%、單日虧損（已實現＋未實現）≤ NAV 2%。超額只通報。
     人手 = 蛇蟠陣 HSI 期貨（使用者人手）＋ 使用者人手列（EW、MHI 超出對沖上限部分）。"""
@@ -507,11 +542,15 @@ def strip_amounts(text: str) -> str:
     return text
 
 
-def tail_sections(level: str, why: list[str], mwhy: list[str], minfo: dict, night: bool) -> tuple[str, str]:
+def tail_sections(level: str, why: list[str], mwhy: list[str], minfo: dict, night: bool,
+                  topup: list[str] = ()) -> tuple[str, str]:
     """回傳 (公開版, 私人版) 嘅「風控階梯」＋「人手交易額度」兩段。公開版冇金額、冇 NAV 百分比。"""
     head = f"\n## 風控階梯\n現時 **{LEVEL_NAME[level]}**（{'夜盤線，日間線 ×' + str(NIGHT_FACTOR) if night else '日間線'}）"
     priv = head + ("：\n" + "\n".join(f"- {w}" for w in why) if why else "，冇觸發") + "\n"
     pub = head + ("：\n" + "\n".join(f"- {strip_amounts(w)}" for w in why) if why else "，冇觸發") + "\n"
+    pub_topup = [t for t in topup if not t.startswith("🏧")]   # 提款上限反推得到緩衝，只放私人版
+    priv += "".join(f"- {t}\n" for t in topup)
+    pub += "".join(f"- {strip_amounts(t)}\n" for t in pub_topup)
     codes = "、".join(minfo.get("codes") or []) or "無"
     if minfo.get("nav"):
         priv += (f"\n## 人手交易額度\n人手持倉：{codes}；名義 HK${minfo['manual_notional_hkd']:,}"
@@ -526,10 +565,11 @@ def tail_sections(level: str, why: list[str], mwhy: list[str], minfo: dict, nigh
     return pub, priv
 
 
-def ladder_message(level: str, why: list[str], today: date) -> str:
+def ladder_message(level: str, why: list[str], today: date, topup: list[str] = ()) -> str:
     head = {"C": "🟠 Ⓒ 減半：請而家把觸發嘅策略倉位減半（使用者 10-13 同意直接提示）",
             "D": "⛔ Ⓓ 全平：請而家平倉（使用者 10-13 同意直接提示）"}.get(level, f"風控階梯 {LEVEL_NAME[level]}")
-    return f"【風控階梯 {today.isoformat()}】{head}\n" + "\n".join(f"- {w}" for w in why) + f"\n詳見 RISK_LADDER.md。{FOOTER}"
+    return (f"【風控階梯 {today.isoformat()}】{head}\n" + "\n".join(f"- {w}" for w in [*why, *topup])
+            + f"\n詳見 RISK_LADDER.md。{FOOTER}")
 
 
 # ---------------------------------------------------------------- 主流程
@@ -570,7 +610,9 @@ def main() -> int:
         if (ROOT / "research" / "divergence" / "DIVERGENCE.md").exists() else ""
     level, why = ladder_level(risk, div_md, tuple(sorted({m["team"] for m in escalate})))
     mwhy, minfo = manual_limits(risk, deals)
-    pub_tail, priv_tail = tail_sections(level, why, mwhy, minfo, is_night())
+    night = is_night()
+    topup = topup_advice(risk, level, why, night)
+    pub_tail, priv_tail = tail_sections(level, why, mwhy, minfo, night, topup)
     md_private = md + priv_tail
     md += pub_tail
     row = pnl_row(risk, deals, ledger, today, level)
@@ -598,11 +640,15 @@ def main() -> int:
     prev = gcs_cat(LADDER_STATE_OBJECT)
     prev = prev if isinstance(prev, dict) else {}
     if level in ("C", "D") and not (prev.get("date") == today.isoformat() and prev.get("level") == level):
-        msgs.append(ladder_message(level, why, today))
+        msgs.append(ladder_message(level, why, today, topup))
+    elif level == "B" and any(t.startswith("💰") for t in topup) and prev.get("topup_date") != today.isoformat():
+        msgs.append(ladder_message(level, why, today, topup))   # Ⓑ 補倉提示：每日一次
+        prev["topup_date"] = today.isoformat()
     if mwhy and prev.get("manual_date") != today.isoformat():
         msgs.append(f"【人手交易額度 {today.isoformat()}】\n" + "\n".join(f"- {w}" for w in mwhy) + f"\n超額只通報、唔干預。{FOOTER}")
         prev["manual_date"] = today.isoformat()
-    gcs_put(LADDER_STATE_OBJECT, json.dumps({"date": today.isoformat(), "level": level, "why": why, "manual_date": prev.get("manual_date")}, ensure_ascii=False))
+    gcs_put(LADDER_STATE_OBJECT, json.dumps({"date": today.isoformat(), "level": level, "why": why, "manual_date": prev.get("manual_date"),
+                                                 "topup_date": prev.get("topup_date")}, ensure_ascii=False))
     for msg in msgs:
         print_private("TG → " + msg)
         if not args.no_tg:

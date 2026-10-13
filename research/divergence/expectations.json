@@ -126,5 +126,197 @@
       "value_col": "ratio"
     },
     "note": "風險預報不是交易:燈亮的組前向倍率明顯低於歷史 = 訊號變弱;綠燈組明顯高於歷史 = 漏報。相鄰燈色日的 5 日窗口重疊,z 用有效樣本 n ÷ 5。"
+  },
+  "dizai_heng": {
+    "name": "⚖️ 地載・衡（R141，逐年滾動選參，1 張）",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；RSI_AVG_DOWN_REPORT.md §regime2（選法 B，2% 災難止蝕）",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 129.9,
+    "bt_std": 882.2,
+    "bt_t": 1.23,
+    "bt_win_rate": 0.557,
+    "bt_worst_month": -2579.7,
+    "bt_max_dd": -4627.9,
+    "bt_ann_pts": 1571,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_state",
+      "gcs": "dizai/heng/HK.HSI_FRONT.json",
+      "pnl_key": "pnl",
+      "time_key": "exit_tk",
+      "note": "GCS bucket zhuge-risk-manager-bucket；trades[].pnl 為點（已扣來回成本），exit_tk 為香港時間；每份狀態只保留最近 DIZAI_TRADES_KEEP 筆，讀取器需每次累積歸檔"
+    },
+    "note": "每年 1 月按前兩年（2 年盈虧÷最深浮虧）重選參數；樣本內挑參數，月均只約樣本內最佳的 1/5（IDEAS #6）。2021 年回撤 −4,628 點≈HK$23 萬。"
+  },
+  "dizai_que": {
+    "name": "🕳️ 地載・缺（R143，開市跳空突破，1 張）",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；RSI_AVG_DOWN_REPORT.md §open_breakout / portfolio.py「缺」",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 72.5,
+    "bt_std": 341.7,
+    "bt_t": 1.77,
+    "bt_win_rate": 0.286,
+    "bt_worst_month": -425.2,
+    "bt_max_dd": -873.2,
+    "bt_ann_pts": 877,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_state",
+      "gcs": "dizai/que/HK.HSI_FRONT.json",
+      "pnl_key": "pnl",
+      "time_key": "exit_tk",
+      "note": "GCS bucket zhuge-risk-manager-bucket；trades[].pnl 為點（已扣來回成本），exit_tk 為香港時間；每份狀態只保留最近 DIZAI_TRADES_KEEP 筆，讀取器需每次累積歸檔"
+    },
+    "note": "規格：09:15 開市跳空 ≥ 0.5%、Nasdaq 隔夜方向與突破相反、±0.25% 突破入場、RSI「不追極端」、止蝕在對面、16:30 收市平倉（見 main.py DIZAI_QUE）。勝率低（月 29%）靠大賺，回測條件用全期挑，不算完全樣本外。"
+  },
+  "dizai_tupo": {
+    "name": "💥 地載・突破V（R145，高波幅日開市突破，1 張）",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；open_breakout2.py / portfolio.py「突破V」",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 56.3,
+    "bt_std": 310.0,
+    "bt_t": 1.52,
+    "bt_win_rate": 0.314,
+    "bt_worst_month": -1224.3,
+    "bt_max_dd": -1823.4,
+    "bt_ann_pts": 681,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_state",
+      "gcs": "dizai/tupo/HK.HSI_FRONT.json",
+      "pnl_key": "pnl",
+      "time_key": "exit_tk",
+      "note": "GCS bucket zhuge-risk-manager-bucket；trades[].pnl 為點（已扣來回成本），exit_tk 為香港時間；每份狀態只保留最近 DIZAI_TRADES_KEEP 筆，讀取器需每次累積歸檔"
+    },
+    "note": "前一日 VHSI > 252 日 75 分位才做，±0.25% 突破、1R 止賺、日終平倉；月勝率 31%，單月最差 −1,224 點。"
+  },
+  "dizai_steady60": {
+    "name": "🧱 地載・穩60（R145，60 分 RSI 轉向攤平，1 份）",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；portfolio.py「穩60」（加倉 1→2→4、止賺 30、止蝕 1000、留倉）",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 18.0,
+    "bt_std": 51.0,
+    "bt_t": 2.96,
+    "bt_win_rate": 0.414,
+    "bt_worst_month": -190.0,
+    "bt_max_dd": -274.0,
+    "bt_ann_pts": 218,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_state",
+      "gcs": "dizai/forward/HK.HSI_FRONT.json",
+      "variant": "steady60",
+      "pnl_key": "pnl",
+      "time_key": "exit_tk",
+      "note": "trades 在 variants.steady60.trades；pnl 單位點"
+    },
+    "note": "狀態檔 variants.steady60.trades。回測八年（2018–2026）298→61 筆全贏零止蝕，此處是 2021 起月度口徑；零止蝕是過度擬合的典型徵兆（IDEAS #5），任何一次止蝕都應視為偏離。"
+  },
+  "dizai_bold_nq": {
+    "name": "🚀 地載・進NQ（R140，Nasdaq 篩選的加倉，1 份）",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；portfolio.py「進NQ」（穿越、止賺 150、止蝕 1500、run5_3 + Nasdaq 反向篩選）",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 137.4,
+    "bt_std": 197.9,
+    "bt_t": 5.81,
+    "bt_win_rate": 0.5,
+    "bt_worst_month": -16.0,
+    "bt_max_dd": -1807.0,
+    "bt_ann_pts": 1662,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_state",
+      "gcs": "dizai/forward/HK.HSI_FRONT.json",
+      "variant": "bold_nq",
+      "pnl_key": "pnl",
+      "time_key": "exit_tk",
+      "note": "trades 在 variants.bold_nq.trades；pnl 單位點"
+    },
+    "note": "狀態檔 variants.bold_nq.trades。篩選條件 run5_3 是看完結果才挑（IDEAS #78 事後條件）；單項最大回撤 −1,807 點等於合(不含衡)的整體回撤，兩者屬同一段下跌。"
+  },
+  "dizai_he_ex": {
+    "name": "🧩 地載・合（不含衡）＝缺×1＋突破V×1＋穩60×2＋進NQ×1",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；portfolio.py 組合（只用 2021–23 挑權重；Sharpe 1.69，訓練 1.46／測試 2.02）；與 main.py DIZAI_HE_BT['ex'] 一致（年化 +3,656、回撤 −1,807）",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 302.3,
+    "bt_std": 545.3,
+    "bt_t": 4.64,
+    "bt_win_rate": 0.7,
+    "bt_worst_month": -1410.7,
+    "bt_max_dd": -1807.0,
+    "bt_ann_pts": 3656,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_combo",
+      "components": {
+        "que": "dizai/que/HK.HSI_FRONT.json",
+        "tupo": "dizai/tupo/HK.HSI_FRONT.json",
+        "steady60": "dizai/forward/HK.HSI_FRONT.json#steady60",
+        "bold_nq": "dizai/forward/HK.HSI_FRONT.json#bold_nq"
+      },
+      "pnl_key": "pnl",
+      "time_key": "exit_tk"
+    },
+    "note": "合併成績＝各成份 trades 按權重加總（穩60 ×2）。成份條件看過全期，2024 起不是完全樣本外（IDEAS #4）。",
+    "weights": {
+      "que": 1,
+      "tupo": 1,
+      "steady60": 2,
+      "bold_nq": 1
+    }
+  },
+  "dizai_he_in": {
+    "name": "🧩 地載・合（含衡）＝不含衡版＋衡×1",
+    "unit": "點／月（1 張大期＝每點 HK$50；合＝按權重張數）",
+    "kind": "paper_trades",
+    "bt_source": "research/hsi_futures_range/dizai_expect.py（沿用 portfolio.py 成份；恒指主連 1 分 K，每邊扣 1 點，2021-01-04 → 2026-10-09 按月加總，70 個月）；portfolio.py 組合；Sharpe 1.44（訓練 1.25／測試 1.75）；與 main.py DIZAI_HE_BT['in'] 一致（年化 +5,227、回撤 −3,445）",
+    "bt_n": 70,
+    "bt_n_unit": "月",
+    "bt_mean": 432.2,
+    "bt_std": 1105.9,
+    "bt_t": 3.27,
+    "bt_win_rate": 0.657,
+    "bt_worst_month": -1706.8,
+    "bt_max_dd": -3444.8,
+    "bt_ann_pts": 5227,
+    "bt_sample": "2021-01-04 → 2026-10-09",
+    "live": {
+      "type": "dizai_paper_combo",
+      "components": {
+        "que": "dizai/que/HK.HSI_FRONT.json",
+        "tupo": "dizai/tupo/HK.HSI_FRONT.json",
+        "steady60": "dizai/forward/HK.HSI_FRONT.json#steady60",
+        "bold_nq": "dizai/forward/HK.HSI_FRONT.json#bold_nq",
+        "heng": "dizai/heng/HK.HSI_FRONT.json"
+      },
+      "pnl_key": "pnl",
+      "time_key": "exit_tk"
+    },
+    "note": "進取版：多一份衡，年化多 43% 但最大回撤也近乎翻倍。",
+    "weights": {
+      "que": 1,
+      "tupo": 1,
+      "steady60": 2,
+      "bold_nq": 1,
+      "heng": 1
+    }
   }
 }

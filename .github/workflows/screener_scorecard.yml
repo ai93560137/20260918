@@ -62,15 +62,27 @@ jobs:
           python3 -c "import json,sys; d=json.load(open('/tmp/ledger.json')); assert isinstance(d,list); json.dump(d, open('research/divergence/xau_trade_ledger.json','w'), ensure_ascii=False, indent=1)" \
             && echo "XAUUSD 帳本 $(python3 -c "import json; print(len(json.load(open('research/divergence/xau_trade_ledger.json'))))") 列"
 
+      - name: Fetch 地載陣 paper states from GCS
+        env:
+          GCP_PROJECT: sacred-alliance-453716-b7
+        run: |
+          mkdir -p _dizai
+          if [ "${{ steps.gcp_auth.outcome }}" != "success" ] || [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
+            echo "GCP 登入未成功，略過地載陣（沿用 repo 內 dizai_trades.json）"; exit 0; fi
+          for o in dizai/heng/HK.HSI_FRONT.json dizai/que/HK.HSI_FRONT.json dizai/tupo/HK.HSI_FRONT.json dizai/forward/HK.HSI_FRONT.json; do
+            python3 scripts/gcp_agent.py cat --object "$o" > "_dizai/${o//\//__}" || { echo "::warning::讀不到 $o"; rm -f "_dizai/${o//\//__}"; }
+          done
+          ls -l _dizai
+
       - name: Strategy divergence
-        run: python3 scripts/strategy_divergence.py --journal _src/journal --out research/divergence --as-of "$(date +%F)"
+        run: python3 scripts/strategy_divergence.py --journal _src/journal --dizai-raw _dizai --out research/divergence --as-of "$(date +%F)"
 
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BR="${GITHUB_REF_NAME}"
-          add_out() { git add research/screener_scorecard research/divergence/DIVERGENCE.md; [ -f research/divergence/xau_trade_ledger.json ] && git add research/divergence/xau_trade_ledger.json; true; }
+          add_out() { git add research/screener_scorecard research/divergence/DIVERGENCE.md; [ -f research/divergence/xau_trade_ledger.json ] && git add research/divergence/xau_trade_ledger.json; [ -f research/divergence/dizai_trades.json ] && git add research/divergence/dizai_trades.json; true; }
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           MSG="chore(scorecard): 篩選器評分卡＋偏離監控 $(date +%F)"

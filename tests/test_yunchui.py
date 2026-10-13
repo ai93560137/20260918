@@ -54,7 +54,7 @@ PUB = {"updated_hkt": "2026-10-12 17:53",
        "corrections": [{"date": "2026-10-11", "text": "更正：第一行\n第二行 原因：對沖狀態只靠記錄，冇向券商核實。" + "尾" * 300}]}
 LIVE = {"run_hkt": "2026-10-12 17:31", "alerts": {},
         "metrics": {"delta_parts": {"straddle": 0.61, "net_with_hedge": -0.39, "hsi_all": 4.93}, "delta": {"x": [-0.39, 0.5]},
-                    "stop_use": {"HSI 月跨式": 0.42, "MES 跨式": 0.26}, "equity": 2520339, "cushion": 332833, "maintenance_margin": 328471},
+                    "stop_use": {"HSI 月跨式": 0.42, "MES 跨式": 0.26}, "equity": 7800000, "cushion": 300000, "maintenance_margin": 200000},
         "positions": [{"code": "HK.MHI2610", "name": "MHI", "qty": -1, "open_price": 24200}]}
 
 main._yunchui_cache.update(ts=main.now_ts(), data=(PUB, "github"))
@@ -71,7 +71,7 @@ check("頁面有列印按鈕", "列印成 PDF" in h and "@media print" in h)
 check("導覽列有雲垂陣（當前頁）", "nav-current'>☁️ 雲垂陣" in h)
 check("更正紀錄原文全部顯示（含尾段）", "原因：對沖狀態只靠記錄，冇向券商核實。" in h and "尾" * 300 in h)
 check("文字有轉義（規則含 <b>）", "規則一&lt;b&gt;" in h and "規則一<b>" not in h)
-check("唔顯示權益／保證金", "2,520,339" not in h and "332,833" not in h and "328,471" not in h and "保證金緩衝" not in h)
+check("唔顯示權益／保證金", "7,800,000" not in h and "300,000" not in h and "200,000" not in h and "保證金緩衝" not in h)
 check("持倉卡有行使價、到期、權利金、止損線", all(x in h for x in ("25,000", "2026-10-29", "1,108.0", "2,216.0", "7,830", "357.0")))
 check("MES 日報 Δ 標明日報時點", "日報時點 2026-10-12 17:53" in h)
 check("事件時間線", "重新對沖" in h)

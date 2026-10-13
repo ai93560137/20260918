@@ -19,6 +19,11 @@
   * ✋ 人手：富途風險快照（gcp_agent.py cat --object futu/risk/latest.json）的 stop_use，選用
   * 智能諸葛亮 XAUUSD：GCS logs/trade_ledger.json（main.py R171 在 MT5 balance 變動時寫），
     workflow 用 gcp_agent.py cat 抓成 research/divergence/xau_trade_ledger.json；只拿 kind == "trade" 的列
+  * ⛰️ 地載陣（紙上）：GCS dizai/<衡|缺|突破V>/HK.HSI_FRONT.json 與 dizai/forward/HK.HSI_FRONT.json 的 variants.<穩60|進NQ>，
+    trades[].pnl（點，已扣成本）、exit_tk（香港時間）。workflow 抓成 --dizai-raw 目錄，本腳本累積歸檔到
+    research/divergence/dizai_trades.json（GCS 只留最近 DIZAI_TRADES_KEEP 筆）。回測期望是「點／月」，所以
+    按 exit_tk 月份加總，只計「start 之後第一個完整月到上個月」（start 唔係 1 號，嗰個月唔計入 z，但計入累計與回撤），冇成交的月份當 0；合＝各成份按 weights 加權。
+    z、⚪ 門檻同上，但 n 是完整月數；回撤用逐筆累計點數對回測最大回撤（取絕對值）。
   * 🐤 金絲雀（風險預報，不是交易）：canary/posthoc_log.csv（每個燈色日一列 📐 後驗倍率），
     按燈分組對比 canary/POSTHOC_EXPECT.md 的歷史期望。燈號另有一套（2026-10-13 預先登記）：
       相鄰燈色日的 5 日窗口重疊，有效樣本 n_eff = n ÷ 5；n_eff < 5 → ⚪ 不判
@@ -195,6 +200,82 @@ def win_rate_z(wins: int, n: int, p0: float | None) -> float | None:
     return (wins / n - p0) / math.sqrt(p0 * (1 - p0) / n)
 
 
+# ---------------------------------------------------------------- 來源：地載陣紙上狀態
+def dizai_specs(live: dict) -> dict[str, tuple[str, str | None]]:
+    """live 規格 → {成份名: (gcs 物件, variant)}。dizai_paper_state 一個成份；combo 多個（"路徑#variant"）。"""
+    if live.get("type") == "dizai_paper_state":
+        name = live.get("variant") or live["gcs"].split("/")[1]
+        return {name: (live["gcs"], live.get("variant"))}
+    out = {}
+    for name, ref in (live.get("components") or {}).items():
+        path, _, var = ref.partition("#")
+        out[name] = (path, var or None)
+    return out
+
+
+def raw_name(gcs: str) -> str:
+    return gcs.replace("/", "__")
+
+
+def merge_dizai(archive: dict, raw_dir: Path | None, specs: dict[str, tuple[str, str | None]]) -> dict:
+    """把 GCS 狀態檔（raw_dir/<路徑以 __ 連接>）嘅 trades 併入 archive，按整筆內容去重。"""
+    if not raw_dir or not raw_dir.exists():
+        return archive
+    for name, (gcs, var) in specs.items():
+        p = raw_dir / raw_name(gcs)
+        if not p.exists():
+            continue
+        try:
+            doc = json.loads(p.read_text(encoding="utf-8"))
+        except ValueError:
+            continue
+        src = ((doc.get("variants") or {}).get(var) or {}) if var else doc
+        slot = archive.setdefault(name, {"start": None, "trades": []})
+        slot["start"] = doc.get("start") or slot.get("start")
+        seen = {json.dumps(t, sort_keys=True, ensure_ascii=False) for t in slot["trades"]}
+        for t in src.get("trades") or []:
+            k = json.dumps(t, sort_keys=True, ensure_ascii=False)
+            if isinstance(t, dict) and k not in seen:
+                seen.add(k)
+                slot["trades"].append(t)
+        slot["trades"].sort(key=lambda t: str(t.get("exit_tk") or ""))
+    return archive
+
+
+def dizai_monthly(archive: dict, weights: dict[str, float], as_of: date,
+                  pnl_key: str = "pnl", time_key: str = "exit_tk") -> dict:
+    """完整月份嘅加權點數（start 月到上個月，冇成交當 0）、逐筆累計回撤、虧損筆數。"""
+    starts = [archive[c]["start"] for c in weights if c in archive and archive[c].get("start")]
+    if not starts:
+        return {"error": "未有紙上狀態（GCS 讀唔到或未歸檔）"}
+    y, m = map(int, min(starts)[:7].split("-"))
+    if min(starts)[8:10] not in ("", "01"):              # 開始月份唔完整，唔同整月回測比；由下個月起計
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    months = []
+    while (y, m) < (as_of.year, as_of.month):
+        months.append(f"{y:04d}-{m:02d}")
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    by_month = {k: 0.0 for k in months}
+    path, losses, n_trades = [], 0, 0
+    for c, w in weights.items():
+        for t in (archive.get(c) or {}).get("trades") or []:
+            v, ts = t.get(pnl_key), str(t.get(time_key) or "")
+            if v is None or not ts:
+                continue
+            n_trades += 1
+            losses += float(v) < 0
+            path.append((ts, float(v) * w))
+            if ts[:7] in by_month:
+                by_month[ts[:7]] += float(v) * w
+    cum, eq = 0.0, [0.0]
+    for _, v in sorted(path):
+        cum += v
+        eq.append(cum)
+    dd = max(max(eq[:i + 1]) - eq[i] for i in range(len(eq)))
+    return {"months": months, "monthly": [by_month[k] for k in months], "n_trades": n_trades,
+            "losses": losses, "dd": dd, "cum": cum, "start": min(starts)}
+
+
 # ---------------------------------------------------------------- 來源：富途快照
 def read_futu(path: Path | None) -> dict | None:
     if not path or not path.exists():
@@ -251,6 +332,8 @@ def main() -> None:
     ap.add_argument("--futu", type=Path, help="futu/risk/latest.json（選用）")
     ap.add_argument("--xau-ledger", type=Path, default=Path("research/divergence/xau_trade_ledger.json"),
                     help="XAUUSD 已實現帳本（GCS logs/trade_ledger.json 抓下來的檔）")
+    ap.add_argument("--dizai-raw", type=Path, help="地載陣 GCS 狀態檔目錄（檔名＝物件路徑以 __ 連接）")
+    ap.add_argument("--dizai-archive", type=Path, default=Path("research/divergence/dizai_trades.json"))
     ap.add_argument("--expectations", type=Path, default=Path("research/divergence/expectations.json"))
     ap.add_argument("--out", type=Path, default=Path("research/divergence"))
     ap.add_argument("--as-of", type=date.fromisoformat, default=date.today())
@@ -356,6 +439,42 @@ def main() -> None:
                     f"- 帳本 {xl['n_rows']} 列，其中已實現交易 {n} 筆（{xl['first']} → {xl['last']}）；出入金 {xl['other_kinds']['transfer']} 列、"
                     f"credit 變動 {xl['other_kinds']['credit']} 列不計。",
                     f"- 回測來源：{e['bt_source']}；{e.get('note', '')}。", ""]
+
+    # 地載陣：紙上成交按月加總 vs 回測「點／月」
+    dz_keys = [k for k, v in exp.items() if isinstance(v, dict) and str((v.get("live") or {}).get("type", "")).startswith("dizai_paper")]
+    if dz_keys:
+        archive = json.loads(a.dizai_archive.read_text(encoding="utf-8")) if a.dizai_archive.exists() else {}
+        all_specs: dict = {}
+        for k in dz_keys:
+            all_specs.update(dizai_specs(exp[k]["live"]))
+        archive = merge_dizai(archive, a.dizai_raw, all_specs)
+        if a.dizai_raw:
+            a.dizai_archive.write_text(json.dumps(archive, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        for k in dz_keys:
+            e = exp[k]
+            live = e["live"]
+            weights = e.get("weights") or {n: 1.0 for n in dizai_specs(live)}
+            unit = "點／月"
+            bt_txt = f"{fmt(e['bt_mean'], 1)} ± {fmt(e['bt_std'], 1)} {unit}"
+            dd_bt = abs(e["bt_max_dd"]) if e.get("bt_max_dd") is not None else None
+            dm = dizai_monthly(archive, weights, a.as_of, live.get("pnl_key", "pnl"), live.get("time_key", "exit_tk"))
+            if "error" in dm:
+                L.append(f"| {e['name']} | ⚪ | — | — | {bt_txt} | — | — | {fmt(dd_bt)} 點 | {dm['error']} |")
+                continue
+            n = len(dm["monthly"])
+            z = zscore(dm["monthly"], e["bt_mean"], e["bt_std"])
+            lt, why = light(z, dm["dd"] / dd_bt if dd_bt else None, n, True)
+            if n < THRESH["min_n"]:
+                why = f"完整月 {n} 個，< {THRESH['min_n']} 個不判（紙上由 {dm['start']} 起，已平倉 {dm['n_trades']} 筆）"
+            mean = statistics.fmean(dm["monthly"]) if dm["monthly"] else None
+            L.append(f"| {e['name']} | {lt} | {n} 個月（{dm['n_trades']} 筆） | {fmt(mean, 1)} {unit} | {bt_txt} | {fmt(z, 2)} | "
+                     f"{fmt(dm['dd'])} 點 | {fmt(dd_bt)} 點 | {why} |")
+            details += [f"### {e['name']}", "",
+                        f"- 紙上由 {dm['start']} 起；完整月份：{', '.join(f'{mm} {fmt(v)}' for mm, v in zip(dm['months'], dm['monthly'])) or '尚無'}；"
+                        f"累計 {fmt(dm['cum'])} 點，已平倉 {dm['n_trades']} 筆（虧損 {dm['losses']} 筆）。"
+                        + (f" 權重：{'、'.join(f'{c}×{w:g}' for c, w in weights.items())}。" if len(weights) > 1 else ""),
+                        f"- 回測來源：{e['bt_source']}（n = {e['bt_n']} 個月，月勝率 {e.get('bt_win_rate', 0):.0%}，最差月 {fmt(e.get('bt_worst_month'))} 點）。",
+                        f"- 備註：{e.get('note', '—')}", ""]
 
     # 金絲雀：風險預報，按燈分組（與交易策略分開一張表）
     if "canary_posthoc" in exp:

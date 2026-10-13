@@ -186,7 +186,7 @@
 | 8 人手交易額度 | ✅ NAV 50%／單日虧損 2%，超額只通報 | 總指揮（R173） | `RISK_LADDER.md` |
 | 9 月報 | ✅ 每月 1 日 09:30 HKT（首份有意義嘅係 2026-11-01 報 10 月，帳本由 10-13 起） | 預設分支 | `scripts/ops_reports.py monthly`；網頁公開版唔列權益絕對值（main.py R174 讀 GCS `ops/reports/public.json`） |
 | 10 營運衛生 | ⏳ 部分（WIF 免金鑰已開通） | — | — |
-| 額外：Claude 用量 | ✅ 總指揮 8 次叫醒 → 4 次新開工作階段＋4 次 Actions | 預設分支＋總指揮 | `ops_notify.yml`、`ops/ROUTINE_RISK_NOTIFY.md` |
+| 額外：Claude 用量 | ◐ 4 次純轉發已搬去 Actions（對沖狀態、成交通報）；風險通報「新開工作階段」版 v2 實測做唔到（冇 repo、冇 send_message），維持舊 persistent Routine | 預設分支＋總指揮 | `ops_notify.yml`、`ops/ROUTINE_RISK_NOTIFY.md`（擱置原因） |
 
 分工原則：**總指揮擁有風控、對帳、損益帳（私人數據）；預設分支擁有流水線、報告、讀取這些數據的下游（晨會、心跳、月報）**。
 下游只讀總指揮產出的檔，不重算。

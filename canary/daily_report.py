@@ -142,6 +142,47 @@ def hk_today():
     return datetime.now(HKT).date()
 
 
+# ----------------------------------------------------------------------------- 未來 24 小時事件(2026-10-13 使用者要求)
+EVENTS_CSV = os.path.join(os.path.dirname(HERE), "calendar", "events.csv")   # 預設分支 scripts/event_calendar.py 每日 07:00 香港產生
+EVENT_HOURS = 24
+
+
+def upcoming_events(now_hkt, path=EVENTS_CSV, hours=EVENT_HOURS):
+    """回傳 (lines, note):now_hkt 起 hours 小時內、「影響陣」含金絲雀的事件,及美國休市日。
+    time_hkt 為「全日」的事件:只要當日落在窗口內就列出。讀不到檔回 ([], 說明)。"""
+    if not os.path.exists(path):
+        return [], "事件日曆 calendar/events.csv 讀不到,本段從缺"
+    end = now_hkt + timedelta(hours=hours)
+    out = []
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                d = date.fromisoformat(r.get("date", ""))
+            except ValueError:
+                continue
+            mine = "金絲雀" in (r.get("affects") or "")
+            us_holiday = r.get("impact") == "Holiday" and r.get("market") in ("US", "USD")
+            if not (mine or us_holiday):
+                continue
+            t = (r.get("time_hkt") or "").strip()
+            if t and t != "全日":
+                try:
+                    hh, mm = (int(x) for x in t.split(":"))
+                    at = datetime(d.year, d.month, d.day, hh, mm, tzinfo=HKT)
+                except ValueError:
+                    continue
+                if not (now_hkt <= at < end):
+                    continue
+                when = f"{dz(d)} {t}"
+            else:
+                if not (now_hkt.date() <= d <= end.date()):
+                    continue
+                at, when = datetime(d.year, d.month, d.day, tzinfo=HKT), f"{dz(d)} 全日"
+            out.append((at, f"{when}|{r.get('market', '')} {r.get('event', '')}({r.get('impact', '')})"))
+    out.sort(key=lambda x: x[0])
+    return [x for _, x in out], ""
+
+
 def prev_weekday(d):
     """d 之前(不含 d)最後一個週一至週五。香港早上報告時,應有燈色日 = 報告日的前一個美股交易日。"""
     d -= timedelta(days=1)
@@ -594,6 +635,14 @@ def build_report(rows, health, today, sent=None):
     for b, lb, gap in fresh:
         md.append(f"| {b} | {lb} | {'—' if gap is None else gap} |")
     md.append("")
+    now_h = datetime.now(HKT) if today == hk_today() else datetime(today.year, today.month, today.day, 6, 30, tzinfo=HKT)
+    ev_lines, ev_note = upcoming_events(now_h)
+    ev_head = f"🗓️ 未來 24 小時事件(香港時間 {dz(now_h.date())} {now_h:%H:%M} 起;只列影響金絲雀的與美國休市)"
+    ev_body = [f"• {x}" for x in ev_lines] or [f"• {ev_note or '無'}"]
+    md.append("## 4b. 未來 24 小時事件\n")
+    md.append(ev_head.replace("🗓️ ", "") + ";來源 `calendar/events.csv`(預設分支每日 07:00 香港產生)\n")
+    md += [f"- {x}" for x in ev_lines] or [f"- {ev_note or '無'}"]
+    md.append("")
     md.append("## 5. 健康檢查\n")
     md.append("| 項目 | 結果 | 狀態 |\n|---|---|---|")
     for k, v, ok in checks:
@@ -666,6 +715,7 @@ def build_report(rows, health, today, sent=None):
           ]
     if ratio is not None:
         tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}|{w1_cmp}")
+    tg += ["", ev_head, *ev_body]
     tg += ["",
            "🩺 數據與健康",
            f"• 新鮮度(各鳥最後日期,落後至應有燈色日 {dz(expected_d)} 的交易日數):"
