@@ -466,6 +466,28 @@ def cmd_cat(ctx: Ctx):
     print(text if not ctx.args.bytes else text[: ctx.args.bytes])
 
 
+PUT_ALLOWED_PREFIX = "ops/"
+
+
+def cmd_put(ctx: Ctx):
+    """寫一個小物件到 bucket（給 GitHub Actions 存通報狀態用）。預設只准寫 ops/ 底下，避免誤蓋系統狀態。"""
+    obj = ctx.args.object
+    if not obj.startswith(PUT_ALLOWED_PREFIX) and not ctx.args.any_prefix:
+        die(f"put 預設只准寫 {PUT_ALLOWED_PREFIX} 底下的物件（{obj}）；真的要寫別處請加 --any-prefix。")
+    if ctx.args.file == "-":
+        data = sys.stdin.buffer.read()
+    else:
+        with open(ctx.args.file, "rb") as fh:
+            data = fh.read()
+    if len(data) > 1_000_000:
+        die("put 只給小檔用（> 1 MB 請用部署流程或 gsutil）")
+    ctype = "application/json" if obj.endswith(".json") else "text/plain; charset=utf-8"
+    from urllib.parse import quote  # noqa: F401  (保留與 gcs_get 一致的匯入風格)
+    ctx.call("POST", f"{GCS_UPLOAD_API}/b/{ctx.bucket}/o", params={"uploadType": "media", "name": obj},
+             data=data, headers={"Content-Type": ctype})
+    print(f"✅ 已寫入 gs://{ctx.bucket}/{obj}（{len(data)} bytes）")
+
+
 def cmd_check(ctx: Ctx):
     url = ctx.args.url
     if not url and ctx.is_run:
@@ -1074,6 +1096,11 @@ def build_parser():
     s.add_argument("--object", required=True)
     s.add_argument("--bytes", type=int, default=0, help="只印前 N 個字元")
 
+    s = sub.add_parser("put", help="寫入 bucket 小物件（預設只准 ops/ 底下）")
+    s.add_argument("--object", required=True)
+    s.add_argument("--file", required=True, help="本機檔案路徑，或 - 讀 stdin")
+    s.add_argument("--any-prefix", action="store_true", help="允許寫到 ops/ 以外（小心）")
+
     s = sub.add_parser("check", help="檢查五個頁面")
     s.add_argument("--url", help="函式網址（省略則從 status 取）")
 
@@ -1106,7 +1133,7 @@ def build_parser():
 
 COMMANDS = {
     "whoami": cmd_whoami, "status": cmd_status, "logs": cmd_logs, "state": cmd_state, "bucket": cmd_bucket,
-    "cat": cmd_cat, "check": cmd_check, "env": cmd_env, "deploy": cmd_deploy, "iam-public": cmd_iam_public,
+    "cat": cmd_cat, "put": cmd_put, "check": cmd_check, "env": cmd_env, "deploy": cmd_deploy, "iam-public": cmd_iam_public,
     "revisions": cmd_revisions, "rollback": cmd_rollback,
 }
 

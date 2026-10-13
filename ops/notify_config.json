@@ -1,0 +1,15 @@
+{
+  "_readme": "scripts/ops_notify.py 的設定。雲垂陣對沖申報手數改了就改這裡（commit 到預設分支），不用改程式。",
+  "hedge": {
+    "declared_hedge_lots": {"HK.MHI2610": -1.0},
+    "delta_limit_lots": 0.5,
+    "stale_minutes": 20,
+    "status_object": "ops/hedge_status.txt"
+  },
+  "deals": {
+    "yunchui_prefixes": ["HK.MHI", "US.MES", "US.EX", "US.EW"],
+    "day_run_min_fetched_hkt": "16:35",
+    "night_run_min_fetched_hkt": "03:05"
+  },
+  "state_object": "ops/notify_state.json"
+}
