@@ -5,8 +5,9 @@
 用法（PowerShell，喺 repo 資料夾）：
   python gcp_ib\\auto_risk.py --once                 # 跑一次
   python gcp_ib\\auto_risk.py --every 15             # 每 15 分鐘一次，視窗開住就一直跑（Ctrl+C 停）
-  每日香港時間 05:30 之後第一次循環會喺背景跑一次 futu_pnl_export.py（基金報告，R152）；
-  成功先記低，失敗每日最多試 3 次。唔想要就加 --no-pnl。
+  每日香港時間 03:05／05:30／16:35 之後第一次循環會喺背景跑一次 futu_pnl_export.py（推 action=futu_pnl：
+  05:30 畀基金報告 R152；03:05 夜盤、16:35 日盤成交畀每日成交紀錄 R172，Cloud Run 存 futu/deals/<日期>.json）；
+  每個時段成功先記低，失敗最多試 3 次。唔想要就加 --no-pnl。
 
 設定（環境變數，用 setx 設一次，重開 PowerShell 生效；唔好寫入 repo）：
   setx ZHUGE_COMBINED_EQUITY 2520339     # 幾個戶口合計權益 HKD（硬止損按合計計）
@@ -95,14 +96,21 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R154"
-PNL_HOUR = (5, 30)        # 香港時間：恒指夜市 03:00 收、美期權 04:00–05:00 收之後先匯出
+SCRIPT_VERSION = "R172"
+# 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
+PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3
 _pnl_proc = None
 
 
+def pnl_slot(t):
+    """今日已到時間嘅最後一個匯出時段，寫成 'YYYY-MM-DD|HH:MM'；未到任何時段回傳 None。"""
+    due = [h for h in PNL_SLOTS if (t.hour, t.minute) >= h]
+    return f"{t:%Y-%m-%d}|{due[-1][0]:02d}:{due[-1][1]:02d}" if due else None
+
+
 def pnl_daily(t):
-    """每日一次喺背景跑 futu_pnl_export.py（推 action=futu_pnl）。唔阻住風險循環；結果記喺 pnl_export_state.json。"""
+    """每日三個時段（PNL_SLOTS）各喺背景跑一次 futu_pnl_export.py（推 action=futu_pnl）。唔阻住風險循環；結果記喺 pnl_export_state.json。"""
     global _pnl_proc
     state_f = OUT / "pnl_export_state.json"
     try:
@@ -114,21 +122,26 @@ def pnl_daily(t):
             return
         out = (OUT / "pnl_export_last.log").read_text(encoding="utf-8", errors="replace")
         ok = _pnl_proc.returncode == 0 and "GCP ✅" in out
+        key = st.get("running_slot") or st.get("running_day")
         if ok:
-            st["done"] = st.get("running_day")
-        st["last"] = {"day": st.get("running_day"), "ok": ok, "end_hkt": t.strftime("%Y-%m-%d %H:%M")}
-        print(f"  → 基金報告匯出{'✅ 完成' if ok else '❌ 失敗（睇 tradingview/out/pnl_export_last.log）'}")
+            st["done_slots"] = (st.get("done_slots") or [])[-9:] + [key]
+            if key and key.endswith("|05:30"):
+                st["done"] = key[:10]                          # 舊欄位：基金報告嗰次，RUNBOOK 查結果用
+        st["last"] = {"slot": key, "ok": ok, "end_hkt": t.strftime("%Y-%m-%d %H:%M")}
+        print(f"  → 成交／基金報告匯出{'✅ 完成' if ok else '❌ 失敗（睇 tradingview/out/pnl_export_last.log）'}")
         _pnl_proc = None
         state_f.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
         return
-    day = t.strftime("%Y-%m-%d")
-    if (t.hour, t.minute) < PNL_HOUR or st.get("done") == day:
+    key = pnl_slot(t)
+    if key is None or key in (st.get("done_slots") or []):
         return
-    tries = st.get("tries", {}) if st.get("tries_day") == day else {}
+    if key.endswith("|05:30") and st.get("done") == key[:10]:  # 舊版狀態檔（只記日期）
+        return
+    tries = st.get("tries", {}) if st.get("tries_slot") == key else {}
     if tries.get("n", 0) >= PNL_MAX_TRIES:
         return
     tries["n"] = tries.get("n", 0) + 1
-    st.update({"tries_day": day, "tries": tries, "running_day": day})
+    st.update({"tries_slot": key, "tries": tries, "running_slot": key})
     state_f.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
     log = (OUT / "pnl_export_last.log").open("w", encoding="utf-8")
     _pnl_proc = subprocess.Popen([sys.executable, str(ROOT / "gcp_ib" / "futu_pnl_export.py")], cwd=ROOT,
@@ -136,7 +149,7 @@ def pnl_daily(t):
                                  env={**os.environ, "PYTHONIOENCODING": "utf-8"},
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     log.close()                   # 子程序有自己一份
-    print(f"  → 基金報告匯出已喺背景開始（今日第 {tries['n']} 次）")
+    print(f"  → 成交／基金報告匯出已喺背景開始（{key} 第 {tries['n']} 次）")
 
 
 def push_gcp(t, M, cur, txt):
