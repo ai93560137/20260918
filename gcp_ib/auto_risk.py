@@ -10,7 +10,7 @@
   每個時段成功先記低，失敗最多試 3 次。唔想要就加 --no-pnl。
 
 設定（環境變數，用 setx 設一次，重開 PowerShell 生效；唔好寫入 repo）：
-  setx ZHUGE_COMBINED_EQUITY 2520339     # 幾個戶口合計權益 HKD（硬止損按合計計）
+  setx ZHUGE_COMBINED_EQUITY 7800000     # 幾個戶口合計權益 HKD（硬止損按合計計）；示例：1,000,000 USD × 7.8，換成你自己嘅數
   setx TG_BOT_TOKEN "…"                 # 選填：有就發 Telegram 警報（同 repo 其他通知同一個 bot）
   setx TG_CHAT_ID "…"
   setx ZHUGE_GCP_URL "https://…run.app/"   # 選填：有就每次推上 GCP（main.py R147 action=futu_risk，存私人 bucket）
