@@ -1,0 +1,69 @@
+name: FX L1 forward（EURUSD 倫敦上午前向紙上交易，每日記錄）
+
+# 規則：EURUSD 每個平日 09:00 UTC 賣出、12:00 UTC 買回（forex_research/FX_L1_FORWARD.md）。
+# 每天 01:40 UTC（週二至週六）記錄「前一個平日」的紙上成交：Dukascopy M1 bid／ask → forex_research/forward/l1_paper.csv，並重寫 L1_STATUS.md。
+# 手動觸發可選 start／end；dry=true 只印出、不 commit（用來驗證 Actions 連得到 Dukascopy）。
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: '起日（預設 2026-10-12，前向起點，不要改）'
+        required: false
+        default: '2026-10-12'
+      end:
+        description: '迄日（空 = 昨天 UTC）'
+        required: false
+        default: ''
+      dry:
+        description: 'true = 只印出不 commit'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: '40 1 * * 2-6'
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths: ['.github/workflows/fx_l1_forward.yml', 'scripts/fx_l1_forward.py', 'scripts/fx_l1_report.py']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fx-l1-forward
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/forex-data-testing-w4q3m2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests pandas numpy
+      - name: Record paper trades
+        run: |
+          START="${{ inputs.start || '2026-10-12' }}"
+          END="${{ inputs.end }}"
+          OUT="forex_research/forward"
+          if [ "${{ inputs.dry }}" = "true" ]; then OUT="/tmp/l1_dry"; fi
+          python3 scripts/fx_l1_forward.py --start "$START" ${END:+--end "$END"} --out "$OUT"
+          python3 scripts/fx_l1_report.py "$OUT"
+      - name: Commit
+        if: ${{ inputs.dry != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add forex_research/forward/l1_paper.csv forex_research/forward/L1_STATUS.md
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "forward(forex): L1 每日紙上交易記錄 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/forex-data-testing-w4q3m2 && exit 0
+            sleep $((i * 7)); git fetch origin claude/forex-data-testing-w4q3m2; git reset --mixed FETCH_HEAD
+            git add forex_research/forward/l1_paper.csv forex_research/forward/L1_STATUS.md
+            git diff --cached --quiet && exit 0
+            git commit -q -m "forward(forex): L1 每日紙上交易記錄 $(date -u +%F)"
+          done
+          exit 1
