@@ -136,6 +136,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           WANT_DIGEST: ${{ inputs.digest }}
         run: |
+          if [ -f config/telegram_paused ]; then echo "Telegram 已暫停（分支 claude/gifted-carson-v2tvhw 的 config/telegram_paused；刪掉該檔即恢復）"; exit 0; fi
           MSG=""
           if [ -s "data/equities/$M/qc_alert.txt" ]; then
             MSG="data/equities/$M/qc_alert.txt"
