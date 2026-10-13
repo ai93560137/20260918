@@ -30,7 +30,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ops_notify import HKT, gcs_cat, gcs_put, parse_hkt, send_telegram  # noqa: E402
+from ops_notify import HKT, gcs_cat, gcs_put, parse_hkt, print_private, send_telegram  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FOOTER = "只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準。"
@@ -326,7 +326,7 @@ def main() -> int:
     a = ap.parse_args()
     now = parse_hkt(a.now) if a.now else datetime.now(HKT)
     text = build(now, load_sources())
-    print(text)
+    print_private(text)
     if not a.dry_run:
         send_telegram(text)
         gcs_put(f"ops/brief/{now:%Y-%m-%d}.txt", text + "\n")

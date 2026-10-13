@@ -366,6 +366,7 @@ def main() -> int:
     if not a.dry_run:
         send_telegram(short)
         gcs_put("ops/heartbeat/latest.txt", full + "\n")
+        gcs_put(f"ops/heartbeat/{now:%Y-%m-%d}.txt", full + "\n")     # 週報數一週紅燈用
     return 0
 
 

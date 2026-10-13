@@ -1,7 +1,7 @@
 """每日對帳表／損益帳／風控階梯（scripts/daily_books.py）。唔連 GCS、唔 git show；全部用假資料。"""
-import io, json, sys
+import io, json, os, re, sys
 from datetime import date, datetime, timezone, timedelta
-sys.path.insert(0, "/home/user/20260918/scripts")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
 import daily_books as db
 
 OK = FAIL = 0
@@ -50,8 +50,8 @@ check("雲垂 MES", jexp.get("US.EX32610P7830x0") == -1)
 check("風揚本週（已結算嗰週唔計）", jexp.get("HK.HSI261016P23750000") == -1 and "HK.HSI261009P23000000" not in jexp, jexp)
 
 print("\n=== 對帳 ===")
-RISK = {"run_hkt": "2026-10-13 17:21", "metrics": {"equity": 2520339, "hard_stop": 750000, "gap": 1770339, "futu_equity": 530504,
-        "maintenance_margin": 210946, "cushion": 319558, "pnl": 13975, "stop_use": {"HSI 月跨式": 0.39, "MES 跨式": 0.21, "EW P7750": 0.35}},
+RISK = {"run_hkt": "2026-10-13 17:21", "metrics": {"equity": 3000000, "hard_stop": 750000, "gap": 2250000, "futu_equity": 500000,
+        "maintenance_margin": 200000, "cushion": 300000, "pnl": 13975, "stop_use": {"HSI 月跨式": 0.39, "MES 跨式": 0.21, "EW P7750": 0.35}},
         "positions": [
             {"code": "HK.HSI2610", "qty": -1, "open_price": 24333, "last": 24373, "futu_pl": -2000},
             {"code": "HK.MHI2610", "qty": -1, "open_price": 24305, "last": 24373, "futu_pl": -680},
@@ -80,7 +80,7 @@ check("雲垂當日已實現 320 + 100 USD", abs(row["real_雲垂陣"] - (320 + 
 check("蛇蟠已實現 5,700、未實現 −2,000", row["real_蛇蟠陣"] == 5700 and row["unreal_蛇蟠陣"] == -2000)
 check("雲垂未實現含 USD 換算", abs(row["unreal_雲垂陣"] - (-680 + 5210 - 3230 + (142.5 + 327.5) * db.USD_HKD)) < 0.01, row["unreal_雲垂陣"])
 check("MT5 只計當日", row["mt5_realized_today"] == -50)
-check("權益／緩衝入列", row["equity_total"] == 2520339 and row["cushion"] == 319558 and row["ladder"] == "A")
+check("權益／緩衝入列", row["equity_total"] == 3000000 and row["cushion"] == 300000 and row["ladder"] == "A")
 csv1 = db.upsert_csv(None, row)
 csv2 = db.upsert_csv(csv1, dict(row, cushion=1))
 check("同日重跑覆蓋、唔重複", csv2.count("2026-10-13") == 1 and ",1," in csv2 or csv2.rstrip().endswith("1") or "2026-10-13" in csv2, csv2)
@@ -109,14 +109,33 @@ check("Ⓓ 訊息直接提示「而家平」", "而家平" in msg and "唔係落
 print("\n=== 人手額度 ===")
 why_m, info = db.manual_limits(RISK, DEALS)
 check("人手名義 = HSI2610 1 手 × 24,373 × 50", info["manual_notional_hkd"] == round(24373 * 50) and info["codes"] == ["HK.HSI2610 -1"], info)
-check("48% NAV 額度內", why_m == [], why_m)
+check("41% NAV 額度內", why_m == [], why_m)
 R4 = json.loads(json.dumps(RISK)); R4["positions"][0]["qty"] = -2
 why4, info4 = db.manual_limits(R4, DEALS)
 check("2 手 → 名義 97% 超額", any("名義" in w for w in why4), why4)
-R5 = json.loads(json.dumps(RISK)); R5["positions"][0]["futu_pl"] = -60000
+R5 = json.loads(json.dumps(RISK)); R5["positions"][0]["futu_pl"] = -70000
 why5, _ = db.manual_limits(R5, {"closed": []})
-check("單日虧損 2.4% → 超額", any("單日虧損" in w for w in why5), why5)
+check("單日虧損 2.3% → 超額", any("單日虧損" in w for w in why5), why5)
 check("MHI 超出對沖上限歸人手", db.split_by_cap("HK.MHI2610", -3) == [("雲垂陣", -1), (db.TEAM_MANUAL, -2)])
+
+print("\n=== 私隱：公開版冇金額、Actions 日誌只印字數 ===")
+import os, contextlib
+why_pub = ["Ⓒ 減半：富途保證金緩衝 HK$95,000 < 100,000", "Ⓓ 全平：離硬止損只剩 9% < 10%"]
+mw = ["人手名義 HK$1,300,000 ＝ NAV 52% > 50%"]
+info_pub = {"nav": 3000000, "manual_notional_hkd": 1218450, "manual_realized_today_hkd": 5700, "manual_unrealized_hkd": -1800, "codes": ["HK.HSI2610 -1"]}
+pub, priv = db.tail_sections("D", why_pub, mw, info_pub, False)
+check("公開版冇 HK$ 金額", "HK$" not in pub and "1,218,450" not in pub and "95,000" not in pub, pub)
+check("公開版冇 NAV 百分比", not re.search(r"NAV\s*\d", pub) and "只剩 9%" not in pub, pub)
+check("公開版保留等級、合約、⚠ 字眼（下游 regex 用）", "Ⓓ 全平" in pub and "HK.HSI2610 -1" in pub and "## 人手交易額度" in pub and "⚠" in pub)
+check("私人版有齊金額", "HK$1,218,450" in priv and "NAV 41%" in priv and "HK$95,000" in priv)
+pub_ok, _ = db.tail_sections("A", [], [], info_pub, True)
+check("額度內最後一行照舊（晨會簡報讀）", pub_ok.strip().splitlines()[-1].startswith("額度內 ✅") and "夜盤線" in pub_ok)
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    os.environ["GITHUB_ACTIONS"] = "true"; db.print_private("權益 HK$3,000,000")
+    os.environ.pop("GITHUB_ACTIONS"); db.print_private("本機 HK$1")
+out = buf.getvalue()
+check("Actions 唔印金額、本機照印", "3,000,000" not in out and "Actions 日誌公開" in out and "本機 HK$1" in out, out)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

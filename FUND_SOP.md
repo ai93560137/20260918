@@ -179,17 +179,18 @@
 | 1 風控階梯 | ✅ 初稿，使用者已同意 Ⓐ–Ⓓ、夜盤 ×1.5、Ⓒ／Ⓓ 直接 TG 提示 | 總指揮（R173） | `RISK_LADDER.md`、GCS `ops/books/ladder_state.json` |
 | 2 晨會簡報 | ✅ 平日 08:30 HKT → Telegram（全文存 GCS `ops/brief/`，私人） | 預設分支 | `scripts/morning_brief.py`、`morning_brief.yml`；七段：風控、金絲雀、昨日損益、對帳、偏離、今日事件、今日要做 |
 | 3 每日對帳表 | ✅ 每日 17:20 HKT | 總指揮（R173） | `scripts/daily_books.py`、`ops_daily_books.yml`、`research/reconcile/<日>.md` |
-| 4 事件日曆 | ⏳ 未做 | 預設分支＋風揚 | — |
+| 4 事件日曆 | ✅ 每日 07:00 HKT 合成；規則待風揚確認 | 預設分支（程式）＋風揚（`calendar/rules.json`） | `scripts/event_calendar.py`、`event_calendar.yml`、`calendar/events.csv`、`calendar/WEEK.md`；晨會簡報、週報讀它 |
 | 5 逐日損益帳 | ✅ 每日一列按陣拆分（私人，不進 repo） | 總指揮（R173） | GCS `ops/books/pnl_daily.csv` |
-| 6 流水線心跳 | ✅ 每日 07:30 HKT → Telegram（全綠一行、有紅只列紅項） | 預設分支 | `scripts/ops_heartbeat.py`、`ops_heartbeat.yml`；排程 workflow 應跑／實跑／失敗＋13 個數據來源新鮮度；Routine 的 last_run 仍由總指揮每週看 |
-| 7 週報／檢討會 | ⏳ 未做 | 預設分支 | — |
+| 6 流水線心跳 | ✅ 每日 07:30 HKT → Telegram（全綠一行、有紅只列紅項） | 預設分支 | `scripts/ops_heartbeat.py`、`ops_heartbeat.yml`；排程 workflow 應跑／實跑／失敗＋14 個數據來源新鮮度；每日全文存 GCS `ops/heartbeat/<日>.txt`（週報數紅燈用）；Routine 的 last_run 仍由總指揮每週看 |
+| 7 週報／檢討會 | ✅ 週日 09:00 HKT → Telegram＋[基金報告頁](https://tnt-hk.com/?view=fund_report) | 預設分支 | `scripts/ops_reports.py weekly`、`ops_reports.yml`；本週損益、IDEAS／評分卡／偏離對比 7 天前、對帳 ⚠、心跳紅燈、建議改狀態、下週事件 |
 | 8 人手交易額度 | ✅ NAV 50%／單日虧損 2%，超額只通報 | 總指揮（R173） | `RISK_LADDER.md` |
-| 9 月報 | ⏳ 等缺口 5 累積一個月 | 預設分支 | — |
+| 9 月報 | ✅ 每月 1 日 09:30 HKT（首份有意義嘅係 2026-11-01 報 10 月，帳本由 10-13 起） | 預設分支 | `scripts/ops_reports.py monthly`；網頁公開版唔列權益絕對值（main.py R174 讀 GCS `ops/reports/public.json`） |
 | 10 營運衛生 | ⏳ 部分（WIF 免金鑰已開通） | — | — |
 | 額外：Claude 用量 | ✅ 總指揮 8 次叫醒 → 4 次新開工作階段＋4 次 Actions | 預設分支＋總指揮 | `ops_notify.yml`、`ops/ROUTINE_RISK_NOTIFY.md` |
 
 分工原則：**總指揮擁有風控、對帳、損益帳（私人數據）；預設分支擁有流水線、報告、讀取這些數據的下游（晨會、心跳、月報）**。
 下游只讀總指揮產出的檔，不重算。
+**公開 repo 的 Actions 日誌人人睇到**：含權益／金額的內文只發 Telegram、存私人 GCS，日誌只印字數（`ops_notify.print_private`）。
 
 ## 三、建議順序
 

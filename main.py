@@ -118,6 +118,9 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-13 — [R174] 📊 基金報告頁加「🗓 週報／📘 月報」：GitHub 排程 ops_reports.yml（週日 09:00、每月 1 日 09:30 HKT）
+#     寫 GCS ops/reports/public.json（公開版，不含權益絕對值，各留 12 份）；本頁讀取顯示最新一份＋舊份摺疊，&format=json 多 "reports"。
+#     完整版（含權益）只發 Telegram、存 ops/reports/<kind>/。讀唔到就唔顯示，唔影響原有已實現盈虧表、唔影響下單。
 #   * 2026-10-13 — [R172] 每日成交紀錄：action=futu_pnl 收到成交後，另計當日逐筆成交、按合約彙總、FIFO 平倉（點數、幣值），
 #     存 futu/deals/<香港日期>.json（今日＋前一日，夜盤跨日）。總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂。本機 auto_risk 加 03:05／16:35 匯出時段。
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
@@ -2594,6 +2597,7 @@ def futu_real_view(now=None):
 # =============================================================================
 FUTU_PNL_FILE = "futu/pnl/latest.json"
 FUND_REPORT_START = os.environ.get("FUND_REPORT_START", "2026-09-01")
+OPS_REPORTS_PUBLIC_FILE = "ops/reports/public.json"                                # [R174] 週報／月報公開版
 FUTU_USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
 FUND_REPORT_SHOW_FLOWS = os.environ.get("FUND_REPORT_SHOW_FLOWS", "0") == "1"   # 資金流水含入／出金金額，預設唔公開
 FUTU_DEAL_TZ_HOURS = float(os.environ.get("FUTU_DEAL_TZ_HOURS", "8") or 8)     # 富途成交時間加幾多個鐘＝香港時間（實測 UTC）
@@ -2833,7 +2837,7 @@ def build_fund_report_page(r):
             f"<p class='muted'>富途戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
             f"數據 {esc(r.get('fetched_hkt') or '—')} HKT（成交 {r['deals']} 筆，由 {esc(r.get('since') or '—')} 起攞，用嚟搵開倉成本）。</p>")
     n = lambda v: f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+,.0f}</span>"
-    body = ""
+    body = ops_reports_html(r.get("reports") or {})                    # [R174] 週報／月報放最頂
     yr = r["periods"].get("year") or {}
     tot = sum(v.get("合計", {}).get("net", 0) for v in yr.values())
     body += (f"<div class='grid'><div class='card'><div class='card-title'>已實現淨盈虧（港幣，{esc(r['start'])} 起）</div>"
@@ -2866,19 +2870,53 @@ def build_fund_report_page(r):
                      "?view=fund_report&amp;format=json</a></p>")
 
 
+def ops_reports_public():
+    """[R174] 讀週報／月報公開版；讀唔到回空 dict（唔影響基金報告其他部分）。"""
+    try:
+        idx = gcs_read_json(OPS_REPORTS_PUBLIC_FILE, {})
+    except StorageError as exc:
+        log_event(f"⚠️ [週報／月報讀取失敗] {exc}", severity="WARNING", component="fund_report")
+        return {}
+    return idx if isinstance(idx, dict) else {}
+
+
+def ops_reports_html(idx):
+    """[R174] 最新週報、月報各一份展開，舊份摺疊。"""
+    pre = "<pre style='white-space:pre-wrap; font-size:13px; line-height:1.65; margin:8px 0 0'>{}</pre>"
+    blocks = ""
+    for kind, zh in (("weekly", "🗓 週報"), ("monthly", "📘 月報")):
+        rows = [r for r in idx.get(kind) or [] if isinstance(r, dict) and r.get("text")]
+        if not rows:
+            blocks += f"<div class='section'><b>{zh}</b><p class='muted'>未有（首份{'週日 09:00' if kind == 'weekly' else '每月 1 日 09:30'} HKT 產生）</p></div>"
+            continue
+        latest, older = rows[0], rows[1:]
+        blocks += (f"<div class='section'><b>{zh}・{esc(str(latest.get('key')))}</b>"
+                   f"<span class='muted' style='font-size:12px'>　產生 {esc(str(latest.get('generated_hkt') or '—'))} HKT</span>"
+                   + pre.format(esc(str(latest["text"])))
+                   + "".join(f"<details style='margin-top:6px'><summary class='muted'>{zh}・{esc(str(r.get('key')))}</summary>"
+                             f"{pre.format(esc(str(r['text'])))}</details>" for r in older)
+                   + "</div>")
+    return (blocks + "<p class='muted' style='font-size:12px'>週報／月報公開版唔列權益絕對值；完整版只經 Telegram 發送。"
+            "原料：逐日損益帳、IDEAS.md、評分卡、偏離監控、對帳表、流水線心跳、事件日曆。</p>")
+
+
 def handle_fund_report_get(req):
+    reports = ops_reports_public()
     try:
         doc = gcs_read_json(FUTU_PNL_FILE, {})
     except StorageError as exc:
         log_event(f"⚠️ [基金報告讀取失敗] {exc}", severity="ERROR", component="futu_pnl")
         doc = None
     if not doc or not doc.get("deals"):
-        r = {"status": "empty", "message": "未有富途成交數據（使用者部機跑 gcp_ib/futu_pnl_export.py 推上嚟）"}
+        r = {"status": "empty", "message": "未有富途成交數據（使用者部機跑 gcp_ib/futu_pnl_export.py 推上嚟）",
+             "reports": reports}
         if req.args.get("format") == "json":
             return _json_response(r)
         return html_page("基金報告", f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>"
-                                    f"{page_nav('fund_report')}</div><p class='muted'>{esc(r['message'])}</p>")
+                                    f"{page_nav('fund_report')}</div><p class='muted'>{esc(r['message'])}</p>"
+                                    + ops_reports_html(reports))
     r = futu_pnl_report(doc, req.args.get("start"))
+    r["reports"] = reports
     if req.args.get("format") == "json":
         return _json_response(r)
     return build_fund_report_page(r)
