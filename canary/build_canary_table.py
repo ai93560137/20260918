@@ -26,6 +26,10 @@
 #   * 滾動 252 日 90 分位 = pandas `x.rolling(252).quantile(0.9)`,窗口**含當日**,
 #     線性插值;不足 252 筆的日子為空值。這裡用純標準庫重現,不需安裝 pandas。
 #   * 每隻鳥在自己的交易日曆上算分位,再對齊到 VIX 日曆(美股交易日)。
+#   * MOVE 沿用(2026-10-13 使用者決定):美國債市休市而股市照開的日子(哥倫布日、退伍軍人節),
+#     MOVE 沒有當日值。該列若有 VIX3M(美股期權正常交易),就沿用前一列的 MOVE 值與其 p90
+#     計黃燈,move_carried 記下沿用自哪一天;只沿用一列,連缺兩列以上照舊留空(屬數據缺口,
+#     不是假期)。VIX 只剩一根 bar 的美股假期列(無 VIX3M)不沿用。
 #   * 表中每一列是「以該日收盤算出」的燈色。**用家必須自己套 lag=1**:
 #     T 日的燈色只能用在 T 之後的交易日,不能用在 T 日本身(§7 口徑紀律)。
 #
@@ -61,6 +65,7 @@ WINDOW = 252
 QUANTILE = 0.9
 QUANTILE_DEEP = 0.95   # 深黃(試用)
 FLAT_LOWER = -0.5
+MOVE_CARRY_ROWS = 1    # MOVE 缺值時最多沿用前面幾列(債市休市單日)
 
 # 紅燈或深紅亮起時一併展示(CANARY_PLAYBOOK.md §3 註,2026-09-26 增補)
 RED_NOTE = (
@@ -171,6 +176,8 @@ def build(start=None):
     calendar = [d for d, _ in series["vix"] if d >= first]
 
     rows = []
+    move_prev = None            # 前一列實際有 MOVE 的 (日期, 值, p90),沿用時用
+    move_gap = 0                # 自上一個實際 MOVE 值起連續缺了幾列
     for d in calendar:
         vix = close["vix"].get(d)
         v9 = close["vix9d"].get(d)
@@ -182,9 +189,19 @@ def build(start=None):
         deep = None if s3 is None else s3 > 0
         flat = None if s9 is None else (FLAT_LOWER < s9 <= 0)
 
+        # MOVE 沿用:債市休市日(有 VIX3M、無 MOVE)用前一列的值與 p90
+        mv, mthr, move_carried = close["move"].get(d), p90["move"].get(d), ""
+        if mv is not None:
+            move_prev, move_gap = (d, mv, mthr), 0
+        else:
+            move_gap += 1
+            if move_prev is not None and v3 is not None and move_gap <= MOVE_CARRY_ROWS:
+                move_carried, mv, mthr = move_prev[0].isoformat(), move_prev[1], move_prev[2]
+        eff = {"move": (mv, mthr)}
+
         yellow_parts = {}
         for b in PCT_BIRDS:
-            v, thr = close[b].get(d), p90[b].get(d)
+            v, thr = eff.get(b, (close[b].get(d), p90[b].get(d)))
             yellow_parts[b] = None if (v is None or thr is None) else v > thr
         known = [x for x in yellow_parts.values() if x is not None]
         yellow = None if not known else any(known)
@@ -218,11 +235,11 @@ def build(start=None):
             "date": d.isoformat(),
             "vix9d": fmt(v9, 2), "vix": fmt(vix, 2), "vix3m": fmt(v3, 2),
             "vvix": fmt(close["vvix"].get(d), 2),
-            "move": fmt(close["move"].get(d), 2),
+            "move": fmt(mv, 2),
             "axvi": fmt(close["axvi"].get(d), 2),
             "slope_9d": fmt(s9, 2), "slope_3m": fmt(s3, 2),
             "vvix_p90": fmt(p90["vvix"].get(d), 2),
-            "move_p90": fmt(p90["move"].get(d), 2),
+            "move_p90": fmt(mthr, 2),
             "axvi_p90": fmt(p90["axvi"].get(d), 2),
             "red": flag(red), "deep_red": flag(deep), "flat": flag(flat),
             "yellow_vvix": flag(yellow_parts["vvix"]),
@@ -242,6 +259,7 @@ def build(start=None):
             "vhsi": fmt(vh, 2),
             "vhsi_p90": fmt(vhthr, 2),
             "trial_yellow_vhsi": flag(yellow_vhsi),
+            "move_carried": move_carried,
         })
     return rows
 
