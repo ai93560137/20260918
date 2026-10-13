@@ -6,17 +6,20 @@
 流程
   1. 抓每隻產品約 2 年日線，只用「已收市」嘅 K 線（日期 < 今日香港日期）。
   2. 喺最後一支 K 線偵測形態：吞噬、Pin bar、母子／NR7 收窄、雙頂／雙底、頭肩、20 日區間突破、旗形、三角收斂。
-  3. 每個形態畫好入場（突破掛單或開市價）、止蝕、目標，計 R:R。
-  4. 評分：形態本身 + 順勢 + 位置（近支持阻力）+ R:R + 波動 + 止蝕闊度 → 🟢 可做／🟡 觀察。
+  3. 每個形態畫好入場（突破掛單或開市價）、止蝕（最少 0.5 ATR）、第一目標；出場用移動止蝕（最高收市 − 3 ATR）。
+  4. 🟢 可做＝v2 優勢組合：金屬（金、銀、銅）、上升趨勢、收市喺 200 日線上、做好倉「區間上破」或「牛旗」。
+     其他形態照評分（形態 + 順勢 + 位置 + R:R + 波動 + 止蝕闊度）≥ 3 分列 🟡 觀察——歷史上冇優勢，只供參考。
+     點解咁揀：見 research/pattern_scan/RESEARCH.md（22 隻產品、1995–2026，≤2016 揀、2017+ 驗）。
   5. 寫訊號帳本 research/pattern_scan/signals.csv，並用之後嘅 K 線為舊訊號計成績（前向評分）。
   6. 出 Telegram 一則 + research/pattern_scan/<日>.md、latest.md。
 
-## 預先登記（2026-10-13，寫喺睇任何前向結果之前）
+## 預先登記（v1 2026-10-13；v2 2026-10-14 改出場同 🟢 定義，前向成績由 v2 重新累積）
 
 * **入場**：`stop` 類＝之後 3 支 K 線內觸及入場價先算成交（好倉 High ≥ 入場、淡倉 Low ≤ 入場），開市跳空過咗就用開市價；
   3 支內未觸及＝過期。`market` 類＝下一支 K 線開市價。
-* **出場**：成交後最多 20 支 K 線；同一支 K 線同時掂止蝕同目標當止蝕（保守）；20 支都未掂就用第 20 支收市價按 R 計。
-* **成績單位**：R（1R＝入場到止蝕嘅距離）。未計點差、滑價、隔夜息。
+* **出場**：移動止蝕＝成交後最高收市 − 3 ATR（淡倉相反），每日收市後更新、只收緊唔放鬆；盤中掂到就出，
+  跳空穿過用開市價。最多持有 60 支 K 線，到期用收市價按 R 計。
+* **成績單位**：R（1R＝入場到止蝕嘅距離）。未計點差、滑價、隔夜息（回測估計成本約 0.05 ATR 來回）。
 * **判決**（只計 🟢，已了結 ≥ 60 筆先判）：平均 R > 0 且 t ≥ 2 → 🔍 值得做正式回測；平均 R ≤ 0 → ☠️ 停用「可做」字眼、
   只留觀察；其他 → ⏳ 繼續累積。看完結果唔准改評分規則；要改就換版本號（`VERSION`）重新累積。
 
@@ -42,8 +45,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "research" / "pattern_scan"
 HKT = timezone(timedelta(hours=8))
-VERSION = "v1"
-FOOTER = "只係形態掃描資訊、唔係落單指令；未回測驗證，入場前自己再睇圖、控制注碼。"
+VERSION = "v2"
+FOOTER = "只係形態掃描資訊、唔係落單指令；🟢 規則有回測（research/pattern_scan/RESEARCH.md）但歷史唔代表將來，入場前自己再睇圖、控制注碼。"
 
 # (Yahoo 代號, 名稱, 類別, 小數位)
 UNIVERSE = [
@@ -66,7 +69,12 @@ BASE = {"頭肩頂": 3, "頭肩底": 3, "雙頂": 3, "雙底": 3, "牛旗": 3, "
 REVERSAL = {"頭肩頂", "頭肩底", "雙頂", "雙底", "好倉吞噬", "淡倉吞噬", "錘頭 Pin", "射擊之星 Pin"}
 PIV_K = 3          # 擺動高低點：左右各 3 支
 TRIGGER_BARS = 3   # 掛單有效 K 線數
-HOLD_BARS = 20     # 最長持有
+HOLD_BARS = 60     # 最長持有
+TRAIL_ATR = 3.0    # 移動止蝕：成交後最高收市 − 3 ATR（淡倉相反），每日收市後更新
+MIN_RISK_ATR = 0.5 # 止蝕最少離入場 0.5 ATR（太近會俾雜訊掃走、R 數失真）
+# v2 🟢 規則（2026-10-14 研究，見 research/pattern_scan/RESEARCH.md）：只有呢個組合喺訓練期同測試期都正
+GREEN_CLASSES = {"金屬"}
+GREEN_PATTERNS = {"區間上破", "牛旗"}
 
 
 @dataclass
@@ -311,9 +319,11 @@ def detect(df: pd.DataFrame, i: int) -> list[Setup]:
 
 
 # ---------------------------------------------------------------- 評分
-def score(df: pd.DataFrame, i: int, s: Setup) -> Setup:
+def score(df: pd.DataFrame, i: int, s: Setup, cls: str = "") -> Setup:
     r = df.iloc[i]
     A = r["ATR"]
+    if abs(s.entry - s.stop) < MIN_RISK_ATR * A:  # 止蝕太近就推遠
+        s.stop = s.entry - s.dir * MIN_RISK_ATR * A
     tr = trend_of(r, df["EMA50"].iloc[i - 10])
     pts = BASE.get(s.pattern, 1)
     why = [f"形態 +{pts}"]
@@ -344,21 +354,26 @@ def score(df: pd.DataFrame, i: int, s: Setup) -> Setup:
     if not math.isnan(rank) and rank < 0.2 and s.pattern not in ("收窄 NR7/母子", "三角收斂", "區間上破", "區間下破"):
         pts -= 1; why.append("波動死水 −1")
     s.score, s.why = pts, why
-    s.grade = "🟢" if pts >= 5 and rr >= 2 else ("🟡" if pts >= 3 else "")
+    green = (cls in GREEN_CLASSES and s.pattern in GREEN_PATTERNS and s.dir > 0 and tr == 1
+             and not math.isnan(r["SMA200"]) and r["Close"] > r["SMA200"])
+    if green:
+        why.append("v2 優勢組合：金屬・上升趨勢・200 日線上・做好突破")
+    s.grade = "🟢" if green else ("🟡" if pts >= 3 else "")
     return s
 
 
-def best_setups(df: pd.DataFrame, i: int) -> list[Setup]:
+def best_setups(df: pd.DataFrame, i: int, cls: str = "") -> list[Setup]:
     if i < 60:
         return []
-    found = [score(df, i, s) for s in detect(df, i)]
+    found = [score(df, i, s, cls) for s in detect(df, i)]
     found = [s for s in found if s.grade]
-    return sorted(found, key=lambda s: (-s.score, -s.rr))
+    return sorted(found, key=lambda s: (s.grade != "🟢", -s.score, -s.rr))
 
 
 # ---------------------------------------------------------------- 成績（前向／回測共用）
 def evaluate(df: pd.DataFrame, i: int, s) -> tuple[str, float | None]:
-    """由第 i 支（訊號日）之後計：回傳（狀態, R）。狀態：未到／過期／持有中／目標／止蝕／到期。"""
+    """由第 i 支（訊號日）之後計：回傳（狀態, R）。狀態：未到／過期／持有中／止蝕／到期。
+    v2：唔用固定目標，用移動止蝕（TRAIL_ATR）；跳空穿止蝕用開市價計。"""
     d, entry, stop, target = int(s["dir"]), float(s["entry"]), float(s["stop"]), float(s["target"])
     n = len(df)
     if i + 1 >= n:
@@ -377,14 +392,15 @@ def evaluate(df: pd.DataFrame, i: int, s) -> tuple[str, float | None]:
     risk = abs(fill - stop)
     if risk <= 0 or (d > 0 and fill <= stop) or (d < 0 and fill >= stop):
         return "止蝕", -1.0
+    O, H, L, C, A = (df[c].values for c in ("Open", "High", "Low", "Close", "ATR"))
+    st, best = stop, fill
     for j in range(j0, min(n, j0 + HOLD_BARS)):
-        h, l = df["High"].iloc[j], df["Low"].iloc[j]
-        hit_s = (l <= stop) if d > 0 else (h >= stop)
-        hit_t = (h >= target) if d > 0 else (l <= target)
-        if hit_s:
-            return "止蝕", -1.0
-        if hit_t:
-            return "目標", d * (target - fill) / risk
+        if (d > 0 and L[j] <= st) or (d < 0 and H[j] >= st):
+            px = min(O[j], st) if d > 0 else max(O[j], st)
+            return "止蝕", d * (px - fill) / risk
+        best = max(best, C[j]) if d > 0 else min(best, C[j])
+        ts = best - d * TRAIL_ATR * A[j]
+        st = max(st, ts) if d > 0 else min(st, ts)
     last = min(n, j0 + HOLD_BARS) - 1
     rr = d * (float(df["Close"].iloc[last]) - fill) / risk
     return ("到期" if j0 + HOLD_BARS <= n else "持有中"), rr
@@ -428,7 +444,8 @@ def line_for(sym: str, s: Setup, df, i) -> str:
     side = "🔺做好" if s.dir > 0 else "🔻做淡"
     how = "突破掛單" if s.entry_type == "stop" else "開市入"
     return (f"{name}｜{side}｜{s.pattern}（{s.note}）\n"
-            f"   {how} {fmt(s.entry, dp)}、止蝕 {fmt(s.stop, dp)}、目標 {fmt(s.target, dp)}、R:R {s.rr:.1f}｜趨勢{trend_word(df, i)}｜{s.score} 分")
+            f"   {how} {fmt(s.entry, dp)}、止蝕 {fmt(s.stop, dp)}、之後移動止蝕（最高收市 − {TRAIL_ATR:g} ATR＝{fmt(TRAIL_ATR * df['ATR'].iloc[i], dp)}）、"
+            f"第一目標 {fmt(s.target, dp)}｜趨勢{trend_word(df, i)}")
 
 
 SIG_FIELDS = ["date", "version", "symbol", "pattern", "dir", "entry_type", "entry", "stop", "target", "rr", "score", "grade", "note"]
@@ -475,7 +492,7 @@ def run_scan(a) -> int:
     for sym, df in data.items():
         i = len(df) - 1
         asof[sym] = df.index[i].date()
-        for s in best_setups(df, i)[:1]:  # 每隻產品只揀最好嗰個
+        for s in best_setups(df, i, META.get(sym, ("", ""))[1])[:1]:  # 每隻產品只揀最好嗰個
             picks.append((sym, s))
     picks.sort(key=lambda x: (-x[1].score, -x[1].rr))
     green = [(k, s) for k, s in picks if s.grade == "🟢"]
@@ -501,22 +518,35 @@ def run_scan(a) -> int:
         if idx < 0:
             continue
         st, rr = evaluate(df, idx, r)
-        if st in ("目標", "止蝕", "到期"):
+        if st in ("止蝕", "到期"):
             graded.setdefault(r["grade"], []).append(rr)
         elif st == "持有中":
             open_n += 1
 
     # 訊息
     d0 = max(asof.values()) if asof else today
-    msg = [f"🧭 早盤形態掃描 {today}（用 {d0} 收市日線，{len(data)} 隻產品）", ""]
+    msg = [f"🧭 早盤形態掃描 {today}（用 {d0} 收市日線，{len(data)} 隻產品，{VERSION}）", ""]
     if green:
         msg.append(f"🟢 今日可做（{len(green)}）")
         for k, s in green:
             msg.append(line_for(k, s, data[k], len(data[k]) - 1))
     else:
-        msg.append("🟢 今日可做：冇。冇好形態就唔好做，等。")
+        msg.append("🟢 今日可做：冇。只有「金屬上升趨勢做好突破」歷史上有優勢，今日冇出現，等。")
+    watch = []
+    for sym, df in data.items():
+        name, cls, dp = META.get(sym, (sym, "", 4))
+        if cls not in GREEN_CLASSES:
+            continue
+        i = len(df) - 1
+        r = df.iloc[i]
+        hi20 = df["High"].iloc[i - 19:i + 1].max()
+        ok = trend_of(r, df["EMA50"].iloc[i - 10]) == 1 and r["Close"] > r["SMA200"]
+        gap = (hi20 - r["Close"]) / r["ATR"]
+        watch.append(f"{name} {fmt(r['Close'], dp)}｜{'✅ 上升趨勢' if ok else '✖ 未符合趨勢'}｜離 20 日高 {fmt(hi20, dp)} 仲差 {gap:.1f} ATR")
+    if watch:
+        msg += ["", "🔭 金屬盯盤（🟢 只會喺呢度出）"] + ["   " + w for w in watch]
     if amber:
-        msg += ["", f"🟡 觀察（{len(amber)}）"]
+        msg += ["", f"🟡 觀察（{len(amber)}，歷史冇優勢，只供參考）"]
         for k, s in amber[:8]:
             name = META.get(k, (k,))[0]
             msg.append(f"{name}：{'好' if s.dir > 0 else '淡'}・{s.pattern}・{s.score} 分・R:R {s.rr:.1f}")
@@ -576,14 +606,18 @@ def run_backtest(a) -> int:
             start = max(250, int(df.index.searchsorted(pd.Timestamp(a.since))))
         else:
             start = 250
+        key = f.name.split("_daily.csv")[0]
+        cls = next((c for sym, _, c, _ in UNIVERSE if file_key(sym) == key), "")
         n0 = sum(len(v) for v in by_grade.values())
         for i in range(start, len(df) - 1):
-            for s in best_setups(df, i)[:1]:
+            for s in best_setups(df, i, cls)[:1]:
                 st, rr = evaluate(df, i, {"dir": s.dir, "entry": s.entry, "stop": s.stop, "target": s.target,
                                           "entry_type": s.entry_type})
-                if st in ("目標", "止蝕", "到期"):
+                if st in ("止蝕", "到期"):
                     by_grade[s.grade].append(rr)
                     by_pat.setdefault(f"{s.grade} {s.pattern}", []).append(rr)
+                    half = "≤2016" if df.index[i].year <= 2016 else "2017+"
+                    by_pat.setdefault(f"{s.grade} {key} {half}", []).append(rr)
         print(f"{f.name}: {sum(len(v) for v in by_grade.values()) - n0} 筆已了結")
     print("\n== 按評級 ==")
     for g, rs in by_grade.items():
