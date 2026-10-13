@@ -1,0 +1,77 @@
+name: Screener scorecard & divergence（篩選器前瞻評分卡＋實倉偏離監控）
+
+# 每週一次：
+# 1. 從 VCP 分支（claude/gifted-carson-v2tvhw）用 git archive 抽出每日篩選名單（analysis/newhighs、analysis/vcp）、
+#    成分股名單與 2025–2026 日線，算每檔被選出之後的前瞻超額報酬，跟同日全部成分股對照 → research/screener_scorecard/
+# 2. 用同分支 journal/（蛇蟠陣紙上前向測試）與本分支 PAPER_TRADING.md（風揚陣方向一）比對回測期望 → research/divergence/
+# 規則與門檻預先登記在 scripts/screener_scorecard.py、scripts/strategy_divergence.py 檔頭；只用標準庫。
+on:
+  schedule:
+    - cron: '37 19 * * 6'   # 週日 03:37 HKT（週六 19:37 UTC），美股週五收市數據已進 VCP 分支
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screener-scorecard
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SRC_BRANCH: claude/gifted-carson-v2tvhw
+      TZ: Asia/Hong_Kong
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Extract screener lists, universes and 2025–2026 prices from the VCP branch
+        run: |
+          git fetch --depth 1 origin "$SRC_BRANCH"
+          mkdir -p _src
+          git archive FETCH_HEAD analysis universes journal scripts/universe_hsi_live.txt \
+            ':(glob)data/equities/*/*/prices_2026.csv' ':(glob)data/equities/*/*/prices_2025.csv' | tar -x -C _src
+          echo "newhighs 檔數 $(ls _src/analysis/newhighs/*.csv | wc -l)、vcp 檔數 $(ls _src/analysis/vcp/*.csv 2>/dev/null | wc -l)、價格目錄 $(ls -d _src/data/equities/*/* | wc -l)"
+
+      - name: Screener scorecard
+        run: python3 scripts/screener_scorecard.py --src _src --out research/screener_scorecard --as-of "$(date +%F)"
+
+      - name: Fetch XAUUSD realized-PnL ledger from GCS（有 GCP_SA_KEY 才做）
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ]; then echo "沒有 GCP_SA_KEY secret，略過 XAUUSD 帳本（沿用 repo 內的舊檔）"; exit 0; fi
+          pip install -q -r scripts/requirements-agent.txt
+          python3 scripts/gcp_agent.py cat --object logs/trade_ledger.json > /tmp/ledger.json || { echo "::warning::讀不到 logs/trade_ledger.json（main.py R171 未部署或尚無平倉）"; exit 0; }
+          python3 -c "import json,sys; d=json.load(open('/tmp/ledger.json')); assert isinstance(d,list); json.dump(d, open('research/divergence/xau_trade_ledger.json','w'), ensure_ascii=False, indent=1)" \
+            && echo "XAUUSD 帳本 $(python3 -c "import json; print(len(json.load(open('research/divergence/xau_trade_ledger.json'))))") 列"
+
+      - name: Strategy divergence
+        run: python3 scripts/strategy_divergence.py --journal _src/journal --out research/divergence --as-of "$(date +%F)"
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BR="${GITHUB_REF_NAME}"
+          add_out() { git add research/screener_scorecard research/divergence/DIVERGENCE.md; [ -f research/divergence/xau_trade_ledger.json ] && git add research/divergence/xau_trade_ledger.json; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          MSG="chore(scorecard): 篩選器評分卡＋偏離監控 $(date +%F)"
+          git commit -q -m "$MSG"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BR" && exit 0
+            sleep $((i * 7))
+            git fetch origin "$BR"
+            git reset --mixed FETCH_HEAD
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "$MSG"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1

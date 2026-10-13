@@ -125,3 +125,54 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 ## 2026-10-12 R157：風揚陣波幅頁、地載陣頁「列印成 PDF」
 - `?view=futu_range`（風揚陣恒指波幅，ES 頁共用）同 `?view=dizai`（地載陣）各加「🖨️ 列印成 PDF」按鈕（window.print，列印視窗揀「另存為 PDF」）；`PRINT_CSS`：A4、導覽列／按鈕隱藏、區塊／卡片／表格列／圖唔喺中間斷開（放唔落就去下一頁）、捲動框全部展開、列印標題行帶香港時間。地載陣頁改用 JS 定時重載（列印中唔重載）。
+
+## 2026-10-12 R159：☁️ 雲垂陣頁（?view=yunchui）
+- 雲垂陣工作階段請求（使用者指示）：`?view=yunchui`（&format=json），風格同地載陣。資料：雲垂陣分支 `claude/dazzling-curie-f3xzb8` 的 `tradingview/data_external/yunchui_public.json`（公開 raw，快取 120 秒、GCS `yunchui/public.json` 後備；可用環境變數 `YUNCHUI_PUBLIC_URL` 改位置）。
+- 即時 Δ（月跨式／對沖／含對沖淨 Δ／恒指全部）、止損用量、對沖手數優先用 `futu/risk/latest.json`（R154 `delta_parts`、`futu_real_view`），標 HKT；冇即時值先退回 JSON 日報時點並標「非即時」。
+- 版面：策略簡介＋規則、Δ 預算條（±0.5）、持倉卡（行使價、到期、權利金、止損線）、事件時間線、更正紀錄（原文全文）；🖨️ 列印成 PDF（R157）；`page_nav` 同五個靜態頁導覽加「☁️ 雲垂陣」；策略總表雲垂陣一格加「→ 詳細頁」連結。唔顯示權益、保證金、帳戶資料。
+
+## 2026-10-12 R160：🐤 金絲雀頁（?view=canary）
+- 金絲雀工作階段（session_01KucjwzRvueynnK5qm26y9g）請求，使用者確認「做金絲雀頁」、策略總表頂部唔加燈色。只顯示金絲雀工作流產出（唔重算燈色），唔影響下單、唔入電閘。
+- 數據：預設分支 `canary/` 四個檔（`CANARY_RAW_BASE` 可改）；記憶體快取 30 分鐘、GCS `canary/` 後備（canary_daily.csv 只存最後 40 列）；讀唔到就顯示上次成功版本同讀取時間；過香港 07:30 而最後報告日≠今日就黃字「今日金絲雀未更新」。
+- `tests/test_canary_page.py`（33 項，假抓取）＋ `tests/fixtures_canary/`（真實檔案節錄）。`canary/` 目錄、canary_daily.yml、canary_broadcast.yml 由金絲雀工作階段負責，本改動冇碰。
+- 同批：風揚陣導覽改名（風揚陣恆指波幅／風揚陣ES 波幅；NQ 頁待 epic-ramanujan 合併後同樣改名）、ES／NQ 頁配色同恒指分開（`FY_THEMES`）。
+
+## 2026-10-12 R161：錦囊九十筆頁加「🖨️ 列印成 PDF」
+- 靜態 `jinnang_tracker.html`（`?view=jinnang_tracker`）加按鈕＋列印樣式（A4、導覽列／按鈕／編輯面板隱藏、輪次格同區塊唔斷開、放唔落就換頁、列印一律淺色、頁頂列印時間香港時間）；唔改 main.py、唔動 localStorage／資料邏輯。`test_risk_gate` 加檢查。
+
+## 2026-10-12 R162：策略總表加「🖨️ 列印成 PDF」
+- `?view=strategies` 加按鈕＋列印樣式；總表同「💼 富途實倉」兩個長區塊容許跨頁（`.print-flow`），一個陣嘅標題＋表格作一塊（`.print-keep`）、表格列唔斷；自動重載改 JS（列印中唔重載）。
+
+## 2026-10-12 R164：導覽「八陣圖指令台」改名「蛇蟠陣」
+- 使用者要求：`PAGE_LINKS` 同五個靜態頁導覽 `⚔️ 八陣圖指令台` → `🐍 蛇蟠陣`（頁面 `?view=bazhentu` 不變）。
+## 2026-10-12 部署紀錄（蛇蟠陣工作階段要求，使用者貼入）
+- R163（策略書頁版面，#87，`7cec29501`）已部署：修訂 `zhuge-risk-manager-00288-6qk`；factsheet 頁有列印按鈕、導覽列；welcome／yunchui／strategies 200。
+
+## 2026-10-12 R165：📈 HTF 每日掛單頁（?view=htf）＋策略總表四行
+- 鳥翔分支（`claude/stock-research-k9nzau`）請求，使用者確認「做 HTF 頁」。讀該分支 `analysis/htf_daily/`（公開 raw，`HTF_RAW_BASE` 可改）：`<mk>_latest.json`、`<mk>_orders_<date>.csv`、`<mk>_positions.csv`、`<mk>_closed.csv`、`names.json`；記憶體快取 30 分鐘、GCS `htf/` 後備（orders 用固定 key）；讀唔到用上次成功版本並標明。唔重算訊號、唔落單、冇改該分支。
+- 頁面：四市場摘要卡、每市場（數據日、貨幣、大市過濾狀態）明日掛單（按 dist_pct 排）、持倉（賣出紅／賣一半黃／持有灰）、前向已平倉（筆數、平均、最近 15）、參數行（美股標 alpha t 1.48 孤峰）、怎樣照做、證偽頁尾；🖨️ 列印（長區塊可跨頁、表頭每頁重印）。策略總表加 `htf_hk/tw/jp/us` 四行（n_open>0 → 做多、lots=n_open）。
+- `tests/test_htf_page.py`（33 項，假抓取）＋ `tests/fixtures_htf/`；導覽頁數 17。
+
+## 2026-10-12 R166：蛇蟠陣頁（bazhentu.html）版面改同雲垂陣一樣、綠色主色
+- 使用者要求：排版、字體、格式同雲垂陣（BASE_CSS：.nav 品牌列＋導覽、.section 卡片、系統字體）一致，主色改綠（`--snake:#1b7f4f`；雲垂陣係藍）。JS、所有欄位 id、localStorage、levels.json 自動套用邏輯原封不動；舊版深色模式同 Noto Serif 字體移除（同雲垂陣一樣冇）。
+- 2026-10-12 R165／R166 部署：第一次 Cloud Build 失敗（main.py 用咗 Python 3.12 先容許嘅 f-string 巢狀同款引號；Cloud Run 係 3.11，本機 3.13 編譯過咗），修正後修訂 `zhuge-risk-manager-00290-lpq`。之後部署前用 `python3.11 -m py_compile main.py`（已寫入 CLAUDE.md）。
+
+## 2026-10-12 R167：導覽「📈 HTF 掛單」改「📈 鳥翔 HTF 掛單」
+- 使用者要求；`PAGE_LINKS`＋五個靜態頁；HTF 頁標題同列印標題一併改「鳥翔 HTF 每日掛單」。路由 `?view=htf` 不變。
+
+## 2026-10-12 R168：首頁移除六個大按鈕
+- 使用者要求「6 個大按鈕已不合用」。`render_welcome_page` 不再輸出 `<div class='tiles'>`；導覽列已涵蓋全部 17 頁。
+  `HUB_TILES`／`HUB_ICONS` 保留備用。與 R167 同在 PR #89，未部署；上線後退回目標 `zhuge-risk-manager-00290-lpq`。
+- 2026-10-12 部署：R167＋R168 → 修訂 `zhuge-risk-manager-00291-vgl`（來源 `ecdca4f04`），五頁 200。退回：`rollback --to zhuge-risk-manager-00290-lpq --yes`。
+
+## 2026-10-12 R169：錦囊執行單、錦囊九十筆加頁首標題
+- 使用者要求兩頁加上同「核心控制台」一樣嘅頁首（品牌標誌＋頁面標題）。`jinnang_sheet.html`／`jinnang_tracker.html`
+  喺導覽列前加 `.brand-head`（logo SVG＋`<h1 class="page-title">`），CSS 同 BASE_CSS 嘅 `.brand/.brand-logo/.page-title` 一致；
+  列印時隱藏。未部署。
+- 2026-10-12 部署：R169 → 修訂 `zhuge-risk-manager-00292-txn`（來源 `f518d119f`），五頁 200，兩頁頁首線上確認。退回：`rollback --to zhuge-risk-manager-00291-vgl --yes`。
+
+## 2026-10-12 R170：錦囊兩頁頁首闊度排版同風揚陣一致
+- 使用者要求「闊度和排版要和風揚一致」。`jinnang_sheet.html`／`jinnang_tracker.html`：頁首標誌＋標題＋導覽列包入 `.topnav`
+  白色卡（同 BASE_CSS `.nav`：padding 15px 20px、圓角 12px、陰影），`.wrap` 闊度 860／880px → 1050px（同 `.container`），
+  去掉導覽列 `margin-bottom:-28px`；列印時整個卡隱藏。未部署。
+- 2026-10-12 部署：R170 → 修訂 `zhuge-risk-manager-00293-ffx`（來源 `9dbd4bb4b`），五頁 200，兩頁 .topnav 線上確認。退回：`rollback --to zhuge-risk-manager-00292-txn --yes`。

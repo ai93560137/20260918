@@ -1,5 +1,5 @@
 """main.py 風控電閘改動的回歸測試。用假的 GCS（記憶體）跑，不碰雲端。"""
-import io, json, os, sys, types, time
+import io, json, os, re, sys, types, time
 
 os.environ.setdefault("GCP_SECRET_TOKEN", "tok")
 sys.path.insert(0, "/home/user/20260918")
@@ -336,9 +336,9 @@ for f, must in (("gates.html", ["gate.driver", "entry_engine", "gate.applies", "
     for m in must:
         check(f"{f} 含「{m}」", m in txt)
 
-print("\n=== 10d. 十二頁導覽列一致（[R131] 八陣圖指令台改為站內頁；[R137] 加地載陣；[R144] 加策略總表）===")
+print("\n=== 10d. 十七頁導覽列一致（[R131] 八陣圖指令台改為站內頁；[R137] 加地載陣；[R144] 加策略總表）===")
 VIEWS = [v for v, _ in main.PAGE_LINKS]
-check(f"main.py 的 PAGE_LINKS 有 13 頁（{len(VIEWS)}）", len(VIEWS) == 13, VIEWS)
+check(f"main.py 的 PAGE_LINKS 有 17 頁（{len(VIEWS)}）", len(VIEWS) == 17, VIEWS)
 EXTERNAL = [v for v in VIEWS if v.startswith("http")]
 check("沒有站外連結（八陣圖指令台已改為 ?view=bazhentu）", EXTERNAL == [] and "bazhentu" in VIEWS, VIEWS)
 for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.html", "bazhentu.html"):
@@ -346,8 +346,11 @@ for f in ("jinnang_sheet.html", "jinnang_tracker.html", "gates.html", "order.htm
     self_view = f[:-5] if f.startswith(("jinnang", "bazhentu")) else f[:-5] + "_app"
     # 當前頁不該連到自己（下面另有一項專門檢查），所以從必須出現的清單裡排除
     miss = [v for v in VIEWS if v != self_view and v not in txt]
-    check(f"{f} 連到其餘 12 頁", not miss, f"缺 {miss}")
+    check(f"{f} 連到其餘 16 頁", not miss, f"缺 {miss}")
     check(f"{f} 不再連到舊 artifact", "claude.ai/artifact" not in txt, f)
+
+_trk = io.open("/home/user/20260918/jinnang_tracker.html", encoding="utf-8").read()
+check("錦囊九十筆頁有「列印成 PDF」按鈕、列印樣式（A4、區塊不斷開）", "列印成 PDF" in _trk and "window.print()" in _trk and "@page{size:A4" in _trk and "break-inside:avoid" in _trk)
 
 print("\n=== 10e. page_nav：[R131] 八陣圖指令台是站內頁，page_nav 仍保留站外連結能力（R91）===")
 nav = main.page_nav("welcome")
@@ -355,13 +358,19 @@ check("指令台是站內連結", "href='?view=bazhentu'" in nav, nav[:400])
 check("沒有把網址接在 ?view= 後面", "?view=https" not in nav, nav[:400])
 check("站內連結照舊", "href='?view=jinnang_tracker'" in nav, nav[:400])
 nav_bz = main.page_nav("bazhentu")
-check("指令台頁自己那格標成 nav-current", "nav-current'>⚔️ 八陣圖指令台" in nav_bz, nav_bz[:400])
+check("指令台頁自己那格標成 nav-current", "nav-current'>🐍 蛇蟠陣" in nav_bz, nav_bz[:400])
 for f, cur in (("jinnang_sheet.html", "錦囊執行單"), ("jinnang_tracker.html", "錦囊九十筆")):
     txt = io.open("/home/user/20260918/" + f, encoding="utf-8").read()
     check(f"{f} 自己那格標成 current",
           f'class="nav-link nav-current" aria-current="page">✅ {cur}<' in txt
           or f'class="nav-link nav-current" aria-current="page">🗒️ {cur}<' in txt)
     check(f"{f} 沒有連到自己", f'href="?view={f[:-5]}"' not in txt)
+    # [R169] 頁首：品牌標誌＋頁面標題（與 main.py 其餘頁面一致），列印時隱藏
+    check(f"{f} 有品牌頁首", '<div class="brand-head"><div class="brand-logo"><svg' in txt
+          and f'<h1 class="page-title">' in txt and f"{cur}</h1>" in txt)
+    check(f"{f} 頁首喺導覽列之前", txt.index('class="brand-head"') < txt.index('<nav class="nav-links"'))
+    check(f"{f} 列印時隱藏頁首",
+          re.search(r"@media print[\s\S]*?\.brand-head[^{}]*\{[^}]*display:none", txt) is not None)
 # 兩頁實際 serve 出來要含全部連結
 # [R91] 站外連結是完整網址，不會長成 ?view=...，所以兩種要分開比。
 def _linked(html, view):

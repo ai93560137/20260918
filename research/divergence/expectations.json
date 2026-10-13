@@ -1,0 +1,86 @@
+{
+  "_readme": "各策略的回測期望，供 scripts/strategy_divergence.py 比對實倉／紙上結果。數字抄自各回測文件，改這裡要附來源。",
+  "snake_hsi": {
+    "name": "🐍 蛇蟠陣 HSI 3 日通道 sar（紙上前向測試）",
+    "unit": "HKD",
+    "bt_source": "DONCHIAN_BACKTEST.md（分支 claude/gifted-carson-v2tvhw）補充：HSI1! TradingView Deep Backtesting 8.5 年，含佣金與滑點",
+    "bt_n": 378,
+    "bt_mean": 2997,
+    "bt_std": 36909,
+    "bt_t": 1.58,
+    "bt_max_dd_pct": 23.75,
+    "extra_rule": "實際成交價 − 通道價 的平均滑價 > 5 點（超出 1 tick 假設）即觸發重審（DONCHIAN_BACKTEST.md）"
+  },
+  "strangle_1sigma": {
+    "name": "🌬️ 風揚陣方向一 每週沽恒指週期權 1σ 勒式",
+    "unit": "點",
+    "bt_source": "research/hsi_futures_range/STRANGLE_1SIGMA.md 二、回測成績（51 週，不挑時機，港交所官方結算價）",
+    "bt_n": 51,
+    "bt_mean": 55,
+    "bt_median": 93,
+    "bt_t": 2.85,
+    "bt_std": null,
+    "bt_max_dd": 472
+  },
+  "manual_es_put": {
+    "name": "✋ 使用者人手 EW2610 P7,750",
+    "note": "人手交易，無回測；只看止損線使用率",
+    "stop_use_keys": [
+      "EW P7750"
+    ]
+  },
+  "xauusd_v12": {
+    "name": "智能諸葛亮 XAUUSD v12（strict K=1.0、TP=3R）",
+    "bt_source": "BACKTEST.md 2026-01-02 → 09-16 全期間掃描，TP=3R 重跑",
+    "bt_n": 173,
+    "bt_win_rate": 0.31,
+    "bt_pf": 1.12,
+    "bt_return_pct": 3.0,
+    "bt_max_dd_pct": 6.8,
+    "note": "每筆平均 = 回測總報酬 3.0% ÷ 173 筆 ≈ 0.017% 淨值；回測沒有逐筆標準差，只比勝率與回撤",
+    "live": {
+      "type": "xau_ledger_jsonl",
+      "path": "research/divergence/xau_trade_ledger.json",
+      "note": "由 main.py handle_heartbeat（R171）在 MT5 balance 變動時寫 GCS logs/trade_ledger.json；workflow 用 gcp_agent.py cat 抓下來"
+    },
+    "bt_mean_per_trade_pct": 0.0173
+  },
+  "yunchui_hsi_straddle": {
+    "name": "☁️ 雲垂陣 小型恒指 ATM 月跨式＋期指 Δ 對沖（1 組，名義 HK$250k）",
+    "unit": "HKD／月",
+    "bt_source": "分支 claude/dazzling-curie-f3xzb8 tradingview/HSI_HANDOFF.md §10.8d（23 年、279 月，整數手對沖版 t 約 3）；§10.8c 全成本 CFD 版月均 +710、t 2.75、勝率 69%",
+    "bt_n": 279,
+    "bt_mean": 1060,
+    "bt_t": 3.0,
+    "bt_std": null,
+    "bt_win_rate": 0.74,
+    "bt_worst_month": -36243,
+    "bt_max_dd": 48359,
+    "nominal_hkd": 250000,
+    "live_rules": "持有到現金結算；買回總價 ≥ 2,216 點（2× 權利金）止損；|Δ| > 0.5 手用 MHI 拉回；單月虧超過名義 20% → 停；帳戶權益 < HK$750,000 硬止損",
+    "live": {
+      "type": "ledger_csv",
+      "path": "research/divergence/ledger_yunchui.csv",
+      "filter_instrument": "MHI"
+    }
+  },
+  "yunchui_mes_straddle": {
+    "name": "☁️ 雲垂陣 MES 月度 ATM 對沖跨式（1 組，名義 ≈ HK$305k）",
+    "unit": "% 名義／月",
+    "bt_source": "分支 claude/dazzling-curie-f3xzb8 tradingview/US_VRP_NOTES.md 動態退出測試（ES 440 月，止損 −100% 權利金那列，等於現行「買回 ≥ 2× 權利金」規則）；SOP 預期月均 +0.9% 名義",
+    "bt_n": 440,
+    "bt_mean": 0.68,
+    "bt_t": 9.2,
+    "bt_std": null,
+    "bt_win_rate": 0.84,
+    "bt_worst_month": -9.9,
+    "bt_max_dd": null,
+    "nominal_hkd": 305000,
+    "live_rules": "到期日美東 16:00 前買回；買回總價 ≥ 357 點（2× 權利金）止損；|Δ| > 0.5 用 MES 期貨對沖；VIX − HV20 < 0 暫停新賣出",
+    "live": {
+      "type": "ledger_csv",
+      "path": "research/divergence/ledger_yunchui.csv",
+      "filter_instrument": "MES"
+    }
+  }
+}

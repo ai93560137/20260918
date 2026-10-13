@@ -1,0 +1,30 @@
+{
+ "market": "us",
+ "date": "2026-10-09",
+ "params": {
+  "adr_min": 0.05,
+  "chase": 0.02,
+  "d": 0.1,
+  "flag_max": 10,
+  "g": 0.15,
+  "hold": 60,
+  "ma20": true,
+  "mkt": true,
+  "mom_q": 99,
+  "partial": null,
+  "risk": false,
+  "stop": 1.0,
+  "trail": "ma10",
+  "vol": 0.6
+ },
+ "n_orders": 0,
+ "n_open": 0,
+ "n_closed": 0,
+ "mkt_ok": true,
+ "mkt_filter": true,
+ "fwd_start": "2026-10-13",
+ "closed_avg": null,
+ "closed_win": null,
+ "orders_top": [],
+ "positions": []
+}
