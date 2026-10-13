@@ -16,7 +16,17 @@
  "notional_hkd": 250000,
  "stop_buyback_pts": 2216,
  "note": "部位止損：跨式買回總價 >= 2216 點（2x 權利金）即平倉；帳戶硬止損權益 < HK$750,000",
- "hedges": [],
+ "hedges": [
+  {
+   "side": "sell",
+   "qty": 1,
+   "price": 24305.0,
+   "contract": "MHI Oct-26 (MHI2610)",
+   "date": "2026-10-13",
+   "time_hkt": "2026-10-13（成交時間未提供，使用者回覆於 2026-10-13 15:07 HKT 前後）",
+   "source": "使用者親口通報（2026-10-13）；待富途 API 下次快照核實"
+  }
+ ],
  "hedge_history": [
   {
    "side": "sell",
@@ -45,8 +55,8 @@
    "note": "總指揮 2026-10-13 轉述：使用者已確認 MHI2610 −1 對沖已平倉；平倉價／時間我未取得，已實現盈虧待使用者提供。"
   }
  ],
- "hedge_verified_hkt": "2026-10-13 15:00",
- "hedge_expected_mhi_qty": 0,
+ "hedge_verified_hkt": "2026-10-13 15:07",
+ "hedge_expected_mhi_qty": -1,
  "other_strategy_note": "使用者確認（2026-10-11）：MHI2610 自 10/1 起嘅大量即日成交（最多同時 12 手空倉）係另一個策略做；該策略收市前不一定平倉（可能過夜），而且冇獨立回報渠道。富途按合約計淨倉，所以 API 讀到嘅 MHI2610 淨手數混埋兩個策略。規則：雲垂對沖手數以 hedge_expected_mhi_qty（現為 −1，10/9 19:49 @24,200）為準，直至使用者報告平倉／加減對沖；其他策略手數 ＝ API 實際 MHI2610 淨手數 − hedge_expected_mhi_qty（殘差推算）。日報要同時列：雲垂淨 Δ（按申報對沖）同 恒指全部淨 Δ（按實際持倉），兩者相差＝其他策略。若 API 淨手數出現變動而使用者冇報告對沖變動，視為其他策略變動並註明，不自動改 hedges。",
  "commander": {
   "session": "session_01N1jfpEJciBkfAgwtd4QxgU（分支 claude/beautiful-hypatia-8qrgjj）",
@@ -59,7 +69,7 @@
   ],
   "hedge_status_source": "總指揮通知（API 直讀）為雲垂對沖狀態主要核實來源；落單權只喺使用者"
  },
- "hedge_verified_note": "總指揮 14:22 快照＋轉述使用者確認：MHI2610 對沖已平（淨 0）；HSI2610 −1 係蛇蟠陣倉（亦已平再開）。雲垂 25000 跨式現時冇對沖，跨式 Δ ≈ +0.63 > +0.5 → 16:30 前賣 1 手 MHI2610 重新對沖（使用者決定）。",
+ "hedge_verified_note": "使用者通報：10/13 重新賣出 1 手 MHI2610 @24,305（舊對沖 10/9 @24,200 已於 09:36–14:22 間平倉，買回價未提供）。等總指揮下次快照核實 MHI2610 淨 −1。跨式 Δ ≈ +0.61，含對沖淨 ≈ −0.39；買回觸發 F≈24,430。",
  "other_positions_flag": {
   "HK.HSI2610": {
    "qty": 1,
