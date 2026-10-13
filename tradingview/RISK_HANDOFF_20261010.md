@@ -195,3 +195,5 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 總指揮：16:45 四陣摘要加「當日平倉」一節；新增 03:15 HKT 夜盤成交通報；有 MHI／MES 成交就通報雲垂（合約、價、時間、已實現）。
 - 首次：請使用者同富途 App 成交紀錄核對。未部署；本機要攞新版 `auto_risk.py`（RUNBOOK §9）。
 
+- 2026-10-13 部署：R172 → 修訂 `zhuge-risk-manager-00295-77j`（來源 `1a4ef8a93`），五頁 200。退回：`rollback --to zhuge-risk-manager-00294-k9r --yes`。
+  本機未攞新版 auto_risk.py 之前，futu/deals/ 只會喺 05:30 基金報告匯出時產生一次。
