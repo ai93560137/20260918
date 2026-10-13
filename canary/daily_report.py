@@ -31,6 +31,7 @@ import csv
 import hashlib
 import math
 import os
+import statistics
 import sys
 from datetime import date, datetime, timedelta, timezone
 
@@ -42,6 +43,7 @@ TABLE = os.path.join(HERE, "canary_daily.csv")
 OUT_MD = os.path.join(HERE, "DAILY_REPORT.md")
 OUT_LOG = os.path.join(HERE, "daily_log.csv")
 OUT_TG = os.path.join(HERE, "tg_daily.txt")
+OUT_POSTHOC = os.path.join(HERE, "posthoc_log.csv")    # 📐 後驗前向紀錄:每個燈色日一列,供每週偏離監控對比歷史期望
 OUT_SENT = os.path.join(HERE, "sent_log.csv")          # 只追加、不覆蓋:每次發出的訊息各一列,供次日回驗
 
 BIRDS = ["vix9d", "vix", "vix3m", "vvix", "move", "axvi", "vhsi"]   # vhsi 為試用層資料,亞洲時段
@@ -232,32 +234,44 @@ def load_sent():
         return list(csv.DictReader(fh))
 
 
-def spx_fwd5(light_date):
+def fwd5_from_series(ds, px, light_date):
     """燈色日 D 之後 5 個交易日的 SPX 實現波動(與 lab_common.fwd 同口徑:5 個對數報酬的樣本標準差×√252×100)、
-    是否出現 −2% 單日,以及 D 之前 252 日的無條件 5 日 RV 中位。D+5 未齊則回 None。"""
-    if not os.path.exists(SPX_FILE):
-        return None
-    ser = load_close(SPX_FILE)
-    ds = [d.isoformat() for d, _ in ser]
-    px = [v for _, v in ser]
+    是否出現 −2% 單日,以及 D 之前 252 個 5 日 RV 的中位(只取完全在 D 以前結束的窗口,不偷看 D 之後)。
+    ds/px 為 SPX 日期(ISO)與收盤。D+5 未齊則回 None。"""
     # D 不在 SPX 日曆上(例如假期孤 bar)→ 取 ≤ D 的最後一個 SPX 交易日
     i = max((k for k, d in enumerate(ds) if d <= light_date), default=None)
     if i is None or i + 5 >= len(px):
         return None
-    r = [math.log(px[k + 1] / px[k]) for k in range(len(px) - 1)]      # r[k] = k→k+1 的報酬,對應日期 ds[k+1]
+    r = [math.log(px[k + 1] / px[k]) for k in range(max(0, i - 260), i + 5)]  # 只算用得到的一段
+    off = max(0, i - 260)                                               # r[k − off] = k→k+1 的報酬(日期 ds[k+1])
 
-    def rv(j):                                                          # 以 j 為訊號日:報酬 r[j..j+4](日期 j+1..j+5)
-        w = r[j:j + 5]
-        if len(w) < 5:
+    def rv(j):                                                          # 以 j 為訊號日:報酬 j..j+4(日期 j+1..j+5)
+        w = r[j - off:j - off + 5]
+        if j < off or len(w) < 5:
             return None
         m = sum(w) / 5
         return math.sqrt(sum((x - m) ** 2 for x in w) / 4) * math.sqrt(252) * 100
 
     fwd = rv(i)
-    down = any(x < -0.02 for x in r[i:i + 5])
-    hist = [v for v in (rv(j) for j in range(max(0, i - 252), i)) if v is not None]
-    med = sorted(hist)[len(hist) // 2] if hist else None
+    down = any(x < -0.02 for x in r[i - off:i - off + 5])
+    # 基準:窗口 j..j+4 的最後一個報酬落在 D 當日或之前(j + 4 ≤ i − 1),共 252 個
+    hist = [v for v in (rv(j) for j in range(max(off, i - 256), i - 4)) if v is not None]
+    med = statistics.median(hist) if hist else None
     return {"spx_day": ds[i], "end": ds[i + 5], "rv": fwd, "down2": down, "median": med}
+
+
+_SPX_CACHE = {}
+
+
+def spx_fwd5(light_date):
+    """每日 📐 後驗用;讀 SPX_FILE 後交給 fwd5_from_series。"""
+    if not os.path.exists(SPX_FILE):
+        return None
+    if SPX_FILE not in _SPX_CACHE:
+        ser = load_close(SPX_FILE)
+        _SPX_CACHE[SPX_FILE] = ([d.isoformat() for d, _ in ser], [v for _, v in ser])
+    ds, px = _SPX_CACHE[SPX_FILE]
+    return fwd5_from_series(ds, px, light_date)
 
 
 def verify_previous(rows, sent, today):
@@ -701,6 +715,56 @@ def build_report(rows, health, today, sent=None):
     return "\n".join(md) + "\n", tg_text, log_row, warnings, sent_row, posthoc_done
 
 
+POSTHOC_FIELDS = ["light_date", "state", "axis_short", "axis_disaster", "yellow", "move_carried",
+                  "spx_day", "end", "rv", "median", "ratio", "down2", "first_report_date"]
+
+
+def posthoc_state(row):
+    """與 posthoc_expect.state_of 同一套分組(按發出時的燈)。"""
+    a_s, a_d, y = row.get("axis_short", ""), row.get("axis_disaster", ""), row.get("yellow", "")
+    if a_d == "深紅":
+        return "深紅"
+    if a_s == "紅":
+        return "紅"
+    if a_s == "" or a_d == "":
+        return ""
+    return {"1": "黃", "0": "綠"}.get(y, "")
+
+
+def append_posthoc(sent):
+    """把 sent_log 裡已後驗(posthoc_done=1)的燈色日寫進 posthoc_log.csv;已有的不重寫(冪等,可補舊列)。
+    燈用該燈色日第一則發出訊息的燈(即當時對外說的燈)。回傳新增列數。"""
+    have = set()
+    if os.path.exists(OUT_POSTHOC):
+        with open(OUT_POSTHOC, newline="", encoding="utf-8") as fh:
+            have = {r["light_date"] for r in csv.DictReader(fh)}
+    first_by_ld = {}
+    for r in sent:
+        if r.get("posthoc_done") == "1" and r["light_date"] not in first_by_ld:
+            first_by_ld[r["light_date"]] = r
+    new = []
+    for ld in sorted(first_by_ld):
+        if ld in have:
+            continue
+        r = first_by_ld[ld]
+        ph = spx_fwd5(ld)
+        if ph is None or not ph["median"]:
+            continue
+        new.append({"light_date": ld, "state": posthoc_state(r), "axis_short": r.get("axis_short", ""),
+                    "axis_disaster": r.get("axis_disaster", ""), "yellow": r.get("yellow", ""),
+                    "move_carried": r.get("move_carried", ""), "spx_day": ph["spx_day"], "end": ph["end"],
+                    "rv": f"{ph['rv']:.4f}", "median": f"{ph['median']:.4f}", "ratio": f"{ph['rv'] / ph['median']:.4f}",
+                    "down2": "1" if ph["down2"] else "0", "first_report_date": r.get("report_date", "")})
+    if new:
+        exists = os.path.exists(OUT_POSTHOC)
+        with open(OUT_POSTHOC, "a", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=POSTHOC_FIELDS)
+            if not exists:
+                w.writeheader()
+            w.writerows(new)
+    return len(new)
+
+
 def append_log(row):
     existing = []
     if os.path.exists(OUT_LOG):
@@ -750,7 +814,9 @@ def main():
     else:
         n = append_log(log_row)
         m = append_sent(sent, sent_row, posthoc_done)
-        print(f"[daily_report] 已寫入 DAILY_REPORT.md、tg_daily.txt;daily_log.csv 共 {n} 列;sent_log.csv 共 {m} 列;警告 {len(warnings)} 則")
+        k = append_posthoc(sent)
+        print(f"[daily_report] 已寫入 DAILY_REPORT.md、tg_daily.txt;daily_log.csv 共 {n} 列;sent_log.csv 共 {m} 列;"
+              f"posthoc_log.csv 新增 {k} 列;警告 {len(warnings)} 則")
     if warnings:
         print("[daily_report] " + " | ".join(warnings), file=sys.stderr)
 
