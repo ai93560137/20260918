@@ -197,3 +197,16 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 
 - 2026-10-13 部署：R172 → 修訂 `zhuge-risk-manager-00295-77j`（來源 `1a4ef8a93`），五頁 200。退回：`rollback --to zhuge-risk-manager-00294-k9r --yes`。
   本機未攞新版 auto_risk.py 之前，futu/deals/ 只會喺 05:30 基金報告匯出時產生一次。
+
+## 2026-10-13 R173：每日對帳表、逐日損益帳、風控階梯（FUND_SOP 缺口 3／5／1／8）
+- `scripts/daily_books.py`（純 Python，Actions `ops_daily_books.yml` 每日 17:20 HKT）：
+  對帳表 `research/reconcile/<日>.md`（富途 `futu/risk/latest.json`／`POSITIONS.md` 解析／蛇蟠 `journal/position.json`、雲垂 `position.json`
+  ＋`position_mes.json`、風揚 `PAPER_TRADING.md` 三方並列；⚠ 原因 `explanations.json`；連續兩日未解釋升級 Ⓑ ＋ TG）；
+  損益帳 GCS `ops/books/pnl_daily.csv`（含權益，私人）；階梯等級 `ops/books/ladder_state.json`，Ⓒ／Ⓓ 直接 TG 提示（使用者同意）。
+- `RISK_LADDER.md`：四層、日間線（使用者同意初稿）、夜盤線 ×1.5（使用者：設更保守線）、人手額度 NAV 50%／單日 2%（同意，超額只通報）、
+  Cloud Run R149 即時門檻對齊建議（§4，待使用者同意先 `env set`）。
+- 首日 2026-10-13：9 個合約 8 個 ✅，EW2610 P7750 ⚠（富途 API 唔回傳 CME 月底期權，已填解釋）；人手名義 NAV 48% 額度內；階梯 Ⓐ。
+- 唔涉及 `main.py`，無需部署。
+- 2026-10-13 環境變數（使用者「改門檻」）：FUTU_MARGIN_WARN=150000、FUTU_MARGIN_CRIT=100000、FUTU_MARGIN_CLEAR=180000 → 修訂 `zhuge-risk-manager-00296-h8s`（同一映像）。
+  Cloud Run 保證金緩衝即時警報改同 RISK_LADDER Ⓑ／Ⓒ 一致（原 6 萬／2 萬／8 萬）。退回：`rollback --to zhuge-risk-manager-00295-77j --yes`。
+
