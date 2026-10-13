@@ -16,7 +16,7 @@
 | ☁️ 雲垂陣（期權 PM） | `session_01RkzmKXKixbBkCNqEjhubCK` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
 | 🌬️ 風揚陣（波幅／週期權 PM） | `session_01X2Qv7MgCQxbyyEyGVzivWC` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
 | 🐍 蛇蟠陣（趨勢 PM） | `session_01B4y7p7QzrJwCXEmDDZCx9M` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
-| 地載陣（日內 PM） | `session_01QDAzw2CmhvhYWip9SRktBn` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
+| 地載陣（日內 PM） | `session_01UxZXWN28xveAEbzggo49AR` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
 | 🐤 金絲雀（風險預報） | `session_01AqAysUfBVsCKimicXrwwKZ` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
 | 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
 | 外匯陣（紙上） | `session_01SHVCr19iNooiT5rp8BxD5t` 等 | `claude/forex-data-testing-w4q3m2` | L1 EURUSD、XAU 只做多、FOMC 漂移三個前向 |

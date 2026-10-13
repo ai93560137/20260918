@@ -10,7 +10,7 @@
 | ☁️ 雲垂陣 | `session_01RkzmKXKixbBkCNqEjhubCK` | `session_01QLJsy4RoeHjPNdNha73ibt` | `claude/dazzling-curie-f3xzb8` | `handoff/雲垂陣.md` | ✅ |
 | 🌬️ 風揚陣 | `session_01X2Qv7MgCQxbyyEyGVzivWC` | `session_01AmKfqsQjNQAkz1xgjRo2Mj` | `claude/epic-ramanujan-kp1l1v` | `handoff/風揚陣.md` | ✅ |
 | 🐍 蛇蟠陣 | `session_01B4y7p7QzrJwCXEmDDZCx9M` | `session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | `handoff/蛇蟠陣.md` | ✅ |
-| 🏔️ 地載陣 | ⏳ | `session_01QDAzw2CmhvhYWip9SRktBn` | `claude/dizai-expectations-r172` | ⏳ | ⏳ |
+| 🏔️ 地載陣 | `session_01UxZXWN28xveAEbzggo49AR` | `session_01QDAzw2CmhvhYWip9SRktBn` | `claude/dizai-expectations-r172` | `handoff/地載陣.md` | ✅（冇 Routine） |
 | 🐤 金絲雀 | `session_01AqAysUfBVsCKimicXrwwKZ` | `session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | `handoff/金絲雀.md` | ✅ |
 | 🐦 鳥翔 HTF | `session_018BXPn6zbpuMedYBTga6wp1` | `session_01NQur232BPDVDQzxd2hrvzU` | `claude/stock-research-k9nzau` | `handoff/鳥翔.md` | ✅ |
 | 📈 股票市場策略研究 | `session_0159FXFtZPPMiENXrdpy2kQd` | `session_01C1wMzBze3QQ3CBXfrDSZ1t` | `claude/gifted-carson-v2tvhw` | `handoff/股票市場策略研究.md` | — |
