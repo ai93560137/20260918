@@ -52,6 +52,10 @@ def zq_from_daily(path: Path, zq: dict) -> dict:
     if not path.exists():
         return zq
     d = pd.read_csv(path, dtype={"contract": str})
+    if "fetched_utc" in d.columns:
+        # IB 在 23:30 UTC 抓到的「隔日」日線是剛開盤 1.5 小時的半根（CME 時段 22:00 UTC 起算隔日）：
+        # 只收 date ≤ 抓取日的列，免得採集中斷時把半根當結算用
+        d = d[pd.to_datetime(d["date"]) <= pd.to_datetime(d["fetched_utc"]).dt.normalize()]
     for ym, g in d.groupby("contract"):
         s = pd.Series(g["close"].astype(float).values, index=pd.to_datetime(g["date"])).sort_index()
         s = s[~s.index.duplicated(keep="last")]
