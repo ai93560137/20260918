@@ -187,3 +187,13 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
 - 限制：一次心跳內平多筆會合併成一列；只有已實現金額，沒有逐筆進出場價。
 - 2026-10-13 部署：R171 → 修訂 `zhuge-risk-manager-00294-k9r`（來源 `b575a0ff0`），五頁 200，心跳處理正常、無例外。
   退回：`rollback --to zhuge-risk-manager-00293-ffx --yes`。帳本物件要等第一次平倉才會出現。
+
+## 2026-10-13 R172：每日成交紀錄（雲垂陣要求，使用者轉達）
+- 雲垂分支 `gcp_ib/futu_deals_daily.py` 要連本機 OpenD，雲端總指揮跑唔到；改為：本機 `auto_risk.py` 加 03:05／16:35 兩個時段
+  再跑 `futu_pnl_export.py`（`PNL_SLOTS`，狀態 `done_slots`），Cloud Run `handle_futu_pnl` 收到後用同一套 FIFO
+  （`futu_deals_build`）計當日逐筆成交、彙總、平倉，寫 `futu/deals/<香港日期>.json`（今日＋前一日）。
+- 總指揮：16:45 四陣摘要加「當日平倉」一節；新增 03:15 HKT 夜盤成交通報；有 MHI／MES 成交就通報雲垂（合約、價、時間、已實現）。
+- 首次：請使用者同富途 App 成交紀錄核對。未部署；本機要攞新版 `auto_risk.py`（RUNBOOK §9）。
+
+- 2026-10-13 部署：R172 → 修訂 `zhuge-risk-manager-00295-77j`（來源 `1a4ef8a93`），五頁 200。退回：`rollback --to zhuge-risk-manager-00294-k9r --yes`。
+  本機未攞新版 auto_risk.py 之前，futu/deals/ 只會喺 05:30 基金報告匯出時產生一次。

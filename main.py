@@ -118,6 +118,8 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-13 — [R172] 每日成交紀錄：action=futu_pnl 收到成交後，另計當日逐筆成交、按合約彙總、FIFO 平倉（點數、幣值），
+#     存 futu/deals/<香港日期>.json（今日＋前一日，夜盤跨日）。總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂。本機 auto_risk 加 03:05／16:35 匯出時段。
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
 #     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
 #     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
@@ -2652,7 +2654,82 @@ def handle_futu_pnl(payload):
         log_event(f"⚠️ [基金報告數據寫入失敗] {exc}", severity="ERROR", component="futu_pnl")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
     log_event(f"📊 [基金報告數據] 成交 {len(deals)} 筆（{_futu_text(payload.get('since'), 10)} 起）", component="futu_pnl")
-    return jsonify({"status": "stored", "deals": len(deals)}), 200
+    written = futu_deals_store(doc)                                       # [R172] 每日成交＋FIFO 平倉
+    return jsonify({"status": "stored", "deals": len(deals), "daily": written}), 200
+
+
+# [R172] 每日成交紀錄：由 futu_pnl 原始成交計「當日逐筆成交、按合約彙總、FIFO 平倉」，存 futu/deals/<香港日期>.json。
+# 總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂（雲垂分支 gcp_ib/futu_deals_daily.py 嘅計法，搬到雲端做；本機唔使加程式）。
+FUTU_DEALS_DIR = "futu/deals"
+
+
+def futu_deals_build(doc, day):
+    """day（香港日期）當日成交；FIFO 配對涵蓋 doc 內全部成交（since 起），只回報當日發生嘅平倉。未計佣金／費用。"""
+    deals = []
+    for d in doc.get("deals") or []:
+        try:
+            t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S") + timedelta(hours=FUTU_DEAL_TZ_HOURS)
+        except (KeyError, ValueError, TypeError):
+            continue
+        q, px = to_float(d.get("qty")), to_float(d.get("price"))
+        if not q or px is None:
+            continue
+        sign = 1 if str(d.get("side", "")).upper() in ("BUY", "BUY_BACK") else -1
+        deals.append((t, str(d["code"]), sign, abs(q), px, str(d.get("order_id") or "")))
+    deals.sort(key=lambda x: (x[0], x[5]))
+    day_deals = [x for x in deals if x[0].date() == day]
+    agg = {}
+    for t, code, sign, q, px, _ in day_deals:
+        a = agg.setdefault(code, {"buy_qty": 0.0, "buy_val": 0.0, "sell_qty": 0.0, "sell_val": 0.0})
+        k = "buy" if sign > 0 else "sell"
+        a[k + "_qty"] += q
+        a[k + "_val"] += q * px
+    summary = [{"code": c, "product": futu_product(c)[0],
+                "buy_qty": a["buy_qty"], "buy_avg": round(a["buy_val"] / a["buy_qty"], 4) if a["buy_qty"] else None,
+                "sell_qty": a["sell_qty"], "sell_avg": round(a["sell_val"] / a["sell_qty"], 4) if a["sell_qty"] else None,
+                "net_qty": a["buy_qty"] - a["sell_qty"]} for c, a in sorted(agg.items())]
+    lots, closed = {}, []
+    for t, code, sign, q, px, _ in deals:
+        book = lots.setdefault(code, [])
+        while q > 1e-9 and book and book[0][0] == -sign:
+            lot = book[0]
+            take = min(q, lot[1])
+            if t.date() == day:
+                pts = (px - lot[2]) * lot[0]                              # 多頭：平價−開價；空頭：開價−平價
+                prod, mult = futu_product(code)
+                closed.append({"code": code, "product": prod, "close_time_hkt": t.strftime("%Y-%m-%d %H:%M:%S"),
+                               "qty": take, "open_price": lot[2], "close_price": px,
+                               "side": "平多" if lot[0] > 0 else "平空", "realized_pts": round(pts, 4),
+                               "realized_ccy": round(pts * take * mult, 2),
+                               "ccy": "USD" if code.startswith("US.") else "HKD"})
+            lot[1] -= take
+            q -= take
+            if lot[1] <= 1e-9:
+                book.pop(0)
+        if q > 1e-9:
+            book.append([sign, q, px])
+    return {"date": day.isoformat(), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
+            "script_version": doc.get("script_version"), "generated_utc": fmt_utc(),
+            "deals": [{"time_hkt": t.strftime("%Y-%m-%d %H:%M:%S"), "code": code, "product": futu_product(code)[0],
+                       "side": "買" if sign > 0 else "賣", "qty": q, "price": px, "order_id": oid}
+                      for t, code, sign, q, px, oid in day_deals],
+            "summary": summary, "closed": closed,
+            "note": "成交時間已換算香港時間；已實現盈虧未計佣金／費用；FIFO 按合約配對，涵蓋 since 起全部成交。"}
+
+
+def futu_deals_store(doc, today=None, days=2):
+    """寫最近 days 個香港日期嘅 futu/deals/<日期>.json（夜盤跨日，所以連前一日一齊重算）。回傳寫成功嘅日期。"""
+    today = today or datetime.now(HK_TZ).date()
+    out = []
+    for i in range(days):
+        day = today - timedelta(days=i)
+        try:
+            gcs_write_text(f"{FUTU_DEALS_DIR}/{day.isoformat()}.json",
+                           json.dumps(futu_deals_build(doc, day), ensure_ascii=False, default=str))
+            out.append(day.isoformat())
+        except Exception as exc:                                          # noqa: BLE001  唔好因此令 futu_pnl 失敗
+            log_event(f"⚠️ [每日成交紀錄] {day} 寫入失敗：{exc}", severity="WARNING", component="futu_pnl")
+    return out
 
 
 def futu_pnl_report(doc, start=None, today=None):
