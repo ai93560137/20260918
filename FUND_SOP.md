@@ -19,7 +19,7 @@
 | 地載陣（日內 PM） | `session_01UxZXWN28xveAEbzggo49AR` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
 | 🐤 金絲雀（風險預報） | `session_01AqAysUfBVsCKimicXrwwKZ` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
 | 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
-| 外匯陣（紙上） | `session_01SHVCr19iNooiT5rp8BxD5t` 等 | `claude/forex-data-testing-w4q3m2` | L1 EURUSD、XAU 只做多、FOMC 漂移三個前向 |
+| 外匯 VM 採集 | `session_01YcJyu1yjZaFQTtY37WuQYH` | `claude/dazzling-curie-f3xzb8` | VM 上 L1 EURUSD 報價、6E 期權快照、ZQ 每日結算採集（使用者 10-14：繼續）；外匯研究線工作階段已停 |
 | 高息紙上 | `session_01GZ86daPoYtbG3bQk5svCx3` | gifted-carson `paper/` | 月度高息＋備兌模擬盤 |
 | 預設分支（登記簿／流水線） | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
 
