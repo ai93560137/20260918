@@ -15,12 +15,12 @@ import morning_brief as mb  # noqa: E402
 
 NOW = datetime(2026, 10, 14, 8, 30, tzinfo=mb.HKT)
 RISK = {"run_hkt": "2026-10-14 08:16", "alerts": {},
-        "metrics": {"equity": 2520339.0, "gap": 1770339.0, "hard_stop": 750000.0, "cushion": 319880.0,
+        "metrics": {"equity": 3000000.0, "gap": 2250000.0, "hard_stop": 750000.0, "cushion": 400000.0,
                     "stop_use": {"HSI 月跨式": 0.85, "MES 跨式": 0.21},
                     "delta_parts": {"net_with_hedge": -0.44, "hsi_all": -5.47}}}
 PNL = ("date,run_hkt,equity_total,unrealized_total,mt5_realized_today,unreal_雲垂陣,real_雲垂陣,unreal_蛇蟠陣,real_蛇蟠陣\n"
-       "2026-10-12,2026-10-12 17:30,2500000,1000,0,0,0,0,0\n"
-       "2026-10-13,2026-10-13 17:36,2520339,14240,0,6166.5,320,-1800,5700\n")
+       "2026-10-12,2026-10-12 17:30,2980000,1000,0,0,0,0,0\n"
+       "2026-10-13,2026-10-13 17:36,3000000,14240,0,6166.5,320,-1800,5700\n")
 RECON = """# 每日對帳表 2026-10-13
 
 | 合約 | 陣 | 用途 | 富途快照 | POSITIONS.md | 陣 journal | 狀態 | 原因／備註 |
@@ -49,7 +49,7 @@ class SectionTests(unittest.TestCase):
         out = "\n".join(mb.section_risk(RISK, {"date": "2026-10-13", "level": "B", "why": ["緩衝 < 15 萬"]}, NOW))
         self.assertIn("Ⓑ 停開新倉", out)
         self.assertIn("緩衝 < 15 萬", out)
-        self.assertIn("離硬止損 HK$1,770,339（70%）", out)
+        self.assertIn("離硬止損 HK$2,250,000（75%）", out)
         self.assertIn("HSI 月跨式 85% ⚠", out)
         self.assertNotIn("數據舊", out)
 
@@ -66,7 +66,7 @@ class SectionTests(unittest.TestCase):
     def test_pnl(self):
         out = "\n".join(mb.section_pnl(PNL))
         self.assertIn("蛇蟠陣 已實現 +5,700／未實現 -1,800", out)
-        self.assertIn("合計權益對前一日 +20,339", out)
+        self.assertIn("合計權益對前一日 +20,000", out)
         self.assertIn("讀不到", "\n".join(mb.section_pnl(None)))
 
     def test_reconcile(self):
