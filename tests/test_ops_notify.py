@@ -113,6 +113,17 @@ class DealsTests(unittest.TestCase):
         self.assertIn("非雲垂合約，只列給使用者", msg)
 
 
+class RepoCopyTests(unittest.TestCase):
+    def test_repo_deals_doc_strips_money(self):
+        _, st, _ = on.compose_deals({"2026-10-13": DEALS}, {}, CFG, hkt("2026-10-13 17:10"), "day")
+        doc = on.repo_deals_doc(st["deals"]["status"])
+        text = json.dumps(doc, ensure_ascii=False)
+        self.assertNotIn("realized_ccy", text)
+        self.assertNotIn("1370", text)
+        self.assertEqual(doc["closed"][0]["close_price"], 24305.0)
+        self.assertEqual(doc["closed"][0]["realized_pts"], 137.0)
+
+
 class PickTaskTests(unittest.TestCase):
     def test_pick(self):
         self.assertEqual(on.pick_task(hkt("2026-10-13 14:36")), "hedge")

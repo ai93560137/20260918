@@ -13,7 +13,9 @@
          雲垂合約（HK.MHI／US.MES／US.EX／US.EW）逐筆列出、平倉列開倉價→平倉價、點數、已實現；
          其他合約只簡短列出。order_id 已通報過的不重複；沒有新成交就靜默。
 
-狀態存 GCS ops/notify_state.json（用 gcp_agent.py put，只准寫 ops/）。只用標準庫 + requests（Telegram）。
+狀態存 GCS ops/notify_state.json（用 gcp_agent.py put，只准寫 ops/）。
+另寫 repo 副本給沒有 GCP 金鑰的雲垂工作階段 git fetch 讀：ops/hedge_status_latest.txt（同一行）、
+ops/deals_latest.json（只有合約、方向、手數、價格、點數，不含金額）；workflow 負責 commit。只用標準庫 + requests（Telegram）。
 每則訊息註明：只係資訊、唔係落單指令；已實現未計佣金，以富途 App 為準。不含帳號、權杖。
 
 用法：
@@ -209,6 +211,20 @@ def compose_deals(files: dict[str, dict | None], state: dict, cfg: dict, now: da
     return "\n".join(parts), state, reminder
 
 
+# ---------------------------------------------------------------- repo 副本（給沒有 GCP 金鑰的工作階段用 git fetch 讀）
+REPO_HEDGE = ROOT / "ops" / "hedge_status_latest.txt"
+REPO_DEALS = ROOT / "ops" / "deals_latest.json"
+
+
+def repo_deals_doc(status: dict) -> dict:
+    """公開 repo 版的成交摘要：只留合約、方向、手數、價格、點數，不含任何金額、權益或帳號。"""
+    keep = ("code", "product", "side", "qty", "open_price", "close_price", "close_time_hkt", "realized_pts")
+    return {"date": status.get("date"), "run_hkt": status.get("run_hkt"), "run_kind": status.get("run_kind"),
+            "closed": [{k: c.get(k) for k in keep if k in c} for c in status.get("closed") or []],
+            "n_yunchui_deals": status.get("n_yunchui_deals"), "n_other_deals": status.get("n_other_deals"),
+            "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"}
+
+
 # ---------------------------------------------------------------- main
 def pick_task(now: datetime) -> str:
     hm = now.hour * 60 + now.minute
@@ -240,6 +256,7 @@ def main() -> int:
         if not a.dry_run:
             send_telegram(msg)
             gcs_put(cfg["hedge"]["status_object"], msg + "\n")
+            REPO_HEDGE.write_text(msg + "\n", encoding="utf-8")
             gcs_put(cfg["state_object"], json.dumps(state, ensure_ascii=False, indent=1))
         return 0
 
@@ -259,6 +276,7 @@ def main() -> int:
             status = (state.get("deals") or {}).get("status")
             if status:
                 gcs_put(cfg["deals"].get("status_object", "ops/deals_status.json"), json.dumps(status, ensure_ascii=False, indent=1))
+                REPO_DEALS.write_text(json.dumps(repo_deals_doc(status), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     elif not reminder:
         print("沒有新成交，靜默。")
     return 0

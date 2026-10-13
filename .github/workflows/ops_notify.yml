@@ -22,7 +22,7 @@ on:
         default: 'false'
 
 permissions:
-  contents: read
+  contents: write   # commit ops/hedge_status_latest.txt、ops/deals_latest.json 給雲垂 git fetch 讀
   id-token: write
 
 concurrency:
@@ -62,3 +62,29 @@ jobs:
           ARGS="--task $TASK"
           if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
           python3 scripts/ops_notify.py $ARGS
+
+      - name: Commit repo copies（雲垂工作階段沒有 GCP 金鑰，用 git fetch 讀）
+        if: ${{ (inputs.dry_run || 'false') != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BR="${GITHUB_REF_NAME}"
+          add_out() { for f in ops/hedge_status_latest.txt ops/deals_latest.json; do [ -f "$f" ] && git add "$f"; done; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          MSG="chore(ops): 對沖狀態／成交摘要 $(date '+%F %H:%M') HKT"
+          git commit -q -m "$MSG"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BR" && exit 0
+            sleep $((i * 7))
+            cp ops/hedge_status_latest.txt /tmp/h.txt 2>/dev/null || true
+            cp ops/deals_latest.json /tmp/d.json 2>/dev/null || true
+            git fetch origin "$BR"
+            git reset -q --hard FETCH_HEAD
+            cp /tmp/h.txt ops/hedge_status_latest.txt 2>/dev/null || true
+            cp /tmp/d.json ops/deals_latest.json 2>/dev/null || true
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "$MSG"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
