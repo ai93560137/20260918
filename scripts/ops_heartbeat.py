@@ -106,14 +106,40 @@ def gh_schedule_runs(since: datetime) -> list[dict]:
     return runs
 
 
-def check_workflows(wfs: dict, runs: list[dict], start: datetime, end: datetime) -> list[tuple[str, str, str]]:
-    """回傳 [(燈, 名稱, 說明)]。"""
+def gh_workflow_meta() -> dict[str, dict]:
+    """{檔名: {"created_at": datetime, "state": "active"/"disabled_manually"/...}}，讀不到就回空 dict。"""
+    import requests
+    repo, token = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_TOKEN")
+    if not repo or not token:
+        return {}
+    r = requests.get(f"https://api.github.com/repos/{repo}/actions/workflows", params={"per_page": 100},
+                     headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}, timeout=30)
+    r.raise_for_status()
+    out = {}
+    for w in r.json().get("workflows") or []:
+        out[Path(w.get("path") or "").name] = {
+            "created_at": datetime.fromisoformat(w["created_at"].replace("Z", "+00:00")).astimezone(UTC),
+            "state": w.get("state")}
+    return out
+
+
+def check_workflows(wfs: dict, runs: list[dict], start: datetime, end: datetime,
+                    meta: dict | None = None) -> list[tuple[str, str, str]]:
+    """回傳 [(燈, 名稱, 說明)]。meta 有 created_at 時，窗口從建立時間起算（今天才加的 workflow 不會被誤判沒跑）。"""
+    meta = meta or {}
     by_file: dict[str, list[dict]] = {}
     for r in runs:
         by_file.setdefault(Path(r.get("path") or "").name, []).append(r)
     out = []
     for fname, wf in wfs.items():
-        exp = expected_fires(wf["crons"], start, end)
+        m = meta.get(fname) or {}
+        if m.get("state") == "disabled_manually":       # 有人刻意停用：只列在全文，不當紅燈
+            out.append(("⚪", fname, "已手動停用（排程不會跑；要恢復到 Actions 頁 Enable workflow）"))
+            continue
+        if m.get("state") and m["state"] != "active":   # 例如 disabled_inactivity：GitHub 自動停用
+            out.append(("🔴", fname, f"workflow 狀態 {m['state']}（排程不會跑）"))
+            continue
+        exp = expected_fires(wf["crons"], max(start, m.get("created_at") or start), end)
         if exp == 0:
             continue
         rs = by_file.get(fname, [])
@@ -136,13 +162,21 @@ def git_show(branch: str, path: str) -> str | None:
     return r.stdout if r.returncode == 0 else None
 
 
-def last_csv_date(text: str | None) -> datetime | None:
+# 市場日期 → 該日收市的香港時間（日線檔只有日期；用收市時間才不會把「昨晚美股收市」算成舊了一整天）
+CLOSE_HKT = {"us": (1, 5, 0), "hk": (0, 16, 30), "jp": (0, 14, 30)}   # (加幾日, 時, 分)
+
+
+def last_csv_date(text: str | None, market: str | None = None) -> datetime | None:
     if not text:
         return None
     for ln in reversed(text.strip().splitlines()):
         m = re.match(r"(\d{4}-\d{2}-\d{2})", ln)
         if m:
-            return datetime.strptime(m.group(1), "%Y-%m-%d").replace(tzinfo=HKT)
+            d = datetime.strptime(m.group(1), "%Y-%m-%d").replace(tzinfo=HKT)
+            if market in CLOSE_HKT:
+                add, h, mi = CLOSE_HKT[market]
+                d = (d + timedelta(days=add)).replace(hour=h, minute=mi)
+            return d
     return None
 
 
@@ -197,10 +231,12 @@ def freshness_checks(now: datetime) -> list[tuple[str, str, datetime | None, flo
         except json.JSONDecodeError:
             pass
     items.append(("蛇蟠通道 levels.json（12:00／16:45）", f"{gc} tradingview/data_external/levels.json", lv_t, 20))
-    for mkt, path in (("美股 SPY", "data/equities/us/SPY/prices_2026.csv"), ("港股 2800", "data/equities/hk/2800.HK/prices_2026.csv"),
-                      ("日股 1321", "data/equities/jp/1321.T/prices_2026.csv")):
-        items.append((f"{mkt} 日線", f"{gc} {path}", last_csv_date(git_show(gc, path)), 40))
-    items.append(("新高名單", f"{gc} analysis/newhighs/summary.csv", last_csv_date(git_show(gc, "analysis/newhighs/summary.csv")), 40))
+    for mkt, code, path in (("美股 SPY", "us", "data/equities/us/SPY/prices_2026.csv"),
+                            ("港股 2800", "hk", "data/equities/hk/2800.HK/prices_2026.csv"),
+                            ("日股 1321", "jp", "data/equities/jp/1321.T/prices_2026.csv")):
+        items.append((f"{mkt} 日線（收市時間計）", f"{gc} {path}", last_csv_date(git_show(gc, path), code), 26))
+    items.append(("新高名單（美股收市計）", f"{gc} analysis/newhighs/summary.csv",
+                  last_csv_date(git_show(gc, "analysis/newhighs/summary.csv"), "us"), 26))
     dc = "claude/dazzling-curie-f3xzb8"
     items.append(("雲垂每日掃描", f"{dc} tradingview/data_external/scan_report.md",
                   first_date(git_show(dc, "tradingview/data_external/scan_report.md")), 40))
@@ -272,7 +308,8 @@ def main() -> int:
     errors: list[str] = []
     wf_rows: list = []
     try:
-        wf_rows = check_workflows(load_workflows(), gh_schedule_runs(start - timedelta(minutes=30)), start, end)
+        wf_rows = check_workflows(load_workflows(), gh_schedule_runs(start - timedelta(minutes=30)), start, end,
+                                  gh_workflow_meta())
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
     fresh_rows = judge_freshness(freshness_checks(now), now)

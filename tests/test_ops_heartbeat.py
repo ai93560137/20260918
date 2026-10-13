@@ -55,6 +55,16 @@ class WorkflowJudgeTests(unittest.TestCase):
         self.assertEqual(d["c.yml"][0], "🔴"); self.assertIn("實際 0 次", d["c.yml"][1])
         self.assertNotIn("weekly.yml", d)   # 窗口內不該跑，不列
 
+    def test_new_and_disabled_workflows(self):
+        meta = {"c.yml": {"created_at": u("2026-10-13 09:00"), "state": "active"},   # 今天才加：22:30 之前不算
+                "b.yml": {"created_at": u("2026-01-01 00:00"), "state": "disabled_manually"},
+                "a.yml": {"created_at": u("2026-01-01 00:00"), "state": "disabled_inactivity"}}
+        rows = hb.check_workflows(self.WFS, [], u("2026-10-12 23:00"), u("2026-10-13 20:00"), meta)
+        d = {n: (l, m) for l, n, m in rows}
+        self.assertNotIn("c.yml", d)
+        self.assertEqual(d["b.yml"][0], "⚪"); self.assertIn("手動停用", d["b.yml"][1])
+        self.assertEqual(d["a.yml"][0], "🔴"); self.assertIn("disabled_inactivity", d["a.yml"][1])
+
 
 class FreshnessTests(unittest.TestCase):
     def test_judge_and_weekend_allowance(self):
@@ -70,6 +80,10 @@ class FreshnessTests(unittest.TestCase):
 
     def test_dates(self):
         self.assertEqual(hb.last_csv_date("Date,Close\n2026-10-12,1\n2026-10-13,2\n").day, 13)
+        us = hb.last_csv_date("Date,Close\n2026-10-12,1\n", "us")
+        self.assertEqual((us.day, us.hour), (13, 5))          # 美股 10-12 收市 = 香港 10-13 05:00
+        hk = hb.last_csv_date("Date,Close\n2026-10-13,1\n", "hk")
+        self.assertEqual((hk.day, hk.hour, hk.minute), (13, 16, 30))
         self.assertEqual(hb.first_date("# 每日對帳表 2026-10-13\n").day, 13)
         self.assertEqual(hb.first_date("run 2026-10-13 17:36 x").hour, 17)
 
