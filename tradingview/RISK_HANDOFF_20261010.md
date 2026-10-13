@@ -205,8 +205,11 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
   損益帳 GCS `ops/books/pnl_daily.csv`（含權益，私人）；階梯等級 `ops/books/ladder_state.json`，Ⓒ／Ⓓ 直接 TG 提示（使用者同意）。
 - `RISK_LADDER.md`：四層、日間線（使用者同意初稿）、夜盤線 ×1.5（使用者：設更保守線）、人手額度 NAV 50%／單日 2%（同意，超額只通報）、
   Cloud Run R149 即時門檻對齊建議（§4，待使用者同意先 `env set`）。
-- 首日 2026-10-13：9 個合約 8 個 ✅，EW2610 P7750 ⚠（富途 API 唔回傳 CME 月底期權，已填解釋）；人手名義 NAV 48% 額度內；階梯 Ⓐ。
+- 首日 2026-10-13：9 個合約 8 個 ✅，EW2610 P7750 ⚠（富途 API 唔回傳 CME 月底期權，已填解釋）；人手額度內；階梯 Ⓐ。
 - 唔涉及 `main.py`，無需部署。
 - 2026-10-13 環境變數（使用者「改門檻」）：FUTU_MARGIN_WARN=150000、FUTU_MARGIN_CRIT=100000、FUTU_MARGIN_CLEAR=180000 → 修訂 `zhuge-risk-manager-00296-h8s`（同一映像）。
   Cloud Run 保證金緩衝即時警報改同 RISK_LADDER Ⓑ／Ⓒ 一致（原 6 萬／2 萬／8 萬）。退回：`rollback --to zhuge-risk-manager-00295-77j --yes`。
+- 2026-10-13 私隱修正（預設分支 session 提醒）：公開 repo 嘅 `research/reconcile/<日>.md` 唔再寫任何 HK$ 金額或 NAV 百分比（金額＋手數可反推權益），
+  完整版改寫 GCS `ops/books/reconcile_private/<日>.md`；Actions 日誌公開，含金額內文一律 `print_private` 只印字數；測試 fixture 改用虛構數字。
+  首版 2026-10-13.md 已覆蓋為公開版，但 git 歷史（commit 354288a83）仍有嗰兩行，要清除需使用者決定。
 
