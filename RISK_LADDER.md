@@ -31,11 +31,11 @@ FUND_SOP 缺口 1、8。使用者 2026-10-13 決定：**Ⓒ／Ⓓ 亮起時 Clau
 日間線 × 1.5（緩衝 < 225k Ⓑ、< 150k Ⓒ、< 90k Ⓓ；離硬止損 < 30% Ⓒ、< 15% Ⓓ；止損用量 ≥ 53% Ⓒ、≥ 67% Ⓓ）。
 夜盤 Ⓒ／Ⓓ 一樣直接 TG 提示；使用者未回應就當「下一個日盤開市即時執行」。
 
-## 4. 即時警報門檻對齊（待使用者同意先改環境變數）
+## 4. 即時警報門檻對齊（使用者 2026-10-13「改門檻」，已套用修訂 zhuge-risk-manager-00296-h8s）
 
-Cloud Run R149 現時：緩衝 < 6 萬 ⚠、< 2 萬 ⛔、回到 8 萬解除（`FUTU_MARGIN_WARN／CRIT／CLEAR`）。建議改成同本階梯一致：
+Cloud Run R149 原本：緩衝 < 6 萬 ⚠、< 2 萬 ⛔、回到 8 萬解除（`FUTU_MARGIN_WARN／CRIT／CLEAR`）。已改成同本階梯一致：
 `FUTU_MARGIN_WARN=150000`（Ⓑ）、`FUTU_MARGIN_CRIT=100000`（Ⓒ）、`FUTU_MARGIN_CLEAR=180000`；Ⓓ 60k 由本機 `auto_risk`
-`ZHUGE_ALERT_CUSHION=60000` 已覆蓋。改法：`python3 scripts/gcp_agent.py env set FUTU_MARGIN_WARN=150000 FUTU_MARGIN_CRIT=100000 FUTU_MARGIN_CLEAR=180000`（dry-run）→ 使用者同意後 `--yes`。
+`ZHUGE_ALERT_CUSHION=60000` 已覆蓋。退回：`python3 scripts/gcp_agent.py rollback --to zhuge-risk-manager-00295-77j --yes`。
 
 ## 5. 人手交易額度（缺口 8；使用者 2026-10-13 同意）
 

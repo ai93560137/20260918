@@ -207,4 +207,6 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
   Cloud Run R149 即時門檻對齊建議（§4，待使用者同意先 `env set`）。
 - 首日 2026-10-13：9 個合約 8 個 ✅，EW2610 P7750 ⚠（富途 API 唔回傳 CME 月底期權，已填解釋）；人手名義 NAV 48% 額度內；階梯 Ⓐ。
 - 唔涉及 `main.py`，無需部署。
+- 2026-10-13 環境變數（使用者「改門檻」）：FUTU_MARGIN_WARN=150000、FUTU_MARGIN_CRIT=100000、FUTU_MARGIN_CLEAR=180000 → 修訂 `zhuge-risk-manager-00296-h8s`（同一映像）。
+  Cloud Run 保證金緩衝即時警報改同 RISK_LADDER Ⓑ／Ⓒ 一致（原 6 萬／2 萬／8 萬）。退回：`rollback --to zhuge-risk-manager-00295-77j --yes`。
 
