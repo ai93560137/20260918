@@ -8,15 +8,17 @@
 
 ### 1.1 人員（工作階段）
 
+> 2026-10-14 起各陣換新工作階段；以下為新 id，**最新以 `handoff/SESSIONS.md` 為準**（地載、外匯、高息、預設分支未換完）。
+
 | 角色 | 工作階段 | 分支 | 職責 |
 |---|---|---|---|
-| 總指揮（風控／營運） | `session_01N1jfpEJciBkfAgwtd4QxgU` | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、成交通報、對沖狀態通報 |
-| ☁️ 雲垂陣（期權 PM） | `session_01QLJsy4RoeHjPNdNha73ibt` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
-| 🌬️ 風揚陣（波幅／週期權 PM） | `session_01AmKfqsQjNQAkz1xgjRo2Mj` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
-| 🐍 蛇蟠陣（趨勢 PM） | `session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
+| 總指揮（風控／營運） | `session_012CwdLPmAQvC91GZs5Jg9XA` | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、成交通報、對沖狀態通報 |
+| ☁️ 雲垂陣（期權 PM） | `session_01RkzmKXKixbBkCNqEjhubCK` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
+| 🌬️ 風揚陣（波幅／週期權 PM） | `session_01X2Qv7MgCQxbyyEyGVzivWC` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
+| 🐍 蛇蟠陣（趨勢 PM） | `session_01B4y7p7QzrJwCXEmDDZCx9M` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
 | 地載陣（日內 PM） | `session_01QDAzw2CmhvhYWip9SRktBn` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
-| 🐤 金絲雀（風險預報） | `session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
-| 鳥翔／HTF（個股 PM） | `session_01NQur232BPDVDQzxd2hrvzU` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
+| 🐤 金絲雀（風險預報） | `session_01AqAysUfBVsCKimicXrwwKZ` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
+| 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
 | 外匯陣（紙上） | `session_01SHVCr19iNooiT5rp8BxD5t` 等 | `claude/forex-data-testing-w4q3m2` | L1 EURUSD、XAU 只做多、FOMC 漂移三個前向 |
 | 高息紙上 | `session_01GZ86daPoYtbG3bQk5svCx3` | gifted-carson `paper/` | 月度高息＋備兌模擬盤 |
 | 預設分支（登記簿／流水線） | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |

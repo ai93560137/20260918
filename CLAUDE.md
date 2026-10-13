@@ -72,9 +72,10 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 - GitHub Actions 的排程 workflow 只在預設分支生效；部署用的 `gcp_deploy.yml` 是手動觸發。
 - 部署教學在 `DEPLOY.md`；讓 Claude 代管 GCP 的設定在 `AGENTIC.md`；策略與回測在 `BACKTEST.md`、`research/`。
 - 全基金的每日流程盤點、各陣工作階段與排程總表、SOP 缺口與優先順序在 `FUND_SOP.md`（2026-10-13 SOP 顧問報告）。
-- **總指揮**：工作階段 `session_01N1jfpEJciBkfAgwtd4QxgU`（分支 `claude/beautiful-hypatia-8qrgjj`，2026-10-11 使用者委任）負責富途實倉監控、
+- **總指揮**：工作階段 `session_012CwdLPmAQvC91GZs5Jg9XA`（2026-10-14 起新工作階段；舊 `session_01N1jfpEJciBkfAgwtd4QxgU` 保留；分支 `claude/beautiful-hypatia-8qrgjj`，2026-10-11 使用者委任）負責富途實倉監控、
   按陣配對（`main.py` 的 `FUTU_TEAM_RULES`，策略總表「💼 富途實倉」）、風險警報與通知各陣。喺富途戶口開新實倉前，先登記 `POSITIONS.md`
   並用 `send_message` 通知總指揮加配對規則；配對唔到嘅會入「未配對」並發 Telegram。
+- **各陣工作階段 id 以 `handoff/SESSIONS.md` 為準**（2026-10-14 起各陣換新工作階段，舊嘅保留；send_message 前先讀）；各陣交接文件在各自分支 `handoff/<陣>.md`。
 - **各陣真實持倉登記在 `POSITIONS.md`**：開倉、平倉要更新並合併到預設分支；開新一輪前先讀它與 GCS `futu/risk/latest.json`（富途即時持倉與按金緩衝）。
 - **風控階梯在 `RISK_LADDER.md`**（總指揮擁有）：Ⓐ觀察／Ⓑ停開新倉／Ⓒ減半／Ⓓ全平嘅觸發線、夜盤線、人手額度；各陣 SOP 引用它。
   每日 17:20 HKT workflow `ops_daily_books.yml` 跑 `scripts/daily_books.py`：對帳表 `research/reconcile/<日>.md`（富途快照／POSITIONS.md／各陣 journal 三方並列，
