@@ -80,6 +80,11 @@ def delta_report(front, hsi_expiry):
                 if age is None or age > 26:
                     stale = ("  ⚠ 對沖記錄未核實（冇填核實時間）" if age is None else f"  ⚠ 對沖記錄 {age:.0f} 小時前先核實")
                     stale += "，請以富途持倉為準"
+            # 對沖爭議：富途讀數同申報唔一致、使用者未確認時，摘要要同時列兩種結果，唔好只報「已對沖」
+            if os.path.exists(pos_f) and p.get('hedge_dispute'):
+                hdp = p['hedge_dispute']
+                stale += (f"  ⚠ 對沖待確認（{hdp.get('since_hkt', '')}：{hdp.get('note', '')}）"
+                          f"；如對沖已平，淨Δ {d * qty:+.2f}" + ("，超界線 → 賣 1 手 MHI" if d * qty > 0.5 else ""))
             if hedge:
                 if abs(net) > 0.5:
                     side = '賣' if net > 0 else '買'
