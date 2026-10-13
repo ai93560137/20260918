@@ -21,6 +21,8 @@ HTF 系列（HTF_BACKTEST.md、HTF_INTRADAY_BACKTEST.md）的最後一個發現�
 - 股票日：對每個交易日 t（港 2010-07 起、美 2004-01-26 起 IB 地平線），若 **t−1 大市過濾成立**（ETF 10MA > 20MA 且雙升），
   從 **t−1 在宇宙內且 21／63／126 日報酬任一在宇宙前 2%** 的股票中**隨機挑 1 檔**（`numpy.random.default_rng(1)`），要求 t 有開盤價、台股漲停規則不適用。
   清單：`analysis/orb/ibkr_request_{hk,us}.csv`（`market,ticker,signal_date,entry_date`）。產生腳本見 commit。
+  **已產生（2026-10-13）**：港 1,409 筆（與 HTF seed 0 對照重疊 17、與 HTF 訊號重疊 15）、美 3,180 筆（重疊 46／43）——重疊約 1–1.5%，可視為獨立樣本。
+  非動能對照 `ibkr_request_{hk,us}_nonmom.csv` 各 1,409／3,180 筆（同日抽）。
 - 這是「每天一檔」的抽樣，不是「每天全部動能股」：為了 IBKR 抓取量可控（港約 1,500 列、美約 2,700 列）。報酬是「隨機挑一檔」的期望，不是組合全持有。
 - 5 分 K：雲垂 IBKR RTH TRADES，規格同 HTF_INTRADAY_REQUEST.md；核對與清理同 HTF_INTRADAY_BACKTEST.md（零量根不算、尺度核對 高低 ≤1%／開收 ≤2%、≥20 根、GURE 類異常檔剔除）。
 
