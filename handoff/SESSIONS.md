@@ -16,9 +16,9 @@
 | 📈 股票市場策略研究 | `session_0159FXFtZPPMiENXrdpy2kQd` | `session_01C1wMzBze3QQ3CBXfrDSZ1t` | `claude/gifted-carson-v2tvhw` | `handoff/股票市場策略研究.md` | — |
 | HTF 交易策略指南（動能 ORB） | 🚫 不換（使用者 10-14：已冇用） | `session_01AA5xBGBfBex9d23T23TQFY` | `claude/momentum-orb-research` | — | — |
 | 外匯（VM 安裝） | ⏳ | `session_01SHVCr19iNooiT5rp8BxD5t` | `claude/dazzling-curie-f3xzb8` | ⏳ | — |
-| 外匯陣（數據測試） | ⏳ | `session_01Svsn6w1kkBJS3v6cXoGoXN` | `claude/forex-data-testing-w4q3m2` | ⏳ | ⏳ |
+| 外匯陣（數據測試） | 🚫 不換（使用者 10-14：已冇用） | `session_01Svsn6w1kkBJS3v6cXoGoXN` | `claude/forex-data-testing-w4q3m2` | — | 10-14 檢查提醒已停用；前向測試照由 Actions 跑 |
 | GCP agent／IV 採集 | ⏳ | `session_01QECdg96y2dtk2skzrBNpVL` | `claude/gcp-agent-whoami-status-hswp4h` | ⏳ | ⏳ |
-| 指數套利 | ⏳ | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | ⏳ | — |
+| 指數套利 | 🚫 不換（使用者 10-14：已冇用） | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | — | — |
 | XAUUSD GCP and TV | ⏳ | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | ⏳ | — |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
 | SOP 顧問／預設分支 | ⏳ | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
