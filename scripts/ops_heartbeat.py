@@ -123,8 +123,27 @@ def gh_workflow_meta() -> dict[str, dict]:
     return out
 
 
+def gh_first_on_branch(fname: str) -> datetime | None:
+    """這個 workflow 檔第一次出現在預設分支的 commit 時間（排程只在預設分支生效；
+    GitHub 的 workflow created_at 可能是它在別的分支出現的日子）。"""
+    import requests
+    repo, token, branch = (os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_TOKEN"),
+                           os.environ.get("GITHUB_REF_NAME"))
+    if not repo or not token:
+        return None
+    params = {"path": f".github/workflows/{fname}", "per_page": 100}
+    if branch:
+        params["sha"] = branch
+    r = requests.get(f"https://api.github.com/repos/{repo}/commits", params=params,
+                     headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}, timeout=30)
+    if r.status_code != 200 or not r.json():
+        return None
+    oldest = r.json()[-1]["commit"]["committer"]["date"]
+    return datetime.fromisoformat(oldest.replace("Z", "+00:00")).astimezone(UTC)
+
+
 def check_workflows(wfs: dict, runs: list[dict], start: datetime, end: datetime,
-                    meta: dict | None = None) -> list[tuple[str, str, str]]:
+                    meta: dict | None = None, first_on_branch=None) -> list[tuple[str, str, str]]:
     """回傳 [(燈, 名稱, 說明)]。meta 有 created_at 時，窗口從建立時間起算（今天才加的 workflow 不會被誤判沒跑）。"""
     meta = meta or {}
     by_file: dict[str, list[dict]] = {}
@@ -146,6 +165,13 @@ def check_workflows(wfs: dict, runs: list[dict], start: datetime, end: datetime,
         done = [r for r in rs if r.get("status") == "completed"]
         bad = [r for r in done if r.get("conclusion") not in ("success", "skipped", "neutral")]
         label = f"{fname}"
+        if not rs and first_on_branch:
+            added = first_on_branch(fname)          # 只在疑似沒跑時才多查一次 API
+            if added and added > start:
+                exp = expected_fires(wf["crons"], added, end)
+                if exp == 0:
+                    out.append(("⚪", label, f"{added.astimezone(HKT):%m-%d %H:%M} 才放上預設分支，窗口內未到排程時間"))
+                    continue
         if not rs:
             out.append(("🔴", label, f"應觸發 {exp} 次，實際 0 次（GitHub 沒排到或 workflow 壞了）"))
         elif bad:
@@ -309,7 +335,7 @@ def main() -> int:
     wf_rows: list = []
     try:
         wf_rows = check_workflows(load_workflows(), gh_schedule_runs(start - timedelta(minutes=30)), start, end,
-                                  gh_workflow_meta())
+                                  gh_workflow_meta(), gh_first_on_branch)
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
     fresh_rows = judge_freshness(freshness_checks(now), now)

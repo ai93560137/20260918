@@ -66,6 +66,16 @@ class WorkflowJudgeTests(unittest.TestCase):
         self.assertEqual(d["a.yml"][0], "🔴"); self.assertIn("disabled_inactivity", d["a.yml"][1])
 
 
+    def test_added_to_branch_later(self):
+        wfs = {"fx.yml": {"name": "FX", "crons": ["40 1 * * 2-6"]}}         # 每日 01:40 UTC
+        late = lambda f: u("2026-10-13 06:00")                             # 01:40 之後才放上預設分支
+        rows = hb.check_workflows(wfs, [], u("2026-10-12 20:00"), u("2026-10-13 20:00"), {}, late)
+        self.assertEqual(rows[0][0], "⚪")
+        early = lambda f: u("2026-10-01 00:00")
+        rows = hb.check_workflows(wfs, [], u("2026-10-12 20:00"), u("2026-10-13 20:00"), {}, early)
+        self.assertEqual(rows[0][0], "🔴")
+
+
 class FreshnessTests(unittest.TestCase):
     def test_judge_and_weekend_allowance(self):
         now = datetime(2026, 10, 14, 7, 30, tzinfo=hb.HKT)   # 週三
