@@ -1,0 +1,166 @@
+# FUND_SOP.md — 基金每日流程：現況盤點與缺口（SOP 顧問報告，2026-10-13）
+
+> 問題：把現有的腳本、排程、工作階段當成一間小型基金，離「每日流程」還差哪幾塊？
+> 方法：盤點預設分支 28 個 GitHub workflow、22 個 Claude Routines、Cloud Run 服務、本機與 VM 的推送腳本，
+> 按基金一天的七個環節對照。只盤點、不評價策略本身。缺口按「風險」排序，每項附建議負責人與工作量。
+
+## 一、現況盤點
+
+### 1.1 人員（工作階段）
+
+| 角色 | 工作階段 | 分支 | 職責 |
+|---|---|---|---|
+| 總指揮（風控／營運） | `session_01N1jfpEJciBkfAgwtd4QxgU` | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、成交通報、對沖狀態通報 |
+| ☁️ 雲垂陣（期權 PM） | `session_01QLJsy4RoeHjPNdNha73ibt` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
+| 🌬️ 風揚陣（波幅／週期權 PM） | `session_01AmKfqsQjNQAkz1xgjRo2Mj` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
+| 🐍 蛇蟠陣（趨勢 PM） | `session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
+| 地載陣（日內 PM） | `session_01QDAzw2CmhvhYWip9SRktBn` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
+| 🐤 金絲雀（風險預報） | `session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
+| 鳥翔／HTF（個股 PM） | `session_01NQur232BPDVDQzxd2hrvzU` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
+| 外匯陣（紙上） | `session_01SHVCr19iNooiT5rp8BxD5t` 等 | `claude/forex-data-testing-w4q3m2` | L1 EURUSD、XAU 只做多、FOMC 漂移三個前向 |
+| 高息紙上 | `session_01GZ86daPoYtbG3bQk5svCx3` | gifted-carson `paper/` | 月度高息＋備兌模擬盤 |
+| 預設分支（登記簿／流水線） | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
+
+### 1.2 自動化（執行者 × 時間）
+
+**Cloud Run `zhuge-risk-manager`**：事件驅動，MT5 EA 每分鐘心跳；電閘、送單、戶口快照、R171 已實現帳本、R172 富途成交／盈虧入庫、五個網頁。
+**本機 `gcp_ib/auto_risk.py`**：每 15 分鐘推富途持倉與風險 `futu/risk/latest.json`；16:35／03:05 匯出成交 `futu/deals/<日>.json`。
+**VM ib-data**：IB 報價快照（外匯 L1、6E 期權），只讀、不下單。
+**GitHub Actions（預設分支，28 個）**與 **Claude Routines（22 個）**按香港時間排成一天：
+
+| 時段（HKT） | 誰 | 做什麼 |
+|---|---|---|
+| 05:30–06:30 | Actions `fetch_equities`（美）、`es_daily_push`、`news_8k`、`bond_daily`、`fetch_stock_data`（港） | 美股收市後數據、債市快報 |
+| 06:30 | Actions `canary_daily` → TG | 金絲雀燈色表＋總結 |
+| 07:07 | Routine 金絲雀 | 核對 canary workflow 跑對沒有 |
+| 07:53 | Actions `hsi_range_report` → TG | 恒指開市前波幅／高低位預測 |
+| 08:17 | Actions `external_data_daily` | 外部來源彙整＋抽樣 QC |
+| 09:15 | Actions `daily_topdown` → TG | 三地 200 日線＋新高名單、VCP |
+| 09:40／10:10／10:30 | Actions `fx_l1_forward`、`xau_long_forward`、`fx_fomc_forward` | 外匯陣三個紙上前向記錄 |
+| 09:45 | Routine 總指揮 | 四陣持倉風險通報（第 1 次） |
+| 每 15 分 | Actions `hsi_touch_alert`、`hsi_peak_signal` → TG | 蛇蟠觸軌、高低位訊號 |
+| 12:00 | Routine 蛇蟠 | 午間通道更新＋TG |
+| 12:07 | Actions `hsi_range_report` → TG | 午市收市檢討 |
+| 12:45 | Routine 總指揮 | 風險通報（第 2 次） |
+| 14:30 | Routine 雲垂 | HSI＋MES 每日掃描＋日報 |
+| 14:35、15:55 | Routine 總指揮 → 雲垂 | 對沖狀態通報（給 14:42 報告、16:00 對沖用） |
+| 16:00 | Routine 雲垂 | HSI Δ 對沖指令＋止損線 |
+| 16:37 | Actions `hsi_range_report` → TG | 日市收市檢討 |
+| 16:40 | Routine 雲垂 | 觸發 `fetch-quotes` 存正式收盤 |
+| 16:45 | Routine 總指揮；Routine 蛇蟠 | 收市摘要給四陣（含當日平倉）；通道更新＋前向結算＋TG |
+| 17:10 | Routine 總指揮 → 雲垂 | 富途成交紀錄通報（日盤） |
+| 17:13 | Routine 鳥翔 | 觸發 HTF 每日訊號 workflow（約 50 分鐘） |
+| 20:30／21:30（夏／冬令） | Actions `es_range_report` → TG | ES 開市前／收市報告（六組 cron 處理夏冬令） |
+| 21:45 | Routine 總指揮 | 風險通報（第 4 次） |
+| 03:13 | Actions `hsi_range_report` → TG | 全日收市檢討 |
+| 03:30（倫敦 20:30） | Routine 雲垂 | MES 檢查點＋對沖指令 |
+| 03:40 | Routine 總指揮 → 雲垂 | 富途成交紀錄通報（夜盤） |
+| 04:15（倫敦 21:15） | Routine 雲垂 | 每日總結＋自檢清單 |
+| 每 4 小時 | Actions `pelosi_tracker` → TG | 佩洛西申報 |
+| 週六 10:17／10:47 | Actions `hkex_option_iv`、`us_futures_daily` | 港交所期權 IV、美期日線 |
+| 週日 03:37 | Actions `screener_scorecard` | 篩選器評分卡＋偏離監控（WIF 免金鑰讀 GCS） |
+| 週日 11:00 | Actions `insider_research` | 內部人回測重跑 |
+| 週五 16:30 後 | 風揚陣（人） | 方向一開新一週勒式；到期日 17:00 Routine 結算 |
+| 月底 | Routine 鳥翔 | 九國月底名單三步 |
+| 手動 | `gcp_deploy`、`vcp_fullmarket`、`pead_backtest`、`dukascopy_m15`、`hkex_inline`、`canary_broadcast`、`research_hsi_history` | 部署、大型回測、資料補抓 |
+
+### 1.3 已具備的「基金部門」
+
+| 部門 | 已有 | 備註 |
+|---|---|---|
+| 數據 | 三地日線＋第二來源比對、CME 期貨、港交所 IV、債市、外部 QC、全市場備份到 Release | 等權／PIT 成分股名單齊 |
+| 研究 | `IDEAS.md` 100 條登記簿、各陣回測文件、評分卡、預先登記慣例 | 本週剛建立 |
+| 投資組合 | 五個陣各有 SOP 文件、持倉在 `POSITIONS.md` | 實倉三個陣＋人手 |
+| 風控 | 四次／日風險通報、Δ 通報、止損線使用率、硬止損 HK$750k 壓力測試、偏離監控燈號 | 全部是「通報」，沒有自動動作 |
+| 交易／對帳 | 富途成交 16:35／03:05 入庫、17:10／03:40 通報；MT5 已實現帳本（R171） | 2026-10-13 起才有 |
+| 營運 | `gcp_agent.py` 部署／回滾、WIF 免金鑰 Actions、session-start hook | — |
+| 投資人報告 | 八陣圖策略書 `factsheet.html`、各網頁 | 沒有 NAV 時序 |
+
+## 二、缺口（按風險排序）
+
+### 缺口 1｜風控只有「通報」，沒有「階梯」　風險：高
+
+現況：硬止損 HK$750k、各策略止損線、按金緩衝、偏離燈號全部算得出來，也會發 Telegram，但**沒有一份文件寫明每個燈號亮起時誰在多少分鐤內做什麼**。🟡 是減半還是只觀察？🔴 是誰平倉、用什麼價、要不要等使用者確認？按金緩衝跌到多少先減哪一個陣？目前答案散在各陣 SOP 與 Routine prompt 裡，互不一致。
+
+建議：一頁 `RISK_LADDER.md`（總指揮擁有）。四層：Ⓐ 觀察（通報）、Ⓑ 停開新倉、Ⓒ 減半、Ⓓ 全平。每層列觸發條件（按金緩衝、硬止損距離、偏離燈、單陣止損線使用率）、執行者（哪個陣／使用者）、時限、可用價（限價中間價／市價）、事後登記（`POSITIONS.md`、`IDEAS.md` 狀態）。各陣 SOP 引用它，不另寫。
+**要使用者決定**：Ⓒ、Ⓓ 是否允許由 Claude 直接提示使用者「現在平」而不等問答，以及夜盤無人時的規則。
+工作量：半天文件＋各陣 SOP 加一行引用。
+
+### 缺口 2｜十幾條 Telegram 流，沒有一份晨會簡報　風險：中高
+
+現況：每天至少 12 個獨立 TG 來源（金絲雀、恒指預測、topdown、蛇蟠、雲垂日報、ES 報告、佩洛西、觸軌……）。使用者是唯一讀者，資訊量已超過一個人早上能消化的。基金的做法是晨會：一頁，先風險、再持倉、再今日事件、再各 PM 今日打算。
+
+建議：Actions `morning_brief.yml`，08:30 HKT，只讀不算：讀 `futu/risk/latest.json`（權益、緩衝、Δ、止損線使用率）、`POSITIONS.md`（持倉與到期日）、`DIVERGENCE.md` 燈號、金絲雀今日燈色、當日事件（缺口 4）、各陣昨日 TG 的第一行。輸出一則 TG＋`analysis/brief/<日>.md`。其他 TG 流不動，但晨會是「只看一則也夠」的那則。
+工作量：1 天。負責人：總指揮（內容）、預設分支（腳本）。
+
+### 缺口 3｜持倉對帳是半自動　風險：中高
+
+現況：真相有三份——富途快照（自動）、`POSITIONS.md`（人手登記）、各陣 journal／position.json（各自維護）。總指揮用 `FUTU_TEAM_RULES` 配對並把「未配對」發 TG，但沒有一份每日對帳表留底；蛇蟠陣 10-12 反手就出現過快照與登記不一致要靠「你問我、我答你」補。
+
+建議：總指揮 16:45 Routine 已在讀快照，加一步產出 `research/reconcile/<日>.md`：每個合約三方數字並列（快照 qty／`POSITIONS.md`／各陣 journal），不一致標 ⚠ 並列原因欄待填；連續兩日未解釋即升級為缺口 1 的 Ⓑ。
+工作量：半天。負責人：總指揮。
+
+### 缺口 4｜沒有事件日曆　風險：中
+
+現況：只有 XAUUSD 有 ForexFactory 新聞鎖（High／Medium）。恒指與 ES 期權是賣方部位，最怕事件週；風揚陣文件自己寫「事件週改鐵鷹或減半——無數據不能測」。FOMC、CPI、NFP、港股假期、期指結算日、指數調整、MSCI 季檢、美股財報季，沒有一處集中。
+
+建議：`calendar/events.csv`（date, time_hkt, market, event, impact, affects）由 Actions 每週一從 ForexFactory 快取、港交所假期表（已有 `futu/calendar/HK.json`）、CME 假期、`universes/calendars/` 合成；晨會與各陣 16:00／週五開倉前讀它。風揚陣的「事件週規則」就有數據可以預先登記。
+工作量：1 天。負責人：預設分支（腳本）、風揚陣（事件週規則）。
+
+### 缺口 5｜沒有逐日損益帳（NAV 時序）　風險：中
+
+現況：富途 `futu/pnl/latest.json` 有按合約的已實現（R172，從 2026-09-01 起）、MT5 有 R171 帳本，但沒有**每日一列、按陣拆分**的時序：日期、各陣已實現、未實現、手續費、總權益、對硬止損距離。偏離監控現在靠各陣手填 CSV；月報、歸因、夏普都做不出來。
+
+建議：總指揮 16:45 讀 `futu/pnl/latest.json`＋`futu/risk/latest.json`＋MT5 帳本，追加一列到 `research/pnl/daily.csv`（陣別用 `FUTU_TEAM_RULES` 配對）。月底 Actions 由它產月報（缺口 9）。`ledger_yunchui.csv` 等手填表改為由此派生。
+工作量：1 天。負責人：總指揮。
+
+### 缺口 6｜流水線本身沒有人看　風險：中
+
+現況：28 個 workflow＋22 個 Routine，失敗只在 GitHub 頁面或 Routine 的 last_run 看得到。只有金絲雀有「核對自己的 workflow 跑對沒有」的 Routine；其餘靜默失敗一週才會被發現（本週就發現 `gcp_deploy.yml` 引用的 WIF secrets 從未設過）。
+
+建議：Actions `ops_heartbeat.yml`，每日 07:30 HKT：列昨日所有 schedule 觸發的 run 結論（GitHub API）、各數據檔新鮮度（`data/equities` 最後日期、`futu/risk/latest.json` run_hkt、`levels.json` fetched_at、`canary/tg_daily.txt` 日期），一則 TG 只列紅項；全綠發一行。Routine 的 last_run 由總指揮每週用 `list_triggers` 掃一次。
+工作量：半天。負責人：預設分支。
+
+### 缺口 7｜研究治理有登記簿，缺定期檢討會　風險：中低
+
+現況：`IDEAS.md`、評分卡、偏離監控本週建立，週日自動更新並 commit，但沒有人被指派「每週讀一次並改狀態」。基金的投委會是固定時間、固定議程。
+
+建議：`screener_scorecard.yml` 跑完加一步：比較本週與上週 `IDEAS.md` 狀態變化、評分卡判決變化、偏離燈變化，發一則「週報」TG；週一總指揮或預設分支 Routine 讀它，把需要改狀態的列改掉。每季一次「棄用清單重讀」，防止舊想法換名字回來。
+工作量：半天。負責人：預設分支。
+
+### 缺口 8｜人手交易沒有規則層　風險：中低
+
+現況：`POSITIONS.md` 有兩列「使用者人手」（EW P7,750、MHI 即日），規則欄寫「人手，冇固定規則」。基金裡 PM 的自主交易也要有限額（名義、每日最大虧損）與事後登記。
+
+建議：在缺口 1 的階梯裡給「人手」一個獨立額度（例如名義 ≤ NAV 50%、單日虧損 ≤ 2% 即停當日），R172 成交入庫後自動對照；超額只通報，不干預。
+工作量：寫進 `RISK_LADDER.md` 即可。**要使用者決定額度。**
+
+### 缺口 9｜沒有月報　風險：低
+
+現況：策略書 `factsheet.html` 是靜態說明，無 NAV、無月度表現、無歸因。
+
+建議：缺口 5 的 `daily.csv` 建立一個月後，Actions 月初產 `reports/<YYYY-MM>.md`：NAV 曲線、各陣貢獻、最大回撤、對回測偏離、本月 `IDEAS.md` 變動、下月到期事件。
+工作量：1 天，等缺口 5。
+
+### 缺口 10｜營運衛生　風險：低但便宜
+
+- **金鑰輪換**：webhooktrade API key 曾公開（`DEPLOY_20260920.md`）；服務帳戶金鑰、Telegram token 沒有輪換日期。建議每季一次，記在 `AGENTIC.md`。
+- **備援**：GCS 狀態（電閘、加單、帳本）是否開了物件版本控制未確認；repo 是程式備援但不是狀態備援。建議開 versioning 並每季做一次「從 bucket 還原到新專案」演練。**要使用者在 GCP 做。**
+- **時區**：ES 報告用六組 cron 處理夏冬令，雲垂 Routine 用倫敦時間，其他用 HKT；11 月初美國冬令切換是每年的風險點。建議 `ops_heartbeat` 在切換週前後加一行提醒。
+- **文件分散**：各陣 SOP 散在五個分支，入口只有 `CLAUDE.md`。本文件兼作索引；各陣在 1.1 表補自己 SOP 檔的路徑。
+
+## 三、建議順序
+
+| 優先 | 缺口 | 理由 | 負責 | 工作量 |
+|---|---|---|---|---|
+| 1 | 缺口 1 風控階梯 | 其他全部缺口的動作都要掛在它上面；需要使用者決策，先問 | 總指揮＋使用者 | 0.5 天 |
+| 2 | 缺口 6 流水線心跳 | 最便宜，立刻減少靜默失敗 | 預設分支 | 0.5 天 |
+| 3 | 缺口 3 每日對帳表 | 總指揮已有 16:45 流程，加一步 | 總指揮 | 0.5 天 |
+| 4 | 缺口 5 逐日損益帳 | 月報、歸因、偏離監控的共同地基 | 總指揮 | 1 天 |
+| 5 | 缺口 2 晨會簡報 | 等 3、5 有數據後做才有內容 | 預設分支 | 1 天 |
+| 6 | 缺口 4 事件日曆 | 期權賣方部位最直接的保護 | 預設分支＋風揚 | 1 天 |
+| 7 | 缺口 7、8、9、10 | 低風險或等前項 | 各自 | — |
+
+## 四、一句話
+
+這間「基金」的數據組與研究部已經比多數同規模的團隊完整，缺的是中後台：一份寫死的風控階梯、一份每日對帳表、一條逐日損益帳、一則晨會。這四樣都不需要新策略，兩週內可以補齊。
