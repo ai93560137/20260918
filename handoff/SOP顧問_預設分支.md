@@ -34,16 +34,22 @@
 - 一次性自檢 `trig_01SGyzundF24zjL9TBmFB4XR` 已觸發完（03:40 成交通報首發成功，04:04 跑）。
 
 ## 五、聯絡（send_message）
+**以 `handoff/SESSIONS.md` 為準**（下面係換新前嘅舊 id，只作歷史參考）。
 - 總指揮 `session_01N1jfpEJciBkfAgwtd4QxgU`（擁有風控、`RISK_LADDER.md`、`daily_books.py`、`POSITIONS.md` 配對、舊風險通報 Routine `trig_01LRrZMZ5mVnFqBYtAFqXxcW`）
 - 金絲雀 `session_01KucjwzRvueynnK5qm26y9g`；風揚 `session_01AmKfqsQjNQAkz1xgjRo2Mj`；地載 `session_01QDAzw2CmhvhYWip9SRktBn`；蛇蟠 `session_011i86tjK8gxGxbMdTukZp4B`；雲垂 `session_01QLJsy4RoeHjPNdNha73ibt`
 - **2026-10-14 起各陣換新工作階段**，以上 id 會變；以 CLAUDE.md 同 `handoff/` 目錄為準。
 
-## 六、進行中／待辦
-1. **換新工作階段（2026-10-14 04:15 開始）**：已叫 15 個舊工作階段寫 `handoff/<名>.md` 喺各自分支並回覆。之後：每個開新工作階段（同分支）→ 新工作階段讀交接、回報接手 → 喺新工作階段重建 Routine（舊嘅 `update_trigger enabled=false`，唔刪）→ 改 CLAUDE.md 總指揮 id、各 Routine prompt 內寫死嘅 session id（總指揮風險通報發畀四陣）→ 通知各陣新 id。舊工作階段由使用者決定幾時封存。
-2. 10-18（日）09:00 第一份週報；11-01 第一份月報（報 10 月）。
-3. 等風揚陣如要再改 `calendar/rules.json`。
-4. 偏離監控：地載 7 行最早 2027-04 判燈。
-5. 用量：使用者問過「Max 20x 夠唔夠」——答：仍 allowed；最大用量係長上下文工作階段被 Routine 叫醒重讀，同使用者開嘅大對話。
+## 六、進行中／待辦（2026-10-14 05:10 HKT 更新）
+1. **換新工作階段已完成**（10-14 04:15–05:10）：對照表 `handoff/SESSIONS.md`（你維護）。總指揮、雲垂、風揚、蛇蟠、地載、金絲雀、鳥翔、股票市場策略研究、外匯 VM 採集、GCP 資料採集、XAUUSD 都有新工作階段；Routine 全部新建綁新工作階段，舊嘅 `enabled=false` 唔刪。使用者話 HTF 策略指南、股票套利、指數套利、外匯數據測試**已冇用、唔換**（佢哋嘅提醒 trigger 已停用；PR #101／#103／#94／#73 仍開，等使用者決定）。舊工作階段全部保留，**幾時封存由使用者決定**。
+   - ⚠ 教訓：`fire_trigger` 手動觸發綁新工作階段嘅 Routine 會另開一個冇 repo 嘅空白工作階段（已封存誤開嗰個）；排程時間到自動觸發就正常（04:27 測試驗證）。要即時做就直接 `send_message`。
+   - ⚠ XAUUSD 舊、GCP 舊兩個工作階段冇 `send_message`，要使用者轉話；新開嘅（create_session）有。
+   - 新建工作階段用 `create_session`（source_url＋source_revision＝該陣分支），開場 prompt：讀 handoff、唔改嘢、`get_session` 查自己 id、`send_message` 回報。
+2. **緩衝風險（10-14 03:54）**：維持保證金由約 18.6 萬跳到約 38.7 萬，緩衝約 14.5 萬，日盤 Ⓑ、夜盤 Ⓒ。新總指揮 04:23 已通報四陣；等使用者 09:15 前決定入金（約 4 萬）或減倉、核實保證金加倍原因、更新部機 risk_book（MHI2610 對沖已平）。
+3. **PR #116**（總指揮 POSITIONS.md 更正）等使用者講「合併」；新總指揮已訂閱。
+4. **1321.T**：股票市場策略研究已修（gifted-carson `a2afd8f1`：刪 adjustments.csv 1321.T、price_overrides 補 10-05／06、marketdata.py 擴充）；新鳥翔要喺 10-30 前對齊自己分支同 10-31 Routine prompt。
+5. 10-18（日）09:00 第一份週報；11-01 第一份月報。
+6. 偏離監控：地載 7 行最早 2027-04 判燈。
+7. 外匯 VM 採集（L1／6E／ZQ）使用者決定繼續，由外匯 VM 新工作階段負責；07:30 心跳唔包 VM。
 
 ## 七、開工第一步
 讀 `CLAUDE.md`、`FUND_SOP.md`（第二之一節）、本檔、`ops/ROUTINE_RISK_NOTIFY.md` 頂部、`IDEAS.md` 前 30 行；`python3 scripts/gcp_agent.py whoami`、`status`。
