@@ -75,16 +75,23 @@ def iv_of(ib, opt, spot):
     return round((lo + hi) / 2 * 100, 2)
 
 
-def pick_expiries(exps):
-    """回傳 (短腿 1–14 天, 長腿 15–60 天) 到期字串——N225 只有月權時
-    取最近兩個月度也能量斜率。長窗落空就取短腿之後最近的一個。"""
-    today = date.today()
+def pick_expiries(exps, today=None):
+    """回傳 (短腿, 長腿) 到期字串。
+    有週權的標的：短腿 1–14 天、長腿 15–60 天（長窗落空就取短腿之後最近的一個）。
+    只有月權的標的（例如 N225）：兩個月度到期日之間的空窗期，1–14 天內沒有任何到期日，
+    原本短腿拿不到、整列被丟掉；現在改取最近兩個還沒到期的到期日，斜率照樣能量，
+    實際天數寫在 wk_dte／mon_dte 欄，研究時看得出來。"""
+    today = today or date.today()
     parsed = sorted((datetime.strptime(e, '%Y%m%d').date(), e) for e in exps)
     dtes = [((d - today).days, e) for d, e in parsed]
     wk = next((e for dd, e in dtes if 1 <= dd <= 14), None)
     mon = next((e for dd, e in dtes if 15 <= dd <= 60), None)
     if wk and mon is None:
         mon = next((e for dd, e in dtes if dd > 14), None)
+    if wk is None:                                       # 沒有週權窗：取最近兩個未到期的到期日
+        upcoming = [e for dd, e in dtes if dd >= 1]
+        if len(upcoming) >= 2:
+            wk, mon = upcoming[0], upcoming[1]
     return wk, mon
 
 
@@ -205,6 +212,8 @@ def main():
                 print(f"  expiries: {exps[:12]}")
             w = atm_pair_iv(ib, label, und, opt_exch, wk, spot, chains, a.dry) if wk else None
             m = atm_pair_iv(ib, label, und, opt_exch, mon, spot, chains, a.dry) if mon else None
+            if not (w and m):
+                print(f"{label}: 沒有湊齊兩條腿的 ATM IV（wk={wk} {'有' if w else '無'}、mon={mon} {'有' if m else '無'}），本次不寫入")
             if w and m:
                 dte_w = (datetime.strptime(wk, '%Y%m%d').date() - date.today()).days
                 dte_m = (datetime.strptime(mon, '%Y%m%d').date() - date.today()).days
