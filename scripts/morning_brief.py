@@ -9,8 +9,8 @@
   3. 昨日損益：GCS ops/books/pnl_daily.csv 最後一列（按陣已實現／未實現）
   4. 對帳：repo research/reconcile/latest.md 的 ⚠ 列與人手額度一行
   5. 偏離燈：repo research/divergence/DIVERGENCE.md 非 ⚪ 的列
-  6. 今日事件：GCS cache/ff_calendar_thisweek.json（Cloud Run 新聞鎖的快取）今日 High 事件，換成 HKT；
-     POSITIONS.md「完結」欄 3 天內到期的持倉
+  6. 今日事件：repo calendar/events.csv（事件日曆，每日 07:00）——事件週、未來 24 小時 High 數據、FOMC、
+     3 日內持倉到期／恒指結算／假期；日曆讀不到才退回 GCS 財經日曆快取＋POSITIONS.md
   7. 今日要做：由日期推出（週五風揚方向一開新週、到期日、恒指結算週）
 
 輸出：Telegram 一則；全文另存 GCS ops/brief/<日>.txt 與 ops/brief/latest.txt（含權益，私人，不進 repo）。
@@ -175,7 +175,47 @@ def section_divergence(md: str | None) -> list[str]:
 
 
 # ---------------------------------------------------------------- 6. 今日事件
-def section_events(cal: dict | None, positions_md: str | None, now: datetime) -> list[str]:
+def section_events_calendar(events_csv: str, now: datetime) -> list[str] | None:
+    """讀 calendar/events.csv（事件日曆，每日 07:00 產生）。讀不到或格式不對回 None，改用舊路徑。"""
+    rows = list(csv.DictReader(io.StringIO(events_csv)))
+    if not rows or "event_week" not in rows[0]:
+        return None
+    out = ["【六、今日事件（HKT）】"]
+    today = now.date()
+    this_week = [r for r in rows if date.fromisoformat(r["date"]).isocalendar()[:2] == today.isocalendar()[:2]]
+    if any(r.get("event_week") == "Y" for r in this_week):
+        keys = [r["event"][:24] for r in this_week if r["category"] in ("FOMC", "HK 結算", "HK 假期")
+                or (r["category"] == "數據" and r["impact"] == "High" and r["market"] in ("USD", "CNY", "HKD"))]
+        out.append("⚠ 本週係事件週：" + "、".join(dict.fromkeys(keys))[:120])
+    for r in rows:
+        d = date.fromisoformat(r["date"])
+        t = r["time_hkt"]
+        if r["category"] == "數據" and r["impact"] == "High":
+            try:
+                dt = datetime.strptime(f"{r['date']} {t}", "%Y-%m-%d %H:%M").replace(tzinfo=HKT)
+            except ValueError:
+                continue
+            if now <= dt < now + timedelta(hours=24):
+                out.append(f"{dt:%H:%M} {r['market']} {r['event']}" + (f"（{r['affects']}）" if r["affects"] else ""))
+        elif r["category"] in ("FOMC",) and 0 <= (d - today).days <= 1:
+            out.append(f"{'今日' if d == today else '明日'} {t} {r['event']}")
+    for r in rows:
+        d = date.fromisoformat(r["date"])
+        days = (d - today).days
+        if r["category"] in ("持倉到期", "HK 結算", "HK 假期", "US 假期") and 0 <= days <= 3:
+            when = "今日" if days == 0 else f"{days} 日後"
+            icon = {"持倉到期": "⏳", "HK 結算": "📅", "HK 假期": "🏖", "US 假期": "🏖"}[r["category"]]
+            out.append(f"{icon} {when}（{d:%m-%d}）：{r['event']}")
+    if len(out) == 1:
+        out.append("未來 24 小時冇 High 級數據、3 日內冇到期／結算／假期")
+    return out
+
+
+def section_events(cal: dict | None, positions_md: str | None, now: datetime, events_csv: str | None = None) -> list[str]:
+    if events_csv:
+        got = section_events_calendar(events_csv, now)
+        if got:
+            return got
     out = ["【六、今日事件（HKT）】"]
     today = now.date()
     evs = []
@@ -250,7 +290,7 @@ def build(now: datetime, sources: dict) -> str:
                 section_pnl(sources["pnl"]),
                 section_reconcile(sources["reconcile"]),
                 section_divergence(sources["divergence"]),
-                section_events(sources["calendar"], sources["positions"], now),
+                section_events(sources["calendar"], sources["positions"], now, sources.get("events_csv")),
                 section_todo(today)):
         parts.append("\n".join(sec))
     parts.append(FOOTER)
@@ -275,6 +315,7 @@ def load_sources() -> dict:
         "reconcile": read_repo("research/reconcile/latest.md"),
         "divergence": read_repo("research/divergence/DIVERGENCE.md"),
         "positions": read_repo("POSITIONS.md"),
+        "events_csv": read_repo("calendar/events.csv"),
     }
 
 

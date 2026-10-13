@@ -1,0 +1,82 @@
+name: Event calendar（事件日曆，每日 07:00 HKT）
+
+# FUND_SOP 缺口 4：合成財經數據、FOMC、三地假期、恒指結算、美股期權到期、持倉到期 → calendar/events.csv、calendar/WEEK.md。
+# 全是公開資訊，commit 進 repo。規則（影響哪個陣、事件週定義）在 calendar/rules.json，由風揚陣擁有。
+on:
+  schedule:
+    - cron: '0 23 * * *'     # 07:00 HKT 每日（晨會 08:30 前）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只印不寫（true/false）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: event-calendar
+  cancel-in-progress: false
+
+jobs:
+  calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Hong_Kong
+      GCP_PROJECT: sacred-alliance-453716-b7
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch source branches（假期表、FOMC 日期）
+        run: git fetch --depth 1 origin claude/gifted-carson-v2tvhw claude/forex-data-testing-w4q3m2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q -r scripts/requirements-agent.txt
+
+      - name: Fetch ForexFactory next week（抓不到就略過）
+        run: |
+          curl -sS --fail --max-time 30 -A "Mozilla/5.0" -o /tmp/ff_next.json \
+            https://nfs.faireconomy.media/ff_calendar_nextweek.json || echo "下週檔抓不到，只用本週快取"
+
+      - name: Build calendar
+        env:
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          ARGS="--nextweek-json /tmp/ff_next.json"
+          if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python3 scripts/event_calendar.py $ARGS
+
+      - name: Commit
+        if: ${{ (inputs.dry_run || 'false') != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BR="${GITHUB_REF_NAME}"
+          git add calendar/events.csv calendar/WEEK.md
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          MSG="chore(calendar): 事件日曆 $(date +%F)"
+          git commit -q -m "$MSG"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BR" && exit 0
+            sleep $((i * 7))
+            cp calendar/events.csv /tmp/e.csv; cp calendar/WEEK.md /tmp/w.md
+            git fetch origin "$BR"; git reset -q --hard FETCH_HEAD
+            cp /tmp/e.csv calendar/events.csv; cp /tmp/w.md calendar/WEEK.md
+            git add calendar/events.csv calendar/WEEK.md
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "$MSG"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
