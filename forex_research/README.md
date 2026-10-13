@@ -117,3 +117,5 @@ GitHub Actions（fetch_forex.yml）抓 HistData／Dukascopy／Yahoo／FRED → �
 2b. **蛇蟠陣外匯到此為止**：25 個商品全部測過（USDJPY ☠️、XAUUSD 🔍、其餘 23 個批次 ☠️、合併 t −1.55）；要再測外匯，得換「機制」而不是換商品（例如更長通道、只做多、或加波動過濾），而且要先過入場券
 3. **XAUUSD 只做多變體**是唯一有希望的形態（樣本外 t 1.70、全期 2.75）：可與主分支的 XAUUSD 前向測試（journal/）對照，記錄多頭腿與空頭腿分開的實盤損益
 5. **每月更新數據**：HistData 月初幾天後才放上月檔；手動觸發 `fetch_forex.yml`（group = all）即可補齊，Dukascopy 部分只補近期
+
+> **排程注意（2026-10-13）**：GitHub 的 cron 只對預設分支上的工作流程執行。三個前向記錄工作流程（`fx_l1_forward.yml` 01:40、`xau_long_forward.yml` 02:10、`fx_fomc_forward.yml` 02:30 UTC）在預設分支 `claude/gcp-trading-v12-rewrite-bz75t2` 各有一份同內容副本（檔內 checkout／推回仍是本分支）；改這三個檔要兩邊同步。本分支上的副本只負責 push 觸發與手動 dry run。

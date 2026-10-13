@@ -23,7 +23,7 @@
 |---|---|---|---|
 | ZQ 每日結算（本月＋後 3 個月合約） | 雲垂 VM cron `scripts/ib_zq_daily.py --push`（IB 日線 Close＝結算） | 平日 23:30 UTC，推回雲垂分支 | `data_forex_ibkr/zq/zq_daily.csv`（＋既有 `ZQ_YYYYMM.csv.gz`） |
 | 目標利率 | Actions 每日從 FRED 抓 DFEDTARU／DFEDTARL | 02:30 UTC | `data_forex_rates/info/` |
-| 訊號、紙上成交、狀態頁 | Actions `fx_fomc_forward.yml`（`scripts/fx_fomc_forward.py`，決定性重算） | 02:30 UTC 週二至週六 | `forward/fomc_events.csv`、`forward/FOMC_STATUS.md` |
+| 訊號、紙上成交、狀態頁 | Actions `fx_fomc_forward.yml`（`scripts/fx_fomc_forward.py`，決定性重算；**排程檔副本放在預設分支**，GitHub 只對預設分支跑 cron，2026-10-13 起） | 02:30 UTC 週二至週六 | `forward/fomc_events.csv`、`forward/FOMC_STATUS.md` |
 | 看板 | `外匯前向看板` 加一格（之後） | — | — |
 
 - Actions 從雲垂分支以 GitHub raw 讀 **zq_daily.csv**（倉庫公開），各合約歷史檔 `ZQ_YYYYMM.csv.gz` 用倉庫內副本 `forward/zq_hist/`（2026-10-13 起；10-13 02:44 的一次 run 因 GitHub API 目錄列表撞匿名限額把全部事件誤寫成 no_zq，同日修正並恢復，期間沒有任何訊號日受影響）；抓不到 zq_daily 時用上次快取並在 log 警告，合約檔為 0 時直接失敗不寫檔；雲垂 VM 當天 23:30 UTC 推的結算，隔日 02:30 UTC 的記錄就用得到；t−3 是週五時，週一 02:30 的記錄會把訊號算出來，**t−2 進場時刻（週一 17:55 UTC）之前訊號已知**——不會有前視。
