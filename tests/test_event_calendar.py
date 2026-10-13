@@ -70,11 +70,20 @@ class BuildTests(unittest.TestCase):
         by = {(e["date"], e["category"]): e for e in evs}
         self.assertEqual(by[("2026-10-14", "數據")]["affects"], "雲垂 MES、人手 EW、金絲雀")
         self.assertEqual(by[("2026-10-19", "HK 假期")]["event_week"], "Y")
-        self.assertIn((2026, 42), flagged)       # CPI 週
+        # 風揚陣 2026-10-13 收緊：只算 FOMC／Federal Funds 與港股平日假期；CPI 單獨不算事件週
+        self.assertNotIn((2026, 42), flagged)    # 只有 CPI
         self.assertIn((2026, 43), flagged)       # 重陽補假週
-        self.assertIn((2026, 44), flagged)       # FOMC＋結算週
+        self.assertIn((2026, 44), flagged)       # FOMC 週
         md = ec.week_md(evs, flagged, now)
-        self.assertIn("本週 10-12～10-18：⚠ 事件週", md)
+        self.assertIn("本週 10-12～10-18：非事件週", md)
+        self.assertIn("下週 10-19～10-25：⚠ 事件週", md)
+
+    def test_event_week_ignores_other_countries_data(self):
+        evs = [ec.ev(datetime(2026, 10, 15).date(), "14:00", "GBP", "數據", "GDP m/m", "High", "ForexFactory"),
+               ec.ev(datetime(2026, 10, 15).date(), "20:30", "USD", "數據", "CPI y/y", "High", "ForexFactory")]
+        self.assertEqual(ec.apply_rules(evs, RULES), {})
+        fomc = [ec.ev(datetime(2026, 10, 29).date(), "02:00", "USD", "數據", "Federal Funds Rate", "High", "ForexFactory")]
+        self.assertIn((2026, 44), ec.apply_rules(fomc, RULES))
         csv_text = ec.to_csv(evs)
         self.assertTrue(csv_text.startswith("date,time_hkt,market,category,event,impact,affects,event_week,source"))
 
