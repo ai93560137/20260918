@@ -1,7 +1,7 @@
 """每日對帳表／損益帳／風控階梯（scripts/daily_books.py）。唔連 GCS、唔 git show；全部用假資料。"""
-import io, json, re, sys
+import io, json, os, re, sys
 from datetime import date, datetime, timezone, timedelta
-sys.path.insert(0, "/home/user/20260918/scripts")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
 import daily_books as db
 
 OK = FAIL = 0
