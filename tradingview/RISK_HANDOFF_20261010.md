@@ -176,3 +176,14 @@ OpenD 身份修好之後，`--diagnose` 會列出 9/1 起成交筆數，正常�
   白色卡（同 BASE_CSS `.nav`：padding 15px 20px、圓角 12px、陰影），`.wrap` 闊度 860／880px → 1050px（同 `.container`），
   去掉導覽列 `margin-bottom:-28px`；列印時整個卡隱藏。未部署。
 - 2026-10-12 部署：R170 → 修訂 `zhuge-risk-manager-00293-ffx`（來源 `9dbd4bb4b`），五頁 200，兩頁 .topnav 線上確認。退回：`rollback --to zhuge-risk-manager-00292-txn --yes`。
+
+## 2026-10-13 R171：已實現盈虧帳本（給 research/divergence 偏離監控）
+- `handle_heartbeat` 每次心跳先讀上一份 MT5 戶口快照，`balance` 有變就寫一列到 GCS `logs/trade_ledger.json`
+  （最新在前、最多 2000 列）。分類：credit 同額變動 `credit`；上一次心跳有持倉或浮動盈虧 `trade`；否則 `transfer`（出入金）。
+  `trade` 類另寫決策日誌「🧾 [已實現] ±金額」（key=realized）。測試 `tests/test_trade_ledger.py` 15 項。
+- 用途：每週 workflow `screener_scorecard.yml` 用 `gcp_agent.py cat --object logs/trade_ledger.json` 抓成
+  `research/divergence/xau_trade_ledger.json`，`strategy_divergence.py` 只拿 `trade` 列比對回測勝率 31%、回撤 6.8%。
+  GitHub Secrets 要加 `GCP_SA_KEY` 才抓得到；沒加則 XAUUSD 那行維持 ⚪。
+- 限制：一次心跳內平多筆會合併成一列；只有已實現金額，沒有逐筆進出場價。
+- 2026-10-13 部署：R171 → 修訂 `zhuge-risk-manager-00294-k9r`（來源 `b575a0ff0`），五頁 200，心跳處理正常、無例外。
+  退回：`rollback --to zhuge-risk-manager-00293-ffx --yes`。帳本物件要等第一次平倉才會出現。

@@ -51,8 +51,20 @@ def install_stubs():
         def get_json(self, silent=False):
             return self["_json"]
 
+    class _Flask:
+        """main.py 檔尾 [R84] 在 import 時就建 `app = Flask(__name__)` 並掛路由；替身只要能被呼叫。"""
+        def __init__(self, *a, **k):
+            self.rules = []
+
+        def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
+            self.rules.append((rule, endpoint, view_func, options))
+
+        def route(self, *a, **k):
+            return lambda fn: fn
+
     module("flask", jsonify=lambda *a, **k: _Response(a[0] if a else k),
-           redirect=lambda url: ("redirect", url))
+           redirect=lambda url: ("redirect", url),
+           Flask=_Flask, request=types.SimpleNamespace(args={}, headers={}, method="GET"))
 
     class _Timeout(Exception):
         pass
