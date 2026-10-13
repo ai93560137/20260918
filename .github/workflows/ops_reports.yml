@@ -1,0 +1,65 @@
+name: Ops reports（週報週日 09:00、月報每月 1 日 09:30 HKT → Telegram＋基金報告頁）
+
+# FUND_SOP 缺口 7（週報）、9（月報）。只讀、不重算：逐日損益帳、IDEAS.md、評分卡、偏離監控、對帳表、心跳、事件日曆。
+# 完整版（含權益）發 Telegram、存 GCS ops/reports/<kind>/；公開版（不含權益絕對值）併入 ops/reports/public.json，
+# tnt-hk.com/?view=fund_report 顯示（main.py R174）。規則見 scripts/ops_reports.py 檔頭。
+on:
+  schedule:
+    - cron: '0 1 * * 0'      # 週日 09:00 HKT 週報（週日 03:37 評分卡之後）
+    - cron: '30 1 1 * *'     # 每月 1 日 09:30 HKT 月報（報上個月）
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'weekly / monthly'
+        required: false
+        default: 'weekly'
+      dry_run:
+        description: '只印不發、不寫 GCS（true/false）'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: read     # 讀 IDEAS.md 等的舊版本（GitHub API）
+  id-token: write    # WIF 讀寫 GCS ops/
+
+concurrency:
+  group: ops-reports
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Hong_Kong
+      GCP_PROJECT: sacred-alliance-453716-b7
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q -r scripts/requirements-agent.txt
+
+      - name: Report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          SCHED: ${{ github.event.schedule }}
+          KIND_IN: ${{ inputs.kind || 'weekly' }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          if [ "$SCHED" = "30 1 1 * *" ]; then KIND=monthly; elif [ -n "$SCHED" ]; then KIND=weekly; else KIND="$KIND_IN"; fi
+          echo "kind=$KIND dry=$DRY"
+          if [ "$DRY" = "true" ]; then python3 scripts/ops_reports.py "$KIND" --dry-run | tee report.txt
+          else python3 scripts/ops_reports.py "$KIND" | tee report.txt; fi
+          { echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

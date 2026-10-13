@@ -59,6 +59,15 @@ def gcs_put(obj: str, text: str) -> None:
         raise RuntimeError(f"gcp_agent put {obj} 失敗：{(r.stderr or r.stdout)[:300]}")
 
 
+# ---------------------------------------------------------------- 日誌
+def print_private(text: str) -> None:
+    """含金額／權益的內文：本機照印；GitHub Actions 日誌係公開 repo 人人睇到，只印字數。"""
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"（內文含金額，Actions 日誌公開所以不印；{len(text)} 字，見 Telegram／GCS）")
+    else:
+        print(text)
+
+
 # ---------------------------------------------------------------- Telegram
 def send_telegram(text: str) -> bool:
     token, chat = os.environ.get("TG_BOT_TOKEN", "").strip(), os.environ.get("TG_CHAT_ID", "").strip()
@@ -269,7 +278,7 @@ def main() -> int:
         if not a.dry_run:
             send_telegram(reminder)
     if msg:
-        print(msg)
+        print_private(msg)
         if not a.dry_run:
             send_telegram(msg)
             gcs_put(cfg["state_object"], json.dumps(state, ensure_ascii=False, indent=1))
