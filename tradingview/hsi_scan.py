@@ -68,7 +68,7 @@ def delta_report(front, hsi_expiry):
                 for hd in p.get('hedges', []):
                     hedge += (hd.get('qty', 1)) * (-1 if hd.get('side') == 'sell' else 1)
             net = d * qty + hedge
-            # 對沖記錄新鮮度：position.json 的 hedge_verified_hkt（由富途 API／截圖核實嘅時間）超過 26 小時或冇填就警告
+            # 對沖記錄新鮮度：position.json 的 hedge_verified_hkt（由富途 API／截圖核實嘅時間）超過 5 小時（2026-10-13 起收緊，因對沖曾於 09:30 平倉而報告未察覺）或冇填就警告
             stale = ''
             if os.path.exists(pos_f):
                 from datetime import timedelta, timezone
@@ -77,7 +77,7 @@ def delta_report(front, hsi_expiry):
                     age = (now_hkt - datetime.strptime(p.get('hedge_verified_hkt', ''), '%Y-%m-%d %H:%M')).total_seconds() / 3600
                 except ValueError:
                     age = None
-                if age is None or age > 26:
+                if age is None or age > 5:
                     stale = ("  ⚠ 對沖記錄未核實（冇填核實時間）" if age is None else f"  ⚠ 對沖記錄 {age:.0f} 小時前先核實")
                     stale += "，請以富途持倉為準"
             # 對沖爭議：富途讀數同申報唔一致、使用者未確認時，摘要要同時列兩種結果，唔好只報「已對沖」
