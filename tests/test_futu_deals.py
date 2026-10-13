@@ -134,5 +134,10 @@ check("警報文字有補倉一行", "💰 補倉" in txt and "唔會落單" in 
 check("解除訊息冇補倉", "💰" not in main.futu_margin_text("clear", None, "now", {"cushion": 190000}))
 main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR = W, C, F, CL
 
+print("\n=== 配對：MHI2611 全部歸人手，MHI2610 1 手係雲垂對沖 ===")
+a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}])
+check("MHI2611 −10 → 使用者人手", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611"] == [(main.FUTU_TEAM_MANUAL, -10)], a)
+check("MHI2610 −1 → 雲垂對沖", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("雲垂陣", -1)], a)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
