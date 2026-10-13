@@ -2,7 +2,8 @@ name: hkex-option-iv
 # 港交所每日報告：恒指期權每個系列的結算價與引伸波幅（scripts/hkex_option_iv.py）。
 # 雲端工作階段連不到 hkex.com.hk，所以在這裡下載，結果 commit 回觸發時的分支（data/hkex_options/）。
 # 港交所網站只保留約 12 個月的報告，所以每週六排程續抓最近兩週（只在預設分支生效），結果 commit 回預設分支；不發訊息。
-# 排程產品：hsio、hsiwo（恒指月／週期權）、dividend（恒指與國指股息點數期貨，research/index_arbitrage/DIVIDEND_FUTURES.md 要累積多年歷史）。
+# 排程產品：hsio、hsiwo（恒指月／週期權）、hsif／htif／hhif（恒指、科指、國指期貨結算價）、dividend（恒指與國指股息點數期貨）；
+# 期貨與股息期貨給 research/index_arbitrage 的基差與股息研究累積多年歷史。
 on:
   schedule:
     - cron: '17 2 * * 6'     # 週六 10:17 HKT
@@ -46,7 +47,7 @@ jobs:
           PRODUCTS: ${{ github.event.inputs.products }}
         run: |
           if [ -z "$MODE" ]; then                      # 排程：續抓最近 14 天
-            MODE=fetch; START=$(date -u -d '14 days ago' +%F); END=$(date -u +%F); PRODUCTS=hsio,hsiwo,dividend
+            MODE=fetch; START=$(date -u -d '14 days ago' +%F); END=$(date -u +%F); PRODUCTS=hsio,hsiwo,hsif,htif,hhif,dividend
           fi
           if [ "$MODE" = "probe" ]; then
             python3 scripts/hkex_option_iv.py probe "$START"
