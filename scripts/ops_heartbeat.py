@@ -272,6 +272,14 @@ def freshness_checks(now: datetime) -> list[tuple[str, str, datetime | None, flo
         items.append((f"{mkt} 日線（收市時間計）", f"{gc} {path}", last_csv_date(git_show(gc, path), code), 26))
     items.append(("新高名單（美股收市計）", f"{gc} analysis/newhighs/summary.csv",
                   last_csv_date(git_show(gc, "analysis/newhighs/summary.csv"), "us"), 26))
+    try:
+        es = gcs_cat("futu/daily/US.ES_FRONT.json")
+        es_last = es[-1].get("time_key") if isinstance(es, list) and es else None
+    except Exception:  # noqa: BLE001
+        es_last = None
+    # 本機 mt5_push.py 推的 ES 日 K（取代已退役的 es_daily_push.yml）；time_key 是美股交易日 → 按美股收市計
+    items.append(("ES 日線（本機 MT5 推送）", "GCS futu/daily/US.ES_FRONT.json 最後 time_key",
+                  last_csv_date(es_last, "us") if es_last else None, 26))
     dc = "claude/dazzling-curie-f3xzb8"
     items.append(("雲垂每日掃描", f"{dc} tradingview/data_external/scan_report.md",
                   first_date(git_show(dc, "tradingview/data_external/scan_report.md")), 40))
@@ -308,12 +316,12 @@ def judge_freshness(items, now: datetime) -> list[tuple[str, str, str]]:
         if age > limit:
             out.append(("🔴", name, f"最新 {t:%m-%d %H:%M}，已 {age:.0f} 小時（上限 {limit:.0f}）｜{src}"))
         else:
-            out.append(("🟢", name, f"最新 {t:%m-%d %H:%M}（{age:.1f} 小時）"))
+            out.append(("🟢", name, f"最新 {t:%m-%d %H:%M}（{'盤中，未收市' if age < 0 else f'{age:.1f} 小時'}）"))
     return out
 
 
 # ---------------------------------------------------------------- main
-def compose(now: datetime, wf_rows, fresh_rows, errors: list[str]) -> tuple[str, str]:
+def compose(now: datetime, wf_rows, fresh_rows, errors: list[str], retired: dict | None = None) -> tuple[str, str]:
     reds = [r for r in wf_rows + fresh_rows if r[0] == "🔴"]
     n_all = len(wf_rows) + len(fresh_rows)
     head = f"💓 流水線心跳 {now:%m-%d %H:%M} HKT"
@@ -326,6 +334,8 @@ def compose(now: datetime, wf_rows, fresh_rows, errors: list[str]) -> tuple[str,
         short = "\n".join(lines)
     full = [head, "", "## 排程 workflow（過去 24 小時）", *[f"{l} {n}：{m}" for l, n, m in wf_rows],
             "", "## 數據新鮮度", *[f"{l} {n}：{m}" for l, n, m in fresh_rows]]
+    if retired:
+        full += ["", "## 已退役（不檢查）", *[f"⚪ {k}：{v}" for k, v in retired.items()]]
     if errors:
         full += ["", "## 檢查本身的錯誤", *errors]
     full += ["", "Claude Routines 的 last_run 不在此（Actions 讀不到），由總指揮每週用 list_triggers 看。"]
@@ -348,7 +358,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
     fresh_rows = judge_freshness(freshness_checks(now), now)
-    short, full = compose(now, wf_rows, fresh_rows, errors)
+    short, full = compose(now, wf_rows, fresh_rows, errors, load_config().get("retired"))
     print(full)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:

@@ -1,0 +1,27 @@
+date,time_hkt,market,category,event,impact,affects,event_week,source
+2026-10-12,全日,JP,JP 假期,JP 休市：體育之日,Holiday,,Y,claude/gifted-carson-v2tvhw universes/calendars
+2026-10-14,20:30,USD,數據,Core CPI m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-14,20:30,USD,數據,Core CPI y/y,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-14,20:30,USD,數據,CPI m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-14,20:30,USD,數據,CPI y/y,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-15,08:30,AUD,數據,Employment Change,High,,Y,ForexFactory
+2026-10-15,08:30,AUD,數據,Unemployment Rate,High,,Y,ForexFactory
+2026-10-15,14:00,GBP,數據,GDP m/m,High,,Y,ForexFactory
+2026-10-15,20:30,USD,數據,Core PPI m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-15,20:30,USD,數據,Core Retail Sales m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-15,20:30,USD,數據,PPI m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-15,20:30,USD,數據,Retail Sales m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-15,20:30,USD,數據,Philly Fed Manufacturing Index,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-15,20:30,USD,數據,Unemployment Claims,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-16,,持倉,持倉到期,"🌬️ 風揚陣・方向一：沽 HSI 週期權 10/16：Put 23,750 @46 ＋ Call 24,900 @36",High,見事件,Y,POSITIONS.md
+2026-10-16,,持倉,持倉到期,"☁️ 雲垂陣：沽 MES 10/16 跨式 C/P 7,830 各 1 張",High,見事件,Y,POSITIONS.md
+2026-10-16,04:00+1,US,US 期權到期,美股月度期權到期（第三個週五）,Medium,雲垂 MES、人手 EW,Y,規則推算
+2026-10-16,10:00,GBP,數據,BOE Gov Bailey Speaks,High,,Y,ForexFactory
+2026-10-16,11:30,USD,數據,Fed Chairman Warsh Speaks,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
+2026-10-19,全日,HK,HK 假期,HK 休市：重陽節補假,Holiday,風揚、雲垂 HSI、蛇蟠、地載,Y,claude/gifted-carson-v2tvhw universes/calendars
+2026-10-29,,持倉,持倉到期,"☁️ 雲垂陣：沽 MHI 10/29 跨式 C/P 25,000 各 1 張",High,見事件,Y,POSITIONS.md
+2026-10-29,02:00,USD,FOMC,FOMC 利率聲明,High,雲垂 MES、人手 EW、金絲雀；全部,Y,外匯分支 fomc_announcements.csv
+2026-10-29,16:00,HK,HK 結算,恒指／小型恒指 10 月期貨及月度期權結算（倒數第二個交易日）,High,風揚、雲垂 HSI、蛇蟠（轉倉）,Y,futu/calendar/HK.json
+2026-10-30,,持倉,持倉到期,"✋ 使用者人手：沽 EW2610 P7,750 1 張 @68",High,見事件,Y,POSITIONS.md
+2026-10-30,04:00+1,US,US 期權到期,ES／MES EOM 期權到期（月末交易日）,Medium,雲垂 MES、人手 EW,Y,規則推算
+2026-11-03,全日,JP,JP 假期,JP 休市：文化之日,Holiday,,,claude/gifted-carson-v2tvhw universes/calendars

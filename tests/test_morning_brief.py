@@ -88,6 +88,20 @@ class SectionTests(unittest.TestCase):
         self.assertIn("⏳ 2 日後到期：🌬️ 風揚陣・方向一 沽 HSI 週期權 10/16：Put 23,750 @46 ＋ Call 24,900 @36（2026-10-16）", out)
         self.assertNotIn("EW2610", out)   # 16 日後，不列
 
+    def test_events_from_calendar(self):
+        csv_text = ("date,time_hkt,market,category,event,impact,affects,event_week,source\n"
+                    "2026-10-14,20:30,USD,數據,CPI m/m,High,雲垂 MES,Y,FF\n"
+                    "2026-10-15,08:30,AUD,數據,Employment Change,High,,Y,FF\n"
+                    "2026-10-16,,持倉,持倉到期,🌬️ 風揚：沽 HSI 週期權 10/16,High,見事件,Y,POSITIONS.md\n"
+                    "2026-10-19,全日,HK,HK 假期,HK 休市：重陽節補假,Holiday,風揚,Y,cal\n")
+        out = "\n".join(mb.section_events(None, None, NOW, csv_text))
+        self.assertIn("⚠ 本週係事件週：CPI m/m", out)
+        self.assertIn("20:30 USD CPI m/m（雲垂 MES）", out)
+        self.assertNotIn("Employment Change", out)          # 明日 08:30 已超過 24 小時
+        self.assertIn("⏳ 2 日後（10-16）：🌬️ 風揚", out)
+        self.assertNotIn("重陽", out)                       # 5 日後，不列
+        self.assertIn("20:30 USD CPI m/m", "\n".join(mb.section_events(CAL, POSITIONS, NOW, "bad,header\n")))
+
     def test_settlement_and_todo(self):
         self.assertEqual(mb.hsi_settlement(date(2026, 10, 14)), date(2026, 10, 29))
         fri = "\n".join(mb.section_todo(date(2026, 10, 16)))

@@ -1,0 +1,24 @@
+{
+  "_readme": "scripts/event_calendar.py 的規則。affects（事件影響哪個陣）與 event_week（事件週定義）由風揚陣擁有，改這裡不用改程式。初稿 2026-10-13 由預設分支起草，待風揚陣確認。",
+  "ff_keep": {
+    "High": ["*"],
+    "Medium": ["USD", "CNY", "HKD"]
+  },
+  "affects": [
+    {"match": {"country": "USD"}, "teams": "雲垂 MES、人手 EW、金絲雀"},
+    {"match": {"country": "CNY"}, "teams": "風揚、雲垂 HSI、蛇蟠"},
+    {"match": {"country": "HKD"}, "teams": "風揚、雲垂 HSI、蛇蟠"},
+    {"match": {"category": "FOMC"}, "teams": "全部"},
+    {"match": {"category": "HK 假期"}, "teams": "風揚、雲垂 HSI、蛇蟠、地載"},
+    {"match": {"category": "HK 結算"}, "teams": "風揚、雲垂 HSI、蛇蟠（轉倉）"},
+    {"match": {"category": "US 假期"}, "teams": "雲垂 MES、人手 EW"},
+    {"match": {"category": "US 期權到期"}, "teams": "雲垂 MES、人手 EW"},
+    {"match": {"category": "持倉到期"}, "teams": "見事件"}
+  ],
+  "event_week": {
+    "_doc": "某週（週一至週五）只要有下列任一，就標為事件週。風揚陣的「事件週改鐵鷹或減半」以此為準。",
+    "categories": ["FOMC", "HK 結算", "HK 假期"],
+    "ff_title_contains": ["CPI", "Non-Farm", "Payroll", "GDP", "FOMC", "Federal Funds", "PBOC", "LPR"],
+    "ff_min_impact": "High"
+  }
+}

@@ -94,6 +94,8 @@ class FreshnessTests(unittest.TestCase):
         friday_close = datetime(2026, 10, 16, 0, 0, tzinfo=hb.HKT)
         rows = hb.judge_freshness([("日線", "s", friday_close, 40)], monday)
         self.assertEqual(rows[0][0], "🟢")   # 79.5 小時 < 40 + 48
+        intraday = hb.judge_freshness([("ES", "s", now + timedelta(hours=10), 26)], now)
+        self.assertIn("盤中，未收市", intraday[0][2])
 
     def test_dates(self):
         self.assertEqual(hb.last_csv_date("Date,Close\n2026-10-12,1\n2026-10-13,2\n").day, 13)
@@ -111,6 +113,13 @@ class ComposeTests(unittest.TestCase):
         short, full = hb.compose(now, [("🟢", "a.yml", "1/1")], [("🟢", "x", "ok")], [])
         self.assertEqual(short.count("\n"), 0)
         self.assertIn("全部 2 項 🟢", short)
+
+    def test_retired_listed_in_full_only(self):
+        now = datetime(2026, 10, 14, 7, 30, tzinfo=hb.HKT)
+        short, full = hb.compose(now, [("🟢", "a.yml", "1/1")], [], [], {"es_daily_push.yml": "改由 MT5 推送"})
+        self.assertNotIn("es_daily_push", short)
+        self.assertIn("## 已退役（不檢查）", full)
+        self.assertIn("⚪ es_daily_push.yml：改由 MT5 推送", full)
 
     def test_reds_only(self):
         now = datetime(2026, 10, 14, 7, 30, tzinfo=hb.HKT)
