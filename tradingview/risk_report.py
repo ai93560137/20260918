@@ -34,6 +34,15 @@ def implied(price, F, K, T, cp):
 
 def load(book_path):
     b = json.loads(Path(book_path).read_text(encoding="utf-8"))
+    # 真實權益／保證金放本機 risk_book.local.json（已 gitignore，不入公開 repo）；同名欄位覆蓋，margin 逐欄合併
+    loc = Path(book_path).with_name("risk_book.local.json")
+    if loc.exists():
+        o = json.loads(loc.read_text(encoding="utf-8"))
+        for k, v in o.items():
+            if isinstance(v, dict) and isinstance(b.get(k), dict):
+                b[k].update(v)
+            else:
+                b[k] = v
     val = date.fromisoformat(b["valuation_date"])
     fx = b["fx"]
     for p in b["positions"]:

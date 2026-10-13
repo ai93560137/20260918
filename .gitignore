@@ -10,3 +10,6 @@ personal/
 
 # 行情資料 — 不進版本庫
 tradingview/data/
+
+# 本機真實權益／保證金（不入公開 repo）
+tradingview/data_external/risk_book.local.json
