@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write   # Workload Identity Federation 免金鑰登入 GCP（同 gcp_deploy.yml）
 
 concurrency:
   group: screener-scorecard
@@ -42,11 +43,20 @@ jobs:
       - name: Screener scorecard
         run: python3 scripts/screener_scorecard.py --src _src --out research/screener_scorecard --as-of "$(date +%F)"
 
-      - name: Fetch XAUUSD realized-PnL ledger from GCS（有 GCP_SA_KEY 才做）
+      - name: Authenticate to GCP (Workload Identity Federation，GitHub 不持有金鑰)
+        id: gcp_auth
+        continue-on-error: true   # 沒設 WIF secrets 時不擋評分卡，只略過 XAUUSD 帳本
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Fetch XAUUSD realized-PnL ledger from GCS
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT: sacred-alliance-453716-b7
         run: |
-          if [ -z "$GCP_SA_KEY" ]; then echo "沒有 GCP_SA_KEY secret，略過 XAUUSD 帳本（沿用 repo 內的舊檔）"; exit 0; fi
+          if [ "${{ steps.gcp_auth.outcome }}" != "success" ] || [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
+            echo "GCP 登入未成功（WIF secrets 未設或無權），略過 XAUUSD 帳本（沿用 repo 內的舊檔）"; exit 0; fi
           pip install -q -r scripts/requirements-agent.txt
           python3 scripts/gcp_agent.py cat --object logs/trade_ledger.json > /tmp/ledger.json || { echo "::warning::讀不到 logs/trade_ledger.json（main.py R171 未部署或尚無平倉）"; exit 0; }
           python3 -c "import json,sys; d=json.load(open('/tmp/ledger.json')); assert isinstance(d,list); json.dump(d, open('research/divergence/xau_trade_ledger.json','w'), ensure_ascii=False, indent=1)" \
