@@ -19,6 +19,11 @@
   * ✋ 人手：富途風險快照（gcp_agent.py cat --object futu/risk/latest.json）的 stop_use，選用
   * 智能諸葛亮 XAUUSD：GCS logs/trade_ledger.json（main.py R171 在 MT5 balance 變動時寫），
     workflow 用 gcp_agent.py cat 抓成 research/divergence/xau_trade_ledger.json；只拿 kind == "trade" 的列
+  * 🐤 金絲雀（風險預報，不是交易）：canary/posthoc_log.csv（每個燈色日一列 📐 後驗倍率），
+    按燈分組對比 canary/POSTHOC_EXPECT.md 的歷史期望。燈號另有一套（2026-10-13 預先登記）：
+      相鄰燈色日的 5 日窗口重疊，有效樣本 n_eff = n ÷ 5；n_eff < 5 → ⚪ 不判
+      燈亮的組（黃／紅／深紅）：z < −1 🟡「訊號比歷史弱」；z < −2 🔴「建議重審燈號」
+      綠燈組：z > +1 🟡「綠燈期波動比歷史高（漏報）」；z > +2 🔴「建議重審燈號」
 
 用法：
     python3 scripts/strategy_divergence.py --journal <目錄含 forward_test.csv> [--futu latest.json] --out research/divergence
@@ -201,6 +206,38 @@ def read_futu(path: Path | None) -> dict | None:
 
 
 # ---------------------------------------------------------------- 報告
+CANARY_MIN_NEFF = 5
+
+
+def read_canary(path: Path, state_col: str, value_col: str) -> dict:
+    if not path.exists():
+        return {"error": f"{path} 不存在"}
+    by: dict[str, list[float]] = {}
+    with path.open(encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            st, v = r.get(state_col, ""), r.get(value_col, "")
+            if not st or not v:
+                continue
+            by.setdefault(st, []).append(float(v))
+    return {"by_state": by}
+
+
+def canary_light(state: str, z: float | None, n_eff: float) -> tuple[str, str]:
+    if n_eff < CANARY_MIN_NEFF or z is None:
+        return "⚪", f"有效樣本 {n_eff:.1f} < {CANARY_MIN_NEFF} 不判"
+    if state == "綠":
+        if z > 2:
+            return "🔴", f"z = {z:.2f} > 2：綠燈期波動遠高於歷史（漏報）→ 建議重審燈號"
+        if z > 1:
+            return "🟡", f"z = {z:.2f} > 1：綠燈期波動比歷史高，留意"
+    else:
+        if z < -2:
+            return "🔴", f"z = {z:.2f} < −2：亮燈後波動遠低於歷史（訊號變弱）→ 建議重審燈號"
+        if z < -1:
+            return "🟡", f"z = {z:.2f} < −1：亮燈後波動比歷史低，留意"
+    return "🟢", "在歷史分佈內"
+
+
 def fmt(x, d=0, unit=""):
     if x is None:
         return "—"
@@ -319,6 +356,32 @@ def main() -> None:
                     f"- 帳本 {xl['n_rows']} 列，其中已實現交易 {n} 筆（{xl['first']} → {xl['last']}）；出入金 {xl['other_kinds']['transfer']} 列、"
                     f"credit 變動 {xl['other_kinds']['credit']} 列不計。",
                     f"- 回測來源：{e['bt_source']}；{e.get('note', '')}。", ""]
+
+    # 金絲雀：風險預報，按燈分組（與交易策略分開一張表）
+    if "canary_posthoc" in exp:
+        e = exp["canary_posthoc"]
+        cz = read_canary(Path(e["live"]["path"]), e["live"]["state_col"], e["live"]["value_col"])
+        C = ["", f"## {e['name']}", "",
+             f"> 風險預報不是交易，燈號另一套（`scripts/strategy_divergence.py` 檔頭）。歷史期望：{e['bt_source']}，樣本 {e['bt_sample']}；"
+             f"相鄰燈色日窗口重疊，z 用有效樣本 n ÷ {e['overlap_days']}。", "",
+             "| 燈 | 燈號 | 前向日數 | 有效樣本 | 前向倍率平均 | 歷史平均 ± 標準差 | z | 說明 |",
+             "|---|---|---:|---:|---:|---:|---:|---|"]
+        if "error" in cz:
+            C.append(f"| — | ⚪ | — | — | — | — | — | {cz['error']} |")
+        else:
+            for stt, g in e["groups"].items():
+                live = cz["by_state"].get(stt, [])
+                n_eff = len(live) / e["overlap_days"]
+                z = None
+                if live and g.get("std"):
+                    z = (statistics.fmean(live) - g["mean"]) / (g["std"] / math.sqrt(max(n_eff, 1e-9)))
+                lt, why = canary_light(stt, z, n_eff)
+                C.append(f"| {stt} | {lt} | {len(live)} | {n_eff:.1f} | {fmt(statistics.fmean(live), 2) if live else '—'} | "
+                         f"{g.get('mean', 0):.2f} ± {g.get('std', 0):.2f} | {fmt(z, 2)} | {why} |")
+            skipped = sum(len(v) for k, v in cz["by_state"].items() if k not in e["groups"])
+            if skipped:
+                C.append(f"\n（另有 {skipped} 列燈色不屬四組，不計。）")
+        L += C
 
     L += ["", *details,
           "## 這張表的用途", "",
