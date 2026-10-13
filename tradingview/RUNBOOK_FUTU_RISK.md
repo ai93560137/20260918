@@ -159,3 +159,31 @@ Start-Process "$([Environment]::GetFolderPath('Startup'))\ZhugeAutoRisk.cmd"
 Get-Content tradingview\out\pnl_export_state.json -Encoding utf8
 Get-Content tradingview\out\pnl_export_last.log -Encoding utf8 -Tail 5
 ```
+
+## 9. 每日成交紀錄（R172，`auto_risk.py` 內建）
+
+`auto_risk.py` 除咗 05:30 基金報告，仲會喺香港時間 **03:05**（夜盤 17:15–03:00 成交）同 **16:35**（日盤成交）之後第一次循環，
+各喺背景再跑一次 `futu_pnl_export.py`（同一個 `action=futu_pnl`）。Cloud Run 收到後會另外計「當日逐筆成交、按合約彙總、FIFO 平倉（開倉價→平倉價、點數、HKD／USD）」，
+存 `futu/deals/<香港日期>.json`（今日＋前一日一齊重算，夜盤跨日）。總指揮 16:45 收市摘要同 03:15 夜盤通報會讀呢個檔，有 MHI／MES 成交就通報雲垂陣。
+純讀取：唔落單、唔 unlock_trade、唔改單；已實現盈虧未計佣金／費用，以富途 App 為準。
+
+每個時段成功先記低（`tradingview\out\pnl_export_state.json` 嘅 `done_slots`），失敗最多試 3 次。唔想要就加 `--no-pnl`（連基金報告一齊停）。
+
+更新（攞新版之後要重開 auto_risk）：
+
+```powershell
+git fetch origin claude/beautiful-hypatia-8qrgjj
+git checkout origin/claude/beautiful-hypatia-8qrgjj -- gcp_ib/auto_risk.py
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object CommandLine -like "*auto_risk.py*" | ForEach-Object { Stop-Process -Id $_.ProcessId }
+Start-Process "$([Environment]::GetFolderPath('Startup'))\ZhugeAutoRisk.cmd"
+```
+
+查結果（本機）：
+
+```powershell
+Get-Content tradingview\out\pnl_export_state.json -Encoding utf8
+```
+
+查結果（雲端，總指揮）：`python3 scripts/gcp_agent.py cat --object futu/deals/2026-10-14.json`。
+首次上線請同富途 App「成交紀錄」核對一次（合約、時間、價、手數）。
+

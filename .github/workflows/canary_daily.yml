@@ -85,7 +85,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # tg_daily.txt 也要提交:它是當天真正發出的 Telegram 全文(sent_log.csv 的 tg_sha1 指向它)。
           # 用 GITHUB_TOKEN 推送不會觸發 canary_broadcast.yml(GitHub 防遞迴),不會重發。
-          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/tg_daily.txt canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
+          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/posthoc_log.csv canary/tg_daily.txt canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
           HKD=$(TZ=Asia/Hong_Kong date +%F)   # 報告日 = 香港日期(22:30 UTC 已是香港翌日 06:30)
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi

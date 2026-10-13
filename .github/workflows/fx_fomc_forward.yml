@@ -1,0 +1,65 @@
+name: FX FOMC forward（pre-FOMC 美元漂移前向紙上記錄，每日）
+
+# 協議：forex_research/FX_FOMC_DRIFT_FORWARD.md。每天 02:30 UTC（週二至週六）：
+# ZQ 日線＝倉庫內快取 forward/zq_hist/（各合約檔副本）＋每天從雲垂分支 raw 抓最新 zq_daily.csv（抓到就更新快取；不用 GitHub API）→ 算每個排定 FOMC 的 t−3 訊號 → 有訊號的事件用 Dukascopy M1 結算 t−2 → t 的紙上損益
+# （M1 快取進 forex_research/forward/fomc_m1/）→ 重寫 fomc_events.csv 與 FOMC_STATUS.md。dry=true 只印不 commit。
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'true = 只印出不 commit'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: '30 2 * * 2-6'
+  push:
+    branches: [claude/forex-data-testing-w4q3m2]
+    paths: ['.github/workflows/fx_fomc_forward.yml', 'scripts/fx_fomc_forward.py', 'scripts/fx_fomc_drift.py']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fx-fomc-forward
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/forex-data-testing-w4q3m2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests pandas numpy
+      - name: Refresh fed funds target (FRED)
+        run: |
+          for s in DFEDTARU DFEDTARL; do
+            curl -fsSL "https://fred.stlouisfed.org/graph/fredgraph.csv?id=$s" -o /tmp/$s.csv && sed 's/^observation_date/Date/;s/,'$s'$/,Value/' /tmp/$s.csv | sed '1s/.*/Date,Value/' > data_forex_rates/info/$s.csv || echo "FRED $s 失敗，用倉庫內舊檔"
+          done
+          head -2 data_forex_rates/info/DFEDTARU.csv; tail -1 data_forex_rates/info/DFEDTARU.csv
+      - name: Record
+        run: |
+          OUT="forex_research/forward"
+          if [ "${{ inputs.dry }}" = "true" ]; then cp -r forex_research/forward /tmp/fomc_dry; OUT="/tmp/fomc_dry"; fi
+          # Dukascopy 限流時 32 個 M1 檔可能抓不完：45 分鐘到就停，Commit 步驟照常提交已抓到的快取（記錄器是決定性重算，下次續抓）
+          timeout 45m python3 scripts/fx_fomc_forward.py --out "$OUT" || echo "記錄器逾時或失敗（exit $?），提交已抓到的快取"
+      - name: Commit
+        if: ${{ inputs.dry != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          FILES="forex_research/forward/fomc_m1 forex_research/forward/zq_hist forex_research/forward/fomc_events.csv forex_research/forward/FOMC_STATUS.md data_forex_rates/info/DFEDTARU.csv data_forex_rates/info/DFEDTARL.csv"
+          git add $FILES
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "forward(fomc): pre-FOMC 美元漂移每日記錄 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/forex-data-testing-w4q3m2 && exit 0
+            sleep $((i * 7)); git fetch origin claude/forex-data-testing-w4q3m2; git reset --mixed FETCH_HEAD
+            git add $FILES; git diff --cached --quiet && exit 0
+            git commit -q -m "forward(fomc): pre-FOMC 美元漂移每日記錄 $(date -u +%F)"
+          done
+          exit 1

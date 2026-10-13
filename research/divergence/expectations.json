@@ -82,5 +82,49 @@
       "path": "research/divergence/ledger_yunchui.csv",
       "filter_instrument": "MES"
     }
+  },
+  "canary_posthoc": {
+    "name": "🐤 金絲雀 📐 後驗(燈色日後 5 日 SPX 實現波動 ÷ 前一年中位)",
+    "unit": "倍",
+    "kind": "risk_forecast",
+    "bt_source": "canary/POSTHOC_EXPECT.md(canary/posthoc_expect.py,與每日 📐 同口徑,2026-10-13 MOVE 沿用規則下重產)",
+    "bt_sample": "2011-01-03 → 2026-10-05",
+    "groups": {
+      "綠": {
+        "n": 2429,
+        "mean": 0.935,
+        "std": 0.5414,
+        "median": 0.8117,
+        "down2_rate": 0.0638
+      },
+      "黃": {
+        "n": 464,
+        "mean": 1.2798,
+        "std": 0.68,
+        "median": 1.161,
+        "down2_rate": 0.1185
+      },
+      "紅": {
+        "n": 770,
+        "mean": 1.3741,
+        "std": 0.8048,
+        "median": 1.1784,
+        "down2_rate": 0.1974
+      },
+      "深紅": {
+        "n": 299,
+        "mean": 3.1194,
+        "std": 2.7296,
+        "median": 2.2491,
+        "down2_rate": 0.4883
+      }
+    },
+    "overlap_days": 5,
+    "live": {
+      "path": "canary/posthoc_log.csv",
+      "state_col": "state",
+      "value_col": "ratio"
+    },
+    "note": "風險預報不是交易:燈亮的組前向倍率明顯低於歷史 = 訊號變弱;綠燈組明顯高於歷史 = 漏報。相鄰燈色日的 5 日窗口重疊,z 用有效樣本 n ÷ 5。"
   }
 }

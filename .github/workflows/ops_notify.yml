@@ -1,0 +1,90 @@
+name: Ops notify（對沖狀態／富途成交通報，純 Python，取代總指揮兩個 Routine）
+
+# FUND_SOP 缺口 2／6：純「讀 GCS → 比對 → Telegram」的通報不耗 Claude 額度。
+# 規格與訊息格式見 scripts/ops_notify.py 檔頭；設定（雲垂申報對沖手數等）在 ops/notify_config.json。
+# 狀態存 GCS ops/notify_state.json；對沖狀態另寫 ops/hedge_status.txt 給雲垂 16:00 Routine 讀。
+# 使用 Workload Identity 免金鑰讀寫 GCS（同 gcp_deploy.yml、screener_scorecard.yml）。
+on:
+  schedule:
+    - cron: '35 6 * * 1-5'    # 14:35 HKT 對沖狀態（給雲垂 14:42 報告）
+    - cron: '55 7 * * 1-5'    # 15:55 HKT 對沖狀態（給雲垂 16:00 對沖）
+    - cron: '10 9 * * 1-5'    # 17:10 HKT 成交通報（日盤；本機 16:35 匯出）
+    - cron: '40 19 * * 1-5'   # 03:40 HKT 翌日（週二至六）成交通報（夜盤；本機 03:05 匯出）
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'auto（按香港時間判斷）、hedge、deals'
+        required: false
+        default: 'auto'
+      dry_run:
+        description: '只印不發、不寫狀態（true/false）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write   # commit ops/hedge_status_latest.txt、ops/deals_latest.json 給雲垂 git fetch 讀
+  id-token: write
+
+concurrency:
+  group: ops-notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Hong_Kong
+      GCP_PROJECT: sacred-alliance-453716-b7
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q -r scripts/requirements-agent.txt
+
+      - name: Notify
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          TASK: ${{ inputs.task || 'auto' }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          ARGS="--task $TASK"
+          if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python3 scripts/ops_notify.py $ARGS
+
+      - name: Commit repo copies（雲垂工作階段沒有 GCP 金鑰，用 git fetch 讀）
+        if: ${{ (inputs.dry_run || 'false') != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BR="${GITHUB_REF_NAME}"
+          add_out() { for f in ops/hedge_status_latest.txt ops/deals_latest.json; do [ -f "$f" ] && git add "$f"; done; true; }
+          add_out
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          MSG="chore(ops): 對沖狀態／成交摘要 $(date '+%F %H:%M') HKT"
+          git commit -q -m "$MSG"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BR" && exit 0
+            sleep $((i * 7))
+            cp ops/hedge_status_latest.txt /tmp/h.txt 2>/dev/null || true
+            cp ops/deals_latest.json /tmp/d.json 2>/dev/null || true
+            git fetch origin "$BR"
+            git reset -q --hard FETCH_HEAD
+            cp /tmp/h.txt ops/hedge_status_latest.txt 2>/dev/null || true
+            cp /tmp/d.json ops/deals_latest.json 2>/dev/null || true
+            add_out
+            if git diff --cached --quiet; then echo "遠端已有相同內容"; exit 0; fi
+            git commit -q -m "$MSG"
+          done
+          echo "push 重試 5 次仍失敗" && exit 1

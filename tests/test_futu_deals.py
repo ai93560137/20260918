@@ -1,0 +1,126 @@
+"""[R172] 每日成交紀錄：futu_deals_build（當日逐筆、彙總、FIFO 平倉）、handle_futu_pnl 寫 futu/deals/<日期>.json、
+auto_risk.pnl_slot 匯出時段。"""
+import json, os, sys, types
+
+os.environ.setdefault("WEBHOOK_SECRET_TOKEN", "tok")
+sys.path.insert(0, "/home/user/20260918")
+
+import functions_framework                      # noqa: E402  真的載入，別被假模組蓋掉
+import google, google.cloud                      # noqa: E402
+FAKE = {}
+class _Blob:
+    def __init__(self, name): self.name = name; self.generation = FAKE.get(name, (None, 0))[1]
+    def exists(self): return self.name in FAKE
+    def download_as_text(self, *a, **k):
+        if self.name not in FAKE: raise KeyError(self.name)
+        return FAKE[self.name][0]
+    def download_as_bytes(self, *a, **k): return self.download_as_text().encode("utf-8")
+    def upload_from_string(self, data, *a, **k):
+        gen = FAKE.get(self.name, (None, 0))[1] + 1
+        FAKE[self.name] = (data, gen); self.generation = gen
+    def reload(self): self.generation = FAKE.get(self.name, (None, 0))[1]
+class _Bucket:
+    def blob(self, name): return _Blob(name)
+    def get_blob(self, name): return _Blob(name) if name in FAKE else None
+class _Client:
+    def __init__(self, *a, **k): pass
+    def bucket(self, name): return _Bucket()
+storage_mod = types.ModuleType("google.cloud.storage"); storage_mod.Client = _Client
+sys.modules["google.cloud.storage"] = storage_mod; google.cloud.storage = storage_mod
+genai = types.ModuleType("google.genai"); genai.Client = lambda *a, **k: None
+genai.types = types.SimpleNamespace(); sys.modules["google.genai"] = genai
+exc_mod = types.ModuleType("google.api_core.exceptions")
+class _PC(Exception): pass
+exc_mod.PreconditionFailed = _PC; exc_mod.NotFound = KeyError
+api_core = types.ModuleType("google.api_core"); api_core.exceptions = exc_mod
+sys.modules["google.api_core"] = api_core; sys.modules["google.api_core.exceptions"] = exc_mod
+
+import main                                      # noqa: E402
+from datetime import date, datetime, timedelta   # noqa: E402
+
+OK = FAIL = 0
+def check(name, cond, extra=""):
+    global OK, FAIL
+    if cond: OK += 1; print(f"  ✅ {name}")
+    else: FAIL += 1; print(f"  ❌ {name} {extra}")
+
+
+def utc(hkt):      # futu_pnl 嘅成交時間係 UTC；FUTU_DEAL_TZ_HOURS=8 換回香港
+    return (datetime.strptime(hkt, "%Y-%m-%d %H:%M:%S") - timedelta(hours=main.FUTU_DEAL_TZ_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def deal(hkt, code, side, qty, px, oid="o"):
+    return {"time": utc(hkt), "code": code, "side": side, "qty": qty, "price": px, "order_id": oid}
+
+
+print("\n=== futu_deals_build：FIFO 平倉（雲垂 self-test 同款）===")
+D = date(2026, 10, 13)
+doc = {"since": "2026-09-01", "fetched_hkt": "2026-10-13 16:36", "deals": [
+    deal("2026-10-09 19:49:00", "HK.MHI2610", "SELL", 1, 24200.0, "a"),   # 開空
+    deal("2026-10-13 12:00:00", "HK.MHI2610", "BUY", 1, 24168.0, "b"),    # 平空 +32 點
+    deal("2026-10-13 15:07:00", "HK.MHI2610", "SELL", 1, 24305.0, "c"),   # 再開空
+]}
+r = main.futu_deals_build(doc, D)
+check("date", r["date"] == "2026-10-13")
+check("當日成交 2 筆、時間已換香港", [d["time_hkt"] for d in r["deals"]] == ["2026-10-13 12:00:00", "2026-10-13 15:07:00"], r["deals"])
+check("買／賣標示", [d["side"] for d in r["deals"]] == ["買", "賣"])
+check("只有一筆平倉", len(r["closed"]) == 1, r["closed"])
+c = r["closed"][0]
+check("平空 24,200→24,168 = +32 點", c["side"] == "平空" and c["open_price"] == 24200.0 and c["close_price"] == 24168.0 and c["realized_pts"] == 32)
+check("MHI ×10 = +320 HKD", c["realized_ccy"] == 320 and c["ccy"] == "HKD", c)
+check("彙總淨手數 0", r["summary"][0]["net_qty"] == 0 and r["summary"][0]["buy_avg"] == 24168.0 and r["summary"][0]["sell_avg"] == 24305.0, r["summary"])
+check("前一日冇平倉", main.futu_deals_build(doc, date(2026, 10, 9))["closed"] == [])
+check("前一日只有開倉一筆", len(main.futu_deals_build(doc, date(2026, 10, 9))["deals"]) == 1)
+
+print("\n=== 多頭部分平倉、HSI ×50、美期權 USD ===")
+doc2 = {"deals": [
+    deal("2026-10-13 10:00:00", "HK.MHI2610", "BUY", 3, 100.0, "a"),
+    deal("2026-10-13 11:00:00", "HK.MHI2610", "SELL", 2, 110.0, "b"),
+    deal("2026-10-12 15:09:57", "HK.HSI2610", "BUY", 1, 24254.0, "c"),
+    deal("2026-10-13 09:30:00", "HK.HSI2610", "SELL", 2, 24300.0, "d"),    # 平多 1（+46 點）＋ 開空 1
+    deal("2026-10-13 21:40:00", "US.EX32610C7830x0", "SELL", 1, 88.75, "e"),
+    deal("2026-10-13 22:10:00", "US.EX32610C7830x0", "BUY", 1, 60.25, "f"),   # 平空 +28.5 點 ×5 USD
+]}
+r2 = main.futu_deals_build(doc2, D)
+cl = {(c["code"], c["side"]): c for c in r2["closed"]}
+check("MHI 平多 2 手 +10 點 = +200 HKD", cl[("HK.MHI2610", "平多")]["qty"] == 2 and cl[("HK.MHI2610", "平多")]["realized_ccy"] == 200)
+check("HSI 平多 1 手 +46 點 = +2,300 HKD", cl[("HK.HSI2610", "平多")]["qty"] == 1 and cl[("HK.HSI2610", "平多")]["realized_ccy"] == 2300)
+check("HSI 剩 1 手新開空（彙總淨 −2）", [x for x in r2["summary"] if x["code"] == "HK.HSI2610"][0]["net_qty"] == -2)
+check("MES 週權平空 +28.5 點 = +142.5 USD", cl[("US.EX32610C7830x0", "平空")]["realized_ccy"] == 142.5 and cl[("US.EX32610C7830x0", "平空")]["ccy"] == "USD")
+check("壞資料被略過", main.futu_deals_build({"deals": [{"time": "x", "code": "HK.MHI2610"}, {"time": utc("2026-10-13 10:00:00"), "code": "HK.MHI2610", "side": "BUY", "qty": 0, "price": 1}]}, D)["deals"] == [])
+
+print("\n=== handle_futu_pnl 寫 futu/deals/<今日>.json 同前一日 ===")
+client = main.app.test_client()
+today = datetime.now(main.HK_TZ).date()
+body = {"action": "futu_pnl", "token": "tok", "since": "2026-09-01", "fetched_hkt": "now",
+        "deals": [deal(f"{today - timedelta(days=1)} 19:49:00", "HK.MHI2610", "SELL", 1, 24200.0, "a"),
+                  deal(f"{today} 12:00:00", "HK.MHI2610", "BUY", 1, 24168.0, "b")]}
+res = client.post("/", data=json.dumps(body), content_type="application/json")
+js = res.get_json()
+check("futu_pnl 回 stored", res.status_code == 200 and js.get("status") == "stored", js)
+check("回傳寫咗兩個日期", js.get("daily") == [today.isoformat(), (today - timedelta(days=1)).isoformat()], js)
+check("futu/pnl/latest.json 照舊", main.FUTU_PNL_FILE in FAKE)
+f_today = f"futu/deals/{today.isoformat()}.json"
+check("今日檔存在", f_today in FAKE)
+dd = json.loads(FAKE[f_today][0])
+check("今日檔有平倉 +320 HKD", dd["closed"] and dd["closed"][0]["realized_ccy"] == 320, dd.get("closed"))
+dy = json.loads(FAKE[f"futu/deals/{(today - timedelta(days=1)).isoformat()}.json"][0])
+check("前一日檔只有開倉", len(dy["deals"]) == 1 and dy["closed"] == [])
+check("冇成交照舊 422", client.post("/", data=json.dumps({"action": "futu_pnl", "token": "tok", "deals": []}),
+                                 content_type="application/json").status_code == 422)
+
+print("\n=== auto_risk.pnl_slot 匯出時段 ===")
+sys.path.insert(0, "/home/user/20260918/gcp_ib")
+import auto_risk                                 # noqa: E402
+t = lambda h, m: datetime(2026, 10, 13, h, m, tzinfo=auto_risk.HKT)
+check("03:04 未到任何時段", auto_risk.pnl_slot(t(3, 4)) is None)
+check("03:05 → 03:05", auto_risk.pnl_slot(t(3, 5)) == "2026-10-13|03:05")
+check("05:29 仍係 03:05", auto_risk.pnl_slot(t(5, 29)) == "2026-10-13|03:05")
+check("05:30 → 05:30", auto_risk.pnl_slot(t(5, 30)) == "2026-10-13|05:30")
+check("16:34 仍係 05:30", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|05:30")
+check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
+check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
+check("SCRIPT_VERSION R172", auto_risk.SCRIPT_VERSION == "R172")
+
+print(f"\n通過 {OK} / 失敗 {FAIL}")
+sys.exit(1 if FAIL else 0)

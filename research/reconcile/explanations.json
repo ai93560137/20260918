@@ -1,0 +1,4 @@
+{
+ "_readme": "對帳表 ⚠ 嘅人手解釋：鍵＝富途代碼，值＝{date: 解釋日期, reason: 原因}。解釋日期 ≥ 不一致首次出現日先算已解釋；連續兩個交易日未解釋會升級 RISK_LADDER Ⓑ。",
+ "US.EW2610P7750x0": {"date": "2026-10-13", "reason": "富途 API 持倉查詢唔回傳 CME 月底期權（冇行情權限），只喺 tradingview/data_external/risk_book.json 用截圖價計；待使用者核對富途 App 仍持有"}
+}

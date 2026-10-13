@@ -1,0 +1,52 @@
+name: Morning brief（晨會簡報，平日 08:30 HKT → Telegram）
+
+# FUND_SOP 缺口 2：一則「只看這則也夠」的晨會簡報。只讀、不重算，原料見 scripts/morning_brief.py 檔頭。
+# 含權益與保證金，全文只發 Telegram 並存 GCS ops/brief/（私人），不 commit 進 repo。
+on:
+  schedule:
+    - cron: '30 0 * * 1-5'   # 08:30 HKT 週一至五（金絲雀 06:30 已出、恒指 09:15 開市前）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只印不發、不寫 GCS（true/false）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: morning-brief
+  cancel-in-progress: false
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Hong_Kong
+      GCP_PROJECT: sacred-alliance-453716-b7
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q -r scripts/requirements-agent.txt
+
+      - name: Brief
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          if [ "$DRY" = "true" ]; then python3 scripts/morning_brief.py --dry-run; else python3 scripts/morning_brief.py; fi
