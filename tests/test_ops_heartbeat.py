@@ -66,6 +66,13 @@ class WorkflowJudgeTests(unittest.TestCase):
         self.assertEqual(d["a.yml"][0], "🔴"); self.assertIn("disabled_inactivity", d["a.yml"][1])
 
 
+    def test_must_be_active(self):
+        meta = {"b.yml": {"created_at": u("2026-01-01 00:00"), "state": "disabled_manually"}}
+        rows = hb.check_workflows(self.WFS, [], u("2026-10-12 23:00"), u("2026-10-13 23:00"), meta, None,
+                                  {"b.yml": "要修好再開"})
+        d = {n: (l, m) for l, n, m in rows}
+        self.assertEqual(d["b.yml"][0], "🔴"); self.assertIn("要修好再開", d["b.yml"][1])
+
     def test_added_to_branch_later(self):
         wfs = {"fx.yml": {"name": "FX", "crons": ["40 1 * * 2-6"]}}         # 每日 01:40 UTC
         late = lambda f: u("2026-10-13 06:00")                             # 01:40 之後才放上預設分支

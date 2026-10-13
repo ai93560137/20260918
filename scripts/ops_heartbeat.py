@@ -142,8 +142,14 @@ def gh_first_on_branch(fname: str) -> datetime | None:
     return datetime.fromisoformat(oldest.replace("Z", "+00:00")).astimezone(UTC)
 
 
+def load_config() -> dict:
+    p = ROOT / "ops" / "heartbeat_config.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+
+
 def check_workflows(wfs: dict, runs: list[dict], start: datetime, end: datetime,
-                    meta: dict | None = None, first_on_branch=None) -> list[tuple[str, str, str]]:
+                    meta: dict | None = None, first_on_branch=None,
+                    must_be_active: dict | None = None) -> list[tuple[str, str, str]]:
     """回傳 [(燈, 名稱, 說明)]。meta 有 created_at 時，窗口從建立時間起算（今天才加的 workflow 不會被誤判沒跑）。"""
     meta = meta or {}
     by_file: dict[str, list[dict]] = {}
@@ -152,6 +158,9 @@ def check_workflows(wfs: dict, runs: list[dict], start: datetime, end: datetime,
     out = []
     for fname, wf in wfs.items():
         m = meta.get(fname) or {}
+        if m.get("state") == "disabled_manually" and fname in (must_be_active or {}):
+            out.append(("🔴", fname, f"已手動停用，但應恢復：{must_be_active[fname]}"))
+            continue
         if m.get("state") == "disabled_manually":       # 有人刻意停用：只列在全文，不當紅燈
             out.append(("⚪", fname, "已手動停用（排程不會跑；要恢復到 Actions 頁 Enable workflow）"))
             continue
@@ -335,7 +344,7 @@ def main() -> int:
     wf_rows: list = []
     try:
         wf_rows = check_workflows(load_workflows(), gh_schedule_runs(start - timedelta(minutes=30)), start, end,
-                                  gh_workflow_meta(), gh_first_on_branch)
+                                  gh_workflow_meta(), gh_first_on_branch, load_config().get("must_be_active"))
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
     fresh_rows = judge_freshness(freshness_checks(now), now)
