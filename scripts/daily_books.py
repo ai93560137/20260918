@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """每日對帳表＋逐日損益帳（FUND_SOP 缺口 3、5；總指揮擁有，純 Python，GitHub Actions ops_daily_books.yml 每日 17:20 HKT 跑）。
 
-對帳表（research/reconcile/<日>.md，repo 公開；只有手數，同 POSITIONS.md 一樣公開程度）：
+對帳表（research/reconcile/<日>.md，repo 公開；只有手數同燈號，冇任何金額／NAV 百分比——金額＋手數可反推權益；
+  含金額嘅完整版寫 GCS ops/books/reconcile_private/<日>.md，私人）。Actions 日誌公開，含金額內文一律 print_private 只印字數：
   每個合約並列三方：① 富途快照 futu/risk/latest.json 嘅 positions.qty；② POSITIONS.md 登記（由持倉欄文字解析）；
   ③ 各陣 journal（蛇蟠 journal/position.json hsi.real_pos、雲垂 position.json hedges／跨式、position_mes.json、
   風揚 PAPER_TRADING.md 方向一本週兩腳）。三方一致 ✅；唔一致 ⚠ 並列「原因」欄（research/reconcile/explanations.json，
@@ -95,6 +96,14 @@ def git_show(branch: str, path: str) -> str | None:
         if r.returncode == 0:
             return r.stdout
     return None
+
+
+def print_private(text: str) -> None:
+    """含金額／權益嘅內文：本機照印；GitHub Actions 日誌喺公開 repo 人人睇到，只印字數（同 ops_notify.print_private）。"""
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"（內文含金額，Actions 日誌公開所以不印；{len(text)} 字，見 Telegram／GCS）")
+    else:
+        print(text)
 
 
 def send_telegram(text: str) -> bool:
@@ -487,6 +496,36 @@ def manual_limits(risk: dict | None, deals: dict | None) -> tuple[list[str], dic
     return why, out
 
 
+PRIVATE_DIR_OBJECT = "ops/books/reconcile_private"   # 含金額嘅完整對帳表（私人）
+
+
+def strip_amounts(text: str) -> str:
+    """公開版：拎走 HK$／US$ 金額同 NAV 百分比（repo 公開，金額＋手數可反推權益）。"""
+    text = re.sub(r"(HK|US)\$-?[\d,]+(\.\d+)?", "（金額見私人版）", text)
+    text = re.sub(r"＝?\s*NAV\s*[\d.]+%", "", text)
+    text = re.sub(r"只剩\s*[\d.]+%", "低於線", text)
+    return text
+
+
+def tail_sections(level: str, why: list[str], mwhy: list[str], minfo: dict, night: bool) -> tuple[str, str]:
+    """回傳 (公開版, 私人版) 嘅「風控階梯」＋「人手交易額度」兩段。公開版冇金額、冇 NAV 百分比。"""
+    head = f"\n## 風控階梯\n現時 **{LEVEL_NAME[level]}**（{'夜盤線，日間線 ×' + str(NIGHT_FACTOR) if night else '日間線'}）"
+    priv = head + ("：\n" + "\n".join(f"- {w}" for w in why) if why else "，冇觸發") + "\n"
+    pub = head + ("：\n" + "\n".join(f"- {strip_amounts(w)}" for w in why) if why else "，冇觸發") + "\n"
+    codes = "、".join(minfo.get("codes") or []) or "無"
+    if minfo.get("nav"):
+        priv += (f"\n## 人手交易額度\n人手持倉：{codes}；名義 HK${minfo['manual_notional_hkd']:,}"
+                 f"（NAV {minfo['manual_notional_hkd'] / minfo['nav']:.0%}）；當日已實現 HK${minfo['manual_realized_today_hkd']:,}、"
+                 f"未實現 HK${minfo['manual_unrealized_hkd']:,}。")
+    else:
+        priv += "\n## 人手交易額度\n（讀不到 NAV）"
+    pub += f"\n## 人手交易額度\n人手持倉：{codes}（金額見私人版）。"
+    verdict_ok = "額度內 ✅（名義 ≤ NAV 50%、單日虧損 ≤ NAV 2%）"
+    priv += ("\n" + "\n".join(f"- ⚠ {w}" for w in mwhy) + "\n") if mwhy else f"\n{verdict_ok}\n"
+    pub += ("\n" + "\n".join(f"- ⚠ {strip_amounts(w)}" for w in mwhy) + "\n") if mwhy else f"\n{verdict_ok}\n"
+    return pub, priv
+
+
 def ladder_message(level: str, why: list[str], today: date) -> str:
     head = {"C": "🟠 Ⓒ 減半：請而家把觸發嘅策略倉位減半（使用者 10-13 同意直接提示）",
             "D": "⛔ Ⓓ 全平：請而家平倉（使用者 10-13 同意直接提示）"}.get(level, f"風控階梯 {LEVEL_NAME[level]}")
@@ -530,26 +569,25 @@ def main() -> int:
     div_md = (ROOT / "research" / "divergence" / "DIVERGENCE.md").read_text(encoding="utf-8") \
         if (ROOT / "research" / "divergence" / "DIVERGENCE.md").exists() else ""
     level, why = ladder_level(risk, div_md, tuple(sorted({m["team"] for m in escalate})))
-    md += (f"\n## 風控階梯\n現時 **{LEVEL_NAME[level]}**（{'夜盤線，日間線 ×' + str(NIGHT_FACTOR) if is_night() else '日間線'}）"
-           + ("：\n" + "\n".join(f"- {w}" for w in why) if why else "，冇觸發") + "\n")
     mwhy, minfo = manual_limits(risk, deals)
-    md += (f"\n## 人手交易額度\n人手持倉：{'、'.join(minfo['codes']) or '無'}；名義 HK${minfo['manual_notional_hkd']:,}"
-           f"（NAV {minfo['manual_notional_hkd'] / minfo['nav']:.0%}）；當日已實現 HK${minfo['manual_realized_today_hkd']:,}、未實現 HK${minfo['manual_unrealized_hkd']:,}。"
-           if minfo.get("nav") else "\n## 人手交易額度\n（讀不到 NAV）")
-    md += ("\n" + "\n".join(f"- ⚠ {w}" for w in mwhy) + "\n") if mwhy else "\n額度內 ✅（名義 ≤ NAV 50%、單日虧損 ≤ NAV 2%）\n"
+    pub_tail, priv_tail = tail_sections(level, why, mwhy, minfo, is_night())
+    md_private = md + priv_tail
+    md += pub_tail
     row = pnl_row(risk, deals, ledger, today, level)
     row.update({"manual_notional_hkd": minfo.get("manual_notional_hkd"), "manual_realized_today_hkd": minfo.get("manual_realized_today_hkd")})
 
-    print(md)
-    print("損益帳列：", json.dumps(row, ensure_ascii=False))
+    print_private(md_private)
+    print_private("損益帳列：" + json.dumps(row, ensure_ascii=False))
     if args.dry_run:
         return 0
     (RECON_DIR / f"{today.isoformat()}.md").write_text(md, encoding="utf-8")
     (RECON_DIR / "latest.md").write_text(md, encoding="utf-8")
     state_f.write_text(json.dumps(new_state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    gcs_put(f"{PRIVATE_DIR_OBJECT}/{today.isoformat()}.md", md_private)
+    gcs_put(f"{PRIVATE_DIR_OBJECT}/latest.md", md_private)
     existing = gcs_cat(PNL_OBJECT)
     gcs_put(PNL_OBJECT, upsert_csv(existing if isinstance(existing, str) else None, row))
-    print(f"✅ 已寫 research/reconcile/{today.isoformat()}.md、latest.md、state.json；GCS {PNL_OBJECT}")
+    print(f"✅ 已寫 research/reconcile/{today.isoformat()}.md、latest.md、state.json（公開版，冇金額）；GCS {PNL_OBJECT}、{PRIVATE_DIR_OBJECT}/")
 
     # Telegram：⚠ 升級、階梯 Ⓒ／Ⓓ（同一等級每日最多一次）
     msgs = []
@@ -566,7 +604,7 @@ def main() -> int:
         prev["manual_date"] = today.isoformat()
     gcs_put(LADDER_STATE_OBJECT, json.dumps({"date": today.isoformat(), "level": level, "why": why, "manual_date": prev.get("manual_date")}, ensure_ascii=False))
     for msg in msgs:
-        print("TG →", msg)
+        print_private("TG → " + msg)
         if not args.no_tg:
             send_telegram(msg)
     return 0

@@ -1,6 +1,6 @@
 # 每日對帳表 2026-10-13
 
-富途快照：2026-10-13 17:36 HKT（futu/risk/latest.json）；POSITIONS.md 與各陣 journal 以產表時預設分支／各陣分支為準。
+富途快照：2026-10-13 18:21 HKT（futu/risk/latest.json）；POSITIONS.md 與各陣 journal 以產表時預設分支／各陣分支為準。
 手數：空為負。三方一致 ✅；不一致 ⚠（原因填 research/reconcile/explanations.json，連續兩個交易日未解釋升級 RISK_LADDER Ⓑ）。
 只係資訊、唔係落單指令。
 
@@ -16,11 +16,11 @@
 | US.EX32610C7830x0 | 雲垂陣 | MES 週權跨式 | -1 | -1 | -1 | ✅ |  |
 | US.EX32610P7830x0 | 雲垂陣 | MES 週權跨式 | -1 | -1 | -1 | ✅ |  |
 
-產表：2026-10-13 17:37 HKT，scripts/daily_books.py
+產表：2026-10-13 18:28 HKT，scripts/daily_books.py
 
 ## 風控階梯
 現時 **Ⓐ 觀察**（夜盤線，日間線 ×1.5），冇觸發
 
 ## 人手交易額度
-人手持倉：HK.HSI2610 -1；名義 HK$1,218,450（NAV 48%）；當日已實現 HK$5,700、未實現 HK$-1,800。
+人手持倉：HK.HSI2610 -1（金額見私人版）。
 額度內 ✅（名義 ≤ NAV 50%、單日虧損 ≤ NAV 2%）
