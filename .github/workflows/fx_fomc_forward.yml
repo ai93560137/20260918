@@ -1,7 +1,7 @@
 name: FX FOMC forward（pre-FOMC 美元漂移前向紙上記錄，每日）
 
 # 協議：forex_research/FX_FOMC_DRIFT_FORWARD.md。每天 02:30 UTC（週二至週六）：
-# 從雲垂分支抓 ZQ 日線（IB 每日採集 + 各合約檔）→ 算每個排定 FOMC 的 t−3 訊號 → 有訊號的事件用 Dukascopy M1 結算 t−2 → t 的紙上損益
+# ZQ 日線＝倉庫內快取 forward/zq_hist/（各合約檔副本）＋每天從雲垂分支 raw 抓最新 zq_daily.csv（抓到就更新快取；不用 GitHub API）→ 算每個排定 FOMC 的 t−3 訊號 → 有訊號的事件用 Dukascopy M1 結算 t−2 → t 的紙上損益
 # （M1 快取進 forex_research/forward/fomc_m1/）→ 重寫 fomc_events.csv 與 FOMC_STATUS.md。dry=true 只印不 commit。
 on:
   workflow_dispatch:
@@ -52,7 +52,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          FILES="forex_research/forward/fomc_m1 forex_research/forward/fomc_events.csv forex_research/forward/FOMC_STATUS.md data_forex_rates/info/DFEDTARU.csv data_forex_rates/info/DFEDTARL.csv"
+          FILES="forex_research/forward/fomc_m1 forex_research/forward/zq_hist forex_research/forward/fomc_events.csv forex_research/forward/FOMC_STATUS.md data_forex_rates/info/DFEDTARU.csv data_forex_rates/info/DFEDTARL.csv"
           git add $FILES
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "forward(fomc): pre-FOMC 美元漂移每日記錄 $(date -u +%F)"

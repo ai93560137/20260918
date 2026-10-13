@@ -25,25 +25,46 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from fx_fomc_drift import (COST_BP, PAIRS, PRE_MIN, THRESH_BP, M1Cache, load_calendar, load_target, load_zq, settle_at, tdays_before, to_utc, tstat)  # noqa: E402
 
 BACKFILL_START, FWD_START = date(2025, 9, 1), date(2026, 10, 13)
+ZQ_HIST = ROOT / "forex_research" / "forward" / "zq_hist"
 RAW = "https://raw.githubusercontent.com/ai93560137/20260918/claude/dazzling-curie-f3xzb8/data_forex_ibkr/zq/"
 API = "https://api.github.com/repos/ai93560137/20260918/contents/data_forex_ibkr/zq?ref=claude/dazzling-curie-f3xzb8"
 DEC = {"EURUSD": 5, "USDCHF": 5, "USDJPY": 3, "GBPUSD": 5}
 
 
 def fetch_zq(tmp: Path) -> Path:
-    """把雲垂分支 data_forex_ibkr/zq/ 的 ZQ_*.csv.gz 與 zq_daily.csv 抓到本機目錄。"""
-    import requests
+    """ZQ 日線來源：倉庫內快取 forex_research/forward/zq_hist/（雲垂 IB 各合約檔 ZQ_*.csv.gz 的副本＋上次抓到的 zq_daily.csv）
+    ＋ 每天從雲垂分支以 GitHub raw 抓最新 zq_daily.csv（抓到就更新快取；抓不到就用快取並警告）。
+    不再依賴 GitHub API 目錄列表——Actions 共用 IP 常撞匿名限額，2026-10-13 曾因此把全部事件誤判成 no_zq。"""
+    import requests, shutil
     tmp.mkdir(parents=True, exist_ok=True)
-    names = []
-    r = requests.get(API, timeout=60, headers={"User-Agent": "fx-fomc-forward"})
-    if r.ok:
-        names = [x["name"] for x in r.json() if x["name"].startswith("ZQ_") and x["name"].endswith(".csv.gz")]
-    names.append("zq_daily.csv")
-    for n in names:
-        rr = requests.get(RAW + n, timeout=60)
-        if rr.ok:
-            (tmp / n).write_bytes(rr.content)
-    print(f"ZQ 檔 {len(names)} 個 → {tmp}")
+    for f in ZQ_HIST.glob("*.csv*"):
+        shutil.copy(f, tmp / f.name)
+    try:
+        rr = requests.get(RAW + "zq_daily.csv", timeout=60, headers={"User-Agent": "fx-fomc-forward"})
+        rr.raise_for_status()
+        if len(rr.content) < 40 or not rr.content.startswith(b"date,contract"):
+            raise ValueError("zq_daily.csv 內容不像 CSV")
+        (tmp / "zq_daily.csv").write_bytes(rr.content)
+        ZQ_HIST.mkdir(parents=True, exist_ok=True)
+        (ZQ_HIST / "zq_daily.csv").write_bytes(rr.content)
+        src = "雲垂分支（已更新快取）"
+    except Exception as exc:  # noqa: BLE001
+        src = f"快取（雲垂分支抓取失敗：{exc}）"
+    try:  # 雲垂若新增合約檔（ZQ_*.csv.gz），順手補進快取；API 失敗不影響
+        r = requests.get(API, timeout=60, headers={"User-Agent": "fx-fomc-forward"})
+        if r.ok:
+            for x in r.json():
+                n = x.get("name", "")
+                if n.startswith("ZQ_") and n.endswith(".csv.gz") and not (ZQ_HIST / n).exists():
+                    rr = requests.get(RAW + n, timeout=60)
+                    if rr.ok:
+                        (ZQ_HIST / n).write_bytes(rr.content); (tmp / n).write_bytes(rr.content)
+    except Exception:  # noqa: BLE001
+        pass
+    n_files = len(list(tmp.glob("ZQ_*.csv.gz")))
+    print(f"ZQ：合約檔 {n_files} 個；zq_daily 來源＝{src}")
+    if n_files == 0:
+        sys.exit("ZQ 合約檔 0 個——快取目錄 forex_research/forward/zq_hist/ 空了，拒絕把全部事件寫成 no_zq")
     return tmp
 
 
