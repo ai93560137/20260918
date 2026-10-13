@@ -1,0 +1,77 @@
+name: Ops daily books（每日對帳表＋逐日損益帳，純 Python）
+
+# FUND_SOP 缺口 3／5（總指揮擁有）。規格見 scripts/daily_books.py 檔頭、RISK_LADDER.md。
+# 對帳表 research/reconcile/<日>.md commit 到預設分支（只有手數）；損益帳含權益，寫 GCS ops/books/pnl_daily.csv（私人）。
+# Workload Identity 免金鑰讀寫 GCS（同 ops_notify.yml）。
+on:
+  schedule:
+    - cron: '20 9 * * 1-5'    # 17:20 HKT：本機 16:35 匯出成交、Actions 17:10 成交通報之後
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'YYYY-MM-DD（HKT），留空＝今日'
+        required: false
+        default: ''
+      dry_run:
+        description: '只印不寫（true/false）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ops-daily-books
+  cancel-in-progress: false
+
+jobs:
+  books:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Asia/Hong_Kong
+      GCP_PROJECT: sacred-alliance-453716-b7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch 各陣分支（journal 對帳用）
+        run: |
+          git fetch --no-tags --depth=1 origin claude/gifted-carson-v2tvhw claude/dazzling-curie-f3xzb8 || true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q -r scripts/requirements-agent.txt
+
+      - name: Daily books
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_HK_BOT_TOKEN || secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_HK_CHAT_ID || secrets.TG_CHAT_ID }}
+          DATE: ${{ inputs.date || '' }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          ARGS=""
+          if [ -n "$DATE" ]; then ARGS="$ARGS --date $DATE"; fi
+          if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python3 scripts/daily_books.py $ARGS
+
+      - name: Commit 對帳表
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/reconcile/
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "chore(reconcile): 每日對帳表 $(date +%F)（香港）"
+          for i in 1 2 3; do git push && break || { git pull --rebase --autostash origin ${GITHUB_REF_NAME} && sleep 3; }; done
