@@ -23,10 +23,10 @@
 
 ### 1.2 自動化（執行者 × 時間）
 
-**Cloud Run `zhuge-risk-manager`**：事件驅動，MT5 EA 每分鐘心跳；電閘、送單、戶口快照、R171 已實現帳本、R172 富途成交／盈虧入庫、五個網頁。
-**本機 `gcp_ib/auto_risk.py`**：每 15 分鐘推富途持倉與風險 `futu/risk/latest.json`；16:35／03:05 匯出成交 `futu/deals/<日>.json`。
+**Cloud Run `zhuge-risk-manager`**：事件驅動，MT5 EA 每分鐘心跳；電閘、送單、戶口快照、R171 已實現帳本、R172 富途成交／盈虧入庫、17 個網頁（各頁數據更新時間見 §1.4）。
+**本機 `gcp_ib/auto_risk.py`**（R172）：每 15 分鐘推富途持倉與風險 `futu/risk/latest.json`；03:05／05:30／16:35 推成交 → Cloud Run 寫 `futu/deals/<日>.json`。
 **VM ib-data**：IB 報價快照（外匯 L1、6E 期權），只讀、不下單。
-**GitHub Actions（預設分支，28 個）**與 **Claude Routines（22 個）**按香港時間排成一天：
+**GitHub Actions（預設分支）**與 **Claude Routines** 按香港時間排成一天（2026-10-13 更新：總指揮 8 次叫醒改為 4 次新開工作階段＋4 次 Actions；新增晨會簡報、每日對帳）：
 
 | 時段（HKT） | 誰 | 做什麼 |
 |---|---|---|
@@ -35,26 +35,30 @@
 | 07:07 | Routine 金絲雀 | 核對 canary workflow 跑對沒有 |
 | 07:53 | Actions `hsi_range_report` → TG | 恒指開市前波幅／高低位預測 |
 | 08:17 | Actions `external_data_daily` | 外部來源彙整＋抽樣 QC |
+| 08:30 | Actions `morning_brief` → TG | 晨會簡報（風控、金絲雀、昨日損益、對帳、偏離、今日事件、今日要做；全文 GCS `ops/brief/`） |
 | 09:15 | Actions `daily_topdown` → TG | 三地 200 日線＋新高名單、VCP |
 | 09:40／10:10／10:30 | Actions `fx_l1_forward`、`xau_long_forward`、`fx_fomc_forward` | 外匯陣三個紙上前向記錄 |
-| 09:45 | Routine 總指揮 | 四陣持倉風險通報（第 1 次） |
+| 09:45 | Routine 四陣風險通報 v2（每次新開工作階段） | 四陣持倉風險通報（第 1 次；狀態 GCS `ops/risk_notify_state.json`） |
 | 每 15 分 | Actions `hsi_touch_alert`、`hsi_peak_signal` → TG | 蛇蟠觸軌、高低位訊號 |
 | 12:00 | Routine 蛇蟠 | 午間通道更新＋TG |
 | 12:07 | Actions `hsi_range_report` → TG | 午市收市檢討 |
-| 12:45 | Routine 總指揮 | 風險通報（第 2 次） |
+| 12:45 | Routine 四陣風險通報 v2 | 風險通報（第 2 次） |
 | 14:30 | Routine 雲垂 | HSI＋MES 每日掃描＋日報 |
-| 14:35、15:55 | Routine 總指揮 → 雲垂 | 對沖狀態通報（給 14:42 報告、16:00 對沖用） |
+| 14:35、15:55 | Actions `ops_notify` → TG | 對沖狀態一行（給雲垂 14:42 報告、16:00 對沖用）；同時 commit `ops/hedge_status_latest.txt` 畀雲垂 git 讀 |
 | 16:00 | Routine 雲垂 | HSI Δ 對沖指令＋止損線 |
 | 16:37 | Actions `hsi_range_report` → TG | 日市收市檢討 |
 | 16:40 | Routine 雲垂 | 觸發 `fetch-quotes` 存正式收盤 |
-| 16:45 | Routine 總指揮；Routine 蛇蟠 | 收市摘要給四陣（含當日平倉）；通道更新＋前向結算＋TG |
-| 17:10 | Routine 總指揮 → 雲垂 | 富途成交紀錄通報（日盤） |
+| 16:35 | 本機 auto_risk | 推日盤成交 → `futu/deals/<日>.json` |
+| 16:45 | Routine 四陣風險通報 v2；Routine 蛇蟠 | 收市摘要給四陣（成交由 17:10 另發）；通道更新＋前向結算＋TG |
+| 17:10 | Actions `ops_notify` → TG | 富途成交紀錄通報（日盤）；commit `ops/deals_latest.json` 畀雲垂 |
+| 17:20 | Actions `ops_daily_books`（總指揮 R173） | 每日對帳表 `research/reconcile/<日>.md`、損益帳 GCS `ops/books/pnl_daily.csv`、風控階梯（Ⓒ／Ⓓ 直接 TG） |
 | 17:13 | Routine 鳥翔 | 觸發 HTF 每日訊號 workflow（約 50 分鐘） |
 | 20:30／21:30（夏／冬令） | Actions `es_range_report` → TG | ES 開市前／收市報告（六組 cron 處理夏冬令） |
-| 21:45 | Routine 總指揮 | 風險通報（第 4 次） |
+| 21:45 | Routine 四陣風險通報 v2 | 風險通報（第 4 次） |
 | 03:13 | Actions `hsi_range_report` → TG | 全日收市檢討 |
 | 03:30（倫敦 20:30） | Routine 雲垂 | MES 檢查點＋對沖指令 |
-| 03:40 | Routine 總指揮 → 雲垂 | 富途成交紀錄通報（夜盤） |
+| 03:05 | 本機 auto_risk | 推夜盤成交 |
+| 03:40 | Actions `ops_notify` → TG | 富途成交紀錄通報（夜盤，讀今日＋前一日） |
 | 04:15（倫敦 21:15） | Routine 雲垂 | 每日總結＋自檢清單 |
 | 每 4 小時 | Actions `pelosi_tracker` → TG | 佩洛西申報 |
 | 週六 10:17／10:47 | Actions `hkex_option_iv`、`us_futures_daily` | 港交所期權 IV、美期日線 |
@@ -64,6 +68,25 @@
 | 月底 | Routine 鳥翔 | 九國月底名單三步 |
 | 手動 | `gcp_deploy`、`vcp_fullmarket`、`pead_backtest`、`dukascopy_m15`、`hkex_inline`、`canary_broadcast`、`research_hsi_history` | 部署、大型回測、資料補抓 |
 
+### 1.4 網頁數據更新時間（tnt-hk.com，香港時間，平日；2026-10-13 總指揮）
+
+頁面隨時開到，每次開都讀最新一份；下表係「新數據幾時到」。
+
+| 頁面 | 新數據幾時到 | 來源 |
+|---|---|---|
+| 🌬️ 風揚陣恆指波幅 | 交易時段每幾分鐘；報告 07:53 開市前、12:07 午市、16:37 日市、03:13 全日 | 富途行情推送＋Actions `hsi_range_report` |
+| 🇺🇸 風揚陣ES／NQ 波幅 | 交易時段每幾分鐘；報告約 06:07 開市前、21:37 隔夜檢討、04:07 RTH 收市、05:07 全日（美國夏令；冬令遲 1 小時） | 同上＋`es_range_report` |
+| 🐍 蛇蟠陣 | 12:00、16:45 通道更新 | 蛇蟠 Routine |
+| ⛰️ 地載陣 | 交易時段即時；頁面每 60 秒重載 | 富途 1 分 K |
+| ☁️ 雲垂陣 | 14:30 掃描、16:00 對沖、04:15 每日總結；頁面每 2 分鐘重載 | 雲垂 Routine（`yunchui_public.json`） |
+| 🐤 金絲雀 | 每日 06:30；頁面每 10 分鐘重載 | Actions `canary_daily` |
+| 📈 鳥翔 HTF 掛單 | 每日約 18:05（17:13 觸發，跑約 50 分鐘）；頁面每 10 分鐘重載 | 鳥翔 Routine＋Actions `htf_daily` |
+| 🧭 策略總表 | 富途實倉每 15 分鐘；頁面每 60 秒重載 | 本機 auto_risk |
+| 📊 基金報告 | 每日 05:30（03:05、16:35 補成交） | 本機 auto_risk（`futu_pnl`） |
+| 📄 投資人日誌、⚙️ 控制台 | 即時（MT5 每分鐘心跳、決策日誌） | Cloud Run |
+| 🎛️ 關卡開關、🧾 送單參數、✅ 錦囊九十筆 | 使用者手動改先變 | 人手 |
+| 🗒️ 錦囊執行單、🏠 首頁 | 固定內容 | — |
+
 ### 1.3 已具備的「基金部門」
 
 | 部門 | 已有 | 備註 |
@@ -71,8 +94,8 @@
 | 數據 | 三地日線＋第二來源比對、CME 期貨、港交所 IV、債市、外部 QC、全市場備份到 Release | 等權／PIT 成分股名單齊 |
 | 研究 | `IDEAS.md` 100 條登記簿、各陣回測文件、評分卡、預先登記慣例 | 本週剛建立 |
 | 投資組合 | 五個陣各有 SOP 文件、持倉在 `POSITIONS.md` | 實倉三個陣＋人手 |
-| 風控 | 四次／日風險通報、Δ 通報、止損線使用率、硬止損 HK$750k 壓力測試、偏離監控燈號 | 全部是「通報」，沒有自動動作 |
-| 交易／對帳 | 富途成交 16:35／03:05 入庫、17:10／03:40 通報；MT5 已實現帳本（R171） | 2026-10-13 起才有 |
+| 風控 | 四次／日風險通報、Δ 通報、止損線使用率、硬止損 HK$750k 壓力測試、偏離監控燈號；`RISK_LADDER.md` 四層階梯（R173） | 仍只通報；Ⓒ／Ⓓ 直接 TG 提示使用者，落單人手 |
+| 交易／對帳 | 富途成交 16:35／03:05 入庫、17:10／03:40 通報（Actions）；MT5 已實現帳本（R171）；每日 17:20 三方對帳（R173） | 2026-10-13 起才有 |
 | 營運 | `gcp_agent.py` 部署／回滾、WIF 免金鑰 Actions、session-start hook | — |
 | 投資人報告 | 八陣圖策略書 `factsheet.html`、各網頁 | 沒有 NAV 時序 |
 
