@@ -154,7 +154,7 @@
 | 缺口 | 狀態 | 誰做的 | 在哪裡 |
 |---|---|---|---|
 | 1 風控階梯 | ✅ 初稿，使用者已同意 Ⓐ–Ⓓ、夜盤 ×1.5、Ⓒ／Ⓓ 直接 TG 提示 | 總指揮（R173） | `RISK_LADDER.md`、GCS `ops/books/ladder_state.json` |
-| 2 晨會簡報 | ⏳ 未做 | 預設分支（待做） | 讀 `research/reconcile/latest.md`、GCS `ops/books/pnl_daily.csv`、`ladder_state.json` |
+| 2 晨會簡報 | ✅ 平日 08:30 HKT → Telegram（全文存 GCS `ops/brief/`，私人） | 預設分支 | `scripts/morning_brief.py`、`morning_brief.yml`；七段：風控、金絲雀、昨日損益、對帳、偏離、今日事件、今日要做 |
 | 3 每日對帳表 | ✅ 每日 17:20 HKT | 總指揮（R173） | `scripts/daily_books.py`、`ops_daily_books.yml`、`research/reconcile/<日>.md` |
 | 4 事件日曆 | ⏳ 未做 | 預設分支＋風揚 | — |
 | 5 逐日損益帳 | ✅ 每日一列按陣拆分（私人，不進 repo） | 總指揮（R173） | GCS `ops/books/pnl_daily.csv` |
