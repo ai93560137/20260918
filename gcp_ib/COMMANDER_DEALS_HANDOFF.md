@@ -13,7 +13,7 @@
 - 直接：`python gcp_ib/futu_deals_daily.py --date 2026-10-13 --out deals.json`
 - 或 `from futu_deals_daily import run; res = run(day, since)` 嵌入 auto_risk（Futu 連線預設 127.0.0.1:11111，按總指揮環境改 HOST/PORT）。
 - 驗證邏輯（唔連富途）：`python gcp_ib/futu_deals_daily.py --self-test`
-- 這邊已用模擬資料驗證 FIFO（10/9 賣 24,200 → 10/13 買 24,168 = +32 點 = +HK$320）；**未連真實富途跑過**，首次請核對一次輸出同富途 App 成交紀錄。
+- 這邊已用模擬資料驗證 FIFO（10/9 賣 24,200 → 10/13 買 24,168 = +32 點）；**未連真實富途跑過**，首次請核對一次輸出同富途 App 成交紀錄。
 
 ## 建議排程（每日）
 - 收市後約 16:45 HKT（日盤成交），及翌日凌晨約 03:15 HKT（夜盤 17:15–03:00 成交，按成交時間歸日）。
