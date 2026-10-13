@@ -46,12 +46,19 @@ def load_bars(mk: str, ticker: str, day) -> list[dict] | None:
 
 
 class Intraday:
-    def __init__(self, mk: str):
+    def __init__(self, mk: str, control: bool = False):
         sus = hb.OUT / f"{mk}_suspect.json"
         excl = {tuple(x) for x in json.loads(sus.read_text())} if sus.exists() else set()
-        self.mk = mk
+        self.mk, self.control = mk, control
         self.h = h = hb.HTF(mk, excl)
-        self.daily_trades = h.trades(*hb.DEFAULT)           # 日線版預設格（已剔除可疑）
+        if control:
+            # 隨機對照（seed 0，與 analysis/htf/ibkr_intraday_control_<mk>.csv 同一批）：日線版在 t 開盤買；盤中版只有 OR 高可突破（無樞紐）
+            self.daily_trades = h.trades(*hb.DEFAULT, random_seed=0)
+            for t in self.daily_trades:
+                rw = h.raw[t["s"]]
+                t["info"] = {"pivot": None, "adr": float(rw["adr"][t["p"] - 1]), "open": float(rw["open"][t["p"]])}
+        else:
+            self.daily_trades = h.trades(*hb.DEFAULT)       # 日線版預設格（已剔除可疑）
         # 子集：有 5 分 K、通過核對
         self.subset, self.why = [], {"no_file": 0, "bad_file": 0, "few_bars": 0, "mismatch": 0}
         for t in self.daily_trades:
@@ -82,10 +89,10 @@ class Intraday:
         """回傳 {status, fill, lod, bar_idx}。status: no_break／chase／filled。"""
         P, adr = t["info"]["pivot"], t["info"]["adr"]
         o_day = live[0]["o"]
-        if o_day > P * (1 + hb.CHASE):
+        if P is not None and o_day > P * (1 + hb.CHASE):
             return {"status": "chase"}
         orh = max(b["h"] for b in live[:or_bars])
-        L = max(orh, P)
+        L = max(orh, P) if P is not None else orh
         lod = min(b["l"] for b in live[:or_bars])
         for i in range(or_bars, len(live)):
             b = live[i]
@@ -182,8 +189,8 @@ class Intraday:
         return out
 
 
-def run(mk: str, inspect: int) -> None:
-    it = Intraday(mk)
+def run(mk: str, inspect: int, control: bool = False) -> None:
+    it = Intraday(mk, control)
     if inspect:
         for t, live in it.subset[:inspect]:
             e = it.intraday_entry(t, live, 1)
@@ -204,7 +211,8 @@ def run(mk: str, inspect: int) -> None:
     trs, _ = it.intraday_trades(1, "skip", "lod")
     by_key = {(t["s"], t["p"]): t for t in trs}
     fate = {"no_entry_or_skip": 0, "stopped_day0": 0, "survived": 0}
-    sick = [t for t, _ in it.subset if len(t["legs"]) == 1 and t["legs"][0]["b"] == t["a"] and t["info"]["open"] < t["info"]["pivot"]]
+    sick = [t for t, _ in it.subset if len(t["legs"]) == 1 and t["legs"][0]["b"] == t["a"]
+            and t["info"]["pivot"] is not None and t["info"]["open"] < t["info"]["pivot"]]
     for t in sick:
         u = by_key.get((t["s"], t["p"]))
         if u is None:
@@ -214,7 +222,7 @@ def run(mk: str, inspect: int) -> None:
         else:
             fate["survived"] += 1
     res["sick_daily_fate"] = {"n": len(sick), **fate}
-    if mk == "hk":   # 第三部分那格（看過結果後選的；只報告）
+    if mk == "hk" and not control:   # 第三部分那格（看過結果後選的；只報告）
         sub_ids = {(t["s"], t["p"]) for t in it.h.trades(1.0, 0.20, adr_min=0.06)}
         it_sub = Intraday.__new__(Intraday)
         it_sub.__dict__.update(it.__dict__)
@@ -222,7 +230,7 @@ def run(mk: str, inspect: int) -> None:
         trs_g, tally_g = it_sub.intraday_trades(1, "skip", "lod")
         res["hk_G100_ADR6"] = {"daily_subset": it_sub.summarize(it_sub.daily_on_subset()), "intraday": {"tally": tally_g, **it_sub.summarize(trs_g)}}
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / f"{mk}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
+    (OUT / f"{mk}{'_control' if control else ''}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float) + "\n", encoding="utf-8")
 
     def line(name, d):
         return (f"  {name:26s} 筆數 {d['trades'] or 0:5d}  alpha t {d['alpha_t'] if d['alpha_t'] is not None else float('nan'):6.2f}  "
@@ -243,8 +251,9 @@ def main() -> None:
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--market", required=True, choices=MARKETS)
     a.add_argument("--inspect", type=int, default=0)
+    a.add_argument("--control", action="store_true", help="隨機對照（seed 0）那批股票日：日線版開盤買 vs 盤中 OR 高突破")
     args = a.parse_args()
-    run(args.market, args.inspect)
+    run(args.market, args.inspect, args.control)
 
 
 if __name__ == "__main__":
