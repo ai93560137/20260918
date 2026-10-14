@@ -9,6 +9,7 @@
 | `build_canary_table.py` | 產生器,純 Python 標準庫,不需 pandas |
 | `yellow_lab.py` / `YELLOW_UPGRADE.md` | 黃燈升級考核腳本(需 pandas)與結果報告 |
 | `red_lab.py` / `RED_UPGRADE.md` | 紅燈(VIX9D 系)提位考核腳本與結果報告 |
+| `bigdrop_lab.py` / `BIGDROP_LAB.md` | 大跌日價格軸考核(IDEAS.md #104,2026-10-14 未過,淘汰) |
 | `daily_report.py` / `DAILY_REPORT.md` / `daily_log.csv` / `sent_log.csv` / `tg_daily.txt` | 每日總結報告產生器、當日報告、長期逐日紀錄、**已發訊息紀錄(只追加,供次日回驗)**、Telegram 短訊 |
 | `lab_common.py` | 兩個考核室共用的口徑函式(與雲垂陣 canary_lab.py 一致) |
 | `data_external/*_daily.csv` | 六隻鳥日線快照(VIX9D、VIX、VIX3M、VVIX、MOVE、AXVI)+ SPX/HSI/VHSI(考核用),來源見下 |
