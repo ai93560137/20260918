@@ -118,6 +118,11 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-14 — [R177] 方向一操作箱（恒指／ES／NQ）加「🎲 按同一套數據」：週內碰到 Put／Call 行使價的機率、到期收在兩腳之間的機率、
+#     平均賠付點數（十次有一次的賠付）；1σ 與變體兩組。用週卡同一份校準（過去各週高／低／收 ÷ R̂×√n），以現價為參考。
+#   * 2026-10-14 — [R176] 波幅頁（恒指／ES／NQ）預測卡加「🎲 價位機率表」：昨收上下各 4 級價位（級距 ≈ R̂ ÷ 4 取整）
+#     今日／本週內／本月內被碰到的機率（過去（高−昨收）÷R̂、（昨收−低）÷R̂ 分佈換算，已碰到標 ✅）；收市高過昨收的機率與
+#     收市八成範圍；日卡另加「📊 對比」：預測對昨日、5 日、22 日平均實際波幅。只係統計估計，唔係期權隱含機率。
 #   * 2026-10-13 — [R174] 📊 基金報告頁加「🗓 週報／📘 月報」：GitHub 排程 ops_reports.yml（週日 09:00、每月 1 日 09:30 HKT）
 #     寫 GCS ops/reports/public.json（公開版，不含權益絕對值，各留 12 份）；本頁讀取顯示最新一份＋舊份摺疊，&format=json 多 "reports"。
 #     完整版（含權益）只發 Telegram、存 ops/reports/<kind>/。讀唔到就唔顯示，唔影響原有已實現盈虧表、唔影響下單。
@@ -4303,7 +4308,7 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
     open_keys：{種類: 還沒結束的那段 key}，那段不計分。回傳 {day|week|month: 摘要＋records}。"""
     logged = {e["date"]: e for e in (log or []) if isinstance(e, dict) and e.get("date") and e.get("range")}
     open_keys = open_keys or {}
-    day, ups, downs = [], [], []
+    day, ups, downs, closes, touch_chk = [], [], [], [], []
     for i, row in enumerate(completed):
         f = har.get(i)
         if not f or not row.get("prev_close"):
@@ -4317,6 +4322,12 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
                        low_lo=ref - _quantile(downs, 1 - q) * f[0], low_hi=ref - _quantile(downs, q) * f[0])
         bisect.insort(ups, (row["high"] - row["prev_close"]) / f[0])
         bisect.insort(downs, (row["prev_close"] - row["low"]) / f[0])
+        if len(ups) >= HL_MIN_DAYS:                                        # [R176] 價位機率表逐日前推驗證
+            lad = _touch_ladder(row["prev_close"], f[0], {"ups": ups, "downs": downs})
+            for r in (lad or {}).get("rows", []):
+                touched = row["high"] >= r["level"] if r["side"] == "up" else row["low"] <= r["level"]
+                touch_chk.append((r["p"], touched))
+        bisect.insort(closes, (row["close"] - row["prev_close"]) / f[0])      # [R176] 收市比例（價位機率表）
         e = logged.get(row["date"])
         if e and None not in (e.get("lo"), e.get("hi")):          # 當天真正發出的預測
             rec.update(forecast=e["range"], lo=e["lo"], hi=e["hi"], live=True)
@@ -4337,12 +4348,16 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
             if rec.get(k) is not None:
                 rec[k] = round(rec[k], 1)
         day.append(rec)
-    out = {"day": {**_acc_summary(day, ("hit_range", "hit_high", "hit_low"), HL_OK_PCT_BY["day"]), "records": day}}
+    rng = [r["range"] for r in completed if r.get("range")]
+    out = {"day": {**_acc_summary(day, ("hit_range", "hit_high", "hit_low"), HL_OK_PCT_BY["day"]), "records": day,
+                   "cal": {"ups": ups, "downs": downs, "closes": closes} if len(ups) >= HL_MIN_DAYS else None,   # [R176]
+                   "touch_check": _touch_check(touch_chk[-TOUCH_CHECK_DAYS * TOUCH_LEVELS * 2:]),
+                   "recent_ranges": ({"r1": rng[-1], "r5": sum(rng[-5:]) / 5, "r22": sum(rng[-22:]) / 22} if len(rng) >= 22 else None)}}
     for kind in ("week", "month"):
         groups = {}
         for i, row in enumerate(completed):
             groups.setdefault(_peak_key(row["date"], kind), []).append(i)
-        recs, ratios, pups, pdowns = [], [], [], []
+        recs, ratios, pups, pdowns, pcloses = [], [], [], [], []
         for key, idx in groups.items():
             if key == open_keys.get(kind):
                 continue
@@ -4369,10 +4384,12 @@ def futu_accuracy(completed, har, log=None, open_keys=None):
             ratios.append(actual / big_r)
             if ref:
                 pups.append((p_high - ref) / big_r); pdowns.append((ref - p_low) / big_r)
+                pcloses.append((completed[idx[-1]]["close"] - ref) / big_r)        # [R176]
             recs.append(rec)
         roll = _roll_calibrate(completed, har, groups, open_keys.get(kind), ROLL_BAND_Q[kind])      # [R124]
         out[kind] = {**_acc_summary(recs, ("hit_range", "hit_high", "hit_low"), HL_OK_PCT_BY[kind]), "records": recs,
-                     "cal": ({"ups": sorted(pups), "downs": sorted(pdowns)} if len(pups) >= PERIOD_CAL_MIN else None),
+                     "cal": ({"ups": sorted(pups), "downs": sorted(pdowns), "closes": sorted(pcloses)}
+                             if len(pups) >= PERIOD_CAL_MIN else None),
                      "cal_roll": roll["cal"], "roll_mid": roll["mid"]}
     return out
 
@@ -4432,6 +4449,107 @@ def _hl_levels(ref, big_r, ups_sorted, downs_sorted, q=None):
     return {"high": round(ref + _quantile(ups_sorted, 0.5) * big_r), "high_lo": round(ref + _quantile(ups_sorted, q) * big_r),
             "high_hi": round(ref + _quantile(ups_sorted, 1 - q) * big_r), "low": round(ref - _quantile(downs_sorted, 0.5) * big_r),
             "low_lo": round(ref - _quantile(downs_sorted, 1 - q) * big_r), "low_hi": round(ref - _quantile(downs_sorted, q) * big_r)}
+
+
+TOUCH_LEVELS = 4                                # [R176] 價位機率表：昨收上下各幾級
+TOUCH_MIN_SAMPLES = {"day": HL_MIN_DAYS, "week": 20, "month": 12}
+
+
+def _nice_step(x):
+    """最接近 x 的「整數級距」：1、2、2.5、5 × 10 的次方（恒指日約 100、ES 日約 10）。"""
+    if not x or x <= 0:
+        return None
+    mag = 10 ** math.floor(math.log10(x))
+    return min((m * mag for m in (1, 2, 2.5, 5, 10)), key=lambda v: abs(v - x))
+
+
+TOUCH_CHECK_DAYS = 250                          # [R176] 前推驗證只看最近 250 天
+TOUCH_BUCKETS = ((0, 20), (20, 50), (50, 101))
+
+
+def _touch_check(pairs):
+    """[R176] [(預測機率%, 實際有冇碰到)] → 每組（<20%、20–50%、≥50%）的平均預測與實際碰到比率。"""
+    out = []
+    for lo, hi in TOUCH_BUCKETS:
+        g = [(p, t) for p, t in pairs if lo <= p < hi]
+        if len(g) >= 20:
+            out.append({"lo": lo, "hi": min(hi, 100), "n": len(g), "pred": round(sum(p for p, _ in g) / len(g)),
+                        "actual": round(sum(1 for _, t in g if t) / len(g) * 100)})
+    return out or None
+
+
+def _share_ge(sorted_vals, x):
+    return (len(sorted_vals) - bisect.bisect_left(sorted_vals, x)) / len(sorted_vals)
+
+
+def _touch_ladder(ref, big_r, cal, hs=None, ls=None):
+    """[R176] 價位機率表。ref：昨收（週、月 = 段首昨收）；big_r：該段預測波幅 R̂；cal：過去各段的
+    (高−ref)÷R̂、(ref−低)÷R̂、(收−ref)÷R̂ 排序清單。上方價位 L 的觸及機率 = 過去 (高−ref)÷R̂ ≥ (L−ref)÷R̂ 的比率；
+    下方同理。hs／ls：該段已出現的高／低（已觸及的價位標 100%）。收市：收高過 ref 的比率、收市八成範圍。
+    只用之前已完結的日子（同預計範圍一樣逐日前推），不是期權隱含機率。"""
+    ups, downs, closes = cal.get("ups") or [], cal.get("downs") or [], cal.get("closes") or []
+    step = _nice_step(big_r * 0.25)
+    if not (ref and big_r and step and ups and downs):
+        return None
+    base = math.floor(ref / step) * step
+    rows = []
+    for k in range(TOUCH_LEVELS, 0, -1):                          # 上方：由遠到近
+        lv = base + k * step
+        hit = hs is not None and hs >= lv
+        rows.append({"level": lv, "side": "up", "dist": lv - ref, "hit": hit,
+                     "p": 100 if hit else round(_share_ge(ups, (lv - ref) / big_r) * 100)})
+    for k in range(0 if base < ref else 1, TOUCH_LEVELS + (0 if base < ref else 1)):    # 下方：由近到遠
+        lv = base - k * step
+        hit = ls is not None and ls <= lv
+        rows.append({"level": lv, "side": "down", "dist": lv - ref, "hit": hit,
+                     "p": 100 if hit else round(_share_ge(downs, (ref - lv) / big_r) * 100)})
+    out = {"ref": ref, "step": step, "rows": rows, "n": len(ups)}
+    if len(closes) >= 10:
+        out.update(close_up=round(_share_ge(closes, 1e-12) * 100),
+                   close_lo=round(ref + _quantile(closes, 0.1) * big_r), close_hi=round(ref + _quantile(closes, 0.9) * big_r),
+                   close_mid=round(ref + _quantile(closes, 0.5) * big_r))
+    return out
+
+
+def _fy_touch_html(kind, fc, per, acc):
+    """[R176] 預測卡內的價位機率表（日、週、月共用）。"""
+    cal = (acc or {}).get("cal")
+    if not fc or not cal:
+        return ""
+    ref = fc.get("ref_close")
+    big_r = fc.get("range") if kind == "day" else fc.get("big_r")
+    if len(cal.get("ups") or []) < TOUCH_MIN_SAMPLES[kind]:
+        return ""
+    hs = (per or {}).get("high", {}).get("ext") if per else None
+    ls = (per or {}).get("low", {}).get("ext") if per else None
+    t = _touch_ladder(ref, big_r, cal, hs, ls)
+    if not t:
+        return ""
+    unit = {"day": "今日", "week": "本週內", "month": "本月內"}[kind]
+    ref_zh = "昨收" if kind == "day" else "段首昨收"
+    body = []
+    for r in t["rows"]:
+        if r["side"] == "down" and body and body[-1][0] == "up":
+            body.append(("ref", f"<tr class='fy-ref'><td>{_n(ref)}</td><td>{ref_zh}</td><td>—</td></tr>"))
+        mark = "✅ 已觸及" if r["hit"] else f"{r['p']}%"
+        body.append((r["side"], f"<tr><td>{'⬆️' if r['side'] == 'up' else '⬇️'} {_n(r['level'])}</td>"
+                                f"<td>{r['dist']:+,.0f}</td><td><span class='fy-pbar' style='--p:{r['p']}%'></span>{mark}</td></tr>"))
+    close = ""
+    if t.get("close_up") is not None:
+        when = "今日收市" if kind == "day" else ("本週最後一個交易日收市" if kind == "week" else "本月最後一個交易日收市")
+        close = (f"<div class='fy-band'>📍 {when}：高過{ref_zh}的機率 <b>{t['close_up']}%</b>；"
+                 f"十次有八次收在 {_n(t['close_lo'])}–{_n(t['close_hi'])}（中位 {_n(t['close_mid'])}）</div>")
+    chk = (acc or {}).get("touch_check") if kind == "day" else None
+    if chk:
+        close += ("<div class='fy-band'>🧪 過去 " + str(TOUCH_CHECK_DAYS) + " 天前推驗證（每天只用之前數據）："
+                  + "；".join(f"預測 {c['lo']}–{c['hi']}%（平均 {c['pred']}%）實際碰到 <b>{c['actual']}%</b>" for c in chk)
+                  + "</div>")
+    return ("<details class='fy-touch' open><summary>🎲 價位機率表（" + unit + "會不會碰到）</summary>"
+            "<table class='fy-ttable'><tr><th>價位</th><th>距" + ref_zh + "</th><th>" + unit + "觸及機率</th></tr>"
+            + "".join(x[1] for x in body) + "</table>" + close
+            + f"<div class='fy-note'>按過去 {t['n']:,} {'天' if kind == 'day' else '段'}「實際高／低離{ref_zh}幾多個預測波幅」的分佈，"
+              f"換算今次預測波幅 {_n(big_r)} 點下每個價位被碰到的比率（級距 {_n(t['step'])} 點）。"
+              "只係統計估計、唔係期權隱含機率；沽期權揀行使價時可以對照（例：觸及機率 10% ≈ 十次有一次會碰到）。</div></details>")
 
 
 # ---- 「怎樣用來賺錢」四個方向  [R106] ---------------------------------------------
@@ -4906,7 +5024,8 @@ def futu_range_data(symbol):
         if ref is None and per["first"] == today and done_rows:
             ref = done_rows[-1]["close"]
         if ref:
-            per["forecast"].update(_hl_levels(ref, per["R"], cal["ups"], cal["downs"], _hl_band_q(kind)), band_q=_hl_band_q(kind))
+            per["forecast"].update(_hl_levels(ref, per["R"], cal["ups"], cal["downs"], _hl_band_q(kind)), band_q=_hl_band_q(kind),
+                                   ref_close=ref, big_r=per["R"])                  # [R176] 價位機率表用
         roll = (data["accuracy"].get(kind) or {}).get("cal_roll")                       # [R124] 最新預測（邊走邊改）
         if roll and per.get("rem") is not None and per.get("high") and per.get("low"):
             hs, ls, price = per["high"]["ext"], per["low"]["ext"], per["price"]
@@ -7591,6 +7710,13 @@ FY_CSS = """<style>
 .fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
 .fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
 .fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.fy-howto-prob { margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(217,119,6,.08); font-size:13.5px; line-height:1.6; }  /* [R177] */
+.fy-touch { margin-top:10px; font-size:13px; } .fy-touch summary { cursor:pointer; font-weight:700; }
+.fy-ttable { width:100%; border-collapse:collapse; margin-top:6px; font-variant-numeric:tabular-nums; }
+.fy-ttable th, .fy-ttable td { padding:3px 6px; border-bottom:1px solid #e9ecef; text-align:right; }
+.fy-ttable th:first-child, .fy-ttable td:first-child { text-align:left; } .fy-ttable tr.fy-ref td { font-weight:700; background:rgba(127,127,127,.08); }
+.fy-pbar { display:inline-block; width:44px; height:6px; margin-right:6px; vertical-align:middle; border-radius:3px;
+  background:linear-gradient(90deg, #d97706 var(--p), rgba(127,127,127,.18) var(--p)); }  /* [R176] */
 .fy-howto { background:var(--card); border-radius:16px; padding:18px 20px 14px; margin-bottom:18px; box-shadow:0 4px 15px rgba(0,0,0,.04); border-left:5px solid #2f6fed; }
 .fy-howto h2 { font-size:17px; margin:0 0 2px; } .fy-howto-status { font-size:14px; font-weight:600; margin:8px 0 10px; padding:8px 12px; border-radius:10px; background:#eef4ff; }
 .fy-howto-status.today { background:#e7f7ec; } .fy-steps { margin:0; padding-left:20px; } .fy-steps li { font-size:13.5px; line-height:1.6; margin:6px 0; }
@@ -7774,6 +7900,13 @@ def _fy_period_card(kind, per, fc, fired, today_label, waiting=None, acc=None, d
                         "範圍隨日子過去收窄。上面「預測高位／低位」是段首定一次的原始預測，過去 7 次表按它計分。"
                         + (f"過去各段走到一半時，最新預測的範圍平均寬 {rm['width']:,} 點、高低都中 {rm['hit_rate']}%"
                            f"（高位平均差 {_n(rm['mae_high'])}、低位 {_n(rm['mae_low'])} 點）。" if rm else "") + "</div>")
+        rc = (acc or {}).get("recent_ranges") if kind == "day" else None             # [R176] 預測對比近期實際波幅
+        if rc and fc.get("range"):
+            chg = (fc["range"] / rc["r22"] - 1) * 100 if rc["r22"] else 0
+            html.append(f"<div class='fy-band'>📊 對比：昨日實際 {_n(rc['r1'])}、5 日平均 {_n(rc['r5'])}、22 日平均 {_n(rc['r22'])} 點"
+                        f" → 預測{'高' if chg >= 0 else '低'}過 22 日平均 {abs(chg):.0f}%"
+                        + ("（波幅擴大中）" if chg >= 15 else "（波幅收窄中）" if chg <= -15 else "（同近月差不多）") + "</div>")
+        html.append(_fy_touch_html(kind, fc, per, acc))
     if per:
         used = per["range"] / fc["range"] * 100 if fc and fc.get("range") else None
         html.append(f"<div class='fy-row'><span>📏 已走</span><b>{_n(per['range'])} 點"
@@ -7921,7 +8054,26 @@ def _strangle_plan(data, symbol=None, now=None):
     if cal_w and fc.get("range") and fc.get("ref_close"):              # 變體：下週預測範圍的九成邊（5%／95% 分位）
         lv = _hl_levels(fc["ref_close"], fc["range"] * math.sqrt(n) * PERIOD_RANGE_RATIO["week"][1], cal_w["ups"], cal_w["downs"], 0.05)
         out.update(alt_put=int(math.floor(lv["low_lo"] / step) * step), alt_call=int(math.ceil(lv["high_hi"] / step) * step))
+    if cal_w and cal_w.get("closes") and F and fc.get("range") and out.get("put"):        # [R177] 兩腳的機率（同週卡價位機率表）
+        big_r = fc["range"] * math.sqrt(n)
+        out["prob"] = _strangle_probs(F, big_r, cal_w, out["put"], out["call"])
+        if out.get("alt_put"):
+            out["prob_alt"] = _strangle_probs(F, big_r, cal_w, out["alt_put"], out["alt_call"])
     return out
+
+
+def _strangle_probs(ref, big_r, cal, put, call):
+    """[R177] 方向一兩腳：按過去各週（高−段首昨收）÷R̂、（段首昨收−低）÷R̂、（週收−段首昨收）÷R̂ 的分佈，
+    以開倉價 ref 與到期週預測波幅 big_r（= 日 R̂ × √交易日數）換算：週內碰到 Put／Call 行使價的機率、
+    到期收在兩腳之間的機率、平均賠付點數（週收當結算價；恒指實際用 EAS 平均價，會略低）。"""
+    ups, downs, closes = cal["ups"], cal["downs"], cal["closes"]
+    lo_c, hi_c = (put - ref) / big_r, (call - ref) / big_r
+    pays = [max(0.0, put - (ref + c * big_r)) + max(0.0, ref + c * big_r - call) for c in closes]
+    return {"put": put, "call": call, "n": len(closes), "ref": ref, "big_r": round(big_r),
+            "touch_put": round(_share_ge(downs, (ref - put) / big_r) * 100),
+            "touch_call": round(_share_ge(ups, (call - ref) / big_r) * 100),
+            "inside": round(sum(1 for c in closes if lo_c < c < hi_c) / len(closes) * 100),
+            "pay_avg": round(sum(pays) / len(pays)), "pay_p90": round(_quantile(sorted(pays), 0.9))}
 
 
 def _fy_howto(data, symbol=None, now=None):
@@ -7958,6 +8110,20 @@ def _fy_howto(data, symbol=None, now=None):
         hold_txt = (f"結算價在 {_n(p['put'])}–{_n(p['call'])} 之間 = 全收權利金；出了範圍每點賠 {unit}。")
     else:
         sig_txt = strike_txt = sell_txt = hold_txt = "等有現價與 IV 才算得出"
+    pr = p.get("prob")
+    prob_html = ""
+    if pr:
+        def _pl(x, tag):
+            return (f"{tag} Put {_n(x['put'])}／Call {_n(x['call'])}：週內碰到 Put <b>{x['touch_put']}%</b>、碰到 Call <b>{x['touch_call']}%</b>；"
+                    f"到期收在兩腳之間 <b>{x['inside']}%</b>；平均賠付 {_n(x['pay_avg'])} 點"
+                    + (f"（十次有一次 ≥ {_n(x['pay_p90'])} 點）" if x["pay_p90"] > 0 else "（超過九成週唔使賠）"))
+        prob_html = ("<div class='fy-howto-prob'>🎲 <b>按同一套數據</b>（過去 " + str(pr["n"]) + " 週「高／低／收離段首昨收幾多個預測波幅」，"
+                     f"換算現價 {_n(pr['ref'])}、到期週預測波幅 {_n(pr['big_r'])} 點）：<br>"
+                     + _pl(pr, "1σ") + (f"<br>{_pl(p['prob_alt'], '變體')}" if p.get("prob_alt") else "")
+                     + "<br><span class='fy-band'>碰到 ≠ 蝕錢：碰到之後可以返回；到期收在兩腳之間就全收權利金。"
+                       + ("平均賠付 + 8 點成本低過收到嘅權利金先有優勢。週收當結算價。" if us else
+                        "平均賠付 + 8 點成本低過收到嘅權利金（目標 ≥ 80 點）先有優勢。週收當結算價，恒指實際結算用 EAS 平均價（會略低）。")
+                     + "只係統計估計，唔係期權隱含機率。</span></div>")
     alt = (f"📎 變體（更穩，回測 +39 點／週、96% 週賺、最差 −144）：行使價改用下週預測範圍的九成邊 Put <b>{_n(p['alt_put'])}</b>／Call <b>{_n(p['alt_call'])}</b>。"
            if p.get("alt_put") else "")
     head = (f"📘 方向一實際操作：每週沽 {short} 週期權 1σ 勒式（做法同恒指，{short} 未回測）" if us else "📘 方向一實際操作：每週沽恒指週期權 1σ 勒式")
@@ -7978,8 +8144,8 @@ def _fy_howto(data, symbol=None, now=None):
             f"完整規則：research/hsi_futures_range/STRANGLE_1SIGMA.md")
     return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
             f"<div class='fy-howto-status{' today' if p['phase'] in ('today', 'window') else ''}'>{status}</div>"
-            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>"
-            f"<div class='fy-note'>{note}</div></div>")
+            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>" + prob_html
+            + f"<div class='fy-note'>{note}</div></div>")
 
 
 def _fy_money(data, symbol=None):
