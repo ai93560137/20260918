@@ -12,6 +12,7 @@
 """
 import argparse
 import json
+import os
 import re
 from datetime import date
 from math import erf, log, sqrt
@@ -68,6 +69,25 @@ def derive_code(p):
     return f"HK.{root}{p['exp'][2:].replace('-', '')}{'C' if p['type'] == 'call' else 'P'}{int(p['K'] * 1000):08d}"
 
 
+YAHOO_SYMBOLS = {"ES": "ES=F"}   # [R183] 富途冇 CME 行情時嘅後備；設 ZHUGE_NO_YAHOO=1 停用
+
+
+def yahoo_last(sym, timeout=6):
+    """Yahoo Finance 延遲最後價（唔使金鑰）；失敗回 None，唔影響報告其他部分。"""
+    if os.environ.get("ZHUGE_NO_YAHOO") == "1":
+        return None
+    import urllib.request
+    try:
+        req = urllib.request.Request(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1m&range=1d",
+                                     headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            meta = json.loads(r.read().decode("utf-8"))["chart"]["result"][0]["meta"]
+        px = meta.get("regularMarketPrice")
+        return float(px) if px and px > 0 else None
+    except Exception:
+        return None
+
+
 def load(book_path, quotes_path=None):
     b = json.loads(Path(book_path).read_text(encoding="utf-8"))
     qf = json.loads(Path(quotes_path).read_text(encoding="utf-8")) if quotes_path else {}
@@ -113,7 +133,12 @@ def load(book_path, quotes_path=None):
                 d["F"], d["F_src"] = px, f"{c} {lab} @ {q.get('quote_time')}"
                 break
         else:
-            # [R182] 冇期貨報價（CME 冇行情權限）：有標普期貨持倉就由富途持倉盈虧反推富途用緊嘅期貨價
+            # [R183] 冇期貨報價（CME 冇行情權限）：先試 Yahoo 延遲報價（ES=F 連續合約，約延遲 10 分鐘）
+            yp = yahoo_last(YAHOO_SYMBOLS.get(u)) if YAHOO_SYMBOLS.get(u) else None
+            if yp:
+                d["F"], d["F_src"] = yp, f"Yahoo {YAHOO_SYMBOLS[u]} 延遲報價（約 10 分鐘）"
+                continue
+            # [R182] 再唔得：有標普期貨持倉就由富途持倉盈虧反推富途用緊嘅期貨價
             for c, r in FP.items():
                 fm = re.match(r"^US\.(ES|MES)\d{4}$", c) if u == "ES" else None
                 if fm and r.get("qty") and r.get("futu_pl") is not None and r.get("open_price"):
