@@ -194,6 +194,23 @@
 下游只讀總指揮產出的檔，不重算。
 **公開 repo 的 Actions 日誌人人睇到**：含權益／金額的內文只發 Telegram、存私人 GCS，日誌只印字數（`ops_notify.print_private`）。
 
+## 二之二、VM 與資料推送守則（2026-10-14，claude-ops 經驗整理，使用者同意）
+
+適用：ib-data／claude-ops 兩部 VM、所有把採集數據推上 GitHub 的步驟、教使用者喺 VM 貼指令嘅工作階段。
+
+1. **附加式日誌只追加，唔覆蓋。** 推資料去有憑證嘅帳號時，唔准用 `cp -r` 蓋遠端既有嘅附加式日誌（例如 `data_stock_ibkr/_status.txt`）；
+   用 `tail -n +N 新檔 >> 舊檔` 只追加，或者先 `git show <分支>:<檔>` 取舊版合併。**commit 前睇 `git diff --stat`，日誌檔唔准有刪除行。**
+   （教訓：10-13 用 `cp -r` 將鳥翔 `_status.txt` 由 313 行蓋成 205 行，歷史喺 `c3f4a61b`，CSV 無損；補回由鳥翔陣負責。）
+2. **有排程喺 pull 嘅目錄唔好直接切分支**（例如 hengkychansinghing 嘅 `~/20260918`）；要用其他分支就開獨立 `git worktree`，做完 `git worktree remove`。
+3. **教使用者貼指令：「復原」指令獨立成一段並清楚標示**，唔好同正常步驟放埋一齊（10-13 使用者連復原嗰行一齊貼，將啱改好嘅 IBC `config.ini` 改返轉頭）。
+   使用者回報做完之後，要佢貼輸出、用輸出驗證，唔好假設已生效。
+4. **Gateway 每晚約 23:50 UTC（07:50 HKT）由 `ib_keepalive.sh` 重啟。** 重啟後 Paper 免責聲明（Error 10141）會擋 API，
+   現靠 `dismiss_paper_warning.sh`（xdotool 座標點擊，視窗必須剛好 501x260）加 IBC `AcceptNonBrokerageAccountWarning=yes`。長時間抓取避開 23:50 UTC 前後。
+5. **採集腳本唔可以因 git 狀態整日唔跑。** `run_daily.sh` 有 `set -e`，`git pull` 因未提交修改失敗會令當日採集全部冇跑；已改 `git pull --autostash`（`c8d3033d1`）。
+   採集用當下延遲報價，**缺咗嘅日子補唔返，不得估算補值**；缺日要喺 `_status.txt` 記低，唔好填假數。
+6. **權限分工與跑別人腳本。** `claudeops` 冇 sudo、冇 GitHub 憑證、讀唔到 `/home/hengkychansinghing`（權限改動照 CLAUDE.md 要附 `AGENTIC.md`「必跑這個檢查」）。
+   跑其他分支嘅腳本前先讀過，確認只讀行情、冇任何下單呼叫。背景長任務用 `setsid nohup … < /dev/null &`；喺 ssh 入面直接 `&` 可能唔返回。
+
 ## 三、建議順序
 
 | 優先 | 缺口 | 理由 | 負責 | 工作量 |
