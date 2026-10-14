@@ -50,6 +50,7 @@ TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最�
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", TEAM_MANUAL, "大恒指期貨（人手）", None),   # 2026-10-14 使用者：預設歸人手；屬蛇蟠要逐張確認
     (r"^US\.EW\d{4}[CP]\d+x\d$", TEAM_MANUAL, "標普 E-mini 月底 Put", None),
+    (r"^US\.(ES|MES)\d{4}$", TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),
     (r"^US\.SPCX$", TEAM_GIFT, "SpaceX 碎股（券商送）", None),
 )
 TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
@@ -226,6 +227,11 @@ def parse_positions_md(text: str, year: int = 2026) -> tuple[dict[str, float], l
         if m:
             n = float(m.group(3)) * (-1 if m.group(1) == "賣" else 1)
             out[f"HK.MHI{m.group(2)}"] = out.get(f"HK.MHI{m.group(2)}", 0.0) + n
+            hit = True
+        m = re.search(r"(賣|買) (ES|MES)(\d{4}) 標普期貨 ?(\d+) 手", pos)
+        if m:
+            n = float(m.group(4)) * (-1 if m.group(1) == "賣" else 1)
+            out[f"US.{m.group(2)}{m.group(3)}"] = out.get(f"US.{m.group(2)}{m.group(3)}", 0.0) + n
             hit = True
         m = re.search(r"沽 EW(\d{4}) P([\d,]+) (\d+) 張", pos)
         if m:
