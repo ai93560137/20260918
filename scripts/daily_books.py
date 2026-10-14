@@ -48,7 +48,7 @@ TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最�
     (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
-    (r"^HK\.HSI\d{4}$", "蛇蟠陣", "大恒指期貨（人手）", None),
+    (r"^HK\.HSI\d{4}$", TEAM_MANUAL, "大恒指期貨（人手）", None),   # 2026-10-14 使用者：預設歸人手；屬蛇蟠要逐張確認
     (r"^US\.EW\d{4}[CP]\d+x\d$", TEAM_MANUAL, "標普 E-mini 月底 Put", None),
     (r"^US\.SPCX$", TEAM_GIFT, "SpaceX 碎股（券商送）", None),
 )
