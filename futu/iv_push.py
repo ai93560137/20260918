@@ -4,7 +4,7 @@
 只用 get_option_expiration_date / get_option_chain / get_market_snapshot，不落單、不解鎖交易。
 
 每一輪：
-  1. 取標的現價（恒指用指數 HK.800000；ES／NQ 用期貨主連，代號可用環境變數改）
+  1. 取標的現價（恒指用指數 HK.800000；ES 用 SPX 指數、NQ 用 NDX 指數，代號可用環境變數改）
   2. 列出到期日，挑三個：本週（本週最後一個、今天之後）、下週（下週最後一個）、月尾（本月最後一個；過了就下個月）
   3. 每個到期日取離現價最近的 STRIKES（預設 10）個行使價，Call、Put 都取 → 快照拿 IV、Delta、買賣價、未平倉
   4. POST 到 GCP：action=futu_data，代號用別名 HK.HSI_IV／US.ES_IV／US.NQ_IV（不會影響波幅頁與 push_to_gcp.py 的資料）。
@@ -14,7 +14,8 @@
     setx ZHUGE_GCP_URL "https://你的服務.run.app/"
     setx WEBHOOK_SECRET_TOKEN "跟 Cloud Run 環境變數相同的權杖"
   選填：IV_MARKETS（預設 HSI,ES,NQ）、IV_STRIKES（10）、IV_INTERVAL_SEC（1800，每 30 分鐘一輪）、
-        IV_ES_UNDERLYINGS／IV_NQ_UNDERLYINGS（逗號分隔，逐個試；預設 US.ESmain,US.ES2612／US.NQmain,US.NQ2612）、
+        IV_ES_UNDERLYINGS／IV_NQ_UNDERLYINGS（逗號分隔，逐個試；預設 US..SPX,US.SPY／US..NDX,US.QQQ。
+          富途 API 唔支援期貨期權，所以 ES 用 SPX、NQ 用 NDX 期權嘅 IV 代表；ETF 只係後備，行使價係指數約 1/10）、
         OPEND_HOST（127.0.0.1）、OPEND_PORT（11111）
 
 用法：
@@ -23,7 +24,8 @@
     python iv_push.py                # 長跑：每 IV_INTERVAL_SEC 秒一輪；Ctrl+C 停
 
 注意：
-  * 美國期貨期權要有 CME 期權行情權限；沒有的話 IV 會是 0 或空，--probe 會標「⚠️ 沒有 IV」。
+  * 美股指數期權要有美股期權行情權限；沒有的話 IV 會是 0 或空，--probe 會標「⚠️ 沒有 IV」。
+  * 富途期權鏈每 30 秒最多 10 次；腳本每次之間停 3.2 秒，一輪約 1 分鐘。
   * 權杖只放環境變數；日誌不印網址與權杖。
 """
 import argparse, os, sys, time
@@ -33,7 +35,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "iv-2"
+SCRIPT_VERSION = "iv-3"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 OPEND_HOST = os.environ.get("OPEND_HOST", "127.0.0.1").strip()
@@ -44,6 +46,7 @@ MARKETS_ON = [x.strip().upper() for x in os.environ.get("IV_MARKETS", "HSI,ES,NQ
 HTTP_TIMEOUT_SEC = 30
 CHAIN_SPAN_DAYS = 29                     # [iv-2] 富途 get_option_chain 每次最多 30 日，分段拎
 CHAIN_DAYS = 60                          # 月尾過咗要拎下個月：最多向後 60 日
+CHAIN_GAP_SEC = 3.2                      # [iv-3] 富途期權鏈每 30 秒最多 10 次
 
 
 def _codes(env, default):
@@ -54,9 +57,9 @@ MARKETS = {
     "HSI": {"alias": "HK.HSI_IV", "tz": ZoneInfo("Asia/Hong_Kong"), "underlyings": ["HK.800000"],
             "index_option_type": ft.IndexOptionType.NORMAL},
     "ES": {"alias": "US.ES_IV", "tz": ZoneInfo("America/New_York"),
-           "underlyings": _codes("IV_ES_UNDERLYINGS", "US.ESmain,US.ES2612")},
+           "underlyings": _codes("IV_ES_UNDERLYINGS", "US..SPX,US.SPY")},     # [iv-3] 富途唔支援期貨期權：用 SPX（同 ES 一樣係標普 500）
     "NQ": {"alias": "US.NQ_IV", "tz": ZoneInfo("America/New_York"),
-           "underlyings": _codes("IV_NQ_UNDERLYINGS", "US.NQmain,US.NQ2612")},
+           "underlyings": _codes("IV_NQ_UNDERLYINGS", "US..NDX,US.QQQ")},     # [iv-3] NDX 對應 NQ
 }
 
 
@@ -134,7 +137,7 @@ class Collector:
             else:
                 last_err = str(ch)[:120]
             start = end + timedelta(days=1)
-            time.sleep(0.5)                                      # 期權鏈有頻率限制
+            time.sleep(CHAIN_GAP_SEC)                            # 期權鏈有頻率限制
         if not parts and last_err:
             raise RuntimeError(f"期權鏈失敗：{last_err}")
         return pd.concat(parts, ignore_index=True).drop_duplicates("code") if parts else pd.DataFrame()
@@ -188,6 +191,8 @@ class Collector:
                 return m["alias"], und, spot, picks, rows
             except Exception as exc:                            # 換下一個標的代號再試
                 errors.append(f"{und}：{exc}")
+                if "high frequency" in str(exc):
+                    time.sleep(30)
         raise RuntimeError("；".join(errors) or "沒有標的代號")
 
     def quote(self, sub, exp, label):
