@@ -1,18 +1,8 @@
 {
  "date": "2026-10-14",
- "run_hkt": "2026-10-14 04:04",
- "run_kind": "night",
+ "run_hkt": "2026-10-14 17:38",
+ "run_kind": "day",
  "closed": [
-  {
-   "code": "HK.MHI2610",
-   "product": "MHI 小型恒指期貨",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 24200.0,
-   "close_price": 24168.0,
-   "close_time_hkt": "2026-10-13 09:30:03",
-   "realized_pts": 32.0
-  },
   {
    "code": "HK.MHI2610",
    "product": "MHI 小型恒指期貨",
@@ -22,9 +12,99 @@
    "close_price": 24295.0,
    "close_time_hkt": "2026-10-14 00:56:28",
    "realized_pts": 10.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 2.0,
+   "open_price": 24260.0,
+   "close_price": 24400.0,
+   "close_time_hkt": "2026-10-14 13:07:21",
+   "realized_pts": -140.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 3.0,
+   "open_price": 24260.0,
+   "close_price": 24400.0,
+   "close_time_hkt": "2026-10-14 13:07:21",
+   "realized_pts": -140.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 5.0,
+   "open_price": 24260.0,
+   "close_price": 24400.0,
+   "close_time_hkt": "2026-10-14 13:07:21",
+   "realized_pts": -140.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平多",
+   "qty": 1.0,
+   "open_price": 24388.0,
+   "close_price": 24437.0,
+   "close_time_hkt": "2026-10-14 13:37:44",
+   "realized_pts": 49.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平多",
+   "qty": 4.0,
+   "open_price": 24388.0,
+   "close_price": 24437.0,
+   "close_time_hkt": "2026-10-14 13:37:45",
+   "realized_pts": 49.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 4.0,
+   "open_price": 24418.0,
+   "close_price": 24410.0,
+   "close_time_hkt": "2026-10-14 13:55:54",
+   "realized_pts": 8.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 2.0,
+   "open_price": 24438.0,
+   "close_price": 24410.0,
+   "close_time_hkt": "2026-10-14 13:55:54",
+   "realized_pts": 28.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 1.0,
+   "open_price": 24438.0,
+   "close_price": 24410.0,
+   "close_time_hkt": "2026-10-14 13:55:54",
+   "realized_pts": 28.0
+  },
+  {
+   "code": "HK.MHI2611",
+   "product": "MHI 小型恒指期貨",
+   "side": "平空",
+   "qty": 1.0,
+   "open_price": 24438.0,
+   "close_price": 24410.0,
+   "close_time_hkt": "2026-10-14 13:55:54",
+   "realized_pts": 28.0
   }
  ],
- "n_yunchui_deals": 2,
- "n_other_deals": 15,
+ "n_yunchui_deals": 13,
+ "n_other_deals": 2,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
