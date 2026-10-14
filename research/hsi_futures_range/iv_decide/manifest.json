@@ -1,0 +1,14 @@
+{
+ "generated_utc": "2026-10-14 09:00:05",
+ "script_sha256": "6bd29245c0afd9723fbde90d20addc76c29f875ee40d61e61c04b0fae316637d",
+ "inputs": {
+  "hsi": "3c775910b32d96b12d8571ae1848f6aea4819ff7ce00817aa75a6d3121b0d21f",
+  "vhsi": "1cd8911daed68aaa38e1178a3e825c32092f26eeb437029269fc93d6bb1c8fb6",
+  "atm_iv.csv": "61dd3615a0397d4d559f9975a6a7d98709b45dafaf58f19f7bcdf725084db799",
+  "har_weekly": "207334ac307c953e05140978936b74a2ee92756130973bdc6d2f432289f91ba9"
+ },
+ "real_weeks": 53,
+ "long_weeks": 1217,
+ "cost_leg": 4.0,
+ "iv_scale": 0.85
+}
