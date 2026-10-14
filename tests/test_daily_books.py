@@ -91,11 +91,11 @@ check("csv 一列、cushion 已覆蓋", len(rows) == 1 and rows[0]["cushion"] ==
 print("\n=== 風控階梯 ===")
 lv, why = db.ladder_level(RISK, "", (), night=False)
 check("現況 Ⓐ", lv == "A" and why == [])
-R = json.loads(json.dumps(RISK)); R["metrics"]["cushion"] = 140000
-check("緩衝 140k → Ⓑ（日間）", db.ladder_level(R, "", (), night=False)[0] == "B")
-check("緩衝 140k → Ⓒ（夜盤 ×1.5：< 150k）", db.ladder_level(R, "", (), night=True)[0] == "C")
-R["metrics"]["cushion"] = 59000
-check("緩衝 59k → Ⓓ", db.ladder_level(R, "", (), night=False)[0] == "D")
+R = json.loads(json.dumps(RISK)); R["metrics"]["cushion"] = 35000
+check("緩衝 35k → Ⓑ（日間，10-14 線 37.5k）", db.ladder_level(R, "", (), night=False)[0] == "B")
+check("緩衝 35k → Ⓒ（夜盤 ×1.5：< 37.5k）", db.ladder_level(R, "", (), night=True)[0] == "C")
+R["metrics"]["cushion"] = 14000
+check("緩衝 14k → Ⓓ", db.ladder_level(R, "", (), night=False)[0] == "D")
 R2 = json.loads(json.dumps(RISK)); R2["metrics"]["gap"] = 0.15 * R2["metrics"]["equity"]
 check("離硬止損 15% → Ⓒ", db.ladder_level(R2, "", (), night=False)[0] == "C")
 R3 = json.loads(json.dumps(RISK)); R3["metrics"]["stop_use"]["HSI 月跨式"] = 0.85
@@ -145,14 +145,14 @@ def tu(c, night=False):
     R = json.loads(json.dumps(RISK)); R["metrics"]["cushion"] = c
     lv, why = db.ladder_level(R, "", (), night=night)
     return lv, why, db.topup_advice(R, lv, why, night)
-lv, why, t = tu(140000)
-check("緩衝 140k（Ⓑ）→ 建議入金 4 萬補到 18 萬", lv == "B" and t and "HK$40,000" in t[0] and "HK$180,000" in t[0] and "17:15 前" in t[0], t)
-lv, why, t = tu(95000)
-check("緩衝 95k（Ⓒ）→ 30 分鐘內入金 9 萬可代替減半", lv == "C" and "30 分鐘內" in t[0] and "HK$90,000" in t[0], t)
-lv, why, t = tu(55000)
-check("緩衝 55k（Ⓓ）→ 唔接受補倉代替全平", lv == "D" and "唔接受補倉代替全平" in t[0], t)
-lv, why, t = tu(140000, night=True)
-check("夜盤 140k（Ⓒ）→ 目標 27 萬、入金 13 萬", lv == "C" and "HK$130,000" in t[0] and "HK$270,000" in t[0], t)
+lv, why, t = tu(35000)
+check("緩衝 35k（Ⓑ）→ 建議入金 1 萬補到 4.5 萬", lv == "B" and t and "HK$10,000" in t[0] and "HK$45,000" in t[0] and "17:15 前" in t[0], t)
+lv, why, t = tu(23000)
+check("緩衝 23k（Ⓒ）→ 30 分鐘內入金 3 萬可代替減半", lv == "C" and "30 分鐘內" in t[0] and "HK$30,000" in t[0], t)
+lv, why, t = tu(14000)
+check("緩衝 14k（Ⓓ）→ 唔接受補倉代替全平", lv == "D" and "唔接受補倉代替全平" in t[0], t)
+lv, why, t = tu(35000, night=True)
+check("夜盤 35k（Ⓒ）→ 目標 6.75 萬、入金 4 萬", lv == "C" and "HK$40,000" in t[0] and "HK$67,500" in t[0], t)
 R3b = json.loads(json.dumps(RISK)); R3b["metrics"]["stop_use"]["HSI 月跨式"] = 0.85
 lv3b, why3b = db.ladder_level(R3b, "", (), night=False)
 t3b = db.topup_advice(R3b, lv3b, why3b, False)
@@ -163,11 +163,11 @@ lv, why, t = tu(250000)
 check("Ⓐ 緩衝 25 萬（< 30 萬）→ 冇提款額", t == [], t)
 pub_t, priv_t = db.tail_sections("A", [], [], info_pub, False, ["🏧 可提款上限 HK$100,000"])
 check("提款上限只放私人版", "可提款" not in pub_t and "HK$100,000" in priv_t)
-_, _, t = tu(140000)
-pub_t, priv_t = db.tail_sections("B", ["Ⓑ 停開新倉：富途保證金緩衝 HK$140,000 < 150,000"], [], info_pub, False, t)
-check("補倉建議公開版冇金額、私人版有", "💰 補倉" in pub_t and "HK$" not in pub_t and "HK$40,000" in priv_t, pub_t)
+_, _, t = tu(35000)
+pub_t, priv_t = db.tail_sections("B", ["Ⓑ 停開新倉：富途保證金緩衝 HK$35,000 < 37,500"], [], info_pub, False, t)
+check("補倉建議公開版冇金額、私人版有", "💰 補倉" in pub_t and "HK$" not in pub_t and "HK$10,000" in priv_t, pub_t)
 check("公開版最後一行照舊", pub_t.strip().splitlines()[-1].startswith("額度內 ✅"))
-check("Ⓒ 訊息附補倉建議", "30 分鐘內" in db.ladder_message("C", ["x"], date(2026, 10, 13), tu(95000)[2]))
+check("Ⓒ 訊息附補倉建議", "30 分鐘內" in db.ladder_message("C", ["x"], date(2026, 10, 13), tu(23000)[2]))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
