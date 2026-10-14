@@ -29,6 +29,8 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
    `zhuge-opend.service` 經 `opend_tmux.sh` 喺 tmux session `opend` 開 OpenD 並自動答；每次開只試一次，
    失敗會寫 `~/zhuge/opend_login.failed` 停止自動試（富途密碼錯有次數限制）＋發 Telegram，改好密碼後刪咗呢個檔再 `sudo systemctl restart zhuge-opend`。
    冇呢個檔就要每次開機人手 `tmux attach -t opend` 登入。
+   ⚠ 富途有**登入次數限制**：短時間登入太多次會「登录次数过多,请等待 50 分钟」，OpenD 即刻退出（exit 31）。
+   `opend_tmux.sh` 遇到會等 60 分鐘先再試；期間唔好人手 `systemctl restart`／開 OpenD，否則越鎖越耐。
 6. **填 `~/zhuge/env`**：照 `gcp_ib/vm_futu/env.example`（可以用 `read -rsp` 逐個填再 `cat > ~/zhuge/env`，唔使 nano）。
    `ZHUGE_COMBINED_EQUITY` 只填純數字港幣（冇逗號、冇 USD）。
 7. **安裝**：`bash ~/20260918/gcp_ib/vm_futu/setup.sh`（會裝 tmux；之後 repo 嘅 service／timer 改動由 `update.sh` 自動套用，OpenD 唔自動重開）。

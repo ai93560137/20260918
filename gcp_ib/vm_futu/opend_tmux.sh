@@ -3,6 +3,8 @@
 # 所以喺 tmux（session 名 opend）入面開 OpenD，由 ~/zhuge/opend_login（chmod 600；第一行牛牛號、第二行「登入」密碼，
 # 唔係交易密碼）自動答。每次開 OpenD 只試一次登入；失敗就寫 ~/zhuge/opend_login.failed，之後唔再自動試
 # （富途密碼錯有次數限制，免得鎖戶口），發 Telegram，留喺 tmux 等人手 `tmux attach -t opend`（Ctrl+B 再 d 離開）。
+# [R189] OpenD 一退出（例如「登录次数过多,请等待 50 分钟」，exit 31）tmux 會保留最後畫面（remain-on-exit）寫入 log；
+# 次數過多就等 60 分鐘先退出，免得 systemd 每 30 秒重開越鎖越耐。
 # 由 zhuge-opend.service 呼叫：bash opend_tmux.sh <HOME>
 set -uo pipefail
 H="${1:-$HOME}"; S=opend
@@ -26,15 +28,19 @@ alert() { local m; m="$(screen | mask | tr "\n" " ")"; log "⚠ $1：$m"; tg "$1
 
 tmux kill-session -t "$S" 2>/dev/null || true
 cd "$H/opend" || { log "搵唔到 $H/opend"; exit 1; }
-tmux new-session -d -s "$S" -x 200 -y 50 "$H/opend/FutuOpenD"
+# 先開空 session 設好 remain-on-exit，再換上 OpenD（OpenD 即刻退出都留低畫面）
+tmux new-session -d -s "$S" -x 200 -y 50 "sleep 86400"
+tmux set-option -t "$S" remain-on-exit on >/dev/null
+tmux respawn-pane -k -t "$S" "$H/opend/FutuOpenD"
 log "OpenD 已喺 tmux session '$S' 開咗"
+dead() { [ "$(tmux display-message -p -t "$S" '#{pane_dead}' 2>/dev/null || echo 1)" = 1 ]; }
 
 if [ -f "$FAILED" ]; then
   alert "上次自動登入失敗，暫停自動登入（確認密碼後刪 ~/zhuge/opend_login.failed）"
 elif [ ! -f "$CRED" ]; then
   alert "冇 ~/zhuge/opend_login，要人手登入"
-elif ! waitfor '请输入账号' 60; then
-  alert "60 秒內冇見到「请输入账号」"
+elif ! waitfor '请输入账号|已退出|次数过多' 60 || ! screen | grep -q '请输入账号'; then
+  alert "OpenD 冇問帳號"
 else
   { IFS= read -r ACC; IFS= read -r PW; } < "$CRED"
   answer "$ACC"
@@ -52,6 +58,14 @@ else
   fi
 fi
 
-while tmux has-session -t "$S" 2>/dev/null; do sleep 30; done
-log "OpenD 已退出，交由 systemd 重開"
+while ! dead; do sleep 30; done
+last="$(screen | mask | tr "\n" " ")"
+tmux kill-session -t "$S" 2>/dev/null || true
+if echo "$last" | grep -q '次数过多'; then
+  log "⚠ OpenD 退出：$last；等 60 分鐘先再試"
+  tg "OpenD 登入次數過多（$last），60 分鐘後自動再試；期間唔好人手重開"
+  sleep 3600
+else
+  log "OpenD 已退出（$last），交由 systemd 重開"
+fi
 exit 1
