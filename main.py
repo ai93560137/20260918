@@ -118,6 +118,9 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-14 — [R178] 期權 IV：讀 futu/iv_push.py 推上嚟嘅 HK.HSI_IV／US.ES_IV（SPX）／US.NQ_IV（NDX）快照，
+#     三頁方向一操作箱加「📈 期權價平 IV」表（本週／下週／月尾、÷ 預測、到期 1σ），σ點改用同到期日嘅真實 IV（冇先用舊來源／預測）；
+#     美股頁唔再誤用恒指期權 IV。
 #   * 2026-10-14 — [R177] 方向一操作箱（恒指／ES／NQ）加「🎲 按同一套數據」：週內碰到 Put／Call 行使價的機率、到期收在兩腳之間的機率、
 #     平均賠付點數（十次有一次的賠付）；1σ 與變體兩組。用週卡同一份校準（過去各週高／低／收 ÷ R̂×√n），以現價為參考。
 #   * 2026-10-14 — [R176] 波幅頁（恒指／ES／NQ）預測卡加「🎲 價位機率表」：昨收上下各 4 級價位（級距 ≈ R̂ ÷ 4 取整）
@@ -3220,7 +3223,8 @@ MARKETS = {
            "zh": "恒指即月期貨", "title": "🌬️ 風揚陣・恒指即月期貨波幅", "view": "futu_range", "icon": "🌬️",
            "session_zh": "日市＋當晚夜市", "hours_zh": "交易日 = 日市 09:15–16:30 ＋ 當晚夜市至翌日 03:00",
            "day_zh": "香港時間 09:00 至翌日 09:00：日市 09:15–16:30 加當晚夜市 17:15–翌日 03:00（跟富途日 K 不同）",
-           "open_zh": "09:15 開市後", "unit_zh": "恒指期貨每點 HK$50，小型恒指 HK$10", "intraday": True},
+           "open_zh": "09:15 開市後", "unit_zh": "恒指期貨每點 HK$50，小型恒指 HK$10", "intraday": True,
+           "iv_alias": "HK.HSI_IV", "iv_src_zh": "恒指期權"},                                  # [R178] futu/iv_push.py
     "US": {"key": "US", "tz": NY_TZ, "shift": 6, "calendar": False, "preopen": ("18:00", "19:00"), "end": (0, "17:00"),
            "start_hour": 18, "c_cut_day": "16:00", "snake_split": False,               # [R130] 整段 23 小時當一天；C 看 16:00 RTH 收市
            "reviews": {"noon": ("🕤", "隔夜時段檢討（前一天 18:00 至 09:30 ET）", "09:30"), "close": ("🕓", "RTH 收市檢討（至 16:00 ET）", "16:00"),
@@ -3231,14 +3235,16 @@ MARKETS = {
            "session_zh": "CME 全段 23 小時", "hours_zh": "交易日 = CME 全段：紐約時間前一天 18:00 至當天 17:00（香港 06:00／07:00 至翌日 05:00／06:00）",
            "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 yfinance 的連續合約日線，轉月不做價差調整",
            "open_zh": "有 5 分 K 推送後", "unit_zh": "ES 每點 US$50，小型 MES US$5", "intraday": False,
-           "short": "ES", "pt_zh": "US$50", "opt_zh": "ES 週期權（週五到期，每點 US$50）", "step": 25, "iv_ref": "VIX（CBOE 30 日 IV）", "cap_zh": "US$30,000",
+           "short": "ES", "pt_zh": "US$50", "opt_zh": "ES 週期權（週五到期，每點 US$50）", "step": 25,
+           "iv_alias": "US.ES_IV", "iv_src_zh": "SPX 指數期權（同 ES 一樣係標普 500）", "iv_ref": "VIX（CBOE 30 日 IV）", "cap_zh": "US$30,000",
            "events_zh": "聯儲議息、非農、CPI", "empty_hint": "本地執行 futu/mt5_push.py --backfill 400 補歷史（MT5_SYMBOLS 含 SP500ft:US.ES_FRONT），之後每 5 分鐘自動更新。"},
 }
 # [R158] 🇺🇸 NQ 納指 100 期貨：與 ES 共用整套美股設定（key 仍是 US → 時區、交易日、高低位分布、檢討都一樣），只換名稱、單位、期權文字。
 MARKETS["NQ"] = {**MARKETS["US"],
                  "zh": "NQ 納指 100 期貨", "title": "🇺🇸 風揚陣・NQ 納指 100 期貨波幅", "view": "nq_range",
                  "unit_zh": "NQ 每點 US$20，微型 MNQ US$2", "short": "NQ", "pt_zh": "US$20",
-                 "opt_zh": "NQ 週期權（週五到期，每點 US$20）", "step": 100, "iv_ref": "VXN（CBOE 納指 100 30 日 IV）", "cap_zh": "US$30,000",
+                 "opt_zh": "NQ 週期權（週五到期，每點 US$20）", "step": 100,
+                 "iv_alias": "US.NQ_IV", "iv_src_zh": "NDX 指數期權（同 NQ 一樣係納指 100）", "iv_ref": "VXN（CBOE 納指 100 30 日 IV）", "cap_zh": "US$30,000",
                  "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 MT5 的 NAS100 CFD 5 分 K 合成",
                  "empty_hint": "本地執行 futu/mt5_push.py --backfill 400 補歷史（MT5_SYMBOLS 含 NAS100ft:US.NQ_FRONT），之後每 5 分鐘自動更新。"}
 ES_SYMBOL = "US.ES_FRONT"
@@ -4560,6 +4566,51 @@ VHSI_SELL_RATIO = 1.2                           # [R107] VHSI ÷ 預測 ≥ 1.2 
 RANGE_TO_SIGMA = 1.596                          # 布朗運動：期望波幅 ≈ 1.596 × σ
 
 
+FUTU_IV_TERM_MAX_AGE = 72 * 3600                 # [R178] 週末用週五最後一份；超過三日當舊
+
+
+def futu_iv_term(symbol, calendar=None, now=None):
+    """[R178] futu/iv_push.py 推上嚟嘅本週／下週／月尾期權（別名 HK.HSI_IV／US.ES_IV／US.NQ_IV）→ 每個到期日嘅價平 IV。
+    價平 = 離標的現價最近嘅行使價，Call、Put IV 平均；days = 今日之後到到期日（包括到期日）嘅交易日數。冇數據 → None。"""
+    m = futu_market(symbol)
+    alias = m.get("iv_alias")
+    snap = read_futu_snapshot(alias) if alias else {}
+    if not isinstance(snap, dict) or snap.get("error"):
+        return None
+    bars = snap.get("bars") or []
+    spot = to_float(bars[-1].get("close")) if bars else None
+    if not spot:
+        return None
+    by_exp = {}
+    for o in snap.get("options") or []:
+        k, iv = to_float(o.get("strike")), to_float(o.get("iv"))
+        if k and iv and o.get("expiry"):
+            by_exp.setdefault(o["expiry"], []).append((k, iv))
+    now = now or datetime.now(timezone.utc)
+    today = now.astimezone(m["tz"]).date()
+    rows = []
+    for exp in sorted(by_exp):
+        pts = by_exp[exp]
+        atm = min({k for k, _ in pts}, key=lambda k: abs(k - spot))
+        ivs = [iv for k, iv in pts if k == atm]
+        try:
+            end = datetime.strptime(exp, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        days, d = 0, today
+        while d < end and days < 400:
+            d += timedelta(days=1)
+            if futu_trading_day(d.isoformat(), calendar or {}) if m["calendar"] else d.weekday() < 5:
+                days += 1
+        rows.append({"expiry": exp, "strike": atm, "iv": round(sum(ivs) / len(ivs), 2), "days": days,
+                     "sigma": round(sum(ivs) / len(ivs) / 100 * math.sqrt(max(days, 1) / 252) * spot)})
+    if not rows:
+        return None
+    age = futu_age_sec(snap, now.timestamp())
+    return {"alias": alias, "spot": spot, "source": str(snap.get("source") or "").partition(":")[2], "rows": rows,
+            "age": age, "fresh": age is not None and age <= FUTU_IV_TERM_MAX_AGE, "received_utc": snap.get("received_utc")}
+
+
 def futu_iv_compare(fc, now=None):
     """方向一：恒指期權價平 IV 對風揚陣預測的年化波幅。沒有期權或預測 → None。
     最新 K 線離現在超過 20 分鐘（休市、週末）→ fresh=False，報價不可信。"""
@@ -5050,6 +5101,7 @@ def futu_range_data(symbol):
         if futu_trading_day(nxt.strftime("%Y-%m-%d"), calendar) or nxt.year > 2100:
             break
     data["iv_compare"] = futu_iv_compare(data.get("forecast"))     # [R106] 方向一：期權 IV 對預測波幅
+    data["iv_term"] = futu_iv_term(symbol, calendar)                 # [R178] 本週／下週／月尾價平 IV
     data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"), "after_close": after_close,
                  "calendar": calendar,                                        # [R135] 給操作箱算操作日與到期日
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
@@ -7710,6 +7762,7 @@ FY_CSS = """<style>
 .fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
 .fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
 .fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.fy-howto-iv { margin:10px 0; font-size:13.5px; }  /* [R178] */
 .fy-howto-prob { margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(217,119,6,.08); font-size:13.5px; line-height:1.6; }  /* [R177] */
 .fy-touch { margin-top:10px; font-size:13px; } .fy-touch summary { cursor:pointer; font-weight:700; }
 .fy-ttable { width:100%; border-collapse:collapse; margin-top:6px; font-variant-numeric:tabular-nums; }
@@ -8039,8 +8092,13 @@ def _strangle_plan(data, symbol=None, now=None):
     fc = data.get("forecast") or {}
     har_vol = ivc.get("har_vol") or ((fc["range"] / RANGE_TO_SIGMA / fc["ref_close"] * math.sqrt(252) * 100)
                                      if fc.get("range") and fc.get("ref_close") else None)
-    iv = ivc.get("iv") if (ivc.get("iv") and ivc.get("fresh")) else None
+    iv = ivc.get("iv") if (not us and ivc.get("iv") and ivc.get("fresh")) else None     # [R178] 呢個係恒指期權，美股頁唔用
     iv_src = "Futu 週期權價平 IV" if iv else ("風揚陣預測（年化）代替，開倉時以券商報價為準" if har_vol else None)
+    term = data.get("iv_term") or {}
+    t_row = next((r for r in term.get("rows") or [] if r["expiry"] == expiry.strftime("%Y-%m-%d")), None)
+    if t_row and term.get("fresh"):                                      # [R178] 同到期日嘅真實 IV 優先
+        iv, iv_src = t_row["iv"], f"{m.get('iv_src_zh') or '期權'}，價平行使價 {_n(t_row['strike'])}"
+        ivc = {**ivc, "expiry": t_row["expiry"]}
     vol = iv or har_vol
     step = m.get("step") or (25 if us else 50)                          # [R158] ES 25、NQ 100、恒指 50
     out = {"op": op.strftime("%Y-%m-%d"), "op_is_today": phase == "today", "phase": phase, "today": today, "win_end": win_end,
@@ -8074,6 +8132,39 @@ def _strangle_probs(ref, big_r, cal, put, call):
             "touch_call": round(_share_ge(ups, (call - ref) / big_r) * 100),
             "inside": round(sum(1 for c in closes if lo_c < c < hi_c) / len(closes) * 100),
             "pay_avg": round(sum(pays) / len(pays)), "pay_p90": round(_quantile(sorted(pays), 0.9))}
+
+
+def _fy_iv_term_html(data, symbol, p):
+    """[R178] 操作箱內：本週／下週／月尾期權價平 IV 對風揚陣預測（年化），到期 1σ 點數；方向一用嘅到期日標 ✓。"""
+    term = data.get("iv_term")
+    m = futu_market(symbol)
+    if not term:
+        return ("<div class='fy-note'>📈 未有期權 IV：喺跑 OpenD 嘅電腦開 <code>python iv_push.py</code>"
+                "（futu/iv_push.py，每 30 分鐘推本週／下週／月尾各 10 檔）。</div>")
+    har = (p or {}).get("har_vol")
+    exp_plan = (p or {}).get("expiry")
+    age = term.get("age")
+    age_txt = (f"{countdown_text(age)} 前更新" if age is not None else "—") + ("" if term.get("fresh") else "・⚠️ 舊數據，未用嚟計")
+    body = ""
+    for i, r in enumerate(term["rows"]):
+        ratio = r["iv"] / har if har else None
+        mark = " ✓ 方向一用" if r["expiry"] == exp_plan else ""
+        lab = ("本週", "下週", "月尾")[i] if len(term["rows"]) == 3 else ""
+        body += (f"<tr{' class=fy-ref' if mark else ''}><td>{lab} {esc(_day_label(r['expiry']))}{mark}</td><td>{r['days']}</td>"
+                 f"<td>{_n(r['strike'])}</td><td><b>{r['iv']:.1f}%</b></td>"
+                 f"<td>{'—' if ratio is None else f'{ratio:.2f}'}</td><td>±{_n(r['sigma'])}</td></tr>")
+    rows = term["rows"]
+    remark = ""
+    if len(rows) >= 2 and rows[0]["iv"] - rows[1]["iv"] >= 2:
+        remark = f"本週 IV 比下週高 {rows[0]['iv'] - rows[1]['iv']:.1f} 個百分點：市場預期今個星期波動大啲（有事件或臨近到期）。"
+    elif len(rows) >= 2 and rows[1]["iv"] - rows[0]["iv"] >= 2:
+        remark = f"下週 IV 比本週高 {rows[1]['iv'] - rows[0]['iv']:.1f} 個百分點：市場預期下週有事件。"
+    return ("<div class='fy-howto-iv'><b>📈 期權價平 IV</b>（" + esc(m.get("iv_src_zh") or "期權") + "，標的 "
+            + f"{_n(term['spot'])}，{esc(age_txt)}）"
+            "<table class='fy-ttable'><tr><th>到期日</th><th>交易日（由今日計）</th><th>價平</th><th>IV</th><th>÷ 預測</th><th>今日至到期 1σ（點）</th></tr>"
+            + body + "</table>"
+            + "<div class='fy-band'>÷ 預測 = 期權 IV ÷ 風揚陣預測（年化 " + ("—" if not har else f"{har:.1f}%")
+            + "）：大過 1 即係期權貴過預測，對沽方有利。今日至到期 1σ = IV × √(交易日 ÷ 252) × 標的現價；下面第 2 步嘅 σ點按到期週交易日計（開倉日起），所以細啲。" + esc(remark) + "</div></div>")
 
 
 def _fy_howto(data, symbol=None, now=None):
@@ -8144,6 +8235,7 @@ def _fy_howto(data, symbol=None, now=None):
             f"完整規則：research/hsi_futures_range/STRANGLE_1SIGMA.md")
     return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
             f"<div class='fy-howto-status{' today' if p['phase'] in ('today', 'window') else ''}'>{status}</div>"
+            + _fy_iv_term_html(data, symbol, p) +
             "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>" + prob_html
             + f"<div class='fy-note'>{note}</div></div>")
 

@@ -366,5 +366,26 @@ check("[R177] 碰到 Put：(300÷1000) → 70%；碰到 Call：(400÷1000) → 6
 check("[R177] 收在兩腳之間：−0.3 < c < 0.4 → 69%", sp["inside"] == 69, sp)
 check("[R177] 平均賠付 = 兩邊出界點數平均", sp["pay_avg"] == round((sum(range(10, 210, 10)) * 0 + sum(max(0, -300 - (i - 50) * 10) + max(0, (i - 50) * 10 - 400) for i in range(100))) / 100), sp)
 
+# ---- [R178] 期權 IV 期限結構（futu/iv_push.py 推上嚟嘅 HK.HSI_IV）----
+from datetime import datetime as _dt3, timezone as _tz3
+_iv_opts = [{"code": f"X{e}{t}{k}", "option_type": t, "expiry": e, "strike": k, "iv": iv}
+            for e, iv in (("2026-10-16", 18.0), ("2026-10-23", 15.0), ("2026-10-29", 16.0))
+            for k in (24200, 24300, 24400) for t in ("CALL", "PUT")]
+_iv_now = _dt3(2026, 10, 14, 8, 30, tzinfo=_tz3.utc)
+main.gcs_write_text(main.futu_symbol_file("HK.HSI_IV"), json.dumps({"symbol": "HK.HSI_IV", "source": "futu_opend:HK.800000",
+    "received_ts": _iv_now.timestamp() - 600, "received_utc": "2026-10-14 08:20:00",
+    "bars": [{"time_key": "2026-10-14 16:20:00", "close": 24314.0}], "options": _iv_opts}))
+term = main.futu_iv_term("HK.HSI_FRONT", {"from": "2026-10-01", "to": "2026-12-31",
+    "days": [d for d in ("2026-10-14", "2026-10-15", "2026-10-16", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23",
+                         "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29")]}, now=_iv_now)
+check("[R178] 三個到期日、價平 24,300、IV 取 Call／Put 平均", [(r["expiry"], r["strike"], r["iv"]) for r in term["rows"]]
+      == [("2026-10-16", 24300, 18.0), ("2026-10-23", 24300, 15.0), ("2026-10-29", 24300, 16.0)], term)
+check("[R178] 交易日按港股日曆（10-19 重陽補假唔計）", [r["days"] for r in term["rows"]] == [2, 6, 10], term["rows"])
+check("[R178] 10 分鐘前推 → 新鮮", term["fresh"] and 590 <= term["age"] <= 610, term)
+check("[R178] 美股頁冇 US.ES_IV 就冇期限結構", main.futu_iv_term("US.ES_FRONT", now=_iv_now) is None)
+ph = main._fy_iv_term_html({"iv_term": term}, "HK.HSI_FRONT", {"har_vol": 15.0, "expiry": "2026-10-23"})
+check("[R178] 操作箱 IV 表：方向一到期日標 ✓、÷ 預測、本週高過下週提示", "✓ 方向一用" in ph and "1.20" in ph and "本週 IV 比下週高 3.0" in ph, ph[:300])
+check("[R178] 冇 IV 數據時教開 iv_push.py", "iv_push.py" in main._fy_iv_term_html({}, "HK.HSI_FRONT", {}))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

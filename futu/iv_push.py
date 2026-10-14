@@ -35,7 +35,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "iv-4"
+SCRIPT_VERSION = "iv-5"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 OPEND_HOST = os.environ.get("OPEND_HOST", "127.0.0.1").strip()
@@ -248,11 +248,11 @@ def summary(key, alias, und, spot, picks, rows):
             + (f"價平 {k:,.0f} IV {iv:.2f}%" if iv else "⚠️ 沒有 IV（可能缺期權行情權限）"))
 
 
-def post(alias, und, spot, rows):
+def post(alias, und, spot, rows, tz):
     if not (GCP_URL and TOKEN):
         log("❌ 未設定 ZHUGE_GCP_URL 或 WEBHOOK_SECRET_TOKEN（見檔頭說明）")
         return False
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")          # [iv-5] 用市場時區（唔靠電腦時鐘嘅時區設定）
     packet = {"action": "futu_data", "token": TOKEN, "symbol": alias, "kline_type": "", "source": f"futu_opend:{und}",
               "script_version": SCRIPT_VERSION, "timestamp": now,
               "data": [{"time_key": now, "open": spot, "high": spot, "low": spot, "close": spot, "volume": 0}],
@@ -289,7 +289,7 @@ def run_round(col, push):
             continue
         summary(key, alias, und, spot, picks, rows)
         if push and rows:
-            ok = post(alias, und, spot, rows) and ok
+            ok = post(alias, und, spot, rows, MARKETS[key]["tz"]) and ok
     return ok
 
 
