@@ -57,7 +57,7 @@ JOURNAL_BRANCHES = {"蛇蟠陣": "claude/gifted-carson-v2tvhw", "雲垂陣": "cl
 
 # 風控階梯初稿（使用者 2026-10-13：Ⓒ／Ⓓ 可直接 TG 提示；門檻待使用者確認，見 RISK_LADDER.md）
 LADDER = {
-    "cushion_hkd": {"B": 150_000, "C": 100_000, "D": 60_000},       # 富途保證金緩衝 < 線
+    "cushion_hkd": {"B": 37_500, "C": 25_000, "D": 15_000},         # 富途保證金緩衝 < 線（使用者 2026-10-14：原 15 萬／10 萬／6 萬 ×0.25）
     "gap_pct": {"C": 0.20, "D": 0.10},                               # 離硬止損 / 合計權益 < 線
     "stop_use": {"C": 0.80, "D": 1.00},                              # 單策略止損用量 ≥ 線（該策略）
 }
@@ -65,10 +65,10 @@ NIGHT_FACTOR = 1.5   # 夜盤（17:15–03:00 HKT）無人：緩衝／離硬止�
 MANUAL_LIMITS = {"notional_pct_nav": 0.50, "daily_loss_pct_nav": 0.02}   # 人手交易額度（缺口 8，使用者 2026-10-13 同意）：超額只通報
 POINT_VALUE = {r"^HK\.HSI\d{4}$": 50, r"^HK\.MHI\d{4}$": 10, r"^US\.EW": 50, r"^US\.EX": 5, r"^US\.MES\d{4}$": 5, r"^US\.ES\d{4}$": 50}
 # 補倉／提款（使用者 2026-10-13：本金隨時可入金、隨時可提款；本金金額只放私人，唔入公開 repo）
-TOPUP = {"target_hkd": 180_000,        # 補倉補到緩衝 ≥ 此線（＝FUTU_MARGIN_CLEAR）；夜盤 ×NIGHT_FACTOR
+TOPUP = {"target_hkd": 45_000,         # 補倉補到緩衝 ≥ 此線（＝FUTU_MARGIN_CLEAR；10-14 隨緩衝線 ×0.25）；夜盤 ×NIGHT_FACTOR
          "round_hkd": 10_000,          # 建議金額向上取整
          "c_minutes": 30,              # 緩衝觸發 Ⓒ：30 分鐘內補到目標可代替減半
-         "withdraw_floor_mult": 2}     # 提款後緩衝要 ≥ Ⓑ 線 × 2，而且當時係 Ⓐ
+         "withdraw_floor_hkd": 300_000}  # 提款後緩衝要 ≥ 此數，而且當時係 Ⓐ（10-14 緩衝線降低後唔跟住降，維持原本 30 萬）
 LEVEL_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3}
 LEVEL_NAME = {"A": "Ⓐ 觀察", "B": "Ⓑ 停開新倉", "C": "Ⓒ 減半", "D": "Ⓓ 全平"}
 FOOTER = "（只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準）"
@@ -493,9 +493,10 @@ def topup_advice(risk: dict | None, level: str, why: list[str], night: bool) -> 
     if other and any(w.startswith((LEVEL_NAME["C"], LEVEL_NAME["D"])) for w in other):
         out.append("💰 補倉唔解決：硬止損／止損用量觸發嘅 Ⓒ／Ⓓ 照執行（入金唔可以用嚟攤平虧損倉）")
     if level == "A" and not out:
-        room = cushion - lines["B"] * TOPUP["withdraw_floor_mult"]
+        floor = TOPUP["withdraw_floor_hkd"]
+        room = cushion - floor
         if room > 0:
-            out.append(f"🏧 可提款上限 HK${room // TOPUP['round_hkd'] * TOPUP['round_hkd']:,.0f}（提款後緩衝 ≥ HK${lines['B'] * TOPUP['withdraw_floor_mult']:,.0f}）；提款／入金後要同步改硬止損線")
+            out.append(f"🏧 可提款上限 HK${room // TOPUP['round_hkd'] * TOPUP['round_hkd']:,.0f}（提款後緩衝 ≥ HK${floor:,.0f}）；提款／入金後要同步改硬止損線")
     return out
 
 
