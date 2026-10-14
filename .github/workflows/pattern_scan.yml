@@ -1,0 +1,58 @@
+name: Pattern scan（早盤形態掃描，平日 07:45 HKT → Telegram）
+
+# 期貨＋外匯日線形態掃描，話你今日邊隻可以做。規則同預先登記見 scripts/pattern_scan.py 檔頭（IDEAS #101）。
+# 雲端工作階段連唔到 Yahoo，所以喺度抓 yfinance。只出資訊、唔落單；報價唔係私人資料，報告 commit 回 research/pattern_scan/。
+on:
+  schedule:
+    - cron: '45 23 * * 0-4'   # 07:45 HKT 週一至五（美股期貨已收、恒指 09:15 開市前）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只印不發、不寫檔（true/false）'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pattern-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Asia/Hong_Kong
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: pip install -q yfinance pandas requests
+
+      - name: Scan
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          if [ "$DRY" = "true" ]; then python3 scripts/pattern_scan.py --dry-run; else python3 scripts/pattern_scan.py; fi
+
+      - name: Commit
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add research/pattern_scan/
+          if git diff --cached --quiet; then echo "冇新報告"; exit 0; fi
+          git commit -m "data: 早盤形態掃描 $(date +%F) [skip-tg]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1
