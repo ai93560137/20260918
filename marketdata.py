@@ -152,15 +152,26 @@ def load_adjustments(ticker: str) -> list[tuple[date, float]]:
                       for r in csv.DictReader(f) if r["ticker"] == ticker)
 
 
-def load_overrides(ticker: str) -> dict[date, float]:
-    """universes/<market>/price_overrides.csv（ticker,date,close,source,note）：全量歷史比對抓到、
+def load_overrides(ticker: str) -> dict[date, dict[str, float]]:
+    """universes/<market>/price_overrides.csv（ticker,date,close,open,high,low,volume,source,note）：全量歷史比對抓到、
     人工查證的 Yahoo 單日錯價（例：5333.T 2010-10-29 收市被記成前一日低價 1486，實際 1219）。
-    載入時改收市價（高低價跟著夾住），原始檔不改。"""
+    載入時改收市價；open/high/low/volume 有填就整列用絕對值取代，空白則高低價跟著收市價夾住（原始檔不改）。"""
     p = ROOT / "universes" / market_of(ticker) / "price_overrides.csv"
     if not p.exists():
         return {}
     with open(p, newline="", encoding="utf-8") as f:
-        return {date.fromisoformat(r["date"]): float(r["close"]) for r in csv.DictReader(f) if r["ticker"] == ticker}
+        return {date.fromisoformat(r["date"]): {k: float(r[k]) for k in ("open", "high", "low", "close", "volume")
+                                               if (r.get(k) or "").strip()}
+                for r in csv.DictReader(f) if r["ticker"] == ticker}
+
+
+def _apply_override(r: tuple, ov: dict[str, float]) -> tuple:
+    c = ov["close"]
+    o = ov.get("open", r[1])
+    h = ov["high"] if "high" in ov else (max(r[2], c) if r[2] is not None else None)
+    lo = ov["low"] if "low" in ov else (min(r[3], c) if r[3] is not None else None)
+    v = int(ov["volume"]) if "volume" in ov else r[5]
+    return (r[0], o, h, lo, c, v)
 
 
 def load_ohlcv(ticker: str, apply_adjustments: bool = True) -> list[dict]:
@@ -172,9 +183,7 @@ def load_ohlcv(ticker: str, apply_adjustments: bool = True) -> list[dict]:
         divs, _ = load_actions(ticker)
         if apply_adjustments:
             ov = load_overrides(ticker)
-            rows = [(r[0], r[1], max(r[2], ov[r[0]]) if r[2] is not None else None,
-                     min(r[3], ov[r[0]]) if r[3] is not None else None, ov[r[0]], r[5]) if r[0] in ov else r
-                    for r in rows]
+            rows = [_apply_override(r, ov[r[0]]) if r[0] in ov else r for r in rows]
         for e, f in (load_adjustments(ticker) if apply_adjustments else []):
             rows = [(r[0], *(x * f if x is not None else None for x in r[1:5]), r[5]) if r[0] < e else r
                     for r in rows]
