@@ -17,7 +17,7 @@
   "trail": "ma50",
   "vol": 1.0
  },
- "n_orders": 1,
+ "n_orders": 2,
  "n_open": 0,
  "n_closed": 0,
  "mkt_ok": false,
@@ -26,7 +26,8 @@
  "closed_avg": null,
  "closed_win": null,
  "orders_top": [
-  "2510.HK 觸發 14.96（距收市 +5.0%）"
+  "2510.HK 觸發 14.96（距收市 +5.0%）",
+  "2586.HK 觸發 9.18（距收市 +7.0%）"
  ],
  "positions": []
 }
