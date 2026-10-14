@@ -26,9 +26,9 @@
    "qty": -1,
    "mult": 10,
    "ccy": "HKD",
-   "open": 24200,
+   "open": 24336,
    "price": 24365,
-   "flag": "使用者確認：平咗 10/6 舊倉（24,252）再喺 24,200 重新賣；舊倉買回價待補（影響已實現盈虧，未計入）"
+   "flag": "10/14 16:26 雲垂重新對沖沽 1 @24,336（使用者通報、富途快照核實）"
   },
   {
    "id": "MHI 10/29 C25000",
@@ -94,34 +94,6 @@
    "settle": "cash"
   },
   {
-   "id": "MES 10/16 C7830",
-   "und": "ES",
-   "type": "call",
-   "K": 7830,
-   "exp": "2026-10-16",
-   "qty": -1,
-   "mult": 5,
-   "ccy": "USD",
-   "open": 88.75,
-   "price": 58.75,
-   "group": "MES 跨式",
-   "settle": "physical: 到期 ITM 自動行使 → 交收 1 手 MES 期貨（MESZ6，US$5/點）"
-  },
-  {
-   "id": "MES 10/16 P7830",
-   "und": "ES",
-   "type": "put",
-   "K": 7830,
-   "exp": "2026-10-16",
-   "qty": -1,
-   "mult": 5,
-   "ccy": "USD",
-   "open": 89.75,
-   "price": 29.0,
-   "group": "MES 跨式",
-   "settle": "physical: 到期 ITM 自動行使 → 交收 1 手 MES 期貨（MESZ6，US$5/點）"
-  },
-  {
    "id": "EW2610 P7750",
    "und": "ES",
    "type": "put",
@@ -144,14 +116,6 @@
    "legs": [
     "MHI 10/29 C25000",
     "MHI 10/29 P25000"
-   ]
-  },
-  "MES 跨式": {
-   "credit": 178.5,
-   "stop_buyback": 357,
-   "legs": [
-    "MES 10/16 C7830",
-    "MES 10/16 P7830"
    ]
   }
  },
