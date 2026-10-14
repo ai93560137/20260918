@@ -128,9 +128,11 @@ for name, sig in cand.items():
     if not (r11["誤報"] <= red11_base["誤報"]):
         fails.append(f"(b) 誤報 {r11['誤報']:.0f}% > 紅 {red11_base['誤報']:.0f}%(2011 起同樣本)")
     if not (row["綠燈下倍率"] >= 1.2):
-        fails.append(f"(c) 綠燈下倍率 {row['綠燈下倍率']:.2f}")
+        fails.append(f"(c) 綠燈下倍率 {row['綠燈下倍率']:.2f}" if pd.notna(row["綠燈下倍率"])
+                     else "(c) 綠燈下亮燈 ≤ 30 日,算不出(大跌日多數當日已亮紅燈)")
     if not (d_r >= 1.2 and d_t >= 3):
-        fails.append(f"(d) 現役燈皆滅時倍率 {d_r:.2f}(t={d_t:.1f},亮 {d_n} 日)")
+        fails.append(f"(d) 現役燈皆滅時倍率 {d_r:.2f}(t={d_t:.1f},亮 {d_n} 日)" if pd.notna(d_r)
+                     else f"(d) 現役燈皆滅時只亮 {d_n} 日,算不出(冇獨立資訊)")
     if max(jr, jd, jy) >= 0.85:
         fails.append(f"(e) Jaccard 紅 {jr:.2f}/深紅 {jd:.2f}/黃 {jy:.2f}")
     if row["亮燈日"] < MIN_N:
