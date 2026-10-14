@@ -7,6 +7,8 @@
 #   setx ZHUGE_DAEMONS   "auto_risk,push_to_gcp,iv_push,mt5_push"   # optional; this is the default
 # Startup folder shortcut (created by the runbook): ZhugeStartAll.cmd -> this script.
 # Logs: tradingview\out\logs\<name>.log and tradingview\out\logs\start_all.log
+# [R187] Once the futu-data VM runs OpenD/auto_risk/push scripts: setx ZHUGE_DAEMONS "mt5_push" and setx ZHUGE_OPEND_EXE ""
+#        so this PC only starts MT5 + mt5_push (see tradingview\RUNBOOK_FUTU_VM.md).
 
 $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent $PSScriptRoot

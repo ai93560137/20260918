@@ -1,0 +1,13 @@
+[Unit]
+Description=Zhuge 期權 IV 採集 iv_push
+After=zhuge-opend.service network-online.target
+Wants=zhuge-opend.service
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/20260918
+EnvironmentFile=@HOME@/zhuge/env
+ExecStart=@HOME@/zhuge-venv/bin/python futu/iv_push.py
+Restart=always
+RestartSec=60
+[Install]
+WantedBy=multi-user.target
