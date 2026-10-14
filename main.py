@@ -118,6 +118,7 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-14 — [R179] 方向一權利金門檻由 60 點改 80 點（使用者「安全一點」；iv_decide：合成權利金 < 80 點每週 −45、t −3.8）。
 #   * 2026-10-14 — [R178] 期權 IV：讀 futu/iv_push.py 推上嚟嘅 HK.HSI_IV／US.ES_IV（SPX）／US.NQ_IV（NDX）快照，
 #     三頁方向一操作箱加「📈 期權價平 IV」表（本週／下週／月尾、÷ 預測、到期 1σ），σ點改用同到期日嘅真實 IV（冇先用舊來源／預測）；
 #     美股頁唔再誤用恒指期權 IV。
@@ -8225,7 +8226,7 @@ def _fy_howto(data, symbol=None, now=None):
         f"現在：F ≈ <b>{f_txt}</b>；{iv_txt}。",
         f"<b>第 2 步 算 σ點</b> ＝ IV × √(到期前交易日數 ÷ 252) × F。到期週有 {p['n']} 個交易日 → {sig_txt}。",
         f"<b>第 3 步 定行使價</b>：{strike_txt}。",
-        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金目標 ≥ 80 點（回測平均 119 點）；少於 60 點代表 IV 太低，這週不沽。",
+        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金（中間價）<b>少於 80 點這週不沽</b>（R179：IV 低、權利金少的週最差，research/hsi_futures_range/iv_decide/）；回測平均 119 點。",
         f"<b>第 5 步 持有到期</b>：不對沖、不中途平倉、不加倉。{esc(_day_label(p['expiry']))} 現金結算：{hold_txt}",
         f"<b>第 6 步 記錄</b>：到期後記下結算價與淨利（權利金 − 賠付 − 每腳 4 點成本），寫進 research/hsi_futures_range/PAPER_TRADING.md；"
         f"到期當天 {p['cut']} 後開下一週的倉。",
