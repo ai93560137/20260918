@@ -118,6 +118,8 @@ R5 = json.loads(json.dumps(RISK)); R5["positions"][0]["futu_pl"] = -70000
 why5, _ = db.manual_limits(R5, {"closed": []})
 check("單日虧損 2.3% → 超額", any("單日虧損" in w for w in why5), why5)
 check("POSITIONS 解析 MHI2611 小期／HSI2611 買", db.parse_positions_md("| ✋ 使用者人手 | 富途期貨 | 賣 MHI2611 小恒指期貨 10 手 @24,260 | x | y | z | 持倉中 | w |\n| 🐍 蛇蟠陣 | 富途期貨 | 買 HSI2611 大恒指期貨 2 手（x） | a | b | c | 持倉中 | d |")[0] == {"HK.MHI2611": -10.0, "HK.HSI2611": 2.0})
+check("ES2612 −1 解析＋歸人手（10-14）", db.parse_positions_md("| ✋ 使用者人手 | 富途期貨 | 賣 ES2612 標普期貨 1 手 @7,803 | x | y | z | 持倉中 | w |")[0] == {"US.ES2612": -1.0}
+      and db.split_by_cap("US.ES2612", -1) == [(db.TEAM_MANUAL, -1)])
 check("MHI2611 全部歸人手（唔當雲垂對沖）", db.split_by_cap("HK.MHI2611", -10) == [(db.TEAM_MANUAL, -10)], db.split_by_cap("HK.MHI2611", -10))
 check("MHI 超出對沖上限歸人手", db.split_by_cap("HK.MHI2610", -3) == [("雲垂陣", -1), (db.TEAM_MANUAL, -2)])
 

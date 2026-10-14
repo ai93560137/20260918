@@ -89,6 +89,18 @@ def load(book_path, quotes_path=None):
                                    "type": "fut", "qty": extra, "mult": 10 if m.group(1) == "MHI" else 50, "ccy": "HKD",
                                    "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or 0,
                                    "code": code, "group": "恒指期貨人手"})
+    # [R182] 富途實際標普期貨（ES／MES，例如使用者人手對沖 EW put）：book 冇就當一條「標普期貨人手」腿計入模型
+    for code, r in FP.items():
+        m = re.match(r"^US\.(ES|MES)\d{4}$", code)
+        if not m or not r.get("qty"):
+            continue
+        booked = sum(p["qty"] for p in b["positions"] if p.get("code") == code)
+        extra = r["qty"] - booked
+        if extra:
+            b["positions"].append({"id": f"{code[3:]} 人手（富途實際 {r['qty']:+g}）", "und": "ES", "type": "fut", "qty": extra,
+                                   "mult": 50 if m.group(1) == "ES" else 5, "ccy": "USD",
+                                   "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or r.get("open_price") or 0,
+                                   "code": code, "group": "標普期貨人手"})
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
     val = date.fromisoformat(b["valuation_date"])
@@ -100,6 +112,15 @@ def load(book_path, quotes_path=None):
             if px:
                 d["F"], d["F_src"] = px, f"{c} {lab} @ {q.get('quote_time')}"
                 break
+        else:
+            # [R182] 冇期貨報價（CME 冇行情權限）：有標普期貨持倉就由富途持倉盈虧反推富途用緊嘅期貨價
+            for c, r in FP.items():
+                fm = re.match(r"^US\.(ES|MES)\d{4}$", c) if u == "ES" else None
+                if fm and r.get("qty") and r.get("futu_pl") is not None and r.get("open_price"):
+                    mult = 50 if fm.group(1) == "ES" else 5
+                    d["F"] = r["open_price"] + r["futu_pl"] / (r["qty"] * mult)
+                    d["F_src"] = f"{c} 富途持倉估值（由持倉盈虧反推；冇行情權限）"
+                    break
     by_id = {p["id"]: p for p in b["positions"]}
     for p in b["positions"]:
         p["code"] = derive_code(p)
