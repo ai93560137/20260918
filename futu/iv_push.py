@@ -33,7 +33,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "iv-1"
+SCRIPT_VERSION = "iv-2"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 OPEND_HOST = os.environ.get("OPEND_HOST", "127.0.0.1").strip()
@@ -42,6 +42,8 @@ STRIKES = max(2, min(30, int(os.environ.get("IV_STRIKES", "10"))))
 INTERVAL_SEC = max(300, int(os.environ.get("IV_INTERVAL_SEC", "1800")))
 MARKETS_ON = [x.strip().upper() for x in os.environ.get("IV_MARKETS", "HSI,ES,NQ").split(",") if x.strip()]
 HTTP_TIMEOUT_SEC = 30
+CHAIN_SPAN_DAYS = 29                     # [iv-2] 富途 get_option_chain 每次最多 30 日，分段拎
+CHAIN_DAYS = 60                          # 月尾過咗要拎下個月：最多向後 60 日
 
 
 def _codes(env, default):
@@ -108,17 +110,49 @@ class Collector:
             self.ctx = None
 
     def spot(self, code):
+        """回傳 (現價, 錯誤訊息)。"""
         ret, snap = self.ctx.get_market_snapshot([code])
+        if ret != ft.RET_OK:
+            return None, f"快照失敗：{str(snap)[:120]}"
+        if snap.empty:
+            return None, "快照冇資料"
+        row = snap.iloc[0]
+        px = num(row.get("last_price")) or num(row.get("prev_close_price"))
+        return (px, None) if px else (None, "現價係 0（多半冇該市場行情權限）")
+
+    def chain(self, code, today, kw):
+        """[iv-2] 分段（每段 ≤ 30 日）拎今天起 CHAIN_DAYS 日內嘅期權鏈。"""
+        import pandas as pd
+        parts, start, last_err = [], today, None
+        end_all = today + timedelta(days=CHAIN_DAYS)
+        while start <= end_all:
+            end = min(start + timedelta(days=CHAIN_SPAN_DAYS), end_all)
+            ret, ch = self.ctx.get_option_chain(code=code, start=start.isoformat(), end=end.isoformat(), **kw)
+            if ret == ft.RET_OK:
+                if not ch.empty:
+                    parts.append(ch)
+            else:
+                last_err = str(ch)[:120]
+            start = end + timedelta(days=1)
+            time.sleep(0.5)                                      # 期權鏈有頻率限制
+        if not parts and last_err:
+            raise RuntimeError(f"期權鏈失敗：{last_err}")
+        return pd.concat(parts, ignore_index=True).drop_duplicates("code") if parts else pd.DataFrame()
+
+    def parity_spot(self, sub):
+        """[iv-2] 冇標的現價時，用 Put-Call 平價反推：F ≈ K + C − P（取中間價，多個行使價取中位數）。"""
+        ret, snap = self.ctx.get_market_snapshot(list(sub["code"])[:300])
         if ret != ft.RET_OK or snap.empty:
             return None
-        row = snap.iloc[0]
-        return num(row.get("last_price")) or num(row.get("prev_close_price"))
-
-    def chain(self, code, start, end, kw):
-        ret, ch = self.ctx.get_option_chain(code=code, start=start, end=end, **kw)
-        if ret != ft.RET_OK:
-            raise RuntimeError(str(ch)[:120])
-        return ch
+        mid = {}
+        for _, r in snap.iterrows():
+            b, a, l = num(r.get("bid_price")), num(r.get("ask_price")), num(r.get("last_price"))
+            mid[r["code"]] = (b + a) / 2 if b and a else (l or None)
+        by_k = {}
+        for _, r in sub.iterrows():
+            by_k.setdefault(float(r["strike_price"]), {})[str(r["option_type"]).upper()[:1]] = mid.get(r["code"])
+        est = sorted(k + v["C"] - v["P"] for k, v in by_k.items() if v.get("C") and v.get("P"))
+        return est[len(est) // 2] if est else None
 
     def collect(self, key):
         """回傳 (別名, 標的代號, 現價, {標籤: 到期日}, 期權列) ；找不到就 raise。"""
@@ -128,19 +162,23 @@ class Collector:
         errors = []
         for und in m["underlyings"]:
             try:
-                spot = self.spot(und)
-                if not spot:
-                    errors.append(f"{und}：沒有現價")
-                    continue
-                ch = self.chain(und, today.isoformat(), (today + timedelta(days=45)).isoformat(), kw)
+                spot, spot_err = self.spot(und)
+                ch = self.chain(und, today, kw)
                 if ch.empty:
-                    errors.append(f"{und}：45 日內沒有期權鏈")
+                    errors.append(f"{und}：{spot_err + '；' if spot_err else ''}{CHAIN_DAYS} 日內沒有期權鏈")
                     continue
                 ch = ch.assign(_exp=ch["strike_time"].astype(str).str[:10])
                 picks = pick_expiries(list(ch["_exp"].unique()), today)
                 if not picks:
                     errors.append(f"{und}：沒有今天之後的到期日")
                     continue
+                if not spot:                                     # [iv-2] 用期權價反推
+                    first = next(iter(picks.values()))
+                    spot = self.parity_spot(ch[ch["_exp"] == first])
+                    if not spot:
+                        errors.append(f"{und}：{spot_err}；期權鏈有 {len(ch)} 張，但期權都冇報價（多半冇期權行情權限）")
+                        continue
+                    log(f"   ℹ️ {und}：{spot_err} → 用期權 Put-Call 平價反推現價 {spot:,.2f}")
                 rows = []
                 for label, exp in picks.items():
                     sub = ch[ch["_exp"] == exp]
