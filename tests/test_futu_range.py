@@ -359,5 +359,12 @@ card = main._fy_touch_html("day", {"ref_close": 24050, "range": 400}, None, {"ca
 check("[R176] 卡片顯示價位機率表", "🎲 價位機率表" in card and "24,100" in card and "唔係期權隱含機率" in card)
 check("[R176] 樣本不足不顯示", main._fy_touch_html("day", {"ref_close": 24050, "range": 400}, None, {"cal": cal_t}) == "")
 
+# ---- [R177] 方向一兩腳機率 ----
+cal_s = {"ups": [i / 100 for i in range(100)], "downs": [i / 100 for i in range(100)], "closes": [(i - 50) / 100 for i in range(100)]}
+sp = main._strangle_probs(24000, 1000, cal_s, 23700, 24400)
+check("[R177] 碰到 Put：(300÷1000) → 70%；碰到 Call：(400÷1000) → 60%", sp["touch_put"] == 70 and sp["touch_call"] == 60, sp)
+check("[R177] 收在兩腳之間：−0.3 < c < 0.4 → 69%", sp["inside"] == 69, sp)
+check("[R177] 平均賠付 = 兩邊出界點數平均", sp["pay_avg"] == round((sum(range(10, 210, 10)) * 0 + sum(max(0, -300 - (i - 50) * 10) + max(0, (i - 50) * 10 - 400) for i in range(100))) / 100), sp)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

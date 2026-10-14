@@ -118,6 +118,8 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-14 — [R177] 方向一操作箱（恒指／ES／NQ）加「🎲 按同一套數據」：週內碰到 Put／Call 行使價的機率、到期收在兩腳之間的機率、
+#     平均賠付點數（十次有一次的賠付）；1σ 與變體兩組。用週卡同一份校準（過去各週高／低／收 ÷ R̂×√n），以現價為參考。
 #   * 2026-10-14 — [R176] 波幅頁（恒指／ES／NQ）預測卡加「🎲 價位機率表」：昨收上下各 4 級價位（級距 ≈ R̂ ÷ 4 取整）
 #     今日／本週內／本月內被碰到的機率（過去（高−昨收）÷R̂、（昨收−低）÷R̂ 分佈換算，已碰到標 ✅）；收市高過昨收的機率與
 #     收市八成範圍；日卡另加「📊 對比」：預測對昨日、5 日、22 日平均實際波幅。只係統計估計，唔係期權隱含機率。
@@ -7708,6 +7710,7 @@ FY_CSS = """<style>
 .fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
 .fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
 .fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.fy-howto-prob { margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(217,119,6,.08); font-size:13.5px; line-height:1.6; }  /* [R177] */
 .fy-touch { margin-top:10px; font-size:13px; } .fy-touch summary { cursor:pointer; font-weight:700; }
 .fy-ttable { width:100%; border-collapse:collapse; margin-top:6px; font-variant-numeric:tabular-nums; }
 .fy-ttable th, .fy-ttable td { padding:3px 6px; border-bottom:1px solid #e9ecef; text-align:right; }
@@ -8051,7 +8054,26 @@ def _strangle_plan(data, symbol=None, now=None):
     if cal_w and fc.get("range") and fc.get("ref_close"):              # 變體：下週預測範圍的九成邊（5%／95% 分位）
         lv = _hl_levels(fc["ref_close"], fc["range"] * math.sqrt(n) * PERIOD_RANGE_RATIO["week"][1], cal_w["ups"], cal_w["downs"], 0.05)
         out.update(alt_put=int(math.floor(lv["low_lo"] / step) * step), alt_call=int(math.ceil(lv["high_hi"] / step) * step))
+    if cal_w and cal_w.get("closes") and F and fc.get("range") and out.get("put"):        # [R177] 兩腳的機率（同週卡價位機率表）
+        big_r = fc["range"] * math.sqrt(n)
+        out["prob"] = _strangle_probs(F, big_r, cal_w, out["put"], out["call"])
+        if out.get("alt_put"):
+            out["prob_alt"] = _strangle_probs(F, big_r, cal_w, out["alt_put"], out["alt_call"])
     return out
+
+
+def _strangle_probs(ref, big_r, cal, put, call):
+    """[R177] 方向一兩腳：按過去各週（高−段首昨收）÷R̂、（段首昨收−低）÷R̂、（週收−段首昨收）÷R̂ 的分佈，
+    以開倉價 ref 與到期週預測波幅 big_r（= 日 R̂ × √交易日數）換算：週內碰到 Put／Call 行使價的機率、
+    到期收在兩腳之間的機率、平均賠付點數（週收當結算價；恒指實際用 EAS 平均價，會略低）。"""
+    ups, downs, closes = cal["ups"], cal["downs"], cal["closes"]
+    lo_c, hi_c = (put - ref) / big_r, (call - ref) / big_r
+    pays = [max(0.0, put - (ref + c * big_r)) + max(0.0, ref + c * big_r - call) for c in closes]
+    return {"put": put, "call": call, "n": len(closes), "ref": ref, "big_r": round(big_r),
+            "touch_put": round(_share_ge(downs, (ref - put) / big_r) * 100),
+            "touch_call": round(_share_ge(ups, (call - ref) / big_r) * 100),
+            "inside": round(sum(1 for c in closes if lo_c < c < hi_c) / len(closes) * 100),
+            "pay_avg": round(sum(pays) / len(pays)), "pay_p90": round(_quantile(sorted(pays), 0.9))}
 
 
 def _fy_howto(data, symbol=None, now=None):
@@ -8088,6 +8110,20 @@ def _fy_howto(data, symbol=None, now=None):
         hold_txt = (f"結算價在 {_n(p['put'])}–{_n(p['call'])} 之間 = 全收權利金；出了範圍每點賠 {unit}。")
     else:
         sig_txt = strike_txt = sell_txt = hold_txt = "等有現價與 IV 才算得出"
+    pr = p.get("prob")
+    prob_html = ""
+    if pr:
+        def _pl(x, tag):
+            return (f"{tag} Put {_n(x['put'])}／Call {_n(x['call'])}：週內碰到 Put <b>{x['touch_put']}%</b>、碰到 Call <b>{x['touch_call']}%</b>；"
+                    f"到期收在兩腳之間 <b>{x['inside']}%</b>；平均賠付 {_n(x['pay_avg'])} 點"
+                    + (f"（十次有一次 ≥ {_n(x['pay_p90'])} 點）" if x["pay_p90"] > 0 else "（超過九成週唔使賠）"))
+        prob_html = ("<div class='fy-howto-prob'>🎲 <b>按同一套數據</b>（過去 " + str(pr["n"]) + " 週「高／低／收離段首昨收幾多個預測波幅」，"
+                     f"換算現價 {_n(pr['ref'])}、到期週預測波幅 {_n(pr['big_r'])} 點）：<br>"
+                     + _pl(pr, "1σ") + (f"<br>{_pl(p['prob_alt'], '變體')}" if p.get("prob_alt") else "")
+                     + "<br><span class='fy-band'>碰到 ≠ 蝕錢：碰到之後可以返回；到期收在兩腳之間就全收權利金。"
+                       + ("平均賠付 + 8 點成本低過收到嘅權利金先有優勢。週收當結算價。" if us else
+                        "平均賠付 + 8 點成本低過收到嘅權利金（目標 ≥ 80 點）先有優勢。週收當結算價，恒指實際結算用 EAS 平均價（會略低）。")
+                     + "只係統計估計，唔係期權隱含機率。</span></div>")
     alt = (f"📎 變體（更穩，回測 +39 點／週、96% 週賺、最差 −144）：行使價改用下週預測範圍的九成邊 Put <b>{_n(p['alt_put'])}</b>／Call <b>{_n(p['alt_call'])}</b>。"
            if p.get("alt_put") else "")
     head = (f"📘 方向一實際操作：每週沽 {short} 週期權 1σ 勒式（做法同恒指，{short} 未回測）" if us else "📘 方向一實際操作：每週沽恒指週期權 1σ 勒式")
@@ -8108,8 +8144,8 @@ def _fy_howto(data, symbol=None, now=None):
             f"完整規則：research/hsi_futures_range/STRANGLE_1SIGMA.md")
     return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
             f"<div class='fy-howto-status{' today' if p['phase'] in ('today', 'window') else ''}'>{status}</div>"
-            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>"
-            f"<div class='fy-note'>{note}</div></div>")
+            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>" + prob_html
+            + f"<div class='fy-note'>{note}</div></div>")
 
 
 def _fy_money(data, symbol=None):
