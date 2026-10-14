@@ -26,7 +26,7 @@
 
 ## e. 進行中／未完成／已知坑
 - **PR #103**（草稿，`claude/momentum-orb-research` → `claude/gifted-carson-v2tvhw`）：`stock_research/MOMENTUM_ORB_BACKTEST.md` 預先登記 + `analysis/orb/ibkr_request_{hk,hk_nonmom,us,us_nonmom}.csv`（港 1,409×2、美 3,180×2）。
-- **等雲垂第 3 批 5 分 K**（指令已由使用者轉 claude-ops，每 400 檔自動 push 到雲垂分支 `data_stock_ibkr/htf_5m/`）。
+- **第 3 批已到並跑完（2026-10-14）**：結果見 `MOMENTUM_ORB_BACKTEST.md` 第二部分——線索未重現，研究線結束。剩下只有等使用者決定 PR #103 合併與否。
   2026-10-14 鳥翔轉告：VM 已抓完，覆蓋率寫在雲垂分支 `data_stock_ibkr/htf_5m/HTF_DATA_SCOPE.md`「第 3 批」（第 72 行起）——
   港 1,353／1,409（96.0%）、港非動能 1,389／1,409（98.6%）、美 2,687／3,180（2004 年後 94.2%）、美非動能 2,731／3,180（95.8%）；
   動能組缺失較多（退市為主），比較時要報告缺失率、只在兩組都有數據的年份比。**但截至 2026-10-14 05:00 HKT，CSV 尚未 push**（分支仍只有第 1、2 批 5,849 檔），要等 claude-ops push。
