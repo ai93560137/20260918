@@ -88,6 +88,31 @@ def yahoo_last(sym, timeout=6):
         return None
 
 
+CME_MAX_AGE_S = 90 * 60   # [R184] IB 延遲報價（ib-data VM 經 Cloud Run）超過 90 分鐘當過期唔用
+
+
+def merge_cme_quotes(Q, path, now_ts=None):
+    """[R184] 用 ib-data VM 嘅 IB 延遲報價補富途冇權限嘅 CME 合約（只補冇買賣價嘅代碼）。"""
+    import time
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return 0
+    if (now_ts or time.time()) - float(doc.get("received_ts") or 0) > CME_MAX_AGE_S:
+        return 0
+    n = 0
+    for code, q in (doc.get("quotes") or {}).items():
+        have = Q.get(code) or {}
+        if (have.get("bid") or 0) > 0 and (have.get("ask") or 0) > 0:
+            continue
+        bid, ask = q.get("bid"), q.get("ask")
+        mid = (bid + ask) / 2 if bid and ask else None
+        Q[code] = {"bid": bid, "ask": ask, "mid": mid, "last": q.get("last") or q.get("close"),
+                   "quote_time": f"{q.get('quote_time') or doc.get('fetched_utc')} UTC（IB 延遲約 15 分鐘）"}
+        n += 1
+    return n
+
+
 def load(book_path, quotes_path=None):
     b = json.loads(Path(book_path).read_text(encoding="utf-8"))
     qf = json.loads(Path(quotes_path).read_text(encoding="utf-8")) if quotes_path else {}
@@ -95,6 +120,7 @@ def load(book_path, quotes_path=None):
     for r in qf.get("positions", []):          # 舊格式：只有 positions 行
         Q.setdefault(r["code"], {k: r.get(k) for k in ("bid", "ask", "mid", "last", "quote_time")})
     FP = {r["code"]: r for r in qf.get("positions", [])}
+    merge_cme_quotes(Q, Path(book_path).with_name("cme_quotes.json"))
     # 富途實際恒指期貨淨手數 vs book（例如人手即日 MHI）：多出／少咗嘅當一條「人手」期貨腿計入模型
     b["fut_lots"] = {}
     for code, r in FP.items():
