@@ -6,6 +6,7 @@ Wants=zhuge-opend.service
 User=@USER@
 WorkingDirectory=@HOME@/20260918
 EnvironmentFile=@HOME@/zhuge/env
+EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
 ExecStart=@HOME@/zhuge-venv/bin/python futu/iv_push.py
 Restart=always
 RestartSec=60

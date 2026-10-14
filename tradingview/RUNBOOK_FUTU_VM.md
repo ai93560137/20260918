@@ -40,6 +40,12 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
 9. **部機收窄**：VM 正常之後，部機 `setx ZHUGE_DAEMONS "mt5_push"`、`setx ZHUGE_OPEND_EXE ""`，部機唔再開 OpenD／auto_risk
    （免得兩邊重覆推、富途同一戶口兩部機登入 OpenD 搶行情權限）。
 
+## 改設定
+- **推乜數據**（`FUTU_SYMBOLS`、`PUSH_INTERVAL_SEC`、`IV_MARKETS` 等）同 `ZHUGE_ALERT_STOP`：改 repo 嘅 `gcp_ib/vm_futu/settings.env`
+  → PR → 合併 →「更新部機」，VM 10 分鐘內自動套用（唔使 SSH）。
+- **權杖、密碼、權益、按金緩衝金額**：只喺 VM 嘅 `~/zhuge/env`／`~/zhuge/opend_login` 改（repo 公開），改完
+  `sudo systemctl restart zhuge-auto-risk zhuge-futu-push zhuge-iv-push`（唔好重開 `zhuge-opend`，富途有登入次數限制）。
+
 ## 常用
 - OpenD 畫面：`tmux attach -t opend`（Ctrl+B 放手再撳 d 離開）；唔入去睇：`tmux capture-pane -pt opend | tail`
 - 狀態：`systemctl --no-pager status zhuge-opend zhuge-auto-risk zhuge-futu-push zhuge-iv-push`
