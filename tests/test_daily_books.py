@@ -68,7 +68,7 @@ md3, st3, esc3 = db.reconcile(RISK, POS_MD, (jexp, jsrc), date(2026, 10, 14), st
 check("有解釋就唔升級、原因入表", esc3 == [] and "API 唔回傳 CME 期權" in md3)
 RISK2 = json.loads(json.dumps(RISK)); RISK2["positions"][0]["qty"] = 1
 md4, st4, esc4 = db.reconcile(RISK2, POS_MD, (jexp, jsrc), date(2026, 10, 13), {}, {})
-check("富途 +1 vs 登記 −1 → ⚠", "| HK.HSI2610 | 蛇蟠陣 | 大恒指期貨（人手） | +1 | -1 | -1 | ⚠ |" in md4, md4)
+check("富途 +1 vs 登記 −1 → ⚠（HSI 期貨預設歸人手，10-14）", "| HK.HSI2610 | 使用者人手 | 大恒指期貨（人手） | +1 | -1 | -1 | ⚠ |" in md4, md4)
 check("SPCX 碎股唔入對帳", "SPCX" not in md)
 
 print("\n=== 損益帳 ===")
@@ -77,7 +77,8 @@ DEALS = {"fetched_hkt": "2026-10-13 17:08", "closed": [
     {"code": "US.EX32610C7830x0", "realized_ccy": 100, "ccy": "USD"}]}
 row = db.pnl_row(RISK, DEALS, [{"time_hkt": "2026-10-13 10:00:00", "realized": -50}, {"time_hkt": "2026-10-12 10:00:00", "realized": 999}], date(2026, 10, 13), "A")
 check("雲垂當日已實現 320 + 100 USD", abs(row["real_雲垂陣"] - (320 + 100 * db.USD_HKD)) < 0.01, row)
-check("蛇蟠已實現 5,700、未實現 −2,000", row["real_蛇蟠陣"] == 5700 and row["unreal_蛇蟠陣"] == -2000)
+check("HSI 期貨已實現 5,700、未實現 −2,000 歸人手；蛇蟠 0（10-14 規則）", row["real_使用者人手"] == 5700 and row["unreal_使用者人手"] == -2000
+      and not row.get("real_蛇蟠陣") and not row.get("unreal_蛇蟠陣"), row)
 check("雲垂未實現含 USD 換算", abs(row["unreal_雲垂陣"] - (-680 + 5210 - 3230 + (142.5 + 327.5) * db.USD_HKD)) < 0.01, row["unreal_雲垂陣"])
 check("MT5 只計當日", row["mt5_realized_today"] == -50)
 check("權益／緩衝入列", row["equity_total"] == 3000000 and row["cushion"] == 300000 and row["ladder"] == "A")
