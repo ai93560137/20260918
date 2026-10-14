@@ -35,7 +35,7 @@ from zoneinfo import ZoneInfo
 import futu as ft
 import requests
 
-SCRIPT_VERSION = "iv-3"
+SCRIPT_VERSION = "iv-4"
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
 OPEND_HOST = os.environ.get("OPEND_HOST", "127.0.0.1").strip()
@@ -185,9 +185,15 @@ class Collector:
                 rows = []
                 for label, exp in picks.items():
                     sub = ch[ch["_exp"] == exp]
+                    # [iv-4] 同一到期日同一行使價有兩種合約（例 NDX 上午結算／NDXP 收市結算、SPX／SPXW）：
+                    # 留代號較長嗰個（收市結算、每週那一系列），每個行使價 Call、Put 各一張
+                    sub = (sub.assign(_len=sub["code"].str.len()).sort_values("_len", ascending=False)
+                           .drop_duplicates(["strike_price", "option_type"]))
                     strikes = sorted(sub["strike_price"].unique(), key=lambda k: abs(float(k) - spot))[:STRIKES]
                     sub = sub[sub["strike_price"].isin(set(strikes))]
                     rows += self.quote(sub, exp, label)
+                if errors:
+                    log(f"   ℹ️ 之前試過：{'；'.join(errors)}")
                 return m["alias"], und, spot, picks, rows
             except Exception as exc:                            # 換下一個標的代號再試
                 errors.append(f"{und}：{exc}")
