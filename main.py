@@ -118,6 +118,8 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-14 — [R180] 方向一補做：上週五因風控閘冇開倉、到期週頭兩個交易日緩衝回升 → 操作箱顯示沽本週到期 1σ（至少剩 3 日），
+#     權利金閘 80 × √(剩餘交易日 ÷ 5)（剩 4 日 72、剩 3 日 62 點）。依據 research/hsi_futures_range/iv_timing/（使用者 10-14 同意）。
 #   * 2026-10-14 — [R179] 方向一權利金門檻由 60 點改 80 點（使用者「安全一點」；iv_decide：合成權利金 < 80 點每週 −45、t −3.8）。
 #   * 2026-10-14 — [R178] 期權 IV：讀 futu/iv_push.py 推上嚟嘅 HK.HSI_IV／US.ES_IV（SPX）／US.NQ_IV（NDX）快照，
 #     三頁方向一操作箱加「📈 期權價平 IV」表（本週／下週／月尾、÷ 預測、到期 1σ），σ點改用同到期日嘅真實 IV（冇先用舊來源／預測）；
@@ -7763,6 +7765,7 @@ FY_CSS = """<style>
 .fy-side { margin-top:12px; } .fy-side h3 { font-size:14px; margin:0 0 6px; }
 .fy-sig { font-size:13px; line-height:1.55; padding:3px 0 3px 2px; }
 .fy-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.fy-howto-makeup { margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(37,99,235,.08); font-size:13.5px; line-height:1.6; }  /* [R180] */
 .fy-howto-iv { margin:10px 0; font-size:13.5px; }  /* [R178] */
 .fy-howto-prob { margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(217,119,6,.08); font-size:13.5px; line-height:1.6; }  /* [R177] */
 .fy-touch { margin-top:10px; font-size:13px; } .fy-touch summary { cursor:pointer; font-weight:700; }
@@ -8118,7 +8121,25 @@ def _strangle_plan(data, symbol=None, now=None):
         out["prob"] = _strangle_probs(F, big_r, cal_w, out["put"], out["call"])
         if out.get("alt_put"):
             out["prob_alt"] = _strangle_probs(F, big_r, cal_w, out["alt_put"], out["alt_call"])
+    # [R180] 補做：上週五因風控閘（緩衝）冇開倉，到期週頭兩個交易日緩衝回升 → 沽本週到期嗰個系列，
+    # 至少剩 3 個交易日；權利金閘按剩餘日數縮細（80 × √(剩餘交易日 ÷ 5)）。research/hsi_futures_range/iv_timing/
+    if phase == "upcoming" and this_week and today in [x.strftime("%Y-%m-%d") for x in this_week[:2]]:
+        mk_exp = this_week[-1].strftime("%Y-%m-%d")
+        n_mk = sum(1 for x in this_week if x.strftime("%Y-%m-%d") > today)
+        if n_mk >= MAKEUP_MIN_DAYS and F:
+            mk_row = next((r for r in term.get("rows") or [] if r["expiry"] == mk_exp), None) if term.get("fresh") else None
+            mk_vol = mk_row["iv"] if mk_row else har_vol
+            mk = {"expiry": mk_exp, "n": n_mk, "gate": round(PREMIUM_GATE * math.sqrt(n_mk / 5)), "vol": mk_vol,
+                  "vol_src": (f"{m.get('iv_src_zh') or '期權'}本週到期價平 IV" if mk_row else "風揚陣預測（年化）代替")}
+            if mk_vol:
+                sig_mk = mk_vol / 100 * math.sqrt(n_mk / 252) * F
+                mk.update(sigma=sig_mk, put=int(math.floor((F - sig_mk) / step) * step), call=int(math.ceil((F + sig_mk) / step) * step))
+            out["makeup"] = mk
     return out
+
+
+PREMIUM_GATE = 80                                # [R179] 方向一權利金閘（點）
+MAKEUP_MIN_DAYS = 3                              # [R180] 補做至少剩幾個交易日
 
 
 def _strangle_probs(ref, big_r, cal, put, call):
@@ -8216,6 +8237,17 @@ def _fy_howto(data, symbol=None, now=None):
                        + ("平均賠付 + 8 點成本低過收到嘅權利金先有優勢。週收當結算價。" if us else
                         "平均賠付 + 8 點成本低過收到嘅權利金（目標 ≥ 80 點）先有優勢。週收當結算價，恒指實際結算用 EAS 平均價（會略低）。")
                      + "只係統計估計，唔係期權隱含機率。</span></div>")
+    mk = p.get("makeup")
+    mk_html = ""
+    if mk:
+        legs = (f"沽 1 張 Put <b>{_n(mk['put'])}</b> ＋ 1 張 Call <b>{_n(mk['call'])}</b>（{esc(_day_label(mk['expiry']))} 到期；"
+                f"σ點 = {mk['vol'] / 100:.3f} × √({mk['n']}/252) × {_n(p['F'])} = {_n(mk['sigma'])}，{esc(mk['vol_src'])}）"
+                if mk.get("put") else "等有現價與 IV 才算得出")
+        mk_html = ("<div class='fy-howto-makeup'>🔁 <b>補做（只限上週五因風控閘冇開倉）</b>：今日 " + esc(_day_label(p["today"]))
+                   + f" 收市前後，如果緩衝已回升到 HK$260,000 以上而且高過 RISK_LADDER Ⓑ 線，可以{legs}。"
+                   f"<br>權利金閘按剩餘日數縮細：合計少於 <b>{mk['gate']} 點</b>（= {PREMIUM_GATE} × √({mk['n']}÷5)）唔做。"
+                   "<span class='fy-band'>真實 52 週回測：週一入場每週 +29、週二 +39（上週五入 +54），最差一週細好多；"
+                   "上週五已經開咗倉就唔好再沽（唔加倉）。research/hsi_futures_range/iv_timing/</span></div>")
     alt = (f"📎 變體（更穩，回測 +39 點／週、96% 週賺、最差 −144）：行使價改用下週預測範圍的九成邊 Put <b>{_n(p['alt_put'])}</b>／Call <b>{_n(p['alt_call'])}</b>。"
            if p.get("alt_put") else "")
     head = (f"📘 方向一實際操作：每週沽 {short} 週期權 1σ 勒式（做法同恒指，{short} 未回測）" if us else "📘 方向一實際操作：每週沽恒指週期權 1σ 勒式")
@@ -8226,7 +8258,7 @@ def _fy_howto(data, symbol=None, now=None):
         f"現在：F ≈ <b>{f_txt}</b>；{iv_txt}。",
         f"<b>第 2 步 算 σ點</b> ＝ IV × √(到期前交易日數 ÷ 252) × F。到期週有 {p['n']} 個交易日 → {sig_txt}。",
         f"<b>第 3 步 定行使價</b>：{strike_txt}。",
-        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金（中間價）<b>少於 80 點這週不沽</b>（R179：IV 低、權利金少的週最差，research/hsi_futures_range/iv_decide/）；回測平均 119 點。",
+        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金（中間價）<b>少於 {PREMIUM_GATE} 點這週不沽</b>（R179：IV 低、權利金少的週最差，research/hsi_futures_range/iv_decide/）；回測平均 119 點。",
         f"<b>第 5 步 持有到期</b>：不對沖、不中途平倉、不加倉。{esc(_day_label(p['expiry']))} 現金結算：{hold_txt}",
         f"<b>第 6 步 記錄</b>：到期後記下結算價與淨利（權利金 − 賠付 − 每腳 4 點成本），寫進 research/hsi_futures_range/PAPER_TRADING.md；"
         f"到期當天 {p['cut']} 後開下一週的倉。",
@@ -8237,7 +8269,7 @@ def _fy_howto(data, symbol=None, now=None):
     return (f"<div class='fy-howto'><h2>{head}</h2><div class='fy-sub'>{sub}</div>"
             f"<div class='fy-howto-status{' today' if p['phase'] in ('today', 'window') else ''}'>{status}</div>"
             + _fy_iv_term_html(data, symbol, p) +
-            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>" + prob_html
+            "<ol class='fy-steps'>" + "".join(f"<li>{x}</li>" for x in steps) + "</ol>" + mk_html + prob_html
             + f"<div class='fy-note'>{note}</div></div>")
 
 

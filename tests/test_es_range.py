@@ -157,5 +157,22 @@ check("恒指操作箱：六步、下次操作日、建議行使價、資金、�
 page_box = client.get("/?view=es_range").get_data(as_text=True)
 check("ES 頁有操作箱（標明未回測）與頁頂日期時間", "方向一實際操作：每週沽 ES 週期權" in page_box and "ES 未回測" in page_box and "更新（" in page_box and "⏱️ 10-05（一） 16:00 更新" in page_box)
 
+print("\n=== [R180] 補做：上週五被風控閘擋住，到期週頭兩個交易日 ===")
+mk6 = pl6.get("makeup") or {}
+check("[R180] 週一 09:20 後：補做本週 10-16 到期、剩 4 日、權利金閘 72、用預測 19.0%", mk6.get("expiry") == "2026-10-16" and mk6.get("n") == 4
+      and mk6.get("gate") == 72 and mk6.get("vol") == 19.0 and mk6.get("put") and mk6["put"] < 24144 < mk6["call"], mk6)
+pl_wed = main._strangle_plan(base, HK, now=hk("2026-10-14 10:00"))
+check("[R180] 週三唔再補做（只限頭兩個交易日）；週五操作時段都冇補做", "makeup" not in pl_wed and "makeup" not in pl3, pl_wed.get("makeup"))
+from datetime import date as _d, timedelta as _td
+cal_h = {"from": "2026-10-01", "to": "2026-12-31", "days": [(_d(2026, 10, 1) + _td(days=i)).isoformat() for i in range(92)
+         if (_d(2026, 10, 1) + _td(days=i)).weekday() < 5 and (_d(2026, 10, 1) + _td(days=i)).isoformat() != "2026-10-19"]}
+pl_tue = main._strangle_plan({**base, "calendar": cal_h}, HK, now=hk("2026-10-20 10:00"))
+check("[R180] 10-19 重陽補假週：週二 10-20 係第一個交易日 → 補做 10-23 到期、剩 3 日、閘 62", (pl_tue.get("makeup") or {}).get("n") == 3
+      and pl_tue["makeup"]["gate"] == 62 and pl_tue["makeup"]["expiry"] == "2026-10-23", pl_tue.get("makeup"))
+pl_wed2 = main._strangle_plan({**base, "calendar": cal_h}, HK, now=hk("2026-10-21 10:00"))
+check("[R180] 同一週週三（第二個交易日）只剩 2 日 → 唔補做", "makeup" not in pl_wed2, pl_wed2.get("makeup"))
+html_mk = main._fy_howto(base, HK, now=hk("2026-10-12 09:20"))
+check("[R180] 操作箱顯示補做箱、閘 72 點、唔加倉提醒", "🔁" in html_mk and "72 點" in html_mk and "唔好再沽" in html_mk, html_mk[:200])
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
