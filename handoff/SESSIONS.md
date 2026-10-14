@@ -21,5 +21,6 @@
 | 指數套利 | 🚫 不換（使用者 10-14：已冇用） | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | — | — |
 | 🥇 XAUUSD GCP and TV | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
+| 🖥️ 富途數據 VM（futu-data，asia-east2；10-15 起推 GCS `futu/risk/latest.json`，改推送內容經 `gcp_ib/vm_futu/settings.env` PR） | `session_01AQNMTZvQodzptWVui6deqY`（總指揮 10-15 開） | — | `claude/futu-vm-setup` | `AGENTIC.md`「VM：futu-data」、`tradingview/RUNBOOK_FUTU_VM.md` | — |
 | 🧭 SOP 顧問／預設分支 | `session_012caA3uVCQjRHHryN5HnMrn` | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
 | claude-ops（使用者 VM，台灣） | `session_01J4dioYdtebaEyoaDwGJotM`（不換） | — | — | — | — |
