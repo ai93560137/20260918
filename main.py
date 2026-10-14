@@ -2356,6 +2356,60 @@ def _futu_risk_clean_metrics(raw):
     return out
 
 
+# [R184] CME 延遲報價中轉：ib-data VM（IB 延遲行情，只讀）推上嚟，使用者部機 auto_risk 攞返去計風險。
+#   VM：action=cme_watchlist 攞富途實倉嘅 CME 代碼 → IB 抓報價 → action=cme_quotes 存；部機：action=cme_quotes_get 讀。
+#   三個都要權杖；只係公開市場報價同合約代碼，冇金額。
+CME_QUOTES_FILE = "futu/ext/cme_quotes.json"
+CME_CODE_RE = re.compile(r"^US\.(ES|MES)\d{4}$|^US\.(EW\d{4}|EX\d{5})[CP]\d+x\d$")
+
+
+def handle_cme_watchlist(payload):
+    """回傳富途最新快照入面嘅 CME 期貨／期貨期權代碼（俾 VM 決定抓邊啲）。"""
+    try:
+        doc = gcs_read_json(FUTU_RISK_FILE, {})
+    except StorageError:
+        return jsonify({"status": "error", "message": "storage read failed"}), 503
+    codes = sorted({str(r.get("code")) for r in (doc.get("positions") or []) if isinstance(r, dict)
+                    and CME_CODE_RE.match(str(r.get("code") or "")) and to_float(r.get("qty"))})
+    for c in ("US.ES2612",):                                          # 標的價一定要有（冇倉都抓）
+        if c not in codes:
+            codes.append(c)
+    return jsonify({"status": "ok", "codes": codes, "run_hkt": doc.get("run_hkt")}), 200
+
+
+def handle_cme_quotes(payload):
+    """存 VM 推上嚟嘅 CME 延遲報價（最多 30 張合約）。"""
+    raw = payload.get("quotes") if isinstance(payload.get("quotes"), dict) else {}
+    quotes = {}
+    for code, q in list(raw.items())[:30]:
+        if not (isinstance(q, dict) and CME_CODE_RE.match(str(code))):
+            continue
+        row = {k: to_float(q.get(k)) for k in ("bid", "ask", "last", "close")}
+        row["md_type"] = int(to_float(q.get("md_type")) or 0)
+        row["quote_time"] = _futu_text(q.get("quote_time"), 25)
+        row["local_symbol"] = _futu_text(q.get("local_symbol"), 24)
+        quotes[str(code)] = row
+    if not quotes:
+        return jsonify({"status": "error", "message": "cme_quotes: no valid quotes"}), 422
+    doc = {"fetched_utc": _futu_text(payload.get("fetched_utc"), 25), "received_utc": fmt_utc(), "received_ts": now_ts(),
+           "source": _futu_text(payload.get("source") or "IB 延遲行情", 40), "quotes": quotes}
+    try:
+        gcs_write_text(CME_QUOTES_FILE, json.dumps(doc, ensure_ascii=False))
+    except StorageError as exc:
+        log_event(f"⚠️ [CME 報價寫入失敗] {exc}", severity="ERROR", component="cme_quotes")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    return jsonify({"status": "stored", "count": len(quotes)}), 200
+
+
+def handle_cme_quotes_get(payload):
+    """俾使用者部機 auto_risk 讀最新 CME 報價（冇就回空）。"""
+    try:
+        doc = gcs_read_json(CME_QUOTES_FILE, {})
+    except StorageError:
+        return jsonify({"status": "error", "message": "storage read failed"}), 503
+    return jsonify({"status": "ok", **(doc if isinstance(doc, dict) else {})}), 200
+
+
 def handle_futu_risk(payload):
     """權杖已在 _dispatch_post 驗過。存最新一份＋按日記指標。沒內容 → 422；寫不進 GCS → 503。"""
     metrics = _futu_risk_clean_metrics(payload.get("metrics"))
@@ -11574,6 +11628,12 @@ def _dispatch_post(payload):
         return handle_futu_pnl(payload)
     if action == "futu_risk":                        # [R147] 本地 auto_risk.py 推上來的持倉風險（私人，只存）
         return handle_futu_risk(payload)
+    if action == "cme_watchlist":                    # [R184] ib-data VM 問要抓邊啲 CME 合約
+        return handle_cme_watchlist(payload)
+    if action == "cme_quotes":                       # [R184] ib-data VM 推上嚟嘅 CME 延遲報價
+        return handle_cme_quotes(payload)
+    if action == "cme_quotes_get":                   # [R184] 使用者部機 auto_risk 讀 CME 報價
+        return handle_cme_quotes_get(payload)
     if action == "inline_scan":                      # [R148] 本地 inline_push.py 推上來的界內證掃描（只存）
         return handle_inline_scan(payload)
     if action == "scan_push":                        # [R150] 本地 scan_push.py 推上來的前向測試掃描（只存）
@@ -11607,7 +11667,8 @@ def receive_tradingview_signal(request):
     log_event(f"📥 [收到封包] action={summary['action']} status={summary['status_signal']} "
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
-    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+    if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl",
+                                     "cme_watchlist", "cme_quotes", "cme_quotes_get"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
