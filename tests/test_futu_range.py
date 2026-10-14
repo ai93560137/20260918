@@ -341,5 +341,23 @@ check("方向一：只有 VHSI、沒有期權也能比較", main.futu_iv_compare
 check("方向三：止蝕 ½ 預測、倉位係數", "200 點" in money and "1.15 倍" in money)
 check("方向四：預測在一年中的位置", "50%" in money and "不是小波幅日" in money)
 
+# ---- [R176] 價位機率表 ----
+check("[R176] 級距取最接近的整數級距", (main._nice_step(105), main._nice_step(254), main._nice_step(14)) == (100, 250, 10))
+cal_t = {"ups": [i / 100 for i in range(100)], "downs": [i / 100 for i in range(100)], "closes": [i / 100 - 0.5 for i in range(100)]}
+lad = main._touch_ladder(24050, 400, cal_t, hs=24210)
+ups_t = [r for r in lad["rows"] if r["side"] == "up"]; dns_t = [r for r in lad["rows"] if r["side"] == "down"]
+check("[R176] 上下各 4 級、以昨收分隔", len(ups_t) == 4 and len(dns_t) == 4 and all(r["level"] > 24050 for r in ups_t)
+      and all(r["level"] < 24050 for r in dns_t), lad["rows"])
+check("[R176] 越遠機率越低", [r["p"] for r in ups_t] == sorted(r["p"] for r in ups_t) and
+      [r["p"] for r in dns_t] == sorted((r["p"] for r in dns_t), reverse=True), lad["rows"])
+check("[R176] 24,300：(250÷400)=0.625 → 過去 37% ≥", next(r for r in ups_t if r["level"] == 24300)["p"] == 37)
+check("[R176] 已碰到的價位標 100%", next(r for r in ups_t if r["level"] == 24200)["hit"] and next(r for r in ups_t if r["level"] == 24300)["hit"] is False)
+check("[R176] 收市高過昨收機率", lad["close_up"] == 49, lad)
+chk = main._touch_check([(10, False)] * 18 + [(10, True)] * 2 + [(30, True)] * 5)
+check("[R176] 前推驗證按組彙總、樣本不足的組不列", chk == [{"lo": 0, "hi": 20, "n": 20, "pred": 10, "actual": 10}], chk)
+card = main._fy_touch_html("day", {"ref_close": 24050, "range": 400}, None, {"cal": {**cal_t, "ups": cal_t["ups"] * 2, "downs": cal_t["downs"] * 2}})
+check("[R176] 卡片顯示價位機率表", "🎲 價位機率表" in card and "24,100" in card and "唔係期權隱含機率" in card)
+check("[R176] 樣本不足不顯示", main._fy_touch_html("day", {"ref_close": 24050, "range": 400}, None, {"cal": cal_t}) == "")
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
