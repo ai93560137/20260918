@@ -118,6 +118,7 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-14 — [R181] 方向一開倉門檻（緩衝）由 HK$260,000 改 HK$150,000（使用者折衷；RISK_LADDER 緩衝線 ×0.25 之後）。
 #   * 2026-10-14 — [R180] 方向一補做：上週五因風控閘冇開倉、到期週頭兩個交易日緩衝回升 → 操作箱顯示沽本週到期 1σ（至少剩 3 日），
 #     權利金閘 80 × √(剩餘交易日 ÷ 5)（剩 4 日 72、剩 3 日 62 點）。依據 research/hsi_futures_range/iv_timing/（使用者 10-14 同意）。
 #   * 2026-10-14 — [R179] 方向一權利金門檻由 60 點改 80 點（使用者「安全一點」；iv_decide：合成權利金 < 80 點每週 −45、t −3.8）。
@@ -8244,7 +8245,7 @@ def _fy_howto(data, symbol=None, now=None):
                 f"σ點 = {mk['vol'] / 100:.3f} × √({mk['n']}/252) × {_n(p['F'])} = {_n(mk['sigma'])}，{esc(mk['vol_src'])}）"
                 if mk.get("put") else "等有現價與 IV 才算得出")
         mk_html = ("<div class='fy-howto-makeup'>🔁 <b>補做（只限上週五因風控閘冇開倉）</b>：今日 " + esc(_day_label(p["today"]))
-                   + f" 收市前後，如果緩衝已回升到 HK$260,000 以上而且高過 RISK_LADDER Ⓑ 線，可以{legs}。"
+                   + f" 收市前後，如果緩衝已回升到 HK$150,000 以上而且高過 RISK_LADDER Ⓑ 線，可以{legs}。"
                    f"<br>權利金閘按剩餘日數縮細：合計少於 <b>{mk['gate']} 點</b>（= {PREMIUM_GATE} × √({mk['n']}÷5)）唔做。"
                    "<span class='fy-band'>真實 52 週回測：週一入場每週 +29、週二 +39（上週五入 +54），最差一週細好多；"
                    "上週五已經開咗倉就唔好再沽（唔加倉）。research/hsi_futures_range/iv_timing/</span></div>")
