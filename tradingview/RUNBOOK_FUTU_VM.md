@@ -20,17 +20,26 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
    Debian 12、磁碟 20 GB；**唔使綁服務帳戶權限**（揀「不允許存取任何 Cloud API」），唔使開外部連入埠。
 2. **SSH 入去**，clone repo（公開，唔使權杖）：
    `git clone -q -b ops/user-machine https://github.com/ai93560137/20260918 ~/20260918`
-3. **裝 OpenD**：喺富途官網下載 OpenD 嘅 Linux（Ubuntu）版，解壓後將 `FutuOpenD`、`FutuOpenD.xml` 等檔放入 `~/opend/`。
-4. **填 OpenD 設定** `~/opend/FutuOpenD.xml`（使用者自己填，**唔好貼入對話**）：`login_account`、`login_pwd_md5`
-   （喺 VM 跑 `echo -n '密碼' | md5sum` 計，跑完 `history -c`）、`api_ip` 127.0.0.1、`api_port` 11111、`telnet_ip` 127.0.0.1、`telnet_port` 22222。
-5. **填 `~/zhuge/env`**：照 `gcp_ib/vm_futu/env.example`，`mkdir -p ~/zhuge && nano ~/zhuge/env`。
-6. **安裝**：`bash ~/20260918/gcp_ib/vm_futu/setup.sh`。
-7. **第一次登入要短訊驗證**時：`telnet 127.0.0.1 22222` → `input_phone_verify_code -code=短訊碼`（碼唔好貼入對話）。
+3. **裝 OpenD**：富途官網下載頁（https://www.futunn.com/download/OpenAPI）Ubuntu 版個掣，喺瀏覽器下載清單複製**真正檔案網址**
+   （`https://softwaredownload.futunn.com/Futu_OpenD_<版本>_Ubuntu18.04.tar.gz`），VM 上 `wget` 落嚟、`tar xzf`，
+   將入面（隔多一層）嘅檔全部 `cp -a` 去 `~/opend/`。
+4. **開 telnet**：`~/opend/FutuOpenD.xml` 嘅 `telnet_ip`／`telnet_port` 預設註解咗，要解開（127.0.0.1:22222）。
+   ⚠ **OpenD 10.11 唔讀 xml／命令列嘅 `login_account`、`login_pwd_md5`**（MD5 喺登入提示亦唔收），每次開都喺主控台問帳號、密碼、記住密碼。
+5. **登入檔 `~/zhuge/opend_login`**（chmod 600；第一行牛牛號、第二行**登入**密碼，唔係交易密碼；用 `read -rs` 喺 VM 填，唔好貼入對話）。
+   `zhuge-opend.service` 經 `opend_tmux.sh` 喺 tmux session `opend` 開 OpenD 並自動答；每次開只試一次，
+   失敗會寫 `~/zhuge/opend_login.failed` 停止自動試（富途密碼錯有次數限制）＋發 Telegram，改好密碼後刪咗呢個檔再 `sudo systemctl restart zhuge-opend`。
+   冇呢個檔就要每次開機人手 `tmux attach -t opend` 登入。
+6. **填 `~/zhuge/env`**：照 `gcp_ib/vm_futu/env.example`（可以用 `read -rsp` 逐個填再 `cat > ~/zhuge/env`，唔使 nano）。
+   `ZHUGE_COMBINED_EQUITY` 只填純數字港幣（冇逗號、冇 USD）。
+7. **安裝**：`bash ~/20260918/gcp_ib/vm_futu/setup.sh`（會裝 tmux；之後 repo 嘅 service／timer 改動由 `update.sh` 自動套用，OpenD 唔自動重開）。
+   **第一次喺新機登入要短訊驗證**：`tmux attach -t opend` → 打 `req_phone_verify_code` → `input_phone_verify_code -code=短訊碼`（碼唔好貼入對話）→ Ctrl+B 再 d 離開。
+   ⚠ 喺 tmux 入面唔好 Ctrl+C（會停 OpenD）。
 8. **驗證**：Claude 睇 GCS `futu/risk/latest.json` 嘅 `run_hkt` 有冇更新；VM 上 `journalctl -u zhuge-auto-risk -n 30`。
 9. **部機收窄**：VM 正常之後，部機 `setx ZHUGE_DAEMONS "mt5_push"`、`setx ZHUGE_OPEND_EXE ""`，部機唔再開 OpenD／auto_risk
    （免得兩邊重覆推、富途同一戶口兩部機登入 OpenD 搶行情權限）。
 
 ## 常用
+- OpenD 畫面：`tmux attach -t opend`（Ctrl+B 放手再撳 d 離開）；唔入去睇：`tmux capture-pane -pt opend | tail`
 - 狀態：`systemctl --no-pager status zhuge-opend zhuge-auto-risk zhuge-futu-push zhuge-iv-push`
 - 紀錄：`journalctl -u zhuge-auto-risk -n 50`、`cat ~/zhuge/update.log`
 - 停晒：`sudo systemctl stop zhuge-auto-risk zhuge-futu-push zhuge-iv-push zhuge-opend`
