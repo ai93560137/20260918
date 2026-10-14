@@ -8,18 +8,20 @@
 
 ### 1.1 人員（工作階段）
 
+> 2026-10-14 起各陣換新工作階段；以下為新 id，**最新以 `handoff/SESSIONS.md` 為準**（2026-10-14 05:10 全部換完；HTF 策略指南、股票套利、指數套利、外匯數據測試已停用唔換）。
+
 | 角色 | 工作階段 | 分支 | 職責 |
 |---|---|---|---|
-| 總指揮（風控／營運） | `session_01N1jfpEJciBkfAgwtd4QxgU` | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、成交通報、對沖狀態通報 |
-| ☁️ 雲垂陣（期權 PM） | `session_01QLJsy4RoeHjPNdNha73ibt` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
-| 🌬️ 風揚陣（波幅／週期權 PM） | `session_01AmKfqsQjNQAkz1xgjRo2Mj` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
-| 🐍 蛇蟠陣（趨勢 PM） | `session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
-| 地載陣（日內 PM） | `session_01QDAzw2CmhvhYWip9SRktBn` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
-| 🐤 金絲雀（風險預報） | `session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
-| 鳥翔／HTF（個股 PM） | `session_01NQur232BPDVDQzxd2hrvzU` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
-| 外匯陣（紙上） | `session_01SHVCr19iNooiT5rp8BxD5t` 等 | `claude/forex-data-testing-w4q3m2` | L1 EURUSD、XAU 只做多、FOMC 漂移三個前向 |
+| 總指揮（風控／營運） | `session_012CwdLPmAQvC91GZs5Jg9XA` | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、成交通報、對沖狀態通報 |
+| ☁️ 雲垂陣（期權 PM） | `session_01RkzmKXKixbBkCNqEjhubCK` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
+| 🌬️ 風揚陣（波幅／週期權 PM） | `session_01X2Qv7MgCQxbyyEyGVzivWC` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
+| 🐍 蛇蟠陣（趨勢 PM） | `session_01B4y7p7QzrJwCXEmDDZCx9M` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
+| 地載陣（日內 PM） | `session_01UxZXWN28xveAEbzggo49AR` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
+| 🐤 金絲雀（風險預報） | `session_01AqAysUfBVsCKimicXrwwKZ` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
+| 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
+| 外匯 VM 採集 | `session_01YcJyu1yjZaFQTtY37WuQYH` | `claude/dazzling-curie-f3xzb8` | VM 上 L1 EURUSD 報價、6E 期權快照、ZQ 每日結算採集（使用者 10-14：繼續）；外匯研究線工作階段已停 |
 | 高息紙上 | `session_01GZ86daPoYtbG3bQk5svCx3` | gifted-carson `paper/` | 月度高息＋備兌模擬盤 |
-| 預設分支（登記簿／流水線） | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
+| 預設分支（登記簿／流水線） | `session_012caA3uVCQjRHHryN5HnMrn` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
 
 ### 1.2 自動化（執行者 × 時間）
 
@@ -191,6 +193,23 @@
 分工原則：**總指揮擁有風控、對帳、損益帳（私人數據）；預設分支擁有流水線、報告、讀取這些數據的下游（晨會、心跳、月報）**。
 下游只讀總指揮產出的檔，不重算。
 **公開 repo 的 Actions 日誌人人睇到**：含權益／金額的內文只發 Telegram、存私人 GCS，日誌只印字數（`ops_notify.print_private`）。
+
+## 二之二、VM 與資料推送守則（2026-10-14，claude-ops 經驗整理，使用者同意）
+
+適用：ib-data／claude-ops 兩部 VM、所有把採集數據推上 GitHub 的步驟、教使用者喺 VM 貼指令嘅工作階段。
+
+1. **附加式日誌只追加，唔覆蓋。** 推資料去有憑證嘅帳號時，唔准用 `cp -r` 蓋遠端既有嘅附加式日誌（例如 `data_stock_ibkr/_status.txt`）；
+   用 `tail -n +N 新檔 >> 舊檔` 只追加，或者先 `git show <分支>:<檔>` 取舊版合併。**commit 前睇 `git diff --stat`，日誌檔唔准有刪除行。**
+   （教訓：`22f1d384`（10-06）用 `cp -r` 將鳥翔 `_status.txt` 313 行歷史蓋成 205 行，CSV 無損；鳥翔陣 10-14 已由 `c3f4a61b` 補回成 518 行，`cd10d0a1`。）
+2. **有排程喺 pull 嘅目錄唔好直接切分支**（例如 hengkychansinghing 嘅 `~/20260918`）；要用其他分支就開獨立 `git worktree`，做完 `git worktree remove`。
+3. **教使用者貼指令：「復原」指令獨立成一段並清楚標示**，唔好同正常步驟放埋一齊（10-13 使用者連復原嗰行一齊貼，將啱改好嘅 IBC `config.ini` 改返轉頭）。
+   使用者回報做完之後，要佢貼輸出、用輸出驗證，唔好假設已生效。
+4. **Gateway 每晚約 23:50 UTC（07:50 HKT）由 `ib_keepalive.sh` 重啟。** 重啟後 Paper 免責聲明（Error 10141）會擋 API，
+   現靠 `dismiss_paper_warning.sh`（xdotool 座標點擊，視窗必須剛好 501x260）加 IBC `AcceptNonBrokerageAccountWarning=yes`。長時間抓取避開 23:50 UTC 前後。
+5. **採集腳本唔可以因 git 狀態整日唔跑。** `run_daily.sh` 有 `set -e`，`git pull` 因未提交修改失敗會令當日採集全部冇跑；已改 `git pull --autostash`（`c8d3033d1`）。
+   採集用當下延遲報價，**缺咗嘅日子補唔返，不得估算補值**；缺日要喺 `_status.txt` 記低，唔好填假數。
+6. **權限分工與跑別人腳本。** `claudeops` 冇 sudo、冇 GitHub 憑證、讀唔到 `/home/hengkychansinghing`（權限改動照 CLAUDE.md 要附 `AGENTIC.md`「必跑這個檢查」）。
+   跑其他分支嘅腳本前先讀過，確認只讀行情、冇任何下單呼叫。背景長任務用 `setsid nohup … < /dev/null &`；喺 ssh 入面直接 `&` 可能唔返回。
 
 ## 三、建議順序
 

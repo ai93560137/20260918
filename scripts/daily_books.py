@@ -222,6 +222,11 @@ def parse_positions_md(text: str, year: int = 2026) -> tuple[dict[str, float], l
                 n = -n
             out[f"HK.HSI{m.group(2)}"] = n
             hit = True
+        m = re.search(r"(賣|買) MHI(\d{4}) 小恒指期貨 ?(\d+) 手", pos)
+        if m:
+            n = float(m.group(3)) * (-1 if m.group(1) == "賣" else 1)
+            out[f"HK.MHI{m.group(2)}"] = out.get(f"HK.MHI{m.group(2)}", 0.0) + n
+            hit = True
         m = re.search(r"沽 EW(\d{4}) P([\d,]+) (\d+) 張", pos)
         if m:
             k = float(m.group(2).replace(",", ""))
