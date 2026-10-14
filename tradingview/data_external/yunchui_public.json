@@ -1,5 +1,5 @@
 {
- "updated_hkt": "2026-10-15 03:33",
+ "updated_hkt": "2026-10-15 04:17",
  "strategy": {
   "name": "雲垂陣",
   "icon": "☁️",
@@ -32,18 +32,6 @@
    "net_lots": -1,
    "open_price": 24336.0,
    "opened_hkt": "2026-10-14 16:26:27"
-  },
-  {
-   "id": "MES 跨式",
-   "instrument": "MES 期權（Micro E-mini S&P 500，歐式週權）",
-   "expiry": "2026-10-16",
-   "strike": 7830,
-   "qty": 1,
-   "entry_date": "2026-09-22",
-   "credit_pts": 178.5,
-   "credit_usd": 892.5,
-   "stop_buyback_pts": 357,
-   "entry_iv": 11.16
   }
  ],
  "status": {
@@ -57,8 +45,8 @@
    "hedge_source": "富途 API（總指揮通報）"
   },
   "mes": {
-   "es": 7760.0,
-   "straddle_delta": 0.72,
+   "es": 7765.0,
+   "straddle_delta": null,
    "band": 0.5
   }
  },
@@ -134,6 +122,10 @@
   {
    "date": "2026-10-14",
    "text": "MES 10/16 7830 跨式：使用者夜盤人手全平（富途快照已無兩腳）；平倉價待成交紀錄核實。MES 暫無持倉，10/19 起按 SOP 滾倉。"
+  },
+  {
+   "date": "2026-10-15",
+   "text": "MES 10/16 7830 跨式平倉核實（成交紀錄）：Put @70.5（00:19:31）＋Call @10.0（00:19:48）＝買回 80.5 點，權利金 178.5 → 已實現 +98 點（未計佣）。MES 暫無持倉。"
   }
  ],
  "corrections": [
