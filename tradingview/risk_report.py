@@ -23,8 +23,8 @@ DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ES2612", "U
 LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「手」單位
 # 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
 # 止損規則（book 冇寫先用呢度；持倉唔喺 book 就略過）
-DEFAULT_STOPS = {"EW P7750": {"credit": 68, "stop_buyback": 136, "legs": ["EW2610 P7750"],
-                              "note": "使用者人手開；2026-10-11 定：買回價 ≥ 136 點（2× 權利金）"}}
+DEFAULT_STOPS = {"EW P7750": {"credit": 43, "stop_buyback": 86, "legs": ["EW2610 P7750"],
+                              "note": "使用者人手開；10/14 03:51 新倉 @43，使用者 10-14 定：買回價 ≥ 86 點（2× 權利金，舊倉 @68 係 136）"}}
 PLAYBOOK = {"雲垂陣 HSI 月跨式＋對沖": {"und": "HSI", "groups": ["HSI 月跨式", "MHI2610 對沖"], "band": 0.5}}
 
 
