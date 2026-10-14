@@ -1,5 +1,5 @@
 {
- "updated_hkt": "2026-10-14 14:39",
+ "updated_hkt": "2026-10-14 16:08",
  "strategy": {
   "name": "雲垂陣",
   "icon": "☁️",
@@ -48,17 +48,17 @@
  ],
  "status": {
   "hsi": {
-   "front": 24400.0,
-   "straddle_delta": 0.56,
+   "front": 24320.0,
+   "straddle_delta": 0.62,
    "hedge_lots": 0,
-   "net_delta": 0.56,
+   "net_delta": 0.62,
    "band": 0.5,
    "hedge_verified_hkt": "2026-10-14 03:09",
    "hedge_source": "富途 API（總指揮通報）"
   },
   "mes": {
-   "es": 7862.0,
-   "straddle_delta": -0.39,
+   "es": 7868.0,
+   "straddle_delta": -0.44,
    "band": 0.5
   }
  },
@@ -122,6 +122,10 @@
   {
    "date": "2026-10-14",
    "text": "14:30 掃描：跨式無對沖，跨式 Δ +0.56，超出 +0.5 界線；規則為賣 1 手 MHI 重新對沖，待使用者決定。MES Δ −0.39，界內。"
+  },
+  {
+   "date": "2026-10-14",
+   "text": "16:00 指令：跨式 Δ +0.62，富途 MHI2610 淨 0（未見新對沖）→ 賣 1 手 MHI2610（16:30 前）。使用者已決定重新對沖，待成交回報。"
   }
  ],
  "corrections": [
