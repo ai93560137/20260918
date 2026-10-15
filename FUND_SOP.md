@@ -183,7 +183,7 @@
 | 3 每日對帳表 | ✅ 每日 17:20 HKT | 總指揮（R173） | `scripts/daily_books.py`、`ops_daily_books.yml`、`research/reconcile/<日>.md` |
 | 4 事件日曆 | ✅ 每日 07:00 HKT 合成；規則待風揚確認 | 預設分支（程式）＋風揚（`calendar/rules.json`） | `scripts/event_calendar.py`、`event_calendar.yml`、`calendar/events.csv`、`calendar/WEEK.md`；晨會簡報、週報讀它 |
 | 5 逐日損益帳 | ✅ 每日一列按陣拆分（私人，不進 repo） | 總指揮（R173） | GCS `ops/books/pnl_daily.csv` |
-| 6 流水線心跳 | ✅ 每日 07:30 HKT → Telegram（全綠一行、有紅只列紅項） | 預設分支 | `scripts/ops_heartbeat.py`、`ops_heartbeat.yml`；排程 workflow 應跑／實跑／失敗＋14 個數據來源新鮮度；每日全文存 GCS `ops/heartbeat/<日>.txt`（週報數紅燈用）；Routine 的 last_run 仍由總指揮每週看 |
+| 6 流水線心跳 | ✅ 每日 07:30 HKT → Telegram（全綠一行、有紅只列紅項） | 預設分支 | `scripts/ops_heartbeat.py`、`ops_heartbeat.yml`；排程 workflow 應跑／實跑／失敗＋數據來源新鮮度＋富途數據 VM `futu-data`（Compute 狀態＋auto_risk／push_to_gcp／iv_push 輸出，10-15 加）；每日全文存 GCS `ops/heartbeat/<日>.txt`（週報數紅燈用）；Routine 的 last_run 仍由總指揮每週看 |
 | 7 週報／檢討會 | ✅ 週日 09:00 HKT → Telegram＋[基金報告頁](https://tnt-hk.com/?view=fund_report) | 預設分支 | `scripts/ops_reports.py weekly`、`ops_reports.yml`；本週損益、IDEAS／評分卡／偏離對比 7 天前、對帳 ⚠、心跳紅燈、建議改狀態、下週事件 |
 | 8 人手交易額度 | ✅ NAV 50%／單日虧損 2%，超額只通報 | 總指揮（R173） | `RISK_LADDER.md` |
 | 9 月報 | ✅ 每月 1 日 09:30 HKT（首份有意義嘅係 2026-11-01 報 10 月，帳本由 10-13 起） | 預設分支 | `scripts/ops_reports.py monthly`；網頁公開版唔列權益絕對值（main.py R174 讀 GCS `ops/reports/public.json`） |
