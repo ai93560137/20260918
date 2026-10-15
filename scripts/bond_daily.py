@@ -8,7 +8,8 @@
 #   2. 債券價格：TLT、IEF、SHY、TIP、LQD、HYG、EDV 與 10Y / 30Y 公債期貨（Yahoo 日線）
 #      再用今天的殖利率算 10Y / 30Y 票面債的存續期間：殖利率每動 10bp 價格大約變多少
 #   3. 公債標售：財政部 fiscaldata API，近 10 天長天期標售結果（得標殖利率、投標倍數）與未來一週排程
-#   3½. 技術位置／股債訊號：10Y / 30Y 殖利率對 50 / 100 / 200 日均線、曲線形態（牛市/熊市 變陡/變平）、
+#   3½. 技術位置／股債訊號：4 小時線 US30Y / ZB / NQ 對 50 / 100 / 200 SMA、NQ 斐波那契、股債輪動判斷；
+#      日線 10Y / 30Y 殖利率對 50 / 100 / 200 日均線、曲線形態（牛市/熊市 變陡/變平）、
 #      信用壓力（HYG 對 IEF 相對表現）、股債相關性（TLT 對 QQQ 20 日滾動相關）
 #   4. 新聞：Google News RSS（中英文關鍵字，過去 24 小時），去重後列標題與連結
 #   5. 每日一則債券知識（依日期輪替）
@@ -32,6 +33,7 @@ from datetime import date, datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote, urlencode
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -44,6 +46,10 @@ URL_NASDAQ = ("https://api.nasdaq.com/api/quote/{t}/historical?assetclass=etf"
               "&fromdate={d1:%Y-%m-%d}&todate={d2:%Y-%m-%d}&limit=400")
 URL_CNBC = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol"
             "?symbols={s}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json")
+URL_CNBC_BARS = ("https://ts-api.cnbc.com/harmony/app/bars/{s}/{iv}/{d1:%Y%m%d%H%M%S}/{d2:%Y%m%d%H%M%S}"
+                 "/adjusted/EST5EDT.json")
+URL_YAHOO_IV = "https://{host}.finance.yahoo.com/v8/finance/chart/{t}?range={rng}&interval={iv}"
+URL_CNBC_CHART = "https://ts-api.cnbc.com/harmony/app/charts/1Y.json?symbol={s}"
 CNBC_SYMBOL = {"ZN=F": "@TY.1", "ZB=F": "@US.1"}  # CNBC 的公債期貨近月代號
 URL_FISCAL = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/"
 URL_GNEWS = "https://news.google.com/rss/search?q={q}&hl={hl}&gl={gl}&ceid={ceid}"
@@ -60,7 +66,12 @@ TICKERS = [
     ("ZN=F", "10 年期公債期貨"),
     ("ZB=F", "30 年期公債期貨"),
 ]
-SMA_DAYS = (50, 100, 200)  # 交易日
+SMA_DAYS = (50, 100, 200)  # 交易日；4 小時線同樣用 50 / 100 / 200 根
+ET_TZ = ZoneInfo("America/New_York")
+# 4 小時線標的：(名稱, CNBC 代號, Yahoo 代號, 種類)。種類 yield = 殖利率（%），price = 價格
+H4_ASSETS = [("US30Y", "US30Y", "^TYX", "yield"), ("ZB", "@US.1", "ZB=F", "price"), ("NQ", "@ND.1", "NQ=F", "price")]
+FIB_LEVELS = (0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.236, 1.382)
+TEST_BAND = 0.004  # 距離 200 SMA 0.4% 以內算「測試」
 CORR_DAYS = 20
 SERIES = {}  # prices_block 抓到的日線，給 signals_block 重用：{ticker: [(date, close)]}
 NEWS_QUERIES = [
@@ -248,6 +259,28 @@ def cnbc(t):
     return [(today - timedelta(days=1), prev), (today, last)]
 
 
+def cnbc_hist(t):
+    """CNBC 一年日線 [(date, close)]（期貨有歷史，可算 1 週 / 1 月 / 今年以來）。近月連續合約換月時會有小跳空。"""
+    sym = CNBC_SYMBOL.get(t, t)
+    bars = (get(URL_CNBC_CHART.format(s=quote(sym))).json().get("barData") or {}).get("priceBars") or []
+    out = {}
+    for b in bars:
+        c = num(b.get("close"))
+        if c is None:
+            continue
+        tt = str(b.get("tradeTime") or "")
+        if len(tt) >= 8 and tt[:8].isdigit():
+            d = datetime.strptime(tt[:8], "%Y%m%d").date()
+        elif b.get("tradeTimeinMills"):
+            d = datetime.fromtimestamp(int(b["tradeTimeinMills"]) / 1000, timezone.utc).date()
+        else:
+            continue
+        out[d] = c
+    if len(out) < 30:
+        raise ValueError(f"CNBC 歷史資料不足（{len(out)} 筆）")
+    return sorted(out.items())
+
+
 def yahoo(t):
     """Yahoo 日線收盤 [(date, close)]。GitHub runner 常被 429 限流，所以兩個主機各試一次。"""
     err = None
@@ -292,7 +325,7 @@ def prices_block():
     notes = []
     for t, name in TICKERS:
         s = None
-        for src in ((cnbc, yahoo) if t.endswith("=F") else (nasdaq, yahoo)):
+        for src in ((cnbc_hist, yahoo, cnbc) if t.endswith("=F") else (nasdaq, yahoo)):
             try:
                 s = src(t)
                 break
@@ -499,11 +532,174 @@ def stock_bond_line():
     return [f"股債相關 TLT×QQQ（{CORR_DAYS} 日）：" + "、".join(f"{l} {c:+.2f}" for l, c in out) + f"（{note}）"]
 
 
+# ---- 4 小時線（跟 TradingView 圖的做法：50 / 100 / 200 SMA、50 SMA 斜率、測試 200 SMA、NQ 斐波那契）
+def bars_to_4h(bars):
+    """[(UTC datetime, close)] 小時線 → 4 小時線收盤。以美東 18:00 為一日開始（CME 交易時段，近似 TradingView）。"""
+    out = {}
+    for ts, c in sorted(bars):
+        sh = ts.astimezone(ET_TZ) - timedelta(hours=18)
+        out[(sh.date(), sh.hour // 4)] = c  # 同一格保留最後一根的收盤
+    return [c for _, c in sorted(out.items())]
+
+
+def cnbc_hourly(sym):
+    end = datetime.now(timezone.utc).astimezone(ET_TZ).replace(tzinfo=None)
+    url = URL_CNBC_BARS.format(s=quote(sym), iv="1H", d1=end - timedelta(days=90), d2=end + timedelta(days=1))
+    bars = (get(url).json().get("barData") or {}).get("priceBars") or []
+    out = []
+    for b in bars:
+        c = num(b.get("close"))
+        if c is None:
+            continue
+        if b.get("tradeTimeinMills"):
+            ts = datetime.fromtimestamp(int(b["tradeTimeinMills"]) / 1000, timezone.utc)
+        else:
+            ts = datetime.strptime(str(b["tradeTime"])[:14], "%Y%m%d%H%M%S").replace(tzinfo=ET_TZ)
+        out.append((ts, c))
+    return out
+
+
+def yahoo_hourly(sym):
+    r = requests.get(URL_YAHOO_IV.format(host="query2", t=quote(sym), rng="90d", iv="60m"), headers=UA, timeout=(10, 30))
+    r.raise_for_status()
+    res = r.json()["chart"]["result"][0]
+    return [(datetime.fromtimestamp(ts, timezone.utc), c)
+            for ts, c in zip(res.get("timestamp") or [], res["indicators"]["quote"][0]["close"]) if c]
+
+
+def h4_series(name, cnbc_sym, yahoo_sym):
+    for src, sym in ((cnbc_hourly, cnbc_sym), (yahoo_hourly, yahoo_sym)):
+        try:
+            closes = bars_to_4h(src(sym))
+            if len(closes) >= 210:
+                return closes
+            print(f"::warning::{name} 4h {src.__name__} 只有 {len(closes)} 根")
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning::{name} 4h {src.__name__} 失敗：{e}")
+    return None
+
+
+def fmt_lvl(kind, name, v):
+    if kind == "yield":
+        return f"{v:.3f}%"
+    return fmt_price("ZB=F", v) if name == "ZB" else f"{v:,.0f}"
+
+
+def h4_state(name, kind, c):
+    """回傳 (表格列, 文字描述, {sma200, last})。"""
+    last = c[-1]
+    m = {n: sma(c, n) for n in SMA_DAYS}
+    m50_prev = sma(c[:-6], 50)  # 約一日前
+    slope = "" if m50_prev is None else ("↑" if m[50] > m50_prev else "↓")
+    row = f"{name:<6}{fmt_lvl(kind, name, last):>9}" + "".join(
+        f"{fmt_lvl(kind, name, m[n]) + (slope if n == 50 else ''):>10}" for n in SMA_DAYS)
+    above = [n for n in SMA_DAYS if last >= m[n]]
+    below = [n for n in SMA_DAYS if last < m[n]]
+    # 最近 6 根（約一日）內穿越
+    crossed = []
+    for n in SMA_DAYS:
+        prev_c, prev_m = c[-7], sma(c[:-6], n)
+        if prev_m is not None and (prev_c >= prev_m) != (last >= m[n]):
+            crossed.append((n, last >= m[n]))
+    parts = []
+    up = [str(n) for n, a in crossed if a]
+    dn = [str(n) for n, a in crossed if not a]
+    if dn:
+        parts.append(f"跌破 {'/'.join(dn)} SMA")
+    if up:
+        parts.append(f"{'收復' if kind == 'price' else '升穿'} {'/'.join(up)} SMA")
+    gap = (last - m[200]) / m[200]
+    if abs(gap) <= TEST_BAND:
+        d = f"{(last - m[200]) * 100:+.1f}bp" if kind == "yield" else f"{gap * 100:+.2f}%"
+        parts.append(f"{'由上往下' if last >= m[200] else '由下往上'}測試 200 SMA（差 {d}）")
+    elif not crossed:
+        parts.append("在 " + "/".join(map(str, above)) + " SMA 之上" if above else "")
+        if below:
+            parts.append("在 " + "/".join(map(str, below)) + " SMA 之下")
+    if slope:
+        parts.append(f"50 SMA {'上彎' if slope == '↑' else '下彎'}")
+    return row, f"{name}：" + "，".join(p for p in parts if p), {"sma200": m[200], "last": last}
+
+
+def fib_line(name, cnbc_sym, yahoo_sym):
+    """近半年日線：擺動低點 → 高點的斐波那契回撤；現價落在哪兩條線之間。"""
+    s = None
+    for src, sym in ((cnbc_hist, cnbc_sym), (yahoo, yahoo_sym)):
+        try:
+            s = src(sym)
+            break
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning::{name} 日線 {src.__name__} 失敗：{e}")
+    if not s or len(s) < 60:
+        return None, None
+    s = s[-126:]  # 約半年
+    hi_i = max(range(len(s)), key=lambda i: s[i][1])
+    if hi_i == 0:
+        return None, None
+    lo_i = min(range(hi_i), key=lambda i: s[i][1])
+    (dl, lo), (dh, hi), last = s[lo_i], s[hi_i], s[-1][1]
+    lv = [(f, hi - (hi - lo) * f) for f in FIB_LEVELS]
+    above = [(f, v) for f, v in lv if v <= last]
+    below = [(f, v) for f, v in lv if v > last]
+    pos = []
+    if below:
+        f, v = below[-1]
+        pos.append(f"{f:g}（{v:,.0f}）之下")
+    if above:
+        f, v = above[0]
+        pos.append(f"{f:g}（{v:,.0f}）之上")
+    nxt = "、".join(f"{f:g} {v:,.0f}" for f, v in above[1:3])
+    line = (f"{name} Fib（{dl:%m/%d} 低 {lo:,.0f} → {dh:%m/%d} 高 {hi:,.0f}，日收盤）：現價 {last:,.0f}，"
+            + "、".join(pos) + (f"；再下支撐 {nxt}" if nxt else ""))
+    return line, dict(lv)
+
+
+def h4_block():
+    rows, notes, st = [], [], {}
+    for name, cs, ys, kind in H4_ASSETS:
+        c = h4_series(name, cs, ys)
+        if not c:
+            continue
+        row, note, info = h4_state(name, kind, c)
+        rows.append(row)
+        notes.append(note)
+        st[name] = info
+    if not rows:
+        return []
+    L = ["<b>4 小時線</b>（SMA 50 / 100 / 200 根；↑↓ = 50 SMA 一日斜率）",
+         "<pre>" + f"{'':<6}{'Last':>9}{'SMA50':>10}{'SMA100':>10}{'SMA200':>10}", *rows, "</pre>", *notes]
+    fib, lv = fib_line("NQ", "@ND.1", "NQ=F")
+    if fib:
+        L.append(fib)
+    # 股債輪動判斷（照圖文的條件）
+    y, zb, nq = st.get("US30Y"), st.get("ZB"), st.get("NQ")
+    if y and zb and nq and lv:
+        y_dn, zb_up, nq_weak = y["last"] < y["sma200"], zb["last"] > zb["sma200"], nq["last"] < lv[0.382]
+        if y_dn and zb_up and nq_weak:
+            v = "🔄 股債輪動延續：30Y 跌穿 200 SMA、ZB 站上 200 SMA、NQ 在 0.382 之下"
+            if nq["last"] >= lv[0.618]:
+                v += " → 留意 NQ 下看 0.5 / 0.618"
+        elif not y_dn and nq["last"] >= lv[0.382]:
+            v = "↩️ 單純修正：30Y 守住 200 SMA、NQ 收復 0.382"
+        else:
+            v = ("⏳ 未分勝負：30Y " + ("在" if y_dn else "未跌穿") + " 200 SMA 下、ZB " + ("已" if zb_up else "未")
+                 + "站上 200 SMA、NQ " + ("在" if nq_weak else "已收復") + " 0.382" + ("之下" if nq_weak else ""))
+        L.append(v)
+        if lv.get(0.618) and nq["last"] < lv[0.618]:
+            L.append("⚠️ NQ 跌破 Fib 0.618：趨勢反轉機率高於單純拉回，下看擺動低點與 1.236 / 1.382 延伸")
+    return L
+
+
 def signals_block(nom):
-    if not nom or len(nom) < 2:
-        return ""
-    ma = ma_lines(nom)
-    body = (["殖利率對日均線（交易日）："] + ma if ma else []) + curve_lines(nom) + credit_line() + stock_bond_line()
+    body = []
+    try:
+        body += h4_block()
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning::4 小時線失敗：{e}")
+    if nom and len(nom) >= 2:
+        ma = ma_lines(nom)
+        body += (["<b>日線</b>（財政部收盤，交易日均線）："] + ma if ma else []) + curve_lines(nom)
+    body += credit_line() + stock_bond_line()
     return "\n".join(["<b>④½ 技術位置／股債訊號</b>"] + body) if body else ""
 
 
