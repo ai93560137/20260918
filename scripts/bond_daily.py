@@ -8,6 +8,8 @@
 #   2. 債券價格：TLT、IEF、SHY、TIP、LQD、HYG、EDV 與 10Y / 30Y 公債期貨（Yahoo 日線）
 #      再用今天的殖利率算 10Y / 30Y 票面債的存續期間：殖利率每動 10bp 價格大約變多少
 #   3. 公債標售：財政部 fiscaldata API，近 10 天長天期標售結果（得標殖利率、投標倍數）與未來一週排程
+#   3½. 技術位置／股債訊號：10Y / 30Y 殖利率對 50 / 100 / 200 日均線、曲線形態（牛市/熊市 變陡/變平）、
+#      信用壓力（HYG 對 IEF 相對表現）、股債相關性（TLT 對 QQQ 20 日滾動相關）
 #   4. 新聞：Google News RSS（中英文關鍵字，過去 24 小時），去重後列標題與連結
 #   5. 每日一則債券知識（依日期輪替）
 # 任一來源失敗只略過該段，其餘照發。
@@ -58,6 +60,9 @@ TICKERS = [
     ("ZN=F", "10 年期公債期貨"),
     ("ZB=F", "30 年期公債期貨"),
 ]
+SMA_DAYS = (50, 100, 200)  # 交易日
+CORR_DAYS = 20
+SERIES = {}  # prices_block 抓到的日線，給 signals_block 重用：{ticker: [(date, close)]}
 NEWS_QUERIES = [
     ("美債 殖利率", "zh-TW"), ("美國公債 長債", "zh-TW"), ("債券 聯準會", "zh-TW"),
     ('"Treasury yields"', "en-US"), ('"30-year" Treasury bond', "en-US"),
@@ -211,7 +216,7 @@ def yields_block(today):
                 L.append(f"⚠️ {label} 殖利率創 52 週新高（= 長債價格 52 週新低）")
             elif cur[key] <= min(hist):
                 L.append(f"✅ {label} 殖利率創 52 週新低（= 長債價格 52 週新高）")
-    return "\n".join(L), cur
+    return "\n".join(L), cur, nom
 
 
 # ---------------------------------------------------------------- 2. 債券價格
@@ -295,6 +300,7 @@ def prices_block():
                 print(f"::warning::{t} {src.__name__} 失敗：{e}")
         if not s:
             continue
+        SERIES[t] = s
         L.append(f"{t:<6} {fmt_price(t, s[-1][1]):>7} {pctf(chg(s, 1)):>6} {pctf(chg(s, 7)):>6} "
                  f"{pctf(chg(s, 30)):>6} {pctf(chg(s, ytd=True)):>6}")
         notes.append(f"{t} {name}")
@@ -381,6 +387,126 @@ def auctions_block(today):
     return "\n".join(L) if len(L) > 1 else ""
 
 
+# ---------------------------------------------------------------- 3½. 技術位置／股債訊號
+def sma(vals, n):
+    return sum(vals[-n:]) / n if len(vals) >= n else None
+
+
+def ma_lines(nom):
+    """10Y / 30Y 殖利率對 50/100/200 日均線：在上/在下，今天穿越就標出來。"""
+    L = []
+    for label, key in (("10Y", "10yr"), ("30Y", "30yr")):
+        v = [r[key] for _, r in nom if key in r]
+        if len(v) < 2:
+            continue
+        parts = []
+        for n in SMA_DAYS:
+            m0, m1 = sma(v, n), sma(v[:-1], n)
+            if m0 is None:
+                continue
+            pos = "上" if v[-1] >= m0 else "下"
+            cross = ""
+            if m1 is not None and (v[-2] >= m1) != (v[-1] >= m0):
+                cross = "⬆️升穿" if v[-1] >= m0 else "⬇️跌穿"
+            parts.append(f"{n}日 {m0:.2f}%（{cross or '在' + pos}）")
+        if parts:
+            L.append(f"{label} {v[-1]:.2f}%：" + "、".join(parts))
+    return L
+
+
+def curve_shape(d_short, d_long):
+    """以 2Y、30Y 殖利率變動（百分點）判斷曲線形態。"""
+    if abs(d_short) < 0.01 and abs(d_long) < 0.01:
+        return "持平"
+    steep = d_long - d_short
+    if abs(steep) < 0.01:
+        return "平行" + ("上移" if d_long > 0 else "下移")
+    if abs(d_short) >= 0.01 and abs(d_long) >= 0.01 and (d_short > 0) != (d_long > 0):
+        return "扭轉" + ("變陡" if steep > 0 else "變平")  # 短端、長端反方向
+    bull = (d_short + d_long) / 2 < 0  # 殖利率整體下跌 = 債價上漲
+    return ("牛市" if bull else "熊市") + ("變陡" if steep > 0 else "變平")
+
+
+def curve_lines(nom):
+    d0, cur = nom[-1]
+    L = []
+    for label, ref in (("1日", nom[-2]), ("1週", at_or_before(nom, d0 - timedelta(days=7)))):
+        if not ref or not all(k in cur and k in ref[1] for k in ("2yr", "30yr")):
+            continue
+        a, b = cur["2yr"] - ref[1]["2yr"], cur["30yr"] - ref[1]["30yr"]
+        L.append(f"{label}：{curve_shape(a, b)}（2Y {bp(a)}、30Y {bp(b)}，30Y−2Y {bp(b - a)}bp）")
+    return ["曲線形態：" + "；".join(L)] if L else []
+
+
+def credit_line():
+    hyg, ief = SERIES.get("HYG"), SERIES.get("IEF")
+    if not hyg or not ief:
+        return []
+    parts = []
+    for label, days in (("1日", 1), ("1週", 7), ("1月", 30)):
+        a, b = chg(hyg, days), chg(ief, days)
+        if a is not None and b is not None:
+            parts.append(f"{label} {(a - b) * 100:+.1f}%")
+    if not parts:
+        return []
+    return ["信用壓力 HYG−IEF：" + "、".join(parts) + "（負 = 高收益債跑輸公債，信用利差擴闊）"]
+
+
+def daily_returns(series):
+    return {d: c / p - 1 for (_, p), (d, c) in zip(series, series[1:])}
+
+
+def corr(xs, ys):
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    sxx = sum((x - mx) ** 2 for x in xs)
+    syy = sum((y - my) ** 2 for y in ys)
+    return sxy / (sxx * syy) ** 0.5 if sxx and syy else None
+
+
+def stock_bond_line():
+    tlt = SERIES.get("TLT")
+    if not tlt:
+        return []
+    qqq = None
+    for src in (nasdaq, yahoo):
+        try:
+            qqq = src("QQQ")
+            break
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning::QQQ {src.__name__} 失敗：{e}")
+    if not qqq:
+        return []
+    rt, rq = daily_returns(tlt), daily_returns(qqq)
+    days = sorted(set(rt) & set(rq))
+    out = []
+    for label, end in (("今日", len(days)), ("1 月前", len(days) - 21)):
+        win = days[max(0, end - CORR_DAYS):end]
+        if len(win) == CORR_DAYS:
+            c = corr([rt[d] for d in win], [rq[d] for d in win])
+            if c is not None:
+                out.append((label, c))
+    if not out:
+        return []
+    c0 = out[0][1]
+    if c0 > 0.2:
+        note = "正相關：股債同向，債券避險效果弱"
+    elif c0 < -0.2:
+        note = "負相關：股跌債漲，債券有避險作用"
+    else:
+        note = "相關性弱"
+    return [f"股債相關 TLT×QQQ（{CORR_DAYS} 日）：" + "、".join(f"{l} {c:+.2f}" for l, c in out) + f"（{note}）"]
+
+
+def signals_block(nom):
+    if not nom or len(nom) < 2:
+        return ""
+    ma = ma_lines(nom)
+    body = (["殖利率對日均線（交易日）："] + ma if ma else []) + curve_lines(nom) + credit_line() + stock_bond_line()
+    return "\n".join(["<b>④½ 技術位置／股債訊號</b>"] + body) if body else ""
+
+
 # ---------------------------------------------------------------- 4. 新聞
 def news_block(now):
     items, seen = [], set()
@@ -451,15 +577,16 @@ def send(text, token, chat):
 def build(now):
     today = now.date()
     head = f"📊 <b>每日美債快報</b> {today:%Y-%m-%d}"
-    y_text, cur = "", None
+    y_text, cur, nom = "", None, None
     try:
-        y_text, cur = yields_block(today)
+        y_text, cur, nom = yields_block(today)
     except Exception as e:  # noqa: BLE001
         print(f"::warning::殖利率失敗：{e}")
     parts = [head, y_text,
              section("債券價格", prices_block),
              section("敏感度", sensitivity_block, cur),
              section("公債標售", auctions_block, today),
+             section("技術位置", signals_block, nom),
              section("新聞", news_block, now),
              knowledge_block(today)]
     return "\n\n".join(p for p in parts if p)
