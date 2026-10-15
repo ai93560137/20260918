@@ -1,6 +1,7 @@
 # 各陣工作階段對照表（2026-10-14 起換新工作階段）
 
 > 規矩（使用者 10-15）：工作階段上下文超過約 40 萬 tokens 就換新（SOP 顧問每週日用量快照會列出；FUND_SOP 二之三 A）。
+> 例外（使用者 10-15）：雲垂（約 42 萬）、圖表形態交易（約 45 萬）暫時唔換；週報照列，等使用者再決定。
 
 > **以本表為準**。send_message 前先讀本表（`git fetch origin claude/gcp-trading-v12-rewrite-bz75t2 && git show origin/claude/gcp-trading-v12-rewrite-bz75t2:handoff/SESSIONS.md`）。
 > 舊工作階段保留（唔封存），但 Routine 已／將改綁新工作階段；舊嘅收到訊息請轉交新嘅。由 SOP 顧問（新 `session_012caA3uVCQjRHHryN5HnMrn`）維護。
