@@ -247,7 +247,7 @@ def incident_lines(md: str | None, start: date, end: date) -> list[str]:
     return out
 
 
-USAGE_CONTEXT_ROTATE = 400_000      # 上下文超過就建議換新工作階段（FUND_SOP 二之三 缺口 A）
+USAGE_CONTEXT_ROTATE = 600_000      # 上下文超過就建議換新工作階段（FUND_SOP 二之三 缺口 A；使用者 10-15 定 60 萬）
 
 
 def usage_lines(now_snap: dict | None, old_snap: dict | None) -> list[str]:

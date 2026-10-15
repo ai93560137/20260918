@@ -224,7 +224,7 @@
 讀法：**大頭係長上下文嘅對話，唔係 Routine**——cache 讀取佔絕大部分 token，上下文愈長每輪愈貴。
 
 ### 進度（10-15 使用者：A–E 做，F、G 不做；雲垂兩個純觸發 Routine 改 Actions；風揚換新工作階段）
-- A ✅ GCS `ops/claude_usage/<日>.json`＋`latest.json`（SOP 顧問 Routine `trig_016R1X3vYQ9uVyKAGRQ5j6oM` 週日 08:45 用 get_session 寫）；週報【三】列本週各工作階段用量、7 日額度、上下文 > 40 萬嘅建議換新。
+- A ✅ GCS `ops/claude_usage/<日>.json`＋`latest.json`（SOP 顧問 Routine `trig_016R1X3vYQ9uVyKAGRQ5j6oM` 週日 08:45 用 get_session 寫）；週報【三】列本週各工作階段用量、7 日額度、上下文 > 60 萬嘅建議換新（使用者 10-15 定）。
 - D ✅ `ops/INCIDENTS.md`；週報【三】列本週新增＋未結。
 - 雲垂 16:40／05:52 → `.github/workflows/yunchui_quote_kicks.yml`（16:40 嗰次另查 hsi／vhsi 日線係 final，唔係就 job 失敗、心跳報 🔴）；兩個 Routine 已停用（唔刪）。
 - E ✅（預設分支部分）`scripts/ops_blotter.py`：每次成交通報後將富途成交按 `FUTU_TEAM_RULES` 歸陣、配對 `ops/intents.csv` 意圖價計滑價，寫私人 GCS `ops/blotter/<月>.csv`；月報【二】列按陣筆數同平均滑價。各陣出落單指令時要登記意圖價（`ops/INTENTS_README.md`），由總指揮通知各陣。
@@ -233,7 +233,7 @@
 ### 剩餘缺口（按風險排序）
 | # | 缺口 | 風險 | 建議 | 負責 |
 |---|---|---|---|---|
-| A | **Claude 用量冇預算、冇監控**：已到 7 日用量警告，冇人知邊個陣用幾多 | 高（用盡＝全部 Routine 停，包括風險通報） | 週報加一段「各工作階段用量」（我用 get_session 讀）；上下文 > 40 萬 tokens 就換新工作階段；把純觸發 Routine 改 Actions cron | SOP 顧問；改 Routine 由各陣 |
+| A | **Claude 用量冇預算、冇監控**：已到 7 日用量警告，冇人知邊個陣用幾多 | 高（用盡＝全部 Routine 停，包括風險通報） | 週報加一段「各工作階段用量」（我用 get_session 讀）；上下文 > 60 萬 tokens 就換新工作階段；把純觸發 Routine 改 Actions cron | SOP 顧問；改 Routine 由各陣 |
 | B | **保證金變動冇預警**：10-14 維持保證金一日約翻倍，事後先知 | 高 | auto_risk 已有 margin；加「維持保證金單日 +30% → 即時 Telegram」，並收交易所／券商保證金調整公告入事件日曆 | 總指揮（auto_risk、R149） |
 | C | **壓力測試冇每日化**：`tradingview/risk_report.py` 有，但唔入晨會 | 中高 | 晨會加一行「恒指 ±5%／VIX +10 情景下緩衝剩幾多」（只 Telegram，唔入 repo） | 總指揮出數，晨會讀 |
 | D | **事故冇登記簿**：1321.T 拆股、`_status.txt` 覆蓋、保證金跳升、OpenD 登入鎖，各自散喺 handoff | 中 | 新增 `ops/INCIDENTS.md`：日期、影響、根因、修正 commit、預防；週報數本週新事故 | SOP 顧問 |

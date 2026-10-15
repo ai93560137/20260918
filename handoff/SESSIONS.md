@@ -1,6 +1,6 @@
 # 各陣工作階段對照表（2026-10-14 起換新工作階段）
 
-> 規矩（使用者 10-15）：工作階段上下文超過約 40 萬 tokens 就換新（SOP 顧問每週日用量快照會列出；FUND_SOP 二之三 A）。
+> 規矩（使用者 10-15）：工作階段上下文超過約 60 萬 tokens 就換新（10-15 由 40 萬改 60 萬）（SOP 顧問每週日用量快照會列出；FUND_SOP 二之三 A）。
 
 > **以本表為準**。send_message 前先讀本表（`git fetch origin claude/gcp-trading-v12-rewrite-bz75t2 && git show origin/claude/gcp-trading-v12-rewrite-bz75t2:handoff/SESSIONS.md`）。
 > 舊工作階段保留（唔封存），但 Routine 已／將改綁新工作階段；舊嘅收到訊息請轉交新嘅。由 SOP 顧問（新 `session_012caA3uVCQjRHHryN5HnMrn`）維護。
@@ -24,5 +24,6 @@
 | 🥇 XAUUSD GCP and TV | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
 | 🖥️ 富途數據 VM（futu-data，asia-east2；10-15 起推 GCS `futu/risk/latest.json`，改推送內容經 `gcp_ib/vm_futu/settings.env` PR） | `session_01AQNMTZvQodzptWVui6deqY`（總指揮 10-15 開） | — | `claude/futu-vm-setup` | `AGENTIC.md`「VM：futu-data」、`tradingview/RUNBOOK_FUTU_VM.md` | — |
+| 🏦 債券每日快報（美債 Telegram，`bond_daily.yml` HKT 週二至六 07:30） | `session_013x5qHyMDisW7VCLNo6w88x`（10-15 總指揮開） | `session_01WrfzzWWLTysdSLJNZ3Mh5u`（美國國債數據與股票市場關係） | `claude/us-intl-data-stock-market-vgt0yi` | `handoff/債券快報.md`（該分支 518b054） | —（冇 Routine，Actions 排程） |
 | 🧭 SOP 顧問／預設分支 | `session_012caA3uVCQjRHHryN5HnMrn` | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
 | claude-ops（使用者 VM，台灣） | `session_01J4dioYdtebaEyoaDwGJotM`（不換） | — | — | — | — |
