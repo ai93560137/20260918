@@ -609,8 +609,10 @@ def h4_state(name, kind, c):
     if up:
         parts.append(f"{'收復' if kind == 'price' else '升穿'} {'/'.join(up)} SMA")
     gap = (last - m[200]) / m[200]
-    if abs(gap) <= TEST_BAND:
-        d = f"{(last - m[200]) * 100:+.1f}bp" if kind == "yield" else f"{gap * 100:+.2f}%"
+    d = f"{(last - m[200]) * 100:+.1f}bp" if kind == "yield" else f"{gap * 100:+.2f}%"
+    if any(n == 200 for n, _ in crossed):
+        parts[-1] += f"（距 200 SMA {d}）"
+    elif abs(gap) <= TEST_BAND:
         parts.append(f"{'由上往下' if last >= m[200] else '由下往上'}測試 200 SMA（差 {d}）")
     elif not crossed:
         parts.append("在 " + "/".join(map(str, above)) + " SMA 之上" if above else "")
@@ -621,8 +623,8 @@ def h4_state(name, kind, c):
     return row, f"{name}：" + "，".join(p for p in parts if p), {"sma200": m[200], "last": last}
 
 
-def fib_line(name, cnbc_sym, yahoo_sym):
-    """近半年日線：擺動低點 → 高點的斐波那契回撤；現價落在哪兩條線之間。"""
+def fib_line(name, cnbc_sym, yahoo_sym, last=None):
+    """近 90 個交易日日線：擺動低點 → 高點的斐波那契回撤；現價（優先用 4 小時線最新價）落在哪兩條線之間。"""
     s = None
     for src, sym in ((cnbc_hist, cnbc_sym), (yahoo, yahoo_sym)):
         try:
@@ -632,12 +634,13 @@ def fib_line(name, cnbc_sym, yahoo_sym):
             print(f"::warning::{name} 日線 {src.__name__} 失敗：{e}")
     if not s or len(s) < 60:
         return None, None
-    s = s[-126:]  # 約半年
+    s = s[-90:]  # 約 4 個多月
     hi_i = max(range(len(s)), key=lambda i: s[i][1])
     if hi_i == 0:
         return None, None
     lo_i = min(range(hi_i), key=lambda i: s[i][1])
-    (dl, lo), (dh, hi), last = s[lo_i], s[hi_i], s[-1][1]
+    (dl, lo), (dh, hi) = s[lo_i], s[hi_i]
+    last = last or s[-1][1]
     lv = [(f, hi - (hi - lo) * f) for f in FIB_LEVELS]
     above = [(f, v) for f, v in lv if v <= last]
     below = [(f, v) for f, v in lv if v > last]
@@ -668,7 +671,7 @@ def h4_block():
         return []
     L = ["<b>4 小時線</b>（SMA 50 / 100 / 200 根；↑↓ = 50 SMA 一日斜率）",
          "<pre>" + f"{'':<6}{'Last':>9}{'SMA50':>10}{'SMA100':>10}{'SMA200':>10}", *rows, "</pre>", *notes]
-    fib, lv = fib_line("NQ", "@ND.1", "NQ=F")
+    fib, lv = fib_line("NQ", "@ND.1", "NQ=F", st.get("NQ", {}).get("last"))
     if fib:
         L.append(fib)
     # 股債輪動判斷（照圖文的條件）
