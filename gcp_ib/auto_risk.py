@@ -15,12 +15,14 @@
   setx TG_CHAT_ID "…"
   setx ZHUGE_GCP_URL "https://…run.app/"   # 選填：有就每次推上 GCP（main.py R147 action=futu_risk，存私人 bucket）
   setx WEBHOOK_SECRET_TOKEN "…"            #        同 futu/push_to_gcp.py 用同一對設定
-  選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 60000；Cloud Run 另有逐級 Telegram）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）
+  選填門檻：ZHUGE_ALERT_CUSHION（富途保證金緩衝警報線，預設 60000；Cloud Run 另有逐級 Telegram）、ZHUGE_ALERT_STOP（止損用量，預設 0.8）、
+  ZHUGE_ALERT_MM_JUMP（維持保證金單日升幅警報，預設 0.30＝30%，R193）
 
 輸出（全部喺 tradingview/out/，已 .gitignore，唔會 commit）：
   risk_report_live.md   最新報告
   risk_history.csv      每次嘅主要指標
   alert_state.json      警報狀態（只喺警報出現／解除時先發 Telegram，唔會每次都發）
+  margin_base.json      當日（06:00 HKT 起）維持保證金基準（R193 急升預警用）
 """
 import argparse
 import csv
@@ -83,6 +85,26 @@ def alerts(M, cushion_line, stop_line):
     return a
 
 
+def mm_jump(t, M, state_f, thr):
+    """[R193] 維持保證金單日急升預警（FUND_SOP 二之三 B；10-14 一日約翻倍事後先知）。
+    交易日以 06:00 HKT 為界；當日第一個讀數做基準，之後升 ≥ thr 就回傳警報字串（新一日自動解除）。"""
+    mm = M.get("maintenance_margin")
+    if not mm:
+        return None
+    day = f"{t - timedelta(hours=6):%Y-%m-%d}"
+    try:
+        st = json.loads(state_f.read_text(encoding="utf-8"))
+    except Exception:
+        st = {}
+    if st.get("day") != day or not st.get("base"):
+        st = {"day": day, "base": mm}
+        state_f.write_text(json.dumps(st), encoding="utf-8")
+    up = mm / st["base"] - 1
+    if up >= thr:
+        return f"⚠ 富途維持保證金今日升 {up * 100:.0f}%（HK${st['base']:,.0f} → {mm:,.0f}）；緩衝 HK${M.get('cushion') or 0:,.0f}"
+    return None
+
+
 def telegram(text):
     tok, chat = os.environ.get("TG_BOT_TOKEN"), os.environ.get("TG_CHAT_ID")
     if not tok or not chat:
@@ -96,7 +118,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R192"
+SCRIPT_VERSION = "R193"
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3
@@ -196,7 +218,7 @@ def fetch_cme():
         pass
 
 
-def cycle(equity, cushion_line, stop_line):
+def cycle(equity, cushion_line, stop_line, mm_thr=0.30):
     t = now_hkt()
     OUT.mkdir(parents=True, exist_ok=True)
     ok, err = fetch()
@@ -214,6 +236,9 @@ def cycle(equity, cushion_line, stop_line):
                                    str(ROOT / "tradingview" / "data_external" / "futu_positions.json"), equity)
         (OUT / "risk_report_live.md").write_text(txt + "\n", encoding="utf-8")
         cur = alerts(M, cushion_line, stop_line)
+        jump = mm_jump(t, M, OUT / "margin_base.json", mm_thr)
+        if jump:
+            cur["mm_jump"] = jump
         hist = OUT / "risk_history.csv"
         new = not hist.exists()
         with hist.open("a", newline="", encoding="utf-8") as f:
@@ -255,12 +280,13 @@ def main():
     a = ap.parse_args()
     cushion_line = float(os.environ.get("ZHUGE_ALERT_CUSHION", 60000))
     stop_line = float(os.environ.get("ZHUGE_ALERT_STOP", 0.8))
+    mm_thr = float(os.environ.get("ZHUGE_ALERT_MM_JUMP", 0.30))
     if not a.combined_equity:
         print("⚠ 冇設合計權益（setx ZHUGE_COMBINED_EQUITY …），硬止損會用 book 假設 NAV 計")
     while True:
         if a.once or a.weekend or not weekend_closed(now_hkt()):
             try:
-                cycle(a.combined_equity, cushion_line, stop_line)
+                cycle(a.combined_equity, cushion_line, stop_line, mm_thr)
             except Exception as e:
                 print(f"[{now_hkt():%m-%d %H:%M}] 出錯：{e.__class__.__name__}: {e}")
         if not (a.once or a.no_pnl) and (a.weekend or not weekend_closed(now_hkt()) or _pnl_proc is not None):

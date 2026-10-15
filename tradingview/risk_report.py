@@ -14,7 +14,7 @@ import argparse
 import json
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from math import erf, log, sqrt
 from pathlib import Path
 
@@ -229,6 +229,28 @@ def value(p, F, iv_shift=0.0, days=0.0):
     return b76(F, p["K"], max(p["iv"] + iv_shift, p["iv"] * 0.5), p["T"] - days / 365, p["type"])
 
 
+HKT_TZ = timezone(timedelta(hours=8))
+LADDER_CUSHION = {"B": 37_500, "C": 25_000, "D": 15_000}   # RISK_LADDER.md 日盤緩衝線（夜盤 ×1.5）；同 scripts/daily_books.py LADDER 一致
+STRESS_SCENARIOS = (("HSI −5%", {"HSI": -.05}, 0), ("HSI +5%", {"HSI": .05}, 0),
+                    ("ES −3%", {"ES": -.03}, 0), ("ES +3%", {"ES": .03}, 0),
+                    ("ES −5%", {"ES": -.05}, 0), ("ES +5%", {"ES": .05}, 0),
+                    ("VIX +10（IV +10 vol）", {}, .10), ("ES −5% 且 IV +10 vol", {"ES": -.05}, .10))
+
+
+def ladder_night(t):
+    """RISK_LADDER §3：17:15–03:00 HKT 夜盤用 ×1.5 線。"""
+    hm = t.hour * 60 + t.minute
+    return hm >= 17 * 60 + 15 or hm < 3 * 60
+
+
+def ladder_level(cushion, night=False):
+    k = 1.5 if night else 1
+    for lv in ("D", "C", "B"):
+        if cushion < LADDER_CUSHION[lv] * k:
+            return lv
+    return "A"
+
+
 def pnl_hkd(b, fx, shocks, vol_add=0.0, days=0.0, skew="fit", px="close"):
     """shocks: {'HSI': pct, 'ES': pct}。skew='fit' 用擬合斜率；'old' 用每跌 1% 加 0.5 vol；px='close'/'mid' 現況標價。"""
     tot, grp = 0.0, {}
@@ -436,6 +458,13 @@ def build(book, quotes=None, combined_equity=None):
         cu = "—" if cush0 is None else f"{cush0 + d:,.0f}"
         P(f"| {name} | {d:+,.0f} | {eq:,.0f} | {gap:+,.0f} | {eq0 + t_old - tot0:,.0f} | {cu} | {note} |")
     P("\n*富途保證金緩衝＝富途戶口權益＋變動 − 現時維持保證金；未計保證金本身隨市況上升，實際更緊。\n")
+    if cush0 is not None:                                     # [R193] 每日壓力情景（FUND_SOP 二之三 C），經 Cloud Run 存私人 GCS
+        night = ladder_night(datetime.now(HKT_TZ))
+        M["stress"] = {"night": night, "lines": {k: v * (1.5 if night else 1) for k, v in LADDER_CUSHION.items()}, "scenarios": []}
+        for name, sh, va in STRESS_SCENARIOS:
+            t, _ = pnl_hkd(b, fx, sh, vol_add=va)
+            after = cush0 + t - tot0
+            M["stress"]["scenarios"].append({"name": name, "cushion_after": round(after), "ladder": ladder_level(after, night)})
 
     P("## 8. 觸及硬止損所需變動（單一市場）")
     for und, sign, lab in (("ES", -1, "ES 下跌"), ("ES", 1, "ES 上升"), ("HSI", 1, "HSI 上升"), ("HSI", -1, "HSI 下跌")):
