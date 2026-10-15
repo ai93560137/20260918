@@ -26,7 +26,7 @@ def num(s):
 
 
 def main():
-    pos = load(D / "position.json")
+    pos = load(D / "position.json") if (D / "position.json").exists() else {}
     mes = load(D / "position_mes.json") if (D / "position_mes.json").exists() else {}
     hist = load(HERE / "yunchui_history.json")
     dg = (D / "digest.txt").read_text(encoding="utf-8") if (D / "digest.txt").exists() else ""
@@ -58,20 +58,20 @@ def main():
                 "監控：烽燧指標燈（只作提示，不具警報權）；對沖狀態由富途 API 核實。"],
             "disclaimer": "只作資訊展示，唔係投資建議。報價延遲，落單以券商即時價為準。",
         },
-        "positions": [
+        "positions": ([
             {"id": "HSI 月跨式", "instrument": pos.get("instrument"), "expiry": pos.get("expiry"), "strike": pos.get("strike"),
              "qty": pos.get("qty"), "entry_date": pos.get("entry_date"), "credit_pts": pos.get("credit_pts"),
              "credit_hkd": pos.get("credit_hkd"), "stop_buyback_pts": pos.get("stop_buyback_pts"), "entry_atm_iv": pos.get("entry_atm_iv")},
             {"id": "MHI 期貨對沖", "instrument": "小型恒指期貨 MHI2610", "net_lots": hedge_lots,
              "open_price": hedges[0]["price"] if hedges else None, "opened_hkt": hedges[0].get("time_hkt") if hedges else None},
-        ] + ([
+        ] if pos else []) + ([
             {"id": "MES 跨式", "instrument": mes.get("instrument"), "expiry": mes.get("expiry"), "strike": mes.get("strike"),
              "qty": mes.get("qty"), "entry_date": mes.get("entry_date"), "credit_pts": mes.get("credit_pts"),
              "credit_usd": mes.get("credit_usd"), "stop_buyback_pts": mes.get("stop_buyback_pts"), "entry_iv": mes.get("entry_iv")}] if mes else []),
         "status": {
-            "hsi": {"front": front, "straddle_delta": h_str, "hedge_lots": h_hedge if h_hedge is not None else hedge_lots,
+            "hsi": ({"front": front, "straddle_delta": h_str, "hedge_lots": h_hedge if h_hedge is not None else hedge_lots,
                     "net_delta": h_net, "band": 0.5,
-                    "hedge_verified_hkt": pos.get("hedge_verified_hkt"), "hedge_source": "富途 API（總指揮通報）"},
+                    "hedge_verified_hkt": pos.get("hedge_verified_hkt"), "hedge_source": "富途 API（總指揮通報）"} if pos else None),
             "mes": {"es": es, "straddle_delta": m_delta if mes else None, "band": 0.5},
         },
         "events": hist["events"],
