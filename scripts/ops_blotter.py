@@ -134,6 +134,28 @@ def to_csv(rows: list[dict]) -> str:
     return buf.getvalue()
 
 
+def all_intents_text() -> str:
+    """預設分支 ops/intents.csv＋notify_config.json intent_branches 各陣分支嗰份（git show origin/<分支>，冇就略過）。"""
+    import subprocess
+    texts = []
+    p = ROOT / "ops" / "intents.csv"
+    if p.exists():
+        texts.append(p.read_text(encoding="utf-8"))
+    try:
+        cfg = json.loads((ROOT / "ops" / "notify_config.json").read_text(encoding="utf-8"))
+        branches = cfg.get("intent_branches", {}).get("branches", [])
+    except (OSError, json.JSONDecodeError):
+        branches = []
+    for br in branches:
+        r = subprocess.run(["git", "-C", str(ROOT), "show", f"origin/{br}:ops/intents.csv"], capture_output=True, text=True)
+        if r.returncode == 0:
+            texts.append(r.stdout)
+    lines, header = [], "date,team,code,side,qty,intent_price,note"
+    for t in texts:
+        lines += [ln for ln in t.splitlines()[1:] if ln.strip()]
+    return "\n".join([header] + list(dict.fromkeys(lines))) + "\n"     # 同一行喺幾個分支都有就當一行
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true")
@@ -141,8 +163,7 @@ def main() -> int:
     a = ap.parse_args()
     now = parse_hkt(a.now) if a.now else datetime.now(HKT)
     rules = team_rules((ROOT / "main.py").read_text(encoding="utf-8"))
-    intents_path = ROOT / "ops" / "intents.csv"
-    intents = load_intents(intents_path.read_text(encoding="utf-8") if intents_path.exists() else None)
+    intents = load_intents(all_intents_text())
 
     deals = []
     for d in (now.date() - timedelta(days=1), now.date()):

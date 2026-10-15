@@ -1,16 +1,35 @@
 {
   "_readme": "scripts/ops_notify.py 的設定。雲垂陣對沖申報手數改了就改這裡（commit 到預設分支），不用改程式。",
   "hedge": {
-    "declared_hedge_lots": {"HK.MHI2610": -1.0},
+    "declared_hedge_lots": {
+      "HK.MHI2610": -1.0
+    },
     "delta_limit_lots": 0.5,
     "stale_minutes": 20,
     "status_object": "ops/hedge_status.txt"
   },
   "deals": {
-    "yunchui_prefixes": ["HK.MHI", "US.MES", "US.EX", "US.EW"],
+    "yunchui_prefixes": [
+      "HK.MHI",
+      "US.MES",
+      "US.EX",
+      "US.EW"
+    ],
     "day_run_min_fetched_hkt": "16:35",
     "night_run_min_fetched_hkt": "03:05",
     "status_object": "ops/deals_status.json"
   },
-  "state_object": "ops/notify_state.json"
+  "state_object": "ops/notify_state.json",
+  "intent_branches": {
+    "_readme": "ops_blotter.py 除預設分支外，再讀以下各陣分支嘅 ops/intents.csv（各陣冇權寫預設分支，喺自己分支加行即可；格式 ops/INTENTS_README.md）",
+    "branches": [
+      "claude/dazzling-curie-f3xzb8",
+      "claude/epic-ramanujan-kp1l1v",
+      "claude/gifted-carson-v2tvhw",
+      "claude/dizai-expectations-r172",
+      "claude/beautiful-hypatia-8qrgjj",
+      "claude/stock-research-k9nzau",
+      "claude/tradingview-pine-script-cor9fw"
+    ]
+  }
 }

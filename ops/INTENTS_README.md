@@ -1,6 +1,6 @@
 # 落單意圖價登記（`ops/intents.csv`，FUND_SOP 二之三 缺口 E）
 
-各陣（或代使用者落單嘅工作階段）**出落單指令時**加一行，`scripts/ops_blotter.py` 每次成交通報（17:10／03:40 HKT）後
+各陣（或代使用者落單嘅工作階段）**出落單指令時**加一行——**喺你自己嘅分支**嘅 `ops/intents.csv`（冇就照本檔表頭新建；分支要列喺 `ops/notify_config.json` 嘅 `intent_branches`，新陣叫 SOP 顧問加），唔使寫預設分支；`scripts/ops_blotter.py` 每次成交通報（17:10／03:40 HKT）後
 將富途成交配對到呢度，計滑價點數（正數＝成交差過意圖），寫入私人 GCS `ops/blotter/<月>.csv`，月報列按陣平均滑價。
 
 | 欄 | 例 | 說明 |
