@@ -1,0 +1,120 @@
+"""[R193] 保證金急升預警（auto_risk.mm_jump）＋每日壓力情景（risk_report M['stress'] → Cloud Run ops/risk/stress_latest.json）。"""
+import json, os, sys, types
+
+os.environ.setdefault("WEBHOOK_SECRET_TOKEN", "tok")
+sys.path.insert(0, "/home/user/20260918")
+
+import functions_framework                      # noqa: E402  真的載入，別被假模組蓋掉
+import google, google.cloud                      # noqa: E402
+FAKE = {}
+class _Blob:
+    def __init__(self, name): self.name = name; self.generation = FAKE.get(name, (None, 0))[1]
+    def exists(self): return self.name in FAKE
+    def download_as_text(self, *a, **k):
+        if self.name not in FAKE: raise KeyError(self.name)
+        return FAKE[self.name][0]
+    def download_as_bytes(self, *a, **k): return self.download_as_text().encode("utf-8")
+    def upload_from_string(self, data, *a, **k):
+        gen = FAKE.get(self.name, (None, 0))[1] + 1
+        FAKE[self.name] = (data, gen); self.generation = gen
+    def reload(self): self.generation = FAKE.get(self.name, (None, 0))[1]
+class _Bucket:
+    def blob(self, name): return _Blob(name)
+    def get_blob(self, name): return _Blob(name) if name in FAKE else None
+class _Client:
+    def __init__(self, *a, **k): pass
+    def bucket(self, name): return _Bucket()
+storage_mod = types.ModuleType("google.cloud.storage"); storage_mod.Client = _Client
+sys.modules["google.cloud.storage"] = storage_mod; google.cloud.storage = storage_mod
+genai = types.ModuleType("google.genai"); genai.Client = lambda *a, **k: None
+genai.types = types.SimpleNamespace(); sys.modules["google.genai"] = genai
+exc_mod = types.ModuleType("google.api_core.exceptions")
+class _PC(Exception): pass
+exc_mod.PreconditionFailed = _PC; exc_mod.NotFound = KeyError
+api_core = types.ModuleType("google.api_core"); api_core.exceptions = exc_mod
+sys.modules["google.api_core"] = api_core; sys.modules["google.api_core.exceptions"] = exc_mod
+
+import main                                      # noqa: E402
+from datetime import date, datetime, timedelta   # noqa: E402
+
+OK = FAIL = 0
+def check(name, cond, extra=""):
+    global OK, FAIL
+    if cond: OK += 1; print(f"  ✅ {name}")
+    else: FAIL += 1; print(f"  ❌ {name} {extra}")
+
+
+import tempfile                                  # noqa: E402
+from pathlib import Path                         # noqa: E402
+sys.path.insert(0, "/home/user/20260918/gcp_ib")
+sys.path.insert(0, "/home/user/20260918/tradingview")
+import auto_risk                                 # noqa: E402
+import risk_report                               # noqa: E402
+
+print("\n=== risk_report 風控階梯分級（RISK_LADDER 日盤／夜盤 ×1.5）===")
+L = risk_report.ladder_level
+check("日盤 40k → A", L(40_000) == "A")
+check("日盤 30k → B", L(30_000) == "B")
+check("日盤 20k → C", L(20_000) == "C")
+check("日盤 10k → D", L(10_000) == "D")
+check("夜盤 50k → B（56.25k 線）", L(50_000, True) == "B")
+N = lambda h, m: risk_report.ladder_night(datetime(2026, 10, 15, h, m, tzinfo=risk_report.HKT_TZ))
+check("17:14 日盤", not N(17, 14))
+check("17:15 夜盤", N(17, 15))
+check("02:59 夜盤", N(2, 59))
+check("03:00 日盤", not N(3, 0))
+check("同 daily_books LADDER 一致", risk_report.LADDER_CUSHION == {"B": 37_500, "C": 25_000, "D": 15_000})
+
+print("\n=== risk_report.build 出 M['stress']（只得標普倉）===")
+tmp = Path(tempfile.mkdtemp())
+book = json.loads(Path("/home/user/20260918/tradingview/data_external/risk_book.json").read_text(encoding="utf-8"))
+(tmp / "risk_book.json").write_text(json.dumps(book), encoding="utf-8")
+q = {"positions": [
+        {"code": "US.EW2610P7750x0", "qty": -1, "bid": 88.0, "ask": 89.0, "last": 88.5},
+        {"code": "US.ES2612", "qty": -1, "bid": 7746.5, "ask": 7746.75, "last": 7746.5},
+        {"code": "US.MES2612", "qty": -4, "bid": 7746.5, "ask": 7747.0, "last": 7747.0}],
+     "accounts": [{"currency": "HKD", "total_assets": 520_000, "maintenance_margin": 310_000}]}
+(tmp / "q.json").write_text(json.dumps(q), encoding="utf-8")
+txt, M = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q.json"), 7_800_000)
+st = M.get("stress") or {}
+sc = {r["name"]: r for r in st.get("scenarios", [])}
+check("有 8 個情景", len(sc) == 8, list(sc))
+check("冇恒指倉：HSI −5% 緩衝不變", sc.get("HSI −5%", {}).get("cushion_after") == round(M["cushion"]), (sc.get("HSI −5%"), M["cushion"]))
+check("偏淡：ES +5% 緩衝低過 ES −5%", sc["ES +5%"]["cushion_after"] < sc["ES −5%"]["cushion_after"])
+check("每個情景有 A–D 級", all(r["ladder"] in "ABCD" for r in sc.values()))
+check("lines 跟日夜盤", st["lines"]["B"] in (37_500, 56_250))
+
+print("\n=== auto_risk.mm_jump 維持保證金單日急升 ===")
+sf = tmp / "margin_base.json"
+T = lambda d, h: datetime(2026, 10, d, h, 0, tzinfo=auto_risk.HKT)
+check("第一個讀數做基準、唔報", auto_risk.mm_jump(T(14, 9), {"maintenance_margin": 200_000}, sf, 0.3) is None)
+check("升 20% 唔報", auto_risk.mm_jump(T(14, 12), {"maintenance_margin": 240_000}, sf, 0.3) is None)
+msg = auto_risk.mm_jump(T(14, 15), {"maintenance_margin": 400_000, "cushion": 50_000}, sf, 0.3)
+check("翻倍 → 報 100%", msg and "100%" in msg, msg)
+check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
+check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
+check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
+check("SCRIPT_VERSION R193", auto_risk.SCRIPT_VERSION == "R193")
+
+print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
+client = main.app.test_client()
+body = {"action": "futu_risk", "token": "tok", "run_hkt": "2026-10-15 16:30", "script_version": "R193",
+        "metrics": {"equity": 7_800_000, "cushion": 210_000, "delta": {}, "stop_use": {},
+                    "stress": {"night": False, "lines": {"B": 37500, "C": 25000, "D": 15000},
+                               "scenarios": [{"name": "ES +5%", "cushion_after": 60_000, "ladder": "A", "junk": 1}]}},
+        "alerts": {"mm_jump": "⚠ 富途維持保證金今日升 100%"}, "positions": [], "report": "x"}
+res = client.post("/", data=json.dumps(body), content_type="application/json")
+check("futu_risk 回 stored", res.status_code == 200 and res.get_json().get("status") == "stored", res.get_json())
+check("stress_latest.json 已寫", main.FUTU_STRESS_FILE in FAKE)
+sd = json.loads(FAKE[main.FUTU_STRESS_FILE][0])
+check("stress 檔有 asof／cushion／scenarios", sd["asof_hkt"] == "2026-10-15 16:30" and sd["cushion"] == 210_000
+      and sd["scenarios"][0] == {"name": "ES +5%", "cushion_after": 60_000, "ladder": "A"}, sd)
+lat = json.loads(FAKE[main.FUTU_RISK_FILE][0])
+check("latest.json metrics 保留 stress", lat["metrics"].get("stress", {}).get("lines", {}).get("B") == 37500)
+check("mm_jump 歸總指揮", main.futu_alert_team("mm_jump") == "總指揮")
+FAKE.clear()
+client.post("/", data=json.dumps({**body, "metrics": {"equity": 1, "delta": {}, "stop_use": {}}}), content_type="application/json")
+check("冇 stress 就唔寫 stress 檔", main.FUTU_STRESS_FILE not in FAKE)
+
+print(f"\n通過 {OK} / 失敗 {FAIL}")
+sys.exit(1 if FAIL else 0)
