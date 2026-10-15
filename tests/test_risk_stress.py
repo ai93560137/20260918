@@ -84,6 +84,24 @@ check("偏淡：ES +5% 緩衝低過 ES −5%", sc["ES +5%"]["cushion_after"] < s
 check("每個情景有 A–D 級", all(r["ladder"] in "ABCD" for r in sc.values()))
 check("lines 跟日夜盤", st["lines"]["B"] in (37_500, 56_250))
 
+print("\n=== R196：富途恒指期權（book 冇）自動入模型 ===")
+q2 = dict(q, positions=q["positions"] + [
+    {"code": "HK.HSI261023P23550000", "qty": -1, "bid": 66.0, "ask": 68.0, "last": 67.0, "open_price": 67.0},
+    {"code": "HK.HSI261023C24700000", "qty": -1, "bid": 43.0, "ask": 45.0, "last": 44.0, "open_price": 44.0}])
+(tmp / "q2.json").write_text(json.dumps(q2), encoding="utf-8")
+txt2, M2 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q2.json"), 7_800_000)
+check("報告有兩條自動 HSI 腿", "HSI 10/23 P23550（富途實際 -1）" in txt2 and "HSI 10/23 C24700（富途實際 -1）" in txt2)
+check("用賣價做平倉價（68／45）", "| 68.00 |" in txt2 and "| 45.00 |" in txt2)
+check("恒指 Δ 有出（delta_parts.hsi_all）", isinstance((M2.get("delta_parts") or {}).get("hsi_all"), float), M2.get("delta_parts"))
+sc2 = {r["name"]: r for r in M2["stress"]["scenarios"]}
+check("HSI ±5% 情景而家會郁緩衝", sc2["HSI −5%"]["cushion_after"] < round(M2["cushion"]) and sc2["HSI +5%"]["cushion_after"] < round(M2["cushion"]),
+      (sc2["HSI −5%"], sc2["HSI +5%"], M2["cushion"]))
+check("週權說明有印", "風揚陣「方向一」" in txt2)
+q3 = dict(q, positions=q["positions"] + [{"code": "HK.HSI261023P23550000", "qty": 0, "last": 67.0}])
+(tmp / "q3.json").write_text(json.dumps(q3), encoding="utf-8")
+txt3, _ = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q3.json"), 7_800_000)
+check("手數 0 唔加腿", "富途實際" not in txt3.split("HSI 10/23")[0] or "HSI 10/23 P23550（富途實際" not in txt3)
+
 print("\n=== auto_risk.mm_jump 維持保證金單日急升 ===")
 sf = tmp / "margin_base.json"
 T = lambda d, h: datetime(2026, 10, d, h, 0, tzinfo=auto_risk.HKT)
@@ -94,7 +112,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R193", auto_risk.SCRIPT_VERSION == "R193")
+check("SCRIPT_VERSION R196", auto_risk.SCRIPT_VERSION == "R196")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
