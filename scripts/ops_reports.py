@@ -361,6 +361,18 @@ def weekly(now: datetime, public: bool = False) -> str:
 
 
 # ---------------------------------------------------------------- 月報
+def blotter_line(csv_text: str | None) -> str:
+    """GCS ops/blotter/<月>.csv（scripts/ops_blotter.py）→ 按陣成交筆數同平均滑價點數（缺口 E）。"""
+    if not csv_text:
+        return "落單紀錄：本月冇 blotter（ops/blotter/<月>.csv）"
+    from ops_blotter import summarize
+    teams = summarize(list(csv.DictReader(io.StringIO(csv_text))), "")["teams"]
+    parts = [f"{k} {v['fills']} 筆" + (f"（{v['with_intent']} 筆有意圖價，平均滑價 {v['avg_slip_pts']:+g} 點）"
+                                       if v["with_intent"] else "（冇意圖價）")
+             for k, v in sorted(teams.items(), key=lambda kv: -kv[1]["fills"])]
+    return "落單紀錄：" + "；".join(parts)
+
+
 def monthly(now: datetime, public: bool = False) -> tuple[str, str]:
     first_this = now.date().replace(day=1)
     end = first_this - timedelta(days=1)
@@ -380,6 +392,8 @@ def monthly(now: datetime, public: bool = False) -> tuple[str, str]:
         if re.search(r"## 人手交易額度.*?(超額|超標|⚠)", md, re.S):
             over += 1
     risk.append(f"人手額度超標日數：{over}")
+    if not public:
+        risk.append(blotter_line(gcs_text(f"ops/blotter/{tag}.csv")))
     parts.append("\n".join(risk))
 
     gov = ["【三、研究與流水線】"]

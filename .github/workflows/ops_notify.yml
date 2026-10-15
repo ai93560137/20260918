@@ -63,6 +63,11 @@ jobs:
           if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
           python3 scripts/ops_notify.py $ARGS
 
+      - name: Blotter（落單紀錄＋意圖價滑價 → 私人 GCS ops/blotter/，FUND_SOP 二之三 E）
+        if: ${{ (inputs.dry_run || 'false') != 'true' }}
+        continue-on-error: true
+        run: python3 scripts/ops_blotter.py
+
       - name: Commit repo copies（雲垂工作階段沒有 GCP 金鑰，用 git fetch 讀）
         if: ${{ (inputs.dry_run || 'false') != 'true' }}
         run: |
