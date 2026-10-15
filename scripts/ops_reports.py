@@ -219,6 +219,60 @@ def chunks(text: str, limit: int = 3900) -> list[str]:
 
 
 # ---------------------------------------------------------------- 週報
+def gcs_json(obj: str) -> dict | None:
+    try:
+        v = gcs_cat(obj)
+    except Exception:  # noqa: BLE001
+        return None
+    return v if isinstance(v, dict) and "_text" not in v else None
+
+
+def incident_lines(md: str | None, start: date, end: date) -> list[str]:
+    """ops/INCIDENTS.md：本週新增嘅列，加埋所有未結案嘅列（缺口 D）。"""
+    if not md:
+        return ["事故登記：⚠ 讀不到 ops/INCIDENTS.md"]
+    new, open_ = [], []
+    for ln in md.splitlines():
+        c = [x.strip() for x in ln.strip().strip("|").split("|")]
+        if len(c) < 8 or not re.match(r"\d{4}-\d{2}-\d{2}$", c[0]):
+            continue
+        d = date.fromisoformat(c[0])
+        if start <= d <= end:
+            new.append(f"{d:%m-%d} {c[1][:40]}（{c[7]}）")
+        elif c[7] != "已結":
+            open_.append(f"{d:%m-%d} {c[1][:40]}（{c[6]}）")
+    out = [f"事故：本週新增 {len(new)} 宗" + ("：" + "；".join(new) if new else "")]
+    if open_:
+        out.append("事故未結（之前登記）：" + "；".join(open_))
+    return out
+
+
+USAGE_CONTEXT_ROTATE = 400_000      # 上下文超過就建議換新工作階段（FUND_SOP 二之三 缺口 A）
+
+
+def usage_lines(now_snap: dict | None, old_snap: dict | None) -> list[str]:
+    """GCS ops/claude_usage/latest.json（SOP 顧問每週日 08:45 用 get_session 寫）：本週各工作階段 Claude 用量（API 等值美元）。"""
+    if not now_snap:
+        return ["Claude 用量：⚠ 讀不到 ops/claude_usage/latest.json"]
+    old = {s["id"]: s for s in (old_snap or {}).get("sessions", [])}
+    rows = []
+    for s in now_snap.get("sessions", []):
+        prev = old.get(s["id"], {}).get("cost_usd")
+        week = s["cost_usd"] - prev if prev is not None and s["cost_usd"] >= prev else s["cost_usd"]
+        rows.append((week, s, prev is None))
+    rows.sort(key=lambda r: -r[0])
+    total = sum(r[0] for r in rows)
+    basis = "本週" if old_snap else "累計（未有上週快照）"
+    out = [f"Claude 用量（{basis}，API 等值）：合計 ≈ US${total:,.0f}；7 日額度 {now_snap.get('rate_limit', '?')}"
+           + (f"，{now_snap['resets_hkt']} 重置" if now_snap.get("resets_hkt") else "")]
+    out.append("　" + "、".join(f"{s['name']} {w:,.0f}" for w, s, _ in rows[:6]))
+    big = [f"{s['name']}（{s['context_tokens'] / 10000:.0f} 萬）" for _, s, _ in rows
+           if s.get("context_tokens", 0) > USAGE_CONTEXT_ROTATE]
+    if big:
+        out.append("　上下文過長、建議換新工作階段：" + "、".join(big))
+    return out
+
+
 def weekly(now: datetime, public: bool = False) -> str:
     today = now.date()
     mon = today - timedelta(days=today.weekday())        # 本週一（週日跑時 = 6 日前）
@@ -269,6 +323,10 @@ def weekly(now: datetime, public: bool = False) -> str:
                 name = ln[2:].split("：")[0].strip()
                 reds[name] = reds.get(name, 0) + 1
     todo.append(f"心跳紅燈（{hb_days} 日有紀錄）：" + ("、".join(f"{k}×{v}" for k, v in sorted(reds.items(), key=lambda kv: -kv[1])) or "無"))
+    todo += incident_lines(read_repo("ops/INCIDENTS.md"), mon, today)
+    if not public:
+        todo += usage_lines(gcs_json("ops/claude_usage/latest.json"),
+                            gcs_json(f"ops/claude_usage/{today - timedelta(days=7):%Y-%m-%d}.json"))
     parts.append("\n".join(todo))
 
     sug = ["【四、建議改 IDEAS 狀態】"]
