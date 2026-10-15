@@ -108,5 +108,40 @@ class ChunkTests(unittest.TestCase):
         self.assertEqual(rp.chunks("短"), ["短"])
 
 
+class IncidentUsageTest(unittest.TestCase):
+    MD = """| 日期 | 事故 | 影響 | 根因 | 修正 | 預防 | 負責 | 狀態 |
+|---|---|---|---|---|---|---|---|
+| 2026-10-06 | 舊事已結 | a | b | c | d | 鳥翔 | 已結 |
+| 2026-10-08 | 舊事未結 | a | b | c | d | 總指揮 | 未結 |
+| 2026-10-14 | 本週新事 | a | b | c | d | 雲垂 | 未結 |
+"""
+
+    def test_incidents_new_and_open(self):
+        out = rp.incident_lines(self.MD, date(2026, 10, 12), date(2026, 10, 18))
+        self.assertIn("本週新增 1 宗", out[0])
+        self.assertIn("本週新事", out[0])
+        self.assertEqual(len(out), 2)
+        self.assertIn("舊事未結（總指揮）", out[1])
+        self.assertNotIn("舊事已結", "".join(out))
+
+    def test_incidents_missing_file(self):
+        self.assertIn("讀不到", rp.incident_lines(None, date(2026, 10, 12), date(2026, 10, 18))[0])
+
+    def test_usage_week_delta_and_rotate_flag(self):
+        now = {"rate_limit": "allowed_warning", "resets_hkt": "10-23 20:00", "sessions": [
+            {"id": "a", "name": "總指揮", "cost_usd": 150.0, "context_tokens": 200_000},
+            {"id": "b", "name": "風揚", "cost_usd": 90.0, "context_tokens": 640_000},
+            {"id": "c", "name": "新陣", "cost_usd": 5.0, "context_tokens": 10_000}]}
+        old = {"sessions": [{"id": "a", "cost_usd": 100.0}, {"id": "b", "cost_usd": 80.0}]}
+        out = rp.usage_lines(now, old)
+        self.assertIn("本週", out[0])
+        self.assertIn("US$65", out[0])            # 50 + 10 + 5
+        self.assertTrue(out[1].strip().startswith("總指揮 50"))
+        self.assertIn("風揚（64 萬）", out[2])
+
+    def test_usage_no_snapshot(self):
+        self.assertIn("讀不到", rp.usage_lines(None, None)[0])
+
+
 if __name__ == "__main__":
     unittest.main()

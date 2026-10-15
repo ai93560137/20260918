@@ -1,0 +1,67 @@
+name: 雲垂 fetch-quotes 定時觸發（取代兩個 Claude Routine）
+
+# 使用者 2026-10-15 決定：雲垂陣兩個「只係觸發 fetch-quotes.yml」嘅 Claude Routine 改由 Actions 做，慳 Claude 用量。
+#   08:40 UTC（16:40 HKT）港股收市後：令 vhsi／hsi／n225 日線存「正式收盤」數；跑完檢查 asia_daily_status.json
+#     hsi_daily.csv、vhsi_daily.csv 嘅 last_row 係咪 final，唔係就 job 失敗（流水線心跳會報 🔴）。
+#   21:52 UTC（05:52 HKT）美股收盤定稿：等金絲雀 06:30 讀到 VIX／VIX9D／VIX3M／VVIX／MOVE 定稿日線。
+# 兩次都用 digest=false（只發警報，唔發日報）。fetch-quotes.yml 喺雲垂分支，排程 workflow 只喺預設分支生效，所以由呢度 dispatch。
+on:
+  schedule:
+    - cron: '40 8 * * 1-5'     # 16:40 HKT 港股收市後
+    - cron: '52 21 * * 1-5'    # 05:52 HKT 美股收盤定稿
+  workflow_dispatch:
+
+permissions:
+  actions: write     # dispatch 另一個 workflow
+  contents: read
+
+concurrency:
+  group: yunchui-quote-kicks
+  cancel-in-progress: false
+
+jobs:
+  kick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      REF: claude/dazzling-curie-f3xzb8
+    steps:
+      - name: Dispatch fetch-quotes.yml（digest=false）
+        run: |
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "SINCE=$since" >> "$GITHUB_ENV"
+          gh api -X POST "repos/$REPO/actions/workflows/fetch-quotes.yml/dispatches" \
+            -f ref="$REF" -f 'inputs[digest]=false'
+          echo "已觸發 fetch-quotes.yml（$REF）"
+
+      - name: 等 fetch-quotes 跑完
+        run: |
+          for i in $(seq 1 50); do
+            sleep 15
+            run=$(gh api "repos/$REPO/actions/workflows/fetch-quotes.yml/runs?event=workflow_dispatch&created=>=$SINCE&per_page=1" \
+                  --jq '.workflow_runs[0] | "\(.status) \(.conclusion) \(.id)"' || true)
+            echo "$run"
+            case "$run" in completed*) break;; esac
+          done
+          case "$run" in
+            "completed success"*) echo "fetch-quotes 成功";;
+            *) echo "::error::fetch-quotes 未成功：$run"; exit 1;;
+          esac
+
+      - name: 港股收市後：檢查 hsi／vhsi 日線係 final
+        if: github.event.schedule == '40 8 * * 1-5'
+        run: |
+          gh api "repos/$REPO/contents/tradingview/data_external/asia_daily_status.json?ref=$REF" \
+            -H 'Accept: application/vnd.github.raw' > status.json
+          python3 - <<'EOF'
+          import json, sys
+          s = json.load(open("status.json"))
+          bad = [f"{k}={s.get(k, {}).get('last_row')}（{s.get(k, {}).get('last_date')}）"
+                 for k in ("hsi_daily.csv", "vhsi_daily.csv") if s.get(k, {}).get("last_row") != "final"]
+          if bad:
+              print("::error::日線仲未係正式收盤：" + "、".join(bad))
+              sys.exit(1)
+          print("hsi／vhsi 日線已係 final")
+          EOF
