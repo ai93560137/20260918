@@ -1,4 +1,4 @@
-# 事件日曆：本週與下週（更新 2026-10-15 07:14 HKT）
+# 事件日曆：本週與下週（更新 2026-10-16 07:11 HKT）
 
 > 由 `scripts/event_calendar.py` 每日產生；完整表 `calendar/events.csv`（過去 7 天到未來 35 天）。
 > 影響哪個陣、事件週定義在 `calendar/rules.json`（風揚陣擁有）。時間為香港時間；「04:00+1」= 翌日 04:00。
@@ -19,7 +19,6 @@
 | 10-15（四） | 20:30 | USD | 數據 | Core Retail Sales m/m | High | 雲垂 MES、人手 EW、金絲雀 |
 | 10-15（四） | 20:30 | USD | 數據 | PPI m/m | High | 雲垂 MES、人手 EW、金絲雀 |
 | 10-15（四） | 20:30 | USD | 數據 | Retail Sales m/m | High | 雲垂 MES、人手 EW、金絲雀 |
-| 10-16（五） |  | 持倉 | 持倉到期 | 🌬️ 風揚陣・方向一：沽 HSI 週期權 10/16：Put 23,750 @46 ＋ Call 24,900 @36 | High | 見事件 |
 | 10-16（五） | 04:00+1 | US | US 期權到期 | 美股月度期權到期（第三個週五） | Medium | 雲垂 MES、人手 EW |
 | 10-16（五） | 10:00 | GBP | 數據 | BOE Gov Bailey Speaks | High |  |
 | 10-16（五） | 11:30 | USD | 數據 | Fed Chairman Warsh Speaks | High | 雲垂 MES、人手 EW、金絲雀 |
