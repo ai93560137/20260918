@@ -1,7 +1,7 @@
 {
- "date": "2026-10-15",
- "run_hkt": "2026-10-15 17:39",
- "run_kind": "day",
+ "date": "2026-10-16",
+ "run_hkt": "2026-10-16 04:04",
+ "run_kind": "night",
  "closed": [
   {
    "code": "US.MES2612",
@@ -134,7 +134,7 @@
    "realized_pts": 12.25
   }
  ],
- "n_yunchui_deals": 5,
- "n_other_deals": 3,
+ "n_yunchui_deals": 4,
+ "n_other_deals": 4,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
