@@ -40,6 +40,11 @@ Cloud Run R149 原本：緩衝 < 6 萬 ⚠、< 2 萬 ⛔、回到 8 萬解除（
 **2026-10-14 使用者「調低 75%」（全部緩衝線 ×0.25）**：Cloud Run 改 `FUTU_MARGIN_WARN=37500`（Ⓑ）、`FUTU_MARGIN_CRIT=25000`（Ⓒ）、
 `FUTU_MARGIN_CLEAR=45000`、`FUTU_MARGIN_FLATTEN=15000`（Ⓓ）；本機 `auto_risk` `ZHUGE_ALERT_CUSHION=15000`。離硬止損、止損用量、夜盤 ×1.5 不變。
 
+### 4b. 預警（R193，FUND_SOP 二之三 B、C；使用者 2026-10-15「A–E 做」）
+
+- **維持保證金單日急升**：`auto_risk` 以 06:00 HKT 為交易日界，當日第一個讀數做基準，升 ≥ 30%（`ZHUGE_ALERT_MM_JUMP`）出警報 `mm_jump` → Telegram（歸總指揮）；新一日自動解除。只預警，唔係觸發線。
+- **每日壓力情景**：`risk_report` 每次計 HSI ±5%、ES ±3%／±5%、IV +10 vol（≈VIX +10）、ES −5% 且 IV +10 vol 之後嘅富途緩衝同落入邊級（日／夜盤線），Cloud Run 存私人 GCS `ops/risk/stress_latest.json`（晨會簡報讀；金額唔入 repo）。未計保證金本身隨市況上升，實際更緊。
+
 ## 5. 補倉／提款（使用者 2026-10-13：本金隨時可入金、隨時可提款）
 
 本金金額只記喺私人（GCS／使用者本機），唔寫入公開 repo。補倉＝向富途戶口入金；**只係資訊，入金同提款由使用者人手做**。

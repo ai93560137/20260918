@@ -2326,6 +2326,7 @@ def handle_futu_data(payload):
 # =============================================================================
 FUTU_RISK_FILE = "futu/risk/latest.json"
 FUTU_RISK_HISTORY_DIR = "futu/risk/history"
+FUTU_STRESS_FILE = "ops/risk/stress_latest.json"                     # [R193] 壓力情景（私人，晨會簡報讀）
 FUTU_RISK_MAX_REPORT = 60000
 FUTU_RISK_METRIC_KEYS = ("quotes_fetched", "pnl", "equity", "hard_stop", "gap", "futu_equity", "cushion",
                          "maintenance_margin")
@@ -2353,6 +2354,14 @@ def _futu_risk_clean_metrics(raw):
     src = raw.get("delta") if isinstance(raw.get("delta"), dict) else {}
     out["delta"] = {_futu_text(k, 60): [to_float(x) for x in (v if isinstance(v, (list, tuple)) else [v])[:2]]
                     for k, v in list(src.items())[:10]}
+    src = raw.get("stress") if isinstance(raw.get("stress"), dict) else None    # [R193] 每日壓力情景（FUND_SOP 二之三 C）
+    if src is not None:
+        lines = src.get("lines") if isinstance(src.get("lines"), dict) else {}
+        out["stress"] = {"night": bool(src.get("night")),
+                         "lines": {_futu_text(k, 4): to_float(v) for k, v in list(lines.items())[:4]},
+                         "scenarios": [{"name": _futu_text(r.get("name"), 40), "cushion_after": to_float(r.get("cushion_after")),
+                                        "ladder": _futu_text(r.get("ladder"), 2)}
+                                       for r in (src.get("scenarios") or [])[:12] if isinstance(r, dict)]}
     return out
 
 
@@ -2437,6 +2446,12 @@ def handle_futu_risk(payload):
         log_event(f"⚠️ [富途風險寫入失敗] {exc}", severity="ERROR", component="futu_risk")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
     warnings = []
+    if metrics.get("stress"):                                         # [R193] 另存一份畀晨會簡報；失敗唔影響主流程
+        try:
+            gcs_write_text(FUTU_STRESS_FILE, json.dumps({"asof_hkt": run_hkt, "cushion": metrics.get("cushion"),
+                                                         **metrics["stress"]}, ensure_ascii=False))
+        except StorageError:
+            warnings.append("stress_write_failed")
     day = run_hkt[:10] if ARCHIVE_DATE_RE.match(run_hkt[:10]) else fmt_utc(fmt="%Y-%m-%d")
     row = {"run_hkt": run_hkt or doc["received_utc"], **{k: metrics.get(k) for k in FUTU_RISK_METRIC_KEYS},
            "delta": metrics["delta"], "stop_use": metrics["stop_use"], "alerts": sorted(alerts)}
