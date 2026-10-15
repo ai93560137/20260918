@@ -250,6 +250,33 @@ ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config
 | 遠端桌面畫面上的文字不能複製 | 從對話複製指令貼進去；要搬檔案用 SSH 視窗上方的「上傳檔案／下載檔案」（`.ssh` 資料夾內的檔案要先複製到家目錄才能下載）。**永遠不要搬私鑰** |
 | 雲端環境連不到 `*.run.app` | 環境設定 → Network access → **Custom**，Allowed domains 加 `*.run.app`，並勾選「Also include default list of common package managers」 |
 
+## VM：futu-data（富途數據，2026-10-15 建立）
+
+方案一：富途 OpenD（Linux 命令列版）、`auto_risk`、`push_to_gcp`、`iv_push` 由使用者部機搬去 Google VM `futu-data`
+（`asia-east2-a`、`e2-small`、Debian 12），用 systemd 開機自動起、死咗自動重開。部機只留 MT5（EA）同 `mt5_push`。
+詳細步驟見 `tradingview/RUNBOOK_FUTU_VM.md`。
+
+| 位置 | 跑乜 | 點樣自動 |
+|---|---|---|
+| VM `futu-data` | OpenD（tmux session `opend`）、`zhuge-auto-risk`、`zhuge-futu-push`、`zhuge-iv-push` | systemd；OpenD 由 `gcp_ib/vm_futu/opend_tmux.sh` 自動答登入提示 |
+| VM 自動更新 | `zhuge-update.timer` 每 10 分鐘跟 `ops/user-machine`，重套 service／timer、重開推送服務（OpenD 唔重開） | 紀錄 `~/zhuge/update.log` |
+| 使用者部機（Windows） | MT5（`ZHUGE_MT5_EXE`）、`mt5_push`（`ZHUGE_DAEMONS=mt5_push`）、Chrome | 啟動資料夾 `ZhugeStartAll.cmd` → `gcp_ib\start_all.ps1`、`Chrome.lnk` |
+
+- **只讀**：唔落單、唔 unlock_trade；交易密碼唔放上 VM。VM **冇綁 Cloud API 權限**（推數據用 `~/zhuge/env` 嘅 webhook 權杖）。
+- 權杖檔（權限 600，使用者喺 VM 用 `read -rs` 自己填，唔入對話／repo）：`~/zhuge/env`、`~/zhuge/opend_login`（牛牛號＋**登入**密碼）、`~/opend/FutuOpenD.xml`。
+- Claude 唔 SSH 入 VM；要改 VM 上嘅程式：開 PR → 使用者合併 → 使用者講「更新部機」→ Claude 將 `ops/user-machine` 快進到預設分支（唔 force-push）→ VM 10 分鐘內自動套用。
+- 驗證：`python3 scripts/gcp_agent.py cat --object futu/risk/latest.json` 睇 `run_hkt`（auto_risk 每 15 分鐘）。
+
+### futu-data 已知坑（2026-10-15 實機）
+| 症狀 | 處理 |
+|---|---|
+| OpenD 卡喺 `ProgramStatusType_Loging` | OpenD 10.11 唔讀 xml／命令列嘅帳號密碼（MD5 亦唔收），要喺主控台答；由 `opend_tmux.sh` 用 `~/zhuge/opend_login` 自動答 |
+| `登录次数过多,请等待 50 分钟`（exit 31） | 富途登入次數限制；腳本會等 60 分鐘先再試，**期間唔好人手重開**，可先 `sudo systemctl stop zhuge-update.timer zhuge-auto-risk zhuge-futu-push zhuge-iv-push zhuge-opend` |
+| 有 `~/zhuge/opend_login.failed` | 上次自動登入密碼錯，已停止自動試；改好 `opend_login` 後刪呢個檔再 `sudo systemctl restart zhuge-opend` |
+| 新機第一次登入要短訊 | `tmux attach -t opend` → `req_phone_verify_code` → `input_phone_verify_code -code=碼`（碼唔好貼入對話）→ Ctrl+B 放手再撳 d 離開；喺 tmux 唔好 Ctrl+C |
+| 部機同 VM 都開 OpenD | 同一戶口會搶行情權限；部機 `ZHUGE_OPEND_EXE` 要清空（PowerShell：`[Environment]::SetEnvironmentVariable("ZHUGE_OPEND_EXE",$null,"User")`，`setx X ""` 會報錯） |
+| 部機重開後 MT5 有開但 EA 冇掛 | MT5 選項 → EA 交易：取消剔「透過外部 Python API 停用演算法交易」等停用選項；EA 掛好後用「檔案 → 退出」正常閂一次 MT5 儲存設定檔 |
+
 ## 收回權限
 
 ```bash

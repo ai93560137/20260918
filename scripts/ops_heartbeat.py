@@ -5,7 +5,10 @@
 1. **排程 workflow**：讀預設分支每個 .github/workflows/*.yml 的 cron，算過去 24 小時「應該觸發幾次」，
    跟 GitHub API 的 schedule run 比對：應跑 ≥ 1 但 0 次 → 🔴「沒跑」；有失敗 → 🔴「失敗 n/m」。
    GitHub 會延遲或丟掉高頻排程，所以每 15 分鐘那種只在「一次都沒有」或「失敗」時才紅。
-2. **數據新鮮度**：GCS（富途快照、成交檔、MT5 心跳、通報狀態、晨會簡報）、repo（金絲雀、對帳表、偏離報告）、
+2. **富途數據 VM `futu-data`**（2026-10-15 起富途數據由它推）：Compute Engine API 讀 VM 狀態（不是 RUNNING → 🔴），
+   再看 VM 上各服務的輸出：`auto_risk`（futu/risk/latest.json，下面新鮮度）、`push_to_gcp`（futu/snapshots/US.QQQ.json）、
+   `iv_push`（futu/snapshots/HK.HSI_IV.json）的 GCS 更新時間。OpenD 死咗三個都會停，所以三個都舊即係 OpenD 或 VM 問題。
+3. **數據新鮮度**：GCS（富途快照、成交檔、MT5 心跳、通報狀態、晨會簡報）、repo（金絲雀、對帳表、偏離報告）、
    其他陣分支（蛇蟠通道 levels.json、三地日線、新高名單、雲垂掃描）。每項有「最舊可接受幾小時」，
    週末與週一放寬（市場沒開就不會有新數據）。
 
@@ -32,6 +35,9 @@ from ops_notify import HKT, gcs_cat, gcs_put, parse_hkt, send_telegram  # noqa: 
 ROOT = Path(__file__).resolve().parent.parent
 UTC = timezone.utc
 WINDOW_H = 24
+GCP_PROJECT = os.environ.get("GCP_PROJECT", "sacred-alliance-453716-b7")
+GCS_BUCKET = os.environ.get("GCS_BUCKET", "zhuge-risk-manager-bucket")
+FUTU_VM = ("asia-east2-a", "futu-data")     # AGENTIC.md「VM：futu-data」
 
 
 # ---------------------------------------------------------------- cron
@@ -238,7 +244,7 @@ def freshness_checks(now: datetime) -> list[tuple[str, str, datetime | None, flo
 
     items = []
     risk = gcs_json("futu/risk/latest.json")
-    items.append(("富途持倉快照（本機 auto_risk）", "GCS futu/risk/latest.json run_hkt", parse_hkt((risk or {}).get("run_hkt")), 6))
+    items.append(("富途持倉快照（VM auto_risk，每 15 分鐘）", "GCS futu/risk/latest.json run_hkt", parse_hkt((risk or {}).get("run_hkt")), 6))
     mt5 = gcs_json("mt5_account_snapshot.txt")
     mt5_t = None
     if mt5 and mt5.get("received_utc"):
@@ -284,6 +290,64 @@ def freshness_checks(now: datetime) -> list[tuple[str, str, datetime | None, flo
     items.append(("雲垂每日掃描", f"{dc} tradingview/data_external/scan_report.md",
                   first_date(git_show(dc, "tradingview/data_external/scan_report.md")), 40))
     return items
+
+
+def _gcp_session():
+    import google.auth
+    from google.auth.transport.requests import AuthorizedSession
+    creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    return AuthorizedSession(creds)
+
+
+def _ts(text: str | None) -> datetime | None:
+    if not text:
+        return None
+    return datetime.fromisoformat(text.replace("Z", "+00:00")).astimezone(HKT)
+
+
+def judge_vm(inst: dict | None, err: str | None) -> tuple[str, str, str]:
+    name = f"富途數據 VM {FUTU_VM[1]}"
+    if inst is None:
+        return ("🔴", name, f"讀不到 VM 狀態（{err}）")
+    status = inst.get("status", "?")
+    started = _ts(inst.get("lastStartTimestamp"))
+    since = f"，上次開機 {started:%m-%d %H:%M}" if started else ""
+    if status != "RUNNING":
+        return ("🔴", name, f"狀態 {status}{since}（Compute Engine）")
+    return ("🟢", name, f"RUNNING{since}")
+
+
+def vm_checks(now: datetime, session=None) -> tuple[list[tuple[str, str, str]], list[tuple[str, str, datetime | None, float]]]:
+    """回傳 (VM 狀態列, VM 服務輸出的新鮮度項)。讀唔到就當 🔴，唔會令成個心跳失敗。"""
+    zone, inst_name = FUTU_VM
+    inst, err = None, None
+    try:
+        session = session or _gcp_session()
+        r = session.get(f"https://compute.googleapis.com/compute/v1/projects/{GCP_PROJECT}/zones/{zone}/instances/{inst_name}",
+                        timeout=30)
+        if r.status_code == 200:
+            inst = r.json()
+        elif r.status_code == 403:
+            err = "HTTP 403：服務帳戶要 compute.instances.get（Compute 檢視者）"
+        else:
+            err = f"HTTP {r.status_code}"
+    except Exception as exc:  # noqa: BLE001
+        err = f"{type(exc).__name__}: {str(exc)[:120]}"
+    rows = [judge_vm(inst, err)]
+
+    def updated(obj: str) -> datetime | None:
+        try:
+            r = session.get(f"https://storage.googleapis.com/storage/v1/b/{GCS_BUCKET}/o/{obj.replace('/', '%2F')}",
+                            params={"fields": "updated"}, timeout=30)
+            return _ts(r.json().get("updated")) if r.status_code == 200 else None
+        except Exception:  # noqa: BLE001
+            return None
+
+    items = [("VM push_to_gcp（5 分 K＋期權，每 5 分鐘）", "GCS futu/snapshots/US.QQQ.json 更新時間",
+              updated("futu/snapshots/US.QQQ.json"), 6),
+             ("VM iv_push（恒指／ES／NQ IV，每 30 分鐘）", "GCS futu/snapshots/HK.HSI_IV.json 更新時間",
+              updated("futu/snapshots/HK.HSI_IV.json"), 6)]
+    return rows, items
 
 
 def _read(rel: str) -> str | None:
@@ -357,7 +421,8 @@ def main() -> int:
                                   gh_workflow_meta(), gh_first_on_branch, load_config().get("must_be_active"))
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
-    fresh_rows = judge_freshness(freshness_checks(now), now)
+    vm_rows, vm_items = vm_checks(now)
+    fresh_rows = vm_rows + judge_freshness(vm_items + freshness_checks(now), now)
     short, full = compose(now, wf_rows, fresh_rows, errors, load_config().get("retired"))
     print(full)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

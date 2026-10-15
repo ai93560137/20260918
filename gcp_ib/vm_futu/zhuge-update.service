@@ -1,0 +1,5 @@
+[Unit]
+Description=Zhuge auto-update from branch ops/user-machine
+[Service]
+Type=oneshot
+ExecStart=/bin/bash @HOME@/20260918/gcp_ib/vm_futu/update.sh @USER@ @HOME@

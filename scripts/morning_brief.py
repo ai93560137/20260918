@@ -3,7 +3,7 @@
 平日 08:30 HKT，GitHub Actions `morning_brief.yml` 跑。只讀、不重算；原料都由別人產出：
 
   順序（先風險、再持倉、再今日事件、再今日要做）
-  1. 風控：GCS futu/risk/latest.json（本機 auto_risk 每 15 分鐘，即時）＋ ops/books/ladder_state.json（總指揮 R173）
+  1. 風控：GCS futu/risk/latest.json（富途數據 VM futu-data 上嘅 auto_risk 每 15 分鐘，即時；10-15 前係本機）＋ ops/books/ladder_state.json（總指揮 R173）
      → 階梯等級、保證金緩衝、離硬止損、止損線用量（≥ 50% 才列）、警報、數據新鮮度
   2. 金絲雀：repo canary/tg_daily.txt 的「🚦 三軸」段（06:30 已出）
   3. 昨日損益：GCS ops/books/pnl_daily.csv 最後一列（按陣已實現／未實現）

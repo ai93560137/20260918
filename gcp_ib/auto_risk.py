@@ -96,7 +96,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R172"
+SCRIPT_VERSION = "R192"
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3
@@ -178,10 +178,29 @@ def push_gcp(t, M, cur, txt):
         return f"GCP ❌ {e.__class__.__name__}"
 
 
+def fetch_cme():
+    """[R184] 由 Cloud Run 攞 ib-data VM 推上去嘅 CME 延遲報價，寫 data_external/cme_quotes.json 俾 risk_report 用。
+    冇設 ZHUGE_GCP_URL／WEBHOOK_SECRET_TOKEN 或者失敗就跳過（報告退返 Yahoo／富途估值）。"""
+    url, tok = os.environ.get("ZHUGE_GCP_URL"), os.environ.get("WEBHOOK_SECRET_TOKEN")
+    if not url or not tok:
+        return
+    req = urllib.request.Request(url, data=json.dumps({"action": "cme_quotes_get", "token": tok}).encode("utf-8"),
+                                 headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            doc = json.loads(r.read().decode("utf-8") or "{}")
+        if doc.get("quotes"):
+            (ROOT / "tradingview" / "data_external" / "cme_quotes.json").write_text(
+                json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+    except Exception:             # 唔好印網址同權杖
+        pass
+
+
 def cycle(equity, cushion_line, stop_line):
     t = now_hkt()
     OUT.mkdir(parents=True, exist_ok=True)
     ok, err = fetch()
+    fetch_cme()
     state_f = OUT / "alert_state.json"
     try:
         prev = json.loads(state_f.read_text(encoding="utf-8"))

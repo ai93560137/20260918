@@ -187,3 +187,26 @@ Get-Content tradingview\out\pnl_export_state.json -Encoding utf8
 查結果（雲端，總指揮）：`python3 scripts/gcp_agent.py cat --object futu/deals/2026-10-14.json`。
 首次上線請同富途 App「成交紀錄」核對一次（合約、時間、價、手數）。
 
+
+## 10. 開機一次過自動起 OpenD、MT5、各推送腳本（R186，`gcp_ib\start_all.ps1`）
+
+只讀：開程式、開推送腳本，唔落單、唔 unlock_trade。重覆跑都得（已經開緊嘅會跳過）。
+
+第一次設定（PowerShell，設完閂咗再開）：
+
+```powershell
+setx ZHUGE_OPEND_EXE "C:\…\Futu_OpenD.exe"                       # 你部機 OpenD 程式嘅完整路徑
+setx ZHUGE_MT5_EXE "C:\Program Files\MetaTrader 5\terminal64.exe"   # 你部機 MT5 嘅完整路徑
+setx ZHUGE_DAEMONS "auto_risk,push_to_gcp,iv_push,mt5_push"          # 要開邊啲推送腳本（可選：inline_push、scan_push）
+```
+
+啟動資料夾改用 `ZhugeStartAll.cmd`（取代舊 `ZhugeAutoRisk.cmd`，免得 auto_risk 開兩個）：
+
+```powershell
+$startup = [Environment]::GetFolderPath("Startup")
+Remove-Item "$startup\ZhugeAutoRisk.cmd" -ErrorAction SilentlyContinue
+"@echo off`r`npowershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PWD\gcp_ib\start_all.ps1`"`r`n" | Set-Content "$startup\ZhugeStartAll.cmd" -Encoding ascii
+Get-Content "$startup\ZhugeStartAll.cmd"
+```
+
+OpenD 要喺設定揀「記住登入」、MT5 登入時剔「儲存密碼」；要驗證碼嘅時候一定要自己做。紀錄喺 `tradingview\out\logs\`。

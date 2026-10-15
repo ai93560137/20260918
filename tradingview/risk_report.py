@@ -12,6 +12,7 @@
 """
 import argparse
 import json
+import os
 import re
 from datetime import date
 from math import erf, log, sqrt
@@ -24,7 +25,8 @@ LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「�
 # 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
 # 止損規則（book 冇寫先用呢度；持倉唔喺 book 就略過）
 DEFAULT_STOPS = {"EW P7750": {"credit": 43, "stop_buyback": 86, "legs": ["EW2610 P7750"],
-                              "note": "使用者人手開；10/14 03:51 新倉 @43，使用者 10-14 定：買回價 ≥ 86 點（2× 權利金，舊倉 @68 係 136）"}}
+                              "note": "使用者人手開；10/14 03:51 新倉 @43，使用者 10-14 定：買回價 ≥ 86 點（2× 權利金，舊倉 @68 係 136）",
+                              "hedge_group": "標普期貨人手"}}   # [R185] 有 ES／MES 對沖時，止損用量改計「put＋對沖」合計虧損
 PLAYBOOK = {"雲垂陣 HSI 月跨式＋對沖": {"und": "HSI", "groups": ["HSI 月跨式", "MHI2610 對沖"], "band": 0.5}}
 
 
@@ -68,6 +70,50 @@ def derive_code(p):
     return f"HK.{root}{p['exp'][2:].replace('-', '')}{'C' if p['type'] == 'call' else 'P'}{int(p['K'] * 1000):08d}"
 
 
+YAHOO_SYMBOLS = {"ES": "ES=F"}   # [R183] 富途冇 CME 行情時嘅後備；設 ZHUGE_NO_YAHOO=1 停用
+
+
+def yahoo_last(sym, timeout=6):
+    """Yahoo Finance 延遲最後價（唔使金鑰）；失敗回 None，唔影響報告其他部分。"""
+    if os.environ.get("ZHUGE_NO_YAHOO") == "1":
+        return None
+    import urllib.request
+    try:
+        req = urllib.request.Request(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1m&range=1d",
+                                     headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            meta = json.loads(r.read().decode("utf-8"))["chart"]["result"][0]["meta"]
+        px = meta.get("regularMarketPrice")
+        return float(px) if px and px > 0 else None
+    except Exception:
+        return None
+
+
+CME_MAX_AGE_S = 90 * 60   # [R184] IB 延遲報價（ib-data VM 經 Cloud Run）超過 90 分鐘當過期唔用
+
+
+def merge_cme_quotes(Q, path, now_ts=None):
+    """[R184] 用 ib-data VM 嘅 IB 延遲報價補富途冇權限嘅 CME 合約（只補冇買賣價嘅代碼）。"""
+    import time
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return 0
+    if (now_ts or time.time()) - float(doc.get("received_ts") or 0) > CME_MAX_AGE_S:
+        return 0
+    n = 0
+    for code, q in (doc.get("quotes") or {}).items():
+        have = Q.get(code) or {}
+        if (have.get("bid") or 0) > 0 and (have.get("ask") or 0) > 0:
+            continue
+        bid, ask = q.get("bid"), q.get("ask")
+        mid = (bid + ask) / 2 if bid and ask else None
+        Q[code] = {"bid": bid, "ask": ask, "mid": mid, "last": q.get("last") or q.get("close"),
+                   "quote_time": f"{q.get('quote_time') or doc.get('fetched_utc')} UTC（IB 延遲約 15 分鐘）"}
+        n += 1
+    return n
+
+
 def load(book_path, quotes_path=None):
     b = json.loads(Path(book_path).read_text(encoding="utf-8"))
     qf = json.loads(Path(quotes_path).read_text(encoding="utf-8")) if quotes_path else {}
@@ -75,6 +121,7 @@ def load(book_path, quotes_path=None):
     for r in qf.get("positions", []):          # 舊格式：只有 positions 行
         Q.setdefault(r["code"], {k: r.get(k) for k in ("bid", "ask", "mid", "last", "quote_time")})
     FP = {r["code"]: r for r in qf.get("positions", [])}
+    merge_cme_quotes(Q, Path(book_path).with_name("cme_quotes.json"))
     # 富途實際恒指期貨淨手數 vs book（例如人手即日 MHI）：多出／少咗嘅當一條「人手」期貨腿計入模型
     b["fut_lots"] = {}
     for code, r in FP.items():
@@ -89,6 +136,18 @@ def load(book_path, quotes_path=None):
                                    "type": "fut", "qty": extra, "mult": 10 if m.group(1) == "MHI" else 50, "ccy": "HKD",
                                    "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or 0,
                                    "code": code, "group": "恒指期貨人手"})
+    # [R182] 富途實際標普期貨（ES／MES，例如使用者人手對沖 EW put）：book 冇就當一條「標普期貨人手」腿計入模型
+    for code, r in FP.items():
+        m = re.match(r"^US\.(ES|MES)\d{4}$", code)
+        if not m or not r.get("qty"):
+            continue
+        booked = sum(p["qty"] for p in b["positions"] if p.get("code") == code)
+        extra = r["qty"] - booked
+        if extra:
+            b["positions"].append({"id": f"{code[3:]} 人手（富途實際 {r['qty']:+g}）", "und": "ES", "type": "fut", "qty": extra,
+                                   "mult": 50 if m.group(1) == "ES" else 5, "ccy": "USD",
+                                   "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or r.get("open_price") or 0,
+                                   "code": code, "group": "標普期貨人手"})
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
     val = date.fromisoformat(b["valuation_date"])
@@ -100,6 +159,20 @@ def load(book_path, quotes_path=None):
             if px:
                 d["F"], d["F_src"] = px, f"{c} {lab} @ {q.get('quote_time')}"
                 break
+        else:
+            # [R183] 冇期貨報價（CME 冇行情權限）：先試 Yahoo 延遲報價（ES=F 連續合約，約延遲 10 分鐘）
+            yp = yahoo_last(YAHOO_SYMBOLS.get(u)) if YAHOO_SYMBOLS.get(u) else None
+            if yp:
+                d["F"], d["F_src"] = yp, f"Yahoo {YAHOO_SYMBOLS[u]} 延遲報價（約 10 分鐘）"
+                continue
+            # [R182] 再唔得：有標普期貨持倉就由富途持倉盈虧反推富途用緊嘅期貨價
+            for c, r in FP.items():
+                fm = re.match(r"^US\.(ES|MES)\d{4}$", c) if u == "ES" else None
+                if fm and r.get("qty") and r.get("futu_pl") is not None and r.get("open_price"):
+                    mult = 50 if fm.group(1) == "ES" else 5
+                    d["F"] = r["open_price"] + r["futu_pl"] / (r["qty"] * mult)
+                    d["F_src"] = f"{c} 富途持倉估值（由持倉盈虧反推；冇行情權限）"
+                    break
     by_id = {p["id"]: p for p in b["positions"]}
     for p in b["positions"]:
         p["code"] = derive_code(p)
@@ -245,7 +318,7 @@ def build(book, quotes=None, combined_equity=None):
           f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
     M["mhi_lots"] = dict(b["fut_lots"]) or {
         derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
-    P("恒指期貨淨手數（富途實際）：" + "、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()))
+    P("期貨淨手數（富途實際）：" + ("、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()) or "冇"))
     P("")
 
     P("## 1. 價格來源（每腿）")
@@ -316,8 +389,26 @@ def build(book, quotes=None, combined_equity=None):
         P(f"- {name}：買回 {bb:,.1f} 點 vs 止損 {s['stop_buyback']} 點（用咗 {bb / s['stop_buyback'] * 100:.0f}%）"
           + (f"；觸發約需 {'、或 '.join(trig)}" if trig else "；標的升跌 30% 內唔觸發")
           + (f"（{s['note']}）" if s.get("note") else ""))
-    P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
-      "research/hsi_futures_range/STRANGLE_1SIGMA.md）\n")
+        hedges = [p for p in b["positions"] if s.get("hedge_group") and p.get("group") == s["hedge_group"]]
+        if hedges and s.get("credit") is not None:
+            # [R185] 使用者 10-15：EW put 用 ES／MES 期貨對沖 → 止損用量（警報／風控階梯用）改計合計：
+            #   (put 虧損 − 對沖盈利) ÷ 止損允許虧損（(止損買回價 − 權利金) × 乘數 × 張數）；put 單計照列作參考
+            legs = [byid[i] for i in s["legs"]]
+            put_loss = sum((byid[i]["close_px"] - (s["credit"] if len(s["legs"]) == 1 else byid[i]["open"])) * byid[i]["mult"] * abs(byid[i]["qty"])
+                           for i in s["legs"])
+            allow = (s["stop_buyback"] - s["credit"]) * legs[0]["mult"] * abs(legs[0]["qty"])
+            h_pnl = sum((h["close_px"] - h["open"]) * h["qty"] * h["mult"] for h in hedges)
+            comb = (put_loss - h_pnl) / allow if allow > 0 else 0.0
+            M["stop_use"][name] = comb
+            cur = legs[0]["ccy"]
+            hl = "、".join(f"{h['code'][3:]} {h['qty']:+g}" for h in hedges)
+            P(f"  - **含對沖合計（警報／風控階梯用）**：put 虧損 {put_loss:+,.0f} {cur}、對沖（{hl}）盈虧 {h_pnl:+,.0f} {cur}"
+              f" → 合計虧損 {put_loss - h_pnl:+,.0f} / 允許 {allow:,.0f} {cur}（用咗 {comb * 100:.0f}%）；"
+              f"put 單計 {bb / s['stop_buyback'] * 100:.0f}% 只作參考")
+    if any(p.get("group") == "HSI 週權 strangle" for p in b["positions"]):                 # [R192] 冇週權就唔印
+        P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
+          "research/hsi_futures_range/STRANGLE_1SIGMA.md）")
+    P("")
 
     P("## 7. 壓力測試")
     P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")
@@ -389,6 +480,9 @@ def build(book, quotes=None, combined_equity=None):
     P("## 10. 同劇本衝突")
     pb = b.get("playbook", PLAYBOOK)
     for name, r in pb.items():
+        if not any(p["und"] == r["und"] and p.get("group", p["id"]) in r["groups"] for p in b["positions"]):
+            P(f"- {name}：冇持倉，唔計 Δ 界線")                                           # [R192] 恒指倉全平
+            continue
         d0 = group_delta_at(b, fx, r["und"], r["groups"], 0)
         M["delta"][name] = (d0, r["band"])
         st = "❌ 超出" if abs(d0) > r["band"] else ("⚠ 接近" if abs(d0) > 0.8 * r["band"] else "✅ 界線內")
@@ -396,14 +490,18 @@ def build(book, quotes=None, combined_equity=None):
         for sign, lab in ((1, "上升"), (-1, "下跌")):
             hit = next((sign * k / 1000 for k in range(1, 201) if abs(group_delta_at(b, fx, r["und"], r["groups"], sign * k / 1000)) > r["band"]), None)
             P(f"  - {r['und']} {lab}" + (f" {abs(hit) * 100:.1f}%（≈ {b['underlyings'][r['und']]['F'] * (1 + hit):,.0f}）就超出界線" if hit else " 20% 內唔超出"))
-    hs_all = gk["HSI"]["dpts"] / 10
-    M["delta_parts"] = {"straddle": group_delta_at(b, fx, "HSI", ["HSI 月跨式"], 0),     # [R154] 雲垂月跨式 Δ（唔含對沖）
-                        "net_with_hedge": next(iter(M["delta"].values()), (None,))[0],   # 含對沖淨 Δ
-                        "hsi_all": hs_all}                                               # 恒指全部淨 Δ（連週權、人手倉）
-    P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
+    if "HSI" in gk:                                                                     # [R192] 冇恒指倉就唔出 delta_parts
+        hs_all = gk["HSI"]["dpts"] / 10
+        M["delta_parts"] = {"straddle": group_delta_at(b, fx, "HSI", ["HSI 月跨式"], 0),  # [R154] 雲垂月跨式 Δ（唔含對沖）
+                            "net_with_hedge": next(iter(M["delta"].values()), (None,))[0],  # 含對沖淨 Δ
+                            "hsi_all": hs_all}                                            # 恒指全部淨 Δ（連週權、人手倉）
+        P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
+    else:
+        P("- 恒指：冇持倉。")
     ew = next((p for p in b["positions"] if p["id"].startswith("EW")), None)
-    P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"
-      + (f"；EW P7750 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
+    if "ES" in gk:
+        P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"
+          + (f"；EW P7750 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
     P("")
 
     P("## 11. 假設與限制")

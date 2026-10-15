@@ -1,0 +1,14 @@
+[Unit]
+Description=Zhuge Futu OpenD (read-only API on 127.0.0.1:11111; tmux session "opend")
+After=network-online.target
+Wants=network-online.target
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/opend
+EnvironmentFile=-@HOME@/zhuge/env
+ExecStart=/bin/bash @HOME@/20260918/gcp_ib/vm_futu/opend_tmux.sh @HOME@
+ExecStop=/usr/bin/tmux kill-session -t opend
+Restart=always
+RestartSec=30
+[Install]
+WantedBy=multi-user.target

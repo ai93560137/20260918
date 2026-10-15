@@ -1,0 +1,14 @@
+[Unit]
+Description=Zhuge 富途行情推送 push_to_gcp
+After=zhuge-opend.service network-online.target
+Wants=zhuge-opend.service
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/20260918
+EnvironmentFile=@HOME@/zhuge/env
+EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
+ExecStart=@HOME@/zhuge-venv/bin/python futu/push_to_gcp.py
+Restart=always
+RestartSec=60
+[Install]
+WantedBy=multi-user.target
