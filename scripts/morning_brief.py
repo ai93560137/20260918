@@ -3,7 +3,7 @@
 平日 08:30 HKT，GitHub Actions `morning_brief.yml` 跑。只讀、不重算；原料都由別人產出：
 
   順序（先風險、再持倉、再今日事件、再今日要做）
-  1. 風控：GCS futu/risk/latest.json（富途數據 VM futu-data 上嘅 auto_risk 每 15 分鐘，即時；10-15 前係本機）＋ ops/books/ladder_state.json（總指揮 R173）
+  1. 風控：GCS futu/risk/latest.json（富途數據 VM futu-data 上嘅 auto_risk 每 15 分鐘，即時；10-15 前係本機）＋ ops/books/ladder_state.json（總指揮 R173）＋壓力情景 metrics.stress／ops/risk/stress_latest.json（總指揮 R193）
      → 階梯等級、保證金緩衝、離硬止損、止損線用量（≥ 50% 才列）、警報、數據新鮮度
   2. 金絲雀：repo canary/tg_daily.txt 的「🚦 三軸」段（06:30 已出）
   3. 昨日損益：GCS ops/books/pnl_daily.csv 最後一列（按陣已實現／未實現）
@@ -54,7 +54,30 @@ def age_note(ts: datetime | None, now: datetime, max_min: int) -> str:
 
 
 # ---------------------------------------------------------------- 1. 風控
-def section_risk(risk: dict | None, ladder: dict | None, now: datetime) -> list[str]:
+LADDER_MARK = {"A": "Ⓐ", "B": "Ⓑ", "C": "Ⓒ", "D": "Ⓓ"}
+
+
+def ladder_lines(stress: dict | None) -> str:
+    """緩衝線（總指揮 R193 已按日／夜盤計）；冇就叫人睇 RISK_LADDER.md，唔再寫死舊數。"""
+    ln = (stress or {}).get("lines") or {}
+    if not all(ln.get(k) is not None for k in "BCD"):
+        return "（線見 RISK_LADDER.md）"
+    return (f"（{'夜盤線 ' if stress.get('night') else ''}Ⓑ<{hk(ln['B'])} Ⓒ<{hk(ln['C'])} Ⓓ<{hk(ln['D'])}）")
+
+
+def stress_lines(stress: dict | None) -> list[str]:
+    """壓力情景（FUND_SOP 二之三 C；總指揮 auto_risk metrics.stress／GCS ops/risk/stress_latest.json）：最差 4 個。"""
+    sc = [x for x in (stress or {}).get("scenarios") or [] if x.get("cushion_after") is not None]
+    if not sc:
+        return []
+    sc.sort(key=lambda x: x["cushion_after"])
+    bad = [x for x in sc if x.get("ladder") in ("C", "D")]
+    items = [f"{x['name']} → {hk(x['cushion_after'])}（{LADDER_MARK.get(x.get('ladder'), x.get('ladder') or '?')}）"
+             for x in sc[:4]]
+    return [("⚠ " if bad else "") + "壓力情景（最差 4 個，緩衝）：" + "；".join(items)]
+
+
+def section_risk(risk: dict | None, ladder: dict | None, now: datetime, stress: dict | None = None) -> list[str]:
     out = ["【一、風控】"]
     if ladder:
         why = "；".join(ladder.get("why") or []) or "冇觸發"
@@ -65,13 +88,15 @@ def section_risk(risk: dict | None, ladder: dict | None, now: datetime) -> list[
         out.append("⚠ 讀不到 futu/risk/latest.json（auto_risk 可能停咗）")
         return out
     m = risk.get("metrics") or {}
+    stress = m.get("stress") or stress
     run = risk.get("run_hkt")
     out.append(f"富途快照 {run} {age_note(parse_hkt(run), now, 60)}".rstrip())
     eq, hs = m.get("equity"), m.get("hard_stop")
     gap_pct = (m.get("gap") / eq * 100) if eq and m.get("gap") is not None else None
     out.append(f"合計權益 {hk(eq)}｜離硬止損 {hk(m.get('gap'))}"
                + (f"（{gap_pct:.0f}%）" if gap_pct is not None else "")
-               + f"｜富途緩衝 {hk(m.get('cushion'))}（Ⓑ<15萬 Ⓒ<10萬 Ⓓ<6萬）")
+               + f"｜富途緩衝 {hk(m.get('cushion'))}{ladder_lines(stress)}")
+    out += stress_lines(stress)
     uses = {k: v for k, v in (m.get("stop_use") or {}).items() if v is not None}
     if uses:
         hi = sorted(uses.items(), key=lambda kv: -kv[1])
@@ -285,7 +310,7 @@ def section_todo(today: date) -> list[str]:
 def build(now: datetime, sources: dict) -> str:
     today = now.date()
     parts = [f"☀️ 晨會簡報 {today:%m-%d}（{'一二三四五六日'[today.weekday()]}）{now:%H:%M} HKT"]
-    for sec in (section_risk(sources["risk"], sources["ladder"], now),
+    for sec in (section_risk(sources["risk"], sources["ladder"], now, sources.get("stress")),
                 section_canary(sources["canary"], today),
                 section_pnl(sources["pnl"]),
                 section_reconcile(sources["reconcile"]),
@@ -309,6 +334,7 @@ def load_sources() -> dict:
     return {
         "risk": safe(gcs_cat, "futu/risk/latest.json"),
         "ladder": safe(gcs_cat, "ops/books/ladder_state.json"),
+        "stress": safe(gcs_cat, "ops/risk/stress_latest.json"),
         "pnl": pnl.get("_text") if isinstance(pnl, dict) else pnl,
         "calendar": safe(gcs_cat, "cache/ff_calendar_thisweek.json"),
         "canary": read_repo("canary/tg_daily.txt"),

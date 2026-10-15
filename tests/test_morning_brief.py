@@ -116,5 +116,26 @@ class SectionTests(unittest.TestCase):
         self.assertEqual(text.count("【"), 7)
 
 
+class StressTest(unittest.TestCase):
+    """壓力情景（總指揮 R193 格式；虛構數字）。"""
+    ST = {"night": True, "lines": {"B": 56250, "C": 37500, "D": 22500}, "scenarios": [
+        {"name": "HSI −5%", "cushion_after": 30000, "ladder": "C"},
+        {"name": "ES +3%", "cushion_after": 90000, "ladder": "A"},
+        {"name": "VIX +10", "cushion_after": 50000, "ladder": "B"},
+        {"name": "ES −5% 且 IV +10", "cushion_after": 10000, "ladder": "D"},
+        {"name": "HSI +5%", "cushion_after": 80000, "ladder": "A"}]}
+
+    def test_lines_and_worst_four(self):
+        self.assertIn("夜盤線 Ⓑ<HK$56,250", mb.ladder_lines(self.ST))
+        out = mb.stress_lines(self.ST)
+        self.assertTrue(out[0].startswith("⚠ "))
+        self.assertTrue(out[0].index("ES −5% 且 IV +10") < out[0].index("HSI −5%"))
+        self.assertNotIn("ES +3%", out[0])
+
+    def test_missing_stress(self):
+        self.assertEqual(mb.stress_lines(None), [])
+        self.assertIn("RISK_LADDER", mb.ladder_lines(None))
+
+
 if __name__ == "__main__":
     unittest.main()
