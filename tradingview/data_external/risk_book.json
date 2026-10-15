@@ -20,80 +20,6 @@
  },
  "positions": [
   {
-   "id": "MHI2610 對沖",
-   "und": "HSI",
-   "type": "fut",
-   "qty": -1,
-   "mult": 10,
-   "ccy": "HKD",
-   "open": 24336,
-   "price": 24365,
-   "flag": "10/14 16:26 雲垂重新對沖沽 1 @24,336（使用者通報、富途快照核實）"
-  },
-  {
-   "id": "MHI 10/29 C25000",
-   "und": "HSI",
-   "type": "call",
-   "K": 25000,
-   "exp": "2026-10-29",
-   "qty": -1,
-   "mult": 10,
-   "ccy": "HKD",
-   "open": 600,
-   "price": 118,
-   "group": "HSI 月跨式",
-   "settle": "cash"
-  },
-  {
-   "id": "MHI 10/29 P25000",
-   "und": "HSI",
-   "type": "put",
-   "K": 25000,
-   "exp": "2026-10-29",
-   "qty": -1,
-   "mult": 10,
-   "ccy": "HKD",
-   "open": 508,
-   "price": 728,
-   "group": "HSI 月跨式",
-   "flag": "Put 現價 728 係 10/9 21:51 最後成交（stale），夜市冇賣價；模型改用 put-call parity：P ≈ C + (K − F) = 118 + 635 = 753。週一開市後用 futu_positions_quote.py --codes 重抓",
-   "mark": {
-    "method": "parity",
-    "call": "MHI 10/29 C25000"
-   },
-   "settle": "cash"
-  },
-  {
-   "id": "HSI 10/16 C24900",
-   "und": "HSI",
-   "type": "call",
-   "K": 24900,
-   "exp": "2026-10-16",
-   "qty": -1,
-   "mult": 50,
-   "ccy": "HKD",
-   "open": 36,
-   "price": 36,
-   "group": "HSI 週權 strangle",
-   "flag": "新倉，現價＝開倉價；使用者話係其他分支叫佢開（我睇唔到嗰邊嘅計劃／止損規則）",
-   "settle": "cash"
-  },
-  {
-   "id": "HSI 10/16 P23750",
-   "und": "HSI",
-   "type": "put",
-   "K": 23750,
-   "exp": "2026-10-16",
-   "qty": -1,
-   "mult": 50,
-   "ccy": "HKD",
-   "open": 46,
-   "price": 46,
-   "group": "HSI 週權 strangle",
-   "flag": "新倉，現價＝開倉價；使用者話係其他分支叫佢開（我睇唔到嗰邊嘅計劃／止損規則）",
-   "settle": "cash"
-  },
-  {
    "id": "EW2610 P7750",
    "und": "ES",
    "type": "put",
@@ -109,16 +35,7 @@
    "settle": "physical: 到期 ITM 自動行使 → 交收 1 手 ES 期貨（ESZ6，US$50/點）"
   }
  ],
- "stops": {
-  "HSI 月跨式": {
-   "credit": 1108,
-   "stop_buyback": 2216,
-   "legs": [
-    "MHI 10/29 C25000",
-    "MHI 10/29 P25000"
-   ]
-  }
- },
+ "stops": {},
  "futu_screenshot": {
   "holding_pl_hkd": 12770.97,
   "today_pl_hkd": 7959.31

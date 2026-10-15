@@ -318,7 +318,7 @@ def build(book, quotes=None, combined_equity=None):
           f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
     M["mhi_lots"] = dict(b["fut_lots"]) or {
         derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
-    P("恒指期貨淨手數（富途實際）：" + "、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()))
+    P("期貨淨手數（富途實際）：" + ("、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()) or "冇"))
     P("")
 
     P("## 1. 價格來源（每腿）")
@@ -405,8 +405,10 @@ def build(book, quotes=None, combined_equity=None):
             P(f"  - **含對沖合計（警報／風控階梯用）**：put 虧損 {put_loss:+,.0f} {cur}、對沖（{hl}）盈虧 {h_pnl:+,.0f} {cur}"
               f" → 合計虧損 {put_loss - h_pnl:+,.0f} / 允許 {allow:,.0f} {cur}（用咗 {comb * 100:.0f}%）；"
               f"put 單計 {bb / s['stop_buyback'] * 100:.0f}% 只作參考")
-    P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
-      "research/hsi_futures_range/STRANGLE_1SIGMA.md）\n")
+    if any(p.get("group") == "HSI 週權 strangle" for p in b["positions"]):                 # [R192] 冇週權就唔印
+        P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
+          "research/hsi_futures_range/STRANGLE_1SIGMA.md）")
+    P("")
 
     P("## 7. 壓力測試")
     P("即時重估；買賣差保留（平倉價 − 模型價）。主欄＝擬合斜率；對照欄＝舊規則（跌 1% 加 0.5 vol）。權益＝現時權益＋變動。\n")
@@ -478,6 +480,9 @@ def build(book, quotes=None, combined_equity=None):
     P("## 10. 同劇本衝突")
     pb = b.get("playbook", PLAYBOOK)
     for name, r in pb.items():
+        if not any(p["und"] == r["und"] and p.get("group", p["id"]) in r["groups"] for p in b["positions"]):
+            P(f"- {name}：冇持倉，唔計 Δ 界線")                                           # [R192] 恒指倉全平
+            continue
         d0 = group_delta_at(b, fx, r["und"], r["groups"], 0)
         M["delta"][name] = (d0, r["band"])
         st = "❌ 超出" if abs(d0) > r["band"] else ("⚠ 接近" if abs(d0) > 0.8 * r["band"] else "✅ 界線內")
@@ -485,14 +490,18 @@ def build(book, quotes=None, combined_equity=None):
         for sign, lab in ((1, "上升"), (-1, "下跌")):
             hit = next((sign * k / 1000 for k in range(1, 201) if abs(group_delta_at(b, fx, r["und"], r["groups"], sign * k / 1000)) > r["band"]), None)
             P(f"  - {r['und']} {lab}" + (f" {abs(hit) * 100:.1f}%（≈ {b['underlyings'][r['und']]['F'] * (1 + hit):,.0f}）就超出界線" if hit else " 20% 內唔超出"))
-    hs_all = gk["HSI"]["dpts"] / 10
-    M["delta_parts"] = {"straddle": group_delta_at(b, fx, "HSI", ["HSI 月跨式"], 0),     # [R154] 雲垂月跨式 Δ（唔含對沖）
-                        "net_with_hedge": next(iter(M["delta"].values()), (None,))[0],   # 含對沖淨 Δ
-                        "hsi_all": hs_all}                                               # 恒指全部淨 Δ（連週權、人手倉）
-    P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
+    if "HSI" in gk:                                                                     # [R192] 冇恒指倉就唔出 delta_parts
+        hs_all = gk["HSI"]["dpts"] / 10
+        M["delta_parts"] = {"straddle": group_delta_at(b, fx, "HSI", ["HSI 月跨式"], 0),  # [R154] 雲垂月跨式 Δ（唔含對沖）
+                            "net_with_hedge": next(iter(M["delta"].values()), (None,))[0],  # 含對沖淨 Δ
+                            "hsi_all": hs_all}                                            # 恒指全部淨 Δ（連週權、人手倉）
+        P(f"- 恒指全部（連週權）Δ {hs_all:+.2f} 手 MHI：週權唔屬雲垂陣，但同一個戶口、同一個硬止損，Δ 會互相抵消或疊加。")
+    else:
+        P("- 恒指：冇持倉。")
     ew = next((p for p in b["positions"] if p["id"].startswith("EW")), None)
-    P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"
-      + (f"；EW P7750 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
+    if "ES" in gk:
+        P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"
+          + (f"；EW P7750 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
     P("")
 
     P("## 11. 假設與限制")
