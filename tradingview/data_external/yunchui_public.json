@@ -1,5 +1,5 @@
 {
- "updated_hkt": "2026-10-16 14:42",
+ "updated_hkt": "2026-10-17 01:23",
  "strategy": {
   "name": "雲垂陣",
   "icon": "☁️",
@@ -13,12 +13,25 @@
   ],
   "disclaimer": "只作資訊展示，唔係投資建議。報價延遲，落單以券商即時價為準。"
  },
- "positions": [],
+ "positions": [
+  {
+   "id": "MES 跨式",
+   "instrument": "MES 期權（Micro E-mini S&P 500，歐式週權，富途代碼 EX3，對應 MES2612）",
+   "expiry": "2026-11-20",
+   "strike": 7700,
+   "qty": 1,
+   "entry_date": "2026-10-16",
+   "credit_pts": 295.0,
+   "credit_usd": null,
+   "stop_buyback_pts": 590,
+   "entry_iv": 21.3
+  }
+ ],
  "status": {
   "hsi": null,
   "mes": {
-   "es": 7799.0,
-   "straddle_delta": null,
+   "es": 7710.0,
+   "straddle_delta": -0.02,
    "band": 0.5
   }
  },
@@ -106,6 +119,10 @@
   {
    "date": "2026-10-15",
    "text": "HSI 平倉核實（成交紀錄）：Put 958＋Call 43＝買回 1,001 vs 權利金 1,108 → +107 點；MHI2610 對沖 24,336 → 24,084 → +252 點；合計 +359 點（未計佣）。雲垂空手。"
+  },
+  {
+   "date": "2026-10-16",
+   "text": "MES 滾倉進場：賣出 MES 11/20 週權 7700 跨式（Call 146.5＋Put 148.5＝權利金 295 點），期貨 7,701.75、IV 約 21.3；止損買回 ≥ 590 點。對中間價滑價 +0.25 點。"
   }
  ],
  "corrections": [

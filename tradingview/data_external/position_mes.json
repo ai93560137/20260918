@@ -1,0 +1,26 @@
+{
+ "market": "MES",
+ "instrument": "MES 期權（Micro E-mini S&P 500，歐式週權，富途代碼 EX3，對應 MES2612）",
+ "expiry": "2026-11-20",
+ "strike": 7700,
+ "qty": 1,
+ "entry_date": "2026-10-16",
+ "entry_time_hkt": "2026-10-17 01:23",
+ "legs": {
+  "call_sold": 146.5,
+  "put_sold": 148.5
+ },
+ "credit_pts": 295.0,
+ "entry_futures": 7701.75,
+ "entry_iv": 21.3,
+ "stop_buyback_pts": 590,
+ "intent": {
+  "call_mid": 148.5,
+  "put_mid": 146.25,
+  "total_mid": 294.75,
+  "slippage_pts": 0.25
+ },
+ "canary_at_entry": "🟡 黃（MOVE p93）；VIX9D 17.35 < VIX 19.08 < VIX3M 20.04（綠）",
+ "big_drop_1_5d": "有（10/14 SPX −1.11%，z −1.85；10/16 盤中 ES −1.15%）——前向觀察，唔作否決",
+ "note": "部位止損：跨式買回總價 >= 590 點（2x 權利金）即平倉；到期日美東 16:00 前平倉；帳戶硬止損權益 < HK$750,000"
+}
