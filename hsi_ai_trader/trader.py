@@ -312,11 +312,31 @@ class Trader:
             log.info("真倉準備檢查：%s", res)
         st["real_preflight"] = res
 
+    def _futures_room_ok(self, contract, side, price, n_open):
+        """[R209] 真倉期貨：開倉後緩衝 ≥ Ⓑ 線（夜盤 ×1.5）＋ 日蝕上限先開，唔夠就唔開（記 OPEN_SKIPPED）。"""
+        cfg = self.cfg
+        if cfg.trd_env != "REAL":
+            return n_open
+        try:
+            r = self.broker.futures_room(contract, side, price)
+        except Exception as e:  # noqa: BLE001
+            self._log("events", {"type": "OPEN_SKIPPED", "reason": f"查唔到期貨緩衝：{e.__class__.__name__}"})
+            return 0
+        night = session_status(self.clock(), cfg.market, cfg.kind)[0] == "NIGHT"
+        need = cfg.fut_ladder_b_day * (cfg.fut_ladder_night_mult if night else 1) + cfg.daily_loss_limit
+        after = r["cushion"] - r["im"] * n_open
+        if r["im"] > 0 and after >= need:
+            return n_open
+        self._log("events", {"type": "OPEN_SKIPPED", "reason": "期貨戶口緩衝唔夠" if r["im"] > 0 else "查唔到每張保證金",
+                             "cushion_after": round(after), "need": round(need), "night": night})
+        log.warning("期貨緩衝唔夠，唔開：開倉後 %.0f < 要求 %.0f", after, need)
+        return 0
+
     def _cap_open_qty(self, contract, side, price, n_open):
         """開倉前問富途最多可以開幾多（購買力／可沽空數量）。唔夠就減細；一股都唔得就唔開。
-        查唔到：REAL 唔開（寧願錯過），SIMULATE 照開。期貨（HSI 1 張、期貨戶口共用按金）暫時唔查。"""
+        查唔到：REAL 唔開（寧願錯過），SIMULATE 照開。期貨只喺 REAL 查戶口緩衝（期貨戶口同其他陣共用按金）。"""
         if self.cfg.kind != "stock":
-            return n_open
+            return self._futures_room_ok(contract, side, price, n_open)
         try:
             cap = self.broker.max_open_qty(contract, side, price)
         except Exception as e:  # noqa: BLE001

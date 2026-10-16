@@ -245,6 +245,8 @@ def readiness(data):
             pdt = f"{'係' if r.get('is_pdt') in (True, 'True', 'true') else '唔係'}／剩 {r.get('pdt_seq', '—')} 次"
         verdict = "未有結果（等 bot 更新）" if not r else ("✅ 準備好" if r.get("ok") else
                                                         "❌ " + str(r.get("error") or r.get("note") or "未齊"))
+        if r.get("im_pct_long") is not None:          # 期貨：一張單嘅初始保證金佔最大購買力幾多
+            verdict += f"（1 張用購買力 {r['im_pct_long']}%）"
         L.append(f"| {p} | {st.get('trd_env', '—')} | {yn(r.get('found'))} | {yn(r.get('funded'))} | "
                  f"{r.get('acc_type') or '—'} | {yn(r.get('can_long'))} | {yn(r.get('can_short'))} | {pdt} | "
                  f"{verdict.replace('|', '／')} | {str(r.get('ts') or '')[5:16]} |")
