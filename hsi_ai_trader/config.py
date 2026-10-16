@@ -19,6 +19,9 @@ def _load_env_file(path: Path) -> None:
 
 _load_env_file(BASE_DIR / ".env")
 
+# 執行期檔案（logs、state、STOP／PAUSE、心跳）放呢度；VM 上設喺 repo 外，免受 git reset 影響
+DATA_DIR = Path(os.getenv("AI_DATA_DIR") or BASE_DIR).expanduser()
+
 
 def _env(name, default):
     return os.getenv(name, default)
@@ -61,10 +64,11 @@ class Config:
 
     # --- 運行 ---
     risk_loop_sec: float = float(_env("RISK_LOOP_SEC", "5"))
-    log_dir: Path = BASE_DIR / "logs"
-    state_file: Path = BASE_DIR / "state.json"
-    stop_file: Path = BASE_DIR / "STOP"      # 存在 = 即刻平倉並停止開新倉
-    pause_file: Path = BASE_DIR / "PAUSE"    # 存在 = 唔開新倉，照樣管理止蝕
+    log_dir: Path = DATA_DIR / "logs"
+    state_file: Path = DATA_DIR / "state.json"
+    stop_file: Path = DATA_DIR / "STOP"      # 存在 = 即刻平倉並停止開新倉
+    pause_file: Path = DATA_DIR / "PAUSE"    # 存在 = 唔開新倉，照樣管理止蝕
+    heartbeat_file: Path = DATA_DIR / "heartbeat"  # 每個 tick 更新；watchdog 靠佢判斷程式仲生存
 
 
 CFG = Config()

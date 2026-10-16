@@ -2,7 +2,7 @@
 券商、AI、時鐘都係注入，方便用假物件測試。"""
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from rules import (session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
@@ -67,6 +67,21 @@ class Trader:
                     log.exception("出錯後平倉失敗")
         finally:
             self._save_state()
+            self._write_heartbeat()
+
+    def _write_heartbeat(self):
+        """watchdog 用：真實 UTC 時間（唔用注入嘅 clock）、有冇倉、連續出錯次數。"""
+        pos = self.state.get("pos") or {}
+        rec = {"utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "trd_env": self.cfg.trd_env, "code": pos.get("code"), "qty": pos.get("qty", 0),
+               "side": pos.get("side"), "stop": pos.get("stop"), "errors": self.errors,
+               "halted": bool(self.state.get("halted"))}
+        try:
+            tmp = self.cfg.heartbeat_file.with_suffix(".tmp")
+            tmp.write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
+            tmp.replace(self.cfg.heartbeat_file)
+        except OSError:
+            log.exception("寫心跳失敗")
 
     def _tick(self, now: datetime):
         st = self.state

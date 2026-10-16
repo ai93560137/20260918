@@ -1,4 +1,5 @@
 """用假券商 + 假 AI 測試風控。執行：python -m pytest tests -q"""
+import json
 import sys
 from dataclasses import replace
 from datetime import datetime, date, timedelta
@@ -71,7 +72,8 @@ class FakeBrain:
 @pytest.fixture
 def env(tmp_path):
     cfg = replace(Config(), log_dir=tmp_path / "logs", state_file=tmp_path / "state.json",
-                  stop_file=tmp_path / "STOP", pause_file=tmp_path / "PAUSE")
+                  stop_file=tmp_path / "STOP", pause_file=tmp_path / "PAUSE",
+                  heartbeat_file=tmp_path / "heartbeat")
     t = {"now": datetime(2026, 10, 16, 10, 0, 5, tzinfo=HKT)}  # 週五日市
     b, ai = FakeBroker(), FakeBrain()
     b.clock = lambda: t["now"]
@@ -208,3 +210,11 @@ def test_errors_halt(env):
     for _ in range(cfg.max_consecutive_errors):
         tr.tick()
     assert tr.state["halted"]
+
+
+def test_heartbeat_written_every_tick(env):
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    hb = json.loads(cfg.heartbeat_file.read_text(encoding="utf-8"))
+    assert hb["utc"].endswith("+00:00") and hb["errors"] == 0 and hb["halted"] is False
+    assert hb["trd_env"] == cfg.trd_env
