@@ -433,6 +433,7 @@ def build(book, quotes=None, combined_equity=None):
         if hedges and s.get("credit") is not None:
             # [R185] 使用者 10-15：EW put 用 ES／MES 期貨對沖 → 止損用量（警報／風控階梯用）改計合計：
             #   (put 虧損 − 對沖盈利) ÷ 止損允許虧損（(止損買回價 − 權利金) × 乘數 × 張數）；put 單計照列作參考
+            #   使用者 10-16 定：對沖盈利只計仲持有嘅對沖倉（由開倉起），已平對沖嘅已實現盈虧唔計
             legs = [byid[i] for i in s["legs"]]
             put_loss = sum((byid[i]["close_px"] - (s["credit"] if len(s["legs"]) == 1 else byid[i]["open"])) * byid[i]["mult"] * abs(byid[i]["qty"])
                            for i in s["legs"])
@@ -444,7 +445,7 @@ def build(book, quotes=None, combined_equity=None):
             hl = "、".join(f"{h['code'][3:]} {h['qty']:+g}" for h in hedges)
             P(f"  - **含對沖合計（警報／風控階梯用）**：put 虧損 {put_loss:+,.0f} {cur}、對沖（{hl}）盈虧 {h_pnl:+,.0f} {cur}"
               f" → 合計虧損 {put_loss - h_pnl:+,.0f} / 允許 {allow:,.0f} {cur}（用咗 {comb * 100:.0f}%）；"
-              f"put 單計 {bb / s['stop_buyback'] * 100:.0f}% 只作參考")
+              f"put 單計 {bb / s['stop_buyback'] * 100:.0f}% 只作參考；已平對沖嘅已實現盈虧唔計（使用者 10-16 定）")
     if any(p.get("group") == "HSI 週權 strangle" for p in b["positions"]):                 # [R192] 冇週權就唔印
         P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
           "research/hsi_futures_range/STRANGLE_1SIGMA.md）")
