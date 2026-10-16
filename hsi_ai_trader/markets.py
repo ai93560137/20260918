@@ -25,6 +25,7 @@ class Spec:
     roll_days: int        # 最後交易日前幾日轉下月（美期成交量喺到期前約一週轉倉）
     kind: str = "future"  # "future" 或 "stock"（ETF）
     notional_usd: float = 0.0  # ETF：每次落單大約金額（按價計股數）；期貨用 MAX_QTY 張
+    daily_loss_hkd: float = 10_000  # 每日虧損上限（HK$，含浮虧）；DAILY_LOSS_LIMIT_<產品> 可改
 
 
 SPECS = {
@@ -33,11 +34,13 @@ SPECS = {
     "MES": Spec("MES", "Micro E-mini S&P 500 Futures (CME)", "US", ET, "USD", 5, 0.25, 1.0, 15, 8),
     "MNQ": Spec("MNQ", "Micro E-mini Nasdaq-100 Futures (CME)", "US", ET, "USD", 2, 0.25, 1.0, 15, 8),
     "MYM": Spec("MYM", "Micro E-mini Dow Jones Futures (CBOT)", "US", ET, "USD", 0.5, 1, 5, 15, 8),
-    # 使用者 2026-10-16：美期冇報價權限，改用美股 ETF（每次約 US$10,000、可沽空、包盤前盤後 04:00–20:00 美東）
-    "SPY": Spec("SPY", "SPDR S&P 500 ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 10_000),
-    "QQQ": Spec("QQQ", "Invesco QQQ Nasdaq-100 ETF (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 10_000),
+    # 使用者 2026-10-16：美期冇報價權限，改用美股 ETF（可沽空、包盤前盤後 04:00–20:00 美東）
+    # [R210] 使用者 10-17：每次約 US$100,000、每隻日蝕上限 HK$100,000（真倉同模擬倉一樣；HSI 維持 HK$10,000）
+    "SPY": Spec("SPY", "SPDR S&P 500 ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "QQQ": Spec("QQQ", "Invesco QQQ Nasdaq-100 ETF (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000,
+                100_000),
     "DIA": Spec("DIA", "SPDR Dow Jones Industrial Average ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0,
-                "stock", 10_000),
+                "stock", 100_000, 100_000),
 }
 
 FX_TO_HKD = {"HKD": 1.0, "USD": 7.8}
