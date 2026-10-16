@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# [R187][R188][R199] futu-data VM（Debian 12，香港區）一次性安裝：富途 OpenD（Linux 命令列版）＋ auto_risk ＋ 富途推送腳本＋自動更新。
+# [R187][R188][R199][R202] futu-data VM（Debian 12，香港區）一次性安裝：富途 OpenD（Linux 命令列版）＋ auto_risk ＋ 富途推送腳本＋自動更新。
 # 只讀：讀持倉同報價、推上 Cloud Run；唔落單、唔 unlock_trade。由使用者喺瀏覽器 SSH 跑：
 #   bash ~/20260918/gcp_ib/vm_futu/setup.sh
 # 前置：OpenD 已解壓到 ~/opend（入面有 FutuOpenD 同 FutuOpenD.xml）；~/zhuge/env 已填好（見 env.example）。
@@ -29,7 +29,18 @@ sudo systemctl enable --now zhuge-auto-risk.service zhuge-futu-push.service zhug
 mkdir -p "$H/zhuge/ai_trader" && chmod 700 "$H/zhuge/ai_trader"
 if grep -q '^ANTHROPIC_API_KEY=sk-ant-' "$H/zhuge/env"; then
   sudo systemctl enable --now zhuge-longfei-guard.service zhuge-longfei.service
-  echo "龍飛陣：$(grep -oE '^TRD_ENV=.*' "$REPO/gcp_ib/vm_futu/settings.env")"
+  # [R202] 其他產品：settings.env 嘅 LONGFEI_EXTRA_PRODUCTS（例如 MES,MNQ,MYM）各開一個 zhuge-longfei@<產品>
+  EXTRA=$(grep -oE '^LONGFEI_EXTRA_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2 | tr ',' ' ')
+  for P in $EXTRA; do
+    mkdir -p "$H/zhuge/ai_trader_$P" && chmod 700 "$H/zhuge/ai_trader_$P"
+    sudo systemctl enable --now "zhuge-longfei@$P.service"
+  done
+  for u in $(systemctl list-units --plain --no-legend 'zhuge-longfei@*.service' | awk '{print $1}'); do
+    P=${u#zhuge-longfei@}; P=${P%.service}
+    echo " $EXTRA " | grep -q " $P " || { sudo systemctl disable --now "$u"; echo "已停 $u（唔喺 LONGFEI_EXTRA_PRODUCTS）"; }
+  done
+  sudo systemctl restart zhuge-longfei-guard.service   # 重讀產品清單
+  echo "龍飛陣：$(grep -oE '^TRD_ENV=.*' "$REPO/gcp_ib/vm_futu/settings.env")；產品 HSI ${EXTRA}"
 else
   echo "⚠ ~/zhuge/env 冇 ANTHROPIC_API_KEY：龍飛陣未開（見 RUNBOOK_FUTU_VM.md）"
 fi

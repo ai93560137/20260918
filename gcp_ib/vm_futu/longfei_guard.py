@@ -17,6 +17,9 @@ from pathlib import Path
 
 HKT = timezone(timedelta(hours=8))
 DATA = Path(os.environ.get("AI_DATA_DIR") or "~/zhuge/ai_trader").expanduser()
+# [R202] 龍飛陣多產品：HSI 用 DATA；LONGFEI_EXTRA_PRODUCTS（例如 MES,MNQ,MYM）各用 DATA_<產品>（zhuge-longfei@<產品>.service）
+EXTRA = [x.strip().upper() for x in os.environ.get("LONGFEI_EXTRA_PRODUCTS", "").split(",") if x.strip()]
+DIRS = [("HSI", DATA)] + [(p, DATA.with_name(f"{DATA.name}_{p}")) for p in EXTRA]
 LADDER = Path(os.environ.get("ZHUGE_LADDER_FILE") or "~/zhuge/ladder_level").expanduser()
 LADDER_MAX_AGE_MIN = float(os.environ.get("LADDER_MAX_AGE_MIN", "30"))   # RISK_LADDER §6b
 HB_STALE_MIN = float(os.environ.get("WATCHDOG_STALE_MIN", "10"))
@@ -80,11 +83,11 @@ def ours(p):
         return False
 
 
-def apply(action, reason):
+def apply(action, reason, data=DATA):
     """放／收 guard 自己嘅 PAUSE、STOP；回傳有冇改動。"""
     changed = False
     for name in ("PAUSE", "STOP"):
-        p = DATA / name
+        p = data / name
         if name == action:
             if not p.exists():
                 p.write_text(f"{TAG} {reason} {datetime.now(HKT):%Y-%m-%d %H:%M}\n", encoding="utf-8")
@@ -96,8 +99,9 @@ def apply(action, reason):
 
 
 class Watchdog:
-    def __init__(self):
+    def __init__(self, label="HSI", data=DATA):
         self.last = {}
+        self.label, self.data = label, data
 
     def alert(self, key, text, now):
         t = self.last.get(key)
@@ -106,56 +110,59 @@ class Watchdog:
             log("⚠ " + text)
             telegram(text)
 
+    def once(self, key, text, now):
+        if key not in self.last:
+            self.last[key] = now
+            log(text)
+            telegram(text)
+
     def clear(self, key):
         self.last.pop(key, None)
 
     def check(self, now):
         try:
-            hb = json.loads((DATA / "heartbeat").read_text(encoding="utf-8"))
+            hb = json.loads((self.data / "heartbeat").read_text(encoding="utf-8"))
             age = (now - datetime.fromisoformat(hb["utc"])).total_seconds() / 60
         except (OSError, ValueError, KeyError):
             hb, age = {}, None
         qty = hb.get("qty") or 0
+        tag = f"[{self.label}] "
+        unit = "zhuge-longfei" if self.label == "HSI" else f"zhuge-longfei@{self.label}"
         booting = time.monotonic() - START < HB_STALE_MIN * 60          # 啱開機：bot 未寫第一個心跳，唔好誤報
         if (age is None or age > HB_STALE_MIN) and not booting:
             what = "冇心跳檔" if age is None else f"{age:.0f} 分鐘冇心跳"
             if qty:
-                self.alert("stale_pos", f"🚨 AI 程式 {what}，仲有 {qty} 張 {hb.get('code')} {hb.get('side')}（止蝕 {hb.get('stop')}），"
-                           "冇程式守止蝕！請即睇（tmux／journalctl -u zhuge-longfei）", now)
+                self.alert("stale_pos", f"🚨 {tag}AI 程式 {what}，仲有 {qty} 張 {hb.get('code')} {hb.get('side')}（止蝕 {hb.get('stop')}），"
+                           f"冇程式守止蝕！請即睇（journalctl -u {unit}）", now)
             elif not weekend_closed(now.astimezone(HKT)):
-                self.alert("stale", f"⚠ AI 程式 {what}（冇倉）", now)
+                self.alert("stale", f"⚠ {tag}AI 程式 {what}（冇倉）", now)
         elif age is not None and age <= HB_STALE_MIN:
             self.clear("stale_pos"), self.clear("stale")
         if hb.get("errors", 0) >= ERR_ALERT:
-            self.alert("errors", f"⚠ AI 程式連續出錯 {hb.get('errors')} 次", now)
+            self.alert("errors", f"⚠ {tag}AI 程式連續出錯 {hb.get('errors')} 次", now)
         else:
             self.clear("errors")
         if (hb.get("foreign_qty") or 0) != 0:                  # 有正負（外來淡倉係負數）；只喺出現時發一次
-            if "foreign" not in self.last:
-                self.last["foreign"] = now
-                msg = f"⚠ 即月有 {hb.get('foreign_qty')} 張唔屬龍飛陣嘅倉，龍飛陣停開新倉"
-                log(msg)
-                telegram(msg)
+            self.once("foreign", f"⚠ {tag}即月有 {hb.get('foreign_qty')} 張唔屬龍飛陣嘅倉，龍飛陣停開新倉", now)
         else:
             self.clear("foreign")
         if hb.get("halted"):                                   # 日蝕停機會停到 17:00，只喺變化時發一次
-            if "halted" not in self.last:
-                self.last["halted"] = now
-                log("⚠ AI 程式已停機（halted）")
-                telegram("⚠ AI 程式已停機（halted），17:00 HKT 新交易日先會再開")
+            self.once("halted", f"⚠ {tag}AI 程式已停機（halted），新交易日先會再開", now)
         else:
             self.clear("halted")
 
 
 def main():
-    DATA.mkdir(parents=True, exist_ok=True)
-    wd = Watchdog()
+    for _, d in DIRS:
+        d.mkdir(parents=True, exist_ok=True)
+    wds = [Watchdog(label, d) for label, d in DIRS]
+    wd = wds[0]
     last_action = "init"
-    log(f"guard 開始：DATA={DATA} LADDER={LADDER}")
+    log(f"guard 開始：{', '.join(f'{l}={d}' for l, d in DIRS)} LADDER={LADDER}")
     while True:
         now = datetime.now(timezone.utc)
         action, reason, alarm = desired(now.astimezone(HKT))
-        changed = apply(action, reason)
+        changed = any([apply(action, reason, d) for _, d in DIRS])   # 戶口級風控：全部產品一齊
         if changed or action != last_action:
             msg = f"{reason} → {'停開新倉（PAUSE）' if action else '照常開倉'}"
             log(msg)
@@ -166,7 +173,8 @@ def main():
             wd.alert("ladder", "⚠ " + reason, now)
         else:
             wd.clear("ladder")
-        wd.check(now)
+        for w in wds:
+            w.check(now)
         time.sleep(LOOP_SEC)
 
 
