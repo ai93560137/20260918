@@ -43,7 +43,7 @@ VALID_ACTIONS = {"HOLD", "OPEN_LONG", "OPEN_SHORT", "CLOSE", "UPDATE_STOP"}
 
 
 def validate_decision(d: dict, *, position: int, entry: float | None, last: float,
-                      cfg, remaining_loss: float, can_open: bool, trades_today: int):
+                      cfg, remaining_loss: float, can_open: bool, trades_today: int, qty: int = 1):
     """將 AI 嘅決定過一次硬性規則。回傳 (最終動作, stop, target, 被拒原因或 None)。"""
     action = str(d.get("action", "HOLD")).upper()
     if action not in VALID_ACTIONS:
@@ -71,7 +71,7 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
             stop = last - side * cfg.min_stop_points
         if cfg.max_stop_points and dist > cfg.max_stop_points:
             stop = last - side * cfg.max_stop_points
-        risk_hkd = abs(last - stop) * cfg.point_value + cfg.slippage_points * 2 * cfg.point_value
+        risk_hkd = (abs(last - stop) + cfg.slippage_points * 2) * cfg.point_value * qty   # qty：期貨張數／ETF 股數
         if risk_hkd > remaining_loss:
             return "HOLD", None, None, f"止蝕風險 HK${risk_hkd:.0f} 超過今日剩餘額度 HK${remaining_loss:.0f}"
         if target is not None and (target - last) * side <= 0:

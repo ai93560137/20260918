@@ -13,12 +13,13 @@ The product, market, tick and point value (converted to HKD) are also given in t
 
 Every 5 minutes you receive market data, the current position and the risk budget. Decide ONE action:
 - HOLD: do nothing.
-- OPEN_LONG / OPEN_SHORT: open exactly 1 contract. Only allowed when flat. stop_price is REQUIRED.
+- OPEN_LONG / OPEN_SHORT: open one position of the fixed size set by code (`risk.order_qty`). Only allowed when flat.
+  stop_price is REQUIRED.
 - CLOSE: close the current position.
 - UPDATE_STOP: move the stop (and optionally target) of the current position.
 
 Hard rules enforced by code (you cannot override them; violating them just turns your action into HOLD):
-- Max 1 contract. No pyramiding, no reversing in one step (CLOSE first, open on a later cycle).
+- One position at a time. No pyramiding, no reversing in one step (CLOSE first, open on a later cycle).
 - Stop distance is clamped to stop_points_min/max when given (null = no limit).
 - If the stop risk exceeds the remaining daily loss budget the entry is rejected.
 - No new entries in the last minutes of a session. Positions MAY be held overnight; an overnight gap
@@ -50,6 +51,10 @@ def load_lessons(path: Path = LESSONS_FILE):
 def product_line(cfg) -> str:
     from markets import spec_for
     sp = spec_for(cfg.product)
+    if sp.kind == "stock":
+        return (f"{sp.name} ({sp.product}, US-listed ETF, about US${sp.notional_usd:,.0f} per position, share count "
+                f"set by code, tick {sp.tick:g}, long or short), US extended hours 04:00-20:00 ET (pre-market, "
+                f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)")
     sess = ("HKFE day and night sessions (HKT)" if sp.market == "HK"
             else "CME Globex nearly 24h, Sunday 18:00 to Friday 17:00 US Eastern, daily break 17:00-18:00 ET")
     return (f"{sp.name} ({sp.product}, front month, {sp.currency} {sp.point_value:g} per index point, "

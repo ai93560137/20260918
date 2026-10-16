@@ -4,9 +4,9 @@ import time as _time
 import logging
 from datetime import datetime, timedelta
 
-from futu import (OpenQuoteContext, OpenFutureTradeContext, RET_OK, Market, SecurityType,
-                  KLType, AuType, TrdEnv, TrdSide, OrderType, ModifyOrderOp, OrderStatus,
-                  SecurityFirm, PositionSide)
+from futu import (OpenQuoteContext, OpenFutureTradeContext, OpenSecTradeContext, RET_OK, Market,
+                  SecurityType, KLType, AuType, TrdEnv, TrdSide, TrdMarket, OrderType, ModifyOrderOp,
+                  OrderStatus, SecurityFirm, PositionSide)
 
 from markets import quarterly_contracts, spec_for
 from rules import HKT, CONTRACT_RE
@@ -33,11 +33,15 @@ class FutuBroker:
         self.cfg = cfg
         self.env = TrdEnv.REAL if cfg.trd_env.upper() == "REAL" else TrdEnv.SIMULATE
         self.quote = OpenQuoteContext(host=cfg.opend_host, port=cfg.opend_port)
-        self.trade = OpenFutureTradeContext(host=cfg.opend_host, port=cfg.opend_port,
-                                            security_firm=SecurityFirm.FUTUSECURITIES)
+        self.spec = spec_for(cfg.product)
+        if self.spec.kind == "stock":                      # ETF：證券戶口（美股）
+            self.trade = OpenSecTradeContext(filter_trdmarket=TrdMarket.US, host=cfg.opend_host,
+                                             port=cfg.opend_port, security_firm=SecurityFirm.FUTUSECURITIES)
+        else:
+            self.trade = OpenFutureTradeContext(host=cfg.opend_host, port=cfg.opend_port,
+                                                security_firm=SecurityFirm.FUTUSECURITIES)
         if self.env == TrdEnv.REAL and cfg.trade_password:
             _ok(*self.trade.unlock_trade(password=cfg.trade_password), "unlock_trade")
-        self.spec = spec_for(cfg.product)
         self.acc_id = cfg.acc_id or self._pick_account()
         log.info("Futu 已連接 env=%s acc_id=%s", cfg.trd_env, self.acc_id)
 
@@ -76,9 +80,14 @@ class FutuBroker:
                  "position_list_query")
         out = {}
         for _, r in df.iterrows():
-            m = CONTRACT_RE.match(str(r["code"]))
-            if not m or m.group(2) != product:
-                continue
+            code = str(r["code"])
+            if self.spec.kind == "stock":
+                if code != f"{self.spec.market}.{product}":
+                    continue
+            else:
+                m = CONTRACT_RE.match(code)
+                if not m or m.group(2) != product:
+                    continue
             qty = float(r["qty"])
             if qty == 0:
                 continue
@@ -154,10 +163,11 @@ class FutuBroker:
             price = math.floor((ref - slippage) / tick + 1e-9) * tick    # 賣：向下取 tick
             trd_side = TrdSide.SELL
         price = round(price, 4)
+        extra = {"fill_outside_rth": True} if self.spec.kind == "stock" else {}   # ETF 盤前盤後都可成交
         df = _ok(*self.trade.place_order(price=price, qty=qty, code=code,
                                          trd_side=trd_side, order_type=OrderType.NORMAL,
                                          trd_env=self.env, acc_id=self.acc_id,
-                                         remark="zhuge-longfei"), "place_order")
+                                         remark="zhuge-longfei", **extra), "place_order")
         order_id = str(df.iloc[0]["order_id"])
         log.info("落單 %s %s x%d @%s id=%s", trd_side, code, qty, price, order_id)
         deadline = _time.time() + timeout
