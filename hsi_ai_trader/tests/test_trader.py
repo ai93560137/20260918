@@ -73,7 +73,8 @@ class FakeBrain:
 def env(tmp_path):
     cfg = replace(Config(), log_dir=tmp_path / "logs", state_file=tmp_path / "state.json",
                   stop_file=tmp_path / "STOP", pause_file=tmp_path / "PAUSE",
-                  heartbeat_file=tmp_path / "heartbeat")
+                  heartbeat_file=tmp_path / "heartbeat",
+                  product="MHI", point_value=10, fee_per_side_hkd=0)   # 測試用細期數字，邏輯同大期一樣
     t = {"now": datetime(2026, 10, 16, 10, 0, 5, tzinfo=HKT)}  # 週五日市
     b, ai = FakeBroker(), FakeBrain()
     b.clock = lambda: t["now"]
@@ -144,7 +145,11 @@ def test_daily_loss_limit_halts_and_blocks(env):
     advance(t, minutes=5)
     tr.tick()
     assert b.pos["HK.MHI2610"] == -1
-    b.cash -= 9500                 # 模擬之前已蝕 9,500
+    b.cash -= 50000                # 戶口其他陣蝕錢：唔應該計入龍飛陣日蝕
+    advance(t, seconds=5)
+    tr.tick()
+    assert not tr.state.get("halted") and b.pos["HK.MHI2610"] == -1
+    tr.state["today_trades"].append({"pnl_hkd": -9500})   # 模擬之前自己已蝕 9,500
     tr.state["pos"]["stop"] = 99999  # 令止蝕唔觸發，專測日蝕上限
     b.price = 25060
     advance(t, seconds=5)
@@ -178,22 +183,47 @@ def test_no_entry_near_close(env):
     assert not b.pos.get("HK.MHI2610") and ai.ctx["risk"]["new_entries_allowed"] is False
 
 
-def test_adopt_unknown_position_and_roll(env):
+def test_foreign_position_untouched_and_blocks_entries(env):
+    """同戶口嘅人手／其他陣倉：唔接手、唔設止蝕、唔平、唔減；即月有外來倉就停開新倉。"""
     cfg, t, b, ai, tr = env
-    b.pos["HK.MHI2610"], b.cost["HK.MHI2610"] = -1, 25100
+    b.pos["HK.MHI2610"], b.cost["HK.MHI2610"] = -1, 25100      # 外來即月倉
+    b.pos["HK.MHI2611"], b.cost["HK.MHI2611"] = 1, 25100       # 外來下月倉
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.9, "reason": "x"}
     tr.tick()
-    assert tr.state["pos"]["stop"] == 25100 + cfg.emergency_stop_points
+    assert tr.state.get("pos") is None and tr.state["foreign_qty"] == -1
+    assert b.orders == [] and ai.ctx["risk"]["new_entries_allowed"] is False
+    b.price = 30000                                            # 外來倉大蝕都唔郁
+    advance(t, minutes=5)
+    tr.tick()
+    assert b.orders == [] and not tr.state.get("halted")
+    tr._flatten_all("測試")
+    assert b.orders == []
+
+
+def test_roll_closes_only_own_position(env):
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.7, "reason": "x"}
+    advance(t, minutes=5)
+    tr.tick()
+    b.pos["HK.MHI2611"], b.cost["HK.MHI2611"] = -2, 25000      # 外來下月倉
     t["now"] = datetime(2026, 10, 29, 9, 30, 5, tzinfo=HKT)   # 最後交易日 → 轉月
     tr.tick()
-    assert b.pos["HK.MHI2610"] == 0 and tr.state["contract"] == "HK.MHI2611"
+    assert b.pos["HK.MHI2610"] == 0 and b.pos["HK.MHI2611"] == -2
+    assert tr.state["contract"] == "HK.MHI2611" and tr.state["pos"] is None
 
 
 def test_stop_file(env):
     cfg, t, b, ai, tr = env
-    b.pos["HK.MHI2610"], b.cost["HK.MHI2610"] = 1, 25000
-    cfg.stop_file.write_text("x")
     tr.tick()
-    assert b.pos["HK.MHI2610"] == 0 and tr.state["halted"]
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.7, "reason": "x"}
+    advance(t, minutes=5)
+    tr.tick()
+    b.pos["HK.MHI2611"], b.cost["HK.MHI2611"] = 3, 25000      # 外來倉：STOP 都唔掂
+    cfg.stop_file.write_text("x")
+    advance(t, seconds=5)
+    tr.tick()
+    assert b.pos["HK.MHI2610"] == 0 and b.pos["HK.MHI2611"] == 3 and tr.state["halted"]
 
 
 def test_order_failure_does_not_create_position(env):

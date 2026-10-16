@@ -138,7 +138,7 @@ class FutuBroker:
         df = _ok(*self.trade.place_order(price=round(price), qty=qty, code=code,
                                          trd_side=trd_side, order_type=OrderType.NORMAL,
                                          trd_env=self.env, acc_id=self.acc_id,
-                                         remark="zhuge-mhi"), "place_order")
+                                         remark="zhuge-longfei"), "place_order")
         order_id = str(df.iloc[0]["order_id"])
         log.info("落單 %s %s x%d @%s id=%s", trd_side, code, qty, round(price), order_id)
         deadline = _time.time() + timeout
