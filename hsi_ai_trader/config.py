@@ -32,7 +32,10 @@ def _env(name, default):
 # 使用者 2026-10-16：HSI 大期，之後加 MES、MNQ、MYM；每隻產品一個獨立程式（PRODUCT 環境變數）
 _PRODUCT = _env("PRODUCT", "HSI").upper()
 SPEC = spec_for(_PRODUCT)
-_REAL_US = {x.strip().upper() for x in os.getenv("LONGFEI_REAL_PRODUCTS", "").split(",") if x.strip()}
+# [R209] 使用者 10-17：真倉同模擬倉並行。模擬程式（zhuge-longfei／zhuge-longfei@<產品>）永遠 SIMULATE；
+# 真倉程式（zhuge-longfei-real@<產品>，LONGFEI_INSTANCE=REAL）要產品喺 LONGFEI_REAL_PRODUCTS 先係 REAL，雙重鎖
+_REAL_LIST = {x.strip().upper() for x in os.getenv("LONGFEI_REAL_PRODUCTS", "").split(",") if x.strip()}
+_INSTANCE_REAL = os.getenv("LONGFEI_INSTANCE", "").strip().upper() == "REAL"
 
 
 def _bool(name, default):
@@ -44,10 +47,9 @@ class Config:
     # --- Futu OpenD ---
     opend_host: str = _env("OPEND_HOST", "127.0.0.1")
     opend_port: int = int(_env("OPEND_PORT", "11111"))
-    # 美國產品（ETF SPY／QQQ／DIA）唔跟 TRD_ENV：要喺 settings.env 嘅 LONGFEI_REAL_PRODUCTS 逐隻列明先係 REAL
-    # （使用者 10-17：證券戶口入金後轉真倉；改 settings.env 要經 PR＋「更新部機」）。HSI 照跟 TRD_ENV。
-    trd_env: str = (("REAL" if _PRODUCT in _REAL_US else "SIMULATE") if SPEC.market == "US"
-                    else _env("TRD_ENV", "SIMULATE"))
+    # 唔再跟 TRD_ENV（HSI 都係）：真倉只喺真倉程式＋settings.env 嘅 LONGFEI_REAL_PRODUCTS 列明（改要經 PR＋「更新部機」）
+    trd_env: str = "REAL" if (_INSTANCE_REAL and _PRODUCT in _REAL_LIST) else "SIMULATE"
+    instance_real: bool = _INSTANCE_REAL
     acc_id: int = int(_env("FUTU_ACC_ID", "0"))          # 0 = 自動揀第一個期貨戶口
     real_acc_id: int = int(_env("FUTU_REAL_ACC_ID", "0"))  # 真倉準備檢查用；0 = 自動揀有該市場權限嘅真實戶口
     real_preflight_min: int = int(_env("REAL_PREFLIGHT_MIN", "30"))   # 每幾分鐘唯讀檢查一次真實戶口；0 = 唔查

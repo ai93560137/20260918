@@ -363,19 +363,6 @@ def test_us_roll_eight_days_before_expiry_and_config():
         importlib.reload(cmod)
 
 
-def test_us_products_forced_simulate():
-    import importlib, os
-    import config as cmod
-    os.environ.update(PRODUCT="MES", TRD_ENV="REAL")
-    try:
-        assert importlib.reload(cmod).CFG.trd_env == "SIMULATE"
-        os.environ["PRODUCT"] = "HSI"
-        assert importlib.reload(cmod).CFG.trd_env == "REAL"
-    finally:
-        del os.environ["PRODUCT"], os.environ["TRD_ENV"]
-        importlib.reload(cmod)
-
-
 def test_etf_session_sizing_and_fee():
     from markets import ET, SPECS, session_status as ss, trading_day_key as tdk, order_qty, fee_hkd
     f = lambda h, mi, d=19: ss(datetime(2026, 10, d, h, mi, tzinfo=ET), "US", "stock")[0]
@@ -533,21 +520,23 @@ def test_real_preflight_runs_every_interval(env):
     assert tr.state["real_preflight"]["ok"] is False and "冇權限" in tr.state["real_preflight"]["error"]
 
 
-def test_us_real_needs_explicit_product_list(monkeypatch):
+def test_real_needs_real_instance_and_listed_product(monkeypatch):
     import importlib
     import config as c
+    for k in ("LONGFEI_INSTANCE", "LONGFEI_REAL_PRODUCTS", "TRD_ENV"):
+        monkeypatch.delenv(k, raising=False)
     monkeypatch.setenv("PRODUCT", "SPY")
-    monkeypatch.setenv("TRD_ENV", "REAL")
-    monkeypatch.delenv("LONGFEI_REAL_PRODUCTS", raising=False)
-    assert importlib.reload(c).Config().trd_env == "SIMULATE"
-    monkeypatch.setenv("LONGFEI_REAL_PRODUCTS", "QQQ, spy")
+    monkeypatch.setenv("LONGFEI_REAL_PRODUCTS", "QQQ, spy,HSI")
+    assert importlib.reload(c).Config().trd_env == "SIMULATE"          # 模擬程式永遠模擬
+    monkeypatch.setenv("LONGFEI_INSTANCE", "REAL")
     assert importlib.reload(c).Config().trd_env == "REAL"
     monkeypatch.setenv("PRODUCT", "DIA")
-    assert importlib.reload(c).Config().trd_env == "SIMULATE"
+    assert importlib.reload(c).Config().trd_env == "SIMULATE"          # 冇列明
     monkeypatch.setenv("PRODUCT", "HSI")
-    monkeypatch.setenv("TRD_ENV", "SIMULATE")
-    assert importlib.reload(c).Config().trd_env == "SIMULATE"
-    monkeypatch.delenv("PRODUCT")
-    monkeypatch.delenv("TRD_ENV")
-    monkeypatch.delenv("LONGFEI_REAL_PRODUCTS")
+    assert importlib.reload(c).Config().trd_env == "REAL"
+    monkeypatch.delenv("LONGFEI_INSTANCE")
+    monkeypatch.setenv("TRD_ENV", "REAL")
+    assert importlib.reload(c).Config().trd_env == "SIMULATE"          # HSI 模擬程式唔再跟 TRD_ENV
+    for k in ("PRODUCT", "TRD_ENV", "LONGFEI_REAL_PRODUCTS"):
+        monkeypatch.delenv(k)
     importlib.reload(c)

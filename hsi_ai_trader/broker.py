@@ -22,6 +22,15 @@ class BrokerError(Exception):
     pass
 
 
+def _num(v):
+    """富途有啲欄位會係 'N/A'（例如期貨戶口嘅購買力）；當 0。"""
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return 0.0
+    return 0.0 if x != x else x
+
+
 def _ok(ret, data, what):
     if ret != RET_OK:
         raise BrokerError(f"{what}: {data}")
@@ -174,7 +183,7 @@ class FutuBroker:
         ccy = "USD" if self.spec.currency == "USD" else "HKD"
         info = _ok(*self.trade.accinfo_query(trd_env=TrdEnv.REAL, acc_id=acc_id, refresh_cache=True,
                                              currency=ccy), "accinfo_query REAL").iloc[0]
-        out["funded"] = float(info.get("total_assets") or 0) > 0
+        out["funded"] = _num(info.get("total_assets")) > 0
         for k in ("is_pdt", "pdt_seq", "dt_status", "risk_status"):
             v = info.get(k)
             if v is not None and str(v) not in ("", "N/A", "nan"):
@@ -182,8 +191,8 @@ class FutuBroker:
         ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,
                                                   trd_env=TrdEnv.REAL, acc_id=acc_id),
                  "acctradinginfo_query REAL").iloc[0]
-        out["can_long"] = float(ti.get("max_cash_and_margin_buy") or 0) >= qty
-        out["can_short"] = float(ti.get("max_sell_short") or 0) >= qty
+        out["can_long"] = _num(ti.get("max_cash_and_margin_buy")) >= qty
+        out["can_short"] = _num(ti.get("max_sell_short")) >= qty
         out["ok"] = bool(out["funded"] and out["can_long"] and out["can_short"])
         return out
 
@@ -192,7 +201,7 @@ class FutuBroker:
         ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,
                                                   trd_env=self.env, acc_id=self.acc_id),
                  "acctradinginfo_query").iloc[0]
-        return int(float(ti.get("max_cash_and_margin_buy" if side > 0 else "max_sell_short") or 0))
+        return int(_num(ti.get("max_cash_and_margin_buy" if side > 0 else "max_sell_short")))
 
     # ---------- 落單 ----------
     def _order_row(self, order_id):
@@ -203,10 +212,10 @@ class FutuBroker:
     @staticmethod
     def _fill(row, price, default_qty):
         """由訂單資料計 (成交均價, 成交數量)；冇成交回傳 (None, 0)。"""
-        q = int(float(row.get("dealt_qty") or 0)) or default_qty
+        q = int(_num(row.get("dealt_qty"))) or default_qty
         if q <= 0:
             return None, 0
-        return float(row.get("dealt_avg_price") or 0) or price, q
+        return _num(row.get("dealt_avg_price")) or price, q
 
     def market_order(self, code: str, side: int, qty: int, slippage: float, timeout=15):
         """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。

@@ -103,6 +103,24 @@ check("總覽有 SPY 同未開始嘅 QQQ", "lf-SPY" in html and "QQQ" in html an
 j = client.get("/?view=longfei&format=json").get_json()
 check("合計按 HK$", j["total_hkd"]["trades"] == 1 and abs(j["total_hkd"]["points"] - 175.5) < 1e-9, j.get("total_hkd"))
 check("json 唔含權杖", "tok" not in json.dumps(j))
+html0 = client.get("/?view=longfei").get_data(as_text=True)
+check("未有真倉顯示未開始", "未開始真倉" in html0 and "lf-real-" not in html0)
+print("=== 真倉分開（R209）===")
+code, body = post({**pkt, "state": {"trd_env": "REAL", "product": "SPY", "pos": None,
+                                    "real_preflight": {"ok": True, "can_long": True}},
+                   "trades": [{"type": "CLOSE", "code": "US.SPY", "side": -1, "entry": 5000, "price": 4990,
+                               "points": 10, "pnl_hkd_gross": 1000, "ts": "2026-10-20T22:00:00+08:00"}],
+                   "decisions": [{"ts": "2026-10-20T22:00:00+08:00", "final": "HOLD"}]})
+check("真倉存 longfei/real/SPY", code == 200 and body.get("real") is True and "longfei/real/SPY/latest.json" in FAKE, (code, body))
+check("真倉決策另外存檔", "longfei/real/SPY/decisions/2026-10-20.json" in FAKE
+      and "longfei/SPY/decisions/2026-10-20.json" not in FAKE)
+check("模擬 SPY 冇被蓋", json.loads(FAKE["longfei/SPY/latest.json"][0])["status"]["trd_env"] == "SIMULATE")
+html = client.get("/?view=longfei").get_data(as_text=True)
+check("頁面真倉同模擬分開", "lf-real-SPY" in html and "lf-SPY" in html and html.index("lf-real-SPY") < html.index("lf-SPY"))
+j = client.get("/?view=longfei&format=json").get_json()
+check("真倉合計獨立", j["total_real_hkd"]["trades"] == 1 and abs(j["total_real_hkd"]["points"] - 1000) < 1e-9
+      and j["total_hkd"]["trades"] == 1, (j.get("total_real_hkd"), j.get("total_hkd")))
+check("戶口檢查唔公開", "real_preflight" not in json.dumps(j) and "real_preflight" not in html)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

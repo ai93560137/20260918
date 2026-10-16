@@ -40,16 +40,17 @@ def _gcs_cat(obj):
         return None
 
 
-def fetch(days):
+def fetch(days, base="longfei"):
+    """base：模擬倉 longfei、真倉 longfei/real（R209）。"""
     out = {}
     today = datetime.now(HKT).date()
     for p in PRODUCTS:
-        doc = _gcs_cat(f"longfei/{p}/latest.json")
+        doc = _gcs_cat(f"{base}/{p}/latest.json")
         if not isinstance(doc, dict):
             continue
         decs = []
         for k in range(days):
-            arr = _gcs_cat(f"longfei/{p}/decisions/{(today - timedelta(days=k)).isoformat()}.json")
+            arr = _gcs_cat(f"{base}/{p}/decisions/{(today - timedelta(days=k)).isoformat()}.json")
             if isinstance(arr, list):
                 decs += arr
         out[p] = {"status": doc.get("status") or {}, "trades": doc.get("trades") or [],
@@ -250,11 +251,11 @@ def readiness(data):
     return L
 
 
-def report(data, title_date=None):
+def report(data, title_date=None, real=False):
     rows = closes(data)
     day = title_date or datetime.now(HKT).strftime("%Y-%m-%d")
-    L = [f"# 🐉 龍飛陣覆盤 {day}", "",
-         "模擬盤；金額按 HK$（美股 ETF 1 美元 = 7.8 港元）、未扣佣金。少過 "
+    L = [f"# 🐉 龍飛陣覆盤 {day}・{'💰 真倉' if real else '🧪 模擬倉'}", "",
+         ("真倉" if real else "模擬盤") + "；金額按 HK$（美股 ETF 1 美元 = 7.8 港元）、未扣佣金。少過 "
          f"{MIN_N} 筆嘅分組只供參考，唔下結論。", ""]
     s = stats(rows)
     pnl = [float(r["pnl_hkd_gross"]) for r in rows if isinstance(r.get("pnl_hkd_gross"), (int, float))]
@@ -269,7 +270,8 @@ def report(data, title_date=None):
         pos = st.get("pos")
         L.append(f"- {p}：{'持倉 ' + ('好' if pos.get('side', 0) > 0 else '淡') + str(pos.get('qty')) + ' @' + str(pos.get('entry')) if pos else '空手'}"
                  f"{'；⛔ 停機 ' + str(st.get('halt_reason')) if st.get('halted') else ''}；今日 {fmt(st.get('day_pnl'))}")
-    L += readiness(data)
+    if not real:
+        L += readiness(data)
     L.append(table(_group(rows, lambda r: r["product"]), "按產品"))
     L.append(table(_group(rows, lambda r: "做好" if r.get("side", 0) > 0 else "做淡"), "按方向"))
     L.append(table(_group(rows, lambda r: r.get("open_session") or "—"), "按開倉時段"))
@@ -322,7 +324,8 @@ def main():
     if not a.fetch and not a.dir:
         ap.error("要 --fetch 或者 --dir")
     data = fetch(a.days) if a.fetch else load_dir(a.dir)
-    text = report(data)
+    real = fetch(a.days, "longfei/real") if a.fetch else {}
+    text = (report(real, real=True) + "\n---\n\n" if real else "") + report(data)
     if a.out:
         Path(a.out).write_text(text, encoding="utf-8")
     else:
