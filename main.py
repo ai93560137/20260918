@@ -7423,9 +7423,9 @@ def _lf_hkt(ts):
 
 def build_longfei_page(data):
     nav = page_nav("longfei")
-    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・AI 自動交易恒指大期</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>由 Claude AI 每 5 分鐘自己決定買賣恒指大期即月，最多 1 張；程式負責落單同硬性風控"
-             "（每日虧損上限到咗即平倉停機）。目標係取代人手落單。</p></div>")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
+    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月，最多 1 張；程式負責落單同硬性風控"
+             "（每日虧損上限到咗即平倉停機）。</p></div>")
     if data.get("status") != "ok":
         return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
     st, m = data["state"], data["metrics"]
