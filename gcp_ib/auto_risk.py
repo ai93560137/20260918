@@ -74,6 +74,11 @@ def alerts(M, cushion_line, stop_line):
         a["hard_stop"] = f"⛔ 合計權益 {M['equity']:,.0f} 低於硬止損 {M['hard_stop']:,.0f}"
     if M.get("cushion") is not None and M["cushion"] < cushion_line:
         a["margin"] = f"⚠ 富途保證金緩衝 HK${M['cushion']:,.0f}（< {cushion_line:,.0f}）"
+    sec = M.get("sec") or {}
+    if sec.get("exposed") and sec.get("ladder", "A") != "A":   # [R205] 證券戶口（龍飛陣 ETF）；冇倉嘅現金戶口唔警報
+        a["sec_margin"] = (f"⚠ 富途證券戶口緩衝 HK${sec['cushion']:,.0f} → {sec['ladder']}"
+                           f"（線 Ⓑ {risk_report.SEC_LADDER_CUSHION['B']:,.0f}／Ⓒ {risk_report.SEC_LADDER_CUSHION['C']:,.0f}"
+                           f"／Ⓓ {risk_report.SEC_LADDER_CUSHION['D']:,.0f}）")
     for name, use in M.get("stop_use", {}).items():
         if use >= 1:
             a[f"stop:{name}"] = f"⛔ {name} 觸止損（買回 {use * 100:.0f}% 止損線）"
@@ -118,7 +123,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R199"
+SCRIPT_VERSION = "R205"
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3
@@ -176,7 +181,7 @@ def pnl_daily(t):
 
 def write_ladder(t, M):
     """[R199] 風控級別寫入 ZHUGE_LADDER_FILE（冇設就唔寫，例如部機）：一行「級別 day|night YYYY-MM-DD HH:MM」，
-    級別同 risk_report.ladder_level 一致（A／B／C／D，夜盤 ×1.5）。龍飛陣 VM 嘅 longfei_guard.py 讀：
+    級別同 risk_report.ladder_level 一致（A／B／C／D，夜盤 ×1.5）。[R205] 有設 ZHUGE_SEC_LADDER_FILE 就另寫證券戶口級別。龍飛陣 VM 嘅 longfei_guard.py 讀：
     Ⓑ → PAUSE；Ⓒ／Ⓓ／硬止損／檔案變舊（讀唔到富途或冇緩衝就唔寫）→ 只發 Telegram（使用者 10-16 定）。"""
     p = os.environ.get("ZHUGE_LADDER_FILE", "").strip()
     hard = bool(M) and M.get("gap", 1) < 0                     # RISK_LADDER §6b：硬止損都當 Ⓓ（STOP）
@@ -184,10 +189,17 @@ def write_ladder(t, M):
         return
     night = risk_report.ladder_night(t)
     lv = "D" if hard else risk_report.ladder_level(M["cushion"], night)
+    _atomic_write(p, f"{lv} {'night' if night else 'day'} {t:%Y-%m-%d %H:%M}{' hard_stop' if hard else ''}\n")
+    sp = os.environ.get("ZHUGE_SEC_LADDER_FILE", "").strip()   # [R205] 證券戶口級別（唔分日夜，同一格式俾 guard 讀）
+    if sp and M.get("sec"):
+        slv = "D" if hard else M["sec"]["ladder"]
+        _atomic_write(sp, f"{slv} sec {t:%Y-%m-%d %H:%M}{' hard_stop' if hard else ''}\n")
+
+
+def _atomic_write(p, text):
     path = Path(p).expanduser()
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(f"{lv} {'night' if night else 'day'} {t:%Y-%m-%d %H:%M}{' hard_stop' if hard else ''}\n",
-                   encoding="utf-8")
+    tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
 
 
