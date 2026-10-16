@@ -387,5 +387,23 @@ ph = main._fy_iv_term_html({"iv_term": term}, "HK.HSI_FRONT", {"har_vol": 15.0, 
 check("[R178] 操作箱 IV 表：方向一到期日標 ✓、÷ 預測、本週高過下週提示", "✓ 方向一用" in ph and "1.20" in ph and "本週 IV 比下週高 3.0" in ph, ph[:300])
 check("[R178] 冇 IV 數據時教開 iv_push.py", "iv_push.py" in main._fy_iv_term_html({}, "HK.HSI_FRONT", {}))
 
+# ---- [R194] 第 4 步合計權利金 ----
+_q = [{"expiry": "2026-10-23", "type": t, "strike": k, "bid": b, "ask": a, "iv": 16.0}
+      for t, k, b, a in (("P", 23900, 164, 169), ("C", 23900, 323, 332), ("P", 24000, 204, 209), ("C", 24000, 263, 270),
+                         ("C", 24250, 145, 151), ("P", 23550, 0, 0))]
+_t = {"quotes": _q, "age": 600, "fresh": True}
+pm = main._strangle_premium(_t, "2026-10-23", 23900, 24250, 24062, 5)
+check("[R194] 兩腳有買賣價 → 中間價相加、唔係估", pm["total"] == 166.5 + 148.0 and not pm["est"], pm)
+check("[R194] 遠期價用 Put-Call 平價（K + C − P 中位數）", 24050 <= pm["fwd"] <= 24070, pm)
+html_pm = main._fy_premium_html(pm, 80)
+check("[R194] 顯示合計點數同夠閘", "314 點" in html_pm and "✅ 夠 80 點" in html_pm and "買 164／賣 169" in html_pm, html_pm)
+pm2 = main._strangle_premium(_t, "2026-10-23", 23550, 24600, 24062, 5)
+check("[R194] 冇報價（買賣 0）→ 由最近行使價中間價反推波幅估", pm2["est"] and pm2["put"]["iv_strike"] == 23900
+      and pm2["call"]["iv_strike"] == 24250 and 20 < pm2["put"]["mid"] < 120 and 20 < pm2["call"]["mid"] < 120, pm2)
+html_pm2 = main._fy_premium_html({**pm2, "total": 70.0}, 80)
+check("[R194] 少過閘 → 這週不沽、標估算", "❌ 少過 80 點，這週不沽" in html_pm2 and "≈" in html_pm2 and "含估算" in html_pm2, html_pm2)
+check("[R194] 冇報價 → None", main._strangle_premium({"quotes": []}, "2026-10-23", 23550, 24600, 24062, 5) is None)
+check("[R194] 期限結構帶逐張報價", any(q["strike"] == 24300 and q["type"] == "C" for q in term["quotes"]), term.get("quotes", [])[:2])
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

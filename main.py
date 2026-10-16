@@ -4231,6 +4231,37 @@ def _peak_signal_text(kind, side, strat, period, s, price, symbol=None):
     return "\n".join(lines)
 
 
+def _peak_both_text(kind, strat, hi, lo, price, symbol=None):
+    """[R198] 同一段、同一策略、同一輪高位低位一齊觸發 → 合併成一則（使用者 10-16：兩個訊息變一個，加埋解釋）。"""
+    zh_kind = {"day": "交易日", "week": "週", "month": "月"}[kind]
+    acc_h, acc_l = _peak_acc(symbol, f"{kind}/high/{strat}"), _peak_acc(symbol, f"{kind}/low/{strat}")
+    lines = [f"⚠️{FENGYANG_TAG}{futu_market(symbol)['zh']} {PEAK_ZH[kind]}高位、低位都可能已出現｜{PEAK_STRAT_ZH[strat]}",
+             f"{PEAK_ZH[kind]}範圍 {lo['ext']:,.0f}–{hi['ext']:,.0f}（高低差 {hi['ext'] - lo['ext']:,.0f} 點），現價 {price:,.0f}"
+             f"（離高位 {hi['dist']:,.0f} 點、離低位 {lo['dist']:,.0f} 點）",
+             f"意思：{PEAK_ZH[kind]}餘下時間大概率喺呢個範圍內上落。",
+             f"B 機率法：之後再創新高的機率 {hi['prob'] * 100:.0f}%、再創新低的機率 {lo['prob'] * 100:.0f}%"]
+    if acc_h is not None or acc_l is not None:
+        lines.append("回測：這類通知" + "、".join(f"{zh_kind}{z} {a:.0%}" for z, a in (("高位", acc_h), ("低位", acc_l)) if a is not None)
+                     + f" 準確（{PEAK_STRAT_ZH[strat]}）")
+    lines.append(f"（{PEAK_STRAT_ZH[strat]}係同一個時間點分別判斷高位、低位，兩邊都離現價夠遠就會一齊出現，唔係矛盾。）")
+    lines.append("統計判斷，不是交易建議。")
+    return "\n".join(lines)
+
+
+def _peak_merge_pairs(add, symbol):
+    """[R198] 同一輪新觸發、同段同策略嘅高位＋低位：高位那則改用合併文字，低位那則標 merged_into（唔再單獨發）。"""
+    by = {}
+    for f in add:
+        by.setdefault((f["kind"], f["key"], f["strat"]), {})[f["side"]] = f
+    for (kind, _key, strat), sides in by.items():
+        hi, lo = sides.get("high"), sides.get("low")
+        if hi and lo:
+            hi["text"] = _peak_both_text(kind, strat, hi, lo, hi["price"], symbol)
+            hi["merged"] = lo["id"]
+            lo["merged_into"] = hi["id"]
+    return add
+
+
 def futu_peak_update(symbol, now=None):
     """每包 5 分 K 到達時重算；任一策略第一次觸發就記一筆通知（同一段、同一邊、同一策略只記一次）。"""
     try:
@@ -4258,6 +4289,7 @@ def futu_peak_update(symbol, now=None):
             add = [f for f in fresh if f["id"] not in seen]
             if not add:
                 return None, 0
+            _peak_merge_pairs(add, symbol)                           # [R198]
             return (items + add)[-FUTU_SIGNAL_KEEP:], len(add)
 
         added = gcs_update(futu_signal_file(symbol), mutate, default_factory=list)
@@ -4307,7 +4339,7 @@ def futu_signals_report(symbol, ack=None):
         return {"status": "ok", "acked": n}
     items = gcs_read_json(futu_signal_file(symbol), [])
     pending = [{"id": e["id"], "text": e["text"]} for e in (items if isinstance(items, list) else [])
-               if isinstance(e, dict) and not e.get("sent")]
+               if isinstance(e, dict) and not e.get("sent") and not e.get("merged_into")]       # [R198] 合併咗嘅低位唔單獨發
     paper = futu_paper_state(symbol)                                 # [R116]
     pending += [{"id": e["id"], "text": e["text"]} for e in (paper or {}).get("notices", [])
                 if isinstance(e, dict) and not e.get("sent")]
@@ -4655,11 +4687,14 @@ def futu_iv_term(symbol, calendar=None, now=None):
     spot = to_float(bars[-1].get("close")) if bars else None
     if not spot:
         return None
-    by_exp = {}
+    by_exp, quotes = {}, []
     for o in snap.get("options") or []:
         k, iv = to_float(o.get("strike")), to_float(o.get("iv"))
         if k and iv and o.get("expiry"):
             by_exp.setdefault(o["expiry"], []).append((k, iv))
+        if k and o.get("expiry"):                                        # [R194] 逐張買賣價，操作箱計合計權利金用
+            quotes.append({"expiry": o["expiry"], "type": str(o.get("option_type") or "").upper()[:1], "strike": k,
+                           "bid": to_float(o.get("bid")), "ask": to_float(o.get("ask")), "iv": iv})
     now = now or datetime.now(timezone.utc)
     today = now.astimezone(m["tz"]).date()
     rows = []
@@ -4682,7 +4717,7 @@ def futu_iv_term(symbol, calendar=None, now=None):
         return None
     age = futu_age_sec(snap, now.timestamp())
     return {"alias": alias, "spot": spot, "source": str(snap.get("source") or "").partition(":")[2], "rows": rows,
-            "age": age, "fresh": age is not None and age <= FUTU_IV_TERM_MAX_AGE, "received_utc": snap.get("received_utc")}
+            "quotes": quotes, "age": age, "fresh": age is not None and age <= FUTU_IV_TERM_MAX_AGE, "received_utc": snap.get("received_utc")}
 
 
 def futu_iv_compare(fc, now=None):
@@ -8183,6 +8218,8 @@ def _strangle_plan(data, symbol=None, now=None):
         sig = vol / 100 * math.sqrt(n / 252) * F
         out.update(sigma=sig, put_raw=F - sig, call_raw=F + sig,
                    put=int(math.floor((F - sig) / step) * step), call=int(math.ceil((F + sig) / step) * step))
+        out["prem"] = _strangle_premium(term, out["expiry"], out["put"], out["call"], F,
+                                        t_row["days"] if t_row else n)              # [R194] 合計權利金
     cal_w = ((data.get("accuracy") or {}).get("week") or {}).get("cal")
     if cal_w and fc.get("range") and fc.get("ref_close"):              # 變體：下週預測範圍的九成邊（5%／95% 分位）
         lv = _hl_levels(fc["ref_close"], fc["range"] * math.sqrt(n) * PERIOD_RANGE_RATIO["week"][1], cal_w["ups"], cal_w["downs"], 0.05)
@@ -8205,6 +8242,7 @@ def _strangle_plan(data, symbol=None, now=None):
             if mk_vol:
                 sig_mk = mk_vol / 100 * math.sqrt(n_mk / 252) * F
                 mk.update(sigma=sig_mk, put=int(math.floor((F - sig_mk) / step) * step), call=int(math.ceil((F + sig_mk) / step) * step))
+                mk["prem"] = _strangle_premium(term, mk_exp, mk["put"], mk["call"], F, n_mk)   # [R194]
             out["makeup"] = mk
     return out
 
@@ -8225,6 +8263,73 @@ def _strangle_probs(ref, big_r, cal, put, call):
             "touch_call": round(_share_ge(ups, (call - ref) / big_r) * 100),
             "inside": round(sum(1 for c in closes if lo_c < c < hi_c) / len(closes) * 100),
             "pay_avg": round(sum(pays) / len(pays)), "pay_p90": round(_quantile(sorted(pays), 0.9))}
+
+
+def _strangle_premium(term, expiry, put, call, F, days):
+    """[R194] 方向一兩腳嘅合計權利金（中間價）。有買賣價（兩邊都 > 0）就用報價中間價；
+    冇（行使價唔喺 iv_push 採集範圍，或者冇莊家）→ 估：遠期價用同到期日 Put-Call 平價（K + C − P 中位數，冇就用 F），
+    由同類型、最近有買賣價嘅行使價中間價反推波幅（Black-76，r = 0，T = 交易日 ÷ 252），再套落目標行使價，標「估」。
+    （富途自己嘅 IV 同中間價對唔齊，所以唔直接用。）冇報價 → None。"""
+    if not term or not put or not call:
+        return None
+    T = max(days, 1) / 252
+
+    def mid(q):
+        return (q["bid"] + q["ask"]) / 2 if q.get("bid") and q.get("ask") and q["ask"] >= q["bid"] > 0 else None
+    qs = [dict(q, mid=mid(q)) for q in term.get("quotes") or [] if q["expiry"] == expiry]
+    pairs = {}
+    for q in qs:
+        if q["mid"]:
+            pairs.setdefault(q["strike"], {})[q["type"]] = q["mid"]
+    par = sorted(k + v["C"] - v["P"] for k, v in pairs.items() if "C" in v and "P" in v)
+    fwd = par[len(par) // 2] if par else F
+    if not fwd:
+        return None
+
+    def implied(price, k, call):
+        lo, hi = 0.01, 3.0
+        if price <= _dz_bs(fwd, k, T, lo, call) or price >= _dz_bs(fwd, k, T, hi, call):
+            return None
+        for _ in range(60):
+            m_ = (lo + hi) / 2
+            lo, hi = (m_, hi) if _dz_bs(fwd, k, T, m_, call) < price else (lo, m_)
+        return (lo + hi) / 2
+    legs = {}
+    for typ, k in (("P", put), ("C", call)):
+        same = [q for q in qs if q["type"] == typ and q["mid"]]
+        q = next((x for x in same if x["strike"] == k), None)
+        if q:
+            legs[typ] = {"strike": k, "mid": q["mid"], "bid": q["bid"], "ask": q["ask"], "est": False}
+            continue
+        for near in sorted(same, key=lambda x: abs(x["strike"] - k)):
+            vol = implied(near["mid"], near["strike"], typ == "C")
+            if vol:
+                legs[typ] = {"strike": k, "mid": _dz_bs(fwd, k, T, vol, typ == "C"), "est": True,
+                             "iv": vol * 100, "iv_strike": near["strike"]}
+                break
+        else:
+            return None
+    return {"put": legs["P"], "call": legs["C"], "total": legs["P"]["mid"] + legs["C"]["mid"], "fwd": fwd,
+            "est": legs["P"]["est"] or legs["C"]["est"], "age": term.get("age"), "fresh": term.get("fresh")}
+
+
+def _fy_premium_html(pm, gate):
+    """[R194] 第 4 步：現在合計權利金幾多點，夠唔夠閘。"""
+    if not pm:
+        return "現在合計權利金：未有期權報價（要 futu/iv_push.py 推 IV）"
+
+    def leg(x, name):
+        if x["est"]:
+            return (f"{name} {_n(x['strike'])} ≈ {x['mid']:.0f} 點<span class='fy-band'>（估：呢個行使價冇報價，用 {_n(x['iv_strike'])} "
+                    f"{name} 中間價反推波幅 {x['iv']:.1f}% 計）</span>")
+        return f"{name} {_n(x['strike'])} {x['mid']:.1f} 點（買 {x['bid']:g}／賣 {x['ask']:g}）"
+    total = pm["total"]
+    ok = total >= gate
+    verdict = (f"✅ 夠 {gate} 點，可以沽" if ok else f"❌ 少過 {gate} 點，這週不沽") + ("（含估算：價外 Put 實際通常貴少少、價外 Call 平少少；落單前以券商中間價為準）" if pm["est"] else "")
+    age = pm.get("age")
+    when = (f"{countdown_text(age)} 前報價" if age is not None else "報價時間不明") + ("" if pm.get("fresh") else "・⚠️ 舊報價")
+    return (f"現在合計權利金（中間價）{'≈ ' if pm['est'] else ''}<b>{total:.0f} 點</b> ＝ {leg(pm['put'], 'Put')} ＋ {leg(pm['call'], 'Call')}"
+            f"（{esc(when)}）→ <b>{verdict}</b>")
 
 
 def _fy_iv_term_html(data, symbol, p):
@@ -8317,6 +8422,7 @@ def _fy_howto(data, symbol=None, now=None):
         mk_html = ("<div class='fy-howto-makeup'>🔁 <b>補做（只限上週五因風控閘冇開倉）</b>：今日 " + esc(_day_label(p["today"]))
                    + f" 收市前後，如果緩衝已回升到 HK$150,000 以上而且高過 RISK_LADDER Ⓑ 線，可以{legs}。"
                    f"<br>權利金閘按剩餘日數縮細：合計少於 <b>{mk['gate']} 點</b>（= {PREMIUM_GATE} × √({mk['n']}÷5)）唔做。"
+                   + (f"<br>{_fy_premium_html(mk.get('prem'), mk['gate'])}。" if mk.get("put") else "") +
                    "<span class='fy-band'>真實 52 週回測：週一入場每週 +29、週二 +39（上週五入 +54），最差一週細好多；"
                    "上週五已經開咗倉就唔好再沽（唔加倉）。research/hsi_futures_range/iv_timing/</span></div>")
     alt = (f"📎 變體（更穩，回測 +39 點／週、96% 週賺、最差 −144）：行使價改用下週預測範圍的九成邊 Put <b>{_n(p['alt_put'])}</b>／Call <b>{_n(p['alt_call'])}</b>。"
@@ -8329,7 +8435,8 @@ def _fy_howto(data, symbol=None, now=None):
         f"現在：F ≈ <b>{f_txt}</b>；{iv_txt}。",
         f"<b>第 2 步 算 σ點</b> ＝ IV × √(到期前交易日數 ÷ 252) × F。到期週有 {p['n']} 個交易日 → {sig_txt}。",
         f"<b>第 3 步 定行使價</b>：{strike_txt}。",
-        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金（中間價）<b>少於 {PREMIUM_GATE} 點這週不沽</b>（R179：IV 低、權利金少的週最差，research/hsi_futures_range/iv_decide/）；回測平均 119 點。",
+        f"<b>第 4 步 沽出</b>：{sell_txt}。合計權利金（中間價）<b>少於 {PREMIUM_GATE} 點這週不沽</b>（R179：IV 低、權利金少的週最差，research/hsi_futures_range/iv_decide/）；回測平均 119 點。"
+        + (f"<br>{_fy_premium_html(p.get('prem'), PREMIUM_GATE)}。" if p.get("sigma") else ""),
         f"<b>第 5 步 持有到期</b>：不對沖、不中途平倉、不加倉。{esc(_day_label(p['expiry']))} 現金結算：{hold_txt}",
         f"<b>第 6 步 記錄</b>：到期後記下結算價與淨利（權利金 − 賠付 − 每腳 4 點成本），寫進 research/hsi_futures_range/PAPER_TRADING.md；"
         f"到期當天 {p['cut']} 後開下一週的倉。",
