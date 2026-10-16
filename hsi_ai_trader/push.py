@@ -35,7 +35,7 @@ def build_packet(cfg, state, token):
     trades = [t for t in _tail_jsonl(cfg.log_dir / "trades.jsonl", MAX_TRADES * 3)
               if t.get("type") in ("OPEN", "CLOSE")][-MAX_TRADES:]
     decisions = [{k: d.get(k) for k in ("ts", "bar", "last", "pos", "ai_action", "final", "confidence",
-                                        "reason", "rejected", "stop", "target", "usage")}
+                                        "reason", "rejected", "stop", "target", "usage", "lessons", "session")}
                  for d in _tail_jsonl(cfg.log_dir / "decisions.jsonl", MAX_DECISIONS)]
     status = {"trd_env": cfg.trd_env, "product": cfg.product, "point_value": cfg.point_value,
               "max_qty": cfg.max_qty, "daily_loss_limit": cfg.daily_loss_limit,

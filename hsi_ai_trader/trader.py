@@ -152,6 +152,10 @@ class Trader:
         meta = st.get("pos")
         if qty != 0 and meta and session and not stale:
             side = 1 if qty > 0 else -1
+            if meta.get("entry") is not None:            # 覆盤用：持倉期間最多浮賺（MFE）／浮蝕（MAE），單位點
+                exc = (last - meta["entry"]) * side
+                meta["mfe"] = round(max(meta.get("mfe", 0.0), exc), 4)
+                meta["mae"] = round(min(meta.get("mae", 0.0), exc), 4)
             if stop_hit(side, last, meta.get("stop")):
                 self._close(contract, qty, f"止蝕 {meta['stop']}", last)
                 return
@@ -195,7 +199,8 @@ class Trader:
                "ai_action": d.get("action"), "ai_stop": d.get("stop_price"),
                "ai_target": d.get("target_price"), "confidence": d.get("confidence"),
                "reason": d.get("reason"), "final": action, "stop": stop, "target": target,
-               "rejected": rejected, "usage": d.get("_usage"), "day_pnl": st.get("day_pnl")}
+               "rejected": rejected, "usage": d.get("_usage"), "day_pnl": st.get("day_pnl"),
+               "lessons": d.get("_lessons"), "session": session}
         self._log("decisions", rec)
         hist = st.setdefault("recent_decisions", [])
         hist.append({"t": now.strftime("%H:%M"), "action": action, "ai": d.get("action"),
@@ -215,11 +220,14 @@ class Trader:
             tgt_adj = round_tick(px + side * abs(target - last), cfg.tick) if target else None
             st["pos"] = {"code": contract, "side": side, "qty": n_open, "entry": px,
                          "stop": stop_adj, "target": tgt_adj, "opened_at": now.isoformat(),
-                         "reason": d.get("reason")}
+                         "reason": d.get("reason"), "risk_pts": round(dist, 4), "mfe": 0.0, "mae": 0.0,
+                         "lessons": d.get("_lessons"), "confidence": d.get("confidence"), "session": session}
             st["trades_today"] = st.get("trades_today", 0) + 1
             self._log("trades", {"type": "OPEN", "code": contract, "side": side,
                                  "qty": n_open, "price": px, "stop": stop_adj,
-                                 "target": tgt_adj, "reason": d.get("reason")})
+                                 "target": tgt_adj, "reason": d.get("reason"), "risk_pts": round(dist, 4),
+                                 "confidence": d.get("confidence"), "lessons": d.get("_lessons"),
+                                 "session": session})
         elif action == "CLOSE":
             self._close(contract, qty, "AI：" + (rejected or d.get("reason") or ""), last)
         elif action == "UPDATE_STOP" and st.get("pos"):
@@ -290,12 +298,23 @@ class Trader:
         st = self.state
         entry = meta.get("entry") if meta.get("code") == code else None
         side = 1 if qty > 0 else -1
-        pts = round((px - entry) * side, 1) if entry is not None else None
+        pts = round((px - entry) * side, 4) if entry is not None else None
         hkd = round(pts * abs(qty) * self.cfg.point_value) if pts is not None else None
         net = hkd - fee_hkd(spec_for(self.cfg.product), qty, self.cfg.fee_per_side_hkd) if hkd is not None else None
+        risk = meta.get("risk_pts") if meta.get("code") == code else None
+        hold = None
+        try:
+            hold = round((self.clock() - datetime.fromisoformat(meta["opened_at"])).total_seconds() / 60, 1)
+        except (KeyError, TypeError, ValueError):
+            pass
+        # 覆盤欄位：R 倍數（點數 ÷ 開倉時止蝕距離）、MFE／MAE、持倉分鐘、開倉時信心、教學簿版本、時段
         rec = {"type": "CLOSE", "code": code, "side": side, "qty": abs(qty), "entry": entry,
-               "price": px, "points": pts, "pnl_hkd_gross": hkd, "reason": reason,
-               "opened_at": meta.get("opened_at")}
+               "price": px, "points": pts, "pnl_hkd_gross": hkd, "pnl_hkd_net": net, "reason": reason,
+               "opened_at": meta.get("opened_at"), "risk_pts": risk,
+               "r_multiple": round(pts / risk, 2) if pts is not None and risk else None,
+               "mfe": meta.get("mfe"), "mae": meta.get("mae"), "hold_min": hold,
+               "confidence": meta.get("confidence"), "lessons": meta.get("lessons"),
+               "open_session": meta.get("session"), "open_reason": (meta.get("reason") or "")[:200]}
         self._log("trades", rec)
         st.setdefault("today_trades", []).append(
             {"side": "LONG" if side > 0 else "SHORT", "entry": entry, "exit": px,

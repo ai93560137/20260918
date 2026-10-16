@@ -62,6 +62,12 @@ check("200 stored", code == 200 and body.get("status") == "stored", (code, body)
 doc = json.loads(FAKE["longfei/HSI/latest.json"][0])
 check("內容齊", doc["status"]["product"] == "HSI" and len(doc["trades"]) == 2 and len(doc["decisions"]) == 1)
 check("權杖唔入檔", "tok" not in FAKE["longfei/HSI/latest.json"][0].replace("stored", ""))
+print("=== 決策按日存檔（去重） ===")
+dpkt = {**pkt, "decisions": [{"ts": "2026-10-17T10:00:03+08:00", "final": "HOLD"},
+                             {"ts": "2026-10-17T10:05:03+08:00", "final": "HOLD"}]}
+post(dpkt); post(dpkt)
+arch = json.loads(FAKE["longfei/HSI/decisions/2026-10-17.json"][0])
+check("存檔兩筆、唔重複", len(arch) == 2, len(arch))
 print("=== 格式錯 ===")
 code, _ = post({**pkt, "trades": "x"})
 check("trades 唔係 list → 422", code == 422, code)

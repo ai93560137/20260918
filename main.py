@@ -3161,6 +3161,7 @@ LONGFEI_ETFS = {"SPY", "QQQ", "DIA"}
 LONGFEI_MAX_TRADES = 500
 LONGFEI_MAX_DECISIONS = 30
 LONGFEI_MAX_BYTES = 400_000
+LONGFEI_ARCHIVE_MAX = 600                            # [R204] 每日每產品決策存檔上限（一日最多約 290 個）
 
 
 def handle_longfei_push(payload):
@@ -3185,6 +3186,22 @@ def handle_longfei_push(payload):
     except StorageError as exc:
         log_event(f"⚠️ [龍飛陣寫入失敗] {exc}", severity="ERROR", component="longfei")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
+    # [R204] 覆盤用：決策按日（香港時間）累積存檔，按 ts 去重；latest.json 只得最近 30 個
+    by_day = {}
+    for d in doc["decisions"]:
+        ts = str(d.get("ts") or "")
+        if ARCHIVE_DATE_RE.match(ts[:10]):
+            by_day.setdefault(ts[:10], []).append(d)
+    for day, rows in by_day.items():
+        def mutate(existing, rows=rows):
+            kept = [r for r in (existing if isinstance(existing, list) else []) if isinstance(r, dict)]
+            seen = {r.get("ts") for r in kept}
+            new = [r for r in rows if r.get("ts") not in seen]
+            return (kept + new)[-LONGFEI_ARCHIVE_MAX:], len(new)
+        try:
+            gcs_update(f"{LONGFEI_DIR}/{product}/decisions/{day}.json", mutate, default_factory=list)
+        except StorageError as exc:
+            log_event(f"⚠️ [龍飛陣決策存檔失敗] {product} {day} {exc}", severity="WARNING", component="longfei")
     return jsonify({"status": "stored", "product": product, "trades": len(doc["trades"]),
                     "decisions": len(doc["decisions"])}), 200
 

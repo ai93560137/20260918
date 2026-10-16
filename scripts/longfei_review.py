@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""[R204] 🐉 龍飛陣覆盤：讀 GCS longfei/<產品>/latest.json（成交）同 decisions/<日>.json（決策），出 Markdown 報告。
+
+用途：每日覆盤，搵出邊類單賺、邊類單蝕，提出「教學簿」（hsi_ai_trader/LESSONS.md）候選改動，
+由使用者批准先寫入。只讀，唔落單、唔改任何設定。
+
+    python3 scripts/longfei_review.py --fetch                 # 經 gcp_agent.py 讀 GCS，印報告
+    python3 scripts/longfei_review.py --dir 某資料夾           # 離線：<產品>.json＋<產品>_decisions_*.json
+    python3 scripts/longfei_review.py --fetch --days 7 --out 報告.md
+
+原則（防過度擬合）：任何分組少過 MIN_N 筆唔出結論；候選教學要寫明樣本數；新教學生效後要同舊版本分開計。
+"""
+import argparse
+import json
+import math
+import re
+import subprocess
+import sys
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+HKT = timezone(timedelta(hours=8))
+PRODUCTS = ["HSI", "SPY", "QQQ", "DIA"]
+MIN_N = 10            # 分組最少筆數先下結論
+ROOT = Path(__file__).resolve().parent.parent
+
+
+# ---------------- 讀數據 ----------------
+def _gcs_cat(obj):
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "gcp_agent.py"), "cat", "--object", obj],
+                       capture_output=True, text=True, timeout=90)
+    text = r.stdout
+    i = min([k for k in (text.find("{"), text.find("[")) if k >= 0] or [-1])   # 跳過開頭嘅提示行
+    if r.returncode != 0 or i < 0:
+        return None
+    try:
+        return json.loads(text[i:])
+    except ValueError:
+        return None
+
+
+def fetch(days):
+    out = {}
+    today = datetime.now(HKT).date()
+    for p in PRODUCTS:
+        doc = _gcs_cat(f"longfei/{p}/latest.json")
+        if not isinstance(doc, dict):
+            continue
+        decs = []
+        for k in range(days):
+            arr = _gcs_cat(f"longfei/{p}/decisions/{(today - timedelta(days=k)).isoformat()}.json")
+            if isinstance(arr, list):
+                decs += arr
+        out[p] = {"status": doc.get("status") or {}, "trades": doc.get("trades") or [],
+                  "decisions": _merge_decs(decs, doc.get("decisions") or [])}
+    return out
+
+
+def _merge_decs(archived, recent):
+    """存檔（R204 部署後先有）＋ latest.json 最近 30 個決策，按 ts 去重。"""
+    seen, out = set(), []
+    for x in list(archived) + list(recent):
+        if isinstance(x, dict) and x.get("ts") not in seen:
+            seen.add(x.get("ts"))
+            out.append(x)
+    return sorted(out, key=lambda x: str(x.get("ts") or ""))
+
+
+def load_dir(d):
+    out = {}
+    for p in PRODUCTS:
+        f = Path(d) / f"{p}.json"
+        if not f.exists():
+            continue
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        decs = []
+        for g in sorted(Path(d).glob(f"{p}_decisions_*.json")):
+            decs += json.loads(g.read_text(encoding="utf-8"))
+        out[p] = {"status": doc.get("status") or {}, "trades": doc.get("trades") or [],
+                  "decisions": _merge_decs(decs, doc.get("decisions") or [])}
+    return out
+
+
+# ---------------- 計數 ----------------
+def stats(rows, key="pnl_hkd_gross"):
+    vals = [float(r[key]) for r in rows if isinstance(r.get(key), (int, float))]
+    n = len(vals)
+    if not n:
+        return {"n": 0}
+    wins = [v for v in vals if v > 0]
+    losses = [-v for v in vals if v < 0]
+    cum = peak = dd = 0.0
+    for v in vals:
+        cum += v
+        peak = max(peak, cum)
+        dd = max(dd, peak - cum)
+    rs = [float(r["r_multiple"]) for r in rows if isinstance(r.get("r_multiple"), (int, float))]
+    return {"n": n, "win": len(wins) / n, "sum": sum(vals), "avg": sum(vals) / n,
+            "pf": (sum(wins) / sum(losses)) if losses else None,
+            "rrr": ((sum(wins) / len(wins)) / (sum(losses) / len(losses))) if wins and losses else None,
+            "dd": dd, "avg_r": (sum(rs) / len(rs)) if rs else None}
+
+
+def t_stat(vals):
+    n = len(vals)
+    if n < 3:
+        return None
+    m = sum(vals) / n
+    sd = math.sqrt(sum((v - m) ** 2 for v in vals) / (n - 1))
+    return m / (sd / math.sqrt(n)) if sd > 0 else None
+
+
+def closes(data):
+    rows = []
+    for p, d in data.items():
+        last_open = None
+        for t in sorted(d["trades"], key=lambda t: str(t.get("ts") or "")):
+            if t.get("type") == "OPEN":
+                last_open = t
+            elif t.get("type") == "CLOSE":
+                row = {**t, "product": p}
+                if last_open:   # 舊紀錄 CLOSE 冇入場資料：由對應 OPEN 補
+                    for k_close, k_open in (("open_reason", "reason"), ("confidence", "confidence"),
+                                            ("open_session", "session"), ("lessons", "lessons")):
+                        if row.get(k_close) is None and last_open.get(k_open) is not None:
+                            row[k_close] = last_open[k_open]
+                rows.append(row)
+                last_open = None
+    rows.sort(key=lambda r: str(r.get("ts") or ""))
+    return rows
+
+
+def exit_kind(reason, points=None):
+    r = str(reason or "")
+    if r.startswith("止蝕"):
+        return "移動止蝕（鎖利）" if (points or 0) > 0 else "止蝕"
+    if r.startswith("止賺"):
+        return "止賺"
+    if r.startswith("AI"):
+        return "AI 平倉"
+    if "外部" in r:
+        return "外部平倉"
+    if "停機" in r or "STOP" in r or "轉倉" in r:
+        return "停機／轉倉"
+    return "其他"
+
+
+def hour_bucket(ts):
+    try:
+        return f"{datetime.fromisoformat(str(ts)).astimezone(HKT).hour:02d} 時"
+    except ValueError:
+        return "—"
+
+
+def conf_bucket(c):
+    if not isinstance(c, (int, float)):
+        return "—"
+    return "高（≥0.7）" if c >= 0.7 else ("中（0.5–0.7）" if c >= 0.5 else "低（<0.5）")
+
+
+# ---------------- 報告 ----------------
+def fmt(v, kind="hkd"):
+    if v is None:
+        return "—"
+    if kind == "pct":
+        return f"{v:.0%}"
+    if kind == "x":
+        return f"{v:.2f}"
+    if kind == "r":
+        return f"{v:+.2f}R"
+    return "0" if abs(v) < 0.5 else f"{v:+,.0f}"
+
+
+def table(groups, title):
+    lines = [f"\n### {title}\n", "| 分組 | 筆數 | 勝率 | 合計 HK$ | 每筆 HK$ | 平均 R | 獲利因子 | 結論 |",
+             "|---|---:|---:|---:|---:|---:|---:|---|"]
+    for name, rows in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        s = stats(rows)
+        if not s["n"]:
+            continue
+        verdict = "樣本不足" if s["n"] < MIN_N else ("✅ 有優勢" if s["avg"] > 0 and (s["pf"] or 9) > 1.2 else
+                                                 ("❌ 蝕錢" if s["avg"] < 0 else "⚪ 打和"))
+        lines.append(f"| {name} | {s['n']} | {fmt(s['win'], 'pct')} | {fmt(s['sum'])} | {fmt(s['avg'])} | "
+                     f"{fmt(s['avg_r'], 'r')} | {fmt(s['pf'], 'x')} | {verdict} |")
+    return "\n".join(lines)
+
+
+def candidates(rows, decs_by_p):
+    """候選教學：只喺樣本夠嘅分組出；每條附證據。由使用者決定寫唔寫入 LESSONS.md。"""
+    out = []
+    by = lambda f: _group(rows, f)
+    for title, groups in (("方向", by(lambda r: "做好" if r.get("side", 0) > 0 else "做淡")),
+                          ("時段", by(lambda r: r.get("open_session") or "—")),
+                          ("信心", by(lambda r: conf_bucket(r.get("confidence")))),
+                          ("產品", by(lambda r: r["product"]))):
+        for name, g in groups.items():
+            s = stats(g)
+            if s["n"] >= MIN_N and s["avg"] < 0 and (s["pf"] or 0) < 0.8:
+                out.append(f"- **{title}「{name}」持續蝕錢**：{s['n']} 筆、勝率 {fmt(s['win'], 'pct')}、每筆 {fmt(s['avg'])}、"
+                           f"獲利因子 {fmt(s['pf'], 'x')} → 候選教學：「{name} 嘅情況要更嚴格先入場（或者唔做）」")
+    # 出場質素：曾經浮賺 ≥ 1R 但最後蝕錢
+    gave_back = [r for r in rows if isinstance(r.get("mfe"), (int, float)) and r.get("risk_pts")
+                 and r["mfe"] >= r["risk_pts"] and (r.get("points") or 0) <= 0]
+    if len(rows) >= MIN_N and len(gave_back) / len(rows) >= 0.2:
+        out.append(f"- **賺錢變蝕錢**：{len(gave_back)}／{len(rows)} 筆曾經浮賺 ≥ 1R 最後蝕或打和 → "
+                   "候選教學：「浮賺達 1R 之後將止蝕移到開倉價」")
+    # 止蝕太緊：贏單嘅最大浮蝕接近止蝕距離
+    winners = [r for r in rows if (r.get("points") or 0) > 0 and isinstance(r.get("mae"), (int, float)) and r.get("risk_pts")]
+    if len(winners) >= MIN_N:
+        near = [r for r in winners if -r["mae"] >= 0.8 * r["risk_pts"]]
+        if len(near) / len(winners) >= 0.3:
+            out.append(f"- **止蝕可能太緊**：{len(near)}／{len(winners)} 張贏單途中浮蝕到止蝕距離八成以上 → "
+                       "候選教學：「止蝕放喺結構位外多一啲，或者減少喺窄幅區間入場」")
+    # 過度交易：每日開倉次數多但每筆平均蝕
+    s_all = stats(rows)
+    if s_all["n"] >= 2 * MIN_N and s_all["avg"] < 0:
+        out.append(f"- **整體每筆平均蝕錢**（{s_all['n']} 筆，每筆 {fmt(s_all['avg'])}）→ 候選教學：「減少開倉，只做最清楚嘅形態」")
+    # 決策質素：理由夾英文
+    mixed = sum(1 for ds in decs_by_p.values() for d in ds
+                if re.search(r"[A-Za-z]{3,}", re.sub(r"\b(HOLD|OPEN_LONG|OPEN_SHORT|UPDATE_STOP|CLOSE|ATR|K|RSI|EMA|MA|VWAP|SPY|QQQ|DIA|HSI)\b", "", str(d.get("reason") or ""))))
+    if mixed >= 5:
+        out.append(f"- **理由夾英文** {mixed} 次 → 候選教學：「理由只用繁體中文（粵語）」")
+    return out or ["- 暫時冇：樣本未夠（每類要 ≥ {} 筆）或者未見明顯問題。".format(MIN_N)]
+
+
+def _group(rows, keyf):
+    g = defaultdict(list)
+    for r in rows:
+        g[keyf(r)].append(r)
+    return g
+
+
+def report(data, title_date=None):
+    rows = closes(data)
+    day = title_date or datetime.now(HKT).strftime("%Y-%m-%d")
+    L = [f"# 🐉 龍飛陣覆盤 {day}", "",
+         "模擬盤；金額按 HK$（美股 ETF 1 美元 = 7.8 港元）、未扣佣金。少過 "
+         f"{MIN_N} 筆嘅分組只供參考，唔下結論。", ""]
+    s = stats(rows)
+    pnl = [float(r["pnl_hkd_gross"]) for r in rows if isinstance(r.get("pnl_hkd_gross"), (int, float))]
+    ts = t_stat(pnl)
+    L.append("## 總覽\n")
+    L.append(f"- 已平倉 **{s.get('n', 0)}** 筆；勝率 {fmt(s.get('win'), 'pct')}；合計 {fmt(s.get('sum'))}；"
+             f"每筆 {fmt(s.get('avg'))}；平均 {fmt(s.get('avg_r'), 'r')}；盈虧比 {fmt(s.get('rrr'), 'x')}；"
+             f"獲利因子 {fmt(s.get('pf'), 'x')}；最大回撤 {fmt(-s['dd']) if s.get('n') else '—'}；"
+             f"每筆 t 值 {fmt(ts, 'x')}（≥ 2 先算有統計意義）")
+    for p, d in data.items():
+        st = d["status"]
+        pos = st.get("pos")
+        L.append(f"- {p}：{'持倉 ' + ('好' if pos.get('side', 0) > 0 else '淡') + str(pos.get('qty')) + ' @' + str(pos.get('entry')) if pos else '空手'}"
+                 f"{'；⛔ 停機 ' + str(st.get('halt_reason')) if st.get('halted') else ''}；今日 {fmt(st.get('day_pnl'))}")
+    L.append(table(_group(rows, lambda r: r["product"]), "按產品"))
+    L.append(table(_group(rows, lambda r: "做好" if r.get("side", 0) > 0 else "做淡"), "按方向"))
+    L.append(table(_group(rows, lambda r: r.get("open_session") or "—"), "按開倉時段"))
+    L.append(table(_group(rows, lambda r: hour_bucket(r.get("opened_at"))), "按開倉鐘數（香港時間）"))
+    L.append(table(_group(rows, lambda r: conf_bucket(r.get("confidence"))), "按 AI 信心"))
+    L.append(table(_group(rows, lambda r: exit_kind(r.get("reason"), r.get("points"))), "按出場方式"))
+    L.append(table(_group(rows, lambda r: r.get("lessons") or "（未有教學簿版本）"), "按教學簿版本（學咗之後有冇進步）"))
+    # 出場質素
+    q = [r for r in rows if isinstance(r.get("mfe"), (int, float)) and r.get("risk_pts")]
+    if q:
+        cap = [r["points"] / r["mfe"] for r in q if (r.get("points") or 0) > 0 and r["mfe"] > 0]
+        L.append("\n### 出場質素\n")
+        L.append(f"- 有 MFE／MAE 紀錄 {len(q)} 筆；贏單平均捉到最大浮賺嘅 {fmt(sum(cap) / len(cap), 'pct') if cap else '—'}")
+        L.append(f"- 平均最大浮賺 {sum(r['mfe'] / r['risk_pts'] for r in q) / len(q):+.2f}R；"
+                 f"平均最大浮蝕 {sum(r['mae'] / r['risk_pts'] for r in q) / len(q):+.2f}R")
+    # 決策
+    L.append("\n## 決策\n")
+    for p, d in data.items():
+        decs = d["decisions"]
+        if not decs:
+            continue
+        cnt = defaultdict(int)
+        rej = defaultdict(int)
+        for x in decs:
+            cnt[x.get("final") or "—"] += 1
+            if x.get("rejected"):
+                rej[str(x["rejected"])[:30]] += 1
+        L.append(f"- {p}：{len(decs)} 次決策（" + "、".join(f"{k} {v}" for k, v in sorted(cnt.items(), key=lambda kv: -kv[1])) + "）"
+                 + ("；風控紀錄：" + "、".join(f"{k}×{v}" for k, v in rej.items()) if rej else ""))
+    L.append("\n## 候選教學（要使用者批准先寫入 LESSONS.md）\n")
+    L += candidates(rows, {p: d["decisions"] for p, d in data.items()})
+    L.append("\n## 最近 10 筆成交\n")
+    L.append("| 產品 | 開倉 | 方向 | 點數 | R | MFE | MAE | 出場 | 入場理由 |")
+    L.append("|---|---|---|---:|---:|---:|---:|---|---|")
+    for r in rows[-10:]:
+        L.append(f"| {r['product']} | {hour_bucket(r.get('opened_at'))} {str(r.get('opened_at') or '')[5:10]} | "
+                 f"{'好' if r.get('side', 0) > 0 else '淡'} | {r.get('points')} | {fmt(r.get('r_multiple'), 'r')} | "
+                 f"{r.get('mfe', '—')} | {r.get('mae', '—')} | {exit_kind(r.get('reason'), r.get('points'))} | "
+                 f"{str(r.get('open_reason') or '')[:40].replace('|', '／')} |")
+    return "\n".join(L) + "\n"
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--fetch", action="store_true", help="經 gcp_agent.py 讀 GCS")
+    ap.add_argument("--dir", help="離線資料夾")
+    ap.add_argument("--days", type=int, default=3, help="讀幾多日嘅決策存檔（預設 3）")
+    ap.add_argument("--out", help="寫入檔案（預設印出）")
+    a = ap.parse_args()
+    if not a.fetch and not a.dir:
+        ap.error("要 --fetch 或者 --dir")
+    data = fetch(a.days) if a.fetch else load_dir(a.dir)
+    text = report(data)
+    if a.out:
+        Path(a.out).write_text(text, encoding="utf-8")
+    else:
+        print(text)
+
+
+if __name__ == "__main__":
+    main()
