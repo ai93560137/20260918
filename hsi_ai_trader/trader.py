@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timezone
 
 from markets import fee_hkd, order_qty, spec_for
-from rules import (session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
+from rules import (round_tick, session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
 log = logging.getLogger("trader")
@@ -211,8 +211,8 @@ class Trader:
                 return
             # 以實際成交價重新校正止蝕距離
             dist = abs(last - stop)
-            stop_adj = round(px - side * dist)
-            tgt_adj = round(px + side * abs(target - last)) if target else None
+            stop_adj = round_tick(px - side * dist, cfg.tick)
+            tgt_adj = round_tick(px + side * abs(target - last), cfg.tick) if target else None
             st["pos"] = {"code": contract, "side": side, "qty": n_open, "entry": px,
                          "stop": stop_adj, "target": tgt_adj, "opened_at": now.isoformat(),
                          "reason": d.get("reason")}

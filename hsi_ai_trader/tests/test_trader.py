@@ -418,3 +418,14 @@ def test_etf_end_to_end_short(tmp_path):
              if '"CLOSE"' in l][-1]
     # FakeBroker 每邊 1 點滑價：沽 659、買回 651，每股 +8 × 15 股 × 7.8
     assert close["points"] == 8.0 and close["pnl_hkd_gross"] == round(8 * 15 * 7.8)
+
+
+def test_etf_stops_keep_cents():
+    cfg = replace(Config(), product="SPY", point_value=7.8, slippage_points=0.05, tick=0.01)
+    a, stop, tgt, _ = validate_decision({"action": "OPEN_SHORT", "stop_price": 770.47, "target_price": 768.33},
+                                        position=0, entry=None, last=770.02, cfg=cfg, remaining_loss=10000,
+                                        can_open=True, trades_today=0, qty=12)
+    assert (a, stop, tgt) == ("OPEN_SHORT", 770.47, 768.33)
+    a, stop, *_ = validate_decision({"action": "UPDATE_STOP", "stop_price": 769.555}, position=-12, entry=770.02,
+                                    last=769.0, cfg=cfg, remaining_loss=10000, can_open=True, trades_today=0)
+    assert a == "UPDATE_STOP" and stop in (769.55, 769.56)
