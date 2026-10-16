@@ -97,6 +97,8 @@ sc2 = {r["name"]: r for r in M2["stress"]["scenarios"]}
 check("HSI ±5% 情景而家會郁緩衝", sc2["HSI −5%"]["cushion_after"] < round(M2["cushion"]) and sc2["HSI +5%"]["cushion_after"] < round(M2["cushion"]),
       (sc2["HSI −5%"], sc2["HSI +5%"], M2["cushion"]))
 check("週權說明有印", "風揚陣「方向一」" in txt2)
+exp_days = (date(2026, 10, 23) - datetime.now(risk_report.HKT_TZ).date()).days
+check("R197：到期日數用今日（唔係 book 10/10）", f"2026-10-23（{max(exp_days, 0)} 天）" in txt2 or exp_days <= 0, exp_days)
 q3 = dict(q, positions=q["positions"] + [{"code": "HK.HSI261023P23550000", "qty": 0, "last": 67.0}])
 (tmp / "q3.json").write_text(json.dumps(q3), encoding="utf-8")
 txt3, _ = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q3.json"), 7_800_000)
@@ -112,7 +114,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R196", auto_risk.SCRIPT_VERSION == "R196")
+check("SCRIPT_VERSION R197", auto_risk.SCRIPT_VERSION == "R197")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
