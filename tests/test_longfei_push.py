@@ -66,5 +66,25 @@ print("=== 格式錯 ===")
 code, _ = post({**pkt, "trades": "x"})
 check("trades 唔係 list → 422", code == 422, code)
 
+print("=== 頁面 ?view=longfei ===")
+r = client.get("/?view=longfei")
+html = r.get_data(as_text=True)
+check("冇數據都 200", r.status_code == 200 and "龍飛陣" in html, r.status_code)
+tr = [{"type": "OPEN", "code": "HK.HSI2610", "ts": "2026-10-17T10:00:00+08:00", "reason": "突破"},
+      {"type": "CLOSE", "code": "HK.HSI2610", "side": 1, "entry": 25000, "price": 25030, "points": 30,
+       "ts": "2026-10-17T10:30:00+08:00", "reason": "止賺 25030", "opened_at": "2026-10-17T10:00:05+08:00"},
+      {"type": "CLOSE", "code": "HK.HSI2610", "side": -1, "entry": 25100, "price": 25120, "points": -20,
+       "ts": "2026-10-18T11:00:00+08:00", "reason": "止蝕 25120"}]
+post({**pkt, "state": {"trd_env": "SIMULATE", "pos": None}, "trades": tr,
+      "decisions": [{"ts": "2026-10-17T10:00:03+08:00", "final": "OPEN_LONG", "last": 25000, "reason": "<b>突破</b>"}]})
+html = client.get("/?view=longfei").get_data(as_text=True)
+check("顯示勝率 50%", "50%" in html)
+check("盈虧比 1.50", "1.50" in html)
+check("理由已轉義", "<b>突破</b>" not in html and "&lt;b&gt;" in html)
+check("導覽有龍飛陣", "?view=longfei" in client.get("/?view=canary").get_data(as_text=True))
+j = client.get("/?view=longfei&format=json").get_json()
+check("json 指標", j["metrics"]["trades"] == 2 and abs(j["metrics"]["profit_factor"] - 1.5) < 1e-9, j.get("metrics"))
+check("json 唔含權杖", "tok" not in json.dumps(j))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -7358,6 +7358,165 @@ def handle_canary_get(req):
 
 
 # =============================================================================
+# [R201] 🐉 龍飛陣頁（?view=longfei；&format=json）：讀 GCS longfei/latest.json（R200 由 VM 每 5 分鐘推上嚟），
+# 顯示階段、持倉、績效指標（勝率、盈虧比、獲利因子、每筆平均、最大回撤、Sharpe）、成交同最近決策。只讀、唔落單、
+# 唔顯示戶口淨值或保證金。
+# =============================================================================
+LONGFEI_STALE_MIN = 15
+
+
+def longfei_metrics(trades):
+    """由 CLOSE 紀錄計績效；點數未扣佣金。Sharpe 用每日點數（按平倉日 HKT）年化 √252，少過 5 日唔計。"""
+    closes = [t for t in trades if t.get("type") == "CLOSE" and isinstance(t.get("points"), (int, float))]
+    pts = [float(t["points"]) for t in closes]
+    n = len(pts)
+    wins = [p for p in pts if p > 0]
+    losses = [p for p in pts if p < 0]
+    gw, gl = sum(wins), -sum(losses)
+    avg_win = gw / len(wins) if wins else None
+    avg_loss = gl / len(losses) if losses else None
+    cum = peak = dd = 0.0
+    for p in pts:
+        cum += p
+        peak = max(peak, cum)
+        dd = max(dd, peak - cum)
+    by_day = {}
+    for t in closes:
+        day = str(t.get("ts") or "")[:10]
+        by_day[day] = by_day.get(day, 0.0) + float(t["points"])
+    days = list(by_day.values())
+    sharpe = None
+    if len(days) >= 5:
+        m = sum(days) / len(days)
+        sd = (sum((d - m) ** 2 for d in days) / (len(days) - 1)) ** 0.5
+        sharpe = m / sd * (252 ** 0.5) if sd > 0 else None
+    return {"trades": n, "wins": len(wins), "win_rate": len(wins) / n if n else None, "points": sum(pts),
+            "avg_win": avg_win, "avg_loss": avg_loss, "rrr": avg_win / avg_loss if avg_win is not None and avg_loss else None,
+            "profit_factor": gw / gl if gl > 0 else None, "expectancy": sum(pts) / n if n else None,
+            "max_dd": dd if n else None, "sharpe": sharpe, "days": len(days)}
+
+
+def longfei_data():
+    doc = gcs_read_json(f"{LONGFEI_DIR}/latest.json", None)
+    if not isinstance(doc, dict):
+        return {"status": "empty", "message": "龍飛陣未有數據上載（程式啱啱開或者未開）。"}
+    trades = [t for t in (doc.get("trades") or []) if isinstance(t, dict)]
+    age = None
+    if isinstance(doc.get("received_ts"), (int, float)):
+        age = (now_ts() - doc["received_ts"]) / 60
+    return {"status": "ok", "state": doc.get("status") or {}, "received_utc": doc.get("received_utc"),
+            "age_min": age, "stale": age is None or age > LONGFEI_STALE_MIN,
+            "metrics": longfei_metrics(trades), "trades": trades,
+            "decisions": [d for d in (doc.get("decisions") or []) if isinstance(d, dict)]}
+
+
+def _lf_hkt(ts):
+    """ISO（+08:00 或 UTC）→ 'MM-DD HH:MM' 香港時間。"""
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone(timedelta(hours=8)))
+        return dt.astimezone(timezone(timedelta(hours=8))).strftime("%m-%d %H:%M")
+    except (TypeError, ValueError):
+        return "—"
+
+
+def build_longfei_page(data):
+    nav = page_nav("longfei")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・AI 自動交易恒指大期</h1></div>{nav}</div>"
+    intro = ("<div class='section'><p>由 Claude AI 每 5 分鐘自己決定買賣恒指大期即月，最多 1 張；程式負責落單同硬性風控"
+             "（每日虧損上限到咗即平倉停機）。目標係取代人手落單。</p></div>")
+    if data.get("status") != "ok":
+        return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    st, m = data["state"], data["metrics"]
+    env = st.get("trd_env") or "—"
+    stage = "模擬盤（富途模擬戶口）" if env == "SIMULATE" else ("真倉" if env == "REAL" else env)
+    if st.get("halted"):
+        run = f"⛔ 今日已停機：{st.get('halt_reason') or ''}"
+    elif st.get("stopped"):
+        run = "⛔ STOP 檔：停機"
+    elif st.get("paused"):
+        run = "⏸ 暫停開新倉（風控 Ⓑ）"
+    elif st.get("foreign_qty"):
+        run = f"⏸ 即月有其他倉 {st.get('foreign_qty'):+}，停開新倉"
+    else:
+        run = "✅ 運行中"
+    warn = ""
+    if data["stale"]:
+        age = data["age_min"]
+        warn = ("<div class='section' style='border-left:5px solid #d97706'><b style='color:#b45309'>⚠ 數據未更新</b>："
+                f"上次收到 {esc(_lf_hkt(data['received_utc']))}（{'—' if age is None else f'{age:.0f} 分鐘前'}），程式可能停咗。</div>")
+    pos = st.get("pos")
+    if pos:
+        side = "好倉" if pos.get("side", 0) > 0 else "淡倉"
+        pos_txt = f"{side} {pos.get('qty')} 張 @ {_cn(pos.get('entry'), 0)}"
+        pos_desc = f"止蝕 {_cn(pos.get('stop'), 0)}・止賺 {_cn(pos.get('target'), 0)}・{esc(_lf_hkt(pos.get('opened_at')))} 開"
+    else:
+        pos_txt, pos_desc = "冇", "空手"
+    pct = lambda v: "—" if v is None else f"{v:.0%}"
+    sharpe = "—" if m["trades"] == 0 else ("樣本不足" if m["sharpe"] is None else f"{m['sharpe']:.2f}")
+    def card(title, value, desc=""):
+        return (f"<div class='card'><div class='card-title'>{title}</div><div class='card-value'>{value}</div>"
+                f"<div class='card-desc'>{desc}</div></div>")
+    top = ("<div class='grid'>"
+           + card("階段", esc(stage), esc(run))
+           + card("模擬盤進度", f"{m['trades']} / 10", "滿 10 筆先考慮轉真倉")
+           + card("而家持倉", esc(pos_txt), pos_desc)
+           + card("已平倉累計點數", "—" if not m["trades"] else _cn(m["points"], 0, sign=True), "一點 HK$50，未扣佣金")
+           + "</div>")
+    metrics = ("<div class='section'><h2>📊 績效指標</h2><div class='grid'>"
+               + card("勝率", pct(m["win_rate"]), "贏嘅筆數 ÷ 總筆數")
+               + card("盈虧比 RRR", "—" if m["rrr"] is None else f"{m['rrr']:.2f}", "平均贏點 ÷ 平均蝕點")
+               + card("Sharpe ratio（年化）", sharpe, "每日點數平均 ÷ 標準差 × √252，要 ≥ 5 個交易日")
+               + card("獲利因子", "—" if m["profit_factor"] is None else f"{m['profit_factor']:.2f}", "總贏點 ÷ 總蝕點")
+               + card("每筆平均", "—" if m["expectancy"] is None else _cn(m["expectancy"], 1, sign=True), "點／筆")
+               + card("最大回撤", "—" if m["max_dd"] is None else f"{m['max_dd']:,.0f} 點", "累計點數由高位最大跌幅")
+               + card("平均贏", "—" if m["avg_win"] is None else _cn(m["avg_win"], 1, sign=True), "點／筆")
+               + card("平均蝕", "—" if m["avg_loss"] is None else _cn(-m["avg_loss"], 1, sign=True), "點／筆")
+               + "</div><p class='muted' style='font-size:13px'>按已平倉成交計；點數未扣佣金同滑價；樣本少時只供參考。</p></div>")
+    rows = ""
+    opens = {}
+    for t in data["trades"]:
+        if t.get("type") == "OPEN":
+            opens[t.get("code")] = t
+        elif t.get("type") == "CLOSE":
+            o = opens.pop(t.get("code"), {})
+            p = t.get("points")
+            color = "" if not isinstance(p, (int, float)) else (" style='color:#15803d'" if p >= 0 else " style='color:#dc2626'")
+            rows += (f"<tr><td>{esc(_lf_hkt(t.get('opened_at') or o.get('ts')))}</td><td>{esc(_lf_hkt(t.get('ts')))}</td>"
+                     f"<td>{'好' if t.get('side', 0) > 0 else '淡'}</td><td>{_cn(t.get('entry'), 0)}</td><td>{_cn(t.get('price'), 0)}</td>"
+                     f"<td{color}>{_cn(p, 0, sign=True)}</td><td>{esc(str(o.get('reason') or '')[:80])}</td>"
+                     f"<td>{esc(str(t.get('reason') or '')[:60])}</td></tr>")
+    trades_html = ("<div class='section'><h2>📒 成交紀錄</h2>"
+                   + ("<div style='overflow-x:auto'><table><tr><th>開倉</th><th>平倉</th><th>方向</th><th>開倉價</th><th>平倉價</th>"
+                      "<th>點數</th><th>入場理由</th><th>出場原因</th></tr>" + rows + "</table></div>" if rows else
+                      "<p class='muted'>未有平倉成交。</p>") + "</div>")
+    drows = "".join(
+        f"<tr><td>{esc(_lf_hkt(d.get('ts')))}</td><td>{esc(str(d.get('final') or '—'))}</td>"
+        f"<td>{_cn(d.get('last'), 0)}</td><td>{esc(str(d.get('reason') or '')[:120])}</td>"
+        f"<td>{esc(str(d.get('rejected') or ''))}</td></tr>" for d in reversed(data["decisions"][-10:]))
+    dec_html = ("<div class='section'><h2>🧠 最近決策（每 5 分鐘）</h2>"
+                + ("<div style='overflow-x:auto'><table><tr><th>時間</th><th>決定</th><th>價</th><th>理由</th><th>被拒原因</th></tr>"
+                   + drows + "</table></div>" if drows else "<p class='muted'>未有決策紀錄。</p>") + "</div>")
+    foot = (f"<p class='muted' style='font-size:13px'>數據收到時間 {esc(_lf_hkt(data['received_utc']))} HKT；"
+            "模擬盤成績唔係真金白銀交易，亦唔代表將來回報。</p>")
+    return html_page("龍飛陣", head + intro + warn + top + metrics + trades_html + dec_html + foot,
+                     "<meta http-equiv='refresh' content='300'>")
+
+
+def handle_longfei_get(req):
+    try:
+        data = longfei_data()
+    except Exception as exc:
+        log_event(f"⚠️ [龍飛陣頁失敗] {exc}", severity="WARNING", component="longfei")
+        data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
+    if req.args.get("format") == "json":
+        out = {k: v for k, v in data.items() if k != "decisions"}
+        return _json_response(out, 200 if data.get("status") == "ok" else 503)
+    return build_longfei_page(data)
+
+
+# =============================================================================
 # [R165] 📈 HTF 每日掛單頁（?view=htf；&format=json）＋策略總表四行：鳥翔分支（claude/stock-research-k9nzau）每個交易日
 # 17:13 HKT 跑 GitHub Actions，約 18:05 前把 analysis/htf_daily/ 結果 commit 入該分支；本頁只讀該分支（公開 raw），
 # 唔重算訊號、唔落單。記憶體快取 30 分鐘、GCS htf/ 後備；讀唔到就用上次成功版本並標明。
@@ -9882,6 +10041,7 @@ PAGE_LINKS = [
     ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
+    ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
@@ -11681,6 +11841,8 @@ def handle_get(req):
         return handle_canary_get(req)
     if view == "htf":                                            # [R165] 📈 HTF 每日掛單（&format=json）
         return handle_htf_get(req)
+    if view == "longfei":                                        # [R201] 🐉 龍飛陣成績（&format=json）
+        return handle_longfei_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）
