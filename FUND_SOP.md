@@ -228,7 +228,7 @@
 - D ✅ `ops/INCIDENTS.md`；週報【三】列本週新增＋未結。
 - 雲垂 16:40／05:52 → `.github/workflows/yunchui_quote_kicks.yml`（16:40 嗰次另查 hsi／vhsi 日線係 final，唔係就 job 失敗、心跳報 🔴）；兩個 Routine 已停用（唔刪）。
 - E ✅（預設分支部分）`scripts/ops_blotter.py`：每次成交通報後將富途成交按 `FUTU_TEAM_RULES` 歸陣、配對 `ops/intents.csv` 意圖價計滑價，寫私人 GCS `ops/blotter/<月>.csv`；月報【二】列按陣筆數同平均滑價。各陣出落單指令時要登記意圖價（`ops/INTENTS_README.md`），由總指揮通知各陣。
-- B、C：總指揮草稿 PR #142（R193：`mm_jump` 維持保證金當日升 ≥30% → Telegram；壓力情景 `ops/risk/stress_latest.json`＋`metrics.stress`），等使用者合併、更新部機、部署。晨會【一】已改讀壓力情景最差 4 個同按日／夜盤嘅緩衝線（舊寫死 15／10／6 萬已刪；PR #142 生效前顯示「線見 RISK_LADDER.md」）。
+- B、C：總指揮草稿 PR #142（R193：`mm_jump` 維持保證金當日升 ≥30% → Telegram；壓力情景 `ops/risk/stress_latest.json`＋`metrics.stress`），10-15 已合併，10-17 核實已生效（VM auto_risk R199、Cloud Run 00314-v2l 寫 `ops/risk/stress_latest.json` 8 個情景）。晨會【一】已改讀壓力情景最差 4 個同按日／夜盤嘅緩衝線（舊寫死 15／10／6 萬已刪；PR #142 生效前顯示「線見 RISK_LADDER.md」）。
 
 ### 剩餘缺口（按風險排序）
 | # | 缺口 | 風險 | 建議 | 負責 |
