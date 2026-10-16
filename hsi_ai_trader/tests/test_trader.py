@@ -113,7 +113,7 @@ def test_open_without_stop_rejected():
 
 
 def test_stop_clamped_to_max():
-    cfg = Config()
+    cfg = replace(Config(), max_stop_points=150)
     a, stop, _, why = validate_decision({"action": "OPEN_SHORT", "stop_price": 25600}, position=0,
                                         entry=None, last=25000, cfg=cfg, remaining_loss=10000,
                                         can_open=True, trades_today=0)
@@ -158,6 +158,7 @@ def test_daily_loss_limit_halts_and_blocks(env):
 
 def test_flatten_before_night_close(env):
     cfg, t, b, ai, tr = env
+    tr.cfg = cfg = replace(cfg, flatten_before_night_close=True)
     t["now"] = datetime(2026, 10, 17, 2, 30, 5, tzinfo=HKT)
     tr.tick()
     ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.7, "reason": "x"}
@@ -181,7 +182,7 @@ def test_adopt_unknown_position_and_roll(env):
     cfg, t, b, ai, tr = env
     b.pos["HK.MHI2610"], b.cost["HK.MHI2610"] = -1, 25100
     tr.tick()
-    assert tr.state["pos"]["stop"] == 25100 + cfg.max_stop_points
+    assert tr.state["pos"]["stop"] == 25100 + cfg.emergency_stop_points
     t["now"] = datetime(2026, 10, 29, 9, 30, 5, tzinfo=HKT)   # 最後交易日 → 轉月
     tr.tick()
     assert b.pos["HK.MHI2610"] == 0 and tr.state["contract"] == "HK.MHI2611"
@@ -218,3 +219,34 @@ def test_heartbeat_written_every_tick(env):
     hb = json.loads(cfg.heartbeat_file.read_text(encoding="utf-8"))
     assert hb["utc"].endswith("+00:00") and hb["errors"] == 0 and hb["halted"] is False
     assert hb["trd_env"] == cfg.trd_env
+
+
+def test_cancelled_limits_default_off(env):
+    """使用者 2026-10-16 取消：每張止蝕距離、每日次數、夜市收市前平倉。日蝕上限照保留。"""
+    cfg, t, b, ai, tr = env
+    a, stop, _, why = validate_decision({"action": "OPEN_SHORT", "stop_price": 25600}, position=0,
+                                        entry=None, last=25000, cfg=cfg, remaining_loss=10000,
+                                        can_open=True, trades_today=99)
+    assert a == "OPEN_SHORT" and stop == 25600 and why is None
+    a, *_ = validate_decision({"action": "OPEN_SHORT", "stop_price": 26100}, position=0,
+                              entry=None, last=25000, cfg=cfg, remaining_loss=10000,
+                              can_open=True, trades_today=0)
+    assert a == "HOLD"                          # 1,100 點 × HK$10 > 日蝕剩餘額度
+    t["now"] = datetime(2026, 10, 17, 2, 30, 5, tzinfo=HKT)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.7, "reason": "x"}
+    advance(t, minutes=5)
+    tr.tick()
+    t["now"] = datetime(2026, 10, 17, 2, 51, 0, tzinfo=HKT)
+    tr.tick()
+    assert b.pos["HK.MHI2610"] == 1             # 唔再 02:50 強制平倉
+
+
+def test_lessons_loaded_into_system(tmp_path):
+    from brain import load_lessons, build_system, SYSTEM
+    assert load_lessons(tmp_path / "none.md") == ("", None)
+    f = tmp_path / "L.md"
+    f.write_text("唔好追高\n", encoding="utf-8")
+    text, ver = load_lessons(f)
+    assert text == "唔好追高" and len(ver) == 8
+    assert build_system(text).endswith("唔好追高") and build_system("") == SYSTEM

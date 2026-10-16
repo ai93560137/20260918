@@ -93,16 +93,16 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
             return "HOLD", None, None, "已有倉位，唔可以再開（最多 1 張，要先 CLOSE）"
         if not can_open:
             return "HOLD", None, None, "而家唔准開新倉（時段/暫停/上限）"
-        if trades_today >= cfg.max_trades_per_day:
+        if cfg.max_trades_per_day and trades_today >= cfg.max_trades_per_day:
             return "HOLD", None, None, "今日開倉次數已到上限"
         if stop is None:
             return "HOLD", None, None, "冇止蝕，拒絕開倉"
         dist = (last - stop) * side
         if dist <= 0:
             return "HOLD", None, None, "止蝕位喺錯邊"
-        if dist < cfg.min_stop_points:
+        if cfg.min_stop_points and dist < cfg.min_stop_points:
             stop = last - side * cfg.min_stop_points
-        if dist > cfg.max_stop_points:
+        if cfg.max_stop_points and dist > cfg.max_stop_points:
             stop = last - side * cfg.max_stop_points
         risk_hkd = abs(last - stop) * cfg.point_value + cfg.slippage_points * 2 * cfg.point_value
         if risk_hkd > remaining_loss:
@@ -122,7 +122,7 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
         side = 1 if position > 0 else -1
         if (last - stop) * side <= 0:
             return "CLOSE", None, None, "新止蝕已被穿，即平"
-        if entry is not None and (entry - stop) * side > cfg.max_stop_points:
+        if cfg.max_stop_points and entry is not None and (entry - stop) * side > cfg.max_stop_points:
             stop = entry - side * cfg.max_stop_points
         return "UPDATE_STOP", round(stop), (round(target) if target else None), None
 

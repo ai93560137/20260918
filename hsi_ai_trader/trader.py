@@ -253,9 +253,10 @@ class Trader:
             "risk": {"day_pnl_hkd": round(st.get("day_pnl", 0)),
                      "remaining_loss_budget_hkd": round(remaining),
                      "point_value_hkd": cfg.point_value, "max_qty": cfg.max_qty,
-                     "stop_points_min": cfg.min_stop_points, "stop_points_max": cfg.max_stop_points,
+                     "stop_points_min": cfg.min_stop_points or None,   # None = 唔限
+                     "stop_points_max": cfg.max_stop_points or None,
                      "trades_today": st.get("trades_today", 0),
-                     "max_trades_per_day": cfg.max_trades_per_day,
+                     "max_trades_per_day": cfg.max_trades_per_day or None,
                      "new_entries_allowed": can_open},
             "today_trades": st.get("today_trades", [])[-10:],
             "recent_decisions": st.get("recent_decisions", []),
@@ -305,7 +306,7 @@ class Trader:
             side = 1 if qty > 0 else -1
             entry = cost or self.broker.snapshot(contract)["last"]
             st["pos"] = {"code": contract, "side": side, "qty": abs(qty), "entry": entry,
-                         "stop": round(entry - side * cfg.max_stop_points), "target": None,
+                         "stop": round(entry - side * cfg.emergency_stop_points), "target": None,
                          "opened_at": now.isoformat(), "reason": "接手現有倉位，設緊急止蝕"}
             self._log("events", {"type": "ADOPT_POSITION", "code": contract, "qty": qty,
                                  "entry": entry, "stop": st["pos"]["stop"]})

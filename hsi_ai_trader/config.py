@@ -52,12 +52,14 @@ class Config:
     # --- 硬性風控（AI 無權超越）---
     max_qty: int = int(_env("MAX_QTY", "1"))
     daily_loss_limit: float = float(_env("DAILY_LOSS_LIMIT", "10000"))   # HK$
-    max_stop_points: float = float(_env("MAX_STOP_POINTS", "150"))       # 每張單最大止蝕點數
-    min_stop_points: float = float(_env("MIN_STOP_POINTS", "20"))
-    max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "20"))
+    # 使用者 2026-10-16 取消每張止蝕 20–150 點、每日 20 次、夜市收市前平倉三條限制；0／false = 唔限
+    max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
+    min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
+    max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "0"))       # 0 = 唔限
+    emergency_stop_points: float = float(_env("EMERGENCY_STOP_POINTS", "150"))  # 接手未知倉位時設嘅緊急止蝕
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
-    flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "true")
+    flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")
     slippage_points: float = float(_env("SLIPPAGE_POINTS", "3"))
     stale_quote_sec: int = int(_env("STALE_QUOTE_SEC", "180"))
     max_consecutive_errors: int = int(_env("MAX_CONSECUTIVE_ERRORS", "10"))
