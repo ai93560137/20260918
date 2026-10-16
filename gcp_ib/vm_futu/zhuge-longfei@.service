@@ -1,0 +1,17 @@
+[Unit]
+Description=Zhuge 龍飛陣 %i（hsi_ai_trader，PRODUCT=%i；美國產品只跑 SIMULATE，唔跟 settings.env 嘅 TRD_ENV）
+After=zhuge-opend.service zhuge-longfei-guard.service network-online.target
+Wants=zhuge-opend.service zhuge-longfei-guard.service
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/20260918/hsi_ai_trader
+Environment=AI_DATA_DIR=@HOME@/zhuge/ai_trader_%i
+Environment=PRODUCT=%i
+EnvironmentFile=@HOME@/zhuge/env
+EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
+# 使用者 2026-10-16：美國產品只跑 SIMULATE，唔隨 HSI 轉 REAL。EnvironmentFile 會蓋過 Environment=，所以喺 ExecStart 用 env 寫死
+ExecStart=/usr/bin/env TRD_ENV=SIMULATE @HOME@/zhuge-venv/bin/python bot.py
+Restart=always
+RestartSec=60
+[Install]
+WantedBy=multi-user.target
