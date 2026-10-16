@@ -166,7 +166,9 @@ def load(book_path, quotes_path=None):
                                    "group": "HSI 週權 strangle" if root == "HSI" else "恒指期權人手"})
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
-    val = date.fromisoformat(b["valuation_date"])
+    # [R197] 有富途快照（即時跑）就用今日（香港）計到期日數；離線只有 book 先用 book 嘅 valuation_date
+    val = datetime.now(HKT_TZ).date() if qf else date.fromisoformat(b["valuation_date"])
+    b["valuation_date"] = val.isoformat()
     for u, d in b["underlyings"].items():
         d["F_src"] = f"截圖／book（{d.get('note', '')}）"
         for c in d.get("codes", DEFAULT_UND_CODES.get(u, [])):
