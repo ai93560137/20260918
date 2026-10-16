@@ -191,8 +191,18 @@ class FutuBroker:
         ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,
                                                   trd_env=TrdEnv.REAL, acc_id=acc_id),
                  "acctradinginfo_query REAL").iloc[0]
-        out["can_long"] = _num(ti.get("max_cash_and_margin_buy")) >= qty
-        out["can_short"] = _num(ti.get("max_sell_short")) >= qty
+        if self.spec.kind == "future":
+            # 期貨：富途 max_cash_and_margin_buy／max_sell_short 係 'N/A'；改用「最大購買力」(power) 對比每張初始保證金。
+            # 只回傳佔購買力百分比（唔係金額）
+            power = _num(info.get("power"))
+            for side, k in (("long", "long_required_im"), ("short", "short_required_im")):
+                im = _num(ti.get(k)) * qty
+                out[f"can_{side}"] = power > 0 and (im <= power if im > 0 else True)
+                if im > 0 and power > 0:
+                    out[f"im_pct_{side}"] = round(im / power * 100)
+        else:
+            out["can_long"] = _num(ti.get("max_cash_and_margin_buy")) >= qty
+            out["can_short"] = _num(ti.get("max_sell_short")) >= qty
         out["ok"] = bool(out["funded"] and out["can_long"] and out["can_short"])
         return out
 
