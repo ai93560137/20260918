@@ -273,7 +273,9 @@ def report(data, title_date=None, real=False):
         L.append(f"- {p}：{'持倉 ' + ('好' if pos.get('side', 0) > 0 else '淡') + str(pos.get('qty')) + ' @' + str(pos.get('entry')) if pos else '空手'}"
                  f"{'；⛔ 停機 ' + str(st.get('halt_reason')) if st.get('halted') else ''}；今日 {fmt(st.get('day_pnl'))}"
                  + (f"；模擬戶口淨值 {sa.get('currency')} {sa.get('equity', 0):,.0f}、購買力 {sa.get('power', 0):,.0f}"
-                    if (sa := st.get("sim_account") or {}) else ""))
+                    if (sa := st.get("sim_account") or {}) else "")
+                 + (f"；真實戶口淨值 {ra.get('currency')} {ra.get('equity', 0):,.0f}、購買力 {ra.get('power', 0):,.0f}"
+                    if (ra := st.get("real_account") or {}) else ""))
     if not real:
         L += readiness(data)
     L.append(table(_group(rows, lambda r: r["product"]), "按產品"))

@@ -307,6 +307,8 @@ class Trader:
         except Exception as e:  # noqa: BLE001
             res = {"ok": False, "error": f"{e.__class__.__name__}: {str(e)[:120]}"}
         res["ts"] = now.isoformat(timespec="seconds")
+        if isinstance(res.get("account"), dict):             # [R212] 真實戶口淨值同購買力另外存
+            st["real_account"] = {**res.pop("account"), "ts": res["ts"], "source": "preflight"}
         if bool(res.get("ok")) != bool(prev.get("ok")) or not prev:
             self._log("events", {"type": "REAL_PREFLIGHT", **res})
             log.info("真倉準備檢查：%s", res)
@@ -464,12 +466,13 @@ class Trader:
 
     def snapshot_equity(self):
         st = self.state
-        # [R212] 使用者 10-17：模擬戶口淨值同購買力上載私人 GCS（真倉唔上載）
+        # [R212] 使用者 10-17：模擬同真實戶口淨值、購買力上載私人 GCS（網頁唔顯示）
         fn = getattr(self.broker, "account_snapshot", None)
-        if fn and self.cfg.trd_env == "SIMULATE":
+        if fn:
+            key = "real_account" if self.cfg.trd_env == "REAL" else "sim_account"
             try:
-                st["sim_account"] = {**fn(), "ts": self.clock().isoformat(timespec="seconds")}
+                st[key] = {**fn(), "ts": self.clock().isoformat(timespec="seconds")}
             except Exception as e:  # noqa: BLE001
-                log.warning("讀模擬戶口淨值失敗：%s", e)
+                log.warning("讀戶口淨值失敗：%s", e)
         self._log("equity", {"equity": st.get("last_equity"), "day": st.get("day"),
                              "day_pnl": st.get("day_pnl"), "pos": (st.get("pos") or {}).get("side", 0)})
