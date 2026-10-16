@@ -27,6 +27,13 @@ def pick_front_month(contracts, product: str, today: date, roll_days: int = 0):
     return sorted(cands)[0][1]
 
 
+def round_tick(x, tick: float = 1.0):
+    """價格按 tick 取整（港期 1 點；ETF 0.01 美元），唔好一律 round() 做整數。"""
+    if x is None:
+        return None
+    return round(round(x / tick) * tick, 4)
+
+
 def stop_hit(side: int, price: float, stop: float | None) -> bool:
     if stop is None or price is None:
         return False
@@ -76,7 +83,8 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
             return "HOLD", None, None, f"止蝕風險 HK${risk_hkd:.0f} 超過今日剩餘額度 HK${remaining_loss:.0f}"
         if target is not None and (target - last) * side <= 0:
             target = None
-        return action, round(stop), (round(target) if target else None), None
+        tick = getattr(cfg, "tick", 1.0)
+        return action, round_tick(stop, tick), (round_tick(target, tick) if target else None), None
 
     if action == "CLOSE":
         if position == 0:
@@ -91,6 +99,7 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
             return "CLOSE", None, None, "新止蝕已被穿，即平"
         if cfg.max_stop_points and entry is not None and (entry - stop) * side > cfg.max_stop_points:
             stop = entry - side * cfg.max_stop_points
-        return "UPDATE_STOP", round(stop), (round(target) if target else None), None
+        tick = getattr(cfg, "tick", 1.0)
+        return "UPDATE_STOP", round_tick(stop, tick), (round_tick(target, tick) if target else None), None
 
     return "HOLD", None, None, None
