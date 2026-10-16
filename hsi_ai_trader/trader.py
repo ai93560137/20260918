@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from markets import spec_for
 from rules import (session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -89,7 +90,7 @@ class Trader:
         cfg = self.cfg
 
         # 1) 交易日重置
-        day = trading_day_key(now)
+        day = trading_day_key(now, cfg.market)
         if st.get("day") != day:
             eq = self.broker.equity()
             st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
@@ -118,7 +119,7 @@ class Trader:
 
         snap = self.broker.snapshot(contract)
         last = snap["last"]
-        session, mins_left = session_status(now)
+        session, mins_left = session_status(now, cfg.market)
         stale = (snap["update_time"] is None or
                  (now - snap["update_time"]).total_seconds() > cfg.stale_quote_sec)
 
@@ -233,7 +234,7 @@ class Trader:
         day_key = st.get("day")
         if self._daily_cache[0] != day_key:
             try:
-                daily = self.broker.klines(f"HK.{cfg.product}main", "1d", days_back=45, max_count=20)
+                daily = self.broker.klines(f"{cfg.market}.{cfg.product}main", "1d", days_back=45, max_count=20)
             except Exception:  # noqa: BLE001
                 daily = self.broker.klines(contract, "1d", days_back=45, max_count=20)
             self._daily_cache = (day_key, daily)
@@ -249,6 +250,8 @@ class Trader:
                    "opened_at": meta.get("opened_at")}
         return {
             "now_hkt": now.strftime("%Y-%m-%d %H:%M"), "weekday": now.strftime("%a"),
+            "product": cfg.product, "market": cfg.market,
+            "now_exchange": now.astimezone(spec_for(cfg.product).tz).strftime("%Y-%m-%d %H:%M %a"),
             "session": session, "minutes_to_session_close": round(mins_left or 0),
             "contract": contract,
             "quote": {"last": snap["last"], "bid": snap["bid"], "ask": snap["ask"]},
@@ -256,7 +259,8 @@ class Trader:
             "position": pos,
             "risk": {"day_pnl_hkd": round(st.get("day_pnl", 0)),
                      "remaining_loss_budget_hkd": round(remaining),
-                     "point_value_hkd": cfg.point_value, "max_qty": cfg.max_qty,
+                     "point_value_hkd": cfg.point_value, "currency": cfg.currency, "tick": cfg.tick,
+                     "max_qty": cfg.max_qty,
                      "stop_points_min": cfg.min_stop_points or None,   # None = 唔限
                      "stop_points_max": cfg.max_stop_points or None,
                      "trades_today": st.get("trades_today", 0),
@@ -347,7 +351,8 @@ class Trader:
         if self._contract_cache[0] == day and self._contract_cache[1]:
             return self._contract_cache[1]
         code = pick_front_month(self.broker.list_contracts(self.cfg.product),
-                                self.cfg.product, now.date())
+                                self.cfg.product, now.astimezone(spec_for(self.cfg.product).tz).date(),
+                                self.cfg.roll_days)
         self._contract_cache = (day, code)
         if code and self.state.get("contract") != code:
             self._log("events", {"type": "CONTRACT", "code": code})
