@@ -123,7 +123,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R205"
+SCRIPT_VERSION = "R206"
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3

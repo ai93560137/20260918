@@ -114,7 +114,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R205", auto_risk.SCRIPT_VERSION == "R205")
+check("SCRIPT_VERSION R206", auto_risk.SCRIPT_VERSION == "R206")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
@@ -135,6 +135,20 @@ check("mm_jump 歸總指揮", main.futu_alert_team("mm_jump") == "總指揮")
 FAKE.clear()
 client.post("/", data=json.dumps({**body, "metrics": {"equity": 1, "delta": {}, "stop_use": {}}}), content_type="application/json")
 check("冇 stress 就唔寫 stress 檔", main.FUTU_STRESS_FILE not in FAKE)
+
+print("\n=== [R206] 證券戶口：碎股／空戶口當 A；沽空市值負數取絕對值 ===")
+def _sec(accs):
+    qf = {"fetched_hkt": "2026-10-17 01:00:00", "positions": [], "quotes": {}, "accounts": accs}
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        json.dump(qf, fh)
+    return risk_report.build("/home/user/20260918/tradingview/data_external/risk_book.json", fh.name, None)[1].get("sec")
+FUT0 = {"account": "期貨帳戶", "currency": "HKD", "total_assets": 500_000, "maintenance_margin": 400_000}
+s0 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 120, "maintenance_margin": 0, "market_val": 97}])
+check("碎股 HK$97（未入錢）→ 唔算有倉、級別 A", s0 and not s0["exposed"] and s0["ladder"] == "A", s0)
+s1 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 25_000, "maintenance_margin": 0, "market_val": -19_156}])
+check("沽空市值 −19,156 → 有倉、緩衝 25k → B", s1 and s1["exposed"] and s1["ladder"] == "B", s1)
+s2 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "N/A", "total_assets": 1, "maintenance_margin": 0}])
+check("幣種 N/A（SIMULATE 式）→ 唔計、唔出錯", s2 is None, s2)
 
 print("\n=== [R205] 證券戶口監察（龍飛陣 ETF 轉真倉前）===")
 SL = risk_report.sec_ladder_level

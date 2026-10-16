@@ -252,6 +252,7 @@ LADDER_CUSHION = {"B": 37_500, "C": 25_000, "D": 15_000}   # RISK_LADDER.md 日�
 # [R205] 富途證券戶口（龍飛陣美股 ETF；使用者 10-17「開始補證券戶口監察」）：緩衝＝總資產 − 維持保證金（港幣）。
 # 線按 3 隻 ETF × 日蝕 HK$10,000 定（RISK_LADDER §6b）；美股時段喺香港夜晚，唔再 ×1.5。
 SEC_LADDER_CUSHION = {"B": 30_000, "C": 20_000, "D": 10_000}
+SEC_MIN_EXPOSURE = 1_000        # [R206] 持倉市值（絕對值，沽空係負數）細過呢個當冇倉（例如碎股），唔警報、級別當 A
 STRESS_SCENARIOS = (("HSI −5%", {"HSI": -.05}, 0), ("HSI +5%", {"HSI": .05}, 0),
                     ("ES −3%", {"ES": -.03}, 0), ("ES +3%", {"ES": .03}, 0),
                     ("ES −5%", {"ES": -.05}, 0), ("ES +5%", {"ES": .05}, 0),
@@ -384,11 +385,13 @@ def build(book, quotes=None, combined_equity=None):
         if rate:
             mm = sec.get("maintenance_margin") or 0
             cush = ((sec.get("total_assets") or 0) - mm) * rate
-            exposed = bool(mm) or bool(sec.get("market_val"))   # 有持倉或者用緊孖展先計風險；冇倉嘅現金戶口唔警報
+            # [R206] 有持倉（市值絕對值 ≥ SEC_MIN_EXPOSURE）或者用緊孖展先計風險；冇倉／得碎股／未入錢嘅戶口級別當 A，
+            # 免得 guard 開咗 LONGFEI_ETF_SEC_LADDER 之後一直讀到 D；龍飛陣開第一張倉之後下一輪（10 分鐘）就會反映
+            exposed = bool(mm) or abs(sec.get("market_val") or 0) * rate >= SEC_MIN_EXPOSURE
             M["sec"] = {"equity": round((sec.get("total_assets") or 0) * rate), "maintenance_margin": round(mm * rate),
-                        "cushion": round(cush), "ladder": sec_ladder_level(cush), "exposed": exposed}
+                        "cushion": round(cush), "ladder": sec_ladder_level(cush) if exposed else "A", "exposed": exposed}
             P(f"富途證券戶口：權益 HK${M['sec']['equity']:,.0f}，維持保證金 HK${M['sec']['maintenance_margin']:,.0f}，"
-              f"**緩衝 HK${cush:,.0f}（{M['sec']['ladder']}）**" + ("" if exposed else "；冇持倉、冇用孖展，唔警報"))
+              f"**緩衝 HK${cush:,.0f}（{M['sec']['ladder']}）**" + ("" if exposed else "；冇持倉（或得碎股）、冇用孖展 → 當 A、唔警報"))
     M["mhi_lots"] = dict(b["fut_lots"]) or {
         derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
     P("期貨淨手數（富途實際）：" + ("、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()) or "冇"))
