@@ -577,3 +577,24 @@ def test_futures_preflight_uses_power_vs_initial_margin():
     T.acctradinginfo_query = lambda self, **k: (RET_OK, pd.DataFrame([{"long_required_im": 200000, "short_required_im": 200000}]))
     r = b.real_preflight("HK.HSI2610", 1, 25000)
     assert not r["ok"] and not r["can_long"]
+
+
+def test_real_futures_needs_cushion_after_margin(env):
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, trd_env="REAL")          # 10:05 日市：要求 = 37,500 + 10,000
+    b.futures_room = lambda code, side, price: {"cushion": 150000, "im": 110000}
+    _open_long(t, ai, tr)
+    assert tr.state.get("pos") is None and not b.orders
+    assert "期貨戶口緩衝唔夠" in (cfg.log_dir / "events.jsonl").read_text(encoding="utf-8")
+    b.futures_room = lambda code, side, price: {"cushion": 170000, "im": 110000}
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "再試"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["qty"] == 1
+
+
+def test_sim_futures_skips_cushion_check(env):
+    cfg, t, b, ai, tr = env
+    b.futures_room = lambda *a: {"cushion": 0, "im": 999999}
+    _open_long(t, ai, tr)
+    assert tr.state["pos"]["qty"] == 1

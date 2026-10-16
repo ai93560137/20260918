@@ -206,6 +206,16 @@ class FutuBroker:
         out["ok"] = bool(out["funded"] and out["can_long"] and out["can_short"])
         return out
 
+    def futures_room(self, code: str, side: int, price: float) -> dict:
+        """[R209] 期貨戶口緩衝（淨值 − 維持保證金，港幣）同每張初始保證金（做好／做淡），富途即時查，唔寫死。"""
+        info = _ok(*self.trade.accinfo_query(trd_env=self.env, acc_id=self.acc_id, refresh_cache=True,
+                                             currency="HKD"), "accinfo_query").iloc[0]
+        ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,
+                                                  trd_env=self.env, acc_id=self.acc_id),
+                 "acctradinginfo_query").iloc[0]
+        return {"cushion": _num(info.get("total_assets")) - _num(info.get("maintenance_margin")),
+                "im": _num(ti.get("long_required_im" if side > 0 else "short_required_im"))}
+
     def max_open_qty(self, code: str, side: int, price: float):
         """而家戶口（SIMULATE 或 REAL）最多可以開幾多：做好用現金＋孖展購買力，做淡用可沽空數量。"""
         ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,

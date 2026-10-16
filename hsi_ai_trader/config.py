@@ -80,6 +80,10 @@ class Config:
     min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
     max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "0"))       # 0 = 唔限
     fee_per_side_hkd: float = float(_env("FEE_PER_SIDE_HKD", str(SPEC.fee_per_side_hkd)))     # 每張每邊佣金＋徵費估算，計日蝕用（寧高唔低）
+    # [R209] 真倉期貨開倉前：開倉後緩衝（淨值 − 維持保證金 − 每張初始保證金）要 ≥ Ⓑ 線（夜盤 ×1.5）＋ 日蝕上限
+    # （總指揮 10-17 建議；Ⓑ 線跟 RISK_LADDER，改咗要同步）
+    fut_ladder_b_day: float = float(_env("FUT_LADDER_B_DAY", "37500"))
+    fut_ladder_night_mult: float = float(_env("FUT_LADDER_NIGHT_MULT", "1.5"))
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
     flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")
