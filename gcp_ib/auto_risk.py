@@ -118,7 +118,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R197"
+SCRIPT_VERSION = "R199"
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3
@@ -172,6 +172,23 @@ def pnl_daily(t):
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     log.close()                   # 子程序有自己一份
     print(f"  → 成交／基金報告匯出已喺背景開始（{key} 第 {tries['n']} 次）")
+
+
+def write_ladder(t, M):
+    """[R199] 風控級別寫入 ZHUGE_LADDER_FILE（冇設就唔寫，例如部機）：一行「級別 day|night YYYY-MM-DD HH:MM」，
+    級別同 risk_report.ladder_level 一致（A／B／C／D，夜盤 ×1.5）。龍飛陣 VM 嘅 longfei_guard.py 讀：
+    Ⓑ → PAUSE、Ⓒ／Ⓓ → STOP；讀唔到富途或冇緩衝就唔寫 → 檔案變舊 → guard 當 STOP（fail-safe）。"""
+    p = os.environ.get("ZHUGE_LADDER_FILE", "").strip()
+    hard = bool(M) and M.get("gap", 1) < 0                     # RISK_LADDER §6b：硬止損都當 Ⓓ（STOP）
+    if not p or not M or (M.get("cushion") is None and not hard):
+        return
+    night = risk_report.ladder_night(t)
+    lv = "D" if hard else risk_report.ladder_level(M["cushion"], night)
+    path = Path(p).expanduser()
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(f"{lv} {'night' if night else 'day'} {t:%Y-%m-%d %H:%M}{' hard_stop' if hard else ''}\n",
+                   encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def push_gcp(t, M, cur, txt):
@@ -236,6 +253,10 @@ def cycle(equity, cushion_line, stop_line, mm_thr=0.30):
                                    str(ROOT / "tradingview" / "data_external" / "futu_positions.json"), equity)
         (OUT / "risk_report_live.md").write_text(txt + "\n", encoding="utf-8")
         cur = alerts(M, cushion_line, stop_line)
+        try:
+            write_ladder(t, M)
+        except OSError as e:
+            print(f"  ⚠ 寫風控級別檔失敗：{e.__class__.__name__}（龍飛陣 guard 會當 STOP）")
         jump = mm_jump(t, M, OUT / "margin_base.json", mm_thr)
         if jump:
             cur["mm_jump"] = jump

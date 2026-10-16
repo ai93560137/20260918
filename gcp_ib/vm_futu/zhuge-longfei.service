@@ -1,0 +1,15 @@
+[Unit]
+Description=Zhuge 龍飛陣 hsi_ai_trader（TRD_ENV 由 settings.env 定，預設 SIMULATE）
+After=zhuge-opend.service zhuge-longfei-guard.service network-online.target
+Wants=zhuge-opend.service zhuge-longfei-guard.service
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/20260918/hsi_ai_trader
+Environment=AI_DATA_DIR=@HOME@/zhuge/ai_trader
+EnvironmentFile=@HOME@/zhuge/env
+EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
+ExecStart=@HOME@/zhuge-venv/bin/python bot.py
+Restart=always
+RestartSec=60
+[Install]
+WantedBy=multi-user.target

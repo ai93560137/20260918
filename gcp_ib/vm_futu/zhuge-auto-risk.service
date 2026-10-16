@@ -1,5 +1,5 @@
 [Unit]
-Description=Zhuge auto_risk 每 15 分鐘讀富途持倉計風險推 Cloud Run
+Description=Zhuge auto_risk 每 10 分鐘讀富途持倉計風險推 Cloud Run
 After=zhuge-opend.service network-online.target
 Wants=zhuge-opend.service
 [Service]
@@ -7,7 +7,7 @@ User=@USER@
 WorkingDirectory=@HOME@/20260918
 EnvironmentFile=@HOME@/zhuge/env
 EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
-ExecStart=@HOME@/zhuge-venv/bin/python gcp_ib/auto_risk.py --every 15
+ExecStart=@HOME@/zhuge-venv/bin/python gcp_ib/auto_risk.py --every 10
 Restart=always
 RestartSec=60
 [Install]
