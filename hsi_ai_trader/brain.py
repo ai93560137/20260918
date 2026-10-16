@@ -52,20 +52,22 @@ def build_system(lessons: str) -> str:
 
 TOOL = {
     "name": "decide",
-    "description": "Return the trading decision for this cycle.",
+    "description": "Return the trading decision for this cycle. Call this exactly once.",
+    "strict": True,   # Sonnet 5.5 唔接受強制 tool_choice（400），用 auto + strict 保證參數合 schema
     "input_schema": {
         "type": "object",
         "properties": {
             "action": {"type": "string",
                        "enum": ["HOLD", "OPEN_LONG", "OPEN_SHORT", "CLOSE", "UPDATE_STOP"]},
-            "stop_price": {"type": ["number", "null"],
+            "stop_price": {"anyOf": [{"type": "number"}, {"type": "null"}],
                            "description": "Absolute stop price. Required for OPEN_* and UPDATE_STOP."},
-            "target_price": {"type": ["number", "null"],
+            "target_price": {"anyOf": [{"type": "number"}, {"type": "null"}],
                              "description": "Optional absolute take-profit price."},
-            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+            "confidence": {"type": "number", "description": "0 to 1."},
             "reason": {"type": "string"},
         },
-        "required": ["action", "confidence", "reason"],
+        "required": ["action", "stop_price", "target_price", "confidence", "reason"],
+        "additionalProperties": False,
     },
 }
 
@@ -78,24 +80,41 @@ class ClaudeBrain:
 
     def decide(self, context: dict) -> dict:
         lessons, lessons_ver = load_lessons()
+        # prompt caching：tools → system 係固定前綴（硬性規則＋LESSONS），每 5 分鐘先 call 一次，
+        # 用 1 小時 TTL；所有會變嘅嘢（時間、K 線、倉位、額度）只放喺 user 訊息。
+        system = [{"type": "text", "text": build_system(lessons),
+                   "cache_control": {"type": "ephemeral", "ttl": "1h"}}]
         try:
+            kwargs = {}
+            if self.cfg.effort:
+                kwargs["output_config"] = {"effort": self.cfg.effort}
             msg = self.client.messages.create(
                 model=self.cfg.model,
-                max_tokens=1024,
-                system=build_system(lessons),
+                max_tokens=16000,          # 思考 token 都計入，太細會截斷
+                system=system,
                 tools=[TOOL],
-                tool_choice={"type": "tool", "name": "decide"},
+                tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 messages=[{"role": "user",
-                           "content": "Market context (JSON):\n" +
-                                      json.dumps(context, ensure_ascii=False, separators=(",", ":"))}],
+                           "content": "Market context (JSON). Call the `decide` tool.\n" +
+                                      json.dumps(context, ensure_ascii=False, sort_keys=True,
+                                                 separators=(",", ":"))}],
+                **kwargs,
             )
+            u = msg.usage
+            usage = {"in": u.input_tokens, "out": u.output_tokens,
+                     "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
+                     "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0}
+            if msg.stop_reason == "refusal":
+                return {"action": "HOLD", "confidence": 0, "reason": "AI 拒絕回應", "_usage": usage,
+                        "_lessons": lessons_ver, "_error": True}
             for block in msg.content:
                 if block.type == "tool_use" and block.name == "decide":
                     d = dict(block.input)
-                    d["_usage"] = {"in": msg.usage.input_tokens, "out": msg.usage.output_tokens}
+                    d["_usage"] = usage
                     d["_lessons"] = lessons_ver   # 記低用咗邊個版本嘅教學，方便事後對照
                     return d
-            return {"action": "HOLD", "confidence": 0, "reason": "AI 冇回傳決定"}
+            return {"action": "HOLD", "confidence": 0, "reason": "AI 冇回傳決定", "_usage": usage,
+                    "_lessons": lessons_ver}
         except Exception as e:  # noqa: BLE001
             log.exception("Claude 決策失敗")
             return {"action": "HOLD", "confidence": 0, "reason": f"AI 出錯：{e}", "_error": True}

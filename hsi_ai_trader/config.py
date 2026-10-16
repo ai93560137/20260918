@@ -48,6 +48,7 @@ class Config:
     anthropic_api_key: str = _env("ANTHROPIC_API_KEY", "")
     model: str = _env("CLAUDE_MODEL", "claude-sonnet-5-5")
     decision_interval_min: int = int(_env("DECISION_INTERVAL_MIN", "5"))
+    effort: str = _env("CLAUDE_EFFORT", "")              # low/medium/high/xhigh/max；留空 = 模型預設（Sonnet 5.5 係 high）
 
     # --- 硬性風控（AI 無權超越）---
     max_qty: int = int(_env("MAX_QTY", "1"))

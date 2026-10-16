@@ -250,3 +250,29 @@ def test_lessons_loaded_into_system(tmp_path):
     text, ver = load_lessons(f)
     assert text == "唔好追高" and len(ver) == 8
     assert build_system(text).endswith("唔好追高") and build_system("") == SYSTEM
+
+
+def test_brain_request_shape_and_usage():
+    """Sonnet 5.5 拒絕強制 tool_choice；system 要有 1h 快取；usage 要記快取命中。"""
+    from types import SimpleNamespace as NS
+    from brain import ClaudeBrain
+    sent = {}
+
+    class FakeMessages:
+        def create(self, **kw):
+            sent.update(kw)
+            return NS(stop_reason="tool_use",
+                      usage=NS(input_tokens=900, output_tokens=50, cache_read_input_tokens=800,
+                               cache_creation_input_tokens=0),
+                      content=[NS(type="tool_use", name="decide",
+                                  input={"action": "HOLD", "stop_price": None, "target_price": None,
+                                         "confidence": 0.5, "reason": "等"})])
+
+    b = ClaudeBrain.__new__(ClaudeBrain)
+    b.cfg, b.client = Config(), NS(messages=FakeMessages())
+    d = b.decide({"b": 1, "a": 2})
+    assert sent["tool_choice"]["type"] == "auto"
+    assert sent["system"][-1]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+    assert sent["tools"][0]["strict"] is True
+    assert '{"a":2,"b":1}' in sent["messages"][0]["content"]
+    assert d["action"] == "HOLD" and d["_usage"]["cache_read"] == 800
