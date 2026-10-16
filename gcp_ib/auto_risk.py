@@ -179,13 +179,15 @@ def write_ladder(t, M):
     級別同 risk_report.ladder_level 一致（A／B／C／D，夜盤 ×1.5）。龍飛陣 VM 嘅 longfei_guard.py 讀：
     Ⓑ → PAUSE、Ⓒ／Ⓓ → STOP；讀唔到富途或冇緩衝就唔寫 → 檔案變舊 → guard 當 STOP（fail-safe）。"""
     p = os.environ.get("ZHUGE_LADDER_FILE", "").strip()
-    if not p or not M or M.get("cushion") is None:
+    hard = bool(M) and M.get("gap", 1) < 0                     # RISK_LADDER §6b：硬止損都當 Ⓓ（STOP）
+    if not p or not M or (M.get("cushion") is None and not hard):
         return
     night = risk_report.ladder_night(t)
-    lv = risk_report.ladder_level(M["cushion"], night)
+    lv = "D" if hard else risk_report.ladder_level(M["cushion"], night)
     path = Path(p).expanduser()
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(f"{lv} {'night' if night else 'day'} {t:%Y-%m-%d %H:%M}\n", encoding="utf-8")
+    tmp.write_text(f"{lv} {'night' if night else 'day'} {t:%Y-%m-%d %H:%M}{' hard_stop' if hard else ''}\n",
+                   encoding="utf-8")
     os.replace(tmp, path)
 
 

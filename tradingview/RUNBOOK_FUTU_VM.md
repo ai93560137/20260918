@@ -47,10 +47,10 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
 
 ## 🐉 龍飛陣（R199）
 - **金鑰**：Claude Console 開 API key（例如 `longfei-vm`），喺 VM 用 `read -rsp` 加入 `~/zhuge/env` 做 `ANTHROPIC_API_KEY=…`（唔好貼入對話）；到期前換。
-- **風控階梯**：`auto_risk` 每 15 分鐘寫 `~/zhuge/ladder_level`（「級別 day|night 時間」，同 `risk_report.ladder_level`）。
-  `longfei_guard.py` 每 30 秒讀：Ⓑ → `~/zhuge/ai_trader/PAUSE`（停開新倉）；Ⓒ／Ⓓ、或者檔案冇咗／舊過 40 分鐘（週末除外）→ `STOP`（平倉，**停到下一個交易日**）；
+- **風控階梯**：`auto_risk` 每 10 分鐘寫（VM 由 15 改 10，等一次讀唔到富途都唔會過 30 分鐘） `~/zhuge/ladder_level`（「級別 day|night 時間」，同 `risk_report.ladder_level`）。
+  `longfei_guard.py` 每 30 秒讀：Ⓑ → `~/zhuge/ai_trader/PAUSE`（停開新倉）；Ⓒ／Ⓓ、硬止損、或者檔案冇咗／舊過 30 分鐘（週末除外，RISK_LADDER §6b）→ `STOP`（平倉，**停到下一個交易日**）；
   啱開機未有檔 → 先 PAUSE。返 Ⓐ 只刪 guard 自己放嘅檔（內容 `guard:` 開頭），人手放嘅唔郁。
-- **watchdog**（同一個 guard）：心跳（`~/zhuge/ai_trader/heartbeat`）超過 10 分鐘冇更新而有倉 → Telegram 🚨；冇倉（非週末）、連續出錯 ≥3、halted 亦通知；同一件事 30 分鐘最多一次。SIMULATE 只通知，唔自動平倉。
+- **watchdog**（同一個 guard）：心跳（`~/zhuge/ai_trader/heartbeat`）超過 10 分鐘冇更新而有倉 → Telegram 🚨；冇倉（非週末）、連續出錯 ≥3、halted、即月有唔屬龍飛陣嘅倉（foreign_qty）亦通知；同一件事 30 分鐘最多一次。SIMULATE 只通知，唔自動平倉。
 - **人手停**：`touch ~/zhuge/ai_trader/STOP`（平倉停機）或 `PAUSE`；紀錄 `~/zhuge/ai_trader/logs/`、`journalctl -u zhuge-longfei -u zhuge-longfei-guard -n 50`。
 - 倉位可以隔夜（使用者 10-16 取消 02:50 平倉），watchdog 全日運作。
 
