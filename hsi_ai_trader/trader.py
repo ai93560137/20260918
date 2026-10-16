@@ -123,6 +123,8 @@ class Trader:
         stale = (snap["update_time"] is None or
                  (now - snap["update_time"]).total_seconds() > cfg.stale_quote_sec)
 
+        self._real_preflight(now, contract, last)
+
         # 4) 每日虧損上限：只計自己嘅盈虧（已實現＋浮動，扣估算佣金），唔用戶口淨值，
         #    否則其他陣蝕錢都會令龍飛陣停機
         st["last_equity"] = self.broker.equity()
@@ -210,10 +212,16 @@ class Trader:
 
         if action in ("OPEN_LONG", "OPEN_SHORT"):
             side = 1 if action == "OPEN_LONG" else -1
-            px = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
-            if px is None:
+            n_open = self._cap_open_qty(contract, side, last, n_open)
+            if not n_open:
+                return
+            px, filled = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
+            if not filled:
                 self._log("events", {"type": "ORDER_FAILED", "action": action})
                 return
+            if filled < n_open:
+                self._log("events", {"type": "PARTIAL_FILL", "action": action, "wanted": n_open, "filled": filled})
+                n_open = filled
             # 以實際成交價重新校正止蝕距離
             dist = abs(last - stop)
             stop_adj = round_tick(px - side * dist, cfg.tick)
@@ -282,15 +290,63 @@ class Trader:
         }
 
     # ---------- 執行 ----------
+    def _real_preflight(self, now, contract, last):
+        """每 REAL_PREFLIGHT_MIN 分鐘唯讀查一次真實戶口準備好未（模擬盤都查，等入金後即刻知）。結果上載 GCS。"""
+        cfg, st = self.cfg, self.state
+        fn = getattr(self.broker, "real_preflight", None)
+        if not fn or cfg.real_preflight_min <= 0 or not last:
+            return
+        prev = st.get("real_preflight") or {}
+        try:
+            if prev.get("ts") and (now - datetime.fromisoformat(prev["ts"])).total_seconds() < cfg.real_preflight_min * 60:
+                return
+        except (TypeError, ValueError):
+            pass
+        try:
+            res = fn(contract, order_qty(spec_for(cfg.product), last, cfg.max_qty), last)
+        except Exception as e:  # noqa: BLE001
+            res = {"ok": False, "error": f"{e.__class__.__name__}: {str(e)[:120]}"}
+        res["ts"] = now.isoformat(timespec="seconds")
+        if bool(res.get("ok")) != bool(prev.get("ok")) or not prev:
+            self._log("events", {"type": "REAL_PREFLIGHT", **res})
+            log.info("真倉準備檢查：%s", res)
+        st["real_preflight"] = res
+
+    def _cap_open_qty(self, contract, side, price, n_open):
+        """開倉前問富途最多可以開幾多（購買力／可沽空數量）。唔夠就減細；一股都唔得就唔開。
+        查唔到：REAL 唔開（寧願錯過），SIMULATE 照開。期貨（HSI 1 張、期貨戶口共用按金）暫時唔查。"""
+        if self.cfg.kind != "stock":
+            return n_open
+        try:
+            cap = self.broker.max_open_qty(contract, side, price)
+        except Exception as e:  # noqa: BLE001
+            if self.cfg.trd_env == "REAL":
+                self._log("events", {"type": "OPEN_SKIPPED", "reason": f"查唔到可開數量：{e.__class__.__name__}"})
+                return 0
+            log.warning("查唔到可開數量（模擬盤照開）：%s", e)
+            return n_open
+        if cap >= n_open:
+            return n_open
+        self._log("events", {"type": "OPEN_CAPPED" if cap > 0 else "OPEN_SKIPPED", "wanted": n_open, "cap": cap,
+                             "reason": "購買力唔夠" if side > 0 else "借唔到貨／沽空額度唔夠"})
+        return max(cap, 0)
+
     def _close(self, code, qty, reason, ref_price=None):
         if qty == 0:
             return None
         side = -1 if qty > 0 else 1
-        px = self.broker.market_order(code, side, abs(qty), self.cfg.slippage_points)
+        px, filled = self.broker.market_order(code, side, abs(qty), self.cfg.slippage_points)
         meta = self.state.get("pos") or {}
-        if px is None:
+        if not filled:
             self._log("events", {"type": "CLOSE_FAILED", "code": code, "reason": reason})
             return None
+        if filled < abs(qty):                    # 部分平倉：記低已平嗰份，其餘繼續管理（下一輪再平）
+            part = filled if qty > 0 else -filled
+            self._record_exit(code, part, px, reason + f"（部分 {filled}／{abs(qty)}）", meta)
+            if meta.get("code") == code:
+                self.state["pos"] = {**meta, "qty": abs(qty) - filled}
+            self._log("events", {"type": "PARTIAL_CLOSE", "code": code, "wanted": abs(qty), "filled": filled})
+            return px
         self._record_exit(code, qty, px, reason, meta)
         return px
 

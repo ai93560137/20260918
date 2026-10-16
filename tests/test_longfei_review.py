@@ -57,5 +57,16 @@ class ReviewTest(unittest.TestCase):
         self.assertIn("最大回撤 0", text)
 
 
+    def test_readiness_table(self):
+        data = {"SPY": {"status": {"trd_env": "SIMULATE", "real_preflight": {
+                    "ok": False, "found": True, "funded": False, "acc_type": "MARGIN", "can_long": False,
+                    "can_short": False, "is_pdt": False, "pdt_seq": 3, "ts": "2026-10-17T09:00:00+08:00"}},
+                        "trades": [], "decisions": []},
+                "QQQ": {"status": {"trd_env": "SIMULATE"}, "trades": [], "decisions": []}}
+        text = "\n".join(lr.readiness(data))
+        self.assertIn("| SPY | SIMULATE | ✅ | ❌ | MARGIN | ❌ | ❌ | 唔係／剩 3 次 | ❌ 未齊 |", text)
+        self.assertIn("| QQQ | SIMULATE | — |", text)
+
+
 if __name__ == "__main__":
     unittest.main()
