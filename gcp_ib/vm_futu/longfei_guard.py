@@ -116,14 +116,15 @@ class Watchdog:
         except (OSError, ValueError, KeyError):
             hb, age = {}, None
         qty = hb.get("qty") or 0
-        if age is None or age > HB_STALE_MIN:
+        booting = time.monotonic() - START < HB_STALE_MIN * 60          # 啱開機：bot 未寫第一個心跳，唔好誤報
+        if (age is None or age > HB_STALE_MIN) and not booting:
             what = "冇心跳檔" if age is None else f"{age:.0f} 分鐘冇心跳"
             if qty:
                 self.alert("stale_pos", f"🚨 AI 程式 {what}，仲有 {qty} 張 {hb.get('code')} {hb.get('side')}（止蝕 {hb.get('stop')}），"
                            "冇程式守止蝕！請即睇（tmux／journalctl -u zhuge-longfei）", now)
             elif not weekend_closed(now.astimezone(HKT)):
                 self.alert("stale", f"⚠ AI 程式 {what}（冇倉）", now)
-        else:
+        elif age is not None and age <= HB_STALE_MIN:
             self.clear("stale_pos"), self.clear("stale")
         if hb.get("errors", 0) >= ERR_ALERT:
             self.alert("errors", f"⚠ AI 程式連續出錯 {hb.get('errors')} 次", now)
