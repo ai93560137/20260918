@@ -121,6 +121,15 @@ j = client.get("/?view=longfei&format=json").get_json()
 check("真倉合計獨立", j["total_real_hkd"]["trades"] == 1 and abs(j["total_real_hkd"]["points"] - 1000) < 1e-9
       and j["total_hkd"]["trades"] == 1, (j.get("total_real_hkd"), j.get("total_hkd")))
 check("戶口檢查唔公開", "real_preflight" not in json.dumps(j) and "real_preflight" not in html)
+code, _ = post({**pkt, "state": {"trd_env": "SIMULATE", "product": "QQQ", "pos": None,
+                                 "sim_account": {"currency": "USD", "equity": 987654.32, "power": 123456.78},
+                                 "real_account": {"currency": "USD", "equity": 555444.33, "power": 111222.33}}})
+check("模擬戶口淨值存入 GCS", json.loads(FAKE["longfei/QQQ/latest.json"][0])["status"]["sim_account"]["equity"] == 987654.32)
+j = client.get("/?view=longfei&format=json").get_json()
+html = client.get("/?view=longfei").get_data(as_text=True)
+check("模擬戶口淨值唔公開", "sim_account" not in json.dumps(j) and "987654" not in html and "987,654" not in html)
+check("真實戶口淨值存入 GCS 但唔公開", json.loads(FAKE["longfei/QQQ/latest.json"][0])["status"]["real_account"]["equity"] == 555444.33
+      and "real_account" not in json.dumps(j) and "555444" not in html and "555,444" not in html)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

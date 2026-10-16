@@ -618,3 +618,27 @@ def test_daily_loss_limit_per_product(monkeypatch):
     for k in ("PRODUCT", "DAILY_LOSS_LIMIT_SPY"):
         monkeypatch.delenv(k)
     importlib.reload(c)
+
+
+def test_account_snapshot_sim_and_real(env):
+    cfg, t, b, ai, tr = env
+    b.account_snapshot = lambda: {"currency": "HKD", "equity": 1_000_000.0, "power": 900_000.0}
+    tr.snapshot_equity()
+    assert tr.state["sim_account"]["power"] == 900_000.0
+    from push import build_packet
+    assert build_packet(cfg, tr.state, "t")["state"]["sim_account"]["equity"] == 1_000_000.0
+    tr.state.pop("sim_account")
+    tr.cfg = replace(cfg, trd_env="REAL")
+    tr.snapshot_equity()
+    assert "sim_account" not in tr.state and tr.state["real_account"]["equity"] == 1_000_000.0
+    tr.state["sim_account"] = {"equity": 1}
+    pk = build_packet(tr.cfg, tr.state, "t")["state"]
+    assert pk["sim_account"] is None and pk["real_account"]["power"] == 900_000.0
+
+
+def test_preflight_account_moves_to_real_account(env):
+    cfg, t, b, ai, tr = env
+    b.real_preflight = lambda code, qty, price: {"ok": True, "account": {"currency": "HKD", "equity": 5.0, "power": 2.0}}
+    tr.tick()
+    assert "account" not in tr.state["real_preflight"]
+    assert tr.state["real_account"]["power"] == 2.0 and tr.state["real_account"]["source"] == "preflight"

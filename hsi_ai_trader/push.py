@@ -2,7 +2,7 @@
 
 VM 冇直接寫 GCS 嘅權限，所以同 futu/push_to_gcp.py 一樣經 Cloud Run webhook。
 冇設 ZHUGE_GCP_URL／WEBHOOK_SECRET_TOKEN 就唔推。失敗只記 log，唔影響交易。
-唔推戶口淨值或保證金（只推龍飛陣自己嘅盈虧）。權杖唔會寫入 log。
+R212 起推模擬同真實戶口淨值、購買力（使用者 10-17；私人 GCS，網頁唔顯示）。權杖唔會寫入 log。
 """
 import json
 import logging
@@ -44,6 +44,9 @@ def build_packet(cfg, state, token):
               "halt_reason": state.get("halt_reason"), "foreign_qty": state.get("foreign_qty", 0),
               "contract": state.get("contract"), "paused": cfg.pause_file.exists(),
               "stopped": cfg.stop_file.exists(), "real_preflight": state.get("real_preflight"),
+              # [R212] 戶口淨值同購買力（私人 GCS，網頁唔顯示）：模擬程式報模擬戶口；真實戶口由真倉程式或者戶口檢查
+              "sim_account": state.get("sim_account") if cfg.trd_env == "SIMULATE" else None,
+              "real_account": state.get("real_account"),
               "pos": {k: pos.get(k) for k in ("code", "side", "qty", "entry", "stop", "target", "opened_at")}
               if pos else None}
     return {"action": "longfei_push", "token": token,
