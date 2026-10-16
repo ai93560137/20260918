@@ -5,7 +5,7 @@
 1. **排程 workflow**：讀預設分支每個 .github/workflows/*.yml 的 cron，算過去 24 小時「應該觸發幾次」，
    跟 GitHub API 的 schedule run 比對：應跑 ≥ 1 但 0 次 → 🔴「沒跑」；有失敗 → 🔴「失敗 n/m」。
    GitHub 會延遲或丟掉高頻排程，所以每 15 分鐘那種只在「一次都沒有」或「失敗」時才紅。
-2. **富途數據 VM `futu-data`**（2026-10-15 起富途數據由它推）：Compute Engine API 讀 VM 狀態（不是 RUNNING → 🔴），
+2. **富途數據 VM `futu-data-tw`**（10-15 起富途數據由 VM 推；10-16 由香港 futu-data 搬台灣）：Compute Engine API 讀 VM 狀態（不是 RUNNING → 🔴），
    再看 VM 上各服務的輸出：`auto_risk`（futu/risk/latest.json，下面新鮮度）、`push_to_gcp`（futu/snapshots/US.QQQ.json）、
    `iv_push`（futu/snapshots/HK.HSI_IV.json）的 GCS 更新時間。OpenD 死咗三個都會停，所以三個都舊即係 OpenD 或 VM 問題。
 3. **數據新鮮度**：GCS（富途快照、成交檔、MT5 心跳、通報狀態、晨會簡報）、repo（金絲雀、對帳表、偏離報告）、
@@ -37,7 +37,7 @@ UTC = timezone.utc
 WINDOW_H = 24
 GCP_PROJECT = os.environ.get("GCP_PROJECT", "sacred-alliance-453716-b7")
 GCS_BUCKET = os.environ.get("GCS_BUCKET", "zhuge-risk-manager-bucket")
-FUTU_VM = ("asia-east2-a", "futu-data")     # AGENTIC.md「VM：futu-data」
+FUTU_VM = ("asia-east1-b", "futu-data-tw")  # 10-16 由香港 futu-data（asia-east2-a）搬台灣：龍飛陣要用 Claude API
 
 
 # ---------------------------------------------------------------- cron
