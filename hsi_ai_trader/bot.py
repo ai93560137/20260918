@@ -7,6 +7,7 @@ import time
 from logging.handlers import RotatingFileHandler
 
 from config import CFG
+from push import push
 from rules import now_hkt
 
 
@@ -53,6 +54,7 @@ def main():
             trader.tick()
             if time.time() - last_eq_snap >= 300:
                 trader.snapshot_equity()
+                push(CFG, trader.state)          # 成績上載 GCS（冇設定就跳過，失敗唔影響交易）
                 last_eq_snap = time.time()
             time.sleep(CFG.risk_loop_sec)
     finally:
