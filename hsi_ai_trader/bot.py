@@ -8,6 +8,7 @@ import time
 from logging.handlers import RotatingFileHandler
 
 from config import CFG
+from markets import spec_for
 from push import push
 from rules import now_hkt
 
@@ -38,9 +39,11 @@ def main():
     from trader import Trader
 
     if CFG.market == "US" and os.getenv("TRD_ENV", "").upper() == "REAL":
-        log.warning("美期只跑模擬盤（使用者 2026-10-16）：TRD_ENV=REAL 已改為 SIMULATE")
-    log.info("啟動龍飛陣 AI 交易：env=%s 上限=%d張 日蝕上限=HK$%.0f 模型=%s",
-             CFG.trd_env, CFG.max_qty, CFG.daily_loss_limit, CFG.model)
+        log.warning("美國產品只跑模擬盤（使用者 2026-10-16）：TRD_ENV=REAL 已改為 SIMULATE")
+    sp = spec_for(CFG.product)
+    size = f"每次約 US${sp.notional_usd:,.0f}（按價計股數）" if sp.kind == "stock" else f"上限={CFG.max_qty}張"
+    log.info("啟動龍飛陣 AI 交易：產品=%s env=%s %s 日蝕上限=HK$%.0f 模型=%s",
+             CFG.product, CFG.trd_env, size, CFG.daily_loss_limit, CFG.model)
     broker = FutuBroker(CFG)
     trader = Trader(CFG, broker, ClaudeBrain(CFG), now_hkt)
 
