@@ -252,6 +252,9 @@ ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config
 
 ## VM：futu-data（富途數據，2026-10-15 建立）
 
+> **2026-10-16 更新**：VM 已搬去台灣 **`futu-data-tw`（asia-east1-b）**，因為同一部機要跑 🐉 龍飛陣（`hsi_ai_trader`，Claude API 喺香港唔支援）。
+> 香港 `futu-data` 服務已 disable 保留。龍飛陣 `TRD_ENV` 由 repo `settings.env` 定（而家 SIMULATE），風控階梯／watchdog 見 `tradingview/RUNBOOK_FUTU_VM.md`「🐉 龍飛陣」。
+
 方案一：富途 OpenD（Linux 命令列版）、`auto_risk`、`push_to_gcp`、`iv_push` 由使用者部機搬去 Google VM `futu-data`
 （`asia-east2-a`、`e2-small`、Debian 12），用 systemd 開機自動起、死咗自動重開。部機只留 MT5（EA）同 `mt5_push`。
 詳細步驟見 `tradingview/RUNBOOK_FUTU_VM.md`。
