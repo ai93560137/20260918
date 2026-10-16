@@ -1,0 +1,46 @@
+name: Fetch real yield（TIPS 實質殖利率歷史）
+
+# 抓財政部實質殖利率曲線（2003 起）寫到 data/vol/real_yield.csv，供 scripts/vol_study.py 用。
+# 沙箱連不到財政部，所以在 Actions 跑。每個交易日收盤後更新；改腳本或手動觸發也會跑。
+on:
+  schedule:
+    - cron: '20 22 * * 1-5'
+  push:
+    paths:
+      - scripts/fetch_real_yield.py
+      - .github/workflows/fetch_real_yield.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-real-yield
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/us-intl-data-stock-market-vgt0yi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests
+      - run: python3 scripts/fetch_real_yield.py
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/vol/real_yield.csv
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(vol): 財政部實質殖利率 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/us-intl-data-stock-market-vgt0yi && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin claude/us-intl-data-stock-market-vgt0yi || exit 1
+          done
+          exit 1

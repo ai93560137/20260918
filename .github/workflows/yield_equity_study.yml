@@ -1,0 +1,63 @@
+name: Yield vs equity study（美債殖利率 vs 美股）
+
+# 跑 scripts/yield_equity_study.py：10Y 殖利率、殖利率曲線、股債利差 vs S&P 500 的歷史驗證。
+# 需要 FRED（GS10/GS2/TB3MS）、財政部殖利率曲線與 multpl（近期 EPS），沙箱連不到，所以放在 Actions 跑。
+# 每月 5 日（月資料更新後）重跑；改了腳本或手動觸發也會跑。報告在 data/macro/yield_equity/README.md。
+on:
+  schedule:
+    - cron: '23 1 5 * *'
+  push:
+    paths:
+      - scripts/yield_equity_study.py
+      - .github/workflows/yield_equity_study.yml
+  workflow_dispatch:
+    inputs:
+      eps:
+        description: '手動指定最新近 12 個月 EPS（空白 = 用 multpl）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yield-equity-study
+  cancel-in-progress: true
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -q requests
+
+      - name: Run study
+        env:
+          EPS: ${{ inputs.eps }}
+        run: |
+          ARGS=""
+          [ -n "$EPS" ] && ARGS="--eps $EPS"
+          python3 scripts/yield_equity_study.py $ARGS
+
+      - name: Commit and push
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/macro/yield_equity
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "chore(macro): 更新美債殖利率 vs 美股研究 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || exit 1
+          done
+          echo "push 重試 5 次仍失敗" && exit 1
