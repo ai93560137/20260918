@@ -48,7 +48,7 @@
   "shares_rows": 547
  },
  "0005.HK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -113,11 +113,11 @@
   "shares_rows": 371
  },
  "0017.HK": {
-  "adj_err_max": 8.3e-05,
+  "adj_err_max": 8.4e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2000-01-04",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -357,11 +357,11 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 0,
+  "files_changed": 1,
   "first": "2002-09-23",
   "kept_tail": 0,
-  "last": "2026-10-15",
-  "rows": 5967,
+  "last": "2026-10-16",
+  "rows": 5968,
   "shares_rows": 369
  },
  "0386.HK": {
@@ -410,7 +410,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2000-01-04",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -458,7 +458,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2003-11-12",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -466,7 +466,7 @@
   "shares_rows": 464
  },
  "0857.HK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -550,7 +550,7 @@
   "shares_rows": 557
  },
  "0968.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -614,7 +614,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 2,
+  "files_changed": 1,
   "first": "2000-01-04",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -646,7 +646,7 @@
   "shares_rows": 682
  },
  "1099.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -674,7 +674,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2015-06-03",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -742,7 +742,7 @@
   "shares_rows": 1565
  },
  "1299.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -754,7 +754,7 @@
   "shares_rows": 814
  },
  "1339.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -878,7 +878,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2018-06-21",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -946,7 +946,7 @@
   "shares_rows": 573
  },
  "2057.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -970,7 +970,7 @@
   "shares_rows": 490
  },
  "2313.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -1030,7 +1030,7 @@
   "shares_rows": 1566
  },
  "2382.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -1054,7 +1054,7 @@
   "shares_rows": 566
  },
  "2600.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -1090,7 +1090,7 @@
   "shares_rows": 420
  },
  "2628.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -1114,15 +1114,15 @@
   "shares_rows": 627
  },
  "2800.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
   "files_changed": 1,
   "first": "2008-01-02",
-  "kept_tail": 0,
+  "kept_tail": 1,
   "last": "2026-10-16",
-  "rows": 4628,
+  "rows": 4630,
   "shares_rows": 72
  },
  "2899.HK": {
@@ -1186,7 +1186,7 @@
   "shares_rows": 1527
  },
  "3988.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -1258,7 +1258,7 @@
   "shares_rows": 354
  },
  "9618.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
@@ -1358,9 +1358,9 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-16",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
-  "kept_tail": 0,
+  "kept_tail": 1,
   "last": "2026-10-16",
   "rows": 7837,
   "shares_rows": 0
