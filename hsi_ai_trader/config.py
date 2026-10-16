@@ -43,7 +43,9 @@ class Config:
     # --- Futu OpenD ---
     opend_host: str = _env("OPEND_HOST", "127.0.0.1")
     opend_port: int = int(_env("OPEND_PORT", "11111"))
-    trd_env: str = _env("TRD_ENV", "SIMULATE")          # SIMULATE 或 REAL
+    # 使用者 2026-10-16：美期（MES／MNQ／MYM）只跑模擬盤（富途冇美期即時報價權限），TRD_ENV=REAL 都當 SIMULATE；
+    # 轉真倉只適用 HSI。要開美期真倉要改呢度（經 PR），唔可以淨係改環境變數。
+    trd_env: str = "SIMULATE" if SPEC.market == "US" else _env("TRD_ENV", "SIMULATE")
     acc_id: int = int(_env("FUTU_ACC_ID", "0"))          # 0 = 自動揀第一個期貨戶口
     trade_password: str = _env("FUTU_TRADE_PASSWORD", "")  # 留空 = 已喺 OpenD 解鎖
 

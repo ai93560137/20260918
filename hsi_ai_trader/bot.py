@@ -1,6 +1,7 @@
 """啟動：python bot.py
 停機：建立 STOP 檔案（即平倉並唔再開倉）；暫停開倉：建立 PAUSE 檔案。"""
 import logging
+import os
 import signal
 import sys
 import time
@@ -36,6 +37,8 @@ def main():
     from brain import ClaudeBrain
     from trader import Trader
 
+    if CFG.market == "US" and os.getenv("TRD_ENV", "").upper() == "REAL":
+        log.warning("美期只跑模擬盤（使用者 2026-10-16）：TRD_ENV=REAL 已改為 SIMULATE")
     log.info("啟動龍飛陣 AI 交易：env=%s 上限=%d張 日蝕上限=HK$%.0f 模型=%s",
              CFG.trd_env, CFG.max_qty, CFG.daily_loss_limit, CFG.model)
     broker = FutuBroker(CFG)

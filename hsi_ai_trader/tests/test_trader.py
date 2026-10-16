@@ -357,3 +357,16 @@ def test_us_roll_eight_days_before_expiry_and_config():
     finally:
         del os.environ["PRODUCT"]
         importlib.reload(cmod)
+
+
+def test_us_products_forced_simulate():
+    import importlib, os
+    import config as cmod
+    os.environ.update(PRODUCT="MES", TRD_ENV="REAL")
+    try:
+        assert importlib.reload(cmod).CFG.trd_env == "SIMULATE"
+        os.environ["PRODUCT"] = "HSI"
+        assert importlib.reload(cmod).CFG.trd_env == "REAL"
+    finally:
+        del os.environ["PRODUCT"], os.environ["TRD_ENV"]
+        importlib.reload(cmod)
