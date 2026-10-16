@@ -206,6 +206,16 @@ class FutuBroker:
         out["ok"] = bool(out["funded"] and out["can_long"] and out["can_short"])
         return out
 
+    def account_snapshot(self) -> dict:
+        """[R212] 而家戶口（只喺 SIMULATE 用）嘅淨值同購買力，ETF 用美元、期貨用港幣。"""
+        ccy = "USD" if self.spec.currency == "USD" else "HKD"
+        info = _ok(*self.trade.accinfo_query(trd_env=self.env, acc_id=self.acc_id, refresh_cache=False,
+                                             currency=ccy), "accinfo_query").iloc[0]
+        return {"currency": ccy, "equity": round(_num(info.get("total_assets")), 2),
+                "power": round(_num(info.get("power")), 2),
+                "max_power_short": round(_num(info.get("max_power_short")), 2),
+                "cash": round(_num(info.get("cash")), 2)}
+
     def futures_room(self, code: str, side: int, price: float) -> dict:
         """[R209] 期貨戶口緩衝（淨值 − 維持保證金，港幣）同每張初始保證金（做好／做淡），富途即時查，唔寫死。"""
         info = _ok(*self.trade.accinfo_query(trd_env=self.env, acc_id=self.acc_id, refresh_cache=True,

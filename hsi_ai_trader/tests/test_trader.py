@@ -618,3 +618,18 @@ def test_daily_loss_limit_per_product(monkeypatch):
     for k in ("PRODUCT", "DAILY_LOSS_LIMIT_SPY"):
         monkeypatch.delenv(k)
     importlib.reload(c)
+
+
+def test_sim_account_snapshot_only_in_simulate(env):
+    cfg, t, b, ai, tr = env
+    b.account_snapshot = lambda: {"currency": "HKD", "equity": 1_000_000.0, "power": 900_000.0}
+    tr.snapshot_equity()
+    assert tr.state["sim_account"]["power"] == 900_000.0
+    from push import build_packet
+    assert build_packet(cfg, tr.state, "t")["state"]["sim_account"]["equity"] == 1_000_000.0
+    tr.state.pop("sim_account")
+    tr.cfg = replace(cfg, trd_env="REAL")
+    tr.snapshot_equity()
+    assert "sim_account" not in tr.state
+    tr.state["sim_account"] = {"equity": 1}
+    assert build_packet(tr.cfg, tr.state, "t")["state"]["sim_account"] is None

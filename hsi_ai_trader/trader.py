@@ -464,5 +464,12 @@ class Trader:
 
     def snapshot_equity(self):
         st = self.state
+        # [R212] 使用者 10-17：模擬戶口淨值同購買力上載私人 GCS（真倉唔上載）
+        fn = getattr(self.broker, "account_snapshot", None)
+        if fn and self.cfg.trd_env == "SIMULATE":
+            try:
+                st["sim_account"] = {**fn(), "ts": self.clock().isoformat(timespec="seconds")}
+            except Exception as e:  # noqa: BLE001
+                log.warning("讀模擬戶口淨值失敗：%s", e)
         self._log("equity", {"equity": st.get("last_equity"), "day": st.get("day"),
                              "day_pnl": st.get("day_pnl"), "pos": (st.get("pos") or {}).get("side", 0)})

@@ -7525,7 +7525,8 @@ def longfei_metrics(trades, key="points"):
 def _longfei_one(doc):
     trades = [t for t in (doc.get("trades") or []) if isinstance(t, dict)]
     age = (now_ts() - doc["received_ts"]) / 60 if isinstance(doc.get("received_ts"), (int, float)) else None
-    state = {k: v for k, v in (doc.get("status") or {}).items() if k != "real_preflight"}   # 戶口檢查唔公開
+    state = {k: v for k, v in (doc.get("status") or {}).items()
+             if k not in ("real_preflight", "sim_account")}   # 戶口檢查、模擬戶口淨值（R212）唔公開
     return {"state": state, "received_utc": doc.get("received_utc"), "age_min": age,
             "stale": age is None or age > LONGFEI_STALE_MIN, "metrics": longfei_metrics(trades),
             "metrics_hkd": longfei_metrics(trades, "pnl_hkd_gross"), "trades": trades,
