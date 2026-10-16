@@ -208,7 +208,7 @@ def parse_positions_md(text: str, year: int = 2026) -> tuple[dict[str, float], l
             out[f"{base}C{int(k)}x0"] = -n
             out[f"{base}P{int(k)}x0"] = -n
             hit = True
-        m = re.search(r"沽 HSI 週期權 (\d{1,2})/(\d{1,2})：Put ([\d,]+) @[\d.]+ ＋ Call ([\d,]+) @[\d.]+（各 (\d+) 張", pos)
+        m = re.search(r"沽 HSI 週期權 (\d{1,2})/(\d{1,2})(?:（[^）]*）)?：Put ([\d,]+) @[\d.]+ ＋ Call ([\d,]+) @[\d.]+（各 (\d+) 張", pos)
         if m:
             mo, dd = int(m.group(1)), int(m.group(2))
             kp, kc, n = float(m.group(3).replace(",", "")), float(m.group(4).replace(",", "")), float(m.group(5))
