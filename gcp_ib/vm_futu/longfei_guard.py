@@ -129,12 +129,19 @@ class Watchdog:
             self.alert("errors", f"⚠ AI 程式連續出錯 {hb.get('errors')} 次", now)
         else:
             self.clear("errors")
-        if hb.get("foreign_qty"):
-            self.alert("foreign", f"⚠ 即月有 {hb.get('foreign_qty')} 張唔屬龍飛陣嘅倉，龍飛陣停開新倉", now)
+        if (hb.get("foreign_qty") or 0) != 0:                  # 有正負（外來淡倉係負數）；只喺出現時發一次
+            if "foreign" not in self.last:
+                self.last["foreign"] = now
+                msg = f"⚠ 即月有 {hb.get('foreign_qty')} 張唔屬龍飛陣嘅倉，龍飛陣停開新倉"
+                log(msg)
+                telegram(msg)
         else:
             self.clear("foreign")
-        if hb.get("halted"):
-            self.alert("halted", "⚠ AI 程式已停機（halted）", now)
+        if hb.get("halted"):                                   # 日蝕停機會停到 17:00，只喺變化時發一次
+            if "halted" not in self.last:
+                self.last["halted"] = now
+                log("⚠ AI 程式已停機（halted）")
+                telegram("⚠ AI 程式已停機（halted），17:00 HKT 新交易日先會再開")
         else:
             self.clear("halted")
 
