@@ -21,8 +21,10 @@ class Spec:
     point_value: float    # 每點價值（原幣）
     tick: float           # 最細跳動
     slippage: float       # 可成交限價單加幾多點（要係 tick 嘅倍數）
-    fee_per_side_hkd: float
+    fee_per_side_hkd: float  # 期貨：每張每邊；股票／ETF：每張單每邊
     roll_days: int        # 最後交易日前幾日轉下月（美期成交量喺到期前約一週轉倉）
+    kind: str = "future"  # "future" 或 "stock"（ETF）
+    notional_usd: float = 0.0  # ETF：每次落單大約金額（按價計股數）；期貨用 MAX_QTY 張
 
 
 SPECS = {
@@ -31,6 +33,11 @@ SPECS = {
     "MES": Spec("MES", "Micro E-mini S&P 500 Futures (CME)", "US", ET, "USD", 5, 0.25, 1.0, 15, 8),
     "MNQ": Spec("MNQ", "Micro E-mini Nasdaq-100 Futures (CME)", "US", ET, "USD", 2, 0.25, 1.0, 15, 8),
     "MYM": Spec("MYM", "Micro E-mini Dow Jones Futures (CBOT)", "US", ET, "USD", 0.5, 1, 5, 15, 8),
+    # 使用者 2026-10-16：美期冇報價權限，改用美股 ETF（每次約 US$10,000、可沽空、包盤前盤後 04:00–20:00 美東）
+    "SPY": Spec("SPY", "SPDR S&P 500 ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 10_000),
+    "QQQ": Spec("QQQ", "Invesco QQQ Nasdaq-100 ETF (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 10_000),
+    "DIA": Spec("DIA", "SPDR Dow Jones Industrial Average ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0,
+                "stock", 10_000),
 }
 
 FX_TO_HKD = {"HKD": 1.0, "USD": 7.8}
@@ -86,16 +93,46 @@ def _us_session(now):
     return "GLOBEX", _mins(t, US_CLOSE)
 
 
-def session_status(now: datetime, market: str = "HK"):
+# ---------- 美股／ETF（美東）：盤前 04:00–09:30、正常 09:30–16:00、盤後 16:00–20:00，週一至五 ----------
+US_EXT_OPEN, US_RTH_OPEN, US_RTH_CLOSE, US_EXT_CLOSE = time(4, 0), time(9, 30), time(16, 0), time(20, 0)
+
+
+def _us_stock_session(now):
+    et = now.astimezone(ET)
+    t, wd = et.timetz().replace(tzinfo=None), et.weekday()
+    if wd >= 5 or not (US_EXT_OPEN <= t < US_EXT_CLOSE):
+        return None, None
+    name = "PRE" if t < US_RTH_OPEN else ("RTH" if t < US_RTH_CLOSE else "POST")
+    return name, _mins(t, US_EXT_CLOSE)          # 盤前盤後連埋計，收市＝20:00
+
+
+def session_status(now: datetime, market: str = "HK", kind: str = "future"):
     """回傳 (時段名, 距離收市分鐘)；唔喺交易時段回傳 (None, None)。假期由「報價過期」檢查處理。"""
-    return _us_session(now) if market == "US" else _hk_session(now)
-
-
-def trading_day_key(now: datetime, market: str = "HK") -> str:
-    """港期：17:00 HKT 開始計新一日（夜市屬下一日）；美期：18:00 美東開市開始計新一日。用嚟重置日蝕。"""
     if market == "US":
+        return _us_stock_session(now) if kind == "stock" else _us_session(now)
+    return _hk_session(now)
+
+
+def trading_day_key(now: datetime, market: str = "HK", kind: str = "future") -> str:
+    """港期：17:00 HKT 開始計新一日（夜市屬下一日）；美期：18:00 美東開市開始計新一日；
+    美股：美東 04:00 盤前開始計新一日。用嚟重置日蝕。"""
+    if market == "US":
+        if kind == "stock":
+            return (now.astimezone(ET) - timedelta(hours=4)).date().isoformat()
         return (now.astimezone(ET) + timedelta(hours=6)).date().isoformat()
     return (now.astimezone(HKT) + timedelta(hours=7)).date().isoformat()
+
+
+def order_qty(spec: "Spec", price: float, max_qty: int) -> int:
+    """期貨：max_qty 張；ETF：按 notional_usd ÷ 價計股數（最少 1 股）。"""
+    if spec.kind == "stock":
+        return max(1, int(spec.notional_usd // price)) if price else 0
+    return max_qty
+
+
+def fee_hkd(spec: "Spec", qty: int, fee_per_side: float) -> float:
+    """一來一回佣金估算：期貨按張；ETF 按單（唔理股數）。"""
+    return fee_per_side * 2 * (1 if spec.kind == "stock" else abs(qty))
 
 
 def third_friday(y: int, m: int) -> date:

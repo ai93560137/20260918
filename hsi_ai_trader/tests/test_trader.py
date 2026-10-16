@@ -370,3 +370,51 @@ def test_us_products_forced_simulate():
     finally:
         del os.environ["PRODUCT"], os.environ["TRD_ENV"]
         importlib.reload(cmod)
+
+
+def test_etf_session_sizing_and_fee():
+    from markets import ET, SPECS, session_status as ss, trading_day_key as tdk, order_qty, fee_hkd
+    f = lambda h, mi, d=19: ss(datetime(2026, 10, d, h, mi, tzinfo=ET), "US", "stock")[0]
+    assert f(3, 59) is None and f(4, 0) == "PRE" and f(9, 30) == "RTH" and f(16, 0) == "POST" and f(20, 0) is None
+    assert f(10, 0, 17) is None                                   # 週六
+    assert tdk(datetime(2026, 10, 19, 3, 59, tzinfo=ET), "US", "stock") == "2026-10-18"
+    assert tdk(datetime(2026, 10, 19, 4, 0, tzinfo=ET), "US", "stock") == "2026-10-19"
+    assert order_qty(SPECS["SPY"], 660.0, 1) == 15 and order_qty(SPECS["HSI"], 25000, 1) == 1
+    assert fee_hkd(SPECS["SPY"], 15, 16) == 32 and fee_hkd(SPECS["HSI"], 1, 40) == 80
+
+
+def test_etf_risk_scales_with_shares():
+    cfg = replace(Config(), product="SPY", point_value=7.8, slippage_points=0.05)
+    # 15 股，止蝕 10 美元：(10 + 0.1) × 7.8 × 15 ≈ HK$1,182
+    a, stop, _, why = validate_decision({"action": "OPEN_SHORT", "stop_price": 670}, position=0, entry=None,
+                                        last=660, cfg=cfg, remaining_loss=1000, can_open=True, trades_today=0, qty=15)
+    assert a == "HOLD" and "止蝕風險" in why
+    a, *_ = validate_decision({"action": "OPEN_SHORT", "stop_price": 670}, position=0, entry=None,
+                              last=660, cfg=cfg, remaining_loss=10000, can_open=True, trades_today=0, qty=15)
+    assert a == "OPEN_SHORT"
+
+
+def test_etf_end_to_end_short(tmp_path):
+    from markets import ET
+    cfg = replace(Config(), log_dir=tmp_path / "logs", state_file=tmp_path / "s.json", stop_file=tmp_path / "STOP",
+                  pause_file=tmp_path / "PAUSE", heartbeat_file=tmp_path / "hb", product="SPY", market="US",
+                  kind="stock", point_value=7.8, fee_per_side_hkd=0, slippage_points=0.05, tick=0.01)
+    t = {"now": datetime(2026, 10, 19, 10, 0, 5, tzinfo=ET).astimezone(HKT)}   # 週一 10:00 美東（正常時段）
+    b, ai = FakeBroker(), FakeBrain()
+    b.price, b.clock = 660.0, (lambda: t["now"])
+    tr = Trader(cfg, b, ai, lambda: t["now"])
+    tr.tick()
+    assert tr.state["contract"] == "US.SPY"
+    ai.next = {"action": "OPEN_SHORT", "stop_price": 670, "target_price": None, "confidence": 0.7, "reason": "x"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert b.pos["US.SPY"] == -15 and tr.state["pos"]["qty"] == 15
+    b.price = 650.0
+    ai.next = {"action": "CLOSE", "confidence": 0.7, "reason": "止賺"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert b.pos["US.SPY"] == 0
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines()
+             if '"CLOSE"' in l][-1]
+    # FakeBroker 每邊 1 點滑價：沽 659、買回 651，每股 +8 × 15 股 × 7.8
+    assert close["points"] == 8.0 and close["pnl_hkd_gross"] == round(8 * 15 * 7.8)

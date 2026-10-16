@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from markets import spec_for
+from markets import fee_hkd, order_qty, spec_for
 from rules import (session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -90,7 +90,7 @@ class Trader:
         cfg = self.cfg
 
         # 1) 交易日重置
-        day = trading_day_key(now, cfg.market)
+        day = trading_day_key(now, cfg.market, cfg.kind)
         if st.get("day") != day:
             eq = self.broker.equity()
             st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
@@ -119,7 +119,7 @@ class Trader:
 
         snap = self.broker.snapshot(contract)
         last = snap["last"]
-        session, mins_left = session_status(now, cfg.market)
+        session, mins_left = session_status(now, cfg.market, cfg.kind)
         stale = (snap["update_time"] is None or
                  (now - snap["update_time"]).total_seconds() > cfg.stale_quote_sec)
 
@@ -187,9 +187,10 @@ class Trader:
         ctx = self._context(now, contract, qty, snap, session, mins_left, remaining, can_open)
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
+        n_open = order_qty(spec_for(cfg.product), last, cfg.max_qty)   # 期貨張數／ETF 股數
         action, stop, target, rejected = validate_decision(
             d, position=qty, entry=meta.get("entry"), last=last, cfg=cfg,
-            remaining_loss=remaining, can_open=can_open, trades_today=st.get("trades_today", 0))
+            remaining_loss=remaining, can_open=can_open, trades_today=st.get("trades_today", 0), qty=n_open)
         rec = {"bar": st["last_decision_bar"], "contract": contract, "last": last, "pos": qty,
                "ai_action": d.get("action"), "ai_stop": d.get("stop_price"),
                "ai_target": d.get("target_price"), "confidence": d.get("confidence"),
@@ -204,7 +205,7 @@ class Trader:
 
         if action in ("OPEN_LONG", "OPEN_SHORT"):
             side = 1 if action == "OPEN_LONG" else -1
-            px = self.broker.market_order(contract, side, cfg.max_qty, cfg.slippage_points)
+            px = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
             if px is None:
                 self._log("events", {"type": "ORDER_FAILED", "action": action})
                 return
@@ -212,12 +213,12 @@ class Trader:
             dist = abs(last - stop)
             stop_adj = round(px - side * dist)
             tgt_adj = round(px + side * abs(target - last)) if target else None
-            st["pos"] = {"code": contract, "side": side, "qty": cfg.max_qty, "entry": px,
+            st["pos"] = {"code": contract, "side": side, "qty": n_open, "entry": px,
                          "stop": stop_adj, "target": tgt_adj, "opened_at": now.isoformat(),
                          "reason": d.get("reason")}
             st["trades_today"] = st.get("trades_today", 0) + 1
             self._log("trades", {"type": "OPEN", "code": contract, "side": side,
-                                 "qty": cfg.max_qty, "price": px, "stop": stop_adj,
+                                 "qty": n_open, "price": px, "stop": stop_adj,
                                  "target": tgt_adj, "reason": d.get("reason")})
         elif action == "CLOSE":
             self._close(contract, qty, "AI：" + (rejected or d.get("reason") or ""), last)
@@ -234,7 +235,8 @@ class Trader:
         day_key = st.get("day")
         if self._daily_cache[0] != day_key:
             try:
-                daily = self.broker.klines(f"{cfg.market}.{cfg.product}main", "1d", days_back=45, max_count=20)
+                daily = self.broker.klines(contract if cfg.kind == "stock" else f"{cfg.market}.{cfg.product}main",
+                                           "1d", days_back=45, max_count=20)
             except Exception:  # noqa: BLE001
                 daily = self.broker.klines(contract, "1d", days_back=45, max_count=20)
             self._daily_cache = (day_key, daily)
@@ -260,7 +262,8 @@ class Trader:
             "risk": {"day_pnl_hkd": round(st.get("day_pnl", 0)),
                      "remaining_loss_budget_hkd": round(remaining),
                      "point_value_hkd": cfg.point_value, "currency": cfg.currency, "tick": cfg.tick,
-                     "max_qty": cfg.max_qty,
+                     "order_qty": order_qty(spec_for(cfg.product), snap["last"], cfg.max_qty),
+                     "kind": cfg.kind,
                      "stop_points_min": cfg.min_stop_points or None,   # None = 唔限
                      "stop_points_max": cfg.max_stop_points or None,
                      "trades_today": st.get("trades_today", 0),
@@ -289,7 +292,7 @@ class Trader:
         side = 1 if qty > 0 else -1
         pts = round((px - entry) * side, 1) if entry is not None else None
         hkd = round(pts * abs(qty) * self.cfg.point_value) if pts is not None else None
-        net = hkd - self.cfg.fee_per_side_hkd * abs(qty) * 2 if hkd is not None else None
+        net = hkd - fee_hkd(spec_for(self.cfg.product), qty, self.cfg.fee_per_side_hkd) if hkd is not None else None
         rec = {"type": "CLOSE", "code": code, "side": side, "qty": abs(qty), "entry": entry,
                "price": px, "points": pts, "pnl_hkd_gross": hkd, "reason": reason,
                "opened_at": meta.get("opened_at")}
@@ -332,7 +335,7 @@ class Trader:
         unreal = 0.0
         if meta and meta.get("code") == contract and meta.get("entry") is not None:
             unreal = ((last - meta["entry"]) * meta["side"] * meta["qty"] * cfg.point_value
-                      - cfg.fee_per_side_hkd * meta["qty"] * 2)
+                      - fee_hkd(spec_for(cfg.product), meta["qty"], cfg.fee_per_side_hkd))
         return realized + unreal
 
     def _flatten_all(self, reason):
@@ -350,6 +353,11 @@ class Trader:
         day = self.state.get("day")
         if self._contract_cache[0] == day and self._contract_cache[1]:
             return self._contract_cache[1]
+        if self.cfg.kind == "stock":                       # ETF 冇合約月份
+            code = f"{self.cfg.market}.{self.cfg.product}"
+            self._contract_cache = (day, code)
+            self.state["contract"] = code
+            return code
         code = pick_front_month(self.broker.list_contracts(self.cfg.product),
                                 self.cfg.product, now.astimezone(spec_for(self.cfg.product).tz).date(),
                                 self.cfg.roll_days)

@@ -86,14 +86,14 @@ j = client.get("/?view=longfei&format=json").get_json()
 check("json 指標", j["products"]["HSI"]["metrics"]["trades"] == 2
       and abs(j["products"]["HSI"]["metrics"]["profit_factor"] - 1.5) < 1e-9, j.get("products"))
 print("=== 多產品 ===")
-code, body = post({**pkt, "state": {"trd_env": "SIMULATE", "product": "MES", "pos": None},
-                   "trades": [{"type": "CLOSE", "code": "US.MES2612", "side": 1, "entry": 5000, "price": 5004.5,
+code, body = post({**pkt, "state": {"trd_env": "SIMULATE", "product": "SPY", "pos": None},
+                   "trades": [{"type": "CLOSE", "code": "US.SPY", "side": 1, "entry": 5000, "price": 5004.5,
                                "points": 4.5, "pnl_hkd_gross": 175.5, "ts": "2026-10-17T22:00:00+08:00"}]})
-check("MES 存 longfei/MES", code == 200 and "longfei/MES/latest.json" in FAKE, (code, body))
+check("SPY 存 longfei/SPY", code == 200 and "longfei/SPY/latest.json" in FAKE, (code, body))
 code, _ = post({**pkt, "state": {"product": "ZZZ"}})
 check("未知產品 422", code == 422, code)
 html = client.get("/?view=longfei").get_data(as_text=True)
-check("總覽有 MES 同未開始嘅 MNQ", "lf-MES" in html and "MNQ" in html and "未開始" in html)
+check("總覽有 SPY 同未開始嘅 QQQ", "lf-SPY" in html and "QQQ" in html and "未開始" in html)
 j = client.get("/?view=longfei&format=json").get_json()
 check("合計按 HK$", j["total_hkd"]["trades"] == 1 and abs(j["total_hkd"]["points"] - 175.5) < 1e-9, j.get("total_hkd"))
 check("json 唔含權杖", "tok" not in json.dumps(j))

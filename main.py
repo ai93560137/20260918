@@ -3153,8 +3153,11 @@ def _scan_clean_row(raw):
 
 
 LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
-LONGFEI_PRODUCTS = ["HSI", "MES", "MNQ", "MYM"]      # [R202] 每隻產品一個程式，各存 longfei/<產品>/latest.json
-LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指"}
+LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA"]      # [R202] 每隻產品一個程式，各存 longfei/<產品>/latest.json
+# [R203] 使用者 10-16：美期冇報價權限，MES／MNQ／MYM 改美股 ETF SPY／QQQ／DIA
+LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指",
+                         "SPY": "標普 500 ETF", "QQQ": "納指 100 ETF", "DIA": "道指 ETF"}
+LONGFEI_ETFS = {"SPY", "QQQ", "DIA"}
 LONGFEI_MAX_TRADES = 500
 LONGFEI_MAX_DECISIONS = 30
 LONGFEI_MAX_BYTES = 400_000
@@ -7476,7 +7479,8 @@ def _lf_product_section(p, d):
     stage = "模擬盤" if env == "SIMULATE" else ("真倉" if env == "REAL" else env)
     pos = st.get("pos")
     if pos:
-        pos_txt = f"{'好倉' if pos.get('side', 0) > 0 else '淡倉'} {pos.get('qty')} 張 @ {_cn(pos.get('entry'), 2 if p != 'HSI' else 0)}"
+        unit = "股" if p in LONGFEI_ETFS else "張"
+        pos_txt = f"{'好倉' if pos.get('side', 0) > 0 else '淡倉'} {pos.get('qty')} {unit} @ {_cn(pos.get('entry'), 2 if p != 'HSI' else 0)}"
         pos_desc = f"止蝕 {_cn(pos.get('stop'), 2)}・止賺 {_cn(pos.get('target'), 2)}・{esc(_lf_hkt(pos.get('opened_at')))} 開"
     else:
         pos_txt, pos_desc = "冇", "空手"
@@ -7524,8 +7528,8 @@ def _lf_product_section(p, d):
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期、微型標普（MES）、微型納指（MNQ）、"
-             "微型道指（MYM）即月，每隻最多 1 張；程式負責落單同硬性風控（每隻每日虧損上限 HK$10,000，到咗即平倉停機）。</p></div>")
+    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）同美股 ETF SPY、QQQ、DIA"
+             "（每次約 US$10,000，可沽空，包盤前盤後）；程式負責落單同硬性風控（每隻每日虧損上限 HK$10,000，到咗即平倉停機）。</p></div>")
     if data.get("status") != "ok":
         return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
     prods = data["products"]
@@ -7546,7 +7550,7 @@ def build_longfei_page(data):
                 "<th>持倉</th><th>模擬筆數</th><th>勝率</th><th>累計（HK$）</th><th>更新</th></tr>" + orow + "</table></div></div>")
     total = ("<div class='section'><h2>📊 合計績效（全部產品，按 HK$）</h2>"
              + _lf_metric_cards(data["total_hkd"], "HK$", lambda v: hk(v))
-             + "<p class='muted' style='font-size:13px'>美期按 1 美元 = 7.8 港元換算；未扣佣金同滑價；樣本少時只供參考。</p></div>")
+             + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金同滑價；樣本少時只供參考。</p></div>")
     secs = "".join(_lf_product_section(p, prods[p]) for p in LONGFEI_PRODUCTS if p in prods)
     foot = "<p class='muted' style='font-size:13px'>模擬盤成績唔係真金白銀交易，亦唔代表將來回報。</p>"
     return html_page("龍飛陣", head + intro + overview + total + secs + foot, "<meta http-equiv='refresh' content='300'>")

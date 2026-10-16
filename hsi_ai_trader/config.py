@@ -43,7 +43,7 @@ class Config:
     # --- Futu OpenD ---
     opend_host: str = _env("OPEND_HOST", "127.0.0.1")
     opend_port: int = int(_env("OPEND_PORT", "11111"))
-    # 使用者 2026-10-16：美期（MES／MNQ／MYM）只跑模擬盤（富途冇美期即時報價權限），TRD_ENV=REAL 都當 SIMULATE；
+    # 使用者 2026-10-16：美國產品（美期，之後改 ETF SPY／QQQ／DIA）只跑模擬盤（富途冇美期即時報價權限），TRD_ENV=REAL 都當 SIMULATE；
     # 轉真倉只適用 HSI。要開美期真倉要改呢度（經 PR），唔可以淨係改環境變數。
     trd_env: str = "SIMULATE" if SPEC.market == "US" else _env("TRD_ENV", "SIMULATE")
     acc_id: int = int(_env("FUTU_ACC_ID", "0"))          # 0 = 自動揀第一個期貨戶口
@@ -53,10 +53,11 @@ class Config:
     # 使用者 2026-10-16：龍飛陣用大期 HSI（雲垂陣對沖用細期 MHI，分開合約免得淨額混埋）；之後加 MES、MNQ、MYM
     product: str = _PRODUCT
     market: str = SPEC.market                            # HK／US
+    kind: str = SPEC.kind                                # future／stock（ETF）
     currency: str = SPEC.currency
     tick: float = SPEC.tick
     roll_days: int = SPEC.roll_days
-    # 每點價值一律換算做 HKD（日蝕上限、止蝕風險、盈虧都用 HKD 比較）：HSI 50；MES 5×7.8＝39
+    # 每點（每張／每股）價值一律換算做 HKD（日蝕上限、止蝕風險、盈虧都用 HKD 比較）：HSI 50；MES 39；ETF 每股 7.8
     point_value: float = float(_env("POINT_VALUE", str(SPEC.point_value * FX_TO_HKD[SPEC.currency])))
 
     # --- Claude ---
