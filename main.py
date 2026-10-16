@@ -3152,6 +3152,34 @@ def _scan_clean_row(raw):
     return out or None
 
 
+LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
+LONGFEI_MAX_TRADES = 500
+LONGFEI_MAX_DECISIONS = 30
+LONGFEI_MAX_BYTES = 400_000
+
+
+def handle_longfei_push(payload):
+    """[R200] 龍飛陣 VM 每 5 分鐘推上嚟嘅狀態、成交、最近決策（私人，只存 GCS longfei/latest.json）。"""
+    status = payload.get("state")                    # 唔用 "status"：_payload_summary 會將佢寫入日誌
+    trades = payload.get("trades")
+    decisions = payload.get("decisions")
+    if not isinstance(status, dict) or not isinstance(trades, list) or not isinstance(decisions, list):
+        return jsonify({"status": "error", "message": "longfei_push: bad shape"}), 422
+    doc = {"received_utc": fmt_utc(), "received_ts": now_ts(),
+           "sent_utc": _futu_text(payload.get("sent_utc"), 32), "status": status,
+           "trades": [t for t in trades if isinstance(t, dict)][-LONGFEI_MAX_TRADES:],
+           "decisions": [d for d in decisions if isinstance(d, dict)][-LONGFEI_MAX_DECISIONS:]}
+    text = json.dumps(doc, ensure_ascii=False, default=str)
+    if len(text.encode("utf-8")) > LONGFEI_MAX_BYTES:
+        return jsonify({"status": "error", "message": "longfei_push: too large"}), 413
+    try:
+        gcs_write_text(f"{LONGFEI_DIR}/latest.json", text)
+    except StorageError as exc:
+        log_event(f"⚠️ [龍飛陣寫入失敗] {exc}", severity="ERROR", component="longfei")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    return jsonify({"status": "stored", "trades": len(doc["trades"]), "decisions": len(doc["decisions"])}), 200
+
+
 def handle_scan_push(payload):
     kind = _futu_text(payload.get("kind"), 24).lower()
     if not SCAN_KIND_RE.match(kind):
@@ -11760,6 +11788,8 @@ def _dispatch_post(payload):
         return handle_inline_scan(payload)
     if action == "scan_push":                        # [R150] 本地 scan_push.py 推上來的前向測試掃描（只存）
         return handle_scan_push(payload)
+    if action == "longfei_push":                     # [R200] 🐉 龍飛陣 VM 推上嚟嘅成績（只存）
+        return handle_longfei_push(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -11790,7 +11820,7 @@ def receive_tradingview_signal(request):
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
     if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl",
-                                     "cme_watchlist", "cme_quotes", "cme_quotes_get"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+                                     "cme_watchlist", "cme_quotes", "cme_quotes_get", "longfei_push"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()

@@ -306,3 +306,18 @@ def test_brain_request_shape_and_usage():
     assert sent["tools"][0]["strict"] is True
     assert '{"a":2,"b":1}' in sent["messages"][0]["content"]
     assert d["action"] == "HOLD" and d["_usage"]["cache_read"] == 800
+
+
+def test_push_packet_has_no_equity_and_reads_logs(env, monkeypatch):
+    import push
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    pkt = push.build_packet(cfg, tr.state, "tok")
+    assert pkt["action"] == "longfei_push" and "status" not in pkt
+    assert pkt["state"]["pos"]["side"] == 1 and "equity" not in json.dumps(pkt["state"])
+    assert [x["type"] for x in pkt["trades"]] == ["OPEN"] and pkt["decisions"][-1]["final"] == "OPEN_LONG"
+    monkeypatch.delenv("ZHUGE_GCP_URL", raising=False)
+    assert push.push(cfg, tr.state) is False          # 冇設定就唔推
