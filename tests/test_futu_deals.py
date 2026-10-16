@@ -120,7 +120,7 @@ check("05:30 → 05:30", auto_risk.pnl_slot(t(5, 30)) == "2026-10-13|05:30")
 check("16:34 仍係 05:30", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|05:30")
 check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
 check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
-check("SCRIPT_VERSION R206（證券戶口碎股當冇倉）", auto_risk.SCRIPT_VERSION == "R206" and callable(auto_risk.fetch_cme))
+check("SCRIPT_VERSION R211（證券戶口線 ×10）", auto_risk.SCRIPT_VERSION == "R211" and callable(auto_risk.fetch_cme))
 
 print("\n=== [R175] 保證金警報附補倉建議 ===")
 W, C, F, CL = main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR
