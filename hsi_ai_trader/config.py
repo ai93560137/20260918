@@ -74,7 +74,9 @@ class Config:
 
     # --- 硬性風控（AI 無權超越）---
     max_qty: int = int(_env("MAX_QTY", "1"))
-    daily_loss_limit: float = float(_env("DAILY_LOSS_LIMIT", "10000"))   # HK$
+    # HK$；次序：DAILY_LOSS_LIMIT_<產品> → 期貨先跟 DAILY_LOSS_LIMIT → 產品預設（ETF HK$100,000，HSI HK$10,000）
+    daily_loss_limit: float = float(os.getenv(f"DAILY_LOSS_LIMIT_{_PRODUCT}") or
+                                    (SPEC.kind == "future" and os.getenv("DAILY_LOSS_LIMIT")) or SPEC.daily_loss_hkd)
     # 使用者 2026-10-16 取消每張止蝕 20–150 點、每日 20 次、夜市收市前平倉三條限制；0／false = 唔限
     max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
     min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
