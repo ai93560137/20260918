@@ -1,140 +1,70 @@
 {
- "date": "2026-10-16",
- "run_hkt": "2026-10-16 04:04",
+ "date": "2026-10-17",
+ "run_hkt": "2026-10-17 04:01",
  "run_kind": "night",
  "closed": [
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
-   "side": "平多",
-   "qty": 5.0,
-   "open_price": 7807.5,
-   "close_price": 7783.75,
-   "close_time_hkt": "2026-10-15 07:39:32",
-   "realized_pts": -23.75
-  },
-  {
-   "code": "US.MES2612",
-   "product": "MES 微型標普期貨",
-   "side": "平多",
+   "side": "平空",
    "qty": 4.0,
-   "open_price": 7783.25,
-   "close_price": 7767.5,
-   "close_time_hkt": "2026-10-15 08:15:02",
-   "realized_pts": -15.75
+   "open_price": 7752.0,
+   "close_price": 7747.75,
+   "close_time_hkt": "2026-10-17 07:58:56",
+   "realized_pts": 4.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
-   "side": "平多",
-   "qty": 4.0,
-   "open_price": 7780.0,
-   "close_price": 7767.5,
-   "close_time_hkt": "2026-10-15 08:15:02",
-   "realized_pts": -12.5
-  },
-  {
-   "code": "US.MES2612",
-   "product": "MES 微型標普期貨",
-   "side": "平多",
-   "qty": 2.0,
-   "open_price": 7780.0,
-   "close_price": 7767.5,
-   "close_time_hkt": "2026-10-15 08:15:02",
-   "realized_pts": -12.5
-  },
-  {
-   "code": "US.EX32610P7830x0",
-   "product": "MES 微型標普週期權",
    "side": "平空",
    "qty": 1.0,
-   "open_price": 89.75,
-   "close_price": 70.5,
-   "close_time_hkt": "2026-10-15 08:19:31",
-   "realized_pts": 19.25
-  },
-  {
-   "code": "US.EX32610C7830x0",
-   "product": "MES 微型標普週期權",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 88.75,
-   "close_price": 10.0,
-   "close_time_hkt": "2026-10-15 08:19:48",
-   "realized_pts": 78.75
+   "open_price": 7752.0,
+   "close_price": 7747.75,
+   "close_time_hkt": "2026-10-17 07:58:56",
+   "realized_pts": 4.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
    "qty": 4.0,
-   "open_price": 7769.0,
-   "close_price": 7769.25,
-   "close_time_hkt": "2026-10-15 09:06:22",
-   "realized_pts": -0.25
+   "open_price": 7752.0,
+   "close_price": 7747.75,
+   "close_time_hkt": "2026-10-17 07:58:56",
+   "realized_pts": 4.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
    "qty": 1.0,
-   "open_price": 7769.0,
-   "close_price": 7769.25,
-   "close_time_hkt": "2026-10-15 09:06:22",
-   "realized_pts": -0.25
-  },
-  {
-   "code": "HK.MHI261029P25000000",
-   "product": "MHI 小型恒指期權",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 508.0,
-   "close_price": 958.0,
-   "close_time_hkt": "2026-10-15 18:55:21",
-   "realized_pts": -450.0
-  },
-  {
-   "code": "HK.MHI261029C25000000",
-   "product": "MHI 小型恒指期權",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 600.0,
-   "close_price": 43.0,
-   "close_time_hkt": "2026-10-15 18:55:39",
-   "realized_pts": 557.0
-  },
-  {
-   "code": "HK.MHI2610",
-   "product": "MHI 小型恒指期貨",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 24336.0,
-   "close_price": 24084.0,
-   "close_time_hkt": "2026-10-15 18:55:51",
-   "realized_pts": 252.0
+   "open_price": 7752.0,
+   "close_price": 7747.75,
+   "close_time_hkt": "2026-10-17 07:58:56",
+   "realized_pts": 4.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
    "qty": 1.0,
-   "open_price": 7759.75,
-   "close_price": 7747.25,
-   "close_time_hkt": "2026-10-15 23:41:22",
-   "realized_pts": 12.5
+   "open_price": 7735.0,
+   "close_price": 7710.75,
+   "close_time_hkt": "2026-10-17 09:11:48",
+   "realized_pts": 24.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
-   "qty": 3.0,
-   "open_price": 7759.75,
-   "close_price": 7747.5,
-   "close_time_hkt": "2026-10-15 23:41:47",
-   "realized_pts": 12.25
+   "qty": 4.0,
+   "open_price": 7735.0,
+   "close_price": 7710.75,
+   "close_time_hkt": "2026-10-17 09:11:48",
+   "realized_pts": 24.25
   }
  ],
- "n_yunchui_deals": 4,
- "n_other_deals": 4,
+ "n_yunchui_deals": 6,
+ "n_other_deals": 6,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
