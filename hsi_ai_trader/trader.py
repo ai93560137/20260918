@@ -74,6 +74,7 @@ class Trader:
         pos = self.state.get("pos") or {}
         rec = {"utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                "trd_env": self.cfg.trd_env, "code": pos.get("code"), "qty": pos.get("qty", 0),
+               "foreign_qty": self.state.get("foreign_qty", 0),
                "side": pos.get("side"), "stop": pos.get("stop"), "errors": self.errors,
                "halted": bool(self.state.get("halted"))}
         try:
@@ -100,18 +101,20 @@ class Trader:
         if not contract:
             raise RuntimeError("搵唔到即月合約")
 
-        # 3) 對賬：以富途實際倉位為準
+        # 3) 對賬：同一富途戶口有其他陣／人手倉（例如使用者人手大期、或者其他陣），而且同合約係淨額顯示。
+        #    所以只管自己落過嘅倉（state["pos"]），落單手數只用自己嘅手數；唔屬於自己嘅倉一律唔掂。
         positions = self.broker.positions(cfg.product)
-        for code, (qty, _) in positions.items():
-            if code != contract:
-                self._close(code, qty, f"轉倉：平舊合約 {code}")
-        qty, cost = positions.get(contract, (0, None))
-        self._reconcile(contract, qty, cost, now)
-        if abs(qty) > cfg.max_qty:
-            excess = abs(qty) - cfg.max_qty
-            side = 1 if qty > 0 else -1
-            self._close(contract, side * excess, f"超出上限 {cfg.max_qty} 張，減倉")
-            qty = side * cfg.max_qty
+        meta = st.get("pos")
+        if meta and meta["code"] != contract:          # 自己嘅倉喺舊合約 → 轉倉只平自己嗰份
+            if positions.get(meta["code"], (0, None))[0] != 0:
+                self._close(meta["code"], meta["side"] * meta["qty"], f"轉倉：平舊合約 {meta['code']}")
+            else:
+                snap_old = self.broker.snapshot(meta["code"])
+                self._record_exit(meta["code"], meta["side"] * meta["qty"], snap_old["last"],
+                                  "倉位喺外部被平（估算價）", meta)
+        broker_qty = positions.get(contract, (0, None))[0]
+        self._reconcile(contract, broker_qty, positions, now)
+        qty = self._own_qty(contract)
 
         snap = self.broker.snapshot(contract)
         last = snap["last"]
@@ -119,10 +122,11 @@ class Trader:
         stale = (snap["update_time"] is None or
                  (now - snap["update_time"]).total_seconds() > cfg.stale_quote_sec)
 
-        # 4) 每日虧損上限
-        eq = self.broker.equity()
-        day_pnl = eq - st["day_start_equity"]
-        st["last_equity"], st["day_pnl"] = eq, day_pnl
+        # 4) 每日虧損上限：只計自己嘅盈虧（已實現＋浮動，扣估算佣金），唔用戶口淨值，
+        #    否則其他陣蝕錢都會令龍飛陣停機
+        st["last_equity"] = self.broker.equity()
+        day_pnl = self._own_day_pnl(contract, last)
+        st["day_pnl"] = day_pnl
         if day_pnl <= -cfg.daily_loss_limit and not st.get("halted"):
             self._halt(f"今日虧損 HK${-day_pnl:,.0f} 到達上限")
         if st.get("halted") and qty != 0:
@@ -171,7 +175,7 @@ class Trader:
 
     def _can_open(self, mins_left):
         st, cfg = self.state, self.cfg
-        return (not st.get("halted") and not cfg.pause_file.exists()
+        return (not st.get("halted") and not cfg.pause_file.exists() and not st.get("foreign_qty")
                 and mins_left is not None and mins_left > cfg.no_entry_before_close_min)
 
     def _decide(self, now, contract, qty, snap, session, mins_left):
@@ -281,39 +285,56 @@ class Trader:
         side = 1 if qty > 0 else -1
         pts = round((px - entry) * side, 1) if entry is not None else None
         hkd = round(pts * abs(qty) * self.cfg.point_value) if pts is not None else None
+        net = hkd - self.cfg.fee_per_side_hkd * abs(qty) * 2 if hkd is not None else None
         rec = {"type": "CLOSE", "code": code, "side": side, "qty": abs(qty), "entry": entry,
                "price": px, "points": pts, "pnl_hkd_gross": hkd, "reason": reason,
                "opened_at": meta.get("opened_at")}
         self._log("trades", rec)
         st.setdefault("today_trades", []).append(
             {"side": "LONG" if side > 0 else "SHORT", "entry": entry, "exit": px,
-             "points": pts, "reason": reason[:60]})
+             "points": pts, "pnl_hkd": net, "reason": reason[:60]})
         if meta.get("code") == code:
             st["pos"] = None
         log.info("平倉 %s %s @%s 點數=%s (%s)", code, qty, px, pts, reason)
 
-    def _reconcile(self, contract, qty, cost, now):
-        """富途倉位同自己記錄唔一致時，以富途為準。"""
-        st, cfg = self.state, self.cfg
+    def _own_qty(self, contract):
+        meta = self.state.get("pos")
+        return meta["side"] * meta["qty"] if meta and meta.get("code") == contract else 0
+
+    def _reconcile(self, contract, broker_qty, positions, now):
+        """唔接手、唔平、唔減其他人嘅倉；只記低「外來倉」並停開新倉。"""
+        st = self.state
         meta = st.get("pos")
-        if qty == 0 and meta:
+        own = self._own_qty(contract)
+        if own != 0 and broker_qty == 0:
             snap = self.broker.snapshot(meta["code"])
-            self._record_exit(meta["code"], meta["side"] * meta.get("qty", 1), snap["last"],
-                              "倉位喺外部被平（估算價）", meta)
-            st["pos"] = None
-        elif qty != 0 and (not meta or meta.get("code") != contract
-                           or meta.get("side") != (1 if qty > 0 else -1)):
-            side = 1 if qty > 0 else -1
-            entry = cost or self.broker.snapshot(contract)["last"]
-            st["pos"] = {"code": contract, "side": side, "qty": abs(qty), "entry": entry,
-                         "stop": round(entry - side * cfg.emergency_stop_points), "target": None,
-                         "opened_at": now.isoformat(), "reason": "接手現有倉位，設緊急止蝕"}
-            self._log("events", {"type": "ADOPT_POSITION", "code": contract, "qty": qty,
-                                 "entry": entry, "stop": st["pos"]["stop"]})
+            self._record_exit(meta["code"], own, snap["last"], "倉位喺外部被平（估算價）", meta)
+            own = 0
+        foreign = broker_qty - own
+        others = {c: q for c, (q, _) in positions.items() if c != contract and q}
+        if foreign != st.get("foreign_qty", 0) or others != st.get("foreign_other", {}):
+            self._log("events", {"type": "FOREIGN_POSITION", "code": contract, "foreign_qty": foreign,
+                                 "broker_qty": broker_qty, "own_qty": own, "other_months": others,
+                                 "note": "唔屬龍飛陣嘅倉（可能係雲垂陣對沖或人手），唔會掂；即月有外來倉時停開新倉"})
+            if foreign:
+                log.warning("即月 %s 有外來倉 %+d 張（富途淨額 %+d，自己 %+d），停開新倉", contract,
+                            foreign, broker_qty, own)
+        st["foreign_qty"], st["foreign_other"] = foreign, others
+
+    def _own_day_pnl(self, contract, last):
+        cfg, st = self.cfg, self.state
+        realized = sum(t.get("pnl_hkd") or 0 for t in st.get("today_trades", []))
+        meta = st.get("pos")
+        unreal = 0.0
+        if meta and meta.get("code") == contract and meta.get("entry") is not None:
+            unreal = ((last - meta["entry"]) * meta["side"] * meta["qty"] * cfg.point_value
+                      - cfg.fee_per_side_hkd * meta["qty"] * 2)
+        return realized + unreal
 
     def _flatten_all(self, reason):
-        for code, (qty, _) in self.broker.positions(self.cfg.product).items():
-            self._close(code, qty, reason)
+        meta = self.state.get("pos")      # 只平自己嘅倉
+        if meta:
+            self._close(meta["code"], meta["side"] * meta["qty"], reason)
 
     def _halt(self, reason):
         self.state["halted"] = True
