@@ -7514,7 +7514,7 @@ def _lf_product_section(p, d):
         f"<td>{_cn(d2.get('last'), nd)}</td><td>{esc(str(d2.get('reason') or '')[:120])}</td>"
         f"<td>{esc(str(d2.get('rejected') or ''))}</td></tr>" for d2 in reversed(d["decisions"][-5:]))
     dec_html = ("<h3>🧠 最近決策</h3>"
-                + ("<div style='overflow-x:auto'><table><tr><th>時間</th><th>決定</th><th>價</th><th>理由</th><th>被拒原因</th></tr>"
+                + ("<div style='overflow-x:auto'><table><tr><th>時間</th><th>決定</th><th>價</th><th>理由</th><th>風控紀錄</th></tr>"
                    + drows + "</table></div>" if drows else "<p class='muted'>未有決策紀錄。</p>"))
     return (f"<div class='section' id='lf-{p}'><h2>{esc(p)}・{esc(LONGFEI_PRODUCT_NAMES.get(p, p))}</h2>" + warn + top
             + "<h3>📊 績效指標（點）</h3>" + _lf_metric_cards(m, "點", lambda v: "—" if v is None else _cn(v, 1, sign=True))
