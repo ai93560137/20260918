@@ -1,29 +1,23 @@
 {
  "vhsi_daily.csv": {
-  "last_date": "2026-10-15",
-  "last_row": "final",
-  "row_fetched_utc": "2026-10-15 09:23",
-  "run_utc": "2026-10-15 22:12",
-  "kept_dates": [
-   "2026-10-15"
-  ]
+  "last_date": "2026-10-16",
+  "last_row": "partial",
+  "row_fetched_utc": "2026-10-16 06:41",
+  "run_utc": "2026-10-16 06:41",
+  "kept_dates": []
  },
  "hsi_daily.csv": {
-  "last_date": "2026-10-15",
-  "last_row": "final",
-  "row_fetched_utc": "2026-10-15 09:23",
-  "run_utc": "2026-10-15 22:12",
-  "kept_dates": [
-   "2026-10-15"
-  ]
+  "last_date": "2026-10-16",
+  "last_row": "partial",
+  "row_fetched_utc": "2026-10-16 06:42",
+  "run_utc": "2026-10-16 06:42",
+  "kept_dates": []
  },
  "n225_daily.csv": {
-  "last_date": "2026-10-15",
+  "last_date": "2026-10-16",
   "last_row": "final",
-  "row_fetched_utc": "2026-10-15 09:23",
-  "run_utc": "2026-10-15 22:12",
-  "kept_dates": [
-   "2026-10-15"
-  ]
+  "row_fetched_utc": "2026-10-16 06:42",
+  "run_utc": "2026-10-16 06:42",
+  "kept_dates": []
  }
 }
