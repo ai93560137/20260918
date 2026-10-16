@@ -231,6 +231,25 @@ def _group(rows, keyf):
     return g
 
 
+def readiness(data):
+    """[R206] 真倉準備：bot 每 30 分鐘唯讀查真實戶口，結果喺 status.real_preflight。"""
+    yn = lambda v: "—" if v is None else ("✅" if v else "❌")
+    L = ["\n### 真倉準備（唯讀檢查真實戶口）\n", "| 產品 | 而家 | 搵到戶口 | 有錢 | 戶口類型 | 夠買 | 可沽空 | PDT | 結論 | 檢查時間 |",
+         "|---|---|---|---|---|---|---|---|---|---|"]
+    for p, d in data.items():
+        st = d["status"]
+        r = st.get("real_preflight") or {}
+        pdt = "—"
+        if "is_pdt" in r or "pdt_seq" in r:
+            pdt = f"{'係' if r.get('is_pdt') in (True, 'True', 'true') else '唔係'}／剩 {r.get('pdt_seq', '—')} 次"
+        verdict = "未有結果（等 bot 更新）" if not r else ("✅ 準備好" if r.get("ok") else
+                                                        "❌ " + str(r.get("error") or r.get("note") or "未齊"))
+        L.append(f"| {p} | {st.get('trd_env', '—')} | {yn(r.get('found'))} | {yn(r.get('funded'))} | "
+                 f"{r.get('acc_type') or '—'} | {yn(r.get('can_long'))} | {yn(r.get('can_short'))} | {pdt} | "
+                 f"{verdict.replace('|', '／')} | {str(r.get('ts') or '')[5:16]} |")
+    return L
+
+
 def report(data, title_date=None):
     rows = closes(data)
     day = title_date or datetime.now(HKT).strftime("%Y-%m-%d")
@@ -250,6 +269,7 @@ def report(data, title_date=None):
         pos = st.get("pos")
         L.append(f"- {p}：{'持倉 ' + ('好' if pos.get('side', 0) > 0 else '淡') + str(pos.get('qty')) + ' @' + str(pos.get('entry')) if pos else '空手'}"
                  f"{'；⛔ 停機 ' + str(st.get('halt_reason')) if st.get('halted') else ''}；今日 {fmt(st.get('day_pnl'))}")
+    L += readiness(data)
     L.append(table(_group(rows, lambda r: r["product"]), "按產品"))
     L.append(table(_group(rows, lambda r: "做好" if r.get("side", 0) > 0 else "做淡"), "按方向"))
     L.append(table(_group(rows, lambda r: r.get("open_session") or "—"), "按開倉時段"))

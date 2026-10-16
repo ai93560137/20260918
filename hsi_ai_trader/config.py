@@ -32,6 +32,7 @@ def _env(name, default):
 # 使用者 2026-10-16：HSI 大期，之後加 MES、MNQ、MYM；每隻產品一個獨立程式（PRODUCT 環境變數）
 _PRODUCT = _env("PRODUCT", "HSI").upper()
 SPEC = spec_for(_PRODUCT)
+_REAL_US = {x.strip().upper() for x in os.getenv("LONGFEI_REAL_PRODUCTS", "").split(",") if x.strip()}
 
 
 def _bool(name, default):
@@ -43,10 +44,13 @@ class Config:
     # --- Futu OpenD ---
     opend_host: str = _env("OPEND_HOST", "127.0.0.1")
     opend_port: int = int(_env("OPEND_PORT", "11111"))
-    # 使用者 2026-10-16：美國產品（美期，之後改 ETF SPY／QQQ／DIA）只跑模擬盤（富途冇美期即時報價權限），TRD_ENV=REAL 都當 SIMULATE；
-    # 轉真倉只適用 HSI。要開美期真倉要改呢度（經 PR），唔可以淨係改環境變數。
-    trd_env: str = "SIMULATE" if SPEC.market == "US" else _env("TRD_ENV", "SIMULATE")
+    # 美國產品（ETF SPY／QQQ／DIA）唔跟 TRD_ENV：要喺 settings.env 嘅 LONGFEI_REAL_PRODUCTS 逐隻列明先係 REAL
+    # （使用者 10-17：證券戶口入金後轉真倉；改 settings.env 要經 PR＋「更新部機」）。HSI 照跟 TRD_ENV。
+    trd_env: str = (("REAL" if _PRODUCT in _REAL_US else "SIMULATE") if SPEC.market == "US"
+                    else _env("TRD_ENV", "SIMULATE"))
     acc_id: int = int(_env("FUTU_ACC_ID", "0"))          # 0 = 自動揀第一個期貨戶口
+    real_acc_id: int = int(_env("FUTU_REAL_ACC_ID", "0"))  # 真倉準備檢查用；0 = 自動揀有該市場權限嘅真實戶口
+    real_preflight_min: int = int(_env("REAL_PREFLIGHT_MIN", "30"))   # 每幾分鐘唯讀檢查一次真實戶口；0 = 唔查
     trade_password: str = _env("FUTU_TRADE_PASSWORD", "")  # 留空 = 已喺 OpenD 解鎖
 
     # --- 合約 ---

@@ -149,9 +149,68 @@ class FutuBroker:
                  "l": float(r["low"]), "c": float(r["close"]), "v": float(r["volume"])}
                 for _, r in df.iterrows()]
 
+    # ---------- 真倉準備（唯讀；唔落單、唔解鎖）----------
+    def _real_account(self):
+        df = _ok(*self.trade.get_acc_list(), "get_acc_list")
+        df = df[df["trd_env"] == TrdEnv.REAL]
+        if "acc_status" in df:
+            df = df[df["acc_status"] != "DISABLED"]
+        if self.cfg.real_acc_id:
+            df = df[df["acc_id"] == self.cfg.real_acc_id]
+        elif "trdmarket_auth" in df:
+            hit = df[df["trdmarket_auth"].astype(str).str.contains(self.spec.market)]
+            if not hit.empty:
+                df = hit
+        return None if df.empty else df.iloc[0]
+
+    def real_preflight(self, code: str, qty: int, price: float) -> dict:
+        """查真實戶口準備好未（入咗錢、孖展、可唔可以買／沽空 qty 股或張、美股日內交易限制）。
+        只查詢，唔落單、唔解鎖；只回傳是／否同次數，唔回傳金額或戶口號碼（會上載 GCS）。"""
+        row = self._real_account()
+        if row is None:
+            return {"ok": False, "found": False, "note": f"搵唔到 {self.spec.market} 真實戶口"}
+        acc_id = int(row["acc_id"])
+        out = {"found": True, "acc_type": str(row.get("acc_type", "")), "qty": qty}
+        ccy = "USD" if self.spec.currency == "USD" else "HKD"
+        info = _ok(*self.trade.accinfo_query(trd_env=TrdEnv.REAL, acc_id=acc_id, refresh_cache=True,
+                                             currency=ccy), "accinfo_query REAL").iloc[0]
+        out["funded"] = float(info.get("total_assets") or 0) > 0
+        for k in ("is_pdt", "pdt_seq", "dt_status", "risk_status"):
+            v = info.get(k)
+            if v is not None and str(v) not in ("", "N/A", "nan"):
+                out[k] = v if isinstance(v, (bool, int)) else str(v)
+        ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,
+                                                  trd_env=TrdEnv.REAL, acc_id=acc_id),
+                 "acctradinginfo_query REAL").iloc[0]
+        out["can_long"] = float(ti.get("max_cash_and_margin_buy") or 0) >= qty
+        out["can_short"] = float(ti.get("max_sell_short") or 0) >= qty
+        out["ok"] = bool(out["funded"] and out["can_long"] and out["can_short"])
+        return out
+
+    def max_open_qty(self, code: str, side: int, price: float):
+        """而家戶口（SIMULATE 或 REAL）最多可以開幾多：做好用現金＋孖展購買力，做淡用可沽空數量。"""
+        ti = _ok(*self.trade.acctradinginfo_query(order_type=OrderType.NORMAL, code=code, price=price,
+                                                  trd_env=self.env, acc_id=self.acc_id),
+                 "acctradinginfo_query").iloc[0]
+        return int(float(ti.get("max_cash_and_margin_buy" if side > 0 else "max_sell_short") or 0))
+
     # ---------- 落單 ----------
+    def _order_row(self, order_id):
+        od = _ok(*self.trade.order_list_query(order_id=order_id, trd_env=self.env,
+                                              acc_id=self.acc_id, refresh_cache=False), "order_list_query")
+        return None if od.empty else od.iloc[0]
+
+    @staticmethod
+    def _fill(row, price, default_qty):
+        """由訂單資料計 (成交均價, 成交數量)；冇成交回傳 (None, 0)。"""
+        q = int(float(row.get("dealt_qty") or 0)) or default_qty
+        if q <= 0:
+            return None, 0
+        return float(row.get("dealt_avg_price") or 0) or price, q
+
     def market_order(self, code: str, side: int, qty: int, slippage: float, timeout=15):
-        """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。回傳成交價或 None。"""
+        """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。
+        回傳 (成交均價, 成交數量)；完全冇成交回傳 (None, 0)。超時會取消，取消後再查：部分成交同取消前啱啱成交都計返。"""
         snap = self.snapshot(code)
         tick = self.spec.tick
         if side > 0:
@@ -173,19 +232,29 @@ class FutuBroker:
         deadline = _time.time() + timeout
         while _time.time() < deadline:
             _time.sleep(1)
-            od = _ok(*self.trade.order_list_query(order_id=order_id, trd_env=self.env,
-                                                  acc_id=self.acc_id, refresh_cache=False),
-                     "order_list_query")
-            if od.empty:
+            row = self._order_row(order_id)
+            if row is None:
                 continue
-            st = od.iloc[0]["order_status"]
+            st = row["order_status"]
             if st in FILLED:
-                return float(od.iloc[0].get("dealt_avg_price") or price)
+                return self._fill(row, price, qty)
             if st in DEAD:
                 log.warning("單 %s 狀態 %s", order_id, st)
-                return None
-        # 超時：取消
-        self.trade.modify_order(ModifyOrderOp.CANCEL, order_id, 0, 0,
-                                trd_env=self.env, acc_id=self.acc_id)
-        log.warning("單 %s 超時已取消", order_id)
-        return None
+                return self._fill(row, price, 0)          # 部分成交後取消（CANCELLED_PART）都計返已成交嗰啲
+        # 超時：取消，再查最終成交（取消同成交可能同時發生）
+        try:
+            self.trade.modify_order(ModifyOrderOp.CANCEL, order_id, 0, 0, trd_env=self.env, acc_id=self.acc_id)
+        except Exception:  # noqa: BLE001
+            log.exception("取消單 %s 失敗", order_id)
+        row = None
+        for _ in range(5):
+            _time.sleep(1)
+            row = self._order_row(order_id)
+            if row is not None and (row["order_status"] in FILLED or row["order_status"] in DEAD):
+                break
+        if row is None:
+            log.error("單 %s 超時、取消後查唔到狀態；下一輪對賬會見到差額", order_id)
+            return None, 0
+        px, q = self._fill(row, price, qty if row["order_status"] in FILLED else 0)
+        log.warning("單 %s 超時已取消：成交 %d／%d", order_id, q, qty)
+        return px, q

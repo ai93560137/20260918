@@ -43,7 +43,7 @@ def build_packet(cfg, state, token):
               "trades_today": state.get("trades_today", 0), "halted": bool(state.get("halted")),
               "halt_reason": state.get("halt_reason"), "foreign_qty": state.get("foreign_qty", 0),
               "contract": state.get("contract"), "paused": cfg.pause_file.exists(),
-              "stopped": cfg.stop_file.exists(),
+              "stopped": cfg.stop_file.exists(), "real_preflight": state.get("real_preflight"),
               "pos": {k: pos.get(k) for k in ("code", "side", "qty", "entry", "stop", "target", "opened_at")}
               if pos else None}
     return {"action": "longfei_push", "token": token,

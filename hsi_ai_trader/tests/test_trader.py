@@ -42,9 +42,13 @@ class FakeBroker:
         return [{"t": "x", "o": self.price, "h": self.price + 20, "l": self.price - 20,
                  "c": self.price, "v": 100}] * 20
 
+    partial = None   # 設數字＝下一張單只成交咁多
+
     def market_order(self, code, side, qty, slippage, timeout=15):
         if not self.fill:
-            return None
+            return None, 0
+        if self.partial is not None:
+            qty, self.partial = min(qty, self.partial), None
         px = self.price + side  # 1 點滑點
         self.orders.append((code, side, qty, px))
         q0 = self.pos.get(code, 0)
@@ -54,7 +58,7 @@ class FakeBroker:
             closed = min(abs(q0), qty)
             self.cash += (px - self.cost[code]) * closed * (1 if q0 > 0 else -1) * 10
         self.pos[code] = q0 + side * qty
-        return px
+        return px, qty
 
 
 class FakeBrain:
@@ -449,3 +453,101 @@ def test_review_fields_on_close(env):
     assert close["confidence"] == 0.7 and close["hold_min"] == 0.2 and close["open_reason"] == "突破"
     dec = [json.loads(l) for l in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
     assert dec["lessons"] == "abcd1234" and dec["session"] == "DAY_AM"
+
+
+def _open_long(t, ai, tr, stop=24950):
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": stop, "target_price": 25100, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+
+
+def test_partial_open_records_filled_qty(env):
+    cfg, t, b, ai, tr = env
+    cfg = replace(cfg, max_qty=3)
+    tr.cfg = cfg
+    b.partial = 2
+    _open_long(t, ai, tr)
+    assert tr.state["pos"]["qty"] == 2 and b.pos["HK.MHI2610"] == 2
+    ev = (cfg.log_dir / "events.jsonl").read_text(encoding="utf-8")
+    assert "PARTIAL_FILL" in ev
+
+
+def test_partial_close_keeps_remainder(env):
+    cfg, t, b, ai, tr = env
+    tr.cfg = cfg = replace(cfg, max_qty=3)
+    _open_long(t, ai, tr)
+    assert tr.state["pos"]["qty"] == 3
+    b.partial = 1
+    b.price = 24940                       # 撞止蝕
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"]["qty"] == 2 and b.pos["HK.MHI2610"] == 2
+    advance(t, seconds=5)
+    tr.tick()                             # 下一輪平埋
+    assert tr.state["pos"] is None and b.pos["HK.MHI2610"] == 0
+    closes = [json.loads(x) for x in (cfg.log_dir / "trades.jsonl").read_text(encoding="utf-8").splitlines()
+              if json.loads(x)["type"] == "CLOSE"]
+    assert [c["qty"] for c in closes] == [1, 2] and "部分 1／3" in closes[0]["reason"]
+
+
+def test_open_capped_or_skipped_by_buying_power(env):
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, max_qty=3, kind="stock")
+    b.max_open_qty = lambda code, side, price: 0
+    _open_long(t, ai, tr)
+    assert tr.state.get("pos") is None and not b.orders
+    assert "OPEN_SKIPPED" in (cfg.log_dir / "events.jsonl").read_text(encoding="utf-8")
+    b.max_open_qty = lambda code, side, price: 1
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "再試"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["qty"] == 1
+
+
+def test_real_skips_open_when_capacity_unknown(env):
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, trd_env="REAL", kind="stock")
+
+    def boom(*a):
+        raise RuntimeError("x")
+    b.max_open_qty = boom
+    _open_long(t, ai, tr)
+    assert tr.state.get("pos") is None and not b.orders
+
+
+def test_real_preflight_runs_every_interval(env):
+    cfg, t, b, ai, tr = env
+    calls = []
+    b.real_preflight = lambda code, qty, price: calls.append(qty) or {"ok": True, "found": True}
+    tr.tick()
+    advance(t, minutes=10)
+    tr.tick()
+    assert len(calls) == 1 and tr.state["real_preflight"]["ok"] is True
+    advance(t, minutes=25)
+    tr.tick()
+    assert len(calls) == 2
+    b.real_preflight = lambda *a: (_ for _ in ()).throw(RuntimeError("冇權限"))
+    advance(t, minutes=31)
+    tr.tick()
+    assert tr.state["real_preflight"]["ok"] is False and "冇權限" in tr.state["real_preflight"]["error"]
+
+
+def test_us_real_needs_explicit_product_list(monkeypatch):
+    import importlib
+    import config as c
+    monkeypatch.setenv("PRODUCT", "SPY")
+    monkeypatch.setenv("TRD_ENV", "REAL")
+    monkeypatch.delenv("LONGFEI_REAL_PRODUCTS", raising=False)
+    assert importlib.reload(c).Config().trd_env == "SIMULATE"
+    monkeypatch.setenv("LONGFEI_REAL_PRODUCTS", "QQQ, spy")
+    assert importlib.reload(c).Config().trd_env == "REAL"
+    monkeypatch.setenv("PRODUCT", "DIA")
+    assert importlib.reload(c).Config().trd_env == "SIMULATE"
+    monkeypatch.setenv("PRODUCT", "HSI")
+    monkeypatch.setenv("TRD_ENV", "SIMULATE")
+    assert importlib.reload(c).Config().trd_env == "SIMULATE"
+    monkeypatch.delenv("PRODUCT")
+    monkeypatch.delenv("TRD_ENV")
+    monkeypatch.delenv("LONGFEI_REAL_PRODUCTS")
+    importlib.reload(c)
