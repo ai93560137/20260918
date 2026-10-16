@@ -53,10 +53,10 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
   （要停：`touch ~/zhuge/ai_trader/STOP` 平倉停到下一個交易日；`PAUSE` 停開新倉）。返 Ⓐ 只刪 guard 自己放嘅檔（內容 `guard:` 開頭）。
 - **watchdog**（同一個 guard）：心跳（`~/zhuge/ai_trader/heartbeat`）超過 10 分鐘冇更新而有倉 → Telegram 🚨；冇倉（非週末）、連續出錯 ≥3、halted、即月有唔屬龍飛陣嘅倉（foreign_qty）亦通知；同一件事 30 分鐘最多一次。SIMULATE 只通知，唔自動平倉。
 - **人手停**：`touch ~/zhuge/ai_trader/STOP`（平倉停機）或 `PAUSE`；紀錄 `~/zhuge/ai_trader/logs/`、`journalctl -u zhuge-longfei -u zhuge-longfei-guard -n 50`。
-- **多產品（R202）**：HSI 由 `zhuge-longfei` 跑（資料 `~/zhuge/ai_trader`）；`settings.env` 嘅 `LONGFEI_EXTRA_PRODUCTS`（例如 `MES,MNQ,MYM`）
+- **多產品（R202）**：HSI 由 `zhuge-longfei` 跑（資料 `~/zhuge/ai_trader`）；`settings.env` 嘅 `LONGFEI_EXTRA_PRODUCTS`（例如 `SPY,QQQ,DIA`）
   每隻一個 `zhuge-longfei@<產品>`（`PRODUCT=<產品>`，資料 `~/zhuge/ai_trader_<產品>`，成績上載 `longfei/<產品>/latest.json`）。
   改清單要「更新部機」後喺 VM 跑一次 `setup.sh` 先會開／停產品。guard 對全部資料夾一齊放 PAUSE（戶口級風控），watchdog 逐個睇心跳，Telegram 前面標 `[產品]`。
-  美期**只跑 SIMULATE**（使用者 10-16 定）：`zhuge-longfei@.service` 用 `env TRD_ENV=SIMULATE` 寫死，`settings.env` 嘅 `TRD_ENV` 只管 HSI。
+  美國產品（SPY／QQQ／DIA ETF）**只跑 SIMULATE**（使用者 10-16 定）：`zhuge-longfei@.service` 用 `env TRD_ENV=SIMULATE` 寫死，`settings.env` 嘅 `TRD_ENV` 只管 HSI。
   每隻產品各自 call Claude，API 費用大約 ×產品數。
 - 倉位可以隔夜（使用者 10-16 取消 02:50 平倉），watchdog 全日運作。
 

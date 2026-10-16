@@ -17,7 +17,7 @@ from pathlib import Path
 
 HKT = timezone(timedelta(hours=8))
 DATA = Path(os.environ.get("AI_DATA_DIR") or "~/zhuge/ai_trader").expanduser()
-# [R202] 龍飛陣多產品：HSI 用 DATA；LONGFEI_EXTRA_PRODUCTS（例如 MES,MNQ,MYM）各用 DATA_<產品>（zhuge-longfei@<產品>.service）
+# [R202] 龍飛陣多產品：HSI 用 DATA；LONGFEI_EXTRA_PRODUCTS（例如 SPY,QQQ,DIA）各用 DATA_<產品>（zhuge-longfei@<產品>.service）
 EXTRA = [x.strip().upper() for x in os.environ.get("LONGFEI_EXTRA_PRODUCTS", "").split(",") if x.strip()]
 DIRS = [("HSI", DATA)] + [(p, DATA.with_name(f"{DATA.name}_{p}")) for p in EXTRA]
 LADDER = Path(os.environ.get("ZHUGE_LADDER_FILE") or "~/zhuge/ladder_level").expanduser()

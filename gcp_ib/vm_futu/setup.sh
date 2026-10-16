@@ -29,7 +29,7 @@ sudo systemctl enable --now zhuge-auto-risk.service zhuge-futu-push.service zhug
 mkdir -p "$H/zhuge/ai_trader" && chmod 700 "$H/zhuge/ai_trader"
 if grep -q '^ANTHROPIC_API_KEY=sk-ant-' "$H/zhuge/env"; then
   sudo systemctl enable --now zhuge-longfei-guard.service zhuge-longfei.service
-  # [R202] 其他產品：settings.env 嘅 LONGFEI_EXTRA_PRODUCTS（例如 MES,MNQ,MYM）各開一個 zhuge-longfei@<產品>
+  # [R202] 其他產品：settings.env 嘅 LONGFEI_EXTRA_PRODUCTS（例如 SPY,QQQ,DIA）各開一個 zhuge-longfei@<產品>
   EXTRA=$(grep -oE '^LONGFEI_EXTRA_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2 | tr ',' ' ')
   for P in $EXTRA; do
     mkdir -p "$H/zhuge/ai_trader_$P" && chmod 700 "$H/zhuge/ai_trader_$P"
