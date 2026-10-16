@@ -49,6 +49,34 @@ def parse_futures(text, day, product):
     return rows, skipped
 
 
+DIV_HEAD_RE = re.compile(r"^\s*(DHS|DHH)\s+-\s+")
+DIV_FIELDS = ("open", "high", "low", "settle", "settle_chg", "c_high", "c_low", "vol", "oi", "oi_chg")
+DEC_RE = re.compile(r"^[+-]?\d+(\.\d+)?$")
+
+
+def parse_dividend(text, day):
+    """股息期貨報告（dividend）：DHH（國指）與 DHS（恒指）兩段，每段每個 12 月合約一行——
+    日市 開 高 低 結算 變動 | 合約高低 量 OI OI變動（兩位小數、沒有夜市欄）。產品欄寫 dhs／dhh。"""
+    rows, skipped, product = [], 0, None
+    for line in text.splitlines():
+        h = DIV_HEAD_RE.match(line)
+        if h:
+            product = h.group(1).lower()
+            continue
+        if "STRATEGY" in line:
+            product = None                                            # 之後是跨期價差段，不要
+        m = FUT_ROW_RE.match(line)
+        if not m or not product or m.group(1)[:3] not in MONTHS:
+            continue
+        toks = [t.replace(",", "") if t != "-" else "0" for t in m.group(2).split()]
+        if len(toks) != len(DIV_FIELDS) or not all(DEC_RE.match(t) for t in toks):
+            skipped += 1
+            continue
+        v = {k: (float(t) if k in ("open", "high", "low", "settle", "settle_chg", "c_high", "c_low") else int(float(t))) for k, t in zip(DIV_FIELDS, toks)}
+        rows.append({"date": day, "product": product, "expiry": expiry_key(m.group(1)), **v, "aht_close": 0, "aht_vol": 0})
+    return rows, skipped
+
+
 def expiry_key(label):
     """'02-OCT-26' → '2026-10-02'；'OCT-26' → '2026-10'（月期權到期日由分析端算）。"""
     parts = label.split("-")
@@ -127,7 +155,7 @@ def fetch(start, end, products, out, get, to_text, base="https://www.hkex.com.hk
     def fut_rows(product, year):
         key = (product, year)
         if key not in fut_cache:
-            fut_cache[key] = {(r["date"], r["expiry"]): r for r in _read_csv(fut_file(product, year), gz=True)}
+            fut_cache[key] = {(r["date"], r["product"], r["expiry"]): r for r in _read_csv(fut_file(product, year), gz=True)}
         return fut_cache[key]
 
     def series_file(product, year):
@@ -157,8 +185,8 @@ def fetch(start, end, products, out, get, to_text, base="https://www.hkex.com.hk
                     index[(day, p)] = {"date": day, "product": p, "status": f"error:{code}", "rows": 0, "skipped": 0}
                     n_err += 1
                     print(f"⚠️ {day} {p}: HTTP {code}", flush=True)
-                elif p.endswith("f"):                                 # 期貨報告（hsif / mhif …）
-                    frows, skipped = parse_futures(to_text(raw), day, p)
+                elif p.endswith("f") or p == "dividend":              # 期貨報告（hsif / mhif …；dividend = 股息期貨兩產品）
+                    frows, skipped = parse_dividend(to_text(raw), day) if p == "dividend" else parse_futures(to_text(raw), day, p)
                     if not frows:
                         index[(day, p)] = {"date": day, "product": p, "status": "error:parse", "rows": 0, "skipped": skipped}
                         n_err += 1
@@ -166,7 +194,7 @@ def fetch(start, end, products, out, get, to_text, base="https://www.hkex.com.hk
                     else:
                         rows = fut_rows(p, day[:4])
                         for r in frows:
-                            rows[(r["date"], r["expiry"])] = r
+                            rows[(r["date"], r["product"], r["expiry"])] = r
                         index[(day, p)] = {"date": day, "product": p, "status": "ok", "rows": len(frows), "skipped": skipped}
                         n_ok += 1
                 else:

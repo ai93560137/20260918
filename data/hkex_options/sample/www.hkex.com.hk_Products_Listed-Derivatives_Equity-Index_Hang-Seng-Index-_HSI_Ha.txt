@@ -1,0 +1,4361 @@
+
+
+
+
+
+
+	Hang Seng Index Futures
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    window.onload = function () {
+        browserCheck("Browser Incompatible");
+        antiClickJack("www.hkgem.com,www.hkex.com.hk,www.hkexgroup.com,sc.hkex.com.hk,sc.hkexnews.hk,www.hkexnews.hk"); 
+    };    
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+
+
+
+
+
+
+        
+        
+
+
+    
+      ! function(o, c) {
+        var n = c.documentElement,
+          t = " w-mod-";
+        n.className += t + "js", ("ontouchstart" in o || o.DocumentTouch && c instanceof DocumentTouch) && (n.className += t + "touch")
+      }(window, document);
+    
+    
+  .section_container_in.breadcrumb a:hover,
+  .section_container_in.breadcrumb a:focus {
+    color: #fff !important;
+  }
+blockquote {
+    font-size: inherit !important;
+}
+
+
+	
+
+	
+	
+	
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-51785376-1');
+	
+
+
+	
+
+
+    
+        (function () {
+            var didInit = false;
+            function initMunchkin() {
+                if (didInit === false) {
+                    didInit = true;
+                    Munchkin.init('381-CPX-988', {"wsInfo":"j1RQ"});
+                }
+            }
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.async = true;
+            s.src = '//munchkin.marketo.net/munchkin.js';
+            s.onreadystatechange = function () {
+                if (this.readyState == 'complete' || this.readyState == 'loaded') {
+                    initMunchkin();
+                }
+            };
+            s.onload = initMunchkin;
+            document.getElementsByTagName('head')[0].appendChild(s);
+        })();
+    
+
+   
+     
+
+      
+
+
+
+
+
+//
+
+
+
+
+
+
+
+	
+	
+	
+	
+	
+	
+
+			
+				
+			
+
+          
+
+
+
+        
+            
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    var $ = jQuery.noConflict();
+    (function ($) {
+        $(function () {
+            if (typeof (LabCI) === "undefined") LabCI = {};
+
+            // For returning the access token
+            LabCI.getToken = function () {
+                // ----- THIS IS A SAMPLE IMPLEMENTATION -----
+                //return "Base64-AES-Encrypted-Token";
+                return "evLtsLsBNAUVTPxtGqVeG1aSqbr8ye7IS2V2CcJgwVM5tEZvagZxlpPC5XRWkNEo";
+            };
+
+            // For returning the current UI language
+            LabCI.getLang = function () {
+                // ----- THIS IS A SAMPLE IMPLEMENTATION -----
+                return "en";
+            };
+        });
+    })(jQuery);
+
+
+
+    
+
+    
+    
+        
+            
+                
+                    
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+(function($) {
+
+$(function() {
+    var _WP_PATH = "/lhkexw/";
+    jQuery.loadScript = function(url, nocache) { return jQuery.ajax({ url:_WP_PATH+url, dataType:"script", async:true, method:"GET", ifModified:nocache?false:true }); };
+    jQuery.loadCSS = function(url) {
+        if (document.createStyleSheet) try { document.createStyleSheet(_WP_PATH+url); } catch (e) { }
+        else $("").appendTo("#lhkexw-quotereits");
+    };
+
+    let commonrc = "js/commonrc_en.js";
+    let marketmarquee = "js/marketmarquee_en.js";
+    // Common Resources
+    if (LabCI.getLang()==="zh_HK"){
+        commonrc = "js/commonrc_zh_HK.js";
+        marketmarquee = "js/marketmarquee_zh_HK.js"
+    }else if(LabCI.getLang()==="chn"){
+        commonrc = "js/commonrc_chn.js";
+        marketmarquee = "js/marketmarquee_chn.js";
+    }
+
+    $.when(
+        $.loadScript(commonrc),
+        $.loadScript(marketmarquee)
+    ).done(function() {
+        // Turn on/off debug logger, default is off
+        LabCI.Utils.CONSOLELOGGER.isdebug = true;
+        LabCI.WP.marketMarquee = LabCI.WP["createmarketmarquee"].call(this).init(LabCI.getLang()).show({});
+    });
+});
+
+})(jQuery);
+
+
+
+
+    
+        
+            
+                 
+                    
+                 
+                    
+                 
+            
+        
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function($) {
+
+$(function() {
+    var _WP_PATH = "/lhkexw/";
+    jQuery.loadScript = function(url, nocache) { return jQuery.ajax({ url:_WP_PATH+url, dataType:"script", async:true, method:"GET", ifModified:nocache?false:true }); };
+    jQuery.loadCSS = function(url) {
+        if (document.createStyleSheet) try { document.createStyleSheet(_WP_PATH+url); } catch (e) { }
+    };
+
+    let commonrc = "js/commonrc_en.js";
+    let marketdetail = "js/marketdetail_en.js";
+    let marketturnover = "js/marketturnover_en.js";
+    let marketsecurities = "js/marketsecurities_en.js";
+    let marketsearch = "js/marketsearch_en.js";
+    let marketderivatives = "js/marketderivatives_en.js";
+    // Common Resources
+    if (LabCI.getLang()==="zh_HK"){
+        commonrc = "js/commonrc_zh_HK.js";
+        marketdetail = "js/marketdetail_zh_HK.js";
+        marketturnover = "js/marketturnover_zh_HK.js";
+        marketsecurities = "js/marketsecurities_zh_HK.js";
+        marketsearch = "js/marketsearch_zh_HK.js";
+        marketderivatives = "js/marketderivatives_zh_HK.js";
+    }else if(LabCI.getLang()==="chn"){
+        commonrc = "js/commonrc_chn.js";
+        marketdetail = "js/marketdetail_chn.js";
+        marketturnover = "js/marketturnover_chn.js";
+        marketsecurities = "js/marketsecurities_chn.js";
+        marketsearch = "js/marketsearch_chn.js";
+        marketderivatives = "js/marketderivatives_chn.js";
+    }
+
+    $.when(
+        $.loadScript(commonrc),
+        $.loadScript(marketdetail),
+        $.loadScript(marketturnover),
+        $.loadScript(marketsecurities),
+        $.loadScript(marketsearch),
+        $.loadScript(marketderivatives)
+    ).done(function() {
+        // Turn on/off debug logger, default is off
+        LabCI.Utils.CONSOLELOGGER.isdebug = true;
+        LabCI.WP["createmarketdetailpageobj"].call(this).init(LabCI.getLang()).show({});
+    });
+
+});
+
+})(jQuery);
+
+
+
+
+    
+        
+            
+                
+                    
+                        
+                    
+                    
+                        
+                            Market Turnover
+                            
+                                
+                                    
+                                        
+                                            
+                                            
+                                        
+                                        
+                                            
+                                            
+                                        
+                                    
+                                    -
+                                    
+                                        
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                                
+                                                
+                                                  
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                        
+                                    
+                                    -
+                                
+                                
+                                    
+                                        
+                                        
+                                            
+                                            
+                                                                          
+                                        
+                                    
+                                    
+                                        
+                                            
+                                        
+                                        
+                                            
+                                                
+                                                
+                                                
+                                                    
+                                                
+                                            
+                                            
+                                            
+                                                
+                                                
+                                            
+                                        
+                                    
+                                    
+                                        
+                                            
+                                        
+                                        
+                                            
+                                                
+                                                
+                                                
+                                                    
+                                                
+                                            
+                                            
+                                            
+                                                
+                                                
+                                            
+                                        
+                                    
+                                    -
+                                
+                            
+                        
+                    
+                    
+                        
+                            
+                                
+                                
+                                    ||||||  
+                                
+                            
+                            
+                                
+                                    
+                                        
+                                        
+                                            
+                                        
+                                    
+                                
+                            
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                    
+                                
+                                
+                                    -
+                                    
+                                
+                            
+                            
+                                
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                                
+                                
+                                
+                            
+                        
+                    
+                    
+                        
+                            
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                    
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                                    
+                                        
+                                    
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                            
+                            
+                                
+                                    
+                                    
+                                    -
+                                
+                                
+                                    
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    
+                                
+                                
+                                
+                                
+                                
+                                    
+                                        
+                                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                    -
+                                
+                            
+                        
+                    
+                
+            
+        
+    
+
+                
+            
+        
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+        
+            
+                
+                
+                    
+                        
+                    
+                
+                
+                
+            
+            
+                
+                
+            
+        
+    
+        
+        
+            
+                繁
+                
+                    简
+                
+        
+
+        
+        
+        
+            
+            
+                About HKEX
+            
+            
+            
+            
+                
+                    
+                        About HKEX
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Investor Relations
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Corporate Governance
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Sustainability
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Media Centre
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Careers
+                        
+                    
+                
+            
+                
+        
+            
+        
+            
+            
+                Related Sites:  LME
+            
+            
+            
+            
+                
+                    
+                        HKEX Group
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        LME
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Bond Connect
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        QME
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        HKEXnews
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        CESC
+                        
+                    
+                
+            
+                
+            
+                
+                    
+                        Client Connect
+                        
+                    
+                
+            
+                
+        
+            
+
+        
+        
+        
+            
+                Latest Market Data
+                
+            
+        
+        
+        
+
+        
+        
+                
+                    
+                        
+                        
+                            
+                                Our Products
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        Securities
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Equities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Exchange Traded Products
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Structured Products
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Real Estate Investment Trusts
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Debt Securities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Listed Derivatives
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Equity Index
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Single Stock
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Foreign Exchange
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Interest Rate
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Commodities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        OTC Derivatives
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Eligible OTC Clear Products
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Interest Rate Swaps
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Non Deliverable Forwards
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Cross Currency Swaps
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Deliverable FX
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Find a Partner
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        MSCI Index Futures & Options
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        HKEX Sustainable & Green Exchange
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                Our Services
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        Trading
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Securities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            Overview
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Infrastructure
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Derivatives
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            Overview
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Infrastructure
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Connectivity
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Hosting Services
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    SDNet/2
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Data and Index Services
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Real Time Data Services
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Historical Data Services
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Infrastructure
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Index Services
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Rules, Forms & Fees
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Rules
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Forms
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Fees
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Clearing
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Securities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            Overview
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Infrastructure
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Risk Management
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            CCP Disclosures
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Listed Derivatives
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            Overview
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Infrastructure
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Risk Management
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            CCP Disclosures
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    OTC Clear
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                    
+                                                        
+                                                        
+                                                            Overview
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Infrastructure
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            Risk Management
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                                    
+                                                        
+                                                        
+                                                            CCP Disclosures
+                                                        
+                                                    
+                                                    
+                                                    
+                                                    
+                                                
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Settlement and Depository
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Settlement - Securities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Depository
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Uncertificated Securities Market
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Common Nominee Services
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Securities Admission into CCASS
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    PFMI
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Unclaimed Entitlements Held by HKSCC Nominees Limited
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Platform Services
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Corporate Action Messaging Standardisation
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Client Connect
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    FINI - A New Era for Hong Kong’s IPO market
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Orion Derivatives Platform
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Orion Cash Platform
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Integrated Fund Platform 
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    HKEX Issuer Access Platform
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Digital Payment Adoption for After-Hours Trading
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Circulars & Notices
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Become a Participant
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        HKEX Connect Hall
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                Join Our Markets
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        IPO
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Listing with HKEX
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    GEM
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Southeast Asia Listing Insights
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Northbound and Southbound
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Stock Connect
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Bond Connect
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Commodities
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    LME
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    QME
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Sustainable Finance at HKEX
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Core Climate
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Sustainable & Green Exchange (STAGE)
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Biotech @ HKEX
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Listing of Specialist Technology Companies 
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Core Climate
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                Listing Regulations
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        Explore By Role
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Potential Applicants
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Listed Issuers
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Directors
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Rules & Resources
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Listing Rules
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Guidance
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Checklists, forms & templates
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Enforcement
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        News & Publications
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    What&apos;s New
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Listing Newsletters
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Reports
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Listing Consultations
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Sustainability & Corporate Governance
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    ESG Academy
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Board Diversity Hub
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Corporate Governance Practices 
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Shareholder Value in Focus
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    INED Corner
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Education Centre
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        About Listing & Contacts
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                News Centre
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        Corporate News Releases
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Regulatory Announcements 
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Market Communications
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Market Consultations
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        News Centre
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        HKEX Calendar
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Research Reports
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                Connect Programmes
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        Connect Hub
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Stock Connect
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Bond Connect
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Swap Connect
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Daily Statistics
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Market Highlights
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Eligible Securities
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+                
+                    
+                        
+                        
+                            
+                                Market Data
+                            
+                        
+                    
+                    
+                            
+                                
+                                    
+                                        Stock Quote Lookup
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Securities Prices
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Equities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Exchange Traded Products
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Derivative Warrants
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Inline Warrants
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Callable Bull / Bear Contracts
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Real Estate Investment Trusts
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Debt Securities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Futures & Options Prices
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Equity Index
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Single Stock
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Foreign Exchange
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Interest Rate
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Commodities
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        Statistics
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                                        
+                                            
+                                                
+                                                    Consolidated Reports
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Securities Market
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Derivatives Market
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Participant
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                        
+                                            
+                                                
+                                                    Clearing, Settlement and Depository
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                            
+                        
+                            
+                                
+                                    
+                                        HKEXnews
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        News Alerts
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                            
+                                
+                                    
+                                        Market Data Services
+                                    
+                                
+                                
+
+                                
+                                
+                                
+                                
+                            
+                        
+                
+            
+
+    
+	    
+	    
+	    
+	    
+	    
+	    
+    
+    
+
+    
+        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+                    
+            
+
+            
+                
+                
+                    
+                        
+                        
+                            About HKEX
+                                
+                            
+                            
+                            
+                            
+                                About HKEX
+                            
+                                
+                            
+                                Investor Relations
+                            
+                                
+                            
+                                Corporate Governance
+                            
+                                
+                            
+                                Sustainability
+                            
+                                
+                            
+                                Media Centre
+                            
+                                
+                            
+                                Careers
+                            
+                                
+                                        
+                        
+                            
+                        
+                            Related Sites:  LME
+                                
+                            
+                            
+                            
+                            
+                                HKEX Group
+                            
+                                
+                            
+                                LME
+                            
+                                
+                            
+                                Bond Connect
+                            
+                                
+                            
+                                QME
+                            
+                                
+                            
+                                HKEXnews
+                            
+                                
+                            
+                                CESC
+                            
+                                
+                            
+                                Client Connect
+                            
+                                
+                                        
+                        
+                            
+                    
+                    
+                                    
+                        
+                            繁
+
+                            
+                                简
+                                            
+                        
+                            
+                            
+                        
+                    
+                    
+                    
+                        
+                        
+                    
+                       
+
+                
+                
+                    
+                        
+                            
+                                
+                            
+                            
+                                
+                            
+                        
+
+                        
+                            
+                                
+                                
+                            
+                        
+                    
+                
+
+                    
+                
+                    
+                        
+                            OurProductsSecuritiesEquitiesExchange Traded ProductsStructured ProductsReal Estate Investment TrustsDebt SecuritiesListed DerivativesEquity IndexSingle StockForeign ExchangeInterest RateCommoditiesOTC DerivativesEligible OTC Clear ProductsInterest Rate SwapsNon Deliverable ForwardsCross Currency SwapsDeliverable FXFind a PartnerSearch our directory to find brokers, clearing members, information vendors and moreMSCI Index Futures & OptionsHKEX launched 39 MSCI equity index futures and options contractsHKEX Sustainable & Green ExchangeCollaborating on sustainable finance amongst our stakeholdersOur ServicesTradingSecuritiesOverviewInfrastructureDerivativesOverviewInfrastructureConnectivityHosting ServicesSDNet/2Data and Index ServicesReal Time Data ServicesHistorical Data ServicesInfrastructureIndex ServicesRules, Forms & FeesRulesFormsFeesClearingSecuritiesOverviewInfrastructureRisk ManagementCCP DisclosuresListed DerivativesOverviewInfrastructureRisk ManagementCCP DisclosuresOTC ClearOverviewInfrastructureRisk ManagementCCP DisclosuresSettlement and DepositorySettlement - SecuritiesDepositoryUncertificated Securities MarketCommon Nominee ServicesSecurities Admission into CCASSPFMIUnclaimed Entitlements Held by HKSCC Nominees LimitedPlatform ServicesCorporate Action Messaging StandardisationClient ConnectFINI - A New Era for Hong Kong’s IPO marketOrion Derivatives PlatformOrion Cash PlatformIntegrated Fund Platform HKEX Issuer Access PlatformDigital Payment Adoption for After-Hours TradingCirculars & NoticesView important information issued by HKEX to Exchange and Clearing House Participants, Market Data vendors and Hosting Services membersBecome a ParticipantConnect to Hong Kong&rsquo;s financial market through HKEXHKEX Connect HallA centrally-located venue at the heart of Hong Kong financial hub, the HKEX Connect Hall is an iconic venue for Hong Kong’s financial community. Join Our MarketsIPOListing with HKEXGEMSoutheast Asia Listing InsightsNorthbound and SouthboundStock ConnectBond ConnectCommoditiesLMEQMESustainable Finance at HKEXCore ClimateSustainable & Green Exchange (STAGE)Biotech @ HKEX
+HKEX connects capital with a rich range of biotech issuers and investment products.
+Listing of Specialist Technology Companies A new listing pathway for Specialist Technology Companies.
+Core ClimateThe new carbon marketplace from HKEX
+ListingRegulationsExplore By RolePotential ApplicantsListed IssuersDirectorsRules & ResourcesListing RulesGuidanceChecklists, forms & templatesEnforcementNews & PublicationsWhat's NewListing NewslettersReportsListing ConsultationsSustainability & Corporate GovernanceESG AcademyBoard Diversity HubCorporate Governance Practices Shareholder Value in FocusINED CornerEducation CentreA centralised education platform, including e-Learning.About Listing & ContactsFind information about listing, including committee members and contact persons.NewscentreCorporate News ReleasesRegulatory Announcements Market CommunicationsMarket ConsultationsNews CentreSnapshot about HKEX latest news and informationHKEX CalendarSubscribe to our calendar containing trading and clearing information, public holidays and moreResearch ReportsResearch and survey conducted by HKEX on its securities and derivatives markets and related topicsConnectProgrammesConnect HubStock ConnectBond ConnectSwap ConnectDaily StatisticsStatistics on Shanghai and Shenzhen Connect updated dailyMarket HighlightsView the market capitalization, number of listed companies and more in the Hong Kong, Shanghai and Shenzhen marketsEligible SecuritiesA list of securities eligible for trading under Shanghai and Shenzhen Stock ConnectMarket Data$('.mega-menu .forMobileQuoteLookup #mobile_quotelookup').load('/lhkexw/ui/powersearchm.html');Securities PricesEquitiesExchange Traded ProductsDerivative WarrantsInline WarrantsCallable Bull / Bear ContractsReal Estate Investment TrustsDebt SecuritiesFutures & Options PricesEquity IndexSingle StockForeign ExchangeInterest RateCommoditiesStatisticsConsolidated ReportsSecurities MarketDerivatives MarketParticipantClearing, Settlement and DepositoryHKEXnewsView listed company announcements and more on the centralised platform for regulatory filings and disclosuresNews AlertsSign up to receive company announcements or website updates by emailMarket Data ServicesVendors can sign up to purchase wholesale market data from HKEX&rsquo;s Market Data Services department
+                        
+                    
+                
+                
+            
+
+            
+            
+                
+                    
+                    
+			        
+                
+            
+        
+    
+
+    
+    if (checkMode() != 'pageeditor') {
+		
+	    var $searchData = $(".topbar_search_data");	
+	    var msgEntKeyword = $searchData.attr("data-search-empty-msg");
+
+	    function validateGlobalSearchKeyword(device) {
+		    if (device == 'desktop') {
+			    if ($("#inputSearch").val() == "") {
+				    alert(msgEntKeyword);
+				    return false;
+			    } else {
+				    redirect(encodeURIComponent($("#inputSearch").val()));
+			    }
+		    }
+	    }
+
+	    function redirect(keyword) {
+		    setTimeout(function () {
+			    var pageUrl = $searchData.attr("data-search-result-page");
+			    var filterUrl = $searchData.attr("data-search-filter-path");
+			    var trCallbackFunction = $searchData.attr("data-search-callback");
+			    if ($('.market-hkex .header-result table tr:nth-child(1) td:nth-child(1)').length > 0)
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl + "&sym=" + $('.market-hkex .header-result table tr:nth-child(1) td:nth-child(1)').html() + "&callback=" + trCallbackFunction + "&qid=" + Date.now();
+			    else if ($('.market-hkex .headermm-result table tr:nth-child(1) td:nth-child(1)').length > 0)
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl + "&sym=" + $('.market-hkex .headermm-result table tr:nth-child(1) td:nth-child(1)').html() + "&callback=" + trCallbackFunction + "&qid=" + Date.now();
+			    else if ($('.market-hkex .headerm-result table tr:nth-child(1) td:nth-child(1)').length > 0)
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl + "&sym=" + $('.market-hkex .headerm-result table tr:nth-child(1) td:nth-child(1)').html() + "&callback=" + trCallbackFunction + "&qid=" + Date.now();
+			    else
+				    window.location = pageUrl + "&mode=basic&q=" + keyword + "&u=" + filterUrl;
+		    }, 500);
+	    }
+
+	    function GlobalSearch(e,device) {
+		    if (e.keyCode == 13 || e.which == 13) {
+			    validateGlobalSearchKeyword(device);
+			    return false;
+		    } else {
+			    return true;
+		    }
+	    }
+
+	    function hideLanguageButton(lang) {
+	    }
+    }
+
+    function getParameterByName(name) {
+	    var url = window.location.href;
+	    url = url.split("#").join("&");
+	    name = name.replace(/[\[\]]/g, "\\$&");
+	    var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
+		    results = regex.exec(url);
+	    if (!results) return null;
+	    if (!results[2]) return '';
+	    return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    (function ($) {
+	    $("#inputSearchBtn").click(function () {
+		    validateGlobalSearchKeyword($("#inputSearchBtn").attr("data-device"));
+		    return false;
+        });
+    }) (jQuery);
+    
+
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+
+
+    
+        
+        
+            
+                HKEX - Our Products
+            
+        
+        
+        
+            
+                Listed Derivatives
+            
+        
+        
+        
+            
+                Equity Index
+            
+        
+        
+        
+            
+                Hang Seng Index (HSI)
+            
+        
+        
+        
+            
+                Hang Seng Index Futures
+            
+        
+        
+    
+
+
+    
+
+    
+    
+    
+        
+        
+            Hang Seng Index Futures
+        
+        
+    
+    
+
+
+
+
+    
+	    
+		    
+	    
+    
+
+
+
+
+    
+
+
+    
+
+
+
+    
+
+
+    function createCookie(name, value, days) {
+        if (typeof days !== 'undefined') {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            var expires = "; expires=" + date.toGMTString();
+        }
+        else var expires = "";
+        var secureCookie = "";
+        if (location.protocol == "https:") {
+            secureCookie = " Secure;"
+        }
+        document.cookie = name + "=" + value + expires + ";" + secureCookie + " path=/;";
+    }
+    function getCookie(cname) {
+      var name = cname + "=";
+      var ca = document.cookie.split(';');
+      for(var i = 0; i 
+
+          
+          
+
+
+    
+        
+
+
+     
+                Equity IndexHang Seng Index (HSI)Hang Seng Index (HSI)Hang Seng Index (HSI)Hang Seng Index FuturesHang Seng Index OptionsHang Seng Index Futures Options Weekly Hang Seng Index OptionsHang Seng Gross Total Return Index FuturesHang Seng Net Total Return Index FuturesMini-Hang Seng Index FuturesMini-Hang Seng Index OptionsDividend FuturesHSI Volatility Index FuturesHang Seng China Enterprises IndexHang Seng China Enterprises IndexHang Seng China Enterprises Index FuturesHang Seng China Enterprises Index OptionsHang Seng China Enterprises Index Futures OptionsWeekly Hang Seng China Enterprises Index OptionsHang Seng China Enterprises Gross Total Return Index FuturesHang Seng China Enterprises Net Total Return Index FuturesMini-Hang Seng China Enterprises Index FuturesMini-Hang Seng China Enterprises Index OptionsHang Seng TECH Index Futures and OptionsHang Seng TECH Index Futures and OptionsHang Seng TECH Index Futures OptionsHang Seng TECH Index FuturesHang Seng TECH Index OptionsWeekly Hang Seng TECH Index OptionsHang Seng Biotech IndexHang Seng Biotech IndexHang Seng Biotech Index FuturesMSCI IndexSector IndexSector IndexSector Index FuturesCES China 120 IndexCES China 120 IndexCES China 120 Index Futures
+
+            
+    
+    
+        
+
+        
+            
+                Hang Seng Index Futures
+            
+        
+
+        
+			
+                
+				
+Hang Seng Index Futures & Options 
+
+Hang Seng Index (HSI), the benchmark of the Hong Kong stock market, is one of the best known indices in Asia and widely used by fund managers as their performance benchmark. 
+
+The HSI is a market capitalisation-weighted index (shares outstanding multiplied by stock price) of the  constituent stocks. The influence of each stock on the index's performance is directly proportional to its relative market value. Constituent stocks with higher market capitalisation will have greater impact on the index's performance than those with lower market capitalisation. The constituent stocks are grouped under Commerce and Industry, Finance, Properties and Utilities sub-indices. 
+The latest list of constituent stocks and compilation methodology are available on the website of Hang Seng Indexes Company Limited at http://www.hsi.com.hk
+Hang Seng Index Futures
+To meet the growing interests in the Hong Kong stock market and rising demand for related hedging tools, the Hong Kong Futures Exchange (HKFE) first introduced HSI futures contracts in May 1986.
+Advantages
+The HSI futures and options provide investors with a set of effective instruments to manage portfolio risk and to capture index arbitrage opportunities. The popularity of Hang Seng Index futures and options has developed gradually with increasing domestic and international investors' participation.
+
+    
+    Proven Markets 
+    HSI futures and options allow experienced and novice investors alike to participate in the performance of constituent stocks in the index. As both local and international investors regard Hang Seng Index as a time-tested benchmark for the Hong Kong equity market and yardstick of portfolio performance, these contracts are consistently used by different investors for trading and risk management purposes.
+    
+    
+    Cost Effective
+    HSI futures and options facilitate hedging activities in a cost-effective way as these contracts are traded on a margin basis. The margin to carry an open position is only a fraction of the contracted value.
+    
+    
+    Low Transaction Costs
+    As the total value of high-capitalisation stocks represented in each HSI futures and options contract is substantial and only one commission is charged to establish or liquidate a contract, transaction costs are low when compared to purchasing or selling the constituent stocks.
+    
+    
+    Clearing House Guarantee
+    HSI futures and options are registered, cleared and guaranteed by the HKFE Clearing Corporation (HKCC), a wholly-owned subsidiary of the HKFE. The HKCC acts as the counter-party to all open contracts, which effectively eliminates counter-party risks between its HKCC Participants. The HKCC guarantee does not cover an HKCC Participant's obligations to its clients. Investors should exercise due care and diligence when deciding through whom they will conduct business.
+    
+
+
+				
+			
+            
+            
+                
+            
+            
+        
+
+        
+            
+            Updated 20 Jul 2026
+        
+
+
+
+    var param = "&product=HSI";
+    if (location.href.indexOf(param) == -1) {
+        if (param != "") {
+            location.hash = param;
+        }
+    }
+
+
+
+    
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    (function($) {
+
+        $(function() {
+            var _WP_PATH = "/lhkexw/";
+            jQuery.loadScript = function(url, nocache) { jQuery.ajax({ url:_WP_PATH+url, dataType:"script", async:false, method:"GET", ifModified:nocache?false:true }); };
+            jQuery.loadCSS = function(url) {
+                if (document.createStyleSheet) try { document.createStyleSheet(_WP_PATH+url); } catch (e) { }
+                else $("").appendTo("#lhkexw-productderivative");
+            };
+
+// Index PageObj & Resources
+//$.loadScript("js/topranking.js");
+
+// Common Resources
+            if (LabCI.getLang()==="zh_HK"){
+                $.loadScript("js/commonrc_zh_HK.js");
+                $.loadScript("js/derivative_zh_HK.js");
+                $.loadScript("js/productderivatives_zh_HK.js");
+
+            }else if(LabCI.getLang()==="chn"){
+                $.loadScript("js/commonrc_chn.js");
+                $.loadScript("js/derivative_chn.js");
+                $.loadScript("js/productderivatives_chn.js");
+            }else {
+                $.loadScript("js/commonrc_en.js");
+                $.loadScript("js/derivative_en.js");
+                $.loadScript("js/productderivatives_en.js");
+            }
+
+// Turn on/off debug logger, default is off
+            LabCI.Utils.CONSOLELOGGER.isdebug = true;
+            LabCI.WP["createproductderivativepageobj"].call(this).init(LabCI.getLang()).show({});
+        });
+    })(jQuery);
+
+
+    
+        
+            
+        
+        
+        
+        
+            
+                
+                    
+                        
+                        
+                        
+                        
+                        
+                    
+                
+				
+                
+
+                
+                    
+                        
+                        
+                        
+                    
+                
+				
+                
+                    
+                        
+                            
+                            
+                             ()
+                        
+                        
+                            
+                                
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                
+                            
+                            
+                            
+                            
+                            
+                                
+                                -
+                            
+                        
+                    
+                    
+                        
+                            
+                        
+                        
+                            
+                                
+                                
+                            
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            
+                                            
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    
+                                                    
+                                                
+                                                
+                                                
+                                                    
+                                                    
+                                                
+                                                
+                                                
+                                            
+                                            
+                                            
+                                            
+                                        
+                                        
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                        
+                                        
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                
+                                                
+                                            
+                                            
+                                        
+                                    
+                                
+                            
+                            
+                                
+                                    
+                                    
+                                        -
+                                    
+                                    -
+                                    - (-)
+                                    
+                                        
+                                            
+                                            -
+                                        
+                                        
+                                            
+                                            -
+                                        
+                                        
+                                            
+                                            -
+                                        
+                                    
+
+                                
+                                
+                                    
+                                        
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                    
+                                    
+                                    
+                                    
+                                
+                            
+                        
+                        
+                            
+                            
+                            
+                                
+                                -
+                            
+                        
+                    
+                    
+                        
+                            
+                        
+                        
+                            
+                                
+                                
+                            
+                        
+                        
+                            
+                                
+                                    
+                                    
+                                        
+                                            
+                                            
+                                        
+                                    
+                                
+                                
+                                    
+                                    
+                                        
+                                        
+                                        
+                                        
+                                    
+                                    
+                                        
+                                            
+                                                
+                                                
+                                            
+                                        
+                                    
+                                
+                            
+                            
+                        
+                        
+                            
+                                 
+                                    
+                                        
+                                        
+                                            -
+                                            -
+                                            -
+                                        
+                                        
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                        
+                                        
+                                    
+                                
+                            
+                        
+                        
+                            
+                            
+                            
+                                
+                                -
+                            
+                        
+                    
+                
+            
+        
+    
+
+
+
+    
+
+    
+        Contract Summary
+    
+    
+        
+            
+            
+    
+        
+            
+            
+            Item
+            
+            
+            
+            
+            Contract Terms
+            
+            
+        
+    
+    
+        
+            
+            
+            
+            
+            Underlying Index
+            
+            
+            
+            
+            
+            
+            
+            Hang Seng Index
+            
+            
+            
+        
+        
+            
+            
+            HKATS Code
+            
+            
+            
+            
+            
+            HSI
+            
+            
+            
+        
+        
+            
+            
+            Contract Multiplier
+            
+            
+            
+            
+            HK$50 per index point
+            
+            
+        
+        
+            
+            
+            Minimum Fluctuation
+            
+            
+            One index point
+        
+        
+            
+            Contract Months
+            
+            
+            Short-dated Futures:
+            Spot, next three calendar month & next three calendar quarter months; and
+            Long-dated Futures:
+            The three months of June and December plus the next three months of December
+            
+        
+        
+            
+            
+            Pre-Market Opening Period
+            
+            
+            8:45 am - 9:15 am & 12:30 pm - 1:00 pm
+            
+        
+        
+            
+            
+            Trading Hours
+            
+            
+            
+            
+            9:15 am - 12:00 noon, 1:00 pm - 4:30 pm & 5:00 pm - 3:00 am
+            
+            
+            (Expiring contract month closes at 4:00 pm on the Last Trading Day)
+            
+            
+            
+            
+            
+            
+        
+        
+            
+            
+            Last Trading Day
+            
+            
+            
+            
+            The second last Trading Day of  the Contract Month
+            
+            
+        
+        
+            
+            
+            Final Settlement Price
+            
+            
+            
+            
+            The average of quotations taken at (i) five (5) minute intervals from five (5) minutes after the start of, and up to five (5) minutes before the end of, the Continuous Trading Session of SEHK; and (ii) the close of trading on SEHK on the Last Trading Day.
+            
+            
+        
+        
+            
+            
+            Transaction Costs
+            
+            
+            
+            
+            Exchange Fee                 HK$10.00
+            Commission Levy            HK$0.54
+            Commission Rate            Negotiable
+            
+            
+        
+    
+
+
+Please visit &ldquo;Rules, Regulations and Procedures of the Futures Exchange&rdquo; under &ldquo;Rules and Regulations&rdquo; of the HKEx website for full contract specifications.
+
+
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+        Margin Table
+    
+    
+        
+            
+            
+    Margin Levels for Futures Contracts - Current    
+    Margin Levels for Futures Contracts - Previous    
+    Client Margin Estimate Reference Table(HKCC) - Current
+    Client Margin Estimate Reference Table (HKCC) - Previous
+
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+
+                
+                    Trading Fees and Commission
+                
+                
+                    Hang Seng Index FuturesExchange FeeHK$10.00 per contract per sideCommission LevyHK$0.54 per contract per sideInvestor Compensation Levy*HK$0.00 per contract per sideTotalHK$10.54 per contract per sideCommissionNegotiable* The amount indicated above is subject to change from time to time.
+                
+                
+            
+
+    
+        List of Market Makers or Liquidity Providers
+    
+    
+        
+            
+            Equity Index ProductsThere are liquidity provider and 3 types of market makers in the equity index products market:- Primary Market Maker (PMM); and- Market maker providing continuous quotes (CQMM); and- Market maker responding to quote request (QRMM). For the details of the obligations and incentives of liquidity providers and market makers, please refer webpage.Below is the list of Short Code for EP of Liquidity Provider, PMM, CQMM and QRMM:
+ 
+
+Market Makers / Liquidity ProvidersBNP
+CCF
+CFT
+CTD
+FLW
+GHF
+IBG
+IMC
+JST
+KGI
+MPF
+NHA
+NHT
+OPT
+ORN
+SGS
+SQH
+UTR
+YKR
+
+Hang Seng China Enterprises Index Futures Options
+
+
+
+PMD
+
+
+
+SMW
+
+
+PMD
+
+PMD
+SMW
+
+
+CMD
+
+PMD
+
+
+Hang Seng Index Futures Options
+
+
+
+PMD
+
+
+
+SMW
+
+
+PMD
+
+PMD
+SMW
+
+
+CMD
+
+
+
+
+Hang Seng Index Options
+CMD
+CMD
+
+PMD
+
+
+CMD
+SMW
+
+
+SMD
+
+SMW
+SMW
+
+
+CMD
+
+PMD
+
+
+Hang Seng TECH Index Futures Options
+
+
+
+CMD
+
+
+
+PMD
+
+
+PMD
+
+PMD
+PMD
+
+
+CMD
+
+
+
+
+Hang Seng Tech Index Options
+
+
+
+CMD
+
+
+CMD
+PMD
+
+
+PMD
+
+PMD
+PMD
+
+
+CMD
+
+
+
+
+HHI Options
+CMD
+CMD
+
+PMD
+
+
+CMD
+SMW
+
+
+SMD
+
+SMW
+SMW
+
+
+CMD
+
+
+
+
+Hang Seng Biotech Index Futures
+
+
+CLD
+
+CLD
+
+
+
+
+
+
+
+CLD
+CLD
+
+
+
+CLD
+
+
+
+HSCEI Dividend Point Index Futures
+CMD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HSI Dividend Point Index Futures
+CMD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MCH Options
+
+
+
+CMD
+
+
+CMD
+CMW
+
+
+CMD
+
+CMW
+CMW
+
+
+
+
+
+
+
+MHI Options
+
+
+
+CMD
+
+
+CMD
+CMW
+
+
+CMD
+
+CMW
+CMW
+
+
+
+
+CMD
+
+
+MSCI AC Asia ex Japan Net Total Return Index Futures
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI China A 50 Connect (USD) Index Futures
+
+
+CLW
+
+CLD
+
+
+
+
+CLW
+
+CLN
+CLD
+
+CLD
+CLW
+
+
+
+
+
+MSCI China Net Total Return (USD) Index Futures
+
+
+CLW
+
+
+
+
+
+CLD
+
+CLN
+
+CLD
+
+
+
+
+
+
+
+
+MSCI EM Asia Net Total Return (USD) Index Futures
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI Hong Kong Net Total Return (USD) Index Futures
+
+
+
+
+CLD
+
+
+
+CLD
+
+CLD
+
+
+
+
+
+
+
+
+
+
+MSCI India Net Total Return (USD) Index Futures
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI Malaysia Net Total Return (USD) Index Futures
+
+
+
+
+CLD
+
+
+
+
+
+CLD
+
+
+
+
+
+
+
+
+
+
+MSCI Taiwan (USD) Index Futures
+
+
+
+
+CLD
+CLW
+
+
+
+
+
+
+
+
+
+
+
+CLW
+
+
+
+MSCI Taiwan Net Total Return (USD) Index Futures
+
+
+
+
+CLD
+
+
+
+
+
+CLW
+
+
+
+
+
+
+
+
+
+
+MSCI Thailand Net Total Return (USD) Index Futures
+
+
+
+
+
+
+
+
+CLD
+
+
+
+
+
+
+
+
+
+
+
+
+Weekly HHI Options
+
+
+
+CMD
+
+
+
+CMW
+
+
+CMD
+
+CMD
+CMW
+
+
+CMD
+
+
+
+
+Weekly HSI Options
+CMD
+
+
+CMD
+
+
+
+CMW
+
+
+CMD
+
+CMD
+CMW
+
+
+CMD
+
+CMD
+
+
+Weekly HTI Options
+
+
+
+CLD
+
+
+
+CLD
+
+
+CLD
+
+CLD
+CLD
+
+
+CLD
+
+
+
+C – Denotes providing continuous quotesQ – Denotes responding to quote requestsP – Denotes Primary Market Maker providing continuous quotes and responding to quote requestsS – Denotes combination of C, Q and PM – Denotes Market MakerL – Denotes Liquidity ProviderB – Denotes both Market Maker and Liquidity ProviderD – Denotes T SessionN – Denotes T+1 SessionW – Denotes Both T and T+1 Sessions
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+
+    
+        Market Maker Obligations and Incentives
+    
+    
+        
+            
+            For details of the Market Making/Liquidity Providing Obligations and Incentives of Equity Index Products, please refer our webpage below:
+https://www.hkex.com.hk/Products/Listed-Derivatives/Market-Maker-Program/Market-Maker-Obligations-and-Incentives?sc_lang=en
+ 
+            
+        
+        
+            
+        
+    
+    
+        
+        
+    
+Updated 20 Jul 2026
+
+    
+    
+        
+             
+   Quick LinksDerivatives Market Access CodesTrading CalendarTrading HoursSevere Weather Arrangements
+ 
+   
+
+-->
+    
+        
+            Publication
+        
+        
+            Hang Seng DerivativesHang Seng DerivativesInformation Sheet
+            
+                
+            
+        
+        
+            Hang Seng DerivativesInformation Sheet
+        
+        
+            DownloadDownload
+        
+    
+-->
+
+    var msgEntKeyword = "Please enter the search keyword.";
+    function faqSearchEvent(e) {
+        if (e.which == 13 || e.keyCode == 13) {
+            validateFaqSearch();
+            return false;
+        }
+        return true;
+    };
+    function validateFaqSearch() {
+        if ($("#faqWidgetInput").val().trim() == "") {
+            alert(msgEntKeyword);
+            return false;
+        }
+        faqSearch();
+    }
+    function faqSearch() {
+        var pageUrl = "/Global/Exchange/FAQ/Top-Questions?sc_lang=en";
+        window.location = pageUrl + "&search=" + encodeURIComponent($("#faqWidgetInput").val().trim());
+    }
+
+
+-->
+    
+    
+        
+            Frequently Asked Questions
+        
+        
+            
+                Enter a question, keyword, or topic
+            
+            
+            View All FAQs
+        
+    
+    
+-->
+    
+
+
+
+          
+      
+
+
+//
+
+
+	  
+      
+
+
+    
+        
+            
+                
+            
+            
+                if (browserAllow()) { 
+                    document.write('');
+                }
+            
+            
+            
+                AlertContactCareerFAQInvestor Product VideosMarket System StatusSitemapGlossaryHKEX Subscription CentreTerms of UseHKEX Privacy NoticesCookie NoticeRSS Feed
+            
+            
+            
+                ©2017-26 Hong Kong Exchanges and Clearing Limited. All rights reserved.
+            
+
+
+        
+    
+
+
+
+
+
+        
+            
+        
+        
+
+
+
+
+
+
+
+      
+	    
+      
+	  
+        
+        
+        
+    
+
+	
+			setTimeout(function()
+			{
+			$(document).ready(function () {
+		    if (typeof $readMoreJS !== "undefined") { 
+			    $readMoreJS.init({moreLink: "Read More...", lessLink: "Show Less"});
+		    }
+			$('a[target="_blank"]').attr('rel', 'noreferrer noopener');
+			});
+			},2000);
+	
+
+	
+
+
+if(!window.adobeDataLayer) {window.adobeDataLayer = window.adobeDataLayer || [];}
+adobeDataLayer.push({
+event: 'pageview',
+environment:'production', //using to identify the correct environment and send the server call to correct report suite
+site_code: 'HKEXMarket' // using to identify the site code if several environments are under same URL
+});
+
+
+
+
+
