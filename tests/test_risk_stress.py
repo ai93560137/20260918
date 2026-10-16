@@ -114,7 +114,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R197", auto_risk.SCRIPT_VERSION == "R197")
+check("SCRIPT_VERSION R199", auto_risk.SCRIPT_VERSION == "R199")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
