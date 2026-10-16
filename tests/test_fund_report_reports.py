@@ -76,5 +76,43 @@ check("頁面照出已實現表", "已實現淨盈虧" in html)
 FAKE[main.OPS_REPORTS_PUBLIC_FILE] = ("[1,2]", 3)
 check("非 dict 當空", main.ops_reports_public() == {})
 
+print("\n五、[R207] 未實現、總盈虧、每月／季／年績效")
+FAKE[main.OPS_REPORTS_PUBLIC_FILE] = (json.dumps(IDX, ensure_ascii=False), 4)
+RISK = {"run_hkt": "2026-10-17 01:37", "metrics": {"futu_equity": 500000},
+        "positions": [{"code": "US.EW2610P7750x0", "qty": -1, "open_price": 43, "futu_pl": -2750.0},
+                      {"code": "HK.HSI261023P23700000", "qty": -1, "open_price": 59, "futu_pl": -100.0},
+                      {"code": "HK.MHI2610", "qty": -1, "open_price": 24300, "bid": 24290, "ask": 24292, "futu_pl": None}]}
+un = main.fund_unrealized(RISK)
+check("美元折港幣：EW −2,750 × 7.8", abs(un["by_product"]["ES 標普月底期權"] - (-2750 * main.FUTU_USD_HKD)) < 1e-6, un)
+check("冇 futu_pl 用中間價計：MHI (24,291 − 24,300) × −1 × 10 = +90", abs(un["by_product"]["MHI 小型恒指期貨"] - 90) < 1e-6, un)
+check("合計", abs(un["total"] - (-2750 * main.FUTU_USD_HKD - 100 + 90)) < 1e-6, un)
+check("讀唔到持倉 → None", main.fund_unrealized({}) is None and main.fund_unrealized(None) is None)
+r = main.futu_pnl_report(json.loads(FAKE[main.FUTU_PNL_FILE][0]))
+perf = main.fund_performance(r, un, today=main.date(2026, 10, 17))
+m = {x["period"]: x for x in perf["periods"]["month"]}
+check("10 月：已實現 1,000＋未實現 → 總盈虧", m["2026-10"]["realized"] == 1000 and abs(m["2026-10"]["total"] - (1000 + un["total"])) < 0.01, m)
+check("回報率 ÷ 富途權益 50 萬", m["2026-10"]["return_pct"] == round((1000 + un["total"]) / 500000 * 100, 2), m)
+check("勝率 100%（1 筆平倉賺）", m["2026-10"]["closes"] == 1 and m["2026-10"]["win_rate"] == 100.0, m)
+check("每季、每年都有", perf["periods"]["quarter"][-1]["period"] == "2026Q4" and perf["periods"]["year"][-1]["period"] == "2026")
+check("本金來源 futu_equity", perf["capital_source"] == "futu_equity")
+perf2 = main.fund_performance(r, un, today=main.date(2026, 11, 2))
+m2 = {x["period"]: x for x in perf2["periods"]["month"]}
+check("未實現只計入現時月份（11 月），10 月唔計", m2["2026-10"]["unrealized"] == 0 and "2026-11" in m2 and m2["2026-11"]["realized"] == 0, m2)
+FAKE[main.FUTU_RISK_FILE] = (json.dumps(RISK), 1)
+html = main.handle_fund_report_get(req())
+check("頁面有未實現卡、總盈虧卡", "未實現盈虧（現時持倉" in html and "總盈虧（已實現＋未實現）" in html)
+check("頁面有每月／每季／每年績效表", all(f"📈 {z}績效" in html for z in ("每月", "每季", "每年")))
+check("頁面有按產品未實現", "未實現盈虧（按產品" in html)
+check("權益絕對值唔出現（50 萬）", "500,000" not in html and "500000" not in html)
+import flask                                     # noqa: E402
+with flask.Flask("t").app_context():
+    j = main.handle_fund_report_get(req(format="json"))
+    j = j[0] if isinstance(j, tuple) else j
+    body = j.get_data(as_text=True)
+check("JSON 有 unrealized、performance，冇權益金額", '"unrealized"' in body and '"performance"' in body and "500000" not in body and "500,000" not in body, body[:300])
+del FAKE[main.FUTU_RISK_FILE]
+html = main.handle_fund_report_get(req())
+check("讀唔到持倉：頁面照出、顯示讀唔到", "讀唔到持倉" in html and "已實現淨盈虧" in html)
+
 print(f"\n合計 ✅ {OK}  ❌ {FAIL}")
 sys.exit(1 if FAIL else 0)
