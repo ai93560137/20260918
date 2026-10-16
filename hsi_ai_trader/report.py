@@ -27,7 +27,7 @@ def summarize(closes, eq):
     pv = CFG.point_value
     trades = [t for t in closes if t.get("points") is not None]
     n = len(trades)
-    print(f"=== MHI AI 交易成績（{CFG.trd_env}）===")
+    print(f"=== 龍飛陣 AI 交易成績（{CFG.trd_env}）===")
     if eq:
         first, last = eq[0]["equity"], eq[-1]["equity"]
         print(f"期間        : {eq[0]['ts'][:10]} → {eq[-1]['ts'][:10]}")

@@ -41,8 +41,9 @@ class Config:
     trade_password: str = _env("FUTU_TRADE_PASSWORD", "")  # 留空 = 已喺 OpenD 解鎖
 
     # --- 合約 ---
-    product: str = _env("PRODUCT", "MHI")                # 小型恒指
-    point_value: float = float(_env("POINT_VALUE", "10"))  # MHI 每點 HK$10
+    # 使用者 2026-10-16：龍飛陣用大期 HSI（雲垂陣對沖用細期 MHI，分開合約免得淨額混埋）
+    product: str = _env("PRODUCT", "HSI")                # 恒指大期
+    point_value: float = float(_env("POINT_VALUE", "50"))  # HSI 每點 HK$50（MHI 係 10）
 
     # --- Claude ---
     anthropic_api_key: str = _env("ANTHROPIC_API_KEY", "")
@@ -57,7 +58,7 @@ class Config:
     max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
     min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
     max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "0"))       # 0 = 唔限
-    emergency_stop_points: float = float(_env("EMERGENCY_STOP_POINTS", "150"))  # 接手未知倉位時設嘅緊急止蝕
+    fee_per_side_hkd: float = float(_env("FEE_PER_SIDE_HKD", "40"))     # 每張每邊佣金＋徵費估算，計日蝕用（寧高唔低）
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
     flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")

@@ -35,7 +35,7 @@ def main():
     from brain import ClaudeBrain
     from trader import Trader
 
-    log.info("啟動 MHI AI 交易：env=%s 上限=%d張 日蝕上限=HK$%.0f 模型=%s",
+    log.info("啟動龍飛陣 AI 交易：env=%s 上限=%d張 日蝕上限=HK$%.0f 模型=%s",
              CFG.trd_env, CFG.max_qty, CFG.daily_loss_limit, CFG.model)
     broker = FutuBroker(CFG)
     trader = Trader(CFG, broker, ClaudeBrain(CFG), now_hkt)

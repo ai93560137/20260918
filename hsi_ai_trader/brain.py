@@ -9,7 +9,8 @@ import anthropic
 log = logging.getLogger("brain")
 
 SYSTEM = """You are the decision engine of an automated intraday trading bot for Hang Seng Index
-Mini Futures (MHI, front month, HK$10 per index point, 1-point tick) on HKFE, day and night sessions.
+Futures (HSI, front month, HK$50 per index point, 1-point tick) on HKFE, day and night sessions.
+The product and point value are also given in the input (`risk.point_value_hkd`).
 
 Every 5 minutes you receive market data, the current position and the risk budget. Decide ONE action:
 - HOLD: do nothing.
