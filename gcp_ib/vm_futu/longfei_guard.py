@@ -1,12 +1,11 @@
-"""[R199] 龍飛陣 VM 守衛：風控階梯 → PAUSE／STOP，加 watchdog（Telegram）。只用標準庫，唔落單。
+"""[R199] 龍飛陣 VM 守衛：風控階梯 → PAUSE＋通知，加 watchdog（Telegram）。只用標準庫，唔落單。
 
 由 zhuge-longfei-guard.service 跑（每 30 秒一輪）。讀：
-- ZHUGE_LADDER_FILE（auto_risk 每 15 分鐘寫「級別 day|night YYYY-MM-DD HH:MM」）
-- AI_DATA_DIR/heartbeat（hsi_ai_trader 每 5 秒寫 JSON：utc、qty、errors、halted…）
-寫：AI_DATA_DIR/PAUSE（Ⓑ；啱開機未有級別檔）、AI_DATA_DIR/STOP（Ⓒ／Ⓓ、級別檔冇咗或者舊過 LADDER_MAX_AGE_MIN＝30 分鐘、硬止損）。
-注意 hsi_ai_trader 見到 STOP 會平倉並停到下一個交易日（刪 STOP 唔會即刻恢復）。
-guard 自己放嘅檔內容以「guard:」開頭；返回 Ⓐ 只會刪自己放嗰啲，人手放嘅 STOP／PAUSE 唔郁。
-週末冇市（星期六 06:00–星期一 06:00 HKT，同 auto_risk 一致）唔當級別檔過期。
+- ZHUGE_LADDER_FILE（auto_risk 每 10 分鐘寫「級別 day|night YYYY-MM-DD HH:MM [hard_stop]」）
+- AI_DATA_DIR/heartbeat（hsi_ai_trader 每 5 秒寫 JSON：utc、qty、errors、halted、foreign_qty…）
+使用者 2026-10-16 定：只有 Ⓑ 會放 AI_DATA_DIR/PAUSE（停開新倉）；Ⓒ／Ⓓ、硬止損、級別檔冇咗／讀唔到／
+舊過 LADDER_MAX_AGE_MIN（30 分鐘，週末除外）**只發 Telegram 通知，唔放 STOP、唔平倉、唔停開新倉**。
+guard 自己放嘅檔內容以「guard:」開頭；只會刪自己放嗰啲（包括舊版 guard 放過嘅 STOP），人手放嘅 STOP／PAUSE 唔郁。
 """
 import json
 import os
@@ -51,27 +50,27 @@ def telegram(text):
 
 
 def desired(now):
-    """回傳 (動作, 原因)：動作係 None／PAUSE／STOP。"""
+    """回傳 (動作, 原因, 要唔要警報)：動作只會係 None 或 PAUSE（Ⓑ）。"""
     try:
-        lv, sess, d, hm = LADDER.read_text(encoding="utf-8").split()[:4]
+        raw = LADDER.read_text(encoding="utf-8")
+        lv, sess, d, hm = raw.split()[:4]
         ts = datetime.strptime(f"{d} {hm}", "%Y-%m-%d %H:%M").replace(tzinfo=HKT)
     except FileNotFoundError:
-        if time.monotonic() - START < LADDER_MAX_AGE_MIN * 60:      # 啱開機：等 auto_risk 第一次寫，暫時只停開新倉
-            return "PAUSE", "等緊 auto_risk 寫第一個風控級別"
-        return "STOP", "冇風控級別檔"
+        starting = time.monotonic() - START < LADDER_MAX_AGE_MIN * 60    # 啱開機等 auto_risk 第一次寫，唔使警報
+        return None, "冇風控級別檔", not starting
     except (OSError, ValueError):
-        return "STOP", "風控級別檔讀唔到"
+        return None, "風控級別檔讀唔到", True
     age = (now - ts).total_seconds() / 60
     if age > LADDER_MAX_AGE_MIN and not weekend_closed(now):
-        return "STOP", f"風控級別檔 {age:.0f} 分鐘冇更新（auto_risk 停咗？）"
+        return None, f"風控級別檔 {age:.0f} 分鐘冇更新（auto_risk 停咗？）", True
     if lv == "B":
-        return "PAUSE", f"風控 Ⓑ（{sess}）"
+        return "PAUSE", f"風控 Ⓑ（{sess}）", False
     if lv in ("C", "D"):
-        extra = "，硬止損" if "hard_stop" in LADDER.read_text(encoding="utf-8") else ""
-        return "STOP", f"風控 Ⓒ／Ⓓ：{lv}（{sess}{extra}）"
+        extra = "，硬止損" if "hard_stop" in raw else ""
+        return None, f"風控 Ⓒ／Ⓓ：{lv}（{sess}{extra}）—— 照常交易，請自己決定要唔要停龍飛陣（touch ~/zhuge/ai_trader/STOP）", True
     if lv == "A":
-        return None, f"風控 Ⓐ（{sess}）"
-    return "STOP", f"風控級別唔明：{lv}"
+        return None, f"風控 Ⓐ（{sess}）", False
+    return None, f"風控級別唔明：{lv}", True
 
 
 def ours(p):
@@ -147,14 +146,18 @@ def main():
     log(f"guard 開始：DATA={DATA} LADDER={LADDER}")
     while True:
         now = datetime.now(timezone.utc)
-        action, reason = desired(now.astimezone(HKT))
+        action, reason, alarm = desired(now.astimezone(HKT))
         changed = apply(action, reason)
         if changed or action != last_action:
-            msg = f"{reason} → {action or '照常開倉'}"
+            msg = f"{reason} → {'停開新倉（PAUSE）' if action else '照常開倉'}"
             log(msg)
             if changed or (last_action != "init" and action != last_action):
                 telegram(msg)
             last_action = action
+        if alarm:
+            wd.alert("ladder", "⚠ " + reason, now)
+        else:
+            wd.clear("ladder")
         wd.check(now)
         time.sleep(LOOP_SEC)
 

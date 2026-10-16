@@ -177,7 +177,7 @@ def pnl_daily(t):
 def write_ladder(t, M):
     """[R199] 風控級別寫入 ZHUGE_LADDER_FILE（冇設就唔寫，例如部機）：一行「級別 day|night YYYY-MM-DD HH:MM」，
     級別同 risk_report.ladder_level 一致（A／B／C／D，夜盤 ×1.5）。龍飛陣 VM 嘅 longfei_guard.py 讀：
-    Ⓑ → PAUSE、Ⓒ／Ⓓ → STOP；讀唔到富途或冇緩衝就唔寫 → 檔案變舊 → guard 當 STOP（fail-safe）。"""
+    Ⓑ → PAUSE；Ⓒ／Ⓓ／硬止損／檔案變舊（讀唔到富途或冇緩衝就唔寫）→ 只發 Telegram（使用者 10-16 定）。"""
     p = os.environ.get("ZHUGE_LADDER_FILE", "").strip()
     hard = bool(M) and M.get("gap", 1) < 0                     # RISK_LADDER §6b：硬止損都當 Ⓓ（STOP）
     if not p or not M or (M.get("cushion") is None and not hard):
@@ -256,7 +256,7 @@ def cycle(equity, cushion_line, stop_line, mm_thr=0.30):
         try:
             write_ladder(t, M)
         except OSError as e:
-            print(f"  ⚠ 寫風控級別檔失敗：{e.__class__.__name__}（龍飛陣 guard 會當 STOP）")
+            print(f"  ⚠ 寫風控級別檔失敗：{e.__class__.__name__}（龍飛陣 guard 會發 Telegram）")
         jump = mm_jump(t, M, OUT / "margin_base.json", mm_thr)
         if jump:
             cur["mm_jump"] = jump
