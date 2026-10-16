@@ -195,6 +195,13 @@ with tempfile.TemporaryDirectory() as td:
     check("未開 ETF_SEC：期貨級別管全部產品", names(g.dirs_for("fut", False)) == ["ai", "ai_QQQ", "ai_SPY"])
     check("開 ETF_SEC：期貨只管 HSI", names(g.dirs_for("fut", True)) == ["ai"])
     check("開 ETF_SEC：證券管 SPY／QQQ", names(g.dirs_for("sec", True)) == ["ai_QQQ", "ai_SPY"])
+    os.environ["LONGFEI_REAL_PRODUCTS"] = "SPY,HSI"     # [R209] 真倉程式
+    g = importlib.reload(g)
+    check("真倉資料夾入 guard", [l for l, _ in g.DIRS][-2:] == ["SPY真倉", "HSI真倉"])
+    check("真倉：期貨級別管 HSI 同 HSI 真倉", names(g.dirs_for("fut", True)) == ["ai", "ai_real_HSI"])
+    check("真倉：證券級別管 ETF 同 ETF 真倉", names(g.dirs_for("sec", True)) == ["ai_QQQ", "ai_SPY", "ai_real_SPY"])
+    del os.environ["LONGFEI_REAL_PRODUCTS"]
+    g = importlib.reload(g)
     sl.write_text("B sec 2026-10-19 10:00\n", encoding="utf-8")
     from datetime import timezone as _tz             # noqa: E402
     now = datetime(2026, 10, 19, 10, 5, tzinfo=g.HKT)

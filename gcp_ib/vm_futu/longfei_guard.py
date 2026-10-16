@@ -20,6 +20,9 @@ DATA = Path(os.environ.get("AI_DATA_DIR") or "~/zhuge/ai_trader").expanduser()
 # [R202] 龍飛陣多產品：HSI 用 DATA；LONGFEI_EXTRA_PRODUCTS（例如 SPY,QQQ,DIA）各用 DATA_<產品>（zhuge-longfei@<產品>.service）
 EXTRA = [x.strip().upper() for x in os.environ.get("LONGFEI_EXTRA_PRODUCTS", "").split(",") if x.strip()]
 DIRS = [("HSI", DATA)] + [(p, DATA.with_name(f"{DATA.name}_{p}")) for p in EXTRA]
+# [R209] 真倉程式（zhuge-longfei-real@<產品>）：標籤「<產品>真倉」，資料 ~/zhuge/ai_trader_real_<產品>
+REAL = [x.strip().upper() for x in os.environ.get("LONGFEI_REAL_PRODUCTS", "").split(",") if x.strip()]
+DIRS += [(f"{p}真倉", DATA.with_name(f"{DATA.name}_real_{p}")) for p in REAL]
 LADDER = Path(os.environ.get("ZHUGE_LADDER_FILE") or "~/zhuge/ladder_level").expanduser()
 # [R205] 美股 ETF 喺證券戶口：LONGFEI_ETF_SEC_LADDER=1 先改跟證券戶口級別檔（轉真倉前、證券戶口入咗錢先開，RISK_LADDER §6b）；
 # 未開就照舊跟期貨戶口（戶口級風控，全部產品一齊）
@@ -131,7 +134,9 @@ class Watchdog:
             hb, age = {}, None
         qty = hb.get("qty") or 0
         tag = f"[{self.label}] "
-        unit = "zhuge-longfei" if self.label == "HSI" else f"zhuge-longfei@{self.label}"
+        prod = self.label.replace("真倉", "")
+        unit = (f"zhuge-longfei-real@{prod}" if self.label.endswith("真倉") else
+                "zhuge-longfei" if self.label == "HSI" else f"zhuge-longfei@{self.label}")
         booting = time.monotonic() - START < HB_STALE_MIN * 60          # 啱開機：bot 未寫第一個心跳，唔好誤報
         if (age is None or age > HB_STALE_MIN) and not booting:
             what = "冇心跳檔" if age is None else f"{age:.0f} 分鐘冇心跳"
@@ -159,7 +164,7 @@ class Watchdog:
 def dirs_for(key, etf_sec=None):
     """[R205] 某個級別檔管邊啲產品資料夾：未開 ETF_SEC → 期貨級別管全部；開咗 → HSI 跟期貨、ETF 跟證券。"""
     etf_sec = ETF_SEC if etf_sec is None else etf_sec
-    return [d for l, d in DIRS if not etf_sec or (l == "HSI") == (key == "fut")]
+    return [d for l, d in DIRS if not etf_sec or (l.replace("真倉", "") == "HSI") == (key == "fut")]
 
 
 def main():

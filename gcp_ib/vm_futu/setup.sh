@@ -39,6 +39,7 @@ if grep -q '^ANTHROPIC_API_KEY=sk-ant-' "$H/zhuge/env"; then
     P=${u#zhuge-longfei@}; P=${P%.service}
     echo " $EXTRA " | grep -q " $P " || { sudo systemctl disable --now "$u"; echo "已停 $u（唔喺 LONGFEI_EXTRA_PRODUCTS）"; }
   done
+  sudo bash "$REPO/gcp_ib/vm_futu/longfei_units.sh" "$U" "$H"   # [R209] 真倉程式（LONGFEI_REAL_PRODUCTS）
   sudo systemctl restart zhuge-longfei-guard.service   # 重讀產品清單
   echo "龍飛陣：$(grep -oE '^TRD_ENV=.*' "$REPO/gcp_ib/vm_futu/settings.env")；產品 HSI ${EXTRA}"
 else

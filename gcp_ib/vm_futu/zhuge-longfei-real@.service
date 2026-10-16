@@ -1,0 +1,15 @@
+[Unit]
+Description=Zhuge 龍飛陣 %i 真倉（R209；LONGFEI_INSTANCE=REAL，要 settings.env 嘅 LONGFEI_REAL_PRODUCTS 列明先落真單；模擬倉 zhuge-longfei／zhuge-longfei@%i 照跑）
+After=zhuge-opend.service zhuge-longfei-guard.service network-online.target
+Wants=zhuge-opend.service zhuge-longfei-guard.service
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/20260918/hsi_ai_trader
+EnvironmentFile=@HOME@/zhuge/env
+EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
+# EnvironmentFile 會蓋過 Environment=，所以喺 ExecStart 用 env 寫死（資料夾同模擬倉分開）
+ExecStart=/usr/bin/env PRODUCT=%i LONGFEI_INSTANCE=REAL AI_DATA_DIR=@HOME@/zhuge/ai_trader_real_%i @HOME@/zhuge-venv/bin/python bot.py
+Restart=always
+RestartSec=60
+[Install]
+WantedBy=multi-user.target
