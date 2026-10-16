@@ -114,7 +114,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R199", auto_risk.SCRIPT_VERSION == "R199")
+check("SCRIPT_VERSION R205", auto_risk.SCRIPT_VERSION == "R205")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
@@ -135,6 +135,61 @@ check("mm_jump 歸總指揮", main.futu_alert_team("mm_jump") == "總指揮")
 FAKE.clear()
 client.post("/", data=json.dumps({**body, "metrics": {"equity": 1, "delta": {}, "stop_use": {}}}), content_type="application/json")
 check("冇 stress 就唔寫 stress 檔", main.FUTU_STRESS_FILE not in FAKE)
+
+print("\n=== [R205] 證券戶口監察（龍飛陣 ETF 轉真倉前）===")
+SL = risk_report.sec_ladder_level
+check("證券 35k → A", SL(35_000) == "A")
+check("證券 25k → B", SL(25_000) == "B")
+check("證券 15k → C", SL(15_000) == "C")
+check("證券 5k → D", SL(5_000) == "D")
+FUT = {"account": "期貨帳戶", "currency": "HKD", "total_assets": 500_000, "maintenance_margin": 400_000}
+SEC = {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 300_000, "maintenance_margin": 0, "market_val": 0}
+f_, s_ = risk_report.pick_accounts([SEC, FUT])
+check("按標籤揀：證券戶口排前都唔會當期貨", f_ is FUT and s_ is SEC)
+f_, s_ = risk_report.pick_accounts([{"currency": "HKD", "total_assets": 1}])
+check("舊檔冇標籤：照舊揀第一個港幣戶口、冇證券", f_ is not None and s_ is None)
+f_, s_ = risk_report.pick_accounts([FUT])
+check("冇證券戶口 → None", f_ is FUT and s_ is None)
+
+base = {"gap": 1, "stop_use": {}, "delta": {}}
+a = auto_risk.alerts({**base, "sec": {"cushion": 25_000, "ladder": "B", "exposed": True}}, 60_000, 0.8)
+check("證券有倉、Ⓑ → sec_margin 警報", "sec_margin" in a and "→ B" in a["sec_margin"], a)
+a = auto_risk.alerts({**base, "sec": {"cushion": 0, "ladder": "D", "exposed": False}}, 60_000, 0.8)
+check("證券冇倉冇孖展（未入錢）→ 唔警報", "sec_margin" not in a, a)
+a = auto_risk.alerts({**base, "sec": {"cushion": 90_000, "ladder": "A", "exposed": True}}, 60_000, 0.8)
+check("證券 Ⓐ → 唔警報", "sec_margin" not in a, a)
+
+with tempfile.TemporaryDirectory() as td:
+    fl, sl = Path(td) / "ladder_level", Path(td) / "ladder_level_sec"
+    os.environ["ZHUGE_LADDER_FILE"], os.environ["ZHUGE_SEC_LADDER_FILE"] = str(fl), str(sl)
+    t = datetime(2026, 10, 19, 10, 0)
+    auto_risk.write_ladder(t, {"gap": 1, "cushion": 90_000, "sec": {"ladder": "B"}})
+    check("期貨級別檔照寫", fl.read_text(encoding="utf-8").startswith("A day 2026-10-19 10:00"), fl.read_text(encoding="utf-8"))
+    check("證券級別檔寫 B sec", sl.read_text(encoding="utf-8").startswith("B sec 2026-10-19 10:00"), sl.read_text(encoding="utf-8"))
+    auto_risk.write_ladder(t, {"gap": -1, "cushion": 90_000, "sec": {"ladder": "A"}})
+    check("硬止損 → 證券都寫 D hard_stop", sl.read_text(encoding="utf-8").startswith("D sec") and "hard_stop" in sl.read_text(encoding="utf-8"))
+    sl.unlink()
+    auto_risk.write_ladder(t, {"gap": 1, "cushion": 90_000})
+    check("冇 sec 數據 → 唔寫證券檔", not sl.exists())
+    del os.environ["ZHUGE_LADDER_FILE"], os.environ["ZHUGE_SEC_LADDER_FILE"]
+
+    os.environ["LONGFEI_EXTRA_PRODUCTS"], os.environ["AI_DATA_DIR"] = "SPY,QQQ", str(Path(td) / "ai")
+    sys.path.insert(0, "/home/user/20260918/gcp_ib/vm_futu")
+    import importlib, longfei_guard as g                # noqa: E402
+    g = importlib.reload(g)
+    names = lambda ds: sorted(d.name for d in ds)
+    check("未開 ETF_SEC：期貨級別管全部產品", names(g.dirs_for("fut", False)) == ["ai", "ai_QQQ", "ai_SPY"])
+    check("開 ETF_SEC：期貨只管 HSI", names(g.dirs_for("fut", True)) == ["ai"])
+    check("開 ETF_SEC：證券管 SPY／QQQ", names(g.dirs_for("sec", True)) == ["ai_QQQ", "ai_SPY"])
+    sl.write_text("B sec 2026-10-19 10:00\n", encoding="utf-8")
+    from datetime import timezone as _tz             # noqa: E402
+    now = datetime(2026, 10, 19, 10, 5, tzinfo=g.HKT)
+    act, why, alarm = g.desired(now, sl)
+    check("guard 讀證券級別 B → PAUSE、唔警報", act == "PAUSE" and not alarm and "sec" in why, (act, why, alarm))
+    sl.write_text("D sec 2026-10-19 10:00\n", encoding="utf-8")
+    act, why, alarm = g.desired(now, sl)
+    check("guard 讀證券級別 D → 只警報唔停", act is None and alarm, (act, why, alarm))
+    del os.environ["LONGFEI_EXTRA_PRODUCTS"], os.environ["AI_DATA_DIR"]
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -21,6 +21,10 @@ DATA = Path(os.environ.get("AI_DATA_DIR") or "~/zhuge/ai_trader").expanduser()
 EXTRA = [x.strip().upper() for x in os.environ.get("LONGFEI_EXTRA_PRODUCTS", "").split(",") if x.strip()]
 DIRS = [("HSI", DATA)] + [(p, DATA.with_name(f"{DATA.name}_{p}")) for p in EXTRA]
 LADDER = Path(os.environ.get("ZHUGE_LADDER_FILE") or "~/zhuge/ladder_level").expanduser()
+# [R205] 美股 ETF 喺證券戶口：LONGFEI_ETF_SEC_LADDER=1 先改跟證券戶口級別檔（轉真倉前、證券戶口入咗錢先開，RISK_LADDER §6b）；
+# 未開就照舊跟期貨戶口（戶口級風控，全部產品一齊）
+SEC_LADDER = Path(os.environ.get("ZHUGE_SEC_LADDER_FILE") or "~/zhuge/ladder_level_sec").expanduser()
+ETF_SEC = os.environ.get("LONGFEI_ETF_SEC_LADDER", "").strip() == "1"
 LADDER_MAX_AGE_MIN = float(os.environ.get("LADDER_MAX_AGE_MIN", "30"))   # RISK_LADDER §6b
 HB_STALE_MIN = float(os.environ.get("WATCHDOG_STALE_MIN", "10"))
 ERR_ALERT = int(os.environ.get("WATCHDOG_ERRORS", "3"))
@@ -52,10 +56,10 @@ def telegram(text):
         return False
 
 
-def desired(now):
-    """回傳 (動作, 原因, 要唔要警報)：動作只會係 None 或 PAUSE（Ⓑ）。"""
+def desired(now, ladder=None):
+    """回傳 (動作, 原因, 要唔要警報)：動作只會係 None 或 PAUSE（Ⓑ）。ladder 預設期貨戶口級別檔。"""
     try:
-        raw = LADDER.read_text(encoding="utf-8")
+        raw = (ladder or LADDER).read_text(encoding="utf-8")
         lv, sess, d, hm = raw.split()[:4]
         ts = datetime.strptime(f"{d} {hm}", "%Y-%m-%d %H:%M").replace(tzinfo=HKT)
     except FileNotFoundError:
@@ -152,27 +156,39 @@ class Watchdog:
             self.clear("halted")
 
 
+def dirs_for(key, etf_sec=None):
+    """[R205] 某個級別檔管邊啲產品資料夾：未開 ETF_SEC → 期貨級別管全部；開咗 → HSI 跟期貨、ETF 跟證券。"""
+    etf_sec = ETF_SEC if etf_sec is None else etf_sec
+    return [d for l, d in DIRS if not etf_sec or (l == "HSI") == (key == "fut")]
+
+
 def main():
     for _, d in DIRS:
         d.mkdir(parents=True, exist_ok=True)
     wds = [Watchdog(label, d) for label, d in DIRS]
     wd = wds[0]
-    last_action = "init"
-    log(f"guard 開始：{', '.join(f'{l}={d}' for l, d in DIRS)} LADDER={LADDER}")
+    last = {"fut": "init", "sec": "init"}
+    log(f"guard 開始：{', '.join(f'{l}={d}' for l, d in DIRS)} LADDER={LADDER}"
+        + (f" ETF 跟證券戶口 {SEC_LADDER}" if ETF_SEC else ""))
     while True:
         now = datetime.now(timezone.utc)
-        action, reason, alarm = desired(now.astimezone(HKT))
-        changed = any([apply(action, reason, d) for _, d in DIRS])   # 戶口級風控：全部產品一齊
-        if changed or action != last_action:
-            msg = f"{reason} → {'停開新倉（PAUSE）' if action else '照常開倉'}"
-            log(msg)
-            if changed or (last_action != "init" and action != last_action):
-                telegram(msg)
-            last_action = action
-        if alarm:
-            wd.alert("ladder", "⚠ " + reason, now)
-        else:
-            wd.clear("ladder")
+        res = {"fut": desired(now.astimezone(HKT))}
+        if ETF_SEC:
+            res["sec"] = desired(now.astimezone(HKT), SEC_LADDER)
+        for key, (action, reason, alarm) in res.items():
+            dirs = dirs_for(key)
+            tag = "[證券戶口] " if key == "sec" else ""
+            changed = any([apply(action, reason, d) for d in dirs])   # 戶口級風控：同一戶口嘅產品一齊
+            if changed or action != last[key]:
+                msg = f"{tag}{reason} → {'停開新倉（PAUSE）' if action else '照常開倉'}"
+                log(msg)
+                if changed or (last[key] != "init" and action != last[key]):
+                    telegram(msg)
+                last[key] = action
+            if alarm:
+                wd.alert(f"ladder_{key}", "⚠ " + tag + reason, now)
+            else:
+                wd.clear(f"ladder_{key}")
         for w in wds:
             w.check(now)
         time.sleep(LOOP_SEC)
