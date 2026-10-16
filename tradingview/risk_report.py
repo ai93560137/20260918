@@ -148,9 +148,27 @@ def load(book_path, quotes_path=None):
                                    "mult": 50 if m.group(1) == "ES" else 5, "ccy": "USD",
                                    "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or r.get("open_price") or 0,
                                    "code": code, "group": "標普期貨人手"})
+    # [R196] 富途實際恒指／MHI 期權：book 冇就自動當一條腿計入模型（例如風揚陣方向一勒式成交後唔使人手改 book）
+    for code, r in FP.items():
+        m = re.match(r"^HK\.(HSI|MHI)(\d{2})(\d{2})(\d{2})([CP])(\d+)$", code)
+        if not m or not r.get("qty"):
+            continue
+        booked = sum(p["qty"] for p in b["positions"] if p["type"] in ("call", "put") and derive_code(p) == code)
+        extra = r["qty"] - booked
+        if extra:
+            root, K = m.group(1), int(m.group(6)) / 1000
+            b["positions"].append({"id": f"{root} {m.group(3)}/{m.group(4)} {m.group(5)}{K:g}（富途實際 {r['qty']:+g}）",
+                                   "und": "HSI", "type": "call" if m.group(5) == "C" else "put", "K": K,
+                                   "exp": f"20{m.group(2)}-{m.group(3)}-{m.group(4)}", "qty": extra,
+                                   "mult": 50 if root == "HSI" else 10, "ccy": "HKD",
+                                   "open": r.get("open_price") or r.get("last") or 0,
+                                   "price": r.get("last") or r.get("open_price") or 0, "code": code, "settle": "cash",
+                                   "group": "HSI 週權 strangle" if root == "HSI" else "恒指期權人手"})
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
-    val = date.fromisoformat(b["valuation_date"])
+    # [R197] 有富途快照（即時跑）就用今日（香港）計到期日數；離線只有 book 先用 book 嘅 valuation_date
+    val = datetime.now(HKT_TZ).date() if qf else date.fromisoformat(b["valuation_date"])
+    b["valuation_date"] = val.isoformat()
     for u, d in b["underlyings"].items():
         d["F_src"] = f"截圖／book（{d.get('note', '')}）"
         for c in d.get("codes", DEFAULT_UND_CODES.get(u, [])):
