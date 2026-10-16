@@ -211,5 +211,25 @@ check("頁面有今日／本週／本月三個區塊", all(k in page for k in ("
 check("每個區塊下有 A／B／C 白話", page.count("⬆️ 高位已出現了嗎？") == 3 and page.count("🅱️ 機率法") >= 6)
 check("明細表與說明收起來", "<details class='fy-more'><summary>📋" in page and "ℹ️ 怎樣算的" in page)
 
+print("\n=== [R198] 高位低位同一輪觸發 → 合併一則 ===")
+ES_SYM = "US.ES_FRONT"
+_hi = {"id": "week:2026-W42:high:C", "kind": "week", "key": "2026-W42", "side": "high", "strat": "C", "price": 7786.0,
+       "ext": 7886.0, "dist": 100.5, "prob": 0.09, "text": "hi", "sent": False}
+_lo = {"id": "week:2026-W42:low:C", "kind": "week", "key": "2026-W42", "side": "low", "strat": "C", "price": 7786.0,
+       "ext": 7717.0, "dist": 69.0, "prob": 0.24, "text": "lo", "sent": False}
+_other = dict(_hi, id="week:2026-W42:high:B", strat="B", text="b")
+merged = main._peak_merge_pairs([dict(_hi), dict(_lo), dict(_other)], ES_SYM)
+mh, ml, mo = merged
+check("[R198] 高位那則改合併文字、低位標 merged_into", "高位、低位都可能已出現" in mh["text"] and ml.get("merged_into") == _hi["id"]
+      and mh.get("merged") == _lo["id"], merged)
+check("[R198] 只有一邊嘅策略唔郁", mo["text"] == "b" and "merged_into" not in mo)
+for k in ("範圍 7,717–7,886", "高低差 169 點", "離高位 100 點、離低位 69 點", "餘下時間大概率喺呢個範圍內上落",
+          "再創新高的機率 9%、再創新低的機率 24%", "唔係矛盾", "不是交易建議"):
+    check(f"[R198] 合併文字有「{k}」", k in mh["text"], mh["text"])
+check("[R198] 開頭有陣名同市場", mh["text"].startswith("⚠️【風揚陣】ES"), mh["text"][:30])
+main.gcs_write_text(main.futu_signal_file(SYM), json.dumps([mh, ml, mo]))
+rep3 = client.get("/?view=futu_range&report=signals").get_json()
+check("[R198] 排程只取合併嗰則同單邊嗰則，低位唔單獨發", {x["id"] for x in rep3["signals"]} == {_hi["id"], _other["id"]}, rep3)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -4231,6 +4231,37 @@ def _peak_signal_text(kind, side, strat, period, s, price, symbol=None):
     return "\n".join(lines)
 
 
+def _peak_both_text(kind, strat, hi, lo, price, symbol=None):
+    """[R198] 同一段、同一策略、同一輪高位低位一齊觸發 → 合併成一則（使用者 10-16：兩個訊息變一個，加埋解釋）。"""
+    zh_kind = {"day": "交易日", "week": "週", "month": "月"}[kind]
+    acc_h, acc_l = _peak_acc(symbol, f"{kind}/high/{strat}"), _peak_acc(symbol, f"{kind}/low/{strat}")
+    lines = [f"⚠️{FENGYANG_TAG}{futu_market(symbol)['zh']} {PEAK_ZH[kind]}高位、低位都可能已出現｜{PEAK_STRAT_ZH[strat]}",
+             f"{PEAK_ZH[kind]}範圍 {lo['ext']:,.0f}–{hi['ext']:,.0f}（高低差 {hi['ext'] - lo['ext']:,.0f} 點），現價 {price:,.0f}"
+             f"（離高位 {hi['dist']:,.0f} 點、離低位 {lo['dist']:,.0f} 點）",
+             f"意思：{PEAK_ZH[kind]}餘下時間大概率喺呢個範圍內上落。",
+             f"B 機率法：之後再創新高的機率 {hi['prob'] * 100:.0f}%、再創新低的機率 {lo['prob'] * 100:.0f}%"]
+    if acc_h is not None or acc_l is not None:
+        lines.append("回測：這類通知" + "、".join(f"{zh_kind}{z} {a:.0%}" for z, a in (("高位", acc_h), ("低位", acc_l)) if a is not None)
+                     + f" 準確（{PEAK_STRAT_ZH[strat]}）")
+    lines.append(f"（{PEAK_STRAT_ZH[strat]}係同一個時間點分別判斷高位、低位，兩邊都離現價夠遠就會一齊出現，唔係矛盾。）")
+    lines.append("統計判斷，不是交易建議。")
+    return "\n".join(lines)
+
+
+def _peak_merge_pairs(add, symbol):
+    """[R198] 同一輪新觸發、同段同策略嘅高位＋低位：高位那則改用合併文字，低位那則標 merged_into（唔再單獨發）。"""
+    by = {}
+    for f in add:
+        by.setdefault((f["kind"], f["key"], f["strat"]), {})[f["side"]] = f
+    for (kind, _key, strat), sides in by.items():
+        hi, lo = sides.get("high"), sides.get("low")
+        if hi and lo:
+            hi["text"] = _peak_both_text(kind, strat, hi, lo, hi["price"], symbol)
+            hi["merged"] = lo["id"]
+            lo["merged_into"] = hi["id"]
+    return add
+
+
 def futu_peak_update(symbol, now=None):
     """每包 5 分 K 到達時重算；任一策略第一次觸發就記一筆通知（同一段、同一邊、同一策略只記一次）。"""
     try:
@@ -4258,6 +4289,7 @@ def futu_peak_update(symbol, now=None):
             add = [f for f in fresh if f["id"] not in seen]
             if not add:
                 return None, 0
+            _peak_merge_pairs(add, symbol)                           # [R198]
             return (items + add)[-FUTU_SIGNAL_KEEP:], len(add)
 
         added = gcs_update(futu_signal_file(symbol), mutate, default_factory=list)
@@ -4307,7 +4339,7 @@ def futu_signals_report(symbol, ack=None):
         return {"status": "ok", "acked": n}
     items = gcs_read_json(futu_signal_file(symbol), [])
     pending = [{"id": e["id"], "text": e["text"]} for e in (items if isinstance(items, list) else [])
-               if isinstance(e, dict) and not e.get("sent")]
+               if isinstance(e, dict) and not e.get("sent") and not e.get("merged_into")]       # [R198] 合併咗嘅低位唔單獨發
     paper = futu_paper_state(symbol)                                 # [R116]
     pending += [{"id": e["id"], "text": e["text"]} for e in (paper or {}).get("notices", [])
                 if isinstance(e, dict) and not e.get("sent")]
