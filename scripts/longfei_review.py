@@ -232,7 +232,7 @@ def _group(rows, keyf):
 
 
 def readiness(data):
-    """[R206] 真倉準備：bot 每 30 分鐘唯讀查真實戶口，結果喺 status.real_preflight。"""
+    """[R208] 真倉準備：bot 每 30 分鐘唯讀查真實戶口，結果喺 status.real_preflight。"""
     yn = lambda v: "—" if v is None else ("✅" if v else "❌")
     L = ["\n### 真倉準備（唯讀檢查真實戶口）\n", "| 產品 | 而家 | 搵到戶口 | 有錢 | 戶口類型 | 夠買 | 可沽空 | PDT | 結論 | 檢查時間 |",
          "|---|---|---|---|---|---|---|---|---|---|"]

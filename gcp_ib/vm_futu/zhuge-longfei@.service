@@ -9,7 +9,7 @@ Environment=AI_DATA_DIR=@HOME@/zhuge/ai_trader_%i
 Environment=PRODUCT=%i
 EnvironmentFile=@HOME@/zhuge/env
 EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
-# 使用者 2026-10-16：美國產品唔隨 HSI 轉 REAL（TRD_ENV 寫死 SIMULATE）；[R206] 美國產品真倉只由 LONGFEI_REAL_PRODUCTS 控制（config.py）
+# 使用者 2026-10-16：美國產品唔隨 HSI 轉 REAL（TRD_ENV 寫死 SIMULATE）；[R208] 美國產品真倉只由 LONGFEI_REAL_PRODUCTS 控制（config.py）
 ExecStart=/usr/bin/env TRD_ENV=SIMULATE @HOME@/zhuge-venv/bin/python bot.py
 Restart=always
 RestartSec=60
