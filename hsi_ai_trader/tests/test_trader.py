@@ -429,3 +429,23 @@ def test_etf_stops_keep_cents():
     a, stop, *_ = validate_decision({"action": "UPDATE_STOP", "stop_price": 769.555}, position=-12, entry=770.02,
                                     last=769.0, cfg=cfg, remaining_loss=10000, can_open=True, trades_today=0)
     assert a == "UPDATE_STOP" and stop in (769.55, 769.56)
+
+
+def test_review_fields_on_close(env):
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "突破",
+               "_lessons": "abcd1234"}
+    advance(t, minutes=5)
+    tr.tick()
+    for p in (25030, 24990, 24940):                 # 先浮賺 29，再跌穿止蝕（觸發嗰下都計入 MAE）
+        b.price = p
+        advance(t, seconds=5)
+        tr.tick()
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines()
+             if '"CLOSE"' in l][-1]
+    assert close["mfe"] == 29 and close["mae"] == -61 and close["risk_pts"] == 50
+    assert close["r_multiple"] == round(close["points"] / 50, 2) and close["lessons"] == "abcd1234"
+    assert close["confidence"] == 0.7 and close["hold_min"] == 0.2 and close["open_reason"] == "突破"
+    dec = [json.loads(l) for l in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert dec["lessons"] == "abcd1234" and dec["session"] == "DAY_AM"
