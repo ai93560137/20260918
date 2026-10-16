@@ -3153,6 +3153,8 @@ def _scan_clean_row(raw):
 
 
 LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
+LONGFEI_PRODUCTS = ["HSI", "MES", "MNQ", "MYM"]      # [R202] 每隻產品一個程式，各存 longfei/<產品>/latest.json
+LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指"}
 LONGFEI_MAX_TRADES = 500
 LONGFEI_MAX_DECISIONS = 30
 LONGFEI_MAX_BYTES = 400_000
@@ -3172,12 +3174,16 @@ def handle_longfei_push(payload):
     text = json.dumps(doc, ensure_ascii=False, default=str)
     if len(text.encode("utf-8")) > LONGFEI_MAX_BYTES:
         return jsonify({"status": "error", "message": "longfei_push: too large"}), 413
+    product = str(status.get("product") or "HSI").upper()
+    if product not in LONGFEI_PRODUCT_NAMES:
+        return jsonify({"status": "error", "message": "longfei_push: unknown product"}), 422
     try:
-        gcs_write_text(f"{LONGFEI_DIR}/latest.json", text)
+        gcs_write_text(f"{LONGFEI_DIR}/{product}/latest.json", text)
     except StorageError as exc:
         log_event(f"⚠️ [龍飛陣寫入失敗] {exc}", severity="ERROR", component="longfei")
         return jsonify({"status": "error", "message": "storage write failed"}), 503
-    return jsonify({"status": "stored", "trades": len(doc["trades"]), "decisions": len(doc["decisions"])}), 200
+    return jsonify({"status": "stored", "product": product, "trades": len(doc["trades"]),
+                    "decisions": len(doc["decisions"])}), 200
 
 
 def handle_scan_push(payload):
@@ -7365,10 +7371,11 @@ def handle_canary_get(req):
 LONGFEI_STALE_MIN = 15
 
 
-def longfei_metrics(trades):
-    """由 CLOSE 紀錄計績效；點數未扣佣金。Sharpe 用每日點數（按平倉日 HKT）年化 √252，少過 5 日唔計。"""
-    closes = [t for t in trades if t.get("type") == "CLOSE" and isinstance(t.get("points"), (int, float))]
-    pts = [float(t["points"]) for t in closes]
+def longfei_metrics(trades, key="points"):
+    """由 CLOSE 紀錄計績效；key="points"（點）或 "pnl_hkd_gross"（HK$，跨產品合計用）；未扣佣金。
+    Sharpe 用每日數值（按平倉日 HKT）年化 √252，少過 5 日唔計。"""
+    closes = [t for t in trades if t.get("type") == "CLOSE" and isinstance(t.get(key), (int, float))]
+    pts = [float(t[key]) for t in closes]
     n = len(pts)
     wins = [p for p in pts if p > 0]
     losses = [p for p in pts if p < 0]
@@ -7383,7 +7390,7 @@ def longfei_metrics(trades):
     by_day = {}
     for t in closes:
         day = str(t.get("ts") or "")[:10]
-        by_day[day] = by_day.get(day, 0.0) + float(t["points"])
+        by_day[day] = by_day.get(day, 0.0) + float(t[key])
     days = list(by_day.values())
     sharpe = None
     if len(days) >= 5:
@@ -7396,18 +7403,27 @@ def longfei_metrics(trades):
             "max_dd": dd if n else None, "sharpe": sharpe, "days": len(days)}
 
 
-def longfei_data():
-    doc = gcs_read_json(f"{LONGFEI_DIR}/latest.json", None)
-    if not isinstance(doc, dict):
-        return {"status": "empty", "message": "龍飛陣未有數據上載（程式啱啱開或者未開）。"}
+def _longfei_one(doc):
     trades = [t for t in (doc.get("trades") or []) if isinstance(t, dict)]
-    age = None
-    if isinstance(doc.get("received_ts"), (int, float)):
-        age = (now_ts() - doc["received_ts"]) / 60
-    return {"status": "ok", "state": doc.get("status") or {}, "received_utc": doc.get("received_utc"),
-            "age_min": age, "stale": age is None or age > LONGFEI_STALE_MIN,
-            "metrics": longfei_metrics(trades), "trades": trades,
+    age = (now_ts() - doc["received_ts"]) / 60 if isinstance(doc.get("received_ts"), (int, float)) else None
+    return {"state": doc.get("status") or {}, "received_utc": doc.get("received_utc"), "age_min": age,
+            "stale": age is None or age > LONGFEI_STALE_MIN, "metrics": longfei_metrics(trades),
+            "metrics_hkd": longfei_metrics(trades, "pnl_hkd_gross"), "trades": trades,
             "decisions": [d for d in (doc.get("decisions") or []) if isinstance(d, dict)]}
+
+
+def longfei_data():
+    products = {}
+    for p in LONGFEI_PRODUCTS:
+        doc = gcs_read_json(f"{LONGFEI_DIR}/{p}/latest.json", None)
+        if doc is None and p == "HSI":                       # R200 舊位置（未分產品）
+            doc = gcs_read_json(f"{LONGFEI_DIR}/latest.json", None)
+        if isinstance(doc, dict):
+            products[p] = _longfei_one(doc)
+    if not products:
+        return {"status": "empty", "message": "龍飛陣未有數據上載（程式啱啱開或者未開）。"}
+    all_trades = [t for v in products.values() for t in v["trades"]]
+    return {"status": "ok", "products": products, "total_hkd": longfei_metrics(all_trades, "pnl_hkd_gross")}
 
 
 def _lf_hkt(ts):
@@ -7421,87 +7437,119 @@ def _lf_hkt(ts):
         return "—"
 
 
-def build_longfei_page(data):
-    nav = page_nav("longfei")
-    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月，最多 1 張；程式負責落單同硬性風控"
-             "（每日虧損上限到咗即平倉停機）。</p></div>")
-    if data.get("status") != "ok":
-        return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
-    st, m = data["state"], data["metrics"]
-    env = st.get("trd_env") or "—"
-    stage = "模擬盤（富途模擬戶口）" if env == "SIMULATE" else ("真倉" if env == "REAL" else env)
+def _lf_run(st):
     if st.get("halted"):
-        run = f"⛔ 今日已停機：{st.get('halt_reason') or ''}"
-    elif st.get("stopped"):
-        run = "⛔ STOP 檔：停機"
-    elif st.get("paused"):
-        run = "⏸ 暫停開新倉（風控 Ⓑ）"
-    elif st.get("foreign_qty"):
-        run = f"⏸ 即月有其他倉 {st.get('foreign_qty'):+}，停開新倉"
-    else:
-        run = "✅ 運行中"
-    warn = ""
-    if data["stale"]:
-        age = data["age_min"]
-        warn = ("<div class='section' style='border-left:5px solid #d97706'><b style='color:#b45309'>⚠ 數據未更新</b>："
-                f"上次收到 {esc(_lf_hkt(data['received_utc']))}（{'—' if age is None else f'{age:.0f} 分鐘前'}），程式可能停咗。</div>")
+        return f"⛔ 今日已停機：{st.get('halt_reason') or ''}"
+    if st.get("stopped"):
+        return "⛔ STOP 檔：停機"
+    if st.get("paused"):
+        return "⏸ 暫停開新倉（風控 Ⓑ）"
+    if st.get("foreign_qty"):
+        return f"⏸ 即月有其他倉 {st.get('foreign_qty'):+}，停開新倉"
+    return "✅ 運行中"
+
+
+def _lf_card(title, value, desc=""):
+    return (f"<div class='card'><div class='card-title'>{title}</div><div class='card-value'>{value}</div>"
+            f"<div class='card-desc'>{desc}</div></div>")
+
+
+def _lf_metric_cards(m, unit, fmt_val):
+    pct = "—" if m["win_rate"] is None else f"{m['win_rate']:.0%}"
+    sharpe = "—" if m["trades"] == 0 else ("樣本不足" if m["sharpe"] is None else f"{m['sharpe']:.2f}")
+    f2 = lambda v: "—" if v is None else f"{v:.2f}"
+    return ("<div class='grid'>"
+            + _lf_card("勝率", pct, "贏嘅筆數 ÷ 總筆數")
+            + _lf_card("盈虧比 RRR", f2(m["rrr"]), "平均贏 ÷ 平均蝕")
+            + _lf_card("Sharpe ratio（年化）", sharpe, "每日平均 ÷ 標準差 × √252，要 ≥ 5 個交易日")
+            + _lf_card("獲利因子", f2(m["profit_factor"]), "總贏 ÷ 總蝕")
+            + _lf_card("每筆平均", fmt_val(m["expectancy"]), f"{unit}／筆")
+            + _lf_card("最大回撤", "—" if m["max_dd"] is None else fmt_val(-m["max_dd"]), "累計由高位最大跌幅")
+            + _lf_card("平均贏", fmt_val(m["avg_win"]), f"{unit}／筆")
+            + _lf_card("平均蝕", "—" if m["avg_loss"] is None else fmt_val(-m["avg_loss"]), f"{unit}／筆")
+            + "</div>")
+
+
+def _lf_product_section(p, d):
+    st, m = d["state"], d["metrics"]
+    env = st.get("trd_env") or "—"
+    stage = "模擬盤" if env == "SIMULATE" else ("真倉" if env == "REAL" else env)
     pos = st.get("pos")
     if pos:
-        side = "好倉" if pos.get("side", 0) > 0 else "淡倉"
-        pos_txt = f"{side} {pos.get('qty')} 張 @ {_cn(pos.get('entry'), 0)}"
-        pos_desc = f"止蝕 {_cn(pos.get('stop'), 0)}・止賺 {_cn(pos.get('target'), 0)}・{esc(_lf_hkt(pos.get('opened_at')))} 開"
+        pos_txt = f"{'好倉' if pos.get('side', 0) > 0 else '淡倉'} {pos.get('qty')} 張 @ {_cn(pos.get('entry'), 2 if p != 'HSI' else 0)}"
+        pos_desc = f"止蝕 {_cn(pos.get('stop'), 2)}・止賺 {_cn(pos.get('target'), 2)}・{esc(_lf_hkt(pos.get('opened_at')))} 開"
     else:
         pos_txt, pos_desc = "冇", "空手"
-    pct = lambda v: "—" if v is None else f"{v:.0%}"
-    sharpe = "—" if m["trades"] == 0 else ("樣本不足" if m["sharpe"] is None else f"{m['sharpe']:.2f}")
-    def card(title, value, desc=""):
-        return (f"<div class='card'><div class='card-title'>{title}</div><div class='card-value'>{value}</div>"
-                f"<div class='card-desc'>{desc}</div></div>")
+    warn = ""
+    if d["stale"]:
+        age = d["age_min"]
+        warn = ("<p style='color:#b45309'><b>⚠ 數據未更新</b>：上次收到 "
+                f"{esc(_lf_hkt(d['received_utc']))}（{'—' if age is None else f'{age:.0f} 分鐘前'}），程式可能停咗。</p>")
+    nd = 0 if p == "HSI" else 2
     top = ("<div class='grid'>"
-           + card("階段", esc(stage), esc(run))
-           + card("模擬盤進度", f"{m['trades']} / 10", "滿 10 筆先考慮轉真倉")
-           + card("而家持倉", esc(pos_txt), pos_desc)
-           + card("已平倉累計點數", "—" if not m["trades"] else _cn(m["points"], 0, sign=True), "一點 HK$50，未扣佣金")
+           + _lf_card("階段", esc(stage), esc(_lf_run(st)))
+           + _lf_card("模擬盤進度", f"{m['trades']} / 10", "滿 10 筆先考慮轉真倉")
+           + _lf_card("而家持倉", esc(pos_txt), pos_desc)
+           + _lf_card("已平倉累計點數", "—" if not m["trades"] else _cn(m["points"], nd, sign=True),
+                      f"合約 {esc(str(st.get('contract') or '—'))}；未扣佣金")
            + "</div>")
-    metrics = ("<div class='section'><h2>📊 績效指標</h2><div class='grid'>"
-               + card("勝率", pct(m["win_rate"]), "贏嘅筆數 ÷ 總筆數")
-               + card("盈虧比 RRR", "—" if m["rrr"] is None else f"{m['rrr']:.2f}", "平均贏點 ÷ 平均蝕點")
-               + card("Sharpe ratio（年化）", sharpe, "每日點數平均 ÷ 標準差 × √252，要 ≥ 5 個交易日")
-               + card("獲利因子", "—" if m["profit_factor"] is None else f"{m['profit_factor']:.2f}", "總贏點 ÷ 總蝕點")
-               + card("每筆平均", "—" if m["expectancy"] is None else _cn(m["expectancy"], 1, sign=True), "點／筆")
-               + card("最大回撤", "—" if m["max_dd"] is None else f"{m['max_dd']:,.0f} 點", "累計點數由高位最大跌幅")
-               + card("平均贏", "—" if m["avg_win"] is None else _cn(m["avg_win"], 1, sign=True), "點／筆")
-               + card("平均蝕", "—" if m["avg_loss"] is None else _cn(-m["avg_loss"], 1, sign=True), "點／筆")
-               + "</div><p class='muted' style='font-size:13px'>按已平倉成交計；點數未扣佣金同滑價；樣本少時只供參考。</p></div>")
-    rows = ""
-    opens = {}
-    for t in data["trades"]:
+    rows, opens = "", {}
+    for t in d["trades"]:
         if t.get("type") == "OPEN":
             opens[t.get("code")] = t
         elif t.get("type") == "CLOSE":
             o = opens.pop(t.get("code"), {})
-            p = t.get("points")
-            color = "" if not isinstance(p, (int, float)) else (" style='color:#15803d'" if p >= 0 else " style='color:#dc2626'")
+            pt = t.get("points")
+            color = "" if not isinstance(pt, (int, float)) else (" style='color:#15803d'" if pt >= 0 else " style='color:#dc2626'")
             rows += (f"<tr><td>{esc(_lf_hkt(t.get('opened_at') or o.get('ts')))}</td><td>{esc(_lf_hkt(t.get('ts')))}</td>"
-                     f"<td>{'好' if t.get('side', 0) > 0 else '淡'}</td><td>{_cn(t.get('entry'), 0)}</td><td>{_cn(t.get('price'), 0)}</td>"
-                     f"<td{color}>{_cn(p, 0, sign=True)}</td><td>{esc(str(o.get('reason') or '')[:80])}</td>"
+                     f"<td>{'好' if t.get('side', 0) > 0 else '淡'}</td><td>{_cn(t.get('entry'), nd)}</td><td>{_cn(t.get('price'), nd)}</td>"
+                     f"<td{color}>{_cn(pt, nd, sign=True)}</td><td>{esc(str(o.get('reason') or '')[:80])}</td>"
                      f"<td>{esc(str(t.get('reason') or '')[:60])}</td></tr>")
-    trades_html = ("<div class='section'><h2>📒 成交紀錄</h2>"
+    trades_html = ("<h3>📒 成交紀錄</h3>"
                    + ("<div style='overflow-x:auto'><table><tr><th>開倉</th><th>平倉</th><th>方向</th><th>開倉價</th><th>平倉價</th>"
                       "<th>點數</th><th>入場理由</th><th>出場原因</th></tr>" + rows + "</table></div>" if rows else
-                      "<p class='muted'>未有平倉成交。</p>") + "</div>")
+                      "<p class='muted'>未有平倉成交。</p>"))
     drows = "".join(
-        f"<tr><td>{esc(_lf_hkt(d.get('ts')))}</td><td>{esc(str(d.get('final') or '—'))}</td>"
-        f"<td>{_cn(d.get('last'), 0)}</td><td>{esc(str(d.get('reason') or '')[:120])}</td>"
-        f"<td>{esc(str(d.get('rejected') or ''))}</td></tr>" for d in reversed(data["decisions"][-10:]))
-    dec_html = ("<div class='section'><h2>🧠 最近決策（每 5 分鐘）</h2>"
-                + ("<div style='overflow-x:auto'><table><tr><th>時間</th><th>決定</th><th>價</th><th>理由</th><th>被拒原因</th></tr>"
-                   + drows + "</table></div>" if drows else "<p class='muted'>未有決策紀錄。</p>") + "</div>")
-    foot = (f"<p class='muted' style='font-size:13px'>數據收到時間 {esc(_lf_hkt(data['received_utc']))} HKT；"
-            "模擬盤成績唔係真金白銀交易，亦唔代表將來回報。</p>")
-    return html_page("龍飛陣", head + intro + warn + top + metrics + trades_html + dec_html + foot,
-                     "<meta http-equiv='refresh' content='300'>")
+        f"<tr><td>{esc(_lf_hkt(d2.get('ts')))}</td><td>{esc(str(d2.get('final') or '—'))}</td>"
+        f"<td>{_cn(d2.get('last'), nd)}</td><td>{esc(str(d2.get('reason') or '')[:120])}</td>"
+        f"<td>{esc(str(d2.get('rejected') or ''))}</td></tr>" for d2 in reversed(d["decisions"][-5:]))
+    dec_html = ("<h3>🧠 最近決策</h3>"
+                + ("<div style='overflow-x:auto'><table><tr><th>時間</th><th>決定</th><th>價</th><th>理由</th><th>風控紀錄</th></tr>"
+                   + drows + "</table></div>" if drows else "<p class='muted'>未有決策紀錄。</p>"))
+    return (f"<div class='section' id='lf-{p}'><h2>{esc(p)}・{esc(LONGFEI_PRODUCT_NAMES.get(p, p))}</h2>" + warn + top
+            + "<h3>📊 績效指標（點）</h3>" + _lf_metric_cards(m, "點", lambda v: "—" if v is None else _cn(v, 1, sign=True))
+            + trades_html + dec_html + "</div>")
+
+
+def build_longfei_page(data):
+    nav = page_nav("longfei")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
+    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期、微型標普（MES）、微型納指（MNQ）、"
+             "微型道指（MYM）即月，每隻最多 1 張；程式負責落單同硬性風控（每隻每日虧損上限 HK$10,000，到咗即平倉停機）。</p></div>")
+    if data.get("status") != "ok":
+        return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    prods = data["products"]
+    hk = lambda v: "—" if v is None else f"HK${v:+,.0f}"
+    orow = ""
+    for p in LONGFEI_PRODUCTS:
+        d = prods.get(p)
+        if not d:
+            orow += f"<tr><td>{p}</td><td colspan='6' class='muted'>未開始</td></tr>"
+            continue
+        m, mh, st = d["metrics"], d["metrics_hkd"], d["state"]
+        pos = st.get("pos")
+        orow += (f"<tr><td><a href='#lf-{p}'>{p}</a></td><td>{esc(_lf_run(st))}</td>"
+                 f"<td>{'—' if not pos else ('好' if pos.get('side', 0) > 0 else '淡') + ' ' + str(pos.get('qty'))}</td>"
+                 f"<td>{m['trades']} / 10</td><td>{'—' if m['win_rate'] is None else format(m['win_rate'], '.0%')}</td>"
+                 f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td><td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")
+    overview = ("<div class='section'><h2>🗂️ 總覽</h2><div style='overflow-x:auto'><table><tr><th>產品</th><th>狀態</th>"
+                "<th>持倉</th><th>模擬筆數</th><th>勝率</th><th>累計（HK$）</th><th>更新</th></tr>" + orow + "</table></div></div>")
+    total = ("<div class='section'><h2>📊 合計績效（全部產品，按 HK$）</h2>"
+             + _lf_metric_cards(data["total_hkd"], "HK$", lambda v: hk(v))
+             + "<p class='muted' style='font-size:13px'>美期按 1 美元 = 7.8 港元換算；未扣佣金同滑價；樣本少時只供參考。</p></div>")
+    secs = "".join(_lf_product_section(p, prods[p]) for p in LONGFEI_PRODUCTS if p in prods)
+    foot = "<p class='muted' style='font-size:13px'>模擬盤成績唔係真金白銀交易，亦唔代表將來回報。</p>"
+    return html_page("龍飛陣", head + intro + overview + total + secs + foot, "<meta http-equiv='refresh' content='300'>")
 
 
 def handle_longfei_get(req):
@@ -7511,7 +7559,9 @@ def handle_longfei_get(req):
         log_event(f"⚠️ [龍飛陣頁失敗] {exc}", severity="WARNING", component="longfei")
         data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
     if req.args.get("format") == "json":
-        out = {k: v for k, v in data.items() if k != "decisions"}
+        out = data if data.get("status") != "ok" else {
+            "status": "ok", "total_hkd": data["total_hkd"],
+            "products": {p: {k: v for k, v in d.items() if k != "decisions"} for p, d in data["products"].items()}}
         return _json_response(out, 200 if data.get("status") == "ok" else 503)
     return build_longfei_page(data)
 

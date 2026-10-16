@@ -8,9 +8,8 @@ import anthropic
 
 log = logging.getLogger("brain")
 
-SYSTEM = """You are the decision engine of an automated intraday trading bot for Hang Seng Index
-Futures (HSI, front month, HK$50 per index point, 1-point tick) on HKFE, day and night sessions.
-The product and point value are also given in the input (`risk.point_value_hkd`).
+SYSTEM = """You are the decision engine of an automated intraday trading bot for {product_line}.
+The product, market, tick and point value (converted to HKD) are also given in the input.
 
 Every 5 minutes you receive market data, the current position and the risk budget. Decide ONE action:
 - HOLD: do nothing.
@@ -48,8 +47,19 @@ def load_lessons(path: Path = LESSONS_FILE):
     return text, hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
 
 
-def build_system(lessons: str) -> str:
-    return SYSTEM + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
+def product_line(cfg) -> str:
+    from markets import spec_for
+    sp = spec_for(cfg.product)
+    sess = ("HKFE day and night sessions (HKT)" if sp.market == "HK"
+            else "CME Globex nearly 24h, Sunday 18:00 to Friday 17:00 US Eastern, daily break 17:00-18:00 ET")
+    return (f"{sp.name} ({sp.product}, front month, {sp.currency} {sp.point_value:g} per index point, "
+            f"tick {sp.tick:g}), {sess}")
+
+
+def build_system(lessons: str, cfg=None) -> str:
+    """固定前綴（每個產品程式各自一份，可快取）：產品描述＋硬性規則＋使用者教學。"""
+    text = SYSTEM.replace("{product_line}", product_line(cfg) if cfg is not None else "an index futures contract")
+    return text + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
 
 TOOL = {
     "name": "decide",
@@ -83,7 +93,7 @@ class ClaudeBrain:
         lessons, lessons_ver = load_lessons()
         # prompt caching：tools → system 係固定前綴（硬性規則＋LESSONS），每 5 分鐘先 call 一次，
         # 用 1 小時 TTL；所有會變嘅嘢（時間、K 線、倉位、額度）只放喺 user 訊息。
-        system = [{"type": "text", "text": build_system(lessons),
+        system = [{"type": "text", "text": build_system(lessons, self.cfg),
                    "cache_control": {"type": "ephemeral", "ttl": "1h"}}]
         try:
             kwargs = {}

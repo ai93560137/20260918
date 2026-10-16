@@ -279,7 +279,9 @@ def test_lessons_loaded_into_system(tmp_path):
     f.write_text("唔好追高\n", encoding="utf-8")
     text, ver = load_lessons(f)
     assert text == "唔好追高" and len(ver) == 8
-    assert build_system(text).endswith("唔好追高") and build_system("") == SYSTEM
+    assert build_system(text).endswith("唔好追高") and "{product_line}" not in build_system("")
+    assert "Micro E-mini S&P" in build_system("", replace(Config(), product="MES"))
+    assert "Hang Seng Index Futures (HKFE) (HSI" in build_system("", Config())
 
 
 def test_brain_request_shape_and_usage():
@@ -321,3 +323,37 @@ def test_push_packet_has_no_equity_and_reads_logs(env, monkeypatch):
     assert [x["type"] for x in pkt["trades"]] == ["OPEN"] and pkt["decisions"][-1]["final"] == "OPEN_LONG"
     monkeypatch.delenv("ZHUGE_GCP_URL", raising=False)
     assert push.push(cfg, tr.state) is False          # 冇設定就唔推
+
+
+def test_us_session_and_day_key():
+    from markets import ET, session_status as ss, trading_day_key as tdk, quarterly_contracts
+    f = lambda y, mo, d, h, mi: ss(datetime(y, mo, d, h, mi, tzinfo=ET), "US")[0]
+    assert f(2026, 10, 19, 10, 0) == "GLOBEX"           # 週一 10:00 美東
+    assert f(2026, 10, 19, 17, 30) is None              # 每日維護 17:00–18:00
+    assert f(2026, 10, 19, 18, 30) == "GLOBEX"
+    assert f(2026, 10, 17, 12, 0) is None               # 週六
+    assert f(2026, 10, 18, 17, 0) is None and f(2026, 10, 18, 18, 5) == "GLOBEX"   # 週日 18:00 開
+    assert f(2026, 10, 23, 17, 5) is None               # 週五收市
+    _, left = ss(datetime(2026, 10, 19, 16, 50, tzinfo=ET), "US")
+    assert abs(left - 10) < 0.01
+    _, left = ss(datetime(2026, 10, 19, 18, 0, tzinfo=ET), "US")
+    assert abs(left - 23 * 60) < 0.01
+    assert tdk(datetime(2026, 10, 19, 17, 59, tzinfo=ET), "US") == "2026-10-19"
+    assert tdk(datetime(2026, 10, 19, 18, 0, tzinfo=ET), "US") == "2026-10-20"
+    qs = quarterly_contracts("MES", "US", date(2026, 10, 16))
+    assert qs[0] == ("US.MES2612", date(2026, 12, 18)) and qs[1][0] == "US.MES2703"
+
+
+def test_us_roll_eight_days_before_expiry_and_config():
+    cs = [("US.MES2612", date(2026, 12, 18)), ("US.MES2703", date(2027, 3, 19)), ("HK.HSI2612", date(2026, 12, 30))]
+    assert pick_front_month(cs, "MES", date(2026, 12, 9), roll_days=8) == "US.MES2612"
+    assert pick_front_month(cs, "MES", date(2026, 12, 10), roll_days=8) == "US.MES2703"
+    import importlib, os
+    import config as cmod
+    os.environ["PRODUCT"] = "MYM"
+    try:
+        c = importlib.reload(cmod).CFG
+        assert (c.product, c.market, c.point_value, c.tick, c.roll_days) == ("MYM", "US", 3.9, 1, 8)
+    finally:
+        del os.environ["PRODUCT"]
+        importlib.reload(cmod)

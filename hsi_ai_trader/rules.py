@@ -3,57 +3,24 @@ import re
 from datetime import datetime, time, timedelta, date
 from zoneinfo import ZoneInfo
 
-HKT = ZoneInfo("Asia/Hong_Kong")
-
-DAY_AM = (time(9, 15), time(12, 0))
-DAY_PM = (time(13, 0), time(16, 30))
-NIGHT_START = time(17, 15)
-NIGHT_END = time(3, 0)
+from markets import HKT, session_status, trading_day_key  # noqa: F401  （時段規則喺 markets.py，按產品市場）
 
 
 def now_hkt() -> datetime:
     return datetime.now(HKT)
 
 
-def _mins(a: time, b: time) -> float:
-    da = a.hour * 60 + a.minute + a.second / 60
-    db = b.hour * 60 + b.minute + b.second / 60
-    return db - da
+CONTRACT_RE = re.compile(r"^(HK|US)\.([A-Z]+)(\d{2})(\d{2})$")   # HK.HSI2610、US.MES2612
 
 
-def session_status(now: datetime):
-    """回傳 (時段名, 距離收市分鐘)；唔喺交易時段回傳 (None, None)。
-    假期由「報價過期」檢查處理。"""
-    t = now.timetz().replace(tzinfo=None)
-    wd = now.weekday()  # 0=Mon
-    if wd <= 4:
-        if DAY_AM[0] <= t < DAY_AM[1]:
-            return "DAY_AM", _mins(t, DAY_AM[1])
-        if DAY_PM[0] <= t < DAY_PM[1]:
-            return "DAY_PM", _mins(t, DAY_PM[1])
-        if t >= NIGHT_START:
-            return "NIGHT", _mins(t, time(23, 59, 59)) + 1 / 60 + 180
-    if 1 <= wd <= 5 and t < NIGHT_END:  # 週二至週六凌晨
-        return "NIGHT", _mins(t, NIGHT_END)
-    return None, None
-
-
-def trading_day_key(now: datetime) -> str:
-    """每日 17:00 HKT 開始計新一日（夜市屬下一個交易日），用嚟重置每日虧損。"""
-    return (now + timedelta(hours=7)).date().isoformat()
-
-
-CONTRACT_RE = re.compile(r"^HK\.([A-Z]+)(\d{2})(\d{2})$")
-
-
-def pick_front_month(contracts, product: str, today: date):
-    """contracts: [(code, last_trade_date)]。揀即月；到咗最後交易日就轉下月。"""
+def pick_front_month(contracts, product: str, today: date, roll_days: int = 0):
+    """contracts: [(code, last_trade_date)]。揀即月；距離最後交易日唔夠 roll_days 日（港期 0＝最後交易日當日）就轉下月。"""
     cands = []
     for code, ltd in contracts:
         m = CONTRACT_RE.match(code)
-        if not m or m.group(1) != product or ltd is None:
+        if not m or m.group(2) != product or ltd is None:
             continue
-        if ltd > today:
+        if ltd > today + timedelta(days=roll_days):
             cands.append((ltd, code))
     if not cands:
         return None

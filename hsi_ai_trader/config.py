@@ -3,6 +3,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from markets import FX_TO_HKD, spec_for
+
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -27,6 +29,11 @@ def _env(name, default):
     return os.getenv(name, default)
 
 
+# 使用者 2026-10-16：HSI 大期，之後加 MES、MNQ、MYM；每隻產品一個獨立程式（PRODUCT 環境變數）
+_PRODUCT = _env("PRODUCT", "HSI").upper()
+SPEC = spec_for(_PRODUCT)
+
+
 def _bool(name, default):
     return str(os.getenv(name, default)).lower() in ("1", "true", "yes", "y")
 
@@ -41,9 +48,14 @@ class Config:
     trade_password: str = _env("FUTU_TRADE_PASSWORD", "")  # 留空 = 已喺 OpenD 解鎖
 
     # --- 合約 ---
-    # 使用者 2026-10-16：龍飛陣用大期 HSI（雲垂陣對沖用細期 MHI，分開合約免得淨額混埋）
-    product: str = _env("PRODUCT", "HSI")                # 恒指大期
-    point_value: float = float(_env("POINT_VALUE", "50"))  # HSI 每點 HK$50（MHI 係 10）
+    # 使用者 2026-10-16：龍飛陣用大期 HSI（雲垂陣對沖用細期 MHI，分開合約免得淨額混埋）；之後加 MES、MNQ、MYM
+    product: str = _PRODUCT
+    market: str = SPEC.market                            # HK／US
+    currency: str = SPEC.currency
+    tick: float = SPEC.tick
+    roll_days: int = SPEC.roll_days
+    # 每點價值一律換算做 HKD（日蝕上限、止蝕風險、盈虧都用 HKD 比較）：HSI 50；MES 5×7.8＝39
+    point_value: float = float(_env("POINT_VALUE", str(SPEC.point_value * FX_TO_HKD[SPEC.currency])))
 
     # --- Claude ---
     anthropic_api_key: str = _env("ANTHROPIC_API_KEY", "")
@@ -58,11 +70,11 @@ class Config:
     max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
     min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
     max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "0"))       # 0 = 唔限
-    fee_per_side_hkd: float = float(_env("FEE_PER_SIDE_HKD", "40"))     # 每張每邊佣金＋徵費估算，計日蝕用（寧高唔低）
+    fee_per_side_hkd: float = float(_env("FEE_PER_SIDE_HKD", str(SPEC.fee_per_side_hkd)))     # 每張每邊佣金＋徵費估算，計日蝕用（寧高唔低）
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
     flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")
-    slippage_points: float = float(_env("SLIPPAGE_POINTS", "3"))
+    slippage_points: float = float(_env("SLIPPAGE_POINTS", str(SPEC.slippage)))
     stale_quote_sec: int = int(_env("STALE_QUOTE_SEC", "180"))
     max_consecutive_errors: int = int(_env("MAX_CONSECUTIVE_ERRORS", "10"))
 
