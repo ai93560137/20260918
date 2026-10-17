@@ -2367,6 +2367,11 @@ def _futu_risk_clean_metrics(raw):
                          "scenarios": [{"name": _futu_text(r.get("name"), 40), "cushion_after": to_float(r.get("cushion_after")),
                                         "ladder": _futu_text(r.get("ladder"), 2)}
                                        for r in (src.get("scenarios") or [])[:12] if isinstance(r, dict)]}
+    src = raw.get("sec") if isinstance(raw.get("sec"), dict) else None          # [R214] 證券戶口（R205），只存私人 GCS
+    if src is not None:
+        out["sec"] = {"equity": to_float(src.get("equity")), "maintenance_margin": to_float(src.get("maintenance_margin")),
+                      "cushion": to_float(src.get("cushion")), "ladder": _futu_text(src.get("ladder"), 2),
+                      "exposed": bool(src.get("exposed"))}
     return out
 
 
@@ -2985,6 +2990,17 @@ def futu_pnl_report(doc, start=None, today=None):
 FUND_REPORT_CAPITAL_HKD = float(os.environ.get("FUND_REPORT_CAPITAL_HKD", "0") or 0)  # [R207] 回報率本金；0＝用富途期貨戶口現時權益
 
 
+FUND_SEC_PRODUCTS = ("美股", "美股期權", "港股")                      # [R214] 富途證券戶口嘅產品；其餘係期貨戶口
+
+
+def fund_by_account(by_product):
+    """[R214] {產品: 港幣} → {"期貨戶口": x, "證券戶口": y}。"""
+    out = {"期貨戶口": 0.0, "證券戶口": 0.0}
+    for prod, v in (by_product or {}).items():
+        out["證券戶口" if prod in FUND_SEC_PRODUCTS else "期貨戶口"] += v or 0.0
+    return {k: round(v, 2) for k, v in out.items()}
+
+
 def fund_unrealized(risk_doc):
     """[R207] 未實現盈虧：讀 futu/risk/latest.json 每個持倉富途自己計嘅 pl_val（futu_pl，原幣），美元折港幣，按產品加總。
     富途冇俾 pl_val 就用（現價 − 開倉價）× 張數 × 每點價值。讀唔到回 None。"""
@@ -3010,7 +3026,9 @@ def fund_unrealized(risk_doc):
         n += 1
     return {"asof": risk_doc.get("run_hkt"), "total": round(sum(by.values()), 2), "positions": n,
             "by_product": {k: round(v, 2) for k, v in sorted(by.items())}, "missing": missing,
-            "futu_equity": to_float((risk_doc.get("metrics") or {}).get("futu_equity"))}
+            "by_account": fund_by_account(by),
+            "futu_equity": (to_float((risk_doc.get("metrics") or {}).get("futu_equity")) or 0.0)
+                           + (to_float(((risk_doc.get("metrics") or {}).get("sec") or {}).get("equity")) or 0.0) or None}
 
 
 def fund_performance(r, unreal, today=None):
@@ -3039,7 +3057,7 @@ def fund_performance(r, unreal, today=None):
 
 def build_fund_report_page(r):
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>{page_nav('fund_report')}</div>"
-            f"<p class='muted'>富途戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
+            f"<p class='muted'>富途期貨戶口＋證券戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
             f"數據 {esc(r.get('fetched_hkt') or '—')} HKT（成交 {r['deals']} 筆，由 {esc(r.get('since') or '—')} 起攞，用嚟搵開倉成本）。</p>")
     n = lambda v: f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+,.0f}</span>"
     body = ops_reports_html(r.get("reports") or {})                    # [R174] 週報／月報放最頂
@@ -3058,7 +3076,7 @@ def build_fund_report_page(r):
     if perf.get("periods"):
         pct = lambda v: "<span class='muted'>—</span>" if v is None else f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+.2f}%</span>"
         wr = lambda v: "—" if v is None else f"{v:.0f}%"
-        src = {"FUND_REPORT_CAPITAL_HKD": "設定本金", "futu_equity": "富途期貨戶口現時權益（近似）"}.get(perf.get("capital_source"), "未有本金")
+        src = {"FUND_REPORT_CAPITAL_HKD": "設定本金", "futu_equity": "富途期貨＋證券戶口現時權益（近似）"}.get(perf.get("capital_source"), "未有本金")
         for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
             rows = perf["periods"].get(name) or []
             if not rows:
@@ -3070,6 +3088,15 @@ def build_fund_report_page(r):
                      "<tr><th>期間</th><th>已實現淨額</th><th>未實現</th><th>總盈虧</th><th>回報率</th><th>平倉筆數</th><th>勝率</th></tr>"
                      f"{trs}</table></div><p class='muted' style='font-size:12px'>回報率 ＝ 總盈虧 ÷ {src}；未實現只計入現時所屬期間；"
                      "勝率按每筆平倉成交（毛利 &gt; 0）。</p></div>")
+    ba = r.get("by_account") or {}
+    if ba.get("realized"):                                                 # [R214] 按戶口
+        ur = ba.get("unrealized") or {}
+        trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(ba['realized'][k])}</td>"
+                      + (f"<td>{n(ur.get(k, 0))}</td><td>{n(ba['realized'][k] + ur.get(k, 0))}</td>" if ur else "<td>—</td><td>—</td>")
+                      + "</tr>" for k in ("期貨戶口", "證券戶口"))
+        body += ("<div class='section'><b>按戶口（港幣）</b><div class='scroll'><table>"
+                 f"<tr><th>戶口</th><th>已實現淨額</th><th>未實現</th><th>總盈虧</th></tr>{trs}</table></div>"
+                 "<p class='muted' style='font-size:12px'>證券戶口＝美股、美股期權、港股；其餘（恒指／標普期貨同期權）屬期貨戶口。</p></div>")
     st = r.get("stats") or {}
     if st.get("trades"):                                                  # [R214] 詳細統計
         hm = lambda v: "—" if v is None else (f"{int(v // 3600)}h {int(v % 3600 // 60)}m" if v < 86400 * 3
@@ -3178,6 +3205,13 @@ def handle_fund_report_get(req):
     un = fund_unrealized(risk_doc)
     r["unrealized"] = {k: v for k, v in un.items() if k != "futu_equity"} if un else None   # 權益唔公開
     r["performance"] = fund_performance(r, un)
+    yr = r["periods"].get("year") or {}                                    # [R214] 按戶口（期貨／證券）
+    real = {}
+    for v in yr.values():
+        for prod, c in v.items():
+            if prod != "合計":
+                real[prod] = real.get(prod, 0.0) + c.get("net", 0.0)
+    r["by_account"] = {"realized": fund_by_account(real), "unrealized": (un or {}).get("by_account")}
     if req.args.get("format") == "json":
         return _json_response(r)
     return build_fund_report_page(r)

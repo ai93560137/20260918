@@ -133,5 +133,16 @@ FAKE[main.FUTU_PNL_FILE] = (json.dumps(D), 9)
 html = main.handle_fund_report_get(req(start="2026-10-01"))
 check("頁面有詳細統計、Sharpe、RRR、持倉時間", "📋 詳細統計" in html and "Sharpe ratio" in html and "RRR" in html and "3h 0m" in html)
 
+print("\n七、[R214] 包括證券戶口")
+R2 = {"run_hkt": "2026-10-17 16:00", "metrics": {"futu_equity": 500000, "sec": {"equity": 300000}},
+      "positions": [{"code": "US.SPY", "qty": 10, "futu_pl": 100.0}, {"code": "HK.HSI261023P23700000", "qty": -1, "futu_pl": -50.0}]}
+u2 = main.fund_unrealized(R2)
+check("未實現按戶口：證券 780、期貨 −50", u2["by_account"] == {"期貨戶口": -50.0, "證券戶口": 780.0}, u2)
+check("本金＝期貨＋證券權益 80 萬", u2["futu_equity"] == 800000, u2)
+check("Cloud Run 保留 sec 指標", main._futu_risk_clean_metrics({"sec": {"equity": 1, "cushion": 2, "ladder": "A"}}).get("sec", {}).get("equity") == 1)
+FAKE[main.FUTU_RISK_FILE] = (json.dumps(R2), 3)
+html = main.handle_fund_report_get(req(start="2026-10-01"))
+check("頁面有按戶口表", "按戶口（港幣）" in html and "證券戶口" in html and "300,000" not in html)
+
 print(f"\n合計 ✅ {OK}  ❌ {FAIL}")
 sys.exit(1 if FAIL else 0)
