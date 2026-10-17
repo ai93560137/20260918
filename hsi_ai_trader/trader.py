@@ -1,10 +1,12 @@
 """交易核心：風控循環（每幾秒）+ AI 決策（每 5 分鐘）。
 券商、AI、時鐘都係注入，方便用假物件測試。"""
+import fcntl
 import json
 import logging
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from markets import fee_hkd, order_qty, spec_for
+from markets import SPECS, fee_hkd, order_qty, spec_for
 from rules import (round_tick, session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -189,7 +191,7 @@ class Trader:
         st, cfg = self.state, self.cfg
         last = snap["last"]
         remaining = cfg.daily_loss_limit + st.get("day_pnl", 0)
-        can_open = self._can_open(mins_left)
+        can_open = self._can_open(mins_left) and not self._portfolio_block()
         ctx = self._context(now, contract, qty, snap, session, mins_left, remaining, can_open)
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
@@ -211,31 +213,8 @@ class Trader:
         log.info("AI %s → %s %s", d.get("action"), action, rejected or d.get("reason", ""))
 
         if action in ("OPEN_LONG", "OPEN_SHORT"):
-            side = 1 if action == "OPEN_LONG" else -1
-            n_open = self._cap_open_qty(contract, side, last, n_open)
-            if not n_open:
-                return
-            px, filled = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
-            if not filled:
-                self._log("events", {"type": "ORDER_FAILED", "action": action})
-                return
-            if filled < n_open:
-                self._log("events", {"type": "PARTIAL_FILL", "action": action, "wanted": n_open, "filled": filled})
-                n_open = filled
-            # 以實際成交價重新校正止蝕距離
-            dist = abs(last - stop)
-            stop_adj = round_tick(px - side * dist, cfg.tick)
-            tgt_adj = round_tick(px + side * abs(target - last), cfg.tick) if target else None
-            st["pos"] = {"code": contract, "side": side, "qty": n_open, "entry": px,
-                         "stop": stop_adj, "target": tgt_adj, "opened_at": now.isoformat(),
-                         "reason": d.get("reason"), "risk_pts": round(dist, 4), "mfe": 0.0, "mae": 0.0,
-                         "lessons": d.get("_lessons"), "confidence": d.get("confidence"), "session": session}
-            st["trades_today"] = st.get("trades_today", 0) + 1
-            self._log("trades", {"type": "OPEN", "code": contract, "side": side,
-                                 "qty": n_open, "price": px, "stop": stop_adj,
-                                 "target": tgt_adj, "reason": d.get("reason"), "risk_pts": round(dist, 4),
-                                 "confidence": d.get("confidence"), "lessons": d.get("_lessons"),
-                                 "session": session})
+            with self._portfolio_lock():          # [R216] 幾隻同時出訊號：逐隻排隊，睇完其他程式先開
+                self._open(now, contract, action, d, last, stop, target, n_open, session)
         elif action == "CLOSE":
             self._close(contract, qty, "AI：" + (rejected or d.get("reason") or ""), last)
         elif action == "UPDATE_STOP" and st.get("pos"):
@@ -244,6 +223,93 @@ class Trader:
                 st["pos"]["target"] = target
             self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": stop,
                                  "target": st["pos"].get("target"), "reason": d.get("reason")})
+
+    def _open(self, now, contract, action, d, last, stop, target, n_open, session):
+        st, cfg = self.state, self.cfg
+        side = 1 if action == "OPEN_LONG" else -1
+        block = self._portfolio_block(side)
+        if block:
+            self._log("events", {"type": "OPEN_SKIPPED", "action": action, "reason": block})
+            log.info("唔開：%s", block)
+            return
+        n_open = self._cap_open_qty(contract, side, last, n_open)
+        if not n_open:
+            return
+        px, filled = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
+        if not filled:
+            self._log("events", {"type": "ORDER_FAILED", "action": action})
+            return
+        if filled < n_open:
+            self._log("events", {"type": "PARTIAL_FILL", "action": action, "wanted": n_open, "filled": filled})
+            n_open = filled
+        # 以實際成交價重新校正止蝕距離
+        dist = abs(last - stop)
+        stop_adj = round_tick(px - side * dist, cfg.tick)
+        tgt_adj = round_tick(px + side * abs(target - last), cfg.tick) if target else None
+        st["pos"] = {"code": contract, "side": side, "qty": n_open, "entry": px,
+                     "stop": stop_adj, "target": tgt_adj, "opened_at": now.isoformat(),
+                     "reason": d.get("reason"), "risk_pts": round(dist, 4), "mfe": 0.0, "mae": 0.0,
+                     "lessons": d.get("_lessons"), "confidence": d.get("confidence"), "session": session}
+        st["trades_today"] = st.get("trades_today", 0) + 1
+        self._log("trades", {"type": "OPEN", "code": contract, "side": side,
+                             "qty": n_open, "price": px, "stop": stop_adj,
+                             "target": tgt_adj, "reason": d.get("reason"), "risk_pts": round(dist, 4),
+                             "confidence": d.get("confidence"), "lessons": d.get("_lessons"),
+                             "session": session})
+        self._save_state()                        # 即刻寫，等其他程式睇到呢個倉
+
+    # ---------- [R216] 組合層面（使用者 10-17：A 美股大盤組同方向最多 2 隻；C 全部 ETF 合計日蝕 HK$200,000）----------
+    def _peer_states(self):
+        """同一部 VM 其他 ETF 程式嘅狀態（模擬對模擬、真倉對真倉）。"""
+        base = self.cfg.state_file.parent.parent
+        prefix = "ai_trader_real_" if self.cfg.instance_real else "ai_trader_"
+        out = {}
+        for p, sp in SPECS.items():
+            if sp.kind != "stock" or p == self.cfg.product:
+                continue
+            try:
+                out[p] = json.loads((base / f"{prefix}{p}" / "state.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+        return out
+
+    def _portfolio_block(self, side=None):
+        """唔准開新倉嘅原因（冇就 None）。只管 ETF；唔會平已有嘅倉。"""
+        cfg, st = self.cfg, self.state
+        if cfg.kind != "stock":
+            return None
+        peers = self._peer_states()
+        if cfg.etf_total_daily_loss:
+            total = (st.get("day_pnl") or 0) + sum(float(s.get("day_pnl") or 0) for s in peers.values()
+                                                  if s.get("day") == st.get("day"))
+            if total <= -cfg.etf_total_daily_loss:
+                return f"全部 ETF 今日合計虧損 HK${-total:,.0f}，到咗合計上限 HK${cfg.etf_total_daily_loss:,.0f}"
+        if side and cfg.group_max_same_dir and cfg.product in cfg.etf_group_us_eq:
+            same = sorted(p for p, s in peers.items()
+                          if p in cfg.etf_group_us_eq and (s.get("pos") or {}).get("side") == side)
+            if len(same) >= cfg.group_max_same_dir:
+                return f"美股大盤組已有 {len(same)} 隻同方向持倉（{'、'.join(same)}）"
+        return None
+
+    @contextmanager
+    def _portfolio_lock(self):
+        """ETF 程式開倉時互相排隊（同一時間只有一隻喺度檢查＋落單），避免同時開爆上限。"""
+        if self.cfg.kind != "stock":
+            yield
+            return
+        path = self.cfg.state_file.parent.parent / ("longfei_real_open.lock" if self.cfg.instance_real
+                                                    else "longfei_open.lock")
+        try:
+            f = open(path, "a")
+        except OSError:
+            yield
+            return
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+            f.close()
 
     def _context(self, now, contract, qty, snap, session, mins_left, remaining, can_open):
         cfg, st = self.cfg, self.state
@@ -284,7 +350,10 @@ class Trader:
                      "stop_points_max": cfg.max_stop_points or None,
                      "trades_today": st.get("trades_today", 0),
                      "max_trades_per_day": cfg.max_trades_per_day or None,
-                     "new_entries_allowed": can_open},
+                     "new_entries_allowed": can_open,
+                     # [R216] 組合限制：寫住唔准開邊個方向（例如美股大盤組同方向已有 2 隻）
+                     "portfolio_long_blocked": self._portfolio_block(1),
+                     "portfolio_short_blocked": self._portfolio_block(-1)},
             "today_trades": st.get("today_trades", [])[-10:],
             "recent_decisions": st.get("recent_decisions", []),
         }
