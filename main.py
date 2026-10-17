@@ -3376,7 +3376,7 @@ def _scan_clean_row(raw):
 
 
 LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
-LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "IEF", "HYG", "GLD", "IAU", "USO", "EEM", "EFA", "IWM"]   # [R202][R213] 每隻產品一個程式，各存 longfei/<產品>/latest.json
+LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "IEF", "HYG", "GLD", "IAU", "USO", "EEM", "EFA", "IWM"]   # [R202][R215] 每隻產品一個程式，各存 longfei/<產品>/latest.json
 # [R203] 使用者 10-16：美期冇報價權限，MES／MNQ／MYM 改美股 ETF SPY／QQQ／DIA
 LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指",
                          "SPY": "標普 500 ETF", "QQQ": "納指 100 ETF", "DIA": "道指 ETF",

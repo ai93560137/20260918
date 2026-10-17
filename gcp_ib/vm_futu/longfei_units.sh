@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# [R209][R213] 龍飛陣程式對齊 settings.env：模擬 LONGFEI_EXTRA_PRODUCTS、真倉 LONGFEI_REAL_PRODUCTS（使用者 10-17：一落指令就用真倉；模擬倉照跑前向測試）。
+# [R209][R215] 龍飛陣程式對齊 settings.env：模擬 LONGFEI_EXTRA_PRODUCTS、真倉 LONGFEI_REAL_PRODUCTS（使用者 10-17：一落指令就用真倉；模擬倉照跑前向測試）。
 #   有列：開 zhuge-longfei-real@<產品>（已經開緊就重開，用新程式）。
 #   冇列：手上冇倉就停；仲有倉就唔停（停咗冇人守止蝕），放 STOP 檔叫佢平倉停機，下次更新再停。
 # 由 update.sh（root）同 setup.sh 叫。冇 ANTHROPIC_API_KEY 就唔開。
@@ -9,7 +9,7 @@ KNOWN=" HSI SPY QQQ DIA TLT IEF HYG GLD IAU USO EEM EFA IWM "     # 同 hsi_ai_t
 REAL=$(grep -oE '^LONGFEI_REAL_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2 | tr ',' ' ' | tr 'a-z' 'A-Z')
 EXTRA=$(grep -oE '^LONGFEI_EXTRA_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2 | tr ',' ' ' | tr 'a-z' 'A-Z')
 grep -q '^ANTHROPIC_API_KEY=sk-ant-' "$H/zhuge/env" || { REAL=""; EXTRA=""; }
-# [R213] 模擬程式：LONGFEI_EXTRA_PRODUCTS 新加嘅產品自動開（唔使再人手跑 setup.sh）；拎走嘅、冇倉先停
+# [R215] 模擬程式：LONGFEI_EXTRA_PRODUCTS 新加嘅產品自動開（唔使再人手跑 setup.sh）；拎走嘅、冇倉先停
 for P in $EXTRA; do
   echo "$KNOWN" | grep -q " $P " || { echo "唔識嘅產品 $P，跳過"; continue; }
   D="$H/zhuge/ai_trader_$P"

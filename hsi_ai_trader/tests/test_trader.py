@@ -644,7 +644,7 @@ def test_preflight_account_moves_to_real_account(env):
     assert tr.state["real_account"]["power"] == 2.0 and tr.state["real_account"]["source"] == "preflight"
 
 
-def test_r213_new_etfs_like_spy():
+def test_r215_new_etfs_like_spy():
     from markets import SPECS, order_qty, session_status as ss, ET
     for p in ("TLT", "IEF", "HYG", "GLD", "IAU", "USO", "EEM", "EFA", "IWM"):
         s = SPECS[p]

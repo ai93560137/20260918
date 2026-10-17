@@ -41,7 +41,7 @@ SPECS = {
                 100_000),
     "DIA": Spec("DIA", "SPDR Dow Jones Industrial Average ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0,
                 "stock", 100_000, 100_000),
-    # [R213] 使用者 10-17：加 9 隻同美股大盤互補、流通量頂級嘅 ETF（債券、黃金、原油、非美股、中小型股），設定同 SPY 一樣
+    # [R215] 使用者 10-17：加 9 隻同美股大盤互補、流通量頂級嘅 ETF（債券、黃金、原油、非美股、中小型股），設定同 SPY 一樣
     "TLT": Spec("TLT", "iShares 20+ Year Treasury Bond ETF (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "IEF": Spec("IEF", "iShares 7-10 Year Treasury Bond ETF (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "HYG": Spec("HYG", "iShares iBoxx $ High Yield Corporate Bond ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
