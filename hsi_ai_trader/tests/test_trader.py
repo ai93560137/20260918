@@ -646,11 +646,11 @@ def test_preflight_account_moves_to_real_account(env):
 
 def test_r215_new_etfs_like_spy():
     from markets import SPECS, order_qty, session_status as ss, ET
-    for p in ("TLT", "HYG", "GLD", "USO", "EEM", "EFA", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWG", "EWU", "EWZ", "EWC"):
+    for p in ("TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC"):
         s = SPECS[p]
         assert (s.kind, s.market, s.notional_usd, s.daily_loss_hkd, s.tick) == ("stock", "US", 100_000, 100_000, 0.01)
         assert ss(datetime(2026, 10, 19, 5, 0, tzinfo=ET), s.market, s.kind)[0] == "PRE"
-    assert order_qty(SPECS["TLT"], 90.0, 1) == 1111 and "IAU" not in SPECS and "IEF" not in SPECS
+    assert order_qty(SPECS["TLT"], 90.0, 1) == 1111 and not {"IAU", "IEF", "EEM", "EFA", "EWG"} & set(SPECS)
 
 
 def _etf_env(tmp_path, product="SPY", **kw):
