@@ -387,7 +387,8 @@ def build(book, quotes=None, combined_equity=None):
             cush = ((sec.get("total_assets") or 0) - mm) * rate
             # [R206] 有持倉（市值絕對值 ≥ SEC_MIN_EXPOSURE）或者用緊孖展先計風險；冇倉／得碎股／未入錢嘅戶口級別當 A，
             # 免得 guard 開咗 LONGFEI_ETF_SEC_LADDER 之後一直讀到 D；龍飛陣開第一張倉之後下一輪（10 分鐘）就會反映
-            exposed = bool(mm) or abs(sec.get("market_val") or 0) * rate >= SEC_MIN_EXPOSURE
+            # [R213] 碎股都可能有幾十蚊維持保證金（10-17 實例：SPCX 0.08 股、MM HK$39）→ MM 同樣要過門檻先算有倉
+            exposed = max(mm * rate, abs(sec.get("market_val") or 0) * rate) >= SEC_MIN_EXPOSURE
             M["sec"] = {"equity": round((sec.get("total_assets") or 0) * rate), "maintenance_margin": round(mm * rate),
                         "cushion": round(cush), "ladder": sec_ladder_level(cush) if exposed else "A", "exposed": exposed}
             P(f"富途證券戶口：權益 HK${M['sec']['equity']:,.0f}，維持保證金 HK${M['sec']['maintenance_margin']:,.0f}，"
