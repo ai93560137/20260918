@@ -642,3 +642,12 @@ def test_preflight_account_moves_to_real_account(env):
     tr.tick()
     assert "account" not in tr.state["real_preflight"]
     assert tr.state["real_account"]["power"] == 2.0 and tr.state["real_account"]["source"] == "preflight"
+
+
+def test_r213_new_etfs_like_spy():
+    from markets import SPECS, order_qty, session_status as ss, ET
+    for p in ("TLT", "IEF", "HYG", "GLD", "IAU", "USO", "EEM", "EFA", "IWM"):
+        s = SPECS[p]
+        assert (s.kind, s.market, s.notional_usd, s.daily_loss_hkd, s.tick) == ("stock", "US", 100_000, 100_000, 0.01)
+        assert ss(datetime(2026, 10, 19, 5, 0, tzinfo=ET), s.market, s.kind)[0] == "PRE"
+    assert order_qty(SPECS["TLT"], 90.0, 1) == 1111
