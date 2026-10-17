@@ -13,3 +13,4 @@
 | 2026-10-13 | 對沖已平但日報仍按有對沖報 Δ | 雲垂 10:05 日報 Δ 錯 | 日報單靠持倉快照假設對沖仍在 | 雲垂更正流程；`ops_notify.yml` 對沖狀態 | 雲垂 Routine 第 0 步必核成交 | 雲垂 | 已結 |
 | 2026-10-14 | 富途維持保證金一日約翻倍，緩衝跌入 Ⓑ（夜盤 Ⓒ） | 需即時決定入金或減倉 | 事前冇保證金變動預警 | PR #142（R193，10-15 合併；VM auto_risk 10-17 已係 R199）：`mm_jump` 維持保證金當日升 ≥30% → Telegram | 晨會讀壓力情景（`ops/risk/stress_latest.json`） | 總指揮 | 已結 |
 | 2026-10-15 | futu-data VM 上 OpenD 登入次數超限（exit 31） | 富途數據停一段時間 | OpenD 反覆重開觸發富途登入限制 | `opend_tmux.sh` 等 60 分鐘再試 | AGENTIC.md「futu-data 已知坑」；唔好頻密重開 | 富途數據 VM | 已結 |
+| 2026-10-18 | futu-data-tw 上 push_to_gcp、iv_push、龍飛陣 17 個程式約 03:30 HKT 同時停推（VM RUNNING） | 富途行情／IV／龍飛陣狀態停更；週一 06:00 開市前要修好（auto_risk 週末本來停，唔計） | 疑 OpenD 被富途週末維護登出、自動登入失敗（待使用者 VM 診斷） | 待富途數據 VM | 心跳已查 longfei／snapshots 新鮮度（週末有放寬） | 富途數據 VM | 未結 |
