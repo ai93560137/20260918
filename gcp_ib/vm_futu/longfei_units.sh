@@ -5,7 +5,7 @@
 # 由 update.sh（root）同 setup.sh 叫。冇 ANTHROPIC_API_KEY 就唔開。
 set -uo pipefail
 U="$1"; H="$2"; REPO="$H/20260918"
-KNOWN=" HSI SPY QQQ DIA TLT IEF HYG GLD IAU USO EEM EFA IWM "     # 同 hsi_ai_trader/markets.py SPECS 一致
+KNOWN=" HSI SPY QQQ DIA TLT IEF HYG GLD USO EEM EFA IWM "     # 同 hsi_ai_trader/markets.py SPECS 一致
 REAL=$(grep -oE '^LONGFEI_REAL_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2 | tr ',' ' ' | tr 'a-z' 'A-Z')
 EXTRA=$(grep -oE '^LONGFEI_EXTRA_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2 | tr ',' ' ' | tr 'a-z' 'A-Z')
 grep -q '^ANTHROPIC_API_KEY=sk-ant-' "$H/zhuge/env" || { REAL=""; EXTRA=""; }
