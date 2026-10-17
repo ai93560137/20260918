@@ -114,7 +114,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R211", auto_risk.SCRIPT_VERSION == "R211")
+check("SCRIPT_VERSION R206", auto_risk.SCRIPT_VERSION == "R206")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
@@ -145,17 +145,17 @@ def _sec(accs):
 FUT0 = {"account": "期貨帳戶", "currency": "HKD", "total_assets": 500_000, "maintenance_margin": 400_000}
 s0 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 120, "maintenance_margin": 0, "market_val": 97}])
 check("碎股 HK$97（未入錢）→ 唔算有倉、級別 A", s0 and not s0["exposed"] and s0["ladder"] == "A", s0)
-s1 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 250_000, "maintenance_margin": 0, "market_val": -19_156}])
-check("沽空市值 −19,156 → 有倉、緩衝 250k → B", s1 and s1["exposed"] and s1["ladder"] == "B", s1)
+s1 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 25_000, "maintenance_margin": 0, "market_val": -19_156}])
+check("沽空市值 −19,156 → 有倉、緩衝 25k → B", s1 and s1["exposed"] and s1["ladder"] == "B", s1)
 s2 = _sec([FUT0, {"account": "證券帳戶-HK", "currency": "N/A", "total_assets": 1, "maintenance_margin": 0}])
 check("幣種 N/A（SIMULATE 式）→ 唔計、唔出錯", s2 is None, s2)
 
 print("\n=== [R205] 證券戶口監察（龍飛陣 ETF 轉真倉前）===")
 SL = risk_report.sec_ladder_level
-check("證券 350k → A", SL(350_000) == "A")
-check("證券 250k → B", SL(250_000) == "B")
-check("證券 150k → C", SL(150_000) == "C")
-check("證券 50k → D", SL(50_000) == "D")
+check("證券 35k → A", SL(35_000) == "A")
+check("證券 25k → B", SL(25_000) == "B")
+check("證券 15k → C", SL(15_000) == "C")
+check("證券 5k → D", SL(5_000) == "D")
 FUT = {"account": "期貨帳戶", "currency": "HKD", "total_assets": 500_000, "maintenance_margin": 400_000}
 SEC = {"account": "證券帳戶-HK", "currency": "HKD", "total_assets": 300_000, "maintenance_margin": 0, "market_val": 0}
 f_, s_ = risk_report.pick_accounts([SEC, FUT])
@@ -166,7 +166,7 @@ f_, s_ = risk_report.pick_accounts([FUT])
 check("冇證券戶口 → None", f_ is FUT and s_ is None)
 
 base = {"gap": 1, "stop_use": {}, "delta": {}}
-a = auto_risk.alerts({**base, "sec": {"cushion": 250_000, "ladder": "B", "exposed": True}}, 60_000, 0.8)
+a = auto_risk.alerts({**base, "sec": {"cushion": 25_000, "ladder": "B", "exposed": True}}, 60_000, 0.8)
 check("證券有倉、Ⓑ → sec_margin 警報", "sec_margin" in a and "→ B" in a["sec_margin"], a)
 a = auto_risk.alerts({**base, "sec": {"cushion": 0, "ladder": "D", "exposed": False}}, 60_000, 0.8)
 check("證券冇倉冇孖展（未入錢）→ 唔警報", "sec_margin" not in a, a)

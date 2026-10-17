@@ -250,9 +250,8 @@ def value(p, F, iv_shift=0.0, days=0.0):
 HKT_TZ = timezone(timedelta(hours=8))
 LADDER_CUSHION = {"B": 37_500, "C": 25_000, "D": 15_000}   # RISK_LADDER.md 日盤緩衝線（夜盤 ×1.5）；同 scripts/daily_books.py LADDER 一致
 # [R205] 富途證券戶口（龍飛陣美股 ETF；使用者 10-17「開始補證券戶口監察」）：緩衝＝總資產 − 維持保證金（港幣）。
-# 線按 3 隻 ETF × 日蝕定（RISK_LADDER §6b）；美股時段喺香港夜晚，唔再 ×1.5。
-# [R211] 使用者 10-17：ETF 每單約 US$100,000、每隻日蝕 HK$100,000（PR #181）→ 線 ×10：Ⓑ＝3 隻最壞一日 HK$300,000。
-SEC_LADDER_CUSHION = {"B": 300_000, "C": 200_000, "D": 100_000}
+# 線按 3 隻 ETF × 日蝕 HK$10,000 定（RISK_LADDER §6b）；美股時段喺香港夜晚，唔再 ×1.5。
+SEC_LADDER_CUSHION = {"B": 30_000, "C": 20_000, "D": 10_000}
 SEC_MIN_EXPOSURE = 1_000        # [R206] 持倉市值（絕對值，沽空係負數）細過呢個當冇倉（例如碎股），唔警報、級別當 A
 STRESS_SCENARIOS = (("HSI −5%", {"HSI": -.05}, 0), ("HSI +5%", {"HSI": .05}, 0),
                     ("ES −3%", {"ES": -.03}, 0), ("ES +3%", {"ES": .03}, 0),
