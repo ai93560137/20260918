@@ -86,6 +86,11 @@ class Config:
     # （總指揮 10-17 建議；Ⓑ 線跟 RISK_LADDER，改咗要同步）
     fut_ladder_b_day: float = float(_env("FUT_LADDER_B_DAY", "37500"))
     fut_ladder_night_mult: float = float(_env("FUT_LADDER_NIGHT_MULT", "1.5"))
+    # [R216] 使用者 10-17：ETF 組合限制（只限開新倉，唔會平已有嘅倉）
+    etf_group_us_eq: tuple = tuple(x.strip().upper() for x in _env("ETF_GROUP_US_EQ", "SPY,QQQ,DIA,IWM").split(",")
+                                   if x.strip())
+    group_max_same_dir: int = int(_env("GROUP_MAX_SAME_DIR", "2"))               # 美股大盤組同方向最多幾隻；0 = 唔限
+    etf_total_daily_loss: float = float(_env("ETF_TOTAL_DAILY_LOSS", "200000"))  # 全部 ETF 合計日蝕（HK$）；0 = 唔限
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
     flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")

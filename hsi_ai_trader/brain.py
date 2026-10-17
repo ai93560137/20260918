@@ -25,6 +25,9 @@ Hard rules enforced by code (you cannot override them; violating them just turns
 - No new entries in the last minutes of a session. Positions MAY be held overnight; an overnight gap
   is not protected by the daily loss limit, so weigh that before holding into a session close.
 - Stops and targets are checked by code every few seconds between your decisions.
+- ETFs only: portfolio limits across products. If risk.portfolio_long_blocked / portfolio_short_blocked is
+  not null, opening in that direction is rejected (e.g. 2 of SPY/QQQ/DIA/IWM already hold that direction, or all
+  ETFs together hit the combined daily loss limit). Do not propose that entry; HOLD or wait instead.
 
 Guidance:
 - HOLD is the default. Only trade when there is a clear edge; overtrading loses money to fees and slippage.

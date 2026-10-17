@@ -651,3 +651,70 @@ def test_r215_new_etfs_like_spy():
         assert (s.kind, s.market, s.notional_usd, s.daily_loss_hkd, s.tick) == ("stock", "US", 100_000, 100_000, 0.01)
         assert ss(datetime(2026, 10, 19, 5, 0, tzinfo=ET), s.market, s.kind)[0] == "PRE"
     assert order_qty(SPECS["TLT"], 90.0, 1) == 1111 and "IAU" not in SPECS and "IEF" not in SPECS
+
+
+def _etf_env(tmp_path, product="SPY", **kw):
+    from markets import ET
+    d = tmp_path / f"ai_trader_{product}"
+    (d / "logs").mkdir(parents=True)
+    cfg = replace(Config(), log_dir=d / "logs", state_file=d / "state.json", stop_file=d / "STOP",
+                  pause_file=d / "PAUSE", heartbeat_file=d / "hb", product=product, market="US",
+                  kind="stock", point_value=7.8, fee_per_side_hkd=0, slippage_points=0.05, tick=0.01,
+                  daily_loss_limit=100_000, **kw)
+    t = {"now": datetime(2026, 10, 19, 10, 0, 5, tzinfo=ET).astimezone(HKT)}
+    b, ai = FakeBroker(), FakeBrain()
+    b.price, b.clock = 660.0, (lambda: t["now"])
+    return cfg, t, b, ai, Trader(cfg, b, ai, lambda: t["now"])
+
+
+def _peer(tmp_path, product, **state):
+    d = tmp_path / f"ai_trader_{product}"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "state.json").write_text(json.dumps(state), encoding="utf-8")
+
+
+def test_group_same_direction_limit(tmp_path):
+    cfg, t, b, ai, tr = _etf_env(tmp_path)
+    tr.tick()
+    _peer(tmp_path, "QQQ", day=tr.state["day"], pos={"side": -1, "qty": 10})
+    _peer(tmp_path, "DIA", day=tr.state["day"], pos={"side": -1, "qty": 10})
+    _peer(tmp_path, "TLT", day=tr.state["day"], pos={"side": -1, "qty": 10})       # 唔屬美股大盤組
+    ai.next = {"action": "OPEN_SHORT", "stop_price": 670, "confidence": 0.7, "reason": "淡"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert not b.orders and "美股大盤組已有 2 隻" in (cfg.log_dir / "events.jsonl").read_text("utf-8")
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}   # 相反方向照開
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["side"] == 1
+
+
+def test_group_limit_only_for_group_members(tmp_path):
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="TLT")
+    tr.tick()
+    for p in ("SPY", "QQQ", "DIA"):
+        _peer(tmp_path, p, day=tr.state["day"], pos={"side": -1, "qty": 10})
+    ai.next = {"action": "OPEN_SHORT", "stop_price": 670, "confidence": 0.7, "reason": "淡"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["side"] == -1
+
+
+def test_total_etf_daily_loss_blocks_new_entries(tmp_path):
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="GLD")
+    tr.tick()
+    _peer(tmp_path, "SPY", day=tr.state["day"], day_pnl=-120_000)
+    _peer(tmp_path, "QQQ", day=tr.state["day"], day_pnl=-90_000)
+    _peer(tmp_path, "DIA", day="2000-01-01", day_pnl=-500_000)                     # 舊日唔計
+    assert "合計上限" in tr._portfolio_block()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert not b.orders
+    _peer(tmp_path, "QQQ", day=tr.state["day"], day_pnl=-50_000)
+    assert tr._portfolio_block() is None
+
+
+def test_portfolio_rules_skip_futures(env):
+    cfg, t, b, ai, tr = env
+    assert tr._portfolio_block(1) is None
