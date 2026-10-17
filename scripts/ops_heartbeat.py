@@ -7,7 +7,7 @@
    GitHub 會延遲或丟掉高頻排程，所以每 15 分鐘那種只在「一次都沒有」或「失敗」時才紅。
 2. **富途數據 VM `futu-data-tw`**（10-15 起富途數據由 VM 推；10-16 由香港 futu-data 搬台灣）：Compute Engine API 讀 VM 狀態（不是 RUNNING → 🔴），
    再看 VM 上各服務的輸出：`auto_risk`（futu/risk/latest.json，下面新鮮度）、`push_to_gcp`（futu/snapshots/US.QQQ.json）、
-   `iv_push`（futu/snapshots/HK.HSI_IV.json）的 GCS 更新時間。OpenD 死咗三個都會停，所以三個都舊即係 OpenD 或 VM 問題。
+   `iv_push`（futu/snapshots/HK.HSI_IV.json）、🐉 龍飛陣（longfei/SPY/latest.json received_ts，> 30 分鐘 → 🔴；10-18 加）的 GCS 更新時間。OpenD 死咗三個都會停，所以三個都舊即係 OpenD 或 VM 問題。
 3. **數據新鮮度**：GCS（富途快照、成交檔、MT5 心跳、通報狀態、晨會簡報）、repo（金絲雀、對帳表、偏離報告）、
    其他陣分支（蛇蟠通道 levels.json、三地日線、新高名單、雲垂掃描）。每項有「最舊可接受幾小時」，
    週末與週一放寬（市場沒開就不會有新數據）。
@@ -343,7 +343,16 @@ def vm_checks(now: datetime, session=None) -> tuple[list[tuple[str, str, str]], 
         except Exception:  # noqa: BLE001
             return None
 
-    items = [("VM push_to_gcp（5 分 K＋期權，每 5 分鐘）", "GCS futu/snapshots/US.QQQ.json 更新時間",
+    lf = None
+    try:
+        r = session.get(f"https://storage.googleapis.com/storage/v1/b/{GCS_BUCKET}/o/longfei%2FSPY%2Flatest.json",
+                        params={"alt": "media"}, timeout=30)
+        ts = r.json().get("received_ts") if r.status_code == 200 else None
+        lf = datetime.fromtimestamp(float(ts), UTC).astimezone(HKT) if ts else None
+    except Exception:  # noqa: BLE001
+        lf = None
+    items = [("🐉 龍飛陣 VM 程式（每 5 分鐘推，代表 SPY）", "GCS longfei/SPY/latest.json received_ts", lf, 0.5),
+             ("VM push_to_gcp（5 分 K＋期權，每 5 分鐘）", "GCS futu/snapshots/US.QQQ.json 更新時間",
               updated("futu/snapshots/US.QQQ.json"), 6),
              ("VM iv_push（恒指／ES／NQ IV，每 30 分鐘）", "GCS futu/snapshots/HK.HSI_IV.json 更新時間",
               updated("futu/snapshots/HK.HSI_IV.json"), 6)]
