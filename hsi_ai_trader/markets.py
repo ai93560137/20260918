@@ -49,6 +49,16 @@ SPECS = {
     "EEM": Spec("EEM", "iShares MSCI Emerging Markets ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "EFA": Spec("EFA", "iShares MSCI EAFE ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "IWM": Spec("IWM", "iShares Russell 2000 ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    # [R217] 使用者 10-17：再加 9 隻單一國家／地區 ETF，設定同 SPY 一樣，只跑模擬
+    "EWJ": Spec("EWJ", "iShares MSCI Japan ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "FXI": Spec("FXI", "iShares China Large-Cap ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWT": Spec("EWT", "iShares MSCI Taiwan ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "INDA": Spec("INDA", "iShares MSCI India ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EZU": Spec("EZU", "iShares MSCI Eurozone ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWG": Spec("EWG", "iShares MSCI Germany ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWU": Spec("EWU", "iShares MSCI United Kingdom ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWZ": Spec("EWZ", "iShares MSCI Brazil ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWC": Spec("EWC", "iShares MSCI Canada ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
 }
 
 FX_TO_HKD = {"HKD": 1.0, "USD": 7.8}
