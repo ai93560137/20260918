@@ -114,5 +114,24 @@ del FAKE[main.FUTU_RISK_FILE]
 html = main.handle_fund_report_get(req())
 check("讀唔到持倉：頁面照出、顯示讀唔到", "讀唔到持倉" in html and "已實現淨盈虧" in html)
 
+print("\n六、[R214] 詳細統計、Sharpe、RRR")
+D = {"fetched_hkt": "2026-10-17 10:00", "since": "2026-10-01", "positions": [], "fees": {"1": 10, "3": 10},
+     "deals": [{"time": "2026-10-05 01:00:00", "code": "HK.MHI2610", "side": "BUY", "qty": 1, "price": 26000, "order_id": "1"},
+               {"time": "2026-10-05 04:00:00", "code": "HK.MHI2610", "side": "SELL", "qty": 1, "price": 26100, "order_id": "2"},
+               {"time": "2026-10-06 01:00:00", "code": "HK.MHI2610", "side": "SELL", "qty": 1, "price": 26000, "order_id": "3"},
+               {"time": "2026-10-06 02:00:00", "code": "HK.MHI2610", "side": "BUY", "qty": 1, "price": 26050, "order_id": "4"}]}
+r = main.futu_pnl_report(D, "2026-10-01", today=main.date(2026, 10, 9))
+st = r["stats"]
+check("2 筆平倉：賺 1,000、蝕 500", st["trades"] == 2 and st["largest_profit"] == 1000 and st["largest_loss"] == -500, st)
+check("Profit factor 2、RRR 2", st["profit_factor"] == 2.0 and st["rrr"] == 2.0, st)
+check("持倉時間：賺 3h、蝕 1h", st["avg_hold_win_s"] == 3 * 3600 and st["avg_hold_loss_s"] == 3600, st)
+check("手續費 20、總盈虧 480", st["commissions"] == 20 and st["total_pnl"] == 480, st)
+check("賺錢日 1、蝕錢日 1、最佳 990、最差 −510", st["winning_days"] == 1 and st["losing_days"] == 1
+      and st["best_day"] == 990 and st["worst_day"] == -510, st)
+check("Sharpe 用 10/1–10/9 工作日（7 日）", st["sharpe_days"] == 7 and st["sharpe"] is not None, st)
+FAKE[main.FUTU_PNL_FILE] = (json.dumps(D), 9)
+html = main.handle_fund_report_get(req(start="2026-10-01"))
+check("頁面有詳細統計、Sharpe、RRR、持倉時間", "📋 詳細統計" in html and "Sharpe ratio" in html and "RRR" in html and "3h 0m" in html)
+
 print(f"\n合計 ✅ {OK}  ❌ {FAIL}")
 sys.exit(1 if FAIL else 0)

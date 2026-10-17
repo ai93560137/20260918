@@ -121,6 +121,8 @@
 #   * 2026-10-17 — [R207] 基金報告加未實現盈虧（futu/risk/latest.json 每個持倉富途 pl_val，美元折港幣，按產品）、總盈虧，
 #     同每月／每季／每年績效表（已實現淨額、未實現只計入現時期間、總盈虧、回報率、平倉筆數、勝率）。回報率本金
 #     FUND_REPORT_CAPITAL_HKD，冇設就用富途期貨戶口現時權益（近似）；權益絕對值唔顯示、唔入 JSON。只顯示，唔影響下單。
+#   * 2026-10-17 — [R214] 基金報告加「詳細統計」：總盈虧、手續費、最大單筆賺／蝕、平均持倉時間（賺／蝕）、Profit factor、
+#     RRR（平均賺 ÷ 平均蝕）、Sharpe（工作日淨盈虧年化 √252，rf＝0）、交易日／賺蝕日、平均及最佳／最差一日。只顯示。
 #   * 2026-10-14 — [R181] 方向一開倉門檻（緩衝）由 HK$260,000 改 HK$150,000（使用者折衷；RISK_LADDER 緩衝線 ×0.25 之後）。
 #   * 2026-10-14 — [R180] 方向一補做：上週五因風控閘冇開倉、到期週頭兩個交易日緩衝回升 → 操作箱顯示沽本週到期 1σ（至少剩 3 日），
 #     權利金閘 80 × √(剩餘交易日 ÷ 5)（剩 4 日 72、剩 3 日 62 點）。依據 research/hsi_futures_range/iv_timing/（使用者 10-14 同意）。
@@ -2839,6 +2841,47 @@ def futu_deals_store(doc, today=None, days=2):
     return out
 
 
+def fund_detailed_stats(rows, start, today):
+    """[R214] 詳細統計（港幣，已實現）：每筆平倉（FIFO 每次配對）同每日淨額（扣手續費）。
+    Sharpe＝年化（√252）日淨盈虧平均 ÷ 標準差，無風險利率當 0，由 start 到 today 每個工作日（冇成交當 0）；
+    比例同本金大細無關。RRR＝平均每筆賺 ÷ 平均每筆蝕（絕對值）。"""
+    trades = [e for e in rows if e.get("trade")]
+    wins = [e["gross"] for e in trades if e["gross"] > 0]
+    losses = [e["gross"] for e in trades if e["gross"] < 0]
+    hold = lambda xs: (sum(xs) / len(xs)) if xs else None
+    daily = {}
+    for e in rows:
+        daily[e["date"]] = daily.get(e["date"], 0.0) + e["gross"] - e["fee"]
+    days = [v for v in daily.values() if abs(v) > 1e-9]
+    wd, ld = [v for v in days if v > 0], [v for v in days if v < 0]
+    series, d = [], start
+    while d <= today:
+        if d.weekday() < 5 or d in daily:
+            series.append(daily.get(d, 0.0))
+        d += timedelta(days=1)
+    sharpe = None
+    if len(series) >= 2:
+        mu = sum(series) / len(series)
+        sd = (sum((x - mu) ** 2 for x in series) / (len(series) - 1)) ** 0.5
+        sharpe = round(mu / sd * 252 ** 0.5, 2) if sd > 0 else None
+    avg_w, avg_l = (sum(wins) / len(wins) if wins else None), (sum(losses) / len(losses) if losses else None)
+    r2 = lambda v: None if v is None else round(v, 2)
+    return {"total_pnl": r2(sum(e["gross"] - e["fee"] for e in rows)), "commissions": r2(sum(e["fee"] for e in rows)),
+            "trades": len(trades), "wins": len(wins), "losses": len(losses),
+            "win_rate": round(len(wins) / len(trades) * 100, 1) if trades else None,
+            "largest_profit": r2(max(wins) if wins else None), "largest_loss": r2(min(losses) if losses else None),
+            "avg_win": r2(avg_w), "avg_loss": r2(avg_l),
+            "rrr": round(avg_w / abs(avg_l), 2) if avg_w and avg_l else None,
+            "profit_factor": round(sum(wins) / abs(sum(losses)), 2) if wins and losses else None,
+            "avg_hold_win_s": hold([e["hold_s"] for e in trades if e["gross"] > 0 and "hold_s" in e]),
+            "avg_hold_loss_s": hold([e["hold_s"] for e in trades if e["gross"] < 0 and "hold_s" in e]),
+            "trading_days": len(days), "winning_days": len(wd), "losing_days": len(ld),
+            "avg_daily": r2(sum(days) / len(days) if days else None),
+            "avg_win_day": r2(sum(wd) / len(wd) if wd else None), "avg_loss_day": r2(sum(ld) / len(ld) if ld else None),
+            "best_day": r2(max(wd) if wd else None), "worst_day": r2(min(ld) if ld else None),
+            "sharpe": sharpe, "sharpe_days": len(series)}
+
+
 def futu_pnl_report(doc, start=None, today=None):
     """先入先出計每個合約嘅已實現盈虧；回傳按產品 × 月／季／年嘅毛利、手續費、淨額（港幣）。"""
     start = date.fromisoformat(start or FUND_REPORT_START)
@@ -2871,20 +2914,21 @@ def futu_pnl_report(doc, start=None, today=None):
             events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy)})
         book = lots.setdefault(code, [])
         while q and book and (book[0][0] > 0) != (q > 0):
-            lq, lp = book[0]
+            lq, lp, lt = book[0]
             take = min(abs(q), abs(lq))
             pnl = (px - lp) * take * mult * (1 if lq > 0 else -1)
-            events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0})
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0,
+                           "trade": True, "hold_s": (t - lt).total_seconds()})        # [R214] 詳細統計用
             lq = lq - take if lq > 0 else lq + take
             q = q + take if q < 0 else q - take
             if lq:
-                book[0] = (lq, lp)
+                book[0] = (lq, lp, lt)
             else:
                 book.pop(0)
         if q:
-            book.append((q, px))
+            book.append((q, px, t))
     for code, book in lots.items():
-        net = sum(lq for lq, _ in book)
+        net = sum(lq for lq, _, _ in book)
         if not net:
             continue
         held = open_now.get(code)
@@ -2894,8 +2938,9 @@ def futu_pnl_report(doc, start=None, today=None):
         if exp and exp < today and held is None:
             prod, mult = futu_product(code)
             ccy = "USD" if code.startswith("US.") else "HKD"
-            pnl = sum(-lp * lq * mult for lq, lp in book)             # 當到期歸零（價外）
-            events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True})
+            pnl = sum(-lp * lq * mult for lq, lp, _ in book)          # 當到期歸零（價外）
+            events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True,
+                           "trade": True})
             warnings.append(f"{code}：冇平倉成交，當 {exp} 到期歸零計（{pnl * fx(ccy):+,.0f} 港幣）；如到期價內請核對結算價")
         else:
             if last_deal.get(code) and last_deal[code] < start:
@@ -2929,8 +2974,9 @@ def futu_pnl_report(doc, start=None, today=None):
         k = (str(f["date"])[:7], f"{f.get('type')}（{f.get('ccy')}）")
         flows[k] = flows.get(k, 0.0) + amt
     products = sorted({e["product"] for e in rows})
+    stats = fund_detailed_stats(rows, start, today)
     return {"status": "ok", "start": str(start), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
-            "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out,
+            "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out, "stats": stats,
             "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())]
             if FUND_REPORT_SHOW_FLOWS else [],
             "warnings": warnings + [str(n) for n in doc.get("notes") or []]}
@@ -3024,6 +3070,29 @@ def build_fund_report_page(r):
                      "<tr><th>期間</th><th>已實現淨額</th><th>未實現</th><th>總盈虧</th><th>回報率</th><th>平倉筆數</th><th>勝率</th></tr>"
                      f"{trs}</table></div><p class='muted' style='font-size:12px'>回報率 ＝ 總盈虧 ÷ {src}；未實現只計入現時所屬期間；"
                      "勝率按每筆平倉成交（毛利 &gt; 0）。</p></div>")
+    st = r.get("stats") or {}
+    if st.get("trades"):                                                  # [R214] 詳細統計
+        hm = lambda v: "—" if v is None else (f"{int(v // 3600)}h {int(v % 3600 // 60)}m" if v < 86400 * 3
+                                              else f"{v / 86400:.1f} 日")
+        m = lambda v: "<span class='muted'>—</span>" if v is None else n(v)
+        x = lambda v, f="{:.2f}": "<span class='muted'>—</span>" if v is None else f.format(v)
+        left = [("總盈虧（已實現淨額）", m(st["total_pnl"])), ("總手續費", x(st["commissions"], "{:,.0f}")),
+                ("最大單筆盈利", m(st["largest_profit"])), ("最大單筆虧損", m(st["largest_loss"])),
+                ("平均持倉時間（賺）", hm(st["avg_hold_win_s"])), ("平均持倉時間（蝕）", hm(st["avg_hold_loss_s"])),
+                ("Profit factor（總賺 ÷ 總蝕）", x(st["profit_factor"])),
+                ("RRR（平均賺 ÷ 平均蝕）", x(st["rrr"])),
+                ("Sharpe ratio（年化）", x(st["sharpe"])),
+                ("平倉筆數／勝率", f"{st['trades']}／{x(st['win_rate'], '{:.0f}%')}")]
+        right = [("交易日數", str(st["trading_days"])), ("賺錢日", str(st["winning_days"])), ("蝕錢日", str(st["losing_days"])),
+                 ("平均每日盈虧", m(st["avg_daily"])), ("平均賺錢日", m(st["avg_win_day"])), ("平均蝕錢日", m(st["avg_loss_day"])),
+                 ("最佳一日", m(st["best_day"])), ("最差一日", m(st["worst_day"])),
+                 ("平均每筆賺", m(st["avg_win"])), ("平均每筆蝕", m(st["avg_loss"]))]
+        trs = "".join(f"<tr><td>{a}</td><td style='text-align:right'>{b}</td><td>{c}</td><td style='text-align:right'>{d}</td></tr>"
+                      for (a, b), (c, d) in zip(left, right))
+        body += ("<div class='section'><b>📋 詳細統計（Detailed Statistics，港幣，已實現）</b><div class='scroll'><table>"
+                 f"{trs}</table></div><p class='muted' style='font-size:12px'>每筆＝先入先出每次平倉配對（毛利，未扣手續費）；"
+                 "每日＝當日已實現淨額（已扣手續費）。Sharpe＝每個工作日淨盈虧（冇成交當 0）年化（×√252），無風險利率當 0；"
+                 f"共 {st['sharpe_days']} 日。RRR＝平均每筆賺 ÷ 平均每筆蝕。</p></div>")
     if un and un.get("by_product"):
         trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(v)}</td></tr>" for k, v in un["by_product"].items())
         body += ("<div class='section'><b>未實現盈虧（按產品，港幣）</b><div class='scroll'><table>"
