@@ -3055,6 +3055,30 @@ def fund_performance(r, unreal, today=None):
             "periods": out}
 
 
+def fund_stats_notes(st, un=None):
+    """[R214] 「要留意」：按詳細統計自動產生嘅提醒（唔含權益金額）。"""
+    out = []
+    if st.get("sharpe") is not None and (st.get("sharpe_days") or 0) < 120:
+        out.append(f"Sharpe {st['sharpe']:.2f} 只用咗 {st['sharpe_days']} 個工作日數據，樣本太短、數字唔穩定；"
+                   "要累積幾個月（至少約半年）先有參考價值。")
+    if st.get("rrr") is not None and st["rrr"] < 1:
+        out.append(f"RRR {st['rrr']:.2f} 細過 1：平均每筆蝕（{abs(st['avg_loss']):,.0f}）大過平均每筆賺（{st['avg_win']:,.0f}），"
+                   f"主要靠勝率 {st['win_rate']:.0f}% 先有錢賺；勝率一跌就會轉蝕。"
+                   f"打和勝率約 {1 / (1 + st['rrr']) * 100:.0f}%。")
+    if st.get("largest_loss") is not None and st.get("avg_win") and abs(st["largest_loss"]) > 10 * st["avg_win"]:
+        out.append(f"最大單筆虧損 {abs(st['largest_loss']):,.0f} 大過平均每筆賺嘅 10 倍"
+                   f"（約 {abs(st['largest_loss']) / st['avg_win']:.0f} 筆賺錢交易先追得返），要留意止損紀律。")
+    if st.get("total_pnl") and st.get("commissions") and st["commissions"] > 0.1 * abs(st["total_pnl"]):
+        out.append(f"手續費 {st['commissions']:,.0f} 佔已實現淨盈虧約 {st['commissions'] / abs(st['total_pnl']) * 100:.0f}%，"
+                   "交易頻率高嘅策略要計埋成本。")
+    if st.get("avg_hold_loss_s") and st.get("avg_hold_win_s") and st["avg_hold_loss_s"] > st["avg_hold_win_s"]:
+        out.append("蝕錢倉平均揸得耐過賺錢倉：可能有「蝕就死揸、賺就快走」嘅傾向。")
+    if un and un.get("total") and st.get("total_pnl") and un["total"] < 0 and abs(un["total"]) > 0.15 * abs(st["total_pnl"]):
+        out.append(f"未實現浮虧 {abs(un['total']):,.0f}（約已實現淨盈虧嘅 {abs(un['total']) / abs(st['total_pnl']) * 100:.0f}%），"
+                   "平倉前總盈虧仲會變。")
+    return out
+
+
 def build_fund_report_page(r):
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>{page_nav('fund_report')}</div>"
             f"<p class='muted'>富途期貨戶口＋證券戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
@@ -3120,6 +3144,10 @@ def build_fund_report_page(r):
                  f"{trs}</table></div><p class='muted' style='font-size:12px'>每筆＝先入先出每次平倉配對（毛利，未扣手續費）；"
                  "每日＝當日已實現淨額（已扣手續費）。Sharpe＝每個工作日淨盈虧（冇成交當 0）年化（×√252），無風險利率當 0；"
                  f"共 {st['sharpe_days']} 日。RRR＝平均每筆賺 ÷ 平均每筆蝕。</p></div>")
+        notes = fund_stats_notes(st, r.get("unrealized"))                 # [R214] 要留意（按數據自動產生）
+        if notes:
+            body += ("<div class='section'><b>⚠️ 要留意：</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
+                     + "".join(f"<li>{esc(t)}</li>" for t in notes) + "</ul></div>")
     if un and un.get("by_product"):
         trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(v)}</td></tr>" for k, v in un["by_product"].items())
         body += ("<div class='section'><b>未實現盈虧（按產品，港幣）</b><div class='scroll'><table>"

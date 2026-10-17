@@ -144,5 +144,19 @@ FAKE[main.FUTU_RISK_FILE] = (json.dumps(R2), 3)
 html = main.handle_fund_report_get(req(start="2026-10-01"))
 check("頁面有按戶口表", "按戶口（港幣）" in html and "證券戶口" in html and "300,000" not in html)
 
+print("\n八、[R214] 要留意")
+nt = main.fund_stats_notes({"sharpe": 6.5, "sharpe_days": 38, "rrr": 0.84, "avg_loss": -2150, "avg_win": 1797, "win_rate": 63,
+                             "largest_loss": -35500, "total_pnl": 70407, "commissions": 9362,
+                             "avg_hold_win_s": 86000, "avg_hold_loss_s": 55000}, {"total": -14000})
+check("Sharpe 樣本短", any("樣本太短" in t for t in nt), nt)
+check("RRR < 1＋打和勝率 54%", any("RRR 0.84" in t and "54%" in t for t in nt), nt)
+check("最大虧損 > 10 倍平均賺", any("最大單筆虧損" in t for t in nt), nt)
+check("手續費佔 13%", any("手續費" in t and "13%" in t for t in nt), nt)
+check("浮虧提醒", any("未實現浮虧" in t for t in nt), nt)
+check("好嘅數據冇提醒", main.fund_stats_notes({"sharpe": 1.2, "sharpe_days": 300, "rrr": 1.5, "avg_win": 100, "largest_loss": -200,
+                                                  "total_pnl": 1000, "commissions": 10}) == [])
+html = main.handle_fund_report_get(req(start="2026-10-01"))
+check("頁面有「要留意：」", "要留意：" in html)
+
 print(f"\n合計 ✅ {OK}  ❌ {FAIL}")
 sys.exit(1 if FAIL else 0)
