@@ -3376,11 +3376,13 @@ def _scan_clean_row(raw):
 
 
 LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
-LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA"]      # [R202] 每隻產品一個程式，各存 longfei/<產品>/latest.json
+LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "EEM", "EFA", "IWM"]   # [R202][R215] 每隻產品一個程式，各存 longfei/<產品>/latest.json
 # [R203] 使用者 10-16：美期冇報價權限，MES／MNQ／MYM 改美股 ETF SPY／QQQ／DIA
 LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指",
-                         "SPY": "標普 500 ETF", "QQQ": "納指 100 ETF", "DIA": "道指 ETF"}
-LONGFEI_ETFS = {"SPY", "QQQ", "DIA"}
+                         "SPY": "標普 500 ETF", "QQQ": "納指 100 ETF", "DIA": "道指 ETF",
+                         "TLT": "美國 20 年以上國債", "HYG": "高收益企業債", "GLD": "黃金",
+                         "USO": "原油", "EEM": "新興市場", "EFA": "美加以外發達市場", "IWM": "羅素 2000 中小型股"}
+LONGFEI_ETFS = set(LONGFEI_PRODUCTS) - {"HSI"}
 LONGFEI_MAX_TRADES = 500
 LONGFEI_MAX_DECISIONS = 30
 LONGFEI_MAX_BYTES = 400_000
@@ -7811,7 +7813,7 @@ def _lf_group(prods, total, real):
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）同美股 ETF SPY、QQQ、DIA"
+    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）同 10 隻美股 ETF（SPY、QQQ、DIA、IWM、TLT、HYG、GLD、USO、EEM、EFA）"
              "（每次約 US$100,000，可沽空，包盤前盤後）；程式負責落單同硬性風控（每日虧損上限：HSI HK$10,000、每隻 ETF HK$100,000，"
              "到咗即平倉停機）。"
              "真倉同模擬倉分開計：模擬倉一直做前向測試，唔會因為開咗真倉而停。</p></div>")
