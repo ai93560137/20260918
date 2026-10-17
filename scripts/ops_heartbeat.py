@@ -7,7 +7,7 @@
    GitHub 會延遲或丟掉高頻排程，所以每 15 分鐘那種只在「一次都沒有」或「失敗」時才紅。
 2. **富途數據 VM `futu-data-tw`**（10-15 起富途數據由 VM 推；10-16 由香港 futu-data 搬台灣）：Compute Engine API 讀 VM 狀態（不是 RUNNING → 🔴），
    再看 VM 上各服務的輸出：`auto_risk`（futu/risk/latest.json，下面新鮮度）、`push_to_gcp`（futu/snapshots/US.QQQ.json）、
-   `iv_push`（futu/snapshots/HK.HSI_IV.json）、🐉 龍飛陣（longfei/SPY/latest.json received_ts，> 30 分鐘 → 🔴；10-18 加）的 GCS 更新時間。OpenD 死咗三個都會停，所以三個都舊即係 OpenD 或 VM 問題。
+   `iv_push`（futu/snapshots/HK.HSI_IV.json）、🐉 龍飛陣（longfei/SPY/latest.json received_ts，> 30 分鐘 → 🔴；10-18 加）的 GCS 更新時間（上限：龍飛陣 0.5、push_to_gcp 1、iv_push 2 小時）；呢三項週末照推，**唔放寬**（10-18 OOM 事故後）。auto_risk 週末本來停，照放寬。OpenD 死咗三個都會停，所以三個都舊即係 OpenD 或 VM 問題。
 3. **數據新鮮度**：GCS（富途快照、成交檔、MT5 心跳、通報狀態、晨會簡報）、repo（金絲雀、對帳表、偏離報告）、
    其他陣分支（蛇蟠通道 levels.json、三地日線、新高名單、雲垂掃描）。每項有「最舊可接受幾小時」，
    週末與週一放寬（市場沒開就不會有新數據）。
@@ -351,11 +351,11 @@ def vm_checks(now: datetime, session=None) -> tuple[list[tuple[str, str, str]], 
         lf = datetime.fromtimestamp(float(ts), UTC).astimezone(HKT) if ts else None
     except Exception:  # noqa: BLE001
         lf = None
-    items = [("🐉 龍飛陣 VM 程式（每 5 分鐘推，代表 SPY）", "GCS longfei/SPY/latest.json received_ts", lf, 0.5),
+    items = [("🐉 龍飛陣 VM 程式（每 5 分鐘推，代表 SPY）", "GCS longfei/SPY/latest.json received_ts", lf, 0.5, False),
              ("VM push_to_gcp（5 分 K＋期權，每 5 分鐘）", "GCS futu/snapshots/US.QQQ.json 更新時間",
-              updated("futu/snapshots/US.QQQ.json"), 6),
+              updated("futu/snapshots/US.QQQ.json"), 1, False),
              ("VM iv_push（恒指／ES／NQ IV，每 30 分鐘）", "GCS futu/snapshots/HK.HSI_IV.json 更新時間",
-              updated("futu/snapshots/HK.HSI_IV.json"), 6)]
+              updated("futu/snapshots/HK.HSI_IV.json"), 2, False)]
     return rows, items
 
 
@@ -380,14 +380,16 @@ def _brief_time(now: datetime) -> datetime | None:
 def judge_freshness(items, now: datetime) -> list[tuple[str, str, str]]:
     out = []
     extra = allowance(now)
-    for name, src, t, max_h in items:
+    for item in items:
+        name, src, t, max_h = item[:4]
+        allow = extra if len(item) < 5 or item[4] else 0.0      # 第 5 欄 False＝週末照推、唔放寬
         if t is None:
             out.append(("🔴", name, f"讀不到時間（{src}）"))
             continue
         age = (now - t).total_seconds() / 3600
-        limit = max_h + (extra if max_h < 24 * 7 else 0)
+        limit = max_h + (allow if max_h < 24 * 7 else 0)
         if age > limit:
-            out.append(("🔴", name, f"最新 {t:%m-%d %H:%M}，已 {age:.0f} 小時（上限 {limit:.0f}）｜{src}"))
+            out.append(("🔴", name, f"最新 {t:%m-%d %H:%M}，已 {age:.0f} 小時（上限 {limit:g}）｜{src}"))
         else:
             out.append(("🟢", name, f"最新 {t:%m-%d %H:%M}（{'盤中，未收市' if age < 0 else f'{age:.1f} 小時'}）"))
     return out
