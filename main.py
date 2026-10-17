@@ -3439,6 +3439,43 @@ def handle_longfei_push(payload):
                     "decisions": len(doc["decisions"])}), 200
 
 
+LONGFEI_BARS_MAX_ROWS = 1500                         # [R218] 一日 1 分鐘 K 線：美股連盤前盤後 960 條、恒指日夜盤約 1,000 條
+
+
+def _lf_bar_row(r):
+    """[R218] ["HH:MM", o, h, l, c, v]；格式唔啱就丟。"""
+    if not (isinstance(r, list) and len(r) == 6 and isinstance(r[0], str) and re.fullmatch(r"\d{2}:\d{2}", r[0])):
+        return None
+    try:
+        nums = [float(x) for x in r[1:]]
+    except (TypeError, ValueError):
+        return None
+    return [r[0]] + nums if all(math.isfinite(x) for x in nums) else None
+
+
+def handle_longfei_bars(payload):
+    """[R218] 龍飛陣 VM 收市後推上嚟嘅 1 分鐘 OHLC（私人，只存 GCS longfei/bars/<產品>/<日>.json；同日再推會覆蓋）。
+    模擬倉同真倉睇同一個市場，所以唔分 real。網頁唔顯示，留俾覆盤同回測。"""
+    product = str(payload.get("product") or "").upper()
+    day = str(payload.get("date") or "")
+    bars = payload.get("bars")
+    if product not in LONGFEI_PRODUCT_NAMES or not ARCHIVE_DATE_RE.match(day) or not isinstance(bars, list):
+        return jsonify({"status": "error", "message": "longfei_bars: bad shape"}), 422
+    if len(bars) > LONGFEI_BARS_MAX_ROWS:
+        return jsonify({"status": "error", "message": "longfei_bars: too many rows"}), 413
+    rows = [x for x in (_lf_bar_row(r) for r in bars) if x]
+    doc = {"product": product, "date": day, "received_utc": fmt_utc(),
+           "fields": ["t", "o", "h", "l", "c", "v"], "bars": rows}
+    try:
+        gcs_write_text(f"{LONGFEI_DIR}/bars/{product}/{day}.json",
+                       json.dumps(doc, ensure_ascii=False, separators=(",", ":")))
+    except StorageError as exc:
+        log_event(f"⚠️ [龍飛陣 K 線存檔失敗] {product} {day} {exc}", severity="WARNING", component="longfei")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    return jsonify({"status": "stored", "product": product, "date": day, "rows": len(rows),
+                    "dropped": len(bars) - len(rows)}), 200
+
+
 def handle_scan_push(payload):
     kind = _futu_text(payload.get("kind"), 24).lower()
     if not SCAN_KIND_RE.match(kind):
@@ -7771,7 +7808,8 @@ def _lf_product_section(p, d, real=False):
                       "<th>點數</th><th>入場理由</th><th>出場原因</th></tr>" + rows + "</table></div>" if rows else
                       "<p class='muted'>未有平倉成交。</p>"))
     drows = "".join(
-        f"<tr><td>{esc(_lf_hkt(d2.get('ts')))}</td><td>{esc(str(d2.get('final') or '—'))}</td>"
+        f"<tr><td>{esc(_lf_hkt(d2.get('ts')))}</td><td>{esc(str(d2.get('final') or '—'))}"
+        f"{'（篩走）' if d2.get('gate') == 'SKIP' else ''}</td>"   # [R218] Haiku 話唔使睇，冇問決策模型
         f"<td>{_cn(d2.get('last'), nd)}</td><td>{esc(str(d2.get('reason') or '')[:120])}</td>"
         f"<td>{esc(str(d2.get('rejected') or ''))}</td></tr>" for d2 in reversed(d["decisions"][-5:]))
     dec_html = ("<h3>🧠 最近決策</h3>"
@@ -12279,6 +12317,8 @@ def _dispatch_post(payload):
         return handle_scan_push(payload)
     if action == "longfei_push":                     # [R200] 🐉 龍飛陣 VM 推上嚟嘅成績（只存）
         return handle_longfei_push(payload)
+    if action == "longfei_bars":                     # [R218] 龍飛陣 1 分鐘 K 線收市存檔（只存）
+        return handle_longfei_bars(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -12309,7 +12349,8 @@ def receive_tradingview_signal(request):
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
     if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl",
-                                     "cme_watchlist", "cme_quotes", "cme_quotes_get", "longfei_push"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+                                     "cme_watchlist", "cme_quotes", "cme_quotes_get", "longfei_push",
+                                     "longfei_bars"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()

@@ -123,7 +123,8 @@ def closes(data):
                 row = {**t, "product": p}
                 if last_open:   # 舊紀錄 CLOSE 冇入場資料：由對應 OPEN 補
                     for k_close, k_open in (("open_reason", "reason"), ("confidence", "confidence"),
-                                            ("open_session", "session"), ("lessons", "lessons")):
+                                            ("open_session", "session"), ("lessons", "lessons"),
+                                            ("model", "model")):
                         if row.get(k_close) is None and last_open.get(k_open) is not None:
                             row[k_close] = last_open[k_open]
                 rows.append(row)
@@ -232,6 +233,106 @@ def _group(rows, keyf):
     return g
 
 
+# [R218] 每百萬 token 美元（官方價目表 2026-10）：輸入、輸出、快取讀、1 小時快取寫
+PRICES = {"claude-fable-5-1": (10, 50, 0.25, 20), "claude-opus-5-5": (4, 20, 0.20, 8),
+          "claude-sonnet-5-5": (2, 10, 0.10, 4), "claude-haiku-5-5": (0.10, 0.50, 0.01, 0.20)}
+DEFAULT_MODEL = "claude-sonnet-5-5"      # R218 之前嘅紀錄冇寫模型，嗰陣用 Sonnet 5.5
+
+
+def usd(u):
+    """一次 call 嘅美元成本（usage 冇寫模型就當 Sonnet 5.5）。"""
+    if not isinstance(u, dict):
+        return 0.0
+    pi, po, pr, pw = PRICES.get(u.get("model") or DEFAULT_MODEL, PRICES[DEFAULT_MODEL])
+    return ((u.get("in") or 0) * pi + (u.get("out") or 0) * po + (u.get("cache_read") or 0) * pr
+            + (u.get("cache_write") or 0) * pw) / 1e6
+
+
+def api_cost(data):
+    """[R218] Claude API 費用：決策模型同 Haiku 篩選分開計；篩走幾多次。"""
+    L = ["\n## Claude API 費用\n", "| 產品 | 決策次數 | 篩走 | 決策模型 | 決策費 US$ | 篩選費 US$ | 合計 US$ | 快取命中 |",
+         "|---|---:|---:|---|---:|---:|---:|---:|"]
+    tot = [0, 0, 0.0, 0.0]
+    for p, d in data.items():
+        decs = d["decisions"]
+        main_u = [x["usage"] for x in decs if isinstance(x.get("usage"), dict)]
+        gate_u = [x["gate_usage"] for x in decs if isinstance(x.get("gate_usage"), dict)]
+        skipped = sum(1 for x in decs if x.get("gate") == "SKIP")
+        if not main_u and not gate_u:
+            continue
+        models = sorted({u.get("model") or DEFAULT_MODEL for u in main_u})
+        c_main, c_gate = sum(map(usd, main_u)), sum(map(usd, gate_u))
+        inp = sum((u.get("in") or 0) + (u.get("cache_read") or 0) for u in main_u)
+        hit = sum(u.get("cache_read") or 0 for u in main_u) / inp if inp else None
+        L.append(f"| {p} | {len(main_u)} | {skipped} | {'、'.join(m.replace('claude-', '') for m in models) or '—'} | "
+                 f"{c_main:.2f} | {c_gate:.2f} | {c_main + c_gate:.2f} | {fmt(hit, 'pct')} |")
+        tot = [tot[0] + len(main_u), tot[1] + skipped, tot[2] + c_main, tot[3] + c_gate]
+    L.append(f"| **合計** | {tot[0]} | {tot[1]} | | {tot[2]:.2f} | {tot[3]:.2f} | **{tot[2] + tot[3]:.2f}** | |")
+    return L
+
+
+def _bar_moves(dec_ts, last, bars, tz, minutes=60):
+    """決策之後 N 分鐘內最大升／跌幅（%），用 1 分鐘 K 線。bars：{日期: [[HH:MM,o,h,l,c,v],...]}。"""
+    from zoneinfo import ZoneInfo
+    try:
+        t0 = datetime.fromisoformat(str(dec_ts)).astimezone(ZoneInfo(tz))
+    except ValueError:
+        return None
+    hi = lo = None
+    for k in range(minutes + 1):
+        t = t0 + timedelta(minutes=k)
+        row = bars.get(t.strftime("%Y-%m-%d"), {}).get(t.strftime("%H:%M"))
+        if row:
+            hi = row[1] if hi is None else max(hi, row[1])
+            lo = row[2] if lo is None else min(lo, row[2])
+    if hi is None or not last:
+        return None
+    return max(hi - last, last - lo) / last * 100
+
+
+def gate_audit(data, bars_by_p):
+    """[R218] 用 1 分鐘 K 線檢查 Haiku 有冇篩走好機會：篩走之後 60 分鐘嘅最大波幅，對比放行（LOOK）嗰啲。
+    篩走嘅波幅經常大過放行嘅中位數 → Haiku 太緊，要改篩選指引或者唔篩。"""
+    L = ["\n## Haiku 篩選檢查（1 分鐘 K 線，決策後 60 分鐘最大波幅）\n"]
+    rows = []
+    for p, d in data.items():
+        bars = bars_by_p.get(p) or {}
+        if not bars:
+            continue
+        tz = "Asia/Hong_Kong" if p == "HSI" else "America/New_York"
+        skip, look = [], []
+        for x in d["decisions"]:
+            if x.get("gate") not in ("SKIP", "LOOK"):
+                continue
+            m = _bar_moves(x.get("ts"), x.get("last"), bars, tz)
+            if m is not None:
+                (skip if x["gate"] == "SKIP" else look).append(m)
+        if not skip or not look:
+            continue
+        med = sorted(look)[len(look) // 2]
+        big = sum(1 for m in skip if m >= med)
+        rows.append(f"| {p} | {len(look)} | {med:.2f}% | {len(skip)} | {sum(skip) / len(skip):.2f}% | "
+                    f"{big}（{big / len(skip):.0%}） |")
+    if not rows:
+        return L + ["未有足夠數據（要有篩選紀錄同 longfei/bars/ 嘅 1 分鐘 K 線）。"]
+    return L + ["| 產品 | 放行次數 | 放行後波幅中位數 | 篩走次數 | 篩走後平均波幅 | 篩走但波幅 ≥ 放行中位數 |",
+                "|---|---:|---:|---:|---:|---:|"] + rows + [
+        "", f"篩走但波幅 ≥ 放行中位數嘅比例長期高過 40% → Haiku 漏得太多，考慮放寬篩選指引；少過 {MIN_N} 次唔下結論。"]
+
+
+def fetch_bars(days, products):
+    """longfei/bars/<產品>/<日>.json → {產品: {日期: {HH:MM: [o,h,l,c,v]}}}（交易所當地日期）。"""
+    out = {}
+    today = datetime.now(HKT).date()
+    for p in products:
+        for k in range(days + 1):
+            day = (today - timedelta(days=k)).isoformat()
+            doc = _gcs_cat(f"longfei/bars/{p}/{day}.json")
+            if isinstance(doc, dict) and isinstance(doc.get("bars"), list):
+                out.setdefault(p, {})[day] = {r[0]: r[1:] for r in doc["bars"] if isinstance(r, list) and len(r) == 6}
+    return out
+
+
 def readiness(data):
     """[R208] 真倉準備：bot 每 30 分鐘唯讀查真實戶口，結果喺 status.real_preflight。"""
     yn = lambda v: "—" if v is None else ("✅" if v else "❌")
@@ -253,7 +354,7 @@ def readiness(data):
     return L
 
 
-def report(data, title_date=None, real=False):
+def report(data, title_date=None, real=False, bars=None):
     rows = closes(data)
     day = title_date or datetime.now(HKT).strftime("%Y-%m-%d")
     L = [f"# 🐉 龍飛陣覆盤 {day}・{'💰 真倉' if real else '🧪 模擬倉'}", "",
@@ -285,6 +386,8 @@ def report(data, title_date=None, real=False):
     L.append(table(_group(rows, lambda r: conf_bucket(r.get("confidence"))), "按 AI 信心"))
     L.append(table(_group(rows, lambda r: exit_kind(r.get("reason"), r.get("points"))), "按出場方式"))
     L.append(table(_group(rows, lambda r: r.get("lessons") or "（未有教學簿版本）"), "按教學簿版本（學咗之後有冇進步）"))
+    L.append(table(_group(rows, lambda r: (r.get("model") or DEFAULT_MODEL).replace("claude-", "")),
+                   "按決策模型（R218 起 Opus 5.5；之前 Sonnet 5.5）"))
     # 出場質素
     q = [r for r in rows if isinstance(r.get("mfe"), (int, float)) and r.get("risk_pts")]
     if q:
@@ -307,6 +410,8 @@ def report(data, title_date=None, real=False):
                 rej[str(x["rejected"])[:30]] += 1
         L.append(f"- {p}：{len(decs)} 次決策（" + "、".join(f"{k} {v}" for k, v in sorted(cnt.items(), key=lambda kv: -kv[1])) + "）"
                  + ("；風控紀錄：" + "、".join(f"{k}×{v}" for k, v in rej.items()) if rej else ""))
+    L += api_cost(data)
+    L += gate_audit(data, bars or {})
     L.append("\n## 候選教學（要使用者批准先寫入 LESSONS.md）\n")
     L += candidates(rows, {p: d["decisions"] for p, d in data.items()})
     L.append("\n## 最近 10 筆成交\n")
@@ -331,7 +436,8 @@ def main():
         ap.error("要 --fetch 或者 --dir")
     data = fetch(a.days) if a.fetch else load_dir(a.dir)
     real = fetch(a.days, "longfei/real") if a.fetch else {}
-    text = (report(real, real=True) + "\n---\n\n" if real else "") + report(data)
+    bars = fetch_bars(a.days, list(set(data) | set(real))) if a.fetch else {}   # [R218] 1 分鐘 K 線（模擬同真倉共用）
+    text = (report(real, real=True, bars=bars) + "\n---\n\n" if real else "") + report(data, bars=bars)
     if a.out:
         Path(a.out).write_text(text, encoding="utf-8")
     else:

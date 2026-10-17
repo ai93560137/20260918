@@ -95,7 +95,8 @@ class Trader:
         day = trading_day_key(now, cfg.market, cfg.kind)
         if st.get("day") != day:
             eq = self.broker.equity()
-            st.update({"day": day, "day_start_equity": eq, "trades_today": 0, "ai_skipped_today": 0,
+            st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
+                       "ai_skipped_today": 0, "ai_gated_today": 0,
                        "today_trades": [], "halted": False, "halt_reason": None})
             self._log("events", {"type": "NEW_DAY", "day": day, "equity": eq})
 
@@ -203,6 +204,18 @@ class Trader:
         remaining = cfg.daily_loss_limit + st.get("day_pnl", 0)
         can_open = self._can_open(mins_left, session) and not self._portfolio_block()
         ctx = self._context(now, contract, qty, snap, session, mins_left, remaining, can_open)
+        gate = None
+        if qty == 0 and can_open and cfg.gate_model:
+            # [R218] 方案 A：冇倉先用 Haiku 篩；佢話唔使睇就唔問決策模型（有倉一律直接問）
+            gate = self.brain.screen(ctx)
+            if not gate.get("look"):
+                st["ai_gated_today"] = st.get("ai_gated_today", 0) + 1
+                self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": last,
+                                        "pos": qty, "ai_action": None, "final": "HOLD", "gate": "SKIP",
+                                        "reason": gate.get("reason"), "rejected": None, "stop": None,
+                                        "target": None, "usage": None, "gate_usage": gate.get("_usage"),
+                                        "day_pnl": st.get("day_pnl"), "session": session})
+                return
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
         n_open = order_qty(spec_for(cfg.product), last, cfg.max_qty)   # 期貨張數／ETF 股數
@@ -214,7 +227,9 @@ class Trader:
                "ai_target": d.get("target_price"), "confidence": d.get("confidence"),
                "reason": d.get("reason"), "final": action, "stop": stop, "target": target,
                "rejected": rejected, "usage": d.get("_usage"), "day_pnl": st.get("day_pnl"),
-               "lessons": d.get("_lessons"), "session": session}
+               "lessons": d.get("_lessons"), "session": session,
+               "gate": "LOOK" if gate else None, "gate_usage": (gate or {}).get("_usage"),
+               "gate_reason": (gate or {}).get("reason")}
         self._log("decisions", rec)
         hist = st.setdefault("recent_decisions", [])
         hist.append({"t": now.strftime("%H:%M"), "action": action, "ai": d.get("action"),
@@ -259,13 +274,14 @@ class Trader:
         st["pos"] = {"code": contract, "side": side, "qty": n_open, "entry": px,
                      "stop": stop_adj, "target": tgt_adj, "opened_at": now.isoformat(),
                      "reason": d.get("reason"), "risk_pts": round(dist, 4), "mfe": 0.0, "mae": 0.0,
-                     "lessons": d.get("_lessons"), "confidence": d.get("confidence"), "session": session}
+                     "lessons": d.get("_lessons"), "confidence": d.get("confidence"), "session": session,
+                     "model": (d.get("_usage") or {}).get("model")}       # [R218] 覆盤比較唔同決策模型
         st["trades_today"] = st.get("trades_today", 0) + 1
         self._log("trades", {"type": "OPEN", "code": contract, "side": side,
                              "qty": n_open, "price": px, "stop": stop_adj,
                              "target": tgt_adj, "reason": d.get("reason"), "risk_pts": round(dist, 4),
                              "confidence": d.get("confidence"), "lessons": d.get("_lessons"),
-                             "session": session})
+                             "session": session, "model": st["pos"]["model"]})
         self._save_state()                        # 即刻寫，等其他程式睇到呢個倉
 
     # ---------- [R216] 組合層面（使用者 10-17：A 美股大盤組同方向最多 2 隻；C 全部 ETF 合計日蝕 HK$200,000）----------
@@ -471,7 +487,8 @@ class Trader:
                "r_multiple": round(pts / risk, 2) if pts is not None and risk else None,
                "mfe": meta.get("mfe"), "mae": meta.get("mae"), "hold_min": hold,
                "confidence": meta.get("confidence"), "lessons": meta.get("lessons"),
-               "open_session": meta.get("session"), "open_reason": (meta.get("reason") or "")[:200]}
+               "open_session": meta.get("session"), "open_reason": (meta.get("reason") or "")[:200],
+               "model": meta.get("model")}
         self._log("trades", rec)
         st.setdefault("today_trades", []).append(
             {"side": "LONG" if side > 0 else "SHORT", "entry": entry, "exit": px,
