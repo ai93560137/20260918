@@ -174,7 +174,7 @@ class FutuBroker:
 
     def real_preflight(self, code: str, qty: int, price: float) -> dict:
         """查真實戶口準備好未（入咗錢、孖展、可唔可以買／沽空 qty 股或張、美股日內交易限制）。
-        只查詢，唔落單、唔解鎖；只回傳是／否同次數，唔回傳金額或戶口號碼（會上載 GCS）。"""
+        只查詢，唔落單、唔解鎖；唔回傳戶口號碼。R212 起 account 帶淨值同購買力（私人 GCS，網頁唔顯示）。"""
         row = self._real_account()
         if row is None:
             return {"ok": False, "found": False, "note": f"搵唔到 {self.spec.market} 真實戶口"}
@@ -184,6 +184,7 @@ class FutuBroker:
         info = _ok(*self.trade.accinfo_query(trd_env=TrdEnv.REAL, acc_id=acc_id, refresh_cache=True,
                                              currency=ccy), "accinfo_query REAL").iloc[0]
         out["funded"] = _num(info.get("total_assets")) > 0
+        out["account"] = self._acct_fields(info, ccy)       # [R212] 使用者 10-17：真實戶口淨值同購買力上載私人 GCS
         for k in ("is_pdt", "pdt_seq", "dt_status", "risk_status"):
             v = info.get(k)
             if v is not None and str(v) not in ("", "N/A", "nan"):
@@ -205,6 +206,21 @@ class FutuBroker:
             out["can_short"] = _num(ti.get("max_sell_short")) >= qty
         out["ok"] = bool(out["funded"] and out["can_long"] and out["can_short"])
         return out
+
+    @staticmethod
+    def _acct_fields(info, ccy):
+        return {"currency": ccy, "equity": round(_num(info.get("total_assets")), 2),
+                "power": round(_num(info.get("power")), 2),
+                "max_power_short": round(_num(info.get("max_power_short")), 2),
+                "cash": round(_num(info.get("cash")), 2),
+                "maintenance_margin": round(_num(info.get("maintenance_margin")), 2)}
+
+    def account_snapshot(self) -> dict:
+        """[R212] 而家戶口（模擬或真實）嘅淨值同購買力，ETF 用美元、期貨用港幣。只上載私人 GCS。"""
+        ccy = "USD" if self.spec.currency == "USD" else "HKD"
+        info = _ok(*self.trade.accinfo_query(trd_env=self.env, acc_id=self.acc_id, refresh_cache=False,
+                                             currency=ccy), "accinfo_query").iloc[0]
+        return self._acct_fields(info, ccy)
 
     def futures_room(self, code: str, side: int, price: float) -> dict:
         """[R209] 期貨戶口緩衝（淨值 − 維持保證金，港幣）同每張初始保證金（做好／做淡），富途即時查，唔寫死。"""

@@ -7525,7 +7525,8 @@ def longfei_metrics(trades, key="points"):
 def _longfei_one(doc):
     trades = [t for t in (doc.get("trades") or []) if isinstance(t, dict)]
     age = (now_ts() - doc["received_ts"]) / 60 if isinstance(doc.get("received_ts"), (int, float)) else None
-    state = {k: v for k, v in (doc.get("status") or {}).items() if k != "real_preflight"}   # 戶口檢查唔公開
+    state = {k: v for k, v in (doc.get("status") or {}).items()
+             if k not in ("real_preflight", "sim_account", "real_account")}   # 戶口檢查、戶口淨值（R212）唔公開
     return {"state": state, "received_utc": doc.get("received_utc"), "age_min": age,
             "stale": age is None or age > LONGFEI_STALE_MIN, "metrics": longfei_metrics(trades),
             "metrics_hkd": longfei_metrics(trades, "pnl_hkd_gross"), "trades": trades,
@@ -7680,7 +7681,8 @@ def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
     intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）同美股 ETF SPY、QQQ、DIA"
-             "（每次約 US$10,000，可沽空，包盤前盤後）；程式負責落單同硬性風控（每隻每日虧損上限 HK$10,000，到咗即平倉停機）。"
+             "（每次約 US$100,000，可沽空，包盤前盤後）；程式負責落單同硬性風控（每日虧損上限：HSI HK$10,000、每隻 ETF HK$100,000，"
+             "到咗即平倉停機）。"
              "真倉同模擬倉分開計：模擬倉一直做前向測試，唔會因為開咗真倉而停。</p></div>")
     if data.get("status") != "ok":
         return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
