@@ -17,7 +17,12 @@ for P in $EXTRA; do
   echo "$KNOWN" | grep -q " $P " || { echo "唔識嘅產品 $P，跳過"; continue; }
   D="$H/zhuge/ai_trader_$P"
   [ -d "$D" ] || { mkdir -p "$D" && chown "$U" "$D" && chmod 700 "$D"; }
-  systemctl is-active -q "zhuge-longfei@$P.service" || { systemctl enable --now "zhuge-longfei@$P.service"; echo "已開模擬 $P"; }
+  # [R220] 10-18 OOM 事故：可用記憶體少過 400MB 就唔再開新模擬程式（保住 OpenD 同 auto_risk）
+  AVAIL=$(awk '/^MemAvailable:/{print int($2/1024)}' /proc/meminfo)
+  if ! systemctl is-active -q "zhuge-longfei@$P.service"; then
+    if [ "${AVAIL:-0}" -lt 400 ]; then echo "記憶體得 ${AVAIL}MB，唔開模擬 $P"; continue; fi
+    systemctl enable --now "zhuge-longfei@$P.service"; echo "已開模擬 $P"; sleep 20
+  fi
 done
 if [ -n "$EXTRA" ]; then
   for u in $(systemctl list-units --all --plain --no-legend 'zhuge-longfei@*.service' | awk '{print $1}'); do
