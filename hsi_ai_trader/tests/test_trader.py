@@ -718,3 +718,31 @@ def test_total_etf_daily_loss_blocks_new_entries(tmp_path):
 def test_portfolio_rules_skip_futures(env):
     cfg, t, b, ai, tr = env
     assert tr._portfolio_block(1) is None
+
+
+def test_rth_only_etfs_no_entries_outside_regular_hours(tmp_path):
+    from markets import SPECS, ET
+    assert not SPECS["EWU"].ext_hours and SPECS["SPY"].ext_hours and SPECS["FXI"].ext_hours
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="EWU")
+    t["now"] = datetime(2026, 10, 19, 7, 0, 5, tzinfo=ET).astimezone(HKT)      # 盤前
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert not b.orders
+    t["now"] = datetime(2026, 10, 19, 10, 0, 5, tzinfo=ET).astimezone(HKT)     # 正常時段
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    tr.tick()
+    assert tr.state["pos"]["side"] == 1
+    assert not tr._can_open(245, "RTH") and tr._can_open(270, "RTH")          # 距 20:00；即 16:00 前 5／30 分鐘
+
+
+def test_spy_still_trades_premarket(tmp_path):
+    from markets import ET
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="SPY")
+    t["now"] = datetime(2026, 10, 19, 7, 0, 5, tzinfo=ET).astimezone(HKT)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["side"] == 1

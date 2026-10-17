@@ -182,8 +182,13 @@ class Trader:
         self.state["last_decision_bar"] = key
         return True
 
-    def _can_open(self, mins_left):
+    def _can_open(self, mins_left, session=None):
         st, cfg = self.state, self.cfg
+        sp = spec_for(cfg.product)
+        if sp.kind == "stock" and not sp.ext_hours:     # 使用者 10-17：差價太闊嘅 ETF 盤前盤後唔開新倉
+            if session != "RTH":
+                return False
+            mins_left = (mins_left or 0) - 240            # 收市計 16:00，唔係 20:00
         return (not st.get("halted") and not cfg.pause_file.exists() and not st.get("foreign_qty")
                 and mins_left is not None and mins_left > cfg.no_entry_before_close_min)
 
@@ -191,7 +196,7 @@ class Trader:
         st, cfg = self.state, self.cfg
         last = snap["last"]
         remaining = cfg.daily_loss_limit + st.get("day_pnl", 0)
-        can_open = self._can_open(mins_left) and not self._portfolio_block()
+        can_open = self._can_open(mins_left, session) and not self._portfolio_block()
         ctx = self._context(now, contract, qty, snap, session, mins_left, remaining, can_open)
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}

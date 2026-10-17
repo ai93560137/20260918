@@ -57,7 +57,9 @@ def product_line(cfg) -> str:
     if sp.kind == "stock":
         return (f"{sp.name} ({sp.product}, US-listed ETF, about US${sp.notional_usd:,.0f} per position, share count "
                 f"set by code, tick {sp.tick:g}, long or short), US extended hours 04:00-20:00 ET (pre-market, "
-                f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)")
+                f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)"
+                + ("" if sp.ext_hours else "; NEW ENTRIES ONLY in regular hours 09:30-16:00 ET (spreads too wide "
+                   "outside), existing positions are still managed"))
     sess = ("HKFE day and night sessions (HKT)" if sp.market == "HK"
             else "CME Globex nearly 24h, Sunday 18:00 to Friday 17:00 US Eastern, daily break 17:00-18:00 ET")
     return (f"{sp.name} ({sp.product}, front month, {sp.currency} {sp.point_value:g} per index point, "
