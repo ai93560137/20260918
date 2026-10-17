@@ -184,7 +184,7 @@ def test_no_entry_near_close(env):
     t["now"] = datetime(2026, 10, 16, 16, 25, 5, tzinfo=HKT)
     ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.9, "reason": "x"}
     tr.tick()
-    assert not b.pos.get("HK.MHI2610") and ai.ctx["risk"]["new_entries_allowed"] is False
+    assert not b.pos.get("HK.MHI2610") and ai.calls == 0                # 收市前冇倉：唔開、亦唔問 Claude
 
 
 def test_foreign_position_untouched_and_blocks_entries(env):
@@ -195,7 +195,7 @@ def test_foreign_position_untouched_and_blocks_entries(env):
     ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.9, "reason": "x"}
     tr.tick()
     assert tr.state.get("pos") is None and tr.state["foreign_qty"] == -1
-    assert b.orders == [] and ai.ctx["risk"]["new_entries_allowed"] is False
+    assert b.orders == [] and ai.calls == 0 and tr.state["ai_skipped_today"] == 1   # 外來倉擋住、自己冇倉：唔問
     b.price = 30000                                            # 外來倉大蝕都唔郁
     advance(t, minutes=5)
     tr.tick()
@@ -746,3 +746,33 @@ def test_spy_still_trades_premarket(tmp_path):
     advance(t, minutes=5)
     tr.tick()
     assert tr.state["pos"]["side"] == 1
+
+
+def test_no_claude_call_when_flat_and_cannot_open(env):
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    n = ai.calls
+    cfg.pause_file.write_text("x")
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == n and tr.state["ai_skipped_today"] == 1          # 冇倉＋暫停：唔問
+    cfg.pause_file.unlink()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["qty"] == 1
+    cfg.pause_file.write_text("x")
+    n = ai.calls
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == n + 1                                             # 有倉：照問
+
+
+def test_rth_only_etf_skips_claude_premarket(tmp_path):
+    from markets import ET
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="EWC")
+    t["now"] = datetime(2026, 10, 19, 7, 0, 5, tzinfo=ET).astimezone(HKT)
+    tr.tick()
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 0

@@ -95,7 +95,7 @@ class Trader:
         day = trading_day_key(now, cfg.market, cfg.kind)
         if st.get("day") != day:
             eq = self.broker.equity()
-            st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
+            st.update({"day": day, "day_start_equity": eq, "trades_today": 0, "ai_skipped_today": 0,
                        "today_trades": [], "halted": False, "halt_reason": None})
             self._log("events", {"type": "NEW_DAY", "day": day, "equity": eq})
 
@@ -169,7 +169,12 @@ class Trader:
 
         # 8) AI 決策（每 N 分鐘，K 線收咗先做）
         if session and not stale and not st.get("halted") and self._decision_due(now):
-            self._decide(now, contract, qty, snap, session, mins_left)
+            # 使用者 10-17：冇倉又唔可以開新倉（暫停、時段、組合限制、收市前）就唔問 Claude，慳 API 費用；
+            # 有倉照問（管理止蝕同平倉）。止蝕／止賺本身由程式每幾秒檢查，唔靠 Claude
+            if qty == 0 and not (self._can_open(mins_left, session) and not self._portfolio_block()):
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+            else:
+                self._decide(now, contract, qty, snap, session, mins_left)
 
     # ---------- 決策 ----------
     def _decision_due(self, now):
