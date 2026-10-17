@@ -65,6 +65,12 @@ class FakeBrain:
     def __init__(self):
         self.next = {"action": "HOLD", "confidence": 0.5, "reason": "等"}
         self.calls = 0
+        self.look = True       # Haiku 篩選結果
+        self.screens = 0
+
+    def screen(self, ctx):
+        self.screens += 1
+        return {"look": self.look, "reason": "睇" if self.look else "靜", "_usage": {"in": 100, "model": "h"}}
 
     def decide(self, ctx):
         self.calls += 1
@@ -184,7 +190,7 @@ def test_no_entry_near_close(env):
     t["now"] = datetime(2026, 10, 16, 16, 25, 5, tzinfo=HKT)
     ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.9, "reason": "x"}
     tr.tick()
-    assert not b.pos.get("HK.MHI2610") and ai.ctx["risk"]["new_entries_allowed"] is False
+    assert not b.pos.get("HK.MHI2610") and ai.calls == 0                # 收市前冇倉：唔開、亦唔問 Claude
 
 
 def test_foreign_position_untouched_and_blocks_entries(env):
@@ -195,7 +201,7 @@ def test_foreign_position_untouched_and_blocks_entries(env):
     ai.next = {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.9, "reason": "x"}
     tr.tick()
     assert tr.state.get("pos") is None and tr.state["foreign_qty"] == -1
-    assert b.orders == [] and ai.ctx["risk"]["new_entries_allowed"] is False
+    assert b.orders == [] and ai.calls == 0 and tr.state["ai_skipped_today"] == 1   # 外來倉擋住、自己冇倉：唔問
     b.price = 30000                                            # 外來倉大蝕都唔郁
     advance(t, minutes=5)
     tr.tick()
@@ -306,12 +312,82 @@ def test_brain_request_shape_and_usage():
 
     b = ClaudeBrain.__new__(ClaudeBrain)
     b.cfg, b.client = Config(), NS(messages=FakeMessages())
-    d = b.decide({"b": 1, "a": 2})
+    b._fallbacks = False
+    d = b.decide({"b": 1, "a": 2, "bars_daily": [1], "product": "HSI"})
     assert sent["tool_choice"]["type"] == "auto"
     assert sent["system"][-1]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
     assert sent["tools"][0]["strict"] is True
-    assert '{"a":2,"b":1}' in sent["messages"][0]["content"]
+    stable, live = sent["messages"][0]["content"]
+    # [R218] 方案 C：日線同產品放第一段並快取；即時數據放第二段（唔快取）
+    assert stable["cache_control"] == {"type": "ephemeral", "ttl": "1h"} and '"bars_daily":[1]' in stable["text"]
+    assert '{"a":2,"b":1}' in live["text"] and "cache_control" not in live and "bars_daily" not in live["text"]
+    assert sent["model"] == "claude-opus-5-5" and sent["output_config"] == {"effort": "medium"}
     assert d["action"] == "HOLD" and d["_usage"]["cache_read"] == 800
+
+
+def test_brain_fallbacks_and_gate():
+    """[R218] Opus 5.5 開拒答後備；beta 唔受就自動唔用。Haiku 篩選用結構化輸出，出錯當要睇。"""
+    from types import SimpleNamespace as NS
+    import anthropic
+    from brain import ClaudeBrain
+    sent = []
+
+    def reply(**kw):
+        sent.append(kw)
+        if "output_config" in kw and "format" in kw["output_config"]:
+            return NS(stop_reason="end_turn", model="claude-haiku-5-5",
+                      usage=NS(input_tokens=700, output_tokens=30, cache_read_input_tokens=0,
+                               cache_creation_input_tokens=0),
+                      content=[NS(type="thinking"), NS(type="text", text='{"look": false, "reason": "橫行"}')])
+        if "extra_body" in kw:
+            raise anthropic.BadRequestError("fallbacks not allowed", response=NS(status_code=400, headers={},
+                                            request=None), body=None)
+        return NS(stop_reason="tool_use", model="claude-opus-5-5",
+                  usage=NS(input_tokens=900, output_tokens=50, cache_read_input_tokens=0,
+                           cache_creation_input_tokens=0),
+                  content=[NS(type="tool_use", name="decide", input={"action": "HOLD", "reason": "等"})])
+
+    b = ClaudeBrain.__new__(ClaudeBrain)
+    b.cfg, b.client, b._fallbacks = Config(), NS(messages=NS(create=reply)), True
+    d = b.decide({"product": "HSI"})
+    assert sent[0]["extra_body"] == {"fallbacks": "default"} and "extra_body" not in sent[1]
+    assert d["action"] == "HOLD" and d["_usage"]["model"] == "claude-opus-5-5" and b._fallbacks is False
+    g = b.screen({"product": "HSI", "bars_daily": []})
+    assert sent[-1]["model"] == "claude-haiku-5-5" and sent[-1]["output_config"]["effort"] == "low"
+    assert g["look"] is False and g["reason"] == "橫行" and g["_usage"]["in"] == 700
+
+    def boom(**kw):
+        raise RuntimeError("x")
+    b.client = NS(messages=NS(create=boom))
+    assert b.screen({"product": "HSI"})["look"] is True            # 篩選出錯：照問決策模型
+
+
+def test_gate_skips_decision_when_flat(env):
+    """[R218] 冇倉：Haiku 話唔使睇就唔問決策模型，並記低；有倉唔經篩選。"""
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    n = ai.calls
+    assert ai.screens == 1 and n == 1                                   # 要睇 → 問決策模型
+    ai.look = False
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.screens == 2 and ai.calls == n and tr.state["ai_gated_today"] == 1
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text().splitlines()][-1]
+    assert rec["gate"] == "SKIP" and rec["final"] == "HOLD" and rec["reason"] == "靜" and rec["gate_usage"]["in"] == 100
+    ai.look, ai.next = True, {"action": "OPEN_LONG", "stop_price": 24900, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert b.pos.get("HK.MHI2610") == 1
+    ai.look = False
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.screens == 3 and ai.calls == n + 2                        # 有倉：唔篩，直接問
+    tr.cfg = replace(cfg, gate_model="")
+    b.pos.clear()
+    tr.state["pos"] = None
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.screens == 3                                              # 留空 GATE_MODEL = 唔篩
 
 
 def test_push_packet_has_no_equity_and_reads_logs(env, monkeypatch):
@@ -646,11 +722,11 @@ def test_preflight_account_moves_to_real_account(env):
 
 def test_r215_new_etfs_like_spy():
     from markets import SPECS, order_qty, session_status as ss, ET
-    for p in ("TLT", "HYG", "GLD", "USO", "EEM", "EFA", "IWM"):
+    for p in ("TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC"):
         s = SPECS[p]
         assert (s.kind, s.market, s.notional_usd, s.daily_loss_hkd, s.tick) == ("stock", "US", 100_000, 100_000, 0.01)
         assert ss(datetime(2026, 10, 19, 5, 0, tzinfo=ET), s.market, s.kind)[0] == "PRE"
-    assert order_qty(SPECS["TLT"], 90.0, 1) == 1111 and "IAU" not in SPECS and "IEF" not in SPECS
+    assert order_qty(SPECS["TLT"], 90.0, 1) == 1111 and not {"IAU", "IEF", "EEM", "EFA", "EWG"} & set(SPECS)
 
 
 def _etf_env(tmp_path, product="SPY", **kw):
@@ -718,3 +794,61 @@ def test_total_etf_daily_loss_blocks_new_entries(tmp_path):
 def test_portfolio_rules_skip_futures(env):
     cfg, t, b, ai, tr = env
     assert tr._portfolio_block(1) is None
+
+
+def test_rth_only_etfs_no_entries_outside_regular_hours(tmp_path):
+    from markets import SPECS, ET
+    assert not SPECS["EWU"].ext_hours and SPECS["SPY"].ext_hours and SPECS["FXI"].ext_hours
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="EWU")
+    t["now"] = datetime(2026, 10, 19, 7, 0, 5, tzinfo=ET).astimezone(HKT)      # 盤前
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert not b.orders
+    t["now"] = datetime(2026, 10, 19, 10, 0, 5, tzinfo=ET).astimezone(HKT)     # 正常時段
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    tr.tick()
+    assert tr.state["pos"]["side"] == 1
+    assert not tr._can_open(245, "RTH") and tr._can_open(270, "RTH")          # 距 20:00；即 16:00 前 5／30 分鐘
+
+
+def test_spy_still_trades_premarket(tmp_path):
+    from markets import ET
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="SPY")
+    t["now"] = datetime(2026, 10, 19, 7, 0, 5, tzinfo=ET).astimezone(HKT)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 650, "confidence": 0.7, "reason": "好"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["side"] == 1
+
+
+def test_no_claude_call_when_flat_and_cannot_open(env):
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    n = ai.calls
+    cfg.pause_file.write_text("x")
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == n and tr.state["ai_skipped_today"] == 1          # 冇倉＋暫停：唔問
+    cfg.pause_file.unlink()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert tr.state["pos"]["qty"] == 1
+    cfg.pause_file.write_text("x")
+    n = ai.calls
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == n + 1                                             # 有倉：照問
+
+
+def test_rth_only_etf_skips_claude_premarket(tmp_path):
+    from markets import ET
+    cfg, t, b, ai, tr = _etf_env(tmp_path, product="EWC")
+    t["now"] = datetime(2026, 10, 19, 7, 0, 5, tzinfo=ET).astimezone(HKT)
+    tr.tick()
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 0

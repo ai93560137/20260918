@@ -131,5 +131,24 @@ check("模擬戶口淨值唔公開", "sim_account" not in json.dumps(j) and "987
 check("真實戶口淨值存入 GCS 但唔公開", json.loads(FAKE["longfei/QQQ/latest.json"][0])["status"]["real_account"]["equity"] == 555444.33
       and "real_account" not in json.dumps(j) and "555444" not in html and "555,444" not in html)
 
+print("=== [R218] 1 分鐘 K 線存檔 ===")
+bars = {"action": "longfei_bars", "token": "tok", "product": "SPY", "date": "2026-10-16",
+        "fields": ["t", "o", "h", "l", "c", "v"],
+        "bars": [["04:00", 1, 2, 0.5, 1.5, 10], ["bad", 1, 2, 3, 4, 5], ["04:01", "x", 1, 1, 1, 1], ["04:02", 1, 1, 1, 1, 0]]}
+code, _ = post({**bars, "token": "wrong"})
+check("K 線錯權杖 403", code == 403 and "longfei/bars/SPY/2026-10-16.json" not in FAKE, code)
+code, body = post(bars)
+doc = json.loads(FAKE.get("longfei/bars/SPY/2026-10-16.json", ("{}",))[0])
+check("K 線存入私人 GCS，壞行丟走", code == 200 and body["rows"] == 2 and body["dropped"] == 2
+      and doc["bars"][0] == ["04:00", 1.0, 2.0, 0.5, 1.5, 10.0] and "tok" not in json.dumps(doc), (code, body))
+code, _ = post({**bars, "bars": [["04:05", 1, 1, 1, 1, 1]]})
+check("同日再推會覆蓋", json.loads(FAKE["longfei/bars/SPY/2026-10-16.json"][0])["bars"][0][0] == "04:05")
+code, _ = post({**bars, "product": "XXX"})
+check("唔識嘅產品 422", code == 422, code)
+code, _ = post({**bars, "date": "../x"})
+check("日期唔啱 422", code == 422, code)
+code, _ = post({**bars, "bars": [["04:00", 1, 1, 1, 1, 1]] * 1501})
+check("太多行 413", code == 413, code)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

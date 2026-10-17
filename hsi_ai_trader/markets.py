@@ -26,6 +26,7 @@ class Spec:
     kind: str = "future"  # "future" 或 "stock"（ETF）
     notional_usd: float = 0.0  # ETF：每次落單大約金額（按價計股數）；期貨用 MAX_QTY 張
     daily_loss_hkd: float = 10_000  # 每日虧損上限（HK$，含浮虧）；DAILY_LOSS_LIMIT_<產品> 可改
+    ext_hours: bool = True          # ETF：盤前盤後可唔可以開新倉（False＝只喺正常時段開；已有倉照管）
 
 
 SPECS = {
@@ -46,9 +47,17 @@ SPECS = {
     "HYG": Spec("HYG", "iShares iBoxx $ High Yield Corporate Bond ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "GLD": Spec("GLD", "SPDR Gold Shares (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "USO": Spec("USO", "United States Oil Fund (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
-    "EEM": Spec("EEM", "iShares MSCI Emerging Markets ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
-    "EFA": Spec("EFA", "iShares MSCI EAFE ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "IWM": Spec("IWM", "iShares Russell 2000 ETF (NYSE Arca)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    # [R217] 使用者 10-17：再加單一國家／地區 ETF；EWT、INDA、EZU、EWU、EWC 盤前盤後差價太闊，只喺正常時段開新倉（ext_hours=False）
+    #，設定同 SPY 一樣，只跑模擬；「刪除重疊」：刪 EEM、EFA（籃子，同國家 ETF 重疊）同 EWG（喺 EZU 入面）
+    "EWJ": Spec("EWJ", "iShares MSCI Japan ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "FXI": Spec("FXI", "iShares China Large-Cap ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWT": Spec("EWT", "iShares MSCI Taiwan ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000, False),
+    "INDA": Spec("INDA", "iShares MSCI India ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000, False),
+    "EZU": Spec("EZU", "iShares MSCI Eurozone ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000, False),
+    "EWU": Spec("EWU", "iShares MSCI United Kingdom ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000, False),
+    "EWZ": Spec("EWZ", "iShares MSCI Brazil ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "EWC": Spec("EWC", "iShares MSCI Canada ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000, False),
 }
 
 FX_TO_HKD = {"HKD": 1.0, "USD": 7.8}

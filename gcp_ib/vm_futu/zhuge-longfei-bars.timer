@@ -1,0 +1,7 @@
+[Unit]
+Description=Zhuge 龍飛陣 1 分鐘 K 線存檔：星期二至六 08:10 香港時間（美股盤後同恒指夜盤都收咗）
+[Timer]
+OnCalendar=Tue..Sat *-*-* 08:10:00 Asia/Hong_Kong
+Persistent=true
+[Install]
+WantedBy=timers.target

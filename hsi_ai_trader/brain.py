@@ -57,7 +57,9 @@ def product_line(cfg) -> str:
     if sp.kind == "stock":
         return (f"{sp.name} ({sp.product}, US-listed ETF, about US${sp.notional_usd:,.0f} per position, share count "
                 f"set by code, tick {sp.tick:g}, long or short), US extended hours 04:00-20:00 ET (pre-market, "
-                f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)")
+                f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)"
+                + ("" if sp.ext_hours else "; NEW ENTRIES ONLY in regular hours 09:30-16:00 ET (spreads too wide "
+                   "outside), existing positions are still managed"))
     sess = ("HKFE day and night sessions (HKT)" if sp.market == "HK"
             else "CME Globex nearly 24h, Sunday 18:00 to Friday 17:00 US Eastern, daily break 17:00-18:00 ET")
     return (f"{sp.name} ({sp.product}, front month, {sp.currency} {sp.point_value:g} per index point, "
@@ -72,7 +74,7 @@ def build_system(lessons: str, cfg=None) -> str:
 TOOL = {
     "name": "decide",
     "description": "Return the trading decision for this cycle. Call this exactly once.",
-    "strict": True,   # Sonnet 5.5 唔接受強制 tool_choice（400），用 auto + strict 保證參數合 schema
+    "strict": True,   # Sonnet／Opus 5.5 唔接受強制 tool_choice（400），用 auto + strict 保證參數合 schema
     "input_schema": {
         "type": "object",
         "properties": {
@@ -91,38 +93,113 @@ TOOL = {
 }
 
 
+GATE_SYSTEM = """You are the pre-screen for an automated intraday trading bot for {product_line}.
+The bot is FLAT. A stronger model makes the real decision, but every call to it costs money, so you only decide
+whether this 5-minute bar deserves a full analysis. You do not trade.
+
+Answer look=true when there is a plausible entry setup now: a breakout or breakdown of a recent range, a pullback to
+a level within a trend, a sharp move or reversal, a volume spike, or price near an important daily high/low.
+Also answer look=true when you are unsure. Answer look=false only when the market is clearly quiet or choppy with no
+setup in either direction. Missing a good trade costs far more than one extra call.
+Write `reason` in Traditional Chinese (Cantonese style is fine), one short sentence.
+The owner's LESSONS (below, if any) describe what the owner wants traded; follow them."""
+
+GATE_FORMAT = {
+    "type": "json_schema",
+    "schema": {
+        "type": "object",
+        "properties": {"look": {"type": "boolean"}, "reason": {"type": "string"}},
+        "required": ["look", "reason"],
+        "additionalProperties": False,
+    },
+}
+
+# 日內唔變嘅部分（日線、合約）放喺可快取嘅前段；其餘每 5 分鐘都變，放後面（方案 C）
+STABLE_KEYS = ("product", "market", "contract", "bars_daily")
+# 拒答時由伺服器按類別轉去後備模型再答（Opus 5.5／Fable 5.1／Sonnet 5.5 先支援）
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
+FALLBACK_MODELS = ("claude-opus-5-5", "claude-fable-5-1", "claude-sonnet-5-5")
+
+
+def _user_content(context: dict, ask: str):
+    """[R218] 方案 C：日線同合約放第一段並標記快取（1 小時），同 system 一齊成為固定前綴；即時數據放第二段。"""
+    dump = lambda d: json.dumps(d, ensure_ascii=False, sort_keys=True, separators=(",", ":"))  # noqa: E731
+    stable = {k: context[k] for k in STABLE_KEYS if k in context}
+    live = {k: v for k, v in context.items() if k not in STABLE_KEYS}
+    return [{"type": "text", "text": "Daily bars and contract (unchanged during the trading day), JSON:\n" + dump(stable),
+             "cache_control": {"type": "ephemeral", "ttl": "1h"}},
+            {"type": "text", "text": f"Market context now (JSON). {ask}\n" + dump(live)}]
+
+
+def _usage(msg, model=None):
+    u = msg.usage
+    return {"in": u.input_tokens, "out": u.output_tokens,
+            "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
+            "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0,
+            "model": getattr(msg, "model", None) or model}     # 有後備模型接手時係實際答嘅模型
+
+
 class ClaudeBrain:
     def __init__(self, cfg):
         self.cfg = cfg
         self.client = anthropic.Anthropic(api_key=cfg.anthropic_api_key or None,
                                           timeout=90, max_retries=2)
+        self._fallbacks = cfg.model in FALLBACK_MODELS
+
+    def _create(self, **kwargs):
+        if self._fallbacks:
+            try:
+                return self.client.messages.create(extra_headers={"anthropic-beta": FALLBACK_BETA},
+                                                   extra_body={"fallbacks": "default"}, **kwargs)
+            except anthropic.BadRequestError as e:
+                # 後備功能唔受落（例如 beta 收咗）：之後唔再用，照普通方式問，唔好令每次決策都出錯
+                log.warning("拒答後備功能唔用得，改普通請求：%s", e.message)
+                self._fallbacks = False
+        return self.client.messages.create(**kwargs)
+
+    def screen(self, context: dict) -> dict:
+        """[R218] 方案 A：Haiku 篩選。出錯一律當「要睇」（寧可多問一次，唔好漏機會）。"""
+        cfg = self.cfg
+        lessons, _ = load_lessons()
+        text = GATE_SYSTEM.replace("{product_line}", product_line(cfg))
+        text += "\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else ""
+        try:
+            msg = self.client.messages.create(
+                model=cfg.gate_model,
+                max_tokens=4000,           # Haiku 5.5 預設會思考，思考 token 計入；太細會截斷
+                system=[{"type": "text", "text": text, "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
+                output_config={"effort": cfg.gate_effort or "low", "format": GATE_FORMAT},
+                messages=[{"role": "user", "content": _user_content(context, "Screen this bar.")}],
+            )
+            usage = _usage(msg, cfg.gate_model)
+            if msg.stop_reason == "refusal":
+                return {"look": True, "reason": "篩選拒答，照問決策模型", "_usage": usage, "_error": True}
+            out = json.loads(next(b.text for b in msg.content if b.type == "text"))
+            return {"look": bool(out.get("look")), "reason": str(out.get("reason") or "")[:200], "_usage": usage}
+        except Exception as e:  # noqa: BLE001
+            log.warning("Haiku 篩選失敗，照問決策模型：%s", e.__class__.__name__)
+            return {"look": True, "reason": f"篩選出錯：{e.__class__.__name__}", "_error": True}
 
     def decide(self, context: dict) -> dict:
         lessons, lessons_ver = load_lessons()
-        # prompt caching：tools → system 係固定前綴（硬性規則＋LESSONS），每 5 分鐘先 call 一次，
-        # 用 1 小時 TTL；所有會變嘅嘢（時間、K 線、倉位、額度）只放喺 user 訊息。
+        # prompt caching：tools → system（硬性規則＋LESSONS）→ 日線，係固定前綴，用 1 小時 TTL；
+        # 所有會變嘅嘢（時間、5 分鐘 K 線、倉位、額度）放喺 user 訊息第二段。
         system = [{"type": "text", "text": build_system(lessons, self.cfg),
                    "cache_control": {"type": "ephemeral", "ttl": "1h"}}]
         try:
             kwargs = {}
             if self.cfg.effort:
                 kwargs["output_config"] = {"effort": self.cfg.effort}
-            msg = self.client.messages.create(
+            msg = self._create(
                 model=self.cfg.model,
                 max_tokens=16000,          # 思考 token 都計入，太細會截斷
                 system=system,
                 tools=[TOOL],
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
-                messages=[{"role": "user",
-                           "content": "Market context (JSON). Call the `decide` tool.\n" +
-                                      json.dumps(context, ensure_ascii=False, sort_keys=True,
-                                                 separators=(",", ":"))}],
+                messages=[{"role": "user", "content": _user_content(context, "Call the `decide` tool.")}],
                 **kwargs,
             )
-            u = msg.usage
-            usage = {"in": u.input_tokens, "out": u.output_tokens,
-                     "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
-                     "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0}
+            usage = _usage(msg, self.cfg.model)
             if msg.stop_reason == "refusal":
                 return {"action": "HOLD", "confidence": 0, "reason": "AI 拒絕回應", "_usage": usage,
                         "_lessons": lessons_ver, "_error": True}

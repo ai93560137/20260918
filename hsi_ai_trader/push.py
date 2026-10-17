@@ -35,12 +35,15 @@ def build_packet(cfg, state, token):
     trades = [t for t in _tail_jsonl(cfg.log_dir / "trades.jsonl", MAX_TRADES * 3)
               if t.get("type") in ("OPEN", "CLOSE")][-MAX_TRADES:]
     decisions = [{k: d.get(k) for k in ("ts", "bar", "last", "pos", "ai_action", "final", "confidence",
-                                        "reason", "rejected", "stop", "target", "usage", "lessons", "session")}
+                                        "reason", "rejected", "stop", "target", "usage", "lessons", "session",
+                                        "gate", "gate_usage", "gate_reason")}
                  for d in _tail_jsonl(cfg.log_dir / "decisions.jsonl", MAX_DECISIONS)]
     status = {"trd_env": cfg.trd_env, "product": cfg.product, "point_value": cfg.point_value,
               "max_qty": cfg.max_qty, "daily_loss_limit": cfg.daily_loss_limit,
               "day": state.get("day"), "day_pnl": state.get("day_pnl"),
               "trades_today": state.get("trades_today", 0), "halted": bool(state.get("halted")),
+              # [R218] 今日慳咗幾多次決策模型：skipped＝冇倉又唔准開；gated＝Haiku 話唔使睇
+              "ai_skipped_today": state.get("ai_skipped_today", 0), "ai_gated_today": state.get("ai_gated_today", 0),
               "halt_reason": state.get("halt_reason"), "foreign_qty": state.get("foreign_qty", 0),
               "contract": state.get("contract"), "paused": cfg.pause_file.exists(),
               "stopped": cfg.stop_file.exists(), "real_preflight": state.get("real_preflight"),

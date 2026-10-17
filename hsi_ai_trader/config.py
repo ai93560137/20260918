@@ -68,9 +68,13 @@ class Config:
 
     # --- Claude ---
     anthropic_api_key: str = _env("ANTHROPIC_API_KEY", "")
-    model: str = _env("CLAUDE_MODEL", "claude-sonnet-5-5")
+    # [R218] 使用者 10-17：決策用最強而價錢合理嘅模型（Opus 5.5，約 Sonnet 兩倍）；Fable 5.1 貴 5 倍又慢，未有數據證明值得
+    model: str = _env("CLAUDE_MODEL", "claude-opus-5-5")
     decision_interval_min: int = int(_env("DECISION_INTERVAL_MIN", "5"))
-    effort: str = _env("CLAUDE_EFFORT", "")              # low/medium/high/xhigh/max；留空 = 模型預設（Sonnet 5.5 係 high）
+    effort: str = _env("CLAUDE_EFFORT", "medium")        # low/medium/high/xhigh/max；Opus 5.5 預設 medium（寫明，免模型預設改咗都唔知）
+    # [R218] 方案 A：冇倉時先用平價 Haiku 篩一次，值得睇先問決策模型；有倉照直接問（管理止蝕同平倉）。留空 = 唔篩
+    gate_model: str = _env("GATE_MODEL", "claude-haiku-5-5")
+    gate_effort: str = _env("GATE_EFFORT", "low")
 
     # --- 硬性風控（AI 無權超越）---
     max_qty: int = int(_env("MAX_QTY", "1"))

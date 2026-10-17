@@ -68,5 +68,25 @@ class ReviewTest(unittest.TestCase):
         self.assertIn("| QQQ | SIMULATE | — |", text)
 
 
+    def test_api_cost_by_model_and_gate(self):
+        """[R218] 決策模型同 Haiku 篩選分開計費；舊紀錄冇寫模型當 Sonnet 5.5。"""
+        decs = [{"ts": "a", "usage": {"in": 1_000_000, "out": 0}},                                   # Sonnet：$2
+                {"ts": "b", "usage": {"in": 0, "out": 100_000, "model": "claude-opus-5-5"}},         # Opus：$2
+                {"ts": "c", "gate": "SKIP", "gate_usage": {"in": 1_000_000, "model": "claude-haiku-5-5"}}]
+        text = "\n".join(lr.api_cost({"SPY": {"decisions": decs}}))
+        self.assertIn("| SPY | 2 | 1 | opus-5-5、sonnet-5-5 | 4.00 | 0.10 | 4.10 |", text)
+
+    def test_gate_audit_uses_1m_bars(self):
+        """[R218] 篩走之後大波幅 → 計入「篩走但波幅 ≥ 放行中位數」。"""
+        day = {f"09:{m:02d}": [100, 100.2, 99.8, 100, 1] for m in range(60)}
+        day.update({f"10:{m:02d}": [100, 100 + m * 0.05, 99.9, 100, 1] for m in range(60)})
+        bars = {"SPY": {"2026-10-16": day}}
+        decs = [{"ts": "2026-10-16T21:00:00+08:00", "gate": "LOOK", "last": 100},       # 09:00 ET：細波幅（09:05 嗰次睇到 10:05，0.25%）
+                {"ts": "2026-10-16T21:05:00+08:00", "gate": "LOOK", "last": 100},
+                {"ts": "2026-10-16T22:00:00+08:00", "gate": "SKIP", "last": 100}]       # 10:00 ET：之後升 3%
+        text = "\n".join(lr.gate_audit({"SPY": {"decisions": decs}}, bars))
+        self.assertIn("| SPY | 2 | 0.25% | 1 | 2.95% | 1（100%） |", text)
+        self.assertIn("未有足夠數據", "\n".join(lr.gate_audit({"SPY": {"decisions": decs}}, {})))
+
 if __name__ == "__main__":
     unittest.main()

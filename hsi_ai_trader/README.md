@@ -60,5 +60,6 @@ python report.py --futu     # 加埋富途實際成交紀錄核對
 ## 要留意
 
 - **止蝕由程式監控，唔係掛喺交易所**。程式或者電腦停咗，倉位就冇止蝕保護。所以最好擺喺長開嘅機（例如 GCP VM），同 OpenD 一齊行。
-- AI 每日約 200 次決策（日夜市），用 Sonnet 成本較低；想用 Opus 改 `CLAUDE_MODEL=claude-opus-5-5`。
+- AI 每 5 分鐘決策一次；決策用 Opus 5.5（`CLAUDE_MODEL`），冇倉時先用 Haiku 5.5 篩（`GATE_MODEL`，留空唔篩）。
+  想慳錢轉返 Sonnet 改 `CLAUDE_MODEL=claude-sonnet-5-5`。收市後 `bars_archive.py` 存 1 分鐘 K 線（R218）。
 - 報告嘅「點數」未扣佣金同交易所費；「戶口淨值」嗰行已經包晒。
