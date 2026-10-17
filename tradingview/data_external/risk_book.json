@@ -20,6 +20,36 @@
  },
  "positions": [
   {
+   "id": "MES 11/20 C7700",
+   "und": "ES",
+   "type": "call",
+   "K": 7700,
+   "exp": "2026-11-20",
+   "qty": -1,
+   "mult": 5,
+   "ccy": "USD",
+   "open": 146.5,
+   "price": 146.5,
+   "group": "MES 跨式",
+   "flag": "雲垂陣 10/17 00:2x HKT 使用者人手開（富途 01:37 快照 US.EX32611C7700x0 −1 核實）",
+   "settle": "physical: 到期 ITM 自動行使 → 交收 1 手 MES 期貨（MESZ6，US$5/點）；雲垂規則到期日美東 16:00 前平倉"
+  },
+  {
+   "id": "MES 11/20 P7700",
+   "und": "ES",
+   "type": "put",
+   "K": 7700,
+   "exp": "2026-11-20",
+   "qty": -1,
+   "mult": 5,
+   "ccy": "USD",
+   "open": 148.5,
+   "price": 148.5,
+   "group": "MES 跨式",
+   "flag": "雲垂陣 10/17 00:2x HKT 使用者人手開（富途 01:37 快照 US.EX32611P7700x0 −1 核實）",
+   "settle": "physical: 到期 ITM 自動行使 → 交收 1 手 MES 期貨（MESZ6，US$5/點）；雲垂規則到期日美東 16:00 前平倉"
+  },
+  {
    "id": "EW2610 P7750",
    "und": "ES",
    "type": "put",
@@ -35,7 +65,17 @@
    "settle": "physical: 到期 ITM 自動行使 → 交收 1 手 ES 期貨（ESZ6，US$50/點）"
   }
  ],
- "stops": {},
+ "stops": {
+  "MES 跨式": {
+   "credit": 295,
+   "stop_buyback": 590,
+   "legs": [
+    "MES 11/20 C7700",
+    "MES 11/20 P7700"
+   ],
+   "note": "雲垂陣 10/17 開：權利金 295 點，買回總價 ≥ 590 點止損（2×）；對沖用 MES 期貨（|Δ|>0.5，暫時冇）；使用者人手 ES2612 −1 唔屬雲垂"
+  }
+ },
  "futu_screenshot": {
   "holding_pl_hkd": 12770.97,
   "today_pl_hkd": 7959.31
