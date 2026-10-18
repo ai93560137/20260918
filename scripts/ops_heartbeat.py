@@ -283,8 +283,8 @@ def freshness_checks(now: datetime) -> list[tuple[str, str, datetime | None, flo
         es_last = es[-1].get("time_key") if isinstance(es, list) and es else None
     except Exception:  # noqa: BLE001
         es_last = None
-    # 本機 mt5_push.py 推的 ES 日 K（取代已退役的 es_daily_push.yml）；time_key 是美股交易日 → 按美股收市計
-    items.append(("ES 日線（本機 MT5 推送）", "GCS futu/daily/US.ES_FRONT.json 最後 time_key",
+    # ES 日 K：10-18 起 es_daily_push.yml（yfinance，R230）推；5 分 K 10-19 起由 ib-data cron ib_es_nq_5m.py 推（取代部機 mt5_push）。time_key 是美股交易日 → 按美股收市計
+    items.append(("ES 日線（Actions es_daily_push yfinance）", "GCS futu/daily/US.ES_FRONT.json 最後 time_key",
                   last_csv_date(es_last, "us") if es_last else None, 26))
     dc = "claude/dazzling-curie-f3xzb8"
     items.append(("雲垂每日掃描", f"{dc} tradingview/data_external/scan_report.md",
