@@ -53,5 +53,10 @@ check("方向一卡：VXN、NQ、每點 US$20", "VXN" in money and "NQ 期權" i
 how_es = main._fy_howto(main.futu_range_data(ES) if client.get("/?view=es_range&format=json").get_json()["status"] == "ok" else data, ES, now)
 check("ES 操作箱不受影響（仍是 ES、US$50）", "每週沽 ES 週期權 1σ 勒式" in how_es and "US$50" in how_es)
 
+page_nq = client.get("/?view=nq_range").get_data(as_text=True)
+check("[R229] MT5 數據源 → 頁頂有偏差警告", "數據源（MT5 差價合約）有停頓同偏差" in page_nq)
+page_hk = client.get("/?view=futu_range").get_data(as_text=True)
+check("[R229] 恒指頁（富途數據）冇警告", "MT5 差價合約" not in page_hk)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

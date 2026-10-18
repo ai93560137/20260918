@@ -8414,6 +8414,8 @@ FY_CSS = """<style>
            padding:14px 18px; margin-bottom:18px; box-shadow:0 4px 15px rgba(0,0,0,.04); font-size:14px; }
 .fy-hero b { font-size:20px; }
 .fy-legend { font-size:12px; color:var(--muted); margin:-8px 0 18px; }
+.fy-warn { background:#fff4e5; color:#7a4a00; border:1px solid #f0b45a; border-radius:10px; padding:10px 14px; margin:0 0 18px; font-size:13.5px; line-height:1.6; }  /* [R229] */
+@media (prefers-color-scheme: dark) { .fy-warn { background:#3a2a10; color:#ffd59a; border-color:#8a5a1a; } }
 .fy-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-bottom:24px; }
 .fy-card { background:var(--card); border-radius:16px; padding:18px 18px 14px; box-shadow:0 4px 15px rgba(0,0,0,.04);
            border-top:4px solid var(--primary); }
@@ -9203,6 +9205,11 @@ def build_futu_range_page(data):
             f"<span>{upd}</span>"
             f"<span>{state}</span></div>"
             f"<div class='fy-legend'>🅰️ 耗盡回落｜🅱️ 機率法｜🅲 時間點　✅ 已通知／已達成　⏳ 未到　❌ 通知後又破　{m['hours_zh']}</div>")
+    if m["key"] == "US" and str(latest.get("source") or "").startswith("mt5_cfd"):      # [R229] MT5 差價合約同 CME 對唔上
+        hero += ("<div class='fy-warn'>⚠️ <b>數據源（MT5 差價合約）有停頓同偏差，數字只供參考。</b>"
+                 "2026-10-16 對富途 App 嘅 CME 期貨：ES 真實低 7,676／收 7,703，呢度 7,740／7,743；"
+                 "NQ 真實高 30,225／低 29,269／收 29,391，呢度 30,535／29,878／29,930。"
+                 "預測、命中率、高低位通知都受影響；轉用富途期貨數據後呢行會自動消失。</div>")
     fc = data.get("forecast")
     day_fc = fc if fc else None
     day_date = ((periods.get("day") or {}).get("first")
