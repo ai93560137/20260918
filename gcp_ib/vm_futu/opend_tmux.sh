@@ -18,6 +18,8 @@ tg() {
     --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=[futu-data] $*" || true
 }
 screen() { tmux capture-pane -pt "$S" 2>/dev/null | grep -v '^\s*$' | tail -n 3; }
+# [R227] 登入結果要睇成個畫面：OpenD 10.11 喺「必要数据准备完毕」之後仲會印權限列表，淨睇最後 3 行會誤判失敗
+whole() { tmux capture-pane -pt "$S" -S -300 2>/dev/null; }
 waitfor() {  # $1 = regex，$2 = 最多等幾秒
   local i; for i in $(seq 1 "$2"); do screen | grep -qE "$1" && return 0; sleep 1; done; return 1
 }
@@ -47,14 +49,16 @@ else
   if waitfor '请输入密码' 15; then answer "$PW"; fi
   unset ACC PW
   if waitfor '记住密码' 15; then tmux send-keys -t "$S" N Enter; fi
-  waitfor '必要数据准备完毕|登录失败|验证码' 120
-  if screen | grep -qE '必要数据准备完毕'; then
+  for _ in $(seq 1 180); do whole | grep -qE '必要数据准备完毕|登录失败|密码错误|验证码' && break; sleep 1; done
+  if whole | grep -qE '必要数据准备完毕'; then
     log "OpenD 登入成功"
-  elif screen | grep -qE '验证码'; then
+  elif whole | grep -qE '验证码'; then
     alert "OpenD 要手機驗證碼"
-  else
-    : > "$FAILED"
+  elif whole | grep -qE '登录失败|密码错误'; then
+    : > "$FAILED"                                  # 只有富途明確話登入失敗先暫停自動登入（免得鎖戶口）
     alert "OpenD 自動登入失敗，已暫停自動登入"
+  else
+    alert "OpenD 3 分鐘內冇講登入成功定失敗（唔暫停自動登入）"
   fi
 fi
 
