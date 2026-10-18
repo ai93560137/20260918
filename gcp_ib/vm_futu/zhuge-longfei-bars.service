@@ -1,0 +1,16 @@
+[Unit]
+Description=Zhuge 龍飛陣 1 分鐘 K 線存檔（hsi_ai_trader/bars_archive.py，收市後上載私人 GCS longfei/bars/）
+After=zhuge-opend.service network-online.target
+Wants=zhuge-opend.service
+[Service]
+# [R220] 10-18 OOM 事故：部機記憶體唔夠時 kernel 先殺龍飛陣程式，唔好殺 FutuOpenD（auto_risk 等全部靠佢）；每個程式最多 300MB
+OOMScoreAdjust=900
+MemoryMax=300M
+Type=oneshot
+User=@USER@
+WorkingDirectory=@HOME@/20260918/hsi_ai_trader
+EnvironmentFile=@HOME@/zhuge/env
+EnvironmentFile=-@HOME@/20260918/gcp_ib/vm_futu/settings.env
+Environment=BARS_DIR=@HOME@/zhuge/bars
+ExecStart=@HOME@/zhuge-venv/bin/python bars_archive.py
+TimeoutStartSec=1800

@@ -65,5 +65,13 @@ class BlotterTest(unittest.TestCase):
         self.assertIsNone(s["使用者人手"]["avg_slip_pts"])
 
 
+    def test_rematch_fills_missing_intent_only(self):
+        rows = bl.build_rows([deal("2026-10-15 16:05:00", "HK.MHI2610", "賣", 1.0, 24090.0)], [], self.rules, [])
+        self.assertEqual(rows[0]["intent_price"], "")
+        self.assertEqual(bl.rematch(rows, bl.load_intents(INTENTS)), 1)
+        self.assertEqual((rows[0]["intent_price"], rows[0]["slip_pts"]), ("24100", "10"))
+        self.assertEqual(bl.rematch(rows, bl.load_intents(INTENTS)), 0)     # 已配咗唔再配
+
+
 if __name__ == "__main__":
     unittest.main()

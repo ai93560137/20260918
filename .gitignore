@@ -15,3 +15,9 @@ gcp-key*.json
 tradingview/data_external/futu_positions.json
 tradingview/out/
 research/warrants_cbbc/backtest_hist.csv
+
+# hsi_ai_trader 執行期檔案
+hsi_ai_trader/logs/
+hsi_ai_trader/state.json
+hsi_ai_trader/STOP
+hsi_ai_trader/PAUSE

@@ -1,22 +1,27 @@
-# 富途數據 VM（futu-data）設定手冊（R187，方案一）
+# 富途數據 VM（futu-data-tw）設定手冊（R187，方案一；R199 搬台灣＋龍飛陣）
 
 使用者 2026-10-15 揀方案一：富途 OpenD、auto_risk、富途推送腳本搬去 Google Linux VM（香港區），
 MT5 同 `mt5_push` 留喺使用者部機（`gcp_ib\start_all.ps1` 開機自動起）。部機重開唔再影響富途數據。
 
-只讀：讀持倉同報價、推上 Cloud Run；**唔落單、唔 unlock_trade，交易密碼唔放上 VM**。
+**2026-10-16 起 VM 係台灣 `futu-data-tw`（asia-east1-b）**：🐉 龍飛陣（`hsi_ai_trader`）要 call Claude API，香港唔支援（唔准 VPN／代理繞過）。
+香港 `futu-data`（asia-east2-a）服務已 `disable`、保留做後備，使用者決定幾時刪。
+
+數據服務只讀：讀持倉同報價、推上 Cloud Run。**龍飛陣例外**：使用者 10-16 同意佢喺富途**模擬戶口**（`TRD_ENV=SIMULATE`）自動落單；
+**交易密碼唔放上 VM**；轉 REAL 要總指揮四個條件（後備止蝕、IDEAS #106 前向測試、先登記 POSITIONS.md、秘密唔入 repo）＋使用者確認，經 PR 改 `settings.env`。
 Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SSH 做，Claude 逐步教。
 
 ## 架構
 | 位置 | 跑乜 | 點樣自動 |
 |---|---|---|
-| VM `futu-data`（Debian 12，asia-east2） | OpenD（Linux 命令列版）、`auto_risk`、`push_to_gcp`、`iv_push` | systemd 服務，開機自動起、死咗 30–60 秒自動重開 |
+| VM `futu-data-tw`（Debian 12，asia-east1-b） | OpenD（Linux 命令列版，tmux）、`auto_risk`、`push_to_gcp`、`iv_push` | systemd 服務，開機自動起、死咗 30–60 秒自動重開 |
+| 同一部 VM | 🐉 龍飛陣 `zhuge-longfei`（`hsi_ai_trader/bot.py`，資料 `~/zhuge/ai_trader`）＋守衛 `zhuge-longfei-guard`（`longfei_guard.py`） | 有 `ANTHROPIC_API_KEY` 先由 `setup.sh` 開 |
 | VM 自動更新 | 每 10 分鐘睇 `ops/user-machine` 分支，有新版就更新 repo、重開推送服務 | systemd timer `zhuge-update.timer`，紀錄 `~/zhuge/update.log` |
 | 使用者部機（Windows） | MT5（EA 心跳）、`mt5_push` | 啟動資料夾 `ZhugeStartAll.cmd` → `start_all.ps1`，`ZHUGE_DAEMONS=mt5_push` |
 
 `ops/user-machine` 只由總指揮喺使用者講「更新部機」先推（由預設分支快進）；其他陣合併入預設分支唔會自動落 VM。
 
 ## 步驟
-1. **開 VM**（GCP Console → Compute Engine → 建立執行個體）：名 `futu-data`、區域 `asia-east2-a`、`e2-small`、
+1. **開 VM**（GCP Console → Compute Engine → 建立執行個體）：名 `futu-data-tw`、區域 **`asia-east1-b`（台灣）**、`e2-small`、
    Debian 12、磁碟 20 GB；**唔使綁服務帳戶權限**（揀「不允許存取任何 Cloud API」），唔使開外部連入埠。
 2. **SSH 入去**，clone repo（公開，唔使權杖）：
    `git clone -q -b ops/user-machine https://github.com/ai93560137/20260918 ~/20260918`
@@ -40,6 +45,21 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
 9. **部機收窄**：VM 正常之後，部機 `setx ZHUGE_DAEMONS "mt5_push"`、`setx ZHUGE_OPEND_EXE ""`，部機唔再開 OpenD／auto_risk
    （免得兩邊重覆推、富途同一戶口兩部機登入 OpenD 搶行情權限）。
 
+## 🐉 龍飛陣（R199）
+- **金鑰**：Claude Console 開 API key（例如 `longfei-vm`），喺 VM 用 `read -rsp` 加入 `~/zhuge/env` 做 `ANTHROPIC_API_KEY=…`（唔好貼入對話）；到期前換。
+- **風控階梯**：`auto_risk` 每 10 分鐘寫（VM 由 15 改 10，等一次讀唔到富途都唔會過 30 分鐘） `~/zhuge/ladder_level`（「級別 day|night 時間」，同 `risk_report.ladder_level`）。
+  `longfei_guard.py` 每 30 秒讀。**使用者 10-16 定：只有 Ⓑ 會放 `~/zhuge/ai_trader/PAUSE`（停開新倉）**；
+  Ⓒ／Ⓓ、硬止損、級別檔冇咗／讀唔到／舊過 30 分鐘（週末除外）**只發 Telegram，唔平倉、唔停機、唔停開新倉**，由使用者自己決定
+  （要停：`touch ~/zhuge/ai_trader/STOP` 平倉停到下一個交易日；`PAUSE` 停開新倉）。返 Ⓐ 只刪 guard 自己放嘅檔（內容 `guard:` 開頭）。
+- **watchdog**（同一個 guard）：心跳（`~/zhuge/ai_trader/heartbeat`）超過 10 分鐘冇更新而有倉 → Telegram 🚨；冇倉（非週末）、連續出錯 ≥3、halted、即月有唔屬龍飛陣嘅倉（foreign_qty）亦通知；同一件事 30 分鐘最多一次。SIMULATE 只通知，唔自動平倉。
+- **人手停**：`touch ~/zhuge/ai_trader/STOP`（平倉停機）或 `PAUSE`；紀錄 `~/zhuge/ai_trader/logs/`、`journalctl -u zhuge-longfei -u zhuge-longfei-guard -n 50`。
+- **多產品（R202）**：HSI 由 `zhuge-longfei` 跑（資料 `~/zhuge/ai_trader`）；`settings.env` 嘅 `LONGFEI_EXTRA_PRODUCTS`（例如 `SPY,QQQ,DIA`）
+  每隻一個 `zhuge-longfei@<產品>`（`PRODUCT=<產品>`，資料 `~/zhuge/ai_trader_<產品>`，成績上載 `longfei/<產品>/latest.json`）。
+  改清單要「更新部機」後喺 VM 跑一次 `setup.sh` 先會開／停產品。guard 對全部資料夾一齊放 PAUSE（戶口級風控），watchdog 逐個睇心跳，Telegram 前面標 `[產品]`。
+  美國產品（SPY／QQQ／DIA ETF）**只跑 SIMULATE**（使用者 10-16 定）：`zhuge-longfei@.service` 用 `env TRD_ENV=SIMULATE` 寫死，`settings.env` 嘅 `TRD_ENV` 只管 HSI。
+  每隻產品各自 call Claude，API 費用大約 ×產品數。
+- 倉位可以隔夜（使用者 10-16 取消 02:50 平倉），watchdog 全日運作。
+
 ## 改設定
 - **推乜數據**（`FUTU_SYMBOLS`、`PUSH_INTERVAL_SEC`、`IV_MARKETS` 等）同 `ZHUGE_ALERT_STOP`：改 repo 嘅 `gcp_ib/vm_futu/settings.env`
   → PR → 合併 →「更新部機」，VM 10 分鐘內自動套用（唔使 SSH）。
@@ -50,4 +70,4 @@ Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SS
 - OpenD 畫面：`tmux attach -t opend`（Ctrl+B 放手再撳 d 離開）；唔入去睇：`tmux capture-pane -pt opend | tail`
 - 狀態：`systemctl --no-pager status zhuge-opend zhuge-auto-risk zhuge-futu-push zhuge-iv-push`
 - 紀錄：`journalctl -u zhuge-auto-risk -n 50`、`cat ~/zhuge/update.log`
-- 停晒：`sudo systemctl stop zhuge-auto-risk zhuge-futu-push zhuge-iv-push zhuge-opend`
+- 停晒：`sudo systemctl stop zhuge-longfei zhuge-longfei-guard zhuge-auto-risk zhuge-futu-push zhuge-iv-push zhuge-opend`

@@ -210,6 +210,21 @@
 | 鳥翔 | 1（＋1 回頭） | 17:13 觸發 HTF＋重發網頁 | 觸發部分可改 cron |
 | 金絲雀 | 1（每日含週末） | 07:07 核對 Actions 日報 | 核對可寫成 Actions 檢查，有 ❌ 先叫 Claude |
 
+### 🐉 龍飛陣（10-16 成立，10-17 龍飛陣通報；詳細 `handoff/龍飛陣.md` 第 0d 節，龍飛陣分支）
+| 時間（HKT） | 做乜 | 執行者 | 耗乜 |
+|---|---|---|---|
+| 全日每 5 秒 | 24 個模擬程式（HSI＋16 隻 ETF＋科技七雄，10-18 起；報價共用快取 R226）對帳、報價、日蝕上限、止蝕止賺 | 台灣 VM `futu-data-tw` | 唔耗 Claude |
+| 全日每 5 分鐘 | 決策：冇倉又唔准開 → 唔問；可開 → Haiku 5.5 篩選；放行或有倉 → Opus 5.5 決策（R218），再經硬性風控 | 同上 | **Claude API（另計，唔係訂閱額度）** |
+| 每 5 分鐘 | 狀態／成交／決策推 Cloud Run → 私人 GCS `longfei/<產品>/`；網頁 `?view=longfei` | 同上 | — |
+| 週二至六 08:10 | 1 分鐘 K 線存檔 → GCS `longfei/bars/<產品>/<日>.json` | VM timer `zhuge-longfei-bars` | — |
+| 每日 08:22 | 覆盤 `scripts/longfei_review.py` → GCS `ops/longfei/reviews/`（API 費用表、Haiku 篩選檢查） | Claude Routine（龍飛陣工作階段） | 訂閱額度 |
+
+- **API 費用（龍飛陣估算）**：R218 後約 US$26／日（10-18 加科技七雄每日再多約 US$7）、約 US$570／月（以前全部 Sonnet 約 US$35／日）；Opus 思考 token 可能令實數更高，第一份實數睇 10-20（二）08:22 覆盤。使用者要求約 10-31 比較 Opus 期同 Sonnet 期成績，冇改善就轉返 Sonnet（`settings.env` `CLAUDE_MODEL`）。
+- 全部係富途**模擬戶口**；轉真倉要使用者逐隻落指令（`LONGFEI_REAL_PRODUCTS`），並先做：總指揮配對 PR（`FUTU_TEAM_RULES`）、`RISK_LADDER` §6b、`POSITIONS.md` 登記、意圖價登記 `ops/intents.csv`（龍飛陣分支）。
+- 風控階梯：Ⓑ → 龍飛陣全部停開新倉；Ⓒ／Ⓓ 只發 Telegram。
+- 部機：10-18 由 e2-small 升 e2-standard-2（8GB）＋2GB swap（每月約多 US$40）；加程式前要估記憶體同富途 API 次數（見 `ops/INCIDENTS.md` 10-18 兩列）。
+- 時間表：10-24 09:30 出 ETF 真倉建議；HSI 真倉前置條件：①使用者准隔夜（10-18 已確認）；②伺服器端止蝕單真戶口驗證（10-19 09:15 後使用者用真期貨戶口掛遠價止蝕單、即掛即撤；模擬戶口 10-18 測試 GTC／當日止損單都被拒）——掛得到即符合 RISK_LADDER §6b ① 後備止蝕，掛唔到即隔夜冇伺服器端保護，總指揮有保留、由使用者決定；③10-19 模擬日冇出錯。覆盤多咗真倉候選排名，教學分共用／個別產品教學簿。
+
 ### Claude 用量（各工作階段 `usage.cost_usd`，API 等值，非實際帳單；10-14 04:20 → 10-15 16:10 約 36 小時）
 | 工作階段 | 美元等值 | 備註 |
 |---|---|---|
@@ -228,7 +243,7 @@
 - D ✅ `ops/INCIDENTS.md`；週報【三】列本週新增＋未結。
 - 雲垂 16:40／05:52 → `.github/workflows/yunchui_quote_kicks.yml`（16:40 嗰次另查 hsi／vhsi 日線係 final，唔係就 job 失敗、心跳報 🔴）；兩個 Routine 已停用（唔刪）。
 - E ✅（預設分支部分）`scripts/ops_blotter.py`：每次成交通報後將富途成交按 `FUTU_TEAM_RULES` 歸陣、配對 `ops/intents.csv` 意圖價計滑價，寫私人 GCS `ops/blotter/<月>.csv`；月報【二】列按陣筆數同平均滑價。各陣出落單指令時要登記意圖價（`ops/INTENTS_README.md`），由總指揮通知各陣。
-- B、C：總指揮草稿 PR #142（R193：`mm_jump` 維持保證金當日升 ≥30% → Telegram；壓力情景 `ops/risk/stress_latest.json`＋`metrics.stress`），等使用者合併、更新部機、部署。晨會【一】已改讀壓力情景最差 4 個同按日／夜盤嘅緩衝線（舊寫死 15／10／6 萬已刪；PR #142 生效前顯示「線見 RISK_LADDER.md」）。
+- B、C：總指揮草稿 PR #142（R193：`mm_jump` 維持保證金當日升 ≥30% → Telegram；壓力情景 `ops/risk/stress_latest.json`＋`metrics.stress`），10-15 已合併，10-17 核實已生效（VM auto_risk R199、Cloud Run 00314-v2l 寫 `ops/risk/stress_latest.json` 8 個情景）。晨會【一】已改讀壓力情景最差 4 個同按日／夜盤嘅緩衝線（舊寫死 15／10／6 萬已刪；PR #142 生效前顯示「線見 RISK_LADDER.md」）。
 
 ### 剩餘缺口（按風險排序）
 | # | 缺口 | 風險 | 建議 | 負責 |

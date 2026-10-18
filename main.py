@@ -118,6 +118,11 @@
 #     資金流水、持倉（action=futu_pnl → futu/pnl/latest.json）；按合約先入先出計已實現盈虧，由 2026-09-01 起按產品分月／季／年，
 #     列毛利、手續費、淨額（美元按 FUTU_USD_HKD 折港幣，預設 7.8）；期權到期冇平倉成交而又唔喺現有持倉，當到期歸零並標明待核對。
 #     資金流水（含入／出金）預設唔公開（FUND_REPORT_SHOW_FLOWS=1 先顯示），原始數據留喺私人 bucket 對數。只顯示，唔影響下單。
+#   * 2026-10-17 — [R207] 基金報告加未實現盈虧（futu/risk/latest.json 每個持倉富途 pl_val，美元折港幣，按產品）、總盈虧，
+#     同每月／每季／每年績效表（已實現淨額、未實現只計入現時期間、總盈虧、回報率、平倉筆數、勝率）。回報率本金
+#     FUND_REPORT_CAPITAL_HKD，冇設就用富途期貨戶口現時權益（近似）；權益絕對值唔顯示、唔入 JSON。只顯示，唔影響下單。
+#   * 2026-10-17 — [R214] 基金報告加「詳細統計」：總盈虧、手續費、最大單筆賺／蝕、平均持倉時間（賺／蝕）、Profit factor、
+#     RRR（平均賺 ÷ 平均蝕）、Sharpe（工作日淨盈虧年化 √252，rf＝0）、交易日／賺蝕日、平均及最佳／最差一日。只顯示。
 #   * 2026-10-14 — [R181] 方向一開倉門檻（緩衝）由 HK$260,000 改 HK$150,000（使用者折衷；RISK_LADDER 緩衝線 ×0.25 之後）。
 #   * 2026-10-14 — [R180] 方向一補做：上週五因風控閘冇開倉、到期週頭兩個交易日緩衝回升 → 操作箱顯示沽本週到期 1σ（至少剩 3 日），
 #     權利金閘 80 × √(剩餘交易日 ÷ 5)（剩 4 日 72、剩 3 日 62 點）。依據 research/hsi_futures_range/iv_timing/（使用者 10-14 同意）。
@@ -2362,6 +2367,11 @@ def _futu_risk_clean_metrics(raw):
                          "scenarios": [{"name": _futu_text(r.get("name"), 40), "cushion_after": to_float(r.get("cushion_after")),
                                         "ladder": _futu_text(r.get("ladder"), 2)}
                                        for r in (src.get("scenarios") or [])[:12] if isinstance(r, dict)]}
+    src = raw.get("sec") if isinstance(raw.get("sec"), dict) else None          # [R214] 證券戶口（R205），只存私人 GCS
+    if src is not None:
+        out["sec"] = {"equity": to_float(src.get("equity")), "maintenance_margin": to_float(src.get("maintenance_margin")),
+                      "cushion": to_float(src.get("cushion")), "ladder": _futu_text(src.get("ladder"), 2),
+                      "exposed": bool(src.get("exposed"))}
     return out
 
 
@@ -2836,6 +2846,47 @@ def futu_deals_store(doc, today=None, days=2):
     return out
 
 
+def fund_detailed_stats(rows, start, today):
+    """[R214] 詳細統計（港幣，已實現）：每筆平倉（FIFO 每次配對）同每日淨額（扣手續費）。
+    Sharpe＝年化（√252）日淨盈虧平均 ÷ 標準差，無風險利率當 0，由 start 到 today 每個工作日（冇成交當 0）；
+    比例同本金大細無關。RRR＝平均每筆賺 ÷ 平均每筆蝕（絕對值）。"""
+    trades = [e for e in rows if e.get("trade")]
+    wins = [e["gross"] for e in trades if e["gross"] > 0]
+    losses = [e["gross"] for e in trades if e["gross"] < 0]
+    hold = lambda xs: (sum(xs) / len(xs)) if xs else None
+    daily = {}
+    for e in rows:
+        daily[e["date"]] = daily.get(e["date"], 0.0) + e["gross"] - e["fee"]
+    days = [v for v in daily.values() if abs(v) > 1e-9]
+    wd, ld = [v for v in days if v > 0], [v for v in days if v < 0]
+    series, d = [], start
+    while d <= today:
+        if d.weekday() < 5 or d in daily:
+            series.append(daily.get(d, 0.0))
+        d += timedelta(days=1)
+    sharpe = None
+    if len(series) >= 2:
+        mu = sum(series) / len(series)
+        sd = (sum((x - mu) ** 2 for x in series) / (len(series) - 1)) ** 0.5
+        sharpe = round(mu / sd * 252 ** 0.5, 2) if sd > 0 else None
+    avg_w, avg_l = (sum(wins) / len(wins) if wins else None), (sum(losses) / len(losses) if losses else None)
+    r2 = lambda v: None if v is None else round(v, 2)
+    return {"total_pnl": r2(sum(e["gross"] - e["fee"] for e in rows)), "commissions": r2(sum(e["fee"] for e in rows)),
+            "trades": len(trades), "wins": len(wins), "losses": len(losses),
+            "win_rate": round(len(wins) / len(trades) * 100, 1) if trades else None,
+            "largest_profit": r2(max(wins) if wins else None), "largest_loss": r2(min(losses) if losses else None),
+            "avg_win": r2(avg_w), "avg_loss": r2(avg_l),
+            "rrr": round(avg_w / abs(avg_l), 2) if avg_w and avg_l else None,
+            "profit_factor": round(sum(wins) / abs(sum(losses)), 2) if wins and losses else None,
+            "avg_hold_win_s": hold([e["hold_s"] for e in trades if e["gross"] > 0 and "hold_s" in e]),
+            "avg_hold_loss_s": hold([e["hold_s"] for e in trades if e["gross"] < 0 and "hold_s" in e]),
+            "trading_days": len(days), "winning_days": len(wd), "losing_days": len(ld),
+            "avg_daily": r2(sum(days) / len(days) if days else None),
+            "avg_win_day": r2(sum(wd) / len(wd) if wd else None), "avg_loss_day": r2(sum(ld) / len(ld) if ld else None),
+            "best_day": r2(max(wd) if wd else None), "worst_day": r2(min(ld) if ld else None),
+            "sharpe": sharpe, "sharpe_days": len(series)}
+
+
 def futu_pnl_report(doc, start=None, today=None):
     """先入先出計每個合約嘅已實現盈虧；回傳按產品 × 月／季／年嘅毛利、手續費、淨額（港幣）。"""
     start = date.fromisoformat(start or FUND_REPORT_START)
@@ -2868,20 +2919,21 @@ def futu_pnl_report(doc, start=None, today=None):
             events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy)})
         book = lots.setdefault(code, [])
         while q and book and (book[0][0] > 0) != (q > 0):
-            lq, lp = book[0]
+            lq, lp, lt = book[0]
             take = min(abs(q), abs(lq))
             pnl = (px - lp) * take * mult * (1 if lq > 0 else -1)
-            events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0})
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0,
+                           "trade": True, "hold_s": (t - lt).total_seconds()})        # [R214] 詳細統計用
             lq = lq - take if lq > 0 else lq + take
             q = q + take if q < 0 else q - take
             if lq:
-                book[0] = (lq, lp)
+                book[0] = (lq, lp, lt)
             else:
                 book.pop(0)
         if q:
-            book.append((q, px))
+            book.append((q, px, t))
     for code, book in lots.items():
-        net = sum(lq for lq, _ in book)
+        net = sum(lq for lq, _, _ in book)
         if not net:
             continue
         held = open_now.get(code)
@@ -2891,8 +2943,9 @@ def futu_pnl_report(doc, start=None, today=None):
         if exp and exp < today and held is None:
             prod, mult = futu_product(code)
             ccy = "USD" if code.startswith("US.") else "HKD"
-            pnl = sum(-lp * lq * mult for lq, lp in book)             # 當到期歸零（價外）
-            events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True})
+            pnl = sum(-lp * lq * mult for lq, lp, _ in book)          # 當到期歸零（價外）
+            events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True,
+                           "trade": True})
             warnings.append(f"{code}：冇平倉成交，當 {exp} 到期歸零計（{pnl * fx(ccy):+,.0f} 港幣）；如到期價內請核對結算價")
         else:
             if last_deal.get(code) and last_deal[code] < start:
@@ -2909,12 +2962,13 @@ def futu_pnl_report(doc, start=None, today=None):
         for e in rows:
             k = key(e["date"])
             for prod in (e["product"], "合計"):
-                c = tab.setdefault(k, {}).setdefault(prod, {"gross": 0.0, "fee": 0.0, "net": 0.0, "n": 0})
+                c = tab.setdefault(k, {}).setdefault(prod, {"gross": 0.0, "fee": 0.0, "net": 0.0, "n": 0, "win": 0})
                 c["gross"] += e["gross"]
                 c["fee"] += e["fee"]
                 c["net"] += e["gross"] - e["fee"]
                 c["n"] += 1 if e["gross"] else 0
-        out[name] = {k: {p: {m: round(v, 2) if m != "n" else v for m, v in c.items()} for p, c in sorted(v.items())}
+                c["win"] += 1 if e["gross"] > 0 else 0                    # [R207] 勝率用
+        out[name] = {k: {p: {m: round(v, 2) if m not in ("n", "win") else v for m, v in c.items()} for p, c in sorted(v.items())}
                      for k, v in sorted(tab.items())}
     flows = {}
     for f in doc.get("cash_flows") or []:
@@ -2925,25 +2979,179 @@ def futu_pnl_report(doc, start=None, today=None):
         k = (str(f["date"])[:7], f"{f.get('type')}（{f.get('ccy')}）")
         flows[k] = flows.get(k, 0.0) + amt
     products = sorted({e["product"] for e in rows})
+    stats = fund_detailed_stats(rows, start, today)
     return {"status": "ok", "start": str(start), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
-            "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out,
+            "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out, "stats": stats,
             "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())]
             if FUND_REPORT_SHOW_FLOWS else [],
             "warnings": warnings + [str(n) for n in doc.get("notes") or []]}
 
 
+FUND_REPORT_CAPITAL_HKD = float(os.environ.get("FUND_REPORT_CAPITAL_HKD", "0") or 0)  # [R207] 回報率本金；0＝用富途期貨戶口現時權益
+
+
+FUND_SEC_PRODUCTS = ("美股", "美股期權", "港股")                      # [R214] 富途證券戶口嘅產品；其餘係期貨戶口
+
+
+def fund_by_account(by_product):
+    """[R214] {產品: 港幣} → {"期貨戶口": x, "證券戶口": y}。"""
+    out = {"期貨戶口": 0.0, "證券戶口": 0.0}
+    for prod, v in (by_product or {}).items():
+        out["證券戶口" if prod in FUND_SEC_PRODUCTS else "期貨戶口"] += v or 0.0
+    return {k: round(v, 2) for k, v in out.items()}
+
+
+def fund_unrealized(risk_doc):
+    """[R207] 未實現盈虧：讀 futu/risk/latest.json 每個持倉富途自己計嘅 pl_val（futu_pl，原幣），美元折港幣，按產品加總。
+    富途冇俾 pl_val 就用（現價 − 開倉價）× 張數 × 每點價值。讀唔到回 None。"""
+    if not isinstance(risk_doc, dict) or not isinstance(risk_doc.get("positions"), list):
+        return None
+    by, n, missing = {}, 0, []
+    for p in risk_doc["positions"]:
+        if not isinstance(p, dict) or not p.get("code"):
+            continue
+        code = str(p["code"])
+        prod, mult = futu_product(code)
+        pl = to_float(p.get("futu_pl"))
+        if pl is None:
+            qty, op = to_float(p.get("qty")), to_float(p.get("open_price"))
+            bid, ask, last = (to_float(p.get(k)) for k in ("bid", "ask", "last"))
+            mark = (bid + ask) / 2 if bid and ask else last
+            if qty is None or op is None or mark is None:
+                missing.append(code)
+                continue
+            pl = (mark - op) * qty * mult
+        pl *= FUTU_USD_HKD if code.startswith("US.") else 1.0
+        by[prod] = by.get(prod, 0.0) + pl
+        n += 1
+    return {"asof": risk_doc.get("run_hkt"), "total": round(sum(by.values()), 2), "positions": n,
+            "by_product": {k: round(v, 2) for k, v in sorted(by.items())}, "missing": missing,
+            "by_account": fund_by_account(by),
+            "futu_equity": (to_float((risk_doc.get("metrics") or {}).get("futu_equity")) or 0.0)
+                           + (to_float(((risk_doc.get("metrics") or {}).get("sec") or {}).get("equity")) or 0.0) or None}
+
+
+def fund_performance(r, unreal, today=None):
+    """[R207] 每月／每季／每年績效：已實現淨額（已扣手續費）、未實現（只計入現時所屬期間）、總盈虧、回報率、平倉筆數、勝率。
+    回報率 ÷ 本金：FUND_REPORT_CAPITAL_HKD，冇設就用富途期貨戶口現時權益（近似；未計期間出入金）。"""
+    today = today or datetime.now(HK_TZ).date()
+    cur = {"month": today.strftime("%Y-%m"), "quarter": f"{today.year}Q{(today.month - 1) // 3 + 1}", "year": str(today.year)}
+    u = (unreal or {}).get("total") or 0.0
+    base = FUND_REPORT_CAPITAL_HKD or (unreal or {}).get("futu_equity") or 0.0
+    out = {}
+    for name, tab in (r.get("periods") or {}).items():
+        keys = sorted(set(tab) | ({cur[name]} if unreal else set()))
+        rows = []
+        for k in keys:
+            c = (tab.get(k) or {}).get("合計") or {}
+            real = c.get("net", 0.0)
+            un = u if (unreal and k == cur[name]) else 0.0
+            tot = real + un
+            rows.append({"period": k, "realized": round(real, 2), "unrealized": round(un, 2), "total": round(tot, 2),
+                         "return_pct": round(tot / base * 100, 2) if base else None,
+                         "closes": c.get("n", 0), "win_rate": round(c.get("win", 0) / c["n"] * 100, 1) if c.get("n") else None})
+        out[name] = rows
+    return {"capital_source": "FUND_REPORT_CAPITAL_HKD" if FUND_REPORT_CAPITAL_HKD else ("futu_equity" if base else None),
+            "periods": out}
+
+
+def fund_stats_notes(st, un=None):
+    """[R214] 「要留意」：按詳細統計自動產生嘅提醒（唔含權益金額）。"""
+    out = []
+    if st.get("sharpe") is not None and (st.get("sharpe_days") or 0) < 120:
+        out.append(f"Sharpe {st['sharpe']:.2f} 只用咗 {st['sharpe_days']} 個工作日數據，樣本太短、數字唔穩定；"
+                   "要累積幾個月（至少約半年）先有參考價值。")
+    if st.get("rrr") is not None and st["rrr"] < 1:
+        out.append(f"RRR {st['rrr']:.2f} 細過 1：平均每筆蝕（{abs(st['avg_loss']):,.0f}）大過平均每筆賺（{st['avg_win']:,.0f}），"
+                   f"主要靠勝率 {st['win_rate']:.0f}% 先有錢賺；勝率一跌就會轉蝕。"
+                   f"打和勝率約 {1 / (1 + st['rrr']) * 100:.0f}%。")
+    if st.get("largest_loss") is not None and st.get("avg_win") and abs(st["largest_loss"]) > 10 * st["avg_win"]:
+        out.append(f"最大單筆虧損 {abs(st['largest_loss']):,.0f} 大過平均每筆賺嘅 10 倍"
+                   f"（約 {abs(st['largest_loss']) / st['avg_win']:.0f} 筆賺錢交易先追得返），要留意止損紀律。")
+    if st.get("total_pnl") and st.get("commissions") and st["commissions"] > 0.1 * abs(st["total_pnl"]):
+        out.append(f"手續費 {st['commissions']:,.0f} 佔已實現淨盈虧約 {st['commissions'] / abs(st['total_pnl']) * 100:.0f}%，"
+                   "交易頻率高嘅策略要計埋成本。")
+    if st.get("avg_hold_loss_s") and st.get("avg_hold_win_s") and st["avg_hold_loss_s"] > st["avg_hold_win_s"]:
+        out.append("蝕錢倉平均揸得耐過賺錢倉：可能有「蝕就死揸、賺就快走」嘅傾向。")
+    if un and un.get("total") and st.get("total_pnl") and un["total"] < 0 and abs(un["total"]) > 0.15 * abs(st["total_pnl"]):
+        out.append(f"未實現浮虧 {abs(un['total']):,.0f}（約已實現淨盈虧嘅 {abs(un['total']) / abs(st['total_pnl']) * 100:.0f}%），"
+                   "平倉前總盈虧仲會變。")
+    return out
+
+
 def build_fund_report_page(r):
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📊 基金報告</h1></div>{page_nav('fund_report')}</div>"
-            f"<p class='muted'>富途戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
+            f"<p class='muted'>富途期貨戶口＋證券戶口全部產品嘅已實現盈虧，由 {esc(r['start'])} 起；先入先出計，美元按 {r['fx_usd_hkd']} 折港幣。"
             f"數據 {esc(r.get('fetched_hkt') or '—')} HKT（成交 {r['deals']} 筆，由 {esc(r.get('since') or '—')} 起攞，用嚟搵開倉成本）。</p>")
     n = lambda v: f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+,.0f}</span>"
     body = ops_reports_html(r.get("reports") or {})                    # [R174] 週報／月報放最頂
     yr = r["periods"].get("year") or {}
     tot = sum(v.get("合計", {}).get("net", 0) for v in yr.values())
+    un = r.get("unrealized")                                           # [R207] 未實現＋總盈虧
+    ucard = (f"<div class='card'><div class='card-title'>未實現盈虧（現時持倉，{esc(str(un.get('asof') or '—'))} HKT）</div>"
+             f"<div class='card-value'>{n(un['total'])}</div></div>"
+             f"<div class='card'><div class='card-title'>總盈虧（已實現＋未實現）</div><div class='card-value'>{n(tot + un['total'])}</div></div>"
+             if un else "<div class='card'><div class='card-title'>未實現盈虧</div><div class='card-value muted'>讀唔到持倉</div></div>")
     body += (f"<div class='grid'><div class='card'><div class='card-title'>已實現淨盈虧（港幣，{esc(r['start'])} 起）</div>"
-             f"<div class='card-value'>{n(tot)}</div></div>"
+             f"<div class='card-value'>{n(tot)}</div></div>{ucard}"
              f"<div class='card'><div class='card-title'>手續費</div><div class='card-value'>"
              f"{sum(v.get('合計', {}).get('fee', 0) for v in yr.values()):,.0f}</div></div></div>")
+    perf = r.get("performance") or {}
+    if perf.get("periods"):
+        pct = lambda v: "<span class='muted'>—</span>" if v is None else f"<span class='{'pos' if v >= 0 else 'neg'}'>{v:+.2f}%</span>"
+        wr = lambda v: "—" if v is None else f"{v:.0f}%"
+        src = {"FUND_REPORT_CAPITAL_HKD": "設定本金", "futu_equity": "富途期貨＋證券戶口現時權益（近似）"}.get(perf.get("capital_source"), "未有本金")
+        for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
+            rows = perf["periods"].get(name) or []
+            if not rows:
+                continue
+            trs = "".join(f"<tr><td>{esc(x['period'])}</td><td>{n(x['realized'])}</td><td>{n(x['unrealized'])}</td><td>{n(x['total'])}</td>"
+                          f"<td>{pct(x['return_pct'])}</td><td>{x['closes']}</td>"
+                          f"<td>{wr(x['win_rate'])}</td></tr>" for x in reversed(rows))
+            body += (f"<div class='section'><b>📈 {zh}績效（港幣）</b><div class='scroll'><table>"
+                     "<tr><th>期間</th><th>已實現淨額</th><th>未實現</th><th>總盈虧</th><th>回報率</th><th>平倉筆數</th><th>勝率</th></tr>"
+                     f"{trs}</table></div><p class='muted' style='font-size:12px'>回報率 ＝ 總盈虧 ÷ {src}；未實現只計入現時所屬期間；"
+                     "勝率按每筆平倉成交（毛利 &gt; 0）。</p></div>")
+    ba = r.get("by_account") or {}
+    if ba.get("realized"):                                                 # [R214] 按戶口
+        ur = ba.get("unrealized") or {}
+        trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(ba['realized'][k])}</td>"
+                      + (f"<td>{n(ur.get(k, 0))}</td><td>{n(ba['realized'][k] + ur.get(k, 0))}</td>" if ur else "<td>—</td><td>—</td>")
+                      + "</tr>" for k in ("期貨戶口", "證券戶口"))
+        body += ("<div class='section'><b>按戶口（港幣）</b><div class='scroll'><table>"
+                 f"<tr><th>戶口</th><th>已實現淨額</th><th>未實現</th><th>總盈虧</th></tr>{trs}</table></div>"
+                 "<p class='muted' style='font-size:12px'>證券戶口＝美股、美股期權、港股；其餘（恒指／標普期貨同期權）屬期貨戶口。</p></div>")
+    st = r.get("stats") or {}
+    if st.get("trades"):                                                  # [R214] 詳細統計
+        hm = lambda v: "—" if v is None else (f"{int(v // 3600)}h {int(v % 3600 // 60)}m" if v < 86400 * 3
+                                              else f"{v / 86400:.1f} 日")
+        m = lambda v: "<span class='muted'>—</span>" if v is None else n(v)
+        x = lambda v, f="{:.2f}": "<span class='muted'>—</span>" if v is None else f.format(v)
+        left = [("總盈虧（已實現淨額）", m(st["total_pnl"])), ("總手續費", x(st["commissions"], "{:,.0f}")),
+                ("最大單筆盈利", m(st["largest_profit"])), ("最大單筆虧損", m(st["largest_loss"])),
+                ("平均持倉時間（賺）", hm(st["avg_hold_win_s"])), ("平均持倉時間（蝕）", hm(st["avg_hold_loss_s"])),
+                ("Profit factor（總賺 ÷ 總蝕）", x(st["profit_factor"])),
+                ("RRR（平均賺 ÷ 平均蝕）", x(st["rrr"])),
+                ("Sharpe ratio（年化）", x(st["sharpe"])),
+                ("平倉筆數／勝率", f"{st['trades']}／{x(st['win_rate'], '{:.0f}%')}")]
+        right = [("交易日數", str(st["trading_days"])), ("賺錢日", str(st["winning_days"])), ("蝕錢日", str(st["losing_days"])),
+                 ("平均每日盈虧", m(st["avg_daily"])), ("平均賺錢日", m(st["avg_win_day"])), ("平均蝕錢日", m(st["avg_loss_day"])),
+                 ("最佳一日", m(st["best_day"])), ("最差一日", m(st["worst_day"])),
+                 ("平均每筆賺", m(st["avg_win"])), ("平均每筆蝕", m(st["avg_loss"]))]
+        trs = "".join(f"<tr><td>{a}</td><td style='text-align:right'>{b}</td><td>{c}</td><td style='text-align:right'>{d}</td></tr>"
+                      for (a, b), (c, d) in zip(left, right))
+        body += ("<div class='section'><b>📋 詳細統計（Detailed Statistics，港幣，已實現）</b><div class='scroll'><table>"
+                 f"{trs}</table></div><p class='muted' style='font-size:12px'>每筆＝先入先出每次平倉配對（毛利，未扣手續費）；"
+                 "每日＝當日已實現淨額（已扣手續費）。Sharpe＝每個工作日淨盈虧（冇成交當 0）年化（×√252），無風險利率當 0；"
+                 f"共 {st['sharpe_days']} 日。RRR＝平均每筆賺 ÷ 平均每筆蝕。</p></div>")
+        notes = fund_stats_notes(st, r.get("unrealized"))                 # [R214] 要留意（按數據自動產生）
+        if notes:
+            body += ("<div class='section'><b>⚠️ 要留意：</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
+                     + "".join(f"<li>{esc(t)}</li>" for t in notes) + "</ul></div>")
+    if un and un.get("by_product"):
+        trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(v)}</td></tr>" for k, v in un["by_product"].items())
+        body += ("<div class='section'><b>未實現盈虧（按產品，港幣）</b><div class='scroll'><table>"
+                 f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div></div>")
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}
         if not tab:
@@ -2962,7 +3170,7 @@ def build_fund_report_page(r):
                  f"<tr><th>月份</th><th>類別</th><th>金額</th></tr>{trs}</table></div></div>")
     notes = "".join(f"<li>{esc(w)}</li>" for w in r["warnings"])
     body += ("<div class='section'><b>注意事項</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
-             "<li>只計已平倉（已實現）盈虧；未平倉持倉嘅浮動盈虧見策略總表「💼 富途實倉」。</li>"
+             "<li>已實現按先入先出計；未實現用富途每個持倉嘅浮動盈虧（pl_val，按富途成本價），兩者成本基礎可能略有差異。</li>"
              "<li>手續費按富途每張單嘅收費，計喺第一筆成交嗰日。</li>"
              f"<li>富途成交時間加 {FUTU_DEAL_TZ_HOURS:g} 個鐘當香港時間（實測）；月份按香港時間分。</li>"
              f"{notes}</ul></div>")
@@ -3017,6 +3225,21 @@ def handle_fund_report_get(req):
                                     + ops_reports_html(reports))
     r = futu_pnl_report(doc, req.args.get("start"))
     r["reports"] = reports
+    try:                                                                  # [R207] 未實現＋績效
+        risk_doc = gcs_read_json(FUTU_RISK_FILE, {})
+    except StorageError as exc:
+        log_event(f"⚠️ [基金報告：讀持倉失敗] {exc}", severity="WARNING", component="fund_report")
+        risk_doc = None
+    un = fund_unrealized(risk_doc)
+    r["unrealized"] = {k: v for k, v in un.items() if k != "futu_equity"} if un else None   # 權益唔公開
+    r["performance"] = fund_performance(r, un)
+    yr = r["periods"].get("year") or {}                                    # [R214] 按戶口（期貨／證券）
+    real = {}
+    for v in yr.values():
+        for prod, c in v.items():
+            if prod != "合計":
+                real[prod] = real.get(prod, 0.0) + c.get("net", 0.0)
+    r["by_account"] = {"realized": fund_by_account(real), "unrealized": (un or {}).get("by_account")}
     if req.args.get("format") == "json":
         return _json_response(r)
     return build_fund_report_page(r)
@@ -3150,6 +3373,110 @@ def _scan_clean_row(raw):
         else:
             out[k] = _futu_text(v, 80)
     return out or None
+
+
+LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
+LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC",
+                    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"]   # [R202][R215][R225] 每隻產品一個程式，各存 longfei/<產品>/latest.json
+# [R203] 使用者 10-16：美期冇報價權限，MES／MNQ／MYM 改美股 ETF SPY／QQQ／DIA
+LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指",
+                         "SPY": "標普 500 ETF", "QQQ": "納指 100 ETF", "DIA": "道指 ETF",
+                         "TLT": "美國 20 年以上國債", "HYG": "高收益企業債", "GLD": "黃金",
+                         "USO": "原油", "IWM": "羅素 2000 中小型股",
+                         "EWJ": "日本", "FXI": "中國大型股", "EWT": "台灣", "INDA": "印度", "EZU": "歐元區", "EWU": "英國", "EWZ": "巴西", "EWC": "加拿大",
+                         "AAPL": "蘋果", "MSFT": "微軟", "NVDA": "輝達", "GOOGL": "Alphabet", "AMZN": "亞馬遜", "META": "Meta",
+                         "TSLA": "特斯拉"}
+LONGFEI_ETFS = set(LONGFEI_PRODUCTS) - {"HSI"}
+LONGFEI_MAX_TRADES = 500
+LONGFEI_MAX_DECISIONS = 30
+LONGFEI_MAX_BYTES = 400_000
+LONGFEI_ARCHIVE_MAX = 600                            # [R204] 每日每產品決策存檔上限（一日最多約 290 個）
+
+
+def _longfei_base(product, trd_env):
+    """[R209] 真倉（trd_env=REAL）存 longfei/real/<產品>/；模擬倉照舊 longfei/<產品>/（使用者 10-17：真倉同模擬倉並行、分開顯示）。"""
+    return f"{LONGFEI_DIR}/real/{product}" if str(trd_env or "").upper() == "REAL" else f"{LONGFEI_DIR}/{product}"
+
+
+def handle_longfei_push(payload):
+    """[R200] 龍飛陣 VM 每 5 分鐘推上嚟嘅狀態、成交、最近決策（私人，只存 GCS longfei/latest.json）。"""
+    status = payload.get("state")                    # 唔用 "status"：_payload_summary 會將佢寫入日誌
+    trades = payload.get("trades")
+    decisions = payload.get("decisions")
+    if not isinstance(status, dict) or not isinstance(trades, list) or not isinstance(decisions, list):
+        return jsonify({"status": "error", "message": "longfei_push: bad shape"}), 422
+    doc = {"received_utc": fmt_utc(), "received_ts": now_ts(),
+           "sent_utc": _futu_text(payload.get("sent_utc"), 32), "status": status,
+           "trades": [t for t in trades if isinstance(t, dict)][-LONGFEI_MAX_TRADES:],
+           "decisions": [d for d in decisions if isinstance(d, dict)][-LONGFEI_MAX_DECISIONS:]}
+    text = json.dumps(doc, ensure_ascii=False, default=str)
+    if len(text.encode("utf-8")) > LONGFEI_MAX_BYTES:
+        return jsonify({"status": "error", "message": "longfei_push: too large"}), 413
+    product = str(status.get("product") or "HSI").upper()
+    if product not in LONGFEI_PRODUCT_NAMES:
+        return jsonify({"status": "error", "message": "longfei_push: unknown product"}), 422
+    base = _longfei_base(product, status.get("trd_env"))   # [R209] 真倉同模擬倉分開存
+    try:
+        gcs_write_text(f"{base}/latest.json", text)
+    except StorageError as exc:
+        log_event(f"⚠️ [龍飛陣寫入失敗] {exc}", severity="ERROR", component="longfei")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    # [R204] 覆盤用：決策按日（香港時間）累積存檔，按 ts 去重；latest.json 只得最近 30 個
+    by_day = {}
+    for d in doc["decisions"]:
+        ts = str(d.get("ts") or "")
+        if ARCHIVE_DATE_RE.match(ts[:10]):
+            by_day.setdefault(ts[:10], []).append(d)
+    for day, rows in by_day.items():
+        def mutate(existing, rows=rows):
+            kept = [r for r in (existing if isinstance(existing, list) else []) if isinstance(r, dict)]
+            seen = {r.get("ts") for r in kept}
+            new = [r for r in rows if r.get("ts") not in seen]
+            return (kept + new)[-LONGFEI_ARCHIVE_MAX:], len(new)
+        try:
+            gcs_update(f"{base}/decisions/{day}.json", mutate, default_factory=list)
+        except StorageError as exc:
+            log_event(f"⚠️ [龍飛陣決策存檔失敗] {product} {day} {exc}", severity="WARNING", component="longfei")
+    return jsonify({"status": "stored", "product": product, "real": base != f"{LONGFEI_DIR}/{product}",
+                    "trades": len(doc["trades"]),
+                    "decisions": len(doc["decisions"])}), 200
+
+
+LONGFEI_BARS_MAX_ROWS = 1500                         # [R218] 一日 1 分鐘 K 線：美股連盤前盤後 960 條、恒指日夜盤約 1,000 條
+
+
+def _lf_bar_row(r):
+    """[R218] ["HH:MM", o, h, l, c, v]；格式唔啱就丟。"""
+    if not (isinstance(r, list) and len(r) == 6 and isinstance(r[0], str) and re.fullmatch(r"\d{2}:\d{2}", r[0])):
+        return None
+    try:
+        nums = [float(x) for x in r[1:]]
+    except (TypeError, ValueError):
+        return None
+    return [r[0]] + nums if all(math.isfinite(x) for x in nums) else None
+
+
+def handle_longfei_bars(payload):
+    """[R218] 龍飛陣 VM 收市後推上嚟嘅 1 分鐘 OHLC（私人，只存 GCS longfei/bars/<產品>/<日>.json；同日再推會覆蓋）。
+    模擬倉同真倉睇同一個市場，所以唔分 real。網頁唔顯示，留俾覆盤同回測。"""
+    product = str(payload.get("product") or "").upper()
+    day = str(payload.get("date") or "")
+    bars = payload.get("bars")
+    if product not in LONGFEI_PRODUCT_NAMES or not ARCHIVE_DATE_RE.match(day) or not isinstance(bars, list):
+        return jsonify({"status": "error", "message": "longfei_bars: bad shape"}), 422
+    if len(bars) > LONGFEI_BARS_MAX_ROWS:
+        return jsonify({"status": "error", "message": "longfei_bars: too many rows"}), 413
+    rows = [x for x in (_lf_bar_row(r) for r in bars) if x]
+    doc = {"product": product, "date": day, "received_utc": fmt_utc(),
+           "fields": ["t", "o", "h", "l", "c", "v"], "bars": rows}
+    try:
+        gcs_write_text(f"{LONGFEI_DIR}/bars/{product}/{day}.json",
+                       json.dumps(doc, ensure_ascii=False, separators=(",", ":")))
+    except StorageError as exc:
+        log_event(f"⚠️ [龍飛陣 K 線存檔失敗] {product} {day} {exc}", severity="WARNING", component="longfei")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    return jsonify({"status": "stored", "product": product, "date": day, "rows": len(rows),
+                    "dropped": len(bars) - len(rows)}), 200
 
 
 def handle_scan_push(payload):
@@ -7330,6 +7657,234 @@ def handle_canary_get(req):
 
 
 # =============================================================================
+# [R201] 🐉 龍飛陣頁（?view=longfei；&format=json）：讀 GCS longfei/latest.json（R200 由 VM 每 5 分鐘推上嚟），
+# 顯示階段、持倉、績效指標（勝率、盈虧比、獲利因子、每筆平均、最大回撤、Sharpe）、成交同最近決策。只讀、唔落單、
+# 唔顯示戶口淨值或保證金。
+# =============================================================================
+LONGFEI_STALE_MIN = 15
+
+
+def longfei_metrics(trades, key="points"):
+    """由 CLOSE 紀錄計績效；key="points"（點）或 "pnl_hkd_gross"（HK$，跨產品合計用）；未扣佣金。
+    Sharpe 用每日數值（按平倉日 HKT）年化 √252，少過 5 日唔計。"""
+    closes = [t for t in trades if t.get("type") == "CLOSE" and isinstance(t.get(key), (int, float))]
+    pts = [float(t[key]) for t in closes]
+    n = len(pts)
+    wins = [p for p in pts if p > 0]
+    losses = [p for p in pts if p < 0]
+    gw, gl = sum(wins), -sum(losses)
+    avg_win = gw / len(wins) if wins else None
+    avg_loss = gl / len(losses) if losses else None
+    cum = peak = dd = 0.0
+    for p in pts:
+        cum += p
+        peak = max(peak, cum)
+        dd = max(dd, peak - cum)
+    by_day = {}
+    for t in closes:
+        day = str(t.get("ts") or "")[:10]
+        by_day[day] = by_day.get(day, 0.0) + float(t[key])
+    days = list(by_day.values())
+    sharpe = None
+    if len(days) >= 5:
+        m = sum(days) / len(days)
+        sd = (sum((d - m) ** 2 for d in days) / (len(days) - 1)) ** 0.5
+        sharpe = m / sd * (252 ** 0.5) if sd > 0 else None
+    return {"trades": n, "wins": len(wins), "win_rate": len(wins) / n if n else None, "points": sum(pts),
+            "avg_win": avg_win, "avg_loss": avg_loss, "rrr": avg_win / avg_loss if avg_win is not None and avg_loss else None,
+            "profit_factor": gw / gl if gl > 0 else None, "expectancy": sum(pts) / n if n else None,
+            "max_dd": dd if n else None, "sharpe": sharpe, "days": len(days)}
+
+
+def _longfei_one(doc):
+    trades = [t for t in (doc.get("trades") or []) if isinstance(t, dict)]
+    age = (now_ts() - doc["received_ts"]) / 60 if isinstance(doc.get("received_ts"), (int, float)) else None
+    state = {k: v for k, v in (doc.get("status") or {}).items()
+             if k not in ("real_preflight", "sim_account", "real_account")}   # 戶口檢查、戶口淨值（R212）唔公開
+    return {"state": state, "received_utc": doc.get("received_utc"), "age_min": age,
+            "stale": age is None or age > LONGFEI_STALE_MIN, "metrics": longfei_metrics(trades),
+            "metrics_hkd": longfei_metrics(trades, "pnl_hkd_gross"), "trades": trades,
+            "decisions": [d for d in (doc.get("decisions") or []) if isinstance(d, dict)]}
+
+
+def longfei_data():
+    products, real = {}, {}
+    for p in LONGFEI_PRODUCTS:
+        doc = gcs_read_json(f"{LONGFEI_DIR}/{p}/latest.json", None)
+        if doc is None and p == "HSI":                       # R200 舊位置（未分產品）
+            doc = gcs_read_json(f"{LONGFEI_DIR}/latest.json", None)
+        if isinstance(doc, dict):
+            products[p] = _longfei_one(doc)
+        rdoc = gcs_read_json(f"{_longfei_base(p, 'REAL')}/latest.json", None)   # [R209] 真倉
+        if isinstance(rdoc, dict):
+            real[p] = _longfei_one(rdoc)
+    if not products and not real:
+        return {"status": "empty", "message": "龍飛陣未有數據上載（程式啱啱開或者未開）。"}
+    tot = lambda g: longfei_metrics([t for v in g.values() for t in v["trades"]], "pnl_hkd_gross")
+    return {"status": "ok", "products": products, "total_hkd": tot(products), "real": real, "total_real_hkd": tot(real)}
+
+
+def _lf_hkt(ts):
+    """ISO（+08:00 或 UTC）→ 'MM-DD HH:MM' 香港時間。"""
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone(timedelta(hours=8)))
+        return dt.astimezone(timezone(timedelta(hours=8))).strftime("%m-%d %H:%M")
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _lf_run(st):
+    if st.get("halted"):
+        return f"⛔ 今日已停機：{st.get('halt_reason') or ''}"
+    if st.get("stopped"):
+        return "⛔ STOP 檔：停機"
+    if st.get("paused"):
+        return "⏸ 暫停開新倉（風控 Ⓑ）"
+    if st.get("foreign_qty"):
+        return f"⏸ 即月有其他倉 {st.get('foreign_qty'):+}，停開新倉"
+    return "✅ 運行中"
+
+
+def _lf_card(title, value, desc=""):
+    return (f"<div class='card'><div class='card-title'>{title}</div><div class='card-value'>{value}</div>"
+            f"<div class='card-desc'>{desc}</div></div>")
+
+
+def _lf_metric_cards(m, unit, fmt_val):
+    pct = "—" if m["win_rate"] is None else f"{m['win_rate']:.0%}"
+    sharpe = "—" if m["trades"] == 0 else ("樣本不足" if m["sharpe"] is None else f"{m['sharpe']:.2f}")
+    f2 = lambda v: "—" if v is None else f"{v:.2f}"
+    return ("<div class='grid'>"
+            + _lf_card("勝率", pct, "贏嘅筆數 ÷ 總筆數")
+            + _lf_card("盈虧比 RRR", f2(m["rrr"]), "平均贏 ÷ 平均蝕")
+            + _lf_card("Sharpe ratio（年化）", sharpe, "每日平均 ÷ 標準差 × √252，要 ≥ 5 個交易日")
+            + _lf_card("獲利因子", f2(m["profit_factor"]), "總贏 ÷ 總蝕")
+            + _lf_card("每筆平均", fmt_val(m["expectancy"]), f"{unit}／筆")
+            + _lf_card("最大回撤", "—" if m["max_dd"] is None else fmt_val(-m["max_dd"]), "累計由高位最大跌幅")
+            + _lf_card("平均贏", fmt_val(m["avg_win"]), f"{unit}／筆")
+            + _lf_card("平均蝕", "—" if m["avg_loss"] is None else fmt_val(-m["avg_loss"]), f"{unit}／筆")
+            + "</div>")
+
+
+def _lf_product_section(p, d, real=False):
+    st, m = d["state"], d["metrics"]
+    sid = f"lf-real-{p}" if real else f"lf-{p}"
+    env = st.get("trd_env") or "—"
+    stage = "模擬盤" if env == "SIMULATE" else ("真倉" if env == "REAL" else env)
+    pos = st.get("pos")
+    if pos:
+        unit = "股" if p in LONGFEI_ETFS else "張"
+        pos_txt = f"{'好倉' if pos.get('side', 0) > 0 else '淡倉'} {pos.get('qty')} {unit} @ {_cn(pos.get('entry'), 2 if p != 'HSI' else 0)}"
+        pos_desc = f"止蝕 {_cn(pos.get('stop'), 2)}・止賺 {_cn(pos.get('target'), 2)}・{esc(_lf_hkt(pos.get('opened_at')))} 開"
+    else:
+        pos_txt, pos_desc = "冇", "空手"
+    warn = ""
+    if d["stale"]:
+        age = d["age_min"]
+        warn = ("<p style='color:#b45309'><b>⚠ 數據未更新</b>：上次收到 "
+                f"{esc(_lf_hkt(d['received_utc']))}（{'—' if age is None else f'{age:.0f} 分鐘前'}），程式可能停咗。</p>")
+    nd = 0 if p == "HSI" else 2
+    top = ("<div class='grid'>"
+           + _lf_card("階段", esc(stage), esc(_lf_run(st)))
+           + (_lf_card("真倉筆數", str(m["trades"]), "已平倉") if real else
+              _lf_card("模擬盤筆數", str(m["trades"]), "前向測試，同真倉並行"))
+           + _lf_card("而家持倉", esc(pos_txt), pos_desc)
+           + _lf_card("已平倉累計點數", "—" if not m["trades"] else _cn(m["points"], nd, sign=True),
+                      f"合約 {esc(str(st.get('contract') or '—'))}；未扣佣金")
+           + "</div>")
+    rows, opens = "", {}
+    for t in d["trades"]:
+        if t.get("type") == "OPEN":
+            opens[t.get("code")] = t
+        elif t.get("type") == "CLOSE":
+            o = opens.pop(t.get("code"), {})
+            pt = t.get("points")
+            color = "" if not isinstance(pt, (int, float)) else (" style='color:#15803d'" if pt >= 0 else " style='color:#dc2626'")
+            rows += (f"<tr><td>{esc(_lf_hkt(t.get('opened_at') or o.get('ts')))}</td><td>{esc(_lf_hkt(t.get('ts')))}</td>"
+                     f"<td>{'好' if t.get('side', 0) > 0 else '淡'}</td><td>{_cn(t.get('entry'), nd)}</td><td>{_cn(t.get('price'), nd)}</td>"
+                     f"<td{color}>{_cn(pt, nd, sign=True)}</td><td>{esc(str(o.get('reason') or '')[:80])}</td>"
+                     f"<td>{esc(str(t.get('reason') or '')[:60])}</td></tr>")
+    trades_html = ("<h3>📒 成交紀錄</h3>"
+                   + ("<div style='overflow-x:auto'><table><tr><th>開倉</th><th>平倉</th><th>方向</th><th>開倉價</th><th>平倉價</th>"
+                      "<th>點數</th><th>入場理由</th><th>出場原因</th></tr>" + rows + "</table></div>" if rows else
+                      "<p class='muted'>未有平倉成交。</p>"))
+    drows = "".join(
+        f"<tr><td>{esc(_lf_hkt(d2.get('ts')))}</td><td>{esc(str(d2.get('final') or '—'))}"
+        f"{'（篩走）' if d2.get('gate') == 'SKIP' else ''}</td>"   # [R218] Haiku 話唔使睇，冇問決策模型
+        f"<td>{_cn(d2.get('last'), nd)}</td><td>{esc(str(d2.get('reason') or '')[:120])}</td>"
+        f"<td>{esc(str(d2.get('rejected') or ''))}</td></tr>" for d2 in reversed(d["decisions"][-5:]))
+    dec_html = ("<h3>🧠 最近決策</h3>"
+                + ("<div style='overflow-x:auto'><table><tr><th>時間</th><th>決定</th><th>價</th><th>理由</th><th>風控紀錄</th></tr>"
+                   + drows + "</table></div>" if drows else "<p class='muted'>未有決策紀錄。</p>"))
+    return (f"<div class='section' id='{sid}'><h2>{'💰 真倉・' if real else '🧪 模擬・'}{esc(p)}・"
+            f"{esc(LONGFEI_PRODUCT_NAMES.get(p, p))}</h2>" + warn + top
+            + "<h3>📊 績效指標（點）</h3>" + _lf_metric_cards(m, "點", lambda v: "—" if v is None else _cn(v, 1, sign=True))
+            + trades_html + dec_html + "</div>")
+
+
+def _lf_group(prods, total, real):
+    """[R209] 一組（真倉或模擬倉）：總覽表、合計績效、逐產品。"""
+    hk = lambda v: "—" if v is None else f"HK${v:+,.0f}"
+    pre = "lf-real-" if real else "lf-"
+    orow = ""
+    for p in LONGFEI_PRODUCTS:
+        d = prods.get(p)
+        if not d:
+            if not real:
+                orow += f"<tr><td>{p}</td><td colspan='6' class='muted'>未開始</td></tr>"
+            continue
+        m, mh, st = d["metrics"], d["metrics_hkd"], d["state"]
+        pos = st.get("pos")
+        orow += (f"<tr><td><a href='#{pre}{p}'>{p}</a></td><td>{esc(_lf_run(st))}</td>"
+                 f"<td>{'—' if not pos else ('好' if pos.get('side', 0) > 0 else '淡') + ' ' + str(pos.get('qty'))}</td>"
+                 f"<td>{m['trades']}</td><td>{'—' if m['win_rate'] is None else format(m['win_rate'], '.0%')}</td>"
+                 f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td><td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")
+    title = "💰 真倉（真金白銀）" if real else "🧪 模擬倉（前向測試，同真倉並行）"
+    overview = (f"<div class='section'><h2>{title}・總覽</h2><div style='overflow-x:auto'><table><tr><th>產品</th><th>狀態</th>"
+                "<th>持倉</th><th>已平倉筆數</th><th>勝率</th><th>累計（HK$）</th><th>更新</th></tr>" + orow + "</table></div></div>")
+    tot = (f"<div class='section'><h2>📊 {'真倉' if real else '模擬倉'}合計績效（按 HK$）</h2>"
+           + _lf_metric_cards(total, "HK$", lambda v: hk(v))
+           + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金"
+           + ("" if real else "同滑價") + "；樣本少時只供參考。</p></div>")
+    secs = "".join(_lf_product_section(p, prods[p], real) for p in LONGFEI_PRODUCTS if p in prods)
+    return overview + tot + secs
+
+
+def build_longfei_page(data):
+    nav = page_nav("longfei")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
+    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）、16 隻美股上市 ETF（SPY、QQQ、DIA、IWM、TLT、HYG、GLD、USO，同日本、中國、台灣、印度、歐元區、英國、巴西、加拿大）同納指科技七雄（蘋果、微軟、輝達、Alphabet、亞馬遜、Meta、特斯拉）"
+             "（每次約 US$100,000，台灣、印度 US$50,000，歐元區、英國、加拿大 US$30,000；可沽空；包盤前盤後，但台灣、印度、歐元區、英國、加拿大只喺正常時段開新倉）；程式負責落單同硬性風控（每日虧損上限：HSI HK$10,000、每隻 ETF HK$100,000，"
+             "到咗即平倉停機）。"
+             "真倉同模擬倉分開計：模擬倉一直做前向測試，唔會因為開咗真倉而停。</p></div>")
+    if data.get("status") != "ok":
+        return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+    real = data.get("real") or {}
+    body = (_lf_group(real, data["total_real_hkd"], True) if real else
+            "<div class='section'><h2>💰 真倉</h2><p class='muted'>未開始真倉。</p></div>")
+    body += _lf_group(data["products"], data["total_hkd"], False)
+    foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。</p>"
+    return html_page("龍飛陣", head + intro + body + foot, "<meta http-equiv='refresh' content='300'>")
+
+
+def handle_longfei_get(req):
+    try:
+        data = longfei_data()
+    except Exception as exc:
+        log_event(f"⚠️ [龍飛陣頁失敗] {exc}", severity="WARNING", component="longfei")
+        data = {"status": "error", "message": "讀取失敗，請稍後再試。"}
+    if req.args.get("format") == "json":
+        strip = lambda g: {p: {k: v for k, v in d.items() if k != "decisions"} for p, d in g.items()}
+        out = data if data.get("status") != "ok" else {
+            "status": "ok", "total_hkd": data["total_hkd"], "products": strip(data["products"]),
+            "total_real_hkd": data["total_real_hkd"], "real": strip(data["real"])}
+        return _json_response(out, 200 if data.get("status") == "ok" else 503)
+    return build_longfei_page(data)
+
+
+# =============================================================================
 # [R165] 📈 HTF 每日掛單頁（?view=htf；&format=json）＋策略總表四行：鳥翔分支（claude/stock-research-k9nzau）每個交易日
 # 17:13 HKT 跑 GitHub Actions，約 18:05 前把 analysis/htf_daily/ 結果 commit 入該分支；本頁只讀該分支（公開 raw），
 # 唔重算訊號、唔落單。記憶體快取 30 分鐘、GCS htf/ 後備；讀唔到就用上次成功版本並標明。
@@ -9854,6 +10409,7 @@ PAGE_LINKS = [
     ("yunchui", "☁️ 雲垂陣"),                               # [R159] 賣跨式＋期貨 Δ 對沖（公開）
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
+    ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     ("dashboard", "⚙️ 控制台"),
@@ -11653,6 +12209,8 @@ def handle_get(req):
         return handle_canary_get(req)
     if view == "htf":                                            # [R165] 📈 HTF 每日掛單（&format=json）
         return handle_htf_get(req)
+    if view == "longfei":                                        # [R201] 🐉 龍飛陣成績（&format=json）
+        return handle_longfei_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
         return serve_factsheet()
     if view == "inline":                                         # [R148] 界內證掃描最新／按日摘要（JSON）
@@ -11760,6 +12318,10 @@ def _dispatch_post(payload):
         return handle_inline_scan(payload)
     if action == "scan_push":                        # [R150] 本地 scan_push.py 推上來的前向測試掃描（只存）
         return handle_scan_push(payload)
+    if action == "longfei_push":                     # [R200] 🐉 龍飛陣 VM 推上嚟嘅成績（只存）
+        return handle_longfei_push(payload)
+    if action == "longfei_bars":                     # [R218] 龍飛陣 1 分鐘 K 線收市存檔（只存）
+        return handle_longfei_bars(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -11790,7 +12352,8 @@ def receive_tradingview_signal(request):
               f"buy={summary['buy_lots']} sell={summary['sell_lots']} m1={summary['m1_time']}",
               component="webhook", direction="in", **summary)
     if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl",
-                                     "cme_watchlist", "cme_quotes", "cme_quotes_get"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+                                     "cme_watchlist", "cme_quotes", "cme_quotes_get", "longfei_push",
+                                     "longfei_bars"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()

@@ -249,6 +249,10 @@ def value(p, F, iv_shift=0.0, days=0.0):
 
 HKT_TZ = timezone(timedelta(hours=8))
 LADDER_CUSHION = {"B": 37_500, "C": 25_000, "D": 15_000}   # RISK_LADDER.md 日盤緩衝線（夜盤 ×1.5）；同 scripts/daily_books.py LADDER 一致
+# [R205] 富途證券戶口（龍飛陣美股 ETF；使用者 10-17「開始補證券戶口監察」）：緩衝＝總資產 − 維持保證金（港幣）。
+# 線按 3 隻 ETF × 日蝕 HK$10,000 定（RISK_LADDER §6b）；美股時段喺香港夜晚，唔再 ×1.5。
+SEC_LADDER_CUSHION = {"B": 30_000, "C": 20_000, "D": 10_000}
+SEC_MIN_EXPOSURE = 1_000        # [R206] 持倉市值（絕對值，沽空係負數）細過呢個當冇倉（例如碎股），唔警報、級別當 A
 STRESS_SCENARIOS = (("HSI −5%", {"HSI": -.05}, 0), ("HSI +5%", {"HSI": .05}, 0),
                     ("ES −3%", {"ES": -.03}, 0), ("ES +3%", {"ES": .03}, 0),
                     ("ES −5%", {"ES": -.05}, 0), ("ES +5%", {"ES": .05}, 0),
@@ -267,6 +271,25 @@ def ladder_level(cushion, night=False):
         if cushion < LADDER_CUSHION[lv] * k:
             return lv
     return "A"
+
+
+def sec_ladder_level(cushion):
+    """[R205] 證券戶口級別（A／B／C／D），唔分日夜。"""
+    for lv in ("D", "C", "B"):
+        if cushion < SEC_LADDER_CUSHION[lv]:
+            return lv
+    return "A"
+
+
+def pick_accounts(accounts):
+    """[R205] 回傳 (期貨戶口, 證券戶口)。富途匯出有 account 標籤（期貨帳戶／證券帳戶-HK／證券帳戶-US）就按標籤揀，
+    免得證券戶口入錢之後俾當成期貨戶口；冇標籤（舊檔）就照舊揀第一個有資產嘅港幣戶口。"""
+    lab = lambda x: str(x.get("account") or "")
+    if any(lab(x) for x in accounts):
+        fut = next((x for x in accounts if lab(x).startswith("期貨") and (x.get("total_assets") or 0) > 0), None)
+        sec = next((x for x in accounts if lab(x).startswith("證券")), None)
+        return fut, sec
+    return next((x for x in accounts if (x.get("total_assets") or 0) > 0 and x.get("currency", "HKD") == "HKD"), None), None
 
 
 def pnl_hkd(b, fx, shocks, vol_add=0.0, days=0.0, skew="fit", px="close"):
@@ -339,7 +362,7 @@ def build(book, quotes=None, combined_equity=None):
     nav, hs = b["nav_hkd"], b["hard_stop_equity_hkd"]
     tot0, grp0 = pnl_hkd(b, fx, {})
     totm, _ = pnl_hkd(b, fx, {}, px="mid")
-    acc = next((x for x in b["accounts"] if (x.get("total_assets") or 0) > 0 and x.get("currency", "HKD") == "HKD"), None)
+    acc, sec = pick_accounts(b["accounts"])
     eq0 = combined_equity if combined_equity else nav + tot0
     budget = eq0 - hs
     M.update(quotes_fetched=b["quotes_fetched"], pnl=tot0, equity=eq0, hard_stop=hs, gap=budget)
@@ -356,6 +379,20 @@ def build(book, quotes=None, combined_equity=None):
         M.update(futu_equity=acc["total_assets"], cushion=cush, maintenance_margin=acc.get("maintenance_margin"))
         P(f"富途期貨戶口：權益 HK${acc['total_assets']:,.0f}，維持保證金 HK${acc.get('maintenance_margin') or 0:,.0f}，"
           f"**保證金緩衝 HK${cush:,.0f}**（跌穿 0 會被追保證金／斬倉；跌市時保證金通常再加）")
+    if sec:                                                    # [R205] 證券戶口（龍飛陣 ETF 轉真倉前要有監察）
+        ccy = str(sec.get("currency") or "HKD").upper()
+        rate = 1.0 if ccy == "HKD" else fx.get(ccy)
+        if rate:
+            mm = sec.get("maintenance_margin") or 0
+            cush = ((sec.get("total_assets") or 0) - mm) * rate
+            # [R206] 有持倉（市值絕對值 ≥ SEC_MIN_EXPOSURE）或者用緊孖展先計風險；冇倉／得碎股／未入錢嘅戶口級別當 A，
+            # 免得 guard 開咗 LONGFEI_ETF_SEC_LADDER 之後一直讀到 D；龍飛陣開第一張倉之後下一輪（10 分鐘）就會反映
+            # [R213] 碎股都可能有幾十蚊維持保證金（10-17 實例：SPCX 0.08 股、MM HK$39）→ MM 同樣要過門檻先算有倉
+            exposed = max(mm * rate, abs(sec.get("market_val") or 0) * rate) >= SEC_MIN_EXPOSURE
+            M["sec"] = {"equity": round((sec.get("total_assets") or 0) * rate), "maintenance_margin": round(mm * rate),
+                        "cushion": round(cush), "ladder": sec_ladder_level(cush) if exposed else "A", "exposed": exposed}
+            P(f"富途證券戶口：權益 HK${M['sec']['equity']:,.0f}，維持保證金 HK${M['sec']['maintenance_margin']:,.0f}，"
+              f"**緩衝 HK${cush:,.0f}（{M['sec']['ladder']}）**" + ("" if exposed else "；冇持倉（或得碎股）、冇用孖展 → 當 A、唔警報"))
     M["mhi_lots"] = dict(b["fut_lots"]) or {
         derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
     P("期貨淨手數（富途實際）：" + ("、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()) or "冇"))
@@ -433,6 +470,7 @@ def build(book, quotes=None, combined_equity=None):
         if hedges and s.get("credit") is not None:
             # [R185] 使用者 10-15：EW put 用 ES／MES 期貨對沖 → 止損用量（警報／風控階梯用）改計合計：
             #   (put 虧損 − 對沖盈利) ÷ 止損允許虧損（(止損買回價 − 權利金) × 乘數 × 張數）；put 單計照列作參考
+            #   使用者 10-16 定：對沖盈利只計仲持有嘅對沖倉（由開倉起），已平對沖嘅已實現盈虧唔計
             legs = [byid[i] for i in s["legs"]]
             put_loss = sum((byid[i]["close_px"] - (s["credit"] if len(s["legs"]) == 1 else byid[i]["open"])) * byid[i]["mult"] * abs(byid[i]["qty"])
                            for i in s["legs"])
@@ -444,7 +482,7 @@ def build(book, quotes=None, combined_equity=None):
             hl = "、".join(f"{h['code'][3:]} {h['qty']:+g}" for h in hedges)
             P(f"  - **含對沖合計（警報／風控階梯用）**：put 虧損 {put_loss:+,.0f} {cur}、對沖（{hl}）盈虧 {h_pnl:+,.0f} {cur}"
               f" → 合計虧損 {put_loss - h_pnl:+,.0f} / 允許 {allow:,.0f} {cur}（用咗 {comb * 100:.0f}%）；"
-              f"put 單計 {bb / s['stop_buyback'] * 100:.0f}% 只作參考")
+              f"put 單計 {bb / s['stop_buyback'] * 100:.0f}% 只作參考；已平對沖嘅已實現盈虧唔計（使用者 10-16 定）")
     if any(p.get("group") == "HSI 週權 strangle" for p in b["positions"]):                 # [R192] 冇週權就唔印
         P("- HSI 週權 strangle：風揚陣「方向一」（每週五沽下週 1σ 勒式，**持有到期、唔止損、唔對沖**；"
           "research/hsi_futures_range/STRANGLE_1SIGMA.md）")

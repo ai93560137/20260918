@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# [R187][R188] 每 10 分鐘：睇 ops/user-machine 分支有冇新版；有就更新 repo 並重開推送服務（OpenD 唔重開）。
+# [R187][R188][R199] 每 10 分鐘：睇 ops/user-machine 分支有冇新版；有就更新 repo 並重開推送服務（OpenD 唔重開）。
 # 只跟 ops/user-machine（總指揮喺使用者講「更新部機」先推）；VM 上嘅 repo 唔好人手改，會被蓋。
 set -uo pipefail
 U="$1"; H="$2"; REPO="$H/20260918"; LOG="$H/zhuge/update.log"
@@ -15,4 +15,7 @@ for f in "$REPO"/gcp_ib/vm_futu/*.service "$REPO"/gcp_ib/vm_futu/*.timer; do
 done
 systemctl daemon-reload
 systemctl restart zhuge-auto-risk.service zhuge-futu-push.service zhuge-iv-push.service
+# [R220] 先停走唔再列嘅程式、再重開其餘（10-18 OOM 事故：唔好一次過重開晒先停）
+bash "$REPO/gcp_ib/vm_futu/longfei_units.sh" "$U" "$H" >> "$LOG" 2>&1   # [R209] 真倉程式跟 LONGFEI_REAL_PRODUCTS 開／停
+systemctl try-restart zhuge-longfei-guard.service zhuge-longfei.service 'zhuge-longfei@*.service'   # [R199][R202] 只重開已經開咗嘅
 echo "$(date -u +%F' '%T) 更新 ${old:0:9} → ${new:0:9}，已重開推送服務" >> "$LOG"

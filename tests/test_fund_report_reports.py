@@ -76,5 +76,87 @@ check("頁面照出已實現表", "已實現淨盈虧" in html)
 FAKE[main.OPS_REPORTS_PUBLIC_FILE] = ("[1,2]", 3)
 check("非 dict 當空", main.ops_reports_public() == {})
 
+print("\n五、[R207] 未實現、總盈虧、每月／季／年績效")
+FAKE[main.OPS_REPORTS_PUBLIC_FILE] = (json.dumps(IDX, ensure_ascii=False), 4)
+RISK = {"run_hkt": "2026-10-17 01:37", "metrics": {"futu_equity": 500000},
+        "positions": [{"code": "US.EW2610P7750x0", "qty": -1, "open_price": 43, "futu_pl": -2750.0},
+                      {"code": "HK.HSI261023P23700000", "qty": -1, "open_price": 59, "futu_pl": -100.0},
+                      {"code": "HK.MHI2610", "qty": -1, "open_price": 24300, "bid": 24290, "ask": 24292, "futu_pl": None}]}
+un = main.fund_unrealized(RISK)
+check("美元折港幣：EW −2,750 × 7.8", abs(un["by_product"]["ES 標普月底期權"] - (-2750 * main.FUTU_USD_HKD)) < 1e-6, un)
+check("冇 futu_pl 用中間價計：MHI (24,291 − 24,300) × −1 × 10 = +90", abs(un["by_product"]["MHI 小型恒指期貨"] - 90) < 1e-6, un)
+check("合計", abs(un["total"] - (-2750 * main.FUTU_USD_HKD - 100 + 90)) < 1e-6, un)
+check("讀唔到持倉 → None", main.fund_unrealized({}) is None and main.fund_unrealized(None) is None)
+r = main.futu_pnl_report(json.loads(FAKE[main.FUTU_PNL_FILE][0]))
+perf = main.fund_performance(r, un, today=main.date(2026, 10, 17))
+m = {x["period"]: x for x in perf["periods"]["month"]}
+check("10 月：已實現 1,000＋未實現 → 總盈虧", m["2026-10"]["realized"] == 1000 and abs(m["2026-10"]["total"] - (1000 + un["total"])) < 0.01, m)
+check("回報率 ÷ 富途權益 50 萬", m["2026-10"]["return_pct"] == round((1000 + un["total"]) / 500000 * 100, 2), m)
+check("勝率 100%（1 筆平倉賺）", m["2026-10"]["closes"] == 1 and m["2026-10"]["win_rate"] == 100.0, m)
+check("每季、每年都有", perf["periods"]["quarter"][-1]["period"] == "2026Q4" and perf["periods"]["year"][-1]["period"] == "2026")
+check("本金來源 futu_equity", perf["capital_source"] == "futu_equity")
+perf2 = main.fund_performance(r, un, today=main.date(2026, 11, 2))
+m2 = {x["period"]: x for x in perf2["periods"]["month"]}
+check("未實現只計入現時月份（11 月），10 月唔計", m2["2026-10"]["unrealized"] == 0 and "2026-11" in m2 and m2["2026-11"]["realized"] == 0, m2)
+FAKE[main.FUTU_RISK_FILE] = (json.dumps(RISK), 1)
+html = main.handle_fund_report_get(req())
+check("頁面有未實現卡、總盈虧卡", "未實現盈虧（現時持倉" in html and "總盈虧（已實現＋未實現）" in html)
+check("頁面有每月／每季／每年績效表", all(f"📈 {z}績效" in html for z in ("每月", "每季", "每年")))
+check("頁面有按產品未實現", "未實現盈虧（按產品" in html)
+check("權益絕對值唔出現（50 萬）", "500,000" not in html and "500000" not in html)
+import flask                                     # noqa: E402
+with flask.Flask("t").app_context():
+    j = main.handle_fund_report_get(req(format="json"))
+    j = j[0] if isinstance(j, tuple) else j
+    body = j.get_data(as_text=True)
+check("JSON 有 unrealized、performance，冇權益金額", '"unrealized"' in body and '"performance"' in body and "500000" not in body and "500,000" not in body, body[:300])
+del FAKE[main.FUTU_RISK_FILE]
+html = main.handle_fund_report_get(req())
+check("讀唔到持倉：頁面照出、顯示讀唔到", "讀唔到持倉" in html and "已實現淨盈虧" in html)
+
+print("\n六、[R214] 詳細統計、Sharpe、RRR")
+D = {"fetched_hkt": "2026-10-17 10:00", "since": "2026-10-01", "positions": [], "fees": {"1": 10, "3": 10},
+     "deals": [{"time": "2026-10-05 01:00:00", "code": "HK.MHI2610", "side": "BUY", "qty": 1, "price": 26000, "order_id": "1"},
+               {"time": "2026-10-05 04:00:00", "code": "HK.MHI2610", "side": "SELL", "qty": 1, "price": 26100, "order_id": "2"},
+               {"time": "2026-10-06 01:00:00", "code": "HK.MHI2610", "side": "SELL", "qty": 1, "price": 26000, "order_id": "3"},
+               {"time": "2026-10-06 02:00:00", "code": "HK.MHI2610", "side": "BUY", "qty": 1, "price": 26050, "order_id": "4"}]}
+r = main.futu_pnl_report(D, "2026-10-01", today=main.date(2026, 10, 9))
+st = r["stats"]
+check("2 筆平倉：賺 1,000、蝕 500", st["trades"] == 2 and st["largest_profit"] == 1000 and st["largest_loss"] == -500, st)
+check("Profit factor 2、RRR 2", st["profit_factor"] == 2.0 and st["rrr"] == 2.0, st)
+check("持倉時間：賺 3h、蝕 1h", st["avg_hold_win_s"] == 3 * 3600 and st["avg_hold_loss_s"] == 3600, st)
+check("手續費 20、總盈虧 480", st["commissions"] == 20 and st["total_pnl"] == 480, st)
+check("賺錢日 1、蝕錢日 1、最佳 990、最差 −510", st["winning_days"] == 1 and st["losing_days"] == 1
+      and st["best_day"] == 990 and st["worst_day"] == -510, st)
+check("Sharpe 用 10/1–10/9 工作日（7 日）", st["sharpe_days"] == 7 and st["sharpe"] is not None, st)
+FAKE[main.FUTU_PNL_FILE] = (json.dumps(D), 9)
+html = main.handle_fund_report_get(req(start="2026-10-01"))
+check("頁面有詳細統計、Sharpe、RRR、持倉時間", "📋 詳細統計" in html and "Sharpe ratio" in html and "RRR" in html and "3h 0m" in html)
+
+print("\n七、[R214] 包括證券戶口")
+R2 = {"run_hkt": "2026-10-17 16:00", "metrics": {"futu_equity": 500000, "sec": {"equity": 300000}},
+      "positions": [{"code": "US.SPY", "qty": 10, "futu_pl": 100.0}, {"code": "HK.HSI261023P23700000", "qty": -1, "futu_pl": -50.0}]}
+u2 = main.fund_unrealized(R2)
+check("未實現按戶口：證券 780、期貨 −50", u2["by_account"] == {"期貨戶口": -50.0, "證券戶口": 780.0}, u2)
+check("本金＝期貨＋證券權益 80 萬", u2["futu_equity"] == 800000, u2)
+check("Cloud Run 保留 sec 指標", main._futu_risk_clean_metrics({"sec": {"equity": 1, "cushion": 2, "ladder": "A"}}).get("sec", {}).get("equity") == 1)
+FAKE[main.FUTU_RISK_FILE] = (json.dumps(R2), 3)
+html = main.handle_fund_report_get(req(start="2026-10-01"))
+check("頁面有按戶口表", "按戶口（港幣）" in html and "證券戶口" in html and "300,000" not in html)
+
+print("\n八、[R214] 要留意")
+nt = main.fund_stats_notes({"sharpe": 6.5, "sharpe_days": 38, "rrr": 0.84, "avg_loss": -2150, "avg_win": 1797, "win_rate": 63,
+                             "largest_loss": -35500, "total_pnl": 70407, "commissions": 9362,
+                             "avg_hold_win_s": 86000, "avg_hold_loss_s": 55000}, {"total": -14000})
+check("Sharpe 樣本短", any("樣本太短" in t for t in nt), nt)
+check("RRR < 1＋打和勝率 54%", any("RRR 0.84" in t and "54%" in t for t in nt), nt)
+check("最大虧損 > 10 倍平均賺", any("最大單筆虧損" in t for t in nt), nt)
+check("手續費佔 13%", any("手續費" in t and "13%" in t for t in nt), nt)
+check("浮虧提醒", any("未實現浮虧" in t for t in nt), nt)
+check("好嘅數據冇提醒", main.fund_stats_notes({"sharpe": 1.2, "sharpe_days": 300, "rrr": 1.5, "avg_win": 100, "largest_loss": -200,
+                                                  "total_pnl": 1000, "commissions": 10}) == [])
+html = main.handle_fund_report_get(req(start="2026-10-01"))
+check("頁面有「要留意：」", "要留意：" in html)
+
 print(f"\n合計 ✅ {OK}  ❌ {FAIL}")
 sys.exit(1 if FAIL else 0)

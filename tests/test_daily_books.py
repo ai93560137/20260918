@@ -171,5 +171,7 @@ check("補倉建議公開版冇金額、私人版有", "💰 補倉" in pub_t an
 check("公開版最後一行照舊", pub_t.strip().splitlines()[-1].startswith("額度內 ✅"))
 check("Ⓒ 訊息附補倉建議", "30 分鐘內" in db.ladder_message("C", ["x"], date(2026, 10, 13), tu(23000)[2]))
 
+_p2, _u2 = db.parse_positions_md("| 🌬️ 風揚陣・方向一 | 富途期貨 | 沽 HSI 週期權 10/23（第 2 週）：Put 23,700 @59 ＋ Call 24,700 @32（各 1 張） | x | x | x | 持倉中 | x |")
+check("週期權列容許（第 N 週）註", _p2.get("HK.HSI261023P23700000") == -1 and _p2.get("HK.HSI261023C24700000") == -1 and not _u2, (_p2, _u2))
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

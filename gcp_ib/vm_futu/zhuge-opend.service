@@ -9,6 +9,8 @@ EnvironmentFile=-@HOME@/zhuge/env
 ExecStart=/bin/bash @HOME@/20260918/gcp_ib/vm_futu/opend_tmux.sh @HOME@
 ExecStop=/usr/bin/tmux kill-session -t opend
 Restart=always
+# [R219] 10-18 03:30 HKT 部機記憶體唔夠（OOM），kernel 殺咗 FutuOpenD，成個數據鏈停。調低 OOM 分數，等 kernel 先殺其他程式（龍飛陣等），保住 OpenD
+OOMScoreAdjust=-900
 RestartSec=30
 [Install]
 WantedBy=multi-user.target
