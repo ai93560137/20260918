@@ -256,6 +256,12 @@
 | ~~F~~ | ~~券商月結單對帳~~（使用者 10-15：不做）：日對帳用富途 API，冇同官方月結單核對 | 中低 | 每月 1 日月報提醒使用者下載月結單，對總權益同手續費 | 使用者＋總指揮 |
 | ~~G~~ | ~~營運衛生（缺口 10 餘項）~~（使用者 10-15：不做）：服務帳戶金鑰輪換日期、VM 權杖到期、Secrets 清單 | 低 | `ops/SECRETS_INVENTORY.md`（只列名同到期日，唔列值），心跳讀到期日 | SOP 顧問 |
 
+### ES／NQ 數據來源（10-19 起，GCP／VM／IBKR 資料採集通報）
+- 5 分 K（`US.ES_FRONT`／`US.NQ_FRONT` K_5M）：ib-data VM cron `*/5 * * * 0-5` 跑 `scripts/ib_es_nq_5m.py`（IB 延遲歷史 K，前月 ESZ6／NQZ6，到期前 8 日轉季；PR #202）。取代部機 MT5 `mt5_push`（10-16 ES 收市同 CME 差約 60 點）。Gateway 約 23:50 UTC 重啟嗰幾輪會缺，下一輪自動補。
+- 心跳（07:30 HKT＝紐約約 18:30–19:30，CME 開市）：`futu/snapshots/US.ES_FRONT.json`／`US.NQ_FRONT.json` 推送 > 20 分鐘、最後一根落後 > 45 分鐘 → 🔴；source 唔係 `ib_delayed:` → 🟡；CME 休市唔查。
+- 日線（K_SESSION）：GitHub Actions `es_daily_push.yml`（yfinance，R230，#201 恢復）；心跳已將佢由「已退役」移返正常檢查。
+- 部機 `ZHUGE_DAEMONS=none`：只起 MT5／EA，唔起 Python 推送；OpenD 喺 futu-data-tw。數據問題搵 GCP／VM／IBKR 資料採集工作階段。
+
 ## 二之二、VM 與資料推送守則（2026-10-14，claude-ops 經驗整理，使用者同意）
 
 適用：ib-data／claude-ops 兩部 VM、所有把採集數據推上 GitHub 的步驟、教使用者喺 VM 貼指令嘅工作階段。

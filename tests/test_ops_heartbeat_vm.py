@@ -71,5 +71,33 @@ class VmCheckTest(unittest.TestCase):
         self.assertEqual(hb.judge_freshness(items[:1], NOW)[0][0], "🔴")
 
 
+class EsNq5mTest(unittest.TestCase):
+    # 2026-10-20（二）07:30 HKT ＝ 10-19（一）19:30 紐約，CME 開市
+    NOW = datetime(2026, 10, 20, 7, 30, tzinfo=hb.HKT)
+
+    def snap(self, age_min, tk, src="ib_delayed:ESZ6"):
+        return {"received_ts": self.NOW.timestamp() - age_min * 60, "source": src, "bars": [{"time_key": tk}]}
+
+    def test_fresh_is_green(self):
+        r = hb.es_nq_5m_rows(self.NOW, {"US.ES_FRONT": self.snap(4, "2026-10-19 19:10:00")})
+        self.assertEqual(r[0][0], "🟢")
+
+    def test_stale_push_and_lagging_bar_red(self):
+        r = hb.es_nq_5m_rows(self.NOW, {"US.ES_FRONT": self.snap(30, "2026-10-19 18:30:00")})
+        self.assertEqual(r[0][0], "🔴")
+        self.assertIn("上限 20", r[0][2])
+        self.assertIn("上限 45", r[0][2])
+
+    def test_mt5_source_yellow(self):
+        r = hb.es_nq_5m_rows(self.NOW, {"US.ES_FRONT": self.snap(4, "2026-10-19 19:10:00", "mt5:SP500ft")})
+        self.assertEqual(r[0][0], "🟡")
+
+    def test_closed_market_skipped(self):
+        sun = datetime(2026, 10, 19, 5, 0, tzinfo=hb.HKT)        # 10-18（日）17:00 紐約，未開市
+        r = hb.es_nq_5m_rows(sun, {"US.ES_FRONT": None})
+        self.assertEqual(r[0][0], "🟢")
+        self.assertIn("休市", r[0][2])
+
+
 if __name__ == "__main__":
     unittest.main()
