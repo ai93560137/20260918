@@ -309,12 +309,13 @@ class Trader:
             total = (st.get("day_pnl") or 0) + sum(float(s.get("day_pnl") or 0) for s in peers.values()
                                                   if s.get("day") == st.get("day"))
             if total <= -cfg.etf_total_daily_loss:
-                return f"全部 ETF 今日合計虧損 HK${-total:,.0f}，到咗合計上限 HK${cfg.etf_total_daily_loss:,.0f}"
-        if side and cfg.group_max_same_dir and cfg.product in cfg.etf_group_us_eq:
-            same = sorted(p for p, s in peers.items()
-                          if p in cfg.etf_group_us_eq and (s.get("pos") or {}).get("side") == side)
-            if len(same) >= cfg.group_max_same_dir:
-                return f"美股大盤組已有 {len(same)} 隻同方向持倉（{'、'.join(same)}）"
+                return f"全部 ETF／個股今日合計虧損 HK${-total:,.0f}，到咗合計上限 HK${cfg.etf_total_daily_loss:,.0f}"
+        for name, group in (("美股大盤組", cfg.etf_group_us_eq), ("科技股組", cfg.etf_group_tech)):   # [R225]
+            if side and cfg.group_max_same_dir and cfg.product in group:
+                same = sorted(p for p, s in peers.items()
+                              if p in group and (s.get("pos") or {}).get("side") == side)
+                if len(same) >= cfg.group_max_same_dir:
+                    return f"{name}已有 {len(same)} 隻同方向持倉（{'、'.join(same)}）"
         return None
 
     @contextmanager

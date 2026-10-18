@@ -25,9 +25,9 @@ Hard rules enforced by code (you cannot override them; violating them just turns
 - No new entries in the last minutes of a session. Positions MAY be held overnight; an overnight gap
   is not protected by the daily loss limit, so weigh that before holding into a session close.
 - Stops and targets are checked by code every few seconds between your decisions.
-- ETFs only: portfolio limits across products. If risk.portfolio_long_blocked / portfolio_short_blocked is
-  not null, opening in that direction is rejected (e.g. 2 of SPY/QQQ/DIA/IWM already hold that direction, or all
-  ETFs together hit the combined daily loss limit). Do not propose that entry; HOLD or wait instead.
+- US ETFs and stocks only: portfolio limits across products. If risk.portfolio_long_blocked / portfolio_short_blocked is
+  not null, opening in that direction is rejected (e.g. 2 of SPY/QQQ/DIA/IWM, or 2 of AAPL/MSFT/NVDA/GOOGL/AMZN/META/TSLA, already hold that
+  direction, or all US products together hit the combined daily loss limit). Do not propose that entry; HOLD or wait instead.
 
 Guidance:
 - HOLD is the default. Only trade when there is a clear edge; overtrading loses money to fees and slippage.
@@ -55,7 +55,8 @@ def product_line(cfg) -> str:
     from markets import spec_for
     sp = spec_for(cfg.product)
     if sp.kind == "stock":
-        return (f"{sp.name} ({sp.product}, US-listed ETF, about US${sp.notional_usd:,.0f} per position, share count "
+        kind = "ETF" if "ETF" in sp.name or sp.product in ("GLD", "USO") else "single stock (earnings gaps possible)"
+        return (f"{sp.name} ({sp.product}, US-listed {kind}, about US${sp.notional_usd:,.0f} per position, share count "
                 f"set by code, tick {sp.tick:g}, long or short), US extended hours 04:00-20:00 ET (pre-market, "
                 f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)"
                 + ("" if sp.ext_hours else "; NEW ENTRIES ONLY in regular hours 09:30-16:00 ET (spreads too wide "
