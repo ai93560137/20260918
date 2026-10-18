@@ -938,3 +938,23 @@ def test_shared_quote_cache(tmp_path, monkeypatch):
     assert len(calls) == 2                                           # 快取新鮮：唔再查
     a.snapshot("US.SPY", fresh=True)
     assert calls[-1] == ["US.SPY"]                                   # 落單前直接查
+
+
+def test_per_product_lessons(tmp_path):
+    """[R228] 共用教學簿＋產品教學簿；（未有）當冇；唔同產品唔會讀到人哋嘅。"""
+    from brain import load_lessons, product_lessons, LESSONS_DIR
+    shared = tmp_path / "LESSONS.md"
+    shared.write_text("共用：唔好追高", encoding="utf-8")
+    d = tmp_path / "lessons"
+    d.mkdir()
+    (d / "HSI.md").write_text("# HSI\n\n> 說明\n\n## 教學\n\n- 開市頭 15 分鐘唔好追\n", encoding="utf-8")
+    (d / "SPY.md").write_text("# SPY\n\n## 教學\n\n（未有）\n", encoding="utf-8")
+    text, ver = load_lessons(shared, "HSI", d)
+    assert "共用：唔好追高" in text and "LESSONS FOR HSI ONLY" in text and "開市頭 15 分鐘" in text
+    spy, spy_ver = load_lessons(shared, "SPY", d)
+    assert spy == "共用：唔好追高" and "HSI" not in spy and spy_ver != ver
+    assert load_lessons(shared, "QQQ", d)[0] == "共用：唔好追高"           # 冇檔照讀共用
+    assert product_lessons("HSI", LESSONS_DIR) == ""                           # repo 入面嘅產品教學簿暫時全部（未有）
+    from markets import SPECS
+    missing = [p for p, s in SPECS.items() if (s.kind == "stock" or p == "HSI") and not (LESSONS_DIR / f"{p}.md").exists()]
+    assert missing == []
