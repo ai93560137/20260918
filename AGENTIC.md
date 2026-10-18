@@ -208,6 +208,9 @@ Claude Code 的 Routines 可以每天固定時間開一個新工作階段執行�
   2026-09-29 已在 ib-data 實跑並加入 cron；一次性長歷史回補用 `VOL_EXPORT_ARGS="--backfill --only tlt qqq spy gld" bash gcp_ib/run_vol_daily.sh`。
   排程中斷後（例如 Gateway 停擺）重跑一次 `bash ~/20260918/gcp_ib/run_vol_daily.sh` 就會自動補齊缺的日子；
   但外匯 IV 日誌只記當天快照，**停擺期間的日子補不回來**。
+- **ES／NQ 5 分 K（2026-10-18 使用者決定取代部機 MT5）**：`scripts/ib_es_nq_5m.py` 複製到 ib-data `~/zhuge/`，cron 每 5 分鐘
+  用 IB 延遲歷史 K 線推 `US.ES_FRONT`／`US.NQ_FRONT` 的 K_5M（source `ib_delayed:ESZ6`；clientId 55、readonly）。先跑 `--dry` 確認
+  冇 CME 訂閱都攞到歷史 K 線；推成功後先停部機 `futu/mt5_push.py`，兩個來源唔好同時推 K_5M。
 - 已知資料缺口：IBKR 取不到 **MOVE**（缺 NYBOT 指數行情訂閱），用 `tlt_iv`、`ief_iv` 搭配 `tnx` 替代；XAUUSD 由 MT5 提供，不在這條匯出裡。
 - 外匯期權每日採集（`gcp_ib/run_daily.sh`，平日 UTC 07:35，含 6E／6J）：2026-09-29 第一次執行時 6J 缺列（剩 1 天的週權當下沒有報價）；
   PR #22 已加上「某一腿拿不到 IV 就改試下一個到期日」與失敗原因日誌。若 6J 之後**每天**都缺，代表延遲行情對這些週權本來就沒有 IV，需要另外處理。
