@@ -369,7 +369,7 @@ def cme_open(t_ny: datetime) -> bool:
 
 def es_nq_5m_rows(now: datetime, snaps: dict[str, dict | None]) -> list[tuple[str, str, str]]:
     """ES／NQ 5 分 K（10-19 起 ib-data cron ib_es_nq_5m.py 推 GCS futu/snapshots/US.*_FRONT.json）。
-    CME 開市時：received_ts 舊過 20 分鐘 🔴；最後一根 time_key 落後紐約現時 45 分鐘 🔴；source 唔係 ib_delayed: 🟡。休市唔檢查。"""
+    CME 開市時：received_ts 舊過 20 分鐘 🔴；最後一根 time_key 落後紐約現時 45 分鐘 🔴；source 唔係 ib_delayed: 🔴（使用者 10-19）。休市唔檢查。"""
     from zoneinfo import ZoneInfo
     ny = ZoneInfo("America/New_York")
     t_ny = now.astimezone(ny)
@@ -401,7 +401,7 @@ def es_nq_5m_rows(now: datetime, snaps: dict[str, dict | None]) -> list[tuple[st
         src = str(d.get("source") or "")
         if not src.startswith("ib_delayed:"):
             probs.append(f"source={src or '?'}（唔係 ib_delayed，有人重開咗 mt5_push？）")
-            light = "🔴" if light == "🔴" else "🟡"
+            light = "🔴"      # 使用者 10-19：要入 Telegram 短訊（短訊只列 🔴）
         rows.append((light, name, "；".join(probs) if probs else f"{src}，最新 {tk[5:16] if tk else '?'}（紐約）"))
     return rows
 
