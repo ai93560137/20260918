@@ -27,6 +27,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -359,6 +360,68 @@ def vm_checks(now: datetime, session=None) -> tuple[list[tuple[str, str, str]], 
     return rows, items
 
 
+# ES／NQ 5 分 K（10-19 起 ib-data cron ib_es_nq_5m.py 每 5 分鐘推；IB 延遲約 15 分鐘）
+ES_NQ_5M = (("ES", "futu/snapshots/US.ES_FRONT.json"), ("NQ", "futu/snapshots/US.NQ_FRONT.json"))
+ES_NQ_PUSH_MAX_MIN = 20       # cron 每 5 分鐘；Gateway 每晚約 23:50 UTC 重啟會缺 2–3 輪
+ES_NQ_BAR_LAG_MAX_MIN = 45    # 延遲約 15 分鐘＋最後一根未完成唔推
+NY = ZoneInfo("America/New_York")
+
+
+def cme_open(now: datetime) -> bool:
+    """CME 期貨交易時段：紐約週日 18:00 至週五 17:00，扣每日 17:00–18:00（唔計假期）。"""
+    t = now.astimezone(NY)
+    wd, hm = t.weekday(), t.strftime("%H:%M")
+    if wd == 5 or (wd == 6 and hm < "18:00") or (wd == 4 and hm >= "17:00"):
+        return False
+    return not ("17:00" <= hm < "18:00")
+
+
+def es_nq_5m_rows(snaps: dict, now: datetime) -> list[tuple[str, str, str]]:
+    """snaps：{"ES": 快照 dict 或 None, "NQ": …}。休市只報最後狀態；開市中查推送、K 線落後同來源。"""
+    rows = []
+    is_open = cme_open(now)
+    for root, obj in ES_NQ_5M:
+        name = f"{root} 5 分 K（ib-data ib_es_nq_5m，每 5 分鐘）"
+        snap = snaps.get(root)
+        if not isinstance(snap, dict):
+            rows.append(("🔴", name, f"讀不到 GCS {obj}"))
+            continue
+        src = str(snap.get("source") or "")
+        bars = snap.get("bars") or []
+        tk = bars[-1].get("time_key") if bars and isinstance(bars[-1], dict) else None
+        recv = datetime.fromtimestamp(float(snap["received_ts"]), UTC) if snap.get("received_ts") else None
+        problems = []
+        if not src.startswith("ib_delayed"):
+            problems.append(f"來源係 {src or '—'}，唔係 ib_delayed（部機 mt5_push 重開咗？）")
+        if is_open:
+            push_min = (now - recv).total_seconds() / 60 if recv else None
+            if push_min is None or push_min > ES_NQ_PUSH_MAX_MIN:
+                problems.append(f"最後收到推送 {'—' if push_min is None else f'{push_min:.0f} 分鐘前'}（上限 {ES_NQ_PUSH_MAX_MIN}）")
+            lag = None
+            if tk:
+                bar_t = datetime.strptime(tk[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=NY)
+                lag = (now - bar_t).total_seconds() / 60
+            if lag is None or lag > ES_NQ_BAR_LAG_MAX_MIN:
+                problems.append(f"最新 K 線 {tk or '—'} 紐約，落後 {'—' if lag is None else f'{lag:.0f}'} 分鐘（上限 {ES_NQ_BAR_LAG_MAX_MIN}）")
+        state = "開市中" if is_open else "休市，唔查新鮮度"
+        if problems:
+            rows.append(("🔴", name, "；".join(problems)))
+        else:
+            rows.append(("🟢", name, f"最新 K 線 {tk or '—'} 紐約，{src}（{state}）"))
+    return rows
+
+
+def es_nq_5m_checks(now: datetime) -> list[tuple[str, str, str]]:
+    snaps = {}
+    for root, obj in ES_NQ_5M:
+        try:
+            v = gcs_cat(obj)
+            snaps[root] = v if isinstance(v, dict) else None
+        except Exception:  # noqa: BLE001
+            snaps[root] = None
+    return es_nq_5m_rows(snaps, now)
+
+
 def _read(rel: str) -> str | None:
     p = ROOT / rel
     return p.read_text(encoding="utf-8") if p.exists() else None
@@ -433,7 +496,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
     vm_rows, vm_items = vm_checks(now)
-    fresh_rows = vm_rows + judge_freshness(vm_items + freshness_checks(now), now)
+    fresh_rows = vm_rows + judge_freshness(vm_items + freshness_checks(now), now) + es_nq_5m_checks(now)
     short, full = compose(now, wf_rows, fresh_rows, errors, load_config().get("retired"))
     print(full)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

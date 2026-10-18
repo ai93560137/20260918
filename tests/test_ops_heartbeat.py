@@ -83,6 +83,40 @@ class WorkflowJudgeTests(unittest.TestCase):
         self.assertEqual(rows[0][0], "🔴")
 
 
+class EsNq5mTests(unittest.TestCase):
+    @staticmethod
+    def snap(tk, recv_utc, source="ib_delayed:ESZ6"):
+        return {"source": source, "received_ts": recv_utc.timestamp(), "bars": [{"time_key": tk, "close": 1.0}]}
+
+    def test_cme_open(self):
+        self.assertTrue(hb.cme_open(u("2026-10-14 23:30")))      # 週三 19:30 紐約
+        self.assertFalse(hb.cme_open(u("2026-10-16 23:30")))     # 週五 19:30 紐約，收咗
+        self.assertFalse(hb.cme_open(u("2026-10-18 21:00")))     # 週日 17:00 紐約，未開
+        self.assertTrue(hb.cme_open(u("2026-10-18 22:30")))      # 週日 18:30 紐約，開咗
+        self.assertFalse(hb.cme_open(u("2026-10-14 21:30")))     # 每日 17:30 休市
+
+    def test_open_fresh_and_stale(self):
+        now = u("2026-10-14 23:30")                               # 紐約 19:30
+        good = {"ES": self.snap("2026-10-14 19:10:00", now - timedelta(minutes=4)),
+                "NQ": self.snap("2026-10-14 19:10:00", now - timedelta(minutes=4), "ib_delayed:NQZ6")}
+        self.assertEqual([r[0] for r in hb.es_nq_5m_rows(good, now)], ["🟢", "🟢"])
+        bad = {"ES": self.snap("2026-10-14 18:00:00", now - timedelta(minutes=4)),          # K 線落後 90 分鐘
+               "NQ": self.snap("2026-10-14 19:10:00", now - timedelta(minutes=40))}          # 推送停咗
+        rows = hb.es_nq_5m_rows(bad, now)
+        self.assertEqual([r[0] for r in rows], ["🔴", "🔴"])
+        self.assertIn("落後", rows[0][2])
+        self.assertIn("最後收到推送", rows[1][2])
+
+    def test_closed_only_checks_source(self):
+        now = u("2026-10-17 23:30")                               # 週六
+        old = u("2026-10-16 21:05")
+        rows = hb.es_nq_5m_rows({"ES": self.snap("2026-10-16 17:00:00", old),
+                                 "NQ": self.snap("2026-10-16 17:00:00", old, "mt5_cfd:NAS100ft")}, now)
+        self.assertEqual([r[0] for r in rows], ["🟢", "🔴"])
+        self.assertIn("mt5_push", rows[1][2])
+        self.assertEqual(hb.es_nq_5m_rows({}, now)[0][0], "🔴")
+
+
 class FreshnessTests(unittest.TestCase):
     def test_judge_and_weekend_allowance(self):
         now = datetime(2026, 10, 14, 7, 30, tzinfo=hb.HKT)   # 週三
