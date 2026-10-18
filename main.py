@@ -3628,6 +3628,8 @@ MARKETS = {
            "iv_alias": "HK.HSI_IV", "iv_src_zh": "恒指期權"},                                  # [R178] futu/iv_push.py
     "US": {"key": "US", "tz": NY_TZ, "shift": 6, "calendar": False, "preopen": ("18:00", "19:00"), "end": (0, "17:00"),
            "start_hour": 18, "c_cut_day": "16:00", "snake_split": False,               # [R130] 整段 23 小時當一天；C 看 16:00 RTH 收市
+           "har_point": "median", "har_extra": True,                                   # [R231] 中位做中間值＋前一日升跌、星期一／五
+           "period_ratio": {"week": (0.678, 1.053, 1.771), "month": (0.754, 1.123, 2.117)},  # [R231] ES 2016+ yfinance 校準（10%／50%／90%）
            "reviews": {"noon": ("🕤", "隔夜時段檢討（前一天 18:00 至 09:30 ET）", "09:30"), "close": ("🕓", "RTH 收市檢討（至 16:00 ET）", "16:00"),
                        "night": ("🌙", "全日收市檢討（CME 全段）", None)},                              # [R133]
            "review_label": {"noon": "隔夜時段", "close": "開市至 RTH 收市", "night": "全日"}, "night_split": ("09:30", "隔夜", "日間（RTH＋尾段）"),
@@ -3644,6 +3646,7 @@ MARKETS = {
 MARKETS["NQ"] = {**MARKETS["US"],
                  "zh": "NQ 納指 100 期貨", "title": "🇺🇸 風揚陣・NQ 納指 100 期貨波幅", "view": "nq_range",
                  "unit_zh": "NQ 每點 US$20，微型 MNQ US$2", "short": "NQ", "pt_zh": "US$20",
+                 "period_ratio": {"week": (0.715, 1.052, 1.810), "month": (0.739, 1.139, 1.849)},  # [R231] NQ 2016+ yfinance 校準
                  "opt_zh": "NQ 週期權（週五到期，每點 US$20）", "step": 100,
                  "iv_alias": "US.NQ_IV", "iv_src_zh": "NDX 指數期權（同 NQ 一樣係納指 100）", "iv_ref": "VXN（CBOE 納指 100 30 日 IV）", "cap_zh": "US$30,000",
                  "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；日線係 yfinance 的 NQ=F 連續合約（R230），轉月不做價差調整",
@@ -3774,10 +3777,27 @@ def _quantile(sorted_values, q):
     return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * (pos - lo)
 
 
-def har_forecasts(rows, last_n=None):
+def _har_cfg(symbol):
+    """[R231] 各市場 HAR 設定：point＝中間預測用平均（mean，對數殘差 smearing）定中位（median）；
+    extra＝加前一日跌幅／升幅（百分點）同星期一／星期五兩個虛擬變數。恒指維持原狀（R98）；ES／NQ 用 R231（research/us_futures/har_tune/）。"""
+    if not symbol:
+        return {"point": "mean", "extra": False}
+    m = futu_market(symbol)
+    return {"point": m.get("har_point", "mean"), "extra": bool(m.get("har_extra"))}
+
+
+def _next_weekday(date_str):
+    d = datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=1)
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return d
+
+
+def har_forecasts(rows, last_n=None, symbol=None):
     """rows：已完結的交易日（依日期）。逐日前推：位置 t 的預測只用 t 之前的列。
     回傳 {位置 t: (預測點數, 80% 下限, 80% 上限)}；t = len(rows) 是下一個交易日。
-    last_n：只算最後 last_n 個位置（擬合仍用全部歷史）。"""
+    last_n：只算最後 last_n 個位置（擬合仍用全部歷史）。symbol：[R231] 按市場揀中間值同額外特徵（見 _har_cfg）。"""
+    cfg = _har_cfg(symbol)
     keep = [i for i, row in enumerate(rows) if row.get("range_pct") and row["range_pct"] > 0]
     n = len(keep)
     if n < HAR_MIN_DAYS:
@@ -3786,10 +3806,18 @@ def har_forecasts(rows, last_n=None):
     lr = [math.log(x) for x in r]
 
     def feat(t):
-        return [1.0, lr[t - 1], math.log(sum(r[t - 5:t]) / 5), math.log(sum(r[t - 22:t]) / 22)]
+        f = [1.0, lr[t - 1], math.log(sum(r[t - 5:t]) / 5), math.log(sum(r[t - 22:t]) / 22)]
+        if cfg["extra"]:                                              # [R231] 前一日升跌、星期一／五
+            prev = rows[keep[t - 1]]
+            ret = (prev["close"] / prev["prev_close"] - 1) * 100 if prev.get("prev_close") else 0.0
+            day = (datetime.strptime(rows[keep[t]]["date"], "%Y-%m-%d") if t < n
+                   else _next_weekday(rows[keep[n - 1]]["date"]))
+            f += [max(0.0, -ret), max(0.0, ret), 1.0 if day.weekday() == 0 else 0.0, 1.0 if day.weekday() == 4 else 0.0]
+        return f
 
-    xtx = [[0.0] * 4 for _ in range(4)]
-    xty = [0.0] * 4
+    k = len(feat(22))
+    xtx = [[0.0] * k for _ in range(k)]
+    xty = [0.0] * k
     feats, out = {}, {}
     first = max(HAR_MIN_DAYS, n + 1 - last_n) if last_n else HAR_MIN_DAYS
     for t in range(22, n + 1):
@@ -3798,7 +3826,7 @@ def har_forecasts(rows, last_n=None):
             if beta is not None:
                 start = max(22, t - HAR_RESID_WINDOW)
                 res = sorted(lr[s] - sum(a * b for a, b in zip(feats[s], beta)) for s in range(start, t))
-                smear = sum(math.exp(e) for e in res) / len(res)
+                smear = sum(math.exp(e) for e in res) / len(res) if cfg["point"] == "mean" else 1.0
                 fitted = sum(a * b for a, b in zip(feat(t), beta))
                 ref = rows[keep[t]]["prev_close"] if t < n else rows[-1]["close"]     # 昨收
                 out[keep[t] if t < n else len(rows)] = (round(math.exp(fitted) * smear * ref, 1),
@@ -3806,14 +3834,14 @@ def har_forecasts(rows, last_n=None):
                                    round(math.exp(fitted + _quantile(res, 0.90)) * ref, 1))
         if t < n:
             x = feats[t] = feat(t)
-            for i in range(4):
+            for i in range(k):
                 xty[i] += x[i] * lr[t]
-                for j in range(4):
+                for j in range(k):
                     xtx[i][j] += x[i] * x[j]
     return out
 
 
-def futu_range_stats(bars, today):
+def futu_range_stats(bars, today, symbol=None):
     """交易日 K（已排序）→ 每天的波幅與過去一年的統計。today：目前的交易日 YYYY-MM-DD。
     波幅 = 高 − 低；真實波幅 TR = max(高, 昨收) − min(低, 昨收)；波幅% = 波幅 ÷ 昨收。
     日期 ≥ today 的最後一根還在交易（日市或當晚夜市未完），不進平均。"""
@@ -3822,7 +3850,7 @@ def futu_range_stats(bars, today):
     all_partial = bool(all_rows) and all_rows[-1]["date"] >= today
     completed = all_rows[:-1] if all_partial else all_rows
     shown = sum(1 for row in completed if row["date"] >= since)
-    har = har_forecasts(completed)                                # [R98] 逐日前推的 HAR 預測（[R104] 全部歷史，給命中率用）
+    har = har_forecasts(completed, symbol=symbol)                 # [R98] 逐日前推的 HAR 預測（[R104] 全部歷史，給命中率用；[R231] 按市場）
     for i, row in enumerate(completed):
         if i in har:
             row["forecast"], row["forecast_lo"], row["forecast_hi"] = har[i]
@@ -3972,11 +4000,11 @@ def futu_session_of(time_key, symbol=None):
     return (t + timedelta(hours=futu_market(symbol)["shift"])).strftime("%Y-%m-%d")
 
 
-def futu_day_forecast(completed, target):
+def futu_day_forecast(completed, target, symbol=None):
     """completed：target 之前已完結的交易日。回傳波幅與高位／低位預測；數據不足 → None。
     高位 = 昨收 + a×R̂，低位 = 昨收 − b×R̂；a、b = 過去每天（高−昨收）÷R̂、（昨收−低）÷R̂ 的中位數（逐日前推），
     預計範圍取同一組比例的 HL_BAND_Q／1−HL_BAND_Q 分位（R119 起 2%／98%）。回測見 research/hsi_futures_range/RESULTS.md。"""
-    har = har_forecasts(completed)
+    har = har_forecasts(completed, symbol=symbol)
     nxt = har.get(len(completed))
     if not nxt:
         return None
@@ -4023,7 +4051,7 @@ def futu_forecast_record(symbol, target):
     if old:
         return old
     completed = [row for row in futu_series_rows(symbol) if row["date"] < target]
-    fc = futu_day_forecast(completed, target)
+    fc = futu_day_forecast(completed, target, symbol)
     if not fc:
         return None
     fc["made_utc"] = fmt_utc()
@@ -4169,11 +4197,11 @@ def futu_report(symbol, kind, now=None):
         if market["preopen"][0] <= hhmm < market["preopen"][1]:
             fc = futu_forecast_record(symbol, day)
         else:                                       # 不在時段內只預覽、不記錄（前一天夜市可能未收）
-            fc = futu_logged_forecast(symbol, day) or futu_day_forecast([r for r in rows if r["date"] < day], day)
+            fc = futu_logged_forecast(symbol, day) or futu_day_forecast([r for r in rows if r["date"] < day], day, symbol)
         if not fc:
             return {"status": "skip", "reason": f"已完結交易日不足 {HAR_MIN_DAYS} 天"}
         stats = futu_range_stats([dict(time_key=r["date"] + " 00:00:00", **{k: r[k] for k in
-                                  ("open", "high", "low", "close", "volume", "source")}) for r in rows if r["date"] < day], day)
+                                  ("open", "high", "low", "close", "volume", "source")}) for r in rows if r["date"] < day], day, symbol)
         summary = {"avg_range_20": stats["summary"].get("avg_range_20"), "bt_mae": stats["backtest"].get("mae")}
         return {"status": "ok", "kind": kind, "date": day, "forecast": fc,
                 "text": futu_preopen_text(fc, day, contract, summary, futu_peak_lines(symbol, now) + futu_paper_lines(symbol), symbol)}
@@ -4207,6 +4235,11 @@ PEAK_STRAT_ZH = {"A": "A 耗盡回落", "B": "B 機率法", "C": "C 時間點"}
 # 週、月預測波幅 = 第一天 HAR 預測 × √交易日數 × 比例；比例取 2023-12 至 2026-09 實際 ÷ 預測 的 10%／50%／90% 分位
 # （逐段前推回測：週 MAE 312 點、80% 區間命中 79%（130 週）；月 MAE 763 點、命中 71%（21 個月））
 PERIOD_RANGE_RATIO = {"week": (0.627, 0.957, 1.537), "month": (0.665, 1.038, 1.671)}
+
+
+def _period_ratio(symbol, kind):
+    """[R231] 週／月波幅 ÷（日 R̂ × √交易日數）的 10%／50%／90% 分位：市場有自己嘅校準就用（ES／NQ），否則用恒指嘅 PERIOD_RANGE_RATIO。"""
+    return ((futu_market(symbol).get("period_ratio") or {}) if symbol else {}).get(kind) or PERIOD_RANGE_RATIO[kind]
 FUTU_SIGNAL_DIR = "futu/signals"
 FUTU_SIGNAL_KEEP = 3000
 # 各 15 分鐘時段佔一個交易日變異的比例（2025-09 至 2026-10 的 250 個交易日估；鍵是 K 線結束時間）
@@ -4472,7 +4505,7 @@ def futu_peak_status(symbol, now=None):
     completed = [r for r in rows if r["date"] < today]
     if len(completed) < HAR_MIN_DAYS:
         return None
-    har = har_forecasts(completed)
+    har = har_forecasts(completed, symbol=symbol)
     nxt = har.get(len(completed))
     if not nxt:
         return None
@@ -4519,8 +4552,8 @@ def futu_peak_status(symbol, now=None):
         period = {"key": key, "sessions_done": len(prior) + (1 if ended and trading_today else 0), "sessions": n,
                   "R": round(big_r, 1), "over": rem <= 0, "range": round(hs - ls, 1), "first": sessions[0],
                   "rem": round(rem, 3), "r_today": round(fc_today, 1), "price": price}      # [R124] 給最新預測用
-        if kind in PERIOD_RANGE_RATIO:                                # [R103] 週、月的預測波幅（已校準）
-            q10, q50, q90 = PERIOD_RANGE_RATIO[kind]
+        if kind in PERIOD_RANGE_RATIO:                                # [R103] 週、月的預測波幅（已校準；[R231] 按市場）
+            q10, q50, q90 = _period_ratio(symbol, kind)
             period["forecast"] = {"range": round(big_r * q50), "lo": round(big_r * q10), "hi": round(big_r * q90)}
         for side in ("high", "low"):
             ext = hs if side == "high" else ls
@@ -5340,7 +5373,7 @@ def _paper_levels(symbol, session, rows_fn):
     """那天的九成日範圍邊與開閘指標：開市前紀錄有就用紀錄，沒有就即時算（R116 起才記 edge95、R118 起才記 gate_*）。"""
     fc = futu_logged_forecast(symbol, session)
     if not fc or fc.get("high_edge95") is None or "gate_ratio" not in fc:
-        fc = futu_day_forecast([r for r in rows_fn() if r["date"] < session], session) or {}
+        fc = futu_day_forecast([r for r in rows_fn() if r["date"] < session], session, symbol) or {}
     if fc.get("high_edge95") is None:
         return None
     return {k: fc.get(k) for k in PAPER_LEVEL_KEYS}
@@ -5475,7 +5508,7 @@ def futu_range_data(symbol):
         today, after_close = nxt.strftime("%Y-%m-%d"), True
     in_session = (not after_close and futu_trading_day(today, calendar) and not futu_session_end_passed(today, None, symbol)
                   and not any(str(b.get("time_key", ""))[:10] == today for b in bars))     # [R129] 今天在進行中但還沒有 K
-    data = futu_range_stats(bars, today)
+    data = futu_range_stats(bars, today, symbol)
     snap = read_futu_snapshot(symbol)
     snap_bars = (snap.get("bars") or []) if isinstance(snap, dict) and not snap.get("error") else []
     traded = [b for b in snap_bars if to_float(b.get("volume"))]       # 略過開市前成交量 0 的佔位 K 線
@@ -5491,7 +5524,7 @@ def futu_range_data(symbol):
     elif data.get("forecast"):                                   # [R99] 未記錄：即時算，含高位／低位
         all_rows = futu_range_rows(bars)
         completed = [r for r in all_rows if r["date"] < today] if data["partial"] else all_rows
-        full = futu_day_forecast(completed, today if (after_close or in_session) else data["forecast"]["date"])   # [R128][R129]
+        full = futu_day_forecast(completed, today if (after_close or in_session) else data["forecast"]["date"], symbol)   # [R128][R129]
         if full:
             data["forecast"] = full
     data["peak"] = futu_peak_status(symbol)                       # [R101][R103] 算一次，頁面與文字共用
@@ -8780,7 +8813,7 @@ def _strangle_plan(data, symbol=None, now=None):
                                         t_row["days"] if t_row else n)              # [R194] 合計權利金
     cal_w = ((data.get("accuracy") or {}).get("week") or {}).get("cal")
     if cal_w and fc.get("range") and fc.get("ref_close"):              # 變體：下週預測範圍的九成邊（5%／95% 分位）
-        lv = _hl_levels(fc["ref_close"], fc["range"] * math.sqrt(n) * PERIOD_RANGE_RATIO["week"][1], cal_w["ups"], cal_w["downs"], 0.05)
+        lv = _hl_levels(fc["ref_close"], fc["range"] * math.sqrt(n) * _period_ratio(symbol, "week")[1], cal_w["ups"], cal_w["downs"], 0.05)
         out.update(alt_put=int(math.floor(lv["low_lo"] / step) * step), alt_call=int(math.ceil(lv["high_hi"] / step) * step))
     if cal_w and cal_w.get("closes") and F and fc.get("range") and out.get("put"):        # [R177] 兩腳的機率（同週卡價位機率表）
         big_r = fc["range"] * math.sqrt(n)

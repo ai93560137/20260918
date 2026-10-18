@@ -63,5 +63,22 @@ check("[R230] 日線改 yfinance、5 分 K 仲係 MT5 → 警告只講日內", "
 page_hk = client.get("/?view=futu_range").get_data(as_text=True)
 check("[R229] 恒指頁（富途數據）冇警告", "MT5 差價合約" not in page_hk)
 
+print("\n=== [R231] ES／NQ HAR 調校 ===")
+check("[R231] 恒指維持平均＋冇額外特徵", main._har_cfg("HK.HSI_FRONT") == {"point": "mean", "extra": False})
+check("[R231] NQ 用中位＋前一日升跌、星期一／五", main._har_cfg(NQ) == {"point": "median", "extra": True})
+check("[R231] NQ 週／月比例用自己校準", main._period_ratio(NQ, "week") == (0.715, 1.052, 1.810) and main._period_ratio(ES, "month")[2] == 2.117)
+check("[R231] 恒指週比例不變", main._period_ratio("HK.HSI_FRONT", "week") == main.PERIOD_RANGE_RATIO["week"])
+import random as _rnd
+_rnd.seed(7)
+_rows, _px = [], 20000.0
+for _i in range(160):
+    _d = (datetime(2026, 3, 2) + timedelta(days=_i + 2 * (_i // 5))).strftime("%Y-%m-%d")
+    _c = _px * (1 + _rnd.gauss(0, 0.01)); _h = max(_px, _c) * (1 + abs(_rnd.gauss(0, 0.006))); _l = min(_px, _c) * (1 - abs(_rnd.gauss(0, 0.006)))
+    _rows.append({"time_key": _d + " 00:00:00", "open": _px, "high": _h, "low": _l, "close": _c, "volume": 1}); _px = _c
+_rr = main.futu_range_rows(_rows)
+_old, _new = main.har_forecasts(_rr), main.har_forecasts(_rr, symbol=NQ)
+check("[R231] 新舊都預測到下一日", len(_rr) in _old and len(_rr) in _new)
+check("[R231] 中位中間值細過平均（冇 smearing）", _new[len(_rr)][0] < _new[len(_rr)][2] and _new[len(_rr)][1] < _new[len(_rr)][0])
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
