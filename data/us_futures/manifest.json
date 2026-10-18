@@ -36,6 +36,19 @@
    "rows": 8760,
    "first": "1992-01-02",
    "last": "2026-10-16"
+  },
+  "^VXN": {
+   "file": "IDX_VXN_daily.csv",
+   "rows": 6472,
+   "first": "2001-01-23",
+   "last": "2026-10-16"
+  },
+  "^VIX": {
+   "file": "IDX_VIX_daily.csv",
+   "rows": 9268,
+   "first": "1990-01-02",
+   "last": "2026-10-16"
   }
- }
+ },
+ "fetched_utc_vxn_vix": "2026-10-18T21:35:58Z"
 }
