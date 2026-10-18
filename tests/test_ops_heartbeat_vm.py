@@ -88,9 +88,9 @@ class EsNq5mTest(unittest.TestCase):
         self.assertIn("上限 20", r[0][2])
         self.assertIn("上限 45", r[0][2])
 
-    def test_mt5_source_yellow(self):
+    def test_mt5_source_red(self):
         r = hb.es_nq_5m_rows(self.NOW, {"US.ES_FRONT": self.snap(4, "2026-10-19 19:10:00", "mt5:SP500ft")})
-        self.assertEqual(r[0][0], "🟡")
+        self.assertEqual(r[0][0], "🔴")
 
     def test_closed_market_skipped(self):
         sun = datetime(2026, 10, 19, 5, 0, tzinfo=hb.HKT)        # 10-18（日）17:00 紐約，未開市
