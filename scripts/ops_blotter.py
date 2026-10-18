@@ -112,6 +112,28 @@ def build_rows(deals: list[dict], existing: list[dict], rules, intents: list[dic
     return new
 
 
+def rematch(existing: list[dict], intents: list[dict]) -> int:
+    """已入 blotter 但冇意圖價嘅行，用最新 intents 再配一次（各陣事後更正 intents.csv 時用）。回傳配到幾多行。"""
+    for r in existing:     # 已配對過嘅意圖先扣返手數
+        if r.get("intent_price"):
+            for it in intents:
+                if it["left"] > 0 and it["side"] == r["side"] and r["code"].startswith(it["code"]) \
+                        and abs(it["price"] - float(r["intent_price"])) < 1e-9:
+                    it["left"] -= float(r["qty"])
+                    break
+    n = 0
+    for r in existing:
+        if r.get("intent_price"):
+            continue
+        it = match_intent({"time_hkt": r["time_hkt"], "code": r["code"], "side": r["side"], "qty": r["qty"]}, intents)
+        if it:
+            r["intent_price"] = f"{it['price']:g}"
+            r["slip_pts"] = f"{slip(r['side'], float(r['price']), it['price']):g}"
+            r["intent_note"] = it["note"]
+            n += 1
+    return n
+
+
 def summarize(rows: list[dict], month: str) -> dict:
     teams: dict[str, dict] = {}
     for r in rows:
@@ -160,6 +182,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--now", help="覆寫現在時間（HKT，YYYY-MM-DD HH:MM）")
+    ap.add_argument("--rematch", action="store_true", help="已入 blotter 但冇意圖價嘅行，用最新 intents 重配（--now 嗰個月）")
     a = ap.parse_args()
     now = parse_hkt(a.now) if a.now else datetime.now(HKT)
     rules = team_rules((ROOT / "main.py").read_text(encoding="utf-8"))
@@ -187,6 +210,15 @@ def main() -> int:
         except Exception:  # noqa: BLE001
             old = None
         existing = list(csv.DictReader(io.StringIO(old["_text"]))) if isinstance(old, dict) and "_text" in old else []
+        if a.rematch:
+            if month != month_now:
+                continue
+            n = rematch(existing, intents)
+            print(f"{month}：重配 {n} 行")
+            if n and not a.dry_run:
+                gcs_put(obj, to_csv(existing))
+                gcs_put("ops/blotter/summary.json", json.dumps(summarize(existing, month), ensure_ascii=False, indent=1))
+            continue
         new = build_rows(ds, existing, rules, intents)
         rows = existing + new
         n_unmatched = sum(1 for r in new if r["team"] == UNMATCHED)

@@ -14,3 +14,5 @@
 | note | 16:00 Δ 對沖 | 一句說明 |
 
 repo 公開：只寫價格同手數，**唔寫金額、權益、保證金**。冇登記意圖價嘅成交照樣入 blotter，只係冇滑價。
+
+各陣事後更正 `intents.csv` 之後，SOP 顧問跑 `python3 scripts/ops_blotter.py --rematch` 將已入 blotter 但未配到嘅成交重配。
