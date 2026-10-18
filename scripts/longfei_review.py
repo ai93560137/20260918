@@ -449,7 +449,7 @@ def report(data, title_date=None, real=False, bars=None):
                  + ("；風控紀錄：" + "、".join(f"{k}×{v}" for k, v in rej.items()) if rej else ""))
     L += api_cost(data)
     L += gate_audit(data, bars or {})
-    L.append("\n## 候選教學（要使用者批准先寫入 LESSONS.md）\n")
+    L.append("\n## 候選教學（要使用者批准；全部產品通用寫 LESSONS.md，只關一隻產品寫 lessons/<產品>.md，R228）\n")
     L += candidates(rows, {p: d["decisions"] for p, d in data.items()})
     L.append("\n## 最近 10 筆成交\n")
     L.append("| 產品 | 開倉 | 方向 | 點數 | R | MFE | MAE | 出場 | 入場理由 |")
