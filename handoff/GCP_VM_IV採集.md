@@ -88,6 +88,20 @@
 - 改動 `claudeops` 權限、家目錄權限或 `config.ini` 之後，必跑 `AGENTIC.md`「必跑這個檢查」，**三行都拒絕才算通過**。
 - 使用新的、有資金的 IBKR 戶口前，先過 `AGENTIC.md`「IBKR 戶口」的入金前檢查清單。
 
+## e2. 2026-10-14 至 10-19 新工作階段（session_01Mv7vE7k7oogpkK9fkBrLcm）更新
+
+- **外匯／指數 IV「只有週二有紀錄」已解決**：10-14、10-15、10-16 連續有列，四個市場齊，N225 返咗嚟（PR #102 生效）。
+  應該係 `run_daily.sh` 加 `--autostash`（c8d3033d1）之後就好返。注意：星期五嘅短腿會跨週末（10-16 ESTX50 短腿 3 日，IV 偏低、斜率變正），研究時要另外處理。
+  雲垂陣同金絲雀都冇讀 `ib_iv_log.csv`；金絲雀話 N225 將來可能有用。
+- **ES／NQ 5 分 K 改由 ib-data 推（10-19 05:05 HKT 起）**：`scripts/ib_es_nq_5m.py`（PR #202），ib-data `~/zhuge/ib_es_nq_5m.py`，
+  cron `*/5 * * * 0-5`，log 喺 `~/zhuge/es_nq_5m.log`，clientId 55，readonly。前月合約 ESZ6／NQZ6，到期前 8 日轉季；source `ib_delayed:<合約>`。
+  部機 `mt5_push` 已停，`ZHUGE_DAEMONS=none`（復原：`setx ZHUGE_DAEMONS "mt5_push"`）；部機 `ZHUGE_OPEND_EXE` 係空白。
+  ib-data crontab 備份：`~/crontab.bak.202610182103`（復原：`crontab -l | grep -v ib_es_nq_5m | crontab -`）。
+  心跳（預設分支 afc7f76f4，SOP 顧問）每日 07:30 HKT 查 `futu/snapshots/US.ES_FRONT.json`／`US.NQ_FRONT.json` 新鮮度；來源唔係 ib_delayed 使用者要 🔴。
+- **封存數據注意（使用者 10-19 決定唔補推）**：GCS `archive/futu_k_5m/US.ES_FRONT`／`US.NQ_FRONT` 喺 10-19 交易日之前係 MT5 數據；
+  **10-16 00:00 至約 09:00 NY 係 MT5 數據，同 CME 有偏差（ES 收 7,764.91 對真實 7,703），回測慎用**。10-16 17:00 嗰根會喺開市第一輪由 IB 蓋返。
+- 已知：休市時最後一根 K 線唔推（程式當佢未完成），所以星期五 17:00 嗰根要等星期日開市先推。
+
 ## f. 開工第一步要讀的檔
 
 1. `CLAUDE.md`（根目錄；規則與指令表；2026-10-14 新增總指揮、`POSITIONS.md`、`RISK_LADDER.md`、`IDEAS.md`、`FUND_SOP.md` 的說明，開倉或改策略前先讀）
