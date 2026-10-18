@@ -724,7 +724,8 @@ def test_r215_new_etfs_like_spy():
     from markets import SPECS, order_qty, session_status as ss, ET
     for p in ("TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC"):
         s = SPECS[p]
-        assert (s.kind, s.market, s.notional_usd, s.daily_loss_hkd, s.tick) == ("stock", "US", 100_000, 100_000, 0.01)
+        size = {"EWT": 50_000, "INDA": 50_000, "EZU": 30_000, "EWU": 30_000, "EWC": 30_000}.get(p, 100_000)   # [R221]
+        assert (s.kind, s.market, s.notional_usd, s.daily_loss_hkd, s.tick) == ("stock", "US", size, 100_000, 0.01)
         assert ss(datetime(2026, 10, 19, 5, 0, tzinfo=ET), s.market, s.kind)[0] == "PRE"
     assert order_qty(SPECS["TLT"], 90.0, 1) == 1111 and not {"IAU", "IEF", "EEM", "EFA", "EWG"} & set(SPECS)
 
@@ -852,3 +853,14 @@ def test_rth_only_etf_skips_claude_premarket(tmp_path):
     advance(t, minutes=5)
     tr.tick()
     assert ai.calls == 0
+
+
+def test_etf_order_size_tiers():
+    """[R221] 使用者 10-17：按成交量容量分級每單金額。"""
+    from markets import order_qty, spec_for
+    assert order_qty(spec_for("SPY"), 500.0, 1) == 200                     # US$100k
+    assert order_qty(spec_for("EWT"), 50.0, 1) == 1000                     # US$50k
+    assert order_qty(spec_for("INDA"), 50.0, 1) == 1000
+    for p in ("EZU", "EWU", "EWC"):
+        assert order_qty(spec_for(p), 30.0, 1) == 1000                     # US$30k
+    assert spec_for("EZU").daily_loss_hkd == 100_000
