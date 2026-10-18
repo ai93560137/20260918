@@ -64,6 +64,28 @@ class Packet(unittest.TestCase):
         self.assertEqual(data[-1]["volume"], 1.0)              # 0／-1 → 1，main.py 先唔會略過
         self.assertEqual(data[0]["time_key"][:10], "2026-10-14")
 
+    def test_last_bar_kept_when_market_closed(self):
+        t0 = datetime(2026, 10, 16, 20, 45, tzinfo=UTC)                 # 紐約 16:45 開 → 16:50 … 17:00 收
+        bars = [bar(t0 + timedelta(minutes=5 * i)) for i in range(3)]
+        live = m.bars_to_packet_data(bars, now_utc=datetime(2026, 10, 16, 21, 12, tzinfo=UTC))
+        self.assertEqual(live[-1]["time_key"], "2026-10-16 16:55:00")    # 啱啱收：最後一根當未完成
+        closed = m.bars_to_packet_data(bars, now_utc=datetime(2026, 10, 18, 21, 0, tzinfo=UTC))
+        self.assertEqual(closed[-1]["time_key"], "2026-10-16 17:00:00")  # 週末：17:00 嗰根照推
+
+    def test_backfill_sessions_and_chunks(self):
+        t0 = datetime(2026, 10, 12, 22, 0, tzinfo=UTC)                  # 紐約 10-12 18:00 起（10-13 交易日）
+        bars = [bar(t0 + timedelta(minutes=5 * i)) for i in range(12 * 24 * 5)]
+        data = m.bars_to_packet_data(bars, count=10 ** 6, now_utc=datetime(2026, 10, 18, 21, 0, tzinfo=UTC))
+        days = sorted({m.session_of(b["time_key"]) for b in data})
+        self.assertEqual(days, ["2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"])
+        two = m.last_sessions(data, 2)
+        self.assertEqual(sorted({m.session_of(b["time_key"]) for b in two}), ["2026-10-15", "2026-10-16"])
+        parts = m.chunks(data)
+        self.assertTrue(all(len(p) <= 400 for p in parts))
+        self.assertEqual(sum(len(p) for p in parts), len(data))
+        self.assertEqual(parts[-1][-1], data[-1])                         # 最後一包係最新
+        self.assertEqual(m.ib_end(datetime(2026, 10, 9, 22, 0, tzinfo=UTC)), "20261009-22:00:00")
+
     def test_packet_shape(self):
         p = m.packet("tok", "US.ES_FRONT", "ib_delayed:ESZ6", [{"time_key": "x"}])
         self.assertEqual(p["action"], "futu_data")
