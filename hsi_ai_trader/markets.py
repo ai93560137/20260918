@@ -52,7 +52,7 @@ SPECS = {
     #，設定同 SPY 一樣，只跑模擬；「刪除重疊」：刪 EEM、EFA（籃子，同國家 ETF 重疊）同 EWG（喺 EZU 入面）
     "EWJ": Spec("EWJ", "iShares MSCI Japan ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "FXI": Spec("FXI", "iShares China Large-Cap ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
-    # [R219] 使用者 10-17：按成交量容量分級；EWT、INDA 每單 US$50k，EZU、EWU、EWC 每單 US$30k（日蝕上限照 HK$100k）
+    # [R221] 使用者 10-17：按成交量容量分級；EWT、INDA 每單 US$50k，EZU、EWU、EWC 每單 US$30k（日蝕上限照 HK$100k）
     "EWT": Spec("EWT", "iShares MSCI Taiwan ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 50_000, 100_000, False),
     "INDA": Spec("INDA", "iShares MSCI India ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 50_000, 100_000, False),
     "EZU": Spec("EZU", "iShares MSCI Eurozone ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 30_000, 100_000, False),
