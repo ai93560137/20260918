@@ -98,7 +98,7 @@ def bars_to_packet_data(bars, count=BAR_COUNT):
         tk = ny_close_key(to_utc(b.date))
         if not in_session(tk) or not b.close or b.close <= 0:
             continue
-        vol = float(b.volume) if b.volume and b.volume > 0 else 0.0
+        vol = float(b.volume) if b.volume and b.volume > 0 else 1.0    # main.py 當 volume 0 係開市前佔位 K 線略過（同 mt5_push）
         out[tk] = {"time_key": tk, "open": float(b.open), "high": float(b.high), "low": float(b.low),
                    "close": float(b.close), "volume": vol}
     return [out[k] for k in sorted(out)][-count:]

@@ -61,7 +61,7 @@ class Packet(unittest.TestCase):
         bars = [bar(t0 + timedelta(minutes=5 * i), v=-1) for i in range(200)]
         data = m.bars_to_packet_data(bars, count=120)
         self.assertEqual(len(data), 120)
-        self.assertEqual(data[-1]["volume"], 0.0)
+        self.assertEqual(data[-1]["volume"], 1.0)              # 0／-1 → 1，main.py 先唔會略過
         self.assertEqual(data[0]["time_key"][:10], "2026-10-14")
 
     def test_packet_shape(self):
