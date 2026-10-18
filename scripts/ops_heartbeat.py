@@ -359,6 +359,53 @@ def vm_checks(now: datetime, session=None) -> tuple[list[tuple[str, str, str]], 
     return rows, items
 
 
+def cme_open(t_ny: datetime) -> bool:
+    """CME 股指期貨時段（紐約時間）：週日 18:00 至週五 17:00，扣每日 17:00–18:00。假期唔理（已知假警報）。"""
+    wd, hm = t_ny.weekday(), t_ny.hour * 60 + t_ny.minute
+    if wd == 5 or (wd == 4 and hm >= 17 * 60) or (wd == 6 and hm < 18 * 60):
+        return False
+    return not (17 * 60 <= hm < 18 * 60)
+
+
+def es_nq_5m_rows(now: datetime, snaps: dict[str, dict | None]) -> list[tuple[str, str, str]]:
+    """ES／NQ 5 分 K（10-19 起 ib-data cron ib_es_nq_5m.py 推 GCS futu/snapshots/US.*_FRONT.json）。
+    CME 開市時：received_ts 舊過 20 分鐘 🔴；最後一根 time_key 落後紐約現時 45 分鐘 🔴；source 唔係 ib_delayed: 🟡。休市唔檢查。"""
+    from zoneinfo import ZoneInfo
+    ny = ZoneInfo("America/New_York")
+    t_ny = now.astimezone(ny)
+    rows = []
+    for sym, d in snaps.items():
+        name = f"{sym} 5 分 K（ib-data ib_es_nq_5m.py）"
+        if not cme_open(t_ny):
+            rows.append(("🟢", name, f"CME 休市（紐約 {t_ny:%a %H:%M}），唔檢查"))
+            continue
+        if not d:
+            rows.append(("🔴", name, f"讀不到 GCS futu/snapshots/{sym}.json"))
+            continue
+        probs, light = [], "🟢"
+        ts = d.get("received_ts")
+        age = (now.timestamp() - float(ts)) / 60 if ts else None
+        if age is None or age > 20:
+            probs.append(f"推送已 {age:.0f} 分鐘冇更新（上限 20）" if age is not None else "冇 received_ts")
+            light = "🔴"
+        bars = d.get("bars") or []
+        tk = bars[-1].get("time_key") if bars else None
+        if tk:
+            lag = (t_ny.replace(tzinfo=None) - datetime.strptime(tk[:16], "%Y-%m-%d %H:%M")).total_seconds() / 60
+            if lag > 45:
+                probs.append(f"最後一根 {tk[5:16]}（紐約）落後 {lag:.0f} 分鐘（上限 45）")
+                light = "🔴"
+        else:
+            probs.append("冇 K 線")
+            light = "🔴"
+        src = str(d.get("source") or "")
+        if not src.startswith("ib_delayed:"):
+            probs.append(f"source={src or '?'}（唔係 ib_delayed，有人重開咗 mt5_push？）")
+            light = "🔴" if light == "🔴" else "🟡"
+        rows.append((light, name, "；".join(probs) if probs else f"{src}，最新 {tk[5:16] if tk else '?'}（紐約）"))
+    return rows
+
+
 def _read(rel: str) -> str | None:
     p = ROOT / rel
     return p.read_text(encoding="utf-8") if p.exists() else None
@@ -433,7 +480,14 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         errors.append(f"讀 GitHub Actions 紀錄失敗：{exc}")
     vm_rows, vm_items = vm_checks(now)
-    fresh_rows = vm_rows + judge_freshness(vm_items + freshness_checks(now), now)
+    es_rows = []
+    try:
+        snaps = {sym: (lambda v: v if isinstance(v, dict) and "_text" not in v else None)(gcs_cat(f"futu/snapshots/{sym}.json"))
+                 for sym in ("US.ES_FRONT", "US.NQ_FRONT")}
+        es_rows = es_nq_5m_rows(now, snaps)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"讀 ES／NQ 5 分 K 失敗：{exc}")
+    fresh_rows = vm_rows + es_rows + judge_freshness(vm_items + freshness_checks(now), now)
     short, full = compose(now, wf_rows, fresh_rows, errors, load_config().get("retired"))
     print(full)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
