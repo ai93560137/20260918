@@ -13,6 +13,11 @@ from rules import (round_tick, session_status, trading_day_key, pick_front_month
 log = logging.getLogger("trader")
 
 
+def is_rate_limited(err) -> bool:
+    """[R226] 富途查詢次數超額（例如報價快照每 30 秒最多 60 次）。同 broker.is_rate_limited 一樣；唔 import broker 免得測試要 futu。"""
+    return "频率太高" in str(err)
+
+
 def _atr(bars, n=14):
     if len(bars) < 2:
         return None
@@ -59,6 +64,11 @@ class Trader:
             self._tick(now)
             self.errors = 0
         except Exception as e:  # noqa: BLE001
+            if is_rate_limited(e):
+                # [R226] 富途查詢次數超額：等下一輪再試，唔計入連續出錯（唔好因為限速停機平倉）
+                log.warning("富途查詢次數超額，下一輪再試：%s", e)
+                self._log("events", {"type": "RATE_LIMIT", "msg": str(e)[:200]})
+                return
             self.errors += 1
             log.exception("tick 出錯 (%d)", self.errors)
             self._log("events", {"type": "ERROR", "msg": str(e), "count": self.errors})
