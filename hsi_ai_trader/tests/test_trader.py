@@ -891,3 +891,50 @@ def test_mag7_specs_and_tech_group(tmp_path):
     tr2 = Trader(cfg2, FakeBroker(), FakeBrain(), lambda: datetime(2026, 10, 19, 10, 0, tzinfo=HKT))
     tr2.state["day"] = "D"
     assert tr2._portfolio_block(1) is None          # 大盤組得 SPY 1 隻；科技股唔計入大盤組
+def test_rate_limit_not_counted_as_error(env):
+    """[R226] 富途限速唔計入連續出錯，唔會停機平倉。"""
+    cfg, t, b, ai, tr = env
+    tr.tick()
+
+    def boom(code, fresh=False):
+        raise RuntimeError("get_market_snapshot: 获取市场快照频率太高，请求失败，每30秒最多60次。")
+    b.snapshot = boom
+    for _ in range(cfg.max_consecutive_errors + 2):
+        advance(t, seconds=5)
+        tr.tick()
+    assert not tr.state.get("halted") and tr.errors == 0
+
+
+def test_shared_quote_cache(tmp_path, monkeypatch):
+    """[R226] 多個程式共用報價快取：快取新鮮就唔再查；一次過查晒所有程式要嘅代號。"""
+    import types
+    import pandas as pd
+    if "futu" not in sys.modules:
+        class _C:
+            def __getattr__(self, n):
+                return n
+        fake = types.ModuleType("futu")
+        for n in ("OpenQuoteContext", "OpenFutureTradeContext", "OpenSecTradeContext", "Market", "SecurityType",
+                  "KLType", "AuType", "TrdEnv", "TrdSide", "TrdMarket", "OrderType", "ModifyOrderOp", "OrderStatus",
+                  "SecurityFirm", "PositionSide"):
+            setattr(fake, n, _C())
+        fake.RET_OK = 0
+        sys.modules["futu"] = fake
+    import broker as bk
+    monkeypatch.setattr(bk, "QUOTE_CACHE", tmp_path / "q.json")
+    calls = []
+
+    class Q:
+        def get_market_snapshot(self, codes):
+            calls.append(list(codes))
+            return 0, pd.DataFrame([{"code": c, "last_price": 10.0, "bid_price": 9.9, "ask_price": 10.1,
+                                     "update_time": "2026-10-19 10:00:00", "volume": 1} for c in codes])
+    a, b2 = bk.FutuBroker.__new__(bk.FutuBroker), bk.FutuBroker.__new__(bk.FutuBroker)
+    a.quote = b2.quote = Q()
+    assert a.snapshot("US.SPY")["last"] == 10.0
+    assert b2.snapshot("HK.HSI2610")["update_time"].utcoffset().total_seconds() == 8 * 3600
+    assert calls == [["US.SPY"], ["HK.HSI2610", "US.SPY"]]          # 第二個程式一次過查埋第一個嘅代號
+    a.snapshot("US.SPY")
+    assert len(calls) == 2                                           # 快取新鮮：唔再查
+    a.snapshot("US.SPY", fresh=True)
+    assert calls[-1] == ["US.SPY"]                                   # 落單前直接查
