@@ -866,6 +866,31 @@ def test_etf_order_size_tiers():
     assert spec_for("EZU").daily_loss_hkd == 100_000
 
 
+def test_mag7_specs_and_tech_group(tmp_path):
+    """[R225] 使用者 10-18：加科技七雄；設定同 ETF 一樣；另開科技股組，同方向最多 2 隻，同大盤組分開計。"""
+    from markets import SPECS, order_qty
+    from brain import product_line
+    for p in ("AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"):
+        s = SPECS[p]
+        assert (s.kind, s.notional_usd, s.daily_loss_hkd, s.ext_hours) == ("stock", 100_000, 100_000, True)
+    assert order_qty(SPECS["NVDA"], 200.0, 1) == 500
+    assert "single stock" in product_line(replace(Config(), product="AAPL"))
+    assert "ETF" in product_line(replace(Config(), product="SPY"))
+    d = tmp_path
+    for peer, side in (("NVDA", 1), ("MSFT", 1), ("SPY", 1)):
+        (d / f"ai_trader_{peer}").mkdir()
+        (d / f"ai_trader_{peer}" / "state.json").write_text(json.dumps({"day": "D", "pos": {"side": side}}))
+    me = d / "ai_trader_AAPL"
+    me.mkdir()
+    cfg = replace(Config(), product="AAPL", kind="stock", state_file=me / "state.json", log_dir=me / "logs")
+    tr = Trader(cfg, FakeBroker(), FakeBrain(), lambda: datetime(2026, 10, 19, 10, 0, tzinfo=HKT))
+    tr.state["day"] = "D"
+    assert "科技股組已有 2 隻" in tr._portfolio_block(1)
+    assert tr._portfolio_block(-1) is None
+    cfg2 = replace(cfg, product="QQQ")
+    tr2 = Trader(cfg2, FakeBroker(), FakeBrain(), lambda: datetime(2026, 10, 19, 10, 0, tzinfo=HKT))
+    tr2.state["day"] = "D"
+    assert tr2._portfolio_block(1) is None          # 大盤組得 SPY 1 隻；科技股唔計入大盤組
 def test_rate_limit_not_counted_as_error(env):
     """[R226] 富途限速唔計入連續出錯，唔會停機平倉。"""
     cfg, t, b, ai, tr = env

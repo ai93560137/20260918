@@ -21,7 +21,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HKT = timezone(timedelta(hours=8))
-PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC"]
+PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC",
+            "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"]
 MIN_N = 10            # 分組最少筆數先下結論
 ROOT = Path(__file__).resolve().parent.parent
 

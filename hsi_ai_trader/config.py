@@ -93,8 +93,11 @@ class Config:
     # [R216] 使用者 10-17：ETF 組合限制（只限開新倉，唔會平已有嘅倉）
     etf_group_us_eq: tuple = tuple(x.strip().upper() for x in _env("ETF_GROUP_US_EQ", "SPY,QQQ,DIA,IWM").split(",")
                                    if x.strip())
+    # [R225] 使用者 10-18：科技七雄另開一組（同方向最多 group_max_same_dir 隻），同美股大盤組分開計
+    etf_group_tech: tuple = tuple(x.strip().upper() for x in _env("ETF_GROUP_TECH", "AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA")
+                                  .split(",") if x.strip())
     group_max_same_dir: int = int(_env("GROUP_MAX_SAME_DIR", "2"))               # 美股大盤組同方向最多幾隻；0 = 唔限
-    etf_total_daily_loss: float = float(_env("ETF_TOTAL_DAILY_LOSS", "200000"))  # 全部 ETF 合計日蝕（HK$）；0 = 唔限
+    etf_total_daily_loss: float = float(_env("ETF_TOTAL_DAILY_LOSS", "200000"))  # 全部 ETF＋個股合計日蝕（HK$）；0 = 唔限
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
     flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")

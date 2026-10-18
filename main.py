@@ -3376,13 +3376,16 @@ def _scan_clean_row(raw):
 
 
 LONGFEI_DIR = "longfei"                              # [R200] 🐉 龍飛陣（hsi_ai_trader）成績
-LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC"]   # [R202][R215] 每隻產品一個程式，各存 longfei/<產品>/latest.json
+LONGFEI_PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC",
+                    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"]   # [R202][R215][R225] 每隻產品一個程式，各存 longfei/<產品>/latest.json
 # [R203] 使用者 10-16：美期冇報價權限，MES／MNQ／MYM 改美股 ETF SPY／QQQ／DIA
 LONGFEI_PRODUCT_NAMES = {"HSI": "恒指大期", "MHI": "恒指小期", "MES": "微型標普", "MNQ": "微型納指", "MYM": "微型道指",
                          "SPY": "標普 500 ETF", "QQQ": "納指 100 ETF", "DIA": "道指 ETF",
                          "TLT": "美國 20 年以上國債", "HYG": "高收益企業債", "GLD": "黃金",
                          "USO": "原油", "IWM": "羅素 2000 中小型股",
-                         "EWJ": "日本", "FXI": "中國大型股", "EWT": "台灣", "INDA": "印度", "EZU": "歐元區", "EWU": "英國", "EWZ": "巴西", "EWC": "加拿大"}
+                         "EWJ": "日本", "FXI": "中國大型股", "EWT": "台灣", "INDA": "印度", "EZU": "歐元區", "EWU": "英國", "EWZ": "巴西", "EWC": "加拿大",
+                         "AAPL": "蘋果", "MSFT": "微軟", "NVDA": "輝達", "GOOGL": "Alphabet", "AMZN": "亞馬遜", "META": "Meta",
+                         "TSLA": "特斯拉"}
 LONGFEI_ETFS = set(LONGFEI_PRODUCTS) - {"HSI"}
 LONGFEI_MAX_TRADES = 500
 LONGFEI_MAX_DECISIONS = 30
@@ -7852,7 +7855,7 @@ def _lf_group(prods, total, real):
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）同 16 隻美股上市 ETF（SPY、QQQ、DIA、IWM、TLT、HYG、GLD、USO，同日本、中國、台灣、印度、歐元區、英國、巴西、加拿大）"
+    intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）、16 隻美股上市 ETF（SPY、QQQ、DIA、IWM、TLT、HYG、GLD、USO，同日本、中國、台灣、印度、歐元區、英國、巴西、加拿大）同納指科技七雄（蘋果、微軟、輝達、Alphabet、亞馬遜、Meta、特斯拉）"
              "（每次約 US$100,000，台灣、印度 US$50,000，歐元區、英國、加拿大 US$30,000；可沽空；包盤前盤後，但台灣、印度、歐元區、英國、加拿大只喺正常時段開新倉）；程式負責落單同硬性風控（每日虧損上限：HSI HK$10,000、每隻 ETF HK$100,000，"
              "到咗即平倉停機）。"
              "真倉同模擬倉分開計：模擬倉一直做前向測試，唔會因為開咗真倉而停。</p></div>")
