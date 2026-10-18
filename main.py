@@ -3646,7 +3646,7 @@ MARKETS["NQ"] = {**MARKETS["US"],
                  "unit_zh": "NQ 每點 US$20，微型 MNQ US$2", "short": "NQ", "pt_zh": "US$20",
                  "opt_zh": "NQ 週期權（週五到期，每點 US$20）", "step": 100,
                  "iv_alias": "US.NQ_IV", "iv_src_zh": "NDX 指數期權（同 NQ 一樣係納指 100）", "iv_ref": "VXN（CBOE 納指 100 30 日 IV）", "cap_zh": "US$30,000",
-                 "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；數據是 MT5 的 NAS100 CFD 5 分 K 合成",
+                 "day_zh": "紐約時間前一天 18:00 至當天 17:00（CME 全段 23 小時），日期取收市那天；日線係 yfinance 的 NQ=F 連續合約（R230），轉月不做價差調整",
                  "empty_hint": "本地執行 futu/mt5_push.py --backfill 400 補歷史（MT5_SYMBOLS 含 NAS100ft:US.NQ_FRONT），之後每 5 分鐘自動更新。"}
 ES_SYMBOL = "US.ES_FRONT"
 NQ_SYMBOL = "US.NQ_FRONT"                                   # [R158]
@@ -5541,6 +5541,7 @@ def futu_range_data(symbol):
     data.update({"symbol": symbol, "today_hk": today, "next_day": nxt.strftime("%Y-%m-%d"), "after_close": after_close,
                  "calendar": calendar,                                        # [R135] 給操作箱算操作日與到期日
                  "contract": str(snap.get("source") or "").partition(":")[2] if snap else "",
+                 "snap_source": str(snap.get("source") or "") if snap else "",          # [R230] 5 分 K 來源（mt5_cfd → 頁頂警告）
                  "latest_5m": five or None,
                  "latest_5m_age_sec": None if age is None else int(age)})
     return data
@@ -9205,11 +9206,15 @@ def build_futu_range_page(data):
             f"<span>{upd}</span>"
             f"<span>{state}</span></div>"
             f"<div class='fy-legend'>🅰️ 耗盡回落｜🅱️ 機率法｜🅲 時間點　✅ 已通知／已達成　⏳ 未到　❌ 通知後又破　{m['hours_zh']}</div>")
-    if m["key"] == "US" and str(latest.get("source") or "").startswith("mt5_cfd"):      # [R229] MT5 差價合約同 CME 對唔上
-        hero += ("<div class='fy-warn'>⚠️ <b>數據源（MT5 差價合約）有停頓同偏差，數字只供參考。</b>"
-                 "2026-10-16 對富途 App 嘅 CME 期貨：ES 真實低 7,676／收 7,703，呢度 7,740／7,743；"
-                 "NQ 真實高 30,225／低 29,269／收 29,391，呢度 30,535／29,878／29,930。"
-                 "預測、命中率、高低位通知都受影響；轉用富途期貨數據後呢行會自動消失。</div>")
+    daily_mt5 = str(latest.get("source") or "").startswith("mt5_cfd")
+    five_mt5 = str(data.get("snap_source") or "").startswith("mt5_cfd")
+    if m["key"] == "US" and (daily_mt5 or five_mt5):                 # [R229][R230] MT5 差價合約同 CME 對唔上
+        what = ("日線同 5 分 K" if daily_mt5 and five_mt5 else "日線" if daily_mt5 else
+                "日內 5 分 K（現價、已走、高低位通知、紙上交易）；日線已改用 yfinance CME 連續合約")
+        hero += ("<div class='fy-warn'>⚠️ <b>" + what + " 數據源係 MT5 差價合約，有停頓同偏差，只供參考。</b>"
+                 "2026-10-16 對富途 App 嘅 CME 期貨：ES 真實低 7,676／收 7,703，MT5 7,740／7,743；"
+                 "NQ 真實高 30,225／低 29,269／收 29,391，MT5 30,535／29,878／29,930。"
+                 "轉用 IB 延遲報價後呢行會自動消失。</div>")
     fc = data.get("forecast")
     day_fc = fc if fc else None
     day_date = ((periods.get("day") or {}).get("first")

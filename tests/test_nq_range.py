@@ -54,7 +54,12 @@ how_es = main._fy_howto(main.futu_range_data(ES) if client.get("/?view=es_range&
 check("ES 操作箱不受影響（仍是 ES、US$50）", "每週沽 ES 週期權 1σ 勒式" in how_es and "US$50" in how_es)
 
 page_nq = client.get("/?view=nq_range").get_data(as_text=True)
-check("[R229] MT5 數據源 → 頁頂有偏差警告", "數據源（MT5 差價合約）有停頓同偏差" in page_nq)
+check("[R229] MT5 數據源 → 頁頂有偏差警告", "數據源係 MT5 差價合約，有停頓同偏差" in page_nq, page_nq[:0])
+client.post("/", json={"action": "futu_data", "token": "tok", "symbol": NQ, "kline_type": "K_5M", "source": "mt5_cfd:NAS100ft", "data": five})
+yf_days = [dict(b, source="yfinance:NQ=F") for b in days[-3:]]
+client.post("/", json={"action": "futu_data", "token": "tok", "symbol": NQ, "kline_type": "K_SESSION", "source": "yfinance:NQ=F", "data": yf_days})
+page_nq2 = client.get("/?view=nq_range").get_data(as_text=True)
+check("[R230] 日線改 yfinance、5 分 K 仲係 MT5 → 警告只講日內", "日內 5 分 K" in page_nq2 and "日線已改用 yfinance" in page_nq2, page_nq2[:0])
 page_hk = client.get("/?view=futu_range").get_data(as_text=True)
 check("[R229] 恒指頁（富途數據）冇警告", "MT5 差價合約" not in page_hk)
 

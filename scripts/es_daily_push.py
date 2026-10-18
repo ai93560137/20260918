@@ -5,14 +5,16 @@ GitHub Actions（.github/workflows/es_daily_push.yml）每個交易日 CME 收�
 - 進行中的交易日（紐約時間 17:00 收市前）那一列不推。
 - 推完後叫 ?view=es_range&report=preopen 記下一個交易日的開市前預測（伺服器只在紐約 18:00–19:00 記錄，其他時間只預覽）。
 需要環境變數：ZHUGE_GCP_URL（Cloud Run 網址）、ZHUGE_WEBHOOK_TOKEN（WEBHOOK_SECRET_TOKEN）。
-用法：python3 scripts/es_daily_push.py [--days 30] [--symbol ES=F] [--dry-run]
+用法：python3 scripts/es_daily_push.py [--days 30] [--symbols ES=F:US.ES_FRONT:es_range,NQ=F:US.NQ_FRONT:nq_range] [--dry-run]
+[R230] 2026-10-18 恢復排程並加 NQ：MT5 差價合約數據 10-16 同 CME 對唔上（ES 低 7,740 對真實 7,676），日線改返用 yfinance；
+mt5_push.py mt5-4 起唔再推 K_SESSION，兩個來源唔會互相覆蓋。
 """
 import argparse, json, os, sys, time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 NY = ZoneInfo("America/New_York")
-ALIAS = "US.ES_FRONT"
+DEFAULT_SYMBOLS = "ES=F:US.ES_FRONT:es_range,NQ=F:US.NQ_FRONT:nq_range"   # yfinance 代號:Cloud Run 別名:頁面 view
 CHUNK = 400
 
 
@@ -44,32 +46,51 @@ def fetch_bars(symbol, days):
     return bars
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--days", type=int, default=30); ap.add_argument("--symbol", default="ES=F"); ap.add_argument("--dry-run", action="store_true")
-    a = ap.parse_args()
-    base = os.environ.get("ZHUGE_GCP_URL", "").strip().rstrip("/")
-    token = os.environ.get("ZHUGE_WEBHOOK_TOKEN", "").strip()
-    bars = fetch_bars(a.symbol, a.days)
-    print(f"{a.symbol}: {len(bars)} 個交易日 {bars[0]['time_key'][:10]} → {bars[-1]['time_key'][:10]}（目前交易日 {session_today()}）")
-    if a.dry_run:
-        print(json.dumps(bars[-3:], ensure_ascii=False)); return
-    if not base or not token:
-        sys.exit("GitHub Secret ZHUGE_GCP_URL 或 ZHUGE_WEBHOOK_TOKEN 沒設")
+def parse_symbols(text):
+    out = []
+    for part in (text or "").split(","):
+        bits = [b.strip() for b in part.split(":")]
+        if len(bits) == 3 and all(bits):
+            out.append(tuple(bits))
+    return out
+
+
+def push(base, token, yf_symbol, alias, view, bars):
     import requests
     for i in range(0, len(bars), CHUNK):
-        packet = {"action": "futu_data", "token": token, "source": f"yfinance:{a.symbol}", "symbol": ALIAS, "kline_type": "K_SESSION",
-                  "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "script_version": "gh-es-1", "data": bars[i:i + CHUNK]}
+        packet = {"action": "futu_data", "token": token, "source": f"yfinance:{yf_symbol}", "symbol": alias, "kline_type": "K_SESSION",
+                  "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "script_version": "gh-es-2", "data": bars[i:i + CHUNK]}
         for attempt in range(3):
             r = requests.post(base + "/", json=packet, timeout=60)
             if r.status_code == 200:
                 break
             print(f"  推送 {i}–{i + CHUNK} 回應 HTTP {r.status_code}：{r.text[:200]}"); time.sleep(5)
         else:
-            sys.exit("推送失敗")
-        print(f"  已推 {min(i + CHUNK, len(bars))}／{len(bars)}")
-    r = requests.get(base + "/", params={"view": "es_range", "report": "preopen", "format": "json"}, timeout=60)
-    print(f"開市前預測：HTTP {r.status_code} {r.text[:300]}")
+            sys.exit(f"{alias} 推送失敗")
+        print(f"  {alias} 已推 {min(i + CHUNK, len(bars))}／{len(bars)}")
+    r = requests.get(base + "/", params={"view": view, "report": "preopen", "format": "json"}, timeout=60)
+    print(f"  {alias} 開市前預測：HTTP {r.status_code} {r.text[:200]}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--days", type=int, default=30); ap.add_argument("--symbols", default=DEFAULT_SYMBOLS)
+    ap.add_argument("--dry-run", action="store_true")
+    a = ap.parse_args()
+    symbols = parse_symbols(a.symbols)
+    if not symbols:
+        sys.exit(f"--symbols 格式要係 yfinance代號:別名:view，逗號分隔：{a.symbols}")
+    base = os.environ.get("ZHUGE_GCP_URL", "").strip().rstrip("/")
+    token = os.environ.get("ZHUGE_WEBHOOK_TOKEN", "").strip()
+    if not a.dry_run and (not base or not token):
+        sys.exit("GitHub Secret ZHUGE_GCP_URL 或 ZHUGE_WEBHOOK_TOKEN 沒設")
+    for yf_symbol, alias, view in symbols:
+        bars = fetch_bars(yf_symbol, a.days)
+        print(f"{yf_symbol} → {alias}: {len(bars)} 個交易日 {bars[0]['time_key'][:10]} → {bars[-1]['time_key'][:10]}（目前交易日 {session_today()}）")
+        if a.dry_run:
+            print(json.dumps(bars[-3:], ensure_ascii=False))
+            continue
+        push(base, token, yf_symbol, alias, view, bars)
 
 
 if __name__ == "__main__":
