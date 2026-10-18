@@ -13,7 +13,8 @@
   選填：MT5_SYMBOLS（券商代號:GCP 別名，逗號分隔；預設 US500:US.ES_FRONT；例 SP500ft:US.ES_FRONT,NAS100ft:US.NQ_FRONT → NQ 進 ?view=nq_range 頁）、
         MT5_PATH（terminal64.exe 路徑，終端機沒開時用）、MT5_LOGIN／MT5_PASSWORD／MT5_SERVER（終端機已登入就不用）、
         MT5_UTC_OFFSET（券商時間比 UTC 快幾小時；不設就由最新報價自動推算，休市時沿用上一次）、
-        PUSH_INTERVAL_SEC（300）、BAR_COUNT（120）、SESSION_DAYS（每輪推最近幾個交易日的 K_SESSION，預設 3）
+        PUSH_INTERVAL_SEC（300）、BAR_COUNT（120）、SESSION_DAYS（每輪推最近幾個交易日的 K_SESSION，預設 3）、
+        MT5_PUSH_SESSION（mt5-4 起預設 0＝唔推日線 K_SESSION，日線改由 GitHub Actions es_daily_push.yml 用 yfinance 推；設 1 先推）
 
 第一次（補歷史給波幅頁與紙上交易）：
     python mt5_push.py --backfill 400          # 最近 400 個日曆日的 M5 → 交易日 K 全部推上去（約 280 個交易日）；
@@ -40,7 +41,7 @@ import argparse, csv, json, os, sys, time, urllib.error, urllib.request
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-SCRIPT_VERSION = "mt5-3"
+SCRIPT_VERSION = "mt5-4"
 NY = ZoneInfo("America/New_York")
 GCP_URL = os.environ.get("ZHUGE_GCP_URL", "").strip()
 TOKEN = os.environ.get("WEBHOOK_SECRET_TOKEN", "").strip()
@@ -48,6 +49,7 @@ SYMBOLS = [tuple(x.split(":", 1)) if ":" in x else (x, x) for x in os.environ.ge
 PUSH_INTERVAL_SEC = int(os.environ.get("PUSH_INTERVAL_SEC", "300"))
 BAR_COUNT = int(os.environ.get("BAR_COUNT", "120"))
 SESSION_DAYS = int(os.environ.get("SESSION_DAYS", "3"))
+PUSH_SESSION = os.environ.get("MT5_PUSH_SESSION", "0") == "1"   # [mt5-4] 日線（K_SESSION）預設唔推：改由 GitHub Actions yfinance 推（MT5 數據 10-16 同 CME 對唔上）
 BOOT_SESSIONS = 12                       # --backfill 時另外推 5 分 K 的交易日數（main.PAPER_BOOT_DAYS）
 CHUNK = 400                              # 每個封包最多幾根（main.FUTU_MAX_BARS）
 HTTP_TIMEOUT_SEC = 60
@@ -287,13 +289,15 @@ class Feed:
         log(f"  {symbol} → {alias}：5 分 K {len(five)} 根，最新 {five[-1]['time_key']}（紐約）收 {five[-1]['close']}；"
             f"交易日 K {len(days)} 根（{days[0]['time_key'][:10]} 至 {days[-1]['time_key'][:10]}，最新一天 {days[-1]['bars']} 根）")
         ok = self.post(self.packet(alias, symbol, "K_5M", five))
+        if not PUSH_SESSION:                                     # [mt5-4] 日線由 es_daily_push.yml（yfinance）負責
+            return ok
         return self.post(self.packet(alias, symbol, "K_SESSION", days), quiet=True) and ok
 
     def backfill(self, alias, symbol, bars, calendar_days):
         days = session_bars(bars)
         log(f"  {symbol} → {alias}：{len(bars)} 根 M5 → {len(days)} 個交易日 K（{days[0]['time_key'][:10]} 至 {days[-1]['time_key'][:10]}）")
         ok = True
-        for i in range(0, len(days), CHUNK):
+        for i in range(0, len(days), CHUNK) if PUSH_SESSION else ():  # [mt5-4] 日線預設唔推
             ok = self.post(self.packet(alias, symbol, "K_SESSION", days[i:i + CHUNK]), quiet=True) and ok
             time.sleep(0.5)
         boot = {d["time_key"][:10] for d in days[-BOOT_SESSIONS:]}
