@@ -15,6 +15,7 @@ for f in "$REPO"/gcp_ib/vm_futu/*.service "$REPO"/gcp_ib/vm_futu/*.timer; do
 done
 systemctl daemon-reload
 systemctl restart zhuge-auto-risk.service zhuge-futu-push.service zhuge-iv-push.service
-systemctl try-restart zhuge-longfei-guard.service zhuge-longfei.service 'zhuge-longfei@*.service'   # [R199][R202] 只重開已經開咗嘅（新產品要跑 setup.sh 先開）
+# [R220] 先停走唔再列嘅程式、再重開其餘（10-18 OOM 事故：唔好一次過重開晒先停）
 bash "$REPO/gcp_ib/vm_futu/longfei_units.sh" "$U" "$H" >> "$LOG" 2>&1   # [R209] 真倉程式跟 LONGFEI_REAL_PRODUCTS 開／停
+systemctl try-restart zhuge-longfei-guard.service zhuge-longfei.service 'zhuge-longfei@*.service'   # [R199][R202] 只重開已經開咗嘅
 echo "$(date -u +%F' '%T) 更新 ${old:0:9} → ${new:0:9}，已重開推送服務" >> "$LOG"
