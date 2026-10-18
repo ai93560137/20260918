@@ -1,6 +1,42 @@
 {
- "fetched_utc": "2026-10-18T21:35:58Z",
+ "fetched_utc": "2026-10-17T03:07:29Z",
  "series": {
+  "ES=F": {
+   "file": "ES_daily.csv",
+   "rows": 6585,
+   "first": "2000-09-18",
+   "last": "2026-10-16"
+  },
+  "NQ=F": {
+   "file": "NQ_daily.csv",
+   "rows": 6585,
+   "first": "2000-09-18",
+   "last": "2026-10-16"
+  },
+  "YM=F": {
+   "file": "YM_daily.csv",
+   "rows": 6176,
+   "first": "2002-04-05",
+   "last": "2026-10-16"
+  },
+  "^GSPC": {
+   "file": "IDX_GSPC_daily.csv",
+   "rows": 24816,
+   "first": "1927-12-30",
+   "last": "2026-10-16"
+  },
+  "^NDX": {
+   "file": "IDX_NDX_daily.csv",
+   "rows": 10341,
+   "first": "1985-10-01",
+   "last": "2026-10-16"
+  },
+  "^DJI": {
+   "file": "IDX_DJI_daily.csv",
+   "rows": 8760,
+   "first": "1992-01-02",
+   "last": "2026-10-16"
+  },
   "^VXN": {
    "file": "IDX_VXN_daily.csv",
    "rows": 6472,
@@ -13,5 +49,6 @@
    "first": "1990-01-02",
    "last": "2026-10-16"
   }
- }
+ },
+ "fetched_utc_vxn_vix": "2026-10-18T21:35:58Z"
 }
