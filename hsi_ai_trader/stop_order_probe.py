@@ -21,6 +21,8 @@ from datetime import datetime
 ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
 PRODUCT = (ARGS[0] if ARGS else "HSI").upper()
 REAL = "--real" in sys.argv and "--i-understand" in sys.argv
+# --hold=秒：掛住幾耐先撤（總指揮 10-18：要喺富途 App 睇到張單喺伺服器，先算數）；預設唔等
+HOLD = next((int(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--hold=")), 0)
 os.environ["PRODUCT"] = PRODUCT
 os.environ.pop("LONGFEI_INSTANCE", None)            # 確保唔係真倉程式設定
 
@@ -108,6 +110,9 @@ def try_type(b, code, last, otype, name, stock):
         say(("✅ 改價成功" if ret == 0 else f"❌ 改價失敗：{d2}") + f"（觸發價改做 {new_aux}）")
         ok = ok and ret == 0
         show(b, oid, "改價後")
+        if HOLD:
+            say(f"⏳ 張單掛住 {HOLD} 秒：而家喺富途 App 睇吓「今日訂單／條件單」見唔見到（觸發價 {new_aux}）…")
+            time.sleep(HOLD)
     finally:
         ret, d3 = b.trade.modify_order(ModifyOrderOp.CANCEL, oid, 0, 0, trd_env=ENV, acc_id=b.acc_id)
         say("✅ 已撤單" if ret == 0 else f"⚠ 撤單失敗：{d3}（請即喺富途 App {'真實戶口' if REAL else '模擬盤'}人手撤 {oid}）")
@@ -138,6 +143,16 @@ def main():
         res = {name: try_type(b, code, last, ot, name, stock)
                for name, ot in (("STOP（止損市價）", OrderType.STOP), ("STOP_LIMIT（止損限價）", OrderType.STOP_LIMIT))}
         say("\n== 結果：" + "；".join(f"{k} {'✅' if v else '❌'}" for k, v in res.items()))
+        # 總指揮 10-18：撤單後再查一次，確認冇殘留有效測試單（冇倉時賣出止蝕觸發會開淡倉）
+        time.sleep(2)
+        ret, od = b.trade.order_list_query(trd_env=ENV, acc_id=b.acc_id, refresh_cache=True)
+        if ret != 0:
+            say(f"⚠ 查唔到訂單列表：{od}；請喺富途 App 人手確認冇殘留測試單")
+        else:
+            live = od[(od.get("remark", "") == "zhuge-longfei-stop-probe")
+                      & ~od["order_status"].astype(str).str.contains("CANCELLED|FAILED|DELETED|DISABLED|FILLED")]
+            say("✅ 撤單後再查：冇殘留測試單" if live.empty else
+                f"🔴 仲有 {len(live)} 張測試單未撤：{list(live['order_id'])}，請即喺富途 App 撤！")
     finally:
         b.close()
 
