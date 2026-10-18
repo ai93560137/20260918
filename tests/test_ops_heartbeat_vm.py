@@ -23,6 +23,9 @@ class _Session:
     def get(self, url, params=None, timeout=None):
         if "compute.googleapis.com" in url:
             return _Resp(self.vm_code, self.vm_body)
+        if "longfei" in url:
+            ts = self.gcs.get("longfei")
+            return _Resp(200, {"received_ts": ts}) if ts else _Resp(404, {})
         for obj, ts in self.gcs.items():
             if obj.replace("/", "%2F") in url:
                 return _Resp(200, {"updated": ts})
@@ -36,7 +39,8 @@ class VmCheckTest(unittest.TestCase):
     def test_running_and_fresh(self):
         s = _Session(200, {"status": "RUNNING", "lastStartTimestamp": "2026-10-14T12:50:23.527-07:00"},
                      {"futu/snapshots/US.QQQ.json": "2026-10-14T23:25:00Z",
-                      "futu/snapshots/HK.HSI_IV.json": "2026-10-14T23:00:00Z"})
+                      "futu/snapshots/HK.HSI_IV.json": "2026-10-14T23:00:00Z",
+                      "longfei": NOW.timestamp() - 600})
         rows, items = hb.vm_checks(NOW, session=s)
         self.assertEqual(rows[0][0], "🟢")
         self.assertIn("10-15 03:50", rows[0][2])
@@ -59,7 +63,12 @@ class VmCheckTest(unittest.TestCase):
                       "futu/snapshots/HK.HSI_IV.json": "2026-10-14T23:00:00Z"})
         _, items = hb.vm_checks(NOW, session=s)
         lights = [r[0] for r in hb.judge_freshness(items, NOW)]
-        self.assertEqual(lights, ["🔴", "🟢"])
+        self.assertEqual(lights, ["🔴", "🔴", "🟢"])          # 龍飛陣讀唔到 → 🔴
+
+    def test_longfei_stale_is_red(self):
+        s = _Session(200, {"status": "RUNNING"}, {"longfei": NOW.timestamp() - 3600})
+        _, items = hb.vm_checks(NOW, session=s)
+        self.assertEqual(hb.judge_freshness(items[:1], NOW)[0][0], "🔴")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,9 @@ Description=Zhuge 龍飛陣 hsi_ai_trader（TRD_ENV 由 settings.env 定，預�
 After=zhuge-opend.service zhuge-longfei-guard.service network-online.target
 Wants=zhuge-opend.service zhuge-longfei-guard.service
 [Service]
+# [R220] 10-18 OOM 事故：部機記憶體唔夠時 kernel 先殺龍飛陣程式，唔好殺 FutuOpenD（auto_risk 等全部靠佢）；每個程式最多 300MB
+OOMScoreAdjust=800
+MemoryMax=300M
 User=@USER@
 WorkingDirectory=@HOME@/20260918/hsi_ai_trader
 Environment=AI_DATA_DIR=@HOME@/zhuge/ai_trader
