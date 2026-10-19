@@ -412,7 +412,9 @@ class Trader:
         except (TypeError, ValueError):
             pass
         try:
-            res = fn(contract, order_qty(spec_for(cfg.product), last, cfg.max_qty), last)
+            # [R240] 用盡槓桿：股數由富途可買數量決定，準備檢查只問「買唔買到／沽唔沽到 1 股」
+            qty = 1 if cfg.real_size_max else order_qty(spec_for(cfg.product), last, cfg.max_qty)
+            res = fn(contract, qty, last)
         except Exception as e:  # noqa: BLE001
             res = {"ok": False, "error": f"{e.__class__.__name__}: {str(e)[:120]}"}
         res["ts"] = now.isoformat(timespec="seconds")
