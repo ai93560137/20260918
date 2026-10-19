@@ -102,6 +102,9 @@ class Config:
     # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
     # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
     real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")
+    # [R249] 使用者 10-20 揀：將來真倉每單 = REAL_SIZE_FRAC × 實時權益（HK$，例如 0.1），取代用盡槓桿；
+    # 由 R248 購買力重演得出：0.1 × 權益差唔多全部模擬單都做得到。設咗就優先過 REAL_SIZE_MAX。只限真倉美股
+    real_size_frac: float = float(_env("REAL_SIZE_FRAC", "0")) if (_IS_REAL and SPEC.kind == "stock") else 0.0
     real_products: tuple = tuple(sorted(_REAL_LIST))
     max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
     min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限

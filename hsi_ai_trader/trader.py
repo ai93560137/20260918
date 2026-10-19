@@ -6,7 +6,7 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from markets import SPECS, fee_hkd, order_qty, spec_for
+from markets import FX_TO_HKD, SPECS, fee_hkd, order_qty, spec_for
 from rules import (round_tick, session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -230,6 +230,9 @@ class Trader:
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
         n_open = order_qty(spec_for(cfg.product), last, cfg.max_qty)   # 期貨張數／ETF 股數
+        if cfg.real_size_frac and last:          # [R249] 真倉美股：每單 = 比例 × 實時權益
+            eq = st.get("last_equity") or self.broker.equity()
+            n_open = max(int(cfg.real_size_frac * eq / (last * FX_TO_HKD[cfg.currency])), 0)
         action, stop, target, rejected = validate_decision(
             d, position=qty, entry=meta.get("entry"), last=last, cfg=cfg,
             remaining_loss=remaining, can_open=can_open, trades_today=st.get("trades_today", 0), qty=n_open)
@@ -413,7 +416,7 @@ class Trader:
             pass
         try:
             # [R240] 用盡槓桿：股數由富途可買數量決定，準備檢查只問「買唔買到／沽唔沽到 1 股」
-            qty = 1 if cfg.real_size_max else order_qty(spec_for(cfg.product), last, cfg.max_qty)
+            qty = 1 if (cfg.real_size_max or cfg.real_size_frac) else order_qty(spec_for(cfg.product), last, cfg.max_qty)
             res = fn(contract, qty, last)
         except Exception as e:  # noqa: BLE001
             res = {"ok": False, "error": f"{e.__class__.__name__}: {str(e)[:120]}"}
@@ -458,7 +461,7 @@ class Trader:
                 return 0
             log.warning("查唔到可開數量（模擬盤照開）：%s", e)
             return n_open
-        if self.cfg.real_size_max:              # [R235] 用盡槓桿：可開數量平均分畀未有倉嘅真倉美股
+        if self.cfg.real_size_max and not self.cfg.real_size_frac:   # [R235] 用盡槓桿：可開數量平均分畀未有倉嘅真倉美股
             peers = self._peer_states()
             slots = 1 + sum(1 for p in self.cfg.real_products
                             if p != self.cfg.product and p in SPECS and SPECS[p].kind == "stock"
