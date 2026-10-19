@@ -954,7 +954,7 @@ def test_per_product_lessons(tmp_path):
     spy, spy_ver = load_lessons(shared, "SPY", d)
     assert spy == "共用：唔好追高" and "HSI" not in spy and spy_ver != ver
     assert load_lessons(shared, "QQQ", d)[0] == "共用：唔好追高"           # 冇檔照讀共用
-    assert product_lessons("HSI", LESSONS_DIR) == ""                           # repo 入面嘅產品教學簿暫時全部（未有）
+    assert "R246" in product_lessons("HSI", LESSONS_DIR)                      # [R246] HSI 教學簿有第一批教學
     from markets import SPECS
     missing = [p for p, s in SPECS.items() if (s.kind == "stock" or p == "HSI") and not (LESSONS_DIR / f"{p}.md").exists()]
     assert missing == []
