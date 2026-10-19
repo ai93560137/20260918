@@ -103,6 +103,7 @@ html = main.handle_fund_report_get(req())
 check("頁面有未實現卡、總盈虧卡", "未實現盈虧（現時持倉" in html and "總盈虧（已實現＋未實現）" in html)
 check("頁面有每月／每季／每年績效表", all(f"📈 {z}績效" in html for z in ("每月", "每季", "每年")))
 check("頁面有按產品未實現", "未實現盈虧（按產品" in html)
+check("[R263] 按產品未實現有快照時間", f"富途快照 {RISK['run_hkt']} HKT" in html)
 check("權益絕對值唔出現（50 萬）", "500,000" not in html and "500000" not in html)
 import flask                                     # noqa: E402
 with flask.Flask("t").app_context():
