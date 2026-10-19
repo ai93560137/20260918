@@ -7965,6 +7965,27 @@ def _lf_period_html(prods, real):
               "未扣佣金；美股按 1 美元 = 7.8 港元。</p></div>")
 
 
+LONGFEI_REAL_UNIT_HKD = 40000                 # [R262] 真倉每單（0.1 × 約 HK$40 萬權益）
+LONGFEI_SIM_UNIT_HKD = 100000 * 7.8           # 模擬每單 US$100k（EWT、INDA US$50k、EZU、EWU、EWC US$30k 按比例）
+
+
+def longfei_real_scaled(p, trades):
+    """[R262] 使用者 10-20「加按真倉注碼換算」：模擬成績按真倉注碼縮細。
+    美股：每單名義按比例縮到 HK$40k（US$50k 嗰幾隻＝HK$20k、US$30k＝HK$12k），即毛利 × 40k ÷ 780k，
+    佣金唔縮（每單固定），照扣返模擬嗰份。HSI 真倉同模擬一樣 1 張，唔使換算。回傳扣費後合計，冇平倉回傳 None。"""
+    k = 1.0 if p == "HSI" else LONGFEI_REAL_UNIT_HKD / LONGFEI_SIM_UNIT_HKD
+    tot, n = 0.0, 0
+    for t in trades:
+        g = t.get("pnl_hkd_gross")
+        if t.get("type") != "CLOSE" or not isinstance(g, (int, float)):
+            continue
+        net = t.get("pnl_hkd_net")
+        fee = g - net if isinstance(net, (int, float)) else 0.0
+        tot += g * k - fee
+        n += 1
+    return tot if n else None
+
+
 def _lf_group(prods, total, real):
     """[R209] 一組（真倉或模擬倉）：總覽表、合計績效、逐產品。"""
     hk = lambda v: "—" if v is None else f"HK${v:+,.0f}"
@@ -7974,7 +7995,7 @@ def _lf_group(prods, total, real):
         d = prods.get(p)
         if not d:
             if not real:
-                orow += f"<tr><td>{p}</td><td colspan='6' class='muted'>未開始</td></tr>"
+                orow += f"<tr><td>{p}</td><td colspan='7' class='muted'>未開始</td></tr>"
             continue
         m, mh, st = d["metrics"], d["metrics_hkd"], d["state"]
         pos = st.get("pos")
@@ -7982,11 +8003,20 @@ def _lf_group(prods, total, real):
         orow += (f"<tr><td><a href='#{pre}{p}'>{p}</a></td><td>{esc(run)}</td>"
                  f"<td>{'—' if not pos else ('好' if pos.get('side', 0) > 0 else '淡') + ' ' + str(pos.get('qty'))}</td>"
                  f"<td>{m['trades']}</td><td>{'—' if m['win_rate'] is None else format(m['win_rate'], '.0%')}</td>"
-                 f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td><td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")
+                 f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td>"
+                 + ("" if real else f"<td>{hk(longfei_real_scaled(p, d['trades']))}</td>")
+                 + f"<td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")
     title = "💰 真倉（真金白銀）" if real else "🧪 模擬倉（前向測試，同真倉並行）"
     overview = (f"<div class='section'><h2>{title}・總覽</h2><div style='overflow-x:auto'><table><tr><th>產品</th><th>狀態</th>"
-                "<th>持倉</th><th>已平倉筆數</th><th>勝率</th><th>累計（HK$）</th><th>更新</th></tr>" + orow + "</table></div></div>")
+                "<th>持倉</th><th>已平倉筆數</th><th>勝率</th><th>累計（HK$）</th>"
+                + ("" if real else "<th>按真倉注碼（HK$，扣費）</th>") + "<th>更新</th></tr>" + orow + "</table></div>"
+                + ("" if real else "<p class='muted' style='font-size:13px'>按真倉注碼：模擬每單 US$100k 當真倉每單 HK$40,000"
+                   "（EWT、INDA HK$20,000；EZU、EWU、EWC HK$12,000），盈虧按比例縮細，佣金每單固定照扣；HSI 真倉同模擬一樣 1 張。</p>")
+                + "</div>")
+    scaled = [v for v in (longfei_real_scaled(p, d["trades"]) for p, d in prods.items()) if v is not None]
     tot = (f"<div class='section'><h2>📊 {'真倉' if real else '模擬倉'}合計績效（按 HK$）</h2>"
+           + ("" if real or not scaled else
+              f"<p><b>按真倉注碼換算（扣費）合計：{hk(sum(scaled))}</b>（真倉每單 HK$40,000 計）</p>")
            + _lf_metric_cards(total, "HK$", lambda v: hk(v))
            + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金"
            + ("" if real else "同滑價") + "；樣本少時只供參考。</p></div>")
