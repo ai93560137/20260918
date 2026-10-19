@@ -145,5 +145,8 @@ check("SPY／QQQ → 龍飛陣", {x["code"]: x["team"] for x in a if x["code"] i
 check("未批准產品 DIA → 未配對", [x["team"] for x in a if x["code"] == "US.DIA"] == [main.FUTU_TEAM_UNMATCHED], a)
 check("龍飛陣喺 FUTU_TEAMS（策略總表有卡）", "龍飛陣" in main.FUTU_TEAMS)
 
+a3 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": -2}])
+check("[R239] MNQ2612 → 使用者人手", [x["team"] for x in a3] == [main.FUTU_TEAM_MANUAL], a3)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
