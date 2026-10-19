@@ -103,6 +103,10 @@ check("總覽有 SPY 同未開始嘅 QQQ", "lf-SPY" in html and "QQQ" in html an
 check("[R241] 每日／每週／每月總結", all(x in html for x in ("每日總結", "每週總結", "每月總結", "2026-10-17",
                                                          "2026-10-12 起", "2026-10", "SPY HK$+176")), html[-3000:])
 check("[R245] 滾動 10 日 KPI 趨勢", "滾動 10 日 KPI 趨勢" in html)
+check("[R262] 按真倉注碼換算", "按真倉注碼（HK$，扣費）" in html and "按真倉注碼換算（扣費）合計" in html
+      and abs(main.longfei_real_scaled("SPY", [{"type": "CLOSE", "pnl_hkd_gross": 780.0, "pnl_hkd_net": 760.0}]) - 20.0) < 1e-9
+      and main.longfei_real_scaled("HSI", [{"type": "CLOSE", "pnl_hkd_gross": 500.0, "pnl_hkd_net": 480.0}]) == 480.0
+      and main.longfei_real_scaled("SPY", []) is None)
 _p = {"X": {"trades": [{"type": "CLOSE", "pnl_hkd_net": v, "ts": f"2026-10-{d:02d}T10:00:00+08:00"}
                        for d, v in ((5, 100), (6, -50), (7, 200), (20, -10))]}}
 _r = main.longfei_rolling_rows(_p, window=2, rows=10)
