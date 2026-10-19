@@ -102,6 +102,12 @@ html = client.get("/?view=longfei").get_data(as_text=True)
 check("總覽有 SPY 同未開始嘅 QQQ", "lf-SPY" in html and "QQQ" in html and "未開始" in html)
 check("[R241] 每日／每週／每月總結", all(x in html for x in ("每日總結", "每週總結", "每月總結", "2026-10-17",
                                                          "2026-10-12 起", "2026-10", "SPY HK$+176")), html[-3000:])
+check("[R245] 滾動 10 日 KPI 趨勢", "滾動 10 日 KPI 趨勢" in html)
+_p = {"X": {"trades": [{"type": "CLOSE", "pnl_hkd_net": v, "ts": f"2026-10-{d:02d}T10:00:00+08:00"}
+                       for d, v in ((5, 100), (6, -50), (7, 200), (20, -10))]}}
+_r = main.longfei_rolling_rows(_p, window=2, rows=10)
+check("[R245] 滾動計法（2 日窗）", [x[0] for x in _r] == ["2026-10-20", "2026-10-07", "2026-10-06", "2026-10-05"]
+      and _r[0][5] == 190 and _r[1][5] == 150 and abs(_r[1][4] - 4.0) < 1e-9 and _r[3][1] == 1, _r)
 check("[R241] 凌晨 6 點前計前一日", str(main._lf_day("2026-10-18T03:00:00+08:00")) == "2026-10-17"
       and str(main._lf_day("2026-10-18T07:00:00+08:00")) == "2026-10-18")
 j = client.get("/?view=longfei&format=json").get_json()
