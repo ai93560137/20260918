@@ -3153,7 +3153,8 @@ def build_fund_report_page(r):
                      + "".join(f"<li>{esc(t)}</li>" for t in notes) + "</ul></div>")
     if un and un.get("by_product"):
         trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(v)}</td></tr>" for k, v in un["by_product"].items())
-        body += ("<div class='section'><b>未實現盈虧（按產品，港幣）</b><div class='scroll'><table>"
+        body += (f"<div class='section'><b>未實現盈虧（按產品，港幣，富途快照 {esc(str(un.get('asof') or '—'))} HKT）</b>"   # [R263] 加時間
+                 "<div class='scroll'><table>"
                  f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div></div>")
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}
