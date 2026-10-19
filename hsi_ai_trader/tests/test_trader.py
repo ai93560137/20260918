@@ -996,3 +996,143 @@ def test_real_order_reunlocks_once(caplog):
     with pytest.raises(bk.BrokerError):
         b._place(code="HK.HSI2610")
     assert b.trade.orders == 1 and b.trade.unlocks == 0
+
+
+class StopBroker(FakeBroker):
+    """FakeBroker 加伺服器端止蝕單（R234）。"""
+    def __init__(self):
+        super().__init__()
+        self.stops = {}            # oid -> dict
+        self.cancel_error = False
+
+    def stop_order(self, code, side, qty, trigger):
+        oid = f"S{len(self.stops) + 1}"
+        self.stops[oid] = {"code": code, "side": side, "qty": qty, "trigger": trigger, "status": "LIVE", "px": None}
+        return oid
+
+    def modify_stop(self, oid, qty, trigger):
+        self.stops[oid].update(qty=qty, trigger=trigger)
+
+    def trigger(self, oid, px):    # 伺服器觸發：倉冇咗
+        s = self.stops[oid]
+        self.pos[s["code"]] = self.pos.get(s["code"], 0) + s["side"] * s["qty"]
+        s.update(status="FILLED", px=px)
+
+    def cancel_order(self, oid):
+        if self.cancel_error:
+            raise RuntimeError("網絡斷咗")
+        s = self.stops[oid]
+        if s["status"] == "FILLED":
+            return s["px"], s["qty"]
+        s["status"] = "CANCELLED"
+        return None, 0
+
+
+@pytest.fixture
+def senv(env):
+    cfg, t, _, ai, _ = env
+    cfg = replace(cfg, server_stop=True, server_stop_buffer_pct=0.3)
+    b = StopBroker()
+    b.clock = lambda: t["now"]
+    from trader import Trader as T
+    return cfg, t, b, ai, T(cfg, b, ai, lambda: t["now"])
+
+
+def _open_long(t, ai, tr, stop=24950):
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": stop, "confidence": 0.7, "reason": "x"}
+    advance(t, minutes=5)
+    tr.tick()
+
+
+def test_server_stop_follows_position(senv):
+    """[R234] 開倉即掛後備止蝕（程式止蝕再遠 0.3%）；改止蝕跟住改；程式止蝕平倉前先撤。"""
+    cfg, t, b, ai, tr = senv
+    _open_long(t, ai, tr)
+    meta = tr.state["pos"]
+    s = b.stops[meta["server_stop_id"]]
+    assert s["side"] == -1 and s["qty"] == 1 and s["trigger"] == round(24951 - 24951 * 0.003)
+    ai.next = {"action": "UPDATE_STOP", "stop_price": 24980, "confidence": 0.7, "reason": "收緊"}
+    advance(t, minutes=5)
+    tr.tick()
+    assert s["trigger"] == round(24980 - 24980 * 0.003)
+    b.price = 24970
+    advance(t, seconds=5)
+    tr.tick()
+    assert s["status"] == "CANCELLED" and b.pos["HK.MHI2610"] == 0 and tr.state["pos"] is None
+    assert len([o for o in b.orders if o[1] == -1]) == 1          # 只平一次，唔會反手
+
+
+def test_server_stop_fired_while_program_down(senv):
+    """[R234] 部機死咗期間伺服器止蝕觸發：返嚟對賬見到冇倉，用止蝕成交價記平倉。"""
+    cfg, t, b, ai, tr = senv
+    _open_long(t, ai, tr)
+    b.trigger(tr.state["pos"]["server_stop_id"], 24870)
+    b.price = 24860
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] is None and b.pos["HK.MHI2610"] == 0
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines()
+             if '"CLOSE"' in l][-1]
+    assert close["price"] == 24870 and "後備止蝕" in close["reason"]
+
+
+def test_close_after_server_stop_already_filled(senv):
+    """[R234] AI 平倉時發現後備止蝕啱啱成交：唔再落平倉單（否則會反手）。"""
+    cfg, t, b, ai, tr = senv
+    _open_long(t, ai, tr)
+    b.trigger(tr.state["pos"]["server_stop_id"], 24870)
+    n = len(b.orders)
+    tr._close("HK.MHI2610", 1, "AI：平")
+    assert len(b.orders) == n and b.pos["HK.MHI2610"] == 0 and tr.state["pos"] is None
+
+
+def test_close_waits_when_server_stop_unknown(senv):
+    """[R234] 撤後備止蝕失敗（唔知有冇成交）：唔落平倉單，下一輪再試。"""
+    cfg, t, b, ai, tr = senv
+    _open_long(t, ai, tr)
+    b.cancel_error = True
+    n = len(b.orders)
+    assert tr._close("HK.MHI2610", 1, "AI：平") is None
+    assert len(b.orders) == n and tr.state["pos"] is not None
+    b.cancel_error = False
+    tr._close("HK.MHI2610", 1, "AI：平")
+    assert b.pos["HK.MHI2610"] == 0 and tr.state["pos"] is None
+
+
+def test_server_stop_off_for_sim(env):
+    cfg, t, b, ai, tr = env
+    assert not cfg.server_stop
+    _open_long(t, ai, tr)
+    assert "server_stop_id" not in tr.state["pos"]
+
+
+def test_real_stock_sizing_only_for_real():
+    """[R233] REAL_NOTIONAL_USD／REAL_DAILY_LOSS_STOCK 只改真倉程式；模擬照用產品預設。"""
+    import os
+    import subprocess
+    code = ("from config import Config; from markets import spec_for, order_qty; c=Config(); "
+            "print(c.trd_env, spec_for('SPY').notional_usd, c.daily_loss_limit, c.etf_total_daily_loss, "
+            "c.server_stop, order_qty(spec_for('SPY'), 500.0, 1))")
+    base = {k: v for k, v in os.environ.items() if not k.startswith(("REAL_", "LONGFEI_", "DAILY_LOSS"))}
+    base.update(PRODUCT="SPY", REAL_NOTIONAL_USD="10000", REAL_DAILY_LOSS_STOCK="3000",
+                REAL_ETF_TOTAL_DAILY_LOSS="6000", LONGFEI_REAL_PRODUCTS="SPY", DAILY_LOSS_LIMIT_SPY="50000")
+    here = str(Path(__file__).resolve().parent.parent)
+    run = lambda e: subprocess.run([sys.executable, "-c", code], cwd=here, env=e, capture_output=True,
+                                   text=True, check=True).stdout.split()
+    assert run({**base, "LONGFEI_INSTANCE": "REAL"}) == ["REAL", "10000.0", "3000.0", "6000.0", "True", "20"]
+    sim = run(base)
+    assert sim[0] == "SIMULATE" and float(sim[1]) == 100000 and float(sim[2]) == 50000 and sim[4] == "False"
+
+
+def test_real_size_max_splits_buying_power(env, tmp_path):
+    """[R235] 用盡槓桿：富途可買數量 ÷ 未有倉嘅真倉美股隻數。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, kind="stock", product="SPY", real_size_max=True, trd_env="REAL",
+                     real_products=("QQQ", "SPY"), state_file=tmp_path / "ai_trader_real_SPY" / "state.json")
+    b.max_open_qty = lambda code, side, price: 301
+    assert tr._cap_open_qty("US.SPY", 1, 700, 14) == 150          # QQQ 未有倉：分一半
+    tr._peer_states = lambda: {"QQQ": {"pos": {"side": 1}}}
+    assert tr._cap_open_qty("US.SPY", 1, 700, 14) == 301          # QQQ 已有倉：全部
+    b.max_open_qty = lambda code, side, price: 0
+    assert tr._cap_open_qty("US.SPY", 1, 700, 14) == 0
