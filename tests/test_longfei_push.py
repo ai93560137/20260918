@@ -100,6 +100,10 @@ code, _ = post({**pkt, "state": {"product": "ZZZ"}})
 check("未知產品 422", code == 422, code)
 html = client.get("/?view=longfei").get_data(as_text=True)
 check("總覽有 SPY 同未開始嘅 QQQ", "lf-SPY" in html and "QQQ" in html and "未開始" in html)
+check("[R241] 每日／每週／每月總結", all(x in html for x in ("每日總結", "每週總結", "每月總結", "2026-10-17",
+                                                         "2026-10-12 起", "2026-10", "SPY HK$+176")), html[-3000:])
+check("[R241] 凌晨 6 點前計前一日", str(main._lf_day("2026-10-18T03:00:00+08:00")) == "2026-10-17"
+      and str(main._lf_day("2026-10-18T07:00:00+08:00")) == "2026-10-18")
 j = client.get("/?view=longfei&format=json").get_json()
 check("合計按 HK$", j["total_hkd"]["trades"] == 1 and abs(j["total_hkd"]["points"] - 175.5) < 1e-9, j.get("total_hkd"))
 check("json 唔含權杖", "tok" not in json.dumps(j))
