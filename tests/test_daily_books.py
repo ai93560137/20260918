@@ -72,7 +72,7 @@ check("富途 +1 vs 登記 −1 → ⚠（HSI 期貨預設歸人手，10-14）",
 check("SPCX 碎股唔入對帳", "SPCX" not in md)
 RISK3 = json.loads(json.dumps(RISK)); RISK3["positions"].append({"code": "US.SPY", "qty": 15, "futu_pl": 40})
 md5, st5, esc5 = db.reconcile(RISK3, POS_MD, (jexp, jsrc), date(2026, 10, 13), {}, {})
-check("[R236] 龍飛陣 SPY 冇登記 → 🐉 只列示，唔計 ⚠／唔升級", "| US.SPY | 龍飛陣 |" in md5 and "| 🐉 |" in md5 and "US.SPY" not in st5["open"] and md5.count("| ⚠ |") == 1, md5)
+check("[R237] 龍飛陣 SPY 冇登記 → 🐉 只列示，唔計 ⚠／唔升級", "| US.SPY | 龍飛陣 |" in md5 and "| 🐉 |" in md5 and "US.SPY" not in st5["open"] and md5.count("| ⚠ |") == 1, md5)
 
 print("\n=== 損益帳 ===")
 DEALS = {"fetched_hkt": "2026-10-13 17:08", "closed": [

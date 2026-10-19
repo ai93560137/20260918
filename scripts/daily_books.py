@@ -53,10 +53,10 @@ TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最�
     (r"^US\.EW\d{4}[CP]\d+x\d$", TEAM_MANUAL, "標普 E-mini 月底 Put", None),
     (r"^US\.(ES|MES)\d{4}$", TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),
     (r"^US\.SPCX$", TEAM_GIFT, "SpaceX 碎股（券商送）", None),
-    (r"^US\.(SPY|QQQ)$", TEAM_LONGFEI, "美股 ETF 真倉（AI 自動）", None),   # [R236] PR #212；同 main.py 一齊改
+    (r"^US\.(SPY|QQQ)$", TEAM_LONGFEI, "美股 ETF 真倉（AI 自動）", None),   # [R237] PR #212；同 main.py 一齊改
 )
 TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_LONGFEI, TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
-AUTO_TEAMS = {TEAM_LONGFEI}   # [R236] 程式自動落單：持倉日內會變，唔登記 POSITIONS.md 每筆，對帳只列示、唔計 ⚠
+AUTO_TEAMS = {TEAM_LONGFEI}   # [R237] 程式自動落單：持倉日內會變，唔登記 POSITIONS.md 每筆，對帳只列示、唔計 ⚠
 JOURNAL_BRANCHES = {"蛇蟠陣": "claude/gifted-carson-v2tvhw", "雲垂陣": "claude/dazzling-curie-f3xzb8"}
 
 # 風控階梯初稿（使用者 2026-10-13：Ⓒ／Ⓓ 可直接 TG 提示；門檻待使用者確認，見 RISK_LADDER.md）
@@ -333,7 +333,7 @@ def reconcile(risk: dict | None, positions_md: str, journal: tuple[dict, dict], 
             ok = True                                              # 登記空手、富途冇倉：一致
         status = "✅" if ok else "⚠"
         reason = ""
-        if team in AUTO_TEAMS and not ok:                          # [R236] 龍飛陣程式自動：只列示
+        if team in AUTO_TEAMS and not ok:                          # [R237] 龍飛陣程式自動：只列示
             status, reason = "🐉", "程式自動落單，以龍飛陣自己帳為準（唔計 ⚠）"
         elif not ok:
             ex = explanations.get(code) or {}

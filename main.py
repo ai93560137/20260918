@@ -2591,7 +2591,7 @@ FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
     "蛇蟠陣": {"icon": "🐍", "desc": "順勢：3 日通道，觸價反手、永遠在場；使用者人手落大恒指期貨（八陣圖指令台）",
               "stop": "按通道反手（人手執行）"},
     "龍飛陣": {"icon": "🐉", "link": "?view=longfei", "desc": "AI 程式自動落單（真倉只限使用者逐隻批准嘅產品）",
-              "stop": "每隻日蝕上限＋開倉即掛伺服器端 GTC 止損單（R234）"},   # [R236]
+              "stop": "每隻日蝕上限＋開倉即掛伺服器端 GTC 止損單（R234）"},   # [R237]
     FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 86 點（10/14 新倉 @43，2× 權利金）"},
     FUTU_TEAM_GIFT: {"icon": "🎁", "desc": "券商推廣送嘅股票（唔係交易策略）", "stop": "—"},
     FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
@@ -2606,7 +2606,7 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
     (r"^US\.(ES|MES)\d{4}$", FUTU_TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),   # 2026-10-14 使用者沽 ES2612 −1 @7,803
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
-    (r"^US\.(SPY|QQQ)$", "龍飛陣", "美股 ETF 真倉（AI 自動）", None),   # [R236] PR #212 美股轉真倉；加產品要同 daily_books.TEAM_RULES 一齊改
+    (r"^US\.(SPY|QQQ)$", "龍飛陣", "美股 ETF 真倉（AI 自動）", None),   # [R237] PR #212 美股轉真倉；加產品要同 daily_books.TEAM_RULES 一齊改
 )
 FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
 
