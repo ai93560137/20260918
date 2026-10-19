@@ -1136,3 +1136,13 @@ def test_real_size_max_splits_buying_power(env, tmp_path):
     assert tr._cap_open_qty("US.SPY", 1, 700, 14) == 301          # QQQ 已有倉：全部
     b.max_open_qty = lambda code, side, price: 0
     assert tr._cap_open_qty("US.SPY", 1, 700, 14) == 0
+
+
+def test_preflight_checks_one_share_in_size_max(env):
+    """[R240] 用盡槓桿：準備檢查只問 1 股（唔好用模擬每單 US$100k 去判斷買唔買到）。"""
+    cfg, t, b, ai, tr = env
+    asked = []
+    b.real_preflight = lambda code, qty, price: asked.append(qty) or {"ok": True}
+    tr.cfg = replace(cfg, real_size_max=True)
+    tr._real_preflight(t["now"], "HK.MHI2610", 25000)
+    assert asked == [1]
