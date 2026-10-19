@@ -33,6 +33,18 @@ class ReviewTest(unittest.TestCase):
         b = [{"ts": "2", "final": "HOLD"}, {"ts": "3", "final": "OPEN_SHORT"}]
         self.assertEqual([x["ts"] for x in lr._merge_decs(a, b)], ["1", "2", "3"])
 
+    def test_fee_section_scales_gross_not_fee(self):  # [R264]
+        rows = [{"product": "SPY", "pnl_hkd_gross": 780.0, "pnl_hkd_net": 750.0},
+                {"product": "SPY", "pnl_hkd_gross": 780.0, "pnl_hkd_net": 750.0},
+                {"product": "HSI", "pnl_hkd_gross": 500.0, "pnl_hkd_net": 400.0}]
+        txt = "\n".join(lr.fee_section(rows))
+        self.assertIn("| SPY | 2 | +1,560 | -60 | 4% | +80 | +20 | 0.07% |", txt)   # 1,560 × 40k/780k = 80；80 − 60；30 ÷ 40k
+        self.assertIn("| HSI | 1 | +500 | -100 | 20% | +500 | +400 | — |", txt)
+        self.assertNotIn("⚠", txt)
+        rows[0]["pnl_hkd_net"] = 680.0
+        self.assertIn("⚠ 按真倉注碼扣費後係蝕", "\n".join(lr.fee_section(rows[:2])))
+        self.assertEqual(lr.fee_section([{"product": "SPY", "pnl_hkd_gross": 1.0}]), [])
+
     def test_fmt_zero_has_no_sign(self):
         self.assertEqual(lr.fmt(-0.0), "0")
         self.assertEqual(lr.fmt(390), "+390")
