@@ -7904,6 +7904,47 @@ def longfei_period_rows(prods):
     return out
 
 
+LONGFEI_ROLL_DAYS = 10
+
+
+def longfei_rolling_rows(prods, window=LONGFEI_ROLL_DAYS, rows=10):
+    """[R245] 使用者 10-19「加滾動 10 日 KPI 趨勢」：每個有平倉嘅交易日，計佢同之前共 window 個交易日嘅合計 KPI
+    （扣費後，冇扣費數就用未扣費）。回傳 [(日, 筆數, 勝率, 每筆平均, 獲利因子, 合計)]，最新喺上面。"""
+    by_day = {}
+    for d in prods.values():
+        for t in d["trades"]:
+            v = t.get("pnl_hkd_net") if isinstance(t.get("pnl_hkd_net"), (int, float)) else t.get("pnl_hkd_gross")
+            day = _lf_day(t.get("ts"))
+            if t.get("type") == "CLOSE" and isinstance(v, (int, float)) and day is not None:
+                by_day.setdefault(day, []).append(float(v))
+    days = sorted(by_day)
+    out = []
+    for i in range(len(days) - 1, max(len(days) - 1 - rows, -1), -1):
+        vals = [v for d in days[max(0, i - window + 1):i + 1] for v in by_day[d]]
+        gw, gl = sum(v for v in vals if v > 0), -sum(v for v in vals if v < 0)
+        out.append((days[i].isoformat(), len(vals), sum(v > 0 for v in vals) / len(vals), sum(vals) / len(vals),
+                    gw / gl if gl > 0 else None, sum(vals)))
+    return out
+
+
+def _lf_rolling_html(prods):
+    rows = longfei_rolling_rows(prods)
+    if not rows:
+        return "<h3>📈 滾動 10 日 KPI 趨勢</h3><p class='muted'>未有平倉成交。</p>"
+    hk = lambda v: f"HK${v:+,.0f}"
+    col = lambda v: " style='color:#15803d'" if v >= 0 else " style='color:#dc2626'"
+    body = ""
+    for i, (d, n, wr, avg, pf, sm) in enumerate(rows):
+        prev = rows[i + 1][3] if i + 1 < len(rows) else None
+        arrow = "" if prev is None else (" ▲" if avg > prev else (" ▼" if avg < prev else " ＝"))
+        body += (f"<tr><td>{esc(d)}</td><td>{n}</td><td>{wr:.0%}</td><td{col(avg)}>{hk(avg)}{arrow}</td>"
+                 f"<td>{'—' if pf is None else f'{pf:.2f}'}</td><td{col(sm)}>{hk(sm)}</td></tr>")
+    return ("<h3>📈 滾動 10 日 KPI 趨勢</h3><div style='overflow-x:auto'><table><tr><th>截至</th><th>平倉筆數</th>"
+            "<th>勝率</th><th>每筆平均</th><th>獲利因子</th><th>10 日合計</th></tr>" + body + "</table></div>"
+            "<p class='muted' style='font-size:13px'>每行＝截至嗰日（連之前）最近 10 個有平倉嘅交易日合計；扣費後（舊紀錄冇扣費數就用未扣費）；"
+            "▲▼ 係每筆平均同前一日比較。目標係呢條線一路向上，唔追單日。</p>")
+
+
 def _lf_period_html(prods, real):
     hk = lambda v: f"HK${v:+,.0f}"
     col = lambda v: " style='color:#15803d'" if v >= 0 else " style='color:#dc2626'"
@@ -7915,7 +7956,8 @@ def _lf_period_html(prods, real):
         parts.append(f"<h3>🗓 {title}</h3>" + (
             "<div style='overflow-x:auto'><table><tr><th>期間</th><th>平倉筆數</th><th>勝率</th><th>合計</th>"
             "<th>最好產品</th><th>最差產品</th></tr>" + body + "</table></div>" if rows else "<p class='muted'>未有平倉成交。</p>"))
-    return (f"<div class='section'><h2>🗓 {'真倉' if real else '模擬倉'}期間總結（全部產品合計，HK$）</h2>" + "".join(parts)
+    return (f"<div class='section'><h2>🗓 {'真倉' if real else '模擬倉'}期間總結（全部產品合計，HK$）</h2>"
+            + _lf_rolling_html(prods) + "".join(parts)
             + "<p class='muted' style='font-size:13px'>按平倉時間計；香港時間凌晨 6 點前平倉計前一個交易日；每週由星期一起；"
               "未扣佣金；美股按 1 美元 = 7.8 港元。</p></div>")
 
