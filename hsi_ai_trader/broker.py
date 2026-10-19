@@ -33,6 +33,7 @@ QUOTE_CACHE = Path(os.getenv("ZHUGE_QUOTE_CACHE", str(Path.home() / "zhuge" / "q
 QUOTE_CACHE_SEC = float(os.getenv("QUOTE_CACHE_SEC", "4"))
 WANTED_TTL_SEC = 600                     # 10 分鐘冇程式要嘅代號就唔再查（例如轉倉後嘅舊合約）
 RATE_LIMIT_MARK = "频率太高"
+UNLOCK_MARK = "解锁"          # [R232] 富途：「没有解锁交易，请先解锁交易」（OpenD 重新登入後解鎖會冇咗）
 
 
 def is_rate_limited(err) -> bool:
@@ -82,10 +83,27 @@ class FutuBroker:
         else:
             self.trade = OpenFutureTradeContext(host=cfg.opend_host, port=cfg.opend_port,
                                                 security_firm=SecurityFirm.FUTUSECURITIES)
-        if self.env == TrdEnv.REAL and cfg.trade_password:
-            _ok(*self.trade.unlock_trade(password=cfg.trade_password), "unlock_trade")
+        if self.env == TrdEnv.REAL:
+            if cfg.trade_password:
+                self._unlock()
+            else:
+                log.warning("真倉但 FUTU_TRADE_PASSWORD 未設：OpenD 冇人手解鎖就落唔到單")
         self.acc_id = cfg.acc_id or self._pick_account()
         log.info("Futu 已連接 env=%s acc_id=%s", cfg.trd_env, self.acc_id)
+
+    def _unlock(self):
+        _ok(*self.trade.unlock_trade(password=self.cfg.trade_password), "unlock_trade")
+        log.info("已解鎖交易")
+
+    def _place(self, **kw):
+        """place_order；真倉遇到「未解鎖」（OpenD 重新登入咗）就重新解鎖再試一次。"""
+        ret, data = self.trade.place_order(**kw)
+        if (ret != RET_OK and UNLOCK_MARK in str(data) and self.env == TrdEnv.REAL
+                and self.cfg.trade_password):
+            log.warning("落單話未解鎖，重新解鎖再試：%s", data)
+            self._unlock()
+            ret, data = self.trade.place_order(**kw)
+        return _ok(ret, data, "place_order")
 
     def close(self):
         self.quote.close()
@@ -349,10 +367,8 @@ class FutuBroker:
             trd_side = TrdSide.SELL
         price = round(price, 4)
         extra = {"fill_outside_rth": True} if self.spec.kind == "stock" else {}   # ETF 盤前盤後都可成交
-        df = _ok(*self.trade.place_order(price=price, qty=qty, code=code,
-                                         trd_side=trd_side, order_type=OrderType.NORMAL,
-                                         trd_env=self.env, acc_id=self.acc_id,
-                                         remark="zhuge-longfei", **extra), "place_order")
+        df = self._place(price=price, qty=qty, code=code, trd_side=trd_side, order_type=OrderType.NORMAL,
+                         trd_env=self.env, acc_id=self.acc_id, remark="zhuge-longfei", **extra)
         order_id = str(df.iloc[0]["order_id"])
         log.info("落單 %s %s x%d @%s id=%s", trd_side, code, qty, price, order_id)
         deadline = _time.time() + timeout

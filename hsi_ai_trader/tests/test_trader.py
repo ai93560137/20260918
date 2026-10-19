@@ -958,3 +958,41 @@ def test_per_product_lessons(tmp_path):
     from markets import SPECS
     missing = [p for p, s in SPECS.items() if (s.kind == "stock" or p == "HSI") and not (LESSONS_DIR / f"{p}.md").exists()]
     assert missing == []
+
+
+def test_real_order_reunlocks_once(caplog):
+    """[R232] 真倉落單遇到「没有解锁交易」（OpenD 重新登入咗）：重新解鎖再試一次；冇密碼就唔試。"""
+    import types
+    if "futu" not in sys.modules:
+        class _C:
+            def __getattr__(self, n):
+                return n
+        fake = types.ModuleType("futu")
+        for n in ("OpenQuoteContext", "OpenFutureTradeContext", "OpenSecTradeContext", "Market", "SecurityType",
+                  "KLType", "AuType", "TrdEnv", "TrdSide", "TrdMarket", "OrderType", "ModifyOrderOp", "OrderStatus",
+                  "SecurityFirm", "PositionSide"):
+            setattr(fake, n, _C())
+        fake.RET_OK = 0
+        sys.modules["futu"] = fake
+    import broker as bk
+    from config import Config
+
+    class T:
+        def __init__(self):
+            self.unlocked, self.orders, self.unlocks = False, 0, 0
+
+        def unlock_trade(self, password):
+            self.unlocks += 1
+            self.unlocked = True
+            return 0, None
+
+        def place_order(self, **kw):
+            self.orders += 1
+            return (0, "ok") if self.unlocked else (-1, "没有解锁交易，请先解锁交易")
+    b = bk.FutuBroker.__new__(bk.FutuBroker)
+    b.cfg, b.env, b.trade = replace(Config(), trade_password="123456"), bk.TrdEnv.REAL, T()
+    assert b._place(code="HK.HSI2610") == "ok" and b.trade.orders == 2 and b.trade.unlocks == 1
+    b.cfg, b.trade = replace(Config(), trade_password=""), T()
+    with pytest.raises(bk.BrokerError):
+        b._place(code="HK.HSI2610")
+    assert b.trade.orders == 1 and b.trade.unlocks == 0
