@@ -48,7 +48,7 @@
   "shares_rows": 547
  },
  "0005.HK": {
-  "adj_err_max": 4e-06,
+  "adj_err_max": 2e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -73,7 +73,7 @@
  },
  "0011.HK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 10,
+  "fails": 11,
   "last_fail": "2026-10-19"
  },
  "0012.HK": {
@@ -113,7 +113,7 @@
   "shares_rows": 371
  },
  "0017.HK": {
-  "adj_err_max": 8.4e-05,
+  "adj_err_max": 8.3e-05,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -365,7 +365,7 @@
   "shares_rows": 369
  },
  "0386.HK": {
-  "adj_err_max": 2e-06,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -390,7 +390,7 @@
  },
  "0494.HK": {
   "error": "空資料（已下市/代碼錯/暫時 rate limit）",
-  "fails": 10,
+  "fails": 11,
   "last_fail": "2026-10-19"
  },
  "0669.HK": {
@@ -610,7 +610,7 @@
   "shares_rows": 550
  },
  "1044.HK": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 4e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -634,7 +634,7 @@
   "shares_rows": 1579
  },
  "1093.HK": {
-  "adj_err_max": 5e-06,
+  "adj_err_max": 0.020695,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -850,7 +850,7 @@
   "shares_rows": 538
  },
  "1929.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -970,7 +970,7 @@
   "shares_rows": 490
  },
  "2313.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -1102,7 +1102,7 @@
   "shares_rows": 1575
  },
  "2688.HK": {
-  "adj_err_max": 0.0,
+  "adj_err_max": 1e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -1114,11 +1114,11 @@
   "shares_rows": 627
  },
  "2800.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "2008-01-02",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -1174,7 +1174,7 @@
   "shares_rows": 487
  },
  "3968.HK": {
-  "adj_err_max": 6e-06,
+  "adj_err_max": 5e-06,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -1258,7 +1258,7 @@
   "shares_rows": 354
  },
  "9618.HK": {
-  "adj_err_max": 1e-06,
+  "adj_err_max": 0.0,
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
@@ -1298,7 +1298,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
-  "files_changed": 0,
+  "files_changed": 1,
   "first": "2020-11-09",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -1310,7 +1310,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
-  "files_changed": 0,
+  "files_changed": 1,
   "first": "2021-04-19",
   "kept_tail": 0,
   "last": "2026-10-16",
@@ -1358,7 +1358,7 @@
   "error": null,
   "fails": 0,
   "fetched": "2026-10-19",
-  "files_changed": 1,
+  "files_changed": 0,
   "first": "1995-01-03",
   "kept_tail": 0,
   "last": "2026-10-16",
