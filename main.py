@@ -2606,7 +2606,7 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
     (r"^US\.(ES|MES)\d{4}$", FUTU_TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),   # 2026-10-14 使用者沽 ES2612 −1 @7,803
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
-    (r"^US\.(SPY|QQQ)$", "龍飛陣", "美股 ETF 真倉（AI 自動）", None),   # [R237] PR #212 美股轉真倉；加產品要同 daily_books.TEAM_RULES 一齊改
+    (r"^US\.(SPY|QQQ|DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", "龍飛陣", "美股 ETF／個股（AI 自動；真倉產品以 settings.env LONGFEI_REAL_PRODUCTS 為準）", None),   # [R238] 使用者 10-19：龍飛陣全部 23 隻候選一次過歸龍飛陣，之後加減真倉產品只改 settings.env＋更新部機，唔使再改呢度同部署
 )
 FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
 
