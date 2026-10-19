@@ -147,5 +147,8 @@ b2 = main.futu_team_assign([{"code": "US.NVDA", "qty": 3}, {"code": "US.EWZ", "q
 check("[R238] 七雄／ETF 候選歸龍飛陣、名單外 ARKK 仍未配對", [x["team"] for x in b2] == ["龍飛陣", "龍飛陣", main.FUTU_TEAM_UNMATCHED], b2)
 check("龍飛陣喺 FUTU_TEAMS（策略總表有卡）", "龍飛陣" in main.FUTU_TEAMS)
 
+a3 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": -2}])
+check("[R239] MNQ2612 → 使用者人手", [x["team"] for x in a3] == [main.FUTU_TEAM_MANUAL], a3)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

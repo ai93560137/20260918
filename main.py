@@ -2604,7 +2604,7 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", FUTU_TEAM_MANUAL, "大恒指期貨（人手）", None),       # 2026-10-14 使用者：預設歸人手；屬蛇蟠陣要逐張問使用者，答「屬」先喺上面加合約規則
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
-    (r"^US\.(ES|MES)\d{4}$", FUTU_TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),   # 2026-10-14 使用者沽 ES2612 −1 @7,803
+    (r"^US\.(ES|MES|MNQ)\d{4}$", FUTU_TEAM_MANUAL, "美股指數期貨（人手）", None),   # [R239] 10-19 加 MNQ（使用者人手「手痕」）   # 2026-10-14 使用者沽 ES2612 −1 @7,803
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
     (r"^US\.(SPY|QQQ|DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", "龍飛陣", "美股 ETF／個股（AI 自動；真倉產品以 settings.env LONGFEI_REAL_PRODUCTS 為準）", None),   # [R238] 使用者 10-19：龍飛陣全部 23 隻候選一次過歸龍飛陣，之後加減真倉產品只改 settings.env＋更新部機，唔使再改呢度同部署
 )
