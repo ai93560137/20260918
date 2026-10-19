@@ -352,6 +352,36 @@ class FutuBroker:
             return None, 0
         return _num(row.get("dealt_avg_price")) or price, q
 
+    # ---------- [R234] 伺服器端後備止蝕（GTC STOP 單，放喺富途伺服器；部機／OpenD 死咗都生效）----------
+    def stop_order(self, code: str, side: int, qty: int, trigger: float) -> str:
+        """掛止損市價單（side：+1 買／-1 賣），長期有效；回傳 order_id。"""
+        from futu import TimeInForce
+        trigger = round(trigger, 4)
+        df = self._place(price=trigger, qty=qty, code=code, trd_side=TrdSide.BUY if side > 0 else TrdSide.SELL,
+                         order_type=OrderType.STOP, aux_price=trigger, time_in_force=TimeInForce.GTC,
+                         trd_env=self.env, acc_id=self.acc_id, remark="zhuge-longfei-stop")
+        oid = str(df.iloc[0]["order_id"])
+        log.info("後備止蝕 %s %s x%d 觸發 %s id=%s", "買" if side > 0 else "賣", code, qty, trigger, oid)
+        return oid
+
+    def modify_stop(self, order_id: str, qty: int, trigger: float):
+        trigger = round(trigger, 4)
+        _ok(*self.trade.modify_order(ModifyOrderOp.NORMAL, order_id, qty, trigger, aux_price=trigger,
+                                     trd_env=self.env, acc_id=self.acc_id), "modify_order")
+
+    def cancel_order(self, order_id: str):
+        """撤單，再查最終狀態；回傳 (成交均價, 成交數量)（撤之前已經觸發成交就唔係 0）。"""
+        try:
+            self.trade.modify_order(ModifyOrderOp.CANCEL, order_id, 0, 0, trd_env=self.env, acc_id=self.acc_id)
+        except Exception:  # noqa: BLE001
+            log.exception("撤單 %s 失敗", order_id)
+        for _ in range(5):
+            row = self._order_row(order_id)
+            if row is not None and (row["order_status"] in FILLED or row["order_status"] in DEAD):
+                return self._fill(row, None, 0)
+            _time.sleep(1)
+        raise BrokerError(f"撤單 {order_id} 後查唔到最終狀態")
+
     def market_order(self, code: str, side: int, qty: int, slippage: float, timeout=15):
         """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。
         回傳 (成交均價, 成交數量)；完全冇成交回傳 (None, 0)。超時會取消，取消後再查：部分成交同取消前啱啱成交都計返。"""

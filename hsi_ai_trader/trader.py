@@ -171,6 +171,7 @@ class Trader:
                 exc = (last - meta["entry"]) * side
                 meta["mfe"] = round(max(meta.get("mfe", 0.0), exc), 4)
                 meta["mae"] = round(min(meta.get("mae", 0.0), exc), 4)
+            self._ensure_server_stop(contract, qty)
             if stop_hit(side, last, meta.get("stop")):
                 self._close(contract, qty, f"止蝕 {meta['stop']}", last)
                 return
@@ -256,6 +257,7 @@ class Trader:
             st["pos"]["stop"] = stop
             if target:
                 st["pos"]["target"] = target
+            self._move_server_stop()
             self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": stop,
                                  "target": st["pos"].get("target"), "reason": d.get("reason")})
 
@@ -292,6 +294,7 @@ class Trader:
                              "target": tgt_adj, "reason": d.get("reason"), "risk_pts": round(dist, 4),
                              "confidence": d.get("confidence"), "lessons": d.get("_lessons"),
                              "session": session, "model": st["pos"]["model"]})
+        self._ensure_server_stop(contract, side * n_open)
         self._save_state()                        # 即刻寫，等其他程式睇到呢個倉
 
     # ---------- [R216] 組合層面（使用者 10-17：A 美股大盤組同方向最多 2 隻；C 全部 ETF 合計日蝕 HK$200,000）----------
@@ -462,9 +465,23 @@ class Trader:
     def _close(self, code, qty, reason, ref_price=None):
         if qty == 0:
             return None
+        meta = self.state.get("pos") or {}
+        if meta.get("code") == code and meta.get("server_stop_id"):
+            try:
+                spx, sfilled = self._cancel_server_stop(meta)
+            except Exception as e:  # noqa: BLE001
+                self._log("events", {"type": "CLOSE_FAILED", "code": code, "reason": f"撤後備止蝕失敗：{e}"})
+                return None                      # 唔知後備止蝕有冇成交就唔落平倉單，免得反手；下一輪再試
+            if sfilled:                          # 撤之前已經觸發：伺服器已經平咗（部分）
+                part = min(sfilled, abs(qty)) * (1 if qty > 0 else -1)
+                self._record_exit(code, part, spx, "後備止蝕（富途伺服器）", meta)
+                if abs(part) >= abs(qty):
+                    return spx
+                qty -= part
+                meta = {**meta, "qty": abs(qty)}
+                self.state["pos"] = meta
         side = -1 if qty > 0 else 1
         px, filled = self.broker.market_order(code, side, abs(qty), self.cfg.slippage_points)
-        meta = self.state.get("pos") or {}
         if not filled:
             self._log("events", {"type": "CLOSE_FAILED", "code": code, "reason": reason})
             return None
@@ -508,6 +525,49 @@ class Trader:
             st["pos"] = None
         log.info("平倉 %s %s @%s 點數=%s (%s)", code, qty, px, pts, reason)
 
+    # ---------- [R234] 伺服器端後備止蝕 ----------
+    def _server_trigger(self, side, stop):
+        """後備止蝕觸發價：程式止蝕再遠 buffer%，平時由程式先止蝕，唔會兩邊同時平倉。"""
+        return round_tick(stop - side * abs(stop) * self.cfg.server_stop_buffer_pct / 100, self.cfg.tick)
+
+    def _ensure_server_stop(self, contract, qty):
+        """真倉有倉但未有後備止蝕就掛（開倉後、或者之前掛唔到／部分平倉後重掛）。失敗唔影響程式止蝕，下一輪再試。"""
+        meta = self.state.get("pos")
+        if not (self.cfg.server_stop and qty and meta and meta.get("code") == contract
+                and meta.get("stop") and not meta.get("server_stop_id")):
+            return
+        side = 1 if qty > 0 else -1
+        trigger = self._server_trigger(side, meta["stop"])
+        try:
+            meta["server_stop_id"] = self.broker.stop_order(contract, -side, abs(qty), trigger)
+            meta["server_stop"] = trigger
+            self._log("events", {"type": "SERVER_STOP", "code": contract, "qty": abs(qty), "trigger": trigger,
+                                 "order_id": meta["server_stop_id"]})
+        except Exception as e:  # noqa: BLE001
+            if not meta.get("server_stop_failed"):
+                self._log("events", {"type": "SERVER_STOP_FAILED", "code": contract, "error": str(e)[:200]})
+            meta["server_stop_failed"] = True
+            log.warning("掛後備止蝕失敗（程式止蝕照用，下一輪再試）：%s", e)
+
+    def _move_server_stop(self):
+        meta = self.state.get("pos")
+        if not (meta and meta.get("server_stop_id") and meta.get("stop")):
+            return
+        trigger = self._server_trigger(meta["side"], meta["stop"])
+        try:
+            self.broker.modify_stop(meta["server_stop_id"], meta["qty"], trigger)
+            meta["server_stop"] = trigger
+        except Exception as e:  # noqa: BLE001
+            self._log("events", {"type": "SERVER_STOP_MODIFY_FAILED", "error": str(e)[:200],
+                                 "order_id": meta["server_stop_id"], "keep": meta.get("server_stop")})
+
+    def _cancel_server_stop(self, meta):
+        """撤後備止蝕；回傳 (成交價, 成交數量)，撤之前已經觸發就唔係 0。撤唔到（狀態不明）會 raise。"""
+        px, filled = self.broker.cancel_order(meta["server_stop_id"])
+        meta["server_stop_id"] = None
+        self._log("events", {"type": "SERVER_STOP_CANCELLED", "code": meta.get("code"), "filled": filled})
+        return px, filled
+
     def _own_qty(self, contract):
         meta = self.state.get("pos")
         return meta["side"] * meta["qty"] if meta and meta.get("code") == contract else 0
@@ -518,8 +578,18 @@ class Trader:
         meta = st.get("pos")
         own = self._own_qty(contract)
         if own != 0 and broker_qty == 0:
-            snap = self.broker.snapshot(meta["code"])
-            self._record_exit(meta["code"], own, snap["last"], "倉位喺外部被平（估算價）", meta)
+            px, reason = None, "倉位喺外部被平（估算價）"
+            if meta.get("server_stop_id"):
+                try:
+                    px, filled = self._cancel_server_stop(meta)
+                    reason = "後備止蝕（富途伺服器）" if filled else reason
+                except Exception as e:  # noqa: BLE001
+                    log.exception("查後備止蝕失敗")
+                    self._log("events", {"type": "SERVER_STOP_ORPHAN", "order_id": meta.get("server_stop_id"),
+                                         "error": str(e)[:200], "note": "倉已冇但後備止蝕撤唔到，請喺富途 App 人手撤"})
+            if px is None:
+                px = self.broker.snapshot(meta["code"])["last"]
+            self._record_exit(meta["code"], own, px, reason, meta)
             own = 0
         foreign = broker_qty - own
         others = {c: q for c, (q, _) in positions.items() if c != contract and q}
