@@ -7,7 +7,7 @@ MT5 同 `mt5_push` 留喺使用者部機（`gcp_ib\start_all.ps1` 開機自動�
 香港 `futu-data`（asia-east2-a）服務已 `disable`、保留做後備，使用者決定幾時刪。
 
 數據服務只讀：讀持倉同報價、推上 Cloud Run。**龍飛陣例外**：使用者 10-16 同意佢喺富途**模擬戶口**（`TRD_ENV=SIMULATE`）自動落單；
-**交易密碼唔放上 VM**；轉 REAL 要總指揮四個條件（後備止蝕、IDEAS #106 前向測試、先登記 POSITIONS.md、秘密唔入 repo）＋使用者確認，經 PR 改 `settings.env`。
+轉 REAL 要總指揮四個條件（後備止蝕、IDEAS #106 前向測試、先登記 POSITIONS.md、秘密唔入 repo）＋使用者確認，經 PR 改 `settings.env`。使用者 10-19 決定：交易密碼 `FUTU_TRADE_PASSWORD` 放 `~/zhuge/env`（600），**只畀** `zhuge-longfei-real@<產品>` 解鎖落真單；解鎖對成個 OpenD 生效，其他程式維持只讀、唔可以加落單代碼。
 Claude（雲端工作階段）唔 SSH 入呢部 VM；由使用者用瀏覽器 SSH 做，Claude 逐步教。
 
 ## 架構
