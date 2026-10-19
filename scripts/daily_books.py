@@ -54,6 +54,7 @@ TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最�
     (r"^US\.(ES|MES)\d{4}$", TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),
     (r"^US\.SPCX$", TEAM_GIFT, "SpaceX 碎股（券商送）", None),
     (r"^US\.(SPY|QQQ)$", TEAM_LONGFEI, "美股 ETF 真倉（AI 自動）", None),   # [R237] PR #212；同 main.py 一齊改
+    (r"^US\.(DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", TEAM_LONGFEI, "美股 ETF／個股候選（未批准真倉，出現請核實）", None),   # [R238] 使用者 10-19：先加齊龍飛陣候選名單，有數據就顯示
 )
 TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_LONGFEI, TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
 AUTO_TEAMS = {TEAM_LONGFEI}   # [R237] 程式自動落單：持倉日內會變，唔登記 POSITIONS.md 每筆，對帳只列示、唔計 ⚠
