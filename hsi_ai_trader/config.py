@@ -99,7 +99,7 @@ class Config:
     # 港期未驗證（模擬盤唔支援），所以預設只開美股，期貨要驗證後設 SERVER_STOP=1
     server_stop: bool = _IS_REAL and _bool("SERVER_STOP", "1" if SPEC.kind == "stock" else "0")
     server_stop_buffer_pct: float = float(_env("SERVER_STOP_BUFFER_PCT", "0.3"))
-    # [R236] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
+    # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
     # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
     real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")
     real_products: tuple = tuple(sorted(_REAL_LIST))

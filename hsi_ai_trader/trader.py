@@ -456,7 +456,7 @@ class Trader:
                 return 0
             log.warning("查唔到可開數量（模擬盤照開）：%s", e)
             return n_open
-        if self.cfg.real_size_max:              # [R236] 用盡槓桿：可開數量平均分畀未有倉嘅真倉美股
+        if self.cfg.real_size_max:              # [R235] 用盡槓桿：可開數量平均分畀未有倉嘅真倉美股
             peers = self._peer_states()
             slots = 1 + sum(1 for p in self.cfg.real_products
                             if p != self.cfg.product and p in SPECS and SPECS[p].kind == "stock"
