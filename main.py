@@ -7991,12 +7991,12 @@ def _lf_group(prods, total, real):
            + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金"
            + ("" if real else "同滑價") + "；樣本少時只供參考。</p></div>")
     secs = "".join(_lf_product_section(p, prods[p], real) for p in LONGFEI_PRODUCTS if p in prods)
-    kind = "real" if real else "sim"            # [R250] 真倉／模擬倉用唔同顏色框，一眼分得開
+    kind = "real" if real else "sim"            # [R260] 真倉／模擬倉用唔同顏色框，一眼分得開
     banner = (f"<div class='lf-banner' id='lf-{kind}-top'>{'💰 真倉（真金白銀）' if real else '🧪 模擬倉（前向測試）'}</div>")
     return f"<div class='lf-grp lf-{kind}'>" + banner + overview + _lf_period_html(prods, real) + tot + secs + "</div>"
 
 
-LONGFEI_CSS = (   # [R250] 使用者 10-20：真倉／模擬倉各區「全部都一樣款，好難搵」→ 分色框
+LONGFEI_CSS = (   # [R260] 使用者 10-20：真倉／模擬倉各區「全部都一樣款，好難搵」→ 分色框
     ".lf-grp{margin-bottom:28px}"
     ".lf-banner{font-size:20px;font-weight:700;padding:10px 18px;border-radius:12px;margin:8px 0 14px;color:#fff}"
     ".lf-real .lf-banner{background:#b45309}.lf-sim .lf-banner{background:#1d4ed8}"
