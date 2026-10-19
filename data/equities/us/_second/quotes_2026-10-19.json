@@ -1,0 +1,4753 @@
+{
+ "n_market": 6963,
+ "quotes": {
+  "A": {
+   "close": 172.97,
+   "industry": "Biotechnology: Laboratory Analytical Instruments",
+   "market_cap": 48765233876.0,
+   "name": "Agilent Technologies Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "AAL": {
+   "close": 11.88,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 7864203018.0,
+   "name": "American Airlines Group Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AAP": {
+   "close": 44.45,
+   "industry": "Auto & Home Supply Stores",
+   "market_cap": 2684780000.0,
+   "name": "Advance Auto Parts Inc.",
+   "sector": "Consumer Discretionary"
+  },
+  "AAPL": {
+   "close": 343.46,
+   "industry": "Computer Manufacturing",
+   "market_cap": 5012517062800.0,
+   "name": "Apple Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ABBV": {
+   "close": 285.42,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 504370615485.0,
+   "name": "AbbVie Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "ABNB": {
+   "close": 173.7,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 104009072963.0,
+   "name": "Airbnb Inc. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ABT": {
+   "close": 104.89,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 181499903917.0,
+   "name": "Abbott Laboratories Common Stock",
+   "sector": "Health Care"
+  },
+  "ACGL": {
+   "close": 101.27,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 34556273590.0,
+   "name": "Arch Capital Group Ltd. Common Stock",
+   "sector": "Finance"
+  },
+  "ACN": {
+   "close": 229.68,
+   "industry": "Business Services",
+   "market_cap": 153313745033.0,
+   "name": "Accenture plc Class A Ordinary Shares (Ireland)",
+   "sector": "Consumer Discretionary"
+  },
+  "ADBE": {
+   "close": 245.2,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 95431840000.0,
+   "name": "Adobe Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ADI": {
+   "close": 395.44,
+   "industry": "Semiconductors",
+   "market_cap": 191616567480.0,
+   "name": "Analog Devices Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ADM": {
+   "close": 82.61,
+   "industry": "Packaged Foods",
+   "market_cap": 39814681152.0,
+   "name": "Archer-Daniels-Midland Company Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "ADP": {
+   "close": 288.9,
+   "industry": "EDP Services",
+   "market_cap": 114477072217.0,
+   "name": "Automatic Data Processing Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ADSK": {
+   "close": 239.9,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 50139100000.0,
+   "name": "Autodesk Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ADT": {
+   "close": 6.87,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 5018942034.0,
+   "name": "ADT Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AEE": {
+   "close": 106.08,
+   "industry": "Power Generation",
+   "market_cap": 29367532066.0,
+   "name": "Ameren Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "AEP": {
+   "close": 127.14,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 69214679333.0,
+   "name": "American Electric Power Company Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "AES": {
+   "close": 14.95,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 10665907519.0,
+   "name": "The AES Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "AFL": {
+   "close": 119.97,
+   "industry": "Accident &Health Insurance",
+   "market_cap": 60146155461.0,
+   "name": "AFLAC Incorporated Common Stock",
+   "sector": "Finance"
+  },
+  "AIG": {
+   "close": 80.74,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 42218394465.0,
+   "name": "American International Group Inc. New Common Stock",
+   "sector": "Finance"
+  },
+  "AIV": {
+   "close": 1.7,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 246902727.0,
+   "name": "Apartment Investment and Management Company Common Stock",
+   "sector": "Real Estate"
+  },
+  "AIZ": {
+   "close": 283.31,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 13973916429.0,
+   "name": "Assurant Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "AJG": {
+   "close": 254.88,
+   "industry": "Specialty Insurers",
+   "market_cap": 65325744000.0,
+   "name": "Arthur J. Gallagher & Co. Common Stock",
+   "sector": "Finance"
+  },
+  "AKAM": {
+   "close": 87.81,
+   "industry": "Business Services",
+   "market_cap": 12619755436.0,
+   "name": "Akamai Technologies Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ALAB": {
+   "close": 285.82,
+   "industry": "Semiconductors",
+   "market_cap": 49585512425.0,
+   "name": "Astera Labs Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ALB": {
+   "close": 95.48,
+   "industry": "Major Chemicals",
+   "market_cap": 11267122842.0,
+   "name": "Albemarle Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "ALGN": {
+   "close": 147.31,
+   "industry": "Industrial Specialties",
+   "market_cap": 10464880598.0,
+   "name": "Align Technology Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "ALK": {
+   "close": 35.13,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 3920617606.0,
+   "name": "Alaska Air Group Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ALL": {
+   "close": 247.88,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 62678428646.0,
+   "name": "Allstate Corporation (The) Common Stock",
+   "sector": "Finance"
+  },
+  "ALLE": {
+   "close": 156.54,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 13311658480.0,
+   "name": "Allegion plc Ordinary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "ALNY": {
+   "close": 231.83,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 31020967826.0,
+   "name": "Alnylam Pharmaceuticals Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "AMAT": {
+   "close": 409.29,
+   "industry": "Semiconductors",
+   "market_cap": 324811497445.0,
+   "name": "Applied Materials Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "AMCR": {
+   "close": 43.85,
+   "industry": "Miscellaneous manufacturing industries",
+   "market_cap": 20273858507.0,
+   "name": "Amcor plc Ordinary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "AMD": {
+   "close": 528.75,
+   "industry": "Semiconductors",
+   "market_cap": 863171178458.0,
+   "name": "Advanced Micro Devices Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "AME": {
+   "close": 248.17,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 56895762923.0,
+   "name": "AMETEK Inc.",
+   "sector": "Industrials"
+  },
+  "AMG": {
+   "close": 383.76,
+   "industry": "Investment Managers",
+   "market_cap": 9924007888.0,
+   "name": "Affiliated Managers Group Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "AMGN": {
+   "close": 432.49,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 233817935842.0,
+   "name": "Amgen Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "AMP": {
+   "close": 500.8,
+   "industry": "Investment Managers",
+   "market_cap": 45020459667.0,
+   "name": "Ameriprise Financial Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "AMT": {
+   "close": 185.27,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 86328418093.0,
+   "name": "American Tower Corporation (REIT) Common Stock",
+   "sector": "Real Estate"
+  },
+  "AMTM": {
+   "close": 19.52,
+   "industry": "Business Services",
+   "market_cap": 4772765182.0,
+   "name": "Amentum Holdings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AMZN": {
+   "close": 250.0,
+   "industry": "Catalog/Specialty Distribution",
+   "market_cap": 2696578393000.0,
+   "name": "Amazon.com Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AN": {
+   "close": 161.73,
+   "industry": "Retail-Auto Dealers and Gas Stations",
+   "market_cap": 5346924154.0,
+   "name": "AutoNation Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ANET": {
+   "close": 176.98,
+   "industry": "Computer Communications Equipment",
+   "market_cap": 223211538203.0,
+   "name": "Arista Networks Inc. Common Stock",
+   "sector": "Telecommunications"
+  },
+  "ANF": {
+   "close": 153.26,
+   "industry": "Clothing/Shoe/Accessory Stores",
+   "market_cap": 6503492619.0,
+   "name": "Abercrombie & Fitch Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AON": {
+   "close": 292.55,
+   "industry": "Specialty Insurers",
+   "market_cap": 62057295717.0,
+   "name": "Aon plc Class A Ordinary Shares (Ireland)",
+   "sector": "Finance"
+  },
+  "AOS": {
+   "close": 59.22,
+   "industry": "Consumer Electronics/Appliances",
+   "market_cap": 8048505693.0,
+   "name": "A.O. Smith Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "APA": {
+   "close": 49.15,
+   "industry": "Oil & Gas Production",
+   "market_cap": 17219776717.0,
+   "name": "APA Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "APC": {
+   "close": 16.36,
+   "industry": "Oil Refining/Marketing",
+   "market_cap": 205648848.0,
+   "name": "ARKO Petroleum Corp. Class A Common Stock",
+   "sector": "Energy"
+  },
+  "APD": {
+   "close": 299.59,
+   "industry": "Major Chemicals",
+   "market_cap": 66714357933.0,
+   "name": "Air Products and Chemicals Inc. Common Stock",
+   "sector": "Basic Materials"
+  },
+  "APH": {
+   "close": 79.35,
+   "industry": "Electrical Products",
+   "market_cap": 195674474626.0,
+   "name": "Amphenol Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "APO": {
+   "close": 110.78,
+   "industry": "Investment Managers",
+   "market_cap": 65420371154.0,
+   "name": "Apollo Global Management Inc. (New) Common Stock",
+   "sector": "Finance"
+  },
+  "APP": {
+   "close": 266.13,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 89060670630.0,
+   "name": "Applovin Corporation Class A Common Stock",
+   "sector": "Technology"
+  },
+  "APTV": {
+   "close": 44.86,
+   "industry": "Auto Parts:O.E.M.",
+   "market_cap": 9314431229.0,
+   "name": "Aptiv PLC Ordinary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "ARE": {
+   "close": 41.62,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 7252183863.0,
+   "name": "Alexandria Real Estate Equities Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "ARES": {
+   "close": 112.27,
+   "industry": "Investment Managers",
+   "market_cap": 37080224500.0,
+   "name": "Ares Management Corporation Class A Common Stock",
+   "sector": "Finance"
+  },
+  "ARM": {
+   "close": 227.8,
+   "industry": "Semiconductors",
+   "market_cap": 242391786406.0,
+   "name": "Arm Holdings plc American Depositary Shares",
+   "sector": "Technology"
+  },
+  "ASH": {
+   "close": 71.15,
+   "industry": "Specialty Chemicals",
+   "market_cap": 3258198276.0,
+   "name": "Ashland Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ASML": {
+   "close": 1641.52,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 632670805451.0,
+   "name": "ASML Holding N.V. New York Registry Shares",
+   "sector": "Technology"
+  },
+  "ATI": {
+   "close": 185.59,
+   "industry": "Steel/Iron Ore",
+   "market_cap": 25271861381.0,
+   "name": "ATI Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "ATO": {
+   "close": 167.34,
+   "industry": "Oil/Gas Transmission",
+   "market_cap": 28278544459.0,
+   "name": "Atmos Energy Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "AVGO": {
+   "close": 328.75,
+   "industry": "Semiconductors",
+   "market_cap": 1569330818119.0,
+   "name": "Broadcom Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "AVY": {
+   "close": 175.31,
+   "industry": "Containers/Packaging",
+   "market_cap": 13286419174.0,
+   "name": "Avery Dennison Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AWK": {
+   "close": 134.94,
+   "industry": "Water Supply",
+   "market_cap": 26816489776.0,
+   "name": "American Water Works Company Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "AXON": {
+   "close": 390.29,
+   "industry": "Ordnance And Accessories",
+   "market_cap": 31706150700.0,
+   "name": "Axon Enterprise Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "AXP": {
+   "close": 313.59,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 211770410530.0,
+   "name": "American Express Company Common Stock",
+   "sector": "Finance"
+  },
+  "AYI": {
+   "close": 303.25,
+   "industry": "Building Products",
+   "market_cap": 9077954628.0,
+   "name": "Acuity Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "AZN": {
+   "close": 165.41,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 256505565991.0,
+   "name": "AstraZeneca PLC Ordinary Shares",
+   "sector": "Health Care"
+  },
+  "AZO": {
+   "close": 3120.59,
+   "industry": "Auto & Home Supply Stores",
+   "market_cap": 50944739559.0,
+   "name": "AutoZone Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BA": {
+   "close": 190.21,
+   "industry": "Aerospace",
+   "market_cap": 150336281504.0,
+   "name": "Boeing Company (The) Common Stock",
+   "sector": "Industrials"
+  },
+  "BAC": {
+   "close": 51.23,
+   "industry": "Major Banks",
+   "market_cap": 358238498739.0,
+   "name": "Bank of America Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "BALL": {
+   "close": 63.2,
+   "industry": "Containers/Packaging",
+   "market_cap": 16729252162.0,
+   "name": "Ball Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "BATRA": {
+   "close": 54.0,
+   "industry": "Services-Misc. Amusement & Recreation",
+   "market_cap": 3465066438.0,
+   "name": "Atlanta Braves Holdings Inc. Series A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BATRK": {
+   "close": 48.82,
+   "industry": "Services-Misc. Amusement & Recreation",
+   "market_cap": 3132676732.0,
+   "name": "Atlanta Braves Holdings Inc. Series C Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BAX": {
+   "close": 25.28,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 13069658855.0,
+   "name": "Baxter International Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "BBWI": {
+   "close": 20.14,
+   "industry": "Other Specialty Stores",
+   "market_cap": 4061136604.0,
+   "name": "Bath & Body Works Inc.",
+   "sector": "Consumer Discretionary"
+  },
+  "BBY": {
+   "close": 92.63,
+   "industry": "Consumer Electronics/Video Chains",
+   "market_cap": 19427076666.0,
+   "name": "Best Buy Co. Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BC": {
+   "close": 64.37,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 4171010440.0,
+   "name": "Brunswick Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "BDX": {
+   "close": 191.75,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 52230168900.0,
+   "name": "Becton Dickinson and Company Common Stock",
+   "sector": "Health Care"
+  },
+  "BEAM": {
+   "close": 23.47,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 2424161498.0,
+   "name": "Beam Therapeutics Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "BEN": {
+   "close": 30.98,
+   "industry": "Investment Managers",
+   "market_cap": 15740222672.0,
+   "name": "Franklin Templeton Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "BF-B": {
+   "close": 28.88,
+   "industry": "",
+   "market_cap": null,
+   "name": "Brown Forman Corporation",
+   "sector": ""
+  },
+  "BFH": {
+   "close": 102.56,
+   "industry": "Business Services",
+   "market_cap": 3940280126.0,
+   "name": "Bread Financial Holdings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BG": {
+   "close": 106.14,
+   "industry": "Packaged Foods",
+   "market_cap": 20391523715.0,
+   "name": "Bunge Limited Common Shares",
+   "sector": "Consumer Staples"
+  },
+  "BHF": {
+   "close": 47.77,
+   "industry": "Life Insurance",
+   "market_cap": 2747327365.0,
+   "name": "Brighthouse Financial Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "BIDU": {
+   "close": 80.14,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 27267848092.0,
+   "name": "Baidu Inc. ADS",
+   "sector": "Technology"
+  },
+  "BIIB": {
+   "close": 232.65,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 34374967635.0,
+   "name": "Biogen Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "BIO": {
+   "close": 353.7,
+   "industry": "Biotechnology: Laboratory Analytical Instruments",
+   "market_cap": 9457292498.0,
+   "name": "Bio-Rad Laboratories Inc. Class A Common Stock",
+   "sector": "Industrials"
+  },
+  "BKNG": {
+   "close": 163.45,
+   "industry": "Transportation Services",
+   "market_cap": 122813142725.0,
+   "name": "Booking Holdings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BKR": {
+   "close": 55.7,
+   "industry": "Oil and Gas Field Machinery",
+   "market_cap": 55291945755.0,
+   "name": "Baker Hughes Company Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BLDR": {
+   "close": 54.65,
+   "industry": "RETAIL: Building Materials",
+   "market_cap": 5880146375.0,
+   "name": "Builders FirstSource Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BLK": {
+   "close": 1134.38,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 175680590024.0,
+   "name": "BlackRock Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "BMRN": {
+   "close": 54.68,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 10584613142.0,
+   "name": "BioMarin Pharmaceutical Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "BMY": {
+   "close": 59.75,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 122052200696.0,
+   "name": "Bristol-Myers Squibb Company Common Stock",
+   "sector": "Health Care"
+  },
+  "BNY": {
+   "close": 143.3,
+   "industry": "Major Banks",
+   "market_cap": 97229643549.0,
+   "name": "The Bank of New York Mellon Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "BR": {
+   "close": 175.11,
+   "industry": "Business Services",
+   "market_cap": 19769924604.0,
+   "name": "Broadridge Financial Solutions Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BRK-B": {
+   "close": 532.02,
+   "industry": "",
+   "market_cap": 1173801775599.0,
+   "name": "Berkshire Hathaway Inc.",
+   "sector": ""
+  },
+  "BRO": {
+   "close": 69.4,
+   "industry": "Specialty Insurers",
+   "market_cap": 23221958776.0,
+   "name": "Brown & Brown Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "BSX": {
+   "close": 44.39,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 64331298659.0,
+   "name": "Boston Scientific Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "BUD": {
+   "close": 82.59,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 162878468930.0,
+   "name": "Anheuser-Busch Inbev SA Sponsored ADR (Belgium)",
+   "sector": "Consumer Staples"
+  },
+  "BWA": {
+   "close": 58.13,
+   "industry": "Auto Parts:O.E.M.",
+   "market_cap": 11839125158.0,
+   "name": "BorgWarner Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "BX": {
+   "close": 106.61,
+   "industry": "Investment Managers",
+   "market_cap": 80024143404.0,
+   "name": "Blackstone Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "BXP": {
+   "close": 59.2,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 9451964115.0,
+   "name": "BXP Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "C": {
+   "close": 124.26,
+   "industry": "Major Banks",
+   "market_cap": 208438294656.0,
+   "name": "Citigroup Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "CAG": {
+   "close": 14.47,
+   "industry": "Packaged Foods",
+   "market_cap": 6908144651.0,
+   "name": "ConAgra Brands Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "CAH": {
+   "close": 254.06,
+   "industry": "Other Pharmaceuticals",
+   "market_cap": 58829967191.0,
+   "name": "Cardinal Health Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "CARR": {
+   "close": 55.0,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 45337878135.0,
+   "name": "Carrier Global Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "CASY": {
+   "close": 689.22,
+   "industry": "Retail-Auto Dealers and Gas Stations",
+   "market_cap": 25473686300.0,
+   "name": "Casey's General Stores Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CAT": {
+   "close": 730.76,
+   "industry": "Construction/Ag Equipment/Trucks",
+   "market_cap": 335912021886.0,
+   "name": "Caterpillar Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "CB": {
+   "close": 359.79,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 138806931270.0,
+   "name": "Chubb Limited  Common Stock",
+   "sector": "Finance"
+  },
+  "CBOE": {
+   "close": 314.98,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 35220669875.0,
+   "name": "Cboe Global Markets Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "CBRE": {
+   "close": 133.08,
+   "industry": "Real Estate",
+   "market_cap": 38536680658.0,
+   "name": "CBRE Group Inc Common Stock Class A",
+   "sector": "Finance"
+  },
+  "CCEP": {
+   "close": 112.4,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 51027625469.0,
+   "name": "Coca-Cola Europacific Partners plc Ordinary Shares",
+   "sector": "Consumer Staples"
+  },
+  "CCI": {
+   "close": 82.26,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 34997964412.0,
+   "name": "Crown Castle Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "CCL": {
+   "close": 25.9,
+   "industry": "Marine Transportation",
+   "market_cap": 34825402341.0,
+   "name": "Carnival Corporation Ltd. Common Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "CDNS": {
+   "close": 319.51,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 87990817430.0,
+   "name": "Cadence Design Systems Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "CDW": {
+   "close": 150.48,
+   "industry": "Catalog/Specialty Distribution",
+   "market_cap": 18812622264.0,
+   "name": "CDW Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CE": {
+   "close": 47.49,
+   "industry": "Major Chemicals",
+   "market_cap": 5211976496.0,
+   "name": "Celanese Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "CEG": {
+   "close": 271.37,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 96148393439.0,
+   "name": "Constellation Energy Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "CF": {
+   "close": 120.85,
+   "industry": "Agricultural Chemicals",
+   "market_cap": 18289213011.0,
+   "name": "CF Industries Holdings Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "CFG": {
+   "close": 63.36,
+   "industry": "Major Banks",
+   "market_cap": 26685761288.0,
+   "name": "Citizens Financial Group Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "CHD": {
+   "close": 104.53,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 24794924399.0,
+   "name": "Church & Dwight Company Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CHKP": {
+   "close": 137.87,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 14076614410.0,
+   "name": "Check Point Software Technologies Ltd. Ordinary Shares",
+   "sector": "Technology"
+  },
+  "CHRW": {
+   "close": 139.49,
+   "industry": "Integrated Freight & Logistics",
+   "market_cap": 16299581978.0,
+   "name": "C.H. Robinson Worldwide Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "CHTR": {
+   "close": 110.11,
+   "industry": "Cable & Other Pay Television Services",
+   "market_cap": 12616127644.0,
+   "name": "Charter Communications Inc. Class A Common Stock New",
+   "sector": "Telecommunications"
+  },
+  "CI": {
+   "close": 302.3,
+   "industry": "Medical Specialities",
+   "market_cap": 79879898918.0,
+   "name": "The Cigna Group Common Stock",
+   "sector": "Health Care"
+  },
+  "CIEN": {
+   "close": 332.73,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 47183950523.0,
+   "name": "Ciena Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "CINF": {
+   "close": 171.25,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 26283115206.0,
+   "name": "Cincinnati Financial Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "CL": {
+   "close": 94.11,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 75021934937.0,
+   "name": "Colgate-Palmolive Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CLF": {
+   "close": 12.12,
+   "industry": "Metal Mining",
+   "market_cap": 6914945370.0,
+   "name": "Cleveland-Cliffs Inc. Common Stock",
+   "sector": "Basic Materials"
+  },
+  "CLX": {
+   "close": 87.09,
+   "industry": "Specialty Chemicals",
+   "market_cap": 10532447049.0,
+   "name": "Clorox Company (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CMCSA": {
+   "close": 21.9,
+   "industry": "Cable & Other Pay Television Services",
+   "market_cap": 77715140949.0,
+   "name": "Comcast Corporation Class A Common Stock",
+   "sector": "Telecommunications"
+  },
+  "CME": {
+   "close": 293.87,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 105669558018.0,
+   "name": "CME Group Inc. Class A Common Stock",
+   "sector": "Finance"
+  },
+  "CMG": {
+   "close": 29.89,
+   "industry": "Restaurants",
+   "market_cap": 37823344020.0,
+   "name": "Chipotle Mexican Grill Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CMI": {
+   "close": 531.33,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 73145271878.0,
+   "name": "Cummins Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "CMS": {
+   "close": 68.7,
+   "industry": "Power Generation",
+   "market_cap": 21542749243.0,
+   "name": "CMS Energy Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "CNC": {
+   "close": 69.16,
+   "industry": "Medical Specialities",
+   "market_cap": 34164694200.0,
+   "name": "Centene Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "CNP": {
+   "close": 40.55,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 26711107678.0,
+   "name": "CenterPoint Energy Inc (Holding Co) Common Stock",
+   "sector": "Utilities"
+  },
+  "CNX": {
+   "close": 35.91,
+   "industry": "Oil & Gas Production",
+   "market_cap": 5312656005.0,
+   "name": "CNX Resources Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "COF": {
+   "close": 201.74,
+   "industry": "Major Banks",
+   "market_cap": 123764430815.0,
+   "name": "Capital One Financial Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "COHR": {
+   "close": 232.9,
+   "industry": "Electronic Components",
+   "market_cap": 45866082081.0,
+   "name": "Coherent Corp. Common Stock",
+   "sector": "Technology"
+  },
+  "COIN": {
+   "close": 173.16,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 45686001587.0,
+   "name": "Coinbase Global Inc. Class A Common Stock",
+   "sector": "Finance"
+  },
+  "COO": {
+   "close": 57.94,
+   "industry": "Ophthalmic Goods",
+   "market_cap": 11017597734.0,
+   "name": "The Cooper Companies Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "COP": {
+   "close": 146.51,
+   "industry": "Integrated oil Companies",
+   "market_cap": 176007954048.0,
+   "name": "ConocoPhillips Common Stock",
+   "sector": "Energy"
+  },
+  "COR": {
+   "close": 340.92,
+   "industry": "Other Pharmaceuticals",
+   "market_cap": 65056797092.0,
+   "name": "Cencora Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "COST": {
+   "close": 989.11,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 438303670389.0,
+   "name": "Costco Wholesale Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "COTY": {
+   "close": 3.2,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 2818196685.0,
+   "name": "Coty Inc. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CPAY": {
+   "close": 399.84,
+   "industry": "Business Services",
+   "market_cap": 26253334064.0,
+   "name": "Corpay Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CPB": {
+   "close": 19.87,
+   "industry": "Packaged Foods",
+   "market_cap": 5925923350.0,
+   "name": "The Campbell's Company Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "CPRI": {
+   "close": 15.95,
+   "industry": "Apparel",
+   "market_cap": 1812743307.0,
+   "name": "Capri Holdings Limited Ordinary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "CPRT": {
+   "close": 27.87,
+   "industry": "Retail-Auto Dealers and Gas Stations",
+   "market_cap": 25816829697.0,
+   "name": "Copart Inc. (DE) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CPT": {
+   "close": 98.59,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 9912174517.0,
+   "name": "Camden Property Trust Common Stock",
+   "sector": "Real Estate"
+  },
+  "CRH": {
+   "close": 83.63,
+   "industry": "Building Materials",
+   "market_cap": 55976856698.0,
+   "name": "CRH PLC Ordinary Shares",
+   "sector": "Industrials"
+  },
+  "CRL": {
+   "close": 300.15,
+   "industry": "Biotechnology: Commercial Physical & Biological Resarch",
+   "market_cap": 14328822431.0,
+   "name": "Charles River Laboratories International Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "CRM": {
+   "close": 240.7,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 198096100000.0,
+   "name": "Salesforce Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "CRWD": {
+   "close": 227.39,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 232832543722.0,
+   "name": "CrowdStrike Holdings Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "CRWV": {
+   "close": 61.39,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 33858831997.0,
+   "name": "CoreWeave Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "CSCO": {
+   "close": 107.39,
+   "industry": "Computer Communications Equipment",
+   "market_cap": 423394404291.0,
+   "name": "Cisco Systems Inc. Common Stock (DE)",
+   "sector": "Telecommunications"
+  },
+  "CSGP": {
+   "close": 32.31,
+   "industry": "Real Estate",
+   "market_cap": 13091934068.0,
+   "name": "CoStar Group Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "CSX": {
+   "close": 48.68,
+   "industry": "Railroads",
+   "market_cap": 90178478960.0,
+   "name": "CSX Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "CTAS": {
+   "close": 213.69,
+   "industry": "Garments and Clothing",
+   "market_cap": 84850976623.0,
+   "name": "Cintas Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "CTSH": {
+   "close": 66.03,
+   "industry": "EDP Services",
+   "market_cap": 29742831120.0,
+   "name": "Cognizant Technology Solutions Corporation Class A Common Stock",
+   "sector": "Technology"
+  },
+  "CTVA": {
+   "close": 12.88,
+   "industry": "Farming/Seeds/Milling",
+   "market_cap": 8593484480.0,
+   "name": "Corteva Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "CVNA": {
+   "close": 58.83,
+   "industry": "Retail-Auto Dealers and Gas Stations",
+   "market_cap": 64740283589.0,
+   "name": "Carvana Co. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "CVS": {
+   "close": 92.36,
+   "industry": "Retail-Drug Stores and Proprietary Stores",
+   "market_cap": 118125703281.0,
+   "name": "CVS Health Corporation Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "CVX": {
+   "close": 224.99,
+   "industry": "Integrated oil Companies",
+   "market_cap": 444528778937.0,
+   "name": "Chevron Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "CZR": {
+   "close": 28.8,
+   "industry": "Hotels/Resorts",
+   "market_cap": 5867146714.0,
+   "name": "Caesars Entertainment Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "D": {
+   "close": 63.56,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 55902669318.0,
+   "name": "Dominion Energy Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "DAL": {
+   "close": 75.37,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 49586856081.0,
+   "name": "Delta Air Lines Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DASH": {
+   "close": 189.15,
+   "industry": "Business Services",
+   "market_cap": 81958304784.0,
+   "name": "DoorDash Inc. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DD": {
+   "close": 130.45,
+   "industry": "Major Chemicals",
+   "market_cap": 17616356089.0,
+   "name": "DuPont de Nemours Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "DDOG": {
+   "close": 247.11,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 88731029181.0,
+   "name": "Datadog Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "DE": {
+   "close": 641.86,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 173061766946.0,
+   "name": "Deere & Company Common Stock",
+   "sector": "Industrials"
+  },
+  "DECK": {
+   "close": 85.71,
+   "industry": "Shoe Manufacturing",
+   "market_cap": 11692063396.0,
+   "name": "Deckers Outdoor Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DELL": {
+   "close": 451.71,
+   "industry": "Computer Manufacturing",
+   "market_cap": 287202977303.0,
+   "name": "Dell Technologies Inc. Class C Common Stock",
+   "sector": "Technology"
+  },
+  "DG": {
+   "close": 134.36,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 29642071904.0,
+   "name": "Dollar General Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DGX": {
+   "close": 235.0,
+   "industry": "Medical Specialities",
+   "market_cap": 25937739600.0,
+   "name": "Quest Diagnostics Incorporated Common Stock",
+   "sector": "Health Care"
+  },
+  "DHI": {
+   "close": 139.39,
+   "industry": "Homebuilding",
+   "market_cap": 38987559607.0,
+   "name": "D.R. Horton Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DHR": {
+   "close": 229.04,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 161011925808.0,
+   "name": "Danaher Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "DINO": {
+   "close": 125.29,
+   "industry": "Natural Gas Distribution",
+   "market_cap": 22274538441.0,
+   "name": "HF Sinclair Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "DIS": {
+   "close": 110.59,
+   "industry": "Services-Misc. Amusement & Recreation",
+   "market_cap": 190954304492.0,
+   "name": "Walt Disney Company (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DLR": {
+   "close": 175.97,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 65115265891.0,
+   "name": "Digital Realty Trust Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "DLTR": {
+   "close": 124.18,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 23299930530.0,
+   "name": "Dollar Tree Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DOC": {
+   "close": 18.98,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 13087227395.0,
+   "name": "Healthpeak Properties Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "DOCU": {
+   "close": 74.65,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 13952268042.0,
+   "name": "DocuSign Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "DOV": {
+   "close": 195.8,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 26370388055.0,
+   "name": "Dover Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "DOW": {
+   "close": 29.93,
+   "industry": "Major Chemicals",
+   "market_cap": 21619657480.0,
+   "name": "Dow Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "DPZ": {
+   "close": 308.64,
+   "industry": "Food Distributors",
+   "market_cap": 10153038724.0,
+   "name": "Domino's Pizza Inc Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DRI": {
+   "close": 216.35,
+   "industry": "Restaurants",
+   "market_cap": 24478536512.0,
+   "name": "Darden Restaurants Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "DTE": {
+   "close": 129.73,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 26995265191.0,
+   "name": "DTE Energy Company Common Stock",
+   "sector": "Utilities"
+  },
+  "DUK": {
+   "close": 121.47,
+   "industry": "Power Generation",
+   "market_cap": 94710425384.0,
+   "name": "Duke Energy Corporation (Holding Company) Common Stock",
+   "sector": "Utilities"
+  },
+  "DVA": {
+   "close": 187.31,
+   "industry": "Misc Health and Biotechnology Services",
+   "market_cap": 11950378000.0,
+   "name": "DaVita Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "DVN": {
+   "close": 50.73,
+   "industry": "Oil & Gas Production",
+   "market_cap": 55803000000.0,
+   "name": "Devon Energy Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "DXC": {
+   "close": 13.62,
+   "industry": "EDP Services",
+   "market_cap": 2176185744.0,
+   "name": "DXC Technology Company Common Stock",
+   "sector": "Technology"
+  },
+  "DXCM": {
+   "close": 86.04,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 32468120221.0,
+   "name": "DexCom Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "DYN": {
+   "close": 14.25,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 2661136642.0,
+   "name": "Dyne Therapeutics Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "EBAY": {
+   "close": 120.28,
+   "industry": "Business Services",
+   "market_cap": 53524600000.0,
+   "name": "eBay Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ECHO": {
+   "close": 85.37,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 24826948602.0,
+   "name": "EchoStar  Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ECL": {
+   "close": 288.89,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 80984130121.0,
+   "name": "Ecolab Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ED": {
+   "close": 112.26,
+   "industry": "Power Generation",
+   "market_cap": 41516962341.0,
+   "name": "Consolidated Edison Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "EFX": {
+   "close": 161.25,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 18944439480.0,
+   "name": "Equifax Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "EG": {
+   "close": 389.1,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 14919157799.0,
+   "name": "Everest Group Ltd. Common Stock",
+   "sector": "Finance"
+  },
+  "EIX": {
+   "close": 55.93,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 21522645845.0,
+   "name": "Edison International Common Stock",
+   "sector": "Utilities"
+  },
+  "EL": {
+   "close": 104.54,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 37877222899.0,
+   "name": "Estee Lauder Companies Inc. (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ELV": {
+   "close": 428.26,
+   "industry": "Medical Specialities",
+   "market_cap": 92876442135.0,
+   "name": "Elevance Health Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "EME": {
+   "close": 721.66,
+   "industry": "Engineering & Construction",
+   "market_cap": 31832351156.0,
+   "name": "EMCOR Group Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "EMN": {
+   "close": 62.33,
+   "industry": "Major Chemicals",
+   "market_cap": 7129144651.0,
+   "name": "Eastman Chemical Company Common Stock",
+   "sector": "Industrials"
+  },
+  "EMR": {
+   "close": 161.47,
+   "industry": "Consumer Electronics/Appliances",
+   "market_cap": 90067966000.0,
+   "name": "Emerson Electric Company Common Stock",
+   "sector": "Technology"
+  },
+  "ENPH": {
+   "close": 30.62,
+   "industry": "Semiconductors",
+   "market_cap": 4046269122.0,
+   "name": "Enphase Energy Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "EOG": {
+   "close": 158.01,
+   "industry": "Oil & Gas Production",
+   "market_cap": 82880855100.0,
+   "name": "EOG Resources Inc. Common Stock",
+   "sector": "Energy"
+  },
+  "EPAM": {
+   "close": 122.19,
+   "industry": "EDP Services",
+   "market_cap": 6303413208.0,
+   "name": "EPAM Systems Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "EQ": {
+   "close": 1.19,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 75455618.0,
+   "name": "Equillium Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "EQIX": {
+   "close": 985.98,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 97288308962.0,
+   "name": "Equinix Inc. Common Stock REIT",
+   "sector": "Real Estate"
+  },
+  "EQT": {
+   "close": 54.3,
+   "industry": "Oil & Gas Production",
+   "market_cap": 33965518800.0,
+   "name": "EQT Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "ERIE": {
+   "close": 243.71,
+   "industry": "Specialty Insurers",
+   "market_cap": 11256737762.0,
+   "name": "Erie Indemnity Company Class A Common Stock",
+   "sector": "Finance"
+  },
+  "ES": {
+   "close": 66.85,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 25180707305.0,
+   "name": "Eversource Energy (D/B/A) Common Stock",
+   "sector": "Utilities"
+  },
+  "ESS": {
+   "close": 269.43,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 17315845520.0,
+   "name": "Essex Property Trust Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "ETN": {
+   "close": 391.25,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 151961500000.0,
+   "name": "Eaton Corporation PLC Ordinary Shares",
+   "sector": "Technology"
+  },
+  "ETR": {
+   "close": 105.11,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 49047636755.0,
+   "name": "Entergy Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "ETSY": {
+   "close": 85.14,
+   "industry": "Business Services",
+   "market_cap": 7814298025.0,
+   "name": "Etsy Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "EVRG": {
+   "close": 83.3,
+   "industry": "Power Generation",
+   "market_cap": 19206245428.0,
+   "name": "Evergy Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "EW": {
+   "close": 86.6,
+   "industry": "Industrial Specialties",
+   "market_cap": 49916240000.0,
+   "name": "Edwards Lifesciences Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "EXC": {
+   "close": 43.5,
+   "industry": "Power Generation",
+   "market_cap": 44903047565.0,
+   "name": "Exelon Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "EXE": {
+   "close": 93.41,
+   "industry": "Oil & Gas Production",
+   "market_cap": 21624768930.0,
+   "name": "Expand Energy Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "EXPD": {
+   "close": 195.91,
+   "industry": "Integrated Freight & Logistics",
+   "market_cap": 25466462756.0,
+   "name": "Expeditors International of Washington Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "EXPE": {
+   "close": 288.95,
+   "industry": "Transportation Services",
+   "market_cap": 33083587704.0,
+   "name": "Expedia Group Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "EXR": {
+   "close": 139.61,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 29495342992.0,
+   "name": "Extra Space Storage Inc Common Stock",
+   "sector": "Real Estate"
+  },
+  "F": {
+   "close": 12.43,
+   "industry": "Auto Manufacturing",
+   "market_cap": 48685122836.0,
+   "name": "Ford Motor Company Common Stock",
+   "sector": "Industrials"
+  },
+  "FANG": {
+   "close": 203.95,
+   "industry": "Oil & Gas Production",
+   "market_cap": 57110966794.0,
+   "name": "Diamondback Energy Inc. Common Stock",
+   "sector": "Energy"
+  },
+  "FAST": {
+   "close": 51.02,
+   "industry": "RETAIL: Building Materials",
+   "market_cap": 58545326174.0,
+   "name": "Fastenal Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FBIN": {
+   "close": 40.04,
+   "industry": "Forest Products",
+   "market_cap": 4779633939.0,
+   "name": "Fortune Brands Innovations Inc. Common Stock",
+   "sector": "Basic Materials"
+  },
+  "FCPT": {
+   "close": 21.99,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 2413543368.0,
+   "name": "Four Corners Property Trust Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "FCX": {
+   "close": 69.54,
+   "industry": "Metal Mining",
+   "market_cap": 99860658549.0,
+   "name": "Freeport-McMoRan Inc. Common Stock",
+   "sector": "Basic Materials"
+  },
+  "FDS": {
+   "close": 301.67,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 10729057357.0,
+   "name": "FactSet Research Systems Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "FDX": {
+   "close": 293.55,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 69474606194.0,
+   "name": "FedEx Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FDXF": {
+   "close": 113.21,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 16926947837.0,
+   "name": "FedEx Freight Holding Company Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FE": {
+   "close": 46.19,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 26727378459.0,
+   "name": "FirstEnergy Corp. Common Stock",
+   "sector": "Utilities"
+  },
+  "FER": {
+   "close": 49.41,
+   "industry": "Military/Government/Technical",
+   "market_cap": 35548407526.0,
+   "name": "Ferrovial N.V. Ordinary Shares",
+   "sector": "Industrials"
+  },
+  "FERG": {
+   "close": 231.61,
+   "industry": "Miscellaneous",
+   "market_cap": 44805583784.0,
+   "name": "Ferguson Enterprises Inc. Common Stock",
+   "sector": "Miscellaneous"
+  },
+  "FFIV": {
+   "close": 442.03,
+   "industry": "Computer Communications Equipment",
+   "market_cap": 25030913259.0,
+   "name": "F5 Inc. Common Stock",
+   "sector": "Telecommunications"
+  },
+  "FHN": {
+   "close": 22.88,
+   "industry": "Major Banks",
+   "market_cap": 10840021375.0,
+   "name": "First Horizon Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "FICO": {
+   "close": 771.19,
+   "industry": "Business Services",
+   "market_cap": 16655880136.0,
+   "name": "Fair Isaac Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FIS": {
+   "close": 36.01,
+   "industry": "Business Services",
+   "market_cap": 18570570071.0,
+   "name": "Fidelity National Information Services Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FISV": {
+   "close": 47.55,
+   "industry": "Business Services",
+   "market_cap": 25285507584.0,
+   "name": "Fiserv Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FITB": {
+   "close": 50.37,
+   "industry": "Major Banks",
+   "market_cap": 45680178449.0,
+   "name": "Fifth Third Bancorp Common Stock",
+   "sector": "Finance"
+  },
+  "FIX": {
+   "close": 1439.07,
+   "industry": "Engineering & Construction",
+   "market_cap": 50647103034.0,
+   "name": "Comfort Systems USA Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "FLEX": {
+   "close": 90.46,
+   "industry": "Electrical Products",
+   "market_cap": 33421391674.0,
+   "name": "Flex Ltd. Ordinary Shares",
+   "sector": "Technology"
+  },
+  "FLR": {
+   "close": 46.95,
+   "industry": "Military/Government/Technical",
+   "market_cap": 6279143096.0,
+   "name": "Fluor Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "FLS": {
+   "close": 70.52,
+   "industry": "Fluid Controls",
+   "market_cap": 8963993246.0,
+   "name": "Flowserve Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "FMC": {
+   "close": 5.66,
+   "industry": "Major Chemicals",
+   "market_cap": 880426392.0,
+   "name": "FMC Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "FOSL": {
+   "close": 6.92,
+   "industry": "Consumer Specialties",
+   "market_cap": 409235320.0,
+   "name": "Fossil Group Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "FOX": {
+   "close": 57.22,
+   "industry": "Broadcasting",
+   "market_cap": 24128164651.0,
+   "name": "Fox Corporation Class B Common Stock",
+   "sector": "Industrials"
+  },
+  "FOXA": {
+   "close": 64.15,
+   "industry": "Broadcasting",
+   "market_cap": 27050362851.0,
+   "name": "Fox Corporation Class A Common Stock",
+   "sector": "Industrials"
+  },
+  "FRT": {
+   "close": 106.32,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 9238052621.0,
+   "name": "Federal Realty Investment Trust Common Stock",
+   "sector": "Real Estate"
+  },
+  "FSLR": {
+   "close": 172.64,
+   "industry": "Semiconductors",
+   "market_cap": 18553584200.0,
+   "name": "First Solar Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "FTI": {
+   "close": 69.67,
+   "industry": "Oil and Gas Field Machinery",
+   "market_cap": 27322092912.0,
+   "name": "TechnipFMC plc Ordinary Share",
+   "sector": "Consumer Discretionary"
+  },
+  "FTNT": {
+   "close": 169.13,
+   "industry": "Computer peripheral equipment",
+   "market_cap": 124092990132.0,
+   "name": "Fortinet Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "FTV": {
+   "close": 57.79,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 17453565435.0,
+   "name": "Fortive Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "GAP": {
+   "close": 23.12,
+   "industry": "Clothing/Shoe/Accessory Stores",
+   "market_cap": 8121365567.0,
+   "name": "Gap Inc. (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "GD": {
+   "close": 344.23,
+   "industry": "Marine Transportation",
+   "market_cap": 93133903235.0,
+   "name": "General Dynamics Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "GDDY": {
+   "close": 105.96,
+   "industry": "EDP Services",
+   "market_cap": 13419590716.0,
+   "name": "GoDaddy Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "GE": {
+   "close": 313.83,
+   "industry": "Consumer Electronics/Appliances",
+   "market_cap": 325618243455.0,
+   "name": "GE Aerospace Common Stock",
+   "sector": "Technology"
+  },
+  "GEHC": {
+   "close": 69.57,
+   "industry": "Medical Electronics",
+   "market_cap": 31423812552.0,
+   "name": "GE HealthCare Technologies Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "GEN": {
+   "close": 24.16,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 14461862693.0,
+   "name": "Gen Digital Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "GEV": {
+   "close": 921.2,
+   "industry": "Consumer Electronics/Appliances",
+   "market_cap": 245346494817.0,
+   "name": "GE Vernova Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "GFS": {
+   "close": 46.68,
+   "industry": "Semiconductors",
+   "market_cap": 26020300388.0,
+   "name": "GlobalFoundries Inc. Ordinary Shares",
+   "sector": "Technology"
+  },
+  "GHC": {
+   "close": 1203.26,
+   "industry": "Other Consumer Services",
+   "market_cap": 5095719465.0,
+   "name": "Graham Holdings Company Common Stock",
+   "sector": "Real Estate"
+  },
+  "GILD": {
+   "close": 156.19,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 193668595659.0,
+   "name": "Gilead Sciences Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "GIS": {
+   "close": 33.13,
+   "industry": "Packaged Foods",
+   "market_cap": 17714185081.0,
+   "name": "General Mills Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "GL": {
+   "close": 168.77,
+   "industry": "Life Insurance",
+   "market_cap": 12969881170.0,
+   "name": "Globe Life Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "GLW": {
+   "close": 132.0,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 113703259692.0,
+   "name": "Corning Incorporated Common Stock",
+   "sector": "Industrials"
+  },
+  "GM": {
+   "close": 83.96,
+   "industry": "Auto Manufacturing",
+   "market_cap": 73670831382.0,
+   "name": "General Motors Company Common Stock",
+   "sector": "Industrials"
+  },
+  "GME": {
+   "close": 26.81,
+   "industry": "Electronics Distribution",
+   "market_cap": 13525671542.0,
+   "name": "GameStop Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "GNRC": {
+   "close": 192.68,
+   "industry": "Metal Fabrications",
+   "market_cap": 11369345637.0,
+   "name": "Generac Holdlings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "GNW": {
+   "close": 9.07,
+   "industry": "Life Insurance",
+   "market_cap": 3427108906.0,
+   "name": "Genworth Financial Inc Common Stock",
+   "sector": "Finance"
+  },
+  "GOOG": {
+   "close": 336.91,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 4120409300000.0,
+   "name": "Alphabet Inc. Class C Capital Stock",
+   "sector": "Technology"
+  },
+  "GOOGL": {
+   "close": 340.59,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 4165415700000.0,
+   "name": "Alphabet Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "GPC": {
+   "close": 133.96,
+   "industry": "Automotive Aftermarket",
+   "market_cap": 18467693182.0,
+   "name": "Genuine Parts Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "GPN": {
+   "close": 83.67,
+   "industry": "Business Services",
+   "market_cap": 22140620691.0,
+   "name": "Global Payments Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "GRMN": {
+   "close": 284.79,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 54922473727.0,
+   "name": "Garmin Ltd. Common Stock (Switzerland)",
+   "sector": "Industrials"
+  },
+  "GS": {
+   "close": 881.26,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 256597715014.0,
+   "name": "Goldman Sachs Group Inc. (The) Common Stock",
+   "sector": "Finance"
+  },
+  "GT": {
+   "close": 4.29,
+   "industry": "Automotive Aftermarket",
+   "market_cap": 1235085582.0,
+   "name": "The Goodyear Tire & Rubber Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "GWW": {
+   "close": 1330.7,
+   "industry": "Office Equipment/Supplies/Services",
+   "market_cap": 62677223519.0,
+   "name": "W.W. Grainger Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "HAL": {
+   "close": 33.5,
+   "industry": "Oilfield Services/Equipment",
+   "market_cap": 27909867295.0,
+   "name": "Halliburton Company Common Stock",
+   "sector": "Energy"
+  },
+  "HAS": {
+   "close": 98.76,
+   "industry": "Recreational Games/Products/Toys",
+   "market_cap": 13929551561.0,
+   "name": "Hasbro Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "HBAN": {
+   "close": 15.27,
+   "industry": "Major Banks",
+   "market_cap": 30851734393.0,
+   "name": "Huntington Bancshares Incorporated Common Stock",
+   "sector": "Finance"
+  },
+  "HCA": {
+   "close": 458.84,
+   "industry": "Hospital/Nursing Management",
+   "market_cap": 99339548260.0,
+   "name": "HCA Healthcare Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "HD": {
+   "close": 309.63,
+   "industry": "RETAIL: Building Materials",
+   "market_cap": 308914638898.0,
+   "name": "Home Depot Inc. (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "HIG": {
+   "close": 135.12,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 36600224910.0,
+   "name": "The Hartford Insurance Group Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "HII": {
+   "close": 272.0,
+   "industry": "Marine Transportation",
+   "market_cap": 10718050656.0,
+   "name": "Huntington Ingalls Industries Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "HLT": {
+   "close": 345.12,
+   "industry": "Hotels/Resorts",
+   "market_cap": 77674401739.0,
+   "name": "Hilton Worldwide Holdings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "HOG": {
+   "close": 26.76,
+   "industry": "Motor Vehicles",
+   "market_cap": 2784980287.0,
+   "name": "Harley-Davidson Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "HON": {
+   "close": 211.41,
+   "industry": "Aerospace",
+   "market_cap": 67004287514.0,
+   "name": "Honeywell International Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "HONA": {
+   "close": 168.09,
+   "industry": "Aerospace",
+   "market_cap": 53276583545.0,
+   "name": "Honeywell Aerospace Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "HOOD": {
+   "close": 98.87,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 88892264332.0,
+   "name": "Robinhood Markets Inc. Class A Common Stock",
+   "sector": "Finance"
+  },
+  "HP": {
+   "close": 37.43,
+   "industry": "Oil & Gas Production",
+   "market_cap": 3740714711.0,
+   "name": "Helmerich & Payne Inc. Common Stock",
+   "sector": "Energy"
+  },
+  "HPE": {
+   "close": 55.13,
+   "industry": "Retail: Computer Software & Peripheral Equipment",
+   "market_cap": 73183133266.0,
+   "name": "Hewlett Packard Enterprise Company Common Stock",
+   "sector": "Technology"
+  },
+  "HPQ": {
+   "close": 30.01,
+   "industry": "Computer Manufacturing",
+   "market_cap": 27062746980.0,
+   "name": "HP Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "HRB": {
+   "close": 48.67,
+   "industry": "Other Consumer Services",
+   "market_cap": 5964852305.0,
+   "name": "H&R Block Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "HRL": {
+   "close": 20.4,
+   "industry": "Meat/Poultry/Fish",
+   "market_cap": 11227156320.0,
+   "name": "Hormel Foods Corporation Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "HSIC": {
+   "close": 86.38,
+   "industry": "Medical Specialities",
+   "market_cap": 9626752298.0,
+   "name": "Henry Schein Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "HST": {
+   "close": 23.97,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 16422431844.0,
+   "name": "Host Hotels & Resorts Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "HSY": {
+   "close": 170.83,
+   "industry": "Specialty Foods",
+   "market_cap": 34324129985.0,
+   "name": "The Hershey Company Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "HUBB": {
+   "close": 461.1,
+   "industry": "Electrical Products",
+   "market_cap": 24361098488.0,
+   "name": "Hubbell Inc Common Stock",
+   "sector": "Technology"
+  },
+  "HUM": {
+   "close": 413.16,
+   "industry": "Medical Specialities",
+   "market_cap": 49612380053.0,
+   "name": "Humana Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "HWM": {
+   "close": 220.96,
+   "industry": "Metal Fabrications",
+   "market_cap": 88119157123.0,
+   "name": "Howmet Aerospace Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "IBKR": {
+   "close": 82.69,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 37465033960.0,
+   "name": "Interactive Brokers Group Inc. Class A Common Stock",
+   "sector": "Finance"
+  },
+  "IBM": {
+   "close": 232.14,
+   "industry": "Computer Manufacturing",
+   "market_cap": 218707077295.0,
+   "name": "International Business Machines Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "ICE": {
+   "close": 161.56,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 90698893320.0,
+   "name": "Intercontinental Exchange Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "IDXX": {
+   "close": 560.36,
+   "industry": "Biotechnology: In Vitro & In Vivo Diagnostic Substances",
+   "market_cap": 44145786162.0,
+   "name": "IDEXX Laboratories Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "IEX": {
+   "close": 235.55,
+   "industry": "Fluid Controls",
+   "market_cap": 17364721503.0,
+   "name": "IDEX Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "IFF": {
+   "close": 90.68,
+   "industry": "Major Chemicals",
+   "market_cap": 23136998645.0,
+   "name": "International Flavors & Fragrances Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "ILMN": {
+   "close": 262.54,
+   "industry": "Medical Specialities",
+   "market_cap": 39643540000.0,
+   "name": "Illumina Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "INCY": {
+   "close": 113.07,
+   "industry": "Biotechnology: Commercial Physical & Biological Resarch",
+   "market_cap": 22919034140.0,
+   "name": "Incyte Corp. Common Stock",
+   "sector": "Health Care"
+  },
+  "INFY": {
+   "close": 12.24,
+   "industry": "EDP Services",
+   "market_cap": 49649847514.0,
+   "name": "Infosys Limited American Depositary Shares",
+   "sector": "Technology"
+  },
+  "INTC": {
+   "close": 89.85,
+   "industry": "Semiconductors",
+   "market_cap": 474863495563.0,
+   "name": "Intel Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "INTU": {
+   "close": 325.15,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 86891785400.0,
+   "name": "Intuit Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "INVH": {
+   "close": 27.07,
+   "industry": "Real Estate",
+   "market_cap": 15988170728.0,
+   "name": "Invitation Homes Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "IP": {
+   "close": 34.05,
+   "industry": "Paper",
+   "market_cap": 18031854925.0,
+   "name": "International Paper Company Common Stock",
+   "sector": "Basic Materials"
+  },
+  "IPGP": {
+   "close": 71.01,
+   "industry": "Semiconductors",
+   "market_cap": 3020377614.0,
+   "name": "IPG Photonics Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "IQV": {
+   "close": 266.9,
+   "industry": "Biotechnology: Commercial Physical & Biological Resarch",
+   "market_cap": 43931740000.0,
+   "name": "IQVIA Holdings Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "IR": {
+   "close": 77.78,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 30178595588.0,
+   "name": "Ingersoll Rand Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "IRM": {
+   "close": 112.51,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 33494543378.0,
+   "name": "Iron Mountain Incorporated (Delaware)Common Stock REIT",
+   "sector": "Real Estate"
+  },
+  "ISRG": {
+   "close": 426.7,
+   "industry": "Industrial Specialties",
+   "market_cap": 150743738815.0,
+   "name": "Intuitive Surgical Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "IT": {
+   "close": 205.35,
+   "industry": "Other Consumer Services",
+   "market_cap": 12967642222.0,
+   "name": "Gartner Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ITT": {
+   "close": 198.42,
+   "industry": "Fluid Controls",
+   "market_cap": 17738748000.0,
+   "name": "ITT Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "ITW": {
+   "close": 272.28,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 77545344000.0,
+   "name": "Illinois Tool Works Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "IVZ": {
+   "close": 28.2,
+   "industry": "Investment Managers",
+   "market_cap": 12450293796.0,
+   "name": "Invesco Ltd Common Stock",
+   "sector": "Finance"
+  },
+  "J": {
+   "close": 141.08,
+   "industry": "Military/Government/Technical",
+   "market_cap": 16511807240.0,
+   "name": "Jacobs Solutions Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "JBHT": {
+   "close": 228.78,
+   "industry": "Trucking Freight/Courier Services",
+   "market_cap": 21485859744.0,
+   "name": "J.B. Hunt Transport Services Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "JBL": {
+   "close": 278.25,
+   "industry": "Electrical Products",
+   "market_cap": 29157007514.0,
+   "name": "Jabil Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "JCI": {
+   "close": 145.47,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 88117211641.0,
+   "name": "Johnson Controls International plc Ordinary Share",
+   "sector": "Industrials"
+  },
+  "JD": {
+   "close": 27.01,
+   "industry": "Other Specialty Stores",
+   "market_cap": 36301440000.0,
+   "name": "JD.com Inc. American Depositary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "JEF": {
+   "close": 44.8,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 10289199738.0,
+   "name": "Jefferies Financial Group Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "JKHY": {
+   "close": 153.19,
+   "industry": "EDP Services",
+   "market_cap": 10740457127.0,
+   "name": "Jack Henry & Associates Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "JNJ": {
+   "close": 255.56,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 615873685449.0,
+   "name": "Johnson & Johnson Common Stock",
+   "sector": "Health Care"
+  },
+  "JPM": {
+   "close": 339.72,
+   "industry": "Major Banks",
+   "market_cap": 903039014165.0,
+   "name": "JP Morgan Chase & Co. Common Stock",
+   "sector": "Finance"
+  },
+  "KBH": {
+   "close": 43.3,
+   "industry": "Homebuilding",
+   "market_cap": 2631026469.0,
+   "name": "KB Home Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "KDP": {
+   "close": 34.62,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 47111797436.0,
+   "name": "Keurig Dr Pepper Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "KEY": {
+   "close": 19.99,
+   "industry": "Major Banks",
+   "market_cap": 21331899794.0,
+   "name": "KeyCorp Common Stock",
+   "sector": "Finance"
+  },
+  "KEYS": {
+   "close": 331.21,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 56386761991.0,
+   "name": "Keysight Technologies Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "KHC": {
+   "close": 23.68,
+   "industry": "Packaged Foods",
+   "market_cap": 28080306589.0,
+   "name": "The Kraft Heinz Company Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "KIM": {
+   "close": 22.91,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 15367784535.0,
+   "name": "Kimco Realty Corporation (HC) Common Stock",
+   "sector": "Real Estate"
+  },
+  "KKR": {
+   "close": 86.21,
+   "industry": "Investment Managers",
+   "market_cap": 77385165162.0,
+   "name": "KKR & Co. Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "KLAC": {
+   "close": 165.74,
+   "industry": "Electronic Components",
+   "market_cap": 216291775984.0,
+   "name": "KLA Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "KMB": {
+   "close": 105.57,
+   "industry": "Containers/Packaging",
+   "market_cap": 35110369042.0,
+   "name": "Kimberly-Clark Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "KMI": {
+   "close": 34.2,
+   "industry": "Natural Gas Distribution",
+   "market_cap": 76156631444.0,
+   "name": "Kinder Morgan Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "KMX": {
+   "close": 53.33,
+   "industry": "Retail-Auto Dealers and Gas Stations",
+   "market_cap": 7569809897.0,
+   "name": "CarMax Inc",
+   "sector": "Consumer Discretionary"
+  },
+  "KO": {
+   "close": 93.9,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 404009373918.0,
+   "name": "Coca-Cola Company (The) Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "KR": {
+   "close": 63.63,
+   "industry": "Food Chains",
+   "market_cap": 37579158981.0,
+   "name": "Kroger Company (The) Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "KSS": {
+   "close": 21.59,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 2447797448.0,
+   "name": "Kohl's Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "KVUE": {
+   "close": 18.91,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 36321826261.0,
+   "name": "Kenvue Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "L": {
+   "close": 110.52,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 22593351614.0,
+   "name": "Loews Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "LAMR": {
+   "close": 150.1,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 15242607568.0,
+   "name": "Lamar Advertising Company Class A Common Stock",
+   "sector": "Real Estate"
+  },
+  "LB": {
+   "close": 81.57,
+   "industry": "Oil & Gas Production",
+   "market_cap": 6287857057.0,
+   "name": "LandBridge Corporation Class A Common Stock",
+   "sector": "Energy"
+  },
+  "LBTYA": {
+   "close": 7.8,
+   "industry": "Cable & Other Pay Television Services",
+   "market_cap": 2660483015.0,
+   "name": "Liberty Global Ltd. Class A Common Shares",
+   "sector": "Telecommunications"
+  },
+  "LBTYK": {
+   "close": 7.67,
+   "industry": "Cable & Other Pay Television Services",
+   "market_cap": 2616141631.0,
+   "name": "Liberty Global Ltd. Class C Common Shares",
+   "sector": "Telecommunications"
+  },
+  "LCID": {
+   "close": 3.13,
+   "industry": "Auto Manufacturing",
+   "market_cap": 1233439651.0,
+   "name": "Lucid Group Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "LDOS": {
+   "close": 124.85,
+   "industry": "EDP Services",
+   "market_cap": 15667702294.0,
+   "name": "Leidos Holdings Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "LEN": {
+   "close": 77.08,
+   "industry": "Homebuilding",
+   "market_cap": 18337350422.0,
+   "name": "Lennar Corporation Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "LH": {
+   "close": 317.95,
+   "industry": "Medical Specialities",
+   "market_cap": 25785745000.0,
+   "name": "Labcorp Holdings Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "LHX": {
+   "close": 248.51,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 46276194222.0,
+   "name": "L3Harris Technologies Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "LIFE": {
+   "close": 37.52,
+   "industry": "Specialty Insurers",
+   "market_cap": 2438199417.0,
+   "name": "Ethos Technologies Inc. Class A Common Stock",
+   "sector": "Finance"
+  },
+  "LII": {
+   "close": 357.73,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 12363390268.0,
+   "name": "Lennox International Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "LILA": {
+   "close": 8.06,
+   "industry": "Cable & Other Pay Television Services",
+   "market_cap": 1578954000.0,
+   "name": "Liberty Latin America Ltd. Class A Common Stock",
+   "sector": "Telecommunications"
+  },
+  "LILAK": {
+   "close": 8.03,
+   "industry": "Cable & Other Pay Television Services",
+   "market_cap": 1573077000.0,
+   "name": "Liberty Latin America Ltd. Class C Common Stock",
+   "sector": "Telecommunications"
+  },
+  "LIN": {
+   "close": 498.43,
+   "industry": "Major Chemicals",
+   "market_cap": 229766342644.0,
+   "name": "Linde plc Ordinary Shares",
+   "sector": "Basic Materials"
+  },
+  "LITE": {
+   "close": 824.13,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 74652049115.0,
+   "name": "Lumentum Holdings Inc. Common Stock",
+   "sector": "Telecommunications"
+  },
+  "LKQ": {
+   "close": 22.23,
+   "industry": "Motor Vehicles",
+   "market_cap": 5624236372.0,
+   "name": "LKQ Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "LLY": {
+   "close": 1257.03,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 1183314071417.0,
+   "name": "Eli Lilly and Company Common Stock",
+   "sector": "Health Care"
+  },
+  "LMT": {
+   "close": 552.09,
+   "industry": "Military/Government/Technical",
+   "market_cap": 127417266824.0,
+   "name": "Lockheed Martin Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "LNC": {
+   "close": 39.83,
+   "industry": "Life Insurance",
+   "market_cap": 7625347393.0,
+   "name": "Lincoln National Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "LNT": {
+   "close": 68.32,
+   "industry": "Power Generation",
+   "market_cap": 17714330636.0,
+   "name": "Alliant Energy Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "LOGI": {
+   "close": 104.41,
+   "industry": "Computer peripheral equipment",
+   "market_cap": 14950293744.0,
+   "name": "Logitech International S.A. Ordinary Shares",
+   "sector": "Technology"
+  },
+  "LOW": {
+   "close": 197.38,
+   "industry": "RETAIL: Building Materials",
+   "market_cap": 110740842270.0,
+   "name": "Lowe's Companies Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "LRCX": {
+   "close": 263.94,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 330300946106.0,
+   "name": "Lam Research Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "LULU": {
+   "close": 97.1,
+   "industry": "Apparel",
+   "market_cap": 10253183614.0,
+   "name": "lululemon athletica inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "LUMN": {
+   "close": 4.65,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 4796221129.0,
+   "name": "Lumen Technologies Inc. Common Stock",
+   "sector": "Telecommunications"
+  },
+  "LUV": {
+   "close": 39.5,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 19323723940.0,
+   "name": "Southwest Airlines Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "LVS": {
+   "close": 38.01,
+   "industry": "Hotels/Resorts",
+   "market_cap": 24619122004.0,
+   "name": "Las Vegas Sands Corp. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "LW": {
+   "close": 53.59,
+   "industry": "Packaged Foods",
+   "market_cap": 7383654155.0,
+   "name": "Lamb Weston Holdings Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "LYB": {
+   "close": 64.01,
+   "industry": "Major Chemicals",
+   "market_cap": 20677659308.0,
+   "name": "LyondellBasell Industries NV Ordinary Shares Class A (Netherlands)",
+   "sector": "Industrials"
+  },
+  "LYV": {
+   "close": 170.51,
+   "industry": "Services-Misc. Amusement & Recreation",
+   "market_cap": 40177929469.0,
+   "name": "Live Nation Entertainment Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "M": {
+   "close": 24.0,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 6268239504.0,
+   "name": "Macy's Inc Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MA": {
+   "close": 617.42,
+   "industry": "Business Services",
+   "market_cap": 540866057155.0,
+   "name": "Mastercard Incorporated Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MAA": {
+   "close": 116.63,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 13531640845.0,
+   "name": "Mid-America Apartment Communities Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "MAC": {
+   "close": 22.96,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 6510523250.0,
+   "name": "Macerich Company (The) Common Stock",
+   "sector": "Real Estate"
+  },
+  "MAR": {
+   "close": 388.05,
+   "industry": "Hotels/Resorts",
+   "market_cap": 101190358058.0,
+   "name": "Marriott International Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MAS": {
+   "close": 72.87,
+   "industry": "Industrial Specialties",
+   "market_cap": 14369048024.0,
+   "name": "Masco Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "MAT": {
+   "close": 17.2,
+   "industry": "Recreational Games/Products/Toys",
+   "market_cap": 4914040000.0,
+   "name": "Mattel Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MBI": {
+   "close": 4.41,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 224982518.0,
+   "name": "MBIA Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "MCD": {
+   "close": 242.97,
+   "industry": "Restaurants",
+   "market_cap": 171935662787.0,
+   "name": "McDonald's Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MCHP": {
+   "close": 73.85,
+   "industry": "Semiconductors",
+   "market_cap": 40101191830.0,
+   "name": "Microchip Technology Incorporated Common Stock",
+   "sector": "Technology"
+  },
+  "MCK": {
+   "close": 1004.84,
+   "industry": "Other Pharmaceuticals",
+   "market_cap": 117154660357.0,
+   "name": "McKesson Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "MCO": {
+   "close": 485.07,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 84014124000.0,
+   "name": "Moody's Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "MDB": {
+   "close": 337.57,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 27193404031.0,
+   "name": "MongoDB Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "MDLZ": {
+   "close": 63.91,
+   "industry": "Packaged Foods",
+   "market_cap": 81568847923.0,
+   "name": "Mondelez International Inc. Class A Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "MDT": {
+   "close": 94.75,
+   "industry": "Biotechnology: Electromedical & Electrotherapeutic Apparatus",
+   "market_cap": 121198315078.0,
+   "name": "Medtronic plc. Ordinary Shares",
+   "sector": "Health Care"
+  },
+  "MELI": {
+   "close": 1834.0,
+   "industry": "Business Services",
+   "market_cap": 92977934868.0,
+   "name": "MercadoLibre Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MET": {
+   "close": 100.76,
+   "industry": "Life Insurance",
+   "market_cap": 64030655165.0,
+   "name": "MetLife Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "META": {
+   "close": 709.325,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 1807009853048.0,
+   "name": "Meta Platforms Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "MGM": {
+   "close": 28.6,
+   "industry": "Hotels/Resorts",
+   "market_cap": 7388041890.0,
+   "name": "MGM Resorts International Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MHK": {
+   "close": 120.29,
+   "industry": "Home Furnishings",
+   "market_cap": 8148221462.0,
+   "name": "Mohawk Industries Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MI": {
+   "close": 0.6399,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 53126096.0,
+   "name": "NFT Limited Class A Ordinary Share",
+   "sector": "Finance"
+  },
+  "MICC": {
+   "close": 18.78,
+   "industry": "Specialty Foods",
+   "market_cap": 11498237898.0,
+   "name": "The Magnum Ice Cream Company N.V. Ordinary Shares",
+   "sector": "Consumer Staples"
+  },
+  "MKC": {
+   "close": 46.35,
+   "industry": "Packaged Foods",
+   "market_cap": 12471138602.0,
+   "name": "McCormick & Company Incorporated Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "MKTX": {
+   "close": 164.64,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 5794157574.0,
+   "name": "MarketAxess Holdings Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "MLM": {
+   "close": 500.84,
+   "industry": "Mining & Quarrying of Nonmetallic Minerals (No Fuels)",
+   "market_cap": 35569822578.0,
+   "name": "Martin Marietta Materials Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "MMI": {
+   "close": 28.04,
+   "industry": "Real Estate",
+   "market_cap": 1061902924.0,
+   "name": "Marcus & Millichap Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "MMM": {
+   "close": 164.75,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 84965268201.0,
+   "name": "3M Company Common Stock",
+   "sector": "Health Care"
+  },
+  "MNST": {
+   "close": 45.73,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 134381290152.0,
+   "name": "Monster Beverage Corporation",
+   "sector": "Consumer Staples"
+  },
+  "MO": {
+   "close": 75.11,
+   "industry": " Medicinal Chemicals and Botanical Products ",
+   "market_cap": 125414466282.0,
+   "name": "Altria Group Inc.",
+   "sector": "Health Care"
+  },
+  "MOH": {
+   "close": 207.36,
+   "industry": "Medical Specialities",
+   "market_cap": 10824192000.0,
+   "name": "Molina Healthcare Inc Common Stock",
+   "sector": "Health Care"
+  },
+  "MOS": {
+   "close": 18.82,
+   "industry": "Agricultural Chemicals",
+   "market_cap": 5982796058.0,
+   "name": "Mosaic Company (The) Common Stock",
+   "sector": "Industrials"
+  },
+  "MPC": {
+   "close": 478.07,
+   "industry": "Integrated oil Companies",
+   "market_cap": 134253894447.0,
+   "name": "Marathon Petroleum Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "MPWR": {
+   "close": 1210.86,
+   "industry": "Semiconductors",
+   "market_cap": 59505292980.0,
+   "name": "Monolithic Power Systems Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "MRK": {
+   "close": 145.95,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 360083700566.0,
+   "name": "Merck & Company Inc. Common Stock (new)",
+   "sector": "Health Care"
+  },
+  "MRNA": {
+   "close": 218.01,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 87037416161.0,
+   "name": "Moderna Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "MRSH": {
+   "close": 188.35,
+   "industry": "Specialty Insurers",
+   "market_cap": 89563123490.0,
+   "name": "Marsh Common Stock",
+   "sector": "Finance"
+  },
+  "MRVL": {
+   "close": 227.83,
+   "industry": "Semiconductors",
+   "market_cap": 199784127000.0,
+   "name": "Marvell Technology Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "MS": {
+   "close": 180.57,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 283597155346.0,
+   "name": "Morgan Stanley Common Stock",
+   "sector": "Finance"
+  },
+  "MSCI": {
+   "close": 569.08,
+   "industry": "Business Services",
+   "market_cap": 41372116000.0,
+   "name": "MSCI Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "MSFT": {
+   "close": 529.05,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 3928484842014.0,
+   "name": "Microsoft Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "MSI": {
+   "close": 463.15,
+   "industry": "Radio And Television Broadcasting And Communications Equipment",
+   "market_cap": 76648447912.0,
+   "name": "Motorola Solutions Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "MSTR": {
+   "close": 136.83,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 57739237152.0,
+   "name": "Strategy Inc Common Stock Class A",
+   "sector": "Technology"
+  },
+  "MTB": {
+   "close": 215.28,
+   "industry": "Major Banks",
+   "market_cap": 31089932883.0,
+   "name": "M&T Bank Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "MTCH": {
+   "close": 42.95,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 9859214806.0,
+   "name": "Match Group Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "MTD": {
+   "close": 1622.29,
+   "industry": "Biotechnology: Laboratory Analytical Instruments",
+   "market_cap": 32505109300.0,
+   "name": "Mettler-Toledo International Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "MTG": {
+   "close": 27.85,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 5712726794.0,
+   "name": "MGIC Investment Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "MTW": {
+   "close": 21.54,
+   "industry": "Construction/Ag Equipment/Trucks",
+   "market_cap": 776774812.0,
+   "name": "Manitowoc Company Inc. (The) Common Stock",
+   "sector": "Industrials"
+  },
+  "MU": {
+   "close": 878.84,
+   "industry": "Semiconductors",
+   "market_cap": 994339975634.0,
+   "name": "Micron Technology Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "MUR": {
+   "close": 41.74,
+   "industry": "Oil & Gas Production",
+   "market_cap": 5984728158.0,
+   "name": "Murphy Oil Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "NAVI": {
+   "close": 9.28,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 870313924.0,
+   "name": "Navient Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "NBIS": {
+   "close": 165.47,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 44983882922.0,
+   "name": "Nebius Group N.V. Class A Ordinary Shares",
+   "sector": "Technology"
+  },
+  "NBR": {
+   "close": 78.2,
+   "industry": "Oil & Gas Production",
+   "market_cap": 1309411142.0,
+   "name": "Nabors Industries Ltd.",
+   "sector": "Energy"
+  },
+  "NCLH": {
+   "close": 15.05,
+   "industry": "Marine Transportation",
+   "market_cap": 6910777082.0,
+   "name": "Norwegian Cruise Line Holdings Ltd. Ordinary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "NDAQ": {
+   "close": 93.97,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 52527103647.0,
+   "name": "Nasdaq Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "NDSN": {
+   "close": 322.31,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 17952462655.0,
+   "name": "Nordson Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "NE": {
+   "close": 44.08,
+   "industry": "Oil & Gas Production",
+   "market_cap": 7037028969.0,
+   "name": "Noble Corporation plc A Ordinary Shares",
+   "sector": "Energy"
+  },
+  "NEE": {
+   "close": 79.8,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 166461061078.0,
+   "name": "NextEra Energy Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "NEM": {
+   "close": 118.6,
+   "industry": "Precious Metals",
+   "market_cap": 124967903341.0,
+   "name": "Newmont Corporation",
+   "sector": "Basic Materials"
+  },
+  "NFLX": {
+   "close": 70.53,
+   "industry": "Consumer Electronics/Video Chains",
+   "market_cap": 293682665348.0,
+   "name": "Netflix Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "NI": {
+   "close": 42.68,
+   "industry": "Power Generation",
+   "market_cap": 20467625068.0,
+   "name": "NiSource Inc Common Stock",
+   "sector": "Utilities"
+  },
+  "NKE": {
+   "close": 37.13,
+   "industry": "Shoe Manufacturing",
+   "market_cap": 55149516821.0,
+   "name": "Nike Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "NKTR": {
+   "close": 35.78,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 1221636325.0,
+   "name": "Nektar Therapeutics  Common Stock",
+   "sector": "Health Care"
+  },
+  "NOC": {
+   "close": 519.86,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 73852884696.0,
+   "name": "Northrop Grumman Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "NOV": {
+   "close": 18.93,
+   "industry": "Oil and Gas Field Machinery",
+   "market_cap": 6748130906.0,
+   "name": "NOV Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "NOW": {
+   "close": 141.97,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 146796980000.0,
+   "name": "ServiceNow Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "NRG": {
+   "close": 103.75,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 21809337611.0,
+   "name": "NRG Energy Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "NSC": {
+   "close": 326.92,
+   "industry": "Railroads",
+   "market_cap": 73428969301.0,
+   "name": "Norfolk Southern Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "NTAP": {
+   "close": 203.8,
+   "industry": "Electronic Components",
+   "market_cap": 40030193219.0,
+   "name": "NetApp Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "NTES": {
+   "close": 126.06,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 80442428916.0,
+   "name": "NetEase Inc. American Depositary Shares",
+   "sector": "Technology"
+  },
+  "NTRS": {
+   "close": 165.54,
+   "industry": "Major Banks",
+   "market_cap": 30286478798.0,
+   "name": "Northern Trust Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "NUE": {
+   "close": 256.29,
+   "industry": "Steel/Iron Ore",
+   "market_cap": 58145967002.0,
+   "name": "Nucor Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "NVDA": {
+   "close": 214.13,
+   "industry": "Semiconductors",
+   "market_cap": 5160533000000.0,
+   "name": "NVIDIA Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "NVR": {
+   "close": 5919.82,
+   "industry": "Homebuilding",
+   "market_cap": 15775491525.0,
+   "name": "NVR Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "NWL": {
+   "close": 5.65,
+   "industry": "Plastic Products",
+   "market_cap": 2406335000.0,
+   "name": "Newell Brands Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "NWS": {
+   "close": 32.88,
+   "industry": "Newspapers/Magazines",
+   "market_cap": 17769864579.0,
+   "name": "News Corporation Class B Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "NWSA": {
+   "close": 30.03,
+   "industry": "Newspapers/Magazines",
+   "market_cap": 16229593470.0,
+   "name": "News Corporation Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "NXPI": {
+   "close": 229.33,
+   "industry": "Semiconductors",
+   "market_cap": 57828810023.0,
+   "name": "NXP Semiconductors N.V. Common Stock",
+   "sector": "Technology"
+  },
+  "NYT": {
+   "close": 67.78,
+   "industry": "Newspapers/Magazines",
+   "market_cap": 10878883986.0,
+   "name": "New York Times Company (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "O": {
+   "close": 56.08,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 53063907291.0,
+   "name": "Realty Income Corporation Common Stock",
+   "sector": "Real Estate"
+  },
+  "ODFL": {
+   "close": 187.72,
+   "industry": "Trucking Freight/Courier Services",
+   "market_cap": 38924985082.0,
+   "name": "Old Dominion Freight Line Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "OGN": {
+   "close": 13.76,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 3613505798.0,
+   "name": "Organon & Co. Common Stock",
+   "sector": "Health Care"
+  },
+  "OI": {
+   "close": 5.83,
+   "industry": "Containers/Packaging",
+   "market_cap": 895836325.0,
+   "name": "O-I Glass Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "OKE": {
+   "close": 93.31,
+   "industry": "Oil & Gas Production",
+   "market_cap": 58819793628.0,
+   "name": "ONEOK Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "OKTA": {
+   "close": 187.26,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 32736966977.0,
+   "name": "Okta Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "OMC": {
+   "close": 80.56,
+   "industry": "Advertising",
+   "market_cap": 22101311102.0,
+   "name": "Omnicom Group Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ON": {
+   "close": 72.02,
+   "industry": "Semiconductors",
+   "market_cap": 28038726508.0,
+   "name": "ON Semiconductor Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "ORCL": {
+   "close": 128.23,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 388729392336.0,
+   "name": "Oracle Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "ORLY": {
+   "close": 89.27,
+   "industry": "Auto & Home Supply Stores",
+   "market_cap": 72215929902.0,
+   "name": "O'Reilly Automotive Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "OTIS": {
+   "close": 71.33,
+   "industry": "Consumer Electronics/Appliances",
+   "market_cap": 27153143951.0,
+   "name": "Otis Worldwide Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "OXY": {
+   "close": 62.38,
+   "industry": "Oil & Gas Production",
+   "market_cap": 62357379203.0,
+   "name": "Occidental Petroleum Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "PANW": {
+   "close": 342.0,
+   "industry": "Computer peripheral equipment",
+   "market_cap": 279756000000.0,
+   "name": "Palo Alto Networks Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "PAYC": {
+   "close": 251.64,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 11341822205.0,
+   "name": "Paycom Software Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "PAYX": {
+   "close": 111.63,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 39738100201.0,
+   "name": "Paychex Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "PBI": {
+   "close": 17.04,
+   "industry": "Office Equipment/Supplies/Services",
+   "market_cap": 2336017212.0,
+   "name": "Pitney Bowes Inc. Common Stock",
+   "sector": "Miscellaneous"
+  },
+  "PCAR": {
+   "close": 110.82,
+   "industry": "Auto Manufacturing",
+   "market_cap": 58331764091.0,
+   "name": "PACCAR Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "PCG": {
+   "close": 13.09,
+   "industry": "Power Generation",
+   "market_cap": 35082646393.0,
+   "name": "Pacific Gas & Electric Co. Common Stock",
+   "sector": "Utilities"
+  },
+  "PDD": {
+   "close": 80.97,
+   "industry": "Business Services",
+   "market_cap": 115252411528.0,
+   "name": "PDD Holdings Inc. American Depositary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "PEG": {
+   "close": 71.49,
+   "industry": "Power Generation",
+   "market_cap": 35632047945.0,
+   "name": "Public Service Enterprise Group Incorporated Common Stock",
+   "sector": "Utilities"
+  },
+  "PENN": {
+   "close": 14.94,
+   "industry": "Hotels/Resorts",
+   "market_cap": 2002954870.0,
+   "name": "PENN Entertainment Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PEP": {
+   "close": 131.49,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 179186826187.0,
+   "name": "PepsiCo Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "PFE": {
+   "close": 29.58,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 168596344763.0,
+   "name": "Pfizer Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "PFG": {
+   "close": 108.81,
+   "industry": "Accident &Health Insurance",
+   "market_cap": 23296725987.0,
+   "name": "Principal Financial Group Inc Common Stock",
+   "sector": "Finance"
+  },
+  "PG": {
+   "close": 159.35,
+   "industry": "Package Goods/Cosmetics",
+   "market_cap": 370398408111.0,
+   "name": "Procter & Gamble Company (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PGR": {
+   "close": 218.49,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 127023918027.0,
+   "name": "Progressive Corporation (The) Common Stock",
+   "sector": "Finance"
+  },
+  "PH": {
+   "close": 963.34,
+   "industry": "Metal Fabrications",
+   "market_cap": 121489133866.0,
+   "name": "Parker-Hannifin Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "PHM": {
+   "close": 113.55,
+   "industry": "Homebuilding",
+   "market_cap": 21285235917.0,
+   "name": "PulteGroup Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PKG": {
+   "close": 236.0,
+   "industry": "Containers/Packaging",
+   "market_cap": 21027198564.0,
+   "name": "Packaging Corporation of America Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PLD": {
+   "close": 125.75,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 119220557000.0,
+   "name": "Prologis Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "PLTR": {
+   "close": 186.03,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 446854008884.0,
+   "name": "Palantir Technologies Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "PM": {
+   "close": 205.2,
+   "industry": " Medicinal Chemicals and Botanical Products ",
+   "market_cap": 319827477683.0,
+   "name": "Philip Morris International Inc Common Stock",
+   "sector": "Health Care"
+  },
+  "PNC": {
+   "close": 217.39,
+   "industry": "Major Banks",
+   "market_cap": 86726363769.0,
+   "name": "PNC Financial Services Group Inc. (The) Common Stock",
+   "sector": "Finance"
+  },
+  "PNR": {
+   "close": 53.44,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 8531052048.0,
+   "name": "Pentair plc. Ordinary Share",
+   "sector": "Industrials"
+  },
+  "PNW": {
+   "close": 103.42,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 12534217940.0,
+   "name": "Pinnacle West Capital Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "PODD": {
+   "close": 141.1,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 9785877479.0,
+   "name": "Insulet Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "POM": {
+   "close": 0.6317,
+   "industry": "Other Specialty Stores",
+   "market_cap": 5854378.0,
+   "name": "POMDOCTOR LIMITED American Depositary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "POOL": {
+   "close": 172.57,
+   "industry": "Industrial Specialties",
+   "market_cap": 6271322710.0,
+   "name": "Pool Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PPG": {
+   "close": 107.39,
+   "industry": "Paints/Coatings",
+   "market_cap": 23872797000.0,
+   "name": "PPG Industries Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PPL": {
+   "close": 35.17,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 26467002058.0,
+   "name": "PPL Corporation Common Stock",
+   "sector": "Utilities"
+  },
+  "PRGO": {
+   "close": 16.63,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 2307732544.0,
+   "name": "Perrigo Company plc Ordinary Shares",
+   "sector": "Health Care"
+  },
+  "PRU": {
+   "close": 115.91,
+   "industry": "Life Insurance",
+   "market_cap": 39988950000.0,
+   "name": "Prudential Financial Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "PSA": {
+   "close": 298.31,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 55739908121.0,
+   "name": "Public Storage Common Stock",
+   "sector": "Real Estate"
+  },
+  "PSX": {
+   "close": 293.17,
+   "industry": "Integrated oil Companies",
+   "market_cap": 116980961944.0,
+   "name": "Phillips 66 Common Stock",
+   "sector": "Energy"
+  },
+  "PTC": {
+   "close": 192.98,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 20939538248.0,
+   "name": "PTC Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "PTON": {
+   "close": 5.22,
+   "industry": "Recreational Games/Products/Toys",
+   "market_cap": 2290910801.0,
+   "name": "Peloton Interactive Inc. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "PVH": {
+   "close": 84.68,
+   "industry": "Garments and Clothing",
+   "market_cap": 3906951698.0,
+   "name": "PVH Corp. Common Stock",
+   "sector": "Industrials"
+  },
+  "PWR": {
+   "close": 631.86,
+   "industry": "Engineering & Construction",
+   "market_cap": 93091794159.0,
+   "name": "Quanta Services Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "PYPL": {
+   "close": 56.7,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 48504631556.0,
+   "name": "PayPal Holdings Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "Q": {
+   "close": 115.37,
+   "industry": "Semiconductors",
+   "market_cap": 24136389606.0,
+   "name": "Qnity Electronics Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "QCOM": {
+   "close": 172.11,
+   "industry": "Radio And Television Broadcasting And Communications Equipment",
+   "market_cap": 180755760143.0,
+   "name": "QUALCOMM Incorporated Common Stock",
+   "sector": "Technology"
+  },
+  "QGEN": {
+   "close": 46.13,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 9506228356.0,
+   "name": "Qiagen N.V. Common Shares",
+   "sector": "Health Care"
+  },
+  "R": {
+   "close": 238.39,
+   "industry": "Rental/Leasing Companies",
+   "market_cap": 9141509863.0,
+   "name": "Ryder System Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "RCL": {
+   "close": 277.68,
+   "industry": "Marine Transportation",
+   "market_cap": 74266094685.0,
+   "name": "Royal Caribbean Cruises Ltd. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "RDDT": {
+   "close": 156.14,
+   "industry": "EDP Services",
+   "market_cap": 30040791071.0,
+   "name": "Reddit Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "REG": {
+   "close": 73.24,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 13411748862.0,
+   "name": "Regency Centers Corporation Common Stock",
+   "sector": "Real Estate"
+  },
+  "REGN": {
+   "close": 790.74,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 81410627211.0,
+   "name": "Regeneron Pharmaceuticals Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "RF": {
+   "close": 27.45,
+   "industry": "Major Banks",
+   "market_cap": 23385464940.0,
+   "name": "Regions Financial Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "RHI": {
+   "close": 33.31,
+   "industry": "Professional Services",
+   "market_cap": 3409672491.0,
+   "name": "Robert Half Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "RIG": {
+   "close": 5.62,
+   "industry": "Oil & Gas Production",
+   "market_cap": 6276866078.0,
+   "name": "Transocean Ltd (Switzerland) Common Stock",
+   "sector": "Energy"
+  },
+  "RJF": {
+   "close": 156.78,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 30158469051.0,
+   "name": "Raymond James Financial Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "RKLB": {
+   "close": 50.84,
+   "industry": "Military/Government/Technical",
+   "market_cap": 31915305131.0,
+   "name": "Rocket Lab Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "RL": {
+   "close": 385.5,
+   "industry": "Garments and Clothing",
+   "market_cap": 22968953135.0,
+   "name": "Ralph Lauren Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "RMD": {
+   "close": 238.97,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 33608559900.0,
+   "name": "ResMed Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "ROK": {
+   "close": 426.23,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 47428296987.0,
+   "name": "Rockwell Automation Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "ROL": {
+   "close": 33.45,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 16094313764.0,
+   "name": "Rollins Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "ROP": {
+   "close": 382.71,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 37850353489.0,
+   "name": "Roper Technologies Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "ROST": {
+   "close": 236.89,
+   "industry": "Clothing/Shoe/Accessory Stores",
+   "market_cap": 75675247228.0,
+   "name": "Ross Stores Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "RRC": {
+   "close": 43.22,
+   "industry": "Oil & Gas Production",
+   "market_cap": 10099628638.0,
+   "name": "Range Resources Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "RSG": {
+   "close": 231.54,
+   "industry": "Environmental Services",
+   "market_cap": 70900552926.0,
+   "name": "Republic Services Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "RTX": {
+   "close": 193.92,
+   "industry": "Aerospace",
+   "market_cap": 261357259284.0,
+   "name": "RTX Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "RVTY": {
+   "close": 152.64,
+   "industry": "Biotechnology: Laboratory Analytical Instruments",
+   "market_cap": 17032548249.0,
+   "name": "Revvity Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "RYAAY": {
+   "close": 52.54,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 27648323274.0,
+   "name": "Ryanair Holdings plc American Depositary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "S": {
+   "close": 21.58,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 7510899945.0,
+   "name": "SentinelOne Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "SBAC": {
+   "close": 187.06,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 19844841857.0,
+   "name": "SBA Communications Corporation Class A Common Stock",
+   "sector": "Real Estate"
+  },
+  "SBUX": {
+   "close": 97.52,
+   "industry": "Restaurants",
+   "market_cap": 111172800000.0,
+   "name": "Starbucks Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "SCHW": {
+   "close": 91.96,
+   "industry": "Investment Bankers/Brokers/Service",
+   "market_cap": 159029712259.0,
+   "name": "Charles Schwab Corporation (The) Common Stock",
+   "sector": "Finance"
+  },
+  "SE": {
+   "close": 93.77,
+   "industry": "Other Consumer Services",
+   "market_cap": 57432673628.0,
+   "name": "Sea Limited American Depositary Shares each representing one Class A Ordinary Share",
+   "sector": "Consumer Discretionary"
+  },
+  "SEDG": {
+   "close": 31.36,
+   "industry": "Semiconductors",
+   "market_cap": 1929447457.0,
+   "name": "SolarEdge Technologies Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "SGP": {
+   "close": 24.0,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 802751496.0,
+   "name": "SpyGlass Pharma Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "SHOP": {
+   "close": 169.52,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 219665884958.0,
+   "name": "Shopify Inc. Class A Subordinate Voting Shares",
+   "sector": "Technology"
+  },
+  "SHW": {
+   "close": 335.2,
+   "industry": "RETAIL: Building Materials",
+   "market_cap": 81372532215.0,
+   "name": "Sherwin-Williams Company (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "SIG": {
+   "close": 118.49,
+   "industry": "Consumer Specialties",
+   "market_cap": 4540210123.0,
+   "name": "Signet Jewelers Limited Common Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "SIRI": {
+   "close": 26.97,
+   "industry": "Broadcasting",
+   "market_cap": 9090694050.0,
+   "name": "SiriusXM Holdings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "SJM": {
+   "close": 127.43,
+   "industry": "Packaged Foods",
+   "market_cap": 13612478210.0,
+   "name": "The J.M. Smucker Company Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "SLB": {
+   "close": 49.5,
+   "industry": "Oilfield Services/Equipment",
+   "market_cap": 73465089935.0,
+   "name": "SLB Limited Common Shares",
+   "sector": "Energy"
+  },
+  "SLG": {
+   "close": 47.0,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 3329945629.0,
+   "name": "SL Green Realty Corp Common Stock",
+   "sector": "Real Estate"
+  },
+  "SLM": {
+   "close": 21.81,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 4099123154.0,
+   "name": "SLM Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "SMCI": {
+   "close": 31.63,
+   "industry": "Computer Manufacturing",
+   "market_cap": 20779815096.0,
+   "name": "Super Micro Computer Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "SNA": {
+   "close": 367.25,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 18996786289.0,
+   "name": "Snap-On Incorporated Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "SNDK": {
+   "close": 1299.3,
+   "industry": "Electronic Components",
+   "market_cap": 188824257223.0,
+   "name": "Sandisk Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "SNPS": {
+   "close": 454.63,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 87123768371.0,
+   "name": "Synopsys Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "SO": {
+   "close": 91.18,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 104890095240.0,
+   "name": "Southern Company (The) Common Stock",
+   "sector": "Utilities"
+  },
+  "SOLS": {
+   "close": 59.25,
+   "industry": "Major Chemicals",
+   "market_cap": 9411706613.0,
+   "name": "Solstice Advanced Materials Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "SOLV": {
+   "close": 85.81,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 14606898185.0,
+   "name": "Solventum Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "SPG": {
+   "close": 205.44,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 66470423242.0,
+   "name": "Simon Property Group Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "SPGI": {
+   "close": 429.64,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 126657872000.0,
+   "name": "S&P Global Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "SRE": {
+   "close": 83.41,
+   "industry": "Natural Gas Distribution",
+   "market_cap": 54541828027.0,
+   "name": "DBA Sempra Common Stock",
+   "sector": "Utilities"
+  },
+  "SSP": {
+   "close": 2.69,
+   "industry": "Broadcasting",
+   "market_cap": 249279586.0,
+   "name": "E.W. Scripps Company (The) Class A Common Stock",
+   "sector": "Industrials"
+  },
+  "STE": {
+   "close": 222.66,
+   "industry": "Industrial Specialties",
+   "market_cap": 21709374493.0,
+   "name": "STERIS plc (Ireland) Ordinary Shares",
+   "sector": "Health Care"
+  },
+  "STI": {
+   "close": 4.39,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 39430510.0,
+   "name": "Solidion Technology Inc. Common Stock",
+   "sector": "Miscellaneous"
+  },
+  "STLD": {
+   "close": 240.54,
+   "industry": "Steel/Iron Ore",
+   "market_cap": 34476138288.0,
+   "name": "Steel Dynamics Inc.",
+   "sector": "Industrials"
+  },
+  "STT": {
+   "close": 165.72,
+   "industry": "Major Banks",
+   "market_cap": 45523576496.0,
+   "name": "State Street Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "STX": {
+   "close": 639.01,
+   "industry": "Electronic Components",
+   "market_cap": 146153441275.0,
+   "name": "Seagate Technology Holdings PLC Ordinary Shares (Ireland)",
+   "sector": "Technology"
+  },
+  "STZ": {
+   "close": 131.35,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 22224221267.0,
+   "name": "Constellation Brands Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "SW": {
+   "close": 41.16,
+   "industry": "Containers/Packaging",
+   "market_cap": 21589362893.0,
+   "name": "Smurfit WestRock plc Ordinary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "SWK": {
+   "close": 92.48,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 13966018960.0,
+   "name": "Stanley Black & Decker Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "SWKS": {
+   "close": 79.7,
+   "industry": "Semiconductors",
+   "market_cap": 11849777430.0,
+   "name": "Skyworks Solutions Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "SYF": {
+   "close": 73.68,
+   "industry": "Finance: Consumer Services",
+   "market_cap": 27413200137.0,
+   "name": "Synchrony Financial Common Stock",
+   "sector": "Finance"
+  },
+  "SYK": {
+   "close": 294.66,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 113023633734.0,
+   "name": "Stryker Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "SYY": {
+   "close": 82.22,
+   "industry": "Food Distributors",
+   "market_cap": 40446271897.0,
+   "name": "Sysco Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "T": {
+   "close": 23.44,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 160619919636.0,
+   "name": "AT&T Inc.",
+   "sector": "Telecommunications"
+  },
+  "TAP": {
+   "close": 39.52,
+   "industry": "Beverages (Production/Distribution)",
+   "market_cap": 7368659432.0,
+   "name": "Molson Coors Beverage Company Class B Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "TCOM": {
+   "close": 40.01,
+   "industry": "Business Services",
+   "market_cap": 25194505932.0,
+   "name": "Trip.com Group Limited American Depositary Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "TDC": {
+   "close": 30.36,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 2823480000.0,
+   "name": "Teradata Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "TDG": {
+   "close": 1139.34,
+   "industry": "Military/Government/Technical",
+   "market_cap": 62978755994.0,
+   "name": "Transdigm Group Incorporated Common Stock",
+   "sector": "Industrials"
+  },
+  "TDY": {
+   "close": 618.6,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 28675619318.0,
+   "name": "Teledyne Technologies Incorporated Common Stock",
+   "sector": "Industrials"
+  },
+  "TE": {
+   "close": 2.62,
+   "industry": "Semiconductors",
+   "market_cap": 784687060.0,
+   "name": "T1 Energy Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "TEAM": {
+   "close": 207.82,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 52403181910.0,
+   "name": "Atlassian Corporation Class A Common Stock",
+   "sector": "Technology"
+  },
+  "TECH": {
+   "close": 72.57,
+   "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+   "market_cap": 11380299532.0,
+   "name": "Bio-Techne Corp Common Stock",
+   "sector": "Health Care"
+  },
+  "TEL": {
+   "close": 212.64,
+   "industry": "Electronic Components",
+   "market_cap": 61562092802.0,
+   "name": "TE Connectivity plc Ordinary Shares",
+   "sector": "Technology"
+  },
+  "TER": {
+   "close": 325.0,
+   "industry": "Electrical Products",
+   "market_cap": 50810743750.0,
+   "name": "Teradyne Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "TEVA": {
+   "close": 41.5,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 48359787486.0,
+   "name": "Teva Pharmaceutical Industries Limited Ordinary Shares",
+   "sector": "Health Care"
+  },
+  "TEX": {
+   "close": 50.99,
+   "industry": "Construction/Ag Equipment/Trucks",
+   "market_cap": 5828157000.0,
+   "name": "Terex Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "TFC": {
+   "close": 47.07,
+   "industry": "Major Banks",
+   "market_cap": 57501944669.0,
+   "name": "Truist Financial Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "TFX": {
+   "close": 130.43,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 5526631741.0,
+   "name": "Teleflex Incorporated Common Stock",
+   "sector": "Health Care"
+  },
+  "TGT": {
+   "close": 154.26,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 70079814495.0,
+   "name": "Target Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "THC": {
+   "close": 267.25,
+   "industry": "Hospital/Nursing Management",
+   "market_cap": 21518702750.0,
+   "name": "Tenet Healthcare Corporation Common Stock",
+   "sector": "Health Care"
+  },
+  "TJX": {
+   "close": 147.33,
+   "industry": "Clothing/Shoe/Accessory Stores",
+   "market_cap": 162059178407.0,
+   "name": "TJX Companies Inc. (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "TKO": {
+   "close": 175.5,
+   "industry": "Services-Misc. Amusement & Recreation",
+   "market_cap": 33216834632.0,
+   "name": "TKO Group Holdings Inc. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "TMO": {
+   "close": 690.0,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 255125627340.0,
+   "name": "Thermo Fisher Scientific Inc Common Stock",
+   "sector": "Industrials"
+  },
+  "TMUS": {
+   "close": 159.1,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 170662053628.0,
+   "name": "T-Mobile US Inc. Common Stock",
+   "sector": "Telecommunications"
+  },
+  "TNL": {
+   "close": 64.59,
+   "industry": "Hotels/Resorts",
+   "market_cap": 3953181345.0,
+   "name": "Travel   Leisure Co. Common  Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "TPL": {
+   "close": 350.92,
+   "industry": "Oil & Gas Production",
+   "market_cap": 24204595758.0,
+   "name": "Texas Pacific Land Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "TPR": {
+   "close": 120.18,
+   "industry": "Apparel",
+   "market_cap": 24006005716.0,
+   "name": "Tapestry Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "TRGP": {
+   "close": 294.9,
+   "industry": "Natural Gas Distribution",
+   "market_cap": 63235708093.0,
+   "name": "Targa Resources Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "TRI": {
+   "close": 109.01,
+   "industry": "Publishing",
+   "market_cap": 47223132000.0,
+   "name": "Thomson Reuters Corporation Common Shares",
+   "sector": "Consumer Discretionary"
+  },
+  "TRIP": {
+   "close": 9.32,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 1092297867.0,
+   "name": "TripAdvisor Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "TRMB": {
+   "close": 59.46,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 13864873762.0,
+   "name": "Trimble Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "TROW": {
+   "close": 100.97,
+   "industry": "Investment Managers",
+   "market_cap": 21538501375.0,
+   "name": "T. Rowe Price Group Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "TRV": {
+   "close": 389.54,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 81248314070.0,
+   "name": "The Travelers Companies Inc. Common Stock",
+   "sector": "Finance"
+  },
+  "TSCO": {
+   "close": 33.16,
+   "industry": "RETAIL: Building Materials",
+   "market_cap": 17277690943.0,
+   "name": "Tractor Supply Company Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "TSLA": {
+   "close": 354.72,
+   "industry": "Auto Manufacturing",
+   "market_cap": 1400983451600.0,
+   "name": "Tesla Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "TSN": {
+   "close": 54.9,
+   "industry": "Meat/Poultry/Fish",
+   "market_cap": 19313903009.0,
+   "name": "Tyson Foods Inc. Common Stock",
+   "sector": "Consumer Staples"
+  },
+  "TT": {
+   "close": 458.89,
+   "industry": "Auto Parts:O.E.M.",
+   "market_cap": 100966435694.0,
+   "name": "Trane Technologies plc",
+   "sector": "Industrials"
+  },
+  "TTD": {
+   "close": 12.23,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 5782284122.0,
+   "name": "The Trade Desk Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "TTWO": {
+   "close": 205.28,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 38383345339.0,
+   "name": "Take-Two Interactive Software Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "TXN": {
+   "close": 276.48,
+   "industry": "Semiconductors",
+   "market_cap": 252494720225.0,
+   "name": "Texas Instruments Incorporated Common Stock",
+   "sector": "Technology"
+  },
+  "TXT": {
+   "close": 75.93,
+   "industry": "Aerospace",
+   "market_cap": 13058966608.0,
+   "name": "Textron Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "TYL": {
+   "close": 360.87,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 14778447118.0,
+   "name": "Tyler Technologies Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "UA": {
+   "close": 4.63,
+   "industry": "Apparel",
+   "market_cap": 1988795855.0,
+   "name": "Under Armour Inc. Class C Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "UAA": {
+   "close": 4.74,
+   "industry": "Apparel",
+   "market_cap": 2036045864.0,
+   "name": "Under Armour Inc. Class A Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "UAL": {
+   "close": 96.1,
+   "industry": "Air Freight/Delivery Services",
+   "market_cap": 31192500489.0,
+   "name": "United Airlines Holdings Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "UBER": {
+   "close": 70.35,
+   "industry": "Business Services",
+   "market_cap": 143694104512.0,
+   "name": "Uber Technologies Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "UDR": {
+   "close": 34.26,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 11006512246.0,
+   "name": "UDR Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "UHS": {
+   "close": 185.1,
+   "industry": "Hospital/Nursing Management",
+   "market_cap": 10909148927.0,
+   "name": "Universal Health Services Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "UIS": {
+   "close": 2.21,
+   "industry": "EDP Services",
+   "market_cap": 161144261.0,
+   "name": "Unisys Corporation New Common Stock",
+   "sector": "Technology"
+  },
+  "ULTA": {
+   "close": 592.94,
+   "industry": "Other Specialty Stores",
+   "market_cap": 25352614855.0,
+   "name": "Ulta Beauty Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "UNH": {
+   "close": 401.43,
+   "industry": "Medical Specialities",
+   "market_cap": 360321499431.0,
+   "name": "UnitedHealth Group Incorporated Common Stock (DE)",
+   "sector": "Health Care"
+  },
+  "UNM": {
+   "close": 92.23,
+   "industry": "Accident &Health Insurance",
+   "market_cap": 14600635980.0,
+   "name": "Unum Group Common Stock",
+   "sector": "Finance"
+  },
+  "UNP": {
+   "close": 289.04,
+   "industry": "Railroads",
+   "market_cap": 171711581942.0,
+   "name": "Union Pacific Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "UPS": {
+   "close": 97.48,
+   "industry": "Trucking Freight/Courier Services",
+   "market_cap": 82934188613.0,
+   "name": "United Parcel Service Inc. Common Stock",
+   "sector": "Industrials"
+  },
+  "URBN": {
+   "close": 86.57,
+   "industry": "Clothing/Shoe/Accessory Stores",
+   "market_cap": 7415601869.0,
+   "name": "Urban Outfitters Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "URI": {
+   "close": 1029.64,
+   "industry": "Diversified Commercial Services",
+   "market_cap": 64087356374.0,
+   "name": "United Rentals Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "USB": {
+   "close": 58.73,
+   "industry": "Major Banks",
+   "market_cap": 91504361424.0,
+   "name": "U.S. Bancorp Common Stock",
+   "sector": "Finance"
+  },
+  "V": {
+   "close": 402.61,
+   "industry": "Business Services",
+   "market_cap": 719365521137.0,
+   "name": "Visa Inc.",
+   "sector": "Consumer Discretionary"
+  },
+  "VEEV": {
+   "close": 310.36,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 50250030686.0,
+   "name": "Veeva Systems Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "VEON": {
+   "close": 83.2,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 5729251424.0,
+   "name": "VEON Ltd. ADS",
+   "sector": "Telecommunications"
+  },
+  "VFC": {
+   "close": 16.85,
+   "industry": "Garments and Clothing",
+   "market_cap": 6624317505.0,
+   "name": "V.F. Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "VIAV": {
+   "close": 33.38,
+   "industry": "Semiconductors",
+   "market_cap": 8266227339.0,
+   "name": "Viavi Solutions Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "VICI": {
+   "close": 23.6,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 25985430463.0,
+   "name": "VICI Properties Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "VLO": {
+   "close": 444.71,
+   "industry": "Integrated oil Companies",
+   "market_cap": 128044221181.0,
+   "name": "Valero Energy Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "VLTO": {
+   "close": 101.04,
+   "industry": "Electrical Products",
+   "market_cap": 24632879478.0,
+   "name": "Veralto Corp Common Stock",
+   "sector": "Industrials"
+  },
+  "VMC": {
+   "close": 257.63,
+   "industry": "Mining & Quarrying of Nonmetallic Minerals (No Fuels)",
+   "market_cap": 33383370529.0,
+   "name": "Vulcan Materials Company (Holding Company) Common Stock",
+   "sector": "Industrials"
+  },
+  "VMRK": {
+   "close": 61.26,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 48242250000.0,
+   "name": "Vivmark Residential Common Shares of Beneficial Interest",
+   "sector": "Real Estate"
+  },
+  "VNO": {
+   "close": 32.93,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 6148707086.0,
+   "name": "Vornado Realty Trust Common Stock",
+   "sector": "Real Estate"
+  },
+  "VNT": {
+   "close": 33.34,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 4507568000.0,
+   "name": "Vontier Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "VOD": {
+   "close": 16.11,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 37283310413.0,
+   "name": "Vodafone Group Plc American Depositary Shares",
+   "sector": "Telecommunications"
+  },
+  "VRSK": {
+   "close": 190.9,
+   "industry": "EDP Services",
+   "market_cap": 24846782691.0,
+   "name": "Verisk Analytics Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "VRSN": {
+   "close": 302.335,
+   "industry": "EDP Services",
+   "market_cap": 27300850500.0,
+   "name": "VeriSign Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "VRT": {
+   "close": 206.42,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 79469258671.0,
+   "name": "Vertiv Holdings LLC Class A Common Stock",
+   "sector": "Technology"
+  },
+  "VRTX": {
+   "close": 499.74,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 126664562160.0,
+   "name": "Vertex Pharmaceuticals Incorporated Common Stock",
+   "sector": "Health Care"
+  },
+  "VST": {
+   "close": 152.02,
+   "industry": "Electric Utilities: Central",
+   "market_cap": 51023262344.0,
+   "name": "Vistra Corp. Common Stock",
+   "sector": "Utilities"
+  },
+  "VTR": {
+   "close": 85.86,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 44041574384.0,
+   "name": "Ventas Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "VTRS": {
+   "close": 18.655,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 21426962568.0,
+   "name": "Viatris Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "VZ": {
+   "close": 44.79,
+   "industry": "Telecommunications Equipment",
+   "market_cap": 186092381298.0,
+   "name": "Verizon Communications Inc. Common Stock",
+   "sector": "Telecommunications"
+  },
+  "WAB": {
+   "close": 286.82,
+   "industry": "Railroads",
+   "market_cap": 48447010284.0,
+   "name": "Westinghouse Air Brake Technologies Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "WAT": {
+   "close": 436.95,
+   "industry": "Biotechnology: Laboratory Analytical Instruments",
+   "market_cap": 42929512101.0,
+   "name": "Waters Corporation Common Stock",
+   "sector": "Industrials"
+  },
+  "WB": {
+   "close": 6.49,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 1594414992.0,
+   "name": "Weibo Corporation American Depositary Share",
+   "sector": "Technology"
+  },
+  "WDAY": {
+   "close": 190.81,
+   "industry": "EDP Services",
+   "market_cap": 45985210000.0,
+   "name": "Workday Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "WDC": {
+   "close": 332.0,
+   "industry": "Electronic Components",
+   "market_cap": 124024569360.0,
+   "name": "Western Digital Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "WEC": {
+   "close": 108.71,
+   "industry": "Power Generation",
+   "market_cap": 35423086426.0,
+   "name": "WEC Energy Group Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "WELL": {
+   "close": 234.85,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 169266951742.0,
+   "name": "Welltower Inc. Common Stock",
+   "sector": "Real Estate"
+  },
+  "WFC": {
+   "close": 83.87,
+   "industry": "Major Banks",
+   "market_cap": 253622824310.0,
+   "name": "Wells Fargo & Company Common Stock",
+   "sector": "Finance"
+  },
+  "WHR": {
+   "close": 27.89,
+   "industry": "Consumer Electronics/Appliances",
+   "market_cap": 1818410652.0,
+   "name": "Whirlpool Corporation Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "WM": {
+   "close": 226.86,
+   "industry": "Environmental Services",
+   "market_cap": 90679386642.0,
+   "name": "Waste Management Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "WMB": {
+   "close": 71.28,
+   "industry": "Natural Gas Distribution",
+   "market_cap": 87187377404.0,
+   "name": "Williams Companies Inc. (The) Common Stock",
+   "sector": "Utilities"
+  },
+  "WMT": {
+   "close": 118.81,
+   "industry": "Department/Specialty Retail Stores",
+   "market_cap": 942608390893.0,
+   "name": "Walmart Inc. Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "WRB": {
+   "close": 75.42,
+   "industry": "Property-Casualty Insurers",
+   "market_cap": 27997980237.0,
+   "name": "W.R. Berkley Corporation Common Stock",
+   "sector": "Finance"
+  },
+  "WSM": {
+   "close": 250.16,
+   "industry": "Home Furnishings",
+   "market_cap": 29463637918.0,
+   "name": "Williams-Sonoma Inc. Common Stock (DE)",
+   "sector": "Consumer Discretionary"
+  },
+  "WST": {
+   "close": 384.02,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 27025700123.0,
+   "name": "West Pharmaceutical Services Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "WTW": {
+   "close": 315.49,
+   "industry": "Specialty Insurers",
+   "market_cap": 29300167404.0,
+   "name": "Willis Towers Watson Public Limited Company Ordinary Shares",
+   "sector": "Finance"
+  },
+  "WU": {
+   "close": 6.17,
+   "industry": "Business Services",
+   "market_cap": 1924293313.0,
+   "name": "Western Union Company (The) Common Stock",
+   "sector": "Consumer Discretionary"
+  },
+  "WY": {
+   "close": 19.61,
+   "industry": "Real Estate Investment Trusts",
+   "market_cap": 14133632960.0,
+   "name": "Weyerhaeuser Company Common Stock",
+   "sector": "Real Estate"
+  },
+  "WYNN": {
+   "close": 75.6,
+   "industry": "Hotels/Resorts",
+   "market_cap": 7784826160.0,
+   "name": "Wynn Resorts Limited Common stock",
+   "sector": "Consumer Discretionary"
+  },
+  "XEL": {
+   "close": 76.31,
+   "industry": "Power Generation",
+   "market_cap": 47665843891.0,
+   "name": "Xcel Energy Inc. Common Stock",
+   "sector": "Utilities"
+  },
+  "XOM": {
+   "close": 178.98,
+   "industry": "Integrated oil Companies",
+   "market_cap": 735950002601.0,
+   "name": "ExxonMobil Holdings Corporation Common Stock",
+   "sector": "Energy"
+  },
+  "XRAY": {
+   "close": 8.57,
+   "industry": "Medical/Dental Instruments",
+   "market_cap": 1708462717.0,
+   "name": "DENTSPLY SIRONA Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "XRX": {
+   "close": 2.47,
+   "industry": "Computer peripheral equipment",
+   "market_cap": 324346842.0,
+   "name": "Xerox Holdings Corporation Common Stock",
+   "sector": "Technology"
+  },
+  "XYL": {
+   "close": 104.05,
+   "industry": "Fluid Controls",
+   "market_cap": 24294302789.0,
+   "name": "Xylem Inc. Common Stock New",
+   "sector": "Industrials"
+  },
+  "XYZ": {
+   "close": 77.89,
+   "industry": "Computer Software: Prepackaged Software",
+   "market_cap": 46795922550.0,
+   "name": "Block Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "YUM": {
+   "close": 150.51,
+   "industry": "Restaurants",
+   "market_cap": 41074342303.0,
+   "name": "Yum! Brands Inc.",
+   "sector": "Consumer Discretionary"
+  },
+  "ZBH": {
+   "close": 94.98,
+   "industry": "Industrial Specialties",
+   "market_cap": 18116265701.0,
+   "name": "Zimmer Biomet Holdings Inc. Common Stock",
+   "sector": "Health Care"
+  },
+  "ZBRA": {
+   "close": 369.01,
+   "industry": "Industrial Machinery/Components",
+   "market_cap": 17458106647.0,
+   "name": "Zebra Technologies Corporation Class A Common Stock",
+   "sector": "Industrials"
+  },
+  "ZION": {
+   "close": 63.37,
+   "industry": "Major Banks",
+   "market_cap": 9249064106.0,
+   "name": "Zions Bancorporation N.A. Common Stock",
+   "sector": "Finance"
+  },
+  "ZM": {
+   "close": 94.19,
+   "industry": "Computer Software: Programming Data Processing",
+   "market_cap": 27483107739.0,
+   "name": "Zoom Communications Inc. Class A Common Stock",
+   "sector": "Technology"
+  },
+  "ZS": {
+   "close": 207.38,
+   "industry": "EDP Services",
+   "market_cap": 33814283271.0,
+   "name": "Zscaler Inc. Common Stock",
+   "sector": "Technology"
+  },
+  "ZTS": {
+   "close": 79.38,
+   "industry": "Biotechnology: Pharmaceutical Preparations",
+   "market_cap": 32801689527.0,
+   "name": "Zoetis Inc. Class A Common Stock",
+   "sector": "Health Care"
+  }
+ },
+ "source": "api.nasdaq.com/api/screener/stocks",
+ "trade_date": "2026-10-19"
+}

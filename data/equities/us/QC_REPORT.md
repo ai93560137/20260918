@@ -1,13 +1,13 @@
-# US 數據品質報告（2026-10-16）
+# US 數據品質報告（2026-10-19）
 
-市場最新交易日 2026-10-16；現任成分股 518 檔（sp500, ndx, djia）；有數據 722 檔；第二來源快照 19 份、比對 12904 筆收市價。
+市場最新交易日 2026-10-19；現任成分股 518 檔（sp500, ndx, djia）；有數據 722 檔；第二來源快照 20 份、比對 13581 筆收市價。
 
-**🔴 6030 嚴重 / 🟡 11 注意 / ✅ 11 已確認**
+**🔴 6343 嚴重 / 🟡 11 注意 / ✅ 10 已確認**
 
 
 ## 🔴 嚴重
 
-- `WBD` stale：現任成分股最後一根 2026-10-05，市場最新 2026-10-16
+- `WBD` stale：現任成分股最後一根 2026-10-05，市場最新 2026-10-19
 - `CTVA` xsource：2026-09-22 第二來源 80.34 vs yfinance 12.054（+566.50%）
 - `CTVA` xsource：2026-09-23 第二來源 80.42 vs yfinance 12.066（+566.50%）
 - `A` xsource：2026-09-24 第二來源 165.32 vs yfinance 172.84（-4.35%）
@@ -2278,7 +2278,6 @@
 - `Q` xsource：2026-10-02 第二來源 128.45 vs yfinance 131.48（-2.30%）
 - `QCOM` xsource：2026-10-02 第二來源 182.09 vs yfinance 184.87（-1.50%）
 - `QGEN` xsource：2026-10-02 第二來源 42.04 vs yfinance 44.75（-6.06%）
-- `QRVO` xsource：2026-10-02 第二來源 112.21 vs yfinance 114.17（-1.72%）
 - `R` xsource：2026-10-02 第二來源 230.92 vs yfinance 237.24（-2.66%）
 - `RCL` xsource：2026-10-02 第二來源 269.99 vs yfinance 277.74（-2.79%）
 - `RDDT` xsource：2026-10-02 第二來源 149.53 vs yfinance 147.86（+1.13%）
@@ -5874,10 +5873,10 @@
 - `MDB` xsource：2026-10-16 第二來源 366.49 vs yfinance 337.57（+8.57%）
 - `MDLZ` xsource：2026-10-16 第二來源 63.03 vs yfinance 63.91（-1.38%）
 - `MELI` xsource：2026-10-16 第二來源 1856.98 vs yfinance 1834.0（+1.25%）
-- `META` xsource：2026-10-16 第二來源 736.72 vs yfinance 709.325（+3.86%）
+- `META` xsource：2026-10-16 第二來源 736.72 vs yfinance 709.33（+3.86%）
 - `MGM` xsource：2026-10-16 第二來源 29.48 vs yfinance 28.6（+3.08%）
 - `MHK` xsource：2026-10-16 第二來源 123.9 vs yfinance 120.29（+3.00%）
-- `MI` xsource：2026-10-16 第二來源 0.664 vs yfinance 0.6399（+3.77%）
+- `MI` xsource：2026-10-16 第二來源 0.664 vs yfinance 0.64（+3.75%）
 - `MICC` xsource：2026-10-16 第二來源 18.44 vs yfinance 18.78（-1.81%）
 - `MKC` xsource：2026-10-16 第二來源 45.71 vs yfinance 46.35（-1.38%）
 - `MLM` xsource：2026-10-16 第二來源 491.23 vs yfinance 500.84（-1.92%）
@@ -5935,7 +5934,7 @@
 - `PNC` xsource：2026-10-16 第二來源 214.94 vs yfinance 217.39（-1.13%）
 - `PNW` xsource：2026-10-16 第二來源 101.58 vs yfinance 103.42（-1.78%）
 - `PODD` xsource：2026-10-16 第二來源 138.77 vs yfinance 141.1（-1.65%）
-- `POM` xsource：2026-10-16 第二來源 0.7091 vs yfinance 0.6317（+12.25%）
+- `POM` xsource：2026-10-16 第二來源 0.7091 vs yfinance 0.632（+12.20%）
 - `POOL` xsource：2026-10-16 第二來源 169.12 vs yfinance 172.57（-2.00%）
 - `PPL` xsource：2026-10-16 第二來源 34.48 vs yfinance 35.17（-1.96%）
 - `PSX` xsource：2026-10-16 第二來源 289.2 vs yfinance 293.17（-1.35%）
@@ -6016,7 +6015,7 @@
 - `VRTX` xsource：2026-10-16 第二來源 508.75 vs yfinance 499.74（+1.80%）
 - `VST` xsource：2026-10-16 第二來源 154.17 vs yfinance 152.02（+1.41%）
 - `VTR` xsource：2026-10-16 第二來源 84.86 vs yfinance 85.86（-1.16%）
-- `VTRS` xsource：2026-10-16 第二來源 18.22 vs yfinance 18.655（-2.33%）
+- `VTRS` xsource：2026-10-16 第二來源 18.22 vs yfinance 18.66（-2.36%）
 - `WAT` xsource：2026-10-16 第二來源 444.15 vs yfinance 436.95（+1.65%）
 - `WDAY` xsource：2026-10-16 第二來源 196.63 vs yfinance 190.81（+3.05%）
 - `WDC` xsource：2026-10-16 第二來源 356.45 vs yfinance 332.0（+7.36%）
@@ -6037,6 +6036,320 @@
 - `ZM` xsource：2026-10-16 第二來源 98.51 vs yfinance 94.19（+4.59%）
 - `ZS` xsource：2026-10-16 第二來源 220.43 vs yfinance 207.38（+6.29%）
 - `ZTS` xsource：2026-10-16 第二來源 78.42 vs yfinance 79.38（-1.21%）
+- `A` xsource：2026-10-19 第二來源 172.97 vs yfinance 169.9（+1.81%）
+- `AAL` xsource：2026-10-19 第二來源 11.88 vs yfinance 11.68（+1.71%）
+- `AAP` xsource：2026-10-19 第二來源 44.45 vs yfinance 43.7（+1.72%）
+- `ABNB` xsource：2026-10-19 第二來源 173.7 vs yfinance 175.46（-1.00%）
+- `ACN` xsource：2026-10-19 第二來源 229.68 vs yfinance 236.93（-3.06%）
+- `ADM` xsource：2026-10-19 第二來源 82.61 vs yfinance 80.51（+2.61%）
+- `ADT` xsource：2026-10-19 第二來源 6.87 vs yfinance 6.7（+2.54%）
+- `AEE` xsource：2026-10-19 第二來源 106.08 vs yfinance 104.01（+1.99%）
+- `AEP` xsource：2026-10-19 第二來源 127.14 vs yfinance 124.72（+1.94%）
+- `AFL` xsource：2026-10-19 第二來源 119.97 vs yfinance 118.67（+1.10%）
+- `AIV` xsource：2026-10-19 第二來源 1.7 vs yfinance 1.65（+3.03%）
+- `ALGN` xsource：2026-10-19 第二來源 147.31 vs yfinance 149.0（-1.13%）
+- `ALK` xsource：2026-10-19 第二來源 35.13 vs yfinance 33.98（+3.38%）
+- `AMD` xsource：2026-10-19 第二來源 528.75 vs yfinance 538.05（-1.73%）
+- `AMGN` xsource：2026-10-19 第二來源 432.49 vs yfinance 424.94（+1.78%）
+- `AMP` xsource：2026-10-19 第二來源 500.8 vs yfinance 480.41（+4.24%）
+- `AMT` xsource：2026-10-19 第二來源 185.27 vs yfinance 183.03（+1.22%）
+- `AMZN` xsource：2026-10-19 第二來源 250.0 vs yfinance 262.45（-4.74%）
+- `ANET` xsource：2026-10-19 第二來源 176.98 vs yfinance 182.95（-3.26%）
+- `ANF` xsource：2026-10-19 第二來源 153.26 vs yfinance 162.01（-5.40%）
+- `APA` xsource：2026-10-19 第二來源 49.15 vs yfinance 49.76（-1.23%）
+- `APC` xsource：2026-10-19 第二來源 16.36 vs yfinance 16.0（+2.25%）
+- `APH` xsource：2026-10-19 第二來源 79.35 vs yfinance 80.28（-1.16%）
+- `APP` xsource：2026-10-19 第二來源 266.13 vs yfinance 269.12（-1.11%）
+- `ARE` xsource：2026-10-19 第二來源 41.62 vs yfinance 40.63（+2.44%）
+- `ATI` xsource：2026-10-19 第二來源 185.59 vs yfinance 189.28（-1.95%）
+- `ATO` xsource：2026-10-19 第二來源 167.34 vs yfinance 164.74（+1.58%）
+- `AVGO` xsource：2026-10-19 第二來源 328.75 vs yfinance 334.59（-1.75%）
+- `AWK` xsource：2026-10-19 第二來源 134.94 vs yfinance 133.57（+1.03%）
+- `AXON` xsource：2026-10-19 第二來源 390.29 vs yfinance 383.09（+1.88%）
+- `AYI` xsource：2026-10-19 第二來源 303.25 vs yfinance 308.58（-1.73%）
+- `BAC` xsource：2026-10-19 第二來源 51.23 vs yfinance 50.39（+1.67%）
+- `BALL` xsource：2026-10-19 第二來源 63.2 vs yfinance 63.84（-1.00%）
+- `BATRA` xsource：2026-10-19 第二來源 54.0 vs yfinance 54.6（-1.10%）
+- `BAX` xsource：2026-10-19 第二來源 25.28 vs yfinance 24.99（+1.16%）
+- `BBWI` xsource：2026-10-19 第二來源 20.14 vs yfinance 19.84（+1.51%）
+- `BBY` xsource：2026-10-19 第二來源 92.63 vs yfinance 91.13（+1.65%）
+- `BEAM` xsource：2026-10-19 第二來源 23.47 vs yfinance 24.19（-2.98%）
+- `BF-B` xsource：2026-10-19 第二來源 28.88 vs yfinance 28.22（+2.34%）
+- `BG` xsource：2026-10-19 第二來源 106.14 vs yfinance 103.11（+2.94%）
+- `BLDR` xsource：2026-10-19 第二來源 54.65 vs yfinance 52.95（+3.21%）
+- `BMY` xsource：2026-10-19 第二來源 59.75 vs yfinance 58.83（+1.56%）
+- `BSX` xsource：2026-10-19 第二來源 44.39 vs yfinance 45.05（-1.47%）
+- `BXP` xsource：2026-10-19 第二來源 59.2 vs yfinance 57.94（+2.17%）
+- `C` xsource：2026-10-19 第二來源 124.26 vs yfinance 121.69（+2.11%）
+- `CAG` xsource：2026-10-19 第二來源 14.47 vs yfinance 14.03（+3.14%）
+- `CBOE` xsource：2026-10-19 第二來源 314.98 vs yfinance 306.47（+2.78%）
+- `CBRE` xsource：2026-10-19 第二來源 133.08 vs yfinance 130.77（+1.77%）
+- `CCI` xsource：2026-10-19 第二來源 82.26 vs yfinance 81.06（+1.48%）
+- `CCL` xsource：2026-10-19 第二來源 25.9 vs yfinance 26.45（-2.08%）
+- `CDNS` xsource：2026-10-19 第二來源 319.51 vs yfinance 325.86（-1.95%）
+- `CDW` xsource：2026-10-19 第二來源 150.48 vs yfinance 152.645（-1.42%）
+- `CEG` xsource：2026-10-19 第二來源 271.37 vs yfinance 263.19（+3.11%）
+- `CF` xsource：2026-10-19 第二來源 120.85 vs yfinance 118.51（+1.97%）
+- `CHTR` xsource：2026-10-19 第二來源 110.11 vs yfinance 108.51（+1.47%）
+- `CI` xsource：2026-10-19 第二來源 302.3 vs yfinance 298.5（+1.27%）
+- `CIEN` xsource：2026-10-19 第二來源 332.73 vs yfinance 344.2（-3.33%）
+- `CLF` xsource：2026-10-19 第二來源 12.12 vs yfinance 14.1（-14.04%）
+- `CLX` xsource：2026-10-19 第二來源 87.09 vs yfinance 85.56（+1.79%）
+- `CMI` xsource：2026-10-19 第二來源 531.33 vs yfinance 522.13（+1.76%）
+- `CMS` xsource：2026-10-19 第二來源 68.7 vs yfinance 67.37（+1.97%）
+- `CNP` xsource：2026-10-19 第二來源 40.55 vs yfinance 39.56（+2.50%）
+- `COIN` xsource：2026-10-19 第二來源 173.16 vs yfinance 168.45（+2.80%）
+- `CPB` xsource：2026-10-19 第二來源 19.87 vs yfinance 19.35（+2.69%）
+- `CPRI` xsource：2026-10-19 第二來源 15.95 vs yfinance 16.15（-1.24%）
+- `CPRT` xsource：2026-10-19 第二來源 27.87 vs yfinance 27.51（+1.31%）
+- `CSGP` xsource：2026-10-19 第二來源 32.31 vs yfinance 31.81（+1.57%）
+- `CSX` xsource：2026-10-19 第二來源 48.68 vs yfinance 47.88（+1.67%）
+- `CTSH` xsource：2026-10-19 第二來源 66.03 vs yfinance 66.79（-1.14%）
+- `CTVA` xsource：2026-10-19 第二來源 12.88 vs yfinance 12.65（+1.82%）
+- `D` xsource：2026-10-19 第二來源 63.56 vs yfinance 62.21（+2.17%）
+- `DASH` xsource：2026-10-19 第二來源 189.15 vs yfinance 193.53（-2.26%）
+- `DDOG` xsource：2026-10-19 第二來源 247.11 vs yfinance 260.36（-5.09%）
+- `DE` xsource：2026-10-19 第二來源 641.86 vs yfinance 627.0（+2.37%）
+- `DECK` xsource：2026-10-19 第二來源 85.71 vs yfinance 87.24（-1.75%）
+- `DHI` xsource：2026-10-19 第二來源 139.39 vs yfinance 135.31（+3.02%）
+- `DHR` xsource：2026-10-19 第二來源 229.04 vs yfinance 224.43（+2.05%）
+- `DLR` xsource：2026-10-19 第二來源 175.97 vs yfinance 173.0（+1.72%）
+- `DOC` xsource：2026-10-19 第二來源 18.98 vs yfinance 18.4（+3.15%）
+- `DOCU` xsource：2026-10-19 第二來源 74.65 vs yfinance 76.66（-2.62%）
+- `DPZ` xsource：2026-10-19 第二來源 308.64 vs yfinance 305.42（+1.05%）
+- `DTE` xsource：2026-10-19 第二來源 129.73 vs yfinance 126.93（+2.21%）
+- `DUK` xsource：2026-10-19 第二來源 121.47 vs yfinance 119.27（+1.84%）
+- `DXC` xsource：2026-10-19 第二來源 13.62 vs yfinance 14.26（-4.49%）
+- `DYN` xsource：2026-10-19 第二來源 14.25 vs yfinance 15.23（-6.43%）
+- `ECL` xsource：2026-10-19 第二來源 288.89 vs yfinance 285.94（+1.03%）
+- `ED` xsource：2026-10-19 第二來源 112.26 vs yfinance 109.69（+2.34%）
+- `EFX` xsource：2026-10-19 第二來源 161.25 vs yfinance 158.57（+1.69%）
+- `EL` xsource：2026-10-19 第二來源 104.54 vs yfinance 105.78（-1.17%）
+- `EPAM` xsource：2026-10-19 第二來源 122.19 vs yfinance 127.38（-4.07%）
+- `EQ` xsource：2026-10-19 第二來源 1.19 vs yfinance 1.24（-4.03%）
+- `EQIX` xsource：2026-10-19 第二來源 985.98 vs yfinance 975.71（+1.05%）
+- `ES` xsource：2026-10-19 第二來源 66.85 vs yfinance 64.48（+3.68%）
+- `ESS` xsource：2026-10-19 第二來源 269.43 vs yfinance 266.65（+1.04%）
+- `ETR` xsource：2026-10-19 第二來源 105.11 vs yfinance 103.8（+1.26%）
+- `EVRG` xsource：2026-10-19 第二來源 83.3 vs yfinance 81.69（+1.97%）
+- `EXC` xsource：2026-10-19 第二來源 43.5 vs yfinance 42.41（+2.57%）
+- `EXR` xsource：2026-10-19 第二來源 139.61 vs yfinance 138.18（+1.03%）
+- `F` xsource：2026-10-19 第二來源 12.43 vs yfinance 12.18（+2.05%）
+- `FCPT` xsource：2026-10-19 第二來源 21.99 vs yfinance 21.57（+1.95%）
+- `FDXF` xsource：2026-10-19 第二來源 113.21 vs yfinance 110.2（+2.73%）
+- `FE` xsource：2026-10-19 第二來源 46.19 vs yfinance 45.25（+2.08%）
+- `FERG` xsource：2026-10-19 第二來源 231.61 vs yfinance 226.36（+2.32%）
+- `FFIV` xsource：2026-10-19 第二來源 442.03 vs yfinance 450.8（-1.95%）
+- `FICO` xsource：2026-10-19 第二來源 771.19 vs yfinance 781.07（-1.26%）
+- `FIX` xsource：2026-10-19 第二來源 1439.07 vs yfinance 1464.0699（-1.71%）
+- `FLEX` xsource：2026-10-19 第二來源 90.46 vs yfinance 87.54（+3.34%）
+- `FMC` xsource：2026-10-19 第二來源 5.66 vs yfinance 5.36（+5.60%）
+- `FOSL` xsource：2026-10-19 第二來源 6.92 vs yfinance 6.75（+2.52%）
+- `FOX` xsource：2026-10-19 第二來源 57.22 vs yfinance 58.33（-1.90%）
+- `FOXA` xsource：2026-10-19 第二來源 64.15 vs yfinance 65.27（-1.72%）
+- `FRT` xsource：2026-10-19 第二來源 106.32 vs yfinance 104.77（+1.48%）
+- `FTNT` xsource：2026-10-19 第二來源 169.13 vs yfinance 171.5（-1.38%）
+- `GAP` xsource：2026-10-19 第二來源 23.12 vs yfinance 23.54（-1.78%）
+- `GEN` xsource：2026-10-19 第二來源 24.16 vs yfinance 23.64（+2.20%）
+- `GEV` xsource：2026-10-19 第二來源 921.2 vs yfinance 908.44（+1.40%）
+- `GFS` xsource：2026-10-19 第二來源 46.68 vs yfinance 46.11（+1.24%）
+- `GILD` xsource：2026-10-19 第二來源 156.19 vs yfinance 153.07（+2.04%）
+- `GIS` xsource：2026-10-19 第二來源 33.13 vs yfinance 32.57（+1.72%）
+- `GM` xsource：2026-10-19 第二來源 83.96 vs yfinance 82.75（+1.46%）
+- `GME` xsource：2026-10-19 第二來源 26.81 vs yfinance 26.44（+1.40%）
+- `GNW` xsource：2026-10-19 第二來源 9.07 vs yfinance 8.94（+1.45%）
+- `GOOGL` xsource：2026-10-19 第二來源 340.59 vs yfinance 344.18（-1.04%）
+- `GPC` xsource：2026-10-19 第二來源 133.96 vs yfinance 130.18（+2.90%）
+- `GPN` xsource：2026-10-19 第二來源 83.67 vs yfinance 84.59（-1.09%）
+- `GT` xsource：2026-10-19 第二來源 4.29 vs yfinance 4.15（+3.37%）
+- `HAL` xsource：2026-10-19 第二來源 33.5 vs yfinance 32.98（+1.58%）
+- `HONA` xsource：2026-10-19 第二來源 168.09 vs yfinance 162.49（+3.45%）
+- `HOOD` xsource：2026-10-19 第二來源 98.87 vs yfinance 96.52（+2.43%）
+- `HP` xsource：2026-10-19 第二來源 37.43 vs yfinance 38.2（-2.02%）
+- `HPE` xsource：2026-10-19 第二來源 55.13 vs yfinance 55.87（-1.32%）
+- `HRB` xsource：2026-10-19 第二來源 48.67 vs yfinance 47.37（+2.74%）
+- `HSIC` xsource：2026-10-19 第二來源 86.38 vs yfinance 83.97（+2.87%）
+- `HSY` xsource：2026-10-19 第二來源 170.83 vs yfinance 167.0（+2.29%）
+- `IBKR` xsource：2026-10-19 第二來源 82.69 vs yfinance 81.35（+1.65%）
+- `IBM` xsource：2026-10-19 第二來源 232.14 vs yfinance 236.39（-1.80%）
+- `ICE` xsource：2026-10-19 第二來源 161.56 vs yfinance 158.4（+1.99%）
+- `INTC` xsource：2026-10-19 第二來源 89.85 vs yfinance 92.03（-2.37%）
+- `INVH` xsource：2026-10-19 第二來源 27.07 vs yfinance 26.71（+1.35%）
+- `IPGP` xsource：2026-10-19 第二來源 71.01 vs yfinance 72.48（-2.03%）
+- `ISRG` xsource：2026-10-19 第二來源 426.7 vs yfinance 433.18（-1.50%）
+- `IT` xsource：2026-10-19 第二來源 205.35 vs yfinance 207.72（-1.14%）
+- `J` xsource：2026-10-19 第二來源 141.08 vs yfinance 138.34（+1.98%）
+- `JBHT` xsource：2026-10-19 第二來源 228.78 vs yfinance 223.25（+2.48%）
+- `JBL` xsource：2026-10-19 第二來源 278.25 vs yfinance 282.06（-1.35%）
+- `JCI` xsource：2026-10-19 第二來源 145.47 vs yfinance 148.22（-1.86%）
+- `JEF` xsource：2026-10-19 第二來源 44.8 vs yfinance 43.6（+2.75%）
+- `JPM` xsource：2026-10-19 第二來源 339.72 vs yfinance 333.53（+1.86%）
+- `KBH` xsource：2026-10-19 第二來源 43.3 vs yfinance 42.59（+1.67%）
+- `KEYS` xsource：2026-10-19 第二來源 331.21 vs yfinance 335.86（-1.38%）
+- `KHC` xsource：2026-10-19 第二來源 23.68 vs yfinance 23.17（+2.20%）
+- `KMI` xsource：2026-10-19 第二來源 34.2 vs yfinance 33.39（+2.43%）
+- `KMX` xsource：2026-10-19 第二來源 53.33 vs yfinance 51.65（+3.25%）
+- `LB` xsource：2026-10-19 第二來源 81.57 vs yfinance 80.05（+1.90%）
+- `LBTYA` xsource：2026-10-19 第二來源 7.8 vs yfinance 7.5（+4.00%）
+- `LBTYK` xsource：2026-10-19 第二來源 7.67 vs yfinance 7.46（+2.82%）
+- `LCID` xsource：2026-10-19 第二來源 3.13 vs yfinance 3.095（+1.13%）
+- `LEN` xsource：2026-10-19 第二來源 77.08 vs yfinance 75.87（+1.59%）
+- `LHX` xsource：2026-10-19 第二來源 248.51 vs yfinance 243.84（+1.92%）
+- `LIFE` xsource：2026-10-19 第二來源 37.52 vs yfinance 38.86（-3.45%）
+- `LILA` xsource：2026-10-19 第二來源 8.06 vs yfinance 7.88（+2.28%）
+- `LILAK` xsource：2026-10-19 第二來源 8.03 vs yfinance 7.87（+2.03%）
+- `LITE` xsource：2026-10-19 第二來源 824.13 vs yfinance 834.51（-1.24%）
+- `LKQ` xsource：2026-10-19 第二來源 22.23 vs yfinance 21.52（+3.30%）
+- `LLY` xsource：2026-10-19 第二來源 1257.03 vs yfinance 1240.34（+1.35%）
+- `LNC` xsource：2026-10-19 第二來源 39.83 vs yfinance 39.28（+1.40%）
+- `LNT` xsource：2026-10-19 第二來源 68.32 vs yfinance 66.85（+2.20%）
+- `LOGI` xsource：2026-10-19 第二來源 104.41 vs yfinance 107.345（-2.73%）
+- `LRCX` xsource：2026-10-19 第二來源 263.94 vs yfinance 272.2（-3.03%）
+- `LUMN` xsource：2026-10-19 第二來源 4.65 vs yfinance 4.46（+4.26%）
+- `LUV` xsource：2026-10-19 第二來源 39.5 vs yfinance 38.8（+1.80%）
+- `M` xsource：2026-10-19 第二來源 24.0 vs yfinance 23.6（+1.69%）
+- `MAC` xsource：2026-10-19 第二來源 22.96 vs yfinance 22.53（+1.91%）
+- `MAT` xsource：2026-10-19 第二來源 17.2 vs yfinance 16.88（+1.90%）
+- `MBI` xsource：2026-10-19 第二來源 4.41 vs yfinance 4.34（+1.61%）
+- `MDB` xsource：2026-10-19 第二來源 337.57 vs yfinance 348.69（-3.19%）
+- `MDT` xsource：2026-10-19 第二來源 94.75 vs yfinance 92.77（+2.13%）
+- `MET` xsource：2026-10-19 第二來源 100.76 vs yfinance 99.58（+1.18%）
+- `MHK` xsource：2026-10-19 第二來源 120.29 vs yfinance 115.78（+3.90%）
+- `MI` xsource：2026-10-19 第二來源 0.6399 vs yfinance 0.5476（+16.86%）
+- `MKC` xsource：2026-10-19 第二來源 46.35 vs yfinance 45.86（+1.07%）
+- `MMI` xsource：2026-10-19 第二來源 28.04 vs yfinance 27.34（+2.56%）
+- `MMM` xsource：2026-10-19 第二來源 164.75 vs yfinance 162.01（+1.69%）
+- `MNST` xsource：2026-10-19 第二來源 45.73 vs yfinance 46.8（-2.29%）
+- `MO` xsource：2026-10-19 第二來源 75.11 vs yfinance 74.09（+1.38%）
+- `MOH` xsource：2026-10-19 第二來源 207.36 vs yfinance 210.2（-1.35%）
+- `MOS` xsource：2026-10-19 第二來源 18.82 vs yfinance 17.92（+5.02%）
+- `MPWR` xsource：2026-10-19 第二來源 1210.86 vs yfinance 1253.66（-3.41%）
+- `MRK` xsource：2026-10-19 第二來源 145.95 vs yfinance 143.63（+1.62%）
+- `MRNA` xsource：2026-10-19 第二來源 218.01 vs yfinance 226.89（-3.91%）
+- `MRVL` xsource：2026-10-19 第二來源 227.83 vs yfinance 237.09（-3.91%）
+- `MS` xsource：2026-10-19 第二來源 180.57 vs yfinance 178.47（+1.18%）
+- `MTCH` xsource：2026-10-19 第二來源 42.95 vs yfinance 44.73（-3.98%）
+- `MU` xsource：2026-10-19 第二來源 878.84 vs yfinance 904.9（-2.88%）
+- `MUR` xsource：2026-10-19 第二來源 41.74 vs yfinance 42.54（-1.88%）
+- `NAVI` xsource：2026-10-19 第二來源 9.28 vs yfinance 9.09（+2.09%）
+- `NBIS` xsource：2026-10-19 第二來源 165.47 vs yfinance 170.24（-2.80%）
+- `NBR` xsource：2026-10-19 第二來源 78.2 vs yfinance 80.06（-2.32%）
+- `NCLH` xsource：2026-10-19 第二來源 15.05 vs yfinance 15.24（-1.25%）
+- `NEE` xsource：2026-10-19 第二來源 79.8 vs yfinance 78.17（+2.09%）
+- `NI` xsource：2026-10-19 第二來源 42.68 vs yfinance 41.95（+1.74%）
+- `NKTR` xsource：2026-10-19 第二來源 35.78 vs yfinance 36.64（-2.35%）
+- `NOC` xsource：2026-10-19 第二來源 519.86 vs yfinance 510.65（+1.80%）
+- `NOW` xsource：2026-10-19 第二來源 141.97 vs yfinance 145.36（-2.33%）
+- `NRG` xsource：2026-10-19 第二來源 103.75 vs yfinance 99.38（+4.40%）
+- `NSC` xsource：2026-10-19 第二來源 326.92 vs yfinance 323.48（+1.06%）
+- `NTAP` xsource：2026-10-19 第二來源 203.8 vs yfinance 207.37（-1.72%）
+- `NUE` xsource：2026-10-19 第二來源 256.29 vs yfinance 260.73（-1.70%）
+- `NVDA` xsource：2026-10-19 第二來源 214.13 vs yfinance 217.09（-1.36%）
+- `NVR` xsource：2026-10-19 第二來源 5919.82 vs yfinance 5828.0（+1.58%）
+- `NWL` xsource：2026-10-19 第二來源 5.65 vs yfinance 5.54（+1.99%）
+- `O` xsource：2026-10-19 第二來源 56.08 vs yfinance 55.51（+1.03%）
+- `OI` xsource：2026-10-19 第二來源 5.83 vs yfinance 5.9（-1.19%）
+- `OKTA` xsource：2026-10-19 第二來源 187.26 vs yfinance 189.93（-1.41%）
+- `OMC` xsource：2026-10-19 第二來源 80.56 vs yfinance 79.44（+1.41%）
+- `ON` xsource：2026-10-19 第二來源 72.02 vs yfinance 73.12（-1.50%）
+- `ORCL` xsource：2026-10-19 第二來源 128.23 vs yfinance 129.59（-1.05%）
+- `PANW` xsource：2026-10-19 第二來源 342.0 vs yfinance 346.95（-1.43%）
+- `PBI` xsource：2026-10-19 第二來源 17.04 vs yfinance 16.84（+1.19%）
+- `PCAR` xsource：2026-10-19 第二來源 110.82 vs yfinance 108.42（+2.21%）
+- `PEG` xsource：2026-10-19 第二來源 71.49 vs yfinance 70.32（+1.66%）
+- `PENN` xsource：2026-10-19 第二來源 14.94 vs yfinance 14.71（+1.56%）
+- `PEP` xsource：2026-10-19 第二來源 131.49 vs yfinance 133.57（-1.56%）
+- `PFG` xsource：2026-10-19 第二來源 108.81 vs yfinance 106.86（+1.82%）
+- `PG` xsource：2026-10-19 第二來源 159.35 vs yfinance 157.69（+1.05%）
+- `PHM` xsource：2026-10-19 第二來源 113.55 vs yfinance 110.9（+2.39%）
+- `PLD` xsource：2026-10-19 第二來源 125.75 vs yfinance 124.09（+1.34%）
+- `PLTR` xsource：2026-10-19 第二來源 186.03 vs yfinance 194.15（-4.18%）
+- `PM` xsource：2026-10-19 第二來源 205.2 vs yfinance 201.05（+2.06%）
+- `PNR` xsource：2026-10-19 第二來源 53.44 vs yfinance 52.75（+1.31%）
+- `PNW` xsource：2026-10-19 第二來源 103.42 vs yfinance 101.17（+2.22%）
+- `POM` xsource：2026-10-19 第二來源 0.6317 vs yfinance 0.5314（+18.87%）
+- `POOL` xsource：2026-10-19 第二來源 172.57 vs yfinance 168.07（+2.68%）
+- `PPL` xsource：2026-10-19 第二來源 35.17 vs yfinance 34.31（+2.51%）
+- `PRGO` xsource：2026-10-19 第二來源 16.63 vs yfinance 16.09（+3.36%）
+- `PRU` xsource：2026-10-19 第二來源 115.91 vs yfinance 113.67（+1.97%）
+- `PWR` xsource：2026-10-19 第二來源 631.86 vs yfinance 618.41（+2.17%）
+- `Q` xsource：2026-10-19 第二來源 115.37 vs yfinance 119.05（-3.09%）
+- `RCL` xsource：2026-10-19 第二來源 277.68 vs yfinance 281.97（-1.52%）
+- `REG` xsource：2026-10-19 第二來源 73.24 vs yfinance 72.41（+1.15%）
+- `REGN` xsource：2026-10-19 第二來源 790.74 vs yfinance 782.04（+1.11%）
+- `RHI` xsource：2026-10-19 第二來源 33.31 vs yfinance 32.87（+1.34%）
+- `RIG` xsource：2026-10-19 第二來源 5.62 vs yfinance 5.89（-4.58%）
+- `RJF` xsource：2026-10-19 第二來源 156.78 vs yfinance 153.44（+2.18%）
+- `RKLB` xsource：2026-10-19 第二來源 50.84 vs yfinance 51.36（-1.01%）
+- `ROL` xsource：2026-10-19 第二來源 33.45 vs yfinance 32.66（+2.42%）
+- `RSG` xsource：2026-10-19 第二來源 231.54 vs yfinance 229.03（+1.10%）
+- `RVTY` xsource：2026-10-19 第二來源 152.64 vs yfinance 150.94（+1.13%）
+- `SBAC` xsource：2026-10-19 第二來源 187.06 vs yfinance 183.09（+2.17%）
+- `SCHW` xsource：2026-10-19 第二來源 91.96 vs yfinance 89.58（+2.66%）
+- `SE` xsource：2026-10-19 第二來源 93.77 vs yfinance 88.47（+5.99%）
+- `SGP` xsource：2026-10-19 第二來源 24.0 vs yfinance 24.6（-2.44%）
+- `SHW` xsource：2026-10-19 第二來源 335.2 vs yfinance 331.61（+1.08%）
+- `SIG` xsource：2026-10-19 第二來源 118.49 vs yfinance 116.76（+1.48%）
+- `SLG` xsource：2026-10-19 第二來源 47.0 vs yfinance 45.0（+4.44%）
+- `SLM` xsource：2026-10-19 第二來源 21.81 vs yfinance 21.57（+1.11%）
+- `SMCI` xsource：2026-10-19 第二來源 31.63 vs yfinance 32.1（-1.46%）
+- `SNDK` xsource：2026-10-19 第二來源 1299.3 vs yfinance 1371.12（-5.24%）
+- `SO` xsource：2026-10-19 第二來源 91.18 vs yfinance 89.27（+2.14%）
+- `SOLS` xsource：2026-10-19 第二來源 59.25 vs yfinance 60.47（-2.02%）
+- `SPG` xsource：2026-10-19 第二來源 205.44 vs yfinance 202.49（+1.46%）
+- `SRE` xsource：2026-10-19 第二來源 83.41 vs yfinance 81.74（+2.04%）
+- `STLD` xsource：2026-10-19 第二來源 240.54 vs yfinance 245.17（-1.89%）
+- `STX` xsource：2026-10-19 第二來源 639.01 vs yfinance 660.81（-3.30%）
+- `SWK` xsource：2026-10-19 第二來源 92.48 vs yfinance 91.19（+1.41%）
+- `SYK` xsource：2026-10-19 第二來源 294.66 vs yfinance 297.94（-1.10%）
+- `T` xsource：2026-10-19 第二來源 23.44 vs yfinance 23.2（+1.03%）
+- `TCOM` xsource：2026-10-19 第二來源 40.01 vs yfinance 39.59（+1.06%）
+- `TDC` xsource：2026-10-19 第二來源 30.36 vs yfinance 31.35（-3.16%）
+- `TE` xsource：2026-10-19 第二來源 2.62 vs yfinance 2.54（+3.15%）
+- `TEAM` xsource：2026-10-19 第二來源 207.82 vs yfinance 214.75（-3.23%）
+- `TER` xsource：2026-10-19 第二來源 325.0 vs yfinance 335.53（-3.14%）
+- `TFC` xsource：2026-10-19 第二來源 47.07 vs yfinance 46.32（+1.62%）
+- `TMO` xsource：2026-10-19 第二來源 690.0 vs yfinance 679.38（+1.56%）
+- `TMUS` xsource：2026-10-19 第二來源 159.1 vs yfinance 156.09（+1.93%）
+- `TPL` xsource：2026-10-19 第二來源 350.92 vs yfinance 344.61（+1.83%）
+- `TPR` xsource：2026-10-19 第二來源 120.18 vs yfinance 117.71（+2.10%）
+- `TRV` xsource：2026-10-19 第二來源 389.54 vs yfinance 385.45（+1.06%）
+- `TSCO` xsource：2026-10-19 第二來源 33.16 vs yfinance 32.81（+1.07%）
+- `TSLA` xsource：2026-10-19 第二來源 354.72 vs yfinance 368.06（-3.62%）
+- `TSN` xsource：2026-10-19 第二來源 54.9 vs yfinance 54.0（+1.67%）
+- `TT` xsource：2026-10-19 第二來源 458.89 vs yfinance 465.04（-1.32%）
+- `UDR` xsource：2026-10-19 第二來源 34.26 vs yfinance 33.84（+1.24%）
+- `UHS` xsource：2026-10-19 第二來源 185.1 vs yfinance 182.29（+1.54%）
+- `UIS` xsource：2026-10-19 第二來源 2.21 vs yfinance 2.24（-1.34%）
+- `UNH` xsource：2026-10-19 第二來源 401.43 vs yfinance 406.88（-1.34%）
+- `USB` xsource：2026-10-19 第二來源 58.73 vs yfinance 57.85（+1.52%）
+- `VEEV` xsource：2026-10-19 第二來源 310.36 vs yfinance 316.8（-2.03%）
+- `VEON` xsource：2026-10-19 第二來源 83.2 vs yfinance 82.18（+1.24%）
+- `VFC` xsource：2026-10-19 第二來源 16.85 vs yfinance 17.14（-1.69%）
+- `VIAV` xsource：2026-10-19 第二來源 33.38 vs yfinance 34.98（-4.57%）
+- `VICI` xsource：2026-10-19 第二來源 23.6 vs yfinance 23.1（+2.16%）
+- `VLO` xsource：2026-10-19 第二來源 444.71 vs yfinance 433.31（+2.63%）
+- `VNO` xsource：2026-10-19 第二來源 32.93 vs yfinance 32.19（+2.30%）
+- `VOD` xsource：2026-10-19 第二來源 16.11 vs yfinance 15.87（+1.51%）
+- `VRSN` xsource：2026-10-19 第二來源 302.335 vs yfinance 306.48（-1.35%）
+- `VST` xsource：2026-10-19 第二來源 152.02 vs yfinance 149.7（+1.55%）
+- `VTR` xsource：2026-10-19 第二來源 85.86 vs yfinance 84.51（+1.60%）
+- `VTRS` xsource：2026-10-19 第二來源 18.655 vs yfinance 18.26（+2.16%）
+- `VZ` xsource：2026-10-19 第二來源 44.79 vs yfinance 44.15（+1.45%）
+- `WDAY` xsource：2026-10-19 第二來源 190.81 vs yfinance 195.2（-2.25%）
+- `WDC` xsource：2026-10-19 第二來源 332.0 vs yfinance 352.21（-5.74%）
+- `WEC` xsource：2026-10-19 第二來源 108.71 vs yfinance 107.0（+1.60%）
+- `WFC` xsource：2026-10-19 第二來源 83.87 vs yfinance 81.8（+2.53%）
+- `WHR` xsource：2026-10-19 第二來源 27.89 vs yfinance 26.46（+5.40%）
+- `WMB` xsource：2026-10-19 第二來源 71.28 vs yfinance 70.38（+1.28%）
+- `WRB` xsource：2026-10-19 第二來源 75.42 vs yfinance 74.08（+1.81%）
+- `WY` xsource：2026-10-19 第二來源 19.61 vs yfinance 19.2（+2.14%）
+- `XEL` xsource：2026-10-19 第二來源 76.31 vs yfinance 75.14（+1.56%）
+- `XRAY` xsource：2026-10-19 第二來源 8.57 vs yfinance 8.42（+1.78%）
+- `ZBRA` xsource：2026-10-19 第二來源 369.01 vs yfinance 375.77（-1.80%）
+- `ZM` xsource：2026-10-19 第二來源 94.19 vs yfinance 97.59（-3.48%）
+- `ZS` xsource：2026-10-19 第二來源 207.38 vs yfinance 212.53（-2.42%）
+- `VMRK` yf_name_changed：yfinance 名字「AvalonBay Communities, Inc.」→「Vivmark Residential」（改名或代碼重用）
 
 ## 🟡 注意
 
@@ -6046,29 +6359,28 @@
 - `CCI` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 2.1%，nasdaq 10y daily）；例 2020-07-31 我們 170.21 vs 對方 166.7（-2.1%）
 - `CPRI` xcheck_history：全量歷史比對 1/897 筆收市差 >1%（最大 1.0%，nasdaq 10y daily）；例 2019-01-02 我們 38.97 vs 對方 39.36（+1.0%）
 - `DOC` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 3.8%，nasdaq 10y daily）；例 2019-11-05 我們 35.78 vs 對方 34.41（-3.8%）
-- `GEN` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 1.9%，nasdaq 10y daily）；例 2019-11-05 我們 23.75 vs 對方 24.19（+1.9%）
-- `GRMN` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 1.1%，nasdaq 10y daily）；例 2021-12-07 我們 137.96 vs 對方 136.44（-1.1%）
-- `LLY` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 1.5%，nasdaq 10y daily）；例 2019-03-13 我們 124.31 vs 對方 126.19（+1.5%）
-- `NEM` xcheck_history：全量歷史比對 3/2513 筆收市差 >1%（最大 1.4%，nasdaq 10y daily）；例 2019-08-02 我們 36.91 vs 對方 37.42（+1.4%）；2021-07-30 我們 62.82 vs 對方 61.98（-1.3%）
-- `VTRS` xcheck_history：全量歷史比對 1/1485 筆收市差 >1%（最大 1.3%，nasdaq 10y daily）；例 2020-11-16 我們 15.86 vs 對方 15.66（-1.3%）
+- `GEN` xcheck_history：全量歷史比對 1/2514 筆收市差 >1%（最大 1.9%，nasdaq 10y daily）；例 2019-11-05 我們 23.75 vs 對方 24.19（+1.9%）
+- `GRMN` xcheck_history：全量歷史比對 1/2514 筆收市差 >1%（最大 1.1%，nasdaq 10y daily）；例 2021-12-07 我們 137.96 vs 對方 136.44（-1.1%）
+- `LLY` xcheck_history：全量歷史比對 1/2514 筆收市差 >1%（最大 1.5%，nasdaq 10y daily）；例 2019-03-13 我們 124.31 vs 對方 126.19（+1.5%）
+- `NEM` xcheck_history：全量歷史比對 3/2514 筆收市差 >1%（最大 1.4%，nasdaq 10y daily）；例 2019-08-02 我們 36.91 vs 對方 37.42（+1.4%）；2021-07-30 我們 62.82 vs 對方 61.98（-1.3%）
+- `VTRS` xcheck_history：全量歷史比對 1/1488 筆收市差 >1%（最大 1.3%，nasdaq 10y daily）；例 2020-11-16 我們 15.86 vs 對方 15.66（-1.3%）
 
 ## ✅ 已確認
 
-- `EA` stale：現任成分股最後一根 2026-08-04，市場最新 2026-10-16（Electronic Arts 2026-08 私有化下市；Nasdaq-100 名單是 Wikipedia 年度快照（2026-06-29），尚未反映出榜——回測到 8 月初之後自然沒有它的價格）
+- `EA` stale：現任成分股最後一根 2026-08-04，市場最新 2026-10-19（Electronic Arts 2026-08 私有化下市；Nasdaq-100 名單是 Wikipedia 年度快照（2026-06-29），尚未反映出榜——回測到 8 月初之後自然沒有它的價格）
 - `EA` no_second_source：現任成分股沒有第二來源報價（Electronic Arts 2026-08 私有化下市（見 EA:stale））
 - `AZN` xcheck_history：全量歷史比對 629/1268 筆收市差 >1%（最大 6.2%，nasdaq 10y daily）；例 2021-05-26 我們 113.08 vs 對方 115.8（+2.4%）；2021-05-27 我們 113.78 vs 對方 110.75（-2.7%）（Nasdaq 的 AZN 2021 段數據逐日 ±2-3% 來回跳（我們平滑、符合 ADR×2 的 2026 直接上市換算）；另 400 筆 Nasdaq 停滯已剔除——判斷為第二來源雜訊（2026-09-23 查））
-- `GM` xcheck_history：全量歷史比對 3/2513 筆收市差 >1%（最大 16.9%，nasdaq 10y daily）；例 2017-12-01 我們 42.79 vs 對方 35.55（-16.9%）；2021-01-20 我們 55.86 vs 對方 53.39（-4.4%）（Nasdaq 端壞價：2017-12-01 Nasdaq 35.55、實際收市約 43（我們 42.79 正確）；另 2 筆 1-4% 單日差（2026-09-23 查））
-- `LBTYA` xcheck_history：全量歷史比對 3/1182 筆收市差 >1%（最大 100.0%，nasdaq 10y daily）；例 2019-09-20 我們 13.4312 vs 對方 9.72267e-05（-100.0%）；2019-09-26 我們 12.7099 vs 對方 9.72267e-05（-100.0%）（Nasdaq 端壞價：2019-09-20 等 3 天 Nasdaq 收市 0.0001 美元量級（我們 13.43 正常））
+- `GM` xcheck_history：全量歷史比對 3/2514 筆收市差 >1%（最大 16.9%，nasdaq 10y daily）；例 2017-12-01 我們 42.79 vs 對方 35.55（-16.9%）；2021-01-20 我們 55.86 vs 對方 53.39（-4.4%）（Nasdaq 端壞價：2017-12-01 Nasdaq 35.55、實際收市約 43（我們 42.79 正確）；另 2 筆 1-4% 單日差（2026-09-23 查））
+- `LBTYA` xcheck_history：全量歷史比對 3/1181 筆收市差 >1%（最大 100.0%，nasdaq 10y daily）；例 2019-09-20 我們 13.4312 vs 對方 9.72267e-05（-100.0%）；2019-09-26 我們 12.7099 vs 對方 9.72267e-05（-100.0%）（Nasdaq 端壞價：2019-09-20 等 3 天 Nasdaq 收市 0.0001 美元量級（我們 13.43 正常））
 - `LILA` xcheck_history：全量歷史比對 2/126 筆收市差 >1%（最大 255.3%，nasdaq 10y daily）；例 2017-12-29 我們 12.9018 vs 對方 45.8383（+255.3%）；2018-01-03 我們 10.8401 vs 對方 13.9904（+29.1%）（Nasdaq 端壞價：2017-12-29 Nasdaq 45.84（我們 12.90、前後日連續））
 - `LILAK` xcheck_history：全量歷史比對 1/126 筆收市差 >1%（最大 314.7%，nasdaq 10y daily）；例 2017-12-29 我們 12.7234 vs 對方 52.7648（+314.7%）（Nasdaq 端壞價：2017-12-29 Nasdaq 52.76（我們 12.72、前後日連續））
 - `MRSH` name_mismatch：第二來源「Marsh Common Stock」vs yfinance「Marsh & McLennan Companies, Inc.」（Marsh McLennan 2026 改名 Marsh、代碼 MMC->MRSH；yfinance 名字還沒更新）
-- `VMRK` name_mismatch：第二來源「Vivmark Residential Common Shares of Beneficial Interest」vs yfinance「AvalonBay Communities, Inc.」（AvalonBay 2026 改名 Vivmark Residential、代碼 AVB->VMRK；yfinance 名字還沒更新）
 - `BATRA` reuse_suspect_ndx_2016-06-30：ndx 2016-06-30~2017-06-30 在榜期間成交額只有同年成員中位數的 0.5%——Yahoo 這個代碼可能是別家公司，查證後列入 universes/us/reuse_blocklist.csv 或 qc_acks.json（Liberty Braves Group A 追蹤股（同一實體，本來就成交清淡），不是代碼重用）
 - `BATRK` reuse_suspect_ndx_2016-06-30：ndx 2016-06-30~2017-06-30 在榜期間成交額只有同年成員中位數的 1.1%——Yahoo 這個代碼可能是別家公司，查證後列入 universes/us/reuse_blocklist.csv 或 qc_acks.json（Liberty Braves Group C 追蹤股（同上））
 
 ## 🔎 全量歷史比對（第二來源整段歷史 vs yfinance）
 
-- 已比對 719/719 檔、1,230,622 筆收市價、不符（>1%）650 筆；第二來源沒有的已下市/改代碼 29 檔（ABI, AVB, BBBY, BF-B, CAM, CPWR, CSRA, DDS, EA, EMC, EQR, EWJ, FB, FMCC, FNMA, GENZ, INFO, JAVA, LEG, NFX…）
+- 已比對 719/719 檔、1,230,866 筆收市價、不符（>1%）650 筆；第二來源沒有的已下市/改代碼 29 檔（ABI, AVB, BBBY, BF-B, CAM, CPWR, CSRA, DDS, EA, EMC, EQR, EWJ, FB, FMCC, FNMA, GENZ, INFO, JAVA, LEG, NFX…）
 - 美股：Nasdaq.com 10 年日線逐日比；日股：Yahoo!ファイナンス 1995 起月線（月底、拆股還原）+ 最近 20 日日線
 - 調整方法差異（已解釋、不算不符）42 檔：Yahoo 把分拆/股份交換記成非整數拆股並回溯調整價格（總回報正確），第二來源只調真拆股；比對前按事件日倍數對齊。例：AIV 2020-12-15 ×1.3019, 2019-02-21 ×1.0312；APTV 2017-12-05 ×1.0167；ASH 2017-05-22 ×1.0132；BDX 2026-02-10 ×1.018；CNX 2017-11-29 ×1.0277；CTVA 2026-10-01 ×1.2394；DD 2025-11-07 ×0.9862, 2019-06-03 ×1.4175；DXC 2018-06-08 ×1.0144
 - Yahoo 漏調的公司行動（第二來源有調、我們沒有）0 處：無
