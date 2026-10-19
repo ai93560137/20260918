@@ -1146,3 +1146,12 @@ def test_preflight_checks_one_share_in_size_max(env):
     tr.cfg = replace(cfg, real_size_max=True)
     tr._real_preflight(t["now"], "HK.MHI2610", 25000)
     assert asked == [1]
+
+
+def test_real_size_frac_uses_equity(env):
+    """[R249] 真倉每單 = 比例 × 實時權益（按價同匯率計股數）。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, real_size_frac=10.0, currency="USD", max_qty=99)
+    _open_long(t, ai, tr, stop=24950)
+    eq = 200000.0                                   # FakeBroker 權益
+    assert b.orders[-1][2] == int(10.0 * eq / (25000 * 7.8))
