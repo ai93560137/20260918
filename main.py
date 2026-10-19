@@ -7818,7 +7818,10 @@ def _lf_product_section(p, d, real=False):
     else:
         pos_txt, pos_desc = "冇", "空手"
     warn = ""
-    if d["stale"]:
+    if d["stale"] and real and not pos:          # [R247] 真倉程式按設定停咗（冇倉）：講明已停，唔當故障
+        warn = (f"<p class='muted'><b>⏹ 真倉已停</b>：最後一次上載 {esc(_lf_hkt(d['received_utc']))}，停嗰陣冇倉；"
+                "而家只跑模擬倉。下面係停之前嘅真倉紀錄。</p>")
+    elif d["stale"]:
         age = d["age_min"]
         warn = ("<p style='color:#b45309'><b>⚠ 數據未更新</b>：上次收到 "
                 f"{esc(_lf_hkt(d['received_utc']))}（{'—' if age is None else f'{age:.0f} 分鐘前'}），程式可能停咗。</p>")
@@ -7975,7 +7978,8 @@ def _lf_group(prods, total, real):
             continue
         m, mh, st = d["metrics"], d["metrics_hkd"], d["state"]
         pos = st.get("pos")
-        orow += (f"<tr><td><a href='#{pre}{p}'>{p}</a></td><td>{esc(_lf_run(st))}</td>"
+        run = "⏹ 已停（冇倉）" if real and d["stale"] and not pos else _lf_run(st)   # [R247]
+        orow += (f"<tr><td><a href='#{pre}{p}'>{p}</a></td><td>{esc(run)}</td>"
                  f"<td>{'—' if not pos else ('好' if pos.get('side', 0) > 0 else '淡') + ' ' + str(pos.get('qty'))}</td>"
                  f"<td>{m['trades']}</td><td>{'—' if m['win_rate'] is None else format(m['win_rate'], '.0%')}</td>"
                  f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td><td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")

@@ -127,6 +127,14 @@ check("真倉決策另外存檔", "longfei/real/SPY/decisions/2026-10-20.json" i
 check("模擬 SPY 冇被蓋", json.loads(FAKE["longfei/SPY/latest.json"][0])["status"]["trd_env"] == "SIMULATE")
 html = client.get("/?view=longfei").get_data(as_text=True)
 check("頁面真倉同模擬分開", "lf-real-SPY" in html and "lf-SPY" in html and html.index("lf-real-SPY") < html.index("lf-SPY"))
+_k = "longfei/real/SPY/latest.json"
+_doc = json.loads(FAKE[_k][0])
+_doc["received_ts"] -= 3 * 3600                                   # [R247] 真倉停咗 3 個鐘、冇倉
+FAKE[_k] = (json.dumps(_doc),) + tuple(FAKE[_k][1:])
+_h = client.get("/?view=longfei").get_data(as_text=True)
+_rs = _h[_h.index("lf-real-SPY"):_h.index("lf-SPY")]
+check("[R247] 真倉停咗冇倉：顯示已停唔係故障", "真倉已停" in _h and "⏹ 已停（冇倉）" in _h and "程式可能停咗" not in _rs)
+FAKE[_k] = (json.dumps({**_doc, "received_ts": _doc["received_ts"] + 3 * 3600}),) + tuple(FAKE[_k][1:])
 j = client.get("/?view=longfei&format=json").get_json()
 check("真倉合計獨立", j["total_real_hkd"]["trades"] == 1 and abs(j["total_real_hkd"]["points"] - 1000) < 1e-9
       and j["total_hkd"]["trades"] == 1, (j.get("total_real_hkd"), j.get("total_hkd")))
