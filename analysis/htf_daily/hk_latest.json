@@ -1,6 +1,6 @@
 {
  "market": "hk",
- "date": "2026-10-15",
+ "date": "2026-10-16",
  "params": {
   "adr_min": 0.0,
   "chase": 0.05,
@@ -17,7 +17,7 @@
   "trail": "ma50",
   "vol": 1.0
  },
- "n_orders": 1,
+ "n_orders": 2,
  "n_open": 0,
  "n_closed": 0,
  "mkt_ok": false,
@@ -26,7 +26,8 @@
  "closed_avg": null,
  "closed_win": null,
  "orders_top": [
-  "2586.HK 觸發 9.18（距收市 +7.4%）"
+  "2586.HK 觸發 9.18（距收市 +7.4%）",
+  "2510.HK 觸發 14.96（距收市 +8.3%）"
  ],
  "positions": []
 }

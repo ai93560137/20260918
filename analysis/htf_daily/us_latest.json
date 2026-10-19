@@ -1,6 +1,6 @@
 {
  "market": "us",
- "date": "2026-10-15",
+ "date": "2026-10-16",
  "params": {
   "adr_min": 0.05,
   "chase": 0.02,
@@ -20,7 +20,7 @@
  "n_orders": 0,
  "n_open": 0,
  "n_closed": 0,
- "mkt_ok": true,
+ "mkt_ok": false,
  "mkt_filter": true,
  "fwd_start": "2026-10-13",
  "closed_avg": null,
