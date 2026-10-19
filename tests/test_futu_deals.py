@@ -139,5 +139,11 @@ a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2
 check("MHI2611 −10 → 使用者人手", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611"] == [(main.FUTU_TEAM_MANUAL, -10)], a)
 check("MHI2610 −1 → 雲垂對沖", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("雲垂陣", -1)], a)
 
+print("\n=== [R235] 龍飛陣美股真倉配對 ===")
+a = main.futu_team_assign([{"code": "US.SPY", "qty": 15}, {"code": "US.QQQ", "qty": -10}, {"code": "US.DIA", "qty": 5}])
+check("SPY／QQQ → 龍飛陣", {x["code"]: x["team"] for x in a if x["code"] in ("US.SPY", "US.QQQ")} == {"US.SPY": "龍飛陣", "US.QQQ": "龍飛陣"}, a)
+check("未批准產品 DIA → 未配對", [x["team"] for x in a if x["code"] == "US.DIA"] == [main.FUTU_TEAM_UNMATCHED], a)
+check("龍飛陣喺 FUTU_TEAMS（策略總表有卡）", "龍飛陣" in main.FUTU_TEAMS)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -42,6 +42,7 @@ LADDER_STATE_OBJECT = "ops/books/ladder_state.json"
 USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
 
 TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED = "使用者人手", "券商贈股", "未配對"
+TEAM_LONGFEI = "龍飛陣"
 TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最多手數；超出當使用者人手）
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
     (r"^HK\.MHI2611$", TEAM_MANUAL, "MHI2611 小期（人手）", None),   # 2026-10-14 使用者確認；雲垂轉倉去 2611 前要改
@@ -52,8 +53,10 @@ TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最�
     (r"^US\.EW\d{4}[CP]\d+x\d$", TEAM_MANUAL, "標普 E-mini 月底 Put", None),
     (r"^US\.(ES|MES)\d{4}$", TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),
     (r"^US\.SPCX$", TEAM_GIFT, "SpaceX 碎股（券商送）", None),
+    (r"^US\.(SPY|QQQ)$", TEAM_LONGFEI, "美股 ETF 真倉（AI 自動）", None),   # [R235] PR #212；同 main.py 一齊改
 )
-TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
+TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_LONGFEI, TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
+AUTO_TEAMS = {TEAM_LONGFEI}   # [R235] 程式自動落單：持倉日內會變，唔登記 POSITIONS.md 每筆，對帳只列示、唔計 ⚠
 JOURNAL_BRANCHES = {"蛇蟠陣": "claude/gifted-carson-v2tvhw", "雲垂陣": "claude/dazzling-curie-f3xzb8"}
 
 # 風控階梯初稿（使用者 2026-10-13：Ⓒ／Ⓓ 可直接 TG 提示；門檻待使用者確認，見 RISK_LADDER.md）
@@ -330,7 +333,9 @@ def reconcile(risk: dict | None, positions_md: str, journal: tuple[dict, dict], 
             ok = True                                              # 登記空手、富途冇倉：一致
         status = "✅" if ok else "⚠"
         reason = ""
-        if not ok:
+        if team in AUTO_TEAMS and not ok:                          # [R235] 龍飛陣程式自動：只列示
+            status, reason = "🐉", "程式自動落單，以龍飛陣自己帳為準（唔計 ⚠）"
+        elif not ok:
             ex = explanations.get(code) or {}
             prev = (state.get("open") or {}).get(code) or {}
             first = prev.get("first_seen") or today.isoformat()
