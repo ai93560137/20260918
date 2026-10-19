@@ -6,7 +6,7 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from markets import FX_TO_HKD, SPECS, fee_hkd, order_qty, spec_for
+from markets import FX_TO_HKD, SPECS, fee_hkd, order_qty, session_day, spec_for
 from rules import (round_tick, session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -133,6 +133,8 @@ class Trader:
         snap = self.broker.snapshot(contract)
         last = snap["last"]
         session, mins_left = session_status(now, cfg.market, cfg.kind)
+        if session and not self._is_trading_day(now):   # [R261] 交易所假期：當休市，唔問 Claude、唔開倉
+            session, mins_left = None, None
         stale = (snap["update_time"] is None or
                  (now - snap["update_time"]).total_seconds() > cfg.stale_quote_sec)
 
@@ -189,6 +191,18 @@ class Trader:
                 self._decide(now, contract, qty, snap, session, mins_left)
 
     # ---------- 決策 ----------
+    def _is_trading_day(self, now):
+        fn = getattr(self.broker, "is_trading_day", None)
+        if not fn:
+            return True
+        day = session_day(now, self.cfg.market)
+        ok = fn(self.cfg.market, day)
+        if not ok and self.state.get("holiday") != day.isoformat():
+            self.state["holiday"] = day.isoformat()
+            self._log("events", {"type": "HOLIDAY", "day": day.isoformat(), "market": self.cfg.market,
+                                 "note": "交易所假期：唔問 Claude、唔開倉"})
+        return ok
+
     def _decision_due(self, now):
         n = self.cfg.decision_interval_min
         if now.minute % n != 0 or now.second < 3:

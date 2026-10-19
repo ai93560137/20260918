@@ -1155,3 +1155,24 @@ def test_real_size_frac_uses_equity(env):
     _open_long(t, ai, tr, stop=24950)
     eq = 200000.0                                   # FakeBroker 權益
     assert b.orders[-1][2] == int(10.0 * eq / (25000 * 7.8))
+
+
+def test_holiday_skips_ai(env):
+    """[R261] 交易所假期：當休市，唔問 Claude，記一次 HOLIDAY。"""
+    cfg, t, b, ai, tr = env
+    b.is_trading_day = lambda market, day: False
+    tr.tick()
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 0 and ai.screens == 0 and tr.state.get("holiday") == "2026-10-16"
+    b.is_trading_day = lambda market, day: True
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls + ai.screens >= 1
+
+
+def test_session_day_night_belongs_to_previous_day():
+    from markets import session_day
+    assert str(session_day(datetime(2026, 10, 20, 2, 30, tzinfo=HKT), "HK")) == "2026-10-19"
+    assert str(session_day(datetime(2026, 10, 20, 17, 30, tzinfo=HKT), "HK")) == "2026-10-20"
+    assert str(session_day(datetime(2026, 10, 20, 2, 30, tzinfo=HKT), "US")) == "2026-10-19"

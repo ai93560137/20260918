@@ -353,6 +353,27 @@ class FutuBroker:
         return _num(row.get("dealt_avg_price")) or price, q
 
     # ---------- [R234] 伺服器端後備止蝕（GTC STOP 單，放喺富途伺服器；部機／OpenD 死咗都生效）----------
+    # ---------- [R261] 交易所假期（富途交易日曆）----------
+    def is_trading_day(self, market: str, day) -> bool:
+        """富途 request_trading_days：港股／美股交易日（包半日市）。查唔到就當交易日（唔阻住交易），一日查一次。"""
+        cache = self.__dict__.setdefault("_tdays", {})
+        key = (market, day.isoformat())
+        if key in cache:
+            return cache[key]
+        try:
+            from futu import TradeDateMarket
+            mk = TradeDateMarket.US if market == "US" else TradeDateMarket.HK
+            start, end = (day - timedelta(days=10)).isoformat(), (day + timedelta(days=10)).isoformat()
+            data = _ok(*self.quote.request_trading_days(market=mk, start=start, end=end), "request_trading_days")
+            days = {str(x.get("time"))[:10] for x in data}
+            for k in range(-10, 11):
+                d = (day + timedelta(days=k)).isoformat()
+                cache[(market, d)] = d in days
+        except Exception as e:  # noqa: BLE001
+            log.warning("查交易日曆失敗（當交易日）：%s", e)
+            return True
+        return cache[key]
+
     def stop_order(self, code: str, side: int, qty: int, trigger: float) -> str:
         """掛止損市價單（side：+1 買／-1 賣），長期有效；回傳 order_id。"""
         from futu import TimeInForce
