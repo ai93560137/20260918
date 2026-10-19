@@ -127,6 +127,7 @@ check("真倉決策另外存檔", "longfei/real/SPY/decisions/2026-10-20.json" i
 check("模擬 SPY 冇被蓋", json.loads(FAKE["longfei/SPY/latest.json"][0])["status"]["trd_env"] == "SIMULATE")
 html = client.get("/?view=longfei").get_data(as_text=True)
 check("頁面真倉同模擬分開", "lf-real-SPY" in html and "lf-SPY" in html and html.index("lf-real-SPY") < html.index("lf-SPY"))
+check("[R250] 真倉／模擬倉分色框", "lf-grp lf-real" in html and "lf-grp lf-sim" in html and "#lf-sim-top" in html and ".lf-real .section" in html)
 _k = "longfei/real/SPY/latest.json"
 _doc = json.loads(FAKE[_k][0])
 _doc["received_ts"] -= 3 * 3600                                   # [R247] 真倉停咗 3 個鐘、冇倉

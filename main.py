@@ -7991,7 +7991,19 @@ def _lf_group(prods, total, real):
            + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金"
            + ("" if real else "同滑價") + "；樣本少時只供參考。</p></div>")
     secs = "".join(_lf_product_section(p, prods[p], real) for p in LONGFEI_PRODUCTS if p in prods)
-    return overview + _lf_period_html(prods, real) + tot + secs
+    kind = "real" if real else "sim"            # [R250] 真倉／模擬倉用唔同顏色框，一眼分得開
+    banner = (f"<div class='lf-banner' id='lf-{kind}-top'>{'💰 真倉（真金白銀）' if real else '🧪 模擬倉（前向測試）'}</div>")
+    return f"<div class='lf-grp lf-{kind}'>" + banner + overview + _lf_period_html(prods, real) + tot + secs + "</div>"
+
+
+LONGFEI_CSS = (   # [R250] 使用者 10-20：真倉／模擬倉各區「全部都一樣款，好難搵」→ 分色框
+    ".lf-grp{margin-bottom:28px}"
+    ".lf-banner{font-size:20px;font-weight:700;padding:10px 18px;border-radius:12px;margin:8px 0 14px;color:#fff}"
+    ".lf-real .lf-banner{background:#b45309}.lf-sim .lf-banner{background:#1d4ed8}"
+    ".lf-real .section{border-left:8px solid #d97706;background:#fffbeb}"
+    ".lf-sim .section{border-left:8px solid #2563eb;background:#eff6ff}"
+    "@media (prefers-color-scheme: dark){.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}"
+)
 
 
 def build_longfei_page(data):
@@ -8008,7 +8020,10 @@ def build_longfei_page(data):
             "<div class='section'><h2>💰 真倉</h2><p class='muted'>未開始真倉。</p></div>")
     body += _lf_group(data["products"], data["total_hkd"], False)
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。</p>"
-    return html_page("龍飛陣", head + intro + body + foot, "<meta http-equiv='refresh' content='300'>")
+    jump = ("<div class='section' style='padding:12px 18px'>跳去："
+            + ("<a href='#lf-real-top'>💰 真倉</a>　｜　" if real else "") + "<a href='#lf-sim-top'>🧪 模擬倉</a></div>")
+    return html_page("龍飛陣", head + intro + jump + body + foot,
+                     "<meta http-equiv='refresh' content='300'><style>" + LONGFEI_CSS + "</style>")
 
 
 def handle_longfei_get(req):
