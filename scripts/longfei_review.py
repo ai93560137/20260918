@@ -390,6 +390,38 @@ def readiness(data):
     return L
 
 
+REAL_UNIT_HKD = 40_000           # [R264] 真倉每單（R249：0.1 × 權益）；同 main.py LONGFEI_REAL_UNIT_HKD 一致
+SIM_UNIT_HKD = 100_000 * 7.8     # 模擬美股每單 US$100k（50k／30k 產品按比例，比例一樣）
+
+
+def fee_section(rows):
+    """[R264] 手續費佔比：模擬每單大，費用睇落好細；縮到真倉注碼後，固定費用可以食晒利潤。HSI 真倉同模擬都係 1 張，唔縮。"""
+    rows = [r for r in rows if all(isinstance(r.get(k), (int, float)) for k in ("pnl_hkd_gross", "pnl_hkd_net"))]
+    if not rows:
+        return []
+    L = ["\n## 手續費佔比（R264）\n",
+         f"真倉注碼 = 毛利 × {REAL_UNIT_HKD:,} ÷ {SIM_UNIT_HKD:,.0f}（HSI 唔縮）− 原本費用；費用係每單固定，唔跟注碼縮細。\n",
+         "| 產品 | 筆數 | 模擬毛利 | 費用 | 費用 ÷ 模擬毛利 | 按真倉注碼毛利 | 按真倉扣費後 | 真倉每筆要賺（名義 %）先打和 |",
+         "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    tot = [0, 0.0, 0.0, 0.0]
+    for p, g in sorted(_group(rows, lambda r: r["product"]).items()):
+        k = 1.0 if p == "HSI" else REAL_UNIT_HKD / SIM_UNIT_HKD
+        gross = sum(r["pnl_hkd_gross"] for r in g)
+        fee = sum(r["pnl_hkd_gross"] - r["pnl_hkd_net"] for r in g)
+        real = gross * k - fee
+        be = "—" if p == "HSI" else f"{fee / len(g) / REAL_UNIT_HKD:.2%}"
+        L.append(f"| {p} | {len(g)} | {fmt(gross)} | {fmt(-fee)} | "
+                 f"{f'{fee / gross:.0%}' if gross > 0 else ('蝕錢' if gross < 0 else '—')} | {fmt(gross * k)} | {fmt(real)} | {be} |")
+        for i, v in enumerate((len(g), gross, fee, real)):
+            tot[i] += v
+    n, gross, fee, real = tot
+    L.append(f"| **合計** | {n} | {fmt(gross)} | {fmt(-fee)} | {f'{fee / gross:.0%}' if gross > 0 else '—'} | | **{fmt(real)}** | |")
+    L.append(f"\n- 每筆平均費用 HK${fee / n:,.0f}；按真倉注碼，每筆平均毛利要大過呢個數先有錢賺。"
+             + ("**⚠ 按真倉注碼扣費後係蝕：要減少交易次數、揀每筆潛在利潤大啲嘅單，或者（要使用者批准）加大真倉注碼。**"
+                if real < 0 else ""))
+    return L
+
+
 def report(data, title_date=None, real=False, bars=None):
     rows = closes(data)
     day = title_date or datetime.now(HKT).strftime("%Y-%m-%d")
@@ -414,6 +446,7 @@ def report(data, title_date=None, real=False, bars=None):
                  + (f"；真實戶口淨值 {ra.get('currency')} {ra.get('equity', 0):,.0f}、購買力 {ra.get('power', 0):,.0f}"
                     if (ra := st.get("real_account") or {}) else ""))
     if not real:
+        L += fee_section(rows)
         L += readiness(data)
         L += ranking(rows, [p for p in PRODUCTS if p in data])
     L.append(table(_group(rows, lambda r: r["product"]), "按產品"))

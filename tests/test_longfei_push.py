@@ -100,6 +100,20 @@ code, _ = post({**pkt, "state": {"product": "ZZZ"}})
 check("未知產品 422", code == 422, code)
 html = client.get("/?view=longfei").get_data(as_text=True)
 check("總覽有 SPY 同未開始嘅 QQQ", "lf-SPY" in html and "QQQ" in html and "未開始" in html)
+check("[R241] 每日／每週／每月總結", all(x in html for x in ("每日總結", "每週總結", "每月總結", "2026-10-17",
+                                                         "2026-10-12 起", "2026-10", "SPY HK$+176")), html[-3000:])
+check("[R245] 滾動 10 日 KPI 趨勢", "滾動 10 日 KPI 趨勢" in html)
+check("[R262] 按真倉注碼換算", "按真倉注碼（HK$，扣費）" in html and "按真倉注碼換算（扣費）合計" in html
+      and abs(main.longfei_real_scaled("SPY", [{"type": "CLOSE", "pnl_hkd_gross": 780.0, "pnl_hkd_net": 760.0}]) - 20.0) < 1e-9
+      and main.longfei_real_scaled("HSI", [{"type": "CLOSE", "pnl_hkd_gross": 500.0, "pnl_hkd_net": 480.0}]) == 480.0
+      and main.longfei_real_scaled("SPY", []) is None)
+_p = {"X": {"trades": [{"type": "CLOSE", "pnl_hkd_net": v, "ts": f"2026-10-{d:02d}T10:00:00+08:00"}
+                       for d, v in ((5, 100), (6, -50), (7, 200), (20, -10))]}}
+_r = main.longfei_rolling_rows(_p, window=2, rows=10)
+check("[R245] 滾動計法（2 日窗）", [x[0] for x in _r] == ["2026-10-20", "2026-10-07", "2026-10-06", "2026-10-05"]
+      and _r[0][5] == 190 and _r[1][5] == 150 and abs(_r[1][4] - 4.0) < 1e-9 and _r[3][1] == 1, _r)
+check("[R241] 凌晨 6 點前計前一日", str(main._lf_day("2026-10-18T03:00:00+08:00")) == "2026-10-17"
+      and str(main._lf_day("2026-10-18T07:00:00+08:00")) == "2026-10-18")
 j = client.get("/?view=longfei&format=json").get_json()
 check("合計按 HK$", j["total_hkd"]["trades"] == 1 and abs(j["total_hkd"]["points"] - 175.5) < 1e-9, j.get("total_hkd"))
 check("json 唔含權杖", "tok" not in json.dumps(j))
@@ -117,6 +131,15 @@ check("真倉決策另外存檔", "longfei/real/SPY/decisions/2026-10-20.json" i
 check("模擬 SPY 冇被蓋", json.loads(FAKE["longfei/SPY/latest.json"][0])["status"]["trd_env"] == "SIMULATE")
 html = client.get("/?view=longfei").get_data(as_text=True)
 check("頁面真倉同模擬分開", "lf-real-SPY" in html and "lf-SPY" in html and html.index("lf-real-SPY") < html.index("lf-SPY"))
+check("[R260] 真倉／模擬倉分色框", "lf-grp lf-real" in html and "lf-grp lf-sim" in html and "#lf-sim-top" in html and ".lf-real .section" in html)
+_k = "longfei/real/SPY/latest.json"
+_doc = json.loads(FAKE[_k][0])
+_doc["received_ts"] -= 3 * 3600                                   # [R247] 真倉停咗 3 個鐘、冇倉
+FAKE[_k] = (json.dumps(_doc),) + tuple(FAKE[_k][1:])
+_h = client.get("/?view=longfei").get_data(as_text=True)
+_rs = _h[_h.index("lf-real-SPY"):_h.index("lf-SPY")]
+check("[R247] 真倉停咗冇倉：顯示已停唔係故障", "真倉已停" in _h and "⏹ 已停（冇倉）" in _h and "程式可能停咗" not in _rs)
+FAKE[_k] = (json.dumps({**_doc, "received_ts": _doc["received_ts"] + 3 * 3600}),) + tuple(FAKE[_k][1:])
 j = client.get("/?view=longfei&format=json").get_json()
 check("真倉合計獨立", j["total_real_hkd"]["trades"] == 1 and abs(j["total_real_hkd"]["points"] - 1000) < 1e-9
       and j["total_hkd"]["trades"] == 1, (j.get("total_real_hkd"), j.get("total_hkd")))

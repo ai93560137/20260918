@@ -268,7 +268,7 @@ ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config
 | VM 自動更新 | `zhuge-update.timer` 每 10 分鐘跟 `ops/user-machine`，重套 service／timer、重開推送服務（OpenD 唔重開） | 紀錄 `~/zhuge/update.log` |
 | 使用者部機（Windows） | MT5（`ZHUGE_MT5_EXE`）、`mt5_push`（`ZHUGE_DAEMONS=mt5_push`）、Chrome | 啟動資料夾 `ZhugeStartAll.cmd` → `gcp_ib\start_all.ps1`、`Chrome.lnk` |
 
-- **只讀**：唔落單、唔 unlock_trade；交易密碼唔放上 VM。VM **冇綁 Cloud API 權限**（推數據用 `~/zhuge/env` 嘅 webhook 權杖）。
+- **只讀（龍飛陣真倉除外）**：推數據、風控（auto_risk）、iv_push、龍飛陣模擬程式都唔落真單、唔 unlock_trade。使用者 10-19 決定（方案 A）：只有龍飛陣真倉服務 `zhuge-longfei-real@<產品>` 會 unlock_trade 同落真單。交易密碼 `FUTU_TRADE_PASSWORD` 只放 VM 嘅 `~/zhuge/env`（權限 600），唔入 repo、唔入 log、唔貼對話。⚠ 解鎖係對成個 OpenD（127.0.0.1:11111）生效，解鎖後任何連 OpenD 嘅程式技術上都落得真單，所以其他程式唔可以加任何落單代碼。VM **冇綁 Cloud API 權限**（推數據用 `~/zhuge/env` 嘅 webhook 權杖）。
 - 權杖檔（權限 600，使用者喺 VM 用 `read -rs` 自己填，唔入對話／repo）：`~/zhuge/env`、`~/zhuge/opend_login`（牛牛號＋**登入**密碼）、`~/opend/FutuOpenD.xml`。
 - Claude 唔 SSH 入 VM；要改 VM 上嘅程式：開 PR → 使用者合併 → 使用者講「更新部機」→ Claude 將 `ops/user-machine` 快進到預設分支（唔 force-push）→ VM 10 分鐘內自動套用。
 - 驗證：`python3 scripts/gcp_agent.py cat --object futu/risk/latest.json` 睇 `run_hkt`（auto_risk 每 15 分鐘）。

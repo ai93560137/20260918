@@ -33,6 +33,7 @@ QUOTE_CACHE = Path(os.getenv("ZHUGE_QUOTE_CACHE", str(Path.home() / "zhuge" / "q
 QUOTE_CACHE_SEC = float(os.getenv("QUOTE_CACHE_SEC", "4"))
 WANTED_TTL_SEC = 600                     # 10 分鐘冇程式要嘅代號就唔再查（例如轉倉後嘅舊合約）
 RATE_LIMIT_MARK = "频率太高"
+UNLOCK_MARK = "解锁"          # [R232] 富途：「没有解锁交易，请先解锁交易」（OpenD 重新登入後解鎖會冇咗）
 
 
 def is_rate_limited(err) -> bool:
@@ -82,10 +83,27 @@ class FutuBroker:
         else:
             self.trade = OpenFutureTradeContext(host=cfg.opend_host, port=cfg.opend_port,
                                                 security_firm=SecurityFirm.FUTUSECURITIES)
-        if self.env == TrdEnv.REAL and cfg.trade_password:
-            _ok(*self.trade.unlock_trade(password=cfg.trade_password), "unlock_trade")
+        if self.env == TrdEnv.REAL:
+            if cfg.trade_password:
+                self._unlock()
+            else:
+                log.warning("真倉但 FUTU_TRADE_PASSWORD 未設：OpenD 冇人手解鎖就落唔到單")
         self.acc_id = cfg.acc_id or self._pick_account()
         log.info("Futu 已連接 env=%s acc_id=%s", cfg.trd_env, self.acc_id)
+
+    def _unlock(self):
+        _ok(*self.trade.unlock_trade(password=self.cfg.trade_password), "unlock_trade")
+        log.info("已解鎖交易")
+
+    def _place(self, **kw):
+        """place_order；真倉遇到「未解鎖」（OpenD 重新登入咗）就重新解鎖再試一次。"""
+        ret, data = self.trade.place_order(**kw)
+        if (ret != RET_OK and UNLOCK_MARK in str(data) and self.env == TrdEnv.REAL
+                and self.cfg.trade_password):
+            log.warning("落單話未解鎖，重新解鎖再試：%s", data)
+            self._unlock()
+            ret, data = self.trade.place_order(**kw)
+        return _ok(ret, data, "place_order")
 
     def close(self):
         self.quote.close()
@@ -334,6 +352,57 @@ class FutuBroker:
             return None, 0
         return _num(row.get("dealt_avg_price")) or price, q
 
+    # ---------- [R234] 伺服器端後備止蝕（GTC STOP 單，放喺富途伺服器；部機／OpenD 死咗都生效）----------
+    # ---------- [R261] 交易所假期（富途交易日曆）----------
+    def is_trading_day(self, market: str, day) -> bool:
+        """富途 request_trading_days：港股／美股交易日（包半日市）。查唔到就當交易日（唔阻住交易），一日查一次。"""
+        cache = self.__dict__.setdefault("_tdays", {})
+        key = (market, day.isoformat())
+        if key in cache:
+            return cache[key]
+        try:
+            from futu import TradeDateMarket
+            mk = TradeDateMarket.US if market == "US" else TradeDateMarket.HK
+            start, end = (day - timedelta(days=10)).isoformat(), (day + timedelta(days=10)).isoformat()
+            data = _ok(*self.quote.request_trading_days(market=mk, start=start, end=end), "request_trading_days")
+            days = {str(x.get("time"))[:10] for x in data}
+            for k in range(-10, 11):
+                d = (day + timedelta(days=k)).isoformat()
+                cache[(market, d)] = d in days
+        except Exception as e:  # noqa: BLE001
+            log.warning("查交易日曆失敗（當交易日）：%s", e)
+            return True
+        return cache[key]
+
+    def stop_order(self, code: str, side: int, qty: int, trigger: float) -> str:
+        """掛止損市價單（side：+1 買／-1 賣），長期有效；回傳 order_id。"""
+        from futu import TimeInForce
+        trigger = round(trigger, 4)
+        df = self._place(price=trigger, qty=qty, code=code, trd_side=TrdSide.BUY if side > 0 else TrdSide.SELL,
+                         order_type=OrderType.STOP, aux_price=trigger, time_in_force=TimeInForce.GTC,
+                         trd_env=self.env, acc_id=self.acc_id, remark="zhuge-longfei-stop")
+        oid = str(df.iloc[0]["order_id"])
+        log.info("後備止蝕 %s %s x%d 觸發 %s id=%s", "買" if side > 0 else "賣", code, qty, trigger, oid)
+        return oid
+
+    def modify_stop(self, order_id: str, qty: int, trigger: float):
+        trigger = round(trigger, 4)
+        _ok(*self.trade.modify_order(ModifyOrderOp.NORMAL, order_id, qty, trigger, aux_price=trigger,
+                                     trd_env=self.env, acc_id=self.acc_id), "modify_order")
+
+    def cancel_order(self, order_id: str):
+        """撤單，再查最終狀態；回傳 (成交均價, 成交數量)（撤之前已經觸發成交就唔係 0）。"""
+        try:
+            self.trade.modify_order(ModifyOrderOp.CANCEL, order_id, 0, 0, trd_env=self.env, acc_id=self.acc_id)
+        except Exception:  # noqa: BLE001
+            log.exception("撤單 %s 失敗", order_id)
+        for _ in range(5):
+            row = self._order_row(order_id)
+            if row is not None and (row["order_status"] in FILLED or row["order_status"] in DEAD):
+                return self._fill(row, None, 0)
+            _time.sleep(1)
+        raise BrokerError(f"撤單 {order_id} 後查唔到最終狀態")
+
     def market_order(self, code: str, side: int, qty: int, slippage: float, timeout=15):
         """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。
         回傳 (成交均價, 成交數量)；完全冇成交回傳 (None, 0)。超時會取消，取消後再查：部分成交同取消前啱啱成交都計返。"""
@@ -349,10 +418,8 @@ class FutuBroker:
             trd_side = TrdSide.SELL
         price = round(price, 4)
         extra = {"fill_outside_rth": True} if self.spec.kind == "stock" else {}   # ETF 盤前盤後都可成交
-        df = _ok(*self.trade.place_order(price=price, qty=qty, code=code,
-                                         trd_side=trd_side, order_type=OrderType.NORMAL,
-                                         trd_env=self.env, acc_id=self.acc_id,
-                                         remark="zhuge-longfei", **extra), "place_order")
+        df = self._place(price=price, qty=qty, code=code, trd_side=trd_side, order_type=OrderType.NORMAL,
+                         trd_env=self.env, acc_id=self.acc_id, remark="zhuge-longfei", **extra)
         order_id = str(df.iloc[0]["order_id"])
         log.info("落單 %s %s x%d @%s id=%s", trd_side, code, qty, price, order_id)
         deadline = _time.time() + timeout

@@ -2590,6 +2590,8 @@ FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
     "風揚陣・方向一": {"icon": "🌬️", "desc": "每週五沽下週到期 1σ 恒指週權勒式", "stop": "持有到期、唔止損、唔對沖"},
     "蛇蟠陣": {"icon": "🐍", "desc": "順勢：3 日通道，觸價反手、永遠在場；使用者人手落大恒指期貨（八陣圖指令台）",
               "stop": "按通道反手（人手執行）"},
+    "龍飛陣": {"icon": "🐉", "link": "?view=longfei", "desc": "AI 程式自動落單（真倉只限使用者逐隻批准嘅產品）",
+              "stop": "每隻日蝕上限＋開倉即掛伺服器端 GTC 止損單（R234）"},   # [R237]
     FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 86 點（10/14 新倉 @43，2× 權利金）"},
     FUTU_TEAM_GIFT: {"icon": "🎁", "desc": "券商推廣送嘅股票（唔係交易策略）", "stop": "—"},
     FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
@@ -2602,8 +2604,9 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", FUTU_TEAM_MANUAL, "大恒指期貨（人手）", None),       # 2026-10-14 使用者：預設歸人手；屬蛇蟠陣要逐張問使用者，答「屬」先喺上面加合約規則
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
-    (r"^US\.(ES|MES)\d{4}$", FUTU_TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),   # 2026-10-14 使用者沽 ES2612 −1 @7,803
+    (r"^US\.(ES|MES|MNQ)\d{4}$", FUTU_TEAM_MANUAL, "美股指數期貨（人手）", None),   # [R239] 10-19 加 MNQ（使用者人手「手痕」）   # 2026-10-14 使用者沽 ES2612 −1 @7,803
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
+    (r"^US\.(SPY|QQQ|DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", "龍飛陣", "美股 ETF／個股（AI 自動；真倉產品以 settings.env LONGFEI_REAL_PRODUCTS 為準）", None),   # [R238] 使用者 10-19：龍飛陣全部 23 隻候選一次過歸龍飛陣，之後加減真倉產品只改 settings.env＋更新部機，唔使再改呢度同部署
 )
 FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
 
@@ -3150,8 +3153,10 @@ def build_fund_report_page(r):
                      + "".join(f"<li>{esc(t)}</li>" for t in notes) + "</ul></div>")
     if un and un.get("by_product"):
         trs = "".join(f"<tr><td>{esc(k)}</td><td>{n(v)}</td></tr>" for k, v in un["by_product"].items())
-        body += ("<div class='section'><b>未實現盈虧（按產品，港幣）</b><div class='scroll'><table>"
-                 f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div></div>")
+        body += (f"<div class='section'><b>未實現盈虧（按產品，港幣，富途快照 {esc(str(un.get('asof') or '—'))} HKT）</b>"   # [R263] 加時間
+                 "<div class='scroll'><table>"
+                 f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div>"
+                 "<div class='muted' style='font-size:12px'>開倉至今（對富途 App「持倉盈虧」）；富途期貨「未實現盈虧」只計上次結算後，兩者唔同。美元 × 7.8。</div></div>")
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}
         if not tab:
@@ -7815,7 +7820,10 @@ def _lf_product_section(p, d, real=False):
     else:
         pos_txt, pos_desc = "冇", "空手"
     warn = ""
-    if d["stale"]:
+    if d["stale"] and real and not pos:          # [R247] 真倉程式按設定停咗（冇倉）：講明已停，唔當故障
+        warn = (f"<p class='muted'><b>⏹ 真倉已停</b>：最後一次上載 {esc(_lf_hkt(d['received_utc']))}，停嗰陣冇倉；"
+                "而家只跑模擬倉。下面係停之前嘅真倉紀錄。</p>")
+    elif d["stale"]:
         age = d["age_min"]
         warn = ("<p style='color:#b45309'><b>⚠ 數據未更新</b>：上次收到 "
                 f"{esc(_lf_hkt(d['received_utc']))}（{'—' if age is None else f'{age:.0f} 分鐘前'}），程式可能停咗。</p>")
@@ -7858,6 +7866,128 @@ def _lf_product_section(p, d, real=False):
             + trades_html + dec_html + "</div>")
 
 
+def _lf_day(ts):
+    """[R241] 平倉時間 → 交易日：香港時間凌晨 6 點前平倉計前一日（美股夜晚交易時段、恒指夜盤唔會拆開兩日）。"""
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone(timedelta(hours=8)))
+        return (dt.astimezone(timezone(timedelta(hours=8))) - timedelta(hours=6)).date()
+    except (TypeError, ValueError):
+        return None
+
+
+LONGFEI_PERIODS = (("每日總結", 10), ("每週總結", 8), ("每月總結", 6))
+
+
+def longfei_period_rows(prods):
+    """[R241] 使用者 10-19：總覽加每日／每週／每月總結。全部產品平倉按期間合計（HK$，未扣佣金）。
+    回傳 {標題: [(期間, 筆數, 贏, 合計, 最好產品, 最好, 最差產品, 最差)]}，最新喺上面。"""
+    keys = {"每日總結": lambda d: d.isoformat(),
+            "每週總結": lambda d: (d - timedelta(days=d.weekday())).isoformat() + " 起",
+            "每月總結": lambda d: d.strftime("%Y-%m")}
+    out = {}
+    for title, n in LONGFEI_PERIODS:
+        agg = {}
+        for p, d in prods.items():
+            for t in d["trades"]:
+                v, day = t.get("pnl_hkd_gross"), _lf_day(t.get("ts"))
+                if t.get("type") != "CLOSE" or not isinstance(v, (int, float)) or day is None:
+                    continue
+                a = agg.setdefault(keys[title](day), {"n": 0, "w": 0, "sum": 0.0, "by": {}})
+                a["n"] += 1
+                a["w"] += v > 0
+                a["sum"] += v
+                a["by"][p] = a["by"].get(p, 0.0) + v
+        rows = []
+        for k in sorted(agg, reverse=True)[:n]:
+            a = agg[k]
+            best = max(a["by"].items(), key=lambda x: x[1])
+            worst = min(a["by"].items(), key=lambda x: x[1])
+            rows.append((k, a["n"], a["w"], a["sum"], best[0], best[1], worst[0], worst[1]))
+        out[title] = rows
+    return out
+
+
+LONGFEI_ROLL_DAYS = 10
+
+
+def longfei_rolling_rows(prods, window=LONGFEI_ROLL_DAYS, rows=10):
+    """[R245] 使用者 10-19「加滾動 10 日 KPI 趨勢」：每個有平倉嘅交易日，計佢同之前共 window 個交易日嘅合計 KPI
+    （扣費後，冇扣費數就用未扣費）。回傳 [(日, 筆數, 勝率, 每筆平均, 獲利因子, 合計)]，最新喺上面。"""
+    by_day = {}
+    for d in prods.values():
+        for t in d["trades"]:
+            v = t.get("pnl_hkd_net") if isinstance(t.get("pnl_hkd_net"), (int, float)) else t.get("pnl_hkd_gross")
+            day = _lf_day(t.get("ts"))
+            if t.get("type") == "CLOSE" and isinstance(v, (int, float)) and day is not None:
+                by_day.setdefault(day, []).append(float(v))
+    days = sorted(by_day)
+    out = []
+    for i in range(len(days) - 1, max(len(days) - 1 - rows, -1), -1):
+        vals = [v for d in days[max(0, i - window + 1):i + 1] for v in by_day[d]]
+        gw, gl = sum(v for v in vals if v > 0), -sum(v for v in vals if v < 0)
+        out.append((days[i].isoformat(), len(vals), sum(v > 0 for v in vals) / len(vals), sum(vals) / len(vals),
+                    gw / gl if gl > 0 else None, sum(vals)))
+    return out
+
+
+def _lf_rolling_html(prods):
+    rows = longfei_rolling_rows(prods)
+    if not rows:
+        return "<h3>📈 滾動 10 日 KPI 趨勢</h3><p class='muted'>未有平倉成交。</p>"
+    hk = lambda v: f"HK${v:+,.0f}"
+    col = lambda v: " style='color:#15803d'" if v >= 0 else " style='color:#dc2626'"
+    body = ""
+    for i, (d, n, wr, avg, pf, sm) in enumerate(rows):
+        prev = rows[i + 1][3] if i + 1 < len(rows) else None
+        arrow = "" if prev is None else (" ▲" if avg > prev else (" ▼" if avg < prev else " ＝"))
+        body += (f"<tr><td>{esc(d)}</td><td>{n}</td><td>{wr:.0%}</td><td{col(avg)}>{hk(avg)}{arrow}</td>"
+                 f"<td>{'—' if pf is None else f'{pf:.2f}'}</td><td{col(sm)}>{hk(sm)}</td></tr>")
+    return ("<h3>📈 滾動 10 日 KPI 趨勢</h3><div style='overflow-x:auto'><table><tr><th>截至</th><th>平倉筆數</th>"
+            "<th>勝率</th><th>每筆平均</th><th>獲利因子</th><th>10 日合計</th></tr>" + body + "</table></div>"
+            "<p class='muted' style='font-size:13px'>每行＝截至嗰日（連之前）最近 10 個有平倉嘅交易日合計；扣費後（舊紀錄冇扣費數就用未扣費）；"
+            "▲▼ 係每筆平均同前一日比較。目標係呢條線一路向上，唔追單日。</p>")
+
+
+def _lf_period_html(prods, real):
+    hk = lambda v: f"HK${v:+,.0f}"
+    col = lambda v: " style='color:#15803d'" if v >= 0 else " style='color:#dc2626'"
+    parts = []
+    for title, rows in longfei_period_rows(prods).items():
+        body = "".join(f"<tr><td>{esc(k)}</td><td>{n}</td><td>{w / n:.0%}</td><td{col(sm)}>{hk(sm)}</td>"
+                       f"<td>{esc(bp)} {hk(bv)}</td><td>{esc(wp)} {hk(wv)}</td></tr>"
+                       for k, n, w, sm, bp, bv, wp, wv in rows)
+        parts.append(f"<h3>🗓 {title}</h3>" + (
+            "<div style='overflow-x:auto'><table><tr><th>期間</th><th>平倉筆數</th><th>勝率</th><th>合計</th>"
+            "<th>最好產品</th><th>最差產品</th></tr>" + body + "</table></div>" if rows else "<p class='muted'>未有平倉成交。</p>"))
+    return (f"<div class='section'><h2>🗓 {'真倉' if real else '模擬倉'}期間總結（全部產品合計，HK$）</h2>"
+            + _lf_rolling_html(prods) + "".join(parts)
+            + "<p class='muted' style='font-size:13px'>按平倉時間計；香港時間凌晨 6 點前平倉計前一個交易日；每週由星期一起；"
+              "未扣佣金；美股按 1 美元 = 7.8 港元。</p></div>")
+
+
+LONGFEI_REAL_UNIT_HKD = 40000                 # [R262] 真倉每單（0.1 × 約 HK$40 萬權益）
+LONGFEI_SIM_UNIT_HKD = 100000 * 7.8           # 模擬每單 US$100k（EWT、INDA US$50k、EZU、EWU、EWC US$30k 按比例）
+
+
+def longfei_real_scaled(p, trades):
+    """[R262] 使用者 10-20「加按真倉注碼換算」：模擬成績按真倉注碼縮細。
+    美股：每單名義按比例縮到 HK$40k（US$50k 嗰幾隻＝HK$20k、US$30k＝HK$12k），即毛利 × 40k ÷ 780k，
+    佣金唔縮（每單固定），照扣返模擬嗰份。HSI 真倉同模擬一樣 1 張，唔使換算。回傳扣費後合計，冇平倉回傳 None。"""
+    k = 1.0 if p == "HSI" else LONGFEI_REAL_UNIT_HKD / LONGFEI_SIM_UNIT_HKD
+    tot, n = 0.0, 0
+    for t in trades:
+        g = t.get("pnl_hkd_gross")
+        if t.get("type") != "CLOSE" or not isinstance(g, (int, float)):
+            continue
+        net = t.get("pnl_hkd_net")
+        fee = g - net if isinstance(net, (int, float)) else 0.0
+        tot += g * k - fee
+        n += 1
+    return tot if n else None
+
+
 def _lf_group(prods, total, real):
     """[R209] 一組（真倉或模擬倉）：總覽表、合計績效、逐產品。"""
     hk = lambda v: "—" if v is None else f"HK${v:+,.0f}"
@@ -7867,23 +7997,45 @@ def _lf_group(prods, total, real):
         d = prods.get(p)
         if not d:
             if not real:
-                orow += f"<tr><td>{p}</td><td colspan='6' class='muted'>未開始</td></tr>"
+                orow += f"<tr><td>{p}</td><td colspan='7' class='muted'>未開始</td></tr>"
             continue
         m, mh, st = d["metrics"], d["metrics_hkd"], d["state"]
         pos = st.get("pos")
-        orow += (f"<tr><td><a href='#{pre}{p}'>{p}</a></td><td>{esc(_lf_run(st))}</td>"
+        run = "⏹ 已停（冇倉）" if real and d["stale"] and not pos else _lf_run(st)   # [R247]
+        orow += (f"<tr><td><a href='#{pre}{p}'>{p}</a></td><td>{esc(run)}</td>"
                  f"<td>{'—' if not pos else ('好' if pos.get('side', 0) > 0 else '淡') + ' ' + str(pos.get('qty'))}</td>"
                  f"<td>{m['trades']}</td><td>{'—' if m['win_rate'] is None else format(m['win_rate'], '.0%')}</td>"
-                 f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td><td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")
+                 f"<td>{'—' if not mh['trades'] else hk(mh['points'])}</td>"
+                 + ("" if real else f"<td>{hk(longfei_real_scaled(p, d['trades']))}</td>")
+                 + f"<td>{esc(_lf_hkt(d['received_utc']))}</td></tr>")
     title = "💰 真倉（真金白銀）" if real else "🧪 模擬倉（前向測試，同真倉並行）"
     overview = (f"<div class='section'><h2>{title}・總覽</h2><div style='overflow-x:auto'><table><tr><th>產品</th><th>狀態</th>"
-                "<th>持倉</th><th>已平倉筆數</th><th>勝率</th><th>累計（HK$）</th><th>更新</th></tr>" + orow + "</table></div></div>")
+                "<th>持倉</th><th>已平倉筆數</th><th>勝率</th><th>累計（HK$）</th>"
+                + ("" if real else "<th>按真倉注碼（HK$，扣費）</th>") + "<th>更新</th></tr>" + orow + "</table></div>"
+                + ("" if real else "<p class='muted' style='font-size:13px'>按真倉注碼：模擬每單 US$100k 當真倉每單 HK$40,000"
+                   "（EWT、INDA HK$20,000；EZU、EWU、EWC HK$12,000），盈虧按比例縮細，佣金每單固定照扣；HSI 真倉同模擬一樣 1 張。</p>")
+                + "</div>")
+    scaled = [v for v in (longfei_real_scaled(p, d["trades"]) for p, d in prods.items()) if v is not None]
     tot = (f"<div class='section'><h2>📊 {'真倉' if real else '模擬倉'}合計績效（按 HK$）</h2>"
+           + ("" if real or not scaled else
+              f"<p><b>按真倉注碼換算（扣費）合計：{hk(sum(scaled))}</b>（真倉每單 HK$40,000 計）</p>")
            + _lf_metric_cards(total, "HK$", lambda v: hk(v))
            + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金"
            + ("" if real else "同滑價") + "；樣本少時只供參考。</p></div>")
     secs = "".join(_lf_product_section(p, prods[p], real) for p in LONGFEI_PRODUCTS if p in prods)
-    return overview + tot + secs
+    kind = "real" if real else "sim"            # [R260] 真倉／模擬倉用唔同顏色框，一眼分得開
+    banner = (f"<div class='lf-banner' id='lf-{kind}-top'>{'💰 真倉（真金白銀）' if real else '🧪 模擬倉（前向測試）'}</div>")
+    return f"<div class='lf-grp lf-{kind}'>" + banner + overview + _lf_period_html(prods, real) + tot + secs + "</div>"
+
+
+LONGFEI_CSS = (   # [R260] 使用者 10-20：真倉／模擬倉各區「全部都一樣款，好難搵」→ 分色框
+    ".lf-grp{margin-bottom:28px}"
+    ".lf-banner{font-size:20px;font-weight:700;padding:10px 18px;border-radius:12px;margin:8px 0 14px;color:#fff}"
+    ".lf-real .lf-banner{background:#b45309}.lf-sim .lf-banner{background:#1d4ed8}"
+    ".lf-real .section{border-left:8px solid #d97706;background:#fffbeb}"
+    ".lf-sim .section{border-left:8px solid #2563eb;background:#eff6ff}"
+    "@media (prefers-color-scheme: dark){.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}"
+)
 
 
 def build_longfei_page(data):
@@ -7900,7 +8052,10 @@ def build_longfei_page(data):
             "<div class='section'><h2>💰 真倉</h2><p class='muted'>未開始真倉。</p></div>")
     body += _lf_group(data["products"], data["total_hkd"], False)
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。</p>"
-    return html_page("龍飛陣", head + intro + body + foot, "<meta http-equiv='refresh' content='300'>")
+    jump = ("<div class='section' style='padding:12px 18px'>跳去："
+            + ("<a href='#lf-real-top'>💰 真倉</a>　｜　" if real else "") + "<a href='#lf-sim-top'>🧪 模擬倉</a></div>")
+    return html_page("龍飛陣", head + intro + jump + body + foot,
+                     "<meta http-equiv='refresh' content='300'><style>" + LONGFEI_CSS + "</style>")
 
 
 def handle_longfei_get(req):

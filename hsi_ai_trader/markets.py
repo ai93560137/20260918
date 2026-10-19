@@ -137,10 +137,18 @@ def _us_stock_session(now):
 
 
 def session_status(now: datetime, market: str = "HK", kind: str = "future"):
-    """回傳 (時段名, 距離收市分鐘)；唔喺交易時段回傳 (None, None)。假期由「報價過期」檢查處理。"""
+    """回傳 (時段名, 距離收市分鐘)；唔喺交易時段回傳 (None, None)。假期由 trader 用富途交易日曆另外查（R261）。"""
     if market == "US":
         return _us_stock_session(now) if kind == "stock" else _us_session(now)
     return _hk_session(now)
+
+
+def session_day(now: datetime, market: str = "HK") -> date:
+    """[R261] 而家個時段屬於邊個交易所日（查假期用）：港期凌晨 03:00 前嘅夜市屬前一日；美國用美東日期。"""
+    if market == "US":
+        return now.astimezone(ET).date()
+    h = now.astimezone(HKT)
+    return (h - timedelta(hours=3)).date() if h.hour < 3 else h.date()
 
 
 def trading_day_key(now: datetime, market: str = "HK", kind: str = "future") -> str:

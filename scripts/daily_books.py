@@ -42,6 +42,7 @@ LADDER_STATE_OBJECT = "ops/books/ladder_state.json"
 USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
 
 TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED = "使用者人手", "券商贈股", "未配對"
+TEAM_LONGFEI = "龍飛陣"
 TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最多手數；超出當使用者人手）
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
     (r"^HK\.MHI2611$", TEAM_MANUAL, "MHI2611 小期（人手）", None),   # 2026-10-14 使用者確認；雲垂轉倉去 2611 前要改
@@ -50,10 +51,12 @@ TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最�
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", TEAM_MANUAL, "大恒指期貨（人手）", None),   # 2026-10-14 使用者：預設歸人手；屬蛇蟠要逐張確認
     (r"^US\.EW\d{4}[CP]\d+x\d$", TEAM_MANUAL, "標普 E-mini 月底 Put", None),
-    (r"^US\.(ES|MES)\d{4}$", TEAM_MANUAL, "標普期貨（人手，EW put 對沖）", None),
+    (r"^US\.(ES|MES|MNQ)\d{4}$", TEAM_MANUAL, "美股指數期貨（人手）", None),   # [R239] 10-19 加 MNQ（使用者人手）
     (r"^US\.SPCX$", TEAM_GIFT, "SpaceX 碎股（券商送）", None),
+    (r"^US\.(SPY|QQQ|DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", TEAM_LONGFEI, "美股 ETF／個股（AI 自動；真倉產品以 settings.env LONGFEI_REAL_PRODUCTS 為準）", None),   # [R238] 使用者 10-19：龍飛陣全部 23 隻候選一次過歸龍飛陣，之後加減真倉產品只改 settings.env＋更新部機，唔使再改呢度同部署
 )
-TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
+TEAM_ORDER = ["雲垂陣", "風揚陣・方向一", "蛇蟠陣", TEAM_LONGFEI, TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED]
+AUTO_TEAMS = {TEAM_LONGFEI}   # [R237] 程式自動落單：持倉日內會變，唔登記 POSITIONS.md 每筆，對帳只列示、唔計 ⚠
 JOURNAL_BRANCHES = {"蛇蟠陣": "claude/gifted-carson-v2tvhw", "雲垂陣": "claude/dazzling-curie-f3xzb8"}
 
 # 風控階梯初稿（使用者 2026-10-13：Ⓒ／Ⓓ 可直接 TG 提示；門檻待使用者確認，見 RISK_LADDER.md）
@@ -64,7 +67,7 @@ LADDER = {
 }
 NIGHT_FACTOR = 1.5   # 夜盤（17:15–03:00 HKT）無人：緩衝／離硬止損線 ×1.5、止損用量線 ÷1.5 更保守（使用者 2026-10-13 定）
 MANUAL_LIMITS = {"notional_pct_nav": 0.50, "daily_loss_pct_nav": 0.02}   # 人手交易額度（缺口 8，使用者 2026-10-13 同意）：超額只通報
-POINT_VALUE = {r"^HK\.HSI\d{4}$": 50, r"^HK\.MHI\d{4}$": 10, r"^US\.EW": 50, r"^US\.EX": 5, r"^US\.MES\d{4}$": 5, r"^US\.ES\d{4}$": 50}
+POINT_VALUE = {r"^HK\.HSI\d{4}$": 50, r"^HK\.MHI\d{4}$": 10, r"^US\.EW": 50, r"^US\.EX": 5, r"^US\.MES\d{4}$": 5, r"^US\.ES\d{4}$": 50, r"^US\.MNQ\d{4}$": 2}
 # 補倉／提款（使用者 2026-10-13：本金隨時可入金、隨時可提款；本金金額只放私人，唔入公開 repo）
 TOPUP = {"target_hkd": 45_000,         # 補倉補到緩衝 ≥ 此線（＝FUTU_MARGIN_CLEAR；10-14 隨緩衝線 ×0.25）；夜盤 ×NIGHT_FACTOR
          "round_hkd": 10_000,          # 建議金額向上取整
@@ -228,7 +231,7 @@ def parse_positions_md(text: str, year: int = 2026) -> tuple[dict[str, float], l
             n = float(m.group(3)) * (-1 if m.group(1) == "賣" else 1)
             out[f"HK.MHI{m.group(2)}"] = out.get(f"HK.MHI{m.group(2)}", 0.0) + n
             hit = True
-        m = re.search(r"(賣|買) (ES|MES)(\d{4}) 標普期貨 ?(\d+) 手", pos)
+        m = re.search(r"(賣|買) (ES|MES|MNQ)(\d{4}) (?:標普|納指)期貨 ?(\d+) 手", pos)
         if m:
             n = float(m.group(4)) * (-1 if m.group(1) == "賣" else 1)
             out[f"US.{m.group(2)}{m.group(3)}"] = out.get(f"US.{m.group(2)}{m.group(3)}", 0.0) + n
@@ -330,7 +333,9 @@ def reconcile(risk: dict | None, positions_md: str, journal: tuple[dict, dict], 
             ok = True                                              # 登記空手、富途冇倉：一致
         status = "✅" if ok else "⚠"
         reason = ""
-        if not ok:
+        if team in AUTO_TEAMS and not ok:                          # [R237] 龍飛陣程式自動：只列示
+            status, reason = "🐉", "程式自動落單，以龍飛陣自己帳為準（唔計 ⚠）"
+        elif not ok:
             ex = explanations.get(code) or {}
             prev = (state.get("open") or {}).get(code) or {}
             first = prev.get("first_seen") or today.isoformat()
