@@ -487,4 +487,15 @@ if __name__ == '__main__':
     dig += DIGEST
     with open(os.path.join(BASE, 'digest.txt'), 'w') as fp:
         fp.write('\n'.join(dig))
+    # Telegram 白話版（使用者 2026-10-19）：digest.txt 保留技術格式畀程式讀，Telegram 發 *_plain.txt
+    from tg_plain import plain_alert, plain_digest
+    plain_alert_path = os.path.join(BASE, 'alert_plain.txt')
+    if ALERTS:
+        with open(plain_alert_path, 'w') as fp:
+            fp.write('⚠️ 八陣圖 · 雲垂陣 警報\n🕐 ' + stamp + ' HKT\n'
+                     + '\n'.join(f'- {plain_alert(a)}' for a in ALERTS))
+    elif os.path.exists(plain_alert_path):
+        os.remove(plain_alert_path)
+    with open(os.path.join(BASE, 'digest_plain.txt'), 'w') as fp:
+        fp.write('\n'.join(plain_digest(dig)))
     print(report)

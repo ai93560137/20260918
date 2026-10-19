@@ -35,10 +35,14 @@ jobs:
         run: |
           # 有警報發警報；否則按 digest 開關發每日摘要（兩市場全報告）
           MSG=""
-          if [ -s tradingview/data_external/alert.txt ]; then
-            MSG=tradingview/data_external/alert.txt
-          elif [ "$WANT_DIGEST" != "false" ] && [ -s tradingview/data_external/digest.txt ]; then
-            MSG=tradingview/data_external/digest.txt
+          # 優先發白話版 *_plain.txt（使用者 2026-10-19）；冇就退回技術版
+          D=tradingview/data_external
+          if [ -s $D/alert.txt ]; then
+            MSG=$D/alert.txt
+            [ -s $D/alert_plain.txt ] && MSG=$D/alert_plain.txt
+          elif [ "$WANT_DIGEST" != "false" ] && [ -s $D/digest.txt ]; then
+            MSG=$D/digest.txt
+            [ -s $D/digest_plain.txt ] && MSG=$D/digest_plain.txt
           fi
           if [ -n "$MSG" ] && [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
             curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=$(cat $MSG)" > /dev/null
