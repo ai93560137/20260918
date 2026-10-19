@@ -213,15 +213,17 @@
 ### 🐉 龍飛陣（10-16 成立，10-17 龍飛陣通報；詳細 `handoff/龍飛陣.md` 第 0d 節，龍飛陣分支）
 | 時間（HKT） | 做乜 | 執行者 | 耗乜 |
 |---|---|---|---|
-| 全日每 5 秒 | 17 個模擬程式（HSI＋16 隻 ETF）對帳、報價、日蝕上限、止蝕止賺 | 台灣 VM `futu-data-tw` | 唔耗 Claude |
+| 全日每 5 秒 | 24 個模擬程式（HSI＋16 隻 ETF＋科技七雄，10-18 起；報價共用快取 R226）對帳、報價、日蝕上限、止蝕止賺 | 台灣 VM `futu-data-tw` | 唔耗 Claude |
 | 全日每 5 分鐘 | 決策：冇倉又唔准開 → 唔問；可開 → Haiku 5.5 篩選；放行或有倉 → Opus 5.5 決策（R218），再經硬性風控 | 同上 | **Claude API（另計，唔係訂閱額度）** |
 | 每 5 分鐘 | 狀態／成交／決策推 Cloud Run → 私人 GCS `longfei/<產品>/`；網頁 `?view=longfei` | 同上 | — |
 | 週二至六 08:10 | 1 分鐘 K 線存檔 → GCS `longfei/bars/<產品>/<日>.json` | VM timer `zhuge-longfei-bars` | — |
 | 每日 08:22 | 覆盤 `scripts/longfei_review.py` → GCS `ops/longfei/reviews/`（API 費用表、Haiku 篩選檢查） | Claude Routine（龍飛陣工作階段） | 訂閱額度 |
 
-- **API 費用（龍飛陣估算）**：R218 後約 US$26／日、約 US$570／月（以前全部 Sonnet 約 US$35／日）；Opus 思考 token 可能令實數更高，第一份實數睇 10-20（二）08:22 覆盤。使用者要求約 10-31 比較 Opus 期同 Sonnet 期成績，冇改善就轉返 Sonnet（`settings.env` `CLAUDE_MODEL`）。
+- **API 費用（龍飛陣估算）**：R218 後約 US$26／日（10-18 加科技七雄每日再多約 US$7）、約 US$570／月（以前全部 Sonnet 約 US$35／日）；Opus 思考 token 可能令實數更高，第一份實數睇 10-20（二）08:22 覆盤。使用者要求約 10-31 比較 Opus 期同 Sonnet 期成績，冇改善就轉返 Sonnet（`settings.env` `CLAUDE_MODEL`）。
 - 全部係富途**模擬戶口**；轉真倉要使用者逐隻落指令（`LONGFEI_REAL_PRODUCTS`），並先做：總指揮配對 PR（`FUTU_TEAM_RULES`）、`RISK_LADDER` §6b、`POSITIONS.md` 登記、意圖價登記 `ops/intents.csv`（龍飛陣分支）。
 - 風控階梯：Ⓑ → 龍飛陣全部停開新倉；Ⓒ／Ⓓ 只發 Telegram。
+- 部機：10-18 由 e2-small 升 e2-standard-2（8GB）＋2GB swap（每月約多 US$40）；加程式前要估記憶體同富途 API 次數（見 `ops/INCIDENTS.md` 10-18 兩列）。
+- 時間表：10-24 09:30 出 ETF 真倉建議；HSI 真倉前置條件：①使用者准隔夜（10-18 已確認）；②伺服器端止蝕單真戶口驗證（10-19 09:15 後使用者用真期貨戶口掛遠價止蝕單、即掛即撤；模擬戶口 10-18 測試 GTC／當日止損單都被拒）——掛得到即符合 RISK_LADDER §6b ① 後備止蝕，掛唔到即隔夜冇伺服器端保護，總指揮有保留、由使用者決定；③10-19 模擬日冇出錯。覆盤多咗真倉候選排名，教學分共用／個別產品教學簿。
 
 ### Claude 用量（各工作階段 `usage.cost_usd`，API 等值，非實際帳單；10-14 04:20 → 10-15 16:10 約 36 小時）
 | 工作階段 | 美元等值 | 備註 |
@@ -253,6 +255,12 @@
 | E | **人手落單冇「落單前檢查」紀錄**：POSITIONS／IDEAS 有規矩，但冇每單一行嘅 blotter（意圖價 vs 成交價、滑價） | 中 | `ops/blotter` 由 17:10 成交匯出自動生成，各陣補「意圖價」；月報計滑價 | 總指揮＋預設分支 |
 | ~~F~~ | ~~券商月結單對帳~~（使用者 10-15：不做）：日對帳用富途 API，冇同官方月結單核對 | 中低 | 每月 1 日月報提醒使用者下載月結單，對總權益同手續費 | 使用者＋總指揮 |
 | ~~G~~ | ~~營運衛生（缺口 10 餘項）~~（使用者 10-15：不做）：服務帳戶金鑰輪換日期、VM 權杖到期、Secrets 清單 | 低 | `ops/SECRETS_INVENTORY.md`（只列名同到期日，唔列值），心跳讀到期日 | SOP 顧問 |
+
+### ES／NQ 數據來源（10-19 起，GCP／VM／IBKR 資料採集通報）
+- 5 分 K（`US.ES_FRONT`／`US.NQ_FRONT` K_5M）：ib-data VM cron `*/5 * * * 0-5` 跑 `scripts/ib_es_nq_5m.py`（IB 延遲歷史 K，前月 ESZ6／NQZ6，到期前 8 日轉季；PR #202）。取代部機 MT5 `mt5_push`（10-16 ES 收市同 CME 差約 60 點）。Gateway 約 23:50 UTC 重啟嗰幾輪會缺，下一輪自動補。**10-16 封存 00:00–約 09:00 NY 係 MT5 數據，同 CME 有偏差（使用者 10-19 決定唔補推），回測慎用。**
+- 心跳（07:30 HKT＝紐約約 18:30–19:30，CME 開市）：`futu/snapshots/US.ES_FRONT.json`／`US.NQ_FRONT.json` 推送 > 20 分鐘、最後一根落後 > 45 分鐘 → 🔴；source 唔係 `ib_delayed:` → 🔴（使用者 10-19）；CME 休市唔查。
+- 日線（K_SESSION）：GitHub Actions `es_daily_push.yml`（yfinance，R230，#201 恢復）；心跳已將佢由「已退役」移返正常檢查。
+- 部機 `ZHUGE_DAEMONS=none`：只起 MT5／EA，唔起 Python 推送；OpenD 喺 futu-data-tw。數據問題搵 GCP／VM／IBKR 資料採集工作階段。
 
 ## 二之二、VM 與資料推送守則（2026-10-14，claude-ops 經驗整理，使用者同意）
 

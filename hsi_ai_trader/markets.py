@@ -59,6 +59,15 @@ SPECS = {
     "EWU": Spec("EWU", "iShares MSCI United Kingdom ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 30_000, 100_000, False),
     "EWZ": Spec("EWZ", "iShares MSCI Brazil ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
     "EWC": Spec("EWC", "iShares MSCI Canada ETF (US-listed)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 30_000, 100_000, False),
+    # [R225] 使用者 10-18：加納指科技七雄（個股），設定同 ETF 一樣（每單 US$100k、每隻日蝕 HK$100k、可沽空、包盤前盤後），
+    # 另開科技股組（同方向最多 2 隻），只跑模擬
+    "AAPL": Spec("AAPL", "Apple Inc. stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "MSFT": Spec("MSFT", "Microsoft Corp. stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "NVDA": Spec("NVDA", "NVIDIA Corp. stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "GOOGL": Spec("GOOGL", "Alphabet Inc. Class A stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "AMZN": Spec("AMZN", "Amazon.com Inc. stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "META": Spec("META", "Meta Platforms Inc. stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
+    "TSLA": Spec("TSLA", "Tesla Inc. stock (Nasdaq)", "US", ET, "USD", 1, 0.01, 0.05, 16, 0, "stock", 100_000, 100_000),
 }
 
 FX_TO_HKD = {"HKD": 1.0, "USD": 7.8}

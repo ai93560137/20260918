@@ -88,5 +88,19 @@ class ReviewTest(unittest.TestCase):
         self.assertIn("| SPY | 2 | 0.25% | 1 | 2.95% | 1（100%） |", text)
         self.assertIn("未有足夠數據", "\n".join(lr.gate_audit({"SPY": {"decisions": decs}}, {})))
 
+    def test_real_candidate_ranking(self):
+        """[R224] 真倉候選排名：樣本不足唔下結論；穩定賺錢先係候選；按 t 值排。"""
+        good = [{"product": "SPY", "pnl_hkd_net": v, "ts": str(i)} for i, v in enumerate([300, 250, -100, 400, 200,
+                                                                                         350, -150, 300, 280, 320])]
+        bad = [{"product": "QQQ", "pnl_hkd_net": v, "ts": str(i)} for i, v in enumerate([-300, 100, -200] * 4)]
+        few = [{"product": "EWT", "pnl_hkd_net": 500, "ts": "1"}]
+        text = "\n".join(lr.ranking(good + bad + few, ["SPY", "QQQ", "EWT", "EWC"]))
+        self.assertIn("| 1 | SPY | 10 |", text)
+        self.assertIn("✅ 候選", text)
+        self.assertIn("樣本不足（1／10 筆）", text)
+        self.assertIn("| QQQ | 12 |", text)
+        self.assertIn("❌ 唔建議", text)
+        self.assertIn("| EWC | 0 |", text)
+
 if __name__ == "__main__":
     unittest.main()

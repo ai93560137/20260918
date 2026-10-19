@@ -1,14 +1,18 @@
 """Futu OpenD 接口包裝。所有同富途嘅溝通都喺呢度。"""
+import fcntl
+import json
 import math
+import os
 import time as _time
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from futu import (OpenQuoteContext, OpenFutureTradeContext, OpenSecTradeContext, RET_OK, Market,
                   SecurityType, KLType, AuType, TrdEnv, TrdSide, TrdMarket, OrderType, ModifyOrderOp,
                   OrderStatus, SecurityFirm, PositionSide)
 
-from markets import quarterly_contracts, spec_for
+from markets import ET, quarterly_contracts, spec_for
 from rules import HKT, CONTRACT_RE
 
 log = logging.getLogger("broker")
@@ -20,6 +24,35 @@ DEAD = {OrderStatus.CANCELLED_ALL, OrderStatus.CANCELLED_PART, OrderStatus.FAILE
 
 class BrokerError(Exception):
     pass
+
+
+# [R226] 10-18：富途報價快照每 30 秒最多 60 次（成個 OpenD 共用）。17 個程式每 5 秒各自查一次 ≈ 每 30 秒 100 次，
+# 超額令程式出錯、連 auto_risk／push_to_gcp 都攞唔到報價。改做所有龍飛陣程式共用一個快取檔：
+# 舊過 QUOTE_CACHE_SEC 先由其中一個程式一次過查晒所有產品（一個請求），大約每 30 秒 8 次。
+QUOTE_CACHE = Path(os.getenv("ZHUGE_QUOTE_CACHE", str(Path.home() / "zhuge" / "quote_cache.json")))
+QUOTE_CACHE_SEC = float(os.getenv("QUOTE_CACHE_SEC", "4"))
+WANTED_TTL_SEC = 600                     # 10 分鐘冇程式要嘅代號就唔再查（例如轉倉後嘅舊合約）
+RATE_LIMIT_MARK = "频率太高"
+
+
+def is_rate_limited(err) -> bool:
+    return RATE_LIMIT_MARK in str(err)
+
+
+def _read_json(path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _enc(q):
+    return {**q, "update_time": q["update_time"].isoformat() if q.get("update_time") else None}
+
+
+def _dec(q):
+    ut = q.get("update_time")
+    return {**q, "update_time": datetime.fromisoformat(ut) if ut else None}
 
 
 def _num(v):
@@ -132,18 +165,66 @@ class FutuBroker:
             log.warning("富途冇 %s 合約列表，用季月推算：%s", product, [c for c, _ in res])
         return res
 
-    def snapshot(self, code: str) -> dict:
-        df = _ok(*self.quote.get_market_snapshot([code]), "get_market_snapshot")
-        r = df.iloc[0]
-        upd = str(r.get("update_time", ""))
-        try:
-            # 富途報價時間係交易所當地時間（港期 HKT、美期美東）；SIMULATE 首日要核實美期
-            ut = datetime.strptime(upd[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=self.spec.tz)
-        except ValueError:
-            ut = None
-        return {"last": float(r["last_price"]), "bid": float(r.get("bid_price") or 0),
-                "ask": float(r.get("ask_price") or 0), "update_time": ut,
-                "volume": float(r.get("volume") or 0)}
+    def _snapshots(self, codes) -> dict:
+        """一個請求查多個代號（get_market_snapshot 一次最多 400 個）。"""
+        df = _ok(*self.quote.get_market_snapshot(list(codes)), "get_market_snapshot")
+        out = {}
+        for _, r in df.iterrows():
+            code = str(r["code"])
+            upd = str(r.get("update_time", ""))
+            try:
+                # 富途報價時間係交易所當地時間（港期 HKT、美股美東）
+                ut = datetime.strptime(upd[:19], "%Y-%m-%d %H:%M:%S").replace(
+                    tzinfo=HKT if code.startswith("HK.") else ET)
+            except ValueError:
+                ut = None
+            out[code] = {"last": float(r["last_price"]), "bid": float(r.get("bid_price") or 0),
+                         "ask": float(r.get("ask_price") or 0), "update_time": ut,
+                         "volume": float(r.get("volume") or 0)}
+        return out
+
+    def snapshot(self, code: str, fresh: bool = False) -> dict:
+        """報價快照。fresh=False 用共用快取（[R226]）；落單前 fresh=True 直接查。快取出問題就自己查。"""
+        if not fresh:
+            try:
+                return self._shared_snapshot(code)
+            except BrokerError:
+                raise
+            except Exception:  # noqa: BLE001
+                log.exception("共用報價快取出錯，改為自己查")
+        return self._snapshots([code])[code]
+
+    def _shared_snapshot(self, code: str) -> dict:
+        now = _time.time()
+        data = _read_json(QUOTE_CACHE)
+        q = (data.get("quotes") or {}).get(code)
+        if q and now - float(data.get("ts") or 0) < QUOTE_CACHE_SEC:
+            return _dec(q)
+        QUOTE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        with open(QUOTE_CACHE.with_suffix(".lock"), "a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)              # 同一時間得一個程式去查，其他等佢寫好就用
+            try:
+                data = _read_json(QUOTE_CACHE)
+                q = (data.get("quotes") or {}).get(code)
+                now = _time.time()
+                if q and now - float(data.get("ts") or 0) < QUOTE_CACHE_SEC:
+                    return _dec(q)
+                wanted = {c: t for c, t in (data.get("wanted") or {}).items() if now - float(t) < WANTED_TTL_SEC}
+                wanted[code] = now
+                try:
+                    quotes = self._snapshots(sorted(wanted))
+                except BrokerError as e:
+                    if is_rate_limited(e):
+                        raise
+                    wanted = {code: now}                  # 其他代號有問題（例如舊合約）：只查自己，清走其他
+                    quotes = self._snapshots([code])
+                tmp = QUOTE_CACHE.with_suffix(f".{os.getpid()}.tmp")
+                tmp.write_text(json.dumps({"ts": now, "wanted": wanted,
+                                           "quotes": {c: _enc(v) for c, v in quotes.items()}}), encoding="utf-8")
+                os.replace(tmp, QUOTE_CACHE)
+                return quotes[code]
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
     def klines(self, code: str, ktype: str, days_back: int, max_count: int):
         end = datetime.now(HKT)
@@ -256,7 +337,7 @@ class FutuBroker:
     def market_order(self, code: str, side: int, qty: int, slippage: float, timeout=15):
         """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。
         回傳 (成交均價, 成交數量)；完全冇成交回傳 (None, 0)。超時會取消，取消後再查：部分成交同取消前啱啱成交都計返。"""
-        snap = self.snapshot(code)
+        snap = self.snapshot(code, fresh=True)           # 落單要最新價，唔用快取
         tick = self.spec.tick
         if side > 0:
             ref = snap["ask"] or snap["last"]

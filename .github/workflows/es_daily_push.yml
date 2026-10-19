@@ -1,13 +1,16 @@
 name: es-daily-push
 # [R127] ES 標普 500 期貨日線 → 風揚陣 ES 頁。每個交易日 CME 收市（紐約 17:00）後約 70 分鐘跑：夏令 22:10 UTC、冬令 23:10 UTC（兩個都排，腳本自己判斷收市了沒）。
 # 需要 GitHub Secret：ZHUGE_GCP_URL、ZHUGE_WEBHOOK_TOKEN。第一次手動 dispatch days=6000 補 26 年歷史。
-# ⛔ 已退役（2026-10-08 起停用，2026-10-13 拿走排程）：ES／NQ 日線改由本機 futu/mt5_push.py 推入，兩個來源會互相覆蓋同一天日 K。
-#    只留手動觸發作後備（MT5 長期停擺時才用；用前先停 mt5_push.py，並確認 ZHUGE_WEBHOOK_TOKEN secret 已設）。
+# [R230] 2026-10-18 恢復排程並加 NQ（使用者：MT5 數據同 CME 對唔上，日線改用 yfinance）。futu/mt5_push.py mt5-4 起唔推日線（K_SESSION），
+#   兩個來源唔會再互相覆蓋；部機要更新到 mt5-4（或設 MT5_PUSH_SESSION=0）先好跑呢個排程。
 on:
+  schedule:
+    - cron: '10 22 * * 1-5'
+    - cron: '10 23 * * 1-5'
   workflow_dispatch:
     inputs:
       days:
-        description: 抓最近幾天（6000 = 全部歷史）
+        description: 抓最近幾天（6000 = 全部歷史；排程用 30）
         required: false
         default: '30'
 

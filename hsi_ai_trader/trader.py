@@ -13,6 +13,11 @@ from rules import (round_tick, session_status, trading_day_key, pick_front_month
 log = logging.getLogger("trader")
 
 
+def is_rate_limited(err) -> bool:
+    """[R226] 富途查詢次數超額（例如報價快照每 30 秒最多 60 次）。同 broker.is_rate_limited 一樣；唔 import broker 免得測試要 futu。"""
+    return "频率太高" in str(err)
+
+
 def _atr(bars, n=14):
     if len(bars) < 2:
         return None
@@ -59,6 +64,11 @@ class Trader:
             self._tick(now)
             self.errors = 0
         except Exception as e:  # noqa: BLE001
+            if is_rate_limited(e):
+                # [R226] 富途查詢次數超額：等下一輪再試，唔計入連續出錯（唔好因為限速停機平倉）
+                log.warning("富途查詢次數超額，下一輪再試：%s", e)
+                self._log("events", {"type": "RATE_LIMIT", "msg": str(e)[:200]})
+                return
             self.errors += 1
             log.exception("tick 出錯 (%d)", self.errors)
             self._log("events", {"type": "ERROR", "msg": str(e), "count": self.errors})
@@ -309,12 +319,13 @@ class Trader:
             total = (st.get("day_pnl") or 0) + sum(float(s.get("day_pnl") or 0) for s in peers.values()
                                                   if s.get("day") == st.get("day"))
             if total <= -cfg.etf_total_daily_loss:
-                return f"全部 ETF 今日合計虧損 HK${-total:,.0f}，到咗合計上限 HK${cfg.etf_total_daily_loss:,.0f}"
-        if side and cfg.group_max_same_dir and cfg.product in cfg.etf_group_us_eq:
-            same = sorted(p for p, s in peers.items()
-                          if p in cfg.etf_group_us_eq and (s.get("pos") or {}).get("side") == side)
-            if len(same) >= cfg.group_max_same_dir:
-                return f"美股大盤組已有 {len(same)} 隻同方向持倉（{'、'.join(same)}）"
+                return f"全部 ETF／個股今日合計虧損 HK${-total:,.0f}，到咗合計上限 HK${cfg.etf_total_daily_loss:,.0f}"
+        for name, group in (("美股大盤組", cfg.etf_group_us_eq), ("科技股組", cfg.etf_group_tech)):   # [R225]
+            if side and cfg.group_max_same_dir and cfg.product in group:
+                same = sorted(p for p, s in peers.items()
+                              if p in group and (s.get("pos") or {}).get("side") == side)
+                if len(same) >= cfg.group_max_same_dir:
+                    return f"{name}已有 {len(same)} 隻同方向持倉（{'、'.join(same)}）"
         return None
 
     @contextmanager

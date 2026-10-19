@@ -21,7 +21,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HKT = timezone(timedelta(hours=8))
-PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC"]
+PRODUCTS = ["HSI", "SPY", "QQQ", "DIA", "TLT", "HYG", "GLD", "USO", "IWM", "EWJ", "FXI", "EWT", "INDA", "EZU", "EWU", "EWZ", "EWC",
+            "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"]
 MIN_N = 10            # 分組最少筆數先下結論
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -333,6 +334,41 @@ def fetch_bars(days, products):
     return out
 
 
+def ranking(rows, products):
+    """[R224] 真倉候選排名（使用者 10-18：一星期內決定 ETF 真倉揀邊幾隻）。用模擬成交扣費後盈虧（冇就用未扣費）。
+    候選＝筆數 ≥ MIN_N、每筆平均 > 0、獲利因子 ≥ 1.2、t 值 ≥ 1；t ≥ 2 先算有統計意義。樣本少一律唔下結論。"""
+    L = ["\n## 真倉候選排名（模擬成交，扣費後）\n",
+         "| 排名 | 產品 | 筆數 | 勝率 | 每筆平均 | 合計 | 獲利因子 | 最大回撤 | t 值 | 判斷 |",
+         "|---:|---|---:|---:|---:|---:|---:|---:|---:|---|"]
+    out = []
+    for p in products:
+        pr = [r for r in rows if r["product"] == p]
+        key = "pnl_hkd_net" if any(isinstance(r.get("pnl_hkd_net"), (int, float)) for r in pr) else "pnl_hkd_gross"
+        s = stats(pr, key)
+        vals = [float(r[key]) for r in pr if isinstance(r.get(key), (int, float))]
+        t = t_stat(vals)
+        n = s.get("n", 0)
+        if n < MIN_N:
+            verdict = f"樣本不足（{n}／{MIN_N} 筆）"
+        elif s["avg"] > 0 and (s.get("pf") is None or s["pf"] >= 1.2) and (t or 0) >= 1:
+            verdict = "✅ 候選" + ("（t ≥ 2，有統計意義）" if (t or 0) >= 2 else "（t 未到 2，要再觀察）")
+        elif s["avg"] > 0:
+            verdict = "🟡 賺錢但未夠穩"
+        else:
+            verdict = "❌ 唔建議"
+        out.append((t if t is not None else -99, s.get("sum", 0) if n else -1e18, p, s, t, verdict))
+    out.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    for i, (_, _, p, s, t, verdict) in enumerate(out, 1):
+        if not s.get("n"):
+            L.append(f"| {i} | {p} | 0 | — | — | — | — | — | — | 未有成交 |")
+            continue
+        L.append(f"| {i} | {p} | {s['n']} | {fmt(s['win'], 'pct')} | {fmt(s['avg'])} | {fmt(s['sum'])} | "
+                 f"{fmt(s.get('pf'), 'x')} | {fmt(-s['dd'])} | {fmt(t, 'x')} | {verdict} |")
+    L.append(f"\n候選條件：筆數 ≥ {MIN_N}、每筆平均 > 0、獲利因子 ≥ 1.2、t 值 ≥ 1。只得一星期數據時 t ≥ 2 好難達到，"
+             "揀咗嘅產品轉真倉後照樣同模擬並排比較，表現差就撤。")
+    return L
+
+
 def readiness(data):
     """[R208] 真倉準備：bot 每 30 分鐘唯讀查真實戶口，結果喺 status.real_preflight。"""
     yn = lambda v: "—" if v is None else ("✅" if v else "❌")
@@ -379,6 +415,7 @@ def report(data, title_date=None, real=False, bars=None):
                     if (ra := st.get("real_account") or {}) else ""))
     if not real:
         L += readiness(data)
+        L += ranking(rows, [p for p in PRODUCTS if p in data])
     L.append(table(_group(rows, lambda r: r["product"]), "按產品"))
     L.append(table(_group(rows, lambda r: "做好" if r.get("side", 0) > 0 else "做淡"), "按方向"))
     L.append(table(_group(rows, lambda r: r.get("open_session") or "—"), "按開倉時段"))
@@ -412,7 +449,7 @@ def report(data, title_date=None, real=False, bars=None):
                  + ("；風控紀錄：" + "、".join(f"{k}×{v}" for k, v in rej.items()) if rej else ""))
     L += api_cost(data)
     L += gate_audit(data, bars or {})
-    L.append("\n## 候選教學（要使用者批准先寫入 LESSONS.md）\n")
+    L.append("\n## 候選教學（要使用者批准；全部產品通用寫 LESSONS.md，只關一隻產品寫 lessons/<產品>.md，R228）\n")
     L += candidates(rows, {p: d["decisions"] for p, d in data.items()})
     L.append("\n## 最近 10 筆成交\n")
     L.append("| 產品 | 開倉 | 方向 | 點數 | R | MFE | MAE | 出場 | 入場理由 |")

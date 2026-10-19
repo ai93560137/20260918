@@ -56,7 +56,7 @@ with tempfile.TemporaryDirectory() as d:
         w = csv.writer(fh); w.writerow(["Time", "Open", "High", "Low", "Close", "Volume"])
         for r in rates:
             w.writerow([datetime.fromtimestamp(r["time"], UTC).strftime("%Y.%m.%d %H:%M:%S"), r["open"], r["high"], r["low"], r["close"], r["tick_volume"]])
-    env = {**os.environ, "ZHUGE_GCP_URL": "", "WEBHOOK_SECRET_TOKEN": ""}
+    env = {**os.environ, "ZHUGE_GCP_URL": "", "WEBHOOK_SECRET_TOKEN": "", "MT5_PUSH_SESSION": "1"}
     out = subprocess.run([sys.executable, "/home/user/20260918/futu/mt5_push.py", "--csv", path, "--utc-offset", "3", "--dry-run"],
                          capture_output=True, text=True, env=env).stdout
     check("印出 K_5M 與 K_SESSION 的 dry-run 行", "K_5M US.ES_FRONT 120 根" in out and "K_SESSION US.ES_FRONT 3 根" in out, out[-400:])
@@ -64,6 +64,10 @@ with tempfile.TemporaryDirectory() as d:
                           capture_output=True, text=True, env=env).stdout
     check("--backfill：交易日 K 一包、啟動期 5 分 K 分包", "K_SESSION US.ES_FRONT 3 根" in out2 and "K_5M US.ES_FRONT" in out2, out2[-400:])
     check("日誌不含權杖字樣", "token" not in out + out2)
+    env0 = {**env, "MT5_PUSH_SESSION": "0"}
+    out3 = subprocess.run([sys.executable, "/home/user/20260918/futu/mt5_push.py", "--csv", path, "--utc-offset", "3", "--dry-run"],
+                          capture_output=True, text=True, env=env0).stdout
+    check("[mt5-4] 預設唔推日線 K_SESSION，只推 5 分 K", "K_5M US.ES_FRONT 120 根" in out3 and "K_SESSION" not in out3, out3[-400:])
 
 print("\n=== [R141] --export-m1：M1 歷史逐月匯出 ===")
 check("紐約 + 7 慣例：夏令券商 01:00 → 紐約 18:01 收市", m.to_ny_close_rule(ep("2026-10-06 01:00"), 1) == "2026-10-05 18:01:00")

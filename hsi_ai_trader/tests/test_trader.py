@@ -864,3 +864,97 @@ def test_etf_order_size_tiers():
     for p in ("EZU", "EWU", "EWC"):
         assert order_qty(spec_for(p), 30.0, 1) == 1000                     # US$30k
     assert spec_for("EZU").daily_loss_hkd == 100_000
+
+
+def test_mag7_specs_and_tech_group(tmp_path):
+    """[R225] 使用者 10-18：加科技七雄；設定同 ETF 一樣；另開科技股組，同方向最多 2 隻，同大盤組分開計。"""
+    from markets import SPECS, order_qty
+    from brain import product_line
+    for p in ("AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"):
+        s = SPECS[p]
+        assert (s.kind, s.notional_usd, s.daily_loss_hkd, s.ext_hours) == ("stock", 100_000, 100_000, True)
+    assert order_qty(SPECS["NVDA"], 200.0, 1) == 500
+    assert "single stock" in product_line(replace(Config(), product="AAPL"))
+    assert "ETF" in product_line(replace(Config(), product="SPY"))
+    d = tmp_path
+    for peer, side in (("NVDA", 1), ("MSFT", 1), ("SPY", 1)):
+        (d / f"ai_trader_{peer}").mkdir()
+        (d / f"ai_trader_{peer}" / "state.json").write_text(json.dumps({"day": "D", "pos": {"side": side}}))
+    me = d / "ai_trader_AAPL"
+    me.mkdir()
+    cfg = replace(Config(), product="AAPL", kind="stock", state_file=me / "state.json", log_dir=me / "logs")
+    tr = Trader(cfg, FakeBroker(), FakeBrain(), lambda: datetime(2026, 10, 19, 10, 0, tzinfo=HKT))
+    tr.state["day"] = "D"
+    assert "科技股組已有 2 隻" in tr._portfolio_block(1)
+    assert tr._portfolio_block(-1) is None
+    cfg2 = replace(cfg, product="QQQ")
+    tr2 = Trader(cfg2, FakeBroker(), FakeBrain(), lambda: datetime(2026, 10, 19, 10, 0, tzinfo=HKT))
+    tr2.state["day"] = "D"
+    assert tr2._portfolio_block(1) is None          # 大盤組得 SPY 1 隻；科技股唔計入大盤組
+def test_rate_limit_not_counted_as_error(env):
+    """[R226] 富途限速唔計入連續出錯，唔會停機平倉。"""
+    cfg, t, b, ai, tr = env
+    tr.tick()
+
+    def boom(code, fresh=False):
+        raise RuntimeError("get_market_snapshot: 获取市场快照频率太高，请求失败，每30秒最多60次。")
+    b.snapshot = boom
+    for _ in range(cfg.max_consecutive_errors + 2):
+        advance(t, seconds=5)
+        tr.tick()
+    assert not tr.state.get("halted") and tr.errors == 0
+
+
+def test_shared_quote_cache(tmp_path, monkeypatch):
+    """[R226] 多個程式共用報價快取：快取新鮮就唔再查；一次過查晒所有程式要嘅代號。"""
+    import types
+    import pandas as pd
+    if "futu" not in sys.modules:
+        class _C:
+            def __getattr__(self, n):
+                return n
+        fake = types.ModuleType("futu")
+        for n in ("OpenQuoteContext", "OpenFutureTradeContext", "OpenSecTradeContext", "Market", "SecurityType",
+                  "KLType", "AuType", "TrdEnv", "TrdSide", "TrdMarket", "OrderType", "ModifyOrderOp", "OrderStatus",
+                  "SecurityFirm", "PositionSide"):
+            setattr(fake, n, _C())
+        fake.RET_OK = 0
+        sys.modules["futu"] = fake
+    import broker as bk
+    monkeypatch.setattr(bk, "QUOTE_CACHE", tmp_path / "q.json")
+    calls = []
+
+    class Q:
+        def get_market_snapshot(self, codes):
+            calls.append(list(codes))
+            return 0, pd.DataFrame([{"code": c, "last_price": 10.0, "bid_price": 9.9, "ask_price": 10.1,
+                                     "update_time": "2026-10-19 10:00:00", "volume": 1} for c in codes])
+    a, b2 = bk.FutuBroker.__new__(bk.FutuBroker), bk.FutuBroker.__new__(bk.FutuBroker)
+    a.quote = b2.quote = Q()
+    assert a.snapshot("US.SPY")["last"] == 10.0
+    assert b2.snapshot("HK.HSI2610")["update_time"].utcoffset().total_seconds() == 8 * 3600
+    assert calls == [["US.SPY"], ["HK.HSI2610", "US.SPY"]]          # 第二個程式一次過查埋第一個嘅代號
+    a.snapshot("US.SPY")
+    assert len(calls) == 2                                           # 快取新鮮：唔再查
+    a.snapshot("US.SPY", fresh=True)
+    assert calls[-1] == ["US.SPY"]                                   # 落單前直接查
+
+
+def test_per_product_lessons(tmp_path):
+    """[R228] 共用教學簿＋產品教學簿；（未有）當冇；唔同產品唔會讀到人哋嘅。"""
+    from brain import load_lessons, product_lessons, LESSONS_DIR
+    shared = tmp_path / "LESSONS.md"
+    shared.write_text("共用：唔好追高", encoding="utf-8")
+    d = tmp_path / "lessons"
+    d.mkdir()
+    (d / "HSI.md").write_text("# HSI\n\n> 說明\n\n## 教學\n\n- 開市頭 15 分鐘唔好追\n", encoding="utf-8")
+    (d / "SPY.md").write_text("# SPY\n\n## 教學\n\n（未有）\n", encoding="utf-8")
+    text, ver = load_lessons(shared, "HSI", d)
+    assert "共用：唔好追高" in text and "LESSONS FOR HSI ONLY" in text and "開市頭 15 分鐘" in text
+    spy, spy_ver = load_lessons(shared, "SPY", d)
+    assert spy == "共用：唔好追高" and "HSI" not in spy and spy_ver != ver
+    assert load_lessons(shared, "QQQ", d)[0] == "共用：唔好追高"           # 冇檔照讀共用
+    assert product_lessons("HSI", LESSONS_DIR) == ""                           # repo 入面嘅產品教學簿暫時全部（未有）
+    from markets import SPECS
+    missing = [p for p, s in SPECS.items() if (s.kind == "stock" or p == "HSI") and not (LESSONS_DIR / f"{p}.md").exists()]
+    assert missing == []

@@ -25,9 +25,9 @@ Hard rules enforced by code (you cannot override them; violating them just turns
 - No new entries in the last minutes of a session. Positions MAY be held overnight; an overnight gap
   is not protected by the daily loss limit, so weigh that before holding into a session close.
 - Stops and targets are checked by code every few seconds between your decisions.
-- ETFs only: portfolio limits across products. If risk.portfolio_long_blocked / portfolio_short_blocked is
-  not null, opening in that direction is rejected (e.g. 2 of SPY/QQQ/DIA/IWM already hold that direction, or all
-  ETFs together hit the combined daily loss limit). Do not propose that entry; HOLD or wait instead.
+- US ETFs and stocks only: portfolio limits across products. If risk.portfolio_long_blocked / portfolio_short_blocked is
+  not null, opening in that direction is rejected (e.g. 2 of SPY/QQQ/DIA/IWM, or 2 of AAPL/MSFT/NVDA/GOOGL/AMZN/META/TSLA, already hold that
+  direction, or all US products together hit the combined daily loss limit). Do not propose that entry; HOLD or wait instead.
 
 Guidance:
 - HOLD is the default. Only trade when there is a clear edge; overtrading loses money to fees and slippage.
@@ -42,11 +42,33 @@ Always answer by calling the `decide` tool."""
 LESSONS_FILE = Path(__file__).resolve().parent / "LESSONS.md"
 
 
-def load_lessons(path: Path = LESSONS_FILE):
-    """使用者教落嘅嘢。每次決策重讀，VM 更新 repo 後唔使重啟。回傳 (內文, 短 hash)。"""
+LESSONS_DIR = Path(__file__).resolve().parent / "lessons"
+EMPTY_MARK = "（未有）"
+
+
+def product_lessons(product, lessons_dir: Path = LESSONS_DIR) -> str:
+    """[R228] 個別產品教學簿 lessons/<產品>.md：只取「## 教學」之後嘅內容；（未有）當冇。"""
+    try:
+        text = (lessons_dir / f"{product}.md").read_text(encoding="utf-8")
+    except (FileNotFoundError, TypeError):
+        return ""
+    body = text.split("## 教學", 1)[1] if "## 教學" in text else ""
+    body = body.strip()
+    return "" if body in ("", EMPTY_MARK) else body
+
+
+def load_lessons(path: Path = LESSONS_FILE, product=None, lessons_dir: Path = LESSONS_DIR):
+    """使用者教落嘅嘢。每次決策重讀，VM 更新 repo 後唔使重啟。回傳 (內文, 短 hash)。
+    [R228] 使用者 10-18：共用教學簿（LESSONS.md）＋ 該產品自己嘅教學簿（lessons/<產品>.md），覆盤後各自更新。"""
     try:
         text = path.read_text(encoding="utf-8").strip()
     except FileNotFoundError:
+        text = ""
+    own = product_lessons(product, lessons_dir) if product else ""
+    if own:
+        text += f"\n\n=== LESSONS FOR {product} ONLY (override the shared ones above for {product}) ===\n{own}"
+    text = text.strip()
+    if not text:
         return "", None
     return text, hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
 
@@ -55,7 +77,8 @@ def product_line(cfg) -> str:
     from markets import spec_for
     sp = spec_for(cfg.product)
     if sp.kind == "stock":
-        return (f"{sp.name} ({sp.product}, US-listed ETF, about US${sp.notional_usd:,.0f} per position, share count "
+        kind = "ETF" if "ETF" in sp.name or sp.product in ("GLD", "USO") else "single stock (earnings gaps possible)"
+        return (f"{sp.name} ({sp.product}, US-listed {kind}, about US${sp.notional_usd:,.0f} per position, share count "
                 f"set by code, tick {sp.tick:g}, long or short), US extended hours 04:00-20:00 ET (pre-market, "
                 f"regular 09:30-16:00, after-hours; thinner liquidity and wider spreads outside regular hours)"
                 + ("" if sp.ext_hours else "; NEW ENTRIES ONLY in regular hours 09:30-16:00 ET (spreads too wide "
@@ -160,7 +183,7 @@ class ClaudeBrain:
     def screen(self, context: dict) -> dict:
         """[R218] 方案 A：Haiku 篩選。出錯一律當「要睇」（寧可多問一次，唔好漏機會）。"""
         cfg = self.cfg
-        lessons, _ = load_lessons()
+        lessons, _ = load_lessons(product=cfg.product)
         text = GATE_SYSTEM.replace("{product_line}", product_line(cfg))
         text += "\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else ""
         try:
@@ -181,7 +204,7 @@ class ClaudeBrain:
             return {"look": True, "reason": f"篩選出錯：{e.__class__.__name__}", "_error": True}
 
     def decide(self, context: dict) -> dict:
-        lessons, lessons_ver = load_lessons()
+        lessons, lessons_ver = load_lessons(product=self.cfg.product)
         # prompt caching：tools → system（硬性規則＋LESSONS）→ 日線，係固定前綴，用 1 小時 TTL；
         # 所有會變嘅嘢（時間、5 分鐘 K 線、倉位、額度）放喺 user 訊息第二段。
         system = [{"type": "text", "text": build_system(lessons, self.cfg),
