@@ -1126,7 +1126,7 @@ def test_real_stock_sizing_only_for_real():
 
 
 def test_real_size_max_splits_buying_power(env, tmp_path):
-    """[R235] 用盡槓桿：富途可買數量 ÷ 未有倉嘅真倉美股隻數。"""
+    """[R236] 用盡槓桿：富途可買數量 ÷ 未有倉嘅真倉美股隻數。"""
     cfg, t, b, ai, tr = env
     tr.cfg = replace(cfg, kind="stock", product="SPY", real_size_max=True, trd_env="REAL",
                      real_products=("QQQ", "SPY"), state_file=tmp_path / "ai_trader_real_SPY" / "state.json")
