@@ -7861,6 +7861,65 @@ def _lf_product_section(p, d, real=False):
             + trades_html + dec_html + "</div>")
 
 
+def _lf_day(ts):
+    """[R241] 平倉時間 → 交易日：香港時間凌晨 6 點前平倉計前一日（美股夜晚交易時段、恒指夜盤唔會拆開兩日）。"""
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone(timedelta(hours=8)))
+        return (dt.astimezone(timezone(timedelta(hours=8))) - timedelta(hours=6)).date()
+    except (TypeError, ValueError):
+        return None
+
+
+LONGFEI_PERIODS = (("每日總結", 10), ("每週總結", 8), ("每月總結", 6))
+
+
+def longfei_period_rows(prods):
+    """[R241] 使用者 10-19：總覽加每日／每週／每月總結。全部產品平倉按期間合計（HK$，未扣佣金）。
+    回傳 {標題: [(期間, 筆數, 贏, 合計, 最好產品, 最好, 最差產品, 最差)]}，最新喺上面。"""
+    keys = {"每日總結": lambda d: d.isoformat(),
+            "每週總結": lambda d: (d - timedelta(days=d.weekday())).isoformat() + " 起",
+            "每月總結": lambda d: d.strftime("%Y-%m")}
+    out = {}
+    for title, n in LONGFEI_PERIODS:
+        agg = {}
+        for p, d in prods.items():
+            for t in d["trades"]:
+                v, day = t.get("pnl_hkd_gross"), _lf_day(t.get("ts"))
+                if t.get("type") != "CLOSE" or not isinstance(v, (int, float)) or day is None:
+                    continue
+                a = agg.setdefault(keys[title](day), {"n": 0, "w": 0, "sum": 0.0, "by": {}})
+                a["n"] += 1
+                a["w"] += v > 0
+                a["sum"] += v
+                a["by"][p] = a["by"].get(p, 0.0) + v
+        rows = []
+        for k in sorted(agg, reverse=True)[:n]:
+            a = agg[k]
+            best = max(a["by"].items(), key=lambda x: x[1])
+            worst = min(a["by"].items(), key=lambda x: x[1])
+            rows.append((k, a["n"], a["w"], a["sum"], best[0], best[1], worst[0], worst[1]))
+        out[title] = rows
+    return out
+
+
+def _lf_period_html(prods, real):
+    hk = lambda v: f"HK${v:+,.0f}"
+    col = lambda v: " style='color:#15803d'" if v >= 0 else " style='color:#dc2626'"
+    parts = []
+    for title, rows in longfei_period_rows(prods).items():
+        body = "".join(f"<tr><td>{esc(k)}</td><td>{n}</td><td>{w / n:.0%}</td><td{col(sm)}>{hk(sm)}</td>"
+                       f"<td>{esc(bp)} {hk(bv)}</td><td>{esc(wp)} {hk(wv)}</td></tr>"
+                       for k, n, w, sm, bp, bv, wp, wv in rows)
+        parts.append(f"<h3>🗓 {title}</h3>" + (
+            "<div style='overflow-x:auto'><table><tr><th>期間</th><th>平倉筆數</th><th>勝率</th><th>合計</th>"
+            "<th>最好產品</th><th>最差產品</th></tr>" + body + "</table></div>" if rows else "<p class='muted'>未有平倉成交。</p>"))
+    return (f"<div class='section'><h2>🗓 {'真倉' if real else '模擬倉'}期間總結（全部產品合計，HK$）</h2>" + "".join(parts)
+            + "<p class='muted' style='font-size:13px'>按平倉時間計；香港時間凌晨 6 點前平倉計前一個交易日；每週由星期一起；"
+              "未扣佣金；美股按 1 美元 = 7.8 港元。</p></div>")
+
+
 def _lf_group(prods, total, real):
     """[R209] 一組（真倉或模擬倉）：總覽表、合計績效、逐產品。"""
     hk = lambda v: "—" if v is None else f"HK${v:+,.0f}"
@@ -7886,7 +7945,7 @@ def _lf_group(prods, total, real):
            + "<p class='muted' style='font-size:13px'>美股 ETF 按 1 美元 = 7.8 港元換算；未扣佣金"
            + ("" if real else "同滑價") + "；樣本少時只供參考。</p></div>")
     secs = "".join(_lf_product_section(p, prods[p], real) for p in LONGFEI_PRODUCTS if p in prods)
-    return overview + tot + secs
+    return overview + _lf_period_html(prods, real) + tot + secs
 
 
 def build_longfei_page(data):
