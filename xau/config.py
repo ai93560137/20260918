@@ -70,13 +70,16 @@ MAGIC = _i("XAU_MAGIC", 921)                               # 線上 V23 用 920�
 # 百分比對本金；本金只放 GCS xau/control.json principal_hkd，唔入 repo。日蝕只計天覆陣自己嘅單。
 # 日蝕 −3% → PAUSE（停開新倉）、−6% → 平倉＋STOP；兩者紐約 17:00 換日自動返 RUN。
 # 保證金水平（全戶口，EA 回報）< 300%（夜盤 ×1.5）→ PAUSE，回升自動解；< 200%／< 150% 只發 Telegram。
-# 累計虧損 25%、高水位回撤 10%／20% 只發 Telegram，唔停唔鎖。冇任何要人手解鎖嘅狀態；STOP 只由日蝕 −6% 或使用者設。
+# 累計虧損 25% → PAUSE（換日自動返 RUN，當日事件）；高水位回撤 10%／20% 只發 Telegram。冇任何要人手解鎖嘅狀態；STOP 只由日蝕 −6% 或使用者設。
 DAILY_LOSS_PAUSE_PCT = _f("XAU_DAILY_LOSS_PAUSE_PCT", 3.0)
 DAILY_LOSS_STOP_PCT = _f("XAU_DAILY_LOSS_STOP_PCT", 6.0)
 MARGIN_PAUSE_PCT = _f("XAU_MARGIN_PAUSE_PCT", 300.0)
 MARGIN_ALERT_PCTS = (_f("XAU_MARGIN_ALERT1_PCT", 200.0), _f("XAU_MARGIN_ALERT2_PCT", 150.0))
 DD_ALERT_PCTS = (_f("XAU_DD_ALERT1_PCT", 10.0), _f("XAU_DD_ALERT2_PCT", 20.0))        # 對高水位回撤，只提示
-CUM_LOSS_ALERT_PCT = _f("XAU_CUM_LOSS_ALERT_PCT", 25.0)                              # 累計虧損，只提示
+# 累計虧損 ≥ 25%（使用者 10-20 揀 A）：PAUSE＋Telegram，紐約換日自動 RUN；觸發係「當日事件」——由 <25% 升到 ≥25% 嗰下先觸發，
+# 換日後仍 ≥25% 都照開新倉，要跌返落 25% 以下再升穿先會再停。XAU_CUM_LOSS_RETRIGGER=daily 改為每日只要 ≥25% 就再 PAUSE。
+CUM_LOSS_PAUSE_PCT = _f("XAU_CUM_LOSS_PAUSE_PCT", 25.0)
+CUM_LOSS_RETRIGGER = _s("XAU_CUM_LOSS_RETRIGGER", "edge").lower()                    # edge | daily
 NIGHT_MULT = _f("XAU_NIGHT_MULT", 1.5)                      # 夜盤（紐約 18:00–02:00 ET）PAUSE 線 ×1.5
 HKD_PER_USD = _f("XAU_HKD_PER_USD", 7.8)
 SPREAD_USD = _f("XAU_SPREAD_USD", 0.30)                     # 紙上模擬每張來回成本（點差）

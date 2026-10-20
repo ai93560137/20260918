@@ -118,7 +118,7 @@ check("正常 → 唔停", not L()["pause"] and not L()["stop"] and not L()["ale
 check("日蝕 −3% → PAUSE（daily）", L(daily_pnl_hkd=-600)["pause"] and L(daily_pnl_hkd=-600)["pause_kind"] == "daily" and not L(daily_pnl_hkd=-600)["stop"])
 check("日蝕 −6% → STOP", L(daily_pnl_hkd=-1200)["stop"])
 check("夜盤 ×1.5：−3% 唔停、−4.5% 先 PAUSE", not L(daily_pnl_hkd=-600, night=True)["pause"] and L(daily_pnl_hkd=-900, night=True)["pause"])
-check("累計 −25% → 只提示", not L(own_equity=15000)["pause"] and "cum_loss" in L(own_equity=15000)["alerts"])
+check("累計 −25% → cum_loss 旗（由 apply_ladder 做當日事件 PAUSE）", L(own_equity=15000)["cum_loss"] and not L(own_equity=15000)["pause"] and "cum_loss" not in L(own_equity=15000)["alerts"])
 check("回撤 10%／20% → 只提示", "dd1" in L(own_equity=18000)["alerts"] and "dd2" in L(own_equity=16000)["alerts"] and not L(own_equity=16000)["pause"])
 check("保證金 250% → PAUSE（margin）；180% 另加提示；140% 兩個提示，唔 STOP", L(margin_level=250)["pause_kind"] == "margin" and "margin1" in L(margin_level=180)["alerts"] and "margin2" in L(margin_level=140)["alerts"] and not L(margin_level=140)["stop"])
 check("冇本金：日蝕唔計", not L(principal_hkd=None, daily_pnl_hkd=-5000)["pause"])
@@ -231,6 +231,26 @@ body["margin_level"] = 500; body["m1_ohlc"]["time"] = int(NOW_RESET) + 240; NOW[
 client.post("/", data=json.dumps(body), content_type="application/json")
 check("保證金回升 → 自動返 RUN", json.loads(FAKE["xau/control.json"][0])["mode"] == "RUN")
 del body["margin_level"]
+# 累計虧損 ≥ 25%（當日事件）：先令 trades 累計大蝕
+state = json.loads(FAKE["xau/state.json"][0])
+state["trades"].append({"side": 1, "lots": 0.01, "entry": 5000.0, "exit": 4200.0, "opened_ts": NOW[0] - 3 * 86400 - 7200, "closed_ts": NOW[0] - 3 * 86400, "reason": "測試大蝕", "pnl_usd": -800.3, "hold_min": 60})
+FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+body["m1_ohlc"]["time"] = int(NOW_RESET) + 300; NOW[0] = NOW_RESET + 305; n_tg = len(TG)
+client.post("/", data=json.dumps(body), content_type="application/json")
+ctl = json.loads(FAKE["xau/control.json"][0])
+check("累計 ≥25% → PAUSE（ladder，換日重開）＋Telegram", ctl["mode"] == "PAUSE" and "累計虧損" in ctl["reason"] and ctl["auto_reset_day"] and any("累計虧損" in t for t in TG[n_tg:]), ctl)
+# 換日：仍然 ≥25%，但係當日事件 → 自動 RUN 之後唔再 PAUSE
+NOW2 = market.ny_day_start_ts(NOW[0]) + 86400 + 3600 * 2
+FAKE["xau/m1.json"] = (json.dumps([{"time": int(NOW2) - (40 - k) * 60, "open": 3999.5, "high": 4000.5, "low": 3999.0, "close": 4000.0} for k in range(40)]), FAKE["xau/m1.json"][1] + 1)
+body["m1_ohlc"]["time"] = int(NOW2); body["m15_ohlc"]["time"] = int(NOW2) - 900; NOW[0] = NOW2 + 5
+client.post("/", data=json.dumps(body), content_type="application/json")
+body["m1_ohlc"]["time"] = int(NOW2) + 60; NOW[0] = NOW2 + 65
+client.post("/", data=json.dumps(body), content_type="application/json")
+ctl = json.loads(FAKE["xau/control.json"][0])
+check("換日後仍 ≥25% → 照 RUN（揀 A：當日事件，唔係持續狀態）", ctl["mode"] == "RUN" and ctl["cum_loss_above"], ctl)
+state = json.loads(FAKE["xau/state.json"][0]); state["trades"] = [t for t in state["trades"] if t.get("reason") != "測試大蝕"]
+FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+NOW_RESET = NOW2
 FAKE["xau/control.json"] = (json.dumps({"mode": "RUN", "reason": "", "set_by": "user", "principal_hkd": None, "equity_peak": 0, "alerts_sent": {}}), 99)
 
 print("=== 休市 ===")

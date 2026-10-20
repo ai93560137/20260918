@@ -130,7 +130,7 @@ def render(status):
             + card("風控階梯", f"<span class='{lad_cls}'>{esc(lad.get('level') or 'A')}</span>", esc("；".join(lad.get("reasons") or []) or "正常"))
             + card("今日盈虧（階梯用）", "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}",
                    "只計天覆陣嘅單，含浮動" + ("" if ctl.get("principal_set") else "；⚠ 未設本金，日蝕未啟用"))
-            + card("只提示嘅警報", esc(alerts), "累計虧損／回撤／保證金：只發 Telegram，唔停唔鎖")
+            + card("只提示嘅警報", esc(alerts), "回撤／保證金：只發 Telegram，唔停唔鎖")
             + card("舊電閘（只供 Claude 參考）", esc(gate.get("status") or "—"), esc(gate.get("reason")))
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"

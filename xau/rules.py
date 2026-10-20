@@ -34,7 +34,7 @@ def ladder(*, principal_hkd, own_equity, peak_equity, daily_pnl_hkd, margin_leve
     {"pause": bool, "stop": bool, "pause_kind": "daily"|"margin"|None, "reasons": [...], "alerts": {key: text}}。
     pause／stop 由日蝕（只計自己嘅單）同保證金水平決定；alerts 只發 Telegram，唔影響交易。缺數據嗰項跳過。"""
     mult = cfg.NIGHT_MULT if night else 1.0
-    out = {"pause": False, "stop": False, "pause_kind": None, "reasons": [], "alerts": {}}
+    out = {"pause": False, "stop": False, "pause_kind": None, "reasons": [], "alerts": {}, "cum_loss": False}
     if principal_hkd and principal_hkd > 0:
         if daily_pnl_hkd is not None:
             pct = daily_pnl_hkd / principal_hkd * 100
@@ -44,8 +44,9 @@ def ladder(*, principal_hkd, own_equity, peak_equity, daily_pnl_hkd, margin_leve
             elif pct <= -cfg.DAILY_LOSS_PAUSE_PCT * mult:
                 out.update(pause=True, pause_kind="daily")
                 out["reasons"].append(f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_PAUSE_PCT * mult:g}% → 停開新倉（換日自動重開）")
-        if own_equity is not None and own_equity <= principal_hkd * (1 - cfg.CUM_LOSS_ALERT_PCT / 100):
-            out["alerts"]["cum_loss"] = f"累計虧損達本金 {100 - own_equity / principal_hkd * 100:.0f}%（提示線 {cfg.CUM_LOSS_ALERT_PCT:g}%）"
+        out["cum_loss"] = bool(own_equity is not None and own_equity <= principal_hkd * (1 - cfg.CUM_LOSS_PAUSE_PCT / 100))
+        if out["cum_loss"]:
+            out["cum_loss_text"] = f"累計虧損達本金 {100 - own_equity / principal_hkd * 100:.0f}% ≥ {cfg.CUM_LOSS_PAUSE_PCT:g}% → 停開新倉（換日自動重開）"
     if own_equity is not None and peak_equity and peak_equity > 0:
         dd = max(0.0, (peak_equity - own_equity) / peak_equity * 100)
         for i, line in enumerate(cfg.DD_ALERT_PCTS):

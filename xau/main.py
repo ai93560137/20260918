@@ -96,7 +96,7 @@ def load_control():
     """唯一開關 GCS xau/control.json（冇網頁按鈕）。mode：RUN／PAUSE／STOP；set_by：user／ladder；
     auto_reset_day：紐約交易日，到咗自動返 RUN（只對 set_by=ladder 生效）；principal_hkd 私人。讀唔到當 STOP（fail-closed）。"""
     base = {"mode": "RUN", "reason": "", "set_by": "user", "set_at_utc": "", "auto_reset_day": None,
-            "principal_hkd": None, "equity_peak": 0.0, "alerts_sent": {}}
+            "principal_hkd": None, "equity_peak": 0.0, "alerts_sent": {}, "cum_loss_above": False, "cum_loss_day": ""}
     try:
         doc = storage.read_json(CONTROL_FILE, None)
     except StorageError as exc:
@@ -149,6 +149,16 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
         elif mode == "PAUSE" and not control.get("auto_reset_day") and not lad["pause"]:
             set_mode(control, "RUN", "保證金水平回升，自動解除停開新倉", "ladder", now)
             notify.tg_send("▶ 保證金水平回升，自動解除停開新倉")
+        mode = control["mode"]
+    # 累計虧損 ≥ 25%：當日事件（edge）——由未達升到達嗰下先觸發；daily 模式每日 ≥25% 都觸發
+    above = bool(lad.get("cum_loss"))
+    was_above = bool(control.get("cum_loss_above"))
+    control["cum_loss_above"] = above
+    cum_trip = above and (not was_above if config.CUM_LOSS_RETRIGGER == "edge" else control.get("cum_loss_day") != day)
+    if cum_trip and mode == "RUN" and not lad["pause"]:
+        control["cum_loss_day"] = day
+        set_mode(control, "PAUSE", lad["cum_loss_text"], "ladder", now, auto_reset_day=next_day)
+        notify.tg_send(f"⏸ {lad['cum_loss_text']}")
         mode = control["mode"]
     handled = False
     if lad["stop"] and mode != "STOP":
@@ -478,7 +488,8 @@ def build_status():
                  "XAU_EXECUTE": config.EXECUTE, "CLAUDE_PROVIDER": config.PROVIDER,
                  "日蝕 PAUSE／STOP %（換日自動重開）": f"{config.DAILY_LOSS_PAUSE_PCT:g}／{config.DAILY_LOSS_STOP_PCT:g}",
                  "保證金 PAUSE %（回升自動解）": config.MARGIN_PAUSE_PCT,
-                 "只提示：保證金 %／回撤 %／累計虧損 %": f"{'／'.join(f'{x:g}' for x in config.MARGIN_ALERT_PCTS)}；{'／'.join(f'{x:g}' for x in config.DD_ALERT_PCTS)}；{config.CUM_LOSS_ALERT_PCT:g}",
+                 "累計虧損 PAUSE %（當日事件，換日自動重開）": f"{config.CUM_LOSS_PAUSE_PCT:g}（{config.CUM_LOSS_RETRIGGER}）",
+                 "只提示：保證金 %／回撤 %": f"{'／'.join(f'{x:g}' for x in config.MARGIN_ALERT_PCTS)}；{'／'.join(f'{x:g}' for x in config.DD_ALERT_PCTS)}",
                  "夜盤倍數": config.NIGHT_MULT},
     }
 
