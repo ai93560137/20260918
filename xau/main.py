@@ -261,7 +261,10 @@ def compact(bars):
 
 
 def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
-    older, recent = m15[:-4], m15[-4:]
+    # Prompt caching（使用者 10-21）：按「整點」切——上一個整點之前嘅 K 線一個鐘先變一次（可快取前段），本小時嘅先係即時部分
+    hour0 = int(m1[-1]["time"]) // 3600 * 3600
+    older, recent = [b for b in m15 if b["time"] < hour0], [b for b in m15 if b["time"] >= hour0]
+    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-120:], [b for b in m1 if b["time"] >= hour0]
     pos = state.get("position")
     last = m1[-1]["close"]
     position = None
@@ -276,7 +279,8 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
         "bars_m15_older": compact(older),
         "time": market.session_text(now),
         "bars_m15_recent": compact(recent),
-        "bars_m1": compact(m1[-60:]),
+        "bars_m1_older": compact(m1_older),
+        "bars_m1": compact(m1_live),
         "atr": {"m1_14": market.wilder_atr(m1), "m15_14": market.wilder_atr(m15),
                 "ea_m1": account.get("atr_m1"), "ea_m5": account.get("atr_m5"), "ea_m15": account.get("atr_m15")},
         "last_price": last,
