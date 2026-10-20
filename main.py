@@ -10994,8 +10994,8 @@ def build_dashboard_page(msg):
         verdict_log = "M1 判定日誌讀取失敗。"
 
     banners = {
-        "auto": ("#d4edda", "#155724", "⚡ 已解除硬鎖並恢復自動。電閘會在下一次 Setup→Trigger 後開啟。"),
-        "locked": ("#f8d7da", "#721c24", "🔒 已啟動緊急硬鎖。狀態機不會自動重新開閘，需手動恢復自動。"),
+        "unlock_removed": ("#fff3cd", "#856404", "ℹ️ 網頁「解除硬鎖」已取消（R252）。硬鎖要由使用者喺總指揮工作階段決定解除。"),
+        "locked": ("#f8d7da", "#721c24", "🔒 已啟動緊急硬鎖。網頁唔可以解鎖，要由使用者喺總指揮工作階段決定解除。"),
         "error": ("#fff3cd", "#856404", "⚠️ 電閘狀態寫入失敗，請查看 Cloud Logging。"),
     }
     banner = ""
@@ -11029,7 +11029,6 @@ def build_dashboard_page(msg):
       <div class='{summary_class}' style='font-weight:600; margin-bottom:6px;'>{esc(summary_text)}</div>
       <div class='muted' style='font-size:13px;'>{gate_detail}｜{esc(state.get('last_reason'))}</div>
       <div style='margin-top:15px;'>
-        <a href='?view=dashboard&action=auto' class='btn btn-open'>🟢 解除硬鎖・恢復自動</a>
         <a href='?view=dashboard&action=lock' class='btn btn-lock'>🔴 緊急硬鎖 (LOCK)</a>
         <a href='?view=reset' class='btn' style='background:#6c757d; color:#fff;'>🧹 重置歷史紀錄</a>
       </div>
@@ -12434,14 +12433,8 @@ def handle_get(req):
     if view == "gates":
         return build_gates_page(req.args.get("msg"))
     if view == "dashboard":
-        if action in ("auto", "open"):          # "open" kept for old bookmarks  [R29]
-            try:
-                clear_hard_lock()
-                log_decision("🟢 [管理員] 解除硬鎖，恢復自動模式。", key="gate")
-                return redirect("?view=dashboard&msg=auto")
-            except StorageError as exc:
-                print(f"⚠️ [電閘寫入失敗] {exc}", flush=True)
-                return redirect("?view=dashboard&msg=error")
+        if action in ("auto", "open"):          # [R252] 網頁解鎖已取消（唔使權杖，邊個知網址都解到）；舊書籤只顯示說明
+            return redirect("?view=dashboard&msg=unlock_removed")
         if action == "lock":
             try:
                 set_hard_lock("管理員緊急鎖死", None)
