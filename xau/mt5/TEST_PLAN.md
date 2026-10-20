@@ -26,7 +26,7 @@
 
 ```bash
 # 例：第 1 項 open（sl／tp 按當時金價，止損距離 2–30 美元）
-echo '{"id":"t1","op":"open","side":"BUY","sl":4105,"tp":4130}' > /tmp/t.json
+echo "{\"id\":\"t1\",\"ts\":$(date +%s),\"op\":\"open\",\"side\":\"BUY\",\"sl\":4105,\"tp\":4130}" > /tmp/t.json   # ts 必帶；超過 10 分鐘嘅檔唔排
 python3 scripts/gcp_agent.py --profile xau put --any-prefix --object xau/test_cmd.json --file /tmp/t.json
 # 其他：{"id":"t2","op":"open","side":"BUY","no_sl":true}（第 2 項）、{"id":"t3","op":"modify","sl":4108,"tp":4130}（第 3 項）、{"id":"t4","op":"close"}（第 4 項）
 # 核實：GET ?format=json 嘅 pending_cmds（ack 後清空）／live_positions；logs --grep 'test_cmd\|指令回報'；gcp_agent cat --object xau/test_cmd.json 睇 result
@@ -49,7 +49,7 @@ python3 scripts/gcp_agent.py --profile xau put --any-prefix --object xau/test_cm
 全部通過＋Claude 自己（`mode=RUN`）喺 demo 開／平過 ≥ 3 張單，先算階段 B 完成。
 
 ## 4. 轉真倉（使用者親口講先做）
-0. **前置條件（10-20 總指揮）**：真戶口嗰套 MT5 行緊 LTC Server（Local Trade Copier 跟單母帳）。轉真倉前要決定 LTC 會唔會複製 magic 921 嘅單去子帳戶（要就要確認子帳戶風險；唔要就喺 LTC 按 magic／comment 排除），並確認 C 戶口登入號（已知真戶口至少有 34393163、34856669，邊個係 C 未確認）。
+0. **前置條件（10-20 總指揮）**：(a) 確認 LTC（Local Trade Copier 跟單主帳）**仍然停用**，或已按 magic 921 排除——10-20 使用者已 unload LTC，轉真倉當日要再確認；(b) 確認真倉戶口號碼——C 戶口 = **34393163**（UltimaMarkets-Live 2），`XAU_ACCOUNT` 要填呢個；34856669 用途未明，唔好用。
 1. `--profile xau env set XAU_ACCOUNT=<真戶口登入號> XAU_EXECUTE=1 XAU_LOTS=0.01`（總指揮 dry-run → 使用者批 → `--yes`）。
 2. 真戶口 EA 參數 `InpDryRun=false`（使用者喺 MT5 改）；demo EA 卸載或 `InpDryRun=true`。
 3. 確認頁面「真倉」區顯示持倉來源係 EA、`XAU_ACCOUNT` 正確。

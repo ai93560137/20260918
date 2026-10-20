@@ -512,7 +512,11 @@ def consume_test_file(now):
         return
     if not isinstance(doc, dict) or not doc.get("op") or doc.get("consumed"):
         return
-    body, _ = queue_test_cmd(doc, now)
+    ts = market.to_float(doc.get("ts"))
+    if ts is None or abs(now - ts) > executor.CMD_TTL_SEC:        # 要帶 ts（UTC epoch 秒，`date +%s`）；放低超過 10 分鐘嘅檔唔排（部署後殘留檔唔會誤落單）
+        body = {"status": "error", "message": f"ts missing or older than {executor.CMD_TTL_SEC}s (use date +%s)"}
+    else:
+        body, _ = queue_test_cmd(doc, now)
     try:
         storage.write_json(TEST_CMD_FILE, {**doc, "consumed": market.fmt_utc(now), "result": body})
     except StorageError as exc:
