@@ -78,7 +78,7 @@ def metric_cards(m):
 def _pos_text(pos):
     if not pos:
         return "冇"
-    return (f"{'好倉' if pos['side'] > 0 else '淡倉'} {pos['lots']:.2f} 手 @ {pos['entry']:.2f}｜止蝕 {pos.get('stop') or '—'}"
+    return (f"{'好倉' if pos['side'] > 0 else '淡倉'} {pos['lots']:.2f} 手 @ {pos['entry']:.{config.PRICE_DIGITS}f}｜止蝕 {pos.get('stop') or '—'}"
             f"｜止賺 {pos.get('target') or '—'}｜票 {pos.get('ticket') or '—'}")
 
 
@@ -111,7 +111,7 @@ def render(status):
                              "profit_factor": None, "max_dd": None, "avg_win": None, "avg_loss": None, "sharpe": None, "days": 0}
     pos = s.get("position")
     if pos:
-        pos_txt = f"{'好倉' if pos['side'] > 0 else '淡倉'} {pos['lots']:.2f} 手 @ {pos['entry']:.2f}"
+        pos_txt = f"{'好倉' if pos['side'] > 0 else '淡倉'} {pos['lots']:.2f} 手 @ {pos['entry']:.{config.PRICE_DIGITS}f}"
         pos_desc = f"止蝕 {pos.get('stop')}・止賺 {pos.get('target') or '—'}・{fmt_hkt(pos['opened_ts'])} 開"
     else:
         pos_txt, pos_desc = "冇", "空手"
@@ -119,7 +119,7 @@ def render(status):
     u = s.get("usage_today") or {}
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} 自動交易</h1></div>"
             f"{page_nav()}</div>")
-    intro = ("<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣黃金差價合約（最多 1 張，固定 "
+    intro = (f"<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣 {esc(config.SYMBOL)} 差價合約（最多 1 張，固定 "
              f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（日蝕 −3% 停開新倉、−6% 平倉停機，換日自動重開；累計虧損 25% 停開新倉、換日自動恢復；保證金水平低停開新倉；"
              "止損距離、最長持倉），AI 無權改。舊系統嘅六關電閘、錦囊 v4 規則只作參考。"
              "先做模擬倉前向測試，達到預先登記標準、使用者講先轉真倉；真倉落單經 MT5 EA 執行指令。</p>"
@@ -148,7 +148,7 @@ def render(status):
            + "</div>")
     rows = "".join(
         f"<tr><td>{esc(fmt_hkt(t['opened_ts']))}</td><td>{esc(fmt_hkt(t['closed_ts']))}</td><td>{'好' if t['side'] > 0 else '淡'}</td>"
-        f"<td>{t['entry']:.2f}</td><td>{t['exit']:.2f}</td><td class=\"{'pos' if t['pnl_usd'] >= 0 else 'neg'}\">{t['pnl_usd']:+.2f}</td>"
+        f"<td>{t['entry']:.{config.PRICE_DIGITS}f}</td><td>{t['exit']:.{config.PRICE_DIGITS}f}</td><td class=\"{'pos' if t['pnl_usd'] >= 0 else 'neg'}\">{t['pnl_usd']:+.2f}</td>"
         f"<td>{t['hold_min']}</td><td>{esc(t.get('reason'))}</td></tr>"
         for t in list(reversed(s.get("trades") or []))[:40])
     trades_html = ("<h3>📒 成交紀錄（美元）</h3>"

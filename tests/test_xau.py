@@ -486,5 +486,38 @@ check("篩選用 5m TTL", _us[0]["cache_control"]["ttl"] == "5m")
 check("cost_usd：1h TTL 寫 2×、5m TTL 寫 1.25×", abs(_brain.cost_usd({"in": 0, "out": 0, "cache_read": 0, "cache_write": 1000, "cache_ttl": "1h", "model": "claude-opus-5-5"}) - 0.008) < 1e-9
       and abs(_brain.cost_usd({"in": 0, "out": 0, "cache_read": 0, "cache_write": 1000, "cache_ttl": "5m", "model": "claude-opus-5-5"}) - 0.005) < 1e-9)
 
+print("=== 多產品（使用者 10-21：EURUSD 0.01 手、止損 5–40 pip、影子、一個產品一個服務）===")
+import executor as _ex
+check("產品表：XAUUSD 預設不變（pip 1、2 位、止損 2–30、點差 0.30、xau/、921）", config.PRODUCTS["XAUUSD"]["pip"] == 1.0 and config.PIP == 1.0 and config.PRICE_DIGITS == 2
+      and config.MIN_SL_USD == 2.0 and config.MAX_SL_USD == 30.0 and abs(config.SPREAD_USD - 0.30) < 1e-9 and config.PREFIX == "xau/" and config.MAGIC == 921 and config.CONTRACT_SIZE == 100.0)
+_e = config.PRODUCTS["EURUSD"]
+check("產品表：EURUSD 合約 100,000、pip 0.0001、5 位、止損 5–40 pip、fx/eurusd/、magic 922", _e["contract"] == 100000.0 and _e["pip"] == 0.0001 and _e["digits"] == 5
+      and _e["min_sl_pips"] == 5.0 and _e["max_sl_pips"] == 40.0 and _e["prefix"] == "fx/eurusd/" and _e["magic"] == 922 and _e["quote"] == "USD")
+_saved = {k: getattr(config, k) for k in ("SYMBOL", "PIP", "PRICE_DIGITS", "MIN_SL_PIPS", "MAX_SL_PIPS", "MIN_SL_USD", "MAX_SL_USD", "SPREAD_USD", "CONTRACT_SIZE", "PRODUCT_KIND", "PRODUCT_DESC", "QUOTE_PER_USD", "MAGIC")}
+config.SYMBOL, config.PIP, config.PRICE_DIGITS, config.MIN_SL_PIPS, config.MAX_SL_PIPS = "EURUSD", 0.0001, 5, 5.0, 40.0
+config.MIN_SL_USD, config.MAX_SL_USD, config.SPREAD_USD, config.CONTRACT_SIZE = 0.0005, 0.0040, 0.0001, 100000.0
+config.PRODUCT_KIND, config.PRODUCT_DESC, config.QUOTE_PER_USD, config.MAGIC = "fx", _e["desc"].replace("{symbol}", "EURUSD"), 1.0, 922
+_st = {"pending_cmds": []}
+_t = _ex.enqueue(_st, "OPEN_LONG", 1.0950, 1.1010, 1000.0, "abcdef0123", lots=0.01)
+check("EURUSD 指令 5 位小數", _t == "open|BUY|0.01|sl=1.09500|tp=1.10100|magic=922|id=abcdef01", _t)
+_a, _sl, _tp, _why = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 1.0998, "target_price": 1.1030, "confidence": 0.9, "reason": "x"},
+                                            position=None, last=1.1000, can_open=True, trades_today=0, block_reason=None)
+check("EURUSD 止損 2 pip < 5 pip 下限 → 推到 5 pip（1.09950）", _a == "OPEN_LONG" and abs(_sl - 1.0995) < 1e-9, (_a, _sl, _why))
+_a2, _, _, _why2 = rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 1.1050, "target_price": None, "confidence": 0.9, "reason": "x"},
+                                           position=None, last=1.1000, can_open=True, trades_today=0, block_reason=None)
+check("EURUSD 止損 50 pip > 40 pip 上限 → HOLD（訊息用 pip）", _a2 == "HOLD" and "pip" in (_why2 or ""), _why2)
+_pos = {"side": 1, "entry": 1.1000, "lots": 0.01}
+check("EURUSD 紙上盈虧：+10 pip 0.01 手 = +US$1.00 − 點差 1 pip US$0.10 = +0.90", abs(paper._pnl(_pos, 1.1010) - 0.9) < 1e-9, paper._pnl(_pos, 1.1010))
+_fri = int(datetime(2026, 10, 23, 22, 30, tzinfo=timezone.utc).timestamp())    # 週五 18:30 ET → 外匯收市
+_sun = int(datetime(2026, 10, 25, 21, 30, tzinfo=timezone.utc).timestamp())    # 週日 17:30 ET → 外匯已開（黃金 18:00 先開）
+_wed = int(datetime(2026, 10, 21, 21, 30, tzinfo=timezone.utc).timestamp())    # 週三 17:30 ET → 外匯 24 小時（黃金休市）
+check("外匯時段：週五 17:00 ET 後收、週日 17:00 ET 開、平日 17:30 ET 照開", (not market.is_market_open(_fri)) and market.is_market_open(_sun) and market.is_market_open(_wed) and not market.is_gold_market_open(_wed))
+_sys = _brain.build_system("")
+check("system prompt 用產品描述（EUR/USD、100,000、pip）同外匯時段，冇 gold 字眼", "EUR/USD" in _sys and "100,000" in _sys and "24 hours on weekdays" in _sys and "gold" not in _sys.lower().split("reference")[0][:600], _sys[:300])
+config.PRODUCT_KIND = "gold"
+check("黃金 system prompt 仍有每日休市", "daily break 17:00-18:00" in _brain.build_system(""))
+for k, v in _saved.items(): setattr(config, k, v)
+check("還原 XAUUSD 後指令仍 2 位", _ex.enqueue({"pending_cmds": []}, "CLOSE", None, None, 1000.0, "zz", lots=0.01) == "close|all|magic=921|id=zz")
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

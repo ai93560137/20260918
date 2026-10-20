@@ -106,6 +106,17 @@ def wilder_atr(bars, length=14):
     return round(atr, 4)
 
 
+def is_market_open(now_ts):
+    """按產品：黃金有每日 17:00–18:00 ET 休市；外匯週日 17:00 ET 開、週五 17:00 ET 收、平日 24 小時。"""
+    if config.PRODUCT_KIND == "fx":
+        ny = datetime.fromtimestamp(now_ts, NY)
+        wd, h = ny.weekday(), ny.hour
+        if wd == 5 or (wd == 4 and h >= 17) or (wd == 6 and h < 17):
+            return False
+        return True
+    return is_gold_market_open(now_ts)
+
+
 def is_gold_market_open(now_ts):
     """CME／券商黃金：週日 18:00 紐約開，週五 17:00 收；平日 17:00–18:00 休市。假期未處理。"""
     ny = datetime.fromtimestamp(now_ts, NY)

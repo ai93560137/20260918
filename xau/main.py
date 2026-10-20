@@ -272,9 +272,10 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
         position = {"side": "LONG" if pos["side"] > 0 else "SHORT", "lots": pos["lots"], "entry": pos["entry"],
                     "stop": pos.get("stop"), "target": pos.get("target"),
                     "age_min": int((now - pos["opened_ts"]) / 60),
-                    "unrealized_usd": round((last - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"], 2)}
+                    "unrealized_usd": round((last - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"] / (config.QUOTE_PER_USD or 1.0), 2)}
     return {
-        "product": {"symbol": config.SYMBOL, "contract_size_oz": config.CONTRACT_SIZE,
+        "product": {"symbol": config.SYMBOL, "contract_size": config.CONTRACT_SIZE, "pip": config.PIP, "price_digits": config.PRICE_DIGITS,
+                    "quote_currency": config.QUOTE_CCY, "description": config.PRODUCT_DESC,
                     "long_only": config.LONG_ONLY, "mode": "live" if config.EXECUTE else "shadow"},
         "bars_m15_older": compact(older),
         "time": market.session_text(now),
@@ -287,7 +288,8 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
         "account": {"currency": account.get("currency"), "equity": account.get("equity"),
                     "balance": account.get("balance"), "daily_pnl": account.get("daily_pnl")},
         "position": position,
-        "risk": {"lots": rules.lots(), "min_sl_usd": config.MIN_SL_USD, "max_sl_usd": config.MAX_SL_USD,
+        "risk": {"lots": rules.lots(), "min_sl_price": config.MIN_SL_USD, "max_sl_price": config.MAX_SL_USD,
+                 "min_sl_pips": config.MIN_SL_PIPS, "max_sl_pips": config.MAX_SL_PIPS, "spread_price": config.SPREAD_USD,
                  "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
                  "trades_today": paper.trades_today(state, day), "max_hold_min": config.MAX_HOLD_MIN,
                  "ladder": {"level": (ladder or {}).get("level", "A"), "reasons": (ladder or {}).get("reasons", []),
@@ -342,7 +344,7 @@ def process_bar(state, bar, m1, m15, account, now):
         exit_rec = paper.on_bar(state, bar, now)
         if exit_rec:
             log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
-    market_open = market.is_gold_market_open(now)   # R253 後舊服務唔再寫電閘，legacy_gate 已刪；舊規則只留 reference/legacy_rules.md
+    market_open = market.is_market_open(now)        # 黃金／外匯時段（market.py）；R253 後舊電閘已刪，舊規則只留 reference/legacy_rules.md
     control = load_control()
     ladder = risk_ladder(state, control, account, bar, now)
     state["ladder"] = ladder
@@ -403,7 +405,7 @@ def process_bar(state, bar, m1, m15, account, now):
     else:
         rec["applied"] = paper.apply(state, action, stop, target, bar, now, day, decision_id)
     _record(state, rec, day)
-    log_event(f"🧠 [{config.TEAM_NAME}] {action}{' ← AI ' + rec['action'] if why else ''} @ {bar['close']:.2f}"
+    log_event(f"🧠 [{config.TEAM_NAME}] {action}{' ← AI ' + rec['action'] if why else ''} @ {bar['close']:.{config.PRICE_DIGITS}f}"
               f"｜{rec['reason'][:80]}{'｜擋：' + why if why else ''}｜{rec['ms']} ms", component="brain",
               action=action, rejected=why, ms=rec["ms"], cost_usd=rec["cost_usd"])
     return rec, rec["applied"]
@@ -585,7 +587,7 @@ def queue_test_cmd(payload, now):
         text = executor.enqueue(state, action, (stop if stop is not None else 0.0), target, now, cid,
                                 lots=(lots if lots else None), tag="test")
         if payload.get("no_sl") and text:
-            state["pending_cmds"][-1]["text"] = text.replace(f"sl={0.0:.2f}", "sl=0")
+            state["pending_cmds"][-1]["text"] = text.replace(f"sl={0.0:.{config.PRICE_DIGITS}f}", "sl=0")
             text = state["pending_cmds"][-1]["text"]
         if payload.get("resend") and text:                 # 測試清單第 5 項：ack 咗之後仍重送同一 id 180 秒，證明 EA 去重（只執行一次）
             state["pending_cmds"][-1]["resend_until"] = now + 180
@@ -621,7 +623,7 @@ def build_status():
                     "set_at_utc": control.get("set_at_utc"), "auto_reset_day": control.get("auto_reset_day"),
                     "principal_set": bool(control.get("principal_hkd"))},
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
-        "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
+        "market_open": market.is_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
         "account_received_utc": account.get("received_utc"), "account_id": account.get("account_id"), "server": account.get("server"),
         "ea_dry_run": account.get("dry_run"), "xau_account": config.ACCOUNT or None, "test_cmds": config.TEST_CMDS,
@@ -633,7 +635,9 @@ def build_status():
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
         "pending_cmds": [c for c in (state.get("pending_cmds") or []) if not c.get("acked")],
-        "risk": {"XAU_LOTS": rules.lots(), "XAU_MIN_SL_USD": config.MIN_SL_USD, "XAU_MAX_SL_USD": config.MAX_SL_USD,
+        "product": {"symbol": config.SYMBOL, "kind": config.PRODUCT_KIND, "pip": config.PIP, "digits": config.PRICE_DIGITS, "contract": config.CONTRACT_SIZE},
+        "risk": {"XAU_LOTS": rules.lots(), "止損距離 pip（下限／上限）": f"{config.MIN_SL_PIPS:g}／{config.MAX_SL_PIPS:g}",
+                 "XAU_MIN_SL_USD": config.MIN_SL_USD, "XAU_MAX_SL_USD": config.MAX_SL_USD,
                  "XAU_MIN_CONFIDENCE": config.MIN_CONFIDENCE, "XAU_MAX_TRADES_PER_DAY": config.MAX_TRADES_PER_DAY,
                  "XAU_MAX_HOLD_MIN": config.MAX_HOLD_MIN, "XAU_LONG_ONLY": config.LONG_ONLY, "XAU_MAGIC": config.MAGIC,
                  "XAU_EXECUTE": config.EXECUTE, "CLAUDE_PROVIDER": config.PROVIDER,

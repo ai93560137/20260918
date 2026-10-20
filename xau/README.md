@@ -74,6 +74,29 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_CALL_WHEN_LOCKED` | 0 | 空倉且電閘 LOCK 時唔問 Claude（慳錢） |
 | `XAU_MAGIC` | 921 | 同新 EA `InpMagic` 一致（線上 V23 用 920） |
 
+## 多產品：一個產品一個服務（使用者 10-21：「將產品擴展到主要外匯」，先做 EURUSD、0.01 手、止損 5–40 pip、影子模式）
+同一套 `xau/` 程式，每個產品另開一個 Cloud Run 服務，用 `XAU_SYMBOL` 分辨；產品表喺 `config.PRODUCTS`（合約、pip、小數位、止損 pip 範圍、點差、報價貨幣、GCS 前綴、magic）。
+XAUUSD 嘅預設完全不變（pip 1 美元、2 位、止損 2–30、`xau/`、921）。
+
+| 產品 | 合約 | pip | 小數位 | 止損 pip | 前綴 | magic |
+|---|---|---|---|---|---|---|
+| XAUUSD | 100 oz | 1.0 | 2 | 2–30 | `xau/` | 921 |
+| EURUSD | 100,000 | 0.0001 | 5 | 5–40 | `fx/eurusd/` | 922 |
+| GBPUSD | 100,000 | 0.0001 | 5 | 6–50 | `fx/gbpusd/` | 923 |
+| AUDUSD | 100,000 | 0.0001 | 5 | 5–40 | `fx/audusd/` | 924 |
+| USDJPY | 100,000 | 0.01 | 3 | 5–40 | `fx/usdjpy/` | 925（報價 JPY，要設 `XAU_QUOTE_PER_USD`） |
+
+**起 EURUSD 影子服務（總指揮 dry-run → 使用者批 → `--yes`）**：
+```bash
+python3 scripts/gcp_agent.py --profile eurusd deploy --copy-env ANTHROPIC_API_KEY TG_BOT_TOKEN TG_CHAT_ID   # 服務唔存在會建立（zhuge-eurusd）
+python3 scripts/gcp_agent.py --profile eurusd env set XAU_SYMBOL=EURUSD XAU_EXECUTE=0 XAU_ACCOUNT=928861 WEBHOOK_SECRET_TOKEN=<同 zhuge-xau> \
+    CLAUDE_PROVIDER=api CLAUDE_MODEL=claude-opus-5-5 CLAUDE_EFFORT=low GATE_MODEL=claude-haiku-5-5 ANTHROPIC_KEY_EXPIRES_UTC="2026-12-31 14:00"
+```
+（`--copy-env` 由 zhuge-risk-manager 抄；ANTHROPIC_API_KEY 如果只喺 zhuge-xau 就要喺控制台填。）之後：控制台開「允許未經驗證的叫用」；
+demo MT5 開一張 **EURUSD** 圖表掛 TianfuExecutor v0.34（`InpUrl` 指去 zhuge-eurusd、`InpMagic=922`、`InpDryRun=true`）；
+`control.json` 放喺 `fx/eurusd/control.json`（`principal_hkd` 同 XAUUSD 一樣係整個戶口）。
+影子標準（IDEAS.md #28）達標、使用者批先轉 demo 落單；轉真倉前要有**戶口總階梯**（多產品共用一個戶口，各服務各自計日蝕唔夠）。
+
 ## K 線歷史：唔使等 5 小時累積 M15（使用者 10-21）
 - **EA v0.33 回填**：首個心跳（OnInit 後）同埋服務回應 `need_history:true` 時，心跳多帶 `m1_hist`（330 根）＋`m15_hist`（60 根）`[[time,open,high,low,close],…]`；服務按 time 去重合併入 `xau/m1.json`／`xau/m15.json`。換戶口、重啟、改 `XAU_ACCOUNT` 後下一個心跳即刻夠數。
 - **服務側砌 M15**：M15 唔夠 20 根時，由已累積嘅 M1 砌完整嘅 15 分鐘 K 線（只取齊 15 根、時間連續嘅格；EA 送嘅優先），寫入 `xau/m15.json`。

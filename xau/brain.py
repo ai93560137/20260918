@@ -11,9 +11,9 @@ import config
 
 log = logging.getLogger("brain")
 
-SYSTEM = """You are the decision engine of an automated trading bot for spot gold CFD {symbol} on MetaTrader 5
-(1 lot = 100 oz, price in US$ per oz, fixed lot size set by code, long or short unless the input says long-only).
-Trading hours: Sunday 18:00 to Friday 17:00 US Eastern with a daily break 17:00-18:00 ET.
+SYSTEM = """You are the decision engine of an automated trading bot for {product_desc}
+(fixed lot size set by code, long or short unless the input says long-only; stop distances in the risk block are in price units, pip size is given).
+{hours}
 
 Every minute, when a 1-minute bar closes, you receive market data, the account, the current position and the risk
 limits. Decide ONE action:
@@ -66,7 +66,7 @@ TOOL = {
     },
 }
 
-GATE_SYSTEM = """You are the pre-screen for an automated gold ({symbol}) trading bot. The bot is FLAT.
+GATE_SYSTEM = """You are the pre-screen for an automated {symbol} trading bot ({product_desc}). The bot is FLAT.
 A stronger model makes the real decision, but every call costs money, so you only decide whether this 1-minute bar
 deserves a full analysis. You do not trade.
 Answer look=true when there is a plausible entry setup now: a breakout of a recent range, a pullback to a level
@@ -142,7 +142,9 @@ def load_reference():
 
 
 def build_system(lessons, symbol=None, reference=None):
-    text = SYSTEM.replace("{symbol}", symbol or config.SYMBOL)
+    hours = ("Trading hours: Sunday 17:00 to Friday 17:00 US Eastern, 24 hours on weekdays (liquidity peaks in the London and New York sessions)."
+             if config.PRODUCT_KIND == "fx" else "Trading hours: Sunday 18:00 to Friday 17:00 US Eastern with a daily break 17:00-18:00 ET.")
+    text = SYSTEM.replace("{product_desc}", config.PRODUCT_DESC).replace("{hours}", hours).replace("{symbol}", symbol or config.SYMBOL)
     reference = load_reference() if reference is None else reference
     if reference:
         text += "\n\n=== REFERENCE: LEGACY RULES AND GATE (not binding) ===\n" + reference
@@ -188,7 +190,7 @@ class ClaudeBrain:
     def screen(self, context):
         """冇倉時用平價模型篩一次。出錯一律當「要睇」。"""
         lessons, _ = self._lessons()
-        text = GATE_SYSTEM.replace("{symbol}", config.SYMBOL) + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
+        text = GATE_SYSTEM.replace("{product_desc}", config.PRODUCT_DESC).replace("{symbol}", config.SYMBOL) + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
         started = time.time()
         try:
             msg = self.client.messages.create(

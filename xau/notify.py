@@ -12,7 +12,7 @@ def tg_send(text):
         return False
     try:
         r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                          data={"chat_id": chat, "text": f"【{config.TEAM_NAME}】{text}"}, timeout=10)
+                          data={"chat_id": chat, "text": f"【{config.TEAM_NAME}{'' if config.SYMBOL == 'XAUUSD' else ' ' + config.SYMBOL}】{text}"}, timeout=10)
         return r.status_code == 200
     except Exception as exc:  # noqa: BLE001  不印網址（含權杖）
         print(f"⚠️ [Telegram 發送失敗] {type(exc).__name__}", flush=True)

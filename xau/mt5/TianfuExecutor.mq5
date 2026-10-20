@@ -23,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.33"
+#property version   "0.34"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -45,6 +45,7 @@ string   g_seen_ids = "";               // 最近執行過嘅 id，以 | 分隔�
 #define  MAX_SEEN  40
 
 //---------------------------------------------------------------- 工具
+string P(double x) { return DoubleToString(x, _Digits); }   // v0.34：價格按商品小數位（XAUUSD 2、EURUSD 5），唔再寫死 %.2f
 string JsonEsc(string s) { StringReplace(s, "\\", "\\\\"); StringReplace(s, "\"", "\\\""); return s; }
 
 bool IsMine(ulong ticket)
@@ -130,13 +131,13 @@ string BuildHist()
    for(int i = n1 - 1; i >= 0; i--)
    {
       if(s1 != "") s1 += ",";
-      s1 += StringFormat("[%I64d,%.2f,%.2f,%.2f,%.2f]", (long)r1[i].time, r1[i].open, r1[i].high, r1[i].low, r1[i].close);
+      s1 += StringFormat("[%I64d,%s,%s,%s,%s]", (long)r1[i].time, P(r1[i].open), P(r1[i].high), P(r1[i].low), P(r1[i].close));
    }
    int n15 = CopyRates(_Symbol, PERIOD_M15, 1, 60, r15);
    for(int i = n15 - 1; i >= 0; i--)
    {
       if(s15 != "") s15 += ",";
-      s15 += StringFormat("[%I64d,%.2f,%.2f,%.2f,%.2f]", (long)r15[i].time, r15[i].open, r15[i].high, r15[i].low, r15[i].close);
+      s15 += StringFormat("[%I64d,%s,%s,%s,%s]", (long)r15[i].time, P(r15[i].open), P(r15[i].high), P(r15[i].low), P(r15[i].close));
    }
    PrintFormat("📚 回填歷史：M1 %d 根、M15 %d 根", n1, n15);
    return StringFormat(",\"m1_hist\":[%s],\"m15_hist\":[%s]", s1, s15);
@@ -156,9 +157,9 @@ string BuildHeartbeat()
       if(type == POSITION_TYPE_BUY) buy += v; else sell += v;
       floating += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
       if(pos_json != "") pos_json += ",";
-      pos_json += StringFormat("{\"ticket\":%I64u,\"side\":\"%s\",\"lots\":%.2f,\"entry\":%.2f,\"sl\":%.2f,\"tp\":%.2f,\"open_time\":%I64d}",
-                               t, type == POSITION_TYPE_BUY ? "BUY" : "SELL", v, PositionGetDouble(POSITION_PRICE_OPEN),
-                               PositionGetDouble(POSITION_SL), PositionGetDouble(POSITION_TP), (long)PositionGetInteger(POSITION_TIME));
+      pos_json += StringFormat("{\"ticket\":%I64u,\"side\":\"%s\",\"lots\":%.2f,\"entry\":%s,\"sl\":%s,\"tp\":%s,\"open_time\":%I64d}",
+                               t, type == POSITION_TYPE_BUY ? "BUY" : "SELL", v, P(PositionGetDouble(POSITION_PRICE_OPEN)),
+                               P(PositionGetDouble(POSITION_SL)), P(PositionGetDouble(POSITION_TP)), (long)PositionGetInteger(POSITION_TIME));
    }
    MqlRates r1[], r15[];
    ArraySetAsSeries(r1, true); ArraySetAsSeries(r15, true);
@@ -167,16 +168,16 @@ string BuildHeartbeat()
    {
       bool is_new = (r1[0].time != g_last_m1);
       if(is_new) g_last_m1 = r1[0].time;
-      m1 = StringFormat("{\"symbol\":\"%s\",\"time\":%I64d,\"open\":%.2f,\"high\":%.2f,\"low\":%.2f,\"close\":%.2f,\"volume\":%I64d,\"is_new_bar\":%s}",
-                        _Symbol, (long)r1[0].time, r1[0].open, r1[0].high, r1[0].low, r1[0].close, r1[0].tick_volume, is_new ? "true" : "false");
+      m1 = StringFormat("{\"symbol\":\"%s\",\"time\":%I64d,\"open\":%s,\"high\":%s,\"low\":%s,\"close\":%s,\"volume\":%I64d,\"is_new_bar\":%s}",
+                        _Symbol, (long)r1[0].time, P(r1[0].open), P(r1[0].high), P(r1[0].low), P(r1[0].close), r1[0].tick_volume, is_new ? "true" : "false");
    }
    if(CopyRates(_Symbol, PERIOD_M15, 1, 1, r15) > 0)
-      m15 = StringFormat("{\"time\":%I64d,\"open\":%.2f,\"high\":%.2f,\"low\":%.2f,\"close\":%.2f}",
-                         (long)r15[0].time, r15[0].open, r15[0].high, r15[0].low, r15[0].close);
+      m15 = StringFormat("{\"time\":%I64d,\"open\":%s,\"high\":%s,\"low\":%s,\"close\":%s}",
+                         (long)r15[0].time, P(r15[0].open), P(r15[0].high), P(r15[0].low), P(r15[0].close));
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    string hist = g_need_hist ? BuildHist() : "";
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.33\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.34\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
       "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,\"trade_allowed\":%s,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s%s}",
@@ -262,11 +263,11 @@ void Execute(string line)
       if(sl <= 0) { Reject(id, line, "no SL"); return; }                       // 冇止損唔開
       // 只管一張：已有自己嘅倉就唔開
       for(int i = PositionsTotal() - 1; i >= 0; i--) { ulong t = PositionGetTicket(i); if(t != 0 && IsMine(t)) { Reject(id, line, StringFormat("already in position (ticket %I64u)", t)); return; } }
-      if(InpDryRun) { PrintFormat("🧪 [dry-run] open %s %.2f sl=%.2f tp=%.2f id=%s", side, lots, sl, tp, id); Ack(id, true, 0, "dry-run"); return; }
+      if(InpDryRun) { PrintFormat("🧪 [dry-run] open %s %.2f sl=%s tp=%s id=%s", side, lots, P(sl), P(tp), id); Ack(id, true, 0, "dry-run"); return; }
       bool ok = (side == "BUY") ? trade.Buy(lots, _Symbol, 0.0, sl, tp, "天覆陣 " + id)
                                 : trade.Sell(lots, _Symbol, 0.0, sl, tp, "天覆陣 " + id);
       ulong ticket = ok ? trade.ResultOrder() : 0;
-      PrintFormat("%s open %s %.2f sl=%.2f tp=%.2f → %s %s", ok ? "✅" : "❌", side, lots, sl, tp, trade.ResultRetcodeDescription(), id);
+      PrintFormat("%s open %s %.2f sl=%s tp=%s → %s %s", ok ? "✅" : "❌", side, lots, P(sl), P(tp), trade.ResultRetcodeDescription(), id);
       Ack(id, ok, ticket, trade.ResultRetcodeDescription());
       return;
    }
@@ -282,7 +283,7 @@ void Execute(string line)
          ulong t = PositionGetTicket(i);
          if(t == 0 || !IsMine(t)) continue;
          any = true;
-         if(InpDryRun) { PrintFormat("🧪 [dry-run] %s ticket=%I64u sl=%.2f tp=%.2f id=%s", op, t, sl, tp, id); continue; }
+         if(InpDryRun) { PrintFormat("🧪 [dry-run] %s ticket=%I64u sl=%s tp=%s id=%s", op, t, P(sl), P(tp), id); continue; }
          bool ok = (op == "close") ? trade.PositionClose(t) : trade.PositionModify(t, sl, tp);
          all_ok = all_ok && ok;
          msg += trade.ResultRetcodeDescription() + ";";
