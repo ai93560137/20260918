@@ -7,6 +7,13 @@ os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_EXECUTE="0", GATE_MODEL="claud
                   ANTHROPIC_API_KEY="x")
 sys.path.insert(0, "/home/user/20260918/xau")
 
+try:
+    import anthropic                             # noqa: F401
+except ImportError:                              # 冇裝 SDK 都要跑到測試（Claude 用假 brain）
+    _an = types.ModuleType("anthropic")
+    class _E(Exception):
+        pass
+    _an.Anthropic = lambda *a, **k: None; _an.BadRequestError = _E; sys.modules["anthropic"] = _an
 import google, google.cloud                      # noqa: E402
 FAKE = {}
 class _Blob:

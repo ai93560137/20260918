@@ -586,6 +586,19 @@ class XauProfileTests(unittest.TestCase):
         self.assertNotIn("gates.html", out)
         self.assertEqual(s.calls, [])
 
+    def test_xau_files_cover_all_py_and_imports(self):
+        files = ga.profile_files(ga.PROFILES["xau"])
+        src = ga.PROFILES["xau"]["source"]
+        for p in src.glob("*.py"):
+            self.assertIn(p.name, files)
+        self.assertIn("reference/legacy_rules.md", files)
+        self.assertEqual(ga.missing_local_imports(src, files), [])
+        # 漏咗一個模組 → 來源檢查要擋（10-20 真實事故：冇 notify.py，修訂 exit(82)）
+        short = tuple(f for f in files if f != "notify.py")
+        self.assertEqual(ga.missing_local_imports(src, short), ["notify.py"])
+        problems = ga.sanity_check_sources(src, {**ga.PROFILES["xau"], "files": short})
+        self.assertTrue(any("notify.py" in p for p in problems), problems)
+
     def test_status_uses_profile_service(self):
         s = FakeSession([("GET", XAU_SVC_NAME, FakeResp(404, text="nf"))])
         out, code = run(["--profile", "xau", "status"], s, RUN_ENV)

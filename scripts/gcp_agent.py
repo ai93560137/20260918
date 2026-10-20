@@ -76,10 +76,38 @@ PROFILES = {
     "zhuge": {"service": "zhuge-risk-manager", "source": REPO_ROOT, "entry": ENTRY_POINT, "files": DEPLOY_FILES,
               "check_views": ("", "gates_app", "order_app", "dashboard", "info"), "tail_ok": ("app = _build_wsgi_app()", "return response")},
     "xau": {"service": "zhuge-xau", "source": REPO_ROOT / "xau", "entry": "xau_entry",
-            "files": ("main.py", "requirements.txt", "brain.py", "config.py", "market.py", "page.py", "paper.py",
-                      "rules.py", "storage.py", "LESSONS.md", "reference/legacy_rules.md"),
+            "files": None,   # 動態：xau/*.py ＋ requirements.txt ＋ LESSONS.md ＋ reference/*.md（見 profile_files；10-20 漏咗 notify.py 令修訂起唔到）
             "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",)},
 }
+
+
+def profile_files(profile, source_dir=None):
+    """profile 要打包嘅檔案。xau 自動收齊目錄入面所有 .py（唔包 tests／mt5），免得漏 import。"""
+    if profile.get("files") is not None:
+        return profile["files"]
+    source_dir = Path(source_dir or profile["source"])
+    names = sorted(p.name for p in source_dir.glob("*.py")) if source_dir.exists() else []
+    names = ["main.py"] + [n for n in names if n != "main.py"]
+    extra = [n for n in ("requirements.txt", "LESSONS.md") if (source_dir / n).exists()]
+    refs = sorted(f"reference/{p.name}" for p in (source_dir / "reference").glob("*.md")) if (source_dir / "reference").exists() else []
+    return tuple(names + extra + refs)
+
+
+def missing_local_imports(source_dir: Path, files):
+    """main.py 同其他 .py 入面 `import x`／`from x import` 嘅本地模組（source_dir 有 x.py）一定要喺 files 入面。"""
+    import re as _re
+    files = set(files)
+    missing = set()
+    for name in [f for f in files if f.endswith(".py")]:
+        try:
+            text = (source_dir / name).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for m in _re.finditer(r"^(?:import|from)\s+([A-Za-z_][A-Za-z0-9_]*)", text, _re.M):
+            mod = m.group(1)
+            if (source_dir / f"{mod}.py").exists() and f"{mod}.py" not in files:
+                missing.add(f"{mod}.py")
+    return sorted(missing)
 DEFAULT_RUNTIME = "python312"
 DEFAULT_MEMORY = "512Mi"
 DEFAULT_TIMEOUT = 60
@@ -123,6 +151,8 @@ class Ctx:
         # 命令列明確畀咗 --profile 就用該 profile 嘅服務名（唔理 $GCP_SERVICE），免得環境變數令 xau 部署去錯舊服務
         self.service = (self.profile["service"] if getattr(args, "profile", None)
                         else os.environ.get("GCP_SERVICE", self.profile["service"])).strip()
+        src = getattr(args, "source", None)
+        self.profile = {**self.profile, "files": profile_files(self.profile, src or self.profile["source"])}
         self.bucket = os.environ.get("GCP_BUCKET", "zhuge-risk-manager-bucket").strip()
         if getattr(args, "region", None):
             self.region = args.region
@@ -889,6 +919,8 @@ def sanity_check_sources(source_dir: Path, profile=None):
     tail = main_py.rstrip()
     if not any(tail.endswith(t) for t in profile["tail_ok"]):
         problems.append(f"main.py 結尾不是預期的 {' / '.join(profile['tail_ok'])}（檔案可能貼到一半）")
+    for miss in missing_local_imports(source_dir, files):
+        problems.append(f"main.py／其他模組 import 咗 {miss}，但部署清單冇佢（修訂會起唔到：ImportError）")
     for py_name in [n for n in files if n.endswith(".py") and n != "main.py"]:
         try:
             compile((source_dir / py_name).read_text(encoding="utf-8", errors="replace"), py_name, "exec")
