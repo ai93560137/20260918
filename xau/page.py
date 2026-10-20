@@ -54,6 +54,13 @@ def metric_cards(m):
             + "</div>")
 
 
+def _pos_text(pos):
+    if not pos:
+        return "冇"
+    return (f"{'好倉' if pos['side'] > 0 else '淡倉'} {pos['lots']:.2f} 手 @ {pos['entry']:.2f}｜止蝕 {pos.get('stop') or '—'}"
+            f"｜止賺 {pos.get('target') or '—'}｜票 {pos.get('ticket') or '—'}")
+
+
 def run_text(s):
     ctl, lad = s.get("control") or {}, s.get("ladder") or {}
     mode = ctl.get("mode") or "RUN"
@@ -97,7 +104,10 @@ def render(status):
     real = (key_warn + "<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉（真金白銀）</div>"
             + ("<div class='section'><p class='muted'>未開始真倉。模擬倉達標、使用者批准後先開始（XAU_EXECUTE=1，新 EA 執行指令）。</p></div>"
                if not s.get("execute") else
-               f"<div class='section'><h2>真倉狀態</h2><p>{esc(run_text(s))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>")
+               f"<div class='section'><h2>真倉狀態</h2><p>{esc(run_text(s))}</p>"
+               f"<p>EA 戶口 {esc(s.get('account_id') or '—')}（{esc(s.get('server') or '—')}）{'，EA dry-run' if s.get('ea_dry_run') else ''}；只收 XAU_ACCOUNT={esc(s.get('xau_account') or '（全收）')}"
+               f"{'；⚠ XAU_TEST_CMDS=1（真倉前要關）' if s.get('test_cmds') else ''}</p>"
+               f"<p>EA 持倉：{esc(_pos_text(s.get('position')))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>")
             + "</div>")
     top = ("<div class='grid'>"
            + card("階段", "模擬盤" if not s.get("execute") else "真倉", esc(run_text(s)))

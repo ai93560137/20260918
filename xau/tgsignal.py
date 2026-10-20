@@ -268,8 +268,15 @@ def send_order(rec):
         return "rejected", why
     cmd_id = uuid.uuid4().hex
 
+    live_pos = None
+    if config.EXECUTE:
+        try:
+            live_pos = (storage.read_json(config.PREFIX + "account.json", {}) or {}).get("positions") or []
+        except StorageError:
+            live_pos = []
+
     def mutate(state):
-        if state.get("position"):
+        if state.get("position") or live_pos:
             return None, None
         text = executor.enqueue(state, "OPEN_LONG" if plan["side"] == "BUY" else "OPEN_SHORT", plan["stop"], plan["target"],
                                 now, cmd_id, lots=lots(), tag=f"tg:{rec.get('sid')}")

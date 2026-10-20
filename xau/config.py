@@ -44,6 +44,9 @@ LEGACY_GATE_FILE = _s("XAU_LEGACY_GATE_FILE", "zhuge_gate_state.json")   # 舊�
 # EXECUTE=0（預設）：影子模式——Claude 照決策、紙上模擬、只寫 GCS，心跳回應 cmd_text 永遠空。
 # EXECUTE=1：真倉——決定變成指令由 EA 執行。切換前要達到 IDEAS.md 預先登記嘅影子標準。
 EXECUTE = _b("XAU_EXECUTE", False)
+# 只接受呢個 MT5 登入號嘅心跳（數據＋指令）；其他登入號回 ignored。留空＝全收（影子階段）。階段 B：demo 登入號；轉真倉：真戶口登入號。
+ACCOUNT = _s("XAU_ACCOUNT", "")
+TEST_CMDS = _b("XAU_TEST_CMDS", False)                       # 1 = 開放 action=test_cmd（階段 B 測試清單用；真倉前要關）
 
 # --- Claude ---
 PROVIDER = _s("CLAUDE_PROVIDER", "api").lower()             # api（ANTHROPIC_API_KEY，同龍飛陣一樣）| vertex（同一 GCP 專案）

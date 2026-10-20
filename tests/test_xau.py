@@ -315,6 +315,72 @@ r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id":
 check("重複回報 → unknown", r.get_json()["status"] == "unknown")
 config.EXECUTE = False
 
+print("=== 階段 B：XAU_ACCOUNT 過濾、實倉持倉由 EA、最長持倉／STOP 排 close、test_cmd ===")
+config.EXECUTE = True; config.ACCOUNT = "70001"; config.TEST_CMDS = True
+FB.calls.clear(); FB.decision = {"action": "OPEN_LONG", "stop_price": 3990.0, "target_price": 4015.0, "confidence": 0.9, "reason": "買"}
+state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+T1 = T0 + 500 * 60
+FAKE["xau/m1.json"] = (json.dumps([{"time": T1 - (40 - k) * 60, "open": 3999.5, "high": 4000.5, "low": 3999.0, "close": 4000.0} for k in range(40)]), FAKE["xau/m1.json"][1] + 1)
+FAKE["xau/m15.json"] = (json.dumps([{"time": T1 - 900 * (30 - k), "open": 3999.0, "high": 4001.0, "low": 3998.0, "close": 4000.0} for k in range(30)]), FAKE["xau/m15.json"][1] + 1)
+def live_hb(i, close, positions, account="70001", **extra):
+    t = T1 + i * 60
+    body = {"action": "heartbeat", "token": "tok", "account": account, "server": "Demo", "symbol": "XAUUSD", "currency": "HKD",
+            "balance": 10000, "equity": 10000, "credit": 0, "margin_level": 0, "floating": extra.get("floating", 0.0), "daily_pnl": extra.get("daily_pnl", 0.0),
+            "realized_total": extra.get("realized_total", 0.0), "buy_lots": 0.01 if positions else 0, "sell_lots": 0, "net_lots": 0.01 if positions else 0, "magic": 921,
+            "dry_run": False, "positions": positions,
+            "m1_ohlc": {"time": t, "open": close - 0.5, "high": close + 0.3, "low": close - 0.8, "close": close, "is_new_bar": True},
+            "m15_ohlc": {"time": T1 - 900, "open": 3999.0, "high": 4001.0, "low": 3998.0, "close": 4000.0}}
+    NOW[0] = t + 5
+    r = client.post("/", data=json.dumps(body), content_type="application/json")
+    return r.status_code, r.get_json()
+st, d = live_hb(0, 4000, [], account="99999")
+check("非 XAU_ACCOUNT 嘅心跳 → ignored，唔入 K 線", d["status"] == "ignored" and d["cmd_text"] == "" and json.loads(FAKE["xau/m1.json"][0])[-1]["time"] == T1 - 60, d)
+st, d = live_hb(0, 4000, [])
+check("demo 心跳：Claude OPEN → 排 open 指令", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|id="), d)
+cid = d["cmd_text"].split("id=")[1]
+POS = [{"ticket": 555, "side": "BUY", "lots": 0.01, "entry": 4000.2, "sl": 3990.0, "tp": 4015.0, "open_time": T1 + 10}]
+client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": cid, "ok": True, "ticket": 555}), content_type="application/json")
+st, d = live_hb(1, 4001, POS)
+check("EA 回報持倉 → 服務持倉以 EA 為準；AI 再 OPEN 被擋（已有倉位）", d["cmd_text"] == "" and d["decision"]["final"] == "HOLD" and "已有倉位" in d["decision"]["rejected"] and json.loads(FAKE["xau/state.json"][0])["position"]["ticket"] == 555, d)
+check("context 持倉來自 EA", FB.ctx["position"]["entry"] == 4000.2 and FB.ctx["position"]["stop"] == 3990.0)
+FB.decision = {"action": "UPDATE_STOP", "stop_price": 3995.0, "target_price": None, "confidence": 0.9, "reason": "收緊"}
+st, d = live_hb(2, 4002, POS)
+check("AI UPDATE_STOP → modify 指令（止賺保留 4015）", d["cmd_text"].startswith("modify|all|sl=3995.00|tp=4015.00"), d)
+mid = d["cmd_text"].split("id=")[1]
+client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": mid, "ok": True}), content_type="application/json")
+FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
+st, d = live_hb(3, 4003, POS, daily_pnl=-50.0, floating=20.0)
+state = json.loads(FAKE["xau/state.json"][0])
+check("真倉階梯用 EA 數字：今日 = daily_pnl＋floating = −30 HKD", abs(state["ladder"]["daily_pnl_hkd"] - (-30.0)) < 0.01, state["ladder"])
+config.MAX_HOLD_MIN = 1
+st, d = live_hb(5, 4003, POS)
+check("最長持倉到 → 排 close（一次）", d["cmd_text"].startswith("close|all|magic=921"), d)
+st, d = live_hb(6, 4003, POS)
+check("未回報前唔重複排 close", d["cmd_text"].count("close|") == 1, d)
+config.MAX_HOLD_MIN = 120
+closeid = d["cmd_text"].split("id=")[1]
+client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": closeid, "ok": True}), content_type="application/json")
+st, d = live_hb(7, 4003, [])
+check("EA 回報平倉後：持倉 None、冇指令", d["cmd_text"] == "" and json.loads(FAKE["xau/state.json"][0])["position"] is None, d)
+# 使用者 STOP 而有倉 → 排 close
+FAKE["xau/control.json"] = (json.dumps({"mode": "STOP", "reason": "使用者停機", "set_by": "user", "principal_hkd": None, "equity_peak": 0, "alerts_sent": {}}), 50)
+st, d = live_hb(8, 4003, POS)
+check("使用者 STOP 而 EA 有倉 → 排 close", d["cmd_text"].startswith("close|all") and "STOP" in d["message"], d)
+FAKE["xau/control.json"] = (json.dumps({"mode": "RUN", "reason": "", "set_by": "user", "principal_hkd": None, "equity_peak": 0, "alerts_sent": {}}), 51)
+state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+# test_cmd
+r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op": "open", "side": "SELL", "sl": 4010.5, "tp": 3990}), content_type="application/json")
+check("test_cmd open → queued", r.get_json()["status"] == "queued" and r.get_json()["text"].startswith("open|SELL|0.01|sl=4010.50|tp=3990.00"), r.get_json())
+r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op": "open", "no_sl": True}), content_type="application/json")
+check("test_cmd no_sl → sl=0（測 EA 拒絕）", "sl=0|" in r.get_json()["text"], r.get_json())
+config.TEST_CMDS = False
+r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op": "close"}), content_type="application/json")
+check("XAU_TEST_CMDS=0 → 403", r.status_code == 403)
+j = client.get("/?format=json").get_json()
+check("JSON 有 account_id／xau_account／live_positions", j["account_id"] == "70001" and j["xau_account"] == "70001" and isinstance(j["live_positions"], list))
+config.EXECUTE = False; config.ACCOUNT = ""
+state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; state["position"] = None; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+
 print("=== 頁面 ===")
 r = client.get("/"); html = r.get_data(as_text=True)
 check("頁面有陣名、模擬倉、成交紀錄、硬性風控、模式", "天覆陣" in html and "模擬倉" in html and "成交紀錄" in html and "XAU_MAX_SL_USD" in html and "模式同風控" in html)

@@ -1,5 +1,7 @@
 //+------------------------------------------------------------------+
-//| 🌌 天覆陣執行器 TianfuExecutor.mq5  v0.2（2026-10-20，未編譯、未測）   |
+//| 🌌 天覆陣執行器 TianfuExecutor.mq5  v0.3（2026-10-20，未編譯、未測）   |
+//| v0.3：心跳加 account（登入號）／server／realized_total（自 InpLedgerStart）|
+//|       服務用 XAU_ACCOUNT 分辨 demo／真戶口，只向該登入號發指令。          |
 //|                                                                  |
 //| 影子階段用法（使用者 10-20：「EA 直接俾 K 線畀新服務」）：            |
 //|   InpDryRun=true 掛喺另一個 XAUUSD 圖表，只做資料源：每 60 秒送心跳   |
@@ -21,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.20"
+#property version   "0.30"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -33,6 +35,7 @@ input int    InpTimeoutMs  = 15000;     // WebRequest 逾時
 input int    InpSlippagePts = 50;       // 市價單允許滑點（點）
 input double InpMaxLots    = 0.10;      // 單張上限（第二道鎖；Cloud Run 亦有 XAU_MAX_LOTS）
 input bool   InpDryRun     = true;      // true = 只印指令唔落單（第一次掛先用）
+input string InpLedgerStart = "2026.10.20"; // 自己 magic 累計已實現由呢日起計（realized_total）
 
 CTrade   trade;
 datetime g_last_m1 = 0;
@@ -78,11 +81,10 @@ void MarkSeen(string id)
    SaveSeen();
 }
 
-// 今日（券商時間）自己 magic 嘅已實現盈虧（含佣金、隔夜利息）
-double OwnRealizedToday()
+// 自己 magic 嘅已實現盈虧（含佣金、隔夜利息），由 from 起
+double OwnRealizedSince(datetime from)
 {
-   datetime day0 = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
-   if(!HistorySelect(day0, TimeCurrent())) return 0.0;
+   if(!HistorySelect(from, TimeCurrent())) return 0.0;
    double sum = 0.0;
    for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
    {
@@ -95,6 +97,9 @@ double OwnRealizedToday()
    }
    return sum;
 }
+
+double OwnRealizedToday() { return OwnRealizedSince((datetime)(TimeCurrent() - TimeCurrent() % 86400)); }
+double OwnRealizedTotal() { return OwnRealizedSince(StringToTime(InpLedgerStart)); }
 
 //---------------------------------------------------------------- 心跳封包
 string BuildHeartbeat()
@@ -129,12 +134,13 @@ string BuildHeartbeat()
                          (long)r15[0].time, r15[0].open, r15[0].high, r15[0].low, r15[0].close);
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.20\",\"symbol\":\"%s\",\"currency\":\"%s\","
-      "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,"
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.30\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
       "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s}",
-      JsonEsc(InpToken), _Symbol, cur, AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
-      AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(),
+      JsonEsc(InpToken), (long)AccountInfoInteger(ACCOUNT_LOGIN), JsonEsc(AccountInfoString(ACCOUNT_SERVER)), _Symbol, cur,
+      AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
+      AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(), OwnRealizedTotal(),
       buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", pos_json, m1, m15);
 }
 
