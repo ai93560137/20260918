@@ -421,6 +421,7 @@ def handle_heartbeat(payload):
     offset = server_offset(payload, now)
     account.update(account_id=str(payload.get("account") or "")[:24], server=str(payload.get("server") or "")[:40],
                    dry_run=bool(payload.get("dry_run")), positions=own_positions(payload, offset), server_offset=offset,
+                   trade_allowed=(payload.get("trade_allowed") if isinstance(payload.get("trade_allowed"), dict) else None),
                    currency=str(payload.get("currency") or "HKD"), symbol=str(payload.get("symbol") or ""),
                    status=str(payload.get("status") or ""), received_utc=market.fmt_utc(now), received_ts=now,
                    atr_m1=market.to_float(m15_raw.get("atr_m1")), atr_m5=market.to_float(m15_raw.get("atr_m5")),
@@ -544,6 +545,8 @@ def queue_test_cmd(payload, now):
         if payload.get("no_sl") and text:
             state["pending_cmds"][-1]["text"] = text.replace(f"sl={0.0:.2f}", "sl=0")
             text = state["pending_cmds"][-1]["text"]
+        if payload.get("resend") and text:                 # 測試清單第 5 項：ack 咗之後仍重送同一 id 180 秒，證明 EA 去重（只執行一次）
+            state["pending_cmds"][-1]["resend_until"] = now + 180
         return state, text
     try:
         text = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)
@@ -580,6 +583,7 @@ def build_status():
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
         "account_received_utc": account.get("received_utc"), "account_id": account.get("account_id"), "server": account.get("server"),
         "ea_dry_run": account.get("dry_run"), "xau_account": config.ACCOUNT or None, "test_cmds": config.TEST_CMDS,
+        "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
         "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),

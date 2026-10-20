@@ -39,8 +39,8 @@ python3 scripts/gcp_agent.py --profile xau put --any-prefix --object xau/test_cm
 | 2 | 冇 SL 嘅 open | EA 拒絕 `no SL`，冇單 | EA 日誌、ack ok=false |
 | 3 | `modify\|all\|sl=…` | MT5 止損改咗 | MT5 持倉 |
 | 4 | `close\|all` | 平倉；下一個心跳 `positions=[]`，服務持倉清空 | MT5、頁面 |
-| 5 | 去重：同一 id 心跳重送兩次 | 只執行一次 | EA 日誌「Seen」 |
-| 6 | 斷線重連：MT5 關 3 分鐘再開，期間排一條 open | 指令 10 分鐘內仍執行一次；超過 10 分鐘作廢 | 服務 `pending_cmds` |
+| 5 | 去重：test_cmd.json 加 `"resend":true` → 服務喺 EA ack 後 180 秒內仍重送同一 id | EA 只落一張；「專家」分頁第二次印「↩️ 重複 id，已執行過，略過」；MT5 只有一張單 | EA 日誌、positions |
+| 6 | 斷線重連：(a) 使用者關 demo MT5 → put open → 3 分鐘後開 MT5 → 首個心跳 consume＋落單一次；(b) 關 MT5 → put → >10 分鐘先開 → `ts` 過期唔排、冇單 | (a) 一張單；(b) test_cmd.json result=error、冇單 | 服務日誌、positions |
 | 7 | 緊急停機：`control.json mode=STOP set_by=user` | 下一根 M1 服務排 `close\|all`，EA 平倉；之後唔問 Claude | MT5、頁面模式 |
 | 8 | 日蝕 −6%（**只喺 demo**）：開倉後把 `principal_hkd` 暫時改細令 −6% 觸發 | 自動 STOP＋`close\|all`＋Telegram；換日自動 RUN | 頁面、Telegram |
 | 9 | 最長持倉：`XAU_MAX_HOLD_MIN=5` 暫時 | 5 分鐘後服務排 `close\|all` | 頁面 |

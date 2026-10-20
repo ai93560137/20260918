@@ -325,7 +325,7 @@ def live_hb(i, close, positions, account="70001", **extra):
     t = T1 + i * 60
     body = {"action": "heartbeat", "token": "tok", "account": account, "server": "Demo", "symbol": "XAUUSD", "currency": "HKD",
             "balance": 10000, "equity": 10000, "credit": 0, "margin_level": 0, "floating": extra.get("floating", 0.0), "daily_pnl": extra.get("daily_pnl", 0.0),
-            "realized_total": extra.get("realized_total", 0.0), "buy_lots": 0.01 if positions else 0, "sell_lots": 0, "net_lots": 0.01 if positions else 0, "magic": 921,
+            "realized_total": extra.get("realized_total", 0.0), "trade_allowed": extra.get("trade_allowed"), "buy_lots": 0.01 if positions else 0, "sell_lots": 0, "net_lots": 0.01 if positions else 0, "magic": 921,
             "dry_run": False, "positions": positions,
             "m1_ohlc": {"time": t, "open": close - 0.5, "high": close + 0.3, "low": close - 0.8, "close": close, "is_new_bar": True},
             "m15_ohlc": {"time": T1 - 900, "open": 3999.0, "high": 4001.0, "low": 3998.0, "close": 4000.0}}
@@ -389,10 +389,21 @@ tf = json.loads(FAKE["xau/test_cmd.json"][0])
 check("test_cmd.json 寫回 consumed＋result", bool(tf.get("consumed")) and tf["result"]["status"] == "queued" and tf["id"] == "t1", tf)
 st, d = live_hb(10, 4003, [])
 check("已 consumed 嘅檔唔會再排", d["cmd_text"].count("open|") == 1, d)
-FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t2", "op": "open", "side": "SELL", "ts": T1 + 11 * 60}), 5)
+# 第 5 項去重：resend=true → ack 後 180 秒內心跳仍帶同一指令（EA 靠 Seen 檔只執行一次）
+state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t5", "op": "open", "side": "BUY", "sl": 3990, "tp": 4015, "ts": T1 + 10 * 60 + 30, "resend": True}), 4)
+st, d = live_hb(10, 4003, [])
+rid = d["cmd_text"].split("id=")[1]
+client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": rid, "ok": True, "ticket": 777}), content_type="application/json")
+st, d = live_hb(11, 4003, [])
+check("resend：ack 後下一個心跳仍帶同一 id", d["cmd_text"].count("id=" + rid) == 1, d)
+st, d2 = live_hb(15, 4003, [])
+check("resend：180 秒後唔再送", "id=" + rid not in d2["cmd_text"], d2)
+state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t2", "op": "open", "side": "SELL", "ts": T1 + 11 * 60}), 6)
 st, d = live_hb(11, 4003, [])
 tf = json.loads(FAKE["xau/test_cmd.json"][0])
-check("test_cmd.json 冇 sl → 唔排，result 記錯誤", d["cmd_text"].count("open|") == 1 and tf["result"]["status"] == "error", tf)
+check("test_cmd.json 冇 sl → 唔排，result 記錯誤", d["cmd_text"].count("open|") == 0 and tf["result"]["status"] == "error", tf)
 config.TEST_CMDS = False
 r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op": "close"}), content_type="application/json")
 check("XAU_TEST_CMDS=0 → 403", r.status_code == 403)
@@ -407,6 +418,11 @@ _p = xau.own_positions({"positions": [{"side": "BUY", "lots": 0.01, "entry": 400
 check("open_time 換算成 UTC（最長持倉先會準）", _p[0]["opened_ts"] == 1_000_000 and _p[0]["stop"] is None, _p)
 j = client.get("/?format=json").get_json()
 check("JSON 有 account_id／xau_account／live_positions", j["account_id"] == "70001" and j["xau_account"] == "70001" and isinstance(j["live_positions"], list))
+st, d = live_hb(13, 4003, [], trade_allowed={"terminal": True, "ea": False, "account": True})
+j = client.get("/?format=json").get_json()
+check("JSON 有 trade_allowed／server_offset", j["trade_allowed"] == {"terminal": True, "ea": False, "account": True} and j["server_offset"] == 0, j.get("trade_allowed"))
+html = client.get("/").get_data(as_text=True)
+check("頁面顯示自動交易被擋（EA 屬性）", "MT5 自動交易被擋" in html and "允許算法交易" in html)
 config.EXECUTE = False; config.ACCOUNT = ""
 state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; state["position"] = None; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 

@@ -31,6 +31,7 @@ https://zhuge-xau-1056099871997.europe-west1.run.app
 | `InpMaxLots` | `0.10` |
 
 4. 「一般」分頁：勾「允許算法交易」（EA 要跑 OnTimer；dry-run 唔會落單）。確定。
+   **真倉／demo 落單仲要三個開關全開**：工具列「Algo Trading」綠色、EA 屬性「一般」分頁「允許算法交易」有勾、戶口准 EA 交易。任何一個關，落單回 `auto trading disabled by client`（10027）。v0.32 起心跳帶 `trade_allowed`，頁面「真倉狀態」會顯示邊個關住，EA 收到指令亦會先回報 `trade not allowed: …` 而唔送單。
 
 ## 4. 確認
 - 圖表右上角 EA 名有笑臉；「專家」日誌每分鐘一行 `WebRequest` 冇錯誤（code 200 唔會印；錯誤會印 ⚠️）。
