@@ -28,6 +28,17 @@ MT5 EA V23 ──心跳──▶ zhuge-risk-manager（main.py，照舊：電閘�
   Ⓓ 之後要使用者把 `halt` 改返 `false` 先會再決策（`gcp_agent.py put` 只准寫 ops/，改 control.json 用 gsutil 或控制台）。
 - 實倉階段（`XAU_EXECUTE=1`）：EA 改指向本服務，心跳回應 `cmd_text` 帶指令，EA 執行後 `cmd_ack` 回報。要先有新 EA（PR B），同埋影子達到預先登記標準（PR C）。
 
+## 新執行器 EA（PR B，`mt5/TianfuExecutor.mq5`，v0.1 未編譯未測）
+
+純執行器：每 60 秒心跳（帶權杖、`margin_level`、只計自己 magic 嘅持倉／今日已實現／浮動、M1／M15 K 線），執行回應 `cmd_text`，`cmd_ack` 回報。
+只管 `_Symbol`＋`InpMagic`；唔接手、唔平其他 magic 嘅單；冇 SL 嘅 open 拒絕；`InpDryRun=true`（預設）只印指令唔落單；id 去重存檔案 `MQL5/Files/tianfu_seen_<symbol>.txt`。
+使用者自己喺 MetaEditor 編譯、先掛 demo。線上 V23 歸 XAUUSD GCP／TV 陣，唔郁。
+
+## 風控階梯點計（使用者 10-20：真倉同 C 戶口共用，唔用獨立戶口）
+
+日蝕／回撤／硬止損**只計天覆陣自己嘅單**：模擬＝紙上盈虧；真倉＝EA 按 magic 回報。「自己嘅權益」= 本金（`control.json principal_hkd`）＋累計已實現＋浮動。
+唔用戶口淨值（有手動單會污染）。保證金水平係戶口級，照用但當作戶口級警報。
+
 ## 指令格式（實倉）
 
 每行一條，EA 用 `StringSplit("|")` 讀；`id` 兩邊去重，10 分鐘冇回報就作廢：

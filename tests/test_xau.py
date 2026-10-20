@@ -172,15 +172,15 @@ check("第 4 次開倉 → 擋（每日上限 3）", d["decision"]["final"] == "
 check("用量：有決策次數同費用", json.loads(FAKE["xau/state.json"][0])["usage_today"]["decide"] >= 5 and json.loads(FAKE["xau/state.json"][0])["usage_today"]["cost_usd"] > 0)
 
 print("=== 停機開關／暫停開倉／階梯 Ⓓ ===")
-FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": True, "principal_hkd": 20000, "equity_peak": 23000}), 1)
+FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": True, "principal_hkd": 20000, "equity_peak": 0}), 1)
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3985.0, "target_price": None, "confidence": 0.9, "reason": "買"}
 st, d = hb(172, 3995)
 check("pause_new → AI 開倉被擋", d["decision"]["final"] == "HOLD" and "暫停開新倉" in d["decision"]["rejected"], d["decision"])
-FAKE["xau/control.json"] = (json.dumps({"halt": True, "halt_reason": "使用者停機", "pause_new": False, "principal_hkd": 20000, "equity_peak": 23000}), 2)
+FAKE["xau/control.json"] = (json.dumps({"halt": True, "halt_reason": "使用者停機", "pause_new": False, "principal_hkd": 20000, "equity_peak": 0}), 2)
 n_calls = len(FB.calls)
 st, d = hb(173, 3995)
 check("halt → 唔問 Claude", len(FB.calls) == n_calls and "停機" in d["message"], d)
-FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": False, "principal_hkd": 20000, "equity_peak": 23000}), 3)
+FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": False, "principal_hkd": 20000, "equity_peak": 0}), 3)
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 hb(174, 3995)                                                  # 開倉（AI OPEN_LONG）
 state = json.loads(FAKE["xau/state.json"][0]); check("開咗紙上倉", state["position"] is not None)
@@ -189,15 +189,22 @@ st, d = hb(175, 3990, low=3989.0)                              # 未到止損 39
 state = json.loads(FAKE["xau/state.json"][0])
 expected = round(paper.daily_pnl_usd(state, market.ny_day_start_ts(NOW[0]), 3990) * 7.8, 2)
 check("階梯用今日紙上盈虧（港幣，含浮動）", abs(state["ladder"]["daily_pnl_hkd"] - expected) < 0.01 and expected < 8.58 * 7.8 and state["ladder"]["level"] == "A", (state["ladder"], expected))
-# 令淨值－信用跌穿硬止損：equity 20000、credit 5500 → 14500 < 15000
-body = {"token": "tok", "action": "check_gate", "equity": 20000, "credit": 5500, "balance": 20000, "buy_lots": 0, "sell_lots": 0, "net_lots": 0,
+check("階梯用自己嘅權益（本金＋累計），唔用戶口淨值", state["ladder"]["own_equity_hkd"] is not None and abs(state["ladder"]["own_equity_hkd"] - (20000 + state["ladder"]["cum_pnl_usd"] * 7.8)) < 0.1, state["ladder"])
+# 戶口淨值大跌（手動單蝕）唔影響天覆陣：equity 5000、credit 0
+body = {"token": "tok", "action": "check_gate", "equity": 5000, "credit": 0, "balance": 5000, "buy_lots": 0, "sell_lots": 0, "net_lots": 0,
         "m1_ohlc": {"time": T0 + 176 * 60, "open": 3990, "high": 3991, "low": 3989.5, "close": 3990.5, "is_new_bar": True},
         "m15_ohlc": {"time": T0 + (176 // 15) * 900, "open": 3990, "high": 3991, "low": 3989, "close": 3990}}
 NOW[0] = T0 + 176 * 60 + 5
 r = client.post("/", data=json.dumps(body), content_type="application/json"); d = r.get_json()
+state = json.loads(FAKE["xau/state.json"][0])
+check("戶口淨值大跌（手動單）唔觸發階梯（只計自己嘅單）", state["ladder"]["level"] == "A" and state["position"] is not None, state["ladder"])
+# 自己嘅單大蝕：把紙上持倉嘅入場價改高，令浮虧 ≥ 本金 25%（0.01 手 × 100 oz：每 1 美元 = US$1 = HK$7.8 → 5000/7.8 ≈ 641 美元）
+state["position"]["entry"] = 3990.5 + 700; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+body["m1_ohlc"]["time"] = T0 + 177 * 60; body["m15_ohlc"]["time"] = T0 + (177 // 15) * 900; NOW[0] = T0 + 177 * 60 + 5
+r = client.post("/", data=json.dumps(body), content_type="application/json"); d = r.get_json()
 state = json.loads(FAKE["xau/state.json"][0]); ctl = json.loads(FAKE["xau/control.json"][0])
-check("硬止損 → 階梯Ⓓ：紙上全平、halt=True、紀錄", state["position"] is None and ctl["halt"] and "硬止損" in ctl["halt_reason"] and d["decision"]["final"] == "CLOSE" and state["trades"][-1]["reason"].startswith("階梯Ⓓ"), (ctl, d))
-st, d = hb(177, 3990)
+check("自己嘅單累計 −25% → 階梯Ⓓ：紙上全平、halt=True、紀錄", state["position"] is None and ctl["halt"] and "硬止損" in ctl["halt_reason"] and d["decision"]["final"] == "CLOSE" and state["trades"][-1]["reason"].startswith("階梯Ⓓ"), (ctl, d))
+st, d = hb(178, 3990)
 check("停機後唔再問", "停機" in d["message"], d)
 FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": False, "principal_hkd": None, "equity_peak": 0}), 9)
 

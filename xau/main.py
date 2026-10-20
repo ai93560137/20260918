@@ -105,16 +105,21 @@ def save_control(control):
 
 
 def risk_ladder(state, control, account, bar, now):
-    """RISK_LADDER §6c：淨值－信用、高水位、今日紙上盈虧（港幣）、EA 回報嘅 margin level（V23 冇，新 EA 先有）。"""
-    equity, credit = market.to_float(account.get("equity")), market.to_float(account.get("credit"), 0.0) or 0.0
-    equity_net = (equity - credit) if equity is not None else None
-    if equity_net is not None and equity_net > (control.get("equity_peak") or 0.0):
-        control["equity_peak"] = equity_net
-    daily_hkd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"]) * config.HKD_PER_USD
-    lad = rules.ladder(principal_hkd=market.to_float(control.get("principal_hkd")), equity_net=equity_net,
-                       peak_equity=control.get("equity_peak"), daily_pnl_hkd=daily_hkd,
+    """RISK_LADDER §6c。使用者 10-20：真倉同 C 戶口共用（有手動單），所以日蝕／回撤／硬止損**只計天覆陣自己嘅單**
+    （模擬＝紙上；真倉＝EA 按 magic 回報），唔用戶口淨值；「自己嘅權益」= 本金 + 累計已實現 + 浮動。
+    保證金水平（EA 回報 margin_level，V23 冇）係戶口級，照用但當作戶口級警報。"""
+    principal = market.to_float(control.get("principal_hkd"))
+    daily_usd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"])
+    cum_usd = paper.cumulative_pnl_usd(state, bar["close"])
+    own_equity = (principal + cum_usd * config.HKD_PER_USD) if principal else None
+    if own_equity is not None and own_equity > (control.get("equity_peak") or 0.0):
+        control["equity_peak"] = round(own_equity, 2)
+    lad = rules.ladder(principal_hkd=principal, equity_net=own_equity,
+                       peak_equity=(control.get("equity_peak") if principal else None),
+                       daily_pnl_hkd=daily_usd * config.HKD_PER_USD,
                        margin_level=market.to_float(account.get("margin_level")), night=market.is_night(now))
-    lad.update(equity_net=equity_net, daily_pnl_hkd=round(daily_hkd, 2), night=market.is_night(now))
+    lad.update(own_equity_hkd=(round(own_equity, 2) if own_equity is not None else None),
+               daily_pnl_hkd=round(daily_usd * config.HKD_PER_USD, 2), cum_pnl_usd=cum_usd, night=market.is_night(now))
     return lad
 
 

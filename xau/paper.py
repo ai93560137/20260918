@@ -86,6 +86,14 @@ def daily_pnl_usd(state, day_start_ts, last_price):
     return round(realized + unreal, 2)
 
 
+def cumulative_pnl_usd(state, last_price):
+    """累計已實現＋浮動（美元），只計天覆陣自己嘅單。"""
+    realized = sum(t["pnl_usd"] for t in (state.get("trades") or []))
+    pos = state.get("position")
+    unreal = (last_price - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"] if pos and last_price else 0.0
+    return round(realized + unreal, 2)
+
+
 def force_close(state, bar, reason, now_ts):
     pos = state.get("position")
     return _close(state, pos, bar["close"], reason, now_ts) if pos else None
