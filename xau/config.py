@@ -65,18 +65,19 @@ MIN_CONFIDENCE = _f("XAU_MIN_CONFIDENCE", 0.6)              # 開倉要嘅最低
 MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐約交易日計）
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
 LONG_ONLY = _b("XAU_LONG_ONLY", False)                      # 影子階段兩邊都記錄；實倉前使用者決定
-MAGIC = _i("XAU_MAGIC", 920)
-# --- 風控階梯（RISK_LADDER §6c 草稿，PR #237；百分比對本金，本金只放 GCS xau/control.json principal_hkd，唔入 repo）---
-# 日蝕同回撤只計天覆陣自己嘅單（影子＝紙上盈虧）；淨值用「淨值－信用」。Ⓑ 停開新倉；Ⓒ 減半；Ⓓ 全平＋停機（要使用者解鎖）。
-DAILY_LOSS_B_PCT = _f("XAU_DAILY_LOSS_B_PCT", 3.0)
-DAILY_LOSS_D_PCT = _f("XAU_DAILY_LOSS_D_PCT", 6.0)
-DD_B_PCT = _f("XAU_DD_B_PCT", 10.0)                         # 對高水位回撤
-DD_D_PCT = _f("XAU_DD_D_PCT", 20.0)
-HARD_STOP_PCT = _f("XAU_HARD_STOP_PCT", 25.0)               # 累計：淨值－信用 ≤ 本金 × (1 − 25%)
-MARGIN_B_PCT = _f("XAU_MARGIN_B_PCT", 300.0)                # EA 回報嘅 margin level（%）
-MARGIN_C_PCT = _f("XAU_MARGIN_C_PCT", 200.0)
-MARGIN_D_PCT = _f("XAU_MARGIN_D_PCT", 150.0)
-NIGHT_MULT = _f("XAU_NIGHT_MULT", 1.5)                      # 夜盤（紐約 18:00–02:00 ET）Ⓑ／Ⓒ 線 ×1.5
+MAGIC = _i("XAU_MAGIC", 921)                               # 線上 V23 用 920，天覆陣用 921 免互相當自己單（總指揮 10-20）
+# --- 風控階梯（RISK_LADDER §6c，PR #237；使用者 10-20：「龍飛陣，沒有硬鎖，這個概念可以刪除」）---
+# 百分比對本金；本金只放 GCS xau/control.json principal_hkd，唔入 repo。日蝕只計天覆陣自己嘅單。
+# 日蝕 −3% → PAUSE（停開新倉）、−6% → 平倉＋STOP；兩者紐約 17:00 換日自動返 RUN。
+# 保證金水平（全戶口，EA 回報）< 300%（夜盤 ×1.5）→ PAUSE，回升自動解；< 200%／< 150% 只發 Telegram。
+# 累計虧損 25%、高水位回撤 10%／20% 只發 Telegram，唔停唔鎖。冇任何要人手解鎖嘅狀態；STOP 只由日蝕 −6% 或使用者設。
+DAILY_LOSS_PAUSE_PCT = _f("XAU_DAILY_LOSS_PAUSE_PCT", 3.0)
+DAILY_LOSS_STOP_PCT = _f("XAU_DAILY_LOSS_STOP_PCT", 6.0)
+MARGIN_PAUSE_PCT = _f("XAU_MARGIN_PAUSE_PCT", 300.0)
+MARGIN_ALERT_PCTS = (_f("XAU_MARGIN_ALERT1_PCT", 200.0), _f("XAU_MARGIN_ALERT2_PCT", 150.0))
+DD_ALERT_PCTS = (_f("XAU_DD_ALERT1_PCT", 10.0), _f("XAU_DD_ALERT2_PCT", 20.0))        # 對高水位回撤，只提示
+CUM_LOSS_ALERT_PCT = _f("XAU_CUM_LOSS_ALERT_PCT", 25.0)                              # 累計虧損，只提示
+NIGHT_MULT = _f("XAU_NIGHT_MULT", 1.5)                      # 夜盤（紐約 18:00–02:00 ET）PAUSE 線 ×1.5
 HKD_PER_USD = _f("XAU_HKD_PER_USD", 7.8)
 SPREAD_USD = _f("XAU_SPREAD_USD", 0.30)                     # 紙上模擬每張來回成本（點差）
 

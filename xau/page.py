@@ -56,12 +56,13 @@ def metric_cards(m):
 
 def run_text(s):
     ctl, lad = s.get("control") or {}, s.get("ladder") or {}
-    if ctl.get("halt"):
-        return f"⛔ 停機：{ctl.get('halt_reason') or ''}"
-    if ctl.get("pause_new"):
-        return "⏸ 暫停開新倉（control.json）"
-    if lad.get("level") in ("B", "C", "D"):
-        return f"⏸ 風控階梯 {lad['level']}：{'；'.join(lad.get('reasons') or [])}"
+    mode = ctl.get("mode") or "RUN"
+    who = "使用者" if ctl.get("set_by") == "user" else "風控"
+    reset = f"，{ctl['auto_reset_day']} 紐約換日自動重開" if ctl.get("auto_reset_day") else ""
+    if mode == "STOP":
+        return f"⛔ 停機（{who}）：{ctl.get('reason') or ''}{reset}"
+    if mode == "PAUSE":
+        return f"⏸ 停開新倉（{who}）：{ctl.get('reason') or ''}{reset or '，回升自動解'}"
     if not s.get("market_open"):
         return "🌙 休市"
     return "✅ 運行中"
@@ -81,7 +82,7 @@ def render(status):
     u = s.get("usage_today") or {}
     head = f"<h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} CFD（MT5）自動交易</h1>"
     intro = ("<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣黃金差價合約（最多 1 張，固定 "
-             f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（風控階梯：日蝕 Ⓑ 停開新倉／Ⓓ 全平停機、高水位回撤、累計硬止損、保證金；"
+             f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（日蝕 −3% 停開新倉、−6% 平倉停機，換日自動重開；保證金水平低停開新倉；"
              "止損距離、最長持倉），AI 無權改。舊系統嘅六關電閘、錦囊 v4 規則只作參考。"
              "先做模擬倉前向測試，達到預先登記標準、使用者講先轉真倉；真倉落單經 MT5 EA 執行指令。</p>"
              f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・{esc(s.get('session'))}・模型 {esc(s.get('model'))}"
@@ -121,13 +122,15 @@ def render(status):
            + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
            + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
            + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
-    lad_cls = {"A": "pos", "B": "", "C": "neg", "D": "neg"}.get(lad.get("level"), "")
+    lad_cls = {"A": "pos", "B": "", "D": "neg"}.get(lad.get("level"), "")
     risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items())
-    ctrl = ("<div class='section'><h2>🛡️ 模式同風控（只讀；開關只喺 GCS xau/control.json，冇網頁按鈕）</h2><div class='grid'>"
+    alerts = "；".join((lad.get("alerts") or {}).values()) or "冇"
+    ctrl = ("<div class='section'><h2>🛡️ 模式同風控（只讀；開關只喺 GCS xau/control.json，冇網頁按鈕、冇硬鎖）</h2><div class='grid'>"
+            + card("模式", esc(ctl.get("mode") or "RUN"), esc(run_text(s)))
             + card("風控階梯", f"<span class='{lad_cls}'>{esc(lad.get('level') or 'A')}</span>", esc("；".join(lad.get("reasons") or []) or "正常"))
-            + card("模式", "⛔ 停機" if ctl.get("halt") else ("⏸ 暫停開倉" if ctl.get("pause_new") else "▶ 運行"),
-                   esc(ctl.get("halt_reason") or ("" if ctl.get("principal_set") else "⚠ 未設本金（principal_hkd），日蝕／硬止損未啟用")))
-            + card("今日盈虧（階梯用）", "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}", "只計天覆陣嘅單，含浮動")
+            + card("今日盈虧（階梯用）", "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}",
+                   "只計天覆陣嘅單，含浮動" + ("" if ctl.get("principal_set") else "；⚠ 未設本金，日蝕未啟用"))
+            + card("只提示嘅警報", esc(alerts), "累計虧損／回撤／保證金：只發 Telegram，唔停唔鎖")
             + card("舊電閘（只供 Claude 參考）", esc(gate.get("status") or "—"), esc(gate.get("reason")))
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"

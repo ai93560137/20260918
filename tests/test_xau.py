@@ -112,23 +112,16 @@ a, s_, t_, w = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 399
 check("止損太近 → 推到下限 2；止賺錯邊 → 唔送", a == "OPEN_LONG" and s_ == 3998.0 and t_ is None, (a, s_, t_))
 check("信心不足 → HOLD", "信心" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.3}, position=pos0, last=4000, can_open=True, trades_today=0)[3])
 check("can_open=False → HOLD", "唔准開" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.9}, position=pos0, last=4000, can_open=False, trades_today=0)[3])
-print("=== 風控階梯（純函數）===")
-L = lambda **k: rules.ladder(**{"principal_hkd": 20000, "equity_net": 20000, "peak_equity": 20000, "daily_pnl_hkd": 0, "margin_level": None, "night": False, **k})
-check("正常 → A", L()["level"] == "A" and L()["can_open"])
-check("日蝕 −3% → B 停開", L(daily_pnl_hkd=-600)["level"] == "B" and not L(daily_pnl_hkd=-600)["can_open"])
-check("日蝕 −6% → D 全平", L(daily_pnl_hkd=-1200)["flatten"])
-check("夜盤 ×1.5：−3% 仍 A、−4.5% 先 B", L(daily_pnl_hkd=-600, night=True)["level"] == "A" and L(daily_pnl_hkd=-900, night=True)["level"] == "B")
-check("硬止損 −25% → D", L(equity_net=15000)["flatten"])
-check("回撤 10% → B；20% → D", L(equity_net=18000, peak_equity=20000)["level"] == "B" and L(equity_net=16000, peak_equity=20000)["level"] == "D")
-check("保證金 250% → B、180% → C 減半、140% → D", L(margin_level=250)["level"] == "B" and L(margin_level=180)["halve"] and L(margin_level=140)["flatten"])
-check("冇本金：日蝕唔計，回撤照計", L(principal_hkd=None, daily_pnl_hkd=-5000)["level"] == "A" and L(principal_hkd=None, equity_net=17000)["level"] == "B")
-check("次數到上限 → HOLD", "上限" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.9}, position=pos0, last=4000, can_open=True, trades_today=3)[3])
-check("有倉再開 → HOLD", "已有倉位" in rules.validate_decision({"action": "OPEN_LONG", "stop_price": 3990, "confidence": 0.9}, position={"side": 1}, last=4000, can_open=True, trades_today=0)[3])
-check("冇倉 CLOSE → HOLD", rules.validate_decision({"action": "CLOSE"}, position=None, last=4000, can_open=True, trades_today=0)[0] == "HOLD")
-check("UPDATE_STOP 錯邊 → HOLD", "錯邊" in rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4001}, position={"side": 1, "target": None}, last=4000, can_open=True, trades_today=0)[3])
-config.LONG_ONLY = True
-check("LONG_ONLY 擋空", "唔做空" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.9}, position=pos0, last=4000, can_open=True, trades_today=0)[3])
-config.LONG_ONLY = False
+print("=== 風控階梯（純函數，龍飛陣做法：冇硬鎖）===")
+L = lambda **k: rules.ladder(**{"principal_hkd": 20000, "own_equity": 20000, "peak_equity": 20000, "daily_pnl_hkd": 0, "margin_level": None, "night": False, **k})
+check("正常 → 唔停", not L()["pause"] and not L()["stop"] and not L()["alerts"])
+check("日蝕 −3% → PAUSE（daily）", L(daily_pnl_hkd=-600)["pause"] and L(daily_pnl_hkd=-600)["pause_kind"] == "daily" and not L(daily_pnl_hkd=-600)["stop"])
+check("日蝕 −6% → STOP", L(daily_pnl_hkd=-1200)["stop"])
+check("夜盤 ×1.5：−3% 唔停、−4.5% 先 PAUSE", not L(daily_pnl_hkd=-600, night=True)["pause"] and L(daily_pnl_hkd=-900, night=True)["pause"])
+check("累計 −25% → 只提示", not L(own_equity=15000)["pause"] and "cum_loss" in L(own_equity=15000)["alerts"])
+check("回撤 10%／20% → 只提示", "dd1" in L(own_equity=18000)["alerts"] and "dd2" in L(own_equity=16000)["alerts"] and not L(own_equity=16000)["pause"])
+check("保證金 250% → PAUSE（margin）；180% 另加提示；140% 兩個提示，唔 STOP", L(margin_level=250)["pause_kind"] == "margin" and "margin1" in L(margin_level=180)["alerts"] and "margin2" in L(margin_level=140)["alerts"] and not L(margin_level=140)["stop"])
+check("冇本金：日蝕唔計", not L(principal_hkd=None, daily_pnl_hkd=-5000)["pause"])
 
 print("=== 影子：開倉 → 止損 ===")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": 4020.0, "confidence": 0.8, "reason": "突破"}
@@ -171,56 +164,90 @@ st, d = hb(171, 3994)
 check("第 4 次開倉 → 擋（每日上限 3）", d["decision"]["final"] == "HOLD" and "上限" in d["decision"]["rejected"], d["decision"])
 check("用量：有決策次數同費用", json.loads(FAKE["xau/state.json"][0])["usage_today"]["decide"] >= 5 and json.loads(FAKE["xau/state.json"][0])["usage_today"]["cost_usd"] > 0)
 
-print("=== 停機開關／暫停開倉／階梯 Ⓓ ===")
-FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": True, "principal_hkd": 20000, "equity_peak": 0}), 1)
+print("=== 模式開關（control.json）：使用者 PAUSE／STOP、日蝕自動 PAUSE→STOP→換日重開、保證金 PAUSE 回升自動解 ===")
+TG = []
+xau.notify.tg_send = lambda text: TG.append(text) or True
+ctl0 = {"mode": "PAUSE", "reason": "使用者暫停", "set_by": "user", "principal_hkd": 20000, "equity_peak": 0, "alerts_sent": {}}
+FAKE["xau/control.json"] = (json.dumps(ctl0), 1)
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3985.0, "target_price": None, "confidence": 0.9, "reason": "買"}
 st, d = hb(172, 3995)
-check("pause_new → AI 開倉被擋", d["decision"]["final"] == "HOLD" and "暫停開新倉" in d["decision"]["rejected"], d["decision"])
-FAKE["xau/control.json"] = (json.dumps({"halt": True, "halt_reason": "使用者停機", "pause_new": False, "principal_hkd": 20000, "equity_peak": 0}), 2)
+check("使用者 PAUSE → AI 開倉被擋", d["decision"]["final"] == "HOLD" and "PAUSE" in d["decision"]["rejected"], d["decision"])
+FAKE["xau/control.json"] = (json.dumps({**ctl0, "mode": "STOP", "reason": "使用者停機"}), 2)
 n_calls = len(FB.calls)
 st, d = hb(173, 3995)
-check("halt → 唔問 Claude", len(FB.calls) == n_calls and "停機" in d["message"], d)
-FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": False, "principal_hkd": 20000, "equity_peak": 0}), 3)
+check("使用者 STOP → 唔問 Claude、程式唔會自己改", len(FB.calls) == n_calls and d["message"].startswith("STOP") and json.loads(FAKE["xau/control.json"][0])["mode"] == "STOP", d)
+FAKE["xau/control.json"] = (json.dumps({**ctl0, "mode": "RUN", "reason": ""}), 3)
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 hb(174, 3995)                                                  # 開倉（AI OPEN_LONG）
 state = json.loads(FAKE["xau/state.json"][0]); check("開咗紙上倉", state["position"] is not None)
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
-st, d = hb(175, 3990, low=3989.0)                              # 未到止損 3985；浮虧 5×100×0.01 = −5 USD
+st, d = hb(175, 3990, low=3989.0)
 state = json.loads(FAKE["xau/state.json"][0])
 expected = round(paper.daily_pnl_usd(state, market.ny_day_start_ts(NOW[0]), 3990) * 7.8, 2)
-check("階梯用今日紙上盈虧（港幣，含浮動）", abs(state["ladder"]["daily_pnl_hkd"] - expected) < 0.01 and expected < 8.58 * 7.8 and state["ladder"]["level"] == "A", (state["ladder"], expected))
-check("階梯用自己嘅權益（本金＋累計），唔用戶口淨值", state["ladder"]["own_equity_hkd"] is not None and abs(state["ladder"]["own_equity_hkd"] - (20000 + state["ladder"]["cum_pnl_usd"] * 7.8)) < 0.1, state["ladder"])
-# 戶口淨值大跌（手動單蝕）唔影響天覆陣：equity 5000、credit 0
+check("階梯用今日自己嘅盈虧（港幣，含浮動）、唔用戶口淨值", abs(state["ladder"]["daily_pnl_hkd"] - expected) < 0.01 and state["ladder"]["level"] == "A", (state["ladder"], expected))
+check("自己嘅權益 = 本金＋累計", abs(state["ladder"]["own_equity_hkd"] - (20000 + state["ladder"]["cum_pnl_usd"] * 7.8)) < 0.1)
+# 戶口淨值大跌（手動單）唔影響
 body = {"token": "tok", "action": "check_gate", "equity": 5000, "credit": 0, "balance": 5000, "buy_lots": 0, "sell_lots": 0, "net_lots": 0,
         "m1_ohlc": {"time": T0 + 176 * 60, "open": 3990, "high": 3991, "low": 3989.5, "close": 3990.5, "is_new_bar": True},
         "m15_ohlc": {"time": T0 + (176 // 15) * 900, "open": 3990, "high": 3991, "low": 3989, "close": 3990}}
 NOW[0] = T0 + 176 * 60 + 5
-r = client.post("/", data=json.dumps(body), content_type="application/json"); d = r.get_json()
+client.post("/", data=json.dumps(body), content_type="application/json")
 state = json.loads(FAKE["xau/state.json"][0])
-check("戶口淨值大跌（手動單）唔觸發階梯（只計自己嘅單）", state["ladder"]["level"] == "A" and state["position"] is not None, state["ladder"])
-# 自己嘅單大蝕：把紙上持倉嘅入場價改高，令浮虧 ≥ 本金 25%（0.01 手 × 100 oz：每 1 美元 = US$1 = HK$7.8 → 5000/7.8 ≈ 641 美元）
-state["position"]["entry"] = 3990.5 + 700; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+check("戶口淨值大跌（手動單）唔觸發（只計自己嘅單）", state["ladder"]["level"] == "A" and state["position"] is not None, state["ladder"])
+# 自己嘅倉浮虧 −3.5%（700 港幣 ≈ 90 美元）→ PAUSE；再跌到 −6% → STOP 平倉；Telegram
+state["position"]["entry"] = 3990.5 + 90; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 body["m1_ohlc"]["time"] = T0 + 177 * 60; body["m15_ohlc"]["time"] = T0 + (177 // 15) * 900; NOW[0] = T0 + 177 * 60 + 5
 r = client.post("/", data=json.dumps(body), content_type="application/json"); d = r.get_json()
-state = json.loads(FAKE["xau/state.json"][0]); ctl = json.loads(FAKE["xau/control.json"][0])
-check("自己嘅單累計 −25% → 階梯Ⓓ：紙上全平、halt=True、紀錄", state["position"] is None and ctl["halt"] and "硬止損" in ctl["halt_reason"] and d["decision"]["final"] == "CLOSE" and state["trades"][-1]["reason"].startswith("階梯Ⓓ"), (ctl, d))
-st, d = hb(178, 3990)
-check("停機後唔再問", "停機" in d["message"], d)
-FAKE["xau/control.json"] = (json.dumps({"halt": False, "pause_new": False, "principal_hkd": None, "equity_peak": 0}), 9)
+ctl = json.loads(FAKE["xau/control.json"][0]); state = json.loads(FAKE["xau/state.json"][0])
+check("日蝕 −3% → PAUSE（ladder，auto_reset_day = 下一交易日）、倉照管、Telegram", ctl["mode"] == "PAUSE" and ctl["set_by"] == "ladder" and ctl["auto_reset_day"] > market.ny_date(NOW[0]) and state["position"] is not None and any("⏸" in t for t in TG), (ctl, TG[-1:] ))
+state["position"]["entry"] = 3990.5 + 170; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+body["m1_ohlc"]["time"] = T0 + 178 * 60; NOW[0] = T0 + 178 * 60 + 5
+r = client.post("/", data=json.dumps(body), content_type="application/json"); d = r.get_json()
+ctl = json.loads(FAKE["xau/control.json"][0]); state = json.loads(FAKE["xau/state.json"][0])
+check("日蝕 −6% → STOP：紙上平倉、auto_reset_day、紀錄 CLOSE、Telegram 🛑", ctl["mode"] == "STOP" and state["position"] is None and d["decision"]["final"] == "CLOSE" and "平倉停機" in state["trades"][-1]["reason"] and any("🛑" in t for t in TG), (ctl, d))
+n_calls = len(FB.calls)
+st, d = hb(179, 3990)
+check("STOP 期間唔問 Claude", len(FB.calls) == n_calls and d["message"].startswith("STOP"), d)
+# 換日：跳到下一個紐約交易日 → 自動返 RUN
+reset_day = ctl["auto_reset_day"]
+NOW_RESET = market.ny_day_start_ts(NOW[0]) + 86400 + 3600 * 2     # 下一交易日開始後 2 小時（紐約 19:00 ET，開市）
+FAKE["xau/m1.json"] = (json.dumps([{"time": int(NOW_RESET) - (40 - k) * 60, "open": 3999.5, "high": 4000.5, "low": 3999.0, "close": 4000.0} for k in range(40)]), FAKE["xau/m1.json"][1] + 1)
+body["m1_ohlc"]["time"] = int(NOW_RESET); body["m15_ohlc"]["time"] = int(NOW_RESET) - 900; NOW[0] = NOW_RESET + 5
+r = client.post("/", data=json.dumps(body), content_type="application/json"); d = r.get_json()
+ctl = json.loads(FAKE["xau/control.json"][0])
+check("換日自動返 RUN（Telegram ▶），同一根照問 Claude", ctl["mode"] == "RUN" and ctl["set_by"] == "ladder" and market.ny_date(NOW[0]) >= reset_day and any("▶" in t for t in TG) and len(FB.calls) > n_calls, (ctl, d, market.ny_date(NOW[0]), reset_day))
+# 保證金 PAUSE 回升自動解
+body["margin_level"] = 250; body["m1_ohlc"]["time"] = int(NOW_RESET) + 60; NOW[0] = NOW_RESET + 65
+client.post("/", data=json.dumps(body), content_type="application/json")
+ctl = json.loads(FAKE["xau/control.json"][0])
+check("保證金 250% → PAUSE（margin，冇 auto_reset_day）", ctl["mode"] == "PAUSE" and ctl["auto_reset_day"] is None and "保證金" in ctl["reason"], ctl)
+body["margin_level"] = 180; body["m1_ohlc"]["time"] = int(NOW_RESET) + 120; NOW[0] = NOW_RESET + 125; n_tg = len(TG)
+client.post("/", data=json.dumps(body), content_type="application/json")
+check("保證金 180% → 只多一個提示（每日一次）", any("180%" in t for t in TG[n_tg:]) and json.loads(FAKE["xau/control.json"][0])["mode"] == "PAUSE")
+body["m1_ohlc"]["time"] = int(NOW_RESET) + 180; NOW[0] = NOW_RESET + 185; n_tg = len(TG)
+client.post("/", data=json.dumps(body), content_type="application/json")
+check("同一日同一提示唔重發", not any("180%" in t for t in TG[n_tg:]))
+body["margin_level"] = 500; body["m1_ohlc"]["time"] = int(NOW_RESET) + 240; NOW[0] = NOW_RESET + 245
+client.post("/", data=json.dumps(body), content_type="application/json")
+check("保證金回升 → 自動返 RUN", json.loads(FAKE["xau/control.json"][0])["mode"] == "RUN")
+del body["margin_level"]
+FAKE["xau/control.json"] = (json.dumps({"mode": "RUN", "reason": "", "set_by": "user", "principal_hkd": None, "equity_peak": 0, "alerts_sent": {}}), 99)
 
 print("=== 休市 ===")
 NOW[0] = 1792857600.0 + 5        # 2026-10-24 週六 12:00 ET：休市
-r = client.post("/", data=json.dumps({"token": "tok", "equity": 1, "m1_ohlc": {"time": T0 + 300 * 60, "open": 1, "high": 2, "low": 0.5, "close": 1.5, "is_new_bar": True}}), content_type="application/json")
+r = client.post("/", data=json.dumps({"token": "tok", "equity": 1, "m1_ohlc": {"time": int(NOW_RESET) + 100000, "open": 1, "high": 2, "low": 0.5, "close": 1.5, "is_new_bar": True}}), content_type="application/json")
 check("休市 → 唔問", r.get_json()["message"] == "休市", r.get_json())
 
 print("=== 實倉模式：指令佇列 ===")
 config.EXECUTE = True
 FB.calls.clear()
+from datetime import datetime, timezone
+T0 = int(datetime(2026, 10, 26, 14, 0, tzinfo=timezone.utc).timestamp()) - 400 * 60   # 週一 10:00 ET 開市；大過之前所有 bar
 FAKE["xau/m1.json"] = (json.dumps([{"time": T0 + (360 + k) * 60, "open": 3999.5, "high": 4000.5, "low": 3999.0, "close": 4000.0} for k in range(40)]), FAKE["xau/m1.json"][1] + 1)
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3990.0, "target_price": 4015.0, "confidence": 0.9, "reason": "買"}
 st, d = hb(400, 4000)
-check("實倉：cmd_text 有 open 指令、紙上唔開倉", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=920|id=") and json.loads(FAKE["xau/state.json"][0])["position"] is None, d["cmd_text"])
+check("實倉：cmd_text 有 open 指令、紙上唔開倉", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|id=") and json.loads(FAKE["xau/state.json"][0])["position"] is None, d)
 cid = d["cmd_text"].split("id=")[1]
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
 st, d2 = hb(401, 4001)
@@ -235,9 +262,9 @@ config.EXECUTE = False
 
 print("=== 頁面 ===")
 r = client.get("/"); html = r.get_data(as_text=True)
-check("頁面有陣名、模擬倉、成交紀錄、硬性風控、階梯", "天覆陣" in html and "模擬倉" in html and "成交紀錄" in html and "XAU_MAX_SL_USD" in html and "風控階梯" in html)
+check("頁面有陣名、模擬倉、成交紀錄、硬性風控、模式", "天覆陣" in html and "模擬倉" in html and "成交紀錄" in html and "XAU_MAX_SL_USD" in html and "模式同風控" in html)
 j = client.get("/?format=json").get_json()
-check("JSON：stats、decisions、risk、階梯", j["ladder"]["level"] in "ABCD" and j["stats"]["n"] >= 3 and j["decisions"] and j["risk"]["XAU_LOTS"] == 0.01, j["stats"])
+check("JSON：stats、decisions、risk、階梯、模式", j["ladder"]["level"] in "ABD" and j["control"]["mode"] == "RUN" and j["stats"]["n"] >= 3 and j["decisions"] and j["risk"]["XAU_LOTS"] == 0.01, j["stats"])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

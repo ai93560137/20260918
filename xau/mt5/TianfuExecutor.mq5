@@ -21,7 +21,7 @@
 
 input string InpUrl        = "https://zhuge-xau-XXXX.europe-west1.run.app/"; // Cloud Run 網址（結尾 /）
 input string InpToken      = "";        // WEBHOOK_SECRET_TOKEN（唔會印出）
-input long   InpMagic      = 920;       // 只管呢個 magic 嘅單
+input long   InpMagic      = 921;       // 只管呢個 magic 嘅單（線上 V23 用 920，天覆陣用 921）
 input int    InpIntervalSec = 60;       // 心跳間隔（秒）
 input int    InpTimeoutMs  = 15000;     // WebRequest 逾時
 input int    InpSlippagePts = 50;       // 市價單允許滑點（點）

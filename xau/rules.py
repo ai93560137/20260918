@@ -29,42 +29,36 @@ def hold_expired(opened_ts, now_ts, max_hold_min=None):
     return bool(max_hold_min) and now_ts - opened_ts >= max_hold_min * 60
 
 
-def ladder(*, principal_hkd, equity_net, peak_equity, daily_pnl_hkd, margin_level, night, cfg=config):
-    """風控階梯（RISK_LADDER §6c 草稿）。回傳 {"level": "A"|"B"|"C"|"D", "reasons": [...], "can_open": bool, "halve": bool, "flatten": bool}。
-    principal_hkd 冇設 → 日蝕／硬止損唔計（只計回撤同保證金）；缺數據嗰項跳過（唔會因為冇數據就 Ⓓ）。"""
-    level, reasons = "A", []
+def ladder(*, principal_hkd, own_equity, peak_equity, daily_pnl_hkd, margin_level, night, cfg=config):
+    """風控階梯（龍飛陣做法，冇硬鎖）。回傳
+    {"pause": bool, "stop": bool, "pause_kind": "daily"|"margin"|None, "reasons": [...], "alerts": {key: text}}。
+    pause／stop 由日蝕（只計自己嘅單）同保證金水平決定；alerts 只發 Telegram，唔影響交易。缺數據嗰項跳過。"""
     mult = cfg.NIGHT_MULT if night else 1.0
-
-    def bump(new, why):
-        nonlocal level
-        reasons.append(why)
-        if "ABCD".index(new) > "ABCD".index(level):
-            level = new
-
+    out = {"pause": False, "stop": False, "pause_kind": None, "reasons": [], "alerts": {}}
     if principal_hkd and principal_hkd > 0:
         if daily_pnl_hkd is not None:
             pct = daily_pnl_hkd / principal_hkd * 100
-            if pct <= -cfg.DAILY_LOSS_D_PCT * mult:
-                bump("D", f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_D_PCT * mult:g}%")
-            elif pct <= -cfg.DAILY_LOSS_B_PCT * mult:
-                bump("B", f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_B_PCT * mult:g}%")
-        if equity_net is not None and equity_net <= principal_hkd * (1 - cfg.HARD_STOP_PCT / 100):
-            bump("D", f"淨值－信用跌至本金 {equity_net / principal_hkd * 100:.0f}%（硬止損 −{cfg.HARD_STOP_PCT:g}%）")
-    if equity_net is not None and peak_equity and peak_equity > 0:
-        dd = max(0.0, (peak_equity - equity_net) / peak_equity * 100)
-        if dd >= cfg.DD_D_PCT:
-            bump("D", f"高水位回撤 {dd:.1f}% ≥ {cfg.DD_D_PCT:g}%")
-        elif dd >= cfg.DD_B_PCT * mult:
-            bump("B", f"高水位回撤 {dd:.1f}% ≥ {cfg.DD_B_PCT * mult:g}%")
+            if pct <= -cfg.DAILY_LOSS_STOP_PCT * mult:
+                out.update(stop=True, pause=True, pause_kind="daily")
+                out["reasons"].append(f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_STOP_PCT * mult:g}% → 平倉停機（換日自動重開）")
+            elif pct <= -cfg.DAILY_LOSS_PAUSE_PCT * mult:
+                out.update(pause=True, pause_kind="daily")
+                out["reasons"].append(f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_PAUSE_PCT * mult:g}% → 停開新倉（換日自動重開）")
+        if own_equity is not None and own_equity <= principal_hkd * (1 - cfg.CUM_LOSS_ALERT_PCT / 100):
+            out["alerts"]["cum_loss"] = f"累計虧損達本金 {100 - own_equity / principal_hkd * 100:.0f}%（提示線 {cfg.CUM_LOSS_ALERT_PCT:g}%）"
+    if own_equity is not None and peak_equity and peak_equity > 0:
+        dd = max(0.0, (peak_equity - own_equity) / peak_equity * 100)
+        for i, line in enumerate(cfg.DD_ALERT_PCTS):
+            if dd >= line:
+                out["alerts"][f"dd{i + 1}"] = f"高水位回撤 {dd:.1f}% ≥ {line:g}%"
     if margin_level is not None and margin_level > 0:
-        if margin_level < cfg.MARGIN_D_PCT:
-            bump("D", f"保證金水平 {margin_level:.0f}% < {cfg.MARGIN_D_PCT:g}%")
-        elif margin_level < cfg.MARGIN_C_PCT * mult:
-            bump("C", f"保證金水平 {margin_level:.0f}% < {cfg.MARGIN_C_PCT * mult:g}%")
-        elif margin_level < cfg.MARGIN_B_PCT * mult:
-            bump("B", f"保證金水平 {margin_level:.0f}% < {cfg.MARGIN_B_PCT * mult:g}%")
-    return {"level": level, "reasons": reasons, "can_open": level == "A",
-            "halve": level == "C", "flatten": level == "D"}
+        if margin_level < cfg.MARGIN_PAUSE_PCT * mult and not out["pause"]:
+            out.update(pause=True, pause_kind="margin")
+            out["reasons"].append(f"戶口保證金水平 {margin_level:.0f}% < {cfg.MARGIN_PAUSE_PCT * mult:g}% → 停開新倉（回升自動解）")
+        for i, line in enumerate(cfg.MARGIN_ALERT_PCTS):
+            if margin_level < line:
+                out["alerts"][f"margin{i + 1}"] = f"戶口保證金水平 {margin_level:.0f}% < {line:g}%（戶口級提示，天覆陣唔平倉）"
+    return out
 
 
 def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, block_reason=None):

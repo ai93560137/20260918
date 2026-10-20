@@ -16,6 +16,7 @@ from flask import Flask, jsonify, request as flask_request
 import brain
 import config
 import market
+import notify
 import page
 import paper
 import rules
@@ -88,15 +89,23 @@ def save_state(state):
     storage.write_json(STATE_FILE, state)
 
 
+MODES = ("RUN", "PAUSE", "STOP")
+
+
 def load_control():
-    base = {"halt": False, "halt_reason": "", "pause_new": False, "principal_hkd": None, "equity_peak": 0.0}
+    """唯一開關 GCS xau/control.json（冇網頁按鈕）。mode：RUN／PAUSE／STOP；set_by：user／ladder；
+    auto_reset_day：紐約交易日，到咗自動返 RUN（只對 set_by=ladder 生效）；principal_hkd 私人。讀唔到當 STOP（fail-closed）。"""
+    base = {"mode": "RUN", "reason": "", "set_by": "user", "set_at_utc": "", "auto_reset_day": None,
+            "principal_hkd": None, "equity_peak": 0.0, "alerts_sent": {}}
     try:
         doc = storage.read_json(CONTROL_FILE, None)
     except StorageError as exc:
-        log_event(f"⚠️ control.json 讀取失敗（當停機）：{exc}", severity="WARNING")
-        return {**base, "halt": True, "halt_reason": "control.json 讀取失敗"}
+        log_event(f"⚠️ control.json 讀取失敗（當 STOP）：{exc}", severity="WARNING")
+        return {**base, "mode": "STOP", "reason": "control.json 讀取失敗", "set_by": "system"}
     if isinstance(doc, dict):
         base.update({k: doc[k] for k in base if k in doc})
+    if base["mode"] not in MODES:
+        base["mode"] = "RUN"
     return base
 
 
@@ -104,23 +113,68 @@ def save_control(control):
     storage.write_json(CONTROL_FILE, control)
 
 
+def set_mode(control, mode, reason, set_by, now, auto_reset_day=None):
+    control.update(mode=mode, reason=reason, set_by=set_by, set_at_utc=market.fmt_utc(now), auto_reset_day=auto_reset_day)
+    log_event(f"🔀 [{config.TEAM_NAME}] 模式 → {mode}（{set_by}）：{reason}", severity="WARNING" if mode != "RUN" else "INFO", component="mode")
+
+
 def risk_ladder(state, control, account, bar, now):
-    """RISK_LADDER §6c。使用者 10-20：真倉同 C 戶口共用（有手動單），所以日蝕／回撤／硬止損**只計天覆陣自己嘅單**
-    （模擬＝紙上；真倉＝EA 按 magic 回報），唔用戶口淨值；「自己嘅權益」= 本金 + 累計已實現 + 浮動。
-    保證金水平（EA 回報 margin_level，V23 冇）係戶口級，照用但當作戶口級警報。"""
+    """使用者 10-20：真倉同 C 戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
+    「自己嘅權益」= 本金 + 累計已實現 + 浮動；保證金水平係戶口級。"""
     principal = market.to_float(control.get("principal_hkd"))
     daily_usd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"])
     cum_usd = paper.cumulative_pnl_usd(state, bar["close"])
     own_equity = (principal + cum_usd * config.HKD_PER_USD) if principal else None
     if own_equity is not None and own_equity > (control.get("equity_peak") or 0.0):
         control["equity_peak"] = round(own_equity, 2)
-    lad = rules.ladder(principal_hkd=principal, equity_net=own_equity,
+    lad = rules.ladder(principal_hkd=principal, own_equity=own_equity,
                        peak_equity=(control.get("equity_peak") if principal else None),
                        daily_pnl_hkd=daily_usd * config.HKD_PER_USD,
                        margin_level=market.to_float(account.get("margin_level")), night=market.is_night(now))
     lad.update(own_equity_hkd=(round(own_equity, 2) if own_equity is not None else None),
-               daily_pnl_hkd=round(daily_usd * config.HKD_PER_USD, 2), cum_pnl_usd=cum_usd, night=market.is_night(now))
+               daily_pnl_hkd=round(daily_usd * config.HKD_PER_USD, 2), cum_pnl_usd=cum_usd, night=market.is_night(now),
+               level=("D" if lad["stop"] else ("B" if lad["pause"] else "A")))
     return lad
+
+
+def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
+    """模式轉換（只會自動改 set_by=ladder 嘅模式；使用者設嘅唔郁）同 Telegram 提示。回傳 True = 今根已經處理完（唔問 Claude）。"""
+    mode, set_by = control["mode"], control.get("set_by")
+    next_day = market.ny_date(now + 86400) if market.ny_date(now + 86400) != day else market.ny_date(now + 2 * 86400)
+    # 自動重置：換日（日蝕）／保證金回升
+    if set_by == "ladder" and mode != "RUN":
+        if control.get("auto_reset_day") and day >= control["auto_reset_day"]:
+            set_mode(control, "RUN", f"換日自動重開（{control.get('reason')}）", "ladder", now)
+            notify.tg_send(f"▶ 換日自動重開（之前：{control.get('reason')}）")
+        elif mode == "PAUSE" and not control.get("auto_reset_day") and not lad["pause"]:
+            set_mode(control, "RUN", "保證金水平回升，自動解除停開新倉", "ladder", now)
+            notify.tg_send("▶ 保證金水平回升，自動解除停開新倉")
+        mode = control["mode"]
+    handled = False
+    if lad["stop"] and mode != "STOP":
+        why = "；".join(lad["reasons"])
+        closed = paper.force_close(state, bar, "日蝕 −" + f"{config.DAILY_LOSS_STOP_PCT:g}% 平倉停機", now)
+        if config.EXECUTE:
+            rec["applied"] = enqueue_cmd(state, "CLOSE", None, None, now, decision_id)
+        set_mode(control, "STOP", why, "ladder", now, auto_reset_day=next_day)
+        rec.update(kind="ladder", action="CLOSE", final="CLOSE", reason=why,
+                   paper_exit=({"reason": closed["reason"], "pnl_usd": closed["pnl_usd"]} if closed else rec.get("paper_exit")))
+        notify.tg_send(f"🛑 {why}｜今日 {lad['daily_pnl_hkd']:+,.0f} 港幣｜紐約 17:00 換日自動重開")
+        handled = True
+    elif lad["pause"] and mode == "RUN":
+        why = "；".join(lad["reasons"])
+        set_mode(control, "PAUSE", why, "ladder", now, auto_reset_day=(next_day if lad["pause_kind"] == "daily" else None))
+        notify.tg_send(f"⏸ {why}")
+    # 只提示嘅警報：每個交易日每項一次
+    sent = control.setdefault("alerts_sent", {})
+    if sent.get("day") != day:
+        control["alerts_sent"] = sent = {"day": day}
+    for key, text in (lad.get("alerts") or {}).items():
+        if not sent.get(key):
+            sent[key] = market.fmt_utc(now)
+            notify.tg_send(f"⚠️ {text}（只提示，唔停唔鎖）")
+            log_event(f"⚠️ [{config.TEAM_NAME}] {text}", severity="WARNING", component="ladder")
+    return handled
 
 
 def legacy_gate():
@@ -177,8 +231,8 @@ def build_context(state, m1, m15, account, gate, now, day, ladder=None, control=
                  "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
                  "trades_today": paper.trades_today(state, day), "max_hold_min": config.MAX_HOLD_MIN,
                  "ladder": {"level": (ladder or {}).get("level", "A"), "reasons": (ladder or {}).get("reasons", []),
-                            "daily_pnl_hkd": (ladder or {}).get("daily_pnl_hkd")},
-                 "pause_new": bool((control or {}).get("pause_new"))},
+                            "daily_pnl_hkd": (ladder or {}).get("daily_pnl_hkd"), "alerts": list((ladder or {}).get("alerts", {}).values())},
+                 "mode": (control or {}).get("mode", "RUN"), "mode_reason": (control or {}).get("reason")},
         "recent_trades": [{"side": "LONG" if t["side"] > 0 else "SHORT", "entry": t["entry"], "exit": t["exit"],
                            "pnl_usd": t["pnl_usd"], "reason": t["reason"], "hold_min": t["hold_min"]}
                           for t in (state.get("trades") or [])[-5:]],
@@ -243,40 +297,27 @@ def process_bar(state, bar, m1, m15, account, now):
     pos = state.get("position")
     decision_id = uuid.uuid4().hex
     rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"], "legacy_gate": gate["status"],
-           "ladder": ladder["level"], "execute": config.EXECUTE}
+           "ladder": ladder["level"], "mode": control["mode"], "execute": config.EXECUTE}
     if exit_rec:
         rec["paper_exit"] = {"reason": exit_rec["reason"], "pnl_usd": exit_rec["pnl_usd"]}
-
-    # 硬性風控：階梯 Ⓓ → 全平＋停機（影子＝紙上平倉＋標記，唔會向 EA 送嘢）；要使用者改 control.json 先解鎖
-    if ladder["flatten"] and not control.get("halt"):
-        why = "階梯Ⓓ：" + "；".join(ladder["reasons"])
-        closed = paper.force_close(state, bar, why, now)
-        control.update(halt=True, halt_reason=why)
-        if config.EXECUTE:
-            rec["applied"] = enqueue_cmd(state, "CLOSE", None, None, now, decision_id)
-        rec.update(kind="ladder", action="CLOSE", final="CLOSE", reason=why,
-                   paper_exit=({"reason": why, "pnl_usd": closed["pnl_usd"]} if closed else rec.get("paper_exit")))
-        _record(state, rec, day)
-        try:
-            save_control(control)
-        except StorageError as exc:
-            log_event(f"🚨 control.json 寫入失敗（停機標記未存）：{exc}", severity="ERROR")
-        log_event(f"🛑 [{config.TEAM_NAME}] {why}", severity="WARNING", component="ladder")
-        return rec, why
+    handled = apply_ladder(state, control, ladder, bar, now, day, decision_id, rec)
+    state["mode"] = {k: control.get(k) for k in ("mode", "reason", "set_by", "set_at_utc", "auto_reset_day")}
     try:
-        save_control(control)                  # 高水位
+        save_control(control)
     except StorageError as exc:
-        log_event(f"⚠️ control.json 寫入失敗：{exc}", severity="WARNING")
-    if control.get("halt"):
-        return None, f"已停機：{control.get('halt_reason') or '使用者停機'}"
+        log_event(f"🚨 control.json 寫入失敗：{exc}", severity="ERROR")
+    if handled:
+        _record(state, rec, day)
+        return rec, rec["reason"]
+    if control["mode"] == "STOP":
+        return None, f"STOP（{control.get('set_by')}）：{control.get('reason') or ''}"
     if not market_open:
         return None, "休市"
     if len(m15) < 20 or len(m1) < 30:
         return None, f"歷史不足（M15 {len(m15)}／M1 {len(m1)} 根），累積中"
 
-    can_open = ladder["can_open"] and not control.get("pause_new")
-    block = ("暫停開新倉（control.json pause_new）" if control.get("pause_new")
-             else (f"階梯{ladder['level']}：" + "；".join(ladder["reasons"]) if not ladder["can_open"] else None))
+    can_open = control["mode"] == "RUN"
+    block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
     ctx = build_context(state, m1, m15, account, gate, now, day, ladder, control)
     b = get_brain()
     if pos is None and config.GATE_MODEL:
@@ -418,8 +459,9 @@ def build_status():
     return {
         "team": config.TEAM_NAME, "symbol": config.SYMBOL, "execute": config.EXECUTE, "model": config.MODEL,
         "ladder": state.get("ladder") or {"level": "A", "reasons": []},
-        "control": {"halt": bool(control.get("halt")), "halt_reason": control.get("halt_reason"),
-                    "pause_new": bool(control.get("pause_new")), "principal_set": bool(control.get("principal_hkd"))},
+        "control": {"mode": control.get("mode"), "reason": control.get("reason"), "set_by": control.get("set_by"),
+                    "set_at_utc": control.get("set_at_utc"), "auto_reset_day": control.get("auto_reset_day"),
+                    "principal_set": bool(control.get("principal_hkd"))},
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
         "gate": legacy_gate(), "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
@@ -434,9 +476,9 @@ def build_status():
                  "XAU_MIN_CONFIDENCE": config.MIN_CONFIDENCE, "XAU_MAX_TRADES_PER_DAY": config.MAX_TRADES_PER_DAY,
                  "XAU_MAX_HOLD_MIN": config.MAX_HOLD_MIN, "XAU_LONG_ONLY": config.LONG_ONLY, "XAU_MAGIC": config.MAGIC,
                  "XAU_EXECUTE": config.EXECUTE, "CLAUDE_PROVIDER": config.PROVIDER,
-                 "階梯 日蝕 Ⓑ／Ⓓ %": f"{config.DAILY_LOSS_B_PCT:g}／{config.DAILY_LOSS_D_PCT:g}",
-                 "階梯 回撤 Ⓑ／Ⓓ %": f"{config.DD_B_PCT:g}／{config.DD_D_PCT:g}", "階梯 硬止損 %": config.HARD_STOP_PCT,
-                 "階梯 保證金 Ⓑ／Ⓒ／Ⓓ %": f"{config.MARGIN_B_PCT:g}／{config.MARGIN_C_PCT:g}／{config.MARGIN_D_PCT:g}",
+                 "日蝕 PAUSE／STOP %（換日自動重開）": f"{config.DAILY_LOSS_PAUSE_PCT:g}／{config.DAILY_LOSS_STOP_PCT:g}",
+                 "保證金 PAUSE %（回升自動解）": config.MARGIN_PAUSE_PCT,
+                 "只提示：保證金 %／回撤 %／累計虧損 %": f"{'／'.join(f'{x:g}' for x in config.MARGIN_ALERT_PCTS)}；{'／'.join(f'{x:g}' for x in config.DD_ALERT_PCTS)}；{config.CUM_LOSS_ALERT_PCT:g}",
                  "夜盤倍數": config.NIGHT_MULT},
     }
 
