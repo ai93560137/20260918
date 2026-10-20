@@ -14,3 +14,12 @@
 | 7 ✅ | 14:56:53 | 95ad6fee | control.json STOP(user) → 服務自動排 close all | ok=true「done at 4141.76;」<1s | 361405614 平 | 14:57:52 positions=[]；STOP 期間冇問 Claude；之後 PAUSE 還原。今日已實現 +26.53 HKD |
 | 8 ✅ | 15:12:52 | 987cf479 | 本金暫改 100；t8 open BUY 0.01 @4143.13（1b8ee860, ticket 361420917）；浮虧 −54.31 HKD → 日蝕 (26.53−54.31)/100 = −27.8% ≤ −6% | 階梯 STOP(ladder, auto_reset_day 2026-10-21)＋排 close → ack「done at 4136.30」1s | 361420917 平 | Telegram 🛑；副作用：高水位回撤 99.5% 警報（equity_peak 仍係原本金水平）、cum_loss_above=true（還原本金後下根 M1 自清）。待還原 principal／PAUSE |
 | 9 ✅ | 15:22:53 | a66fd6fa / ccf50c68 | XAU_MAX_HOLD_MIN=5（修訂 00011-nt5）；t9 open BUY 0.01 @4135.73 | 15:28:53 日誌「⏱ 最長持倉 5 分鐘到，排 close」→ ack「done at 4135.55;」<1s | 361462087 開→平 | 開倉後第 6 分鐘（滿 5 分鐘後首根 M1）自動平；15:29:52 positions=[] |
+| 6a ✅ | 15:48:44 | 882de041 | MT5 15:38:52 關；15:40:26 put t6a；MT5 重開首個心跳 15:48:44 consume＋open（距 put 498 秒，險過 600 秒 TTL） | ok=true「done at 4133.02」1s | 361489991 | 只開一張；修訂 00012-znn（MAX_HOLD 已還原 1440） |
+| 6a 平倉 | 15:50:44 | deea8411 | close all | ok=true「done at 4133.57;」 | 361489991 平 | 15:51:44 positions=[] |
+| 6b ✅ | 16:11:06 | t6b | MT5 15:53:44 關；15:54:44 put；16:10 後重開 → 首個心跳 16:11:06 consume（相隔 982 秒 > 600） | 唔排：result=error「ts missing or older than 600s」 | — | positions=[]、pending=[]，冇單 |
+| 10 ⏭ | — | — | 真倉戶口掛 dry-run EA 被 ignored | 總指揮決定唔做（唔想使用者喺真戶口掛 EA）；XAU_ACCOUNT 過濾有單元測試（tests/test_xau.py「非 XAU_ACCOUNT 嘅心跳 → ignored」） | — | 轉真倉前 XAU_ACCOUNT 改真倉戶口時，demo EA 心跳會被 ignored，等於實地驗證 |
+
+## 小結
+- 1–9 全部通過（第 5 嘅 EA「↩️ 重複 id」行由使用者確認；第 10 跳過）。指令→EA→ack 每次 ≤1 秒。
+- 待做：XAU_TEST_CMDS=0 還原；control.json RUN；Claude 自己喺 demo 開／平 ≥3 張（M15 夠 20 根先開始）。
+- 轉真倉前置：見 TEST_PLAN §4（LTC 停用確認、真倉戶口號碼、EA InpDryRun、XAU_ACCOUNT）。
