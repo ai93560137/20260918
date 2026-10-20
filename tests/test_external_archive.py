@@ -1,4 +1,4 @@
-"""[R84] `gunicorn main:app` 這條路也要能跑（buildpack 沒拿到 entry point 時的退路）。"""
+"""[R95] 外部來源按日封存（R253 起只剩富途；MT5 M1 移去天覆陣）。"""
 import json, os, sys, types
 
 os.environ.setdefault("WEBHOOK_SECRET_TOKEN", "tok")
@@ -41,8 +41,6 @@ sys.modules["google.api_core"] = api_core; sys.modules["google.api_core.exceptio
 import main
 from datetime import datetime, timezone
 
-main.macro_news_session.status = lambda now=None: {"locked": False, "known": True, "reason": "test",
-                                                   "events": [], "warnings": [], "warning": None}
 OK = FAIL = 0
 def check(name, cond, extra=""):
     global OK, FAIL
@@ -51,46 +49,6 @@ def check(name, cond, extra=""):
 
 client = main.app.test_client()
 def rows(name): return json.loads(FAKE[name][0])
-
-print("\n=== R95：MT5 M1 按日封存（券商伺服器日期）===")
-FAKE.clear()
-t0 = int(datetime(2026, 9, 25, 23, 58, tzinfo=timezone.utc).timestamp())   # 伺服器時間 23:58
-for i in range(4):                                                          # 23:58, 23:59, 00:00, 00:01
-    main.archive_mt5_bar({"time": t0 + 60 * i, "open": 3700 + i, "high": 3701 + i, "low": 3699 + i, "close": 3700.5 + i})
-main.archive_mt5_bar({"time": t0, "open": 3700, "high": 3701, "low": 3699, "close": 3700.5})   # 重送同一根
-d1 = main.archive_blob_name("mt5_m1", "XAUUSD", "2026-09-25")
-d2 = main.archive_blob_name("mt5_m1", "XAUUSD", "2026-09-26")
-check("跨日切成兩個檔", d1 in FAKE and d2 in FAKE, sorted(FAKE))
-check("前一日 2 根、重送不重複", len(rows(d1)) == 2, rows(d1))
-check("後一日 2 根", len(rows(d2)) == 2)
-r0 = rows(d1)[0]
-check("伺服器時間與 UTC 都記下", r0["time_server"] == "2026-09-25 23:58:00" and r0["time_utc"].startswith("2026-09-25 2"), r0)
-gen = FAKE[d1][1]
-main.archive_mt5_bar({"time": t0, "open": 3700, "high": 3701, "low": 3699, "close": 3700.5})
-check("內容沒變就不寫入", FAKE[d1][1] == gen)
-
-print("\n=== R95：封存失敗不能擋交易 ===")
-orig = main.gcs_update
-def boom(*a, **k): raise main.StorageError("down")
-main.gcs_update = boom
-try:
-    main.archive_mt5_bar({"time": t0, "open": 1, "high": 1, "low": 1, "close": 1}); ok = True
-except Exception as exc:
-    ok = False
-main.gcs_update = orig
-check("GCS 掛了也不丟例外", ok)
-
-print("\n=== R95：process_m1_bar 真的會封存 ===")
-FAKE.clear()
-called = []
-orig_arch = main.archive_mt5_bar
-main.archive_mt5_bar = lambda bar, symbol="XAUUSD": called.append(bar["time"])
-try:
-    main.gold_indicator_session.process_m1_bar({"time": t0, "open": 1, "high": 2, "low": 0.5, "close": 1.5}, False)
-except Exception as exc:
-    print("   (process_m1_bar 後段例外，不影響本檢查)", type(exc).__name__, exc)
-main.archive_mt5_bar = orig_arch
-check("每根 M1 都呼叫封存", called == [t0], called)
 
 print("\n=== R95：Futu 多代號＋按日封存 ===")
 FAKE.clear()
@@ -113,10 +71,9 @@ check("指定代號讀回 QQQ", j.get("symbol") == "US.QQQ", j.get("symbol"))
 check("不指定＝最後收到的 SPY", client.get("/?view=futu&format=json").get_json().get("symbol") == "US.SPY")
 
 print("\n=== R95：?view=archive 讀回某一天 ===")
-main.archive_mt5_bar({"time": int(datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc).timestamp()), "open": 1, "high": 2, "low": 0.5, "close": 1.5})
 j = client.get("/?view=archive&format=json&date=2026-09-25").get_json()
 check("status ok", j.get("status") == "ok", j)
-check("三種來源都在", set(j["series"]) == {"mt5_m1/XAUUSD", "futu_k_5m/US.QQQ", "futu_k_5m/US.SPY", "futu_options/US.QQQ", "futu_options/US.SPY"}, j["series"])
+check("富途來源都在（R253：MT5 M1 唔再封存）", set(j["series"]) == {"futu_k_5m/US.QQQ", "futu_k_5m/US.SPY", "futu_options/US.QQQ", "futu_options/US.SPY"}, j["series"])
 check("不含別天的檔", "2026-09-24" not in json.dumps(j["data"]["futu_k_5m/US.QQQ"]))
 check("壞日期 → 400", client.get("/?view=archive&format=json&date=../x").status_code == 400)
 check("沒資料的日子 → 空", client.get("/?view=archive&format=json&date=2020-01-01").get_json()["series"] == {})

@@ -1,6 +1,6 @@
 # CLAUDE.md — 給 Claude 的工作說明
 
-本 repo 是「智能諸葛亮」XAUUSD 量化交易系統：`main.py` 的進入點是 `receive_tradingview_signal`，
+本 repo 是「智能諸葛亮」量化交易系統：`main.py` 的進入點是 `receive_tradingview_signal`（2026-10-20 R253 起只做富途／恒指／CME／各陣頁面；舊 XAUUSD 引擎已移除，黃金由天覆陣 `zhuge-xau`／`xau/` 負責），
 狀態全部存在 GCS bucket `zhuge-risk-manager-bucket`。
 **目前實際在跑的是 Cloud Run 服務 `zhuge-risk-manager`（區域 `europe-west1`）**，不是 Cloud Function；
 專案裡沒有任何 Cloud Function。asia-east1 另有一個同名、部署失敗的舊 Cloud Run 服務（不接流量，別理它）。
@@ -18,7 +18,7 @@
 | 看日誌 | `python3 scripts/gcp_agent.py logs --since 2h --limit 100 [--grep 已送出] [--severity WARNING]` |
 | 電閘／加單／決策日誌 | `python3 scripts/gcp_agent.py state` |
 | bucket 內容 | `python3 scripts/gcp_agent.py bucket --prefix logs/`、`cat --object logs/last_order_sent.json` |
-| 五個頁面是否正常 | `python3 scripts/gcp_agent.py check`（雲端容器的網路政策可能擋 `*.run.app`，被擋時請使用者在環境設定放行） |
+| 頁面是否正常（首頁、策略總表、龍飛陣、基金報告、蛇蟠陣） | `python3 scripts/gcp_agent.py check`（雲端容器的網路政策可能擋 `*.run.app`，被擋時請使用者在環境設定放行） |
 | 看環境變數 | `python3 scripts/gcp_agent.py env get` |
 | 改參數（環境變數） | `python3 scripts/gcp_agent.py env set KEY=VAL`（先看計畫）→ 使用者同意後加 `--yes` |
 | 列出版本與流量 | `python3 scripts/gcp_agent.py revisions` |
@@ -47,7 +47,7 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 1. **這個系統會對真實帳戶送單。** 部署與改環境變數前先跑 dry-run，把「將會做什麼」告訴使用者；
    只有使用者明確要求部署／修改時才加 `--yes`。讀取類命令（status / logs / state / check）可自由執行。
 2. 部署前一定先做 `python3.11 -m py_compile main.py`（**Cloud Run 執行階段係 Python 3.11**；本機 python3 係 3.13，3.12+ 先容許嘅 f-string 巢狀同款引號會令 Cloud Build 失敗）與 `deploy` dry-run 的來源檢查；部署檔案
-   （`main.py`、`requirements.txt`、`gates.html`、`order.html`、`jinnang_sheet.html`、`jinnang_tracker.html`、`bazhentu.html`、`factsheet.html`）必須完整。
+   （`main.py`、`requirements.txt`、`bazhentu.html`、`factsheet.html`；R253 起舊 XAUUSD 四頁已移除）必須完整。
    `futu/`、`tests/`、`scripts/`、`data/` 不部署（見 `.gcloudignore`）。
 3. 不要印出、記錄或 commit 任何金鑰與權杖（`WEBHOOK_SECRET_TOKEN`、`WEBHOOK_API_KEY`、`GCP_SA_KEY`）。
    `gcp_agent.py` 對含 TOKEN/SECRET/KEY 的值、以及網址的查詢參數（例如 `BROKER_API_URL` 的 `?t=…`）會自動遮罩，請保持。
