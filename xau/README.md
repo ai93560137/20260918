@@ -1,0 +1,67 @@
+# 🌌 天覆陣 — XAUUSD CFD（MT5）Claude 決策服務（R266）
+
+龍飛陣做期貨／美股（富途），天覆陣做 CFD（MT5）。架構沿用龍飛陣 `hsi_ai_trader/`：
+
+| 檔案 | 做咩 |
+|---|---|
+| `main.py` | Cloud Run 入口：EA 心跳 → 累積 K 線 → 問 Claude → 硬性規則 → 影子（紙上）或實倉（指令）→ 紀錄 |
+| `brain.py` | Claude 決策（strict tool `decide`：HOLD／OPEN_LONG／OPEN_SHORT／CLOSE／UPDATE_STOP），Haiku 預篩，prompt caching |
+| `rules.py` | 純邏輯：硬性規則（AI 無權改）、止損止賺觸發、最長持倉 |
+| `paper.py` | 紙上模擬（影子模式嘅盈虧） |
+| `page.py` | 單一頁面（取代舊服務五頁：投資人日誌、關卡開關、送單參數、錦囊執行單、錦囊九十筆） |
+| `storage.py`、`market.py`、`config.py` | GCS、K 線／時段、設定 |
+| `LESSONS.md` | 使用者教學簿；線上優先讀 GCS `xau/lessons.md` |
+
+## 同舊服務嘅關係
+
+```
+MT5 EA V23 ──心跳──▶ zhuge-risk-manager（main.py，照舊：電閘、錦囊、webhooktrade）
+                          └─ XAU_SHADOW_URL 設咗 → 新 M1 收盤時轉發（加權杖，2 秒逾時，唔等）──▶ zhuge-xau（本服務）
+                                                                                            └─ Claude 決策 → 紙上模擬 → GCS xau/
+```
+
+- 影子階段（`XAU_EXECUTE=0`，預設）：只寫 GCS `xau/`，心跳回應 `cmd_text` 永遠空，**唔會送單**。電閘只讀舊服務 `zhuge_gate_state.json`。
+- 實倉階段（`XAU_EXECUTE=1`）：EA 改指向本服務，心跳回應 `cmd_text` 帶指令，EA 執行後 `cmd_ack` 回報。要先有新 EA（PR B），同埋影子達到預先登記標準（PR C）。
+
+## 指令格式（實倉）
+
+每行一條，EA 用 `StringSplit("|")` 讀；`id` 兩邊去重，10 分鐘冇回報就作廢：
+```
+open|BUY|0.01|sl=4120.50|tp=4210.00|magic=920|id=a1b2c3d4
+close|all|magic=920|id=…
+modify|all|sl=4130.00|tp=|magic=920|id=…
+```
+EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"ticket":123,"message":"…"}`。
+
+## 環境變數
+
+| 變數 | 預設 | 說明 |
+|---|---|---|
+| `WEBHOOK_SECRET_TOKEN` | — | 必須；同舊服務相同。心跳同回報都要帶 |
+| `ANTHROPIC_API_KEY` | — | `CLAUDE_PROVIDER=api`（預設，同龍飛陣）時必須 |
+| `CLAUDE_PROVIDER` | `api` | `vertex` = 用同一 GCP 專案嘅 Vertex AI Claude（要喺 Model Garden 啟用） |
+| `CLAUDE_MODEL`／`CLAUDE_EFFORT` | `claude-opus-5-5`／`low` | 影子階段量延遲同費用再調 |
+| `GATE_MODEL`／`GATE_EFFORT` | `claude-haiku-5-5`／`low` | 空倉先篩；留空 = 唔篩 |
+| `XAU_EXECUTE` | `0` | 1 = 實倉指令 |
+| `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
+| `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
+| `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |
+| `XAU_MAX_TRADES_PER_DAY` | 0 | 0 = 唔限 |
+| `XAU_MAX_HOLD_MIN` | 1440 | 最長持倉，到時強制平倉 |
+| `XAU_LONG_ONLY` | 0 | 影子階段兩邊都記 |
+| `XAU_CALL_WHEN_LOCKED` | 0 | 空倉且電閘 LOCK 時唔問 Claude（慳錢） |
+| `XAU_MAGIC` | 920 | 同 EA `InpMagicNumber` 一致 |
+
+## 費用同延遲（影子階段要量）
+
+M1 每日最多 1,440 次。空倉且電閘 LOCK 唔問；空倉先用 Haiku 篩。頁面顯示今日次數、費用、p95 延遲。
+EA `WebRequest` 逾時 15 秒（V23）：實倉前 p95 要低過呢個數，否則改非同步（決定寫 GCS，EA 下一個心跳先取指令）。
+
+## 部署（未做）
+
+`scripts/gcp_agent.py` 目前只會更新已存在嘅服務同打包 repo 根目錄；要加 `--source-dir xau` 同建立新服務（另一個 PR）。
+部署前：`python3.11 -m py_compile xau/*.py`、`python3 tests/test_xau.py`。
+
+## 影子標準（照 IDEAS.md 慣例預先登記，達標先入 PR C）
+
+≥ 30 筆紙上交易、期望值 > 0、最大回撤 < 設定值、冇違反硬規則嘅輸出、p95 延遲 < 15 秒。

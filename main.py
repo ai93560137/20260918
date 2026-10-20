@@ -12889,6 +12889,27 @@ def handle_tg_signal_callback(request):
     return jsonify({"status": result}), 200
 
 
+# [R266] 🌌 天覆陣（xau/，獨立 Cloud Run 服務）影子階段：EA 仍指向本服務，本服務把帶新 M1 收盤嘅心跳
+#        轉發過去（加上權杖）。短逾時、吞掉所有錯誤，EA 嘅回應唔受影響。XAU_SHADOW_URL 留空 = 關。
+XAU_SHADOW_URL = _env_str("XAU_SHADOW_URL", "")
+XAU_SHADOW_TIMEOUT_SEC = _env_float("XAU_SHADOW_TIMEOUT_SEC", 2.0)
+
+
+def forward_heartbeat_to_xau(payload):
+    if not XAU_SHADOW_URL or "equity" not in payload:
+        return
+    m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
+    if not m1.get("is_new_bar"):
+        return
+    try:
+        requests.post(XAU_SHADOW_URL, json={**payload, "token": GCP_SECRET_TOKEN, "forwarded_by": "zhuge-risk-manager"},
+                      timeout=XAU_SHADOW_TIMEOUT_SEC)
+    except requests.Timeout:
+        pass                                          # 預期：對面要問 Claude，唔等佢
+    except Exception as exc:                          # 唔印網址
+        print(f"⚠️ [天覆陣轉發失敗] {type(exc).__name__}", flush=True)
+
+
 def _dispatch_post(payload):
     action = payload.get("action")
     if action == "trade_result":
@@ -12971,6 +12992,7 @@ def receive_tradingview_signal(request):
                   action=summary["action"])
         raise
     code, status = _response_info(response)
+    forward_heartbeat_to_xau(payload)                 # [R266] 天覆陣影子：新 M1 收盤先轉發，唔影響回應
     log_event(f"📤 [回應] HTTP {code} {status} ({int((now_ts() - started) * 1000)} ms)",
               severity="INFO" if code < 500 else "ERROR", component="webhook", direction="out",
               action=summary["action"], http_status=code, result=status)
