@@ -4,7 +4,7 @@
   1. 權杖檢查 → 2. 累積 M1／M15 → 3. 戶口快照 → 4. 新 M1 收盤：紙上止損／止賺／最長持倉 →
   5. 要問先問 Claude（空倉而電閘 LOCK 或休市就唔問；空倉先用 GATE_MODEL 篩）→ 6. 硬性規則 →
   7. 影子：紙上模擬；實倉（XAU_EXECUTE=1）：排指令，心跳回應 cmd_text 由 EA 執行 → 8. 寫決策紀錄。
-狀態全部喺 GCS `xau/` 前綴；電閘影子階段只讀舊服務嘅 zhuge_gate_state.json。
+狀態全部喺 GCS `xau/` 前綴。
 """
 import json
 import time
@@ -235,25 +235,6 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
     return handled
 
 
-def legacy_gate():
-    """舊服務電閘：硬鎖／新聞鎖／armed。讀唔到當 LOCK（fail-closed）。"""
-    try:
-        g = storage.read_json(config.LEGACY_GATE_FILE, None)
-    except StorageError as exc:
-        return {"status": "LOCK", "reason": f"電閘讀取失敗：{exc}"}
-    if not isinstance(g, dict):
-        return {"status": "LOCK", "reason": "舊服務電閘不存在"}
-    lock = g.get("hard_lock")
-    if isinstance(lock, dict) and (lock.get("until_ts") is None or now_ts() < market.to_float(lock.get("until_ts"), 0)):
-        return {"status": "LOCK", "reason": f"硬鎖：{lock.get('reason') or '未知'}"}
-    if g.get("news_lock"):
-        return {"status": "LOCK", "reason": "新聞鎖"}
-    if not g.get("armed"):
-        risk = g.get("risk") if isinstance(g.get("risk"), dict) else {}
-        return {"status": "LOCK", "reason": risk.get("reason") or g.get("last_reason") or "未開閘"}
-    return {"status": "OPEN", "reason": (g.get("risk") or {}).get("reason") or "六關全過"}
-
-
 # ---------------------------------------------------------------------------
 # 決策
 # ---------------------------------------------------------------------------
@@ -261,7 +242,7 @@ def compact(bars):
     return [[b["time"], b["open"], b["high"], b["low"], b["close"]] for b in bars]
 
 
-def build_context(state, m1, m15, account, gate, now, day, ladder=None, control=None):
+def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     older, recent = m15[:-4], m15[-4:]
     pos = state.get("position")
     last = m1[-1]["close"]
@@ -283,7 +264,6 @@ def build_context(state, m1, m15, account, gate, now, day, ladder=None, control=
         "last_price": last,
         "account": {"currency": account.get("currency"), "equity": account.get("equity"),
                     "balance": account.get("balance"), "daily_pnl": account.get("daily_pnl")},
-        "legacy_gate": gate,
         "position": position,
         "risk": {"lots": rules.lots(), "min_sl_usd": config.MIN_SL_USD, "max_sl_usd": config.MAX_SL_USD,
                  "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
@@ -340,14 +320,13 @@ def process_bar(state, bar, m1, m15, account, now):
         exit_rec = paper.on_bar(state, bar, now)
         if exit_rec:
             log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
-    gate = legacy_gate()                       # 只作參考資料傳畀 Claude，唔係硬閘（使用者 10-20）
-    market_open = market.is_gold_market_open(now)
+    market_open = market.is_gold_market_open(now)   # R253 後舊服務唔再寫電閘，legacy_gate 已刪；舊規則只留 reference/legacy_rules.md
     control = load_control()
     ladder = risk_ladder(state, control, account, bar, now)
     state["ladder"] = ladder
     pos = state.get("position")
     decision_id = uuid.uuid4().hex
-    rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"], "legacy_gate": gate["status"],
+    rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"],
            "ladder": ladder["level"], "mode": control["mode"], "execute": config.EXECUTE}
     if exit_rec:
         rec["paper_exit"] = {"reason": exit_rec["reason"], "pnl_usd": exit_rec["pnl_usd"]}
@@ -372,7 +351,7 @@ def process_bar(state, bar, m1, m15, account, now):
 
     can_open = control["mode"] == "RUN"
     block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
-    ctx = build_context(state, m1, m15, account, gate, now, day, ladder, control)
+    ctx = build_context(state, m1, m15, account, now, day, ladder, control)
     b = get_brain()
     if pos is None and config.GATE_MODEL:
         sc = b.screen(ctx)
@@ -553,7 +532,7 @@ def build_status():
                     "set_at_utc": control.get("set_at_utc"), "auto_reset_day": control.get("auto_reset_day"),
                     "principal_set": bool(control.get("principal_hkd"))},
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
-        "gate": legacy_gate(), "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
+        "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
         "account_received_utc": account.get("received_utc"), "account_id": account.get("account_id"), "server": account.get("server"),
         "ea_dry_run": account.get("dry_run"), "xau_account": config.ACCOUNT or None, "test_cmds": config.TEST_CMDS,

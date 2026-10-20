@@ -57,8 +57,8 @@ class FakeBrain:
     def decide(self, ctx): self.calls.append("decide"); self.ctx = ctx; return {**self.decision, "_usage": {"in": 5000, "out": 300, "cache_read": 4000, "model": "claude-opus-5-5"}, "_ms": 2500, "_lessons": None}
 FB = FakeBrain(); xau._brain = FB
 
-def set_gate(open_):
-    FAKE["zhuge_gate_state.json"] = (json.dumps({"armed": open_, "hard_lock": None, "news_lock": False, "risk": {"reason": "六關全過"}}), 1)
+def set_gate(open_):   # R253 後舊電閘已刪：保留呼叫點，唔做嘢
+    pass
 
 T0 = 1792599000
 def hb(i, close, high=None, low=None, new=True, token="tok"):
@@ -90,7 +90,7 @@ for i in range(29):
 check("前 29 根：M1 歷史不足，冇問 AI", st == 200 and FB.calls == [] and "歷史不足" in d["message"], (d, FB.calls))
 for i in range(29, 40):
     st, d = hb(i, 4000 + i * 0.1)
-check("第 30 根起：照問（舊電閘 LOCK 唔係硬閘）", FB.calls and d["decision"] is not None, (d, FB.calls))
+check("第 30 根起：照問", FB.calls and d["decision"] is not None, (d, FB.calls))
 FB.calls.clear()
 st, d = hb(39, 4000 + 39 * 0.1)
 check("同一根重送 → duplicate", d.get("message") == "duplicate M1 bar", d)
@@ -98,10 +98,9 @@ st, d = hb(39, 4000, new=False)
 check("is_new_bar=false 只存快照", d.get("message") is None and d["status"] == "monitoring", d)
 m1 = json.loads(FAKE["xau/m1.json"][0]); check("M1 歷史 40 根、M15 ≥ 32 根", len(m1) == 40 and len(json.loads(FAKE["xau/m15.json"][0])) >= 32, len(json.loads(FAKE["xau/m15.json"][0])))
 
-print("=== 舊電閘只係參考：LOCK 都照問 ===")
 FB.screen_look = False
 st, d = hb(40, 4004)
-check("LOCK 且空倉 → 照篩選（唔係硬閘）", FB.calls == ["screen"] and "篩選" in d["message"], (FB.calls, d))
+check("空倉 → 先篩選", FB.calls == ["screen"] and "篩選" in d["message"], (FB.calls, d))
 FB.calls.clear()
 
 print("=== 篩選 ===")
@@ -134,7 +133,7 @@ print("=== 影子：開倉 → 止損 ===")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": 4020.0, "confidence": 0.8, "reason": "突破"}
 st, d = hb(42, 4005)
 check("開倉：紙上持倉、cmd_text 空", d["decision"]["final"] == "OPEN_LONG" and d["cmd_text"] == "" and json.loads(FAKE["xau/state.json"][0])["position"]["entry"] == 4005, d)
-check("context 有 M15／M1／風控／舊電閘參考／階梯", FB.ctx["legacy_gate"]["status"] == "OPEN" and len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
+check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": None, "confidence": 0.8, "reason": "再開"}
 st, d = hb(43, 4006)
 check("有倉時 AI 再開 → 擋", d["decision"]["final"] == "HOLD" and "已有倉位" in d["decision"]["rejected"], d)

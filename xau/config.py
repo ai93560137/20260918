@@ -38,7 +38,6 @@ SYMBOL = _s("XAU_SYMBOL", "XAUUSD")
 TOKEN = _s("WEBHOOK_SECRET_TOKEN", "")                      # 同 zhuge-risk-manager 相同；心跳同指令回報都要帶
 BUCKET = _s("XAU_BUCKET", "zhuge-risk-manager-bucket")
 PREFIX = _s("XAU_PREFIX", "xau/")                           # 本服務只寫呢個前綴
-LEGACY_GATE_FILE = _s("XAU_LEGACY_GATE_FILE", "zhuge_gate_state.json")   # 舊服務電閘：只讀，只作參考資料傳畀 Claude（唔係硬閘）
 
 # --- 模式 ---
 # EXECUTE=0（預設）：影子模式——Claude 照決策、紙上模擬、只寫 GCS，心跳回應 cmd_text 永遠空。
