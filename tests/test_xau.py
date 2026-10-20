@@ -133,7 +133,7 @@ print("=== 影子：開倉 → 止損 ===")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": 4020.0, "confidence": 0.8, "reason": "突破"}
 st, d = hb(42, 4005)
 check("開倉：紙上持倉、cmd_text 空", d["decision"]["final"] == "OPEN_LONG" and d["cmd_text"] == "" and json.loads(FAKE["xau/state.json"][0])["position"]["entry"] == 4005, d)
-check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
+check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1_older"]) + len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": None, "confidence": 0.8, "reason": "再開"}
 st, d = hb(43, 4006)
 check("有倉時 AI 再開 → 擋", d["decision"]["final"] == "HOLD" and "已有倉位" in d["decision"]["rejected"], d)
@@ -472,6 +472,19 @@ r = client.post("/", data=json.dumps(body), content_type="application/json"); d1
 _m1, _m15 = json.loads(FAKE["xau/m1.json"][0]), json.loads(FAKE["xau/m15.json"][0])
 check("EA 回填 m1_hist／m15_hist → 合併入歷史，need_history=false", len(_m1) >= 300 and len(_m15) >= 60 and d1.get("need_history") is False and _m15[0]["time"] == TS - 900 * 60, (len(_m1), len(_m15), d1.get("need_history")))
 check("回填後 M1 歷史仍然排序、冇重複", [b["time"] for b in _m1] == sorted(set(b["time"] for b in _m1)))
+
+print("=== Prompt caching（使用者 10-21）：整點切、三段快取、TTL ===")
+import brain as _brain
+_h0 = (int(FB.ctx["bars_m1"][0][0]) // 3600) * 3600 if FB.ctx.get("bars_m1") else None
+check("build_context：整點前 M1／M15 入快取段，本小時嘅係即時段", _h0 is not None and all(b[0] >= _h0 for b in FB.ctx["bars_m1"]) and all(b[0] < _h0 for b in FB.ctx["bars_m1_older"])
+      and all(b[0] < _h0 for b in FB.ctx["bars_m15_older"]) and all(b[0] >= _h0 for b in FB.ctx["bars_m15_recent"]), (_h0, FB.ctx["bars_m1"][:1], FB.ctx["bars_m1_older"][-1:]))
+_uc = _brain._user_content(FB.ctx, "Call the `decide` tool.")
+check("_user_content：三段，首兩段 cache_control ttl=1h，第三段冇", len(_uc) == 3 and _uc[0]["cache_control"] == {"type": "ephemeral", "ttl": "1h"} and _uc[1]["cache_control"] == {"type": "ephemeral", "ttl": "1h"} and "cache_control" not in _uc[2])
+check("快取段只含穩定 key；即時段有 account／position／risk", "bars_m15_older" in _uc[0]["text"] and "bars_m1_older" in _uc[1]["text"] and "bars_m1\"" in _uc[2]["text"] and "account" in _uc[2]["text"] and "bars_m1_older" not in _uc[2]["text"])
+_us = _brain._user_content(FB.ctx, "Screen this bar.", _brain.CACHE_TTL_SCREEN)
+check("篩選用 5m TTL", _us[0]["cache_control"]["ttl"] == "5m")
+check("cost_usd：1h TTL 寫 2×、5m TTL 寫 1.25×", abs(_brain.cost_usd({"in": 0, "out": 0, "cache_read": 0, "cache_write": 1000, "cache_ttl": "1h", "model": "claude-opus-5-5"}) - 0.008) < 1e-9
+      and abs(_brain.cost_usd({"in": 0, "out": 0, "cache_read": 0, "cache_write": 1000, "cache_ttl": "5m", "model": "claude-opus-5-5"}) - 0.005) < 1e-9)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -79,7 +79,10 @@ GATE_FORMAT = {"type": "json_schema", "schema": {
     "type": "object", "properties": {"look": {"type": "boolean"}, "reason": {"type": "string"}},
     "required": ["look", "reason"], "additionalProperties": False}}
 
-STABLE_KEYS = ("product", "bars_m15_older")           # 每 15 分鐘至 1 小時先變：放可快取前段
+STABLE_KEYS = ("product", "bars_m15_older")           # 一個鐘先變一次：放可快取前段（整點切，見 main.build_context）
+STABLE2_KEYS = ("bars_m1_older",)                     # 上一個整點之前嘅 M1：第二個快取段
+CACHE_TTL_DECIDE = "1h"                               # 決策模型唔係每根都問（篩選先），1 小時 TTL（寫 2×）
+CACHE_TTL_SCREEN = "5m"                               # 篩選每分鐘都問，5 分鐘 TTL 夠（寫 1.25×）
 FALLBACK_BETA = "server-side-fallback-2026-07-01"     # 拒答時由伺服器按類別轉後備模型（只限 Anthropic API）
 FALLBACK_MODELS = ("claude-opus-5-5", "claude-fable-5-1", "claude-sonnet-5-5")
 
@@ -88,20 +91,24 @@ def _dump(d):
     return json.dumps(d, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def _user_content(context, ask):
+def _user_content(context, ask, ttl=CACHE_TTL_DECIDE):
+    """三段：[產品＋整點前 M15]（快取）→ [整點前 M1]（快取）→ [本小時 K 線＋戶口＋持倉＋風控]（即時）。
+    快取段每個鐘先變一次；system 另有一個快取段，合共 3 個 cache_control（上限 4）。"""
     stable = {k: context[k] for k in STABLE_KEYS if k in context}
-    live = {k: v for k, v in context.items() if k not in STABLE_KEYS}
-    return [{"type": "text", "text": "Product and older 15-minute bars (change slowly), JSON:\n" + _dump(stable),
-             "cache_control": {"type": "ephemeral", "ttl": "1h"}},
-            {"type": "text", "text": f"Market context now (JSON). {ask}\n" + _dump(live)}]
+    stable2 = {k: context[k] for k in STABLE2_KEYS if k in context}
+    live = {k: v for k, v in context.items() if k not in STABLE_KEYS and k not in STABLE2_KEYS}
+    cc = {"type": "ephemeral", "ttl": ttl}
+    return [{"type": "text", "text": "Product and 15-minute bars before the current hour (change once an hour), JSON:\n" + _dump(stable), "cache_control": cc},
+            {"type": "text", "text": "1-minute bars before the current hour (change once an hour), JSON:\n" + _dump(stable2), "cache_control": cc},
+            {"type": "text", "text": f"Market context now: this hour's 1-minute and 15-minute bars, account, position, risk (JSON). {ask}\n" + _dump(live)}]
 
 
-def _usage(msg, model):
+def _usage(msg, model, ttl=CACHE_TTL_DECIDE):
     u = msg.usage
     return {"in": u.input_tokens, "out": u.output_tokens,
             "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
             "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0,
-            "model": getattr(msg, "model", None) or model}
+            "cache_ttl": ttl, "model": getattr(msg, "model", None) or model}
 
 
 def cost_usd(usage):
@@ -117,8 +124,9 @@ def cost_usd(usage):
     if not price:
         return None
     pin, pout, pcache = price
+    write_mult = 2.0 if str(usage.get("cache_ttl") or "1h") == "1h" else 1.25     # 快取寫入：1h TTL 2×，5m TTL 1.25×
     return round((usage.get("in", 0) * pin + usage.get("out", 0) * pout + usage.get("cache_read", 0) * pcache
-                  + usage.get("cache_write", 0) * pin * 1.25) / 1e6, 5)
+                  + usage.get("cache_write", 0) * pin * write_mult) / 1e6, 5)
 
 
 REFERENCE_FILE = __file__.rsplit("/", 1)[0] + "/reference/legacy_rules.md"
@@ -185,10 +193,10 @@ class ClaudeBrain:
         try:
             msg = self.client.messages.create(
                 model=config.GATE_MODEL, max_tokens=4000,
-                system=[{"type": "text", "text": text, "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
+                system=[{"type": "text", "text": text, "cache_control": {"type": "ephemeral", "ttl": CACHE_TTL_SCREEN}}],
                 output_config={"effort": config.GATE_EFFORT, "format": GATE_FORMAT},
-                messages=[{"role": "user", "content": _user_content(context, "Screen this bar.")}])
-            usage = _usage(msg, config.GATE_MODEL)
+                messages=[{"role": "user", "content": _user_content(context, "Screen this bar.", CACHE_TTL_SCREEN)}])
+            usage = _usage(msg, config.GATE_MODEL, CACHE_TTL_SCREEN)
             ms = int((time.time() - started) * 1000)
             if msg.stop_reason == "refusal":
                 return {"look": True, "reason": "篩選拒答，照問決策模型", "_usage": usage, "_ms": ms, "_error": True}
