@@ -97,6 +97,14 @@ demo MT5 開一張 **EURUSD** 圖表掛 TianfuExecutor v0.34（`InpUrl` 指去 z
 `control.json` 放喺 `fx/eurusd/control.json`（`principal_hkd` 同 XAUUSD 一樣係整個戶口）。
 影子標準（IDEAS.md #28）達標、使用者批先轉 demo 落單；轉真倉前要有**戶口總階梯**（多產品共用一個戶口，各服務各自計日蝕唔夠）。
 
+## 戶口總階梯（使用者 10-21 批方案 A；`xau/ACCOUNT_LADDER.md`）
+多產品共用一個 MT5 戶口，階梯要計**天覆陣全部產品合計**，唔計手動單同其他 EA：
+- EA v0.35 參數 `InpBotMagics="921,922,923,924,925"`；心跳多送三個數（戶口貨幣 HKD）：
+  `bots_daily_pnl` = 呢組 magic 今日（伺服器日）已實現（含佣金、隔夜息）、`bots_floating` = 呢組 magic 所有持倉浮動、`bots_realized_total` = 呢組 magic 自 `InpLedgerStart` 起已實現。
+- 服務 `risk_ladder`（真倉 `XAU_EXECUTE=1`）：心跳有 `bots_daily_pnl` 就 **日蝕 = bots_daily_pnl + bots_floating**、**累計 = bots_realized_total + bots_floating**、**自己權益 = 本金 + 累計**（`ladder.scope=account`）；冇就退回自己 magic（`scope=own`）。影子模式仍用紙上（`scope=paper`）。
+- 每個服務各自喺自己下一根 M1 用同一組數判斷 → 同時 PAUSE／STOP，各自排 `close|all|magic=<自己>`；本金 `principal_hkd` 各服務 control.json 填同一個（整個戶口）。
+- 頁面「今日盈虧（階梯用）・戶口合計」另顯示本產品數。RISK_LADDER §6c 由總指揮同步改成「天覆陣全部產品合計」。
+
 ## K 線歷史：唔使等 5 小時累積 M15（使用者 10-21）
 - **EA v0.33 回填**：首個心跳（OnInit 後）同埋服務回應 `need_history:true` 時，心跳多帶 `m1_hist`（330 根）＋`m15_hist`（60 根）`[[time,open,high,low,close],…]`；服務按 time 去重合併入 `xau/m1.json`／`xau/m15.json`。換戶口、重啟、改 `XAU_ACCOUNT` 後下一個心跳即刻夠數。
 - **服務側砌 M15**：M15 唔夠 20 根時，由已累積嘅 M1 砌完整嘅 15 分鐘 K 線（只取齊 15 根、時間連續嘅格；EA 送嘅優先），寫入 `xau/m15.json`。

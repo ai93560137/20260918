@@ -50,6 +50,7 @@ python3 scripts/gcp_agent.py --profile xau put --any-prefix --object xau/test_cm
 
 ## 4. 轉真倉（使用者親口講先做）
 0. **前置條件（10-20 總指揮）**：(a) 確認 LTC（Local Trade Copier 跟單主帳）**仍然停用**，或已按 magic 921 排除——10-20 使用者已 unload LTC，轉真倉當日要再確認；(b) 確認真倉戶口號碼——使用者有多過一個真錢戶口，用邊個未最終確認；號碼係私人資料，見 GCS `xau/control.json`（`live_account`，由總指揮寫入），唔寫入公開 repo；`XAU_ACCOUNT` 要同佢一致。
+0b. **戶口總階梯已驗證**（多產品）：兩個產品喺 demo 各開一張（XAUUSD test_cmd、EURUSD 轉 demo 後），縮本金令合計 −6% → 兩個服務同一分鐘 STOP、兩張單都平、Telegram 各一條；EA 兩張圖表都係 v0.35、`InpBotMagics` 一致。
 1. `--profile xau env set XAU_ACCOUNT=<真戶口登入號> XAU_EXECUTE=1 XAU_LOTS=0.01`（總指揮 dry-run → 使用者批 → `--yes`）。
 2. 真戶口 EA 參數 `InpDryRun=false`（使用者喺 MT5 改）；demo EA 卸載或 `InpDryRun=true`。
 3. 確認頁面「真倉」區顯示持倉來源係 EA、`XAU_ACCOUNT` 正確。
