@@ -83,7 +83,8 @@ python3 scripts/gcp_agent.py --profile xau deploy --set-env XAU_EXECUTE=0 CLAUDE
 python3 scripts/gcp_agent.py --profile xau status / logs / env get
 ```
 部署後使用者要喺控制台做：① 服務「安全性」→ 允許未經驗證的叫用；② 環境變數填 `WEBHOOK_SECRET_TOKEN`（同舊服務相同）同 `ANTHROPIC_API_KEY`（唔貼入對話）。
-之後舊服務 `env set XAU_SHADOW_URL=<新服務網址>/`（先 dry-run，同總指揮對時間）先會開始轉發心跳。
+之後舊服務 `env set XAU_SHADOW_URL=<新服務網址>/ XAU_SHADOW_TOKEN=<新服務嘅權杖>`（先 dry-run，同總指揮對時間）先會開始轉發心跳。
+⚠️ 舊服務線上**未設** `WEBHOOK_SECRET_TOKEN`（10-20 查到），程式用預設 `123456`；天覆陣用自己嘅權杖，唔沿用。
 
 ## 影子標準（照 IDEAS.md 慣例預先登記，達標先入 PR C）
 

@@ -12893,6 +12893,7 @@ def handle_tg_signal_callback(request):
 #        轉發過去（加上權杖）。短逾時、吞掉所有錯誤，EA 嘅回應唔受影響。XAU_SHADOW_URL 留空 = 關。
 XAU_SHADOW_URL = _env_str("XAU_SHADOW_URL", "")
 XAU_SHADOW_TIMEOUT_SEC = _env_float("XAU_SHADOW_TIMEOUT_SEC", 2.0)
+XAU_SHADOW_TOKEN = _env_str("XAU_SHADOW_TOKEN", GCP_SECRET_TOKEN)      # 新服務自己嘅權杖（唔跟本服務；本服務線上未設 WEBHOOK_SECRET_TOKEN）
 
 
 def forward_heartbeat_to_xau(payload):
@@ -12902,7 +12903,7 @@ def forward_heartbeat_to_xau(payload):
     if not m1.get("is_new_bar"):
         return
     try:
-        requests.post(XAU_SHADOW_URL, json={**payload, "token": GCP_SECRET_TOKEN, "forwarded_by": "zhuge-risk-manager"},
+        requests.post(XAU_SHADOW_URL, json={**payload, "token": XAU_SHADOW_TOKEN, "forwarded_by": "zhuge-risk-manager"},
                       timeout=XAU_SHADOW_TIMEOUT_SEC)
     except requests.Timeout:
         pass                                          # 預期：對面要問 Claude，唔等佢
