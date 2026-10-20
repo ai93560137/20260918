@@ -61,6 +61,15 @@ def _pos_text(pos):
             f"｜止賺 {pos.get('target') or '—'}｜票 {pos.get('ticket') or '—'}")
 
 
+def _ta_text(ta):
+    """EA v0.32 心跳 trade_allowed：終端掣／EA 屬性／戶口三個自動交易開關。"""
+    if not isinstance(ta, dict):
+        return ""
+    names = {"terminal": "終端 Algo Trading 掣", "ea": "EA 屬性「允許算法交易」", "account": "戶口准自動交易"}
+    off = [names[k] for k in names if not ta.get(k)]
+    return "；✅ MT5 自動交易三個開關全開" if not off else "；<b class='neg'>⛔ MT5 自動交易被擋：" + "、".join(off) + "（關住）</b>"
+
+
 def run_text(s):
     ctl, lad = s.get("control") or {}, s.get("ladder") or {}
     mode = ctl.get("mode") or "RUN"
@@ -106,7 +115,7 @@ def render(status):
                if not s.get("execute") else
                f"<div class='section'><h2>真倉狀態</h2><p>{esc(run_text(s))}</p>"
                f"<p>EA 戶口 {esc(s.get('account_id') or '—')}（{esc(s.get('server') or '—')}）{'，EA dry-run' if s.get('ea_dry_run') else ''}；只收 XAU_ACCOUNT={esc(s.get('xau_account') or '（全收）')}"
-               f"{'；⚠ XAU_TEST_CMDS=1（真倉前要關）' if s.get('test_cmds') else ''}</p>"
+               f"{'；⚠ XAU_TEST_CMDS=1（真倉前要關）' if s.get('test_cmds') else ''}{_ta_text(s.get('trade_allowed'))}</p>"
                f"<p>EA 持倉：{esc(_pos_text(s.get('position')))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>")
             + "</div>")
     top = ("<div class='grid'>"

@@ -23,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.31"
+#property version   "0.32"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -101,6 +101,24 @@ double OwnRealizedSince(datetime from)
 double OwnRealizedToday() { return OwnRealizedSince((datetime)(TimeCurrent() - TimeCurrent() % 86400)); }
 double OwnRealizedTotal() { return OwnRealizedSince(StringToTime(InpLedgerStart)); }
 
+//---------------------------------------------------------------- 自動交易三個開關（終端掣／EA 屬性／戶口）
+bool TerminalAT() { return (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED); }
+bool EaAT()       { return (bool)MQLInfoInteger(MQL_TRADE_ALLOWED); }
+bool AccountAT()  { return (bool)AccountInfoInteger(ACCOUNT_TRADE_EXPERT) && (bool)AccountInfoInteger(ACCOUNT_TRADE_ALLOWED); }
+string TradeAllowedJson()
+{
+   return StringFormat("{\"terminal\":%s,\"ea\":%s,\"account\":%s}",
+                       TerminalAT() ? "true" : "false", EaAT() ? "true" : "false", AccountAT() ? "true" : "false");
+}
+string TradeBlockedReason()      // "" = 三個都開
+{
+   string r = "";
+   if(!TerminalAT()) r += "terminal Algo Trading off;";
+   if(!EaAT())       r += "EA property Allow Algo Trading off;";
+   if(!AccountAT())  r += "account trading not allowed;";
+   return r;
+}
+
 //---------------------------------------------------------------- 心跳封包
 string BuildHeartbeat()
 {
@@ -134,14 +152,14 @@ string BuildHeartbeat()
                          (long)r15[0].time, r15[0].open, r15[0].high, r15[0].low, r15[0].close);
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.31\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.32\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
-      "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,"
+      "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,\"trade_allowed\":%s,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s}",
       JsonEsc(InpToken), (long)AccountInfoInteger(ACCOUNT_LOGIN), JsonEsc(AccountInfoString(ACCOUNT_SERVER)), _Symbol, cur,
       AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
       AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(), OwnRealizedTotal(),
-      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), pos_json, m1, m15);
+      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), pos_json, m1, m15);
 }
 
 //---------------------------------------------------------------- HTTP
@@ -198,6 +216,8 @@ void Execute(string line)
    long magic = (long)StringToInteger(Field(parts, n, "magic"));
    if(magic != InpMagic) { Print("⚠️ magic 唔符，略過：", line); MarkSeen(id); Ack(id, false, 0, "magic mismatch"); return; }
    MarkSeen(id);                                          // 先記，再執行：寧可漏一次，唔好重複落單
+   if(!InpDryRun && TradeBlockedReason() != "")           // 三個自動交易開關任何一個關，先回報原因，唔送單
+   { Print("❌ 自動交易被擋：", TradeBlockedReason(), " ", line); Ack(id, false, 0, "trade not allowed: " + TradeBlockedReason()); return; }
    trade.SetExpertMagicNumber(InpMagic);
    trade.SetDeviationInPoints(InpSlippagePts);
 
