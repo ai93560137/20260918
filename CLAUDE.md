@@ -54,7 +54,7 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 4. 不要刪 bucket 物件、不要刪函式、不要改 IAM（除了 `iam-public` 這個既定步驟），除非使用者明確要求。
 5. 不要用 `gcp_agent.py` 以外的方法繞過 dry-run（例如自己組 REST 請求去部署）。
 6. 改完 `main.py` 要部署時，先跑 `python3 -m unittest scripts/test_gcp_agent.py`（工具本身的測試）與
-   `python3 backtest.py --help`（確認模組還能匯入），再部署。
+   `python3 tests/test_wsgi_app.py`（確認模組還能匯入、路由正常），再部署。（R253 刪咗舊黃金回測 `backtest.py`）
 
 ## VM（ib-data／claude-ops）規則
 
@@ -90,7 +90,7 @@ run 模式的寫入流程：`env set/unset` 用目前的程式碼映像建立新
 
 ```bash
 python3.11 -m py_compile main.py          # Cloud Run 係 3.11；本機 python3 太新會漏掉語法錯誤
-python3 -m py_compile backtest.py scripts/*.py
+python3 -m py_compile scripts/*.py
 python3 -m unittest scripts/test_gcp_agent.py -v
 python3 scripts/gcp_agent.py deploy          # 離線也能跑：打包 + 來源檢查
 ```
