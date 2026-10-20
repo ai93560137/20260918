@@ -119,12 +119,52 @@ def set_mode(control, mode, reason, set_by, now, auto_reset_day=None):
     log_event(f"🔀 [{config.TEAM_NAME}] 模式 → {mode}（{set_by}）：{reason}", severity="WARNING" if mode != "RUN" else "INFO", component="mode")
 
 
+def own_positions(payload):
+    """EA 心跳 positions[]（EA 已只數自己 magic）→ 乾淨列表。"""
+    out = []
+    for p in (payload.get("positions") or []) if isinstance(payload.get("positions"), list) else []:
+        if not isinstance(p, dict):
+            continue
+        side = 1 if str(p.get("side") or "").upper() == "BUY" else -1
+        entry, lots = market.to_float(p.get("entry")), market.to_float(p.get("lots"))
+        if entry is None or lots is None:
+            continue
+        out.append({"ticket": p.get("ticket"), "side": side, "entry": entry, "lots": lots,
+                    "stop": (market.to_float(p.get("sl")) or None), "target": (market.to_float(p.get("tp")) or None),
+                    "opened_ts": market.to_float(p.get("open_time")) or 0})
+    return out
+
+
+def live_position(account):
+    """實倉模式：持倉以 EA 心跳為準（最多 1 張；多過 1 張取最早嗰張，並記警告）。"""
+    pos = (account or {}).get("positions") or []
+    if not pos:
+        return None
+    if len(pos) > 1:
+        log_event(f"⚠️ [{config.TEAM_NAME}] EA 回報 {len(pos)} 張自己 magic 嘅倉（應該最多 1 張）", severity="WARNING", component="ea")
+    p = sorted(pos, key=lambda x: x.get("opened_ts") or 0)[0]
+    return {**p, "decision_id": None, "source": "ea"}
+
+
+def pending_has(state, op):
+    now = now_ts()
+    return any((not c.get("acked")) and c["text"].startswith(op + "|") and now - c["ts"] < executor.CMD_TTL_SEC
+               for c in (state.get("pending_cmds") or []))
+
+
 def risk_ladder(state, control, account, bar, now):
     """使用者 10-20：真倉同 C 戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
     「自己嘅權益」= 本金 + 累計已實現 + 浮動；保證金水平係戶口級。"""
     principal = market.to_float(control.get("principal_hkd"))
-    daily_usd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"])
-    cum_usd = paper.cumulative_pnl_usd(state, bar["close"])
+    if config.EXECUTE:
+        # 真倉：EA 回報（戶口貨幣 HKD）：daily_pnl＝自己 magic 今日已實現、floating＝自己 magic 浮動、realized_total＝自 InpLedgerStart
+        floating = market.to_float(account.get("floating"), 0.0) or 0.0
+        daily_hkd = (market.to_float(account.get("daily_pnl"), 0.0) or 0.0) + floating
+        cum_hkd = (market.to_float(account.get("realized_total"), 0.0) or 0.0) + floating
+        daily_usd, cum_usd = daily_hkd / config.HKD_PER_USD, cum_hkd / config.HKD_PER_USD
+    else:
+        daily_usd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"])
+        cum_usd = paper.cumulative_pnl_usd(state, bar["close"])
     own_equity = (principal + cum_usd * config.HKD_PER_USD) if principal else None
     if own_equity is not None and own_equity > (control.get("equity_peak") or 0.0):
         control["equity_peak"] = round(own_equity, 2)
@@ -164,9 +204,11 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
     handled = False
     if lad["stop"] and mode != "STOP":
         why = "；".join(lad["reasons"])
-        closed = paper.force_close(state, bar, "日蝕 −" + f"{config.DAILY_LOSS_STOP_PCT:g}% 平倉停機", now)
+        closed = None
         if config.EXECUTE:
-            rec["applied"] = enqueue_cmd(state, "CLOSE", None, None, now, decision_id)
+            rec["applied"] = (enqueue_cmd(state, "CLOSE", None, None, now, decision_id) if state.get("position") and not pending_has(state, "close") else "HOLD")
+        else:
+            closed = paper.force_close(state, bar, "日蝕 −" + f"{config.DAILY_LOSS_STOP_PCT:g}% 平倉停機", now)
         set_mode(control, "STOP", why, "ladder", now, auto_reset_day=next_day)
         rec.update(kind="ladder", action="CLOSE", final="CLOSE", reason=why,
                    paper_exit=({"reason": closed["reason"], "pnl_usd": closed["pnl_usd"]} if closed else rec.get("paper_exit")))
@@ -287,9 +329,17 @@ def cmd_text(state, now):
 def process_bar(state, bar, m1, m15, account, now):
     """新 M1 收盤。回傳 (決策紀錄或 None, 摘要)。"""
     day = market.ny_date(now)
-    exit_rec = paper.on_bar(state, bar, now)
-    if exit_rec:
-        log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
+    exit_rec = None
+    if config.EXECUTE:
+        state["position"] = live_position(account)       # 真倉：持倉以 EA 為準；止損止賺由伺服器端 SL／TP 執行
+        pos_live = state["position"]
+        if pos_live and rules.hold_expired(pos_live.get("opened_ts") or now, now) and not pending_has(state, "close"):
+            enqueue_cmd(state, "CLOSE", None, None, now, uuid.uuid4().hex)
+            log_event(f"⏱ [{config.TEAM_NAME}] 最長持倉 {config.MAX_HOLD_MIN} 分鐘到，排 close", severity="WARNING", component="ea")
+    else:
+        exit_rec = paper.on_bar(state, bar, now)
+        if exit_rec:
+            log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
     gate = legacy_gate()                       # 只作參考資料傳畀 Claude，唔係硬閘（使用者 10-20）
     market_open = market.is_gold_market_open(now)
     control = load_control()
@@ -311,6 +361,9 @@ def process_bar(state, bar, m1, m15, account, now):
         _record(state, rec, day)
         return rec, rec["reason"]
     if control["mode"] == "STOP":
+        if config.EXECUTE and state.get("position") and not pending_has(state, "close"):   # 使用者／日蝕 STOP：真倉即排 close
+            enqueue_cmd(state, "CLOSE", None, None, now, uuid.uuid4().hex)
+            log_event(f"🛑 [{config.TEAM_NAME}] STOP 而有倉，排 close", severity="WARNING", component="ea")
         return None, f"STOP（{control.get('set_by')}）：{control.get('reason') or ''}"
     if not market_open:
         return None, "休市"
@@ -367,9 +420,14 @@ def handle_heartbeat(payload):
     now = now_ts()
     m1_raw = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
     m15_raw = payload.get("m15_ohlc") if isinstance(payload.get("m15_ohlc"), dict) else {}
+    if config.ACCOUNT and str(payload.get("account") or "").strip() != config.ACCOUNT:   # 階段 B：只收指定登入號
+        log_event(f"ℹ️ [{config.TEAM_NAME}] 非 XAU_ACCOUNT 嘅心跳，略過（account={str(payload.get('account') or '')[:12]}）", component="ea")
+        return jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "credit", "floating", "daily_pnl",
-                                                             "buy_lots", "sell_lots", "net_lots", "margin_level")}
-    account.update(currency=str(payload.get("currency") or "HKD"), symbol=str(payload.get("symbol") or ""),
+                                                             "buy_lots", "sell_lots", "net_lots", "margin_level", "realized_total")}
+    account.update(account_id=str(payload.get("account") or "")[:24], server=str(payload.get("server") or "")[:40],
+                   dry_run=bool(payload.get("dry_run")), positions=own_positions(payload),
+                   currency=str(payload.get("currency") or "HKD"), symbol=str(payload.get("symbol") or ""),
                    status=str(payload.get("status") or ""), received_utc=market.fmt_utc(now), received_ts=now,
                    atr_m1=market.to_float(m15_raw.get("atr_m1")), atr_m5=market.to_float(m15_raw.get("atr_m5")),
                    atr_m15=market.to_float(m15_raw.get("atr_m15")))
@@ -390,6 +448,8 @@ def handle_heartbeat(payload):
             log_event(f"⚠️ M15 寫入失敗：{exc}", severity="WARNING")
 
     state = load_state()
+    if config.EXECUTE:
+        state["position"] = live_position(account)
     resp = {"status": "monitoring", "team": config.TEAM_NAME, "mode": "live" if config.EXECUTE else "shadow",
             "cmd_text": cmd_text(state, now)}
     bar = market.parse_bar(m1_raw) if m1_raw.get("is_new_bar") else None
@@ -439,6 +499,37 @@ def handle_cmd_ack(payload):
     return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
 
 
+def handle_test_cmd(payload):
+    """排一條指令（open／close／modify）畀 EA，測試清單用。要 XAU_TEST_CMDS=1 同權杖。"""
+    if not config.TEST_CMDS:
+        return jsonify({"status": "error", "message": "XAU_TEST_CMDS=0"}), 403
+    op = str(payload.get("op") or "").lower()
+    side = str(payload.get("side") or "BUY").upper()
+    action = {"open": ("OPEN_LONG" if side == "BUY" else "OPEN_SHORT"), "close": "CLOSE", "modify": "UPDATE_STOP"}.get(op)
+    if not action:
+        return jsonify({"status": "error", "message": "op must be open|close|modify"}), 400
+    stop, target = market.to_float(payload.get("sl")), market.to_float(payload.get("tp"))
+    lots = market.to_float(payload.get("lots"))
+    if action != "CLOSE" and stop is None and not payload.get("no_sl"):
+        return jsonify({"status": "error", "message": "sl required (or no_sl=true to test EA rejection)"}), 400
+    now = now_ts()
+    cid = uuid.uuid4().hex
+
+    def mutate(state):
+        text = executor.enqueue(state, action, (stop if stop is not None else 0.0), target, now, cid,
+                                lots=(lots if lots else None), tag="test")
+        if payload.get("no_sl") and text:
+            state["pending_cmds"][-1]["text"] = text.replace(f"sl={0.0:.2f}", "sl=0")
+            text = state["pending_cmds"][-1]["text"]
+        return state, text
+    try:
+        text = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)
+    except StorageError as exc:
+        return jsonify({"status": "error", "message": str(exc)[:100]}), 500
+    log_event(f"🧪 [{config.TEAM_NAME}] test_cmd 排指令：{text}", severity="WARNING", component="test")
+    return jsonify({"status": "queued", "id": cid[:8], "text": text, "will_send": config.EXECUTE}), 200
+
+
 def build_status():
     state = load_state()
     try:
@@ -464,7 +555,9 @@ def build_status():
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
         "gate": legacy_gate(), "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
-        "account_received_utc": account.get("received_utc"),
+        "account_received_utc": account.get("received_utc"), "account_id": account.get("account_id"), "server": account.get("server"),
+        "ea_dry_run": account.get("dry_run"), "xau_account": config.ACCOUNT or None, "test_cmds": config.TEST_CMDS,
+        "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
         "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),
         "trades_today": paper.trades_today(state, market.ny_date(now)),
@@ -507,6 +600,8 @@ def entry(req):
         return handle_cmd_ack(payload)
     if action == "tg_signal":                          # [R290] VM 監聽腳本推上嚟嘅外部頻道訊息
         return tgsignal.handle_signal(payload)
+    if action == "test_cmd":                           # 階段 B 測試清單：XAU_TEST_CMDS=1 先開放；真倉前要關
+        return handle_test_cmd(payload)
     if "equity" in payload or action in ("check_gate", "heartbeat"):
         return handle_heartbeat(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200

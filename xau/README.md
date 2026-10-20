@@ -30,9 +30,9 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
   唯一開關 GCS `xau/control.json`（`mode` RUN／PAUSE／STOP、`set_by`、`auto_reset_day`、`principal_hkd` 私人）；使用者設嘅模式程式唔會自己改。見 `handoff/天覆陣.md` §5。
 - 實倉階段（`XAU_EXECUTE=1`）：EA 改指向本服務，心跳回應 `cmd_text` 帶指令，EA 執行後 `cmd_ack` 回報。要先有新 EA（PR B），同埋影子達到預先登記標準（PR C）。
 
-## 新執行器 EA（PR B，`mt5/TianfuExecutor.mq5`，v0.1 未編譯未測）
+## 新執行器 EA（`mt5/TianfuExecutor.mq5` v0.3，未編譯未測；安裝 `mt5/README.md`，階段 B 測試 `mt5/TEST_PLAN.md`）
 
-純執行器：每 60 秒心跳（帶權杖、`margin_level`、只計自己 magic 嘅持倉／今日已實現／浮動、M1／M15 K 線），執行回應 `cmd_text`，`cmd_ack` 回報。
+純執行器：每 60 秒心跳（帶權杖、`account` 登入號、`server`、`margin_level`、只計自己 magic 嘅持倉／今日已實現／浮動／`realized_total`、M1／M15 K 線），執行回應 `cmd_text`，`cmd_ack` 回報。
 只管 `_Symbol`＋`InpMagic`；唔接手、唔平其他 magic 嘅單；冇 SL 嘅 open 拒絕；`InpDryRun=true`（預設）只印指令唔落單；id 去重存檔案 `MQL5/Files/tianfu_seen_<symbol>.txt`。
 使用者自己喺 MetaEditor 編譯、先掛 demo。線上 V23 歸 XAUUSD GCP／TV 陣，唔郁。
 
@@ -60,7 +60,9 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `CLAUDE_PROVIDER` | `api` | `vertex` = 用同一 GCP 專案嘅 Vertex AI Claude（要喺 Model Garden 啟用） |
 | `CLAUDE_MODEL`／`CLAUDE_EFFORT` | `claude-opus-5-5`／`low` | 影子階段量延遲同費用再調 |
 | `GATE_MODEL`／`GATE_EFFORT` | `claude-haiku-5-5`／`low` | 空倉先篩；留空 = 唔篩 |
-| `XAU_EXECUTE` | `0` | 1 = 實倉指令 |
+| `XAU_EXECUTE` | `0` | 1 = 實倉：持倉／止損／止賺以 EA 心跳 `positions[]` 為準，日蝕用 EA `daily_pnl`＋`floating`，累計用 `realized_total`＋`floating`；最長持倉、STOP 由服務排 `close` |
+| `XAU_ACCOUNT` | 空 | 只收呢個 MT5 登入號嘅心跳／只向佢發指令，其他回 `ignored`（階段 B：demo 登入號；真倉：真戶口登入號）。空＝全收 |
+| `XAU_TEST_CMDS` | `0` | 1 = 開放 `action=test_cmd`（階段 B 測試清單排指令）；真倉前要關 |
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |
