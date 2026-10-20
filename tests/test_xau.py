@@ -433,6 +433,12 @@ r = client.get("/"); html = r.get_data(as_text=True)
 check("頁面頂有導覽列：12 個舊服務頁連結（絕對網址、同一次序）＋本頁高亮", html.count("class='nav-link' href='https://zhuge-risk-manager-1056099871997.europe-west1.run.app/?view=") == 12
       and html.index("?view=welcome") < html.index("?view=futu_range") < html.index("?view=longfei") < html.index("?view=fund_report")
       and "<span class='nav-link nav-current'>🌌 天覆陣 XAUUSD</span>" in html and "↗" not in html.split("</nav>")[0], html[:1500].split("<nav")[-1][:400])
+check("使用者 10-21：標題冇 CFD（MT5）、冇 AI 用量卡、決策表只有延遲、風控表冇 CLAUDE_PROVIDER／XAU_MAGIC／XAU_EXECUTE、冇模型字眼",
+      "<title>🌌 天覆陣・XAUUSD 自動交易</title>" in html and "天覆陣・XAUUSD 自動交易</h1>" in html and "CFD（MT5）" not in html
+      and "AI 今日用量" not in html and "延遲／費用" not in html and "<th>延遲</th>" in html and "cost_usd" not in html
+      and "CLAUDE_PROVIDER" not in html and "<td>XAU_MAGIC</td>" not in html and "<td>XAU_EXECUTE</td>" not in html and "effort" not in html and "claude-opus" not in html
+      and "<td>XAU_MAX_SL_USD</td>" in html)
+check("JSON 仍然有費用同模型（只係網頁唔顯示）", j["usage_today"].get("cost_usd") is not None and j.get("model") and j["risk"].get("CLAUDE_PROVIDER"))
 check("頁面有陣名、模擬倉、成交紀錄、硬性風控、模式", "天覆陣" in html and "模擬倉" in html and "成交紀錄" in html and "XAU_MAX_SL_USD" in html and "模式同風控" in html)
 j = client.get("/?format=json").get_json()
 check("JSON：stats、decisions、risk、階梯、模式", j["ladder"]["level"] in "ABD" and j["control"]["mode"] == "RUN" and j["stats"]["n"] >= 3 and j["decisions"] and j["risk"]["XAU_LOTS"] == 0.01, j["stats"])

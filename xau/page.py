@@ -35,6 +35,9 @@ PAGE_LINKS = [
 ]
 
 
+RISK_HIDE = {"CLAUDE_PROVIDER", "XAU_MAGIC", "XAU_EXECUTE"}   # 使用者 10-21：硬性風控表只顯示真正風控數值（內部設定唔顯示）
+
+
 def page_nav():
     items = "".join(f"<a class='nav-link' href='{esc(config.ZHUGE_URL)}?view={view}'>{label}</a>" for view, label in PAGE_LINKS)
     items += f"<span class='nav-link nav-current'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)} {esc(config.SYMBOL)}</span>"
@@ -114,14 +117,13 @@ def render(status):
         pos_txt, pos_desc = "冇", "空手"
     lad, ctl = s.get("ladder") or {}, s.get("control") or {}
     u = s.get("usage_today") or {}
-    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} CFD（MT5）自動交易</h1></div>"
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} 自動交易</h1></div>"
             f"{page_nav()}</div>")
     intro = ("<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣黃金差價合約（最多 1 張，固定 "
              f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（日蝕 −3% 停開新倉、−6% 平倉停機，換日自動重開；累計虧損 25% 停開新倉、換日自動恢復；保證金水平低停開新倉；"
              "止損距離、最長持倉），AI 無權改。舊系統嘅六關電閘、錦囊 v4 規則只作參考。"
              "先做模擬倉前向測試，達到預先登記標準、使用者講先轉真倉；真倉落單經 MT5 EA 執行指令。</p>"
-             f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・{esc(s.get('session'))}・模型 {esc(s.get('model'))}"
-             f"（effort {esc(s.get('effort'))}）{('＋篩選 ' + esc(s.get('gate_model'))) if s.get('gate_model') else ''}</p></div>")
+             f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・{esc(s.get('session'))}</p></div>")   # 使用者 10-21：唔顯示模型／費用
     key = s.get("api_key") or {}
     key_warn = ""
     if key.get("warn"):
@@ -143,7 +145,6 @@ def render(status):
            + card("而家持倉", esc(pos_txt), pos_desc)
            + card("已平倉累計", "—" if not m["trades"] else hk(m["points"]), f"{usd(m['points'])} USD；已扣點差 {config.SPREAD_USD:g}")
            + card("今日開倉", str(s.get("trades_today", 0)), f"上限 {s['risk'].get('XAU_MAX_TRADES_PER_DAY') or '不限'}")
-           + card("AI 今日用量", f"${u.get('cost_usd', 0):.2f}", f"決策 {u.get('decide', 0)} 次・篩選 {u.get('screen', 0)} 次・p95 {u.get('p95_ms') or '—'} ms")
            + "</div>")
     rows = "".join(
         f"<tr><td>{esc(fmt_hkt(t['opened_ts']))}</td><td>{esc(fmt_hkt(t['closed_ts']))}</td><td>{'好' if t['side'] > 0 else '淡'}</td>"
@@ -158,17 +159,17 @@ def render(status):
         f"<td><span class='tag'>{esc(d.get('final') or d.get('action'))}</span>{(' <small class=neg>AI 提 ' + esc(d.get('action')) + '</small>') if d.get('rejected') else ''}</td>"
         f"<td>{esc(d.get('reason'))}{('<br><small class=neg>擋：' + esc(d.get('rejected')) + '</small>') if d.get('rejected') else ''}"
         f"{('<br><small class=muted>' + esc(d.get('applied')) + '</small>') if d.get('applied') and d.get('applied') != 'HOLD' else ''}</td>"
-        f"<td>{esc(d.get('ms') or '—')} ms<br>${esc(d.get('cost_usd') or 0)}</td></tr>"
+        f"<td>{esc(d.get('ms') or '—')} ms</td></tr>"
         for d in list(reversed(s.get("decisions") or []))[:60])
     dec_html = ("<h3>🧠 最近決策（最新在上）</h3>"
-                + ("<div style='overflow-x:auto'><table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲／費用</th></tr>" + drows + "</table></div>"
+                + ("<div style='overflow-x:auto'><table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲</th></tr>" + drows + "</table></div>"
                    if drows else "<p class='muted'>未有決策。</p>"))
     sim = ("<div class='lf-grp lf-sim' id='lf-sim-top'><div class='lf-banner'>🧪 模擬倉（前向測試）</div>"
            + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
            + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
            + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
     lad_cls = {"A": "pos", "B": "", "D": "neg"}.get(lad.get("level"), "")
-    risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items())
+    risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items() if k not in RISK_HIDE)
     alerts = "；".join((lad.get("alerts") or {}).values()) or "冇"
     ctrl = ("<div class='section'><h2>🛡️ 模式同風控（只讀；開關只喺 GCS xau/control.json，冇網頁按鈕、冇硬鎖）</h2><div class='grid'>"
             + card("模式", esc(ctl.get("mode") or "RUN"), esc(run_text(s)))
@@ -179,5 +180,5 @@ def render(status):
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-            f"<meta http-equiv='refresh' content='300'><title>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}</title><style>{CSS}</style></head>"
+            f"<meta http-equiv='refresh' content='300'><title>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} 自動交易</title><style>{CSS}</style></head>"
             f"<body><div class='container'>{head}{intro}{real}{sim}{ctrl}{foot}</div></body></html>")
