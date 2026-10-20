@@ -545,6 +545,8 @@ def queue_test_cmd(payload, now):
         if payload.get("no_sl") and text:
             state["pending_cmds"][-1]["text"] = text.replace(f"sl={0.0:.2f}", "sl=0")
             text = state["pending_cmds"][-1]["text"]
+        if payload.get("resend") and text:                 # 測試清單第 5 項：ack 咗之後仍重送同一 id 180 秒，證明 EA 去重（只執行一次）
+            state["pending_cmds"][-1]["resend_until"] = now + 180
         return state, text
     try:
         text = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)

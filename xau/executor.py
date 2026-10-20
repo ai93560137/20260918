@@ -28,7 +28,7 @@ def cmd_text(state, now):
     if not config.EXECUTE:
         return ""
     return "\n".join(c["text"] for c in (state.get("pending_cmds") or [])
-                     if not c.get("acked") and now - c["ts"] < CMD_TTL_SEC)
+                     if (not c.get("acked") or now < (c.get("resend_until") or 0)) and now - c["ts"] < CMD_TTL_SEC)
 
 
 def ack(state, cid, payload, now):
