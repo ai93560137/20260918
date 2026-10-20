@@ -182,9 +182,11 @@ FAKE["xau/control.json"] = (json.dumps({**ctl0, "mode": "STOP", "reason": "使�
 n_calls = len(FB.calls)
 st, d = hb(173, 3995)
 check("使用者 STOP → 唔問 Claude、程式唔會自己改", len(FB.calls) == n_calls and d["message"].startswith("STOP") and json.loads(FAKE["xau/control.json"][0])["mode"] == "STOP", d)
-FAKE["xau/control.json"] = (json.dumps({**ctl0, "mode": "RUN", "reason": ""}), 3)
+FAKE["xau/control.json"] = (json.dumps({**ctl0, "mode": "RUN", "reason": "", "equity_peak": 99999.0}), 3)
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
-hb(174, 3995)                                                  # 開倉（AI OPEN_LONG）
+hb(174, 3995)
+_c = json.loads(FAKE["xau/control.json"][0])
+check("本金改變 → equity_peak 重設為當時權益（唔會用舊高水位亂發回撤警報）", _c["principal_seen"] == 20000 and _c["equity_peak"] < 99999.0 and not any("回撤" in t for t in TG), (_c["equity_peak"], TG[-2:]))                                                  # 開倉（AI OPEN_LONG）
 state = json.loads(FAKE["xau/state.json"][0]); check("開咗紙上倉", state["position"] is not None)
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
 st, d = hb(175, 3990, low=3989.0)

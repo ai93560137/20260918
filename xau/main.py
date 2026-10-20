@@ -98,7 +98,7 @@ def load_control():
     """唯一開關 GCS xau/control.json（冇網頁按鈕）。mode：RUN／PAUSE／STOP；set_by：user／ladder；
     auto_reset_day：紐約交易日，到咗自動返 RUN（只對 set_by=ladder 生效）；principal_hkd 私人。讀唔到當 STOP（fail-closed）。"""
     base = {"mode": "RUN", "reason": "", "set_by": "user", "set_at_utc": "", "auto_reset_day": None,
-            "principal_hkd": None, "equity_peak": 0.0, "alerts_sent": {}, "cum_loss_above": False, "cum_loss_day": ""}
+            "principal_hkd": None, "equity_peak": 0.0, "principal_seen": None, "alerts_sent": {}, "cum_loss_above": False, "cum_loss_day": ""}
     try:
         doc = storage.read_json(CONTROL_FILE, None)
     except StorageError as exc:
@@ -180,6 +180,10 @@ def risk_ladder(state, control, account, bar, now):
         daily_usd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"])
         cum_usd = paper.cumulative_pnl_usd(state, bar["close"])
     own_equity = (principal + cum_usd * config.HKD_PER_USD) if principal else None
+    if principal and control.get("principal_seen") != principal:      # 本金改咗（入金／出金／測試）：高水位重設為當時權益，免得回撤警報亂響
+        control["principal_seen"] = principal
+        control["equity_peak"] = round(own_equity, 2)
+        log_event(f"ℹ️ [{config.TEAM_NAME}] 本金已更新，高水位重設", component="ladder")
     if own_equity is not None and own_equity > (control.get("equity_peak") or 0.0):
         control["equity_peak"] = round(own_equity, 2)
     lad = rules.ladder(principal_hkd=principal, own_equity=own_equity,
