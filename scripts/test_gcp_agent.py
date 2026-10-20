@@ -241,6 +241,7 @@ def svc_body(ready=True):
         "template": {"timeout": "300s", "serviceAccount": "sa@x.iam.gserviceaccount.com",
                      "scaling": {"maxInstanceCount": 20},
                      "containers": [{"image": "europe-west1-docker.pkg.dev/p/cloud-run-source-deploy/zhuge-risk-manager@sha256:abc",
+                                     "baseImageUri": "europe-west1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/python311",
                                      "resources": {"limits": {"cpu": "1", "memory": "512Mi"}},
                                      "env": [{"name": "WEBHOOK_API_KEY", "value": "supersecret123"},
                                              {"name": "BROKER_API_URL", "value": "https://broker.example/hook.php?t=abc123tok&x=1"},
@@ -654,7 +655,24 @@ class XauProfileTests(unittest.TestCase):
                          {"XAU_EXECUTE": "0", "CLAUDE_MODEL": "claude-opus-5-5", "WEBHOOK_API_KEY": "supersecret123"})
         self.assertNotIn("supersecret123", out, "抄過嚟嘅值唔可以印出")
         self.assertEqual(body["template"]["serviceAccount"], "sa@x.iam.gserviceaccount.com")
+        self.assertEqual(body["template"]["containers"][0]["baseImageUri"],
+                         "europe-west1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/python311", "建立時要抄 baseImageUri，否則容器冇 runtime")
         self.assertFalse(any(c[1].endswith(":setIamPolicy") for c in s.calls), "唔改 IAM")
+
+    def test_update_path_adds_missing_base_image_uri(self):
+        """10-20 真實事故：zhuge-xau 容器冇 baseImageUri，enableAutomaticUpdates=true → direct exec 失敗。更新路徑要補上，dry-run 要印。"""
+        broken = {**svc_body(), "name": XAU_SVC_NAME}
+        broken["template"]["containers"][0].pop("baseImageUri")
+        s = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, broken))])
+        out, code = run(["--profile", "xau", "deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("冇 baseImageUri", out)
+        self.assertIn("python311", out)
+        self.assertEqual(writes(s), [])
+        ok_svc = {**svc_body(), "name": XAU_SVC_NAME}
+        s2 = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, ok_svc))])
+        out2, _ = run(["--profile", "xau", "deploy"], s2, RUN_ENV)
+        self.assertNotIn("冇 baseImageUri", out2)
 
 
 if __name__ == "__main__":

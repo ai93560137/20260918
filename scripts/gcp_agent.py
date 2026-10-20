@@ -989,6 +989,10 @@ def template_service(ctx: Ctx):
     bbc = (base or {}).get("buildConfig") or {}
     btpl = (base or {}).get("template") or {}
     image_uri = f"{ctx.region}-docker.pkg.dev/{ctx.project}/cloud-run-source-deploy/{ctx.service}:latest"
+    bcont = (btpl.get("containers") or [{}])[0]
+    # enableAutomaticUpdates 時 Cloud Build 只出 app layer，容器要有 baseImageUri 先有 runtime／launcher
+    # （10-20 zhuge-xau-00002 「direct exec: no such file」就係冇呢個）
+    base_image_uri = bcont.get("baseImageUri") or bbc.get("baseImage")
     env = [{"name": k, "value": v} for k, v in (parse_kv(ctx.args.set_env) if ctx.args.set_env else {}).items()]
     # --copy-env KEY…：由 zhuge-risk-manager 抄環境變數（例如 WEBHOOK_SECRET_TOKEN），值唔會印出、唔經命令列
     base_env = {e["name"]: e for e in ((btpl.get("containers") or [{}])[0].get("env") or [])}
@@ -1006,7 +1010,8 @@ def template_service(ctx: Ctx):
                                           "enableAutomaticUpdates": bbc.get("enableAutomaticUpdates"), "imageUri": image_uri}.items() if v is not None},
         "template": {
             "containers": [{"image": image_uri, "env": env,
-                            "resources": (btpl.get("containers") or [{}])[0].get("resources") or {"limits": {"cpu": "1000m", "memory": "512Mi"}}}],
+                            **({"baseImageUri": base_image_uri} if base_image_uri else {}),
+                            "resources": bcont.get("resources") or {"limits": {"cpu": "1000m", "memory": "512Mi"}}}],
             "timeout": btpl.get("timeout") or "300s",
             "scaling": {"minInstanceCount": 0, "maxInstanceCount": 5},
             **({"serviceAccount": btpl["serviceAccount"]} if btpl.get("serviceAccount") else {}),
@@ -1027,6 +1032,9 @@ def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
     if not bc.get("functionTarget") and not bc.get("baseImage"):
         die("這個 Cloud Run 服務不是用原始碼部署的（沒有 buildConfig），本工具不處理。")
     container = svc["template"]["containers"][0]
+    if bc.get("enableAutomaticUpdates") and not container.get("baseImageUri") and bc.get("baseImage"):
+        container["baseImageUri"] = bc["baseImage"]
+        plan(f"⚠️ 容器冇 baseImageUri 而 buildConfig.enableAutomaticUpdates=true（修訂會 direct exec 失敗）→ 補上 {short_image(bc['baseImage'])}")
     image_uri = (bc.get("imageUri") or container.get("image", "")).split("@", 1)[0]
     bucket = run_sources_bucket(ctx)
     head, dirty = git_revision(source_dir, ctx.profile["files"])
