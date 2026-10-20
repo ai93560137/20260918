@@ -28,7 +28,7 @@
 #include <Trade\Trade.mqh>
 
 input string InpUrl        = "";        // Cloud Run 網址（結尾 /）；留空＝按圖表商品自動（XAUUSD→zhuge-xau、EURUSD→zhuge-eurusd…，v0.36 使用者 10-21）
-input string InpToken      = "";        // WEBHOOK_SECRET_TOKEN（唔會印出）
+input string InpToken      = "123456";  // WEBHOOK_SECRET_TOKEN（使用者 10-21 確認預設 123456；公開 repo，人人睇到，轉真倉前建議換私人權杖）
 input long   InpMagic      = 0;         // 只管呢個 magic 嘅單；0＝按圖表商品自動（XAUUSD 921、EURUSD 922、GBPUSD 923、AUDUSD 924、USDJPY 925；V23 用 920）
 input int    InpIntervalSec = 60;       // 心跳間隔（秒）
 input int    InpTimeoutMs  = 15000;     // WebRequest 逾時
