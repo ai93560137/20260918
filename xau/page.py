@@ -19,8 +19,26 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 .lf-grp{margin-bottom:28px}.lf-banner{font-size:20px;font-weight:700;padding:10px 18px;border-radius:12px;margin:8px 0 14px;color:#fff}
 .lf-real .lf-banner{background:#b45309}.lf-sim .lf-banner{background:#1d4ed8}
 .lf-real .section{border-left:8px solid #d97706;background:#fffbeb}.lf-sim .section{border-left:8px solid #2563eb;background:#eff6ff}
-@media (prefers-color-scheme: dark){:root{--bg:#111;--card:#1b1b1b;--text:#eee;--muted:#9aa}.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}
+.nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:24px;padding:15px 20px;background:var(--card);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.nav-links{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.nav-link{display:inline-block;padding:7px 12px;border-radius:20px;font-size:13px;font-weight:700;text-decoration:none;color:var(--primary);background:#eef4ff;white-space:nowrap}
+.nav-link:hover{background:#dbe7ff}.nav-current{background:#0f62fe;color:#fff;cursor:default}
+@media (prefers-color-scheme: dark){.nav-link{background:#1e2a44}.nav-link:hover{background:#27375c}.nav-current{background:#0f62fe;color:#fff}:root{--bg:#111;--card:#1b1b1b;--text:#eee;--muted:#9aa}.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}
 """
+
+
+# 使用者 10-21：同舊服務每頁頂一樣嘅導覽列（同樣次序、emoji、pill 樣式）；舊服務嘅頁用絕對網址，本頁係目前頁
+PAGE_LINKS = [
+    ("welcome", "🏠 首頁"), ("futu_range", "🌬️ 風揚陣恆指波幅"), ("es_range", "🇺🇸 風揚陣ES 波幅"), ("nq_range", "🇺🇸 風揚陣NQ 波幅"),
+    ("bazhentu", "🐍 蛇蟠陣"), ("dizai", "⛰️ 地載陣"), ("yunchui", "☁️ 雲垂陣"), ("canary", "🐤 金絲雀"), ("htf", "📈 鳥翔 HTF 掛單"),
+    ("longfei", "🐉 龍飛陣"), ("strategies", "🧭 策略總表"), ("fund_report", "📊 基金報告"),
+]
+
+
+def page_nav():
+    items = "".join(f"<a class='nav-link' href='{esc(config.ZHUGE_URL)}?view={view}'>{label}</a>" for view, label in PAGE_LINKS)
+    items += f"<span class='nav-link nav-current'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)} {esc(config.SYMBOL)}</span>"
+    return f"<nav class='nav-links' aria-label='頁面導覽'>{items}</nav>"
 
 
 def esc(x):
@@ -96,7 +114,8 @@ def render(status):
         pos_txt, pos_desc = "冇", "空手"
     lad, ctl = s.get("ladder") or {}, s.get("control") or {}
     u = s.get("usage_today") or {}
-    head = f"<h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} CFD（MT5）自動交易</h1>"
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} CFD（MT5）自動交易</h1></div>"
+            f"{page_nav()}</div>")
     intro = ("<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣黃金差價合約（最多 1 張，固定 "
              f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（日蝕 −3% 停開新倉、−6% 平倉停機，換日自動重開；累計虧損 25% 停開新倉、換日自動恢復；保證金水平低停開新倉；"
              "止損距離、最長持倉），AI 無權改。舊系統嘅六關電閘、錦囊 v4 規則只作參考。"

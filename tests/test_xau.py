@@ -430,6 +430,9 @@ state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; state
 
 print("=== 頁面 ===")
 r = client.get("/"); html = r.get_data(as_text=True)
+check("頁面頂有導覽列：12 個舊服務頁連結（絕對網址、同一次序）＋本頁高亮", html.count("class='nav-link' href='https://zhuge-risk-manager-1056099871997.europe-west1.run.app/?view=") == 12
+      and html.index("?view=welcome") < html.index("?view=futu_range") < html.index("?view=longfei") < html.index("?view=fund_report")
+      and "<span class='nav-link nav-current'>🌌 天覆陣 XAUUSD</span>" in html and "↗" not in html.split("</nav>")[0], html[:1500].split("<nav")[-1][:400])
 check("頁面有陣名、模擬倉、成交紀錄、硬性風控、模式", "天覆陣" in html and "模擬倉" in html and "成交紀錄" in html and "XAU_MAX_SL_USD" in html and "模式同風控" in html)
 j = client.get("/?format=json").get_json()
 check("JSON：stats、decisions、risk、階梯、模式", j["ladder"]["level"] in "ABD" and j["control"]["mode"] == "RUN" and j["stats"]["n"] >= 3 and j["decisions"] and j["risk"]["XAU_LOTS"] == 0.01, j["stats"])
