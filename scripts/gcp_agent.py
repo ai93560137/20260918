@@ -66,15 +66,13 @@ except ImportError:  # pragma: no cover
     sys.exit(2)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEPLOY_FILES = ("main.py", "requirements.txt", "gates.html", "order.html",
-                "jinnang_sheet.html", "jinnang_tracker.html", "bazhentu.html",
-                "factsheet.html")
+DEPLOY_FILES = ("main.py", "requirements.txt", "bazhentu.html", "factsheet.html")   # [R253] 舊 XAUUSD 四個頁面已移除
 ENTRY_POINT = "receive_tradingview_signal"
 # [R291] 部署 profile：zhuge = 舊服務（repo 根目錄）；xau = 🌌 天覆陣（xau/ 目錄，獨立 Cloud Run 服務）。
 #        --profile xau 會把預設服務名改成 zhuge-xau、來源改成 xau/、進入點改成 xau_entry、check 只打兩個頁面。
 PROFILES = {
     "zhuge": {"service": "zhuge-risk-manager", "source": REPO_ROOT, "entry": ENTRY_POINT, "files": DEPLOY_FILES,
-              "check_views": ("", "gates_app", "order_app", "dashboard", "info"), "tail_ok": ("app = _build_wsgi_app()", "return response")},
+              "check_views": ("", "strategies", "longfei", "fund_report", "bazhentu"), "tail_ok": ("app = _build_wsgi_app()", "return response")},
     "xau": {"service": "zhuge-xau", "source": REPO_ROOT / "xau", "entry": "xau_entry",
             "files": None,   # 動態：xau/*.py ＋ requirements.txt ＋ LESSONS.md ＋ reference/*.md（見 profile_files；10-20 漏咗 notify.py 令修訂起唔到）
             "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",)},

@@ -556,12 +556,12 @@ class CloudRunDeployTests(unittest.TestCase):
 class CheckTests(unittest.TestCase):
     def test_check_reports_pages(self):
         def fake_get(url, timeout):
-            return FakeResp(200 if "order_app" not in url else 500, text="<html>" + "x" * 300 + "</html>")
+            return FakeResp(200 if "longfei" not in url else 500, text="<html>" + "x" * 300 + "</html>")
         with mock.patch.object(ga.requests, "get", side_effect=fake_get):
             out, code = run(["check", "--url", URI], FakeSession([]))
         self.assertEqual(code, 1)
-        self.assertIn("❌ order_app", out)
-        self.assertIn("✅ dashboard", out)
+        self.assertIn("❌ longfei", out)
+        self.assertIn("✅ strategies", out)
 
 
 XAU_SVC_NAME = f"projects/{PROJECT}/locations/{RUN_REGION}/services/zhuge-xau"
