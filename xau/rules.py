@@ -88,13 +88,14 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
         dist = (last - stop) * side
         if dist <= 0:
             return "HOLD", None, None, "止損喺錯邊"
+        nd = getattr(cfg, "PRICE_DIGITS", 2)
         if dist < cfg.MIN_SL_USD:
-            stop = round(last - side * cfg.MIN_SL_USD, 2)
+            stop = round(last - side * cfg.MIN_SL_USD, nd)
         if dist > cfg.MAX_SL_USD:
-            return "HOLD", None, None, f"止損距離 {dist:.2f} 超過上限 {cfg.MAX_SL_USD:g} 美元"
+            return "HOLD", None, None, f"止損距離 {dist / cfg.PIP:.1f} pip 超過上限 {cfg.MAX_SL_PIPS:g} pip"
         if target is not None and (target - last) * side <= 0:
             target = None                                   # 止賺錯邊：唔送，唔因此拒絕
-        return action, round(stop, 2), (round(target, 2) if target is not None else None), None
+        return action, round(stop, nd), (round(target, nd) if target is not None else None), None
 
     if action == "CLOSE":
         if position is None:

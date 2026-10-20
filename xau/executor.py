@@ -10,13 +10,14 @@ def enqueue(state, action, stop, target, now, cmd_id, lots=None, tag=""):
     """回傳指令文字或 None。cmd_id 取前 8 碼。"""
     cid = cmd_id[:8]
     lots = rules.lots() if lots is None else lots
-    tp = "" if target is None else f"{target:.2f}"
+    nd = config.PRICE_DIGITS
+    tp = "" if target is None else f"{target:.{nd}f}"
     if action in ("OPEN_LONG", "OPEN_SHORT"):
-        text = f"open|{'BUY' if action == 'OPEN_LONG' else 'SELL'}|{lots:.2f}|sl={stop:.2f}|tp={tp}|magic={config.MAGIC}|id={cid}"
+        text = f"open|{'BUY' if action == 'OPEN_LONG' else 'SELL'}|{lots:.2f}|sl={stop:.{nd}f}|tp={tp}|magic={config.MAGIC}|id={cid}"
     elif action == "CLOSE":
         text = f"close|all|magic={config.MAGIC}|id={cid}"
     elif action == "UPDATE_STOP":
-        text = f"modify|all|sl={stop:.2f}|tp={tp}|magic={config.MAGIC}|id={cid}"
+        text = f"modify|all|sl={stop:.{nd}f}|tp={tp}|magic={config.MAGIC}|id={cid}"
     else:
         return None
     state["pending_cmds"] = [c for c in (state.get("pending_cmds") or []) if now - c["ts"] < CMD_TTL_SEC]

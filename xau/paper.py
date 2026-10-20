@@ -12,9 +12,10 @@ def empty_state():
 
 
 def _pnl(pos, exit_price):
+    """紙上盈虧（美元）：價差 × 合約 × 手數 係報價貨幣，再除 QUOTE_PER_USD（USD 報價 = 1）。"""
     gross = (exit_price - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"]
     cost = config.SPREAD_USD * config.CONTRACT_SIZE * pos["lots"]
-    return round(gross - cost, 2)
+    return round((gross - cost) / (config.QUOTE_PER_USD or 1.0), 2)
 
 
 def _close(state, pos, exit_price, reason, now_ts):
@@ -82,7 +83,7 @@ def daily_pnl_usd(state, day_start_ts, last_price):
     """今日（紐約交易日）已平倉盈虧＋未平倉浮動（美元），只計天覆陣自己嘅紙上單。"""
     realized = sum(t["pnl_usd"] for t in (state.get("trades") or []) if t.get("closed_ts", 0) >= day_start_ts)
     pos = state.get("position")
-    unreal = (last_price - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"] if pos and last_price else 0.0
+    unreal = (last_price - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"] / (config.QUOTE_PER_USD or 1.0) if pos and last_price else 0.0
     return round(realized + unreal, 2)
 
 
@@ -90,7 +91,7 @@ def cumulative_pnl_usd(state, last_price):
     """累計已實現＋浮動（美元），只計天覆陣自己嘅單。"""
     realized = sum(t["pnl_usd"] for t in (state.get("trades") or []))
     pos = state.get("position")
-    unreal = (last_price - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"] if pos and last_price else 0.0
+    unreal = (last_price - pos["entry"]) * pos["side"] * config.CONTRACT_SIZE * pos["lots"] / (config.QUOTE_PER_USD or 1.0) if pos and last_price else 0.0
     return round(realized + unreal, 2)
 
 
@@ -122,10 +123,10 @@ def apply(state, action, stop, target, bar, now_ts, day, decision_id):
         state["position"] = {"side": side, "entry": price, "lots": rules.lots(), "stop": stop, "target": target,
                              "opened_ts": now_ts, "decision_id": decision_id}
         n = count_trade(state, day)
-        return f"紙上開倉 {'多' if side > 0 else '空'} @ {price:.2f} 止損 {stop} 止賺 {target or '—'}（今日第 {n} 筆）"
+        return f"紙上開倉 {'多' if side > 0 else '空'} @ {price:.{config.PRICE_DIGITS}f} 止損 {stop} 止賺 {target or '—'}（今日第 {n} 筆）"
     if action == "CLOSE" and pos:
         t = _close(state, pos, price, "AI 平倉", now_ts)
-        return f"紙上平倉 @ {price:.2f}，{t['pnl_usd']:+.2f} 美元"
+        return f"紙上平倉 @ {price:.{config.PRICE_DIGITS}f}，{t['pnl_usd']:+.2f} 美元"
     if action == "UPDATE_STOP" and pos:
         old = pos.get("stop")
         pos["stop"], pos["target"] = stop, target

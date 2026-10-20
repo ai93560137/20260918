@@ -76,6 +76,9 @@ PROFILES = {
     "xau": {"service": "zhuge-xau", "source": REPO_ROOT / "xau", "entry": "xau_entry",
             "files": None,   # 動態：xau/*.py ＋ requirements.txt ＋ LESSONS.md ＋ reference/*.md（見 profile_files；10-20 漏咗 notify.py 令修訂起唔到）
             "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",)},
+    # 使用者 10-21：一個產品一個服務——同一套 xau/ 程式，另一個 Cloud Run 服務，用環境變數 XAU_SYMBOL 分辨
+    "eurusd": {"service": "zhuge-eurusd", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
+               "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",)},
 }
 
 
