@@ -56,6 +56,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | 變數 | 預設 | 說明 |
 |---|---|---|
 | `WEBHOOK_SECRET_TOKEN` | — | 必須；同舊服務相同。心跳同回報都要帶 |
+| `ZHUGE_URL` | `https://zhuge-risk-manager-1056099871997.europe-west1.run.app/` | 舊服務網址，頁頂導覽列連去各陣頁（`?view=…`） |
 | `ANTHROPIC_API_KEY` | — | `CLAUDE_PROVIDER=api`（預設，同龍飛陣）時必須 |
 | `CLAUDE_PROVIDER` | `api` | `vertex` = 用同一 GCP 專案嘅 Vertex AI Claude（要喺 Model Garden 啟用） |
 | `CLAUDE_MODEL`／`CLAUDE_EFFORT` | `claude-opus-5-5`／`low` | 影子階段量延遲同費用再調 |

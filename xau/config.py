@@ -34,6 +34,7 @@ def _b(name, default):
 
 TEAM_NAME = _s("XAU_TEAM_NAME", "天覆陣")
 TEAM_EMOJI = _s("XAU_TEAM_EMOJI", "🌌")
+ZHUGE_URL = _s("ZHUGE_URL", "https://zhuge-risk-manager-1056099871997.europe-west1.run.app/").rstrip("/") + "/"   # 舊服務（導覽列連去各陣頁）
 SYMBOL = _s("XAU_SYMBOL", "XAUUSD")
 TOKEN = _s("WEBHOOK_SECRET_TOKEN", "")                      # 同 zhuge-risk-manager 相同；心跳同指令回報都要帶
 BUCKET = _s("XAU_BUCKET", "zhuge-risk-manager-bucket")
