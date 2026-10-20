@@ -33,7 +33,7 @@ class ReviewTest(unittest.TestCase):
         b = [{"ts": "2", "final": "HOLD"}, {"ts": "3", "final": "OPEN_SHORT"}]
         self.assertEqual([x["ts"] for x in lr._merge_decs(a, b)], ["1", "2", "3"])
 
-    def test_fee_section_scales_gross_not_fee(self):  # [R264]
+    def test_fee_section_scales_gross_not_fee(self):  # [R290]
         rows = [{"product": "SPY", "pnl_hkd_gross": 780.0, "pnl_hkd_net": 750.0},
                 {"product": "SPY", "pnl_hkd_gross": 780.0, "pnl_hkd_net": 750.0},
                 {"product": "HSI", "pnl_hkd_gross": 500.0, "pnl_hkd_net": 400.0}]

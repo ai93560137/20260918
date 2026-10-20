@@ -241,6 +241,7 @@ def svc_body(ready=True):
         "template": {"timeout": "300s", "serviceAccount": "sa@x.iam.gserviceaccount.com",
                      "scaling": {"maxInstanceCount": 20},
                      "containers": [{"image": "europe-west1-docker.pkg.dev/p/cloud-run-source-deploy/zhuge-risk-manager@sha256:abc",
+                                     "baseImageUri": "europe-west1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/python311",
                                      "resources": {"limits": {"cpu": "1", "memory": "512Mi"}},
                                      "env": [{"name": "WEBHOOK_API_KEY", "value": "supersecret123"},
                                              {"name": "BROKER_API_URL", "value": "https://broker.example/hook.php?t=abc123tok&x=1"},
@@ -561,6 +562,117 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("❌ order_app", out)
         self.assertIn("✅ dashboard", out)
+
+
+XAU_SVC_NAME = f"projects/{PROJECT}/locations/{RUN_REGION}/services/zhuge-xau"
+
+
+def create_perm_handlers(ok=True):
+    perms = (["cloudbuild.builds.create", "cloudbuild.builds.get", "run.services.create", "run.services.get"] if ok else [])
+    return [("POST", f"projects/{PROJECT}:testIamPermissions", FakeResp(200, {"permissions": perms})),
+            ("GET", "run-sources-demo-proj-europe-west1/iam/testPermissions",
+             FakeResp(200, {"permissions": ["storage.objects.create"] if ok else []}))]
+
+
+class XauProfileTests(unittest.TestCase):
+    """[R291] 天覆陣 profile：打包 xau/、服務 zhuge-xau、進入點 xau_entry、服務不存在就建立（唔改 IAM）。"""
+
+    def test_local_only_packs_xau_files(self):
+        s = FakeSession([])
+        out, code = run(["--profile", "xau", "deploy", "--local-only"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("profile zhuge-xau", out)
+        for name in ("brain.py", "rules.py", "reference/legacy_rules.md"):
+            self.assertIn(name, out)
+        self.assertNotIn("gates.html", out)
+        self.assertEqual(s.calls, [])
+
+    def test_xau_files_cover_all_py_and_imports(self):
+        files = ga.profile_files(ga.PROFILES["xau"])
+        src = ga.PROFILES["xau"]["source"]
+        for p in src.glob("*.py"):
+            self.assertIn(p.name, files)
+        self.assertIn("reference/legacy_rules.md", files)
+        self.assertEqual(ga.missing_local_imports(src, files), [])
+        # 漏咗一個模組 → 來源檢查要擋（10-20 真實事故：冇 notify.py，修訂 exit(82)）
+        short = tuple(f for f in files if f != "notify.py")
+        self.assertEqual(ga.missing_local_imports(src, short), ["notify.py"])
+        problems = ga.sanity_check_sources(src, {**ga.PROFILES["xau"], "files": short})
+        self.assertTrue(any("notify.py" in p for p in problems), problems)
+
+    def test_status_uses_profile_service(self):
+        s = FakeSession([("GET", XAU_SVC_NAME, FakeResp(404, text="nf"))])
+        out, code = run(["--profile", "xau", "status"], s, RUN_ENV)
+        self.assertIn("zhuge-xau", out)
+
+    def test_dry_run_create_plans_without_writing(self):
+        s = FakeSession(create_perm_handlers(ok=True) + [
+            ("GET", XAU_SVC_NAME, FakeResp(404, text="nf")),
+            ("GET", SVC_NAME, FakeResp(200, svc_body())),          # 樣板：沿用舊服務 baseImage
+        ])
+        out, code = run(["--profile", "xau", "deploy", "--set-env", "XAU_EXECUTE=0"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("建立新 Cloud Run 服務", out)
+        self.assertIn("xau_entry", out)
+        self.assertIn("python311", out)
+        self.assertIn("唔會**自動開放未經驗證叫用", out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_dry_run_create_reports_missing_permissions(self):
+        s = FakeSession(create_perm_handlers(ok=False) + [
+            ("GET", XAU_SVC_NAME, FakeResp(404, text="nf")), ("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["--profile", "xau", "deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("run.services.create", out)
+        self.assertEqual(writes(s), [])
+
+    def test_yes_create_flow(self):
+        build_op = {"name": f"operations/build/{PROJECT}/abc", "done": False}
+        build_done = {"name": build_op["name"], "done": True, "response": {"status": "SUCCESS", "results": {"images": [
+            {"name": f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/zhuge-xau:latest", "digest": "sha256:new"}]}}}
+        created = {**svc_body(), "name": XAU_SVC_NAME, "latestReadyRevision": f"{XAU_SVC_NAME}/revisions/zhuge-xau-00001-abc"}
+        s = FakeSession(create_perm_handlers(ok=True) + [
+            ("GET", XAU_SVC_NAME, lambda m, u, kw: FakeResp(404, text="nf") if not any(c[0] == "POST" and c[1].endswith("/services") and "validateOnly" not in (c[2].get("params") or {}) for c in s.calls) else FakeResp(200, created)),
+            ("GET", SVC_NAME, FakeResp(200, svc_body())),
+            ("POST", "run-sources-demo-proj-europe-west1/o", FakeResp(200, {"generation": "7"})),
+            ("POST", "builds:submit", FakeResp(200, {"buildOperation": build_op})),
+            ("GET", build_op["name"], FakeResp(200, build_done)),
+            ("POST", f"locations/{RUN_REGION}/services", FakeResp(200, {"name": "projects/p/locations/l/operations/o9", "done": True, "response": created})),
+        ])
+        out, code = run(["--profile", "xau", "deploy", "--yes", "--no-check", "--set-env", "XAU_EXECUTE=0", "CLAUDE_MODEL=claude-opus-5-5",
+                         "--copy-env", "WEBHOOK_API_KEY"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        creates = [c for c in s.calls if c[0] == "POST" and c[1].endswith("/services")]
+        self.assertEqual(len(creates), 2, "validateOnly 一次、真建立一次")
+        self.assertEqual(creates[0][2]["params"], {"serviceId": "zhuge-xau", "validateOnly": "true"})
+        body = creates[1][2]["json"]
+        self.assertNotIn("name", body)
+        self.assertEqual(body["buildConfig"]["functionTarget"], "xau_entry")
+        self.assertEqual(body["template"]["containers"][0]["image"],
+                         f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/zhuge-xau:latest@sha256:new")
+        self.assertEqual({e["name"]: e["value"] for e in body["template"]["containers"][0]["env"]},
+                         {"XAU_EXECUTE": "0", "CLAUDE_MODEL": "claude-opus-5-5", "WEBHOOK_API_KEY": "supersecret123"})
+        self.assertNotIn("supersecret123", out, "抄過嚟嘅值唔可以印出")
+        self.assertEqual(body["template"]["serviceAccount"], "sa@x.iam.gserviceaccount.com")
+        self.assertEqual(body["template"]["containers"][0]["baseImageUri"],
+                         "europe-west1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/python311", "建立時要抄 baseImageUri，否則容器冇 runtime")
+        self.assertFalse(any(c[1].endswith(":setIamPolicy") for c in s.calls), "唔改 IAM")
+
+    def test_update_path_adds_missing_base_image_uri(self):
+        """10-20 真實事故：zhuge-xau 容器冇 baseImageUri，enableAutomaticUpdates=true → direct exec 失敗。更新路徑要補上，dry-run 要印。"""
+        broken = {**svc_body(), "name": XAU_SVC_NAME}
+        broken["template"]["containers"][0].pop("baseImageUri")
+        s = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, broken))])
+        out, code = run(["--profile", "xau", "deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("⚠️ 容器冇 baseImageUri", out)
+        self.assertIn("python311", out)
+        self.assertEqual(writes(s), [])
+        ok_svc = {**svc_body(), "name": XAU_SVC_NAME}
+        s2 = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, ok_svc))])
+        out2, _ = run(["--profile", "xau", "deploy"], s2, RUN_ENV)
+        self.assertNotIn("⚠️ 容器冇 baseImageUri", out2)   # 只對計畫嗰行（commit 訊息都可能有呢幾個字）
 
 
 if __name__ == "__main__":

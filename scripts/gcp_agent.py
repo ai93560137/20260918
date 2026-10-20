@@ -70,6 +70,44 @@ DEPLOY_FILES = ("main.py", "requirements.txt", "gates.html", "order.html",
                 "jinnang_sheet.html", "jinnang_tracker.html", "bazhentu.html",
                 "factsheet.html")
 ENTRY_POINT = "receive_tradingview_signal"
+# [R291] 部署 profile：zhuge = 舊服務（repo 根目錄）；xau = 🌌 天覆陣（xau/ 目錄，獨立 Cloud Run 服務）。
+#        --profile xau 會把預設服務名改成 zhuge-xau、來源改成 xau/、進入點改成 xau_entry、check 只打兩個頁面。
+PROFILES = {
+    "zhuge": {"service": "zhuge-risk-manager", "source": REPO_ROOT, "entry": ENTRY_POINT, "files": DEPLOY_FILES,
+              "check_views": ("", "gates_app", "order_app", "dashboard", "info"), "tail_ok": ("app = _build_wsgi_app()", "return response")},
+    "xau": {"service": "zhuge-xau", "source": REPO_ROOT / "xau", "entry": "xau_entry",
+            "files": None,   # 動態：xau/*.py ＋ requirements.txt ＋ LESSONS.md ＋ reference/*.md（見 profile_files；10-20 漏咗 notify.py 令修訂起唔到）
+            "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",)},
+}
+
+
+def profile_files(profile, source_dir=None):
+    """profile 要打包嘅檔案。xau 自動收齊目錄入面所有 .py（唔包 tests／mt5），免得漏 import。"""
+    if profile.get("files") is not None:
+        return profile["files"]
+    source_dir = Path(source_dir or profile["source"])
+    names = sorted(p.name for p in source_dir.glob("*.py")) if source_dir.exists() else []
+    names = ["main.py"] + [n for n in names if n != "main.py"]
+    extra = [n for n in ("requirements.txt", "LESSONS.md") if (source_dir / n).exists()]
+    refs = sorted(f"reference/{p.name}" for p in (source_dir / "reference").glob("*.md")) if (source_dir / "reference").exists() else []
+    return tuple(names + extra + refs)
+
+
+def missing_local_imports(source_dir: Path, files):
+    """main.py 同其他 .py 入面 `import x`／`from x import` 嘅本地模組（source_dir 有 x.py）一定要喺 files 入面。"""
+    import re as _re
+    files = set(files)
+    missing = set()
+    for name in [f for f in files if f.endswith(".py")]:
+        try:
+            text = (source_dir / name).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for m in _re.finditer(r"^(?:import|from)\s+([A-Za-z_][A-Za-z0-9_]*)", text, _re.M):
+            mod = m.group(1)
+            if (source_dir / f"{mod}.py").exists() and f"{mod}.py" not in files:
+                missing.add(f"{mod}.py")
+    return sorted(missing)
 DEFAULT_RUNTIME = "python312"
 DEFAULT_MEMORY = "512Mi"
 DEFAULT_TIMEOUT = 60
@@ -108,8 +146,13 @@ class Ctx:
             self.region = os.environ.get("GCP_RUN_REGION", DEFAULT_RUN_REGION).strip()
         else:
             self.region = os.environ.get("GCP_REGION", DEFAULT_FN_REGION).strip()
+        self.profile = PROFILES[(getattr(args, "profile", None) or os.environ.get("GCP_PROFILE") or "zhuge").strip().lower()]
         self.function = os.environ.get("GCP_FUNCTION", ENTRY_POINT).strip()
-        self.service = os.environ.get("GCP_SERVICE", DEFAULT_SERVICE).strip()
+        # 命令列明確畀咗 --profile 就用該 profile 嘅服務名（唔理 $GCP_SERVICE），免得環境變數令 xau 部署去錯舊服務
+        self.service = (self.profile["service"] if getattr(args, "profile", None)
+                        else os.environ.get("GCP_SERVICE", self.profile["service"])).strip()
+        src = getattr(args, "source", None)
+        self.profile = {**self.profile, "files": profile_files(self.profile, src or self.profile["source"])}
         self.bucket = os.environ.get("GCP_BUCKET", "zhuge-risk-manager-bucket").strip()
         if getattr(args, "region", None):
             self.region = args.region
@@ -502,8 +545,8 @@ def cmd_check(ctx: Ctx):
         url = fn.get("serviceConfig", {}).get("uri") or fn.get("url")
     print(f"檢查 {url}")
     ok = True
-    for view in ("", "gates_app", "order_app", "dashboard", "info"):
-        target = url if not view else f"{url}?view={view}"
+    for view in ctx.profile["check_views"]:
+        target = url if not view else (f"{url}{view}" if view.startswith("?") else f"{url}?view={view}")
         try:
             r = requests.get(target, timeout=30)
             good = r.status_code == 200 and len(r.text) > 200
@@ -639,6 +682,38 @@ def update_service(ctx: Ctx, svc, what):
     op = ctx.call("PATCH", url, json=body)
     wait_run_operation(ctx, op)
     return report_after_update(ctx, svc)
+
+
+def create_service(ctx: Ctx, svc):
+    """[R291] 建立新服務：先 validateOnly，再真的建立。唔碰 IAM。"""
+    body = json.loads(json.dumps(svc))
+    body.pop("name", None)
+    url = f"{RUN_API}/{ctx.fn_parent}/services"
+    ctx.call("POST", url, params={"serviceId": ctx.service, "validateOnly": "true"}, json=body)
+    print("✅ GCP 伺服器端驗證通過（validateOnly，尚未建立）")
+    print(f"🚀 建立服務 {ctx.service}（約 1–3 分鐘）…")
+    op = ctx.call("POST", url, params={"serviceId": ctx.service}, json=body)
+    wait_run_operation(ctx, op)
+    return report_after_update(ctx, {})
+
+
+def missing_create_permissions(ctx: Ctx):
+    """建立新服務要嘅權限：Cloud Build、run-sources bucket 寫入、專案層級 run.services.create。"""
+    missing = []
+    r = ctx.session.post(f"https://cloudresourcemanager.googleapis.com/v1/projects/{ctx.project}:testIamPermissions",
+                         json={"permissions": ["cloudbuild.builds.create", "cloudbuild.builds.get", "run.services.create", "run.services.get"]}, timeout=60)
+    have = set((r.json() if r.status_code == 200 else {}).get("permissions", []))
+    for perm, role in (("cloudbuild.builds.create", "Cloud Build 編輯者 roles/cloudbuild.builds.editor"),
+                       ("cloudbuild.builds.get", "Cloud Build 編輯者 roles/cloudbuild.builds.editor"),
+                       ("run.services.create", "Cloud Run 開發人員 roles/run.developer"),
+                       ("run.services.get", "Cloud Run 開發人員 roles/run.developer")):
+        if perm not in have:
+            missing.append(f"專案層級 {perm}（角色：{role}）")
+    bucket = run_sources_bucket(ctx)
+    r = ctx.session.get(f"{GCS_API}/b/{bucket}/iam/testPermissions", params={"permissions": ["storage.objects.create"]}, timeout=60)
+    if "storage.objects.create" not in (r.json() if r.status_code == 200 else {}).get("permissions", []):
+        missing.append(f"bucket {bucket} 的 storage.objects.create（角色：Storage 物件建立者 roles/storage.objectCreator）")
+    return missing
 
 
 def report_after_update(ctx: Ctx, before):
@@ -818,11 +893,11 @@ def cmd_env(ctx: Ctx):
 
 
 # ---- deploy -------------------------------------------------------------------
-def build_zip(source_dir: Path):
+def build_zip(source_dir: Path, files=DEPLOY_FILES):
     buf = io.BytesIO()
     manifest = []
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for name in DEPLOY_FILES:
+        for name in files:
             p = source_dir / name
             if not p.exists():
                 die(f"缺少部署檔案：{p}")
@@ -834,15 +909,24 @@ def build_zip(source_dir: Path):
     return buf.getvalue(), manifest
 
 
-def sanity_check_sources(source_dir: Path):
+def sanity_check_sources(source_dir: Path, profile=None):
+    profile = profile or PROFILES["zhuge"]
+    entry, files = profile["entry"], profile["files"]
     problems = []
     main_py = (source_dir / "main.py").read_text(encoding="utf-8", errors="replace")
-    if f"def {ENTRY_POINT}(" not in main_py:
-        problems.append(f"main.py 找不到 def {ENTRY_POINT}(")
+    if f"def {entry}(" not in main_py:
+        problems.append(f"main.py 找不到 def {entry}(")
     tail = main_py.rstrip()
-    if not (tail.endswith("app = _build_wsgi_app()") or tail.endswith("return response")):
-        problems.append("main.py 結尾不是 `app = _build_wsgi_app()` 也不是 `return response`（檔案可能貼到一半）")
-    for html_name in [n for n in DEPLOY_FILES if n.endswith(".html")]:
+    if not any(tail.endswith(t) for t in profile["tail_ok"]):
+        problems.append(f"main.py 結尾不是預期的 {' / '.join(profile['tail_ok'])}（檔案可能貼到一半）")
+    for miss in missing_local_imports(source_dir, files):
+        problems.append(f"main.py／其他模組 import 咗 {miss}，但部署清單冇佢（修訂會起唔到：ImportError）")
+    for py_name in [n for n in files if n.endswith(".py") and n != "main.py"]:
+        try:
+            compile((source_dir / py_name).read_text(encoding="utf-8", errors="replace"), py_name, "exec")
+        except (SyntaxError, OSError) as exc:
+            problems.append(f"{py_name}：{exc}")
+    for html_name in [n for n in files if n.endswith(".html")]:
         text = (source_dir / html_name).read_text(encoding="utf-8", errors="replace")
         if not text.lstrip().lower().startswith("<!doctype html>") or not text.rstrip().lower().endswith("</html>"):
             problems.append(f"{html_name} 頭尾不完整")
@@ -856,13 +940,13 @@ def sanity_check_sources(source_dir: Path):
     return problems
 
 
-def git_revision(source_dir: Path):
+def git_revision(source_dir: Path, files=DEPLOY_FILES):
     import subprocess
 
     try:
         head = subprocess.run(["git", "-C", str(source_dir), "log", "-1", "--format=%h %ci %s"],
                               capture_output=True, text=True, timeout=10).stdout.strip()
-        dirty = subprocess.run(["git", "-C", str(source_dir), "status", "--porcelain", "--", *DEPLOY_FILES],
+        dirty = subprocess.run(["git", "-C", str(source_dir), "status", "--porcelain", "--", *files],
                                capture_output=True, text=True, timeout=10).stdout.strip()
         return head, bool(dirty)
     except Exception:  # noqa: BLE001
@@ -894,22 +978,75 @@ def missing_deploy_permissions(ctx: Ctx, svc):
     return missing
 
 
+def template_service(ctx: Ctx):
+    """[R291] 建立新服務用嘅樣板：沿用 zhuge-risk-manager 嘅 buildConfig（baseImage）同資源設定；冇就用預設。"""
+    base = None
+    try:
+        r = ctx.session.get(f"{RUN_API}/{ctx.fn_parent}/services/{DEFAULT_SERVICE}", timeout=60)
+        base = r.json() if r.status_code == 200 else None
+    except requests.RequestException:
+        base = None
+    bbc = (base or {}).get("buildConfig") or {}
+    btpl = (base or {}).get("template") or {}
+    image_uri = f"{ctx.region}-docker.pkg.dev/{ctx.project}/cloud-run-source-deploy/{ctx.service}:latest"
+    bcont = (btpl.get("containers") or [{}])[0]
+    # enableAutomaticUpdates 時 Cloud Build 只出 app layer，容器要有 baseImageUri 先有 runtime／launcher
+    # （10-20 zhuge-xau-00002 「direct exec: no such file」就係冇呢個）
+    base_image_uri = bcont.get("baseImageUri") or bbc.get("baseImage")
+    env = [{"name": k, "value": v} for k, v in (parse_kv(ctx.args.set_env) if ctx.args.set_env else {}).items()]
+    # --copy-env KEY…：由 zhuge-risk-manager 抄環境變數（例如 WEBHOOK_SECRET_TOKEN），值唔會印出、唔經命令列
+    base_env = {e["name"]: e for e in ((btpl.get("containers") or [{}])[0].get("env") or [])}
+    for key in (getattr(ctx.args, "copy_env", None) or []):
+        if key in {e["name"] for e in env}:
+            continue
+        if key not in base_env:
+            die(f"--copy-env {key}：{DEFAULT_SERVICE} 冇呢個環境變數")
+        env.append(base_env[key])
+        plan(f"環境變數 {key} 由 {DEFAULT_SERVICE} 抄過嚟（{mask(key, base_env[key].get('value', ''))}）")
+    svc = {
+        "name": ctx.svc_name,
+        "ingress": "INGRESS_TRAFFIC_ALL",
+        "buildConfig": {k: v for k, v in {"baseImage": bbc.get("baseImage"), "functionTarget": ctx.profile["entry"],
+                                          "enableAutomaticUpdates": bbc.get("enableAutomaticUpdates"), "imageUri": image_uri}.items() if v is not None},
+        "template": {
+            "containers": [{"image": image_uri, "env": env,
+                            **({"baseImageUri": base_image_uri} if base_image_uri else {}),
+                            "resources": bcont.get("resources") or {"limits": {"cpu": "1000m", "memory": "512Mi"}}}],
+            "timeout": btpl.get("timeout") or "300s",
+            "scaling": {"minInstanceCount": 0, "maxInstanceCount": 5},
+            **({"serviceAccount": btpl["serviceAccount"]} if btpl.get("serviceAccount") else {}),
+        },
+    }
+    return svc, bool(base)
+
+
 def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
     a = ctx.args
-    svc = require_service(ctx)
+    svc = get_service(ctx, quiet=True)
+    creating = svc is None
+    if creating:
+        svc, from_base = template_service(ctx)
+        plan(f"⚠️ 建立新 Cloud Run 服務 {ctx.svc_name}（{'樣板沿用 ' + DEFAULT_SERVICE + ' 嘅 baseImage／資源／服務帳戶' if from_base else '找不到 ' + DEFAULT_SERVICE + '，用預設 512Mi／300s'}）")
+        plan("建立後**唔會**自動開放未經驗證叫用（唔改 IAM）：請使用者喺控制台「安全性」開「允許未經驗證的叫用」")
     bc = dict(svc.get("buildConfig") or {})
     if not bc.get("functionTarget") and not bc.get("baseImage"):
         die("這個 Cloud Run 服務不是用原始碼部署的（沒有 buildConfig），本工具不處理。")
     container = svc["template"]["containers"][0]
+    if bc.get("enableAutomaticUpdates") and not container.get("baseImageUri") and bc.get("baseImage"):
+        container["baseImageUri"] = bc["baseImage"]
+        plan(f"⚠️ 容器冇 baseImageUri 而 buildConfig.enableAutomaticUpdates=true（修訂會 direct exec 失敗）→ 補上 {short_image(bc['baseImage'])}")
     image_uri = (bc.get("imageUri") or container.get("image", "")).split("@", 1)[0]
     bucket = run_sources_bucket(ctx)
-    head, dirty = git_revision(source_dir)
+    head, dirty = git_revision(source_dir, ctx.profile["files"])
     print(f"📌 來源版本：{head or '（非 git）'}{'  ⚠️ 部署檔案有尚未 commit 的修改' if dirty else ''}")
     plan(f"上傳原始碼 zip 到 gs://{bucket}/services/{ctx.service}/<時間戳>.zip")
     plan(f"Cloud Build 建置（buildpacks，函式進入點 {bc.get('functionTarget')}，基底 {short_image(bc.get('baseImage'))}）→ {image_uri}")
-    plan(f"更新服務 {ctx.svc_name}：換上新映像並建立新修訂，100% 流量切到新修訂")
-    plan(f"環境變數保持不變（{len(container.get('env', []))} 個），目前修訂 {short_rev(svc.get('latestReadyRevision'))} 保留可 rollback")
-    missing = missing_deploy_permissions(ctx, svc)
+    if creating:
+        plan(f"建立服務 {ctx.svc_name}：環境變數 {len(container.get('env', []))} 個（--set-env），100% 流量到第一個修訂")
+    else:
+        plan(f"更新服務 {ctx.svc_name}：換上新映像並建立新修訂，100% 流量切到新修訂")
+        plan(f"環境變數保持不變（{len(container.get('env', []))} 個），目前修訂 {short_rev(svc.get('latestReadyRevision'))} 保留可 rollback")
+    missing = missing_deploy_permissions(ctx, svc) if not creating else missing_create_permissions(ctx)
     if missing:
         print("⚠️ 服務帳戶還缺以下權限，現在加 --yes 會失敗：")
         for m in missing:
@@ -957,7 +1094,10 @@ def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
     bc["sourceLocation"] = f"gs://{bucket}/{quote(obj)}" + (f"#{generation}" if generation else "")
     svc["buildConfig"] = bc
     svc["traffic"] = LATEST_TRAFFIC
-    after = update_service(ctx, svc, "換上新映像，建立新修訂")
+    if creating:
+        after = create_service(ctx, svc)
+    else:
+        after = update_service(ctx, svc, "換上新映像，建立新修訂")
     if not a.no_check:
         ctx.args.url = service_url(after)
         cmd_check(ctx)
@@ -965,12 +1105,12 @@ def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
 
 def cmd_deploy(ctx: Ctx):
     a = ctx.args
-    source_dir = Path(a.source).resolve()
-    problems = sanity_check_sources(source_dir)
-    zip_bytes, manifest = build_zip(source_dir)
+    source_dir = Path(a.source).resolve() if a.source else Path(ctx.profile["source"]).resolve()
+    problems = sanity_check_sources(source_dir, ctx.profile)
+    zip_bytes, manifest = build_zip(source_dir, ctx.profile["files"])
     print(f"📦 部署套件（{len(zip_bytes)} bytes）：")
     for name, size, digest in manifest:
-        print(f"   {name:<18} {size:>8} bytes  sha256 {digest}")
+        print(f"   {name:<26} {size:>8} bytes  sha256 {digest}")
     if problems:
         for p in problems:
             print(f"❌ {p}")
@@ -1072,7 +1212,8 @@ def build_parser():
     p.add_argument("--target", choices=["run", "function"],
                    help="操作對象：run = Cloud Run 服務（預設），function = Cloud Functions（或設 $GCP_TARGET）")
     p.add_argument("--region", help="區域（run 預設 $GCP_RUN_REGION 或 europe-west1；function 預設 $GCP_REGION 或 asia-east1）")
-    p.add_argument("--service", help="Cloud Run 服務名稱（預設 $GCP_SERVICE 或 zhuge-risk-manager）")
+    p.add_argument("--profile", choices=sorted(PROFILES), help="部署 profile：zhuge（預設，舊服務）或 xau（天覆陣，xau/ 目錄、服務 zhuge-xau）")
+    p.add_argument("--service", help="Cloud Run 服務名稱（預設 $GCP_SERVICE 或 profile 的預設）")
     p.add_argument("--function", help="函式名稱（預設 receive_tradingview_signal）")
     p.add_argument("--bucket", help="狀態 bucket（預設 zhuge-risk-manager-bucket）")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -1110,11 +1251,12 @@ def build_parser():
     s.add_argument("--yes", action="store_true")
 
     s = sub.add_parser("deploy", help="部署（預設 dry-run）")
-    s.add_argument("--source", default=str(REPO_ROOT))
+    s.add_argument("--source", default=None, help="來源目錄（預設 profile 的目錄：repo 根目錄或 xau/）")
     s.add_argument("--runtime", default=DEFAULT_RUNTIME)
     s.add_argument("--memory", default=DEFAULT_MEMORY)
     s.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
     s.add_argument("--set-env", nargs="*", metavar="KEY=VAL")
+    s.add_argument("--copy-env", nargs="*", metavar="KEY", help="建立新服務時由 zhuge-risk-manager 抄環境變數（值唔印出）")
     s.add_argument("--no-check", action="store_true", help="部署後不打頁面檢查")
     s.add_argument("--local-only", action="store_true", help="只做本機來源檢查，不連線 GCP")
     s.add_argument("--yes", action="store_true")
@@ -1149,11 +1291,12 @@ def main(argv=None):
             ctx.session
         except SystemExit:
             print("ℹ️ 只做本機套件檢查（不連線 GCP）。" if args.local_only else "⚠️ 沒有 GCP 憑證，只做本機套件檢查。")
-            problems = sanity_check_sources(Path(args.source).resolve())
-            zip_bytes, manifest = build_zip(Path(args.source).resolve())
-            print(f"📦 部署套件（{len(zip_bytes)} bytes）：")
+            source_dir = Path(args.source).resolve() if args.source else Path(ctx.profile["source"]).resolve()
+            problems = sanity_check_sources(source_dir, ctx.profile)
+            zip_bytes, manifest = build_zip(source_dir, ctx.profile["files"])
+            print(f"📦 部署套件（{len(zip_bytes)} bytes，profile {ctx.service}）：")
             for name, size, digest in manifest:
-                print(f"   {name:<18} {size:>8} bytes  sha256 {digest}")
+                print(f"   {name:<26} {size:>8} bytes  sha256 {digest}")
             for pr in problems:
                 print(f"❌ {pr}")
             sys.exit(1 if problems else 0)
