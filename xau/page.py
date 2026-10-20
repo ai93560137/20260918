@@ -85,7 +85,7 @@ def render(status):
         pos_desc = f"止蝕 {pos.get('stop')}・止賺 {pos.get('target') or '—'}・{fmt_hkt(pos['opened_ts'])} 開"
     else:
         pos_txt, pos_desc = "冇", "空手"
-    lad, ctl, gate = s.get("ladder") or {}, s.get("control") or {}, s.get("gate") or {}
+    lad, ctl = s.get("ladder") or {}, s.get("control") or {}
     u = s.get("usage_today") or {}
     head = f"<h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} CFD（MT5）自動交易</h1>"
     intro = ("<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣黃金差價合約（最多 1 張，固定 "
@@ -148,7 +148,6 @@ def render(status):
             + card("今日盈虧（階梯用）", "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}",
                    "只計天覆陣嘅單，含浮動" + ("" if ctl.get("principal_set") else "；⚠ 未設本金，日蝕未啟用"))
             + card("只提示嘅警報", esc(alerts), "回撤／保證金：只發 Telegram，唔停唔鎖")
-            + card("舊電閘（只供 Claude 參考）", esc(gate.get("status") or "—"), esc(gate.get("reason")))
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"

@@ -57,8 +57,8 @@ class FakeBrain:
     def decide(self, ctx): self.calls.append("decide"); self.ctx = ctx; return {**self.decision, "_usage": {"in": 5000, "out": 300, "cache_read": 4000, "model": "claude-opus-5-5"}, "_ms": 2500, "_lessons": None}
 FB = FakeBrain(); xau._brain = FB
 
-def set_gate(open_):
-    FAKE["zhuge_gate_state.json"] = (json.dumps({"armed": open_, "hard_lock": None, "news_lock": False, "risk": {"reason": "六關全過"}}), 1)
+def set_gate(open_):   # R253 後舊電閘已刪：保留呼叫點，唔做嘢
+    pass
 
 T0 = 1792599000
 def hb(i, close, high=None, low=None, new=True, token="tok"):
@@ -90,7 +90,7 @@ for i in range(29):
 check("前 29 根：M1 歷史不足，冇問 AI", st == 200 and FB.calls == [] and "歷史不足" in d["message"], (d, FB.calls))
 for i in range(29, 40):
     st, d = hb(i, 4000 + i * 0.1)
-check("第 30 根起：照問（舊電閘 LOCK 唔係硬閘）", FB.calls and d["decision"] is not None, (d, FB.calls))
+check("第 30 根起：照問", FB.calls and d["decision"] is not None, (d, FB.calls))
 FB.calls.clear()
 st, d = hb(39, 4000 + 39 * 0.1)
 check("同一根重送 → duplicate", d.get("message") == "duplicate M1 bar", d)
@@ -98,10 +98,9 @@ st, d = hb(39, 4000, new=False)
 check("is_new_bar=false 只存快照", d.get("message") is None and d["status"] == "monitoring", d)
 m1 = json.loads(FAKE["xau/m1.json"][0]); check("M1 歷史 40 根、M15 ≥ 32 根", len(m1) == 40 and len(json.loads(FAKE["xau/m15.json"][0])) >= 32, len(json.loads(FAKE["xau/m15.json"][0])))
 
-print("=== 舊電閘只係參考：LOCK 都照問 ===")
 FB.screen_look = False
 st, d = hb(40, 4004)
-check("LOCK 且空倉 → 照篩選（唔係硬閘）", FB.calls == ["screen"] and "篩選" in d["message"], (FB.calls, d))
+check("空倉 → 先篩選", FB.calls == ["screen"] and "篩選" in d["message"], (FB.calls, d))
 FB.calls.clear()
 
 print("=== 篩選 ===")
@@ -134,7 +133,7 @@ print("=== 影子：開倉 → 止損 ===")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": 4020.0, "confidence": 0.8, "reason": "突破"}
 st, d = hb(42, 4005)
 check("開倉：紙上持倉、cmd_text 空", d["decision"]["final"] == "OPEN_LONG" and d["cmd_text"] == "" and json.loads(FAKE["xau/state.json"][0])["position"]["entry"] == 4005, d)
-check("context 有 M15／M1／風控／舊電閘參考／階梯", FB.ctx["legacy_gate"]["status"] == "OPEN" and len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
+check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": None, "confidence": 0.8, "reason": "再開"}
 st, d = hb(43, 4006)
 check("有倉時 AI 再開 → 擋", d["decision"]["final"] == "HOLD" and "已有倉位" in d["decision"]["rejected"], d)
@@ -373,9 +372,39 @@ r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op"
 check("test_cmd open → queued", r.get_json()["status"] == "queued" and r.get_json()["text"].startswith("open|SELL|0.01|sl=4010.50|tp=3990.00"), r.get_json())
 r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op": "open", "no_sl": True}), content_type="application/json")
 check("test_cmd no_sl → sl=0（測 EA 拒絕）", "sl=0|" in r.get_json()["text"], r.get_json())
+# GCS 測試指令檔（唔使權杖）
+state = json.loads(FAKE["xau/state.json"][0]); state["pending_cmds"] = []; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t0", "op": "open", "side": "BUY", "sl": 3990, "tp": 4015}), 1)
+st, d = live_hb(9, 4003, [])
+tf = json.loads(FAKE["xau/test_cmd.json"][0])
+check("test_cmd.json 冇 ts → 唔排，result 記錯誤", "open|" not in d["cmd_text"] and tf["result"]["status"] == "error" and "ts" in tf["result"]["message"], tf)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t0b", "op": "open", "side": "BUY", "sl": 3990, "tp": 4015, "ts": T1 + 9 * 60 - 700}), 2)
+st, d = live_hb(9, 4003, [])
+tf = json.loads(FAKE["xau/test_cmd.json"][0])
+check("test_cmd.json ts 超過 10 分鐘 → 唔排（部署後殘留檔唔會落單）", "open|" not in d["cmd_text"] and tf["result"]["status"] == "error", tf)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t1", "op": "open", "side": "BUY", "sl": 3990, "tp": 4015, "ts": T1 + 9 * 60}), 3)
+st, d = live_hb(9, 4003, [])
+check("GCS test_cmd.json → 心跳排 open 指令", "open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|id=" in d["cmd_text"], d)
+tf = json.loads(FAKE["xau/test_cmd.json"][0])
+check("test_cmd.json 寫回 consumed＋result", bool(tf.get("consumed")) and tf["result"]["status"] == "queued" and tf["id"] == "t1", tf)
+st, d = live_hb(10, 4003, [])
+check("已 consumed 嘅檔唔會再排", d["cmd_text"].count("open|") == 1, d)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t2", "op": "open", "side": "SELL", "ts": T1 + 11 * 60}), 5)
+st, d = live_hb(11, 4003, [])
+tf = json.loads(FAKE["xau/test_cmd.json"][0])
+check("test_cmd.json 冇 sl → 唔排，result 記錯誤", d["cmd_text"].count("open|") == 1 and tf["result"]["status"] == "error", tf)
 config.TEST_CMDS = False
 r = client.post("/", data=json.dumps({"token": "tok", "action": "test_cmd", "op": "close"}), content_type="application/json")
 check("XAU_TEST_CMDS=0 → 403", r.status_code == 403)
+FAKE["xau/test_cmd.json"] = (json.dumps({"id": "t3", "op": "close", "ts": T1 + 12 * 60}), 7)
+st, d = live_hb(12, 4003, [])
+check("XAU_TEST_CMDS=0 → 唔讀 test_cmd.json", "close|" not in d["cmd_text"] and "consumed" not in FAKE["xau/test_cmd.json"][0], d)
+# 伺服器時間 → UTC（EA open_time 係 MT5 伺服器時間，UltimaMarkets ≈ UTC+3）
+check("伺服器時差：由剛收盤 M1 時間估（取整 15 分鐘）", xau.server_offset({"m1_ohlc": {"time": 1_000_000 + 10800 - 70}}, 1_000_000) == 10800)
+check("伺服器時差：EA 有送 server_time 就直接用", xau.server_offset({"server_time": 1_000_000 + 7200 + 3}, 1_000_000) == 7200)
+check("伺服器時差：冇資料 = 0", xau.server_offset({}, 1_000_000) == 0)
+_p = xau.own_positions({"positions": [{"side": "BUY", "lots": 0.01, "entry": 4000, "sl": 0, "tp": 0, "open_time": 1_000_000 + 10800}]}, 10800)
+check("open_time 換算成 UTC（最長持倉先會準）", _p[0]["opened_ts"] == 1_000_000 and _p[0]["stop"] is None, _p)
 j = client.get("/?format=json").get_json()
 check("JSON 有 account_id／xau_account／live_positions", j["account_id"] == "70001" and j["xau_account"] == "70001" and isinstance(j["live_positions"], list))
 config.EXECUTE = False; config.ACCOUNT = ""

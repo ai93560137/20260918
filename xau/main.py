@@ -4,7 +4,7 @@
   1. 權杖檢查 → 2. 累積 M1／M15 → 3. 戶口快照 → 4. 新 M1 收盤：紙上止損／止賺／最長持倉 →
   5. 要問先問 Claude（空倉而電閘 LOCK 或休市就唔問；空倉先用 GATE_MODEL 篩）→ 6. 硬性規則 →
   7. 影子：紙上模擬；實倉（XAU_EXECUTE=1）：排指令，心跳回應 cmd_text 由 EA 執行 → 8. 寫決策紀錄。
-狀態全部喺 GCS `xau/` 前綴；電閘影子階段只讀舊服務嘅 zhuge_gate_state.json。
+狀態全部喺 GCS `xau/` 前綴。
 """
 import json
 import time
@@ -32,6 +32,7 @@ STATE_FILE = config.PREFIX + "state.json"
 LESSONS_FILE = config.PREFIX + "lessons.md"
 DECISIONS_PREFIX = config.PREFIX + "decisions/"
 CONTROL_FILE = config.PREFIX + "control.json"      # 緊急停機開關、暫停開倉、本金（私人）、淨值高水位
+TEST_CMD_FILE = config.PREFIX + "test_cmd.json"    # 階段 B 測試指令檔（XAU_TEST_CMDS=1 先讀；用過寫回 consumed）
 BUNDLED_LESSONS = __file__.rsplit("/", 1)[0] + "/LESSONS.md"
 
 
@@ -119,8 +120,21 @@ def set_mode(control, mode, reason, set_by, now, auto_reset_day=None):
     log_event(f"🔀 [{config.TEAM_NAME}] 模式 → {mode}（{set_by}）：{reason}", severity="WARNING" if mode != "RUN" else "INFO", component="mode")
 
 
-def own_positions(payload):
-    """EA 心跳 positions[]（EA 已只數自己 magic）→ 乾淨列表。"""
+def server_offset(payload, now):
+    """EA 送嘅時間（MT5 伺服器時間，UltimaMarkets ≈ UTC+3）同真 UTC 嘅差（秒）。
+    EA 有送 server_time 就直接計（取整到分鐘）；否則用剛收盤嗰根 M1 嘅時間估（取整到 15 分鐘；收盤後 1–2 分鐘內收到都估得準）。"""
+    st = market.to_float(payload.get("server_time"))
+    if st:
+        return int(round((st - now) / 60.0) * 60)
+    m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
+    t = market.to_float(m1.get("time"))
+    if not t:
+        return 0
+    return int(round((t - now) / 900.0) * 900)
+
+
+def own_positions(payload, offset=0):
+    """EA 心跳 positions[]（EA 已只數自己 magic）→ 乾淨列表；open_time 係伺服器時間，減 offset 換成 UTC（最長持倉用）。"""
     out = []
     for p in (payload.get("positions") or []) if isinstance(payload.get("positions"), list) else []:
         if not isinstance(p, dict):
@@ -131,7 +145,7 @@ def own_positions(payload):
             continue
         out.append({"ticket": p.get("ticket"), "side": side, "entry": entry, "lots": lots,
                     "stop": (market.to_float(p.get("sl")) or None), "target": (market.to_float(p.get("tp")) or None),
-                    "opened_ts": market.to_float(p.get("open_time")) or 0})
+                    "opened_ts": ((market.to_float(p.get("open_time")) or 0) - offset) if market.to_float(p.get("open_time")) else 0})
     return out
 
 
@@ -153,7 +167,7 @@ def pending_has(state, op):
 
 
 def risk_ladder(state, control, account, bar, now):
-    """使用者 10-20：真倉同 C 戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
+    """使用者 10-20：真倉同真倉戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
     「自己嘅權益」= 本金 + 累計已實現 + 浮動；保證金水平係戶口級。"""
     principal = market.to_float(control.get("principal_hkd"))
     if config.EXECUTE:
@@ -235,25 +249,6 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
     return handled
 
 
-def legacy_gate():
-    """舊服務電閘：硬鎖／新聞鎖／armed。讀唔到當 LOCK（fail-closed）。"""
-    try:
-        g = storage.read_json(config.LEGACY_GATE_FILE, None)
-    except StorageError as exc:
-        return {"status": "LOCK", "reason": f"電閘讀取失敗：{exc}"}
-    if not isinstance(g, dict):
-        return {"status": "LOCK", "reason": "舊服務電閘不存在"}
-    lock = g.get("hard_lock")
-    if isinstance(lock, dict) and (lock.get("until_ts") is None or now_ts() < market.to_float(lock.get("until_ts"), 0)):
-        return {"status": "LOCK", "reason": f"硬鎖：{lock.get('reason') or '未知'}"}
-    if g.get("news_lock"):
-        return {"status": "LOCK", "reason": "新聞鎖"}
-    if not g.get("armed"):
-        risk = g.get("risk") if isinstance(g.get("risk"), dict) else {}
-        return {"status": "LOCK", "reason": risk.get("reason") or g.get("last_reason") or "未開閘"}
-    return {"status": "OPEN", "reason": (g.get("risk") or {}).get("reason") or "六關全過"}
-
-
 # ---------------------------------------------------------------------------
 # 決策
 # ---------------------------------------------------------------------------
@@ -261,7 +256,7 @@ def compact(bars):
     return [[b["time"], b["open"], b["high"], b["low"], b["close"]] for b in bars]
 
 
-def build_context(state, m1, m15, account, gate, now, day, ladder=None, control=None):
+def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     older, recent = m15[:-4], m15[-4:]
     pos = state.get("position")
     last = m1[-1]["close"]
@@ -283,7 +278,6 @@ def build_context(state, m1, m15, account, gate, now, day, ladder=None, control=
         "last_price": last,
         "account": {"currency": account.get("currency"), "equity": account.get("equity"),
                     "balance": account.get("balance"), "daily_pnl": account.get("daily_pnl")},
-        "legacy_gate": gate,
         "position": position,
         "risk": {"lots": rules.lots(), "min_sl_usd": config.MIN_SL_USD, "max_sl_usd": config.MAX_SL_USD,
                  "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
@@ -340,14 +334,13 @@ def process_bar(state, bar, m1, m15, account, now):
         exit_rec = paper.on_bar(state, bar, now)
         if exit_rec:
             log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
-    gate = legacy_gate()                       # 只作參考資料傳畀 Claude，唔係硬閘（使用者 10-20）
-    market_open = market.is_gold_market_open(now)
+    market_open = market.is_gold_market_open(now)   # R253 後舊服務唔再寫電閘，legacy_gate 已刪；舊規則只留 reference/legacy_rules.md
     control = load_control()
     ladder = risk_ladder(state, control, account, bar, now)
     state["ladder"] = ladder
     pos = state.get("position")
     decision_id = uuid.uuid4().hex
-    rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"], "legacy_gate": gate["status"],
+    rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"],
            "ladder": ladder["level"], "mode": control["mode"], "execute": config.EXECUTE}
     if exit_rec:
         rec["paper_exit"] = {"reason": exit_rec["reason"], "pnl_usd": exit_rec["pnl_usd"]}
@@ -372,7 +365,7 @@ def process_bar(state, bar, m1, m15, account, now):
 
     can_open = control["mode"] == "RUN"
     block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
-    ctx = build_context(state, m1, m15, account, gate, now, day, ladder, control)
+    ctx = build_context(state, m1, m15, account, now, day, ladder, control)
     b = get_brain()
     if pos is None and config.GATE_MODEL:
         sc = b.screen(ctx)
@@ -425,8 +418,9 @@ def handle_heartbeat(payload):
         return jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "credit", "floating", "daily_pnl",
                                                              "buy_lots", "sell_lots", "net_lots", "margin_level", "realized_total")}
+    offset = server_offset(payload, now)
     account.update(account_id=str(payload.get("account") or "")[:24], server=str(payload.get("server") or "")[:40],
-                   dry_run=bool(payload.get("dry_run")), positions=own_positions(payload),
+                   dry_run=bool(payload.get("dry_run")), positions=own_positions(payload, offset), server_offset=offset,
                    currency=str(payload.get("currency") or "HKD"), symbol=str(payload.get("symbol") or ""),
                    status=str(payload.get("status") or ""), received_utc=market.fmt_utc(now), received_ts=now,
                    atr_m1=market.to_float(m15_raw.get("atr_m1")), atr_m5=market.to_float(m15_raw.get("atr_m5")),
@@ -447,6 +441,7 @@ def handle_heartbeat(payload):
         except StorageError as exc:
             log_event(f"⚠️ M15 寫入失敗：{exc}", severity="WARNING")
 
+    consume_test_file(now)                             # 階段 B：GCS xau/test_cmd.json 排測試指令（XAU_TEST_CMDS=1 先生效）
     state = load_state()
     if config.EXECUTE:
         state["position"] = live_position(account)
@@ -500,19 +495,47 @@ def handle_cmd_ack(payload):
 
 
 def handle_test_cmd(payload):
-    """排一條指令（open／close／modify）畀 EA，測試清單用。要 XAU_TEST_CMDS=1 同權杖。"""
+    """HTTP 入口：排一條測試指令。要 XAU_TEST_CMDS=1 同權杖。"""
+    body, code = queue_test_cmd(payload, now_ts())
+    return jsonify(body), code
+
+
+def consume_test_file(now):
+    """階段 B 另一個入口（唔使權杖）：GCS `xau/test_cmd.json` 放 {"id":…,"op":"open|close|modify","side":…,"sl":…,"tp":…,"lots":…,"no_sl":…}，
+    服務每個心跳讀一次，未用過就排指令，然後寫回 consumed＋result（同一個檔唔會排第二次）。只喺 XAU_TEST_CMDS=1 且 XAU_EXECUTE=1 生效。"""
+    if not (config.TEST_CMDS and config.EXECUTE):
+        return
+    try:
+        doc = storage.read_json(TEST_CMD_FILE, None)
+    except StorageError as exc:
+        log_event(f"⚠️ [{config.TEAM_NAME}] test_cmd.json 讀取失敗：{exc}", severity="WARNING", component="test")
+        return
+    if not isinstance(doc, dict) or not doc.get("op") or doc.get("consumed"):
+        return
+    ts = market.to_float(doc.get("ts"))
+    if ts is None or abs(now - ts) > executor.CMD_TTL_SEC:        # 要帶 ts（UTC epoch 秒，`date +%s`）；放低超過 10 分鐘嘅檔唔排（部署後殘留檔唔會誤落單）
+        body = {"status": "error", "message": f"ts missing or older than {executor.CMD_TTL_SEC}s (use date +%s)"}
+    else:
+        body, _ = queue_test_cmd(doc, now)
+    try:
+        storage.write_json(TEST_CMD_FILE, {**doc, "consumed": market.fmt_utc(now), "result": body})
+    except StorageError as exc:
+        log_event(f"🚨 [{config.TEAM_NAME}] test_cmd.json 寫回 consumed 失敗（可能重複排指令）：{exc}", severity="ERROR", component="test")
+
+
+def queue_test_cmd(payload, now):
+    """排一條指令（open／close／modify）畀 EA，測試清單用。回傳 (回應 dict, HTTP 狀態碼)。"""
     if not config.TEST_CMDS:
-        return jsonify({"status": "error", "message": "XAU_TEST_CMDS=0"}), 403
+        return {"status": "error", "message": "XAU_TEST_CMDS=0"}, 403
     op = str(payload.get("op") or "").lower()
     side = str(payload.get("side") or "BUY").upper()
     action = {"open": ("OPEN_LONG" if side == "BUY" else "OPEN_SHORT"), "close": "CLOSE", "modify": "UPDATE_STOP"}.get(op)
     if not action:
-        return jsonify({"status": "error", "message": "op must be open|close|modify"}), 400
+        return {"status": "error", "message": "op must be open|close|modify"}, 400
     stop, target = market.to_float(payload.get("sl")), market.to_float(payload.get("tp"))
     lots = market.to_float(payload.get("lots"))
     if action != "CLOSE" and stop is None and not payload.get("no_sl"):
-        return jsonify({"status": "error", "message": "sl required (or no_sl=true to test EA rejection)"}), 400
-    now = now_ts()
+        return {"status": "error", "message": "sl required (or no_sl=true to test EA rejection)"}, 400
     cid = uuid.uuid4().hex
 
     def mutate(state):
@@ -525,9 +548,9 @@ def handle_test_cmd(payload):
     try:
         text = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)
     except StorageError as exc:
-        return jsonify({"status": "error", "message": str(exc)[:100]}), 500
+        return {"status": "error", "message": str(exc)[:100]}, 500
     log_event(f"🧪 [{config.TEAM_NAME}] test_cmd 排指令：{text}", severity="WARNING", component="test")
-    return jsonify({"status": "queued", "id": cid[:8], "text": text, "will_send": config.EXECUTE}), 200
+    return {"status": "queued", "id": cid[:8], "text": text, "will_send": config.EXECUTE}, 200
 
 
 def build_status():
@@ -553,7 +576,7 @@ def build_status():
                     "set_at_utc": control.get("set_at_utc"), "auto_reset_day": control.get("auto_reset_day"),
                     "principal_set": bool(control.get("principal_hkd"))},
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
-        "gate": legacy_gate(), "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
+        "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
         "account_received_utc": account.get("received_utc"), "account_id": account.get("account_id"), "server": account.get("server"),
         "ea_dry_run": account.get("dry_run"), "xau_account": config.ACCOUNT or None, "test_cmds": config.TEST_CMDS,

@@ -32,9 +32,8 @@ Hard rules enforced by code (you cannot override them; violating them just turns
   on cumulative loss and the broker margin level. You cannot change it.
 - A position is force-closed by code after risk.max_hold_min minutes, and the stop/target are checked on every bar.
 
-The legacy system's rules and gate (legacy_gate in the input, and the REFERENCE section below) are reference only:
-they describe what the previous rule-based system would do and what was measured. Use them as context, not as
-conditions you must satisfy.
+The legacy system's rules and gate (the REFERENCE section below) are reference only: they describe what the previous
+rule-based system did and what was measured. Use them as context, not as conditions you must satisfy.
 
 Guidance:
 - HOLD is the default. Only trade when there is a clear edge; overtrading loses money to spread and slippage.

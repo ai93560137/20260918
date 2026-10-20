@@ -36,7 +36,7 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
 只管 `_Symbol`＋`InpMagic`；唔接手、唔平其他 magic 嘅單；冇 SL 嘅 open 拒絕；`InpDryRun=true`（預設）只印指令唔落單；id 去重存檔案 `MQL5/Files/tianfu_seen_<symbol>.txt`。
 使用者自己喺 MetaEditor 編譯、先掛 demo。線上 V23 歸 XAUUSD GCP／TV 陣，唔郁。
 
-## 風控階梯點計（使用者 10-20：真倉同 C 戶口共用，唔用獨立戶口）
+## 風控階梯點計（使用者 10-20：真倉同真倉戶口（使用者手動主力戶）共用，唔用獨立戶口）
 
 日蝕／回撤／硬止損**只計天覆陣自己嘅單**：模擬＝紙上盈虧；真倉＝EA 按 magic 回報。「自己嘅權益」= 本金（`control.json principal_hkd`）＋累計已實現＋浮動。
 唔用戶口淨值（有手動單會污染）。保證金水平係戶口級，照用但當作戶口級警報。
@@ -62,7 +62,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `GATE_MODEL`／`GATE_EFFORT` | `claude-haiku-5-5`／`low` | 空倉先篩；留空 = 唔篩 |
 | `XAU_EXECUTE` | `0` | 1 = 實倉：持倉／止損／止賺以 EA 心跳 `positions[]` 為準，日蝕用 EA `daily_pnl`＋`floating`，累計用 `realized_total`＋`floating`；最長持倉、STOP 由服務排 `close` |
 | `XAU_ACCOUNT` | 空 | 只收呢個 MT5 登入號嘅心跳／只向佢發指令，其他回 `ignored`（階段 B：demo 登入號；真倉：真戶口登入號）。空＝全收 |
-| `XAU_TEST_CMDS` | `0` | 1 = 開放 `action=test_cmd`（階段 B 測試清單排指令）；真倉前要關 |
+| `XAU_TEST_CMDS` | `0` | 1 = 開放測試排指令入口（階段 B 清單）：HTTP `action=test_cmd`（要權杖），或 GCS 檔 `xau/test_cmd.json`（`gcp_agent.py --profile xau put --any-prefix --object xau/test_cmd.json --file …`，內容 `{"id":"t1","op":"open|close|modify","side":"BUY|SELL","sl":…,"tp":…,"lots":…,"no_sl":true}`；服務每個心跳讀一次，用過寫回 `consumed`＋`result`）；真倉前要關 |
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |
