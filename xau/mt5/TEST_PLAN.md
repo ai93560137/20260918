@@ -22,7 +22,16 @@
 - 指令 10 分鐘內冇 `cmd_ack` 就作廢；EA 用檔案記最近 40 個 id 去重，重啟都唔重複。
 
 ## 3. 測試清單（demo，`XAU_EXECUTE=1`、`XAU_ACCOUNT=demo`）
-用 `control.json` `mode=PAUSE` 令 Claude 唔自己開倉，再用 R290 Telegram 訊號或者臨時 `xau/test_cmd.json`（我會加一個只限 `XAU_TEST_CMDS=1` 先生效嘅測試入口）排指令：
+用 `control.json` `mode=PAUSE`（`set_by=user`）令 Claude 唔自己開倉，再用 GCS 檔 `xau/test_cmd.json` 排指令（只限 `XAU_TEST_CMDS=1`＋`XAU_EXECUTE=1`；唔使權杖，服務每個心跳讀一次，用過寫回 `consumed`＋`result`）：
+
+```bash
+# 例：第 1 項 open（sl／tp 按當時金價，止損距離 2–30 美元）
+echo '{"id":"t1","op":"open","side":"BUY","sl":4105,"tp":4130}' > /tmp/t.json
+python3 scripts/gcp_agent.py --profile xau put --any-prefix --object xau/test_cmd.json --file /tmp/t.json
+# 其他：{"id":"t2","op":"open","side":"BUY","no_sl":true}（第 2 項）、{"id":"t3","op":"modify","sl":4108,"tp":4130}（第 3 項）、{"id":"t4","op":"close"}（第 4 項）
+# 核實：GET ?format=json 嘅 pending_cmds（ack 後清空）／live_positions；logs --grep 'test_cmd\|指令回報'；gcp_agent cat --object xau/test_cmd.json 睇 result
+```
+（2026-10-20：天覆陣工作階段嘅權限分類器唔准佢讀服務權杖同寫 bucket，所以 `put` 由總指揮／使用者執行，天覆陣用 GET／logs 核實記錄。）
 
 | # | 測 | 預期 | 睇邊度 |
 |---|---|---|---|
@@ -40,6 +49,7 @@
 全部通過＋Claude 自己（`mode=RUN`）喺 demo 開／平過 ≥ 3 張單，先算階段 B 完成。
 
 ## 4. 轉真倉（使用者親口講先做）
+0. **前置條件（10-20 總指揮）**：真戶口嗰套 MT5 行緊 LTC Server（Local Trade Copier 跟單母帳）。轉真倉前要決定 LTC 會唔會複製 magic 921 嘅單去子帳戶（要就要確認子帳戶風險；唔要就喺 LTC 按 magic／comment 排除），並確認 C 戶口登入號（已知真戶口至少有 34393163、34856669，邊個係 C 未確認）。
 1. `--profile xau env set XAU_ACCOUNT=<真戶口登入號> XAU_EXECUTE=1 XAU_LOTS=0.01`（總指揮 dry-run → 使用者批 → `--yes`）。
 2. 真戶口 EA 參數 `InpDryRun=false`（使用者喺 MT5 改）；demo EA 卸載或 `InpDryRun=true`。
 3. 確認頁面「真倉」區顯示持倉來源係 EA、`XAU_ACCOUNT` 正確。

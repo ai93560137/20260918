@@ -62,7 +62,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `GATE_MODEL`／`GATE_EFFORT` | `claude-haiku-5-5`／`low` | 空倉先篩；留空 = 唔篩 |
 | `XAU_EXECUTE` | `0` | 1 = 實倉：持倉／止損／止賺以 EA 心跳 `positions[]` 為準，日蝕用 EA `daily_pnl`＋`floating`，累計用 `realized_total`＋`floating`；最長持倉、STOP 由服務排 `close` |
 | `XAU_ACCOUNT` | 空 | 只收呢個 MT5 登入號嘅心跳／只向佢發指令，其他回 `ignored`（階段 B：demo 登入號；真倉：真戶口登入號）。空＝全收 |
-| `XAU_TEST_CMDS` | `0` | 1 = 開放 `action=test_cmd`（階段 B 測試清單排指令）；真倉前要關 |
+| `XAU_TEST_CMDS` | `0` | 1 = 開放測試排指令入口（階段 B 清單）：HTTP `action=test_cmd`（要權杖），或 GCS 檔 `xau/test_cmd.json`（`gcp_agent.py --profile xau put --any-prefix --object xau/test_cmd.json --file …`，內容 `{"id":"t1","op":"open|close|modify","side":"BUY|SELL","sl":…,"tp":…,"lots":…,"no_sl":true}`；服務每個心跳讀一次，用過寫回 `consumed`＋`result`）；真倉前要關 |
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |

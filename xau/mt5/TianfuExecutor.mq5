@@ -23,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.30"
+#property version   "0.31"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -134,14 +134,14 @@ string BuildHeartbeat()
                          (long)r15[0].time, r15[0].open, r15[0].high, r15[0].low, r15[0].close);
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.30\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.31\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
-      "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,"
+      "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s}",
       JsonEsc(InpToken), (long)AccountInfoInteger(ACCOUNT_LOGIN), JsonEsc(AccountInfoString(ACCOUNT_SERVER)), _Symbol, cur,
       AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
       AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(), OwnRealizedTotal(),
-      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", pos_json, m1, m15);
+      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), pos_json, m1, m15);
 }
 
 //---------------------------------------------------------------- HTTP
