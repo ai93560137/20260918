@@ -63,6 +63,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_EXECUTE` | `0` | 1 = 實倉：持倉／止損／止賺以 EA 心跳 `positions[]` 為準，日蝕用 EA `daily_pnl`＋`floating`，累計用 `realized_total`＋`floating`；最長持倉、STOP 由服務排 `close` |
 | `XAU_ACCOUNT` | 空 | 只收呢個 MT5 登入號嘅心跳／只向佢發指令，其他回 `ignored`（階段 B：demo 登入號；真倉：真戶口登入號）。空＝全收 |
 | `XAU_TEST_CMDS` | `0` | 1 = 開放測試排指令入口（階段 B 清單）：HTTP `action=test_cmd`（要權杖），或 GCS 檔 `xau/test_cmd.json`（`gcp_agent.py --profile xau put --any-prefix --object xau/test_cmd.json --file …`，內容 `{"id":"t1","op":"open|close|modify","side":"BUY|SELL","sl":…,"tp":…,"lots":…,"no_sl":true}`；服務每個心跳讀一次，用過寫回 `consumed`＋`result`）；真倉前要關 |
+| `XAU_M1_MAX`／`XAU_M15_MAX` | 400／200 | 保留幾多根 K 線（M1 ≥ 315 根先砌到 20 根 M15） |
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |
@@ -71,6 +72,11 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_LONG_ONLY` | 0 | 影子階段兩邊都記 |
 | `XAU_CALL_WHEN_LOCKED` | 0 | 空倉且電閘 LOCK 時唔問 Claude（慳錢） |
 | `XAU_MAGIC` | 921 | 同新 EA `InpMagic` 一致（線上 V23 用 920） |
+
+## K 線歷史：唔使等 5 小時累積 M15（使用者 10-21）
+- **EA v0.33 回填**：首個心跳（OnInit 後）同埋服務回應 `need_history:true` 時，心跳多帶 `m1_hist`（330 根）＋`m15_hist`（60 根）`[[time,open,high,low,close],…]`；服務按 time 去重合併入 `xau/m1.json`／`xau/m15.json`。換戶口、重啟、改 `XAU_ACCOUNT` 後下一個心跳即刻夠數。
+- **服務側砌 M15**：M15 唔夠 20 根時，由已累積嘅 M1 砌完整嘅 15 分鐘 K 線（只取齊 15 根、時間連續嘅格；EA 送嘅優先），寫入 `xau/m15.json`。
+- 歷史重置規則（`market.ingest`）：新 K 線時間比上一根**早**就略過；同一根內容變咗就覆蓋；**缺口**大過 `XAU_M1_GAP_RESET_SEC`（M1 30 分鐘、M15 ×15）就重新累積——10-20 12:15 UTC M15 重置就係因為資料源由真倉戶口 EA 換成 demo EA 中間停咗心跳。有回填之後重置亦即刻補返。
 
 ## 費用同延遲（影子階段要量）
 

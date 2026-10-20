@@ -55,6 +55,44 @@ def ingest(history, bar, max_len, gap_reset_sec):
     return history[-max_len:], True
 
 
+def merge_bars(history, bars, max_len):
+    """合併歷史（EA 回填／由 M1 砌出嚟嘅 M15）：按 time 去重，後者覆蓋，排序後只留最近 max_len 根。"""
+    by_time = {b["time"]: b for b in (history or []) if isinstance(b, dict) and "time" in b}
+    for b in bars or []:
+        if isinstance(b, dict) and "time" in b:
+            by_time[b["time"]] = b
+    return [by_time[t] for t in sorted(by_time)][-max_len:]
+
+
+def m15_from_m1(m1):
+    """由 M1 砌 M15：只用完整嘅 15 根（同一個 15 分鐘格、時間連續）；唔夠 15 根嗰格唔要。"""
+    groups = {}
+    for b in m1 or []:
+        if not isinstance(b, dict) or "time" not in b:
+            continue
+        groups.setdefault(int(b["time"]) // 900 * 900, []).append(b)
+    out = []
+    for t0 in sorted(groups):
+        g = sorted(groups[t0], key=lambda x: x["time"])
+        if len(g) != 15 or [x["time"] for x in g] != [t0 + 60 * k for k in range(15)]:
+            continue
+        out.append({"time": t0, "open": g[0]["open"], "high": max(x["high"] for x in g),
+                    "low": min(x["low"] for x in g), "close": g[-1]["close"]})
+    return out
+
+
+def parse_hist(rows):
+    """EA 回填 [[time,open,high,low,close],…] → 乾淨 K 線列表（壞嘅跳過）。"""
+    out = []
+    for r in rows if isinstance(rows, list) else []:
+        if isinstance(r, (list, tuple)) and len(r) >= 5:
+            r = {"time": r[0], "open": r[1], "high": r[2], "low": r[3], "close": r[4]}
+        b = parse_bar(r)
+        if b:
+            out.append(b)
+    return out
+
+
 def wilder_atr(bars, length=14):
     if len(bars) < length + 1:
         return None

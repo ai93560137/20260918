@@ -434,5 +434,35 @@ check("頁面有陣名、模擬倉、成交紀錄、硬性風控、模式", "天
 j = client.get("/?format=json").get_json()
 check("JSON：stats、decisions、risk、階梯、模式", j["ladder"]["level"] in "ABD" and j["control"]["mode"] == "RUN" and j["stats"]["n"] >= 3 and j["decisions"] and j["risk"]["XAU_LOTS"] == 0.01, j["stats"])
 
+print("=== M15 由 M1 砌＋EA 回填（唔使等 5 小時）===")
+check("m15_from_m1：只取完整 15 根", len(market.m15_from_m1([{"time": 900 * 100 + 60 * k, "open": 1 + k, "high": 10 + k, "low": 0.5, "close": 2 + k} for k in range(20)])) == 1)
+_g = market.m15_from_m1([{"time": 900 * 100 + 60 * k, "open": 1 + k, "high": 10 + k, "low": 0.5 - k * 0.01, "close": 2 + k} for k in range(15)])[0]
+check("m15_from_m1：OHLC 正確", _g["open"] == 1 and _g["high"] == 24 and abs(_g["low"] - 0.36) < 1e-9 and _g["close"] == 16, _g)
+check("merge_bars：去重、後者覆蓋、排序、截 max_len", [b["time"] for b in market.merge_bars([{"time": 2, "open": 1, "high": 1, "low": 1, "close": 1}, {"time": 1, "open": 0, "high": 0, "low": 0, "close": 0}], [{"time": 2, "open": 9, "high": 9, "low": 9, "close": 9}, {"time": 3, "open": 1, "high": 1, "low": 1, "close": 1}], 2)] == [2, 3])
+check("parse_hist：陣列格式＋壞行跳過", len(market.parse_hist([[100, 1, 2, 0.5, 1.5], [0, 1, 2, 0.5, 1.5], "x", [101, 1, 2, 0.5, 1.5]])) == 2)
+TS = T0 + 910 * 60                                              # 對齊 15 分鐘邊界
+FAKE["xau/m1.json"] = (json.dumps([{"time": TS + k * 60, "open": 4000.0, "high": 4001.0, "low": 3999.0, "close": 4000.5} for k in range(330)]), FAKE["xau/m1.json"][1] + 1)
+FAKE["xau/m15.json"] = (json.dumps([{"time": TS - 900 * (3 - k), "open": 4000.0, "high": 4001.0, "low": 3999.0, "close": 4000.0} for k in range(3)]), FAKE["xau/m15.json"][1] + 1)
+st, d = hb(1240, 4000.5)
+_m15 = json.loads(FAKE["xau/m15.json"][0])
+check("M15 唔夠 → 由 330 根 M1 砌到 ≥ 20 根並寫入；need_history=false", len(_m15) >= 20 and d.get("need_history") is False, (len(_m15), d.get("need_history"), d.get("message")))
+check("砌出嚟嘅 M15 時間對齊 15 分鐘（≥22 根）、EA 送嘅保留", sum(1 for b in _m15 if b["time"] % 900 == 0) >= 22 and _m15[0]["time"] == TS - 2700, _m15[:2])
+FAKE["xau/m15.json"] = (json.dumps([]), FAKE["xau/m15.json"][1] + 1)
+FAKE["xau/m1.json"] = (json.dumps([{"time": TS + 330 * 60, "open": 4000.0, "high": 4001.0, "low": 3999.0, "close": 4000.5}]), FAKE["xau/m1.json"][1] + 1)
+st, d0 = hb(1241, 4000.5)
+check("歷史空 → need_history=true", d0.get("need_history") is True, d0)
+t = T0 + 1242 * 60
+body = {"action": "heartbeat", "token": "tok", "symbol": "XAUUSD", "currency": "HKD", "balance": 23000, "equity": 28000, "credit": 0, "floating": 0, "daily_pnl": 0,
+        "buy_lots": 0, "sell_lots": 0, "net_lots": 0,
+        "m1_ohlc": {"time": t, "open": 4000, "high": 4001, "low": 3999, "close": 4000.5, "is_new_bar": True},
+        "m15_ohlc": {"time": T0 + (1242 // 15) * 900, "open": 4000, "high": 4001, "low": 3999, "close": 4000.5},
+        "m1_hist": [[TS + k * 60, 4000, 4001, 3999, 4000.5] for k in range(300)],
+        "m15_hist": [[TS - 900 * (60 - k), 4000, 4001, 3999, 4000.2] for k in range(60)]}
+NOW[0] = t + 5
+r = client.post("/", data=json.dumps(body), content_type="application/json"); d1 = r.get_json()
+_m1, _m15 = json.loads(FAKE["xau/m1.json"][0]), json.loads(FAKE["xau/m15.json"][0])
+check("EA 回填 m1_hist／m15_hist → 合併入歷史，need_history=false", len(_m1) >= 300 and len(_m15) >= 60 and d1.get("need_history") is False and _m15[0]["time"] == TS - 900 * 60, (len(_m1), len(_m15), d1.get("need_history")))
+check("回填後 M1 歷史仍然排序、冇重複", [b["time"] for b in _m1] == sorted(set(b["time"] for b in _m1)))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
