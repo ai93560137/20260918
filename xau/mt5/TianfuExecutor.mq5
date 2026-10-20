@@ -1,5 +1,11 @@
 //+------------------------------------------------------------------+
-//| 🌌 天覆陣執行器 TianfuExecutor.mq5  v0.1（2026-10-20，未編譯、未測）   |
+//| 🌌 天覆陣執行器 TianfuExecutor.mq5  v0.2（2026-10-20，未編譯、未測）   |
+//|                                                                  |
+//| 影子階段用法（使用者 10-20：「EA 直接俾 K 線畀新服務」）：            |
+//|   InpDryRun=true 掛喺另一個 XAUUSD 圖表，只做資料源：每 60 秒送心跳   |
+//|   （M1／M15 K 線、淨值、保證金水平、自己 magic 嘅倉同今日盈虧）去     |
+//|   zhuge-xau。dry-run 時 OnTimer 唔會入 Execute()，冇任何落單路徑。    |
+//|   線上 V23 照舊指住 zhuge-risk-manager，唔使改。                     |
 //|                                                                  |
 //| 純執行器：唔自己決策。每 60 秒向 zhuge-xau 送心跳，執行回應入面        |
 //| cmd_text 嘅指令（open／close／modify），回報 cmd_ack。               |
@@ -15,7 +21,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.10"
+#property version   "0.20"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -123,7 +129,7 @@ string BuildHeartbeat()
                          (long)r15[0].time, r15[0].open, r15[0].high, r15[0].low, r15[0].close);
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.10\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.20\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,"
       "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s}",
@@ -252,6 +258,11 @@ void OnTimer()
    if(!Post(BuildHeartbeat(), reply)) return;
    string cmds = ExtractCmdText(reply);
    if(cmds == "") return;
+   if(InpDryRun)                                          // 資料源模式：連 Execute 都唔入，0 落單路徑
+   {
+      Print("🧪 [dry-run] 收到指令但唔執行：", cmds);
+      return;
+   }
    string lines[];
    int n = StringSplit(cmds, '\n', lines);
    for(int i = 0; i < n; i++)

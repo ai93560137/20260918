@@ -260,6 +260,19 @@ FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 NOW_RESET = NOW2
 FAKE["xau/control.json"] = (json.dumps({"mode": "RUN", "reason": "", "set_by": "user", "principal_hkd": None, "equity_peak": 0, "alerts_sent": {}}), 99)
 
+print("=== TianfuExecutor v0.2 直接心跳格式 ===")
+ea = {"action": "heartbeat", "token": "tok", "ea": "TianfuExecutor/0.20", "symbol": "XAUUSD", "currency": "HKD",
+      "balance": 27165.70, "equity": 29172.53, "credit": 2006.83, "margin_level": 0.0, "floating": 0.0, "daily_pnl": 0.0,
+      "buy_lots": 0.0, "sell_lots": 0.0, "net_lots": 0.0, "magic": 921, "dry_run": True, "positions": [],
+      "m1_ohlc": {"symbol": "XAUUSD", "time": int(NOW_RESET) + 300, "open": 3990.0, "high": 3991.0, "low": 3989.5, "close": 3990.5, "volume": 12, "is_new_bar": True},
+      "m15_ohlc": {"time": int(NOW_RESET) - 900, "open": 3990.0, "high": 3991.0, "low": 3989.0, "close": 3990.0}}
+NOW[0] = NOW_RESET + 305
+r = client.post("/", data=json.dumps(ea), content_type="application/json"); d = r.get_json()
+acc = json.loads(FAKE["xau/account.json"][0])
+check("EA 直接心跳：收到、存快照（margin_level 0 當冇）、M1 入歷史", r.status_code == 200 and d["status"] == "monitoring" and acc["equity"] == 29172.53 and acc["margin_level"] == 0.0 and json.loads(FAKE["xau/m1.json"][0])[-1]["time"] == int(NOW_RESET) + 300, (d, acc))
+r2 = client.post("/", data=json.dumps({**ea, "m1_ohlc": {"time": int(NOW_RESET) + 300, "is_new_bar": False}}), content_type="application/json")
+check("is_new_bar=false 心跳只存快照", r2.get_json().get("decision") is None)
+
 print("=== API key 到期提示 ===")
 check("key_expiry 解析", market.key_expiry(0, "2026-12-31 14:00")[1] > 0 and market.key_expiry(0, "")[0] is None)
 config.KEY_EXPIRES_UTC = market.fmt_utc(NOW[0] + 5 * 86400, "%Y-%m-%d %H:%M"); n_tg = len(TG)

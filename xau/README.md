@@ -13,13 +13,14 @@
 | `tgsignal.py`、`executor.py` | R290 Telegram 頻道訊號（Claude 解析 → 人手確認 → EA 指令）；EA 指令佇列 |
 | `LESSONS.md` | 使用者教學簿；線上優先讀 GCS `xau/lessons.md` |
 
-## 同舊服務嘅關係
+## 同舊服務嘅關係（使用者 10-20：「EA 直接俾 K 線畀新服務」）
 
 ```
-MT5 EA V23 ──心跳──▶ zhuge-risk-manager（main.py，照舊：電閘、錦囊、webhooktrade）
-                          └─ XAU_SHADOW_URL 設咗 → 新 M1 收盤時轉發（加權杖，2 秒逾時，唔等）──▶ zhuge-xau（本服務）
-                                                                                            └─ Claude 決策 → 紙上模擬 → GCS xau/
+MT5 EA V23 ──心跳──▶ zhuge-risk-manager（main.py，照舊：電閘、錦囊、webhooktrade；唔改）
+MT5 TianfuExecutor（InpDryRun=true，另一個 XAUUSD 圖表，magic 921）──每 60 秒心跳（帶新服務權杖）──▶ zhuge-xau（本服務）
+                                                                                                     └─ Claude 決策 → 紙上模擬 → GCS xau/
 ```
+main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudignore` 排除 `xau/`、`tg_relay/`。EA 安裝步驟見 `mt5/README.md`。
 
 - 影子階段（`XAU_EXECUTE=0`，預設）：只寫 GCS `xau/`，心跳回應 `cmd_text` 永遠空，**唔會送單**。
 - **舊規則同電閘唔再係硬閘**（使用者 10-20：「將之前的規則, 電閘, 刪減, 但給該陣claude.ai 做參考」）：六關、錦囊 v4 條件、150 分鐘出場、新聞鎖整理喺
@@ -84,8 +85,7 @@ python3 scripts/gcp_agent.py --profile xau deploy --set-env XAU_EXECUTE=0 CLAUDE
 python3 scripts/gcp_agent.py --profile xau status / logs / env get
 ```
 部署後使用者要喺控制台做：① 服務「安全性」→ 允許未經驗證的叫用；② 環境變數填 `WEBHOOK_SECRET_TOKEN`（同舊服務相同）同 `ANTHROPIC_API_KEY`（唔貼入對話）。
-之後舊服務 `env set XAU_SHADOW_URL=<新服務網址>/ XAU_SHADOW_TOKEN=<新服務嘅權杖>`（先 dry-run，同總指揮對時間）先會開始轉發心跳。
-⚠️ 舊服務線上**未設** `WEBHOOK_SECRET_TOKEN`（10-20 查到），程式用預設 `123456`；天覆陣用自己嘅權杖，唔沿用。
+數據由 TianfuExecutor（dry-run）直接送，唔經舊服務。⚠️ 舊服務線上未設 `WEBHOOK_SECRET_TOKEN`（10-20 查到，使用者決定唔改）；天覆陣用自己嘅權杖。
 
 ## 影子標準（照 IDEAS.md 慣例預先登記，達標先入 PR C）
 
