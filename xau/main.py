@@ -420,6 +420,7 @@ def build_status():
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
         "account_received_utc": account.get("received_utc"),
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
+        "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},

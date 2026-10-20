@@ -1,21 +1,25 @@
-"""🌌 天覆陣單一頁面：取代舊服務嘅投資人日誌／關卡開關／送單參數／錦囊執行單／錦囊九十筆五頁。
-只讀 GCS，唔接受任何寫入（風控數字由環境變數定，改要經 env set）。"""
+"""🌌 天覆陣頁面：同龍飛陣 ?view=longfei 同一套版面（真倉／模擬倉分色區、績效卡、成交紀錄、最近決策、模式／階梯）。
+取代舊服務五頁（投資人日誌、關卡開關、送單參數、錦囊執行單、錦囊九十筆）。只讀，冇任何按鈕或解鎖連結。"""
 import html
 
 import config
 from market import fmt_hkt
 
 CSS = """
-:root{--p:#0f62fe;--ok:#198754;--bad:#dc3545;--warn:#d97706;--bg:#f4f7fb;--card:#fff;--t:#161616;--m:#6c757d}
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);margin:0;padding:16px}
-.c{max-width:1050px;margin:0 auto}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--m);font-size:13px;margin-bottom:14px}
-.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px}
-.card{background:var(--card);border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.card h3{margin:0 0 8px;font-size:14px;color:var(--m);font-weight:600}.big{font-size:22px;font-weight:700}
-.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
-th{color:var(--m);font-weight:600}.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
-.tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:12px;background:#eef}
+:root{--primary:#0f62fe;--success:#198754;--danger:#dc3545;--warning:#d97706;--bg:#f4f7fb;--card:#fff;--text:#161616;--muted:#6c757d}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:20px 15px;margin:0}
+.container{max-width:1050px;margin:0 auto}.page-title{font-size:22px;margin:0 0 6px}.muted{color:var(--muted)!important}
+.grid{display:grid;gap:16px;margin-bottom:24px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.card{background:var(--card);padding:20px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,.04)}
+.card-title{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600}.card-value{font-size:24px;font-weight:bold}.card-desc{font-size:12px;color:#adb5bd;margin-top:8px}
+.section{background:var(--card);padding:25px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,.04);margin-bottom:24px}
+h2{font-size:17px;margin:0 0 16px}h3{font-size:15px;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #e9ecef;vertical-align:top}th{color:var(--muted);font-weight:600}
+.pos{color:var(--success)!important}.neg{color:var(--danger)!important}.tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:12px;background:#eef}
+.lf-grp{margin-bottom:28px}.lf-banner{font-size:20px;font-weight:700;padding:10px 18px;border-radius:12px;margin:8px 0 14px;color:#fff}
+.lf-real .lf-banner{background:#b45309}.lf-sim .lf-banner{background:#1d4ed8}
+.lf-real .section{border-left:8px solid #d97706;background:#fffbeb}.lf-sim .section{border-left:8px solid #2563eb;background:#eff6ff}
+@media (prefers-color-scheme: dark){:root{--bg:#111;--card:#1b1b1b;--text:#eee;--muted:#9aa}.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}
 """
 
 
@@ -23,53 +27,110 @@ def esc(x):
     return html.escape("" if x is None else str(x))
 
 
-def _pos_text(pos):
-    if not pos:
-        return "空倉"
-    return (f"{'多' if pos['side'] > 0 else '空'} {pos['lots']:.2f} 手 @ {pos['entry']:.2f}｜止損 {pos.get('stop')}"
-            f"｜止賺 {pos.get('target') or '—'}｜{fmt_hkt(pos['opened_ts'])} 開")
+def card(title, value, desc=""):
+    return f"<div class='card'><div class='card-title'>{title}</div><div class='card-value'>{value}</div><div class='card-desc'>{desc}</div></div>"
+
+
+def hk(v):
+    return "—" if v is None else f"HK${v * config.HKD_PER_USD:+,.0f}"
+
+
+def usd(v):
+    return "—" if v is None else f"{v:+,.2f}"
+
+
+def metric_cards(m):
+    f2 = lambda v: "—" if v is None else f"{v:.2f}"
+    sharpe = "—" if m["trades"] == 0 else ("樣本不足" if m["sharpe"] is None else f"{m['sharpe']:.2f}")
+    return ("<div class='grid'>"
+            + card("勝率", "—" if m["win_rate"] is None else f"{m['win_rate']:.0%}", "贏嘅筆數 ÷ 總筆數")
+            + card("盈虧比 RRR", f2(m["rrr"]), "平均贏 ÷ 平均蝕")
+            + card("Sharpe ratio（年化）", sharpe, f"按紐約交易日，要 ≥ 5 日（而家 {m['days']} 日）")
+            + card("獲利因子", f2(m["profit_factor"]), "總贏 ÷ 總蝕")
+            + card("每筆平均", hk(m["expectancy"]), f"{usd(m['expectancy'])} USD／筆")
+            + card("最大回撤", "—" if m["max_dd"] is None else hk(-m["max_dd"]), "累計由高位最大跌幅")
+            + card("平均贏", hk(m["avg_win"]), f"{usd(m['avg_win'])} USD／筆")
+            + card("平均蝕", "—" if m["avg_loss"] is None else hk(-m["avg_loss"]), f"{usd(-m['avg_loss']) if m['avg_loss'] else '—'} USD／筆")
+            + "</div>")
+
+
+def run_text(s):
+    ctl, lad = s.get("control") or {}, s.get("ladder") or {}
+    if ctl.get("halt"):
+        return f"⛔ 停機：{ctl.get('halt_reason') or ''}"
+    if ctl.get("pause_new"):
+        return "⏸ 暫停開新倉（control.json）"
+    if lad.get("level") in ("B", "C", "D"):
+        return f"⏸ 風控階梯 {lad['level']}：{'；'.join(lad.get('reasons') or [])}"
+    if not s.get("market_open"):
+        return "🌙 休市"
+    return "✅ 運行中"
 
 
 def render(status):
-    """status = main.build_status() 嘅 dict。"""
     s = status
-    st = s.get("stats") or {}
-    mode = "實倉（EA 執行指令）" if s.get("execute") else "影子模式（只記錄，唔送單）"
-    gate = s.get("gate") or {}
-    gate_cls = "ok" if gate.get("status") == "OPEN" else "warn"
-    lad, ctl = s.get("ladder") or {}, s.get("control") or {}
-    lad_cls = {"A": "ok", "B": "warn"}.get(lad.get("level"), "bad")
-    rows_d = "".join(
-        f"<tr><td class=mono>{esc(fmt_hkt(d.get('ts', 0), '%m-%d %H:%M'))}</td><td>{esc(d.get('price'))}</td>"
-        f"<td><span class=tag>{esc(d.get('final') or d.get('action'))}</span>"
-        f"{(' <small class=warn>AI 提 ' + esc(d.get('action')) + '</small>') if d.get('rejected') else ''}</td>"
-        f"<td>{esc(d.get('reason'))}{('<br><small class=bad>擋：' + esc(d.get('rejected')) + '</small>') if d.get('rejected') else ''}"
-        f"{('<br><small class=m>' + esc(d.get('applied')) + '</small>') if d.get('applied') and d.get('applied') != 'HOLD' else ''}</td>"
-        f"<td class=mono>{esc(d.get('ms'))} ms<br>${esc(d.get('cost_usd'))}</td></tr>"
-        for d in list(reversed(s.get("decisions") or []))[:60])
-    rows_t = "".join(
-        f"<tr><td class=mono>{esc(fmt_hkt(t['opened_ts']))} → {esc(fmt_hkt(t['closed_ts']))}</td>"
-        f"<td>{'多' if t['side'] > 0 else '空'} {t['lots']:.2f}</td><td>{t['entry']:.2f} → {t['exit']:.2f}</td>"
-        f"<td>{esc(t.get('reason'))}</td><td class=\"{'ok' if t['pnl_usd'] > 0 else 'bad'}\">{t['pnl_usd']:+.2f}</td></tr>"
+    m = s.get("metrics") or {"trades": 0, "wins": 0, "win_rate": None, "points": 0.0, "expectancy": None, "rrr": None,
+                             "profit_factor": None, "max_dd": None, "avg_win": None, "avg_loss": None, "sharpe": None, "days": 0}
+    pos = s.get("position")
+    if pos:
+        pos_txt = f"{'好倉' if pos['side'] > 0 else '淡倉'} {pos['lots']:.2f} 手 @ {pos['entry']:.2f}"
+        pos_desc = f"止蝕 {pos.get('stop')}・止賺 {pos.get('target') or '—'}・{fmt_hkt(pos['opened_ts'])} 開"
+    else:
+        pos_txt, pos_desc = "冇", "空手"
+    lad, ctl, gate = s.get("ladder") or {}, s.get("control") or {}, s.get("gate") or {}
+    u = s.get("usage_today") or {}
+    head = f"<h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} CFD（MT5）自動交易</h1>"
+    intro = ("<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣黃金差價合約（最多 1 張，固定 "
+             f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（風控階梯：日蝕 Ⓑ 停開新倉／Ⓓ 全平停機、高水位回撤、累計硬止損、保證金；"
+             "止損距離、最長持倉），AI 無權改。舊系統嘅六關電閘、錦囊 v4 規則只作參考。"
+             "先做模擬倉前向測試，達到預先登記標準、使用者講先轉真倉；真倉落單經 MT5 EA 執行指令。</p>"
+             f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・{esc(s.get('session'))}・模型 {esc(s.get('model'))}"
+             f"（effort {esc(s.get('effort'))}）{('＋篩選 ' + esc(s.get('gate_model'))) if s.get('gate_model') else ''}</p></div>")
+    real = ("<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉（真金白銀）</div>"
+            + ("<div class='section'><p class='muted'>未開始真倉。模擬倉達標、使用者批准後先開始（XAU_EXECUTE=1，新 EA 執行指令）。</p></div>"
+               if not s.get("execute") else
+               f"<div class='section'><h2>真倉狀態</h2><p>{esc(run_text(s))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>")
+            + "</div>")
+    top = ("<div class='grid'>"
+           + card("階段", "模擬盤" if not s.get("execute") else "真倉", esc(run_text(s)))
+           + card("模擬盤筆數", str(m["trades"]), "前向測試，已平倉")
+           + card("而家持倉", esc(pos_txt), pos_desc)
+           + card("已平倉累計", "—" if not m["trades"] else hk(m["points"]), f"{usd(m['points'])} USD；已扣點差 {config.SPREAD_USD:g}")
+           + card("今日開倉", str(s.get("trades_today", 0)), f"上限 {s['risk'].get('XAU_MAX_TRADES_PER_DAY') or '不限'}")
+           + card("AI 今日用量", f"${u.get('cost_usd', 0):.2f}", f"決策 {u.get('decide', 0)} 次・篩選 {u.get('screen', 0)} 次・p95 {u.get('p95_ms') or '—'} ms")
+           + "</div>")
+    rows = "".join(
+        f"<tr><td>{esc(fmt_hkt(t['opened_ts']))}</td><td>{esc(fmt_hkt(t['closed_ts']))}</td><td>{'好' if t['side'] > 0 else '淡'}</td>"
+        f"<td>{t['entry']:.2f}</td><td>{t['exit']:.2f}</td><td class=\"{'pos' if t['pnl_usd'] >= 0 else 'neg'}\">{t['pnl_usd']:+.2f}</td>"
+        f"<td>{t['hold_min']}</td><td>{esc(t.get('reason'))}</td></tr>"
         for t in list(reversed(s.get("trades") or []))[:40])
-    risk = s.get("risk") or {}
-    risk_rows = "".join(f"<tr><th>{esc(k)}</th><td class=mono>{esc(v)}</td></tr>" for k, v in risk.items())
-    usage = s.get("usage_today") or {}
-    return f"""<!doctype html><html lang=zh-Hant><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
-<title>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}</title><style>{CSS}</style></head><body><div class=c>
-<h1>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}｜{esc(config.SYMBOL)} CFD（MT5）</h1>
-<div class=sub>Claude 每根 M1 收盤決策 · 硬性風控由程式把關 · {esc(mode)} · 更新 {esc(s.get('updated_hkt'))} HKT</div>
-<div class=g>
-<div class=card><h3>模式</h3><div class="big {'bad' if s.get('execute') else 'warn'}">{esc('實倉' if s.get('execute') else '影子')}</div><small>{esc(s.get('model'))}（effort {esc(s.get('effort'))}）{('＋篩選 ' + esc(s.get('gate_model'))) if s.get('gate_model') else ''}</small></div>
-<div class=card><h3>風控階梯（硬性）</h3><div class="big {lad_cls}">{esc(lad.get('level'))}{'　🛑 停機' if ctl.get('halt') else ''}{'　⏸ 暫停開倉' if ctl.get('pause_new') else ''}</div><small>{esc('；'.join(lad.get('reasons') or []) or '正常')}{('<br>' + esc(ctl.get('halt_reason'))) if ctl.get('halt') else ''}{'' if ctl.get('principal_set') else '<br>⚠ 未設本金（control.json principal_hkd），日蝕／硬止損未啟用'}</small></div>
-<div class=card><h3>舊電閘（只供 Claude 參考）</h3><div class="big {gate_cls}">{esc(gate.get('status') or '未知')}</div><small>{esc(gate.get('reason'))}</small></div>
-<div class=card><h3>市場</h3><div class=big>{esc(s.get('last_price') or '—')}</div><small>{esc(s.get('session'))}<br>M1 {esc(s.get('m1_bars'))} 根・M15 {esc(s.get('m15_bars'))} 根・{'開市' if s.get('market_open') else '休市'}</small></div>
-<div class=card><h3>持倉（{'紙上' if not s.get('execute') else '真倉'}）</h3><div style="font-size:14px">{esc(_pos_text(s.get('position')))}</div></div>
-<div class=card><h3>紙上成績</h3><div class="big {'ok' if st.get('pnl_usd', 0) >= 0 else 'bad'}">{st.get('pnl_usd', 0):+.2f} USD</div><small>{esc(st.get('n', 0))} 筆・勝 {esc(st.get('wins', 0))}・最大回撤 {esc(st.get('max_dd', 0))}・今日開倉 {esc(s.get('trades_today'))}</small></div>
-<div class=card><h3>AI 今日用量</h3><div class=big>${esc(usage.get('cost_usd', 0))}</div><small>決策 {esc(usage.get('decide', 0))} 次・篩選 {esc(usage.get('screen', 0))} 次・p95 {esc(usage.get('p95_ms'))} ms</small></div>
-</div>
-<div class=card style="margin-bottom:14px"><h3>最近決策（最新在上）</h3><table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲／費用</th></tr>{rows_d or '<tr><td colspan=5>未有</td></tr>'}</table></div>
-<div class=card style="margin-bottom:14px"><h3>紙上交易</h3><table><tr><th>開 → 平（HKT）</th><th>方向</th><th>價</th><th>原因</th><th>USD</th></tr>{rows_t or '<tr><td colspan=5>未有</td></tr>'}</table></div>
-<div class=card><h3>硬性風控（環境變數，AI 無權改）</h3><table>{risk_rows}</table></div>
-<div class=sub style="margin-top:12px">舊服務 zhuge-risk-manager 嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。本頁只讀。</div>
-</div></body></html>"""
+    trades_html = ("<h3>📒 成交紀錄（美元）</h3>"
+                   + ("<div style='overflow-x:auto'><table><tr><th>開倉</th><th>平倉</th><th>方向</th><th>開倉價</th><th>平倉價</th><th>盈虧</th><th>分鐘</th><th>出場原因</th></tr>"
+                      + rows + "</table></div>" if rows else "<p class='muted'>未有平倉成交。</p>"))
+    drows = "".join(
+        f"<tr><td>{esc(fmt_hkt(d.get('ts', 0)))}</td><td>{esc(d.get('price'))}</td>"
+        f"<td><span class='tag'>{esc(d.get('final') or d.get('action'))}</span>{(' <small class=neg>AI 提 ' + esc(d.get('action')) + '</small>') if d.get('rejected') else ''}</td>"
+        f"<td>{esc(d.get('reason'))}{('<br><small class=neg>擋：' + esc(d.get('rejected')) + '</small>') if d.get('rejected') else ''}"
+        f"{('<br><small class=muted>' + esc(d.get('applied')) + '</small>') if d.get('applied') and d.get('applied') != 'HOLD' else ''}</td>"
+        f"<td>{esc(d.get('ms') or '—')} ms<br>${esc(d.get('cost_usd') or 0)}</td></tr>"
+        for d in list(reversed(s.get("decisions") or []))[:60])
+    dec_html = ("<h3>🧠 最近決策（最新在上）</h3>"
+                + ("<div style='overflow-x:auto'><table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲／費用</th></tr>" + drows + "</table></div>"
+                   if drows else "<p class='muted'>未有決策。</p>"))
+    sim = ("<div class='lf-grp lf-sim' id='lf-sim-top'><div class='lf-banner'>🧪 模擬倉（前向測試）</div>"
+           + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
+           + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
+           + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
+    lad_cls = {"A": "pos", "B": "", "C": "neg", "D": "neg"}.get(lad.get("level"), "")
+    risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items())
+    ctrl = ("<div class='section'><h2>🛡️ 模式同風控（只讀；開關只喺 GCS xau/control.json，冇網頁按鈕）</h2><div class='grid'>"
+            + card("風控階梯", f"<span class='{lad_cls}'>{esc(lad.get('level') or 'A')}</span>", esc("；".join(lad.get("reasons") or []) or "正常"))
+            + card("模式", "⛔ 停機" if ctl.get("halt") else ("⏸ 暫停開倉" if ctl.get("pause_new") else "▶ 運行"),
+                   esc(ctl.get("halt_reason") or ("" if ctl.get("principal_set") else "⚠ 未設本金（principal_hkd），日蝕／硬止損未啟用")))
+            + card("今日盈虧（階梯用）", "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}", "只計天覆陣嘅單，含浮動")
+            + card("舊電閘（只供 Claude 參考）", esc(gate.get("status") or "—"), esc(gate.get("reason")))
+            + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
+    foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"
+    return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+            f"<meta http-equiv='refresh' content='300'><title>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}</title><style>{CSS}</style></head>"
+            f"<body><div class='container'>{head}{intro}{real}{sim}{ctrl}{foot}</div></body></html>")

@@ -228,7 +228,7 @@ config.EXECUTE = False
 
 print("=== 頁面 ===")
 r = client.get("/"); html = r.get_data(as_text=True)
-check("頁面有陣名、紙上交易、硬性風控、階梯", "天覆陣" in html and "紙上交易" in html and "XAU_MAX_SL_USD" in html and "風控階梯" in html)
+check("頁面有陣名、模擬倉、成交紀錄、硬性風控、階梯", "天覆陣" in html and "模擬倉" in html and "成交紀錄" in html and "XAU_MAX_SL_USD" in html and "風控階梯" in html)
 j = client.get("/?format=json").get_json()
 check("JSON：stats、decisions、risk、階梯", j["ladder"]["level"] in "ABCD" and j["stats"]["n"] >= 3 and j["decisions"] and j["risk"]["XAU_LOTS"] == 0.01, j["stats"])
 
