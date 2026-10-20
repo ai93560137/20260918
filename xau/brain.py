@@ -81,7 +81,7 @@ GATE_FORMAT = {"type": "json_schema", "schema": {
 
 STABLE_KEYS = ("product", "bars_m15_older")           # 一個鐘先變一次：放可快取前段（整點切，見 main.build_context）
 STABLE2_KEYS = ("bars_m1_older",)                     # 上一個整點之前嘅 M1：第二個快取段
-CACHE_TTL_DECIDE = "1h"                               # 決策模型唔係每根都問（篩選先），1 小時 TTL（寫 2×）
+CACHE_TTL_DECIDE = "5m"                               # 決策約每 2 分鐘一次（使用者 10-21：改 5 分鐘緩存，寫 1.25×；10-20 實測 1h 寫 2× 令成本持平）
 CACHE_TTL_SCREEN = "5m"                               # 篩選每分鐘都問，5 分鐘 TTL 夠（寫 1.25×）
 FALLBACK_BETA = "server-side-fallback-2026-07-01"     # 拒答時由伺服器按類別轉後備模型（只限 Anthropic API）
 FALLBACK_MODELS = ("claude-opus-5-5", "claude-fable-5-1", "claude-sonnet-5-5")

@@ -13,23 +13,23 @@
 //| cmd_text 嘅指令（open／close／modify），回報 cmd_ack。               |
 //|                                                                  |
 //| 設計原則（來自 V23 踩過嘅坑，見 handoff/天覆陣.md §3）：               |
-//|  · 只管 _Symbol ＋ InpMagic 嘅倉；唔接手、唔平其他 magic 嘅單         |
+//|  · 只管 _Symbol ＋ magic 嘅倉（v0.36 按圖表商品自動）；唔平其他 magic   |
 //|  · 回報嘅盈虧只計自己 magic（已實現今日＋浮動），唔用戶口淨值           |
 //|  · 開倉一定帶伺服器端 SL（冇 SL 嘅 open 指令拒絕執行）                 |
 //|  · cmd id 去重：用 GlobalVariable 記最近執行過嘅 id，重啟都唔重複      |
 //|  · 唔做定時出場、唔做帳戶回撤熔斷（呢啲由 Cloud Run 決定）             |
 //|  · 日誌唔印權杖同網址                                              |
-//| 用法：MT5 → 工具 → 選項 → EA 交易 → 允許 WebRequest 加 InpUrl；      |
+//| 用法：MT5 → 工具 → 選項 → EA 交易 → 允許 WebRequest 加服務網址；    |
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.35"
+#property version   "0.36"
 #property strict
 #include <Trade\Trade.mqh>
 
-input string InpUrl        = "https://zhuge-xau-1056099871997.europe-west1.run.app/"; // Cloud Run 網址（結尾 /）（使用者 10-20：預設填好）
+input string InpUrl        = "";        // Cloud Run 網址（結尾 /）；留空＝按圖表商品自動（XAUUSD→zhuge-xau、EURUSD→zhuge-eurusd…，v0.36 使用者 10-21）
 input string InpToken      = "";        // WEBHOOK_SECRET_TOKEN（唔會印出）
-input long   InpMagic      = 921;       // 只管呢個 magic 嘅單（線上 V23 用 920，天覆陣用 921）
+input long   InpMagic      = 0;         // 只管呢個 magic 嘅單；0＝按圖表商品自動（XAUUSD 921、EURUSD 922、GBPUSD 923、AUDUSD 924、USDJPY 925；V23 用 920）
 input int    InpIntervalSec = 60;       // 心跳間隔（秒）
 input int    InpTimeoutMs  = 15000;     // WebRequest 逾時
 input int    InpSlippagePts = 50;       // 市價單允許滑點（點）
@@ -39,6 +39,27 @@ input string InpLedgerStart = "2026.10.20"; // 自己 magic 累計已實現由�
 input string InpBotMagics  = "921,922,923,924,925"; // 戶口總階梯（v0.35）：天覆陣全部產品嘅 magic，心跳送合計日蝕／浮動／累計（唔計手動單同其他 EA）
 
 CTrade   trade;
+long     g_magic = 0;                    // v0.36：實際用嘅 magic（InpMagic 或按 _Symbol 自動）
+string   g_url   = "";                   // v0.36：實際用嘅網址（InpUrl 或按 _Symbol 自動）
+
+//---------------------------------------------------------------- v0.36 EA 參數跟圖表預設（使用者 10-21）
+long AutoMagic()
+{
+   string s = _Symbol; StringToUpper(s);
+   if(StringFind(s, "XAUUSD") == 0) return 921;
+   if(StringFind(s, "EURUSD") == 0) return 922;
+   if(StringFind(s, "GBPUSD") == 0) return 923;
+   if(StringFind(s, "AUDUSD") == 0) return 924;
+   if(StringFind(s, "USDJPY") == 0) return 925;
+   return 929;                                                // 其他商品：同服務 config.PRODUCT 預設一致
+}
+string AutoUrl()
+{
+   string s = _Symbol; StringToUpper(s);
+   string svc = (StringFind(s, "XAUUSD") == 0) ? "zhuge-xau" : "zhuge-" + StringSubstr(s, 0, 6);
+   StringToLower(svc);
+   return "https://" + svc + "-1056099871997.europe-west1.run.app/";
+}
 datetime g_last_m1 = 0;
 bool     g_need_hist = true;            // 首個心跳回填 M1／M15 歷史；之後服務回 need_history:true 再送
 string   g_seen_ids = "";               // 最近執行過嘅 id，以 | 分隔（亦存 GlobalVariable）
@@ -53,7 +74,7 @@ bool IsMine(ulong ticket)
 {
    if(!PositionSelectByTicket(ticket)) return false;
    if(PositionGetString(POSITION_SYMBOL) != _Symbol) return false;
-   return PositionGetInteger(POSITION_MAGIC) == InpMagic;
+   return PositionGetInteger(POSITION_MAGIC) == g_magic;
 }
 
 void LoadSeen()
@@ -94,7 +115,7 @@ double OwnRealizedSince(datetime from)
       ulong d = HistoryDealGetTicket(i);
       if(d == 0) continue;
       if(HistoryDealGetString(d, DEAL_SYMBOL) != _Symbol) continue;
-      if(HistoryDealGetInteger(d, DEAL_MAGIC) != InpMagic) continue;
+      if(HistoryDealGetInteger(d, DEAL_MAGIC) != g_magic) continue;
       if(HistoryDealGetInteger(d, DEAL_ENTRY) == DEAL_ENTRY_IN) continue;
       sum += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION) + HistoryDealGetDouble(d, DEAL_SWAP);
    }
@@ -215,14 +236,14 @@ string BuildHeartbeat()
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    string hist = g_need_hist ? BuildHist() : "";
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.35\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.36\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
       "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,\"trade_allowed\":%s,\"bots_daily_pnl\":%.2f,\"bots_floating\":%.2f,\"bots_realized_total\":%.2f,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s%s}",
       JsonEsc(InpToken), (long)AccountInfoInteger(ACCOUNT_LOGIN), JsonEsc(AccountInfoString(ACCOUNT_SERVER)), _Symbol, cur,
       AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
       AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(), OwnRealizedTotal(),
-      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), BotsRealizedToday(), BotsFloating(), BotsRealizedTotal(), pos_json, m1, m15, hist);
+      buy, sell, buy - sell, g_magic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), BotsRealizedToday(), BotsFloating(), BotsRealizedTotal(), pos_json, m1, m15, hist);
 }
 
 //---------------------------------------------------------------- HTTP
@@ -233,7 +254,7 @@ bool Post(string body, string &reply)
    int n = StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
    if(n > 0) ArrayResize(data, n - 1);
    ResetLastError();
-   int code = WebRequest("POST", InpUrl, headers, InpTimeoutMs, data, result, rh);
+   int code = WebRequest("POST", g_url, headers, InpTimeoutMs, data, result, rh);
    if(code == 200) { reply = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8); return true; }
    PrintFormat("⚠️ WebRequest 失敗 code=%d err=%d", code, GetLastError());
    return false;
@@ -283,11 +304,11 @@ void Execute(string line)
    if(id == "") { Print("⚠️ 指令冇 id，略過：", line); return; }
    if(Seen(id)) { Print("↩️ 重複 id，已執行過，略過：", line); return; }   // 心跳重送
    long magic = (long)StringToInteger(Field(parts, n, "magic"));
-   if(magic != InpMagic) { MarkSeen(id); Reject(id, line, "magic mismatch"); return; }
+   if(magic != g_magic) { MarkSeen(id); Reject(id, line, "magic mismatch"); return; }
    MarkSeen(id);                                          // 先記，再執行：寧可漏一次，唔好重複落單
    if(!InpDryRun && TradeBlockedReason() != "")           // 三個自動交易開關任何一個關，先回報原因，唔送單
    { Reject(id, line, "trade not allowed: " + TradeBlockedReason()); return; }
-   trade.SetExpertMagicNumber(InpMagic);
+   trade.SetExpertMagicNumber(g_magic);
    trade.SetDeviationInPoints(InpSlippagePts);
 
    if(op == "open")
@@ -338,9 +359,13 @@ void Execute(string line)
 int OnInit()
 {
    if(InpToken == "") { Print("❌ InpToken 未填"); return INIT_PARAMETERS_INCORRECT; }
+   g_magic = (InpMagic > 0) ? InpMagic : AutoMagic();           // 手填值覆蓋；0＝自動
+   g_url   = (InpUrl != "") ? InpUrl : AutoUrl();
+   if(StringSubstr(g_url, StringLen(g_url) - 1) != "/") g_url += "/";
+   PrintFormat("🔧 參數：url=%s magic=%I64d（%s）", g_url, g_magic, (InpMagic > 0 || InpUrl != "") ? "手填" : "按圖表商品自動");
    LoadSeen();
    EventSetTimer(InpIntervalSec);
-   PrintFormat("🌌 天覆陣執行器啟動 symbol=%s magic=%I64d dry_run=%s", _Symbol, InpMagic, InpDryRun ? "true" : "false");
+   PrintFormat("🌌 天覆陣執行器啟動 symbol=%s magic=%I64d dry_run=%s", _Symbol, g_magic, InpDryRun ? "true" : "false");
    return INIT_SUCCEEDED;
 }
 
