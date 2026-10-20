@@ -23,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.34"
+#property version   "0.35"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -36,6 +36,7 @@ input int    InpSlippagePts = 50;       // 市價單允許滑點（點）
 input double InpMaxLots    = 0.10;      // 單張上限（第二道鎖；Cloud Run 亦有 XAU_MAX_LOTS）
 input bool   InpDryRun     = true;      // true = 只印指令唔落單（第一次掛先用）
 input string InpLedgerStart = "2026.10.20"; // 自己 magic 累計已實現由呢日起計（realized_total）
+input string InpBotMagics  = "921,922,923,924,925"; // 戶口總階梯（v0.35）：天覆陣全部產品嘅 magic，心跳送合計日蝕／浮動／累計（唔計手動單同其他 EA）
 
 CTrade   trade;
 datetime g_last_m1 = 0;
@@ -101,6 +102,43 @@ double OwnRealizedSince(datetime from)
 }
 
 double OwnRealizedToday() { return OwnRealizedSince((datetime)(TimeCurrent() - TimeCurrent() % 86400)); }
+
+// v0.35 戶口總階梯：天覆陣全部產品（InpBotMagics）嘅合計，任何商品
+bool IsBotMagic(long magic)
+{
+   string parts[];
+   int n = StringSplit(InpBotMagics, ',', parts);
+   for(int i = 0; i < n; i++) { string t = parts[i]; StringTrimLeft(t); StringTrimRight(t); if(t != "" && StringToInteger(t) == magic) return true; }
+   return false;
+}
+double BotsRealizedSince(datetime from)
+{
+   if(!HistorySelect(from, TimeCurrent())) return 0.0;
+   double sum = 0.0;
+   for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+   {
+      ulong d = HistoryDealGetTicket(i);
+      if(d == 0) continue;
+      if(!IsBotMagic(HistoryDealGetInteger(d, DEAL_MAGIC))) continue;
+      if(HistoryDealGetInteger(d, DEAL_ENTRY) == DEAL_ENTRY_IN) continue;
+      sum += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION) + HistoryDealGetDouble(d, DEAL_SWAP);
+   }
+   return sum;
+}
+double BotsRealizedToday() { return BotsRealizedSince((datetime)(TimeCurrent() - TimeCurrent() % 86400)); }
+double BotsRealizedTotal() { return BotsRealizedSince(StringToTime(InpLedgerStart)); }
+double BotsFloating()
+{
+   double f = 0.0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !PositionSelectByTicket(t)) continue;
+      if(!IsBotMagic(PositionGetInteger(POSITION_MAGIC))) continue;
+      f += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+   }
+   return f;
+}
 double OwnRealizedTotal() { return OwnRealizedSince(StringToTime(InpLedgerStart)); }
 
 //---------------------------------------------------------------- 自動交易三個開關（終端掣／EA 屬性／戶口）
@@ -177,14 +215,14 @@ string BuildHeartbeat()
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
    string hist = g_need_hist ? BuildHist() : "";
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.34\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.35\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
-      "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,\"trade_allowed\":%s,"
+      "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,\"trade_allowed\":%s,\"bots_daily_pnl\":%.2f,\"bots_floating\":%.2f,\"bots_realized_total\":%.2f,"
       "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s%s}",
       JsonEsc(InpToken), (long)AccountInfoInteger(ACCOUNT_LOGIN), JsonEsc(AccountInfoString(ACCOUNT_SERVER)), _Symbol, cur,
       AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
       AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(), OwnRealizedTotal(),
-      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), pos_json, m1, m15, hist);
+      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), BotsRealizedToday(), BotsFloating(), BotsRealizedTotal(), pos_json, m1, m15, hist);
 }
 
 //---------------------------------------------------------------- HTTP

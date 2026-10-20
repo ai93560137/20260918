@@ -327,7 +327,8 @@ def live_hb(i, close, positions, account="70001", **extra):
     t = T1 + i * 60
     body = {"action": "heartbeat", "token": "tok", "account": account, "server": "Demo", "symbol": "XAUUSD", "currency": "HKD",
             "balance": 10000, "equity": 10000, "credit": 0, "margin_level": 0, "floating": extra.get("floating", 0.0), "daily_pnl": extra.get("daily_pnl", 0.0),
-            "realized_total": extra.get("realized_total", 0.0), "trade_allowed": extra.get("trade_allowed"), "buy_lots": 0.01 if positions else 0, "sell_lots": 0, "net_lots": 0.01 if positions else 0, "magic": 921,
+            "realized_total": extra.get("realized_total", 0.0), "trade_allowed": extra.get("trade_allowed"),
+            "bots_daily_pnl": extra.get("bots_daily_pnl"), "bots_floating": extra.get("bots_floating"), "bots_realized_total": extra.get("bots_realized_total"), "buy_lots": 0.01 if positions else 0, "sell_lots": 0, "net_lots": 0.01 if positions else 0, "magic": 921,
             "dry_run": False, "positions": positions,
             "m1_ohlc": {"time": t, "open": close - 0.5, "high": close + 0.3, "low": close - 0.8, "close": close, "is_new_bar": True},
             "m15_ohlc": {"time": T1 - 900, "open": 3999.0, "high": 4001.0, "low": 3998.0, "close": 4000.0}}
@@ -352,7 +353,13 @@ client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": mid
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
 st, d = live_hb(3, 4003, POS, daily_pnl=-50.0, floating=20.0)
 state = json.loads(FAKE["xau/state.json"][0])
-check("真倉階梯用 EA 數字：今日 = daily_pnl＋floating = −30 HKD", abs(state["ladder"]["daily_pnl_hkd"] - (-30.0)) < 0.01, state["ladder"])
+check("真倉階梯用 EA 數字：今日 = daily_pnl＋floating = −30 HKD（冇 bots_* → scope=own）", abs(state["ladder"]["daily_pnl_hkd"] - (-30.0)) < 0.01 and state["ladder"]["scope"] == "own", state["ladder"])
+st, d = live_hb(4, 4003, POS, daily_pnl=-50.0, floating=20.0, bots_daily_pnl=-400.0, bots_floating=-150.0, bots_realized_total=-900.0)
+state = json.loads(FAKE["xau/state.json"][0])
+check("戶口總階梯（EA v0.35 bots_*）：今日 = bots_daily_pnl＋bots_floating = −550 HKD、scope=account、本產品 −30 另記", abs(state["ladder"]["daily_pnl_hkd"] - (-550.0)) < 0.01
+      and state["ladder"]["scope"] == "account" and abs(state["ladder"]["own_daily_pnl_hkd"] - (-30.0)) < 0.01 and abs(state["ladder"]["cum_pnl_usd"] - (-1050.0 / 7.8)) < 0.01, state["ladder"])
+html_l = client.get("/").get_data(as_text=True)
+check("頁面：今日盈虧卡標明戶口合計＋本產品", "今日盈虧（階梯用）・戶口合計" in html_l and "本產品 HK$-30" in html_l)
 config.MAX_HOLD_MIN = 1
 st, d = live_hb(5, 4003, POS)
 check("最長持倉到 → 排 close（一次）", d["cmd_text"].startswith("close|all|magic=921"), d)

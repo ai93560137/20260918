@@ -174,8 +174,9 @@ def render(status):
     ctrl = ("<div class='section'><h2>🛡️ 模式同風控（只讀；開關只喺 GCS xau/control.json，冇網頁按鈕、冇硬鎖）</h2><div class='grid'>"
             + card("模式", esc(ctl.get("mode") or "RUN"), esc(run_text(s)))
             + card("風控階梯", f"<span class='{lad_cls}'>{esc(lad.get('level') or 'A')}</span>", esc("；".join(lad.get("reasons") or []) or "正常"))
-            + card("今日盈虧（階梯用）", "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}",
-                   "只計天覆陣嘅單，含浮動" + ("" if ctl.get("principal_set") else "；⚠ 未設本金，日蝕未啟用"))
+            + card("今日盈虧（階梯用）" + ("・戶口合計" if lad.get("scope") == "account" else ""), "—" if lad.get("daily_pnl_hkd") is None else f"HK${lad['daily_pnl_hkd']:+,.0f}",
+                   ("天覆陣全部產品合計（EA InpBotMagics），含浮動" + (f"；本產品 HK${lad['own_daily_pnl_hkd']:+,.0f}" if lad.get("own_daily_pnl_hkd") is not None else "")
+                    if lad.get("scope") == "account" else "只計天覆陣嘅單，含浮動") + ("" if ctl.get("principal_set") else "；⚠ 未設本金，日蝕未啟用"))
             + card("只提示嘅警報", esc(alerts), "回撤／保證金：只發 Telegram，唔停唔鎖")
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"

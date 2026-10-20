@@ -170,11 +170,20 @@ def risk_ladder(state, control, account, bar, now):
     """使用者 10-20：真倉同真倉戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
     「自己嘅權益」= 本金 + 累計已實現 + 浮動；保證金水平係戶口級。"""
     principal = market.to_float(control.get("principal_hkd"))
+    scope = "paper"
     if config.EXECUTE:
-        # 真倉：EA 回報（戶口貨幣 HKD）：daily_pnl＝自己 magic 今日已實現、floating＝自己 magic 浮動、realized_total＝自 InpLedgerStart
-        floating = market.to_float(account.get("floating"), 0.0) or 0.0
-        daily_hkd = (market.to_float(account.get("daily_pnl"), 0.0) or 0.0) + floating
-        cum_hkd = (market.to_float(account.get("realized_total"), 0.0) or 0.0) + floating
+        # 真倉：EA 回報（戶口貨幣 HKD）。v0.35 起優先用 bots_*（天覆陣全部產品合計：InpBotMagics，唔計手動單同其他 EA）——
+        # 戶口總階梯（xau/ACCOUNT_LADDER.md 方案 A，使用者 10-21 批）；冇 bots_* 就退回自己 magic（daily_pnl／floating／realized_total）。
+        if market.to_float(account.get("bots_daily_pnl")) is not None:
+            scope = "account"
+            floating = market.to_float(account.get("bots_floating"), 0.0) or 0.0
+            daily_hkd = (market.to_float(account.get("bots_daily_pnl"), 0.0) or 0.0) + floating
+            cum_hkd = (market.to_float(account.get("bots_realized_total"), 0.0) or 0.0) + floating
+        else:
+            scope = "own"
+            floating = market.to_float(account.get("floating"), 0.0) or 0.0
+            daily_hkd = (market.to_float(account.get("daily_pnl"), 0.0) or 0.0) + floating
+            cum_hkd = (market.to_float(account.get("realized_total"), 0.0) or 0.0) + floating
         daily_usd, cum_usd = daily_hkd / config.HKD_PER_USD, cum_hkd / config.HKD_PER_USD
     else:
         daily_usd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"])
@@ -190,8 +199,10 @@ def risk_ladder(state, control, account, bar, now):
                        peak_equity=(control.get("equity_peak") if principal else None),
                        daily_pnl_hkd=daily_usd * config.HKD_PER_USD,
                        margin_level=market.to_float(account.get("margin_level")), night=market.is_night(now))
+    own_daily = ((market.to_float(account.get("daily_pnl"), 0.0) or 0.0) + (market.to_float(account.get("floating"), 0.0) or 0.0)) if config.EXECUTE else None
     lad.update(own_equity_hkd=(round(own_equity, 2) if own_equity is not None else None),
                daily_pnl_hkd=round(daily_usd * config.HKD_PER_USD, 2), cum_pnl_usd=cum_usd, night=market.is_night(now),
+               scope=scope, own_daily_pnl_hkd=(round(own_daily, 2) if own_daily is not None else None),
                level=("D" if lad["stop"] else ("B" if lad["pause"] else "A")))
     return lad
 
@@ -427,7 +438,8 @@ def handle_heartbeat(payload):
         log_event(f"ℹ️ [{config.TEAM_NAME}] 非 XAU_ACCOUNT 嘅心跳，略過（account={str(payload.get('account') or '')[:12]}）", component="ea")
         return jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "credit", "floating", "daily_pnl",
-                                                             "buy_lots", "sell_lots", "net_lots", "margin_level", "realized_total")}
+                                                             "buy_lots", "sell_lots", "net_lots", "margin_level", "realized_total",
+                                                             "bots_daily_pnl", "bots_floating", "bots_realized_total")}   # bots_*：EA v0.35 戶口總階梯合計
     offset = server_offset(payload, now)
     account.update(account_id=str(payload.get("account") or "")[:24], server=str(payload.get("server") or "")[:40],
                    dry_run=bool(payload.get("dry_run")), positions=own_positions(payload, offset), server_offset=offset,

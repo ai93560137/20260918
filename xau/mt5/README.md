@@ -37,6 +37,9 @@ https://zhuge-xau-1056099871997.europe-west1.run.app
 每個產品一張圖表一個 EA、一個服務：EURUSD 圖表掛同一個 TianfuExecutor，`InpUrl` 改成 zhuge-eurusd 網址、`InpMagic=922`（XAUUSD 921）、`InpDryRun=true`（影子）。
 v0.34 價格按 `_Digits` 送（EURUSD 5 位），舊版 v0.33 以下送 2 位會令外匯 K 線全部變 1.09，**外匯圖表一定要 v0.34**。
 
+## 3a2. v0.35 起：戶口總階梯
+參數 `InpBotMagics`（預設 `921,922,923,924,925`）要兩張圖表一樣；心跳多送天覆陣全部產品嘅合計日蝕／浮動／累計，服務用佢計階梯。
+
 ## 3b. v0.33 起：回填歷史
 EA 首個心跳會送最近 330 根 M1＋60 根 M15（「專家」分頁印「📚 回填歷史」），服務即刻夠 20 根 M15 決策；之後服務回 `need_history:true`（例如歷史被重置）EA 就再送一次。
 
