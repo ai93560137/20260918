@@ -205,19 +205,25 @@ void Ack(string id, bool ok, ulong ticket, string msg)
 }
 
 //---------------------------------------------------------------- 執行指令
+void Reject(string id, string line, string msg)        // 使用者 10-20：所有拒絕／略過都要喺「專家」分頁有一行紀錄
+{
+   Print("❌ 拒絕指令：", msg, " ｜ ", line);
+   Ack(id, false, 0, msg);
+}
+
 void Execute(string line)
 {
    string parts[];
    int n = StringSplit(line, '|', parts);
-   if(n < 2) return;
+   if(n < 2) { Print("❌ 指令格式錯，略過：", line); return; }
    string op = parts[0], id = Field(parts, n, "id");
    if(id == "") { Print("⚠️ 指令冇 id，略過：", line); return; }
-   if(Seen(id)) return;                                   // 已執行過（心跳重送）
+   if(Seen(id)) { Print("↩️ 重複 id，已執行過，略過：", line); return; }   // 心跳重送
    long magic = (long)StringToInteger(Field(parts, n, "magic"));
-   if(magic != InpMagic) { Print("⚠️ magic 唔符，略過：", line); MarkSeen(id); Ack(id, false, 0, "magic mismatch"); return; }
+   if(magic != InpMagic) { MarkSeen(id); Reject(id, line, "magic mismatch"); return; }
    MarkSeen(id);                                          // 先記，再執行：寧可漏一次，唔好重複落單
    if(!InpDryRun && TradeBlockedReason() != "")           // 三個自動交易開關任何一個關，先回報原因，唔送單
-   { Print("❌ 自動交易被擋：", TradeBlockedReason(), " ", line); Ack(id, false, 0, "trade not allowed: " + TradeBlockedReason()); return; }
+   { Reject(id, line, "trade not allowed: " + TradeBlockedReason()); return; }
    trade.SetExpertMagicNumber(InpMagic);
    trade.SetDeviationInPoints(InpSlippagePts);
 
@@ -228,10 +234,10 @@ void Execute(string line)
       double sl = StringToDouble(Field(parts, n, "sl"));
       string tp_s = Field(parts, n, "tp");
       double tp = tp_s == "" ? 0.0 : StringToDouble(tp_s);
-      if(lots <= 0 || lots > InpMaxLots) { Ack(id, false, 0, "lots out of range"); return; }
-      if(sl <= 0) { Ack(id, false, 0, "no SL"); return; }                       // 冇止損唔開
+      if(lots <= 0 || lots > InpMaxLots) { Reject(id, line, StringFormat("lots out of range (%.2f, max %.2f)", lots, InpMaxLots)); return; }
+      if(sl <= 0) { Reject(id, line, "no SL"); return; }                       // 冇止損唔開
       // 只管一張：已有自己嘅倉就唔開
-      for(int i = PositionsTotal() - 1; i >= 0; i--) { ulong t = PositionGetTicket(i); if(t != 0 && IsMine(t)) { Ack(id, false, 0, "already in position"); return; } }
+      for(int i = PositionsTotal() - 1; i >= 0; i--) { ulong t = PositionGetTicket(i); if(t != 0 && IsMine(t)) { Reject(id, line, StringFormat("already in position (ticket %I64u)", t)); return; } }
       if(InpDryRun) { PrintFormat("🧪 [dry-run] open %s %.2f sl=%.2f tp=%.2f id=%s", side, lots, sl, tp, id); Ack(id, true, 0, "dry-run"); return; }
       bool ok = (side == "BUY") ? trade.Buy(lots, _Symbol, 0.0, sl, tp, "天覆陣 " + id)
                                 : trade.Sell(lots, _Symbol, 0.0, sl, tp, "天覆陣 " + id);
@@ -258,12 +264,11 @@ void Execute(string line)
          msg += trade.ResultRetcodeDescription() + ";";
          PrintFormat("%s %s ticket=%I64u → %s %s", ok ? "✅" : "❌", op, t, trade.ResultRetcodeDescription(), id);
       }
-      if(!any) { Ack(id, false, 0, "no own position"); return; }
+      if(!any) { Reject(id, line, "no own position"); return; }
       Ack(id, all_ok, 0, InpDryRun ? "dry-run" : msg);
       return;
    }
-   Print("⚠️ 未知指令：", op);
-   Ack(id, false, 0, "unknown op");
+   Reject(id, line, "unknown op " + op);
 }
 
 //---------------------------------------------------------------- 事件
