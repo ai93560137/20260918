@@ -626,7 +626,8 @@ class XauProfileTests(unittest.TestCase):
             ("GET", build_op["name"], FakeResp(200, build_done)),
             ("POST", f"locations/{RUN_REGION}/services", FakeResp(200, {"name": "projects/p/locations/l/operations/o9", "done": True, "response": created})),
         ])
-        out, code = run(["--profile", "xau", "deploy", "--yes", "--no-check", "--set-env", "XAU_EXECUTE=0", "CLAUDE_MODEL=claude-opus-5-5"], s, RUN_ENV)
+        out, code = run(["--profile", "xau", "deploy", "--yes", "--no-check", "--set-env", "XAU_EXECUTE=0", "CLAUDE_MODEL=claude-opus-5-5",
+                         "--copy-env", "WEBHOOK_API_KEY"], s, RUN_ENV)
         self.assertEqual(code, 0, out)
         creates = [c for c in s.calls if c[0] == "POST" and c[1].endswith("/services")]
         self.assertEqual(len(creates), 2, "validateOnly 一次、真建立一次")
@@ -637,7 +638,8 @@ class XauProfileTests(unittest.TestCase):
         self.assertEqual(body["template"]["containers"][0]["image"],
                          f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/zhuge-xau:latest@sha256:new")
         self.assertEqual({e["name"]: e["value"] for e in body["template"]["containers"][0]["env"]},
-                         {"XAU_EXECUTE": "0", "CLAUDE_MODEL": "claude-opus-5-5"})
+                         {"XAU_EXECUTE": "0", "CLAUDE_MODEL": "claude-opus-5-5", "WEBHOOK_API_KEY": "supersecret123"})
+        self.assertNotIn("supersecret123", out, "抄過嚟嘅值唔可以印出")
         self.assertEqual(body["template"]["serviceAccount"], "sa@x.iam.gserviceaccount.com")
         self.assertFalse(any(c[1].endswith(":setIamPolicy") for c in s.calls), "唔改 IAM")
 

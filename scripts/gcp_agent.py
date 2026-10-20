@@ -958,6 +958,15 @@ def template_service(ctx: Ctx):
     btpl = (base or {}).get("template") or {}
     image_uri = f"{ctx.region}-docker.pkg.dev/{ctx.project}/cloud-run-source-deploy/{ctx.service}:latest"
     env = [{"name": k, "value": v} for k, v in (parse_kv(ctx.args.set_env) if ctx.args.set_env else {}).items()]
+    # --copy-env KEY…：由 zhuge-risk-manager 抄環境變數（例如 WEBHOOK_SECRET_TOKEN），值唔會印出、唔經命令列
+    base_env = {e["name"]: e for e in ((btpl.get("containers") or [{}])[0].get("env") or [])}
+    for key in (getattr(ctx.args, "copy_env", None) or []):
+        if key in {e["name"] for e in env}:
+            continue
+        if key not in base_env:
+            die(f"--copy-env {key}：{DEFAULT_SERVICE} 冇呢個環境變數")
+        env.append(base_env[key])
+        plan(f"環境變數 {key} 由 {DEFAULT_SERVICE} 抄過嚟（{mask(key, base_env[key].get('value', ''))}）")
     svc = {
         "name": ctx.svc_name,
         "ingress": "INGRESS_TRAFFIC_ALL",
@@ -1207,6 +1216,7 @@ def build_parser():
     s.add_argument("--memory", default=DEFAULT_MEMORY)
     s.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
     s.add_argument("--set-env", nargs="*", metavar="KEY=VAL")
+    s.add_argument("--copy-env", nargs="*", metavar="KEY", help="建立新服務時由 zhuge-risk-manager 抄環境變數（值唔印出）")
     s.add_argument("--no-check", action="store_true", help="部署後不打頁面檢查")
     s.add_argument("--local-only", action="store_true", help="只做本機來源檢查，不連線 GCP")
     s.add_argument("--yes", action="store_true")
