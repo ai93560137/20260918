@@ -167,7 +167,7 @@ def pending_has(state, op):
 
 
 def risk_ladder(state, control, account, bar, now):
-    """使用者 10-20：真倉同 C 戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
+    """使用者 10-20：真倉同真倉戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
     「自己嘅權益」= 本金 + 累計已實現 + 浮動；保證金水平係戶口級。"""
     principal = market.to_float(control.get("principal_hkd"))
     if config.EXECUTE:

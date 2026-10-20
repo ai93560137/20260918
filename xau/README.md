@@ -36,7 +36,7 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
 只管 `_Symbol`＋`InpMagic`；唔接手、唔平其他 magic 嘅單；冇 SL 嘅 open 拒絕；`InpDryRun=true`（預設）只印指令唔落單；id 去重存檔案 `MQL5/Files/tianfu_seen_<symbol>.txt`。
 使用者自己喺 MetaEditor 編譯、先掛 demo。線上 V23 歸 XAUUSD GCP／TV 陣，唔郁。
 
-## 風控階梯點計（使用者 10-20：真倉同 C 戶口共用，唔用獨立戶口）
+## 風控階梯點計（使用者 10-20：真倉同真倉戶口（使用者手動主力戶）共用，唔用獨立戶口）
 
 日蝕／回撤／硬止損**只計天覆陣自己嘅單**：模擬＝紙上盈虧；真倉＝EA 按 magic 回報。「自己嘅權益」= 本金（`control.json principal_hkd`）＋累計已實現＋浮動。
 唔用戶口淨值（有手動單會污染）。保證金水平係戶口級，照用但當作戶口級警報。

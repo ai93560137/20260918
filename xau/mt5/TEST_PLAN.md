@@ -13,7 +13,7 @@
 
 ## 1. 喺邊個戶口測
 - **建議：UltimaMarkets demo 戶口**，另開一個 MT5 終端（portable 模式，唔同資料夾），掛 TianfuExecutor `InpDryRun=false`、`InpMagic=921`。
-- 真戶口 C 嗰個 EA 保持 `InpDryRun=true`；服務 `XAU_ACCOUNT=<demo 登入號>`，所以真戶口嘅心跳會被 `ignored`，真戶口 EA 就算收到指令都唔執行（dry-run 唔入 Execute）——雙重保險。
+- 真倉戶口嗰個 EA 保持 `InpDryRun=true`；服務 `XAU_ACCOUNT=<demo 登入號>`，所以真戶口嘅心跳會被 `ignored`，真戶口 EA 就算收到指令都唔執行（dry-run 唔入 Execute）——雙重保險。
 - 如果 demo 開唔到：真戶口 0.01 手測嘅風險＝每 US$1 金價 ≈ HK$7.8；止損 2–30 美元即每張最多蝕 HK$16–234，再加點差。測試清單第 7 項（日蝕 −6%）喺真戶口**唔做**（要蝕 HK$1,630）。
 
 ## 2. `XAU_EXECUTE=1` 嘅影響
@@ -49,7 +49,7 @@ python3 scripts/gcp_agent.py --profile xau put --any-prefix --object xau/test_cm
 全部通過＋Claude 自己（`mode=RUN`）喺 demo 開／平過 ≥ 3 張單，先算階段 B 完成。
 
 ## 4. 轉真倉（使用者親口講先做）
-0. **前置條件（10-20 總指揮）**：(a) 確認 LTC（Local Trade Copier 跟單主帳）**仍然停用**，或已按 magic 921 排除——10-20 使用者已 unload LTC，轉真倉當日要再確認；(b) 確認真倉戶口號碼——C 戶口 = **34393163**（UltimaMarkets-Live 2），`XAU_ACCOUNT` 要填呢個；34856669 用途未明，唔好用。
+0. **前置條件（10-20 總指揮）**：(a) 確認 LTC（Local Trade Copier 跟單主帳）**仍然停用**，或已按 magic 921 排除——10-20 使用者已 unload LTC，轉真倉當日要再確認；(b) 確認真倉戶口號碼——使用者有多過一個真錢戶口，用邊個未最終確認；號碼係私人資料，見 GCS `xau/control.json`（`live_account`，由總指揮寫入），唔寫入公開 repo；`XAU_ACCOUNT` 要同佢一致。
 1. `--profile xau env set XAU_ACCOUNT=<真戶口登入號> XAU_EXECUTE=1 XAU_LOTS=0.01`（總指揮 dry-run → 使用者批 → `--yes`）。
 2. 真戶口 EA 參數 `InpDryRun=false`（使用者喺 MT5 改）；demo EA 卸載或 `InpDryRun=true`。
 3. 確認頁面「真倉」區顯示持倉來源係 EA、`XAU_ACCOUNT` 正確。
