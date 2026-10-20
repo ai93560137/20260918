@@ -275,7 +275,7 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     # Prompt caching（使用者 10-21）：按「整點」切——上一個整點之前嘅 K 線一個鐘先變一次（可快取前段），本小時嘅先係即時部分
     hour0 = int(m1[-1]["time"]) // 3600 * 3600
     older, recent = [b for b in m15 if b["time"] < hour0], [b for b in m15 if b["time"] >= hour0]
-    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-120:], [b for b in m1 if b["time"] >= hour0]
+    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-60:], [b for b in m1 if b["time"] >= hour0]   # 整點前最多 60 根（10-21 由 120 減，慳 token）
     pos = state.get("position")
     last = m1[-1]["close"]
     position = None

@@ -22,9 +22,9 @@ https://zhuge-xau-1056099871997.europe-west1.run.app
 
 | 參數 | 填 |
 |---|---|
-| `InpUrl` | `https://zhuge-xau-1056099871997.europe-west1.run.app/`（結尾有 `/`） |
+| `InpUrl` | **留空＝按圖表商品自動**（v0.36：XAUUSD→zhuge-xau、EURUSD→zhuge-eurusd、其他→zhuge-<商品>）；手填就用手填值（結尾有 `/`） |
 | `InpToken` | zhuge-xau 嘅 `WEBHOOK_SECRET_TOKEN`（你喺控制台填嘅嗰個；唔好用舊服務嘅） |
-| `InpMagic` | `921`（V23 係 920，一定要唔同） |
+| `InpMagic` | **0＝按圖表商品自動**（XAUUSD 921、EURUSD 922、GBPUSD 923、AUDUSD 924、USDJPY 925；V23 係 920）；手填就用手填值 |
 | `InpIntervalSec` | `60` |
 | `InpTimeoutMs` | `15000` |
 | **`InpDryRun`** | **`true`**（影子階段一定要 true：OnTimer 收到指令都唔會入 Execute，0 落單路徑） |
@@ -32,6 +32,9 @@ https://zhuge-xau-1056099871997.europe-west1.run.app
 
 4. 「一般」分頁：勾「允許算法交易」（EA 要跑 OnTimer；dry-run 唔會落單）。確定。
    **真倉／demo 落單仲要三個開關全開**：工具列「Algo Trading」綠色、EA 屬性「一般」分頁「允許算法交易」有勾、戶口准 EA 交易。任何一個關，落單回 `auto trading disabled by client`（10027）。v0.32 起心跳帶 `trade_allowed`，頁面「真倉狀態」會顯示邊個關住，EA 收到指令亦會先回報 `trade not allowed: …` 而唔送單。
+
+## 3a0. v0.36 起：EA 參數跟圖表預設（使用者 10-21）
+掛上圖表就自動按 `_Symbol` 揀 `InpUrl`／`InpMagic`（專家分頁印「🔧 參數：url=… magic=…（按圖表商品自動）」），使用者唔使逐個填；手填仍可覆蓋。`InpDryRun` 預設仍係 **true**，真落單嘅圖表要自己改 false。
 
 ## 3a. 多產品（v0.34 起）
 每個產品一張圖表一個 EA、一個服務：EURUSD 圖表掛同一個 TianfuExecutor，`InpUrl` 改成 zhuge-eurusd 網址、`InpMagic=922`（XAUUSD 921）、`InpDryRun=true`（影子）。
