@@ -219,7 +219,7 @@
 | 週二至六 08:10 | 1 分鐘 K 線存檔 → GCS `longfei/bars/<產品>/<日>.json` | VM timer `zhuge-longfei-bars` | — |
 | 每日 08:22 | 覆盤 `scripts/longfei_review.py` → GCS `ops/longfei/reviews/`（API 費用表、Haiku 篩選檢查） | Claude Routine（龍飛陣工作階段） | 訂閱額度 |
 
-- **API 費用（龍飛陣估算）**：R218 後約 US$26／日（10-18 加科技七雄每日再多約 US$7）、約 US$570／月（以前全部 Sonnet 約 US$35／日）；Opus 思考 token 可能令實數更高，第一份實數睇 10-20（二）08:22 覆盤。使用者要求約 10-31 比較 Opus 期同 Sonnet 期成績，冇改善就轉返 Sonnet（`settings.env` `CLAUDE_MODEL`）。
+- **API 費用（龍飛陣估算）**：R218 後約 US$26／日（10-18 加科技七雄每日再多約 US$7）、約 US$570／月（以前全部 Sonnet 約 US$35／日）；**第一份實數（10-20 08:22 覆盤，計 10-19 一個美股交易日＋少量 HSI）：US$42.04／日**（決策 Opus 5.5／HSI Sonnet 5.5 US$40.28、Haiku 篩選 US$1.75；模擬 24 隻 US$37.62、真倉 SPY／QQQ US$4.42 已停；快取命中約 40%），比估算高約 60%；淨模擬約 US$38／交易日，一個月 21 個交易日約 US$800。週報【三】由覆盤費用表自動加總（`ops_reports.longfei_api_line`）。使用者要求約 10-31 比較 Opus 期同 Sonnet 期成績，冇改善就轉返 Sonnet（`settings.env` `CLAUDE_MODEL`）。
 - 全部係富途**模擬戶口**；轉真倉要使用者逐隻落指令（`LONGFEI_REAL_PRODUCTS`），並先做：總指揮配對 PR（`FUTU_TEAM_RULES`）、`RISK_LADDER` §6b、`POSITIONS.md` 登記、意圖價登記 `ops/intents.csv`（龍飛陣分支）。
 - 風控階梯：Ⓑ → 龍飛陣全部停開新倉；Ⓒ／Ⓓ 只發 Telegram。
 - 部機：10-18 由 e2-small 升 e2-standard-2（8GB）＋2GB swap（每月約多 US$40）；加程式前要估記憶體同富途 API 次數（見 `ops/INCIDENTS.md` 10-18 兩列）。
