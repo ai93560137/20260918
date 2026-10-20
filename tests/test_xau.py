@@ -1,4 +1,4 @@
-"""[R266] 🌌 天覆陣（xau/）：心跳權杖、K 線累積去重、電閘 LOCK 唔問 AI、篩選、硬性規則、紙上止損／止賺／最長持倉、
+"""[R291] 🌌 天覆陣（xau/）：心跳權杖、K 線累積去重、電閘 LOCK 唔問 AI、篩選、硬性規則、紙上止損／止賺／最長持倉、
 實倉指令佇列同回報、頁面。Claude 用假 brain，GCS 用假 bucket。"""
 import json, os, sys, time, types
 

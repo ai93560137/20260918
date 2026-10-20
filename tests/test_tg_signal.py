@@ -1,4 +1,4 @@
-"""[R264] 外部 Telegram 頻道訊號：解析正規化、下單前檢查、去重、確認 bot 權限、只送一次。"""
+"""[R290] 外部 Telegram 頻道訊號：解析正規化、下單前檢查、去重、確認 bot 權限、只送一次。"""
 import json, os, sys, types
 
 os.environ.setdefault("WEBHOOK_SECRET_TOKEN", "tok")

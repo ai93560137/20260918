@@ -1,4 +1,4 @@
-# 📨 外部 Telegram 頻道訊號 → 分析 → 人手確認 → MT5（R264）
+# 📨 外部 Telegram 頻道訊號 → 分析 → 人手確認 → MT5（R290）
 
 ```
 別人的頻道 ──(你的用戶帳號，Telethon)──▶ claude-ops VM：tg_listener.py

@@ -1,4 +1,4 @@
-"""[R264] 外部 Telegram 頻道 → Cloud Run（action=tg_signal）→ AI 分析 → 訊號確認 bot 發按鈕 → 人手確認後先送 webhook。
+"""[R290] 外部 Telegram 頻道 → Cloud Run（action=tg_signal）→ AI 分析 → 訊號確認 bot 發按鈕 → 人手確認後先送 webhook。
 
 用「用戶帳號」（Telethon／MTProto）讀你已加入但 bot 加唔入去嘅頻道，每則新訊息 POST 到 Cloud Run。
 這個腳本只轉發文字，**唔會下單**；下單只會喺你喺 Telegram 按「✅ 確認下單」之後由 Cloud Run 做。

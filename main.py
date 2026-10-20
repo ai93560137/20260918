@@ -12487,7 +12487,7 @@ def _response_info(response):
 
 
 # =============================================================================
-# 📨 [R264] 外部 Telegram 頻道訊號 → AI 分析 → 人手確認 → webhooktrade（MT5）
+# 📨 [R290] 外部 Telegram 頻道訊號 → AI 分析 → 人手確認 → webhooktrade（MT5）
 # -----------------------------------------------------------------------------
 # 流程：
 #   1. VM／本地電腦的 tg_relay/tg_listener.py 用「用戶帳號」（Telethon）讀別人的頻道，
@@ -12729,7 +12729,7 @@ def tgs_save(sid, mutate_fn):
 
 
 def handle_tg_signal(payload):
-    """[R264] VM 監聽腳本推上嚟嘅頻道訊息。"""
+    """[R290] VM 監聽腳本推上嚟嘅頻道訊息。"""
     text = str(payload.get("text") or "").strip()[:TG_SIGNAL_MAX_TEXT]
     if not text:
         return jsonify({"status": "ignored", "message": "empty text"}), 200
@@ -12825,7 +12825,7 @@ def tgs_send_order(rec):
 
 
 def handle_tg_signal_callback(request):
-    """[R264] Telegram 訊號確認 bot 的 webhook（?tg=signal）。只處理白名單 chat／使用者的按鈕。"""
+    """[R290] Telegram 訊號確認 bot 的 webhook（?tg=signal）。只處理白名單 chat／使用者的按鈕。"""
     import hmac
     secret = os.environ.get("TG_SIGNAL_WEBHOOK_SECRET", "").strip()
     given = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
@@ -12889,7 +12889,7 @@ def handle_tg_signal_callback(request):
     return jsonify({"status": result}), 200
 
 
-# [R266] 🌌 天覆陣（xau/，獨立 Cloud Run 服務）影子階段：EA 仍指向本服務，本服務把帶新 M1 收盤嘅心跳
+# [R291] 🌌 天覆陣（xau/，獨立 Cloud Run 服務）影子階段：EA 仍指向本服務，本服務把帶新 M1 收盤嘅心跳
 #        轉發過去（加上權杖）。短逾時、吞掉所有錯誤，EA 嘅回應唔受影響。XAU_SHADOW_URL 留空 = 關。
 XAU_SHADOW_URL = _env_str("XAU_SHADOW_URL", "")
 XAU_SHADOW_TIMEOUT_SEC = _env_float("XAU_SHADOW_TIMEOUT_SEC", 2.0)
@@ -12946,7 +12946,7 @@ def _dispatch_post(payload):
         return handle_longfei_push(payload)
     if action == "longfei_bars":                     # [R218] 龍飛陣 1 分鐘 K 線收市存檔（只存）
         return handle_longfei_bars(payload)
-    if action == "tg_signal":                        # [R264] VM 監聽腳本推上嚟嘅外部頻道訊息（分析＋人手確認）
+    if action == "tg_signal":                        # [R290] VM 監聽腳本推上嚟嘅外部頻道訊息（分析＋人手確認）
         return handle_tg_signal(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
@@ -12967,7 +12967,7 @@ def receive_tradingview_signal(request):
         return handle_jinnang_api_post(request)
     if request.args.get("view") == "reset":          # 重置頁的表單（需權杖＋確認字串）
         return handle_reset_post(request)
-    if request.args.get("tg") == "signal":           # [R264] 訊號確認 bot 的按鈕（核對 secret_token 標頭）
+    if request.args.get("tg") == "signal":           # [R290] 訊號確認 bot 的按鈕（核對 secret_token 標頭）
         return handle_tg_signal_callback(request)
 
     payload = parse_payload(request)
@@ -12981,7 +12981,7 @@ def receive_tradingview_signal(request):
               component="webhook", direction="in", **summary)
     if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl",
                                      "cme_watchlist", "cme_quotes", "cme_quotes_get", "longfei_push",
-                                     "longfei_bars", "tg_signal"):   # [R94][R264][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+                                     "longfei_bars", "tg_signal"):   # [R94][R290][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
@@ -12992,7 +12992,7 @@ def receive_tradingview_signal(request):
                   action=summary["action"])
         raise
     code, status = _response_info(response)
-    forward_heartbeat_to_xau(payload)                 # [R266] 天覆陣影子：新 M1 收盤先轉發，唔影響回應
+    forward_heartbeat_to_xau(payload)                 # [R291] 天覆陣影子：新 M1 收盤先轉發，唔影響回應
     log_event(f"📤 [回應] HTTP {code} {status} ({int((now_ts() - started) * 1000)} ms)",
               severity="INFO" if code < 500 else "ERROR", component="webhook", direction="out",
               action=summary["action"], http_status=code, result=status)

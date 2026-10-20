@@ -1,4 +1,4 @@
-# 🌌 天覆陣 — XAUUSD CFD（MT5）Claude 決策服務（R266）
+# 🌌 天覆陣 — XAUUSD CFD（MT5）Claude 決策服務（R291）
 
 龍飛陣做期貨／美股（富途），天覆陣做 CFD（MT5）。架構沿用龍飛陣 `hsi_ai_trader/`：
 
