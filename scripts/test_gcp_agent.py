@@ -666,13 +666,13 @@ class XauProfileTests(unittest.TestCase):
         s = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, broken))])
         out, code = run(["--profile", "xau", "deploy"], s, RUN_ENV)
         self.assertEqual(code, 0, out)
-        self.assertIn("冇 baseImageUri", out)
+        self.assertIn("⚠️ 容器冇 baseImageUri", out)
         self.assertIn("python311", out)
         self.assertEqual(writes(s), [])
         ok_svc = {**svc_body(), "name": XAU_SVC_NAME}
         s2 = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, ok_svc))])
         out2, _ = run(["--profile", "xau", "deploy"], s2, RUN_ENV)
-        self.assertNotIn("冇 baseImageUri", out2)
+        self.assertNotIn("⚠️ 容器冇 baseImageUri", out2)   # 只對計畫嗰行（commit 訊息都可能有呢幾個字）
 
 
 if __name__ == "__main__":
