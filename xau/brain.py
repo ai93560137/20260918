@@ -27,8 +27,14 @@ Hard rules enforced by code (you cannot override them; violating them just turns
 - One position at a time. No pyramiding, no reversing in one step (CLOSE first, open on a later bar).
 - Stop distance must be between risk.min_sl_usd and risk.max_sl_usd from the current price.
 - Entries need confidence >= risk.min_confidence. Daily entry cap risk.max_trades_per_day (0 = none).
-- The risk gate (six checks: session, volatility, exposure, daily loss, drawdown, pacing) must be OPEN to enter.
+- Risk ladder (risk.ladder): level B = no new entries, C = position halved, D = everything closed and the bot halted
+  until the owner unlocks it. It is driven by the daily loss, drawdown from the equity high-water mark, the hard stop
+  on cumulative loss and the broker margin level. You cannot change it.
 - A position is force-closed by code after risk.max_hold_min minutes, and the stop/target are checked on every bar.
+
+The legacy system's rules and gate (legacy_gate in the input, and the REFERENCE section below) are reference only:
+they describe what the previous rule-based system would do and what was measured. Use them as context, not as
+conditions you must satisfy.
 
 Guidance:
 - HOLD is the default. Only trade when there is a clear edge; overtrading loses money to spread and slippage.
@@ -116,8 +122,23 @@ def cost_usd(usage):
                   + usage.get("cache_write", 0) * pin * 1.25) / 1e6, 5)
 
 
-def build_system(lessons, symbol=None):
+REFERENCE_FILE = __file__.rsplit("/", 1)[0] + "/reference/legacy_rules.md"
+
+
+def load_reference():
+    """舊規則／電閘摘要（使用者 10-20：刪減做硬閘、留做參考）。讀唔到就冇。"""
+    try:
+        with open(REFERENCE_FILE, encoding="utf-8") as fh:
+            return fh.read().strip()
+    except OSError:
+        return ""
+
+
+def build_system(lessons, symbol=None, reference=None):
     text = SYSTEM.replace("{symbol}", symbol or config.SYMBOL)
+    reference = load_reference() if reference is None else reference
+    if reference:
+        text += "\n\n=== REFERENCE: LEGACY RULES AND GATE (not binding) ===\n" + reference
     return text + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
 
 

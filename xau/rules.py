@@ -29,8 +29,46 @@ def hold_expired(opened_ts, now_ts, max_hold_min=None):
     return bool(max_hold_min) and now_ts - opened_ts >= max_hold_min * 60
 
 
-def validate_decision(d, *, position, last, gate_open, trades_today, cfg=config):
-    """position: None 或 {side: ±1, entry, stop, target, ...}。
+def ladder(*, principal_hkd, equity_net, peak_equity, daily_pnl_hkd, margin_level, night, cfg=config):
+    """風控階梯（RISK_LADDER §6c 草稿）。回傳 {"level": "A"|"B"|"C"|"D", "reasons": [...], "can_open": bool, "halve": bool, "flatten": bool}。
+    principal_hkd 冇設 → 日蝕／硬止損唔計（只計回撤同保證金）；缺數據嗰項跳過（唔會因為冇數據就 Ⓓ）。"""
+    level, reasons = "A", []
+    mult = cfg.NIGHT_MULT if night else 1.0
+
+    def bump(new, why):
+        nonlocal level
+        reasons.append(why)
+        if "ABCD".index(new) > "ABCD".index(level):
+            level = new
+
+    if principal_hkd and principal_hkd > 0:
+        if daily_pnl_hkd is not None:
+            pct = daily_pnl_hkd / principal_hkd * 100
+            if pct <= -cfg.DAILY_LOSS_D_PCT * mult:
+                bump("D", f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_D_PCT * mult:g}%")
+            elif pct <= -cfg.DAILY_LOSS_B_PCT * mult:
+                bump("B", f"當日虧損 {pct:.1f}% ≤ −{cfg.DAILY_LOSS_B_PCT * mult:g}%")
+        if equity_net is not None and equity_net <= principal_hkd * (1 - cfg.HARD_STOP_PCT / 100):
+            bump("D", f"淨值－信用跌至本金 {equity_net / principal_hkd * 100:.0f}%（硬止損 −{cfg.HARD_STOP_PCT:g}%）")
+    if equity_net is not None and peak_equity and peak_equity > 0:
+        dd = max(0.0, (peak_equity - equity_net) / peak_equity * 100)
+        if dd >= cfg.DD_D_PCT:
+            bump("D", f"高水位回撤 {dd:.1f}% ≥ {cfg.DD_D_PCT:g}%")
+        elif dd >= cfg.DD_B_PCT * mult:
+            bump("B", f"高水位回撤 {dd:.1f}% ≥ {cfg.DD_B_PCT * mult:g}%")
+    if margin_level is not None and margin_level > 0:
+        if margin_level < cfg.MARGIN_D_PCT:
+            bump("D", f"保證金水平 {margin_level:.0f}% < {cfg.MARGIN_D_PCT:g}%")
+        elif margin_level < cfg.MARGIN_C_PCT * mult:
+            bump("C", f"保證金水平 {margin_level:.0f}% < {cfg.MARGIN_C_PCT * mult:g}%")
+        elif margin_level < cfg.MARGIN_B_PCT * mult:
+            bump("B", f"保證金水平 {margin_level:.0f}% < {cfg.MARGIN_B_PCT * mult:g}%")
+    return {"level": level, "reasons": reasons, "can_open": level == "A",
+            "halve": level == "C", "flatten": level == "D"}
+
+
+def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, block_reason=None):
+    """position: None 或 {side: ±1, entry, stop, target, ...}。can_open=False（階梯 Ⓑ 以上／暫停開倉／停機）就唔准開新倉。
     回傳 (最終動作, stop, target, 被拒原因或 None)。唔合規一律變 HOLD。"""
     action = str(d.get("action", "HOLD")).upper()
     if action not in VALID_ACTIONS:
@@ -42,8 +80,8 @@ def validate_decision(d, *, position, last, gate_open, trades_today, cfg=config)
         side = 1 if action == "OPEN_LONG" else -1
         if position is not None:
             return "HOLD", None, None, "已有倉位，唔可以再開（最多 1 張，要先 CLOSE）"
-        if not gate_open:
-            return "HOLD", None, None, "電閘 LOCK，唔准開新倉"
+        if not can_open:
+            return "HOLD", None, None, block_reason or "而家唔准開新倉（風控階梯／暫停／停機）"
         if cfg.LONG_ONLY and side < 0:
             return "HOLD", None, None, "XAU_LONG_ONLY=1，唔做空"
         if cfg.MAX_TRADES_PER_DAY and trades_today >= cfg.MAX_TRADES_PER_DAY:

@@ -20,7 +20,12 @@ MT5 EA V23 ──心跳──▶ zhuge-risk-manager（main.py，照舊：電閘�
                                                                                             └─ Claude 決策 → 紙上模擬 → GCS xau/
 ```
 
-- 影子階段（`XAU_EXECUTE=0`，預設）：只寫 GCS `xau/`，心跳回應 `cmd_text` 永遠空，**唔會送單**。電閘只讀舊服務 `zhuge_gate_state.json`。
+- 影子階段（`XAU_EXECUTE=0`，預設）：只寫 GCS `xau/`，心跳回應 `cmd_text` 永遠空，**唔會送單**。
+- **舊規則同電閘唔再係硬閘**（使用者 10-20：「將之前的規則, 電閘, 刪減, 但給該陣claude.ai 做參考」）：六關、錦囊 v4 條件、150 分鐘出場、新聞鎖整理喺
+  `reference/legacy_rules.md`，放入 Claude system prompt 做參考；舊服務 `zhuge_gate_state.json` 只讀，作 `legacy_gate` 參考資料傳畀 Claude。
+- **硬性風控（AI 無權改）**：風控階梯（RISK_LADDER §6c，PR #237 待批）Ⓑ 停開新倉／Ⓒ 減半／Ⓓ 全平＋停機；最大手數、止損距離、最長持倉；
+  緊急停機開關 GCS `xau/control.json`：`{"halt": true/false, "halt_reason": "...", "pause_new": true/false, "principal_hkd": <本金，私人>, "equity_peak": <自動>}`。
+  Ⓓ 之後要使用者把 `halt` 改返 `false` 先會再決策（`gcp_agent.py put` 只准寫 ops/，改 control.json 用 gsutil 或控制台）。
 - 實倉階段（`XAU_EXECUTE=1`）：EA 改指向本服務，心跳回應 `cmd_text` 帶指令，EA 執行後 `cmd_ack` 回報。要先有新 EA（PR B），同埋影子達到預先登記標準（PR C）。
 
 ## 指令格式（實倉）
@@ -54,7 +59,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 
 ## 費用同延遲（影子階段要量）
 
-M1 每日最多 1,440 次。空倉且電閘 LOCK 唔問；空倉先用 Haiku 篩。頁面顯示今日次數、費用、p95 延遲。
+M1 每日最多 1,440 次。休市／停機唔問；空倉先用 Haiku 篩。頁面顯示今日次數、費用、p95 延遲。
 EA `WebRequest` 逾時 15 秒（V23）：實倉前 p95 要低過呢個數，否則改非同步（決定寫 GCS，EA 下一個心跳先取指令）。
 
 ## 部署（未做）

@@ -87,6 +87,22 @@ def ny_date(now_ts):
     return ny.strftime("%Y-%m-%d")
 
 
+def ny_day_start_ts(now_ts):
+    """今個紐約交易日嘅開始（前一日 17:00 ET）。"""
+    from datetime import timedelta
+    ny = datetime.fromtimestamp(now_ts, NY)
+    start = ny.replace(hour=17, minute=0, second=0, microsecond=0)
+    if ny.hour < 17:
+        start -= timedelta(days=1)
+    return start.timestamp()
+
+
+def is_night(now_ts):
+    """夜盤（亞洲時段薄）：紐約 18:00–02:00 ET。"""
+    h = datetime.fromtimestamp(now_ts, NY).hour
+    return h >= 18 or h < 2
+
+
 def fmt_utc(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.fromtimestamp(ts, timezone.utc).strftime(fmt)
 

@@ -38,7 +38,7 @@ SYMBOL = _s("XAU_SYMBOL", "XAUUSD")
 TOKEN = _s("WEBHOOK_SECRET_TOKEN", "")                      # 同 zhuge-risk-manager 相同；心跳同指令回報都要帶
 BUCKET = _s("XAU_BUCKET", "zhuge-risk-manager-bucket")
 PREFIX = _s("XAU_PREFIX", "xau/")                           # 本服務只寫呢個前綴
-LEGACY_GATE_FILE = _s("XAU_LEGACY_GATE_FILE", "zhuge_gate_state.json")   # 影子階段只讀舊服務嘅電閘（唔寫）
+LEGACY_GATE_FILE = _s("XAU_LEGACY_GATE_FILE", "zhuge_gate_state.json")   # 舊服務電閘：只讀，只作參考資料傳畀 Claude（唔係硬閘）
 
 # --- 模式 ---
 # EXECUTE=0（預設）：影子模式——Claude 照決策、紙上模擬、只寫 GCS，心跳回應 cmd_text 永遠空。
@@ -66,7 +66,18 @@ MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐�
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
 LONG_ONLY = _b("XAU_LONG_ONLY", False)                      # 影子階段兩邊都記錄；實倉前使用者決定
 MAGIC = _i("XAU_MAGIC", 920)
-CALL_WHEN_LOCKED = _b("XAU_CALL_WHEN_LOCKED", False)        # 空倉而電閘 LOCK 時唔問 Claude（慳錢）
+# --- 風控階梯（RISK_LADDER §6c 草稿，PR #237；百分比對本金，本金只放 GCS xau/control.json principal_hkd，唔入 repo）---
+# 日蝕同回撤只計天覆陣自己嘅單（影子＝紙上盈虧）；淨值用「淨值－信用」。Ⓑ 停開新倉；Ⓒ 減半；Ⓓ 全平＋停機（要使用者解鎖）。
+DAILY_LOSS_B_PCT = _f("XAU_DAILY_LOSS_B_PCT", 3.0)
+DAILY_LOSS_D_PCT = _f("XAU_DAILY_LOSS_D_PCT", 6.0)
+DD_B_PCT = _f("XAU_DD_B_PCT", 10.0)                         # 對高水位回撤
+DD_D_PCT = _f("XAU_DD_D_PCT", 20.0)
+HARD_STOP_PCT = _f("XAU_HARD_STOP_PCT", 25.0)               # 累計：淨值－信用 ≤ 本金 × (1 − 25%)
+MARGIN_B_PCT = _f("XAU_MARGIN_B_PCT", 300.0)                # EA 回報嘅 margin level（%）
+MARGIN_C_PCT = _f("XAU_MARGIN_C_PCT", 200.0)
+MARGIN_D_PCT = _f("XAU_MARGIN_D_PCT", 150.0)
+NIGHT_MULT = _f("XAU_NIGHT_MULT", 1.5)                      # 夜盤（紐約 18:00–02:00 ET）Ⓑ／Ⓒ 線 ×1.5
+HKD_PER_USD = _f("XAU_HKD_PER_USD", 7.8)
 SPREAD_USD = _f("XAU_SPREAD_USD", 0.30)                     # 紙上模擬每張來回成本（點差）
 
 # --- 數據 ---

@@ -28,6 +28,7 @@ ACCOUNT_FILE = config.PREFIX + "account.json"
 STATE_FILE = config.PREFIX + "state.json"
 LESSONS_FILE = config.PREFIX + "lessons.md"
 DECISIONS_PREFIX = config.PREFIX + "decisions/"
+CONTROL_FILE = config.PREFIX + "control.json"      # 緊急停機開關、暫停開倉、本金（私人）、淨值高水位
 BUNDLED_LESSONS = __file__.rsplit("/", 1)[0] + "/LESSONS.md"
 CMD_TTL_SEC = 600            # 指令 10 分鐘內冇執行就作廢（EA 離線時唔好開舊單）
 
@@ -87,6 +88,36 @@ def save_state(state):
     storage.write_json(STATE_FILE, state)
 
 
+def load_control():
+    base = {"halt": False, "halt_reason": "", "pause_new": False, "principal_hkd": None, "equity_peak": 0.0}
+    try:
+        doc = storage.read_json(CONTROL_FILE, None)
+    except StorageError as exc:
+        log_event(f"⚠️ control.json 讀取失敗（當停機）：{exc}", severity="WARNING")
+        return {**base, "halt": True, "halt_reason": "control.json 讀取失敗"}
+    if isinstance(doc, dict):
+        base.update({k: doc[k] for k in base if k in doc})
+    return base
+
+
+def save_control(control):
+    storage.write_json(CONTROL_FILE, control)
+
+
+def risk_ladder(state, control, account, bar, now):
+    """RISK_LADDER §6c：淨值－信用、高水位、今日紙上盈虧（港幣）、EA 回報嘅 margin level（V23 冇，新 EA 先有）。"""
+    equity, credit = market.to_float(account.get("equity")), market.to_float(account.get("credit"), 0.0) or 0.0
+    equity_net = (equity - credit) if equity is not None else None
+    if equity_net is not None and equity_net > (control.get("equity_peak") or 0.0):
+        control["equity_peak"] = equity_net
+    daily_hkd = paper.daily_pnl_usd(state, market.ny_day_start_ts(now), bar["close"]) * config.HKD_PER_USD
+    lad = rules.ladder(principal_hkd=market.to_float(control.get("principal_hkd")), equity_net=equity_net,
+                       peak_equity=control.get("equity_peak"), daily_pnl_hkd=daily_hkd,
+                       margin_level=market.to_float(account.get("margin_level")), night=market.is_night(now))
+    lad.update(equity_net=equity_net, daily_pnl_hkd=round(daily_hkd, 2), night=market.is_night(now))
+    return lad
+
+
 def legacy_gate():
     """舊服務電閘：硬鎖／新聞鎖／armed。讀唔到當 LOCK（fail-closed）。"""
     try:
@@ -113,7 +144,7 @@ def compact(bars):
     return [[b["time"], b["open"], b["high"], b["low"], b["close"]] for b in bars]
 
 
-def build_context(state, m1, m15, account, gate, now, day):
+def build_context(state, m1, m15, account, gate, now, day, ladder=None, control=None):
     older, recent = m15[:-4], m15[-4:]
     pos = state.get("position")
     last = m1[-1]["close"]
@@ -135,11 +166,14 @@ def build_context(state, m1, m15, account, gate, now, day):
         "last_price": last,
         "account": {"currency": account.get("currency"), "equity": account.get("equity"),
                     "balance": account.get("balance"), "daily_pnl": account.get("daily_pnl")},
-        "gate": gate,
+        "legacy_gate": gate,
         "position": position,
         "risk": {"lots": rules.lots(), "min_sl_usd": config.MIN_SL_USD, "max_sl_usd": config.MAX_SL_USD,
                  "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
-                 "trades_today": paper.trades_today(state, day), "max_hold_min": config.MAX_HOLD_MIN},
+                 "trades_today": paper.trades_today(state, day), "max_hold_min": config.MAX_HOLD_MIN,
+                 "ladder": {"level": (ladder or {}).get("level", "A"), "reasons": (ladder or {}).get("reasons", []),
+                            "daily_pnl_hkd": (ladder or {}).get("daily_pnl_hkd")},
+                 "pause_new": bool((control or {}).get("pause_new"))},
         "recent_trades": [{"side": "LONG" if t["side"] > 0 else "SHORT", "entry": t["entry"], "exit": t["exit"],
                            "pnl_usd": t["pnl_usd"], "reason": t["reason"], "hold_min": t["hold_min"]}
                           for t in (state.get("trades") or [])[-5:]],
@@ -196,23 +230,49 @@ def process_bar(state, bar, m1, m15, account, now):
     exit_rec = paper.on_bar(state, bar, now)
     if exit_rec:
         log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
-    gate = legacy_gate()
+    gate = legacy_gate()                       # 只作參考資料傳畀 Claude，唔係硬閘（使用者 10-20）
     market_open = market.is_gold_market_open(now)
+    control = load_control()
+    ladder = risk_ladder(state, control, account, bar, now)
+    state["ladder"] = ladder
     pos = state.get("position")
     decision_id = uuid.uuid4().hex
-    rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"], "gate": gate["status"],
-           "execute": config.EXECUTE}
+    rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"], "legacy_gate": gate["status"],
+           "ladder": ladder["level"], "execute": config.EXECUTE}
     if exit_rec:
         rec["paper_exit"] = {"reason": exit_rec["reason"], "pnl_usd": exit_rec["pnl_usd"]}
 
+    # 硬性風控：階梯 Ⓓ → 全平＋停機（影子＝紙上平倉＋標記，唔會向 EA 送嘢）；要使用者改 control.json 先解鎖
+    if ladder["flatten"] and not control.get("halt"):
+        why = "階梯Ⓓ：" + "；".join(ladder["reasons"])
+        closed = paper.force_close(state, bar, why, now)
+        control.update(halt=True, halt_reason=why)
+        if config.EXECUTE:
+            rec["applied"] = enqueue_cmd(state, "CLOSE", None, None, now, decision_id)
+        rec.update(kind="ladder", action="CLOSE", final="CLOSE", reason=why,
+                   paper_exit=({"reason": why, "pnl_usd": closed["pnl_usd"]} if closed else rec.get("paper_exit")))
+        _record(state, rec, day)
+        try:
+            save_control(control)
+        except StorageError as exc:
+            log_event(f"🚨 control.json 寫入失敗（停機標記未存）：{exc}", severity="ERROR")
+        log_event(f"🛑 [{config.TEAM_NAME}] {why}", severity="WARNING", component="ladder")
+        return rec, why
+    try:
+        save_control(control)                  # 高水位
+    except StorageError as exc:
+        log_event(f"⚠️ control.json 寫入失敗：{exc}", severity="WARNING")
+    if control.get("halt"):
+        return None, f"已停機：{control.get('halt_reason') or '使用者停機'}"
     if not market_open:
         return None, "休市"
-    if pos is None and gate["status"] != "OPEN" and not config.CALL_WHEN_LOCKED:
-        return None, f"空倉且電閘 LOCK（{gate['reason']}），唔問 Claude"
     if len(m15) < 20 or len(m1) < 30:
         return None, f"歷史不足（M15 {len(m15)}／M1 {len(m1)} 根），累積中"
 
-    ctx = build_context(state, m1, m15, account, gate, now, day)
+    can_open = ladder["can_open"] and not control.get("pause_new")
+    block = ("暫停開新倉（control.json pause_new）" if control.get("pause_new")
+             else (f"階梯{ladder['level']}：" + "；".join(ladder["reasons"]) if not ladder["can_open"] else None))
+    ctx = build_context(state, m1, m15, account, gate, now, day, ladder, control)
     b = get_brain()
     if pos is None and config.GATE_MODEL:
         sc = b.screen(ctx)
@@ -227,7 +287,7 @@ def process_bar(state, bar, m1, m15, account, now):
     d = b.decide(ctx)
     _bump_usage(state, "decide", d.get("_usage"), d.get("_ms", 0), day)
     action, stop, target, why = rules.validate_decision(
-        d, position=pos, last=bar["close"], gate_open=gate["status"] == "OPEN",
+        d, position=pos, last=bar["close"], can_open=can_open, block_reason=block,
         trades_today=paper.trades_today(state, day))
     rec.update(kind="decide", action=str(d.get("action")), final=action, stop=stop, target=target,
                confidence=d.get("confidence"), reason=str(d.get("reason") or "")[:400], rejected=why,
@@ -261,7 +321,7 @@ def handle_heartbeat(payload):
     m1_raw = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
     m15_raw = payload.get("m15_ohlc") if isinstance(payload.get("m15_ohlc"), dict) else {}
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "credit", "floating", "daily_pnl",
-                                                             "buy_lots", "sell_lots", "net_lots")}
+                                                             "buy_lots", "sell_lots", "net_lots", "margin_level")}
     account.update(currency=str(payload.get("currency") or "HKD"), symbol=str(payload.get("symbol") or ""),
                    status=str(payload.get("status") or ""), received_utc=market.fmt_utc(now), received_ts=now,
                    atr_m1=market.to_float(m15_raw.get("atr_m1")), atr_m5=market.to_float(m15_raw.get("atr_m5")),
@@ -349,8 +409,12 @@ def build_status():
     u = state.get("usage_today") or {}
     ms = sorted(u.get("ms") or [])
     p95 = ms[int(len(ms) * 0.95) - 1] if len(ms) >= 2 else (ms[0] if ms else None)
+    control = load_control()
     return {
         "team": config.TEAM_NAME, "symbol": config.SYMBOL, "execute": config.EXECUTE, "model": config.MODEL,
+        "ladder": state.get("ladder") or {"level": "A", "reasons": []},
+        "control": {"halt": bool(control.get("halt")), "halt_reason": control.get("halt_reason"),
+                    "pause_new": bool(control.get("pause_new")), "principal_set": bool(control.get("principal_hkd"))},
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
         "gate": legacy_gate(), "market_open": market.is_gold_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
@@ -363,7 +427,11 @@ def build_status():
         "risk": {"XAU_LOTS": rules.lots(), "XAU_MIN_SL_USD": config.MIN_SL_USD, "XAU_MAX_SL_USD": config.MAX_SL_USD,
                  "XAU_MIN_CONFIDENCE": config.MIN_CONFIDENCE, "XAU_MAX_TRADES_PER_DAY": config.MAX_TRADES_PER_DAY,
                  "XAU_MAX_HOLD_MIN": config.MAX_HOLD_MIN, "XAU_LONG_ONLY": config.LONG_ONLY, "XAU_MAGIC": config.MAGIC,
-                 "XAU_EXECUTE": config.EXECUTE, "CLAUDE_PROVIDER": config.PROVIDER},
+                 "XAU_EXECUTE": config.EXECUTE, "CLAUDE_PROVIDER": config.PROVIDER,
+                 "階梯 日蝕 Ⓑ／Ⓓ %": f"{config.DAILY_LOSS_B_PCT:g}／{config.DAILY_LOSS_D_PCT:g}",
+                 "階梯 回撤 Ⓑ／Ⓓ %": f"{config.DD_B_PCT:g}／{config.DD_D_PCT:g}", "階梯 硬止損 %": config.HARD_STOP_PCT,
+                 "階梯 保證金 Ⓑ／Ⓒ／Ⓓ %": f"{config.MARGIN_B_PCT:g}／{config.MARGIN_C_PCT:g}／{config.MARGIN_D_PCT:g}",
+                 "夜盤倍數": config.NIGHT_MULT},
     }
 
 

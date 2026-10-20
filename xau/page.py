@@ -36,7 +36,9 @@ def render(status):
     st = s.get("stats") or {}
     mode = "實倉（EA 執行指令）" if s.get("execute") else "影子模式（只記錄，唔送單）"
     gate = s.get("gate") or {}
-    gate_cls = "ok" if gate.get("status") == "OPEN" else "bad"
+    gate_cls = "ok" if gate.get("status") == "OPEN" else "warn"
+    lad, ctl = s.get("ladder") or {}, s.get("control") or {}
+    lad_cls = {"A": "ok", "B": "warn"}.get(lad.get("level"), "bad")
     rows_d = "".join(
         f"<tr><td class=mono>{esc(fmt_hkt(d.get('ts', 0), '%m-%d %H:%M'))}</td><td>{esc(d.get('price'))}</td>"
         f"<td><span class=tag>{esc(d.get('final') or d.get('action'))}</span>"
@@ -59,7 +61,8 @@ def render(status):
 <div class=sub>Claude 每根 M1 收盤決策 · 硬性風控由程式把關 · {esc(mode)} · 更新 {esc(s.get('updated_hkt'))} HKT</div>
 <div class=g>
 <div class=card><h3>模式</h3><div class="big {'bad' if s.get('execute') else 'warn'}">{esc('實倉' if s.get('execute') else '影子')}</div><small>{esc(s.get('model'))}（effort {esc(s.get('effort'))}）{('＋篩選 ' + esc(s.get('gate_model'))) if s.get('gate_model') else ''}</small></div>
-<div class=card><h3>電閘（讀舊服務）</h3><div class="big {gate_cls}">{esc(gate.get('status') or '未知')}</div><small>{esc(gate.get('reason'))}</small></div>
+<div class=card><h3>風控階梯（硬性）</h3><div class="big {lad_cls}">{esc(lad.get('level'))}{'　🛑 停機' if ctl.get('halt') else ''}{'　⏸ 暫停開倉' if ctl.get('pause_new') else ''}</div><small>{esc('；'.join(lad.get('reasons') or []) or '正常')}{('<br>' + esc(ctl.get('halt_reason'))) if ctl.get('halt') else ''}{'' if ctl.get('principal_set') else '<br>⚠ 未設本金（control.json principal_hkd），日蝕／硬止損未啟用'}</small></div>
+<div class=card><h3>舊電閘（只供 Claude 參考）</h3><div class="big {gate_cls}">{esc(gate.get('status') or '未知')}</div><small>{esc(gate.get('reason'))}</small></div>
 <div class=card><h3>市場</h3><div class=big>{esc(s.get('last_price') or '—')}</div><small>{esc(s.get('session'))}<br>M1 {esc(s.get('m1_bars'))} 根・M15 {esc(s.get('m15_bars'))} 根・{'開市' if s.get('market_open') else '休市'}</small></div>
 <div class=card><h3>持倉（{'紙上' if not s.get('execute') else '真倉'}）</h3><div style="font-size:14px">{esc(_pos_text(s.get('position')))}</div></div>
 <div class=card><h3>紙上成績</h3><div class="big {'ok' if st.get('pnl_usd', 0) >= 0 else 'bad'}">{st.get('pnl_usd', 0):+.2f} USD</div><small>{esc(st.get('n', 0))} 筆・勝 {esc(st.get('wins', 0))}・最大回撤 {esc(st.get('max_dd', 0))}・今日開倉 {esc(s.get('trades_today'))}</small></div>
