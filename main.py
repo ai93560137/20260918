@@ -12486,6 +12486,409 @@ def _response_info(response):
     return code, (body or {}).get("status") if isinstance(body, dict) else None
 
 
+# =============================================================================
+# 📨 [R264] 外部 Telegram 頻道訊號 → AI 分析 → 人手確認 → webhooktrade（MT5）
+# -----------------------------------------------------------------------------
+# 流程：
+#   1. VM／本地電腦的 tg_relay/tg_listener.py 用「用戶帳號」（Telethon）讀別人的頻道，
+#      每則新訊息 POST action=tg_signal（帶 WEBHOOK_SECRET_TOKEN）到這裡。
+#   2. handle_tg_signal：去重 → Gemini 把自由格式文字解析成結構化 JSON（只解析、不決定）
+#      → 存 GCS tg_signals/<sid>.json → 用「訊號確認 bot」發一則附「✅ 確認下單／❌ 略過」按鈕的訊息。
+#   3. 使用者按 ✅ → Telegram 把 callback_query POST 到 ?tg=signal（setWebhook，核對 secret_token 標頭）
+#      → handle_tg_signal_callback 重新檢查（逾時、電閘硬鎖／新聞鎖、最新價、止損方向與距離、價格偏離）
+#      → 用 build_order 組封包 POST BROKER_API_URL。
+#   * 不碰加單狀態（pyramid_state）、不經 AI 覆核關卡、不算訓練節奏；手數固定 TG_SIGNAL_LOTS（夾在 TG_SIGNAL_MAX_LOTS 內），
+#     只送止損／止盈，移動止損與保本一律不送。
+#   * TG_SIGNAL_ORDER_ENABLED=0（預設）時只分析、只發參考訊息，按鈕不會出現。
+#   * ⚠️ EA V22 冇 magic 過濾：手動單會計入 EA 回報嘅 buy_lots／sell_lots，自動策略解鎖後可能當佢係自己嘅持倉加碼。
+# =============================================================================
+TG_SIGNAL_ORDER_ENABLED = _env_bool("TG_SIGNAL_ORDER_ENABLED", False)
+TG_SIGNAL_LOTS = _env_float("TG_SIGNAL_LOTS", 0.01)
+TG_SIGNAL_MAX_LOTS = _env_float("TG_SIGNAL_MAX_LOTS", 0.10)
+TG_SIGNAL_CONFIRM_TTL_SEC = _env_int("TG_SIGNAL_CONFIRM_TTL_SEC", 900)       # 分析後幾秒內可確認
+TG_SIGNAL_PRICE_MAX_AGE_SEC = _env_int("TG_SIGNAL_PRICE_MAX_AGE_SEC", 300)   # EA 最新 M1 收市價最舊可接受幾秒
+TG_SIGNAL_MAX_DRIFT_USD = _env_float("TG_SIGNAL_MAX_DRIFT_USD", 5.0)         # 現價離訊號入場（區）最多幾美元
+TG_SIGNAL_MAX_SL_USD = _env_float("TG_SIGNAL_MAX_SL_USD", 30.0)              # 止損距離上限（美元）
+TG_SIGNAL_COMMENT = _env_str("TG_SIGNAL_COMMENT", "TG")
+TG_SIGNAL_AI_MODEL = _env_str("TG_SIGNAL_AI_MODEL", AI_MODEL)
+TG_SIGNAL_NOTIFY_ALL = _env_bool("TG_SIGNAL_NOTIFY_ALL", False)              # 1 = 非交易訊息都發一則
+TG_SIGNAL_PREFIX = "tg_signals/"
+TG_SIGNAL_MAX_TEXT = 4000
+TG_SIGNAL_GOLD_ALIASES = ("XAUUSD", "XAU/USD", "XAU", "GOLD", "黃金", "黄金")
+_tgs_genai_client = None
+
+
+def tgs_sid(channel_id, msg_id, edit_ts=None):
+    """GCS 物件名與 callback_data 用嘅 id（callback_data 上限 64 bytes）。"""
+    cid = re.sub(r"[^0-9A-Za-z]", "", str(channel_id or "x"))[:24] or "x"
+    mid = re.sub(r"[^0-9]", "", str(msg_id or ""))[:12] or "0"
+    return f"{cid}_{mid}" + (f"_e{int(edit_ts)}" if edit_ts else "")
+
+
+def tgs_api(method, body):
+    """呼叫訊號確認 bot（TG_SIGNAL_BOT_TOKEN）。回傳 JSON 或 None；不記錄權杖與網址。"""
+    token = os.environ.get("TG_SIGNAL_BOT_TOKEN", "").strip()
+    if not token:
+        return None
+    try:
+        r = requests.post(f"https://api.telegram.org/bot{token}/{method}", json=body, timeout=10)
+        return r.json() if r.status_code == 200 else None
+    except Exception as exc:
+        print(f"⚠️ [訊號 bot {method} 失敗] {type(exc).__name__}", flush=True)
+        return None
+
+
+def tgs_is_gold(symbol):
+    s = str(symbol or "").strip().upper()
+    return bool(s) and any(s == a or s.startswith(a) for a in TG_SIGNAL_GOLD_ALIASES)
+
+
+def tgs_prompt(text, reply_text=None, channel=None):
+    context = f"\n（這則訊息是回覆以下舊訊息：\n{reply_text[:1500]}\n）" if reply_text else ""
+    return (
+        "你是交易訊號解析員。下面是一則來自 Telegram 交易頻道的訊息，格式不固定，可能中英混雜、含表情符號。\n"
+        "只做解析與風險提示，不要自行補上訊息沒有的數字；沒有就填 null。\n"
+        f"頻道：{channel or '未知'}{context}\n"
+        f"訊息：\n{text}\n\n"
+        "只輸出一個 JSON 物件，欄位：\n"
+        '{"kind": "new_signal" | "update" | "other",   // new_signal=新開倉訊號；update=對舊單的管理（移止損、平倉、止賺到）；other=其他\n'
+        ' "symbol": 字串或 null（例 XAUUSD）,\n'
+        ' "side": "BUY" | "SELL" | null,\n'
+        ' "order_type": "market" | "limit" | "stop" | null,\n'
+        ' "entry_low": 數字或 null, "entry_high": 數字或 null,   // 單一入場價時兩個相同\n'
+        ' "sl": 數字或 null,\n'
+        ' "tp": [數字, ...],\n'
+        ' "update_action": 字串或 null,   // kind=update 時用中文簡述要做什麼\n'
+        ' "confidence": 0 到 1,   // 你對「解析正確」的把握\n'
+        ' "analysis": "繁體中文 2-4 句：訊號內容、風險回報、可疑或缺漏之處"}'
+    )
+
+
+def tgs_parse_ai_json(text):
+    """容錯解析 AI 回覆（可能包 ```json）。回傳 dict 或 None。"""
+    if not text:
+        return None
+    m = re.search(r"\{.*\}", text, re.S)
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(0))
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def tgs_normalize(raw):
+    """把 AI 的輸出夾成固定欄位與型別；數字一律 to_float，絕不信任格式。"""
+    raw = raw if isinstance(raw, dict) else {}
+    side = str(raw.get("side") or "").strip().upper()
+    side = {"LONG": "BUY", "SHORT": "SELL"}.get(side, side)
+    lo, hi = to_float(raw.get("entry_low")), to_float(raw.get("entry_high"))
+    if lo is None and hi is not None:
+        lo = hi
+    if hi is None and lo is not None:
+        hi = lo
+    if lo is not None and hi is not None and lo > hi:
+        lo, hi = hi, lo
+    tps = raw.get("tp") if isinstance(raw.get("tp"), list) else [raw.get("tp")]
+    kind = str(raw.get("kind") or "other").strip().lower()
+    return {
+        "kind": kind if kind in ("new_signal", "update", "other") else "other",
+        "symbol": str(raw.get("symbol") or "").strip().upper() or None,
+        "side": side if side in ("BUY", "SELL") else None,
+        "order_type": str(raw.get("order_type") or "").strip().lower() or None,
+        "entry_low": lo, "entry_high": hi,
+        "sl": to_float(raw.get("sl")),
+        "tp": [v for v in (to_float(t) for t in tps) if v is not None and v > 0][:5],
+        "update_action": str(raw.get("update_action") or "").strip()[:200] or None,
+        "confidence": to_float(raw.get("confidence")),
+        "analysis": str(raw.get("analysis") or "").strip()[:800],
+    }
+
+
+def tgs_analyze(text, reply_text=None, channel=None):
+    """Gemini（Vertex AI，同 AI 覆核同一個服務帳戶）解析。失敗回 (None, 原因)。"""
+    global _tgs_genai_client
+    try:
+        if _tgs_genai_client is None:
+            _tgs_genai_client = ai_review_session.client or genai.Client(vertexai=True, location=AI_LOCATION)
+        config = types.GenerateContentConfig(temperature=0.0, max_output_tokens=1024,
+                                             response_mime_type="application/json")
+        resp = _tgs_genai_client.models.generate_content(model=TG_SIGNAL_AI_MODEL,
+                                                         contents=tgs_prompt(text, reply_text, channel), config=config)
+        data = tgs_parse_ai_json((resp.text or "").strip())
+    except Exception as exc:
+        return None, f"AI 呼叫失敗：{type(exc).__name__}: {str(exc)[:120]}"
+    if data is None:
+        return None, "AI 回覆唔係 JSON"
+    return tgs_normalize(data), None
+
+
+def tgs_latest_price():
+    """EA 心跳最新 M1 收市價（webhook 紀錄最近 30 包）。回傳 (price, age_sec) 或 (None, 原因)。"""
+    try:
+        rows = gcs_read_json(WEBHOOK_LOG_FILE, [])
+    except StorageError as exc:
+        return None, f"讀取封包紀錄失敗：{exc}"
+    for row in rows if isinstance(rows, list) else []:
+        payload = row.get("payload") if isinstance(row, dict) else None
+        m1 = payload.get("m1_ohlc") if isinstance(payload, dict) and isinstance(payload.get("m1_ohlc"), dict) else None
+        close = to_float(m1.get("close")) if m1 else None
+        if not close or close <= 0:
+            continue
+        try:
+            ts = datetime.strptime(str(row.get("timestamp_utc")), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp()
+        except ValueError:
+            return None, "封包時間格式錯誤"
+        return close, now_ts() - ts
+    return None, "最近 30 包冇 EA 的 M1 收市價"
+
+
+def tgs_check(sig, price, price_age):
+    """下單前檢查。回傳 (ok, 原因, plan)。plan = {side, sl_distance, tp_distance}。純函數，方便測試。"""
+    if sig.get("kind") != "new_signal":
+        return False, "唔係新開倉訊號", None
+    if not tgs_is_gold(sig.get("symbol")):
+        return False, f"商品 {sig.get('symbol') or '未知'} 唔係黃金，系統只送 XAUUSD", None
+    side, sl = sig.get("side"), sig.get("sl")
+    if side not in ("BUY", "SELL"):
+        return False, "缺方向", None
+    if sl is None or sl <= 0:
+        return False, "訊號冇止損，唔提供下單", None
+    if price is None:
+        return False, f"冇最新價（{price_age}）", None
+    if price_age > TG_SIGNAL_PRICE_MAX_AGE_SEC:
+        return False, f"最新價已過 {int(price_age)} 秒（上限 {TG_SIGNAL_PRICE_MAX_AGE_SEC}），EA 可能離線或休市", None
+    lo, hi = sig.get("entry_low"), sig.get("entry_high")
+    if lo is not None and hi is not None:
+        if price < lo - TG_SIGNAL_MAX_DRIFT_USD or price > hi + TG_SIGNAL_MAX_DRIFT_USD:
+            return False, f"現價 {price:.2f} 離入場 {lo:g}–{hi:g} 超過 {TG_SIGNAL_MAX_DRIFT_USD:g} 美元", None
+    sl_distance = round(price - sl, 2) if side == "BUY" else round(sl - price, 2)
+    if sl_distance <= 0:
+        return False, f"止損 {sl:g} 已在現價 {price:.2f} 錯邊（已觸發）", None
+    if sl_distance > TG_SIGNAL_MAX_SL_USD:
+        return False, f"止損距離 {sl_distance:.2f} 美元超過上限 {TG_SIGNAL_MAX_SL_USD:g}", None
+    tp_distance = None
+    for tp in sig.get("tp") or []:
+        d = round(tp - price, 2) if side == "BUY" else round(price - tp, 2)
+        if d > 0:
+            tp_distance = d
+            break
+    if sig.get("tp") and tp_distance is None:
+        return False, f"所有止賺 {sig['tp']} 已喺現價 {price:.2f} 錯邊（行情已走完）", None
+    return True, "", {"side": side, "sl_distance": sl_distance, "tp_distance": tp_distance}
+
+
+def tgs_gate_block():
+    """只睇管理員硬鎖同新聞鎖（緊急制動）；唔要求自動策略嘅 armed／趨勢方向。回傳原因或 None。"""
+    state = read_gate_state()
+    if hard_lock_active(state):
+        lock = state.get("hard_lock") or {}
+        return f"電閘硬鎖中（{lock.get('reason') or '未知'}）"
+    if state.get("news_lock"):
+        return "新聞鎖中"
+    return None
+
+
+def tgs_lots():
+    return max(0.01, min(round(TG_SIGNAL_LOTS, 2), round(TG_SIGNAL_MAX_LOTS, 2)))
+
+
+def tgs_message(rec):
+    sig = rec.get("analysis") or {}
+    lines = [f"📨 頻道訊號｜{rec.get('channel') or '未知頻道'}", "", (rec.get("text") or "")[:900], "", "🤖 解析"]
+    if sig:
+        entry = "市價" if sig.get("entry_low") is None else (
+            f"{sig['entry_low']:g}" if sig["entry_low"] == sig["entry_high"] else f"{sig['entry_low']:g}–{sig['entry_high']:g}")
+        lines.append(f"種類 {sig.get('kind')}｜{sig.get('symbol') or '—'} {sig.get('side') or '—'}｜入場 {entry}"
+                     f"｜止損 {sig.get('sl') if sig.get('sl') is not None else '—'}"
+                     f"｜止賺 {', '.join(f'{t:g}' for t in sig.get('tp') or []) or '—'}")
+        if sig.get("update_action"):
+            lines.append(f"管理指示：{sig['update_action']}")
+        if sig.get("confidence") is not None:
+            lines.append(f"解析把握 {sig['confidence']:.0%}")
+        if sig.get("analysis"):
+            lines.append(sig["analysis"])
+    else:
+        lines.append(f"解析失敗：{rec.get('error') or '未知'}")
+    pre = rec.get("precheck") or {}
+    lines.append("")
+    if pre.get("ok"):
+        plan = pre["plan"]
+        tp_txt = f"{plan['tp_distance']:.2f}" if plan.get("tp_distance") is not None else "不送"
+        lines.append(f"📋 若確認：{plan['side']} {tgs_lots():.2f} 手 {read_order_params()[0].get('symbol')}"
+                     f"｜現價 {pre['price']:.2f}｜止損距離 {plan['sl_distance']:.2f}｜止賺距離 {tp_txt}")
+        lines.append(f"⏳ {TG_SIGNAL_CONFIRM_TTL_SEC // 60} 分鐘內有效；按確認時會用當時最新價重新檢查。")
+    else:
+        lines.append(f"🚫 唔提供下單：{pre.get('reason') or '—'}")
+    return "\n".join(lines)[:4000]
+
+
+def tgs_save(sid, mutate_fn):
+    return gcs_update(f"{TG_SIGNAL_PREFIX}{sid}.json", mutate_fn, default_factory=dict)
+
+
+def handle_tg_signal(payload):
+    """[R264] VM 監聽腳本推上嚟嘅頻道訊息。"""
+    text = str(payload.get("text") or "").strip()[:TG_SIGNAL_MAX_TEXT]
+    if not text:
+        return jsonify({"status": "ignored", "message": "empty text"}), 200
+    sid = tgs_sid(payload.get("channel_id"), payload.get("msg_id"), payload.get("edit_ts"))
+    rec = {"sid": sid, "status": "analyzing", "channel": str(payload.get("channel") or "")[:80],
+           "channel_id": str(payload.get("channel_id") or "")[:32], "msg_id": payload.get("msg_id"),
+           "msg_date": str(payload.get("date") or "")[:32], "text": text,
+           "reply_text": str(payload.get("reply_text") or "")[:1500] or None, "received_ts": now_ts(),
+           "received_utc": fmt_utc()}
+    try:
+        claimed = tgs_save(sid, lambda d: (None, False) if d else (rec, True))
+    except StorageError as exc:
+        return jsonify({"status": "error", "message": f"storage: {exc}"}), 500
+    if not claimed:
+        return jsonify({"status": "duplicate", "sid": sid}), 200
+
+    sig, err = tgs_analyze(text, rec["reply_text"], rec["channel"])
+    rec.update(analysis=sig, error=err)
+    if sig and sig["kind"] == "new_signal":
+        price, age = tgs_latest_price()
+        ok, why, plan = tgs_check(sig, price, age)
+        block = tgs_gate_block() if ok else None
+        if not TG_SIGNAL_ORDER_ENABLED:
+            ok, why = False, "TG_SIGNAL_ORDER_ENABLED=0（只分析，唔送單）"
+        elif block:
+            ok, why = False, block
+        rec["precheck"] = {"ok": ok, "reason": why, "plan": plan, "price": price}
+    else:
+        rec["precheck"] = {"ok": False, "reason": "AI 解析失敗" if err else "唔係新開倉訊號（只供參考）"}
+    rec["status"] = "pending" if rec["precheck"]["ok"] else "info"
+
+    notify = sig is None or sig["kind"] != "other" or TG_SIGNAL_NOTIFY_ALL
+    if notify:
+        body = {"chat_id": os.environ.get("TG_SIGNAL_CHAT_ID", "").strip(), "text": tgs_message(rec),
+                "disable_web_page_preview": True}
+        if rec["status"] == "pending":
+            body["reply_markup"] = {"inline_keyboard": [[{"text": "✅ 確認下單", "callback_data": f"tgs:ok:{sid}"},
+                                                         {"text": "❌ 略過", "callback_data": f"tgs:no:{sid}"}]]}
+        sent = tgs_api("sendMessage", body)
+        rec["tg_message_id"] = ((sent or {}).get("result") or {}).get("message_id")
+        rec["notified"] = bool(sent and sent.get("ok"))
+    try:
+        tgs_save(sid, lambda d: ({**d, **rec}, None))
+    except StorageError as exc:
+        print(f"⚠️ [頻道訊號寫入失敗] {exc}", flush=True)
+    log_event(f"📨 [頻道訊號] {rec['channel']} #{rec['msg_id']} → {sig['kind'] if sig else 'AI 失敗'}｜{rec['status']}"
+              f"｜{rec['precheck'].get('reason') or '可確認'}", component="tg_signal", sid=sid)
+    return jsonify({"status": "stored", "sid": sid, "kind": sig["kind"] if sig else None,
+                    "confirmable": rec["status"] == "pending", "notified": rec.get("notified", False)}), 200
+
+
+def tgs_send_order(rec):
+    """確認後真正送單。回傳 (status, 給使用者的一句話)。"""
+    sig = rec.get("analysis") or {}
+    if now_ts() - to_float(rec.get("received_ts"), 0.0) > TG_SIGNAL_CONFIRM_TTL_SEC:
+        return "expired", f"已超過 {TG_SIGNAL_CONFIRM_TTL_SEC // 60} 分鐘，作廢"
+    if not TG_SIGNAL_ORDER_ENABLED:
+        return "disabled", "TG_SIGNAL_ORDER_ENABLED=0，唔送單"
+    if not str(BROKER_API_URL or "").strip():
+        return "rejected", "BROKER_API_URL 未設定"
+    block = tgs_gate_block()
+    if block:
+        return "rejected", block
+    price, age = tgs_latest_price()
+    ok, why, plan = tgs_check(sig, price, age)
+    if not ok:
+        return "rejected", why
+    params = dict(read_order_params()[0])
+    params.update(size=tgs_lots(), comment=TG_SIGNAL_COMMENT[:64],
+                  ts_activation_price=0, ts_distance_price=0, breakeven_distance_price=0)
+    order = build_order({"ticker": params["symbol"], "signal": plan["side"], "sl_distance": plan["sl_distance"],
+                         "tp_distance": plan["tp_distance"]}, params)
+    summary = (f"{plan['side']} {params['size']:.2f} 手 {params['symbol']} @≈{price:.2f}｜止損距離 {plan['sl_distance']:.2f}"
+               f"｜止賺距離 {plan['tp_distance'] if plan['tp_distance'] is not None else '不送'}")
+    try:
+        response = requests.post(BROKER_API_URL, json=order, timeout=BROKER_TIMEOUT_SEC)
+    except requests.Timeout:
+        save_last_order(order, {"status": "broker_timeout", "source": "tg_signal"})
+        log_decision(f"⚠️ [頻道訊號下單逾時] {summary}：可能已成交，請到 MT5 核對。", key="tg_signal")
+        return "broker_timeout", f"送單逾時，可能已成交，請到 MT5 核對｜{summary}"
+    except requests.RequestException as exc:
+        save_last_order(order, {"status": "broker_error", "reason": str(exc)[:150], "source": "tg_signal"})
+        log_decision(f"❌ [頻道訊號下單失敗] {summary}：{type(exc).__name__}", key="tg_signal")
+        return "broker_error", f"送單失敗：{type(exc).__name__}"
+    body = (response.text or "")[:200]
+    save_last_order(order, {"status": "sent" if response.ok else "broker_error", "http_status": response.status_code,
+                            "body": body, "source": "tg_signal"})
+    if not response.ok:
+        log_decision(f"❌ [頻道訊號下單失敗] {summary}：HTTP {response.status_code}", key="tg_signal")
+        return "broker_error", f"券商 HTTP {response.status_code}：{body[:100]}"
+    log_decision(f"✅ [頻道訊號已送出] {rec.get('channel')} #{rec.get('msg_id')}｜{summary}", key="tg_signal")
+    return "sent", f"已送出｜{summary}"
+
+
+def handle_tg_signal_callback(request):
+    """[R264] Telegram 訊號確認 bot 的 webhook（?tg=signal）。只處理白名單 chat／使用者的按鈕。"""
+    import hmac
+    secret = os.environ.get("TG_SIGNAL_WEBHOOK_SECRET", "").strip()
+    given = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+    if not secret or not hmac.compare_digest(given.encode(), secret.encode()):
+        return jsonify({"status": "error", "message": "forbidden"}), 403
+    update = request.get_json(force=True, silent=True) or {}
+    cq = update.get("callback_query") if isinstance(update.get("callback_query"), dict) else None
+    if not cq:
+        return jsonify({"status": "ignored"}), 200
+    chat_id = str(((cq.get("message") or {}).get("chat") or {}).get("id") or "")
+    user_id = str((cq.get("from") or {}).get("id") or "")
+    allowed_chat = os.environ.get("TG_SIGNAL_CHAT_ID", "").strip()
+    allowed_users = {u.strip() for u in os.environ.get("TG_SIGNAL_ALLOWED_USERS", "").split(",") if u.strip()} or {allowed_chat}
+    answer = lambda txt: tgs_api("answerCallbackQuery", {"callback_query_id": cq.get("id"), "text": txt[:190]})
+    if not allowed_chat or chat_id != allowed_chat or user_id not in allowed_users:
+        log_event(f"🚫 [頻道訊號] 非白名單按鈕 chat={chat_id} user={user_id}", severity="WARNING", component="tg_signal")
+        answer("無權限")
+        return jsonify({"status": "forbidden"}), 200
+    parts = str(cq.get("data") or "").split(":", 2)
+    if len(parts) != 3 or parts[0] != "tgs" or parts[1] not in ("ok", "no"):
+        answer("未知按鈕")
+        return jsonify({"status": "ignored"}), 200
+    sid, want = parts[2], parts[1]
+
+    def claim(d):
+        if not d:
+            return None, "missing"
+        if d.get("status") != "pending":
+            return None, d.get("status")
+        return {**d, "status": "sending" if want == "ok" else "skipped", "decided_utc": fmt_utc(),
+                "decided_by": user_id}, "claimed"
+    try:
+        claimed = tgs_save(sid, claim)
+    except StorageError as exc:
+        answer("儲存失敗，未送單")
+        return jsonify({"status": "error", "message": str(exc)[:100]}), 200
+    if claimed != "claimed":
+        answer(f"已處理過（{claimed}）")
+        return jsonify({"status": "duplicate", "state": claimed}), 200
+
+    if want == "no":
+        result, msg = "skipped", "已略過"
+        rec = {}
+    else:
+        rec = gcs_read_json(f"{TG_SIGNAL_PREFIX}{sid}.json", {})
+        try:
+            result, msg = tgs_send_order(rec)
+        except Exception as exc:                       # 唔好令 Telegram 重送 → 重複落單
+            result, msg = "error", f"處理異常：{type(exc).__name__}"
+            log_event(f"💥 [頻道訊號] {type(exc).__name__}: {exc}", severity="ERROR", component="tg_signal")
+    try:
+        tgs_save(sid, lambda d: ({**d, "status": result, "result": msg, "done_utc": fmt_utc()}, None))
+    except StorageError as exc:
+        print(f"⚠️ [頻道訊號結果寫入失敗] {exc}", flush=True)
+    answer(msg)
+    msg_id = (cq.get("message") or {}).get("message_id")
+    if msg_id:
+        tgs_api("editMessageReplyMarkup", {"chat_id": chat_id, "message_id": msg_id, "reply_markup": {"inline_keyboard": []}})
+        tgs_api("sendMessage", {"chat_id": chat_id, "text": f"{'✅' if result == 'sent' else 'ℹ️'} {msg}",
+                                "reply_to_message_id": msg_id})
+    return jsonify({"status": result}), 200
+
+
 def _dispatch_post(payload):
     action = payload.get("action")
     if action == "trade_result":
@@ -12522,6 +12925,8 @@ def _dispatch_post(payload):
         return handle_longfei_push(payload)
     if action == "longfei_bars":                     # [R218] 龍飛陣 1 分鐘 K 線收市存檔（只存）
         return handle_longfei_bars(payload)
+    if action == "tg_signal":                        # [R264] VM 監聽腳本推上嚟嘅外部頻道訊息（分析＋人手確認）
+        return handle_tg_signal(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
@@ -12541,6 +12946,8 @@ def receive_tradingview_signal(request):
         return handle_jinnang_api_post(request)
     if request.args.get("view") == "reset":          # 重置頁的表單（需權杖＋確認字串）
         return handle_reset_post(request)
+    if request.args.get("tg") == "signal":           # [R264] 訊號確認 bot 的按鈕（核對 secret_token 標頭）
+        return handle_tg_signal_callback(request)
 
     payload = parse_payload(request)
     if payload is None:
@@ -12553,7 +12960,7 @@ def receive_tradingview_signal(request):
               component="webhook", direction="in", **summary)
     if payload.get("action") not in ("futu_data", "futu_risk", "inline_scan", "scan_push", "futu_pnl",
                                      "cme_watchlist", "cme_quotes", "cme_quotes_get", "longfei_push",
-                                     "longfei_bars"):   # [R94][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
+                                     "longfei_bars", "tg_signal"):   # [R94][R264][R147][R148][R150] Futu 封包大／私人，唔入 webhook 日誌
         webhook_log_session.save_payload(payload)
 
     started = now_ts()
