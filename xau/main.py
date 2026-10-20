@@ -364,7 +364,7 @@ def process_bar(state, bar, m1, m15, account, now):
         return None, f"STOP（{control.get('set_by')}）：{control.get('reason') or ''}"
     if not market_open:
         return None, "休市"
-    if len(m15) < 20 or len(m1) < 30:
+    if len(m15) < config.M15_MIN_BARS or len(m1) < 30:
         return None, f"歷史不足（M15 {len(m15)}／M1 {len(m1)} 根），累積中"
 
     can_open = control["mode"] == "RUN"
@@ -435,6 +435,18 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         log_event(f"⚠️ 戶口快照寫入失敗：{exc}", severity="WARNING")
 
+    # EA v0.33 回填：首個心跳（或服務回 need_history）帶 m1_hist／m15_hist，合併入歷史，唔使等 5 小時累積 M15
+    hist1, hist15 = market.parse_hist(payload.get("m1_hist")), market.parse_hist(payload.get("m15_hist"))
+    if hist1 or hist15:
+        try:
+            if hist1:
+                storage.update(M1_FILE, lambda h: (lambda n: (n, n))(market.merge_bars(h, hist1, config.M1_MAX)), default_factory=list)
+            if hist15:
+                storage.update(M15_FILE, lambda h: (lambda n: (n, n))(market.merge_bars(h, hist15, config.M15_MAX)), default_factory=list)
+            log_event(f"📚 [{config.TEAM_NAME}] EA 回填歷史：M1 {len(hist1)} 根、M15 {len(hist15)} 根", component="ea")
+        except StorageError as exc:
+            log_event(f"⚠️ 回填寫入失敗：{exc}", severity="WARNING")
+
     m15_bar = market.parse_bar(m15_raw)
     m15 = None
     if m15_bar:
@@ -451,7 +463,7 @@ def handle_heartbeat(payload):
     if config.EXECUTE:
         state["position"] = live_position(account)
     resp = {"status": "monitoring", "team": config.TEAM_NAME, "mode": "live" if config.EXECUTE else "shadow",
-            "cmd_text": cmd_text(state, now)}
+            "cmd_text": cmd_text(state, now), "need_history": need_history(m15)}
     bar = market.parse_bar(m1_raw) if m1_raw.get("is_new_bar") else None
     if bar is None:
         return jsonify(resp), 200
@@ -471,6 +483,19 @@ def handle_heartbeat(payload):
             m15 = storage.read_json(M15_FILE, [])
         except StorageError:
             m15 = []
+    if len(m15) < config.M15_MIN_BARS:                     # M15 唔夠：由已累積嘅 M1 砌完整嘅 15 分鐘 K 線補上（EA 送嘅優先）
+        synth = market.m15_from_m1(m1)
+        if synth:
+            merged = market.merge_bars(synth, m15, config.M15_MAX)
+            if len(merged) > len(m15):
+                added = len(merged) - len(m15)
+                try:
+                    m15 = storage.update(M15_FILE, lambda h: (lambda n: (n, n))(market.merge_bars(merged, h, config.M15_MAX)), default_factory=list)
+                    log_event(f"🧩 [{config.TEAM_NAME}] M15 唔夠，由 M1 砌咗 {added} 根（而家 {len(m15)} 根）", component="ea")
+                except StorageError as exc:
+                    log_event(f"⚠️ M15 合併寫入失敗：{exc}", severity="WARNING")
+                    m15 = merged
+    resp["need_history"] = need_history(m15)
 
     rec, summary = process_bar(state, bar, m1, m15 or [], account, now)
     try:
@@ -480,6 +505,15 @@ def handle_heartbeat(payload):
     resp.update(cmd_text=cmd_text(state, now), message=summary,
                 decision=({k: rec.get(k) for k in ("final", "action", "reason", "rejected", "stop", "target", "ms")} if rec else None))
     return jsonify(resp), 200
+
+
+def need_history(m15):
+    """M15 唔夠 20 根就叫 EA 下個心跳回填（EA v0.33 睇 need_history）。"""
+    try:
+        n = len(m15) if m15 is not None else len(storage.read_json(M15_FILE, []))
+    except StorageError:
+        return True
+    return n < config.M15_MIN_BARS
 
 
 def handle_cmd_ack(payload):

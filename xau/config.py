@@ -89,7 +89,8 @@ HKD_PER_USD = _f("XAU_HKD_PER_USD", 7.8)
 SPREAD_USD = _f("XAU_SPREAD_USD", 0.30)                     # 紙上模擬每張來回成本（點差）
 
 # --- 數據 ---
-M1_MAX = _i("XAU_M1_MAX", 200)                              # ≈ 3 小時
+M1_MAX = _i("XAU_M1_MAX", 400)                              # ≈ 6.7 小時（要 ≥ 315 根先砌到 20 根 M15）
+M15_MIN_BARS = 20                                            # Claude 決策要 ≥ 20 根 M15
 M15_MAX = _i("XAU_M15_MAX", 200)                            # ≈ 50 小時
 M1_GAP_RESET_SEC = _i("XAU_M1_GAP_RESET_SEC", 30 * 60)
 CONTRACT_SIZE = 100.0                                       # XAUUSD 1 手 = 100 盎司

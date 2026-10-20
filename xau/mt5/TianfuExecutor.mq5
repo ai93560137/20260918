@@ -23,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.32"
+#property version   "0.33"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -39,6 +39,7 @@ input string InpLedgerStart = "2026.10.20"; // 自己 magic 累計已實現由�
 
 CTrade   trade;
 datetime g_last_m1 = 0;
+bool     g_need_hist = true;            // 首個心跳回填 M1／M15 歷史；之後服務回 need_history:true 再送
 string   g_seen_ids = "";               // 最近執行過嘅 id，以 | 分隔（亦存 GlobalVariable）
 #define  SEEN_GV   "TIANFU_SEEN_IDS_"
 #define  MAX_SEEN  40
@@ -119,6 +120,28 @@ string TradeBlockedReason()      // "" = 三個都開
    return r;
 }
 
+//---------------------------------------------------------------- 歷史回填（v0.33）：330 根 M1＋60 根 M15，服務合併後即刻夠 20 根 M15
+string BuildHist()
+{
+   MqlRates r1[], r15[];
+   ArraySetAsSeries(r1, true); ArraySetAsSeries(r15, true);
+   string s1 = "", s15 = "";
+   int n1 = CopyRates(_Symbol, PERIOD_M1, 1, 330, r1);
+   for(int i = n1 - 1; i >= 0; i--)
+   {
+      if(s1 != "") s1 += ",";
+      s1 += StringFormat("[%I64d,%.2f,%.2f,%.2f,%.2f]", (long)r1[i].time, r1[i].open, r1[i].high, r1[i].low, r1[i].close);
+   }
+   int n15 = CopyRates(_Symbol, PERIOD_M15, 1, 60, r15);
+   for(int i = n15 - 1; i >= 0; i--)
+   {
+      if(s15 != "") s15 += ",";
+      s15 += StringFormat("[%I64d,%.2f,%.2f,%.2f,%.2f]", (long)r15[i].time, r15[i].open, r15[i].high, r15[i].low, r15[i].close);
+   }
+   PrintFormat("📚 回填歷史：M1 %d 根、M15 %d 根", n1, n15);
+   return StringFormat(",\"m1_hist\":[%s],\"m15_hist\":[%s]", s1, s15);
+}
+
 //---------------------------------------------------------------- 心跳封包
 string BuildHeartbeat()
 {
@@ -151,15 +174,16 @@ string BuildHeartbeat()
       m15 = StringFormat("{\"time\":%I64d,\"open\":%.2f,\"high\":%.2f,\"low\":%.2f,\"close\":%.2f}",
                          (long)r15[0].time, r15[0].open, r15[0].high, r15[0].low, r15[0].close);
    string cur = AccountInfoString(ACCOUNT_CURRENCY);
+   string hist = g_need_hist ? BuildHist() : "";
    return StringFormat(
-      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.32\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
+      "{\"action\":\"heartbeat\",\"token\":\"%s\",\"ea\":\"TianfuExecutor/0.33\",\"account\":\"%I64d\",\"server\":\"%s\",\"symbol\":\"%s\",\"currency\":\"%s\","
       "\"balance\":%.2f,\"equity\":%.2f,\"credit\":%.2f,\"margin_level\":%.2f,\"floating\":%.2f,\"daily_pnl\":%.2f,\"realized_total\":%.2f,"
       "\"buy_lots\":%.2f,\"sell_lots\":%.2f,\"net_lots\":%.2f,\"magic\":%I64d,\"dry_run\":%s,\"server_time\":%I64d,\"trade_allowed\":%s,"
-      "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s}",
+      "\"positions\":[%s],\"m1_ohlc\":%s,\"m15_ohlc\":%s%s}",
       JsonEsc(InpToken), (long)AccountInfoInteger(ACCOUNT_LOGIN), JsonEsc(AccountInfoString(ACCOUNT_SERVER)), _Symbol, cur,
       AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY),
       AccountInfoDouble(ACCOUNT_CREDIT), AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), floating, OwnRealizedToday(), OwnRealizedTotal(),
-      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), pos_json, m1, m15);
+      buy, sell, buy - sell, InpMagic, InpDryRun ? "true" : "false", (long)TimeCurrent(), TradeAllowedJson(), pos_json, m1, m15, hist);
 }
 
 //---------------------------------------------------------------- HTTP
@@ -287,6 +311,7 @@ void OnTimer()
 {
    string reply;
    if(!Post(BuildHeartbeat(), reply)) return;
+   g_need_hist = (StringFind(reply, "\"need_history\":true") >= 0);   // 服務話 M15 唔夠先再回填
    string cmds = ExtractCmdText(reply);
    if(cmds == "") return;
    if(InpDryRun)                                          // 資料源模式：連 Execute 都唔入，0 落單路徑
