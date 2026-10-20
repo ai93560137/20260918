@@ -73,10 +73,17 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 M1 每日最多 1,440 次。休市／停機唔問；空倉先用 Haiku 篩。頁面顯示今日次數、費用、p95 延遲。
 EA `WebRequest` 逾時 15 秒（V23）：實倉前 p95 要低過呢個數，否則改非同步（決定寫 GCS，EA 下一個心跳先取指令）。
 
-## 部署（未做）
+## 部署
 
-`scripts/gcp_agent.py` 目前只會更新已存在嘅服務同打包 repo 根目錄；要加 `--source-dir xau` 同建立新服務（另一個 PR）。
-部署前：`python3.11 -m py_compile xau/*.py`、`python3 tests/test_xau.py`。
+```bash
+python3.11 -m py_compile xau/*.py && python3 tests/test_xau.py
+python3 scripts/gcp_agent.py --profile xau deploy --local-only                      # 只打包＋來源檢查
+python3 scripts/gcp_agent.py --profile xau deploy --set-env XAU_EXECUTE=0 CLAUDE_PROVIDER=api CLAUDE_MODEL=claude-opus-5-5 CLAUDE_EFFORT=low GATE_MODEL=claude-haiku-5-5   # dry-run：計畫＋缺少嘅權限
+#   → 使用者同意後加 --yes；服務唔存在會建立（沿用 zhuge-risk-manager 嘅 baseImage／資源／服務帳戶），唔改 IAM
+python3 scripts/gcp_agent.py --profile xau status / logs / env get
+```
+部署後使用者要喺控制台做：① 服務「安全性」→ 允許未經驗證的叫用；② 環境變數填 `WEBHOOK_SECRET_TOKEN`（同舊服務相同）同 `ANTHROPIC_API_KEY`（唔貼入對話）。
+之後舊服務 `env set XAU_SHADOW_URL=<新服務網址>/`（先 dry-run，同總指揮對時間）先會開始轉發心跳。
 
 ## 影子標準（照 IDEAS.md 慣例預先登記，達標先入 PR C）
 

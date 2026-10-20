@@ -563,5 +563,84 @@ class CheckTests(unittest.TestCase):
         self.assertIn("✅ dashboard", out)
 
 
+XAU_SVC_NAME = f"projects/{PROJECT}/locations/{RUN_REGION}/services/zhuge-xau"
+
+
+def create_perm_handlers(ok=True):
+    perms = (["cloudbuild.builds.create", "cloudbuild.builds.get", "run.services.create", "run.services.get"] if ok else [])
+    return [("POST", f"projects/{PROJECT}:testIamPermissions", FakeResp(200, {"permissions": perms})),
+            ("GET", "run-sources-demo-proj-europe-west1/iam/testPermissions",
+             FakeResp(200, {"permissions": ["storage.objects.create"] if ok else []}))]
+
+
+class XauProfileTests(unittest.TestCase):
+    """[R291] 天覆陣 profile：打包 xau/、服務 zhuge-xau、進入點 xau_entry、服務不存在就建立（唔改 IAM）。"""
+
+    def test_local_only_packs_xau_files(self):
+        s = FakeSession([])
+        out, code = run(["--profile", "xau", "deploy", "--local-only"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("profile zhuge-xau", out)
+        for name in ("brain.py", "rules.py", "reference/legacy_rules.md"):
+            self.assertIn(name, out)
+        self.assertNotIn("gates.html", out)
+        self.assertEqual(s.calls, [])
+
+    def test_status_uses_profile_service(self):
+        s = FakeSession([("GET", XAU_SVC_NAME, FakeResp(404, text="nf"))])
+        out, code = run(["--profile", "xau", "status"], s, RUN_ENV)
+        self.assertIn("zhuge-xau", out)
+
+    def test_dry_run_create_plans_without_writing(self):
+        s = FakeSession(create_perm_handlers(ok=True) + [
+            ("GET", XAU_SVC_NAME, FakeResp(404, text="nf")),
+            ("GET", SVC_NAME, FakeResp(200, svc_body())),          # 樣板：沿用舊服務 baseImage
+        ])
+        out, code = run(["--profile", "xau", "deploy", "--set-env", "XAU_EXECUTE=0"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("建立新 Cloud Run 服務", out)
+        self.assertIn("xau_entry", out)
+        self.assertIn("python311", out)
+        self.assertIn("唔會**自動開放未經驗證叫用", out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_dry_run_create_reports_missing_permissions(self):
+        s = FakeSession(create_perm_handlers(ok=False) + [
+            ("GET", XAU_SVC_NAME, FakeResp(404, text="nf")), ("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["--profile", "xau", "deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("run.services.create", out)
+        self.assertEqual(writes(s), [])
+
+    def test_yes_create_flow(self):
+        build_op = {"name": f"operations/build/{PROJECT}/abc", "done": False}
+        build_done = {"name": build_op["name"], "done": True, "response": {"status": "SUCCESS", "results": {"images": [
+            {"name": f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/zhuge-xau:latest", "digest": "sha256:new"}]}}}
+        created = {**svc_body(), "name": XAU_SVC_NAME, "latestReadyRevision": f"{XAU_SVC_NAME}/revisions/zhuge-xau-00001-abc"}
+        s = FakeSession(create_perm_handlers(ok=True) + [
+            ("GET", XAU_SVC_NAME, lambda m, u, kw: FakeResp(404, text="nf") if not any(c[0] == "POST" and c[1].endswith("/services") and "validateOnly" not in (c[2].get("params") or {}) for c in s.calls) else FakeResp(200, created)),
+            ("GET", SVC_NAME, FakeResp(200, svc_body())),
+            ("POST", "run-sources-demo-proj-europe-west1/o", FakeResp(200, {"generation": "7"})),
+            ("POST", "builds:submit", FakeResp(200, {"buildOperation": build_op})),
+            ("GET", build_op["name"], FakeResp(200, build_done)),
+            ("POST", f"locations/{RUN_REGION}/services", FakeResp(200, {"name": "projects/p/locations/l/operations/o9", "done": True, "response": created})),
+        ])
+        out, code = run(["--profile", "xau", "deploy", "--yes", "--no-check", "--set-env", "XAU_EXECUTE=0", "CLAUDE_MODEL=claude-opus-5-5"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        creates = [c for c in s.calls if c[0] == "POST" and c[1].endswith("/services")]
+        self.assertEqual(len(creates), 2, "validateOnly 一次、真建立一次")
+        self.assertEqual(creates[0][2]["params"], {"serviceId": "zhuge-xau", "validateOnly": "true"})
+        body = creates[1][2]["json"]
+        self.assertNotIn("name", body)
+        self.assertEqual(body["buildConfig"]["functionTarget"], "xau_entry")
+        self.assertEqual(body["template"]["containers"][0]["image"],
+                         f"europe-west1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/zhuge-xau:latest@sha256:new")
+        self.assertEqual({e["name"]: e["value"] for e in body["template"]["containers"][0]["env"]},
+                         {"XAU_EXECUTE": "0", "CLAUDE_MODEL": "claude-opus-5-5"})
+        self.assertEqual(body["template"]["serviceAccount"], "sa@x.iam.gserviceaccount.com")
+        self.assertFalse(any(c[1].endswith(":setIamPolicy") for c in s.calls), "唔改 IAM")
+
+
 if __name__ == "__main__":
     unittest.main()

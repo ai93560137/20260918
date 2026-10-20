@@ -25,6 +25,7 @@
 | 退回舊版本 | `python3 scripts/gcp_agent.py rollback [--to 修訂名]`（先看計畫）→ 同意後加 `--yes` |
 | 部署新程式 | `python3 scripts/gcp_agent.py deploy`（dry-run：來源檢查＋計畫＋缺少的權限）→ 同意後加 `--yes` |
 | 只做本機來源檢查 | `python3 scripts/gcp_agent.py deploy --local-only`（不連線） |
+| 🌌 天覆陣（`xau/`，獨立服務 `zhuge-xau`） | 全域參數 `--profile xau`，例如 `gcp_agent.py --profile xau status`、`--profile xau deploy`（服務不存在會**建立**，先 dry-run；不改 IAM，「允許未經驗證的叫用」由使用者在控制台開）、`--profile xau env set …` |
 
 預設模式是 `--target run`：Cloud Run 服務 `zhuge-risk-manager`、區域 `europe-west1`
 （可用 `GCP_SERVICE`、`GCP_RUN_REGION` 或 `--service`、`--region` 改）。全域參數要放在子命令**前面**，
