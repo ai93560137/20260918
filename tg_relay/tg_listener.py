@@ -8,8 +8,8 @@
 環境變數（這個 repo 是公開的，ID／hash／權杖／網址都唔好寫入檔案）：
   TG_API_ID、TG_API_HASH     https://my.telegram.org → API development tools 申請
   TG_CHANNELS                要監聽嘅頻道，逗號分隔（@username、t.me 連結或數字 id）
-  ZHUGE_GCP_URL              Cloud Run 網址（https://….run.app/）
-  WEBHOOK_SECRET_TOKEN       同 Cloud Run 環境變數相同
+  ZHUGE_GCP_URL              天覆陣 zhuge-xau 網址（https://zhuge-xau-….run.app/），唔係 zhuge-risk-manager
+  WEBHOOK_SECRET_TOKEN       同 zhuge-xau 環境變數相同
   選填：TG_SESSION（session 檔路徑，預設 ~/.tg_relay/user.session；等同帳號密碼，chmod 600）
         TG_FORWARD_EDITS=1（訊息被編輯都轉發；預設 0）
 

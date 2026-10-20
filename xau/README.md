@@ -10,6 +10,7 @@
 | `paper.py` | 紙上模擬（影子模式嘅盈虧） |
 | `page.py` | 單一頁面（取代舊服務五頁：投資人日誌、關卡開關、送單參數、錦囊執行單、錦囊九十筆） |
 | `storage.py`、`market.py`、`config.py` | GCS、K 線／時段、設定 |
+| `tgsignal.py`、`executor.py` | R290 Telegram 頻道訊號（Claude 解析 → 人手確認 → EA 指令）；EA 指令佇列 |
 | `LESSONS.md` | 使用者教學簿；線上優先讀 GCS `xau/lessons.md` |
 
 ## 同舊服務嘅關係

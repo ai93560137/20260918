@@ -2,29 +2,27 @@
 
 ```
 別人的頻道 ──(你的用戶帳號，Telethon)──▶ claude-ops VM：tg_listener.py
-      └─ POST action=tg_signal（WEBHOOK_SECRET_TOKEN）──▶ Cloud Run zhuge-risk-manager
+      └─ POST action=tg_signal（zhuge-xau 嘅 WEBHOOK_SECRET_TOKEN）──▶ Cloud Run zhuge-xau（天覆陣）
             ├─ 去重（GCS tg_signals/<頻道>_<訊息>.json）
-            ├─ Gemini 解析自由格式文字 → JSON（只解析，唔決定）
-            ├─ 預檢：黃金？有止損？現價離入場幾遠？止損方向／距離？電閘硬鎖／新聞鎖？
+            ├─ Claude 解析自由格式文字 → JSON（只解析，唔決定）
+            ├─ 預檢：黃金？有止損？現價離入場幾遠？止損方向／距離？天覆陣模式係咪 RUN？
             └─ 訊號確認 bot 發訊息＋「✅ 確認下單／❌ 略過」按鈕
-你按 ✅ ──▶ Telegram callback ──▶ Cloud Run ?tg=signal（核對 secret_token、chat／使用者白名單）
+你按 ✅ ──▶ Telegram callback ──▶ zhuge-xau ?tg=signal（核對 secret_token、chat／使用者白名單）
             ├─ 用當時最新價重新檢查（逾時 15 分鐘作廢）
-            └─ build_order → BROKER_API_URL（webhooktrade）→ MT5 EA
+            └─ 排 EA 指令（同天覆陣引擎共用 magic 921）→ TianfuExecutor 下一個心跳執行（XAU_EXECUTE=0 時唔會送）
 ```
 
 * **全部要人手確認**：冇按 ✅ 就唔會送單；同一個按鈕只會送一次（GCS 原子 claim）。
 * 管理指示（移止損、平倉、止賺到）同閒聊**只發參考訊息**，系統唔會自動平倉或改單。
-* 只送 XAUUSD；手數固定 `TG_SIGNAL_LOTS`（預設 0.01，上限 `TG_SIGNAL_MAX_LOTS` 0.10）；只送止損／止賺，唔送移動止損與保本。
-* 唔改加單狀態、唔經 AI 覆核關卡、唔計訓練節奏。
-* ⚠️ **EA V22 冇 magic 過濾**：手動單會計入 EA 回報嘅持倉。自動策略解除硬鎖後，可能會當呢張單係自己嘅持倉去加碼，
-  或者因為「方向衝突」停手；R171 帳本亦會混埋。最穩陣係用**另一個 MT5 戶口**（送單參數頁嘅 `account`）。
+* 只送 XAUUSD；手數固定 `TG_SIGNAL_LOTS`（預設 0.01，上限 `TG_SIGNAL_MAX_LOTS` 0.10）；只送止損／止賺。
+* 同天覆陣引擎共用 magic 921 同「最多 1 張」：天覆陣有倉就唔排；排咗之後 Claude 引擎會當係自己嘅倉管理（止損止賺、最長持倉）。
 
 ## 第 1 步：開一個「訊號確認 bot」（唔好用現有嘅 @HC_Gold_Signal_bot）
 1. Telegram 搵 @BotFather → `/newbot` → 攞 bot token。
 2. 同新 bot 講一句 `/start`，再用 @userinfobot 攞你自己嘅數字 id（私訊時 chat id = 你嘅 user id）。
 3. 自己產生一串隨機字做 webhook secret（例：`python3 -c "import secrets;print(secrets.token_urlsafe(32))"`）。
 
-## 第 2 步：Cloud Run 環境變數（Claude 幫你用 `gcp_agent.py env set`，先睇計畫，你同意先套用）
+## 第 2 步：zhuge-xau 環境變數（`gcp_agent.py --profile xau env set`，先睇計畫，你同意先套用）
 | 變數 | 值 |
 |---|---|
 | `TG_SIGNAL_BOT_TOKEN` | 第 1 步 bot token |
@@ -50,8 +48,8 @@ cat > ~/.tg_relay.env <<'X'
 export TG_API_ID=...            # https://my.telegram.org → API development tools
 export TG_API_HASH=...
 export TG_CHANNELS=-100xxxxxxxxxx
-export ZHUGE_GCP_URL=https://你的服務.run.app/
-export WEBHOOK_SECRET_TOKEN=...
+export ZHUGE_GCP_URL=https://zhuge-xau-….run.app/      # 天覆陣服務，唔係 zhuge-risk-manager
+export WEBHOOK_SECRET_TOKEN=...                        # zhuge-xau 嘅權杖
 X
 chmod 600 ~/.tg_relay.env && . ~/.tg_relay.env
 ~/venv/bin/python tg_listener.py --login      # 輸入電話、驗證碼（有兩步驗證就再輸入密碼）

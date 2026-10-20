@@ -15,12 +15,14 @@ from flask import Flask, jsonify, request as flask_request
 
 import brain
 import config
+import executor
 import market
 import notify
 import page
 import paper
 import rules
 import storage
+import tgsignal
 from storage import StorageError
 
 M1_FILE = config.PREFIX + "m1.json"
@@ -31,7 +33,6 @@ LESSONS_FILE = config.PREFIX + "lessons.md"
 DECISIONS_PREFIX = config.PREFIX + "decisions/"
 CONTROL_FILE = config.PREFIX + "control.json"      # 緊急停機開關、暫停開倉、本金（私人）、淨值高水位
 BUNDLED_LESSONS = __file__.rsplit("/", 1)[0] + "/LESSONS.md"
-CMD_TTL_SEC = 600            # 指令 10 分鐘內冇執行就作廢（EA 離線時唔好開舊單）
 
 
 def now_ts():
@@ -271,26 +272,11 @@ def _record(state, rec, day):
 
 
 def enqueue_cmd(state, action, stop, target, now, decision_id):
-    """實倉：把動作變成 EA 指令（分行文字，EA 用 StringSplit 讀）。"""
-    cid = decision_id[:8]
-    if action in ("OPEN_LONG", "OPEN_SHORT"):
-        text = f"open|{'BUY' if action == 'OPEN_LONG' else 'SELL'}|{rules.lots():.2f}|sl={stop:.2f}|tp={'' if target is None else f'{target:.2f}'}|magic={config.MAGIC}|id={cid}"
-    elif action == "CLOSE":
-        text = f"close|all|magic={config.MAGIC}|id={cid}"
-    elif action == "UPDATE_STOP":
-        text = f"modify|all|sl={stop:.2f}|tp={'' if target is None else f'{target:.2f}'}|magic={config.MAGIC}|id={cid}"
-    else:
-        return None
-    state["pending_cmds"] = [c for c in (state.get("pending_cmds") or []) if now - c["ts"] < CMD_TTL_SEC]
-    state["pending_cmds"].append({"id": cid, "text": text, "ts": now, "acked": False})
-    return text
+    return executor.enqueue(state, action, stop, target, now, decision_id)
 
 
 def cmd_text(state, now):
-    if not config.EXECUTE:
-        return ""
-    return "\n".join(c["text"] for c in (state.get("pending_cmds") or [])
-                     if not c.get("acked") and now - c["ts"] < CMD_TTL_SEC)
+    return executor.cmd_text(state, now)
 
 
 def process_bar(state, bar, m1, m15, account, now):
@@ -438,12 +424,7 @@ def handle_cmd_ack(payload):
         return jsonify({"status": "error", "message": "missing id"}), 400
 
     def mutate(state):
-        found = False
-        for c in state.get("pending_cmds") or []:
-            if c["id"] == cid and not c.get("acked"):
-                c.update(acked=True, ok=bool(payload.get("ok")), ticket=payload.get("ticket"),
-                         message=str(payload.get("message") or "")[:200], acked_ts=now_ts())
-                found = True
+        found = executor.ack(state, cid, payload, now_ts())
         return (state if found else None), found
     try:
         found = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)
@@ -502,6 +483,8 @@ def entry(req):
         if req.args.get("format") == "json":
             return jsonify(status), 200
         return page.render(status), 200, {"Content-Type": "text/html; charset=utf-8"}
+    if req.args.get("tg") == "signal":                 # [R290] 訊號確認 bot 嘅按鈕（核對 secret_token 標頭，唔使權杖）
+        return tgsignal.handle_callback(req)
     try:
         raw = req.get_data().decode("utf-8").replace("\x00", "").strip()     # MT5 char 陣列常以 \0 結尾
         payload = json.loads(raw) if raw else {}
@@ -514,6 +497,8 @@ def entry(req):
     action = payload.get("action")
     if action == "cmd_ack":
         return handle_cmd_ack(payload)
+    if action == "tg_signal":                          # [R290] VM 監聽腳本推上嚟嘅外部頻道訊息
+        return tgsignal.handle_signal(payload)
     if "equity" in payload or action in ("check_gate", "heartbeat"):
         return handle_heartbeat(payload)
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200

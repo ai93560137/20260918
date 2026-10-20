@@ -225,3 +225,48 @@ class ClaudeBrain:
             log.exception("Claude 決策失敗")
             return {"action": "HOLD", "confidence": 0, "reason": f"AI 出錯：{exc.__class__.__name__}: {str(exc)[:120]}",
                     "_error": True, "_ms": int((time.time() - started) * 1000)}
+
+
+# ---------------------------------------------------------------------------
+# [R290] Telegram 頻道訊號解析（只解析，唔決定）：自由格式 → 固定 JSON
+# ---------------------------------------------------------------------------
+SIGNAL_SYSTEM = """You parse messages from Telegram trading-signal channels. Messages are free-form, often mixed Chinese/English with emoji.
+Only parse and flag risks; never invent numbers that are not in the message (use null). Write `analysis` in Traditional Chinese
+(Cantonese style is fine), 2-4 sentences: what the signal says, risk/reward, anything suspicious or missing."""
+
+SIGNAL_FORMAT = {"type": "json_schema", "schema": {
+    "type": "object",
+    "properties": {
+        "kind": {"type": "string", "enum": ["new_signal", "update", "other"],
+                 "description": "new_signal = a new entry; update = managing an existing trade (move SL, close, TP hit); other = anything else"},
+        "symbol": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "side": {"anyOf": [{"type": "string", "enum": ["BUY", "SELL"]}, {"type": "null"}]},
+        "order_type": {"anyOf": [{"type": "string", "enum": ["market", "limit", "stop"]}, {"type": "null"}]},
+        "entry_low": {"anyOf": [{"type": "number"}, {"type": "null"}]},
+        "entry_high": {"anyOf": [{"type": "number"}, {"type": "null"}]},
+        "sl": {"anyOf": [{"type": "number"}, {"type": "null"}]},
+        "tp": {"type": "array", "items": {"type": "number"}},
+        "update_action": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "confidence": {"type": "number"},
+        "analysis": {"type": "string"},
+    },
+    "required": ["kind", "symbol", "side", "order_type", "entry_low", "entry_high", "sl", "tp", "update_action", "confidence", "analysis"],
+    "additionalProperties": False}}
+
+
+def analyze_signal(client, text, reply_text=None, channel=None, model=None):
+    """回傳 (dict, None) 或 (None, 原因)。"""
+    context = f"\n(This message replies to an earlier message:\n{reply_text[:1500]}\n)" if reply_text else ""
+    user = f"Channel: {channel or 'unknown'}{context}\nMessage:\n{text}"
+    try:
+        msg = client.messages.create(
+            model=model or config.MODEL, max_tokens=4000,
+            system=[{"type": "text", "text": SIGNAL_SYSTEM, "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
+            output_config={"effort": "low", "format": SIGNAL_FORMAT},
+            messages=[{"role": "user", "content": user}])
+        if msg.stop_reason == "refusal":
+            return None, "AI 拒答"
+        data = json.loads(next(b.text for b in msg.content if b.type == "text"))
+    except Exception as exc:  # noqa: BLE001
+        return None, f"AI 呼叫失敗：{type(exc).__name__}: {str(exc)[:120]}"
+    return (data if isinstance(data, dict) else None), (None if isinstance(data, dict) else "AI 回覆唔係 JSON")

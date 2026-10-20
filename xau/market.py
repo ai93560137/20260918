@@ -9,6 +9,11 @@ NY = ZoneInfo("America/New_York")
 HK = ZoneInfo("Asia/Hong_Kong")
 
 
+def now_ts():
+    import time
+    return time.time()
+
+
 def to_float(value, default=None):
     if value is None or isinstance(value, bool):
         return default
