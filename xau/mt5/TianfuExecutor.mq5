@@ -25,7 +25,7 @@
 #property strict
 #include <Trade\Trade.mqh>
 
-input string InpUrl        = "https://zhuge-xau-XXXX.europe-west1.run.app/"; // Cloud Run 網址（結尾 /）
+input string InpUrl        = "https://zhuge-xau-1056099871997.europe-west1.run.app/"; // Cloud Run 網址（結尾 /）（使用者 10-20：預設填好）
 input string InpToken      = "";        // WEBHOOK_SECRET_TOKEN（唔會印出）
 input long   InpMagic      = 921;       // 只管呢個 magic 嘅單（線上 V23 用 920，天覆陣用 921）
 input int    InpIntervalSec = 60;       // 心跳間隔（秒）
