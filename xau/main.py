@@ -176,11 +176,16 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
         why = "；".join(lad["reasons"])
         set_mode(control, "PAUSE", why, "ladder", now, auto_reset_day=(next_day if lad["pause_kind"] == "daily" else None))
         notify.tg_send(f"⏸ {why}")
-    # 只提示嘅警報：每個交易日每項一次
+    # 只提示嘅警報：每個交易日每項一次（含 API key 到期前 KEY_WARN_DAYS 日）
     sent = control.setdefault("alerts_sent", {})
     if sent.get("day") != day:
         control["alerts_sent"] = sent = {"day": day}
-    for key, text in (lad.get("alerts") or {}).items():
+    alerts = dict(lad.get("alerts") or {})
+    _, days_left = market.key_expiry(now)
+    if days_left is not None and days_left <= config.KEY_WARN_DAYS:
+        alerts["api_key"] = (f"ANTHROPIC_API_KEY 仲有 {days_left:.0f} 日到期（{config.KEY_EXPIRES_UTC} UTC），請喺控制台換新 key"
+                             if days_left > 0 else f"ANTHROPIC_API_KEY 已到期（{config.KEY_EXPIRES_UTC} UTC），決策會失敗")
+    for key, text in alerts.items():
         if not sent.get(key):
             sent[key] = market.fmt_utc(now)
             notify.tg_send(f"⚠️ {text}（只提示，唔停唔鎖）")
@@ -443,6 +448,7 @@ def build_status():
     except StorageError:
         m1, m15, account = [], [], {}
     now = now_ts()
+    _, key_days = market.key_expiry(now)
     u = state.get("usage_today") or {}
     ms = sorted(u.get("ms") or [])
     p95 = ms[int(len(ms) * 0.95) - 1] if len(ms) >= 2 else (ms[0] if ms else None)
@@ -450,6 +456,8 @@ def build_status():
     return {
         "team": config.TEAM_NAME, "symbol": config.SYMBOL, "execute": config.EXECUTE, "model": config.MODEL,
         "ladder": state.get("ladder") or {"level": "A", "reasons": []},
+        "api_key": {"expires_utc": config.KEY_EXPIRES_UTC or None, "days_left": (round(key_days, 1) if key_days is not None else None),
+                    "warn": bool(key_days is not None and key_days <= config.KEY_WARN_DAYS)},
         "control": {"mode": control.get("mode"), "reason": control.get("reason"), "set_by": control.get("set_by"),
                     "set_at_utc": control.get("set_at_utc"), "auto_reset_day": control.get("auto_reset_day"),
                     "principal_set": bool(control.get("principal_hkd"))},

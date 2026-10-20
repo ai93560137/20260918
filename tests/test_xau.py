@@ -260,6 +260,20 @@ FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 NOW_RESET = NOW2
 FAKE["xau/control.json"] = (json.dumps({"mode": "RUN", "reason": "", "set_by": "user", "principal_hkd": None, "equity_peak": 0, "alerts_sent": {}}), 99)
 
+print("=== API key 到期提示 ===")
+check("key_expiry 解析", market.key_expiry(0, "2026-12-31 14:00")[1] > 0 and market.key_expiry(0, "")[0] is None)
+config.KEY_EXPIRES_UTC = market.fmt_utc(NOW[0] + 5 * 86400, "%Y-%m-%d %H:%M"); n_tg = len(TG)
+body2 = {"token": "tok", "action": "check_gate", "equity": 1, "credit": 0, "buy_lots": 0, "sell_lots": 0, "net_lots": 0,
+         "m1_ohlc": {"time": int(NOW_RESET) + 400, "open": 3990, "high": 3991, "low": 3989.5, "close": 3990.5, "is_new_bar": True},
+         "m15_ohlc": {"time": int(NOW_RESET) - 900, "open": 3990, "high": 3991, "low": 3989, "close": 3990}}
+NOW[0] = NOW_RESET + 405
+client.post("/", data=json.dumps(body2), content_type="application/json")
+check("到期前 5 日 → Telegram 提示一次、頁面警告", any("ANTHROPIC_API_KEY" in t for t in TG[n_tg:]) and "ANTHROPIC_API_KEY" in client.get("/").get_data(as_text=True) and client.get("/?format=json").get_json()["api_key"]["warn"])
+body2["m1_ohlc"]["time"] = int(NOW_RESET) + 460; NOW[0] = NOW_RESET + 465; n_tg = len(TG)
+client.post("/", data=json.dumps(body2), content_type="application/json")
+check("同日唔重發", not any("ANTHROPIC_API_KEY" in t for t in TG[n_tg:]))
+config.KEY_EXPIRES_UTC = "2026-12-31 14:00"
+
 print("=== 休市 ===")
 NOW[0] = 1792857600.0 + 5        # 2026-10-24 週六 12:00 ET：休市
 r = client.post("/", data=json.dumps({"token": "tok", "equity": 1, "m1_ohlc": {"time": int(NOW_RESET) + 100000, "open": 1, "high": 2, "low": 0.5, "close": 1.5, "is_new_bar": True}}), content_type="application/json")

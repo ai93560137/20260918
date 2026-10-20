@@ -55,6 +55,8 @@ API_TIMEOUT_SEC = _f("CLAUDE_TIMEOUT_SEC", 45)              # EA WebRequest 同�
 VERTEX_PROJECT = _s("CLAUDE_VERTEX_PROJECT", "")
 VERTEX_REGION = _s("CLAUDE_VERTEX_REGION", "global")
 MAX_TOKENS = _i("CLAUDE_MAX_TOKENS", 8000)                  # 思考 token 計入；太細會截斷
+KEY_EXPIRES_UTC = _s("ANTHROPIC_KEY_EXPIRES_UTC", "2026-12-31 14:00")   # API key 到期（使用者 10-20 建）；到期前 14 日頁面警告＋Telegram 每日一次
+KEY_WARN_DAYS = _i("ANTHROPIC_KEY_WARN_DAYS", 14)
 
 # --- 硬性風控（AI 無權超越）---
 LOTS = _f("XAU_LOTS", 0.01)

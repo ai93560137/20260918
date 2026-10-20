@@ -87,7 +87,14 @@ def render(status):
              "先做模擬倉前向測試，達到預先登記標準、使用者講先轉真倉；真倉落單經 MT5 EA 執行指令。</p>"
              f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・{esc(s.get('session'))}・模型 {esc(s.get('model'))}"
              f"（effort {esc(s.get('effort'))}）{('＋篩選 ' + esc(s.get('gate_model'))) if s.get('gate_model') else ''}</p></div>")
-    real = ("<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉（真金白銀）</div>"
+    key = s.get("api_key") or {}
+    key_warn = ""
+    if key.get("warn"):
+        days = key.get("days_left") or 0
+        key_state = "已到期" if days <= 0 else f"仲有 {days:.0f} 日到期"
+        key_warn = ("<div class='section' style='border-left:8px solid #dc2626;background:#fef2f2'><b>🔑 ANTHROPIC_API_KEY "
+                    + key_state + "</b>（" + esc(key.get("expires_utc")) + " UTC）：請喺 Cloud Run 控制台換新 key，否則決策會失敗。</div>")
+    real = (key_warn + "<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉（真金白銀）</div>"
             + ("<div class='section'><p class='muted'>未開始真倉。模擬倉達標、使用者批准後先開始（XAU_EXECUTE=1，新 EA 執行指令）。</p></div>"
                if not s.get("execute") else
                f"<div class='section'><h2>真倉狀態</h2><p>{esc(run_text(s))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>")

@@ -12482,7 +12482,7 @@ def _response_info(response):
 # [R291] 🌌 天覆陣（xau/，獨立 Cloud Run 服務）影子階段：EA 仍指向本服務，本服務把帶新 M1 收盤嘅心跳
 #        轉發過去（加上權杖）。短逾時、吞掉所有錯誤，EA 嘅回應唔受影響。XAU_SHADOW_URL 留空 = 關。
 XAU_SHADOW_URL = _env_str("XAU_SHADOW_URL", "")
-XAU_SHADOW_TIMEOUT_SEC = _env_float("XAU_SHADOW_TIMEOUT_SEC", 2.0)
+XAU_SHADOW_TIMEOUT_SEC = _env_float("XAU_SHADOW_TIMEOUT_SEC", 1.0)      # 只需送到，唔等對面（對面要問 Claude）；最多阻 EA 1 秒／分鐘
 XAU_SHADOW_TOKEN = _env_str("XAU_SHADOW_TOKEN", GCP_SECRET_TOKEN)      # 新服務自己嘅權杖（唔跟本服務；本服務線上未設 WEBHOOK_SECRET_TOKEN）
 
 

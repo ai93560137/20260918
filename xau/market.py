@@ -108,6 +108,20 @@ def is_night(now_ts):
     return h >= 18 or h < 2
 
 
+def key_expiry(now_ts, text=None):
+    """API key 到期：回傳 (到期 ts, 剩餘日數) 或 (None, None)。格式 YYYY-MM-DD[ HH:MM]（UTC）。"""
+    text = (config.KEY_EXPIRES_UTC if text is None else text).strip()
+    if not text:
+        return None, None
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            ts = datetime.strptime(text, fmt).replace(tzinfo=timezone.utc).timestamp()
+            return ts, (ts - now_ts) / 86400
+        except ValueError:
+            continue
+    return None, None
+
+
 def fmt_utc(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.fromtimestamp(ts, timezone.utc).strftime(fmt)
 
