@@ -244,6 +244,7 @@ FB.calls.clear()
 from datetime import datetime, timezone
 T0 = int(datetime(2026, 10, 26, 14, 0, tzinfo=timezone.utc).timestamp()) - 400 * 60   # 週一 10:00 ET 開市；大過之前所有 bar
 FAKE["xau/m1.json"] = (json.dumps([{"time": T0 + (360 + k) * 60, "open": 3999.5, "high": 4000.5, "low": 3999.0, "close": 4000.0} for k in range(40)]), FAKE["xau/m1.json"][1] + 1)
+FAKE["xau/m15.json"] = (json.dumps([{"time": T0 + 400 * 60 - 900 * (30 - k), "open": 3999.0, "high": 4001.0, "low": 3998.0, "close": 4000.0} for k in range(30)]), FAKE["xau/m15.json"][1] + 1)
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3990.0, "target_price": 4015.0, "confidence": 0.9, "reason": "買"}
 st, d = hb(400, 4000)
