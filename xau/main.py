@@ -342,6 +342,36 @@ def cmd_text(state, now):
     return executor.cmd_text(state, now)
 
 
+def in_active_hours(now):
+    """XAU_ACTIVE_HOURS_UTC="07-17" → 07:00–16:59 UTC 先問；空＝全日。"""
+    spec = (config.ACTIVE_HOURS_UTC or "").strip()
+    if not spec or "-" not in spec:
+        return True
+    try:
+        a, b = (int(x) for x in spec.split("-", 1))
+    except ValueError:
+        return True
+    h = int(now // 3600) % 24
+    return a <= h < b if a <= b else (h >= a or h < b)
+
+
+def reuse_hold(state, m1, m15, now):
+    """慳成本 F：上次真正問 Claude 係 HOLD、仲未過 REUSE_MAX_MIN 分鐘、價格變動 < REUSE_ATR_MULT × M1 ATR、
+    冇新 M15 收盤 → 回傳原因（可以沿用）；否則 None。"""
+    anchor, last = state.get("reuse_anchor") or {}, state.get("last_decision") or {}
+    if not anchor or last.get("final") != "HOLD" or last.get("kind") not in ("decide", "screen", "reuse"):
+        return None
+    if now - anchor.get("ts", 0) > config.REUSE_MAX_MIN * 60:
+        return None
+    if m15 and anchor.get("m15_time") != m15[-1]["time"]:
+        return None
+    atr = market.wilder_atr(m1) or 0
+    move = abs(m1[-1]["close"] - (anchor.get("price") or 0))
+    if not atr or move >= config.REUSE_ATR_MULT * atr:
+        return None
+    return f"價格變動 {move:.{config.PRICE_DIGITS}f} < {config.REUSE_ATR_MULT:g}×ATR {atr:.{config.PRICE_DIGITS}f}、冇新 M15"
+
+
 def process_bar(state, bar, m1, m15, account, now):
     """新 M1 收盤。回傳 (決策紀錄或 None, 摘要)。"""
     day = market.ny_date(now)
@@ -387,6 +417,17 @@ def process_bar(state, bar, m1, m15, account, now):
 
     can_open = control["mode"] == "RUN"
     block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
+    if pos is None and not in_active_hours(now):          # 慳成本 D：時段外空倉唔問 Claude（有倉照管）
+        return None, f"時段外（XAU_ACTIVE_HOURS_UTC={config.ACTIVE_HOURS_UTC}），空倉唔問 Claude"
+    reuse = reuse_hold(state, m1, m15, now) if pos is None and not config.SIGNAL_BOOK and config.REUSE_HOLD in ("on", "shadow") else None
+    if reuse and config.REUSE_HOLD == "on":               # 慳成本 F：市況冇變沿用上次 HOLD
+        rec.update(kind="reuse", action="HOLD", final="HOLD", reason=f"沿用上次 HOLD（{reuse}）")
+        _record(state, rec, day)
+        return rec, "沿用 HOLD"
+    if not reuse:
+        state["reuse_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
+    if reuse:
+        rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
     active = signals.active(now) if config.SIGNAL_BOOK else None
     if config.SIGNAL_BOOK and pos is None and not active:
         return None, "冇有效訊號（訊號書唔問 Claude）"

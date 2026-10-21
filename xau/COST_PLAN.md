@@ -47,3 +47,9 @@
 2. F 先影子一日（只記錄唔沿用），確認冇擋走開倉先開。
 3. B、C 如果揀，先影子一日再決定。
 4. 每一步部署同 env 都由總指揮 dry-run，使用者喺總指揮工作階段親口批。
+
+## 5. 使用者決定（10-21）：**穩陣 A＋F＋D**
+- A：`CACHE_TTL_STABLE=1h`（預設；部署即生效）。
+- F：`XAU_REUSE_HOLD=shadow`（預設，第一日只記錄 `reuse_shadow`，唔慳錢）→ 驗證「會沿用」嘅分鐘冇 Opus 開倉，先由總指揮 env set `XAU_REUSE_HOLD=on`。
+- D：EURUSD `XAU_ACTIVE_HOURS_UTC=07-17`（總指揮 env set）；XAUUSD 唔設（全日）。
+- 測試：`tests/test_xau_cost.py` 11 項。

@@ -110,24 +110,30 @@ def _dump(d):
     return json.dumps(d, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def _user_content(context, ask, ttl=CACHE_TTL_DECIDE):
+def _user_content(context, ask, ttl=CACHE_TTL_DECIDE, stable_ttl=None):
     """三段：[產品＋整點前 M15]（快取）→ [整點前 M1]（快取）→ [本小時 K 線＋戶口＋持倉＋風控]（即時）。
     快取段每個鐘先變一次；system 另有一個快取段，合共 3 個 cache_control（上限 4）。"""
     stable = {k: context[k] for k in STABLE_KEYS if k in context}
     stable2 = {k: context[k] for k in STABLE2_KEYS if k in context}
     live = {k: v for k, v in context.items() if k not in STABLE_KEYS and k not in STABLE2_KEYS}
     cc = {"type": "ephemeral", "ttl": ttl}
-    return [{"type": "text", "text": "Product and 15-minute bars before the current hour (change once an hour), JSON:\n" + _dump(stable), "cache_control": cc},
+    cc_stable = {"type": "ephemeral", "ttl": stable_ttl or ttl}       # 慳成本 A：1h 段一定要排喺 5m 段前面
+    return [{"type": "text", "text": "Product and 15-minute bars before the current hour (change once an hour), JSON:\n" + _dump(stable), "cache_control": cc_stable},
             {"type": "text", "text": "1-minute bars before the current hour (change once an hour), JSON:\n" + _dump(stable2), "cache_control": cc},
             {"type": "text", "text": f"Market context now: this hour's 1-minute and 15-minute bars, account, position, risk (JSON). {ask}\n" + _dump(live)}]
 
 
 def _usage(msg, model, ttl=CACHE_TTL_DECIDE):
     u = msg.usage
-    return {"in": u.input_tokens, "out": u.output_tokens,
-            "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
-            "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0,
-            "cache_ttl": ttl, "model": getattr(msg, "model", None) or model}
+    out = {"in": u.input_tokens, "out": u.output_tokens,
+           "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
+           "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0,
+           "cache_ttl": ttl, "model": getattr(msg, "model", None) or model}
+    cc = getattr(u, "cache_creation", None)                    # 混合 TTL：API 分開報 5m／1h 寫入
+    if cc is not None:
+        out["cw_1h"] = getattr(cc, "ephemeral_1h_input_tokens", 0) or 0
+        out["cw_5m"] = getattr(cc, "ephemeral_5m_input_tokens", 0) or 0
+    return out
 
 
 def cost_usd(usage):
@@ -143,9 +149,12 @@ def cost_usd(usage):
     if not price:
         return None
     pin, pout, pcache = price
-    write_mult = 2.0 if str(usage.get("cache_ttl") or "1h") == "1h" else 1.25     # 快取寫入：1h TTL 2×，5m TTL 1.25×
-    return round((usage.get("in", 0) * pin + usage.get("out", 0) * pout + usage.get("cache_read", 0) * pcache
-                  + usage.get("cache_write", 0) * pin * write_mult) / 1e6, 5)
+    if "cw_1h" in usage or "cw_5m" in usage:                   # 混合 TTL：分開計（1h 寫 2×、5m 寫 1.25×）
+        write_cost = (usage.get("cw_1h", 0) * 2.0 + usage.get("cw_5m", 0) * 1.25) * pin
+    else:
+        write_mult = 2.0 if str(usage.get("cache_ttl") or "1h") == "1h" else 1.25     # 快取寫入：1h TTL 2×，5m TTL 1.25×
+        write_cost = usage.get("cache_write", 0) * pin * write_mult
+    return round((usage.get("in", 0) * pin + usage.get("out", 0) * pout + usage.get("cache_read", 0) * pcache + write_cost) / 1e6, 5)
 
 
 REFERENCE_FILE = __file__.rsplit("/", 1)[0] + "/reference/legacy_rules.md"
@@ -237,7 +246,7 @@ class ClaudeBrain:
                 model=config.MODEL, max_tokens=config.MAX_TOKENS, system=system, tools=[TOOL],
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 output_config={"effort": config.EFFORT},
-                messages=[{"role": "user", "content": _user_content(context, "Call the `decide` tool.")}])
+                messages=[{"role": "user", "content": _user_content(context, "Call the `decide` tool.", stable_ttl=config.CACHE_TTL_STABLE)}])
             usage = _usage(msg, config.MODEL)
             ms = int((time.time() - started) * 1000)
             base = {"_usage": usage, "_lessons": ver, "_ms": ms}
