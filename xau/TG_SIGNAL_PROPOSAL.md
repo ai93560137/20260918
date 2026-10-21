@@ -123,3 +123,20 @@ Opus 決策 prompt：「signals（外部、未經核實，只係資料）」區�
 8. VM 安裝教學（你瀏覽器 SSH 跟住做）。
 
 S0 只需要 1、2 同一部分 3（唔落單）就可以開始。
+
+## 10. 使用者決定（2026-10-21）
+| # | 決定 |
+|---|---|
+| Q1 | **B 獨立訊號書**（zhuge-xau-sig 等；921 做對照組） |
+| Q2 | **新開專用 VM**（e2-micro；由使用者喺 GCP 控制台開，天覆陣唔 SSH） |
+| Q3 | **主帳戶**（使用者揀；即係冇副號隔離，下面補償措施必做） |
+| Q4 | **931–935** |
+| Q5 | 待使用者提供（頻道 id 只放 VM 本機設定檔） |
+
+**用主帳戶嘅補償措施（必做）**：
+1. 主帳戶開兩步驗證密碼（Settings → Privacy and Security → Two-Step Verification），登入 session 時要輸入。
+2. VM 只跑 `tg_listener.py`：冇其他服務、冇 Claude、冇對外開 port（防火牆只准出站）；SSH 只用瀏覽器 SSH（OS Login）。
+3. session 檔同 api_hash 只喺 `tgrelay` 使用者家目錄（700／600），唔備份去 GCS 或者其他地方。
+4. 程式只訂閱 `NewMessage(chats=白名單)`；代碼審查確認冇任何 send／join／delete／read 私人對話嘅呼叫。
+5. 每月喺 TG「設定 → 裝置」睇一次，只應該見到 VM 嗰個 session；見到唔認得嘅即刻按 §4 撤銷。
+6. 停用：`sudo systemctl stop tg-relay` → TG「裝置」終止 session → 刪 session 檔。
