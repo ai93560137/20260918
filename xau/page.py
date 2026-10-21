@@ -130,6 +130,18 @@ def render_signal_book(s):
             "<div class='section'><h2>最近訊號</h2><div style='overflow-x:auto'><table><tr><th>訊息時間</th><th>狀態</th><th>種類</th>"
             "<th>方向</th><th>入場</th><th>止損</th><th>止賺</th><th>原因</th></tr>"
             + (rows or "<tr><td colspan='8' class='muted'>未有訊號</td></tr>") + "</table></div></div>")
+    sc = sg.get("scores") or {}
+    pct = lambda a, b: "—" if not b else f"{a / b:.0%}"  # noqa: E731
+    score_rows = ""
+    for ch, c in sorted(sc.items()):
+        avg_tp = "—" if not c.get("filled") else f"{c['max_tp_sum'] / c['filled']:.1f}"
+        avg_r = "—" if not c.get("r_n") else f"{c['r_sum'] / c['r_n']:+.2f}"
+        score_rows += (f"<tr><td>…{esc(ch)}</td><td>{c['n']}</td><td>{pct(c['filled'], c['n'])}</td><td>{pct(c['tp1'], c['filled'])}</td>"
+                       f"<td>{pct(c['sl'], c['filled'])}</td><td>{avg_tp}</td><td>{avg_r}</td></tr>")
+    body += ("<div class='section'><h2>頻道準確度（用實際金價計，唔信頻道自稱成績）</h2><div style='overflow-x:auto'><table>"
+             "<tr><th>頻道</th><th>已完結訊號</th><th>成交率</th><th>TP1 先到</th><th>SL 先到</th><th>平均去到第幾個 TP</th><th>TP1 走平均 R</th></tr>"
+             + (score_rows or "<tr><td colspan='7' class='muted'>未有完結嘅訊號</td></tr>") + "</table></div>"
+             "<p class='muted' style='font-size:13px'>成交＝30 分鐘內 K 線碰到入場區；同一根 K 線碰到 SL 同 TP 當 SL（保守）；24 小時未完當平手。R＝去到 TP1 即走嘅回報÷風險。</p></div>")
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</h1></div>{page_nav()}</div>")
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"
             f"<meta http-equiv='refresh' content='300'><title>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</title><style>{CSS}</style></head>"

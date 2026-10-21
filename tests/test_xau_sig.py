@@ -121,9 +121,43 @@ check("注入文字只變成結構化欄位（冇手數欄位）", d["signal_sta
 
 check("6 個 TP 全部保留（10-21 DAN VIP 訊號有 6 個）", signals.normalize({"tp": [1, 2, 3, 4, 5, 6]})["tp"] == [1, 2, 3, 4, 5, 6])
 
+print("=== MT5 時差（10-21 修）===")
+FAKE["xau/account.json"] = (json.dumps({"server_offset": 10800}), 1)
+FAKE["xau/m1.json"] = (json.dumps([{"time": int(NOW[0] - 60 + 10800), "open": 4101, "high": 4101, "low": 4101, "close": 4101}]), 1)
+p_, age_ = signals.latest_price()
+check("伺服器時間 UTC+3：扣時差後 age ≈ 0", p_ == 4101 and abs(age_) < 5, age_)
+FAKE["xau/m1.json"] = (json.dumps([{"time": int(NOW[0] - 3600 + 10800), "open": 4101, "high": 4101, "low": 4101, "close": 4101}]), 1)
+check("一個鐘前嘅價 → age ≈ 3600（之前會係負數當新鮮）", abs(signals.latest_price()[1] - 3600) < 120, signals.latest_price())
+FAKE.pop("xau/account.json")
+set_price(4101)
+
+print("=== 用實際金價計頻道準確度 ===")
+V = {"side": "BUY", "entry_low": 4100, "entry_high": 4102, "sl": 4090, "tp": [4105, 4110], "msg_ts": 1000}
+def bar(t, lo, hi): return {"time": t, "open": lo, "high": hi, "low": lo, "close": hi}
+o = signals.evaluate(V, [bar(1020, 4101, 4103), bar(1080, 4103, 4106), bar(1140, 4089, 4104)], 0, now=2000)
+check("成交 → TP1 → SL：max_tp 1、final sl", o["filled_ts"] == 1020 and o["max_tp"] == 1 and o["final"] == "sl", o)
+check("TP1 先到 R = (4105−4101)/11", signals.r_multiple(V, o) == round(4 / 11, 2), signals.r_multiple(V, o))
+o = signals.evaluate(V, [bar(1020, 4101, 4103), bar(1080, 4089, 4106)], 0, now=2000)
+check("同一根碰 SL 同 TP → 當 SL（保守）、R −1", o["final"] == "sl" and o["max_tp"] == 0 and signals.r_multiple(V, o) == -1.0, o)
+o = signals.evaluate(V, [bar(1020, 4110, 4112), bar(1000 + 31 * 60, 4110, 4112)], 0, now=1000 + 40 * 60)
+check("30 分鐘內冇碰入場區 → not_filled、唔計 R", o["final"] == "not_filled" and signals.r_multiple(V, o) is None, o)
+o1 = signals.evaluate(V, [bar(1020, 4101, 4103)], 0, now=1100)
+o2 = signals.evaluate(V, [bar(1020, 4101, 4103), bar(1080, 4106, 4111)], 0, prev=o1, now=1200)
+check("分兩次累計（K 線窗口有限）→ all_tp", o2["final"] == "all_tp" and o2["max_tp"] == 2, o2)
+
 print("=== 心跳、頁面 ===")
 st, d = send({"action": "tg_heartbeat", "script_version": "tg-relay-2", "channels": 2, "connected": True, "forwarded": 5, "dropped": 1})
 check("監聽心跳 → ok", st == 200 and d["status"] == "ok", d)
+rows = json.loads(FAKE["xau/sig/signals/recent.json"][0])
+row9 = next(r for r in rows if r["sid"] == "1001_9")
+check("心跳順手計訊號結果（有 outcome、ch）", "outcome" in row9 and row9["ch"] == "1001", row9.get("outcome"))
+FAKE["xau/m1.json"] = (json.dumps([{"time": int(NOW[0]), "open": 4101, "high": 4101.5, "low": 4100.5, "close": 4101},
+                                   {"time": int(NOW[0]) + 60, "open": 4100, "high": 4100.5, "low": 4089, "close": 4089}]), 1)
+send({"action": "tg_heartbeat", "channels": 4, "connected": True})
+sc = json.loads(FAKE["xau/sig/signals/scores.json"][0])
+check("訊號完結 → scores.json 按頻道累計（SELL 去晒 TP）", sc.get("1001", {}).get("all_tp", 0) >= 1 and sc["1001"]["tp1"] >= 1, sc)
+html = client.get("/").get_data(as_text=True)
+check("頁面有頻道準確度表", "頻道準確度" in html and "…1001" in html)
 r = client.get("/?format=json")
 j = r.get_json()
 check("JSON 有 signals、冇原文", j["book"] == "signal" and j["signals"]["rows"] and "https://x.y" not in r.get_data(as_text=True), list(j))

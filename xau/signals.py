@@ -28,6 +28,9 @@ PREFIX = config.PREFIX + "signals/"
 RECENT_FILE = PREFIX + "recent.json"
 LISTENER_FILE = config.PREFIX + "listener.json"
 MAIN_M1_FILE = config.MAIN_PREFIX + "m1.json"
+MAIN_ACCOUNT_FILE = config.MAIN_PREFIX + "account.json"
+SCORES_FILE = PREFIX + "scores.json"
+SCORE_MAX_HOURS = 24
 MAX_TEXT = 4000
 GOLD_ALIASES = ("XAUUSD", "XAU", "GOLD", "黃金", "黄金")
 now_ts = time.time
@@ -156,6 +159,115 @@ def msg_time(payload, received):
         return received
 
 
+def evaluate(view, bars, offset, prev=None, now=None):
+    """用實際金價計一條入場訊號嘅結果（唔信頻道自稱嘅成績；使用者 10-21：「只需要考慮他的訊號準確度」）。純函數。
+    成交：K 線碰到入場區；之後先到 SL 定 TP1…TPn（同一根 K 線兩樣都碰到當 SL，保守）。
+    prev 係上次計到邊（K 線窗口得約 6.7 小時，所以每次心跳累計）。回傳新 outcome dict。"""
+    now = now if now is not None else now_ts()
+    o = dict(prev or {"filled_ts": None, "max_tp": 0, "sl_hit": False, "last_ts": 0, "final": None})
+    if o.get("final"):
+        return o
+    side, lo, hi, sl, tps = view.get("side"), view.get("entry_low"), view.get("entry_high"), view.get("sl"), view.get("tp") or []
+    msg_ts = view.get("msg_ts") or 0
+    if side not in ("BUY", "SELL") or lo is None or sl is None:
+        o["final"] = "skip"
+        return o
+    for b in bars:
+        t = b["time"] - offset                                   # K 線開盤 UTC
+        if t + 60 <= max(msg_ts, o["last_ts"]):
+            continue
+        o["last_ts"] = t + 60
+        if not o["filled_ts"]:
+            if t > msg_ts + config.SIG_TTL_MIN * 60:
+                o["final"] = "not_filled"
+                return o
+            if b["low"] <= hi and b["high"] >= lo:
+                o["filled_ts"] = t
+            else:
+                continue
+        hit_sl = b["low"] <= sl if side == "BUY" else b["high"] >= sl
+        if hit_sl:
+            o["sl_hit"], o["final"] = True, "sl"
+            return o
+        for k, tp in enumerate(tps, 1):
+            if (b["high"] >= tp if side == "BUY" else b["low"] <= tp):
+                o["max_tp"] = max(o["max_tp"], k)
+        if tps and o["max_tp"] >= len(tps):
+            o["final"] = "all_tp"
+            return o
+    if not o["filled_ts"] and now > msg_ts + config.SIG_TTL_MIN * 60 + 120 and o["last_ts"] >= msg_ts + config.SIG_TTL_MIN * 60:
+        o["final"] = "not_filled"
+    elif now > msg_ts + SCORE_MAX_HOURS * 3600:
+        o["final"] = "timeout"
+    return o
+
+
+def r_multiple(view, o):
+    """「去到 TP1 就走」嘅 R：TP1 先到 =(TP1−入場中位)/(入場中位−SL)；SL 先到 = −1；未成交／未完 = None。"""
+    if o.get("final") in (None, "skip", "not_filled"):
+        return None
+    mid = (view["entry_low"] + view["entry_high"]) / 2
+    risk = abs(mid - view["sl"])
+    if o.get("max_tp", 0) >= 1 and view.get("tp") and risk > 0:
+        return round(abs(view["tp"][0] - mid) / risk, 2)
+    return -1.0 if o.get("sl_hit") else (0.0 if o.get("final") == "timeout" else None)
+
+
+def score_pending(now=None):
+    """監聽心跳（每 5 分鐘）同新訊號時行：更新未完結入場訊號嘅結果；完結就計入 scores.json（按頻道）。"""
+    now = now if now is not None else now_ts()
+    bars, offset = main_bars()
+    if not bars:
+        return 0
+    finals = []
+
+    def mutate(rows):
+        rows = rows if isinstance(rows, list) else []
+        for r in rows:
+            if r.get("kind") != "new_signal" or r.get("status") not in ("valid", "unverified"):
+                continue
+            if not r.get("msg_ts"):                       # 10-21 前嘅舊紀錄冇 msg_ts／ch：由逐條檔補
+                try:
+                    full = storage.read_json(f"{PREFIX}{r['sid']}.json", {}) or {}
+                except StorageError:
+                    full = {}
+                if not full.get("msg_ts"):
+                    continue
+                r["msg_ts"] = full["msg_ts"]
+                r["ch"] = str(full.get("channel_id") or r["sid"].split("_")[0])[-4:]
+            o = r.get("outcome") or {}
+            if o.get("final"):
+                continue
+            o = evaluate(r, bars, offset, o, now)
+            r["outcome"] = o
+            if o.get("final"):
+                r["r_tp1"] = r_multiple(r, o)
+                finals.append(r)
+        return rows, None
+    try:
+        storage.update(RECENT_FILE, mutate, default_factory=list)
+        if finals:
+            def add(sc):
+                sc = sc if isinstance(sc, dict) else {}
+                for r in finals:
+                    c = sc.setdefault(r.get("ch") or "?", {"n": 0, "filled": 0, "tp1": 0, "sl": 0, "all_tp": 0, "r_sum": 0.0, "r_n": 0, "max_tp_sum": 0})
+                    o = r["outcome"]
+                    c["n"] += 1
+                    c["filled"] += 1 if o.get("filled_ts") else 0
+                    c["tp1"] += 1 if o.get("max_tp", 0) >= 1 else 0
+                    c["sl"] += 1 if o.get("sl_hit") and o.get("max_tp", 0) == 0 else 0
+                    c["all_tp"] += 1 if o.get("final") == "all_tp" else 0
+                    c["max_tp_sum"] += o.get("max_tp", 0)
+                    if r.get("r_tp1") is not None:
+                        c["r_sum"] = round(c["r_sum"] + r["r_tp1"], 2)
+                        c["r_n"] += 1
+                return sc, None
+            storage.update(SCORES_FILE, add, default_factory=dict)
+    except StorageError as exc:
+        log_event(f"⚠️ 訊號成績更新失敗：{type(exc).__name__}", severity="WARNING")
+    return len(finals)
+
+
 def public_view(rec):
     """網頁／JSON 用：只有結構化欄位，冇原文、冇頻道名、冇 analysis。"""
     sig = rec.get("signal") or {}
@@ -163,19 +275,26 @@ def public_view(rec):
             "valid_until_utc": rec.get("valid_until_utc"), "valid_until_ts": rec.get("valid_until_ts"), "status": rec.get("status"), "reason": rec.get("reason"),
             "kind": sig.get("kind"), "side": sig.get("side"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
             "sl": sig.get("sl"), "tp": sig.get("tp"), "parse_confidence": sig.get("confidence"), "price": rec.get("price"),
-            "edited": bool(rec.get("edit_ts"))}
+            "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:]}
 
 
 # ---------- I/O ----------
-def latest_price():
+def main_bars():
+    """主服務嘅 M1（只讀）同 MT5 伺服器時差（秒；K 線 time 係伺服器時間，UltimaMarkets ≈ UTC+3）。"""
     try:
-        m1 = storage.read_json(MAIN_M1_FILE, [])
+        m1 = storage.read_json(MAIN_M1_FILE, []) or []
+        offset = market.to_float((storage.read_json(MAIN_ACCOUNT_FILE, {}) or {}).get("server_offset"), 0.0) or 0.0
     except StorageError:
-        return None, None
+        return [], 0.0
+    return m1, offset
+
+
+def latest_price():
+    m1, offset = main_bars()
     if not m1:
         return None, None
     bar = m1[-1]
-    return bar.get("close"), now_ts() - (bar["time"] + 60)
+    return bar.get("close"), now_ts() - (bar["time"] - offset + 60)     # 10-21 修：之前冇扣時差，age 永遠係負數
 
 
 def parse(text, reply_text):
@@ -219,6 +338,7 @@ def handle_heartbeat(payload):
         storage.write_json(LISTENER_FILE, row)
     except StorageError as exc:
         return jsonify({"status": "error", "message": f"storage: {exc}"}), 500
+    score_pending(now)
     return jsonify({"status": "ok"}), 200
 
 
@@ -259,6 +379,7 @@ def handle_signal(payload):
         storage.append_jsonl(f"{PREFIX}{market.ny_date(now)}.jsonl", view)
     except StorageError as exc:
         log_event(f"⚠️ 訊號寫入失敗 {sid}：{type(exc).__name__}", severity="WARNING", sid=sid)
+    score_pending(now)
     log_event(f"📨 訊號 {sid} → {(sig or {}).get('kind') or '解析失敗'}｜{status}", sid=sid, status=status)
     return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
@@ -269,8 +390,9 @@ def recent(now=None):
     try:
         rows = storage.read_json(RECENT_FILE, []) or []
         listener = storage.read_json(LISTENER_FILE, {}) or {}
+        scores = storage.read_json(SCORES_FILE, {}) or {}
     except StorageError:
-        rows, listener = [], {}
+        rows, listener, scores = [], {}, {}
     out = []
     for r in rows[-30:][::-1]:
         r = dict(r)
@@ -278,4 +400,4 @@ def recent(now=None):
             r["status"] = "expired"
         out.append(r)
     age = now - listener["ts"] if listener.get("ts") else None
-    return {"rows": out, "listener": {**{k: v for k, v in listener.items() if k != "ts"}, "age_sec": age}}
+    return {"rows": out, "listener": {**{k: v for k, v in listener.items() if k != "ts"}, "age_sec": age}, "scores": scores}
