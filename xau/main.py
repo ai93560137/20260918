@@ -387,9 +387,14 @@ def process_bar(state, bar, m1, m15, account, now):
 
     can_open = control["mode"] == "RUN"
     block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
+    active = signals.active(now) if config.SIGNAL_BOOK else None
+    if config.SIGNAL_BOOK and pos is None and not active:
+        return None, "冇有效訊號（訊號書唔問 Claude）"
     ctx = build_context(state, m1, m15, account, now, day, ladder, control)
+    if config.SIGNAL_BOOK:
+        ctx["signals"] = active
     b = get_brain()
-    if pos is None and config.GATE_MODEL:
+    if pos is None and config.GATE_MODEL and not config.SIGNAL_BOOK:     # 訊號書：有效訊號本身就係「值得睇」，唔使 Haiku 篩
         sc = b.screen(ctx)
         _bump_usage(state, "screen", sc.get("_usage"), sc.get("_ms", 0), day)
         if not sc.get("look"):
@@ -404,12 +409,21 @@ def process_bar(state, bar, m1, m15, account, now):
     action, stop, target, why = rules.validate_decision(
         d, position=pos, last=bar["close"], can_open=can_open, block_reason=block,
         trades_today=paper.trades_today(state, day))
+    cited = None
+    if config.SIGNAL_BOOK and action in ("OPEN_LONG", "OPEN_SHORT"):
+        cited = next((x for x in active or [] if x["sid"] == d.get("signal_id")), None)
+        if cited is None:
+            action, stop, target, why = "HOLD", None, None, f"訊號書開倉要引用有效訊號（signal_id={d.get('signal_id')!r}）"
     rec.update(kind="decide", action=str(d.get("action")), final=action, stop=stop, target=target,
                confidence=d.get("confidence"), reason=str(d.get("reason") or "")[:400], rejected=why,
                ai_stop=d.get("stop_price"), ai_target=d.get("target_price"),
                ms=d.get("_ms"), usage=d.get("_usage"), cost_usd=brain.cost_usd(d.get("_usage")),
                model=(d.get("_usage") or {}).get("model") or config.MODEL, lessons=d.get("_lessons"),
                error=bool(d.get("_error")))
+    if cited:
+        rec["signal_id"] = cited["sid"]
+        if cited["sid"] not in rec["reason"]:
+            rec["reason"] = (rec["reason"] + signals.note(cited))[:480]
     if config.EXECUTE:
         rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD"
         if action in ("OPEN_LONG", "OPEN_SHORT"):
@@ -676,8 +690,9 @@ def entry(req):
     if config.SIGNAL_BOOK:                             # 訊號書 S0：只收 HMAC 簽名嘅訊號／監聽心跳；EA 心跳等一律 ignored，唔問 Opus、唔落單
         if req.method == "POST" and req.headers.get("X-Sig-Signature"):
             return signals.handle_ingest(req.headers, req.get_data())
-        return jsonify({"status": "ignored", "message": "signal book S0: ingest only"}), 200
-    if req.args.get("tg") == "signal":                 # [R290] 訊號確認 bot 嘅按鈕（核對 secret_token 標頭，唔使權杖）
+        if not config.SIG_DECIDE:
+            return jsonify({"status": "ignored", "message": "signal book S0: ingest only"}), 200
+    if req.args.get("tg") == "signal" and not config.SIGNAL_BOOK:   # [R290] 訊號確認 bot 嘅按鈕（訊號書唔用）
         return tgsignal.handle_callback(req)
     try:
         raw = req.get_data().decode("utf-8").replace("\x00", "").strip()     # MT5 char 陣列常以 \0 結尾
@@ -691,9 +706,9 @@ def entry(req):
     action = payload.get("action")
     if action == "cmd_ack":
         return handle_cmd_ack(payload)
-    if action == "tg_signal":                          # [R290] VM 監聽腳本推上嚟嘅外部頻道訊息
+    if action == "tg_signal" and not config.SIGNAL_BOOK:   # [R290] 舊入口（訊號書只收 HMAC 簽名入口）
         return tgsignal.handle_signal(payload)
-    if action == "test_cmd":                           # 階段 B 測試清單：XAU_TEST_CMDS=1 先開放；真倉前要關
+    if action == "test_cmd" and not config.SIGNAL_BOOK:                           # 階段 B 測試清單：XAU_TEST_CMDS=1 先開放；真倉前要關
         return handle_test_cmd(payload)
     if "equity" in payload or action in ("check_gate", "heartbeat"):
         return handle_heartbeat(payload)

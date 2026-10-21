@@ -23,7 +23,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.36"
+#property version   "0.37"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -36,7 +36,7 @@ input int    InpSlippagePts = 50;       // 市價單允許滑點（點）
 input double InpMaxLots    = 0.10;      // 單張上限（第二道鎖；Cloud Run 亦有 XAU_MAX_LOTS）
 input bool   InpDryRun     = true;      // true = 只印指令唔落單（第一次掛先用）
 input string InpLedgerStart = "2026.10.20"; // 自己 magic 累計已實現由呢日起計（realized_total）
-input string InpBotMagics  = "921,922,923,924,925"; // 戶口總階梯（v0.35）：天覆陣全部產品嘅 magic，心跳送合計日蝕／浮動／累計（唔計手動單同其他 EA）
+input string InpBotMagics  = "921,922,923,924,925,931,932,933,934,935"; // 戶口總階梯（v0.35；v0.37 加訊號書 931–935）：天覆陣全部產品嘅 magic，心跳送合計日蝕／浮動／累計（唔計手動單同其他 EA）
 
 CTrade   trade;
 long     g_magic = 0;                    // v0.36：實際用嘅 magic（InpMagic 或按 _Symbol 自動）
@@ -57,6 +57,7 @@ string AutoUrl()
 {
    string s = _Symbol; StringToUpper(s);
    string svc = (StringFind(s, "XAUUSD") == 0) ? "zhuge-xau" : "zhuge-" + StringSubstr(s, 0, 6);
+   if(g_magic >= 931 && g_magic <= 935) svc += "-sig";       // v0.37 訊號書（InpMagic=931 就自動指去 zhuge-xau-sig）
    StringToLower(svc);
    return "https://" + svc + "-1056099871997.europe-west1.run.app/";
 }
@@ -77,17 +78,20 @@ bool IsMine(ulong ticket)
    return PositionGetInteger(POSITION_MAGIC) == g_magic;
 }
 
+// v0.37：同一商品可以有兩張圖表（921 主服務＋931 訊號書），去重檔要按 magic 分開
+string SeenFile() { return "tianfu_seen_" + _Symbol + "_" + IntegerToString(g_magic) + ".txt"; }
+
 void LoadSeen()
 {
    string gv = SEEN_GV + _Symbol;
    // GlobalVariable 只存 double，所以 id 清單用 chart 物件唔穩陣；改用檔案
-   int h = FileOpen("tianfu_seen_" + _Symbol + ".txt", FILE_READ | FILE_TXT | FILE_ANSI);
+   int h = FileOpen(SeenFile(), FILE_READ | FILE_TXT | FILE_ANSI);
    if(h != INVALID_HANDLE) { g_seen_ids = FileReadString(h); FileClose(h); }
 }
 
 void SaveSeen()
 {
-   int h = FileOpen("tianfu_seen_" + _Symbol + ".txt", FILE_WRITE | FILE_TXT | FILE_ANSI);
+   int h = FileOpen(SeenFile(), FILE_WRITE | FILE_TXT | FILE_ANSI);
    if(h != INVALID_HANDLE) { FileWriteString(h, g_seen_ids); FileClose(h); }
 }
 

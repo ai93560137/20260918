@@ -173,3 +173,10 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 - 每個頻道滿 10 條**已完結**入場訊號（掂 SL、去晒 TP 或 24 小時平手；未成交唔計入 10 條，但另列成交率），就出該頻道嘅結論：TP1 先到比率、SL 先到比率、平均去到第幾個 TP、去到 TP1 即走嘅平均 R。
 - 結論由天覆陣喺巡檢時發現夠數就整理，報總指揮同使用者；之後每多 10 條更新一次。
 - 計法：用 Ultima 實際 M1 金價；市價單即時成交、限價入場容許一個點差；同一根 K 線碰 SL 同 TP 當 SL。頻道自稱成績一律唔用。
+
+## 15. S1：訊號書 demo 落單（總指揮 10-21 轉達使用者「訊號書都要落單」）
+- `SIG_DECIDE=1`：訊號書處理 EA 心跳（第二張 XAUUSD 圖表、EA v0.37 `InpMagic=931`，網址自動指去 zhuge-xau-sig）。
+- 冇有效訊號而且冇倉 → 唔問 Claude（慳錢）；有有效訊號 → 直接問 Opus（唔使 Haiku 篩）；有倉 → 照管倉。
+- 開倉一定要引用有效訊號（`signal_id`），否則變 HOLD；理由自動註明「參考 TG 訊號 <sid>：方向 入場／SL」（§12）。
+- 硬性風控同主服務一樣；戶口總階梯要所有圖表 EA v0.37（`InpBotMagics` 已包 931–935）。
+- 落唔落單照舊由 `XAU_EXECUTE` 決定；S1 用 demo 928861。IDEAS #117。

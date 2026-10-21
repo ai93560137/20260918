@@ -424,6 +424,32 @@ def handle_signal(payload):
     return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
 
+def active(now=None):
+    """S1 決策用：未過期、驗證有效嘅入場訊號（新到舊，最多 SIG_MAX_IN_PROMPT 條），只有結構化欄位。"""
+    now = now if now is not None else now_ts()
+    try:
+        rows = storage.read_json(RECENT_FILE, []) or []
+    except StorageError:
+        return []
+    out = []
+    for r in rows[::-1]:
+        if r.get("kind") != "new_signal" or r.get("status") != "valid" or (r.get("valid_until_ts") or 0) < now:
+            continue
+        out.append({"sid": r["sid"], "side": r.get("side"), "entry_low": r.get("entry_low"), "entry_high": r.get("entry_high"),
+                    "sl": r.get("sl"), "tp": r.get("tp") or [], "order_type": r.get("order_type"),
+                    "age_min": int((now - (r.get("msg_ts") or now)) / 60), "minutes_left": int((r["valid_until_ts"] - now) / 60)})
+        if len(out) >= config.SIG_MAX_IN_PROMPT:
+            break
+    return out
+
+
+def note(sig):
+    """決策理由註明參考咗邊條訊號（使用者 10-21 §12：網頁唔加方格，喺理由註明）。"""
+    lo, hi = sig.get("entry_low"), sig.get("entry_high")
+    entry = "市價" if lo is None else (f"{lo:g}" if lo == hi else f"{lo:g}–{hi:g}")
+    return f"（參考 TG 訊號 {sig['sid']}：{sig.get('side')} {entry}／SL {sig.get('sl'):g}）"
+
+
 def recent(now=None):
     """網頁用：最近訊號（過期嘅 valid 顯示為 expired）同監聽心跳。"""
     now = now if now is not None else now_ts()

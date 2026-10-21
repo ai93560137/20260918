@@ -157,3 +157,7 @@ SIG_PARSE_MODEL = _s("SIG_PARSE_MODEL", GATE_MODEL or "claude-haiku-5-5")
 SIG_FILL_TOL = _f("SIG_FILL_TOL", SPREAD_USD)              # 計頻道準確度：限價入場區容許幾多誤差（頻道報價同 Ultima 唔同、買價＝賣價＋點差）
 SIG_ASSUME_SYMBOL = _b("SIG_ASSUME_SYMBOL", True)            # 訊息冇寫商品就當本產品（使用者 10-21：頻道淨係出 XAUUSD）；入場離現價檢查會擋走其他商品
 SIG_RECENT_MAX = 100
+# S1（總指揮 10-21 轉達使用者「訊號書都要落單」）：SIG_DECIDE=1 先處理 EA 心跳（magic 931 圖表）同問 Claude；
+# 只喺有有效訊號（未過期）或者有倉時先問；開倉一定要引用有效訊號。落唔落單照舊由 XAU_EXECUTE 決定（demo 先）。
+SIG_DECIDE = _b("SIG_DECIDE", False)
+SIG_MAX_IN_PROMPT = _i("SIG_MAX_IN_PROMPT", 5)
