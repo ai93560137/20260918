@@ -79,6 +79,11 @@ PROFILES = {
     # 使用者 10-21：一個產品一個服務——同一套 xau/ 程式，另一個 Cloud Run 服務，用環境變數 XAU_SYMBOL 分辨
     "eurusd": {"service": "zhuge-eurusd", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
                "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",)},
+    # 使用者 10-21 揀 TG 訊號方案 B（xau/TG_SIGNAL_PROPOSAL.md）：訊號書獨立服務，GCS xau/sig/、magic 931。
+    # required_env：建立時自動加入；更新時服務環境變數唔一致就拒絕（冇 XAU_BOOK=signal 會變成第二個寫 xau/ 嘅主服務）。
+    "xausig": {"service": "zhuge-xau-sig", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
+               "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
+               "required_env": {"XAU_BOOK": "signal", "XAU_SYMBOL": "XAUUSD"}},
 }
 
 
@@ -1033,6 +1038,17 @@ def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
     if not bc.get("functionTarget") and not bc.get("baseImage"):
         die("這個 Cloud Run 服務不是用原始碼部署的（沒有 buildConfig），本工具不處理。")
     container = svc["template"]["containers"][0]
+    required = ctx.profile.get("required_env") or {}
+    if required:
+        cur = {e.get("name"): e.get("value") for e in container.get("env", [])}
+        if creating:
+            container["env"] = [e for e in container.get("env", []) if e.get("name") not in required] + \
+                [{"name": k, "value": v} for k, v in required.items()]
+            plan("profile 必要環境變數：" + "、".join(f"{k}={v}" for k, v in required.items()))
+        else:
+            bad = [f"{k}（而家 {cur.get(k)!r}，應該 {v!r}）" for k, v in required.items() if cur.get(k) != v]
+            if bad:
+                die(f"{ctx.svc_name} 環境變數同 profile 唔一致：{'、'.join(bad)}；先用 env set 改正，唔部署。")
     if bc.get("enableAutomaticUpdates") and not container.get("baseImageUri") and bc.get("baseImage"):
         container["baseImageUri"] = bc["baseImage"]
         plan(f"⚠️ 容器冇 baseImageUri 而 buildConfig.enableAutomaticUpdates=true（修訂會 direct exec 失敗）→ 補上 {short_image(bc['baseImage'])}")

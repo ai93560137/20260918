@@ -675,5 +675,47 @@ class XauProfileTests(unittest.TestCase):
         self.assertNotIn("⚠️ 容器冇 baseImageUri", out2)   # 只對計畫嗰行（commit 訊息都可能有呢幾個字）
 
 
+SIG_SVC_NAME = f"projects/{PROJECT}/locations/{RUN_REGION}/services/zhuge-xau-sig"
+
+
+class XauSigProfileTests(unittest.TestCase):
+    """TG 訊號書 profile（使用者 10-21 揀方案 B）：服務 zhuge-xau-sig；建立時自動加 XAU_BOOK=signal；
+    更新時環境變數唔一致就拒絕（否則會變成第二個寫 xau/ 嘅主服務）。"""
+
+    def test_local_only_packs_signals(self):
+        s = FakeSession([])
+        out, code = run(["--profile", "xausig", "deploy", "--local-only"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("profile zhuge-xau-sig", out)
+        self.assertIn("signals.py", out)
+        self.assertEqual(s.calls, [])
+
+    def test_create_dry_run_adds_required_env(self):
+        s = FakeSession(create_perm_handlers(ok=True) + [
+            ("GET", SIG_SVC_NAME, FakeResp(404, text="nf")), ("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["--profile", "xausig", "deploy", "--set-env", "XAU_BOOK=claude"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("XAU_BOOK=signal", out)
+        self.assertIn("zhuge-xau-sig", out)
+        self.assertEqual(writes(s), [])
+
+    def test_update_refuses_when_env_mismatch(self):
+        svc = {**svc_body(), "name": SIG_SVC_NAME}
+        s = FakeSession(perm_handlers(ok=True) + [("GET", SIG_SVC_NAME, FakeResp(200, svc))])
+        out, code = run(["--profile", "xausig", "deploy"], s, RUN_ENV)
+        self.assertNotEqual(code, 0, out)                 # die() 訊息寫 stderr
+        self.assertNotIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_update_ok_when_env_matches(self):
+        svc = {**svc_body(), "name": SIG_SVC_NAME}
+        svc["template"]["containers"][0]["env"] = [{"name": "XAU_BOOK", "value": "signal"}, {"name": "XAU_SYMBOL", "value": "XAUUSD"}]
+        s = FakeSession(perm_handlers(ok=True) + [("GET", SIG_SVC_NAME, FakeResp(200, svc))])
+        out, code = run(["--profile", "xausig", "deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+
 if __name__ == "__main__":
     unittest.main()

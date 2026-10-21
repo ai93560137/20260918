@@ -140,3 +140,18 @@ S0 只需要 1、2 同一部分 3（唔落單）就可以開始。
 4. 程式只訂閱 `NewMessage(chats=白名單)`；代碼審查確認冇任何 send／join／delete／read 私人對話嘅呼叫。
 5. 每月喺 TG「設定 → 裝置」睇一次，只應該見到 VM 嗰個 session；見到唔認得嘅即刻按 §4 撤銷。
 6. 停用：`sudo systemctl stop tg-relay` → TG「裝置」終止 session → 刪 session 檔。
+
+## 11. S0 實作（本 PR）
+- `xau/config.py`：`XAU_BOOK=signal` → 前綴 `xau/sig/`、magic 931、名「天覆陣訊號書」；`TG_SIGNAL_INGEST_SECRET` 等 `SIG_*` 設定。
+- `xau/signals.py`：HMAC 入口（`hmac.compare_digest`、時間戳 ±300 秒、每容器每分鐘 30 個、body ≤ 16 KB）→ 去重 → Haiku 解析 → 驗證（valid／unverified／invalid／info／expired）→ 存 `xau/sig/signals/<sid>.json`、`recent.json`、`<紐約日>.jsonl`。日誌只印 sid 同狀態；網頁同 JSON 只有結構化欄位，冇原文、冇頻道名。
+- `xau/main.py`：訊號書服務只接受有 `X-Sig-Signature` 嘅 POST；EA 心跳、`test_cmd`、舊 R290 `tg_signal` 一律 `ignored`——**唔問 Opus、唔落單**。
+- `xau/page.py`：訊號書頁（監聽心跳＋最近 30 條訊號）。
+- `tg_relay/tg_listener.py` v2：關鍵字分流（`TG_ROUTES`）、HMAC 簽名、5 分鐘心跳、`catch_up=True`；刪走權杖同舊確認 bot。
+- `scripts/gcp_agent.py`：`--profile xausig`（服務 `zhuge-xau-sig`；建立時自動加 `XAU_BOOK=signal XAU_SYMBOL=XAUUSD`，更新時唔一致就拒絕部署）。
+- **IAM：唔使**。VM 只對外 HTTPS POST，唔寫 GCS。
+
+部署（總指揮 dry-run → 使用者批 → `--yes`）：
+```bash
+python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KEY      # 服務唔存在會建立；ANTHROPIC_API_KEY 如果只喺 zhuge-xau 就喺控制台填
+```
+之後使用者喺控制台：① 安全性 → 允許未經驗證的叫用；② 環境變數填 `TG_SIGNAL_INGEST_SECRET`。VM 安裝見 `tg_relay/README.md`。
