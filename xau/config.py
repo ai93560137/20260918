@@ -154,4 +154,5 @@ SIG_PRICE_MAX_AGE_SEC = _i("SIG_PRICE_MAX_AGE_SEC", 300)     # 主服務最新 M
 SIG_MAX_DRIFT = _f("SIG_MAX_DRIFT", MAX_SL_USD)               # 入場區離現價最多幾多（價格單位；預設 = 止損上限）
 SIG_MAX_SL = _f("SIG_MAX_SL", MAX_SL_USD * 2)                 # 訊號止損距離上限（價格單位；只用嚟判斷訊號係咪合理，唔係落單止損）
 SIG_PARSE_MODEL = _s("SIG_PARSE_MODEL", GATE_MODEL or "claude-haiku-5-5")
+SIG_ASSUME_SYMBOL = _b("SIG_ASSUME_SYMBOL", True)            # 訊息冇寫商品就當本產品（使用者 10-21：頻道淨係出 XAUUSD）；入場離現價檢查會擋走其他商品
 SIG_RECENT_MAX = 100

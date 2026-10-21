@@ -131,7 +131,7 @@ S0 只需要 1、2 同一部分 3（唔落單）就可以開始。
 | Q2 | **新開專用 VM**（e2-micro；由使用者喺 GCP 控制台開，天覆陣唔 SSH） |
 | Q3 | **主帳戶**（使用者揀；即係冇副號隔離，下面補償措施必做） |
 | Q4 | **931–935** |
-| Q5 | 待使用者提供（頻道 id 只放 VM 本機設定檔） |
+| Q5 | **淨係 XAUUSD，幾個頻道**（頻道 id 只放 VM 本機設定檔；`TG_ROUTE_DEFAULT=XAUUSD`、`SIG_ASSUME_SYMBOL=1`：冇寫商品就當黃金，入場離現價檢查擋走其他商品） |
 
 **用主帳戶嘅補償措施（必做）**：
 1. 主帳戶開兩步驗證密碼（Settings → Privacy and Security → Two-Step Verification），登入 session 時要輸入。

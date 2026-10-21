@@ -118,7 +118,7 @@ def validate(sig, price, price_age):
     """回傳 (status, 原因)。status：valid／unverified（冇新鮮價）／invalid／info（唔係開倉訊號）。純函數。"""
     if sig.get("kind") != "new_signal":
         return "info", "唔係新開倉訊號（管理指示或閒聊，只供參考）"
-    if not symbol_matches(sig.get("symbol")):
+    if not (symbol_matches(sig.get("symbol")) or (config.SIG_ASSUME_SYMBOL and not sig.get("symbol"))):
         return "invalid", f"商品 {sig.get('symbol') or '未知'} 唔係 {config.SYMBOL}"
     side, sl = sig.get("side"), sig.get("sl")
     if side not in ("BUY", "SELL"):

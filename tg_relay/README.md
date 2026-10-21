@@ -42,8 +42,9 @@ curl -fsSLo tg_listener.py https://raw.githubusercontent.com/ai93560137/20260918
 cat > ~/.tg_relay.env <<'X'
 TG_API_ID=...                      # https://my.telegram.org → API development tools
 TG_API_HASH=...
-TG_CHANNELS=-100xxxxxxxxxx         # 第 4 步 --list 之後先填
+TG_CHANNELS=-100aaa,-100bbb,-100ccc   # 第 4 步 --list 之後先填；幾個頻道用逗號分隔
 TG_ROUTES=XAUUSD=https://zhuge-xau-sig-1056099871997.europe-west1.run.app/
+TG_ROUTE_DEFAULT=XAUUSD            # 使用者 10-21：頻道淨係出 XAUUSD，冇寫商品嘅訊息（例如「TP1 到」）都送去黃金訊號書
 TG_SIGNAL_INGEST_SECRET=...        # 第 1 步嗰串
 X
 chmod 600 ~/.tg_relay.env
