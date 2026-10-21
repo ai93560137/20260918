@@ -1,7 +1,7 @@
 {
  "A": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -11,39 +11,39 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AAL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00045,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1995,
+  "n_cmp": 1993,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AAP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1725,
+  "n_cmp": 1723,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AAPL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00073,
@@ -53,11 +53,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ABBV": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -67,10 +67,10 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ABI": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -80,21 +80,21 @@
  },
  "ABNB": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1354,
+  "n_cmp": 1356,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-12-10~2026-10-15"
+  "span": "2020-12-10~2026-10-19"
  },
  "ABT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -104,25 +104,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ACGL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 6e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1269,
+  "n_cmp": 1271,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ACN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -132,11 +132,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ADBE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
@@ -146,11 +146,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ADI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00048,
@@ -160,11 +160,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ADM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -174,11 +174,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ADP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00099,
@@ -188,11 +188,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ADSK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
@@ -202,11 +202,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ADT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -216,11 +216,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2018-01-19~2026-10-15"
+  "span": "2018-01-19~2026-10-19"
  },
  "AEE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -230,11 +230,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AEP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 6e-05,
@@ -244,11 +244,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AES": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -258,11 +258,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AFL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -272,11 +272,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AIG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -286,7 +286,7 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AIV": {
   "breaks": [
@@ -303,21 +303,21 @@
     "used": true
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00078,
   "n_bad": 0,
   "n_bad_all": 0,
-  "n_bad_raw": 1048,
-  "n_cmp": 1052,
+  "n_bad_raw": 1046,
+  "n_cmp": 1050,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AIZ": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -327,11 +327,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AJG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -341,11 +341,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AKAM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00016,
@@ -355,25 +355,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ALAB": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 350,
+  "n_cmp": 352,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2024-03-20~2026-10-15"
+  "span": "2024-03-20~2026-10-19"
  },
  "ALB": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00023,
@@ -383,11 +383,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ALGN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 5e-05,
@@ -397,25 +397,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ALK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1804,
+  "n_cmp": 1802,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ALL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -425,11 +425,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ALLE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00021,
@@ -439,25 +439,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ALNY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 350,
+  "n_cmp": 352,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMAT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0001,
@@ -467,25 +467,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMCR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00364,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1848,
+  "n_cmp": 1850,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2019-06-11~2026-10-15"
+  "span": "2019-06-11~2026-10-19"
  },
  "AMD": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00079,
@@ -495,11 +495,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AME": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -509,25 +509,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 801,
+  "n_cmp": 799,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMGN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 3e-05,
@@ -537,11 +537,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -551,11 +551,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -565,11 +565,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AMTM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -579,11 +579,11 @@
   "n_cmp": 63,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2024-09-24~2026-10-15"
+  "span": "2024-09-24~2026-10-19"
  },
  "AMZN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00052,
@@ -593,39 +593,39 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 203,
+  "n_cmp": 201,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ANET": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 1e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2321,
+  "n_cmp": 2323,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ANF": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -635,11 +635,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AON": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -649,11 +649,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AOS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -663,11 +663,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "APA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0006,
@@ -677,11 +677,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "APC": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -691,11 +691,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2026-02-12~2026-10-15"
+  "span": "2026-02-12~2026-10-19"
  },
  "APD": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -705,11 +705,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "APH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 1e-05,
@@ -719,35 +719,35 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "APO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 728,
+  "n_cmp": 730,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "APP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 599,
+  "n_cmp": 601,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2021-04-15~2026-10-15"
+  "span": "2021-04-15~2026-10-19"
  },
  "APTV": {
   "breaks": [
@@ -758,21 +758,21 @@
     "used": true
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 5e-05,
   "n_bad": 0,
   "n_bad_all": 0,
-  "n_bad_raw": 286,
+  "n_bad_raw": 284,
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ARE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -782,35 +782,35 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ARES": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 486,
+  "n_cmp": 488,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ARM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 775,
+  "n_cmp": 777,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2023-09-14~2026-10-15"
+  "span": "2023-09-14~2026-10-19"
  },
  "ASH": {
   "breaks": [
@@ -821,35 +821,35 @@
     "used": false
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 5,
-  "n_bad_raw": 144,
+  "n_bad_raw": 142,
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ASML": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00048,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2360,
+  "n_cmp": 2362,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ATI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -859,24 +859,24 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "ATO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2202,
+  "n_cmp": 2204,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AVB": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -886,7 +886,7 @@
  },
  "AVGO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00029,
@@ -896,11 +896,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AVY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -910,11 +910,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AWK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -924,25 +924,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AXON": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1141,
+  "n_cmp": 1143,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AXP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -952,25 +952,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-19~2026-10-19"
  },
  "AYI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 419,
+  "n_cmp": 416,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "AZN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [
    "2021-05-26 我們 113.08 vs 對方 115.8（+2.4%）",
    "2021-05-27 我們 113.78 vs 對方 110.75（-2.7%）",
@@ -981,113 +981,113 @@
   "in_use": true,
   "max_diff": 0.06234,
   "n_bad": 629,
-  "n_bad_all": 1090,
-  "n_bad_raw": 1391,
+  "n_bad_all": 1091,
+  "n_bad_raw": 1389,
   "n_cmp": 1268,
-  "n_stale_theirs": 395,
+  "n_stale_theirs": 392,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "AZO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BAC": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BALL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BATRA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 177,
+  "n_cmp": 174,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BATRK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 177,
+  "n_cmp": 174,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BAX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BBBY": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -1097,7 +1097,7 @@
  },
  "BBT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -1107,11 +1107,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BBWI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00161,
@@ -1121,25 +1121,25 @@
   "n_cmp": 1071,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BBY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BC": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -1149,7 +1149,7 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BDX": {
   "breaks": [
@@ -1160,21 +1160,21 @@
     "used": true
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.004,
   "n_bad": 0,
   "n_bad_all": 0,
-  "n_bad_raw": 2341,
-  "n_cmp": 2513,
+  "n_bad_raw": 2338,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BEAM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -1184,24 +1184,24 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-02-06~2026-10-15"
+  "span": "2020-02-06~2026-10-20"
  },
  "BEN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BF-B": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -1211,35 +1211,35 @@
  },
  "BFH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00886,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 925,
+  "n_cmp": 922,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1176,
+  "n_cmp": 1178,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BHF": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 6e-05,
@@ -1249,39 +1249,39 @@
   "n_cmp": 430,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-07-17~2026-10-15"
+  "span": "2017-07-17~2026-10-20"
  },
  "BIDU": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1686,
+  "n_cmp": 1683,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BIIB": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 5e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BIO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -1291,25 +1291,25 @@
   "n_cmp": 1345,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BKNG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00027,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BKR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [
    "2019-10-18 我們 22.08 vs 對方 21.77（-1.4%）",
    "2021-12-07 我們 24.88 vs 對方 25.13（+1.0%）"
@@ -1319,140 +1319,140 @@
   "n_bad": 2,
   "n_bad_all": 2,
   "n_bad_raw": 2,
-  "n_cmp": 2334,
+  "n_cmp": 2336,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-07-05~2026-10-15"
+  "span": "2017-07-05~2026-10-20"
  },
  "BLDR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 983,
+  "n_cmp": 985,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BLK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BMRN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00045,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1183,
+  "n_cmp": 1180,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BMY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BNY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2369,
+  "n_cmp": 2371,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BRK-B": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0001,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BRO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1549,
+  "n_cmp": 1551,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BSX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BUD": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -1462,94 +1462,94 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BWA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00971,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2119,
+  "n_cmp": 2116,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1047,
+  "n_cmp": 1049,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "BXP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "C": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CAG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00805,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2437,
+  "n_cmp": 2434,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CAH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CAM": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -1559,105 +1559,105 @@
  },
  "CARR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1653,
+  "n_cmp": 1655,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-03-19~2026-10-15"
+  "span": "2020-03-19~2026-10-20"
  },
  "CASY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 1e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 407,
+  "n_cmp": 409,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CAT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CB": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CBOE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 6e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CBRE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CCEP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 8e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 849,
+  "n_cmp": 851,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CCI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [
    "2020-07-31 我們 170.21 vs 對方 166.7（-2.1%）"
   ],
@@ -1666,28 +1666,28 @@
   "n_bad": 1,
   "n_bad_all": 1,
   "n_bad_raw": 1,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CCL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CCU": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -1697,39 +1697,39 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CDNS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00078,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CDW": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 5e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2050,
+  "n_cmp": 2052,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -1739,165 +1739,165 @@
   "n_cmp": 1843,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CEG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 1e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1190,
+  "n_cmp": 1192,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2022-01-19~2026-10-15"
+  "span": "2022-01-19~2026-10-20"
  },
  "CF": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CFG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CHD": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00014,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CHKP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00019,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1435,
+  "n_cmp": 1432,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CHRW": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00015,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CHTR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00054,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CIEN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 446,
+  "n_cmp": 448,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CINF": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00089,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CLF": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -1907,119 +1907,119 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CLX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CMCSA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00176,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CME": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00034,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CMG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CMI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CMS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CNC": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CNP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CNX": {
   "breaks": [
@@ -2030,161 +2030,161 @@
     "used": false
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
-  "n_bad_raw": 282,
+  "n_bad_raw": 279,
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "COF": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "COHR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 418,
+  "n_cmp": 420,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2022-09-08~2026-10-15"
+  "span": "2022-09-08~2026-10-20"
  },
  "COIN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 3e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 629,
+  "n_cmp": 631,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2021-04-14~2026-10-15"
+  "span": "2021-04-14~2026-10-20"
  },
  "COO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 9e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "COP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "COR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "COST": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "COTY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00102,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 988,
+  "n_cmp": 985,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CPAY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2368,
+  "n_cmp": 2370,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CPB": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00016,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2431,
+  "n_cmp": 2428,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CPRI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [
    "2019-01-02 我們 38.97 vs 對方 39.36（+1.0%）"
   ],
@@ -2193,41 +2193,41 @@
   "n_bad": 1,
   "n_bad_all": 1,
   "n_bad_raw": 1,
-  "n_cmp": 897,
+  "n_cmp": 894,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CPRT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00018,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2359,
+  "n_cmp": 2361,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CPT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1415,
+  "n_cmp": 1417,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CPWR": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -2237,104 +2237,104 @@
  },
  "CRH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
-  "n_bad_all": 452,
-  "n_bad_raw": 1136,
-  "n_cmp": 478,
-  "n_stale_theirs": 969,
+  "n_bad_all": 451,
+  "n_bad_raw": 1135,
+  "n_cmp": 480,
+  "n_stale_theirs": 967,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CRL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1638,
+  "n_cmp": 1640,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CRM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CRWD": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1354,
+  "n_cmp": 1356,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2019-06-12~2026-10-15"
+  "span": "2019-06-12~2026-10-20"
  },
  "CRWV": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 350,
+  "n_cmp": 352,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2025-03-28~2026-10-15"
+  "span": "2025-03-28~2026-10-20"
  },
  "CSCO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0002,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CSGP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00075,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1826,
+  "n_cmp": 1828,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CSRA": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -2344,45 +2344,45 @@
  },
  "CSX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00012,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CTAS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00067,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CTSH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0001,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CTVA": {
   "breaks": [
@@ -2393,63 +2393,63 @@
     "used": true
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 1e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 1848,
-  "n_cmp": 1859,
+  "n_cmp": 1861,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2019-05-24~2026-10-15"
+  "span": "2019-05-24~2026-10-20"
  },
  "CVNA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 478,
+  "n_cmp": 480,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-04-28~2026-10-15"
+  "span": "2017-04-28~2026-10-20"
  },
  "CVS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CVX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "CZR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -2459,49 +2459,49 @@
   "n_cmp": 1406,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "D": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DAL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DASH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 849,
+  "n_cmp": 851,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-12-09~2026-10-15"
+  "span": "2020-12-09~2026-10-20"
  },
  "DD": {
   "breaks": [
@@ -2518,7 +2518,7 @@
     "used": true
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "constant_offset": true,
   "examples": [],
   "in_use": true,
@@ -2526,27 +2526,27 @@
   "n_bad": 0,
   "n_bad_all": 4,
   "n_bad_raw": 2053,
-  "n_cmp": 2292,
+  "n_cmp": 2294,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-09-01~2026-10-15"
+  "span": "2017-09-01~2026-10-20"
  },
  "DDOG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1354,
+  "n_cmp": 1356,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2019-09-19~2026-10-15"
+  "span": "2019-09-19~2026-10-20"
  },
  "DDS": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -2556,105 +2556,105 @@
  },
  "DE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DECK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 922,
+  "n_cmp": 924,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DELL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 3,
   "n_bad_raw": 3,
-  "n_cmp": 792,
+  "n_cmp": 794,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2018-12-20~2026-10-15"
+  "span": "2018-12-20~2026-10-20"
  },
  "DG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DGX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DHI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DHR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00421,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DIA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -2664,11 +2664,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DINO": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -2678,53 +2678,53 @@
   "n_cmp": 1021,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DIS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DLR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DLTR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 7e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DOC": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [
    "2019-11-05 我們 35.78 vs 對方 34.41（-3.8%）"
   ],
@@ -2733,14 +2733,14 @@
   "n_bad": 1,
   "n_bad_all": 1,
   "n_bad_raw": 1,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DOCU": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -2750,35 +2750,35 @@
   "n_cmp": 780,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2018-04-27~2026-10-15"
+  "span": "2018-04-27~2026-10-20"
  },
  "DOV": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00371,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DOW": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1905,
+  "n_cmp": 1907,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2019-03-20~2026-10-15"
+  "span": "2019-03-20~2026-10-20"
  },
  "DPZ": {
   "breaks": [],
@@ -2796,73 +2796,73 @@
  },
  "DRI": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DTE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00909,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DUK": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DVA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DVN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DXC": {
   "breaks": [
@@ -2873,7 +2873,7 @@
     "used": true
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "constant_offset": true,
   "examples": [],
   "in_use": true,
@@ -2884,25 +2884,25 @@
   "n_cmp": 1647,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-03-16~2026-10-15"
+  "span": "2017-03-16~2026-10-20"
  },
  "DXCM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00047,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1892,
+  "n_cmp": 1894,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "DYN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -2912,10 +2912,10 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-09-17~2026-10-15"
+  "span": "2020-09-17~2026-10-20"
  },
  "EA": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -2925,17 +2925,17 @@
  },
  "EBAY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00015,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ECHO": {
   "breaks": [
@@ -2946,118 +2946,118 @@
     "used": false
    }
   ],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00028,
   "n_bad": 0,
   "n_bad_all": 1,
-  "n_bad_raw": 729,
-  "n_cmp": 354,
+  "n_bad_raw": 726,
+  "n_cmp": 356,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ECL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ED": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EFX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EIX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ELV": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EMC": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -3067,49 +3067,49 @@
  },
  "EME": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 542,
+  "n_cmp": 544,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EMN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2275,
+  "n_cmp": 2272,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EMR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ENPH": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00019,
@@ -3119,25 +3119,25 @@
   "n_cmp": 1456,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EOG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EP": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -3147,11 +3147,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EPAM": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -3161,11 +3161,11 @@
   "n_cmp": 1395,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EQ": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -3175,24 +3175,24 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2018-10-12~2026-10-15"
+  "span": "2018-10-12~2026-10-20"
  },
  "EQIX": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00024,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EQR": {
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -3202,91 +3202,91 @@
  },
  "EQT": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00176,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1811,
+  "n_cmp": 1810,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ERIE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 792,
+  "n_cmp": 794,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ES": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ESS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ETN": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ETR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "ETSY": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00036,
@@ -3296,35 +3296,35 @@
   "n_cmp": 1282,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EVRG": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 8e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2103,
+  "n_cmp": 2105,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2018-06-05~2026-10-15"
+  "span": "2018-06-05~2026-10-20"
  },
  "EW": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "EWJ": {
   "checked": "2026-10-19",
@@ -6826,7 +6826,7 @@
  },
  "NSC": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -6836,11 +6836,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "NTAP": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00047,
@@ -6850,91 +6850,91 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "NTES": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00068,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1687,
+  "n_cmp": 1684,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "NTRS": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00067,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "NUE": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "NVDA": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00023,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2513,
+  "n_cmp": 2512,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "NVR": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2048,
+  "n_cmp": 2050,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "NWL": {
   "breaks": [],
-  "checked": "2026-10-16",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00041,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1740,
+  "n_cmp": 1737,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-17~2026-10-15"
+  "span": "2016-10-20~2026-10-20"
  },
  "NWS": {
   "breaks": [],
@@ -7044,21 +7044,21 @@
  },
  "OI": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 34,
+  "n_cmp": 31,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "OKE": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7068,11 +7068,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "OKTA": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7082,11 +7082,11 @@
   "n_cmp": 780,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-04-07~2026-10-14"
+  "span": "2017-04-07~2026-10-19"
  },
  "OMC": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7096,25 +7096,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ON": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00014,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1360,
+  "n_cmp": 1363,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ORCL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7124,7 +7124,7 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ORLY": {
   "breaks": [],
@@ -7291,7 +7291,7 @@
  },
  "PEG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7301,11 +7301,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PENN": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00032,
@@ -7315,11 +7315,11 @@
   "n_cmp": 652,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PEP": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 4e-05,
@@ -7329,7 +7329,7 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PFE": {
   "breaks": [
@@ -7340,21 +7340,21 @@
     "used": true
    }
   ],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
-  "n_bad_raw": 1030,
+  "n_bad_raw": 1027,
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PFG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00341,
@@ -7364,11 +7364,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7378,11 +7378,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PGR": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7392,11 +7392,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PH": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7406,11 +7406,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PHM": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7420,11 +7420,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PKG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7434,11 +7434,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PLD": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7448,25 +7448,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PLTR": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 791,
+  "n_cmp": 794,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-09-30~2026-10-14"
+  "span": "2020-09-30~2026-10-19"
  },
  "PM": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7476,11 +7476,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PNC": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7490,11 +7490,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PNR": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00078,
@@ -7504,11 +7504,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PNW": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7518,25 +7518,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PODD": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 3e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1175,
+  "n_cmp": 1178,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "POM": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -7546,11 +7546,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2025-10-08~2026-10-14"
+  "span": "2025-10-08~2026-10-19"
  },
  "POOL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
@@ -7560,11 +7560,11 @@
   "n_cmp": 1708,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PPG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7574,11 +7574,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PPL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7588,25 +7588,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PRGO": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1240,
+  "n_cmp": 1237,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PRU": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7616,11 +7616,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PSA": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7630,10 +7630,10 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PSKY": {
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -7643,7 +7643,7 @@
  },
  "PSX": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7653,25 +7653,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PTC": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 6e-05,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1655,
+  "n_cmp": 1658,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PTON": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7681,25 +7681,25 @@
   "n_cmp": 529,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2019-09-26~2026-10-14"
+  "span": "2019-09-26~2026-10-19"
  },
  "PVH": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1491,
+  "n_cmp": 1488,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PWR": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7709,11 +7709,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "PYPL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00045,
@@ -7723,25 +7723,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "Q": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 243,
+  "n_cmp": 246,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2025-10-27~2026-10-14"
+  "span": "2025-10-27~2026-10-19"
  },
  "QCOM": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 7e-05,
@@ -7751,7 +7751,7 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "QGEN": {
   "breaks": [
@@ -7768,7 +7768,7 @@
     "used": false
    }
   ],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7778,11 +7778,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-01-25~2026-10-14"
+  "span": "2017-01-25~2026-10-19"
  },
  "QQQ": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -7792,10 +7792,10 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "QRVO": {
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -7805,21 +7805,21 @@
  },
  "R": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 169,
+  "n_cmp": 166,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RCL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7829,25 +7829,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RDDT": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 317,
+  "n_cmp": 320,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2024-03-21~2026-10-14"
+  "span": "2024-03-21~2026-10-19"
  },
  "REG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00044,
@@ -7857,11 +7857,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "REGN": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 1e-05,
@@ -7871,11 +7871,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RF": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7885,39 +7885,39 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RHI": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 1933,
+  "n_cmp": 1930,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RIG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 195,
+  "n_cmp": 192,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RJF": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7927,25 +7927,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RKLB": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 349,
+  "n_cmp": 352,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2020-11-16~2026-10-14"
+  "span": "2020-11-16~2026-10-19"
  },
  "RL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7955,11 +7955,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RMD": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7969,11 +7969,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ROK": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -7983,25 +7983,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ROL": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 2295,
+  "n_cmp": 2298,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ROP": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 2e-05,
@@ -8011,11 +8011,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "ROST": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 4e-05,
@@ -8025,25 +8025,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RRC": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 420,
+  "n_cmp": 417,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RSG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8053,11 +8053,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RSP": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -8067,7 +8067,7 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RTX": {
   "breaks": [
@@ -8078,21 +8078,21 @@
     "used": true
    }
   ],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
-  "n_bad_raw": 872,
+  "n_bad_raw": 869,
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RVTY": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8102,11 +8102,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "RYAAY": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8116,11 +8116,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "S": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -8130,11 +8130,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2021-06-30~2026-10-14"
+  "span": "2021-06-30~2026-10-19"
  },
  "SBAC": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.00777,
@@ -8144,10 +8144,10 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SBNY": {
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -8157,7 +8157,7 @@
  },
  "SBUX": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 6e-05,
@@ -8167,11 +8167,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SCHW": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8181,11 +8181,11 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SE": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -8195,11 +8195,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2017-10-20~2026-10-14"
+  "span": "2017-10-20~2026-10-19"
  },
  "SEDG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8209,11 +8209,11 @@
   "n_cmp": 776,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SGP": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -8223,10 +8223,10 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2026-02-06~2026-10-14"
+  "span": "2026-02-06~2026-10-19"
  },
  "SHLD": {
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "max_diff": 0,
   "n_bad": 0,
@@ -8236,21 +8236,21 @@
  },
  "SHOP": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.002,
   "n_bad": 0,
   "n_bad_all": 7,
   "n_bad_raw": 7,
-  "n_cmp": 598,
+  "n_cmp": 601,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SHW": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8260,25 +8260,25 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SIG": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
   "n_bad": 0,
   "n_bad_all": 0,
   "n_bad_raw": 0,
-  "n_cmp": 357,
+  "n_cmp": 354,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SII": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": false,
   "max_diff": 0.0,
@@ -8288,11 +8288,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SIRI": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8302,11 +8302,11 @@
   "n_cmp": 0,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2024-09-09~2026-10-14"
+  "span": "2024-09-09~2026-10-19"
  },
  "SJM": {
   "breaks": [],
-  "checked": "2026-10-15",
+  "checked": "2026-10-21",
   "examples": [],
   "in_use": true,
   "max_diff": 0.0,
@@ -8316,7 +8316,7 @@
   "n_cmp": 2513,
   "n_stale_theirs": 0,
   "source": "nasdaq 10y daily",
-  "span": "2016-10-14~2026-10-14"
+  "span": "2016-10-19~2026-10-19"
  },
  "SLB": {
   "breaks": [],

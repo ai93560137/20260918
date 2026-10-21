@@ -1,6 +1,6 @@
-# US 數據品質報告（2026-10-19）
+# US 數據品質報告（2026-10-21）
 
-市場最新交易日 2026-10-19；現任成分股 518 檔（sp500, ndx, djia）；有數據 722 檔；第二來源快照 20 份、比對 13581 筆收市價。
+市場最新交易日 2026-10-19；現任成分股 518 檔（sp500, ndx, djia）；有數據 722 檔；第二來源快照 20 份、比對 13582 筆收市價。
 
 **🔴 6343 嚴重 / 🟡 11 注意 / ✅ 10 已確認**
 
@@ -2278,6 +2278,7 @@
 - `Q` xsource：2026-10-02 第二來源 128.45 vs yfinance 131.48（-2.30%）
 - `QCOM` xsource：2026-10-02 第二來源 182.09 vs yfinance 184.87（-1.50%）
 - `QGEN` xsource：2026-10-02 第二來源 42.04 vs yfinance 44.75（-6.06%）
+- `QRVO` xsource：2026-10-02 第二來源 112.21 vs yfinance 114.17（-1.72%）
 - `R` xsource：2026-10-02 第二來源 230.92 vs yfinance 237.24（-2.66%）
 - `RCL` xsource：2026-10-02 第二來源 269.99 vs yfinance 277.74（-2.79%）
 - `RDDT` xsource：2026-10-02 第二來源 149.53 vs yfinance 147.86（+1.13%）
@@ -6087,7 +6088,7 @@
 - `CCI` xsource：2026-10-19 第二來源 82.26 vs yfinance 81.06（+1.48%）
 - `CCL` xsource：2026-10-19 第二來源 25.9 vs yfinance 26.45（-2.08%）
 - `CDNS` xsource：2026-10-19 第二來源 319.51 vs yfinance 325.86（-1.95%）
-- `CDW` xsource：2026-10-19 第二來源 150.48 vs yfinance 152.645（-1.42%）
+- `CDW` xsource：2026-10-19 第二來源 150.48 vs yfinance 152.65（-1.42%）
 - `CEG` xsource：2026-10-19 第二來源 271.37 vs yfinance 263.19（+3.11%）
 - `CF` xsource：2026-10-19 第二來源 120.85 vs yfinance 118.51（+1.97%）
 - `CHTR` xsource：2026-10-19 第二來源 110.11 vs yfinance 108.51（+1.47%）
@@ -6203,7 +6204,7 @@
 - `LLY` xsource：2026-10-19 第二來源 1257.03 vs yfinance 1240.34（+1.35%）
 - `LNC` xsource：2026-10-19 第二來源 39.83 vs yfinance 39.28（+1.40%）
 - `LNT` xsource：2026-10-19 第二來源 68.32 vs yfinance 66.85（+2.20%）
-- `LOGI` xsource：2026-10-19 第二來源 104.41 vs yfinance 107.345（-2.73%）
+- `LOGI` xsource：2026-10-19 第二來源 104.41 vs yfinance 107.35（-2.74%）
 - `LRCX` xsource：2026-10-19 第二來源 263.94 vs yfinance 272.2（-3.03%）
 - `LUMN` xsource：2026-10-19 第二來源 4.65 vs yfinance 4.46（+4.26%）
 - `LUV` xsource：2026-10-19 第二來源 39.5 vs yfinance 38.8（+1.80%）
@@ -6215,7 +6216,7 @@
 - `MDT` xsource：2026-10-19 第二來源 94.75 vs yfinance 92.77（+2.13%）
 - `MET` xsource：2026-10-19 第二來源 100.76 vs yfinance 99.58（+1.18%）
 - `MHK` xsource：2026-10-19 第二來源 120.29 vs yfinance 115.78（+3.90%）
-- `MI` xsource：2026-10-19 第二來源 0.6399 vs yfinance 0.5476（+16.86%）
+- `MI` xsource：2026-10-19 第二來源 0.6399 vs yfinance 0.548（+16.77%）
 - `MKC` xsource：2026-10-19 第二來源 46.35 vs yfinance 45.86（+1.07%）
 - `MMI` xsource：2026-10-19 第二來源 28.04 vs yfinance 27.34（+2.56%）
 - `MMM` xsource：2026-10-19 第二來源 164.75 vs yfinance 162.01（+1.69%）
@@ -6267,7 +6268,7 @@
 - `PM` xsource：2026-10-19 第二來源 205.2 vs yfinance 201.05（+2.06%）
 - `PNR` xsource：2026-10-19 第二來源 53.44 vs yfinance 52.75（+1.31%）
 - `PNW` xsource：2026-10-19 第二來源 103.42 vs yfinance 101.17（+2.22%）
-- `POM` xsource：2026-10-19 第二來源 0.6317 vs yfinance 0.5314（+18.87%）
+- `POM` xsource：2026-10-19 第二來源 0.6317 vs yfinance 0.531（+18.96%）
 - `POOL` xsource：2026-10-19 第二來源 172.57 vs yfinance 168.07（+2.68%）
 - `PPL` xsource：2026-10-19 第二來源 35.17 vs yfinance 34.31（+2.51%）
 - `PRGO` xsource：2026-10-19 第二來源 16.63 vs yfinance 16.09（+3.36%）
@@ -6349,16 +6350,15 @@
 - `ZBRA` xsource：2026-10-19 第二來源 369.01 vs yfinance 375.77（-1.80%）
 - `ZM` xsource：2026-10-19 第二來源 94.19 vs yfinance 97.59（-3.48%）
 - `ZS` xsource：2026-10-19 第二來源 207.38 vs yfinance 212.53（-2.42%）
-- `VMRK` yf_name_changed：yfinance 名字「AvalonBay Communities, Inc.」→「Vivmark Residential」（改名或代碼重用）
 
 ## 🟡 注意
 
 - `PSKY` no_second_source：現任成分股沒有第二來源報價
 - `WBD` no_second_source：現任成分股沒有第二來源報價
-- `BKR` xcheck_history：全量歷史比對 2/2334 筆收市差 >1%（最大 1.4%，nasdaq 10y daily）；例 2019-10-18 我們 22.08 vs 對方 21.77（-1.4%）；2021-12-07 我們 24.88 vs 對方 25.13（+1.0%）
-- `CCI` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 2.1%，nasdaq 10y daily）；例 2020-07-31 我們 170.21 vs 對方 166.7（-2.1%）
-- `CPRI` xcheck_history：全量歷史比對 1/897 筆收市差 >1%（最大 1.0%，nasdaq 10y daily）；例 2019-01-02 我們 38.97 vs 對方 39.36（+1.0%）
-- `DOC` xcheck_history：全量歷史比對 1/2513 筆收市差 >1%（最大 3.8%，nasdaq 10y daily）；例 2019-11-05 我們 35.78 vs 對方 34.41（-3.8%）
+- `BKR` xcheck_history：全量歷史比對 2/2336 筆收市差 >1%（最大 1.4%，nasdaq 10y daily）；例 2019-10-18 我們 22.08 vs 對方 21.77（-1.4%）；2021-12-07 我們 24.88 vs 對方 25.13（+1.0%）
+- `CCI` xcheck_history：全量歷史比對 1/2512 筆收市差 >1%（最大 2.1%，nasdaq 10y daily）；例 2020-07-31 我們 170.21 vs 對方 166.7（-2.1%）
+- `CPRI` xcheck_history：全量歷史比對 1/894 筆收市差 >1%（最大 1.0%，nasdaq 10y daily）；例 2019-01-02 我們 38.97 vs 對方 39.36（+1.0%）
+- `DOC` xcheck_history：全量歷史比對 1/2512 筆收市差 >1%（最大 3.8%，nasdaq 10y daily）；例 2019-11-05 我們 35.78 vs 對方 34.41（-3.8%）
 - `GEN` xcheck_history：全量歷史比對 1/2514 筆收市差 >1%（最大 1.9%，nasdaq 10y daily）；例 2019-11-05 我們 23.75 vs 對方 24.19（+1.9%）
 - `GRMN` xcheck_history：全量歷史比對 1/2514 筆收市差 >1%（最大 1.1%，nasdaq 10y daily）；例 2021-12-07 我們 137.96 vs 對方 136.44（-1.1%）
 - `LLY` xcheck_history：全量歷史比對 1/2514 筆收市差 >1%（最大 1.5%，nasdaq 10y daily）；例 2019-03-13 我們 124.31 vs 對方 126.19（+1.5%）
@@ -6380,7 +6380,7 @@
 
 ## 🔎 全量歷史比對（第二來源整段歷史 vs yfinance）
 
-- 已比對 719/719 檔、1,230,866 筆收市價、不符（>1%）650 筆；第二來源沒有的已下市/改代碼 29 檔（ABI, AVB, BBBY, BF-B, CAM, CPWR, CSRA, DDS, EA, EMC, EQR, EWJ, FB, FMCC, FNMA, GENZ, INFO, JAVA, LEG, NFX…）
+- 已比對 719/719 檔、1,230,820 筆收市價、不符（>1%）650 筆；第二來源沒有的已下市/改代碼 29 檔（ABI, AVB, BBBY, BF-B, CAM, CPWR, CSRA, DDS, EA, EMC, EQR, EWJ, FB, FMCC, FNMA, GENZ, INFO, JAVA, LEG, NFX…）
 - 美股：Nasdaq.com 10 年日線逐日比；日股：Yahoo!ファイナンス 1995 起月線（月底、拆股還原）+ 最近 20 日日線
 - 調整方法差異（已解釋、不算不符）42 檔：Yahoo 把分拆/股份交換記成非整數拆股並回溯調整價格（總回報正確），第二來源只調真拆股；比對前按事件日倍數對齊。例：AIV 2020-12-15 ×1.3019, 2019-02-21 ×1.0312；APTV 2017-12-05 ×1.0167；ASH 2017-05-22 ×1.0132；BDX 2026-02-10 ×1.018；CNX 2017-11-29 ×1.0277；CTVA 2026-10-01 ×1.2394；DD 2025-11-07 ×0.9862, 2019-06-03 ×1.4175；DXC 2018-06-08 ×1.0144
 - Yahoo 漏調的公司行動（第二來源有調、我們沒有）0 處：無
