@@ -1,16 +1,22 @@
 {
- "date": "2026-10-20",
+ "date": "2026-10-21",
  "open": {
-  "US.ES2612": {
-   "first_seen": "2026-10-19",
-   "days": 2,
-   "last": "2026-10-20",
+  "HK.HSI2611": {
+   "first_seen": "2026-10-21",
+   "days": 1,
+   "last": "2026-10-21",
+   "explained": false
+  },
+  "HK.HSI2612": {
+   "first_seen": "2026-10-21",
+   "days": 1,
+   "last": "2026-10-21",
    "explained": false
   },
   "US.MES2612": {
    "first_seen": "2026-10-19",
-   "days": 2,
-   "last": "2026-10-20",
+   "days": 3,
+   "last": "2026-10-21",
    "explained": false
   }
  }
