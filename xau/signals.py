@@ -107,7 +107,7 @@ def normalize(raw):
         "symbol": str(raw.get("symbol") or "").strip().upper()[:16] or None,
         "side": side if side in ("BUY", "SELL") else None,
         "entry_low": lo, "entry_high": hi, "sl": f(raw.get("sl")),
-        "tp": [v for v in (f(t) for t in tps) if v is not None and v > 0][:5],
+        "tp": [v for v in (f(t) for t in tps) if v is not None and v > 0][:8],   # 頻道常見 6 個 TP（10-21 DAN VIP）；5 會截走最後一個
         "update_action": str(raw.get("update_action") or "").strip()[:200] or None,
         "confidence": f(raw.get("confidence")),
         "analysis": str(raw.get("analysis") or "").strip()[:800],

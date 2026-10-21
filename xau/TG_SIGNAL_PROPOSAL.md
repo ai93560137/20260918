@@ -155,3 +155,9 @@ S0 只需要 1、2 同一部分 3（唔落單）就可以開始。
 python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KEY      # 服務唔存在會建立；ANTHROPIC_API_KEY 如果只喺 zhuge-xau 就喺控制台填
 ```
 之後使用者喺控制台：① 安全性 → 允許未經驗證的叫用；② 環境變數填 `TG_SIGNAL_INGEST_SECRET`。VM 安裝見 `tg_relay/README.md`。
+
+## 12. 網頁顯示（使用者 10-21：「網頁唔駛加多一個BOX, 當係天覆陣 參考, 只要係理由 註明」；喺天覆陣工作階段確認「只改網頁，保留 B」）
+- 方案照舊 **B**：訊號書 931 獨立，921 做對照組（睇唔到訊號）。
+- 🌌 天覆陣主頁（zhuge-xau）**唔加**任何訊號方格／區塊。
+- S1 訊號書嘅決策：Claude 參考咗訊號，就喺決策「理由」寫明，例如「參考 TG 訊號 <sid>：BUY 4100–4102／SL 4090」；唔另設訊號欄位顯示。`signal_id` 只作內部記錄同成績歸屬。
+- 訊號書自己嘅頁（zhuge-xau-sig，S0 收訊號用）保留，作核對解析之用。
