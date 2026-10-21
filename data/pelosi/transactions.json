@@ -45,9 +45,9 @@
     "description": "Purchased 10,000 shares.",
     "option": null,
     "price_at_tx": 184.89,
-    "price_now": 238.77,
+    "price_now": 238.53,
     "price_now_date": "2026-10-21",
-    "change_pct": 29.14
+    "change_pct": 29.01
    },
    {
     "owner": "SP",
@@ -69,9 +69,9 @@
      "expiry": "2027-06-17"
     },
     "price_at_tx": 184.89,
-    "price_now": 238.77,
+    "price_now": 238.53,
     "price_now_date": "2026-10-21",
-    "change_pct": 29.14
+    "change_pct": 29.01
    },
    {
     "owner": "SP",
@@ -87,9 +87,9 @@
     "description": "Purchased 5,000 shares.",
     "option": null,
     "price_at_tx": 166.84,
-    "price_now": 238.77,
+    "price_now": 238.53,
     "price_now_date": "2026-10-21",
-    "change_pct": 43.11
+    "change_pct": 42.97
    },
    {
     "owner": "SP",
@@ -111,9 +111,9 @@
      "expiry": "2027-06-17"
     },
     "price_at_tx": 166.84,
-    "price_now": 238.77,
+    "price_now": 238.53,
     "price_now_date": "2026-10-21",
-    "change_pct": 43.11
+    "change_pct": 42.97
    },
    {
     "owner": "SP",
@@ -561,9 +561,9 @@
     "description": "Exercised 50 call options purchased 1/14/25 (5,000 shares) at a strike price of $50 with an expiration date of 1/16/26.",
     "option": null,
     "price_at_tx": 166.6,
-    "price_now": 156.19,
+    "price_now": 156.14,
     "price_now_date": "2026-10-21",
-    "change_pct": -6.25
+    "change_pct": -6.28
    },
    {
     "owner": "SP",
@@ -579,9 +579,9 @@
     "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 114.79,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": -2.59
+    "change_pct": -2.58
    }
   ]
  },
@@ -851,9 +851,9 @@
      "expiry": "2026-01-16"
     },
     "price_at_tx": 170.51,
-    "price_now": 156.19,
+    "price_now": 156.14,
     "price_now_date": "2026-10-21",
-    "change_pct": -8.4
+    "change_pct": -8.43
    }
   ]
  },
@@ -1009,9 +1009,9 @@
     "description": "Sold 2,000 shares.",
     "option": null,
     "price_at_tx": 263.24,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 55.02
+    "change_pct": 54.93
    }
   ]
  },
@@ -1275,9 +1275,9 @@
      "expiry": "2023-01-20"
     },
     "price_at_tx": 35.38,
-    "price_now": 52.53,
+    "price_now": 52.55,
     "price_now_date": "2026-10-21",
-    "change_pct": 48.47
+    "change_pct": 48.53
    }
   ]
  },
@@ -1457,9 +1457,9 @@
     "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 26.16,
-    "price_now": 52.53,
+    "price_now": 52.55,
     "price_now_date": "2026-10-21",
-    "change_pct": 100.8
+    "change_pct": 100.88
    },
    {
     "owner": "SP",
@@ -1481,9 +1481,9 @@
      "expiry": "2023-01-20"
     },
     "price_at_tx": 128.45,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": 88.18
+    "change_pct": 88.23
    },
    {
     "owner": "SP",
@@ -1517,9 +1517,9 @@
     "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 86.92,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 28.64
+    "change_pct": 28.66
    }
   ]
  },
@@ -1545,9 +1545,9 @@
     "description": "Sold 20,000 shares.",
     "option": null,
     "price_at_tx": 201.78,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 102.24
+    "change_pct": 102.13
    }
   ]
  },
@@ -1645,9 +1645,9 @@
      "expiry": "2022-09-16"
     },
     "price_at_tx": 108.25,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 3.29
+    "change_pct": 3.31
    }
   ]
  },
@@ -1767,9 +1767,9 @@
     "description": "Sold 10,000 shares.",
     "option": null,
     "price_at_tx": 194.39,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 109.92
+    "change_pct": 109.81
    }
   ]
  },
@@ -1971,9 +1971,9 @@
     "description": "Exercised 50 call options (5,000 shares) expiring 1/21/22 at a strike price of $80. 2000090456",
     "option": null,
     "price_at_tx": 158.74,
-    "price_now": 323.64,
+    "price_now": 323.61,
     "price_now_date": "2026-10-21",
-    "change_pct": 103.88
+    "change_pct": 103.86
    },
    {
     "owner": "SP",
@@ -2025,9 +2025,9 @@
     "description": "Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100.",
     "option": null,
     "price_at_tx": 137.38,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": -18.61
+    "change_pct": -18.6
    }
   ]
  },
@@ -2067,9 +2067,9 @@
     "description": "Exercised 50 call options (5,000 shares) expiring 1/21/22 at a strike price of $80.",
     "option": null,
     "price_at_tx": 158.74,
-    "price_now": 323.64,
+    "price_now": 323.61,
     "price_now_date": "2026-10-21",
-    "change_pct": 103.88
+    "change_pct": 103.86
    },
    {
     "owner": "SP",
@@ -2121,9 +2121,9 @@
     "description": "Exercised 100 call options (10,000 shares) expiring 1/21/22 at a strike price o f $100.",
     "option": null,
     "price_at_tx": 137.38,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": -18.61
+    "change_pct": -18.6
    }
   ]
  },
@@ -2263,9 +2263,9 @@
      "expiry": "2023-01-20"
     },
     "price_at_tx": 98.69,
-    "price_now": 52.53,
+    "price_now": 52.55,
     "price_now_date": "2026-10-21",
-    "change_pct": -46.77
+    "change_pct": -46.75
    },
    {
     "owner": "SP",
@@ -2287,9 +2287,9 @@
      "expiry": "2023-01-20"
     },
     "price_at_tx": 247.21,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": -2.22
+    "change_pct": -2.2
    },
    {
     "owner": "SP",
@@ -2311,9 +2311,9 @@
      "expiry": "2023-01-20"
     },
     "price_at_tx": 247.21,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": -2.22
+    "change_pct": -2.2
    },
    {
     "owner": "SP",
@@ -2335,9 +2335,9 @@
      "expiry": "2022-09-16"
     },
     "price_at_tx": 148.76,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": -24.84
+    "change_pct": -24.83
    }
   ]
  },
@@ -2763,9 +2763,9 @@
      "expiry": "2022-01-21"
     },
     "price_at_tx": 170.45,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": -34.4
+    "change_pct": -34.39
    }
   ]
  },
@@ -2943,9 +2943,9 @@
      "expiry": "2022-01-21"
     },
     "price_at_tx": 95.48,
-    "price_now": 323.64,
+    "price_now": 323.61,
     "price_now_date": "2026-10-21",
-    "change_pct": 238.96
+    "change_pct": 238.93
    },
    {
     "owner": "SP",
@@ -3063,9 +3063,9 @@
     "description": "Exercised 100 call options (10,000 shares) expiring 6/19/2020 at a strike price o f $140.",
     "option": null,
     "price_at_tx": 187.66,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": 28.81
+    "change_pct": 28.84
    }
   ]
  },
@@ -3213,9 +3213,9 @@
     "description": "Sold 3,000 shares.",
     "option": null,
     "price_at_tx": 185.09,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 120.47
+    "change_pct": 120.35
    },
    {
     "owner": "SP",
@@ -3231,9 +3231,9 @@
     "description": "Sold 3,000 shares.",
     "option": null,
     "price_at_tx": 185.09,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 120.47
+    "change_pct": 120.35
    }
   ]
  },
@@ -3503,9 +3503,9 @@
     "description": "Sale of 1,000 Shares",
     "option": null,
     "price_at_tx": 175.32,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 132.76
+    "change_pct": 132.63
    }
   ]
  },
@@ -3545,9 +3545,9 @@
     "description": "Sale of 1.000 Shares",
     "option": null,
     "price_at_tx": 175.32,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 132.76
+    "change_pct": 132.63
    },
    {
     "owner": "SP",
@@ -3563,9 +3563,9 @@
     "description": "Sale of 1,000 Shares",
     "option": null,
     "price_at_tx": 175.32,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 132.76
+    "change_pct": 132.63
    }
   ]
  },
@@ -3693,9 +3693,9 @@
      "expiry": "2020-06-19"
     },
     "price_at_tx": 150.01,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": 61.14
+    "change_pct": 61.18
    },
    {
     "owner": "SP",
@@ -3717,9 +3717,9 @@
      "expiry": "2020-06-19"
     },
     "price_at_tx": 150.59,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": 60.52
+    "change_pct": 60.56
    }
   ]
  },
@@ -4097,9 +4097,9 @@
     "description": "sale of 5,000 shares",
     "option": null,
     "price_at_tx": 114.35,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 256.86
+    "change_pct": 256.67
    },
    {
     "owner": "SP",
@@ -4115,9 +4115,9 @@
     "description": "Contribution of 1,750 shares held person ally to Isolep Enterprises via transfer between brokerage accounts.",
     "option": null,
     "price_at_tx": 112.41,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 263.02
+    "change_pct": 262.82
    }
   ]
  },
@@ -4227,9 +4227,9 @@
     "description": "Exercised 50 call options (5,000 shares) expiring 1/20/17 at a strike price o f $8",
     "option": null,
     "price_at_tx": 14.89,
-    "price_now": 78.2,
+    "price_now": 78.21,
     "price_now_date": "2026-10-21",
-    "change_pct": 425.18
+    "change_pct": 425.25
    }
   ]
  },
@@ -4297,9 +4297,9 @@
     "description": "Sale of 1,250 Shares",
     "option": null,
     "price_at_tx": 78.79,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 417.92
+    "change_pct": 417.64
    }
   ]
  },
@@ -4355,9 +4355,9 @@
      "expiry": "2017-01-20"
     },
     "price_at_tx": 9.18,
-    "price_now": 78.2,
+    "price_now": 78.21,
     "price_now_date": "2026-10-21",
-    "change_pct": 751.85
+    "change_pct": 751.96
    }
   ]
  },
@@ -4407,9 +4407,9 @@
     "description": "Exercised 100 call options (10,000 shares) expiring 1/ 15/16 at a strike price of $90",
     "option": null,
     "price_at_tx": 93.9,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 19.08
+    "change_pct": 19.09
    }
   ]
  },
@@ -4435,9 +4435,9 @@
     "description": "Contribution of 1,084 shares held personall y to The Paul & Nancy Pelosi Charitable Foundation via transferbetween brokerage accounts. Visa Inc. (V)",
     "option": null,
     "price_at_tx": 79.14,
-    "price_now": 241.72,
+    "price_now": 241.78,
     "price_now_date": "2026-10-21",
-    "change_pct": 205.43
+    "change_pct": 205.51
    },
    {
     "owner": "SP",
@@ -4453,9 +4453,9 @@
     "description": "Contribution of 2,000 shares held personally to The Pa ul & Nancy Pelosi Charitable Foundation via transferbetween brokerage accounts. Visa Inc. (V)",
     "option": null,
     "price_at_tx": 78.35,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 420.83
+    "change_pct": 420.55
    },
    {
     "owner": "SP",
@@ -4471,9 +4471,9 @@
     "description": "Sale of 5,000 Shares",
     "option": null,
     "price_at_tx": 79.21,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 415.17
+    "change_pct": 414.9
    }
   ]
  },
@@ -4659,9 +4659,9 @@
      "expiry": "2016-01-15"
     },
     "price_at_tx": 91.63,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 22.03
+    "change_pct": 22.05
    },
    {
     "owner": "SP",
@@ -4683,9 +4683,9 @@
      "expiry": "2016-01-15"
     },
     "price_at_tx": 92.51,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 20.87
+    "change_pct": 20.88
    }
   ]
  },
@@ -4711,9 +4711,9 @@
     "description": "sale of 1000 shares Visa Inc. (V)",
     "option": null,
     "price_at_tx": 66.36,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 514.96
+    "change_pct": 514.63
    },
    {
     "owner": "SP",
@@ -4729,9 +4729,9 @@
     "description": "sale of 500 shares Walt Disney Company (DIs)",
     "option": null,
     "price_at_tx": 66.14,
-    "price_now": 408.07,
+    "price_now": 407.85,
     "price_now_date": "2026-10-21",
-    "change_pct": 517.0
+    "change_pct": 516.67
    },
    {
     "owner": "SP",
@@ -4753,9 +4753,9 @@
      "expiry": null
     },
     "price_at_tx": 91.63,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 22.03
+    "change_pct": 22.05
    }
   ]
  },
@@ -4883,9 +4883,9 @@
      "expiry": null
     },
     "price_at_tx": 92.51,
-    "price_now": 111.82,
+    "price_now": 111.83,
     "price_now_date": "2026-10-21",
-    "change_pct": 20.87
+    "change_pct": 20.88
    }
   ]
  },
@@ -4911,9 +4911,9 @@
     "description": "",
     "option": null,
     "price_at_tx": 39.02,
-    "price_now": 40.72,
+    "price_now": 40.73,
     "price_now_date": "2026-10-21",
-    "change_pct": 4.36
+    "change_pct": 4.37
    },
    {
     "owner": "SP",
@@ -4929,9 +4929,9 @@
     "description": "",
     "option": null,
     "price_at_tx": 25.13,
-    "price_now": 25.94,
+    "price_now": 25.92,
     "price_now_date": "2026-10-21",
-    "change_pct": 3.24
+    "change_pct": 3.15
    },
    {
     "owner": "SP",
@@ -4961,9 +4961,9 @@
     "description": "",
     "option": null,
     "price_at_tx": 49.8,
-    "price_now": 30.42,
+    "price_now": 30.38,
     "price_now_date": "2026-10-21",
-    "change_pct": -38.93
+    "change_pct": -39.0
    },
    {
     "owner": "SP",
