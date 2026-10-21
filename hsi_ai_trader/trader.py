@@ -249,7 +249,8 @@ class Trader:
             n_open = max(int(cfg.real_size_frac * eq / (last * FX_TO_HKD[cfg.currency])), 0)
         action, stop, target, rejected = validate_decision(
             d, position=qty, entry=meta.get("entry"), last=last, cfg=cfg,
-            remaining_loss=remaining, can_open=can_open, trades_today=st.get("trades_today", 0), qty=n_open)
+            remaining_loss=remaining, can_open=can_open, trades_today=st.get("trades_today", 0), qty=n_open,
+            current_stop=meta.get("stop"))
         rec = {"bar": st["last_decision_bar"], "contract": contract, "last": last, "pos": qty,
                "ai_action": d.get("action"), "ai_stop": d.get("stop_price"),
                "ai_target": d.get("target_price"), "confidence": d.get("confidence"),
