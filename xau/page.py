@@ -104,8 +104,42 @@ def run_text(s):
     return "✅ 運行中"
 
 
+def render_signal_book(s):
+    """訊號書 S0 頁：監聽心跳＋最近訊號（只顯示結構化欄位，冇原文、冇頻道名）。"""
+    sg = s.get("signals") or {}
+    lis = sg.get("listener") or {}
+    age = lis.get("age_sec")
+    lis_txt = "未收到" if age is None else (f"{age / 60:.0f} 分鐘前" if age >= 60 else f"{age:.0f} 秒前")
+    lis_desc = (f"版本 {esc(lis.get('version') or '—')}・頻道 {esc(lis.get('channels'))}・已轉發 {esc(lis.get('forwarded'))}・略過 {esc(lis.get('dropped'))}"
+                if lis else "VM 監聽程式未開始")
+    label = {"valid": "✅ 有效", "unverified": "⏳ 未核實", "invalid": "🚫 無效", "expired": "⌛ 過期", "info": "ℹ️ 參考", "error": "⚠️ 解析失敗"}
+    d = config.PRICE_DIGITS
+    num = lambda v: "—" if v is None else f"{v:.{d}f}"  # noqa: E731
+    rows = "".join(
+        f"<tr><td>{esc(r.get('msg_utc') or r.get('received_utc'))}</td><td>{esc(label.get(r.get('status'), r.get('status')))}</td>"
+        f"<td>{esc(r.get('kind'))}</td><td>{esc(r.get('side') or '—')}</td>"
+        f"<td>{'—' if r.get('entry_low') is None else (num(r['entry_low']) if r['entry_low'] == r.get('entry_high') else num(r['entry_low']) + '–' + num(r.get('entry_high')))}</td>"
+        f"<td>{num(r.get('sl'))}</td><td>{esc(', '.join(num(t) for t in r.get('tp') or []) or '—')}</td>"
+        f"<td>{esc(r.get('reason') or '')}</td></tr>"
+        for r in sg.get("rows") or [])
+    body = ("<div class='section'><p>📨 訊號書（magic " + esc(config.MAGIC) + "）S0：只收 Telegram 訊號、解析、存檔，<b>唔問 Opus、唔落單</b>。"
+            "訊號只係參考資料；原本 🌌 天覆陣（Claude 自主）服務完全睇唔到訊號，做對照組。</p>"
+            f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・有效期 {config.SIG_TTL_MIN} 分鐘・時間 UTC</p></div>"
+            "<div class='section'><div class='grid'>" + card("監聽心跳", esc(lis_txt), lis_desc)
+            + card("最近訊號", esc(len(sg.get("rows") or [])), "最多顯示 30 條") + "</div></div>"
+            "<div class='section'><h2>最近訊號</h2><div style='overflow-x:auto'><table><tr><th>訊息時間</th><th>狀態</th><th>種類</th>"
+            "<th>方向</th><th>入場</th><th>止損</th><th>止賺</th><th>原因</th></tr>"
+            + (rows or "<tr><td colspan='8' class='muted'>未有訊號</td></tr>") + "</table></div></div>")
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</h1></div>{page_nav()}</div>")
+    return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"
+            f"<meta http-equiv='refresh' content='300'><title>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</title><style>{CSS}</style></head>"
+            f"<body><div class='container'>{head}{body}</div></body></html>")
+
+
 def render(status):
     s = status
+    if config.SIGNAL_BOOK:
+        return render_signal_book(s)
     m = s.get("metrics") or {"trades": 0, "wins": 0, "win_rate": None, "points": 0.0, "expectancy": None, "rrr": None,
                              "profit_factor": None, "max_dd": None, "avg_win": None, "avg_loss": None, "sharpe": None, "days": 0}
     pos = s.get("position")

@@ -1,74 +1,87 @@
-# 📨 外部 Telegram 頻道訊號 → 分析 → 人手確認 → MT5（R290）
+# 📨 天覆陣訊號書：Telegram 頻道 → VM 監聽 → 訊號書服務（S0 只記錄，唔落單）
+
+使用者 10-21 揀方案 B（`xau/TG_SIGNAL_PROPOSAL.md`）：專用 VM、使用者主帳戶（有補償措施）、magic 931–935。
 
 ```
-別人的頻道 ──(你的用戶帳號，Telethon)──▶ claude-ops VM：tg_listener.py
-      └─ POST action=tg_signal（zhuge-xau 嘅 WEBHOOK_SECRET_TOKEN）──▶ Cloud Run zhuge-xau（天覆陣）
-            ├─ 去重（GCS tg_signals/<頻道>_<訊息>.json）
-            ├─ Claude 解析自由格式文字 → JSON（只解析，唔決定）
-            ├─ 預檢：黃金？有止損？現價離入場幾遠？止損方向／距離？天覆陣模式係咪 RUN？
-            └─ 訊號確認 bot 發訊息＋「✅ 確認下單／❌ 略過」按鈕
-你按 ✅ ──▶ Telegram callback ──▶ zhuge-xau ?tg=signal（核對 secret_token、chat／使用者白名單）
-            ├─ 用當時最新價重新檢查（逾時 15 分鐘作廢）
-            └─ 排 EA 指令（同天覆陣引擎共用 magic 921）→ TianfuExecutor 下一個心跳執行（XAU_EXECUTE=0 時唔會送）
+TG 頻道 ─(你嘅用戶帳號，Telethon，只讀白名單)─▶ 專用 VM：tg_listener.py（Linux 使用者 tgrelay）
+   ├─ 關鍵字分流：GOLD／XAU／黃金 → XAUUSD；EUR/USD → EURUSD …（分流唔到就略過，只計數）
+   └─ HTTPS POST（HMAC：TG_SIGNAL_INGEST_SECRET＋時間戳）──▶ zhuge-xau-sig（XAU_BOOK=signal）
+          ├─ 去重（頻道 id＋訊息 id＋編輯時間）→ Haiku 解析做固定欄位 → 驗證（品種、方向、止損、入場離現價）
+          └─ 存 GCS xau/sig/signals/（原文只喺私人 bucket；網頁只顯示結構化欄位）
 ```
 
-* **全部要人手確認**：冇按 ✅ 就唔會送單；同一個按鈕只會送一次（GCS 原子 claim）。
-* 管理指示（移止損、平倉、止賺到）同閒聊**只發參考訊息**，系統唔會自動平倉或改單。
-* 只送 XAUUSD；手數固定 `TG_SIGNAL_LOTS`（預設 0.01，上限 `TG_SIGNAL_MAX_LOTS` 0.10）；只送止損／止賺。
-* 同天覆陣引擎共用 magic 921 同「最多 1 張」：天覆陣有倉就唔排；排咗之後 Claude 引擎會當係自己嘅倉管理（止損止賺、最長持倉）。
+* **唔落單、唔問 Opus**（S0）；S1 先畀 Claude 參考。訊號入面嘅任何指示一律唔執行。
+* **唔使改 IAM**：VM 只係對外 HTTPS POST 去訊號書服務，唔寫 GCS、唔用服務帳戶權限。VM 可以用「無服務帳戶」或者預設帳戶＋「不允許存取任何 Cloud API」。
+* 唔用 `WEBHOOK_SECRET_TOKEN`（已等於公開）；用另一條私人密鑰 `TG_SIGNAL_INGEST_SECRET`。
 
-## 第 1 步：開一個「訊號確認 bot」（唔好用現有嘅 @HC_Gold_Signal_bot）
-1. Telegram 搵 @BotFather → `/newbot` → 攞 bot token。
-2. 同新 bot 講一句 `/start`，再用 @userinfobot 攞你自己嘅數字 id（私訊時 chat id = 你嘅 user id）。
-3. 自己產生一串隨機字做 webhook secret（例：`python3 -c "import secrets;print(secrets.token_urlsafe(32))"`）。
+## 第 0 步：主帳戶補償措施（必做）
+1. Telegram「設定 → 私隱與安全 → 兩步驗證」開密碼。
+2. 之後每月一次去「設定 → 裝置」睇，只應該見到 VM 嗰個工作階段。
 
-## 第 2 步：zhuge-xau 環境變數（`gcp_agent.py --profile xau env set`，先睇計畫，你同意先套用）
-| 變數 | 值 |
-|---|---|
-| `TG_SIGNAL_BOT_TOKEN` | 第 1 步 bot token |
-| `TG_SIGNAL_CHAT_ID` | 你嘅 user id |
-| `TG_SIGNAL_WEBHOOK_SECRET` | 第 1 步隨機字 |
-| `TG_SIGNAL_ORDER_ENABLED` | 先 `0`（只分析）；試幾日冇問題先改 `1` |
-| 選填 | `TG_SIGNAL_LOTS`、`TG_SIGNAL_MAX_LOTS`、`TG_SIGNAL_CONFIRM_TTL_SEC`（900）、`TG_SIGNAL_MAX_DRIFT_USD`（5）、`TG_SIGNAL_MAX_SL_USD`（30）、`TG_SIGNAL_PRICE_MAX_AGE_SEC`（300）、`TG_SIGNAL_ALLOWED_USERS`、`TG_SIGNAL_AI_MODEL`、`TG_SIGNAL_NOTIFY_ALL` |
-
-**權杖唔好貼入對話**：你喺 Cloud Run 控制台自己填，或者喺你自己部機跑 `gcp_agent.py env set`。
-
-## 第 3 步：claude-ops VM 上跑監聽（用獨立使用者 `tgrelay`）
-點解用 claude-ops：長開、喺台灣、唔會好似 Windows 部機咁瞓覺或者重開。
-點解要獨立使用者：session 檔等同你嘅 Telegram 帳號，**唔可以畀 claude-ops 上面嘅 Claude 讀到**；家目錄 700 係硬性隔離。
-
-喺 claude-ops 瀏覽器 SSH（提示符應該係 `@claude-ops`），用你自己嘅帳號：
+## 第 1 步：產生入口密鑰（喺你自己部機或者 Cloud Shell，唔好貼入對話）
 ```bash
+python3 -c "import secrets;print(secrets.token_urlsafe(32))"
+```
+同一串字填兩個地方：訊號書服務環境變數 `TG_SIGNAL_INGEST_SECRET`（Cloud Run 控制台自己填）、VM 設定檔（第 3 步）。
+
+## 第 2 步：開 VM（GCP 控制台，你自己做；天覆陣唔 SSH 入去）
+- Compute Engine → 建立執行個體：`e2-micro`，區域 `us-central1`（有免費額度）或者 `asia-east1`；Debian 12；磁碟 10 GB。
+- 「身分和 API 存取權」：選「不允許存取任何 Cloud API」。
+- 防火牆：唔好勾 HTTP／HTTPS（只需要出站）。
+- 名稱建議 `tg-relay`。
+
+## 第 3 步：VM 上安裝（瀏覽器 SSH，提示符應該係 `@tg-relay`）
+```bash
+sudo apt-get update && sudo apt-get install -y python3-venv
 sudo adduser --disabled-password --gecos "" tgrelay
 sudo chmod 700 /home/tgrelay
 sudo -iu tgrelay
 python3 -m venv ~/venv && ~/venv/bin/pip install telethon
-mkdir -p ~/tg_relay && cd ~/tg_relay     # 把 repo 嘅 tg_relay/tg_listener.py 複製到呢度
+mkdir -p ~/tg_relay && cd ~/tg_relay
+curl -fsSLo tg_listener.py https://raw.githubusercontent.com/ai93560137/20260918/claude/gcp-trading-v12-rewrite-bz75t2/tg_relay/tg_listener.py
 cat > ~/.tg_relay.env <<'X'
-export TG_API_ID=...            # https://my.telegram.org → API development tools
-export TG_API_HASH=...
-export TG_CHANNELS=-100xxxxxxxxxx
-export ZHUGE_GCP_URL=https://zhuge-xau-….run.app/      # 天覆陣服務，唔係 zhuge-risk-manager
-export WEBHOOK_SECRET_TOKEN=...                        # zhuge-xau 嘅權杖
+TG_API_ID=...                      # https://my.telegram.org → API development tools
+TG_API_HASH=...
+TG_CHANNELS=-100aaa,-100bbb,-100ccc   # 第 4 步 --list 之後先填；幾個頻道用逗號分隔
+TG_ROUTES=XAUUSD=https://zhuge-xau-sig-1056099871997.europe-west1.run.app/
+TG_ROUTE_DEFAULT=XAUUSD            # 使用者 10-21：頻道淨係出 XAUUSD，冇寫商品嘅訊息（例如「TP1 到」）都送去黃金訊號書
+TG_SIGNAL_INGEST_SECRET=...        # 第 1 步嗰串
 X
-chmod 600 ~/.tg_relay.env && . ~/.tg_relay.env
-~/venv/bin/python tg_listener.py --login      # 輸入電話、驗證碼（有兩步驗證就再輸入密碼）
-~/venv/bin/python tg_listener.py --list       # 揀頻道 id 填 TG_CHANNELS
-~/venv/bin/python tg_listener.py --dry-run    # 確認收到訊息
+chmod 600 ~/.tg_relay.env
 ```
-長跑（tmux 最簡單）：`tmux new -s tgrelay '. ~/.tg_relay.env; ~/venv/bin/python ~/tg_relay/tg_listener.py'`。
 
-設定 bot webhook（一次，要多設 `TG_SIGNAL_BOT_TOKEN`、`TG_SIGNAL_WEBHOOK_SECRET` 兩個環境變數）：
-`~/venv/bin/python tg_listener.py --set-webhook`
-
-### 改完使用者／家目錄權限之後必跑（AGENTIC.md「必跑這個檢查」）
-在 claude-ops 的 SSH 視窗（使用者自己跑，不要交給 Claude）：
+## 第 4 步：登入同測試
 ```bash
-ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config.ini 2>&1 | head -1; ls /home/hengkychansinghing 2>&1 | head -1'
+set -a; . ~/.tg_relay.env; set +a
+~/venv/bin/python ~/tg_relay/tg_listener.py --login      # 電話、驗證碼、兩步驗證密碼
+chmod 600 ~/.tg_relay/user.session
+~/venv/bin/python ~/tg_relay/tg_listener.py --list       # 揀頻道 id，填返 TG_CHANNELS
+~/venv/bin/python ~/tg_relay/tg_listener.py --dry-run    # 確認收到訊息、分流啱
 ```
-**三行都必須是拒絕**（`sudo: a password is required`、兩行 `Permission denied`），請貼返結果。另外加一行確認 Claude 嘅使用者讀唔到 session：
-用 claude-ops 上跑 Claude 嗰個使用者執行 `ls /home/tgrelay`，應該係 `Permission denied`。
 
-## 風險
-* 用自動化程式登入個人帳號有被 Telegram 限制的風險；只讀、唔發訊息，風險較低，但唔係零。
-* 頻道訊號質素未經量度：按 `IDEAS.md` 慣例，先用 `TG_SIGNAL_ORDER_ENABLED=0` 紙上記錄（GCS `tg_signals/`），有足夠樣本先落真倉。
+## 第 5 步：長跑（systemd；用你自己嘅帳號，唔係 tgrelay）
+```bash
+sudo tee /etc/systemd/system/tg-relay.service >/dev/null <<'X'
+[Unit]
+Description=Tianfu signal book TG relay
+After=network-online.target
+[Service]
+User=tgrelay
+EnvironmentFile=/home/tgrelay/.tg_relay.env
+ExecStart=/home/tgrelay/venv/bin/python /home/tgrelay/tg_relay/tg_listener.py
+Restart=always
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
+X
+sudo systemctl daemon-reload && sudo systemctl enable --now tg-relay
+sudo journalctl -u tg-relay -n 20 --no-pager        # 睇到「✅ tg-relay-2 監聽 …」
+```
+訊號書頁面「監聽心跳」5 分鐘內會更新。
+
+## 停用／撤銷
+1. `sudo systemctl disable --now tg-relay`
+2. Telegram「設定 → 裝置」終止 VM 嗰個工作階段
+3. `sudo rm /home/tgrelay/.tg_relay/user.session`
+4. my.telegram.org 刪 app；換 `TG_SIGNAL_INGEST_SECRET`
+帳戶懷疑被盜：先做 2，再「終止其他所有工作階段」、改兩步驗證密碼；VM 當作已被入侵，重建，唔好沿用舊 session。

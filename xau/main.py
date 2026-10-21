@@ -22,6 +22,7 @@ import page
 import paper
 import rules
 import storage
+import signals
 import tgsignal
 from storage import StorageError
 
@@ -666,9 +667,16 @@ def entry(req):
         return "", 204
     if req.method == "GET":
         status = build_status()
+        status["book"] = config.BOOK
+        if config.SIGNAL_BOOK:
+            status["signals"] = signals.recent()
         if req.args.get("format") == "json":
             return jsonify(status), 200
         return page.render(status), 200, {"Content-Type": "text/html; charset=utf-8"}
+    if config.SIGNAL_BOOK:                             # 訊號書 S0：只收 HMAC 簽名嘅訊號／監聽心跳；EA 心跳等一律 ignored，唔問 Opus、唔落單
+        if req.method == "POST" and req.headers.get("X-Sig-Signature"):
+            return signals.handle_ingest(req.headers, req.get_data())
+        return jsonify({"status": "ignored", "message": "signal book S0: ingest only"}), 200
     if req.args.get("tg") == "signal":                 # [R290] 訊號確認 bot 嘅按鈕（核對 secret_token 標頭，唔使權杖）
         return tgsignal.handle_callback(req)
     try:
