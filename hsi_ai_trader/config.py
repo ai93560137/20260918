@@ -1,8 +1,9 @@
 """設定：全部由 .env 或環境變數讀入。硬性風控數字喺呢度，AI 無權改。"""
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
+import markets
 from markets import FX_TO_HKD, spec_for
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,6 +37,17 @@ SPEC = spec_for(_PRODUCT)
 # 真倉程式（zhuge-longfei-real@<產品>，LONGFEI_INSTANCE=REAL）要產品喺 LONGFEI_REAL_PRODUCTS 先係 REAL，雙重鎖
 _REAL_LIST = {x.strip().upper() for x in os.getenv("LONGFEI_REAL_PRODUCTS", "").split(",") if x.strip()}
 _INSTANCE_REAL = os.getenv("LONGFEI_INSTANCE", "").strip().upper() == "REAL"
+_IS_REAL = _INSTANCE_REAL and _PRODUCT in _REAL_LIST
+_REAL_LOSS = None
+# [R233] 使用者 10-19：美股真倉用自己嘅倉位同日蝕設定。只喺真倉程式生效，模擬照用產品預設。
+# 次序：REAL_NOTIONAL_USD_<產品> → REAL_NOTIONAL_USD；REAL_DAILY_LOSS_<產品> → REAL_DAILY_LOSS_STOCK。
+# 直接改 markets.SPECS 呢個程式（每隻產品一個程式）嘅產品規格，咁落單股數、AI 提示、日蝕全部一致。
+if _IS_REAL and SPEC.kind == "stock":
+    _n = os.getenv(f"REAL_NOTIONAL_USD_{_PRODUCT}") or os.getenv("REAL_NOTIONAL_USD")
+    _l = _REAL_LOSS = os.getenv(f"REAL_DAILY_LOSS_{_PRODUCT}") or os.getenv("REAL_DAILY_LOSS_STOCK")
+    SPEC = replace(SPEC, notional_usd=float(_n) if _n else SPEC.notional_usd,
+                   daily_loss_hkd=float(_l) if _l else SPEC.daily_loss_hkd)
+    markets.SPECS[_PRODUCT] = SPEC
 
 
 def _bool(name, default):
@@ -48,7 +60,7 @@ class Config:
     opend_host: str = _env("OPEND_HOST", "127.0.0.1")
     opend_port: int = int(_env("OPEND_PORT", "11111"))
     # 唔再跟 TRD_ENV（HSI 都係）：真倉只喺真倉程式＋settings.env 嘅 LONGFEI_REAL_PRODUCTS 列明（改要經 PR＋「更新部機」）
-    trd_env: str = "REAL" if (_INSTANCE_REAL and _PRODUCT in _REAL_LIST) else "SIMULATE"
+    trd_env: str = "REAL" if _IS_REAL else "SIMULATE"
     instance_real: bool = _INSTANCE_REAL
     acc_id: int = int(_env("FUTU_ACC_ID", "0"))          # 0 = 自動揀第一個期貨戶口
     real_acc_id: int = int(_env("FUTU_REAL_ACC_ID", "0"))  # 真倉準備檢查用；0 = 自動揀有該市場權限嘅真實戶口
@@ -79,9 +91,21 @@ class Config:
     # --- 硬性風控（AI 無權超越）---
     max_qty: int = int(_env("MAX_QTY", "1"))
     # HK$；次序：DAILY_LOSS_LIMIT_<產品> → 期貨先跟 DAILY_LOSS_LIMIT → 產品預設（ETF HK$100,000，HSI HK$10,000）
-    daily_loss_limit: float = float(os.getenv(f"DAILY_LOSS_LIMIT_{_PRODUCT}") or
+    daily_loss_limit: float = float(_REAL_LOSS or os.getenv(f"DAILY_LOSS_LIMIT_{_PRODUCT}") or
                                     (SPEC.kind == "future" and os.getenv("DAILY_LOSS_LIMIT")) or SPEC.daily_loss_hkd)
     # 使用者 2026-10-16 取消每張止蝕 20–150 點、每日 20 次、夜市收市前平倉三條限制；0／false = 唔限
+    # [R234] 真倉後備止蝕：開倉即喺富途伺服器掛 GTC 止損市價單（部機／OpenD 死咗都生效）。
+    # 觸發價比程式止蝕再遠 SERVER_STOP_BUFFER_PCT%，平時由程式自己先止蝕；平倉前先撤。美股 10-19 真戶口驗證過；
+    # 港期未驗證（模擬盤唔支援），所以預設只開美股，期貨要驗證後設 SERVER_STOP=1
+    server_stop: bool = _IS_REAL and _bool("SERVER_STOP", "1" if SPEC.kind == "stock" else "0")
+    server_stop_buffer_pct: float = float(_env("SERVER_STOP_BUFFER_PCT", "0.3"))
+    # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
+    # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
+    real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")
+    # [R249] 使用者 10-20 揀：將來真倉每單 = REAL_SIZE_FRAC × 實時權益（HK$，例如 0.1），取代用盡槓桿；
+    # 由 R248 購買力重演得出：0.1 × 權益差唔多全部模擬單都做得到。設咗就優先過 REAL_SIZE_MAX。只限真倉美股
+    real_size_frac: float = float(_env("REAL_SIZE_FRAC", "0")) if (_IS_REAL and SPEC.kind == "stock") else 0.0
+    real_products: tuple = tuple(sorted(_REAL_LIST))
     max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
     min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
     max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "0"))       # 0 = 唔限
@@ -97,7 +121,8 @@ class Config:
     etf_group_tech: tuple = tuple(x.strip().upper() for x in _env("ETF_GROUP_TECH", "AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA")
                                   .split(",") if x.strip())
     group_max_same_dir: int = int(_env("GROUP_MAX_SAME_DIR", "2"))               # 美股大盤組同方向最多幾隻；0 = 唔限
-    etf_total_daily_loss: float = float(_env("ETF_TOTAL_DAILY_LOSS", "200000"))  # 全部 ETF＋個股合計日蝕（HK$）；0 = 唔限
+    etf_total_daily_loss: float = float((_IS_REAL and os.getenv("REAL_ETF_TOTAL_DAILY_LOSS"))
+                                        or _env("ETF_TOTAL_DAILY_LOSS", "200000"))  # 全部 ETF＋個股合計日蝕（HK$）；0 = 唔限；真倉用 REAL_ETF_TOTAL_DAILY_LOSS
     no_entry_before_close_min: int = int(_env("NO_ENTRY_BEFORE_CLOSE_MIN", "10"))
     flatten_before_night_close_min: int = int(_env("FLATTEN_BEFORE_NIGHT_CLOSE_MIN", "10"))
     flatten_before_night_close: bool = _bool("FLATTEN_BEFORE_NIGHT_CLOSE", "false")

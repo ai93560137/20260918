@@ -142,6 +142,16 @@ class IncidentUsageTest(unittest.TestCase):
     def test_usage_no_snapshot(self):
         self.assertIn("讀不到", rp.usage_lines(None, None)[0])
 
+    def test_longfei_api_line_sums_real_and_sim_tables(self):
+        rev = ("# 覆盤・真倉\n## Claude API 費用\n| 產品 | a | b | c | d | e | 合計 US$ | f |\n"
+               "| **合計** | 173 | 29 | | 4.32 | 0.10 | **4.42** | |\n## 手續費\n"
+               "| **合計** | 40 | +1 | -1,280 | 78% | | **-1,196** | |\n"
+               "# 覆盤・模擬\n## Claude API 費用\n| **合計** | 1342 | 2131 | | 35.96 | 1.65 | **37.62** | |\n")
+        out = rp.longfei_api_line({"2026-10-20": rev, "2026-10-19": None})
+        self.assertIn("US$42", out)
+        self.assertIn("10-20 42", out)
+        self.assertIn("冇覆盤", rp.longfei_api_line({"2026-10-19": None}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,3 +19,7 @@ research/
 futu/
 tests/
 hsi_ai_trader/
+# [R290] 外部頻道監聽腳本跑喺 VM，不部署
+tg_relay/
+# [R291] 天覆陣係另一個 Cloud Run 服務，唔跟本服務部署
+xau/

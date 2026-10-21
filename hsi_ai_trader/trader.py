@@ -6,7 +6,7 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from markets import SPECS, fee_hkd, order_qty, spec_for
+from markets import FX_TO_HKD, SPECS, fee_hkd, order_qty, session_day, spec_for
 from rules import (round_tick, session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -133,6 +133,8 @@ class Trader:
         snap = self.broker.snapshot(contract)
         last = snap["last"]
         session, mins_left = session_status(now, cfg.market, cfg.kind)
+        if session and not self._is_trading_day(now):   # [R261] 交易所假期：當休市，唔問 Claude、唔開倉
+            session, mins_left = None, None
         stale = (snap["update_time"] is None or
                  (now - snap["update_time"]).total_seconds() > cfg.stale_quote_sec)
 
@@ -171,6 +173,7 @@ class Trader:
                 exc = (last - meta["entry"]) * side
                 meta["mfe"] = round(max(meta.get("mfe", 0.0), exc), 4)
                 meta["mae"] = round(min(meta.get("mae", 0.0), exc), 4)
+            self._ensure_server_stop(contract, qty)
             if stop_hit(side, last, meta.get("stop")):
                 self._close(contract, qty, f"止蝕 {meta['stop']}", last)
                 return
@@ -188,6 +191,18 @@ class Trader:
                 self._decide(now, contract, qty, snap, session, mins_left)
 
     # ---------- 決策 ----------
+    def _is_trading_day(self, now):
+        fn = getattr(self.broker, "is_trading_day", None)
+        if not fn:
+            return True
+        day = session_day(now, self.cfg.market)
+        ok = fn(self.cfg.market, day)
+        if not ok and self.state.get("holiday") != day.isoformat():
+            self.state["holiday"] = day.isoformat()
+            self._log("events", {"type": "HOLIDAY", "day": day.isoformat(), "market": self.cfg.market,
+                                 "note": "交易所假期：唔問 Claude、唔開倉"})
+        return ok
+
     def _decision_due(self, now):
         n = self.cfg.decision_interval_min
         if now.minute % n != 0 or now.second < 3:
@@ -229,6 +244,9 @@ class Trader:
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
         n_open = order_qty(spec_for(cfg.product), last, cfg.max_qty)   # 期貨張數／ETF 股數
+        if cfg.real_size_frac and last:          # [R249] 真倉美股：每單 = 比例 × 實時權益
+            eq = st.get("last_equity") or self.broker.equity()
+            n_open = max(int(cfg.real_size_frac * eq / (last * FX_TO_HKD[cfg.currency])), 0)
         action, stop, target, rejected = validate_decision(
             d, position=qty, entry=meta.get("entry"), last=last, cfg=cfg,
             remaining_loss=remaining, can_open=can_open, trades_today=st.get("trades_today", 0), qty=n_open)
@@ -256,6 +274,7 @@ class Trader:
             st["pos"]["stop"] = stop
             if target:
                 st["pos"]["target"] = target
+            self._move_server_stop()
             self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": stop,
                                  "target": st["pos"].get("target"), "reason": d.get("reason")})
 
@@ -292,6 +311,7 @@ class Trader:
                              "target": tgt_adj, "reason": d.get("reason"), "risk_pts": round(dist, 4),
                              "confidence": d.get("confidence"), "lessons": d.get("_lessons"),
                              "session": session, "model": st["pos"]["model"]})
+        self._ensure_server_stop(contract, side * n_open)
         self._save_state()                        # 即刻寫，等其他程式睇到呢個倉
 
     # ---------- [R216] 組合層面（使用者 10-17：A 美股大盤組同方向最多 2 隻；C 全部 ETF 合計日蝕 HK$200,000）----------
@@ -409,7 +429,9 @@ class Trader:
         except (TypeError, ValueError):
             pass
         try:
-            res = fn(contract, order_qty(spec_for(cfg.product), last, cfg.max_qty), last)
+            # [R240] 用盡槓桿：股數由富途可買數量決定，準備檢查只問「買唔買到／沽唔沽到 1 股」
+            qty = 1 if (cfg.real_size_max or cfg.real_size_frac) else order_qty(spec_for(cfg.product), last, cfg.max_qty)
+            res = fn(contract, qty, last)
         except Exception as e:  # noqa: BLE001
             res = {"ok": False, "error": f"{e.__class__.__name__}: {str(e)[:120]}"}
         res["ts"] = now.isoformat(timespec="seconds")
@@ -453,6 +475,16 @@ class Trader:
                 return 0
             log.warning("查唔到可開數量（模擬盤照開）：%s", e)
             return n_open
+        if self.cfg.real_size_max and not self.cfg.real_size_frac:   # [R235] 用盡槓桿：可開數量平均分畀未有倉嘅真倉美股
+            peers = self._peer_states()
+            slots = 1 + sum(1 for p in self.cfg.real_products
+                            if p != self.cfg.product and p in SPECS and SPECS[p].kind == "stock"
+                            and not (peers.get(p) or {}).get("pos"))
+            n_max = cap // slots
+            self._log("events", {"type": "OPEN_SIZE_MAX", "cap": cap, "slots": slots, "qty": n_max})
+            if n_max <= 0:
+                self._log("events", {"type": "OPEN_SKIPPED", "reason": "購買力唔夠一股", "cap": cap})
+            return max(n_max, 0)
         if cap >= n_open:
             return n_open
         self._log("events", {"type": "OPEN_CAPPED" if cap > 0 else "OPEN_SKIPPED", "wanted": n_open, "cap": cap,
@@ -462,9 +494,23 @@ class Trader:
     def _close(self, code, qty, reason, ref_price=None):
         if qty == 0:
             return None
+        meta = self.state.get("pos") or {}
+        if meta.get("code") == code and meta.get("server_stop_id"):
+            try:
+                spx, sfilled = self._cancel_server_stop(meta)
+            except Exception as e:  # noqa: BLE001
+                self._log("events", {"type": "CLOSE_FAILED", "code": code, "reason": f"撤後備止蝕失敗：{e}"})
+                return None                      # 唔知後備止蝕有冇成交就唔落平倉單，免得反手；下一輪再試
+            if sfilled:                          # 撤之前已經觸發：伺服器已經平咗（部分）
+                part = min(sfilled, abs(qty)) * (1 if qty > 0 else -1)
+                self._record_exit(code, part, spx, "後備止蝕（富途伺服器）", meta)
+                if abs(part) >= abs(qty):
+                    return spx
+                qty -= part
+                meta = {**meta, "qty": abs(qty)}
+                self.state["pos"] = meta
         side = -1 if qty > 0 else 1
         px, filled = self.broker.market_order(code, side, abs(qty), self.cfg.slippage_points)
-        meta = self.state.get("pos") or {}
         if not filled:
             self._log("events", {"type": "CLOSE_FAILED", "code": code, "reason": reason})
             return None
@@ -508,6 +554,49 @@ class Trader:
             st["pos"] = None
         log.info("平倉 %s %s @%s 點數=%s (%s)", code, qty, px, pts, reason)
 
+    # ---------- [R234] 伺服器端後備止蝕 ----------
+    def _server_trigger(self, side, stop):
+        """後備止蝕觸發價：程式止蝕再遠 buffer%，平時由程式先止蝕，唔會兩邊同時平倉。"""
+        return round_tick(stop - side * abs(stop) * self.cfg.server_stop_buffer_pct / 100, self.cfg.tick)
+
+    def _ensure_server_stop(self, contract, qty):
+        """真倉有倉但未有後備止蝕就掛（開倉後、或者之前掛唔到／部分平倉後重掛）。失敗唔影響程式止蝕，下一輪再試。"""
+        meta = self.state.get("pos")
+        if not (self.cfg.server_stop and qty and meta and meta.get("code") == contract
+                and meta.get("stop") and not meta.get("server_stop_id")):
+            return
+        side = 1 if qty > 0 else -1
+        trigger = self._server_trigger(side, meta["stop"])
+        try:
+            meta["server_stop_id"] = self.broker.stop_order(contract, -side, abs(qty), trigger)
+            meta["server_stop"] = trigger
+            self._log("events", {"type": "SERVER_STOP", "code": contract, "qty": abs(qty), "trigger": trigger,
+                                 "order_id": meta["server_stop_id"]})
+        except Exception as e:  # noqa: BLE001
+            if not meta.get("server_stop_failed"):
+                self._log("events", {"type": "SERVER_STOP_FAILED", "code": contract, "error": str(e)[:200]})
+            meta["server_stop_failed"] = True
+            log.warning("掛後備止蝕失敗（程式止蝕照用，下一輪再試）：%s", e)
+
+    def _move_server_stop(self):
+        meta = self.state.get("pos")
+        if not (meta and meta.get("server_stop_id") and meta.get("stop")):
+            return
+        trigger = self._server_trigger(meta["side"], meta["stop"])
+        try:
+            self.broker.modify_stop(meta["server_stop_id"], meta["qty"], trigger)
+            meta["server_stop"] = trigger
+        except Exception as e:  # noqa: BLE001
+            self._log("events", {"type": "SERVER_STOP_MODIFY_FAILED", "error": str(e)[:200],
+                                 "order_id": meta["server_stop_id"], "keep": meta.get("server_stop")})
+
+    def _cancel_server_stop(self, meta):
+        """撤後備止蝕；回傳 (成交價, 成交數量)，撤之前已經觸發就唔係 0。撤唔到（狀態不明）會 raise。"""
+        px, filled = self.broker.cancel_order(meta["server_stop_id"])
+        meta["server_stop_id"] = None
+        self._log("events", {"type": "SERVER_STOP_CANCELLED", "code": meta.get("code"), "filled": filled})
+        return px, filled
+
     def _own_qty(self, contract):
         meta = self.state.get("pos")
         return meta["side"] * meta["qty"] if meta and meta.get("code") == contract else 0
@@ -518,8 +607,18 @@ class Trader:
         meta = st.get("pos")
         own = self._own_qty(contract)
         if own != 0 and broker_qty == 0:
-            snap = self.broker.snapshot(meta["code"])
-            self._record_exit(meta["code"], own, snap["last"], "倉位喺外部被平（估算價）", meta)
+            px, reason = None, "倉位喺外部被平（估算價）"
+            if meta.get("server_stop_id"):
+                try:
+                    px, filled = self._cancel_server_stop(meta)
+                    reason = "後備止蝕（富途伺服器）" if filled else reason
+                except Exception as e:  # noqa: BLE001
+                    log.exception("查後備止蝕失敗")
+                    self._log("events", {"type": "SERVER_STOP_ORPHAN", "order_id": meta.get("server_stop_id"),
+                                         "error": str(e)[:200], "note": "倉已冇但後備止蝕撤唔到，請喺富途 App 人手撤"})
+            if px is None:
+                px = self.broker.snapshot(meta["code"])["last"]
+            self._record_exit(meta["code"], own, px, reason, meta)
             own = 0
         foreign = broker_qty - own
         others = {c: q for c, (q, _) in positions.items() if c != contract and q}

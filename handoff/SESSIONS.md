@@ -26,5 +26,6 @@
 | 🖥️ 富途數據 VM（10-16 起 futu-data-tw，asia-east1-b；香港 futu-data 已停服務、保留待使用者刪；10-15 起推 GCS `futu/risk/latest.json`，改推送內容經 `gcp_ib/vm_futu/settings.env` PR） | `session_01AQNMTZvQodzptWVui6deqY`（總指揮 10-15 開） | — | `claude/futu-vm-setup` | `AGENTIC.md`「VM：futu-data」、`tradingview/RUNBOOK_FUTU_VM.md` | — |
 | 🏦 債券每日快報（美債 Telegram，`bond_daily.yml` HKT 週二至六 07:30） | `session_013x5qHyMDisW7VCLNo6w88x`（10-15 總指揮開） | `session_01WrfzzWWLTysdSLJNZ3Mh5u`（美國國債數據與股票市場關係） | `claude/us-intl-data-stock-market-vgt0yi` | `handoff/債券快報.md`（該分支 518b054） | —（冇 Routine，Actions 排程） |
 | 🐉 龍飛陣（AI 決策：HSI＋美股 ETF SPY／QQQ／DIA，10-16 22:20 起喺 futu-data-tw 跑，全部富途模擬戶口；2026-10-16 成立） | `session_0139SPVaaCjhGQM81SipbPgp` | — | `claude/hsi-ai-trader` | `handoff/龍飛陣.md` | —（未有 Routine） |
+| 🌌 天覆陣（XAUUSD CFD／MT5 改造；使用者 10-20 批准抽出獨立 Cloud Run `zhuge-xau`，GCS 只寫 `xau/`，影子階段唔落單；2026-10-20 成立） | `session_01N9ooQRNEnSz5WQRUg81hi5`（10-21 換，上下文 61 萬） | `session_01Xi2KRPAn4M1iG7VvrVxBUx` | `claude/tianfu`（舊名 `claude/keen-davinci-1zx3uo`、`claude/tianfu-xau`） | `handoff/天覆陣.md`（該分支，PR #236） | — |
 | 🧭 SOP 顧問／預設分支 | `session_012caA3uVCQjRHHryN5HnMrn` | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
 | claude-ops（使用者 VM，台灣） | `session_01J4dioYdtebaEyoaDwGJotM`（不換） | — | — | — | — |

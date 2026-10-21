@@ -41,7 +41,7 @@ check("ES 頁配色同恒指頁唔同（橙色主題；恒指頁冇）", "#d9480
 check("ES、NQ 兩組配色互相唔同", main.FY_THEMES["es_range"] != main.FY_THEMES["nq_range"] and not set(main.FY_THEMES["es_range"]) & set(main.FY_THEMES["nq_range"]))
 js = client.get("/?view=es_range&format=json").get_json()
 check("format=json：代號 US.ES_FRONT、有預測", js["symbol"] == ES and js.get("forecast") and js["forecast"].get("range"), js.get("symbol"))
-for f in ("gates.html", "order.html", "jinnang_sheet.html", "jinnang_tracker.html"):
+for f in ("bazhentu.html",):   # [R253] 舊 XAUUSD 四頁已移除
     check(f"{f} 有 ES 連結", "es_range" in open(f"/home/user/20260918/{f}", encoding="utf-8").read())
 
 print("\n=== 開市前紀錄：紐約 18:00–19:00 才記 ===")

@@ -273,6 +273,28 @@ def usage_lines(now_snap: dict | None, old_snap: dict | None) -> list[str]:
     return out
 
 
+def longfei_api_line(reviews: dict[str, str | None]) -> str:
+    """龍飛陣 Claude API 實際費用（另計，唔係訂閱額度）：GCS ops/longfei/reviews/<日>.md 每個「## Claude API 費用」表嘅合計列。"""
+    days, total = [], 0.0
+    for day, text in sorted(reviews.items()):
+        if not text:
+            continue
+        cost, in_sec = 0.0, False
+        for ln in text.splitlines():
+            if ln.startswith("#"):
+                in_sec = ln.startswith("## Claude API 費用")
+            elif in_sec and ln.startswith("| **合計**"):
+                m = re.search(r"\*\*([\d.,]+)\*\*", ln.split("|")[7] if ln.count("|") > 7 else "")
+                if m:
+                    cost += float(m.group(1).replace(",", ""))
+        if cost:
+            days.append(f"{day[5:]} {cost:.0f}")
+            total += cost
+    if not days:
+        return "龍飛陣 Claude API（另計）：本週冇覆盤費用表"
+    return f"龍飛陣 Claude API（另計，覆盤實數）：合計 ≈ US${total:,.0f}（" + "、".join(days) + "）"
+
+
 def weekly(now: datetime, public: bool = False) -> str:
     today = now.date()
     mon = today - timedelta(days=today.weekday())        # 本週一（週日跑時 = 6 日前）
@@ -327,6 +349,8 @@ def weekly(now: datetime, public: bool = False) -> str:
     if not public:
         todo += usage_lines(gcs_json("ops/claude_usage/latest.json"),
                             gcs_json(f"ops/claude_usage/{today - timedelta(days=7):%Y-%m-%d}.json"))
+        todo.append(longfei_api_line({f"{d:%Y-%m-%d}": gcs_text(f"ops/longfei/reviews/{d:%Y-%m-%d}.md")
+                                      for d in (today - timedelta(days=i) for i in range(7))}))
     parts.append("\n".join(todo))
 
     sug = ["【四、建議改 IDEAS 狀態】"]

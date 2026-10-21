@@ -1,70 +1,60 @@
 {
- "date": "2026-10-17",
- "run_hkt": "2026-10-17 04:01",
+ "date": "2026-10-20",
+ "run_hkt": "2026-10-20 04:09",
  "run_kind": "night",
  "closed": [
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
-   "qty": 4.0,
-   "open_price": 7752.0,
+   "qty": 2.0,
+   "open_price": 7760.0,
    "close_price": 7747.75,
-   "close_time_hkt": "2026-10-17 07:58:56",
-   "realized_pts": 4.25
+   "close_time_hkt": "2026-10-20 02:49:20",
+   "realized_pts": 12.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
    "qty": 1.0,
-   "open_price": 7752.0,
+   "open_price": 7760.0,
    "close_price": 7747.75,
-   "close_time_hkt": "2026-10-17 07:58:56",
-   "realized_pts": 4.25
+   "close_time_hkt": "2026-10-20 02:49:20",
+   "realized_pts": 12.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
-   "qty": 4.0,
-   "open_price": 7752.0,
-   "close_price": 7747.75,
-   "close_time_hkt": "2026-10-17 07:58:56",
-   "realized_pts": 4.25
+   "qty": 2.0,
+   "open_price": 7745.0,
+   "close_price": 7741.5,
+   "close_time_hkt": "2026-10-20 05:44:19",
+   "realized_pts": 3.5
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
-   "qty": 1.0,
-   "open_price": 7752.0,
-   "close_price": 7747.75,
-   "close_time_hkt": "2026-10-17 07:58:56",
-   "realized_pts": 4.25
+   "qty": 2.0,
+   "open_price": 7750.0,
+   "close_price": 7743.75,
+   "close_time_hkt": "2026-10-20 06:40:15",
+   "realized_pts": 6.25
   },
   {
    "code": "US.MES2612",
    "product": "MES 微型標普期貨",
    "side": "平空",
-   "qty": 1.0,
-   "open_price": 7735.0,
-   "close_price": 7710.75,
-   "close_time_hkt": "2026-10-17 09:11:48",
-   "realized_pts": 24.25
-  },
-  {
-   "code": "US.MES2612",
-   "product": "MES 微型標普期貨",
-   "side": "平空",
-   "qty": 4.0,
-   "open_price": 7735.0,
-   "close_price": 7710.75,
-   "close_time_hkt": "2026-10-17 09:11:48",
-   "realized_pts": 24.25
+   "qty": 5.0,
+   "open_price": 7755.0,
+   "close_price": 7743.0,
+   "close_time_hkt": "2026-10-20 09:57:46",
+   "realized_pts": 12.0
   }
  ],
- "n_yunchui_deals": 6,
- "n_other_deals": 6,
+ "n_yunchui_deals": 7,
+ "n_other_deals": 20,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
