@@ -109,6 +109,7 @@ def normalize(raw):
         "kind": kind if kind in ("new_signal", "update", "other") else "other",
         "symbol": str(raw.get("symbol") or "").strip().upper()[:16] or None,
         "side": side if side in ("BUY", "SELL") else None,
+        "order_type": str(raw.get("order_type") or "").strip().lower()[:16] or None,
         "entry_low": lo, "entry_high": hi, "sl": f(raw.get("sl")),
         "tp": [v for v in (f(t) for t in tps) if v is not None and v > 0][:8],   # 頻道常見 6 個 TP（10-21 DAN VIP）；5 會截走最後一個
         "update_action": str(raw.get("update_action") or "").strip()[:200] or None,
@@ -181,7 +182,9 @@ def evaluate(view, bars, offset, prev=None, now=None):
             if t > msg_ts + config.SIG_TTL_MIN * 60:
                 o["final"] = "not_filled"
                 return o
-            if b["low"] <= hi and b["high"] >= lo:
+            market_now = "market" in str(view.get("order_type") or "") or "now" in str(view.get("order_type") or "")
+            tol = config.SIG_FILL_TOL
+            if market_now or (b["low"] <= hi + tol and b["high"] >= lo - tol):   # 市價單（BUY NOW）第一根就成交
                 o["filled_ts"] = t
             else:
                 continue
@@ -273,7 +276,7 @@ def public_view(rec):
     sig = rec.get("signal") or {}
     return {"sid": rec.get("sid"), "received_utc": rec.get("received_utc"), "msg_utc": rec.get("msg_utc"),
             "valid_until_utc": rec.get("valid_until_utc"), "valid_until_ts": rec.get("valid_until_ts"), "status": rec.get("status"), "reason": rec.get("reason"),
-            "kind": sig.get("kind"), "side": sig.get("side"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
+            "kind": sig.get("kind"), "side": sig.get("side"), "order_type": sig.get("order_type"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
             "sl": sig.get("sl"), "tp": sig.get("tp"), "parse_confidence": sig.get("confidence"), "price": rec.get("price"),
             "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:]}
 
