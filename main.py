@@ -6347,7 +6347,7 @@ LONGFEI_CSS = (   # [R260] 使用者 10-20：真倉／模擬倉各區「全部�
     ".lf-real .lf-banner{background:#b45309}.lf-sim .lf-banner{background:#1d4ed8}"
     ".lf-real .section{border-left:8px solid #d97706;background:#fffbeb}"
     ".lf-sim .section{border-left:8px solid #2563eb;background:#eff6ff}"
-    "@media (prefers-color-scheme: dark){.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}"
+    ""  # [R255] 唔再跟手機深色模式（只轉部分底色，字睇唔清；使用者 10-21）
 )
 
 
@@ -6916,7 +6916,6 @@ FY_CSS = """<style>
 .fy-hero b { font-size:20px; }
 .fy-legend { font-size:12px; color:var(--muted); margin:-8px 0 18px; }
 .fy-warn { background:#fff4e5; color:#7a4a00; border:1px solid #f0b45a; border-radius:10px; padding:10px 14px; margin:0 0 18px; font-size:13.5px; line-height:1.6; }  /* [R229] */
-@media (prefers-color-scheme: dark) { .fy-warn { background:#3a2a10; color:#ffd59a; border-color:#8a5a1a; } }
 .fy-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-bottom:24px; }
 .fy-card { background:var(--card); border-radius:16px; padding:18px 18px 14px; box-shadow:0 4px 15px rgba(0,0,0,.04);
            border-top:4px solid var(--primary); }
@@ -7834,7 +7833,7 @@ def parse_payload(req):
 # 🌐 Web pages (read-only except the explicit dashboard actions)
 # =============================================================================
 BASE_CSS = """
-:root { --primary:#0f62fe; --success:#198754; --danger:#dc3545; --warning:#d97706; --bg:#f4f7fb; --card:#fff; --text:#161616; --muted:#6c757d; }
+:root { --primary:#0f62fe; --success:#198754; --danger:#dc3545; --warning:#d97706; --bg:#f4f7fb; --card:#fff; --text:#161616; --muted:#6c757d; color-scheme: light; }
 * { box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); padding:20px 15px; margin:0; }
 .container { max-width:1050px; margin:0 auto; }
@@ -7979,6 +7978,7 @@ def page_nav(current, extra=()):
 def html_page(title, body, head_extra=""):
     return (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+            f"<meta name='color-scheme' content='light only'>"
             f"<title>{esc(title)}</title><style>{BASE_CSS}</style>{head_extra}</head>"
             f"<body><div class='container'>{body}</div></body></html>")
 
