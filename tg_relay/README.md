@@ -85,3 +85,15 @@ sudo journalctl -u tg-relay -n 20 --no-pager        # 睇到「✅ tg-relay-2 �
 3. `sudo rm /home/tgrelay/.tg_relay/user.session`
 4. my.telegram.org 刪 app；換 `TG_SIGNAL_INGEST_SECRET`
 帳戶懷疑被盜：先做 2，再「終止其他所有工作階段」、改兩步驗證密碼；VM 當作已被入侵，重建，唔好沿用舊 session。
+
+## 讀頻道舊訊息（使用者 10-21：讀返 90 日，計各頻道過往準確度）
+同一個 session 檔唔可以兩個程式同時用，所以要先停監聽，跑完再開返（用你自己帳號）：
+```bash
+sudo systemctl stop tg-relay
+sudo -iu tgrelay bash -c 'cd ~/tg_relay && curl -fsSLo tg_listener.py https://raw.githubusercontent.com/ai93560137/20260918/claude/gcp-trading-v12-rewrite-bz75t2/tg_relay/tg_listener.py && set -a && . ~/.tg_relay.env && set +a && ~/venv/bin/python tg_listener.py --history 90 --dry-run'
+```
+`--dry-run` 只數每個頻道有幾多條；冇問題就去咗 `--dry-run` 再跑一次（每條停 2.5 秒，幾千條要一至兩個鐘，可以用 `tmux` 跑）。跑完：
+```bash
+sudo systemctl start tg-relay
+```
+舊訊息只解析存檔（GCS `xau/sig/history/`），唔當即時訊號、唔落單。成績用 MT5 匯出嘅 M1 計：`xau/mt5/ExportM1.mq5`（MetaEditor 新 Script → 貼入 → 編譯 → 拖落 XAUUSD 圖表），CSV 喺 MT5「檔案 → 打開數據資料夾 → MQL5/Files」，上傳去 GCS `zhuge-risk-manager-bucket/xau/sig/history/`（控制台 Cloud Storage → 上傳檔案），之後由天覆陣跑 `scripts/sig_backtest.py`。

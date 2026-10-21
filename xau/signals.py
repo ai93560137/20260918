@@ -30,6 +30,7 @@ LISTENER_FILE = config.PREFIX + "listener.json"
 MAIN_M1_FILE = config.MAIN_PREFIX + "m1.json"
 MAIN_ACCOUNT_FILE = config.MAIN_PREFIX + "account.json"
 SCORES_FILE = PREFIX + "scores.json"
+HISTORY_PREFIX = config.PREFIX + "history/"
 SCORE_MAX_HOURS = 24
 MAX_TEXT = 4000
 GOLD_ALIASES = ("XAUUSD", "XAU", "GOLD", "黃金", "黄金")
@@ -327,6 +328,8 @@ def handle_ingest(headers, body: bytes):
     action = payload.get("action")
     if action == "tg_heartbeat":
         return handle_heartbeat(payload)
+    if action == "tg_signal" and payload.get("history"):
+        return handle_history(payload)
     if action == "tg_signal":
         return handle_signal(payload)
     return jsonify({"status": "ignored"}), 200
@@ -343,6 +346,40 @@ def handle_heartbeat(payload):
         return jsonify({"status": "error", "message": f"storage: {exc}"}), 500
     score_pending(now)
     return jsonify({"status": "ok"}), 200
+
+
+def handle_history(payload):
+    """頻道舊訊息（使用者 10-21：「可以看頻道之前的messages?」→ 讀最近 90 日）：只解析＋結構檢查，存 history/，
+    唔入 recent.json、唔用現價檢查、唔計入即時成績；成績由 scripts/sig_backtest.py 用 MT5 匯出嘅歷史 M1 計。"""
+    text = str(payload.get("text") or "").strip()[:MAX_TEXT]
+    if not text:
+        return jsonify({"status": "ignored", "message": "empty text"}), 200
+    now = now_ts()
+    sid = sid_of(payload.get("channel_id"), payload.get("msg_id"))
+    name = f"{HISTORY_PREFIX}{sid}.json"
+    t_msg = msg_time(payload, now)
+    rec = {"sid": sid, "status": "parsing", "channel_id": str(payload.get("channel_id") or "")[:32], "msg_id": payload.get("msg_id"),
+           "text": text, "reply_text": str(payload.get("reply_text") or "")[:1500] or None,
+           "received_ts": now, "msg_ts": t_msg, "msg_utc": market.fmt_utc(t_msg)}
+    try:
+        claimed = storage.update(name, lambda d: (None, False) if d else (rec, True), default_factory=dict)
+    except StorageError as exc:
+        return jsonify({"status": "error", "message": f"storage: {exc}"}), 500
+    if not claimed:
+        return jsonify({"status": "duplicate", "sid": sid}), 200
+    sig, err = parse(text, rec["reply_text"])
+    if sig is None:
+        status, reason = "error", "解析失敗"
+    else:
+        status, reason = validate(sig, None, None)          # 冇現價：結構啱會係 unverified
+        status = "history" if status == "unverified" else status
+    rec.update(signal=sig, parse_error=(err or "")[:200] or None, status=status, reason=reason)
+    try:
+        storage.write_json(name, rec)
+    except StorageError as exc:
+        log_event(f"⚠️ 歷史訊息寫入失敗 {sid}：{type(exc).__name__}", severity="WARNING", sid=sid)
+    log_event(f"📜 歷史訊息 {sid} → {(sig or {}).get('kind') or '解析失敗'}｜{status}", sid=sid, status=status)
+    return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
 
 def handle_signal(payload):

@@ -18,6 +18,7 @@
   python tg_listener.py --list           # 列出你已加入嘅頻道與 id（揀 TG_CHANNELS 用）
   python tg_listener.py --dry-run        # 只印出收到嘅訊息同分流結果，唔 POST
   python tg_listener.py                  # 長跑（建議用 systemd，見 tg_relay/README.md）
+  python tg_listener.py --history 90     # 讀每個頻道最近 90 日舊訊息送去訊號書做歷史解析（加 --dry-run 只數唔送）
 """
 import argparse, asyncio, hashlib, hmac, json, os, re, sys, time, urllib.error, urllib.request
 
@@ -180,6 +181,47 @@ async def run(dry_run):
     await client.run_until_disconnected()
 
 
+async def backfill(days, dry_run):
+    """讀每個頻道最近 days 日嘅舊訊息（由舊到新），送去訊號書做歷史解析（history=true，唔當即時訊號）。
+    每條之間停 2.5 秒（服務每分鐘上限 30 個）；服務按頻道＋訊息 id 去重，中途斷咗再跑會跳過已處理嘅。"""
+    import datetime as _dt
+    chans, routes = channels_from_env(), routes_from_env()
+    if not dry_run and not (routes and SECRET):
+        sys.exit("要先設 TG_ROUTES、TG_SIGNAL_INGEST_SECRET")
+    since = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)
+    client = make_client()
+    await client.start()
+    total = sent = 0
+    for ch in chans:
+        chat = await client.get_entity(ch)
+        n = 0
+        async for msg in client.iter_messages(chat, reverse=True, offset_date=since):   # reverse＋offset_date：由 since 之後、舊到新
+            if not (msg.message or "").strip():
+                continue
+            reply_text = None
+            if msg.is_reply:
+                try:
+                    reply = await msg.get_reply_message()
+                    reply_text = reply.message if reply else None
+                except Exception:
+                    pass
+            payload = {**build_payload(chat, msg, reply_text, False), "history": True}
+            sym = route_of(payload["text"], payload["reply_text"])
+            url = routes.get(sym) if sym else None
+            total += 1
+            n += 1
+            if dry_run or not url:
+                continue
+            resp = await asyncio.to_thread(post, url, payload)
+            sent += 1
+            if sent % 50 == 0:
+                print(f"📜 已送 {sent} 條（最後 {(resp or {}).get('status')}）", flush=True)
+            await asyncio.sleep(2.5)
+        print(f"📜 頻道 #{getattr(chat, 'id', '?')}：{n} 條有文字嘅訊息", flush=True)
+    await client.disconnect()
+    print(f"✅ 歷史訊息完成：共 {total} 條，送出 {sent} 條{'（dry-run 冇送）' if dry_run else ''}", flush=True)
+
+
 async def list_dialogs():
     client = make_client()
     await client.start()
@@ -194,7 +236,10 @@ def main():
     ap.add_argument("--login", action="store_true")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--history", type=int, metavar="DAYS", help="讀每個頻道最近 DAYS 日嘅舊訊息送去訊號書做歷史解析")
     args = ap.parse_args()
+    if args.history:
+        return asyncio.run(backfill(args.history, args.dry_run))
     if args.login:
         async def _login():
             client = make_client()
