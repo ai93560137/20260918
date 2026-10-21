@@ -717,5 +717,29 @@ class XauSigProfileTests(unittest.TestCase):
         self.assertEqual(writes(s), [])
 
 
+class VmCreateTests(unittest.TestCase):
+    """天覆陣訊號書 VM：預設 dry-run、冇服務帳戶、OS Login、已存在就停、唔改 IAM。"""
+
+    def test_body_has_no_service_account(self):
+        b = ga.vm_body(PROJECT, "tg-relay", "us-central1-a", "e2-micro")
+        self.assertEqual(b["serviceAccounts"], [])
+        self.assertIn({"key": "enable-oslogin", "value": "TRUE"}, b["metadata"]["items"])
+        self.assertTrue(b["shieldedInstanceConfig"]["enableSecureBoot"])
+
+    def test_dry_run_no_writes(self):
+        s = FakeSession([("GET", "zones/us-central1-a/instances/tg-relay", FakeResp(404, text="nf"))])
+        out, code = run(["vm-create"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("冇服務帳戶", out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_existing_vm_stops(self):
+        s = FakeSession([("GET", "zones/us-central1-a/instances/tg-relay", FakeResp(200, {"name": "tg-relay"}))])
+        out, code = run(["vm-create", "--yes"], s, RUN_ENV)
+        self.assertNotEqual(code, 0)
+        self.assertEqual(writes(s), [])
+
+
 if __name__ == "__main__":
     unittest.main()

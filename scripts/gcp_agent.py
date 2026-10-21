@@ -126,6 +126,7 @@ HK_TZ = timezone(timedelta(hours=8))
 
 CF_API = "https://cloudfunctions.googleapis.com/v2"
 RUN_API = "https://run.googleapis.com/v2"
+COMPUTE_API = "https://compute.googleapis.com/compute/v1"
 LOG_API = "https://logging.googleapis.com/v2"
 GCS_API = "https://storage.googleapis.com/storage/v1"
 SU_API = "https://serviceusage.googleapis.com/v1"
@@ -1287,13 +1288,71 @@ def build_parser():
 
     s = sub.add_parser("iam-public", help="允許未經驗證的叫用")
     s.add_argument("--yes", action="store_true")
+
+    s = sub.add_parser("vm-create", help="建立天覆陣訊號書 VM（預設 dry-run；冇服務帳戶、唔改 IAM／防火牆）")
+    s.add_argument("--name", default="tg-relay")
+    s.add_argument("--zone", default="us-central1-a")
+    s.add_argument("--machine", default="e2-micro")
+    s.add_argument("--yes", action="store_true")
     return p
+
+
+def vm_body(project, name, zone, machine):
+    """天覆陣訊號書 VM（使用者 10-21：專用 e2-micro，只跑 tg_listener.py）。純函數，方便測試。
+    冇服務帳戶（唔可以存取任何 Cloud API）、OS Login、Shielded VM、Debian 12、10 GB 標準磁碟、臨時外部 IP（只為出站）。"""
+    return {
+        "name": name,
+        "machineType": f"zones/{zone}/machineTypes/{machine}",
+        "labels": {"purpose": "tg-relay", "team": "tianfu"},
+        "disks": [{"boot": True, "autoDelete": True, "initializeParams": {
+            "sourceImage": "projects/debian-cloud/global/images/family/debian-12", "diskSizeGb": "10",
+            "diskType": f"zones/{zone}/diskTypes/pd-standard"}}],
+        "networkInterfaces": [{"network": "global/networks/default",
+                               "accessConfigs": [{"type": "ONE_TO_ONE_NAT", "name": "External NAT"}]}],
+        "serviceAccounts": [],
+        "metadata": {"items": [{"key": "enable-oslogin", "value": "TRUE"}]},
+        "shieldedInstanceConfig": {"enableSecureBoot": True, "enableVtpm": True, "enableIntegrityMonitoring": True},
+        "scheduling": {"automaticRestart": True, "onHostMaintenance": "MIGRATE"},
+    }
+
+
+def cmd_vm_create(ctx: Ctx):
+    """建立訊號書 VM（預設 dry-run）。唔改 IAM、唔改防火牆、唔刪任何嘢；已存在就停。"""
+    a = ctx.args
+    base = f"{COMPUTE_API}/projects/{ctx.project}/zones/{a.zone}/instances"
+    r = ctx.session.get(f"{base}/{a.name}", timeout=60)
+    if r.status_code == 200:
+        die(f"VM {a.name}（{a.zone}）已經存在，唔會重建。")
+    if r.status_code not in (404,):
+        die(f"查詢 VM 失敗 HTTP {r.status_code}: {r.text[:300]}")
+    body = vm_body(ctx.project, a.name, a.zone, a.machine)
+    plan(f"建立 VM {a.name}：{a.machine}、{a.zone}、Debian 12、10 GB 標準磁碟、Shielded VM")
+    plan("冇服務帳戶（VM 唔可以存取任何 Cloud API）；OS Login；臨時外部 IP（只為出站去 Telegram 同訊號書）")
+    plan("唔改 IAM、唔改防火牆（瀏覽器 SSH 用專案現有規則）；開機後冇裝任何嘢，由使用者跟 tg_relay/README.md 安裝")
+    if a.zone.startswith(("us-central1", "us-west1", "us-east1")) and a.machine == "e2-micro":
+        plan("費用：e2-micro 喺 us-central1／us-west1／us-east1 有每月免費額度（每個帳單帳戶 1 部；外部 IP 或者另收少量費用）")
+    else:
+        plan("費用：約 US$7–10／月（e2-micro 非免費區域）")
+    if not a.yes:
+        print("（dry-run；確認無誤後加 --yes 才會建立。）")
+        return
+    op = ctx.call("POST", base, json=body)
+    print("🚀 建立中…")
+    for _ in range(60):
+        if op.get("status") == "DONE":
+            break
+        time.sleep(5)
+        op = ctx.call("GET", f"{COMPUTE_API}/projects/{ctx.project}/zones/{a.zone}/operations/{op['name']}")
+    if op.get("error"):
+        die(f"建立失敗：{json.dumps(op['error'], ensure_ascii=False)[:800]}")
+    inst = ctx.call("GET", f"{base}/{a.name}")
+    print(f"✅ VM {a.name} 狀態 {inst.get('status')}（{a.zone}）。之後由使用者喺控制台「SSH」按鈕登入，跟 tg_relay/README.md 第 3 步。")
 
 
 COMMANDS = {
     "whoami": cmd_whoami, "status": cmd_status, "logs": cmd_logs, "state": cmd_state, "bucket": cmd_bucket,
     "cat": cmd_cat, "put": cmd_put, "check": cmd_check, "env": cmd_env, "deploy": cmd_deploy, "iam-public": cmd_iam_public,
-    "revisions": cmd_revisions, "rollback": cmd_rollback,
+    "revisions": cmd_revisions, "rollback": cmd_rollback, "vm-create": cmd_vm_create,
 }
 
 
