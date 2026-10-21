@@ -6,7 +6,7 @@ import config
 from market import fmt_hkt
 
 CSS = """
-:root{--primary:#0f62fe;--success:#198754;--danger:#dc3545;--warning:#d97706;--bg:#f4f7fb;--card:#fff;--text:#161616;--muted:#6c757d}
+:root{color-scheme:light;--primary:#0f62fe;--success:#198754;--danger:#dc3545;--warning:#d97706;--bg:#f4f7fb;--card:#fff;--text:#161616;--muted:#6c757d}
 *{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:20px 15px;margin:0}
 .container{max-width:1050px;margin:0 auto}.page-title{font-size:22px;margin:0 0 6px}.muted{color:var(--muted)!important}
 .grid{display:grid;gap:16px;margin-bottom:24px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
@@ -23,7 +23,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 .nav-links{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .nav-link{display:inline-block;padding:7px 12px;border-radius:20px;font-size:13px;font-weight:700;text-decoration:none;color:var(--primary);background:#eef4ff;white-space:nowrap}
 .nav-link:hover{background:#dbe7ff}.nav-current{background:#0f62fe;color:#fff;cursor:default}
-@media (prefers-color-scheme: dark){.nav-link{background:#1e2a44}.nav-link:hover{background:#27375c}.nav-current{background:#0f62fe;color:#fff}:root{--bg:#111;--card:#1b1b1b;--text:#eee;--muted:#9aa}.lf-real .section{background:#2a1f0e}.lf-sim .section{background:#0f1a2e}}
 """
 
 
@@ -180,6 +179,6 @@ def render(status):
             + card("只提示嘅警報", esc(alerts), "回撤／保證金：只發 Telegram，唔停唔鎖")
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"
-    return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+    return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"
             f"<meta http-equiv='refresh' content='300'><title>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} 自動交易</title><style>{CSS}</style></head>"
             f"<body><div class='container'>{head}{intro}{real}{sim}{ctrl}{foot}</div></body></html>")
