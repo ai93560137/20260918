@@ -142,6 +142,15 @@ def render_signal_book(s):
              "<tr><th>頻道</th><th>已完結訊號</th><th>成交率</th><th>TP1 先到</th><th>SL 先到</th><th>平均去到第幾個 TP</th><th>TP1 走平均 R</th></tr>"
              + (score_rows or "<tr><td colspan='7' class='muted'>未有完結嘅訊號</td></tr>") + "</table></div>"
              "<p class='muted' style='font-size:13px'>成交＝30 分鐘內 K 線碰到入場區；同一根 K 線碰到 SL 同 TP 當 SL（保守）；24 小時未完當平手。R＝去到 TP1 即走嘅回報÷風險。</p></div>")
+    if config.SIG_DECIDE:                              # S1：訊號書自己落單（demo 先），顯示持倉同最近決策
+        pos = s.get("live_positions") if s.get("execute") else ([s["position"]] if s.get("position") else [])
+        pos_txt = "冇" if not pos else "；".join(f"{'好' if (p.get('side') or 0) > 0 else '淡'}倉 {p.get('lots')} 手 @ {p.get('entry')}・SL {p.get('stop')}・TP {p.get('target') or '—'}" for p in pos)
+        dec = [x for x in (s.get("decisions") or []) if x.get("kind") == "decide"][-10:][::-1]
+        drows = "".join(f"<tr><td>{esc(fmt_hkt(x['ts']))}</td><td>{esc(x.get('final'))}</td><td>{esc(x.get('reason'))}</td></tr>" for x in dec)
+        body += (f"<div class='section'><h2>S1 落單（magic {esc(config.MAGIC)}，{'demo／真倉指令' if s.get('execute') else '紙上'}）</h2>"
+                 + "<div class='grid'>" + card("模式", esc((s.get("control") or {}).get("mode") or "RUN"), esc(run_text(s)))
+                 + card("持倉", esc(pos_txt)) + "</div><div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>決定</th><th>理由</th></tr>"
+                 + (drows or "<tr><td colspan='3' class='muted'>未有決策（冇有效訊號就唔問 Claude）</td></tr>") + "</table></div></div>")
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</h1></div>{page_nav()}</div>")
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"
             f"<meta http-equiv='refresh' content='300'><title>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</title><style>{CSS}</style></head>"
