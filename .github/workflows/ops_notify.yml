@@ -58,6 +58,7 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           TASK: ${{ inputs.task || 'auto' }}
           DRY: ${{ inputs.dry_run || 'false' }}
+          SCHEDULE: ${{ github.event.schedule }}   # 遲到嘅 schedule 都按原本 cron 判斷任務
         run: |
           ARGS="--task $TASK"
           if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
