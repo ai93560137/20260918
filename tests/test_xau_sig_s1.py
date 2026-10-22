@@ -68,10 +68,10 @@ def hb(i, close):
     r = client.post("/", data=json.dumps(body), content_type="application/json")
     return r.status_code, r.get_json()
 
-def put_signal(sid, side="BUY", lo=3999, hi=4001, sl=3990, tp=(4010,), status="valid", left_min=20):
+def put_signal(sid, side="BUY", lo=3999, hi=4001, sl=3990, tp=(4010,), status="valid", left_min=20, ch="7713", msg_ts=None):
     rows = json.loads(FAKE.get("xau/sig/signals/recent.json", ("[]", 0))[0])
     rows.append({"sid": sid, "kind": "new_signal", "status": status, "side": side, "entry_low": lo, "entry_high": hi, "sl": sl, "tp": list(tp),
-                 "msg_ts": NOW[0] - 60, "valid_until_ts": NOW[0] + left_min * 60})
+                 "msg_ts": msg_ts if msg_ts is not None else NOW[0] - 60, "valid_until_ts": NOW[0] + left_min * 60, "ch": ch})
     FAKE["xau/sig/signals/recent.json"] = (json.dumps(rows), 1)
 
 print("=== 設定 ===")
@@ -118,6 +118,29 @@ check("test_cmd 唔開放", r.get_json().get("status") != "queued", r.get_json()
 
 html = client.get("/").get_data(as_text=True)
 check("頁面有 S1 落單區同決策理由", "S1 落單" in html and "參考 TG 訊號 1001_7" in html)
+
+print("=== S1 demo 落單規則（使用者 10-22）：走咗嘅訊號唔用、只參考指定頻道、附和計數 ===")
+FAKE["xau/sig/signals/recent.json"] = ("[]", 1)
+NOW[0] = T0 + 500 * 60
+put_signal("2001_1", side="BUY", lo=3999, hi=4001, sl=3994, tp=(4010, 4013))             # 止損距離 6，TP1 4010
+check("現價 4000 → 唔算走咗", not signals.is_late(json.loads(FAKE["xau/sig/signals/recent.json"][0])[0], 4000.0))
+check("現價 4006（走咗 ≥1R）→ 走咗", signals.is_late(json.loads(FAKE["xau/sig/signals/recent.json"][0])[0], 4006.0))
+check("現價 4010.5（過咗 TP1）→ 走咗", signals.is_late(json.loads(FAKE["xau/sig/signals/recent.json"][0])[0], 4010.5))
+check("SELL 鏡像：現價 3993 走咗、4001 未走", signals.is_late({"side": "SELL", "entry_low": 3999, "entry_high": 4001, "sl": 4006, "tp": [3990]}, 3993.0)
+      and not signals.is_late({"side": "SELL", "entry_low": 3999, "entry_high": 4001, "sl": 4006, "tp": [3990]}, 4001.0))
+check("市價單用收到時嘅價做入場", signals.is_late({"side": "BUY", "entry_low": None, "entry_high": None, "price": 4000, "sl": 3994, "tp": [4010]}, 4006.5))
+check("active 用現價過濾走咗嘅", [x["sid"] for x in signals.active(NOW[0], price=4000.0)] == ["2001_1"] and signals.active(NOW[0], price=4007.0) == [])
+put_signal("2001_2", side="BUY", ch="0342", lo=3998, hi=4002, sl=3985, tp=(4005,))      # 另一頻道同方向 → 附和
+put_signal("2001_3", side="SELL", ch="5231", lo=3998, hi=4002, sl=4015, tp=(3995,))     # 反方向唔計
+put_signal("2001_4", side="BUY", ch="0342", lo=3998, hi=4002, sl=3985, tp=(4005,), msg_ts=NOW[0] - 3 * 3600)  # 太舊唔計
+act = signals.active(NOW[0], price=4000.0)
+check("SIG_REFERENCE_CHANNELS 空 → 全部頻道都可參考", sorted(x["sid"] for x in act) == ["2001_1", "2001_2", "2001_3", "2001_4"], [x["sid"] for x in act])
+check("agree：2001_1 有 1 個附和（唔計反方向、唔計 3 小時前、唔計自己頻道）", next(x for x in act if x["sid"] == "2001_1")["agree"] == 1, act)
+config.SIG_REFERENCE_CHANNELS = ("7713",)
+act = signals.active(NOW[0], price=4000.0)
+check("只參考 7713，其他頻道只當附和", [x["sid"] for x in act] == ["2001_1"] and act[0]["agree"] == 1, act)
+config.SIG_REFERENCE_CHANNELS = ()
+check("brain 說明有 agree 同走咗過濾", "`agree`" in brain.SYSTEM and "past TP1" in brain.SYSTEM)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

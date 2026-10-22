@@ -428,7 +428,7 @@ def process_bar(state, bar, m1, m15, account, now):
         state["reuse_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
     if reuse:
         rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
-    active = signals.active(now) if config.SIGNAL_BOOK else None
+    active = signals.active(now, price=bar["close"]) if config.SIGNAL_BOOK else None
     if config.SIGNAL_BOOK and pos is None and not active:
         return None, "冇有效訊號（訊號書唔問 Claude）"
     ctx = build_context(state, m1, m15, account, now, day, ladder, control)

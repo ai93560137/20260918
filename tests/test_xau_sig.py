@@ -137,6 +137,10 @@ def bar(t, lo, hi): return {"time": t, "open": lo, "high": hi, "low": lo, "close
 o = signals.evaluate(V, [bar(1020, 4101, 4103), bar(1080, 4103, 4106), bar(1140, 4089, 4104)], 0, now=2000)
 check("成交 → TP1 → SL：max_tp 1、final sl", o["filled_ts"] == 1020 and o["max_tp"] == 1 and o["final"] == "sl", o)
 check("TP1 先到 R = (4105−4101)/11", signals.r_multiple(V, o) == round(4 / 11, 2), signals.r_multiple(V, o))
+o = signals.evaluate(V, [{"time": 1020, "open": 4103, "high": 4104, "low": 4101.5, "close": 4104}, bar(1080, 4103, 4106), bar(1140, 4089, 4104)], 0, now=2000)
+check("10-22 修：開盤喺入場區上面、低位入區 → 成交價＝近邊 4102，R = (4105−4102)/11（唔再白送中位）", o.get("fill_px") == 4102 and signals.r_multiple(V, o) == round(3 / 11, 2), o)
+o = signals.evaluate({**V, "side": "SELL", "sl": 4112, "tp": [4097]}, [{"time": 1020, "open": 4099, "high": 4100.5, "low": 4098, "close": 4098}, bar(1080, 4096, 4099), bar(1140, 4100, 4113)], 0, now=2000)
+check("SELL 鏡像：開盤喺區下面、高位入區 → 成交價 4100，R = (4100−4097)/11", o.get("fill_px") == 4100 and signals.r_multiple({**V, "side": "SELL", "sl": 4112, "tp": [4097]}, o) == round(3 / 11, 2), o)
 o = signals.evaluate(V, [bar(1020, 4101, 4103), bar(1080, 4089, 4106)], 0, now=2000)
 check("同一根碰 SL 同 TP → 當 SL（保守）、R −1", o["final"] == "sl" and o["max_tp"] == 0 and signals.r_multiple(V, o) == -1.0, o)
 o = signals.evaluate(V, [bar(1020, 4110, 4112), bar(1000 + 31 * 60, 4110, 4112)], 0, now=1000 + 40 * 60)
@@ -195,7 +199,17 @@ check("VM 簽名同服務一致", tg_listener.sign(123, b"{}") == signals.sign("
 check("分流：GOLD→XAUUSD、EUR/USD→EURUSD、閒聊→None、回覆睇原訊息",
       (tg_listener.route_of("BUY GOLD"), tg_listener.route_of("eur/usd sell"), tg_listener.route_of("hi"), tg_listener.route_of("TP1", "XAUUSD buy"))
       == ("XAUUSD", "EURUSD", None, "XAUUSD"))
-check("VM 封包冇權杖", "token" not in tg_listener.build_payload(types.SimpleNamespace(id=-1001, title="c"), types.SimpleNamespace(id=1, message="x", date=None, edit_date=None)))
+check("VM 封包冇權杖", "token" not in tg_listener.build_payload(types.SimpleNamespace(id=-1001, title="c"), types.SimpleNamespace(id=1, message="x", date=None, edit_date=None, fwd_from=None)))
+import datetime as _dt
+_fwd = types.SimpleNamespace(date=_dt.datetime(2026, 10, 22, 8, 0, tzinfo=_dt.timezone.utc), from_id=types.SimpleNamespace(channel_id=555), channel_post=42)
+_pl = tg_listener.build_payload(types.SimpleNamespace(id=-1001, title="c"), types.SimpleNamespace(id=1, message="x", date=_dt.datetime(2026, 10, 22, 8, 7, tzinfo=_dt.timezone.utc), edit_date=None, fwd_from=_fwd))
+check("v3 封包有轉發標頭（原發佈時間、原頻道 id、原貼 id），冇名稱", _pl["fwd_date"].startswith("2026-10-22T08:00") and _pl["fwd_from_id"] == 555 and _pl["fwd_post_id"] == 42 and "from_name" not in _pl, _pl)
+_pl2 = tg_listener.build_payload(types.SimpleNamespace(id=-1001, title="c"), types.SimpleNamespace(id=2, message="x", date=None, edit_date=None, fwd_from=None))
+check("非轉發：fwd 欄位係 None", _pl2["fwd_date"] is None and _pl2["fwd_from_id"] is None)
+_rec = {"sid": "1_1", "msg_ts": 1000 + 7 * 60, "fwd_ts": 1000, "signal": {"kind": "new_signal"}}
+_pv = signals.public_view(_rec)
+check("public_view：fwd=True、原發佈→貼出延遲 7 分", _pv["fwd"] is True and _pv["fwd_lag_min"] == 7, _pv)
+check("public_view：非轉發 fwd=False、lag None", signals.public_view({"sid": "1_2", "msg_ts": 1, "signal": {}})["fwd"] is False and signals.public_view({"sid": "1_2", "msg_ts": 1, "signal": {}})["fwd_lag_min"] is None)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

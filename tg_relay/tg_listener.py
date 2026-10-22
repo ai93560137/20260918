@@ -22,7 +22,7 @@
 """
 import argparse, asyncio, hashlib, hmac, json, os, re, sys, time, urllib.error, urllib.request
 
-SCRIPT_VERSION = "tg-relay-2"
+SCRIPT_VERSION = "tg-relay-3"
 SECRET = os.environ.get("TG_SIGNAL_INGEST_SECRET", "").strip()
 SESSION = os.path.expanduser(os.environ.get("TG_SESSION", "~/.tg_relay/user.session"))
 FORWARD_EDITS = os.environ.get("TG_FORWARD_EDITS", "0") == "1"
@@ -80,11 +80,17 @@ def build_payload(chat, msg, reply_text=None, edited=False):
     title = getattr(chat, "title", None) or getattr(chat, "username", None) or str(getattr(chat, "id", ""))
     edit_date = getattr(msg, "edit_date", None)
     date = getattr(msg, "date", None)
+    fwd = getattr(msg, "fwd_from", None)                 # v3：轉發標頭（原發佈時間、原頻道 id）——分辨「轉載群組」同「原頻道」
+    fwd_date = getattr(fwd, "date", None) if fwd else None
+    from_id = getattr(fwd, "from_id", None) if fwd else None
+    fwd_from_id = (getattr(from_id, "channel_id", None) or getattr(from_id, "user_id", None)) if from_id else None
     return {
         "action": "tg_signal", "script_version": SCRIPT_VERSION,
         "channel": title, "channel_id": getattr(chat, "id", None), "msg_id": getattr(msg, "id", None),
         "date": date.isoformat() if date else None,
         "edit_ts": int(edit_date.timestamp()) if edited and edit_date else None,
+        "fwd_date": fwd_date.isoformat() if fwd_date else None, "fwd_from_id": fwd_from_id,
+        "fwd_post_id": getattr(fwd, "channel_post", None) if fwd else None,
         "text": (getattr(msg, "message", None) or "").strip(),
         "reply_text": (reply_text or "").strip() or None,
     }
@@ -222,6 +228,36 @@ async def backfill(days, dry_run):
     print(f"✅ 歷史訊息完成：共 {total} 條，送出 {sent} 條{'（dry-run 冇送）' if dry_run else ''}", flush=True)
 
 
+async def fwd_stats(days):
+    """只印統計、唔 POST、唔印原文：每個頻道最近 days 日嘅訊息有幾多係轉發、原發佈→貼出延遲、原頻道 id。
+    用嚟分辨我哋聽嘅係原頻道定轉載群組（天覆陣 10-22 延遲分析）。"""
+    import datetime as _dt, statistics as _st
+    chans = channels_from_env()
+    since = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)
+    client = make_client()
+    await client.start()
+    for ch in chans:
+        chat = await client.get_entity(ch)
+        n = fwd = 0; lags = []; src = {}
+        async for msg in client.iter_messages(chat, reverse=True, offset_date=since):
+            if not (msg.message or "").strip():
+                continue
+            n += 1
+            f = getattr(msg, "fwd_from", None)
+            if not f:
+                continue
+            fwd += 1
+            from_id = getattr(f, "from_id", None)
+            sid = getattr(from_id, "channel_id", None) or getattr(from_id, "user_id", None) or ("name:" + str(getattr(f, "from_name", None) or "?"))
+            src[sid] = src.get(sid, 0) + 1
+            if getattr(f, "date", None) and msg.date:
+                lags.append((msg.date - f.date).total_seconds() / 60)
+        top = sorted(src.items(), key=lambda kv: -kv[1])[:5]
+        lag_txt = f"延遲中位 {_st.median(lags):.1f} 分、90 百分位 {sorted(lags)[int(len(lags) * 0.9) - 1 if len(lags) > 1 else 0]:.1f} 分" if lags else "—"
+        print(f"頻道 #{getattr(chat, 'id', '?')}：{n} 條有文字，轉發 {fwd} 條（{fwd / n:.0%}）；{lag_txt}；原來源 id（條數）：{top}" if n else f"頻道 #{getattr(chat, 'id', '?')}：0 條", flush=True)
+    await client.disconnect()
+
+
 async def list_dialogs():
     client = make_client()
     await client.start()
@@ -237,7 +273,10 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--history", type=int, metavar="DAYS", help="讀每個頻道最近 DAYS 日嘅舊訊息送去訊號書做歷史解析")
+    ap.add_argument("--fwd-stats", type=int, metavar="DAYS", help="只印統計：每頻道最近 DAYS 日有幾多條係轉發、原發佈→貼出延遲、原來源 id（唔 POST、唔印原文）")
     args = ap.parse_args()
+    if args.fwd_stats:
+        return asyncio.run(fwd_stats(args.fwd_stats))
     if args.history:
         return asyncio.run(backfill(args.history, args.dry_run))
     if args.login:

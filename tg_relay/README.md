@@ -97,3 +97,14 @@ sudo -iu tgrelay bash -c 'cd ~/tg_relay && curl -fsSLo tg_listener.py https://ra
 sudo systemctl start tg-relay
 ```
 舊訊息只解析存檔（GCS `xau/sig/history/`），唔當即時訊號、唔落單。成績用 MT5 匯出嘅 M1 計：`xau/mt5/ExportM1.mq5`（MetaEditor 新 Script → 貼入 → 編譯 → 拖落 XAUUSD 圖表），CSV 喺 MT5「檔案 → 打開數據資料夾 → MQL5/Files」，上傳去 GCS `zhuge-risk-manager-bucket/xau/sig/history/`（控制台 Cloud Storage → 上傳檔案），之後由天覆陣跑 `scripts/sig_backtest.py`。
+
+## v3（10-22）：轉發標頭同 `--fwd-stats`
+v3 封包多三個欄位 `fwd_date`、`fwd_from_id`、`fwd_post_id`（Telegram「轉發自」標頭：原發佈時間、原頻道 id、原貼 id；冇名稱冇原文），訊號書網頁會顯示「↪ 轉發+N分」。用嚟分辨我哋聽嘅係原頻道定轉載群組。更新 VM 上嘅程式同之前一樣 `curl -fsSLo tg_listener.py …` 再 `sudo systemctl restart tg-relay`。
+
+一次過統計過去 90 日（只印統計、唔 POST、唔印原文），用第二個 session 檔（同讀歷史一樣，唔使停監聯）：
+```bash
+sudo systemd-run --unit=tg-fwd -p User=tgrelay -p WorkingDirectory=/home/tgrelay/tg_relay -p EnvironmentFile=/home/tgrelay/.tg_relay.env \
+  -E TG_SESSION=/home/tgrelay/.tg_relay/history.session /home/tgrelay/venv/bin/python tg_listener.py --fwd-stats 90
+journalctl -u tg-fwd -f
+```
+輸出每個頻道一行：有文字訊息數、轉發數同比例、原發佈→貼出延遲中位／90 百分位、原來源 id（條數）。貼返畀天覆陣就可以判斷邊個係原頻道、轉載延遲幾多。如果 `history.session` 已刪，要先 `--login` 建立返（會再問電話同驗證碼）。

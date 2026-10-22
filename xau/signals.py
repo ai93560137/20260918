@@ -185,8 +185,11 @@ def evaluate(view, bars, offset, prev=None, now=None):
                 return o
             market_now = "market" in str(view.get("order_type") or "") or "now" in str(view.get("order_type") or "")
             tol = config.SIG_FILL_TOL
-            if market_now or (b["low"] <= hi + tol and b["high"] >= lo - tol):   # 市價單（BUY NOW）第一根就成交
-                o["filled_ts"] = t
+            if market_now:                                        # 市價單（BUY NOW）第一根就成交，成交價＝開盤
+                o["filled_ts"], o["fill_px"] = t, b["open"]
+            elif b["low"] <= hi + tol and b["high"] >= lo - tol:
+                o["filled_ts"] = t                                # 10-22 修：成交價用價格真正去到嘅位（近邊／開盤），唔係入場中位——之前每張限價單白送約半個區闊
+                o["fill_px"] = min(b["open"], max(hi, b["low"])) if side == "BUY" else max(b["open"], min(lo, b["high"]))
             else:
                 continue
         hit_sl = b["low"] <= sl if side == "BUY" else b["high"] >= sl
@@ -212,8 +215,10 @@ def r_multiple(view, o):
         return None
     mid = (view["entry_low"] + view["entry_high"]) / 2
     risk = abs(mid - view["sl"])
+    fill = o.get("fill_px", mid)                                   # 舊紀錄冇 fill_px 就用中位
+    sgn = 1 if view.get("side") == "BUY" else -1
     if o.get("max_tp", 0) >= 1 and view.get("tp") and risk > 0:
-        return round(abs(view["tp"][0] - mid) / risk, 2)
+        return round(sgn * (view["tp"][0] - fill) / risk, 2)
     return -1.0 if o.get("sl_hit") else (0.0 if o.get("final") == "timeout" else None)
 
 
@@ -279,7 +284,9 @@ def public_view(rec):
             "valid_until_utc": rec.get("valid_until_utc"), "valid_until_ts": rec.get("valid_until_ts"), "status": rec.get("status"), "reason": rec.get("reason"),
             "kind": sig.get("kind"), "side": sig.get("side"), "order_type": sig.get("order_type"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
             "sl": sig.get("sl"), "tp": sig.get("tp"), "parse_confidence": sig.get("confidence"), "price": rec.get("price"),
-            "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:]}
+            "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:],
+            "late": bool(rec.get("late")), "fwd": bool(rec.get("fwd_ts")),
+            "fwd_lag_min": (round((rec["msg_ts"] - rec["fwd_ts"]) / 60) if rec.get("fwd_ts") and rec.get("msg_ts") else None)}
 
 
 # ---------- I/O ----------
@@ -389,8 +396,10 @@ def handle_signal(payload):
     now = now_ts()
     sid = sid_of(payload.get("channel_id"), payload.get("msg_id"), payload.get("edit_ts"))
     t_msg = msg_time(payload, now)
+    fwd_ts = msg_time({"date": payload.get("fwd_date")}, 0) if payload.get("fwd_date") else None   # v3：轉發自原頻道嘅原發佈時間
     rec = {"sid": sid, "status": "parsing", "channel_id": str(payload.get("channel_id") or "")[:32],
            "msg_id": payload.get("msg_id"), "edit_ts": payload.get("edit_ts"), "text": text,
+           "fwd_ts": fwd_ts or None, "fwd_from": str(payload.get("fwd_from_id") or "")[:32] or None,
            "reply_text": str(payload.get("reply_text") or "")[:1500] or None,
            "received_ts": now, "received_utc": market.fmt_utc(now), "msg_ts": t_msg, "msg_utc": market.fmt_utc(t_msg),
            "valid_until_ts": t_msg + config.SIG_TTL_MIN * 60, "valid_until_utc": market.fmt_utc(t_msg + config.SIG_TTL_MIN * 60)}
@@ -411,6 +420,9 @@ def handle_signal(payload):
         status, reason = validate(sig, price, age)
     rec.update(signal=sig, parse_error=(err or "")[:200] or None, status=status, reason=reason,
                price=price if age is not None and age <= config.SIG_PRICE_MAX_AGE_SEC else None)
+    if status == "valid" and is_late({**sig, "price": rec["price"]}, rec["price"]):
+        rec["late"] = True                                   # S1 唔用（價已過 TP1／走咗 ≥1R），但成績照計
+        rec["reason"] = "收到時價已過 TP1 或走咗 ≥1R（只計成績）"
     try:
         storage.write_json(f"{PREFIX}{sid}.json", rec)
         view = public_view(rec)
@@ -424,20 +436,45 @@ def handle_signal(payload):
     return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
 
-def active(now=None):
-    """S1 決策用：未過期、驗證有效嘅入場訊號（新到舊，最多 SIG_MAX_IN_PROMPT 條），只有結構化欄位。"""
+def is_late(r, price):
+    """S1：訊號已經「走咗」——現價過咗 TP1，或者已經向有利方向離入場 ≥ SIG_LATE_R × 止損距離（跟唔到）。純函數。"""
+    if price is None or r.get("sl") is None or r.get("side") not in ("BUY", "SELL"):
+        return False
+    lo, hi = r.get("entry_low"), r.get("entry_high")
+    mid = (lo + hi) / 2 if lo is not None else r.get("price")        # 市價單用收到時嘅價
+    if mid is None:
+        return False
+    sgn = 1 if r["side"] == "BUY" else -1
+    tps = r.get("tp") or []
+    if tps and (tps[0] - price) * sgn <= 0:
+        return True
+    risk = abs(mid - r["sl"])
+    return risk > 0 and (price - mid) * sgn >= config.SIG_LATE_R * risk
+
+
+def active(now=None, price=None):
+    """S1 決策用：未過期、驗證有效、未「走咗」嘅參考頻道入場訊號（新到舊，最多 SIG_MAX_IN_PROMPT 條），只有結構化欄位；
+    agree = 另外幾多個頻道喺 SIG_AGREE_MIN 分鐘內同方向（互相核對，§16）。"""
     now = now if now is not None else now_ts()
     try:
         rows = storage.read_json(RECENT_FILE, []) or []
     except StorageError:
         return []
+    live = [r for r in rows if r.get("kind") == "new_signal" and r.get("status") in ("valid", "unverified")]
     out = []
-    for r in rows[::-1]:
-        if r.get("kind") != "new_signal" or r.get("status") != "valid" or (r.get("valid_until_ts") or 0) < now:
+    for r in live[::-1]:
+        if r.get("status") != "valid" or (r.get("valid_until_ts") or 0) < now:
             continue
+        if config.SIG_REFERENCE_CHANNELS and str(r.get("ch") or "")[-4:] not in config.SIG_REFERENCE_CHANNELS:
+            continue
+        if is_late(r, price):
+            continue
+        t = r.get("msg_ts") or now
+        agree = len({str(x.get("ch")) for x in live if x is not r and x.get("ch") != r.get("ch") and x.get("side") == r.get("side")
+                     and abs((x.get("msg_ts") or 0) - t) <= config.SIG_AGREE_MIN * 60})
         out.append({"sid": r["sid"], "side": r.get("side"), "entry_low": r.get("entry_low"), "entry_high": r.get("entry_high"),
-                    "sl": r.get("sl"), "tp": r.get("tp") or [], "order_type": r.get("order_type"),
-                    "age_min": int((now - (r.get("msg_ts") or now)) / 60), "minutes_left": int((r["valid_until_ts"] - now) / 60)})
+                    "sl": r.get("sl"), "tp": r.get("tp") or [], "order_type": r.get("order_type"), "agree": agree,
+                    "age_min": int((now - t) / 60), "minutes_left": int((r["valid_until_ts"] - now) / 60)})
         if len(out) >= config.SIG_MAX_IN_PROMPT:
             break
     return out
