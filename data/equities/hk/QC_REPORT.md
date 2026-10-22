@@ -1,8 +1,8 @@
 # 數據品質日報（2026-10-22）
 
-由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）62 份（最新 2026-10-21），公司名紀錄 112 檔。
+由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）63 份（最新 2026-10-22），公司名紀錄 112 檔。
 
-**🔴 嚴重 0 項 ｜ 🟡 注意 2 項 ｜ ✅ 已確認 36 項**
+**🔴 嚴重 0 項 ｜ 🟡 注意 3 項 ｜ ✅ 已確認 37 項**
 
 確認沒問題的項目加進 `scripts/qc_acks.json`（key 格式 `<TICKER>:<檢查>`）。
 
@@ -14,6 +14,7 @@
 
 | 代碼 | 檢查 | 說明 |
 |---|---|---|
+| 0762.HK | ohlc_auction | 近30天 1 根開/收市價落在高低價外（多半是競價時段慣例）：2026-10-22 |
 | 1044.HK | ohlc_auction | 近30天 1 根開/收市價落在高低價外（多半是競價時段慣例）：2026-09-28 |
 | 2003.HK | ohlc_auction | 近30天 1 根開/收市價落在高低價外（多半是競價時段慣例）：2026-09-23 |
 
@@ -35,6 +36,7 @@
 | 1177.HK | hkex_vs_wiki_name | 港交所簡稱 SBP GROUP = 中國生物製藥 Sino Biopharmaceutical |
 | 1398.HK | hkex_vs_wiki_name | 港交所簡稱 ICBC = 工商銀行 |
 | 1880.HK | hkex_vs_wiki_name | 已知代碼重用：2018 年時 1880 是百麗，現為中國中免；回測由防代碼重用檢查擋掉 |
+| 1997.HK | hkex_vs_wiki_name | 港交所簡稱 WHARF REIC = 九龍倉置業 |
 | 2038.HK | hkex_vs_wiki_name | 同一家公司改名：富士康國際 Foxconn International → 富智康 FIH Mobile |
 | 2600.HK | hkex_vs_wiki_name | 港交所簡稱 CHALCO = 中國鋁業 |
 | 6098.HK | hkex_vs_wiki_name | Wikipedia 誤記：6098 是碧桂園服務 CG Services，碧桂園是 2007 |
