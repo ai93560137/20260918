@@ -91,6 +91,19 @@ def run(argv, session, env_extra=None):
     return out.getvalue(), code
 
 
+class ConditionalEnvTests(unittest.TestCase):
+    def test_xausig_warns_when_s1_or_follow_without_token(self):
+        prof = ga.PROFILES["xausig"]
+        self.assertEqual(ga.env_warnings(prof, {"XAU_BOOK": "signal"}), [])                       # S0：唔使權杖
+        self.assertEqual(ga.env_warnings(prof, {"SIG_DECIDE": "0", "SIG_FOLLOW_CHANNELS": ""}), [])
+        w = ga.env_warnings(prof, {"SIG_DECIDE": "1"})
+        self.assertEqual(len(w), 1); self.assertIn("WEBHOOK_SECRET_TOKEN", w[0]); self.assertIn("SIG_DECIDE", w[0])
+        w = ga.env_warnings(prof, {"SIG_FOLLOW_CHANNELS": "5231"})
+        self.assertEqual(len(w), 1); self.assertIn("SIG_FOLLOW_CHANNELS", w[0])
+        self.assertEqual(ga.env_warnings(prof, {"SIG_DECIDE": "1", "SIG_FOLLOW_CHANNELS": "5231", "WEBHOOK_SECRET_TOKEN": "x"}), [])
+        self.assertEqual(ga.env_warnings(ga.PROFILES["xau"], {"SIG_DECIDE": "1"}), [])            # 其他 profile 冇呢條
+
+
 class StatusAndEnvTests(unittest.TestCase):
     def test_status_masks_secrets(self):
         s = FakeSession([("GET", FN_NAME, FakeResp(200, fn_body()))])

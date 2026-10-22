@@ -83,8 +83,21 @@ PROFILES = {
     # required_env：建立時自動加入；更新時服務環境變數唔一致就拒絕（冇 XAU_BOOK=signal 會變成第二個寫 xau/ 嘅主服務）。
     "xausig": {"service": "zhuge-xau-sig", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
                "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
-               "required_env": {"XAU_BOOK": "signal", "XAU_SYMBOL": "XAUUSD"}},
+               "required_env": {"XAU_BOOK": "signal", "XAU_SYMBOL": "XAUUSD"},
+               # 有條件必要：S1（SIG_DECIDE）／跟單（SIG_FOLLOW_CHANNELS）要收 EA 心跳，就一定要有 WEBHOOK_SECRET_TOKEN（同 EA InpToken）；
+               # S0 只收 HMAC 訊號唔使。10-22 漏咗令 EA 心跳 403。dry-run 會警告，唔擋。
+               "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("SIG_DECIDE", "SIG_FOLLOW_CHANNELS")}},
 }
+
+
+def env_warnings(profile, env):
+    """profile.conditional_env：{必要變數: (觸發變數…)}——任何觸發變數有值（唔係空／0／false）而必要變數冇，就回傳警告句。純函數。"""
+    out = []
+    for need, triggers in (profile.get("conditional_env") or {}).items():
+        on = [t for t in triggers if str(env.get(t) or "").strip().lower() not in ("", "0", "false", "off")]
+        if on and not str(env.get(need) or "").strip():
+            out.append(f"⚠️ {'／'.join(on)} 已設但冇 {need}：EA 心跳會 403，S1／跟單落唔到單（S0 唔使）。請 env set {need}=<同 EA InpToken>")
+    return out
 
 
 def profile_files(profile, source_dir=None):
@@ -786,6 +799,8 @@ def cmd_env_run(ctx: Ctx):
     if not changed:
         print("沒有變更。")
         return
+    for w in env_warnings(ctx.profile, {e["name"]: e.get("value") for e in new_list}):
+        print(w)
     plan(f"以目前的程式碼映像（{short_image(container.get('image'))}）建立新修訂，100% 流量切到新修訂")
     if not traffic_follows_latest(svc):
         plan("⚠️ 目前流量不是跟著最新修訂（可能之前做過 rollback）；套用後流量會改回最新修訂")
@@ -1050,6 +1065,9 @@ def deploy_run(ctx: Ctx, source_dir: Path, zip_bytes):
             bad = [f"{k}（而家 {cur.get(k)!r}，應該 {v!r}）" for k, v in required.items() if cur.get(k) != v]
             if bad:
                 die(f"{ctx.svc_name} 環境變數同 profile 唔一致：{'、'.join(bad)}；先用 env set 改正，唔部署。")
+    if not creating:
+        for w in env_warnings(ctx.profile, {e.get("name"): e.get("value") for e in container.get("env", [])}):
+            print(w)
     if bc.get("enableAutomaticUpdates") and not container.get("baseImageUri") and bc.get("baseImage"):
         container["baseImageUri"] = bc["baseImage"]
         plan(f"⚠️ 容器冇 baseImageUri 而 buildConfig.enableAutomaticUpdates=true（修訂會 direct exec 失敗）→ 補上 {short_image(bc['baseImage'])}")

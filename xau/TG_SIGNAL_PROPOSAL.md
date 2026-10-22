@@ -208,7 +208,7 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 ## 19. S1 demo 落單決定（使用者 2026-10-22 批）
 - 使用者批：(1) 教學兩條（有浮盈即移保本再跟結構收緊；第一目標 ≥ 止損距離）寫入 GCS `xau/lessons.md` 同 `xau/sig/lessons.md`（已寫，唔使部署，兩本書即時生效）；(2) 訊號書 S1 做 demo 落單。
 - S1 規則（程式）：`SIG_REFERENCE_CHANNELS`（頻道 id 尾 4 位）只參考指定頻道（建議只開 DAN VIP，§17 唯一實際價正期望）；其他頻道唔入 prompt，只當 `agree` 附和計數（`SIG_AGREE_MIN` 30 分鐘內同方向嘅其他頻道數）；決策時用現價過濾「走咗」嘅訊號（`is_late`：現價已過 TP1，或向有利方向離入場 ≥ `SIG_LATE_R`×止損距離，預設 1R）；收到時都標 `late`（網頁 🏃 走咗），成績照計。
-- 部署步驟（總指揮 dry-run → 使用者喺總指揮工作階段親口批）：① `--profile xausig deploy`；② `env set SIG_DECIDE=1 SIG_REFERENCE_CHANNELS=<DAN 尾 4 位> XAU_EXECUTE=1`（demo 928861）；③ 使用者 MT5 加第三張 XAUUSD 圖表掛 EA v0.37、`InpMagic=931`（而家只掛 921、922，冇 931 EA 就只會紙上落單）。
+- 部署步驟（總指揮 dry-run → 使用者喺總指揮工作階段親口批）：① `--profile xausig deploy`；② `env set SIG_DECIDE=1 SIG_REFERENCE_CHANNELS=<DAN 尾 4 位> XAU_EXECUTE=1 XAU_ACCOUNT=928861 WEBHOOK_SECRET_TOKEN=<同 EA InpToken>`（**S1／跟單要收 EA 心跳，一定要有 WEBHOOK_SECRET_TOKEN；S0 唔使，10-22 漏咗令心跳 403**，`gcp_agent` dry-run 會警告）；③ 使用者 MT5 加第三張 XAUUSD 圖表掛 EA v0.37、`InpMagic=931`（而家只掛 921、922，冇 931 EA 就只會紙上落單）。
 - 對照：921（唔睇訊號）vs 931（參考 DAN VIP）每筆期望值，IDEAS #117；每滿 10 張出一次小結。
 
 ## 20. 改良 DAN（IDEAS #119）walk-forward 結果：❌（2026-10-22；數字抽象，完整報告私人）
@@ -246,5 +246,5 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 ## 25. 跟單（magic 932）：CTC 0.01 手、TP1 全平（使用者 10-22 批；IDEAS #123）
 - 程式 `xau/follower.py`，喺訊號書服務內按 magic 分流：`SIG_FOLLOW_CHANNELS`（頻道尾 4 位，空＝關）、`SIG_FOLLOW_MAGIC`（預設 931+1＝932）、`SIG_FOLLOW_LOTS`（0.01）。狀態前綴 `xau/sig/follow/`（state.json、account.json），同 S1（931）成績分開；EA InpBotMagics 已包 932，§6c 戶口總階梯自動計入。
 - 規則：市價單訊號即刻市價入；限價單等現價入到入場區（±點差）先入；收到時已過 TP1、止損錯邊、距離超上限就略過（標 used 唔再試）；一次只一張；control 非 RUN、階梯 Ⓑ／Ⓓ、EA 唔准交易唔開；SL＝頻道原 SL、TP＝TP1，伺服器端執行，唔改唔主動平；回報按指令 id 前綴 `f`。`XAU_EXECUTE=0` 只記紙上。
-- 部署：MT5 第四張 XAUUSD 圖表 EA v0.37 `InpMagic=932`；env `SIG_FOLLOW_CHANNELS=5231`；唔使開 SIG_DECIDE。
+- 部署：MT5 第四張 XAUUSD 圖表 EA v0.37 `InpMagic=932`；env `SIG_FOLLOW_CHANNELS=5231`＋`WEBHOOK_SECRET_TOKEN`（同 EA InpToken，收心跳必要）；唔使開 SIG_DECIDE。MT5「允許 WebRequest 的 URL」要加 `https://zhuge-xau-sig-1056099871997.europe-west1.run.app`（同 921 嘅 host 唔同）。
 - 成功標準（#123）：demo 30 張扣成本每張 >+0.5 美元、最大回撤 <100 美元、最長連輸 ≤5。
