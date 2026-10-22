@@ -1,7 +1,6 @@
 {
   "gcp": {
     "days": [
-      "2026-10-12",
       "2026-10-13",
       "2026-10-14",
       "2026-10-15",
@@ -10,52 +9,52 @@
       "2026-10-18",
       "2026-10-19",
       "2026-10-20",
-      "2026-10-21"
+      "2026-10-21",
+      "2026-10-22"
     ],
     "errors": [],
-    "files_changed": 125,
+    "files_changed": 123,
     "ok": true,
     "rows_fetched": {
-      "futu_k_1m/HK.HSI_FRONT": 5927,
+      "futu_k_1m/HK.HSI_FRONT": 6118,
       "futu_k_5m/HK.800000": 427,
       "futu_k_5m/HK.800125": 426,
-      "futu_k_5m/HK.HSI_FRONT": 1203,
-      "futu_k_5m/HK.HSI_IV": 292,
-      "futu_k_5m/US.ES_FRONT": 1938,
-      "futu_k_5m/US.ES_IV": 298,
-      "futu_k_5m/US.NQ_FRONT": 1938,
-      "futu_k_5m/US.NQ_IV": 290,
+      "futu_k_5m/HK.HSI_FRONT": 1240,
+      "futu_k_5m/HK.HSI_IV": 338,
+      "futu_k_5m/US.ES_FRONT": 1937,
+      "futu_k_5m/US.ES_IV": 347,
+      "futu_k_5m/US.NQ_FRONT": 1937,
+      "futu_k_5m/US.NQ_IV": 339,
       "futu_k_5m/US.QQQ": 546,
-      "futu_k_day/HK.00001": 1,
-      "futu_k_day/HK.00005": 6,
-      "futu_k_day/HK.00019": 1,
-      "futu_k_day/HK.00023": 2,
-      "futu_k_day/HK.00101": 5,
-      "futu_k_day/HK.00823": 1,
-      "futu_k_day/HK.00881": 3,
-      "futu_k_day/HK.00883": 5,
-      "futu_k_day/HK.00939": 3,
-      "futu_k_day/HK.00968": 5,
-      "futu_k_day/HK.01109": 5,
-      "futu_k_day/HK.01211": 6,
+      "futu_k_day/HK.00005": 5,
+      "futu_k_day/HK.00023": 1,
+      "futu_k_day/HK.00101": 6,
+      "futu_k_day/HK.00285": 6,
+      "futu_k_day/HK.00881": 2,
+      "futu_k_day/HK.00883": 4,
+      "futu_k_day/HK.00939": 2,
+      "futu_k_day/HK.00968": 4,
+      "futu_k_day/HK.01109": 4,
+      "futu_k_day/HK.01211": 5,
       "futu_k_day/HK.01288": 6,
-      "futu_k_day/HK.01299": 5,
+      "futu_k_day/HK.01299": 4,
       "futu_k_day/HK.01339": 6,
-      "futu_k_day/HK.01378": 3,
-      "futu_k_day/HK.01876": 6,
-      "futu_k_day/HK.02020": 5,
-      "futu_k_day/HK.02038": 2,
-      "futu_k_day/HK.02318": 5,
-      "futu_k_day/HK.02601": 5,
-      "futu_k_day/HK.03988": 4,
-      "futu_k_day/HK.09992": 5,
+      "futu_k_day/HK.01378": 2,
+      "futu_k_day/HK.01876": 5,
+      "futu_k_day/HK.02020": 4,
+      "futu_k_day/HK.02038": 1,
+      "futu_k_day/HK.02318": 4,
+      "futu_k_day/HK.02601": 4,
+      "futu_k_day/HK.03988": 3,
+      "futu_k_day/HK.09992": 4,
       "futu_k_day/HK.800000": 6,
       "futu_k_day/US.AAPL": 6,
+      "futu_k_day/US.APO": 6,
       "futu_k_day/US.BALL": 6,
       "futu_k_day/US.BRK.B": 6,
       "futu_k_day/US.CBRE": 6,
       "futu_k_day/US.CDNS": 6,
-      "futu_k_day/US.CHTR": 3,
+      "futu_k_day/US.CHTR": 2,
       "futu_k_day/US.COF": 6,
       "futu_k_day/US.CPRI": 6,
       "futu_k_day/US.CSGP": 6,
@@ -86,60 +85,61 @@
       "futu_k_day/US.IFF": 6,
       "futu_k_day/US.IRM": 6,
       "futu_k_day/US.ITW": 6,
-      "futu_k_day/US.JD": 5,
+      "futu_k_day/US.JD": 4,
       "futu_k_day/US.JNJ": 6,
       "futu_k_day/US.KMI": 6,
-      "futu_k_day/US.LEN": 6,
-      "futu_k_day/US.LH": 5,
-      "futu_k_day/US.LVS": 5,
-      "futu_k_day/US.LYB": 5,
-      "futu_k_day/US.LYV": 5,
-      "futu_k_day/US.MAC": 4,
-      "futu_k_day/US.MDT": 4,
-      "futu_k_day/US.MOH": 3,
-      "futu_k_day/US.MPWR": 4,
-      "futu_k_day/US.MRVL": 3,
-      "futu_k_day/US.MSCI": 2,
-      "futu_k_day/US.MTD": 5,
-      "futu_k_day/US.MTG": 5,
-      "futu_k_day/US.NBR": 2,
-      "futu_k_day/US.NE": 6,
-      "futu_k_day/US.NI": 1,
-      "futu_k_day/US.NKTR": 1,
-      "futu_k_day/US.NUE": 4,
-      "futu_k_day/US.NWS": 1,
-      "futu_k_day/US.OGN": 5,
-      "futu_k_day/US.ORCL": 2,
-      "futu_k_day/US.ORLY": 1,
-      "futu_k_day/US.POOL": 2,
-      "futu_k_day/US.PRU": 3,
+      "futu_k_day/US.LEN": 5,
+      "futu_k_day/US.LH": 4,
+      "futu_k_day/US.LVS": 4,
+      "futu_k_day/US.LYB": 4,
+      "futu_k_day/US.LYV": 4,
+      "futu_k_day/US.MAC": 3,
+      "futu_k_day/US.MDT": 3,
+      "futu_k_day/US.MNST": 6,
+      "futu_k_day/US.MOH": 2,
+      "futu_k_day/US.MPWR": 3,
+      "futu_k_day/US.MRVL": 2,
+      "futu_k_day/US.MSCI": 1,
+      "futu_k_day/US.MTD": 4,
+      "futu_k_day/US.MTG": 4,
+      "futu_k_day/US.NBR": 1,
+      "futu_k_day/US.NE": 5,
+      "futu_k_day/US.NTRS": 6,
+      "futu_k_day/US.NUE": 3,
+      "futu_k_day/US.OGN": 4,
+      "futu_k_day/US.ORCL": 1,
+      "futu_k_day/US.POOL": 1,
+      "futu_k_day/US.PRU": 2,
+      "futu_k_day/US.QGEN": 6,
       "futu_k_day/US.QQQ": 6,
-      "futu_k_day/US.RCL": 4,
-      "futu_k_day/US.REG": 5,
-      "futu_k_day/US.RKLB": 3,
-      "futu_k_day/US.SHOP": 6,
+      "futu_k_day/US.RCL": 3,
+      "futu_k_day/US.REG": 4,
+      "futu_k_day/US.RKLB": 2,
+      "futu_k_day/US.SHOP": 5,
+      "futu_k_day/US.SIG": 6,
       "futu_k_day/US.SPY": 6,
-      "futu_k_day/US.STX": 5,
-      "futu_k_day/US.TDC": 5,
-      "futu_k_day/US.TFX": 5,
-      "futu_k_day/US.TNL": 5,
-      "futu_k_day/US.TSLA": 5,
-      "futu_k_day/US.UAA": 5,
-      "futu_k_day/US.VEON": 5,
-      "futu_k_day/US.VRSN": 5,
-      "futu_k_day/US.WAT": 5,
-      "futu_k_day/US.WEC": 6,
-      "futu_k_day/US.WMT": 2,
-      "futu_k_day/US.XYL": 6,
+      "futu_k_day/US.STX": 4,
+      "futu_k_day/US.TDC": 4,
+      "futu_k_day/US.TFX": 4,
+      "futu_k_day/US.TNL": 4,
+      "futu_k_day/US.TSLA": 4,
+      "futu_k_day/US.UAA": 4,
+      "futu_k_day/US.VEON": 4,
+      "futu_k_day/US.VRSN": 4,
+      "futu_k_day/US.VST": 6,
+      "futu_k_day/US.WAT": 4,
+      "futu_k_day/US.WEC": 5,
+      "futu_k_day/US.WMT": 1,
+      "futu_k_day/US.XYL": 5,
       "futu_k_session/HK.HSI_FRONT": 7,
       "futu_k_session/US.ES_FRONT": 7,
       "futu_k_session/US.NQ_FRONT": 7,
-      "futu_options/HK.800000": 21530,
-      "futu_options/HK.HSI_IV": 32300,
-      "futu_options/US.ES_IV": 34380,
-      "futu_options/US.NQ_IV": 33600,
-      "futu_options/US.QQQ": 21260,
-      "mt5_m1/XAUUSD": 7127
+      "futu_options/HK.800000": 21500,
+      "futu_options/HK.HSI_IV": 37820,
+      "futu_options/US.ES_IV": 40260,
+      "futu_options/US.NQ_IV": 39480,
+      "futu_options/US.QQQ": 21230,
+      "mt5_m1/XAUUSD": 5749
     },
     "unknown_sources": []
   },
@@ -152,20 +152,20 @@
     ],
     "ok": true,
     "source_branch": "claude/dazzling-curie-f3xzb8",
-    "source_commit": "8851334dd20eee456a49168cdf06e1711e6d7d10 2026-10-21T00:11:34Z"
+    "source_commit": "de55a549b85c15a68f6d77a8d32b278b2080985e 2026-10-22T00:16:46Z"
   },
-  "run_utc": "2026-10-21 04:41:25",
+  "run_utc": "2026-10-22 04:38:33",
   "series": {
     "futu/HK.800000/K_5M": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 31
     },
     "futu/HK.800000/options": {
-      "latest_date": "2026-10-21",
-      "rows": 440
+      "latest_date": "2026-10-22",
+      "rows": 420
     },
     "futu/HK.800125/K_5M": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 30
     },
     "futu/HK.800700/K_60M": {
@@ -181,11 +181,11 @@
       "rows": 13
     },
     "futu/HK.HSI_FRONT/K_1M": {
-      "latest_date": "2026-10-21",
-      "rows": 345
+      "latest_date": "2026-10-22",
+      "rows": 342
     },
     "futu/HK.HSI_FRONT/K_5M": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 70
     },
     "futu/HK.HSI_FRONT/K_60M": {
@@ -193,15 +193,15 @@
       "rows": 4
     },
     "futu/HK.HSI_FRONT/K_SESSION": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 1
     },
     "futu/HK.HSI_IV/K_5M": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 24
     },
     "futu/HK.HSI_IV/options": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 2880
     },
     "futu/HK.HTI_FRONT/K_15M": {
@@ -213,19 +213,19 @@
       "rows": 1021
     },
     "futu/US.ES_FRONT/K_5M": {
-      "latest_date": "2026-10-21",
-      "rows": 6
+      "latest_date": "2026-10-22",
+      "rows": 5
     },
     "futu/US.ES_FRONT/K_SESSION": {
-      "latest_date": "2026-10-20",
+      "latest_date": "2026-10-21",
       "rows": 1
     },
     "futu/US.ES_IV/K_5M": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 1
     },
     "futu/US.ES_IV/options": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 120
     },
     "futu/US.NQ_FRONT/K_1M": {
@@ -233,32 +233,32 @@
       "rows": 1021
     },
     "futu/US.NQ_FRONT/K_5M": {
-      "latest_date": "2026-10-21",
-      "rows": 6
+      "latest_date": "2026-10-22",
+      "rows": 5
     },
     "futu/US.NQ_FRONT/K_SESSION": {
-      "latest_date": "2026-10-20",
+      "latest_date": "2026-10-21",
       "rows": 1
     },
     "futu/US.NQ_IV/K_5M": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 1
     },
     "futu/US.NQ_IV/options": {
-      "latest_date": "2026-10-21",
+      "latest_date": "2026-10-22",
       "rows": 120
     },
     "futu/US.QQQ/K_5M": {
-      "latest_date": "2026-10-20",
+      "latest_date": "2026-10-21",
       "rows": 78
     },
     "futu/US.QQQ/options": {
-      "latest_date": "2026-10-20",
-      "rows": 1760
+      "latest_date": "2026-10-21",
+      "rows": 1750
     },
     "futu/_K_DAY": {
-      "latest_date": "2026-10-20",
-      "rows": 6
+      "latest_date": "2026-10-21",
+      "rows": 5
     },
     "mt5/XAUUSD/M1": {
       "latest_date": "2026-10-20",
