@@ -204,3 +204,9 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 - 結構 vs 揀位：隨機時間用同一結構全程 R 已經 +0.43（36% 去晒 TP6）；DAN 實際 61–68% 去晒、+1.88（嚴格限價）～+2.28（市價）。簡單規則（前 15 分鐘反向 ≥3 美元就反向限價入；加時段）重現唔到，仍然 36%、+0.40～0.46R。差距分唔開係真判斷定係事後偏差（44% 訊號出嗰刻價已過 TP1；舊訊息可能編輯過）。
 - 可程式化規則（抽象）：R1 前 15 分鐘變動 ≤ −3 美元 → 現價 −4 限價 BUY（區 ±2）、SL 中位 −6、TP 中位 +3k（k=1…6）、30 分鐘有效；SELL 鏡像。R1b 加時段 02–07／12–15 UTC。
 - 結論：天覆陣唔照抄入場模板；學「有浮盈即分級鎖利」（IDEAS #118）。S1 用 DAN 參考要加過期規則。
+
+## 19. S1 demo 落單決定（使用者 2026-10-22 批）
+- 使用者批：(1) 教學兩條（有浮盈即移保本再跟結構收緊；第一目標 ≥ 止損距離）寫入 GCS `xau/lessons.md` 同 `xau/sig/lessons.md`（已寫，唔使部署，兩本書即時生效）；(2) 訊號書 S1 做 demo 落單。
+- S1 規則（程式）：`SIG_REFERENCE_CHANNELS`（頻道 id 尾 4 位）只參考指定頻道（建議只開 DAN VIP，§17 唯一實際價正期望）；其他頻道唔入 prompt，只當 `agree` 附和計數（`SIG_AGREE_MIN` 30 分鐘內同方向嘅其他頻道數）；決策時用現價過濾「走咗」嘅訊號（`is_late`：現價已過 TP1，或向有利方向離入場 ≥ `SIG_LATE_R`×止損距離，預設 1R）；收到時都標 `late`（網頁 🏃 走咗），成績照計。
+- 部署步驟（總指揮 dry-run → 使用者喺總指揮工作階段親口批）：① `--profile xausig deploy`；② `env set SIG_DECIDE=1 SIG_REFERENCE_CHANNELS=<DAN 尾 4 位> XAU_EXECUTE=1`（demo 928861）；③ 使用者 MT5 加第三張 XAUUSD 圖表掛 EA v0.37、`InpMagic=931`（而家只掛 921、922，冇 931 EA 就只會紙上落單）。
+- 對照：921（唔睇訊號）vs 931（參考 DAN VIP）每筆期望值，IDEAS #117；每滿 10 張出一次小結。

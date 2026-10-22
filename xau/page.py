@@ -116,7 +116,7 @@ def render_signal_book(s):
     d = config.PRICE_DIGITS
     num = lambda v: "—" if v is None else f"{v:.{d}f}"  # noqa: E731
     rows = "".join(
-        f"<tr><td>{esc(r.get('msg_utc') or r.get('received_utc'))}</td><td>{esc(label.get(r.get('status'), r.get('status')))}</td>"
+        f"<tr><td>{esc(r.get('msg_utc') or r.get('received_utc'))}</td><td>{esc(label.get(r.get('status'), r.get('status')))}{' 🏃 走咗' if r.get('late') else ''}</td>"
         f"<td>{esc(r.get('kind'))}</td><td>{esc(r.get('side') or '—')}</td>"
         f"<td>{'—' if r.get('entry_low') is None else (num(r['entry_low']) if r['entry_low'] == r.get('entry_high') else num(r['entry_low']) + '–' + num(r.get('entry_high')))}</td>"
         f"<td>{num(r.get('sl'))}</td><td>{esc(', '.join(num(t) for t in r.get('tp') or []) or '—')}</td>"

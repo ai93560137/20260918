@@ -279,7 +279,8 @@ def public_view(rec):
             "valid_until_utc": rec.get("valid_until_utc"), "valid_until_ts": rec.get("valid_until_ts"), "status": rec.get("status"), "reason": rec.get("reason"),
             "kind": sig.get("kind"), "side": sig.get("side"), "order_type": sig.get("order_type"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
             "sl": sig.get("sl"), "tp": sig.get("tp"), "parse_confidence": sig.get("confidence"), "price": rec.get("price"),
-            "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:]}
+            "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:],
+            "late": bool(rec.get("late"))}
 
 
 # ---------- I/O ----------
@@ -411,6 +412,9 @@ def handle_signal(payload):
         status, reason = validate(sig, price, age)
     rec.update(signal=sig, parse_error=(err or "")[:200] or None, status=status, reason=reason,
                price=price if age is not None and age <= config.SIG_PRICE_MAX_AGE_SEC else None)
+    if status == "valid" and is_late({**sig, "price": rec["price"]}, rec["price"]):
+        rec["late"] = True                                   # S1 唔用（價已過 TP1／走咗 ≥1R），但成績照計
+        rec["reason"] = "收到時價已過 TP1 或走咗 ≥1R（只計成績）"
     try:
         storage.write_json(f"{PREFIX}{sid}.json", rec)
         view = public_view(rec)
@@ -424,20 +428,45 @@ def handle_signal(payload):
     return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
 
-def active(now=None):
-    """S1 決策用：未過期、驗證有效嘅入場訊號（新到舊，最多 SIG_MAX_IN_PROMPT 條），只有結構化欄位。"""
+def is_late(r, price):
+    """S1：訊號已經「走咗」——現價過咗 TP1，或者已經向有利方向離入場 ≥ SIG_LATE_R × 止損距離（跟唔到）。純函數。"""
+    if price is None or r.get("sl") is None or r.get("side") not in ("BUY", "SELL"):
+        return False
+    lo, hi = r.get("entry_low"), r.get("entry_high")
+    mid = (lo + hi) / 2 if lo is not None else r.get("price")        # 市價單用收到時嘅價
+    if mid is None:
+        return False
+    sgn = 1 if r["side"] == "BUY" else -1
+    tps = r.get("tp") or []
+    if tps and (tps[0] - price) * sgn <= 0:
+        return True
+    risk = abs(mid - r["sl"])
+    return risk > 0 and (price - mid) * sgn >= config.SIG_LATE_R * risk
+
+
+def active(now=None, price=None):
+    """S1 決策用：未過期、驗證有效、未「走咗」嘅參考頻道入場訊號（新到舊，最多 SIG_MAX_IN_PROMPT 條），只有結構化欄位；
+    agree = 另外幾多個頻道喺 SIG_AGREE_MIN 分鐘內同方向（互相核對，§16）。"""
     now = now if now is not None else now_ts()
     try:
         rows = storage.read_json(RECENT_FILE, []) or []
     except StorageError:
         return []
+    live = [r for r in rows if r.get("kind") == "new_signal" and r.get("status") in ("valid", "unverified")]
     out = []
-    for r in rows[::-1]:
-        if r.get("kind") != "new_signal" or r.get("status") != "valid" or (r.get("valid_until_ts") or 0) < now:
+    for r in live[::-1]:
+        if r.get("status") != "valid" or (r.get("valid_until_ts") or 0) < now:
             continue
+        if config.SIG_REFERENCE_CHANNELS and str(r.get("ch") or "")[-4:] not in config.SIG_REFERENCE_CHANNELS:
+            continue
+        if is_late(r, price):
+            continue
+        t = r.get("msg_ts") or now
+        agree = len({str(x.get("ch")) for x in live if x is not r and x.get("ch") != r.get("ch") and x.get("side") == r.get("side")
+                     and abs((x.get("msg_ts") or 0) - t) <= config.SIG_AGREE_MIN * 60})
         out.append({"sid": r["sid"], "side": r.get("side"), "entry_low": r.get("entry_low"), "entry_high": r.get("entry_high"),
-                    "sl": r.get("sl"), "tp": r.get("tp") or [], "order_type": r.get("order_type"),
-                    "age_min": int((now - (r.get("msg_ts") or now)) / 60), "minutes_left": int((r["valid_until_ts"] - now) / 60)})
+                    "sl": r.get("sl"), "tp": r.get("tp") or [], "order_type": r.get("order_type"), "agree": agree,
+                    "age_min": int((now - t) / 60), "minutes_left": int((r["valid_until_ts"] - now) / 60)})
         if len(out) >= config.SIG_MAX_IN_PROMPT:
             break
     return out

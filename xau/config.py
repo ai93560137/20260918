@@ -161,6 +161,11 @@ SIG_RECENT_MAX = 100
 # 只喺有有效訊號（未過期）或者有倉時先問；開倉一定要引用有效訊號。落唔落單照舊由 XAU_EXECUTE 決定（demo 先）。
 SIG_DECIDE = _b("SIG_DECIDE", False)
 SIG_MAX_IN_PROMPT = _i("SIG_MAX_IN_PROMPT", 5)
+# S1 demo 落單（使用者 10-22 批）：只參考指定頻道（頻道 id 尾 4 位，逗號分隔；空＝全部）；其他頻道只當「附和」計數
+SIG_REFERENCE_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_REFERENCE_CHANNELS", "").split(",") if x.strip())
+# 收到／決策時價已經過咗 TP1、或者已經向有利方向走咗 ≥ SIG_LATE_R × 止損距離 → 當過期（90 日回測：該頻道 44% 訊號出時價已過 TP1）
+SIG_LATE_R = _f("SIG_LATE_R", 1.0)
+SIG_AGREE_MIN = _i("SIG_AGREE_MIN", 30)                      # 幾多分鐘內另一個頻道同方向算「附和」
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h
