@@ -91,5 +91,12 @@ from functions_framework import _function_registry as _reg
 reg = getattr(_reg, "REGISTRY_MAP", {})
 check("receive_tradingview_signal 仍註冊為 http", reg.get("receive_tradingview_signal") == "http", reg)
 
+# [R284] 📏 人手交易守則頁
+r = client.get("/?view=rules")
+html = r.get_data(as_text=True)
+check("[R284] 人手交易守則頁 200", r.status_code == 200, r.status_code)
+check("[R284] 守則頁有「蝕緊嘅方向唔好加注」同警報標記", "蝕緊嘅方向唔好加注" in html and "⏰ 會出警報" in html)
+check("[R284] 導覽列有守則頁", "view=rules" in client.get("/?view=longfei").get_data(as_text=True))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

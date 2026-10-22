@@ -1,6 +1,6 @@
 """[R268] 龍飛陣教學研究：使用者富途成交（futu/pnl/latest.json 嘅 deals）FIFO 配對成一筆筆平倉，搵賺錢單有咩共通點。
 
-用 main.py 同一套配對（按合約 FIFO；富途成交時間 +8 小時＝香港時間）同產品每點價值（main.FUTU_PRODUCTS）。
+用 main.py 同一套配對（按合約 FIFO）；成交時間：期貨戶口已經係香港時間、證券戶口美股係美東時間（10-22 更正，之前錯當 UTC +8）同產品每點價值（main.FUTU_PRODUCTS）。
 每筆記：產品、方向、開／平倉時間、持倉時間、點數、盈虧（港幣，美元 × 7.8，未扣費）。
 再用 15 分鐘 K 線（HSI 富途存檔、標普／納指 Dukascopy）睇開倉嗰刻係咪順當日走勢（價 vs 當日開市價）。
 
@@ -14,13 +14,12 @@ import math
 import os
 import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bars import ET, load_dukascopy, load_hsi  # noqa: E402
 
-TZ_HOURS = 8
 HKT = ZoneInfo("Asia/Hong_Kong")
 USD_HKD = 7.8
 PRODUCTS = (   # 同 main.py FUTU_PRODUCTS（呢度唔 import main，免得要齊 Cloud Run 套件）
@@ -46,11 +45,19 @@ def product(code):
     return "其他", 1, None
 
 
+def deal_time_hkt(d):
+    """富途成交時間：期貨戶口已經係香港時間；證券戶口嘅美股係美東時間（10-22 對過：HSI 夜市 00:21、SPY 09:50＝香港 21:50）。"""
+    t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S")
+    if "證券" in str(d.get("account", "")) and str(d.get("code", "")).startswith("US."):
+        return t.replace(tzinfo=ET).astimezone(HKT).replace(tzinfo=None)
+    return t
+
+
 def round_trips(doc):
     deals = []
     for d in doc.get("deals") or []:
         try:
-            t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S") + timedelta(hours=TZ_HOURS)
+            t = deal_time_hkt(d)
             q, px = abs(float(d["qty"])), float(d["price"])
         except (KeyError, ValueError, TypeError):
             continue

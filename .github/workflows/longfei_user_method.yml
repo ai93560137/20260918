@@ -1,0 +1,41 @@
+name: 龍飛陣 使用者方法前向測試（R286）
+
+# 使用者 10-23：「將我賺錢嘅 34 單歸納出一個方法……我哋前向測試」。規則凍結喺 research/longfei_lessons/user_method.py（2026-10-23）。
+# 每日讀 GCS 1 分鐘 HSI K 線（含夜市）同使用者富途成交，由 2026-10-23 起重播：
+#   方法 A＝全自動順勢沽空；方法 B＝使用者入場＋系統管理出場（對照使用者自己平倉）。
+# 結果寫 GCS ops/longfei/user_method/forward.md／forward.json（私人；方法 B 有使用者成交點數），唔 commit。只係紙上，唔落單。
+on:
+  schedule:
+    - cron: '5 0 * * 2-6'     # 08:05 HKT 星期二至六（前一晚夜市 03:00 收、1 分鐘存檔已更新）
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: longfei-user-method
+  cancel-in-progress: false
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q google-cloud-storage
+
+      - name: Forward test
+        run: python3 research/longfei_lessons/user_method.py --gcs --since 2026-10-23

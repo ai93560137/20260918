@@ -23,11 +23,13 @@
   risk_history.csv      每次嘅主要指標
   alert_state.json      警報狀態（只喺警報出現／解除時先發 Telegram，唔會每次都發）
   margin_base.json      當日（06:00 HKT 起）維持保證金基準（R193 急升預警用）
+  manual_rules_state.json 上次期貨手數同「蝕緊加注」旗（R284 人手守則①）
 """
 import argparse
 import csv
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -108,6 +110,39 @@ def mm_jump(t, M, state_f, thr):
     if up >= thr:
         return f"⚠ 富途維持保證金今日升 {up * 100:.0f}%（HK${st['base']:,.0f} → {mm:,.0f}）；緩衝 HK${M.get('cushion') or 0:,.0f}"
     return None
+
+
+# [R284] 人手守則①「蝕緊嘅方向唔好加注」（使用者 10-22：「人手做錯即刻出警報提我」）。只睇期貨（人手落嘅主要係期貨；期權有其他陣）。
+MANUAL_FUT_RX = re.compile(r"^(HK\.(HSI|MHI)\d{4}|US\.(ES|MES|NQ|MNQ)\d{4})$")
+
+
+def add_to_loser(rows, state_f):
+    """同上次持倉比：同方向手數多咗、而而家成個倉浮蝕 → 警報（記低加注前手數）；
+    之後一直保持，直到減返去加注前或以下、或者轉賺先解除。回傳 {警報鍵: 訊息}。"""
+    qty, pl = {}, {}
+    for r in rows or []:
+        code = str(r.get("code") or "")
+        if r.get("source") == "positions" and MANUAL_FUT_RX.match(code) and r.get("qty"):
+            qty[code] = qty.get(code, 0) + r["qty"]
+            if r.get("futu_pl") is not None:
+                pl[code] = pl.get(code, 0) + r["futu_pl"]
+    try:
+        st = json.loads(state_f.read_text(encoding="utf-8"))
+    except Exception:
+        st = {}
+    prev, flag = st.get("qty") or {}, st.get("flag") or {}
+    for code, q in qty.items():
+        p = prev.get(code, 0)
+        if p and q * p > 0 and abs(q) > abs(p) and pl.get(code, 0) < 0 and code not in flag:
+            flag[code] = p
+    for code in list(flag):
+        q, base = qty.get(code, 0), flag[code]
+        if not (q * base > 0 and abs(q) > abs(base) and pl.get(code, 0) < 0):
+            del flag[code]
+    state_f.write_text(json.dumps({"qty": qty, "flag": flag}), encoding="utf-8")
+    return {f"rule1:{code}": (f"⏰ 人手守則①：{code} 蝕緊（浮蝕 {pl[code]:,.0f} {'USD' if code.startswith('US.') else 'HKD'}）"
+                              f"仲加注 {base:+g} → {qty[code]:+g} 手。守則：蝕緊嘅方向唔好加注（見網頁 📏 人手交易守則）")
+            for code, base in flag.items()}
 
 
 def telegram(text):
@@ -269,6 +304,11 @@ def cycle(equity, cushion_line, stop_line, mm_thr=0.30):
             write_ladder(t, M)
         except OSError as e:
             print(f"  ⚠ 寫風控級別檔失敗：{e.__class__.__name__}（龍飛陣 guard 會發 Telegram）")
+        try:                                                      # [R284] 人手守則①
+            rows = json.loads((ROOT / "tradingview" / "data_external" / "futu_positions.json").read_text(encoding="utf-8")).get("positions")
+            cur.update(add_to_loser(rows, OUT / "manual_rules_state.json"))
+        except Exception as e:
+            print(f"  ⚠ 人手守則檢查失敗：{e.__class__.__name__}")
         jump = mm_jump(t, M, OUT / "margin_base.json", mm_thr)
         if jump:
             cur["mm_jump"] = jump
