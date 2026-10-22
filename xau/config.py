@@ -170,6 +170,14 @@ SIG_AGREE_MIN = _i("SIG_AGREE_MIN", 30)                      # 幾多分鐘內�
 FOLLOW_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_CHANNELS", "").split(",") if x.strip())
 FOLLOW_MAGIC = _i("SIG_FOLLOW_MAGIC", MAGIC + 1)             # 931 → 932（EA InpBotMagics 已包 931–935，計入戶口總階梯）
 FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
+# 學徒計劃階段 0／1（使用者 10-22 批；xau/DAN_APPRENTICE.md、IDEAS #122）：特徵快照（永遠開）、規則學生（免費）、Claude 學生（XAU_SHADOW=1 先問 Opus）
+STUDENT = _b("XAU_STUDENT", True)
+SHADOW = _b("XAU_SHADOW", False)
+SHADOW_HOURS_UTC = _s("XAU_SHADOW_HOURS_UTC", "01-07,12-15")       # DAN 活躍時段（§18）
+SHADOW_INTERVAL_MIN = _i("XAU_SHADOW_INTERVAL_MIN", 30)
+STUDENT_WINDOW_MIN = _i("XAU_STUDENT_WINDOW_MIN", 30)               # 訊號到之前幾多分鐘內嘅判斷先算「交咗卷」
+STUDENT_ZONE_TOL = _f("XAU_STUDENT_ZONE_TOL", 3.0)                  # 入場區中位差 ≤3 美元算命中
+STUDENT_R_TARGET = _f("XAU_STUDENT_R_TARGET", 2.0)                  # 學生自己成績：2R 全平
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h

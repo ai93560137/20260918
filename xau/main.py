@@ -24,6 +24,7 @@ import rules
 import storage
 import signals
 import follower
+import student
 import tgsignal
 from storage import StorageError
 
@@ -572,6 +573,12 @@ def handle_heartbeat(payload):
                     m15 = merged
     resp["need_history"] = need_history(m15)
 
+    if config.SIGNAL_BOOK and student.enabled():                 # 學徒階段 1：影子學生先交卷（唔落單），再做 S1
+        try:
+            student.rule_tick(m1, offset, now)
+            student.claude_tick(get_brain(), lambda: build_context(state, m1, m15 or [], account, now, market.ny_date(now)), now)
+        except Exception as exc:  # noqa: BLE001
+            log_event(f"⚠️ 影子學生出錯：{type(exc).__name__}: {str(exc)[:80]}", severity="WARNING", component="student")
     rec, summary = process_bar(state, bar, m1, m15 or [], account, now)
     try:
         save_state(state)
@@ -728,6 +735,8 @@ def entry(req):
             status["signals"] = signals.recent()
             if follower.enabled():
                 status["follow"] = follower.status()
+            if student.enabled():
+                status["student"] = student.status()
         if req.args.get("format") == "json":
             return jsonify(status), 200
         return page.render(status), 200, {"Content-Type": "text/html; charset=utf-8"}
