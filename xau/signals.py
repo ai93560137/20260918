@@ -28,6 +28,8 @@ PREFIX = config.PREFIX + "signals/"
 RECENT_FILE = PREFIX + "recent.json"
 LISTENER_FILE = config.PREFIX + "listener.json"
 MAIN_M1_FILE = config.MAIN_PREFIX + "m1.json"
+MAIN_M15_FILE = config.MAIN_PREFIX + "m15.json"
+SNAP_PREFIX = config.PREFIX + "snapshots/"
 MAIN_ACCOUNT_FILE = config.MAIN_PREFIX + "account.json"
 SCORES_FILE = PREFIX + "scores.json"
 HISTORY_PREFIX = config.PREFIX + "history/"
@@ -285,7 +287,7 @@ def public_view(rec):
             "kind": sig.get("kind"), "side": sig.get("side"), "order_type": sig.get("order_type"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
             "sl": sig.get("sl"), "tp": sig.get("tp"), "parse_confidence": sig.get("confidence"), "price": rec.get("price"),
             "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:],
-            "late": bool(rec.get("late")), "fwd": bool(rec.get("fwd_ts")),
+            "late": bool(rec.get("late")), "fwd": bool(rec.get("fwd_ts")), "lag_min": rec.get("lag_min"), "moved_usd": rec.get("moved_usd"),
             "fwd_lag_min": (round((rec["msg_ts"] - rec["fwd_ts"]) / 60) if rec.get("fwd_ts") and rec.get("msg_ts") else None)}
 
 
@@ -352,6 +354,13 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         return jsonify({"status": "error", "message": f"storage: {exc}"}), 500
     score_pending(now)
+    if config.STUDENT:
+        try:
+            import student
+            bars, offset = main_bars()
+            student.score_pending(bars, offset, now)
+        except Exception as exc:  # noqa: BLE001
+            log_event(f"⚠️ 學生成績計算失敗：{type(exc).__name__}", severity="WARNING")
     return jsonify({"status": "ok"}), 200
 
 
@@ -423,6 +432,11 @@ def handle_signal(payload):
     if status == "valid" and is_late({**sig, "price": rec["price"]}, rec["price"]):
         rec["late"] = True                                   # S1 唔用（價已過 TP1／走咗 ≥1R），但成績照計
         rec["reason"] = "收到時價已過 TP1 或走咗 ≥1R（只計成績）"
+    if sig and sig.get("kind") == "new_signal" and status in ("valid", "unverified") and config.STUDENT:
+        try:
+            snapshot(rec, sig, now)                          # 學徒階段 0：特徵快照（只係數字）＋階段 1 對答案
+        except Exception as exc:  # noqa: BLE001
+            log_event(f"⚠️ 快照／對答案失敗 {sid}：{type(exc).__name__}: {str(exc)[:80]}", severity="WARNING", sid=sid)
     try:
         storage.write_json(f"{PREFIX}{sid}.json", rec)
         view = public_view(rec)
@@ -450,6 +464,41 @@ def is_late(r, price):
         return True
     risk = abs(mid - r["sl"])
     return risk > 0 and (price - mid) * sgn >= config.SIG_LATE_R * risk
+
+
+def snapshot(rec, sig, now):
+    """階段 0：收到入場訊號嗰刻嘅特徵（主服務 M1／M15、擺動點、關鍵價位、時段、ATR、延遲、已走、附和、轉發）寫 snapshots/<sid>.json；
+    rec 加 lag_min／moved_usd（網頁顯示）。參考頻道嘅訊號再交學生對答案。"""
+    import features
+    import student
+    m1, offset = main_bars()
+    try:
+        m15 = storage.read_json(MAIN_M15_FILE, []) or []
+    except StorageError:
+        m15 = []
+    side = sig.get("side"); lo, hi = sig.get("entry_low"), sig.get("entry_high")
+    mid = (lo + hi) / 2 if lo is not None and hi is not None else rec.get("price")
+    if mid is None or side not in ("BUY", "SELL"):
+        return
+    ts = rec["msg_ts"]
+    feats = features.snapshot(m1, m15, offset, ts, side, mid, sig.get("sl"), sig.get("tp") or [], rec.get("price"), tol=config.SIG_FILL_TOL)
+    ch = str(rec.get("channel_id") or "")[-4:]
+    try:
+        rows = storage.read_json(RECENT_FILE, []) or []
+    except StorageError:
+        rows = []
+    agree = len({str(x.get("ch")) for x in rows if x.get("kind") == "new_signal" and x.get("status") in ("valid", "unverified") and x.get("side") == side
+                 and str(x.get("ch")) != ch and abs((x.get("msg_ts") or 0) - ts) <= config.SIG_AGREE_MIN * 60})
+    feats["agree"] = agree
+    rec["lag_min"], rec["moved_usd"] = feats.get("lag_min"), feats.get("moved_usd")
+    b1 = [[b["time"] - offset, b["open"], b["high"], b["low"], b["close"]] for b in m1[-120:]]
+    b15 = [[b["time"] - offset, b["open"], b["high"], b["low"], b["close"]] for b in m15[-40:]]
+    doc = {"sid": rec["sid"], "ch": ch, "msg_ts": ts, "msg_utc": rec.get("msg_utc"), "received_ts": rec.get("received_ts"), "side": side, "mid": mid,
+           "entry_low": lo, "entry_high": hi, "sl": sig.get("sl"), "tp": sig.get("tp"), "order_type": sig.get("order_type"), "status": rec.get("status"),
+           "late": bool(rec.get("late")), "fwd_ts": rec.get("fwd_ts"), "price": rec.get("price"), "features": feats, "m1": b1, "m15": b15}
+    storage.write_json(f"{SNAP_PREFIX}{rec['sid']}.json", doc)
+    if ch in config.SIG_REFERENCE_CHANNELS:
+        student.grade({"sid": rec["sid"], "side": side, "entry_low": lo, "entry_high": hi, "price": rec.get("price"), "msg_ts": ts})
 
 
 def active(now=None, price=None):

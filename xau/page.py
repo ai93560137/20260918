@@ -116,7 +116,7 @@ def render_signal_book(s):
     d = config.PRICE_DIGITS
     num = lambda v: "—" if v is None else f"{v:.{d}f}"  # noqa: E731
     rows = "".join(
-        f"<tr><td>{esc(r.get('msg_utc') or r.get('received_utc'))}</td><td>{esc(label.get(r.get('status'), r.get('status')))}{' 🏃 走咗' if r.get('late') else ''}{(' ↪ 轉發+' + str(r.get('fwd_lag_min')) + '分') if r.get('fwd') else ''}</td>"
+        f"<tr><td>{esc(r.get('msg_utc') or r.get('received_utc'))}</td><td>{esc(label.get(r.get('status'), r.get('status')))}{' 🏃 走咗' if r.get('late') else ''}{(' ↪ 轉發+' + str(r.get('fwd_lag_min')) + '分') if r.get('fwd') else ''}{(' ⏱' + str(r.get('lag_min')) + '分/走' + str(r.get('moved_usd'))) if r.get('lag_min') is not None else ''}</td>"
         f"<td>{esc(r.get('kind'))}</td><td>{esc(r.get('side') or '—')}</td>"
         f"<td>{'—' if r.get('entry_low') is None else (num(r['entry_low']) if r['entry_low'] == r.get('entry_high') else num(r['entry_low']) + '–' + num(r.get('entry_high')))}</td>"
         f"<td>{num(r.get('sl'))}</td><td>{esc(', '.join(num(t) for t in r.get('tp') or []) or '—')}</td>"
@@ -166,6 +166,24 @@ def render_signal_book(s):
                  + card("最近判斷", esc((fo.get("last") or {}).get("note") or "—"), esc((fo.get("last") or {}).get("utc") or "")) + "</div>"
                  "<div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>頻道</th><th>方向／手</th><th>入場價</th><th>SL／TP1</th><th>入場依據</th><th>EA 回報</th></tr>"
                  + (orows or "<tr><td colspan='7' class='muted'>未有跟單</td></tr>") + "</table></div></div>")
+    stu = s.get("student")
+    if stu:
+        g = (stu.get("scores") or {}).get("grade") or {}; own = (stu.get("scores") or {}).get("own") or {}
+        def gp(a, b): return "—" if not b else f"{a / b:.0%}"
+        srows = "".join(f"<tr><td>{esc(k)}</td><td>{esc((stu.get('counts') or {}).get(k, 0))}</td>"
+                        f"<td>{esc(g.get(k, {}).get('n', 0))}</td><td>{gp(g.get(k, {}).get('dir', 0), g.get(k, {}).get('n', 0))}</td>"
+                        f"<td>{gp(g.get(k, {}).get('zone', 0), g.get(k, {}).get('n', 0))}</td><td>{gp(g.get(k, {}).get('time', 0), g.get(k, {}).get('n', 0))}</td>"
+                        f"<td>{esc(own.get(k, {}).get('filled', 0))}／{esc(own.get(k, {}).get('n', 0))}</td><td>{gp(own.get(k, {}).get('win', 0), own.get(k, {}).get('filled', 0))}</td>"
+                        f"<td>{esc(own.get(k, {}).get('r_sum', 0))}</td></tr>" for k in ("rule:swing", "rule:level", "rule:rev15", "claude"))
+        prow = "".join(f"<tr><td>{esc(fmt_hkt(p['ts']))}</td><td>{esc(p.get('student'))}</td><td>{esc(p.get('side') or 'HOLD')}</td>"
+                       f"<td>{'—' if p.get('entry_low') is None else num(p['entry_low']) + '–' + num(p['entry_high'])}</td><td>{num(p.get('price'))}</td>"
+                       f"<td>{esc(p.get('ref') if p.get('ref') is not None else (p.get('reason') or ''))}</td><td>{esc(p.get('graded') or '')}</td></tr>" for p in stu.get("recent") or [])
+        body += ("<div class='section'><h2>🎓 學徒（階段 1 影子學生，唔落單；階段 0 快照每條訊號自動存）</h2>"
+                 f"<p class='muted' style='font-size:13px'>Claude 學生 {'開（' + esc(stu.get('shadow_hours')) + ' UTC 每 ' + esc(stu.get('interval_min')) + ' 分鐘）' if stu.get('shadow') else '未開（XAU_SHADOW=1）'}・"
+                 f"對答案：參考頻道訊號到之前 30 分鐘內有判斷＝交卷，方向一樣＝方向命中，入場區中位差 ≤3 美元＝位置命中・自己成績：DAN 結構 2R 全平・Claude 學生用量 {esc((stu.get('usage') or {}).get('n'))} 次／${esc((stu.get('usage') or {}).get('cost_usd'))}</p>"
+                 "<div style='overflow-x:auto'><table><tr><th>學生</th><th>判斷數</th><th>對過答案</th><th>方向命中</th><th>位置命中</th><th>交卷率</th><th>自己成交／完結</th><th>自己勝率</th><th>自己 R 合計</th></tr>"
+                 + srows + "</table></div><h3 style='margin-top:12px'>最近判斷</h3><div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>學生</th><th>方向</th><th>入場區</th><th>現價</th><th>依據</th><th>對答案</th></tr>"
+                 + (prow or "<tr><td colspan='7' class='muted'>未有判斷</td></tr>") + "</table></div></div>")
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</h1></div>{page_nav()}</div>")
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"
             f"<meta http-equiv='refresh' content='300'><title>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</title><style>{CSS}</style></head>"
