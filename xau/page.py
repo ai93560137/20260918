@@ -151,6 +151,21 @@ def render_signal_book(s):
                  + "<div class='grid'>" + card("模式", esc((s.get("control") or {}).get("mode") or "RUN"), esc(run_text(s)))
                  + card("持倉", esc(pos_txt)) + "</div><div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>決定</th><th>理由</th></tr>"
                  + (drows or "<tr><td colspan='3' class='muted'>未有決策（冇有效訊號就唔問 Claude）</td></tr>") + "</table></div></div>")
+    fo = s.get("follow")
+    if fo:
+        fa = fo.get("account") or {}
+        fpos = fa.get("positions") or []
+        fpos_txt = "冇" if not fpos else "；".join(f"{'好' if (p.get('side') or 0) > 0 else '淡'}倉 {p.get('lots')} 手 @ {p.get('entry')}・SL {p.get('stop')}・TP {p.get('target') or '—'}" for p in fpos)
+        orows = "".join(f"<tr><td>{esc(fmt_hkt(o['ts']))}</td><td>{esc(o.get('ch'))}</td><td>{esc(o.get('side'))} {esc(o.get('lots'))}</td><td>{num(o.get('price'))}</td>"
+                        f"<td>{num(o.get('sl'))}／{num(o.get('tp'))}</td><td>{esc(o.get('entry'))}</td>"
+                        f"<td>{'紙上' if o.get('applied') == 'paper' else ('✅ ' + str(o.get('ticket') or '') if o.get('ok') else ('❌ ' + str(o.get('message') or '') if o.get('acked') else '⏳ 等回報'))}</td></tr>"
+                        for o in fo.get("orders") or [])
+        body += (f"<div class='section'><h2>跟單（magic {esc(fo.get('magic'))}，頻道尾號 {esc('、'.join(fo.get('channels') or []))}，{esc(fo.get('lots'))} 手，TP1 全平、原 SL；{'demo／真倉指令' if fo.get('execute') else '紙上'}）</h2>"
+                 "<div class='grid'>" + card("跟單心跳", esc(fa.get("received_utc") or "未收到"), "magic " + esc(fo.get("magic")) + " 圖表")
+                 + card("持倉", esc(fpos_txt)) + card("今日／累計（HKD，自己 magic）", esc(fa.get("daily_pnl")) + "／" + esc(fa.get("realized_total")))
+                 + card("最近判斷", esc((fo.get("last") or {}).get("note") or "—"), esc((fo.get("last") or {}).get("utc") or "")) + "</div>"
+                 "<div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>頻道</th><th>方向／手</th><th>入場價</th><th>SL／TP1</th><th>入場依據</th><th>EA 回報</th></tr>"
+                 + (orows or "<tr><td colspan='7' class='muted'>未有跟單</td></tr>") + "</table></div></div>")
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</h1></div>{page_nav()}</div>")
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"
             f"<meta http-equiv='refresh' content='300'><title>📨 {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)}</title><style>{CSS}</style></head>"

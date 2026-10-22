@@ -166,6 +166,10 @@ SIG_REFERENCE_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_REFERENCE_CHANNEL
 # 收到／決策時價已經過咗 TP1、或者已經向有利方向走咗 ≥ SIG_LATE_R × 止損距離 → 當過期（90 日回測：該頻道 44% 訊號出時價已過 TP1）
 SIG_LATE_R = _f("SIG_LATE_R", 1.0)
 SIG_AGREE_MIN = _i("SIG_AGREE_MIN", 30)                      # 幾多分鐘內另一個頻道同方向算「附和」
+# 跟單（使用者 10-22 批「CTC 0.01 手執銀仔落 demo」；IDEAS #123）：只限指定頻道（尾 4 位；空＝關）、固定手數、TP1 全平、用頻道原 SL、獨立 magic
+FOLLOW_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_CHANNELS", "").split(",") if x.strip())
+FOLLOW_MAGIC = _i("SIG_FOLLOW_MAGIC", MAGIC + 1)             # 931 → 932（EA InpBotMagics 已包 931–935，計入戶口總階梯）
+FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h

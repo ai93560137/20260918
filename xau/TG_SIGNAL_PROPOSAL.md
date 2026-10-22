@@ -242,3 +242,9 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 - 收到時已過 TP1 會唔會去 TP2？會：DAN 38 條下一個未到 TP 100% 先到、每張 +1.15 美元（0.01 手），但收到價離下一個 TP 中位 1.9 美元 vs 原 SL 離 12.8 美元（賠率 1:7）；改用合理止損（收到價 − 3 美元）即變 92%／−1.10。唔建議追；S1「略過走咗」維持。
 - 其他頻道 0.01 真倉 TP1 走：只有 CTC 正（train +0.22、valid +3.05 美元／張、回撤 −129、8 月負）；bootstrap 月合計中位 +35 美元。IDEAS #123 等使用者決定，先 demo 30 張。
 - 「訊號相反」0.1 手有賺就走：❌（IDEAS #124）。跟後出／先出全部負；正期望組合全部係跟 DAN；0.1 手 SL $20＝本金 5.7% 穿 PAUSE；冇 SL 最差單張 −20% 本金。
+
+## 25. 跟單（magic 932）：CTC 0.01 手、TP1 全平（使用者 10-22 批；IDEAS #123）
+- 程式 `xau/follower.py`，喺訊號書服務內按 magic 分流：`SIG_FOLLOW_CHANNELS`（頻道尾 4 位，空＝關）、`SIG_FOLLOW_MAGIC`（預設 931+1＝932）、`SIG_FOLLOW_LOTS`（0.01）。狀態前綴 `xau/sig/follow/`（state.json、account.json），同 S1（931）成績分開；EA InpBotMagics 已包 932，§6c 戶口總階梯自動計入。
+- 規則：市價單訊號即刻市價入；限價單等現價入到入場區（±點差）先入；收到時已過 TP1、止損錯邊、距離超上限就略過（標 used 唔再試）；一次只一張；control 非 RUN、階梯 Ⓑ／Ⓓ、EA 唔准交易唔開；SL＝頻道原 SL、TP＝TP1，伺服器端執行，唔改唔主動平；回報按指令 id 前綴 `f`。`XAU_EXECUTE=0` 只記紙上。
+- 部署：MT5 第四張 XAUUSD 圖表 EA v0.37 `InpMagic=932`；env `SIG_FOLLOW_CHANNELS=5231`；唔使開 SIG_DECIDE。
+- 成功標準（#123）：demo 30 張扣成本每張 >+0.5 美元、最大回撤 <100 美元、最長連輸 ≤5。

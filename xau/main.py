@@ -23,6 +23,7 @@ import paper
 import rules
 import storage
 import signals
+import follower
 import tgsignal
 from storage import StorageError
 
@@ -725,13 +726,15 @@ def entry(req):
         status["book"] = config.BOOK
         if config.SIGNAL_BOOK:
             status["signals"] = signals.recent()
+            if follower.enabled():
+                status["follow"] = follower.status()
         if req.args.get("format") == "json":
             return jsonify(status), 200
         return page.render(status), 200, {"Content-Type": "text/html; charset=utf-8"}
     if config.SIGNAL_BOOK:                             # 訊號書 S0：只收 HMAC 簽名嘅訊號／監聽心跳；EA 心跳等一律 ignored，唔問 Opus、唔落單
         if req.method == "POST" and req.headers.get("X-Sig-Signature"):
             return signals.handle_ingest(req.headers, req.get_data())
-        if not config.SIG_DECIDE:
+        if not config.SIG_DECIDE and not follower.enabled():
             return jsonify({"status": "ignored", "message": "signal book S0: ingest only"}), 200
     if req.args.get("tg") == "signal" and not config.SIGNAL_BOOK:   # [R290] 訊號確認 bot 嘅按鈕（訊號書唔用）
         return tgsignal.handle_callback(req)
@@ -745,6 +748,15 @@ def entry(req):
     if not _token_ok(payload):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     action = payload.get("action")
+    if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
+        if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
+            found = follower.ack(str(payload.get("id") or "")[:8], payload, now_ts())
+            log_event(f"📨 [{config.TEAM_NAME}] 跟單指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}", component="follow")
+            return jsonify({"status": "acked" if found else "unknown", "id": str(payload.get("id") or "")[:8]}), 200
+        if follower.is_follow_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return follower.handle_heartbeat(payload)
+        if not config.SIG_DECIDE and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return jsonify({"status": "ignored", "message": "signal book S0: ingest only", "cmd_text": ""}), 200
     if action == "cmd_ack":
         return handle_cmd_ack(payload)
     if action == "tg_signal" and not config.SIGNAL_BOOK:   # [R290] 舊入口（訊號書只收 HMAC 簽名入口）
