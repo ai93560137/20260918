@@ -25,7 +25,7 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
 - 影子階段（`XAU_EXECUTE=0`，預設）：只寫 GCS `xau/`，心跳回應 `cmd_text` 永遠空，**唔會送單**。
 - **舊規則同電閘唔再係硬閘**（使用者 10-20：「將之前的規則, 電閘, 刪減, 但給該陣claude.ai 做參考」）：六關、錦囊 v4 條件、150 分鐘出場、新聞鎖整理喺
   `reference/legacy_rules.md`，放入 Claude system prompt 做參考；舊服務 `zhuge_gate_state.json` 只讀，作 `legacy_gate` 參考資料傳畀 Claude。
-- **硬性風控（AI 無權改，照龍飛陣、冇硬鎖）**：日蝕 −3% PAUSE／−6% 平倉 STOP（紐約換日自動重開）；保證金 < 300% PAUSE（回升自動解）；
+- **硬性風控（AI 無權改，照龍飛陣、冇硬鎖）**：日蝕 −20% PAUSE／冇平倉 STOP（使用者 10-22 由 −3%／−6% 放寬；`XAU_DAILY_LOSS_PAUSE_PCT=20`、`XAU_DAILY_LOSS_STOP_PCT=1000`；夜盤 ×1.5 即 −30%）（紐約換日自動重開）；保證金 < 300% PAUSE（回升自動解）；
   累計 −25% PAUSE（當日事件，換日自動重開）；回撤 10%／20%、保證金 < 200%／150% 只發 Telegram；最大手數、止損距離、最長持倉。
   唯一開關 GCS `xau/control.json`（`mode` RUN／PAUSE／STOP、`set_by`、`auto_reset_day`、`principal_hkd` 私人）；使用者設嘅模式程式唔會自己改。見 `handoff/天覆陣.md` §5。
 - 實倉階段（`XAU_EXECUTE=1`）：EA 改指向本服務，心跳回應 `cmd_text` 帶指令，EA 執行後 `cmd_ack` 回報。要先有新 EA（PR B），同埋影子達到預先登記標準（PR C）。

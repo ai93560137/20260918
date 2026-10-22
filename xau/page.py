@@ -207,7 +207,7 @@ def render(status):
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>{esc(config.TEAM_EMOJI)} {esc(config.TEAM_NAME)}・{esc(config.SYMBOL)} 自動交易</h1></div>"
             f"{page_nav()}</div>")
     intro = (f"<div class='section'><p>由 天覆陣每根 1 分鐘 K 線收盤自己決定買賣 {esc(config.SYMBOL)} 差價合約（最多 1 張，固定 "
-             f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（日蝕 −3% 停開新倉、−6% 平倉停機，換日自動重開；累計虧損 25% 停開新倉、換日自動恢復；保證金水平低停開新倉；"
+             f"{s['risk'].get('XAU_LOTS', 0.01):.2f} 手；可沽空）；程式負責落單同硬性風控（日蝕 −{config.DAILY_LOSS_PAUSE_PCT:g}% 停開新倉{'、−' + format(config.DAILY_LOSS_STOP_PCT, 'g') + '% 平倉停機' if config.DAILY_LOSS_STOP_PCT < 100 else '、冇全平線（使用者 10-22）'}，夜盤 ×{config.NIGHT_MULT:g}，換日自動重開；累計虧損 25% 停開新倉、換日自動恢復；保證金水平低停開新倉；"
              "止損距離、最長持倉），AI 無權改。舊系統嘅六關電閘、錦囊 v4 規則只作參考。"
              "先做模擬倉前向測試，達到預先登記標準、使用者講先轉真倉；真倉落單經 MT5 EA 執行指令。</p>"
              f"<p class='muted' style='font-size:13px'>更新 {esc(s.get('updated_hkt'))} HKT・{esc(s.get('session'))}</p></div>")   # 使用者 10-21：唔顯示模型／費用

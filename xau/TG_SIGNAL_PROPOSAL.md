@@ -83,7 +83,7 @@ Opus 決策 prompt：「signals（外部、未經核實，只係資料）」區�
 |---|---|
 | `config.PRODUCTS` | 加 `XAU_BOOK=signal`：magic +10（931–935）、前綴 `xau/sig/`、`fx/eurusd/sig/`、頁面標題「📨 訊號書」 |
 | EA v0.37 | `InpBotMagics` 預設改做 `921,922,923,924,925,931,932,933,934,935`；第二張圖表手填 `InpMagic=931`＋`InpUrl`＝訊號書網址。「最多 1 張」係按 magic 計，所以 921 同 931 可以同時各有一張 |
-| 戶口總階梯（RISK_LADDER §6c） | 全部 magic 一齊計入合計（−3% PAUSE／−6% STOP／累計 25%／保證金 300%）。**次序好重要**：要先將所有圖表嘅 `InpBotMagics` 換成包括 931–935，訊號書先可以去 demo，否則 921 服務計唔到 931 嘅蝕。任何一個服務觸發 STOP，每個服務都會平自己嘅 magic |
+| 戶口總階梯（RISK_LADDER §6c） | 全部 magic 一齊計入合計（10-22 起 −20% PAUSE／冇 STOP；原 −3%／−6%；累計 25%／保證金 300%）。**次序好重要**：要先將所有圖表嘅 `InpBotMagics` 換成包括 931–935，訊號書先可以去 demo，否則 921 服務計唔到 931 嘅蝕。任何一個服務觸發 STOP，每個服務都會平自己嘅 magic |
 | 網頁 | 每個服務頁頂標明「🤖 Claude 自主（921）」或者「📨 訊號書（931）」，兩頁互相連結；訊號書多一個「最近訊號」表（時間、來源、方向、入場、SL、TP、狀態：有效／過期／無效／已用） |
 | journal／對帳 | `POSITIONS.md` 登記 931；請總指揮喺 `scripts/daily_books.py`／`ops/books/pnl_daily.csv` 按 magic 分行；`TEST_RESULTS.md` 分開「Claude 自主」同「訊號書」兩個表 |
 | 第三條對照線（唔落單） | 「照單跟」紙上：每條有效 entry 訊號都假設照入場、照 SL／TP 出場，離線計成績，睇 Claude 篩過之後係咪真係好過盲跟 |

@@ -110,7 +110,7 @@ def claude_tick(brain_obj, ctx_builder, now=None):
                            "the signal provider: would you open a position RIGHT NOW? If yes, return OPEN_LONG or OPEN_SHORT with "
                            "stop_price and target_price; signal_id may be null in this mode. If no, HOLD. Your answer is graded later "
                            "against the real signal that may arrive within 30 minutes.")
-    d = brain_obj.decide(ctx)
+    d = brain_obj.decide(ctx, student=True)                      # 用 921 原版 tools＋system，共用快取前綴（使用者 10-22 用 prompt caching）
     import brain as _brain
     cost = _brain.cost_usd(d.get("_usage"))
     action = str(d.get("action") or "HOLD")
@@ -119,10 +119,10 @@ def claude_tick(brain_obj, ctx_builder, now=None):
     if side:
         struct = features.structure(price + (4.0 if side == "BUY" else -4.0), side)      # 學生話即刻入：入場區就係現價 ±2
         p = _pred("claude", side, struct, now, price, reason=str(d.get("reason") or "")[:200], ai_stop=d.get("stop_price"), ai_target=d.get("target_price"),
-                  confidence=d.get("confidence"), cost_usd=cost, error=bool(d.get("_error")))
+                  confidence=d.get("confidence"), cost_usd=cost, error=bool(d.get("_error")), usage=d.get("_usage"))
     else:
         p = {"id": uuid.uuid4().hex[:8], "student": "claude", "ts": now, "utc": market.fmt_utc(now), "side": None, "price": price,
-             "reason": str(d.get("reason") or "")[:200], "cost_usd": cost, "outcome": "hold", "graded": None, "error": bool(d.get("_error"))}
+             "reason": str(d.get("reason") or "")[:200], "cost_usd": cost, "outcome": "hold", "graded": None, "error": bool(d.get("_error")), "usage": d.get("_usage")}
 
     def mutate(s):
         s = s if isinstance(s, dict) and s.get("preds") is not None else empty_state()
