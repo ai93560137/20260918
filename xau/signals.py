@@ -285,7 +285,8 @@ def public_view(rec):
             "kind": sig.get("kind"), "side": sig.get("side"), "order_type": sig.get("order_type"), "entry_low": sig.get("entry_low"), "entry_high": sig.get("entry_high"),
             "sl": sig.get("sl"), "tp": sig.get("tp"), "parse_confidence": sig.get("confidence"), "price": rec.get("price"),
             "edited": bool(rec.get("edit_ts")), "msg_ts": rec.get("msg_ts"), "ch": str(rec.get("channel_id") or "")[-4:],
-            "late": bool(rec.get("late"))}
+            "late": bool(rec.get("late")), "fwd": bool(rec.get("fwd_ts")),
+            "fwd_lag_min": (round((rec["msg_ts"] - rec["fwd_ts"]) / 60) if rec.get("fwd_ts") and rec.get("msg_ts") else None)}
 
 
 # ---------- I/O ----------
@@ -395,8 +396,10 @@ def handle_signal(payload):
     now = now_ts()
     sid = sid_of(payload.get("channel_id"), payload.get("msg_id"), payload.get("edit_ts"))
     t_msg = msg_time(payload, now)
+    fwd_ts = msg_time({"date": payload.get("fwd_date")}, 0) if payload.get("fwd_date") else None   # v3：轉發自原頻道嘅原發佈時間
     rec = {"sid": sid, "status": "parsing", "channel_id": str(payload.get("channel_id") or "")[:32],
            "msg_id": payload.get("msg_id"), "edit_ts": payload.get("edit_ts"), "text": text,
+           "fwd_ts": fwd_ts or None, "fwd_from": str(payload.get("fwd_from_id") or "")[:32] or None,
            "reply_text": str(payload.get("reply_text") or "")[:1500] or None,
            "received_ts": now, "received_utc": market.fmt_utc(now), "msg_ts": t_msg, "msg_utc": market.fmt_utc(t_msg),
            "valid_until_ts": t_msg + config.SIG_TTL_MIN * 60, "valid_until_utc": market.fmt_utc(t_msg + config.SIG_TTL_MIN * 60)}
