@@ -183,7 +183,7 @@ def report(a, b, first, last, since):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bars", required=True)
+    ap.add_argument("--bars", default="", help="本機 1 分鐘 K 線 JSON；用 --gcs 就唔使")
     ap.add_argument("--pnl", default="")
     ap.add_argument("--since", default="")
     ap.add_argument("--out", default="")
@@ -192,6 +192,8 @@ def main():
     a = ap.parse_args()
     if a.gcs:
         raw, pnl = gcs_load()
+    elif not a.bars:
+        ap.error("要 --bars 或者 --gcs")
     else:
         raw, pnl = json.load(open(a.bars)), (json.load(open(a.pnl)) if a.pnl else None)
     bars = load(raw)
