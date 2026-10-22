@@ -130,10 +130,6 @@ class PickTaskTests(unittest.TestCase):
         self.assertEqual(on.pick_task(hkt("2026-10-13 15:58")), "hedge")
         self.assertEqual(on.pick_task(hkt("2026-10-13 17:15")), "deals")
         self.assertEqual(on.pick_task(hkt("2026-10-14 03:45")), "deals")
-        # 排程遲 5 小時：按 cron 字串，唔按時鐘
-        self.assertEqual(on.pick_task(hkt("2026-10-22 22:29"), "10 9 * * 1-5"), "deals")
-        self.assertEqual(on.pick_task(hkt("2026-10-22 06:43"), "40 19 * * 1-5"), "deals")
-        self.assertEqual(on.pick_task(hkt("2026-10-22 17:15"), "55 7 * * 1-5"), "hedge")
 
 
 if __name__ == "__main__":

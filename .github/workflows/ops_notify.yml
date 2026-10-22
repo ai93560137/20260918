@@ -57,7 +57,6 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           TASK: ${{ inputs.task || 'auto' }}
-          GH_SCHEDULE: ${{ github.event.schedule }}   # 排程遲到時照 cron 揀 hedge／deals
           DRY: ${{ inputs.dry_run || 'false' }}
         run: |
           ARGS="--task $TASK"
