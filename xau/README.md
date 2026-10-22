@@ -73,6 +73,9 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_LONG_ONLY` | 0 | 影子階段兩邊都記 |
 | `XAU_CALL_WHEN_LOCKED` | 0 | 空倉且電閘 LOCK 時唔問 Claude（慳錢） |
 | `XAU_MAGIC` | 921 | 同新 EA `InpMagic` 一致（線上 V23 用 920） |
+| `XAU_HOLD_RULES` | shadow | 慳成本 H（`hold_rules.py`，COST_PLAN §6）：有倉時程式按教學第 1／4 條移止損。`off`／`shadow`（只記「規則會點移」vs Opus 實際點移，唔改行為）／`on`（規則處理；Opus 只喺新 M15、首次 1R、價格離 SL／TP ≤0.5×M15 ATR、每 `XAU_HOLD_RULES_ASK_MIN` 分鐘先問）。止損只准收緊、唔收到 0.5×ATR 內、未到 1R 唔郁 |
+| `XAU_HOLD_RULES_ASK_MIN` | 5 | on 模式下最多隔幾多分鐘問一次 Opus |
+| `XAU_HOLD_RULES_TOL` | 1.0（EURUSD 0.0010） | shadow 統計：Opus 止損同規則相差 ≤tol 算一致（目標一星期 ≥80% 先開 on） |
 
 ## 多產品：一個產品一個服務（使用者 10-21：「將產品擴展到主要外匯」，先做 EURUSD、0.01 手、止損 5–40 pip、影子模式）
 同一套 `xau/` 程式，每個產品另開一個 Cloud Run 服務，用 `XAU_SYMBOL` 分辨；產品表喺 `config.PRODUCTS`（合約、pip、小數位、止損 pip 範圍、點差、報價貨幣、GCS 前綴、magic）。
