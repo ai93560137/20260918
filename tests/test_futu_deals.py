@@ -156,5 +156,21 @@ check("期貨戶口 HSI 夜市 22:36 照當香港時間", main.futu_deal_hkt({"t
 check("證券戶口美股：美東 09:50（夏令）→ 香港 21:50", main.futu_deal_hkt({"time": "2026-10-19 09:50:00", "code": "US.SPY", "account": "證券帳戶-HK"}) == datetime(2026, 10, 19, 21, 50))
 check("證券戶口美股：美東 09:50（冬令）→ 香港 22:50", main.futu_deal_hkt({"time": "2026-12-01 09:50:00", "code": "US.SPY", "account": "證券帳戶-HK"}) == datetime(2026, 12, 1, 22, 50))
 
+print("\n=== [R284] 人手守則①：蝕緊嘅方向加注 ===")
+import tempfile                                     # noqa: E402
+from pathlib import Path as _P                      # noqa: E402
+_sf = _P(tempfile.mkdtemp()) / "manual_rules_state.json"
+_r = lambda code, q, pl: {"source": "positions", "code": code, "qty": q, "futu_pl": pl}
+check("第一次冇基準 → 冇警報", auto_risk.add_to_loser([_r("US.ES2612", -1, -500)], _sf) == {})
+a = auto_risk.add_to_loser([_r("US.ES2612", -2, -900)], _sf)
+check("淡倉蝕緊由 −1 加到 −2 → 警報", list(a) == ["rule1:US.ES2612"] and "−1" not in a["rule1:US.ES2612"] and "-1 → -2" in a["rule1:US.ES2612"], a)
+check("照舊 −2 蝕緊 → 警報保持", list(auto_risk.add_to_loser([_r("US.ES2612", -2, -1200)], _sf)) == ["rule1:US.ES2612"])
+check("減返 −1 → 解除", auto_risk.add_to_loser([_r("US.ES2612", -1, -600)], _sf) == {})
+check("有浮賺時加注 → 冇警報", auto_risk.add_to_loser([_r("US.ES2612", -3, 400)], _sf) == {})
+check("期權唔計", auto_risk.add_to_loser([_r("HK.HSI261023P23700000", -2, -9000)], _sf) == {}
+      and auto_risk.add_to_loser([_r("HK.HSI261023P23700000", -3, -9000)], _sf) == {})
+auto_risk.add_to_loser([_r("HK.HSI2610", 1, -100)], _sf)
+check("HSI 期貨蝕緊加注 → 警報", "rule1:HK.HSI2610" in auto_risk.add_to_loser([_r("HK.HSI2610", 2, -800)], _sf))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

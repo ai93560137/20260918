@@ -936,6 +936,8 @@ def futu_alert_team(key):
         return "雲垂陣"
     if key.startswith(("margin", "hard_stop")):
         return "全部陣（同一富途戶口）"
+    if key.startswith("rule1:"):                       # [R284] 人手守則①（auto_risk.add_to_loser）
+        return FUTU_TEAM_MANUAL
     return "總指揮"
 
 
@@ -6360,6 +6362,49 @@ LONGFEI_CSS = (   # [R260] 使用者 10-20：真倉／模擬倉各區「全部�
 )
 
 
+# [R284] 使用者 10-22：「寫成一頁人手交易守則，蝕緊嘅方向唔好加注，放喺網頁上；人手做錯即刻出警報提我」。
+# 證據來自使用者富途成交 FIFO 配對（2026-06 至 10，龍飛陣 R268／R283，成交時區已更正）；只寫比率，唔寫金額。
+# 「⏰ 會出警報」嗰幾條由 gcp_ib/auto_risk.py 逐次讀持倉檢查，發 Telegram。
+MANUAL_RULES = [
+    ("蝕緊嘅方向唔好加注", True,
+     "倉位有浮蝕時，唔好再加同方向嘅單（攤平）。要加，只可以喺倉位有浮賺時順勢加。",
+     "10-21 標普一路升，一個鐘內分 4 次加淡 ES／MES，最後喺高位全部止蝕，係近期最大單次虧損。"),
+    ("開倉前寫低止蝕，止蝕只可以收緊", False,
+     "落單嗰刻就決定止蝕位；之後只可以向有利方向移（收緊），唔好因為「等佢返嚟」而移遠。",
+     "勝率約七成，但平均輸係平均贏嘅 3 至 8 倍：輸單冇及早止蝕。"),
+    ("蝕緊嘅倉唔好拖過 1 日、唔好帶過夜", False,
+     "揸超過 1 日嘅單整體大蝕；揸 4 小時至 1 日嘅單最好。蝕緊就喺當日處理。",
+     "持倉 > 1 日：獲利因子 0.25；4 小時至 1 日：獲利因子 4.9（94 筆，t 4.2）。"),
+    ("贏單要揸，用移動止蝕跟住", False,
+     "有浮賺、走勢未轉，就唔好賺少少就走；用移動止蝕鎖利。最賺錢嘅單多數係順勢沽空 HSI 揸 1 至 3 日。",
+     "頭 10 大贏單有 9 筆係 HSI 順勢沽空，揸過夜。"),
+    ("唔好逆當日走勢開倉", False,
+     "做好要價位喺今日開市價上面、做淡要喺下面。逆住當日走勢開倉幾乎全部蝕。",
+     "逆當日走勢：獲利因子 0.16（60 筆）；順當日走勢：1.26。做淡而且順當日走勢：3.28。"),
+    ("唔好逆日線方向開倉", False,
+     "日線升勢唔好沽空、日線跌勢唔好撈底做好；日線同當日方向一致先開。",
+     "逆日線方向：獲利因子 0.08（37 筆）。"),
+    ("沽期權變價內：喺行使價用期貨對沖", False,
+     "沽出嘅 put／call 跌入價內，喺行使價附近用期貨對沖，鎖住損失，到期再一齊處理。",
+     "10-22 HSI P23700 深度價內，喺 23,700 沽 1 張期貨對沖，鎖住咗大部分損失（做得啱嘅例子）。"),
+]
+
+
+def build_manual_rules_page():
+    nav = page_nav("rules")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📏 人手交易守則</h1></div>{nav}</div>"
+    intro = ("<div class='section'><p>落單前睇一次。每條都係由你富途成交（2026 年 6 月至 10 月，FIFO 配對）整理出嚟，"
+             "唔係理論。標住「⏰ 會出警報」嘅，做錯會即時（每次持倉檢查）發 Telegram 提你。</p></div>")
+    tag = " <span style='font-size:13px;color:#c0392b'>⏰ 會出警報</span>"
+    items = "".join(
+        f"<div class='section'><h2>{i}. {esc(title)}{tag if alarm else ''}</h2>"
+        f"<p>{esc(rule)}</p><p class='muted' style='font-size:13px'>證據：{esc(why)}</p></div>"
+        for i, (title, alarm, rule, why) in enumerate(MANUAL_RULES, 1))
+    foot = ("<p class='muted' style='font-size:13px'>只係紀律提醒，唔係落單指令。過往成交統計唔代表將來；"
+            "樣本只得 5 個月。龍飛陣每月重新跑一次成交分析再更新。</p>")
+    return html_page("人手交易守則", head + intro + items + foot)
+
+
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
@@ -7963,6 +8008,7 @@ PAGE_LINKS = [
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
     ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
+    ("rules", "📏 人手交易守則"),                               # [R284] 使用者 10-22：人手落單前睇（龍飛陣由成交分析整理）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
     (XAU_URL, "🌌 天覆陣 XAUUSD"),                               # [R253] 舊 XAUUSD 頁面移去天覆陣 zhuge-xau
@@ -8263,6 +8309,8 @@ def handle_get(req):
         return handle_canary_get(req)
     if view == "htf":                                            # [R165] 📈 HTF 每日掛單（&format=json）
         return handle_htf_get(req)
+    if view == "rules":                                          # [R284] 📏 人手交易守則
+        return build_manual_rules_page()
     if view == "longfei":                                        # [R201] 🐉 龍飛陣成績（&format=json）
         return handle_longfei_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
