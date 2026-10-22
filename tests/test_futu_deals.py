@@ -45,7 +45,7 @@ def check(name, cond, extra=""):
     else: FAIL += 1; print(f"  ❌ {name} {extra}")
 
 
-def utc(hkt):      # futu_pnl 嘅成交時間係 UTC；FUTU_DEAL_TZ_HOURS=8 換回香港
+def utc(hkt):      # [R256] 期貨戶口成交時間本身係香港時間（FUTU_DEAL_TZ_HOURS 預設 0）
     return (datetime.strptime(hkt, "%Y-%m-%d %H:%M:%S") - timedelta(hours=main.FUTU_DEAL_TZ_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -149,6 +149,12 @@ check("龍飛陣喺 FUTU_TEAMS（策略總表有卡）", "龍飛陣" in main.FUT
 
 a3 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": -2}])
 check("[R239] MNQ2612 → 使用者人手", [x["team"] for x in a3] == [main.FUTU_TEAM_MANUAL], a3)
+
+print("\n=== [R256] 富途成交時區 ===")
+check("期貨戶口預設唔加鐘（本身係香港時間）", main.FUTU_DEAL_TZ_HOURS == 0)
+check("期貨戶口 HSI 夜市 22:36 照當香港時間", main.futu_deal_hkt({"time": "2026-10-21 22:36:00.123", "code": "HK.HSI2612", "account": "期貨帳戶"}) == datetime(2026, 10, 21, 22, 36))
+check("證券戶口美股：美東 09:50（夏令）→ 香港 21:50", main.futu_deal_hkt({"time": "2026-10-19 09:50:00", "code": "US.SPY", "account": "證券帳戶-HK"}) == datetime(2026, 10, 19, 21, 50))
+check("證券戶口美股：美東 09:50（冬令）→ 香港 22:50", main.futu_deal_hkt({"time": "2026-12-01 09:50:00", "code": "US.SPY", "account": "證券帳戶-HK"}) == datetime(2026, 12, 1, 22, 50))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

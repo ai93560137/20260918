@@ -1030,7 +1030,16 @@ FUND_REPORT_START = os.environ.get("FUND_REPORT_START", "2026-09-01")
 OPS_REPORTS_PUBLIC_FILE = "ops/reports/public.json"                                # [R174] 週報／月報公開版
 FUTU_USD_HKD = float(os.environ.get("FUTU_USD_HKD", "7.8") or 7.8)
 FUND_REPORT_SHOW_FLOWS = os.environ.get("FUND_REPORT_SHOW_FLOWS", "0") == "1"   # 資金流水含入／出金金額，預設唔公開
-FUTU_DEAL_TZ_HOURS = float(os.environ.get("FUTU_DEAL_TZ_HOURS", "8") or 8)     # 富途成交時間加幾多個鐘＝香港時間（實測 UTC）
+FUTU_DEAL_TZ_HOURS = float(os.environ.get("FUTU_DEAL_TZ_HOURS", "0") or 0)     # [R256] 期貨戶口成交時間本身已係香港時間（10-22 核實：HK 成交 351/353 落喺交易時段；+8 只得 231）
+
+
+def futu_deal_hkt(d):
+    """[R256] 富途成交時間 → 香港時間（naive）。期貨戶口＝香港時間（+FUTU_DEAL_TZ_HOURS，預設 0）；
+    證券戶口美股／美股期權＝美東時間，按 America/New_York（含夏令時）轉香港時間。"""
+    t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S")
+    if "證券" in str(d.get("account") or "") and str(d.get("code") or "").startswith("US."):
+        return t.replace(tzinfo=NY_TZ).astimezone(ZoneInfo("Asia/Hong_Kong")).replace(tzinfo=None)
+    return t + timedelta(hours=FUTU_DEAL_TZ_HOURS)
 FUTU_PRODUCTS = (   # (代碼正則, 產品, 每點價值)
     (r"^HK\.MHI\d{4}$", "MHI 小型恒指期貨", 10),
     (r"^HK\.HSI\d{4}$", "HSI 恒指期貨", 50),
@@ -1102,7 +1111,7 @@ def futu_deals_build(doc, day):
     deals = []
     for d in doc.get("deals") or []:
         try:
-            t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S") + timedelta(hours=FUTU_DEAL_TZ_HOURS)
+            t = futu_deal_hkt(d)
         except (KeyError, ValueError, TypeError):
             continue
         q, px = to_float(d.get("qty")), to_float(d.get("price"))
@@ -1217,7 +1226,7 @@ def futu_pnl_report(doc, start=None, today=None):
     deals = []
     for d in doc.get("deals") or []:
         try:
-            t = datetime.strptime(str(d["time"])[:19], "%Y-%m-%d %H:%M:%S") + timedelta(hours=FUTU_DEAL_TZ_HOURS)
+            t = futu_deal_hkt(d)
         except (KeyError, ValueError):
             continue
         q, px = to_float(d.get("qty")), to_float(d.get("price"))
@@ -1494,7 +1503,7 @@ def build_fund_report_page(r):
     body += ("<div class='section'><b>注意事項</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
              "<li>已實現按先入先出計；未實現用富途每個持倉嘅浮動盈虧（pl_val，按富途成本價），兩者成本基礎可能略有差異。</li>"
              "<li>手續費按富途每張單嘅收費，計喺第一筆成交嗰日。</li>"
-             f"<li>富途成交時間加 {FUTU_DEAL_TZ_HOURS:g} 個鐘當香港時間（實測）；月份按香港時間分。</li>"
+             f"<li>富途成交時間：期貨戶口當香港時間、證券戶口美股由美東時間轉香港時間；月份按香港時間分。</li>"
              f"{notes}</ul></div>")
     return html_page("基金報告", head + body + f"<p class='muted' style='font-size:12px'>JSON：<a href='?view=fund_report&amp;format=json'>"
                      "?view=fund_report&amp;format=json</a></p>")
