@@ -99,11 +99,12 @@ print("=== Claude 學生 ===")
 config.SHADOW = True; config.SHADOW_HOURS_UTC = ""          # 測試用：全日都問（env 空字串會退回預設時段）
 class FakeBrain:
     def __init__(self): self.decision = {"action": "OPEN_SHORT", "stop_price": 4005, "target_price": 3990, "confidence": 0.7, "reason": "淡"}; self.calls = 0
-    def decide(self, ctx): self.calls += 1; self.ctx = ctx; return {**self.decision, "_usage": {"in": 10, "out": 5, "model": "claude-opus-5-5"}, "_ms": 5}
+    def decide(self, ctx, student=False): self.calls += 1; self.ctx = ctx; self.student = student; return {**self.decision, "_usage": {"in": 10, "out": 5, "model": "claude-opus-5-5"}, "_ms": 5}
 FB = FakeBrain()
 ctx = lambda: {"last_price": 3998.4, "signals": [{"sid": "x"}], "bars_m1": []}
 p = student.claude_tick(FB, ctx, NOW[0])
-check("Claude 學生：問一次、prompt 冇 signals、有 student_task", FB.calls == 1 and "signals" not in FB.ctx and "STUDENT MODE" in FB.ctx["student_task"], FB.ctx.keys())
+check("Claude 學生：問一次、prompt 冇 signals、有 student_task、student=True", FB.calls == 1 and "signals" not in FB.ctx and "STUDENT MODE" in FB.ctx["student_task"] and FB.student is True, FB.ctx.keys())
+check("判斷記低 usage（部署後核實快取）", p is not None and p.get("usage", {}).get("in") == 10, p)
 check("OPEN_SHORT → SELL 判斷，入場區＝現價 ±2，記 cost", p["side"] == "SELL" and abs((p["entry_low"] + p["entry_high"]) / 2 - 3998.4) < 0.01 and p["cost_usd"] >= 0, p)
 check("30 分鐘內唔再問", student.claude_tick(FB, ctx, NOW[0] + 600) is None and FB.calls == 1)
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}

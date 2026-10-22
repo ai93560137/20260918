@@ -68,5 +68,11 @@ m1b = m1[:-1] + [{**m1[-1], "close": 4001.5}]
 check("價格移動 ≥ 0.3×ATR → 唔沿用", xau.reuse_hold(st, m1b, m15, 2120) is None)
 check("上次唔係 HOLD → 唔沿用", xau.reuse_hold({**st, "last_decision": {"kind": "decide", "final": "OPEN_LONG"}}, m1, m15, 2120) is None)
 
+print("=== 影子學生快取（使用者 10-22「用 prompt caching」）===")
+uc_s = brain._user_content({"product": {}, "bars_m15_older": [], "bars_m1_older": [], "bars_m1": []}, "x", stable_ttl="1h", ttl="1h", cache_m1=False)
+check("學生：產品＋M15 段 1h、M1 段冇 cache_control、live 冇", uc_s[0]["cache_control"]["ttl"] == "1h" and "cache_control" not in uc_s[1] and "cache_control" not in uc_s[2], [c.get("cache_control") for c in uc_s])
+check("BASE_TOOL 冇 signal_id、BASE_SYSTEM 冇訊號書段（同 921 前綴一樣）", "signal_id" not in brain.BASE_TOOL["input_schema"]["properties"] and "SIGNAL BOOK MODE" not in brain.BASE_SYSTEM)
+check("build_system(base=BASE_SYSTEM) 用原版", "SIGNAL BOOK MODE" not in brain.build_system("", base=brain.BASE_SYSTEM, reference=""))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
