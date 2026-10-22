@@ -105,3 +105,22 @@
 3. S 影子一日 → 達標先開；F-XAU 繼續 shadow 兩日。
 4. C、E、D2 唔建議。
 5. 每步部署／env 由總指揮 dry-run，使用者喺總指揮工作階段親口批；硬性風控同 RISK_LADDER §6c 一樣都唔郁。
+
+## 7. 使用者決定（10-23，經總指揮）：**穩陣（再加 H）＝ G＋L2＋F-EUR＋H**
+
+| 項 | 狀態 | 細節 |
+|---|---|---|
+| G | 程式已入（PR #294，`XAU_M15_OLDER_MAX=160`） | 部署三個服務後一日核實 `cw_1h`／`cw_5m`；大重寫只應喺 :00 |
+| L2 | SOP | **教學簿（GCS `xau/lessons.md`、`xau/sig/lessons.md`）一日最多改一次**；一日內多條就集齊一次寫（每次改 ≈ 一次 system 1h 重寫 $0.03）。寫入 `handoff/天覆陣.md` §1、`DAN_APPRENTICE.md` |
+| F-EUR | 等總指揮 `--profile eurusd env set XAU_REUSE_HOLD=on` | 只對 zhuge-eurusd；XAUUSD 維持 shadow（亞洲時段再睇兩日） |
+| H | 程式已入（`xau/hold_rules.py`，`XAU_HOLD_RULES` 預設 **shadow**） | 見下 §7.1；shadow 一星期達標先由使用者批 `on` |
+
+### 7.1 H 實作（`xau/hold_rules.py`；tests/test_xau_hold.py 55 項）
+- **規則止損**（`suggest`）：浮盈 < 1R 唔郁（教學第 1 條）；≥1R → 候選＝max(保本, 較遠者(現價 ∓ 1×M15 ATR, 上一個 M1 擺動點 ∓ 0.1×ATR))（教學第 1、4 條「取較遠」），再夾到唔近過現價 0.5×ATR（教學第 4 條）；
+  **只准收緊**（新止損冇比現止損緊就唔郁）；收緊幅度 < 0.1×ATR 唔郁（免每分鐘 modify）。擺動點用嚴格極值（橫行打和唔算）。
+  R＝入場價同「第一次見到呢張倉時嘅止損」嘅距離（部署中途接手嘅倉就係當時 SL；ATR 或初始止損攞唔到就交 Claude）。
+- **問 Opus 嘅分鐘**（`should_ask`，只 on 模式生效）：新 M15 收盤／浮盈首次到 1R／價格離 SL 或 TP ≤0.5×ATR／距上次問 ≥5 分鐘（`XAU_HOLD_RULES_ASK_MIN`）／冇初始止損或 ATR。其餘分鐘由規則處理，決策紀錄 `kind=hold_rules`、`cost_usd=0`，EA 有未 ack 嘅 modify 就等。
+- **shadow**（預設）：行為完全唔變（Opus 每分鐘照問），每根 M1 記 `rec.hold_rules={sl, stage, r_mult, reason, ask, ai_sl}`；`state.hold_rules.stats`（跨倉累積，狀態 JSON `hold_rules`）：
+  `ai_moves`（Opus 實際移止損次數）、`both`／`within_tol`（同一分鐘規則都會移且相差 ≤`XAU_HOLD_RULES_TOL`）、`ai_only`、`rule_only`、`agree_pct`＝within_tol／ai_moves、`rule_minutes`／`minutes`（on 模式會慳幾多分鐘）。
+- **達標開 on**：一星期 `agree_pct ≥ 80%`（且 `ai_only` 嘅個案睇過唔係規則漏咗保本）→ 總指揮 dry-run `env set XAU_HOLD_RULES=on`（先 XAUUSD；EURUSD 另計，tol 0.0010）。退回：`XAU_HOLD_RULES=shadow` 或 `off`。
+- Opus 被問到時嘅決定照行（包括 Opus 自己移遠——`rules.validate_decision` 對 Opus 嘅 UPDATE_STOP 權限冇變）；規則下一分鐘只會收返、唔會放鬆。

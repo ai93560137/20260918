@@ -191,3 +191,8 @@ REUSE_ATR_MULT = _f("XAU_REUSE_ATR_MULT", 0.3)
 REUSE_MAX_MIN = _i("XAU_REUSE_MAX_MIN", 5)
 # D：空倉時只喺呢段 UTC 鐘數問 Claude（例 "07-17" = 07:00–16:59 UTC；空＝全日）；有倉照管
 ACTIVE_HOURS_UTC = _s("XAU_ACTIVE_HOURS_UTC", "")
+# H（使用者 10-23 揀「穩陣＋H」）：有倉時程式按教學第 1／4 條移止損（hold_rules.py）；off｜shadow（預設：只記錄唔改行為）｜on
+#    on 時 Opus 只喺新 M15／首次 1R／價格離 SL 或 TP ≤0.5×ATR／每 HOLD_RULES_ASK_MIN 分鐘先問；止損只准收緊、唔收到 0.5×ATR 內
+HOLD_RULES = _s("XAU_HOLD_RULES", "shadow").lower()
+HOLD_RULES_ASK_MIN = _i("XAU_HOLD_RULES_ASK_MIN", 5)
+HOLD_RULES_TOL = _f("XAU_HOLD_RULES_TOL", 1.0 if PRODUCT["digits"] == 2 else 0.0010)   # shadow 統計：規則 vs Opus 止損「相差 ≤tol」

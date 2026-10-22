@@ -24,6 +24,7 @@ import rules
 import storage
 import signals
 import follower
+import hold_rules
 import student
 import tgsignal
 from storage import StorageError
@@ -430,6 +431,41 @@ def process_bar(state, bar, m1, m15, account, now):
         state["reuse_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
     if reuse:
         rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
+    hr = hr_rule = None
+    if pos is not None and hold_rules.mode() != "off":   # 慳成本 H：有倉時規則止損（shadow 只記錄；on 時規則處理、Opus 只喺特定分鐘問）
+        hr = hold_rules.track(state.get("hold_rules"), pos, now)
+        atr15 = market.wilder_atr(m15)
+        hr_rule = hold_rules.suggest(pos, m1, atr15, bar["close"], hr.get("initial_stop"))
+        r_hit_first = hr_rule.get("r_mult") is not None and hr_rule["r_mult"] >= hold_rules.BE_R and hr.get("r_hit_ts") is None
+        if r_hit_first:
+            hr["r_hit_ts"] = now
+        ask = hold_rules.should_ask(hr, pos, bar["close"], atr15, m15[-1]["time"], now, r_hit_first)
+        hr["last_m15_time"] = m15[-1]["time"]
+        if ask:
+            hr["last_ask_ts"] = now
+        st = hr.setdefault("stats", {}); st["minutes"] = st.get("minutes", 0) + 1
+        if not ask:
+            st["rule_minutes"] = st.get("rule_minutes", 0) + 1       # on 模式下唔問 Opus 嘅分鐘（shadow＝估計可以慳幾多）
+        rec["hold_rules"] = {"mode": hold_rules.mode(), "sl": hr_rule.get("sl"), "stage": hr_rule.get("stage"),
+                             "r_mult": hr_rule.get("r_mult"), "reason": hr_rule.get("reason"), "ask": ask}
+        state["hold_rules"] = hr
+        if hold_rules.mode() == "on" and not ask:
+            action, stop, target, why = "HOLD", None, None, None
+            if hr_rule.get("sl") is not None:
+                action, stop, target, why = rules.validate_decision(
+                    {"action": "UPDATE_STOP", "stop_price": hr_rule["sl"], "target_price": None, "confidence": 1.0, "reason": "規則"},
+                    position=pos, last=bar["close"], can_open=False, block_reason="規則", trades_today=paper.trades_today(state, day))
+                if action == "UPDATE_STOP" and config.EXECUTE and pending_has(state, "modify"):
+                    action, why = "HOLD", "上一個 modify 未 ack"
+            rec.update(kind="hold_rules", action=action, final=action, stop=stop, target=target, rejected=why,
+                       reason=f"規則止損（{hr_rule.get('reason')}）", cost_usd=0.0, model="rules")
+            rec["applied"] = (enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD") if config.EXECUTE \
+                else paper.apply(state, action, stop, target, bar, now, day, decision_id)
+            _record(state, rec, day)
+            if action == "UPDATE_STOP":
+                log_event(f"📏 [{config.TEAM_NAME}] 規則移止損 → {stop:.{config.PRICE_DIGITS}f}（{hr_rule.get('reason')}）@ {bar['close']:.{config.PRICE_DIGITS}f}",
+                          component="rules", action=action)
+            return rec, rec["applied"]
     active = signals.active(now, price=bar["close"]) if config.SIGNAL_BOOK else None
     if config.SIGNAL_BOOK and pos is None and not active:
         return None, "冇有效訊號（訊號書唔問 Claude）"
@@ -463,6 +499,10 @@ def process_bar(state, bar, m1, m15, account, now):
                ms=d.get("_ms"), usage=d.get("_usage"), cost_usd=brain.cost_usd(d.get("_usage")),
                model=(d.get("_usage") or {}).get("model") or config.MODEL, lessons=d.get("_lessons"),
                error=bool(d.get("_error")))
+    if hr is not None:                                    # H shadow／on：Opus 實際移止損 vs 規則會移去邊
+        hr["stats"] = hold_rules.compare(hr.get("stats"), hr_rule.get("sl"), action, stop, pos.get("stop"), config.HOLD_RULES_TOL)
+        if action == "UPDATE_STOP":
+            rec["hold_rules"]["ai_sl"] = stop
     if cited:
         rec["signal_id"] = cited["sid"]
         if cited["sid"] not in rec["reason"]:
@@ -709,6 +749,7 @@ def build_status():
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
+        "hold_rules": {"mode": hold_rules.mode(), "ask_min": config.HOLD_RULES_ASK_MIN, "tol": config.HOLD_RULES_TOL, **(state.get("hold_rules") or {})},
         "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
