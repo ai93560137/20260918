@@ -74,5 +74,17 @@ check("學生：產品＋M15 段 1h、M1 段冇 cache_control、live 冇", uc_s[
 check("BASE_TOOL 冇 signal_id、BASE_SYSTEM 冇訊號書段（同 921 前綴一樣）", "signal_id" not in brain.BASE_TOOL["input_schema"]["properties"] and "SIGNAL BOOK MODE" not in brain.BASE_SYSTEM)
 check("build_system(base=BASE_SYSTEM) 用原版", "SIGNAL BOOK MODE" not in brain.build_system("", base=brain.BASE_SYSTEM, reference=""))
 
+print("=== 慳成本 G：整點前 M15 段固定根數，清單滾動唔會令 1h 快取失效 ===")
+import main as xau_main
+T0 = 1792600000 // 3600 * 3600                     # 整點
+m1 = [{"time": T0 + 60 * k, "open": 1, "high": 1, "low": 1, "close": 1} for k in range(5)]
+m15a = [{"time": T0 - 900 * (200 - k), "open": 1, "high": 1, "low": 1, "close": 1} for k in range(200)]           # 200 根，全部 < hour0
+m15b = m15a[1:] + [{"time": T0 + 900, "open": 1, "high": 1, "low": 1, "close": 1}]                                   # 15 分鐘後：最舊一根跌出、新一根（>= hour0）加入
+acct = {"equity": 1, "balance": 1, "daily_pnl": 0, "currency": "HKD"}
+ca = xau_main.build_context({"position": None}, m1, m15a, acct, T0 + 60, "2026-10-22")
+cb = xau_main.build_context({"position": None}, m1, m15b, acct, T0 + 960, "2026-10-22")
+check("M15 清單滾動一根後，整點前 M15 段（1h 快取）內容唔變", ca["bars_m15_older"] == cb["bars_m15_older"] and len(ca["bars_m15_older"]) == config.M15_OLDER_MAX, (len(ca["bars_m15_older"]), len(cb["bars_m15_older"])))
+check("新 M15 根入咗 recent（即時段）", len(cb["bars_m15_recent"]) == 1 and len(ca["bars_m15_recent"]) == 0)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
