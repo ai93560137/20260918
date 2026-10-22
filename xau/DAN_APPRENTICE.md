@@ -61,3 +61,4 @@
 - **10-22 Claude 學生 prompt caching（使用者「合併 PR 用 prompt caching」）**：`brain.decide(ctx, student=True)` 用 921 原版 `BASE_TOOL`＋`BASE_SYSTEM`（冇訊號書段、冇 signal_id）→ tools／system 快取前綴同 921 一樣（同一 API key，跨服務可以互相讀到）；產品＋整點前 M15 段 1h TTL；整點前 M1 段唔快取（每 30 分鐘先問一次，5m 必過期）；live 唔快取。判斷記 `usage`（cache_read／cw_1h）部署後核實。估算：改前每次 ≈ $0.073；改後未同 921 共用 M15 段時 ≈ $0.04–0.05／次（14 次／日 ≈ US$17–21／月），兩邊 M15 歷史齊 200 根後（約 2 日）M15 段都讀到 921 寫嘅快取 ≈ $0.02–0.025／次（≈ US$8–10／月）。
 - 教學第 3 條（10-22 使用者批）「唔好追穿：等反抽試返原支持／阻力位唔過、出現轉弱 K 線先入」已寫入 GCS `xau/lessons.md`＋`xau/sig/lessons.md`（兩份內容一樣，lessons hash 76aadf61，令 system 前綴一致）；EURUSD 用自己嘅 `fx/eurusd/lessons.md`（未有）。
 - 教學第 4 條（10-22 使用者批）「有浮盈後止損唔好收到 0.5×M15 ATR 之內，跟上一個擺動高／低或 1×ATR 取較遠」已寫 GCS 兩份（hash 33b64a3b）。來源：C10／C11／C14／C21 收太貼被掃，§21 回測 0.5×ATR 最差、1×ATR 最穩定。
+- 教學第 5 條（10-22 使用者批）「初始止損最少 0.7×M15 ATR 並放喺擺動點外；超程式上限就唔開」已寫 GCS 兩份（hash a1b683a4）。來源：C22／C23 止損 0.4–0.5×ATR 被反抽掃。
