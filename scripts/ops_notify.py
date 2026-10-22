@@ -235,7 +235,14 @@ def repo_deals_doc(status: dict) -> dict:
 
 
 # ---------------------------------------------------------------- main
-def pick_task(now: datetime) -> str:
+SCHEDULE_TASKS = {"35 6 * * 1-5": "hedge", "55 7 * * 1-5": "hedge", "10 9 * * 1-5": "deals", "40 19 * * 1-5": "deals"}
+
+
+def pick_task(now: datetime, schedule: str = "") -> str:
+    # 排程觸發先睇 github.event.schedule（cron 字串）：GitHub 排程 10-20 起遲 2–5 小時，
+    # 按時鐘猜會跌出 ±40 分鐘窗口、全部當 hedge，成交通報 10-20 至 10-22 一次都冇跑。
+    if schedule in SCHEDULE_TASKS:
+        return SCHEDULE_TASKS[schedule]
     hm = now.hour * 60 + now.minute
     # 14:35／15:55 → hedge；17:10 → deals 日盤；03:40 → deals 夜盤。前後 40 分鐘容忍排程延遲。
     for center, task in ((14 * 60 + 35, "hedge"), (15 * 60 + 55, "hedge"), (17 * 60 + 10, "deals"), (3 * 60 + 40, "deals")):
@@ -252,7 +259,7 @@ def main() -> int:
     a = ap.parse_args()
     now = parse_hkt(a.now) if a.now else datetime.now(HKT)
     cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    task = pick_task(now) if a.task == "auto" else a.task
+    task = pick_task(now, os.environ.get("GH_SCHEDULE", "")) if a.task == "auto" else a.task
     state = gcs_cat(cfg["state_object"]) or {}
     if "_text" in state:
         state = {}
