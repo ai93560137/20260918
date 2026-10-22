@@ -105,6 +105,7 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
     if action == "UPDATE_STOP":
         if position is None:
             return "HOLD", None, None, "冇倉可改"
+        nd = getattr(cfg, "PRICE_DIGITS", 2)                     # 10-23 修：之前寫死 round(…, 2)，EURUSD 1.1218→1.12、SL＝TP，EA 全部 invalid stops
         side = position["side"]
         if stop is None:
             return "HOLD", None, None, "UPDATE_STOP 冇止損價"
@@ -112,7 +113,7 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
             return "HOLD", None, None, "新止損喺錯邊（已過現價）"
         if target is not None and (target - last) * side <= 0:
             target = position.get("target")
-        return "UPDATE_STOP", round(stop, 2), (round(target, 2) if target is not None else position.get("target")), None
+        return "UPDATE_STOP", round(stop, nd), (round(target, nd) if target is not None else position.get("target")), None
 
     return "HOLD", None, None, None
 
