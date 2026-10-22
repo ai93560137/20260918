@@ -611,7 +611,10 @@ def handle_cmd_ack(payload):
         found = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)
     except StorageError as exc:
         return jsonify({"status": "error", "message": str(exc)[:100]}), 500
-    log_event(f"📨 [{config.TEAM_NAME}] 指令回報 {cid} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}", component="ea")
+    ok = bool(payload.get("ok"))
+    log_event(f"📨 [{config.TEAM_NAME}] 指令回報 {cid} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
+              + ("" if ok else f"｜EA：{str(payload.get('message') or '')[:160]}"),            # 10-23：失敗原因（retcode 描述）要入日誌，之前只有 EA「專家」分頁先睇到
+              severity="INFO" if ok else "WARNING", component="ea", cmd=cid, ok=ok)
     return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
 
 
@@ -760,7 +763,9 @@ def entry(req):
     if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
         if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
             found = follower.ack(str(payload.get("id") or "")[:8], payload, now_ts())
-            log_event(f"📨 [{config.TEAM_NAME}] 跟單指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}", component="follow")
+            log_event(f"📨 [{config.TEAM_NAME}] 跟單指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
+                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                      severity="INFO" if payload.get("ok") else "WARNING", component="follow")
             return jsonify({"status": "acked" if found else "unknown", "id": str(payload.get("id") or "")[:8]}), 200
         if follower.is_follow_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return follower.handle_heartbeat(payload)
