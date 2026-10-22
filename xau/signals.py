@@ -185,8 +185,11 @@ def evaluate(view, bars, offset, prev=None, now=None):
                 return o
             market_now = "market" in str(view.get("order_type") or "") or "now" in str(view.get("order_type") or "")
             tol = config.SIG_FILL_TOL
-            if market_now or (b["low"] <= hi + tol and b["high"] >= lo - tol):   # 市價單（BUY NOW）第一根就成交
-                o["filled_ts"] = t
+            if market_now:                                        # 市價單（BUY NOW）第一根就成交，成交價＝開盤
+                o["filled_ts"], o["fill_px"] = t, b["open"]
+            elif b["low"] <= hi + tol and b["high"] >= lo - tol:
+                o["filled_ts"] = t                                # 10-22 修：成交價用價格真正去到嘅位（近邊／開盤），唔係入場中位——之前每張限價單白送約半個區闊
+                o["fill_px"] = min(b["open"], max(hi, b["low"])) if side == "BUY" else max(b["open"], min(lo, b["high"]))
             else:
                 continue
         hit_sl = b["low"] <= sl if side == "BUY" else b["high"] >= sl
@@ -212,8 +215,10 @@ def r_multiple(view, o):
         return None
     mid = (view["entry_low"] + view["entry_high"]) / 2
     risk = abs(mid - view["sl"])
+    fill = o.get("fill_px", mid)                                   # 舊紀錄冇 fill_px 就用中位
+    sgn = 1 if view.get("side") == "BUY" else -1
     if o.get("max_tp", 0) >= 1 and view.get("tp") and risk > 0:
-        return round(abs(view["tp"][0] - mid) / risk, 2)
+        return round(sgn * (view["tp"][0] - fill) / risk, 2)
     return -1.0 if o.get("sl_hit") else (0.0 if o.get("final") == "timeout" else None)
 
 
