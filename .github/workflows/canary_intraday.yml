@@ -1,0 +1,67 @@
+name: Canary intraday（金絲雀盤中特別警報）
+
+# 2026-10-23 使用者要求:「未來一兩週嘅保險,價錢追近咗一個月嘅保險,要發特別警報」。
+# 美股交易時段每 30 分鐘抓 VIX9D / VIX / VIX3M 盤中價(canary/special_alert.py intraday):
+#   短期軸 綠→走平(VIX9D − VIX > −0.5)、→紅(> 0),或災難軸 綠→深紅(VIX − VIX3M > 0),比上一收市升級就發「盤中預警」;
+#   同一美股交易日每升一級只發一次。收市後 canary_daily.yml 的 special_alert.py close 發「收市確認」或「收市解除」。
+# cron 用 UTC,覆蓋夏令(13:30–20:00)與冬令(14:30–21:00)開市時段;腳本自己檢查報價是否新鮮(休市、假期、延遲就不判)。
+# GitHub 排程可能延遲甚至跳過,盤中預警是「盡量快」,不是保證;收市確認一定會有。
+on:
+  schedule:
+    - cron: '5,35 13-21 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canary-intraday
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check intraday term structure
+        run: python3 canary/special_alert.py intraday
+
+      - name: Commit alert state
+        if: hashFiles('canary/alert_intraday.txt') != ''
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add canary/alert_state.json canary/alert_log.csv
+          git diff --cached --quiet && exit 0
+          git commit -q -m "chore(canary): 盤中特別警報 $(TZ=Asia/Hong_Kong date '+%F %H:%M')(香港)[skip-tg]"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:$BRANCH" && exit 0
+            sleep $((i * 5))
+            git pull --rebase -X theirs origin "$BRANCH" || exit 1
+          done
+          echo "push 重試 5 次仍失敗(警報照發,狀態未存,下一輪可能重發)"
+
+      - name: Telegram
+        if: hashFiles('canary/alert_intraday.txt') != ''
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設,未發送"; exit 0
+          fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=$(cat canary/alert_intraday.txt)" > /dev/null
+          echo "telegram sent"
