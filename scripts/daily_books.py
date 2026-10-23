@@ -45,8 +45,7 @@ TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED = "使用者人手", "券商贈股", "未
 TEAM_LONGFEI = "龍飛陣"
 TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最多手數；超出當使用者人手）
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
-    (r"^HK\.MHI2611$", TEAM_MANUAL, "MHI2611 小期（人手）", None),   # 2026-10-14 使用者確認；雲垂轉倉去 2611 前要改
-    (r"^HK\.MHI\d{4}$", "雲垂陣", "MHI 期貨 Δ 對沖", 1),
+    (r"^HK\.MHI\d{4}$", "MHI_BY_MONTH", "MHI 期貨", 1),   # [R257] 方案 a：當刻即月 → 龍飛陣；其他月份 → 雲垂陣（各最多 1 手）
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", TEAM_MANUAL, "大恒指期貨（人手）", None),   # 2026-10-14 使用者：預設歸人手；屬蛇蟠要逐張確認
@@ -138,16 +137,39 @@ def num(x, default=None):
         return default
 
 
-def team_of(code: str) -> tuple[str, str, float | None]:
+def hk_index_futures_ltd(y: int, m: int) -> date:
+    """照 main.py：港交所指數期貨最後交易日＝該月最後營業日嘅前一個營業日（只扣週末）。"""
+    d = date(y + m // 12, m % 12 + 1, 1) - timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    d -= timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return d
+
+
+def hk_front_month(today: date) -> tuple[int, int]:
+    y, m = today.year, today.month
+    if today >= hk_index_futures_ltd(y, m):
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return y, m
+
+
+def team_of(code: str, today: date | None = None) -> tuple[str, str, float | None]:
     for rx, team, use, cap in TEAM_RULES:
         if re.match(rx, code or ""):
+            if team == "MHI_BY_MONTH":
+                today = today or datetime.now(HKT).date()
+                if (2000 + int(code[6:8]), int(code[8:10])) == hk_front_month(today):
+                    return TEAM_LONGFEI, "MHI 即月期貨（AI 真倉）", cap
+                return "雲垂陣", "MHI 期貨 Δ 對沖（非即月）", cap
             return team, use, cap
     return TEAM_UNMATCHED, "—", None
 
 
-def split_by_cap(code: str, qty: float) -> list[tuple[str, float]]:
-    """有手數上限嘅規則（MHI 對沖 1 手）：上限內歸該陣，超出歸使用者人手。"""
-    team, _, cap = team_of(code)
+def split_by_cap(code: str, qty: float, today: date | None = None) -> list[tuple[str, float]]:
+    """有手數上限嘅規則（MHI 1 手）：上限內歸該陣，超出歸使用者人手。"""
+    team, _, cap = team_of(code, today)
     if cap is None or abs(qty) <= cap:
         return [(team, qty)]
     sign = 1 if qty > 0 else -1
@@ -326,7 +348,7 @@ def reconcile(risk: dict | None, positions_md: str, journal: tuple[dict, dict], 
     new_state = {"date": today.isoformat(), "open": {}}
     for code in codes:
         f, r, j = futu.get(code), reg.get(code), jexp.get(code)
-        team, use, _ = team_of(code)
+        team, use, _ = team_of(code, today)
         vals = [v for v in (f, r, j) if v is not None]
         ok = len(vals) >= 2 and all(abs(v - vals[0]) < 1e-9 for v in vals) and (f is not None or all(abs(v) < 1e-9 for v in vals))
         if f is None and r is not None and abs(r) < 1e-9 and (j is None or abs(j) < 1e-9):
@@ -376,7 +398,7 @@ def pnl_row(risk: dict | None, deals: dict | None, ledger, today: date, ladder_l
         if pl is None or not q:
             continue
         fx = USD_HKD if code.startswith("US.") else 1.0
-        parts = split_by_cap(code, q)
+        parts = split_by_cap(code, q, today)
         for team, part in parts:
             unreal[team] += pl * fx * (part / q)
     real = defaultdict(float)
@@ -385,7 +407,7 @@ def pnl_row(risk: dict | None, deals: dict | None, ledger, today: date, ladder_l
         if v is None:
             continue
         fx = USD_HKD if c.get("ccy") == "USD" else 1.0
-        real[team_of(str(c.get("code", "")))[0]] += v * fx
+        real[team_of(str(c.get("code", "")), today)[0]] += v * fx
     mt5 = 0.0
     if isinstance(ledger, list):
         for e in ledger:

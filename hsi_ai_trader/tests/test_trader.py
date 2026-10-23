@@ -1176,3 +1176,27 @@ def test_session_day_night_belongs_to_previous_day():
     assert str(session_day(datetime(2026, 10, 20, 2, 30, tzinfo=HKT), "HK")) == "2026-10-19"
     assert str(session_day(datetime(2026, 10, 20, 17, 30, tzinfo=HKT), "HK")) == "2026-10-20"
     assert str(session_day(datetime(2026, 10, 20, 2, 30, tzinfo=HKT), "US")) == "2026-10-19"
+
+
+def test_update_stop_only_tightens():
+    """[R269] 使用者 10-21「止蝕只准收緊」：做好唔准落移、做淡唔准上移；收緊照准；冇現有止蝕就照舊。"""
+    cfg = Config()
+    kw = dict(entry=24950, last=25000, cfg=cfg, remaining_loss=10000, can_open=True, trades_today=0)
+    a, stop, _, why = validate_decision({"action": "UPDATE_STOP", "stop_price": 24900}, position=1, current_stop=24920, **kw)
+    assert a == "HOLD" and stop is None and "只准收緊" in why
+    a, stop, *_ = validate_decision({"action": "UPDATE_STOP", "stop_price": 24960}, position=1, current_stop=24920, **kw)
+    assert a == "UPDATE_STOP" and stop == 24960
+    kw["last"] = 24900
+    a, *_, why = validate_decision({"action": "UPDATE_STOP", "stop_price": 25010}, position=-1, current_stop=24990, **kw)
+    assert a == "HOLD" and "只准收緊" in why
+    a, stop, *_ = validate_decision({"action": "UPDATE_STOP", "stop_price": 24970}, position=-1, current_stop=24990, **kw)
+    assert a == "UPDATE_STOP" and stop == 24970
+    a, stop, *_ = validate_decision({"action": "UPDATE_STOP", "stop_price": 25010}, position=-1, **kw)
+    assert a == "UPDATE_STOP" and stop == 25010
+
+
+def test_mhi_uses_hsi_lessons():
+    """[R287] MHI 真倉用 HSI 教學簿。"""
+    from brain import product_lessons
+    assert product_lessons("MHI") == product_lessons("HSI") != ""
+

@@ -49,10 +49,10 @@ FAKE.clear()
 d = main.strategies_data()
 check("全部列出、方向不知道、沒有方向相反", len(d["rows"]) >= 12 and d["summary"]["unknown"] >= 1 and not d["conflicts"], d["summary"])
 r = client.get("/?view=strategies")
-check("頁面 200、有總表與導覽", r.status_code == 200 and "策略總表" in r.get_data(as_text=True) and "錦囊 v4" in r.get_data(as_text=True))
+check("頁面 200、有總表與導覽", r.status_code == 200 and "策略總表" in r.get_data(as_text=True) and "天覆陣" in r.get_data(as_text=True))
 
-print("=== 2. 有持倉：蛇蟠陣做多、地載・衡做空、黃金做多 ===")
-main.gcs_write_text(main.ACCOUNT_FILE, json.dumps({"net_lots": 0.03, "buy_lots": 0.03, "sell_lots": 0, "received_utc": "2026-10-12 02:00:00"}))
+print("=== 2. 有持倉：蛇蟠陣做多、地載・衡做空、天覆陣紙上做多 ===")
+main.gcs_write_text("xau/state.json", json.dumps({"position": {"side": 1, "lots": 0.01, "entry": 4100.0}}))
 main.gcs_write_text(main.futu_paper_file(SYM), json.dumps({"version": main.PAPER_VERSION, "snake": {"pos": 1, "lots": 1, "upper": 25000, "lower": 24000,
     "entry_time": "2026-10-12 09:20:00"}, "open": {"B_S_R3": {"side": 1, "entry_price": 24500, "stop": 24100, "target": 25700, "lots": 2,
     "entry_time": "2026-10-12 10:00:00"}}, "trades": [], "notices": []}))
@@ -61,7 +61,8 @@ main.gcs_write_text(main.dizai_heng_file(SYM), json.dumps({"version": main.DIZAI
 main.gcs_write_text(main.dizai_que_file(SYM), json.dumps({"version": main.DIZAI_QUE_VERSION, "pos": None}))
 d = main.strategies_data()
 by = {r["key"]: r for r in d["rows"]}
-check("黃金：淨 0.03 手做多", by["jinnang"]["pos"]["side"] == 1 and "0.03" in by["jinnang"]["pos"]["detail"], by["jinnang"]["pos"])
+check("R253 天覆陣：紙上 0.01 手做多、連去 zhuge-xau", by["tianfu"]["pos"]["side"] == 1 and by["tianfu"]["pos"]["lots"] == 0.01
+      and "zhuge-xau" in by["tianfu"]["link"], by["tianfu"])
 check("蛇蟠陣（真錢）只列訊號方向：做多", by["snake_real"]["pos"]["side"] == 1 and by["snake_real"].get("signal_only"))
 check("風揚陣 B＋跟蛇 3R 做多 2 張；A 空手", by["fy_B_S_R3_恒指"]["pos"]["side"] == 1 and by["fy_B_S_R3_恒指"]["pos"]["lots"] == 2
       and by["fy_A_S_R2_恒指"]["pos"]["side"] == 0)
@@ -79,7 +80,7 @@ check("JSON 一致", j["summary"] == d["summary"] and len(j["rows"]) == len(d["r
 
 print("=== 3. 導覽列 ===")
 check("PAGE_LINKS 有策略總表", ("strategies", "🧭 策略總表") in main.PAGE_LINKS)
-for f in ("gates.html", "order.html", "jinnang_sheet.html", "jinnang_tracker.html", "bazhentu.html"):
+for f in ("bazhentu.html",):
     check(f"{f} 連到策略總表", "strategies" in open("/home/user/20260918/" + f, encoding="utf-8").read())
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")

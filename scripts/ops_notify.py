@@ -235,7 +235,19 @@ def repo_deals_doc(status: dict) -> dict:
 
 
 # ---------------------------------------------------------------- main
-def pick_task(now: datetime) -> str:
+# GitHub schedule 可以遲 3–5 個鐘（10-20～22 實測：09:10 UTC 嗰次 12:15–13:15 先跑），按時間猜會將成交通報
+# 誤判做 hedge，成交紀錄連續三日冇更新。schedule 觸發時 workflow 傳 github.event.schedule（cron 字串），以佢為準。
+SCHEDULE_TASKS = {
+    "35 6 * * 1-5": ("hedge", None),
+    "55 7 * * 1-5": ("hedge", None),
+    "10 9 * * 1-5": ("deals", "day"),
+    "40 19 * * 1-5": ("deals", "night"),
+}
+
+
+def pick_task(now: datetime, schedule: str | None = None) -> str:
+    if schedule and schedule.strip() in SCHEDULE_TASKS:
+        return SCHEDULE_TASKS[schedule.strip()][0]
     hm = now.hour * 60 + now.minute
     # 14:35／15:55 → hedge；17:10 → deals 日盤；03:40 → deals 夜盤。前後 40 分鐘容忍排程延遲。
     for center, task in ((14 * 60 + 35, "hedge"), (15 * 60 + 55, "hedge"), (17 * 60 + 10, "deals"), (3 * 60 + 40, "deals")):
@@ -252,7 +264,8 @@ def main() -> int:
     a = ap.parse_args()
     now = parse_hkt(a.now) if a.now else datetime.now(HKT)
     cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    task = pick_task(now) if a.task == "auto" else a.task
+    schedule = os.environ.get("SCHEDULE") or ""
+    task = pick_task(now, schedule) if a.task == "auto" else a.task
     state = gcs_cat(cfg["state_object"]) or {}
     if "_text" in state:
         state = {}
@@ -269,7 +282,8 @@ def main() -> int:
             gcs_put(cfg["state_object"], json.dumps(state, ensure_ascii=False, indent=1))
         return 0
 
-    run_kind = "day" if now.hour >= 12 else "night"
+    sched_kind = SCHEDULE_TASKS.get(schedule.strip(), (None, None))[1] if a.task == "auto" else None
+    run_kind = sched_kind or ("day" if now.hour >= 12 else "night")
     days = [now.strftime("%Y-%m-%d")] + ([(now - timedelta(days=1)).strftime("%Y-%m-%d")] if run_kind == "night" else [])
     files = {d: gcs_cat(f"futu/deals/{d}.json") for d in days}
     msg, state, reminder = compose_deals(files, state, cfg, now, run_kind)

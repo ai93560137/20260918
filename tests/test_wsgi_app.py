@@ -36,9 +36,6 @@ sys.modules["google.api_core"] = api_core; sys.modules["google.api_core.exceptio
 
 import main
 
-main.macro_news_session.status = lambda now=None: {"locked": False, "known": True, "reason": "test",
-                                                   "events": [], "warning": None}
-main.ai_review_session.review = lambda meta: (True, "test")
 
 OK = FAIL = 0
 def check(name, cond, extra=""):
@@ -55,7 +52,7 @@ check("app 是 Flask 實例", main.app.__class__.__name__ == "Flask")
 
 client = main.app.test_client()
 
-# 1) GET / ——儀表板。走 functions-framework 時是同一個函式，所以回應必須一致。
+# 1) GET / ——首頁。走 functions-framework 時是同一個函式，所以回應必須一致。
 r = client.get("/")
 direct_html = None
 from flask import request as flask_request
@@ -82,10 +79,24 @@ check("子路徑 → 同樣 403（不是 404）", r.status_code == 403, r.status
 r = client.post("/", json={"action": "update_levels", "token": os.environ["WEBHOOK_SECRET_TOKEN"]})
 check("POST 正確權杖 → 200", r.status_code == 200, r.status_code)
 
+# 5b) [R253] 舊 MT5 心跳（帶 equity）唔再信任，冇權杖 → 403；舊 XAUUSD 頁面 → 410 指去天覆陣
+r = client.post("/", json={"equity": 1000, "action": "check_gate"})
+check("R253：MT5 心跳冇權杖 → 403", r.status_code == 403, r.status_code)
+for v in main.XAU_REMOVED_VIEWS:
+    r = client.get(f"/?view={v}")
+    check(f"R253：?view={v} → 410", r.status_code == 410 and "zhuge-xau" in r.get_data(as_text=True), r.status_code)
+
 # 6) functions-framework 的註冊沒有被破壞（正常那條路仍然是主路）。
 from functions_framework import _function_registry as _reg
 reg = getattr(_reg, "REGISTRY_MAP", {})
 check("receive_tradingview_signal 仍註冊為 http", reg.get("receive_tradingview_signal") == "http", reg)
+
+# [R284] 📏 人手交易守則頁
+r = client.get("/?view=rules")
+html = r.get_data(as_text=True)
+check("[R284] 人手交易守則頁 200", r.status_code == 200, r.status_code)
+check("[R284] 守則頁有「蝕緊嘅方向唔好加注」同警報標記", "蝕緊嘅方向唔好加注" in html and "⏰ 會出警報" in html)
+check("[R284] 導覽列有守則頁", "view=rules" in client.get("/?view=longfei").get_data(as_text=True))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
