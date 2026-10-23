@@ -1,21 +1,21 @@
 # 波動率與利率日線（IBKR）
 
-由 `scripts/ibkr_vol_export.py` 於 2026-10-22 22:30 產生。資料來自 IBKR，僅供個人研究使用。
+由 `scripts/ibkr_vol_export.py` 於 2026-10-23 22:30 產生。資料來自 IBKR，僅供個人研究使用。
 
 | 檔案 | 內容 | IB whatToShow | 起 | 迄 | 筆數 |
 |---|---|---|---|---|---|
-| `vix.csv` | VIX | TRADES | 2005-10-03 | 2026-10-22 | 5280 |
-| `vix3m.csv` | VIX 3 個月 | TRADES | 2009-08-12 | 2026-10-22 | 4325 |
-| `tnx.csv` | 10 年期殖利率 ×10 | TRADES | 2009-08-12 | 2026-10-22 | 4323 |
-| `tlt.csv` | TLT 還原價 | ADJUSTED_LAST | 2016-02-03 | 2026-10-22 | 2696 |
-| `tlt_iv.csv` | TLT 30 天隱含波動率 | OPTION_IMPLIED_VOLATILITY | 2006-01-06 | 2026-10-22 | 3542 |
-| `tlt_hv.csv` | TLT 30 天歷史波動率 | HISTORICAL_VOLATILITY | 2005-02-15 | 2026-10-21 | 5449 |
-| `ief_iv.csv` | IEF 30 天隱含波動率 | OPTION_IMPLIED_VOLATILITY | 2006-01-09 | 2026-10-22 | 3542 |
-| `qqq.csv` | QQQ 還原價（NQ/MNQ 的長歷史替代） | ADJUSTED_LAST | 1999-03-10 | 2026-10-22 | 6950 |
-| `spy.csv` | SPY 還原價 | ADJUSTED_LAST | 1996-10-07 | 2026-10-22 | 7557 |
-| `gld.csv` | GLD（黃金的長歷史替代） | ADJUSTED_LAST | 2004-11-18 | 2026-10-22 | 5514 |
-| `zn.csv` | 10 年公債期貨 | TRADES | 2025-04-04 | 2026-10-22 | 390 |
-| `zb.csv` | 30 年公債期貨 | TRADES | 2025-04-04 | 2026-10-22 | 390 |
-| `nq.csv` | 那斯達克 100 期貨 | TRADES | 2024-03-18 | 2026-10-22 | 651 |
+| `vix.csv` | VIX | TRADES | 2005-10-03 | 2026-10-23 | 5281 |
+| `vix3m.csv` | VIX 3 個月 | TRADES | 2009-08-12 | 2026-10-23 | 4326 |
+| `tnx.csv` | 10 年期殖利率 ×10 | TRADES | 2009-08-12 | 2026-10-23 | 4324 |
+| `tlt.csv` | TLT 還原價 | ADJUSTED_LAST | 2016-02-03 | 2026-10-23 | 2697 |
+| `tlt_iv.csv` | TLT 30 天隱含波動率 | OPTION_IMPLIED_VOLATILITY | 2006-01-06 | 2026-10-23 | 3543 |
+| `tlt_hv.csv` | TLT 30 天歷史波動率 | HISTORICAL_VOLATILITY | 2005-02-15 | 2026-10-22 | 5450 |
+| `ief_iv.csv` | IEF 30 天隱含波動率 | OPTION_IMPLIED_VOLATILITY | 2006-01-09 | 2026-10-23 | 3543 |
+| `qqq.csv` | QQQ 還原價（NQ/MNQ 的長歷史替代） | ADJUSTED_LAST | 1999-03-10 | 2026-10-23 | 6951 |
+| `spy.csv` | SPY 還原價 | ADJUSTED_LAST | 1996-10-07 | 2026-10-23 | 7558 |
+| `gld.csv` | GLD（黃金的長歷史替代） | ADJUSTED_LAST | 2004-11-18 | 2026-10-23 | 5515 |
+| `zn.csv` | 10 年公債期貨 | TRADES | 2025-04-04 | 2026-10-23 | 391 |
+| `zb.csv` | 30 年公債期貨 | TRADES | 2025-04-04 | 2026-10-23 | 391 |
+| `nq.csv` | 那斯達克 100 期貨 | TRADES | 2024-03-18 | 2026-10-23 | 652 |
 
 這次失敗：move（多半是缺該市場的行情訂閱）。
