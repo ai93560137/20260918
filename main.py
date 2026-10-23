@@ -6460,11 +6460,121 @@ def _chart_png_b64(name):
     return base64.b64encode(blob.download_as_bytes()).decode("ascii")
 
 
-def build_charts_page(items, err=None):
+# [R259] 📝 龍飛陣分析（學使用者思路）：使用者 10-23（經龍飛陣）「每天在網頁上加一個我的分析欄，我看看你能否學到我」。
+# 龍飛陣每日 08:20 HKT 寫 GCS ops/longfei/analyst/latest.json、daily/<日>.json、charts/<日>/*.png、scorecard.json。
+ANALYST_PREFIX = "ops/longfei/analyst/"
+_DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _md_inline(text):
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", esc(text))
+
+
+def md_to_html(md):
+    """龍飛陣分析用嘅細 Markdown：##／### 標題、- 列點、空行分段、**粗體**；其他照原文（已轉義）。"""
+    out, para, items = [], [], []
+
+    def flush():
+        if para:
+            out.append("<p>" + "<br>".join(para) + "</p>")
+            para.clear()
+        if items:
+            out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            items.clear()
+    for raw in str(md or "").splitlines():
+        line = raw.rstrip()
+        if not line.strip():
+            flush()
+        elif line.startswith("### "):
+            flush(); out.append(f"<h4>{_md_inline(line[4:])}</h4>")
+        elif line.startswith("## "):
+            flush(); out.append(f"<h3>{_md_inline(line[3:])}</h3>")
+        elif line.lstrip().startswith(("- ", "* ")):
+            if para:
+                out.append("<p>" + "<br>".join(para) + "</p>"); para.clear()
+            items.append(_md_inline(line.lstrip()[2:]))
+        else:
+            if items:
+                out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>"); items.clear()
+            para.append(_md_inline(line))
+    flush()
+    return "".join(out)
+
+
+def analyst_data(day=None):
+    name = f"{ANALYST_PREFIX}daily/{day}.json" if day else f"{ANALYST_PREFIX}latest.json"
+    doc = gcs_read_json(name, None)
+    score = gcs_read_json(ANALYST_PREFIX + "scorecard.json", None)
+    days = sorted((b.name.rsplit("/", 1)[-1][:-5] for b in _bucket().list_blobs(prefix=ANALYST_PREFIX + "daily/")
+                   if b.name.endswith(".json")), reverse=True)
+    return {"doc": doc, "scorecard": score, "days": [d for d in days if _DAY_RE.match(d)][:60]}
+
+
+def _analyst_call_txt(c):
+    if c.get("kind") == "bias":
+        return {1: "偏好 ↑", -1: "偏淡 ↓", 0: "橫盤 ↔"}.get(c.get("dir"), "—")
+    lv = c.get("level")
+    return f"{esc({'support': '支撐', 'resistance': '壓力', 'target': '目標'}.get(c.get('kind'), c.get('kind') or ''))} {lv:,}" if isinstance(lv, (int, float)) else esc(c.get("kind") or "—")
+
+
+def _rate_pct(r):
+    return f"{r * 100:.0f}%" if isinstance(r, (int, float)) else "—"
+
+
+def build_analyst_section(a):
+    doc, sc = a.get("doc"), a.get("scorecard") or {}
+    if not doc:
+        return "<div class='section'><h2>📝 龍飛陣分析（學使用者思路）</h2><p class='muted'>暫時未有分析。</p></div>"
+    imgs = ""
+    for mkt, paths in (doc.get("charts") or {}).items():
+        cells = ""
+        for path in (paths or [])[:2]:
+            b64 = None
+            if isinstance(path, str) and path.startswith(ANALYST_PREFIX):
+                try:
+                    b64 = _chart_png_b64(path)
+                except Exception as exc:
+                    log_event(f"⚠️ [分析圖讀取失敗] {path}: {exc}", severity="WARNING", component="charts")
+            cells += (f"<div style='flex:1 1 420px;min-width:0'><img alt='{esc(path)}' style='width:100%;height:auto;border-radius:6px' "
+                      f"src='data:image/png;base64,{b64}'></div>" if b64 else "")
+        if cells:
+            imgs += f"<h3>{esc(mkt)}</h3><div style='display:flex;flex-wrap:wrap;gap:10px'>{cells}</div>"
+    summ = sc.get("summary") or {}
+    srows = "".join(
+        f"<tr><td>{esc(k)}</td><td style='text-align:right'>{esc(v.get('hit'))}／{esc(v.get('n'))}</td>"
+        f"<td style='text-align:right'>{_rate_pct(v.get('rate'))}</td></tr>"
+        if isinstance(v, dict) else f"<tr><td>{esc(k)}</td><td colspan='2'>{esc(v)}</td></tr>" for k, v in summ.items())
+    def res(r):   # 龍飛陣 pack.py：未到期 null；到期 {"ok": bool, "detail": "..."}
+        if r is None:
+            return "⏳"
+        ok = r.get("ok") if isinstance(r, dict) else r
+        mark = "✅" if ok is True else "❌" if ok is False else "—"
+        detail = r.get("detail") if isinstance(r, dict) else None
+        return mark + (f" <span class='muted' style='font-size:12px'>{esc(detail)}</span>" if detail else "")
+    crows = "".join(
+        f"<tr><td>{esc(c.get('date'))}</td><td>{esc(c.get('market'))}</td><td>{_analyst_call_txt(c)}</td>"
+        f"<td style='text-align:right'>{esc(c.get('horizon'))} 日</td><td>{esc(c.get('why'))}</td>"
+        f"<td>{res(c.get('result'))}</td></tr>"
+        for c in (sc.get("calls") or [])[-40:][::-1])
+    score_html = ("<h3>🎯 計分卡（學唔學到睇呢度）</h3>"
+                  + (f"<table><tr><th>類別</th><th style='text-align:right'>命中／已到期</th><th style='text-align:right'>命中率</th></tr>{srows}</table>" if srows
+                     else "<p class='muted'>未有到期嘅判斷。</p>")
+                  + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>"
+                  + (f"<table><tr><th>日期</th><th>市場</th><th>判斷</th><th style='text-align:right'>期限</th><th>理由</th><th>結果</th></tr>{crows}</table>" if crows else ""))
+    hist = "　".join(f"<a href='?view=charts&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
+    return (f"<div class='section'><h2>📝 龍飛陣分析（學使用者思路）・{esc(doc.get('date'))}</h2>"
+            f"<p><b>{esc(doc.get('title'))}</b></p>"
+            f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）；只係分析，唔係落單指令。</p>"
+            f"{md_to_html(doc.get('markdown'))}{imgs}{score_html}"
+            + (f"<h3>🗂 歷史</h3><p>{hist}</p>" if hist else "") + "</div>")
+
+
+def build_charts_page(items, err=None, analyst=""):
     nav = page_nav("charts")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
     intro = ("<div class='section'><p>各陣嘅分析圖同報告，程式定時重新出圖。只係分析資料，唔係落單指令；"
              "落單以券商即時價為準。</p></div>")
+    intro += analyst
     if err:
         return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
     if not items:
@@ -6500,9 +6610,16 @@ def handle_charts_get(req):
     except Exception as exc:
         log_event(f"⚠️ [分析圖頁失敗] {exc}", severity="WARNING", component="charts")
         items, err = [], "讀取失敗，請稍後再試。"
+    day = req.args.get("day") or None
+    day = day if day and _DAY_RE.match(day) else None
+    try:
+        a = analyst_data(day)
+    except Exception as exc:
+        log_event(f"⚠️ [龍飛陣分析讀取失敗] {exc}", severity="WARNING", component="charts")
+        a = {"doc": None, "scorecard": None, "days": []}
     if req.args.get("format") == "json":
-        return jsonify({"status": "error" if err else "ok", "items": items})
-    return build_charts_page(items, err)
+        return jsonify({"status": "error" if err else "ok", "items": items, "analyst": a})
+    return build_charts_page(items, err, build_analyst_section(a))
 
 
 def build_longfei_page(data):
