@@ -426,7 +426,8 @@ check("伺服器時差：冇資料 = 0", xau.server_offset({}, 1_000_000) == 0)
 _p = xau.own_positions({"positions": [{"side": "BUY", "lots": 0.01, "entry": 4000, "sl": 0, "tp": 0, "open_time": 1_000_000 + 10800}]}, 10800)
 check("open_time 換算成 UTC（最長持倉先會準）", _p[0]["opened_ts"] == 1_000_000 and _p[0]["stop"] is None, _p)
 j = client.get("/?format=json").get_json()
-check("JSON 有 account_id／xau_account／live_positions", j["account_id"] == "70001" and j["xau_account"] == "70001" and isinstance(j["live_positions"], list))
+check("JSON account_id／xau_account 只露尾 2 位（10-23 權杖公開，真倉號碼唔可以外露）", j["account_id"] == "…01" and j["xau_account"] == "…01" and isinstance(j["live_positions"], list) and j["ack_require_account"] is False, (j["account_id"], j["xau_account"]))
+check("JSON pending_cmds id 遮罩", all(c["id"].endswith("*" * 6) and "id=" + c["id"] in c["text"] for c in j["pending_cmds"]) if j["pending_cmds"] else True, j["pending_cmds"])
 st, d = live_hb(13, 4003, [], trade_allowed={"terminal": True, "ea": False, "account": True})
 j = client.get("/?format=json").get_json()
 check("JSON 有 trade_allowed／server_offset", j["trade_allowed"] == {"terminal": True, "ea": False, "account": True} and j["server_offset"] == 0, j.get("trade_allowed"))
@@ -526,6 +527,31 @@ config.PRODUCT_KIND = "gold"
 check("黃金 system prompt 仍有每日休市", "daily break 17:00-18:00" in _brain.build_system(""))
 for k, v in _saved.items(): setattr(config, k, v)
 check("還原 XAUUSD 後指令仍 2 位", _ex.enqueue({"pending_cmds": []}, "CLOSE", None, None, 1000.0, "zz", lots=0.01) == "close|all|magic=921|id=zz")
+
+print("=== 10-23 權杖公開減險：cmd_ack 核對 account ===")
+config.EXECUTE = True; config.ACCOUNT = "70001"; config.ACK_REQUIRE_ACCOUNT = False
+_st = json.loads(FAKE["xau/state.json"][0]); _st["pending_cmds"] = []
+_ex.enqueue(_st, "CLOSE", None, None, NOW[0], "ab12cd34ef", lots=0.01)
+FAKE["xau/state.json"] = (json.dumps(_st), FAKE["xau/state.json"][1] + 1)
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ab12cd34", "ok": True, "account": "99999"}), content_type="application/json").get_json()
+_pc = json.loads(FAKE["xau/state.json"][0])["pending_cmds"]
+check("cmd_ack 帶錯 account → ignored、指令仍未 acked、回應 id 遮罩", r["status"] == "ignored" and not _pc[0]["acked"] and r["id"] == "ab******", (r, _pc))
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ab12cd34", "ok": True, "account": 70001}), content_type="application/json").get_json()
+check("cmd_ack account 同 XAU_ACCOUNT 一致（數字亦可）→ acked", r["status"] == "acked" and json.loads(FAKE["xau/state.json"][0])["pending_cmds"][0]["acked"], r)
+_st = json.loads(FAKE["xau/state.json"][0]); _st["pending_cmds"] = []
+_ex.enqueue(_st, "CLOSE", None, None, NOW[0], "cd34ef56ab", lots=0.01); FAKE["xau/state.json"] = (json.dumps(_st), FAKE["xau/state.json"][1] + 1)
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "cd34ef56", "ok": True}), content_type="application/json").get_json()
+check("舊 EA 冇 account、XAU_ACK_REQUIRE_ACCOUNT=0 → 照 acked（demo 相容）", r["status"] == "acked", r)
+_st = json.loads(FAKE["xau/state.json"][0]); _st["pending_cmds"] = []
+_ex.enqueue(_st, "CLOSE", None, None, NOW[0], "ef56ab12cd", lots=0.01); FAKE["xau/state.json"] = (json.dumps(_st), FAKE["xau/state.json"][1] + 1)
+config.ACK_REQUIRE_ACCOUNT = True
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ef56ab12", "ok": True}), content_type="application/json").get_json()
+check("XAU_ACK_REQUIRE_ACCOUNT=1 → 冇 account 嘅 cmd_ack ignored", r["status"] == "ignored" and not json.loads(FAKE["xau/state.json"][0])["pending_cmds"][0]["acked"], r)
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ef56ab12", "ok": True, "account": "70001"}), content_type="application/json").get_json()
+check("XAU_ACK_REQUIRE_ACCOUNT=1 ＋ 正確 account → acked", r["status"] == "acked", r)
+config.ACK_REQUIRE_ACCOUNT = False
+check("mask_account／mask_id／mask_cmd", _ex.mask_account("928861") == "…61" and _ex.mask_account("") is None and _ex.mask_id("fedf43fb") == "fe******"
+      and _ex.mask_cmd({"id": "fedf43fb", "text": "open|SELL|0.01|sl=1|tp=2|magic=932|id=fedf43fb"})["text"].endswith("id=fe******"))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

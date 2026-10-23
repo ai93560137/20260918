@@ -1,6 +1,7 @@
 //+------------------------------------------------------------------+
 //| 🌌 天覆陣執行器 TianfuExecutor.mq5  v0.3（2026-10-20，未編譯、未測）   |
 //| v0.3：心跳加 account（登入號）／server／realized_total（自 InpLedgerStart）|
+//| v0.38（10-23）：cmd_ack 加 account（權杖公開，服務核對 XAU_ACCOUNT 先認回報）|
 //|       服務用 XAU_ACCOUNT 分辨 demo／真戶口，只向該登入號發指令。          |
 //|                                                                  |
 //| 影子階段用法（使用者 10-20：「EA 直接俾 K 線畀新服務」）：            |
@@ -23,7 +24,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.37"
+#property version   "0.38"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -286,8 +287,8 @@ string Field(string &parts[], int n, string key)   // key=value 欄位
 
 void Ack(string id, bool ok, ulong ticket, string msg)
 {
-   string body = StringFormat("{\"action\":\"cmd_ack\",\"token\":\"%s\",\"id\":\"%s\",\"ok\":%s,\"ticket\":%I64u,\"message\":\"%s\"}",
-                              JsonEsc(InpToken), id, ok ? "true" : "false", ticket, JsonEsc(msg));
+   string body = StringFormat("{\"action\":\"cmd_ack\",\"token\":\"%s\",\"id\":\"%s\",\"ok\":%s,\"ticket\":%I64u,\"message\":\"%s\",\"account\":%I64d}",
+                              JsonEsc(InpToken), id, ok ? "true" : "false", ticket, JsonEsc(msg), (long)AccountInfoInteger(ACCOUNT_LOGIN));   // v0.38：回報帶登入號（服務核對 XAU_ACCOUNT）
    string reply;
    Post(body, reply);
 }

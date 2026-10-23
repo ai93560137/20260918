@@ -82,6 +82,9 @@ EXECUTE = _b("XAU_EXECUTE", False)
 # 只接受呢個 MT5 登入號嘅心跳（數據＋指令）；其他登入號回 ignored。留空＝全收（影子階段）。階段 B：demo 登入號；轉真倉：真戶口登入號。
 ACCOUNT = _s("XAU_ACCOUNT", "")
 TEST_CMDS = _b("XAU_TEST_CMDS", False)                       # 1 = 開放 action=test_cmd（階段 B 測試清單用；真倉前要關）
+# 10-23 使用者決定權杖「keep 123456」（公開）：cmd_ack 要核對 account（EA v0.38 起回報帶登入號）；
+#   XAU_ACK_REQUIRE_ACCOUNT=1 時冇 account 嘅回報一律忽略（真倉開；demo 舊 EA 仍可用 0）
+ACK_REQUIRE_ACCOUNT = _b("XAU_ACK_REQUIRE_ACCOUNT", False)
 
 # --- Claude ---
 PROVIDER = _s("CLAUDE_PROVIDER", "api").lower()             # api（ANTHROPIC_API_KEY，同龍飛陣一樣）| vertex（同一 GCP 專案）
