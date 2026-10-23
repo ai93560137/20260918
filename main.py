@@ -6517,6 +6517,10 @@ def _analyst_call_txt(c):
     return f"{esc({'support': '支撐', 'resistance': '壓力', 'target': '目標'}.get(c.get('kind'), c.get('kind') or ''))} {lv:,}" if isinstance(lv, (int, float)) else esc(c.get("kind") or "—")
 
 
+def _rate_pct(r):
+    return f"{r * 100:.0f}%" if isinstance(r, (int, float)) else "—"
+
+
 def build_analyst_section(a):
     doc, sc = a.get("doc"), a.get("scorecard") or {}
     if not doc:
@@ -6538,13 +6542,19 @@ def build_analyst_section(a):
     summ = sc.get("summary") or {}
     srows = "".join(
         f"<tr><td>{esc(k)}</td><td style='text-align:right'>{esc(v.get('hit'))}／{esc(v.get('n'))}</td>"
-        f"<td style='text-align:right'>{esc(v.get('pct'))}{'%' if v.get('pct') is not None else ''}</td></tr>"
+        f"<td style='text-align:right'>{_rate_pct(v.get('rate'))}</td></tr>"
         if isinstance(v, dict) else f"<tr><td>{esc(k)}</td><td colspan='2'>{esc(v)}</td></tr>" for k, v in summ.items())
-    res = {True: "✅", False: "❌", None: "⏳"}
+    def res(r):   # 龍飛陣 pack.py：未到期 null；到期 {"ok": bool, "detail": "..."}
+        if r is None:
+            return "⏳"
+        ok = r.get("ok") if isinstance(r, dict) else r
+        mark = "✅" if ok is True else "❌" if ok is False else "—"
+        detail = r.get("detail") if isinstance(r, dict) else None
+        return mark + (f" <span class='muted' style='font-size:12px'>{esc(detail)}</span>" if detail else "")
     crows = "".join(
         f"<tr><td>{esc(c.get('date'))}</td><td>{esc(c.get('market'))}</td><td>{_analyst_call_txt(c)}</td>"
         f"<td style='text-align:right'>{esc(c.get('horizon'))} 日</td><td>{esc(c.get('why'))}</td>"
-        f"<td>{res.get(c.get('result'), esc(c.get('result')))}</td></tr>"
+        f"<td>{res(c.get('result'))}</td></tr>"
         for c in (sc.get("calls") or [])[-40:][::-1])
     score_html = ("<h3>🎯 計分卡（學唔學到睇呢度）</h3>"
                   + (f"<table><tr><th>類別</th><th style='text-align:right'>命中／已到期</th><th style='text-align:right'>命中率</th></tr>{srows}</table>" if srows
