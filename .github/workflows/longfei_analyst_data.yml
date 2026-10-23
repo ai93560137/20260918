@@ -1,0 +1,40 @@
+name: 龍飛陣 每日分析欄數據（R289）
+
+# 使用者 10-23：「根據我的思路，每天在網頁上加一個我的分析欄，我看看你能否學到我」。
+# 雲端工作階段連唔到 Yahoo，由呢度攞 NQ／ES 期貨日線同 1 小時線寫 GCS ops/longfei/analyst/data/；
+# 每日分析工作階段（08:20 HKT）讀佢同 HSI 1 分鐘存檔，按 research/longfei_analyst/STYLE.md 寫分析。只係分析，唔落單。
+on:
+  schedule:
+    - cron: '45 23 * * 1-5'   # 07:45 HKT 星期二至六（美股收市後）
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: longfei-analyst-data
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+
+      - name: Fetch NQ / ES
+        run: python3 scripts/longfei_analyst_data.py

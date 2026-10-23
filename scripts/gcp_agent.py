@@ -544,7 +544,8 @@ def cmd_put(ctx: Ctx):
             data = fh.read()
     if len(data) > 1_000_000:
         die("put 只給小檔用（> 1 MB 請用部署流程或 gsutil）")
-    ctype = "application/json" if obj.endswith(".json") else "text/plain; charset=utf-8"
+    ctype = ("application/json" if obj.endswith(".json") else "image/png" if obj.endswith(".png")   # [R289] 分析欄圖
+             else "text/plain; charset=utf-8")
     from urllib.parse import quote  # noqa: F401  (保留與 gcs_get 一致的匯入風格)
     ctx.call("POST", f"{GCS_UPLOAD_API}/b/{ctx.bucket}/o", params={"uploadType": "media", "name": obj},
              data=data, headers={"Content-Type": ctype})
