@@ -50,7 +50,8 @@ VALID_ACTIONS = {"HOLD", "OPEN_LONG", "OPEN_SHORT", "CLOSE", "UPDATE_STOP"}
 
 
 def validate_decision(d: dict, *, position: int, entry: float | None, last: float,
-                      cfg, remaining_loss: float, can_open: bool, trades_today: int, qty: int = 1):
+                      cfg, remaining_loss: float, can_open: bool, trades_today: int, qty: int = 1,
+                      current_stop: float | None = None):
     """將 AI 嘅決定過一次硬性規則。回傳 (最終動作, stop, target, 被拒原因或 None)。"""
     action = str(d.get("action", "HOLD")).upper()
     if action not in VALID_ACTIONS:
@@ -95,6 +96,8 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
         if position == 0 or stop is None:
             return "HOLD", None, None, "冇倉位或冇新止蝕"
         side = 1 if position > 0 else -1
+        if current_stop is not None and (stop - current_stop) * side < 0:   # [R269] 使用者 10-21：止蝕只准收緊
+            return "HOLD", None, None, f"止蝕只准收緊：新止蝕 {stop:g} 比現有 {current_stop:g} 遠"
         if (last - stop) * side <= 0:
             return "CLOSE", None, None, "新止蝕已被穿，即平"
         if cfg.max_stop_points and entry is not None and (entry - stop) * side > cfg.max_stop_points:

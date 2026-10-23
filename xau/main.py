@@ -22,6 +22,10 @@ import page
 import paper
 import rules
 import storage
+import signals
+import follower
+import hold_rules
+import student
 import tgsignal
 from storage import StorageError
 
@@ -274,7 +278,7 @@ def compact(bars):
 def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     # Prompt caching（使用者 10-21）：按「整點」切——上一個整點之前嘅 K 線一個鐘先變一次（可快取前段），本小時嘅先係即時部分
     hour0 = int(m1[-1]["time"]) // 3600 * 3600
-    older, recent = [b for b in m15 if b["time"] < hour0], [b for b in m15 if b["time"] >= hour0]
+    older, recent = [b for b in m15 if b["time"] < hour0][-config.M15_OLDER_MAX:], [b for b in m15 if b["time"] >= hour0]   # 固定根數 → 同一個鐘內內容唔變（慳成本 G）
     m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-60:], [b for b in m1 if b["time"] >= hour0]   # 整點前最多 60 根（10-21 由 120 減，慳 token）
     pos = state.get("position")
     last = m1[-1]["close"]
@@ -341,6 +345,36 @@ def cmd_text(state, now):
     return executor.cmd_text(state, now)
 
 
+def in_active_hours(now):
+    """XAU_ACTIVE_HOURS_UTC="07-17" → 07:00–16:59 UTC 先問；空＝全日。"""
+    spec = (config.ACTIVE_HOURS_UTC or "").strip()
+    if not spec or "-" not in spec:
+        return True
+    try:
+        a, b = (int(x) for x in spec.split("-", 1))
+    except ValueError:
+        return True
+    h = int(now // 3600) % 24
+    return a <= h < b if a <= b else (h >= a or h < b)
+
+
+def reuse_hold(state, m1, m15, now):
+    """慳成本 F：上次真正問 Claude 係 HOLD、仲未過 REUSE_MAX_MIN 分鐘、價格變動 < REUSE_ATR_MULT × M1 ATR、
+    冇新 M15 收盤 → 回傳原因（可以沿用）；否則 None。"""
+    anchor, last = state.get("reuse_anchor") or {}, state.get("last_decision") or {}
+    if not anchor or last.get("final") != "HOLD" or last.get("kind") not in ("decide", "screen", "reuse"):
+        return None
+    if now - anchor.get("ts", 0) > config.REUSE_MAX_MIN * 60:
+        return None
+    if m15 and anchor.get("m15_time") != m15[-1]["time"]:
+        return None
+    atr = market.wilder_atr(m1) or 0
+    move = abs(m1[-1]["close"] - (anchor.get("price") or 0))
+    if not atr or move >= config.REUSE_ATR_MULT * atr:
+        return None
+    return f"價格變動 {move:.{config.PRICE_DIGITS}f} < {config.REUSE_ATR_MULT:g}×ATR {atr:.{config.PRICE_DIGITS}f}、冇新 M15"
+
+
 def process_bar(state, bar, m1, m15, account, now):
     """新 M1 收盤。回傳 (決策紀錄或 None, 摘要)。"""
     day = market.ny_date(now)
@@ -386,9 +420,60 @@ def process_bar(state, bar, m1, m15, account, now):
 
     can_open = control["mode"] == "RUN"
     block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
+    if pos is None and not in_active_hours(now):          # 慳成本 D：時段外空倉唔問 Claude（有倉照管）
+        return None, f"時段外（XAU_ACTIVE_HOURS_UTC={config.ACTIVE_HOURS_UTC}），空倉唔問 Claude"
+    reuse = reuse_hold(state, m1, m15, now) if pos is None and not config.SIGNAL_BOOK and config.REUSE_HOLD in ("on", "shadow") else None
+    if reuse and config.REUSE_HOLD == "on":               # 慳成本 F：市況冇變沿用上次 HOLD
+        rec.update(kind="reuse", action="HOLD", final="HOLD", reason=f"沿用上次 HOLD（{reuse}）")
+        _record(state, rec, day)
+        return rec, "沿用 HOLD"
+    if not reuse:
+        state["reuse_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
+    if reuse:
+        rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
+    hr = hr_rule = None
+    if pos is not None and hold_rules.mode() != "off":   # 慳成本 H：有倉時規則止損（shadow 只記錄；on 時規則處理、Opus 只喺特定分鐘問）
+        hr = hold_rules.track(state.get("hold_rules"), pos, now)
+        atr15 = market.wilder_atr(m15)
+        hr_rule = hold_rules.suggest(pos, m1, atr15, bar["close"], hr.get("initial_stop"))
+        r_hit_first = hr_rule.get("r_mult") is not None and hr_rule["r_mult"] >= hold_rules.BE_R and hr.get("r_hit_ts") is None
+        if r_hit_first:
+            hr["r_hit_ts"] = now
+        ask = hold_rules.should_ask(hr, pos, bar["close"], atr15, m15[-1]["time"], now, r_hit_first)
+        hr["last_m15_time"] = m15[-1]["time"]
+        if ask:
+            hr["last_ask_ts"] = now
+        st = hr.setdefault("stats", {}); st["minutes"] = st.get("minutes", 0) + 1
+        if not ask:
+            st["rule_minutes"] = st.get("rule_minutes", 0) + 1       # on 模式下唔問 Opus 嘅分鐘（shadow＝估計可以慳幾多）
+        rec["hold_rules"] = {"mode": hold_rules.mode(), "sl": hr_rule.get("sl"), "stage": hr_rule.get("stage"),
+                             "r_mult": hr_rule.get("r_mult"), "reason": hr_rule.get("reason"), "ask": ask}
+        state["hold_rules"] = hr
+        if hold_rules.mode() == "on" and not ask:
+            action, stop, target, why = "HOLD", None, None, None
+            if hr_rule.get("sl") is not None:
+                action, stop, target, why = rules.validate_decision(
+                    {"action": "UPDATE_STOP", "stop_price": hr_rule["sl"], "target_price": None, "confidence": 1.0, "reason": "規則"},
+                    position=pos, last=bar["close"], can_open=False, block_reason="規則", trades_today=paper.trades_today(state, day))
+                if action == "UPDATE_STOP" and config.EXECUTE and pending_has(state, "modify"):
+                    action, why = "HOLD", "上一個 modify 未 ack"
+            rec.update(kind="hold_rules", action=action, final=action, stop=stop, target=target, rejected=why,
+                       reason=f"規則止損（{hr_rule.get('reason')}）", cost_usd=0.0, model="rules")
+            rec["applied"] = (enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD") if config.EXECUTE \
+                else paper.apply(state, action, stop, target, bar, now, day, decision_id)
+            _record(state, rec, day)
+            if action == "UPDATE_STOP":
+                log_event(f"📏 [{config.TEAM_NAME}] 規則移止損 → {stop:.{config.PRICE_DIGITS}f}（{hr_rule.get('reason')}）@ {bar['close']:.{config.PRICE_DIGITS}f}",
+                          component="rules", action=action)
+            return rec, rec["applied"]
+    active = signals.active(now, price=bar["close"]) if config.SIGNAL_BOOK else None
+    if config.SIGNAL_BOOK and pos is None and not active:
+        return None, "冇有效訊號（訊號書唔問 Claude）"
     ctx = build_context(state, m1, m15, account, now, day, ladder, control)
+    if config.SIGNAL_BOOK:
+        ctx["signals"] = active
     b = get_brain()
-    if pos is None and config.GATE_MODEL:
+    if pos is None and config.GATE_MODEL and not config.SIGNAL_BOOK:     # 訊號書：有效訊號本身就係「值得睇」，唔使 Haiku 篩
         sc = b.screen(ctx)
         _bump_usage(state, "screen", sc.get("_usage"), sc.get("_ms", 0), day)
         if not sc.get("look"):
@@ -403,12 +488,25 @@ def process_bar(state, bar, m1, m15, account, now):
     action, stop, target, why = rules.validate_decision(
         d, position=pos, last=bar["close"], can_open=can_open, block_reason=block,
         trades_today=paper.trades_today(state, day))
+    cited = None
+    if config.SIGNAL_BOOK and action in ("OPEN_LONG", "OPEN_SHORT"):
+        cited = next((x for x in active or [] if x["sid"] == d.get("signal_id")), None)
+        if cited is None:
+            action, stop, target, why = "HOLD", None, None, f"訊號書開倉要引用有效訊號（signal_id={d.get('signal_id')!r}）"
     rec.update(kind="decide", action=str(d.get("action")), final=action, stop=stop, target=target,
                confidence=d.get("confidence"), reason=str(d.get("reason") or "")[:400], rejected=why,
                ai_stop=d.get("stop_price"), ai_target=d.get("target_price"),
                ms=d.get("_ms"), usage=d.get("_usage"), cost_usd=brain.cost_usd(d.get("_usage")),
                model=(d.get("_usage") or {}).get("model") or config.MODEL, lessons=d.get("_lessons"),
                error=bool(d.get("_error")))
+    if hr is not None:                                    # H shadow／on：Opus 實際移止損 vs 規則會移去邊
+        hr["stats"] = hold_rules.compare(hr.get("stats"), hr_rule.get("sl"), action, stop, pos.get("stop"), config.HOLD_RULES_TOL)
+        if action == "UPDATE_STOP":
+            rec["hold_rules"]["ai_sl"] = stop
+    if cited:
+        rec["signal_id"] = cited["sid"]
+        if cited["sid"] not in rec["reason"]:
+            rec["reason"] = (rec["reason"] + signals.note(cited))[:480]
     if config.EXECUTE:
         rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD"
         if action in ("OPEN_LONG", "OPEN_SHORT"):
@@ -515,6 +613,12 @@ def handle_heartbeat(payload):
                     m15 = merged
     resp["need_history"] = need_history(m15)
 
+    if config.SIGNAL_BOOK and student.enabled():                 # 學徒階段 1：影子學生先交卷（唔落單），再做 S1
+        try:
+            student.rule_tick(m1, offset, now)
+            student.claude_tick(get_brain(), lambda: build_context(state, m1, m15 or [], account, now, market.ny_date(now)), now)
+        except Exception as exc:  # noqa: BLE001
+            log_event(f"⚠️ 影子學生出錯：{type(exc).__name__}: {str(exc)[:80]}", severity="WARNING", component="student")
     rec, summary = process_bar(state, bar, m1, m15 or [], account, now)
     try:
         save_state(state)
@@ -547,7 +651,10 @@ def handle_cmd_ack(payload):
         found = storage.update(STATE_FILE, mutate, default_factory=paper.empty_state)
     except StorageError as exc:
         return jsonify({"status": "error", "message": str(exc)[:100]}), 500
-    log_event(f"📨 [{config.TEAM_NAME}] 指令回報 {cid} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}", component="ea")
+    ok = bool(payload.get("ok"))
+    log_event(f"📨 [{config.TEAM_NAME}] 指令回報 {cid} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
+              + ("" if ok else f"｜EA：{str(payload.get('message') or '')[:160]}"),            # 10-23：失敗原因（retcode 描述）要入日誌，之前只有 EA「專家」分頁先睇到
+              severity="INFO" if ok else "WARNING", component="ea", cmd=cid, ok=ok)
     return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
 
 
@@ -642,6 +749,7 @@ def build_status():
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
+        "hold_rules": {"mode": hold_rules.mode(), "ask_min": config.HOLD_RULES_ASK_MIN, "tol": config.HOLD_RULES_TOL, **(state.get("hold_rules") or {})},
         "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
@@ -666,10 +774,22 @@ def entry(req):
         return "", 204
     if req.method == "GET":
         status = build_status()
+        status["book"] = config.BOOK
+        if config.SIGNAL_BOOK:
+            status["signals"] = signals.recent()
+            if follower.enabled():
+                status["follow"] = follower.status()
+            if student.enabled():
+                status["student"] = student.status()
         if req.args.get("format") == "json":
             return jsonify(status), 200
         return page.render(status), 200, {"Content-Type": "text/html; charset=utf-8"}
-    if req.args.get("tg") == "signal":                 # [R290] 訊號確認 bot 嘅按鈕（核對 secret_token 標頭，唔使權杖）
+    if config.SIGNAL_BOOK:                             # 訊號書 S0：只收 HMAC 簽名嘅訊號／監聽心跳；EA 心跳等一律 ignored，唔問 Opus、唔落單
+        if req.method == "POST" and req.headers.get("X-Sig-Signature"):
+            return signals.handle_ingest(req.headers, req.get_data())
+        if not config.SIG_DECIDE and not follower.enabled():
+            return jsonify({"status": "ignored", "message": "signal book S0: ingest only"}), 200
+    if req.args.get("tg") == "signal" and not config.SIGNAL_BOOK:   # [R290] 訊號確認 bot 嘅按鈕（訊號書唔用）
         return tgsignal.handle_callback(req)
     try:
         raw = req.get_data().decode("utf-8").replace("\x00", "").strip()     # MT5 char 陣列常以 \0 結尾
@@ -681,11 +801,22 @@ def entry(req):
     if not _token_ok(payload):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     action = payload.get("action")
+    if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
+        if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
+            found = follower.ack(str(payload.get("id") or "")[:8], payload, now_ts())
+            log_event(f"📨 [{config.TEAM_NAME}] 跟單指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
+                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                      severity="INFO" if payload.get("ok") else "WARNING", component="follow")
+            return jsonify({"status": "acked" if found else "unknown", "id": str(payload.get("id") or "")[:8]}), 200
+        if follower.is_follow_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return follower.handle_heartbeat(payload)
+        if not config.SIG_DECIDE and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return jsonify({"status": "ignored", "message": "signal book S0: ingest only", "cmd_text": ""}), 200
     if action == "cmd_ack":
         return handle_cmd_ack(payload)
-    if action == "tg_signal":                          # [R290] VM 監聽腳本推上嚟嘅外部頻道訊息
+    if action == "tg_signal" and not config.SIGNAL_BOOK:   # [R290] 舊入口（訊號書只收 HMAC 簽名入口）
         return tgsignal.handle_signal(payload)
-    if action == "test_cmd":                           # 階段 B 測試清單：XAU_TEST_CMDS=1 先開放；真倉前要關
+    if action == "test_cmd" and not config.SIGNAL_BOOK:                           # 階段 B 測試清單：XAU_TEST_CMDS=1 先開放；真倉前要關
         return handle_test_cmd(payload)
     if "equity" in payload or action in ("check_gate", "heartbeat"):
         return handle_heartbeat(payload)

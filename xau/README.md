@@ -25,7 +25,7 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
 - 影子階段（`XAU_EXECUTE=0`，預設）：只寫 GCS `xau/`，心跳回應 `cmd_text` 永遠空，**唔會送單**。
 - **舊規則同電閘唔再係硬閘**（使用者 10-20：「將之前的規則, 電閘, 刪減, 但給該陣claude.ai 做參考」）：六關、錦囊 v4 條件、150 分鐘出場、新聞鎖整理喺
   `reference/legacy_rules.md`，放入 Claude system prompt 做參考；舊服務 `zhuge_gate_state.json` 只讀，作 `legacy_gate` 參考資料傳畀 Claude。
-- **硬性風控（AI 無權改，照龍飛陣、冇硬鎖）**：日蝕 −3% PAUSE／−6% 平倉 STOP（紐約換日自動重開）；保證金 < 300% PAUSE（回升自動解）；
+- **硬性風控（AI 無權改，照龍飛陣、冇硬鎖）**：日蝕 −20% PAUSE／冇平倉 STOP（使用者 10-22 由 −3%／−6% 放寬；`XAU_DAILY_LOSS_PAUSE_PCT=20`、`XAU_DAILY_LOSS_STOP_PCT=1000`；夜盤 ×1.5 即 −30%）（紐約換日自動重開）；保證金 < 300% PAUSE（回升自動解）；
   累計 −25% PAUSE（當日事件，換日自動重開）；回撤 10%／20%、保證金 < 200%／150% 只發 Telegram；最大手數、止損距離、最長持倉。
   唯一開關 GCS `xau/control.json`（`mode` RUN／PAUSE／STOP、`set_by`、`auto_reset_day`、`principal_hkd` 私人）；使用者設嘅模式程式唔會自己改。見 `handoff/天覆陣.md` §5。
 - 實倉階段（`XAU_EXECUTE=1`）：EA 改指向本服務，心跳回應 `cmd_text` 帶指令，EA 執行後 `cmd_ack` 回報。要先有新 EA（PR B），同埋影子達到預先登記標準（PR C）。
@@ -55,7 +55,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 
 | 變數 | 預設 | 說明 |
 |---|---|---|
-| `WEBHOOK_SECRET_TOKEN` | — | 必須；同舊服務相同。心跳同回報都要帶 |
+| `WEBHOOK_SECRET_TOKEN` | — | 必須；同舊服務相同。心跳同回報都要帶。**訊號書 `zhuge-xau-sig` S0 唔使，但開 S1（`SIG_DECIDE=1`）或跟單（`SIG_FOLLOW_CHANNELS`）要收 EA 心跳就一定要有**（10-22 漏咗令心跳 403；`gcp_agent --profile xausig` dry-run 會警告） |
 | `ZHUGE_URL` | `https://zhuge-risk-manager-1056099871997.europe-west1.run.app/` | 舊服務網址，頁頂導覽列連去各陣頁（`?view=…`） |
 | `ANTHROPIC_API_KEY` | — | `CLAUDE_PROVIDER=api`（預設，同龍飛陣）時必須 |
 | `CLAUDE_PROVIDER` | `api` | `vertex` = 用同一 GCP 專案嘅 Vertex AI Claude（要喺 Model Garden 啟用） |
@@ -73,6 +73,9 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_LONG_ONLY` | 0 | 影子階段兩邊都記 |
 | `XAU_CALL_WHEN_LOCKED` | 0 | 空倉且電閘 LOCK 時唔問 Claude（慳錢） |
 | `XAU_MAGIC` | 921 | 同新 EA `InpMagic` 一致（線上 V23 用 920） |
+| `XAU_HOLD_RULES` | shadow | 慳成本 H（`hold_rules.py`，COST_PLAN §6）：有倉時程式按教學第 1／4 條移止損。`off`／`shadow`（只記「規則會點移」vs Opus 實際點移，唔改行為）／`on`（規則處理；Opus 只喺新 M15、首次 1R、價格離 SL／TP ≤0.5×M15 ATR、每 `XAU_HOLD_RULES_ASK_MIN` 分鐘先問）。止損只准收緊、唔收到 0.5×ATR 內、未到 0.95R 唔郁（`hold_rules.BE_R`，使用者 10-23 由 1.0 放寬） |
+| `XAU_HOLD_RULES_ASK_MIN` | 5 | on 模式下最多隔幾多分鐘問一次 Opus |
+| `XAU_HOLD_RULES_TOL` | 1.0（EURUSD 0.0010） | shadow 統計：Opus 止損同規則相差 ≤tol 算一致（目標一星期 ≥80% 先開 on） |
 
 ## 多產品：一個產品一個服務（使用者 10-21：「將產品擴展到主要外匯」，先做 EURUSD、0.01 手、止損 5–40 pip、影子模式）
 同一套 `xau/` 程式，每個產品另開一個 Cloud Run 服務，用 `XAU_SYMBOL` 分辨；產品表喺 `config.PRODUCTS`（合約、pip、小數位、止損 pip 範圍、點差、報價貨幣、GCS 前綴、magic）。

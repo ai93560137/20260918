@@ -8,6 +8,7 @@ date,time_hkt,market,category,event,impact,affects,event_week,source
 2026-10-22,05:45,NZD,數據,CPI q/q,High,,Y,ForexFactory
 2026-10-22,20:30,USD,數據,Unemployment Claims,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
 2026-10-23,,持倉,持倉到期,🌬️ 風揚陣・方向一：沽 HSI 週期權 10/23,High,見事件,Y,POSITIONS.md
+2026-10-23,,持倉,持倉到期,"✋ 使用者人手：賣 HSI2610 大恒指期貨 1 手 @23,700",High,見事件,Y,POSITIONS.md
 2026-10-23,21:45,USD,數據,Flash Manufacturing PMI,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
 2026-10-23,21:45,USD,數據,Flash Services PMI,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
 2026-10-23,22:00,USD,數據,Revised UoM Consumer Sentiment,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
@@ -15,8 +16,12 @@ date,time_hkt,market,category,event,impact,affects,event_week,source
 2026-10-29,02:00,USD,FOMC,FOMC 利率聲明,High,雲垂 MES、人手 EW、金絲雀；全部,Y,外匯分支 fomc_announcements.csv
 2026-10-29,16:00,HK,HK 結算,恒指／小型恒指 10 月期貨及月度期權結算（倒數第二個交易日）,High,風揚、雲垂 HSI、蛇蟠（轉倉）,Y,futu/calendar/HK.json
 2026-10-30,,持倉,持倉到期,"✋ 使用者人手：沽 EW2610 P7,750 1 張 @43",High,見事件,Y,POSITIONS.md
-2026-10-30,,持倉,持倉到期,"✋ 使用者人手：賣 ES2612 標普期貨 1 手 @7,762",High,見事件,Y,POSITIONS.md
+2026-10-30,,持倉,持倉到期,"✋ 使用者人手：沽 EW2610 P7,650 1 張 @60",High,見事件,Y,POSITIONS.md
+2026-10-30,,持倉,持倉到期,"✋ 使用者人手：賣 MES2612 微型標普期貨 10 手 @7,693.25",High,見事件,Y,POSITIONS.md
+2026-10-30,,持倉,持倉到期,"✋ 使用者人手：賣 ES2612 標普期貨 1 手 @7,756",High,見事件,Y,POSITIONS.md
 2026-10-30,04:00+1,US,US 期權到期,ES／MES EOM 期權到期（月末交易日）,Medium,雲垂 MES、人手 EW,Y,規則推算
 2026-11-03,全日,JP,JP 假期,JP 休市：文化之日,Holiday,,,claude/gifted-carson-v2tvhw universes/calendars
 2026-11-20,04:00+1,US,US 期權到期,美股月度期權到期（第三個週五）,Medium,雲垂 MES、人手 EW,,規則推算
 2026-11-23,全日,JP,JP 假期,JP 休市：勤勞感謝之日,Holiday,,,claude/gifted-carson-v2tvhw universes/calendars
+2026-11-26,全日,US,US 假期,US 休市：感恩節,Holiday,雲垂 MES、人手 EW,,claude/gifted-carson-v2tvhw universes/calendars
+2026-11-27,16:00,HK,HK 結算,恒指／小型恒指 11 月期貨及月度期權結算（倒數第二個交易日）,High,風揚、雲垂 HSI、蛇蟠（轉倉）,,futu/calendar/HK.json

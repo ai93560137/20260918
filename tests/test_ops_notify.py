@@ -131,6 +131,14 @@ class PickTaskTests(unittest.TestCase):
         self.assertEqual(on.pick_task(hkt("2026-10-13 17:15")), "deals")
         self.assertEqual(on.pick_task(hkt("2026-10-14 03:45")), "deals")
 
+    def test_pick_task_delayed_schedule(self):
+        # GitHub schedule 遲 4–5 個鐘：按 cron 字串判斷，唔再誤判做 hedge
+        self.assertEqual(on.pick_task(hkt("2026-10-22 21:13"), "10 9 * * 1-5"), "deals")
+        self.assertEqual(on.pick_task(hkt("2026-10-22 08:43"), "40 19 * * 1-5"), "deals")
+        self.assertEqual(on.pick_task(hkt("2026-10-22 20:29"), "55 7 * * 1-5"), "hedge")
+        self.assertEqual(on.SCHEDULE_TASKS["40 19 * * 1-5"][1], "night")
+        self.assertEqual(on.pick_task(hkt("2026-10-13 17:15"), ""), "deals")   # 手動觸發照舊按時間
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -91,6 +91,19 @@ def run(argv, session, env_extra=None):
     return out.getvalue(), code
 
 
+class ConditionalEnvTests(unittest.TestCase):
+    def test_xausig_warns_when_s1_or_follow_without_token(self):
+        prof = ga.PROFILES["xausig"]
+        self.assertEqual(ga.env_warnings(prof, {"XAU_BOOK": "signal"}), [])                       # S0：唔使權杖
+        self.assertEqual(ga.env_warnings(prof, {"SIG_DECIDE": "0", "SIG_FOLLOW_CHANNELS": ""}), [])
+        w = ga.env_warnings(prof, {"SIG_DECIDE": "1"})
+        self.assertEqual(len(w), 1); self.assertIn("WEBHOOK_SECRET_TOKEN", w[0]); self.assertIn("SIG_DECIDE", w[0])
+        w = ga.env_warnings(prof, {"SIG_FOLLOW_CHANNELS": "5231"})
+        self.assertEqual(len(w), 1); self.assertIn("SIG_FOLLOW_CHANNELS", w[0])
+        self.assertEqual(ga.env_warnings(prof, {"SIG_DECIDE": "1", "SIG_FOLLOW_CHANNELS": "5231", "WEBHOOK_SECRET_TOKEN": "x"}), [])
+        self.assertEqual(ga.env_warnings(ga.PROFILES["xau"], {"SIG_DECIDE": "1"}), [])            # 其他 profile 冇呢條
+
+
 class StatusAndEnvTests(unittest.TestCase):
     def test_status_masks_secrets(self):
         s = FakeSession([("GET", FN_NAME, FakeResp(200, fn_body()))])
@@ -673,6 +686,72 @@ class XauProfileTests(unittest.TestCase):
         s2 = FakeSession(perm_handlers(ok=True) + [("GET", XAU_SVC_NAME, FakeResp(200, ok_svc))])
         out2, _ = run(["--profile", "xau", "deploy"], s2, RUN_ENV)
         self.assertNotIn("⚠️ 容器冇 baseImageUri", out2)   # 只對計畫嗰行（commit 訊息都可能有呢幾個字）
+
+
+SIG_SVC_NAME = f"projects/{PROJECT}/locations/{RUN_REGION}/services/zhuge-xau-sig"
+
+
+class XauSigProfileTests(unittest.TestCase):
+    """TG 訊號書 profile（使用者 10-21 揀方案 B）：服務 zhuge-xau-sig；建立時自動加 XAU_BOOK=signal；
+    更新時環境變數唔一致就拒絕（否則會變成第二個寫 xau/ 嘅主服務）。"""
+
+    def test_local_only_packs_signals(self):
+        s = FakeSession([])
+        out, code = run(["--profile", "xausig", "deploy", "--local-only"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("profile zhuge-xau-sig", out)
+        self.assertIn("signals.py", out)
+        self.assertEqual(s.calls, [])
+
+    def test_create_dry_run_adds_required_env(self):
+        s = FakeSession(create_perm_handlers(ok=True) + [
+            ("GET", SIG_SVC_NAME, FakeResp(404, text="nf")), ("GET", SVC_NAME, FakeResp(200, svc_body()))])
+        out, code = run(["--profile", "xausig", "deploy", "--set-env", "XAU_BOOK=claude"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("XAU_BOOK=signal", out)
+        self.assertIn("zhuge-xau-sig", out)
+        self.assertEqual(writes(s), [])
+
+    def test_update_refuses_when_env_mismatch(self):
+        svc = {**svc_body(), "name": SIG_SVC_NAME}
+        s = FakeSession(perm_handlers(ok=True) + [("GET", SIG_SVC_NAME, FakeResp(200, svc))])
+        out, code = run(["--profile", "xausig", "deploy"], s, RUN_ENV)
+        self.assertNotEqual(code, 0, out)                 # die() 訊息寫 stderr
+        self.assertNotIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_update_ok_when_env_matches(self):
+        svc = {**svc_body(), "name": SIG_SVC_NAME}
+        svc["template"]["containers"][0]["env"] = [{"name": "XAU_BOOK", "value": "signal"}, {"name": "XAU_SYMBOL", "value": "XAUUSD"}]
+        s = FakeSession(perm_handlers(ok=True) + [("GET", SIG_SVC_NAME, FakeResp(200, svc))])
+        out, code = run(["--profile", "xausig", "deploy"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+
+class VmCreateTests(unittest.TestCase):
+    """天覆陣訊號書 VM：預設 dry-run、冇服務帳戶、OS Login、已存在就停、唔改 IAM。"""
+
+    def test_body_has_no_service_account(self):
+        b = ga.vm_body(PROJECT, "tg-relay", "us-central1-a", "e2-micro")
+        self.assertEqual(b["serviceAccounts"], [])
+        self.assertIn({"key": "enable-oslogin", "value": "TRUE"}, b["metadata"]["items"])
+        self.assertTrue(b["shieldedInstanceConfig"]["enableSecureBoot"])
+
+    def test_dry_run_no_writes(self):
+        s = FakeSession([("GET", "zones/us-central1-a/instances/tg-relay", FakeResp(404, text="nf"))])
+        out, code = run(["vm-create"], s, RUN_ENV)
+        self.assertEqual(code, 0, out)
+        self.assertIn("冇服務帳戶", out)
+        self.assertIn("dry-run", out)
+        self.assertEqual(writes(s), [])
+
+    def test_existing_vm_stops(self):
+        s = FakeSession([("GET", "zones/us-central1-a/instances/tg-relay", FakeResp(200, {"name": "tg-relay"}))])
+        out, code = run(["vm-create", "--yes"], s, RUN_ENV)
+        self.assertNotEqual(code, 0)
+        self.assertEqual(writes(s), [])
 
 
 if __name__ == "__main__":
