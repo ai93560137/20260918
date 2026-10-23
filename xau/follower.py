@@ -7,6 +7,7 @@ import uuid
 import config
 import executor
 import market
+import signals
 import storage
 from storage import StorageError
 
@@ -67,12 +68,19 @@ def entry_check(sig, price):
     tp1 = tps[0]
     if (price - tp1) * sgn >= 0:
         return "skip", "收到時價已過 TP1"
+    nd = config.PRICE_DIGITS
+    market_now = any(k in str(sig.get("order_type") or "") for k in ("market", "now"))
+    ref = price if (market_now or lo is None or hi is None) else (lo + hi) / 2     # 限價訊號會喺入場區成交，用區中位計剩餘空間
+    remain = (tp1 - ref) * sgn
+    if remain < config.FOLLOW_MIN_TP:                      # 10-23 DAN 2766：市價 BUY 時 TP1 只剩 0.5 美元而 SL 9.5，唔值得入
+        return "skip", f"入場到 TP1 只有 {remain:.{nd}f} < {config.FOLLOW_MIN_TP:g}"
+    if signals.is_late(sig, price):                        # 同 S1 一樣：已向有利方向離入場區 ≥ SIG_LATE_R×止損距離＝走咗
+        return "skip", f"走咗（離入場區已 ≥ {config.SIG_LATE_R:g}×止損距離）"
     dist = (price - sl) * sgn
     if dist <= 0:
         return "skip", "止損已經觸發／錯邊"
     if dist > config.SIG_MAX_SL:
         return "skip", f"止損距離 {dist:.{config.PRICE_DIGITS}f} 超過 {config.SIG_MAX_SL:g}"
-    market_now = any(k in str(sig.get("order_type") or "") for k in ("market", "now"))
     if market_now or lo is None:
         return "ok", "市價單"
     tol = config.SIG_FILL_TOL

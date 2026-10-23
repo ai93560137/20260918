@@ -248,6 +248,7 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 - 規則：市價單訊號即刻市價入；限價單等現價入到入場區（±點差）先入；收到時已過 TP1、止損錯邊、距離超上限就略過（標 used 唔再試）；一次只一張；control 非 RUN、階梯 Ⓑ／Ⓓ、EA 唔准交易唔開；SL＝頻道原 SL、TP＝TP1，伺服器端執行，唔改唔主動平；回報按指令 id 前綴 `f`。`XAU_EXECUTE=0` 只記紙上。
 - 部署：MT5 第四張 XAUUSD 圖表 EA v0.37 `InpMagic=932`；env `SIG_FOLLOW_CHANNELS=5231`＋`WEBHOOK_SECRET_TOKEN`（同 EA InpToken，收心跳必要）；唔使開 SIG_DECIDE。MT5「允許 WebRequest 的 URL」要加 `https://zhuge-xau-sig-1056099871997.europe-west1.run.app`（同 921 嘅 host 唔同）。
 - 成功標準（#123）：demo 30 張扣成本每張 >+0.5 美元、最大回撤 <100 美元、最長連輸 ≤5。
+- **10-23 使用者：「DAN 都加入跟單 和CTC一樣」**（IDEAS #126）：唔改程式，env `SIG_FOLLOW_CHANNELS=5231,7713`。DAN 訊號多數係限價入場區（現價反向 4 ±2），follower 會等現價入區（±點差）先入；SL 6／TP1 3，TP1 走盈虧比 1:2，要勝率 >70% 先有錢賺——DAN 回測 TP1 先到比率高（§21 TP1 平一半勝率 100%，valid 14 張），但 TP1 走會放棄 DAN 最值錢嘅「去晒 TP6」部分，所以 #126 要同時記每張「TP1 走 vs 逐級鎖」差幾多 R，30 張後決定要唔要加 trailing 變體。一次只一張：兩頻道同時有訊號先到先得。成績喺 `xau/sig/follow/` 按 `ch` 分開睇。
 
 ## 26. 學徒計劃階段 0＋1 上線（2026-10-22 使用者批）
 見 `xau/DAN_APPRENTICE.md` 實作紀錄：每條入場訊號存特徵快照（`snapshots/`，冇原文）；規則學生（擺動點／關鍵價位／前 15 分鐘反向）每根 M1 交卷、Claude 學生（`XAU_SHADOW=1`）活躍時段每 30 分鐘交卷；參考頻道訊號到就對答案；學生自己判斷用實際價計 DAN 結構 2R。成功標準見 IDEAS #122（≥40 條訊號：方向 ≥70%、入場區 ≥50%、交卷 ≥50%；多手 >0R 並贏隨機）。

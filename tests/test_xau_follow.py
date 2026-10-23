@@ -74,6 +74,22 @@ check("entry_check 純函數：市價單 ok、限價等、過 TP1 略過、止�
       and follower.entry_check({"side": "BUY", "sl": 3990, "tp": [4005], "entry_low": 3999, "entry_high": 4001}, 4000.5)[0] == "ok"
       and follower.entry_check({"side": "BUY", "sl": 3990, "tp": [4005], "entry_low": 3999, "entry_high": 4001}, 4005.2)[0] == "skip"
       and follower.entry_check({"side": "SELL", "sl": 3990, "tp": [3985], "entry_low": 3999, "entry_high": 4001}, 4000)[0] == "skip")
+# 10-23 DAN 第一張跟單（3860767713_2766）：市價 BUY、冇入場區、SL 4005、TP1 4015、現價 4014.48 → TP1 只剩 0.52 而 SL 差 9.5
+_dan = {"side": "BUY", "sl": 4005.0, "tp": [4015.0, 4018.0, 4021.0], "entry_low": None, "entry_high": None, "order_type": "market"}
+v, why = follower.entry_check(_dan, 4014.48)
+check("市價單離 TP1 只剩 0.52 < SIG_FOLLOW_MIN_TP 2.0 → skip", v == "skip" and "0.52" in why, (v, why))
+v, why = follower.entry_check(_dan, 4012.5)
+check("市價單離 TP1 剩 2.5 ≥ 2.0 → ok", v == "ok", (v, why))
+v, why = follower.entry_check({"side": "SELL", "sl": 4025.0, "tp": [4015.0], "entry_low": None, "entry_high": None, "order_type": "market"}, 4016.0)
+check("空單鏡像：離 TP1 剩 1.0 < 2.0 → skip", v == "skip", (v, why))
+# 有入場區：BUY 3999–4001、SL 3990（風險 10）、TP1 4015：現價 4011（離區中位 11 ≥ 1×風險）→ 走咗 skip；現價 4006 → 未入區 wait
+_zone = {"side": "BUY", "sl": 3990.0, "tp": [4015.0], "entry_low": 3999.0, "entry_high": 4001.0}
+v, why = follower.entry_check(_zone, 4011.0)
+check("有入場區：已離區 ≥1×止損距離 → skip（走咗，同 S1 is_late）", v == "skip" and "走咗" in why, (v, why))
+check("有入場區：離區 6 < 風險 10 → wait 等回入場區", follower.entry_check(_zone, 4006.0)[0] == "wait", follower.entry_check(_zone, 4006.0))
+check("限價訊號剩餘空間用入場區中位計：區 3999–4001、TP1 4002（中位→TP1 2.0）現價 4001.5 → wait；TP1 4001.5（1.5）→ skip", follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4002.0], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.5)[0] == "wait" and follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4001.5], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.4)[0] == "skip", (follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4002.0], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.5), follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4001.5], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.4)))
+check("CTC 執銀仔結構（TP1 4–6、SL 21）唔受影響：市價 BUY 4000、TP1 4005、SL 3979 → ok", follower.entry_check({"side": "BUY", "sl": 3979.0, "tp": [4005.0], "entry_low": None, "entry_high": None, "order_type": "market"}, 4000.0)[0] == "ok")
+check("config：SIG_FOLLOW_MIN_TP 2.0", config.FOLLOW_MIN_TP == 2.0)
 
 print("=== 分流 ===")
 st, d = hb(1, 4000, magic=931)

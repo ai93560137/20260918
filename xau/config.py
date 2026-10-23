@@ -172,6 +172,9 @@ SIG_AGREE_MIN = _i("SIG_AGREE_MIN", 30)                      # 幾多分鐘內�
 FOLLOW_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_CHANNELS", "").split(",") if x.strip())
 FOLLOW_MAGIC = _i("SIG_FOLLOW_MAGIC", MAGIC + 1)             # 931 → 932（EA InpBotMagics 已包 931–935，計入戶口總階梯）
 FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
+# 10-23 DAN 第一張跟單：市價 BUY 時 TP1 只差 0.5 美元、SL 差 9.5 → 加「剩餘空間」下限：
+#   現價到 TP1 ≥ SIG_FOLLOW_MIN_TP（價格單位；DAN TP1 步距 3、CTC 4–6，唔受影響），另外同 S1 一樣用 signals.is_late 略過「走咗」嘅限價訊號
+FOLLOW_MIN_TP = _f("SIG_FOLLOW_MIN_TP", 2.0 if PRODUCT["digits"] == 2 else 0.0004)
 # 學徒計劃階段 0／1（使用者 10-22 批；xau/DAN_APPRENTICE.md、IDEAS #122）：特徵快照（永遠開）、規則學生（免費）、Claude 學生（XAU_SHADOW=1 先問 Opus）
 STUDENT = _b("XAU_STUDENT", True)
 SHADOW = _b("XAU_SHADOW", False)
