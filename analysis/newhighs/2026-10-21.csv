@@ -1,3 +1,61 @@
 date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,longest_months,streak_window,streak_longest,yahoo_ticker
 2026-10-21,jp,日股,3,醫療,4503.JP,アステラス製薬,2490.5,2458,9.9,3,1,1,4503.T
 2026-10-21,jp,日股,3,醫療,4506.JP,住友ファーマ,1951,1925,7.6,3,1,1,4506.T
+2026-10-21,us,美股,12,醫療,A,Agilent Technologies,177.75,177.47,32.1,12,1,1,A
+2026-10-21,us,美股,12,醫療,CRL,Charles River Laboratories International,344.87,333.3,59.0,12,1,1,CRL
+2026-10-21,us,美股,12,醫療,MRNA,Moderna,245.81,243.98,205.3,12,1,1,MRNA
+2026-10-21,us,美股,12,醫療,MTD,Mettler-Toledo International,1677.94,1659.7,26.1,12,1,1,MTD
+2026-10-21,us,美股,12,醫療,WAT,Waters,457.47,454.54,24.6,12,1,1,WAT
+2026-10-21,us,美股,12,醫療,WST,West Pharmaceutical Services,393.48,389.75,27.4,12,2,2,WST
+2026-10-21,us,美股,12,科技,ADP,Automatic Data Processing,294.5,294.27,24.5,12,2,2,ADP
+2026-10-21,us,美股,12,科技,ZBRA,Zebra Technologies,391,390.8,41.8,12,1,1,ZBRA
+2026-10-21,us,美股,12,非必需消費,HAS,Hasbro,114,109.81,26.2,12,2,2,HAS
+2026-10-21,us,美股,12,非必需消費,HLT,Hilton Worldwide,362.25,360.4,13.6,12,2,2,HLT
+2026-10-21,us,美股,12,工業,CTAS,Cintas,220.15,219.17,16.7,12,1,1,CTAS
+2026-10-21,us,美股,12,金融,TRV,The Travelers Companies,398.95,398.7,23.2,12,1,1,TRV
+2026-10-21,us,美股,9,醫療,A,Agilent Technologies,177.75,177.47,32.1,12,1,1,A
+2026-10-21,us,美股,9,醫療,CRL,Charles River Laboratories International,344.87,333.3,59.0,12,1,1,CRL
+2026-10-21,us,美股,9,醫療,MRNA,Moderna,245.81,243.98,205.3,12,1,1,MRNA
+2026-10-21,us,美股,9,醫療,MTD,Mettler-Toledo International,1677.94,1659.7,26.1,12,1,1,MTD
+2026-10-21,us,美股,9,醫療,WAT,Waters,457.47,454.54,24.6,12,1,1,WAT
+2026-10-21,us,美股,9,醫療,WST,West Pharmaceutical Services,393.48,389.75,27.4,12,2,2,WST
+2026-10-21,us,美股,9,科技,ADP,Automatic Data Processing,294.5,294.27,24.5,12,2,2,ADP
+2026-10-21,us,美股,9,科技,CDW,CDW,158.28,158.05,20.7,9,1,1,CDW
+2026-10-21,us,美股,9,科技,ZBRA,Zebra Technologies,391,390.8,41.8,12,1,1,ZBRA
+2026-10-21,us,美股,9,非必需消費,HAS,Hasbro,114,109.81,26.2,12,2,2,HAS
+2026-10-21,us,美股,9,非必需消費,HLT,Hilton Worldwide,362.25,360.4,13.6,12,2,2,HLT
+2026-10-21,us,美股,9,工業,CTAS,Cintas,220.15,219.17,16.7,12,1,1,CTAS
+2026-10-21,us,美股,9,金融,TRV,The Travelers Companies,398.95,398.7,23.2,12,1,1,TRV
+2026-10-21,us,美股,6,醫療,A,Agilent Technologies,177.75,177.47,32.1,12,1,1,A
+2026-10-21,us,美股,6,醫療,CRL,Charles River Laboratories International,344.87,333.3,59.0,12,1,1,CRL
+2026-10-21,us,美股,6,醫療,DHR,Danaher,233.86,233.02,16.6,6,1,1,DHR
+2026-10-21,us,美股,6,醫療,MRNA,Moderna,245.81,243.98,205.3,12,1,1,MRNA
+2026-10-21,us,美股,6,醫療,MTD,Mettler-Toledo International,1677.94,1659.7,26.1,12,1,1,MTD
+2026-10-21,us,美股,6,醫療,WAT,Waters,457.47,454.54,24.6,12,1,1,WAT
+2026-10-21,us,美股,6,醫療,WST,West Pharmaceutical Services,393.48,389.75,27.4,12,2,2,WST
+2026-10-21,us,美股,6,科技,ADP,Automatic Data Processing,294.5,294.27,24.5,12,2,2,ADP
+2026-10-21,us,美股,6,科技,CDW,CDW,158.28,158.05,20.7,9,1,1,CDW
+2026-10-21,us,美股,6,科技,CTSH,Cognizant Technology Solutions,69.55,68.75,17.8,6,2,2,CTSH
+2026-10-21,us,美股,6,科技,ZBRA,Zebra Technologies,391,390.8,41.8,12,1,1,ZBRA
+2026-10-21,us,美股,6,非必需消費,HAS,Hasbro,114,109.81,26.2,12,2,2,HAS
+2026-10-21,us,美股,6,非必需消費,HLT,Hilton Worldwide,362.25,360.4,13.6,12,2,2,HLT
+2026-10-21,us,美股,6,工業,CTAS,Cintas,220.15,219.17,16.7,12,1,1,CTAS
+2026-10-21,us,美股,6,金融,TRV,The Travelers Companies,398.95,398.7,23.2,12,1,1,TRV
+2026-10-21,us,美股,3,醫療,A,Agilent Technologies,177.75,177.47,32.1,12,1,1,A
+2026-10-21,us,美股,3,醫療,CRL,Charles River Laboratories International,344.87,333.3,59.0,12,1,1,CRL
+2026-10-21,us,美股,3,醫療,DHR,Danaher,233.86,233.02,16.6,6,1,1,DHR
+2026-10-21,us,美股,3,醫療,MRNA,Moderna,245.81,243.98,205.3,12,1,1,MRNA
+2026-10-21,us,美股,3,醫療,MTD,Mettler-Toledo International,1677.94,1659.7,26.1,12,1,1,MTD
+2026-10-21,us,美股,3,醫療,WAT,Waters,457.47,454.54,24.6,12,1,1,WAT
+2026-10-21,us,美股,3,醫療,WST,West Pharmaceutical Services,393.48,389.75,27.4,12,2,2,WST
+2026-10-21,us,美股,3,科技,ADP,Automatic Data Processing,294.5,294.27,24.5,12,2,2,ADP
+2026-10-21,us,美股,3,科技,CDW,CDW,158.28,158.05,20.7,9,1,1,CDW
+2026-10-21,us,美股,3,科技,CTSH,Cognizant Technology Solutions,69.55,68.75,17.8,6,2,2,CTSH
+2026-10-21,us,美股,3,科技,TRMB,Trimble,62.59,62.45,1.9,3,2,2,TRMB
+2026-10-21,us,美股,3,科技,ZBRA,Zebra Technologies,391,390.8,41.8,12,1,1,ZBRA
+2026-10-21,us,美股,3,非必需消費,HAS,Hasbro,114,109.81,26.2,12,2,2,HAS
+2026-10-21,us,美股,3,非必需消費,HLT,Hilton Worldwide,362.25,360.4,13.6,12,2,2,HLT
+2026-10-21,us,美股,3,非必需消費,MAR,Marriott International,404,397.72,14.6,3,2,2,MAR
+2026-10-21,us,美股,3,金融,CBOE,Cboe Global Markets,318.82,317.74,10.3,3,1,1,CBOE
+2026-10-21,us,美股,3,金融,TRV,The Travelers Companies,398.95,398.7,23.2,12,1,1,TRV
+2026-10-21,us,美股,3,工業,CTAS,Cintas,220.15,219.17,16.7,12,1,1,CTAS
