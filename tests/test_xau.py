@@ -133,7 +133,7 @@ print("=== 影子：開倉 → 止損 ===")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": 4020.0, "confidence": 0.8, "reason": "突破"}
 st, d = hb(42, 4005)
 check("開倉：紙上持倉、cmd_text 空", d["decision"]["final"] == "OPEN_LONG" and d["cmd_text"] == "" and json.loads(FAKE["xau/state.json"][0])["position"]["entry"] == 4005, d)
-check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1_older"]) + len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
+check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1_older"]) + len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["product"]["risk_limits"]["lots"] == 0.01 and "lots" not in FB.ctx["risk"] and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": None, "confidence": 0.8, "reason": "再開"}
 st, d = hb(43, 4006)
 check("有倉時 AI 再開 → 擋", d["decision"]["final"] == "HOLD" and "已有倉位" in d["decision"]["rejected"], d)
@@ -483,9 +483,17 @@ check("回填後 M1 歷史仍然排序、冇重複", [b["time"] for b in _m1] ==
 
 print("=== Prompt caching（使用者 10-21）：整點切、三段快取、TTL ===")
 import brain as _brain
-_h0 = (int(FB.ctx["bars_m1"][0][0]) // 3600) * 3600 if FB.ctx.get("bars_m1") else None
-check("build_context：整點前 M1／M15 入快取段，本小時嘅係即時段", _h0 is not None and all(b[0] >= _h0 for b in FB.ctx["bars_m1"]) and all(b[0] < _h0 for b in FB.ctx["bars_m1_older"])
+_h0 = (int(FB.ctx["bars_m1_older"][-1][0]) // 3600 + 1) * 3600 if FB.ctx.get("bars_m1_older") else None
+check("build_context：整點前 M1／M15 入快取段，本小時嘅係即時段（M1 時間欄＝本小時第幾分鐘）", _h0 is not None and all(0 <= b[0] <= 59 for b in FB.ctx["bars_m1"])
+      and FB.ctx["bars_m1"] == sorted(FB.ctx["bars_m1"]) and FB.ctx["bars_m1_hour_utc"] == time.strftime("%H:%M", time.gmtime(_h0)) and all(b[0] < _h0 for b in FB.ctx["bars_m1_older"])
       and all(b[0] < _h0 for b in FB.ctx["bars_m15_older"]) and all(b[0] >= _h0 for b in FB.ctx["bars_m15_recent"]), (_h0, FB.ctx["bars_m1"][:1], FB.ctx["bars_m1_older"][-1:]))
+check("本小時 M1 最多 XAU_M1_LIVE_MAX 根、recent_decisions 最多 XAU_RECENT_DECISIONS 條、reason 截短", len(FB.ctx["bars_m1"]) <= config.M1_LIVE_MAX
+      and len(FB.ctx["recent_decisions"]) <= config.RECENT_DECISIONS and all(len(d["reason"]) <= config.REASON_MAX_CHARS for d in FB.ctx["recent_decisions"]), FB.ctx["recent_decisions"])
+check("system／tool：reason 係短標籤，日誌行由 Python 組", f"at most {config.REASON_MAX_CHARS} characters" in _brain.build_system(None) and "{reason_rule}" not in _brain.build_system(None)
+      and "No sentences" in _brain.TOOL["input_schema"]["properties"]["reason"]["description"] and "Leave `reason` empty" in _brain.reason_rule(0))
+_rec = {"final": "OPEN_LONG", "action": "OPEN_LONG", "stop": 3996.0, "target": 4020.0, "confidence": 0.8, "reason": "突破", "rejected": None, "ms": 1200}
+check("decision_line：動作｜價｜SL｜TP｜信心｜標籤｜ms", xau.decision_line(_rec, 4001.23) == "🧠 [天覆陣] OPEN_LONG @ 4001.23｜SL 3996.00｜TP 4020.00｜信心 0.80｜突破｜1200 ms", xau.decision_line(_rec, 4001.23))
+check("decision_line：被擋＋冇標籤", "HOLD ← AI OPEN_LONG @ 4001.23｜擋：階梯 B" in xau.decision_line({**_rec, "final": "HOLD", "stop": None, "target": None, "confidence": None, "reason": "", "rejected": "階梯 B", "ms": None}, 4001.23))
 _uc = _brain._user_content(FB.ctx, "Call the `decide` tool.")
 check("_user_content：三段，首兩段 cache_control ttl=5m（決策 10-21 改 5 分鐘），第三段冇", len(_uc) == 3 and _uc[0]["cache_control"] == {"type": "ephemeral", "ttl": "5m"} and _uc[1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"} and "cache_control" not in _uc[2])
 check("整點前 M1 最多 60 根", len(FB.ctx["bars_m1_older"]) <= 60)

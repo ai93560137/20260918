@@ -106,6 +106,35 @@
 4. C、E、D2 唔建議。
 5. 每步部署／env 由總指揮 dry-run，使用者喺總指揮工作階段親口批；硬性風控同 RISK_LADDER §6c 一樣都唔郁。
 
+## 7d. 10-23 晚：即時輸入 47% 點慳 → 使用者「做 1 至 4 … Opus 唔講話，直接入日誌，用 Python call 出來」
+**量化（10-23 XAU 762 次）**：即時段（每次都重新讀，$4/M）平均 ≈1,957 tok＝$5.97（47%）；輸出平均 265 tok（純 tool call，其中 `reason` 中文兩句佔大半）≈ $4（32%）。
+即時段組成估算：recent_decisions 6 條（每條 reason ≈60 中文字）≈500–600；本小時 M1（平均 30 根 × 16 tok，10 位 epoch 佔 5）≈480；風控區 ≈150（大半係常數）；ATR／戶口／持倉／時段／價／本小時 M15 ≈250；recent_trades 0–200；格式 ≈60。
+
+| # | 改動 | env（退回值） | 估計每次慳 |
+|---|---|---|---|
+| ① | 風控常數（lots、min/max_sl_price、min/max_sl_pips、spread_price、min_confidence、max_trades_per_day、max_hold_min）由 `risk` 搬入 `product.risk_limits`（1h 快取段）；`risk` 只留 trades_today／ladder／mode | — | ≈120 tok |
+| ② | recent_decisions 6 → 3，reason 截到標籤長度 | `XAU_RECENT_DECISIONS`（6） | ≈450 tok（連標籤縮短） |
+| ③ | 本小時 M1 時間欄改「本小時第幾分鐘」0–59，鐘頭另給 `bars_m1_hour_utc` | — | ≈4 tok／根 ≈120 |
+| ④ | 本小時 M1 只送最近 30 根（上半小時嘅已喺 1h 段冇份，但 Opus 仲有本小時 M15） | `XAU_M1_LIVE_MAX`（0＝全部） | 鐘尾最多 ≈450 |
+| 理由 | `reason` 改短標籤 ≤20 字（system 同 tool description 都講明「唔寫句子，日誌由程式組」）；`main.decision_line` 用 action／價／SL／TP／信心／標籤／擋／ms 組日誌行 | `XAU_REASON_MAX_CHARS`（200；0＝留空） | 輸出 265 → ≈40 tok ≈ $3.4／日 |
+
+估計：即時段 ≈1,957 → ≈1,200–1,350 tok（−$2／日 XAU），輸出 −$3.4／日；合計 XAU 每日約 **−$5**（12.73 → ≈7.5），EUR／S1 按比例。
+副作用：決策紀錄同網頁嘅「理由」只剩標籤（使用者揀）；學徒（student）同 931 共用 system，標籤規則一併生效；訊號書 `signal_id` 由程式補註（`signals.note`）。
+**核實**（部署後一日）：`xau/decisions/<日>.jsonl` 嘅 `usage.in` 平均（目標 ≤1,350）、`usage.out` 平均（目標 ≤60）、`cost_usd` 日總。
+system 改字會令三個服務各重寫一次 1h system 快取（每次 ≈$0.03）。
+
+## 7c. 10-23 晚：M1 快取段 5m → 1h（總指揮問；使用者批後部署）
+**量化（10-23 XAU 762 次 Opus，$12.73）**：5m 段（整點前 M1，約 1,596 token，每個鐘先變一次）重寫 62 次、共 97,392 token、**$0.49（3.8%）**；其中 50 次係 Opus 兩次調用相隔 >5 分鐘之後（Haiku 篩走／H 規則處理）、8 次係換鐘。10-22（冇 H、Haiku 放行 94%）係 90 次 $0.70（3%）。成本結構：即時輸入 $5.97（47%）、快取讀 $2.99、1h 寫 $0.81、5m 寫 $0.49、輸出其餘。
+
+| 選項 | 每日成本（XAU 10-23 實數推算） | 備註 |
+|---|---|---|
+| 保持 5m | 寫 $0.49 ＋ 讀 $0.45 ＝ **$0.93** | 調用間隔越疏（S 開 on 之後更疏）重寫越多 |
+| **A：M1 段改 1h** | 寫 23 次×1,596×$8/M ＝ $0.29 ＋ 讀 762×1,596×$0.4/M ＝ $0.49 ＝ **$0.78** | 每個鐘只寫一次，唔受調用間隔影響；兩個快取段都 1h，排序合規 |
+| B：M1 段唔快取 | 762×1,596×$4/M ＝ **$4.86** | 每次當即時輸入，最貴，否決 |
+
+**建議 A**：env `CACHE_TTL_M1`（預設 1h；退回 `5m`），`brain.decide` M1 段同 usage 標籤跟佔。預期每日慳 XAU ≈ $0.15、EUR ≈ $0.02（EUR 17 次重寫 $0.14 → $0.10）；S 開 on 之後（調用更疏）慳多啲。入場邏輯唔動。
+**更大嘅位**：即時輸入 $5.97／日（每次 1,957 token：本小時 M1＋M15、戶口、持倉、風控）佔 47%，係下一輪方案嘅目標（縮本小時 M1 條數／精簡欄位），今次唔郁。
+
 ## 7b. 使用者 10-23 20:1x HKT：「開 S shadow」（真倉第一日，921 當日 576 次 Opus $9.42）
 - 程式 `xau/prescreen.py`，`XAU_PRESCREEN` 預設 **shadow**（部署後行為唔變）。空倉時只喺 (a) 新 M15 收盤 (b) 價格離上次問 Opus ≥0.3×M1 ATR（`XAU_PRESCREEN_ATR_MULT`） (c) 貼近 M1 嚴格擺動點／前日高低／亞洲高低 ≤2 美元（`XAU_PRESCREEN_NEAR`；外匯 5 pip） (d) 前 15 分鐘走 ≥3 美元（`XAU_PRESCREEN_MOVE15`；外匯 10 pip）先問 Opus；錨點只喺「會問」嗰分鐘更新（shadow 模擬到 on 嘅行為）。有倉唔經前篩（H 管）；Haiku 篩選仍喺 S 之後。
 - shadow 統計（狀態 JSON `prescreen`）：`minutes`、`skip`／`skip_pct`（on 模式會唔問嘅分鐘比例）、`opens`、`opens_in_skip`（開倉落喺「唔問」分鐘＝會漏嘅單）、`opens_kept_pct`。**達標開 on**：一日 ≥ 20 張開倉樣本（或兩日）之中 `opens_kept_pct ≥ 90%`（10-22 嘅 21 張要 ≥19 張仍放行）；達標由總指揮 dry-run `env set XAU_PRESCREEN=on`（921 先）。

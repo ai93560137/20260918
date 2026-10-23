@@ -43,7 +43,9 @@ def check(name, cond, extra=""):
 
 print("=== A 混合快取 TTL ===")
 uc = brain._user_content({"product": {}, "bars_m15_older": [], "bars_m1_older": [], "bars_m1": []}, "x", stable_ttl="1h")
-check("產品＋M15 段 1h、整點前 M1 段 5m（1h 喺 5m 前面）", uc[0]["cache_control"]["ttl"] == "1h" and uc[1]["cache_control"]["ttl"] == "5m", [c.get("cache_control") for c in uc])
+check("產品＋M15 段 1h、整點前 M1 段預設參數 5m（1h 喺 5m 前面）", uc[0]["cache_control"]["ttl"] == "1h" and uc[1]["cache_control"]["ttl"] == "5m", [c.get("cache_control") for c in uc])
+uc1 = brain._user_content({"product": {}, "bars_m15_older": [], "bars_m1_older": [], "bars_m1": []}, "x", stable_ttl=config.CACHE_TTL_STABLE, ttl=config.CACHE_TTL_M1)
+check("10-23：決策實際用 CACHE_TTL_M1（預設 1h）→ 兩個快取段都 1h、live 段冇 cache_control", config.CACHE_TTL_M1 == "1h" and uc1[0]["cache_control"]["ttl"] == "1h" and uc1[1]["cache_control"]["ttl"] == "1h" and "cache_control" not in uc1[2], [c.get("cache_control") for c in uc1])
 check("預設 CACHE_TTL_STABLE=1h", config.CACHE_TTL_STABLE == "1h")
 c_mixed = brain.cost_usd({"in": 0, "out": 0, "cache_read": 0, "cache_write": 2000, "cw_1h": 1000, "cw_5m": 1000, "model": "claude-opus-5-5"})
 check("混合寫入成本 = 1000×4×2 + 1000×4×1.25（/1e6）", abs(c_mixed - 0.013) < 1e-9, c_mixed)
