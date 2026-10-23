@@ -200,5 +200,11 @@ ACTIVE_HOURS_UTC = _s("XAU_ACTIVE_HOURS_UTC", "")
 # H（使用者 10-23 揀「穩陣＋H」）：有倉時程式按教學第 1／4 條移止損（hold_rules.py）；off｜shadow（預設：只記錄唔改行為）｜on
 #    on 時 Opus 只喺新 M15／首次 1R／價格離 SL 或 TP ≤0.5×ATR／每 HOLD_RULES_ASK_MIN 分鐘先問；止損只准收緊、唔收到 0.5×ATR 內
 HOLD_RULES = _s("XAU_HOLD_RULES", "shadow").lower()
+# S（使用者 10-23「開 S shadow」）：空倉時規則前篩（prescreen.py），off｜shadow（預設：照問，只記錄）｜on（唔問，cost 0）
+#    問 Opus 條件：新 M15／價格離上次問 Opus ≥ ATR_MULT×M1 ATR／貼近擺動點或前日高低亞洲高低 ≤ NEAR／前 15 分鐘走 ≥ MOVE15
+PRESCREEN = _s("XAU_PRESCREEN", "shadow").lower()
+PRESCREEN_ATR_MULT = _f("XAU_PRESCREEN_ATR_MULT", 0.3)
+PRESCREEN_NEAR = _f("XAU_PRESCREEN_NEAR", 2.0 if PRODUCT["digits"] == 2 else 0.0005)
+PRESCREEN_MOVE15 = _f("XAU_PRESCREEN_MOVE15", 3.0 if PRODUCT["digits"] == 2 else 0.0010)
 HOLD_RULES_ASK_MIN = _i("XAU_HOLD_RULES_ASK_MIN", 5)
 HOLD_RULES_TOL = _f("XAU_HOLD_RULES_TOL", 1.0 if PRODUCT["digits"] == 2 else 0.0010)   # shadow 統計：規則 vs Opus 止損「相差 ≤tol」

@@ -25,6 +25,7 @@ import storage
 import signals
 import follower
 import hold_rules
+import prescreen
 import student
 import tgsignal
 from storage import StorageError
@@ -431,6 +432,18 @@ def process_bar(state, bar, m1, m15, account, now):
         state["reuse_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
     if reuse:
         rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
+    ps = None
+    if pos is None and not config.SIGNAL_BOOK and prescreen.mode() != "off":   # 慳成本 S：空倉規則前篩（shadow 只記錄；on 時唔問 Opus）
+        ps = prescreen.evaluate(m1, m15, bar["close"], state.get("prescreen_anchor"), account.get("server_offset"), now)
+        rec["prescreen"] = {"mode": prescreen.mode(), "ask": ps["ask"], "reasons": ps["reasons"], "near": ps["near"]}
+        if prescreen.mode() == "on" and not ps["ask"]:
+            state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), False)
+            rec.update(kind="prescreen", action="HOLD", final="HOLD", reason="規則前篩：冇新 M15／價格冇變／唔貼關鍵位／冇急走，唔問", cost_usd=0.0, model="rules")
+            rec["applied"] = "HOLD"
+            _record(state, rec, day)
+            return rec, "規則前篩：唔問"
+        if ps["ask"]:                                      # 錨點只喺「規則會問」嗰分鐘更新（shadow 先模擬到 on 嘅行為）
+            state["prescreen_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
     hr = hr_rule = None
     if pos is not None and hold_rules.mode() != "off":   # 慳成本 H：有倉時規則止損（shadow 只記錄；on 時規則處理、Opus 只喺特定分鐘問）
         hr = hold_rules.track(state.get("hold_rules"), pos, now)
@@ -477,6 +490,8 @@ def process_bar(state, bar, m1, m15, account, now):
         sc = b.screen(ctx)
         _bump_usage(state, "screen", sc.get("_usage"), sc.get("_ms", 0), day)
         if not sc.get("look"):
+            if ps is not None:
+                state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), ps["ask"])
             rec.update(kind="screen", action="HOLD", final="HOLD", reason=f"篩選：{sc.get('reason')}",
                        ms=sc.get("_ms"), cost_usd=brain.cost_usd(sc.get("_usage")), model=config.GATE_MODEL)
             _record(state, rec, day)
@@ -499,6 +514,8 @@ def process_bar(state, bar, m1, m15, account, now):
                ms=d.get("_ms"), usage=d.get("_usage"), cost_usd=brain.cost_usd(d.get("_usage")),
                model=(d.get("_usage") or {}).get("model") or config.MODEL, lessons=d.get("_lessons"),
                error=bool(d.get("_error")))
+    if ps is not None:                                    # S shadow／on：記規則會唔會問、開倉有冇落喺「唔問」分鐘
+        state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), ps["ask"], opened=action in ("OPEN_LONG", "OPEN_SHORT"))
     if hr is not None:                                    # H shadow／on：Opus 實際移止損 vs 規則會移去邊
         hr["stats"] = hold_rules.compare(hr.get("stats"), hr_rule.get("sl"), action, stop, pos.get("stop"), config.HOLD_RULES_TOL)
         if action == "UPDATE_STOP":
@@ -766,6 +783,7 @@ def build_status():
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
         "hold_rules": {"mode": hold_rules.mode(), "ask_min": config.HOLD_RULES_ASK_MIN, "tol": config.HOLD_RULES_TOL, **(state.get("hold_rules") or {})},
+        "prescreen": {"mode": prescreen.mode(), "near": config.PRESCREEN_NEAR, "move15": config.PRESCREEN_MOVE15, "atr_mult": config.PRESCREEN_ATR_MULT, **(state.get("prescreen_stats") or {})},
         "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
