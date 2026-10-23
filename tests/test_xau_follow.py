@@ -90,6 +90,29 @@ check("有入場區：離區 6 < 風險 10 → wait 等回入場區", follower.e
 check("限價訊號剩餘空間用入場區中位計：區 3999–4001、TP1 4002（中位→TP1 2.0）現價 4001.5 → wait；TP1 4001.5（1.5）→ skip", follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4002.0], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.5)[0] == "wait" and follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4001.5], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.4)[0] == "skip", (follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4002.0], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.5), follower.entry_check({"side": "BUY", "sl": 3990.0, "tp": [4001.5], "entry_low": 3999.0, "entry_high": 4001.0}, 4001.4)))
 check("CTC 執銀仔結構（TP1 4–6、SL 21）唔受影響：市價 BUY 4000、TP1 4005、SL 3979 → ok", follower.entry_check({"side": "BUY", "sl": 3979.0, "tp": [4005.0], "entry_low": None, "entry_high": None, "order_type": "market"}, 4000.0)[0] == "ok")
 check("config：SIG_FOLLOW_MIN_TP 2.0", config.FOLLOW_MIN_TP == 2.0)
+# 10-24 使用者「加『唔跟未到入場價』規則，倫敦時段都避」（CTC 5231；提案 §27）
+_at = lambda h: (1792800000 // 86400) * 86400 + h * 3600 + 600          # 某日 UTC h:10
+check("config：預設 CTC 唔跟未到入場價（tol 0.3）、避 07–12 UTC", config.FOLLOW_SKIP_UNREACHED_CHANNELS == ("5231",) and config.FOLLOW_UNREACHED_TOL == 0.3
+      and follower.avoid_hours("5231") == (7, 12) and follower.avoid_hours("7713") is None and follower.avoid_hours("3996305231") == (7, 12))
+_ctc = {"ch": "3996305231", "side": "BUY", "sl": 3980.0, "tp": [4006.0, 4012.0], "entry_low": 4000.0, "entry_high": 4000.0}
+v, why = follower.entry_check(_ctc, 3999.5, _at(3))
+check("CTC BUY 入場 4000、現價 3999.5（反向 0.5 ≥ 0.3）→ skip 未到入場價", v == "skip" and "未到入場價" in why, (v, why))
+check("CTC 現價 3999.8（反向 0.2 < 0.3）→ ok（±點差容許）", follower.entry_check(_ctc, 3999.8, _at(3))[0] == "ok", follower.entry_check(_ctc, 3999.8, _at(3)))
+check("CTC 現價 4001.5（已走 1.5）→ wait 等回入場區（規則只管反向）", follower.entry_check(_ctc, 4001.5, _at(3))[0] == "wait", follower.entry_check(_ctc, 4001.5, _at(3)))
+_ctc_sell = {**_ctc, "side": "SELL", "sl": 4020.0, "tp": [3994.0, 3988.0]}
+check("CTC SELL 鏡像：現價 4000.5（反向 0.5）→ skip；3999.0（已走）→ wait", follower.entry_check(_ctc_sell, 4000.5, _at(3))[0] == "skip" and follower.entry_check(_ctc_sell, 3999.0, _at(3))[0] == "wait")
+_dan_zone = {"ch": "3860767713", "side": "BUY", "sl": 3990.0, "tp": [4003.0, 4006.0, 4009.0], "entry_low": 3999.0, "entry_high": 4001.0}
+check("DAN（唔喺名單）現價 3996 反向 4 → 仍然 wait 等入區（規則唔適用）", follower.entry_check(_dan_zone, 3996.0, _at(3))[0] == "wait", follower.entry_check(_dan_zone, 3996.0, _at(3)))
+v, why = follower.entry_check(_ctc, 4000.0, _at(7))
+check("CTC 07:10 UTC 收到 → skip 時段", v == "skip" and "07–12" in why, (v, why))
+check("CTC 11:10 skip、12:10 ok、06:10 ok", follower.entry_check(_ctc, 4000.0, _at(11))[0] == "skip" and follower.entry_check(_ctc, 4000.0, _at(12))[0] == "ok" and follower.entry_check(_ctc, 4000.0, _at(6))[0] == "ok")
+check("DAN 08:10 唔受時段規則影響", follower.entry_check(_dan_zone, 4000.0, _at(8))[0] == "ok", follower.entry_check(_dan_zone, 4000.0, _at(8)))
+check("冇 ch 嘅舊測試訊號：兩條規則都唔觸發", follower.entry_check({"side": "BUY", "sl": 3990, "tp": [4005], "entry_low": 3999, "entry_high": 4001}, 3995.0, _at(8))[0] == "wait")
+_old = config.FOLLOW_AVOID_HOURS; config.FOLLOW_AVOID_HOURS = "5231:22-02,7713:13-14"
+check("avoid_hours 跨午夜 22–02 同多頻道解析", follower.in_avoid_hours("5231", _at(23)) and follower.in_avoid_hours("5231", _at(1)) and not follower.in_avoid_hours("5231", _at(2)) and follower.avoid_hours("7713") == (13, 14))
+config.FOLLOW_AVOID_HOURS = ""; check("SIG_FOLLOW_AVOID_HOURS 空＝關", follower.avoid_hours("5231") is None and not follower.in_avoid_hours("5231", _at(8)))
+config.FOLLOW_AVOID_HOURS = _old
+check("status JSON 有 skip_unreached_channels／unreached_tol／avoid_hours", follower.status()["skip_unreached_channels"] == ["5231"] and follower.status()["avoid_hours"].get("5231") == (7, 12))
 
 print("=== 分流 ===")
 st, d = hb(1, 4000, magic=931)

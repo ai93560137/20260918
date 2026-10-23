@@ -182,6 +182,12 @@ FOLLOW_MIN_TP = _f("SIG_FOLLOW_MIN_TP", 2.0 if PRODUCT["digits"] == 2 else 0.000
 #   之後每到 TP(k) 止損移到 TP(k−1)，只准收緊；其他頻道維持 TP1 全平。例 SIG_FOLLOW_LADDER_CHANNELS=7713（DAN）
 FOLLOW_LADDER_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_LADDER_CHANNELS", "").split(",") if x.strip())
 FOLLOW_LADDER_BUF = _f("SIG_FOLLOW_LADDER_BUF", 0.0)          # 鎖位再退幾多（價格單位；0＝剛好保本／上一級）
+# 10-24 使用者「加『唔跟未到入場價』規則，倫敦時段都避」（CTC 入場點分析：提案 §27——收到時價仍未到入場價嗰 45% 係 −1.08 美元／張；倫敦 07–12 UTC −1.61／張）
+#   SIG_FOLLOW_SKIP_UNREACHED_CHANNELS：呢啲頻道收到時現價仍喺入場價嘅反向（離 ≥ SIG_FOLLOW_UNREACHED_TOL）就略過，唔等限價；DAN 限價區設計上係反向 4±2，唔適用
+#   SIG_FOLLOW_AVOID_HOURS：頻道:起-止（UTC 整點，止不含），逗號分隔多個；呢段時間收到嘅訊號略過。空＝關
+FOLLOW_SKIP_UNREACHED_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_SKIP_UNREACHED_CHANNELS", "5231").split(",") if x.strip())
+FOLLOW_UNREACHED_TOL = _f("SIG_FOLLOW_UNREACHED_TOL", 0.3 if PRODUCT["digits"] == 2 else 0.00003)
+FOLLOW_AVOID_HOURS = _s("SIG_FOLLOW_AVOID_HOURS", "5231:07-12")
 # 學徒計劃階段 0／1（使用者 10-22 批；xau/DAN_APPRENTICE.md、IDEAS #122）：特徵快照（永遠開）、規則學生（免費）、Claude 學生（XAU_SHADOW=1 先問 Opus）
 STUDENT = _b("XAU_STUDENT", True)
 SHADOW = _b("XAU_SHADOW", False)
