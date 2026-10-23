@@ -197,6 +197,13 @@ CACHE_TTL_STABLE = _s("CACHE_TTL_STABLE", "1h")
 # 10-23 晚：M1 段（整點前 M1，每個鐘先變一次）由 5m 改 1h。10-23 實數：Haiku 篩走＋H 規則令 Opus 調用相隔常 >5 分鐘，5m 段 62 次重寫（$0.49）；
 #   1h 寫 $8/M 但每個鐘只寫一次（23×1,596 tok ≈ $0.29）→ 每日慳約 $0.15（XAU）／$0.02（EUR）。退回：CACHE_TTL_M1=5m
 CACHE_TTL_M1 = _s("CACHE_TTL_M1", "1h")
+# 10-23 使用者「做 1 至 4 … Opus 唔講話」：即時段（每次都要重新讀、$4/M）由 ≈1,960 tok 壓到 ≈1,300：
+#   ① 風控常數（手數、止損上下限、信心門檻、日上限、最長持倉）搬入 product（1h 快取段）；② recent_decisions 6 → 3；
+#   ③ 本小時 M1 時間欄改「本小時第幾分鐘」（0–59，唔再 10 位 epoch）；④ 本小時 M1 只送最近 M1_LIVE_MAX 根。
+#   reason 改短標籤（最多 REASON_MAX_CHARS 個字；0＝叫 Opus 留空），日誌行由 Python 按 action／價／SL／TP／信心組出（輸出 265 → 約 40 tok）。
+M1_LIVE_MAX = _i("XAU_M1_LIVE_MAX", 30)                     # 本小時 M1 最多送幾根（0＝全部）
+RECENT_DECISIONS = _i("XAU_RECENT_DECISIONS", 3)            # 即時段帶幾條最近決策
+REASON_MAX_CHARS = _i("XAU_REASON_MAX_CHARS", 20)           # Opus reason 標籤上限；0＝留空。退回舊行為：XAU_REASON_MAX_CHARS=200
 # F：空倉、上次係 HOLD、價格變動 < REUSE_ATR_MULT × M1 ATR、冇新 M15 收盤 → 沿用 HOLD（最多連續 REUSE_MAX_MIN 分鐘）
 #    off｜shadow（預設：只記錄「會沿用」唔慳錢，驗證一日）｜on
 REUSE_HOLD = _s("XAU_REUSE_HOLD", "shadow").lower()

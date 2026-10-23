@@ -75,6 +75,9 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_MAGIC` | 921 | 同新 EA `InpMagic` 一致（線上 V23 用 920） |
 | `XAU_HOLD_RULES` | shadow | 慳成本 H（`hold_rules.py`，COST_PLAN §6）：有倉時程式按教學第 1／4 條移止損。`off`／`shadow`（只記「規則會點移」vs Opus 實際點移，唔改行為）／`on`（規則處理；Opus 只喺新 M15、首次 1R、價格離 SL／TP ≤0.5×M15 ATR、每 `XAU_HOLD_RULES_ASK_MIN` 分鐘先問）。止損只准收緊、唔收到 0.5×ATR 內、未到 0.95R 唔郁（`hold_rules.BE_R`，使用者 10-23 由 1.0 放寬） |
 | `CACHE_TTL_M1` | 1h | 決策 prompt「整點前 M1」快取段 TTL（10-23 由 5m 改 1h：Haiku 篩走＋H 令調用相隔 >5 分鐘，5m 段每日重寫 60–90 次；1h 每個鐘一次）。退回 `5m` |
+| `XAU_M1_LIVE_MAX` | 30 | 即時段本小時 M1 最多送幾根（0＝全部；時間欄係「本小時第幾分鐘」，鐘頭喺 `bars_m1_hour_utc`）。COST_PLAN §7d ③④ |
+| `XAU_RECENT_DECISIONS` | 3 | 即時段帶幾條最近決策（10-23 由 6 減）。COST_PLAN §7d ② |
+| `XAU_REASON_MAX_CHARS` | 20 | Opus `reason` 只係短標籤（上限字數；0＝叫 Opus 留空），日誌行由 Python 按 action／價／SL／TP／信心組。退回舊長理由：200。COST_PLAN §7d |
 | `XAU_PRESCREEN` | shadow | 慳成本 S（`prescreen.py`，COST_PLAN §7b）：空倉規則前篩。`off`／`shadow`（照問，只記 skip_pct 同 opens_in_skip）／`on`（唔符合條件嘅分鐘唔問 Opus 亦唔問 Haiku，kind=prescreen）。條件：新 M15／價格離上次問 ≥`XAU_PRESCREEN_ATR_MULT`(0.3)×M1 ATR／貼近擺動點或前日高低亞洲高低 ≤`XAU_PRESCREEN_NEAR`(2.0；外匯 0.0005)／前 15 分鐘走 ≥`XAU_PRESCREEN_MOVE15`(3.0；外匯 0.0010) |
 | `SIG_FOLLOW_LADDER_CHANNELS` | （空） | 跟單出場用**逐級鎖**嘅頻道尾 4 位（例 `7713` DAN）：開倉 TP 掛最後一級，到 TP1 止損移保本，到 TP(k) 鎖 TP(k−1)，只准收緊；其他頻道 TP1 全平。`SIG_FOLLOW_LADDER_BUF`（0）鎖位再退幾多 |
 | `XAU_HOLD_RULES_ASK_MIN` | 5 | on 模式下最多隔幾多分鐘問一次 Opus |

@@ -276,11 +276,43 @@ def compact(bars):
     return [[b["time"], b["open"], b["high"], b["low"], b["close"]] for b in bars]
 
 
+def compact_live(bars, hour0):
+    """本小時 M1：時間欄改「本小時第幾分鐘」（0–59），慳 10 位 epoch（③）；只送最近 M1_LIVE_MAX 根（④）。"""
+    if config.M1_LIVE_MAX > 0:
+        bars = bars[-config.M1_LIVE_MAX:]
+    return [[int((b["time"] - hour0) // 60), b["open"], b["high"], b["low"], b["close"]] for b in bars]
+
+
+def short_reason(text):
+    n = config.REASON_MAX_CHARS
+    return str(text or "")[:n] if n > 0 else ""
+
+
+def decision_line(rec, price):
+    """日誌行由 Python 組（使用者 10-23：Opus 唔講話）：動作｜價｜SL／TP｜信心｜標籤｜擋｜ms。"""
+    nd = config.PRICE_DIGITS
+    action, why = rec.get("final"), rec.get("rejected")
+    parts = [f"{action}{' ← AI ' + str(rec.get('action')) if why else ''} @ {price:.{nd}f}"]
+    if rec.get("stop") is not None:
+        parts.append(f"SL {rec['stop']:.{nd}f}")
+    if rec.get("target") is not None:
+        parts.append(f"TP {rec['target']:.{nd}f}")
+    if rec.get("confidence") is not None:
+        parts.append(f"信心 {rec['confidence']:.2f}")
+    if rec.get("reason"):
+        parts.append(str(rec["reason"])[:80])
+    if why:
+        parts.append("擋：" + str(why))
+    if rec.get("ms") is not None:
+        parts.append(f"{rec['ms']} ms")
+    return f"🧠 [{config.TEAM_NAME}] " + "｜".join(parts)
+
+
 def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     # Prompt caching（使用者 10-21）：按「整點」切——上一個整點之前嘅 K 線一個鐘先變一次（可快取前段），本小時嘅先係即時部分
     hour0 = int(m1[-1]["time"]) // 3600 * 3600
     older, recent = [b for b in m15 if b["time"] < hour0][-config.M15_OLDER_MAX:], [b for b in m15 if b["time"] >= hour0]   # 固定根數 → 同一個鐘內內容唔變（慳成本 G）
-    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-60:], [b for b in m1 if b["time"] >= hour0]   # 整點前最多 60 根（10-21 由 120 減，慳 token）
+    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-60:], [b for b in m1 if b["time"] >= hour0]   # 整點前最多 60 根（10-21 由 120 減，慳 token）；本小時嘅見 compact_live
     pos = state.get("position")
     last = m1[-1]["close"]
     position = None
@@ -292,30 +324,34 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     return {
         "product": {"symbol": config.SYMBOL, "contract_size": config.CONTRACT_SIZE, "pip": config.PIP, "price_digits": config.PRICE_DIGITS,
                     "quote_currency": config.QUOTE_CCY, "description": config.PRODUCT_DESC,
-                    "long_only": config.LONG_ONLY, "mode": "live" if config.EXECUTE else "shadow"},
+                    "long_only": config.LONG_ONLY, "mode": "live" if config.EXECUTE else "shadow",
+                    # ① 風控常數（10-23）：一日唔變，放入 1h 快取段；每分鐘變嘅留喺 risk
+                    "risk_limits": {"lots": rules.lots(), "min_sl_price": config.MIN_SL_USD, "max_sl_price": config.MAX_SL_USD,
+                                    "min_sl_pips": config.MIN_SL_PIPS, "max_sl_pips": config.MAX_SL_PIPS, "spread_price": config.SPREAD_USD,
+                                    "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
+                                    "max_hold_min": config.MAX_HOLD_MIN}},
         "bars_m15_older": compact(older),
         "time": market.session_text(now),
         "bars_m15_recent": compact(recent),
         "bars_m1_older": compact(m1_older),
-        "bars_m1": compact(m1_live),
+        "bars_m1": compact_live(m1_live, hour0),
+        "bars_m1_hour_utc": time.strftime("%H:%M", time.gmtime(hour0)),
         "atr": {"m1_14": market.wilder_atr(m1), "m15_14": market.wilder_atr(m15),
                 "ea_m1": account.get("atr_m1"), "ea_m5": account.get("atr_m5"), "ea_m15": account.get("atr_m15")},
         "last_price": last,
         "account": {"currency": account.get("currency"), "equity": account.get("equity"),
                     "balance": account.get("balance"), "daily_pnl": account.get("daily_pnl")},
         "position": position,
-        "risk": {"lots": rules.lots(), "min_sl_price": config.MIN_SL_USD, "max_sl_price": config.MAX_SL_USD,
-                 "min_sl_pips": config.MIN_SL_PIPS, "max_sl_pips": config.MAX_SL_PIPS, "spread_price": config.SPREAD_USD,
-                 "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
-                 "trades_today": paper.trades_today(state, day), "max_hold_min": config.MAX_HOLD_MIN,
+        "risk": {"trades_today": paper.trades_today(state, day),
                  "ladder": {"level": (ladder or {}).get("level", "A"), "reasons": (ladder or {}).get("reasons", []),
                             "daily_pnl_hkd": (ladder or {}).get("daily_pnl_hkd"), "alerts": list((ladder or {}).get("alerts", {}).values())},
                  "mode": (control or {}).get("mode", "RUN"), "mode_reason": (control or {}).get("reason")},
         "recent_trades": [{"side": "LONG" if t["side"] > 0 else "SHORT", "entry": t["entry"], "exit": t["exit"],
                            "pnl_usd": t["pnl_usd"], "reason": t["reason"], "hold_min": t["hold_min"]}
                           for t in (state.get("trades") or [])[-5:]],
-        "recent_decisions": [{"hkt": market.fmt_hkt(d["ts"]), "action": d.get("final"), "reason": d.get("reason")}
-                             for d in (state.get("decisions") or [])[-6:]],
+        "recent_decisions": [{"hkt": market.fmt_hkt(d["ts"]), "action": d.get("final"), "reason": short_reason(d.get("reason")),
+                              **({"sid": d["signal_id"]} if d.get("signal_id") else {})}
+                             for d in (state.get("decisions") or [])[-config.RECENT_DECISIONS:]],   # ② 6 → 3（10-23）
     }
 
 
@@ -535,8 +571,7 @@ def process_bar(state, bar, m1, m15, account, now):
     else:
         rec["applied"] = paper.apply(state, action, stop, target, bar, now, day, decision_id)
     _record(state, rec, day)
-    log_event(f"🧠 [{config.TEAM_NAME}] {action}{' ← AI ' + rec['action'] if why else ''} @ {bar['close']:.{config.PRICE_DIGITS}f}"
-              f"｜{rec['reason'][:80]}{'｜擋：' + why if why else ''}｜{rec['ms']} ms", component="brain",
+    log_event(decision_line(rec, bar["close"]), component="brain",
               action=action, rejected=why, ms=rec["ms"], cost_usd=rec["cost_usd"])
     return rec, rec["applied"]
 

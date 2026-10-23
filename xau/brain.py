@@ -12,25 +12,27 @@ import config
 log = logging.getLogger("brain")
 
 SYSTEM = """You are the decision engine of an automated trading bot for {product_desc}
-(fixed lot size set by code, long or short unless the input says long-only; stop distances in the risk block are in price units, pip size is given).
+(fixed lot size set by code, long or short unless the input says long-only; the fixed limits are in `product.risk_limits`,
+stop distances there are in price units, pip size is given; `risk` carries what changes minute to minute).
 {hours}
 
 Every minute, when a 1-minute bar closes, you receive market data, the account, the current position and the risk
 limits. Decide ONE action:
 - HOLD: do nothing.
-- OPEN_LONG / OPEN_SHORT: open one position of the fixed size (`risk.lots`). Only allowed when flat and the gate is OPEN.
+- OPEN_LONG / OPEN_SHORT: open one position of the fixed size (`product.risk_limits.lots`). Only allowed when flat and the gate is OPEN.
   stop_price (absolute US$) is REQUIRED. target_price is optional.
 - CLOSE: close the current position.
 - UPDATE_STOP: move the stop (and optionally the target) of the current position.
 
 Hard rules enforced by code (you cannot override them; violating them just turns your action into HOLD):
 - One position at a time. No pyramiding, no reversing in one step (CLOSE first, open on a later bar).
-- Stop distance must be between risk.min_sl_usd and risk.max_sl_usd from the current price.
-- Entries need confidence >= risk.min_confidence. Daily entry cap risk.max_trades_per_day (0 = none).
+- Stop distance must be between product.risk_limits.min_sl_price and .max_sl_price from the current price.
+- Entries need confidence >= product.risk_limits.min_confidence. Daily entry cap product.risk_limits.max_trades_per_day
+  (0 = none; risk.trades_today is today's count).
 - Risk ladder (risk.ladder): level B = no new entries, C = position halved, D = everything closed and the bot halted
   until the owner unlocks it. It is driven by the daily loss, drawdown from the equity high-water mark, the hard stop
   on cumulative loss and the broker margin level. You cannot change it.
-- A position is force-closed by code after risk.max_hold_min minutes, and the stop/target are checked on every bar.
+- A position is force-closed by code after product.risk_limits.max_hold_min minutes, and the stop/target are checked on every bar.
 
 The legacy system's rules and gate (the REFERENCE section below) are reference only: they describe what the previous
 rule-based system did and what was measured. Use them as context, not as conditions you must satisfy.
@@ -41,10 +43,22 @@ Guidance:
 - Respect the higher-timeframe trend (15-minute bars); be careful around the New York open, the 17:00 ET break
   and scheduled US data releases (see news).
 - Use recent_decisions and recent_trades to stay consistent; do not flip-flop bar to bar.
-- Write `reason` in Traditional Chinese (Cantonese style is fine), max 2 sentences.
+{reason_rule}
 - The owner's LESSONS (below, if any) come from the human owner reviewing your past trades.
   They override the general guidance above, but never the hard rules.
 Always answer by calling the `decide` tool exactly once."""
+
+def reason_rule(n=None):
+    """10-23 使用者：「Opus 唔講話，直接入日誌，用 Python call 出來」——reason 只係短標籤（或留空），日誌行由 main.decision_line 組。"""
+    n = config.REASON_MAX_CHARS if n is None else n
+    if n <= 0:
+        return "- Leave `reason` empty (\"\"): the log line is built by code from your action, prices and confidence."
+    return (f"- `reason` is a short tag in Traditional Chinese, at most {n} characters (e.g. 「順勢回調」「冇邊際」「收緊保本」);\n"
+            "  no sentences — the log line is built by code from your action, prices and confidence.")
+
+
+REASON_DESC = ("Leave empty." if config.REASON_MAX_CHARS <= 0
+               else f"Short tag, Traditional Chinese, max {config.REASON_MAX_CHARS} characters. No sentences.")
 
 TOOL = {
     "name": "decide",
@@ -59,7 +73,7 @@ TOOL = {
             "target_price": {"anyOf": [{"type": "number"}, {"type": "null"}],
                              "description": "Optional absolute take-profit price in US$."},
             "confidence": {"type": "number", "description": "0 to 1."},
-            "reason": {"type": "string"},
+            "reason": {"type": "string", "description": REASON_DESC},
         },
         "required": ["action", "stop_price", "target_price", "confidence", "reason"],
         "additionalProperties": False,
@@ -75,9 +89,9 @@ to your own reading of the market; you are never obliged to follow a signal and 
 already run past TP1 or more than one stop-distance from the entry are filtered out before you see them. `agree` is how
 many OTHER channels called the same direction within the last half hour (cross-check); 0 is common and not a veto.
 - You may only OPEN a position when you cite one listed signal in `signal_id`. The direction may differ from the signal
-  if your analysis disagrees (say so in `reason`).
+  if your analysis disagrees (tag it, e.g. 「逆訊號」).
 - Choose your own stop within the risk limits; it does not have to equal the signal's sl.
-- Mention the signal you used in `reason` (e.g. "參考 TG 訊號 <sid>"). Set signal_id to null for every other action."""
+- `signal_id` is enough; code appends the signal to the log. Set signal_id to null for every other action."""
 
 GATE_SYSTEM = """You are the pre-screen for an automated {symbol} trading bot ({product_desc}). The bot is FLAT.
 A stronger model makes the real decision, but every call costs money, so you only decide whether this 1-minute bar
@@ -127,7 +141,8 @@ def _user_content(context, ask, ttl=CACHE_TTL_DECIDE, stable_ttl=None, cache_m1=
         m1_block["cache_control"] = cc
     return [{"type": "text", "text": "Product and 15-minute bars before the current hour (change once an hour), JSON:\n" + _dump(stable), "cache_control": cc_stable},
             m1_block,
-            {"type": "text", "text": f"Market context now: this hour's 1-minute and 15-minute bars, account, position, risk (JSON). {ask}\n" + _dump(live)}]
+            {"type": "text", "text": f"Market context now (JSON): latest 1-minute bars of this hour (`bars_m1`: [minute_of_hour,open,high,low,close]; "
+                                     f"hour start in `bars_m1_hour_utc`), this hour's 15-minute bars, account, position, risk. {ask}\n" + _dump(live)}]
 
 
 def _usage(msg, model, ttl=CACHE_TTL_DECIDE):
@@ -179,7 +194,7 @@ def load_reference():
 def build_system(lessons, symbol=None, reference=None, base=None):
     hours = ("Trading hours: Sunday 17:00 to Friday 17:00 US Eastern, 24 hours on weekdays (liquidity peaks in the London and New York sessions)."
              if config.PRODUCT_KIND == "fx" else "Trading hours: Sunday 18:00 to Friday 17:00 US Eastern with a daily break 17:00-18:00 ET.")
-    text = (base or SYSTEM).replace("{product_desc}", config.PRODUCT_DESC).replace("{hours}", hours).replace("{symbol}", symbol or config.SYMBOL)
+    text = (base or SYSTEM).replace("{product_desc}", config.PRODUCT_DESC).replace("{hours}", hours).replace("{symbol}", symbol or config.SYMBOL).replace("{reason_rule}", reason_rule())
     reference = load_reference() if reference is None else reference
     if reference:
         text += "\n\n=== REFERENCE: LEGACY RULES AND GATE (not binding) ===\n" + reference
