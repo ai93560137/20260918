@@ -292,9 +292,14 @@ def die(msg, code=1):
 URL_QUERY_VALUE = re.compile(r"([?&][^=&#\s]+=)[^&#\s]+")
 
 
+ACCOUNT_ENV_PATTERN = re.compile(r"ACCOUNT", re.I)      # 真倉戶口號（XAU_ACCOUNT）唔入對話／日誌：只露尾 2 位（使用者 10-23 規則）
+
+
 def mask(key, value):
     if SECRET_ENV_PATTERN.search(key) and value:
         return value[:2] + "…" + value[-2:] if len(value) > 6 else "••••"
+    if ACCOUNT_ENV_PATTERN.search(key) and isinstance(value, str) and value.strip().isdigit() and len(value.strip()) >= 5:
+        return "…" + value.strip()[-2:]                      # 旗標（例如 XAU_ACK_REQUIRE_ACCOUNT=1）照印
     if isinstance(value, str) and "://" in value:
         # 網址的查詢參數常夾帶權杖（例如 BROKER_API_URL 的 ?t=…），一律遮罩
         return URL_QUERY_VALUE.sub(r"\1••••", value)
