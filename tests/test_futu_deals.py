@@ -134,10 +134,17 @@ check("警報文字有補倉一行", "💰 補倉" in txt and "唔會落單" in 
 check("解除訊息冇補倉", "💰" not in main.futu_margin_text("clear", None, "now", {"cushion": 190000}))
 main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR = W, C, F, CL
 
-print("\n=== 配對：MHI2611 全部歸人手，MHI2610 1 手係雲垂對沖 ===")
-a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}])
-check("MHI2611 −10 → 使用者人手", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611"] == [(main.FUTU_TEAM_MANUAL, -10)], a)
-check("MHI2610 −1 → 雲垂對沖", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("雲垂陣", -1)], a)
+print("\n=== [R257] 配對：MHI 即月 → 龍飛陣，非即月 → 雲垂陣（各 1 手，超出歸人手）===")
+from datetime import date as _d
+a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}], today=_d(2026, 10, 23))
+check("10-23 MHI2611 −10 → 雲垂 1 手＋人手 9 手", sorted((x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611") == sorted([("雲垂陣", -1), (main.FUTU_TEAM_MANUAL, -9)]), a)
+check("10-23 MHI2610 −1 → 龍飛陣", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("龍飛陣", -1)], a)
+check("10-28 即月仍係 2610", main.hk_front_month(_d(2026, 10, 28)) == (2026, 10))
+check("10-29 最後交易日即月轉 2611", main.hk_front_month(_d(2026, 10, 29)) == (2026, 11))
+check("12-30 最後交易日即月轉 2701", main.hk_front_month(_d(2026, 12, 30)) == (2027, 1))
+check("11-27 最後交易日（11-30 週一）", main.hk_index_futures_ltd(2026, 11) == _d(2026, 11, 27))
+check("MHI 期權仍歸雲垂", main.futu_mhi_team("HK.MHI2611", _d(2026, 10, 29))[0] == "龍飛陣"
+      and [x["team"] for x in main.futu_team_assign([{"code": "HK.MHI261127C24000", "qty": -1}], today=_d(2026, 10, 23))] == ["雲垂陣"])
 
 print("\n=== [R237] 龍飛陣美股真倉配對 ===")
 a = main.futu_team_assign([{"code": "US.SPY", "qty": 15}, {"code": "US.QQQ", "qty": -10}, {"code": "US.DIA", "qty": 5}])

@@ -79,10 +79,10 @@ DEALS = {"fetched_hkt": "2026-10-13 17:08", "closed": [
     {"code": "HK.MHI2610", "realized_ccy": 320, "ccy": "HKD"}, {"code": "HK.HSI2610", "realized_ccy": 5700, "ccy": "HKD"},
     {"code": "US.EX32610C7830x0", "realized_ccy": 100, "ccy": "USD"}]}
 row = db.pnl_row(RISK, DEALS, [{"time_hkt": "2026-10-13 10:00:00", "realized": -50}, {"time_hkt": "2026-10-12 10:00:00", "realized": 999}], date(2026, 10, 13), "A")
-check("雲垂當日已實現 320 + 100 USD", abs(row["real_雲垂陣"] - (320 + 100 * db.USD_HKD)) < 0.01, row)
+check("[R257] 雲垂當日已實現 100 USD；MHI2610（10-13 即月）320 歸龍飛", abs(row["real_雲垂陣"] - 100 * db.USD_HKD) < 0.01 and abs(row["real_龍飛陣"] - 320) < 0.01, row)
 check("HSI 期貨已實現 5,700、未實現 −2,000 歸人手；蛇蟠 0（10-14 規則）", row["real_使用者人手"] == 5700 and row["unreal_使用者人手"] == -2000
       and not row.get("real_蛇蟠陣") and not row.get("unreal_蛇蟠陣"), row)
-check("雲垂未實現含 USD 換算", abs(row["unreal_雲垂陣"] - (-680 + 5210 - 3230 + (142.5 + 327.5) * db.USD_HKD)) < 0.01, row["unreal_雲垂陣"])
+check("雲垂未實現含 USD 換算", abs(row["unreal_雲垂陣"] - (5210 - 3230 + (142.5 + 327.5) * db.USD_HKD)) < 0.01, row["unreal_雲垂陣"])
 check("MT5 只計當日", row["mt5_realized_today"] == -50)
 check("權益／緩衝入列", row["equity_total"] == 3000000 and row["cushion"] == 300000 and row["ladder"] == "A")
 csv1 = db.upsert_csv(None, row)
@@ -123,8 +123,12 @@ check("單日虧損 2.3% → 超額", any("單日虧損" in w for w in why5), wh
 check("POSITIONS 解析 MHI2611 小期／HSI2611 買", db.parse_positions_md("| ✋ 使用者人手 | 富途期貨 | 賣 MHI2611 小恒指期貨 10 手 @24,260 | x | y | z | 持倉中 | w |\n| 🐍 蛇蟠陣 | 富途期貨 | 買 HSI2611 大恒指期貨 2 手（x） | a | b | c | 持倉中 | d |")[0] == {"HK.MHI2611": -10.0, "HK.HSI2611": 2.0})
 check("ES2612 −1 解析＋歸人手（10-14）", db.parse_positions_md("| ✋ 使用者人手 | 富途期貨 | 賣 ES2612 標普期貨 1 手 @7,803 | x | y | z | 持倉中 | w |")[0] == {"US.ES2612": -1.0}
       and db.split_by_cap("US.ES2612", -1) == [(db.TEAM_MANUAL, -1)])
-check("MHI2611 全部歸人手（唔當雲垂對沖）", db.split_by_cap("HK.MHI2611", -10) == [(db.TEAM_MANUAL, -10)], db.split_by_cap("HK.MHI2611", -10))
-check("MHI 超出對沖上限歸人手", db.split_by_cap("HK.MHI2610", -3) == [("雲垂陣", -1), (db.TEAM_MANUAL, -2)])
+from datetime import date as _d
+check("[R257] 10-23 MHI2610 即月 → 龍飛陣 1 手，超出歸人手", db.split_by_cap("HK.MHI2610", -3, _d(2026, 10, 23)) == [("龍飛陣", -1), (db.TEAM_MANUAL, -2)])
+check("[R257] 10-23 MHI2611 非即月 → 雲垂陣 1 手，超出歸人手", db.split_by_cap("HK.MHI2611", -10, _d(2026, 10, 23)) == [("雲垂陣", -1), (db.TEAM_MANUAL, -9)])
+check("[R257] 10-29 最後交易日 → MHI2611 已係即月", db.team_of("HK.MHI2611", _d(2026, 10, 29))[0] == "龍飛陣" and db.team_of("HK.MHI2610", _d(2026, 10, 29))[0] == "雲垂陣")
+check("[R257] 最後交易日 10-29／11-27／12-30", [db.hk_index_futures_ltd(2026, m) for m in (10, 11, 12)] == [_d(2026, 10, 29), _d(2026, 11, 27), _d(2026, 12, 30)])
+check("[R257] 12 月最後交易日後即月轉 2701", db.team_of("HK.MHI2701", _d(2026, 12, 30))[0] == "龍飛陣")
 
 print("\n=== 私隱：公開版冇金額、Actions 日誌只印字數 ===")
 import os, contextlib
