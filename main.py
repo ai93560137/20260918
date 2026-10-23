@@ -249,6 +249,7 @@
 #       zhuge_gate_state.json, pyramid_state.json, gcp_decision_log.json,
 #       ai_training/pending_signals_v2.json, cache/ff_calendar_thisweek.json
 # =============================================================================
+import base64
 import bisect
 import csv
 import html
@@ -6437,6 +6438,73 @@ def build_manual_rules_page():
     return html_page("人手交易守則", head + intro + items + foot)
 
 
+# [R258] 📐 分析圖（?view=charts；&format=json）：讀 GCS charts/index.json（scripts/charts_publish.py 由
+# workflow charts_publish.yml 定時出圖上載）。使用者 10-23（經龍飛陣）：分析圖、報告放網頁，唔好只傳檔案。
+CHARTS_INDEX = "charts/index.json"
+CHARTS_MAX_PNG = 3_000_000
+
+
+def charts_data():
+    items = (gcs_read_json(CHARTS_INDEX, {}) or {}).get("items") or []
+    items = sorted((it for it in items if isinstance(it, dict) and it.get("id")),
+                   key=lambda it: str(it.get("updated_hkt") or ""), reverse=True)
+    for it in items:
+        it["data"] = gcs_read_json(it["json"], None) if it.get("json") else None
+    return items
+
+
+def _chart_png_b64(name):
+    blob = _bucket().get_blob(name)
+    if blob is None or (blob.size or 0) > CHARTS_MAX_PNG:
+        return None
+    return base64.b64encode(blob.download_as_bytes()).decode("ascii")
+
+
+def build_charts_page(items, err=None):
+    nav = page_nav("charts")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
+    intro = ("<div class='section'><p>各陣嘅分析圖同報告，程式定時重新出圖。只係分析資料，唔係落單指令；"
+             "落單以券商即時價為準。</p></div>")
+    if err:
+        return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
+    if not items:
+        return html_page("分析圖", head + intro + "<div class='section'><p class='muted'>暫時未有分析圖。</p></div>")
+    body = ""
+    for it in items:
+        b64 = None
+        try:
+            b64 = _chart_png_b64(it["png"]) if it.get("png") else None
+        except Exception as exc:
+            log_event(f"⚠️ [分析圖讀取失敗] {it.get('id')}: {exc}", severity="WARNING", component="charts")
+        img = (f"<img alt='{esc(it.get('title'))}' style='width:100%;height:auto;border-radius:6px' "
+               f"src='data:image/png;base64,{b64}'>" if b64 else "<p class='muted'>圖暫時讀取唔到。</p>")
+        d = it.get("data") or {}
+        lv = d.get("levels") or {}
+        table = ""
+        if lv:
+            rows = "".join(f"<tr><td>{esc(k)}</td><td style='text-align:right'>{esc(f'{v:,}')}</td></tr>" for k, v in lv.items())
+            extra = "".join(f"<tr><td>SMA {n}</td><td style='text-align:right'>{esc(f'{d[k]:,}')}</td></tr>"
+                            for n, k in ((50, "sma50"), (100, "sma100"), (200, "sma200")) if d.get(k) is not None)
+            last_txt = f"{d['last']:,.0f}" if d.get("last") is not None else ""
+            last = f"<p>現價 <b>{esc(last_txt)}</b>（截至 {esc(d.get('asof'))}）</p>" if last_txt else ""
+            table = (f"{last}<table><tr><th>回撤位</th><th style='text-align:right'>價位</th></tr>{rows}{extra}</table>")
+        body += (f"<div class='section'><h2>{esc(it.get('team') or '')} {esc(it.get('title'))}</h2>"
+                 f"<p class='muted' style='font-size:13px'>{esc(it.get('desc') or '')}　更新：{esc(it.get('updated_hkt') or '—')} HKT</p>"
+                 f"{img}{table}</div>")
+    return html_page("分析圖", head + intro + body, "<meta http-equiv='refresh' content='900'>")
+
+
+def handle_charts_get(req):
+    try:
+        items, err = charts_data(), None
+    except Exception as exc:
+        log_event(f"⚠️ [分析圖頁失敗] {exc}", severity="WARNING", component="charts")
+        items, err = [], "讀取失敗，請稍後再試。"
+    if req.args.get("format") == "json":
+        return jsonify({"status": "error" if err else "ok", "items": items})
+    return build_charts_page(items, err)
+
+
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
@@ -8040,6 +8108,7 @@ PAGE_LINKS = [
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
     ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
+    ("charts", "📐 分析圖"),                                     # [R258] 各陣分析圖（龍飛陣斐波那契等）
     ("rules", "📏 人手交易守則"),                               # [R284] 使用者 10-22：人手落單前睇（龍飛陣由成交分析整理）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
@@ -8343,6 +8412,8 @@ def handle_get(req):
         return handle_htf_get(req)
     if view == "rules":                                          # [R284] 📏 人手交易守則
         return build_manual_rules_page()
+    if view == "charts":                                         # [R258] 📐 分析圖（各陣分析圖／報告）
+        return handle_charts_get(req)
     if view == "longfei":                                        # [R201] 🐉 龍飛陣成績（&format=json）
         return handle_longfei_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
