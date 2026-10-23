@@ -77,6 +77,11 @@ jobs:
         run: |
           python3 canary/daily_report.py --health "refresh=$R" "build=ok" "labs=$L"
 
+      - name: Special alert (close)
+        # 2026-10-23 使用者要求:短期軸收市升級(綠→走平→紅)、災難軸綠→深紅,或盤中預警收市未成立,另發一則特別警報。
+        # 同一燈色日只發一次(排程重複跑不重發);失敗不擋每日報告。
+        run: python3 canary/special_alert.py close || echo "::warning::special_alert.py close 失敗"
+
       - name: Commit and push
         env:
           BRANCH: ${{ github.ref_name }}
@@ -85,7 +90,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # tg_daily.txt 也要提交:它是當天真正發出的 Telegram 全文(sent_log.csv 的 tg_sha1 指向它)。
           # 用 GITHUB_TOKEN 推送不會觸發 canary_broadcast.yml(GitHub 防遞迴),不會重發。
-          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/posthoc_log.csv canary/tg_daily.txt canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md; true; }
+          add_out() { git add canary/data_external canary/canary_daily.csv canary/DAILY_REPORT.md canary/daily_log.csv canary/sent_log.csv canary/posthoc_log.csv canary/tg_daily.txt canary/YELLOW_UPGRADE.md canary/RED_UPGRADE.md canary/alert_state.json canary/alert_log.csv; true; }
           HKD=$(TZ=Asia/Hong_Kong date +%F)   # 報告日 = 香港日期(22:30 UTC 已是香港翌日 06:30)
           add_out
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
@@ -104,6 +109,13 @@ jobs:
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設,未發送"; exit 0
+          fi
+          if [ -s canary/alert_close.txt ]; then
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "disable_web_page_preview=true" \
+              --data-urlencode "text=$(cat canary/alert_close.txt)" > /dev/null
+            echo "special alert sent"
           fi
           curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TG_CHAT_ID}" \

@@ -21,3 +21,5 @@ hsi_ai_trader/logs/
 hsi_ai_trader/state.json
 hsi_ai_trader/STOP
 hsi_ai_trader/PAUSE
+canary/alert_intraday.txt
+canary/alert_close.txt
