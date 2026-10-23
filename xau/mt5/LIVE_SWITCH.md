@@ -62,6 +62,25 @@
 | P9 | **POSITIONS.md 登記列** | 總指揮 | 開真倉前登記（magic、產品、手數、戶口＝「天覆陣真倉戶口」唔寫號碼）；配對規則 | ☐ |
 | P10 | **Telegram 通知** | 天覆陣核實 | 開倉／平倉／階梯變化有 Telegram（demo 已有）；轉真倉第一張要使用者睇住 | ☐ |
 
+## 2b. P2 總階梯 0b 具體步驟（10-23 天覆陣出；總指揮執行、天覆陣讀取核實）
+
+**原理**：階梯用 EA 嘅 `bots_daily_pnl`（伺服器日 UTC+3 已實現，天覆陣全部 magic）＋`bots_floating`；PAUSE 線 −20%（紐約 18:00–02:00 ET 夜盤 ×1.5 ＝ −30%）。
+兩個難處：(a) 今日已實現正數（+143）縮本金都穿唔到 → 要揀 **伺服器換日（21:00 UTC）之後、未有任何平倉** 嘅時段，日蝕只剩浮動；(b) 累計線 25% 一定同時穿（`bots_realized_total` −62）而且程式**先檢查累計**（edge 觸發），會令 control.reason 寫成累計——**解法**：改本金嗰次 put 同時寫 `"cum_loss_above": true`（edge 模式要由 false→true 先觸發，預設 true 就唔會觸發），淨返日蝕線。
+
+| 步 | 誰 | 做乜 |
+|---|---|---|
+| 0 | — | **時間**：週日 10-25 22:05 UTC（週一 06:05 HKT）起，黃金同外匯都開市、伺服器日剛換（daily 已實現＝0）、未有 921／922 平倉。夜盤線 −30%。10-23（五）21:00 UTC 後休市，做唔到 |
+| 1 | 總指揮 | `--profile xau env set XAU_TEST_CMDS=1`、`--profile eurusd env set XAU_TEST_CMDS=1`（dry-run → 批 → --yes；兩個新修訂） |
+| 2 | 總指揮 | 落兩個檔（`ts` 填 `date +%s`，10 分鐘內有效）：<br>`xau/test_cmd.json`：`{"id":"ob1","ts":<epoch>,"op":"open","side":"BUY","lots":0.01,"sl":<現價−30>,"tp":<現價+30>}`<br>`fx/eurusd/test_cmd.json`：`{"id":"ob2","ts":<epoch>,"op":"open","side":"SELL","lots":0.01,"sl":<現價+0.0100>,"tp":<現價−0.0100>}`<br>（SL／TP 放遠，免測試中被掃；lots 0.01 夠，浮動主要係點差 ≈ −2.5／−0.8 HKD） |
+| 3 | 天覆陣 | 下一個心跳日誌「🧪 test_cmd 排指令」→「📨 指令回報 ok=True」；JSON `live_positions` 兩個服務各一張、`ladder.scope=account`、`ladder.daily_pnl_hkd`（＝bots_daily_pnl＋bots_floating，兩個服務數字應一樣）。**等到 daily_pnl_hkd 係負數**（通常即刻，點差） |
+| 4 | 總指揮 | 兩個 control.json **同一分鐘** put：`principal_hkd` ＝ `round(|daily_pnl_hkd| / 0.5, 1)`（令 pct ≈ −50%，穿 −30% 有餘；例 daily −3.3 → 本金 6.6）、`"cum_loss_above": true`（壓住累計線）、其他欄位照舊（mode RUN、set_by user）。記低原本金 |
+| 5 | 天覆陣 | 下一根 M1：兩個服務 JSON `control.mode=PAUSE`、`control.set_by=ladder`、`control.reason` 含「**當日虧損 −xx% ≤ −30% → 停開新倉（換日自動重開）**」（唔係「累計虧損」）、`ladder.level=B`、`ladder.reasons` 同一句；日誌「ℹ️ 本金已更新，高水位重設」＋ PAUSE；Telegram 兩條「⏸ 當日虧損 …」（xau、eurusd 各一）。兩個服務觸發時間差 ≤ 1 分鐘＝**0b 通過**。記 TEST_RESULTS |
+| 6 | 總指揮 | 還原：兩個 control.json put `principal_hkd`＝原值、`mode:"RUN"`、`set_by:"user"`、`reason:"0b 測試完畢還原"`、`cum_loss_above:false`、刪 `auto_reset_day`（日蝕 PAUSE 本來要等紐約 17:00 換日先自動重開，所以要人手 RUN）。再落 `{"id":"ob3","ts":…,"op":"close"}` 兩個檔平測試倉 |
+| 7 | 總指揮 | `--profile xau env set XAU_TEST_CMDS=0`、`--profile eurusd env set XAU_TEST_CMDS=0`（關測試入口；步 1→7 控制喺 15 分鐘內） |
+| 8 | 天覆陣 | 核實：JSON `test_cmds=false`、`live_positions=[]`、`control.mode=RUN`、`ladder.level=A`、高水位已按原本金重設；`xau/test_cmd.json` 兩檔 `consumed` 已寫 |
+
+副作用（已知，10-20 測試 8 見過）：本金縮細期間「高水位回撤 ≥10%／20%」提示會響一次（只提示）；還原本金後下根 M1 自動重設。測試倉期間 Opus／H 規則可能移止損或平倉（屬正常），步 6 用 close 收尾即可。
+
 ## 3. 切換當日次序（P1–P10 完成後）
 
 1. 總指揮 dry-run → 使用者批 → `--yes`：
