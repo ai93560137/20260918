@@ -1,4 +1,4 @@
-# 數據品質日報（2026-10-22）
+# 數據品質日報（2026-10-23）
 
 由 `scripts/check_data_quality.py` 產生。主來源 yfinance（`data/equities/hk/`）113 檔，第二來源港交所官方快照（`data/stocks_hkex/`）63 份（最新 2026-10-22），公司名紀錄 112 檔。
 
