@@ -1632,8 +1632,7 @@ def futu_risk_alert_text(run_hkt, metrics, alerts, prev_alerts):
     lines = [f"【富途持倉風險（自動）】{run_hkt} HKT"] + new + [f"✅ 已解除〔{futu_alert_team(k)}〕：{k}" for k in cleared]
     lines.append(f"合計權益 {fmt_num(metrics.get('equity'), '{:,.0f}')}｜富途保證金緩衝 {fmt_num(metrics.get('cushion'), '{:,.0f}')}"
                  + (f"｜雲垂 Δ {delta:+.2f}" if isinstance(delta, (int, float)) else ""))
-    lines.append("只係監控，唔係落單指令；落單以富途即時價為準。")
-    return "\n".join(lines)
+    return "\n".join(lines)                                                       # [R261] 使用者 10-24：刪「只係監控…」
 
 
 # =============================================================================

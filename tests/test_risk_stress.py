@@ -124,6 +124,12 @@ q5 = dict(q, positions=q["positions"] + [
 _, M5 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q5.json"), 7_800_000)
 check("正常報價照用賣價：(310+310)/590 > 100% 照觸止損", M5["stop_use"]["MES 跨式"] > 1, M5["stop_use"])
 
+print("\n=== R261：白話警報 ===")
+check("解除白話", auto_risk.cleared_text("stop:MES 跨式") == "MES 跨式 已經離開止損範圍" and auto_risk.cleared_text("margin").startswith("富途保證金緩衝"))
+a6 = auto_risk.alerts({"stop_use": {"X": 1.2, "Y": 0.85}}, 0, 0.8)
+check("觸止損白話", a6["stop:X"].startswith("⛔ X 已到止損線") and "120%" in a6["stop:X"], a6)
+check("近止損白話", a6["stop:Y"].startswith("⚠ Y 就快到止損線") and "80% 起提醒" in a6["stop:Y"], a6)
+
 print("\n=== auto_risk.mm_jump 維持保證金單日急升 ===")
 sf = tmp / "margin_base.json"
 T = lambda d, h: datetime(2026, 10, d, h, 0, tzinfo=auto_risk.HKT)

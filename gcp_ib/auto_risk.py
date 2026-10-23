@@ -69,6 +69,16 @@ def fetch():
     return True, []
 
 
+def cleared_text(k):
+    """[R261] 解除通知用白話：stop:MES 跨式 → MES 跨式 已經離開止損範圍。"""
+    if k.startswith("stop:"):
+        return f"{k[5:]} 已經離開止損範圍"
+    if k.startswith("delta:"):
+        return f"{k[6:]} 對沖返入範圍"
+    return {"margin": "富途保證金緩衝回到安全水平", "sec_margin": "證券戶口緩衝回到安全水平", "hard_stop": "合計權益回到硬止損之上",
+            "mm_jump": "維持保證金冇再急升", "fetch": "富途數據恢復"}.get(k, k)
+
+
 def alerts(M, cushion_line, stop_line):
     """回傳 {警報鍵: 訊息}；空＝冇警報。"""
     a = {}
@@ -85,9 +95,9 @@ def alerts(M, cushion_line, stop_line):
         det = (M.get("stop_detail") or {}).get(name)          # [R260] 附腿同價，唔使估係邊個倉
         tail = f"\n   ↳ {det}" if det else ""
         if use >= 1:
-            a[f"stop:{name}"] = f"⛔ {name} 觸止損（買回 {use * 100:.0f}% 止損線）{tail}"
+            a[f"stop:{name}"] = f"⛔ {name} 已到止損線：而家買回要用止損線嘅 {use * 100:.0f}%{tail}"
         elif use >= stop_line:
-            a[f"stop:{name}"] = f"⚠ {name} 近止損（買回 {use * 100:.0f}% 止損線）{tail}"
+            a[f"stop:{name}"] = f"⚠ {name} 就快到止損線：而家買回要用止損線嘅 {use * 100:.0f}%（{stop_line:.0%} 起提醒）{tail}"
     for name, (d, band) in M.get("delta", {}).items():
         if abs(d) > band:
             a[f"delta:{name}"] = f"⚠ {name} 淨 Δ {d:+.2f} 手，超出 ±{band}"
@@ -326,7 +336,8 @@ def cycle(equity, cushion_line, stop_line, mm_thr=0.30):
                         round(M["gap"]), round(M["cushion"]) if M.get("cushion") is not None else "",
                         round(d, 2) if d is not None else "",
                         ";".join(f"{k}={v:.0%}" for k, v in M["stop_use"].items()), ";".join(cur)])
-    new_on = {k: v for k, v in cur.items() if prev.get(k) != v}
+    lvl = lambda v: str(v)[:1]                        # [R261] 只比較「鍵＋級別」：警報附咗即時價（R260），價一變就唔好每 15 分鐘重發
+    new_on = {k: v for k, v in cur.items() if k not in prev or lvl(prev[k]) != lvl(v)}
     cleared = [k for k in prev if k not in cur]
     state_f.write_text(json.dumps(cur, ensure_ascii=False, indent=1), encoding="utf-8")
     line = (f"[{t:%m-%d %H:%M} HKT] 盈虧 {M['pnl']:+,.0f}｜合計權益 {M['equity']:,.0f}｜富途緩衝 "
@@ -335,12 +346,14 @@ def cycle(equity, cushion_line, stop_line, mm_thr=0.30):
     if M:
         print("  → " + push_gcp(t, M, cur, txt))
     if new_on or cleared:
+        # [R261] 使用者 10-24：白話啲；刪「只係監控…」一句
         msg = ["【諸葛亮持倉風險（自動）】" + f"{t:%m-%d %H:%M} HKT"]
         msg += list(new_on.values())
-        msg += [f"✅ 已解除：{k}" for k in cleared]
+        msg += [f"✅ 已解除：{cleared_text(k)}" for k in cleared]
         if M:
-            msg.append(line.split("] ", 1)[-1])
-        msg.append("只係監控，唔係落單指令；落單以富途即時價為準。")
+            pnl = M["pnl"]
+            msg.append(f"而家：全部持倉未平倉盈虧 {'+' if pnl >= 0 else '−'}HK${abs(pnl):,.0f}｜富途保證金緩衝 HK${M.get('cushion', 0):,.0f}"
+                       f"（跌穿 HK${cushion_line:,.0f} 會提醒）")
         sent = telegram("\n".join(msg))
         print("  → Telegram 已發（本機）" if sent else "  →（本機冇設 Telegram；推上 GCP 之後由 Cloud Run 代發）")
 
