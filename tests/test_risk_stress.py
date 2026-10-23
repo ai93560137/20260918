@@ -104,6 +104,26 @@ q3 = dict(q, positions=q["positions"] + [{"code": "HK.HSI261023P23550000", "qty"
 txt3, _ = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q3.json"), 7_800_000)
 check("手數 0 唔加腿", "富途實際" not in txt3.split("HSI 10/23")[0] or "HSI 10/23 P23550（富途實際" not in txt3)
 
+print("\n=== R260：收市後買賣差離譜唔當平倉價（10-24 04:45 MES 跨式誤報）===")
+q4 = dict(q, positions=q["positions"] + [
+    {"code": "US.EX32611P7700x0", "qty": -1, "bid": 122.0, "ask": 1500.0, "last": 144.0, "open_price": 148.5},
+    {"code": "US.EX32611C7700x0", "qty": -1, "ask": 131.0, "last": 109.0, "open_price": 146.5}])
+(tmp / "q4.json").write_text(json.dumps(q4), encoding="utf-8")
+txt4, M4 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q4.json"), 7_800_000)
+use4 = M4["stop_use"].get("MES 跨式")
+check("P7700 用最後成交 144（唔用賣價 1,500）→ 用量 (131+144)/590 ≈ 47%", use4 is not None and abs(use4 - 275 / 590) < 0.01, use4)
+check("報告寫明買賣差太闊", "買賣差太闊" in txt4)
+det = M4.get("stop_detail", {}).get("MES 跨式", "")
+check("stop_detail 列兩隻腿同價", "MES 11/20 P7700 144.0" in det and "MES 11/20 C7700 131.0" in det and "止損 590" in det, det)
+a4 = auto_risk.alerts({"stop_use": {"MES 跨式": 1.2}, "stop_detail": {"MES 跨式": det}}, 0, 0.8)
+check("警報附腿同價", "↳" in a4["stop:MES 跨式"] and "P7700" in a4["stop:MES 跨式"], a4)
+q5 = dict(q, positions=q["positions"] + [
+    {"code": "US.EX32611P7700x0", "qty": -1, "bid": 300.0, "ask": 310.0, "last": 305.0, "open_price": 148.5},
+    {"code": "US.EX32611C7700x0", "qty": -1, "bid": 300.0, "ask": 310.0, "last": 305.0, "open_price": 146.5}])
+(tmp / "q5.json").write_text(json.dumps(q5), encoding="utf-8")
+_, M5 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q5.json"), 7_800_000)
+check("正常報價照用賣價：(310+310)/590 > 100% 照觸止損", M5["stop_use"]["MES 跨式"] > 1, M5["stop_use"])
+
 print("\n=== auto_risk.mm_jump 維持保證金單日急升 ===")
 sf = tmp / "margin_base.json"
 T = lambda d, h: datetime(2026, 10, d, h, 0, tzinfo=auto_risk.HKT)

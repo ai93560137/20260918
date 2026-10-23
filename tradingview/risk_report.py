@@ -201,20 +201,26 @@ def load(book_path, quotes_path=None):
             p["T"] = max((date.fromisoformat(p["exp"]) - val).days, 0.5) / 365
     for p in b["positions"]:
         side = p["ask"] if p["qty"] < 0 else p["bid"]
-        if side:
+        # [R260] 10-24 04:45 誤報：美股收市後 MES 11/20 P7700 買 122／賣 1,500（最後成交 144），用賣價計出買回 276% 觸止損。
+        # 買賣差闊過買價一半（或者一邊冇價而平倉價離最後成交 3 倍以上）就當報價唔可信，跌落去用最後成交／富途估值。
+        wide = bool(side and ((p["bid"] and p["ask"] and p["ask"] - p["bid"] > 0.5 * p["bid"] and p["ask"] - p["bid"] > 5)
+                              or (p["last"] and (side > 3 * p["last"] or side < p["last"] / 3))))
+        if side and not wide:
             p["close_px"], p["basis"] = side, ("賣價" if p["qty"] < 0 else "買價") + f" @ {p['qtime']}"
             continue
+        p["wide_quote"] = f"買 {p['bid'] or '—'}／賣 {p['ask'] or '—'}" if wide else None
         stale = any(w in p.get("flag", "") for w in ("冇賣價", "冇買價", "stale"))
         other = next((o for o in b["positions"] if o is not p and o["und"] == p["und"] and o.get("K") == p.get("K")
                       and o.get("exp") == p.get("exp") and o["type"] in ("call", "put") and o["type"] != p["type"]), None)
         has_q = bool(p["bid"] or p["ask"] or p["last"])           # 有報價但欠一邊
-        if p["type"] in ("call", "put") and other and (has_q or stale):
+        if p["type"] in ("call", "put") and other and (has_q or stale) and not wide:
             F = b["underlyings"][p["und"]]["F"]
             o_px = (other["ask"] if other["qty"] < 0 else other["bid"]) or other.get("mid") or other.get("last") or other["price"]
             p["close_px"] = o_px + (p["K"] - F) if p["type"] == "put" else o_px - (p["K"] - F)
             p["basis"] = f"parity（冇{'賣' if p['qty'] < 0 else '買'}價；{other['id']} {o_px:g}）"
         elif p["last"]:
-            p["close_px"], p["basis"] = p["last"], f"最後成交（冇{'賣' if p['qty'] < 0 else '買'}價）@ {p['qtime']}"
+            why = f"買賣差太闊：{p['wide_quote']}" if wide else f"冇{'賣' if p['qty'] < 0 else '買'}價"
+            p["close_px"], p["basis"] = p["last"], f"最後成交（{why}）@ {p['qtime']}"
         elif (FP.get(p["code"]) or {}).get("futu_pl") is not None:
             # 冇報價（例如 CME 期權冇行情權限）：由富途持倉盈虧反推富途用緊嘅估值
             pl = FP[p["code"]]["futu_pl"]
@@ -452,6 +458,10 @@ def build(book, quotes=None, combined_equity=None):
     for name, s in stops.items():
         bb = sum(px[i] for i in s["legs"])
         M["stop_use"][name] = bb / s["stop_buyback"]
+        M.setdefault("stop_detail", {})[name] = (     # [R260] 警報附上邊幾隻腿、用咩價計，唔使估係邊個倉
+            "＋".join(f"{i} {px[i]:,.1f}（{byid[i]['basis'].split(' @')[0]}）" for i in s["legs"])
+            + f" ＝ 買回 {bb:,.1f} 點／止損 {s['stop_buyback']} 點"
+            + (f"（權利金 {s['credit']}）" if s.get("credit") is not None else ""))
         und = byid[s["legs"][0]]["und"]
         F0 = b["underlyings"][und]["F"]
         trig = []

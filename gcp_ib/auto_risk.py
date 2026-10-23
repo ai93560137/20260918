@@ -82,10 +82,12 @@ def alerts(M, cushion_line, stop_line):
                            f"（線 Ⓑ {risk_report.SEC_LADDER_CUSHION['B']:,.0f}／Ⓒ {risk_report.SEC_LADDER_CUSHION['C']:,.0f}"
                            f"／Ⓓ {risk_report.SEC_LADDER_CUSHION['D']:,.0f}）")
     for name, use in M.get("stop_use", {}).items():
+        det = (M.get("stop_detail") or {}).get(name)          # [R260] 附腿同價，唔使估係邊個倉
+        tail = f"\n   ↳ {det}" if det else ""
         if use >= 1:
-            a[f"stop:{name}"] = f"⛔ {name} 觸止損（買回 {use * 100:.0f}% 止損線）"
+            a[f"stop:{name}"] = f"⛔ {name} 觸止損（買回 {use * 100:.0f}% 止損線）{tail}"
         elif use >= stop_line:
-            a[f"stop:{name}"] = f"⚠ {name} 近止損（買回 {use * 100:.0f}% 止損線）"
+            a[f"stop:{name}"] = f"⚠ {name} 近止損（買回 {use * 100:.0f}% 止損線）{tail}"
     for name, (d, band) in M.get("delta", {}).items():
         if abs(d) > band:
             a[f"delta:{name}"] = f"⚠ {name} 淨 Δ {d:+.2f} 手，超出 ±{band}"
