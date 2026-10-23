@@ -1194,3 +1194,9 @@ def test_update_stop_only_tightens():
     a, stop, *_ = validate_decision({"action": "UPDATE_STOP", "stop_price": 25010}, position=-1, **kw)
     assert a == "UPDATE_STOP" and stop == 25010
 
+
+def test_mhi_uses_hsi_lessons():
+    """[R287] MHI 真倉用 HSI 教學簿。"""
+    from brain import product_lessons
+    assert product_lessons("MHI") == product_lessons("HSI") != ""
+
