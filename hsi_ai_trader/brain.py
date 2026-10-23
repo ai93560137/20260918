@@ -46,8 +46,12 @@ LESSONS_DIR = Path(__file__).resolve().parent / "lessons"
 EMPTY_MARK = "（未有）"
 
 
+LESSONS_ALIAS = {"MHI": "HSI"}      # [R287] 小型恒指同大期同一個指數，用 HSI 教學簿（MHI 真倉跟 HSI 模擬學到嘅嘢）
+
+
 def product_lessons(product, lessons_dir: Path = LESSONS_DIR) -> str:
     """[R228] 個別產品教學簿 lessons/<產品>.md：只取「## 教學」之後嘅內容；（未有）當冇。"""
+    product = LESSONS_ALIAS.get(product, product)
     try:
         text = (lessons_dir / f"{product}.md").read_text(encoding="utf-8")
     except (FileNotFoundError, TypeError):
