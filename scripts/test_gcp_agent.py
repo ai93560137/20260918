@@ -284,6 +284,8 @@ OP = f"projects/{PROJECT}/locations/{RUN_REGION}/operations/op-run"
 class MaskTests(unittest.TestCase):
     def test_mask(self):
         self.assertEqual(ga.mask("WEBHOOK_API_KEY", "abcdefgh"), "ab…gh")
+        self.assertEqual(ga.mask("XAU_ACCOUNT", "12345678"), "…78")
+        self.assertEqual(ga.mask("XAU_ACK_REQUIRE_ACCOUNT", "1"), "1")
         self.assertEqual(ga.mask("URL", "https://h/p?t=tok#frag"), "https://h/p?t=••••#frag")
         self.assertEqual(ga.mask("URL", "https://h/p"), "https://h/p")
         self.assertEqual(ga.mask("TARGET_RRR", "3"), "3")

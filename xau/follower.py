@@ -3,6 +3,7 @@
 規則：市價單訊號即刻市價入；限價單訊號等現價入到入場區（±點差）先市價入；收到時已過 TP1、止損錯邊、TTL 過咗就唔入（標 used 唔再試）；
 一次只一張；control 非 RUN、階梯 Ⓑ／Ⓓ、EA 唔准交易就唔開；唔改止損、唔主動平（SL／TP 伺服器端）。XAU_EXECUTE=0 只記紙上。"""
 import re
+import time
 import uuid
 
 import config
@@ -60,13 +61,51 @@ def candidates(now):
             and (r.get("valid_until_ts") or 0) > now and str(r.get("ch") or "")[-4:] in config.FOLLOW_CHANNELS]
 
 
-def entry_check(sig, price):
-    """回傳 (ok|wait|skip, 原因)。純函數。"""
+def avoid_hours(ch):
+    """SIG_FOLLOW_AVOID_HOURS="5231:07-12,7713:13-14" → 該頻道 (起, 止) UTC 整點；冇就 None。"""
+    ch = str(ch or "")[-4:]
+    for part in (config.FOLLOW_AVOID_HOURS or "").split(","):
+        part = part.strip()
+        if ":" not in part or "-" not in part:
+            continue
+        c, hours = part.split(":", 1)
+        if c.strip()[-4:] != ch:
+            continue
+        try:
+            a, b = (int(x) for x in hours.split("-", 1))
+        except ValueError:
+            continue
+        return a % 24, b % 24
+    return None
+
+
+def in_avoid_hours(ch, now):
+    rng = avoid_hours(ch)
+    if not rng or now is None:
+        return False
+    a, b = rng
+    h = int(now // 3600) % 24
+    return a <= h < b if a <= b else (h >= a or h < b)
+
+
+def entry_check(sig, price, now=None):
+    """回傳 (ok|wait|skip, 原因)。純函數（now 只用於時段規則；None＝而家）。"""
     side = sig.get("side"); sgn = 1 if side == "BUY" else -1
     sl, tps, lo, hi = sig.get("sl"), sig.get("tp") or [], sig.get("entry_low"), sig.get("entry_high")
     if side not in ("BUY", "SELL") or sl is None or not tps or price is None:
         return "skip", "欄位唔齊"
+    ch = str(sig.get("ch") or "")[-4:]
+    now = time.time() if now is None else now
+    if in_avoid_hours(ch, now):                            # 10-24 使用者：倫敦時段都避（CTC 07–12 UTC −1.61 美元／張）
+        a, b = avoid_hours(ch)
+        return "skip", f"時段 {a:02d}–{b:02d} UTC 唔跟"
     tp1 = tps[0]
+    if ch in config.FOLLOW_SKIP_UNREACHED_CHANNELS:        # 10-24 使用者：唔跟未到入場價（收到時價仍喺入場價反向 ≥ tol → 唔等限價，略過）
+        ref, _src = signals.ref_entry(sig)
+        if ref is not None:
+            behind = (ref - price) * sgn
+            if behind >= config.FOLLOW_UNREACHED_TOL:
+                return "skip", f"收到時價未到入場價（反向 {behind:.{config.PRICE_DIGITS}f} ≥ {config.FOLLOW_UNREACHED_TOL:g}）"
     if (price - tp1) * sgn >= 0:
         return "skip", "收到時價已過 TP1"
     nd = config.PRICE_DIGITS
@@ -99,6 +138,8 @@ def status():
         acct = {}
     return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": config.FOLLOW_LOTS,
             "exit": {ch: exit_mode(ch) for ch in config.FOLLOW_CHANNELS}, "ladder_channels": list(config.FOLLOW_LADDER_CHANNELS),
+            "skip_unreached_channels": list(config.FOLLOW_SKIP_UNREACHED_CHANNELS), "unreached_tol": config.FOLLOW_UNREACHED_TOL,
+            "avoid_hours": {ch: avoid_hours(ch) for ch in config.FOLLOW_CHANNELS if avoid_hours(ch)},
             "execute": config.EXECUTE, "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "floating", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id")), "applied": (re.sub(r"id=([0-9a-f]+)", lambda m: "id=" + executor.mask_id(m.group(1)), str(o.get("applied") or "")))} for o in (st.get("orders") or [])[-20:][::-1]],
             "used": len(st.get("used") or []), "last": st.get("last"),
@@ -218,7 +259,7 @@ def _decide(m, state, account, price, now):
     for sig in candidates(now):
         if sig["sid"] in used:
             continue
-        verdict, reason = entry_check(sig, price)
+        verdict, reason = entry_check(sig, price, now)
         if verdict == "skip":
             state["used"] = [*state.get("used", []), sig["sid"]][-500:]
             m.log_event(f"📨 [{config.TEAM_NAME}] 跟單略過 {sig['sid']}：{reason}", component="follow")
