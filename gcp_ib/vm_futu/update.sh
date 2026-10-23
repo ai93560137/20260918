@@ -17,7 +17,8 @@ if [ "${AVAIL:-99999}" -lt 1024 ]; then   # 少過 1GB：清得狠啲
 fi
 old=$(runuser -u "$U" -- git rev-parse HEAD)
 runuser -u "$U" -- git fetch -q origin ops/user-machine || { echo "$(date -u +%F' '%T) fetch 失敗" >> "$LOG"; exit 0; }
-new=$(runuser -u "$U" -- git rev-parse FETCH_HEAD)
+# [R307] 10-23 硬碟滿時 FETCH_HEAD 寫唔到，rev-parse 失敗會印返「FETCH_HEAD」字樣當新版，每 10 分鐘重開晒程式：攞唔到就跳過
+new=$(runuser -u "$U" -- git rev-parse -q --verify 'FETCH_HEAD^{commit}') || { echo "$(date -u +%F' '%T) 讀唔到 FETCH_HEAD（硬碟滿？），跳過" >> "$LOG"; exit 0; }
 [ "$old" = "$new" ] && exit 0
 runuser -u "$U" -- git reset -q --hard "$new"
 # [R188] repo 入面嘅 service／timer 改咗都即刻生效（OpenD 唔重開，免得要重新登入）
