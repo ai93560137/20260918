@@ -35,6 +35,12 @@
 
 真倉前要加嘅 env（總指揮 dry-run）：`XAU_ACK_REQUIRE_ACCOUNT=1`（三個服務；要先換 EA v0.38，否則舊 EA 嘅回報會被忽略 → 指令重發）。
 
+## 0d. 10-23 17:5x HKT 切換（使用者喺總指揮工作階段：「即刻切真倉，唔等 0b」）
+- 總指揮已套用：三個服務 `XAU_ACCOUNT=<真戶口>`、`XAU_LOTS=0.01`、`XAU_MAX_LOTS=0.01`、xau-sig `SIG_FOLLOW_LOTS=0.01`；`XAU_ACK_REQUIRE_ACCOUNT=1`（四張 demo EA 已換 v0.38，使用者確認）。修訂 zhuge-xau 00031-vjw（回退 00030-sn7）、zhuge-eurusd 00016-ckn（00015-hxx）、zhuge-xau-sig 00025-4b7（00024-h5g）。09:56 UTC 起 demo 心跳被略過。
+- **0b（兩產品總階梯測試）使用者決定跳過**；階梯程式本身同 demo 一樣，只係冇做兩產品同時觸發嘅演示。
+- 次序：真戶口 EA `InpDryRun=true` 掛四張 → 天覆陣核實第一個真心跳 → 總指揮改三個 control.json `principal_hkd`（真戶口權益 100%）＋POSITIONS.md → 核實 ladder 用新本金 → 使用者 932／931 → 921 → 922 逐張 `InpDryRun=false` → 第一張單核實 cmd_ack 帶 account。
+- 前置狀態：P1 權杖 keep（§0c 減險已部署）；P2 0b 跳過；P3 真戶口已入 env（control.json `live_account` 由總指揮填）；P4 LTC 使用者確認已卸載；P5 本金等真心跳後填；P6／P7 使用者做（下面教學）；P8 緊急停機沿用 10-20 測試；P9 總指揮寫；P10 Telegram 照舊。
+
 ## 1. 邊幾本轉（使用者定；天覆陣建議）
 
 | magic | 服務 | 內容 | 建議 | 理由 |
