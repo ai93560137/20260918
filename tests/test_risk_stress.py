@@ -140,12 +140,12 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R213", auto_risk.SCRIPT_VERSION == "R213")
+check("SCRIPT_VERSION R261", auto_risk.SCRIPT_VERSION == "R261")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
 body = {"action": "futu_risk", "token": "tok", "run_hkt": "2026-10-15 16:30", "script_version": "R193",
-        "metrics": {"equity": 7_800_000, "cushion": 210_000, "delta": {}, "stop_use": {},
+        "metrics": {"equity": 7_800_000, "cushion": 210_000, "delta": {}, "stop_use": {}, "stop_detail": {"MES 跨式": "C 131＋P 144"},
                     "stress": {"night": False, "lines": {"B": 37500, "C": 25000, "D": 15000},
                                "scenarios": [{"name": "ES +5%", "cushion_after": 60_000, "ladder": "A", "junk": 1}]}},
         "alerts": {"mm_jump": "⚠ 富途維持保證金今日升 100%"}, "positions": [], "report": "x"}
@@ -156,6 +156,7 @@ sd = json.loads(FAKE[main.FUTU_STRESS_FILE][0])
 check("stress 檔有 asof／cushion／scenarios", sd["asof_hkt"] == "2026-10-15 16:30" and sd["cushion"] == 210_000
       and sd["scenarios"][0] == {"name": "ES +5%", "cushion_after": 60_000, "ladder": "A"}, sd)
 lat = json.loads(FAKE[main.FUTU_RISK_FILE][0])
+check("R262 latest.json 保留 stop_detail", lat["metrics"].get("stop_detail") == {"MES 跨式": "C 131＋P 144"}, lat["metrics"].get("stop_detail"))
 check("latest.json metrics 保留 stress", lat["metrics"].get("stress", {}).get("lines", {}).get("B") == 37500)
 check("mm_jump 歸總指揮", main.futu_alert_team("mm_jump") == "總指揮")
 FAKE.clear()

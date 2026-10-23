@@ -670,6 +670,8 @@ def _futu_risk_clean_metrics(raw):
     for key in ("stop_use", "margin_hit"):
         src = raw.get(key) if isinstance(raw.get(key), dict) else {}
         out[key] = {_futu_text(k, 40): to_float(v) for k, v in list(src.items())[:10]}
+    src = raw.get("stop_detail") if isinstance(raw.get("stop_detail"), dict) else {}      # [R262] R260 止損線用咗邊幾隻腿、咩價
+    out["stop_detail"] = {_futu_text(k, 40): _futu_text(v, 300) for k, v in list(src.items())[:10]}
     src = raw.get("mhi_lots") if isinstance(raw.get("mhi_lots"), dict) else {}
     out["mhi_lots"] = {_futu_text(k, 24): to_float(v) for k, v in list(src.items())[:6]}
     src = raw.get("delta_parts") if isinstance(raw.get("delta_parts"), dict) else {}      # [R154] 三個 Δ
