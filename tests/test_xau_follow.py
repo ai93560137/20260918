@@ -157,5 +157,57 @@ st, d = hb(15, 4000)
 check("紙上：記 order applied=paper、cmd_text 空", d["cmd_text"] == "" and fstate()["orders"][-1]["applied"] == "paper", d)
 config.EXECUTE = True
 
+print("=== 逐級鎖（使用者 10-23「真」：DAN 7713 出場改逐級鎖，CTC 維持 TP1）===")
+config.EXECUTE = True
+config.FOLLOW_CHANNELS = ("5231", "7713"); config.FOLLOW_LADDER_CHANNELS = ("7713",)
+check("exit_mode：7713 ladder、5231 tp1", follower.exit_mode("3860767713") == "ladder" and follower.exit_mode("5231") == "tp1")
+_o = {"side": "BUY", "tps": [4015.0, 4018.0, 4021.0, 4024.0, 4027.0, 4030.0]}
+_p = {"entry": 4012.2, "stop": 4005.0, "target": 4030.0}
+check("ladder_stop：未到 TP1 → 唔郁", follower.ladder_stop(_o, _p, 4014.9)[0] is None)
+check("ladder_stop：到 TP1 → 保本（入場價）", follower.ladder_stop(_o, _p, 4015.0) == (4012.2, 0, "保本"))
+check("ladder_stop：到 TP2 → 鎖 TP1", follower.ladder_stop(_o, _p, 4018.4) == (4015.0, 1, "鎖 TP1"))
+check("ladder_stop：到 TP3 → 鎖 TP2；回落到 TP2 以下唔放鬆", follower.ladder_stop(_o, {**_p, "stop": 4015.0}, 4021.1)[0] == 4018.0 and follower.ladder_stop(_o, {**_p, "stop": 4018.0}, 4019.0)[0] is None)
+check("ladder_stop：現止損已 ≥ 鎖位 → 唔郁", follower.ladder_stop(_o, {**_p, "stop": 4012.2}, 4016.0)[0] is None)
+_os = {"side": "SELL", "tps": [3985.0, 3982.0, 3979.0]}
+check("ladder_stop 空倉鏡像：到 TP2 → 鎖 TP1 3985", follower.ladder_stop(_os, {"entry": 3988.0, "stop": 3994.0, "target": 3979.0}, 3981.9) == (3985.0, 1, "鎖 TP1"))
+FAKE["xau/sig/signals/recent.json"] = ("[]", 1); FAKE["xau/sig/follow/state.json"] = (json.dumps(follower.empty_state()), 1)
+put_signal("7713_9", lo=None, hi=None, sl=4005, tp=(4015, 4018, 4021, 4024, 4027, 4030), ch="7713", order_type="market")
+st, d = hb(20, 4012)
+check("DAN 市價單：開倉指令 TP 掛最後一級 4030、SL 4005；order 記 exit=ladder、tps 六級", d["cmd_text"].startswith("open|BUY|0.01|sl=4005.00|tp=4030.00|magic=932") and fstate()["orders"][-1]["exit"] == "ladder" and len(fstate()["orders"][-1]["tps"]) == 6, (d["cmd_text"], fstate()["orders"][-1]))
+cid = d["cmd_text"].split("id=")[1]
+client.post("/", data=json.dumps({"action": "cmd_ack", "token": "tok", "id": cid, "ok": True, "ticket": 901}), content_type="application/json")
+POS = [{"ticket": 901, "side": "BUY", "entry": 4012.2, "lots": 0.01, "sl": 4005.0, "tp": 4030.0, "open_time": T0 + 20 * 60}]
+st, d = hb(21, 4013.5, positions=POS)
+check("有倉未到 TP1 → 唔排 modify", d["cmd_text"] == "" and "未到 TP1" in d["message"], d)
+st, d = hb(22, 4015.2, positions=POS)
+check("到 TP1 → modify sl=4012.20（保本）tp=4030.00，id 前綴 f", d["cmd_text"].startswith("modify|all|sl=4012.20|tp=4030.00|magic=932|id=f") and "保本" in d["message"] or "TP1" in d["message"], d)
+mid = d["cmd_text"].split("id=")[1]
+st, d = hb(23, 4016.0, positions=POS)
+check("modify 未 ack → 唔重複排", d["cmd_text"].count("modify") == 1 and "等 EA" in d["message"], d)
+client.post("/", data=json.dumps({"action": "cmd_ack", "token": "tok", "id": mid, "ok": True}), content_type="application/json")
+POS2 = [{**POS[0], "sl": 4012.2}]
+st, d = hb(24, 4016.5, positions=POS2)
+check("ack 後 EA 回報 sl=4012.2，價 4016.5（仍 TP1 級）→ 唔再排", d["cmd_text"] == "" and "已 ≥ 鎖位" in d["message"], d)
+st, d = hb(25, 4018.6, positions=POS2)
+check("到 TP2 → modify sl=4015.00（鎖 TP1）", d["cmd_text"].startswith("modify|all|sl=4015.00|tp=4030.00"), d)
+mid2 = d["cmd_text"].split("id=")[1]
+client.post("/", data=json.dumps({"action": "cmd_ack", "token": "tok", "id": mid2, "ok": True}), content_type="application/json")
+POS3 = [{**POS[0], "sl": 4015.0}]
+st, d = hb(26, 4016.2, positions=POS3)
+check("回落到 TP1–TP2 之間 → 唔放鬆（止損留 4015）", d["cmd_text"] == "" and "已 ≥ 鎖位" in d["message"], d)
+check("order.ladder 記最後鎖位 k=1 sl=4015", fstate()["orders"][-1]["ladder"]["k"] == 1 and fstate()["orders"][-1]["ladder"]["sl"] == 4015.0, fstate()["orders"][-1].get("ladder"))
+# CTC 仍然 TP1 全平
+FAKE["xau/sig/signals/recent.json"] = ("[]", 1); FAKE["xau/sig/follow/state.json"] = (json.dumps(follower.empty_state()), 1)
+put_signal("5231_9", lo=None, hi=None, sl=3979, tp=(4005, 4010), ch="5231", order_type="market")
+st, d = hb(27, 4000)
+check("CTC 市價單仍然 TP1 全平（tp=4005.00）、exit=tp1", d["cmd_text"].startswith("open|BUY|0.01|sl=3979.00|tp=4005.00") and fstate()["orders"][-1]["exit"] == "tp1", d["cmd_text"])
+cid = d["cmd_text"].split("id=")[1]
+client.post("/", data=json.dumps({"action": "cmd_ack", "token": "tok", "id": cid, "ok": True, "ticket": 902}), content_type="application/json")
+st, d = hb(28, 4003.0, positions=[{"ticket": 902, "side": "BUY", "entry": 4000.2, "lots": 0.01, "sl": 3979.0, "tp": 4005.0, "open_time": T0 + 27 * 60}])
+check("CTC 有倉：唔經逐級鎖、唔 modify", d["cmd_text"] == "" and d["message"] == "有倉（SL／TP 伺服器端）", d)
+js = client.get("/?format=json").get_json()
+check("JSON follow.exit 每頻道模式", js["follow"]["exit"] == {"5231": "tp1", "7713": "ladder"} and js["follow"]["ladder_channels"] == ["7713"], js["follow"].get("exit"))
+config.FOLLOW_CHANNELS = ("5231",); config.FOLLOW_LADDER_CHANNELS = ()
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -98,6 +98,7 @@ def status():
     except StorageError:
         acct = {}
     return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": config.FOLLOW_LOTS,
+            "exit": {ch: exit_mode(ch) for ch in config.FOLLOW_CHANNELS}, "ladder_channels": list(config.FOLLOW_LADDER_CHANNELS),
             "execute": config.EXECUTE, "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "floating", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id")), "applied": (re.sub(r"id=([0-9a-f]+)", lambda m: "id=" + executor.mask_id(m.group(1)), str(o.get("applied") or "")))} for o in (st.get("orders") or [])[-20:][::-1]],
             "used": len(st.get("used") or []), "last": st.get("last"),
@@ -143,9 +144,63 @@ def handle_heartbeat(payload):
     return m.jsonify(resp), 200
 
 
+def exit_mode(ch):
+    """tp1（TP1 全平，CTC）或 ladder（逐級鎖，DAN；使用者 10-23 真倉直接開）。"""
+    return "ladder" if str(ch or "")[-4:] in config.FOLLOW_LADDER_CHANNELS else "tp1"
+
+
+def ladder_stop(order, pos, price):
+    """逐級鎖純函數：回傳 (新止損或 None, 級數 k, 原因)。k=0 到 TP1 → 保本（入場價）；k≥1 到 TP(k+1) → 鎖 TP(k)。只准收緊。"""
+    tps, side = order.get("tps") or [], 1 if order.get("side") == "BUY" else -1
+    if not tps or price is None or pos is None:
+        return None, -1, "冇 TP／價／倉"
+    k = -1
+    for i, tp in enumerate(tps):
+        if (price - tp) * side >= 0:
+            k = i
+    if k < 0:
+        return None, k, "未到 TP1"
+    entry = pos.get("entry")
+    want = entry if k == 0 else tps[k - 1]
+    if want is None:
+        return None, k, "冇入場價"
+    want = want - side * config.FOLLOW_LADDER_BUF
+    want = round(want, config.PRICE_DIGITS)
+    cur = pos.get("stop")
+    if cur is not None and (want - cur) * side <= 0:
+        return None, k, f"現止損 {cur} 已 ≥ 鎖位 {want}"
+    if (want - price) * side >= 0:
+        return None, k, "鎖位喺現價錯邊"
+    return want, k, ("保本" if k == 0 else f"鎖 TP{k}")
+
+
+def _manage(m, state, account, price, now):
+    """有倉：逐級鎖頻道按級數收緊止損（排 modify，伺服器端執行）；TP1 頻道唔郁。"""
+    pos = (account.get("positions") or [None])[0]
+    orders = state.get("orders") or []
+    order = next((o for o in reversed(orders) if o.get("ok") and (o.get("ticket") in (None, pos.get("ticket")) if pos else False)), None)
+    if order is None or exit_mode(order.get("ch")) != "ladder":
+        return "有倉（SL／TP 伺服器端）"
+    if m.pending_has(state, "modify"):
+        return "有倉（逐級鎖：等 EA 回報 modify）"
+    want, k, why = ladder_stop(order, pos, price)
+    if want is None:
+        return f"有倉（逐級鎖 k={k}：{why}）"
+    last = order.get("ladder") or {}
+    if last.get("sl") == want and now - (last.get("ts") or 0) < 300:          # 同一鎖位 5 分鐘內唔重複排（EA 拒絕時免每分鐘重試）
+        return f"有倉（逐級鎖 TP{k + 1}：止損 {want} 已排，等 EA）"
+    cid = "f" + uuid.uuid4().hex[:7]
+    target = pos.get("target") if pos.get("target") is not None else (order.get("tps") or [None])[-1]
+    text = executor.enqueue(state, "UPDATE_STOP", want, target, now, cid, tag=order.get("sid"), magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
+    order["ladder"] = {"k": k, "sl": want, "ts": now, "utc": market.fmt_utc(now), "cmd": cid}
+    m.log_event(f"📨 [{config.TEAM_NAME}] 跟單逐級鎖 {order.get('sid')} 到 TP{k + 1} → 止損 {want}（{why}）@ {price}｜{'已排 modify' if text else '紙上'}",
+                component="follow", sid=order.get("sid"), cmd=cid)
+    return f"有倉（逐級鎖 TP{k + 1}：止損 → {want}）"
+
+
 def _decide(m, state, account, price, now):
     if account.get("positions"):
-        return "有倉（SL／TP 伺服器端）"
+        return _manage(m, state, account, price, now)
     if m.pending_has(state, "open"):
         return "等 EA 回報開倉"
     control = m.load_control()
@@ -171,13 +226,16 @@ def _decide(m, state, account, price, now):
         if verdict == "wait":
             return f"{sig['sid']}：{reason}"
         side = sig["side"]; action = "OPEN_LONG" if side == "BUY" else "OPEN_SHORT"
+        ch = str(sig.get("ch") or "")[-4:]; mode = exit_mode(ch)
+        tp_cmd = sig["tp"][-1] if mode == "ladder" else sig["tp"][0]          # 逐級鎖：伺服器端 TP 掛最後一級，中途由 modify 鎖
         cid = "f" + uuid.uuid4().hex[:7]
-        text = executor.enqueue(state, action, sig["sl"], sig["tp"][0], now, cid, lots=config.FOLLOW_LOTS, tag=sig["sid"], magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
-        order = {"id": cid, "sid": sig["sid"], "ch": str(sig.get("ch") or "")[-4:], "side": side, "lots": config.FOLLOW_LOTS, "sl": sig["sl"], "tp": sig["tp"][0],
+        text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=config.FOLLOW_LOTS, tag=sig["sid"], magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
+        order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": config.FOLLOW_LOTS, "sl": sig["sl"], "tp": tp_cmd,
+                 "tps": list(sig["tp"]), "exit": mode,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
         state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]
         state["used"] = [*state.get("used", []), sig["sid"]][-500:]
-        m.log_event(f"📨 [{config.TEAM_NAME}] 跟單 {sig['sid']} {side} {config.FOLLOW_LOTS} 手 @ {price}｜SL {sig['sl']}｜TP1 {sig['tp'][0]}｜{reason}｜{'已排指令' if text else '紙上'}",
+        m.log_event(f"📨 [{config.TEAM_NAME}] 跟單 {sig['sid']} {side} {config.FOLLOW_LOTS} 手 @ {price}｜SL {sig['sl']}｜{'TP' + str(len(sig['tp'])) + ' ' + str(tp_cmd) + '（逐級鎖）' if mode == 'ladder' else 'TP1 ' + str(sig['tp'][0])}｜{reason}｜{'已排指令' if text else '紙上'}",
                     component="follow", sid=sig["sid"], cmd=cid)
         return f"跟單 {sig['sid']} {side}（{reason}）"
     return "冇可跟訊號"
