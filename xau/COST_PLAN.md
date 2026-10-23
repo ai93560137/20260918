@@ -122,5 +122,6 @@
 - **問 Opus 嘅分鐘**（`should_ask`，只 on 模式生效）：新 M15 收盤／浮盈首次到 1R／價格離 SL 或 TP ≤0.5×ATR／距上次問 ≥5 分鐘（`XAU_HOLD_RULES_ASK_MIN`）／冇初始止損或 ATR。其餘分鐘由規則處理，決策紀錄 `kind=hold_rules`、`cost_usd=0`，EA 有未 ack 嘅 modify 就等。
 - **shadow**（預設）：行為完全唔變（Opus 每分鐘照問），每根 M1 記 `rec.hold_rules={sl, stage, r_mult, reason, ask, ai_sl}`；`state.hold_rules.stats`（跨倉累積，狀態 JSON `hold_rules`）：
   `ai_moves`（Opus 實際移止損次數）、`both`／`within_tol`（同一分鐘規則都會移且相差 ≤`XAU_HOLD_RULES_TOL`）、`ai_only`、`rule_only`、`agree_pct`＝within_tol／ai_moves、`rule_minutes`／`minutes`（on 模式會慳幾多分鐘）。
-- **達標開 on**：一星期 `agree_pct ≥ 80%`（且 `ai_only` 嘅個案睇過唔係規則漏咗保本）→ 總指揮 dry-run `env set XAU_HOLD_RULES=on`（先 XAUUSD；EURUSD 另計，tol 0.0010）。退回：`XAU_HOLD_RULES=shadow` 或 `off`。
+- **使用者 10-23 15:xx HKT 批「H 開 on」**（唔等一星期；shadow 數據：BE_R 0.95 之後 Opus 三次移止損全部同規則相差 ≤0.06）：先 zhuge-xau（921）`XAU_HOLD_RULES=on`，EURUSD／xau-sig 等有有倉 shadow 樣本再講。退回 `shadow`。
+- **原定達標開 on**：一星期 `agree_pct ≥ 80%`（且 `ai_only` 嘅個案睇過唔係規則漏咗保本）→ 總指揮 dry-run `env set XAU_HOLD_RULES=on`（先 XAUUSD；EURUSD 另計，tol 0.0010）。退回：`XAU_HOLD_RULES=shadow` 或 `off`。
 - Opus 被問到時嘅決定照行（包括 Opus 自己移遠——`rules.validate_decision` 對 Opus 嘅 UPDATE_STOP 權限冇變）；規則下一分鐘只會收返、唔會放鬆。
