@@ -14,6 +14,27 @@
 | demo 成績（10-21 起） | 921：32 張 12 賺 2 保本 18 蝕，累計 −154.55 HKD（今日 +53）；932 跟單：3 張全 TP1，+96.74；931 S1：0 張；922 EURUSD：demo 落單、紙上標準（IDEAS #28）未達 | `TEST_RESULTS.md`、狀態 JSON |
 | 預先登記門檻 | 921 期望值仍負；932 3／30；931 冇樣本；922 未達 #28 | `IDEAS.md` #123／#126／#28、`TEST_PLAN.md` |
 
+## 0b. 使用者決定（10-23，經總指揮）
+- **四本全部轉真倉**：921、922 EURUSD、931 S1、932 跟單，全部 0.01 手起；學生照影子。（天覆陣建議 922 留 demo，使用者決定全轉。）
+- **權杖「keep 123456」**：使用者明確揀唔換（總指揮喺 RISK_LADDER 記低係使用者決定同風險）。因此加 §0c 減險。
+
+## 0c. 權杖公開嘅減險（程式已入 PR #299；真倉前要開）
+入口盤點（`xau/main.py entry()`）：
+
+| 入口 | 要乜先過 | 可以做到乜 | 減險 |
+|---|---|---|---|
+| GET `/`、`?format=json` | 無 | 讀狀態 | **已改**：`account_id`／`xau_account` 只露尾 2 位；`pending_cmds`／跟單 `pending`／`orders` 嘅指令 id 遮罩（`id=fe******`）→ 唔知真戶口號、唔知未完成指令 id |
+| heartbeat（check_gate／heartbeat） | 權杖 ＋ **`account`＝`XAU_ACCOUNT`** | 假 K 線／假持倉／假權益 → 影響決策同階梯；收到 `cmd_text` | 真戶口號只放 env／control.json，公開 JSON 已遮罩 → 攻擊者估唔到 `account`；日誌會見「非 XAU_ACCOUNT 嘅心跳，略過」 |
+| cmd_ack | 權杖 ＋ id | 冒認回報令服務以為指令已執行（EA 之後唔再收到） | **已改**：帶 `account` 就要同 `XAU_ACCOUNT` 一致（EA v0.38 回報加登入號）；`XAU_ACK_REQUIRE_ACCOUNT=1` 時冇 `account` 嘅回報一律忽略（**真倉開 1**；demo 舊 EA 用 0）；id 已遮罩所以估唔到 |
+| test_cmd（HTTP／GCS） | 權杖 ＋ `XAU_TEST_CMDS=1` | 直接排 open／close／modify | **保持 `XAU_TEST_CMDS=0`**（三個服務而家都係 0；真倉後唔再開） |
+| action=tg_signal（舊入口，zhuge-xau／eurusd） | 權杖 | 建立「待確認」訊號、發 Telegram 畀使用者按 ✅ | 唔會直接落單（要 Telegram callback 嘅 `TG_SIGNAL_WEBHOOK_SECRET` 標頭＋白名單）；zhuge-xau／eurusd 未設 `TG_SIGNAL_*` env → 入口等於無效。訊號書服務只收 HMAC 簽名入口（`TG_SIGNAL_INGEST_SECRET`，另一個私人密鑰） |
+| Telegram callback `?tg=signal` | `TG_SIGNAL_WEBHOOK_SECRET` 標頭＋chat 白名單 | — | 未設 env → 唔生效 |
+| control.json（PAUSE／STOP／本金） | GCS 寫入權限（服務帳戶） | — | 唔經 HTTP |
+
+剩餘風險（使用者接受）：知道真戶口登入號嘅人可以用公開權杖送假心跳影響決策。登入號唔入 repo／對話／公開 JSON，只喺 env 同 control.json。
+
+真倉前要加嘅 env（總指揮 dry-run）：`XAU_ACK_REQUIRE_ACCOUNT=1`（三個服務；要先換 EA v0.38，否則舊 EA 嘅回報會被忽略 → 指令重發）。
+
 ## 1. 邊幾本轉（使用者定；天覆陣建議）
 
 | magic | 服務 | 內容 | 建議 | 理由 |
@@ -30,12 +51,12 @@
 
 | # | 項目 | 誰做 | 點做 | 狀態 |
 |---|---|---|---|---|
-| P1 | **換私人權杖** | 總指揮＋使用者 | 總指揮生成一個隨機權杖（唔入對話／repo），`--profile xau env set WEBHOOK_SECRET_TOKEN=<新>`、`--profile eurusd …`、`--profile xausig …`（三個同一個值）；使用者四張圖表 EA（921、922、931、932）`InpToken` 填同一個值。**次序**：先改 EA 再改服務會令心跳 403 幾分鐘，建議先服務後 EA，中間心跳 403 屬預期（`gcp_agent conditional_env` 會提醒） | ☐ |
+| P1 | ~~換私人權杖~~ **使用者 10-23 決定 keep 123456** → 改為 §0c 減險：真倉前 `XAU_ACK_REQUIRE_ACCOUNT=1`（三服務）＋EA v0.38 | 總指揮＋使用者 | ~~總指揮生成一個隨機權杖（唔入對話／repo），`--profile xau env set WEBHOOK_SECRET_TOKEN=<新>`、`--profile eurusd …`、`--profile xausig …`（三個同一個值）；使用者四張圖表 EA（921、922、931、932）`InpToken` 填同一個值。**次序**：先改 EA 再改服務會令心跳 403 幾分鐘，建議先服務後 EA，中間心跳 403 屬預期（`gcp_agent conditional_env` 會提醒） | ☐ |
 | P2 | **總階梯 0b 驗證（demo）** | 總指揮（put control.json）＋天覆陣核實 | demo 戶口：XAUUSD 同 EURUSD 各開一張（可以等自然開倉，或者 `XAU_TEST_CMDS=1` 用 test_cmd 開；完事要關返 0），總指揮將兩個 control.json `principal_hkd` 暫改到令合計浮虧穿 −20% → 下一根 M1 兩個服務同時 PAUSE（`ladder.level` B、「停開新倉」、Telegram）；還原本金後下根 M1 自動解。證據寫入 TEST_RESULTS | ☐ |
 | P3 | **真倉戶口號碼** | 使用者→總指揮 | 使用者確認用邊個真錢戶口（有多過一個）；總指揮寫入三個 control.json `live_account`（私人）；之後 env `XAU_ACCOUNT=<真戶口>`（三個服務同一個） | ☐ |
 | P4 | **LTC 跟單主帳** | 使用者 | 確認 Local Trade Copier 仍然卸載，或已排除 magic 921／931／932（否則天覆陣嘅單會被複製到從帳） | ☐ |
 | P5 | **真倉本金** | 使用者→總指揮 | 三個 control.json `principal_hkd` 改成真倉分配本金（同一個數，私人）；日蝕 −20% PAUSE 線＝本金 ×20%；`equity_peak` 會隨本金重設 | ☐ |
-| P6 | **真戶口 MT5 準備** | 使用者 | 真戶口 MT5：四張 XAUUSD 圖表（EURUSD 留 demo 就三張）掛 EA v0.37，`InpMagic` 921／931／932（922 如轉），`InpDryRun=true` 先；「允許 WebRequest 的 URL」加 `https://zhuge-xau-1056099871997.europe-west1.run.app` 同 `https://zhuge-xau-sig-1056099871997.europe-west1.run.app`（EURUSD 加 zhuge-eurusd）；`InpBotMagics` 預設已包 921–925、931–935；`InpLedgerStart` 設為轉真倉當日（累計由 0 起計）；`InpMaxLots` 0.01 或 0.02（第二道鎖） | ☐ |
+| P6 | **真戶口 MT5 準備** | 使用者 | 真戶口 MT5：三張 XAUUSD 圖表（921／931／932）＋一張 EURUSD（922）掛 **EA v0.38**（cmd_ack 帶登入號；PR #299），`InpMagic` 921／931／932（922 如轉），`InpDryRun=true` 先；「允許 WebRequest 的 URL」加 `https://zhuge-xau-1056099871997.europe-west1.run.app` 同 `https://zhuge-xau-sig-1056099871997.europe-west1.run.app`（EURUSD 加 zhuge-eurusd）；`InpBotMagics` 預設已包 921–925、931–935；`InpLedgerStart` 設為轉真倉當日（累計由 0 起計）；`InpMaxLots` 0.01 或 0.02（第二道鎖） | ☐ |
 | P7 | **demo EA 處理** | 使用者 | demo 戶口嘅 EA 全部卸載或 `InpDryRun=true`；否則兩個戶口都會送心跳，服務只收 `XAU_ACCOUNT` 嗰個，另一個 `ignored`（日誌會見） | ☐ |
 | P8 | **緊急停機驗證** | 總指揮＋天覆陣 | 轉真倉前喺 demo 試一次：總指揮 put control.json `mode=STOP set_by=user` → 下一根 M1 服務排 `close\|all`、唔問 Claude；還原 RUN。另外確認 EA `InpDryRun=true` 幾秒內令指令唔執行（10-20 測試 1–9 已證） | ☐（10-20 測試 5/6 已做過 STOP／PAUSE，轉真倉前再做一次） |
 | P9 | **POSITIONS.md 登記列** | 總指揮 | 開真倉前登記（magic、產品、手數、戶口＝「天覆陣真倉戶口」唔寫號碼）；配對規則 | ☐ |
@@ -44,9 +65,9 @@
 ## 3. 切換當日次序（P1–P10 完成後）
 
 1. 總指揮 dry-run → 使用者批 → `--yes`：
-   - `--profile xau env set XAU_ACCOUNT=<真戶口> XAU_LOTS=0.01 XAU_MAX_LOTS=0.01`
-   - `--profile xausig env set XAU_ACCOUNT=<真戶口> SIG_FOLLOW_LOTS=0.01`（931 用 `XAU_LOTS`，932 用 `SIG_FOLLOW_LOTS`）
-   - 922 如轉：`--profile eurusd env set XAU_ACCOUNT=<真戶口> XAU_LOTS=0.01`；留 demo 就唔改（仍收 demo 心跳）
+   - `--profile xau env set XAU_ACCOUNT=<真戶口> XAU_LOTS=0.01 XAU_MAX_LOTS=0.01 XAU_ACK_REQUIRE_ACCOUNT=1`
+   - `--profile xausig env set XAU_ACCOUNT=<真戶口> XAU_LOTS=0.01 SIG_FOLLOW_LOTS=0.01 XAU_ACK_REQUIRE_ACCOUNT=1`（931 用 `XAU_LOTS`，932 用 `SIG_FOLLOW_LOTS`）
+   - `--profile eurusd env set XAU_ACCOUNT=<真戶口> XAU_LOTS=0.01 XAU_ACK_REQUIRE_ACCOUNT=1`（使用者 10-23：922 都轉）
 2. 使用者：真戶口 EA `InpDryRun=false`（先 932／931 圖表，再 921）；demo EA 卸載。
 3. 天覆陣核實（讀取）：三個服務 `account_id`＝真戶口（JSON 有，唔會寫入 repo）、`ea_dry_run=false`、`trade_allowed` 全 true、`live_positions` 來源 EA、`ladder.scope=account`、principal 已設；第一次心跳日誌冇 403／ignored。
 4. 第一張單 0.01 手，使用者睇住；TEST_RESULTS 另開「真倉」表（只寫 HKD 盈虧，唔寫權益）。

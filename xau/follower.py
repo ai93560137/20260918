@@ -2,6 +2,7 @@
 獨立 magic（FOLLOW_MAGIC＝932）、獨立狀態前綴 xau/sig/follow/，成績同 S1（931）分得開；戶口總階梯（§6c）由 EA InpBotMagics 合計計入。
 規則：市價單訊號即刻市價入；限價單訊號等現價入到入場區（±點差）先市價入；收到時已過 TP1、止損錯邊、TTL 過咗就唔入（標 used 唔再試）；
 一次只一張；control 非 RUN、階梯 Ⓑ／Ⓓ、EA 唔准交易就唔開；唔改止損、唔主動平（SL／TP 伺服器端）。XAU_EXECUTE=0 只記紙上。"""
+import re
 import uuid
 
 import config
@@ -98,8 +99,9 @@ def status():
         acct = {}
     return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": config.FOLLOW_LOTS,
             "execute": config.EXECUTE, "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "floating", "trade_allowed", "dry_run")},
-            "orders": (st.get("orders") or [])[-20:][::-1], "used": len(st.get("used") or []), "last": st.get("last"),
-            "pending": [c for c in (st.get("pending_cmds") or []) if not c.get("acked")]}
+            "orders": [{**o, "id": executor.mask_id(o.get("id")), "applied": (re.sub(r"id=([0-9a-f]+)", lambda m: "id=" + executor.mask_id(m.group(1)), str(o.get("applied") or "")))} for o in (st.get("orders") or [])[-20:][::-1]],
+            "used": len(st.get("used") or []), "last": st.get("last"),
+            "pending": [executor.mask_cmd(c) for c in (st.get("pending_cmds") or []) if not c.get("acked")]}   # 10-23：id 遮罩
 
 
 def ack(cid, payload, now):
