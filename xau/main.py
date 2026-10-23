@@ -434,7 +434,11 @@ def process_bar(state, bar, m1, m15, account, now):
         rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
     ps = None
     if pos is None and not config.SIGNAL_BOOK and prescreen.mode() != "off":   # 慳成本 S：空倉規則前篩（shadow 只記錄；on 時唔問 Opus）
-        ps = prescreen.evaluate(m1, m15, bar["close"], state.get("prescreen_anchor"), account.get("server_offset"), now)
+        try:
+            ps = prescreen.evaluate(m1, m15, bar["close"], state.get("prescreen_anchor"), account.get("server_offset"), now)
+        except Exception as exc:                           # 前篩出錯唔可以阻住決策：當「要問」（fail-open），記 WARNING
+            log_event(f"⚠️ [{config.TEAM_NAME}] prescreen 例外，當要問：{exc!r}", severity="WARNING", component="prescreen")
+            ps = {"ask": True, "reasons": [f"prescreen 例外：{type(exc).__name__}"], "near": None}
         rec["prescreen"] = {"mode": prescreen.mode(), "ask": ps["ask"], "reasons": ps["reasons"], "near": ps["near"]}
         if prescreen.mode() == "on" and not ps["ask"]:
             state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), False)
