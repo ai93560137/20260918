@@ -250,5 +250,9 @@ python3 scripts/gcp_agent.py --profile xausig deploy --copy-env ANTHROPIC_API_KE
 - 成功標準（#123）：demo 30 張扣成本每張 >+0.5 美元、最大回撤 <100 美元、最長連輸 ≤5。
 - **10-23 使用者：「DAN 都加入跟單 和CTC一樣」**（IDEAS #126）：唔改程式，env `SIG_FOLLOW_CHANNELS=5231,7713`。DAN 訊號多數係限價入場區（現價反向 4 ±2），follower 會等現價入區（±點差）先入；SL 6／TP1 3，TP1 走盈虧比 1:2，要勝率 >70% 先有錢賺——DAN 回測 TP1 先到比率高（§21 TP1 平一半勝率 100%，valid 14 張），但 TP1 走會放棄 DAN 最值錢嘅「去晒 TP6」部分，所以 #126 要同時記每張「TP1 走 vs 逐級鎖」差幾多 R，30 張後決定要唔要加 trailing 變體。一次只一張：兩頻道同時有訊號先到先得。成績喺 `xau/sig/follow/` 按 `ch` 分開睇。
 
+### 25b. 10-23 使用者：「做，逐級鎖 唔用 shadow，真」＋遲到市價訊號（IDEAS #126 補）
+- **逐級鎖（`SIG_FOLLOW_LADDER_CHANNELS=7713`，DAN）**：開倉 SL＝頻道原 SL、TP 掛**最後一級**；之後每個心跳有倉時 `follower._manage`：到 TP1 → modify 止損到入場價（保本）；到 TP(k) → 止損移到 TP(k−1)；只准收緊；同一鎖位 5 分鐘內唔重複排；modify 未 ack 唔再排。CTC（5231）維持 TP1 全平。根據：90 日回測 DAN 61–68% 去晒 TP6、逐級鎖 valid +1.03R 回撤 −0.1R（§21）。真倉直接開（使用者決定），30 張後對照 TP1 全平（#126）。
+- **遲到市價訊號**：解析器加 `quoted_price`（頻道寫嘅市價）；`signals.ref_entry` 決定「原本入場價」：入場區中位 → quoted_price → 等距 TP 推算（TP1 − 級距，要喺 SL 同 TP1 之間）→ 收到時價；`is_late` 用呢個價計「已走 ≥1R」，S1 `active` 同跟單 `entry_check` 共用；訊號紀錄加 `entry_ref`／`entry_ref_src`，日後統計每頻道「走咗」比例（回測 44%）。2766 嗰種（TP1 只剩 0.5）由 `SIG_FOLLOW_MIN_TP` 擋。
+
 ## 26. 學徒計劃階段 0＋1 上線（2026-10-22 使用者批）
 見 `xau/DAN_APPRENTICE.md` 實作紀錄：每條入場訊號存特徵快照（`snapshots/`，冇原文）；規則學生（擺動點／關鍵價位／前 15 分鐘反向）每根 M1 交卷、Claude 學生（`XAU_SHADOW=1`）活躍時段每 30 分鐘交卷；參考頻道訊號到就對答案；學生自己判斷用實際價計 DAN 結構 2R。成功標準見 IDEAS #122（≥40 條訊號：方向 ≥70%、入場區 ≥50%、交卷 ≥50%；多手 >0R 並贏隨機）。

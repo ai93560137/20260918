@@ -113,6 +113,7 @@ def normalize(raw):
         "symbol": str(raw.get("symbol") or "").strip().upper()[:16] or None,
         "side": side if side in ("BUY", "SELL") else None,
         "order_type": str(raw.get("order_type") or "").strip().lower()[:16] or None,
+        "quoted_price": f(raw.get("quoted_price")),                                   # 10-23：市價訊號頻道寫嘅價（計「走咗」用）
         "entry_low": lo, "entry_high": hi, "sl": f(raw.get("sl")),
         "tp": [v for v in (f(t) for t in tps) if v is not None and v > 0][:8],   # 頻道常見 6 個 TP（10-21 DAN VIP）；5 會截走最後一個
         "update_action": str(raw.get("update_action") or "").strip()[:200] or None,
@@ -429,8 +430,11 @@ def handle_signal(payload):
         status, reason = validate(sig, price, age)
     rec.update(signal=sig, parse_error=(err or "")[:200] or None, status=status, reason=reason,
                price=price if age is not None and age <= config.SIG_PRICE_MAX_AGE_SEC else None)
+    if sig and rec.get("price") is not None:
+        _ref, _src = ref_entry({**sig, "price": rec["price"]})
+        rec["entry_ref"], rec["entry_ref_src"] = _ref, _src      # 10-23：原本入場價同來源（zone／quoted／inferred／received），統計「走咗」用
     if status == "valid" and is_late({**sig, "price": rec["price"]}, rec["price"]):
-        rec["late"] = True                                   # S1 唔用（價已過 TP1／走咗 ≥1R），但成績照計
+        rec["late"] = True                                   # S1／跟單唔用（價已過 TP1／走咗 ≥1R），但成績照計
         rec["reason"] = "收到時價已過 TP1 或走咗 ≥1R（只計成績）"
     if sig and sig.get("kind") == "new_signal" and status in ("valid", "unverified") and config.STUDENT:
         try:
@@ -450,12 +454,31 @@ def handle_signal(payload):
     return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
 
+def ref_entry(r):
+    """訊號「原本嘅入場價」：入場區中位 → 頻道寫嘅市價（quoted_price）→ 由等距 TP 推算（TP1 − 級距，DAN 結構每級 3 美元；
+    要喺 SL 同 TP1 之間先信）→ 收到時嘅價。回傳 (價, 來源)。10-23：市價訊號之前只能用收到時價，計唔到「走咗」。"""
+    lo, hi = r.get("entry_low"), r.get("entry_high")
+    if lo is not None and hi is not None:
+        return (lo + hi) / 2, "zone"
+    if r.get("quoted_price") is not None:
+        return r["quoted_price"], "quoted"
+    tps, sl, side = r.get("tp") or [], r.get("sl"), r.get("side")
+    if len(tps) >= 2 and sl is not None and side in ("BUY", "SELL"):
+        step = tps[1] - tps[0]
+        sgn = 1 if side == "BUY" else -1
+        if step * sgn > 0 and (len(tps) < 3 or abs((tps[2] - tps[1]) - step) <= abs(step) * 0.34):   # 等距（容許少少唔齊）
+            est = tps[0] - step
+            if (est - sl) * sgn > 0 and (tps[0] - est) * sgn > 0:
+                return est, "inferred"
+    return r.get("price"), "received"
+
+
 def is_late(r, price):
-    """S1：訊號已經「走咗」——現價過咗 TP1，或者已經向有利方向離入場 ≥ SIG_LATE_R × 止損距離（跟唔到）。純函數。"""
+    """S1／跟單：訊號已經「走咗」——現價過咗 TP1，或者已經向有利方向離入場 ≥ SIG_LATE_R × 止損距離（跟唔到）。純函數。
+    入場價用 ref_entry（入場區／頻道引用價／等距 TP 推算／收到時價）。"""
     if price is None or r.get("sl") is None or r.get("side") not in ("BUY", "SELL"):
         return False
-    lo, hi = r.get("entry_low"), r.get("entry_high")
-    mid = (lo + hi) / 2 if lo is not None else r.get("price")        # 市價單用收到時嘅價
+    mid, _ = ref_entry(r)
     if mid is None:
         return False
     sgn = 1 if r["side"] == "BUY" else -1

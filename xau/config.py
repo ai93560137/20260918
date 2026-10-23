@@ -178,6 +178,10 @@ FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
 # 10-23 DAN 第一張跟單：市價 BUY 時 TP1 只差 0.5 美元、SL 差 9.5 → 加「剩餘空間」下限：
 #   現價到 TP1 ≥ SIG_FOLLOW_MIN_TP（價格單位；DAN TP1 步距 3、CTC 4–6，唔受影響），另外同 S1 一樣用 signals.is_late 略過「走咗」嘅限價訊號
 FOLLOW_MIN_TP = _f("SIG_FOLLOW_MIN_TP", 2.0 if PRODUCT["digits"] == 2 else 0.0004)
+# 10-23 使用者「逐級鎖，唔用 shadow，真」：呢啲頻道（尾 4 位）嘅跟單出場用逐級鎖——開倉 TP 掛最後一級，到 TP1 止損移保本，
+#   之後每到 TP(k) 止損移到 TP(k−1)，只准收緊；其他頻道維持 TP1 全平。例 SIG_FOLLOW_LADDER_CHANNELS=7713（DAN）
+FOLLOW_LADDER_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_LADDER_CHANNELS", "").split(",") if x.strip())
+FOLLOW_LADDER_BUF = _f("SIG_FOLLOW_LADDER_BUF", 0.0)          # 鎖位再退幾多（價格單位；0＝剛好保本／上一級）
 # 學徒計劃階段 0／1（使用者 10-22 批；xau/DAN_APPRENTICE.md、IDEAS #122）：特徵快照（永遠開）、規則學生（免費）、Claude 學生（XAU_SHADOW=1 先問 Opus）
 STUDENT = _b("XAU_STUDENT", True)
 SHADOW = _b("XAU_SHADOW", False)

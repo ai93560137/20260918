@@ -127,9 +127,18 @@ r = last_rec(); state = json.loads(FAKE["xau/state.json"][0])
 check("on：規則問、Haiku 擋 → kind=screen，stats minutes 加", r["kind"] == "screen" and FB.calls == ["screen"] and state["prescreen_stats"]["minutes"] == 6, (r.get("kind"), FB.calls, state["prescreen_stats"]))   # 第 4 分鐘有倉唔經前篩
 FB.look = True
 check("JSON status 有 prescreen.mode／skip_pct", xau.build_status()["prescreen"]["mode"] == "on" and "skip_pct" in xau.build_status()["prescreen"])
-config.PRESCREEN = "off"
+config.PRESCREEN = "on"
+_orig = prescreen.evaluate
+def _boom(*a, **k): raise ValueError("boom")
+prescreen.evaluate = _boom
 FB.calls.clear()
 st, d = hb(8, 4001.91, m15_time=T0 + 900)
+r = last_rec()
+check("前篩例外 → fail-open 當要問（照問 Haiku＋Opus、kind=decide、reasons 記例外），唔中斷決策", r["kind"] == "decide" and FB.calls == ["screen", "decide"] and any("例外" in x for x in r["prescreen"]["reasons"]), (r.get("kind"), FB.calls, r.get("prescreen")))
+prescreen.evaluate = _orig
+config.PRESCREEN = "off"
+FB.calls.clear()
+st, d = hb(9, 4001.92, m15_time=T0 + 900)
 r = last_rec()
 check("off：每分鐘照問，rec 冇 prescreen", "prescreen" not in r and FB.calls == ["screen", "decide"], (r.keys(), FB.calls))
 config.PRESCREEN = "shadow"

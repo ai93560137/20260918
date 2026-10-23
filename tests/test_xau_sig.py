@@ -150,6 +150,17 @@ check("差一個點差內（頻道報價唔同）→ 當成交", o["filled_ts"] 
 o = signals.evaluate({**V, "order_type": "market"}, [bar(1020, 4104, 4104.5)], 0, now=1100)
 check("市價單（BUY NOW）第一根就成交", o["filled_ts"] == 1020, o)
 check("normalize 保留 order_type", signals.normalize({"order_type": "Market"})["order_type"] == "market")
+print("=== 10-23 遲到市價訊號：ref_entry／is_late ===")
+check("normalize 保留 quoted_price", signals.normalize({"quoted_price": "4012"})["quoted_price"] == 4012.0 and signals.normalize({})["quoted_price"] is None)
+check("ref_entry：有入場區 → 中位 zone", signals.ref_entry({"entry_low": 3999, "entry_high": 4001, "price": 4003}) == (4000.0, "zone"))
+check("ref_entry：市價有 quoted_price → quoted", signals.ref_entry({"entry_low": None, "entry_high": None, "quoted_price": 4012.0, "price": 4014.56}) == (4012.0, "quoted"))
+_dan = {"entry_low": None, "entry_high": None, "quoted_price": None, "side": "BUY", "sl": 4005.0, "tp": [4015.0, 4018.0, 4021.0, 4024.0, 4027.0, 4030.0], "price": 4014.56}
+check("ref_entry：DAN 2766 等距 TP → 推算入場 4012（TP1 − 級距）inferred", signals.ref_entry(_dan) == (4012.0, "inferred"))
+check("ref_entry：TP 唔等距／推算價唔喺 SL–TP1 之間 → 收到時價 received", signals.ref_entry({**_dan, "tp": [4015.0, 4030.0, 4031.0]}) == (4014.56, "received") and signals.ref_entry({**_dan, "tp": [4015.0, 4040.0]}) == (4014.56, "received"))
+check("ref_entry：空單等距 TP 推算（TP1 ＋ 級距）", signals.ref_entry({"entry_low": None, "entry_high": None, "side": "SELL", "sl": 4020.0, "tp": [4005.0, 4002.0, 3999.0], "price": 4006.0}) == (4008.0, "inferred"))
+_q = {"entry_low": None, "entry_high": None, "quoted_price": 4000.0, "side": "BUY", "sl": 3990.0, "tp": [4030.0], "price": 4011.0}
+check("is_late 用 quoted_price：走咗 11 ≥ 1×風險 10 → late；9 → 唔 late", signals.is_late(_q, 4011.0) and not signals.is_late({**_q, "price": 4009.0}, 4009.0))
+check("is_late DAN 2766：推算入場 4012、價 4014.56（走 2.56 < 風險 7、未過 TP1）→ 唔 late（由 SIG_FOLLOW_MIN_TP 擋）；價 4015.1 過 TP1 → late", not signals.is_late(_dan, 4014.56) and signals.is_late(_dan, 4015.1))
 o1 = signals.evaluate(V, [bar(1020, 4101, 4103)], 0, now=1100)
 o2 = signals.evaluate(V, [bar(1020, 4101, 4103), bar(1080, 4106, 4111)], 0, prev=o1, now=1200)
 check("分兩次累計（K 線窗口有限）→ all_tp", o2["final"] == "all_tp" and o2["max_tp"] == 2, o2)

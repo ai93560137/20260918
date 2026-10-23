@@ -291,6 +291,8 @@ SIGNAL_FORMAT = {"type": "json_schema", "schema": {
         "symbol": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "side": {"anyOf": [{"type": "string", "enum": ["BUY", "SELL"]}, {"type": "null"}]},
         "order_type": {"anyOf": [{"type": "string", "enum": ["market", "limit", "stop"]}, {"type": "null"}]},
+        "quoted_price": {"anyOf": [{"type": "number"}, {"type": "null"}],
+                         "description": "For a market/now order: the current or entry price the channel writes in the message (e.g. 'buy now 4012'); null if not written. Never guess."},
         "entry_low": {"anyOf": [{"type": "number"}, {"type": "null"}]},
         "entry_high": {"anyOf": [{"type": "number"}, {"type": "null"}]},
         "sl": {"anyOf": [{"type": "number"}, {"type": "null"}]},
@@ -299,7 +301,7 @@ SIGNAL_FORMAT = {"type": "json_schema", "schema": {
         "confidence": {"type": "number"},
         "analysis": {"type": "string"},
     },
-    "required": ["kind", "symbol", "side", "order_type", "entry_low", "entry_high", "sl", "tp", "update_action", "confidence", "analysis"],
+    "required": ["kind", "symbol", "side", "order_type", "quoted_price", "entry_low", "entry_high", "sl", "tp", "update_action", "confidence", "analysis"],
     "additionalProperties": False}}
 
 
