@@ -74,6 +74,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_CALL_WHEN_LOCKED` | 0 | 空倉且電閘 LOCK 時唔問 Claude（慳錢） |
 | `XAU_MAGIC` | 921 | 同新 EA `InpMagic` 一致（線上 V23 用 920） |
 | `XAU_HOLD_RULES` | shadow | 慳成本 H（`hold_rules.py`，COST_PLAN §6）：有倉時程式按教學第 1／4 條移止損。`off`／`shadow`（只記「規則會點移」vs Opus 實際點移，唔改行為）／`on`（規則處理；Opus 只喺新 M15、首次 1R、價格離 SL／TP ≤0.5×M15 ATR、每 `XAU_HOLD_RULES_ASK_MIN` 分鐘先問）。止損只准收緊、唔收到 0.5×ATR 內、未到 0.95R 唔郁（`hold_rules.BE_R`，使用者 10-23 由 1.0 放寬） |
+| `XAU_PRESCREEN` | shadow | 慳成本 S（`prescreen.py`，COST_PLAN §7b）：空倉規則前篩。`off`／`shadow`（照問，只記 skip_pct 同 opens_in_skip）／`on`（唔符合條件嘅分鐘唔問 Opus 亦唔問 Haiku，kind=prescreen）。條件：新 M15／價格離上次問 ≥`XAU_PRESCREEN_ATR_MULT`(0.3)×M1 ATR／貼近擺動點或前日高低亞洲高低 ≤`XAU_PRESCREEN_NEAR`(2.0；外匯 0.0005)／前 15 分鐘走 ≥`XAU_PRESCREEN_MOVE15`(3.0；外匯 0.0010) |
 | `XAU_HOLD_RULES_ASK_MIN` | 5 | on 模式下最多隔幾多分鐘問一次 Opus |
 | `XAU_ACK_REQUIRE_ACCOUNT` | 0 | 10-23 權杖公開（使用者 keep）：1 = cmd_ack 必須帶 `account` 且等於 `XAU_ACCOUNT`（EA v0.38 起有）；0 = 冇 account 都接受（demo 舊 EA）。帶錯 account 一律忽略。公開 JSON 嘅登入號／指令 id 已遮罩 |
 | `XAU_HOLD_RULES_TOL` | 1.0（EURUSD 0.0010） | shadow 統計：Opus 止損同規則相差 ≤tol 算一致（目標一星期 ≥80% 先開 on） |

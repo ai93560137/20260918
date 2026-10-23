@@ -106,6 +106,12 @@
 4. C、E、D2 唔建議。
 5. 每步部署／env 由總指揮 dry-run，使用者喺總指揮工作階段親口批；硬性風控同 RISK_LADDER §6c 一樣都唔郁。
 
+## 7b. 使用者 10-23 20:1x HKT：「開 S shadow」（真倉第一日，921 當日 576 次 Opus $9.42）
+- 程式 `xau/prescreen.py`，`XAU_PRESCREEN` 預設 **shadow**（部署後行為唔變）。空倉時只喺 (a) 新 M15 收盤 (b) 價格離上次問 Opus ≥0.3×M1 ATR（`XAU_PRESCREEN_ATR_MULT`） (c) 貼近 M1 嚴格擺動點／前日高低／亞洲高低 ≤2 美元（`XAU_PRESCREEN_NEAR`；外匯 5 pip） (d) 前 15 分鐘走 ≥3 美元（`XAU_PRESCREEN_MOVE15`；外匯 10 pip）先問 Opus；錨點只喺「會問」嗰分鐘更新（shadow 模擬到 on 嘅行為）。有倉唔經前篩（H 管）；Haiku 篩選仍喺 S 之後。
+- shadow 統計（狀態 JSON `prescreen`）：`minutes`、`skip`／`skip_pct`（on 模式會唔問嘅分鐘比例）、`opens`、`opens_in_skip`（開倉落喺「唔問」分鐘＝會漏嘅單）、`opens_kept_pct`。**達標開 on**：一日 ≥ 20 張開倉樣本（或兩日）之中 `opens_kept_pct ≥ 90%`（10-22 嘅 21 張要 ≥19 張仍放行）；達標由總指揮 dry-run `env set XAU_PRESCREEN=on`（921 先）。
+- 預計：skip 60–70% 空倉分鐘 → XAU 每日 −$4 至 6（Haiku 都慳埋），EUR −$2。
+- 真倉第一日唔動入場模型（使用者問「改用低成本可以嗎」→ 揀 S shadow，拒絕 C／E／換弱模型）。
+
 ## 7. 使用者決定（10-23，經總指揮）：**穩陣（再加 H）＝ G＋L2＋F-EUR＋H**
 
 | 項 | 狀態 | 細節 |
