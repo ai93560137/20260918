@@ -57,8 +57,8 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           TASK: ${{ inputs.task || 'auto' }}
-          GH_SCHEDULE: ${{ github.event.schedule }}   # 排程遲到時照 cron 揀 hedge／deals
           DRY: ${{ inputs.dry_run || 'false' }}
+          SCHEDULE: ${{ github.event.schedule }}   # 遲到嘅 schedule 都按原本 cron 判斷任務
         run: |
           ARGS="--task $TASK"
           if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
