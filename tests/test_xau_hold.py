@@ -71,7 +71,12 @@ check("候選 4004 鬆過現止損 4005 → 唔郁（唔可以移遠）", s["sl"
 s = hold_rules.suggest(pos, flat, 2.0, 4012.0, 3994.0)
 check("價 4012：1×ATR 候選 4010，離現價 2 = 1×ATR ≥ 0.5×ATR → 4010", s["sl"] == 4010.0, s)
 s = hold_rules.suggest(pos, flat, 2.0, 4005.5, 3994.0)
-check("浮盈 5.5 < 6 → 未到 1R 唔郁", s["sl"] is None and s["stage"] == "pre_1r")
+check("浮盈 5.5 = 0.92R < 0.95R → 唔郁", s["sl"] is None and s["stage"] == "pre_1r" and "0.95R" in s["reason"], s)
+s = hold_rules.suggest(pos, flat, 8.0, 4005.72, 3994.0)
+check("使用者 10-23：浮盈 5.72 = 0.95R → 保本（C30 嗰種 0.99R 唔再漏）", s["sl"] == 4000.0 and s["reason"] == "保本", s)
+s = hold_rules.suggest(pos, flat, 8.0, 4005.6, 3994.0)
+check("浮盈 5.6 = 0.93R → 仍然唔郁", s["sl"] is None and s["stage"] == "pre_1r", s)
+check("BE_R 係 0.95", hold_rules.BE_R == 0.95)
 pos4 = {**pos, "stop": 4003.9}
 s = hold_rules.suggest(pos4, flat, ATR, 4006.0, 3994.0)
 check("收緊 0.1 < 0.1×ATR（0.2）→ 唔郁（免每分鐘 modify）", s["sl"] is None and "幅度" in s["reason"], s)
