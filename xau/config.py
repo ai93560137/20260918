@@ -194,6 +194,9 @@ STUDENT_R_TARGET = _f("XAU_STUDENT_R_TARGET", 2.0)                  # 學生自�
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h
 CACHE_TTL_STABLE = _s("CACHE_TTL_STABLE", "1h")
+# 10-23 晚：M1 段（整點前 M1，每個鐘先變一次）由 5m 改 1h。10-23 實數：Haiku 篩走＋H 規則令 Opus 調用相隔常 >5 分鐘，5m 段 62 次重寫（$0.49）；
+#   1h 寫 $8/M 但每個鐘只寫一次（23×1,596 tok ≈ $0.29）→ 每日慳約 $0.15（XAU）／$0.02（EUR）。退回：CACHE_TTL_M1=5m
+CACHE_TTL_M1 = _s("CACHE_TTL_M1", "1h")
 # F：空倉、上次係 HOLD、價格變動 < REUSE_ATR_MULT × M1 ATR、冇新 M15 收盤 → 沿用 HOLD（最多連續 REUSE_MAX_MIN 分鐘）
 #    off｜shadow（預設：只記錄「會沿用」唔慳錢，驗證一日）｜on
 REUSE_HOLD = _s("XAU_REUSE_HOLD", "shadow").lower()

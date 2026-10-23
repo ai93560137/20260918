@@ -256,8 +256,8 @@ class ClaudeBrain:
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 output_config={"effort": config.EFFORT},
                 messages=[{"role": "user", "content": _user_content(context, "Call the `decide` tool.", stable_ttl=config.CACHE_TTL_STABLE if student else config.CACHE_TTL_STABLE,
-                                                                     ttl=("1h" if student else CACHE_TTL_DECIDE), cache_m1=not student)}])
-            usage = _usage(msg, config.MODEL)
+                                                                     ttl=("1h" if student else config.CACHE_TTL_M1), cache_m1=not student)}])   # 10-23：M1 段預設 1h
+            usage = _usage(msg, config.MODEL, ttl=("1h" if student else config.CACHE_TTL_M1))
             ms = int((time.time() - started) * 1000)
             base = {"_usage": usage, "_lessons": ver, "_ms": ms}
             if msg.stop_reason == "refusal":
