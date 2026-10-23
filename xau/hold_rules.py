@@ -4,7 +4,7 @@ Opus 只喺 (a) 新 M15 收盤 (b) 浮盈首次到 1R (c) 價格入到離 SL／T
 硬規則：止損只准收緊（唔可以移遠）；唔收到 0.5×ATR 之內；未到 1R 唔郁（教學第 1 條）。純函數，冇 I/O。"""
 import config
 
-BE_R = 1.0            # 浮盈 ≥1R → 保本（教學第 1 條）
+BE_R = 0.95           # 浮盈 ≥0.95R → 保本（教學第 1 條；使用者 10-23 由 1.0 放寬：C30 Opus 5.59／5.6＝0.99R 已移保本，規則嚴格 1R 冇郁，差一個四捨五入）
 MIN_ATR_MULT = 0.5    # 唔收到 0.5×M15 ATR 之內（教學第 4 條）
 TRAIL_ATR_MULT = 1.0  # 跟 1×M15 ATR 或擺動點，取較遠（教學第 4 條）
 SWING_BUF_ATR = 0.1   # 擺動點外少少
@@ -58,7 +58,7 @@ def suggest(pos, m1, atr15, price, initial_stop, nd=None):
     profit = (price - entry) * side
     out["r_mult"] = round(profit / r, 2)
     if profit < BE_R * r:
-        out.update(stage="pre_1r", reason=f"浮盈 {out['r_mult']}R < 1R，唔郁")
+        out.update(stage="pre_1r", reason=f"浮盈 {out['r_mult']}R < {BE_R:g}R，唔郁")
         return out
     be = entry
     trail_atr = price - side * TRAIL_ATR_MULT * atr15
