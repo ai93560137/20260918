@@ -1,5 +1,4 @@
 date,time_hkt,market,category,event,impact,affects,event_week,source
-2026-10-16,04:00+1,US,US 期權到期,美股月度期權到期（第三個週五）,Medium,雲垂 MES、人手 EW,,規則推算
 2026-10-19,全日,HK,HK 假期,HK 休市：重陽節補假,Holiday,風揚、雲垂 HSI、蛇蟠、地載,Y,claude/gifted-carson-v2tvhw universes/calendars
 2026-10-19,20:30,CAD,數據,CPI m/m,High,,Y,ForexFactory
 2026-10-19,20:30,CAD,數據,Median CPI y/y,High,,Y,ForexFactory
