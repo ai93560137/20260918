@@ -187,7 +187,7 @@ async def run(dry_run):
     await client.run_until_disconnected()
 
 
-async def backfill(days, dry_run):
+async def backfill(days, dry_run, skip_days=0):
     """讀每個頻道最近 days 日嘅舊訊息（由舊到新），送去訊號書做歷史解析（history=true，唔當即時訊號）。
     每條之間停 2.5 秒（服務每分鐘上限 30 個）；服務按頻道＋訊息 id 去重，中途斷咗再跑會跳過已處理嘅。"""
     import datetime as _dt
@@ -195,6 +195,8 @@ async def backfill(days, dry_run):
     if not dry_run and not (routes and SECRET):
         sys.exit("要先設 TG_ROUTES、TG_SIGNAL_INGEST_SECRET")
     since = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)
+    until = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=skip_days) if skip_days else None   # 10-25：最近 N 日已經入咗唔再送（每條慳 2.5 秒）
+    skipped = 0
     client = make_client()
     await client.start()
     total = sent = 0
@@ -203,6 +205,9 @@ async def backfill(days, dry_run):
         n = 0
         async for msg in client.iter_messages(chat, reverse=True, offset_date=since):   # reverse＋offset_date：由 since 之後、舊到新
             if not (msg.message or "").strip():
+                continue
+            if until is not None and msg.date and msg.date >= until:
+                skipped += 1
                 continue
             reply_text = None
             if msg.is_reply:
@@ -225,7 +230,7 @@ async def backfill(days, dry_run):
             await asyncio.sleep(2.5)
         print(f"📜 頻道 #{getattr(chat, 'id', '?')}：{n} 條有文字嘅訊息", flush=True)
     await client.disconnect()
-    print(f"✅ 歷史訊息完成：共 {total} 條，送出 {sent} 條{'（dry-run 冇送）' if dry_run else ''}", flush=True)
+    print(f"✅ 歷史訊息完成：共 {total} 條，送出 {sent} 條{'（dry-run 冇送）' if dry_run else ''}{f'；最近 {skip_days} 日已有、跳過 {skipped} 條' if skip_days else ''}", flush=True)
 
 
 async def fwd_stats(days):
@@ -273,12 +278,13 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--history", type=int, metavar="DAYS", help="讀每個頻道最近 DAYS 日嘅舊訊息送去訊號書做歷史解析")
+    ap.add_argument("--history-skip-days", type=int, default=0, metavar="N", help="配合 --history：最近 N 日嘅訊息唔再送（之前已經入咗，例如 90）")
     ap.add_argument("--fwd-stats", type=int, metavar="DAYS", help="只印統計：每頻道最近 DAYS 日有幾多條係轉發、原發佈→貼出延遲、原來源 id（唔 POST、唔印原文）")
     args = ap.parse_args()
     if args.fwd_stats:
         return asyncio.run(fwd_stats(args.fwd_stats))
     if args.history:
-        return asyncio.run(backfill(args.history, args.dry_run))
+        return asyncio.run(backfill(args.history, args.dry_run, args.history_skip_days))
     if args.login:
         async def _login():
             client = make_client()

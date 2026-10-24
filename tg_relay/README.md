@@ -92,7 +92,7 @@ sudo journalctl -u tg-relay -n 20 --no-pager        # 睇到「✅ tg-relay-2 �
 sudo systemctl stop tg-relay
 sudo -iu tgrelay bash -c 'cd ~/tg_relay && curl -fsSLo tg_listener.py https://raw.githubusercontent.com/ai93560137/20260918/claude/gcp-trading-v12-rewrite-bz75t2/tg_relay/tg_listener.py && set -a && . ~/.tg_relay.env && set +a && ~/venv/bin/python tg_listener.py --history 90 --dry-run'
 ```
-`--dry-run` 只數每個頻道有幾多條；冇問題就去咗 `--dry-run` 再跑一次（每條停 2.5 秒，幾千條要一至兩個鐘，可以用 `tmux` 跑）。跑完：
+`--history 365 --history-skip-days 90` 只送 90 日之前嘅（最近 90 日已經入咗，每條慳 2.5 秒）。`--dry-run` 只數每個頻道有幾多條；冇問題就去咗 `--dry-run` 再跑一次（每條停 2.5 秒，幾千條要一至兩個鐘，可以用 `tmux` 跑）。跑完：
 ```bash
 sudo systemctl start tg-relay
 ```
