@@ -4,7 +4,7 @@
 思路見 STYLE.md（使用者 ES／NQ 筆記：均線 50／100／200、斐波那契、支撐跌破後回測、形態量度、成交密集區）。
 
 數據：
-- NQ／ES：GCS ops/longfei/analyst/data/{NQ,ES}.json（GitHub Actions longfei_analyst_data.yml 用 yfinance 寫，美東時間）
+- NQ／ES／SPX：GCS ops/longfei/analyst/data/{NQ,ES,SPX}.json（GitHub Actions longfei_analyst_data.yml 用 yfinance 寫，美東時間）
 - HSI：GCS archive/futu_k_1m/HK.HSI_FRONT/<日>.json（1 分鐘，含夜市），增量合成後存 ops/longfei/analyst/data/HSI.json
   （交易日按港交所 T+1：17:00 後嘅夜市算下一個交易日）
 
@@ -25,7 +25,7 @@ AGENT = [sys.executable, os.path.join(ROOT, "scripts", "gcp_agent.py")]
 DATA = "ops/longfei/analyst/data/"
 OUT = "ops/longfei/analyst/"
 HSI_1M = "archive/futu_k_1m/HK.HSI_FRONT/"
-NAMES = {"NQ": "納指 100 期貨（NQ）", "ES": "標普 500 期貨（ES）", "HSI": "恒指即月期貨（HSI）"}
+NAMES = {"NQ": "納指 100 期貨（NQ）", "ES": "標普 500 期貨（ES）", "SPX": "標普 500 現貨（SPX）", "HSI": "恒指即月期貨（HSI）"}
 FIB = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 0.886, 1]
 
 
@@ -124,7 +124,32 @@ def ma_block(bars):
             cross = {"type": "金叉" if s50[i] > s200[i] else "死叉", "bar": bars[len(bars) - 1 - i][0]}
             break
     blk["cross_50_200"] = cross
+    # [R290] 均線糾結（使用者 10-24 SPX 筆記）：50／100 貼近、200 走平 → 今年 3 月跌破前嘅狀態
+    s50, s100, s200, s200_20 = sma(c, 50), sma(c, 100), sma(c, 200), sma(c, 200, 20)
+    if None not in (s50, s100, s200, s200_20):
+        blk["tangle"] = {"spread_50_100_pct": round(abs(s50 - s100) / c[-1] * 100, 2),
+                         "sma200_slope_20bars_pct": round((s200 / s200_20 - 1) * 100, 2),
+                         "dist_to_sma200_pct": round((c[-1] / s200 - 1) * 100, 2)}
     return blk
+
+
+def open_gaps(d1, lookback=120):
+    """[R290] 日線未補缺口：跳空之後到而家都未有 K 線返入缺口範圍（使用者講「補 7/30 缺口」）。"""
+    gaps = []
+    rows = d1[-lookback:]
+    for i in range(1, len(rows)):
+        prev, cur = rows[i - 1], rows[i]
+        if cur[3] > prev[2]:                                   # 向上跳空：缺口 = 昨高 → 今低
+            lo, hi, kind = prev[2], cur[3], "向上缺口（下方支撐）"
+        elif cur[2] < prev[3]:                                 # 向下跳空：缺口 = 今高 → 昨低
+            lo, hi, kind = cur[2], prev[3], "向下缺口（上方壓力）"
+        else:
+            continue
+        after = rows[i + 1:]
+        filled = any(b[3] <= lo for b in after) if kind.startswith("向上") else any(b[2] >= hi for b in after)
+        if not filled:
+            gaps.append({"date": cur[0], "kind": kind, "low": lo, "high": hi})
+    return gaps[-6:]
 
 
 def fib_block(bars4, days=90):
@@ -178,7 +203,8 @@ def market_pack(name, doc):
             "chg_1d_pct": round((last[4] / d1[-2][4] - 1) * 100, 2),
             "daily_ma": d_ma, "h4_ma": h_ma, "fib_4h": {k: v for k, v in fib.items() if k != "_idx"},
             "swing_highs_1d": hs, "swing_lows_1d": ls, "break_retest": checks,
-            "hi_60d": max(b[2] for b in d1[-60:]), "lo_60d": min(b[3] for b in d1[-60:])}, bars4, fib
+            "hi_60d": max(b[2] for b in d1[-60:]), "lo_60d": min(b[3] for b in d1[-60:]),
+            "open_gaps_1d": open_gaps(d1)}, bars4, fib
 
 
 # ---------- 圖 ----------
@@ -238,7 +264,7 @@ def chart(path, bars, title, fib=None, show=160):
 def cmd_pack(work):
     os.makedirs(work, exist_ok=True)
     docs = {}
-    for name in ("NQ", "ES"):
+    for name in ("NQ", "ES", "SPX"):
         raw = gcs_cat(DATA + f"{name}.json")
         if raw:
             docs[name] = json.loads(raw)
@@ -297,7 +323,7 @@ def score_call(call, d1, base_day):
 def cmd_score(work):
     os.makedirs(work, exist_ok=True)
     data = {}
-    for name in ("NQ", "ES", "HSI"):
+    for name in ("NQ", "ES", "SPX", "HSI"):
         raw = gcs_cat(DATA + f"{name}.json")
         if raw:
             data[name] = json.loads(raw)["d1"]

@@ -1,4 +1,4 @@
-"""[R289] 龍飛陣每日分析欄：用 yfinance 攞 NQ／ES 期貨日線同 1 小時線，寫 GCS ops/longfei/analyst/data/<代號>.json。
+"""[R289] 龍飛陣每日分析欄：用 yfinance 攞 NQ／ES 期貨同 SPX 現貨嘅日線同 1 小時線，寫 GCS ops/longfei/analyst/data/<代號>.json。
 
 使用者 10-23：「根據我的思路，每天在網頁上加一個我的分析欄，我看看你能否學到我」。
 雲端工作階段連唔到 Yahoo，所以由 GitHub Actions（longfei_analyst_data.yml，WIF）攞數據，分析由每日工作階段讀 GCS 寫。
@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 import yfinance as yf
 
-SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F"}
+SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F", "SPX": "^GSPC"}   # [R290] SPX 現貨：使用者 4 小時圖用現貨（只得正常時段）
 BUCKET = "zhuge-risk-manager-bucket"
 PREFIX = "ops/longfei/analyst/data/"
 
