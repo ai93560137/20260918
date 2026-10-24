@@ -154,7 +154,9 @@ t1 = int(pred["ts"]) + 60
 bars = [{"time": t1, "open": mid + 1, "high": mid + 1, "low": mid - 0.5, "close": mid}, {"time": t1 + 60, "open": mid, "high": pred["tp"][0] + 0.5, "low": mid, "close": pred["tp"][0]}]
 n = student.score_pending(bars, 0, pred["ts"] + 3600)
 own = json.loads(FAKE["xau/sig/student/scores.json"][0]).get("own", {})
-check("成交後到 2R → own.win、r_sum +2", n >= 1 and own.get("rule:rev15", {}).get("win") == 1 and own["rule:rev15"]["r_sum"] == 2.0, own)
+_o = own.get("rule:rev15", {})
+check("成交後到 2R → own.win；r_sum 用實際成交價（開盤 mid+1）扣成本 0.5：(12−1−0.5)/6=1.75；r_nominal 仍 +2；pnl_usd 10.5",
+      n >= 1 and _o.get("win") == 1 and _o.get("r_sum") == 1.75 and _o.get("r_nominal") == 2.0 and _o.get("pnl_usd") == 10.5 and config.STUDENT_COST == 0.5, own)
 
 print("=== 網頁／JSON／心跳唔爆 ===")
 js = client.get("/?format=json").get_json()
