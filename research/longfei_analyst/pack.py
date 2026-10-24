@@ -133,16 +133,17 @@ def ma_block(bars):
     return blk
 
 
-def open_gaps(d1, lookback=120):
-    """[R290] 日線未補缺口：跳空之後到而家都未有 K 線返入缺口範圍（使用者講「補 7/30 缺口」）。"""
+def open_gaps(d1, lookback=120, min_pct=0.3):
+    """[R290] 日線未補缺口：跳空之後到而家都未有 K 線返入缺口範圍（使用者講「補 7/30 缺口 7,314–7,370」）。
+    缺口用昨日收市計（同使用者一樣：7/29 收 7,316 → 7/30 低 7,371），細過 min_pct% 嘅唔計。"""
     gaps = []
     rows = d1[-lookback:]
     for i in range(1, len(rows)):
         prev, cur = rows[i - 1], rows[i]
-        if cur[3] > prev[2]:                                   # 向上跳空：缺口 = 昨高 → 今低
-            lo, hi, kind = prev[2], cur[3], "向上缺口（下方支撐）"
-        elif cur[2] < prev[3]:                                 # 向下跳空：缺口 = 今高 → 昨低
-            lo, hi, kind = cur[2], prev[3], "向下缺口（上方壓力）"
+        if cur[3] > prev[4] * (1 + min_pct / 100):            # 向上跳空：缺口 = 昨收 → 今低
+            lo, hi, kind = prev[4], cur[3], "向上缺口（下方支撐）"
+        elif cur[2] < prev[4] * (1 - min_pct / 100):          # 向下跳空：缺口 = 今高 → 昨收
+            lo, hi, kind = cur[2], prev[4], "向下缺口（上方壓力）"
         else:
             continue
         after = rows[i + 1:]
