@@ -671,7 +671,7 @@ def handle_heartbeat(payload):
 
     if config.SIGNAL_BOOK and student.enabled():                 # 學徒階段 1：影子學生先交卷（唔落單），再做 S1
         try:
-            student.rule_tick(m1, offset, now)
+            student.rule_tick(m1, offset, now, m15 or [])
             student.claude_tick(get_brain(), lambda: build_context(state, m1, m15 or [], account, now, market.ny_date(now)), now)
         except Exception as exc:  # noqa: BLE001
             log_event(f"⚠️ 影子學生出錯：{type(exc).__name__}: {str(exc)[:80]}", severity="WARNING", component="student")
