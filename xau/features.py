@@ -8,6 +8,10 @@ STRUCT_SL = 6.0         # SL 6 美元
 STRUCT_TP = 3.0         # 6 級 TP 每 3 美元
 STRUCT_N_TP = 6
 REV15_USD = 3.0         # 規則 R3：前 15 分鐘反向走 ≥3 美元
+# rev15x（IDEAS #128，使用者 10-24 批）：rev15 ＋ 活躍時段 ＋ M15 ATR 唔收縮（提案 §29／§30：DAN 訊號集中 01–06／12–15 UTC、
+# 波幅擴張中接 15–60 分鐘反向；train +1.01／valid +0.53 美元／張 TP1 全平，逐級鎖 +0.41／+0.66；贏隨機 ≥0.1R）
+REV15X_HOURS = ((1, 6), (12, 15))      # UTC 整點，兩端包含
+REV15X_ATR_RATIO = 0.9                 # M15 ATR(14) 現在 ÷ 20 根 M15（5 小時）前 ≥ 0.9 先算「唔收縮」
 
 
 def utc(bars, offset):
@@ -117,11 +121,30 @@ def structure(price, side):
             "sl": round(mid - sgn * STRUCT_SL, 2), "tp": [round(mid + sgn * STRUCT_TP * k, 2) for k in range(1, STRUCT_N_TP + 1)]}
 
 
-def rule_candidates(m1, offset, now):
-    """規則學生（階段 1）：三條候選規則喺「依家」會唔會入、邊個方向。純函數，回傳 list。
+def in_hours(now, ranges=REV15X_HOURS):
+    h = int(now // 3600) % 24
+    return any(a <= h <= b for a, b in ranges)
+
+
+def atr_ratio(m15, offset, now, back=20):
+    """M15 ATR(14) 現在 ÷ back 根前（只用已收盤嘅 M15）；數據唔夠回傳 None。"""
+    if not m15:
+        return None
+    b15 = [b for b in utc(m15, offset) if b["t"] + 900 <= now]
+    if len(b15) < back + 15:
+        return None
+    a_now, a_old = atr(b15), atr(b15[:-back])
+    if not a_now or not a_old:
+        return None
+    return round(a_now / a_old, 3)
+
+
+def rule_candidates(m1, offset, now, m15=None):
+    """規則學生（階段 1）：候選規則喺「依家」會唔會入、邊個方向。純函數，回傳 list。
     swing：現價 2 美元內有 M1 擺動低（→BUY）／高（→SELL）且擺動點喺現價後面；
     level：現價 2 美元內有前日高／亞洲高（→SELL）或前日低／亞洲低（→BUY）；
-    rev15：前 15 分鐘走 ≥3 美元 → 反向。"""
+    rev15：前 15 分鐘走 ≥3 美元 → 反向；
+    rev15x（#128）：rev15 ＋ 活躍時段（REV15X_HOURS）＋ M15 ATR 唔收縮（要有 m15）。"""
     b1 = [b for b in utc(m1, offset) if b["t"] + 60 <= now]
     if len(b1) < 30:
         return []
@@ -141,6 +164,10 @@ def rule_candidates(m1, offset, now):
         mv = b1[-1]["close"] - b1[-16]["open"]
         if abs(mv) >= REV15_USD:
             out.append({"rule": "rev15", **structure(price, "BUY" if mv < 0 else "SELL"), "ref": round(mv, 2), "price": price})
+            if in_hours(now):
+                ratio = atr_ratio(m15, offset, now)
+                if ratio is not None and ratio >= REV15X_ATR_RATIO:
+                    out.append({"rule": "rev15x", **structure(price, "BUY" if mv < 0 else "SELL"), "ref": ratio, "price": price})
     return out
 
 

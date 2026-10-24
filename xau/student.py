@@ -15,7 +15,7 @@ PREFIX = config.PREFIX + "student/"
 STATE_FILE = PREFIX + "state.json"
 SCORES_FILE = PREFIX + "scores.json"
 SNAP_PREFIX = config.PREFIX + "snapshots/"
-STUDENTS = ("rule:swing", "rule:level", "rule:rev15", "claude")
+STUDENTS = ("rule:swing", "rule:level", "rule:rev15", "rule:rev15x", "claude")   # rev15x：IDEAS #128（10-24 使用者批）
 MAX_PREDS = 300
 COOLDOWN_SEC = 3600
 now_ts = None   # tests 可以覆蓋；None 用 market.now_ts
@@ -48,10 +48,10 @@ def _pred(student, side, struct, now, price, **extra):
             "price": price, "outcome": None, "graded": None, **extra}
 
 
-def rule_tick(m1, offset, now=None):
-    """每根 M1 行一次：三條規則有冇觸發；觸發就記錄（60 分鐘冷卻）。回傳新觸發 list。"""
+def rule_tick(m1, offset, now=None, m15=None):
+    """每根 M1 行一次：規則有冇觸發；觸發就記錄（60 分鐘冷卻）。回傳新觸發 list。m15 畀 rev15x 計 ATR 比率。"""
     now = now if now is not None else _now()
-    cands = features.rule_candidates(m1, offset, now)
+    cands = features.rule_candidates(m1, offset, now, m15)
     if not cands:
         return []
     fired = []
