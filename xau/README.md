@@ -79,6 +79,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_RECENT_DECISIONS` | 3 | 即時段帶幾條最近決策（10-23 由 6 減）。COST_PLAN §7d ② |
 | `XAU_REASON_MAX_CHARS` | 20 | Opus `reason` 只係短標籤（上限字數；0＝叫 Opus 留空），日誌行由 Python 按 action／價／SL／TP／信心組。退回舊長理由：200。COST_PLAN §7d |
 | `XAU_PRESCREEN` | shadow | 慳成本 S（`prescreen.py`，COST_PLAN §7b）：空倉規則前篩。`off`／`shadow`（照問，只記 skip_pct 同 opens_in_skip）／`on`（唔符合條件嘅分鐘唔問 Opus 亦唔問 Haiku，kind=prescreen）。條件：新 M15／價格離上次問 ≥`XAU_PRESCREEN_ATR_MULT`(0.3)×M1 ATR／貼近擺動點或前日高低亞洲高低 ≤`XAU_PRESCREEN_NEAR`(2.0；外匯 0.0005)／前 15 分鐘走 ≥`XAU_PRESCREEN_MOVE15`(3.0；外匯 0.0010) |
+| `XAU_STUDENT_COST` | 0.5（點差＋0.2） | 學徒計劃：規則學生自己成績每張扣幾多（美元／盎司），R 用實際成交價計（10-24 使用者批；舊「贏 +2R／輸 −1R」保留喺 `r_nominal`） |
 | `SIG_FOLLOW_SKIP_UNREACHED_CHANNELS` | 5231 | 跟單：呢啲頻道收到時現價仍喺入場價反向 ≥ `SIG_FOLLOW_UNREACHED_TOL` 就略過、唔等限價（10-24 使用者；提案 §27：CTC 呢批 −1.08 美元／張）。DAN 限價區設計上反向 4±2，唔要放入。空＝關 |
 | `SIG_FOLLOW_UNREACHED_TOL` | 0.3（外匯 0.00003） | 上面規則嘅容許（價格單位，≈點差） |
 | `SIG_FOLLOW_AVOID_HOURS` | 5231:07-12 | 跟單：頻道:起-止（UTC 整點，止不含），逗號分隔多個；該時段收到嘅訊號略過（10-24 使用者「倫敦時段都避」；CTC 07–12 UTC −1.61／張）。空＝關 |

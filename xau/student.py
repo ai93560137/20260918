@@ -214,10 +214,21 @@ def score_pending(bars, offset, now=None):
             o = p["outcome"]; c["n"] += 1
             if o.get("filled_ts"):
                 c["filled"] += 1
+                # 10-24 使用者批（離線預評發現舊計法高估約 0.3R）：R 用實際成交價（evaluate 嘅 fill_px，近邊／開盤）計，
+                # 每張扣 STUDENT_COST（點差＋滑價）；r_nominal 保留舊「贏 +2R／輸 −1R」方便對照
+                sgn = 1 if p["side"] == "BUY" else -1
+                mid = (p["entry_low"] + p["entry_high"]) / 2; risk = abs(mid - p["sl"]) or 1e-9
+                fill = o.get("fill_px") or mid
                 if o["final"] == "all_tp":
-                    c["win"] += 1; c["r_sum"] = round(c["r_sum"] + config.STUDENT_R_TARGET, 2)
+                    c["win"] += 1; exit_px, nominal = p["tp"][0], config.STUDENT_R_TARGET
                 elif o["final"] == "sl":
-                    c["sl"] += 1; c["r_sum"] = round(c["r_sum"] - 1.0, 2)
+                    c["sl"] += 1; exit_px, nominal = p["sl"], -1.0
+                else:
+                    continue
+                pnl = sgn * (exit_px - fill) - config.STUDENT_COST
+                c["r_sum"] = round(c["r_sum"] + pnl / risk, 2)
+                c["pnl_usd"] = round(c.get("pnl_usd", 0.0) + pnl, 2)
+                c["r_nominal"] = round(c.get("r_nominal", 0.0) + nominal, 2)
         return sc, None
     try:
         storage.update(STATE_FILE, mutate, default_factory=empty_state)
