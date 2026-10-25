@@ -6461,7 +6461,7 @@ def _chart_png_b64(name):
     return base64.b64encode(blob.download_as_bytes()).decode("ascii")
 
 
-# [R259] 📝 龍飛陣分析（學使用者思路）：使用者 10-23（經龍飛陣）「每天在網頁上加一個我的分析欄，我看看你能否學到我」。
+# [R259] 📝 龍飛陣分析：使用者 10-23（經龍飛陣）「每天在網頁上加一個我的分析欄，我看看你能否學到我」。
 # 龍飛陣每日 08:20 HKT 寫 GCS ops/longfei/analyst/latest.json、daily/<日>.json、charts/<日>/*.png、scorecard.json。
 ANALYST_PREFIX = "ops/longfei/analyst/"
 _DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -6525,7 +6525,7 @@ def _rate_pct(r):
 def build_analyst_section(a):
     doc, sc = a.get("doc"), a.get("scorecard") or {}
     if not doc:
-        return "<div class='section'><h2>📝 龍飛陣分析（學使用者思路）</h2><p class='muted'>暫時未有分析。</p></div>"
+        return "<div class='section'><h2>📝 龍飛陣分析</h2><p class='muted'>暫時未有分析。</p></div>"
     imgs = ""
     for mkt, paths in (doc.get("charts") or {}).items():
         cells = ""
@@ -6563,7 +6563,7 @@ def build_analyst_section(a):
                   + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>"
                   + (f"<table><tr><th>日期</th><th>市場</th><th>判斷</th><th style='text-align:right'>期限</th><th>理由</th><th>結果</th></tr>{crows}</table>" if crows else ""))
     hist = "　".join(f"<a href='?view=charts&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
-    return (f"<div class='section'><h2>📝 龍飛陣分析（學使用者思路）・{esc(doc.get('date'))}</h2>"
+    return (f"<div class='section'><h2>📝 龍飛陣分析・{esc(doc.get('date'))}</h2>"
             f"<p><b>{esc(doc.get('title'))}</b></p>"
             f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）</p>"
             f"{md_to_html(doc.get('markdown'))}{imgs}{score_html}"
