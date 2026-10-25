@@ -25,6 +25,7 @@
 | 退回舊版本 | `python3 scripts/gcp_agent.py rollback [--to 修訂名]`（先看計畫）→ 同意後加 `--yes` |
 | 部署新程式 | `python3 scripts/gcp_agent.py deploy`（dry-run：來源檢查＋計畫＋缺少的權限）→ 同意後加 `--yes` |
 | 只做本機來源檢查 | `python3 scripts/gcp_agent.py deploy --local-only`（不連線） |
+| ⏰ Cloud Scheduler（`ops/scheduler_jobs.json`；**總指揮全權負責，使用者 2026-10-25 授權「不用問我」**） | `gcp_agent.py scheduler list`；改清單後 `scheduler apply`（先看計畫）→ `--yes`；`scheduler pause／resume／run <名> --yes`。PAT 喺 Secret Manager `github-actions-pat`，只喺記憶體讀；清單以外嘅工作（例如金絲雀 `canary-intraday`）唔郁唔刪 |
 | 🌌 天覆陣（`xau/`，獨立服務 `zhuge-xau`） | 全域參數 `--profile xau`，例如 `gcp_agent.py --profile xau status`、`--profile xau deploy`（服務不存在會**建立**，先 dry-run；不改 IAM，「允許未經驗證的叫用」由使用者在控制台開）、`--profile xau env set …` |
 
 預設模式是 `--target run`：Cloud Run 服務 `zhuge-risk-manager`、區域 `europe-west1`

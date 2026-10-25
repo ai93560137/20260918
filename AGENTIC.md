@@ -312,3 +312,11 @@ sudo rm -f /home/claudeops/.ssh/authorized_keys      # 金鑰立刻失效
 | `HTTP 404` 讀函式 | 區域不對：`--region asia-east2` 或改 `GCP_REGION` |
 | 部署卡在 `BUILD` 超過 10 分鐘 | 到 Console → Cloud Build 看建構日誌，通常是 `requirements.txt` 套件裝不起來 |
 | 日誌是空的 | 第 2 代函式的日誌在 Cloud Run 修訂底下；`logs` 已同時查兩種資源，若仍空代表期間內真的沒有請求 |
+
+
+## Cloud Scheduler（2026-10-25 起，總指揮全權負責）
+- **原因**：GitHub Actions 排程好唔準（`hsi_touch_alert` 排每 15 分鐘，實際一日 4–5 次；金絲雀 10-23 應 13 次得 2 次），改由 Cloud Scheduler 準時 `workflow_dispatch`。
+- **授權**：使用者 10-25「以後所有 Google scheduler 由你全權負責，不用問我」。總指揮可以自己新增、改時間、暫停、恢復、試觸發清單內工作，唔使再問；照舊先 dry-run 再 `--yes`，做完喺對話交代。**刪除**清單以外嘅工作（例如金絲雀自己嘅 `canary-intraday`）仍然要問該陣／使用者。
+- **權限**（使用者 10-25 喺 Cloud Shell 開）：服務帳戶 `claude-agent@` 有 `roles/cloudscheduler.admin`（專案）同 Secret `github-actions-pat` 嘅 `roles/secretmanager.secretAccessor`（只此一個 secret）。
+- **PAT**：fine-grained，只限本 repo、Actions 讀寫；存 Secret Manager `github-actions-pat`。`gcp_agent.py scheduler apply` 建立／更新目標時喺記憶體讀，唔印、唔落檔。PAT 過期或者撤銷：使用者喺 Cloud Shell `printf '%s' "$PAT" | gcloud secrets versions add github-actions-pat --data-file=-`，總指揮再 `scheduler apply --yes`（會重寫標頭）。
+- **清單**：`ops/scheduler_jobs.json`（名、時區、cron、workflow、inputs）。`scripts/cloud_scheduler_jobs.sh` 係 10-25 第一次建立用嘅舊腳本，以後用 `gcp_agent.py scheduler`。

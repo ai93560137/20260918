@@ -1,0 +1,162 @@
+{
+ "_doc": "[R265] Cloud Scheduler 工作清單（總指揮全權負責，使用者 2026-10-25 授權）。改呢度之後跑 python3 scripts/gcp_agent.py scheduler apply（先 dry-run）。冇喺呢度嘅工作（例如金絲雀 canary-intraday）apply 唔會郁、唔會刪。",
+ "location": "asia-east1",
+ "repo": "ai93560137/20260918",
+ "ref": "claude/gcp-trading-v12-rewrite-bz75t2",
+ "pat_secret": "github-actions-pat",
+ "jobs": [
+  {
+   "name": "zhuge-hsi-touch-alert",
+   "time_zone": "UTC",
+   "schedule": "*/15 * * * 1-5",
+   "workflow": "hsi_touch_alert.yml",
+   "inputs": {}
+  },
+  {
+   "name": "zhuge-hsi-peak-signal",
+   "time_zone": "UTC",
+   "schedule": "4,19,34,49 * * * 1-5",
+   "workflow": "hsi_peak_signal.yml",
+   "inputs": {
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-yunchui-quotes-hk",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "40 16 * * 1-5",
+   "workflow": "yunchui_quote_kicks.yml",
+   "inputs": {}
+  },
+  {
+   "name": "zhuge-yunchui-quotes-us",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "52 5 * * 2-6",
+   "workflow": "yunchui_quote_kicks.yml",
+   "inputs": {}
+  },
+  {
+   "name": "zhuge-ops-notify-1435",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "35 14 * * 1-5",
+   "workflow": "ops_notify.yml",
+   "inputs": {
+    "task": "auto"
+   }
+  },
+  {
+   "name": "zhuge-ops-notify-1555",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "55 15 * * 1-5",
+   "workflow": "ops_notify.yml",
+   "inputs": {
+    "task": "auto"
+   }
+  },
+  {
+   "name": "zhuge-ops-notify-1710",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "10 17 * * 1-5",
+   "workflow": "ops_notify.yml",
+   "inputs": {
+    "task": "auto"
+   }
+  },
+  {
+   "name": "zhuge-ops-notify-0340",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "40 3 * * 2-6",
+   "workflow": "ops_notify.yml",
+   "inputs": {
+    "task": "auto"
+   }
+  },
+  {
+   "name": "zhuge-ops-daily-books",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "20 17 * * 1-5",
+   "workflow": "ops_daily_books.yml",
+   "inputs": {}
+  },
+  {
+   "name": "zhuge-hsi-range-preopen",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "53 7 * * 1-5",
+   "workflow": "hsi_range_report.yml",
+   "inputs": {
+    "report": "preopen",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-hsi-range-noon",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "7 12 * * 1-5",
+   "workflow": "hsi_range_report.yml",
+   "inputs": {
+    "report": "noon",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-hsi-range-close",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "37 16 * * 1-5",
+   "workflow": "hsi_range_report.yml",
+   "inputs": {
+    "report": "close",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-hsi-range-night",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "13 3 * * 2-6",
+   "workflow": "hsi_range_report.yml",
+   "inputs": {
+    "report": "night",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-es-range-preopen",
+   "time_zone": "America/New_York",
+   "schedule": "7 18 * * 0-4",
+   "workflow": "es_range_report.yml",
+   "inputs": {
+    "report": "preopen",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-es-range-noon",
+   "time_zone": "America/New_York",
+   "schedule": "37 9 * * 1-5",
+   "workflow": "es_range_report.yml",
+   "inputs": {
+    "report": "noon",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-es-range-close",
+   "time_zone": "America/New_York",
+   "schedule": "7 16 * * 1-5",
+   "workflow": "es_range_report.yml",
+   "inputs": {
+    "report": "close",
+    "send": "yes"
+   }
+  },
+  {
+   "name": "zhuge-es-range-night",
+   "time_zone": "America/New_York",
+   "schedule": "7 17 * * 1-5",
+   "workflow": "es_range_report.yml",
+   "inputs": {
+    "report": "night",
+    "send": "yes"
+   }
+  }
+ ]
+}
