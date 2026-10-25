@@ -6573,8 +6573,7 @@ def build_analyst_section(a):
 def build_charts_page(items, err=None, analyst=""):
     nav = page_nav("charts")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>各陣嘅分析圖同報告，程式定時重新出圖。只係分析資料，唔係落單指令；"
-             "落單以券商即時價為準。</p></div>")
+    intro = ""                                                     # [R263] 使用者 10-25：移除頁頂說明
     intro += analyst
     if err:
         return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
