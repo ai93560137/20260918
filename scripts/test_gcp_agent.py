@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import base64
 import json
 import sys
 import unittest
@@ -754,6 +755,42 @@ class VmCreateTests(unittest.TestCase):
         out, code = run(["vm-create", "--yes"], s, RUN_ENV)
         self.assertNotEqual(code, 0)
         self.assertEqual(writes(s), [])
+
+
+class SchedulerTests(unittest.TestCase):
+    """[R265] Cloud Scheduler 清單 vs 現有工作。"""
+    CFG = {"repo": "o/r", "ref": "main", "jobs": [
+        {"name": "a", "time_zone": "UTC", "schedule": "*/15 * * * 1-5", "workflow": "a.yml", "inputs": {}},
+        {"name": "b", "time_zone": "Asia/Hong_Kong", "schedule": "20 17 * * 1-5", "workflow": "b.yml", "inputs": {"x": "1"}},
+        {"name": "c", "time_zone": "UTC", "schedule": "0 1 * * *", "workflow": "c.yml", "inputs": {}}]}
+
+    def live(self, name, schedule, tz, wf, inputs, auth=True):
+        body = base64.b64encode(json.dumps({"ref": "main", "inputs": inputs}).encode()).decode()
+        hdr = {"Authorization": "Bearer t"} if auth else {}
+        return {"schedule": schedule, "timeZone": tz,
+                "httpTarget": {"uri": f"https://api.github.com/repos/o/r/actions/workflows/{wf}/dispatches", "body": body, "headers": hdr}}
+
+    def test_diff(self):
+        live = {"a": self.live("a", "*/15 * * * 1-5", "UTC", "a.yml", {}),
+                "b": self.live("b", "10 17 * * 1-5", "Asia/Hong_Kong", "b.yml", {"x": "1"}),
+                "zzz": self.live("zzz", "0 0 * * *", "UTC", "z.yml", {})}
+        got = {n: act for n, act, _ in ga.sched_diff(self.CFG, live)}
+        self.assertEqual(got, {"a": "ok", "b": "update_time", "c": "create"})     # zzz（清單以外）唔出現、唔會刪
+
+    def test_target_change_needs_pat(self):
+        live = {"a": self.live("a", "*/15 * * * 1-5", "UTC", "a.yml", {"y": "2"}),
+                "b": self.live("b", "20 17 * * 1-5", "Asia/Hong_Kong", "b.yml", {"x": "1"}, auth=False),
+                "c": self.live("c", "0 1 * * *", "UTC", "other.yml", {})}
+        got = {n: act for n, act, _ in ga.sched_diff(self.CFG, live)}
+        self.assertEqual(got, {"a": "update_target", "b": "update_target", "c": "update_target"})
+
+    def test_repo_config_valid(self):
+        cfg = ga.sched_config()
+        names = [j["name"] for j in cfg["jobs"]]
+        self.assertEqual(len(names), len(set(names)))
+        for j in cfg["jobs"]:
+            self.assertTrue((Path(__file__).resolve().parent.parent / ".github" / "workflows" / j["workflow"]).exists(), j)
+            self.assertEqual(len(j["schedule"].split()), 5, j)
 
 
 if __name__ == "__main__":

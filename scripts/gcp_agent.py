@@ -1310,6 +1310,13 @@ def build_parser():
     s.add_argument("--to", help="目標修訂名稱（省略則選目前修訂之前最近一個 Ready 的）")
     s.add_argument("--yes", action="store_true")
 
+    s = sub.add_parser("scheduler", help="Cloud Scheduler（R265）：list／apply（按 ops/scheduler_jobs.json）／pause／resume／run／delete；寫入預設 dry-run")
+    s.add_argument("sched_action", choices=["list", "apply", "pause", "resume", "run", "delete"])
+    s.add_argument("names", nargs="*", help="pause／resume／run／delete 嘅工作名")
+    s.add_argument("--only", nargs="*", help="apply 只處理呢啲工作")
+    s.add_argument("--config", help="清單檔（預設 ops/scheduler_jobs.json）")
+    s.add_argument("--yes", action="store_true")
+
     s = sub.add_parser("iam-public", help="允許未經驗證的叫用")
     s.add_argument("--yes", action="store_true")
 
@@ -1378,6 +1385,131 @@ COMMANDS = {
     "cat": cmd_cat, "put": cmd_put, "check": cmd_check, "env": cmd_env, "deploy": cmd_deploy, "iam-public": cmd_iam_public,
     "revisions": cmd_revisions, "rollback": cmd_rollback, "vm-create": cmd_vm_create,
 }
+
+
+# =============================================================================
+# [R265] Cloud Scheduler（使用者 2026-10-25：「以後所有 Google scheduler 由你全權負責，不用問我」）
+#   清單喺 ops/scheduler_jobs.json；每個工作 POST GitHub workflow_dispatch。PAT 只喺記憶體由 Secret Manager 讀，唔印唔落檔。
+#   apply 只建立／更新清單入面嘅工作，清單以外（例如 canary-intraday）唔郁、唔刪。
+# =============================================================================
+SCHED_CONFIG = Path(__file__).resolve().parent.parent / "ops" / "scheduler_jobs.json"
+SCHED_API = "https://cloudscheduler.googleapis.com/v1"
+
+
+def sched_config(path=None):
+    return json.loads(Path(path or SCHED_CONFIG).read_text(encoding="utf-8"))
+
+
+def sched_body(cfg, job):
+    return {"ref": cfg["ref"], "inputs": job.get("inputs") or {}}
+
+
+def sched_diff(cfg, live):
+    """清單 vs 現有工作 → [(name, 動作, 原因)]；動作：create／update_time（只改時間，唔使 PAT）／update_target（要 PAT）／ok。純函數。"""
+    out = []
+    for job in cfg["jobs"]:
+        cur = live.get(job["name"])
+        if cur is None:
+            out.append((job["name"], "create", "未有"))
+            continue
+        ht = cur.get("httpTarget") or {}
+        want_uri = f"https://api.github.com/repos/{cfg['repo']}/actions/workflows/{job['workflow']}/dispatches"
+        try:
+            body = json.loads(base64.b64decode(ht.get("body") or b"").decode() or "{}")
+        except ValueError:
+            body = {}
+        if ht.get("uri") != want_uri or body != sched_body(cfg, job) or "Authorization" not in (ht.get("headers") or {}):
+            out.append((job["name"], "update_target", "workflow／inputs／權杖標頭唔同"))
+        elif cur.get("schedule") != job["schedule"] or cur.get("timeZone") != job["time_zone"]:
+            out.append((job["name"], "update_time", f"{cur.get('schedule')} [{cur.get('timeZone')}] → {job['schedule']} [{job['time_zone']}]"))
+        else:
+            out.append((job["name"], "ok", ""))
+    return out
+
+
+def _sched_pat(ctx, cfg):
+    url = f"https://secretmanager.googleapis.com/v1/projects/{ctx.project}/secrets/{cfg['pat_secret']}/versions/latest:access"
+    data = ctx.call("GET", url)["payload"]["data"]
+    return base64.b64decode(data).decode().strip()
+
+
+def _sched_job(ctx, cfg, job, pat):
+    return {"name": f"projects/{ctx.project}/locations/{cfg['location']}/jobs/{job['name']}",
+            "schedule": job["schedule"], "timeZone": job["time_zone"], "attemptDeadline": "60s",
+            "retryConfig": {"retryCount": 2},
+            "httpTarget": {"uri": f"https://api.github.com/repos/{cfg['repo']}/actions/workflows/{job['workflow']}/dispatches",
+                           "httpMethod": "POST",
+                           "headers": {"Authorization": f"Bearer {pat}", "Accept": "application/vnd.github+json",
+                                       "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "zhuge-scheduler",
+                                       "Content-Type": "application/json"},
+                           "body": base64.b64encode(json.dumps(sched_body(cfg, job)).encode()).decode()}}
+
+
+def cmd_scheduler(ctx: Ctx):
+    a = ctx.args
+    cfg = sched_config(a.config)
+    ctx.session
+    parent = f"{SCHED_API}/projects/{ctx.project}/locations/{cfg['location']}"
+    live = {j["name"].rsplit("/", 1)[-1]: j for j in ctx.call("GET", f"{parent}/jobs?pageSize=200").get("jobs", [])}
+    if a.sched_action == "list":
+        managed = {j["name"] for j in cfg["jobs"]}
+        for name in sorted(live):
+            j = live[name]
+            st = j.get("status") or {}
+            last = hk_time(j["lastAttemptTime"]) if j.get("lastAttemptTime") else "—"
+            res = "—" if not j.get("lastAttemptTime") else ("✅" if not st.get("code") else f"❌ {st.get('code')}")
+            print(f"{'📋' if name in managed else '  '} {name:<26} {j.get('schedule', ''):<20} {j.get('timeZone', ''):<17} {j.get('state', ''):<8} 上次 {last} {res}")
+        missing = sorted(managed - set(live))
+        if missing:
+            print("⚠️ 清單有但未建立：" + "、".join(missing))
+        print("（📋＝ops/scheduler_jobs.json 管理；冇標記嘅唔會被 apply 郁）")
+        return
+    if a.sched_action == "apply":
+        diff = [d for d in sched_diff(cfg, live) if not a.only or d[0] in a.only]
+        todo = [d for d in diff if d[1] != "ok"]
+        for name, act, why in diff:
+            print(f"{'✅' if act == 'ok' else '📝'} {name}：{ {'ok': '一致', 'create': '建立', 'update_time': '改時間', 'update_target': '更新目標'}[act]} {why}")
+        if not todo:
+            print("全部一致，冇嘢做。")
+            return
+        if not a.yes:
+            print(f"（dry-run；{len(todo)} 個要改。加 --yes 先會套用）")
+            return
+        pat = _sched_pat(ctx, cfg) if any(act != "update_time" for _, act, _ in todo) else ""
+        jobs = {j["name"]: j for j in cfg["jobs"]}
+        for name, act, _ in todo:
+            body = _sched_job(ctx, cfg, jobs[name], pat or "x")
+            if act == "create":
+                ctx.call("POST", f"{parent}/jobs", json=body)
+            elif act == "update_time":
+                ctx.call("PATCH", f"{parent}/jobs/{name}?updateMask=schedule,timeZone",
+                         json={"schedule": body["schedule"], "timeZone": body["timeZone"]})
+            else:
+                ctx.call("PATCH", f"{parent}/jobs/{name}?updateMask=schedule,timeZone,httpTarget,attemptDeadline,retryConfig", json=body)
+            print(f"  ✅ {name} 已{ {'create': '建立', 'update_time': '改時間', 'update_target': '更新'}[act]}")
+        pat = None
+        return
+    names = a.names or []
+    if not names:
+        die("要指定工作名，例如 scheduler run zhuge-hsi-touch-alert")
+    for name in names:
+        if name not in live:
+            die(f"冇呢個工作：{name}")
+    verb = {"pause": "暫停", "resume": "恢復", "run": "即刻觸發一次", "delete": "刪除"}[a.sched_action]
+    for name in names:
+        plan(f"{verb}：{name}")
+    if not a.yes:
+        print("（dry-run；加 --yes 先會做）")
+        return
+    for name in names:
+        if a.sched_action == "delete":
+            ctx.call("DELETE", f"{parent}/jobs/{name}")
+        else:
+            ctx.call("POST", f"{parent}/jobs/{name}:{a.sched_action}", json={})
+        print(f"  ✅ {name} 已{verb}")
+
+
+COMMANDS["scheduler"] = cmd_scheduler
 
 
 def main(argv=None):
