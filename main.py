@@ -6557,7 +6557,7 @@ def build_analyst_section(a):
         f"<td style='text-align:right'>{esc(c.get('horizon'))} 日</td><td>{esc(c.get('why'))}</td>"
         f"<td>{res(c.get('result'))}</td></tr>"
         for c in (sc.get("calls") or [])[-40:][::-1])
-    score_html = ("<h3>🎯 計分卡（學唔學到睇呢度）</h3>"
+    score_html = ("<h3>🎯 計分卡</h3>"
                   + (f"<table><tr><th>類別</th><th style='text-align:right'>命中／已到期</th><th style='text-align:right'>命中率</th></tr>{srows}</table>" if srows
                      else "<p class='muted'>未有到期嘅判斷。</p>")
                   + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>"
@@ -6573,8 +6573,7 @@ def build_analyst_section(a):
 def build_charts_page(items, err=None, analyst=""):
     nav = page_nav("charts")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
-    intro = ("<div class='section'><p>各陣嘅分析圖同報告，程式定時重新出圖。只係分析資料，唔係落單指令；"
-             "落單以券商即時價為準。</p></div>")
+    intro = ""                                                     # [R263] 使用者 10-25：移除頁頂說明
     intro += analyst
     if err:
         return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
