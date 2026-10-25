@@ -27,6 +27,7 @@ OUT = "ops/longfei/analyst/"
 HSI_1M = "archive/futu_k_1m/HK.HSI_FRONT/"
 NAMES = {"NQ": "納指 100 期貨（NQ）", "ES": "標普 500 期貨（ES）", "SPX": "標普 500 現貨（SPX）", "HSI": "恒指即月期貨（HSI）"}
 FIB = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 0.886, 1]
+FIB_EXT = [1.236, 1.382, 1.618]   # [R292] 延伸：跌穿起點之後嘅目標（使用者 NQ 用 1.236）
 
 
 # ---------- GCS（經 gcp_agent，唔繞過佢） ----------
@@ -166,7 +167,8 @@ def fib_block(bars4, days=90):
         a, b, kind = lo2, hi_i, "升浪回撤"
     lo, hi = bars4[a][3], bars4[b][2]
     return {"kind": kind, "low": [bars4[a][0], lo], "high": [bars4[b][0], hi],
-            "levels": {f"{r:g}": round(hi - (hi - lo) * r, 2) for r in FIB}, "_idx": (a, b)}
+            "levels": {f"{r:g}": round(hi - (hi - lo) * r, 2) for r in FIB},
+            "ext": {f"{r:g}": round(hi - (hi - lo) * r, 2) for r in FIB_EXT}, "_idx": (a, b)}
 
 
 def pivots(d1, k=3, n=6):
@@ -191,12 +193,48 @@ def break_retest(d1, level, lookback=40):
     return {"level": level, "broke_on": rows[broke][0], "retest_failed_on": retest, "now_above": rows[-1][4] > level}
 
 
+def confluence(last, d_ma, h_ma, fib, hs, ls, gaps, tol_pct=0.4):
+    """[R292] 目標要重疊（推理第 6 步）：將各種方法計出嚟嘅位放埋一齊，相距 tol_pct% 以內就歸一組；
+    兩種或以上方法重疊先列出，按離現價遠近排。每個位都寫明出處，分析要引用呢度嘅計算。"""
+    lv = [(f"日線 {k.upper()}", v["value"], "均線") for k, v in d_ma.items() if k.startswith("sma")]
+    lv += [(f"4 小時 {k.upper()}", v["value"], "均線") for k, v in h_ma.items() if k.startswith("sma")]
+    lv += [(f"斐波那契 {r}", p, "斐波那契") for r, p in fib["levels"].items() if r not in ("0", "1")]
+    lv += [(f"斐波那契延伸 {r}", p, "斐波那契") for r, p in fib["ext"].items()]
+    lv += [(f"波段起點 {fib['low'][0][:10]}", fib["low"][1], "擺動點"), (f"波段高點 {fib['high'][0][:10]}", fib["high"][1], "擺動點")]
+    lv += [(f"日線擺動低 {d}", p, "擺動點") for d, p in ls] + [(f"日線擺動高 {d}", p, "擺動點") for d, p in hs]
+    for g in gaps:
+        lv += [(f"缺口 {g['date']} 下沿", g["low"], "缺口"), (f"缺口 {g['date']} 上沿", g["high"], "缺口")]
+    lv.sort(key=lambda x: x[1])
+    groups, cur = [], [lv[0]] if lv else []
+    for x in lv[1:]:
+        if (x[1] - cur[0][1]) / cur[0][1] * 100 <= tol_pct:
+            cur.append(x)
+        else:
+            groups.append(cur)
+            cur = [x]
+    if cur:
+        groups.append(cur)
+    out = []
+    for g in groups:
+        kinds = {k for _, _, k in g}
+        if len(kinds) < 2:
+            continue
+        lo, hi = min(p for _, p, _ in g), max(p for _, p, _ in g)
+        mid = (lo + hi) / 2
+        out.append({"zone": [round(lo, 2), round(hi, 2)], "side": "上方壓力" if mid > last else "下方支撐",
+                    "dist_pct": round((mid / last - 1) * 100, 2), "methods": sorted(kinds),
+                    "members": [f"{n} {p:,.2f}" for n, p, _ in g]})
+    out.sort(key=lambda z: abs(z["dist_pct"]))
+    return out[:8]
+
+
 def market_pack(name, doc):
     d1, bars4 = doc["d1"], h4(doc["h1"])
     hs, ls = pivots(d1)
     last = d1[-1]
     d_ma, h_ma = ma_block(d1), ma_block(bars4)
     fib = fib_block(bars4)
+    gaps = open_gaps(d1)
     checks = [x for x in [break_retest(d1, lv) for _, lv in ls] +
               [break_retest(d1, d_ma[k]["value"]) for k in ("sma50", "sma100") if k in d_ma] if x]
     return {"market": name, "name": NAMES[name], "last": last[4], "last_bar_1d": last[0], "last_bar_4h": bars4[-1][0],
@@ -205,7 +243,8 @@ def market_pack(name, doc):
             "daily_ma": d_ma, "h4_ma": h_ma, "fib_4h": {k: v for k, v in fib.items() if k != "_idx"},
             "swing_highs_1d": hs, "swing_lows_1d": ls, "break_retest": checks,
             "hi_60d": max(b[2] for b in d1[-60:]), "lo_60d": min(b[3] for b in d1[-60:]),
-            "open_gaps_1d": open_gaps(d1)}, bars4, fib
+            "open_gaps_1d": gaps,
+            "confluence": confluence(last[4], d_ma, h_ma, fib, hs, ls, gaps)}, bars4, fib
 
 
 # ---------- 圖 ----------
