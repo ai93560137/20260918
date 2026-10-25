@@ -6565,7 +6565,7 @@ def build_analyst_section(a):
     hist = "　".join(f"<a href='?view=charts&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
     return (f"<div class='section'><h2>📝 龍飛陣分析（學使用者思路）・{esc(doc.get('date'))}</h2>"
             f"<p><b>{esc(doc.get('title'))}</b></p>"
-            f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）；只係分析，唔係落單指令。</p>"
+            f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）</p>"
             f"{md_to_html(doc.get('markdown'))}{imgs}{score_html}"
             + (f"<h3>🗂 歷史</h3><p>{hist}</p>" if hist else "") + "</div>")
 
