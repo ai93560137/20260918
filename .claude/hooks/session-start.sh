@@ -24,6 +24,23 @@ pip_install() {  # $1 = requirements 檔；只印非 root 警告的輸出，回�
 pip_install "$ROOT/scripts/requirements-agent.txt" && log "✅ gcp_agent.py 套件就位" || log "⚠️ requirements-agent.txt 安裝有錯誤（見上方輸出）"
 pip_install "$ROOT/requirements.txt" || log "⚠️ requirements.txt 安裝有錯誤（不影響 gcp_agent.py）"
 
+# ---- 1b. 龍飛陣分析欄畫圖（research/longfei_analyst/pack.py）--------------------
+# 要 matplotlib 同中文字型，否則 pack 一畫圖就失敗、或者標題變方格；兩樣都唔影響 gcp_agent.py。
+if ! python3 -c 'import matplotlib' 2>/dev/null; then
+  pip3 install -q --user matplotlib 2>&1 | grep -v -i "warning: running pip as the 'root'" | grep -v '^$' || true
+fi
+if python3 -c 'import matplotlib' 2>/dev/null; then
+  log "✅ matplotlib 就位"
+else
+  log "⚠️ matplotlib 安裝失敗（分析欄畫唔到圖）"
+fi
+CJK_FONT=/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+if [ ! -f "$CJK_FONT" ] && command -v apt-get >/dev/null 2>&1; then
+  timeout 300 apt-get install -y -q fonts-noto-cjk >/dev/null 2>&1 \
+    || { timeout 120 apt-get update -q >/dev/null 2>&1 && timeout 300 apt-get install -y -q fonts-noto-cjk >/dev/null 2>&1; }
+fi
+[ -f "$CJK_FONT" ] && log "✅ 中文字型就位" || log "⚠️ 中文字型（fonts-noto-cjk）安裝失敗：分析欄圖表標題會變方格"
+
 # ---- 2. GCP 憑證 ------------------------------------------------------------
 if [ -n "${GCP_SA_KEY:-}" ]; then
   CRED_DIR="$HOME/.config/gcp-claude"
