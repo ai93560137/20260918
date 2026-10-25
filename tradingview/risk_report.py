@@ -488,6 +488,9 @@ def build(book, quotes=None, combined_equity=None):
             h_pnl = sum((h["close_px"] - h["open"]) * h["qty"] * h["mult"] for h in hedges)
             comb = (put_loss - h_pnl) / allow if allow > 0 else 0.0
             M["stop_use"][name] = comb
+            M["stop_detail"][name] = (                    # [R266] 有對沖時 stop_use 係合計；詳情要講清，免單腿買回 > 止損令人以為觸發
+                f"含對沖合計用咗 {comb * 100:.0f}%（put 虧損 {put_loss:+,.0f}、對沖 {h_pnl:+,.0f}，允許 {allow:,.0f}）"
+                f"｜單腿參考：{M['stop_detail'][name]}")
             cur = legs[0]["ccy"]
             hl = "、".join(f"{h['code'][3:]} {h['qty']:+g}" for h in hedges)
             P(f"  - **含對沖合計（警報／風控階梯用）**：put 虧損 {put_loss:+,.0f} {cur}、對沖（{hl}）盈虧 {h_pnl:+,.0f} {cur}"
