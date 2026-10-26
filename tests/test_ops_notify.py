@@ -15,11 +15,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import ops_notify as on  # noqa: E402
 
 CFG = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ops", "notify_config.json")))
-# 測試用 10-13 嘅設定（雲垂當時有 MHI2610 −1 對沖、MHI 成交歸雲垂）；線上設定 10-26 已改 0／拎走 HK.MHI
+# 測試用 10-13 嘅設定（雲垂當時申報 MHI2610 −1 對沖）；線上設定 10-26 已改 0
 LIVE_CFG = CFG
 CFG = json.loads(json.dumps(CFG))
 CFG["hedge"]["declared_hedge_lots"] = {"HK.MHI2610": -1.0}
-CFG["deals"]["yunchui_prefixes"] = ["HK.MHI"] + [p for p in CFG["deals"]["yunchui_prefixes"] if p != "HK.MHI"]
 
 
 def hkt(s):
@@ -36,7 +35,12 @@ class HedgeTests(unittest.TestCase):
     def test_live_config_yunchui_no_hedge(self):   # 10-26 雲垂冇 MHI 對沖；MHI 倉全屬龍飛陣
         msg, _ = on.compose_hedge(RISK, {}, LIVE_CFG, hkt("2026-10-26 15:55"))
         self.assertIn("雲垂對沖申報 +0／其他 -1", msg)
-        self.assertFalse(on.is_yunchui("HK.MHI2610", LIVE_CFG))
+        # 方案 a：即月 MHI 期貨歸龍飛；非即月、MHI 期權歸雲垂（10-29 前 2610 係即月，之後 2611）
+        self.assertFalse(on.is_yunchui("HK.MHI2610", LIVE_CFG, "2026-10-26 22:10:00"))
+        self.assertTrue(on.is_yunchui("HK.MHI2612", LIVE_CFG, "2026-10-26 22:10:00"))
+        self.assertTrue(on.is_yunchui("HK.MHI261127C23200", LIVE_CFG, "2026-10-26"))
+        self.assertFalse(on.is_yunchui("HK.MHI2611", LIVE_CFG, "2026-10-29 09:30:00"))
+        self.assertTrue(on.is_yunchui("HK.MHI2611", LIVE_CFG, "2026-10-28 09:30:00"))
 
     def test_basic_line(self):
         msg, st = on.compose_hedge(RISK, {}, CFG, hkt("2026-10-13 15:55"))
@@ -71,8 +75,8 @@ class HedgeTests(unittest.TestCase):
 
 DEALS = {"date": "2026-10-13", "fetched_hkt": "2026-10-13 17:08",
          "deals": [{"time_hkt": "2026-10-13 00:12:33", "code": "HK.HSI2610", "side": "賣", "qty": 1.0, "price": 24258.0, "order_id": "A1"},
-                   {"time_hkt": "2026-10-13 10:05:00", "code": "HK.MHI2610", "side": "賣", "qty": 1.0, "price": 24305.0, "order_id": "B2"}],
-         "closed": [{"code": "HK.MHI2610", "close_time_hkt": "2026-10-13 10:05:00", "qty": 1.0, "open_price": 24168.0,
+                   {"time_hkt": "2026-10-13 10:05:00", "code": "HK.MHI2611", "side": "賣", "qty": 1.0, "price": 24305.0, "order_id": "B2"}],
+         "closed": [{"code": "HK.MHI2611", "close_time_hkt": "2026-10-13 10:05:00", "qty": 1.0, "open_price": 24168.0,
                      "close_price": 24305.0, "side": "平多", "realized_pts": 137.0, "realized_ccy": 1370.0, "ccy": "HKD"},
                     {"code": "HK.HSI2610", "close_time_hkt": "2026-10-13 01:58:36", "qty": 1.0, "open_price": 24258.0,
                      "close_price": 24252.0, "side": "平空", "realized_pts": 6.0, "realized_ccy": 300.0, "ccy": "HKD"}]}
@@ -83,7 +87,7 @@ class DealsTests(unittest.TestCase):
         msg, st, rem = on.compose_deals({"2026-10-13": DEALS}, {}, CFG, hkt("2026-10-13 17:10"), "day")
         self.assertIsNone(rem)
         self.assertIn("→ 雲垂陣", msg)
-        self.assertIn("HK.MHI2610 賣 1 @ 24305.0", msg)
+        self.assertIn("HK.MHI2611 賣 1 @ 24305.0", msg)
         self.assertIn("24168.0 → 24305.0，+137 點，已實現 +1,370 HKD", msg)
         self.assertIn("其他合約（非雲垂）1 筆", msg)
         self.assertNotIn("HSI2610 平空", msg)   # 非雲垂的平倉不列
