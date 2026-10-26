@@ -124,6 +124,11 @@ q5 = dict(q, positions=q["positions"] + [
 _, M5 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q5.json"), 7_800_000)
 check("正常報價照用賣價：(310+310)/590 > 100% 照觸止損", M5["stop_use"]["MES 跨式"] > 1, M5["stop_use"])
 
+print("\n=== R266：有對沖嘅止損線，stop_detail 先講合計 ===")
+det_ew = M4.get("stop_detail", {}).get("EW P7750", "")
+check("EW 詳情以合計開頭、附單腿參考", det_ew.startswith("含對沖合計用咗") and "單腿參考" in det_ew and "EW2610 P7750" in det_ew, det_ew)
+check("合計 % 同 stop_use 一致", f"{M4['stop_use']['EW P7750'] * 100:.0f}%" in det_ew, (M4["stop_use"]["EW P7750"], det_ew))
+
 print("\n=== R261：白話警報 ===")
 check("解除白話", auto_risk.cleared_text("stop:MES 跨式") == "MES 跨式 已經離開止損範圍" and auto_risk.cleared_text("margin").startswith("富途保證金緩衝"))
 a6 = auto_risk.alerts({"stop_use": {"X": 1.2, "Y": 0.85}}, 0, 0.8)
@@ -140,7 +145,7 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R261", auto_risk.SCRIPT_VERSION == "R261")
+check("SCRIPT_VERSION R266", auto_risk.SCRIPT_VERSION == "R266")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
