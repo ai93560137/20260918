@@ -6522,6 +6522,10 @@ def _rate_pct(r):
     return f"{r * 100:.0f}%" if isinstance(r, (int, float)) else "—"
 
 
+# [R268] 使用者 10-26：分析圖頁刪「（技術分析僅供參考，非投資建議；龍飛陣 AI 交易不讀此欄。）」；舊分析都要濾走
+_ANALYST_DISCLAIMER_RE = re.compile(r"\n*[（(]?技術分析僅供參考[^\n]*")
+
+
 def build_analyst_section(a):
     doc, sc = a.get("doc"), a.get("scorecard") or {}
     if not doc:
@@ -6566,7 +6570,7 @@ def build_analyst_section(a):
     return (f"<div class='section'><h2>📝 龍飛陣分析・{esc(doc.get('date'))}</h2>"
             f"<p><b>{esc(doc.get('title'))}</b></p>"
             f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）</p>"
-            f"{md_to_html(doc.get('markdown'))}{imgs}{score_html}"
+            f"{md_to_html(_ANALYST_DISCLAIMER_RE.sub('', doc.get('markdown') or ''))}{imgs}{score_html}"
             + (f"<h3>🗂 歷史</h3><p>{hist}</p>" if hist else "") + "</div>")
 
 
