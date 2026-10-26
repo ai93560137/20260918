@@ -24,3 +24,4 @@ date,time_hkt,market,category,event,impact,affects,event_week,source
 2026-11-23,全日,JP,JP 假期,JP 休市：勤勞感謝之日,Holiday,,,claude/gifted-carson-v2tvhw universes/calendars
 2026-11-26,全日,US,US 假期,US 休市：感恩節,Holiday,雲垂 MES、人手 EW,,claude/gifted-carson-v2tvhw universes/calendars
 2026-11-27,16:00,HK,HK 結算,恒指／小型恒指 11 月期貨及月度期權結算（倒數第二個交易日）,High,風揚、雲垂 HSI、蛇蟠（轉倉）,,futu/calendar/HK.json
+2026-11-30,04:00+1,US,US 期權到期,ES／MES EOM 期權到期（月末交易日）,Medium,雲垂 MES、人手 EW,,規則推算
