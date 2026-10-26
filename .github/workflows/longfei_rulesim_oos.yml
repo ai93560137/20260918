@@ -1,0 +1,36 @@
+name: 龍飛陣 規則變體樣本外檢查（IDEAS #130）
+
+# 一次性研究：用 yfinance 5 分鐘 K 線（60 日）喺 10-14 之前嘅日子驗 R295 規則變體 A／B／C／D。
+# 結果寫 GCS longfei/rulesim_oos/report.json，Actions log 亦有。只係紙上，唔改每日回測、唔落單。
+on:
+  workflow_dispatch:
+    inputs:
+      before:
+        description: 只計呢日之前（樣本外）
+        required: false
+        default: '2026-10-14'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  oos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Out-of-sample check
+        env:
+          BEFORE: ${{ github.event.inputs.before }}
+        run: python3 research/longfei_rulesim/oos_check.py --before "${BEFORE:-2026-10-14}"

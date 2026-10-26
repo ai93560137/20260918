@@ -47,19 +47,24 @@ def to5(bars):
     return [tuple(out[k]) for k in sorted(out)]
 
 
-def run_day(bars1, trend, sp):
-    """bars1：當日正常時段 1 分鐘 K 線（交易所當地時間）。trend：+1／−1／0（冇數據唔做）。回傳 trade dict 或 None 同原因。"""
+def run_day(bars1, trend, sp, min_or_bars=10, first_entry=None, min_or_width=None):
+    """bars1：當日正常時段 1 分鐘 K 線（交易所當地時間）。trend：+1／−1／0（冇數據唔做）。回傳 trade dict 或 None 同原因。
+    [IDEAS #130] 樣本外檢查用：min_or_bars（5 分鐘數據用 6）、first_entry（幾點前唔入場）、min_or_width（OR 窄過呢個唔做）。預設＝R295 v1。"""
     if not trend:
         return None, "冇日線趨勢數據"
     orb = [b for b in bars1 if sp["open"] <= b[0].time() < sp["or_end"]]
-    if len(orb) < 10:
+    if len(orb) < min_or_bars:
         return None, "開市區間 K 線唔夠"
     hi, lo = max(b[2] for b in orb), min(b[3] for b in orb)
+    if min_or_width is not None and hi - lo < min_or_width:
+        return None, "開市區間太窄"
     b5 = [b for b in to5([b for b in bars1 if b[0].time() >= sp["or_end"]]) if b[0].time() <= sp["close"]]
     entry_i = None
     for i, b in enumerate(b5):
         if b[0].time() >= sp["last_entry"]:
             break
+        if first_entry and b[0].time() < first_entry:
+            continue
         if (trend > 0 and b[4] > hi) or (trend < 0 and b[4] < lo):
             entry_i = i
             break
