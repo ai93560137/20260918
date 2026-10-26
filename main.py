@@ -6726,6 +6726,40 @@ def handle_charts_get(req):
     return build_charts_page(items, err, build_analyst_section(a))
 
 
+def _lf_rulesim_section():
+    """[R295] 使用者 10-26「模擬唔再用 api call，改為即日回測」：讀 GCS longfei/rulesim/summary.json（Actions longfei_rulesim.yml 每日 08:35 HKT 寫）。"""
+    try:
+        sm = gcs_read_json("longfei/rulesim/summary.json", None)
+    except Exception:  # noqa: BLE001
+        sm = None
+    title = "<h2>📊 即日回測（規則版，唔用 AI）</h2>"
+    note = ("<p class='muted'>10-26 起模擬倉唔再叫 Claude；每日收市後用當日 1 分鐘 K 線，按教學簿規則機械版回測："
+            "開市區間突破、只順日線方向、尾段唔追、1R 後移動止蝕、收市平倉、扣成本。量度嘅係規則，唔係 AI 判斷。</p>")
+    if not sm or not (sm.get("all") or {}).get("n"):
+        return f"<div class='section' id='lf-rulesim'>{title}{note}<p class='muted'>未有回測成交。</p></div>"
+
+    def fmt(v, f="{:+.3f}"):
+        return "—" if v is None else f.format(v)
+
+    def row(name, st):
+        return (f"<tr><td>{esc(name)}</td><td>{st.get('n', 0)}</td><td>{st.get('days', 0)}</td>"
+                f"<td>{fmt(st.get('win'), '{:.0%}')}</td><td>{fmt(st.get('avg_r'))}R</td><td>{fmt(st.get('pf'), '{:.2f}')}</td>"
+                f"<td>{fmt(st.get('t'), '{:.2f}')}</td><td>{fmt(st.get('hkd'), '{:+,.0f}')}</td>"
+                f"<td>{fmt(st.get('max_dd_hkd'), '{:,.0f}')}</td></tr>")
+    rows = row("全部", sm["all"]) + "".join(row(p, st) for p, st in sorted(
+        (sm.get("by_product") or {}).items(), key=lambda kv: -(kv[1].get("hkd") or 0)))
+    tbl = ("<div style='overflow-x:auto'><table><tr><th>產品</th><th>筆數</th><th>日數</th><th>勝率</th><th>每筆平均</th>"
+           "<th>獲利因子</th><th>t 值</th><th>合計 HK$</th><th>最大回撤 HK$</th></tr>" + rows + "</table></div>")
+    rec = "".join(f"<tr><td>{esc(x['date'])}</td><td>{esc(x['product'])}</td><td>{'好' if x['side'] > 0 else '淡'}</td>"
+                  f"<td>{esc(x['entry_t'])}</td><td>{x['entry']:g}</td><td>{x['exit']:g}</td><td>{esc(x['exit_reason'])}</td>"
+                  f"<td>{x['r']:+.2f}R</td><td>{x['hkd']:+,.0f}</td></tr>" for x in list(reversed(sm.get("recent") or []))[:15])
+    recent = ("<h3>最近成交</h3><div style='overflow-x:auto'><table><tr><th>日期</th><th>產品</th><th>方向</th><th>入場</th>"
+              "<th>入場價</th><th>出場價</th><th>出場</th><th>R</th><th>HK$</th></tr>" + rec + "</table></div>")
+    foot = (f"<p class='muted' style='font-size:13px'>規則版本 {esc(sm.get('rules') or '')}；更新 {esc(sm.get('updated_utc') or '')}（UTC）。"
+            "HK$：HSI 按 1 張大期、美股按名義 US$100,000 計。</p>")
+    return f"<div class='section' id='lf-rulesim'>{title}{note}{tbl}{recent}{foot}</div>"
+
+
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
@@ -6738,10 +6772,13 @@ def build_longfei_page(data):
     real = data.get("real") or {}
     body = (_lf_group(real, data["total_real_hkd"], True) if real else
             "<div class='section'><h2>💰 真倉</h2><p class='muted'>未開始真倉。</p></div>")
+    body += _lf_rulesim_section()                       # [R295] 即日回測（規則版）
     body += _lf_group(data["products"], data["total_hkd"], False)
-    foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。</p>"
+    foot = ("<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。"
+            "10-26 起模擬倉唔再叫 AI（R295），下面 🧪 模擬倉係之前 AI 模擬嘅成績。</p>")
     jump = ("<div class='section' style='padding:12px 18px'>跳去："
-            + ("<a href='#lf-real-top'>💰 真倉</a>　｜　" if real else "") + "<a href='#lf-sim-top'>🧪 模擬倉</a></div>")
+            + ("<a href='#lf-real-top'>💰 真倉</a>　｜　" if real else "")
+            + "<a href='#lf-rulesim'>📊 即日回測</a>　｜　<a href='#lf-sim-top'>🧪 模擬倉（AI，10-26 前）</a></div>")
     return html_page("龍飛陣", head + intro + jump + body + foot,
                      "<meta http-equiv='refresh' content='300'><style>" + LONGFEI_CSS + "</style>")
 

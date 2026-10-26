@@ -185,7 +185,14 @@ class Trader:
         if session and not stale and not st.get("halted") and self._decision_due(now):
             # 使用者 10-17：冇倉又唔可以開新倉（暫停、時段、組合限制、收市前）就唔問 Claude，慳 API 費用；
             # 有倉照問（管理止蝕同平倉）。止蝕／止賺本身由程式每幾秒檢查，唔靠 Claude
-            if qty == 0 and not (self._can_open(mins_left, session) and not self._portfolio_block()):
+            if not self.cfg.sim_ai:                      # [R295] 模擬唔叫 AI，改由 research/longfei_rulesim 即日回測
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+                self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": snap["last"],
+                                        "pos": qty, "ai_action": None, "final": "HOLD", "gate": None,
+                                        "reason": "模擬唔叫 AI（R295，改即日回測）", "rejected": None, "stop": None,
+                                        "target": None, "usage": None, "day_pnl": st.get("day_pnl"),
+                                        "session": session})
+            elif qty == 0 and not (self._can_open(mins_left, session) and not self._portfolio_block()):
                 st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
             else:
                 self._decide(now, contract, qty, snap, session, mins_left)
