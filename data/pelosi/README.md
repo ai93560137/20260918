@@ -1,6 +1,6 @@
 # 佩洛西（Nancy Pelosi）股票交易追蹤
 
-更新時間：2026-10-26 04:55 UTC　｜　申報 66 份　｜　交易 227 筆
+更新時間：2026-10-26 15:15 UTC　｜　申報 66 份　｜　交易 227 筆
 
 數據源：[House Clerk 財務披露](https://disclosures-clerk.house.gov/FinancialDisclosure)（Periodic Transaction Report）。交易多由配偶 Paul Pelosi 帳戶進行；申報可延遲至交易後 45 天，金額只有區間。漲跌幅為正股自交易日收盤至最新收盤（Yahoo，僅供參考）。
 
@@ -9,294 +9,294 @@
 | 代號 | 買入 | 賣出 | 最近交易 | 自最近交易漲跌 |
 |---|---:|---:|---|---:|
 | REOF XXX, LLC | 1 | 0 | 2026-09-08 | — |
-| BE | 4 | 0 | 2026-07-28 | +15.9% |
+| BE | 4 | 0 | 2026-07-28 | +25.8% |
 | REOF XXV, LLC | 2 | 0 | 2026-07-27 | — |
-| INTC | 3 | 0 | 2026-07-24 | -5.8% |
-| UBER | 1 | 0 | 2026-05-29 | -5.3% |
+| INTC | 3 | 0 | 2026-07-24 | -2.2% |
+| UBER | 1 | 0 | 2026-05-29 | -5.7% |
 | AB | 9 | 0 | 2026-01-16 | — |
-| GOOGL | 5 | 4 | 2026-01-16 | -3.0% |
-| AMZN | 8 | 5 | 2026-01-16 | +3.7% |
-| NVDA | 11 | 4 | 2026-01-16 | +13.3% |
-| TEM | 2 | 0 | 2026-01-16 | -3.9% |
-| VST | 2 | 0 | 2026-01-16 | -15.9% |
-| VSNT | 0 | 0 | 2026-01-02 | -32.6% |
-| AAPL | 18 | 17 | 2025-12-30 | +27.3% |
-| PYPL | 5 | 3 | 2025-12-30 | -3.5% |
-| DIS | 9 | 3 | 2025-12-30 | -2.0% |
-| AVGO | 2 | 0 | 2025-06-20 | +28.7% |
+| GOOGL | 5 | 4 | 2026-01-16 | -2.9% |
+| AMZN | 8 | 5 | 2026-01-16 | +4.5% |
+| NVDA | 11 | 4 | 2026-01-16 | +16.6% |
+| TEM | 2 | 0 | 2026-01-16 | -5.3% |
+| VST | 2 | 0 | 2026-01-16 | -14.7% |
+| VSNT | 0 | 0 | 2026-01-02 | -33.0% |
+| AAPL | 18 | 17 | 2025-12-30 | +27.0% |
+| PYPL | 5 | 3 | 2025-12-30 | -6.3% |
+| DIS | 9 | 3 | 2025-12-30 | -3.2% |
+| AVGO | 2 | 0 | 2025-06-20 | +32.3% |
 | Matthews International Mutual  | 0 | 1 | 2025-06-20 | — |
-| PANW | 3 | 0 | 2024-12-20 | +103.7% |
+| PANW | 3 | 0 | 2024-12-20 | +108.4% |
 | REOF XXVI, LLC | 1 | 0 | 2024-08-13 | — |
-| MSFT | 8 | 1 | 2024-07-26 | +23.3% |
-| V | 0 | 15 | 2024-07-01 | +55.0% |
-| TSLA | 2 | 2 | 2024-06-24 | +103.9% |
+| MSFT | 8 | 1 | 2024-07-26 | +24.2% |
+| V | 0 | 15 | 2024-07-01 | +53.5% |
+| TSLA | 2 | 2 | 2024-06-24 | +116.8% |
 | Forge Investments, LLC | 1 | 0 | 2024-03-04 | — |
-| RBLX | 1 | 2 | 2023-01-20 | +49.5% |
-| NFLX | 3 | 2 | 2022-12-30 | +123.3% |
+| RBLX | 1 | 2 | 2023-01-20 | +49.7% |
+| NFLX | 3 | 2 | 2022-12-30 | +117.5% |
 | Alliance Bernstein Holding L.P | 0 | 1 | 2022-12-28 | — |
 | REOF XX, LLC | 3 | 0 | 2022-12-27 | — |
-| CRM | 5 | 2 | 2022-12-20 | +93.5% |
+| CRM | 5 | 2 | 2022-12-20 | +91.8% |
 | GOOG | 2 | 0 | 2022-09-16 | +206.2% |
-| MU | 1 | 1 | 2022-09-16 | +1560.5% |
+| MU | 1 | 1 | 2022-09-16 | +1613.2% |
 | WBD | 0 | 0 | 2022-04-11 | +0.0% |
-| AXP | 3 | 0 | 2022-01-21 | +97.3% |
+| AXP | 3 | 0 | 2022-01-21 | +98.6% |
 | REOF XX, llC | 1 | 0 | 2021-12-22 | — |
 | WORK | 1 | 1 | 2021-07-22 | — |
 | REOF XXII, llC | 1 | 0 | 2021-07-13 | — |
 | Roblox Corporation | 1 | 0 | 2021-03-10 | — |
-| CRWD | 1 | 0 | 2020-09-03 | +697.1% |
-| FB | 4 | 2 | 2020-08-07 | +139.4% |
-| IBKR | 0 | 1 | 2020-05-08 | +680.7% |
-| MORN | 0 | 1 | 2020-05-08 | +57.1% |
+| CRWD | 1 | 0 | 2020-09-03 | +712.3% |
+| FB | 4 | 2 | 2020-08-07 | +140.2% |
+| IBKR | 0 | 1 | 2020-05-08 | +692.0% |
+| MORN | 0 | 1 | 2020-05-08 | +56.6% |
 | REoF XX, llC | 1 | 0 | 2020-04-28 | — |
 | REoF XX, LLC | 2 | 0 | 2020-01-21 | — |
 | REoF XXI, llC | 1 | 0 | 2019-08-13 | — |
 | BFET | 0 | 2 | 2019-02-07 | — |
-| T | 1 | 0 | 2018-10-24 | -8.7% |
+| T | 1 | 0 | 2018-10-24 | -7.9% |
 | Mojo Networks, Inc. | 0 | 1 | 2018-08-23 | — |
-| DBX | 1 | 0 | 2018-03-27 | +26.5% |
-| SQ | 2 | 0 | 2017-01-20 | +413.5% |
+| DBX | 1 | 0 | 2018-03-27 | +26.6% |
+| SQ | 2 | 0 | 2017-01-20 | +400.5% |
 | 1600 Atlas Peak Road - Real Es | 0 | 1 | 2016-12-30 | — |
-| MGRC | 0 | 2 | 2016-07-21 | +264.3% |
-| HTZ | 10 | 0 | 2015-07-16 | -92.4% |
+| MGRC | 0 | 2 | 2016-07-21 | +268.8% |
+| HTZ | 10 | 0 | 2015-07-16 | -92.9% |
 | SUNE | 1 | 0 | 2014-10-24 | -100.0% |
-| AA | 0 | 1 | 2014-10-23 | -2.9% |
+| AA | 0 | 1 | 2014-10-23 | -1.4% |
 | BCOR | 0 | 1 | 2014-10-23 | -2.1% |
 | BRCM | 0 | 1 | 2014-10-23 | — |
-| DOW | 0 | 1 | 2014-10-23 | -34.5% |
+| DOW | 0 | 1 | 2014-10-23 | -31.5% |
 | ELX | 0 | 1 | 2014-10-23 | — |
 | ENTR | 0 | 1 | 2014-10-23 | — |
 | SFLY | 0 | 1 | 2014-10-23 | — |
-| RHI | 0 | 1 | 2014-09-22 | -8.9% |
+| RHI | 0 | 1 | 2014-09-22 | -8.5% |
 
 ## 全部交易（新 → 舊）
 
 | 交易日 | 申報日 | 代號 | 資產 | 類型 | 金額 | 細節 | 漲跌 |
 |---|---|---|---|---|---|---|---:|
 | 2026-09-08 | [2026-10-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035553.pdf) | — | REOF XXX, LLC | 買入 | $500,001 - $1,000,000 | Investment in LLC which is acquiring and managing a commerci | — |
-| 2026-07-28 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | +15.9% |
-| 2026-07-28 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $100 到期 2027-06-17 | +15.9% |
+| 2026-07-28 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | +25.8% |
+| 2026-07-28 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $100 到期 2027-06-17 | +25.8% |
 | 2026-07-27 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | — | REOF XXV, LLC | 買入 | $500,001 - $1,000,000 | Additional investment in LLC which is acquiring and restorin | — |
-| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $1,000,001 - $5,000,000 | Purchased 10,000 shares. | +4.5% |
-| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $1,000,001 - $5,000,000 | 100 張 Call 行使價 $100 到期 2027-06-17 | +4.5% |
-| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | INTC | Intel Corporation - Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $50 到期 2027-06-17 | -5.8% |
-| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | INTC | Intel Corporation - Common Stock | 買入 | $500,001 - $1,000,000 | Purchased 10,000 shares. | -5.8% |
-| 2026-05-29 | [2026-06-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034836.pdf) | INTC | Intel Corporation - Common Stock | 買入 | $1,000,001 - $5,000,000 | 200 張 Call 行使價 $50 到期 2027-03-19 | -24.2% |
-| 2026-05-29 | [2026-06-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034836.pdf) | UBER | Uber Technologies, Inc. Common Stock | 買入 | $500,001 - $1,000,000 | 200 張 Call 行使價 $50 到期 2027-03-19 | -5.3% |
+| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $1,000,001 - $5,000,000 | Purchased 10,000 shares. | +13.5% |
+| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | BE | Bloom Energy Corporation Class A Common Stock | 買入 | $1,000,001 - $5,000,000 | 100 張 Call 行使價 $100 到期 2027-06-17 | +13.5% |
+| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | INTC | Intel Corporation - Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $50 到期 2027-06-17 | -2.2% |
+| 2026-07-24 | [2026-08-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035143.pdf) | INTC | Intel Corporation - Common Stock | 買入 | $500,001 - $1,000,000 | Purchased 10,000 shares. | -2.2% |
+| 2026-05-29 | [2026-06-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034836.pdf) | INTC | Intel Corporation - Common Stock | 買入 | $1,000,001 - $5,000,000 | 200 張 Call 行使價 $50 到期 2027-03-19 | -21.3% |
+| 2026-05-29 | [2026-06-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034836.pdf) | UBER | Uber Technologies, Inc. Common Stock | 買入 | $500,001 - $1,000,000 | 200 張 Call 行使價 $50 到期 2027-03-19 | -5.7% |
 | 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AB | AllianceBernstein Holding L.P. Units | 買入 | $1,000,001 - $5,000,000 | Purchased 25,000 shares. | — |
-| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 買入 | $500,001 - $1,000,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | -3.0% |
-| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 買入 | $500,001 - $1,000,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | +3.7% |
-| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $250,001 - $500,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | +13.3% |
-| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | TEM | Tempus AI, Inc. - Class A Common Stock | 買入 | $50,001 - $100,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | -3.9% |
-| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | VST | Vistra Corp. Common Stock | 買入 | $100,001 - $250,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | -15.9% |
-| 2026-01-02 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | VSNT | Versant Media Group, Inc. - Class A Common St | 交換 | $15 | 776 shares and cash in lieu received as a result of spinoff  | -32.6% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 買入 | $250,001 - $500,000 | 20 張 Call 行使價 $150 到期 2027-01-15 | +2.0% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Contribution of 7,704 shares held personally to Donor-Advise | +2.0% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 買入 | $100,001 - $250,000 | 20 張 Call 行使價 $120 到期 2027-01-15 | +6.7% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AAPL | Apple Inc. - Common Stock | 買入 | $250,001 - $500,000 | 20 張 Call 行使價 $100 到期 2027-01-15 | +27.3% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $5,000,001 - $25,000,000 | Contribution of 28,200 shares to Donor-Advised Fund. | +27.3% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $100,001 - $250,000 | 20 張 Call 行使價 $100 到期 2027-01-15 | +12.5% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | PYPL | PayPal Holdings, Inc. - Common Stock | 賣出 | $250,001 - $500,000 | Sold 5,000 shares. | -3.5% |
-| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | DIS | Walt Disney Company | 賣出 | $1,000,001 - $5,000,000 | Sold 10,000 shares. | -2.0% |
-| 2025-12-24 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 20,000 shares. | +6.7% |
-| 2025-12-24 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $5,000,001 - $25,000,000 | Sold 45,000 shares. | +27.0% |
-| 2025-12-24 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | NVDA | NVIDIA Corporation - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 20,000 shares. | +11.8% |
-| 2025-10-22 | [2025-10-24](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20033337.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $100,001 - $250,000 | Contribution of 382 shares held personally to Trinity Univer | +34.5% |
-| 2025-06-20 | [2025-07-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20030630.pdf) | AVGO | Broadcom Inc. - Common Stock | 買入 | $1,000,001 - $5,000,000 | Exercised 200 call options purchased 6/24/24 (20,000 shares) | +28.7% |
+| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 買入 | $500,001 - $1,000,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | -2.9% |
+| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 買入 | $500,001 - $1,000,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | +4.5% |
+| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $250,001 - $500,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | +16.6% |
+| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | TEM | Tempus AI, Inc. - Class A Common Stock | 買入 | $50,001 - $100,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | -5.3% |
+| 2026-01-16 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | VST | Vistra Corp. Common Stock | 買入 | $100,001 - $250,000 | Exercised 50 call options purchased 1/14/25 (5,000 shares) a | -14.7% |
+| 2026-01-02 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | VSNT | Versant Media Group, Inc. - Class A Common St | 交換 | $15 | 776 shares and cash in lieu received as a result of spinoff  | -33.0% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 買入 | $250,001 - $500,000 | 20 張 Call 行使價 $150 到期 2027-01-15 | +2.1% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Contribution of 7,704 shares held personally to Donor-Advise | +2.1% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 買入 | $100,001 - $250,000 | 20 張 Call 行使價 $120 到期 2027-01-15 | +7.5% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AAPL | Apple Inc. - Common Stock | 買入 | $250,001 - $500,000 | 20 張 Call 行使價 $100 到期 2027-01-15 | +27.0% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $5,000,001 - $25,000,000 | Contribution of 28,200 shares to Donor-Advised Fund. | +27.0% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $100,001 - $250,000 | 20 張 Call 行使價 $100 到期 2027-01-15 | +15.8% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | PYPL | PayPal Holdings, Inc. - Common Stock | 賣出 | $250,001 - $500,000 | Sold 5,000 shares. | -6.3% |
+| 2025-12-30 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | DIS | Walt Disney Company | 賣出 | $1,000,001 - $5,000,000 | Sold 10,000 shares. | -3.2% |
+| 2025-12-24 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 20,000 shares. | +7.6% |
+| 2025-12-24 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $5,000,001 - $25,000,000 | Sold 45,000 shares. | +26.6% |
+| 2025-12-24 | [2026-01-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033725.pdf) | NVDA | NVIDIA Corporation - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 20,000 shares. | +15.1% |
+| 2025-10-22 | [2025-10-24](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20033337.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $100,001 - $250,000 | Contribution of 382 shares held personally to Trinity Univer | +34.1% |
+| 2025-06-20 | [2025-07-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20030630.pdf) | AVGO | Broadcom Inc. - Common Stock | 買入 | $1,000,001 - $5,000,000 | Exercised 200 call options purchased 6/24/24 (20,000 shares) | +32.3% |
 | 2025-06-20 | [2025-07-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20030630.pdf) | — | Matthews International Mutual Fund | 賣出 | $15,001 - $50,000 | Sale of 2,822 units. | — |
-| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $150 到期 2026-01-16 | +68.8% |
-| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $150 到期 2026-01-16 | +13.9% |
-| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $80 到期 2026-01-16 | +60.1% |
-| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | TEM | Tempus AI, Inc. - Class A Common Stock | 買入 | $50,001 - $100,000 | 50 張 Call 行使價 $20 到期 2026-01-16 | +112.4% |
-| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | VST | Vistra Corp. Common Stock | 買入 | $500,001 - $1,000,000 | 50 張 Call 行使價 $50 到期 2026-01-16 | -17.8% |
-| 2024-12-31 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $5,000,001 - $25,000,000 | Sold 31,600 shares. | +38.9% |
-| 2024-12-31 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | NVDA | NVIDIA Corporation - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 10,000 shares. | +57.1% |
-| 2024-12-20 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $500,001 - $1,000,000 | Exercised 500 call options purchased 11/22/23 (50,000 shares | +56.6% |
-| 2024-12-20 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | PANW | Palo Alto Networks, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 140 call options purchased 2/12/24 & 2/21/24 (14,0 | +103.7% |
+| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | GOOGL | Alphabet Inc. - Class A Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $150 到期 2026-01-16 | +69.0% |
+| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | AMZN | Amazon.com, Inc. - Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $150 到期 2026-01-16 | +14.8% |
+| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $80 到期 2026-01-16 | +64.8% |
+| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | TEM | Tempus AI, Inc. - Class A Common Stock | 買入 | $50,001 - $100,000 | 50 張 Call 行使價 $20 到期 2026-01-16 | +109.2% |
+| 2025-01-14 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | VST | Vistra Corp. Common Stock | 買入 | $500,001 - $1,000,000 | 50 張 Call 行使價 $50 到期 2026-01-16 | -16.6% |
+| 2024-12-31 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | AAPL | Apple Inc. - Common Stock | 部分賣出 | $5,000,001 - $25,000,000 | Sold 31,600 shares. | +38.4% |
+| 2024-12-31 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | NVDA | NVIDIA Corporation - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 10,000 shares. | +61.7% |
+| 2024-12-20 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $500,001 - $1,000,000 | Exercised 500 call options purchased 11/22/23 (50,000 shares | +61.2% |
+| 2024-12-20 | [2025-01-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2025/20026590.pdf) | PANW | Palo Alto Networks, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 140 call options purchased 2/12/24 & 2/21/24 (14,0 | +108.4% |
 | 2024-08-13 | [2024-09-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025819.pdf) | — | REOF XXVI, LLC | 買入 | $250,001 - $500,000 | Investment in LLC which is acquiring and managing a commerci | — |
-| 2024-07-26 | [2024-07-30](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025535.pdf) | MSFT | Microsoft Corporation - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 5,000 shares. | +23.3% |
-| 2024-07-26 | [2024-07-30](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025535.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $1,000,001 - $5,000,000 | Purchased 10,000 shares. | +86.6% |
-| 2024-07-01 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | V | Visa Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 2,000 shares. | +55.0% |
-| 2024-06-26 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $1,000,001 - $5,000,000 | Purchased 10,000 shares. | +66.9% |
-| 2024-06-24 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | AVGO | Broadcom Inc. - Common Stock | 買入 | $1,000,001 - $5,000,000 | 20 張 Call 行使價 $800 到期 2025-06-20 | +102.0% |
-| 2024-06-24 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | TSLA | Tesla, Inc. - Common Stock | 賣出 | $250,001 - $500,000 | Sold 2,500 shares. | +103.9% |
+| 2024-07-26 | [2024-07-30](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025535.pdf) | MSFT | Microsoft Corporation - Common Stock | 部分賣出 | $1,000,001 - $5,000,000 | Sold 5,000 shares. | +24.2% |
+| 2024-07-26 | [2024-07-30](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025535.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $1,000,001 - $5,000,000 | Purchased 10,000 shares. | +92.1% |
+| 2024-07-01 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | V | Visa Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 2,000 shares. | +53.5% |
+| 2024-06-26 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | NVDA | NVIDIA Corporation - Common Stock | 買入 | $1,000,001 - $5,000,000 | Purchased 10,000 shares. | +71.8% |
+| 2024-06-24 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | AVGO | Broadcom Inc. - Common Stock | 買入 | $1,000,001 - $5,000,000 | 20 張 Call 行使價 $800 到期 2025-06-20 | +107.7% |
+| 2024-06-24 | [2024-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20025368.pdf) | TSLA | Tesla, Inc. - Common Stock | 賣出 | $250,001 - $500,000 | Sold 2,500 shares. | +116.8% |
 | 2024-03-04 | [2024-03-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20024625.pdf) | — | Forge Investments, LLC | 買入 | $1,000,001 - $5,000,000 | Investment in fund that owns Databricks stock. Databricks is | — |
-| 2024-02-21 | [2024-02-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20024542.pdf) | PANW | Palo Alto Networks, Inc. | 買入 | $100,001 - $250,000 | 20 張 Call 行使價 $200 到期 2025-01-17 | +190.5% |
-| 2024-02-12 | [2024-02-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20024542.pdf) | PANW | Palo Alto Networks, Inc. | 買入 | $500,001 - $1,000,000 | 50 張 Call 行使價 $200 到期 2025-01-17 | +104.6% |
-| 2023-11-22 | [2023-12-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20024186.pdf) | NVDA | NVIDIA Corporation | 買入 | $1,000,001 - $5,000,000 | 50 張 Call 行使價 $120 到期 2024-12-20 | +333.0% |
-| 2023-06-15 | [2023-06-22](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023192.pdf) | AAPL | Apple Inc. | 買入 | $250,001 - $500,000 | Exercised 50 call options purchased 5/24/22 (5,000 shares) a | +86.9% |
-| 2023-06-15 | [2023-06-22](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023192.pdf) | MSFT | Microsoft Corporation | 買入 | $500,001 - $1,000,000 | Exercised 50 call options purchased 5/24/22 (5,000 shares) a | +50.7% |
-| 2023-05-08 | [2023-06-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023080.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 2,900 shares held personally to Trinity Coll | +100.4% |
-| 2023-03-17 | [2023-04-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022664.pdf) | AAPL | Apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 100 call options purchased 5/13/22 (10,000 shares) | +124.3% |
+| 2024-02-21 | [2024-02-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20024542.pdf) | PANW | Palo Alto Networks, Inc. | 買入 | $100,001 - $250,000 | 20 張 Call 行使價 $200 到期 2025-01-17 | +197.1% |
+| 2024-02-12 | [2024-02-23](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2024/20024542.pdf) | PANW | Palo Alto Networks, Inc. | 買入 | $500,001 - $1,000,000 | 50 張 Call 行使價 $200 到期 2025-01-17 | +109.3% |
+| 2023-11-22 | [2023-12-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20024186.pdf) | NVDA | NVIDIA Corporation | 買入 | $1,000,001 - $5,000,000 | 50 張 Call 行使價 $120 到期 2024-12-20 | +345.8% |
+| 2023-06-15 | [2023-06-22](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023192.pdf) | AAPL | Apple Inc. | 買入 | $250,001 - $500,000 | Exercised 50 call options purchased 5/24/22 (5,000 shares) a | +86.4% |
+| 2023-06-15 | [2023-06-22](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023192.pdf) | MSFT | Microsoft Corporation | 買入 | $500,001 - $1,000,000 | Exercised 50 call options purchased 5/24/22 (5,000 shares) a | +51.8% |
+| 2023-05-08 | [2023-06-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023080.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 2,900 shares held personally to Trinity Coll | +99.8% |
+| 2023-03-17 | [2023-04-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022664.pdf) | AAPL | Apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 100 call options purchased 5/13/22 (10,000 shares) | +123.7% |
 | 2023-03-09 | [2023-04-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022664.pdf) | — | REOF XXV, LLC | 買入 | $500,001 - $1,000,000 | Investment in LLC which is acquiring and restoring a luxury  | — |
-| 2023-01-20 | [2023-01-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022320.pdf) | RBLX | Roblox Corporation Class A | 賣出 | $1 | 100 張 Call 行使價 $100 到期 2023-01-20 （到期作廢） | +49.5% |
-| 2022-12-30 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | NFLX | Netflix, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 1,000 shares. | +123.3% |
-| 2022-12-29 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | NFLX | Netflix, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 1,000 shares. | +126.2% |
+| 2023-01-20 | [2023-01-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022320.pdf) | RBLX | Roblox Corporation Class A | 賣出 | $1 | 100 張 Call 行使價 $100 到期 2023-01-20 （到期作廢） | +49.7% |
+| 2022-12-30 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | NFLX | Netflix, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 1,000 shares. | +117.5% |
+| 2022-12-29 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | NFLX | Netflix, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 1,000 shares. | +120.3% |
 | 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | — | Alliance Bernstein Holding L.P. Units | 部分賣出 | $500,001 - $1,000,000 | Sold 20,000 shares. | — |
-| 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | GOOGL | Alphabet Inc. - Class A | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +272.2% |
-| 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | PYPL | PayPal Holdings, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 5,000 shares. | -15.6% |
-| 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | RBLX | Roblox Corporation Class A | 部分賣出 | $100,001 - $250,000 | Sold 5,000 shares. | +102.2% |
+| 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | GOOGL | Alphabet Inc. - Class A | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +272.6% |
+| 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | PYPL | PayPal Holdings, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 5,000 shares. | -18.1% |
+| 2022-12-28 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | RBLX | Roblox Corporation Class A | 部分賣出 | $100,001 - $250,000 | Sold 5,000 shares. | +102.4% |
 | 2022-12-27 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | — | REOF XX, LLC | 買入 | $15,001 - $50,000 | Additional investment in LLC which acquired five Courtyard b | — |
-| 2022-12-21 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | GOOGL | Alphabet Inc. - Class A | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +257.5% |
-| 2022-12-21 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | PYPL | PayPal Holdings, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 5,000 shares. | -17.6% |
-| 2022-12-21 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | DIS | Walt Disney Company | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +29.4% |
-| 2022-12-20 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | GOOGL | Alphabet Inc. - Class A | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +259.7% |
-| 2022-12-20 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | CRM | Salesforce, Inc. | 賣出 | $9 | 130 張 Call 行使價 $210 到期 2023-01-20 | +93.5% |
-| 2022-12-20 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | TSLA | Tesla, Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 5,000 shares. | +170.1% |
-| 2022-11-08 | [2022-11-30](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20022063.pdf) | V | Visa Inc. | 部分賣出 | $1,000,001 - $5,000,000 | Sold 20,000 shares. | +102.2% |
+| 2022-12-21 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | GOOGL | Alphabet Inc. - Class A | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +257.8% |
+| 2022-12-21 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | PYPL | PayPal Holdings, Inc. | 部分賣出 | $250,001 - $500,000 | Sold 5,000 shares. | -20.0% |
+| 2022-12-21 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | DIS | Walt Disney Company | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +27.8% |
+| 2022-12-20 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | GOOGL | Alphabet Inc. - Class A | 部分賣出 | $500,001 - $1,000,000 | Sold 10,000 shares. | +260.1% |
+| 2022-12-20 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | CRM | Salesforce, Inc. | 賣出 | $9 | 130 張 Call 行使價 $210 到期 2023-01-20 | +91.8% |
+| 2022-12-20 | [2023-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20022260.pdf) | TSLA | Tesla, Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 5,000 shares. | +187.3% |
+| 2022-11-08 | [2022-11-30](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20022063.pdf) | V | Visa Inc. | 部分賣出 | $1,000,001 - $5,000,000 | Sold 20,000 shares. | +100.2% |
 | 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | GOOG | Alphabet Inc. - Class C Capital Stock | 買入 | $1,000,001 - $5,000,000 | Exercised 200 call options purchased 12/17/21 (20,000 shares | +206.2% |
-| 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | MU | Micron Technology, Inc. | 賣出 | $15,001 - $50,000 | 100 張 Call 行使價 $50 到期 2022-09-16 | +1560.5% |
-| 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | NVDA | NVIDIA Corporation | 賣出 | $100,001 - $250,000 | 50 張 Call 行使價 $100 到期 2022-09-16 | +1498.4% |
-| 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | DIS | Walt Disney Company | 賣出 | $1 | 50 張 Call 行使價 $130 到期 2022-09-16 （到期作廢） | +3.9% |
+| 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | MU | Micron Technology, Inc. | 賣出 | $15,001 - $50,000 | 100 張 Call 行使價 $50 到期 2022-09-16 | +1613.2% |
+| 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | NVDA | NVIDIA Corporation | 賣出 | $100,001 - $250,000 | 50 張 Call 行使價 $100 到期 2022-09-16 | +1545.3% |
+| 2022-09-16 | [2022-10-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021837.pdf) | DIS | Walt Disney Company | 賣出 | $1 | 50 張 Call 行使價 $130 到期 2022-09-16 （到期作廢） | +2.6% |
 | 2022-08-24 | [2022-09-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021675.pdf) | — | REOF XX, LLC | 買入 | $15,001 - $50,000 | Additional investment in LLC which acquired five Courtyard b | — |
-| 2022-07-26 | [2022-07-26](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021438.pdf) | NVDA | NVIDIA Corporation | 賣出 | $1,000,001 - $5,000,000 | Sold 25,000 shares. | +1176.0% |
-| 2022-06-21 | [2022-07-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021374.pdf) | V | Visa Inc. | 部分賣出 | $1,000,001 - $5,000,000 | Sold 10,000 shares. | +109.8% |
-| 2022-06-17 | [2022-07-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021374.pdf) | AAPL | Apple Inc. | 部分賣出 | $100,001 - $250,000 | 50 張 Call 行使價 $100 到期 2022-06-17 | +164.3% |
-| 2022-06-17 | [2022-07-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021374.pdf) | NVDA | NVIDIA Corporation | 買入 | $1,000,001 - $5,000,000 | Exercised 200 call options (20,000 shares) expiring 6/17/22  | +1228.5% |
-| 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | AAPL | Apple Inc. | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $80 到期 2023-06-16 | +147.7% |
-| 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | MSFT | Microsoft Corporation | 買入 | $50,001 - $100,000 | 10 張 Call 行使價 $180 到期 2023-06-16 | +102.0% |
-| 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | MSFT | Microsoft Corporation | 買入 | $250,001 - $500,000 | 40 張 Call 行使價 $180 到期 2023-06-16 | +102.0% |
-| 2022-05-13 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | AAPL | Apple Inc. | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $80 到期 2023-03-17 | +136.4% |
+| 2022-07-26 | [2022-07-26](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021438.pdf) | NVDA | NVIDIA Corporation | 賣出 | $1,000,001 - $5,000,000 | Sold 25,000 shares. | +1213.4% |
+| 2022-06-21 | [2022-07-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021374.pdf) | V | Visa Inc. | 部分賣出 | $1,000,001 - $5,000,000 | Sold 10,000 shares. | +107.8% |
+| 2022-06-17 | [2022-07-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021374.pdf) | AAPL | Apple Inc. | 部分賣出 | $100,001 - $250,000 | 50 張 Call 行使價 $100 到期 2022-06-17 | +163.5% |
+| 2022-06-17 | [2022-07-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021374.pdf) | NVDA | NVIDIA Corporation | 買入 | $1,000,001 - $5,000,000 | Exercised 200 call options (20,000 shares) expiring 6/17/22  | +1267.4% |
+| 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | AAPL | Apple Inc. | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $80 到期 2023-06-16 | +147.0% |
+| 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | MSFT | Microsoft Corporation | 買入 | $50,001 - $100,000 | 10 張 Call 行使價 $180 到期 2023-06-16 | +103.5% |
+| 2022-05-24 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | MSFT | Microsoft Corporation | 買入 | $250,001 - $500,000 | 40 張 Call 行使價 $180 到期 2023-06-16 | +103.5% |
+| 2022-05-13 | [2022-06-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20021142.pdf) | AAPL | Apple Inc. | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $80 到期 2023-03-17 | +135.7% |
 | 2022-04-11 | [2022-05-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020916.pdf) | WBD | Warner Bros. Discovery, Inc. - Series A | 交換 | $50,001 - $100,000 | 2419 shares received as the result of a spinoff of AT&T (T)  | +0.0% |
-| 2022-03-17 | [2022-03-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020662.pdf) | TSLA | Tesla, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 25 call options (2,500 shares) expiring 3/18/22 at | +28.1% |
+| 2022-03-17 | [2022-03-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020662.pdf) | TSLA | Tesla, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 25 call options (2,500 shares) expiring 3/18/22 at | +36.2% |
 | 2022-01-27 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $250,001 - $500,000 | Purchased 10,000 units in a global asset management firm pro | — |
 | 2022-01-27 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $250,001 - $500,000 | Purchased 10,000 units in a global asset management firm pro | — |
-| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | AXP | American Express Company | 買入 | $250,001 - $500,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | +97.3% |
-| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | AAPL | Apple Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | +114.1% |
-| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | -65.1% |
-| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | DIS | Walt Disney Company | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | -18.1% |
-| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | AXP | American Express Company | 買入 | $250,001 - $500,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | +97.3% |
-| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | AAPL | Apple Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | +114.1% |
-| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | -65.1% |
-| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | DIS | Walt Disney Company | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | -18.1% |
-| 2021-12-30 | [2022-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020208.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 3,000 shares held personall y to the Paul F. | +95.1% |
-| 2021-12-30 | [2022-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020208.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 3,000 shares held personall y to Trinity Col | +95.1% |
+| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | AXP | American Express Company | 買入 | $250,001 - $500,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | +98.6% |
+| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | AAPL | Apple Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | +113.5% |
+| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | -66.2% |
+| 2022-01-21 | [2022-03-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020561.pdf) | DIS | Walt Disney Company | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | -19.1% |
+| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | AXP | American Express Company | 買入 | $250,001 - $500,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | +98.6% |
+| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | AAPL | Apple Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | +113.5% |
+| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 1/21/22 at | -66.2% |
+| 2022-01-21 | [2022-02-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020515.pdf) | DIS | Walt Disney Company | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 1/21/22  | -19.1% |
+| 2021-12-30 | [2022-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020208.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 3,000 shares held personall y to the Paul F. | +94.5% |
+| 2021-12-30 | [2022-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2022/20020208.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 3,000 shares held personall y to Trinity Col | +94.5% |
 | 2021-12-22 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | — | REOF XX, llC | 買入 | $50,001 - $100,000 | Additional investment in llC which acquired five Courty ard  | — |
-| 2021-12-21 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | MU | Micron Technology, Inc. | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $50 到期 2022-09-16 | +867.7% |
+| 2021-12-21 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | MU | Micron Technology, Inc. | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $50 到期 2022-09-16 | +898.5% |
 | 2021-12-20 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | RBLX | Roblox Corporation Class A | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $100 到期 2023-01-20 | -46.4% |
-| 2021-12-20 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | CRM | Salesforce.com Inc | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $210 到期 2023-01-20 | +0.6% |
-| 2021-12-20 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | CRM | Salesforce.com Inc | 買入 | $100,001 - $250,000 | 30 張 Call 行使價 $210 到期 2023-01-20 | +0.6% |
+| 2021-12-20 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | CRM | Salesforce.com Inc | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $210 到期 2023-01-20 | -0.3% |
+| 2021-12-20 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | CRM | Salesforce.com Inc | 買入 | $100,001 - $250,000 | 30 張 Call 行使價 $210 到期 2023-01-20 | -0.3% |
 | 2021-12-17 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | GOOG | Alphabet Inc. - Class C Capital Stock | 買入 | $500,001 - $1,000,000 | 10 張 Call 行使價 $2000 到期 2022-09-16 | +122.2% |
-| 2021-12-17 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | DIS | Walt Disney Company | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $130 到期 2022-09-16 | -24.4% |
-| 2021-07-23 | [2021-08-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019331.pdf) | NVDA | NVIDIA Corporation | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | +978.6% |
-| 2021-07-23 | [2021-08-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019331.pdf) | NVDA | NVIDIA Corporation | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $100 到期 2022-09-16 | +978.6% |
+| 2021-12-17 | [2021-12-29](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20020106.pdf) | DIS | Walt Disney Company | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $130 到期 2022-09-16 | -25.3% |
+| 2021-07-23 | [2021-08-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019331.pdf) | NVDA | NVIDIA Corporation | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | +1010.3% |
+| 2021-07-23 | [2021-08-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019331.pdf) | NVDA | NVIDIA Corporation | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $100 到期 2022-09-16 | +1010.3% |
 | 2021-07-22 | [2021-08-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019331.pdf) | WORK | Slack Technologies, Inc. Class A | 賣出 | $250,001 - $500,000 | 10,000 shares of Slack Technologies Inc. exchanged for 776 s | — |
 | 2021-07-13 | [2021-08-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019331.pdf) | — | REOF XXII, llC | 買入 | $250,001 - $500,000 | Investment in llC which is acquiring eleven Marriott-branded | — |
-| 2021-06-18 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | GOOGL | Alphabet Inc. - Cl ass A | 買入 | $1,000,001 - $5,000,000 | Exercised 40 call options (4,000 shares) expiring 6/18/21 at | +166.6% |
-| 2021-06-03 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | NVDA | NVIDIA Corporation | 買入 | $1,000,001 - $5,000,000 | 50 張 Call 行使價 $400 到期 2022-06-17 | +1143.2% |
-| 2021-05-21 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | AMZN | Amazon.com, Inc. | 買入 | $500,001 - $1,000,000 | 20 張 Call 行使價 $3000 到期 2022-06-17 | +54.9% |
-| 2021-05-21 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | AAPL | Apple Inc. | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $100 到期 2022-06-17 | +177.2% |
-| 2021-03-19 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | MSFT | Microsoft Corporation | 買入 | $1,000,001 - $5,000,000 | Exercised 150 call options (15,000 shares) expiring 3/19/202 | +127.7% |
-| 2021-03-19 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | MSFT | Microsoft Corporation | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 3/19/202 | +127.7% |
+| 2021-06-18 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | GOOGL | Alphabet Inc. - Cl ass A | 買入 | $1,000,001 - $5,000,000 | Exercised 40 call options (4,000 shares) expiring 6/18/21 at | +166.9% |
+| 2021-06-03 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | NVDA | NVIDIA Corporation | 買入 | $1,000,001 - $5,000,000 | 50 張 Call 行使價 $400 到期 2022-06-17 | +1179.6% |
+| 2021-05-21 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | AMZN | Amazon.com, Inc. | 買入 | $500,001 - $1,000,000 | 20 張 Call 行使價 $3000 到期 2022-06-17 | +56.1% |
+| 2021-05-21 | [2021-07-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20019004.pdf) | AAPL | Apple Inc. | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $100 到期 2022-06-17 | +176.4% |
+| 2021-03-19 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | MSFT | Microsoft Corporation | 買入 | $1,000,001 - $5,000,000 | Exercised 150 call options (15,000 shares) expiring 3/19/202 | +129.4% |
+| 2021-03-19 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | MSFT | Microsoft Corporation | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 3/19/202 | +129.4% |
 | 2021-03-10 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | — | Roblox Corporation | 買入 | $500,001 - $1,000,000 | Purchased 10,000 shares. | — |
 | 2021-02-23 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | AB | AllianceBernstein Holding L.P. Units | 買入 | $500,001 - $1,000,000 | Purchased 25,000 units in a global as set management firm pr | — |
-| 2021-02-23 | [2021-03-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018355.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $500,001 - $1,000,000 | Purchased 25,000 shares. | -3.5% |
+| 2021-02-23 | [2021-03-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018355.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $500,001 - $1,000,000 | Purchased 25,000 shares. | -2.5% |
 | 2021-02-18 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | AB | AllianceBernstein Holding L.P. Units | 買入 | $500,001 - $1,000,000 | Purchased 15,000 units in a global asset management firm pro | — |
-| 2021-02-18 | [2021-03-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018355.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $500,001 - $1,000,000 | Purchased 15,000 shares. | -7.8% |
+| 2021-02-18 | [2021-03-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018355.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $500,001 - $1,000,000 | Purchased 15,000 shares. | -6.8% |
 | 2020-12-22 | [2021-04-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018539.pdf) | AB | AllianceBernstein Holding L.P. Units | 買入 | $500,001 - $1,000,000 | Purchased 20,000 units in a global as set management firm pr | — |
-| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $500,001 - $1,000,000 | Purchased 20,000 shares. | +4.7% |
-| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | AAPL | Apple Inc. | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $100 到期 2022-01-21 | +163.7% |
-| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | TSLA | Tesla, Inc. | 買入 | $500,001 - $1,000,000 | 25 張 Call 行使價 $500 到期 2022-03-18 | +74.4% |
-| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | DIS | Walt Disney Company | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $100 到期 2022-01-21 | -34.0% |
-| 2020-11-06 | [2020-12-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017834.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 4,500 shares held personally to the Paul F.  | +193.0% |
+| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | AB | AllianceBernstein Holding l.P. units | 買入 | $500,001 - $1,000,000 | Purchased 20,000 shares. | +5.8% |
+| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | AAPL | Apple Inc. | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $100 到期 2022-01-21 | +162.9% |
+| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | TSLA | Tesla, Inc. | 買入 | $500,001 - $1,000,000 | 25 張 Call 行使價 $500 到期 2022-03-18 | +85.5% |
+| 2020-12-22 | [2021-01-21](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2021/20018011.pdf) | DIS | Walt Disney Company | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $100 到期 2022-01-21 | -34.8% |
+| 2020-11-06 | [2020-12-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017834.pdf) | AAPL | Apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Contribution of 4,500 shares held personally to the Paul F.  | +192.1% |
 | 2020-11-05 | [2020-12-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017834.pdf) | — | REOF XX, LLC | 買入 | $15,001 - $50,000 | Additional investment in LLC which acquired five Courty ard  | — |
-| 2020-09-03 | [2020-10-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017460.pdf) | CRWD | CrowdStrike Holdings, I nc. - ClassA | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | +697.1% |
-| 2020-08-07 | [2020-09-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017123.pdf) | FB | Facebook, Inc. - Class A | 賣出 | $1,000,001 - $5,000,000 | Contribution of 5,000 shares held personall y to The Paul &  | +139.4% |
-| 2020-06-24 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AXP | American Express Company | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $80 到期 2022-01-21 | +228.1% |
-| 2020-06-24 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $100 到期 2022-01-21 | -66.1% |
-| 2020-06-18 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AAPL | Apple Inc. | 賣出 | $1,000,001 - $5,000,000 | 100 張 Call 行使價 $145 到期 2020-06-19 | +295.4% |
-| 2020-06-18 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | NFLX | Netflix, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 50 call options (5,000 shares) expiring 6/19/2020  | +46.4% |
-| 2020-06-18 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | CRM | Salesforce.com Inc | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 6/19/202 | +32.5% |
-| 2020-06-12 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | -63.3% |
-| 2020-06-12 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | -63.3% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | AAPL | apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 1,700 shares. | +348.5% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | AAPL | apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 3,000 shares. | +348.5% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | AAPL | apple Inc. | 部分賣出 | $1,000,001 - $5,000,000 | Sold 3,300 shares. | +348.5% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | FB | Facebook, Inc. - Class a | 部分賣出 | $1,000,001 - $5,000,000 | Sold 5,000 shares. | +202.6% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | IBKR | Interactive Brokers group, Inc. - Class a | 部分賣出 | $100,001 - $250,000 | Sold 3,000 shares. | +680.7% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | MORN | Morningstar, Inc. | 部分賣出 | $100,001 - $250,000 | Sold 1,700 shares. | +57.1% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | V | Visa Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 3,000 shares. | +120.4% |
-| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | V | Visa Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 3,000 shares. | +120.4% |
+| 2020-09-03 | [2020-10-04](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017460.pdf) | CRWD | CrowdStrike Holdings, I nc. - ClassA | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | +712.3% |
+| 2020-08-07 | [2020-09-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20017123.pdf) | FB | Facebook, Inc. - Class A | 賣出 | $1,000,001 - $5,000,000 | Contribution of 5,000 shares held personall y to The Paul &  | +140.2% |
+| 2020-06-24 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AXP | American Express Company | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $80 到期 2022-01-21 | +230.2% |
+| 2020-06-24 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $250,001 - $500,000 | 50 張 Call 行使價 $100 到期 2022-01-21 | -67.0% |
+| 2020-06-18 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AAPL | Apple Inc. | 賣出 | $1,000,001 - $5,000,000 | 100 張 Call 行使價 $145 到期 2020-06-19 | +294.3% |
+| 2020-06-18 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | NFLX | Netflix, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 50 call options (5,000 shares) expiring 6/19/2020  | +42.6% |
+| 2020-06-18 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | CRM | Salesforce.com Inc | 買入 | $1,000,001 - $5,000,000 | Exercised 100 call options (10,000 shares) expiring 6/19/202 | +31.3% |
+| 2020-06-12 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | -64.3% |
+| 2020-06-12 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | PYPL | PayPal Holdings, Inc. | 買入 | $500,001 - $1,000,000 | Purchased 5,000 shares. | -64.3% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | AAPL | apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 1,700 shares. | +347.1% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | AAPL | apple Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 3,000 shares. | +347.1% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | AAPL | apple Inc. | 部分賣出 | $1,000,001 - $5,000,000 | Sold 3,300 shares. | +347.1% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | FB | Facebook, Inc. - Class a | 部分賣出 | $1,000,001 - $5,000,000 | Sold 5,000 shares. | +203.6% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | IBKR | Interactive Brokers group, Inc. - Class a | 部分賣出 | $100,001 - $250,000 | Sold 3,000 shares. | +692.0% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | MORN | Morningstar, Inc. | 部分賣出 | $100,001 - $250,000 | Sold 1,700 shares. | +56.6% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | V | Visa Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 3,000 shares. | +118.2% |
+| 2020-05-08 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | V | Visa Inc. | 部分賣出 | $500,001 - $1,000,000 | Sold 3,000 shares. | +118.2% |
 | 2020-04-28 | [2020-06-09](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016726.pdf) | — | REoF XX, llC | 買入 | $15,001 - $50,000 | additional investment in llC which acquired five Courty ard  | — |
-| 2020-02-28 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | MSFT | Microsoft Corporation | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $130 到期 2021-03-19 | +223.8% |
-| 2020-02-27 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | GOOGL | alphabet Inc. - Cl ass a | 買入 | $500,001 - $1,000,000 | 40 張 Call 行使價 $1200 到期 2021-06-18 | +387.0% |
-| 2020-02-21 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | MSFT | Microsoft Corporation | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $130 到期 2021-03-19 | +193.7% |
-| 2020-02-20 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | MSFT | Microsoft Corporation | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $140 到期 2021-03-19 | +184.4% |
+| 2020-02-28 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | MSFT | Microsoft Corporation | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $130 到期 2021-03-19 | +226.2% |
+| 2020-02-27 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | GOOGL | alphabet Inc. - Cl ass a | 買入 | $500,001 - $1,000,000 | 40 張 Call 行使價 $1200 到期 2021-06-18 | +387.5% |
+| 2020-02-21 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | MSFT | Microsoft Corporation | 買入 | $500,001 - $1,000,000 | 100 張 Call 行使價 $130 到期 2021-03-19 | +195.9% |
+| 2020-02-20 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | MSFT | Microsoft Corporation | 買入 | $250,001 - $500,000 | 100 張 Call 行使價 $140 到期 2021-03-19 | +186.5% |
 | 2020-02-20 | [2020-04-01](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016340.pdf) | WORK | slack Technologies, Inc. Class a | 買入 | $250,001 - $500,000 | Purchased 10,000 shares. | — |
 | 2020-01-21 | [2020-03-03](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016155.pdf) | — | REoF XX, LLC | 買入 | $50,001 - $100,000 | Additional investment in LLC which acquired five Courtyard b | — |
-| 2020-01-16 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AMZN | Amazon.com, Inc. | 賣出 | $250,001 - $500,000 | 20 張 Call 行使價 $1700 到期 2020-01-17 | +164.1% |
-| 2020-01-16 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AMZN | Amazon.com, Inc. | 賣出 | $250,001 - $500,000 | 20 張 Call 行使價 $1600 到期 2020-01-17 | +164.1% |
-| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | AMZN | amazon.com, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 30 call options (3,000 shares) expiring 1/17/20 at | +164.1% |
-| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | AMZN | amazon.com, Inc. | 賣出 | $250,001 - $500,000 | sold 20 call options with a strike price of $1,700 and an ex | +164.1% |
-| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | AMZN | amazon.com, Inc. | 賣出 | $250,001 - $500,000 | sold 20 call options with a strike price of $1,600 and an ex | +164.1% |
-| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | FB | Facebook, Inc. - Class a | 買入 | $250,001 - $500,000 | Exercised 30 call options (3,000 shares) expiring 1/17/20 at | +189.8% |
-| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | FB | Facebook, Inc. - Class a | 買入 | $250,001 - $500,000 | Exercised 20 call options (2,000 shares) expiring 1/17/20 at | +189.8% |
+| 2020-01-16 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AMZN | Amazon.com, Inc. | 賣出 | $250,001 - $500,000 | 20 張 Call 行使價 $1700 到期 2020-01-17 | +166.2% |
+| 2020-01-16 | [2020-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20016961.pdf) | AMZN | Amazon.com, Inc. | 賣出 | $250,001 - $500,000 | 20 張 Call 行使價 $1600 到期 2020-01-17 | +166.2% |
+| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | AMZN | amazon.com, Inc. | 買入 | $1,000,001 - $5,000,000 | Exercised 30 call options (3,000 shares) expiring 1/17/20 at | +166.2% |
+| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | AMZN | amazon.com, Inc. | 賣出 | $250,001 - $500,000 | sold 20 call options with a strike price of $1,700 and an ex | +166.2% |
+| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | AMZN | amazon.com, Inc. | 賣出 | $250,001 - $500,000 | sold 20 call options with a strike price of $1,600 and an ex | +166.2% |
+| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | FB | Facebook, Inc. - Class a | 買入 | $250,001 - $500,000 | Exercised 30 call options (3,000 shares) expiring 1/17/20 at | +190.7% |
+| 2020-01-16 | [2020-02-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2020/20015042.pdf) | FB | Facebook, Inc. - Class a | 買入 | $250,001 - $500,000 | Exercised 20 call options (2,000 shares) expiring 1/17/20 at | +190.7% |
 | 2019-08-13 | [2019-09-18](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012288.pdf) | — | REoF XXI, llC | 買入 | $250,001 - $500,000 | Investment in llC which is acquiring three unique o ffice bu | — |
-| 2019-08-07 | [2019-09-19](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012343.pdf) | V | Visa Inc. | 部分賣出 | $100,001 - $250,000 | Sale of 1,000 Shares | +132.7% |
-| 2019-08-07 | [2019-09-18](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012288.pdf) | V | Visa Inc. | 部分賣出 | $100,001 - $250,000 | Sale of 1.000 Shares | +132.7% |
-| 2019-08-07 | [2019-09-18](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012288.pdf) | V | Visa Inc. | 部分賣出 | $100,001 - $250,000 | Sale of 1,000 Shares | +132.7% |
-| 2019-07-22 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | AMZN | Amazon.com, Inc. | 買入 | $500,001 - $1,000,000 | 20 張 Call 行使價 $1700 到期 2020-01-17 | +149.8% |
-| 2019-07-22 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | NFLX | Netflix, Inc. | 買入 | $100,001 - $250,000 | 30 張 Call 行使價 $250 到期 2020-06-19 | +112.0% |
+| 2019-08-07 | [2019-09-19](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012343.pdf) | V | Visa Inc. | 部分賣出 | $100,001 - $250,000 | Sale of 1,000 Shares | +130.4% |
+| 2019-08-07 | [2019-09-18](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012288.pdf) | V | Visa Inc. | 部分賣出 | $100,001 - $250,000 | Sale of 1.000 Shares | +130.4% |
+| 2019-08-07 | [2019-09-18](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012288.pdf) | V | Visa Inc. | 部分賣出 | $100,001 - $250,000 | Sale of 1,000 Shares | +130.4% |
+| 2019-07-22 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | AMZN | Amazon.com, Inc. | 買入 | $500,001 - $1,000,000 | 20 張 Call 行使價 $1700 到期 2020-01-17 | +151.8% |
+| 2019-07-22 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | NFLX | Netflix, Inc. | 買入 | $100,001 - $250,000 | 30 張 Call 行使價 $250 到期 2020-06-19 | +106.5% |
 | 2019-07-22 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | — | REoF XX, LLC | 買入 | $100,001 - $250,000 | Investment in LLC which acquired five Courtyard by Marriott  | — |
-| 2019-07-05 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | NFLX | Netflix, Inc. | 買入 | $250,001 - $500,000 | 20 張 Call 行使價 $250 到期 2020-06-19 | +73.0% |
-| 2019-06-18 | [2019-07-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011965.pdf) | CRM | salesforce.com Inc | 買入 | $100,001 - $250,000 | 80 張 Call 行使價 $140 到期 2020-06-19 | +65.1% |
-| 2019-06-14 | [2019-07-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011965.pdf) | CRM | salesforce.com Inc | 買入 | $50,001 - $100,000 | 20 張 Call 行使價 $140 到期 2020-06-19 | +65.7% |
+| 2019-07-05 | [2019-08-13](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20012127.pdf) | NFLX | Netflix, Inc. | 買入 | $250,001 - $500,000 | 20 張 Call 行使價 $250 到期 2020-06-19 | +68.5% |
+| 2019-06-18 | [2019-07-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011965.pdf) | CRM | salesforce.com Inc | 買入 | $100,001 - $250,000 | 80 張 Call 行使價 $140 到期 2020-06-19 | +63.6% |
+| 2019-06-14 | [2019-07-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011965.pdf) | CRM | salesforce.com Inc | 買入 | $50,001 - $100,000 | 20 張 Call 行使價 $140 到期 2020-06-19 | +64.2% |
 | 2019-02-07 | [2019-03-11](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011279.pdf) | BFET | BF Enterprises Common stock New | 賣出 | $1,001 - $15,000 | Final cash liquidation initiated by corporation. | — |
-| 2018-10-24 | [2018-11-08](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf) | T | aT&T Inc. | 買入 | $250,001 - $500,000 | Purchased 10,000 shares. | -8.7% |
-| 2018-10-12 | [2018-11-08](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf) | AMZN | amazon.com, Inc. | 買入 | $1,000,001 - $5,000,000 | Purchased 30 call options with a strike price of $1600 and a | +177.3% |
-| 2018-10-09 | [2018-11-08](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf) | FB | Facebook, Inc. - Class a | 買入 | $100,001 - $250,000 | Purchased 30 call options with a strike price of $140 and an | +307.0% |
-| 2018-09-20 | [2018-10-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 9/21/18 at | +532.1% |
-| 2018-09-20 | [2018-10-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 9/21/18 at | +532.1% |
-| 2018-09-11 | [2018-10-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Purchased 100 call options with a strike price of $145 and a | +521.4% |
+| 2018-10-24 | [2018-11-08](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf) | T | aT&T Inc. | 買入 | $250,001 - $500,000 | Purchased 10,000 shares. | -7.9% |
+| 2018-10-12 | [2018-11-08](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf) | AMZN | amazon.com, Inc. | 買入 | $1,000,001 - $5,000,000 | Purchased 30 call options with a strike price of $1600 and a | +179.5% |
+| 2018-10-09 | [2018-11-08](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010631.pdf) | FB | Facebook, Inc. - Class a | 買入 | $100,001 - $250,000 | Purchased 30 call options with a strike price of $140 and an | +308.3% |
+| 2018-09-20 | [2018-10-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 9/21/18 at | +530.3% |
+| 2018-09-20 | [2018-10-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 50 call options (5,000 shares) expiring 9/21/18 at | +530.3% |
+| 2018-09-11 | [2018-10-25](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20010452.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Purchased 100 call options with a strike price of $145 and a | +519.5% |
 | 2018-08-23 | [2018-09-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009481.pdf) | — | Mojo Networks, Inc. | 賣出 | $1,001 - $15,000 | Final cash distribution for preferr ed shares held resulting | — |
-| 2018-07-27 | [2018-09-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009481.pdf) | AMZN | Amazon.com, Inc. | 買入 | $500,001 - $1,000,000 | Purchase of 20 call options with a strike price of $1700 and | +172.9% |
-| 2018-07-27 | [2018-09-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009481.pdf) | FB | Facebook, Inc. - Class A | 買入 | $50,001 - $100,000 | Purchase of 20 call options with a strike price of $150 and  | +267.4% |
-| 2018-03-27 | [2018-04-16](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009293.pdf) | DBX | Dropbox, Inc. - Class a | 買入 | $250,001 - $500,000 | Purchase of 10,000 Shares | +26.5% |
-| 2018-02-02 | [2018-02-26](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009030.pdf) | AAPL | apple Inc. | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $140 到期 2018-09-21 | +766.6% |
-| 2018-02-02 | [2018-02-26](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009030.pdf) | AAPL | apple Inc. | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $130 到期 2018-09-21 | +766.6% |
-| 2017-12-29 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | AAPL | apple Inc. | 賣出 | $250,001 - $500,000 | Contribution of 2,800 shares held personally to the Pa ul &  | +721.9% |
-| 2017-12-28 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | AAPL | apple Inc. | 賣出 | $1,000,001 - $5,000,000 | sale of 9,000 shares | +713.0% |
-| 2017-12-28 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | V | Visa Inc. | 賣出 | $500,001 - $1,000,000 | sale of 5,000 shares | +256.7% |
-| 2017-12-21 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | AAPL | apple Inc. | 賣出 | $100,001 - $250,000 | Contribution of 1,300 shares held person ally to Isolep Ente | +694.8% |
-| 2017-12-21 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | V | Visa Inc. | 賣出 | $100,001 - $250,000 | Contribution of 1,750 shares held person ally to Isolep Ente | +262.9% |
+| 2018-07-27 | [2018-09-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009481.pdf) | AMZN | Amazon.com, Inc. | 買入 | $500,001 - $1,000,000 | Purchase of 20 call options with a strike price of $1700 and | +175.1% |
+| 2018-07-27 | [2018-09-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009481.pdf) | FB | Facebook, Inc. - Class A | 買入 | $50,001 - $100,000 | Purchase of 20 call options with a strike price of $150 and  | +268.6% |
+| 2018-03-27 | [2018-04-16](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009293.pdf) | DBX | Dropbox, Inc. - Class a | 買入 | $250,001 - $500,000 | Purchase of 10,000 Shares | +26.6% |
+| 2018-02-02 | [2018-02-26](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009030.pdf) | AAPL | apple Inc. | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $140 到期 2018-09-21 | +764.0% |
+| 2018-02-02 | [2018-02-26](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20009030.pdf) | AAPL | apple Inc. | 買入 | $100,001 - $250,000 | 50 張 Call 行使價 $130 到期 2018-09-21 | +764.0% |
+| 2017-12-29 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | AAPL | apple Inc. | 賣出 | $250,001 - $500,000 | Contribution of 2,800 shares held personally to the Pa ul &  | +719.5% |
+| 2017-12-28 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | AAPL | apple Inc. | 賣出 | $1,000,001 - $5,000,000 | sale of 9,000 shares | +710.6% |
+| 2017-12-28 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | V | Visa Inc. | 賣出 | $500,001 - $1,000,000 | sale of 5,000 shares | +253.3% |
+| 2017-12-21 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | AAPL | apple Inc. | 賣出 | $100,001 - $250,000 | Contribution of 1,300 shares held person ally to Isolep Ente | +692.4% |
+| 2017-12-21 | [2018-01-10](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2018/20008699.pdf) | V | Visa Inc. | 賣出 | $100,001 - $250,000 | Contribution of 1,750 shares held person ally to Isolep Ente | +259.4% |
 | 2017-06-20 | [2017-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20007655.pdf) | BFET | Exercised 100 call options (10,000 shares) ex | 賣出 | $1,001 - $15,000 | Partial cash liquidation initiated by corporation. | — |
-| 2017-06-15 | [2017-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20007655.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 100 call options (10,000 shares) expiring 6/16/ 17 | +864.0% |
-| 2017-01-20 | [2017-02-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf) | AAPL |  | 賣出 | $250,001 - $500,000 | 100 張 Call 行使價 $90 到期 2017-01-20 | +1059.1% |
-| 2017-01-20 | [2017-02-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf) | SQ | Class a | 買入 | $15,001 - $50,000 | Exercised 50 call options (5,000 shares) expiring 1/20/17 at | +413.5% |
-| 2017-01-19 | [2017-02-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 100 call options (10,000 shares) expiring 1/20/17  | +1061.2% |
+| 2017-06-15 | [2017-07-20](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20007655.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 100 call options (10,000 shares) expiring 6/16/ 17 | +861.1% |
+| 2017-01-20 | [2017-02-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf) | AAPL |  | 賣出 | $250,001 - $500,000 | 100 張 Call 行使價 $90 到期 2017-01-20 | +1055.6% |
+| 2017-01-20 | [2017-02-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf) | SQ | Class a | 買入 | $15,001 - $50,000 | Exercised 50 call options (5,000 shares) expiring 1/20/17 at | +400.5% |
+| 2017-01-19 | [2017-02-14](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006735.pdf) | AAPL | apple Inc. | 買入 | $500,001 - $1,000,000 | Exercised 100 call options (10,000 shares) expiring 1/20/17  | +1057.8% |
 | 2016-12-30 | [2017-02-06](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2017/20006683.pdf) | — | 1600 Atlas Peak Road - Real Estate Investment | 賣出 | $500,001 - $1,000,000 | Sale of Investment Property JT 723 Mule Ears Court - Town ho | — |
-| 2016-07-21 | [2016-08-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005689.pdf) | MGRC | Mcgrath RentCorp | 賣出 | $250,001 - $500,000 | Sale of 8,000 Shares | +264.3% |
-| 2016-07-21 | [2016-08-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005689.pdf) | V | Visa Inc. | 賣出 | $50,001 - $100,000 | Sale of 1,250 Shares | +417.7% |
-| 2016-05-17 | [2016-05-24](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005096.pdf) | AAPL | apple Inc. | 買入 | $100,001 - $250,000 | 100 張 Call 行使價 $80 到期 2017-06-16 | +1387.8% |
-| 2016-05-17 | [2016-05-24](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005096.pdf) | SQ | Class a | 買入 | $1,001 - $15,000 | 50 張 Call 行使價 $8 到期 2017-01-20 | +732.9% |
-| 2016-01-15 | [2016-02-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004596.pdf) | DIS | Walt Disney Company | 買入 | $500,001 - $1,000,000 | Exercised 100 call options (10,000 shares) expiring 1/ 15/16 | +19.8% |
-| 2016-01-13 | [2016-02-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004596.pdf) | AAPL | apple Inc. | 買入 | $250,001 - $500,000 | 200 張 Call 行使價 $90 到期 2017-01-20 | +1328.2% |
-| 2015-12-30 | [2016-02-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf) | CRM | Salesforce.com Inc | 賣出 | $50,001 - $100,000 | Contribution of 1,084 shares held personall y to The Paul &  | +214.1% |
-| 2015-12-30 | [2016-02-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf) | V |  | 賣出 | $100,001 - $250,000 | Contribution of 2,000 shares held personally to The Pa ul &  | +420.6% |
-| 2015-12-29 | [2016-02-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf) | V |  | 賣出 | $250,001 - $500,000 | Sale of 5,000 Shares | +415.0% |
-| 2015-07-16 | [2015-07-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003475.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $100,001 - $250,000 | 258 張 Call 行使價 $14 到期 2016-01-15 | -92.4% |
-| 2015-07-15 | [2015-07-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003475.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 42 張 Call 行使價 $14 到期 2016-01-15 | -92.4% |
-| 2014-12-30 | [2015-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf) | V |  | 賣出 | $100,001 - $250,000 | sale of 500 shares Walt Disney Company (DIs) | +516.8% |
-| 2014-12-29 | [2015-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf) | V | Visa Inc. | 賣出 | $250,001 - $500,000 | sale of 1000 shares Visa Inc. (V) | +514.7% |
-| 2014-12-10 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | DIS | Purchase of 100 call options with a strike pr | 買入 | $50,001 - $100,000 | 92 張 Call 行使價 $90 到期 2016-01-15 | +22.8% |
-| 2014-12-10 | [2015-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf) | DIS | sale of 500 shares Walt Disney Company | 買入 | $50,001 - $100,000 | 92 張 期權 | +22.8% |
-| 2014-11-28 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | Purchase of 150 call options with a strike pr | 買入 | $50,001 - $100,000 | 100 張 Call 行使價 $22 到期 2016-01-15 | -92.4% |
-| 2014-11-28 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | DIS | Purchase of 92 call options with a strike pri | 買入 | $1,001 - $15,000 | 8 張 Call 行使價 $90 到期 2016-01-15 | +21.6% |
-| 2014-11-28 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Purchase of 200 Options Hertz global Holdings | 買入 | $50,001 - $100,000 | 100 張 期權 | -92.4% |
-| 2014-11-28 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | DIS | Purchase of 100 Options Walt Disney Company | 買入 | $1,001 - $15,000 | 8 張 期權 | +21.6% |
-| 2014-11-25 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | Purchase of 50 call options with a strike pri | 買入 | $100,001 - $250,000 | 200 張 Call 行使價 $22 到期 2016-01-15 | -92.4% |
-| 2014-11-25 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Purchase of 150 Options Hertz global Holdings | 買入 | $100,001 - $250,000 | 200 張 期權 | -92.4% |
-| 2014-11-06 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | Purchase of 200 call options with a strike pr | 買入 | $50,001 - $100,000 | 150 張 Call 行使價 $22 到期 2016-01-15 | -92.4% |
-| 2014-11-06 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Purchase of 50 Options Hertz global Holdings, | 買入 | $50,001 - $100,000 | 150 張 期權 | -92.4% |
-| 2014-11-05 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | 2000005577 Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 50 張 Call 行使價 $22 到期 2016-01-15 | -92.4% |
-| 2014-11-05 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 50 張 期權 | -92.4% |
+| 2016-07-21 | [2016-08-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005689.pdf) | MGRC | Mcgrath RentCorp | 賣出 | $250,001 - $500,000 | Sale of 8,000 Shares | +268.8% |
+| 2016-07-21 | [2016-08-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005689.pdf) | V | Visa Inc. | 賣出 | $50,001 - $100,000 | Sale of 1,250 Shares | +412.7% |
+| 2016-05-17 | [2016-05-24](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005096.pdf) | AAPL | apple Inc. | 買入 | $100,001 - $250,000 | 100 張 Call 行使價 $80 到期 2017-06-16 | +1383.3% |
+| 2016-05-17 | [2016-05-24](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20005096.pdf) | SQ | Class a | 買入 | $1,001 - $15,000 | 50 張 Call 行使價 $8 到期 2017-01-20 | +711.9% |
+| 2016-01-15 | [2016-02-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004596.pdf) | DIS | Walt Disney Company | 買入 | $500,001 - $1,000,000 | Exercised 100 call options (10,000 shares) expiring 1/ 15/16 | +18.3% |
+| 2016-01-13 | [2016-02-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004596.pdf) | AAPL | apple Inc. | 買入 | $250,001 - $500,000 | 200 張 Call 行使價 $90 到期 2017-01-20 | +1323.9% |
+| 2015-12-30 | [2016-02-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf) | CRM | Salesforce.com Inc | 賣出 | $50,001 - $100,000 | Contribution of 1,084 shares held personall y to The Paul &  | +211.3% |
+| 2015-12-30 | [2016-02-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf) | V |  | 賣出 | $100,001 - $250,000 | Contribution of 2,000 shares held personally to The Pa ul &  | +415.6% |
+| 2015-12-29 | [2016-02-02](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2016/20004503.pdf) | V |  | 賣出 | $250,001 - $500,000 | Sale of 5,000 Shares | +410.0% |
+| 2015-07-16 | [2015-07-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003475.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $100,001 - $250,000 | 258 張 Call 行使價 $14 到期 2016-01-15 | -92.9% |
+| 2015-07-15 | [2015-07-28](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003475.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 42 張 Call 行使價 $14 到期 2016-01-15 | -92.9% |
+| 2014-12-30 | [2015-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf) | V |  | 賣出 | $100,001 - $250,000 | sale of 500 shares Walt Disney Company (DIs) | +510.8% |
+| 2014-12-29 | [2015-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf) | V | Visa Inc. | 賣出 | $250,001 - $500,000 | sale of 1000 shares Visa Inc. (V) | +508.8% |
+| 2014-12-10 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | DIS | Purchase of 100 call options with a strike pr | 買入 | $50,001 - $100,000 | 92 張 Call 行使價 $90 到期 2016-01-15 | +21.2% |
+| 2014-12-10 | [2015-01-12](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20002351.pdf) | DIS | sale of 500 shares Walt Disney Company | 買入 | $50,001 - $100,000 | 92 張 期權 | +21.2% |
+| 2014-11-28 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | Purchase of 150 call options with a strike pr | 買入 | $50,001 - $100,000 | 100 張 Call 行使價 $22 到期 2016-01-15 | -92.9% |
+| 2014-11-28 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | DIS | Purchase of 92 call options with a strike pri | 買入 | $1,001 - $15,000 | 8 張 Call 行使價 $90 到期 2016-01-15 | +20.1% |
+| 2014-11-28 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Purchase of 200 Options Hertz global Holdings | 買入 | $50,001 - $100,000 | 100 張 期權 | -92.9% |
+| 2014-11-28 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | DIS | Purchase of 100 Options Walt Disney Company | 買入 | $1,001 - $15,000 | 8 張 期權 | +20.1% |
+| 2014-11-25 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | Purchase of 50 call options with a strike pri | 買入 | $100,001 - $250,000 | 200 張 Call 行使價 $22 到期 2016-01-15 | -92.9% |
+| 2014-11-25 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Purchase of 150 Options Hertz global Holdings | 買入 | $100,001 - $250,000 | 200 張 期權 | -92.9% |
+| 2014-11-06 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | Purchase of 200 call options with a strike pr | 買入 | $50,001 - $100,000 | 150 張 Call 行使價 $22 到期 2016-01-15 | -92.9% |
+| 2014-11-06 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Purchase of 50 Options Hertz global Holdings, | 買入 | $50,001 - $100,000 | 150 張 期權 | -92.9% |
+| 2014-11-05 | [2015-07-07](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2015/20003320.pdf) | HTZ | 2000005577 Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 50 張 Call 行使價 $22 到期 2016-01-15 | -92.9% |
+| 2014-11-05 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 50 張 期權 | -92.9% |
 | 2014-10-24 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | SUNE | sunEdison, Inc. | 買入 | $100,001 - $250,000 |  | -100.0% |
-| 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | AA | alcoa Inc. | 賣出 | $15,001 - $50,000 |  | -2.9% |
+| 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | AA | alcoa Inc. | 賣出 | $15,001 - $50,000 |  | -1.4% |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | BCOR | Blucora, Inc. | 賣出 | $1,001 - $15,000 |  | -2.1% |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | BRCM | Broadcom Corporation - Class a | 賣出 | $1,001 - $15,000 |  | — |
-| 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | DOW | Dow Chemical Company | 賣出 | $15,001 - $50,000 |  | -34.5% |
+| 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | DOW | Dow Chemical Company | 賣出 | $15,001 - $50,000 |  | -31.5% |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | ELX | Emulex Corporation | 賣出 | $1,001 - $15,000 |  | — |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | ENTR | Entropic Communications, Inc. | 賣出 | $1,001 - $15,000 |  | — |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | SFLY | shutterfly, Inc. | 賣出 | $15,001 - $50,000 |  | — |
-| 2014-09-22 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | MGRC | Mcgrath RentCorp | 賣出 | $50,001 - $100,000 | Contribution of shares held personall y to The Paul & Nancy  | +228.3% |
-| 2014-09-22 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | RHI | Robert Half Internat ional Inc. | 賣出 | $100,001 - $250,000 | Contribution of shares held personall y to The Paul & Nancy  | -8.9% |
+| 2014-09-22 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | MGRC | Mcgrath RentCorp | 賣出 | $50,001 - $100,000 | Contribution of shares held personall y to The Paul & Nancy  | +232.3% |
+| 2014-09-22 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | RHI | Robert Half Internat ional Inc. | 賣出 | $100,001 - $250,000 | Contribution of shares held personall y to The Paul & Nancy  | -8.5% |
