@@ -6522,6 +6522,14 @@ def _rate_pct(r):
     return f"{r * 100:.0f}%" if isinstance(r, (int, float)) else "—"
 
 
+# [R268] 使用者 10-26：分析圖頁刪「（技術分析僅供參考，非投資建議；龍飛陣 AI 交易不讀此欄。）」；舊分析都要濾走
+_ANALYST_DISCLAIMER_RE = re.compile(r"\n*[（(]?技術分析僅供參考[^\n]*")
+
+
+def _analyst_md(md):
+    return md_to_html(_ANALYST_DISCLAIMER_RE.sub("", md or ""))
+
+
 def _analyst_imgs(doc):
     imgs = ""
     for mkt, paths in (doc.get("charts") or {}).items():
@@ -6585,7 +6593,7 @@ def build_analyst_section(a):
             f"<p><b>{esc(doc.get('title'))}</b></p>"
             f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）"
             f"　<a href='?view=analyst'>📝 全部日子</a></p>"
-            f"{md_to_html(doc.get('markdown'))}{imgs}{score_html}"
+            f"{_analyst_md(doc.get('markdown'))}{imgs}{score_html}"
             + (f"<h3>🗂 歷史</h3><p>{hist}</p>" if hist else "") + "</div>")
 
 
@@ -6634,7 +6642,7 @@ def build_analyst_page(h, open_day=None, err=None):
                   f"<td style='text-align:right'>{_rate_pct(hit / n) if n else '—'}</td><td style='text-align:right'>{pend}</td></tr>")
     top = ("<div class='section'><h2>🎯 學得點：計分卡</h2>"
            "<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（星期二至六 08:20 HKT），舊嘅全部保留；"
-           "每篇嘅判斷到期後由程式對照真實收市自動計分。技術分析僅供參考，非投資建議；龍飛陣 AI 交易唔讀此欄。</p>"
+           "每篇嘅判斷到期後由程式對照真實收市自動計分。</p>"
            + _analyst_summary_table(sc)
            + "<h3>📈 逐篇命中</h3><table><tr><th>日期</th><th>標題</th><th style='text-align:right'>命中／已到期</th>"
            f"<th style='text-align:right'>命中率</th><th style='text-align:right'>未到期</th></tr>{trows}</table></div>")
@@ -6643,7 +6651,7 @@ def build_analyst_page(h, open_day=None, err=None):
         day = d.get("date")
         calls = _analyst_calls_table(by_day.get(day) or [], with_date=False) or _analyst_calls_table(d.get("calls") or [], with_date=False)
         inner = (f"<p class='muted' style='font-size:13px'>寫於 {esc(d.get('generated_hkt') or '—')} HKT</p>"
-                 + md_to_html(d.get("markdown")) + (f"<h3>🎯 本篇判斷</h3>{calls}" if calls else ""))
+                 + _analyst_md(d.get("markdown")) + (f"<h3>🎯 本篇判斷</h3>{calls}" if calls else ""))
         if day == open_day:
             body += (f"<div class='section' id='d-{esc(day)}'><h2>📝 {esc(day)}・{esc(d.get('title'))}</h2>"
                      f"{inner}{_analyst_imgs(d)}</div>")

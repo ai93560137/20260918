@@ -30,10 +30,27 @@
 |---|---|---|---|---|---|---|---|---|
 | L1 | 10-23 14:34 | 921 SELL 0.01（42b4dded，ack ok，**cmd_ack 帶 account，ACK_REQUIRE=1 下通過**） | ≈3982.4（決策價 3982.48） | 3991.20／3971.50（8.7／11.0 美元） | — | 14:37–14:38 伺服器端 **SL 3991.20**（3975.6 急彈到 3992.6） | **−70.43** | 前 15 分鐘跌 16 美元後反抽 3989.5 企唔穩、陰燭跌返 3982、M15 跌浪；止損放擺動高 3989.6 上面（教學第 5 條）。3 分鐘內被 V 型反彈掃出——同 demo C29 一樣嘅模式（急跌後第一次反抽入場） |
 | L2 | 10-23 14:46 | 921 SELL 0.01（65e41a4b，ack ok，帶 account） | 3998.17（決策價 3997.51） | 4007.50／3984.50（9.3／13.7 美元） | — | 20:00 UTC **Opus 主動 CLOSE @≈3999.9**（a1929fd2，ack ok 帶 account；週五 16:00 ET 臨收市，3994–4001 窄幅磨 5 小時冇跌，唔揸過週末避跳空） | **−14.43** | 反彈到 4000–4001.9 阻力區出陰燭吞沒、M15 跌勢；止損放擺動高同 4008 阻力上面約 0.9×ATR。**H on 第一張**：14:47–20:00 共 5 小時 14 分，規則處理約 70%（cost 0），Opus 只喺新 M15／近止損／滿 5 分鐘被問；最低 3993.5＝0.5R 未到 0.95R，規則同 Opus 都冇移止損，一致 |
+| L3 | 10-26 00:08 | 921 SELL 0.01（9238f515，ack ok，帶 account） | ≈3985.9（決策價） | 3992.60／3976.00（6.7／9.9 美元） | — | 00:16–00:18 UTC 伺服器端 **SL 3992.60**（3984.6 反彈到 3992.6） | **−56.94** | 週一亞洲早盤 3985 跌穿區間底後反抽受壓、信心 0.62「反抽受壓轉弱沽」；止損放擺動高上。入場後 7 分鐘內被反彈掃出，同 L1 同一模式（急跌後第一次反抽入場、止損太近 0.5×ATR 級）。H on：8 分鐘內規則處理 4 分鐘（浮盈最高 0.19R < 0.95R 唔郁）、Opus 被問 4 次（新 M15／近止損），冇移止損 |
+| F1 | 10-26 02:31 | 932 跟單 CTC（5231_3086）BUY 0.01（fe57489c，ack ok，帶 account） | ≈3993.9（訊號到後 8 秒排單） | 3973.18／TP1 4000.21（20.7／6.3 美元，TP1 全平模式） | — | 02:54 UTC 伺服器端 **TP1 4000.21**（23 分鐘） | **+47.53** | 新規則下第一張真倉跟單：收到時現價喺入場區（未到入場價規則冇觸發）、02:31 UTC 非避開時段（07–12 UTC）。前一條 3082（00:06 UTC）因「收到時價已過 TP1」略過 |
 
 **真倉首日（10-23 10:06–21:00 UTC，週五）小結**：2 張（921），**−84.86 HKD**（L1 SL −70.43、L2 主動平 −14.43）；922／931／932 0 張。兩次開倉、一次平倉嘅 cmd_ack 全部 ok 並帶 account；伺服器端 SL／TP 正常；H on 全程冇異常；ladder 最低 A（−104 含浮動，本金 −20% 線遠未到）。
 
 **第一張真單核實（10-23 16:03 UTC）**：cmd_ack ok=True 兩次、冇「冇 account」WARNING（EA v0.38＋`XAU_ACK_REQUIRE_ACCOUNT=1` 通過）；live_positions 有 sl／tp、lots 0.01；ladder scope=account、level A（今日 −104 HKD 含浮動，本金 −20% 線遠未到）；prescreen shadow 64 分鐘 skip 2（3.1%）、兩張開倉都落喺「會問」分鐘（opens_in_skip 0）。922／931／932 真倉未有單。
+
+### 0b 總階梯測試（真戶口，2026-10-26 01:45–01:52 UTC；使用者親口批；總指揮執行、天覆陣讀取核實）— **通過**
+
+| 步 | UTC | 動作（總指揮） | 核實（天覆陣，讀取） |
+|---|---|---|---|
+| ① | 01:44–01:45 | `XAU_TEST_CMDS=1`：zhuge-xau 00035-gsw、zhuge-eurusd 00020-t6b | status 兩邊 TEST_CMDS=1、新修訂 100% 流量 |
+| ② | 01:46 | test_cmd：ob1 921 BUY 0.01 sl 3955.98 tp 4015.98；ob2 922 SELL 0.01 sl 1.13199 tp 1.11199 | eurusd 第一次 JSON 格式錯 → 01:45:34 一條 WARN「test_cmd.json corrupt JSON」，覆寫後 01:46:34 正常排指令；兩條 ack ok 帶 ticket（xau …301 @3987.32、eurusd …539 @1.12202） |
+| ③ | 01:47 | — | 兩邊 live_positions 各一張；ladder scope=account，daily_pnl_hkd 兩邊同一來源（bots 已實現 −56.94 ＋浮動），差額只係心跳時差。**副作用**：Claude 接手兩張 test 倉改 SL／TP（xau 01:47:24 modify；eurusd 01:47:42 UPDATE_STOP） |
+| ④ | 01:48:17 | 兩個 control.json principal 暫改 150 | cum_loss_above true（預期） |
+| ⑤ | 01:48:18／01:48:33 | — | 兩邊自動 **PAUSE（ladder）**：「當日虧損 −51.7%／−52.5% ≤ −30%（夜盤線）」，set_by=ladder，相差 15 秒；level B、pause=True、night=True |
+| ⑥ | 01:49:05 → 01:49:18／01:49:33 | 還原 principal、RUN、set_by user、刪 auto_reset_day；ob3 close all 兩邊 | close ack ok 兩邊（2195c8d6／794b5846）；01:50 空倉、pending 空；測試成本約 **−29 HKD**（bots 日已實現 −56.94 → −86.27） |
+| ⑦ | 01:5x | `XAU_TEST_CMDS=0`：zhuge-xau **00036-w8h**、zhuge-eurusd **00021-k8g** | status 兩邊 TEST_CMDS=0、新修訂 100% 流量 |
+| ⑧ | 01:52 | — | 兩邊 test_cmds=false、live_positions 空、mode RUN（set_by user）、ladder level A、pause=False、cum_loss false、auto_reset_day None；control.json equity_peak 已重設到現時權益水平（唔係本金、唔係測試值）；Telegram ⏸ 兩條：服務唔記送出日誌（notify.tg_send 只回 bool），要使用者手機確認 |
+
+結論：真戶口上總階梯 scope=account 兩本一致、夜盤線 −30% 觸發 PAUSE、還原後自動回 A，全部指令 ack ok。注意兩點：(1) test 倉會被 Claude 當自己倉管理（改 SL／TP），下次測試要縮短步 ③→④ 間隔或接受；(2) 日內已實現唔係 0（L3）唔影響測試結論。
 
 ## Claude 自主開平（階段 B 最後一項，目標 ≥3 張；修訂 00021-92x，mode RUN）
 

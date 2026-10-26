@@ -7,13 +7,8 @@ name: es-range-report
 # 不在任何時段內就靜靜結束；休市日（週末、沒有 5 分 K）GCP 回 skip，不發訊息。需要本地 futu/mt5_push.py 在推 5 分 K。
 # 排程 workflow 只在預設分支生效。統計估計，不是交易建議，不影響下單。
 on:
-  schedule:
-    - cron: '7 22 * * 0-5'    # 18:07 ET 夏令（preopen）／17:07 ET 冬令（night）
-    - cron: '7 23 * * 0-5'    # 18:07 ET 冬令（preopen）／19:07 ET 夏令（略過）
-    - cron: '37 13 * * 1-6'   # 09:37 ET 夏令（noon）／08:37 ET 冬令（略過）
-    - cron: '37 14 * * 1-6'   # 09:37 ET 冬令（noon）／10:37 ET 夏令（略過）
-    - cron: '7 20 * * 1-5'    # 16:07 ET 夏令（close）／15:07 ET 冬令（略過）
-    - cron: '7 21 * * 1-5'    # 16:07 ET 冬令（close）／17:07 ET 夏令（night）
+  # R267：排程由 Cloud Scheduler 做（ops/scheduler_jobs.json → workflow_dispatch）。GitHub cron 會遲幾個鐘、
+  # 遲到嗰次會同 Scheduler 重發，所以 2026-10-26 拎走；時間改 ops/scheduler_jobs.json 再 gcp_agent.py scheduler apply。
   workflow_dispatch:
     inputs:
       report:
