@@ -1,20 +1,20 @@
 {
- "date": "2026-10-23",
- "run_hkt": "2026-10-23 06:44",
- "run_kind": "night",
+ "date": "2026-10-26",
+ "run_hkt": "2026-10-26 17:10",
+ "run_kind": "day",
  "closed": [
   {
-   "code": "US.MES2612",
-   "product": "MES 微型標普期貨",
-   "side": "平空",
-   "qty": 5.0,
-   "open_price": 7795.0,
-   "close_price": 7777.25,
-   "close_time_hkt": "2026-10-22 06:25:17",
-   "realized_pts": 17.75
+   "code": "HK.MHI2610",
+   "product": "MHI 小型恒指期貨",
+   "side": "平多",
+   "qty": 1.0,
+   "open_price": 23241.0,
+   "close_price": 23215.0,
+   "close_time_hkt": "2026-10-26 16:00:14",
+   "realized_pts": -26.0
   }
  ],
- "n_yunchui_deals": 3,
- "n_other_deals": 6,
+ "n_yunchui_deals": 2,
+ "n_other_deals": 0,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
