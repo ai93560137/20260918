@@ -36,6 +36,21 @@
 
 **第一張真單核實（10-23 16:03 UTC）**：cmd_ack ok=True 兩次、冇「冇 account」WARNING（EA v0.38＋`XAU_ACK_REQUIRE_ACCOUNT=1` 通過）；live_positions 有 sl／tp、lots 0.01；ladder scope=account、level A（今日 −104 HKD 含浮動，本金 −20% 線遠未到）；prescreen shadow 64 分鐘 skip 2（3.1%）、兩張開倉都落喺「會問」分鐘（opens_in_skip 0）。922／931／932 真倉未有單。
 
+### 0b 總階梯測試（真戶口，2026-10-26 01:45–01:52 UTC；使用者親口批；總指揮執行、天覆陣讀取核實）— **通過**
+
+| 步 | UTC | 動作（總指揮） | 核實（天覆陣，讀取） |
+|---|---|---|---|
+| ① | 01:44–01:45 | `XAU_TEST_CMDS=1`：zhuge-xau 00035-gsw、zhuge-eurusd 00020-t6b | status 兩邊 TEST_CMDS=1、新修訂 100% 流量 |
+| ② | 01:46 | test_cmd：ob1 921 BUY 0.01 sl 3955.98 tp 4015.98；ob2 922 SELL 0.01 sl 1.13199 tp 1.11199 | eurusd 第一次 JSON 格式錯 → 01:45:34 一條 WARN「test_cmd.json corrupt JSON」，覆寫後 01:46:34 正常排指令；兩條 ack ok 帶 ticket（xau …301 @3987.32、eurusd …539 @1.12202） |
+| ③ | 01:47 | — | 兩邊 live_positions 各一張；ladder scope=account，daily_pnl_hkd 兩邊同一來源（bots 已實現 −56.94 ＋浮動），差額只係心跳時差。**副作用**：Claude 接手兩張 test 倉改 SL／TP（xau 01:47:24 modify；eurusd 01:47:42 UPDATE_STOP） |
+| ④ | 01:48:17 | 兩個 control.json principal 暫改 150 | cum_loss_above true（預期） |
+| ⑤ | 01:48:18／01:48:33 | — | 兩邊自動 **PAUSE（ladder）**：「當日虧損 −51.7%／−52.5% ≤ −30%（夜盤線）」，set_by=ladder，相差 15 秒；level B、pause=True、night=True |
+| ⑥ | 01:49:05 → 01:49:18／01:49:33 | 還原 principal、RUN、set_by user、刪 auto_reset_day；ob3 close all 兩邊 | close ack ok 兩邊（2195c8d6／794b5846）；01:50 空倉、pending 空；測試成本約 **−29 HKD**（bots 日已實現 −56.94 → −86.27） |
+| ⑦ | 01:5x | `XAU_TEST_CMDS=0`：zhuge-xau **00036-w8h**、zhuge-eurusd **00021-k8g** | status 兩邊 TEST_CMDS=0、新修訂 100% 流量 |
+| ⑧ | 01:52 | — | 兩邊 test_cmds=false、live_positions 空、mode RUN（set_by user）、ladder level A、pause=False、cum_loss false、auto_reset_day None；control.json equity_peak 已重設到現時權益水平（唔係本金、唔係測試值）；Telegram ⏸ 兩條：服務唔記送出日誌（notify.tg_send 只回 bool），要使用者手機確認 |
+
+結論：真戶口上總階梯 scope=account 兩本一致、夜盤線 −30% 觸發 PAUSE、還原後自動回 A，全部指令 ack ok。注意兩點：(1) test 倉會被 Claude 當自己倉管理（改 SL／TP），下次測試要縮短步 ③→④ 間隔或接受；(2) 日內已實現唔係 0（L3）唔影響測試結論。
+
 ## Claude 自主開平（階段 B 最後一項，目標 ≥3 張；修訂 00021-92x，mode RUN）
 
 | # | 開倉 UTC | 方向 | 入場 | 初始 SL／TP | 調整 | 出場 | 結果（HKD，含成本） | Claude 理由（摘要） |
