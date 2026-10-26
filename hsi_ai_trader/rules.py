@@ -68,6 +68,14 @@ def validate_decision(d: dict, *, position: int, entry: float | None, last: floa
             return "HOLD", None, None, "已有倉位，唔可以再開（最多 1 張，要先 CLOSE）"
         if not can_open:
             return "HOLD", None, None, "而家唔准開新倉（時段/暫停/上限）"
+        min_conf = getattr(cfg, "real_min_confidence", 0.0)
+        if min_conf:                                          # [R294] 使用者 10-26「信心 0.65」（只限真倉）
+            try:
+                conf = float(d.get("confidence") or 0)
+            except (TypeError, ValueError):
+                conf = 0.0
+            if conf < min_conf:
+                return "HOLD", None, None, f"信心 {conf:g} 低過真倉門檻 {min_conf:g}"
         if cfg.max_trades_per_day and trades_today >= cfg.max_trades_per_day:
             return "HOLD", None, None, "今日開倉次數已到上限"
         if stop is None:

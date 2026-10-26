@@ -1200,3 +1200,15 @@ def test_mhi_uses_hsi_lessons():
     from brain import product_lessons
     assert product_lessons("MHI") == product_lessons("HSI") != ""
 
+
+def test_real_min_confidence():
+    """[R294] 使用者 10-26「信心 0.65」：真倉開倉信心要 ≥ 門檻；0＝唔限（模擬）。"""
+    kw = dict(position=0, entry=None, last=25000, remaining_loss=10000, can_open=True, trades_today=0)
+    d = {"action": "OPEN_LONG", "stop_price": 24940, "target_price": 25150, "confidence": 0.55}
+    a, *_, why = validate_decision(d, cfg=replace(Config(), real_min_confidence=0.65), **kw)
+    assert a == "HOLD" and "真倉門檻" in why
+    a, *_ = validate_decision(dict(d, confidence=0.7), cfg=replace(Config(), real_min_confidence=0.65), **kw)
+    assert a == "OPEN_LONG"
+    a, *_ = validate_decision(d, cfg=replace(Config(), real_min_confidence=0.0), **kw)
+    assert a == "OPEN_LONG"
+
