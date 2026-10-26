@@ -6526,10 +6526,11 @@ def _rate_pct(r):
 _ANALYST_DISCLAIMER_RE = re.compile(r"\n*[（(]?技術分析僅供參考[^\n]*")
 
 
-def build_analyst_section(a):
-    doc, sc = a.get("doc"), a.get("scorecard") or {}
-    if not doc:
-        return "<div class='section'><h2>📝 龍飛陣分析</h2><p class='muted'>暫時未有分析。</p></div>"
+def _analyst_md(md):
+    return md_to_html(_ANALYST_DISCLAIMER_RE.sub("", md or ""))
+
+
+def _analyst_imgs(doc):
     imgs = ""
     for mkt, paths in (doc.get("charts") or {}).items():
         cells = ""
@@ -6544,34 +6545,133 @@ def build_analyst_section(a):
                       f"src='data:image/png;base64,{b64}'></div>" if b64 else "")
         if cells:
             imgs += f"<h3>{esc(mkt)}</h3><div style='display:flex;flex-wrap:wrap;gap:10px'>{cells}</div>"
+    return imgs
+
+
+def _analyst_res(r):   # 龍飛陣 pack.py：未到期 null；到期 {"ok": bool, "detail": "..."}
+    if r is None:
+        return "⏳"
+    ok = r.get("ok") if isinstance(r, dict) else r
+    mark = "✅" if ok is True else "❌" if ok is False else "—"
+    detail = r.get("detail") if isinstance(r, dict) else None
+    return mark + (f" <span class='muted' style='font-size:12px'>{esc(detail)}</span>" if detail else "")
+
+
+def _analyst_calls_table(calls, with_date=True):
+    rows = "".join(
+        (f"<tr><td>{esc(c.get('date'))}</td>" if with_date else "<tr>")
+        + f"<td>{esc(c.get('market'))}</td><td>{_analyst_call_txt(c)}</td>"
+        f"<td style='text-align:right'>{esc(c.get('horizon'))} 日</td><td>{esc(c.get('why'))}</td>"
+        f"<td>{_analyst_res(c.get('result'))}</td></tr>"
+        for c in calls)
+    if not rows:
+        return ""
+    return ("<table><tr>" + ("<th>日期</th>" if with_date else "")
+            + f"<th>市場</th><th>判斷</th><th style='text-align:right'>期限</th><th>理由</th><th>結果</th></tr>{rows}</table>")
+
+
+def _analyst_summary_table(sc):
     summ = sc.get("summary") or {}
     srows = "".join(
         f"<tr><td>{esc(k)}</td><td style='text-align:right'>{esc(v.get('hit'))}／{esc(v.get('n'))}</td>"
         f"<td style='text-align:right'>{_rate_pct(v.get('rate'))}</td></tr>"
         if isinstance(v, dict) else f"<tr><td>{esc(k)}</td><td colspan='2'>{esc(v)}</td></tr>" for k, v in summ.items())
-    def res(r):   # 龍飛陣 pack.py：未到期 null；到期 {"ok": bool, "detail": "..."}
-        if r is None:
-            return "⏳"
-        ok = r.get("ok") if isinstance(r, dict) else r
-        mark = "✅" if ok is True else "❌" if ok is False else "—"
-        detail = r.get("detail") if isinstance(r, dict) else None
-        return mark + (f" <span class='muted' style='font-size:12px'>{esc(detail)}</span>" if detail else "")
-    crows = "".join(
-        f"<tr><td>{esc(c.get('date'))}</td><td>{esc(c.get('market'))}</td><td>{_analyst_call_txt(c)}</td>"
-        f"<td style='text-align:right'>{esc(c.get('horizon'))} 日</td><td>{esc(c.get('why'))}</td>"
-        f"<td>{res(c.get('result'))}</td></tr>"
-        for c in (sc.get("calls") or [])[-40:][::-1])
-    score_html = ("<h3>🎯 計分卡</h3>"
-                  + (f"<table><tr><th>類別</th><th style='text-align:right'>命中／已到期</th><th style='text-align:right'>命中率</th></tr>{srows}</table>" if srows
-                     else "<p class='muted'>未有到期嘅判斷。</p>")
-                  + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>"
-                  + (f"<table><tr><th>日期</th><th>市場</th><th>判斷</th><th style='text-align:right'>期限</th><th>理由</th><th>結果</th></tr>{crows}</table>" if crows else ""))
-    hist = "　".join(f"<a href='?view=charts&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
+    return (f"<table><tr><th>類別</th><th style='text-align:right'>命中／已到期</th><th style='text-align:right'>命中率</th></tr>{srows}</table>" if srows
+            else "<p class='muted'>未有到期嘅判斷。</p>")
+
+
+def build_analyst_section(a):
+    doc, sc = a.get("doc"), a.get("scorecard") or {}
+    if not doc:
+        return "<div class='section'><h2>📝 龍飛陣分析</h2><p class='muted'>暫時未有分析。</p></div>"
+    imgs = _analyst_imgs(doc)
+    crows = _analyst_calls_table((sc.get("calls") or [])[-40:][::-1])
+    score_html = ("<h3>🎯 計分卡</h3>" + _analyst_summary_table(sc)
+                  + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>" + crows)
+    hist = "　".join(f"<a href='?view=analyst&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
     return (f"<div class='section'><h2>📝 龍飛陣分析・{esc(doc.get('date'))}</h2>"
             f"<p><b>{esc(doc.get('title'))}</b></p>"
-            f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）</p>"
-            f"{md_to_html(_ANALYST_DISCLAIMER_RE.sub('', doc.get('markdown') or ''))}{imgs}{score_html}"
+            f"<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（{esc(doc.get('generated_hkt') or '—')} HKT）"
+            f"　<a href='?view=analyst'>📝 全部日子</a></p>"
+            f"{_analyst_md(doc.get('markdown'))}{imgs}{score_html}"
             + (f"<h3>🗂 歷史</h3><p>{hist}</p>" if hist else "") + "</div>")
+
+
+# [R329] 📝 龍飛陣分析頁（?view=analyst；&day=；&format=json）：使用者 10-26「把網址加到首頁導航，每天一路加上去，
+# 不要將舊的刪除，我要看到你的過程能否學到我」。所有 daily/<日>.json 由新到舊全部列出（唔設上限）；
+# 最新一篇（或 &day= 指定嗰篇）展開連圖，其餘摺埋只有文字＋當日判斷結果（圖要撳入去先載，免得頁面太大）。
+def analyst_history():
+    names = sorted((b.name for b in _bucket().list_blobs(prefix=ANALYST_PREFIX + "daily/")
+                    if b.name.endswith(".json") and _DAY_RE.match(b.name.rsplit("/", 1)[-1][:-5])), reverse=True)
+    docs = []
+    for name in names:
+        try:
+            doc = gcs_read_json(name, None)
+        except Exception as exc:
+            log_event(f"⚠️ [龍飛陣分析讀取失敗] {name}: {exc}", severity="WARNING", component="analyst")
+            doc = None
+        if isinstance(doc, dict):
+            doc.setdefault("date", name.rsplit("/", 1)[-1][:-5])
+            docs.append(doc)
+    return {"docs": docs, "scorecard": gcs_read_json(ANALYST_PREFIX + "scorecard.json", None)}
+
+
+def _analyst_day_tally(calls):
+    done = [c for c in calls if isinstance(c.get("result"), dict)]
+    hit = sum(1 for c in done if c["result"].get("ok") is True)
+    return hit, len(done), len(calls) - len(done)
+
+
+def build_analyst_page(h, open_day=None, err=None):
+    nav = page_nav("analyst")
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📝 龍飛陣分析</h1></div>{nav}</div>"
+    if err:
+        return html_page("龍飛陣分析", head + f"<div class='section'>{esc(err)}</div>")
+    docs, sc = h.get("docs") or [], h.get("scorecard") or {}
+    if not docs:
+        return html_page("龍飛陣分析", head + "<div class='section'><p class='muted'>暫時未有分析。</p></div>")
+    by_day = {}
+    for c in sc.get("calls") or []:
+        by_day.setdefault(c.get("date"), []).append(c)
+    open_day = open_day if open_day in {d.get("date") for d in docs} else docs[0].get("date")
+    trows = ""
+    for d in docs:
+        hit, n, pend = _analyst_day_tally(by_day.get(d.get("date")) or d.get("calls") or [])   # 計分卡未計到嘅新篇：全部當未到期
+        trows += (f"<tr><td><a href='?view=analyst&day={esc(d.get('date'))}#d-{esc(d.get('date'))}'>{esc(d.get('date'))}</a></td>"
+                  f"<td>{esc(d.get('title'))}</td><td style='text-align:right'>{hit}／{n}</td>"
+                  f"<td style='text-align:right'>{_rate_pct(hit / n) if n else '—'}</td><td style='text-align:right'>{pend}</td></tr>")
+    top = ("<div class='section'><h2>🎯 學得點：計分卡</h2>"
+           "<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（星期二至六 08:20 HKT），舊嘅全部保留；"
+           "每篇嘅判斷到期後由程式對照真實收市自動計分。</p>"
+           + _analyst_summary_table(sc)
+           + "<h3>📈 逐篇命中</h3><table><tr><th>日期</th><th>標題</th><th style='text-align:right'>命中／已到期</th>"
+           f"<th style='text-align:right'>命中率</th><th style='text-align:right'>未到期</th></tr>{trows}</table></div>")
+    body = ""
+    for d in docs:
+        day = d.get("date")
+        calls = _analyst_calls_table(by_day.get(day) or [], with_date=False) or _analyst_calls_table(d.get("calls") or [], with_date=False)
+        inner = (f"<p class='muted' style='font-size:13px'>寫於 {esc(d.get('generated_hkt') or '—')} HKT</p>"
+                 + _analyst_md(d.get("markdown")) + (f"<h3>🎯 本篇判斷</h3>{calls}" if calls else ""))
+        if day == open_day:
+            body += (f"<div class='section' id='d-{esc(day)}'><h2>📝 {esc(day)}・{esc(d.get('title'))}</h2>"
+                     f"{inner}{_analyst_imgs(d)}</div>")
+        else:
+            body += (f"<div class='section' id='d-{esc(day)}'><details><summary><b>📝 {esc(day)}・{esc(d.get('title'))}</b></summary>"
+                     f"{inner}<p><a href='?view=analyst&day={esc(day)}#d-{esc(day)}'>🖼 睇當日圖</a></p></details></div>")
+    return html_page("龍飛陣分析", head + top + body, "<meta http-equiv='refresh' content='900'>")
+
+
+def handle_analyst_get(req):
+    day = req.args.get("day") or None
+    day = day if day and _DAY_RE.match(day) else None
+    try:
+        h, err = analyst_history(), None
+    except Exception as exc:
+        log_event(f"⚠️ [龍飛陣分析頁失敗] {exc}", severity="WARNING", component="analyst")
+        h, err = {"docs": [], "scorecard": None}, "讀取失敗，請稍後再試。"
+    if req.args.get("format") == "json":
+        return jsonify({"status": "error" if err else "ok", **h})
+    return build_analyst_page(h, day, err)
 
 
 def build_charts_page(items, err=None, analyst=""):
@@ -8229,6 +8329,7 @@ PAGE_LINKS = [
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
     ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
+    ("analyst", "📝 龍飛陣分析"),                                # [R329] 每日分析欄，全部日子累積（使用者 10-26）
     ("charts", "📐 分析圖"),                                     # [R258] 各陣分析圖（龍飛陣斐波那契等）
     ("rules", "📏 人手交易守則"),                               # [R284] 使用者 10-22：人手落單前睇（龍飛陣由成交分析整理）
     ("strategies", "🧭 策略總表"),
@@ -8533,6 +8634,8 @@ def handle_get(req):
         return handle_htf_get(req)
     if view == "rules":                                          # [R284] 📏 人手交易守則
         return build_manual_rules_page()
+    if view == "analyst":                                        # [R329] 📝 龍飛陣分析（全部日子）
+        return handle_analyst_get(req)
     if view == "charts":                                         # [R258] 📐 分析圖（各陣分析圖／報告）
         return handle_charts_get(req)
     if view == "longfei":                                        # [R201] 🐉 龍飛陣成績（&format=json）

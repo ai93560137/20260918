@@ -22,8 +22,30 @@ sc = {"summary": {"bias": {"hit": 3, "n": 4, "rate": 0.75}}, "pending": 2,
 with mock.patch.object(main, "_chart_png_b64", return_value="BBBB") as m:
     a = main.build_analyst_section({"doc": doc, "scorecard": sc, "days": ["2026-10-23", "2026-10-22"]})
     assert m.call_count == 1                      # 只讀 ops/longfei/analyst/ 底下嘅圖
-assert "BBBB" in a and "壓力 23,309" in a and "偏淡 ↓" in a and "3／4" in a and "75%" in a and "❌" in a and "28,700 跌穿" in a and "⏳" in a and "✅" in a and "?view=charts&day=2026-10-22" in a, a
+assert "BBBB" in a and "壓力 23,309" in a and "偏淡 ↓" in a and "3／4" in a and "75%" in a and "❌" in a and "28,700 跌穿" in a and "⏳" in a and "✅" in a and "?view=analyst&day=2026-10-22" in a, a
 assert "文字" in a and "技術分析僅供參考" not in a   # [R268] 免責句濾走
 assert "暫時未有分析" in main.build_analyst_section({"doc": None})
 assert main._DAY_RE.match("2026-10-23") and not main._DAY_RE.match("../x")
 print("analyst ok")
+
+# [R329] 📝 龍飛陣分析頁：全部日子累積，最新展開連圖，舊嘅摺埋
+d2 = {"date": "2026-10-24", "title": "新篇", "generated_hkt": "2026-10-24 08:51", "markdown": "## 上次對照\n今日",
+      "charts": {"NQ": ["ops/longfei/analyst/charts/2026-10-24/NQ_4h.png"]}, "calls": []}
+d1 = {"date": "2026-10-23", "title": "舊篇", "markdown": "## 舊\n昨日\n\n（技術分析僅供參考，非投資建議；龍飛陣 AI 交易不讀此欄。）", "charts": {"NQ": ["ops/longfei/analyst/charts/2026-10-23/NQ_4h.png"]}}
+sc2 = {"summary": {"bias": {"hit": 1, "n": 2, "rate": 0.5}},
+       "calls": [{"date": "2026-10-23", "market": "NQ", "kind": "bias", "dir": -1, "horizon": 5, "why": "a", "result": {"ok": True, "detail": "d"}},
+                 {"date": "2026-10-23", "market": "ES", "kind": "bias", "dir": 0, "horizon": 5, "why": "b", "result": {"ok": False}},
+                 {"date": "2026-10-24", "market": "HSI", "kind": "resistance", "level": 23309, "horizon": 5, "why": "c", "result": None}]}
+with mock.patch.object(main, "_chart_png_b64", return_value="CCCC") as m:
+    p = main.build_analyst_page({"docs": [d2, d1], "scorecard": sc2})
+    assert m.call_count == 1                      # 只有展開嗰篇載圖
+assert "新篇" in p and "舊篇" in p and "今日" in p and "昨日" in p and "<details>" in p and "CCCC" in p, p[:300]
+assert "1／2" in p and "50%" in p and "壓力 23,309" in p and "⏳" in p and "nav-current'>📝 龍飛陣分析" in p
+with mock.patch.object(main, "_chart_png_b64", return_value="CCCC"):
+    p = main.build_analyst_page({"docs": [d2, d1], "scorecard": sc2}, "2026-10-23")
+assert p.index("id='d-2026-10-23'><h2>") > 0 and "id='d-2026-10-24'><details>" in p
+assert "暫時未有分析" in main.build_analyst_page({"docs": [], "scorecard": None})
+assert "讀取失敗" in main.build_analyst_page({}, None, "讀取失敗")
+assert any(v == "analyst" for v, _ in main.PAGE_LINKS)
+assert "技術分析僅供參考" not in p   # [R268]
+print("analyst page ok")
