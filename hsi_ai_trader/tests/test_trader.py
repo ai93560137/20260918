@@ -1212,3 +1212,13 @@ def test_real_min_confidence():
     a, *_ = validate_decision(d, cfg=replace(Config(), real_min_confidence=0.0), **kw)
     assert a == "OPEN_LONG"
 
+
+
+def test_sim_ai_off_skips_claude(env):
+    """[R295] 使用者 10-26「模擬唔再用 api call」：sim_ai=False 唔篩選、唔問決策模型，只記一行 HOLD。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, sim_ai=False)
+    tr.tick()
+    assert ai.screens == 0 and ai.calls == 0 and b.orders == []
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text().splitlines()][-1]
+    assert rec["final"] == "HOLD" and "模擬唔叫 AI" in rec["reason"] and rec["usage"] is None
