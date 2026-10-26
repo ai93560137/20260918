@@ -4,8 +4,8 @@ name: Ops daily books（每日對帳表＋逐日損益帳，純 Python）
 # 對帳表 research/reconcile/<日>.md commit 到預設分支（只有手數）；損益帳含權益，寫 GCS ops/books/pnl_daily.csv（私人）。
 # Workload Identity 免金鑰讀寫 GCS（同 ops_notify.yml）。
 on:
-  schedule:
-    - cron: '20 9 * * 1-5'    # 17:20 HKT：本機 16:35 匯出成交、Actions 17:10 成交通報之後
+  # R267：排程由 Cloud Scheduler 做（ops/scheduler_jobs.json → workflow_dispatch）。GitHub cron 會遲幾個鐘、
+  # 遲到嗰次會同 Scheduler 重發，所以 2026-10-26 拎走；時間改 ops/scheduler_jobs.json 再 gcp_agent.py scheduler apply。
   workflow_dispatch:
     inputs:
       date:

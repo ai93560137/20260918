@@ -5,11 +5,8 @@ name: Ops notify（對沖狀態／富途成交通報，純 Python，取代總指
 # 狀態存 GCS ops/notify_state.json；對沖狀態另寫 ops/hedge_status.txt 給雲垂 16:00 Routine 讀。
 # 使用 Workload Identity 免金鑰讀寫 GCS（同 gcp_deploy.yml、screener_scorecard.yml）。
 on:
-  schedule:
-    - cron: '35 6 * * 1-5'    # 14:35 HKT 對沖狀態（給雲垂 14:42 報告）
-    - cron: '55 7 * * 1-5'    # 15:55 HKT 對沖狀態（給雲垂 16:00 對沖）
-    - cron: '10 9 * * 1-5'    # 17:10 HKT 成交通報（日盤；本機 16:35 匯出）
-    - cron: '40 19 * * 1-5'   # 03:40 HKT 翌日（週二至六）成交通報（夜盤；本機 03:05 匯出）
+  # R267：排程由 Cloud Scheduler 做（ops/scheduler_jobs.json → workflow_dispatch）。GitHub cron 會遲幾個鐘、
+  # 遲到嗰次會同 Scheduler 重發，所以 2026-10-26 拎走；時間改 ops/scheduler_jobs.json 再 gcp_agent.py scheduler apply。
   workflow_dispatch:
     inputs:
       task:

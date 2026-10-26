@@ -7,8 +7,8 @@ name: hsi-touch-alert
 # (紐約週五 17:00 收市 = 週五 UTC 21:00,仍在平日行內)。
 # 恒指休市時段由腳本的報價呆滯檢查自動跳過;黃金即時價休市時凍結,同日去重防重發。
 on:
-  schedule:
-    - cron: '*/15 * * * 1-5'
+  # R267：排程由 Cloud Scheduler 做（ops/scheduler_jobs.json → workflow_dispatch）。GitHub cron 會遲幾個鐘、
+  # 遲到嗰次會同 Scheduler 重發，所以 2026-10-26 拎走；時間改 ops/scheduler_jobs.json 再 gcp_agent.py scheduler apply。
   workflow_dispatch:
 
 permissions:

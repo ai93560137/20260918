@@ -6,10 +6,14 @@ name: 雲垂 fetch-quotes 定時觸發（取代兩個 Claude Routine）
 #   21:52 UTC（05:52 HKT）美股收盤定稿：等金絲雀 06:30 讀到 VIX／VIX9D／VIX3M／VVIX／MOVE 定稿日線。
 # 兩次都用 digest=false（只發警報，唔發日報）。fetch-quotes.yml 喺雲垂分支，排程 workflow 只喺預設分支生效，所以由呢度 dispatch。
 on:
-  schedule:
-    - cron: '40 8 * * 1-5'     # 16:40 HKT 港股收市後
-    - cron: '52 21 * * 1-5'    # 05:52 HKT 美股收盤定稿
+  # R267：排程由 Cloud Scheduler 做（ops/scheduler_jobs.json → workflow_dispatch）。GitHub cron 會遲幾個鐘、
+  # 遲到嗰次會同 Scheduler 重發，所以 2026-10-26 拎走；時間改 ops/scheduler_jobs.json 再 gcp_agent.py scheduler apply。
   workflow_dispatch:
+    inputs:
+      check_final:
+        description: '跑完檢查 hsi／vhsi 日線係 final（16:40 HKT 嗰次用 true）'
+        required: false
+        default: 'false'
 
 permissions:
   actions: write     # dispatch 另一個 workflow
@@ -51,7 +55,7 @@ jobs:
           esac
 
       - name: 港股收市後：檢查 hsi／vhsi 日線係 final
-        if: github.event.schedule == '40 8 * * 1-5'
+        if: inputs.check_final == 'true'
         run: |
           gh api "repos/$REPO/contents/tradingview/data_external/asia_daily_status.json?ref=$REF" \
             -H 'Accept: application/vnd.github.raw' > status.json
