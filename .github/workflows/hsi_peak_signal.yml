@@ -4,8 +4,8 @@ name: hsi-peak-signal
 # 這裡每 15 分鐘取未發的通知、發 Telegram、再回報已發（&ack=）。通知本身在高位後幾小時才出現，15 分鐘延遲影響不大。
 # UTC 週一至五全天 = 香港週一 08:00 至週六 08:00，涵蓋日市與夜市。排程只在預設分支生效。統計判斷，不影響下單。
 on:
-  schedule:
-    - cron: '4,19,34,49 * * * 1-5'
+  # R267：排程由 Cloud Scheduler 做（ops/scheduler_jobs.json → workflow_dispatch）。GitHub cron 會遲幾個鐘、
+  # 遲到嗰次會同 Scheduler 重發，所以 2026-10-26 拎走；時間改 ops/scheduler_jobs.json 再 gcp_agent.py scheduler apply。
   workflow_dispatch:
     inputs:
       send:
