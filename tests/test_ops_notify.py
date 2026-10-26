@@ -15,6 +15,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import ops_notify as on  # noqa: E402
 
 CFG = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ops", "notify_config.json")))
+# 測試用 10-13 嘅設定（雲垂當時有 MHI2610 −1 對沖、MHI 成交歸雲垂）；線上設定 10-26 已改 0／拎走 HK.MHI
+LIVE_CFG = CFG
+CFG = json.loads(json.dumps(CFG))
+CFG["hedge"]["declared_hedge_lots"] = {"HK.MHI2610": -1.0}
+CFG["deals"]["yunchui_prefixes"] = ["HK.MHI"] + [p for p in CFG["deals"]["yunchui_prefixes"] if p != "HK.MHI"]
 
 
 def hkt(s):
@@ -28,6 +33,11 @@ RISK = {"run_hkt": "2026-10-13 15:49",
 
 
 class HedgeTests(unittest.TestCase):
+    def test_live_config_yunchui_no_hedge(self):   # 10-26 雲垂冇 MHI 對沖；MHI 倉全屬龍飛陣
+        msg, _ = on.compose_hedge(RISK, {}, LIVE_CFG, hkt("2026-10-26 15:55"))
+        self.assertIn("雲垂對沖申報 +0／其他 -1", msg)
+        self.assertFalse(on.is_yunchui("HK.MHI2610", LIVE_CFG))
+
     def test_basic_line(self):
         msg, st = on.compose_hedge(RISK, {}, CFG, hkt("2026-10-13 15:55"))
         self.assertIn("🛡️ 對沖狀態 15:55", msg)
