@@ -45,7 +45,7 @@ TEAM_MANUAL, TEAM_GIFT, TEAM_UNMATCHED = "使用者人手", "券商贈股", "未
 TEAM_LONGFEI = "龍飛陣"
 TEAM_RULES = (   # 照 main.py FUTU_TEAM_RULES（代碼正則, 陣, 用途, 最多手數；超出當使用者人手）
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
-    (r"^HK\.MHI\d{4}$", "MHI_BY_MONTH", "MHI 期貨", 1),   # [R257] 方案 a：當刻即月 → 龍飛陣；其他月份 → 雲垂陣（各最多 1 手）
+    (r"^HK\.MHI\d{4}$", "MHI_BY_MONTH", "MHI 期貨", 1),   # [R257] 方案 a：當刻即月 → 龍飛陣（R300 最多 10 張）；其他月份 → 雲垂陣（最多 1 手）
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", TEAM_MANUAL, "大恒指期貨（人手）", None),   # 2026-10-14 使用者：預設歸人手；屬蛇蟠要逐張確認
@@ -155,13 +155,16 @@ def hk_front_month(today: date) -> tuple[int, int]:
     return y, m
 
 
+MHI_LONGFEI_CAP = 10   # [R300] 照 main.py FUTU_MHI_LONGFEI_CAP：龍飛陣即月 MHI 最多 10 張（使用者 10-27）
+
+
 def team_of(code: str, today: date | None = None) -> tuple[str, str, float | None]:
     for rx, team, use, cap in TEAM_RULES:
         if re.match(rx, code or ""):
             if team == "MHI_BY_MONTH":
                 today = today or datetime.now(HKT).date()
                 if (2000 + int(code[6:8]), int(code[8:10])) == hk_front_month(today):
-                    return TEAM_LONGFEI, "MHI 即月期貨（AI 真倉）", cap
+                    return TEAM_LONGFEI, "MHI 即月期貨（AI 真倉）", MHI_LONGFEI_CAP
                 return "雲垂陣", "MHI 期貨 Δ 對沖（非即月）", cap
             return team, use, cap
     return TEAM_UNMATCHED, "—", None
