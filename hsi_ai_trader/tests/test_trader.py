@@ -1273,3 +1273,58 @@ def test_order_fail_recorded_and_capped(env):
     from push import build_packet
     pkt = build_packet(tr.cfg, st, "x")
     assert pkt["state"]["order_fail_today"] == 2 and pkt["state"]["open_block"]
+
+
+def test_buying_power_check_skips_ai(env):
+    """[R299] 使用者 10-27「開倉前先查購買力」：富途話兩邊都開唔到就 HOLD，唔叫 AI，heartbeat 記低。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, real_bp_check=True)
+    b.max_open_qty = lambda code, side, price: 0
+    tr.tick()
+    assert ai.calls == 0 and b.orders == []
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert "購買力不足" in rec["reason"] and tr.state["buying_power"]["blocked"]
+    b.max_open_qty = lambda code, side, price: 1 if side < 0 else 0      # 夠沽空：照問 AI
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 1 and not tr.state["buying_power"]["blocked"]
+
+
+def test_swing_exit_trails_and_skips_ai(env):
+    """[R299] 波段（IDEAS #135）：有倉唔叫 AI、唔理目標價；浮賺夠就移動止蝕，跌返就止蝕走。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, swing_exit=True, swing_trail_start=100, swing_trail=80)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    entry, calls = tr.state["pos"]["entry"], ai.calls
+    b.price = entry + 120                              # 過咗目標價都唔平；浮賺 120 ≥ 100 → 止蝕移到 entry+40
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] and tr.state["pos"]["stop"] == entry + 40
+    advance(t, minutes=5)                              # 到決策時間：有倉唔叫 AI
+    tr.tick()
+    assert ai.calls == calls
+    b.price = entry + 30                               # 跌穿移動止蝕
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] is None
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines() if '"CLOSE"' in l][-1]
+    assert "止蝕" in close["reason"] and close["points"] > 0
+
+
+def test_swing_max_days_close(env):
+    """[R299] 波段揸滿 N 個交易日，第 N 日日市收市前平倉。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, swing_exit=True)
+    tr.tick()
+    ai.next = {"action": "OPEN_SHORT", "stop_price": 25100, "confidence": 0.7, "reason": "沽空"}
+    advance(t, minutes=5)
+    tr.tick()
+    tr.state["pos"]["days_held"] = 2                   # 第 3 個交易日
+    t["now"] = t["now"].replace(hour=16, minute=22, second=5)
+    tr.tick()
+    assert tr.state["pos"] is None
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines() if '"CLOSE"' in l][-1]
+    assert "揸滿 3 個交易日" in close["reason"]
