@@ -118,6 +118,14 @@ a, s_, t_, w = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 399
 check("止損太近 → 推到下限 2；止賺錯邊 → 唔送", a == "OPEN_LONG" and s_ == 3998.0 and t_ is None, (a, s_, t_))
 check("信心不足 → HOLD", "信心" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.3}, position=pos0, last=4000, can_open=True, trades_today=0)[3])
 check("can_open=False → HOLD", "唔准開" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.9}, position=pos0, last=4000, can_open=False, trades_today=0)[3])
+# [R340] UPDATE_STOP 新止損太貼現價 → 夾到 MODIFY_MIN_DIST（XAUUSD 2＋0.3＋1＝3.3）；夾完唔比現止損緊 → HOLD 唔發 modify
+posS = {"side": -1, "entry": 4010.0, "stop": 4015.0, "target": 3990.0}
+a, s_, t_, w = rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4001.0, "confidence": 0.7}, position=posS, last=4000, can_open=True, trades_today=0)
+check("UPDATE_STOP 太貼（1 美元）→ 夾到 4003.3、止賺保留", a == "UPDATE_STOP" and s_ == 4003.3 and t_ == 3990.0, (a, s_, t_, w))
+a, s_, t_, w = rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4002.0, "confidence": 0.7}, position={**posS, "stop": 4003.0}, last=4000, can_open=True, trades_today=0)
+check("UPDATE_STOP 太貼而現止損已係 4003 → HOLD 唔發", a == "HOLD" and "唔比現止損緊" in w, (a, s_, w))
+a, s_, t_, w = rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4006.0, "confidence": 0.7}, position=posS, last=4000, can_open=True, trades_today=0)
+check("UPDATE_STOP 距離夠（6 美元）→ 照發", a == "UPDATE_STOP" and s_ == 4006.0, (a, s_, w))
 print("=== 風控階梯（純函數，龍飛陣做法：冇硬鎖）===")
 L = lambda **k: rules.ladder(**{"principal_hkd": 20000, "own_equity": 20000, "peak_equity": 20000, "daily_pnl_hkd": 0, "margin_level": None, "night": False, **k})
 check("正常 → 唔停", not L()["pause"] and not L()["stop"] and not L()["alerts"])
@@ -133,7 +141,7 @@ print("=== 影子：開倉 → 止損 ===")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": 4020.0, "confidence": 0.8, "reason": "突破"}
 st, d = hb(42, 4005)
 check("開倉：紙上持倉、cmd_text 空", d["decision"]["final"] == "OPEN_LONG" and d["cmd_text"] == "" and json.loads(FAKE["xau/state.json"][0])["position"]["entry"] == 4005, d)
-check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1_older"]) + len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["risk"]["lots"] == 0.01 and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
+check("context 有 M15／M1／風控／階梯（冇舊電閘）", "legacy_gate" not in FB.ctx and len(FB.ctx["bars_m1_older"]) + len(FB.ctx["bars_m1"]) >= 30 and FB.ctx["product"]["risk_limits"]["lots"] == 0.01 and "lots" not in FB.ctx["risk"] and FB.ctx["position"] is None and FB.ctx["risk"]["ladder"]["level"] == "A")
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3996.0, "target_price": None, "confidence": 0.8, "reason": "再開"}
 st, d = hb(43, 4006)
 check("有倉時 AI 再開 → 擋", d["decision"]["final"] == "HOLD" and "已有倉位" in d["decision"]["rejected"], d)
@@ -426,7 +434,8 @@ check("伺服器時差：冇資料 = 0", xau.server_offset({}, 1_000_000) == 0)
 _p = xau.own_positions({"positions": [{"side": "BUY", "lots": 0.01, "entry": 4000, "sl": 0, "tp": 0, "open_time": 1_000_000 + 10800}]}, 10800)
 check("open_time 換算成 UTC（最長持倉先會準）", _p[0]["opened_ts"] == 1_000_000 and _p[0]["stop"] is None, _p)
 j = client.get("/?format=json").get_json()
-check("JSON 有 account_id／xau_account／live_positions", j["account_id"] == "70001" and j["xau_account"] == "70001" and isinstance(j["live_positions"], list))
+check("JSON account_id／xau_account 只露尾 2 位（10-23 權杖公開，真倉號碼唔可以外露）", j["account_id"] == "…01" and j["xau_account"] == "…01" and isinstance(j["live_positions"], list) and j["ack_require_account"] is False, (j["account_id"], j["xau_account"]))
+check("JSON pending_cmds id 遮罩", all(c["id"].endswith("*" * 6) and "id=" + c["id"] in c["text"] for c in j["pending_cmds"]) if j["pending_cmds"] else True, j["pending_cmds"])
 st, d = live_hb(13, 4003, [], trade_allowed={"terminal": True, "ea": False, "account": True})
 j = client.get("/?format=json").get_json()
 check("JSON 有 trade_allowed／server_offset", j["trade_allowed"] == {"terminal": True, "ea": False, "account": True} and j["server_offset"] == 0, j.get("trade_allowed"))
@@ -482,9 +491,17 @@ check("回填後 M1 歷史仍然排序、冇重複", [b["time"] for b in _m1] ==
 
 print("=== Prompt caching（使用者 10-21）：整點切、三段快取、TTL ===")
 import brain as _brain
-_h0 = (int(FB.ctx["bars_m1"][0][0]) // 3600) * 3600 if FB.ctx.get("bars_m1") else None
-check("build_context：整點前 M1／M15 入快取段，本小時嘅係即時段", _h0 is not None and all(b[0] >= _h0 for b in FB.ctx["bars_m1"]) and all(b[0] < _h0 for b in FB.ctx["bars_m1_older"])
+_h0 = (int(FB.ctx["bars_m1_older"][-1][0]) // 3600 + 1) * 3600 if FB.ctx.get("bars_m1_older") else None
+check("build_context：整點前 M1／M15 入快取段，本小時嘅係即時段（M1 時間欄＝本小時第幾分鐘）", _h0 is not None and all(0 <= b[0] <= 59 for b in FB.ctx["bars_m1"])
+      and FB.ctx["bars_m1"] == sorted(FB.ctx["bars_m1"]) and FB.ctx["bars_m1_hour_utc"] == time.strftime("%H:%M", time.gmtime(_h0)) and all(b[0] < _h0 for b in FB.ctx["bars_m1_older"])
       and all(b[0] < _h0 for b in FB.ctx["bars_m15_older"]) and all(b[0] >= _h0 for b in FB.ctx["bars_m15_recent"]), (_h0, FB.ctx["bars_m1"][:1], FB.ctx["bars_m1_older"][-1:]))
+check("本小時 M1 最多 XAU_M1_LIVE_MAX 根、recent_decisions 最多 XAU_RECENT_DECISIONS 條、reason 截短", len(FB.ctx["bars_m1"]) <= config.M1_LIVE_MAX
+      and len(FB.ctx["recent_decisions"]) <= config.RECENT_DECISIONS and all(len(d["reason"]) <= config.REASON_MAX_CHARS for d in FB.ctx["recent_decisions"]), FB.ctx["recent_decisions"])
+check("system／tool：reason 係短標籤，日誌行由 Python 組", f"at most {config.REASON_MAX_CHARS} characters" in _brain.build_system(None) and "{reason_rule}" not in _brain.build_system(None)
+      and "No sentences" in _brain.TOOL["input_schema"]["properties"]["reason"]["description"] and "Leave `reason` empty" in _brain.reason_rule(0))
+_rec = {"final": "OPEN_LONG", "action": "OPEN_LONG", "stop": 3996.0, "target": 4020.0, "confidence": 0.8, "reason": "突破", "rejected": None, "ms": 1200}
+check("decision_line：動作｜價｜SL｜TP｜信心｜標籤｜ms", xau.decision_line(_rec, 4001.23) == "🧠 [天覆陣] OPEN_LONG @ 4001.23｜SL 3996.00｜TP 4020.00｜信心 0.80｜突破｜1200 ms", xau.decision_line(_rec, 4001.23))
+check("decision_line：被擋＋冇標籤", "HOLD ← AI OPEN_LONG @ 4001.23｜擋：階梯 B" in xau.decision_line({**_rec, "final": "HOLD", "stop": None, "target": None, "confidence": None, "reason": "", "rejected": "階梯 B", "ms": None}, 4001.23))
 _uc = _brain._user_content(FB.ctx, "Call the `decide` tool.")
 check("_user_content：三段，首兩段 cache_control ttl=5m（決策 10-21 改 5 分鐘），第三段冇", len(_uc) == 3 and _uc[0]["cache_control"] == {"type": "ephemeral", "ttl": "5m"} and _uc[1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"} and "cache_control" not in _uc[2])
 check("整點前 M1 最多 60 根", len(FB.ctx["bars_m1_older"]) <= 60)
@@ -526,6 +543,31 @@ config.PRODUCT_KIND = "gold"
 check("黃金 system prompt 仍有每日休市", "daily break 17:00-18:00" in _brain.build_system(""))
 for k, v in _saved.items(): setattr(config, k, v)
 check("還原 XAUUSD 後指令仍 2 位", _ex.enqueue({"pending_cmds": []}, "CLOSE", None, None, 1000.0, "zz", lots=0.01) == "close|all|magic=921|id=zz")
+
+print("=== 10-23 權杖公開減險：cmd_ack 核對 account ===")
+config.EXECUTE = True; config.ACCOUNT = "70001"; config.ACK_REQUIRE_ACCOUNT = False
+_st = json.loads(FAKE["xau/state.json"][0]); _st["pending_cmds"] = []
+_ex.enqueue(_st, "CLOSE", None, None, NOW[0], "ab12cd34ef", lots=0.01)
+FAKE["xau/state.json"] = (json.dumps(_st), FAKE["xau/state.json"][1] + 1)
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ab12cd34", "ok": True, "account": "99999"}), content_type="application/json").get_json()
+_pc = json.loads(FAKE["xau/state.json"][0])["pending_cmds"]
+check("cmd_ack 帶錯 account → ignored、指令仍未 acked、回應 id 遮罩", r["status"] == "ignored" and not _pc[0]["acked"] and r["id"] == "ab******", (r, _pc))
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ab12cd34", "ok": True, "account": 70001}), content_type="application/json").get_json()
+check("cmd_ack account 同 XAU_ACCOUNT 一致（數字亦可）→ acked", r["status"] == "acked" and json.loads(FAKE["xau/state.json"][0])["pending_cmds"][0]["acked"], r)
+_st = json.loads(FAKE["xau/state.json"][0]); _st["pending_cmds"] = []
+_ex.enqueue(_st, "CLOSE", None, None, NOW[0], "cd34ef56ab", lots=0.01); FAKE["xau/state.json"] = (json.dumps(_st), FAKE["xau/state.json"][1] + 1)
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "cd34ef56", "ok": True}), content_type="application/json").get_json()
+check("舊 EA 冇 account、XAU_ACK_REQUIRE_ACCOUNT=0 → 照 acked（demo 相容）", r["status"] == "acked", r)
+_st = json.loads(FAKE["xau/state.json"][0]); _st["pending_cmds"] = []
+_ex.enqueue(_st, "CLOSE", None, None, NOW[0], "ef56ab12cd", lots=0.01); FAKE["xau/state.json"] = (json.dumps(_st), FAKE["xau/state.json"][1] + 1)
+config.ACK_REQUIRE_ACCOUNT = True
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ef56ab12", "ok": True}), content_type="application/json").get_json()
+check("XAU_ACK_REQUIRE_ACCOUNT=1 → 冇 account 嘅 cmd_ack ignored", r["status"] == "ignored" and not json.loads(FAKE["xau/state.json"][0])["pending_cmds"][0]["acked"], r)
+r = client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": "ef56ab12", "ok": True, "account": "70001"}), content_type="application/json").get_json()
+check("XAU_ACK_REQUIRE_ACCOUNT=1 ＋ 正確 account → acked", r["status"] == "acked", r)
+config.ACK_REQUIRE_ACCOUNT = False
+check("mask_account／mask_id／mask_cmd", _ex.mask_account("928861") == "…61" and _ex.mask_account("") is None and _ex.mask_id("fedf43fb") == "fe******"
+      and _ex.mask_cmd({"id": "fedf43fb", "text": "open|SELL|0.01|sl=1|tp=2|magic=932|id=fedf43fb"})["text"].endswith("id=fe******"))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -82,6 +82,9 @@ EXECUTE = _b("XAU_EXECUTE", False)
 # 只接受呢個 MT5 登入號嘅心跳（數據＋指令）；其他登入號回 ignored。留空＝全收（影子階段）。階段 B：demo 登入號；轉真倉：真戶口登入號。
 ACCOUNT = _s("XAU_ACCOUNT", "")
 TEST_CMDS = _b("XAU_TEST_CMDS", False)                       # 1 = 開放 action=test_cmd（階段 B 測試清單用；真倉前要關）
+# 10-23 使用者決定權杖「keep 123456」（公開）：cmd_ack 要核對 account（EA v0.38 起回報帶登入號）；
+#   XAU_ACK_REQUIRE_ACCOUNT=1 時冇 account 嘅回報一律忽略（真倉開；demo 舊 EA 仍可用 0）
+ACK_REQUIRE_ACCOUNT = _b("XAU_ACK_REQUIRE_ACCOUNT", False)
 
 # --- Claude ---
 PROVIDER = _s("CLAUDE_PROVIDER", "api").lower()             # api（ANTHROPIC_API_KEY，同龍飛陣一樣）| vertex（同一 GCP 專案）
@@ -103,6 +106,7 @@ MIN_SL_PIPS = _f("XAU_MIN_SL_PIPS", PRODUCT["min_sl_pips"])  # 止損距離範�
 MAX_SL_PIPS = _f("XAU_MAX_SL_PIPS", PRODUCT["max_sl_pips"])
 MIN_SL_USD = _f("XAU_MIN_SL_USD", MIN_SL_PIPS * PIP)        # 同一範圍以價格單位表示（名稱沿用）
 MAX_SL_USD = _f("XAU_MAX_SL_USD", MAX_SL_PIPS * PIP)
+MODIFY_MIN_DIST_USD = _f("XAU_MODIFY_MIN_DIST_USD", MIN_SL_USD + PRODUCT["spread_pips"] * PIP + PIP)   # [R340] UPDATE_STOP 新止損離現價最少幾多（價格單位）：經紀 stops level ≈ 最小止損距離，再加點差＋1 pip 緩衝；太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（10-26／27 EURUSD E1／E3 Opus 追到 5 pip，EA 拒 18 次 invalid stops）
 MIN_CONFIDENCE = _f("XAU_MIN_CONFIDENCE", 0.6)              # 開倉要嘅最低信心
 MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐約交易日計）
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
@@ -175,6 +179,16 @@ FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
 # 10-23 DAN 第一張跟單：市價 BUY 時 TP1 只差 0.5 美元、SL 差 9.5 → 加「剩餘空間」下限：
 #   現價到 TP1 ≥ SIG_FOLLOW_MIN_TP（價格單位；DAN TP1 步距 3、CTC 4–6，唔受影響），另外同 S1 一樣用 signals.is_late 略過「走咗」嘅限價訊號
 FOLLOW_MIN_TP = _f("SIG_FOLLOW_MIN_TP", 2.0 if PRODUCT["digits"] == 2 else 0.0004)
+# 10-23 使用者「逐級鎖，唔用 shadow，真」：呢啲頻道（尾 4 位）嘅跟單出場用逐級鎖——開倉 TP 掛最後一級，到 TP1 止損移保本，
+#   之後每到 TP(k) 止損移到 TP(k−1)，只准收緊；其他頻道維持 TP1 全平。例 SIG_FOLLOW_LADDER_CHANNELS=7713（DAN）
+FOLLOW_LADDER_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_LADDER_CHANNELS", "").split(",") if x.strip())
+FOLLOW_LADDER_BUF = _f("SIG_FOLLOW_LADDER_BUF", 0.0)          # 鎖位再退幾多（價格單位；0＝剛好保本／上一級）
+# 10-24 使用者「加『唔跟未到入場價』規則，倫敦時段都避」（CTC 入場點分析：提案 §27——收到時價仍未到入場價嗰 45% 係 −1.08 美元／張；倫敦 07–12 UTC −1.61／張）
+#   SIG_FOLLOW_SKIP_UNREACHED_CHANNELS：呢啲頻道收到時現價仍喺入場價嘅反向（離 ≥ SIG_FOLLOW_UNREACHED_TOL）就略過，唔等限價；DAN 限價區設計上係反向 4±2，唔適用
+#   SIG_FOLLOW_AVOID_HOURS：頻道:起-止（UTC 整點，止不含），逗號分隔多個；呢段時間收到嘅訊號略過。空＝關
+FOLLOW_SKIP_UNREACHED_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_SKIP_UNREACHED_CHANNELS", "5231").split(",") if x.strip())
+FOLLOW_UNREACHED_TOL = _f("SIG_FOLLOW_UNREACHED_TOL", 0.3 if PRODUCT["digits"] == 2 else 0.00003)
+FOLLOW_AVOID_HOURS = _s("SIG_FOLLOW_AVOID_HOURS", "5231:07-12")
 # 學徒計劃階段 0／1（使用者 10-22 批；xau/DAN_APPRENTICE.md、IDEAS #122）：特徵快照（永遠開）、規則學生（免費）、Claude 學生（XAU_SHADOW=1 先問 Opus）
 STUDENT = _b("XAU_STUDENT", True)
 SHADOW = _b("XAU_SHADOW", False)
@@ -183,10 +197,21 @@ SHADOW_INTERVAL_MIN = _i("XAU_SHADOW_INTERVAL_MIN", 30)
 STUDENT_WINDOW_MIN = _i("XAU_STUDENT_WINDOW_MIN", 30)               # 訊號到之前幾多分鐘內嘅判斷先算「交咗卷」
 STUDENT_ZONE_TOL = _f("XAU_STUDENT_ZONE_TOL", 3.0)                  # 入場區中位差 ≤3 美元算命中
 STUDENT_R_TARGET = _f("XAU_STUDENT_R_TARGET", 2.0)                  # 學生自己成績：2R 全平
+STUDENT_COST = _f("XAU_STUDENT_COST", SPREAD_USD + 0.2)             # 10-24 使用者批：學生自己成績用實際成交價計 R，每張扣點差＋滑價 0.2（美元／盎司）
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h
 CACHE_TTL_STABLE = _s("CACHE_TTL_STABLE", "1h")
+# 10-23 晚：M1 段（整點前 M1，每個鐘先變一次）由 5m 改 1h。10-23 實數：Haiku 篩走＋H 規則令 Opus 調用相隔常 >5 分鐘，5m 段 62 次重寫（$0.49）；
+#   1h 寫 $8/M 但每個鐘只寫一次（23×1,596 tok ≈ $0.29）→ 每日慳約 $0.15（XAU）／$0.02（EUR）。退回：CACHE_TTL_M1=5m
+CACHE_TTL_M1 = _s("CACHE_TTL_M1", "1h")
+# 10-23 使用者「做 1 至 4 … Opus 唔講話」：即時段（每次都要重新讀、$4/M）由 ≈1,960 tok 壓到 ≈1,300：
+#   ① 風控常數（手數、止損上下限、信心門檻、日上限、最長持倉）搬入 product（1h 快取段）；② recent_decisions 6 → 3；
+#   ③ 本小時 M1 時間欄改「本小時第幾分鐘」（0–59，唔再 10 位 epoch）；④ 本小時 M1 只送最近 M1_LIVE_MAX 根。
+#   reason 改短標籤（最多 REASON_MAX_CHARS 個字；0＝叫 Opus 留空），日誌行由 Python 按 action／價／SL／TP／信心組出（輸出 265 → 約 40 tok）。
+M1_LIVE_MAX = _i("XAU_M1_LIVE_MAX", 30)                     # 本小時 M1 最多送幾根（0＝全部）
+RECENT_DECISIONS = _i("XAU_RECENT_DECISIONS", 3)            # 即時段帶幾條最近決策
+REASON_MAX_CHARS = _i("XAU_REASON_MAX_CHARS", 20)           # Opus reason 標籤上限；0＝留空。退回舊行為：XAU_REASON_MAX_CHARS=200
 # F：空倉、上次係 HOLD、價格變動 < REUSE_ATR_MULT × M1 ATR、冇新 M15 收盤 → 沿用 HOLD（最多連續 REUSE_MAX_MIN 分鐘）
 #    off｜shadow（預設：只記錄「會沿用」唔慳錢，驗證一日）｜on
 REUSE_HOLD = _s("XAU_REUSE_HOLD", "shadow").lower()
@@ -197,5 +222,11 @@ ACTIVE_HOURS_UTC = _s("XAU_ACTIVE_HOURS_UTC", "")
 # H（使用者 10-23 揀「穩陣＋H」）：有倉時程式按教學第 1／4 條移止損（hold_rules.py）；off｜shadow（預設：只記錄唔改行為）｜on
 #    on 時 Opus 只喺新 M15／首次 1R／價格離 SL 或 TP ≤0.5×ATR／每 HOLD_RULES_ASK_MIN 分鐘先問；止損只准收緊、唔收到 0.5×ATR 內
 HOLD_RULES = _s("XAU_HOLD_RULES", "shadow").lower()
+# S（使用者 10-23「開 S shadow」）：空倉時規則前篩（prescreen.py），off｜shadow（預設：照問，只記錄）｜on（唔問，cost 0）
+#    問 Opus 條件：新 M15／價格離上次問 Opus ≥ ATR_MULT×M1 ATR／貼近擺動點或前日高低亞洲高低 ≤ NEAR／前 15 分鐘走 ≥ MOVE15
+PRESCREEN = _s("XAU_PRESCREEN", "shadow").lower()
+PRESCREEN_ATR_MULT = _f("XAU_PRESCREEN_ATR_MULT", 0.3)
+PRESCREEN_NEAR = _f("XAU_PRESCREEN_NEAR", 2.0 if PRODUCT["digits"] == 2 else 0.0005)
+PRESCREEN_MOVE15 = _f("XAU_PRESCREEN_MOVE15", 3.0 if PRODUCT["digits"] == 2 else 0.0010)
 HOLD_RULES_ASK_MIN = _i("XAU_HOLD_RULES_ASK_MIN", 5)
 HOLD_RULES_TOL = _f("XAU_HOLD_RULES_TOL", 1.0 if PRODUCT["digits"] == 2 else 0.0010)   # shadow 統計：規則 vs Opus 止損「相差 ≤tol」

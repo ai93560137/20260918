@@ -4,9 +4,21 @@
 set -uo pipefail
 U="$1"; H="$2"; REPO="$H/20260918"; LOG="$H/zhuge/update.log"
 cd "$REPO" || exit 1
+# [R306] 10-23 21:50 HKT 硬碟爆（No space left）：每 10 分鐘清舊 log，唔使等有新版（git fetch 都要硬碟位）
+FLOG="$H/.com.futunn.FutuOpenD/Log"                 # OpenD 同 futu-api（每個連線程式）嘅 log
+find "$FLOG" -type f -mmin +4320 -delete 2>/dev/null  # 3 日前
+J=/etc/systemd/journald.conf.d/zhuge.conf
+if [ ! -f "$J" ]; then mkdir -p "${J%/*}"; printf '[Journal]\nSystemMaxUse=300M\n' > "$J"; systemctl restart systemd-journald; fi
+AVAIL=$(df --output=avail -m / | tail -1 | tr -d " ")
+if [ "${AVAIL:-99999}" -lt 1024 ]; then   # 少過 1GB：清得狠啲
+  find "$FLOG" -type f -mmin +360 -delete 2>/dev/null
+  journalctl --vacuum-size=100M >/dev/null 2>&1
+  echo "$(date -u +%F' '%T) ⚠ 硬碟少過 1GB，已清 Futu log 同 journald" >> "$LOG"
+fi
 old=$(runuser -u "$U" -- git rev-parse HEAD)
 runuser -u "$U" -- git fetch -q origin ops/user-machine || { echo "$(date -u +%F' '%T) fetch 失敗" >> "$LOG"; exit 0; }
-new=$(runuser -u "$U" -- git rev-parse FETCH_HEAD)
+# [R307] 10-23 硬碟滿時 FETCH_HEAD 寫唔到，rev-parse 失敗會印返「FETCH_HEAD」字樣當新版，每 10 分鐘重開晒程式：攞唔到就跳過
+new=$(runuser -u "$U" -- git rev-parse -q --verify 'FETCH_HEAD^{commit}') || { echo "$(date -u +%F' '%T) 讀唔到 FETCH_HEAD（硬碟滿？），跳過" >> "$LOG"; exit 0; }
 [ "$old" = "$new" ] && exit 0
 runuser -u "$U" -- git reset -q --hard "$new"
 # [R188] repo 入面嘅 service／timer 改咗都即刻生效（OpenD 唔重開，免得要重新登入）

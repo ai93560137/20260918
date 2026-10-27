@@ -46,7 +46,7 @@ PUB = {"updated_hkt": "2026-10-12 17:53",
        "strategy": {"name": "雲垂陣", "icon": "☁️", "summary": "賣跨式＋期貨對沖", "rules": ["規則一<b>", "規則二"], "disclaimer": "只作資訊"},
        "positions": [{"id": "HSI 月跨式", "instrument": "MHI", "expiry": "2026-10-29", "strike": 25000, "qty": 1, "entry_date": "2026-09-22",
                       "credit_pts": 1108, "credit_hkd": 11080, "stop_buyback_pts": 2216, "entry_atm_iv": 17.3},
-                     {"id": "MHI 期貨對沖", "instrument": "MHI2610", "net_lots": -1, "open_price": 24200.0, "opened_hkt": "2026-10-09 19:49"},
+                     {"id": "MHI 期貨對沖", "instrument": "MHI2612", "net_lots": -1, "open_price": 24200.0, "opened_hkt": "2026-10-09 19:49"},
                      {"id": "MES 跨式", "instrument": "MES", "expiry": "2026-10-16", "strike": 7830, "qty": 1, "credit_pts": 178.5, "credit_usd": 892.5, "stop_buyback_pts": 357}],
        "status": {"hsi": {"straddle_delta": 0.62, "hedge_lots": -1.0, "net_delta": -0.38, "band": 0.5, "hedge_verified_hkt": "2026-10-12 15:46"},
                   "mes": {"es": 7883.0, "straddle_delta": -0.44, "band": 0.5}},
@@ -55,7 +55,7 @@ PUB = {"updated_hkt": "2026-10-12 17:53",
 LIVE = {"run_hkt": "2026-10-12 17:31", "alerts": {},
         "metrics": {"delta_parts": {"straddle": 0.61, "net_with_hedge": -0.39, "hsi_all": 4.93}, "delta": {"x": [-0.39, 0.5]},
                     "stop_use": {"HSI 月跨式": 0.42, "MES 跨式": 0.26}, "equity": 7800000, "cushion": 300000, "maintenance_margin": 200000},
-        "positions": [{"code": "HK.MHI2610", "name": "MHI", "qty": -1, "open_price": 24200}]}
+        "positions": [{"code": "HK.MHI2612", "name": "MHI", "qty": -1, "open_price": 24200}]}
 
 main._yunchui_cache.update(ts=main.now_ts(), data=(PUB, "github"))
 store = {"risk": LIVE}

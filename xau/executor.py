@@ -1,3 +1,4 @@
+import re
 """EA 指令佇列（實倉）：把動作變成 cmd_text（分行文字，EA 用 StringSplit 讀），cmd_ack 回報後清走。
 天覆陣引擎（main.py）同 Telegram 頻道訊號（tgsignal.py）共用。XAU_EXECUTE=0 時 cmd_text 永遠空。"""
 import config
@@ -41,3 +42,23 @@ def ack(state, cid, payload, now):
                      message=str(payload.get("message") or "")[:200], acked_ts=now)
             found = True
     return found
+
+
+def mask_id(cid):
+    """公開 JSON 用：指令 id 只露頭 2 碼（10-23 權杖公開，id 外露會被假 cmd_ack 冒認）。"""
+    cid = str(cid or "")
+    return cid[:2] + "*" * max(0, len(cid) - 2) if cid else cid
+
+
+def mask_cmd(c):
+    out = dict(c)
+    out["id"] = mask_id(c.get("id"))
+    if "text" in out:
+        out["text"] = re.sub(r"id=([0-9a-f]+)", lambda m: "id=" + mask_id(m.group(1)), str(out["text"]))
+    return out
+
+
+def mask_account(a):
+    """登入號只露尾 2 位（真倉戶口號碼唔可以公開）。"""
+    a = str(a or "")
+    return ("…" + a[-2:]) if len(a) > 2 else ("已設" if a else None)

@@ -105,8 +105,10 @@ class Trader:
         day = trading_day_key(now, cfg.market, cfg.kind)
         if st.get("day") != day:
             eq = self.broker.equity()
+            if st.get("pos"):                            # [R299] 波段：揸咗幾多個交易日
+                st["pos"]["days_held"] = st["pos"].get("days_held", 0) + 1
             st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
-                       "ai_skipped_today": 0, "ai_gated_today": 0,
+                       "ai_skipped_today": 0, "ai_gated_today": 0, "order_fail_today": 0, "open_block": None,
                        "today_trades": [], "halted": False, "halt_reason": None})
             self._log("events", {"type": "NEW_DAY", "day": day, "equity": eq})
 
@@ -173,11 +175,29 @@ class Trader:
                 exc = (last - meta["entry"]) * side
                 meta["mfe"] = round(max(meta.get("mfe", 0.0), exc), 4)
                 meta["mae"] = round(min(meta.get("mae", 0.0), exc), 4)
+            be_r, risk = cfg.breakeven_at_r, meta.get("risk_pts")
+            if (be_r and risk and meta.get("entry") is not None and meta.get("stop") is not None
+                    and meta.get("mfe", 0.0) >= be_r * risk and (meta["stop"] - meta["entry"]) * side < 0):
+                meta["stop"] = round_tick(meta["entry"], cfg.tick)      # [R297] 浮賺夠 R 數就保本，只會收緊
+                self._move_server_stop()
+                self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": meta["stop"],
+                                     "target": meta.get("target"), "reason": f"[R297] 浮賺 ≥ {be_r:g}R，止蝕移到開倉價保本"})
+            if cfg.swing_exit and cfg.swing_trail_start and meta.get("mfe", 0.0) >= cfg.swing_trail_start:
+                trail = round_tick(meta["entry"] + side * (meta["mfe"] - cfg.swing_trail), cfg.tick)
+                if meta.get("stop") is None or (trail - meta["stop"]) * side > 0:     # [R299] 移動止蝕，只收緊
+                    meta["stop"] = trail
+                    self._move_server_stop()
+                    self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": trail,
+                                         "target": meta.get("target"), "reason": f"[R299] 波段移動止蝕（最多浮賺 {meta['mfe']:g} 點）"})
+            if (cfg.swing_exit and cfg.swing_max_days and meta.get("days_held", 0) >= cfg.swing_max_days - 1
+                    and session == "DAY_PM" and mins_left is not None and mins_left <= cfg.no_entry_before_close_min):
+                self._close(contract, qty, f"[R299] 波段揸滿 {cfg.swing_max_days} 個交易日，日市收市前平倉", last)
+                return
             self._ensure_server_stop(contract, qty)
             if stop_hit(side, last, meta.get("stop")):
                 self._close(contract, qty, f"止蝕 {meta['stop']}", last)
                 return
-            if target_hit(side, last, meta.get("target")):
+            if not cfg.swing_exit and target_hit(side, last, meta.get("target")):
                 self._close(contract, qty, f"止賺 {meta['target']}", last)
                 return
 
@@ -185,8 +205,24 @@ class Trader:
         if session and not stale and not st.get("halted") and self._decision_due(now):
             # 使用者 10-17：冇倉又唔可以開新倉（暫停、時段、組合限制、收市前）就唔問 Claude，慳 API 費用；
             # 有倉照問（管理止蝕同平倉）。止蝕／止賺本身由程式每幾秒檢查，唔靠 Claude
-            if qty == 0 and not (self._can_open(mins_left, session) and not self._portfolio_block()):
+            if not self.cfg.sim_ai:                      # [R295] 模擬唔叫 AI，改由 research/longfei_rulesim 即日回測
                 st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+                self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": snap["last"],
+                                        "pos": qty, "ai_action": None, "final": "HOLD", "gate": None,
+                                        "reason": "模擬唔叫 AI（R295，改即日回測）", "rejected": None, "stop": None,
+                                        "target": None, "usage": None, "day_pnl": st.get("day_pnl"),
+                                        "session": session})
+            elif qty == 0 and not (self._can_open(mins_left, session) and not self._portfolio_block()):
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+            elif qty != 0 and self.cfg.swing_exit:      # [R299] 波段：出場由程式管（止蝕、保本、移動止蝕、揸滿 N 日），唔叫 AI
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+            elif qty == 0 and self._no_buying_power(contract, snap["last"]):
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+                self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": snap["last"],
+                                        "pos": qty, "ai_action": None, "final": "HOLD", "gate": None,
+                                        "reason": "購買力不足：富途話做好同做淡都開唔到（R299，唔叫 AI）", "rejected": None,
+                                        "stop": None, "target": None, "usage": None, "day_pnl": st.get("day_pnl"),
+                                        "session": session})
             else:
                 self._decide(now, contract, qty, snap, session, mins_left)
 
@@ -220,7 +256,7 @@ class Trader:
             if session != "RTH":
                 return False
             mins_left = (mins_left or 0) - 240            # 收市計 16:00，唔係 20:00
-        return (not st.get("halted") and not cfg.pause_file.exists() and not st.get("foreign_qty")
+        return (not st.get("halted") and not st.get("open_block") and not cfg.pause_file.exists() and not st.get("foreign_qty")
                 and mins_left is not None and mins_left > cfg.no_entry_before_close_min)
 
     def _decide(self, now, contract, qty, snap, session, mins_left):
@@ -292,7 +328,14 @@ class Trader:
             return
         px, filled = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
         if not filled:
-            self._log("events", {"type": "ORDER_FAILED", "action": action})
+            err = getattr(self.broker, "last_order_error", None)
+            self._log("events", {"type": "ORDER_FAILED", "action": action, "error": err})
+            st["order_fail_today"] = st.get("order_fail_today", 0) + 1     # [R298] 記低原因，heartbeat 睇得到
+            st["order_errors"] = (st.get("order_errors") or [])[-4:] + [{"ts": now.isoformat(timespec="seconds"),
+                                                                          "action": action, "error": err}]
+            if cfg.order_fail_max and st["order_fail_today"] >= cfg.order_fail_max and not st.get("open_block"):
+                st["open_block"] = f"今日開倉單失敗 {st['order_fail_today']} 次，今日唔再開新倉（R298）"
+                self._log("events", {"type": "OPEN_BLOCKED", "reason": st["open_block"]})
             return
         if filled < n_open:
             self._log("events", {"type": "PARTIAL_FILL", "action": action, "wanted": n_open, "filled": filled})
@@ -443,11 +486,37 @@ class Trader:
             log.info("真倉準備檢查：%s", res)
         st["real_preflight"] = res
 
+    def _no_buying_power(self, contract, price):
+        """[R299] 真倉期貨：富途最多可開張數，做好同做淡都係 0 就 True（記入 heartbeat）；查唔到就當有（照舊行）。"""
+        st = self.state
+        if not self.cfg.real_bp_check:
+            return False
+        try:
+            caps = {side: self.broker.max_open_qty(contract, side, price) for side in (1, -1)}
+        except Exception as e:  # noqa: BLE001
+            log.warning("查唔到購買力（照舊行）：%s", e)
+            return False
+        blocked = all(c <= 0 for c in caps.values())
+        st["buying_power"] = {"long": caps[1], "short": caps[-1], "blocked": blocked,
+                              "ts": self.clock().isoformat(timespec="seconds")}
+        return blocked
+
     def _futures_room_ok(self, contract, side, price, n_open):
         """[R209] 真倉期貨：開倉後緩衝 ≥ Ⓑ 線（夜盤 ×1.5）＋ 日蝕上限先開，唔夠就唔開（記 OPEN_SKIPPED）。"""
         cfg = self.cfg
         if cfg.trd_env != "REAL":
             return n_open
+        if cfg.real_bp_check:                            # [R299] 富途購買力（10-27 七張單「購買力不足」落單失敗）
+            try:
+                cap = self.broker.max_open_qty(contract, side, price)
+            except Exception as e:  # noqa: BLE001
+                cap = None
+                log.warning("查唔到可開張數（照舊行）：%s", e)
+            if cap is not None and cap < n_open:
+                self._log("events", {"type": "OPEN_SKIPPED", "reason": "購買力不足（富途最多可開 %s 張）" % cap})
+                if cap <= 0:
+                    return 0
+                n_open = cap
         try:
             r = self.broker.futures_room(contract, side, price)
         except Exception as e:  # noqa: BLE001

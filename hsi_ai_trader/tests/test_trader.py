@@ -1200,3 +1200,131 @@ def test_mhi_uses_hsi_lessons():
     from brain import product_lessons
     assert product_lessons("MHI") == product_lessons("HSI") != ""
 
+
+def test_real_min_confidence():
+    """[R294] 使用者 10-26「信心 0.65」：真倉開倉信心要 ≥ 門檻；0＝唔限（模擬）。"""
+    kw = dict(position=0, entry=None, last=25000, remaining_loss=10000, can_open=True, trades_today=0)
+    d = {"action": "OPEN_LONG", "stop_price": 24940, "target_price": 25150, "confidence": 0.55}
+    a, *_, why = validate_decision(d, cfg=replace(Config(), real_min_confidence=0.65), **kw)
+    assert a == "HOLD" and "真倉門檻" in why
+    a, *_ = validate_decision(dict(d, confidence=0.7), cfg=replace(Config(), real_min_confidence=0.65), **kw)
+    assert a == "OPEN_LONG"
+    a, *_ = validate_decision(d, cfg=replace(Config(), real_min_confidence=0.0), **kw)
+    assert a == "OPEN_LONG"
+
+
+
+def test_sim_ai_off_skips_claude(env):
+    """[R295] 使用者 10-26「模擬唔再用 api call」：sim_ai=False 唔篩選、唔問決策模型，只記一行 HOLD。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, sim_ai=False)
+    tr.tick()
+    assert ai.screens == 0 and ai.calls == 0 and b.orders == []
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text().splitlines()][-1]
+    assert rec["final"] == "HOLD" and "模擬唔叫 AI" in rec["reason"] and rec["usage"] is None
+
+
+def test_breakeven_at_r(env):
+    """[R297] 使用者 10-27「批 #133」：浮賺 ≥ 1R 之後止蝕自動移到開倉價；之後跌返開倉價就保本走。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, breakeven_at_r=1.0)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25200, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    pos = tr.state["pos"]
+    entry, risk = pos["entry"], pos["risk_pts"]
+    b.price = entry + risk - 5                      # 未夠 1R：止蝕唔郁
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"]["stop"] < entry
+    b.price = entry + risk + 5                      # 夠 1R：止蝕移到開倉價
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"]["stop"] == entry
+    b.price = entry - 2                             # 跌返落開倉價以下：保本止蝕
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] is None
+    lines = (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines()
+    assert any("[R297]" in l for l in lines)
+    close = [json.loads(l) for l in lines if '"CLOSE"' in l][-1]
+    assert "止蝕" in close["reason"] and close["mfe"] >= risk
+
+
+
+def test_order_fail_recorded_and_capped(env):
+    """[R298] 10-27 MHI 開倉單連續「下單失敗」：記低富途錯誤；同日失敗夠 ORDER_FAIL_MAX 次就唔再開新倉。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, order_fail_max=2)
+    b.fill = False
+    b.last_order_error = "FAILED：保證金不足"
+    tr.tick()
+    for _ in range(2):
+        ai.next = {"action": "OPEN_SHORT", "stop_price": 25060, "target_price": 24900, "confidence": 0.7,
+                   "reason": "沽空"}
+        advance(t, minutes=5)
+        tr.tick()
+    st = tr.state
+    assert st["order_fail_today"] == 2 and st["order_errors"][-1]["error"] == "FAILED：保證金不足"
+    assert st["open_block"] and not tr._can_open(120, "DAY_AM")
+    events = (cfg.log_dir / "events.jsonl").read_text("utf-8")
+    assert "保證金不足" in events and "OPEN_BLOCKED" in events
+    from push import build_packet
+    pkt = build_packet(tr.cfg, st, "x")
+    assert pkt["state"]["order_fail_today"] == 2 and pkt["state"]["open_block"]
+
+
+def test_buying_power_check_skips_ai(env):
+    """[R299] 使用者 10-27「開倉前先查購買力」：富途話兩邊都開唔到就 HOLD，唔叫 AI，heartbeat 記低。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, real_bp_check=True)
+    b.max_open_qty = lambda code, side, price: 0
+    tr.tick()
+    assert ai.calls == 0 and b.orders == []
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert "購買力不足" in rec["reason"] and tr.state["buying_power"]["blocked"]
+    b.max_open_qty = lambda code, side, price: 1 if side < 0 else 0      # 夠沽空：照問 AI
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 1 and not tr.state["buying_power"]["blocked"]
+
+
+def test_swing_exit_trails_and_skips_ai(env):
+    """[R299] 波段（IDEAS #135）：有倉唔叫 AI、唔理目標價；浮賺夠就移動止蝕，跌返就止蝕走。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, swing_exit=True, swing_trail_start=100, swing_trail=80)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    entry, calls = tr.state["pos"]["entry"], ai.calls
+    b.price = entry + 120                              # 過咗目標價都唔平；浮賺 120 ≥ 100 → 止蝕移到 entry+40
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] and tr.state["pos"]["stop"] == entry + 40
+    advance(t, minutes=5)                              # 到決策時間：有倉唔叫 AI
+    tr.tick()
+    assert ai.calls == calls
+    b.price = entry + 30                               # 跌穿移動止蝕
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] is None
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines() if '"CLOSE"' in l][-1]
+    assert "止蝕" in close["reason"] and close["points"] > 0
+
+
+def test_swing_max_days_close(env):
+    """[R299] 波段揸滿 N 個交易日，第 N 日日市收市前平倉。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, swing_exit=True)
+    tr.tick()
+    ai.next = {"action": "OPEN_SHORT", "stop_price": 25100, "confidence": 0.7, "reason": "沽空"}
+    advance(t, minutes=5)
+    tr.tick()
+    tr.state["pos"]["days_held"] = 2                   # 第 3 個交易日
+    t["now"] = t["now"].replace(hour=16, minute=22, second=5)
+    tr.tick()
+    assert tr.state["pos"] is None
+    close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines() if '"CLOSE"' in l][-1]
+    assert "揸滿 3 個交易日" in close["reason"]

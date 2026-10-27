@@ -1,0 +1,42 @@
+name: 📐 分析圖出圖（R258）
+
+# 使用者 10-23（經龍飛陣）：分析圖、報告放網頁，唔好只係傳檔案；由總指揮負責。
+# 跑 scripts/charts_publish.py：出圖（而家係龍飛陣恒指 4 小時線斐波那契）→ GCS charts/ → 舊服務 ?view=charts 顯示。
+on:
+  schedule:
+    - cron: '50 8 * * 1-5'     # 16:50 HKT 平日（日市收市後）
+    - cron: '20 19 * * 1-5'    # 03:20 HKT 星期二至六（夜市收市後）
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: charts-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: |
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          pip install -q google-cloud-storage matplotlib
+
+      - name: Publish charts
+        run: python3 scripts/charts_publish.py

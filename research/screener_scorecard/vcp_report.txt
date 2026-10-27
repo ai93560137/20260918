@@ -1,3 +1,34 @@
 Screener: vcp   horizon: 10 trading days   entry: next open, exit: close
-Score (hit rate, excess>0): — on 0 scored picks (3 pending, 0 no data); mean excess —, median —, t —
-Control 日股 (all constituents, same days): hit — mean excess — n=0
+Score (hit rate, excess>0): 0.000 on 3 scored picks (1 pending, 0 no data); mean excess -3.4%, median -3.4%, t -12.28
+Control 港股 (all constituents, same days): hit — mean excess — n=0
+Control 日股 (all constituents, same days): hit 0.781 mean excess +7.2% n=675
+
+--- FAILED 1 ---
+Pick: 2026-10-05 日股 5711.JP 三菱マテリアル
+Features: status=setup, n_contractions=2, depths_pct=20/6, pct_vs_pivot=-4.0, stop_pct=-1.7
+Return 10d: -11.6%  Excess: -4.0%
+
+--- FAILED 2 ---
+Pick: 2026-10-07 日股 5711.JP 三菱マテリアル
+Features: status=setup, n_contractions=2, depths_pct=20/6, pct_vs_pivot=-4.0, stop_pct=-1.7
+Return 10d: -13.6%  Excess: -3.4%
+
+--- FAILED 3 ---
+Pick: 2026-10-06 日股 5711.JP 三菱マテリアル
+Features: status=setup, n_contractions=2, depths_pct=20/6, pct_vs_pivot=-2.7, stop_pct=-3.0
+Return 10d: -13.7%  Excess: -2.8%
+
+--- BEST 1 ---
+Pick: 2026-10-06 日股 5711.JP 三菱マテリアル
+Features: status=setup, n_contractions=2, depths_pct=20/6, pct_vs_pivot=-2.7, stop_pct=-3.0
+Return 10d: -13.7%  Excess: -2.8%
+
+--- BEST 2 ---
+Pick: 2026-10-07 日股 5711.JP 三菱マテリアル
+Features: status=setup, n_contractions=2, depths_pct=20/6, pct_vs_pivot=-4.0, stop_pct=-1.7
+Return 10d: -13.6%  Excess: -3.4%
+
+--- BEST 3 ---
+Pick: 2026-10-05 日股 5711.JP 三菱マテリアル
+Features: status=setup, n_contractions=2, depths_pct=20/6, pct_vs_pivot=-4.0, stop_pct=-1.7
+Return 10d: -11.6%  Excess: -4.0%

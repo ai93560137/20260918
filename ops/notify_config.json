@@ -2,7 +2,7 @@
   "_readme": "scripts/ops_notify.py 的設定。雲垂陣對沖申報手數改了就改這裡（commit 到預設分支），不用改程式。",
   "hedge": {
     "declared_hedge_lots": {
-      "HK.MHI2610": -1.0
+      "HK.MHI2610": 0.0
     },
     "delta_limit_lots": 0.5,
     "stale_minutes": 20,

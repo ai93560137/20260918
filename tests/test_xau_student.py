@@ -77,6 +77,29 @@ cands = features.rule_candidates(M1, 0, NOW[0])
 rules = {c["rule"]: c for c in cands}
 check("rev15：最後 15 分鐘跌 ≥3 → BUY", rules.get("rev15", {}).get("side") == "BUY", cands)
 check("swing：現價 1998.x 附近有擺動低 4000？（現價 3998.4 喺擺動低下面 → 唔算「後面」）", "swing" not in rules or rules["swing"]["side"] == "SELL", cands)
+# rev15x（#128）：合成 60 根 M1（最後 15 分鐘跌 4）＋ 40 根 M15；喺活躍時段、ATR 唔收縮先觸發
+def _m1x(now, drop=4.0):
+    t0 = now - 60 * 60; out = []
+    for k in range(60):
+        px = 4000.0 - (drop * (k - 44) / 15 if k >= 45 else 0.0)
+        out.append({"time": t0 + 60 * k, "open": px + 0.1, "high": px + 0.4, "low": px - 0.4, "close": px})
+    return out
+def _m15x(now, old_range=2.0, new_range=2.0):
+    t0 = now - 900 * 40; out = []
+    for k in range(40):
+        r = old_range if k < 25 else new_range
+        out.append({"time": t0 + 900 * k, "open": 4000.0, "high": 4000.0 + r, "low": 4000.0 - r, "close": 4000.0})
+    return out
+_day = (NOW[0] // 86400) * 86400
+_at = lambda h: _day + h * 3600 + 1800
+cx = {c["rule"]: c for c in features.rule_candidates(_m1x(_at(3)), 0, _at(3), _m15x(_at(3)))}
+check("rev15x：03:30 UTC、前 15 分鐘跌 4、M15 ATR 持平 → rev15 同 rev15x 都 BUY，ref＝ATR 比率 ≈1.0", cx.get("rev15", {}).get("side") == "BUY" and cx.get("rev15x", {}).get("side") == "BUY" and abs(cx["rev15x"]["ref"] - 1.0) < 0.05, cx)
+check("rev15x：09:30 UTC（倫敦）→ 只有 rev15", "rev15x" not in {c["rule"] for c in features.rule_candidates(_m1x(_at(9)), 0, _at(9), _m15x(_at(9)))} and "rev15" in {c["rule"] for c in features.rule_candidates(_m1x(_at(9)), 0, _at(9), _m15x(_at(9)))})
+check("rev15x：13:30 UTC、ATR 收縮（舊 3.0 → 新 1.0）→ 唔觸發", "rev15x" not in {c["rule"] for c in features.rule_candidates(_m1x(_at(13)), 0, _at(13), _m15x(_at(13), 3.0, 1.0))})
+check("rev15x：13:30 UTC、ATR 擴張（舊 1.0 → 新 2.5）→ 觸發 SELL（前 15 分鐘升）", {c["rule"]: c["side"] for c in features.rule_candidates(_m1x(_at(13), -4.0), 0, _at(13), _m15x(_at(13), 1.0, 2.5))}.get("rev15x") == "SELL")
+check("rev15x：冇 m15／M15 唔夠 35 根 → 唔觸發（唔爆）", "rev15x" not in {c["rule"] for c in features.rule_candidates(_m1x(_at(3)), 0, _at(3), None)} and "rev15x" not in {c["rule"] for c in features.rule_candidates(_m1x(_at(3)), 0, _at(3), _m15x(_at(3))[-30:])})
+check("in_hours／atr_ratio 純函數", features.in_hours(_at(1)) and features.in_hours(_at(6)) and not features.in_hours(_at(7)) and features.in_hours(_at(12)) and features.in_hours(_at(15)) and not features.in_hours(_at(16)) and features.atr_ratio([], 0, _at(3)) is None)
+check("STUDENTS 有 rule:rev15x", "rule:rev15x" in student.STUDENTS)
 g = features.grade({"side": "BUY", "entry_low": 3994, "entry_high": 3998, "ts": NOW[0] - 600}, "BUY", 3997.0, NOW[0])
 check("grade：方向中、入場區 ±3 中、提前 10 分鐘", g["dir"] and g["zone"] and g["lead_min"] == 10, g)
 snap = features.snapshot(M1, [], 0, NOW[0], "BUY", 3997.0, 3991.0, [4000, 4003], 3998.4)
@@ -154,7 +177,9 @@ t1 = int(pred["ts"]) + 60
 bars = [{"time": t1, "open": mid + 1, "high": mid + 1, "low": mid - 0.5, "close": mid}, {"time": t1 + 60, "open": mid, "high": pred["tp"][0] + 0.5, "low": mid, "close": pred["tp"][0]}]
 n = student.score_pending(bars, 0, pred["ts"] + 3600)
 own = json.loads(FAKE["xau/sig/student/scores.json"][0]).get("own", {})
-check("成交後到 2R → own.win、r_sum +2", n >= 1 and own.get("rule:rev15", {}).get("win") == 1 and own["rule:rev15"]["r_sum"] == 2.0, own)
+_o = own.get("rule:rev15", {})
+check("成交後到 2R → own.win；r_sum 用實際成交價（開盤 mid+1）扣成本 0.5：(12−1−0.5)/6=1.75；r_nominal 仍 +2；pnl_usd 10.5",
+      n >= 1 and _o.get("win") == 1 and _o.get("r_sum") == 1.75 and _o.get("r_nominal") == 2.0 and _o.get("pnl_usd") == 10.5 and config.STUDENT_COST == 0.5, own)
 
 print("=== 網頁／JSON／心跳唔爆 ===")
 js = client.get("/?format=json").get_json()

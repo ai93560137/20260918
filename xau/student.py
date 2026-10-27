@@ -15,7 +15,7 @@ PREFIX = config.PREFIX + "student/"
 STATE_FILE = PREFIX + "state.json"
 SCORES_FILE = PREFIX + "scores.json"
 SNAP_PREFIX = config.PREFIX + "snapshots/"
-STUDENTS = ("rule:swing", "rule:level", "rule:rev15", "claude")
+STUDENTS = ("rule:swing", "rule:level", "rule:rev15", "rule:rev15x", "claude")   # rev15x：IDEAS #128（10-24 使用者批）
 MAX_PREDS = 300
 COOLDOWN_SEC = 3600
 now_ts = None   # tests 可以覆蓋；None 用 market.now_ts
@@ -48,10 +48,10 @@ def _pred(student, side, struct, now, price, **extra):
             "price": price, "outcome": None, "graded": None, **extra}
 
 
-def rule_tick(m1, offset, now=None):
-    """每根 M1 行一次：三條規則有冇觸發；觸發就記錄（60 分鐘冷卻）。回傳新觸發 list。"""
+def rule_tick(m1, offset, now=None, m15=None):
+    """每根 M1 行一次：規則有冇觸發；觸發就記錄（60 分鐘冷卻）。回傳新觸發 list。m15 畀 rev15x 計 ATR 比率。"""
     now = now if now is not None else _now()
-    cands = features.rule_candidates(m1, offset, now)
+    cands = features.rule_candidates(m1, offset, now, m15)
     if not cands:
         return []
     fired = []
@@ -214,10 +214,21 @@ def score_pending(bars, offset, now=None):
             o = p["outcome"]; c["n"] += 1
             if o.get("filled_ts"):
                 c["filled"] += 1
+                # 10-24 使用者批（離線預評發現舊計法高估約 0.3R）：R 用實際成交價（evaluate 嘅 fill_px，近邊／開盤）計，
+                # 每張扣 STUDENT_COST（點差＋滑價）；r_nominal 保留舊「贏 +2R／輸 −1R」方便對照
+                sgn = 1 if p["side"] == "BUY" else -1
+                mid = (p["entry_low"] + p["entry_high"]) / 2; risk = abs(mid - p["sl"]) or 1e-9
+                fill = o.get("fill_px") or mid
                 if o["final"] == "all_tp":
-                    c["win"] += 1; c["r_sum"] = round(c["r_sum"] + config.STUDENT_R_TARGET, 2)
+                    c["win"] += 1; exit_px, nominal = p["tp"][0], config.STUDENT_R_TARGET
                 elif o["final"] == "sl":
-                    c["sl"] += 1; c["r_sum"] = round(c["r_sum"] - 1.0, 2)
+                    c["sl"] += 1; exit_px, nominal = p["sl"], -1.0
+                else:
+                    continue
+                pnl = sgn * (exit_px - fill) - config.STUDENT_COST
+                c["r_sum"] = round(c["r_sum"] + pnl / risk, 2)
+                c["pnl_usd"] = round(c.get("pnl_usd", 0.0) + pnl, 2)
+                c["r_nominal"] = round(c.get("r_nominal", 0.0) + nominal, 2)
         return sc, None
     try:
         storage.update(STATE_FILE, mutate, default_factory=empty_state)

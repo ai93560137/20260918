@@ -1,16 +1,40 @@
 {
- "date": "2026-10-22",
+ "date": "2026-10-27",
  "open": {
+  "HK.HSI2610": {
+   "first_seen": "2026-10-27",
+   "days": 1,
+   "last": "2026-10-27",
+   "explained": false
+  },
+  "HK.HSI261030C23750000": {
+   "first_seen": "2026-10-23",
+   "days": 3,
+   "last": "2026-10-27",
+   "explained": false
+  },
+  "HK.HSI261030P22450000": {
+   "first_seen": "2026-10-23",
+   "days": 3,
+   "last": "2026-10-27",
+   "explained": false
+  },
   "HK.HSI2611": {
-   "first_seen": "2026-10-21",
+   "first_seen": "2026-10-26",
    "days": 2,
-   "last": "2026-10-22",
+   "last": "2026-10-27",
    "explained": false
   },
   "HK.HSI2612": {
-   "first_seen": "2026-10-21",
-   "days": 2,
-   "last": "2026-10-22",
+   "first_seen": "2026-10-27",
+   "days": 1,
+   "last": "2026-10-27",
+   "explained": false
+  },
+  "US.MES2612": {
+   "first_seen": "2026-10-23",
+   "days": 3,
+   "last": "2026-10-27",
    "explained": false
   }
  }

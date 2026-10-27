@@ -25,6 +25,7 @@ import storage
 import signals
 import follower
 import hold_rules
+import prescreen
 import student
 import tgsignal
 from storage import StorageError
@@ -275,11 +276,43 @@ def compact(bars):
     return [[b["time"], b["open"], b["high"], b["low"], b["close"]] for b in bars]
 
 
+def compact_live(bars, hour0):
+    """本小時 M1：時間欄改「本小時第幾分鐘」（0–59），慳 10 位 epoch（③）；只送最近 M1_LIVE_MAX 根（④）。"""
+    if config.M1_LIVE_MAX > 0:
+        bars = bars[-config.M1_LIVE_MAX:]
+    return [[int((b["time"] - hour0) // 60), b["open"], b["high"], b["low"], b["close"]] for b in bars]
+
+
+def short_reason(text):
+    n = config.REASON_MAX_CHARS
+    return str(text or "")[:n] if n > 0 else ""
+
+
+def decision_line(rec, price):
+    """日誌行由 Python 組（使用者 10-23：Opus 唔講話）：動作｜價｜SL／TP｜信心｜標籤｜擋｜ms。"""
+    nd = config.PRICE_DIGITS
+    action, why = rec.get("final"), rec.get("rejected")
+    parts = [f"{action}{' ← AI ' + str(rec.get('action')) if why else ''} @ {price:.{nd}f}"]
+    if rec.get("stop") is not None:
+        parts.append(f"SL {rec['stop']:.{nd}f}")
+    if rec.get("target") is not None:
+        parts.append(f"TP {rec['target']:.{nd}f}")
+    if rec.get("confidence") is not None:
+        parts.append(f"信心 {rec['confidence']:.2f}")
+    if rec.get("reason"):
+        parts.append(str(rec["reason"])[:80])
+    if why:
+        parts.append("擋：" + str(why))
+    if rec.get("ms") is not None:
+        parts.append(f"{rec['ms']} ms")
+    return f"🧠 [{config.TEAM_NAME}] " + "｜".join(parts)
+
+
 def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     # Prompt caching（使用者 10-21）：按「整點」切——上一個整點之前嘅 K 線一個鐘先變一次（可快取前段），本小時嘅先係即時部分
     hour0 = int(m1[-1]["time"]) // 3600 * 3600
     older, recent = [b for b in m15 if b["time"] < hour0][-config.M15_OLDER_MAX:], [b for b in m15 if b["time"] >= hour0]   # 固定根數 → 同一個鐘內內容唔變（慳成本 G）
-    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-60:], [b for b in m1 if b["time"] >= hour0]   # 整點前最多 60 根（10-21 由 120 減，慳 token）
+    m1_older, m1_live = [b for b in m1[-180:] if b["time"] < hour0][-60:], [b for b in m1 if b["time"] >= hour0]   # 整點前最多 60 根（10-21 由 120 減，慳 token）；本小時嘅見 compact_live
     pos = state.get("position")
     last = m1[-1]["close"]
     position = None
@@ -291,30 +324,34 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     return {
         "product": {"symbol": config.SYMBOL, "contract_size": config.CONTRACT_SIZE, "pip": config.PIP, "price_digits": config.PRICE_DIGITS,
                     "quote_currency": config.QUOTE_CCY, "description": config.PRODUCT_DESC,
-                    "long_only": config.LONG_ONLY, "mode": "live" if config.EXECUTE else "shadow"},
+                    "long_only": config.LONG_ONLY, "mode": "live" if config.EXECUTE else "shadow",
+                    # ① 風控常數（10-23）：一日唔變，放入 1h 快取段；每分鐘變嘅留喺 risk
+                    "risk_limits": {"lots": rules.lots(), "min_sl_price": config.MIN_SL_USD, "max_sl_price": config.MAX_SL_USD,
+                                    "min_sl_pips": config.MIN_SL_PIPS, "max_sl_pips": config.MAX_SL_PIPS, "spread_price": config.SPREAD_USD,
+                                    "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
+                                    "max_hold_min": config.MAX_HOLD_MIN}},
         "bars_m15_older": compact(older),
         "time": market.session_text(now),
         "bars_m15_recent": compact(recent),
         "bars_m1_older": compact(m1_older),
-        "bars_m1": compact(m1_live),
+        "bars_m1": compact_live(m1_live, hour0),
+        "bars_m1_hour_utc": time.strftime("%H:%M", time.gmtime(hour0)),
         "atr": {"m1_14": market.wilder_atr(m1), "m15_14": market.wilder_atr(m15),
                 "ea_m1": account.get("atr_m1"), "ea_m5": account.get("atr_m5"), "ea_m15": account.get("atr_m15")},
         "last_price": last,
         "account": {"currency": account.get("currency"), "equity": account.get("equity"),
                     "balance": account.get("balance"), "daily_pnl": account.get("daily_pnl")},
         "position": position,
-        "risk": {"lots": rules.lots(), "min_sl_price": config.MIN_SL_USD, "max_sl_price": config.MAX_SL_USD,
-                 "min_sl_pips": config.MIN_SL_PIPS, "max_sl_pips": config.MAX_SL_PIPS, "spread_price": config.SPREAD_USD,
-                 "min_confidence": config.MIN_CONFIDENCE, "max_trades_per_day": config.MAX_TRADES_PER_DAY,
-                 "trades_today": paper.trades_today(state, day), "max_hold_min": config.MAX_HOLD_MIN,
+        "risk": {"trades_today": paper.trades_today(state, day),
                  "ladder": {"level": (ladder or {}).get("level", "A"), "reasons": (ladder or {}).get("reasons", []),
                             "daily_pnl_hkd": (ladder or {}).get("daily_pnl_hkd"), "alerts": list((ladder or {}).get("alerts", {}).values())},
                  "mode": (control or {}).get("mode", "RUN"), "mode_reason": (control or {}).get("reason")},
         "recent_trades": [{"side": "LONG" if t["side"] > 0 else "SHORT", "entry": t["entry"], "exit": t["exit"],
                            "pnl_usd": t["pnl_usd"], "reason": t["reason"], "hold_min": t["hold_min"]}
                           for t in (state.get("trades") or [])[-5:]],
-        "recent_decisions": [{"hkt": market.fmt_hkt(d["ts"]), "action": d.get("final"), "reason": d.get("reason")}
-                             for d in (state.get("decisions") or [])[-6:]],
+        "recent_decisions": [{"hkt": market.fmt_hkt(d["ts"]), "action": d.get("final"), "reason": short_reason(d.get("reason")),
+                              **({"sid": d["signal_id"]} if d.get("signal_id") else {})}
+                             for d in (state.get("decisions") or [])[-config.RECENT_DECISIONS:]],   # ② 6 → 3（10-23）
     }
 
 
@@ -431,6 +468,22 @@ def process_bar(state, bar, m1, m15, account, now):
         state["reuse_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
     if reuse:
         rec["reuse_shadow"] = reuse                       # shadow：照問，但記低「會沿用」，驗證有冇擋走開倉
+    ps = None
+    if pos is None and not config.SIGNAL_BOOK and prescreen.mode() != "off":   # 慳成本 S：空倉規則前篩（shadow 只記錄；on 時唔問 Opus）
+        try:
+            ps = prescreen.evaluate(m1, m15, bar["close"], state.get("prescreen_anchor"), account.get("server_offset"), now)
+        except Exception as exc:                           # 前篩出錯唔可以阻住決策：當「要問」（fail-open），記 WARNING
+            log_event(f"⚠️ [{config.TEAM_NAME}] prescreen 例外，當要問：{exc!r}", severity="WARNING", component="prescreen")
+            ps = {"ask": True, "reasons": [f"prescreen 例外：{type(exc).__name__}"], "near": None}
+        rec["prescreen"] = {"mode": prescreen.mode(), "ask": ps["ask"], "reasons": ps["reasons"], "near": ps["near"]}
+        if prescreen.mode() == "on" and not ps["ask"]:
+            state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), False)
+            rec.update(kind="prescreen", action="HOLD", final="HOLD", reason="規則前篩：冇新 M15／價格冇變／唔貼關鍵位／冇急走，唔問", cost_usd=0.0, model="rules")
+            rec["applied"] = "HOLD"
+            _record(state, rec, day)
+            return rec, "規則前篩：唔問"
+        if ps["ask"]:                                      # 錨點只喺「規則會問」嗰分鐘更新（shadow 先模擬到 on 嘅行為）
+            state["prescreen_anchor"] = {"ts": now, "price": bar["close"], "m15_time": m15[-1]["time"] if m15 else None}
     hr = hr_rule = None
     if pos is not None and hold_rules.mode() != "off":   # 慳成本 H：有倉時規則止損（shadow 只記錄；on 時規則處理、Opus 只喺特定分鐘問）
         hr = hold_rules.track(state.get("hold_rules"), pos, now)
@@ -477,6 +530,8 @@ def process_bar(state, bar, m1, m15, account, now):
         sc = b.screen(ctx)
         _bump_usage(state, "screen", sc.get("_usage"), sc.get("_ms", 0), day)
         if not sc.get("look"):
+            if ps is not None:
+                state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), ps["ask"])
             rec.update(kind="screen", action="HOLD", final="HOLD", reason=f"篩選：{sc.get('reason')}",
                        ms=sc.get("_ms"), cost_usd=brain.cost_usd(sc.get("_usage")), model=config.GATE_MODEL)
             _record(state, rec, day)
@@ -499,6 +554,8 @@ def process_bar(state, bar, m1, m15, account, now):
                ms=d.get("_ms"), usage=d.get("_usage"), cost_usd=brain.cost_usd(d.get("_usage")),
                model=(d.get("_usage") or {}).get("model") or config.MODEL, lessons=d.get("_lessons"),
                error=bool(d.get("_error")))
+    if ps is not None:                                    # S shadow／on：記規則會唔會問、開倉有冇落喺「唔問」分鐘
+        state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), ps["ask"], opened=action in ("OPEN_LONG", "OPEN_SHORT"))
     if hr is not None:                                    # H shadow／on：Opus 實際移止損 vs 規則會移去邊
         hr["stats"] = hold_rules.compare(hr.get("stats"), hr_rule.get("sl"), action, stop, pos.get("stop"), config.HOLD_RULES_TOL)
         if action == "UPDATE_STOP":
@@ -514,8 +571,7 @@ def process_bar(state, bar, m1, m15, account, now):
     else:
         rec["applied"] = paper.apply(state, action, stop, target, bar, now, day, decision_id)
     _record(state, rec, day)
-    log_event(f"🧠 [{config.TEAM_NAME}] {action}{' ← AI ' + rec['action'] if why else ''} @ {bar['close']:.{config.PRICE_DIGITS}f}"
-              f"｜{rec['reason'][:80]}{'｜擋：' + why if why else ''}｜{rec['ms']} ms", component="brain",
+    log_event(decision_line(rec, bar["close"]), component="brain",
               action=action, rejected=why, ms=rec["ms"], cost_usd=rec["cost_usd"])
     return rec, rec["applied"]
 
@@ -615,7 +671,7 @@ def handle_heartbeat(payload):
 
     if config.SIGNAL_BOOK and student.enabled():                 # 學徒階段 1：影子學生先交卷（唔落單），再做 S1
         try:
-            student.rule_tick(m1, offset, now)
+            student.rule_tick(m1, offset, now, m15 or [])
             student.claude_tick(get_brain(), lambda: build_context(state, m1, m15 or [], account, now, market.ny_date(now)), now)
         except Exception as exc:  # noqa: BLE001
             log_event(f"⚠️ 影子學生出錯：{type(exc).__name__}: {str(exc)[:80]}", severity="WARNING", component="student")
@@ -638,11 +694,26 @@ def need_history(m15):
     return n < config.M15_MIN_BARS
 
 
+def ack_account_ok(payload):
+    """10-23 權杖公開（使用者決定 keep）：cmd_ack 帶 account（EA v0.38）就要同 XAU_ACCOUNT 一致；
+    冇 account 時只有 XAU_ACK_REQUIRE_ACCOUNT=0 先接受（demo 舊 EA）。回傳 (ok, 原因)。"""
+    if not config.ACCOUNT:
+        return True, ""
+    acct = str(payload.get("account") or "").strip()
+    if acct:
+        return (acct == config.ACCOUNT), ("" if acct == config.ACCOUNT else "account 唔係 XAU_ACCOUNT")
+    return (not config.ACK_REQUIRE_ACCOUNT), ("" if not config.ACK_REQUIRE_ACCOUNT else "cmd_ack 冇 account（XAU_ACK_REQUIRE_ACCOUNT=1）")
+
+
 def handle_cmd_ack(payload):
-    """EA 執行完指令回報：{"action":"cmd_ack","id":...,"ok":true,"ticket":...,"message":...}"""
+    """EA 執行完指令回報：{"action":"cmd_ack","id":...,"ok":true,"ticket":...,"message":...,"account":...}"""
     cid = str(payload.get("id") or "").strip()
     if not cid:
         return jsonify({"status": "error", "message": "missing id"}), 400
+    ok_acct, why = ack_account_ok(payload)
+    if not ok_acct:
+        log_event(f"⚠️ [{config.TEAM_NAME}] 指令回報 {executor.mask_id(cid)} 略過：{why}", severity="WARNING", component="ea")
+        return jsonify({"status": "ignored", "message": why, "id": executor.mask_id(cid)}), 200
 
     def mutate(state):
         found = executor.ack(state, cid, payload, now_ts())
@@ -744,17 +815,19 @@ def build_status():
         "effort": config.EFFORT, "gate_model": config.GATE_MODEL, "updated_hkt": market.fmt_hkt(now, "%m-%d %H:%M:%S"),
         "market_open": market.is_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
-        "account_received_utc": account.get("received_utc"), "account_id": account.get("account_id"), "server": account.get("server"),
-        "ea_dry_run": account.get("dry_run"), "xau_account": config.ACCOUNT or None, "test_cmds": config.TEST_CMDS,
+        "account_received_utc": account.get("received_utc"), "account_id": executor.mask_account(account.get("account_id")), "server": account.get("server"),
+        "ea_dry_run": account.get("dry_run"), "xau_account": executor.mask_account(config.ACCOUNT), "test_cmds": config.TEST_CMDS,
+        "ack_require_account": config.ACK_REQUIRE_ACCOUNT,
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
         "hold_rules": {"mode": hold_rules.mode(), "ask_min": config.HOLD_RULES_ASK_MIN, "tol": config.HOLD_RULES_TOL, **(state.get("hold_rules") or {})},
+        "prescreen": {"mode": prescreen.mode(), "near": config.PRESCREEN_NEAR, "move15": config.PRESCREEN_MOVE15, "atr_mult": config.PRESCREEN_ATR_MULT, **(state.get("prescreen_stats") or {})},
         "metrics": paper.metrics(state.get("trades") or [], day_key=market.ny_date),
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
-        "pending_cmds": [c for c in (state.get("pending_cmds") or []) if not c.get("acked")],
+        "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack
         "product": {"symbol": config.SYMBOL, "kind": config.PRODUCT_KIND, "pip": config.PIP, "digits": config.PRICE_DIGITS, "contract": config.CONTRACT_SIZE},
         "risk": {"XAU_LOTS": rules.lots(), "止損距離 pip（下限／上限）": f"{config.MIN_SL_PIPS:g}／{config.MAX_SL_PIPS:g}",
                  "XAU_MIN_SL_USD": config.MIN_SL_USD, "XAU_MAX_SL_USD": config.MAX_SL_USD,
@@ -803,6 +876,10 @@ def entry(req):
     action = payload.get("action")
     if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
         if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
+            ok_acct, why = ack_account_ok(payload)
+            if not ok_acct:
+                log_event(f"⚠️ [{config.TEAM_NAME}] 跟單指令回報 {executor.mask_id(payload.get('id'))} 略過：{why}", severity="WARNING", component="follow")
+                return jsonify({"status": "ignored", "message": why}), 200
             found = follower.ack(str(payload.get("id") or "")[:8], payload, now_ts())
             log_event(f"📨 [{config.TEAM_NAME}] 跟單指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
                       + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),

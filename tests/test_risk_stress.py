@@ -104,6 +104,37 @@ q3 = dict(q, positions=q["positions"] + [{"code": "HK.HSI261023P23550000", "qty"
 txt3, _ = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q3.json"), 7_800_000)
 check("手數 0 唔加腿", "富途實際" not in txt3.split("HSI 10/23")[0] or "HSI 10/23 P23550（富途實際" not in txt3)
 
+print("\n=== R260：收市後買賣差離譜唔當平倉價（10-24 04:45 MES 跨式誤報）===")
+q4 = dict(q, positions=q["positions"] + [
+    {"code": "US.EX32611P7700x0", "qty": -1, "bid": 122.0, "ask": 1500.0, "last": 144.0, "open_price": 148.5},
+    {"code": "US.EX32611C7700x0", "qty": -1, "ask": 131.0, "last": 109.0, "open_price": 146.5}])
+(tmp / "q4.json").write_text(json.dumps(q4), encoding="utf-8")
+txt4, M4 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q4.json"), 7_800_000)
+use4 = M4["stop_use"].get("MES 跨式")
+check("P7700 用最後成交 144（唔用賣價 1,500）→ 用量 (131+144)/590 ≈ 47%", use4 is not None and abs(use4 - 275 / 590) < 0.01, use4)
+check("報告寫明買賣差太闊", "買賣差太闊" in txt4)
+det = M4.get("stop_detail", {}).get("MES 跨式", "")
+check("stop_detail 列兩隻腿同價", "MES 11/20 P7700 144.0" in det and "MES 11/20 C7700 131.0" in det and "止損 590" in det, det)
+a4 = auto_risk.alerts({"stop_use": {"MES 跨式": 1.2}, "stop_detail": {"MES 跨式": det}}, 0, 0.8)
+check("警報附腿同價", "↳" in a4["stop:MES 跨式"] and "P7700" in a4["stop:MES 跨式"], a4)
+q5 = dict(q, positions=q["positions"] + [
+    {"code": "US.EX32611P7700x0", "qty": -1, "bid": 300.0, "ask": 310.0, "last": 305.0, "open_price": 148.5},
+    {"code": "US.EX32611C7700x0", "qty": -1, "bid": 300.0, "ask": 310.0, "last": 305.0, "open_price": 146.5}])
+(tmp / "q5.json").write_text(json.dumps(q5), encoding="utf-8")
+_, M5 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q5.json"), 7_800_000)
+check("正常報價照用賣價：(310+310)/590 > 100% 照觸止損", M5["stop_use"]["MES 跨式"] > 1, M5["stop_use"])
+
+print("\n=== R266：有對沖嘅止損線，stop_detail 先講合計 ===")
+det_ew = M4.get("stop_detail", {}).get("EW P7750", "")
+check("EW 詳情以合計開頭、附單腿參考", det_ew.startswith("含對沖合計用咗") and "單腿參考" in det_ew and "EW2610 P7750" in det_ew, det_ew)
+check("合計 % 同 stop_use 一致", f"{M4['stop_use']['EW P7750'] * 100:.0f}%" in det_ew, (M4["stop_use"]["EW P7750"], det_ew))
+
+print("\n=== R261：白話警報 ===")
+check("解除白話", auto_risk.cleared_text("stop:MES 跨式") == "MES 跨式 已經離開止損範圍" and auto_risk.cleared_text("margin").startswith("富途保證金緩衝"))
+a6 = auto_risk.alerts({"stop_use": {"X": 1.2, "Y": 0.85}}, 0, 0.8)
+check("觸止損白話", a6["stop:X"].startswith("⛔ X 已到止損線") and "120%" in a6["stop:X"], a6)
+check("近止損白話", a6["stop:Y"].startswith("⚠ Y 就快到止損線") and "80% 起提醒" in a6["stop:Y"], a6)
+
 print("\n=== auto_risk.mm_jump 維持保證金單日急升 ===")
 sf = tmp / "margin_base.json"
 T = lambda d, h: datetime(2026, 10, d, h, 0, tzinfo=auto_risk.HKT)
@@ -114,12 +145,12 @@ check("翻倍 → 報 100%", msg and "100%" in msg, msg)
 check("03:51 仍屬前一個交易日（06:00 為界）", auto_risk.mm_jump(T(15, 3), {"maintenance_margin": 400_000}, sf, 0.3) is not None)
 check("新一日 06:00 起重設基準 → 解除", auto_risk.mm_jump(T(15, 7), {"maintenance_margin": 400_000}, sf, 0.3) is None)
 check("冇維持保證金唔報", auto_risk.mm_jump(T(15, 8), {}, sf, 0.3) is None)
-check("SCRIPT_VERSION R213", auto_risk.SCRIPT_VERSION == "R213")
+check("SCRIPT_VERSION R266", auto_risk.SCRIPT_VERSION == "R266")
 
 print("\n=== Cloud Run：metrics.stress 保留＋另存 ops/risk/stress_latest.json ===")
 client = main.app.test_client()
 body = {"action": "futu_risk", "token": "tok", "run_hkt": "2026-10-15 16:30", "script_version": "R193",
-        "metrics": {"equity": 7_800_000, "cushion": 210_000, "delta": {}, "stop_use": {},
+        "metrics": {"equity": 7_800_000, "cushion": 210_000, "delta": {}, "stop_use": {}, "stop_detail": {"MES 跨式": "C 131＋P 144"},
                     "stress": {"night": False, "lines": {"B": 37500, "C": 25000, "D": 15000},
                                "scenarios": [{"name": "ES +5%", "cushion_after": 60_000, "ladder": "A", "junk": 1}]}},
         "alerts": {"mm_jump": "⚠ 富途維持保證金今日升 100%"}, "positions": [], "report": "x"}
@@ -130,6 +161,7 @@ sd = json.loads(FAKE[main.FUTU_STRESS_FILE][0])
 check("stress 檔有 asof／cushion／scenarios", sd["asof_hkt"] == "2026-10-15 16:30" and sd["cushion"] == 210_000
       and sd["scenarios"][0] == {"name": "ES +5%", "cushion_after": 60_000, "ladder": "A"}, sd)
 lat = json.loads(FAKE[main.FUTU_RISK_FILE][0])
+check("R262 latest.json 保留 stop_detail", lat["metrics"].get("stop_detail") == {"MES 跨式": "C 131＋P 144"}, lat["metrics"].get("stop_detail"))
 check("latest.json metrics 保留 stress", lat["metrics"].get("stress", {}).get("lines", {}).get("B") == 37500)
 check("mm_jump 歸總指揮", main.futu_alert_team("mm_jump") == "總指揮")
 FAKE.clear()
