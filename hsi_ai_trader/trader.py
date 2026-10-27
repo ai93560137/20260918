@@ -173,6 +173,13 @@ class Trader:
                 exc = (last - meta["entry"]) * side
                 meta["mfe"] = round(max(meta.get("mfe", 0.0), exc), 4)
                 meta["mae"] = round(min(meta.get("mae", 0.0), exc), 4)
+            be_r, risk = cfg.breakeven_at_r, meta.get("risk_pts")
+            if (be_r and risk and meta.get("entry") is not None and meta.get("stop") is not None
+                    and meta.get("mfe", 0.0) >= be_r * risk and (meta["stop"] - meta["entry"]) * side < 0):
+                meta["stop"] = round_tick(meta["entry"], cfg.tick)      # [R297] 浮賺夠 R 數就保本，只會收緊
+                self._move_server_stop()
+                self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": meta["stop"],
+                                     "target": meta.get("target"), "reason": f"[R297] 浮賺 ≥ {be_r:g}R，止蝕移到開倉價保本"})
             self._ensure_server_stop(contract, qty)
             if stop_hit(side, last, meta.get("stop")):
                 self._close(contract, qty, f"止蝕 {meta['stop']}", last)

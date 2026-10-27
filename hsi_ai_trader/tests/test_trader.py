@@ -1222,3 +1222,32 @@ def test_sim_ai_off_skips_claude(env):
     assert ai.screens == 0 and ai.calls == 0 and b.orders == []
     rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text().splitlines()][-1]
     assert rec["final"] == "HOLD" and "模擬唔叫 AI" in rec["reason"] and rec["usage"] is None
+
+
+def test_breakeven_at_r(env):
+    """[R297] 使用者 10-27「批 #133」：浮賺 ≥ 1R 之後止蝕自動移到開倉價；之後跌返開倉價就保本走。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, breakeven_at_r=1.0)
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25200, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    pos = tr.state["pos"]
+    entry, risk = pos["entry"], pos["risk_pts"]
+    b.price = entry + risk - 5                      # 未夠 1R：止蝕唔郁
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"]["stop"] < entry
+    b.price = entry + risk + 5                      # 夠 1R：止蝕移到開倉價
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"]["stop"] == entry
+    b.price = entry - 2                             # 跌返落開倉價以下：保本止蝕
+    advance(t, seconds=5)
+    tr.tick()
+    assert tr.state["pos"] is None
+    lines = (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines()
+    assert any("[R297]" in l for l in lines)
+    close = [json.loads(l) for l in lines if '"CLOSE"' in l][-1]
+    assert "止蝕" in close["reason"] and close["mfe"] >= risk
+
