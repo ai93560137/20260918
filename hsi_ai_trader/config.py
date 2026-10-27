@@ -38,6 +38,8 @@ SPEC = spec_for(_PRODUCT)
 _REAL_LIST = {x.strip().upper() for x in os.getenv("LONGFEI_REAL_PRODUCTS", "").split(",") if x.strip()}
 _INSTANCE_REAL = os.getenv("LONGFEI_INSTANCE", "").strip().upper() == "REAL"
 _IS_REAL = _INSTANCE_REAL and _PRODUCT in _REAL_LIST
+# [R299] 使用者 10-27「揸耐啲、止蝕闊啲」：波段模式只限真倉（模擬程式冇 AI、唔開倉）
+_SWING = _IS_REAL and os.getenv("SWING_EXIT", "0").strip().lower() in ("1", "true", "yes", "on")
 _REAL_LOSS = None
 # [R233] 使用者 10-19：美股真倉用自己嘅倉位同日蝕設定。只喺真倉程式生效，模擬照用產品預設。
 # 次序：REAL_NOTIONAL_USD_<產品> → REAL_NOTIONAL_USD；REAL_DAILY_LOSS_<產品> → REAL_DAILY_LOSS_STOCK。
@@ -107,6 +109,15 @@ class Config:
     breakeven_at_r: float = float(_env("BREAKEVEN_AT_R", "0"))
     # [R298] 10-27 MHI 開倉單連續「下單失敗」仍然每 5 分鐘重試：同一日失敗 N 次就唔再開新倉（有倉照管）；0＝唔限
     order_fail_max: int = int(_env("ORDER_FAIL_MAX", "0"))
+    # [R299] 使用者 10-27「開倉前先查購買力。ok」：真倉期貨冇倉時，問 AI 之前先問富途最多可開幾張，兩邊都 0 就 HOLD 唔叫 AI
+    real_bp_check: bool = _IS_REAL and SPEC.kind != "stock" and _bool("REAL_BP_CHECK", "0")
+    # [R299] 使用者 10-27「揸耐啲、止蝕闊啲。ok」（IDEAS #135）：波段出場由程式管，有倉唔再叫 AI；
+    # 止蝕最少 SWING_MIN_STOP 點、每日最多開 SWING_MAX_OPENS 次；浮賺 ≥ SWING_TRAIL_START 點之後用 SWING_TRAIL 點移動止蝕（只收緊），
+    # 最多揸 SWING_MAX_DAYS 個交易日（第 N 日日市收市前平）。點數按 10-27 恒指 14 日平均日波幅約 330 點：止蝕 0.35、移動 0.5 個日波幅
+    swing_exit: bool = _SWING
+    swing_trail_start: float = float(_env("SWING_TRAIL_START", "165"))
+    swing_trail: float = float(_env("SWING_TRAIL", "165"))
+    swing_max_days: int = int(_env("SWING_MAX_DAYS", "3"))
     # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
     # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
     real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")
@@ -115,8 +126,8 @@ class Config:
     real_size_frac: float = float(_env("REAL_SIZE_FRAC", "0")) if (_IS_REAL and SPEC.kind == "stock") else 0.0
     real_products: tuple = tuple(sorted(_REAL_LIST))
     max_stop_points: float = float(_env("MAX_STOP_POINTS", "0"))         # 每張單最大止蝕點數，0 = 唔限
-    min_stop_points: float = float(_env("MIN_STOP_POINTS", "0"))         # 0 = 唔限
-    max_trades_per_day: int = int(_env("MAX_TRADES_PER_DAY", "0"))       # 0 = 唔限
+    min_stop_points: float = float(_env("SWING_MIN_STOP", "120") if _SWING else _env("MIN_STOP_POINTS", "0"))  # 0 = 唔限
+    max_trades_per_day: int = int(_env("SWING_MAX_OPENS", "1") if _SWING else _env("MAX_TRADES_PER_DAY", "0"))  # 0 = 唔限
     fee_per_side_hkd: float = float(_env("FEE_PER_SIDE_HKD", str(SPEC.fee_per_side_hkd)))     # 每張每邊佣金＋徵費估算，計日蝕用（寧高唔低）
     # [R209] 真倉期貨開倉前：開倉後緩衝（淨值 − 維持保證金 − 每張初始保證金）要 ≥ Ⓑ 線（夜盤 ×1.5）＋ 日蝕上限
     # （總指揮 10-17 建議；Ⓑ 線跟 RISK_LADDER，改咗要同步）
