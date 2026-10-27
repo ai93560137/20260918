@@ -1,0 +1,36 @@
+name: 龍飛陣 反向開市突破驗證（IDEAS #131）
+
+# 一次性研究：yfinance 1 小時 K 線（約 730 日），只用 2026-08-01 之前（#130 用過嘅日子唔計），
+# 驗「順日線開市突破反向做」F1／F2 同對照 A1。結果寫 GCS longfei/rulesim_oos/fade_report.json。只係紙上，唔落單。
+on:
+  workflow_dispatch:
+    inputs:
+      before:
+        description: 只計呢日之前
+        required: false
+        default: '2026-08-01'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  fade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Fade check
+        env:
+          BEFORE: ${{ github.event.inputs.before }}
+        run: python3 research/longfei_rulesim/fade_check.py --before "${BEFORE:-2026-08-01}"
