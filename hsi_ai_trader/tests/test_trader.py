@@ -654,6 +654,13 @@ def test_futures_preflight_uses_power_vs_initial_margin():
     T.acctradinginfo_query = lambda self, **k: (RET_OK, pd.DataFrame([{"long_required_im": 200000, "short_required_im": 200000}]))
     r = b.real_preflight("HK.HSI2610", 1, 25000)
     assert not r["ok"] and not r["can_long"]
+    # [R301] 期貨 max_open_qty：富途兩個「最多可買／沽空」欄係 N/A，要用購買力 ÷ 每張初始保證金（10-27 R299 誤當 0 張）
+    b.env, b.acc_id = "REAL", 1
+    T.acctradinginfo_query = lambda self, **k: (RET_OK, pd.DataFrame([{"max_cash_and_margin_buy": "N/A", "max_sell_short": "N/A",
+                                                                       "long_required_im": 19000, "short_required_im": 20000}]))
+    assert b.max_open_qty("HK.MHI2610", 1, 23000) == 8 and b.max_open_qty("HK.MHI2610", -1, 23000) == 8
+    T.accinfo_query = lambda self, **k: (RET_OK, pd.DataFrame([{"power": 10000}]))
+    assert b.max_open_qty("HK.MHI2610", -1, 23000) == 0
 
 
 def test_real_futures_needs_cushion_after_margin(env):
