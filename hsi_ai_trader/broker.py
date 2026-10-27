@@ -406,6 +406,7 @@ class FutuBroker:
     def market_order(self, code: str, side: int, qty: int, slippage: float, timeout=15):
         """以可成交限價單模擬市價：買用 ask+滑點，賣用 bid-滑點。
         回傳 (成交均價, 成交數量)；完全冇成交回傳 (None, 0)。超時會取消，取消後再查：部分成交同取消前啱啱成交都計返。"""
+        self.last_order_error = None
         snap = self.snapshot(code, fresh=True)           # 落單要最新價，唔用快取
         tick = self.spec.tick
         if side > 0:
@@ -432,7 +433,9 @@ class FutuBroker:
             if st in FILLED:
                 return self._fill(row, price, qty)
             if st in DEAD:
-                log.warning("單 %s 狀態 %s", order_id, st)
+                # [R298] 10-27 MHI 7 張開倉單「下單失敗」查唔到原因：記低富途嘅錯誤訊息畀 trader 寫入事件同 heartbeat
+                self.last_order_error = f"{st}：{row.get('last_err_msg') or ''}".strip("：")
+                log.warning("單 %s 狀態 %s", order_id, self.last_order_error)
                 return self._fill(row, price, 0)          # 部分成交後取消（CANCELLED_PART）都計返已成交嗰啲
         # 超時：取消，再查最終成交（取消同成交可能同時發生）
         try:

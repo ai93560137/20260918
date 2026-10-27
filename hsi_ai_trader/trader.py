@@ -106,7 +106,7 @@ class Trader:
         if st.get("day") != day:
             eq = self.broker.equity()
             st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
-                       "ai_skipped_today": 0, "ai_gated_today": 0,
+                       "ai_skipped_today": 0, "ai_gated_today": 0, "order_fail_today": 0, "open_block": None,
                        "today_trades": [], "halted": False, "halt_reason": None})
             self._log("events", {"type": "NEW_DAY", "day": day, "equity": eq})
 
@@ -234,7 +234,7 @@ class Trader:
             if session != "RTH":
                 return False
             mins_left = (mins_left or 0) - 240            # 收市計 16:00，唔係 20:00
-        return (not st.get("halted") and not cfg.pause_file.exists() and not st.get("foreign_qty")
+        return (not st.get("halted") and not st.get("open_block") and not cfg.pause_file.exists() and not st.get("foreign_qty")
                 and mins_left is not None and mins_left > cfg.no_entry_before_close_min)
 
     def _decide(self, now, contract, qty, snap, session, mins_left):
@@ -306,7 +306,14 @@ class Trader:
             return
         px, filled = self.broker.market_order(contract, side, n_open, cfg.slippage_points)
         if not filled:
-            self._log("events", {"type": "ORDER_FAILED", "action": action})
+            err = getattr(self.broker, "last_order_error", None)
+            self._log("events", {"type": "ORDER_FAILED", "action": action, "error": err})
+            st["order_fail_today"] = st.get("order_fail_today", 0) + 1     # [R298] 記低原因，heartbeat 睇得到
+            st["order_errors"] = (st.get("order_errors") or [])[-4:] + [{"ts": now.isoformat(timespec="seconds"),
+                                                                          "action": action, "error": err}]
+            if cfg.order_fail_max and st["order_fail_today"] >= cfg.order_fail_max and not st.get("open_block"):
+                st["open_block"] = f"今日開倉單失敗 {st['order_fail_today']} 次，今日唔再開新倉（R298）"
+                self._log("events", {"type": "OPEN_BLOCKED", "reason": st["open_block"]})
             return
         if filled < n_open:
             self._log("events", {"type": "PARTIAL_FILL", "action": action, "wanted": n_open, "filled": filled})

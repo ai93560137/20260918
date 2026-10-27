@@ -1251,3 +1251,25 @@ def test_breakeven_at_r(env):
     close = [json.loads(l) for l in lines if '"CLOSE"' in l][-1]
     assert "止蝕" in close["reason"] and close["mfe"] >= risk
 
+
+
+def test_order_fail_recorded_and_capped(env):
+    """[R298] 10-27 MHI 開倉單連續「下單失敗」：記低富途錯誤；同日失敗夠 ORDER_FAIL_MAX 次就唔再開新倉。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, order_fail_max=2)
+    b.fill = False
+    b.last_order_error = "FAILED：保證金不足"
+    tr.tick()
+    for _ in range(2):
+        ai.next = {"action": "OPEN_SHORT", "stop_price": 25060, "target_price": 24900, "confidence": 0.7,
+                   "reason": "沽空"}
+        advance(t, minutes=5)
+        tr.tick()
+    st = tr.state
+    assert st["order_fail_today"] == 2 and st["order_errors"][-1]["error"] == "FAILED：保證金不足"
+    assert st["open_block"] and not tr._can_open(120, "DAY_AM")
+    events = (cfg.log_dir / "events.jsonl").read_text("utf-8")
+    assert "保證金不足" in events and "OPEN_BLOCKED" in events
+    from push import build_packet
+    pkt = build_packet(tr.cfg, st, "x")
+    assert pkt["state"]["order_fail_today"] == 2 and pkt["state"]["open_block"]

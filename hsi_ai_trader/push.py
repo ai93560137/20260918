@@ -47,6 +47,9 @@ def build_packet(cfg, state, token):
               "halt_reason": state.get("halt_reason"), "foreign_qty": state.get("foreign_qty", 0),
               "contract": state.get("contract"), "paused": cfg.pause_file.exists(),
               "stopped": cfg.stop_file.exists(), "real_preflight": state.get("real_preflight"),
+              # [R298] 開倉單失敗原因（富途 last_err_msg）同今日有冇因此停開新倉
+              "order_fail_today": state.get("order_fail_today", 0), "order_errors": state.get("order_errors"),
+              "open_block": state.get("open_block"),
               # [R212] 戶口淨值同購買力（私人 GCS，網頁唔顯示）：模擬程式報模擬戶口；真實戶口由真倉程式或者戶口檢查
               "sim_account": state.get("sim_account") if cfg.trd_env == "SIMULATE" else None,
               "real_account": state.get("real_account"),

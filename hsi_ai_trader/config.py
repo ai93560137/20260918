@@ -105,6 +105,8 @@ class Config:
     sim_ai: bool = _IS_REAL or _bool("LONGFEI_SIM_AI", "1")
     # [R297] 使用者 10-27「批 #133」：浮賺 ≥ 呢個 R 數之後，程式自動將止蝕最少移到開倉價（保本）；0＝唔開
     breakeven_at_r: float = float(_env("BREAKEVEN_AT_R", "0"))
+    # [R298] 10-27 MHI 開倉單連續「下單失敗」仍然每 5 分鐘重試：同一日失敗 N 次就唔再開新倉（有倉照管）；0＝唔限
+    order_fail_max: int = int(_env("ORDER_FAIL_MAX", "0"))
     # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
     # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
     real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")
