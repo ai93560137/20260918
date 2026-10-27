@@ -36,11 +36,13 @@ class HedgeTests(unittest.TestCase):
         msg, _ = on.compose_hedge(RISK, {}, LIVE_CFG, hkt("2026-10-26 15:55"))
         self.assertIn("雲垂對沖申報 +0／其他 -1", msg)
         # 方案 a：即月 MHI 期貨歸龍飛；非即月、MHI 期權歸雲垂（10-29 前 2610 係即月，之後 2611）
-        self.assertFalse(on.is_yunchui("HK.MHI2610", LIVE_CFG, "2026-10-26 22:10:00"))
+        self.assertFalse(on.is_yunchui("HK.MHI2610", LIVE_CFG, "2026-10-20 22:10:00"))
         self.assertTrue(on.is_yunchui("HK.MHI2612", LIVE_CFG, "2026-10-26 22:10:00"))
         self.assertTrue(on.is_yunchui("HK.MHI261127C23200", LIVE_CFG, "2026-10-26"))
-        self.assertFalse(on.is_yunchui("HK.MHI2611", LIVE_CFG, "2026-10-29 09:30:00"))
-        self.assertTrue(on.is_yunchui("HK.MHI2611", LIVE_CFG, "2026-10-28 09:30:00"))
+        # [R302] 最後一星期（最後交易日 10-29 前 7 日起）龍飛陣用下一月：10-22 起 2611 歸龍飛、2610 歸雲垂
+        self.assertFalse(on.is_yunchui("HK.MHI2611", LIVE_CFG, "2026-10-27 09:30:00"))
+        self.assertTrue(on.is_yunchui("HK.MHI2610", LIVE_CFG, "2026-10-27 09:30:00"))
+        self.assertTrue(on.is_yunchui("HK.MHI2611", LIVE_CFG, "2026-10-21 09:30:00"))
 
     def test_basic_line(self):
         msg, st = on.compose_hedge(RISK, {}, CFG, hkt("2026-10-13 15:55"))

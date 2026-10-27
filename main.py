@@ -941,10 +941,21 @@ def hk_front_month(today):
 FUTU_MHI_LONGFEI_CAP = 10   # [R300] 使用者 10-27 喺總指揮工作階段親口「確認 MHI 10 張、日蝕 HK$30,000」：龍飛陣即月 MHI 最多 10 張；雲垂非即月對沖仍然 1 手
 
 
+FUTU_MHI_LONGFEI_ROLL_DAYS = 7   # [R302] 使用者 10-27「最後一星期波段用下一月」：同 settings.env ROLL_DAYS_MHI 一致
+
+
+def longfei_mhi_month(today):
+    """[R302] 龍飛陣真倉用嘅 MHI 月份：即月最後交易日 ≤ 今日＋7 日（日曆日）就用下一個月。"""
+    y, m = hk_front_month(today)
+    if hk_index_futures_ltd(y, m) <= today + timedelta(days=FUTU_MHI_LONGFEI_ROLL_DAYS):
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return y, m
+
+
 def futu_mhi_team(code, today):
-    """[R257] MHI 期貨：當刻即月 → 龍飛陣；其他月份 → 雲垂陣。"""
+    """[R257] MHI 期貨：龍飛陣月份（R302：即月，最後一星期轉下月）→ 龍飛陣；其他月份 → 雲垂陣。"""
     m = re.match(r"^HK\.MHI(\d{2})(\d{2})$", code or "")
-    if m and (2000 + int(m.group(1)), int(m.group(2))) == hk_front_month(today):
+    if m and (2000 + int(m.group(1)), int(m.group(2))) == longfei_mhi_month(today):
         return "龍飛陣", "MHI 即月期貨（AI 真倉）"
     return "雲垂陣", "MHI 期貨 Δ 對沖（非即月）"
 

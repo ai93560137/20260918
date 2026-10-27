@@ -76,7 +76,8 @@ class Config:
     kind: str = SPEC.kind                                # future／stock（ETF）
     currency: str = SPEC.currency
     tick: float = SPEC.tick
-    roll_days: int = SPEC.roll_days
+    # [R302] 使用者 10-27「最後一星期波段用下一月」：真倉可用 ROLL_DAYS_<產品> 覆寫（日曆日；最後交易日 ≤ 今日＋N 日就轉下月）
+    roll_days: int = int((_IS_REAL and os.getenv(f"ROLL_DAYS_{_PRODUCT}")) or SPEC.roll_days)
     # 每點（每張／每股）價值一律換算做 HKD（日蝕上限、止蝕風險、盈虧都用 HKD 比較）：HSI 50；MES 39；ETF 每股 7.8
     point_value: float = float(_env("POINT_VALUE", str(SPEC.point_value * FX_TO_HKD[SPEC.currency])))
 

@@ -155,6 +155,14 @@ def hk_front_month(today: date) -> tuple[int, int]:
     return y, m
 
 
+def longfei_mhi_month(today: date) -> tuple[int, int]:
+    """[R302] 照 main.py：龍飛陣 MHI 月份＝即月，最後交易日 ≤ 今日＋7 日（日曆日）就用下一個月。"""
+    y, m = hk_front_month(today)
+    if hk_index_futures_ltd(y, m) <= today + timedelta(days=7):
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return y, m
+
+
 MHI_LONGFEI_CAP = 10   # [R300] 照 main.py FUTU_MHI_LONGFEI_CAP：龍飛陣即月 MHI 最多 10 張（使用者 10-27）
 
 
@@ -163,7 +171,7 @@ def team_of(code: str, today: date | None = None) -> tuple[str, str, float | Non
         if re.match(rx, code or ""):
             if team == "MHI_BY_MONTH":
                 today = today or datetime.now(HKT).date()
-                if (2000 + int(code[6:8]), int(code[8:10])) == hk_front_month(today):
+                if (2000 + int(code[6:8]), int(code[8:10])) == longfei_mhi_month(today):
                     return TEAM_LONGFEI, "MHI 即月期貨（AI 真倉）", MHI_LONGFEI_CAP
                 return "雲垂陣", "MHI 期貨 Δ 對沖（非即月）", cap
             return team, use, cap
