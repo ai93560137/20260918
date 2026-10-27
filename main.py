@@ -938,6 +938,9 @@ def hk_front_month(today):
     return y, m
 
 
+FUTU_MHI_LONGFEI_CAP = 10   # [R300] 使用者 10-27 喺總指揮工作階段親口「確認 MHI 10 張、日蝕 HK$30,000」：龍飛陣即月 MHI 最多 10 張；雲垂非即月對沖仍然 1 手
+
+
 def futu_mhi_team(code, today):
     """[R257] MHI 期貨：當刻即月 → 龍飛陣；其他月份 → 雲垂陣。"""
     m = re.match(r"^HK\.MHI(\d{2})(\d{2})$", code or "")
@@ -948,7 +951,7 @@ def futu_mhi_team(code, today):
 
 FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當使用者人手)
     (r"^HK\.MHI\d{6}[CP]\d+$", "雲垂陣", "MHI 月跨式", None),
-    (r"^HK\.MHI\d{4}$", FUTU_MHI_BY_MONTH, "MHI 期貨", 1),                  # [R257] 使用者 10-23 方案 a：當刻即月 → 龍飛陣真倉；其他月份 → 雲垂陣 Δ 對沖（各最多 1 手）
+    (r"^HK\.MHI\d{4}$", FUTU_MHI_BY_MONTH, "MHI 期貨", 1),                  # [R257] 使用者 10-23 方案 a：當刻即月 → 龍飛陣真倉（R300 最多 10 張）；其他月份 → 雲垂陣 Δ 對沖（最多 1 手）
     (r"^US\.EX\d{5}[CP]\d+x\d$", "雲垂陣", "MES 週權跨式", None),
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", FUTU_TEAM_MANUAL, "大恒指期貨（人手）", None),       # 2026-10-14 使用者：預設歸人手；屬蛇蟠陣要逐張問使用者，答「屬」先喺上面加合約規則
@@ -991,6 +994,8 @@ def futu_team_assign(positions, today=None):
             if re.match(rx, code):
                 if team == FUTU_MHI_BY_MONTH:
                     team, use = futu_mhi_team(code, today)
+                    if team == "龍飛陣":
+                        cap = FUTU_MHI_LONGFEI_CAP
                 take = qty if cap is None else math.copysign(min(abs(qty), cap), qty)
                 out.append({**base, "team": team, "use": use, "qty": take,
                             "futu_pl": None if pl is None else round(pl * take / qty, 2)})

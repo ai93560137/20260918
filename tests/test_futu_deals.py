@@ -139,6 +139,8 @@ from datetime import date as _d
 a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}], today=_d(2026, 10, 23))
 check("10-23 MHI2611 −10 → 雲垂 1 手＋人手 9 手", sorted((x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611") == sorted([("雲垂陣", -1), (main.FUTU_TEAM_MANUAL, -9)]), a)
 check("10-23 MHI2610 −1 → 龍飛陣", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("龍飛陣", -1)], a)
+a10 = main.futu_team_assign([{"code": "HK.MHI2610", "qty": -12}], today=_d(2026, 10, 23))
+check("[R300] 10-23 MHI2610 −12 → 龍飛陣 10 張＋人手 2 張", sorted((x["team"], x["qty"]) for x in a10) == sorted([("龍飛陣", -10), (main.FUTU_TEAM_MANUAL, -2)]), a10)
 check("10-28 即月仍係 2610", main.hk_front_month(_d(2026, 10, 28)) == (2026, 10))
 check("10-29 最後交易日即月轉 2611", main.hk_front_month(_d(2026, 10, 29)) == (2026, 11))
 check("12-30 最後交易日即月轉 2701", main.hk_front_month(_d(2026, 12, 30)) == (2027, 1))

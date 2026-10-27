@@ -124,7 +124,8 @@ check("POSITIONS 解析 MHI2611 小期／HSI2611 買", db.parse_positions_md("| 
 check("ES2612 −1 解析＋歸人手（10-14）", db.parse_positions_md("| ✋ 使用者人手 | 富途期貨 | 賣 ES2612 標普期貨 1 手 @7,803 | x | y | z | 持倉中 | w |")[0] == {"US.ES2612": -1.0}
       and db.split_by_cap("US.ES2612", -1) == [(db.TEAM_MANUAL, -1)])
 from datetime import date as _d
-check("[R257] 10-23 MHI2610 即月 → 龍飛陣 1 手，超出歸人手", db.split_by_cap("HK.MHI2610", -3, _d(2026, 10, 23)) == [("龍飛陣", -1), (db.TEAM_MANUAL, -2)])
+check("[R300] 10-23 MHI2610 即月 → 龍飛陣最多 10 張，超出歸人手", db.split_by_cap("HK.MHI2610", -3, _d(2026, 10, 23)) == [("龍飛陣", -3)]
+      and db.split_by_cap("HK.MHI2610", -12, _d(2026, 10, 23)) == [("龍飛陣", -10), (db.TEAM_MANUAL, -2)])
 check("[R257] 10-23 MHI2611 非即月 → 雲垂陣 1 手，超出歸人手", db.split_by_cap("HK.MHI2611", -10, _d(2026, 10, 23)) == [("雲垂陣", -1), (db.TEAM_MANUAL, -9)])
 check("[R257] 10-29 最後交易日 → MHI2611 已係即月", db.team_of("HK.MHI2611", _d(2026, 10, 29))[0] == "龍飛陣" and db.team_of("HK.MHI2610", _d(2026, 10, 29))[0] == "雲垂陣")
 check("[R257] 最後交易日 10-29／11-27／12-30", [db.hk_index_futures_ltd(2026, m) for m in (10, 11, 12)] == [_d(2026, 10, 29), _d(2026, 11, 27), _d(2026, 12, 30)])
