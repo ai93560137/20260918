@@ -158,10 +158,10 @@ _MHI_FUT_RE = re.compile(r"^HK\.MHI(\d{2})(\d{2})$")
 
 def is_yunchui(code: str, cfg: dict, on: str | None = None) -> bool:
     """on＝成交／平倉日（YYYY-MM-DD…）。方案 a（使用者 10-21，RISK_LADDER §6b）：MHI 期權歸雲垂；
-    MHI 期貨「當日即月」歸龍飛陣即月真倉，非即月歸雲垂對沖（雲垂 10-26 更正）。"""
+    MHI 期貨「龍飛陣月份」（即月，R302 最後一星期轉下月）歸龍飛陣真倉，其他月份歸雲垂對沖（雲垂 10-26 更正）。"""
     m = _MHI_FUT_RE.match(code)
     if m:
-        from daily_books import hk_front_month   # 同一套港交所最後交易日計法
+        from daily_books import longfei_mhi_month as hk_front_month   # [R302] 龍飛陣月份（最後一星期轉下月）
         try:
             day = datetime.strptime((on or "")[:10], "%Y-%m-%d").date()
         except ValueError:

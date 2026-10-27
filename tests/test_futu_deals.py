@@ -136,11 +136,18 @@ main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUT
 
 print("\n=== [R257] 配對：MHI 即月 → 龍飛陣，非即月 → 雲垂陣（各 1 手，超出歸人手）===")
 from datetime import date as _d
-a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}], today=_d(2026, 10, 23))
-check("10-23 MHI2611 −10 → 雲垂 1 手＋人手 9 手", sorted((x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611") == sorted([("雲垂陣", -1), (main.FUTU_TEAM_MANUAL, -9)]), a)
-check("10-23 MHI2610 −1 → 龍飛陣", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("龍飛陣", -1)], a)
-a10 = main.futu_team_assign([{"code": "HK.MHI2610", "qty": -12}], today=_d(2026, 10, 23))
-check("[R300] 10-23 MHI2610 −12 → 龍飛陣 10 張＋人手 2 張", sorted((x["team"], x["qty"]) for x in a10) == sorted([("龍飛陣", -10), (main.FUTU_TEAM_MANUAL, -2)]), a10)
+a = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}], today=_d(2026, 10, 13))
+check("10-13 MHI2611 −10 → 雲垂 1 手＋人手 9 手", sorted((x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2611") == sorted([("雲垂陣", -1), (main.FUTU_TEAM_MANUAL, -9)]), a)
+check("10-13 MHI2610 −1 → 龍飛陣", [(x["team"], x["qty"]) for x in a if x["code"] == "HK.MHI2610"] == [("龍飛陣", -1)], a)
+a10 = main.futu_team_assign([{"code": "HK.MHI2610", "qty": -12}], today=_d(2026, 10, 13))
+check("[R300] 10-13 MHI2610 −12 → 龍飛陣 10 張＋人手 2 張", sorted((x["team"], x["qty"]) for x in a10) == sorted([("龍飛陣", -10), (main.FUTU_TEAM_MANUAL, -2)]), a10)
+check("[R302] 最後一星期龍飛陣用下一月：10-21 仍係 2610、10-22 起 2611、10-29 起 2611、11-20 起 2612",
+      main.longfei_mhi_month(_d(2026, 10, 21)) == (2026, 10) and main.longfei_mhi_month(_d(2026, 10, 22)) == (2026, 11)
+      and main.longfei_mhi_month(_d(2026, 10, 29)) == (2026, 11) and main.longfei_mhi_month(_d(2026, 11, 19)) == (2026, 11)
+      and main.longfei_mhi_month(_d(2026, 11, 20)) == (2026, 12))
+a27 = main.futu_team_assign([{"code": "HK.MHI2611", "qty": -10}, {"code": "HK.MHI2610", "qty": -1}], today=_d(2026, 10, 27))
+check("[R302] 10-27 MHI2611 −10 → 龍飛陣；MHI2610 → 雲垂", sorted((x["code"], x["team"], x["qty"]) for x in a27)
+      == sorted([("HK.MHI2611", "龍飛陣", -10), ("HK.MHI2610", "雲垂陣", -1)]), a27)
 check("10-28 即月仍係 2610", main.hk_front_month(_d(2026, 10, 28)) == (2026, 10))
 check("10-29 最後交易日即月轉 2611", main.hk_front_month(_d(2026, 10, 29)) == (2026, 11))
 check("12-30 最後交易日即月轉 2701", main.hk_front_month(_d(2026, 12, 30)) == (2027, 1))
