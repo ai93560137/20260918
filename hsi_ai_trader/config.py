@@ -91,7 +91,8 @@ class Config:
     gate_effort: str = _env("GATE_EFFORT", "low")
 
     # --- 硬性風控（AI 無權超越）---
-    max_qty: int = int(_env("MAX_QTY", "1"))
+    # [R300] 使用者 10-27「一次可以最多 10 張」（MHI）：次序 MAX_QTY_<產品>（只限真倉）→ MAX_QTY → 1
+    max_qty: int = int((_IS_REAL and os.getenv(f"MAX_QTY_{_PRODUCT}")) or _env("MAX_QTY", "1"))
     # HK$；次序：DAILY_LOSS_LIMIT_<產品> → 期貨先跟 DAILY_LOSS_LIMIT → 產品預設（ETF HK$100,000，HSI HK$10,000）
     daily_loss_limit: float = float(_REAL_LOSS or os.getenv(f"DAILY_LOSS_LIMIT_{_PRODUCT}") or
                                     (SPEC.kind == "future" and os.getenv("DAILY_LOSS_LIMIT")) or SPEC.daily_loss_hkd)
