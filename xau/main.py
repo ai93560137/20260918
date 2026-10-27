@@ -706,7 +706,7 @@ def archive_bars(bars, offset):
             return ([have[k] for k in sorted(have)] if len(have) > n0 else None), None
         try:
             storage.update(f"{BARS_PREFIX}{day}.jsonl", mutate, default_factory=list)
-        except StorageError as exc:
+        except Exception as exc:  # noqa: BLE001  [R345b] 存檔喺真倉心跳路徑：任何錯（缺欄位、儲存）都只記 WARNING，唔可以影響交易
             log_event(f"⚠️ M1 存檔寫入失敗 {day}：{type(exc).__name__}", severity="WARNING")
 
 
