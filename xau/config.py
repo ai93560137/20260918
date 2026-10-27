@@ -156,6 +156,7 @@ SIG_MAX_SKEW_SEC = _i("SIG_MAX_SKEW_SEC", 300)               # 簽名時間戳�
 SIG_RATE_PER_MIN = _i("SIG_RATE_PER_MIN", 30)                # 每個容器每分鐘最多幾個請求（超過回 429）
 SIG_MAX_BODY = _i("SIG_MAX_BODY", 16000)                     # body 上限 bytes
 SIG_TTL_MIN = _i("SIG_TTL_MIN", 30)                          # 訊號有效分鐘（由訊息時間起計）
+SIG_MERGE_SEC = _i("SIG_MERGE_SEC", 60)                      # [R343] 同一頻道幾秒內連續訊息合併解析（只喺單條判 invalid 時先試；0＝關）。10-27 黃金戰鬥機一條訊號拆兩條（「BUY」／入場區 SL TP）逐條都 invalid
 SIG_PRICE_MAX_AGE_SEC = _i("SIG_PRICE_MAX_AGE_SEC", 300)     # 主服務最新 M1 最舊可接受幾秒，再舊就標 unverified
 SIG_MAX_DRIFT = _f("SIG_MAX_DRIFT", MAX_SL_USD)               # 入場區離現價最多幾多（價格單位；預設 = 止損上限）
 SIG_MAX_SL = _f("SIG_MAX_SL", MAX_SL_USD * 2)                 # 訊號止損距離上限（價格單位；只用嚟判斷訊號係咪合理，唔係落單止損）

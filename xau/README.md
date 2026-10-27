@@ -84,6 +84,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `SIG_FOLLOW_SKIP_UNREACHED_CHANNELS` | 5231 | 跟單：呢啲頻道收到時現價仍喺入場價反向 ≥ `SIG_FOLLOW_UNREACHED_TOL` 就略過、唔等限價（10-24 使用者；提案 §27：CTC 呢批 −1.08 美元／張）。DAN 限價區設計上反向 4±2，唔要放入。空＝關 |
 | `SIG_FOLLOW_UNREACHED_TOL` | 0.3（外匯 0.00003） | 上面規則嘅容許（價格單位，≈點差） |
 | `SIG_FOLLOW_AVOID_HOURS` | 5231:07-12 | 跟單：頻道:起-止（UTC 整點，止不含），逗號分隔多個；該時段收到嘅訊號略過（10-24 使用者「倫敦時段都避」；CTC 07–12 UTC −1.61／張）。空＝關 |
+| `SIG_MERGE_SEC` | 60 | [R343] 同一頻道幾秒內連續訊息合併解析：單條判 invalid 時先同上一條片段合併再試一次（成功就把上一條標 merged，同一訊號只處理一次）；0＝關 |
 | `SIG_FOLLOW_LADDER_CHANNELS` | （空） | 跟單出場用**逐級鎖**嘅頻道尾 4 位（例 `7713` DAN）：開倉 TP 掛最後一級，到 TP1 止損移保本，到 TP(k) 鎖 TP(k−1)，只准收緊；其他頻道 TP1 全平。`SIG_FOLLOW_LADDER_BUF`（0）鎖位再退幾多 |
 | `XAU_HOLD_RULES_ASK_MIN` | 5 | on 模式下最多隔幾多分鐘問一次 Opus |
 | `XAU_ACK_REQUIRE_ACCOUNT` | 0 | 10-23 權杖公開（使用者 keep）：1 = cmd_ack 必須帶 `account` 且等於 `XAU_ACCOUNT`（EA v0.38 起有）；0 = 冇 account 都接受（demo 舊 EA）。帶錯 account 一律忽略。公開 JSON 嘅登入號／指令 id 已遮罩 |

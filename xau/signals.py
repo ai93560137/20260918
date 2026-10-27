@@ -26,6 +26,7 @@ from storage import StorageError
 
 PREFIX = config.PREFIX + "signals/"
 RECENT_FILE = PREFIX + "recent.json"
+MERGE_FILE = PREFIX + "merge_pending.json"        # [R343] 每頻道最近一條判 invalid 嘅訊息片段（sid、msg_ts、text），等下一條合併
 LISTENER_FILE = config.PREFIX + "listener.json"
 MAIN_M1_FILE = config.MAIN_PREFIX + "m1.json"
 MAIN_M15_FILE = config.MAIN_PREFIX + "m15.json"
@@ -399,6 +400,46 @@ def handle_history(payload):
     return jsonify({"status": "stored", "sid": sid, "signal_status": status}), 200
 
 
+def remember_fragment(rec, text, t_msg):
+    """[R343] 本條判 invalid：記低做片段，等同頻道下一條（SIG_MERGE_SEC 內）合併。"""
+    ch = rec.get("channel_id") or ""
+    try:
+        storage.update(MERGE_FILE, lambda m: ({**(m if isinstance(m, dict) else {}), ch: {"sid": rec["sid"], "msg_ts": t_msg, "text": text[:MAX_TEXT]}}, None),
+                       default_factory=dict)
+    except StorageError as exc:
+        log_event(f"⚠️ 片段寫入失敗 {rec['sid']}：{type(exc).__name__}", severity="WARNING", sid=rec["sid"])
+
+
+def try_merge(rec, text, t_msg, price, age):
+    """[R343] 本條判 invalid 時：同一頻道上一條亦係 invalid 嘅片段（SIG_MERGE_SEC 內）→ 兩段合併再解析一次。
+    成功（valid／unverified）就把上一條標 merged（唔會再被用、同一訊號只處理一次）並清片段；回傳 (sig, status, reason, err, prev_sid)，否則 None。
+    只喺單條 invalid 先試，唔改已經 valid 嘅解析。"""
+    if config.SIG_MERGE_SEC <= 0:
+        return None
+    ch = rec.get("channel_id") or ""
+    try:
+        frag = (storage.read_json(MERGE_FILE, {}) or {}).get(ch)
+    except StorageError:
+        return None
+    if not frag or frag.get("sid") == rec["sid"] or abs(t_msg - (frag.get("msg_ts") or 0)) > config.SIG_MERGE_SEC:
+        return None
+    sig, err = parse(f"{frag.get('text') or ''}\n{text}", rec.get("reply_text"))
+    if sig is None:
+        return None
+    status, reason = validate(sig, price, age)
+    if status not in ("valid", "unverified"):
+        return None
+    prev_sid = frag.get("sid")
+    try:
+        storage.update(f"{PREFIX}{prev_sid}.json", lambda d: ({**(d if isinstance(d, dict) else {}), "status": "merged", "reason": f"已併入 {rec['sid']}"}, None),
+                       default_factory=dict)
+        storage.update(MERGE_FILE, lambda m: ({k: v for k, v in (m if isinstance(m, dict) else {}).items() if k != ch}, None), default_factory=dict)
+    except StorageError as exc:
+        log_event(f"⚠️ 合併標記寫入失敗 {prev_sid}：{type(exc).__name__}", severity="WARNING", sid=rec["sid"])
+    log_event(f"🧩 訊號 {rec['sid']} 同上一條 {prev_sid} 合併解析 → {status}", sid=rec["sid"], merged_from=prev_sid)
+    return sig, status, reason, err, prev_sid
+
+
 def handle_signal(payload):
     text = str(payload.get("text") or "").strip()[:MAX_TEXT]
     if not text:
@@ -428,6 +469,12 @@ def handle_signal(payload):
         status, reason = "expired", "收到時已過期"
     else:
         status, reason = validate(sig, price, age)
+    if status == "invalid":                                  # [R343] 拆開嘅訊號：先試同上一條片段合併，唔得就記低做片段
+        merged = try_merge(rec, text, t_msg, price, age)
+        if merged:
+            sig, status, reason, err, rec["merged_from"] = merged
+        else:
+            remember_fragment(rec, text, t_msg)
     rec.update(signal=sig, parse_error=(err or "")[:200] or None, status=status, reason=reason,
                price=price if age is not None and age <= config.SIG_PRICE_MAX_AGE_SEC else None)
     if sig and rec.get("price") is not None:
