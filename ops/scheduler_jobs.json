@@ -159,6 +159,13 @@
     "report": "night",
     "send": "yes"
    }
+  },
+  {
+   "name": "zhuge-eurusd-rulesim",
+   "time_zone": "UTC",
+   "schedule": "40 17 * * 1-5",
+   "workflow": "eurusd_rulesim.yml",
+   "inputs": {}
   }
  ]
 }

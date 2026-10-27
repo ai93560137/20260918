@@ -1,0 +1,58 @@
+name: 天覆陣 EURUSD 即日回測（規則版，R345）
+
+# 使用者 10-27：「EURUSD 暫停 API CALL，暫時只做即日回測模擬」→ 批「EURUSD 即日回測」。方案 xau/EURUSD_SIM_PLAN.md、IDEAS #139。
+# 每日 17:00 UTC 收市後讀 GCS fx/eurusd/bars/<日>.jsonl（zhuge-eurusd 心跳存，R345 A1；冇就 yfinance 1 分鐘補、標估算），
+# 按 research/eurusd_rulesim/rulesim.py 嘅「倫敦開市區間突破」機械規則回測，寫 GCS fx/eurusd/rulesim/。只係紙上，唔落單，$0 API。
+# 排程由 Cloud Scheduler 做（ops/scheduler_jobs.json zhuge-eurusd-rulesim 17:40 UTC → workflow_dispatch）；GitHub cron 唔準所以唔用。
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 由呢日起重新回測（例如 2026-10-20；留空＝只補最近 7 日未做嘅）
+        required: false
+        default: ''
+      dry_run:
+        description: 只印不寫（true/false）
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: eurusd-rulesim
+  cancel-in-progress: false
+
+jobs:
+  rulesim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+
+      - name: Rule tests
+        run: python3 tests/test_eurusd_rulesim.py
+
+      - name: Rule backtest
+        env:
+          SINCE: ${{ github.event.inputs.since }}
+          DRY: ${{ github.event.inputs.dry_run }}
+        run: |
+          ARGS="--backfill-yf"
+          [ -n "$SINCE" ] && ARGS="$ARGS --since $SINCE"
+          [ "$DRY" = "true" ] && ARGS="$ARGS --dry-run"
+          python3 research/eurusd_rulesim/rulesim.py $ARGS
