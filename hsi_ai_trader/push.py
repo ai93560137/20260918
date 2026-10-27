@@ -51,6 +51,7 @@ def build_packet(cfg, state, token):
               "order_fail_today": state.get("order_fail_today", 0), "order_errors": state.get("order_errors"),
               "open_block": state.get("open_block"),
               "buying_power": state.get("buying_power"),   # [R299] 富途最多可開張數
+              "size_level": state.get("size_level"),       # [R305] 按成績升級：下一單張數
               # [R212] 戶口淨值同購買力（私人 GCS，網頁唔顯示）：模擬程式報模擬戶口；真實戶口由真倉程式或者戶口檢查
               "sim_account": state.get("sim_account") if cfg.trd_env == "SIMULATE" else None,
               "real_account": state.get("real_account"),

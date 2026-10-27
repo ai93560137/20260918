@@ -280,6 +280,8 @@ class Trader:
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
         n_open = order_qty(spec_for(cfg.product), last, cfg.max_qty)   # 期貨張數／ETF 股數
+        if cfg.size_ladder:                       # [R305] 按成績升級：而家嘅級數（1 至 max_qty 張）
+            n_open = min(max(int(st.get("size_level") or 1), 1), cfg.max_qty)
         if cfg.real_size_frac and last:          # [R249] 真倉美股：每單 = 比例 × 實時權益
             eq = st.get("last_equity") or self.broker.equity()
             n_open = max(int(cfg.real_size_frac * eq / (last * FX_TO_HKD[cfg.currency])), 0)
@@ -616,7 +618,17 @@ class Trader:
                "confidence": meta.get("confidence"), "lessons": meta.get("lessons"),
                "open_session": meta.get("session"), "open_reason": (meta.get("reason") or "")[:200],
                "model": meta.get("model")}
+        rec["size_level"] = st.get("size_level") if self.cfg.size_ladder else None
         self._log("trades", rec)
+        if self.cfg.size_ladder and net is not None and meta.get("code") == code:
+            total = (meta.get("realized_net") or 0) + net
+            if abs(qty) < int(meta.get("qty") or 0):          # 部分平倉：累計，等全部平先計
+                meta["realized_net"] = total
+            else:                                              # [R305] 成個倉平晒：賺 +1 張、蝕 −1 張
+                lvl = min(max(int(st.get("size_level") or 1), 1), self.cfg.max_qty)
+                new = min(lvl + 1, self.cfg.max_qty) if total > 0 else max(lvl - 1, 1) if total < 0 else lvl
+                st["size_level"] = new
+                self._log("events", {"type": "SIZE_LEVEL", "from": lvl, "to": new, "pnl_hkd_net": total})
         st.setdefault("today_trades", []).append(
             {"side": "LONG" if side > 0 else "SHORT", "entry": entry, "exit": px,
              "points": pts, "pnl_hkd": net, "reason": reason[:60]})

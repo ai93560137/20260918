@@ -1335,3 +1335,29 @@ def test_swing_max_days_close(env):
     assert tr.state["pos"] is None
     close = [json.loads(l) for l in (cfg.log_dir / "trades.jsonl").read_text("utf-8").splitlines() if '"CLOSE"' in l][-1]
     assert "揸滿 3 個交易日" in close["reason"]
+
+
+def test_size_ladder(env):
+    """[R305] 按成績升級：由 1 張開始，賺 +1、蝕 −1，最少 1、最多 max_qty。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, size_ladder=True, max_qty=3)
+    tr.tick()
+
+    def one_trade(win):
+        ai.next = {"action": "OPEN_LONG", "stop_price": b.price - 50, "target_price": b.price + 60,
+                   "confidence": 0.7, "reason": "試"}
+        advance(t, minutes=5)
+        tr.tick()
+        qty = tr.state["pos"]["qty"]
+        b.price += 70 if win else -60              # 止賺／止蝕
+        advance(t, seconds=5)
+        tr.tick()
+        assert tr.state["pos"] is None
+        return qty
+
+    assert one_trade(True) == 1 and tr.state["size_level"] == 2
+    assert one_trade(True) == 2 and tr.state["size_level"] == 3
+    assert one_trade(True) == 3 and tr.state["size_level"] == 3      # 頂到 max_qty
+    assert one_trade(False) == 3 and tr.state["size_level"] == 2
+    assert one_trade(False) == 2 and tr.state["size_level"] == 1
+    assert one_trade(False) == 1 and tr.state["size_level"] == 1     # 最少 1 張
