@@ -123,6 +123,27 @@ def normalize(raw):
     }
 
 
+def infer_side(sig):
+    """[R344] 缺方向但有入場區＋止損（＋止賺）→ 由止損幾何推方向：SL 喺入場區下面＝BUY、上面＝SELL；
+    SL 喺入場區入面、或 TP1 同推出嚟嘅方向矛盾 → 唔推（照 invalid「缺方向」）。只喺 side 缺先郁，已有方向嘅訊號完全不變。
+    10-27 黃金戰鬥機（5117）四條訊號全部拆訊息、其中 09:00 連「BUY」行都冇，R343 合併救唔到；使用者批。"""
+    if not isinstance(sig, dict) or sig.get("kind") != "new_signal" or sig.get("side") in ("BUY", "SELL"):
+        return sig
+    lo, hi, sl = sig.get("entry_low"), sig.get("entry_high"), sig.get("sl")
+    if lo is None or hi is None or sl is None or sl <= 0:
+        return sig
+    if sl < lo:
+        side = "BUY"
+    elif sl > hi:
+        side = "SELL"
+    else:
+        return sig
+    tps = sig.get("tp") or []
+    if tps and ((side == "BUY" and tps[0] <= hi) or (side == "SELL" and tps[0] >= lo)):
+        return sig
+    return {**sig, "side": side, "side_inferred": True}
+
+
 def validate(sig, price, price_age):
     """回傳 (status, 原因)。status：valid／unverified（冇新鮮價）／invalid／info（唔係開倉訊號）。純函數。"""
     if sig.get("kind") != "new_signal":
@@ -424,6 +445,7 @@ def try_merge(rec, text, t_msg, price, age):
     if not frag or frag.get("sid") == rec["sid"] or abs(t_msg - (frag.get("msg_ts") or 0)) > config.SIG_MERGE_SEC:
         return None
     sig, err = parse(f"{frag.get('text') or ''}\n{text}", rec.get("reply_text"))
+    sig = infer_side(sig)                                   # [R344]
     if sig is None:
         return None
     status, reason = validate(sig, price, age)
@@ -462,6 +484,7 @@ def handle_signal(payload):
         return jsonify({"status": "duplicate", "sid": sid}), 200
 
     sig, err = parse(text, rec["reply_text"])
+    sig = infer_side(sig)                                       # [R344] 缺方向由止損幾何推（只喺 side 缺先郁）
     price, age = latest_price()
     if sig is None:
         status, reason = "error", "解析失敗"

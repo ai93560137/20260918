@@ -223,21 +223,21 @@ check("public_view：fwd=True、原發佈→貼出延遲 7 分", _pv["fwd"] is T
 check("public_view：非轉發 fwd=False、lag None", signals.public_view({"sid": "1_2", "msg_ts": 1, "signal": {}})["fwd"] is False and signals.public_view({"sid": "1_2", "msg_ts": 1, "signal": {}})["fwd_lag_min"] is None)
 
 
-print("=== [R343] 拆開嘅訊號合併解析（10-27 黃金戰鬥機：「BUY」／入場區 SL TP 分兩條）===")
+print("=== [R343] 拆開嘅訊號合併解析（同頻道 60 秒內兩條各自唔齊：方向＋入場區／SL＋TP；R344 後「價位齊但缺方向」會自己推到方向，所以用呢種拆法）===")
 def fake_split(text, reply_text=None):
     PARSES.append(text)
-    has_side, has_levels = "BUY" in text, "4005.5" in text
+    has_side, has_zone, has_sl, has_tp = "BUY" in text, "4005.5" in text, "SL" in text, "TP" in text
     return signals.normalize({"kind": "new_signal", "symbol": "GOLD", "side": "BUY" if has_side else None,
-                              "entry_low": 4005.5 if has_levels else None, "entry_high": 4010.5 if has_levels else None,
-                              "sl": 4000.5 if has_levels else None, "tp": [4015.5, 4020.5] if has_levels else [], "confidence": 0.8}), None
+                              "entry_low": 4005.5 if has_zone else None, "entry_high": 4010.5 if has_zone else None,
+                              "sl": 4000.5 if has_sl else None, "tp": [4015.5, 4020.5] if has_tp else [], "confidence": 0.8}), None
 signals.parse = fake_split
 NOW[0] = 1792700000.0; set_price(4008)
-st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 100, "text": "BUY"})
-check("第一條只有方向 → invalid 冇止損、記低片段", d["signal_status"] == "invalid" and json.loads(FAKE["xau/sig/signals/merge_pending.json"][0])["-1473"]["sid"] == "1473_100", (d, FAKE.get("xau/sig/signals/merge_pending.json")))
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 100, "text": "BUY 4005.5-4010.5"})
+check("第一條只有方向＋入場區（冇 SL）→ invalid 冇止損、記低片段", d["signal_status"] == "invalid" and json.loads(FAKE["xau/sig/signals/merge_pending.json"][0])["-1473"]["sid"] == "1473_100", (d, FAKE.get("xau/sig/signals/merge_pending.json")))
 NOW[0] += 49; n0 = len(PARSES)
-st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 101, "text": "入場 4005.5-4010.5 SL 4000.5 TP 4015.5"})
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 101, "text": "SL 4000.5 TP 4015.5"})
 rec2 = json.loads(FAKE["xau/sig/signals/1473_101.json"][0]); rec1 = json.loads(FAKE["xau/sig/signals/1473_100.json"][0])
-check("第二條（49 秒內）合併 → valid、記 merged_from", d["signal_status"] == "valid" and rec2.get("merged_from") == "1473_100" and rec2["signal"]["side"] == "BUY" and rec2["signal"]["sl"] == 4000.5, (d, rec2.get("merged_from")))
+check("第二條只有 SL／TP（49 秒內）→ 合併 → valid、記 merged_from", d["signal_status"] == "valid" and rec2.get("merged_from") == "1473_100" and rec2["signal"]["side"] == "BUY" and rec2["signal"]["sl"] == 4000.5, (d, rec2.get("merged_from")))
 check("合併解析用兩段文字、只多解析 2 次（單條＋合併）", len(PARSES) - n0 == 2 and "BUY" in PARSES[-1] and "4005.5" in PARSES[-1], PARSES[-2:])
 check("上一條標 merged、片段清走（同一訊號只處理一次）", rec1["status"] == "merged" and "-1473" not in json.loads(FAKE["xau/sig/signals/merge_pending.json"][0]), (rec1["status"], FAKE["xau/sig/signals/merge_pending.json"][0]))
 recent = json.loads(FAKE["xau/sig/signals/recent.json"][0])
@@ -249,14 +249,52 @@ st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 103, "text":
 check("兩條各自 valid → 各自 valid、冇合併、每條只解析一次", d["signal_status"] == "valid" and len(PARSES) - n0 == 2 and "merged_from" not in json.loads(FAKE["xau/sig/signals/1473_103.json"][0]), (d, len(PARSES) - n0))
 # 超過 60 秒 → 唔合併
 NOW[0] += 100
-send({"action": "tg_signal", "channel_id": -1473, "msg_id": 104, "text": "BUY"})
+send({"action": "tg_signal", "channel_id": -1473, "msg_id": 104, "text": "BUY 4005.5-4010.5"})
 NOW[0] += 61
-st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 105, "text": "入場 4005.5-4010.5 SL 4000.5 TP 4015.5"})
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 105, "text": "SL 4000.5 TP 4015.5"})
 check("相隔 61 秒 → 唔合併，第二條照 invalid 缺方向、變成新片段", d["signal_status"] == "invalid" and json.loads(FAKE["xau/sig/signals/merge_pending.json"][0])["-1473"]["sid"] == "1473_105", (d, FAKE["xau/sig/signals/merge_pending.json"][0]))
 # 另一頻道嘅片段唔會畀呢個頻道用
 NOW[0] += 10
-st, d = send({"action": "tg_signal", "channel_id": -2249, "msg_id": 7, "text": "BUY"})
+st, d = send({"action": "tg_signal", "channel_id": -2249, "msg_id": 7, "text": "BUY 4005.5-4010.5"})
 check("唔同頻道唔合併（片段按頻道分開）", d["signal_status"] == "invalid" and json.loads(FAKE["xau/sig/signals/merge_pending.json"][0])["-2249"]["sid"] == "2249_7", d)
+
+
+print("=== [R344] 缺方向由止損幾何推方向（10-27 黃金戰鬥機 09:00：只有入場區／SL／TP，連「BUY」行都冇）===")
+def fake_levels(text, reply_text=None):
+    PARSES.append(text)
+    import re as _re
+    nums = [float(x) for x in _re.findall(r"\d+\.\d+", text)]
+    side = "SELL" if "SELL" in text else ("BUY" if "BUY" in text else None)
+    lo, hi, sl, tp = nums[0], nums[1], nums[2], nums[3:]
+    return signals.normalize({"kind": "new_signal", "symbol": "GOLD", "side": side, "entry_low": lo, "entry_high": hi, "sl": sl, "tp": tp, "confidence": 0.45}), None
+signals.parse = fake_levels
+NOW[0] += 1000; set_price(3991.0)
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 200, "text": "3988.0-3993.0 SL 3983.0 TP 3998.0 4003.0"})
+rec = json.loads(FAKE["xau/sig/signals/1473_200.json"][0])
+check("SL 喺入場區下面 → 推 BUY、valid、標 side_inferred", d["signal_status"] == "valid" and rec["signal"]["side"] == "BUY" and rec["signal"].get("side_inferred") is True, (d, rec["signal"]))
+check("推方向後唔會留片段（唔需要合併）", json.loads(FAKE["xau/sig/signals/merge_pending.json"][0]).get("-1473", {}).get("sid") != "1473_200", FAKE["xau/sig/signals/merge_pending.json"][0])
+NOW[0] += 100
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 201, "text": "3988.0-3993.0 SL 3998.0 TP 3983.0 3978.0"})
+rec = json.loads(FAKE["xau/sig/signals/1473_201.json"][0])
+check("SL 喺入場區上面 → 推 SELL、valid", d["signal_status"] == "valid" and rec["signal"]["side"] == "SELL", (d, rec["signal"].get("side")))
+NOW[0] += 100
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 202, "text": "3988.0-3993.0 SL 3990.0 TP 3998.0"})
+check("SL 喺入場區入面 → 唔推、仍 invalid 缺方向", d["signal_status"] == "invalid" and json.loads(FAKE["xau/sig/signals/1473_202.json"][0])["reason"] == "缺方向", d)
+NOW[0] += 100
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 203, "text": "3988.0-3993.0 SL 3983.0 TP 3980.0"})
+check("SL 下面但 TP1 又喺下面（矛盾）→ 唔推、invalid", d["signal_status"] == "invalid", d)
+NOW[0] += 100
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 204, "text": "SELL 3988.0-3993.0 SL 3983.0 TP 3998.0"})
+rec = json.loads(FAKE["xau/sig/signals/1473_204.json"][0])
+check("已有方向（SELL 但 SL 錯邊）→ 唔改方向、照 invalid 止損錯邊", d["signal_status"] == "invalid" and rec["signal"]["side"] == "SELL" and "side_inferred" not in rec["signal"] and "錯邊" in rec["reason"], (d, rec["reason"]))
+# 同 R343 一齊：先「BUY」（invalid 冇止損，留片段）再價位 → 價位一條自己推到方向 valid，唔需要合併；片段留低等過期
+NOW[0] += 100
+signals.parse = fake_split; set_price(4008)
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 205, "text": "BUY"})
+NOW[0] += 20
+st, d = send({"action": "tg_signal", "channel_id": -1473, "msg_id": 206, "text": "入場 4005.5-4010.5 SL 4000.5 TP 4015.5"})
+rec = json.loads(FAKE["xau/sig/signals/1473_206.json"][0])
+check("R343＋R344 同時：價位一條推到 BUY 自己 valid、冇用合併", d["signal_status"] == "valid" and rec["signal"]["side"] == "BUY" and "merged_from" not in rec, (d, rec.get("merged_from")))
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
