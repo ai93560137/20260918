@@ -118,6 +118,14 @@ a, s_, t_, w = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 399
 check("止損太近 → 推到下限 2；止賺錯邊 → 唔送", a == "OPEN_LONG" and s_ == 3998.0 and t_ is None, (a, s_, t_))
 check("信心不足 → HOLD", "信心" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.3}, position=pos0, last=4000, can_open=True, trades_today=0)[3])
 check("can_open=False → HOLD", "唔准開" in rules.validate_decision({"action": "OPEN_SHORT", "stop_price": 4010, "confidence": 0.9}, position=pos0, last=4000, can_open=False, trades_today=0)[3])
+# [R340] UPDATE_STOP 新止損太貼現價 → 夾到 MODIFY_MIN_DIST（XAUUSD 2＋0.3＋1＝3.3）；夾完唔比現止損緊 → HOLD 唔發 modify
+posS = {"side": -1, "entry": 4010.0, "stop": 4015.0, "target": 3990.0}
+a, s_, t_, w = rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4001.0, "confidence": 0.7}, position=posS, last=4000, can_open=True, trades_today=0)
+check("UPDATE_STOP 太貼（1 美元）→ 夾到 4003.3、止賺保留", a == "UPDATE_STOP" and s_ == 4003.3 and t_ == 3990.0, (a, s_, t_, w))
+a, s_, t_, w = rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4002.0, "confidence": 0.7}, position={**posS, "stop": 4003.0}, last=4000, can_open=True, trades_today=0)
+check("UPDATE_STOP 太貼而現止損已係 4003 → HOLD 唔發", a == "HOLD" and "唔比現止損緊" in w, (a, s_, w))
+a, s_, t_, w = rules.validate_decision({"action": "UPDATE_STOP", "stop_price": 4006.0, "confidence": 0.7}, position=posS, last=4000, can_open=True, trades_today=0)
+check("UPDATE_STOP 距離夠（6 美元）→ 照發", a == "UPDATE_STOP" and s_ == 4006.0, (a, s_, w))
 print("=== 風控階梯（純函數，龍飛陣做法：冇硬鎖）===")
 L = lambda **k: rules.ladder(**{"principal_hkd": 20000, "own_equity": 20000, "peak_equity": 20000, "daily_pnl_hkd": 0, "margin_level": None, "night": False, **k})
 check("正常 → 唔停", not L()["pause"] and not L()["stop"] and not L()["alerts"])

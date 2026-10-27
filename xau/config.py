@@ -106,6 +106,7 @@ MIN_SL_PIPS = _f("XAU_MIN_SL_PIPS", PRODUCT["min_sl_pips"])  # 止損距離範�
 MAX_SL_PIPS = _f("XAU_MAX_SL_PIPS", PRODUCT["max_sl_pips"])
 MIN_SL_USD = _f("XAU_MIN_SL_USD", MIN_SL_PIPS * PIP)        # 同一範圍以價格單位表示（名稱沿用）
 MAX_SL_USD = _f("XAU_MAX_SL_USD", MAX_SL_PIPS * PIP)
+MODIFY_MIN_DIST_USD = _f("XAU_MODIFY_MIN_DIST_USD", MIN_SL_USD + PRODUCT["spread_pips"] * PIP + PIP)   # [R340] UPDATE_STOP 新止損離現價最少幾多（價格單位）：經紀 stops level ≈ 最小止損距離，再加點差＋1 pip 緩衝；太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（10-26／27 EURUSD E1／E3 Opus 追到 5 pip，EA 拒 18 次 invalid stops）
 MIN_CONFIDENCE = _f("XAU_MIN_CONFIDENCE", 0.6)              # 開倉要嘅最低信心
 MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐約交易日計）
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
