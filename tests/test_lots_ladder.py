@@ -39,5 +39,7 @@ check("再開再平蝕（157.27 → 152.25）→ 跌一級", ll.live_close(st, p
 st2 = {}
 check("冇參考點就平倉（服務重啟）→ 唔郁、只記參考點", ll.live_close(st2, pos, None, 50.0, **K) is None and st2["lots_realized_ref"] == 50.0)
 check("realized 缺 → 唔郁、參考點唔記", ll.live_close(st2, pos, None, None, **K) is None and st2["lots_realized_ref"] == 50.0)
+check("env 未同步（MAX 0.01 < MIN 0.05）→ 硬上限優先，lots 0.01", ll.current({}, start=0.05, lo=0.05, hi=0.01, on=True) == 0.01 and ll.step({}, 10, start=0.05, lo=0.05, hi=0.01, step=0.01, on=True) == (0.01, 0.01))
+check("關、start 高過硬上限 → 用硬上限", ll.current({}, start=0.05, lo=0.05, hi=0.01, on=False) == 0.01)
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -10,13 +10,14 @@ def _r(v):
 
 
 def clamp(v, lo, hi):
-    return _r(max(lo, min(hi, v)))
+    """hi（XAU_MAX_LOTS 硬上限）優先：lo > hi（env 未同步）時照用 hi，唔會超過上限。"""
+    return _r(min(hi, max(lo, v)))
 
 
 def current(state, *, start, lo, hi, on):
     """而家應該用幾多手。關＝start（夾喺 lo–hi）；開＝state["lots_level"]（冇就 start）。"""
     if not on:
-        return clamp(start, min(lo, start), max(hi, start))
+        return _r(min(hi, start))                     # 關：固定 start，但唔超硬上限
     lvl = (state or {}).get("lots_level")
     return clamp(start if lvl is None else lvl, lo, hi)
 
