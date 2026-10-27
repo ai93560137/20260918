@@ -1,0 +1,31 @@
+name: 龍飛陣 美股日線順勢前向（IDEAS #143 V3）
+
+# 每個美股交易日收市後（06:40 HKT 星期二至六）計 200 日均線好／空倉組合嘅紙上前向成績，寫 GCS longfei/daily_trend/forward.json。
+# 只係紙上，唔落單。
+on:
+  schedule:
+    - cron: '40 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Forward
+        run: python3 research/longfei_rulesim/daily_trend_forward.py
