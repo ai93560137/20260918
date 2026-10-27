@@ -36,6 +36,7 @@ ACCOUNT_FILE = config.PREFIX + "account.json"
 STATE_FILE = config.PREFIX + "state.json"
 LESSONS_FILE = config.PREFIX + "lessons.md"
 DECISIONS_PREFIX = config.PREFIX + "decisions/"
+BARS_PREFIX = config.PREFIX + "bars/"                 # [R345] 全日 M1 存檔（xau/EURUSD_SIM_PLAN.md A1）
 CONTROL_FILE = config.PREFIX + "control.json"      # 緊急停機開關、暫停開倉、本金（私人）、淨值高水位
 TEST_CMD_FILE = config.PREFIX + "test_cmd.json"    # 階段 B 測試指令檔（XAU_TEST_CMDS=1 先讀；用過寫回 consumed）
 BUNDLED_LESSONS = __file__.rsplit("/", 1)[0] + "/LESSONS.md"
@@ -616,6 +617,7 @@ def handle_heartbeat(payload):
             if hist15:
                 storage.update(M15_FILE, lambda h: (lambda n: (n, n))(market.merge_bars(h, hist15, config.M15_MAX)), default_factory=list)
             log_event(f"📚 [{config.TEAM_NAME}] EA 回填歷史：M1 {len(hist1)} 根、M15 {len(hist15)} 根", component="ea")
+            archive_bars(hist1, offset)                                  # [R345]
         except StorageError as exc:
             log_event(f"⚠️ 回填寫入失敗：{exc}", severity="WARNING")
 
@@ -650,6 +652,7 @@ def handle_heartbeat(payload):
         return jsonify({**resp, "message": "M1 storage error"}), 200
     if not is_new:
         return jsonify({**resp, "message": "duplicate M1 bar"}), 200
+    archive_bars([bar], offset)                                       # [R345] 全日 M1 存檔
     if m15 is None:
         try:
             m15 = storage.read_json(M15_FILE, [])
@@ -683,6 +686,28 @@ def handle_heartbeat(payload):
     resp.update(cmd_text=cmd_text(state, now), message=summary,
                 decision=({k: rec.get(k) for k in ("final", "action", "reason", "rejected", "stop", "target", "ms")} if rec else None))
     return jsonify(resp), 200
+
+
+def archive_bars(bars, offset):
+    """[R345] 全日 M1 存檔：<PREFIX>bars/<UTC 日>.jsonl（JSON list，按 time 去重、排序；每根加 utc＝time−伺服器時差）。
+    心跳每根新 M1 一次（同 decisions 日誌同頻率），EA 回填歷史時成批合併。EURUSD 即日回測（research/eurusd_rulesim）讀呢度。"""
+    if not config.BARS_ARCHIVE or not bars:
+        return
+    by = {}
+    for b in bars:
+        if isinstance(b, dict) and b.get("time") is not None:
+            by.setdefault(market.fmt_utc(b["time"] - offset, "%Y-%m-%d"), []).append(b)
+    for day, rows in by.items():
+        def mutate(cur, rows=rows):
+            have = {x["time"]: x for x in (cur if isinstance(cur, list) else []) if isinstance(x, dict) and "time" in x}
+            n0 = len(have)
+            for b in rows:
+                have[b["time"]] = {"time": b["time"], "utc": b["time"] - offset, "open": b["open"], "high": b["high"], "low": b["low"], "close": b["close"]}
+            return ([have[k] for k in sorted(have)] if len(have) > n0 else None), None
+        try:
+            storage.update(f"{BARS_PREFIX}{day}.jsonl", mutate, default_factory=list)
+        except StorageError as exc:
+            log_event(f"⚠️ M1 存檔寫入失敗 {day}：{type(exc).__name__}", severity="WARNING")
 
 
 def need_history(m15):
@@ -790,6 +815,15 @@ def queue_test_cmd(payload, now):
     return {"status": "queued", "id": cid[:8], "text": text, "will_send": config.EXECUTE}, 200
 
 
+def rulesim_summary():
+    """[R345] research/eurusd_rulesim 每日寫 <PREFIX>rulesim/summary.json；頁面只讀。"""
+    try:
+        sm = storage.read_json(config.PREFIX + "rulesim/summary.json", None)
+    except StorageError:
+        return None
+    return sm if isinstance(sm, dict) else None
+
+
 def build_status():
     state = load_state()
     try:
@@ -827,6 +861,7 @@ def build_status():
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
+        "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
         "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack
         "product": {"symbol": config.SYMBOL, "kind": config.PRODUCT_KIND, "pip": config.PIP, "digits": config.PRICE_DIGITS, "contract": config.CONTRACT_SIZE},
         "risk": {"XAU_LOTS": rules.lots(), "止損距離 pip（下限／上限）": f"{config.MIN_SL_PIPS:g}／{config.MAX_SL_PIPS:g}",

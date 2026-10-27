@@ -132,6 +132,7 @@ SPREAD_USD = _f("XAU_SPREAD_USD", PRODUCT["spread_pips"] * PIP)   # 紙上模擬
 
 # --- 數據 ---
 M1_MAX = _i("XAU_M1_MAX", 400)                              # ≈ 6.7 小時（要 ≥ 315 根先砌到 20 根 M15）
+BARS_ARCHIVE = _i("XAU_BARS_ARCHIVE", 1)                     # [R345] 每根新 M1 存入 <PREFIX>bars/<UTC 日>.jsonl（全日 K 線，EURUSD 即日回測用；0＝關）
 M15_MIN_BARS = 20                                            # Claude 決策要 ≥ 20 根 M15
 M15_MAX = _i("XAU_M15_MAX", 200)                            # ≈ 50 小時
 M15_OLDER_MAX = _i("XAU_M15_OLDER_MAX", 160)                # prompt 嘅「整點前 M15」固定攞最後 160 根（≈40 小時）：

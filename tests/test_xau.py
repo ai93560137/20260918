@@ -94,6 +94,9 @@ check("第 30 根起：照問", FB.calls and d["decision"] is not None, (d, FB.c
 FB.calls.clear()
 st, d = hb(39, 4000 + 39 * 0.1)
 check("同一根重送 → duplicate", d.get("message") == "duplicate M1 bar", d)
+# [R345] 全日 M1 存檔：xau/bars/<UTC 日>.jsonl，按 time 去重、有 utc 欄；重送唔重複
+_bars = json.loads(FAKE["xau/bars/" + market.fmt_utc(T0, "%Y-%m-%d") + ".jsonl"][0])
+check("M1 存檔：40 根、有 utc、重送唔重複、按時間排序", len(_bars) == 40 and _bars[0]["utc"] == T0 and _bars[-1]["time"] == T0 + 39 * 60 and all(_bars[k]["time"] < _bars[k + 1]["time"] for k in range(39)), (len(_bars), _bars[:1]))
 st, d = hb(39, 4000, new=False)
 check("is_new_bar=false 只存快照", d.get("message") is None and d["status"] == "monitoring", d)
 m1 = json.loads(FAKE["xau/m1.json"][0]); check("M1 歷史 40 根、M15 ≥ 32 根", len(m1) == 40 and len(json.loads(FAKE["xau/m15.json"][0])) >= 32, len(json.loads(FAKE["xau/m15.json"][0])))

@@ -190,6 +190,39 @@ def render_signal_book(s):
             f"<body><div class='container'>{head}{body}</div></body></html>")
 
 
+def rulesim_section(sm):
+    """[R345] 即日回測（規則版，唔用 AI）：research/eurusd_rulesim/rulesim.py 每日寫 summary.json。sm 冇就唔出。"""
+    if not isinstance(sm, dict):
+        return ""
+    title = "<h2>🧪 即日回測（規則版，唔用 AI）</h2>"
+    note = ("<p class='muted'>10-27 起 EURUSD 空倉唔問 Claude（使用者「暫停 API CALL，暫時只做即日回測模擬」）；每日 17:00 UTC 收市後用當日 1 分鐘 K 線，"
+            "按「倫敦開市區間突破」機械規則回測：07:00–07:30 UTC 區間、M5 收市突破、順日線 20 日均線、止蝕區間另一邊（最少 7 pip、區間闊過 25 pip 唔做）、"
+            "1R 後保本再跟 3 支 M5 收緊、17:00 平倉、每張扣 1 pip。0.01 手計 HK$。量度嘅係規則，唔係 AI。</p>")
+    allst = sm.get("all") or {}
+    if not allst.get("n"):
+        return f"<div class='section' id='rulesim'>{title}{note}<p class='muted'>未有回測成交（已評 {esc(sm.get('days_scored') or 0)} 日）。</p></div>"
+
+    def fmt(v, f="{:+.3f}"):
+        return "—" if v is None else f.format(v)
+
+    def row(name, st):
+        return (f"<tr><td>{esc(name)}</td><td>{st.get('n', 0)}</td><td>{st.get('days', 0)}</td><td>{fmt(st.get('win'), '{:.0%}')}</td>"
+                f"<td>{fmt(st.get('avg_r'))}R</td><td>{fmt(st.get('pf'), '{:.2f}')}</td><td>{fmt(st.get('t'), '{:.2f}')}</td>"
+                f"<td>{fmt(st.get('pips'), '{:+.1f}')}</td><td>{fmt(st.get('hkd'), '{:+,.2f}')}</td><td>{fmt(st.get('max_dd_hkd'), '{:,.2f}')}</td></tr>")
+    names = {"B_or60": "B：區間 60 分鐘", "C_width": "C：區間闊度 ≥ 前 20 日中位", "D_no_trend": "D：冇日線過濾"}
+    rows = row("主規則", allst) + "".join(row(names.get(k, k), st) for k, st in (sm.get("variants") or {}).items() if st.get("n"))
+    tbl = ("<div style='overflow-x:auto'><table><tr><th>規則</th><th>筆數</th><th>日數</th><th>勝率</th><th>每筆平均</th><th>獲利因子</th>"
+           "<th>t 值</th><th>合計 pip</th><th>合計 HK$</th><th>最大回撤 HK$</th></tr>" + rows + "</table></div>")
+    rec = "".join(f"<tr><td>{esc(x.get('date'))}</td><td>{'好' if x.get('side', 0) > 0 else '淡'}</td><td>{esc(x.get('entry_t'))}</td>"
+                  f"<td>{x.get('entry')}</td><td>{x.get('exit')}</td><td>{esc(x.get('exit_reason'))}</td><td>{x.get('pips'):+.1f}</td>"
+                  f"<td>{x.get('r'):+.2f}R</td><td>{x.get('hkd'):+,.2f}</td><td>{esc(x.get('source') or '')}</td></tr>"
+                  for x in list(reversed(sm.get("recent") or []))[:15])
+    recent = ("<h3>最近成交（主規則）</h3><div style='overflow-x:auto'><table><tr><th>日期</th><th>方向</th><th>入場</th><th>入場價</th>"
+              "<th>出場價</th><th>出場</th><th>pip</th><th>R</th><th>HK$</th><th>數據</th></tr>" + rec + "</table></div>")
+    foot = f"<p class='muted' style='font-size:13px'>規則版本 {esc(sm.get('rules') or '')}；更新 {esc(sm.get('updated_utc') or '')}（UTC）。「yfinance（估算）」＝冇經紀 K 線嗰日用公開 1 分鐘數據補，非經紀價。</p>"
+    return f"<div class='section' id='rulesim'>{title}{note}{tbl}{recent}{foot}</div>"
+
+
 def render(status):
     s = status
     if config.SIGNAL_BOOK:
@@ -255,6 +288,7 @@ def render(status):
            + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
            + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
            + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
+    sim += rulesim_section(s.get("rulesim"))                     # [R345] 即日回測（規則版）
     lad_cls = {"A": "pos", "B": "", "D": "neg"}.get(lad.get("level"), "")
     risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items() if k not in RISK_HIDE)
     alerts = "；".join((lad.get("alerts") or {}).values()) or "冇"

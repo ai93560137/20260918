@@ -1,4 +1,4 @@
-# EURUSD 即日回測模擬方案（922 停 API 後）— 待使用者批
+# EURUSD 即日回測模擬方案（922 停 API 後）— 使用者 10-27 批「EURUSD 即日回測」；程式 R345
 
 使用者 10-27 原話：「EURUSD 暫停 API CALL，暫時只做即日回測模擬」。總指揮 14:23 UTC 已把 zhuge-eurusd `XAU_ACTIVE_HOURS_UTC` 改成 `00-00`
 （零長度時段：空倉永遠唔問 Claude，Haiku 篩選同 Opus 都停；有倉時仍會管倉），修訂 **00024-b78**（退回 `rollback --to zhuge-eurusd-00023-c87` 即恢復 07–17）。
@@ -38,3 +38,10 @@
 1. A1 存檔改動部署 zhuge-eurusd（同埗 zhuge-xau 可選）——總指揮 dry-run，使用者批 `--yes`。
 2. 開 Actions workflow `eurusd_rulesim.yml`（預設分支生效；只讀 GCS，用現有 WIF）。
 3. 規則 §2 照上面寫死（如要改 OR 時段／最少止蝕先講）。
+
+## 6. 實作（R345，10-27）
+- A1：`xau/main.py` `archive_bars`（心跳每根新 M1＋EA 回填）→ `<PREFIX>bars/<UTC 日>.jsonl`（JSON list，按 time 去重，有 `utc` 欄）；`XAU_BARS_ARCHIVE`（1）。xau／eurusd 兩個服務部署後都會存。
+- A2：`research/eurusd_rulesim/rulesim.py --backfill-yf`：yfinance EURUSD=X 1 分鐘補冇經紀 K 線嘅日子 → `fx/eurusd/bars_est/<日>.jsonl`，結果 `source=yfinance（估算）`。
+- 規則 §2 寫死喺 `rulesim.run_day`（`RULES_VERSION=R345 v1`）；變體 B／C／D 同一日檔 `variants`。純函數測試 `tests/test_eurusd_rulesim.py`。
+- 排程：`.github/workflows/eurusd_rulesim.yml`（workflow_dispatch）＋ `ops/scheduler_jobs.json` `zhuge-eurusd-rulesim` 17:40 UTC 週一至五（總指揮 `scheduler apply`）。
+- 頁面：zhuge-eurusd 模擬倉之下「🧪 即日回測（規則版，唔用 AI）」一節（`page.rulesim_section`，讀 `fx/eurusd/rulesim/summary.json`）。
