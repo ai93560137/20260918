@@ -25,6 +25,7 @@ import storage
 import signals
 import follower
 import hold_rules
+import lots_ladder
 import prescreen
 import student
 import tgsignal
@@ -418,8 +419,12 @@ def process_bar(state, bar, m1, m15, account, now):
     day = market.ny_date(now)
     exit_rec = None
     if config.EXECUTE:
+        prev_pos = state.get("position")
         state["position"] = live_position(account)       # 真倉：持倉以 EA 為準；止損止賺由伺服器端 SL／TP 執行
         pos_live = state["position"]
+        moved = lots_ladder.live_close(state, prev_pos, pos_live, market.to_float(account.get("realized_total")), now=now, note="ea", **rules.lots_ladder_kw())   # [R346]
+        if moved:
+            log_event(f"🪜 [{config.TEAM_NAME}] 手數階梯 {moved[0]:.2f} → {moved[1]:.2f}（平倉 {state['lots_log'][-1]['pnl']:+.2f} HKD）", component="ea")
         if pos_live and rules.hold_expired(pos_live.get("opened_ts") or now, now) and not pending_has(state, "close"):
             enqueue_cmd(state, "CLOSE", None, None, now, uuid.uuid4().hex)
             log_event(f"⏱ [{config.TEAM_NAME}] 最長持倉 {config.MAX_HOLD_MIN} 分鐘到，排 close", severity="WARNING", component="ea")
@@ -634,10 +639,10 @@ def handle_heartbeat(payload):
 
     consume_test_file(now)                             # 階段 B：GCS xau/test_cmd.json 排測試指令（XAU_TEST_CMDS=1 先生效）
     state = load_state()
-    if config.EXECUTE:
+    if config.EXECUTE and state.get("position") is None:                 # [R346] 已存 state 有倉就留畀 process_bar 偵測平倉；冇倉先同步
         state["position"] = live_position(account)
     resp = {"status": "monitoring", "team": config.TEAM_NAME, "mode": "live" if config.EXECUTE else "shadow",
-            "cmd_text": cmd_text(state, now), "need_history": need_history(m15)}
+            "cmd_text": cmd_text(state, now), "need_history": need_history(m15), "lots": rules.lots(state)}
     bar = market.parse_bar(m1_raw) if m1_raw.get("is_new_bar") else None
     if bar is None:
         return jsonify(resp), 200
@@ -864,7 +869,10 @@ def build_status():
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
         "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack
         "product": {"symbol": config.SYMBOL, "kind": config.PRODUCT_KIND, "pip": config.PIP, "digits": config.PRICE_DIGITS, "contract": config.CONTRACT_SIZE},
-        "risk": {"XAU_LOTS": rules.lots(), "止損距離 pip（下限／上限）": f"{config.MIN_SL_PIPS:g}／{config.MAX_SL_PIPS:g}",
+        "lots": {"current": rules.lots(state), "ladder": config.LOTS_LADDER, "start": round(config.LOTS, 2), "min": round(config.LOTS_MIN, 2), "max": round(config.MAX_LOTS, 2),
+                 "step": round(config.LOTS_STEP, 2), "log": (state.get("lots_log") or [])[-10:]},            # [R346]
+        "risk": {"XAU_LOTS": rules.lots(state), "手數階梯": (f"開：{config.LOTS_MIN:.2f}–{config.MAX_LOTS:.2f}，每次全部平倉賺 +{config.LOTS_STEP:.2f}／蝕 −{config.LOTS_STEP:.2f}" if config.LOTS_LADDER else "關（固定手數）"),
+                 "止損距離 pip（下限／上限）": f"{config.MIN_SL_PIPS:g}／{config.MAX_SL_PIPS:g}",
                  "XAU_MIN_SL_USD": config.MIN_SL_USD, "XAU_MAX_SL_USD": config.MAX_SL_USD,
                  "XAU_MIN_CONFIDENCE": config.MIN_CONFIDENCE, "XAU_MAX_TRADES_PER_DAY": config.MAX_TRADES_PER_DAY,
                  "XAU_MAX_HOLD_MIN": config.MAX_HOLD_MIN, "XAU_LONG_ONLY": config.LONG_ONLY, "XAU_MAGIC": config.MAGIC,

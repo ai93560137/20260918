@@ -578,5 +578,23 @@ config.ACK_REQUIRE_ACCOUNT = False
 check("mask_account／mask_id／mask_cmd", _ex.mask_account("928861") == "…61" and _ex.mask_account("") is None and _ex.mask_id("fedf43fb") == "fe******"
       and _ex.mask_cmd({"id": "fedf43fb", "text": "open|SELL|0.01|sl=1|tp=2|magic=932|id=fedf43fb"})["text"].endswith("id=fe******"))
 
+
+print("=== [R346] 手數階梯（紙上平倉亦行；預設關＝固定手數） ===")
+import paper as _paper
+_cfg_keep = (config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS)
+_st = {**_paper.empty_state(), "position": {"side": 1, "lots": 0.05, "entry": 4000.0, "opened_ts": NOW[0] - 600}}
+_paper._close(_st, _st["position"], 4010.0, "測試", NOW[0])
+check("階梯關：紙上平倉唔改級數、lots 固定 0.01", _st.get("lots_level") is None and rules.lots(_st) == 0.01, (_st.get("lots_level"), rules.lots(_st)))
+config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS = True, 0.05, 0.05, 0.10
+check("階梯開、冇級數 → 0.05", rules.lots(_st) == 0.05)
+_st["position"] = {"side": 1, "lots": 0.05, "entry": 4000.0, "opened_ts": NOW[0] - 600}
+_t = _paper._close(_st, _st["position"], 4010.0, "測試賺", NOW[0])
+check("紙上賺 → 0.06、trade 記 lots_level", _st["lots_level"] == 0.06 and _t.get("lots_level") == 0.06 and rules.lots(_st) == 0.06, (_st.get("lots_level"), _t))
+_st["position"] = {"side": 1, "lots": 0.06, "entry": 4000.0, "opened_ts": NOW[0] - 600}
+_paper._close(_st, _st["position"], 3990.0, "測試蝕", NOW[0])
+check("紙上蝕 → 回 0.05", _st["lots_level"] == 0.05)
+check("executor.enqueue 用 state 級數", "open|BUY|0.05|" in (xau.executor.enqueue(_st, "OPEN_LONG", 3990.0, 4020.0, NOW[0], "abcdef12") or ""))
+config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS = _cfg_keep
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
