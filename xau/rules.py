@@ -111,6 +111,13 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
             return "HOLD", None, None, "UPDATE_STOP 冇止損價"
         if (last - stop) * side <= 0:
             return "HOLD", None, None, "新止損喺錯邊（已過現價）"
+        min_dist = getattr(cfg, "MODIFY_MIN_DIST_USD", cfg.MIN_SL_USD)
+        if (last - stop) * side < min_dist:                          # [R340] 太貼現價：夾到最小距離；夾完唔比現止損緊就唔發（EA 會拒 invalid stops，白燒一次指令）
+            asked = (last - stop) * side
+            stop = round(last - side * min_dist, nd)
+            cur = position.get("stop")
+            if cur is not None and (stop - cur) * side <= 0:
+                return "HOLD", None, None, f"新止損離價 {asked / cfg.PIP:.1f} pip < 最小 {min_dist / cfg.PIP:.1f} pip，夾返都唔比現止損緊，唔改"
         if target is not None and (target - last) * side <= 0:
             target = position.get("target")
         return "UPDATE_STOP", round(stop, nd), (round(target, nd) if target is not None else position.get("target")), None

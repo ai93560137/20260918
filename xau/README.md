@@ -67,6 +67,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_M1_MAX`／`XAU_M15_MAX` | 400／200 | 保留幾多根 K 線（M1 ≥ 315 根先砌到 20 根 M15） |
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
+| `XAU_MODIFY_MIN_DIST_USD` | 最小止損距離＋點差＋1 pip（XAUUSD 3.3；EURUSD 0.0007） | [R340] UPDATE_STOP 新止損離現價最少幾多：太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（免 EA「invalid stops」） |
 | `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |
 | `XAU_MAX_TRADES_PER_DAY` | 0 | 0 = 唔限 |
 | `XAU_MAX_HOLD_MIN` | 1440 | 最長持倉，到時強制平倉 |
