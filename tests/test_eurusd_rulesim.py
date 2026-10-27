@@ -1,8 +1,9 @@
 """[R345] EURUSD 即日回測規則（research/eurusd_rulesim/rulesim.py）純函數測試：唔連 GCS、唔連 yfinance。"""
+import os
 import sys
 from datetime import datetime, timedelta
 
-sys.path.insert(0, "/home/user/20260918/research/eurusd_rulesim")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "research", "eurusd_rulesim"))   # Actions 用相對路徑
 import rulesim  # noqa: E402
 
 OK = FAIL = 0
