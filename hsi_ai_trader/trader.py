@@ -109,6 +109,7 @@ class Trader:
                 st["pos"]["days_held"] = st["pos"].get("days_held", 0) + 1
             st.update({"day": day, "day_start_equity": eq, "trades_today": 0,
                        "ai_skipped_today": 0, "ai_gated_today": 0, "order_fail_today": 0, "open_block": None,
+                       "ai_reused_today": 0, "reuse_shadow_today": 0, "reuse_shadow_open_today": 0, "reuse": None,
                        "today_trades": [], "halted": False, "halt_reason": None})
             self._log("events", {"type": "NEW_DAY", "day": day, "equity": eq})
 
@@ -201,6 +202,11 @@ class Trader:
                 self._close(contract, qty, f"止賺 {meta['target']}", last)
                 return
 
+        # [R347] 沿用 HOLD：記低上次 AI HOLD 之後價格去過嘅最高／最低（每幾秒），掂過觸發位就唔沿用
+        r = st.get("reuse")
+        if r and qty == 0 and not stale and last:
+            r["max"], r["min"] = max(r["max"], last), min(r["min"], last)
+
         # 8) AI 決策（每 N 分鐘，K 線收咗先做）
         if session and not stale and not st.get("halted") and self._decision_due(now):
             # 使用者 10-17：冇倉又唔可以開新倉（暫停、時段、組合限制、收市前）就唔問 Claude，慳 API 費用；
@@ -264,6 +270,16 @@ class Trader:
         last = snap["last"]
         remaining = cfg.daily_loss_limit + st.get("day_pnl", 0)
         can_open = self._can_open(mins_left, session) and not self._portfolio_block()
+        reuse = self._reuse_reason(now, contract, session) if qty == 0 and can_open else None
+        if reuse and cfg.reuse_hold == "on":
+            st["ai_reused_today"] = st.get("ai_reused_today", 0) + 1
+            self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": last,
+                                    "pos": qty, "ai_action": None, "final": "HOLD", "gate": "REUSE",
+                                    "reason": "沿用上次 HOLD（R347）：" + reuse, "rejected": None, "stop": None,
+                                    "target": None, "usage": None, "day_pnl": st.get("day_pnl"), "session": session})
+            return
+        if reuse:                                 # shadow：照叫 AI，記低「會沿用」
+            st["reuse_shadow_today"] = st.get("reuse_shadow_today", 0) + 1
         ctx = self._context(now, contract, qty, snap, session, mins_left, remaining, can_open)
         gate = None
         if qty == 0 and can_open and cfg.gate_model:
@@ -275,7 +291,7 @@ class Trader:
                                         "pos": qty, "ai_action": None, "final": "HOLD", "gate": "SKIP",
                                         "reason": gate.get("reason"), "rejected": None, "stop": None,
                                         "target": None, "usage": None, "gate_usage": gate.get("_usage"),
-                                        "day_pnl": st.get("day_pnl"), "session": session})
+                                        "day_pnl": st.get("day_pnl"), "session": session, "reuse_shadow": reuse})
                 return
         d = self.brain.decide(ctx)
         meta = st.get("pos") or {}
@@ -296,8 +312,12 @@ class Trader:
                "rejected": rejected, "usage": d.get("_usage"), "day_pnl": st.get("day_pnl"),
                "lessons": d.get("_lessons"), "session": session,
                "gate": "LOOK" if gate else None, "gate_usage": (gate or {}).get("_usage"),
-               "gate_reason": (gate or {}).get("reason")}
+               "gate_reason": (gate or {}).get("reason"), "watch": [d.get("watch_below"), d.get("watch_above")],
+               "reuse_shadow": reuse}
         self._log("decisions", rec)
+        if reuse and action in ("OPEN_LONG", "OPEN_SHORT"):
+            st["reuse_shadow_open_today"] = st.get("reuse_shadow_open_today", 0) + 1   # shadow：沿用會擋走呢次開倉
+        self._remember_hold(now, contract, qty, session, last, d, action, reuse)
         hist = st.setdefault("recent_decisions", [])
         hist.append({"t": now.strftime("%H:%M"), "action": action, "ai": d.get("action"),
                      "reason": (d.get("reason") or "")[:120], "rejected": rejected})
@@ -316,6 +336,35 @@ class Trader:
             self._move_server_stop()
             self._log("trades", {"type": "UPDATE_STOP", "code": contract, "stop": stop,
                                  "target": st["pos"].get("target"), "reason": d.get("reason")})
+
+    def _remember_hold(self, now, contract, qty, session, last, d, action, reuse):
+        """[R347] AI 冇倉講 HOLD 而且畀齊觸發位就記低，畀之後沿用；其他結果清走。
+        shadow 下「會沿用」嗰次唔重設起點（同 on 一樣由上次真正叫 AI 計時）。"""
+        st = self.state
+        lo, hi = d.get("watch_below"), d.get("watch_above")
+        if action != "HOLD" or qty != 0 or d.get("_error") or d.get("action") != "HOLD":
+            st["reuse"] = None
+        elif reuse:
+            return
+        elif isinstance(lo, (int, float)) and isinstance(hi, (int, float)) and lo < last < hi:
+            st["reuse"] = {"t": now.isoformat(), "contract": contract, "session": session,
+                           "below": lo, "above": hi, "min": last, "max": last,
+                           "trades": st.get("trades_today", 0)}
+        else:
+            st["reuse"] = None
+
+    def _reuse_reason(self, now, contract, session):
+        """[R347] 可以沿用上次 HOLD 就回傳原因，否則 None。"""
+        cfg, st = self.cfg, self.state
+        r = st.get("reuse")
+        if cfg.reuse_hold not in ("on", "shadow") or not r:
+            return None
+        if r["contract"] != contract or r["session"] != session or r["trades"] != st.get("trades_today", 0):
+            return None
+        age = (now - datetime.fromisoformat(r["t"])).total_seconds() / 60
+        if age >= cfg.reuse_hold_max_min or not (r["below"] < r["min"] and r["max"] < r["above"]):
+            return None
+        return f"價仲喺 {r['below']:g}–{r['above']:g} 之間（上次叫 AI {age:.0f} 分鐘前）"
 
     def _open(self, now, contract, action, d, last, stop, target, n_open, session):
         st, cfg = self.state, self.cfg
