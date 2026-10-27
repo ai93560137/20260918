@@ -123,6 +123,11 @@ class Config:
     swing_trail_start: float = float(_env("SWING_TRAIL_START", "165"))
     swing_trail: float = float(_env("SWING_TRAIL", "165"))
     swing_max_days: int = int(_env("SWING_MAX_DAYS", "3"))
+    # [R347] 使用者 10-27「叫龍飛陣照做」（總指揮轉達）：冇倉時 AI 講 HOLD 會順帶畀觸發位 watch_above／watch_below；
+    # 之後價一直喺兩者之間、距上次叫 AI < REUSE_HOLD_MAX_MIN 分鐘、冇開過倉、同一時段 → 沿用 HOLD，唔叫 Haiku／Opus。
+    # off＝唔用；shadow＝只記錄「會沿用」照叫 AI（驗證冇擋走開倉）；on＝真係沿用。參考天覆陣 XAU_REUSE_HOLD
+    reuse_hold: str = _env("REUSE_HOLD", "off").strip().lower()
+    reuse_hold_max_min: int = int(_env("REUSE_HOLD_MAX_MIN", "30"))
     # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
     # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
     real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")

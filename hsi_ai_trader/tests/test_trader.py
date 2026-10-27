@@ -1361,3 +1361,71 @@ def test_size_ladder(env):
     assert one_trade(False) == 3 and tr.state["size_level"] == 2
     assert one_trade(False) == 2 and tr.state["size_level"] == 1
     assert one_trade(False) == 1 and tr.state["size_level"] == 1     # 最少 1 張
+
+
+def test_reuse_hold_on(env):
+    """[R347] 冇倉 AI HOLD 畀觸發位：價仲喺中間就沿用，唔叫 Haiku／Opus；掂過觸發位或者夠 30 分鐘先再叫。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, reuse_hold="on", reuse_hold_max_min=30)
+    ai.next = {"action": "HOLD", "confidence": 0.5, "reason": "等突破", "watch_below": 24900, "watch_above": 25100}
+    tr.tick()
+    assert ai.calls == 1 and tr.state["reuse"]["above"] == 25100
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 1 and ai.screens == 1 and tr.state["ai_reused_today"] == 1
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert rec["gate"] == "REUSE" and "R347" in rec["reason"]
+    b.price = 25120                                    # 中途升穿觸發位再跌返
+    advance(t, seconds=30)
+    tr.tick()
+    b.price = 25000
+    advance(t, minutes=4, seconds=30)
+    tr.tick()
+    assert ai.calls == 2                               # 冇畀觸發位 → 之後照叫
+    assert tr.state["reuse"] is None
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 3
+
+
+def test_reuse_hold_expires(env):
+    """[R347] 距上次叫 AI 夠 REUSE_HOLD_MAX_MIN 分鐘就照叫。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, reuse_hold="on", reuse_hold_max_min=15)
+    ai.next = {"action": "HOLD", "confidence": 0.5, "reason": "等", "watch_below": 24900, "watch_above": 25100}
+    tr.tick()
+    for _ in range(2):
+        advance(t, minutes=5)
+        tr.tick()
+    assert ai.calls == 1
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 2
+
+
+def test_reuse_hold_shadow(env):
+    """[R347] shadow：照叫 AI，只記錄「會沿用」；起點唔重設；AI 其實開倉就記低（驗證有冇擋走開倉）。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, reuse_hold="shadow", reuse_hold_max_min=30)
+    ai.next = {"action": "HOLD", "confidence": 0.5, "reason": "等", "watch_below": 24900, "watch_above": 25100}
+    tr.tick()
+    t0 = tr.state["reuse"]["t"]
+    advance(t, minutes=5)
+    ai.next = {"action": "HOLD", "confidence": 0.5, "reason": "等", "watch_below": 24950, "watch_above": 25050}
+    tr.tick()
+    assert ai.calls == 2 and tr.state["reuse_shadow_today"] == 1 and tr.state["reuse"]["t"] == t0
+    advance(t, minutes=5)
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24850, "confidence": 0.7, "reason": "突破"}
+    tr.tick()
+    assert ai.calls == 3 and tr.state["reuse_shadow_open_today"] == 1 and tr.state["reuse"] is None
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert rec["reuse_shadow"] and rec["final"] == "OPEN_LONG"
+
+
+def test_reuse_hold_off_by_default(env):
+    cfg, t, b, ai, tr = env
+    ai.next = {"action": "HOLD", "confidence": 0.5, "reason": "等", "watch_below": 24900, "watch_above": 25100}
+    tr.tick()
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == 2 and not tr.state.get("reuse_shadow_today")

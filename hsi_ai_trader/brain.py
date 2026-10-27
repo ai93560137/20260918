@@ -113,8 +113,16 @@ TOOL = {
                              "description": "Optional absolute take-profit price."},
             "confidence": {"type": "number", "description": "0 to 1."},
             "reason": {"type": "string"},
+            "watch_above": {"anyOf": [{"type": "number"}, {"type": "null"}],
+                            "description": "Only for HOLD while flat: the price above which you would want to re-evaluate "
+                                           "(e.g. the breakout level you are waiting for). While price stays strictly between "
+                                           "watch_below and watch_above, the bot may reuse this HOLD for up to 30 minutes without "
+                                           "asking you again. null otherwise, or if any move could matter."},
+            "watch_below": {"anyOf": [{"type": "number"}, {"type": "null"}],
+                            "description": "Only for HOLD while flat: the price below which you would want to re-evaluate. "
+                                           "null otherwise."},
         },
-        "required": ["action", "stop_price", "target_price", "confidence", "reason"],
+        "required": ["action", "stop_price", "target_price", "confidence", "reason", "watch_above", "watch_below"],
         "additionalProperties": False,
     },
 }
