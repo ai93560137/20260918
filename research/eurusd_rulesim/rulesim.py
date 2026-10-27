@@ -181,8 +181,8 @@ def backfill_yf(store, days):
         df.columns = [c[0] for c in df.columns]
     df.index = df.index.tz_convert("UTC").tz_localize(None)
     for day in days:
-        if store.get(f"{PREFIX}bars/{day}.jsonl") or store.get(f"{PREFIX}bars_est/{day}.jsonl"):
-            continue
+        if len(store.get(f"{PREFIX}bars/{day}.jsonl") or []) >= 300 or store.get(f"{PREFIX}bars_est/{day}.jsonl"):
+            continue                                                # [R345d] 經紀 K 線唔夠一日（例如部署日由中途開始）都補 yfinance
         sub = df[df.index.date == date.fromisoformat(day)]
         if len(sub) < 200:
             continue
