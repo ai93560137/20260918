@@ -13,7 +13,8 @@ from datetime import datetime, timezone
 
 import yfinance as yf
 
-SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F", "SPX": "^GSPC"}   # [R290] SPX 現貨：使用者 4 小時圖用現貨（只得正常時段）
+SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F", "SPX": "^GSPC",   # [R290] SPX 現貨：使用者 4 小時圖用現貨（只得正常時段）
+           "VIX": "^VIX"}                                   # [R304] 使用者 10-27 VIX 日線筆記（缺口、200 SMA、下降壓力線）
 BUCKET = "zhuge-risk-manager-bucket"
 PREFIX = "ops/longfei/analyst/data/"
 
@@ -46,6 +47,9 @@ def main():
         bucket = storage.Client().bucket(BUCKET)
     for name, ticker in SYMBOLS.items():
         doc = fetch(ticker)
+        if name == "VIX" and (len(doc["d1"]) < 250 or len(doc["h1"]) < 200):   # VIX 只係輔助，唔夠就跳過唔好令成個 workflow 失敗
+            print(f"VIX 數據唔夠，跳過：日線 {len(doc['d1'])}、1 小時 {len(doc['h1'])}")
+            continue
         if len(doc["d1"]) < 250 or len(doc["h1"]) < 500:
             raise SystemExit(f"{ticker} 數據唔夠：日線 {len(doc['d1'])}、1 小時 {len(doc['h1'])}")
         text = json.dumps(doc, separators=(",", ":"))
