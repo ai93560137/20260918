@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -152,7 +153,21 @@ def compose_hedge(risk: dict | None, state: dict, cfg: dict, now: datetime) -> t
 
 
 # ---------------------------------------------------------------- deals
-def is_yunchui(code: str, cfg: dict) -> bool:
+_MHI_FUT_RE = re.compile(r"^HK\.MHI(\d{2})(\d{2})$")
+
+
+def is_yunchui(code: str, cfg: dict, on: str | None = None) -> bool:
+    """on＝成交／平倉日（YYYY-MM-DD…）。方案 a（使用者 10-21，RISK_LADDER §6b）：MHI 期權歸雲垂；
+    MHI 期貨「當日即月」歸龍飛陣即月真倉，非即月歸雲垂對沖（雲垂 10-26 更正）。"""
+    m = _MHI_FUT_RE.match(code)
+    if m:
+        from daily_books import hk_front_month   # 同一套港交所最後交易日計法
+        try:
+            day = datetime.strptime((on or "")[:10], "%Y-%m-%d").date()
+        except ValueError:
+            day = datetime.now(HKT).date()
+        if (2000 + int(m.group(1)), int(m.group(2))) == hk_front_month(day):
+            return False
     return any(code.startswith(p) for p in cfg["deals"]["yunchui_prefixes"])
 
 
@@ -184,9 +199,9 @@ def compose_deals(files: dict[str, dict | None], state: dict, cfg: dict, now: da
                 continue
             new_ids.append(oid)
             line = f"{d.get('time_hkt', '')[5:16]} {d.get('code')} {d.get('side')} {fmt_lots(d.get('qty')).lstrip('+')} @ {d.get('price')}"
-            (yun if is_yunchui(str(d.get("code")), cfg) else other).append(line)
+            (yun if is_yunchui(str(d.get("code")), cfg, d.get("time_hkt")) else other).append(line)
         for c in doc.get("closed") or []:
-            if not is_yunchui(str(c.get("code")), cfg):
+            if not is_yunchui(str(c.get("code")), cfg, c.get("close_time_hkt")):
                 continue
             key = f"closed|{c.get('close_time_hkt')}|{c.get('code')}|{c.get('close_price')}"
             if key in seen:
@@ -214,7 +229,7 @@ def compose_deals(files: dict[str, dict | None], state: dict, cfg: dict, now: da
     parts.append("（平倉按 FIFO 配對、未計佣金／費用，以富途 App 為準。只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準。）")
     state["deals"]["status"] = {"date": today, "run_hkt": now.strftime("%Y-%m-%d %H:%M"), "run_kind": run_kind,
                                 "closed": [c for day in sorted(files) for c in ((files[day] or {}).get("closed") or [])
-                                           if is_yunchui(str(c.get("code")), cfg)],
+                                           if is_yunchui(str(c.get("code")), cfg, c.get("close_time_hkt"))],
                                 "n_yunchui_deals": len(yun), "n_other_deals": len(other),
                                 "summary_text": "；".join(closed_lines) if closed_lines else "雲垂合約今日無平倉"}
     return "\n".join(parts), state, reminder

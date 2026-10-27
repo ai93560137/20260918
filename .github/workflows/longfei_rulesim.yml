@@ -1,0 +1,47 @@
+name: 龍飛陣 即日回測（規則版，R295）
+
+# 使用者 10-26：「模擬唔再用 api call，改為即日回測」（經總指揮，使用者批「做」）。
+# VM 模擬倉 LONGFEI_SIM_AI=0 唔再叫 Claude；呢度每日讀 GCS 1 分鐘 K 線（美股 longfei/bars/，08:10 HKT 上載；HSI archive/futu_k_1m/），
+# 按 research/longfei_rulesim/rulesim.py 嘅教學簿機械版規則回測，寫 GCS longfei/rulesim/。只係紙上，唔落單。
+on:
+  schedule:
+    - cron: '35 0 * * 2-6'    # 08:35 HKT 星期二至六（bars_archive 08:10 上載之後）
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 由呢日起重新回測（例如 2026-10-14；留空＝只補最近 7 日未做嘅）
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: longfei-rulesim
+  cancel-in-progress: false
+
+jobs:
+  rulesim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+
+      - name: Rule backtest
+        env:
+          SINCE: ${{ github.event.inputs.since }}
+        run: python3 research/longfei_rulesim/rulesim.py ${SINCE:+--since "$SINCE"}
