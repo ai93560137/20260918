@@ -1,0 +1,29 @@
+name: 龍飛陣 美股波段出場驗證（IDEAS #141）
+
+# 一次性研究：yfinance 1 小時 K 線（約 730 日）驗美股同一批入場「波段 vs 即日」出場。
+# 結果寫 GCS longfei/rulesim_oos/us_swing_report.json。只係紙上，唔落單。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  us_swing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: US swing check
+        run: python3 research/longfei_rulesim/us_swing_check.py
