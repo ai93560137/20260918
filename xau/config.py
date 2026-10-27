@@ -102,6 +102,9 @@ KEY_WARN_DAYS = _i("ANTHROPIC_KEY_WARN_DAYS", 14)
 # --- 硬性風控（AI 無權超越）---
 LOTS = _f("XAU_LOTS", 0.01)
 MAX_LOTS = _f("XAU_MAX_LOTS", 0.10)
+LOTS_LADDER = _b("XAU_LOTS_LADDER", False)                 # [R346] 手數階梯：每次全部平倉賺 +LOTS_STEP、蝕 −LOTS_STEP，夾喺 LOTS_MIN–MAX_LOTS；起點 XAU_LOTS（使用者 10-27 0.05→0.10）
+LOTS_MIN = _f("XAU_LOTS_MIN", LOTS)
+LOTS_STEP = _f("XAU_LOTS_STEP", 0.01)
 MIN_SL_PIPS = _f("XAU_MIN_SL_PIPS", PRODUCT["min_sl_pips"])  # 止損距離範圍（pip；XAUUSD 1 pip = 1 美元）
 MAX_SL_PIPS = _f("XAU_MAX_SL_PIPS", PRODUCT["max_sl_pips"])
 MIN_SL_USD = _f("XAU_MIN_SL_USD", MIN_SL_PIPS * PIP)        # 同一範圍以價格單位表示（名稱沿用）
@@ -178,6 +181,9 @@ SIG_AGREE_MIN = _i("SIG_AGREE_MIN", 30)                      # 幾多分鐘內�
 FOLLOW_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_CHANNELS", "").split(",") if x.strip())
 FOLLOW_MAGIC = _i("SIG_FOLLOW_MAGIC", MAGIC + 1)             # 931 → 932（EA InpBotMagics 已包 931–935，計入戶口總階梯）
 FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
+FOLLOW_LOTS_LADDER = _b("SIG_FOLLOW_LOTS_LADDER", LOTS_LADDER)   # [R346] 跟單（932）自己一個級數；預設跟 XAU_LOTS_LADDER
+FOLLOW_LOTS_MIN = _f("SIG_FOLLOW_LOTS_MIN", FOLLOW_LOTS)
+FOLLOW_MAX_LOTS = _f("SIG_FOLLOW_MAX_LOTS", MAX_LOTS)
 # 10-23 DAN 第一張跟單：市價 BUY 時 TP1 只差 0.5 美元、SL 差 9.5 → 加「剩餘空間」下限：
 #   現價到 TP1 ≥ SIG_FOLLOW_MIN_TP（價格單位；DAN TP1 步距 3、CTC 4–6，唔受影響），另外同 S1 一樣用 signals.is_late 略過「走咗」嘅限價訊號
 FOLLOW_MIN_TP = _f("SIG_FOLLOW_MIN_TP", 2.0 if PRODUCT["digits"] == 2 else 0.0004)

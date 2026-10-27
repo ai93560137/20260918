@@ -125,5 +125,20 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
     return "HOLD", None, None, None
 
 
-def lots():
-    return max(0.01, min(round(config.LOTS, 2), round(config.MAX_LOTS, 2)))
+def lots(state=None):
+    """[R346] 手數：階梯開就用 state 嘅級數（起點 XAU_LOTS，夾 XAU_LOTS_MIN–XAU_MAX_LOTS）；關＝固定 XAU_LOTS。"""
+    import lots_ladder
+    return max(0.01, lots_ladder.current(state, start=round(config.LOTS, 2), lo=round(config.LOTS_MIN, 2), hi=round(config.MAX_LOTS, 2), on=config.LOTS_LADDER))
+
+
+def follow_lots(state=None):
+    """[R346] 跟單（932）手數，自己一個級數。"""
+    import lots_ladder
+    return max(0.01, lots_ladder.current(state, start=round(config.FOLLOW_LOTS, 2), lo=round(config.FOLLOW_LOTS_MIN, 2), hi=round(config.FOLLOW_MAX_LOTS, 2), on=config.FOLLOW_LOTS_LADDER))
+
+
+def lots_ladder_kw(follow=False):
+    """[R346] 畀 lots_ladder.step／live_close 用嘅參數。"""
+    if follow:
+        return dict(start=round(config.FOLLOW_LOTS, 2), lo=round(config.FOLLOW_LOTS_MIN, 2), hi=round(config.FOLLOW_MAX_LOTS, 2), step=round(config.LOTS_STEP, 2), on=config.FOLLOW_LOTS_LADDER)
+    return dict(start=round(config.LOTS, 2), lo=round(config.LOTS_MIN, 2), hi=round(config.MAX_LOTS, 2), step=round(config.LOTS_STEP, 2), on=config.LOTS_LADDER)

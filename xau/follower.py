@@ -136,7 +136,9 @@ def status():
         acct = storage.read_json(ACCOUNT_FILE, {}) or {}
     except StorageError:
         acct = {}
-    return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": config.FOLLOW_LOTS,
+    import rules as _rules
+    return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": _rules.follow_lots(st),
+            "lots_ladder": {"on": config.FOLLOW_LOTS_LADDER, "start": round(config.FOLLOW_LOTS, 2), "min": round(config.FOLLOW_LOTS_MIN, 2), "max": round(config.FOLLOW_MAX_LOTS, 2), "level": st.get("lots_level"), "log": (st.get("lots_log") or [])[-10:]},
             "exit": {ch: exit_mode(ch) for ch in config.FOLLOW_CHANNELS}, "ladder_channels": list(config.FOLLOW_LADDER_CHANNELS),
             "skip_unreached_channels": list(config.FOLLOW_SKIP_UNREACHED_CHANNELS), "unreached_tol": config.FOLLOW_UNREACHED_TOL,
             "avoid_hours": {ch: avoid_hours(ch) for ch in config.FOLLOW_CHANNELS if avoid_hours(ch)},
@@ -173,6 +175,11 @@ def handle_heartbeat(payload):
     m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
     price = market.to_float(m1.get("close"))
     state = load_state()
+    import lots_ladder, rules as _rules                                   # [R346] 跟單手數階梯：上個心跳有倉、而家冇 → 平倉
+    moved = lots_ladder.live_close(state, state.get("pos_seen"), (account.get("positions") or [None])[0], account.get("realized_total"), now=now, note="ea", **_rules.lots_ladder_kw(follow=True))
+    state["pos_seen"] = (account.get("positions") or [None])[0]
+    if moved:
+        m.log_event(f"🪜 [{config.TEAM_NAME}] 跟單手數階梯 {moved[0]:.2f} → {moved[1]:.2f}（平倉 {state['lots_log'][-1]['pnl']:+.2f} HKD）", component="follow")
     resp = {"status": "monitoring", "team": config.TEAM_NAME, "book": "follow", "magic": config.FOLLOW_MAGIC,
             "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now)}
     why = _decide(m, state, account, price, now)
@@ -270,13 +277,15 @@ def _decide(m, state, account, price, now):
         ch = str(sig.get("ch") or "")[-4:]; mode = exit_mode(ch)
         tp_cmd = sig["tp"][-1] if mode == "ladder" else sig["tp"][0]          # 逐級鎖：伺服器端 TP 掛最後一級，中途由 modify 鎖
         cid = "f" + uuid.uuid4().hex[:7]
-        text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=config.FOLLOW_LOTS, tag=sig["sid"], magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
-        order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": config.FOLLOW_LOTS, "sl": sig["sl"], "tp": tp_cmd,
+        import rules as _rules
+        f_lots = _rules.follow_lots(state)                                  # [R346]
+        text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=f_lots, tag=sig["sid"], magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
+        order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": f_lots, "sl": sig["sl"], "tp": tp_cmd,
                  "tps": list(sig["tp"]), "exit": mode,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
         state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]
         state["used"] = [*state.get("used", []), sig["sid"]][-500:]
-        m.log_event(f"📨 [{config.TEAM_NAME}] 跟單 {sig['sid']} {side} {config.FOLLOW_LOTS} 手 @ {price}｜SL {sig['sl']}｜{'TP' + str(len(sig['tp'])) + ' ' + str(tp_cmd) + '（逐級鎖）' if mode == 'ladder' else 'TP1 ' + str(sig['tp'][0])}｜{reason}｜{'已排指令' if text else '紙上'}",
+        m.log_event(f"📨 [{config.TEAM_NAME}] 跟單 {sig['sid']} {side} {f_lots:.2f} 手 @ {price}｜SL {sig['sl']}｜{'TP' + str(len(sig['tp'])) + ' ' + str(tp_cmd) + '（逐級鎖）' if mode == 'ladder' else 'TP1 ' + str(sig['tp'][0])}｜{reason}｜{'已排指令' if text else '紙上'}",
                     component="follow", sid=sig["sid"], cmd=cid)
         return f"跟單 {sig['sid']} {side}（{reason}）"
     return "冇可跟訊號"

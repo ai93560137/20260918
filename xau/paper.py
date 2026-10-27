@@ -30,6 +30,10 @@ def _close(state, pos, exit_price, reason, now_ts):
     st["pnl_usd"] = round(st["pnl_usd"] + pnl, 2)
     st["peak"] = max(st["peak"], st["pnl_usd"])
     st["max_dd"] = round(max(st["max_dd"], st["peak"] - st["pnl_usd"]), 2)
+    import lots_ladder, rules                                          # [R346] 紙上平倉亦行階梯（模擬同真倉一致）
+    moved = lots_ladder.step(state, pnl, now=now_ts, note=reason, **rules.lots_ladder_kw())
+    if moved:
+        trade["lots_level"] = moved[1]
     return trade
 
 

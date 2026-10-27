@@ -65,7 +65,9 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_ACCOUNT` | 空 | 只收呢個 MT5 登入號嘅心跳／只向佢發指令，其他回 `ignored`（階段 B：demo 登入號；真倉：真戶口登入號）。空＝全收 |
 | `XAU_TEST_CMDS` | `0` | 1 = 開放測試排指令入口（階段 B 清單）：HTTP `action=test_cmd`（要權杖），或 GCS 檔 `xau/test_cmd.json`（`gcp_agent.py --profile xau put --any-prefix --object xau/test_cmd.json --file …`，內容 `{"id":"t1","op":"open|close|modify","side":"BUY|SELL","sl":…,"tp":…,"lots":…,"no_sl":true}`；服務每個心跳讀一次，用過寫回 `consumed`＋`result`）；真倉前要關 |
 | `XAU_M1_MAX`／`XAU_M15_MAX` | 400／200 | 保留幾多根 K 線（M1 ≥ 315 根先砌到 20 根 M15） |
-| `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 固定手數 |
+| `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 手數起點／上限（階梯關＝固定手數） |
+| `XAU_LOTS_LADDER`／`XAU_LOTS_MIN`／`XAU_LOTS_STEP` | 0／=XAU_LOTS／0.01 | [R346] 手數階梯（使用者 10-27 0.05→0.10）：每次全部平倉賺 +step、蝕 −step，夾 MIN–MAX；級數存 state `lots_level`；真倉平倉由 EA 心跳有倉→冇倉＋realized_total 差額判斷 |
+| `SIG_FOLLOW_LOTS_LADDER`／`SIG_FOLLOW_LOTS_MIN`／`SIG_FOLLOW_MAX_LOTS` | =XAU_LOTS_LADDER／=SIG_FOLLOW_LOTS／=XAU_MAX_LOTS | [R346] 跟單 932 自己一個級數 |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MODIFY_MIN_DIST_USD` | 最小止損距離＋點差＋1 pip（XAUUSD 3.3；EURUSD 0.0007） | [R340] UPDATE_STOP 新止損離現價最少幾多：太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（免 EA「invalid stops」） |
 | `XAU_BARS_ARCHIVE` | 1 | [R345] 每根新 M1（同 EA 回填）存入 `<PREFIX>bars/<UTC 日>.jsonl`（全日 K 線、按 time 去重、有 utc 欄），EURUSD 即日回測 `research/eurusd_rulesim` 讀；0＝關 |
