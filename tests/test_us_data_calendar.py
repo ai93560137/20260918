@@ -44,6 +44,19 @@ class T(unittest.TestCase):
         for e in d["events"]:
             datetime.fromisoformat(e["t"].replace("Z", "+00:00"))
 
+    def test_main_section_renders(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        import main
+        doc = {"updated_utc": "2026-10-28T00:11:00Z", "block_hours": 4, "sources": {"ff_thisweek": "ok 1"},
+               "events": [{"t": "2026-10-28T18:00:00Z", "title": "FOMC Statement", "src": "ff"},
+                          {"t": "2026-10-28T18:00:00Z", "title": "FOMC 議息決定", "src": "manual"},
+                          {"t": "2026-10-29T12:30:00Z", "title": "Advance GDP q/q", "src": "ff"}]}
+        h = main.build_us_data_section(doc, datetime(2026, 10, 28, 15, 0, tzinfo=U))
+        self.assertIn("10-29 02:00", h)           # 香港時間
+        self.assertEqual(h.count("🔒 唔開新倉"), 1)  # 只有 FOMC 喺 4 小時內；手動重複行唔顯示
+        self.assertNotIn("FOMC 議息決定", h)
+        self.assertIn("讀唔到", main.build_us_data_section(None))
+
 
 if __name__ == "__main__":
     unittest.main()

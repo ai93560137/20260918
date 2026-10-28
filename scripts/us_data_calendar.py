@@ -1,7 +1,7 @@
 """us_data_calendar.py — 美國高影響數據日曆（R348，使用者 10-28「數據之前4小時不入市」，範圍：所有真倉）。
 
 來源：ForexFactory 公開 JSON（本週＋下週，country=USD、impact=High）＋ ops/us_data_manual.json（FOMC 等預先知道嘅）。
-輸出：GCS ops/us_data_calendar.json（只准寫 ops/），各陣真倉程式讀呢個檔決定「數據前 N 小時唔開新倉」：
+輸出：GCS ops/us_data_calendar.json（另存本週原檔 ops/ff_calendar_thisweek.json 畀事件日曆／晨報）（只准寫 ops/），各陣真倉程式讀呢個檔決定「數據前 N 小時唔開新倉」：
 
     {"updated_utc": "...", "block_hours": 4, "sources": {...},
      "events": [{"t": "2026-10-28T18:00:00Z", "title": "...", "src": "ff|manual"}, ...]}
@@ -30,6 +30,9 @@ FF_URLS = {"ff_thisweek": "https://nfs.faireconomy.media/ff_calendar_thisweek.js
            "ff_nextweek": "https://nfs.faireconomy.media/ff_calendar_nextweek.json"}
 MANUAL_PATH = ROOT / "ops" / "us_data_manual.json"
 GCS_OBJECT = "ops/us_data_calendar.json"
+# 本週 ForexFactory 原檔（全部國家、全部級別），格式同 R253 前 Cloud Run 新聞鎖嘅 cache/ff_calendar_thisweek.json，
+# 畀 event_calendar.py（事件日曆）同 morning_brief.py 讀（舊快取自 10-20 R253 起冇人更新）
+FF_RAW_OBJECT = "ops/ff_calendar_thisweek.json"
 BLOCK_HOURS = 4
 KEEP_PAST = timedelta(days=2)
 
@@ -84,21 +87,24 @@ def is_blocked(doc: dict | None, now: datetime, hours: float | None = None) -> d
     return None
 
 
-def fetch_ff() -> tuple[list[dict], dict]:
+def fetch_ff() -> tuple[list[dict], dict, list | None]:
     import requests
-    events, status = [], {}
+    events, status, raw_this = [], {}, None
     for name, url in FF_URLS.items():
         try:
             r = requests.get(url, timeout=30, headers={"User-Agent": "zhuge-calendar/1.0"})
             if r.status_code != 200:
                 status[name] = f"HTTP {r.status_code}"
                 continue
-            got = parse_ff(r.json())
+            raw = r.json()
+            if name == "ff_thisweek" and isinstance(raw, list):
+                raw_this = raw
+            got = parse_ff(raw)
             events += got
             status[name] = f"ok {len(got)}"
         except Exception as exc:  # noqa: BLE001 — 下週檔週初常常未出，唔好令成個 job 失敗
             status[name] = f"error {type(exc).__name__}"
-    return events, status
+    return events, status, raw_this
 
 
 def main() -> int:
@@ -106,7 +112,7 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     now = datetime.now(timezone.utc)
-    ff, status = fetch_ff()
+    ff, status, raw_this = fetch_ff()
     manual = json.loads(MANUAL_PATH.read_text(encoding="utf-8")).get("events", [])
     events = merge(ff, manual, now)
     doc = {"updated_utc": _iso(now), "block_hours": BLOCK_HOURS, "sources": status, "events": events}
@@ -118,6 +124,10 @@ def main() -> int:
         from ops_notify import gcs_put
         gcs_put(GCS_OBJECT, text)
         print(f"已寫 GCS {GCS_OBJECT}（{len(events)} 件）")
+        if raw_this is not None:
+            gcs_put(FF_RAW_OBJECT, json.dumps({"fetched_ts": now.timestamp(), "events": raw_this,
+                                               "last_fail_ts": 0, "error": None}, ensure_ascii=False))
+            print(f"已寫 GCS {FF_RAW_OBJECT}（{len(raw_this)} 件）")
     return 0
 
 

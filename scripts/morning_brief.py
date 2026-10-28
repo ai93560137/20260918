@@ -336,7 +336,7 @@ def load_sources() -> dict:
         "ladder": safe(gcs_cat, "ops/books/ladder_state.json"),
         "stress": safe(gcs_cat, "ops/risk/stress_latest.json"),
         "pnl": pnl.get("_text") if isinstance(pnl, dict) else pnl,
-        "calendar": safe(gcs_cat, "cache/ff_calendar_thisweek.json"),
+        "calendar": safe(gcs_cat, "ops/ff_calendar_thisweek.json") or safe(gcs_cat, "cache/ff_calendar_thisweek.json"),  # [R348] 新來源；舊快取 R253 後停更
         "canary": read_repo("canary/tg_daily.txt"),
         "reconcile": read_repo("research/reconcile/latest.md"),
         "divergence": read_repo("research/divergence/DIVERGENCE.md"),

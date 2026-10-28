@@ -7142,6 +7142,69 @@ def strategies_data(now=None):
                         "flat": sum(1 for r in rows if r["pos"]["side"] == 0), "unknown": sum(1 for r in rows if r["pos"]["side"] is None)}}
 
 
+# [R348] 📅 美國數據日曆（使用者 10-28「數據之前4小時不入市」，RISK_LADDER §6d）：讀 GCS ops/us_data_calendar.json
+# （scripts/us_data_calendar.py，Cloud Scheduler 每 6 小時），喺策略總表顯示 UTC／倫敦／香港時間、倒數同封鎖狀態。
+# 取代 R253 前舊 XAUUSD 頁嘅「ForexFactory 總經事件預警表」。只顯示，唔影響落單（封鎖由各陣真倉程式自己做）。
+US_DATA_CALENDAR_FILE = "ops/us_data_calendar.json"
+_US_DATA_CACHE = {"ts": 0.0, "doc": None}
+
+
+def us_data_calendar_doc():
+    now = time.time()
+    if _US_DATA_CACHE["doc"] is not None and now - _US_DATA_CACHE["ts"] < 300:
+        return _US_DATA_CACHE["doc"]
+    try:
+        doc = gcs_read_json(US_DATA_CALENDAR_FILE, None)
+    except StorageError as exc:
+        print(f"⚠️ [數據日曆] {exc}", flush=True)
+        doc = None
+    _US_DATA_CACHE.update(ts=now, doc=doc)
+    return doc
+
+
+def build_us_data_section(doc, now=None):
+    now = now or datetime.now(UTC)
+    if not doc:
+        return ("<div class='section' style='border-left:5px solid #d97706'><h2>📅 美國數據日曆</h2>"
+                "<p class='muted'>⚠️ 讀唔到 ops/us_data_calendar.json；各陣照常交易並會發 Telegram 提醒。</p></div>")
+    hours = float(doc.get("block_hours") or 4)
+    rows, seen = "", set()
+    london = ZoneInfo("Europe/London")
+    ff_times = {e.get("t") for e in doc.get("events") or [] if e.get("src") == "ff"}
+    for e in doc.get("events") or []:
+        if e.get("src") == "manual" and e.get("t") in ff_times:   # ForexFactory 已有同一時刻嘅就唔重複顯示手動嗰行
+            continue
+        try:
+            t = datetime.fromisoformat(str(e["t"]).replace("Z", "+00:00"))
+        except (KeyError, ValueError):
+            continue
+        if t < now - timedelta(hours=1) or (e["t"], (e.get("title") or "").lower()) in seen:
+            continue
+        seen.add((e["t"], (e.get("title") or "").lower()))
+        secs = (t - now).total_seconds()
+        if secs <= 0:
+            cd, state = "已公布", ""
+        else:
+            d, rem = divmod(int(secs), 86400)
+            cd = (f"{d} 日 " if d else "") + f"{rem // 3600} 小時 {rem % 3600 // 60} 分"
+            state = " <span class='neg'>🔒 唔開新倉</span>" if secs <= hours * 3600 else ""
+        rows += (f"<tr><td>{t:%m-%d %H:%M}</td>"
+                 f"<td style='color:#0f62fe;font-weight:600'>{t.astimezone(london):%m-%d %H:%M}</td>"
+                 f"<td style='color:#198754;font-weight:600'>{t.astimezone(HK_TZ):%m-%d %H:%M}</td>"
+                 f"<td>High</td><td style='font-weight:600'>{esc(e.get('title') or '')}</td><td><b>{cd}</b>{state}</td></tr>")
+        if len(seen) >= 12:
+            break
+    rows = rows or "<tr><td colspan='6' class='muted' style='text-align:center'>近期冇美國高影響數據</td></tr>"
+    upd = esc(str(doc.get("updated_utc") or "")[:16].replace("T", " "))
+    src = esc("、".join(f"{k} {v}" for k, v in (doc.get("sources") or {}).items()))
+    return (f"<div class='section'><h2>📅 美國數據日曆（ForexFactory USD High＋FOMC）</h2>"
+            f"<p class='muted' style='font-size:12px'>真倉喺數據公布前 {hours:g} 小時至公布一刻唔開新倉（R348，RISK_LADDER §6d）；"
+            f"已有倉照原有規則管理。</p>"
+            f"<div class='scroll'><table><tr><th>公布時間 (UTC)</th><th style='color:#0f62fe'>倫敦</th>"
+            f"<th style='color:#198754'>香港</th><th>衝擊</th><th>經濟指標</th><th>倒數</th></tr>{rows}</table></div>"
+            f"<p class='muted' style='font-size:12px'>日曆更新 {upd} UTC・來源 {src}</p></div>")
+
+
 def build_strategies_page(data):
     side_zh = {1: ("做多", "pos"), -1: ("做空", "neg"), 0: ("空手", "muted"), None: ("不知道", "muted")}
     head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>🧭 策略總表</h1></div>{page_nav('strategies')}</div>"
@@ -7177,6 +7240,7 @@ def build_strategies_page(data):
              f"<th>方向風格</th><th>持倉時間</th><th>通知</th></tr>{trs}</table></div>"
              f"<p class='muted' style='font-size:12px'>更新 {esc(data['updated_utc'])} UTC・JSON：<a href='?view=strategies&amp;format=json'>?view=strategies&amp;format=json</a></p></div>")
     real = build_futu_real_section(data.get("futu_real"))
+    real += build_us_data_section(us_data_calendar_doc())   # [R348] 美國數據日曆
     notes = ("<div class='section'><b>使用提醒</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
              "<li>真錢策略之間不會衝突：錦囊做黃金、蛇蟠陣做恒指；但兩者共用資金與保證金。</li>"
              "<li>蛇蟠陣（順勢）與地載陣（逆市）在大升大跌日方向經常相反；地載陣落實盤時，請用另一個戶口或子戶口。</li>"
