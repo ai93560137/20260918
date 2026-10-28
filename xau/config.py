@@ -105,6 +105,8 @@ MAX_LOTS = _f("XAU_MAX_LOTS", 0.10)
 LOTS_LADDER = _b("XAU_LOTS_LADDER", False)                 # [R346] 手數階梯：每次全部平倉賺 +LOTS_STEP、蝕 −LOTS_STEP，夾喺 LOTS_MIN–MAX_LOTS；起點 XAU_LOTS（使用者 10-27 0.05→0.10）
 LOTS_MIN = _f("XAU_LOTS_MIN", LOTS)
 LOTS_STEP = _f("XAU_LOTS_STEP", 0.01)
+LOTS_MILESTONE = _i("XAU_LOTS_MILESTONE", 0)              # [R349] 已達成里程碑數 0–4（MILESTONES M1–M4；總指揮 env set、使用者批）→ 升級上限 LOTS_MILESTONE_CAPS[n-1]；0＝上限係起點（使用者 10-28「達到里程碑先增加」）
+LOTS_MILESTONE_CAPS = tuple(float(x) for x in _s("XAU_LOTS_MILESTONE_CAPS", "0.06,0.07,0.08,0.10").split(",") if x.strip())   # [R349] M1→0.06、M2→0.07、M3→0.08、M4→0.10
 MIN_SL_PIPS = _f("XAU_MIN_SL_PIPS", PRODUCT["min_sl_pips"])  # 止損距離範圍（pip；XAUUSD 1 pip = 1 美元）
 MAX_SL_PIPS = _f("XAU_MAX_SL_PIPS", PRODUCT["max_sl_pips"])
 MIN_SL_USD = _f("XAU_MIN_SL_USD", MIN_SL_PIPS * PIP)        # 同一範圍以價格單位表示（名稱沿用）
@@ -184,6 +186,7 @@ FOLLOW_MAGIC = _i("SIG_FOLLOW_MAGIC", MAGIC + 1)             # 931 → 932（EA 
 FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
 FOLLOW_LOTS_LADDER = _b("SIG_FOLLOW_LOTS_LADDER", LOTS_LADDER)   # [R346] 跟單（932）自己一個級數；預設跟 XAU_LOTS_LADDER
 FOLLOW_LOTS_MIN = _f("SIG_FOLLOW_LOTS_MIN", FOLLOW_LOTS)
+FOLLOW_LOTS_MILESTONE = _i("SIG_FOLLOW_LOTS_MILESTONE", 0)    # [R349] 932 自己計已達成里程碑數（唔跟 921）
 FOLLOW_MAX_LOTS = _f("SIG_FOLLOW_MAX_LOTS", MAX_LOTS)
 # 10-23 DAN 第一張跟單：市價 BUY 時 TP1 只差 0.5 美元、SL 差 9.5 → 加「剩餘空間」下限：
 #   現價到 TP1 ≥ SIG_FOLLOW_MIN_TP（價格單位；DAN TP1 步距 3、CTC 4–6，唔受影響），另外同 S1 一樣用 signals.is_late 略過「走咗」嘅限價訊號

@@ -581,12 +581,19 @@ check("mask_account／mask_id／mask_cmd", _ex.mask_account("928861") == "…61"
 
 print("=== [R346] 手數階梯（紙上平倉亦行；預設關＝固定手數） ===")
 import paper as _paper
-_cfg_keep = (config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS)
+_cfg_keep = (config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS, config.LOTS_MILESTONE)
 _st = {**_paper.empty_state(), "position": {"side": 1, "lots": 0.05, "entry": 4000.0, "opened_ts": NOW[0] - 600}}
 _paper._close(_st, _st["position"], 4010.0, "測試", NOW[0])
 check("階梯關：紙上平倉唔改級數、lots 固定 0.01", _st.get("lots_level") is None and rules.lots(_st) == 0.01, (_st.get("lots_level"), rules.lots(_st)))
 config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS = True, 0.05, 0.05, 0.10
 check("階梯開、冇級數 → 0.05", rules.lots(_st) == 0.05)
+# [R349] 里程碑 0（預設）：賺都唔升
+config.LOTS_MILESTONE = 0
+_st["position"] = {"side": 1, "lots": 0.05, "entry": 4000.0, "opened_ts": NOW[0] - 600}
+_paper._close(_st, _st["position"], 4010.0, "測試賺（里程碑 0）", NOW[0])
+check("[R349] 里程碑 0：紙上賺 → 仍 0.05（上限＝起點）、risk 文字有「上限 0.05」", _st["lots_level"] == 0.05 and rules.lots(_st) == 0.05 and rules.lots_cap() == 0.05, (_st.get("lots_level"), rules.lots_cap()))
+config.LOTS_MILESTONE = 1
+check("[R349] 達 M1 → 上限 0.06", rules.lots_cap() == 0.06 and rules.lots_ladder_kw()["cap"] == 0.06)
 _st["position"] = {"side": 1, "lots": 0.05, "entry": 4000.0, "opened_ts": NOW[0] - 600}
 _t = _paper._close(_st, _st["position"], 4010.0, "測試賺", NOW[0])
 check("紙上賺 → 0.06、trade 記 lots_level", _st["lots_level"] == 0.06 and _t.get("lots_level") == 0.06 and rules.lots(_st) == 0.06, (_st.get("lots_level"), _t))
@@ -594,7 +601,7 @@ _st["position"] = {"side": 1, "lots": 0.06, "entry": 4000.0, "opened_ts": NOW[0]
 _paper._close(_st, _st["position"], 3990.0, "測試蝕", NOW[0])
 check("紙上蝕 → 回 0.05", _st["lots_level"] == 0.05)
 check("executor.enqueue 用 state 級數", "open|BUY|0.05|" in (xau.executor.enqueue(_st, "OPEN_LONG", 3990.0, 4020.0, NOW[0], "abcdef12") or ""))
-config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS = _cfg_keep
+config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS, config.LOTS_MILESTONE = _cfg_keep
 
 
 print("=== [R348] 數據前 4 小時唔開新倉（空倉唔問 AI；有倉照管；日曆壞照常） ===")
