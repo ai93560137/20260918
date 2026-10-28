@@ -249,7 +249,7 @@ def market_pack(name, doc):
 
 
 # ---------- 圖 ----------
-def chart(path, bars, title, fib=None, show=160):
+def chart(path, bars, title, fib=None, show=160, tf=""):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -296,7 +296,10 @@ def chart(path, bars, title, fib=None, show=160):
     for s in ax.spines.values():
         s.set_color("#2a2e39")
     ax.legend(loc="upper left", facecolor="#131722", labelcolor="#dddddd", fontsize=8)
-    ax.set_title(title, color="#eeeeee", fontsize=11)
+    ax.set_title((f"【{tf}】" if tf else "") + title, color="#eeeeee", fontsize=11)
+    if tf:                                   # 使用者 10-28：每張圖註明係幾多分鐘嘅圖
+        ax.text(0.99, 0.98, tf, transform=ax.transAxes, ha="right", va="top", color="#ffd54f", fontsize=16,
+                fontweight="bold", bbox={"facecolor": "#131722", "edgecolor": "#ffd54f", "boxstyle": "round,pad=0.3"})
     plt.tight_layout()
     plt.savefig(path, facecolor=fig.get_facecolor())
     plt.close(fig)
@@ -319,8 +322,8 @@ def cmd_pack(work):
         tz = "香港時間" if name == "HSI" else "美東時間"
         chart(os.path.join(work, f"{name}_4h.png"), bars4,
               f"{NAMES[name]} 4 小時線（{tz}）斐波那契 {fib['low'][0][:10]} 低 {fib['low'][1]:,.0f} → "
-              f"{fib['high'][0][:10]} 高 {fib['high'][1]:,.0f}", fib=fib)
-        chart(os.path.join(work, f"{name}_1d.png"), doc["d1"], f"{NAMES[name]} 日線", show=260)
+              f"{fib['high'][0][:10]} 高 {fib['high'][1]:,.0f}", fib=fib, tf="240 分鐘圖（4 小時 K 線）")
+        chart(os.path.join(work, f"{name}_1d.png"), doc["d1"], f"{NAMES[name]} 日線", show=260, tf="日線圖（每支 K＝1 日）")
     json.dump(pack, open(os.path.join(work, "pack.json"), "w"), ensure_ascii=False, indent=1)
     print(json.dumps(pack, ensure_ascii=False, indent=1))
 
