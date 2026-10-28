@@ -255,7 +255,8 @@ def load_sources(nextweek_path: str | None) -> dict:
         except json.JSONDecodeError:
             pass
     pos = ROOT / "POSITIONS.md"
-    return {"ff_this": safe(gcs_cat, "cache/ff_calendar_thisweek.json"), "ff_next": ff_next,
+    return {"ff_this": safe(gcs_cat, "ops/ff_calendar_thisweek.json") or safe(gcs_cat, "cache/ff_calendar_thisweek.json"),  # [R348] 新來源；舊快取 R253 後停更
+            "ff_next": ff_next,
             "fomc": git_show(FX, "data_forex_rates/fomc/fomc_announcements.csv"),
             "hk_hol": git_show(GC, "universes/calendars/hk.csv"), "us_hol": git_show(GC, "universes/calendars/us.csv"),
             "jp_hol": git_show(GC, "universes/calendars/jp.csv"),
