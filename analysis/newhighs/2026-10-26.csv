@@ -18,6 +18,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-26,us,美股,6,工業,LMT,Lockheed Martin,635.2,612.75,13.1,6,1,1,LMT
 2026-10-26,us,美股,6,金融,CME,CME,308.06,308.01,11.5,6,1,1,CME
 2026-10-26,us,美股,6,金融,NDAQ,Nasdaq,104.72,104.21,16.4,12,1,1,NDAQ
+2026-10-26,us,美股,6,公用,AES,The AES,15.03,15,3.3,6,1,1,AES
 2026-10-26,us,美股,6,能源,XOM,ExxonMobil,184.54,183.75,21.2,12,2,2,XOM
 2026-10-26,us,美股,6,醫療,CRL,Charles River Laboratories International,357.27,351.21,63.3,12,1,1,CRL
 2026-10-26,us,美股,6,非必需消費,HAS,Hasbro,117.96,117.77,29.9,12,5,5,HAS
@@ -27,6 +28,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-26,us,美股,3,金融,NDAQ,Nasdaq,104.72,104.21,16.4,12,1,1,NDAQ
 2026-10-26,us,美股,3,非必需消費,HAS,Hasbro,117.96,117.77,29.9,12,5,5,HAS
 2026-10-26,us,美股,3,非必需消費,TSLA,Tesla,391.62,388.86,1.4,3,1,1,TSLA
+2026-10-26,us,美股,3,公用,AES,The AES,15.03,15,3.3,6,1,1,AES
 2026-10-26,us,美股,3,原材料,DOW,Dow,33.99,33.4,6.4,3,1,1,DOW
 2026-10-26,us,美股,3,能源,XOM,ExxonMobil,184.54,183.75,21.2,12,2,2,XOM
 2026-10-26,us,美股,3,醫療,CRL,Charles River Laboratories International,357.27,351.21,63.3,12,1,1,CRL
