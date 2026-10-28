@@ -45,7 +45,7 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
 
 每行一條，EA 用 `StringSplit("|")` 讀；`id` 兩邊去重，10 分鐘冇回報就作廢：
 ```
-open|BUY|0.01|sl=4120.50|tp=4210.00|magic=921|note=AI決策|id=a1b2c3d4     ← [R350] note 可選（放 id 之前）：EA v0.39 寫入 MT5 註解「天覆陣 AI決策 a1b2c3d4」；跟單係「跟單CTC」（SIG_CHANNEL_NAMES）
+open|BUY|0.01|sl=4120.50|tp=4210.00|magic=921|note=AI決策|id=a1b2c3d4     ← [R350] note 可選（放 id 之前）；[R350b] 回應 JSON 唔做 ASCII 轉義（EA v0.40 超 31 字先截 note 保留 id）：EA v0.39 寫入 MT5 註解「天覆陣 AI決策 a1b2c3d4」；跟單係「跟單CTC」（SIG_CHANNEL_NAMES）
 close|all|magic=921|id=…
 modify|all|sl=4130.00|tp=|magic=921|id=…
 ```
