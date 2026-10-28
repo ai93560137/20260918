@@ -279,7 +279,8 @@ def send_order(rec):
         if state.get("position") or live_pos:
             return None, None
         text = executor.enqueue(state, "OPEN_LONG" if plan["side"] == "BUY" else "OPEN_SHORT", plan["stop"], plan["target"],
-                                now, cmd_id, lots=lots(), tag=f"tg:{rec.get('sid')}")
+                                now, cmd_id, lots=lots(), tag=f"tg:{rec.get('sid')}",
+                                note="訊號S1 " + config.CHANNEL_NAMES.get(str(rec.get("ch") or "")[-4:], str(rec.get("ch") or "")[-4:]))   # [R350] MT5 註解
         return state, text
     try:
         text = storage.update(STATE_FILE, mutate, default_factory=dict)

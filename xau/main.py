@@ -378,7 +378,7 @@ def _record(state, rec, day):
 
 
 def enqueue_cmd(state, action, stop, target, now, decision_id):
-    return executor.enqueue(state, action, stop, target, now, decision_id)
+    return executor.enqueue(state, action, stop, target, now, decision_id, note="AI決策")   # [R350] MT5 註解「天覆陣 AI決策 <id>」（使用者 10-28）
 
 
 def cmd_text(state, now):

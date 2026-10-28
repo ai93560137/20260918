@@ -124,7 +124,7 @@ check("跟單戶口快照寫入 follow/account.json", "xau/sig/follow/account.js
 print("=== 市價單訊號 → 即刻開 0.01、SL 原 SL、TP＝TP1 ===")
 put_signal("5231_1", order_type="market", lo=3999, hi=4001, sl=3990, tp=(4005, 4010))
 st, d = hb(3, 4003)
-check("排咗 open 指令：BUY 0.01 sl=3990 tp=4005 magic=932 id=f…", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4005.00|magic=932|id=f"), d["cmd_text"])
+check("排咗 open 指令：BUY 0.01 sl=3990 tp=4005 magic=932 id=f…", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4005.00|magic=932|note=跟單CTC|id=f"), d["cmd_text"])
 o = fstate()["orders"][-1]
 check("紀錄：sid、頻道尾號、入場依據市價單", o["sid"] == "5231_1" and o["ch"] == "5231" and o["entry"] == "市價單" and o["applied"].startswith("open|"), o)
 st, d = hb(4, 4003)
@@ -203,7 +203,7 @@ POS = [{"ticket": 901, "side": "BUY", "entry": 4012.2, "lots": 0.01, "sl": 4005.
 st, d = hb(21, 4013.5, positions=POS)
 check("有倉未到 TP1 → 唔排 modify", d["cmd_text"] == "" and "未到 TP1" in d["message"], d)
 st, d = hb(22, 4015.2, positions=POS)
-check("到 TP1 → modify sl=4012.20（保本）tp=4030.00，id 前綴 f", d["cmd_text"].startswith("modify|all|sl=4012.20|tp=4030.00|magic=932|id=f") and "保本" in d["message"] or "TP1" in d["message"], d)
+check("到 TP1 → modify sl=4012.20（保本）tp=4030.00，id 前綴 f", d["cmd_text"].startswith("modify|all|sl=4012.20|tp=4030.00|magic=932|note=跟單CTC|id=f") and "保本" in d["message"] or "TP1" in d["message"], d)
 mid = d["cmd_text"].split("id=")[1]
 st, d = hb(23, 4016.0, positions=POS)
 check("modify 未 ack → 唔重複排", d["cmd_text"].count("modify") == 1 and "等 EA" in d["message"], d)

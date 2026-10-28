@@ -2,6 +2,7 @@
 //| 🌌 天覆陣執行器 TianfuExecutor.mq5  v0.3（2026-10-20，未編譯、未測）   |
 //| v0.3：心跳加 account（登入號）／server／realized_total（自 InpLedgerStart）|
 //| v0.38（10-23）：cmd_ack 加 account（權杖公開，服務核對 XAU_ACCOUNT 先認回報）|
+//| v0.39（10-28）：open 指令可帶 note=…，寫入 MT5 註解（AI決策／跟單CTC）        |
 //|       服務用 XAU_ACCOUNT 分辨 demo／真戶口，只向該登入號發指令。          |
 //|                                                                  |
 //| 影子階段用法（使用者 10-20：「EA 直接俾 K 線畀新服務」）：            |
@@ -24,7 +25,7 @@
 //|       先掛 demo 戶口；InpToken 填 Cloud Run 嘅 WEBHOOK_SECRET_TOKEN  |
 //+------------------------------------------------------------------+
 #property copyright "zhuge / 天覆陣"
-#property version   "0.38"
+#property version   "0.39"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -328,8 +329,11 @@ void Execute(string line)
       // 只管一張：已有自己嘅倉就唔開
       for(int i = PositionsTotal() - 1; i >= 0; i--) { ulong t = PositionGetTicket(i); if(t != 0 && IsMine(t)) { Reject(id, line, StringFormat("already in position (ticket %I64u)", t)); return; } }
       if(InpDryRun) { PrintFormat("🧪 [dry-run] open %s %.2f sl=%s tp=%s id=%s", side, lots, P(sl), P(tp), id); Ack(id, true, 0, "dry-run"); return; }
-      bool ok = (side == "BUY") ? trade.Buy(lots, _Symbol, 0.0, sl, tp, "天覆陣 " + id)
-                                : trade.Sell(lots, _Symbol, 0.0, sl, tp, "天覆陣 " + id);
+      string note = Field(parts, n, "note");                                   // v0.39：註解「天覆陣 AI決策 <id>」／「天覆陣 跟單CTC <id>」（使用者 10-28）
+      string cmt = "天覆陣 " + (note == "" ? "" : note + " ") + id;
+      if(StringLen(cmt) > 31) cmt = StringSubstr(cmt, 0, 31);                     // MT5 註解上限 31 字
+      bool ok = (side == "BUY") ? trade.Buy(lots, _Symbol, 0.0, sl, tp, cmt)
+                                : trade.Sell(lots, _Symbol, 0.0, sl, tp, cmt);
       ulong ticket = ok ? trade.ResultOrder() : 0;
       PrintFormat("%s open %s %.2f sl=%s tp=%s → %s %s", ok ? "✅" : "❌", side, lots, P(sl), P(tp), trade.ResultRetcodeDescription(), id);
       Ack(id, ok, ticket, trade.ResultRetcodeDescription());

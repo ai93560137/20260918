@@ -289,7 +289,8 @@ def _decide(m, state, account, price, now):
         cid = "f" + uuid.uuid4().hex[:7]
         import rules as _rules
         f_lots = _rules.follow_lots(state)                                  # [R346]
-        text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=f_lots, tag=sig["sid"], magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
+        text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=f_lots, tag=sig["sid"], magic=config.FOLLOW_MAGIC,
+                                note="跟單" + config.CHANNEL_NAMES.get(ch, ch)) if config.EXECUTE else None   # [R350] MT5 註解「天覆陣 跟單CTC <id>」
         order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": f_lots, "sl": sig["sl"], "tp": tp_cmd,
                  "tps": list(sig["tp"]), "exit": mode,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
