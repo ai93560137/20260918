@@ -68,6 +68,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 手數起點／上限（階梯關＝固定手數） |
 | `XAU_LOTS_LADDER`／`XAU_LOTS_MIN`／`XAU_LOTS_STEP` | 0／=XAU_LOTS／0.01 | [R346] 手數階梯（使用者 10-27 0.05→0.10）：每次全部平倉賺 +step、蝕 −step，夾 MIN–MAX；級數存 state `lots_level`；真倉平倉由 EA 心跳有倉→冇倉＋realized_total 差額判斷 |
 | `SIG_FOLLOW_LOTS_LADDER`／`SIG_FOLLOW_LOTS_MIN`／`SIG_FOLLOW_MAX_LOTS` | =XAU_LOTS_LADDER／=SIG_FOLLOW_LOTS／=XAU_MAX_LOTS | [R346] 跟單 932 自己一個級數 |
+| `XAU_LOTS_MILESTONE`／`XAU_LOTS_MILESTONE_CAPS`／`SIG_FOLLOW_LOTS_MILESTONE` | 0／`0.06,0.07,0.08,0.10`／0 | [R349] 使用者 10-28「手數升降規則要達到里程碑先增加」：階梯升級上限＝已達成里程碑數（0–4）對應 CAPS（M1 0.06、M2 0.07、M3 0.08、M4 0.10）；0＝上限係起點（即固定 0.05）。賺 +step 唔超上限、蝕 −step 最低 MIN。921／932 各自計；達成里程碑由總指揮 env set（使用者批） |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MODIFY_MIN_DIST_USD` | 最小止損距離＋點差＋1 pip（XAUUSD 3.3；EURUSD 0.0007） | [R340] UPDATE_STOP 新止損離現價最少幾多：太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（免 EA「invalid stops」） |
 | `XAU_BARS_ARCHIVE` | 1 | [R345] 每根新 M1（同 EA 回填）存入 `<PREFIX>bars/<UTC 日>.jsonl`（全日 K 線、按 time 去重、有 utc 欄），EURUSD 即日回測 `research/eurusd_rulesim` 讀；0＝關 |

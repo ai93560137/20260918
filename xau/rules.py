@@ -125,20 +125,28 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
     return "HOLD", None, None, None
 
 
-def lots(state=None):
-    """[R346] 手數：階梯開就用 state 嘅級數（起點 XAU_LOTS，夾 XAU_LOTS_MIN–XAU_MAX_LOTS）；關＝固定 XAU_LOTS。"""
+def lots_cap(follow=False):
+    """[R349] 升級上限：已達成里程碑數（XAU_LOTS_MILESTONE／SIG_FOLLOW_LOTS_MILESTONE）→ XAU_LOTS_MILESTONE_CAPS；0＝起點；唔超硬上限。"""
     import lots_ladder
-    return max(0.01, lots_ladder.current(state, start=round(config.LOTS, 2), lo=round(config.LOTS_MIN, 2), hi=round(config.MAX_LOTS, 2), on=config.LOTS_LADDER))
+    if follow:
+        return lots_ladder.cap_for(round(config.FOLLOW_LOTS, 2), config.LOTS_MILESTONE_CAPS, config.FOLLOW_LOTS_MILESTONE, round(config.FOLLOW_MAX_LOTS, 2))
+    return lots_ladder.cap_for(round(config.LOTS, 2), config.LOTS_MILESTONE_CAPS, config.LOTS_MILESTONE, round(config.MAX_LOTS, 2))
+
+
+def lots(state=None):
+    """[R346] 手數：階梯開就用 state 嘅級數（起點 XAU_LOTS，夾 XAU_LOTS_MIN–min(XAU_MAX_LOTS, 里程碑上限)）；關＝固定 XAU_LOTS。"""
+    import lots_ladder
+    return max(0.01, lots_ladder.current(state, start=round(config.LOTS, 2), lo=round(config.LOTS_MIN, 2), hi=round(config.MAX_LOTS, 2), on=config.LOTS_LADDER, cap=lots_cap()))
 
 
 def follow_lots(state=None):
-    """[R346] 跟單（932）手數，自己一個級數。"""
+    """[R346] 跟單（932）手數，自己一個級數（[R349] 自己嘅里程碑上限）。"""
     import lots_ladder
-    return max(0.01, lots_ladder.current(state, start=round(config.FOLLOW_LOTS, 2), lo=round(config.FOLLOW_LOTS_MIN, 2), hi=round(config.FOLLOW_MAX_LOTS, 2), on=config.FOLLOW_LOTS_LADDER))
+    return max(0.01, lots_ladder.current(state, start=round(config.FOLLOW_LOTS, 2), lo=round(config.FOLLOW_LOTS_MIN, 2), hi=round(config.FOLLOW_MAX_LOTS, 2), on=config.FOLLOW_LOTS_LADDER, cap=lots_cap(follow=True)))
 
 
 def lots_ladder_kw(follow=False):
-    """[R346] 畀 lots_ladder.step／live_close 用嘅參數。"""
+    """[R346] 畀 lots_ladder.step／live_close 用嘅參數（[R349] 含 cap）。"""
     if follow:
-        return dict(start=round(config.FOLLOW_LOTS, 2), lo=round(config.FOLLOW_LOTS_MIN, 2), hi=round(config.FOLLOW_MAX_LOTS, 2), step=round(config.LOTS_STEP, 2), on=config.FOLLOW_LOTS_LADDER)
-    return dict(start=round(config.LOTS, 2), lo=round(config.LOTS_MIN, 2), hi=round(config.MAX_LOTS, 2), step=round(config.LOTS_STEP, 2), on=config.LOTS_LADDER)
+        return dict(start=round(config.FOLLOW_LOTS, 2), lo=round(config.FOLLOW_LOTS_MIN, 2), hi=round(config.FOLLOW_MAX_LOTS, 2), step=round(config.LOTS_STEP, 2), on=config.FOLLOW_LOTS_LADDER, cap=lots_cap(follow=True))
+    return dict(start=round(config.LOTS, 2), lo=round(config.LOTS_MIN, 2), hi=round(config.MAX_LOTS, 2), step=round(config.LOTS_STEP, 2), on=config.LOTS_LADDER, cap=lots_cap())

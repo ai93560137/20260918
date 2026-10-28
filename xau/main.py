@@ -884,8 +884,8 @@ def build_status():
         "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack
         "product": {"symbol": config.SYMBOL, "kind": config.PRODUCT_KIND, "pip": config.PIP, "digits": config.PRICE_DIGITS, "contract": config.CONTRACT_SIZE},
         "lots": {"current": rules.lots(state), "ladder": config.LOTS_LADDER, "start": round(config.LOTS, 2), "min": round(config.LOTS_MIN, 2), "max": round(config.MAX_LOTS, 2),
-                 "step": round(config.LOTS_STEP, 2), "log": (state.get("lots_log") or [])[-10:]},            # [R346]
-        "risk": {"XAU_LOTS": rules.lots(state), "手數階梯": (f"開：{config.LOTS_MIN:.2f}–{config.MAX_LOTS:.2f}，每次全部平倉賺 +{config.LOTS_STEP:.2f}／蝕 −{config.LOTS_STEP:.2f}" if config.LOTS_LADDER else "關（固定手數）"),
+                 "step": round(config.LOTS_STEP, 2), "milestone": config.LOTS_MILESTONE, "cap": rules.lots_cap(), "log": (state.get("lots_log") or [])[-10:]},            # [R346][R349]
+        "risk": {"XAU_LOTS": rules.lots(state), "手數階梯": (f"開：{config.LOTS_MIN:.2f}–{rules.lots_cap():.2f}（已達里程碑 {config.LOTS_MILESTONE}／{len(config.LOTS_MILESTONE_CAPS)} → 上限 {rules.lots_cap():.2f}；硬上限 {config.MAX_LOTS:.2f}），每次全部平倉賺 +{config.LOTS_STEP:.2f} 唔超上限／蝕 −{config.LOTS_STEP:.2f}" if config.LOTS_LADDER else "關（固定手數）"),
                  "止損距離 pip（下限／上限）": f"{config.MIN_SL_PIPS:g}／{config.MAX_SL_PIPS:g}",
                  "XAU_MIN_SL_USD": config.MIN_SL_USD, "XAU_MAX_SL_USD": config.MAX_SL_USD,
                  "XAU_MIN_CONFIDENCE": config.MIN_CONFIDENCE, "XAU_MAX_TRADES_PER_DAY": config.MAX_TRADES_PER_DAY,

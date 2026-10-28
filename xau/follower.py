@@ -139,7 +139,8 @@ def status():
     import rules as _rules
     return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": _rules.follow_lots(st),
             "data_block": st.get("data_block"), "skipped_data": (st.get("skipped_data") or [])[-10:],            # [R348]
-            "lots_ladder": {"on": config.FOLLOW_LOTS_LADDER, "start": round(config.FOLLOW_LOTS, 2), "min": round(config.FOLLOW_LOTS_MIN, 2), "max": round(config.FOLLOW_MAX_LOTS, 2), "level": st.get("lots_level"), "log": (st.get("lots_log") or [])[-10:]},
+            "lots_ladder": {"on": config.FOLLOW_LOTS_LADDER, "start": round(config.FOLLOW_LOTS, 2), "min": round(config.FOLLOW_LOTS_MIN, 2), "max": round(config.FOLLOW_MAX_LOTS, 2), "level": st.get("lots_level"),
+                            "milestone": config.FOLLOW_LOTS_MILESTONE, "cap": _rules.lots_cap(follow=True), "log": (st.get("lots_log") or [])[-10:]},   # [R349] 升級上限由里程碑決定
             "exit": {ch: exit_mode(ch) for ch in config.FOLLOW_CHANNELS}, "ladder_channels": list(config.FOLLOW_LADDER_CHANNELS),
             "skip_unreached_channels": list(config.FOLLOW_SKIP_UNREACHED_CHANNELS), "unreached_tol": config.FOLLOW_UNREACHED_TOL,
             "avoid_hours": {ch: avoid_hours(ch) for ch in config.FOLLOW_CHANNELS if avoid_hours(ch)},
