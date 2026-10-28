@@ -6546,6 +6546,16 @@ def _analyst_md(md):
     return md_to_html(_ANALYST_DISCLAIMER_RE.sub("", md or ""))
 
 
+_ANALYST_TF = (("_1d", "日線圖（每支 K＝1 日）"), ("_4h", "240 分鐘圖（4 小時 K 線）"), ("_1h", "60 分鐘圖"),
+                ("_30m", "30 分鐘圖"), ("_15m", "15 分鐘圖"), ("_5m", "5 分鐘圖"))
+
+
+def _analyst_tf_label(path):
+    """[R352] 使用者 10-28「每日總結分析圖表，記得註明是多少分鐘圖表」：由檔名（…_4h.png）判斷時間框架。"""
+    name = str(path).rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    return next((lab for suf, lab in _ANALYST_TF if name.endswith(suf)), "")
+
+
 def _analyst_imgs(doc):
     imgs = ""
     for mkt, paths in (doc.get("charts") or {}).items():
@@ -6557,7 +6567,10 @@ def _analyst_imgs(doc):
                     b64 = _chart_png_b64(path)
                 except Exception as exc:
                     log_event(f"⚠️ [分析圖讀取失敗] {path}: {exc}", severity="WARNING", component="charts")
-            cells += (f"<div style='flex:1 1 420px;min-width:0'><img alt='{esc(path)}' style='width:100%;height:auto;border-radius:6px' "
+            cap = _analyst_tf_label(path)
+            cells += (f"<div style='flex:1 1 420px;min-width:0'>"
+                      + (f"<div style='font-weight:bold;color:#ffd54f;margin:2px 0'>🕒 {esc(cap)}</div>" if cap else "")
+                      + f"<img alt='{esc(path)}' style='width:100%;height:auto;border-radius:6px' "
                       f"src='data:image/png;base64,{b64}'></div>" if b64 else "")
         if cells:
             imgs += f"<h3>{esc(mkt)}</h3><div style='display:flex;flex-wrap:wrap;gap:10px'>{cells}</div>"
