@@ -232,5 +232,27 @@ js = client.get("/?format=json").get_json()
 check("JSON follow.exit 每頻道模式", js["follow"]["exit"] == {"5231": "tp1", "7713": "ladder"} and js["follow"]["ladder_channels"] == ["7713"], js["follow"].get("exit"))
 config.FOLLOW_CHANNELS = ("5231",); config.FOLLOW_LADDER_CHANNELS = ()
 
+
+print("=== [R348] 數據封鎖：收到開倉訊號唔跟、記 skipped_data；事件過後照跟 ===")
+import data_block as _db, time as _time
+def _iso(ts): return _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime(ts))
+_cfg_db = config.DATA_BLOCK_HOURS; config.DATA_BLOCK_HOURS = 4.0
+FAKE["xau/sig/signals/recent.json"] = ("[]", 1); FAKE["xau/sig/follow/state.json"] = (json.dumps(follower.empty_state()), 1)
+_t = T0 + 40 * 60; NOW[0] = _t
+FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_t - 3600), "block_hours": 4, "events": [{"t": _iso(_t + 3600), "title": "FOMC", "src": "manual"}]}), 1)
+_db._cache.update(ts=0, doc=None, error=None)
+put_signal("5231_40", lo=None, hi=None, sl=3979, tp=(4005,), ch="5231", order_type="market")
+st, d = hb(40, 4000)
+_fs = fstate()
+check("封鎖中：市價訊號唔跟、cmd_text 空、記 skipped_data、sid 入 used", d["cmd_text"] == "" and (_fs.get("skipped_data") or [{}])[-1].get("sid") == "5231_40" and "5231_40" in _fs["used"] and (_fs.get("data_block") or {}).get("title") == "FOMC", (d, _fs.get("skipped_data")))
+js = client.get("/?format=json").get_json()
+check("JSON follow.data_block／skipped_data", (js["follow"].get("data_block") or {}).get("title") == "FOMC" and len(js["follow"].get("skipped_data") or []) == 1, js["follow"].get("data_block"))
+FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_t - 3600), "block_hours": 4, "events": [{"t": _iso(_t - 60), "title": "FOMC", "src": "manual"}]}), 2)
+_db._cache.update(ts=0, doc=None, error=None); NOW[0] = T0 + 41 * 60
+put_signal("5231_41", lo=None, hi=None, sl=3979, tp=(4005,), ch="5231", order_type="market")
+st, d = hb(41, 4000)
+check("事件過後：新訊號照跟", d["cmd_text"].startswith("open|BUY|") and fstate().get("data_block") is None, d["cmd_text"])
+config.DATA_BLOCK_HOURS = _cfg_db; FAKE.pop("ops/us_data_calendar.json", None); _db._cache.update(ts=0, doc=None, error=None)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
