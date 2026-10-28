@@ -9,7 +9,8 @@
 import argparse
 import json
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import yfinance as yf
 
@@ -17,6 +18,36 @@ SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F", "SPX": "^GSPC",   # [R290] SPX 現貨：�
            "VIX": "^VIX"}                                   # [R304] 使用者 10-27 VIX 日線筆記（缺口、200 SMA、下降壓力線）
 BUCKET = "zhuge-risk-manager-bucket"
 PREFIX = "ops/longfei/analyst/data/"
+ET = ZoneInfo("America/New_York")
+REBUILD_DAYS = 10
+
+
+def trade_date(ts: str) -> str:
+    """CME 期貨交易日：美東 18:00 之後嘅 K 線屬下一個平日（星期五／日晚 → 星期一）。"""
+    t = datetime.strptime(ts, "%Y-%m-%d %H:%M")
+    d = t.date()
+    if t.hour >= 18:
+        d += timedelta(days=1)
+        while d.weekday() >= 5:
+            d += timedelta(days=1)
+    return d.isoformat()
+
+
+def futures_d1(d1, h1, now_et):
+    """[R349] 分析欄 10-28 發現：yfinance 期貨日線最後一支係未完成嘅夜盤（10-27 嗰支幅度得 10 點，
+    真正 10-27 全日反而冇咗）。最近 REBUILD_DAYS 個交易日改用 1 小時線按 CME 交易日重砌，
+    未收市（美東 17:00 前）嘅交易日唔放入日線。"""
+    days = {}
+    for ts, o, h, lo, c in h1:
+        k = trade_date(ts)
+        x = days.get(k)
+        days[k] = [k, o, h, lo, c] if x is None else [k, x[1], max(x[2], h), min(x[3], lo), c]
+    keys = sorted(days)[-REBUILD_DAYS:]
+    if keys and now_et < datetime.combine(date.fromisoformat(keys[-1]), datetime.min.time(), ET).replace(hour=17):
+        keys = keys[:-1]
+    if not keys:
+        return d1
+    return [r for r in d1 if r[0] < keys[0]] + [days[k] for k in keys]
 
 
 def rows(df, fmt):
@@ -33,8 +64,12 @@ def fetch(ticker):
     h1 = yf.download(ticker, period="300d", interval="1h", progress=False, auto_adjust=False)
     if h1.index.tz is not None:
         h1.index = h1.index.tz_convert("America/New_York")
-    return {"symbol": ticker, "fetched_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "d1": rows(d1, "%Y-%m-%d"), "h1": rows(h1, "%Y-%m-%d %H:%M")}
+    doc = {"symbol": ticker, "fetched_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+           "d1": rows(d1, "%Y-%m-%d"), "h1": rows(h1, "%Y-%m-%d %H:%M")}
+    if ticker.endswith("=F"):
+        doc["d1"] = futures_d1(doc["d1"], doc["h1"], datetime.now(ET))
+        doc["d1_note"] = "R349：最近交易日由 1 小時線按 CME 交易日重砌，只含已收市日"
+    return doc
 
 
 def main():
