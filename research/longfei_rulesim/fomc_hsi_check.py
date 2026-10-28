@@ -48,6 +48,8 @@ def parse_fed(text):
             mon, d1, d2, tail = m.groups()
             if re.search(r"unscheduled|notation|cancel", tail, re.I):
                 continue
+            if re.match(r"\s*,\s*\d{4}", tail):        # 「Released November 20, 2024」會議紀錄公佈日，唔係會議
+                continue
             if "/" in mon:
                 mo = ABBR[mon.split("/")[1]]
             else:
@@ -87,6 +89,10 @@ def main():
     print("FOMC 公佈日", len(fomc), [d.isoformat() for d in fomc[:3]], "…", [d.isoformat() for d in fomc[-3:]])
     if len(fomc) < 30:
         raise SystemExit("FOMC 日期抓唔夠（網頁格式可能變咗）")
+    per_year = {y: sum(d.year == y for d in fomc) for y in sorted({d.year for d in fomc})}
+    print("每年會議數", per_year)
+    if any(n > 9 for n in per_year.values()):            # 定期會議每年 8 次；多過 9 即係捉錯咗其他日期
+        raise SystemExit(f"FOMC 日期多過預期（{per_year}），解析有問題")
     df = yf.download("^HSI", start="2019-12-01", interval="1d", progress=False, auto_adjust=False)
     if hasattr(df.columns, "levels"):
         df.columns = df.columns.get_level_values(0)
@@ -108,6 +114,7 @@ def main():
     others = [d for d in ret if d not in set(pre) | set(post) and d >= date(2020, 1, 1)]
     split = date(2023, 1, 1)
     res = {"generated_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z", "fomc_n": len(fomc),
+           "fomc_dates": [d.isoformat() for d in fomc],
            "pre_days": len(pre), "post_days": len(post),
            "A_pre_drift": stats([ret[d] for d in pre], [ret[d] for d in others]),
            "A_h1": stats([ret[d] for d in pre if d < split], [ret[d] for d in others if d < split]),
