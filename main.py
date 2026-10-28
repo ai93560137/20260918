@@ -6596,13 +6596,39 @@ def _analyst_summary_table(sc):
             else "<p class='muted'>未有到期嘅判斷。</p>")
 
 
+# [R350] 使用者 10-28「計分卡有什麼用？用白話寫出來」→「以上文字放在網頁上」：計分卡上面嘅白話說明（而家嘅情況按 scorecard 動態寫）
+ANALYST_SCORECARD_HELP = (
+    "<div style='background:#f6f8fa;border-radius:8px;padding:10px 14px;font-size:13px;margin:6px 0 10px'>"
+    "<p style='margin:0 0 6px'><b>計分卡有咩用？</b>將分析入面每一個預測記低，到期後自動對答案，睇吓分析準唔準、值唔值得信。</p>"
+    "<p style='margin:6px 0 2px'><b>點樣運作</b></p><ol style='margin:0 0 6px 18px;padding:0'>"
+    "<li>每日分析會寫低幾個具體價位，例如「恒指 23,309 係壓力位」「VIX 16.29 係支撐位」。</li>"
+    "<li>每個預測定咗期限（通常 5 個交易日）。</li>"
+    "<li>到期後程式自動用收市價核對：話係壓力而價格冇收穿 → ✅ 對；收穿咗 → ❌ 錯；支撐位就倒轉。</li>"
+    "<li>累積落嚟就計到命中率。</li></ol>"
+    "<p style='margin:6px 0 2px'><b>有咩用</b></p><ul style='margin:0 0 6px 18px;padding:0'>"
+    "<li><b>知道信得幾多</b>：做咗幾十條得一半啱，同擲銅錢差唔多，就唔好靠佢做決定；長期七成以上啱，先有參考價值。</li>"
+    "<li><b>唔會淨係記住贏嗰次</b>：人好容易只記得估中嘅，計分卡連估錯都記晒。</li>"
+    "<li><b>知道邊方面強、邊方面弱</b>：可以分開睇恒指、美股、VIX，或者支撐定壓力邊樣準啲，等龍飛陣知道要改善邊度。</li>"
+    "<li><b>將來決定用唔用</b>：龍飛陣嘅 AI 交易而家唔睇呢欄分析；計分卡證明真係準，先考慮畀交易參考，唔準就只當資訊睇。</li></ul>"
+    "<p style='margin:6px 0 0'><b>而家嘅情況</b>：{status}大約要累積到 30 條以上已到期，先睇得出準唔準。</p></div>")
+
+
+def _analyst_scorecard_status(sc):
+    calls = sc.get("calls") or []
+    done = sum(1 for c in calls if c.get("result") is not None)
+    if not done:
+        return f"記低咗 {len(calls)} 條預測，全部未到期，所以命中率仲係空白。"
+    return f"記低咗 {len(calls)} 條預測，{done} 條已到期，{len(calls) - done} 條未到期。"
+
+
 def build_analyst_section(a):
     doc, sc = a.get("doc"), a.get("scorecard") or {}
     if not doc:
         return "<div class='section'><h2>📝 龍飛陣分析</h2><p class='muted'>暫時未有分析。</p></div>"
     imgs = _analyst_imgs(doc)
     crows = _analyst_calls_table((sc.get("calls") or [])[-40:][::-1])
-    score_html = ("<h3>🎯 計分卡</h3>" + _analyst_summary_table(sc)
+    score_html = ("<h3>🎯 計分卡</h3>" + ANALYST_SCORECARD_HELP.format(status=esc(_analyst_scorecard_status(sc)))
+                  + _analyst_summary_table(sc)
                   + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>" + crows)
     hist = "　".join(f"<a href='?view=analyst&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
     return (f"<div class='section'><h2>📝 龍飛陣分析・{esc(doc.get('date'))}</h2>"
