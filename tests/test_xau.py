@@ -320,7 +320,7 @@ FAKE["xau/m15.json"] = (json.dumps([{"time": T0 + 400 * 60 - 900 * (30 - k), "op
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3990.0, "target_price": 4015.0, "confidence": 0.9, "reason": "買"}
 st, d = hb(400, 4000)
-check("實倉：cmd_text 有 open 指令、紙上唔開倉", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|id=") and json.loads(FAKE["xau/state.json"][0])["position"] is None, d)
+check("實倉：cmd_text 有 open 指令、紙上唔開倉", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|note=AI決策|id=") and json.loads(FAKE["xau/state.json"][0])["position"] is None, d)
 cid = d["cmd_text"].split("id=")[1]
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
 st, d2 = hb(401, 4001)
@@ -355,7 +355,7 @@ def live_hb(i, close, positions, account="70001", **extra):
 st, d = live_hb(0, 4000, [], account="99999")
 check("非 XAU_ACCOUNT 嘅心跳 → ignored，唔入 K 線", d["status"] == "ignored" and d["cmd_text"] == "" and json.loads(FAKE["xau/m1.json"][0])[-1]["time"] == T1 - 60, d)
 st, d = live_hb(0, 4000, [])
-check("demo 心跳：Claude OPEN → 排 open 指令", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|id="), d)
+check("demo 心跳：Claude OPEN → 排 open 指令", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|note=AI決策|id="), d)
 cid = d["cmd_text"].split("id=")[1]
 POS = [{"ticket": 555, "side": "BUY", "lots": 0.01, "entry": 4000.2, "sl": 3990.0, "tp": 4015.0, "open_time": T1 + 10}]
 client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": cid, "ok": True, "ticket": 555}), content_type="application/json")
@@ -534,6 +534,13 @@ config.PRODUCT_KIND, config.PRODUCT_DESC, config.QUOTE_PER_USD, config.MAGIC = "
 _st = {"pending_cmds": []}
 _t = _ex.enqueue(_st, "OPEN_LONG", 1.0950, 1.1010, 1000.0, "abcdef0123", lots=0.01)
 check("EURUSD 指令 5 位小數", _t == "open|BUY|0.01|sl=1.09500|tp=1.10100|magic=922|id=abcdef01", _t)
+# [R350] 開倉備註 note → MT5 註解
+_tn = _ex.enqueue({}, "OPEN_SHORT", 4079.25, 4057.25, 0, "f5e7277f", lots=0.05, magic=932, note="跟單CTC")
+check("[R350] note 放 magic 之後、id 之前", _tn.startswith("open|SELL|0.05|sl=4079.25") and _tn.endswith("|magic=932|note=跟單CTC|id=f5e7277f"), _tn)
+check("[R350] clean_note 去 |=換行、最長 16", _ex.clean_note(" AI|決=策\n ") == "AI決策" and len(_ex.clean_note("x" * 40)) == 16 and _ex.clean_note(None) == "")
+check("[R350] 冇 note → 指令不變", "note=" not in (_ex.enqueue({}, "OPEN_LONG", 1.0, 2.0, 0, "abcdef02", lots=0.01) or ""))
+check("[R350] 921 enqueue_cmd 帶 AI決策", "|note=AI決策|id=abcdef03" in (xau.enqueue_cmd({}, "OPEN_LONG", 4000.0, 4010.0, 0, "abcdef03") or ""))
+check("[R350] 頻道名對照", config.CHANNEL_NAMES.get("5231") == "CTC" and config.CHANNEL_NAMES.get("0342") == "GoldBrother" and config.CHANNEL_NAMES.get("7713") == "DAN")
 _a, _sl, _tp, _why = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 1.0998, "target_price": 1.1030, "confidence": 0.9, "reason": "x"},
                                             position=None, last=1.1000, can_open=True, trades_today=0, block_reason=None)
 check("EURUSD 止損 2 pip < 5 pip 下限 → 推到 5 pip（1.09950）", _a == "OPEN_LONG" and abs(_sl - 1.0995) < 1e-9, (_a, _sl, _why))

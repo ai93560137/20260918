@@ -182,6 +182,7 @@ SIG_LATE_R = _f("SIG_LATE_R", 1.0)
 SIG_AGREE_MIN = _i("SIG_AGREE_MIN", 30)                      # 幾多分鐘內另一個頻道同方向算「附和」
 # 跟單（使用者 10-22 批「CTC 0.01 手執銀仔落 demo」；IDEAS #123）：只限指定頻道（尾 4 位；空＝關）、固定手數、TP1 全平、用頻道原 SL、獨立 magic
 FOLLOW_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_FOLLOW_CHANNELS", "").split(",") if x.strip())
+CHANNEL_NAMES = dict((k.strip()[-4:], v.strip()) for k, _, v in (x.partition(":") for x in _s("SIG_CHANNEL_NAMES", "5231:CTC,7713:DAN,0342:GoldBrother,5117:黃金戰鬥機").split(",")) if k.strip() and v.strip())   # [R350] 頻道尾號 → 名稱（MT5 註解「跟單CTC」）
 FOLLOW_MAGIC = _i("SIG_FOLLOW_MAGIC", MAGIC + 1)             # 931 → 932（EA InpBotMagics 已包 931–935，計入戶口總階梯）
 FOLLOW_LOTS = _f("SIG_FOLLOW_LOTS", 0.01)
 FOLLOW_LOTS_LADDER = _b("SIG_FOLLOW_LOTS_LADDER", LOTS_LADDER)   # [R346] 跟單（932）自己一個級數；預設跟 XAU_LOTS_LADDER

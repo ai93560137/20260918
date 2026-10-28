@@ -45,7 +45,7 @@ main.py 同預設分支**零差異**（R291 轉發 hook 已刪）；`.gcloudigno
 
 每行一條，EA 用 `StringSplit("|")` 讀；`id` 兩邊去重，10 分鐘冇回報就作廢：
 ```
-open|BUY|0.01|sl=4120.50|tp=4210.00|magic=921|id=a1b2c3d4
+open|BUY|0.01|sl=4120.50|tp=4210.00|magic=921|note=AI決策|id=a1b2c3d4     ← [R350] note 可選（放 id 之前）：EA v0.39 寫入 MT5 註解「天覆陣 AI決策 a1b2c3d4」；跟單係「跟單CTC」（SIG_CHANNEL_NAMES）
 close|all|magic=921|id=…
 modify|all|sl=4130.00|tp=|magic=921|id=…
 ```
@@ -67,6 +67,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_M1_MAX`／`XAU_M15_MAX` | 400／200 | 保留幾多根 K 線（M1 ≥ 315 根先砌到 20 根 M15） |
 | `XAU_LOTS`／`XAU_MAX_LOTS` | 0.01／0.10 | 手數起點／上限（階梯關＝固定手數） |
 | `XAU_LOTS_LADDER`／`XAU_LOTS_MIN`／`XAU_LOTS_STEP` | 0／=XAU_LOTS／0.01 | [R346] 手數階梯（使用者 10-27 0.05→0.10）：每次全部平倉賺 +step、蝕 −step，夾 MIN–MAX；級數存 state `lots_level`；真倉平倉由 EA 心跳有倉→冇倉＋realized_total 差額判斷 |
+| `SIG_CHANNEL_NAMES` | `5231:CTC,7713:DAN,0342:GoldBrother,5117:黃金戰鬥機` | [R350] 頻道尾號 → 名稱，用喺跟單開倉 note（MT5 註解「天覆陣 跟單CTC <id>」）同頁面 |
 | `SIG_FOLLOW_LOTS_LADDER`／`SIG_FOLLOW_LOTS_MIN`／`SIG_FOLLOW_MAX_LOTS` | =XAU_LOTS_LADDER／=SIG_FOLLOW_LOTS／=XAU_MAX_LOTS | [R346] 跟單 932 自己一個級數 |
 | `XAU_LOTS_MILESTONE`／`XAU_LOTS_MILESTONE_CAPS`／`SIG_FOLLOW_LOTS_MILESTONE` | 0／`0.06,0.07,0.08,0.10`／0 | [R349] 使用者 10-28「手數升降規則要達到里程碑先增加」：階梯升級上限＝已達成里程碑數（0–4）對應 CAPS（M1 0.06、M2 0.07、M3 0.08、M4 0.10）；0＝上限係起點（即固定 0.05）。賺 +step 唔超上限、蝕 −step 最低 MIN。921／932 各自計；達成里程碑由總指揮 env set（使用者批） |
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
