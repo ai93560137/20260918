@@ -1429,3 +1429,69 @@ def test_reuse_hold_off_by_default(env):
     advance(t, minutes=5)
     tr.tick()
     assert ai.calls == 2 and not tr.state.get("reuse_shadow_today")
+
+
+def _cal(tmp_path, events, fetch_ok=True):
+    from data_calendar import DataCalendar
+    manual = tmp_path / "manual.json"
+    manual.write_text(json.dumps({"events": events}), encoding="utf-8")
+
+    def fetch():
+        if not fetch_ok:
+            raise OSError("down")
+        return []
+    return DataCalendar(tmp_path / "ff.json", manual, fetch)
+
+
+def test_data_block_skips_ai(env, tmp_path):
+    """[R348] 使用者 10-28「數據之前4小時不入市」：事件前 4 小時冇倉唔叫 AI，記 gate=DATA；之前／之後照叫。"""
+    cfg, t, b, ai, tr = env                                  # 10-16 10:00:05 HKT ＝ 02:00 UTC
+    tr.cfg = replace(cfg, data_block_hours=4)
+    tr.calendar = _cal(tmp_path, [{"t": "2026-10-16T06:30:00Z", "title": "FOMC"}])   # 14:30 HKT
+    tr.tick()
+    assert ai.calls == 1 and tr.state["data_block"] is None
+    advance(t, minutes=30)                                    # 10:30 HKT ＝ 事件前 4 小時
+    tr.tick()
+    assert ai.calls == 1 and ai.screens == 1 and tr.state["data_block"]["title"] == "FOMC"
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert rec["gate"] == "DATA" and "FOMC" in rec["reason"] and "10-16 14:30" in rec["reason"]
+    assert tr.state["data_calendar_warn"] is None
+    t["now"] = t["now"].replace(hour=14, minute=30)          # 事件時刻：解封
+    tr.tick()
+    assert ai.calls == 2 and tr.state["data_block"] is None
+
+
+def test_data_block_keeps_managing_position(env, tmp_path):
+    """[R348] 封鎖期間有倉照管：止蝕照做；平倉後冇倉就唔再叫 AI。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, data_block_hours=4)
+    tr.calendar = _cal(tmp_path, [{"t": "2026-10-16T06:30:00Z", "title": "CPI"}])
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "confidence": 0.7, "reason": "突破"}
+    tr.tick()                                                 # 10:00 HKT 未封鎖：開倉
+    assert tr.state["pos"]
+    advance(t, minutes=30)                                    # 10:30 封鎖
+    b.price = 24940
+    tr.tick()
+    assert tr.state["pos"] is None                            # 止蝕照做
+    calls = ai.calls
+    advance(t, minutes=5)
+    tr.tick()
+    assert ai.calls == calls and tr.state["data_block"]["title"] == "CPI"
+
+
+def test_data_calendar_warn_when_ff_down(env, tmp_path):
+    """[R348] ForexFactory 讀唔到：照常交易（manual 照封），heartbeat 有提示。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, data_block_hours=4)
+    tr.calendar = _cal(tmp_path, [], fetch_ok=False)
+    tr.tick()
+    assert ai.calls == 1 and "ForexFactory" in tr.state["data_calendar_warn"]
+    hb = json.loads(cfg.heartbeat_file.read_text("utf-8"))
+    assert hb["calendar_warn"]
+
+
+def test_data_block_off_by_default(env, tmp_path):
+    cfg, t, b, ai, tr = env
+    tr.calendar = _cal(tmp_path, [{"t": "2026-10-16T03:00:00Z", "title": "FOMC"}])
+    tr.tick()
+    assert ai.calls == 1 and tr.state["data_block"] is None

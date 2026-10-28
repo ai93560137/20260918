@@ -54,6 +54,8 @@ def build_packet(cfg, state, token):
               # [R347] 沿用 HOLD：on 慳咗幾多次；shadow 會沿用幾多次、其中幾多次 AI 其實開咗倉（應該係 0）
               "ai_reused_today": state.get("ai_reused_today", 0), "reuse_shadow_today": state.get("reuse_shadow_today", 0),
               "reuse_shadow_open_today": state.get("reuse_shadow_open_today", 0),
+              # [R348] 美國數據前 N 小時唔入市：而家封鎖緊邊件事（null＝冇）；日曆有問題嘅提示
+              "data_block": state.get("data_block"), "data_calendar_warn": state.get("data_calendar_warn"),
               "size_level": state.get("size_level"),       # [R305] 按成績升級：下一單張數
               # [R212] 戶口淨值同購買力（私人 GCS，網頁唔顯示）：模擬程式報模擬戶口；真實戶口由真倉程式或者戶口檢查
               "sim_account": state.get("sim_account") if cfg.trd_env == "SIMULATE" else None,

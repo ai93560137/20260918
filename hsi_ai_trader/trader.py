@@ -6,7 +6,9 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from markets import FX_TO_HKD, SPECS, fee_hkd, order_qty, session_day, spec_for
+from data_calendar import DataCalendar
+
+from markets import FX_TO_HKD, HKT, SPECS, fee_hkd, order_qty, session_day, spec_for
 from rules import (round_tick, session_status, trading_day_key, pick_front_month, stop_hit, target_hit,
                    validate_decision)
 
@@ -39,6 +41,7 @@ class Trader:
         self.errors = 0
         self._contract_cache = (None, None)  # (day_key, code)
         self._daily_cache = (None, None)
+        self.calendar = DataCalendar(cfg.state_file.parent / "us_data_ff.json")   # [R348]
 
     # ---------- 狀態同日誌 ----------
     def _load_state(self):
@@ -89,7 +92,8 @@ class Trader:
                "trd_env": self.cfg.trd_env, "code": pos.get("code"), "qty": pos.get("qty", 0),
                "foreign_qty": self.state.get("foreign_qty", 0),
                "side": pos.get("side"), "stop": pos.get("stop"), "errors": self.errors,
-               "halted": bool(self.state.get("halted"))}
+               "halted": bool(self.state.get("halted")),
+               "calendar_warn": self.state.get("data_calendar_warn")}   # [R348] guard 每日發一次 Telegram
         try:
             tmp = self.cfg.heartbeat_file.with_suffix(".tmp")
             tmp.write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
@@ -207,6 +211,8 @@ class Trader:
         if r and qty == 0 and not stale and last:
             r["max"], r["min"] = max(r["max"], last), min(r["min"], last)
 
+        data_blocked = self._data_blocked(now)          # [R348] heartbeat data_block 每 tick 更新
+
         # 8) AI 決策（每 N 分鐘，K 線收咗先做）
         if session and not stale and not st.get("halted") and self._decision_due(now):
             # 使用者 10-17：冇倉又唔可以開新倉（暫停、時段、組合限制、收市前）就唔問 Claude，慳 API 費用；
@@ -218,6 +224,14 @@ class Trader:
                                         "reason": "模擬唔叫 AI（R295，改即日回測）", "rejected": None, "stop": None,
                                         "target": None, "usage": None, "day_pnl": st.get("day_pnl"),
                                         "session": session})
+            elif qty == 0 and data_blocked:    # [R348] 美國數據前 N 小時：唔開新倉、唔叫 AI
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+                b = st["data_block"]
+                self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": snap["last"],
+                                        "pos": qty, "ai_action": None, "final": "HOLD", "gate": "DATA",
+                                        "reason": f"美國數據前 {self.cfg.data_block_hours:g} 小時唔入市（R348）：{b['title']}"
+                                                  f"（{b['hkt']} HKT）", "rejected": None, "stop": None, "target": None,
+                                        "usage": None, "day_pnl": st.get("day_pnl"), "session": session})
             elif qty == 0 and not (self._can_open(mins_left, session) and not self._portfolio_block()):
                 st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
             elif qty != 0 and self.cfg.swing_exit:      # [R299] 波段：出場由程式管（止蝕、保本、移動止蝕、揸滿 N 日），唔叫 AI
@@ -254,6 +268,18 @@ class Trader:
             return False
         self.state["last_decision_bar"] = key
         return True
+
+    def _data_blocked(self, now):
+        """[R348] 美國高影響數據前 N 小時：回傳 True 並將事件寫入 state（heartbeat data_block）。日曆有問題照常交易。"""
+        st = self.state
+        e = self.calendar.blocked(now, self.cfg.data_block_hours) if self.cfg.data_block_hours else None
+        st["data_calendar_warn"] = self.calendar.warn if self.cfg.data_block_hours else None
+        st["data_block"] = None
+        if e:
+            t = datetime.fromisoformat(e["t"].replace("Z", "+00:00"))
+            st["data_block"] = {"title": e.get("title"), "t": e["t"],
+                                "hkt": t.astimezone(HKT).strftime("%m-%d %H:%M")}
+        return bool(e)
 
     def _can_open(self, mins_left, session=None):
         st, cfg = self.state, self.cfg

@@ -155,6 +155,9 @@ class Watchdog:
             self.once("foreign", f"⚠ {tag}即月有 {hb.get('foreign_qty')} 張唔屬龍飛陣嘅倉，龍飛陣停開新倉", now)
         else:
             self.clear("foreign")
+        if hb.get("calendar_warn"):                            # [R348] 數據日曆有問題：照常交易，每日提一次
+            self.once(f"cal_{now.astimezone(HKT):%Y-%m-%d}", f"⚠ {tag}美國數據日曆：{hb['calendar_warn']}"
+                      "（數據前 4 小時唔入市暫時唔生效，照常交易）", now)
         if hb.get("halted"):                                   # 日蝕停機會停到 17:00，只喺變化時發一次
             self.once("halted", f"⚠ {tag}AI 程式已停機（halted），新交易日先會再開", now)
         else:
