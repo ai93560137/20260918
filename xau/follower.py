@@ -138,6 +138,7 @@ def status():
         acct = {}
     import rules as _rules
     return {"magic": config.FOLLOW_MAGIC, "channels": list(config.FOLLOW_CHANNELS), "lots": _rules.follow_lots(st),
+            "data_block": st.get("data_block"), "skipped_data": (st.get("skipped_data") or [])[-10:],            # [R348]
             "lots_ladder": {"on": config.FOLLOW_LOTS_LADDER, "start": round(config.FOLLOW_LOTS, 2), "min": round(config.FOLLOW_LOTS_MIN, 2), "max": round(config.FOLLOW_MAX_LOTS, 2), "level": st.get("lots_level"), "log": (st.get("lots_log") or [])[-10:]},
             "exit": {ch: exit_mode(ch) for ch in config.FOLLOW_CHANNELS}, "ladder_channels": list(config.FOLLOW_LADDER_CHANNELS),
             "skip_unreached_channels": list(config.FOLLOW_SKIP_UNREACHED_CHANNELS), "unreached_tol": config.FOLLOW_UNREACHED_TOL,
@@ -262,9 +263,17 @@ def _decide(m, state, account, price, now):
         return "EA／終端／戶口未准交易"
     if price is None:
         return "心跳冇 M1 收市價"
+    import data_block                                                    # [R348] 數據前 N 小時唔跟新開倉訊號（訊號照存，記 skipped_data）
+    data_ev, _info = data_block.check(state, now, market.ny_date(now), log=m.log_event, tg=m.notify.tg_send)
+    state["data_block"] = data_ev
     used = set(state.get("used") or [])
     for sig in candidates(now):
         if sig["sid"] in used:
+            continue
+        if data_ev:
+            state["used"] = [*state.get("used", []), sig["sid"]][-500:]
+            state["skipped_data"] = [*state.get("skipped_data", []), {"sid": sig["sid"], "ch": str(sig.get("ch") or "")[-4:], "side": sig.get("side"), "utc": market.fmt_utc(now), "event": data_ev["title"], "event_t": data_ev["t"]}][-100:]
+            m.log_event(f"📨 [{config.TEAM_NAME}] 跟單略過 {sig['sid']}：📅 數據封鎖 {data_block.text(data_ev)}", component="follow", sid=sig["sid"])
             continue
         verdict, reason = entry_check(sig, price, now)
         if verdict == "skip":

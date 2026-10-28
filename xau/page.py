@@ -166,6 +166,7 @@ def render_signal_book(s):
                  + card("最近判斷", esc((fo.get("last") or {}).get("note") or "—"), esc((fo.get("last") or {}).get("utc") or "")) + "</div>"
                  "<div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>頻道</th><th>方向／手</th><th>入場價</th><th>SL／TP1</th><th>入場依據</th><th>EA 回報</th></tr>"
                  + (orows or "<tr><td colspan='7' class='muted'>未有跟單</td></tr>") + "</table></div></div>")
+        body += (f"<p class='muted'>📅 數據封鎖：{esc(((fo.get('data_block') or {}).get('title') + '（' + str((fo.get('data_block') or {}).get('t', ''))[11:16] + ' UTC）') if fo.get('data_block') else '冇')}；最近因數據略過 {len(fo.get('skipped_data') or [])} 條</p>" if fo else "")   # [R348]
     stu = s.get("student")
     if stu:
         g = (stu.get("scores") or {}).get("grade") or {}; own = (stu.get("scores") or {}).get("own") or {}
@@ -299,6 +300,9 @@ def render(status):
                    ("天覆陣全部產品合計（EA InpBotMagics），含浮動" + (f"；本產品 HK${lad['own_daily_pnl_hkd']:+,.0f}" if lad.get("own_daily_pnl_hkd") is not None else "")
                     if lad.get("scope") == "account" else "只計天覆陣嘅單，含浮動") + ("" if ctl.get("principal_set") else "；⚠ 未設本金，日蝕未啟用"))
             + card("只提示嘅警報", esc(alerts), "回撤／保證金：只發 Telegram，唔停唔鎖")
+            + card("📅 數據封鎖（事件前 " + esc(f"{config.DATA_BLOCK_HOURS:g}") + " 小時唔開新倉）",
+                   esc(("封鎖中：" + ((s.get("data_block") or {}).get("blocked") or {}).get("title", "")) if (s.get("data_block") or {}).get("blocked") else ("關" if not (s.get("data_block") or {}).get("on") else "冇")),
+                   esc(("日曆 " + str((s.get("data_block") or {}).get("calendar_updated_utc") or "讀唔到") + "；下一件：" + "、".join(f"{u.get('t', '')[5:16]} {u.get('title', '')}" for u in ((s.get("data_block") or {}).get("upcoming") or [])[:2])) if (s.get("data_block") or {}).get("calendar_ok") else "⚠ 日曆讀唔到或舊過 48 小時：照常交易（R348）"))
             + "</div><div style='overflow-x:auto'><table><tr><th>硬性風控（環境變數，AI 無權改）</th><th>值</th></tr>" + risk_rows + "</table></div></div>")
     foot = "<p class='muted' style='font-size:13px'>模擬倉成績唔係真金白銀交易；過往成績亦唔代表將來回報。舊服務嘅投資人日誌／關卡開關／送單參數／錦囊兩頁，切換後由本頁取代。</p>"
     return (f"<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='color-scheme' content='light only'>"

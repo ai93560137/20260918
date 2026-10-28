@@ -130,6 +130,7 @@ DD_ALERT_PCTS = (_f("XAU_DD_ALERT1_PCT", 10.0), _f("XAU_DD_ALERT2_PCT", 20.0))  
 CUM_LOSS_PAUSE_PCT = _f("XAU_CUM_LOSS_PAUSE_PCT", 25.0)
 CUM_LOSS_RETRIGGER = _s("XAU_CUM_LOSS_RETRIGGER", "edge").lower()                    # edge | daily
 NIGHT_MULT = _f("XAU_NIGHT_MULT", 1.5)                      # 夜盤（紐約 18:00–02:00 ET）PAUSE 線 ×1.5
+DATA_BLOCK_HOURS = _f("DATA_BLOCK_HOURS", 4.0)                # [R348] 美國高影響數據前幾多小時唔開新倉（GCS ops/us_data_calendar.json；0＝關）。使用者 10-28「數據之前4小時不入市」
 HKD_PER_USD = _f("XAU_HKD_PER_USD", 7.8)
 SPREAD_USD = _f("XAU_SPREAD_USD", PRODUCT["spread_pips"] * PIP)   # 紙上模擬每張來回成本（點差，價格單位）
 

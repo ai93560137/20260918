@@ -26,6 +26,7 @@ import signals
 import follower
 import hold_rules
 import lots_ladder
+import data_block
 import prescreen
 import student
 import tgsignal
@@ -463,6 +464,17 @@ def process_bar(state, bar, m1, m15, account, now):
 
     can_open = control["mode"] == "RUN"
     block = None if can_open else f"PAUSE（{control.get('set_by')}）：{control.get('reason') or ''}"
+    data_ev, data_info = data_block.check(state, now, day, log=log_event, tg=notify.tg_send)   # [R348] 數據前 N 小時唔開新倉；日曆壞咗照常＋每日提醒一次
+    state["data_block"] = {"blocked": data_ev, "calendar_ok": data_info["calendar_ok"], "calendar_updated_utc": data_info["calendar_updated_utc"]}
+    if data_ev:
+        rec["data_block"] = data_ev["title"]
+        if pos is None:                                   # 空倉：唔叫 AI，記一條 DATA 決策
+            rec.update(kind="data", action="HOLD", final="HOLD", reason=f"📅 數據前 {config.DATA_BLOCK_HOURS:g} 小時唔開新倉：{data_block.text(data_ev)}", cost_usd=0.0, model="rules")
+            rec["applied"] = "HOLD"
+            _record(state, rec, day)
+            return rec, f"數據封鎖：{data_ev['title']}"
+        can_open = False                                  # 有倉：照管倉（止蝕／移損／平倉），但唔准開新倉
+        block = f"數據封鎖：{data_block.text(data_ev)}"
     if pos is None and not in_active_hours(now):          # 慳成本 D：時段外空倉唔問 Claude（有倉照管）
         return None, f"時段外（XAU_ACTIVE_HOURS_UTC={config.ACTIVE_HOURS_UTC}），空倉唔問 Claude"
     reuse = reuse_hold(state, m1, m15, now) if pos is None and not config.SIGNAL_BOOK and config.REUSE_HOLD in ("on", "shadow") else None
@@ -642,7 +654,8 @@ def handle_heartbeat(payload):
     if config.EXECUTE and state.get("position") is None:                 # [R346] 已存 state 有倉就留畀 process_bar 偵測平倉；冇倉先同步
         state["position"] = live_position(account)
     resp = {"status": "monitoring", "team": config.TEAM_NAME, "mode": "live" if config.EXECUTE else "shadow",
-            "cmd_text": cmd_text(state, now), "need_history": need_history(m15), "lots": rules.lots(state)}
+            "cmd_text": cmd_text(state, now), "need_history": need_history(m15), "lots": rules.lots(state),
+            "data_block": ((state.get("data_block") or {}).get("blocked") or {}).get("title")}
     bar = market.parse_bar(m1_raw) if m1_raw.get("is_new_bar") else None
     if bar is None:
         return jsonify(resp), 200
@@ -688,7 +701,7 @@ def handle_heartbeat(payload):
         save_state(state)
     except StorageError as exc:
         log_event(f"⚠️ 狀態寫入失敗：{exc}", severity="ERROR")
-    resp.update(cmd_text=cmd_text(state, now), message=summary,
+    resp.update(cmd_text=cmd_text(state, now), message=summary, data_block=((state.get("data_block") or {}).get("blocked") or {}).get("title"),   # [R348]
                 decision=({k: rec.get(k) for k in ("final", "action", "reason", "rejected", "stop", "target", "ms")} if rec else None))
     return jsonify(resp), 200
 
@@ -867,6 +880,7 @@ def build_status():
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
+        "data_block": data_block.check(state, now, market.ny_date(now))[1],   # [R348] 目前封鎖事件／日曆狀態（只讀，唔提醒）
         "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack
         "product": {"symbol": config.SYMBOL, "kind": config.PRODUCT_KIND, "pip": config.PIP, "digits": config.PRICE_DIGITS, "contract": config.CONTRACT_SIZE},
         "lots": {"current": rules.lots(state), "ladder": config.LOTS_LADDER, "start": round(config.LOTS, 2), "min": round(config.LOTS_MIN, 2), "max": round(config.MAX_LOTS, 2),

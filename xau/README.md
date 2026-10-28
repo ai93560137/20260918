@@ -71,6 +71,7 @@ EA 回報：`POST {"action":"cmd_ack","token":…,"id":"a1b2c3d4","ok":true,"tic
 | `XAU_MIN_SL_USD`／`XAU_MAX_SL_USD` | 2／30 | 止損距離範圍（美元／盎司） |
 | `XAU_MODIFY_MIN_DIST_USD` | 最小止損距離＋點差＋1 pip（XAUUSD 3.3；EURUSD 0.0007） | [R340] UPDATE_STOP 新止損離現價最少幾多：太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（免 EA「invalid stops」） |
 | `XAU_BARS_ARCHIVE` | 1 | [R345] 每根新 M1（同 EA 回填）存入 `<PREFIX>bars/<UTC 日>.jsonl`（全日 K 線、按 time 去重、有 utc 欄），EURUSD 即日回測 `research/eurusd_rulesim` 讀；0＝關 |
+| `DATA_BLOCK_HOURS` | 4 | [R348] 美國高影響數據（GCS `ops/us_data_calendar.json`，Scheduler 每 6 小時更新）前幾多小時唔開新倉：921 空倉唔叫 AI（記 kind=data）、有倉照管但唔准開；932 收到訊號唔跟（記 skipped_data）。日曆讀唔到／舊過 48h 照常交易＋TG 每日提醒一次。0＝關 |
 | `XAU_MIN_CONFIDENCE` | 0.6 | 開倉最低信心 |
 | `XAU_MAX_TRADES_PER_DAY` | 0 | 0 = 唔限 |
 | `XAU_MAX_HOLD_MIN` | 1440 | 最長持倉，到時強制平倉 |

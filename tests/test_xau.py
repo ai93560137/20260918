@@ -596,5 +596,43 @@ check("紙上蝕 → 回 0.05", _st["lots_level"] == 0.05)
 check("executor.enqueue 用 state 級數", "open|BUY|0.05|" in (xau.executor.enqueue(_st, "OPEN_LONG", 3990.0, 4020.0, NOW[0], "abcdef12") or ""))
 config.LOTS_LADDER, config.LOTS, config.LOTS_MIN, config.MAX_LOTS = _cfg_keep
 
+
+print("=== [R348] 數據前 4 小時唔開新倉（空倉唔問 AI；有倉照管；日曆壞照常） ===")
+import data_block as _db, time as _time
+def _iso(ts): return _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime(ts))
+_cfg_db = config.DATA_BLOCK_HOURS; config.DATA_BLOCK_HOURS = 4.0
+_keep_ea = (config.ACCOUNT, config.EXECUTE); config.ACCOUNT = ""; config.EXECUTE = False     # 前面測試設咗真倉 account，hb() 冇帶會被 ignored；呢段用紙上
+_k = (json.loads(FAKE["xau/m1.json"][0])[-1]["time"] - T0) // 60 + 1          # 由現有 M1 最後一根之後開始（避免 duplicate／gap reset）
+_now = T0 + _k * 60
+FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_now - 3600), "block_hours": 4, "events": [{"t": _iso(_now + 2 * 3600), "title": "FOMC Statement", "src": "ff"}]}), 1)
+_db._cache.update(ts=0, doc=None, error=None)
+state = json.loads(FAKE["xau/state.json"][0]); state["position"] = None; state["pending_cmds"] = []; state["trades_today"] = {"date": "", "count": 0}; state.pop("data_cal_warned_day", None); FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FB.calls.clear(); FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
+st, d = hb(_k + 0, 4000.0)
+_last = json.loads(FAKE["xau/state.json"][0])["decisions"][-1]
+check("空倉＋事件前 2 小時 → 唔問 AI、記 kind=data、message 數據封鎖", "數據封鎖" in (d.get("message") or "") and FB.calls == [] and _last.get("kind") == "data" and _last.get("cost_usd") == 0.0, (d.get("message"), FB.calls, _last.get("kind")))
+check("心跳回應帶 data_block 事件", d.get("data_block") == "FOMC Statement", d.get("data_block"))
+js = client.get("/?format=json").get_json()
+check("JSON data_block：blocked 事件、calendar_ok、upcoming", (js.get("data_block") or {}).get("blocked", {}).get("title") == "FOMC Statement" and js["data_block"]["calendar_ok"] and js["data_block"]["upcoming"], js.get("data_block"))
+check("頁面有數據封鎖卡", "數據封鎖" in client.get("/").get_data(as_text=True))
+state = json.loads(FAKE["xau/state.json"][0]); state["position"] = {"side": 1, "lots": 0.01, "entry": 3999.0, "stop": 3990.0, "target": 4015.0, "opened_ts": _now - 600, "decision_id": "x"}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+st, d = hb(_k + 1, 4001.0)
+check("有倉 → 照管倉（唔係數據封鎖訊息、冇 kind=data）", "數據封鎖" not in (d.get("message") or "") and json.loads(FAKE["xau/state.json"][0])["decisions"][-1].get("kind") != "data", d.get("message"))
+FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_now - 3600), "block_hours": 4, "events": [{"t": _iso(_now - 60), "title": "FOMC Statement", "src": "ff"}]}), 2)
+_db._cache.update(ts=0, doc=None, error=None)
+state = json.loads(FAKE["xau/state.json"][0]); state["position"] = None; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+st, d = hb(_k + 2, 4000.0)
+check("事件過後 → 唔再封鎖", "數據封鎖" not in (d.get("message") or "") and json.loads(FAKE["xau/state.json"][0])["decisions"][-1].get("kind") != "data", d.get("message"))
+FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_now - 50 * 3600), "block_hours": 4, "events": [{"t": _iso(_now + 2 * 3600), "title": "FOMC Statement", "src": "ff"}]}), 3)
+_db._cache.update(ts=0, doc=None, error=None)
+st, d = hb(_k + 3, 4000.0)
+_stt = json.loads(FAKE["xau/state.json"][0])
+check("日曆舊過 48 小時 → 照常交易（唔封鎖）、記提醒日", "數據封鎖" not in (d.get("message") or "") and _stt.get("data_cal_warned_day") == market.ny_date(NOW[0]), (d.get("message"), _stt.get("data_cal_warned_day")))
+config.DATA_BLOCK_HOURS = 0.0; _db._cache.update(ts=0, doc=None, error=None)
+FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_now - 3600), "block_hours": 4, "events": [{"t": _iso(_now + 2 * 3600), "title": "FOMC Statement", "src": "ff"}]}), 4)
+st, d = hb(_k + 4, 4000.0)
+check("DATA_BLOCK_HOURS=0 → 關、唔封鎖", "數據封鎖" not in (d.get("message") or ""), d.get("message"))
+config.DATA_BLOCK_HOURS = _cfg_db; config.ACCOUNT, config.EXECUTE = _keep_ea; FAKE.pop("ops/us_data_calendar.json", None); _db._cache.update(ts=0, doc=None, error=None)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
