@@ -541,6 +541,8 @@ check("[R350] clean_note 去 |=換行、最長 16", _ex.clean_note(" AI|決=策\
 check("[R350] 冇 note → 指令不變", "note=" not in (_ex.enqueue({}, "OPEN_LONG", 1.0, 2.0, 0, "abcdef02", lots=0.01) or ""))
 check("[R350] 921 enqueue_cmd 帶 AI決策", "|note=AI決策|id=abcdef03" in (xau.enqueue_cmd({}, "OPEN_LONG", 4000.0, 4010.0, 0, "abcdef03") or ""))
 check("[R350] 頻道名對照", config.CHANNEL_NAMES.get("5231") == "CTC" and config.CHANNEL_NAMES.get("0342") == "GoldBrother" and config.CHANNEL_NAMES.get("7713") == "DAN")
+_raw = client.get("/?format=json").get_data(as_text=True)
+check("[R350b] JSON 回應唔做 ASCII 轉義（EA 註解中文原樣）", "天覆陣" in _raw and "\\u5929" not in _raw, _raw[:120])
 _a, _sl, _tp, _why = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 1.0998, "target_price": 1.1030, "confidence": 0.9, "reason": "x"},
                                             position=None, last=1.1000, can_open=True, trades_today=0, block_reason=None)
 check("EURUSD 止損 2 pip < 5 pip 下限 → 推到 5 pip（1.09950）", _a == "OPEN_LONG" and abs(_sl - 1.0995) < 1e-9, (_a, _sl, _why))
