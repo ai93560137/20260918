@@ -6685,6 +6685,7 @@ def build_analyst_page(h, open_day=None, err=None):
     top = ("<div class='section'><h2>🎯 學得點：計分卡</h2>"
            "<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（星期二至六 08:20 HKT），舊嘅全部保留；"
            "每篇嘅判斷到期後由程式對照真實收市自動計分。</p>"
+           + ANALYST_SCORECARD_HELP.format(status=esc(_analyst_scorecard_status(sc)))   # [R350b] 分析頁都加白話說明
            + _analyst_summary_table(sc)
            + "<h3>📈 逐篇命中</h3><table><tr><th>日期</th><th>標題</th><th style='text-align:right'>命中／已到期</th>"
            f"<th style='text-align:right'>命中率</th><th style='text-align:right'>未到期</th></tr>{trows}</table></div>")
