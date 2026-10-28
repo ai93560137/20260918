@@ -34,7 +34,7 @@ SPEC = {
     "min_risk": 7 * PIP, "max_or": 25 * PIP,
     "hkd": lambda pts: pts / PIP * 0.10 * 7.8,   # 0.01 手：1 pip = US$0.10
 }
-RULES_VERSION = "R345 v1"
+RULES_VERSION = "R345 v1"   # 評分規則冇變；R345e 只改 K 線來源判斷
 
 
 def to5(bars):
@@ -170,6 +170,14 @@ def est_bars(store, day):
     return sorted((datetime.fromisoformat(b["t"]), b["o"], b["h"], b["l"], b["c"]) for b in rows or [])
 
 
+def usable(bars, sp=SPEC, min_or_bars=20):
+    """[R345e] 一日 K 線夠唔夠評分：總數 ≥300 **而且**開市區間（sp["open"]–sp["or_end"]）內 ≥ min_or_bars 根。
+    10-27 經紀 K 線由 14:54 UTC 起有 366 根（≥300）但冇開市區間 → 之前照用經紀價而唔補 yfinance，結果「開市區間 K 線唔夠」。"""
+    if len(bars) < 300:
+        return False
+    return sum(1 for b in bars if sp["open"] <= b[0].time() < sp["or_end"]) >= min_or_bars
+
+
 def backfill_yf(store, days):
     """yfinance EURUSD=X 1 分鐘（只回 7 日）→ fx/eurusd/bars_est/<日>.jsonl（估算，非經紀價）。只補冇經紀 K 線嘅日子。"""
     import yfinance as yf
@@ -181,8 +189,8 @@ def backfill_yf(store, days):
         df.columns = [c[0] for c in df.columns]
     df.index = df.index.tz_convert("UTC").tz_localize(None)
     for day in days:
-        if len(store.get(f"{PREFIX}bars/{day}.jsonl") or []) >= 300 or store.get(f"{PREFIX}bars_est/{day}.jsonl"):
-            continue                                                # [R345d] 經紀 K 線唔夠一日（例如部署日由中途開始）都補 yfinance
+        if usable(broker_bars(store, day)) or store.get(f"{PREFIX}bars_est/{day}.jsonl"):
+            continue                                                # [R345d/e] 經紀 K 線唔夠一日或者唔覆蓋開市區間（例如部署日由中途開始）都補 yfinance
         sub = df[df.index.date == date.fromisoformat(day)]
         if len(sub) < 200:
             continue
@@ -232,9 +240,9 @@ def main():
         if store.get(out) and not a.since:
             continue
         bars, source = broker_bars(store, day), "broker"
-        if len(bars) < 300:
+        if not usable(bars):                                            # [R345e] 經紀 K 線唔覆蓋開市區間 → 用 yfinance 估算
             bars, source = est_bars(store, day), "yfinance（估算）"
-        if len(bars) < 300:
+        if not usable(bars):
             continue
         trend = trend_of(closes, day)
         trade, why = run_day(bars, trend)

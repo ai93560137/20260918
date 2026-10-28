@@ -82,5 +82,15 @@ check("日線趨勢：昨收 > 20MA → +1", rulesim.trend_of(closes, "2026-10-0
 check("日線趨勢：唔夠 20 日 → 0", rulesim.trend_of({"2026-09-29": 1.1, "2026-09-30": 1.2}, "2026-10-01") == 0)
 check("to5：60 根 M1 → 12 根 M5、高低正確", len(rulesim.to5(up[:60])) == 12 and rulesim.to5(up[:5])[0][2] == max(b[2] for b in up[:5]))
 
+# [R345e] usable：總數 ≥300 而且開市區間 ≥20 根
+print("=== [R345e] K 線夠唔夠（覆蓋開市區間） ===")
+from datetime import datetime as _dt, timedelta as _td
+def _mk(start_h, start_m, n):
+    t0 = _dt(2026, 10, 27, start_h, start_m)
+    return [(t0 + _td(minutes=i), 1.12, 1.1201, 1.1199, 1.12) for i in range(n)]
+check("由 14:54 起 366 根（10-27 情況）→ 唔夠（冇開市區間）", rulesim.usable(_mk(14, 54, 366)) is False)
+check("由 00:00 起 600 根 → 夠", rulesim.usable(_mk(0, 0, 600)) is True)
+check("由 07:15 起 400 根（區間只 15 根）→ 唔夠", rulesim.usable(_mk(7, 15, 400)) is False)
+check("總數 <300 → 唔夠", rulesim.usable(_mk(0, 0, 299)) is False)
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
