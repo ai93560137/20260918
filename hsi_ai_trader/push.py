@@ -36,7 +36,8 @@ def build_packet(cfg, state, token):
               if t.get("type") in ("OPEN", "CLOSE")][-MAX_TRADES:]
     decisions = [{k: d.get(k) for k in ("ts", "bar", "last", "pos", "ai_action", "final", "confidence",
                                         "reason", "rejected", "stop", "target", "usage", "lessons", "session",
-                                        "gate", "gate_usage", "gate_reason")}
+                                        "gate", "gate_usage", "gate_reason",
+                                        "watch", "reuse_shadow")}     # [R347] 觸發位同 shadow「會沿用」，驗證用
                  for d in _tail_jsonl(cfg.log_dir / "decisions.jsonl", MAX_DECISIONS)]
     status = {"trd_env": cfg.trd_env, "product": cfg.product, "point_value": cfg.point_value,
               "max_qty": cfg.max_qty, "daily_loss_limit": cfg.daily_loss_limit,
