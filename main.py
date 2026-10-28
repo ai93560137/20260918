@@ -6569,7 +6569,7 @@ def _analyst_imgs(doc):
                     log_event(f"⚠️ [分析圖讀取失敗] {path}: {exc}", severity="WARNING", component="charts")
             cap = _analyst_tf_label(path)
             cells += (f"<div style='flex:1 1 420px;min-width:0'>"
-                      + (f"<div style='font-weight:bold;color:#ffd54f;margin:2px 0'>🕒 {esc(cap)}</div>" if cap else "")
+                      + (f"<div style='font-weight:bold;color:var(--warning);margin:2px 0'>🕒 {esc(cap)}</div>" if cap else "")
                       + f"<img alt='{esc(path)}' style='width:100%;height:auto;border-radius:6px' "
                       f"src='data:image/png;base64,{b64}'></div>" if b64 else "")
         if cells:
