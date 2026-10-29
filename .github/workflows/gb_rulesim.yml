@@ -5,6 +5,10 @@ name: 天覆陣 Gold Brother 跟單規則回測（IDEAS #148）
 on:
   workflow_dispatch:
     inputs:
+      channel:
+        description: 頻道 id（2249680342＝Gold Brother、1473735117＝黃金戰鬥機）
+        required: false
+        default: '2249680342'
       since:
         description: 由呢日起嘅訊號（預設 2026-09-01；1 分鐘只回 7 日、5 分鐘只回 60 日）
         required: false
@@ -55,11 +59,12 @@ jobs:
 
       - name: Rule backtest
         env:
+          CHANNEL: ${{ github.event.inputs.channel }}
           SINCE: ${{ github.event.inputs.since }}
           INTERVAL: ${{ github.event.inputs.interval }}
           PERIOD: ${{ github.event.inputs.period }}
           DRY: ${{ github.event.inputs.dry_run }}
         run: |
-          ARGS="--since ${SINCE:-2026-09-01} --interval ${INTERVAL:-5m} --period ${PERIOD:-60d}"
+          ARGS="--channel ${CHANNEL:-2249680342} --since ${SINCE:-2026-09-01} --interval ${INTERVAL:-5m} --period ${PERIOD:-60d}"
           [ "$DRY" = "true" ] && ARGS="$ARGS --dry-run"
           python3 research/gb_rulesim/gb_rulesim.py $ARGS

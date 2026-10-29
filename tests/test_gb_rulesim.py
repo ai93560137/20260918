@@ -105,6 +105,9 @@ check("parse_history update → None", gb.parse_history({"signal": {"kind": "upd
 rec = {"ch": "0342", "kind": "new_signal", "sid": "2249680342_6756", "msg_ts": 1.0, "msg_utc": "2026-10-29 07:30:00", "side": "SELL", "entry_low": 4029, "entry_high": 4031, "sl": 4049, "tp": [4026, 4021, 4016, 4011]}
 check("parse_recent 0342", gb.parse_recent(rec) is not None and gb.parse_recent(dict(rec, ch="5231")) is None)
 
+check("out_prefix 0342 沿用舊位、5117 分開", gb.out_prefix("2249680342") == "xau/sig/gb_rulesim/" and gb.out_prefix("1473735117") == "xau/sig/gb_rulesim/5117/")
+check("parse_recent 指定 5117", gb.parse_recent(dict(rec, ch="5117"), "5117") is not None and gb.parse_recent(rec, "5117") is None)
+
 print("run_all / to_markdown：")
 sigs = [BUY, dict(BUY, sid="x_2", ts=T0 + 60 * 40, side="SELL", lo=4064.0, hi=4066.0, sl=4084.0, tp=[4061.0, 4056.0, 4051.0, 4046.0])]
 res, dropped = gb.run_all(sigs, lambda s: (bars_from(up), 0.0), variants={"V0": gb.VARIANTS["V0"], "V2": gb.VARIANTS["V2"]})
