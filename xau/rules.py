@@ -62,6 +62,27 @@ def ladder(*, principal_hkd, own_equity, peak_equity, daily_pnl_hkd, margin_leve
     return out
 
 
+def chase_block(m1, side, price, cfg=config):
+    """[R351] MILESTONES M1 硬規則：開倉前 CHASE_WINDOW_MIN 根 M1 內，有一個高位之後（嚴格喺後面嗰根）出現跌 ≥ CHASE_MOVE_USD 嘅低位，
+    而決策價高過該低位 ≥ CHASE_BACK_USD → 擋 SELL（急跌後反抽沽）；BUY 對稱（急升後回落買）。回傳擋嘅原因或 None。"""
+    if not getattr(cfg, "CHASE_BLOCK", False) or not m1 or price is None:
+        return None
+    t0 = m1[-1]["time"] - (cfg.CHASE_WINDOW_MIN - 1) * 60
+    ext, nd = None, getattr(cfg, "PRICE_DIGITS", 2)
+    for b in (x for x in m1 if x["time"] >= t0):
+        if side < 0:
+            if ext is not None and ext - b["low"] >= cfg.CHASE_MOVE_USD and price - b["low"] >= cfg.CHASE_BACK_USD:
+                return (f"M1 硬規則：{cfg.CHASE_WINDOW_MIN} 分鐘內由 {ext:.{nd}f} 急跌到 {b['low']:.{nd}f}（{ext - b['low']:.{nd}f}），"
+                        f"決策價 {price:.{nd}f} 已反抽 {price - b['low']:.{nd}f}，唔准反抽沽")
+            ext = b["high"] if ext is None else max(ext, b["high"])
+        else:
+            if ext is not None and b["high"] - ext >= cfg.CHASE_MOVE_USD and b["high"] - price >= cfg.CHASE_BACK_USD:
+                return (f"M1 硬規則：{cfg.CHASE_WINDOW_MIN} 分鐘內由 {ext:.{nd}f} 急升到 {b['high']:.{nd}f}（{b['high'] - ext:.{nd}f}），"
+                        f"決策價 {price:.{nd}f} 已回落 {b['high'] - price:.{nd}f}，唔准回落買")
+            ext = b["low"] if ext is None else min(ext, b["low"])
+    return None
+
+
 def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, block_reason=None):
     """position: None 或 {side: ±1, entry, stop, target, ...}。can_open=False（階梯 Ⓑ 以上／暫停開倉／停機）就唔准開新倉。
     回傳 (最終動作, stop, target, 被拒原因或 None)。唔合規一律變 HOLD。"""

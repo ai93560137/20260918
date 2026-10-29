@@ -112,6 +112,10 @@ MAX_SL_PIPS = _f("XAU_MAX_SL_PIPS", PRODUCT["max_sl_pips"])
 MIN_SL_USD = _f("XAU_MIN_SL_USD", MIN_SL_PIPS * PIP)        # 同一範圍以價格單位表示（名稱沿用）
 MAX_SL_USD = _f("XAU_MAX_SL_USD", MAX_SL_PIPS * PIP)
 MODIFY_MIN_DIST_USD = _f("XAU_MODIFY_MIN_DIST_USD", MIN_SL_USD + PRODUCT["spread_pips"] * PIP + PIP)   # [R340] UPDATE_STOP 新止損離現價最少幾多（價格單位）：經紀 stops level ≈ 最小止損距離，再加點差＋1 pip 緩衝；太貼就夾到呢個距離，夾完唔比現止損緊就唔發 modify（10-26／27 EURUSD E1／E3 Opus 追到 5 pip，EA 拒 18 次 invalid stops）
+CHASE_BLOCK = _b("XAU_CHASE_BLOCK", PRODUCT["kind"] == "gold")   # [R351] M1 硬規則（使用者 10-30 批）：急跌後反抽沽／急升後回落買一律擋；黃金預設開，外匯數字未校準預設關
+CHASE_WINDOW_MIN = _i("XAU_CHASE_WINDOW_MIN", 15)            # 回望幾多根 M1（含啱啱收盤嗰根）
+CHASE_MOVE_USD = _f("XAU_CHASE_MOVE_USD", 6.0 * PIP)         # 窗內先高後低（買：先低後高）幅度 ≥ 呢個先算急跌／急升
+CHASE_BACK_USD = _f("XAU_CHASE_BACK_USD", 3.0 * PIP)         # 決策價離該低位（買：高位）≥ 呢個＝已反抽，擋
 MIN_CONFIDENCE = _f("XAU_MIN_CONFIDENCE", 0.6)              # 開倉要嘅最低信心
 MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐約交易日計）
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
