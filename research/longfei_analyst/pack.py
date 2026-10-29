@@ -279,14 +279,14 @@ def chart(path, bars, title, fib=None, show=160, tf=""):
                "0.786": "#42a5f5", "0.886": "#42a5f5", "1": "#9e9e9e"}
         for r, p in fib["levels"].items():
             ax.hlines(p, fib["_idx"][0], len(bars) + 8, color=pal[r], linewidth=1)
-            ax.text(len(bars) + 9, p, f"{r} ({p:,.0f})", color=pal[r], va="center", fontsize=13)
+            ax.text(len(bars) + 9, p, f"{r} ({p:,.0f})", color="#ffffff", va="center", fontsize=13)   # 使用者 10-29：數字用白色
     ax.axhline(c[-1], color="#2962ff", ls=":", linewidth=0.8)
-    ax.text(len(bars) + 9, c[-1], f"{c[-1]:,.2f}", color="#82b1ff", va="center", fontsize=14, fontweight="bold")
+    ax.text(len(bars) + 9, c[-1], f"{c[-1]:,.2f}", color="#ffffff", va="center", fontsize=14, fontweight="bold")
     step = max(1, (len(bars) - start) // 10)
     ticks = list(range(start, len(bars), step))
     ax.set_xticks(ticks)
-    ax.set_xticklabels([bars[i][0][5:10] for i in ticks], color="#bbbbbb", fontsize=13)
-    ax.tick_params(axis="y", colors="#bbbbbb", labelsize=13)
+    ax.set_xticklabels([bars[i][0][5:10] for i in ticks], color="#ffffff", fontsize=13)
+    ax.tick_params(axis="y", colors="#ffffff", labelsize=13)
     ax.set_xlim(start - 2, len(bars) + 26)
     lo = min(b[3] for b in bars[start:])
     hi = max(b[2] for b in bars[start:])
@@ -298,7 +298,7 @@ def chart(path, bars, title, fib=None, show=160, tf=""):
     ax.legend(loc="upper left", facecolor="#131722", labelcolor="#dddddd", fontsize=12)
     ax.set_title((f"【{tf}】" if tf else "") + title, color="#eeeeee", fontsize=15)
     if tf:                                   # 使用者 10-28：每張圖註明係幾多分鐘嘅圖
-        ax.text(0.99, 0.98, tf, transform=ax.transAxes, ha="right", va="top", color="#ffd54f", fontsize=18,
+        ax.text(0.5, 0.98, tf, transform=ax.transAxes, ha="center", va="top", color="#ffd54f", fontsize=18,   # 置中，免遮右邊回撤位數字
                 fontweight="bold", bbox={"facecolor": "#131722", "edgecolor": "#ffd54f", "boxstyle": "round,pad=0.3"})
     plt.tight_layout()
     plt.savefig(path, facecolor=fig.get_facecolor())
@@ -327,6 +327,12 @@ def cmd_pack(work):
               f"{NAMES[name]} 4 小時線（{tz}）斐波那契 {fib['low'][0][:10]} 低 {fib['low'][1]:,.0f} → "
               f"{fib['high'][0][:10]} 高 {fib['high'][1]:,.0f}", fib=fib, tf="240 分鐘圖（4 小時 K 線）")
         chart(os.path.join(work, f"{name}_1d.png"), doc["d1"], f"{NAMES[name]} 日線", show=260, tf="日線圖（每支 K＝1 日）")
+        # 使用者 10-29「日線圖都加回撤位，數字用白色」：日線斐波那契（最近一年高低），畀「📐 斐波那契回撤分析圖」頁
+        fib1 = fib_block([[r[0] + " 00:00", *r[1:]] for r in doc["d1"]], days=365)
+        mp["fib_1d"] = {k: v for k, v in fib1.items() if k != "_idx"}
+        chart(os.path.join(work, f"{name}_1d_fib.png"), doc["d1"],
+              f"{NAMES[name]} 日線 斐波那契 {fib1['low'][0][:10]} 低 {fib1['low'][1]:,.0f} → "
+              f"{fib1['high'][0][:10]} 高 {fib1['high'][1]:,.0f}", fib=fib1, show=260, tf="日線圖（每支 K＝1 日）")
     json.dump(pack, open(os.path.join(work, "pack.json"), "w"), ensure_ascii=False, indent=1)
     print(json.dumps(pack, ensure_ascii=False, indent=1))
 
