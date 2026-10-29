@@ -381,8 +381,12 @@ def cmd_score(work):
             base = doc.get("base_days", {}).get(call.get("market"))
             if not d1 or not base:
                 continue
-            r = score_call(call, d1, base)
-            rows.append({"date": doc.get("date"), **call, "result": r})
+            # 10-29 舊總指揮核對：10-23 篇美東 10:03 寫，但 NQ／ES base 記咗 10-23（當日未收市）、HSI 記咗 10-26（夜市屬下一交易日），
+            # 即係用咗寫文之後先出現嘅收市價做起點。起點一律唔可以遲過「文章日期之前最後一個交易日」
+            limit = max((b[0] for b in d1 if b[0] < str(doc.get("date") or "")), default=None)
+            used = min(base, limit) if limit else base
+            r = score_call(call, d1, used)
+            rows.append({"date": doc.get("date"), **call, "base_used": used, "result": r})
     done = [r for r in rows if r["result"]]
     by = {}
     for r in done:
