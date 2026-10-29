@@ -249,20 +249,11 @@ def market_pack(name, doc):
 
 
 # ---------- 圖 ----------
-def spread(ys, ymin, ymax, frac):
-    """右邊數字標籤由細到大排，相鄰最少隔 frac × 圖高；頂出界就由上面壓返落嚟。回傳新位置（同 ys 一樣次序）。"""
-    gap = (ymax - ymin) * frac
-    out = []
-    for y in ys:
-        out.append(max(y, out[-1] + gap) if out else max(y, ymin + gap / 2))
-    top = ymax - gap / 2
-    for i in range(len(out) - 1, -1, -1):
-        lim = top if i == len(out) - 1 else out[i + 1] - gap
-        out[i] = min(out[i], lim)
-    return out
-
-
 def chart(path, bars, title, fib=None, show=160, tf=""):
+    """[R365] 使用者 10-30「恒指即月期貨 4 小時線・斐波那契回撤圖表樣式很好，所有圖表同一樣式」：
+    照 research/longfei_lessons/hsi_fib.py（R363／R364）：底色 #131722、陰陽燭 #26a69a／#ef5350、SMA50／100／200、
+    回撤線 pal 色、右邊白色粗體加框標籤一欄自動排開（均線框跟線色、現價藍底）、標題一行寫波段同截至時間、15×8 吋 110dpi。
+    bars：[[時間字串, 開, 高, 低, 收], …]；tf 寫入標題（例如「240 分鐘圖（4 小時 K 線）」）。"""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -272,58 +263,74 @@ def chart(path, bars, title, fib=None, show=160, tf=""):
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
-    c = [b[4] for b in bars]
+    daily = len(bars[-1][0]) <= 10
+    C = [b[4] for b in bars]
+    pad_n = 40 if daily else 60
     start = max(0, len(bars) - show)
-    if fib:
-        start = min(start, max(0, fib["_idx"][0] - 20))
-    fig, ax = plt.subplots(figsize=(14, 7.5), dpi=100)   # 使用者 10-29：圖嘅數字大一點
+    if fib:                                   # 同 hsi_fib：由波段低點前 pad_n 支開始畫
+        start = max(0, fib["_idx"][0] - pad_n)
+    n = len(bars)
+    xl = 10 if daily else 13                  # 右邊標籤欄起點（離最後一根 K 幾多格）
+    fig, ax = plt.subplots(figsize=(15, 8), dpi=110)
     fig.patch.set_facecolor("#131722")
     ax.set_facecolor("#131722")
-    for i in range(start, len(bars)):
+    for i in range(start, n):
         _, o, h, lo, cl = bars[i]
         col = "#26a69a" if cl >= o else "#ef5350"
         ax.vlines(i, lo, h, color=col, linewidth=0.7)
-        ax.vlines(i, min(o, cl), max(o, cl), color=col, linewidth=2.4)
-    tags = []                                # 右邊數字欄：(真實價位, 文字, 框色)；使用者 10-30：白色、清楚、唔重疊
-    for n, col in ((50, "#f5c542"), (100, "#4caf50"), (200, "#e53935")):
-        xs = [i for i in range(max(start, n - 1), len(c))]
-        ys = [sum(c[i - n + 1:i + 1]) / n for i in xs]
-        ax.plot(xs, ys, color=col, linewidth=1.2, label=f"SMA {n}")
+        ax.vlines(i, min(o, cl), max(o, cl), color=col, linewidth=2.6)
+    labels = []
+    for k, col in ((50, "#f5c542"), (100, "#4caf50"), (200, "#e53935")):
+        xs = list(range(max(start, k - 1), n))
+        ys = [sum(C[i - k + 1:i + 1]) / k for i in xs]
+        ax.plot(xs, ys, color=col, linewidth=1, label=f"SMA {k}")
         if ys:
-            tags.append((ys[-1], f"SMA{n} {ys[-1]:,.0f}", col))
+            labels.append((ys[-1], f"SMA{k}  {ys[-1]:,.0f}", dict(facecolor=col, edgecolor="none", alpha=0.6)))
     if fib:
         pal = {"0": "#9e9e9e", "0.236": "#e53935", "0.382": "#66bb6a", "0.5": "#66bb6a", "0.618": "#26a69a",
                "0.786": "#42a5f5", "0.886": "#42a5f5", "1": "#9e9e9e"}
+        lo_i, hi_i = fib["_idx"][0], fib["_idx"][1]
         for r, p in fib["levels"].items():
-            ax.hlines(p, fib["_idx"][0], len(bars) + 2, color=pal[r], linewidth=1.2)
-            tags.append((p, f"{r}  {p:,.0f}", pal[r]))
-    ax.axhline(c[-1], color="#2962ff", ls=":", linewidth=0.9)
-    tags.append((c[-1], f"現價 {c[-1]:,.2f}", "#2962ff"))
-    step = max(1, (len(bars) - start) // 10)
-    ticks = list(range(start, len(bars), step))
+            ax.hlines(p, lo_i, n + xl - 1, color=pal[r], linewidth=1.1)
+            labels.append((p, f"{r}  {p:,.0f}", dict(facecolor="#131722", edgecolor=pal[r], linewidth=1.2)))
+        ax.plot([lo_i, hi_i], [fib["low"][1], fib["high"][1]], ls="--", color="#bbbbbb", linewidth=0.8)
+        ax.annotate(fib["low"][0][5:10].replace("-", "/"), (lo_i, fib["low"][1]), xytext=(0, -18),
+                    textcoords="offset points", color="#ffd54f", ha="center")
+        ax.annotate(fib["high"][0][5:10].replace("-", "/"), (hi_i, fib["high"][1]), xytext=(0, 10),
+                    textcoords="offset points", color="#ffd54f", ha="center")
+    ax.axhline(C[-1], color="#2962ff", ls=":", linewidth=0.8)
+    labels.append((C[-1], f"現價  {C[-1]:,.2f}" if C[-1] < 1000 else f"現價  {C[-1]:,.0f}", dict(facecolor="#2962ff", edgecolor="none")))
+    if daily:
+        ticks = [i for i in range(start, n) if i == start or bars[i][0][:7] != bars[i - 1][0][:7]]
+    else:
+        ticks = [i for i in range(start, n) if i == start or bars[i][0][:10] != bars[i - 1][0][:10]
+                 and datetime.strptime(bars[i][0][:10], "%Y-%m-%d").weekday() == 0]
     ax.set_xticks(ticks)
-    ax.set_xticklabels([bars[i][0][5:10] for i in ticks], color="#ffffff", fontsize=13)
-    ax.tick_params(axis="y", colors="#ffffff", labelsize=13)
-    ax.set_xlim(start - 2, len(bars) + 38)
-    lo = min([b[3] for b in bars[start:]] + [t[0] for t in tags if fib])
-    hi = max([b[2] for b in bars[start:]] + [t[0] for t in tags if fib])
-    pad = (hi - lo) * 0.05
-    ax.set_ylim(lo - pad, hi + pad)
-    for (y0, txt, col), y in zip(sorted(tags), spread([t[0] for t in sorted(tags)], lo - pad, hi + pad, 0.05)):
-        ax.annotate(txt, xy=(len(bars) + 1, y0), xytext=(len(bars) + 6, y), va="center", fontsize=13,
-                    fontweight="bold", color="#ffffff",
-                    bbox={"facecolor": "#131722", "edgecolor": col, "boxstyle": "round,pad=0.25"},
-                    arrowprops={"arrowstyle": "-", "color": col, "lw": 0.8})
-    ax.text(0.01, 0.01, f"最新 K 線：{bars[-1][0]}", transform=ax.transAxes, ha="left", va="bottom",
-            color="#ffffff", fontsize=12)
+    ax.set_xticklabels([bars[i][0][5:10].replace("-", "/") for i in ticks], color="#bbbbbb", fontsize=8)
+    ax.tick_params(axis="y", colors="#dddddd", labelsize=10)
+    ax.set_xlim(start, n + (30 if daily else 38))
+    lo_v = min(b[3] for b in bars[start:])
+    hi_v = max(b[2] for b in bars[start:])
+    pad = (hi_v - lo_v) * 0.05
+    ax.set_ylim(lo_v - pad, hi_v + pad)
+    y0, y1 = ax.get_ylim()
+    gap = (y1 - y0) * 0.034                   # 一個標籤嘅高度
+    labels.sort(key=lambda t: t[0])
+    placed = []
+    for y, _, _ in labels:                    # 由下而上推開，再由頂壓返落嚟（唔好出圖外）
+        placed.append(max(y, placed[-1] + gap) if placed else max(y, y0 + gap / 2))
+    for i in range(len(placed) - 1, -1, -1):
+        placed[i] = min(placed[i], (y1 - gap / 2) if i == len(placed) - 1 else placed[i + 1] - gap)
+    for (y, txt, box), ty in zip(labels, placed):
+        if abs(ty - y) > (y1 - y0) * 0.001:   # 被推開咗：劃條細線連返原本價位
+            ax.plot([n + xl - 1, n + xl], [y, ty], color="#888888", linewidth=0.6)
+        ax.text(n + xl, ty, txt, color="#ffffff", va="center", fontsize=12, fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.25", **box))
     ax.grid(color="#2a2e39", linewidth=0.5)
-    for s in ax.spines.values():
-        s.set_color("#2a2e39")
-    ax.legend(loc="upper left", facecolor="#131722", labelcolor="#dddddd", fontsize=12)
-    ax.set_title((f"【{tf}】" if tf else "") + title, color="#eeeeee", fontsize=15)
-    if tf:                                   # 使用者 10-28：每張圖註明係幾多分鐘嘅圖
-        ax.text(0.5, 0.98, tf, transform=ax.transAxes, ha="center", va="top", color="#ffd54f", fontsize=18,   # 置中，免遮右邊回撤位數字
-                fontweight="bold", bbox={"facecolor": "#131722", "edgecolor": "#ffd54f", "boxstyle": "round,pad=0.3"})
+    for sp in ax.spines.values():
+        sp.set_color("#2a2e39")
+    ax.legend(loc="upper left", facecolor="#131722", labelcolor="#dddddd", fontsize=9)
+    ax.set_title((f"【{tf}】" if tf else "") + f"{title}　截至 {bars[-1][0][5:16]}", color="#eeeeee", fontsize=12)
     plt.tight_layout()
     plt.savefig(path, facecolor=fig.get_facecolor())
     plt.close(fig)
@@ -348,15 +355,15 @@ def cmd_pack(work):
         chart(os.path.join(work, f"{name}_4h.png"), bars4, f"{NAMES[name]} 4 小時線（{tz}）",
               tf="240 分鐘圖（4 小時 K 線）")
         chart(os.path.join(work, f"{name}_4h_fib.png"), bars4,
-              f"{NAMES[name]} 4 小時線（{tz}）斐波那契 {fib['low'][0][:10]} 低 {fib['low'][1]:,.0f} → "
-              f"{fib['high'][0][:10]} 高 {fib['high'][1]:,.0f}", fib=fib, tf="240 分鐘圖（4 小時 K 線）")
+              f"{NAMES[name]} 4 小時線（{tz}）　斐波那契：{fib['low'][0][5:10]} 低 {fib['low'][1]:,.0f} → "
+              f"{fib['high'][0][5:10]} 高 {fib['high'][1]:,.0f}", fib=fib, tf="240 分鐘圖（4 小時 K 線）")
         chart(os.path.join(work, f"{name}_1d.png"), doc["d1"], f"{NAMES[name]} 日線", show=260, tf="日線圖（每支 K＝1 日）")
-        # 使用者 10-29「日線圖都加回撤位，數字用白色」：日線斐波那契（最近一年高低），畀「📐 斐波那契回撤分析圖」頁
-        fib1 = fib_block([[r[0] + " 00:00", *r[1:]] for r in doc["d1"]], days=365)
+        # 使用者 10-29「日線圖都加回撤位，數字用白色」：日線斐波那契，畀「📐 斐波那契回撤分析圖」頁
+        fib1 = fib_block([[r[0] + " 00:00", *r[1:]] for r in doc["d1"]], days=90)   # 同 hsi_fib：日線同 4 小時用同一個 90 日波段
         mp["fib_1d"] = {k: v for k, v in fib1.items() if k != "_idx"}
         chart(os.path.join(work, f"{name}_1d_fib.png"), doc["d1"],
-              f"{NAMES[name]} 日線 斐波那契 {fib1['low'][0][:10]} 低 {fib1['low'][1]:,.0f} → "
-              f"{fib1['high'][0][:10]} 高 {fib1['high'][1]:,.0f}", fib=fib1, show=260, tf="日線圖（每支 K＝1 日）")
+              f"{NAMES[name]} 日線　斐波那契：{fib1['low'][0][5:10]} 低 {fib1['low'][1]:,.0f} → "
+              f"{fib1['high'][0][5:10]} 高 {fib1['high'][1]:,.0f}", fib=fib1, show=260, tf="日線圖（每支 K＝1 日）")
     json.dump(pack, open(os.path.join(work, "pack.json"), "w"), ensure_ascii=False, indent=1)
     print(json.dumps(pack, ensure_ascii=False, indent=1))
 
