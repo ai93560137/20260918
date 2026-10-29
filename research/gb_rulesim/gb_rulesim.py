@@ -18,6 +18,7 @@ HIST_PREFIX = "xau/sig/history/2249680342_"
 RECENT = "xau/sig/signals/recent.json"
 OUT_PREFIX = "xau/sig/gb_rulesim/"
 CH = "0342"
+DEFAULT_CHANNEL = "2249680342"     # [使用者 10-29「黃金戰鬥機做回測同 gold brother 一樣」] --channel 1473735117＝黃金戰鬥機（5117）
 MAX_HOLD_MIN = 24 * 60
 FILL_TTL_MIN = 30
 
@@ -192,8 +193,14 @@ def parse_history(doc):
             "lo": float(s["entry_low"]), "hi": float(s["entry_high"]), "sl": float(s["sl"]), "tp": [float(x) for x in s["tp"]]}
 
 
-def parse_recent(rec):
-    if rec.get("ch") != CH or rec.get("kind") != "new_signal" or rec.get("side") not in ("BUY", "SELL") or rec.get("sl") is None or not rec.get("tp"):
+def out_prefix(channel):
+    """0342 沿用舊位置（xau/sig/gb_rulesim/）；其他頻道 xau/sig/gb_rulesim/<尾4>/。"""
+    ch4 = str(channel)[-4:]
+    return OUT_PREFIX if ch4 == "0342" else f"{OUT_PREFIX}{ch4}/"
+
+
+def parse_recent(rec, ch=None):
+    if rec.get("ch") != (ch or CH) or rec.get("kind") != "new_signal" or rec.get("side") not in ("BUY", "SELL") or rec.get("sl") is None or not rec.get("tp"):
         return None
     if rec.get("entry_low") is None or rec.get("entry_high") is None:
         return None
@@ -222,7 +229,8 @@ def run_all(signals, bars_for, variants=VARIANTS):
 
 
 def to_markdown(result, dropped, meta):
-    lines = [f"# Gold Brother（0342）跟單規則回測（IDEAS #148）", "",
+    ch4 = str(meta.get("channel", DEFAULT_CHANNEL))[-4:]
+    lines = [f"# 頻道 {ch4} 跟單規則回測（IDEAS #148／#150）", "",
              f"- 跑：{meta.get('run_utc')} UTC；訊號 {meta.get('n_signals')} 張（{meta.get('since')} 起），有 K 線 {meta.get('n_used')} 張、略過 {len(dropped)}；價格 {meta.get('price_src')}",
              "- R＝每 1 美元原 SL 風險；Σ美元/oz 係每 1 oz；0342 真倉 0.07 手＝7 oz。鎖位用 K 線收市價、SL／TP4 用影線、同根先當 SL（保守）。", "",
              "| 變體 | 說明 | 張 | 勝 | 平 | 負 | ΣR | 平均R | PF | 最大回撤R | 最長連敗 | 略過 | Σ美元/oz |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -255,15 +263,15 @@ class Gcs:
         return [b.name for b in self.b.list_blobs(prefix=prefix)]
 
 
-def load_signals(g, since):
+def load_signals(g, since, channel=DEFAULT_CHANNEL):
     sigs, seen = [], set()
-    for name in g.list(HIST_PREFIX):
+    for name in g.list(f"xau/sig/history/{channel}_"):
         s = parse_history(g.read_json(name))
         if s and s["utc"] and s["utc"] >= since and s["sid"] not in seen:
             sigs.append(s)
             seen.add(s["sid"])
     for rec in g.read_json(RECENT) or []:
-        s = parse_recent(rec)
+        s = parse_recent(rec, str(channel)[-4:])
         if s and s["utc"] and s["utc"] >= since and s["sid"] not in seen:
             sigs.append(s)
             seen.add(s["sid"])
@@ -312,6 +320,7 @@ def fetch_futures(interval, period):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--since", default="2026-09-01")
+    ap.add_argument("--channel", default=DEFAULT_CHANNEL, help="頻道 id（2249680342＝Gold Brother、1473735117＝黃金戰鬥機）")
     ap.add_argument("--interval", default="5m")
     ap.add_argument("--period", default="60d")
     ap.add_argument("--source", default="yf", choices=("yf", "broker"), help="yf＝yfinance GC=F（校正基差）；broker＝GCS xau/sig/bars 經紀 M1（無基差，只有最近幾日）")
@@ -319,7 +328,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     g = Gcs()
-    sigs = load_signals(g, a.since)
+    sigs = load_signals(g, a.since, a.channel)
     if a.source == "broker":
         fut = fetch_broker_bars(g, a.days)
         src = f"經紀 M1（GCS {BARS_PREFIX} 最近 {a.days} 日，無基差）"
@@ -334,7 +343,7 @@ def main():
         return 1
     result, dropped = run_all(sigs, bars_for)
     run_utc = dt.datetime.utcnow().strftime("%Y-%m-%dT%H%MZ")
-    meta = {"run_utc": run_utc, "since": a.since, "n_signals": len(sigs), "n_used": len(sigs) - len(dropped), "price_src": src, "variants": {k: v["kw"] for k, v in VARIANTS.items()}}
+    meta = {"run_utc": run_utc, "since": a.since, "n_signals": len(sigs), "n_used": len(sigs) - len(dropped), "price_src": src, "channel": a.channel, "variants": {k: v["kw"] for k, v in VARIANTS.items()}}
     md = to_markdown(result, dropped, meta)
     print(md)
     for key in PRIMARY:
@@ -343,10 +352,10 @@ def main():
         print("（dry-run，唔寫 GCS）")
         return 0
     doc = {"meta": meta, "result": result, "dropped": dropped}
-    g.write(OUT_PREFIX + run_utc + ".json", json.dumps(doc, ensure_ascii=False), "application/json")
-    g.write(OUT_PREFIX + "latest.json", json.dumps(doc, ensure_ascii=False), "application/json")
-    g.write(OUT_PREFIX + "latest.md", md, "text/markdown; charset=utf-8")
-    print("已寫 GCS", OUT_PREFIX + run_utc + ".json / latest.json / latest.md")
+    g.write(out_prefix(a.channel) + run_utc + ".json", json.dumps(doc, ensure_ascii=False), "application/json")
+    g.write(out_prefix(a.channel) + "latest.json", json.dumps(doc, ensure_ascii=False), "application/json")
+    g.write(out_prefix(a.channel) + "latest.md", md, "text/markdown; charset=utf-8")
+    print("已寫 GCS", out_prefix(a.channel) + run_utc + ".json / latest.json / latest.md")
     return 0
 
 
