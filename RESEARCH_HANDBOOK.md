@@ -188,6 +188,13 @@
 **使用者 2026-10-12 決定：HTF 每日掛單併入鳥翔**——鳥翔改為兩腿：**月底**＝趨勢模板股全部等權（本段）；**每日**＝HTF 高漲旗型全期擬合參數（港台日美，stock_research/HTF_CURVEFIT.md、HTF_INVESTOR_BRIEF.pdf）。此決定覆蓋「一陣一策略」對鳥翔的限制；兩腿各自計前向紀錄與證偽條件，不合併計分。網頁合一（https://claude.ai/artifact/HcFBUwqBgLTQuuhZiTmEu1），總指揮網站專頁名「鳥翔 HTF 掛單」（https://tnt-hk.com/?view=htf，2026-10-12 起用此網域）。
 **烽燧響應規則（鳥翔）：紅=不行動；深紅=不行動；黃=不行動。每次月底訊號日只記錄訊號日收盤的燈色（`scripts/tt_all_beacon.py` → `analysis/tt_all/beacon_log.csv`，Telegram 摘要附一行「烽燧：燈色（只記錄不行動）」）。登記日期：2026-09-26。**理由：鳥翔規格已凍結，🔍 判決基於原規格，前向 12 個月內任何反應都會令證偽結果無法歸因；烽燧預測力只在標普／恒指證實，鳥翔九個市場未證；鳥翔自有大市過濾（ETF 對 50／200 日線）已承擔同一職能。第二期若要響應，先預先登記回測「深紅週延後月底換倉」（CANARY_PLAYBOOK §7 建議；lag=1、閾值固定、t≥3）過門檻後另作新登記，舊紀錄不得追溯重算。（依 CANARY_PLAYBOOK §8 登記制度；雲垂分支登記冊留指標：見本段。）
 
+**虎翼（使用者 2026-10-30 命名）＝大跌股賣期權**（short put／short call；分支 `claude/huyi-bigdrop-options`，獨立工作階段，由鳥翔交出 handoff/虎翼.md）——
+對號理由：**雙向包抄**＝put、call 兩翼（八陣規範「雙向包抄類＝虎翼」），只喺大跌股開陣。研究同判決：stock_research/BIGDROP_OPTIONS_PREREG.md 第 9 部分
+（賣 95% put 🔍：損益平衡 ρ\* 美 0.90／港 ≤0.80、ρ₂ 0.95，但隨機日一樣 0.89–0.93，優勢唔係大跌特有、美股覆蓋只 55%；賣 105% call 不確定 → 只准紙上）。
+每日流程：`scripts/huyi_scan.py` ＋ `.github/workflows/huyi_daily.yml`（push `analysis/huyi/run_request.txt` 觸發；美股收市後香港 06:17、港股收市後香港 19:41），
+掃現行 S&P 500／恒指成分股 ≤ −8%，抓期權鏈（美 Yahoo、港交所股票期權日報）算真實 ρ、95% put／105% call 報價與年化、業績窗 → 候選表＋紙上紀錄（`analysis/huyi/`），Telegram 🐯 虎翼。
+**實倉規則未由使用者確認之前只出候選＋紙上，不出落單指令**；確認後開實倉前先喺預設分支 POSITIONS.md 登記並通知總指揮。前向證偽（登記第 7 部分）：合資格 put 前 30 筆平均損益 ≤ 0，或累計虧損 > 已收權利金總和 → 停。
+
 已佔用（2026-09-22 登記）：**雲垂＝波動溢價收割**（分支 `claude/dazzling-curie-f3xzb8`）——
 恒指+標普 delta 對沖賣出 ATM 跨式，月度滾倉收 IV−RV 溢價。對號理由：
 **雲垂氣聚**＝保費逐日聚攏（theta 收割，月勝率 84%）；**隱蔽性高**＝期貨對沖後

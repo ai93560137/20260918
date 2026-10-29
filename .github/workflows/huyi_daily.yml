@@ -1,0 +1,63 @@
+name: 虎翼 每日大跌股掃描（賣期權候選＋紙上紀錄；不落單）
+
+# 非預設分支不能排程，用 push 觸發：往 analysis/huyi/run_request.txt 追加一行「us」或「hk」並 push 即跑
+# （每個交易日由虎翼工作階段的每日排程推：美股收市後香港 06:17、港股收市後香港 19:41）。
+# 只讀行情（Yahoo 日線／期權鏈、港交所股票期權日報），不落單。Telegram 用研究通道同一組 secrets。
+on:
+  push:
+    branches: [claude/huyi-bigdrop-options]
+    paths: ['analysis/huyi/run_request.txt']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: huyi-daily
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install -q yfinance pandas requests
+      - name: Selftest
+        run: python3 scripts/huyi_scan.py --selftest
+      - name: Scan
+        id: scan
+        run: |
+          M=$(tail -n 1 analysis/huyi/run_request.txt | awk '{print $1}')
+          case "$M" in us|hk) ;; *) echo "request 最後一行要係 us 或 hk：$M"; exit 1;; esac
+          echo "market=$M" >> "$GITHUB_OUTPUT"
+          python3 scripts/huyi_scan.py --market "$M"
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/huyi
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(huyi): ${{ steps.scan.outputs.market }} 大跌股掃描 $(TZ=Asia/Hong_Kong date +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 5))
+            git pull --no-rebase -q origin ${GITHUB_REF_NAME} || true
+          done
+          exit 1
+      - name: Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          M: ${{ steps.scan.outputs.market }}
+        run: |
+          F=analysis/huyi/tg_$M.txt
+          [ -s "$F" ] || { echo "沒有摘要"; exit 0; }
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then echo "::warning::TG secrets 沒設"; exit 0; fi
+          curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "text=$(cat $F)" > /dev/null
+          echo "telegram sent"
