@@ -295,7 +295,12 @@ def render_signal_book(s):
     if s.get("execute") or s.get("live_book_follow"):            # [R352] 真倉績效（932 跟單；S1 開就加 931）／模擬倉
         body += ("<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉績效</div>"
                  + live_book_section("💰 真倉績效・932（跟單）", s.get("live_book_follow"))
-                 + (live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（訊號書 S1）", s.get("live_book")) if config.SIG_DECIDE else "")
+                 + ((live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（訊號書 S1）", s.get("live_book"))
+                     if config.SIG_S1_OPEN or ((s.get("live_book") or {}).get("summary") or {}).get("n") else
+                     f"<div class='section'><h2>💰 {esc(config.MAGIC)}：留畀規則學生，未過門檻</h2><p>使用者 10-30 決定 {esc(config.MAGIC)} 唔再用 Opus S1 落單，"
+                     "留畀規則學生（rev15／level）。門檻：成交 ≥ 100 張、每張 R ≥ +0.2、PF ≥ 1.3、TP 命中贏隨機基準 ≥ 10 點、最大連敗 ≤ 6；"
+                     "11-11 初判（rev15）、11-25 正式（level），過關要使用者批先落真倉 0.01 手。進度見下面「🔬 前向測試」。</p></div>")
+                    if config.SIG_DECIDE else "")
                  + "</div><div class='lf-grp lf-sim'><div class='lf-banner'>🧪 模擬倉績效</div><div class='section'><p><b>已轉真倉，模擬停。</b>"
                  "頻道準確度同學徒係影子評分（唔落單），唔計入真倉績效。</p></div></div>")
     body += forward_section(s.get("forward"))                    # [R352c] 前向測試（0342 V13／5117／學生）

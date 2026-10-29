@@ -150,5 +150,18 @@ class Forward(unittest.TestCase):
         self.assertEqual(page.forward_section(None), "")
 
 
+class S1Reserved(unittest.TestCase):
+    def test_signal_page_931_reserved(self):
+        keep = (config.SIGNAL_BOOK, config.SIG_DECIDE, config.SIG_S1_OPEN)
+        try:
+            config.SIGNAL_BOOK, config.SIG_DECIDE, config.SIG_S1_OPEN = True, True, False
+            s = {"execute": True, "signals": {}, "live_book": live_book.view({}, [], {}), "live_book_follow": live_book.view({}, [], {})}
+            h = page.render_signal_book(s)
+            self.assertIn("留畀規則學生，未過門檻", h)
+            self.assertNotIn("真倉績效・931", h)
+        finally:
+            config.SIGNAL_BOOK, config.SIG_DECIDE, config.SIG_S1_OPEN = keep
+
+
 if __name__ == "__main__":
     unittest.main()
