@@ -599,7 +599,7 @@ def build(book, quotes=None, combined_equity=None):
     ew = next((p for p in b["positions"] if p["id"].startswith("EW")), None)
     if "ES" in gk:
         P(f"- 標普：Δ {gk['ES']['dpts'] / (5 * fx['USD']):+.2f} 手 MES，冇任何對沖規則"
-          + (f"；EW P7750 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
+          + (f"；{ew['id']} 名義 {ew['K'] * ew['mult'] * fx[ew['ccy']] / eq0:.1f}× 合計權益，ES 下跌係硬止損同富途保證金嘅主要風險。" if ew else "。"))
     P("")
 
     P("## 11. 假設與限制")

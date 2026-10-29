@@ -68,6 +68,10 @@ check("同 daily_books LADDER 一致", risk_report.LADDER_CUSHION == {"B": 37_50
 print("\n=== risk_report.build 出 M['stress']（只得標普倉）===")
 tmp = Path(tempfile.mkdtemp())
 book = json.loads(Path("/home/user/20260918/tradingview/data_external/risk_book.json").read_text(encoding="utf-8"))
+# EW P7750 10-27 已平、book 已換 P7650；R185「put＋對沖」合計止損測試用自己嘅 P7750 腳（唔靠現行 book）
+book["positions"] = [x for x in book["positions"] if not x["id"].startswith("EW")] + [
+    {"id": "EW2610 P7750", "und": "ES", "type": "put", "K": 7750, "exp": "2026-10-30", "qty": -1, "mult": 50, "ccy": "USD",
+     "open": 43, "price": 47, "group": "標普 E-mini put", "settle": "physical"}]
 (tmp / "risk_book.json").write_text(json.dumps(book), encoding="utf-8")
 q = {"positions": [
         {"code": "US.EW2610P7750x0", "qty": -1, "bid": 88.0, "ask": 89.0, "last": 88.5},
