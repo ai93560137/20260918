@@ -1,0 +1,65 @@
+name: 天覆陣 Gold Brother 跟單規則回測（IDEAS #148）
+
+# 使用者 10-29：「F11 如何避免？…同我回測」。research/gb_rulesim/gb_rulesim.py：0342 頻道歷史訊號（GCS xau/sig/history）對 yfinance GC=F 期貨 K 線
+# （每張訊號校正基差）跑 V0–V10 規則變體，寫 GCS xau/sig/gb_rulesim/。只係紙上研究，唔落單，$0 API。手動觸發（workflow_dispatch）。
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 由呢日起嘅訊號（預設 2026-09-01；1 分鐘只回 7 日、5 分鐘只回 60 日）
+        required: false
+        default: '2026-09-01'
+      interval:
+        description: yfinance K 線（5m 或 1m）
+        required: false
+        default: '5m'
+      period:
+        description: yfinance 回溯（5m 最多 60d、1m 最多 7d）
+        required: false
+        default: '60d'
+      dry_run:
+        description: 只印不寫（true/false）
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: gb-rulesim
+  cancel-in-progress: false
+
+jobs:
+  rulesim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+
+      - name: Rule tests
+        run: python3 tests/test_gb_rulesim.py
+
+      - name: Rule backtest
+        env:
+          SINCE: ${{ github.event.inputs.since }}
+          INTERVAL: ${{ github.event.inputs.interval }}
+          PERIOD: ${{ github.event.inputs.period }}
+          DRY: ${{ github.event.inputs.dry_run }}
+        run: |
+          ARGS="--since ${SINCE:-2026-09-01} --interval ${INTERVAL:-5m} --period ${PERIOD:-60d}"
+          [ "$DRY" = "true" ] && ARGS="$ARGS --dry-run"
+          python3 research/gb_rulesim/gb_rulesim.py $ARGS
