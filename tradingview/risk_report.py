@@ -49,6 +49,18 @@ def implied(price, F, K, T, cp):
     return m
 
 
+def _cme_option_expiry(kind, yy, mm):
+    """[R356] EW＝月底最後一個平日（假期唔理）；EX1–EX4＝該月第 1–4 個星期五。回傳 YYYY-MM-DD。"""
+    if kind == "EW":
+        d = (date(yy + mm // 12, mm % 12 + 1, 1) - timedelta(days=1))
+        while d.weekday() >= 5:
+            d -= timedelta(days=1)
+        return d.isoformat()
+    first = date(yy, mm, 1)
+    fri = first + timedelta(days=(4 - first.weekday()) % 7)
+    return (fri + timedelta(weeks=int(kind[2]) - 1)).isoformat()
+
+
 def derive_code(p):
     """富途代碼：book 有就用；恒指／MHI 按已驗證格式推算；標普期貨期權未知 → None。"""
     if p.get("code"):
@@ -164,6 +176,43 @@ def load(book_path, quotes_path=None):
                                    "open": r.get("open_price") or r.get("last") or 0,
                                    "price": r.get("last") or r.get("open_price") or 0, "code": code, "settle": "cash",
                                    "group": "HSI 週權 strangle" if root == "HSI" else "恒指期權人手"})
+    # [R356] 富途實際標普期權（EW 月底／EX1–4 MES 週五）：book 冇就自動當一條腿（使用者 10-29「倉位清單自動更新，唔使每次確認」）
+    for code, r in FP.items():
+        m = re.match(r"^US\.(EW|EX([1-4]))(\d{2})(\d{2})([CP])(\d+)x0$", code)
+        if not m or not r.get("qty"):
+            continue
+        booked = sum(p["qty"] for p in b["positions"] if p["type"] in ("call", "put") and derive_code(p) == code)
+        extra = r["qty"] - booked
+        if extra:
+            yy, mm, K = 2000 + int(m.group(3)), int(m.group(4)), int(m.group(6))
+            exp = _cme_option_expiry(m.group(1), yy, mm)
+            root = "EW" if m.group(1) == "EW" else "MES"
+            b["positions"].append({"id": f"{root}{m.group(3)}{m.group(4)} {m.group(5)}{K}（富途實際 {r['qty']:+g}）" if root == "EW"
+                                   else f"MES {exp[5:7]}/{exp[8:10]} {m.group(5)}{K}（富途實際 {r['qty']:+g}）",
+                                   "und": "ES", "type": "call" if m.group(5) == "C" else "put", "K": K, "exp": exp,
+                                   "qty": extra, "mult": 50 if root == "EW" else 5, "ccy": "USD",
+                                   "open": r.get("open_price") or r.get("last") or 0,
+                                   "price": r.get("last") or r.get("open_price") or 0, "code": code,
+                                   "settle": f"physical: 到期 ITM 交收 {'ES' if root == 'EW' else 'MES'} 期貨",
+                                   "group": "標普期權人手"})
+    # [R356] 已平嘅腿自動剔走：有富途快照、而且快照有返同類代碼（證明 API 有回傳嗰類持倉）先剔，免得快照漏咗就當平倉
+    if FP:
+        def _kind(c):
+            return ("cme_opt" if re.match(r"^US\.(EW|EX)", c or "") else "hk_opt" if re.match(r"^HK\.(HSI|MHI)\d{6}[CP]", c or "")
+                    else None)
+        seen = {_kind(c) for c, r in FP.items() if r.get("qty")} - {None}
+        keep = []
+        for p in b["positions"]:
+            c = derive_code(p) if p["type"] in ("call", "put") else None
+            k = _kind(c)
+            if k and k in seen and not (FP.get(c) or {}).get("qty"):
+                b.setdefault("auto_dropped", []).append(p["id"])
+                continue
+            keep.append(p)
+        b["positions"] = keep
+        for name in list(b.get("stops", {})):            # 止損規則嘅腿冇晒就唔再計
+            if not all(any(p["id"] == l for p in keep) for l in b["stops"][name].get("legs", [])):
+                b["stops"].pop(name)
     b["quotes_fetched"] = qf.get("fetched_hkt")
     b["accounts"] = qf.get("accounts", [])
     # [R197] 有富途快照（即時跑）就用今日（香港）計到期日數；離線只有 book 先用 book 嘅 valuation_date
@@ -401,6 +450,8 @@ def build(book, quotes=None, combined_equity=None):
               f"**緩衝 HK${cush:,.0f}（{M['sec']['ladder']}）**" + ("" if exposed else "；冇持倉（或得碎股）、冇用孖展 → 當 A、唔警報"))
     M["mhi_lots"] = dict(b["fut_lots"]) or {
         derive_code(p): p["qty"] for p in b["positions"] if p["type"] == "fut" and derive_code(p)}
+    if b.get("auto_dropped"):
+        P("book 有但富途快照已冇（當已平、唔計）：" + "、".join(b["auto_dropped"]))
     P("期貨淨手數（富途實際）：" + ("、".join(f"{c} {q:+g}" for c, q in M["mhi_lots"].items()) or "冇"))
     P("")
 

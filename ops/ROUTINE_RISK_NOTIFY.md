@@ -61,5 +61,7 @@ python3 scripts/gcp_agent.py cat --object ops/risk_notify_state.json
 ```
 寫入：`python3 scripts/gcp_agent.py put --object ops/risk_notify_state.json --file -`（stdin 餵 JSON）。
 
+**持倉變動（使用者 10-29）**：富途快照有新倉而冇陣認領 → 當使用者人手，通報入面寫「已當人手登記」，總指揮之後登記 `POSITIONS.md`；唔使問使用者確認。快照冇咗嘅倉當已平。
+
 **第 6 步：結束**
 在本對話只留一行結果（例：「12:45 無變化，靜默；狀態已更新」或「16:45 摘要已發四陣」）。不要發 Telegram、不要 commit、不要開 PR。
