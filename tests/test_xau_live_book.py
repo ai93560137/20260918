@@ -102,5 +102,53 @@ class Page(unittest.TestCase):
         self.assertEqual(page.live_book_section("x", None), "")
 
 
+class Breakdown(unittest.TestCase):
+    def test_groups_921(self):
+        rows = [{"closed_ts": 10, "opened_ts": 1793296740, "side": -1, "lots": 0.05, "pnl_hkd": -330.32, "r": -1.23},
+                {"closed_ts": 20, "opened_ts": 1793245980, "side": -1, "lots": 0.05, "pnl_hkd": 372.28, "r": 1.49},
+                {"closed_ts": 30, "opened_ts": 1793180000, "side": 1, "lots": 0.01, "pnl_hkd": 76.0, "r": 1.5}]
+        v = live_book.view({}, rows, {}, now=40)
+        names = [g for g, _ in v["groups"]]
+        self.assertEqual(names, ["方向", "開倉時段", "手數"])
+        side = dict(v["groups"][0][1])
+        self.assertEqual(side["淡（SELL）"]["n"], 2)
+        self.assertEqual(side["淡（SELL）"]["total"], 41.96)
+        self.assertEqual(live_book.session_of(1793296740), "紐約（13–22 UTC）")     # 17:59 UTC
+        self.assertEqual(live_book.session_of(1793245980), "亞洲（22–07 UTC）")     # 03:53 UTC
+        html_ = page.live_book_section("921", v)
+        self.assertIn("按方向細分", html_)
+        self.assertIn("按開倉時段細分", html_)
+        self.assertIn("dec-scroll", html_)
+
+    def test_groups_932_by_channel(self):
+        rows = [{"closed_ts": 1, "side": 1, "pnl_hkd": 929.69, "ch": "0342", "r": 0.84},
+                {"closed_ts": 2, "side": 1, "pnl_hkd": -1261.53, "ch": "0342", "r": -1.02},
+                {"closed_ts": 3, "side": -1, "pnl_hkd": 203.55, "ch": "5231", "r": 0.31}]
+        v = live_book.view({}, rows, {}, now=5)
+        self.assertEqual([g for g, _ in v["groups"]], ["頻道", "方向"])
+        ch = dict(v["groups"][0][1])
+        self.assertEqual(ch["…0342 Gold Brother"]["total"], -331.84)
+        self.assertEqual(ch["…5231 CTC"]["wins"], 1)
+
+
+class Forward(unittest.TestCase):
+    def test_forward_section(self):
+        summ = lambda n, w, f, l, r, pf, dd: {"n": n, "win": w, "flat": f, "loss": l, "sum_r": r, "pf": pf, "max_dd_r": dd}
+        fw = {"gb": {"meta": {"run_utc": "2026-10-29T1842Z", "bars_to": "2026-10-29 18:40"},
+                     "eval": {"0342": {"name": "Gold Brother", "candidate": "V13", "done": 5, "pending": 0, "verdict": "未夠 5／20 張",
+                                       "result": {"V0": {"name": "基準", "summary": summ(5, 0, 4, 1, -1.0, 0.0, -1.0)},
+                                                  "V13": {"name": "SL 10 TP 10", "summary": summ(5, 1, 0, 4, -1.51, 0.25, -1.51)}}}}},
+              "student": {"own": {"rule:rev15": {"filled": 89, "win": 47, "sl": 39, "r_sum": 27.34}}}}
+        book = {"rows": [{"opened_ts": 1793296794, "side": -1, "entry": 4006.78, "decision_price": 4008.33},
+                         {"opened_ts": 1793289474, "side": -1, "entry": 4014.94, "decision_price": 4014.77}]}
+        h = page.forward_section(fw, book)
+        for frag in ("前向測試", "V13 ⭐候選", "-1.51", "未夠 5／20 張", "rev15", "89／100", "+0.31", "2／20", "+1.55", "已觸發 P3"):
+            self.assertIn(frag, h)
+
+    def test_forward_bad_data(self):
+        self.assertIn("讀唔到", page.forward_section({"gb": {"eval": {"0342": {"result": {"V0": {}}}}}}))
+        self.assertEqual(page.forward_section(None), "")
+
+
 if __name__ == "__main__":
     unittest.main()

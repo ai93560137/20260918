@@ -103,10 +103,36 @@ def summary(rows, now=None, day_key=None, week_key=None):
             "first_ts": rows[0]["closed_ts"] if rows else None}
 
 
-def view(state, seed, account=None, now=None):
-    """status／頁面用：逐筆（最新 40）＋指標＋EA 自己 magic 今日／累計（HKD）。"""
+CH_NAMES = {"5231": "…5231 CTC", "0342": "…0342 Gold Brother", "7713": "…7713 DAN", "5117": "…5117 黃金戰鬥機"}
+
+
+def session_of(ts):
+    """開倉時段（UTC）：亞洲 22:00–07:00、倫敦 07:00–13:00、紐約 13:00–22:00。"""
+    if not ts:
+        return "未知"
+    h = time.gmtime(ts).tm_hour
+    return "亞洲（22–07 UTC）" if (h >= 22 or h < 7) else ("倫敦（07–13 UTC）" if h < 13 else "紐約（13–22 UTC）")
+
+
+def breakdown(rows, key):
+    """[R352c] 按 key(row) 分組嘅 summary（使用者 10-30「921／932 再細分」）；回傳 [(組名, summary)]，按筆數多到少。"""
+    groups = {}
+    for x in rows:
+        groups.setdefault(key(x), []).append(x)
+    return sorted(((k, summary(v)) for k, v in groups.items()), key=lambda kv: -kv[1]["n"])
+
+
+def view(state, seed, account=None, now=None, max_rows=200):
+    """status／頁面用：逐筆（最新 max_rows，頁面用捲軸）＋指標＋分組＋EA 自己 magic 今日／累計（HKD）。"""
     rows = merged((state or {}).get("book"), seed)
     acct = account or {}
-    return {"rows": rows[-40:][::-1], "summary": summary(rows, now), "seeded": len(seed or []),
+    groups = []
+    if any(x.get("ch") for x in rows):
+        groups.append(("頻道", breakdown(rows, lambda x: CH_NAMES.get(str(x.get("ch") or ""), "…" + str(x.get("ch") or "—")))))
+    groups.append(("方向", breakdown(rows, lambda x: "好（BUY）" if (x.get("side") or 0) > 0 else "淡（SELL）")))
+    if not any(x.get("ch") for x in rows):
+        groups.append(("開倉時段", breakdown(rows, lambda x: session_of(x.get("opened_ts")))))
+        groups.append(("手數", breakdown(rows, lambda x: "—" if x.get("lots") is None else f"{x['lots']:.2f} 手")))
+    return {"rows": rows[-max_rows:][::-1], "summary": summary(rows, now), "seeded": len(seed or []), "groups": groups,
             "ea_daily_hkd": _f(acct.get("daily_pnl")), "ea_realized_hkd": _f(acct.get("realized_total")),
             "open": (state or {}).get("book_open")}

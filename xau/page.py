@@ -99,7 +99,7 @@ def live_book_section(title, v, note=""):
         f"<td>{esc(t.get('ch') or '')}</td><td>{'好' if (t.get('side') or 0) > 0 else '淡'}</td><td>{'—' if t.get('lots') is None else format(t['lots'], '.2f')}</td>"
         f"<td>{num(t.get('entry'))}{('<br><small class=muted>決策 ' + num(t.get('decision_price')) + '</small>') if t.get('decision_price') is not None else ''}</td>"
         f"<td>{num(t.get('exit') if t.get('exit') is not None else t.get('exit_est'))}{'' if t.get('exit') is not None else '<small class=muted> 估</small>'}</td>"
-        f"<td>{'—' if t.get('r') is None else format(t['r'], '+.2f') + 'R'}</td>"
+        f"<td>{'—' if t.get('r') is None else format(t['r'] or 0.0, '+.2f') + 'R'}</td>"
         f"<td class='{cls(t.get('pnl_hkd'))}'>{float(t.get('pnl_hkd') or 0):+,.2f}</td></tr>"
         for t in v.get("rows") or [])
     has_ch = any(t.get("ch") for t in v.get("rows") or [])
@@ -107,12 +107,96 @@ def live_book_section(title, v, note=""):
     if not has_ch:
         head = head.replace("<th>頻道</th>", "")
         rows = rows.replace("<td></td><td>好", "<td>好").replace("<td></td><td>淡", "<td>淡")
-    tbl = ("<div style='overflow-x:auto'><table>" + head + rows + "</table></div>") if rows else "<p class='muted'>未有已平倉真倉單。</p>"
-    return (f"<div class='section'><h2>{title}</h2>" + cards + "<h3>📒 已平倉逐筆（最新在上，最多 40）</h3>" + tbl
+    tbl = (("<div class='dec-scroll' style='overflow:auto;max-height:420px;border:1px solid #e5e7eb;border-radius:8px'>"   # 使用者 10-30：太長，用捲軸
+            "<style>.dec-scroll th{position:sticky;top:0;background:#fff;z-index:1}</style><table>") + head + rows + "</table></div>") if rows else "<p class='muted'>未有已平倉真倉單。</p>"
+    grp = ""
+    for gname, items in v.get("groups") or []:                  # [R352c] 使用者 10-30「921／932 再細分」
+        grows = "".join(
+            f"<tr><td>{esc(k)}</td><td>{g['n']}</td><td>{g['wins']}／{g['flat']}／{g['losses']}</td>"
+            f"<td>{'—' if g['win_rate'] is None else format(g['win_rate'], '.0%')}</td>"
+            f"<td class='{cls(g['total'])}'>{g['total']:+,.2f}</td><td>{'—' if g['pf'] is None else format(g['pf'], '.2f')}</td>"
+            f"<td>{'—' if g['avg_r'] is None else format(g['avg_r'], '+.2f') + 'R'}</td><td>{'—' if g['max_dd'] is None else format(-g['max_dd'] or 0.0, ',.2f')}</td></tr>"
+            for k, g in items)
+        grp += (f"<h3>🔎 按{esc(gname)}細分</h3><div style='overflow-x:auto'><table><tr><th>{esc(gname)}</th><th>筆數</th><th>勝／平／負</th><th>勝率</th>"
+                "<th>合計 HKD</th><th>PF</th><th>平均 R</th><th>最大回撤 HKD</th></tr>" + grows + "</table></div>")
+    return (f"<div class='section'><h2>{title}</h2>" + cards + grp + f"<h3>📒 已平倉逐筆（最新在上，共 {len(v.get('rows') or [])} 筆，捲動睇舊嘅）</h3>" + tbl
             + "<p class='muted' style='font-size:13px'>HKD 用 EA realized_total 差額（含佣金／隔夜息）；出場價由 HKD 反推（1 美元＝"
             + f"{config.HKD_PER_USD:g} 港元），標「估」；R＝(出場−入場)÷初始止損距離。"
             + (f"部署前 {v.get('seeded')} 筆由補登紀錄載入。" if v.get("seeded") else "")
             + esc(note) + "</p></div>")
+
+
+FWD_145_FROM = 1793232000          # 2026-10-29 00:00 UTC：R349 部署後第一張 921（L16）起計 IDEAS #145 20 張
+
+
+def forward_section(fw, book=None):
+    """[R352c] 包 try：前向數據格式有變都唔拖垮頁面。"""
+    try:
+        return _forward_section(fw, book)
+    except Exception:  # noqa: BLE001
+        return "<div class='section'><h2>🔬 前向測試</h2><p class='muted'>前向數據讀唔到（格式有變），睇 GCS xau/sig/gb_forward/latest.md。</p></div>"
+
+
+def _forward_section(fw, book=None):
+    """[R352c] 🔬 前向測試（影子，唔落單；使用者 10-30「將 V13 及其他前向測試結果放上去」）。
+    fw＝{"gb": gb_forward latest.json, "student": student scores.json}；book＝921 live_book view（#145 滑價）。"""
+    if not isinstance(fw, dict):
+        return ""
+    out = ""
+    f2 = lambda x, f="{:+.2f}": "—" if x is None else f.format(x)  # noqa: E731
+    gb = fw.get("gb") or {}
+    ev = gb.get("eval") or {}
+    crit = {"0342": "#149：候選 V13（GB 入場、SL 10、TP 10 全平）；20 張判：ΣR ≥ +2R、PF ≥ 1.2、最大回撤 ≤ 3R、好過同期 V0 → 先提真倉 0.05 手（要批）",
+            "5117": "#150：歷史回測全部變體蝕，已棄用；只觀察候選 V11"}
+    for ch in ("0342", "5117"):
+        e = ev.get(ch)
+        if not e:
+            continue
+        rows = "".join(
+            f"<tr{' style=font-weight:600' if k == e.get('candidate') else ''}><td>{esc(k)}{' ⭐候選' if k == e.get('candidate') else ''}</td><td>{esc(r.get('name'))}</td>"
+            f"<td>{r['summary']['n']}</td><td>{r['summary']['win']}／{r['summary']['flat']}／{r['summary']['loss']}</td>"
+            f"<td class=\"{'pos' if (r['summary'].get('sum_r') or 0) > 0 else ('neg' if (r['summary'].get('sum_r') or 0) < 0 else '')}\">{f2(r['summary'].get('sum_r'))}</td>"
+            f"<td>{f2(r['summary'].get('pf'), '{:.2f}')}</td><td>{f2(r['summary'].get('max_dd_r'))}</td></tr>"
+            for k, r in (e.get("result") or {}).items())
+        out += (f"<h3>{esc(e.get('name'))}（…{ch}）：{esc(e.get('verdict'))}（已完 {e.get('done')}、未完 {e.get('pending')}）</h3>"
+                f"<p class='muted' style='font-size:13px'>{esc(crit.get(ch, ''))}</p>"
+                "<div style='overflow-x:auto'><table><tr><th>變體</th><th>規則</th><th>張</th><th>勝／平／負</th><th>ΣR</th><th>PF</th><th>最大回撤 R</th></tr>"
+                + rows + "</table></div>")
+    meta = gb.get("meta") or {}
+    if out:
+        out += f"<p class='muted' style='font-size:13px'>經紀 M1 計、唔落單；更新 {esc(meta.get('run_utc'))} UTC（K 線到 {esc(meta.get('bars_to'))}），Actions 每 6 小時跑。</p>"
+    own = ((fw.get("student") or {}).get("own")) or {}
+    if own:
+        names = {"rule:rev15": ("rev15（M15 反轉）", "11-11 判"), "rule:level": ("level（亞洲區間高低位）", "11-25 判"),
+                 "rule:swing": ("swing", "觀察"), "rule:rev15x": ("rev15x", "已棄")}
+        srows = ""
+        for k in ("rule:rev15", "rule:level", "rule:swing", "rule:rev15x"):
+            o = own.get(k)
+            if not o:
+                continue
+            fl = o.get("filled") or 0
+            per = (o.get("r_sum") or 0) / fl if fl else None
+            srows += (f"<tr><td>{esc(names[k][0])}</td><td>{fl}／100</td><td>{o.get('win', 0)}／{o.get('sl', 0)}</td>"
+                      f"<td class=\"{'pos' if (o.get('r_sum') or 0) > 0 else 'neg'}\">{f2(o.get('r_sum'))}</td><td>{f2(per)}</td><td>{esc(names[k][1])}</td></tr>")
+        out += ("<h3>規則學生（#146，影子，2R 全平、扣點差＋滑價 0.2）</h3>"
+                "<p class='muted' style='font-size:13px'>升 931 真倉 0.01 門檻：成交 ≥ 100、每張 R ≥ +0.2、PF ≥ 1.3、TP 命中贏隨機基準 ≥ 10 點、最大連敗 ≤ 6（要批）。</p>"
+                "<div style='overflow-x:auto'><table><tr><th>學生</th><th>成交／門檻</th><th>勝／止損</th><th>合計 R</th><th>每張 R</th><th>判斷</th></tr>"
+                + srows + "</table></div>")
+    if isinstance(book, dict):
+        rows = [x for x in (book.get("rows") or []) if (x.get("opened_ts") or 0) >= FWD_145_FROM]
+        slips = [round((x.get("side") or 0) * ((x.get("entry") or 0) - x["decision_price"]), 2) for x in rows if x.get("decision_price") is not None and x.get("entry") is not None]
+        if rows:
+            med = sorted(slips)[len(slips) // 2] if slips else None
+            if slips and len(slips) % 2 == 0:
+                med = round((sorted(slips)[len(slips) // 2 - 1] + sorted(slips)[len(slips) // 2]) / 2, 2)
+            p3 = any(sv > 1.5 for sv in slips) or (med is not None and med > 0.5)
+            out += ("<h3>921 三項改善影子統計（#145，R349 起 20 張判）</h3>"
+                    f"<p>進度 <b>{len(rows)}／20</b> 張。P3 滑價（決策價→成交，不利為正）：{esc('、'.join(f'{sv:+.2f}' for sv in reversed(slips)) or '—')}；"
+                    f"中位數 {f2(med)}；{'⚠ 已觸發 P3 條件（任何一張 >1.5 或中位數 >0.5），20 張期滿先判' if p3 else '未觸發'}。"
+                    "P1（0.8R 保本）／P2（止損後 15 分鐘同向重入）逐張記喺 TEST_RESULTS。</p>")
+    if not out:
+        return ""
+    return "<div class='section' id='forward'><h2>🔬 前向測試（影子，唔落單）</h2>" + out + "</div>"
 
 
 def _pos_text(pos):
@@ -214,6 +298,7 @@ def render_signal_book(s):
                  + (live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（訊號書 S1）", s.get("live_book")) if config.SIG_DECIDE else "")
                  + "</div><div class='lf-grp lf-sim'><div class='lf-banner'>🧪 模擬倉績效</div><div class='section'><p><b>已轉真倉，模擬停。</b>"
                  "頻道準確度同學徒係影子評分（唔落單），唔計入真倉績效。</p></div></div>")
+    body += forward_section(s.get("forward"))                    # [R352c] 前向測試（0342 V13／5117／學生）
     stu = s.get("student")
     if stu:
         g = (stu.get("scores") or {}).get("grade") or {}; own = (stu.get("scores") or {}).get("own") or {}
@@ -347,6 +432,7 @@ def render(status):
                + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
                + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
     sim += rulesim_section(s.get("rulesim"))                     # [R345] 即日回測（規則版）
+    sim += forward_section(s.get("forward"), s.get("live_book"))   # [R352c] 前向測試
     lad_cls = {"A": "pos", "B": "", "D": "neg"}.get(lad.get("level"), "")
     risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items() if k not in RISK_HIDE)
     alerts = "；".join((lad.get("alerts") or {}).values()) or "冇"
