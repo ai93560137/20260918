@@ -74,6 +74,47 @@ def metric_cards(m):
             + "</div>")
 
 
+def live_book_section(title, v, note=""):
+    """[R352] 真倉績效：逐筆（時間、方向、手數、入／出價、R、HKD）＋今日／本週／累計、勝率、獲利因子、最大回撤。v＝live_book.view()；冇就唔出。"""
+    if not isinstance(v, dict):
+        return ""
+    sm, d = v.get("summary") or {}, config.PRICE_DIGITS
+    num = lambda x: "—" if x is None else f"{x:.{d}f}"  # noqa: E731
+    money = lambda x: "—" if x is None else f"HK${x:+,.2f}"  # noqa: E731
+    cls = lambda x: "" if not x else ("pos" if x > 0 else "neg")  # noqa: E731
+    first = fmt_hkt(sm["first_ts"])[:5] if sm.get("first_ts") else "—"
+    cards = ("<div class='grid'>"
+             + card("今日（EA，自己 magic）", f"<span class='{cls(v.get('ea_daily_hkd'))}'>{money(v.get('ea_daily_hkd'))}</span>", "MT5 伺服器日，含浮動")
+             + card("本週（已平倉）", f"<span class='{cls(sm.get('week'))}'>{money(sm.get('week'))}</span>", "香港時間週一起")
+             + card("累計（EA，自己 magic）", f"<span class='{cls(v.get('ea_realized_hkd'))}'>{money(v.get('ea_realized_hkd'))}</span>", "EA 自 InpLedgerStart 起已實現")
+             + card("已平倉筆數", f"{sm.get('n', 0)}", f"{sm.get('wins', 0)} 勝／{sm.get('flat', 0)} 平／{sm.get('losses', 0)} 負；{first} 起")
+             + card("勝率", "—" if sm.get("win_rate") is None else f"{sm['win_rate']:.0%}", "賺錢筆數 ÷ 總筆數")
+             + card("獲利因子 PF", "—" if sm.get("pf") is None else f"{sm['pf']:.2f}", "總贏 ÷ 總蝕")
+             + card("最大回撤", "—" if sm.get("max_dd") is None else f"HK${-sm['max_dd']:,.2f}", "逐筆累計由高位最大跌幅")
+             + card("平均 R", "—" if sm.get("avg_r") is None else f"{sm['avg_r']:+.2f}R", "R＝按初始止損距離")
+             + card("成交簿合計", f"<span class='{cls(sm.get('total'))}'>{money(sm.get('total'))}</span>", "下面逐筆加埋")
+             + "</div>")
+    rows = "".join(
+        f"<tr><td>{esc(fmt_hkt(t['opened_ts'])) if t.get('opened_ts') else '—'}</td><td>{esc(fmt_hkt(t['closed_ts']))}</td>"
+        f"<td>{esc(t.get('ch') or '')}</td><td>{'好' if (t.get('side') or 0) > 0 else '淡'}</td><td>{'—' if t.get('lots') is None else format(t['lots'], '.2f')}</td>"
+        f"<td>{num(t.get('entry'))}{('<br><small class=muted>決策 ' + num(t.get('decision_price')) + '</small>') if t.get('decision_price') is not None else ''}</td>"
+        f"<td>{num(t.get('exit') if t.get('exit') is not None else t.get('exit_est'))}{'' if t.get('exit') is not None else '<small class=muted> 估</small>'}</td>"
+        f"<td>{'—' if t.get('r') is None else format(t['r'], '+.2f') + 'R'}</td>"
+        f"<td class='{cls(t.get('pnl_hkd'))}'>{float(t.get('pnl_hkd') or 0):+,.2f}</td></tr>"
+        for t in v.get("rows") or [])
+    has_ch = any(t.get("ch") for t in v.get("rows") or [])
+    head = "<tr><th>開倉 HKT</th><th>平倉 HKT</th><th>頻道</th><th>方向</th><th>手數</th><th>入場</th><th>出場</th><th>R</th><th>HKD</th></tr>"
+    if not has_ch:
+        head = head.replace("<th>頻道</th>", "")
+        rows = rows.replace("<td></td><td>好", "<td>好").replace("<td></td><td>淡", "<td>淡")
+    tbl = ("<div style='overflow-x:auto'><table>" + head + rows + "</table></div>") if rows else "<p class='muted'>未有已平倉真倉單。</p>"
+    return (f"<div class='section'><h2>{title}</h2>" + cards + "<h3>📒 已平倉逐筆（最新在上，最多 40）</h3>" + tbl
+            + "<p class='muted' style='font-size:13px'>HKD 用 EA realized_total 差額（含佣金／隔夜息）；出場價由 HKD 反推（1 美元＝"
+            + f"{config.HKD_PER_USD:g} 港元），標「估」；R＝(出場−入場)÷初始止損距離。"
+            + (f"部署前 {v.get('seeded')} 筆由補登紀錄載入。" if v.get("seeded") else "")
+            + esc(note) + "</p></div>")
+
+
 def _pos_text(pos):
     if not pos:
         return "冇"
@@ -167,6 +208,12 @@ def render_signal_book(s):
                  "<div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>頻道</th><th>方向／手</th><th>入場價</th><th>SL／TP1</th><th>入場依據</th><th>EA 回報</th></tr>"
                  + (orows or "<tr><td colspan='7' class='muted'>未有跟單</td></tr>") + "</table></div></div>")
         body += (f"<p class='muted'>📅 數據封鎖：{esc(((fo.get('data_block') or {}).get('title') + '（' + str((fo.get('data_block') or {}).get('t', ''))[11:16] + ' UTC）') if fo.get('data_block') else '冇')}；最近因數據略過 {len(fo.get('skipped_data') or [])} 條</p>" if fo else "")   # [R348]
+    if s.get("execute") or s.get("live_book_follow"):            # [R352] 真倉績效（932 跟單；S1 開就加 931）／模擬倉
+        body += ("<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉績效</div>"
+                 + live_book_section("💰 真倉績效・932（跟單）", s.get("live_book_follow"))
+                 + (live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（訊號書 S1）", s.get("live_book")) if config.SIG_DECIDE else "")
+                 + "</div><div class='lf-grp lf-sim'><div class='lf-banner'>🧪 模擬倉績效</div><div class='section'><p><b>已轉真倉，模擬停。</b>"
+                 "頻道準確度同學徒係影子評分（唔落單），唔計入真倉績效。</p></div></div>")
     stu = s.get("student")
     if stu:
         g = (stu.get("scores") or {}).get("grade") or {}; own = (stu.get("scores") or {}).get("own") or {}
@@ -258,7 +305,9 @@ def render(status):
                f"<div class='section'><h2>真倉狀態</h2><p>{esc(run_text(s))}</p>"
                f"<p>EA 戶口 {esc(s.get('account_id') or '—')}（{esc(s.get('server') or '—')}）{'，EA dry-run' if s.get('ea_dry_run') else ''}；只收 XAU_ACCOUNT={esc(s.get('xau_account') or '（全收）')}"
                f"{'；⚠ XAU_TEST_CMDS=1（真倉前要關）' if s.get('test_cmds') else ''}{_ta_text(s.get('trade_allowed'))}</p>"
-               f"<p>EA 持倉：{esc(_pos_text(s.get('position')))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>")
+               f"<p>EA 持倉：{esc(_pos_text(s.get('position')))}</p><p>待執行指令：{len(s.get('pending_cmds') or [])} 條</p></div>"
+               + live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（AI 自主）", s.get("live_book"))
+               + live_book_section("💰 真倉績效・932（跟單）", s.get("live_book_follow")))
             + "</div>")
     top = ("<div class='grid'>"
            + card("階段", "模擬盤" if not s.get("execute") else "真倉", esc(run_text(s)))
@@ -285,10 +334,16 @@ def render(status):
     dec_html = ("<h3>🧠 最近決策（最新在上）</h3>"
                 + ("<div style='overflow-x:auto'><table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲</th></tr>" + drows + "</table></div>"
                    if drows else "<p class='muted'>未有決策。</p>"))
-    sim = ("<div class='lf-grp lf-sim' id='lf-sim-top'><div class='lf-banner'>🧪 模擬倉（前向測試）</div>"
-           + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
-           + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
-           + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
+    if s.get("execute"):                                         # [R352] 已轉真倉：決策搬去真倉段，模擬倉只寫停咗（有舊紙上單就照列）
+        real = real[:-len("</div>")] + "<div class='section'>" + dec_html + "</div></div>"
+        sim = ("<div class='lf-grp lf-sim' id='lf-sim-top'><div class='lf-banner'>🧪 模擬倉績效</div>"
+               + "<div class='section'><p><b>已轉真倉，模擬停。</b>決策直接落真倉（見上面 💰 真倉績效）；以下係轉真倉前嘅紙上成績。</p>"
+               + (metric_cards(m) + trades_html if m["trades"] else "<p class='muted'>冇紙上成交紀錄。</p>") + "</div></div>")
+    else:
+        sim = ("<div class='lf-grp lf-sim' id='lf-sim-top'><div class='lf-banner'>🧪 模擬倉（前向測試）</div>"
+               + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
+               + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
+               + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
     sim += rulesim_section(s.get("rulesim"))                     # [R345] 即日回測（規則版）
     lad_cls = {"A": "pos", "B": "", "D": "neg"}.get(lad.get("level"), "")
     risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items() if k not in RISK_HIDE)
