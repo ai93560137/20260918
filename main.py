@@ -7395,14 +7395,17 @@ def handle_futu_range_get(req, default_symbol=FUTU_RANGE_DEFAULT):
     return build_futu_range_page(data)
 
 
-def futu_price_chart(rows):
+def futu_price_chart(rows, day_recs=None):
     """[R354] 每日高低收連續曲線（投資人意見→使用者 10-29：「日線圖加埋曲線，高藍色、低紅色、收白色，要連續性」）。
-    深色底（白色收市線喺白底睇唔到）；每日一個透明豎條帶原生提示框。"""
+    深色底（白色收市線喺白底睇唔到）；每日一個透明豎條帶原生提示框。
+    day_recs：accuracy["day"]["records"]（逐日開市前嘅預測高位／低位）→ 淺色帶（使用者 10-29「加埋系統預測嘅高低範圍做淺色帶」）。"""
     rows = [r for r in rows if r.get("high") and r.get("low") and r.get("close")]
     if len(rows) < 2:
         return ""
+    pred = {r["key"]: (r["low"], r["high"]) for r in (day_recs or []) if r.get("high") and r.get("low")}
     w, h, pad_l, pad_b, pad_t, pad_r = 1000, 300, 60, 26, 12, 10
-    lo_v, hi_v = min(r["low"] for r in rows), max(r["high"] for r in rows)
+    lo_v = min([r["low"] for r in rows] + [pred[r["date"]][0] for r in rows if r["date"] in pred])
+    hi_v = max([r["high"] for r in rows] + [pred[r["date"]][1] for r in rows if r["date"] in pred])
     span = (hi_v - lo_v) or 1
     lo_v, hi_v = lo_v - span * 0.04, hi_v + span * 0.04
     step = (w - pad_l - pad_r) / (len(rows) - 1)
@@ -7417,10 +7420,29 @@ def futu_price_chart(rows):
         pts = " ".join(f"{x(i):.1f},{y(r[key]):.1f}" for i, r in enumerate(rows))
         return f"<polyline points='{pts}' fill='none' stroke='{color}' stroke-width='{width}' stroke-linejoin='round'/>"
 
-    lines = line("high", "#4f9dff", 1.6) + line("low", "#ff5c5c", 1.6) + line("close", "#ffffff", 2.0)
+    band, seg = "", []                            # 預測帶：連續有預測嘅日子砌成一塊多邊形
+    for i, r in enumerate(rows + [None]):
+        if r is not None and r["date"] in pred:
+            seg.append(i)
+            continue
+        if len(seg) > 1:
+            top = " ".join(f"{x(j):.1f},{y(pred[rows[j]['date']][1]):.1f}" for j in seg)
+            bot = " ".join(f"{x(j):.1f},{y(pred[rows[j]['date']][0]):.1f}" for j in reversed(seg))
+            band += (f"<polygon points='{top} {bot}' fill='#f2c94c' fill-opacity='0.30' stroke='none'/>"
+                     f"<polyline points='{top}' fill='none' stroke='#f2c94c' stroke-width='1' stroke-dasharray='3 3' stroke-opacity='0.8'/>"
+                     f"<polyline points='{bot}' fill='none' stroke='#f2c94c' stroke-width='1' stroke-dasharray='3 3' stroke-opacity='0.8'/>")
+        seg = []
+    lines = band + line("high", "#4f9dff", 1.6) + line("low", "#ff5c5c", 1.6) + line("close", "#ffffff", 2.0)
+
+    def tip(r):
+        t = f"{r['date']}\n高 {r['high']:,.0f}　低 {r['low']:,.0f}　收 {r['close']:,.0f}"
+        if r["date"] in pred:
+            t += f"\n預測 低 {pred[r['date']][0]:,.0f}～高 {pred[r['date']][1]:,.0f}"
+        return esc(t)
+
     hover = "".join(
         f"<rect x='{x(i) - step / 2:.1f}' y='{pad_t}' width='{max(step, 1):.1f}' height='{h - pad_t - pad_b}' fill='transparent'>"
-        f"<title>{esc(r['date'])}\n高 {r['high']:,.0f}　低 {r['low']:,.0f}　收 {r['close']:,.0f}</title></rect>"
+        f"<title>{tip(r)}</title></rect>"
         for i, r in enumerate(rows))
     months, labels = set(), []
     for i, r in enumerate(rows):
@@ -7433,6 +7455,7 @@ def futu_price_chart(rows):
               "<span><span style='display:inline-block; width:14px; height:3px; background:#4f9dff; vertical-align:middle;'></span> 高</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ff5c5c; vertical-align:middle;'></span> 低</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ffffff; outline:1px solid #999; vertical-align:middle;'></span> 收</span>"
+              + ("<span><span style='display:inline-block; width:14px; height:10px; background:#f2c94c; opacity:0.6; vertical-align:middle;'></span> 系統預測高低（開市前，黃色帶）</span>" if pred else "") +
               f"<span>最新 {esc(last['date'])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}</span></div>")
     return (f"{legend}<svg viewBox='0 0 {w} {h}' style='width:100%; height:auto; background:#15181d; border-radius:8px;' role='img' "
             f"aria-label='過去一年每日高低收曲線'>{grid}{lines}{hover}{''.join(labels)}</svg>")
@@ -8351,7 +8374,7 @@ def build_futu_range_page(data):
     <div class='section-header'>📊 過去一年</div>
     {stats}
     <div class='section'><h2>📉 每日高低收（日線，{len(rows)} 個交易日）</h2>
-      {futu_price_chart(rows)}
+      {futu_price_chart(rows, ((data.get('accuracy') or {}).get('day') or {}).get('records'))}
     </div>
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
       {futu_range_chart(rows)}
