@@ -464,20 +464,20 @@ def run(market: str) -> int:
             w.writerow(["run_utc", "market", "trade_date", "universe", "with_px", "drops", "qualifying_put", "settled", "intraday"])
         w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), market, d0, len(tick), len(px), len(drops),
                     sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled), "Y" if intraday else "N"])
-    md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper))
+    md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper), intraday)
     (OUT / f"latest_{market}.md").write_text(md_txt, encoding="utf-8")
     (OUT / f"tg_{market}.txt").write_text(tg, encoding="utf-8")
     print(tg)
     return 0
 
 
-def report(market, d0, n_univ, rows, worst, settled, fwd) -> tuple[str, str]:
+def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tuple[str, str]:
     mk = {"us": "美股 S&P 500 ", "hk": "港股恒指 "}[market]
     L = [f"# 🐯 虎翼｜{mk}大跌股候選 {d0}", "",
          "**紙上紀錄階段——實倉規則未定，以下唔係落單指令。**", "",
          f"宇宙 {n_univ}；大跌門檻 ≤ {THR:.0%}、收市 ≥ {MIN_PX:g}；到期 {DTE_LO}–{DTE_HI} 日最近 {DTE_TGT} 日；"
          f"合資格＝ρ ≥ ρ₂（put {RHO2[market]['put95']}、call {RHO2[market]['call105']}，call 只准紙上）且到期前冇已知業績。", ""]
-    T = ["🐯 虎翼｜" + mk + f"{d0}（紙上，非落單指令）"]
+    T = ["🐯 虎翼｜" + mk + f"{d0}（{'盤中測試，' if intraday else ''}紙上，非落單指令）"]
     if not rows:
         L.append("今日冇大跌股。")
         T.append("今日冇 ≤ −8% 大跌股。")
@@ -506,6 +506,8 @@ def report(market, d0, n_univ, rows, worst, settled, fwd) -> tuple[str, str]:
                     head += f"｜{'P' if x['leg'] == 'put95' else 'C'}{x['strike']} @{x['fill']} 年化{x['yield_ann_pct']}%{'✅' if x['qualifies'] == 'Y' else ''}"
             if r.get("earnings_in_window") == "Y":
                 head += "｜⚠️業績窗內"
+            elif r.get("earnings_in_window") == "?":
+                head += "｜業績日未知"
             T.append(head)
     L += ["", "當日跌幅最大 5 隻：" + "、".join(f"{w['ticker']} {w['ret'] * 100:+.1f}%" for w in worst), ""]
     if settled:
