@@ -11,7 +11,7 @@ import time
 import uuid
 
 import functions_framework
-from flask import Flask, jsonify, request as flask_request
+from flask import Flask, current_app, jsonify, request as flask_request
 
 import brain
 import config
@@ -957,15 +957,23 @@ def entry(req):
     return jsonify({"status": "ignored", "message": "No handler for this payload"}), 200
 
 
+def _json_utf8(flask_app):
+    """[R350b/c] JSON 回應唔做 ASCII 轉義：EA 用 UTF-8 解碼但只係字串搵 cmd_text，「跟單」轉義成 \\u8ddf\\u55ae 會原樣入
+    MT5 註解，而且長咗令 31 字截斷切走 id（使用者 10-28 截圖）。Cloud Run 實際由 functions-framework 自己嘅 Flask app 行
+    xau_entry（唔係下面 app），所以要喺請求時對 current_app 設定（R350c）。"""
+    try:
+        flask_app.json.ensure_ascii = False
+    except AttributeError:                             # Flask < 2.3
+        flask_app.config["JSON_AS_ASCII"] = False
+
+
 @functions_framework.http
 def xau_entry(request):
+    _json_utf8(current_app)                            # [R350c] functions-framework 嘅 app
     return entry(request)
 
 
 app = Flask(__name__)
-try:                                                   # [R350b] JSON 回應唔做 ASCII 轉義：EA 用 UTF-8 解碼但只係字串搵 cmd_text，
-    app.json.ensure_ascii = False                      # 「跟單」轉義成 \u8ddf\u55ae 會原樣入 MT5 註解，而且長咗令 31 字截斷切走 id（使用者 10-28 截圖）
-except AttributeError:                                 # Flask < 2.3
-    app.config["JSON_AS_ASCII"] = False
+_json_utf8(app)
 app.add_url_rule("/", "root", lambda: entry(flask_request), methods=["GET", "POST", "OPTIONS"])
 app.add_url_rule("/<path:_p>", "any", lambda _p: entry(flask_request), methods=["GET", "POST", "OPTIONS"])
