@@ -7395,6 +7395,49 @@ def handle_futu_range_get(req, default_symbol=FUTU_RANGE_DEFAULT):
     return build_futu_range_page(data)
 
 
+def futu_price_chart(rows):
+    """[R354] 每日高低收連續曲線（投資人意見→使用者 10-29：「日線圖加埋曲線，高藍色、低紅色、收白色，要連續性」）。
+    深色底（白色收市線喺白底睇唔到）；每日一個透明豎條帶原生提示框。"""
+    rows = [r for r in rows if r.get("high") and r.get("low") and r.get("close")]
+    if len(rows) < 2:
+        return ""
+    w, h, pad_l, pad_b, pad_t, pad_r = 1000, 300, 60, 26, 12, 10
+    lo_v, hi_v = min(r["low"] for r in rows), max(r["high"] for r in rows)
+    span = (hi_v - lo_v) or 1
+    lo_v, hi_v = lo_v - span * 0.04, hi_v + span * 0.04
+    step = (w - pad_l - pad_r) / (len(rows) - 1)
+    x = lambda i: pad_l + i * step
+    y = lambda v: pad_t + (h - pad_t - pad_b) * (1 - (v - lo_v) / (hi_v - lo_v))
+    ticks = [lo_v + (hi_v - lo_v) / 4 * i for i in range(5)]
+    grid = "".join(f"<line x1='{pad_l}' x2='{w - pad_r}' y1='{y(t):.1f}' y2='{y(t):.1f}' stroke='#2b2f36'/>"
+                   f"<text x='{pad_l - 6}' y='{y(t) + 4:.1f}' text-anchor='end' font-size='11' fill='#9aa0a6'>{t:,.0f}</text>"
+                   for t in ticks)
+
+    def line(key, color, width):
+        pts = " ".join(f"{x(i):.1f},{y(r[key]):.1f}" for i, r in enumerate(rows))
+        return f"<polyline points='{pts}' fill='none' stroke='{color}' stroke-width='{width}' stroke-linejoin='round'/>"
+
+    lines = line("high", "#4f9dff", 1.6) + line("low", "#ff5c5c", 1.6) + line("close", "#ffffff", 2.0)
+    hover = "".join(
+        f"<rect x='{x(i) - step / 2:.1f}' y='{pad_t}' width='{max(step, 1):.1f}' height='{h - pad_t - pad_b}' fill='transparent'>"
+        f"<title>{esc(r['date'])}\n高 {r['high']:,.0f}　低 {r['low']:,.0f}　收 {r['close']:,.0f}</title></rect>"
+        for i, r in enumerate(rows))
+    months, labels = set(), []
+    for i, r in enumerate(rows):
+        if r["date"][:7] not in months:
+            months.add(r["date"][:7])
+            if i and x(i) < w - 40:
+                labels.append(f"<text x='{x(i):.1f}' y='{h - 8}' font-size='11' fill='#9aa0a6'>{r['date'][2:7]}</text>")
+    last = rows[-1]
+    legend = ("<div style='display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:#6c757d; margin-bottom:6px;'>"
+              "<span><span style='display:inline-block; width:14px; height:3px; background:#4f9dff; vertical-align:middle;'></span> 高</span>"
+              "<span><span style='display:inline-block; width:14px; height:3px; background:#ff5c5c; vertical-align:middle;'></span> 低</span>"
+              "<span><span style='display:inline-block; width:14px; height:3px; background:#ffffff; outline:1px solid #999; vertical-align:middle;'></span> 收</span>"
+              f"<span>最新 {esc(last['date'])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}</span></div>")
+    return (f"{legend}<svg viewBox='0 0 {w} {h}' style='width:100%; height:auto; background:#15181d; border-radius:8px;' role='img' "
+            f"aria-label='過去一年每日高低收曲線'>{grid}{lines}{hover}{''.join(labels)}</svg>")
+
+
 def futu_range_chart(rows):
     """每日波幅柱狀圖＋20 日平均線（單一 y 軸），每根柱有原生提示框。"""
     if len(rows) < 2:
@@ -8307,6 +8350,9 @@ def build_futu_range_page(data):
     body = nav + print_toolbar_html(m['title']) + hero + cards + reviews + extras + f"""
     <div class='section-header'>📊 過去一年</div>
     {stats}
+    <div class='section'><h2>📉 每日高低收（日線，{len(rows)} 個交易日）</h2>
+      {futu_price_chart(rows)}
+    </div>
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
       {futu_range_chart(rows)}
     </div>
