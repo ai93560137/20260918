@@ -566,6 +566,10 @@ def process_bar(state, bar, m1, m15, account, now):
         cited = next((x for x in active or [] if x["sid"] == d.get("signal_id")), None)
         if cited is None:
             action, stop, target, why = "HOLD", None, None, f"訊號書開倉要引用有效訊號（signal_id={d.get('signal_id')!r}）"
+    if action in ("OPEN_LONG", "OPEN_SHORT"):
+        chase = rules.chase_block(m1, 1 if action == "OPEN_LONG" else -1, bar["close"])
+        if chase:
+            action, stop, target, why = "HOLD", None, None, chase
     rec.update(kind="decide", action=str(d.get("action")), final=action, stop=stop, target=target,
                confidence=d.get("confidence"), reason=str(d.get("reason") or "")[:400], rejected=why,
                ai_stop=d.get("stop_price"), ai_target=d.get("target_price"),

@@ -4,7 +4,7 @@ import json, os, sys, time, types
 
 os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_EXECUTE="0", GATE_MODEL="claude-haiku-5-5",
                   XAU_MAX_SL_USD="30", XAU_MIN_SL_USD="2", XAU_MAX_HOLD_MIN="120", XAU_MAX_TRADES_PER_DAY="3",
-                  ANTHROPIC_API_KEY="x")
+                  ANTHROPIC_API_KEY="x", XAU_CHASE_BLOCK="0")   # [R351] M1 硬規則預設關：下面紙上開倉例子有急跌；最尾另外開嚟測
 sys.path.insert(0, "/home/user/20260918/xau")
 
 try:
@@ -658,6 +658,18 @@ FAKE["ops/us_data_calendar.json"] = (json.dumps({"updated_utc": _iso(_now - 3600
 st, d = hb(_k + 4, 4000.0)
 check("DATA_BLOCK_HOURS=0 → 關、唔封鎖", "數據封鎖" not in (d.get("message") or ""), d.get("message"))
 config.DATA_BLOCK_HOURS = _cfg_db; config.ACCOUNT, config.EXECUTE = _keep_ea; FAKE.pop("ops/us_data_calendar.json", None); _db._cache.update(ts=0, doc=None, error=None)
+
+print("=== [R351] M1 硬規則：急跌後反抽沽 → 擋 ===")
+config.CHASE_BLOCK = True; FB.screen_look = True; _keep_ea = (config.ACCOUNT, config.EXECUTE); config.ACCOUNT = ""; config.EXECUTE = False
+state = json.loads(FAKE["xau/state.json"][0]); state["position"] = None; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
+hb(_k + 5, 4010.0, high=4012.0, low=4009.5)
+hb(_k + 6, 4003.0, high=4004.0, low=4002.0)                  # 高 4012 → 低 4002，跌 10
+FB.decision = {"action": "OPEN_SHORT", "stop_price": 4012.0, "target_price": 3995.0, "confidence": 0.8, "reason": "反抽轉弱"}
+st, d = hb(_k + 7, 4006.0, high=4006.5, low=4003.5)         # 反抽 4 ≥ 3
+check("急跌 10 後反抽 4 沽 → HOLD、原因寫 M1 硬規則、冇開倉", d["decision"]["final"] == "HOLD" and "M1 硬規則" in (d["decision"]["rejected"] or "")
+      and json.loads(FAKE["xau/state.json"][0])["position"] is None, d.get("decision"))
+config.CHASE_BLOCK = False; config.ACCOUNT, config.EXECUTE = _keep_ea
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
