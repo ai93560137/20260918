@@ -60,13 +60,21 @@ def rows(df, fmt):
     return out
 
 
+PREPOST = {"RSP"}   # 使用者嘅 TradingView RSP 4 小時圖包盤前盤後（每日 4 支 4 小時 K），均線先對得上
+
+
 def fetch(ticker):
     d1 = yf.download(ticker, period="3y", interval="1d", progress=False, auto_adjust=False)
-    h1 = yf.download(ticker, period="300d", interval="1h", progress=False, auto_adjust=False)
+    h1 = yf.download(ticker, period="300d", interval="1h", progress=False, auto_adjust=False,
+                     prepost=ticker in PREPOST)
     if h1.index.tz is not None:
         h1.index = h1.index.tz_convert("America/New_York")
     doc = {"symbol": ticker, "fetched_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "d1": rows(d1, "%Y-%m-%d"), "h1": rows(h1, "%Y-%m-%d %H:%M")}
+    if ticker in PREPOST:                   # 對照用：派息調整後日線（TradingView 預設調整股息）
+        adj = yf.download(ticker, period="3y", interval="1d", progress=False, auto_adjust=True)
+        doc["d1_adj"] = rows(adj, "%Y-%m-%d")
+        doc["h1_note"] = "1 小時線包盤前盤後（prepost）"
     if ticker.endswith("=F"):
         doc["d1"] = futures_d1(doc["d1"], doc["h1"], datetime.now(ET))
         doc["d1_note"] = "R349：最近交易日由 1 小時線按 CME 交易日重砌，只含已收市日"
