@@ -249,6 +249,19 @@ def market_pack(name, doc):
 
 
 # ---------- 圖 ----------
+def spread(ys, ymin, ymax, frac):
+    """右邊數字標籤由細到大排，相鄰最少隔 frac × 圖高；頂出界就由上面壓返落嚟。回傳新位置（同 ys 一樣次序）。"""
+    gap = (ymax - ymin) * frac
+    out = []
+    for y in ys:
+        out.append(max(y, out[-1] + gap) if out else max(y, ymin + gap / 2))
+    top = ymax - gap / 2
+    for i in range(len(out) - 1, -1, -1):
+        lim = top if i == len(out) - 1 else out[i + 1] - gap
+        out[i] = min(out[i], lim)
+    return out
+
+
 def chart(path, bars, title, fib=None, show=160, tf=""):
     import matplotlib
     matplotlib.use("Agg")
@@ -271,27 +284,38 @@ def chart(path, bars, title, fib=None, show=160, tf=""):
         col = "#26a69a" if cl >= o else "#ef5350"
         ax.vlines(i, lo, h, color=col, linewidth=0.7)
         ax.vlines(i, min(o, cl), max(o, cl), color=col, linewidth=2.4)
+    tags = []                                # 右邊數字欄：(真實價位, 文字, 框色)；使用者 10-30：白色、清楚、唔重疊
     for n, col in ((50, "#f5c542"), (100, "#4caf50"), (200, "#e53935")):
         xs = [i for i in range(max(start, n - 1), len(c))]
-        ax.plot(xs, [sum(c[i - n + 1:i + 1]) / n for i in xs], color=col, linewidth=1, label=f"SMA {n}")
+        ys = [sum(c[i - n + 1:i + 1]) / n for i in xs]
+        ax.plot(xs, ys, color=col, linewidth=1.2, label=f"SMA {n}")
+        if ys:
+            tags.append((ys[-1], f"SMA{n} {ys[-1]:,.0f}", col))
     if fib:
         pal = {"0": "#9e9e9e", "0.236": "#e53935", "0.382": "#66bb6a", "0.5": "#66bb6a", "0.618": "#26a69a",
                "0.786": "#42a5f5", "0.886": "#42a5f5", "1": "#9e9e9e"}
         for r, p in fib["levels"].items():
-            ax.hlines(p, fib["_idx"][0], len(bars) + 8, color=pal[r], linewidth=1)
-            ax.text(len(bars) + 9, p, f"{r} ({p:,.0f})", color="#ffffff", va="center", fontsize=13)   # 使用者 10-29：數字用白色
-    ax.axhline(c[-1], color="#2962ff", ls=":", linewidth=0.8)
-    ax.text(len(bars) + 9, c[-1], f"{c[-1]:,.2f}", color="#ffffff", va="center", fontsize=14, fontweight="bold")
+            ax.hlines(p, fib["_idx"][0], len(bars) + 2, color=pal[r], linewidth=1.2)
+            tags.append((p, f"{r}  {p:,.0f}", pal[r]))
+    ax.axhline(c[-1], color="#2962ff", ls=":", linewidth=0.9)
+    tags.append((c[-1], f"現價 {c[-1]:,.2f}", "#2962ff"))
     step = max(1, (len(bars) - start) // 10)
     ticks = list(range(start, len(bars), step))
     ax.set_xticks(ticks)
     ax.set_xticklabels([bars[i][0][5:10] for i in ticks], color="#ffffff", fontsize=13)
     ax.tick_params(axis="y", colors="#ffffff", labelsize=13)
-    ax.set_xlim(start - 2, len(bars) + 26)
-    lo = min(b[3] for b in bars[start:])
-    hi = max(b[2] for b in bars[start:])
+    ax.set_xlim(start - 2, len(bars) + 38)
+    lo = min([b[3] for b in bars[start:]] + [t[0] for t in tags if fib])
+    hi = max([b[2] for b in bars[start:]] + [t[0] for t in tags if fib])
     pad = (hi - lo) * 0.05
     ax.set_ylim(lo - pad, hi + pad)
+    for (y0, txt, col), y in zip(sorted(tags), spread([t[0] for t in sorted(tags)], lo - pad, hi + pad, 0.05)):
+        ax.annotate(txt, xy=(len(bars) + 1, y0), xytext=(len(bars) + 6, y), va="center", fontsize=13,
+                    fontweight="bold", color="#ffffff",
+                    bbox={"facecolor": "#131722", "edgecolor": col, "boxstyle": "round,pad=0.25"},
+                    arrowprops={"arrowstyle": "-", "color": col, "lw": 0.8})
+    ax.text(0.01, 0.01, f"最新 K 線：{bars[-1][0]}", transform=ax.transAxes, ha="left", va="bottom",
+            color="#ffffff", fontsize=12)
     ax.grid(color="#2a2e39", linewidth=0.5)
     for s in ax.spines.values():
         s.set_color("#2a2e39")
