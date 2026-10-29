@@ -20,23 +20,28 @@ HKT = timezone(timedelta(hours=8))
 INDEX = "charts/index.json"
 
 
-def hsi_fib(tmp, bucket):
-    """龍飛陣斐波那契：下載最近 200 日 1 分鐘恒指即月 K 線，跑 hsi_fib.py。"""
+def hsi_fib(tmp, bucket, tf="4h", ndays=200):
+    """龍飛陣斐波那契：下載最近 ndays 日 1 分鐘恒指即月 K 線，跑 hsi_fib.py（tf＝4h／1d）。"""
     src = os.path.join(tmp, "k")
     os.makedirs(src, exist_ok=True)
-    blobs = sorted(bucket.list_blobs(prefix="archive/futu_k_1m/HK.HSI_FRONT/"), key=lambda b: b.name)[-200:]
+    blobs = sorted(bucket.list_blobs(prefix="archive/futu_k_1m/HK.HSI_FRONT/"), key=lambda b: b.name)[-ndays:]
     for b in blobs:
         try:      # 唔帶 generation：今日嘅檔每分鐘重寫，用舊 generation 會 404
             bucket.blob(b.name).download_to_filename(os.path.join(src, os.path.basename(b.name)))
         except Exception as exc:
             print(f"略過 {b.name}：{exc}", file=sys.stderr)
-    png = os.path.join(tmp, "hsi_fib_4h.png")
-    out = subprocess.run([sys.executable, os.path.join(ROOT, "research/longfei_lessons/hsi_fib.py"), src, png],
+    png = os.path.join(tmp, f"hsi_fib_{tf}.png")
+    out = subprocess.run([sys.executable, os.path.join(ROOT, "research/longfei_lessons/hsi_fib.py"), src, png, tf],
                          check=True, capture_output=True, text=True)
     return png, json.loads(out.stdout.strip().splitlines()[-1])
 
 
 CHARTS = [
+    # [R364] 使用者 10-30「恒指加番日線，同斐波那契回撤」：同 4 小時線同一個波段；下載全部 1 分鐘存檔（約一年）先夠 SMA200
+    {"id": "hsi_fib_1d", "title": "恒指即月期貨 日線・斐波那契回撤", "team": "🐉 龍飛陣",
+     "desc": "同 4 小時線同一個波段（最近 90 日最高點同佢之前嘅最低點），劃 0.236–0.886 回撤位同 50／100／200 日均線；夜市歸下一個交易日。",
+     "make": lambda tmp, bucket: hsi_fib(tmp, bucket, "1d", 400)},
+    # 4 小時線排尾出圖：updated_hkt 較新，網頁（按更新時間新到舊）會排第一
     {"id": "hsi_fib_4h", "title": "恒指即月期貨 4 小時線・斐波那契回撤", "team": "🐉 龍飛陣",
      "desc": "程式自己揀波段（最近 90 日最高點同佢之前嘅最低點），劃 0.236–0.886 回撤位同 50／100／200 均線；日市＋夜市，香港時間。",
      "make": hsi_fib},
