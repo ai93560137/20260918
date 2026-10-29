@@ -298,6 +298,13 @@ def hk_legs(rec: dict, spot: float, d0: date, rate: float = 0.03) -> dict | None
 
 
 # ───────────────────────── 紙上紀錄 ─────────────────────────
+def is_intraday(market: str, d0: date) -> bool:
+    """最新日線係今日而當地未收市（+15 分鐘）→ 盤中。"""
+    from zoneinfo import ZoneInfo
+    now = datetime.now(ZoneInfo("America/New_York" if market == "us" else "Asia/Hong_Kong"))
+    return d0 == now.date() and (now.hour, now.minute) < (16, 15)
+
+
 def read_paper() -> list[dict]:
     p = OUT / "paper_log.csv"
     if not p.exists():
@@ -419,12 +426,16 @@ def run(market: str) -> int:
             c["note"] = f"抓報價失敗 {ex!r}"[:120]
         rows += build_rows(c, q, market)
         time.sleep(0.5)
-    # 紙上：去重後每條有報價嘅腿都記（qualifies 標明係咪「會開」）
+    # 紙上：去重後每條有報價嘅腿都記（qualifies 標明係咪「會開」）；盤中跑（測試）只出表唔記
+    intraday = is_intraday(market, d0)
     recent = {r["ticker"] for r in paper if r["market"] == market
               and (d0 - date.fromisoformat(r["open_date"])).days <= DEDUP_DAYS and r["open_date"] != str(d0)}
     already = {(r["ticker"], r["leg"]) for r in paper if r["open_date"] == str(d0) and r["market"] == market}
     for r in rows:
         if r["leg"] not in LEGS or not r.get("strike"):
+            continue
+        if intraday:
+            r["paper"], r["note"] = "N", (r["note"] + " 盤中價，唔記紙上").strip()
             continue
         if r["ticker"] in recent:
             r["paper"], r["note"] = "N", (r["note"] + f" {DEDUP_DAYS} 日內已記").strip()
@@ -432,7 +443,7 @@ def run(market: str) -> int:
         r["paper"] = "Y"
         if (r["ticker"], r["leg"]) in already:
             continue
-        paper.append(dict(open_date=d0, market=market, ticker=r["ticker"], leg=r["leg"], expiry=r["expiry"], dte=r["dte"],
+        paper.append(dict(open_date=str(d0), market=market, ticker=r["ticker"], leg=r["leg"], expiry=str(r["expiry"]), dte=r["dte"],
                           strike=r["strike"], spot=r["close"], fill=r["fill"], bid=r["bid"], ask=r["ask"], mid=r["mid"],
                           iv_leg=r["iv_leg"], atm_iv=r["atm_iv"], rv63pre=r["rv63pre"], rho=r["rho"], rho_req=r["rho_req"],
                           qualifies=r["qualifies"], earnings=r["earnings"], drop_pct=r["drop_pct"], status="open", note=r["note"]))
@@ -442,16 +453,17 @@ def run(market: str) -> int:
     if need:
         px.update(fetch_prices(sorted(need)))
     settled = settle_paper(paper, market, d0, px)
-    write_csv(OUT / "paper_log.csv", PAPER_COLS, paper)
+    if not intraday:
+        write_csv(OUT / "paper_log.csv", PAPER_COLS, paper)
     write_csv(OUT / market / f"{d0}.csv", CAND_COLS, rows)
     log_p = OUT / "scan_log.csv"
     new = not log_p.exists()
     with open(log_p, "a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if new:
-            w.writerow(["run_utc", "market", "trade_date", "universe", "with_px", "drops", "qualifying_put", "settled"])
+            w.writerow(["run_utc", "market", "trade_date", "universe", "with_px", "drops", "qualifying_put", "settled", "intraday"])
         w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), market, d0, len(tick), len(px), len(drops),
-                    sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled)])
+                    sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled), "Y" if intraday else "N"])
     md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper))
     (OUT / f"latest_{market}.md").write_text(md_txt, encoding="utf-8")
     (OUT / f"tg_{market}.txt").write_text(tg, encoding="utf-8")
