@@ -178,9 +178,9 @@ SIG_RECENT_MAX = 100
 # S1（總指揮 10-21 轉達使用者「訊號書都要落單」）：SIG_DECIDE=1 先處理 EA 心跳（magic 931 圖表）同問 Claude；
 # 只喺有有效訊號（未過期）或者有倉時先問；開倉一定要引用有效訊號。落唔落單照舊由 XAU_EXECUTE 決定（demo 先）。
 SIG_DECIDE = _b("SIG_DECIDE", False)
-# [R353] 使用者 10-30：「931 改為留畀『規則學生』」→ S1（Opus 參考訊號）唔再開新倉；SIG_DECIDE 照開，因為規則學生靠 931 圖表心跳推動。
-# 有舊 931 倉照管（只准平／移止損）。規則學生過門檻（IDEAS #146）、使用者批先另做落單。
-SIG_S1_OPEN = _b("SIG_S1_OPEN", False)
+# [R353] 931 S1 開新倉開關：使用者 10-30 先講「931 留畀規則學生」、之後改口「不用停」→ 預設開（S1 照舊，參考 7713）；
+# 規則學生過門檻（IDEAS #146，11-25）後再定 931 點用。要停 S1 用 SIG_S1_OPEN=0，**唔好用 SIG_DECIDE=0**（規則學生靠 931 心跳推動，會一齊停）。
+SIG_S1_OPEN = _b("SIG_S1_OPEN", True)
 SIG_MAX_IN_PROMPT = _i("SIG_MAX_IN_PROMPT", 5)
 # S1 demo 落單（使用者 10-22 批）：只參考指定頻道（頻道 id 尾 4 位，逗號分隔；空＝全部）；其他頻道只當「附和」計數
 SIG_REFERENCE_CHANNELS = tuple(x.strip()[-4:] for x in _s("SIG_REFERENCE_CHANNELS", "").split(",") if x.strip())

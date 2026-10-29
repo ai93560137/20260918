@@ -157,8 +157,11 @@ class S1Reserved(unittest.TestCase):
             config.SIGNAL_BOOK, config.SIG_DECIDE, config.SIG_S1_OPEN = True, True, False
             s = {"execute": True, "signals": {}, "live_book": live_book.view({}, [], {}), "live_book_follow": live_book.view({}, [], {})}
             h = page.render_signal_book(s)
-            self.assertIn("留畀規則學生，未過門檻", h)
+            self.assertIn("S1 停開新倉；規則學生過門檻後再定", h)
             self.assertNotIn("真倉績效・931", h)
+            config.SIG_S1_OPEN = True
+            h = page.render_signal_book(s)
+            self.assertIn("S1 運行中（0 張）；規則學生過門檻後再定", h)
         finally:
             config.SIGNAL_BOOK, config.SIG_DECIDE, config.SIG_S1_OPEN = keep
 

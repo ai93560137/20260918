@@ -2,7 +2,7 @@
 開倉一定要引用有效訊號；理由註明參考咗邊條訊號；唔使 Haiku 篩選；magic 931；system／tool 有訊號書段，主服務唔受影響。"""
 import json, os, sys, types
 
-os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_BOOK="signal", SIG_DECIDE="1", SIG_S1_OPEN="1", TG_SIGNAL_INGEST_SECRET="s",   # [R353] 測 S1 機制要開
+os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_BOOK="signal", SIG_DECIDE="1", SIG_S1_OPEN="1", TG_SIGNAL_INGEST_SECRET="s",   # [R353] 預設已開，寫明
                   ANTHROPIC_API_KEY="x", XAU_EXECUTE="0", GATE_MODEL="claude-haiku-5-5")
 sys.path.insert(0, "/home/user/20260918/xau")
 try:
@@ -142,12 +142,12 @@ check("只參考 7713，其他頻道只當附和", [x["sid"] for x in act] == ["
 config.SIG_REFERENCE_CHANNELS = ()
 check("brain 說明有 agree 同走咗過濾", "`agree`" in brain.SYSTEM and "past TP1" in brain.SYSTEM)
 
-print("=== [R353] SIG_S1_OPEN=0（931 留畀規則學生）：有效訊號都唔問 Opus、唔開倉，心跳照收 ===")
+print("=== [R353] SIG_S1_OPEN=0（停開新倉）：有效訊號都唔問 Opus、唔開倉，心跳照收 ===")
 _st = json.loads(FAKE["xau/sig/state.json"][0]); _st["position"] = None; FAKE["xau/sig/state.json"] = (json.dumps(_st), FAKE["xau/sig/state.json"][1] + 1)
 config.SIG_S1_OPEN = False; FB.calls.clear()
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3994, "target_price": 4010, "confidence": 0.8, "reason": "突破", "signal_id": "2001_1"}
 st, d = hb(6, 4000)
-check("S1 關：心跳收得、唔 decide、訊息寫留畀規則學生、冇開倉", st == 200 and FB.calls == [] and "規則學生" in (d.get("message") or "")
+check("S1 關：心跳收得、唔 decide、訊息寫停開新倉、冇開倉", st == 200 and FB.calls == [] and "S1 停開新倉" in (d.get("message") or "")
       and json.loads(FAKE["xau/sig/state.json"][0]).get("position") is None, (FB.calls, d))
 config.SIG_S1_OPEN = True
 
