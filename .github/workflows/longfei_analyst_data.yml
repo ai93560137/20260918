@@ -4,8 +4,8 @@ name: 龍飛陣 每日分析欄數據（R289）
 # 雲端工作階段連唔到 Yahoo，由呢度攞 NQ／ES 期貨日線同 1 小時線寫 GCS ops/longfei/analyst/data/；
 # 每日分析工作階段（08:20 HKT）讀佢同 HSI 1 分鐘存檔，按 research/longfei_analyst/STYLE.md 寫分析。只係分析，唔落單。
 on:
-  schedule:
-    - cron: '45 23 * * 1-5'   # 07:45 HKT 星期二至六（美股收市後）
+  # 排程由 Cloud Scheduler zhuge-longfei-analyst-data 做（07:40 HKT 星期二至六；ops/scheduler_jobs.json）。
+  # GitHub cron 10-28、10-29 都冇喺 08:20 前跑（R267 同一問題），所以拎走，免得遲到嗰次重複跑。
   workflow_dispatch: {}
 
 permissions:

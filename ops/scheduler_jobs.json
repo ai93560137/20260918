@@ -173,6 +173,13 @@
    "schedule": "7 */6 * * *",
    "workflow": "us_data_calendar.yml",
    "inputs": {}
+  },
+  {
+   "name": "zhuge-longfei-analyst-data",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "40 7 * * 2-6",
+   "workflow": "longfei_analyst_data.yml",
+   "inputs": {}
   }
  ]
 }
