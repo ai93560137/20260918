@@ -332,7 +332,9 @@ def render(status):
         f"<td>{esc(d.get('ms') or '—')} ms</td></tr>"
         for d in list(reversed(s.get("decisions") or []))[:60])
     dec_html = ("<h3>🧠 最近決策（最新在上）</h3>"
-                + ("<div style='overflow-x:auto'><table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲</th></tr>" + drows + "</table></div>"
+                + ("<div class='dec-scroll' style='overflow:auto;max-height:420px;border:1px solid #e5e7eb;border-radius:8px'>"   # 使用者 10-30：太長，用捲軸
+                   "<style>.dec-scroll th{position:sticky;top:0;background:#fff;z-index:1}</style>"
+                   "<table><tr><th>HKT</th><th>價</th><th>動作</th><th>理由</th><th>延遲</th></tr>" + drows + "</table></div>"
                    if drows else "<p class='muted'>未有決策。</p>"))
     if s.get("execute"):                                         # [R352] 已轉真倉：決策搬去真倉段，模擬倉只寫停咗（有舊紙上單就照列）
         real = real[:-len("</div>")] + "<div class='section'>" + dec_html + "</div></div>"
