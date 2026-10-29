@@ -6656,7 +6656,8 @@ def _analyst_md(md):
     return md_to_html(_ANALYST_DISCLAIMER_RE.sub("", md or ""))
 
 
-_ANALYST_TF = (("_1d", "日線圖（每支 K＝1 日）"), ("_4h", "240 分鐘圖（4 小時 K 線）"), ("_1h", "60 分鐘圖"),
+_ANALYST_TF = (("_1d", "日線圖（每支 K＝1 日）"), ("_4h", "240 分鐘圖（4 小時 K 線）"),
+                ("_4h_fib", "240 分鐘圖（4 小時 K 線・斐波那契）"), ("_1d_fib", "日線圖（每支 K＝1 日・斐波那契）"), ("_1h", "60 分鐘圖"),
                 ("_30m", "30 分鐘圖"), ("_15m", "15 分鐘圖"), ("_5m", "5 分鐘圖"))
 
 
@@ -6678,12 +6679,12 @@ def _analyst_imgs(doc):
                 except Exception as exc:
                     log_event(f"⚠️ [分析圖讀取失敗] {path}: {exc}", severity="WARNING", component="charts")
             cap = _analyst_tf_label(path)
-            cells += (f"<div style='flex:1 1 420px;min-width:0'>"
+            cells += (f"<div style='margin:0 0 12px'>"                    # 使用者 10-29：同 HSI 一樣一張一行，唔並排
                       + (f"<div style='font-weight:bold;color:var(--warning);margin:2px 0'>🕒 {esc(cap)}</div>" if cap else "")
                       + f"<img alt='{esc(path)}' style='width:100%;height:auto;border-radius:6px' "
                       f"src='data:image/png;base64,{b64}'></div>" if b64 else "")
         if cells:
-            imgs += f"<h3>{esc(mkt)}</h3><div style='display:flex;flex-wrap:wrap;gap:10px'>{cells}</div>"
+            imgs += f"<h3>{esc(mkt)}</h3><div>{cells}</div>"
     return imgs
 
 
