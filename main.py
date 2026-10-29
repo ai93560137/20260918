@@ -6663,7 +6663,7 @@ _ANALYST_TF = (("_1d", "日線圖（每支 K＝1 日）"), ("_4h", "240 分鐘�
 
 def _analyst_tf_label(path):
     """[R352] 使用者 10-28「每日總結分析圖表，記得註明是多少分鐘圖表」：由檔名（…_4h.png）判斷時間框架。"""
-    name = str(path).rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    name = str(path).rsplit("/", 1)[-1].rsplit(".", 1)[0].removesuffix("_fib")   # [R362] …_4h_fib.png
     return next((lab for suf, lab in _ANALYST_TF if name.endswith(suf)), "")
 
 
@@ -6893,7 +6893,17 @@ def _charts_markets_section(doc):
     if not isinstance(doc, dict):
         return ""
     charts = doc.get("charts") or {}
-    imgs = _analyst_imgs({"charts": {m: charts[m] for m in CHARTS_MARKETS if m in charts}})
+    # [R362] 龍飛陣 R361 起分析附圖 4h 唔再劃回撤位，另出 charts_fib（<市場>_4h_fib.png）；有就用佢＋日線，冇就退返 charts
+    fib = doc.get("charts_fib") or {}
+    sel = {}
+    for m in CHARTS_MARKETS:
+        if fib.get(m):   # R361b 起 charts_fib 有 4h＋1d 兩張；只得 4h 就配 charts 嘅日線
+            f = list(fib[m])[:2]
+            sel[m] = f if any(str(p).endswith("_1d_fib.png") for p in f) else \
+                f[:1] + [p for p in (charts.get(m) or []) if str(p).endswith("_1d.png")][:1]
+        elif charts.get(m):
+            sel[m] = charts[m]
+    imgs = _analyst_imgs({"charts": sel})
     if not imgs:
         return ""
     when = esc(doc.get("date") or "")
