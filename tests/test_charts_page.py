@@ -85,3 +85,13 @@ try:
 finally:
     main._chart_png_b64 = _orig
 print("fib v2 ok")
+# [R362] R361b：charts_fib 有 4h＋1d 兩張就直接用，唔再配 charts 日線
+main._chart_png_b64 = lambda path: "QUJD"
+try:
+    doc["charts_fib"] = {m: [f"{base}{m}_4h_fib.png", f"{base}{m}_1d_fib.png"] for m in ("NQ", "ES", "SPX", "VIX")}
+    sec = main._charts_markets_section(doc)
+    assert f"{base}NQ_1d_fib.png" in sec and f"{base}NQ_1d.png'" not in sec and f"{base}VIX_4h_fib.png" in sec
+    assert sec.count("240 分鐘圖") == 4 and sec.count("日線圖") == 4
+finally:
+    main._chart_png_b64 = _orig
+print("fib v2b ok")

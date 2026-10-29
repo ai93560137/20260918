@@ -6853,8 +6853,10 @@ def _charts_markets_section(doc):
     fib = doc.get("charts_fib") or {}
     sel = {}
     for m in CHARTS_MARKETS:
-        if fib.get(m):
-            sel[m] = list(fib[m])[:1] + [p for p in (charts.get(m) or []) if str(p).endswith("_1d.png")][:1]
+        if fib.get(m):   # R361b 起 charts_fib 有 4h＋1d 兩張；只得 4h 就配 charts 嘅日線
+            f = list(fib[m])[:2]
+            sel[m] = f if any(str(p).endswith("_1d_fib.png") for p in f) else \
+                f[:1] + [p for p in (charts.get(m) or []) if str(p).endswith("_1d.png")][:1]
         elif charts.get(m):
             sel[m] = charts[m]
     imgs = _analyst_imgs({"charts": sel})
