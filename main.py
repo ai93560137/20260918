@@ -6844,7 +6844,9 @@ def build_charts_page(items, err=None, analyst=""):
     nav = page_nav("charts")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
     intro = ""                                                     # [R263] 使用者 10-25：移除頁頂說明
-    intro += analyst
+    # [R358] 使用者 10-29：分析文章只喺 ?view=analyst 顯示，呢度留一條連結，唔再重覆
+    intro += analyst or ("<div class='section'><p>📝 龍飛陣每日分析文章同評分卡："
+                         "<a href='?view=analyst'>龍飛陣分析 →</a></p></div>")
     if err:
         return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
     if not items:
@@ -6880,16 +6882,9 @@ def handle_charts_get(req):
     except Exception as exc:
         log_event(f"⚠️ [分析圖頁失敗] {exc}", severity="WARNING", component="charts")
         items, err = [], "讀取失敗，請稍後再試。"
-    day = req.args.get("day") or None
-    day = day if day and _DAY_RE.match(day) else None
-    try:
-        a = analyst_data(day)
-    except Exception as exc:
-        log_event(f"⚠️ [龍飛陣分析讀取失敗] {exc}", severity="WARNING", component="charts")
-        a = {"doc": None, "scorecard": None, "days": []}
     if req.args.get("format") == "json":
-        return jsonify({"status": "error" if err else "ok", "items": items, "analyst": a})
-    return build_charts_page(items, err, build_analyst_section(a))
+        return jsonify({"status": "error" if err else "ok", "items": items})
+    return build_charts_page(items, err)                           # [R358] 分析文章搬走，見 ?view=analyst
 
 
 def _lf_rulesim_section():
