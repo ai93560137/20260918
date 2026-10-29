@@ -7458,7 +7458,7 @@ def futu_price_chart(rows, data=None):
     if len(fd) == 10 and fd > rows[-1]["date"]:                  # [R354c] 今日未有日線（例如 ES 開市前）：加一點只有預測帶
         day_items.append({"key": fd, "date": fd, "high": None, "low": None, "close": None})
     if len(fd) == 10 and day_items[-1]["key"] == fd:
-        day_items[-1] = {**day_items[-1], "today": True}             # 前端用粗黃括號標今日預測
+        day_items[-1] = {**day_items[-1], "today": True}             # 前端用粗黃直線標今日預測
     legend = ("<div style='display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:#6c757d; margin-bottom:6px;'>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#4f9dff; vertical-align:middle;'></span> 高</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ff5c5c; vertical-align:middle;'></span> 低</span>"
@@ -7489,8 +7489,8 @@ function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
   o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}
   else if(seg.length===1){const i=seg[0];o+=`<rect x="${(X(i)-4).toFixed(1)}" y="${Y(S[i][5]).toFixed(1)}" width="8" height="${Math.max(1,Y(S[i][4])-Y(S[i][5])).toFixed(1)}" fill="#f2c94c" fill-opacity="0.45" stroke="#f2c94c" stroke-dasharray="3 3"/>`;}seg=[];};
  S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
- S.forEach((r,i)=>{if(!r[6]||r[4]==null)return;const x=X(i),yh=Y(r[5]),yl=Y(r[4]);   // [R354c] 今日預測：粗黃括號（[R354d] 使用者 10-29 剷走旁邊文字，數值睇提示框）
-  o+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yh.toFixed(1)}" y2="${yl.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/><line x1="${(x-7).toFixed(1)}" x2="${(x+7).toFixed(1)}" y1="${yh.toFixed(1)}" y2="${yh.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/><line x1="${(x-7).toFixed(1)}" x2="${(x+7).toFixed(1)}" y1="${yl.toFixed(1)}" y2="${yl.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/>`;});
+ S.forEach((r,i)=>{if(!r[6]||r[4]==null)return;const x=X(i),yh=Y(r[5]),yl=Y(r[4]);   // [R354c] 今日預測：粗黃直線（[R354d] 剷走旁邊文字；[R354e] 使用者 10-29 移除黃色橫線）
+  o+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yh.toFixed(1)}" y2="${yl.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/>`;});
  const ln=(k,c,wd)=>`<polyline points="${S.map((r,i)=>r[k]==null?'':X(i).toFixed(1)+','+Y(r[k]).toFixed(1)).filter(Boolean).join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round"/>`;
  o+=ln(1,'#4f9dff',1.6)+ln(2,'#ff5c5c',1.6)+ln(3,'#ffffff',2);
  const pr=S.length<=70?2.6:S.length<=140?1.8:1.2;
