@@ -7416,21 +7416,20 @@ def _pc_block(cid, title, items, pred, presets, default_n, note=""):
     if len(items) < 2:
         return ""
     data = [[it["date"] if len(it["key"]) != 7 else it["key"], it["high"], it["low"], it["close"]]
-            + list(pred.get(it["key"], (None, None))) for it in items]
+            + list(pred.get(it["key"], (None, None))) + ([1] if it.get("today") else []) for it in items]
     btns = "".join(f"<button type='button' class='pc-btn' data-n='{n}'>{lab}</button>" for n, lab in presets)
-    last = items[-1]
+    real = [i for i, it in enumerate(items) if it.get("close") is not None]
+    last = items[real[-1]]
     return (f"<h3 style='margin:14px 0 4px;'>{title}</h3>"
             f"<div style='display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px;' id='{cid}-tools'>{btns}"
             "<button type='button' class='pc-btn' data-z='0.7'>＋ 放大</button><button type='button' class='pc-btn' data-z='1.4'>－ 縮小</button>"
-            f"<span class='muted' style='font-size:12px;'>最新 {esc(data[-1][0])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}{esc(note)}</span></div>"
+            f"<span class='muted' style='font-size:12px;'>最新 {esc(data[real[-1]][0])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}{esc(note)}</span></div>"
             f"<div id='{cid}-info' style='font-size:12px; color:#6c757d; min-height:18px; margin-bottom:4px;'></div>"
-            # [R354b] 使用者 10-29「加上捲軸，圖片範圍高度和闊度都加大 50%」：圖闊 150%（外框橫向捲軸），高度跟住 ×1.5；下面加時間捲軸
+            # [R354b] 使用者 10-29「加上捲軸，圖片範圍高度和闊度都加大 50%」：圖闊 150%（外框橫向捲軸），高度跟住 ×1.5
+            # [R354c] 使用者 10-29「移除時間捲軸」
             f"<div style='overflow-x:auto; border-radius:8px;'>"
             f"<svg id='{cid}' viewBox='0 0 1000 300' style='width:150%; max-width:none; height:auto; display:block; background:#15181d; border-radius:8px; touch-action:none; cursor:grab;' "
             f"role='img' aria-label='{esc(title)}'></svg></div>"
-            f"<input type='range' id='{cid}-scroll' min='0' max='0' value='0' step='1' aria-label='時間捲軸' "
-            f"style='width:100%; margin:6px 0 2px; accent-color:#0f62fe;'>"
-            f"<div class='muted' style='font-size:11px; display:flex; justify-content:space-between;'><span>◀ 較早</span><span>時間捲軸：拖動睇其他日子</span><span>較近 ▶</span></div>"
             f"<script>_pcInit('{cid}',{json.dumps(data, ensure_ascii=False)},{int(default_n)});</script>")
 
 
@@ -7449,14 +7448,22 @@ def futu_price_chart(rows, data=None):
         key = (periods.get(kind) or {}).get("key")
         if kind != "day" and key and fc.get("high") and fc.get("low"):
             out.setdefault(key, (fc["low"], fc["high"]))       # 未完嘅本週／本月：用而家嘅預測
+        today = (data or {}).get("forecast") or {}
+        if kind == "day" and today.get("high") and today.get("low") and len(str(today.get("date", ""))) == 10:
+            out.setdefault(today["date"], (today["low"], today["high"]))   # [R354c] 使用者 10-29「加上今天的預測範圍」
         return out
 
     day_items = [{"key": r["date"], **r} for r in rows]
+    fd = str(((data or {}).get("forecast") or {}).get("date", ""))
+    if len(fd) == 10 and fd > rows[-1]["date"]:                  # [R354c] 今日未有日線（例如 ES 開市前）：加一點只有預測帶
+        day_items.append({"key": fd, "date": fd, "high": None, "low": None, "close": None})
+    if len(fd) == 10 and day_items[-1]["key"] == fd:
+        day_items[-1] = {**day_items[-1], "today": True}             # 前端用粗黃括號標今日預測
     legend = ("<div style='display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:#6c757d; margin-bottom:6px;'>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#4f9dff; vertical-align:middle;'></span> 高</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ff5c5c; vertical-align:middle;'></span> 低</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ffffff; outline:1px solid #999; vertical-align:middle;'></span> 收</span>"
-              "<span><span style='display:inline-block; width:14px; height:10px; background:#f2c94c; opacity:0.6; vertical-align:middle;'></span> 系統預測高低（開始前，黃色帶）</span>"
+              "<span><span style='display:inline-block; width:14px; height:10px; background:#f2c94c; opacity:0.6; vertical-align:middle;'></span> 系統預測高低（開始前，黃色帶；最右係今日預測）</span>"
               "<span>滑鼠滾輪放大縮小、拖動左右移；手機兩隻手指拉闊／收窄、一隻手指拖動；指住睇數值</span></div>")
     return (legend + "<style>.pc-btn{border:1px solid #ced4da;background:#fff;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer}"
             ".pc-btn.on{background:#0f62fe;color:#fff;border-color:#0f62fe}</style><script>" + _PC_JS + "</script>"
@@ -7468,34 +7475,38 @@ def futu_price_chart(rows, data=None):
 
 # [R354] 高低收圖前端：放大縮小、拖動、手機雙指、data point、指住彈數值框；y 軸跟可見範圍
 _PC_JS = r"""window._pcInit=window._pcInit||function(id,D,n0){
-const svg=document.getElementById(id),info=document.getElementById(id+'-info'),tools=document.getElementById(id+'-tools'),sc=document.getElementById(id+'-scroll');
+const svg=document.getElementById(id),info=document.getElementById(id+'-info'),tools=document.getElementById(id+'-tools');
 if(!svg||!D.length)return;
 const W=1000,H=300,L=60,R=56,T=12,B=26;let a=0,b=D.length-1,hov=-1,st=1;
 const f=v=>Math.round(v).toLocaleString('en-US');
 function clamp(){const n=D.length;let w=Math.max(Math.min(5,n-1),b-a);if(w>n-1)w=n-1;if(a<0)a=0;b=a+w;if(b>n-1){b=n-1;a=b-w;}a=Math.round(a);b=Math.round(b);}
 function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
- S.forEach(r=>{lo=Math.min(lo,r[2],r[4]??1e18);hi=Math.max(hi,r[1],r[5]??-1e18);});
+ S.forEach(r=>{lo=Math.min(lo,r[2]??1e18,r[4]??1e18);hi=Math.max(hi,r[1]??-1e18,r[5]??-1e18);});
  const sp=(hi-lo)||1;lo-=sp*.05;hi+=sp*.05;st=(W-L-R)/Math.max(1,S.length-1);
  const X=i=>L+i*st,Y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));let o='';
  for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text><text x="${W-4}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
  let seg=[];const flush=()=>{if(seg.length>1){const t=seg.map(i=>X(i).toFixed(1)+','+Y(S[i][5]).toFixed(1)).join(' '),bo=seg.slice().reverse().map(i=>X(i).toFixed(1)+','+Y(S[i][4]).toFixed(1)).join(' ');
-  o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}seg=[];};
+  o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}
+  else if(seg.length===1){const i=seg[0];o+=`<rect x="${(X(i)-4).toFixed(1)}" y="${Y(S[i][5]).toFixed(1)}" width="8" height="${Math.max(1,Y(S[i][4])-Y(S[i][5])).toFixed(1)}" fill="#f2c94c" fill-opacity="0.45" stroke="#f2c94c" stroke-dasharray="3 3"/>`;}seg=[];};
  S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
- const ln=(k,c,wd)=>`<polyline points="${S.map((r,i)=>X(i).toFixed(1)+','+Y(r[k]).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round"/>`;
+ S.forEach((r,i)=>{if(!r[6]||r[4]==null)return;const x=X(i),yh=Y(r[5]),yl=Y(r[4]);   // [R354c] 今日預測：粗黃括號＋數值
+  o+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yh.toFixed(1)}" y2="${yl.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/><line x1="${(x-7).toFixed(1)}" x2="${(x+7).toFixed(1)}" y1="${yh.toFixed(1)}" y2="${yh.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/><line x1="${(x-7).toFixed(1)}" x2="${(x+7).toFixed(1)}" y1="${yl.toFixed(1)}" y2="${yl.toFixed(1)}" stroke="#f2c94c" stroke-width="3"/>`+
+   `<text x="${(x-10).toFixed(1)}" y="${(yh-6).toFixed(1)}" text-anchor="end" font-size="12" font-weight="bold" fill="#f2c94c" stroke="#15181d" stroke-width="3" paint-order="stroke">今日預測高 ${f(r[5])}</text><text x="${(x-10).toFixed(1)}" y="${(yl+15).toFixed(1)}" text-anchor="end" font-size="12" font-weight="bold" fill="#f2c94c" stroke="#15181d" stroke-width="3" paint-order="stroke">今日預測低 ${f(r[4])}</text>`;});
+ const ln=(k,c,wd)=>`<polyline points="${S.map((r,i)=>r[k]==null?'':X(i).toFixed(1)+','+Y(r[k]).toFixed(1)).filter(Boolean).join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round"/>`;
  o+=ln(1,'#4f9dff',1.6)+ln(2,'#ff5c5c',1.6)+ln(3,'#ffffff',2);
  const pr=S.length<=70?2.6:S.length<=140?1.8:1.2;
- S.forEach((r,i)=>{const x=X(i).toFixed(1);o+=`<circle cx="${x}" cy="${Y(r[1]).toFixed(1)}" r="${pr}" fill="#4f9dff"/><circle cx="${x}" cy="${Y(r[2]).toFixed(1)}" r="${pr}" fill="#ff5c5c"/><circle cx="${x}" cy="${Y(r[3]).toFixed(1)}" r="${pr}" fill="#ffffff"/>`;});
+ S.forEach((r,i)=>{if(r[3]==null)return;const x=X(i).toFixed(1);o+=`<circle cx="${x}" cy="${Y(r[1]).toFixed(1)}" r="${pr}" fill="#4f9dff"/><circle cx="${x}" cy="${Y(r[2]).toFixed(1)}" r="${pr}" fill="#ff5c5c"/><circle cx="${x}" cy="${Y(r[3]).toFixed(1)}" r="${pr}" fill="#ffffff"/>`;});
  const every=Math.max(1,Math.ceil(S.length/10));
  S.forEach((r,i)=>{if(i%every===0&&X(i)<W-40){const lab=r[0].length===7?r[0]:(S.length>70?r[0].slice(2,7):r[0].slice(5));o+=`<text x="${X(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#9aa0a6">${lab}</text>`;}});
  if(hov>=a&&hov<=b){const i=hov-a,r=S[i],x=X(i);o+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#9aa0a6" stroke-dasharray="2 3"/>`;
-  [[1,'#4f9dff'],[2,'#ff5c5c'],[3,'#ffffff']].forEach(([k,c])=>{o+=`<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="4.5" fill="${c}" stroke="#15181d" stroke-width="1.5"/>`;});
-  const rowsT=[[r[0],'#e8eaed'],['高 '+f(r[1]),'#4f9dff'],['低 '+f(r[2]),'#ff5c5c'],['收 '+f(r[3]),'#ffffff']].concat(r[4]!=null?[['預測 '+f(r[4])+'～'+f(r[5]),'#f2c94c']]:[]);
-  const bw=160,bh=12+rowsT.length*16,bx=x+12+bw>W-R?x-12-bw:x+12,by=Math.min(Math.max(T,Y(r[1])-bh/2),H-B-bh);
+  [[1,'#4f9dff'],[2,'#ff5c5c'],[3,'#ffffff']].forEach(([k,c])=>{if(r[k]!=null)o+=`<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="4.5" fill="${c}" stroke="#15181d" stroke-width="1.5"/>`;});
+  const rowsT=[[r[0]+(r[3]==null?'（今日，未有數據）':''),'#e8eaed']].concat(r[3]!=null?[['高 '+f(r[1]),'#4f9dff'],['低 '+f(r[2]),'#ff5c5c'],['收 '+f(r[3]),'#ffffff']]:[]).concat(r[4]!=null?[['預測 '+f(r[4])+'～'+f(r[5]),'#f2c94c']]:[]);
+  const bw=160,bh=12+rowsT.length*16,bx=x+12+bw>W-R?x-12-bw:x+12,by=Math.min(Math.max(T,Y(r[1]??r[5]??lo)-bh/2),H-B-bh);
   o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw}" height="${bh}" rx="6" fill="#0b0d10" fill-opacity="0.92" stroke="#3c4043"/>`;
   rowsT.forEach((t,k)=>{o+=`<text x="${(bx+10).toFixed(1)}" y="${(by+20+k*16).toFixed(1)}" font-size="12" fill="${t[1]}">${t[0]}</text>`;});
-  info.textContent=`${r[0]}　高 ${f(r[1])}　低 ${f(r[2])}　收 ${f(r[3])}`+(r[4]!=null?`　預測 ${f(r[4])}～${f(r[5])}`:'');}
+  info.textContent=`${r[0]}`+(r[3]!=null?`　高 ${f(r[1])}　低 ${f(r[2])}　收 ${f(r[3])}`:'　今日未有數據')+(r[4]!=null?`　預測 ${f(r[4])}～${f(r[5])}`:'');}
  else info.textContent=`顯示 ${S[0][0]} 至 ${S[S.length-1][0]}（${S.length} 點）`;
- svg.innerHTML=o;if(sc){sc.max=Math.max(0,D.length-1-(b-a));sc.value=a;sc.disabled=(b-a)>=D.length-1;}}
+ svg.innerHTML=o;}
 function idxAt(cx){const r=svg.getBoundingClientRect();return a+Math.round(((cx-r.left)/r.width*W-L)/st);}
 function zoom(fac,c){c=c==null?(a+b)/2:c;const w=Math.max(5,(b-a)*fac);a=c-(c-a)*fac;b=a+w;draw();}
 tools.querySelectorAll('.pc-btn').forEach(el=>el.addEventListener('click',()=>{
@@ -7514,7 +7525,6 @@ svg.addEventListener('touchmove',e=>{const t=e.touches;if(!t0)return;e.preventDe
  else if(t.length===1&&t0.x!=null){const r=svg.getBoundingClientRect();const dd=(t[0].clientX-t0.x)/r.width*W/st;a=t0.a-dd;b=t0.b-dd;hov=idxAt(t[0].clientX);}
  draw();},{passive:false});
 svg.addEventListener('touchend',()=>{t0=null;});
-if(sc)sc.addEventListener('input',()=>{const w=b-a;a=+sc.value;b=a+w;draw();});
 b=D.length-1;a=n0?Math.max(0,b-n0):0;draw();
 const box=svg.parentElement;if(box&&box.scrollWidth>box.clientWidth){const go=()=>{box.scrollLeft=box.scrollWidth;};go();requestAnimationFrame(go);window.addEventListener('load',go);}   // [R354b] 預設拉到最右邊（最近）
 tools.querySelectorAll('.pc-btn[data-n="'+n0+'"]').forEach(x=>x.classList.add('on'));
