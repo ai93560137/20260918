@@ -78,7 +78,8 @@ def plain_alert(a):
         return f"恒指期權 {m.group(1)} 日後結算（{m.group(2)}）：持有到結算，第二日開下個月新倉"
     m = re.match(r'滾倉窗口：(\d+) 天後月度結算', a)
     if m:
-        return f"恒指本月期權 {m.group(1)} 日後結算，準備之後開下個月新倉"
+        d = '今日' if m.group(1) == '0' else f"{m.group(1)} 日後"
+        return f"恒指本月期權{d}結算，準備之後開下個月新倉"
     return a
 
 
@@ -99,7 +100,7 @@ def plain_line(s):
         return f"恒指 {_mon(m.group(1))}期權保費溢價 {m.group(4)}（歷史平均 +2.4）→ {verdict}"
     m = re.match(r'HSI 月度到期剩 (\d+) 天', s)
     if m:
-        return f"🗓 恒指本月期權 {m.group(1)} 日後結算"
+        return '🗓 恒指本月期權今日結算' if m.group(1) == '0' else f"🗓 恒指本月期權 {m.group(1)} 日後結算"
     m = re.match(r'HSI 持倉 (\S+) 跨式 到期剩 (-?\d+) 天', s)
     if m:
         return f"📌 恒指持倉：行使價 {m.group(1)} 跨式（同時賣出認購同認沽），{m.group(2)} 日後到期"
