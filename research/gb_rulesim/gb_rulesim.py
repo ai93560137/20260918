@@ -328,27 +328,67 @@ def decode_duka_day(raw, day_start_ts):
     return out
 
 
-def fetch_duka(since, until=None):
-    """Dukascopy XAUUSD 現貨 1 分鐘 BID（URL 月份由 0 起計），由 since（YYYY-MM-DD）逐日到 until／今日；週末冇檔就跳過。"""
+DUKA_CACHE = "xau/sig/duka/"          # 已完結嘅日子快取（[t, o, h, l, c] 陣列），重跑唔使再下載
+
+
+def fetch_duka(since, until=None, cache=None, pause=0.4):
+    """Dukascopy XAUUSD 現貨 1 分鐘 BID（URL 月份由 0 起計），由 since（YYYY-MM-DD）逐日到 until／今日；星期六跳過。
+    10-29 第一次跑大部分日子攞唔到（疑被限速）→ 加瀏覽器 User-Agent、5 次重試（2／4／8／16 秒退避）、每日之間停 pause 秒，
+    已完結而有數據嘅日子寫 GCS 快取（cache＝Gcs 物件）。回傳 (K 線, 統計 dict)。"""
+    import urllib.error
     import urllib.request
     d0 = dt.datetime.strptime(since[:10], "%Y-%m-%d").replace(tzinfo=dt.timezone.utc)
     d1 = dt.datetime.strptime(until[:10], "%Y-%m-%d").replace(tzinfo=dt.timezone.utc) if until else dt.datetime.now(dt.timezone.utc)
+    today = dt.datetime.now(dt.timezone.utc).date()
     out, day = [], d0
+    st = {"days": 0, "ok": 0, "cached": 0, "empty": 0, "failed": [], "bars": 0}
     while day.date() <= d1.date():
         if day.weekday() != 5:                                          # 星期六冇報價
-            url = DUKA_URL.format(y=day.year, m0=day.month - 1, d=day.day)
-            raw = None
-            for _ in range(3):
+            st["days"] += 1
+            key = f"{DUKA_CACHE}{day.date().isoformat()}.json"
+            got = None
+            if cache is not None:
                 try:
-                    with urllib.request.urlopen(url, timeout=30) as r:
-                        raw = r.read()
-                    break
-                except Exception:                                       # noqa: BLE001 — 網絡失敗重試，404（未有檔）就略過
-                    time.sleep(1)
-            out.extend(decode_duka_day(raw, int(day.timestamp())))
+                    rows = cache.read_json(key)
+                except Exception:                                       # noqa: BLE001
+                    rows = None
+                if rows:
+                    got = [{"utc": int(t), "open": o, "high": h, "low": lo, "close": c} for t, o, h, lo, c in rows]
+                    st["cached"] += 1
+            if got is None:
+                url = DUKA_URL.format(y=day.year, m0=day.month - 1, d=day.day)
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"})
+                raw, err = None, ""
+                for k in range(5):
+                    try:
+                        with urllib.request.urlopen(req, timeout=40) as r:
+                            raw = r.read()
+                        break
+                    except urllib.error.HTTPError as e:
+                        err = f"HTTP {e.code}"
+                        if e.code == 404:
+                            break
+                    except Exception as e:                              # noqa: BLE001 — 網絡失敗退避重試
+                        err = type(e).__name__
+                    time.sleep(2 ** (k + 1))
+                got = decode_duka_day(raw, int(day.timestamp()))
+                if got:
+                    st["ok"] += 1
+                    if cache is not None and day.date() < today:
+                        try:
+                            cache.write(key, json.dumps([[b["utc"], b["open"], b["high"], b["low"], b["close"]] for b in got]), "application/json")
+                        except Exception:                               # noqa: BLE001
+                            pass
+                elif raw is not None:
+                    st["empty"] += 1
+                else:
+                    st["failed"].append(f"{day.date().isoformat()}（{err or '冇回應'}）")
+                time.sleep(pause)
+            out.extend(got or [])
         day += dt.timedelta(days=1)
     out.sort(key=lambda b: b["utc"])
-    return out
+    st["bars"] = len(out)
+    return out, st
 
 
 def fetch_futures(interval, period):
@@ -387,8 +427,11 @@ def main():
         src = f"經紀 M1（GCS {BARS_PREFIX} 最近 {a.days} 日，無基差）"
         bars_for = lambda s: ([b for b in fut if s["ts"] - 3600 <= b["utc"] <= s["ts"] + 24 * 3600], 0.0)   # noqa: E731
     elif a.source == "duka":
-        fut = fetch_duka(a.since)
-        src = f"Dukascopy XAUUSD 現貨 1 分鐘 BID（{a.since} 起，無期貨基差）"
+        fut, st = fetch_duka(a.since, cache=g)
+        print(f"Dukascopy：{st['days']} 個交易日，下載 {st['ok']}、快取 {st['cached']}、空檔 {st['empty']}、失敗 {len(st['failed'])}；K 線 {st['bars']} 根")
+        if st["failed"]:
+            print("失敗日子：" + "、".join(st["failed"][:40]))
+        src = f"Dukascopy XAUUSD 現貨 1 分鐘 BID（{a.since} 起，無期貨基差；{st['ok'] + st['cached']}／{st['days']} 日有數據）"
         bars_for = lambda s: ([b for b in fut if s["ts"] - 3600 <= b["utc"] <= s["ts"] + 24 * 3600], 0.0)   # noqa: E731
     else:
         fut = fetch_futures(a.interval, a.period)
