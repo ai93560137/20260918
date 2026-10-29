@@ -38,8 +38,13 @@ VARIANTS = {
     "V8b": {"name": "MAE 止損 8", "kw": {"mae_stop": 8}}, "V8c": {"name": "MAE 止損 12", "kw": {"mae_stop": 12}},
     "V3b": {"name": "時間止損 20 分鐘", "kw": {"time_stop": 20}}, "V3c": {"name": "時間止損 45 分鐘", "kw": {"time_stop": 45}},
     "V10": {"name": "V2（唔追 15）＋V1（SL 上限 10）", "kw": {"chase": 15, "sl_cap": 10}},
+    # 「學佢入場、改善佢」候選（使用者 10-29）：GB 入場方向／時機不變，SL 上限 10，TP 唔用佢嘅 4／5 步距而按 R 重定（tp_set＝成交價 ± 距離）
+    "V11": {"name": "GB 入場、SL 10、TP 5/10/15/20 逐級鎖", "kw": {"sl_cap": 10, "tp_set": [5, 10, 15, 20]}},
+    "V12": {"name": "GB 入場、SL 10、TP 10/20 兩級（TP1→保本）", "kw": {"sl_cap": 10, "tp_set": [10, 20]}},
+    "V13": {"name": "GB 入場、SL 10、TP 10 全平（1:1）", "kw": {"sl_cap": 10, "tp_set": [10], "lock": "tp1_flat"}},
+    "V14": {"name": "GB 入場、SL 10、TP 5/10/15/20、MAE 止損 6", "kw": {"sl_cap": 10, "tp_set": [5, 10, 15, 20], "mae_stop": 6}},
 }
-PRIMARY = ("V0", "V1", "V2", "V3", "V8", "V10")
+PRIMARY = ("V0", "V1", "V2", "V3", "V8", "V10", "V11", "V12", "V13", "V14")
 
 
 # ---------- 純函數 ----------
@@ -69,7 +74,7 @@ def pre_move(bars, ts, minutes=30):
 
 
 def simulate(bars, sig, *, sl_cap=None, lock="tp1_be", time_stop=None, entry="market", mae_stop=None, chase=None,
-             max_hold_min=MAX_HOLD_MIN):
+             tp_set=None, max_hold_min=MAX_HOLD_MIN):
     """一張訊號喺 bars（已校正到現貨價）上行一個變體。sig：ts、side、lo、hi、sl、tp（list）。回傳 dict：
     res（sl／be／lockK／all_tp／tp1_flat／tp2_flat／time_stop／mae_stop／skip_chase／not_filled／open／no_bars）、r（每 1 美元原 SL 風險）、pnl（美元/oz）、mfe、mae、k、exit_utc。"""
     side, sg, tps = sig["side"], (1 if sig["side"] == "BUY" else -1), list(sig["tp"] or [])
@@ -102,6 +107,8 @@ def simulate(bars, sig, *, sl_cap=None, lock="tp1_be", time_stop=None, entry="ma
     sl = sig["sl"]
     if sl_cap is not None and risk0 > sl_cap:
         sl = fill - sg * sl_cap
+    if tp_set:                                                         # 「學佢入場、改善佢」：TP 按成交價 ± 距離重定
+        tps = [fill + sg * float(d) for d in tp_set]
     cur, k, mfe, mae = sl, 0, 0.0, 0.0
 
     def out(res, pnl, i, kk):
@@ -237,6 +244,10 @@ class Gcs:
         blob = self.b.blob(name)
         return json.loads(blob.download_as_text()) if blob.exists() else None
 
+    def read_text(self, name):
+        blob = self.b.blob(name)
+        return blob.download_as_text() if blob.exists() else None
+
     def write(self, name, text, ctype):
         self.b.blob(name).upload_from_string(text, content_type=ctype)
 
@@ -258,6 +269,25 @@ def load_signals(g, since):
             seen.add(s["sid"])
     sigs.sort(key=lambda s: s["ts"])
     return sigs
+
+
+BARS_PREFIX = "xau/sig/bars/"
+
+
+def fetch_broker_bars(g, days):
+    """GCS xau/sig/bars/<日>.jsonl（EA 心跳存嘅經紀 M1，一行一個 JSON 陣列）→ 最近 days 日嘅 K 線（utc 欄）。無基差。"""
+    out = []
+    for nm in sorted(g.list(BARS_PREFIX))[-days:]:
+        for ln in (g.read_text(nm) or "").splitlines():
+            ln = ln.strip()
+            if ln:
+                try:
+                    out.extend(json.loads(ln))
+                except ValueError:
+                    continue
+    out = [{"utc": int(b["utc"]), "open": float(b["open"]), "high": float(b["high"]), "low": float(b["low"]), "close": float(b["close"])} for b in out if isinstance(b, dict) and b.get("utc") is not None]
+    out.sort(key=lambda b: b["utc"])
+    return out
 
 
 def fetch_futures(interval, period):
@@ -284,18 +314,27 @@ def main():
     ap.add_argument("--since", default="2026-09-01")
     ap.add_argument("--interval", default="5m")
     ap.add_argument("--period", default="60d")
+    ap.add_argument("--source", default="yf", choices=("yf", "broker"), help="yf＝yfinance GC=F（校正基差）；broker＝GCS xau/sig/bars 經紀 M1（無基差，只有最近幾日）")
+    ap.add_argument("--days", type=int, default=7, help="--source broker 讀最近幾日 K 線")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     g = Gcs()
     sigs = load_signals(g, a.since)
-    fut = fetch_futures(a.interval, a.period)
-    print(f"訊號 {len(sigs)} 張（{a.since} 起）；期貨 K 線 {len(fut)} 根 {a.interval}/{a.period}" + (f"（{dt.datetime.utcfromtimestamp(fut[0]['utc'])} → {dt.datetime.utcfromtimestamp(fut[-1]['utc'])}）" if fut else ""))
+    if a.source == "broker":
+        fut = fetch_broker_bars(g, a.days)
+        src = f"經紀 M1（GCS {BARS_PREFIX} 最近 {a.days} 日，無基差）"
+        bars_for = lambda s: ([b for b in fut if s["ts"] - 3600 <= b["utc"] <= s["ts"] + 24 * 3600], 0.0)   # noqa: E731
+    else:
+        fut = fetch_futures(a.interval, a.period)
+        src = f"yfinance GC=F {a.interval}/{a.period}（每張訊號校正基差）"
+        bars_for = lambda s: calibrate(fut, s)   # noqa: E731
+    print(f"訊號 {len(sigs)} 張（{a.since} 起）；K 線 {len(fut)} 根 {src}" + (f"（{dt.datetime.utcfromtimestamp(fut[0]['utc'])} → {dt.datetime.utcfromtimestamp(fut[-1]['utc'])}）" if fut else ""))
     if not fut:
-        print("yfinance 冇數據，停")
+        print("冇 K 線數據，停")
         return 1
-    result, dropped = run_all(sigs, lambda s: calibrate(fut, s))
+    result, dropped = run_all(sigs, bars_for)
     run_utc = dt.datetime.utcnow().strftime("%Y-%m-%dT%H%MZ")
-    meta = {"run_utc": run_utc, "since": a.since, "n_signals": len(sigs), "n_used": len(sigs) - len(dropped), "price_src": f"yfinance GC=F {a.interval}/{a.period}（每張訊號校正基差）", "variants": {k: v["kw"] for k, v in VARIANTS.items()}}
+    meta = {"run_utc": run_utc, "since": a.since, "n_signals": len(sigs), "n_used": len(sigs) - len(dropped), "price_src": src, "variants": {k: v["kw"] for k, v in VARIANTS.items()}}
     md = to_markdown(result, dropped, meta)
     print(md)
     for key in PRIMARY:

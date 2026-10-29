@@ -70,6 +70,15 @@ check("回調限價成交 4064 → all_tp，pnl 20", r["res"] == "all_tp" and ab
 # 冇 K 線
 check("冇 K 線 → no_bars", gb.simulate(bars_from(flat[:10]), BUY)["res"] == "no_bars")
 
+r = gb.simulate(bars_from(up), BUY, sl_cap=10, tp_set=[5, 10, 15, 20])
+check("tp_set 5/10/15/20 一路升 → all_tp +20、R＝20/19", r["res"] == "all_tp" and abs(r["pnl"] - 20.0) < 0.01 and abs(r["r"] - 20 / 19) < 0.01, r)
+r = gb.simulate(bars_from(up), BUY, sl_cap=10, tp_set=[10], lock="tp1_flat")
+check("tp_set [10] 單一 TP＝伺服器 TP → all_tp +10", r["res"] == "all_tp" and abs(r["pnl"] - 10.0) < 0.01, r)
+mid = flat + [4065, 4068, 4071, 4075.5, 4076, 4072, 4068, 4064.5, 4062]
+r = gb.simulate(bars_from(mid), BUY, sl_cap=10, tp_set=[10, 20])
+check("tp_set [10,20] 到 TP1 收市保本 → 回落 → be", r["res"] == "be" and abs(r["pnl"]) < 0.01, r)
+check("V11–V14 喺 VARIANTS", all(k in gb.VARIANTS for k in ("V11", "V12", "V13", "V14")))
+
 print("summarize：")
 s = gb.summarize([{"res": "all_tp", "r": 1.0, "pnl": 20}, {"res": "sl", "r": -1.0, "pnl": -20}, {"res": "be", "r": 0.0, "pnl": 0}, {"res": "skip_chase", "r": 0.0, "pnl": 0}, {"res": "sl", "r": -0.5, "pnl": -10}])
 check("n 4、勝 1 平 1 負 2、ΣR −0.5、略過 1", s["n"] == 4 and s["win"] == 1 and s["flat"] == 1 and s["loss"] == 2 and abs(s["sum_r"] + 0.5) < 1e-9 and s["skipped"] == 1, s)
