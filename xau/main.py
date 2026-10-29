@@ -559,6 +559,8 @@ def process_bar(state, bar, m1, m15, account, now):
                 log_event(f"📏 [{config.TEAM_NAME}] 規則移止損 → {stop:.{config.PRICE_DIGITS}f}（{hr_rule.get('reason')}）@ {bar['close']:.{config.PRICE_DIGITS}f}",
                           component="rules", action=action)
             return rec, rec["applied"]
+    if config.SIGNAL_BOOK and pos is None and not config.SIG_S1_OPEN:      # [R353] SIG_S1_OPEN=0：唔問 Opus、唔開倉（學生已喺心跳前面交卷）
+        return None, "931 S1 停開新倉（SIG_S1_OPEN=0；規則學生照行）"
     active = signals.active(now, price=bar["close"]) if config.SIGNAL_BOOK else None
     if config.SIGNAL_BOOK and pos is None and not active:
         return None, "冇有效訊號（訊號書唔問 Claude）"

@@ -110,7 +110,7 @@ def live_book_section(title, v, note=""):
     tbl = (("<div class='dec-scroll' style='overflow:auto;max-height:420px;border:1px solid #e5e7eb;border-radius:8px'>"   # 使用者 10-30：太長，用捲軸
             "<style>.dec-scroll th{position:sticky;top:0;background:#fff;z-index:1}</style><table>") + head + rows + "</table></div>") if rows else "<p class='muted'>未有已平倉真倉單。</p>"
     grp = ""
-    for gname, items in v.get("groups") or []:                  # [R352c] 使用者 10-30「921／932 再細分」
+    for gname, items in (v.get("groups") or []) if (v.get("summary") or {}).get("n") else []:   # [R352c] 使用者 10-30「921／932 再細分」；冇單唔出空表
         grows = "".join(
             f"<tr><td>{esc(k)}</td><td>{g['n']}</td><td>{g['wins']}／{g['flat']}／{g['losses']}</td>"
             f"<td>{'—' if g['win_rate'] is None else format(g['win_rate'], '.0%')}</td>"
@@ -119,7 +119,7 @@ def live_book_section(title, v, note=""):
             for k, g in items)
         grp += (f"<h3>🔎 按{esc(gname)}細分</h3><div style='overflow-x:auto'><table><tr><th>{esc(gname)}</th><th>筆數</th><th>勝／平／負</th><th>勝率</th>"
                 "<th>合計 HKD</th><th>PF</th><th>平均 R</th><th>最大回撤 HKD</th></tr>" + grows + "</table></div>")
-    return (f"<div class='section'><h2>{title}</h2>" + cards + grp + f"<h3>📒 已平倉逐筆（最新在上，共 {len(v.get('rows') or [])} 筆，捲動睇舊嘅）</h3>" + tbl
+    return (f"<div class='section'><h2>{title}</h2>" + cards + grp + (f"<h3>📒 已平倉逐筆（最新在上，共 {len(v.get('rows') or [])} 筆，捲動睇舊嘅）</h3>" if v.get('rows') else "<h3>📒 已平倉逐筆</h3>") + tbl
             + "<p class='muted' style='font-size:13px'>HKD 用 EA realized_total 差額（含佣金／隔夜息）；出場價由 HKD 反推（1 美元＝"
             + f"{config.HKD_PER_USD:g} 港元），標「估」；R＝(出場−入場)÷初始止損距離。"
             + (f"部署前 {v.get('seeded')} 筆由補登紀錄載入。" if v.get("seeded") else "")
@@ -295,7 +295,13 @@ def render_signal_book(s):
     if s.get("execute") or s.get("live_book_follow"):            # [R352] 真倉績效（932 跟單；S1 開就加 931）／模擬倉
         body += ("<div class='lf-grp lf-real'><div class='lf-banner'>💰 真倉績效</div>"
                  + live_book_section("💰 真倉績效・932（跟單）", s.get("live_book_follow"))
-                 + (live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（訊號書 S1）", s.get("live_book")) if config.SIG_DECIDE else "")
+                 + ((live_book_section(f"💰 真倉績效・{esc(config.MAGIC)}（訊號書 S1）", s.get("live_book"))
+                     if ((s.get("live_book") or {}).get("summary") or {}).get("n") else
+                     f"<div class='section'><h2>💰 {esc(config.MAGIC)}（訊號書 S1）：{'S1 運行中（0 張）' if config.SIG_S1_OPEN else 'S1 停開新倉'}；規則學生過門檻（11-25）後再定</h2>"
+                     f"<p>{esc(config.MAGIC)} S1 由 Opus 參考有效訊號（{esc('、'.join(config.SIG_REFERENCE_CHANNELS) or '全部頻道')}）落真倉，暫時未有已平倉單。"
+                     "規則學生（rev15／level）過 IDEAS #146 門檻（成交 ≥ 100 張、每張 R ≥ +0.2、PF ≥ 1.3、TP 命中贏隨機基準 ≥ 10 點、最大連敗 ≤ 6；"
+                     "11-11 初判、11-25 正式）後，再由使用者決定 931 點用。進度見下面「🔬 前向測試」。</p></div>")
+                    if config.SIG_DECIDE else "")
                  + "</div><div class='lf-grp lf-sim'><div class='lf-banner'>🧪 模擬倉績效</div><div class='section'><p><b>已轉真倉，模擬停。</b>"
                  "頻道準確度同學徒係影子評分（唔落單），唔計入真倉績效。</p></div></div>")
     body += forward_section(s.get("forward"))                    # [R352c] 前向測試（0342 V13／5117／學生）
