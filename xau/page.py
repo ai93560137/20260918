@@ -110,7 +110,7 @@ def live_book_section(title, v, note=""):
     tbl = (("<div class='dec-scroll' style='overflow:auto;max-height:420px;border:1px solid #e5e7eb;border-radius:8px'>"   # 使用者 10-30：太長，用捲軸
             "<style>.dec-scroll th{position:sticky;top:0;background:#fff;z-index:1}</style><table>") + head + rows + "</table></div>") if rows else "<p class='muted'>未有已平倉真倉單。</p>"
     grp = ""
-    for gname, items in v.get("groups") or []:                  # [R352c] 使用者 10-30「921／932 再細分」
+    for gname, items in (v.get("groups") or []) if (v.get("summary") or {}).get("n") else []:   # [R352c] 使用者 10-30「921／932 再細分」；冇單唔出空表
         grows = "".join(
             f"<tr><td>{esc(k)}</td><td>{g['n']}</td><td>{g['wins']}／{g['flat']}／{g['losses']}</td>"
             f"<td>{'—' if g['win_rate'] is None else format(g['win_rate'], '.0%')}</td>"
@@ -119,7 +119,7 @@ def live_book_section(title, v, note=""):
             for k, g in items)
         grp += (f"<h3>🔎 按{esc(gname)}細分</h3><div style='overflow-x:auto'><table><tr><th>{esc(gname)}</th><th>筆數</th><th>勝／平／負</th><th>勝率</th>"
                 "<th>合計 HKD</th><th>PF</th><th>平均 R</th><th>最大回撤 HKD</th></tr>" + grows + "</table></div>")
-    return (f"<div class='section'><h2>{title}</h2>" + cards + grp + f"<h3>📒 已平倉逐筆（最新在上，共 {len(v.get('rows') or [])} 筆，捲動睇舊嘅）</h3>" + tbl
+    return (f"<div class='section'><h2>{title}</h2>" + cards + grp + (f"<h3>📒 已平倉逐筆（最新在上，共 {len(v.get('rows') or [])} 筆，捲動睇舊嘅）</h3>" if v.get('rows') else "<h3>📒 已平倉逐筆</h3>") + tbl
             + "<p class='muted' style='font-size:13px'>HKD 用 EA realized_total 差額（含佣金／隔夜息）；出場價由 HKD 反推（1 美元＝"
             + f"{config.HKD_PER_USD:g} 港元），標「估」；R＝(出場−入場)÷初始止損距離。"
             + (f"部署前 {v.get('seeded')} 筆由補登紀錄載入。" if v.get("seeded") else "")
