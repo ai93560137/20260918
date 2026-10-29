@@ -7470,14 +7470,14 @@ def futu_price_chart(rows, data=None):
 _PC_JS = r"""window._pcInit=window._pcInit||function(id,D,n0){
 const svg=document.getElementById(id),info=document.getElementById(id+'-info'),tools=document.getElementById(id+'-tools'),sc=document.getElementById(id+'-scroll');
 if(!svg||!D.length)return;
-const W=1000,H=300,L=60,R=10,T=12,B=26;let a=0,b=D.length-1,hov=-1,st=1;
+const W=1000,H=300,L=60,R=56,T=12,B=26;let a=0,b=D.length-1,hov=-1,st=1;
 const f=v=>Math.round(v).toLocaleString('en-US');
 function clamp(){const n=D.length;let w=Math.max(Math.min(5,n-1),b-a);if(w>n-1)w=n-1;if(a<0)a=0;b=a+w;if(b>n-1){b=n-1;a=b-w;}a=Math.round(a);b=Math.round(b);}
 function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
  S.forEach(r=>{lo=Math.min(lo,r[2],r[4]??1e18);hi=Math.max(hi,r[1],r[5]??-1e18);});
  const sp=(hi-lo)||1;lo-=sp*.05;hi+=sp*.05;st=(W-L-R)/Math.max(1,S.length-1);
  const X=i=>L+i*st,Y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));let o='';
- for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
+ for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text><text x="${W-4}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
  let seg=[];const flush=()=>{if(seg.length>1){const t=seg.map(i=>X(i).toFixed(1)+','+Y(S[i][5]).toFixed(1)).join(' '),bo=seg.slice().reverse().map(i=>X(i).toFixed(1)+','+Y(S[i][4]).toFixed(1)).join(' ');
   o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}seg=[];};
  S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
@@ -7516,6 +7516,7 @@ svg.addEventListener('touchmove',e=>{const t=e.touches;if(!t0)return;e.preventDe
 svg.addEventListener('touchend',()=>{t0=null;});
 if(sc)sc.addEventListener('input',()=>{const w=b-a;a=+sc.value;b=a+w;draw();});
 b=D.length-1;a=n0?Math.max(0,b-n0):0;draw();
+const box=svg.parentElement;if(box&&box.scrollWidth>box.clientWidth){const go=()=>{box.scrollLeft=box.scrollWidth;};go();requestAnimationFrame(go);window.addEventListener('load',go);}   // [R354b] 預設拉到最右邊（最近）
 tools.querySelectorAll('.pc-btn[data-n="'+n0+'"]').forEach(x=>x.classList.add('on'));
 };"""
 
