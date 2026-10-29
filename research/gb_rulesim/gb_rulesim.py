@@ -298,6 +298,59 @@ def fetch_broker_bars(g, days):
     return out
 
 
+DUKA_URL = "https://datafeed.dukascopy.com/datafeed/XAUUSD/{y:04d}/{m0:02d}/{d:02d}/BID_candles_min_1.bi5"
+
+
+def decode_duka_day(raw, day_start_ts):
+    """Dukascopy 一日 1 分鐘 BID K 線（.bi5＝LZMA）→ K 線列表。每筆 24 bytes 大端：int32 秒（由當日 00:00 UTC）、
+    int32 開、收、低、高（價 × 除數）、float32 成交量。XAUUSD 除數 1000；為穩陣按價位自動揀（1000／100000，令價喺 500–20000）。"""
+    import lzma
+    import struct
+    if not raw:
+        return []
+    try:
+        data = lzma.decompress(raw)
+    except lzma.LZMAError:
+        return []
+    out, n = [], len(data) // 24
+    rows = [struct.unpack(">5if", data[i * 24:(i + 1) * 24]) for i in range(n)]
+    if not rows:
+        return []
+    div = 1000.0
+    for cand in (1000.0, 100000.0, 100.0):
+        if 500 <= rows[0][1] / cand <= 20000:
+            div = cand
+            break
+    for t, o, c, lo, hi, vol in rows:
+        if o <= 0 or vol < 0:
+            continue
+        out.append({"utc": int(day_start_ts + t), "open": o / div, "high": hi / div, "low": lo / div, "close": c / div})
+    return out
+
+
+def fetch_duka(since, until=None):
+    """Dukascopy XAUUSD 現貨 1 分鐘 BID（URL 月份由 0 起計），由 since（YYYY-MM-DD）逐日到 until／今日；週末冇檔就跳過。"""
+    import urllib.request
+    d0 = dt.datetime.strptime(since[:10], "%Y-%m-%d").replace(tzinfo=dt.timezone.utc)
+    d1 = dt.datetime.strptime(until[:10], "%Y-%m-%d").replace(tzinfo=dt.timezone.utc) if until else dt.datetime.now(dt.timezone.utc)
+    out, day = [], d0
+    while day.date() <= d1.date():
+        if day.weekday() != 5:                                          # 星期六冇報價
+            url = DUKA_URL.format(y=day.year, m0=day.month - 1, d=day.day)
+            raw = None
+            for _ in range(3):
+                try:
+                    with urllib.request.urlopen(url, timeout=30) as r:
+                        raw = r.read()
+                    break
+                except Exception:                                       # noqa: BLE001 — 網絡失敗重試，404（未有檔）就略過
+                    time.sleep(1)
+            out.extend(decode_duka_day(raw, int(day.timestamp())))
+        day += dt.timedelta(days=1)
+    out.sort(key=lambda b: b["utc"])
+    return out
+
+
 def fetch_futures(interval, period):
     import yfinance as yf
     df = yf.download("GC=F", period=period, interval=interval, progress=False, auto_adjust=False)
@@ -323,7 +376,7 @@ def main():
     ap.add_argument("--channel", default=DEFAULT_CHANNEL, help="頻道 id（2249680342＝Gold Brother、1473735117＝黃金戰鬥機）")
     ap.add_argument("--interval", default="5m")
     ap.add_argument("--period", default="60d")
-    ap.add_argument("--source", default="yf", choices=("yf", "broker"), help="yf＝yfinance GC=F（校正基差）；broker＝GCS xau/sig/bars 經紀 M1（無基差，只有最近幾日）")
+    ap.add_argument("--source", default="yf", choices=("yf", "broker", "duka"), help="yf＝yfinance GC=F（校正基差）；broker＝GCS xau/sig/bars 經紀 M1（無基差，只有最近幾日）")
     ap.add_argument("--days", type=int, default=7, help="--source broker 讀最近幾日 K 線")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
@@ -332,6 +385,10 @@ def main():
     if a.source == "broker":
         fut = fetch_broker_bars(g, a.days)
         src = f"經紀 M1（GCS {BARS_PREFIX} 最近 {a.days} 日，無基差）"
+        bars_for = lambda s: ([b for b in fut if s["ts"] - 3600 <= b["utc"] <= s["ts"] + 24 * 3600], 0.0)   # noqa: E731
+    elif a.source == "duka":
+        fut = fetch_duka(a.since)
+        src = f"Dukascopy XAUUSD 現貨 1 分鐘 BID（{a.since} 起，無期貨基差）"
         bars_for = lambda s: ([b for b in fut if s["ts"] - 3600 <= b["utc"] <= s["ts"] + 24 * 3600], 0.0)   # noqa: E731
     else:
         fut = fetch_futures(a.interval, a.period)

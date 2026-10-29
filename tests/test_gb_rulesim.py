@@ -108,6 +108,13 @@ check("parse_recent 0342", gb.parse_recent(rec) is not None and gb.parse_recent(
 check("out_prefix 0342 沿用舊位、5117 分開", gb.out_prefix("2249680342") == "xau/sig/gb_rulesim/" and gb.out_prefix("1473735117") == "xau/sig/gb_rulesim/5117/")
 check("parse_recent 指定 5117", gb.parse_recent(dict(rec, ch="5117"), "5117") is not None and gb.parse_recent(rec, "5117") is None)
 
+import lzma, struct
+recs = b"".join(struct.pack(">5if", i * 60, 4000000 + i, 4000500 + i, 3999500 + i, 4001000 + i, 1.5) for i in range(3))
+day_bars = gb.decode_duka_day(lzma.compress(recs, format=lzma.FORMAT_ALONE), 1800000000)
+check("Dukascopy 解碼 3 根、價 ÷1000", len(day_bars) == 3 and abs(day_bars[0]["open"] - 4000.0) < 1e-9 and abs(day_bars[0]["close"] - 4000.5) < 1e-9 and day_bars[1]["utc"] == 1800000060, day_bars[:1])
+check("Dukascopy 高低欄位", abs(day_bars[0]["high"] - 4001.0) < 1e-9 and abs(day_bars[0]["low"] - 3999.5) < 1e-9)
+check("Dukascopy 空檔 → []", gb.decode_duka_day(b"", 0) == [] and gb.decode_duka_day(b"xx", 0) == [])
+
 print("run_all / to_markdown：")
 sigs = [BUY, dict(BUY, sid="x_2", ts=T0 + 60 * 40, side="SELL", lo=4064.0, hi=4066.0, sl=4084.0, tp=[4061.0, 4056.0, 4051.0, 4046.0])]
 res, dropped = gb.run_all(sigs, lambda s: (bars_from(up), 0.0), variants={"V0": gb.VARIANTS["V0"], "V2": gb.VARIANTS["V2"]})

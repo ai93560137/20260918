@@ -13,6 +13,10 @@ on:
         description: 由呢日起嘅訊號（預設 2026-09-01；1 分鐘只回 7 日、5 分鐘只回 60 日）
         required: false
         default: '2026-09-01'
+      source:
+        description: 價格來源（yf＝期貨校正基差；duka＝Dukascopy 現貨 1 分鐘；broker＝經紀 M1 最近幾日）
+        required: false
+        default: 'yf'
       interval:
         description: yfinance K 線（5m 或 1m）
         required: false
@@ -37,7 +41,7 @@ concurrency:
 jobs:
   rulesim:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -61,10 +65,11 @@ jobs:
         env:
           CHANNEL: ${{ github.event.inputs.channel }}
           SINCE: ${{ github.event.inputs.since }}
+          SOURCE: ${{ github.event.inputs.source }}
           INTERVAL: ${{ github.event.inputs.interval }}
           PERIOD: ${{ github.event.inputs.period }}
           DRY: ${{ github.event.inputs.dry_run }}
         run: |
-          ARGS="--channel ${CHANNEL:-2249680342} --since ${SINCE:-2026-09-01} --interval ${INTERVAL:-5m} --period ${PERIOD:-60d}"
+          ARGS="--channel ${CHANNEL:-2249680342} --since ${SINCE:-2026-09-01} --source ${SOURCE:-yf} --interval ${INTERVAL:-5m} --period ${PERIOD:-60d}"
           [ "$DRY" = "true" ] && ARGS="$ARGS --dry-run"
           python3 research/gb_rulesim/gb_rulesim.py $ARGS
