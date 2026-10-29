@@ -224,6 +224,13 @@ class Trader:
                                         "reason": "模擬唔叫 AI（R295，改即日回測）", "rejected": None, "stop": None,
                                         "target": None, "usage": None, "day_pnl": st.get("day_pnl"),
                                         "session": session})
+            elif qty == 0 and self._open_window(now):   # [R353] 開市時段（IDEAS #147）：唔開新倉、唔叫 AI
+                st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
+                self._log("decisions", {"bar": st["last_decision_bar"], "contract": contract, "last": snap["last"],
+                                        "pos": qty, "ai_action": None, "final": "HOLD", "gate": "OPEN_WINDOW",
+                                        "reason": f"開市時段 {self._open_window(now)} 唔開新倉（R353，IDEAS #147）",
+                                        "rejected": None, "stop": None, "target": None, "usage": None,
+                                        "day_pnl": st.get("day_pnl"), "session": session})
             elif qty == 0 and data_blocked:    # [R348] 美國數據前 N 小時：唔開新倉、唔叫 AI
                 st["ai_skipped_today"] = st.get("ai_skipped_today", 0) + 1
                 b = st["data_block"]
@@ -268,6 +275,18 @@ class Trader:
             return False
         self.state["last_decision_bar"] = key
         return True
+
+    def _open_window(self, now):
+        """[R353] 而家（香港時間）喺 OPEN_BLOCK_WINDOWS 某段入面就回傳嗰段（例如 "09:28-09:36"），否則 ""。"""
+        spec = self.cfg.open_block_windows
+        if not spec:
+            return ""
+        hm = now.astimezone(HKT).strftime("%H:%M")
+        for w in spec.split(","):
+            a, _, b = w.strip().partition("-")
+            if a and b and a.strip() <= hm < b.strip():
+                return w.strip()
+        return ""
 
     def _data_blocked(self, now):
         """[R348] 美國高影響數據前 N 小時：回傳 True 並將事件寫入 state（heartbeat data_block）。日曆有問題照常交易。"""

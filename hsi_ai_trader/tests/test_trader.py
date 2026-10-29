@@ -1495,3 +1495,41 @@ def test_data_block_off_by_default(env, tmp_path):
     tr.calendar = _cal(tmp_path, [{"t": "2026-10-16T03:00:00Z", "title": "FOMC"}])
     tr.tick()
     assert ai.calls == 1 and tr.state["data_block"] is None
+
+
+def test_open_window_blocks_new_entries(env):
+    """[R353] 使用者 10-29「批 #147」：09:15–09:20、09:28–09:36 冇倉唔叫 AI，記 gate=OPEN_WINDOW；之後照叫。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, open_block_windows="09:15-09:20,09:28-09:36")
+    t["now"] = t["now"].replace(hour=9, minute=30, second=5)
+    tr.tick()
+    assert ai.calls == 0 and ai.screens == 0
+    rec = [json.loads(x) for x in (cfg.log_dir / "decisions.jsonl").read_text("utf-8").splitlines()][-1]
+    assert rec["gate"] == "OPEN_WINDOW" and "09:28-09:36" in rec["reason"]
+    advance(t, minutes=5)                                     # 09:35 仲喺窗口
+    tr.tick()
+    assert ai.calls == 0
+    advance(t, minutes=5)                                     # 09:40 窗口外
+    tr.tick()
+    assert ai.calls == 1
+
+
+def test_open_window_keeps_managing_position(env):
+    """[R353] 窗口入面有倉照管：止蝕照做。"""
+    cfg, t, b, ai, tr = env
+    tr.cfg = replace(cfg, open_block_windows="09:28-09:36")
+    t["now"] = t["now"].replace(hour=9, minute=25, second=5)
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "confidence": 0.7, "reason": "突破"}
+    tr.tick()
+    assert tr.state["pos"]
+    advance(t, minutes=5)                                     # 09:30 窗口入面跌穿止蝕
+    b.price = 24940
+    tr.tick()
+    assert tr.state["pos"] is None
+
+
+def test_open_window_off_by_default(env):
+    cfg, t, b, ai, tr = env
+    t["now"] = t["now"].replace(hour=9, minute=30, second=5)
+    tr.tick()
+    assert ai.calls == 1

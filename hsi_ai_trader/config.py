@@ -131,6 +131,10 @@ class Config:
     # [R348] 使用者 10-28「數據之前4小時不入市」（所有真倉，RISK_LADDER §6d）：美國高影響數據前 N 小時唔開新倉、
     # 冇倉唔叫 Haiku／Opus；有倉照管。日曆見 data_calendar.py。0＝關；只限真倉
     data_block_hours: float = float(_env("DATA_BLOCK_HOURS", "0")) if _IS_REAL else 0.0
+    # [R353] 使用者 10-29「批 #147 開市時段唔開新倉」：IDEAS #147 港期開市頭 5 分鐘同 A 股開市（09:30）幾分鐘
+    # 每分鐘幅度係平時 2–3 倍（09:30–09:31 平均 88 點）。呢啲時段（香港時間，含頭唔含尾）唔開新倉、冇倉唔叫 AI；有倉照管。
+    # 格式 "09:15-09:20,09:28-09:36"；空＝關；只限真倉
+    open_block_windows: str = _env("OPEN_BLOCK_WINDOWS", "").strip() if _IS_REAL else ""
     # [R235] 使用者 10-19：美股真倉「用盡富途槓桿、唔留緩衝」：開倉股數 = 富途而家最多可買／可沽空數量
     # ÷ 未有倉嘅真倉美股隻數（等每隻都開到）。REAL_NOTIONAL_USD 唔再用。只限真倉美股
     real_size_max: bool = _IS_REAL and SPEC.kind == "stock" and _bool("REAL_SIZE_MAX", "0")
