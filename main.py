@@ -8648,11 +8648,17 @@ def page_nav(current, extra=()):
     return f"<nav class='nav-links' aria-label='頁面導覽'>{items}</nav>"
 
 
+# [R355] 使用者 10-29「分頁加 logo，容易找」→「扇形圖案」：瀏覽器分頁圖示（內嵌 SVG，深藍圓角底＋金色羽扇）
+FAVICON_LINK = ("<link rel='icon' type='image/svg+xml' href=\"data:image/svg+xml,"
+                "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b2a5b'/%3E%3Cpath d='M32 44C14 38 9 22 16 12C22 5 42 5 48 12C55 22 50 38 32 44Z' fill='%23f2c94c'/%3E%3Cpath d='M32 44L20 12M32 44L26 8M32 44V7M32 44L38 8M32 44L44 12'"
+                " stroke='%230b2a5b' stroke-width='1.6' stroke-linecap='round'/%3E%3Crect x='30' y='42' width='4' height='17' rx='2' fill='%23c8962e'/%3E%3Ccircle cx='32' cy='44' r='3' fill='%23c8962e'/%3E%3C/svg%3E\">")
+
+
 def html_page(title, body, head_extra=""):
     return (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
             f"<meta name='color-scheme' content='light only'>"
-            f"<title>{esc(title)}</title><style>{BASE_CSS}</style>{head_extra}</head>"
+            f"<title>{esc(title)}</title>{FAVICON_LINK}<style>{BASE_CSS}</style>{head_extra}</head>"
             f"<body><div class='container'>{body}</div></body></html>")
 
 
@@ -8897,7 +8903,7 @@ def cors_preflight():
 def _serve_static_html(path, label):
     try:
         with open(path, encoding="utf-8") as handle:
-            return handle.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
+            return handle.read().replace("<head>", "<head>" + FAVICON_LINK, 1), 200, {"Content-Type": "text/html; charset=utf-8"}   # [R355] 分頁圖示
     except OSError as exc:
         print(f"⚠️ [{label}讀取失敗] {exc}", flush=True)
         return _json_response({"status": "error",
