@@ -19,5 +19,5 @@ NKVI url nikkei_stock_average_vi_daily_en.csv: HTTP 403, 2354 bytes
 NKVI url nikkei_stock_average_vi_daily_jp.csv: HTTP 403, 2354 bytes
 NKVI url dataload?list=vi&csv=1: HTTP 200, 5044 bytes
 NKVI url ERR: ParserError('Error tokenizing data. C error: Expected 1 fields in line 117, saw 2\n')
-ES=F: 7742.0 @ 2026-10-29 15:00:00-04:00
-NQ=F: 29494.75 @ 2026-10-29 15:00:00-04:00
+ES=F: 7717.0 @ 2026-10-29 16:00:00-04:00
+NQ=F: 29132.75 @ 2026-10-29 16:00:00-04:00
