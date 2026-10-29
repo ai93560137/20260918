@@ -7488,10 +7488,17 @@ function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
  S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
  const ln=(k,c,wd)=>`<polyline points="${S.map((r,i)=>X(i).toFixed(1)+','+Y(r[k]).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round"/>`;
  o+=ln(1,'#4f9dff',1.6)+ln(2,'#ff5c5c',1.6)+ln(3,'#ffffff',2);
+ const pr=S.length<=70?2.6:S.length<=140?1.8:1.2;   // [R354] data point：每日三個點
+ S.forEach((r,i)=>{const x=X(i).toFixed(1);o+=`<circle cx="${x}" cy="${Y(r[1]).toFixed(1)}" r="${pr}" fill="#4f9dff"/><circle cx="${x}" cy="${Y(r[2]).toFixed(1)}" r="${pr}" fill="#ff5c5c"/><circle cx="${x}" cy="${Y(r[3]).toFixed(1)}" r="${pr}" fill="#ffffff"/>`;});
  const every=Math.max(1,Math.ceil(S.length/10));let lastM='';
  S.forEach((r,i)=>{const lab=S.length>70?r[0].slice(2,7):r[0].slice(5);const key=S.length>70?r[0].slice(0,7):i;
   if(S.length>70?(key!==lastM&&i):(i%every===0)){if(X(i)<W-40)o+=`<text x="${X(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#9aa0a6">${lab}</text>`;}lastM=S.length>70?key:lastM;});
- if(hov>=a&&hov<=b){const i=hov-a,r=S[i];o+=`<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#9aa0a6" stroke-dasharray="2 3"/>`;
+ if(hov>=a&&hov<=b){const i=hov-a,r=S[i],x=X(i);o+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#9aa0a6" stroke-dasharray="2 3"/>`;
+  o+=`<circle cx="${x.toFixed(1)}" cy="${Y(r[1]).toFixed(1)}" r="4.5" fill="#4f9dff" stroke="#15181d" stroke-width="1.5"/><circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="4.5" fill="#ff5c5c" stroke="#15181d" stroke-width="1.5"/><circle cx="${x.toFixed(1)}" cy="${Y(r[3]).toFixed(1)}" r="4.5" fill="#ffffff" stroke="#15181d" stroke-width="1.5"/>`;
+  const rowsT=[[r[0],'#e8eaed'],['高 '+f(r[1]),'#4f9dff'],['低 '+f(r[2]),'#ff5c5c'],['收 '+f(r[3]),'#ffffff']].concat(r[4]!=null?[['預測 '+f(r[4])+'～'+f(r[5]),'#f2c94c']]:[]);
+  const bw=150,bh=12+rowsT.length*16,bx=x+12+bw>W-R?x-12-bw:x+12,by=Math.min(Math.max(T,Y(r[1])-bh/2),H-B-bh);
+  o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw}" height="${bh}" rx="6" fill="#0b0d10" fill-opacity="0.92" stroke="#3c4043"/>`;
+  rowsT.forEach((t,k)=>{o+=`<text x="${(bx+10).toFixed(1)}" y="${(by+20+k*16).toFixed(1)}" font-size="12" fill="${t[1]}">${t[0]}</text>`;});
   info.textContent=`${r[0]}　高 ${f(r[1])}　低 ${f(r[2])}　收 ${f(r[3])}`+(r[4]!=null?`　預測 ${f(r[4])}～${f(r[5])}`:'');}
  else info.textContent=`顯示 ${S[0][0]} 至 ${S[S.length-1][0]}（${S.length} 個交易日）`;
  svg.innerHTML=o;svg._st=st;}
