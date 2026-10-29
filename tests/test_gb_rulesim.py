@@ -115,6 +115,24 @@ check("Dukascopy 解碼 3 根、價 ÷1000", len(day_bars) == 3 and abs(day_bars
 check("Dukascopy 高低欄位", abs(day_bars[0]["high"] - 4001.0) < 1e-9 and abs(day_bars[0]["low"] - 3999.5) < 1e-9)
 check("Dukascopy 空檔 → []", gb.decode_duka_day(b"", 0) == [] and gb.decode_duka_day(b"xx", 0) == [])
 
+
+class _Cache:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def read_json(self, key):
+        return self.rows.get(key)
+
+    def write(self, *a):
+        raise AssertionError("快取命中唔應寫")
+
+
+cache = _Cache({"xau/sig/duka/2026-09-02.json": [[1788307200, 4000.0, 4001.0, 3999.0, 4000.5]]})
+bars_c, st_c = gb.fetch_duka("2026-09-02", "2026-09-02", cache=cache, pause=0)
+check("Dukascopy 快取命中唔使下載", st_c["cached"] == 1 and st_c["ok"] == 0 and len(bars_c) == 1 and bars_c[0]["close"] == 4000.5, st_c)
+_, st_s = gb.fetch_duka("2026-09-05", "2026-09-05", cache=cache, pause=0)
+check("星期六唔計交易日", st_s["days"] == 0, st_s)
+
 print("run_all / to_markdown：")
 sigs = [BUY, dict(BUY, sid="x_2", ts=T0 + 60 * 40, side="SELL", lo=4064.0, hi=4066.0, sl=4084.0, tp=[4061.0, 4056.0, 4051.0, 4046.0])]
 res, dropped = gb.run_all(sigs, lambda s: (bars_from(up), 0.0), variants={"V0": gb.VARIANTS["V0"], "V2": gb.VARIANTS["V2"]})
