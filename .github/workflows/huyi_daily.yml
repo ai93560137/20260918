@@ -48,6 +48,11 @@ jobs:
             git pull --no-rebase -q origin ${GITHUB_REF_NAME} || true
           done
           exit 1
+      - name: Push to 總指揮網頁（?view=huyi）
+        env:
+          ZHUGE_GCP_URL: ${{ secrets.ZHUGE_GCP_URL }}
+          ZHUGE_WEBHOOK_TOKEN: ${{ secrets.ZHUGE_WEBHOOK_TOKEN }}
+        run: python3 scripts/huyi_push.py
       - name: Telegram
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
