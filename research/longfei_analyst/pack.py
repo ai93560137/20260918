@@ -26,7 +26,7 @@ DATA = "ops/longfei/analyst/data/"
 OUT = "ops/longfei/analyst/"
 HSI_1M = "archive/futu_k_1m/HK.HSI_FRONT/"
 NAMES = {"NQ": "納指 100 期貨（NQ）", "ES": "標普 500 期貨（ES）", "SPX": "標普 500 現貨（SPX）", "HSI": "恒指即月期貨（HSI）",
-         "VIX": "VIX 波動率指數（現貨）"}
+         "VIX": "VIX 波動率指數（現貨）", "RSP": "標普 500 等權 ETF（RSP）"}
 FIB = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 0.886, 1]
 FIB_EXT = [1.236, 1.382, 1.618]   # [R292] 延伸：跌穿起點之後嘅目標（使用者 NQ 用 1.236）
 
@@ -308,7 +308,7 @@ def chart(path, bars, title, fib=None, show=160, tf=""):
 def cmd_pack(work):
     os.makedirs(work, exist_ok=True)
     docs = {}
-    for name in ("NQ", "ES", "SPX", "VIX"):               # [R304] VIX：使用者 10-27 筆記
+    for name in ("NQ", "ES", "SPX", "VIX", "RSP"):        # [R304] VIX：使用者 10-27 筆記；RSP：10-29 板塊輪動
         raw = gcs_cat(DATA + f"{name}.json")
         if raw:
             docs[name] = json.loads(raw)
@@ -367,7 +367,7 @@ def score_call(call, d1, base_day):
 def cmd_score(work):
     os.makedirs(work, exist_ok=True)
     data = {}
-    for name in ("NQ", "ES", "SPX", "HSI", "VIX"):
+    for name in ("NQ", "ES", "SPX", "HSI", "VIX", "RSP"):
         raw = gcs_cat(DATA + f"{name}.json")
         if raw:
             data[name] = json.loads(raw)["d1"]

@@ -15,7 +15,8 @@ from zoneinfo import ZoneInfo
 import yfinance as yf
 
 SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F", "SPX": "^GSPC",   # [R290] SPX 現貨：使用者 4 小時圖用現貨（只得正常時段）
-           "VIX": "^VIX"}                                   # [R304] 使用者 10-27 VIX 日線筆記（缺口、200 SMA、下降壓力線）
+           "VIX": "^VIX",                                   # [R304] 使用者 10-27 VIX 日線筆記（缺口、200 SMA、下降壓力線）
+           "RSP": "RSP"}                                    # 使用者 10-29：等權標普 ETF，睇板塊輪動／市場廣度（對比 NQ）
 BUCKET = "zhuge-risk-manager-bucket"
 PREFIX = "ops/longfei/analyst/data/"
 ET = ZoneInfo("America/New_York")
@@ -82,8 +83,8 @@ def main():
         bucket = storage.Client().bucket(BUCKET)
     for name, ticker in SYMBOLS.items():
         doc = fetch(ticker)
-        if name == "VIX" and (len(doc["d1"]) < 250 or len(doc["h1"]) < 200):   # VIX 只係輔助，唔夠就跳過唔好令成個 workflow 失敗
-            print(f"VIX 數據唔夠，跳過：日線 {len(doc['d1'])}、1 小時 {len(doc['h1'])}")
+        if name in ("VIX", "RSP") and (len(doc["d1"]) < 250 or len(doc["h1"]) < 200):   # VIX／RSP 只係輔助，唔夠就跳過唔好令成個 workflow 失敗
+            print(f"{name} 數據唔夠，跳過：日線 {len(doc['d1'])}、1 小時 {len(doc['h1'])}")
             continue
         if len(doc["d1"]) < 250 or len(doc["h1"]) < 500:
             raise SystemExit(f"{ticker} 數據唔夠：日線 {len(doc['d1'])}、1 小時 {len(doc['h1'])}")
