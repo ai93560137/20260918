@@ -6719,6 +6719,48 @@ def _analyst_summary_table(sc):
             else "<p class='muted'>未有到期嘅判斷。</p>")
 
 
+# [R360] 使用者 10-29「有計分結果，在網頁通知，等人入去看」：pack.py score 有新到期結果就寫 new_results／new_at，
+# 3 日內導覽列「📝 龍飛陣分析」加 🔴，分析頁頂列出新結果。scorecard 讀取 10 分鐘快取，讀唔到就當冇。
+ANALYST_NEW_DAYS = 3
+_analyst_new_cache = {"ts": 0.0, "data": None}
+
+
+def _analyst_new_results(sc=None):
+    """回傳 {"at": ISO, "items": [...]}（new_at 喺 ANALYST_NEW_DAYS 日內），否則 None。"""
+    if sc is None:
+        now = time.time()
+        if now - _analyst_new_cache["ts"] < 600:
+            return _analyst_new_cache["data"]
+        try:
+            sc = gcs_read_json(ANALYST_PREFIX + "scorecard.json", None) or {}
+        except Exception:
+            sc = {}
+        _analyst_new_cache["ts"] = now
+        _analyst_new_cache["data"] = res = _analyst_new_results(sc)
+        return res
+    at, items = sc.get("new_at"), sc.get("new_results") or []
+    try:
+        fresh = at and datetime.now(timezone.utc) - datetime.fromisoformat(str(at).replace("Z", "+00:00")) < timedelta(days=ANALYST_NEW_DAYS)
+    except ValueError:
+        fresh = False
+    return {"at": at, "items": items} if fresh and items else None
+
+
+def _analyst_new_banner(sc):
+    new = _analyst_new_results(sc)
+    if not new:
+        return ""
+    items = new["items"]
+    hit = sum(1 for c in items if isinstance(c.get("result"), dict) and c["result"].get("ok") is True)
+    try:
+        when = datetime.fromisoformat(str(new["at"]).replace("Z", "+00:00")).astimezone(HK_TZ).strftime("%m-%d %H:%M")
+    except ValueError:
+        when = "—"
+    return ("<div style='background:#fff4e5;border-left:4px solid var(--warning);border-radius:6px;padding:8px 12px;margin:6px 0 10px'>"
+            f"<b>🔴 新計分結果（{esc(when)} HKT）</b>：{len(items)} 條到期，✅ {hit}　❌ {len(items) - hit}"
+            + _analyst_calls_table(items) + "</div>")
+
+
 # [R350] 使用者 10-28「計分卡有什麼用？用白話寫出來」→「以上文字放在網頁上」：計分卡上面嘅白話說明（而家嘅情況按 scorecard 動態寫）
 ANALYST_SCORECARD_HELP = (
     "<div style='background:#f6f8fa;border-radius:8px;padding:10px 14px;font-size:13px;margin:6px 0 10px'>"
@@ -6750,7 +6792,7 @@ def build_analyst_section(a):
         return "<div class='section'><h2>📝 龍飛陣分析</h2><p class='muted'>暫時未有分析。</p></div>"
     imgs = _analyst_imgs(doc)
     crows = _analyst_calls_table((sc.get("calls") or [])[-40:][::-1])
-    score_html = ("<h3>🎯 計分卡</h3>" + ANALYST_SCORECARD_HELP.format(status=esc(_analyst_scorecard_status(sc)))
+    score_html = ("<h3>🎯 計分卡</h3>" + _analyst_new_banner(sc) + ANALYST_SCORECARD_HELP.format(status=esc(_analyst_scorecard_status(sc)))
                   + _analyst_summary_table(sc)
                   + f"<p class='muted' style='font-size:13px'>未到期：{esc(sc.get('pending', 0))} 條</p>" + crows)
     hist = "　".join(f"<a href='?view=analyst&day={d}'>{d}</a>" if d != doc.get("date") else f"<b>{d}</b>" for d in a.get("days") or [])
@@ -6808,6 +6850,7 @@ def build_analyst_page(h, open_day=None, err=None):
     top = ("<div class='section'><h2>🎯 學得點：計分卡</h2>"
            "<p class='muted' style='font-size:13px'>龍飛陣學你嘅思路每日寫（星期二至六 08:20 HKT），舊嘅全部保留；"
            "每篇嘅判斷到期後由程式對照真實收市自動計分。</p>"
+           + _analyst_new_banner(sc)                                                     # [R360] 新計分結果提示
            + ANALYST_SCORECARD_HELP.format(status=esc(_analyst_scorecard_status(sc)))   # [R350b] 分析頁都加白話說明
            + _analyst_summary_table(sc)
            + "<h3>📈 逐篇命中</h3><table><tr><th>日期</th><th>標題</th><th style='text-align:right'>命中／已到期</th>"
@@ -8768,6 +8811,8 @@ def page_nav(current, extra=()):
         if view.startswith("http"):
             return (f"<a class='nav-link' href='{esc(view)}' target='_blank' "
                     f"rel='noopener noreferrer'>{label} ↗</a>")
+        if view == "analyst" and _analyst_new_results():       # [R360] 有新計分結果：導覽列提示
+            label += " 🔴"
         if view == current:
             return f"<span class='nav-link nav-current'>{label}</span>"
         return f"<a class='nav-link' href='?view={view}'>{label}</a>"
