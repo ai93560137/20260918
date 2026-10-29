@@ -1,0 +1,55 @@
+name: 天覆陣 0342／5117 影子前向（IDEAS #149／#150）
+
+# 使用者 10-29「停跟 Gold Brother，但學佢入場，再改善佢」＋「黃金戰鬥機做回測同 gold brother 一樣」。
+# research/gb_rulesim/gb_forward.py：每 6 小時把 recent.json 入面 0342／5117 新訊號歸檔（只存解析欄位，唔存原文）到 GCS xau/sig/fwd_archive/，
+# 再用經紀 M1（xau/sig/bars）計 V0／V6／V11／V13，寫 xau/sig/gb_forward/latest.md。只係紙上，唔落單，$0 API。
+# recent.json 只留最近 100 條會滾走，所以要定時跑；GitHub cron 唔準但 6 小時一次夠用（100 條約 1–2 日）。
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 只印不寫（true/false）
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: gb-forward
+  cancel-in-progress: false
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q google-cloud-storage
+
+      - name: Tests
+        run: python3 tests/test_gb_forward.py
+
+      - name: Forward
+        env:
+          DRY: ${{ github.event.inputs.dry_run }}
+        run: |
+          cd research/gb_rulesim
+          ARGS=""
+          [ "$DRY" = "true" ] && ARGS="--dry-run"
+          python3 gb_forward.py $ARGS
