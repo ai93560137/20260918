@@ -26,6 +26,7 @@ import signals
 import follower
 import hold_rules
 import lots_ladder
+import live_book
 import data_block
 import prescreen
 import student
@@ -155,6 +156,22 @@ def own_positions(payload, offset=0):
                     "stop": (market.to_float(p.get("sl")) or None), "target": (market.to_float(p.get("tp")) or None),
                     "opened_ts": ((market.to_float(p.get("open_time")) or 0) - offset) if market.to_float(p.get("open_time")) else 0})
     return out
+
+
+def _open_meta(state, pos):
+    """[R352] 開倉快照加 AI 決策價：開倉前 10 分鐘內最近一次 OPEN 決策。"""
+    t = pos.get("opened_ts") or now_ts()
+    d = next((x for x in reversed(state.get("decisions") or []) if str(x.get("final") or "").startswith("OPEN") and t - 600 <= (x.get("ts") or 0) <= t + 120), None)
+    return {"decision_price": d.get("price")} if d else {}
+
+
+def live_book_seed(prefix):
+    """[R352] 部署前嘅真倉單（GCS <prefix>book_seed.json，只喺 GCS）；冇就 []。"""
+    try:
+        seed = storage.read_json(prefix + "book_seed.json", [])
+    except StorageError:
+        return []
+    return seed if isinstance(seed, list) else []
 
 
 def live_position(account):
@@ -423,6 +440,8 @@ def process_bar(state, bar, m1, m15, account, now):
         prev_pos = state.get("position")
         state["position"] = live_position(account)       # 真倉：持倉以 EA 為準；止損止賺由伺服器端 SL／TP 執行
         pos_live = state["position"]
+        for t in live_book.track(state, prev_pos, pos_live, market.to_float(account.get("realized_total")), now=now, extra=lambda p: _open_meta(state, p)):   # [R352] 真倉成交簿
+            log_event(f"📗 [{config.TEAM_NAME}] 真倉平倉 {t['pnl_hkd']:+.2f} HKD（{'' if t['r'] is None else format(t['r'], '+.2f') + 'R'}）", component="ea")
         moved = lots_ladder.live_close(state, prev_pos, pos_live, market.to_float(account.get("realized_total")), now=now, note="ea", **rules.lots_ladder_kw())   # [R346]
         if moved:
             log_event(f"🪜 [{config.TEAM_NAME}] 手數階梯 {moved[0]:.2f} → {moved[1]:.2f}（平倉 {state['lots_log'][-1]['pnl']:+.2f} HKD）", component="ea")
@@ -846,6 +865,24 @@ def rulesim_summary():
     return sm if isinstance(sm, dict) else None
 
 
+def follow_book_view(now):
+    """[R352] 932 跟單成交簿：訊號書服務由 follower 寫；黃金主服務頁只讀同一個 GCS 位（MAIN_PREFIX + sig/follow/）。"""
+    if config.SIGNAL_BOOK:
+        pre = follower.PREFIX
+    elif config.PRODUCT_KIND == "gold":
+        pre = config.MAIN_PREFIX + "sig/follow/"
+    else:
+        return None
+    try:
+        st = storage.read_json(pre + "state.json", None) or {}
+        acct = storage.read_json(pre + "account.json", None) or {}
+    except StorageError:
+        return None
+    if not st and not acct:
+        return None
+    return live_book.view(st, live_book_seed(pre), acct, now)
+
+
 def build_status():
     state = load_state()
     try:
@@ -883,6 +920,8 @@ def build_status():
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
+        "live_book": live_book.view(state, live_book_seed(config.PREFIX), account, now) if config.EXECUTE else None,   # [R352] 真倉績效（921／931）
+        "live_book_follow": follow_book_view(now),                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
         "data_block": data_block.check(state, now, market.ny_date(now))[1],   # [R348] 目前封鎖事件／日曆狀態（只讀，唔提醒）
         "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack

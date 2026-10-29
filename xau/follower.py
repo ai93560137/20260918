@@ -178,6 +178,9 @@ def handle_heartbeat(payload):
     price = market.to_float(m1.get("close"))
     state = load_state()
     import lots_ladder, rules as _rules                                   # [R346] 跟單手數階梯：上個心跳有倉、而家冇 → 平倉
+    import live_book                                                       # [R352] 真倉成交簿（要喺 live_close 之前）
+    for t in live_book.track(state, state.get("pos_seen"), (account.get("positions") or [None])[0], account.get("realized_total"), now=now, extra=lambda p: _order_meta(state, p)):
+        m.log_event(f"📗 [{config.TEAM_NAME}] 跟單真倉平倉 {t['pnl_hkd']:+.2f} HKD（頻道 {t.get('ch') or '—'}）", component="follow")
     moved = lots_ladder.live_close(state, state.get("pos_seen"), (account.get("positions") or [None])[0], account.get("realized_total"), now=now, note="ea", **_rules.lots_ladder_kw(follow=True))
     state["pos_seen"] = (account.get("positions") or [None])[0]
     if moved:
@@ -192,6 +195,12 @@ def handle_heartbeat(payload):
         m.log_event(f"⚠️ 跟單狀態寫入失敗：{exc}", severity="ERROR")
     resp.update(cmd_text=executor.cmd_text(state, now), message=why)
     return m.jsonify(resp), 200
+
+
+def _order_meta(state, pos):
+    """[R352] 成交簿開倉快照：用 ticket 對返跟單紀錄，加頻道尾號同訊號價。"""
+    o = next((x for x in reversed(state.get("orders") or []) if x.get("ticket") is not None and str(x.get("ticket")) == str(pos.get("ticket"))), None)
+    return {"ch": o.get("ch"), "decision_price": o.get("price")} if o else {}
 
 
 def exit_mode(ch):
