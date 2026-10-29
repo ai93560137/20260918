@@ -388,15 +388,26 @@ def cmd_score(work):
             r = score_call(call, d1, used)
             rows.append({"date": doc.get("date"), **call, "base_used": used, "result": r})
     done = [r for r in rows if r["result"]]
+    # 使用者 10-29「有計分結果，在網頁通知，等人入去看」：同上一份 scorecard 比，今次新到期嘅記入 new_results，
+    # 網頁見到 new_at 喺 3 日內就喺導覽列同分析頁頂提示
+    try:
+        prev = json.loads(gcs_cat(OUT + "scorecard.json") or "{}")
+    except ValueError:
+        prev = {}
+    key = lambda r: (r.get("date"), r.get("market"), r.get("kind"), r.get("level"), r.get("dir"))  # noqa: E731
+    old_done = {key(r) for r in prev.get("calls") or [] if r.get("result")}
+    new = [r for r in done if key(r) not in old_done]
     by = {}
     for r in done:
         by.setdefault(r["kind"], []).append(r["result"]["ok"])
     card = {"generated": datetime.utcnow().isoformat(timespec="seconds") + "Z",
             "summary": {k: {"n": len(v), "hit": sum(v), "rate": round(sum(v) / len(v), 3)} for k, v in by.items()},
-            "pending": len(rows) - len(done), "calls": rows}
+            "pending": len(rows) - len(done), "calls": rows,
+            "new_results": new or prev.get("new_results") or [],
+            "new_at": (datetime.utcnow().isoformat(timespec="seconds") + "Z") if new else prev.get("new_at")}
     p = os.path.join(work, "scorecard.json")
     json.dump(card, open(p, "w"), ensure_ascii=False, indent=1)
-    print(json.dumps(card["summary"], ensure_ascii=False), f"未到期 {card['pending']}")
+    print(json.dumps(card["summary"], ensure_ascii=False), f"未到期 {card['pending']}", f"新到期 {len(new)}")
 
 
 def main():
