@@ -252,5 +252,23 @@ with tempfile.TemporaryDirectory() as td:
     check("guard 讀證券級別 D → 只警報唔停", act is None and alarm, (act, why, alarm))
     del os.environ["LONGFEI_EXTRA_PRODUCTS"], os.environ["AI_DATA_DIR"]
 
+print("\n=== [R356] book 自動跟富途：新標普期權加入、已平腿剔走 ===")
+check("EW 月底到期日", risk_report._cme_option_expiry("EW", 2026, 10) == "2026-10-30")
+check("EX3 第三個星期五", risk_report._cme_option_expiry("EX3", 2026, 11) == "2026-11-20")
+bk = json.loads(json.dumps(book))       # 有 EW2610 P7750 腳（上面自備）
+(tmp / "rb356.json").write_text(json.dumps(bk), encoding="utf-8")
+q356 = {"fetched_hkt": "2026-10-29 23:30", "positions": [
+    {"code": "US.EW2610P7650x0", "qty": -1, "bid": 20, "ask": 21, "last": 20.5, "open_price": 60},
+    {"code": "US.MES2612", "qty": -12, "bid": 7733.5, "ask": 7733.75, "last": 7733.5}],
+    "accounts": [{"currency": "HKD", "total_assets": 857_253, "maintenance_margin": 705_398}]}
+(tmp / "q356.json").write_text(json.dumps(q356), encoding="utf-8")
+t356, M356 = risk_report.build(str(tmp / "rb356.json"), str(tmp / "q356.json"), 7_800_000)
+check("已平 P7750 剔走、唔再出止損", "EW P7750" not in (M356.get("stop_use") or {}) and any("已冇（當已平" in l and "EW2610 P7750" in l for l in t356.splitlines()), M356.get("stop_use"))
+check("富途新 P7650 自動加入", "EW2610 P7650（富途實際 -1）" in t356)
+q356b = {**q356, "positions": [x for x in q356["positions"] if not x["code"].startswith("US.EW")]}
+(tmp / "q356b.json").write_text(json.dumps(q356b), encoding="utf-8")
+t356b, M356b = risk_report.build(str(tmp / "rb356.json"), str(tmp / "q356b.json"), 7_800_000)
+check("快照冇任何 CME 期權（可能 API 漏）→ 唔剔 book 腳", "EW P7750" in (M356b.get("stop_use") or {}) and "已冇" not in t356b, M356b.get("stop_use"))
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
