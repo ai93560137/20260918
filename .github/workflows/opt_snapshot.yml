@@ -1,0 +1,41 @@
+name: 個股期權鏈快照（即時查詢，非回測）
+
+# 往 analysis/opt_snapshot/request.txt 追加一行「代號 代號 …」並 push 即跑；只讀行情，不落單。
+on:
+  push:
+    branches: [claude/stock-research-k9nzau]
+    paths: ['analysis/opt_snapshot/request.txt']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opt-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install -q yfinance pandas
+      - name: Fetch
+        run: python3 scripts/opt_snapshot.py $(tail -n 1 analysis/opt_snapshot/request.txt)
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/opt_snapshot
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(opt-snapshot): $(tail -n 1 analysis/opt_snapshot/request.txt) $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 5))
+            git pull --no-rebase -q origin ${GITHUB_REF_NAME} || true
+          done
+          exit 1
