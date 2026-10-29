@@ -7424,8 +7424,13 @@ def _pc_block(cid, title, items, pred, presets, default_n, note=""):
             "<button type='button' class='pc-btn' data-z='0.7'>＋ 放大</button><button type='button' class='pc-btn' data-z='1.4'>－ 縮小</button>"
             f"<span class='muted' style='font-size:12px;'>最新 {esc(data[-1][0])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}{esc(note)}</span></div>"
             f"<div id='{cid}-info' style='font-size:12px; color:#6c757d; min-height:18px; margin-bottom:4px;'></div>"
-            f"<svg id='{cid}' viewBox='0 0 1000 300' style='width:100%; height:auto; background:#15181d; border-radius:8px; touch-action:none; cursor:grab;' "
-            f"role='img' aria-label='{esc(title)}'></svg>"
+            # [R354b] 使用者 10-29「加上捲軸，圖片範圍高度和闊度都加大 50%」：圖闊 150%（外框橫向捲軸），高度跟住 ×1.5；下面加時間捲軸
+            f"<div style='overflow-x:auto; border-radius:8px;'>"
+            f"<svg id='{cid}' viewBox='0 0 1000 300' style='width:150%; max-width:none; height:auto; display:block; background:#15181d; border-radius:8px; touch-action:none; cursor:grab;' "
+            f"role='img' aria-label='{esc(title)}'></svg></div>"
+            f"<input type='range' id='{cid}-scroll' min='0' max='0' value='0' step='1' aria-label='時間捲軸' "
+            f"style='width:100%; margin:6px 0 2px; accent-color:#0f62fe;'>"
+            f"<div class='muted' style='font-size:11px; display:flex; justify-content:space-between;'><span>◀ 較早</span><span>時間捲軸：拖動睇其他日子</span><span>較近 ▶</span></div>"
             f"<script>_pcInit('{cid}',{json.dumps(data, ensure_ascii=False)},{int(default_n)});</script>")
 
 
@@ -7463,16 +7468,16 @@ def futu_price_chart(rows, data=None):
 
 # [R354] 高低收圖前端：放大縮小、拖動、手機雙指、data point、指住彈數值框；y 軸跟可見範圍
 _PC_JS = r"""window._pcInit=window._pcInit||function(id,D,n0){
-const svg=document.getElementById(id),info=document.getElementById(id+'-info'),tools=document.getElementById(id+'-tools');
+const svg=document.getElementById(id),info=document.getElementById(id+'-info'),tools=document.getElementById(id+'-tools'),sc=document.getElementById(id+'-scroll');
 if(!svg||!D.length)return;
-const W=1000,H=300,L=60,R=10,T=12,B=26;let a=0,b=D.length-1,hov=-1,st=1;
+const W=1000,H=300,L=60,R=56,T=12,B=26;let a=0,b=D.length-1,hov=-1,st=1;
 const f=v=>Math.round(v).toLocaleString('en-US');
 function clamp(){const n=D.length;let w=Math.max(Math.min(5,n-1),b-a);if(w>n-1)w=n-1;if(a<0)a=0;b=a+w;if(b>n-1){b=n-1;a=b-w;}a=Math.round(a);b=Math.round(b);}
 function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
  S.forEach(r=>{lo=Math.min(lo,r[2],r[4]??1e18);hi=Math.max(hi,r[1],r[5]??-1e18);});
  const sp=(hi-lo)||1;lo-=sp*.05;hi+=sp*.05;st=(W-L-R)/Math.max(1,S.length-1);
  const X=i=>L+i*st,Y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));let o='';
- for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
+ for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text><text x="${W-4}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
  let seg=[];const flush=()=>{if(seg.length>1){const t=seg.map(i=>X(i).toFixed(1)+','+Y(S[i][5]).toFixed(1)).join(' '),bo=seg.slice().reverse().map(i=>X(i).toFixed(1)+','+Y(S[i][4]).toFixed(1)).join(' ');
   o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}seg=[];};
  S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
@@ -7490,7 +7495,7 @@ function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
   rowsT.forEach((t,k)=>{o+=`<text x="${(bx+10).toFixed(1)}" y="${(by+20+k*16).toFixed(1)}" font-size="12" fill="${t[1]}">${t[0]}</text>`;});
   info.textContent=`${r[0]}　高 ${f(r[1])}　低 ${f(r[2])}　收 ${f(r[3])}`+(r[4]!=null?`　預測 ${f(r[4])}～${f(r[5])}`:'');}
  else info.textContent=`顯示 ${S[0][0]} 至 ${S[S.length-1][0]}（${S.length} 點）`;
- svg.innerHTML=o;}
+ svg.innerHTML=o;if(sc){sc.max=Math.max(0,D.length-1-(b-a));sc.value=a;sc.disabled=(b-a)>=D.length-1;}}
 function idxAt(cx){const r=svg.getBoundingClientRect();return a+Math.round(((cx-r.left)/r.width*W-L)/st);}
 function zoom(fac,c){c=c==null?(a+b)/2:c;const w=Math.max(5,(b-a)*fac);a=c-(c-a)*fac;b=a+w;draw();}
 tools.querySelectorAll('.pc-btn').forEach(el=>el.addEventListener('click',()=>{
@@ -7509,7 +7514,9 @@ svg.addEventListener('touchmove',e=>{const t=e.touches;if(!t0)return;e.preventDe
  else if(t.length===1&&t0.x!=null){const r=svg.getBoundingClientRect();const dd=(t[0].clientX-t0.x)/r.width*W/st;a=t0.a-dd;b=t0.b-dd;hov=idxAt(t[0].clientX);}
  draw();},{passive:false});
 svg.addEventListener('touchend',()=>{t0=null;});
+if(sc)sc.addEventListener('input',()=>{const w=b-a;a=+sc.value;b=a+w;draw();});
 b=D.length-1;a=n0?Math.max(0,b-n0):0;draw();
+const box=svg.parentElement;if(box&&box.scrollWidth>box.clientWidth){const go=()=>{box.scrollLeft=box.scrollWidth;};go();requestAnimationFrame(go);window.addEventListener('load',go);}   // [R354b] 預設拉到最右邊（最近）
 tools.querySelectorAll('.pc-btn[data-n="'+n0+'"]').forEach(x=>x.classList.add('on'));
 };"""
 
