@@ -895,6 +895,21 @@ def follow_book_view(now):
     return live_book.view(st, live_book_seed(pre), acct, now)
 
 
+def forward_view():
+    """[R352c] 前向測試摘要（只讀）：GitHub Actions gb_forward 寫嘅 latest.json＋規則學生 scores.json；只黃金。"""
+    if config.PRODUCT_KIND != "gold":
+        return None
+    base = config.MAIN_PREFIX + "sig/"
+    try:
+        gb = storage.read_json(base + "gb_forward/latest.json", None)
+        stu = storage.read_json(base + "student/scores.json", None)
+    except StorageError:
+        return None
+    if not gb and not stu:
+        return None
+    return {"gb": gb if isinstance(gb, dict) else None, "student": stu if isinstance(stu, dict) else None}
+
+
 def build_status():
     state = load_state()
     try:
@@ -933,7 +948,8 @@ def build_status():
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
         "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.EXECUTE else None,   # [R352] 真倉績效（921／931）
-        "live_book_follow": _safe_book(lambda: follow_book_view(now)),                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
+        "live_book_follow": _safe_book(lambda: follow_book_view(now)),
+        "forward": _safe_book(forward_view),                           # [R352c] 前向測試（gb_forward、規則學生）                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
         "data_block": data_block.check(state, now, market.ny_date(now))[1],   # [R348] 目前封鎖事件／日曆狀態（只讀，唔提醒）
         "pending_cmds": [executor.mask_cmd(c) for c in (state.get("pending_cmds") or []) if not c.get("acked")],   # 10-23：id 遮罩，免假 cmd_ack
