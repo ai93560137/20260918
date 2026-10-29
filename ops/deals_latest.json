@@ -1,40 +1,20 @@
 {
- "date": "2026-10-28",
- "run_hkt": "2026-10-28 03:40",
+ "date": "2026-10-30",
+ "run_hkt": "2026-10-30 03:40",
  "run_kind": "night",
  "closed": [
   {
-   "code": "HK.MHI2610",
-   "product": "MHI 小型恒指期貨",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 23039.0,
-   "close_price": 23116.0,
-   "close_time_hkt": "2026-10-27 13:51:23",
-   "realized_pts": -77.0
-  },
-  {
-   "code": "HK.MHI2610",
-   "product": "MHI 小型恒指期貨",
-   "side": "平空",
-   "qty": 1.0,
-   "open_price": 23002.0,
-   "close_price": 23021.0,
-   "close_time_hkt": "2026-10-27 16:04:03",
-   "realized_pts": -19.0
-  },
-  {
-   "code": "US.EW2610P7750x0",
+   "code": "US.EW2610P7650x0",
    "product": "ES 標普月底期權",
    "side": "平空",
    "qty": 1.0,
-   "open_price": 43.0,
-   "close_price": 42.5,
-   "close_time_hkt": "2026-10-27 23:24:44",
-   "realized_pts": 0.5
+   "open_price": 60.0,
+   "close_price": 3.6,
+   "close_time_hkt": "2026-10-30 02:58:15",
+   "realized_pts": 56.4
   }
  ],
- "n_yunchui_deals": 3,
- "n_other_deals": 4,
+ "n_yunchui_deals": 1,
+ "n_other_deals": 25,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
