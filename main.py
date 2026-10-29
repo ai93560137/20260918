@@ -1825,6 +1825,116 @@ def handle_longfei_push(payload):
                     "decisions": len(doc["decisions"])}), 200
 
 
+# =============================================================================
+# [R357] 🐯 虎翼（大跌股賣期權：short put／short call；使用者 2026-10-30 開陣，會落實倉）
+# 虎翼工作階段（分支 claude/huyi-bigdrop-options）用 action=huyi_push 推 JSON，存私人 GCS huyi/latest.json；
+# 網頁 ?view=huyi 只顯示，唔重算、唔落單。實倉規則未定之前，候選只係紙上紀錄。
+# =============================================================================
+HUYI_FILE = "huyi/latest.json"
+HUYI_MAX_ROWS = 200
+HUYI_MAX_BYTES = 300_000
+HUYI_ROW_KEYS = ("date", "market", "code", "name", "drop_pct", "close", "atm_iv", "rv63", "rho", "rho_star",
+                 "leg", "strike", "expiry", "premium", "status", "note", "pnl_pct")
+
+
+def _huyi_rows(rows):
+    out = []
+    for r in (rows if isinstance(rows, list) else [])[:HUYI_MAX_ROWS]:
+        if isinstance(r, dict):
+            out.append({k: (to_float(r[k]) if isinstance(r.get(k), (int, float)) else _futu_text(r.get(k), 80))
+                        for k in HUYI_ROW_KEYS if r.get(k) is not None})
+    return out
+
+
+def handle_huyi_push(payload):
+    """[R357] 虎翼推上嚟嘅候選、紙上紀錄、規則狀態（只存 GCS huyi/latest.json）。"""
+    doc = {"received_utc": fmt_utc(), "asof_hkt": _futu_text(payload.get("asof_hkt"), 32),
+           "mode": _futu_text(payload.get("mode") or "paper", 16),
+           "rules": _futu_text(payload.get("rules"), 600),
+           "candidates": _huyi_rows(payload.get("candidates")),
+           "paper": _huyi_rows(payload.get("paper")),
+           "notes": [_futu_text(x, 300) for x in (payload.get("notes") or [])[:20] if x]}
+    text = json.dumps(doc, ensure_ascii=False)
+    if len(text.encode("utf-8")) > HUYI_MAX_BYTES:
+        return jsonify({"status": "error", "message": "huyi_push: too large"}), 413
+    try:
+        gcs_write_text(HUYI_FILE, text)
+    except StorageError as exc:
+        log_event(f"⚠️ [虎翼寫入失敗] {exc}", severity="ERROR", component="huyi")
+        return jsonify({"status": "error", "message": "storage write failed"}), 503
+    return jsonify({"status": "stored", "candidates": len(doc["candidates"]), "paper": len(doc["paper"])}), 200
+
+
+HUYI_COLS = (("date", "日期"), ("market", "市場"), ("code", "代號"), ("name", "名稱"), ("drop_pct", "單日跌幅"),
+             ("close", "收市"), ("atm_iv", "平值 IV"), ("rv63", "RV63"), ("rho", "ρ"), ("rho_star", "ρ*"),
+             ("leg", "腳"), ("strike", "行使價"), ("expiry", "到期"), ("premium", "權利金"), ("status", "狀態"),
+             ("pnl_pct", "損益 %"), ("note", "備註"))
+
+
+def _huyi_table(rows):
+    cols = [(k, zh) for k, zh in HUYI_COLS if any(k in r for r in rows)]
+    def cell(k, v):
+        if v is None:
+            return "<td class='muted'>—</td>"
+        if k in ("drop_pct", "pnl_pct") and isinstance(v, float):
+            return f"<td><span class='{'pos' if v >= 0 else 'neg'}'>{v:+.1f}%</span></td>"
+        if k in ("atm_iv", "rv63") and isinstance(v, float):
+            return f"<td>{v * 100:.1f}%</td>" if v < 3 else f"<td>{v:.1f}%</td>"
+        if isinstance(v, float):
+            return f"<td>{v:,.2f}</td>"
+        return f"<td>{esc(v)}</td>"
+    head = "".join(f"<th>{zh}</th>" for _, zh in cols)
+    body = "".join("<tr>" + "".join(cell(k, r.get(k)) for k, _ in cols) + "</tr>" for r in rows)
+    return f"<div class='scroll'><table><tr>{head}</tr>{body}</table></div>"
+
+
+def build_huyi_page(doc):
+    mode = (doc or {}).get("mode") or "paper"
+    badge = ("<span class='neg'>⚠ 實倉</span>" if mode == "live" else "📝 紙上（實倉規則未定，唔出落單指令）")
+    body = (f"<div class='nav'><div class='brand'><h1 class='page-title'>🐯 虎翼</h1></div>{page_nav('huyi')}</div>"
+            "<p class='muted'>大跌股賣期權：S&amp;P 500／恒指成分股單日跌 ≥ 8% 之後，按「平值 IV ÷ 大跌前 RV63」（ρ）"
+            "揀賣 95% 現金擔保 put 或 105% call。2026-10-30 開陣。</p>"
+            f"<div class='grid'><div class='card'><div class='card-title'>狀態</div><div class='card-value'>{badge}</div></div>"
+            f"<div class='card'><div class='card-title'>數據時間</div><div class='card-value'>"
+            f"{esc((doc or {}).get('asof_hkt') or '未有')}</div></div></div>")
+    body += ("<div class='section'><b>研究判決（stock_research/BIGDROP_OPTIONS_PREREG.md）</b><div class='scroll'><table>"
+             "<tr><th>腳</th><th>判決</th><th>損益平衡 ρ*</th><th>備註</th></tr>"
+             "<tr><td>賣 95% 現金擔保 put</td><td>🔍 觀察</td><td>美 0.90／港 ≤ 0.80</td>"
+             "<td>隨機日一樣有優勢，唔係大跌特有；美股數據覆蓋約 55%（下市股缺，對賣 put 有利嘅偏差）</td></tr>"
+             "<tr><td>賣 105% call</td><td>❔ 不確定</td><td>—</td><td>只做紙上</td></tr></table></div>"
+             "<p class='muted' style='font-size:12px'>ρ 高過 ρ* 先有優勢；ρ＝候選當日平值 IV ÷ 大跌前 63 日實際波動。</p></div>")
+    rules = (doc or {}).get("rules")
+    body += ("<div class='section'><b>實倉規則</b>"
+             + (f"<p>{esc(rules)}</p>" if rules else
+                "<p class='muted'>未定（使用者稍後定）：每筆上限、同時最多幾筆、美／港、行使價、到期、被行使接貨點處理。"
+                "定之前只出候選同紙上紀錄。開實倉前先登記 POSITIONS.md 並通知總指揮。</p>") + "</div>")
+    cands = (doc or {}).get("candidates") or []
+    body += ("<div class='section'><b>今日候選</b>"
+             + (_huyi_table(cands) if cands else "<p class='muted'>暫時冇候選（或者虎翼未推數據）。</p>") + "</div>")
+    paper = (doc or {}).get("paper") or []
+    body += ("<div class='section'><b>紙上紀錄</b>"
+             + (_huyi_table(paper) if paper else "<p class='muted'>未有紀錄。</p>") + "</div>")
+    notes = (doc or {}).get("notes") or []
+    if notes:
+        body += ("<div class='section'><b>注意</b><ul style='margin:6px 0 0 18px; font-size:13px'>"
+                 + "".join(f"<li>{esc(n)}</li>" for n in notes) + "</ul></div>")
+    body += ("<p class='muted' style='font-size:12px'>只係資訊、唔係落單指令；報價只作參考，落單以券商即時價為準。"
+             "JSON：<a href='?view=huyi&amp;format=json'>?view=huyi&amp;format=json</a></p>")
+    return html_page("虎翼", body)
+
+
+def handle_huyi_get(req):
+    try:
+        doc = gcs_read_json(HUYI_FILE, {})
+    except StorageError as exc:
+        log_event(f"⚠️ [虎翼頁讀取失敗] {exc}", severity="WARNING", component="huyi")
+        doc = {}
+    doc = doc if isinstance(doc, dict) else {}
+    if req.args.get("format") == "json":
+        return _json_response({"status": "ok" if doc else "empty", **{k: v for k, v in doc.items() if k != "received_utc"}})
+    return build_huyi_page(doc)
+
+
 LONGFEI_BARS_MAX_ROWS = 1500                         # [R218] 一日 1 分鐘 K 線：美股連盤前盤後 960 條、恒指日夜盤約 1,000 條
 
 
@@ -6734,7 +6844,9 @@ def build_charts_page(items, err=None, analyst=""):
     nav = page_nav("charts")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
     intro = ""                                                     # [R263] 使用者 10-25：移除頁頂說明
-    intro += analyst
+    # [R358] 使用者 10-29：分析文章只喺 ?view=analyst 顯示，呢度留一條連結，唔再重覆
+    intro += analyst or ("<div class='section'><p>📝 龍飛陣每日分析文章同評分卡："
+                         "<a href='?view=analyst'>龍飛陣分析 →</a></p></div>")
     if err:
         return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
     if not items:
@@ -6770,16 +6882,9 @@ def handle_charts_get(req):
     except Exception as exc:
         log_event(f"⚠️ [分析圖頁失敗] {exc}", severity="WARNING", component="charts")
         items, err = [], "讀取失敗，請稍後再試。"
-    day = req.args.get("day") or None
-    day = day if day and _DAY_RE.match(day) else None
-    try:
-        a = analyst_data(day)
-    except Exception as exc:
-        log_event(f"⚠️ [龍飛陣分析讀取失敗] {exc}", severity="WARNING", component="charts")
-        a = {"doc": None, "scorecard": None, "days": []}
     if req.args.get("format") == "json":
-        return jsonify({"status": "error" if err else "ok", "items": items, "analyst": a})
-    return build_charts_page(items, err, build_analyst_section(a))
+        return jsonify({"status": "error" if err else "ok", "items": items})
+    return build_charts_page(items, err)                           # [R358] 分析文章搬走，見 ?view=analyst
 
 
 def _lf_rulesim_section():
@@ -8624,6 +8729,7 @@ PAGE_LINKS = [
     ("canary", "🐤 金絲雀"),                                # [R160] 市場風險天氣預報（只顯示）
     ("htf", "📈 鳥翔 HTF 掛單"),                                  # [R165] 港台日美高漲旗型每日掛單（鳥翔分支）
     ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
+    ("huyi", "🐯 虎翼"),                                        # [R357] 大跌股賣期權（使用者 10-30 開陣）
     ("analyst", "📝 龍飛陣分析"),                                # [R329] 每日分析欄，全部日子累積（使用者 10-26）
     ("charts", "📐 分析圖"),                                     # [R258] 各陣分析圖（龍飛陣斐波那契等）
     ("rules", "📏 人手交易守則"),                               # [R284] 使用者 10-22：人手落單前睇（龍飛陣由成交分析整理）
@@ -8939,6 +9045,8 @@ def handle_get(req):
         return handle_analyst_get(req)
     if view == "charts":                                         # [R258] 📐 分析圖（各陣分析圖／報告）
         return handle_charts_get(req)
+    if view == "huyi":                                           # [R357] 🐯 虎翼（&format=json）
+        return handle_huyi_get(req)
     if view == "longfei":                                        # [R201] 🐉 龍飛陣成績（&format=json）
         return handle_longfei_get(req)
     if view == "factsheet":                                      # [R132] 八陣圖策略書（投資人展示頁）
@@ -9017,6 +9125,8 @@ def _dispatch_post(payload):
         return handle_inline_scan(payload)
     if action == "scan_push":                        # [R150] 本地 scan_push.py 推上來的前向測試掃描（只存）
         return handle_scan_push(payload)
+    if action == "huyi_push":                        # [R357] 🐯 虎翼候選／紙上紀錄（只存）
+        return handle_huyi_push(payload)
     if action == "longfei_push":                     # [R200] 🐉 龍飛陣 VM 推上嚟嘅成績（只存）
         return handle_longfei_push(payload)
     if action == "longfei_bars":                     # [R218] 龍飛陣 1 分鐘 K 線收市存檔（只存）

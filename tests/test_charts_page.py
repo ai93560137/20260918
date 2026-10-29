@@ -49,3 +49,6 @@ assert "讀取失敗" in main.build_analyst_page({}, None, "讀取失敗")
 assert any(v == "analyst" for v, _ in main.PAGE_LINKS)
 assert "技術分析僅供參考" not in p   # [R268]
 print("analyst page ok")
+# [R358] 分析圖頁唔再嵌入龍飛陣分析文章，只留連結
+h = main.build_charts_page([])
+assert "?view=analyst" in h and "龍飛陣分析" in h
