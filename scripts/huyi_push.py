@@ -35,7 +35,8 @@ def row(r: dict, paper: bool) -> dict:
         d["status"] = f"{st}｜{'未到期' if r.get('status') == 'open' else '已結算' + ('（接貨／被call）' if r.get('assigned') == 'Y' else '')}"
         d["pnl_pct"] = num(r.get("pnl_pct"))
     else:
-        d["status"] = "✅ 合資格（紙上）" if r.get("qualifies") == "Y" else "—"
+        d["status"] = ("🌙 盤後預警" if r.get("session") == "ah" else
+                       "✅ 合資格（紙上）" if r.get("qualifies") == "Y" else "—")
     return {k: v for k, v in d.items() if v not in (None, "")}
 
 

@@ -47,7 +47,7 @@ UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 PAPER_COLS = ["open_date", "market", "ticker", "leg", "expiry", "dte", "strike", "spot", "fill", "bid", "ask", "mid",
               "iv_leg", "atm_iv", "rv63pre", "rho", "rho_req", "qualifies", "earnings", "drop_pct",
               "status", "close_at_expiry", "assigned", "pnl_pct", "note"]
-CAND_COLS = ["session", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
+CAND_COLS = ["session", "ah_px", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
              "leg", "strike", "moneyness", "bid", "ask", "mid", "fill", "iv_leg", "yield_ann_pct", "rho_req",
              "rho_ok", "earnings", "earnings_in_window", "qualifies", "paper", "note"]
 
@@ -179,7 +179,7 @@ def after_hours_drops(px: dict[str, list[tuple]], ah: dict[str, float], d0: date
         if ret <= THR and p >= MIN_PX:
             adj = [x[2] for x in v]
             out.append(dict(ticker=t, date=d0, close=v[-1][1], ret=ret, rv63pre=rv_pre(adj + [adj[-1]]), ah_px=p,
-                            note=f"🌙盤後跌（盤後價 {p:.4g}；期權係收市報價、未反映跌幅，行使價按盤後價揀；下一個交易日收市再按正式規則記紙上）"))
+                            note="🌙盤後跌：行使價按盤後價揀；期權收市價未反映跌幅，唔列價；下一交易日收市再按正式規則判"))
     out.sort(key=lambda r: r["ret"])
     return out
 
@@ -401,7 +401,7 @@ def forward_stats(paper: list[dict]) -> str:
 
 # ───────────────────────── 主流程 ─────────────────────────
 def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
-    base = dict(session="ah" if c.get("ah_px") else "", date=c["date"], market=market, ticker=c["ticker"], name=c.get("name", ""), drop_pct=f"{c['ret'] * 100:.2f}",
+    base = dict(session="ah" if c.get("ah_px") else "", ah_px=f"{c['ah_px']:.4g}" if c.get("ah_px") else "", date=c["date"], market=market, ticker=c["ticker"], name=c.get("name", ""), drop_pct=f"{c['ret'] * 100:.2f}",
                 close=f"{c['close']:.4g}", rv63pre=f"{c['rv63pre']:.4f}", earnings=c.get("earnings", ""), note=c.get("note", ""))
     if q is None:
         return [dict(base, leg="—", qualifies="N", paper="N")]
@@ -417,6 +417,12 @@ def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
             continue
         req = RHO2[market][leg]
         rho_ok = rho >= req
+        if c.get("ah_px"):   # 盤後：收市期權價未反映跌幅 → 只列行使價，唔列價、唔計年化
+            rows.append(dict(base, expiry=exp, dte=dte, atm_iv=f"{q['atm_iv']:.4f}", rho=f"{rho:.3f}", leg=leg,
+                             strike=f"{L['strike']:g}", moneyness=f"{L['strike'] / c['ah_px']:.3f}", rho_req=req,
+                             earnings_in_window="Y" if e_in else ("?" if not c.get("earnings") else "N"),
+                             qualifies="N"))
+            continue
         den = L["strike"] if leg == "put95" else c.get("ah_px") or c["close"]
         rows.append(dict(base, expiry=exp, dte=dte, atm_iv=f"{q['atm_iv']:.4f}", rho=f"{rho:.3f}", leg=leg,
                          strike=f"{L['strike']:g}", moneyness=f"{L['strike'] / c['close']:.3f}", bid=L["bid"], ask=L["ask"],
@@ -550,17 +556,19 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tup
                 continue
             seen.add(r["ticker"])
             mine = [x for x in rows if x["ticker"] == r["ticker"]]
-            head = (f"• 🌙{r['ticker']} 盤後 {r['drop_pct']}%（收 {r['close']}）" if r.get("session") == "ah"
+            head = (f"• 🌙{r['ticker']} 盤後 {r['drop_pct']}%（收 {r['close']} → 盤後 {r['ah_px']}）" if r.get("session") == "ah"
                     else f"• {r['ticker']} {r['drop_pct']}% 收 {r['close']}")
             if mine[0]["leg"] == "—":
                 T.append(f"{head}｜{r.get('note', '')}")
                 continue
             head += f"｜ρ {r.get('rho', '')}（到期 {r.get('expiry', '')}）"
             for x in mine:
-                if x.get("strike"):
+                if x.get("strike") and r.get("session") == "ah":
+                    head += f"｜{'P' if x['leg'] == 'put95' else 'C'}{x['strike']}"
+                elif x.get("strike"):
                     head += f"｜{'P' if x['leg'] == 'put95' else 'C'}{x['strike']} @{x['fill']} 年化{x['yield_ann_pct']}%{'✅' if x['qualifies'] == 'Y' else ''}"
             if r.get("session") == "ah":
-                head += "｜收市期權價未反映跌幅，明日收市再確認"
+                head += "｜ρ 用收市 IV；期權報價待開市，下一交易日收市再按正式規則判"
             if r.get("earnings_in_window") == "Y":
                 head += "｜⚠️業績窗內"
             elif r.get("earnings_in_window") == "?":
