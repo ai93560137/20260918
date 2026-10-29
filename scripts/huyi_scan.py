@@ -47,7 +47,7 @@ UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 PAPER_COLS = ["open_date", "market", "ticker", "leg", "expiry", "dte", "strike", "spot", "fill", "bid", "ask", "mid",
               "iv_leg", "atm_iv", "rv63pre", "rho", "rho_req", "qualifies", "earnings", "drop_pct",
               "status", "close_at_expiry", "assigned", "pnl_pct", "note"]
-CAND_COLS = ["date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
+CAND_COLS = ["session", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
              "leg", "strike", "moneyness", "bid", "ask", "mid", "fill", "iv_leg", "yield_ann_pct", "rho_req",
              "rho_ok", "earnings", "earnings_in_window", "qualifies", "paper", "note"]
 
@@ -141,6 +141,49 @@ def find_drops(px: dict[str, list[tuple]]) -> tuple[date | None, list[dict], lis
     return d0, drops, rows[:5]
 
 
+def fetch_after_hours(tickers: list[str], d0: date) -> dict[str, float]:
+    """美股盤後價：d0 美東 16:00 之後（含翌日盤前）最後一根 15 分鐘線收市價（Yahoo prepost）。"""
+    import yfinance as yf
+    from zoneinfo import ZoneInfo
+    ny = ZoneInfo("America/New_York")
+    cut = datetime(d0.year, d0.month, d0.day, 16, 0, tzinfo=ny)
+    out = {}
+    for i in range(0, len(tickers), 100):
+        batch = tickers[i:i + 100]
+        try:
+            df = yf.download(batch, period="5d", interval="15m", prepost=True, auto_adjust=False, group_by="ticker",
+                             threads=True, progress=False)
+        except Exception as ex:  # noqa: BLE001
+            print("盤後價抓取失敗", repr(ex))
+            continue
+        for t in batch:
+            try:
+                s = (df[t] if len(batch) > 1 else df)["Close"].dropna()
+                s = s[s.index.tz_convert(ny) >= cut]
+                if len(s):
+                    out[t] = float(s.iloc[-1])
+            except Exception:  # noqa: BLE001
+                pass
+        time.sleep(1)
+    return out
+
+
+def after_hours_drops(px: dict[str, list[tuple]], ah: dict[str, float], d0: date, have: set[str]) -> list[dict]:
+    """盤後價對 d0 正式收市 ≤ 門檻（正式時段已入大跌名單嘅唔重複）。RV63pre 包埋 d0（大跌喺收市之後）。"""
+    out = []
+    for t, p in ah.items():
+        v = px.get(t)
+        if t in have or not v or len(v) < 66 or v[-1][0] != d0:
+            continue
+        ret = p / v[-1][1] - 1
+        if ret <= THR and p >= MIN_PX:
+            adj = [x[2] for x in v]
+            out.append(dict(ticker=t, date=d0, close=v[-1][1], ret=ret, rv63pre=rv_pre(adj + [adj[-1]]), ah_px=p,
+                            note=f"🌙盤後跌（盤後價 {p:.4g}；期權係收市報價、未反映跌幅，行使價按盤後價揀；下一個交易日收市再按正式規則記紙上）"))
+    out.sort(key=lambda r: r["ret"])
+    return out
+
+
 def next_earnings(tk, after: date) -> str:
     """yfinance 下一個業績日（> 大跌日）；冇就回空字串。"""
     try:
@@ -163,8 +206,9 @@ def next_earnings(tk, after: date) -> str:
 
 
 # ───────────────────────── 期權腿 ─────────────────────────
-def us_legs(chain: list[dict], spot: float, d0: date, exp: date, rate: float) -> dict | None:
-    """chain：同一到期日的 dict(cp,strike,bid,ask,last)。回傳平值 IV 與兩腿報價。"""
+def us_legs(chain: list[dict], spot: float, d0: date, exp: date, rate: float, ref: float | None = None) -> dict | None:
+    """chain：同一到期日的 dict(cp,strike,bid,ask,last)。回傳平值 IV 與兩腿報價。
+    ref：行使價目標的基準價（盤後大跌用盤後價；平值 IV 仍按收市報價嘅 spot）。"""
     T = max((exp - d0).days, 1) / 365
     df = math.exp(-rate * T)
     by_k: dict[float, dict] = {}
@@ -192,7 +236,7 @@ def us_legs(chain: list[dict], spot: float, d0: date, exp: date, rate: float) ->
         return None
     legs = {}
     for leg, (cp, m) in LEGS.items():
-        tgt = m * spot
+        tgt = m * (ref or spot)
         ks = [k for k in by_k if cp in by_k[k] and (k <= tgt if cp == "p" else k >= tgt)]
         if not ks:
             continue
@@ -218,13 +262,13 @@ def us_quotes(c: dict, rate: float) -> dict | None:
     ch = tk.option_chain(str(exp))
     rows = [dict(cp=cp, strike=r["strike"], bid=r.get("bid"), ask=r.get("ask"), last=r.get("lastPrice"))
             for cp, d in (("c", ch.calls), ("p", ch.puts)) for _, r in d.iterrows()]
-    q = us_legs(rows, c["close"], c["date"], exp, rate)
+    q = us_legs(rows, c["close"], c["date"], exp, rate, c.get("ah_px"))
     if q is None:   # 收市後 Yahoo 有時清零買賣價 → 退用最後成交價（標明，唔當真實買價）
-        q = us_legs([dict(r, bid=r["last"], ask=r["last"]) for r in rows], c["close"], c["date"], exp, rate)
+        q = us_legs([dict(r, bid=r["last"], ask=r["last"]) for r in rows], c["close"], c["date"], exp, rate, c.get("ah_px"))
         if q is None:
             c["note"] = "期權鏈冇有效買賣價／成交價"
             return None
-        c["note"] = "買賣價清零，用最後成交價"
+        c["note"] = (c.get("note", "") + " 買賣價清零，用最後成交價").strip()
     q["expiry"] = exp
     return q
 
@@ -357,7 +401,7 @@ def forward_stats(paper: list[dict]) -> str:
 
 # ───────────────────────── 主流程 ─────────────────────────
 def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
-    base = dict(date=c["date"], market=market, ticker=c["ticker"], name=c.get("name", ""), drop_pct=f"{c['ret'] * 100:.2f}",
+    base = dict(session="ah" if c.get("ah_px") else "", date=c["date"], market=market, ticker=c["ticker"], name=c.get("name", ""), drop_pct=f"{c['ret'] * 100:.2f}",
                 close=f"{c['close']:.4g}", rv63pre=f"{c['rv63pre']:.4f}", earnings=c.get("earnings", ""), note=c.get("note", ""))
     if q is None:
         return [dict(base, leg="—", qualifies="N", paper="N")]
@@ -373,14 +417,14 @@ def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
             continue
         req = RHO2[market][leg]
         rho_ok = rho >= req
-        den = L["strike"] if leg == "put95" else c["close"]
+        den = L["strike"] if leg == "put95" else c.get("ah_px") or c["close"]
         rows.append(dict(base, expiry=exp, dte=dte, atm_iv=f"{q['atm_iv']:.4f}", rho=f"{rho:.3f}", leg=leg,
                          strike=f"{L['strike']:g}", moneyness=f"{L['strike'] / c['close']:.3f}", bid=L["bid"], ask=L["ask"],
                          mid=f"{L['mid']:.4g}", fill=f"{L['fill']:.4g}",
                          iv_leg=f"{L['iv_leg']:.4f}" if L["iv_leg"] else "",
                          yield_ann_pct=f"{L['fill'] / den * 365 / dte * 100:.1f}", rho_req=req, rho_ok="Y" if rho_ok else "N",
                          earnings_in_window="Y" if e_in else ("?" if not c.get("earnings") else "N"),
-                         qualifies="Y" if rho_ok and not e_in else "N"))
+                         qualifies="Y" if rho_ok and not e_in and not c.get("ah_px") else "N"))
     return rows
 
 
@@ -393,7 +437,11 @@ def run(market: str) -> int:
     if d0 is None:
         print("冇日線")
         return 1
-    print(f"{market} {d0}：宇宙 {len(tick)}、有日線 {len(px)}、大跌 {len(drops)}")
+    ah_drops = []
+    if market == "us":
+        ah_drops = after_hours_drops(px, fetch_after_hours([t for t, v in px.items() if v and v[-1][0] == d0], d0), d0,
+                                     {c["ticker"] for c in drops})
+    print(f"{market} {d0}：宇宙 {len(tick)}、有日線 {len(px)}、大跌 {len(drops)}、盤後大跌 {len(ah_drops)}")
     rate = 0.04
     if market == "us":
         try:
@@ -402,12 +450,12 @@ def run(market: str) -> int:
         except Exception:  # noqa: BLE001
             pass
     hkex = None
-    if market == "hk" and drops:
+    if market == "hk" and drops:  # 港股冇盤後時段
         html = hk_report(d0)
         hkex = parse_hkex(html) if html else None
     paper = read_paper()
     rows = []
-    for c in drops:
+    for c in drops + ah_drops:
         q = None
         try:
             if market == "us":
@@ -433,6 +481,9 @@ def run(market: str) -> int:
     already = {(r["ticker"], r["leg"]) for r in paper if r["open_date"] == str(d0) and r["market"] == market}
     for r in rows:
         if r["leg"] not in LEGS or not r.get("strike"):
+            continue
+        if r.get("session") == "ah":
+            r["paper"] = "N"
             continue
         if intraday:
             r["paper"], r["note"] = "N", (r["note"] + " 盤中價，唔記紙上").strip()
@@ -461,9 +512,11 @@ def run(market: str) -> int:
     with open(log_p, "a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if new:
-            w.writerow(["run_utc", "market", "trade_date", "universe", "with_px", "drops", "qualifying_put", "settled", "intraday"])
+            w.writerow(["run_utc", "market", "trade_date", "universe", "with_px", "drops", "qualifying_put", "settled", "intraday",
+                        "ah_drops"])
         w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), market, d0, len(tick), len(px), len(drops),
-                    sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled), "Y" if intraday else "N"])
+                    sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled), "Y" if intraday else "N",
+                    len(ah_drops)])
     md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper), intraday)
     (OUT / f"latest_{market}.md").write_text(md_txt, encoding="utf-8")
     (OUT / f"tg_{market}.txt").write_text(tg, encoding="utf-8")
@@ -476,6 +529,7 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tup
     L = [f"# 🐯 虎翼｜{mk}大跌股候選 {d0}", "",
          "**紙上紀錄階段——實倉規則未定，以下唔係落單指令。**", "",
          f"宇宙 {n_univ}；大跌門檻 ≤ {THR:.0%}、收市 ≥ {MIN_PX:g}；到期 {DTE_LO}–{DTE_HI} 日最近 {DTE_TGT} 日；"
+         "🌙＝盤後大跌（盤後價對正式收市 ≤ −8%；只預警，期權係收市報價，下一交易日收市再按正式規則判）；"
          f"合資格＝ρ ≥ ρ₂（put {RHO2[market]['put95']}、call {RHO2[market]['call105']}，call 只准紙上）且到期前冇已知業績。", ""]
     T = ["🐯 虎翼｜" + mk + f"{d0}（{'盤中測試，' if intraday else ''}紙上，非落單指令）"]
     if not rows:
@@ -496,7 +550,8 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tup
                 continue
             seen.add(r["ticker"])
             mine = [x for x in rows if x["ticker"] == r["ticker"]]
-            head = f"• {r['ticker']} {r['drop_pct']}% 收 {r['close']}"
+            head = (f"• 🌙{r['ticker']} 盤後 {r['drop_pct']}%（收 {r['close']}）" if r.get("session") == "ah"
+                    else f"• {r['ticker']} {r['drop_pct']}% 收 {r['close']}")
             if mine[0]["leg"] == "—":
                 T.append(f"{head}｜{r.get('note', '')}")
                 continue
@@ -504,6 +559,8 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tup
             for x in mine:
                 if x.get("strike"):
                     head += f"｜{'P' if x['leg'] == 'put95' else 'C'}{x['strike']} @{x['fill']} 年化{x['yield_ann_pct']}%{'✅' if x['qualifies'] == 'Y' else ''}"
+            if r.get("session") == "ah":
+                head += "｜收市期權價未反映跌幅，明日收市再確認"
             if r.get("earnings_in_window") == "Y":
                 head += "｜⚠️業績窗內"
             elif r.get("earnings_in_window") == "?":
