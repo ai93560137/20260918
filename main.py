@@ -7457,8 +7457,65 @@ def futu_price_chart(rows, day_recs=None):
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ffffff; outline:1px solid #999; vertical-align:middle;'></span> 收</span>"
               + ("<span><span style='display:inline-block; width:14px; height:10px; background:#f2c94c; opacity:0.6; vertical-align:middle;'></span> 系統預測高低（開市前，黃色帶）</span>" if pred else "") +
               f"<span>最新 {esc(last['date'])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}</span></div>")
-    return (f"{legend}<svg viewBox='0 0 {w} {h}' style='width:100%; height:auto; background:#15181d; border-radius:8px;' role='img' "
-            f"aria-label='過去一年每日高低收曲線'>{grid}{lines}{hover}{''.join(labels)}</svg>")
+    data = [[r["date"], r["high"], r["low"], r["close"]] + list(pred.get(r["date"], (None, None))) for r in rows]
+    btns = "".join(f"<button type='button' class='pc-btn' data-n='{n}'>{lab}</button>"
+                   for n, lab in ((22, "1 個月"), (66, "3 個月"), (132, "6 個月"), (0, "全年")))
+    tools = (f"<div style='display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px;'>{btns}"
+             "<button type='button' class='pc-btn' data-z='0.7'>＋ 放大</button><button type='button' class='pc-btn' data-z='1.4'>－ 縮小</button>"
+             "<span class='muted' style='font-size:12px;'>滑鼠滾輪放大縮小、拖動左右移；手機兩隻手指拉闊／收窄、一隻手指拖動</span></div>"
+             "<div id='pc-info' style='font-size:12px; color:#6c757d; min-height:18px; margin-bottom:4px;'></div>")
+    svg = (f"<svg id='pc-svg' viewBox='0 0 {w} {h}' style='width:100%; height:auto; background:#15181d; border-radius:8px; "
+           f"touch-action:none; cursor:grab;' role='img' aria-label='每日高低收曲線'>{grid}{lines}{hover}{''.join(labels)}</svg>")
+    return (legend + tools + svg + "<style>.pc-btn{border:1px solid #ced4da;background:#fff;border-radius:6px;padding:3px 10px;"
+            "font-size:12px;cursor:pointer}.pc-btn.on{background:#0f62fe;color:#fff;border-color:#0f62fe}</style>"
+            + "<script>" + _PC_JS.replace("__DATA__", json.dumps(data, ensure_ascii=False)) + "</script>")
+
+
+# [R354] 日線高低收圖嘅放大縮小（使用者 10-29「可以放大縮小」）：前端用同一份數據重畫，y 軸跟住可見範圍調整
+_PC_JS = r"""(function(){
+const D=__DATA__, svg=document.getElementById('pc-svg'), info=document.getElementById('pc-info');
+if(!svg||!D.length)return;
+const W=1000,H=300,L=60,R=10,T=12,B=26; let a=0,b=D.length-1, hov=-1;
+const f=v=>Math.round(v).toLocaleString('en-US');
+function clamp(){const n=D.length;let w=Math.max(5,b-a);if(w>n-1)w=n-1;if(a<0)a=0;b=a+w;if(b>n-1){b=n-1;a=b-w;}a=Math.round(a);b=Math.round(b);}
+function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
+ S.forEach(r=>{lo=Math.min(lo,r[2],r[4]??1e18);hi=Math.max(hi,r[1],r[5]??-1e18);});
+ const sp=(hi-lo)||1;lo-=sp*.05;hi+=sp*.05;const st=(W-L-R)/Math.max(1,S.length-1);
+ const X=i=>L+i*st, Y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));let o='';
+ for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
+ let seg=[];const flush=()=>{if(seg.length>1){const t=seg.map(i=>X(i).toFixed(1)+','+Y(S[i][5]).toFixed(1)).join(' '),bo=seg.slice().reverse().map(i=>X(i).toFixed(1)+','+Y(S[i][4]).toFixed(1)).join(' ');
+  o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}seg=[];};
+ S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
+ const ln=(k,c,wd)=>`<polyline points="${S.map((r,i)=>X(i).toFixed(1)+','+Y(r[k]).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round"/>`;
+ o+=ln(1,'#4f9dff',1.6)+ln(2,'#ff5c5c',1.6)+ln(3,'#ffffff',2);
+ const every=Math.max(1,Math.ceil(S.length/10));let lastM='';
+ S.forEach((r,i)=>{const lab=S.length>70?r[0].slice(2,7):r[0].slice(5);const key=S.length>70?r[0].slice(0,7):i;
+  if(S.length>70?(key!==lastM&&i):(i%every===0)){if(X(i)<W-40)o+=`<text x="${X(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#9aa0a6">${lab}</text>`;}lastM=S.length>70?key:lastM;});
+ if(hov>=a&&hov<=b){const i=hov-a,r=S[i];o+=`<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#9aa0a6" stroke-dasharray="2 3"/>`;
+  info.textContent=`${r[0]}　高 ${f(r[1])}　低 ${f(r[2])}　收 ${f(r[3])}`+(r[4]!=null?`　預測 ${f(r[4])}～${f(r[5])}`:'');}
+ else info.textContent=`顯示 ${S[0][0]} 至 ${S[S.length-1][0]}（${S.length} 個交易日）`;
+ svg.innerHTML=o;svg._st=st;}
+function idxAt(cx){const r=svg.getBoundingClientRect();const px=(cx-r.left)/r.width*W;return a+Math.round((px-L)/(svg._st||1));}
+function zoom(fac,center){const c=center==null?(a+b)/2:center;const w=Math.max(5,(b-a)*fac);a=c-(c-a)*fac;b=a+w;draw();}
+document.querySelectorAll('.pc-btn').forEach(el=>el.addEventListener('click',()=>{
+ if(el.dataset.z){zoom(+el.dataset.z);}else{const n=+el.dataset.n;b=D.length-1;a=n?b-n:0;draw();}
+ document.querySelectorAll('.pc-btn[data-n]').forEach(x=>x.classList.toggle('on',x===el));}));
+svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?0.8:1.25,idxAt(e.clientX));},{passive:false});
+let drag=null;
+svg.addEventListener('mousedown',e=>{drag={x:e.clientX,a,b};svg.style.cursor='grabbing';});
+window.addEventListener('mouseup',()=>{drag=null;svg.style.cursor='grab';});
+svg.addEventListener('mousemove',e=>{if(drag){const r=svg.getBoundingClientRect();const d=(e.clientX-drag.x)/r.width*W/(svg._st||1);a=drag.a-d;b=drag.b-d;}hov=idxAt(e.clientX);draw();});
+svg.addEventListener('mouseleave',()=>{hov=-1;draw();});
+let t0=null;
+svg.addEventListener('touchstart',e=>{const t=e.touches;t0=t.length===2?{d:Math.abs(t[0].clientX-t[1].clientX),a,b,c:idxAt((t[0].clientX+t[1].clientX)/2)}:{x:t[0].clientX,a,b};hov=idxAt(t[0].clientX);draw();},{passive:true});
+svg.addEventListener('touchmove',e=>{const t=e.touches;if(!t0)return;e.preventDefault();
+ if(t.length===2&&t0.d){const d=Math.abs(t[0].clientX-t[1].clientX)||1,fac=t0.d/d,c=t0.c;a=c-(c-t0.a)*fac;b=c+(t0.b-c)*fac;}
+ else if(t.length===1&&t0.x!=null){const r=svg.getBoundingClientRect();const dd=(t[0].clientX-t0.x)/r.width*W/(svg._st||1);a=t0.a-dd;b=t0.b-dd;hov=idxAt(t[0].clientX);}
+ draw();},{passive:false});
+svg.addEventListener('touchend',()=>{t0=null;});
+b=D.length-1;a=Math.max(0,b-66);draw();
+document.querySelectorAll('.pc-btn[data-n="66"]').forEach(x=>x.classList.add('on'));
+})();"""
 
 
 def futu_range_chart(rows):
