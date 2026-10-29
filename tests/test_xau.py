@@ -543,6 +543,15 @@ check("[R350] 921 enqueue_cmd 帶 AI決策", "|note=AI決策|id=abcdef03" in (xa
 check("[R350] 頻道名對照", config.CHANNEL_NAMES.get("5231") == "CTC" and config.CHANNEL_NAMES.get("0342") == "GoldBrother" and config.CHANNEL_NAMES.get("7713") == "DAN")
 _raw = client.get("/?format=json").get_data(as_text=True)
 check("[R350b] JSON 回應唔做 ASCII 轉義（EA 註解中文原樣）", "天覆陣" in _raw and "\\u5929" not in _raw, _raw[:120])
+# [R350c] Cloud Run 經 functions-framework 嘅 Flask app 行 xau_entry（唔係 xau.app）：用另一個預設 app 模擬
+from flask import Flask as _Flask
+_ffapp = _Flask("ff_sim")
+with _ffapp.test_request_context("/?format=json"):
+    from flask import request as _freq
+    _r = xau.xau_entry(_freq)
+    _r = _r[0] if isinstance(_r, tuple) else _r
+    _raw2 = _r.get_data(as_text=True) if hasattr(_r, "get_data") else str(_r)
+check("[R350c] functions-framework app 都唔轉義", "天覆陣" in _raw2 and "\\u5929" not in _raw2, _raw2[:120])
 _a, _sl, _tp, _why = rules.validate_decision({"action": "OPEN_LONG", "stop_price": 1.0998, "target_price": 1.1030, "confidence": 0.9, "reason": "x"},
                                             position=None, last=1.1000, can_open=True, trades_today=0, block_reason=None)
 check("EURUSD 止損 2 pip < 5 pip 下限 → 推到 5 pip（1.09950）", _a == "OPEN_LONG" and abs(_sl - 1.0995) < 1e-9, (_a, _sl, _why))
