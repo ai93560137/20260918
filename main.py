@@ -6840,17 +6840,35 @@ def handle_analyst_get(req):
     return build_analyst_page(h, day, err)
 
 
-def build_charts_page(items, err=None, analyst=""):
+CHARTS_TITLE = "斐波那契回撤分析圖"                               # [R359] 使用者 10-29：分析圖改名
+CHARTS_MARKETS = ("NQ", "ES", "SPX", "VIX")                     # [R359] 使用者 10-29：加番 NQ、ES、SPX、VIX（龍飛陣每日分析圖）
+
+
+def _charts_markets_section(doc):
+    """[R359] 龍飛陣每日分析（ops/longfei/analyst/latest.json）入面 NQ／ES／SPX／VIX 嘅圖（含斐波那契），只放圖唔放文章。"""
+    if not isinstance(doc, dict):
+        return ""
+    charts = doc.get("charts") or {}
+    imgs = _analyst_imgs({"charts": {m: charts[m] for m in CHARTS_MARKETS if m in charts}})
+    if not imgs:
+        return ""
+    when = esc(doc.get("date") or "")
+    return (f"<div class='section'><h2>🐉 龍飛陣 美股指數・VIX</h2>"
+            f"<p class='muted' style='font-size:13px'>龍飛陣每日分析附圖（斐波那契回撤、均線）{('　日期：' + when) if when else ''}；"
+            f"文章見 <a href='?view=analyst'>龍飛陣分析 →</a></p>{imgs}</div>")
+
+
+def build_charts_page(items, err=None, analyst="", markets=""):
     nav = page_nav("charts")
-    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 分析圖</h1></div>{nav}</div>"
+    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📐 {CHARTS_TITLE}</h1></div>{nav}</div>"
     intro = ""                                                     # [R263] 使用者 10-25：移除頁頂說明
     # [R358] 使用者 10-29：分析文章只喺 ?view=analyst 顯示，呢度留一條連結，唔再重覆
     intro += analyst or ("<div class='section'><p>📝 龍飛陣每日分析文章同評分卡："
                          "<a href='?view=analyst'>龍飛陣分析 →</a></p></div>")
     if err:
-        return html_page("分析圖", head + intro + f"<div class='section'>{esc(err)}</div>")
-    if not items:
-        return html_page("分析圖", head + intro + "<div class='section'><p class='muted'>暫時未有分析圖。</p></div>")
+        return html_page(CHARTS_TITLE, head + intro + f"<div class='section'>{esc(err)}</div>" + markets)
+    if not items and not markets:
+        return html_page(CHARTS_TITLE, head + intro + "<div class='section'><p class='muted'>暫時未有分析圖。</p></div>")
     body = ""
     for it in items:
         b64 = None
@@ -6873,7 +6891,7 @@ def build_charts_page(items, err=None, analyst=""):
         body += (f"<div class='section'><h2>{esc(it.get('team') or '')} {esc(it.get('title'))}</h2>"
                  f"<p class='muted' style='font-size:13px'>{esc(it.get('desc') or '')}　更新：{esc(it.get('updated_hkt') or '—')} HKT</p>"
                  f"{img}{table}</div>")
-    return html_page("分析圖", head + intro + body, "<meta http-equiv='refresh' content='900'>")
+    return html_page(CHARTS_TITLE, head + intro + body + markets, "<meta http-equiv='refresh' content='900'>")
 
 
 def handle_charts_get(req):
@@ -6884,7 +6902,12 @@ def handle_charts_get(req):
         items, err = [], "讀取失敗，請稍後再試。"
     if req.args.get("format") == "json":
         return jsonify({"status": "error" if err else "ok", "items": items})
-    return build_charts_page(items, err)                           # [R358] 分析文章搬走，見 ?view=analyst
+    try:
+        markets = _charts_markets_section(gcs_read_json(ANALYST_PREFIX + "latest.json", None))
+    except Exception as exc:
+        log_event(f"⚠️ [分析圖 NQ/ES/SPX/VIX 讀取失敗] {exc}", severity="WARNING", component="charts")
+        markets = ""
+    return build_charts_page(items, err, markets=markets)          # [R358] 分析文章搬走，見 ?view=analyst
 
 
 def _lf_rulesim_section():
@@ -8731,7 +8754,7 @@ PAGE_LINKS = [
     ("longfei", "🐉 龍飛陣"),                                   # [R201] AI 自動交易恒指大期（成績、持倉、決策）
     ("huyi", "🐯 虎翼"),                                        # [R357] 大跌股賣期權（使用者 10-30 開陣）
     ("analyst", "📝 龍飛陣分析"),                                # [R329] 每日分析欄，全部日子累積（使用者 10-26）
-    ("charts", "📐 分析圖"),                                     # [R258] 各陣分析圖（龍飛陣斐波那契等）
+    ("charts", "📐 斐波那契回撤分析圖"),                                     # [R258] 各陣分析圖（龍飛陣斐波那契等）
     ("rules", "📏 人手交易守則"),                               # [R284] 使用者 10-22：人手落單前睇（龍飛陣由成交分析整理）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
