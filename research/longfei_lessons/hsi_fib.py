@@ -58,26 +58,39 @@ for i, k in enumerate(keys):
     col = "#26a69a" if c >= o else "#ef5350"
     ax.vlines(i, l, h, color=col, linewidth=0.7)
     ax.vlines(i, min(o, c), max(o, c), color=col, linewidth=2.6)
+labels = []   # [R363] 右邊一欄：(價, 字, 框樣式)，最後統一排開唔重疊
 for n, col in ((50, "#f5c542"), (100, "#4caf50"), (200, "#e53935")):
     s = sma(n)
     ax.plot([i for i in range(len(s)) if s[i]], [v for v in s if v], color=col, linewidth=1, label=f"SMA {n}")
+    if s[-1]:   # [R363] 使用者 10-30：回撤位表唔要，數字用白色喺圖上清楚顯示（均線尾端都標數）
+        labels.append((s[-1], f"SMA{n}  {s[-1]:,.0f}", dict(facecolor=col, edgecolor="none", alpha=0.6)))
 pal = {0: "#9e9e9e", 0.236: "#e53935", 0.382: "#66bb6a", 0.5: "#66bb6a", 0.618: "#26a69a",
        0.786: "#42a5f5", 0.886: "#42a5f5", 1: "#9e9e9e"}
 for r in levels:
     ax.hlines(price[r], lo_i, len(keys) + 12, color=pal[r], linewidth=1.1)
-    ax.text(len(keys) + 13, price[r], f"{r:g} ({price[r]:,.0f})", color=pal[r], va="center", fontsize=10)
+    labels.append((price[r], f"{r:g}  {price[r]:,.0f}", dict(facecolor="#131722", edgecolor=pal[r], linewidth=1.2)))
 ax.plot([lo_i, hi_i], [lo, hi], ls="--", color="#bbbbbb", linewidth=0.8)
 ax.annotate(keys[lo_i].strftime("%m/%d"), (lo_i, lo), xytext=(0, -18), textcoords="offset points", color="#ffd54f", ha="center")
 ax.annotate(keys[hi_i].strftime("%m/%d"), (hi_i, hi), xytext=(0, 10), textcoords="offset points", color="#ffd54f", ha="center")
 ax.axhline(C[-1], color="#2962ff", ls=":", linewidth=0.8)
-ax.text(len(keys) + 13, C[-1], f"現價 {C[-1]:,.0f}", color="#82b1ff", va="center", fontsize=10, fontweight="bold")
+labels.append((C[-1], f"現價  {C[-1]:,.0f}", dict(facecolor="#2962ff", edgecolor="none")))
 ticks = [i for i in range(len(keys)) if keys[i].hour < 4 and keys[i].weekday() == 0]
 ax.set_xticks(ticks)
 ax.set_xticklabels([keys[i].strftime("%m/%d") for i in ticks], color="#bbbbbb", fontsize=8)
-ax.tick_params(axis="y", colors="#bbbbbb")
-ax.set_xlim(max(0, lo_i - 60), len(keys) + 30)
+ax.tick_params(axis="y", colors="#dddddd", labelsize=10)
+ax.set_xlim(max(0, lo_i - 60), len(keys) + 38)
 vis = range(max(0, lo_i - 60), len(keys))
 ax.set_ylim(min(L[i] for i in vis) - 200, max(H[i] for i in vis) + 200)
+y0, y1 = ax.get_ylim()
+gap = (y1 - y0) * 0.034                       # 一個標籤嘅高度（相對 y 範圍）
+placed = []
+for y, txt, box in sorted(labels, key=lambda t: t[0]):
+    ty = max(y, placed[-1] + gap) if placed else y
+    placed.append(ty)
+    if abs(ty - y) > 1:                       # 被推開咗：劃條細線連返原本價位
+        ax.plot([len(keys) + 12, len(keys) + 13], [y, ty], color="#888888", linewidth=0.6)
+    ax.text(len(keys) + 13, ty, txt, color="#ffffff", va="center", fontsize=12, fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.25", **box))
 ax.grid(color="#2a2e39", linewidth=0.5)
 for s in ax.spines.values():
     s.set_color("#2a2e39")

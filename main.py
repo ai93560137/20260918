@@ -6580,11 +6580,23 @@ def charts_data():
     return items
 
 
-def _chart_png_b64(name):
+def _chart_png(name):
+    """[R363] 回傳 (base64, 更新時間 HKT 字串)；圖唔存在或太大 → (None, None)。"""
     blob = _bucket().get_blob(name)
     if blob is None or (blob.size or 0) > CHARTS_MAX_PNG:
-        return None
-    return base64.b64encode(blob.download_as_bytes()).decode("ascii")
+        return None, None
+    upd = blob.updated.astimezone(HK_TZ).strftime("%m-%d %H:%M") if getattr(blob, "updated", None) else None
+    return base64.b64encode(blob.download_as_bytes()).decode("ascii"), upd
+
+
+def _chart_png_b64(name):
+    return _chart_png(name)[0]
+
+
+def _chart_upd_html(upd):
+    """[R363] 使用者 10-30「每張圖隔離會有最新 update 時間」。"""
+    return (f"<div style='font-size:13px;color:var(--muted);margin:2px 0 4px'>🔄 最新更新：<b>{esc(upd)} HKT</b></div>"
+            if upd else "")
 
 
 # [R259] 📝 龍飛陣分析：使用者 10-23（經龍飛陣）「每天在網頁上加一個我的分析欄，我看看你能否學到我」。
@@ -6672,15 +6684,16 @@ def _analyst_imgs(doc):
     for mkt, paths in (doc.get("charts") or {}).items():
         cells = ""
         for path in (paths or [])[:2]:
-            b64 = None
+            b64 = upd = None
             if isinstance(path, str) and path.startswith(ANALYST_PREFIX):
                 try:
-                    b64 = _chart_png_b64(path)
+                    b64, upd = _chart_png(path)
                 except Exception as exc:
                     log_event(f"⚠️ [分析圖讀取失敗] {path}: {exc}", severity="WARNING", component="charts")
             cap = _analyst_tf_label(path)
             cells += (f"<div style='margin:0 0 12px'>"                    # 使用者 10-29：同 HSI 一樣一張一行，唔並排
                       + (f"<div style='font-weight:bold;color:var(--warning);margin:2px 0'>🕒 {esc(cap)}</div>" if cap else "")
+                      + _chart_upd_html(upd)
                       + f"<img alt='{esc(path)}' style='width:100%;height:auto;border-radius:6px' "
                       f"src='data:image/png;base64,{b64}'></div>" if b64 else "")
         if cells:
@@ -6925,26 +6938,18 @@ def build_charts_page(items, err=None, analyst="", markets=""):
         return html_page(CHARTS_TITLE, head + intro + "<div class='section'><p class='muted'>暫時未有分析圖。</p></div>")
     body = ""
     for it in items:
-        b64 = None
+        b64 = upd = None
         try:
-            b64 = _chart_png_b64(it["png"]) if it.get("png") else None
+            b64, upd = _chart_png(it["png"]) if it.get("png") else (None, None)
         except Exception as exc:
             log_event(f"⚠️ [分析圖讀取失敗] {it.get('id')}: {exc}", severity="WARNING", component="charts")
         img = (f"<img alt='{esc(it.get('title'))}' style='width:100%;height:auto;border-radius:6px' "
                f"src='data:image/png;base64,{b64}'>" if b64 else "<p class='muted'>圖暫時讀取唔到。</p>")
-        d = it.get("data") or {}
-        lv = d.get("levels") or {}
-        table = ""
-        if lv:
-            rows = "".join(f"<tr><td>{esc(k)}</td><td style='text-align:right'>{esc(f'{v:,}')}</td></tr>" for k, v in lv.items())
-            extra = "".join(f"<tr><td>SMA {n}</td><td style='text-align:right'>{esc(f'{d[k]:,}')}</td></tr>"
-                            for n, k in ((50, "sma50"), (100, "sma100"), (200, "sma200")) if d.get(k) is not None)
-            last_txt = f"{d['last']:,.0f}" if d.get("last") is not None else ""
-            last = f"<p>現價 <b>{esc(last_txt)}</b>（截至 {esc(d.get('asof'))}）</p>" if last_txt else ""
-            table = (f"{last}<table><tr><th>回撤位</th><th style='text-align:right'>價位</th></tr>{rows}{extra}</table>")
+        # [R363] 使用者 10-30：回撤位表唔要（數字已用白色標喺圖上）；每張圖隔離寫最新更新時間
+        upd_txt = it.get("updated_hkt") or (upd and f"{upd}")
         body += (f"<div class='section'><h2>{esc(it.get('team') or '')} {esc(it.get('title'))}</h2>"
-                 f"<p class='muted' style='font-size:13px'>{esc(it.get('desc') or '')}　更新：{esc(it.get('updated_hkt') or '—')} HKT</p>"
-                 f"{img}{table}</div>")
+                 f"<p class='muted' style='font-size:13px'>{esc(it.get('desc') or '')}</p>"
+                 f"{_chart_upd_html(upd_txt)}{img}</div>")
     return html_page(CHARTS_TITLE, head + intro + body + markets, "<meta http-equiv='refresh' content='900'>")
 
 
