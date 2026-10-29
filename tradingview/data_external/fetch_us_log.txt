@@ -1,11 +1,11 @@
 SAVED vhsi_daily.csv: 5758 rows -> 2026-10-29 00:00:00
 SAVED hsi_daily.csv: 9829 rows -> 2026-10-29 00:00:00
-SAVED vix_daily.csv: 9276 rows -> 2026-10-28 00:00:00
+SAVED vix_daily.csv: 9277 rows -> 2026-10-29 00:00:00
 SAVED spx_daily.csv: 24824 rows -> 2026-10-28 00:00:00
 SAVED vxn_daily.csv: 6480 rows -> 2026-10-28 00:00:00
 SAVED ndx_daily.csv: 10349 rows -> 2026-10-28 00:00:00
 SAVED n225_daily.csv: 15196 rows -> 2026-10-29 00:00:00
-SAVED vix9d_daily.csv: 3978 rows -> 2026-10-28 00:00:00
+SAVED vix9d_daily.csv: 3979 rows -> 2026-10-28 00:00:00
 SAVED vix3m_daily.csv: 5104 rows -> 2026-10-28 00:00:00
 SAVED vvix_daily.csv: 4978 rows -> 2026-10-28 00:00:00
 SAVED move_daily.csv: 5925 rows -> 2026-10-28 00:00:00
@@ -14,6 +14,7 @@ SAVED axvi_daily.csv: 4762 rows -> 2026-10-29 00:00:00
 NKVI download page: HTTP 404, vi-csv links: []
 NKVI url nikkei_stock_average_vi_daily_en.csv: HTTP 403, 2354 bytes
 NKVI url nikkei_stock_average_vi_daily_jp.csv: HTTP 403, 2354 bytes
-NKVI url dataload?list=vi&csv=1: HTTP 200, 4837 bytes
-ES=F: 7763.25 @ 2026-10-29 02:00:00-04:00
-NQ=F: 29661.0 @ 2026-10-29 02:00:00-04:00
+NKVI url dataload?list=vi&csv=1: HTTP 200, 5044 bytes
+NKVI url ERR: ParserError('Error tokenizing data. C error: Expected 1 fields in line 117, saw 2\n')
+ES=F: 7760.25 @ 2026-10-29 04:00:00-04:00
+NQ=F: 29640.0 @ 2026-10-29 04:00:00-04:00
