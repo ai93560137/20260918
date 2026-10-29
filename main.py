@@ -7395,134 +7395,123 @@ def handle_futu_range_get(req, default_symbol=FUTU_RANGE_DEFAULT):
     return build_futu_range_page(data)
 
 
-def futu_price_chart(rows, day_recs=None):
-    """[R354] 每日高低收連續曲線（投資人意見→使用者 10-29：「日線圖加埋曲線，高藍色、低紅色、收白色，要連續性」）。
-    深色底（白色收市線喺白底睇唔到）；每日一個透明豎條帶原生提示框。
-    day_recs：accuracy["day"]["records"]（逐日開市前嘅預測高位／低位）→ 淺色帶（使用者 10-29「加埋系統預測嘅高低範圍做淺色帶」）。"""
+def _pc_periods(rows, kind):
+    """[R354] 日線 rows → 週／月 OHLC（週用 ISO 週，key 同 accuracy 記錄一致；label＝該段第一日）。"""
+    out = {}
+    for r in rows:
+        k = _peak_key(r["date"], kind)
+        g = out.get(k)
+        if g is None:
+            out[k] = {"key": k, "date": r["date"], "high": r["high"], "low": r["low"], "close": r["close"], "n": 1}
+        else:
+            g.update(high=max(g["high"], r["high"]), low=min(g["low"], r["low"]), close=r["close"], n=g["n"] + 1)
+    items = list(out.values())
+    if items and items[0]["n"] < (4 if kind == "week" else 15):      # 數據由段中開始嘅第一段唔完整，剔走（最後一段係進行中，保留）
+        items = items[1:]
+    return items
+
+
+def _pc_block(cid, title, items, pred, presets, default_n, note=""):
+    """[R354] 一個可放大縮小嘅高低收圖：items=[{key,date,high,low,close}]，pred={key:(低,高)}。前端 _pcInit 畫。"""
+    if len(items) < 2:
+        return ""
+    data = [[it["date"] if len(it["key"]) != 7 else it["key"], it["high"], it["low"], it["close"]]
+            + list(pred.get(it["key"], (None, None))) for it in items]
+    btns = "".join(f"<button type='button' class='pc-btn' data-n='{n}'>{lab}</button>" for n, lab in presets)
+    last = items[-1]
+    return (f"<h3 style='margin:14px 0 4px;'>{title}</h3>"
+            f"<div style='display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px;' id='{cid}-tools'>{btns}"
+            "<button type='button' class='pc-btn' data-z='0.7'>＋ 放大</button><button type='button' class='pc-btn' data-z='1.4'>－ 縮小</button>"
+            f"<span class='muted' style='font-size:12px;'>最新 {esc(data[-1][0])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}{esc(note)}</span></div>"
+            f"<div id='{cid}-info' style='font-size:12px; color:#6c757d; min-height:18px; margin-bottom:4px;'></div>"
+            f"<svg id='{cid}' viewBox='0 0 1000 300' style='width:100%; height:auto; background:#15181d; border-radius:8px; touch-action:none; cursor:grab;' "
+            f"role='img' aria-label='{esc(title)}'></svg>"
+            f"<script>_pcInit('{cid}',{json.dumps(data, ensure_ascii=False)},{int(default_n)});</script>")
+
+
+def futu_price_chart(rows, data=None):
+    """[R354] 高低收連續曲線：日線＋週＋月（投資人意見→使用者 10-29：高藍、低紅、收白、連續；加系統預測黃色帶；
+    可以放大縮小；加 data point、mouse over 顯示數值；「做埋週同月，放喺底；ES、NQ 一齊做」）。深色底（白線喺白底睇唔到）。"""
     rows = [r for r in rows if r.get("high") and r.get("low") and r.get("close")]
     if len(rows) < 2:
         return ""
-    pred = {r["key"]: (r["low"], r["high"]) for r in (day_recs or []) if r.get("high") and r.get("low")}
-    w, h, pad_l, pad_b, pad_t, pad_r = 1000, 300, 60, 26, 12, 10
-    lo_v = min([r["low"] for r in rows] + [pred[r["date"]][0] for r in rows if r["date"] in pred])
-    hi_v = max([r["high"] for r in rows] + [pred[r["date"]][1] for r in rows if r["date"] in pred])
-    span = (hi_v - lo_v) or 1
-    lo_v, hi_v = lo_v - span * 0.04, hi_v + span * 0.04
-    step = (w - pad_l - pad_r) / (len(rows) - 1)
-    x = lambda i: pad_l + i * step
-    y = lambda v: pad_t + (h - pad_t - pad_b) * (1 - (v - lo_v) / (hi_v - lo_v))
-    ticks = [lo_v + (hi_v - lo_v) / 4 * i for i in range(5)]
-    grid = "".join(f"<line x1='{pad_l}' x2='{w - pad_r}' y1='{y(t):.1f}' y2='{y(t):.1f}' stroke='#2b2f36'/>"
-                   f"<text x='{pad_l - 6}' y='{y(t) + 4:.1f}' text-anchor='end' font-size='11' fill='#9aa0a6'>{t:,.0f}</text>"
-                   for t in ticks)
+    acc = (data or {}).get("accuracy") or {}
+    periods = ((data or {}).get("peak") or {}).get("periods") or {}
 
-    def line(key, color, width):
-        pts = " ".join(f"{x(i):.1f},{y(r[key]):.1f}" for i, r in enumerate(rows))
-        return f"<polyline points='{pts}' fill='none' stroke='{color}' stroke-width='{width}' stroke-linejoin='round'/>"
+    def preds(kind):
+        out = {r["key"]: (r["low"], r["high"]) for r in (acc.get(kind) or {}).get("records") or [] if r.get("high") and r.get("low")}
+        fc = (periods.get(kind) or {}).get("forecast") or {}
+        key = (periods.get(kind) or {}).get("key")
+        if kind != "day" and key and fc.get("high") and fc.get("low"):
+            out.setdefault(key, (fc["low"], fc["high"]))       # 未完嘅本週／本月：用而家嘅預測
+        return out
 
-    band, seg = "", []                            # 預測帶：連續有預測嘅日子砌成一塊多邊形
-    for i, r in enumerate(rows + [None]):
-        if r is not None and r["date"] in pred:
-            seg.append(i)
-            continue
-        if len(seg) > 1:
-            top = " ".join(f"{x(j):.1f},{y(pred[rows[j]['date']][1]):.1f}" for j in seg)
-            bot = " ".join(f"{x(j):.1f},{y(pred[rows[j]['date']][0]):.1f}" for j in reversed(seg))
-            band += (f"<polygon points='{top} {bot}' fill='#f2c94c' fill-opacity='0.30' stroke='none'/>"
-                     f"<polyline points='{top}' fill='none' stroke='#f2c94c' stroke-width='1' stroke-dasharray='3 3' stroke-opacity='0.8'/>"
-                     f"<polyline points='{bot}' fill='none' stroke='#f2c94c' stroke-width='1' stroke-dasharray='3 3' stroke-opacity='0.8'/>")
-        seg = []
-    lines = band + line("high", "#4f9dff", 1.6) + line("low", "#ff5c5c", 1.6) + line("close", "#ffffff", 2.0)
-
-    def tip(r):
-        t = f"{r['date']}\n高 {r['high']:,.0f}　低 {r['low']:,.0f}　收 {r['close']:,.0f}"
-        if r["date"] in pred:
-            t += f"\n預測 低 {pred[r['date']][0]:,.0f}～高 {pred[r['date']][1]:,.0f}"
-        return esc(t)
-
-    hover = "".join(
-        f"<rect x='{x(i) - step / 2:.1f}' y='{pad_t}' width='{max(step, 1):.1f}' height='{h - pad_t - pad_b}' fill='transparent'>"
-        f"<title>{tip(r)}</title></rect>"
-        for i, r in enumerate(rows))
-    months, labels = set(), []
-    for i, r in enumerate(rows):
-        if r["date"][:7] not in months:
-            months.add(r["date"][:7])
-            if i and x(i) < w - 40:
-                labels.append(f"<text x='{x(i):.1f}' y='{h - 8}' font-size='11' fill='#9aa0a6'>{r['date'][2:7]}</text>")
-    last = rows[-1]
+    day_items = [{"key": r["date"], **r} for r in rows]
     legend = ("<div style='display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:#6c757d; margin-bottom:6px;'>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#4f9dff; vertical-align:middle;'></span> 高</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ff5c5c; vertical-align:middle;'></span> 低</span>"
               "<span><span style='display:inline-block; width:14px; height:3px; background:#ffffff; outline:1px solid #999; vertical-align:middle;'></span> 收</span>"
-              + ("<span><span style='display:inline-block; width:14px; height:10px; background:#f2c94c; opacity:0.6; vertical-align:middle;'></span> 系統預測高低（開市前，黃色帶）</span>" if pred else "") +
-              f"<span>最新 {esc(last['date'])}：高 {last['high']:,.0f}／低 {last['low']:,.0f}／收 {last['close']:,.0f}</span></div>")
-    data = [[r["date"], r["high"], r["low"], r["close"]] + list(pred.get(r["date"], (None, None))) for r in rows]
-    btns = "".join(f"<button type='button' class='pc-btn' data-n='{n}'>{lab}</button>"
-                   for n, lab in ((22, "1 個月"), (66, "3 個月"), (132, "6 個月"), (0, "全年")))
-    tools = (f"<div style='display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px;'>{btns}"
-             "<button type='button' class='pc-btn' data-z='0.7'>＋ 放大</button><button type='button' class='pc-btn' data-z='1.4'>－ 縮小</button>"
-             "<span class='muted' style='font-size:12px;'>滑鼠滾輪放大縮小、拖動左右移；手機兩隻手指拉闊／收窄、一隻手指拖動</span></div>"
-             "<div id='pc-info' style='font-size:12px; color:#6c757d; min-height:18px; margin-bottom:4px;'></div>")
-    svg = (f"<svg id='pc-svg' viewBox='0 0 {w} {h}' style='width:100%; height:auto; background:#15181d; border-radius:8px; "
-           f"touch-action:none; cursor:grab;' role='img' aria-label='每日高低收曲線'>{grid}{lines}{hover}{''.join(labels)}</svg>")
-    return (legend + tools + svg + "<style>.pc-btn{border:1px solid #ced4da;background:#fff;border-radius:6px;padding:3px 10px;"
-            "font-size:12px;cursor:pointer}.pc-btn.on{background:#0f62fe;color:#fff;border-color:#0f62fe}</style>"
-            + "<script>" + _PC_JS.replace("__DATA__", json.dumps(data, ensure_ascii=False)) + "</script>")
+              "<span><span style='display:inline-block; width:14px; height:10px; background:#f2c94c; opacity:0.6; vertical-align:middle;'></span> 系統預測高低（開始前，黃色帶）</span>"
+              "<span>滑鼠滾輪放大縮小、拖動左右移；手機兩隻手指拉闊／收窄、一隻手指拖動；指住睇數值</span></div>")
+    return (legend + "<style>.pc-btn{border:1px solid #ced4da;background:#fff;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer}"
+            ".pc-btn.on{background:#0f62fe;color:#fff;border-color:#0f62fe}</style><script>" + _PC_JS + "</script>"
+            + _pc_block("pc-day", "📅 日線", day_items, preds("day"), ((22, "1 個月"), (66, "3 個月"), (132, "6 個月"), (0, "全部")), 66)
+            + _pc_block("pc-week", "🗓️ 週線（每點＝一星期，日期係該星期第一個交易日）", _pc_periods(rows, "week"), preds("week"),
+                        ((13, "3 個月"), (26, "6 個月"), (0, "全部")), 0)
+            + _pc_block("pc-month", "🈷️ 月線（每點＝一個月）", _pc_periods(rows, "month"), preds("month"), ((6, "6 個月"), (0, "全部")), 0))
 
 
-# [R354] 日線高低收圖嘅放大縮小（使用者 10-29「可以放大縮小」）：前端用同一份數據重畫，y 軸跟住可見範圍調整
-_PC_JS = r"""(function(){
-const D=__DATA__, svg=document.getElementById('pc-svg'), info=document.getElementById('pc-info');
+# [R354] 高低收圖前端：放大縮小、拖動、手機雙指、data point、指住彈數值框；y 軸跟可見範圍
+_PC_JS = r"""window._pcInit=window._pcInit||function(id,D,n0){
+const svg=document.getElementById(id),info=document.getElementById(id+'-info'),tools=document.getElementById(id+'-tools');
 if(!svg||!D.length)return;
-const W=1000,H=300,L=60,R=10,T=12,B=26; let a=0,b=D.length-1, hov=-1;
+const W=1000,H=300,L=60,R=10,T=12,B=26;let a=0,b=D.length-1,hov=-1,st=1;
 const f=v=>Math.round(v).toLocaleString('en-US');
-function clamp(){const n=D.length;let w=Math.max(5,b-a);if(w>n-1)w=n-1;if(a<0)a=0;b=a+w;if(b>n-1){b=n-1;a=b-w;}a=Math.round(a);b=Math.round(b);}
+function clamp(){const n=D.length;let w=Math.max(Math.min(5,n-1),b-a);if(w>n-1)w=n-1;if(a<0)a=0;b=a+w;if(b>n-1){b=n-1;a=b-w;}a=Math.round(a);b=Math.round(b);}
 function draw(){clamp();const S=D.slice(a,b+1);let lo=1e18,hi=-1e18;
  S.forEach(r=>{lo=Math.min(lo,r[2],r[4]??1e18);hi=Math.max(hi,r[1],r[5]??-1e18);});
- const sp=(hi-lo)||1;lo-=sp*.05;hi+=sp*.05;const st=(W-L-R)/Math.max(1,S.length-1);
- const X=i=>L+i*st, Y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));let o='';
+ const sp=(hi-lo)||1;lo-=sp*.05;hi+=sp*.05;st=(W-L-R)/Math.max(1,S.length-1);
+ const X=i=>L+i*st,Y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));let o='';
  for(let k=0;k<5;k++){const v=lo+(hi-lo)/4*k;o+=`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#2b2f36"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa0a6">${f(v)}</text>`;}
  let seg=[];const flush=()=>{if(seg.length>1){const t=seg.map(i=>X(i).toFixed(1)+','+Y(S[i][5]).toFixed(1)).join(' '),bo=seg.slice().reverse().map(i=>X(i).toFixed(1)+','+Y(S[i][4]).toFixed(1)).join(' ');
   o+=`<polygon points="${t} ${bo}" fill="#f2c94c" fill-opacity="0.30"/><polyline points="${t}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/><polyline points="${bo}" fill="none" stroke="#f2c94c" stroke-dasharray="3 3" stroke-opacity="0.8"/>`;}seg=[];};
  S.forEach((r,i)=>{if(r[4]!=null&&r[5]!=null)seg.push(i);else flush();});flush();
  const ln=(k,c,wd)=>`<polyline points="${S.map((r,i)=>X(i).toFixed(1)+','+Y(r[k]).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round"/>`;
  o+=ln(1,'#4f9dff',1.6)+ln(2,'#ff5c5c',1.6)+ln(3,'#ffffff',2);
- const pr=S.length<=70?2.6:S.length<=140?1.8:1.2;   // [R354] data point：每日三個點
+ const pr=S.length<=70?2.6:S.length<=140?1.8:1.2;
  S.forEach((r,i)=>{const x=X(i).toFixed(1);o+=`<circle cx="${x}" cy="${Y(r[1]).toFixed(1)}" r="${pr}" fill="#4f9dff"/><circle cx="${x}" cy="${Y(r[2]).toFixed(1)}" r="${pr}" fill="#ff5c5c"/><circle cx="${x}" cy="${Y(r[3]).toFixed(1)}" r="${pr}" fill="#ffffff"/>`;});
- const every=Math.max(1,Math.ceil(S.length/10));let lastM='';
- S.forEach((r,i)=>{const lab=S.length>70?r[0].slice(2,7):r[0].slice(5);const key=S.length>70?r[0].slice(0,7):i;
-  if(S.length>70?(key!==lastM&&i):(i%every===0)){if(X(i)<W-40)o+=`<text x="${X(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#9aa0a6">${lab}</text>`;}lastM=S.length>70?key:lastM;});
+ const every=Math.max(1,Math.ceil(S.length/10));
+ S.forEach((r,i)=>{if(i%every===0&&X(i)<W-40){const lab=r[0].length===7?r[0]:(S.length>70?r[0].slice(2,7):r[0].slice(5));o+=`<text x="${X(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#9aa0a6">${lab}</text>`;}});
  if(hov>=a&&hov<=b){const i=hov-a,r=S[i],x=X(i);o+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#9aa0a6" stroke-dasharray="2 3"/>`;
-  o+=`<circle cx="${x.toFixed(1)}" cy="${Y(r[1]).toFixed(1)}" r="4.5" fill="#4f9dff" stroke="#15181d" stroke-width="1.5"/><circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="4.5" fill="#ff5c5c" stroke="#15181d" stroke-width="1.5"/><circle cx="${x.toFixed(1)}" cy="${Y(r[3]).toFixed(1)}" r="4.5" fill="#ffffff" stroke="#15181d" stroke-width="1.5"/>`;
+  [[1,'#4f9dff'],[2,'#ff5c5c'],[3,'#ffffff']].forEach(([k,c])=>{o+=`<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="4.5" fill="${c}" stroke="#15181d" stroke-width="1.5"/>`;});
   const rowsT=[[r[0],'#e8eaed'],['高 '+f(r[1]),'#4f9dff'],['低 '+f(r[2]),'#ff5c5c'],['收 '+f(r[3]),'#ffffff']].concat(r[4]!=null?[['預測 '+f(r[4])+'～'+f(r[5]),'#f2c94c']]:[]);
-  const bw=150,bh=12+rowsT.length*16,bx=x+12+bw>W-R?x-12-bw:x+12,by=Math.min(Math.max(T,Y(r[1])-bh/2),H-B-bh);
+  const bw=160,bh=12+rowsT.length*16,bx=x+12+bw>W-R?x-12-bw:x+12,by=Math.min(Math.max(T,Y(r[1])-bh/2),H-B-bh);
   o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw}" height="${bh}" rx="6" fill="#0b0d10" fill-opacity="0.92" stroke="#3c4043"/>`;
   rowsT.forEach((t,k)=>{o+=`<text x="${(bx+10).toFixed(1)}" y="${(by+20+k*16).toFixed(1)}" font-size="12" fill="${t[1]}">${t[0]}</text>`;});
   info.textContent=`${r[0]}　高 ${f(r[1])}　低 ${f(r[2])}　收 ${f(r[3])}`+(r[4]!=null?`　預測 ${f(r[4])}～${f(r[5])}`:'');}
- else info.textContent=`顯示 ${S[0][0]} 至 ${S[S.length-1][0]}（${S.length} 個交易日）`;
- svg.innerHTML=o;svg._st=st;}
-function idxAt(cx){const r=svg.getBoundingClientRect();const px=(cx-r.left)/r.width*W;return a+Math.round((px-L)/(svg._st||1));}
-function zoom(fac,center){const c=center==null?(a+b)/2:center;const w=Math.max(5,(b-a)*fac);a=c-(c-a)*fac;b=a+w;draw();}
-document.querySelectorAll('.pc-btn').forEach(el=>el.addEventListener('click',()=>{
- if(el.dataset.z){zoom(+el.dataset.z);}else{const n=+el.dataset.n;b=D.length-1;a=n?b-n:0;draw();}
- document.querySelectorAll('.pc-btn[data-n]').forEach(x=>x.classList.toggle('on',x===el));}));
+ else info.textContent=`顯示 ${S[0][0]} 至 ${S[S.length-1][0]}（${S.length} 點）`;
+ svg.innerHTML=o;}
+function idxAt(cx){const r=svg.getBoundingClientRect();return a+Math.round(((cx-r.left)/r.width*W-L)/st);}
+function zoom(fac,c){c=c==null?(a+b)/2:c;const w=Math.max(5,(b-a)*fac);a=c-(c-a)*fac;b=a+w;draw();}
+tools.querySelectorAll('.pc-btn').forEach(el=>el.addEventListener('click',()=>{
+ if(el.dataset.z){zoom(+el.dataset.z);}else{const n=+el.dataset.n;b=D.length-1;a=n?b-n:0;draw();
+ tools.querySelectorAll('.pc-btn[data-n]').forEach(x=>x.classList.toggle('on',x===el));}}));
 svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?0.8:1.25,idxAt(e.clientX));},{passive:false});
 let drag=null;
 svg.addEventListener('mousedown',e=>{drag={x:e.clientX,a,b};svg.style.cursor='grabbing';});
 window.addEventListener('mouseup',()=>{drag=null;svg.style.cursor='grab';});
-svg.addEventListener('mousemove',e=>{if(drag){const r=svg.getBoundingClientRect();const d=(e.clientX-drag.x)/r.width*W/(svg._st||1);a=drag.a-d;b=drag.b-d;}hov=idxAt(e.clientX);draw();});
+svg.addEventListener('mousemove',e=>{if(drag){const r=svg.getBoundingClientRect();const d=(e.clientX-drag.x)/r.width*W/st;a=drag.a-d;b=drag.b-d;}hov=idxAt(e.clientX);draw();});
 svg.addEventListener('mouseleave',()=>{hov=-1;draw();});
 let t0=null;
 svg.addEventListener('touchstart',e=>{const t=e.touches;t0=t.length===2?{d:Math.abs(t[0].clientX-t[1].clientX),a,b,c:idxAt((t[0].clientX+t[1].clientX)/2)}:{x:t[0].clientX,a,b};hov=idxAt(t[0].clientX);draw();},{passive:true});
 svg.addEventListener('touchmove',e=>{const t=e.touches;if(!t0)return;e.preventDefault();
  if(t.length===2&&t0.d){const d=Math.abs(t[0].clientX-t[1].clientX)||1,fac=t0.d/d,c=t0.c;a=c-(c-t0.a)*fac;b=c+(t0.b-c)*fac;}
- else if(t.length===1&&t0.x!=null){const r=svg.getBoundingClientRect();const dd=(t[0].clientX-t0.x)/r.width*W/(svg._st||1);a=t0.a-dd;b=t0.b-dd;hov=idxAt(t[0].clientX);}
+ else if(t.length===1&&t0.x!=null){const r=svg.getBoundingClientRect();const dd=(t[0].clientX-t0.x)/r.width*W/st;a=t0.a-dd;b=t0.b-dd;hov=idxAt(t[0].clientX);}
  draw();},{passive:false});
 svg.addEventListener('touchend',()=>{t0=null;});
-b=D.length-1;a=Math.max(0,b-66);draw();
-document.querySelectorAll('.pc-btn[data-n="66"]').forEach(x=>x.classList.add('on'));
-})();"""
+b=D.length-1;a=n0?Math.max(0,b-n0):0;draw();
+tools.querySelectorAll('.pc-btn[data-n="'+n0+'"]').forEach(x=>x.classList.add('on'));
+};"""
 
 
 def futu_range_chart(rows):
@@ -8437,8 +8426,8 @@ def build_futu_range_page(data):
     body = nav + print_toolbar_html(m['title']) + hero + cards + reviews + extras + f"""
     <div class='section-header'>📊 過去一年</div>
     {stats}
-    <div class='section'><h2>📉 每日高低收（日線，{len(rows)} 個交易日）</h2>
-      {futu_price_chart(rows, ((data.get('accuracy') or {}).get('day') or {}).get('records'))}
+    <div class='section'><h2>📉 高低收走勢（日線／週線／月線）</h2>
+      {futu_price_chart(rows, data)}
     </div>
     <div class='section'><h2>📈 每日波幅與預測（{esc(s['first_date'] or '—')} 至 {esc(latest['date'])}，{len(rows)} 個交易日）</h2>
       {futu_range_chart(rows)}
