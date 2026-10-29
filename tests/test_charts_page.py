@@ -52,3 +52,21 @@ print("analyst page ok")
 # [R358] 分析圖頁唔再嵌入龍飛陣分析文章，只留連結
 h = main.build_charts_page([])
 assert "?view=analyst" in h and "龍飛陣分析" in h
+# [R359] 改名斐波那契回撤分析圖；加番 NQ／ES／SPX／VIX（龍飛陣每日分析圖，唔放 HSI 重覆、唔放文章）
+assert "斐波那契回撤分析圖" in main.build_charts_page([])
+_orig = main._chart_png_b64
+main._chart_png_b64 = lambda path: "QUJD"
+try:
+    doc = {"date": "2026-10-29", "markdown": "文章內容唔應該出現",
+           "charts": {m: [f"ops/longfei/analyst/charts/2026-10-29/{m}_4h.png", f"ops/longfei/analyst/charts/2026-10-29/{m}_1d.png"]
+                      for m in ("NQ", "ES", "SPX", "VIX", "HSI")}}
+    sec = main._charts_markets_section(doc)
+    for m in ("NQ", "ES", "SPX", "VIX"):
+        assert f"<h3>{m}</h3>" in sec, m
+    assert "<h3>HSI</h3>" not in sec and "文章內容" not in sec and "240 分鐘圖" in sec
+    h = main.build_charts_page([], None, markets=sec)
+    assert "<h3>NQ</h3>" in h and "暫時未有" not in h
+    assert main._charts_markets_section(None) == "" and main._charts_markets_section({"charts": {}}) == ""
+finally:
+    main._chart_png_b64 = _orig
+print("fib charts ok")
