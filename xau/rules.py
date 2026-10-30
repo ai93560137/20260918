@@ -83,6 +83,21 @@ def chase_block(m1, side, price, cfg=config):
     return None
 
 
+def sl_cooldown(last_close, side, now, cfg=config):
+    """[R355] #145 P2：上一張平倉係蝕（pnl<0）而且同方向、平倉後未夠 SL_COOLDOWN_MIN 分鐘 → 回傳擋嘅原因，否則 None。
+    last_close：{"side": ±1, "closed_ts": …, "pnl": …}（真倉＝成交簿最後一筆 pnl_hkd；紙上＝trades 最後一筆 pnl_usd）。"""
+    mins = getattr(cfg, "SL_COOLDOWN_MIN", 0) or 0
+    if not mins or not last_close or last_close.get("closed_ts") is None:
+        return None
+    pnl = last_close.get("pnl")
+    if pnl is None or pnl >= 0 or int(last_close.get("side") or 0) != side:
+        return None
+    left = mins * 60 - (now - float(last_close["closed_ts"]))
+    if left <= 0:
+        return None
+    return f"止損後冷靜期：上一張同方向 {mins} 分鐘內止損平倉（仲有 {left / 60:.0f} 分鐘），唔准同方向再開"
+
+
 def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, block_reason=None):
     """position: None 或 {side: ±1, entry, stop, target, ...}。can_open=False（階梯 Ⓑ 以上／暫停開倉／停機）就唔准開新倉。
     回傳 (最終動作, stop, target, 被拒原因或 None)。唔合規一律變 HOLD。"""
@@ -139,6 +154,10 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
             cur = position.get("stop")
             if cur is not None and (stop - cur) * side <= 0:
                 return "HOLD", None, None, f"新止損離價 {asked / cfg.PIP:.1f} pip < 最小 {min_dist / cfg.PIP:.1f} pip，夾返都唔比現止損緊，唔改"
+        cur = position.get("stop")
+        if getattr(cfg, "STOP_TIGHTEN_ONLY", False) and cur is not None and (stop - cur) * side <= 0:   # [R354] 只准收緊：放鬆／冇變一律唔改
+            return "HOLD", None, None, (f"新止損 {stop:.{nd}f} 唔比現止損 {cur:.{nd}f} 緊（只准收緊，唔准放鬆）" if (stop - cur) * side < 0
+                                        else "新止損同現止損一樣，唔改")
         if target is not None and (target - last) * side <= 0:
             target = position.get("target")
         return "UPDATE_STOP", round(stop, nd), (round(target, nd) if target is not None else position.get("target")), None

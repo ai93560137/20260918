@@ -13,7 +13,7 @@ def clean_note(note):
     return t[:16]
 
 
-def enqueue(state, action, stop, target, now, cmd_id, lots=None, tag="", magic=None, note=""):
+def enqueue(state, action, stop, target, now, cmd_id, lots=None, tag="", magic=None, note="", px=None, dev=None):
     """回傳指令文字或 None。cmd_id 取前 8 碼。magic 預設本服務（跟單用 FOLLOW_MAGIC）。[R350] note＝開倉備註（AI決策／跟單CTC…），EA 放入 MT5 註解。"""
     cid = cmd_id[:8]; magic = config.MAGIC if magic is None else magic
     lots = rules.lots(state) if lots is None else lots                 # [R346] 階梯級數喺 state
@@ -21,7 +21,8 @@ def enqueue(state, action, stop, target, now, cmd_id, lots=None, tag="", magic=N
     tp = "" if target is None else f"{target:.{nd}f}"
     if action in ("OPEN_LONG", "OPEN_SHORT"):
         text = f"open|{'BUY' if action == 'OPEN_LONG' else 'SELL'}|{lots:.2f}|sl={stop:.{nd}f}|tp={tp}|magic={magic}" \
-               + (f"|note={clean_note(note)}" if clean_note(note) else "") + f"|id={cid}"       # [R350] note 放 id 之前（id 保持喺尾，mask／ack 唔受影響）
+               + (f"|note={clean_note(note)}" if clean_note(note) else "") \
+               + (f"|px={px:.{nd}f}|dev={dev:.{nd}f}" if px is not None and dev else "") + f"|id={cid}"   # [R350] note 放 id 之前；[R355] px／dev：EA v0.41 不利偏離 > dev 唔開（舊 EA 唔識就照開）
     elif action == "CLOSE":
         text = f"close|all|magic={magic}|id={cid}"
     elif action == "UPDATE_STOP":

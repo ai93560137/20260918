@@ -320,7 +320,7 @@ FAKE["xau/m15.json"] = (json.dumps([{"time": T0 + 400 * 60 - 900 * (30 - k), "op
 state = json.loads(FAKE["xau/state.json"][0]); state["trades_today"] = {"date": "", "count": 0}; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
 FB.decision = {"action": "OPEN_LONG", "stop_price": 3990.0, "target_price": 4015.0, "confidence": 0.9, "reason": "買"}
 st, d = hb(400, 4000)
-check("實倉：cmd_text 有 open 指令、紙上唔開倉", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|note=AI決策|id=") and json.loads(FAKE["xau/state.json"][0])["position"] is None, d)
+check("實倉：cmd_text 有 open 指令、紙上唔開倉", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|note=AI決策|px=4000.00|dev=1.50|id=") and json.loads(FAKE["xau/state.json"][0])["position"] is None, d)
 cid = d["cmd_text"].split("id=")[1]
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
 st, d2 = hb(401, 4001)
@@ -355,7 +355,7 @@ def live_hb(i, close, positions, account="70001", **extra):
 st, d = live_hb(0, 4000, [], account="99999")
 check("非 XAU_ACCOUNT 嘅心跳 → ignored，唔入 K 線", d["status"] == "ignored" and d["cmd_text"] == "" and json.loads(FAKE["xau/m1.json"][0])[-1]["time"] == T1 - 60, d)
 st, d = live_hb(0, 4000, [])
-check("demo 心跳：Claude OPEN → 排 open 指令", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|note=AI決策|id="), d)
+check("demo 心跳：Claude OPEN → 排 open 指令", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4015.00|magic=921|note=AI決策|px=4000.00|dev=1.50|id="), d)
 cid = d["cmd_text"].split("id=")[1]
 POS = [{"ticket": 555, "side": "BUY", "lots": 0.01, "entry": 4000.2, "sl": 3990.0, "tp": 4015.0, "open_time": T1 + 10}]
 client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": cid, "ok": True, "ticket": 555}), content_type="application/json")

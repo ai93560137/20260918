@@ -158,6 +158,15 @@ def own_positions(payload, offset=0):
     return out
 
 
+def _last_close(state):
+    """[R355] 最後一張平倉：真倉用成交簿（pnl_hkd），紙上用 trades（pnl_usd）。"""
+    if config.EXECUTE:
+        t = (state.get("book") or [None])[-1]
+        return {"side": t.get("side"), "closed_ts": t.get("closed_ts"), "pnl": t.get("pnl_hkd")} if t else None
+    t = (state.get("trades") or [None])[-1]
+    return {"side": t.get("side"), "closed_ts": t.get("closed_ts"), "pnl": t.get("pnl_usd")} if t else None
+
+
 def _open_meta(state, pos):
     """[R352] 開倉快照加 AI 決策價：開倉前 10 分鐘內最近一次 OPEN 決策。"""
     t = pos.get("opened_ts") or now_ts()
@@ -394,8 +403,9 @@ def _record(state, rec, day):
         log_event(f"⚠️ 決策紀錄寫入失敗：{exc}", severity="WARNING")
 
 
-def enqueue_cmd(state, action, stop, target, now, decision_id):
-    return executor.enqueue(state, action, stop, target, now, decision_id, note="AI決策")   # [R350] MT5 註解「天覆陣 AI決策 <id>」（使用者 10-28）
+def enqueue_cmd(state, action, stop, target, now, decision_id, px=None):
+    return executor.enqueue(state, action, stop, target, now, decision_id, note="AI決策",
+                            px=px, dev=(config.MAX_ENTRY_SLIP or None))   # [R355] #145 P3：開倉帶決策價，EA v0.41 偏離太多唔開   # [R350] MT5 註解「天覆陣 AI決策 <id>」（使用者 10-28）
 
 
 def cmd_text(state, now):
@@ -594,6 +604,10 @@ def process_bar(state, bar, m1, m15, account, now):
         chase = rules.chase_block(m1, 1 if action == "OPEN_LONG" else -1, bar["close"])
         if chase:
             action, stop, target, why = "HOLD", None, None, chase
+    if action in ("OPEN_LONG", "OPEN_SHORT"):                       # [R355] #145 P2 止損後冷靜期
+        cool = rules.sl_cooldown(_last_close(state), 1 if action == "OPEN_LONG" else -1, now)
+        if cool:
+            action, stop, target, why = "HOLD", None, None, cool
     rec.update(kind="decide", action=str(d.get("action")), final=action, stop=stop, target=target,
                confidence=d.get("confidence"), reason=str(d.get("reason") or "")[:400], rejected=why,
                ai_stop=d.get("stop_price"), ai_target=d.get("target_price"),
@@ -611,7 +625,7 @@ def process_bar(state, bar, m1, m15, account, now):
         if cited["sid"] not in rec["reason"]:
             rec["reason"] = (rec["reason"] + signals.note(cited))[:480]
     if config.EXECUTE:
-        rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD"
+        rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id, px=bar["close"]) or "HOLD"
         if action in ("OPEN_LONG", "OPEN_SHORT"):
             paper.count_trade(state, day)
     else:

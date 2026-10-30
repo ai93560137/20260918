@@ -222,7 +222,9 @@ FB.calls.clear()
 loose = round(cur_stop() - 1.0, 2)
 FB.decision = {"action": "UPDATE_STOP", "stop_price": loose, "target_price": None, "confidence": 0.9, "reason": "放鬆"}
 st, d = hb(14, far, m15_time=T0 + 1800)
-check("新 M15 問 Opus：Opus 移遠 1 美元（rules.validate 唔擋，Opus 權限照舊）", cur_stop() == loose, (cur_stop(), loose))
+_before = round(loose + 1.0, 2)
+check("[R354] 新 M15 問 Opus：Opus 移遠 1 美元 → 只准收緊，擋（止損唔變、rejected 寫只准收緊）",
+      cur_stop() == _before and "只准收緊" in (d["decision"].get("rejected") or ""), (cur_stop(), _before, d["decision"].get("rejected")))
 FB.decision = {"action": "HOLD", "stop_price": None, "target_price": None, "confidence": 0.5, "reason": "等"}
 FB.calls.clear()
 st, d = hb(15, 4019.5, m15_time=T0 + 1800)    # 近止賺 4020 → 問
