@@ -139,6 +139,10 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
             cur = position.get("stop")
             if cur is not None and (stop - cur) * side <= 0:
                 return "HOLD", None, None, f"新止損離價 {asked / cfg.PIP:.1f} pip < 最小 {min_dist / cfg.PIP:.1f} pip，夾返都唔比現止損緊，唔改"
+        cur = position.get("stop")
+        if getattr(cfg, "STOP_TIGHTEN_ONLY", False) and cur is not None and (stop - cur) * side <= 0:   # [R354] 只准收緊：放鬆／冇變一律唔改
+            return "HOLD", None, None, (f"新止損 {stop:.{nd}f} 唔比現止損 {cur:.{nd}f} 緊（只准收緊，唔准放鬆）" if (stop - cur) * side < 0
+                                        else "新止損同現止損一樣，唔改")
         if target is not None and (target - last) * side <= 0:
             target = position.get("target")
         return "UPDATE_STOP", round(stop, nd), (round(target, nd) if target is not None else position.get("target")), None

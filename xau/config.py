@@ -116,6 +116,7 @@ CHASE_BLOCK = _b("XAU_CHASE_BLOCK", PRODUCT["kind"] == "gold")   # [R351] M1 硬
 CHASE_WINDOW_MIN = _i("XAU_CHASE_WINDOW_MIN", 15)            # 回望幾多根 M1（含啱啱收盤嗰根）
 CHASE_MOVE_USD = _f("XAU_CHASE_MOVE_USD", 6.0 * PIP)         # 窗內先高後低（買：先低後高）幅度 ≥ 呢個先算急跌／急升
 CHASE_BACK_USD = _f("XAU_CHASE_BACK_USD", 3.0 * PIP)         # 決策價離該低位（買：高位）≥ 呢個＝已反抽，擋
+STOP_TIGHTEN_ONLY = _b("XAU_STOP_TIGHTEN_ONLY", True)       # [R354] UPDATE_STOP 只准收緊（10-30 L26 AI「止損放闊至6美元」放鬆 0.90 冇被擋）；硬性風控，AI 無權改
 MIN_CONFIDENCE = _f("XAU_MIN_CONFIDENCE", 0.6)              # 開倉要嘅最低信心
 MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐約交易日計）
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
