@@ -155,17 +155,15 @@ def open_gaps(d1, lookback=120, min_pct=0.3):
     return gaps[-6:]
 
 
-def fib_block(bars4, days=90):
-    """最近 days 日最高點同佢之前嘅最低點（升浪回撤）；如果最低點喺最高點之後就倒轉（跌浪反彈）。"""
+def fib_block(bars4, days=90, per_day=6):
+    """最近 days 日最高點，同佢之前 days 日內嘅最低點（升浪回撤；同 hsi_fib 一樣由高點往前揾）。
+    使用者 10-30「日線圖波段選擇不對，沒有選圖中的最低點」：舊版只喺「最近 90 日」入面揾低點，
+    低點啱啱跌出 90 日（例如 NQ 07-29）就揀咗次低點。per_day：每日幾支 K（4 小時 6、日線 1）。"""
     last = datetime.strptime(bars4[-1][0], "%Y-%m-%d %H:%M")
     idx = [i for i, b in enumerate(bars4) if (last - datetime.strptime(b[0], "%Y-%m-%d %H:%M")).days <= days]
     hi_i = max(idx, key=lambda i: bars4[i][2])
-    lo_i = min(idx, key=lambda i: bars4[i][3])
-    if lo_i < hi_i:      # 升浪：低 → 高，回撤由高計落
-        a, b, kind = lo_i, hi_i, "升浪回撤"
-    else:                # 高 → 低：先揾高點之前嘅低點做升浪
-        lo2 = min(range(max(0, hi_i - 6 * days), hi_i + 1), key=lambda i: bars4[i][3])
-        a, b, kind = lo2, hi_i, "升浪回撤"
+    lo_i = min(range(max(0, hi_i - per_day * days), hi_i + 1), key=lambda i: bars4[i][3])
+    a, b, kind = lo_i, hi_i, "升浪回撤"
     lo, hi = bars4[a][3], bars4[b][2]
     return {"kind": kind, "low": [bars4[a][0], lo], "high": [bars4[b][0], hi],
             "levels": {f"{r:g}": round(hi - (hi - lo) * r, 2) for r in FIB},
@@ -268,7 +266,12 @@ def chart(path, bars, title, fib=None, show=160, tf=""):
     pad_n = 40 if daily else 60
     start = max(0, len(bars) - show)
     if fib:                                   # 同 hsi_fib：由波段低點前 pad_n 支開始畫
-        start = max(0, fib["_idx"][0] - pad_n)
+        a = fib["_idx"][0]
+        start = max(0, a - pad_n)
+        # 使用者 10-30「沒有選圖中的最低點」：低點之前如果有更低嘅 K，就由佢之後先開始畫，保證波段低點係圖中最低
+        lower = [i for i in range(start, a) if bars[i][3] < bars[a][3]]
+        if lower:
+            start = lower[-1] + 1
     n = len(bars)
     xl = 10 if daily else 13                  # 右邊標籤欄起點（離最後一根 K 幾多格）
     fig, ax = plt.subplots(figsize=(15, 8), dpi=110)
@@ -359,7 +362,7 @@ def cmd_pack(work):
               f"{fib['high'][0][5:10]} 高 {fib['high'][1]:,.0f}", fib=fib, tf="240 分鐘圖（4 小時 K 線）")
         chart(os.path.join(work, f"{name}_1d.png"), doc["d1"], f"{NAMES[name]} 日線", show=260, tf="日線圖（每支 K＝1 日）")
         # 使用者 10-29「日線圖都加回撤位，數字用白色」：日線斐波那契，畀「📐 斐波那契回撤分析圖」頁
-        fib1 = fib_block([[r[0] + " 00:00", *r[1:]] for r in doc["d1"]], days=90)   # 同 hsi_fib：日線同 4 小時用同一個 90 日波段
+        fib1 = fib_block([[r[0] + " 00:00", *r[1:]] for r in doc["d1"]], days=90, per_day=1)   # 同 hsi_fib：日線同 4 小時用同一個 90 日波段
         mp["fib_1d"] = {k: v for k, v in fib1.items() if k != "_idx"}
         chart(os.path.join(work, f"{name}_1d_fib.png"), doc["d1"],
               f"{NAMES[name]} 日線　斐波那契：{fib1['low'][0][5:10]} 低 {fib1['low'][1]:,.0f} → "
