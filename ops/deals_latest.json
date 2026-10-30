@@ -1,7 +1,7 @@
 {
- "date": "2026-10-30",
- "run_hkt": "2026-10-30 17:10",
- "run_kind": "day",
+ "date": "2026-10-31",
+ "run_hkt": "2026-10-31 03:40",
+ "run_kind": "night",
  "closed": [
   {
    "code": "US.EW2610P7650x0",
@@ -42,9 +42,29 @@
    "close_price": 7701.0,
    "close_time_hkt": "2026-10-30 06:28:23",
    "realized_pts": 69.0
+  },
+  {
+   "code": "US.EX32611P7700x0",
+   "product": "MES 微型標普週期權",
+   "side": "平空",
+   "qty": 1.0,
+   "open_price": 148.5,
+   "close_price": 122.5,
+   "close_time_hkt": "2026-10-30 20:48:09",
+   "realized_pts": 26.0
+  },
+  {
+   "code": "US.EX32611C7700x0",
+   "product": "MES 微型標普週期權",
+   "side": "平空",
+   "qty": 1.0,
+   "open_price": 146.5,
+   "close_price": 92.0,
+   "close_time_hkt": "2026-10-30 20:48:16",
+   "realized_pts": 54.5
   }
  ],
- "n_yunchui_deals": 1,
- "n_other_deals": 6,
+ "n_yunchui_deals": 2,
+ "n_other_deals": 49,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
