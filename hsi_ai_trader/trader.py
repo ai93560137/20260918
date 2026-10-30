@@ -551,6 +551,10 @@ class Trader:
                      # [R216] 組合限制：寫住唔准開邊個方向（例如美股大盤組同方向已有 2 隻）
                      "portfolio_long_blocked": self._portfolio_block(1),
                      "portfolio_short_blocked": self._portfolio_block(-1)},
+            "trading_day": st.get("day"),
+            "today_trades_note": "today_trades = this exchange trading day; HK futures trading day starts 17:00 HKT the "
+                                 "previous calendar day, so night-session trades belong to the next trading day. "
+                                 "When citing a trade, give its closed_hkt date/time, not just 'today'.",
             "today_trades": st.get("today_trades", [])[-10:],
             "recent_decisions": st.get("recent_decisions", []),
         }
@@ -723,9 +727,13 @@ class Trader:
                 new = min(lvl + 1, self.cfg.max_qty) if total > 0 else max(lvl - 1, 1) if total < 0 else lvl
                 st["size_level"] = new
                 self._log("events", {"type": "SIZE_LEVEL", "from": lvl, "to": new, "pnl_hkd_net": total})
+        # 使用者 10-31：交畀 AI 嘅成交要有日期時間——港期交易日由前一日 17:00 夜市開始，
+        # 10-29 19:15 平嘅單屬 10-30 交易日，AI 寫「今日蝕咗」會令人以為係同一個日曆日
         st.setdefault("today_trades", []).append(
             {"side": "LONG" if side > 0 else "SHORT", "entry": entry, "exit": px,
-             "points": pts, "pnl_hkd": net, "reason": reason[:60]})
+             "points": pts, "pnl_hkd": net, "reason": reason[:60],
+             "opened_hkt": (meta.get("opened_at") or "")[:16].replace("T", " ") or None,
+             "closed_hkt": self.clock().strftime("%Y-%m-%d %H:%M")})
         if meta.get("code") == code:
             st["pos"] = None
         log.info("平倉 %s %s @%s 點數=%s (%s)", code, qty, px, pts, reason)

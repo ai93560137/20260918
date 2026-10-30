@@ -148,6 +148,24 @@ def test_open_then_stop_hit(env):
     assert len(closes) == 1 and "止蝕" in closes[0]
 
 
+
+def test_today_trades_carry_hkt_times(env):
+    """使用者 10-31：交畀 AI 嘅 today_trades 要有開倉／平倉日期時間，同埋講明交易日由前一日 17:00 起計。"""
+    cfg, t, b, ai, tr = env
+    tr.tick()
+    ai.next = {"action": "OPEN_LONG", "stop_price": 24950, "target_price": 25100, "confidence": 0.7, "reason": "突破"}
+    advance(t, minutes=5)
+    tr.tick()
+    b.price = 24940
+    advance(t, seconds=5)
+    tr.tick()
+    rec = tr.state["today_trades"][-1]
+    assert rec["closed_hkt"] == t["now"].strftime("%Y-%m-%d %H:%M")
+    assert rec["opened_hkt"] and len(rec["opened_hkt"]) == 16 and "T" not in rec["opened_hkt"]
+    ctx = tr._context(tr.clock(), "HK.MHI2610", 0, {"last": 24940, "bid": 24939, "ask": 24941}, "DAY_AM", 60, 1000, True)
+    assert ctx["trading_day"] == tr.state["day"] and "17:00" in ctx["today_trades_note"]
+    assert ctx["today_trades"][-1]["closed_hkt"] == rec["closed_hkt"]
+
 def test_daily_loss_limit_halts_and_blocks(env):
     cfg, t, b, ai, tr = env
     tr.tick()
