@@ -166,6 +166,13 @@ check("龍飛陣喺 FUTU_TEAMS（策略總表有卡）", "龍飛陣" in main.FUT
 a3 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": -2}])
 check("[R239] MNQ2612 → 使用者人手", [x["team"] for x in a3] == [main.FUTU_TEAM_MANUAL], a3)
 
+print("\n=== [R364] 虎翼美股期權／NQ 配對 ===")
+a4 = main.futu_team_assign([{"code": "US.RDDT261127P80000", "qty": -1}, {"code": "US.NVDA261218C210000", "qty": -1},
+                            {"code": "US.EW2610P7750x0", "qty": -1}, {"code": "US.EX32611C7700x0", "qty": -1},
+                            {"code": "US.NQ2612", "qty": 1}])
+check("[R364] 美股個股期權 → 虎翼；期貨期權／NQ 唔撞", [x["team"] for x in a4] == ["虎翼", "虎翼", main.FUTU_TEAM_MANUAL, "雲垂陣", main.FUTU_TEAM_MANUAL], a4)
+check("[R364] 虎翼喺 FUTU_TEAMS", "虎翼" in main.FUTU_TEAMS)
+
 print("\n=== [R256] 富途成交時區 ===")
 check("期貨戶口預設唔加鐘（本身係香港時間）", main.FUTU_DEAL_TZ_HOURS == 0)
 check("期貨戶口 HSI 夜市 22:36 照當香港時間", main.futu_deal_hkt({"time": "2026-10-21 22:36:00.123", "code": "HK.HSI2612", "account": "期貨帳戶"}) == datetime(2026, 10, 21, 22, 36))
