@@ -99,6 +99,8 @@ def summary(rows, now=None, day_key=None, week_key=None):
             "max_dd": round(dd, 2) if pnls else None, "avg_r": (round(sum(rs) / len(rs), 2) if rs else None),
             "total": round(sum(pnls), 2),
             "today": round(sum(float(x.get("pnl_hkd") or 0) for x in rows if day_key(x["closed_ts"]) == today), 2),
+            "today_n": sum(1 for x in rows if day_key(x["closed_ts"]) == today),
+            "today_basis": "香港時間 00:00 起平倉（同 EA daily_pnl 嘅 MT5 伺服器日唔同）",   # 10-30 總指揮：today −678.37 vs EA −86.76，差喺 HKT 00:00–06:00 平倉嘅單
             "week": round(sum(float(x.get("pnl_hkd") or 0) for x in rows if week_key(x["closed_ts"]) == week), 2),
             "first_ts": rows[0]["closed_ts"] if rows else None}
 
