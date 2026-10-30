@@ -427,7 +427,9 @@ def hk_canary():
 
 
 def roll_check():
-    today = date.today()
+    # 用香港日期：Actions 係 UTC，凌晨 0–8 點 HKT 會當前一日，結算後仲出「0 天後結算」假警報（2026-10-30）
+    from datetime import timezone
+    today = (datetime.now(timezone.utc) + timedelta(hours=8)).date()
     # 有持倉時倒數「持倉自己的到期日」，避免當月（非持倉月）結算的假滾倉警報
     pos_f = os.path.join(BASE, 'position.json')
     if os.path.exists(pos_f):
@@ -442,9 +444,12 @@ def roll_check():
             ALERTS.append(f"HSI 滾倉窗口：{dd} 天後持倉結算（{expiry}），持有至結算，次日賣下月 ATM 跨式")
         return expiry
     # 無持倉：照舊倒數當月月度到期（近似：月底倒數第二個工作日）
-    bdays = pd.bdate_range(today.replace(day=1), periods=40)
-    month_b = [d.date() for d in bdays if d.month == today.month]
-    expiry = month_b[-2] if len(month_b) >= 2 else month_b[-1]
+    def _month_expiry(first):
+        month_b = [d.date() for d in pd.bdate_range(first, periods=40) if d.month == first.month]
+        return month_b[-2] if len(month_b) >= 2 else month_b[-1]
+    expiry = _month_expiry(today.replace(day=1))
+    if expiry < today:  # 本月已結算 → 倒數下月（2026-10-30 曾顯示「剩 -1 天」）
+        expiry = _month_expiry((today.replace(day=28) + timedelta(days=4)).replace(day=1))
     dd = (expiry - today).days
     LINES.append(f"\n## 滾倉：本月到期日約 {expiry}（{dd:+d} 天）")
     DIGEST.append(f"HSI 月度到期剩 {dd} 天")
