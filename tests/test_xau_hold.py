@@ -140,6 +140,8 @@ config.HOLD_RULES = "shadow"
 
 # ---------------------------------------------------------------- 整合（紙上）
 print("=== shadow：唔改行為，只記錄")
+_MIN_DIST = config.MODIFY_MIN_DIST_USD
+config.MODIFY_MIN_DIST_USD = 0.5      # [R340] 之後 UPDATE_STOP 離現價最少 MIN_SL＋點差＋1 pip（≈3.3）；本節 M15 ATR ≈2–2.4，1×ATR 跟蹤會被夾，呢度收細只測 hold_rules 本身（夾距另有測試）
 NOW = [1792600000.0]
 xau.now_ts = lambda: NOW[0]
 class FB:
@@ -237,6 +239,7 @@ FB.calls.clear()
 st, d = hb(17, 4014.5, m15_time=T0 + 1800)
 check("off：每分鐘照問 Opus，rec 冇 hold_rules", FB.calls == ["decide"] and "hold_rules" not in d["decision"], d["decision"].keys())
 config.HOLD_RULES = "shadow"
+config.MODIFY_MIN_DIST_USD = _MIN_DIST
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
