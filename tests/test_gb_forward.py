@@ -20,7 +20,8 @@ d = fw.archive_doc(rec)
 check("0342 入場訊號歸檔", d and d["ch"] == "0342" and d["side"] == "BUY")
 check("唔存原文", d and "text" not in d)
 check("5117 都歸檔", fw.archive_doc(dict(rec, ch="5117", sid="1473735117_1")) is not None)
-check("CTC 唔歸檔", fw.archive_doc(dict(rec, ch="5231")) is None)
+check("[#152] CTC 都歸檔（只歸檔、唔計變體）", (fw.archive_doc(dict(rec, ch="5231", sid="3996305231_1")) or {}).get("ch") == "5231")
+check("其他頻道唔歸檔", fw.archive_doc(dict(rec, ch="7713")) is None)
 check("update 唔歸檔", fw.archive_doc(dict(rec, kind="update")) is None)
 
 T0 = 1793300000
