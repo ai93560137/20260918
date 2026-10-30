@@ -146,6 +146,8 @@
 #     完整版（含權益）只發 Telegram、存 ops/reports/<kind>/。讀唔到就唔顯示，唔影響原有已實現盈虧表、唔影響下單。
 #   * 2026-10-13 — [R172] 每日成交紀錄：action=futu_pnl 收到成交後，另計當日逐筆成交、按合約彙總、FIFO 平倉（點數、幣值），
 #     存 futu/deals/<香港日期>.json（今日＋前一日，夜盤跨日）。總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂。本機 auto_risk 加 03:05／16:35 匯出時段。
+#   * 2026-10-31 — [R364] 總指揮：FUTU_TEAM_RULES 加虎翼（美股個股期權 US.XXXXyymmdd[CP]strike → 🐯 虎翼）、NQ 期貨歸人手；
+#     人手卡止損欄刪咗已平嘅 EW P7750。只改配對顯示，唔影響下單。
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
 #     使用者人手；配對唔到嘅入「未配對」。策略總表（?view=strategies）加「💼 富途實倉（按陣）」一節公開持倉、盈虧、止損用量同
 #     警報（使用者同意投資人睇；唔顯示戶口權益、保證金金額）。Telegram 警報前面標陣名；出現新嘅未配對持倉即時發 Telegram。
@@ -912,7 +914,8 @@ FUTU_TEAMS = {   # 顯示次序；desc 會喺策略總表公開
               "stop": "按通道反手（人手執行）"},
     "龍飛陣": {"icon": "🐉", "link": "?view=longfei", "desc": "AI 程式自動落單（真倉只限使用者逐隻批准嘅產品）",
               "stop": "每隻日蝕上限＋開倉即掛伺服器端 GTC 止損單（R234）"},   # [R237]
-    FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "EW P7750：買回價 ≥ 86 點（10/14 新倉 @43，2× 權利金）"},
+    "虎翼": {"icon": "🐯", "desc": "美股個股 cash-secured 95% put（20–45 日、持有到期；被行使轉 covered call）", "stop": "唔止損；每單 ≤2% 證券總資產、同時 ≤5 單（RISK_LADDER §6e）"},   # [R364]
+    FUTU_TEAM_MANUAL: {"icon": "✋", "desc": "使用者自己人手落嘅倉（唔屬任何陣）", "stop": "按 RISK_LADDER 人手額度"},
     FUTU_TEAM_GIFT: {"icon": "🎁", "desc": "券商推廣送嘅股票（唔係交易策略）", "stop": "—"},
     FUTU_TEAM_UNMATCHED: {"icon": "❓", "desc": "配對唔到任何陣；請喺 POSITIONS.md 登記，總指揮會加規則", "stop": "—"},
 }
@@ -967,7 +970,8 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^HK\.HSI\d{6}[CP]\d+$", "風揚陣・方向一", "恒指週權 1σ 勒式", None),
     (r"^HK\.HSI\d{4}$", FUTU_TEAM_MANUAL, "大恒指期貨（人手）", None),       # 2026-10-14 使用者：預設歸人手；屬蛇蟠陣要逐張問使用者，答「屬」先喺上面加合約規則
     (r"^US\.EW\d{4}[CP]\d+x\d$", FUTU_TEAM_MANUAL, "標普 E-mini 月底 Put", None),
-    (r"^US\.(ES|MES|MNQ)\d{4}$", FUTU_TEAM_MANUAL, "美股指數期貨（人手）", None),   # [R239] 10-19 加 MNQ（使用者人手「手痕」）   # 2026-10-14 使用者沽 ES2612 −1 @7,803
+    (r"^US\.(ES|MES|NQ|MNQ)\d{4}$", FUTU_TEAM_MANUAL, "美股指數期貨（人手）", None),   # [R239] 10-19 加 MNQ（使用者人手「手痕」）；[R364] 10-31 加 NQ   # 2026-10-14 使用者沽 ES2612 −1 @7,803
+    (r"^US\.[A-Z]{1,6}\d{6}[CP]\d+$", "虎翼", "美股個股期權（cash-secured put／covered call）", None),   # [R364] 使用者 10-31「加虎翼入白名單 照虎翼草案」；代碼格式 US.RDDT261127P80000 經富途 VM 核實；期貨期權有 x0 尾唔會撞
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
     (r"^US\.(SPY|QQQ|DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", "龍飛陣", "美股 ETF／個股（AI 自動；真倉產品以 settings.env LONGFEI_REAL_PRODUCTS 為準）", None),   # [R238] 使用者 10-19：龍飛陣全部 23 隻候選一次過歸龍飛陣，之後加減真倉產品只改 settings.env＋更新部機，唔使再改呢度同部署
 )
