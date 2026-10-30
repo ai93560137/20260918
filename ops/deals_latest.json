@@ -1,7 +1,7 @@
 {
  "date": "2026-10-30",
- "run_hkt": "2026-10-30 03:40",
- "run_kind": "night",
+ "run_hkt": "2026-10-30 17:10",
+ "run_kind": "day",
  "closed": [
   {
    "code": "US.EW2610P7650x0",
@@ -12,9 +12,39 @@
    "close_price": 3.6,
    "close_time_hkt": "2026-10-30 02:58:15",
    "realized_pts": 56.4
+  },
+  {
+   "code": "US.MES2612",
+   "product": "MES 微型標普期貨",
+   "side": "平空",
+   "qty": 10.0,
+   "open_price": 7693.25,
+   "close_price": 7701.0,
+   "close_time_hkt": "2026-10-30 06:28:23",
+   "realized_pts": -7.75
+  },
+  {
+   "code": "US.MES2612",
+   "product": "MES 微型標普期貨",
+   "side": "平空",
+   "qty": 1.0,
+   "open_price": 7760.0,
+   "close_price": 7701.0,
+   "close_time_hkt": "2026-10-30 06:28:23",
+   "realized_pts": 59.0
+  },
+  {
+   "code": "US.MES2612",
+   "product": "MES 微型標普期貨",
+   "side": "平空",
+   "qty": 1.0,
+   "open_price": 7770.0,
+   "close_price": 7701.0,
+   "close_time_hkt": "2026-10-30 06:28:23",
+   "realized_pts": 69.0
   }
  ],
  "n_yunchui_deals": 1,
- "n_other_deals": 25,
+ "n_other_deals": 6,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
