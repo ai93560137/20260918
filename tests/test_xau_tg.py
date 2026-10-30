@@ -112,7 +112,7 @@ check("錯 secret → 403", press("tgs:ok:100123_42", secret="bad")[0] == 403)
 check("非白名單使用者 → forbidden", press("tgs:ok:100123_42", user=999)[1]["status"] == "forbidden")
 st, d = press("tgs:ok:100123_42")
 state = json.loads(FAKE["xau/state.json"][0])
-check("確認 → 排一條 open 指令（影子：queued_shadow）", d["status"] == "queued_shadow" and len(state["pending_cmds"]) == 1 and state["pending_cmds"][0]["text"].startswith("open|BUY|0.01|sl=2640.00|tp=2660.00|magic=921|id=") and state["pending_cmds"][0]["tag"] == "tg:100123_42", (d, state.get("pending_cmds")))
+check("確認 → 排一條 open 指令（影子：queued_shadow）", d["status"] == "queued_shadow" and len(state["pending_cmds"]) == 1 and state["pending_cmds"][0]["text"].startswith("open|BUY|0.01|sl=2640.00|tp=2660.00|magic=921|note=訊號S1|id=") and state["pending_cmds"][0]["tag"] == "tg:100123_42", (d, state.get("pending_cmds")))
 st, d = press("tgs:ok:100123_42", cq_id="q2")
 check("再按一次 → duplicate，唔再排", d["status"] == "duplicate" and len(json.loads(FAKE["xau/state.json"][0])["pending_cmds"]) == 1, d)
 hb = {"token": "tok", "action": "heartbeat", "equity": 1, "m1_ohlc": {"time": 1, "is_new_bar": False}}
