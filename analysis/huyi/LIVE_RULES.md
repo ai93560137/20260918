@@ -71,7 +71,11 @@
    - 喺預設分支 POSITIONS.md 登記；
    - 通知總指揮；
    - 請總指揮喺 FUTU_TEAM_RULES 加配對。
-3. 落單意圖價寫 `ops/intents.csv`（FUND_SOP 二之三 E）。要 SOP 顧問將 `claude/huyi-bigdrop-options` 加入 notify_config.json 嘅 intent_branches。
+3. 落單意圖價寫本分支 `ops/intents.csv`，**要喺落單前**加。
+   - 本分支已經由 SOP 顧問 2026-10-31 加入 notify_config.json 嘅 intent_branches（預設分支 c2a7376a9）。
+   - 欄位：`date,team,code,side,qty,intent_price,note`。code 用富途代碼，例如 `US.RDDT261127P80000`；side 寫「買」或「賣」。
+   - blotter 會讀呢個檔計滑價；事後可以更正（`--rematch`）。
+   - 聯絡其他工作階段之前，先讀預設分支 `handoff/SESSIONS.md` 攞現任 session id。
 4. 富途代碼格式（**待富途 VM 核對**）：
    - 正股：`US.RDDT`；
    - 期權：`US.RDDT261127P80000`，即 代號＋到期 YYMMDD＋C／P＋行使價 × 1000。
