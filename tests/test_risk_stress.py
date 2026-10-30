@@ -72,6 +72,13 @@ book = json.loads(Path("/home/user/20260918/tradingview/data_external/risk_book.
 book["positions"] = [x for x in book["positions"] if not x["id"].startswith("EW")] + [
     {"id": "EW2610 P7750", "und": "ES", "type": "put", "K": 7750, "exp": "2026-10-30", "qty": -1, "mult": 50, "ccy": "USD",
      "open": 43, "price": 47, "group": "標普 E-mini put", "settle": "physical"}]
+# 雲垂 MES 跨式 10-30 已平、book 已剔；R260／R262 測試用返自己嘅兩腳＋止損（唔靠現行 book）
+book["positions"] += [
+    {"id": "MES 11/20 C7700", "und": "ES", "type": "call", "K": 7700, "exp": "2026-11-20", "qty": -1, "mult": 5, "ccy": "USD",
+     "open": 146.5, "price": 146.5, "group": "MES 跨式", "settle": "physical"},
+    {"id": "MES 11/20 P7700", "und": "ES", "type": "put", "K": 7700, "exp": "2026-11-20", "qty": -1, "mult": 5, "ccy": "USD",
+     "open": 148.5, "price": 148.5, "group": "MES 跨式", "settle": "physical"}]
+book.setdefault("stops", {})["MES 跨式"] = {"credit": 295, "stop_buyback": 590, "legs": ["MES 11/20 C7700", "MES 11/20 P7700"]}
 (tmp / "risk_book.json").write_text(json.dumps(book), encoding="utf-8")
 q = {"positions": [
         {"code": "US.EW2610P7750x0", "qty": -1, "bid": 88.0, "ask": 89.0, "last": 88.5},
