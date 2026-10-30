@@ -270,5 +270,16 @@ q356b = {**q356, "positions": [x for x in q356["positions"] if not x["code"].sta
 t356b, M356b = risk_report.build(str(tmp / "rb356.json"), str(tmp / "q356b.json"), 7_800_000)
 check("快照冇任何 CME 期權（可能 API 漏）→ 唔剔 book 腳", "EW P7750" in (M356b.get("stop_use") or {}) and "已冇" not in t356b, M356b.get("stop_use"))
 
+print("\n=== [R357] 納指期貨 NQ／MNQ 自動計入 ===")
+q357 = {"fetched_hkt": "2026-10-30 21:47", "positions": [
+    {"code": "US.MNQ2612", "qty": -15, "bid": 29500, "ask": 29501, "last": 29500, "open_price": 29520},
+    {"code": "US.NQ2612", "qty": 1, "bid": 29500, "ask": 29501, "last": 29500, "open_price": 29480}],
+    "accounts": [{"currency": "HKD", "total_assets": 850_000, "maintenance_margin": 613_115}]}
+(tmp / "q357.json").write_text(json.dumps(q357), encoding="utf-8")
+t357, M357 = risk_report.build(str(tmp / "risk_book.json"), str(tmp / "q357.json"), 7_800_000)
+check("NQ 淨 −5 手 MNQ", "納指期貨人手 -5.00 MNQ" in t357)
+sc = {s["name"]: s["cushion_after"] for s in M357["stress"]["scenarios"]}
+check("ES +5% 情景 NQ 跟住郁（淡倉蝕）", sc["ES +5%"] < sc["ES −5%"], sc)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
