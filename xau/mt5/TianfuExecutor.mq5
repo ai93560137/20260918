@@ -4,6 +4,7 @@
 //| v0.38（10-23）：cmd_ack 加 account（權杖公開，服務核對 XAU_ACCOUNT 先認回報）|
 //| v0.39（10-28）：open 指令可帶 note=…，寫入 MT5 註解（AI決策／跟單CTC）        |
 //| v0.40（10-28）：註解超 31 字先截 note、保留完整 id（服務端同時改 JSON 唔轉義）|
+//| v0.41（10-30）：open 指令帶 px=決策價｜dev=上限 → 不利偏離 > dev 唔開（#145 P3）|
 //|       服務用 XAU_ACCOUNT 分辨 demo／真戶口，只向該登入號發指令。          |
 //|                                                                  |
 //| 影子階段用法（使用者 10-20：「EA 直接俾 K 線畀新服務」）：            |
@@ -329,6 +330,13 @@ void Execute(string line)
       if(sl <= 0) { Reject(id, line, "no SL"); return; }                       // 冇止損唔開
       // 只管一張：已有自己嘅倉就唔開
       for(int i = PositionsTotal() - 1; i >= 0; i--) { ulong t = PositionGetTicket(i); if(t != 0 && IsMine(t)) { Reject(id, line, StringFormat("already in position (ticket %I64u)", t)); return; } }
+      double px = StringToDouble(Field(parts, n, "px")), dev = StringToDouble(Field(parts, n, "dev"));   // v0.41：服務決策價同偏離上限（舊服務唔帶＝唔查）
+      if(px > 0 && dev > 0)
+      {
+         double now_px = (side == "BUY") ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+         double adverse = (side == "BUY") ? now_px - px : px - now_px;            // 正＝向不利方向走咗
+         if(adverse > dev) { Reject(id, line, StringFormat("price moved %.2f > dev %.2f (px %s now %s)", adverse, dev, P(px), P(now_px))); return; }
+      }
       if(InpDryRun) { PrintFormat("🧪 [dry-run] open %s %.2f sl=%s tp=%s id=%s", side, lots, P(sl), P(tp), id); Ack(id, true, 0, "dry-run"); return; }
       string note = Field(parts, n, "note");                                   // v0.39：註解「天覆陣 AI決策 <id>」／「天覆陣 跟單CTC <id>」（使用者 10-28）
       string cmt = "天覆陣 " + (note == "" ? "" : note + " ") + id;
