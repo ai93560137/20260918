@@ -85,6 +85,7 @@ def live_book_section(title, v, note=""):
     first = fmt_hkt(sm["first_ts"])[:5] if sm.get("first_ts") else "—"
     cards = ("<div class='grid'>"
              + card("今日（EA，自己 magic）", f"<span class='{cls(v.get('ea_daily_hkd'))}'>{money(v.get('ea_daily_hkd'))}</span>", "MT5 伺服器日，含浮動")
+             + card("今日（已平倉，HKT）", f"<span class='{cls(sm.get('today'))}'>{money(sm.get('today'))}</span>", f"{sm.get('today_n', 0)} 筆；香港時間 00:00 起，同上面 MT5 伺服器日唔同")
              + card("本週（已平倉）", f"<span class='{cls(sm.get('week'))}'>{money(sm.get('week'))}</span>", "香港時間週一起")
              + card("累計（EA，自己 magic）", f"<span class='{cls(v.get('ea_realized_hkd'))}'>{money(v.get('ea_realized_hkd'))}</span>", "EA 自 InpLedgerStart 起已實現")
              + card("已平倉筆數", f"{sm.get('n', 0)}", f"{sm.get('wins', 0)} 勝／{sm.get('flat', 0)} 平／{sm.get('losses', 0)} 負；{first} 起")

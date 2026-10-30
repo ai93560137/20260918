@@ -81,6 +81,8 @@ class Summary(unittest.TestCase):
         self.assertEqual(sm["total"], -50.0)
         self.assertEqual(sm["avg_r"], round((1 - 1 - 1.2) / 3, 2))
         self.assertEqual(sm["today"], -50.0)
+        self.assertEqual(sm["today_n"], 4)
+        self.assertIn("香港時間", sm["today_basis"])
 
     def test_empty(self):
         sm = live_book.summary([])
