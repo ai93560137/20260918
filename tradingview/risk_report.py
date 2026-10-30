@@ -20,8 +20,9 @@ from pathlib import Path
 
 N = lambda x: 0.5 * (1 + erf(x / sqrt(2)))
 HERE = Path(__file__).resolve().parent
-DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ES2612", "US.ESmain", "US.MES2612", "US.MESmain"]}
-LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD")}       # Δ 用嘅「手」單位
+DEFAULT_UND_CODES = {"HSI": ["HK.MHI2610", "HK.HSImain"], "ES": ["US.ES2612", "US.ESmain", "US.MES2612", "US.MESmain"],
+                     "NQ": ["US.NQ2612", "US.NQmain", "US.MNQ2612", "US.MNQmain"]}
+LOT = {"HSI": ("MHI", 10, "HKD"), "ES": ("MES", 5, "USD"), "NQ": ("MNQ", 2, "USD")}       # Δ 用嘅「手」單位
 # 雲垂陣劇本：月跨式＋對沖 淨 Δ 界線（MHI 手）；book 可用 "playbook" 覆寫
 # 止損規則（book 冇寫先用呢度；持倉唔喺 book 就略過）
 DEFAULT_STOPS = {"EW P7750": {"credit": 43, "stop_buyback": 86, "legs": ["EW2610 P7750"],
@@ -82,7 +83,7 @@ def derive_code(p):
     return f"HK.{root}{p['exp'][2:].replace('-', '')}{'C' if p['type'] == 'call' else 'P'}{int(p['K'] * 1000):08d}"
 
 
-YAHOO_SYMBOLS = {"ES": "ES=F"}   # [R183] 富途冇 CME 行情時嘅後備；設 ZHUGE_NO_YAHOO=1 停用
+YAHOO_SYMBOLS = {"ES": "ES=F", "NQ": "NQ=F"}   # [R183] 富途冇 CME 行情時嘅後備；設 ZHUGE_NO_YAHOO=1 停用
 
 
 def yahoo_last(sym, timeout=6):
@@ -160,6 +161,19 @@ def load(book_path, quotes_path=None):
                                    "mult": 50 if m.group(1) == "ES" else 5, "ccy": "USD",
                                    "open": r.get("open_price") or r.get("last") or 0, "price": r.get("last") or r.get("open_price") or 0,
                                    "code": code, "group": "標普期貨人手"})
+    # [R357] 富途實際納指期貨（NQ／MNQ，10-30 使用者人手開）：book 冇就當「納指期貨人手」腿；book 冇 NQ 標的就用持倉價開一個
+    for code, r in FP.items():
+        m = re.match(r"^US\.(NQ|MNQ)\d{4}$", code)
+        if not m or not r.get("qty"):
+            continue
+        px0 = r.get("last") or r.get("open_price") or 0
+        b["underlyings"].setdefault("NQ", {"F": px0, "note": "富途持倉價（book 冇 NQ 標的）"})
+        booked = sum(p["qty"] for p in b["positions"] if p.get("code") == code)
+        extra = r["qty"] - booked
+        if extra:
+            b["positions"].append({"id": f"{code[3:]} 人手（富途實際 {r['qty']:+g}）", "und": "NQ", "type": "fut", "qty": extra,
+                                   "mult": 20 if m.group(1) == "NQ" else 2, "ccy": "USD",
+                                   "open": r.get("open_price") or px0, "price": px0, "code": code, "group": "納指期貨人手"})
     # [R196] 富途實際恒指／MHI 期權：book 冇就自動當一條腿計入模型（例如風揚陣方向一勒式成交後唔使人手改 book）
     for code, r in FP.items():
         m = re.match(r"^HK\.(HSI|MHI)(\d{2})(\d{2})(\d{2})([CP])(\d+)$", code)
@@ -352,7 +366,7 @@ def pnl_hkd(b, fx, shocks, vol_add=0.0, days=0.0, skew="fit", px="close"):
     tot, grp = 0.0, {}
     for p in b["positions"]:
         F0 = b["underlyings"][p["und"]]["F"]
-        r = shocks.get(p["und"], 0.0)
+        r = shocks.get(p["und"], shocks.get("ES", 0.0) if p["und"] == "NQ" else 0.0)   # [R357] 冇 NQ 情景就跟 ES 一樣郁（近似）
         if not shocks and not vol_add and not days:          # 現況：直接用報價
             v = p["close_px"] if px == "close" else (p["mid"] or p["close_px"])
         else:
