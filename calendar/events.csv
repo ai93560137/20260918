@@ -15,7 +15,6 @@ date,time_hkt,market,category,event,impact,affects,event_week,source
 2026-10-29,02:00,USD,數據,FOMC Statement,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
 2026-10-29,02:00,USD,FOMC,FOMC 利率聲明,High,雲垂 MES、人手 EW、金絲雀；全部,Y,外匯分支 fomc_announcements.csv
 2026-10-29,02:30,USD,數據,FOMC Press Conference,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
-2026-10-29,16:00,HK,HK 結算,恒指／小型恒指 10 月期貨及月度期權結算（倒數第二個交易日）,High,風揚、雲垂 HSI、蛇蟠（轉倉）,Y,futu/calendar/HK.json
 2026-10-29,20:30,USD,數據,Advance GDP q/q,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
 2026-10-29,20:30,USD,數據,Core PCE Price Index m/m,High,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
 2026-10-29,20:30,USD,數據,Advance GDP Price Index q/q,Medium,雲垂 MES、人手 EW、金絲雀,Y,ForexFactory
@@ -24,9 +23,6 @@ date,time_hkt,market,category,event,impact,affects,event_week,source
 2026-10-29,21:15,EUR,數據,Monetary Policy Statement,High,,Y,ForexFactory
 2026-10-29,21:45,EUR,數據,ECB Press Conference,High,,Y,ForexFactory
 2026-10-30,,持倉,持倉到期,🌬️ 風揚陣・方向一：沽 HSI 週期權 10/30,High,見事件,Y,POSITIONS.md
-2026-10-30,,持倉,持倉到期,"✋ 使用者人手：沽 EW2610 P7,750 1 張 @43",High,見事件,Y,POSITIONS.md
-2026-10-30,,持倉,持倉到期,"✋ 使用者人手：沽 EW2610 P7,650 1 張 @60",High,見事件,Y,POSITIONS.md
-2026-10-30,,持倉,持倉到期,"✋ 使用者人手：賣 MES2612 微型標普期貨 10 手 @7,693.25",High,見事件,Y,POSITIONS.md
 2026-10-30,,持倉,持倉到期,"✋ 使用者人手：賣 ES2612 標普期貨 1 手 @7,756",High,見事件,Y,POSITIONS.md
 2026-10-30,04:00+1,US,US 期權到期,ES／MES EOM 期權到期（月末交易日）,Medium,雲垂 MES、人手 EW,Y,規則推算
 2026-10-30,10:30,JPY,數據,BOJ Policy Rate,High,,Y,ForexFactory
