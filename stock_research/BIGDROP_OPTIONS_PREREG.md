@@ -78,6 +78,8 @@ H：大型股單日大跌之後，按「IV = ρ × 大跌前 RV63」定價賣出
 - 開實倉前：預設分支 POSITIONS.md 登記並通知總指揮；落單意圖價寫 `ops/intents.csv`（FUND_SOP 二之三 E）
 - 前向證偽（寫死）：前 30 筆平均損益 ≤ 0，或累計虧損 > 已收權利金總和 → 停
 
+> **2026-10-31 使用者確認「照草案」**（經總指揮）；完整實倉規則 v1（含草案未寫的預設）見 `analysis/huyi/LIVE_RULES.md`。
+
 ## 8. 程式
 
 `bigdrop_options.py`（本登記 commit 之後才寫）→ `research/bigdrop_options/{us,hk}.json`、報告寫回本檔第 9 部分。
