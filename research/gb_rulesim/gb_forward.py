@@ -21,15 +21,16 @@ ARCHIVE = "xau/sig/fwd_archive/"
 OUT = "xau/sig/gb_forward/"
 CHANNELS = {"0342": {"name": "Gold Brother", "id": "2249680342", "candidate": "V13"},
             "5117": {"name": "黃金戰鬥機", "id": "1473735117", "candidate": "V11"}}
+ARCHIVE_ONLY = ("5231",)              # [IDEAS #152] CTC 只歸檔（學生＋CTC 同向確認前向用），唔計變體
 VARS = ("V0", "V6", "V11", "V13")
 MIN_AFTER_SEC = 6 * 3600
 TARGET_N = 20
 
 
 def archive_doc(rec):
-    """recent.json 一條 → 歸檔 dict（只保留解析欄位）；唔係 0342／5117 入場訊號就 None。"""
+    """recent.json 一條 → 歸檔 dict（只保留解析欄位）；唔係 0342／5117（或只歸檔嘅 5231）入場訊號就 None。"""
     ch = str(rec.get("ch") or "")[-4:]
-    if ch not in CHANNELS:
+    if ch not in CHANNELS and ch not in ARCHIVE_ONLY:
         return None
     s = gb.parse_recent(rec, ch)
     if not s:
