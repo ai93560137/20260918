@@ -27,6 +27,7 @@ repo 公開：只寫價格、張數、百分比，唔寫金額。
 import argparse
 import csv
 import gzip
+import json
 import math
 import re
 import sys
@@ -42,12 +43,16 @@ RHO2 = {"us": {"put95": 0.95, "call105": 1.20}, "hk": {"put95": 0.95, "call105":
 LEGS = {"put95": ("p", 0.95), "call105": ("c", 1.05)}
 DTE_LO, DTE_HI, DTE_TGT = 20, 45, 30
 DEDUP_DAYS = 30
+# 實倉（analysis/huyi/LIVE_RULES.md v1；總指揮 2026-10-31 登記 RISK_LADDER §6e）
+MODE_FILE = OUT / "mode.json"           # {"us": "live", "hk": "paper"}
+POS_FILE = OUT / "live_positions.csv"   # 實倉持倉（人手／虎翼更新）：ticker,sector,leg,strike,expiry,contracts,open_date,status
+LIVE_MAX_POS, LIVE_MAX_SECTOR, LIVE_MAX_SPREAD, LIVE_MIN_OI = 5, 2, 0.20, 100
 HK_COST_VOL = 0.01
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"}
 PAPER_COLS = ["open_date", "market", "ticker", "leg", "expiry", "dte", "strike", "spot", "fill", "bid", "ask", "mid",
               "iv_leg", "atm_iv", "rv63pre", "rho", "rho_req", "qualifies", "earnings", "drop_pct",
               "status", "close_at_expiry", "assigned", "pnl_pct", "note"]
-CAND_COLS = ["session", "ah_px", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
+CAND_COLS = ["live", "live_note", "sector", "oi", "session", "ah_px", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
              "leg", "strike", "moneyness", "bid", "ask", "mid", "fill", "iv_leg", "yield_ann_pct", "rho_req",
              "rho_ok", "earnings", "earnings_in_window", "qualifies", "paper", "note"]
 
@@ -212,7 +217,12 @@ def us_legs(chain: list[dict], spot: float, d0: date, exp: date, rate: float, re
     T = max((exp - d0).days, 1) / 365
     df = math.exp(-rate * T)
     by_k: dict[float, dict] = {}
+    oi = {}
     for r in chain:
+        try:
+            oi[(float(r["strike"]), r["cp"])] = int(float(r.get("oi") or 0))
+        except (TypeError, ValueError):
+            pass
         bid, ask = float(r["bid"] or 0), float(r["ask"] or 0)
         if bid > 0 and ask >= bid:
             by_k.setdefault(float(r["strike"]), {})[r["cp"]] = (bid, ask, (bid + ask) / 2)
@@ -242,7 +252,8 @@ def us_legs(chain: list[dict], spot: float, d0: date, exp: date, rate: float, re
             continue
         k = max(ks) if cp == "p" else min(ks)
         bid, ask, mid = by_k[k][cp]
-        legs[leg] = dict(strike=k, bid=bid, ask=ask, mid=mid, fill=bid, iv_leg=implied_vol(F, k, T, df, mid, cp))
+        legs[leg] = dict(strike=k, bid=bid, ask=ask, mid=mid, fill=bid, iv_leg=implied_vol(F, k, T, df, mid, cp),
+                         oi=oi.get((k, cp), ""))
     return dict(atm_iv=sum(ivs) / len(ivs), F=F, T=T, legs=legs)
 
 
@@ -253,14 +264,16 @@ def us_quotes(c: dict, rate: float) -> dict | None:
     exp = pick_expiry(exps, c["date"])
     c["earnings"] = next_earnings(tk, c["date"])
     try:
-        c["name"] = (tk.info or {}).get("shortName", "")
+        info = tk.info or {}
+        c["name"], c["sector"] = info.get("shortName", ""), info.get("sector", "")
     except Exception:  # noqa: BLE001
         c["name"] = ""
     if not exp:
         c["note"] = f"冇 {DTE_LO}–{DTE_HI} 日到期"
         return None
     ch = tk.option_chain(str(exp))
-    rows = [dict(cp=cp, strike=r["strike"], bid=r.get("bid"), ask=r.get("ask"), last=r.get("lastPrice"))
+    rows = [dict(cp=cp, strike=r["strike"], bid=r.get("bid"), ask=r.get("ask"), last=r.get("lastPrice"),
+                 oi=0 if r.get("openInterest") != r.get("openInterest") else r.get("openInterest"))
             for cp, d in (("c", ch.calls), ("p", ch.puts)) for _, r in d.iterrows()]
     q = us_legs(rows, c["close"], c["date"], exp, rate, c.get("ah_px"))
     if q is None:   # 收市後 Yahoo 有時清零買賣價 → 退用最後成交價（標明，唔當真實買價）
@@ -349,6 +362,66 @@ def is_intraday(market: str, d0: date) -> bool:
     return d0 == now.date() and (now.hour, now.minute) < (16, 15)
 
 
+def read_mode() -> dict:
+    try:
+        return json.loads(MODE_FILE.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def read_positions() -> list[dict]:
+    if not POS_FILE.exists():
+        return []
+    with open(POS_FILE, newline="", encoding="utf-8") as f:
+        return [r for r in csv.DictReader(f) if r.get("status", "open") == "open"]
+
+
+def mark_live(rows: list[dict], positions: list[dict]) -> None:
+    """LIVE_RULES v1：合資格 put 再過 業績日已知、OI ≥ 100（買賣差 ≤ 20% 落單時用富途實時價核對）；按 ρ 由高到低分配名額
+    （同時 ≤ 5 筆、同業 ≤ 2、同股 1）。張數要用富途總資產計，repo 唔寫金額 → 只出每張名義同公式。"""
+    held = {p["ticker"] for p in positions}
+    n_open = len(positions)
+    by_sec: dict[str, int] = {}
+    for p in positions:
+        by_sec[p.get("sector", "")] = by_sec.get(p.get("sector", ""), 0) + 1
+    cands = []
+    for r in rows:
+        r["live"], r["live_note"] = "N", ""
+        if r["leg"] != "put95" or r["qualifies"] != "Y":
+            continue
+        why = []
+        if r.get("earnings_in_window") != "N":
+            why.append("業績日未知")
+        try:   # 收市後 Yahoo 價差普遍偏闊 → 只標示；買賣差 ≤ 20% 喺落單時用富途實時價核對
+            b, a, m = float(r["bid"]), float(r["ask"]), float(r["mid"])
+            r["spread_note"] = f"收市後價差 {(a - b) / m:.0%}" if m > 0 else ""
+        except (TypeError, ValueError):
+            why.append("冇買賣價")
+        try:
+            if int(float(r.get("oi") or 0)) < LIVE_MIN_OI:
+                why.append(f"OI {r.get('oi') or 0} < {LIVE_MIN_OI}")
+        except ValueError:
+            why.append("冇 OI")
+        if r["ticker"] in held:
+            why.append("已持有")
+        if why:
+            r["live_note"] = "唔做實倉：" + "、".join(why)
+        else:
+            cands.append(r)
+    for r in sorted(cands, key=lambda x: -float(x["rho"])):
+        sec = r.get("sector", "")
+        if n_open >= LIVE_MAX_POS:
+            r["live_note"] = f"唔做實倉：已滿 {LIVE_MAX_POS} 筆"
+        elif sec and by_sec.get(sec, 0) >= LIVE_MAX_SECTOR:
+            r["live_note"] = f"唔做實倉：{sec} 已有 {LIVE_MAX_SECTOR} 筆"
+        else:
+            r["live"] = "Y"
+            n_open += 1
+            by_sec[sec] = by_sec.get(sec, 0) + 1
+            r["live_note"] = (f"每張 100 股 × 行使價 {r['strike']}"
+                              + (f"；{r['spread_note']}（落單時富途價差要 ≤ 20%）" if r.get("spread_note") else ""))
+
+
 def read_paper() -> list[dict]:
     p = OUT / "paper_log.csv"
     if not p.exists():
@@ -402,7 +475,8 @@ def forward_stats(paper: list[dict]) -> str:
 # ───────────────────────── 主流程 ─────────────────────────
 def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
     base = dict(session="ah" if c.get("ah_px") else "", ah_px=f"{c['ah_px']:.4g}" if c.get("ah_px") else "", date=c["date"], market=market, ticker=c["ticker"], name=c.get("name", ""), drop_pct=f"{c['ret'] * 100:.2f}",
-                close=f"{c['close']:.4g}", rv63pre=f"{c['rv63pre']:.4f}", earnings=c.get("earnings", ""), note=c.get("note", ""))
+                close=f"{c['close']:.4g}", rv63pre=f"{c['rv63pre']:.4f}", earnings=c.get("earnings", ""), note=c.get("note", ""),
+                sector=c.get("sector", ""))
     if q is None:
         return [dict(base, leg="—", qualifies="N", paper="N")]
     exp, dte = q["expiry"], (q["expiry"] - c["date"]).days
@@ -426,6 +500,7 @@ def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
         den = L["strike"] if leg == "put95" else c.get("ah_px") or c["close"]
         rows.append(dict(base, expiry=exp, dte=dte, atm_iv=f"{q['atm_iv']:.4f}", rho=f"{rho:.3f}", leg=leg,
                          strike=f"{L['strike']:g}", moneyness=f"{L['strike'] / c['close']:.3f}", bid=L["bid"], ask=L["ask"],
+                         oi=L.get("oi", ""),
                          mid=f"{L['mid']:.4g}", fill=f"{L['fill']:.4g}",
                          iv_leg=f"{L['iv_leg']:.4f}" if L["iv_leg"] else "",
                          yield_ann_pct=f"{L['fill'] / den * 365 / dte * 100:.1f}", rho_req=req, rho_ok="Y" if rho_ok else "N",
@@ -512,7 +587,6 @@ def run(market: str) -> int:
     settled = settle_paper(paper, market, d0, px)
     if not intraday:
         write_csv(OUT / "paper_log.csv", PAPER_COLS, paper)
-    write_csv(OUT / market / f"{d0}.csv", CAND_COLS, rows)
     log_p = OUT / "scan_log.csv"
     new = not log_p.exists()
     with open(log_p, "a", newline="", encoding="utf-8") as f:
@@ -523,33 +597,46 @@ def run(market: str) -> int:
         w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), market, d0, len(tick), len(px), len(drops),
                     sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled), "Y" if intraday else "N",
                     len(ah_drops)])
-    md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper), intraday)
+    live = read_mode().get(market) == "live" and not intraday
+    if live:
+        mark_live(rows, read_positions())
+    md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper), intraday, live)
+    write_csv(OUT / market / f"{d0}.csv", CAND_COLS, rows)
     (OUT / f"latest_{market}.md").write_text(md_txt, encoding="utf-8")
     (OUT / f"tg_{market}.txt").write_text(tg, encoding="utf-8")
     print(tg)
     return 0
 
 
-def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tuple[str, str]:
+LIVE_GUIDE = ("落單指引（LIVE_RULES v1）：翌日美股開市 30 分鐘後，用富途實時價重核 ρ ≥ 0.95、行使價＝現價×0.95 最近一檔；"
+              "張數＝向下取整(總資產×2% ÷ (行使價×100))，不足 1 張唔做；限價＝中間價，1 小時未成交改中間價−¼價差，"
+              "收市前 30 分鐘未成交取消唔追；預留全數行使現金；開第一張前先登記 POSITIONS.md。")
+
+
+def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False, live=False) -> tuple[str, str]:
     mk = {"us": "美股 S&P 500 ", "hk": "港股恒指 "}[market]
     L = [f"# 🐯 虎翼｜{mk}大跌股候選 {d0}", "",
-         "**紙上紀錄階段——實倉規則未定，以下唔係落單指令。**", "",
+         ("**實倉候選模式（LIVE_RULES v1）**：🔴＝實倉候選；其餘只係紙上紀錄。" if live else
+          "**紙上紀錄模式——以下唔係落單指令。**"), "",
          f"宇宙 {n_univ}；大跌門檻 ≤ {THR:.0%}、收市 ≥ {MIN_PX:g}；到期 {DTE_LO}–{DTE_HI} 日最近 {DTE_TGT} 日；"
          "🌙＝盤後大跌（盤後價對正式收市 ≤ −8%；只預警，期權係收市報價，下一交易日收市再按正式規則判）；"
          f"合資格＝ρ ≥ ρ₂（put {RHO2[market]['put95']}、call {RHO2[market]['call105']}，call 只准紙上）且到期前冇已知業績。", ""]
-    T = ["🐯 虎翼｜" + mk + f"{d0}（{'盤中測試，' if intraday else ''}紙上，非落單指令）"]
+    T = ["🐯 虎翼｜" + mk + f"{d0}（{'盤中測試，' if intraday else ''}{'實倉候選＋紙上' if live else '紙上，非落單指令'}）"]
     if not rows:
         L.append("今日冇大跌股。")
         T.append("今日冇 ≤ −8% 大跌股。")
     else:
-        L += ["| 股票 | 跌幅 | 收市 | RV63 | 到期（日） | 平值IV | ρ | 腿 | 行使價 | 買／賣／中 | 紙上價 | 年化% | 業績 | 合資格 | 備註 |",
-              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        if live and any(r.get("live") == "Y" for r in rows):
+            L += [LIVE_GUIDE, ""]
+            T.insert(1, LIVE_GUIDE)
+        L += ["| 實倉 | 股票 | 跌幅 | 收市 | RV63 | 到期（日） | 平值IV | ρ | 腿 | 行使價 | 買／賣／中 | 紙上價 | 年化% | 業績 | 合資格 | 備註 |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in rows:
-            L.append(f"| {r['ticker']} {r.get('name', '')} | {r['drop_pct']}% | {r['close']} | {r['rv63pre']} | {r.get('expiry', '')}"
+            L.append(f"| {'🔴' if r.get('live') == 'Y' else ''} | {r['ticker']} {r.get('name', '')} | {r['drop_pct']}% | {r['close']} | {r['rv63pre']} | {r.get('expiry', '')}"
                      f"（{r.get('dte', '')}） | {r.get('atm_iv', '')} | {r.get('rho', '')} | {r['leg']} | {r.get('strike', '')} | "
                      f"{r.get('bid', '')}／{r.get('ask', '')}／{r.get('mid', '')} | {r.get('fill', '')} | {r.get('yield_ann_pct', '')} | "
                      f"{r.get('earnings', '')}{'（窗內）' if r.get('earnings_in_window') == 'Y' else ''} | "
-                     f"{'✅' if r['qualifies'] == 'Y' else '—'} | {r.get('note', '')} |")
+                     f"{'✅' if r['qualifies'] == 'Y' else '—'} | {(r.get('note', '') + ' ' + r.get('live_note', '')).strip()} |")
         seen = set()
         for r in rows:
             if r["ticker"] in seen:
@@ -569,6 +656,12 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False) -> tup
                     head += f"｜{'P' if x['leg'] == 'put95' else 'C'}{x['strike']} @{x['fill']} 年化{x['yield_ann_pct']}%{'✅' if x['qualifies'] == 'Y' else ''}"
             if r.get("session") == "ah":
                 head += "｜ρ 用收市 IV；期權報價待開市，下一交易日收市再按正式規則判"
+            for x in mine:
+                if x.get("live") == "Y":
+                    head = "🔴實倉候選 " + head.lstrip("• ") + (f"｜賣 P{x['strike']} 到期 {x['expiry']}｜買 {x['bid']}／賣 {x['ask']}"
+                                                               f"／中 {x['mid']}｜OI {x.get('oi', '')}｜{x['live_note']}")
+                elif live and x.get("live_note"):
+                    head += f"｜{x['live_note']}"
             if r.get("earnings_in_window") == "Y":
                 head += "｜⚠️業績窗內"
             elif r.get("earnings_in_window") == "?":
