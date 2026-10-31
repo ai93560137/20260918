@@ -4,6 +4,8 @@
 不直接執行別的分支。需求說明與交付格式：該分支 stock_research/IBKR_DATA_REQUEST.md。
 與原版不同處：--req／--out／--suffix 參數；readonly 連線；預設 clientId 61（不與 17/23/24/31/32/41/43/45/55/77 撞）；
 已有 ok 但未有下一交易日的列會重抓（月底後太早跑也安全）；連不到 Gateway 時以代碼 3 結束並寫清原因。
+2026-10-31 修：connect 唔做啟動同步（fetchFields=StartupFetchNONE；週六維護時持倉／戶口同步逾時令 connect 失敗）；
+TCP 連唔到 vs 握手／同步逾時分開報；ib_insync 日誌嘅戶口號換成 <acct>。
 
     pip install ib_insync
     python3 scripts/ib_stock_verify.py --port 4002 --job probe                 # 先跑：每個市場各試 1 檔，看合約能不能解析、有沒有權限錯誤
@@ -17,7 +19,10 @@
 節流：每個請求間隔 --pace 秒（預設 2.5；遇 pacing violation 自動等 60 秒重試）。只讀：不下單、不改帳戶。
 """
 import argparse
+import asyncio
 import csv
+import logging
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -26,6 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REQ = ROOT / "analysis" / "tt_all" / "ibkr_request.csv"
 OUT = ROOT / "data_stock_ibkr"
+MAX_FAIL_STREAK = 8
 FIELDS = ["ticker", "ib_symbol", "exchange", "currency", "con_id", "signal_date", "ib_close", "next_date", "ib_next_open", "ib_next_close", "status", "note"]
 
 # Yahoo 代號 → IB 合約（exchange, currency, symbol 轉換）
@@ -49,6 +55,41 @@ def to_ib(mk: str, t: str):
     if mk == "kr":
         return t[:-3], "KSE", "KRW"                        # 預期失敗
     raise ValueError(mk)
+
+
+ACCT_RE = re.compile(r"\b(?:DU|DF|DI|U|F|I)\d{5,}\b")   # IB 戶口號（例如 DU1234567、U1234567）
+
+
+class _RedactAcct(logging.Filter):
+    """ib_insync 自己的日誌會印戶口號（例如 account updates for DU… timed out）→ 換成 <acct>，日誌會同步去 /srv/ibshare。"""
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg = ACCT_RE.sub("<acct>", record.getMessage())
+        record.args = ()
+        return True
+
+
+def quiet_ib_logs() -> None:
+    lg = logging.getLogger("ib_insync")
+    h = logging.StreamHandler()
+    h.setFormatter(logging.Formatter("%(asctime)s ib_insync %(levelname)s %(message)s"))
+    h.addFilter(_RedactAcct())
+    lg.handlers[:] = [h]
+    lg.propagate = False
+    lg.setLevel(logging.WARNING)
+
+
+def connect_ib(ib, port: int, client_id: int) -> None:
+    """只讀連線，唔做啟動同步（持倉／戶口／成交）：週末 IB 伺服器維護時，啟動同步會逾時令 connect() 失敗，
+    而核對收市價根本唔需要嗰啲資料。舊版 ib_insync（冇 fetchFields）就退而求其次：timeout 加長到 120 秒。"""
+    try:
+        from ib_insync import StartupFetchNONE  # ib_insync ≥ 0.9.86
+    except ImportError:
+        StartupFetchNONE = None
+    if StartupFetchNONE is not None:
+        ib.connect("127.0.0.1", port, clientId=client_id, timeout=30, readonly=True, fetchFields=StartupFetchNONE)
+    else:
+        log("⚠️ ib_insync 版本冇 fetchFields，改用 timeout=120（啟動同步可能慢）")
+        ib.connect("127.0.0.1", port, clientId=client_id, timeout=120, readonly=True)
 
 
 def log(msg: str) -> None:
@@ -147,13 +188,22 @@ def main() -> None:
         REQ = Path(args.req)
     if args.out:
         OUT = Path(args.out)
+    quiet_ib_logs()
     from ib_insync import IB
     ib = IB()
     try:
-        ib.connect("127.0.0.1", args.port, clientId=args.client_id, timeout=30, readonly=True)
+        connect_ib(ib, args.port, args.client_id)
+    except (ConnectionRefusedError, ConnectionResetError) as exc:
+        log(f"❌ TCP 連唔到 IB Gateway 127.0.0.1:{args.port}（{type(exc).__name__}）——Gateway 冇行緊或者未開 API 埠；"
+            "睇 health.txt 有冇 java／4002 LISTEN")
+        sys.exit(3)
+    except (TimeoutError, asyncio.TimeoutError) as exc:
+        log(f"❌ 連到 4002 但 API 握手／啟動同步逾時（{ACCT_RE.sub('<acct>', repr(exc))}）——"
+            "週末或深夜 IB 伺服器維護時常見，遲啲排程會自動再試；如果平日亦咁，多半卡喺免責聲明"
+            "（AGENTIC.md「IB Gateway 重啟後卡在免責聲明」，用 VNC 按接受）")
+        sys.exit(3)
     except Exception as exc:  # noqa: BLE001
-        log(f"❌ 連不到 IB Gateway 127.0.0.1:{args.port}（{exc!r}）——多半是 Gateway 重啟後卡在免責聲明或未登入；"
-            "見 AGENTIC.md「IB Gateway 重啟後卡在免責聲明」，用 VNC 按接受後重跑")
+        log(f"❌ 連 IB Gateway 失敗（{ACCT_RE.sub('<acct>', repr(exc))}）")
         sys.exit(3)
     ib.reqMarketDataType(3)
     jobs = read_request(args.market)
@@ -161,11 +211,23 @@ def main() -> None:
     for (mk, d), tickers in sorted(jobs.items()):
         path = OUT / f"{mk}_{d}{args.suffix}.csv"
         rows = load_done(path)
+        streak = 0
         todo = tickers[:1] if args.job == "probe" else [t for t in tickers if rows.get(t, {}).get("status") != "ok" or not rows[t].get("next_date")]
         log(f"[{mk}] {d}：{len(tickers)} 檔，待抓 {len(todo)}")
         for k, t in enumerate(todo, 1):
             r = fetch_one(ib, mk, t, d, args.pace, rth=not args.no_rth)
+            failed = r["status"] in ("no_data", "error") and not r.get("ib_close")
+            if r["status"] in ("no_data", "error") and rows.get(t, {}).get("status") == "ok":
+                log(f"  {t} → {r['status']}（保留上次 ok 結果）")
+                r = rows[t]
             rows[t] = r
+            # 一連串空 K 線／錯誤 = 多半係 IB 歷史數據伺服器維護（週末），唔好逐檔等 60 秒等幾粒鐘
+            streak = streak + 1 if failed else 0
+            if streak >= MAX_FAIL_STREAK:
+                save(path, rows)
+                log(f"⛔ 連續 {streak} 檔冇數據／出錯，疑似 IB 歷史數據伺服器維護；今次停，下次排程再試")
+                ib.disconnect()
+                sys.exit(5)
             if args.job == "probe" or k % 20 == 0 or k == len(todo):
                 save(path, rows)
             if r["status"] != "ok":

@@ -11,7 +11,7 @@
 #
 # 流程：下載請求檔 → 取最新訊號日 D → 已齊全（每檔 ok 且有下一交易日，或 no_contract／no_data）的市場跳過
 #       → probe → 先跑 --no-rth 市場（檔名後綴 _nortrh）→ 再跑正式 → 關鍵字掃描 → commit＋push。
-#       失敗可直接重跑：已抓好的列會跳過；未有下一交易日的列會重抓，所以月底後太早跑亦安全。
+#       失敗可直接重跑：已抓好的列會跳過；未有下一交易日或 no_data 的列會重抓，所以月底後太早跑亦安全。
 #
 # 用法：
 #   bash ~/20260918/gcp_ib/run_monthend_closes.sh --dry   # 試跑：只 probe（寫去暫存資料夾），不提交、不推送
@@ -20,7 +20,8 @@
 #          亦早於 Gateway 約 23:50 的每日重啟；名單齊全後每次幾秒就結束）：
 #   5 22 1-8 * * bash $HOME/20260918/gcp_ib/run_monthend_closes.sh >> $HOME/monthend_cron.log 2>&1
 #
-# 結束代碼：0 完成或無事可做；1 一般錯誤；3 連不到 IB Gateway（多半卡免責聲明）；4 關鍵字掃描命中，不推送。
+# 結束代碼：0 完成或無事可做；1 一般錯誤；3 未能連上 IB Gateway（TCP 連唔到／握手或啟動同步逾時）；4 關鍵字掃描命中，不推送。
+# （抓取程式代碼 5 = 連續冇數據疑似 IB 維護、提早停：照提交已抓部分，下次再補。）
 set -uo pipefail
 umask 027
 
@@ -89,7 +90,7 @@ else
 fi
 mkdir -p data_stock_ibkr
 
-# 4) 邊啲市場未齊（每檔 ok 且有下一交易日，或 no_contract／no_data，先算齊）
+# 4) 邊啲市場未齊（每檔 ok 且有下一交易日，或 no_contract，先算齊）
 pending() {  # $1 = 市場清單，$2 = 檔名後綴
   "$PY" - "$WORK/req.csv" "$D" "$1" "$2" "$DATA/data_stock_ibkr" <<'EOF'
 import csv, sys
@@ -103,7 +104,8 @@ left = []
 for mk, ts in sorted(want.items()):
     p = out / f"{mk}_{d}{suf}.csv"
     got = {r["ticker"]: r for r in csv.DictReader(open(p, encoding="utf-8"))} if p.exists() else {}
-    done = lambda r: r is not None and (r["status"] in ("no_contract", "no_data") or (r["status"] == "ok" and r.get("next_date")))
+    # no_data 唔當完成：週末維護時歷史數據請求會逾時變 no_data，要下次再試；只有 no_contract（IB 冇呢隻股）先係最終結果
+    done = lambda r: r is not None and (r["status"] == "no_contract" or (r["status"] == "ok" and r.get("next_date")))
     if not all(done(got.get(t)) for t in ts):
         left.append(mk)
 print(" ".join(left))
@@ -117,7 +119,7 @@ say "待抓：正式 [${TODO:-無}]；no-rth [${TODO_N:-無}]"
 run_fetch() {  # 其餘參數照傳；回傳 python 的結束代碼
   "$PY" "$FETCHER" --port "$PORT" --client-id "$CLIENT_ID" --pace "$PACE" --req "$WORK/req.csv" "$@"
 }
-gw_fail() { say "❌ 連不到 IB Gateway（127.0.0.1:$PORT）。多半係 Gateway 重啟後卡喺免責聲明或未登入：用 VNC 按接受（AGENTIC.md「IB Gateway 重啟後卡在免責聲明」），之後重跑本腳本。今次唔提交。"; exit 3; }
+gw_fail() { say "❌ 未能連上 IB Gateway（127.0.0.1:$PORT），原因見上一行（TCP 連唔到／握手或啟動同步逾時）。今次唔提交；排程下一日會自動再試，亦可以人手重跑。"; exit 3; }
 
 # 5) probe（--dry 寫去暫存資料夾）
 ALL="$(echo "$TODO $TODO_N" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
