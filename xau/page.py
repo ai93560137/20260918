@@ -138,13 +138,44 @@ def forward_section(fw, book=None):
         return "<div class='section'><h2>🔬 前向測試</h2><p class='muted'>前向數據讀唔到（格式有變），睇 GCS xau/sig/gb_forward/latest.md。</p></div>"
 
 
+def _stat_txt(st, f2):
+    if not isinstance(st, dict) or not st.get("n"):
+        return "0 張"
+    return f"{st['n']} 張，平均 {f2(st.get('avg'))}R，PF {f2(st.get('pf'), '{:.2f}')}，最大連敗 {st.get('streak', 0)}"
+
+
+def g7_block(g, f2):
+    """[R360] IDEAS #162／#163：H4 趨勢內 H1 回調策略——回測總結（固定）＋影子前向（GCS xau/sig/g7_forward/latest.json）。"""
+    if not isinstance(g, dict):
+        return ""
+    bt = g.get("backtest") or {}
+    fwd = g.get("forward") or {}
+    p = g.get("params") or {}
+    rows = "".join(
+        f"<tr><td>{esc(t.get('utc'))}</td><td>{'BUY' if (t.get('side') or 0) > 0 else 'SELL'}</td><td>{f2(t.get('entry'), '{:.2f}')}</td>"
+        f"<td>{f2(t.get('sl'), '{:.2f}')}／{f2(t.get('tp'), '{:.2f}')}</td><td>{esc(t.get('exit') or '未完')}</td>"
+        f"<td class=\"{'pos' if (t.get('r') or 0) > 0 else ('neg' if (t.get('r') or 0) < 0 else '')}\">{f2(t.get('r'))}</td></tr>"
+        for t in reversed(fwd.get("trades") or []))
+    tbl = ("<div style='overflow-x:auto'><table><tr><th>訊號 UTC</th><th>方向</th><th>入場</th><th>SL／TP</th><th>出場</th><th>R</th></tr>" + rows + "</table></div>") if rows else "<p class='muted'>前向仲未有單。</p>"
+    return ("<h3>📈 H1 回調策略（IDEAS #162 合格 → #163 影子前向，唔落單）</h3>"
+            f"<p style='font-size:14px'><b>規則：</b>H4 EMA50 向上（已收盤 H4 對上一根比較）而 H1 RSI(14) 跌穿 {esc(p.get('TH', 35))} → 買；"
+            f"H4 EMA50 向下而 H1 RSI 升穿 {100 - int(p.get('TH', 35))} → 沽。下一根 M5 開盤市價入；SL {esc(p.get('K'))}×H1 ATR(14)、TP {esc(p.get('R'))}R、最長持倉 {esc(p.get('T'))} 小時；同時最多 1 張；每張扣 0.5 美元。</p>"
+            f"<p style='font-size:14px'><b>回測（券商 MT5 M1，滾動前向樣本外 2023-09→2026-10）：</b>{esc(_stat_txt(bt.get('oos'), f2))}；正數季 {esc(bt.get('pos_q', '—'))}；"
+            f"做多 {esc(_stat_txt(bt.get('long'), f2))}；做空 {esc(_stat_txt(bt.get('short'), f2))}；對照盲買 {f2((bt.get('blind') or {}).get('avg'))}R；"
+            f"Dukascopy 07-24→10-30 {esc(_stat_txt(bt.get('duka'), f2))}。</p>"
+            f"<p style='font-size:14px'><b>影子前向（{esc(fwd.get('from'))} UTC 起，經紀 M1；更新 {esc(g.get('run_utc'))} UTC）：</b>{esc(_stat_txt(fwd.get('all'), f2))}"
+            f"（做多 {esc(_stat_txt(fwd.get('long'), f2))}；做空 {esc(_stat_txt(fwd.get('short'), f2))}）→ <b>{esc(fwd.get('verdict') or '—')}</b></p>"
+            "<p class='muted' style='font-size:13px'>判斷（預先登記）：3 個月或 30 張（先到者）時平均 R ≥ +0.10 且 PF ≥ 1.2 → 先出 921 接駁方案（規則出訊號、Opus 只做否決、0.05 手；PR＋總指揮 dry-run＋使用者批）。</p>"
+            + tbl)
+
+
 def _forward_section(fw, book=None):
     """[R352c] 🔬 前向測試（影子，唔落單；使用者 10-30「將 V13 及其他前向測試結果放上去」）。
     fw＝{"gb": gb_forward latest.json, "student": student scores.json}；book＝921 live_book view（#145 滑價）。"""
     if not isinstance(fw, dict):
         return ""
-    out = ""
     f2 = lambda x, f="{:+.2f}": "—" if x is None else f.format(x)  # noqa: E731
+    out = g7_block(fw.get("g7"), f2)
     gb = fw.get("gb") or {}
     ev = gb.get("eval") or {}
     crit = {"0342": "#149：候選 V13（GB 入場、SL 10、TP 10 全平）；20 張判：ΣR ≥ +2R、PF ≥ 1.2、最大回撤 ≤ 3R、好過同期 V0 → 先提真倉 0.05 手（要批）",

@@ -147,6 +147,19 @@ class Forward(unittest.TestCase):
         for frag in ("前向測試", "V13 ⭐候選", "-1.51", "未夠 5／20 張", "rev15", "89／100", "+0.31", "2／20", "+1.55", "已觸發 P3"):
             self.assertIn(frag, h)
 
+    def test_forward_g7(self):
+        g7 = {"run_utc": "2026-11-07 00:02", "params": {"TH": 35, "K": 1.5, "R": 2.0, "T": 72},
+              "backtest": {"oos": {"n": 155, "avg": 0.325, "pf": 1.62, "streak": 8}, "pos_q": "9／13",
+                           "long": {"n": 88, "avg": 0.298, "pf": 1.57, "streak": 7}, "short": {"n": 67, "avg": 0.362, "pf": 1.69, "streak": 5},
+                           "blind": {"avg": 0.1}, "duka": {"n": 16, "avg": 0.863, "pf": 2.69, "streak": 4}},
+              "forward": {"from": "2026-11-01 22:00", "all": {"n": 1, "avg": 1.9, "pf": None, "streak": 0}, "long": {"n": 0},
+                          "short": {"n": 1, "avg": 1.9, "pf": None, "streak": 0}, "verdict": "未到期（1／30 張）",
+                          "trades": [{"utc": "11-03 09:15", "side": -1, "entry": 3900.1, "sl": 3915.0, "tp": 3870.3, "exit": "TP", "r": 1.9}]}}
+        h = page.forward_section({"g7": g7})
+        for frag in ("H1 回調策略", "155 張，平均 +0.33R", "9／13", "+0.10R", "未到期（1／30 張）", "SELL", "3870.30", "+1.90", "RSI(14) 跌穿 35", "升穿 65"):
+            self.assertIn(frag, h)
+        self.assertIn("前向仲未有單", page.forward_section({"g7": {**g7, "forward": {"from": "x"}}}))
+
     def test_forward_bad_data(self):
         self.assertIn("讀唔到", page.forward_section({"gb": {"eval": {"0342": {"result": {"V0": {}}}}}}))
         self.assertEqual(page.forward_section(None), "")

@@ -957,11 +957,13 @@ def forward_view():
     try:
         gb = storage.read_json(base + "gb_forward/latest.json", None)
         stu = storage.read_json(base + "student/scores.json", None)
+        g7 = storage.read_json(base + "g7_forward/latest.json", None)      # [R360] IDEAS #162／#163 H1 回調策略（研究腳本 wf_forward.py --write 寫）
     except StorageError:
         return None
-    if not gb and not stu:
+    if not gb and not stu and not g7:
         return None
-    return {"gb": gb if isinstance(gb, dict) else None, "student": stu if isinstance(stu, dict) else None}
+    return {"gb": gb if isinstance(gb, dict) else None, "student": stu if isinstance(stu, dict) else None,
+            "g7": g7 if isinstance(g7, dict) else None}
 
 
 def build_status():
