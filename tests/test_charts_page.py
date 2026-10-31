@@ -98,3 +98,13 @@ try:
 finally:
     main._chart_png = _orig
 print("fib v2b ok")
+# 使用者 10-31：VXN、VVIX 加入分析圖表頁
+main._chart_png = lambda path: ("QUJD", "10-31 20:15")
+try:
+    doc["charts_fib"] = {m: [f"{base}{m}_4h_fib.png", f"{base}{m}_1d_fib.png"] for m in ("NQ", "ES", "SPX", "VIX", "VXN", "VVIX")}
+    sec = main._charts_markets_section(doc)
+    assert "<h3>VXN</h3>" in sec and "<h3>VVIX</h3>" in sec and f"{base}VVIX_1d_fib.png" in sec
+    assert sec.count("240 分鐘圖") == 6 and sec.count("日線圖") == 6
+finally:
+    main._chart_png = _orig
+print("vxn vvix ok")
