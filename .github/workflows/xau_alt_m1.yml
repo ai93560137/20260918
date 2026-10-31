@@ -1,0 +1,53 @@
+name: 天覆陣 另類黃金 M1 數據（rev15 離線再驗）
+
+# 使用者 10-31「rev15 離線用其他數據源再試」。雲端工作階段連唔到外網，所以喺度拎：
+#   paxg＝Binance 公開歸檔 PAXGUSDT 1 分鐘（data.binance.vision，唔使金鑰）；gcf＝yfinance GC=F 期貨 1 分鐘（只得最近 7 日）。
+# 寫 GCS xau/sig/alt/<src>/<日>.json；分析喺工作階段用 research/student_offline/rev15_gap.py --src。只有價格，唔落單，$0 API。
+on:
+  workflow_dispatch:
+    inputs:
+      src:
+        description: 數據源（paxg 或 gcf）
+        required: false
+        default: 'paxg'
+      start:
+        description: 開始日（UTC，paxg 用；gcf 固定最近 7 日）
+        required: false
+        default: '2026-07-24'
+      end:
+        description: 結束日（UTC；留空＝今日）
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: xau-alt-m1
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+
+      - name: Fetch
+        run: |
+          END="${{ github.event.inputs.end }}"
+          python3 research/student_offline/fetch_alt_m1.py --src "${{ github.event.inputs.src }}" --start "${{ github.event.inputs.start }}" ${END:+--end "$END"}
