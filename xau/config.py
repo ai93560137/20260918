@@ -232,7 +232,7 @@ STUDENT_LOTS = _f("SIG_STUDENT_LOTS", 0.05)
 STUDENT_LOTS_LADDER = _b("SIG_STUDENT_LOTS_LADDER", False)           # 手數階梯（同 932 一樣：賺 +LOTS_STEP、蝕 −LOTS_STEP）
 STUDENT_LOTS_MIN = _f("SIG_STUDENT_LOTS_MIN", STUDENT_LOTS)
 STUDENT_MAX_LOTS = _f("SIG_STUDENT_MAX_LOTS", STUDENT_LOTS)          # 預設唔升（上限＝起點），要升使用者另批
-STUDENT_DAY_STOP_HKD = _f("SIG_STUDENT_DAY_STOP_HKD", 500.0)         # 933 自己當日（EA 伺服器日、自己 magic）蝕到呢個數就停開新倉；0＝唔設
+STUDENT_DAY_STOP_HKD = _f("SIG_STUDENT_DAY_STOP_HKD", 5000.0)        # 933 自己當日（EA 伺服器日、自己 magic）蝕到呢個數就停開新倉；0＝唔設（使用者 10-31 定 5000）
 STUDENT_TTL_MIN = _i("SIG_STUDENT_TTL_MIN", 30)                      # 學生出區之後幾多分鐘內未入到入場區就放棄
 STUDENT_MAX_CONCURRENT = _i("SIG_STUDENT_MAX_CONCURRENT", 1)         # 同戶口 931＋933 同時最多幾張倉（含排緊嘅開倉）
 
