@@ -9,6 +9,7 @@
 | `build_canary_table.py` | 產生器,純 Python 標準庫,不需 pandas |
 | `yellow_lab.py` / `YELLOW_UPGRADE.md` | 黃燈升級考核腳本(需 pandas)與結果報告 |
 | `red_lab.py` / `RED_UPGRADE.md` | 紅燈(VIX9D 系)提位考核腳本與結果報告 |
+| `watch_list.py` / `watch_status.json` / `watch_log.csv` | 👀 留神清單(觀察名單 W2,2026-10-31,無警報權):四條規則、每日 Telegram 一段、🐤 網頁讀 `watch_status.json` |
 | `special_alert.py` / `alert_state.json` / `alert_log.csv` | 特別警報(2026-10-23):盤中預警(`canary_intraday.yml`)與收市確認／解除(`canary_daily.yml`);`ALERT.txt` 為 10-23 手動發出的第一則 |
 | `bigdrop_lab.py` / `BIGDROP_LAB.md` | 大跌日價格軸考核(IDEAS.md #104,2026-10-14 未過,淘汰) |
 | `daily_report.py` / `DAILY_REPORT.md` / `daily_log.csv` / `sent_log.csv` / `tg_daily.txt` | 每日總結報告產生器、當日報告、長期逐日紀錄、**已發訊息紀錄(只追加,供次日回驗)**、Telegram 短訊 |
