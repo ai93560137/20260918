@@ -9,7 +9,7 @@ ib-data 喺每月 1–8 號每日 UTC 22:05 跑 `run_monthend_closes.sh`：
 
 1. 從公開 repo 下載請求檔，攞最新訊號日 D（只係 CSV 數據，唔執行別嘅分支嘅程式）
 2. 檢查邊啲市場未齊（預設 `hk sg au us`；澳洲另跑 `--no-rth` 對照收市競價，檔名後綴 `_nortrh`）。
-   一個市場要每一檔都有 ok 結果兼有下一交易日，或者係 `no_contract`／`no_data`，先算齊
+   一個市場要每一檔都有 ok 結果兼有下一交易日，或者係 `no_contract`，先算齊（`no_data` 會下次再試，因為週末維護時可能係暫時性）
 3. 齊晒就即刻結束（每次幾秒）；未齊就 probe → no-rth → 正式抓
 4. 掃描 password／token／secret／api key 關鍵字，冇命中先 commit 同 push 去**專用資料分支 `data/stock-ibkr`**。
    資料 repo 係 `~/stock-ibkr-data`，同程式分支分開
@@ -19,14 +19,17 @@ ib-data 喺每月 1–8 號每日 UTC 22:05 跑 `run_monthend_closes.sh`：
 - 用 readonly 連線，clientId 61（唔同 17/23/24/31/32/41/43/45/55/77 撞）
 - 支援 `--req`／`--out`／`--suffix` 參數
 - 已經 ok 但未有下一交易日嘅列會重抓，所以月底後太早跑都安全
-- 連唔到 Gateway 就用代碼 3 結束，並寫明原因
+- 連線唔做啟動同步（`fetchFields=StartupFetchNONE`；舊版 ib_insync 就 timeout 120 秒）——2026-10-31 週六試跑時持倉／戶口同步逾時令 connect 失敗
+- 連唔到 Gateway 就用代碼 3 結束，分開報「TCP 連唔到」同「握手／啟動同步逾時」
+- ib_insync 自己日誌入面嘅戶口號會換成 `<acct>`（日誌會同步去 /srv/ibshare）
 
 ## 結束代碼
 
 | 代碼 | 意思 | 點處理 |
 |---|---|---|
 | 0 | 完成／無事可做 | — |
-| 3 | 連唔到 IB Gateway（多半卡喺免責聲明） | 跟 AGENTIC.md「IB Gateway 重啟後卡在免責聲明」用 VNC 按接受；下一日排程會自動補，或者人手重跑 |
+| 3 | 未能連上 IB Gateway：日誌分「TCP 連唔到」（Gateway 冇行）同「握手／啟動同步逾時」（週末維護常見；平日都咁就多半卡免責聲明） | 週末：等排程自動再試；平日：跟 AGENTIC.md「IB Gateway 重啟後卡在免責聲明」用 VNC 按接受，之後人手重跑 |
+| 5（抓取程式） | 連續 8 檔冇數據／出錯，疑似 IB 歷史數據伺服器維護，提早停（唔會逐檔等 60 秒等幾粒鐘） | 腳本照提交已抓到嘅部分，下次排程再補 |
 | 4 | 關鍵字掃描命中 | 唔會推送；人手睇 `~/stock-ibkr-data/data_stock_ibkr` |
 | 1 | 其他（下載請求檔失敗、推送失敗等） | 睇日誌；下一日排程會重試 |
 
