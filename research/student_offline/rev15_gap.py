@@ -57,10 +57,11 @@ def run(m1, t_from, t_to):
         now = b["time"] + 60
         if not (t_from <= now < t_to) or now - last < 3600:
             continue
-        win = m1[max(0, i - 419):i + 1]
+        win = m1[max(0, i - config.M1_MAX + 1):i + 1]             # 同實時一樣：心跳用 GCS m1.json（XAU_M1_MAX 根）
         if len(win) < 30:
             continue
-        for c in features.rule_candidates(win, 0, now, None):
+        m15 = _m15_upto(m1, now) if RULE == "rule:rev15x" else None   # rev15x 要 M15 ATR 比率：由 M1 砌
+        for c in features.rule_candidates(win, 0, now, m15):
             if "rule:" + c["rule"] != RULE:
                 continue
             mid = (c["entry_low"] + c["entry_high"]) / 2; sgn = 1 if c["side"] == "BUY" else -1
@@ -68,6 +69,26 @@ def run(m1, t_from, t_to):
                           "tp": [round(mid + sgn * config.STUDENT_R_TARGET * features.STRUCT_SL, 2)]})
             last = now
     return preds
+
+
+_M15 = {}
+
+
+def _m15_upto(m1, now):
+    """M1 → 已收盤 M15（最近 60 根），time＝15 分鐘開盤 UTC；按 id(m1) 快取。"""
+    import bisect
+    key = id(m1)
+    if key not in _M15:
+        out = {}
+        for b in m1:
+            k = b["time"] // 900 * 900
+            o = out.setdefault(k, {"time": k, "open": b["open"], "high": b["high"], "low": b["low"], "close": b["close"]})
+            o["high"] = max(o["high"], b["high"]); o["low"] = min(o["low"], b["low"]); o["close"] = b["close"]
+        rows = [out[k] for k in sorted(out)]
+        _M15[key] = (rows, [r["time"] for r in rows])
+    rows, ts = _M15[key]
+    j = bisect.bisect_right(ts, now - 900)
+    return rows[max(0, j - 60):j]
 
 
 def r_of(p, o):
