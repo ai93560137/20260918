@@ -19,7 +19,8 @@ ib-data 喺每月 1–8 號每日 UTC 22:05 跑 `run_monthend_closes.sh`：
 - 用 readonly 連線，clientId 61（唔同 17/23/24/31/32/41/43/45/55/77 撞）
 - 支援 `--req`／`--out`／`--suffix` 參數
 - 已經 ok 但未有下一交易日嘅列會重抓，所以月底後太早跑都安全
-- 連線唔做啟動同步（`fetchFields=StartupFetchNONE`；舊版 ib_insync 就 timeout 120 秒）——2026-10-31 週六試跑時持倉／戶口同步逾時令 connect 失敗
+- 連線只做 API 握手（`ib.client.connect`），唔經 `IB.connect()` 嘅持倉／戶口／成交同步——ib-data 嘅 ib_insync 0.9.86 冇 `fetchFields`，2026-10-31 週六試跑時同步逾時令連線被斷（新版有 `StartupFetchNONE` 就用官方參數）
+- 每個請求最多等 90 秒（`RequestTimeout`），整個抓取最多 2 小時（`MONTHEND_MAX_SEC`），防止維護時卡死霸住鎖
 - 連唔到 Gateway 就用代碼 3 結束，分開報「TCP 連唔到」同「握手／啟動同步逾時」
 - ib_insync 自己日誌入面嘅戶口號會換成 `<acct>`（日誌會同步去 /srv/ibshare）
 

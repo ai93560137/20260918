@@ -79,17 +79,19 @@ def quiet_ib_logs() -> None:
 
 
 def connect_ib(ib, port: int, client_id: int) -> None:
-    """只讀連線，唔做啟動同步（持倉／戶口／成交）：週末 IB 伺服器維護時，啟動同步會逾時令 connect() 失敗，
-    而核對收市價根本唔需要嗰啲資料。舊版 ib_insync（冇 fetchFields）就退而求其次：timeout 加長到 120 秒。"""
+    """只做 API 握手，唔做 IB.connect() 嘅啟動同步（持倉／戶口／成交）。
+    ib-data 用 ib_insync 0.9.86：IB.connect() 握手成功後會同步持倉、戶口、成交；週末 IB 伺服器維護時呢啲請求逾時，
+    最後 reqExecutions 拋 TimeoutError，連線被斷（2026-10-31 實測）。核對收市價只需要合約解析同歷史 K 線，唔需要嗰啲資料，
+    所以直接用 ib.client.connect()（TCP＋startApi＋等 nextValidId／managedAccounts）。新版（有 StartupFetchNONE）就用官方參數。"""
     try:
-        from ib_insync import StartupFetchNONE  # ib_insync ≥ 0.9.86
+        from ib_insync import StartupFetchNONE  # ib_insync ≥ 0.9.87
     except ImportError:
         StartupFetchNONE = None
     if StartupFetchNONE is not None:
         ib.connect("127.0.0.1", port, clientId=client_id, timeout=30, readonly=True, fetchFields=StartupFetchNONE)
-    else:
-        log("⚠️ ib_insync 版本冇 fetchFields，改用 timeout=120（啟動同步可能慢）")
-        ib.connect("127.0.0.1", port, clientId=client_id, timeout=120, readonly=True)
+        return
+    ib.wrapper.clientId = client_id          # 同 IB.connectAsync 第一步一樣
+    ib.client.connect("127.0.0.1", port, client_id, 30)
 
 
 def log(msg: str) -> None:
@@ -191,6 +193,7 @@ def main() -> None:
     quiet_ib_logs()
     from ib_insync import IB
     ib = IB()
+    ib.RequestTimeout = 90          # 合約解析等請求最多等 90 秒（預設 0＝永遠等；維護時會卡死）
     try:
         connect_ib(ib, args.port, args.client_id)
     except (ConnectionRefusedError, ConnectionResetError) as exc:
@@ -198,9 +201,9 @@ def main() -> None:
             "睇 health.txt 有冇 java／4002 LISTEN")
         sys.exit(3)
     except (TimeoutError, asyncio.TimeoutError) as exc:
-        log(f"❌ 連到 4002 但 API 握手／啟動同步逾時（{ACCT_RE.sub('<acct>', repr(exc))}）——"
-            "週末或深夜 IB 伺服器維護時常見，遲啲排程會自動再試；如果平日亦咁，多半卡喺免責聲明"
-            "（AGENTIC.md「IB Gateway 重啟後卡在免責聲明」，用 VNC 按接受）")
+        log(f"❌ TCP 連到 {args.port}，但 API 握手逾時（30 秒內冇收到 nextValidId／managedAccounts；{type(exc).__name__}）——"
+            "Gateway 多半未登入或卡喺免責聲明（AGENTIC.md「IB Gateway 重啟後卡在免責聲明」，用 VNC 按接受）；"
+            "週末 IB 維護亦可能，排程下一日會自動再試")
         sys.exit(3)
     except Exception as exc:  # noqa: BLE001
         log(f"❌ 連 IB Gateway 失敗（{ACCT_RE.sub('<acct>', repr(exc))}）")
