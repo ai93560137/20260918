@@ -162,7 +162,7 @@ def ack(cid, payload, now):
 
 def handle_heartbeat(payload):
     m = _m(); now = m.now_ts()
-    if config.ACCOUNT and str(payload.get("account") or "").strip() != config.ACCOUNT:
+    if config.FOLLOW_ACCOUNT and str(payload.get("account") or "").strip() != config.FOLLOW_ACCOUNT:   # [R357] 932 可以同 931 唔同戶口
         return m.jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
     offset = m.server_offset(payload, now)
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "floating", "daily_pnl", "realized_total", "margin_level",

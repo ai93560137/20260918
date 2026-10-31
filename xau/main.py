@@ -779,14 +779,15 @@ def need_history(m15):
     return n < config.M15_MIN_BARS
 
 
-def ack_account_ok(payload):
+def ack_account_ok(payload, want=None):
     """10-23 權杖公開（使用者決定 keep）：cmd_ack 帶 account（EA v0.38）就要同 XAU_ACCOUNT 一致；
-    冇 account 時只有 XAU_ACK_REQUIRE_ACCOUNT=0 先接受（demo 舊 EA）。回傳 (ok, 原因)。"""
-    if not config.ACCOUNT:
+    冇 account 時只有 XAU_ACK_REQUIRE_ACCOUNT=0 先接受（demo 舊 EA）。回傳 (ok, 原因)。[R357] want＝跟單用 FOLLOW_ACCOUNT。"""
+    want = config.ACCOUNT if want is None else want
+    if not want:
         return True, ""
     acct = str(payload.get("account") or "").strip()
     if acct:
-        return (acct == config.ACCOUNT), ("" if acct == config.ACCOUNT else "account 唔係 XAU_ACCOUNT")
+        return (acct == want), ("" if acct == want else "account 唔係指定登入號")
     return (not config.ACK_REQUIRE_ACCOUNT), ("" if not config.ACK_REQUIRE_ACCOUNT else "cmd_ack 冇 account（XAU_ACK_REQUIRE_ACCOUNT=1）")
 
 
@@ -952,7 +953,7 @@ def build_status():
         "market_open": market.is_market_open(now), "session": market.session_text(now),
         "last_price": (m1[-1]["close"] if m1 else None), "m1_bars": len(m1), "m15_bars": len(m15),
         "account_received_utc": account.get("received_utc"), "account_id": executor.mask_account(account.get("account_id")), "server": account.get("server"),
-        "ea_dry_run": account.get("dry_run"), "xau_account": executor.mask_account(config.ACCOUNT), "test_cmds": config.TEST_CMDS,
+        "ea_dry_run": account.get("dry_run"), "xau_account": executor.mask_account(config.ACCOUNT), "follow_account": executor.mask_account(config.FOLLOW_ACCOUNT), "test_cmds": config.TEST_CMDS,
         "ack_require_account": config.ACK_REQUIRE_ACCOUNT,
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
         "live_positions": account.get("positions") or [],
@@ -1020,7 +1021,7 @@ def entry(req):
     action = payload.get("action")
     if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
         if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
-            ok_acct, why = ack_account_ok(payload)
+            ok_acct, why = ack_account_ok(payload, config.FOLLOW_ACCOUNT)
             if not ok_acct:
                 log_event(f"⚠️ [{config.TEAM_NAME}] 跟單指令回報 {executor.mask_id(payload.get('id'))} 略過：{why}", severity="WARNING", component="follow")
                 return jsonify({"status": "ignored", "message": why}), 200
