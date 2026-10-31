@@ -539,6 +539,16 @@ def run(market: str) -> int:
     if market == "us":
         ah_drops = after_hours_drops(px, fetch_after_hours([t for t, v in px.items() if v and v[-1][0] == d0], d0), d0,
                                      {c["ticker"] for c in drops})
+    # 防舊數據：Yahoo 有時未更新日線，最新交易日比上次正式掃描舊 → 中止（唔寫檔、唔發 Telegram）
+    try:
+        with open(OUT / "scan_log.csv", newline="", encoding="utf-8") as f:
+            prev = max((r["trade_date"] for r in csv.DictReader(f) if r["market"] == market and r.get("intraday") != "Y"),
+                       default="")
+    except FileNotFoundError:
+        prev = ""
+    if prev and str(d0) < prev:
+        print(f"::error::{market} 日線最新交易日 {d0} 比上次掃描 {prev} 舊（Yahoo 未更新），中止")
+        return 2
     print(f"{market} {d0}：宇宙 {len(tick)}、有日線 {len(px)}、大跌 {len(drops)}、盤後大跌 {len(ah_drops)}")
     rate = 0.04
     if market == "us":
