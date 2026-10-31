@@ -6902,7 +6902,7 @@ def handle_analyst_get(req):
 
 
 CHARTS_TITLE = "斐波那契回撤分析圖"                               # [R359] 使用者 10-29：分析圖改名
-CHARTS_MARKETS = ("NQ", "ES", "SPX", "VIX")                     # [R359] 使用者 10-29：加番 NQ、ES、SPX、VIX（龍飛陣每日分析圖）
+CHARTS_MARKETS = ("NQ", "ES", "SPX", "VIX", "VXN", "VVIX")     # [R359] 使用者 10-29：加番 NQ、ES、SPX、VIX；10-31 加 VXN、VVIX（龍飛陣每日分析圖）
 
 
 def _charts_markets_section(doc):
@@ -6924,7 +6924,7 @@ def _charts_markets_section(doc):
     if not imgs:
         return ""
     when = esc(doc.get("date") or "")
-    return (f"<div class='section'><h2>🐉 龍飛陣 美股指數・VIX</h2>"
+    return (f"<div class='section'><h2>🐉 龍飛陣 美股指數・波動率（VIX／VXN／VVIX）</h2>"
             f"<p class='muted' style='font-size:13px'>龍飛陣每日分析附圖（斐波那契回撤、均線）{('　日期：' + when) if when else ''}；"
             f"文章見 <a href='?view=analyst'>龍飛陣分析 →</a></p>{imgs}</div>")
 
