@@ -107,6 +107,33 @@ st, d = hb(8, 4000, extra={"account": "99"})
 check("戶口唔啱 → ignored", d.get("status") == "ignored", d)
 config.STUDENT_ACCOUNT = ""
 
+print("=== [R359] 933 真單測試檔、cmd_ack 分流後備 ===")
+config.TEST_CMDS = True
+config.STUDENT_LIVE_RULES = ()                       # 測試期間：收心跳但唔落規則單
+FAKE["xau/sig/studentlive/state.json"] = (json.dumps({"pending_cmds": [], "used": [], "orders": []}), 50)
+FAKE["xau/sig/studentlive/test_cmd.json"] = (json.dumps({"op": "open", "side": "BUY", "sl": 3990, "tp": 4010, "lots": 0.01, "ts": NOW[0] + 600}), 1)
+st, d = hb(20, 4000)
+tc = json.loads(FAKE["xau/sig/studentlive/test_cmd.json"][0])
+check("933 測試檔 → open BUY 0.01 magic=933、id 前綴 s、寫回 consumed", d["cmd_text"].startswith("open|BUY|0.01|sl=3990.00|tp=4010.00|magic=933") and "|id=s" in d["cmd_text"] and tc.get("consumed") and tc["result"]["status"] == "queued", (d, tc))
+check("規則空 → 唔會自己落規則單（message 寫未開）", "未開" in d["message"], d)
+put_pred("p9")
+st, d = hb(21, 4000)
+check("規則空時有 rev15 判斷都唔落", d["cmd_text"].count("open|") == 1, d["cmd_text"])
+st, d = hb(22, 4000)
+check("同一測試檔唔會排第二次", d["cmd_text"].count("open|") == 1, d["cmd_text"])
+FAKE["xau/sig/studentlive/test_cmd.json"] = (json.dumps({"op": "open", "side": "BUY", "sl": 3990, "lots": 0.01, "ts": NOW[0] - 3600}), 2)
+st, d = hb(23, 4000)
+check("過期 ts 唔排", json.loads(FAKE["xau/sig/studentlive/test_cmd.json"][0])["result"]["status"] == "error")
+config.TEST_CMDS = False; config.STUDENT_LIVE_RULES = ("rule:rev15",)
+# 931 嘅 id 撞 f 開頭：子書戶口唔啱 → 交返 931
+st931 = json.loads(FAKE.get("xau/sig/state.json", (json.dumps({}), 0))[0]) or {}
+st931.setdefault("pending_cmds", []).append({"id": "fabc1234", "text": "open|SELL|0.05|sl=4006.00|tp=3990.00|magic=931|id=fabc1234", "ts": NOW[0], "acked": False, "tag": ""})
+FAKE["xau/sig/state.json"] = (json.dumps(st931), 70)
+config.ACCOUNT, config.FOLLOW_ACCOUNT, config.STUDENT_ACCOUNT = "1169", "1163", "1169"
+r = client.post("/", data=json.dumps({"action": "cmd_ack", "token": "tok", "id": "fabc1234", "ok": True, "ticket": 5, "account": 1169}), content_type="application/json").get_json()
+check("931 id 撞 f 開頭、戶口 …69 → 932 唔認 → 931 收到", r.get("status") == "acked" and any(c.get("acked") for c in json.loads(FAKE["xau/sig/state.json"][0])["pending_cmds"] if c["id"] == "fabc1234"), r)
+config.ACCOUNT, config.FOLLOW_ACCOUNT, config.STUDENT_ACCOUNT = "", "", ""
+
 print("=== 關 ===")
 config.STUDENT_LIVE = False
 check("SIG_STUDENT_LIVE=0 → enabled False、busy False", not student_live.enabled() and not student_live.busy(NOW[0]))

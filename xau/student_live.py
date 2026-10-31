@@ -14,6 +14,7 @@ from storage import StorageError
 
 PREFIX = config.PREFIX + "studentlive/"
 STATE_FILE = PREFIX + "state.json"
+TEST_FILE = PREFIX + "test_cmd.json"        # [R359] 933 真單測試（XAU_TEST_CMDS=1＋XAU_EXECUTE=1 先生效；同 931 嘅 xau/sig/test_cmd.json 一樣用法）
 ACCOUNT_FILE = PREFIX + "account.json"
 MAX_ORDERS = 200
 
@@ -172,6 +173,7 @@ def handle_heartbeat(payload):
     state["pos_seen"] = pos
     if moved:
         m.log_event(f"🪜 [{config.TEAM_NAME}] 學生真倉手數階梯 {moved[0]:.2f} → {moved[1]:.2f}", component="studentlive")
+    _consume_test(m, state, now)
     why = _decide(m, state, account, price, now) if enabled() else "學生真倉未開（SIG_STUDENT_LIVE=0 或冇准落嘅規則）"
     state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why}
     try:
@@ -180,6 +182,30 @@ def handle_heartbeat(payload):
         m.log_event(f"⚠️ 學生真倉狀態寫入失敗：{exc}", severity="ERROR")
     return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "studentlive", "magic": config.STUDENT_MAGIC,
                       "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now), "message": why}), 200
+
+
+def _consume_test(m, state, now):
+    """[R359] GCS xau/sig/studentlive/test_cmd.json：{"op":"open|close","side","sl","tp","lots","ts"}；未用過、ts 喺 TTL 內就排入 933（id 前綴 s），
+    寫回 consumed＋result。學生真倉關（SIG_STUDENT_LIVE_RULES 空）都照用——測試唔會觸發規則單。"""
+    if not (config.TEST_CMDS and config.EXECUTE):
+        return
+    try:
+        doc = storage.read_json(TEST_FILE, None)
+    except StorageError:
+        return
+    if not isinstance(doc, dict) or not doc.get("op") or doc.get("consumed"):
+        return
+    ts = market.to_float(doc.get("ts"))
+    if ts is None or abs(now - ts) > executor.CMD_TTL_SEC:
+        body = {"status": "error", "message": f"ts missing or older than {executor.CMD_TTL_SEC}s (use date +%s)"}
+    else:
+        text, err = m.test_text(state, doc, now, "s" + uuid.uuid4().hex[:7], magic=config.STUDENT_MAGIC)
+        body = {"status": "queued", "text": text} if text else {"status": "error", "message": err}
+        m.log_event(f"🧪 [{config.TEAM_NAME}] 933 test_cmd：{text or err}", severity="WARNING", component="studentlive")
+    try:
+        storage.write_json(TEST_FILE, {**doc, "consumed": market.fmt_utc(now), "result": body})
+    except StorageError as exc:
+        m.log_event(f"🚨 933 test_cmd.json 寫回 consumed 失敗（可能重複排指令）：{exc}", severity="ERROR", component="studentlive")
 
 
 def _order_meta(state, pos):

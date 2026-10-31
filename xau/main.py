@@ -794,6 +794,27 @@ def ack_account_ok(payload, want=None):
     return (not config.ACK_REQUIRE_ACCOUNT), ("" if not config.ACK_REQUIRE_ACCOUNT else "cmd_ack 冇 account（XAU_ACK_REQUIRE_ACCOUNT=1）")
 
 
+def _sub_book_ack(payload):
+    """[R359] cmd_ack 分流：id 前綴 s→933、f→932；931 嘅指令 id 係隨機 hex，1／16 會撞 f 開頭——所以子書戶口唔啱或者搵唔到呢個 id，
+    就回 None 交返 931（handle_cmd_ack）。10-31 R357 後 931（…69）同 932（…63）唔同戶口，冇呢個後備 931 嗰啲回報會被當跟單略過。"""
+    cid = str(payload.get("id") or "")[:8]
+    books = []
+    if config.STUDENT_LIVE and student_live.is_cmd(cid):
+        books.append(("學生真倉", "studentlive", config.STUDENT_ACCOUNT, student_live.ack))
+    if follower.enabled() and follower.is_follow_cmd(cid):
+        books.append(("跟單", "follow", config.FOLLOW_ACCOUNT, follower.ack))
+    for name, comp, want, ack_fn in books:
+        if not ack_account_ok(payload, want)[0]:
+            continue
+        if not ack_fn(cid, payload, now_ts()):
+            continue
+        log_event(f"📨 [{config.TEAM_NAME}] {name}指令回報 {cid} ok={payload.get('ok')}"
+                  + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                  severity="INFO" if payload.get("ok") else "WARNING", component=comp)
+        return jsonify({"status": "acked", "id": cid}), 200
+    return None
+
+
 def handle_cmd_ack(payload):
     """EA 執行完指令回報：{"action":"cmd_ack","id":...,"ok":true,"ticket":...,"message":...,"account":...}"""
     cid = str(payload.get("id") or "").strip()
@@ -845,6 +866,19 @@ def consume_test_file(now):
         storage.write_json(TEST_CMD_FILE, {**doc, "consumed": market.fmt_utc(now), "result": body})
     except StorageError as exc:
         log_event(f"🚨 [{config.TEAM_NAME}] test_cmd.json 寫回 consumed 失敗（可能重複排指令）：{exc}", severity="ERROR", component="test")
+
+
+def test_text(state, payload, now, cid, magic=None):
+    """[R359] 測試指令（open／close／modify）排入 state；回傳 (指令文字, 錯誤)。queue_test_cmd 同 933 共用。"""
+    op = str(payload.get("op") or "").lower()
+    side = str(payload.get("side") or "BUY").upper()
+    action = {"open": ("OPEN_LONG" if side == "BUY" else "OPEN_SHORT"), "close": "CLOSE", "modify": "UPDATE_STOP"}.get(op)
+    if not action:
+        return None, "op must be open|close|modify"
+    stop, target, lots = market.to_float(payload.get("sl")), market.to_float(payload.get("tp")), market.to_float(payload.get("lots"))
+    if action != "CLOSE" and stop is None:
+        return None, "sl required"
+    return executor.enqueue(state, action, (stop if stop is not None else 0.0), target, now, cid, lots=(lots if lots else None), tag="test", magic=magic), None
 
 
 def queue_test_cmd(payload, now):
@@ -1024,30 +1058,14 @@ def entry(req):
     if not _token_ok(payload):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     action = payload.get("action")
-    if config.SIGNAL_BOOK and config.STUDENT_LIVE:                    # [R358] 規則學生真倉（magic 933）：心跳按 magic 分流、回報按指令 id 前綴 s
-        if action == "cmd_ack" and student_live.is_cmd(payload.get("id")):
-            ok_acct, why = ack_account_ok(payload, config.STUDENT_ACCOUNT)
-            if not ok_acct:
-                log_event(f"⚠️ [{config.TEAM_NAME}] 學生真倉指令回報 {executor.mask_id(payload.get('id'))} 略過：{why}", severity="WARNING", component="studentlive")
-                return jsonify({"status": "ignored", "message": why}), 200
-            found = student_live.ack(str(payload.get("id") or "")[:8], payload, now_ts())
-            log_event(f"📨 [{config.TEAM_NAME}] 學生真倉指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
-                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
-                      severity="INFO" if payload.get("ok") else "WARNING", component="studentlive")
-            return jsonify({"status": "acked" if found else "unknown", "id": str(payload.get("id") or "")[:8]}), 200
+    if action == "cmd_ack" and config.SIGNAL_BOOK:                    # [R359] 子書（933 前綴 s／932 前綴 f）先試；戶口唔啱或者搵唔到就交返 931
+        hit = _sub_book_ack(payload)
+        if hit is not None:
+            return hit
+    if config.SIGNAL_BOOK and config.STUDENT_LIVE:                    # [R358] 規則學生真倉（magic 933）：心跳按 magic 分流
         if student_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return student_live.handle_heartbeat(payload)
     if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
-        if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
-            ok_acct, why = ack_account_ok(payload, config.FOLLOW_ACCOUNT)
-            if not ok_acct:
-                log_event(f"⚠️ [{config.TEAM_NAME}] 跟單指令回報 {executor.mask_id(payload.get('id'))} 略過：{why}", severity="WARNING", component="follow")
-                return jsonify({"status": "ignored", "message": why}), 200
-            found = follower.ack(str(payload.get("id") or "")[:8], payload, now_ts())
-            log_event(f"📨 [{config.TEAM_NAME}] 跟單指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
-                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
-                      severity="INFO" if payload.get("ok") else "WARNING", component="follow")
-            return jsonify({"status": "acked" if found else "unknown", "id": str(payload.get("id") or "")[:8]}), 200
         if follower.is_follow_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return follower.handle_heartbeat(payload)
         if not config.SIG_DECIDE and ("equity" in payload or action in ("check_gate", "heartbeat")):
