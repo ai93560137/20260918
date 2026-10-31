@@ -51,8 +51,8 @@ HK_COST_VOL = 0.01
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"}
 PAPER_COLS = ["live_eligible", "open_date", "market", "ticker", "leg", "expiry", "dte", "strike", "spot", "fill", "bid", "ask", "mid",
               "iv_leg", "atm_iv", "rv63pre", "rho", "rho_req", "qualifies", "earnings", "drop_pct",
-              "status", "close_at_expiry", "assigned", "pnl_pct", "note", "sector"]
-CAND_COLS = ["live", "live_note", "sector", "oi", "session", "ah_px", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
+              "status", "close_at_expiry", "assigned", "pnl_pct", "note", "sector", "gap_pct"]
+CAND_COLS = ["gap_pct", "live", "live_note", "sector", "oi", "session", "ah_px", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
              "leg", "strike", "moneyness", "bid", "ask", "mid", "fill", "iv_leg", "yield_ann_pct", "rho_req",
              "rho_ok", "earnings", "earnings_in_window", "qualifies", "paper", "note"]
 
@@ -121,12 +121,23 @@ def fetch_prices(tickers: list[str]) -> dict[str, list[tuple]]:
             try:
                 s = df[t] if len(batch) > 1 else df
                 s = s.dropna(subset=["Close"])
-                out[t] = [(d.date(), float(r["Close"]), float(r.get("Adj Close", r["Close"])), float(r["Volume"] or 0))
+                out[t] = [(d.date(), float(r["Close"]), float(r.get("Adj Close", r["Close"])), float(r["Volume"] or 0),
+                           float(r["Open"]), float(r["High"]), float(r["Low"]))      # 4–6：開高低（未調整）
                           for d, r in s.iterrows()]
             except Exception:  # noqa: BLE001
                 pass
         time.sleep(1)
     return out
+
+
+def gap_of(v: list[tuple]) -> float | str:
+    """跳空幅度（GAP10_FORWARD_PREREG.md）：前一日最低 ÷ 當日開市 − 1（開市冇低過前一日最低＝0）；調整口徑（× Adj ÷ Close）。"""
+    try:
+        f0, f1 = v[-2][2] / v[-2][1], v[-1][2] / v[-1][1]
+        lo0, op1 = v[-2][6] * f0, v[-1][4] * f1
+        return lo0 / op1 - 1 if op1 < lo0 else 0.0
+    except (IndexError, ZeroDivisionError, TypeError):
+        return ""
 
 
 def find_drops(px: dict[str, list[tuple]]) -> tuple[date | None, list[dict], list[dict]]:
@@ -140,7 +151,7 @@ def find_drops(px: dict[str, list[tuple]]) -> tuple[date | None, list[dict], lis
         if len(v) < 66 or v[-1][0] != d0 or v[-1][3] <= 0:
             continue
         ret = v[-1][2] / v[-2][2] - 1
-        rows.append(dict(ticker=t, date=d0, close=v[-1][1], ret=ret, rv63pre=rv_pre([x[2] for x in v])))
+        rows.append(dict(ticker=t, date=d0, close=v[-1][1], ret=ret, rv63pre=rv_pre([x[2] for x in v]), gap=gap_of(v)))
     rows.sort(key=lambda r: r["ret"])
     drops = [r for r in rows if r["ret"] <= THR and r["close"] >= MIN_PX]
     return d0, drops, rows[:5]
@@ -486,6 +497,14 @@ def forward_stats(paper: list[dict]) -> str:
         else:
             flag = f"進行中（{len(done)}/30）"
         out.append(f"{lab} 紙上 {len(q)} 筆、已到期 {len(done)}：平均 {mu:+.2f}%、勝率 {win:.0%}、{flag}")
+    g = [r for r in paper if r["leg"] == "put95" and r.get("gap_pct") not in (None, "") and r["market"] == "us"]
+    if g:
+        parts = []
+        for lab, sel in (("≥10%", lambda r: float(r["gap_pct"]) >= 10), ("<10%", lambda r: float(r["gap_pct"]) < 10)):
+            d = [float(r["pnl_pct"]) for r in g if sel(r) and r["status"] == "closed"]
+            n = sum(1 for r in g if sel(r))
+            parts.append(f"{lab} {n} 筆、到期 {len(d)}" + (f"、平均 {sum(d) / len(d):+.2f}%" if d else ""))
+        out.append("📐GAP10 前向（全部 put 腿）：" + "；".join(parts))
     return "\n".join(out)
 
 
@@ -493,6 +512,7 @@ def forward_stats(paper: list[dict]) -> str:
 def build_rows(c: dict, q: dict | None, market: str) -> list[dict]:
     base = dict(session="ah" if c.get("ah_px") else "", ah_px=f"{c['ah_px']:.4g}" if c.get("ah_px") else "", date=c["date"], market=market, ticker=c["ticker"], name=c.get("name", ""), drop_pct=f"{c['ret'] * 100:.2f}",
                 close=f"{c['close']:.4g}", rv63pre=f"{c['rv63pre']:.4f}", earnings=c.get("earnings", ""), note=c.get("note", ""),
+                gap_pct=f"{c['gap'] * 100:.2f}" if isinstance(c.get("gap"), float) and not c.get("ah_px") else "",
                 sector=c.get("sector", ""))
     if q is None:
         return [dict(base, leg="—", qualifies="N", paper="N")]
@@ -613,13 +633,19 @@ def run(market: str) -> int:
                           strike=r["strike"], spot=r["close"], fill=r["fill"], bid=r["bid"], ask=r["ask"], mid=r["mid"],
                           iv_leg=r["iv_leg"], atm_iv=r["atm_iv"], rv63pre=r["rv63pre"], rho=r["rho"], rho_req=r["rho_req"],
                           qualifies=r["qualifies"], earnings=r["earnings"], drop_pct=r["drop_pct"], status="open", note=r["note"],
-                          live_eligible=r.get("live", ""), sector=r.get("sector", "")))
+                          live_eligible=r.get("live", ""), sector=r.get("sector", ""), gap_pct=r.get("gap_pct", "")))
     # 到期結算：用今次抓到嘅日線（宇宙外／已剔除嘅另抓）
     need = {r["ticker"] for r in paper if r["market"] == market and r["status"] == "open"
             and date.fromisoformat(r["expiry"]) < d0 and r["ticker"] not in px}
     if need:
         px.update(fetch_prices(sorted(need)))
     settled = settle_paper(paper, market, d0, px)
+    for r in paper:   # 回填跳空幅度（GAP10 前向記錄開始前已記嘅紙上筆；盤後預警筆唔計）
+        if r["market"] == market and r.get("gap_pct") in (None, "") and r["ticker"] in px:
+            v = [x for x in px[r["ticker"]] if str(x[0]) <= r["open_date"]]
+            if len(v) >= 2 and str(v[-1][0]) == r["open_date"]:
+                g = gap_of(v)
+                r["gap_pct"] = f"{g * 100:.2f}" if isinstance(g, float) else ""
     if not intraday:
         write_csv(OUT / "paper_log.csv", PAPER_COLS, paper)
     log_p = OUT / "scan_log.csv"
@@ -696,6 +722,11 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False, live=F
                     head = "🧪前向測試 " + head.lstrip("• ") + f"｜符合實倉規則（紙上記錄，唔落單）｜OI {x.get('oi', '')}"
                 elif x.get("live_note"):
                     head += f"｜{x['live_note']}"
+            try:
+                if float(r.get("gap_pct") or 0) >= 10:
+                    head += f"｜跳空 {float(r['gap_pct']):.1f}%（GAP10 前向記錄）"
+            except ValueError:
+                pass
             if r.get("earnings_in_window") == "Y":
                 head += "｜⚠️業績窗內"
             elif r.get("earnings_in_window") == "?":
