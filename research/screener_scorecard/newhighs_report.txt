@@ -1,8 +1,8 @@
 Screener: newhighs   horizon: 10 trading days   entry: next open, exit: close
-Score (hit rate, excess>0): 0.279 on 165 scored picks (268 pending, 0 no data); mean excess -4.7%, median -5.1%, t -6.90
-Control 港股 (all constituents, same days): hit 0.531 mean excess +0.1% n=510
-Control 日股 (all constituents, same days): hit 0.433 mean excess -0.8% n=2925
-Control 美股 (all constituents, same days): hit 0.455 mean excess -0.3% n=10524
+Score (hit rate, excess>0): 0.472 on 282 scored picks (285 pending, 0 no data); mean excess -1.4%, median -0.4%, t -2.53
+Control 港股 (all constituents, same days): hit 0.563 mean excess +0.5% n=680
+Control 日股 (all constituents, same days): hit 0.525 mean excess +0.7% n=4050
+Control 美股 (all constituents, same days): hit 0.517 mean excess +0.5% n=13529
 
 --- FAILED 1 ---
 Pick: 2026-09-18 日股 6594.JP ニデック
@@ -45,16 +45,16 @@ Features: window=12, sector=科技, pct_above_ma200=92.6, streak=2
 Return 10d: -21.3%  Excess: -19.8%
 
 --- BEST 1 ---
-Pick: 2026-09-29 美股 MRNA Moderna
-Features: window=12, sector=醫療, pct_above_ma200=208.4, streak=1
-Return 10d: +21.3%  Excess: +20.9%
+Pick: 2026-10-08 日股 6532.JP ベイカレント
+Features: window=9, sector=工業, pct_above_ma200=38.6, streak=1
+Return 10d: +36.7%  Excess: +46.1%
 
 --- BEST 2 ---
-Pick: 2026-10-07 日股 6702.JP 富士通
-Features: window=6, sector=科技, pct_above_ma200=13.0, streak=1
-Return 10d: +9.0%  Excess: +19.3%
+Pick: 2026-10-09 日股 6532.JP ベイカレント
+Features: window=9, sector=工業, pct_above_ma200=45.0, streak=2
+Return 10d: +33.4%  Excess: +41.1%
 
 --- BEST 3 ---
-Pick: 2026-09-09 日股 5301.JP 東海カーボン
-Features: window=12, sector=原材料, pct_above_ma200=52.2, streak=1
-Return 10d: +20.0%  Excess: +18.9%
+Pick: 2026-10-15 美股 HAS Hasbro
+Features: window=3, sector=非必需消費, pct_above_ma200=9.5, streak=1
+Return 10d: +20.9%  Excess: +23.0%
