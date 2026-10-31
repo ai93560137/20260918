@@ -116,8 +116,8 @@ TODO_N="$(pending "$NORTH_MARKETS" "_nortrh")"
 if [ -z "$TODO" ] && [ -z "$TODO_N" ]; then say "✅ $D 已齊全（$MARKETS；no-rth：$NORTH_MARKETS），無事可做"; exit 0; fi
 say "待抓：正式 [${TODO:-無}]；no-rth [${TODO_N:-無}]"
 
-run_fetch() {  # 其餘參數照傳；回傳 python 的結束代碼
-  "$PY" "$FETCHER" --port "$PORT" --client-id "$CLIENT_ID" --pace "$PACE" --req "$WORK/req.csv" "$@"
+run_fetch() {  # 其餘參數照傳；回傳 python 的結束代碼（124 = 超過 MONTHEND_MAX_SEC 被停，防止卡死霸住鎖）
+  timeout "${MONTHEND_MAX_SEC:-7200}" "$PY" "$FETCHER" --port "$PORT" --client-id "$CLIENT_ID" --pace "$PACE" --req "$WORK/req.csv" "$@"
 }
 gw_fail() { say "❌ 未能連上 IB Gateway（127.0.0.1:$PORT），原因見上一行（TCP 連唔到／握手或啟動同步逾時）。今次唔提交；排程下一日會自動再試，亦可以人手重跑。"; exit 3; }
 
