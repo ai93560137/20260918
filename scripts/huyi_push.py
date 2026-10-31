@@ -15,6 +15,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "analysis" / "huyi"
 MAX_ROWS = 200
+try:
+    LIVE = any(v == "live" for v in json.loads((OUT / "mode.json").read_text(encoding="utf-8")).values())
+except Exception:  # noqa: BLE001
+    LIVE = False
 
 
 def num(x):
@@ -32,11 +36,11 @@ def row(r: dict, paper: bool) -> dict:
          "expiry": r.get("expiry"), "premium": num(r.get("fill")),
          "note": ((r.get("note") or "") + " " + (r.get("live_note") or "")).strip()}
     if paper:
-        st = "合資格" if r.get("qualifies") == "Y" else "唔合資格"
+        st = ("🧪前向測試｜" if r.get("live_eligible") == "Y" else "") + ("合資格" if r.get("qualifies") == "Y" else "唔合資格")
         d["status"] = f"{st}｜{'未到期' if r.get('status') == 'open' else '已結算' + ('（接貨／被call）' if r.get('assigned') == 'Y' else '')}"
         d["pnl_pct"] = num(r.get("pnl_pct"))
     else:
-        d["status"] = ("🔴 實倉候選" if r.get("live") == "Y" else "🌙 盤後預警" if r.get("session") == "ah" else
+        d["status"] = (("🔴 實倉候選" if LIVE else "🧪 前向測試（符合實倉規則）") if r.get("live") == "Y" else "🌙 盤後預警" if r.get("session") == "ah" else
                        "✅ 合資格（紙上）" if r.get("qualifies") == "Y" else "—")
     return {k: v for k, v in d.items() if v not in (None, "")}
 
@@ -69,6 +73,8 @@ def build() -> dict:
     live = any(v == "live" for v in mode.values())
     if live:
         notes.insert(0, "實倉規則 LIVE_RULES v1（2026-10-31 登記 RISK_LADDER §6e）：美股實倉候選、港股紙上")
+    else:
+        notes.insert(0, "🧪 前向測試中（使用者 2026-10-31「先做前向測試」）：全部紙上，唔出落單指令；成功標準見 analysis/huyi/FORWARD_TEST.md")
     return {"action": "huyi_push", "asof_hkt": now.strftime("%Y-%m-%d %H:%M"), "mode": "live" if live else "paper",
             "rules": ("每筆名義 ≤ 總資產 2%；同時 ≤ 5 筆、同業 ≤ 2；95% 現金擔保 put、ρ ≥ 0.95、到期前冇業績（未知唔做）；"
                       "約 30 日到期；翌日開市 30 分鐘後限價中間價；call 只紙上；港股暫紙上") if live else "",

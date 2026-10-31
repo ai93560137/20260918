@@ -2,7 +2,7 @@
 
 - 來源：使用者 2026-10-31 喺總指揮工作階段（session_01ELtWSJc46vAFMT4oh3fCTV）決定「照虎翼草案」。
   草案＝stock_research/BIGDROP_OPTIONS_PREREG.md 第 7 部分；草案冇明寫嘅（標「預設」）由虎翼提出，經總指揮登記。
-- 狀態：**待總指揮登記入 RISK_LADDER／POSITIONS**。登記確認之前，每日掃描仍維持紙上模式。
+- 狀態：總指揮 2026-10-31 已登記（RISK_LADDER §6e）；**同日使用者決定「先做前向測試」→ 全部紙上**，成功標準見 `FORWARD_TEST.md`，轉實倉要使用者再親口批。
 - repo 公開：只寫比例、價格、張數，**唔寫總資產金額**。
 
 ## 1. 每筆上限（草案）

@@ -49,9 +49,9 @@ POS_FILE = OUT / "live_positions.csv"   # 實倉持倉（人手／虎翼更新�
 LIVE_MAX_POS, LIVE_MAX_SECTOR, LIVE_MAX_SPREAD, LIVE_MIN_OI = 5, 2, 0.20, 100
 HK_COST_VOL = 0.01
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"}
-PAPER_COLS = ["open_date", "market", "ticker", "leg", "expiry", "dte", "strike", "spot", "fill", "bid", "ask", "mid",
+PAPER_COLS = ["live_eligible", "open_date", "market", "ticker", "leg", "expiry", "dte", "strike", "spot", "fill", "bid", "ask", "mid",
               "iv_leg", "atm_iv", "rv63pre", "rho", "rho_req", "qualifies", "earnings", "drop_pct",
-              "status", "close_at_expiry", "assigned", "pnl_pct", "note"]
+              "status", "close_at_expiry", "assigned", "pnl_pct", "note", "sector"]
 CAND_COLS = ["live", "live_note", "sector", "oi", "session", "ah_px", "date", "market", "ticker", "name", "drop_pct", "close", "rv63pre", "expiry", "dte", "atm_iv", "rho",
              "leg", "strike", "moneyness", "bid", "ask", "mid", "fill", "iv_leg", "yield_ann_pct", "rho_req",
              "rho_ok", "earnings", "earnings_in_window", "qualifies", "paper", "note"]
@@ -460,16 +460,33 @@ def settle_paper(paper: list[dict], market: str, today: date, closes: dict[str, 
     return msgs
 
 
+FWD_START = "2026-10-30"     # 前向測試（analysis/huyi/FORWARD_TEST.md）由此日起計
+
+
 def forward_stats(paper: list[dict]) -> str:
-    q = [r for r in paper if r["leg"] == "put95" and r["qualifies"] == "Y"]
-    done = [r for r in q if r["status"] == "closed"][:30]
-    if not done:
-        return f"合資格 put 紙上 {len(q)} 筆（未有到期）"
-    pnl = [float(r["pnl_pct"]) for r in done]
-    prem = sum(float(r["fill"]) / float(r["strike"]) * 100 for r in done)
-    loss = -sum(x for x in pnl if x < 0)
-    flag = "🔴 觸發證偽" if (len(done) >= 30 and sum(pnl) / len(pnl) <= 0) or loss > prem else "未觸發"
-    return f"合資格 put 紙上 {len(q)} 筆、已到期 {len(done)}：平均 {sum(pnl) / len(pnl):+.2f}%、證偽 {flag}"
+    """兩行：合資格 put（研究口徑）＋實倉規則子集（前向測試主口徑，FORWARD_TEST.md 第 3 部分門檻）。"""
+    out = []
+    for lab, sel in (("合資格 put", lambda r: r["qualifies"] == "Y"),
+                     ("🧪前向測試（實倉規則子集）", lambda r: r.get("live_eligible") == "Y" and r["open_date"] >= FWD_START)):
+        q = [r for r in paper if r["leg"] == "put95" and sel(r)]
+        done = sorted([r for r in q if r["status"] == "closed"], key=lambda r: (r["open_date"], r["ticker"]))
+        if not done:
+            out.append(f"{lab} 紙上 {len(q)} 筆（未有到期）")
+            continue
+        pnl = [float(r["pnl_pct"]) for r in done]
+        prem = sum(float(r["fill"]) / float(r["strike"]) * 100 for r in done)
+        loss = -sum(x for x in pnl if x < 0)
+        mu, win = sum(pnl) / len(pnl), sum(x > 0 for x in pnl) / len(pnl)
+        if loss > prem:
+            flag = "🔴 證偽：累計虧損 > 已收權利金"
+        elif len(done) >= 30 and (win < 0.60 or mu <= -2.5):
+            flag = "🔴 未過（勝率 < 60% 或平均 ≤ −2.5%）"
+        elif len(done) >= 30 and win >= 0.70 and mu > 0:
+            flag = "✅ 達標（待使用者親口批先轉實倉）"
+        else:
+            flag = f"進行中（{len(done)}/30）"
+        out.append(f"{lab} 紙上 {len(q)} 筆、已到期 {len(done)}：平均 {mu:+.2f}%、勝率 {win:.0%}、{flag}")
+    return "\n".join(out)
 
 
 # ───────────────────────── 主流程 ─────────────────────────
@@ -557,6 +574,13 @@ def run(market: str) -> int:
         time.sleep(0.5)
     # 紙上：去重後每條有報價嘅腿都記（qualifies 標明係咪「會開」）；盤中跑（測試）只出表唔記
     intraday = is_intraday(market, d0)
+    # 實倉規則子集（LIVE_RULES v1）：美股每次都判；live 模式按真實持倉計名額、paper（前向測試）按紙上子集持倉計
+    live = read_mode().get(market) == "live" and not intraday
+    if market == "us" and not intraday:
+        pos = read_positions() if live else [
+            dict(ticker=r["ticker"], sector=r.get("sector", "")) for r in paper
+            if r["market"] == market and r["leg"] == "put95" and r.get("live_eligible") == "Y" and r["status"] == "open"]
+        mark_live(rows, pos)
     recent = {r["ticker"] for r in paper if r["market"] == market
               and (d0 - date.fromisoformat(r["open_date"])).days <= DEDUP_DAYS and r["open_date"] != str(d0)}
     already = {(r["ticker"], r["leg"]) for r in paper if r["open_date"] == str(d0) and r["market"] == market}
@@ -578,7 +602,8 @@ def run(market: str) -> int:
         paper.append(dict(open_date=str(d0), market=market, ticker=r["ticker"], leg=r["leg"], expiry=str(r["expiry"]), dte=r["dte"],
                           strike=r["strike"], spot=r["close"], fill=r["fill"], bid=r["bid"], ask=r["ask"], mid=r["mid"],
                           iv_leg=r["iv_leg"], atm_iv=r["atm_iv"], rv63pre=r["rv63pre"], rho=r["rho"], rho_req=r["rho_req"],
-                          qualifies=r["qualifies"], earnings=r["earnings"], drop_pct=r["drop_pct"], status="open", note=r["note"]))
+                          qualifies=r["qualifies"], earnings=r["earnings"], drop_pct=r["drop_pct"], status="open", note=r["note"],
+                          live_eligible=r.get("live", ""), sector=r.get("sector", "")))
     # 到期結算：用今次抓到嘅日線（宇宙外／已剔除嘅另抓）
     need = {r["ticker"] for r in paper if r["market"] == market and r["status"] == "open"
             and date.fromisoformat(r["expiry"]) < d0 and r["ticker"] not in px}
@@ -597,9 +622,6 @@ def run(market: str) -> int:
         w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), market, d0, len(tick), len(px), len(drops),
                     sum(1 for r in rows if r["leg"] == "put95" and r["qualifies"] == "Y"), len(settled), "Y" if intraday else "N",
                     len(ah_drops)])
-    live = read_mode().get(market) == "live" and not intraday
-    if live:
-        mark_live(rows, read_positions())
     md_txt, tg = report(market, d0, len(tick), rows, worst, settled, forward_stats(paper), intraday, live)
     write_csv(OUT / market / f"{d0}.csv", CAND_COLS, rows)
     (OUT / f"latest_{market}.md").write_text(md_txt, encoding="utf-8")
@@ -657,10 +679,12 @@ def report(market, d0, n_univ, rows, worst, settled, fwd, intraday=False, live=F
             if r.get("session") == "ah":
                 head += "｜ρ 用收市 IV；期權報價待開市，下一交易日收市再按正式規則判"
             for x in mine:
-                if x.get("live") == "Y":
+                if x.get("live") == "Y" and live:
                     head = "🔴實倉候選 " + head.lstrip("• ") + (f"｜賣 P{x['strike']} 到期 {x['expiry']}｜買 {x['bid']}／賣 {x['ask']}"
                                                                f"／中 {x['mid']}｜OI {x.get('oi', '')}｜{x['live_note']}")
-                elif live and x.get("live_note"):
+                elif x.get("live") == "Y":
+                    head = "🧪前向測試 " + head.lstrip("• ") + f"｜符合實倉規則（紙上記錄，唔落單）｜OI {x.get('oi', '')}"
+                elif x.get("live_note"):
                     head += f"｜{x['live_note']}"
             if r.get("earnings_in_window") == "Y":
                 head += "｜⚠️業績窗內"

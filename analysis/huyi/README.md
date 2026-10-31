@@ -11,4 +11,4 @@
 
 輸出：`latest_<us|hk>.md` 當日候選表、`<us|hk>/<日期>.csv` 明細、`paper_log.csv` 紙上紀錄（到期自動結算）、`scan_log.csv` 每次掃描一行。
 
-**模式**：`mode.json`（2026-10-31 起 美股 `live`＝實倉候選、港股 `paper`）；規則見 `LIVE_RULES.md`（總指揮登記 RISK_LADDER §6e）。實倉持倉記 `live_positions.csv`（開倉後更新，計名額）。🔴＝實倉候選，其餘只係紙上紀錄。 repo 公開：只寫價格、張數、百分比，唔寫金額。
+**模式**：`mode.json`——2026-10-31 使用者「先做前向測試」，美港都係 `paper`；🧪＝符合實倉規則（`LIVE_RULES.md`）嘅紙上筆，成功標準見 `FORWARD_TEST.md`。轉實倉要使用者再親口批。
