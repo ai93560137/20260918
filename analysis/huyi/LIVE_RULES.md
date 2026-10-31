@@ -76,6 +76,6 @@
    - 欄位：`date,team,code,side,qty,intent_price,note`。code 用富途代碼，例如 `US.RDDT261127P80000`；side 寫「買」或「賣」。
    - blotter 會讀呢個檔計滑價；事後可以更正（`--rematch`）。
    - 聯絡其他工作階段之前，先讀預設分支 `handoff/SESSIONS.md` 攞現任 session id。
-4. 富途代碼格式（**待富途 VM 核對**）：
+4. 富途代碼格式（富途數據 VM 2026-11-01 已核實；行使價 × 1000 唔補零，例如 82.5 → `P82500`）：
    - 正股：`US.RDDT`；
    - 期權：`US.RDDT261127P80000`，即 代號＋到期 YYMMDD＋C／P＋行使價 × 1000。
