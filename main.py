@@ -146,6 +146,7 @@
 #     完整版（含權益）只發 Telegram、存 ops/reports/<kind>/。讀唔到就唔顯示，唔影響原有已實現盈虧表、唔影響下單。
 #   * 2026-10-13 — [R172] 每日成交紀錄：action=futu_pnl 收到成交後，另計當日逐筆成交、按合約彙總、FIFO 平倉（點數、幣值），
 #     存 futu/deals/<香港日期>.json（今日＋前一日，夜盤跨日）。總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂。本機 auto_risk 加 03:05／16:35 匯出時段。
+#   * 2026-10-31 — [R365] 🐤 金絲雀頁加「👀 留神清單（W2）」：讀 canary/watch_status.json（PR #520），只顯示、無警報權、唔改燈色。
 #   * 2026-10-31 — [R364] 總指揮：FUTU_TEAM_RULES 加虎翼（美股個股期權 US.XXXXyymmdd[CP]strike → 🐯 虎翼）、NQ 期貨歸人手；
 #     人手卡止損欄刪咗已平嘅 EW P7750。只改配對顯示，唔影響下單。
 #   * 2026-10-11 — [R151] 總指揮：富途實倉按陣配對。futu/risk/latest.json 嘅持倉按 FUTU_TEAM_RULES 歸入雲垂陣、風揚陣・方向一、
@@ -5924,7 +5925,7 @@ def handle_yunchui_get(req):
 # =============================================================================
 CANARY_RAW_BASE = os.environ.get(
     "CANARY_RAW_BASE", "https://raw.githubusercontent.com/ai93560137/20260918/claude/gcp-trading-v12-rewrite-bz75t2/canary").rstrip("/")
-CANARY_FILES = ("tg_daily.txt", "canary_daily.csv", "sent_log.csv", "daily_log.csv")
+CANARY_FILES = ("tg_daily.txt", "canary_daily.csv", "sent_log.csv", "daily_log.csv", "watch_status.json")   # [R365] 加 👀 留神清單（W2）
 CANARY_CACHE_SEC = 1800
 CANARY_KEEP_ROWS = 40                                       # 後備只存 canary_daily.csv 最後幾列
 _canary_cache = {"ts": 0.0, "data": None}
@@ -6062,6 +6063,12 @@ def canary_data(now=None):
                           ("9D 對 3M 倒掛", "trial_red_9d3m"), ("黃 VHSI p90", "trial_yellow_vhsi"))]
     w1 = next((r for r in reversed(dlog) if r.get("date") == D), dlog[-1] if dlog else {})
     w1_info = {"lit": w1.get("w1_fear_spike") == "1" if w1 else None, "ratio": _cf(w1.get("vvix_vix_ratio")), "p10": _cf(w1.get("ratio_p10"))}
+    try:                                                                # [R365] 👀 留神清單（觀察名單 W2，無警報權）
+        watch = json.loads(f.get("watch_status.json") or "null")
+    except ValueError:
+        watch = None
+    if not isinstance(watch, dict) or not isinstance(watch.get("rules"), list):
+        watch = None
     blocks = _canary_blocks(tg)
     cite = [b for first, b in blocks if first.startswith("🔁") or first.startswith("📐")]
     rows30 = []
@@ -6076,7 +6083,7 @@ def canary_data(now=None):
     top = {"report_date": last_sent.get("report_date"), "light_date": D, "apply_date": last_sent.get("apply_date_pred"),
            "generated_hkt": canary_hkt(last_sent.get("generated_at_utc")), "light_note": "此燈色用於燈色日之後嘅交易日（lag=1）",
            "outdated": outdated, "today_hkt": today}
-    return {"status": "ok", "top": top, "axes": axes, "birds": birds, "trial": trial, "w1": w1_info, "rows30": rows30,
+    return {"status": "ok", "top": top, "axes": axes, "birds": birds, "trial": trial, "w1": w1_info, "watch": watch, "rows30": rows30,
             "cite": cite, "sent_log": list(reversed(sent[-10:])), "tg_daily": tg, "fetched_utc": pack["fetched_utc"],
             "stale_files": pack["stale_files"], "yellow": {"light": drow.get("light") or drow.get("yellow"), "count": drow.get("yellow_count"),
                                                             "streak": last_sent.get("streak_yellow")}}
@@ -6085,7 +6092,7 @@ def canary_data(now=None):
 def canary_json(data):
     if data.get("status") != "ok":
         return data
-    return {k: data[k] for k in ("status", "top", "axes", "birds", "yellow", "rows30", "fetched_utc", "stale_files")}
+    return {k: data[k] for k in ("status", "top", "axes", "birds", "yellow", "watch", "rows30", "fetched_utc", "stale_files")}
 
 
 def _cn(v, nd=2, sign=False):
@@ -6145,6 +6152,18 @@ def build_canary_page(data):
            f"（比率 {_cn(w1['ratio'])} vs p10 {_cn(w1['p10'])}）</td></tr>")
     trial_html = ("<div class='section'><h2>🧪 試用層與觀察名單 W1</h2><p><b>無警報權，只記錄。</b></p>"
                   f"<div class='scroll'><table><tr><th>項目</th><th>狀態</th></tr>{tr}</table></div></div>")
+    watch_html = ""
+    wt = data.get("watch")
+    if wt:                                                              # [R365] 使用者 10-31：留神清單放網頁
+        wr = "".join(f"<tr><td>{esc(str(r.get('id') or ''))} {esc(str(r.get('name') or ''))}</td><td>{'🟠 亮' if r.get('lit') else '⚪ 滅'}</td>"
+                     f"<td>{esc(str(r.get('value') or '—'))}</td><td class='muted' style='font-size:12px'>{esc(str(r.get('rule') or ''))}</td></tr>"
+                     for r in wt["rules"] if isinstance(r, dict))
+        mismatch = "" if wt.get("light_date") == top["light_date"] else "　<span style='color:#b45309'>⚠ 同上面燈色日唔同</span>"
+        watch_html = ("<div class='section'><h2>👀 留神清單（觀察名單 W2）</h2>"
+                      f"<p><b>{esc(str(wt.get('level') or '—'))}</b>：亮 {esc(str(wt.get('lit', '—')))} / {len(wt['rules'])} 條（亮 ≥2 條＝加強留神）・燈色日 {esc(canary_date(wt.get('light_date')))}"
+                      f"{mismatch}</p>"
+                      f"<div class='scroll'><table><tr><th>規則</th><th>狀態</th><th>數值</th><th>條件</th></tr>{wr}</table></div>"
+                      f"<p class='muted' style='font-size:12px'>{esc(str(wt.get('note') or '無警報權，唔改燈色。'))}</p></div>")
 
     def cell(pair):
         v, p = pair
@@ -6168,7 +6187,7 @@ def build_canary_page(data):
     foot = (f"<p class='muted' style='font-size:12px'>{esc(CANARY_FOOTER)}　讀取時間 {esc(canary_hkt(data['fetched_utc']))}・"
             "JSON：<a href='?view=canary&amp;format=json'>?view=canary&amp;format=json</a></p>")
     body = (head + warn + print_toolbar_html("🐤 金絲雀・市場風險天氣預報") + f"<div class='section'>{cards}</div>" + axes_html + birds_html
-            + trial_html + table_html + cite_html + sent_html + full_html + foot)
+            + trial_html + watch_html + table_html + cite_html + sent_html + full_html + foot)
     return html_page("金絲雀", body, head_extra=PRINT_CSS + "<script>setTimeout(function r(){if(window.__printing){setTimeout(r,600000)}else{location.reload()}},600000)</script>")
 
 

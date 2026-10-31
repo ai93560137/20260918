@@ -105,7 +105,7 @@ check("成功抓取寫 GCS 後備，canary_daily 只存最後 40 列", "canary/t
 main._canary_cache["ts"] = 0.0
 main.requests.get = fake_get_fail
 d_fail = main.canary_data(datetime(2026, 10, 12, 10, 0, tzinfo=HK))
-check("讀取失敗用上次成功版本、標明讀取時間", d_fail["status"] == "ok" and len(d_fail["stale_files"]) == 4 and d_fail["fetched_utc"], d_fail.get("stale_files"))
+check("讀取失敗用上次成功版本、標明讀取時間", d_fail["status"] == "ok" and len(d_fail["stale_files"]) == len(main.CANARY_FILES) and d_fail["fetched_utc"], d_fail.get("stale_files"))
 check("頁面標明暫時讀唔到最新", "暫時讀唔到最新檔案" in main.build_canary_page(d_fail))
 # 冇記憶體：用 GCS 後備
 reset()
@@ -125,6 +125,9 @@ check("?view=canary 回 200", r.status_code == 200 and "金絲雀" in r.get_data
 j = client.get("/?view=canary&format=json")
 jd = j.get_json()
 check("&format=json：頂部卡、三軸、黃鳥、最近 30 列", j.status_code == 200 and all(k in jd for k in ("top", "axes", "birds", "rows30")) and len(jd["rows30"]) == 30, list(jd))
+check("[R365] JSON 有 watch（留神清單 4 條）", isinstance(jd.get("watch"), dict) and len(jd["watch"]["rules"]) == 4, jd.get("watch"))
+html = r.get_data(as_text=True)
+check("[R365] 頁面有 👀 留神清單、L1–L4、無警報權說明", "👀 留神清單" in html and all(f"L{i}" in html for i in range(1, 5)) and "無警報權" in html)
 check("PAGE_LINKS 有 canary", ("canary", "🐤 金絲雀") in main.PAGE_LINKS)
 reset(); store.clear(); main.requests.get = fake_get_fail
 check("全失敗 JSON 回 503", client.get("/?view=canary&format=json").status_code == 503)
