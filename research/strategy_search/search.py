@@ -317,7 +317,7 @@ def trade_mats(ctx, sig):
     t, o, h, l, c = d["t"], d["o"], d["h"], d["l"], d["c"]
     n = len(t)
     m = len(sig)
-    H = np.full((m, MAX_H), np.nan, np.float32); L = H.copy(); C = H.copy()
+    H = np.full((m, MAX_H), np.nan, np.float32); L = H.copy(); C = H.copy(); O = H.copy()
     E = np.full((m, MAX_H), 10**9, np.int64)
     ent_i = np.zeros(m, np.int64); ent_px = np.zeros(m)
     for r, (i, s) in enumerate(sig):
@@ -328,16 +328,16 @@ def trade_mats(ctx, sig):
         px = o[a]
         ent_i[r] = a; ent_px[r] = px
         if s > 0:
-            H[r, :b - a] = h[a:b] - px; L[r, :b - a] = l[a:b] - px; C[r, :b - a] = c[a:b] - px
+            H[r, :b - a] = h[a:b] - px; L[r, :b - a] = l[a:b] - px; C[r, :b - a] = c[a:b] - px; O[r, :b - a] = o[a:b] - px
         else:
-            H[r, :b - a] = px - l[a:b]; L[r, :b - a] = px - h[a:b]; C[r, :b - a] = px - c[a:b]
+            H[r, :b - a] = px - l[a:b]; L[r, :b - a] = px - h[a:b]; C[r, :b - a] = px - c[a:b]; O[r, :b - a] = px - o[a:b]
         E[r, :b - a] = t[a:b] - t[a]
-    return H, L, C, E, ent_i
+    return H, L, C, E, ent_i, O
 
 
 def simulate(ctx, sig, mats, K, R, T):
     """回傳每個訊號 (R, 入場索引, 出場索引)；冇數／未完 R＝nan。"""
-    H, L, C, E, ent_i = mats
+    H, L, C, E, ent_i, O = mats
     m = len(sig)
     if m == 0:
         return np.array([]), ent_i, ent_i
@@ -356,7 +356,8 @@ def simulate(ctx, sig, mats, K, R, T):
     rows = np.arange(m)
     first = np.minimum(np.minimum(si, ti), te)
     valid = ~np.isnan(sl) & (sl > 0) & (first < big)
-    exit_px = np.where(si <= np.minimum(ti, te), -sl, np.where(ti <= te, tp, C[rows, np.clip(te, 0, MAX_H - 1)]))
+    sl_px = np.minimum(-sl, O[rows, np.clip(si, 0, MAX_H - 1)])           # 跳空開盤已過 SL → 用開盤價
+    exit_px = np.where(si <= np.minimum(ti, te), sl_px, np.where(ti <= te, tp, C[rows, np.clip(te, 0, MAX_H - 1)]))
     r = np.where(valid, (exit_px - COST) / np.where(sl > 0, sl, 1), np.nan)
     ex_i = ent_i + np.where(valid, first, 0)
     return r, ent_i, ex_i
