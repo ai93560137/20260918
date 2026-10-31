@@ -136,9 +136,10 @@ def ma_block(bars):
     return blk
 
 
-def open_gaps(d1, lookback=120, min_pct=0.3):
+def open_gaps(d1, lookback=260, min_pct=0.3, keep=8):
     """[R290] 日線未補缺口：跳空之後到而家都未有 K 線返入缺口範圍（使用者講「補 7/30 缺口 7,314–7,370」）。
-    缺口用昨日收市計（同使用者一樣：7/29 收 7,316 → 7/30 低 7,371），細過 min_pct% 嘅唔計。"""
+    缺口用昨日收市計（同使用者一樣：7/29 收 7,316 → 7/30 低 7,371），細過 min_pct% 嘅唔計。
+    10-31：lookback 120 → 260（約一年），keep 6 → 8——使用者引用 VIX 4/8、VVIX 3/31 缺口，120 支 K 睇唔到。"""
     gaps = []
     rows = d1[-lookback:]
     for i in range(1, len(rows)):
@@ -153,7 +154,7 @@ def open_gaps(d1, lookback=120, min_pct=0.3):
         filled = any(b[3] <= lo for b in after) if kind.startswith("向上") else any(b[2] >= hi for b in after)
         if not filled:
             gaps.append({"date": cur[0], "kind": kind, "low": lo, "high": hi})
-    return gaps[-6:]
+    return gaps[-keep:]
 
 
 def fib_block(bars4, days=90, per_day=6):
