@@ -38,6 +38,7 @@ from datetime import date, datetime, timedelta, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from build_canary_table import RED_NOTE, WINDOW, load_close, rolling_quantile  # noqa: E402
+import watch_list  # noqa: E402  👀 留神清單(觀察名單 W2,2026-10-31)
 
 TABLE = os.path.join(HERE, "canary_daily.csv")
 OUT_MD = os.path.join(HERE, "DAILY_REPORT.md")
@@ -423,6 +424,9 @@ def verify_previous(rows, sent, today):
 
 
 # ----------------------------------------------------------------------------- 報告
+LAST_WATCH = None   # build_report 算好的 👀 留神清單,main 寫 watch_status.json / watch_log.csv 用
+
+
 def build_report(rows, health, today, sent=None):
     last, prev = rows[-1], (rows[-2] if len(rows) > 1 else None)
     d_last = date.fromisoformat(last["date"])
@@ -630,6 +634,23 @@ def build_report(rows, health, today, sent=None):
         w1txt = "無資料(窗口未滿)" if w1 is None else ("亮" if w1 else "滅")
         md.append(f"| 觀察 W1:VVIX/VIX < p10 | {w1txt} | {w1_cmp} | — | 樣本外累積中(自 2026-09-27) |")
     md.append("")
+    try:
+        # L4 用 D 之前第 5 個有燈色交易日的後驗(與本則 📐 同一個數,不等 posthoc_log 追加)
+        lit_rows = [r for r in rows if r.get("axis_short")]
+        ph_rows = []
+        if len(lit_rows) >= 6:
+            ld5 = lit_rows[-6]["date"]
+            ph5 = spx_fwd5(ld5)
+            if ph5 is not None and ph5["median"]:
+                ph_rows = [{"light_date": ld5, "ratio": f"{ph5['rv'] / ph5['median']:.4f}"}]
+        watch = watch_list.compute(rows, posthoc_rows=ph_rows)
+    except Exception as e:   # 留神清單只是觀察名單,算不出不擋每日報告
+        watch = None
+        warnings.append(f"👀 留神清單計算失敗:{e}")
+    global LAST_WATCH
+    LAST_WATCH = watch
+    if watch is not None:
+        md += watch_list.md_lines(watch)
     md.append("## 4. 數據新鮮度\n")
     md.append(f"| 鳥 | 最後日期 | 落後交易日(至應有燈色日 {dz(expected_d)}) |\n|---|---|---|")
     for b, lb, gap in fresh:
@@ -715,6 +736,8 @@ def build_report(rows, health, today, sent=None):
           ]
     if ratio is not None:
         tg.append(f"• W1 VVIX/VIX<p10:{'🔔亮' if w1 else '滅' if w1 is not None else '—'}|{w1_cmp}")
+    if watch is not None:
+        tg += ["", *watch_list.tg_lines(watch)]
     tg += ["", ev_head, *ev_body]
     tg += ["",
            "🩺 數據與健康",
@@ -865,6 +888,11 @@ def main():
         n = append_log(log_row)
         m = append_sent(sent, sent_row, posthoc_done)
         k = append_posthoc(sent)
+        try:
+            if LAST_WATCH is not None:
+                watch_list.write_outputs(LAST_WATCH, sent_row["generated_at_utc"])
+        except Exception as e:
+            print(f"[daily_report] 留神清單未寫出:{e}", file=sys.stderr)
         print(f"[daily_report] 已寫入 DAILY_REPORT.md、tg_daily.txt;daily_log.csv 共 {n} 列;sent_log.csv 共 {m} 列;"
               f"posthoc_log.csv 新增 {k} 列;警告 {len(warnings)} 則")
     if warnings:
