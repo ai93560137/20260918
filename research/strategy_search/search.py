@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(ROOT, "research", "gb_rulesim"))
 
 COST = 0.5
 CACHE = "/tmp/strategy_search_cache"
-SEARCH = ("2023-01-01", "2026-01-01")
+SEARCH = ("2022-09-01", "2026-01-01")
 VALID = ("2026-01-01", "2026-07-24")
 FINAL = ("2026-07-24", "2026-10-31")
 MIN_SEARCH_N = 150
@@ -67,7 +67,7 @@ def load(src, a, b):
         return {k: z[k] for k in z.files}
     import gb_rulesim as gb
     g = gb.Gcs()
-    prefix = "xau/sig/duka/" if src == "duka" else f"xau/sig/alt/{src}/"
+    prefix = {"duka": "xau/sig/duka/", "mt5": "xau/sig/mt5m1/"}.get(src, f"xau/sig/alt/{src}/")
     rows = {}
     for d in days_between(a, b):
         doc = g.read_json(f"{prefix}{d}.json")
@@ -432,12 +432,12 @@ def gkey(fam, p, e):
 
 
 def cmd_search():
-    duka = load("duka", "2022-12-25", "2026-07-23")
+    duka = load("mt5", "2022-08-03", "2026-07-23")   # 主數據＝券商 MT5 M1（變數名沿用）
     ctx = Ctx(duka)
     s0, s1 = ts_of(SEARCH[0]), ts_of(SEARCH[1])
     v0, v1 = ts_of(VALID[0]), ts_of(VALID[1])
     out = ["# IDEAS #161 策略搜尋：搜尋段＋驗證段", "",
-           f"- 數據：Dukascopy M1 {len(duka['t'])} 根（{dt.datetime.fromtimestamp(int(duka['t'][0]), dt.timezone.utc):%Y-%m-%d}→{dt.datetime.fromtimestamp(int(duka['t'][-1]), dt.timezone.utc):%Y-%m-%d}）",
+           f"- 數據：券商 MT5 M1 {len(duka['t'])} 根（{dt.datetime.fromtimestamp(int(duka['t'][0]), dt.timezone.utc):%Y-%m-%d}→{dt.datetime.fromtimestamp(int(duka['t'][-1]), dt.timezone.utc):%Y-%m-%d}）",
            f"- 搜尋段 {SEARCH[0]}→{SEARCH[1]}；驗證段 {VALID[0]}→{VALID[1]}；成本 {COST} 美元／張；入場＝下一根開盤", ""]
     total = 0
     cands = []
@@ -494,27 +494,29 @@ def cmd_search():
 
 def cmd_final():
     sel = json.load(open(os.path.join(HERE, "selected.json")))
-    out = ["# IDEAS #161 最終測試（一次過；Dukascopy＋PAXG 2026-07-24→10-30）", "", f"- 搜尋＋驗證總共試咗 {sel['total_tested']} 組；揀中 {len(sel['selected'])} 個", ""]
+    out = ["# IDEAS #161 最終測試（一次過；MT5 主＋Dukascopy／PAXG 旁證 2026-07-24→10-30）", "", f"- 搜尋＋驗證總共試咗 {sel['total_tested']} 組；揀中 {len(sel['selected'])} 個", ""]
     if not sel["selected"]:
         out.append("- 冇揀中策略")
     else:
+        mt5 = load("mt5", "2026-07-10", "2026-10-31")
         duka = load("duka", "2026-07-17", "2026-10-31")
         paxg = load("paxg", "2026-07-20", "2026-10-31")
         f0, f1 = ts_of(FINAL[0]), ts_of(FINAL[1])
         for c in sel["selected"]:
             res = {}
-            for name, d in (("Dukascopy", duka), ("PAXG", paxg)):
+            for name, d in (("MT5", mt5), ("Dukascopy", duka), ("PAXG", paxg)):
                 ctx = Ctx(d)
                 r, ts = run_strategy(ctx, c["fam"], c["p"], c["e"], f0, f1)
                 res[name] = (stats(r), months(r, ts))
-            fd, fp = res["Dukascopy"][0], res["PAXG"][0]
+            fd, fp, fk = res["MT5"][0], res["PAXG"][0], res["Dukascopy"][0]
             ok = {"①≥50張 +0.2R PF1.3": fd["n"] >= 50 and fd["avg"] >= 0.2 and fd["pf"] >= 1.3,
                   "②連敗≤6": fd["streak"] <= 6,
                   "③PAXG≥+0.1R": fp["n"] > 0 and fp["avg"] >= 0.1,
                   "④三段都正": fd["n"] > 0 and fd["avg"] > 0 and c["search"]["avg"] > 0 and c["valid"]["avg"] > 0}
             out.append(f"## {c['fam']} {json.dumps({**c['p'], **c['e']}, ensure_ascii=False)}")
             out.append(f"- 搜尋 {fmt(c['search'])}｜驗證 {fmt(c['valid'])}")
-            out.append(f"- 最終 Dukascopy：{fmt(fd)}；每月 " + "、".join(f"{k} {v['avg']:+.2f}R（{v['n']}）" for k, v in res['Dukascopy'][1].items() if v['n']))
+            out.append(f"- 最終 MT5（主）：{fmt(fd)}；每月 " + "、".join(f"{k} {v['avg']:+.2f}R（{v['n']}）" for k, v in res['MT5'][1].items() if v['n']))
+            out.append(f"- 最終 Dukascopy（旁證）：{fmt(fk)}")
             out.append(f"- 最終 PAXG：{fmt(fp)}")
             out.append("- 判斷：" + "；".join(f"{k} {'✓' if v else '✗'}" for k, v in ok.items()) + f" → **{'合格' if all(ok.values()) else '唔合格'}**")
             out.append("")
