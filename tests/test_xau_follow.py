@@ -254,5 +254,16 @@ st, d = hb(41, 4000)
 check("事件過後：新訊號照跟", d["cmd_text"].startswith("open|BUY|") and fstate().get("data_block") is None, d["cmd_text"])
 config.DATA_BLOCK_HOURS = _cfg_db; FAKE.pop("ops/us_data_calendar.json", None); _db._cache.update(ts=0, doc=None, error=None)
 
+print("=== [R357] 931／932 唔同戶口：SIG_FOLLOW_ACCOUNT")
+_acc0, _facc0 = config.ACCOUNT, config.FOLLOW_ACCOUNT
+config.ACCOUNT, config.FOLLOW_ACCOUNT = "1111", "2222"
+st, d = hb(42, 4000, extra={"account": "2222"})
+check("932 心跳用 FOLLOW_ACCOUNT 2222 → 照收", d.get("status") != "ignored", d)
+st, d = hb(43, 4000, extra={"account": "1111"})
+check("932 心跳用 931 戶口 1111 → ignored", d.get("status") == "ignored", d)
+check("ack_account_ok：931 預設用 XAU_ACCOUNT", xau.ack_account_ok({"account": "1111"})[0] and not xau.ack_account_ok({"account": "2222"})[0])
+check("ack_account_ok：跟單用 FOLLOW_ACCOUNT", xau.ack_account_ok({"account": "2222"}, config.FOLLOW_ACCOUNT)[0] and not xau.ack_account_ok({"account": "1111"}, config.FOLLOW_ACCOUNT)[0])
+config.ACCOUNT, config.FOLLOW_ACCOUNT = _acc0, _facc0
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

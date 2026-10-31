@@ -81,6 +81,7 @@ PREFIX = _s("XAU_PREFIX", PRODUCT["prefix"] + ("sig/" if SIGNAL_BOOK else ""))  
 EXECUTE = _b("XAU_EXECUTE", False)
 # 只接受呢個 MT5 登入號嘅心跳（數據＋指令）；其他登入號回 ignored。留空＝全收（影子階段）。階段 B：demo 登入號；轉真倉：真戶口登入號。
 ACCOUNT = _s("XAU_ACCOUNT", "")
+FOLLOW_ACCOUNT = _s("SIG_FOLLOW_ACCOUNT", "") or ACCOUNT    # [R357] 932 跟單嘅登入號（使用者 10-31：931 搬去另一戶口，932 留原戶口）；留空＝同 XAU_ACCOUNT
 TEST_CMDS = _b("XAU_TEST_CMDS", False)                       # 1 = 開放 action=test_cmd（階段 B 測試清單用；真倉前要關）
 # 10-23 使用者決定權杖「keep 123456」（公開）：cmd_ack 要核對 account（EA v0.38 起回報帶登入號）；
 #   XAU_ACK_REQUIRE_ACCOUNT=1 時冇 account 嘅回報一律忽略（真倉開；demo 舊 EA 仍可用 0）
