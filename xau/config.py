@@ -222,6 +222,19 @@ STUDENT_WINDOW_MIN = _i("XAU_STUDENT_WINDOW_MIN", 30)               # 訊號到�
 STUDENT_ZONE_TOL = _f("XAU_STUDENT_ZONE_TOL", 3.0)                  # 入場區中位差 ≤3 美元算命中
 STUDENT_R_TARGET = _f("XAU_STUDENT_R_TARGET", 2.0)                  # 學生自己成績：2R 全平
 STUDENT_COST = _f("XAU_STUDENT_COST", SPREAD_USD + 0.2)             # 10-24 使用者批：學生自己成績用實際成交價計 R，每張扣點差＋滑價 0.2（美元／盎司）
+# [R358] 規則學生真倉（使用者 10-31 揀 A：用新 magic 933，同 931 S1 分開成交簿；「先準備定、判定成功之後就可以開始」）——預設關。
+#   只准 SIG_STUDENT_LIVE_RULES 列明、已過 IDEAS #146 門檻嘅規則（例 rule:rev15；11-11 判 rev15、11-25 判 level）；空＝一條都唔落。
+STUDENT_LIVE = _b("SIG_STUDENT_LIVE", False)
+STUDENT_MAGIC = _i("SIG_STUDENT_MAGIC", MAGIC + 2)                   # 931 → 933（EA InpBotMagics 931–935 已包）
+STUDENT_LIVE_RULES = tuple(("rule:" + x.strip().removeprefix("rule:")) for x in _s("SIG_STUDENT_LIVE_RULES", "").split(",") if x.strip())
+STUDENT_ACCOUNT = _s("SIG_STUDENT_ACCOUNT", "") or ACCOUNT           # 預設同 931 一個戶口
+STUDENT_LOTS = _f("SIG_STUDENT_LOTS", 0.05)
+STUDENT_LOTS_LADDER = _b("SIG_STUDENT_LOTS_LADDER", False)           # 手數階梯（同 932 一樣：賺 +LOTS_STEP、蝕 −LOTS_STEP）
+STUDENT_LOTS_MIN = _f("SIG_STUDENT_LOTS_MIN", STUDENT_LOTS)
+STUDENT_MAX_LOTS = _f("SIG_STUDENT_MAX_LOTS", STUDENT_LOTS)          # 預設唔升（上限＝起點），要升使用者另批
+STUDENT_DAY_STOP_HKD = _f("SIG_STUDENT_DAY_STOP_HKD", 500.0)         # 933 自己當日（EA 伺服器日、自己 magic）蝕到呢個數就停開新倉；0＝唔設
+STUDENT_TTL_MIN = _i("SIG_STUDENT_TTL_MIN", 30)                      # 學生出區之後幾多分鐘內未入到入場區就放棄
+STUDENT_MAX_CONCURRENT = _i("SIG_STUDENT_MAX_CONCURRENT", 1)         # 同戶口 931＋933 同時最多幾張倉（含排緊嘅開倉）
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h

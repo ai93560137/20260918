@@ -24,6 +24,7 @@ import rules
 import storage
 import signals
 import follower
+import student_live
 import hold_rules
 import lots_ladder
 import live_book
@@ -571,6 +572,8 @@ def process_bar(state, bar, m1, m15, account, now):
             return rec, rec["applied"]
     if config.SIGNAL_BOOK and pos is None and not config.SIG_S1_OPEN:      # [R353] SIG_S1_OPEN=0：唔問 Opus、唔開倉（學生已喺心跳前面交卷）
         return None, "931 S1 停開新倉（SIG_S1_OPEN=0；規則學生照行）"
+    if config.SIGNAL_BOOK and pos is None and student_live.busy(now):    # [R358] 同戶口 931＋933 合共上限
+        return None, f"933 學生真倉有倉／排緊開倉（同戶口合共上限 {config.STUDENT_MAX_CONCURRENT} 張），931 唔開新倉"
     active = signals.active(now, price=bar["close"]) if config.SIGNAL_BOOK else None
     if config.SIGNAL_BOOK and pos is None and not active:
         return None, "冇有效訊號（訊號書唔問 Claude）"
@@ -997,6 +1000,8 @@ def entry(req):
             status["signals"] = signals.recent()
             if follower.enabled():
                 status["follow"] = follower.status()
+            if config.STUDENT_LIVE:
+                status["student_live"] = student_live.status()   # [R358]
             if student.enabled():
                 status["student"] = student.status()
         if req.args.get("format") == "json":
@@ -1019,6 +1024,19 @@ def entry(req):
     if not _token_ok(payload):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     action = payload.get("action")
+    if config.SIGNAL_BOOK and config.STUDENT_LIVE:                    # [R358] 規則學生真倉（magic 933）：心跳按 magic 分流、回報按指令 id 前綴 s
+        if action == "cmd_ack" and student_live.is_cmd(payload.get("id")):
+            ok_acct, why = ack_account_ok(payload, config.STUDENT_ACCOUNT)
+            if not ok_acct:
+                log_event(f"⚠️ [{config.TEAM_NAME}] 學生真倉指令回報 {executor.mask_id(payload.get('id'))} 略過：{why}", severity="WARNING", component="studentlive")
+                return jsonify({"status": "ignored", "message": why}), 200
+            found = student_live.ack(str(payload.get("id") or "")[:8], payload, now_ts())
+            log_event(f"📨 [{config.TEAM_NAME}] 學生真倉指令回報 {str(payload.get('id') or '')[:8]} ok={payload.get('ok')} {'' if found else '（未知／已回報）'}"
+                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                      severity="INFO" if payload.get("ok") else "WARNING", component="studentlive")
+            return jsonify({"status": "acked" if found else "unknown", "id": str(payload.get("id") or "")[:8]}), 200
+        if student_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return student_live.handle_heartbeat(payload)
     if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
         if action == "cmd_ack" and follower.is_follow_cmd(payload.get("id")):
             ok_acct, why = ack_account_ok(payload, config.FOLLOW_ACCOUNT)
