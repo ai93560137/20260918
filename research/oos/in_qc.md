@@ -1,14 +1,14 @@
-# 全市場數據品質檢查：in（2026-10-01）
+# 全市場數據品質檢查：in（2026-10-31）
 
 規則見 stock_research/VCP_FULLMARKET_BACKTEST.md 第一部分之二（樣本外驗證新市場沿用，見 stock_research/OOS_VALIDATION.md）。
 
 ## 1. 結構檢查
 
-2341 檔 → 整檔排除 **23** 檔、有殭屍段 321 檔（共 1005 段，載入時丟掉）。
+2422 檔 → 整檔排除 **23** 檔、有殭屍段 328 檔（共 1027 段，載入時丟掉）。
 
 排除原因：尖刺 17、還原比例異常 5、高低價矛盾 1
 
-例：ADANIENT.NS：還原比例異常；ALEMBICLTD.NS：尖刺 7 次；AQYLON.NS：尖刺 6 次；CIPLA.NS：尖刺 5 次；GLENMARK.NS：尖刺 6 次；HTMEDIA.NS：高低價矛盾 6.3%；IFGLEXPOR.NS：尖刺 3 次；IOC.NS：尖刺 10 次；IVC.NS：尖刺 4 次；JAICORPLTD.NS：尖刺 5 次
+例：ADANIENT.NS：還原比例異常；ALEMBICLTD.NS：尖刺 7 次；AQYLON.NS：尖刺 6 次；CIPLA.NS：尖刺 5 次；GLENMARK.NS：尖刺 6 次；HTMEDIA.NS：高低價矛盾 6.2%；IFGLEXPOR.NS：尖刺 3 次；IOC.NS：尖刺 10 次；IVC.NS：尖刺 4 次；JAICORPLTD.NS：尖刺 5 次
 
 ## 2. 跟指數版數據對照
 
