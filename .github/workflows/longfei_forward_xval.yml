@@ -1,0 +1,29 @@
+name: 龍飛陣 前向測試交叉驗證（#143 V3）
+
+# 使用者 10-31「前向測試都做證，以免錯判」：#143 日線順勢前向同離線同一套計法逐日配對、SMA 窗口相位敏感度。
+# 結果寫 GCS longfei/xval/daily_trend.json。只係研究，唔落單。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  xval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Cross-validate #143
+        run: python3 research/longfei_rulesim/forward_xval.py daily
