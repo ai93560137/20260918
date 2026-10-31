@@ -1,6 +1,7 @@
 """另類黃金 M1 數據（使用者 10-31「rev15 離線用其他數據源再試」）：雲端工作階段連唔到外網，由 GitHub Actions 跑，寫入 GCS。
   paxg：Binance 公開歸檔 data.binance.vision 嘅 PAXGUSDT 1 分鐘（代幣化黃金，24／7；週末段之後分析時剔走）
   gcf ：yfinance GC=F 期貨 1 分鐘（只可以拎最近 7 日）
+  duka：Dukascopy 現貨補數（用 gb_rulesim.fetch_duka，寫佢嘅快取 xau/sig/duka/<日>.json；10-31 為 0342／5117 交叉驗證補 10-29 之後）
 輸出 GCS xau/sig/alt/<src>/<UTC 日>.json＝[[utc, open, high, low, close], …]。只有價格。
 用法：python3 research/student_offline/fetch_alt_m1.py --src paxg --start 2026-07-24 --end 2026-10-31"""
 import argparse
@@ -48,13 +49,24 @@ def gcf_all():
     return out
 
 
+def duka(a):
+    import os
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "gb_rulesim"))
+    import gb_rulesim as gb
+    bars, st = gb.fetch_duka(a.start, a.end, cache=None if a.dry_run else gb.Gcs())
+    print(f"duka：{st['bars']} 根；日數 {st['days']}、新下載 {st['ok']}、快取 {st['cached']}、空 {st['empty']}、失敗 {st['failed']}")
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", choices=("paxg", "gcf"), required=True)
+    ap.add_argument("--src", choices=("paxg", "gcf", "duka"), required=True)
     ap.add_argument("--start", default="2026-07-24")
     ap.add_argument("--end", default=dt.date.today().isoformat())
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
+    if a.src == "duka":
+        return duka(a)
     from google.cloud import storage
     bucket = None if a.dry_run else storage.Client().bucket(BUCKET)
     got = {d: paxg_day(d) for d in days(a.start, a.end)} if a.src == "paxg" else gcf_all()
