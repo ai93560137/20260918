@@ -1,7 +1,7 @@
 """[R363] 按風險計手數（使用者 11-01：921、932、931 S1、933、934 全部改用；每張風險＝該戶口權益 XAU_RISK_PCT%）。預設關（XAU_RISK_SIZING=0）。
 手數＝floor(權益 × pct% ÷（|入場 − 初始止損| × 合約 × HKD／報價貨幣）, 0.01)，夾喺 [0.01, 該書硬上限]；
 計出嚟細過 0.01 → 唔開（寫原因）；權益讀唔到 → 退返固定 XAU_RISK_FALLBACK_LOTS（0.05）並寫 WARNING。
-所有書（921 main／931 S1／932 follower／933 student_live／934 g7_live／tgsignal）用同一個函數。純函數，方便測試。"""
+所有書（921 main／931 S1／932 follower／933 student_live／934 g7_live／935 combo_live／tgsignal）用同一個函數。純函數，方便測試。"""
 import math
 
 import config
@@ -75,4 +75,5 @@ def accounts_open_risk():
     base = config.MAIN_PREFIX
     sig = base + "sig/"
     return {"…63（921＋932）": open_risk(base + "account.json", [base + "account.json", sig + "follow/account.json"]),
-            "…69（931＋933＋934）": open_risk(sig + "account.json", [sig + "account.json", sig + "studentlive/account.json", sig + "g7live/account.json"])}
+            "…69（931＋933＋934＋935）": open_risk(sig + "account.json", [sig + "account.json", sig + "studentlive/account.json", sig + "g7live/account.json",
+                                                                       sig + "combolive/account.json"])}

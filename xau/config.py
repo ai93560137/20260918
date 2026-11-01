@@ -253,6 +253,18 @@ G7_SIGNAL_TTL_MIN = _i("SIG_G7_SIGNAL_TTL_MIN", 15)                   # H1 收�
 G7_LOOKBACK_DAYS = _i("SIG_G7_LOOKBACK_DAYS", 30)                    # 合成 H1／H4 讀幾多日 M1（經紀 bars／MT5 歷史）
 G7_DAY_STOP_HKD = _f("SIG_G7_DAY_STOP_HKD", 5000.0)                  # 934 當日蝕到呢個數停開新倉；0＝唔設
 G7_ACCOUNT_MAX = _i("SIG_G7_ACCOUNT_MAX", 3)                          # 同戶口（931＋933＋934）合共最多幾張倉（含排緊開倉）
+# [R364] 組合 A 單倉真倉（IDEAS #183／#186；使用者 11-01：magic 935、同時 1 張、戶口 …69、每張 1% 上限 0.01 手）。預設關。
+COMBO_LIVE = _b("SIG_COMBO_LIVE", False)
+COMBO_MAGIC = _i("SIG_COMBO_MAGIC", MAGIC + 4)                       # 931 → 935（EA InpBotMagics 931–935 已包）
+COMBO_ACCOUNT = _s("SIG_COMBO_ACCOUNT", "") or ACCOUNT               # 預設同 931（…69）
+COMBO_RISK_PCT = _f("SIG_COMBO_RISK_PCT", 1.0)                       # 每張風險＝權益幾多 %（唔夠 0.01 手就照開 0.01）
+COMBO_MAX_LOTS = _f("SIG_COMBO_MAX_LOTS", 0.01)                      # 手數硬上限
+COMBO_FLOOR_MAX_PCT = _f("SIG_COMBO_FLOOR_MAX_PCT", 10.0)            # 0.01 手風險超過權益呢個 % 就唔開
+COMBO_DAY_STOP_HKD = _f("SIG_COMBO_DAY_STOP_HKD", 5000.0)            # 935 當日蝕到呢個數停開新倉
+COMBO_ACCOUNT_MAX = _i("SIG_COMBO_ACCOUNT_MAX", 3)                   # 同戶口（931＋933＋934＋935）合共最多幾張倉
+COMBO_SIGNAL_TTL_MIN = _i("SIG_COMBO_SIGNAL_TTL_MIN", 30)            # 收市後第一根 K 線開咗幾多分鐘內先入
+COMBO_SEED_DAYS = _i("SIG_COMBO_SEED_DAYS", 600)                     # H1 快取要幾多日（D1 SMA200 要 200 根交易日＋SAR 預熱；420 日唔夠）
+COMBO_PARAM_YEAR = _i("SIG_COMBO_PARAM_YEAR", 2026)                  # 參數年份；同今年唔一樣就唔開（#184 每年重揀）
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h
