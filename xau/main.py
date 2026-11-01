@@ -25,6 +25,7 @@ import storage
 import signals
 import follower
 import student_live
+import g7_live
 import hold_rules
 import lots_ladder
 import live_book
@@ -801,6 +802,8 @@ def _sub_book_ack(payload):
     books = []
     if config.STUDENT_LIVE and student_live.is_cmd(cid):
         books.append(("學生真倉", "studentlive", config.STUDENT_ACCOUNT, student_live.ack))
+    if config.G7_LIVE and g7_live.is_cmd(cid):                        # [R361] 934 H1 回調（前綴 g）
+        books.append(("H1 回調真倉", "g7live", config.G7_ACCOUNT, g7_live.ack))
     if follower.enabled() and follower.is_follow_cmd(cid):
         books.append(("跟單", "follow", config.FOLLOW_ACCOUNT, follower.ack))
     for name, comp, want, ack_fn in books:
@@ -958,8 +961,12 @@ def forward_view():
         gb = storage.read_json(base + "gb_forward/latest.json", None)
         stu = storage.read_json(base + "student/scores.json", None)
         g7 = storage.read_json(base + "g7_forward/latest.json", None)      # [R360] IDEAS #162／#163 H1 回調策略（研究腳本 wf_forward.py --write 寫）
+        g7l = storage.read_json(base + "g7live/state.json", None)          # [R361] 934 真倉成交簿
     except StorageError:
         return None
+    if isinstance(g7l, dict) and (g7l.get("book") or g7l.get("orders")):
+        g7 = dict(g7) if isinstance(g7, dict) else {}
+        g7["live"] = {"book": (g7l.get("book") or [])[-50:], "orders": (g7l.get("orders") or [])[-10:], "last": g7l.get("last")}
     if not gb and not stu and not g7:
         return None
     return {"gb": gb if isinstance(gb, dict) else None, "student": stu if isinstance(stu, dict) else None,
@@ -1038,6 +1045,8 @@ def entry(req):
                 status["follow"] = follower.status()
             if config.STUDENT_LIVE:
                 status["student_live"] = student_live.status()   # [R358]
+            if config.G7_LIVE:
+                status["g7_live"] = g7_live.status()             # [R361]
             if student.enabled():
                 status["student"] = student.status()
         if req.args.get("format") == "json":
@@ -1064,6 +1073,9 @@ def entry(req):
         hit = _sub_book_ack(payload)
         if hit is not None:
             return hit
+    if config.SIGNAL_BOOK and config.G7_LIVE:                         # [R361] H1 回調真倉（magic 934）：心跳按 magic 分流
+        if g7_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return g7_live.handle_heartbeat(payload)
     if config.SIGNAL_BOOK and config.STUDENT_LIVE:                    # [R358] 規則學生真倉（magic 933）：心跳按 magic 分流
         if student_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return student_live.handle_heartbeat(payload)
