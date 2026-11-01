@@ -59,7 +59,7 @@ def duka_h1(a):
     y, m = int(a.start[:4]), int(a.start[5:7]); y1, m1 = int(a.end[:4]), int(a.end[5:7])
     tot = 0
     while (y, m) <= (y1, m1):
-        url = f"https://datafeed.dukascopy.com/datafeed/XAUUSD/{y:04d}/{m - 1:02d}/BID_candles_hour_1.bi5"
+        url = f"https://datafeed.dukascopy.com/datafeed/{a.sym}/{y:04d}/{m - 1:02d}/BID_candles_hour_1.bi5"
         raw = None
         for k in range(5):
             try:
@@ -76,14 +76,15 @@ def duka_h1(a):
             recs = [struct.unpack(">5if", data[i * 24:(i + 1) * 24]) for i in range(len(data) // 24)]
             div = 1000.0
             for cand in (1000.0, 100000.0, 100.0):
-                if recs and 200 <= recs[0][1] / cand <= 20000:
+                lo_ok, hi_ok = (200, 20000) if a.sym == "XAUUSD" else (2, 200)      # [IDEAS #168] XAGUSD 等
+                if recs and lo_ok <= recs[0][1] / cand <= hi_ok:
                     div = cand
                     break
             rows = [[t0 + s, o / div, hi / div, lo / div, c / div] for s, o, c, lo, hi, v in recs if o > 0]
         print(f"duka_h1 {y}-{m:02d}：{len(rows)} 根" + (f"，{rows[0][4]:.2f} → {rows[-1][4]:.2f}" if rows else ""))
         tot += len(rows)
         if bucket and rows:
-            bucket.blob(f"{PREFIX.replace('alt/', '')}duka_h1/{y:04d}-{m:02d}.json").upload_from_string(json.dumps(rows), content_type="application/json")
+            bucket.blob(f"{PREFIX.replace('alt/', '')}duka_h1{'' if a.sym == 'XAUUSD' else '_' + a.sym.lower()}/{y:04d}-{m:02d}.json").upload_from_string(json.dumps(rows), content_type="application/json")
         m += 1
         if m == 13:
             y, m = y + 1, 1
@@ -106,6 +107,7 @@ def main():
     ap.add_argument("--start", default="2026-07-24")
     ap.add_argument("--end", default=dt.date.today().isoformat())
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--sym", default="XAUUSD", help="duka_h1 品種（XAUUSD 寫 duka_h1/；其他寫 duka_h1_<品種小寫>/）")
     a = ap.parse_args()
     if a.src == "duka":
         return duka(a)
