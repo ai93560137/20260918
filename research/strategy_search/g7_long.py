@@ -43,7 +43,7 @@ def h4_from_h1(t, o, h, l, c):
 
 
 def backtest(t, o, h, l, c):
-    """回傳成交 list：(入場 UTC, 方向, sl 距離美元, R, 出場方式)。"""
+    """回傳成交 list：(入場 UTC, 方向, sl 距離美元, R, 出場方式, 出場 UTC)。"""
     n = len(t)
     r14 = rsi(c, 14)
     tr = np.r_[h[0] - l[0], np.maximum.reduce([h[1:] - l[1:], np.abs(h[1:] - c[:-1]), np.abs(l[1:] - c[:-1])])]
@@ -80,7 +80,7 @@ def backtest(t, o, h, l, c):
         if ex is None:
             break                                                # 數據尾未完
         r = (s * (ex - px) - COST) / d
-        trades.append((int(t[a]), s, float(d), float(r), how))
+        trades.append((int(t[a]), s, float(d), float(r), how, int(t[j_end]) + 3600))
         busy_until = j_end
     return trades
 
@@ -96,10 +96,22 @@ def stats(rs):
     return f"n={len(rs)} 平均 {rs.mean():+.3f}R PF {w / ls if ls else float('inf'):.2f} 最大連敗 {mx}"
 
 
-def equity(trades, start_hkd, mode, val):
-    """mode fixed（val＝手數）／risk（val＝%）。回傳 (最終, 最大回撤%, 開咗幾張, 最低)。"""
+def nights(t0, t1):
+    """持倉跨過幾多次隔夜結算（約 21:30 UTC）；星期三嗰晚當 3 晚（週末息）。"""
+    n = 0
+    day = (t0 - 77400) // 86400 + 1
+    while day * 86400 + 77400 <= t1:
+        wd = dt.datetime.fromtimestamp(day * 86400 + 77400, dt.timezone.utc).weekday()
+        n += 3 if wd == 2 else (0 if wd >= 5 else 1)
+        day += 1
+    return n
+
+
+def equity(trades, start_hkd, mode, val, swap=0.0):
+    """mode fixed（val＝手數）／risk（val＝%）；swap＝每手每晚隔夜息（美元，負＝支出）。回傳 (最終, 最大回撤%, 開咗幾張, 最低)。"""
     eq = peak = start_hkd; mdd = 0.0; opened = 0; low = eq
-    for ts, s, d, r, how in trades:
+    for ts, s, d, r, how, te in trades:
+        r = r + swap * nights(ts, te) / OZ / d
         per_lot = d * OZ * HKD
         if mode == "fixed":
             lots = val
@@ -180,11 +192,25 @@ def main():
             cagr = (fin / start) ** (1 / years) - 1 if fin > 0 else -1
             shown = f"{fin:,.0f} HKD" + (f"（{fin / 7.8:,.0f} USD）" if start == 78000.0 else "")
             out.append(f"| {label} | {name} | {shown if fin > 0 else '💥 爆倉'} | {cagr:+.1%} | {'—' if mdd == -1 else f'{mdd:.0%}'} | {n}／{len(tr)} |")
+    out += ["", "## 4. 隔夜息敏感度（使用者：swap 唔固定；每手每晚，星期三 ×3）", "",
+            "| 本金 | 做法 | swap 0 | swap −15 美元 | swap −30 美元 |", "|---|---|---|---|---|"]
+    avg_n = np.mean([nights(x[0], x[5]) for x in tr]) if tr else 0
+    for start, lab in ((10000.0, "10,000 HKD"), (78000.0, "10,000 USD")):
+        for mode, val, name in (("fixed", 0.01, "固定 0.01 手"), ("risk", 1.0, "按風險 1%")):
+            cells = []
+            for sw in (0.0, -15.0, -30.0):
+                fin, mdd, n, _ = equity(tr, start, mode, val, sw)
+                cells.append(f"{fin:,.0f} HKD（回撤 {mdd:.0%}）" if fin > 0 else "💥 爆倉")
+            out.append(f"| {lab} | {name} | " + " | ".join(cells) + " |")
+    out.append(f"\n- 平均每張持倉跨 {avg_n:.2f} 晚結算。")
+    out += ["", "## 5. 保證金（使用者：槓桿 1:2000）", "",
+            "- 1 手＝100 盎司；金價 4,000 美元時名義 400,000 美元 ÷ 2000＝**200 美元（約 1,560 HKD）／手**；0.05 手約 78 HKD、0.01 手約 16 HKD。",
+            "- 10,000 HKD 本金落 0.05 手，保證金佔 < 1%，唔會因保證金不足被斬倉；風險喺連續止損蝕穿權益（見第 3 節最大回撤）。", ""]
     for start, lab in ((10000.0, "10,000 HKD"), (78000.0, "10,000 USD")):
         for y0 in (2023,):
             sub = [x for x in tr if yr(x[0]) >= y0]
             fin, mdd, n, _ = equity(sub, start, "risk", 1.0)
-            out.append(f"| {lab}（只計 2023→2026） | 按風險 1% | {fin:,.0f} HKD | — | {mdd:.0%} | {n}／{len(sub)} |")
+            out.append(f"- {lab}，只計 2023→2026、按風險 1%：最終 {fin:,.0f} HKD，最大回撤 {mdd:.0%}，開咗 {n}／{len(sub)} 張")
     out += ["", "## 注意",
             "- H1 引擎同 M5 引擎嘅差距見第 1 節（入場遲最多 1 小時、H1 內 SL／TP 先後只能保守當 SL）。",
             "- 2005–2010 金價低（400–1,200 美元），止損美元細，所以同一本金可以落大啲手；成本 0.5 美元喺早年佔 R 比例較大。",
