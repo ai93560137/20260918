@@ -159,6 +159,11 @@ class Forward(unittest.TestCase):
         for frag in ("H1 回調策略", "155 張，平均 +0.33R", "9／13", "+0.10R", "未到期（1／30 張）", "SELL", "3870.30", "+1.90", "RSI(14) 跌穿 35", "升穿 65"):
             self.assertIn(frag, h)
         self.assertIn("前向仲未有單", page.forward_section({"g7": {**g7, "forward": {"from": "x"}}}))
+        live = {"book": [{"opened_ts": 1793700000, "side": 1, "lots": 0.05, "entry": 3950.0, "exit_est": 3980.0, "pnl_hkd": 1170.0, "r": 1.98}],
+                "last": {"note": "有倉（SL／TP 伺服器端；到鐘時間止蝕）"}}
+        h2 = page.forward_section({"g7": {**g7, "live": live}})
+        for frag in ("934 真倉", "1 張已平倉", "+1170.00", "+1.98", "到鐘時間止蝕"):
+            self.assertIn(frag, h2)
 
     def test_forward_bad_data(self):
         self.assertIn("讀唔到", page.forward_section({"gb": {"eval": {"0342": {"result": {"V0": {}}}}}}))

@@ -156,6 +156,21 @@ def g7_block(g, f2):
         f"<td>{f2(t.get('sl'), '{:.2f}')}／{f2(t.get('tp'), '{:.2f}')}</td><td>{esc(t.get('exit') or '未完')}</td>"
         f"<td class=\"{'pos' if (t.get('r') or 0) > 0 else ('neg' if (t.get('r') or 0) < 0 else '')}\">{f2(t.get('r'))}</td></tr>"
         for t in reversed(fwd.get("trades") or []))
+    live = g.get("live") or {}
+    lrows = live.get("book") or []
+    live_html = ""
+    if lrows or live.get("orders"):
+        rs = [x.get("r") for x in lrows if x.get("r") is not None]
+        tot = sum(x.get("pnl_hkd") or 0 for x in lrows)
+        wins = sum(1 for x in lrows if (x.get("pnl_hkd") or 0) > 0)
+        body = "".join(
+            f"<tr><td>{esc(hk(x.get('opened_ts')))}</td><td>{'BUY' if (x.get('side') or 0) > 0 else 'SELL'}</td><td>{esc(x.get('lots'))}</td>"
+            f"<td>{f2(x.get('entry'), '{:.2f}')}</td><td>{f2(x.get('exit_est'), '{:.2f}')}</td>"
+            f"<td class=\"{'pos' if (x.get('pnl_hkd') or 0) > 0 else 'neg'}\">{f2(x.get('pnl_hkd'))}</td><td>{f2(x.get('r'))}</td></tr>"
+            for x in reversed(lrows))
+        live_html = (f"<p style='font-size:14px'><b>💰 934 真倉（0.05 手）：</b>{len(lrows)} 張已平倉，{wins} 勝，合計 {f2(tot)} HKD，"
+                     f"平均 {f2(sum(rs) / len(rs)) if rs else '—'}R；最新：{esc((live.get('last') or {}).get('note') or '—')}</p>"
+                     + ("<div style='overflow-x:auto'><table><tr><th>開倉（HKT）</th><th>方向</th><th>手</th><th>入場</th><th>出場（估）</th><th>HKD</th><th>R</th></tr>" + body + "</table></div>" if body else ""))
     tbl = ("<div style='overflow-x:auto'><table><tr><th>訊號 UTC</th><th>方向</th><th>入場</th><th>SL／TP</th><th>出場</th><th>R</th></tr>" + rows + "</table></div>") if rows else "<p class='muted'>前向仲未有單。</p>"
     return ("<h3>📈 H1 回調策略（IDEAS #162 合格 → #163 影子前向，唔落單）</h3>"
             f"<p style='font-size:14px'><b>規則：</b>H4 EMA50 向上（已收盤 H4 對上一根比較）而 H1 RSI(14) 跌穿 {esc(p.get('TH', 35))} → 買；"
@@ -165,8 +180,8 @@ def g7_block(g, f2):
             f"Dukascopy 07-24→10-30 {esc(_stat_txt(bt.get('duka'), f2))}。</p>"
             f"<p style='font-size:14px'><b>影子前向（{esc(fwd.get('from'))} UTC 起，經紀 M1；更新 {esc(g.get('run_utc'))} UTC）：</b>{esc(_stat_txt(fwd.get('all'), f2))}"
             f"（做多 {esc(_stat_txt(fwd.get('long'), f2))}；做空 {esc(_stat_txt(fwd.get('short'), f2))}）→ <b>{esc(fwd.get('verdict') or '—')}</b></p>"
-            "<p class='muted' style='font-size:13px'>判斷（預先登記）：3 個月或 30 張（先到者）時平均 R ≥ +0.10 且 PF ≥ 1.2 → 先出 921 接駁方案（規則出訊號、Opus 只做否決、0.05 手；PR＋總指揮 dry-run＋使用者批）。</p>"
-            + tbl)
+            "<p class='muted' style='font-size:13px'>判斷（預先登記）：3 個月或 30 張（先到者）時平均 R ≥ +0.10 且 PF ≥ 1.2。使用者 11-01 決定唔等前向、用 magic 934 真倉 0.05 手（R361）；影子前向照計做對照。</p>"
+            + live_html + tbl)
 
 
 def _forward_section(fw, book=None):

@@ -235,6 +235,19 @@ STUDENT_MAX_LOTS = _f("SIG_STUDENT_MAX_LOTS", STUDENT_LOTS)          # 預設唔
 STUDENT_DAY_STOP_HKD = _f("SIG_STUDENT_DAY_STOP_HKD", 5000.0)        # 933 自己當日（EA 伺服器日、自己 magic）蝕到呢個數就停開新倉；0＝唔設（使用者 10-31 定 5000）
 STUDENT_TTL_MIN = _i("SIG_STUDENT_TTL_MIN", 30)                      # 學生出區之後幾多分鐘內未入到入場區就放棄
 STUDENT_MAX_CONCURRENT = _i("SIG_STUDENT_MAX_CONCURRENT", 1)         # 同戶口 931＋933 同時最多幾張倉（含排緊嘅開倉）
+# [R361] H1 回調策略真倉（IDEAS #162 G7；使用者 11-01「H1 回調星期一用真倉」→ 新 magic 934，覆蓋 #163 影子前向）。預設關。
+G7_LIVE = _b("SIG_G7_LIVE", False)
+G7_MAGIC = _i("SIG_G7_MAGIC", MAGIC + 3)                             # 931 → 934（EA InpBotMagics 931–935 已包）
+G7_ACCOUNT = _s("SIG_G7_ACCOUNT", "") or ACCOUNT                     # 預設同 931 一個戶口
+G7_LOTS = _f("SIG_G7_LOTS", 0.05)                                    # 固定手數（冇階梯）
+G7_RSI_TH = _f("SIG_G7_RSI_TH", 35.0)                                # H1 RSI(14) 跌穿呢個買／升穿 100−呢個沽
+G7_SL_ATR = _f("SIG_G7_SL_ATR", 1.5)                                 # SL＝K×H1 ATR(14)
+G7_TP_R = _f("SIG_G7_TP_R", 2.0)                                     # TP＝R 倍止損距離
+G7_HOLD_H = _f("SIG_G7_HOLD_H", 72.0)                                # 時間止蝕（小時），到鐘市價平倉
+G7_SIGNAL_TTL_MIN = _i("SIG_G7_SIGNAL_TTL_MIN", 15)                   # H1 收盤後幾多分鐘內先入（遲咗就放棄，唔追）
+G7_LOOKBACK_DAYS = _i("SIG_G7_LOOKBACK_DAYS", 30)                    # 合成 H1／H4 讀幾多日 M1（經紀 bars／MT5 歷史）
+G7_DAY_STOP_HKD = _f("SIG_G7_DAY_STOP_HKD", 5000.0)                  # 934 當日蝕到呢個數停開新倉；0＝唔設
+G7_ACCOUNT_MAX = _i("SIG_G7_ACCOUNT_MAX", 3)                          # 同戶口（931＋933＋934）合共最多幾張倉（含排緊開倉）
 
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h
