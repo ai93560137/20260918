@@ -282,6 +282,13 @@ def load_signals(g, since, channel=DEFAULT_CHANNEL):
 BARS_PREFIX = "xau/sig/bars/"
 
 
+def broker_utc(server_t):
+    """券商伺服器時間 → UTC：UTC+2（冬）／UTC+3（美國夏令時），同 xau/g7_live.broker_utc。"""
+    from zoneinfo import ZoneInfo
+    guess = dt.datetime.fromtimestamp(int(server_t) - 7200, dt.timezone.utc)
+    return int(server_t) - (3 if guess.astimezone(ZoneInfo("America/New_York")).dst() else 2) * 3600
+
+
 def fetch_broker_bars(g, days):
     """GCS xau/sig/bars/<日>.jsonl（EA 心跳存嘅經紀 M1，一行一個 JSON 陣列）→ 最近 days 日嘅 K 線（utc 欄）。無基差。"""
     out = []
@@ -293,8 +300,13 @@ def fetch_broker_bars(g, days):
                     out.extend(json.loads(ln))
                 except ValueError:
                     continue
-    out = [{"utc": int(b["utc"]), "open": float(b["open"]), "high": float(b["high"]), "low": float(b["low"]), "close": float(b["close"])} for b in out if isinstance(b, dict) and b.get("utc") is not None]
-    out.sort(key=lambda b: b["utc"])
+    # [R362] 用伺服器 time 欄按券商時區規則重算 UTC（週末 server_offset 計錯，星期五 K 線曾被錯時重複存去星期六／日），同一分鐘去重
+    dedup = {}
+    for b in out:
+        if isinstance(b, dict) and (b.get("time") is not None or b.get("utc") is not None):
+            u = broker_utc(b["time"]) if b.get("time") is not None else int(b["utc"])
+            dedup[u] = {"utc": u, "open": float(b["open"]), "high": float(b["high"]), "low": float(b["low"]), "close": float(b["close"])}
+    out = [dedup[k] for k in sorted(dedup)]
     return out
 
 

@@ -18,6 +18,12 @@ NEW = {**fr.CUR_COMMON, "E": 6.0, "S": 4.0, "RT": 1.0}      # E6 Z2 S4 1R 冷卻
 TARGET_N = 30
 
 
+def _broker_utc(server_t):
+    from zoneinfo import ZoneInfo
+    guess = dt.datetime.fromtimestamp(int(server_t) - 7200, dt.timezone.utc)
+    return int(server_t) - (3 if guess.astimezone(ZoneInfo("America/New_York")).dst() else 2) * 3600
+
+
 def broker_bars(start_ts):
     sys.path.insert(0, os.path.join(HERE, "..", "gb_rulesim"))
     import gb_rulesim as gb   # noqa: E402
@@ -33,14 +39,20 @@ def broker_bars(start_ts):
                 continue
             try:
                 for b in json.loads(ln):
-                    if isinstance(b, dict) and b.get("utc") is not None:
-                        rows[int(b["utc"])] = b
+                    if isinstance(b, dict) and (b.get("time") is not None or b.get("utc") is not None):
+                        # 用伺服器時間重算 UTC（週末 server_offset 會計錯、星期五 K 線重複存去週末；同 xau/g7_live.broker_utc）
+                        u = _broker_utc(b["time"]) if b.get("time") is not None else int(b["utc"])
+                        rows[u] = b
             except ValueError:
                 continue
     ks = sorted(rows)
     d = {"t": np.array(ks, dtype=np.int64)}
     for k, n in (("o", "open"), ("h", "high"), ("l", "low"), ("c", "close")):
         d[k] = np.array([float(rows[t][n]) for t in ks])
+    # 剔休市平盤 K 線（EA 週末心跳照寫、價唔郁；同 research search.load 一樣）
+    if len(ks):
+        flat = (d["h"] == d["l"]) & (np.r_[np.nan, d["c"][:-1]] == d["c"])
+        d = {k: v[~flat] for k, v in d.items()}
     return d
 
 

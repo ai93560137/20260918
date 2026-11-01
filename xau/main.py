@@ -131,17 +131,43 @@ def set_mode(control, mode, reason, set_by, now, auto_reset_day=None):
     log_event(f"🔀 [{config.TEAM_NAME}] 模式 → {mode}（{set_by}）：{reason}", severity="WARNING" if mode != "RUN" else "INFO", component="mode")
 
 
-def server_offset(payload, now):
-    """EA 送嘅時間（MT5 伺服器時間，UltimaMarkets ≈ UTC+3）同真 UTC 嘅差（秒）。
-    EA 有送 server_time 就直接計（取整到分鐘）；否則用剛收盤嗰根 M1 嘅時間估（取整到 15 分鐘；收盤後 1–2 分鐘內收到都估得準）。"""
+def rule_offset(now):
+    """[R362] 券商時區規則：UTC+2，美國夏令時期間 UTC+3（XAU_SERVER_TZ_RULE=ny）；off 回 None。"""
+    if (config.SERVER_TZ_RULE or "").lower() != "ny":
+        return None
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+    return (3 if datetime.fromtimestamp(now, timezone.utc).astimezone(ZoneInfo("America/New_York")).dst() else 2) * 3600
+
+
+_OFFSET_WARN = {"ts": 0.0}
+
+
+def measured_offset(payload, now):
+    """心跳估出嚟嘅時差：有 server_time 就用（取整到分鐘），否則用剛收盤嗰根 M1 嘅時間（取整到 15 分鐘）。"""
     st = market.to_float(payload.get("server_time"))
     if st:
         return int(round((st - now) / 60.0) * 60)
     m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
     t = market.to_float(m1.get("time"))
     if not t:
-        return 0
+        return None
     return int(round((t - now) / 900.0) * 900)
+
+
+def server_offset(payload, now):
+    """EA 送嘅時間（MT5 伺服器時間）同真 UTC 嘅差（秒）。
+    [R362] 有券商時區規則就用規則值：週末／休市時 EA 嘅 server_time 停喺星期五收市，用佢估會差成日（11-01 發現：
+    星期五 K 線被錯時存去星期六／日）。心跳估出嚟同規則唔同就寫 WARNING（每小時最多一次），但照用規則值。冇規則先用心跳估。"""
+    meas = measured_offset(payload, now)
+    rule = rule_offset(now)
+    if rule is None:
+        return meas or 0
+    if meas is not None and meas != rule and now - _OFFSET_WARN["ts"] > 3600:
+        _OFFSET_WARN["ts"] = now
+        log_event(f"⚠️ [{config.TEAM_NAME}] 伺服器時差：心跳估 {meas / 3600:+.2f} 小時，同券商規則 {rule / 3600:+.0f} 小時唔同（休市時 server_time 停住屬正常），用規則值",
+                  severity="WARNING", component="ea")
+    return rule
 
 
 def own_positions(payload, offset=0):

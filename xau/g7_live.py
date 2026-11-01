@@ -7,11 +7,12 @@
   斜率＜0 而 H1 RSI 啱啱升穿 100−TH → 沽。H1 收盤後 SIG_G7_SIGNAL_TTL_MIN 分鐘內市價入（帶 px／dev，EA v0.41 滑價上限）。
   SL＝入場 ∓ K×H1 ATR(14)；TP＝R×SL 距離；開倉 SIG_G7_HOLD_H 小時仲未完 → 市價平倉（時間止蝕）。同時 1 張。
   H1／H4 由 M1 合成：經紀 M1（xau/sig/bars/<日>.jsonl，931 心跳寫）優先，冇就用券商 MT5 歷史（xau/sig/mt5m1/<日>.json）；
-  H4 以 22:00 UTC 對齊（22、02、06…）。數據唔夠（H4 < 60 根）或者最新 M1 舊過 5 分鐘就唔開。
+  H4 以 22:00 UTC 對齊（22、02、06…）；休市平盤 K 線（高＝低、收市冇變）剔走（同回測一樣）。數據唔夠（H4 < 60 根）或者最新 M1 舊過 5 分鐘就唔開。
 風控：control 非 RUN、階梯 Ⓑ／Ⓓ、EA 唔准、數據封鎖、934 當日蝕到 SIG_G7_DAY_STOP_HKD、同戶口合共倉數 ≥ SIG_G7_ACCOUNT_MAX 都唔開。
 934 唔計入 931＋933 嗰個 SIG_STUDENT_MAX_CONCURRENT 上限。純計算函數冇 I/O，方便測試。"""
 import datetime as dt
 import uuid
+from zoneinfo import ZoneInfo
 
 import config
 import executor
@@ -156,6 +157,16 @@ def time_stop_due(pos, now, hold_h=None, opened_fallback=None):
 
 
 # ------------------------------------------------------------------ 數據
+_NY = ZoneInfo("America/New_York")
+
+
+def broker_utc(server_t):
+    """券商伺服器時間 → UTC：UTC+2（冬）／UTC+3（美國夏令時），同 research import_mt5.server_to_utc 一樣。
+    唔信 bars 檔嘅 utc 欄：週末 EA 伺服器時間凍結，main.server_offset 會計錯，星期五 K 線被重複存去星期六／日（11-01 發現）。"""
+    guess = dt.datetime.fromtimestamp(int(server_t) - 2 * 3600, dt.timezone.utc)
+    return int(server_t) - (3 if guess.astimezone(_NY).dst() else 2) * 3600
+
+
 def _day_rows(day, today):
     if day in _DAY_CACHE and day < today:
         return _DAY_CACHE[day]
@@ -165,8 +176,8 @@ def _day_rows(day, today):
     except StorageError:
         doc = None
     if isinstance(doc, list) and doc:
-        rows = [(int(b["utc"]), float(b["open"]), float(b["high"]), float(b["low"]), float(b["close"]))
-                for b in doc if isinstance(b, dict) and b.get("utc") is not None]
+        rows = [(broker_utc(b["time"]) if b.get("time") is not None else int(b["utc"]), float(b["open"]), float(b["high"]), float(b["low"]), float(b["close"]))
+                for b in doc if isinstance(b, dict) and (b.get("time") is not None or b.get("utc") is not None)]
     if not rows:
         try:
             doc = storage.read_json(f"{MT5_PREFIX}{day}.json", None)
@@ -180,14 +191,26 @@ def _day_rows(day, today):
     return rows
 
 
+def drop_flat(rows):
+    """剔走休市平盤 K 線（高＝低而且收市同上一根一樣）：EA 週末／每日休市時心跳照寫，價唔郁；
+    回測數據（research search.load）一樣咁剔，唔剔會拉低 H1 ATR、扭曲 H4 EMA50 斜率。"""
+    out, prev_c = [], None
+    for b in rows:                       # 同 search.load 一樣：同「上一根原始 K 線」比較
+        if not (b[2] == b[3] and prev_c is not None and b[4] == prev_c):
+            out.append(b)
+        prev_c = b[4]
+    return out
+
+
 def load_m1(now, days=None):
     days = config.G7_LOOKBACK_DAYS if days is None else days
     d1 = dt.datetime.fromtimestamp(now, dt.timezone.utc).date()
     today = d1.isoformat()
-    out = []
-    for k in range(days, -1, -1):
-        out += _day_rows((d1 - dt.timedelta(days=k)).isoformat(), today)
-    return out
+    by = {}
+    for k in range(days + 1, -2, -1):          # 前後多讀一日：重算 UTC 之後 K 線可能喺隔籬日檔
+        for b in _day_rows((d1 - dt.timedelta(days=k)).isoformat(), today):
+            by[b[0]] = b                         # 同一分鐘（重複存）只留一根
+    return drop_flat([by[t] for t in sorted(by) if t + 60 <= now + 60])
 
 
 # ------------------------------------------------------------------ 狀態／回報
