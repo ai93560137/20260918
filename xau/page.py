@@ -186,7 +186,7 @@ def g7_block(g, f2):
             f"<td>{f2(x.get('entry'), '{:.2f}')}</td><td>{f2(x.get('exit_est'), '{:.2f}')}</td>"
             f"<td class=\"{'pos' if (x.get('pnl_hkd') or 0) > 0 else 'neg'}\">{f2(x.get('pnl_hkd'))}</td><td>{f2(x.get('r'))}</td></tr>"
             for x in reversed(lrows))
-        live_html = (f"<p style='font-size:14px'><b>💰 934 真倉（0.05 手）：</b>{len(lrows)} 張已平倉，{wins} 勝，合計 {f2(tot)} HKD，"
+        live_html = (f"<p style='font-size:14px'><b>💰 934 真倉（按風險計，上限 0.01 手）：</b>{len(lrows)} 張已平倉，{wins} 勝，合計 {f2(tot)} HKD，"
                      f"平均 {f2(sum(rs) / len(rs)) if rs else '—'}R；最新：{esc((live.get('last') or {}).get('note') or '—')}</p>"
                      + ("<div style='overflow-x:auto'><table><tr><th>開倉（HKT）</th><th>方向</th><th>手</th><th>入場</th><th>出場（估）</th><th>HKD</th><th>R</th></tr>" + body + "</table></div>" if body else ""))
     tbl = ("<div style='overflow-x:auto'><table><tr><th>訊號 UTC</th><th>方向</th><th>入場</th><th>SL／TP</th><th>出場</th><th>R</th></tr>" + rows + "</table></div>") if rows else "<p class='muted'>前向仲未有單。</p>"
@@ -198,8 +198,38 @@ def g7_block(g, f2):
             f"Dukascopy 07-24→10-30 {esc(_stat_txt(bt.get('duka'), f2))}。</p>"
             f"<p style='font-size:14px'><b>影子前向（{esc(fwd.get('from'))} UTC 起，經紀 M1；更新 {esc(g.get('run_utc'))} UTC）：</b>{esc(_stat_txt(fwd.get('all'), f2))}"
             f"（做多 {esc(_stat_txt(fwd.get('long'), f2))}；做空 {esc(_stat_txt(fwd.get('short'), f2))}）→ <b>{esc(fwd.get('verdict') or '—')}</b></p>"
-            "<p class='muted' style='font-size:13px'>判斷（預先登記）：3 個月或 30 張（先到者）時平均 R ≥ +0.10 且 PF ≥ 1.2。使用者 11-01 決定唔等前向、用 magic 934 真倉 0.05 手（R361）；影子前向照計做對照。</p>"
+            "<p class='muted' style='font-size:13px'>判斷（預先登記）：3 個月或 30 張（先到者）時平均 R ≥ +0.10 且 PF ≥ 1.2。使用者 11-01 決定唔等前向、用 magic 934 真倉（R361；上限 0.01 手）；影子前向照計做對照。</p>"
             + live_html + tbl)
+
+
+def combo_block(c, f2):
+    """[R366] 935 A+ 真倉（R364 組合 A＋R365 內包線突破）：規則、回測（固定）、真倉成交簿（GCS xau/sig/combolive/state.json）。"""
+    if not isinstance(c, dict):
+        return ""
+    rows = c.get("book") or []
+    rs = [x.get("r") for x in rows if x.get("r") is not None]
+    tot = sum(x.get("pnl_hkd") or 0 for x in rows)
+    wins = sum(1 for x in rows if (x.get("pnl_hkd") or 0) > 0)
+    body = "".join(
+        f"<tr><td>{esc(hk(x.get('opened_ts')))}</td><td>{esc(str(x.get('ch') or '—').replace('組合A:', ''))}</td><td>{'BUY' if (x.get('side') or 0) > 0 else 'SELL'}</td><td>{esc(x.get('lots'))}</td>"
+        f"<td>{f2(x.get('entry'), '{:.2f}')}</td><td>{f2(x.get('exit_est'), '{:.2f}')}</td>"
+        f"<td class=\"{'pos' if (x.get('pnl_hkd') or 0) > 0 else 'neg'}\">{f2(x.get('pnl_hkd'))}</td><td>{f2(x.get('r'))}</td></tr>"
+        for x in reversed(rows))
+    pend = [o for o in (c.get("orders") or []) if o.get("kind") == "open"][-1:]
+    pend_txt = "；".join(f"{esc(o.get('comp'))} {esc(o.get('side'))} {esc(o.get('lots'))} 手 @ {f2(o.get('price'), '{:.2f}')}（SL {f2(o.get('sl'), '{:.2f}')}／TP {f2(o.get('tp'), '{:.2f}') if o.get('tp') else '冇'}）"
+                         for o in pend) or "冇"
+    comps = "、".join(esc(x) for x in (c.get("components") or []))
+    return ("<h3>🧩 A+（935 真倉：組合 A＋內包線突破）</h3>"
+            f"<p style='font-size:14px'><b>狀態：</b>{'開' if c.get('on') else '關'}；最新：{esc((c.get('last') or {}).get('note') or '—')}；最近開倉指令：{pend_txt}</p>"
+            f"<p style='font-size:14px'><b>七個成份（同時出訊號按次序揀第一個）：</b>{comps}。</p>"
+            "<p style='font-size:14px'><b>規則：</b>每個 H4／D1 收市判；同時最多 1 張；每張風險 1%（唔夠 0.01 手照開 0.01、0.01 手風險超過權益 10% 唔開）、上限 0.01 手；"
+            "止蝕／止賺放伺服器（星期五做多冇止賺）；時間止蝕 D1 成份 20 日、H4 成份 80 小時、星期五 24 小時；當日蝕 5000 HKD 停開；…69 戶口 931＋933＋934＋935 合共最多 3 張。</p>"
+            "<p style='font-size:14px'><b>回測（Dukascopy 2009→2026 滾動前向樣本外，單倉）：</b>981 張，平均 +0.101R，PF 1.30，最近 10 年 7/10 年正、正數月 70/117，最大回撤 −25.7R；"
+            "券商 MT5 2022-10→ 242 張 +0.162R（IDEAS #207）。</p>"
+            "<p class='muted' style='font-size:13px'>停條件（使用者批）：累計 ≤ −12R、由高位回落 ≤ −15R、連輸 ≥ 10、滿 40 張 PF &lt; 0.85 → 建議停。</p>"
+            + (f"<p style='font-size:14px'><b>💰 真倉成績：</b>{len(rows)} 張已平倉，{wins} 勝，合計 {f2(tot)} HKD，平均 {f2(sum(rs) / len(rs)) if rs else '—'}R</p>"
+               "<div style='overflow-x:auto'><table><tr><th>開倉（HKT）</th><th>成份</th><th>方向</th><th>手</th><th>入場</th><th>出場（估）</th><th>HKD</th><th>R</th></tr>" + body + "</table></div>"
+               if body else "<p class='muted'>真倉仲未有平倉。</p>"))
 
 
 def _forward_section(fw, book=None):
@@ -208,7 +238,7 @@ def _forward_section(fw, book=None):
     if not isinstance(fw, dict):
         return ""
     f2 = lambda x, f="{:+.2f}": "—" if x is None else f.format(x)  # noqa: E731
-    out = g7_block(fw.get("g7"), f2)
+    out = combo_block(fw.get("combo"), f2) + g7_block(fw.get("g7"), f2)
     gb = fw.get("gb") or {}
     ev = gb.get("eval") or {}
     crit = {"0342": "#149：候選 V13（GB 入場、SL 10、TP 10 全平）；20 張判：ΣR ≥ +2R、PF ≥ 1.2、最大回撤 ≤ 3R、好過同期 V0 → 先提真倉 0.05 手（要批）",
