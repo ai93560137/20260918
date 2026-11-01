@@ -1,4 +1,4 @@
-"""[IDEAS #165] XAUUSD 長期穩健策略搜尋：Dukascopy H1 2005→2026，五個家族，滾動前向（4 年揀、1 年測）。
+"""[IDEAS #166] XAUUSD 長期穩健策略搜尋：Dukascopy H1 2005→2026，五個家族，滾動前向（4 年揀、1 年測）。
 參數網格寫死喺 FAMILIES（預先登記，跑之前 commit）。成交：訊號 K 收市後下一根 H1 開盤入；SL／TP 用 H1 高低
 （同一根都掂當 SL、跳空過 SL 用開盤）；每張扣 0.5 美元；同一組合一次一張。H4／D1 由 H1 合成，日界 22:00 UTC。
 用法：python3 research/strategy_search/robust_long.py   → ROBUST_LONG.md
@@ -220,7 +220,7 @@ def fmt(s):
 def main():
     duka = load_duka()
     D = Data(*duka)
-    out = ["# XAUUSD 長期穩健策略搜尋（IDEAS #165）", "",
+    out = ["# XAUUSD 長期穩健策略搜尋（IDEAS #166）", "",
            f"- 數據：Dukascopy H1 {dt.datetime.fromtimestamp(int(D.t[0]), dt.timezone.utc):%Y-%m}→{dt.datetime.fromtimestamp(int(D.t[-1]), dt.timezone.utc):%Y-%m}（{len(D.t):,} 根）；每張扣 {COST} 美元；同一組合一次一張",
            f"- 滾動前向：前 {TRAIN_Y} 年揀（≥ {MIN_TRAIN_N} 張、PF ≥ {MIN_TRAIN_PF}），測下一年；樣本外 {FIRST_TEST}→{LAST_TEST}", ""]
     trades = {}
