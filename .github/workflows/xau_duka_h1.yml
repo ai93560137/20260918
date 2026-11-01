@@ -1,0 +1,52 @@
+name: 天覆陣 Dukascopy H1 補數（按年並行）
+
+# IDEAS #164：Dukascopy XAUUSD H1 2005→2026。單一 runner 約 2 個月／分鐘（疑被限速），按年拆 matrix 並行。
+# 寫 GCS xau/sig/duka_h1/<YYYY-MM>.json（已有嘅月份會覆寫同一內容）。只有價格，唔落單，$0 API。
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: 開始年
+        required: false
+        default: '2005'
+      end_year:
+        description: 結束年（包含）
+        required: false
+        default: '2026'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  years:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.y.outputs.list }}
+    steps:
+      - id: y
+        run: echo "list=$(python3 -c "import json;print(json.dumps([str(y) for y in range(int('${{ github.event.inputs.start_year }}'), int('${{ github.event.inputs.end_year }}') + 1)]))")" >> "$GITHUB_OUTPUT"
+
+  fetch:
+    needs: years
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 22
+      matrix:
+        year: ${{ fromJSON(needs.years.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q google-cloud-storage
+      - name: Fetch year
+        run: python3 research/student_offline/fetch_alt_m1.py --src duka_h1 --start "${{ matrix.year }}-01-01" --end "${{ matrix.year }}-12-31"
