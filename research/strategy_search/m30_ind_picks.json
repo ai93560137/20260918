@@ -1,0 +1,41 @@
+{
+ "A 保力加回歸＋ADX": {
+  "pass1": false,
+  "param": null
+ },
+ "B 擠壓突破（BB 喺 KC 入面）": {
+  "pass1": false,
+  "param": {
+   "sq": 12,
+   "k": 1.5,
+   "RR": 2.0
+  }
+ },
+ "C MACD 交叉＋H1 EMA200": {
+  "pass1": false,
+  "param": {
+   "k": 1.5,
+   "RR": 3.0
+  }
+ },
+ "D 隨機指標＋H1 斜率": {
+  "pass1": false,
+  "param": null
+ },
+ "E 時段均價（TWAP）": {
+  "pass1": false,
+  "param": {
+   "mode": "pullback",
+   "z": 0,
+   "k": 2.5
+  }
+ },
+ "G M5 唐奇安＋波幅擴張": {
+  "pass1": false,
+  "param": {
+   "N": 96,
+   "vf": true,
+   "RR": 3.0
+  }
+ }
+}
