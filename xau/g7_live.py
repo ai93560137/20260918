@@ -215,7 +215,7 @@ def load_m1(now, days=None):
 
 # ------------------------------------------------------------------ 狀態／回報
 def account_open_count(now):
-    """同戶口 931＋933＋934 倉數＋排緊嘅開倉。"""
+    """同戶口 931＋933＋934（＋935 組合 A）倉數＋排緊嘅開倉。"""
     m = _m()
     n = 0
     files = [(m.ACCOUNT_FILE, m.STATE_FILE)]
@@ -225,6 +225,8 @@ def account_open_count(now):
     except Exception:  # noqa: BLE001
         pass
     files.append((ACCOUNT_FILE, STATE_FILE))
+    if getattr(config, "COMBO_LIVE", False):                     # [R364] 935 組合 A 同戶口
+        files.append((config.PREFIX + "combolive/account.json", config.PREFIX + "combolive/state.json"))
     for af, sf in files:
         try:
             acct = storage.read_json(af, {}) or {}

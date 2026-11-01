@@ -19,6 +19,8 @@ import robust_long as R  # noqa: E402
 
 START_TS = int(dt.datetime(2026, 11, 2, tzinfo=dt.timezone.utc).timestamp())
 END_DAY = dt.date(2027, 11, 1)
+START_HKD = 30000.0
+RISK_PCTS = (1, 2, 3, 4, 5)          # 使用者 11-01：每張 1／2／3／4／5% 並列模擬
 COMPS = [  # 名、家族鍵、時框、時間止蝕（小時）、網格
     ("1 D1 Keltner 突破", "J5", "D1", 480, Q.FAMILIES["J5 Keltner 突破"]),
     ("2 D1 拋物線 SAR", "J7", "D1", 480, Q.FAMILIES["J7 拋物線 SAR 轉向"]),
@@ -55,7 +57,7 @@ def main():
            "- 六個成份同 #183；每年用前 4 年揀參數；只計 2026-11-02 起入場；唔落單；每張扣 0.5 美元",
            f"- 到期 {END_DAY}；回測對照（樣本外 2009→2026）：2,853 張 +0.074R PF 1.22、14/18 年正、最大回撤 −45R", "",
            "| 成份 | 今年參數 | 已平倉 | ΣR | 持倉中／待入場 |", "|---|---|---|---|---|"]
-    allr, opens, rows = [], [], []
+    allr, opens, rows, alltr = [], [], [], []
     for name, key, tf, th, grid in COMPS:
         D = frames[tf]
         g = pick(D, key, th, grid, year)
@@ -65,7 +67,7 @@ def main():
         ent = [e for e in entries(D, key, th, grid[g]) if int(D.t[e[0]]) >= START_TS]
         done = R.simulate(D, sorted(ent))
         done_ts = {x[0] for x in done}
-        rs = [x[3] for x in done]; allr += rs
+        rs = [x[3] for x in done]; allr += rs; alltr += done
         op = [e for e in ent if int(D.t[e[0]]) not in done_ts and int(D.t[e[0]]) > (max(done_ts) if done_ts else 0)][:1]
         for e in op:
             px = D.o[e[0]]
@@ -81,7 +83,13 @@ def main():
     out += ["", "## 持倉中", "", *(opens or ["- 冇"]), "", "## 已平倉", "", "| 入場（UTC） | 成份 | 方向 | 出場 | R |", "|---|---|---|---|---|",
             *(sorted(rows) or ["| — | — | — | — | — |"]), "", "## 累計", "",
             f"- {len(rs)} 張；ΣR {rs.sum() if len(rs) else 0:+.2f}；" + (f"平均 {s['avg']:+.3f}R PF {s['pf']:.2f}；最大回撤 {dd:+.1f}R" if len(rs) else "未有平倉"),
-            f"- 判：{'⚠ 觸發警示（累計 ≤ −15R 或回撤 ≤ −20R）→ 報總指揮重評' if warn else ('到期，照 IDEAS #184 判' if now.date() >= END_DAY else '未到期')}", ""]
+            f"- 判：{'⚠ 觸發警示（累計 ≤ −15R 或回撤 ≤ −20R）→ 報總指揮重評' if warn else ('到期，照 IDEAS #184 判' if now.date() >= END_DAY else '未到期')}", "",
+            "## 模擬資金（本金 30,000 HKD，已平倉成交，同時有倉疊加，最少 0.01 手）", "",
+            "| 每張風險 | 而家資金 | 回報 | 最大回撤 |", "|---|---|---|---|"]
+    for pct in RISK_PCTS:
+        e, m, _, _ = P.equity(sorted(alltr), START_HKD, pct)
+        out.append(f"| {pct:g}% | {e:,.0f} | {e / START_HKD - 1:+.1%} | {m:.0%} |")
+    out += ["", "- 0.01 手已經超過目標風險嘅單照開 0.01 手（本金 30,000 HKD 時，1% 好多時會係咁）。", ""]
     open(os.path.join(HERE, "PORTFOLIO_FORWARD.md"), "w").write("\n".join(out) + "\n")
     print("\n".join(out))
 

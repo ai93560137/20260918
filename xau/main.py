@@ -26,6 +26,7 @@ import signals
 import follower
 import student_live
 import g7_live
+import combo_live
 import hold_rules
 import lots_ladder
 import live_book
@@ -842,6 +843,8 @@ def _sub_book_ack(payload):
         books.append(("學生真倉", "studentlive", config.STUDENT_ACCOUNT, student_live.ack))
     if config.G7_LIVE and g7_live.is_cmd(cid):                        # [R361] 934 H1 回調（前綴 g）
         books.append(("H1 回調真倉", "g7live", config.G7_ACCOUNT, g7_live.ack))
+    if config.COMBO_LIVE and combo_live.is_cmd(cid):                  # [R364] 935 組合 A（前綴 k）
+        books.append(("組合 A 真倉", "combolive", config.COMBO_ACCOUNT, combo_live.ack))
     if follower.enabled() and follower.is_follow_cmd(cid):
         books.append(("跟單", "follow", config.FOLLOW_ACCOUNT, follower.ack))
     for name, comp, want, ack_fn in books:
@@ -1086,6 +1089,8 @@ def entry(req):
                 status["student_live"] = student_live.status()   # [R358]
             if config.G7_LIVE:
                 status["g7_live"] = g7_live.status()             # [R361]
+            if config.COMBO_LIVE:
+                status["combo_live"] = combo_live.status()       # [R364]
             if student.enabled():
                 status["student"] = student.status()
         if config.PRODUCT_KIND == "gold":
@@ -1118,6 +1123,9 @@ def entry(req):
         hit = _sub_book_ack(payload)
         if hit is not None:
             return hit
+    if config.SIGNAL_BOOK and config.COMBO_LIVE:                      # [R364] 組合 A 真倉（magic 935）：心跳按 magic 分流
+        if combo_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return combo_live.handle_heartbeat(payload)
     if config.SIGNAL_BOOK and config.G7_LIVE:                         # [R361] H1 回調真倉（magic 934）：心跳按 magic 分流
         if g7_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return g7_live.handle_heartbeat(payload)
