@@ -11,4 +11,4 @@
 | PAXG（Binance）M1 | `xau/sig/alt/paxg/<日>.json` | 2026-07-24→10-30 | 24／7，分析時剔週末 |
 | GC=F（yfinance）M1 | `xau/sig/alt/gcf/<日>.json` | 10-23→10-30 | 只得 7 日 |
 
-新嘅 MT5 匯出：用 `xau/mt5/ExportM1Years.mq5`（按年 CSV，已轉 UTC）或者再上載 *_MAX.zip 跑 `import_mt5.py`。
+新嘅 MT5 匯出：**多品種一次過**用 `xau/mt5/ExportMaxBars.mq5`（品種清單＋時框清單，輸出 `MQL5\Files\MAX\<品種>_<時框>_MAX.csv`，格式同 *_MAX.csv 一樣；先將「圖表最大 K 線數」改 Unlimited）；單品種按年用 `xau/mt5/ExportM1Years.mq5`（按年 CSV，已轉 UTC）或者再上載 *_MAX.zip 跑 `import_mt5.py`。
