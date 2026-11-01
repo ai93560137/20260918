@@ -269,17 +269,26 @@ def send_order(rec):
     cmd_id = uuid.uuid4().hex
 
     live_pos = None
+    acct = {}
     if config.EXECUTE:
         try:
-            live_pos = (storage.read_json(config.PREFIX + "account.json", {}) or {}).get("positions") or []
+            acct = storage.read_json(config.PREFIX + "account.json", {}) or {}
+            live_pos = acct.get("positions") or []
         except StorageError:
             live_pos = []
+    n_lots = lots()
+    import risk_size
+    r_lots, r_info = risk_size.size(acct.get("equity"), price, plan["stop"], config.MAX_LOTS)   # [R363] 按風險計手數
+    if r_lots is not None:
+        if r_lots == 0.0:
+            return "rejected", f"按風險計手數唔開：{r_info.get('why')}"
+        n_lots = r_lots
 
     def mutate(state):
         if state.get("position") or live_pos:
             return None, None
         text = executor.enqueue(state, "OPEN_LONG" if plan["side"] == "BUY" else "OPEN_SHORT", plan["stop"], plan["target"],
-                                now, cmd_id, lots=lots(), tag=f"tg:{rec.get('sid')}",
+                                now, cmd_id, lots=n_lots, tag=f"tg:{rec.get('sid')}",
                                 note="訊號S1 " + config.CHANNEL_NAMES.get(str(rec.get("ch") or "")[-4:], str(rec.get("ch") or "")[-4:]))   # [R350] MT5 註解
         return state, text
     try:

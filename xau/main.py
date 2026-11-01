@@ -431,8 +431,18 @@ def _record(state, rec, day):
         log_event(f"⚠️ 決策紀錄寫入失敗：{exc}", severity="WARNING")
 
 
-def enqueue_cmd(state, action, stop, target, now, decision_id, px=None):
-    return executor.enqueue(state, action, stop, target, now, decision_id, note="AI決策",
+def enqueue_cmd(state, action, stop, target, now, decision_id, px=None, account=None):
+    lots = None
+    if action in ("OPEN_LONG", "OPEN_SHORT") and config.RISK_SIZING:          # [R363] 按風險計手數（921／931 S1）
+        import risk_size
+        lots, info = risk_size.size((account or {}).get("equity"), px, stop, config.MAX_LOTS)
+        state["risk_last"] = {**info, "ts": now, "id": str(decision_id)[:8]}
+        if info.get("mode") == "fallback":
+            log_event(f"⚠️ [{config.TEAM_NAME}] 按風險計手數：{info['why']}（{lots:.2f} 手）", severity="WARNING", component="risk")
+        if lots == 0.0:
+            log_event(f"🧮 [{config.TEAM_NAME}] 按風險計手數唔開：{info.get('why')}", component="risk")
+            return None
+    return executor.enqueue(state, action, stop, target, now, decision_id, note="AI決策", lots=lots,
                             px=px, dev=(config.MAX_ENTRY_SLIP or None))   # [R355] #145 P3：開倉帶決策價，EA v0.41 偏離太多唔開   # [R350] MT5 註解「天覆陣 AI決策 <id>」（使用者 10-28）
 
 
@@ -655,7 +665,9 @@ def process_bar(state, bar, m1, m15, account, now):
         if cited["sid"] not in rec["reason"]:
             rec["reason"] = (rec["reason"] + signals.note(cited))[:480]
     if config.EXECUTE:
-        rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id, px=bar["close"]) or "HOLD"
+        rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id, px=bar["close"], account=account) or "HOLD"
+        if action in ("OPEN_LONG", "OPEN_SHORT") and state.get("risk_last") and (state["risk_last"].get("id") == str(decision_id)[:8]):
+            rec["risk"] = state["risk_last"]
         if action in ("OPEN_LONG", "OPEN_SHORT"):
             paper.count_trade(state, day)
     else:
@@ -1028,6 +1040,7 @@ def build_status():
         "ea_dry_run": account.get("dry_run"), "xau_account": executor.mask_account(config.ACCOUNT), "follow_account": executor.mask_account(config.FOLLOW_ACCOUNT), "test_cmds": config.TEST_CMDS,
         "ack_require_account": config.ACK_REQUIRE_ACCOUNT,
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
+        "risk_sizing": {"on": config.RISK_SIZING, "pct": config.RISK_PCT, "fallback_lots": config.RISK_FALLBACK_LOTS, "last": state.get("risk_last")},
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
         "hold_rules": {"mode": hold_rules.mode(), "ask_min": config.HOLD_RULES_ASK_MIN, "tol": config.HOLD_RULES_TOL, **(state.get("hold_rules") or {})},
@@ -1075,6 +1088,12 @@ def entry(req):
                 status["g7_live"] = g7_live.status()             # [R361]
             if student.enabled():
                 status["student"] = student.status()
+        if config.PRODUCT_KIND == "gold":
+            try:
+                import risk_size
+                status["open_risk"] = risk_size.accounts_open_risk()     # [R363] 戶口合計開倉風險 %
+            except Exception:  # noqa: BLE001
+                status["open_risk"] = None
         if req.args.get("format") == "json":
             return jsonify(status), 200
         return page.render(status), 200, {"Content-Type": "text/html; charset=utf-8"}

@@ -178,6 +178,14 @@ fresh_state()
 st, d = hb(END + 65, price)
 check("control STOP → 唔開", d["cmd_text"] == "" and "STOP" in d["message"], d)
 FAKE["xau/sig/control.json"] = (json.dumps({"mode": "RUN", "set_by": "user", "principal_hkd": 27000.0}), 3)
+print("=== [R363] 按風險計手數 ===")
+config.RISK_SIZING = True
+fresh_state(); put_bars(rows)
+st, d = hb(END + 65, price)
+o = gstate()["orders"][-1]
+exp = int(28000 * 0.01 / ((o["price"] - o["sl"]) * 100 * 7.8) / 0.01 + 1e-9) * 0.01
+check("934 按風險：權益 28,000 × 1% ÷ 每手止損 → 手數同計算一致、指令用新手數", abs(o["lots"] - round(exp, 2)) < 1e-9 and d["cmd_text"].startswith(f"open|BUY|{o['lots']:.2f}|") and (o.get("risk") or {}).get("mode") == "risk", (o, d["cmd_text"]))
+config.RISK_SIZING = False
 NOW[0] = END + 65
 sts = G.status()
 check("status：magic、參數、訊號紀錄", sts["magic"] == 934 and sts["params"]["hold_h"] == 72 and isinstance(sts["signals"], list), sts)

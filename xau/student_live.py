@@ -252,9 +252,18 @@ def _decide(m, state, account, price, now):
         action = "OPEN_LONG" if p["side"] == "BUY" else "OPEN_SHORT"
         cid = "s" + uuid.uuid4().hex[:7]
         n = lots(state)
+        import risk_size
+        r_lots, r_info = risk_size.size(account.get("equity"), price, p["sl"], config.STUDENT_MAX_LOTS)   # [R363] 按風險計手數
+        if r_lots is not None:
+            if r_info.get("mode") == "fallback":
+                m.log_event(f"⚠️ [{config.TEAM_NAME}] 學生真倉按風險計手數：{r_info['why']}", severity="WARNING", component="risk")
+            if r_lots == 0.0:
+                state["used"] = [*state.get("used", []), p["id"]][-500:]
+                return f"{p['student']} {p['side']}：按風險計手數唔開（{r_info.get('why')}）"
+            n = r_lots
         text = executor.enqueue(state, action, p["sl"], p["tp"][0], now, cid, lots=n, tag=p["id"], magic=config.STUDENT_MAGIC,
                                 note="學生" + p["student"].removeprefix("rule:"), px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.EXECUTE else None
-        order = {"id": cid, "pred": p["id"], "student": p["student"], "side": p["side"], "lots": n, "sl": p["sl"], "tp": p["tp"][0],
+        order = {"id": cid, "pred": p["id"], "student": p["student"], "side": p["side"], "lots": n, "sl": p["sl"], "tp": p["tp"][0], "risk": r_info if r_lots is not None else None,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
         state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]
         state["used"] = [*state.get("used", []), p["id"]][-500:]

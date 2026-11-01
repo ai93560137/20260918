@@ -103,6 +103,9 @@ KEY_WARN_DAYS = _i("ANTHROPIC_KEY_WARN_DAYS", 14)
 # --- 硬性風控（AI 無權超越）---
 LOTS = _f("XAU_LOTS", 0.01)
 MAX_LOTS = _f("XAU_MAX_LOTS", 0.10)
+RISK_SIZING = _b("XAU_RISK_SIZING", False)                 # [R363] 按風險計手數（使用者 11-01，921／931／932／933／934 全部）；開咗取代固定手數同階梯
+RISK_PCT = _f("XAU_RISK_PCT", 1.0)                          # 每張風險＝戶口權益幾多 %
+RISK_FALLBACK_LOTS = _f("XAU_RISK_FALLBACK_LOTS", 0.05)     # 權益讀唔到時用返嘅固定手數
 LOTS_LADDER = _b("XAU_LOTS_LADDER", False)                 # [R346] 手數階梯：每次全部平倉賺 +LOTS_STEP、蝕 −LOTS_STEP，夾喺 LOTS_MIN–MAX_LOTS；起點 XAU_LOTS（使用者 10-27 0.05→0.10）
 LOTS_MIN = _f("XAU_LOTS_MIN", LOTS)
 LOTS_STEP = _f("XAU_LOTS_STEP", 0.01)
@@ -241,6 +244,7 @@ G7_LIVE = _b("SIG_G7_LIVE", False)
 G7_MAGIC = _i("SIG_G7_MAGIC", MAGIC + 3)                             # 931 → 934（EA InpBotMagics 931–935 已包）
 G7_ACCOUNT = _s("SIG_G7_ACCOUNT", "") or ACCOUNT                     # 預設同 931 一個戶口
 G7_LOTS = _f("SIG_G7_LOTS", 0.05)                                    # 固定手數（冇階梯）
+G7_MAX_LOTS = _f("SIG_G7_MAX_LOTS", MAX_LOTS)                        # [R363] 按風險計手數嘅硬上限
 G7_RSI_TH = _f("SIG_G7_RSI_TH", 35.0)                                # H1 RSI(14) 跌穿呢個買／升穿 100−呢個沽
 G7_SL_ATR = _f("SIG_G7_SL_ATR", 1.5)                                 # SL＝K×H1 ATR(14)
 G7_TP_R = _f("SIG_G7_TP_R", 2.0)                                     # TP＝R 倍止損距離

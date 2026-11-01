@@ -301,9 +301,19 @@ def _decide(m, state, account, price, now):
         cid = "f" + uuid.uuid4().hex[:7]
         import rules as _rules
         f_lots = _rules.follow_lots(state)                                  # [R346]
+        import risk_size
+        r_lots, r_info = risk_size.size(account.get("equity"), price, sig["sl"], config.FOLLOW_MAX_LOTS)   # [R363] 按風險計手數
+        if r_lots is not None:
+            if r_info.get("mode") == "fallback":
+                m.log_event(f"⚠️ [{config.TEAM_NAME}] 跟單按風險計手數：{r_info['why']}", severity="WARNING", component="risk")
+            if r_lots == 0.0:
+                state["used"] = [*state.get("used", []), sig["sid"]][-500:]
+                m.log_event(f"📨 [{config.TEAM_NAME}] 跟單略過 {sig['sid']}：按風險計手數 {r_info.get('why')}", component="follow")
+                continue
+            f_lots = r_lots
         text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=f_lots, tag=sig["sid"], magic=config.FOLLOW_MAGIC,
                                 note="跟單" + config.CHANNEL_NAMES.get(ch, ch)) if config.EXECUTE else None   # [R350] MT5 註解「天覆陣 跟單CTC <id>」
-        order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": f_lots, "sl": sig["sl"], "tp": tp_cmd,
+        order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": f_lots, "sl": sig["sl"], "tp": tp_cmd, "risk": r_info if r_lots is not None else None,
                  "tps": list(sig["tp"]), "exit": mode,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
         state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]
