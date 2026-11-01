@@ -1,0 +1,54 @@
+name: 天覆陣 Dukascopy M1 補數（按半年並行）
+
+# IDEAS #169：M5 指標策略要喺券商 MT5（2022-08 起）以外，用 Dukascopy 2015→2022-07 M1 做未見數據核對。
+# 逐日檔、疑被限速，所以每半年一個 job 並行。寫 GCS xau/sig/duka/<日>.json（已有嘅日子會跳過）。只有價格，唔落單，$0 API。
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: 開始年
+        required: false
+        default: '2015'
+      end_year:
+        description: 結束年（包含）
+        required: false
+        default: '2022'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  halves:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.y.outputs.list }}
+    steps:
+      - id: y
+        run: echo "list=$(python3 -c "import json;print(json.dumps([f'{y}-{h}' for y in range(int('${{ github.event.inputs.start_year }}'), int('${{ github.event.inputs.end_year }}') + 1) for h in ('01-01:06-30', '07-01:12-31')]))")" >> "$GITHUB_OUTPUT"
+
+  fetch:
+    needs: halves
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        part: ${{ fromJSON(needs.halves.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q google-cloud-storage
+      - name: Fetch half-year
+        run: |
+          P="${{ matrix.part }}"; Y="${P%%-*}"; R="${P#*-}"; A="${R%%:*}"; B="${R##*:}"
+          python3 research/student_offline/fetch_alt_m1.py --src duka --start "$Y-$A" --end "$Y-$B"
