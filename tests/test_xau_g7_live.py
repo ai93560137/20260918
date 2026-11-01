@@ -89,6 +89,18 @@ check("時間止蝕：72 小時到先平；冇開倉時間用落單時間", G.ti
 # 週末缺口：星期五 20:00 開倉，星期一 22:00 都已經過 72 小時（按時鐘計，同回測一樣）
 fri = 1793390400   # 2026-10-30 20:00 UTC 星期五
 check("時間止蝕按時鐘計（週末都計）：星期五 20:00 開 → 星期一 20:00 到", G.time_stop_due({"opened_ts": fri}, fri + 72 * 3600, 72))
+wk = [(100, 1, 2, 0.5, 1.5), (160, 1.5, 1.5, 1.5, 1.5), (220, 1.5, 1.5, 1.5, 1.5), (280, 1.5, 2, 1, 1.8), (340, 1.8, 1.8, 1.8, 1.9)]
+check("剔休市平盤 K 線（高＝低、收市同上一根一樣），真 K 線保留", G.drop_flat(wk) == [wk[0], wk[3], wk[4]], G.drop_flat(wk))
+# 券商時區：10-29（夏令 UTC+3）、11-03（冬令 UTC+2）
+check("broker_utc：美國夏令時 UTC+3、之後 UTC+2", G.broker_utc(1793311200 + 3 * 3600) == 1793311200 and G.broker_utc(1793664000 + 2 * 3600) == 1793664000)
+# 週末 server_offset 計錯：星期五 K 線（伺服器時間一樣）被存去星期六檔、utc 錯 → 讀返要合併、唔重複
+fri_t = 1793390400 + 3 * 3600   # 星期五 20:00 UTC 嘅伺服器時間
+FAKE["xau/sig/bars/2026-10-30.jsonl"] = (json.dumps([{"time": fri_t, "utc": fri_t - 3 * 3600, "open": 1, "high": 2, "low": 0.5, "close": 1.5}]), 1)
+FAKE["xau/sig/bars/2026-10-31.jsonl"] = (json.dumps([{"time": fri_t, "utc": fri_t + 66000, "open": 1, "high": 2, "low": 0.5, "close": 1.5}]), 1)
+G._DAY_CACHE.clear()
+lm = G.load_m1(1793390400 + 2 * 86400, days=3)
+check("週末重複存嘅星期五 K 線：用伺服器時間重算 UTC → 只剩一根、時間啱", [b[0] for b in lm] == [1793390400], lm)
+FAKE.pop("xau/sig/bars/2026-10-30.jsonl"); FAKE.pop("xau/sig/bars/2026-10-31.jsonl"); G._DAY_CACHE.clear()
 check("id 前綴 g；931 隨機 hex 永遠唔會撞（hex 冇 g）", G.is_cmd("g1234567") and not G.is_cmd("f1234567") and not G.is_cmd("abcdef01"))
 check("magic 934、0.05 手、日蝕 300、戶口上限 3", config.G7_MAGIC == 934 and config.G7_LOTS == 0.05 and config.G7_DAY_STOP_HKD == 300 and config.G7_ACCOUNT_MAX == 3)
 
@@ -96,7 +108,7 @@ check("magic 934、0.05 手、日蝕 300、戶口上限 3", config.G7_MAGIC == 9
 def put_bars(rows):
     by = {}
     for t, o, h, l, c in rows:
-        by.setdefault(dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%Y-%m-%d"), []).append({"time": t, "utc": t, "open": o, "high": h, "low": l, "close": c})
+        by.setdefault(dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%Y-%m-%d"), []).append({"time": t + (2 * 3600 if t >= 1793512800 else 3 * 3600), "utc": t, "open": o, "high": h, "low": l, "close": c})
     for d, v in by.items():
         FAKE[f"xau/sig/bars/{d}.jsonl"] = (json.dumps(v), 1)
     G._DAY_CACHE.clear()
