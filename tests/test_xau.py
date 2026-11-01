@@ -2,7 +2,7 @@
 實倉指令佇列同回報、頁面。Claude 用假 brain，GCS 用假 bucket。"""
 import json, os, sys, time, types
 
-os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_EXECUTE="0", GATE_MODEL="claude-haiku-5-5",
+os.environ.update(XAU_SERVER_TZ_RULE="off", WEBHOOK_SECRET_TOKEN="tok", XAU_EXECUTE="0", GATE_MODEL="claude-haiku-5-5",
                   XAU_MAX_SL_USD="30", XAU_MIN_SL_USD="2", XAU_MAX_HOLD_MIN="120", XAU_MAX_TRADES_PER_DAY="3",
                   ANTHROPIC_API_KEY="x", XAU_CHASE_BLOCK="0")   # [R351] M1 硬規則預設關：下面紙上開倉例子有急跌；最尾另外開嚟測
 sys.path.insert(0, "/home/user/20260918/xau")

@@ -35,7 +35,8 @@ def _bars(rows):
         if isinstance(b, (list, tuple)):
             t, o, h, l, c = int(b[0]), *map(float, b[1:5])
         else:
-            t = int(b.get("utc") if b.get("utc") is not None else b["time"]); o, h, l, c = (float(b[k]) for k in ("open", "high", "low", "close"))
+            # [R362] 經紀 bars 有伺服器 time 欄就按券商時區規則重算 UTC（唔信可能錯嘅 utc 欄）
+            t = gb.broker_utc(b["time"]) if b.get("time") is not None else int(b["utc"]); o, h, l, c = (float(b[k]) for k in ("open", "high", "low", "close"))
         out[t] = {"time": t, "open": o, "high": h, "low": l, "close": c}
     return out
 
