@@ -1,0 +1,36 @@
+{
+ "W1 大K逆勢": {
+  "pass1": false,
+  "param": {
+   "k": 2.5,
+   "a": 0.5,
+   "b": 6.0
+  }
+ },
+ "W2 順H1趨勢 RSI2 回調": {
+  "pass1": false,
+  "param": {
+   "a": 0.5,
+   "b": 6.0,
+   "T": 24
+  }
+ },
+ "W3 TWAP 偏離回歸": {
+  "pass1": false,
+  "param": null
+ },
+ "W4 亞洲區間邊回歸": {
+  "pass1": false,
+  "param": {
+   "a": 0.3,
+   "b": 6.0
+  }
+ },
+ "W5 偏離 EMA50 回歸": {
+  "pass1": false,
+  "param": {
+   "dev": 3.0,
+   "b": 10.0
+  }
+ }
+}
