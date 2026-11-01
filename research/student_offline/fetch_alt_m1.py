@@ -54,7 +54,12 @@ PX_RANGE = {"XAUUSD": (200, 20000), "XAGUSD": (2, 200), "EURUSD": (0.6, 1.9), "U
             "USA500IDXUSD": (500, 12000), "USTBONDTRUSD": (80, 250), "LIGHTCMDUSD": (5, 200), "BTCUSD": (50, 500000), "COPPERCMDUSD": (1, 9)}
 
 
+FIXED_DIV = {"BTCUSD": 10.0}          # 範圍太闊會揀錯（2025-06 試抓：÷1000 得 1,045，實際約 104,500）
+
+
 def _div_for(sym, first_open):
+    if sym in FIXED_DIV:
+        return FIXED_DIV[sym]
     lo_ok, hi_ok = PX_RANGE.get(sym, (2, 200))
     for cand in (1000.0, 100000.0, 100.0, 10000.0, 10.0, 1.0):
         if lo_ok <= first_open / cand <= hi_ok:
