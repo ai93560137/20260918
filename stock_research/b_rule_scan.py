@@ -5,8 +5,10 @@
 收市由 Keltner 上軌（EMA20 + 2×ATR20）下面升穿上軌 ＋ 拋物線 SAR 向上 ＋ 收市 > SMA200 → 做多；做空相反。
 入場參考 = 下一個交易日開市。⚠️ 回測判決 ☠️（#181、B_STOCKS_ATR_GRID_PREREG.md）：訊號唔勝隨機入場——名單只供參考，唔係落單指令。
 
-    python3 stock_research/b_rule_scan.py --src /tmp/eq --ss /tmp/ss/research/strategy_search
+    python3 stock_research/b_rule_scan.py --src /tmp/eq --ss /tmp/ss/research/strategy_search [--tg]
 輸出 analysis/b_scan/<日期>.csv、<日期>.md、latest.md。
+--tg：最新收市日未發過嘅市場（記錄喺 analysis/b_scan/sent.txt）各寫一個 analysis/b_scan/tg_<市場>.txt，
+由 .github/workflows/b_scan_daily.yml（預設分支）用 Telegram 發；同一市場同一日只發一次。
 """
 import argparse
 import csv
@@ -31,6 +33,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default="/tmp/eq")
     ap.add_argument("--ss", default="/tmp/ss/research/strategy_search")
+    ap.add_argument("--tg", action="store_true")
     a = ap.parse_args()
     sys.path.insert(0, a.ss)
     import b_stocks as BS  # noqa: E402
@@ -99,6 +102,47 @@ def main():
     (OUT / f"{day}.md").write_text(md, encoding="utf-8")
     (OUT / "latest.md").write_text(md, encoding="utf-8")
     print(md)
+    if a.tg:
+        write_tg(rows, mkt_last)
+
+
+MKT_NAME = {"us": "🇺🇸 美股（標普／納指／道指）", "jp": "🇯🇵 日經 225", "hk": "🇭🇰 恒指"}
+
+
+def write_tg(rows, mkt_last):
+    sent_f = OUT / "sent.txt"
+    sent = set(sent_f.read_text(encoding="utf-8").split()) if sent_f.exists() else set()
+    for f in OUT.glob("tg_*.txt"):
+        f.unlink()
+    for mkt, day in sorted(mkt_last.items()):
+        tag = f"{mkt}:{day}"
+        if tag in sent:
+            print(f"{tag} 已發過")
+            continue
+        uniq = {}
+        for r in rows:
+            if r["市場"] == mkt:
+                u = uniq.setdefault(r["代號"], dict(r, 指數集=[]))
+                u["指數集"].append(r["指數"])
+        lo = sorted((r for r in uniq.values() if r["方向"] == "做多"), key=lambda r: r["代號"])
+        sh = sorted((r for r in uniq.values() if r["方向"] == "做空"), key=lambda r: r["代號"])
+        L = [f"📡 日線 B 規則掃描｜{MKT_NAME[mkt]}｜{day} 收市", f"做多 {len(lo)}、做空 {len(sh)}（下一交易日開市入；SL2／TP4×ATR20 以收市估）", ""]
+        for title, grp in (("⬆️ 做多", lo), ("⬇️ 做空", sh)):
+            if grp:
+                L.append(title)
+                L += [f"{r['代號']} {r['收市']}｜SL {r['SL2']}／TP {r['TP4']}（ATR {r['ATR佔價']}）" for r in grp]
+                L.append("")
+        if not lo and not sh:
+            L.append("（今日冇訊號）")
+        L += ["⚠️ 只係掃描、唔係落單指令：回測 ☠️（訊號唔勝隨機入場；股票做空多數做唔到）。",
+              f"全表（三組 ATR）：analysis/b_scan/{day}.md（分支 claude/stock-research-k9nzau）"]
+        txt = "\n".join(L)
+        if len(txt) > 3900:
+            txt = txt[:3800].rsplit("\n", 1)[0] + "\n…（太長截斷，全表見 analysis/b_scan/）"
+        (OUT / f"tg_{mkt}.txt").write_text(txt + "\n", encoding="utf-8")
+        sent.add(tag)
+        print(f"→ tg_{mkt}.txt")
+    sent_f.write_text("\n".join(sorted(sent)) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
