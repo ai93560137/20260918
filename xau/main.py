@@ -1003,15 +1003,21 @@ def forward_view():
         stu = storage.read_json(base + "student/scores.json", None)
         g7 = storage.read_json(base + "g7_forward/latest.json", None)      # [R360] IDEAS #162／#163 H1 回調策略（研究腳本 wf_forward.py --write 寫）
         g7l = storage.read_json(base + "g7live/state.json", None)          # [R361] 934 真倉成交簿
+        cbl = storage.read_json(base + "combolive/state.json", None)       # [R366] 935 A+ 真倉成交簿
     except StorageError:
         return None
+    combo = None
+    if config.COMBO_LIVE or (isinstance(cbl, dict) and cbl):          # zhuge-xau 頁冇開 SIG_COMBO_LIVE 都照顯示（有狀態檔就顯示）
+        cbl = cbl if isinstance(cbl, dict) else {}
+        combo = {"book": (cbl.get("book") or [])[-50:], "orders": (cbl.get("orders") or [])[-10:], "last": cbl.get("last"),
+                 "on": config.COMBO_LIVE, "components": [c[0] for c in combo_live.COMPONENTS]}
     if isinstance(g7l, dict) and (g7l.get("book") or g7l.get("orders")):
         g7 = dict(g7) if isinstance(g7, dict) else {}
         g7["live"] = {"book": (g7l.get("book") or [])[-50:], "orders": (g7l.get("orders") or [])[-10:], "last": g7l.get("last")}
-    if not gb and not stu and not g7:
+    if not gb and not stu and not g7 and not combo:
         return None
     return {"gb": gb if isinstance(gb, dict) else None, "student": stu if isinstance(stu, dict) else None,
-            "g7": g7 if isinstance(g7, dict) else None}
+            "g7": g7 if isinstance(g7, dict) else None, "combo": combo}
 
 
 def build_status():

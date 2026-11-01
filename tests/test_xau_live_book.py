@@ -162,8 +162,17 @@ class Forward(unittest.TestCase):
         live = {"book": [{"opened_ts": 1793700000, "side": 1, "lots": 0.05, "entry": 3950.0, "exit_est": 3980.0, "pnl_hkd": 1170.0, "r": 1.98}],
                 "last": {"note": "有倉（SL／TP 伺服器端；到鐘時間止蝕）"}}
         h2 = page.forward_section({"g7": {**g7, "live": live}})
-        for frag in ("934 真倉", "1 張已平倉", "+1170.00", "+1.98", "到鐘時間止蝕"):
+        for frag in ("934 真倉（按風險計，上限 0.01 手）", "1 張已平倉", "+1170.00", "+1.98", "到鐘時間止蝕"):
             self.assertIn(frag, h2)
+
+    def test_forward_combo_aplus(self):
+        c = {"on": True, "components": ["D1 Keltner 突破", "星期效應", "D1 內包線突破"], "last": {"note": "等 H4 收市"},
+             "orders": [{"kind": "open", "comp": "D1 內包線突破", "side": "BUY", "lots": 0.01, "price": 3950.0, "sl": 3900.0, "tp": 4050.0}],
+             "book": [{"opened_ts": 1793700000, "side": 1, "lots": 0.01, "entry": 3950.0, "exit_est": 4050.0, "pnl_hkd": 780.0, "r": 1.99, "ch": "組合A:D1 內包線突破"}]}
+        h = page.forward_section({"combo": c})
+        for frag in ("A+（935 真倉", "D1 內包線突破", "981 張", "+0.101R", "70/117", "1 張已平倉", "+780.00", "+1.99", "等 H4 收市", "BUY 0.01 手 @ 3950.00", "建議停"):
+            self.assertIn(frag, h)
+        self.assertIn("真倉仲未有平倉", page.forward_section({"combo": {**c, "book": []}}))
 
     def test_forward_bad_data(self):
         self.assertIn("讀唔到", page.forward_section({"gb": {"eval": {"0342": {"result": {"V0": {}}}}}}))
