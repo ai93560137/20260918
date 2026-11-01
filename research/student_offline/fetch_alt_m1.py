@@ -49,6 +49,51 @@ def gcf_all():
     return out
 
 
+def _div_for(sym, first_open):
+    lo_ok, hi_ok = (200, 20000) if sym == "XAUUSD" else (2, 200)
+    for cand in (1000.0, 100000.0, 100.0):
+        if lo_ok <= first_open / cand <= hi_ok:
+            return cand
+    return 1000.0
+
+
+def _duka_days_to_h1(sym, y, m):
+    """[IDEAS #194] 當月：逐日下載 /YYYY/MM(0 起)/DD/BID_candles_min_1.bi5（24 bytes／根：秒、開、收、低、高、量），合成 H1 [[utc, o, h, l, c], …]。
+    只用已完結嘅鐘（唔要而家呢個鐘）；拎唔到嘅日子（假期、週末、未出）略過。"""
+    import lzma, struct, time
+    import urllib.request
+    now = int(dt.datetime.now(dt.timezone.utc).timestamp())
+    hours = {}
+    d = dt.date(y, m, 1)
+    while d.month == m and d <= dt.date.today():
+        url = f"https://datafeed.dukascopy.com/datafeed/{sym}/{y:04d}/{m - 1:02d}/{d.day:02d}/BID_candles_min_1.bi5"
+        try:
+            raw = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=60).read()
+        except Exception as exc:  # noqa: BLE001
+            print(f"{d} 日檔拎唔到：{exc}"); raw = None
+        if raw:
+            data = lzma.decompress(raw)
+            recs = [struct.unpack(">5if", data[i * 24:(i + 1) * 24]) for i in range(len(data) // 24)]
+            recs = [r for r in recs if r[1] > 0]
+            if recs:
+                div = _div_for(sym, recs[0][1])
+                t0 = int(dt.datetime(d.year, d.month, d.day, tzinfo=dt.timezone.utc).timestamp())
+                for s_, o, c, lo, hi, v in recs:
+                    if v <= 0 and o == c == lo == hi:
+                        continue                                # 冇成交嘅平線分鐘
+                    ts = t0 + s_; hk = ts - ts % 3600
+                    if hk + 3600 > now:
+                        continue
+                    b = hours.get(hk)
+                    if b is None:
+                        hours[hk] = [hk, o / div, hi / div, lo / div, c / div]
+                    else:
+                        b[2] = max(b[2], hi / div); b[3] = min(b[3], lo / div); b[4] = c / div
+        d += dt.timedelta(days=1)
+        time.sleep(0.2)
+    return [hours[k] for k in sorted(hours)]
+
+
 def duka_h1(a):
     """[IDEAS #164] Dukascopy XAUUSD H1 BID：每月一個檔 /YYYY/MM(0 起)/BID_candles_hour_1.bi5（24 bytes／根：秒、開、收、低、高、量）。
     寫 GCS xau/sig/duka_h1/<YYYY-MM>.json＝[[utc, o, h, l, c], …]。"""
@@ -70,6 +115,8 @@ def duka_h1(a):
                 print(f"{y}-{m:02d} 第 {k + 1} 次失敗：{exc}")
                 time.sleep(2 ** (k + 1))
         rows = []
+        if not raw and (y, m) == (dt.date.today().year, dt.date.today().month):
+            rows = _duka_days_to_h1(a.sym, y, m)                # [IDEAS #194] 當月未有月檔 → 用每日 M1 檔合成 H1
         if raw:
             data = lzma.decompress(raw)
             t0 = int(dt.datetime(y, m, 1, tzinfo=dt.timezone.utc).timestamp())
