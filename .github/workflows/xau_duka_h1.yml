@@ -13,6 +13,10 @@ on:
         description: 結束年（包含）
         required: false
         default: '2026'
+      sym:
+        description: 品種（XAUUSD／XAGUSD；IDEAS #168 白銀獨立市場核對）
+        required: false
+        default: 'XAUUSD'
 
 permissions:
   contents: read
@@ -49,4 +53,4 @@ jobs:
       - name: Install
         run: pip install -q google-cloud-storage
       - name: Fetch year
-        run: python3 research/student_offline/fetch_alt_m1.py --src duka_h1 --start "${{ matrix.year }}-01-01" --end "${{ matrix.year }}-12-31"
+        run: python3 research/student_offline/fetch_alt_m1.py --src duka_h1 --start "${{ matrix.year }}-01-01" --end "${{ matrix.year }}-12-31" --sym "${{ github.event.inputs.sym || 'XAUUSD' }}"
