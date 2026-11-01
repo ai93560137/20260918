@@ -1,5 +1,5 @@
 """[R364] 核對 xau/combo_live.py（純 Python，真倉用）同 research numpy 版（d1_indicators／h4_indicators／robust2）訊號一致：
-用 Dukascopy H1 2015→2026，逐根 D1／H4 比較六個成份嘅訊號方向同止蝕距離。用法：python3 research/strategy_search/combo_live_parity.py"""
+用 Dukascopy H1 2015→2026，逐根 D1／H4 比較指標成份（R365 起連 D1 內包線突破）嘅訊號方向同止蝕距離。用法：python3 research/strategy_search/combo_live_parity.py"""
 import os
 import sys
 
@@ -10,6 +10,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "..", "xau"))
 os.environ.setdefault("XAU_BOOK", "signal")
 import combo_live as CL  # noqa: E402
+import candle_ind as CI  # noqa: E402
 import d1_indicators as Q  # noqa: E402
 import h4_indicators as H  # noqa: E402
 import robust_long as R  # noqa: E402
@@ -26,8 +27,8 @@ for tf, per, D in (("D1", 86400, Q.DI(t, o, h, l, c)), ("H4", 14400, H.H4I(t, o,
     for name, fam, ctf, *_ in CL.COMPONENTS:
         if ctf != tf or fam == "S2":
             continue
-        p = {"J5": dict(ex=2), "J7": dict(filt=True, ex=2), "J8": dict(th=20, filt=True, ex=2), "J2": dict(filt=True, ex=1)}[fam]
-        b, x = Q.signals(D, fam, p)
+        p = {"J5": dict(ex=2), "J7": dict(filt=True, ex=2), "J8": dict(th=20, filt=True, ex=2), "J2": dict(filt=True, ex=1), "C3": dict(filt=True, ex=2)}[fam]
+        b, x = CI.signals(D, "C3 內包線突破", p) if fam == "C3" else Q.signals(D, fam, p)       # R365 A+：C3 對 candle_ind
         ref = np.where(b, 1, np.where(x, -1, 0))
         live = np.array([CL.family_side(ind, fam, i) for i in range(len(bars))])
         k = np.arange(len(bars)) >= 210

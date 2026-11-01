@@ -71,6 +71,18 @@ check("id 前綴 k；931 隨機 hex 唔會撞", C.is_cmd("k1234567") and not C.i
 check("magic 935、1%、上限 0.01、戶口上限 3、參數年 2026", config.COMBO_MAGIC == 935 and config.COMBO_RISK_PCT == 1.0 and config.COMBO_MAX_LOTS == 0.01
       and config.COMBO_ACCOUNT_MAX == 3 and config.COMBO_PARAM_YEAR == 2026)
 
+print("=== R365 A+：D1 內包線突破 ===")
+check("A+ 七個成份、內包線突破排最後（TP4／SL2、480 小時）", len(C.COMPONENTS) == 7 and C.COMPONENTS[-1] == ("D1 內包線突破", "C3", "D1", 4.0, 2.0, 480.0), C.COMPONENTS[-1])
+ib = {"h": [110, 108, 112], "l": [100, 102, 105], "c": [105, 105, 111], "s200": [90, 90, 90]}
+check("內包線（第 2 根喺第 1 根入面）＋收市破母線高＋SMA200 之上 → 買", C.family_side(ib, "C3", 2) == 1)
+ib2 = {"h": [110, 108, 104], "l": [100, 102, 98], "c": [105, 105, 99], "s200": [120, 120, 120]}
+check("破母線低＋SMA200 之下 → 沽", C.family_side(ib2, "C3", 2) == -1)
+ib3 = dict(ib, s200=[120, 120, 120])
+check("破高但喺 SMA200 之下 → 唔做（filt）", C.family_side(ib3, "C3", 2) == 0)
+ib4 = {"h": [110, 111, 115], "l": [100, 102, 105], "c": [105, 105, 114], "s200": [90, 90, 90]}
+check("上一根唔係內包線 → 唔做", C.family_side(ib4, "C3", 2) == 0)
+check("status 標 A+", C.status().get("version") == "A+" if isinstance(C.status(), dict) else False, C.status() if isinstance(C.status(), dict) else None)
+
 # ---------- 合成 600 日 H1：慢升，最後一個券商日（11-02 22:00→11-03 22:00）急升 → D1 Keltner 突破 ----------
 DAY_END = 1793743200          # 2026-11-03 22:00 UTC（星期二收市＝星期三券商日開始）
 def h1_series():

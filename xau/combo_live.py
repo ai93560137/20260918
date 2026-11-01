@@ -2,13 +2,15 @@
 預設關（SIG_COMBO_LIVE=0）；開唔開由使用者經總指揮批（影子前向 #184 仲進行緊）。做法同 934（g7_live）一樣：EA 用 magic 935 掛一張圖，
 心跳按 magic 分流到呢度；獨立狀態前綴 xau/sig/combolive/、指令 id 前綴 k（唔係十六進制，唔會同 931 隨機 id 撞）。
 
-六個成份（2026 年參數＝#184 用 2022–2025 揀出嗰組；同 research d1_indicators／h4_indicators／robust2 計法一致）：
+七個成份（R365 起叫「A+」＝組合 A 六個＋內包線突破；2026 年參數＝#184／#208 用 2022–2025 揀出嗰組；同 research d1_indicators／h4_indicators／robust2 計法一致）：
   1 D1 Keltner 突破：收市由下面升穿 EMA20＋2×ATR20 → 買；跌穿 EMA20−2×ATR20 → 沽；TP 4／SL 2 × D1 ATR20；20 日
   2 D1 拋物線 SAR 轉向：SAR 轉向上＋收市 > SMA200 → 買；轉向下＋收市 < SMA200 → 沽；TP 4／SL 2；20 日
   3 D1 威廉 %R(14)：由 ≤ −80 升上 −80 以上＋收市 > SMA200 → 買；由 ≥ −20 跌落 −20 以下＋收市 < SMA200 → 沽；TP 4／SL 2；20 日
   4 H4 MACD(12,26,9) 交叉＋H4 收市同 H4 SMA200 同邊；TP 2／SL 2 × H4 ATR20；80 小時
   5 H4 拋物線 SAR 轉向＋H4 SMA200；TP 2／SL 2；80 小時
   6 星期效應：券商日（22:00 UTC 起）星期五開盤做多；SL 1.5 × 前一日 D1 ATR20；冇 TP；24 小時平
+  7 D1 內包線突破（R365「A+」，IDEAS #207／#208；使用者 11-01「A+，替換 935」）：上一日係內包線（高低都喺前一日入面），
+    今日收市破母線（前兩日）高位＋收市 > SMA200 → 買；破母線低位＋收市 < SMA200 → 沽；TP 4／SL 2 × D1 ATR20；20 日（同 research candle_ind C3 filt ex2）
 D1／H4 由 H1 合成（22:00 UTC 日界／H4 22:00 對齊）；H1 由經紀 M1（xau/sig/bars/）合成，冇就用券商 MT5 歷史（xau/sig/mt5m1/），
 H1 存喺 xau/sig/combolive/h1.json（第一次由 MT5 歷史補 COMBO_SEED_DAYS 日）。K 線收市後 COMBO_SIGNAL_TTL_MIN 分鐘內先入（市價，帶 px／dev）。
 同一時間最多 1 張；同時幾個訊號按成份次序揀第一個（同 #186 回測）。開倉後按成份記低時間止蝕，到鐘市價平倉。
@@ -42,6 +44,7 @@ COMPONENTS = (
     ("H4 MACD", "J2", "H4", 2.0, 2.0, 80.0),
     ("H4 拋物線 SAR", "J7", "H4", 2.0, 2.0, 80.0),
     ("星期效應", "S2", "D1", None, 1.5, 24.0),
+    ("D1 內包線突破", "C3", "D1", 4.0, 2.0, 480.0),      # R365 A+：排最後（同 #207 回測次序）
 )
 
 
@@ -155,7 +158,7 @@ def indicators(bars):
         wr[i] = None if hh == ll else -100 * (hh - c[i]) / (hh - ll)
     macd = [a - b for a, b in zip(ema(c, 12), ema(c, 26))]
     sig = ema(macd, 9)
-    return {"c": c, "atr": atr, "ku": ku, "kl": kl, "s200": s200, "sar_up": sar_up, "wr": wr, "macd": macd, "sig": sig}
+    return {"h": h, "l": l, "c": c, "atr": atr, "ku": ku, "kl": kl, "s200": s200, "sar_up": sar_up, "wr": wr, "macd": macd, "sig": sig}
 
 
 def _gt(a, b):
@@ -167,7 +170,7 @@ def _lt(a, b):
 
 
 def family_side(ind, fam, i):
-    """第 i 根（已收市）有冇訊號：回傳 1／−1／0。同 research d1_indicators.signals（J5 ex2、J7 filt、J8 th20 filt、J2 filt）。"""
+    """第 i 根（已收市）有冇訊號：回傳 1／−1／0。同 research d1_indicators.signals（J5 ex2、J7 filt、J8 th20 filt、J2 filt）同 candle_ind C3 filt。"""
     if i < 1:
         return 0
     c, cp = ind["c"][i], ind["c"][i - 1]
@@ -190,6 +193,14 @@ def family_side(ind, fam, i):
                 return 1
             if w < -20 and wp >= -20 and td:
                 return -1
+    elif fam == "C3":
+        if i >= 2:
+            h, l = ind["h"], ind["l"]
+            if h[i - 1] <= h[i - 2] and l[i - 1] >= l[i - 2]:          # 上一日係內包線（母線＝前兩日）
+                if c > h[i - 2] and tu:
+                    return 1
+                if c < l[i - 2] and td:
+                    return -1
     elif fam == "J2":
         m, s, mp, sp = ind["macd"][i], ind["sig"][i], ind["macd"][i - 1], ind["sig"][i - 1]
         if m > s and mp <= sp and tu:
@@ -320,7 +331,7 @@ def status():
     except StorageError:
         acct = {}
     return {"on": enabled(), "magic": config.COMBO_MAGIC, "risk_pct": config.COMBO_RISK_PCT, "max_lots": config.COMBO_MAX_LOTS,
-            "param_year": config.COMBO_PARAM_YEAR, "components": [c[0] for c in COMPONENTS],
+            "version": "A+", "param_year": config.COMBO_PARAM_YEAR, "components": [c[0] for c in COMPONENTS],
             "day_stop_hkd": config.COMBO_DAY_STOP_HKD, "account_max": config.COMBO_ACCOUNT_MAX,
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
