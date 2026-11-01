@@ -49,6 +49,48 @@ def gcf_all():
     return out
 
 
+def duka_h1(a):
+    """[IDEAS #164] Dukascopy XAUUSD H1 BID：每月一個檔 /YYYY/MM(0 起)/BID_candles_hour_1.bi5（24 bytes／根：秒、開、收、低、高、量）。
+    寫 GCS xau/sig/duka_h1/<YYYY-MM>.json＝[[utc, o, h, l, c], …]。"""
+    import lzma, struct, time
+    import urllib.request
+    from google.cloud import storage
+    bucket = None if a.dry_run else storage.Client().bucket(BUCKET)
+    y, m = int(a.start[:4]), int(a.start[5:7]); y1, m1 = int(a.end[:4]), int(a.end[5:7])
+    tot = 0
+    while (y, m) <= (y1, m1):
+        url = f"https://datafeed.dukascopy.com/datafeed/XAUUSD/{y:04d}/{m - 1:02d}/BID_candles_hour_1.bi5"
+        raw = None
+        for k in range(5):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                raw = urllib.request.urlopen(req, timeout=60).read()
+                break
+            except Exception as exc:  # noqa: BLE001
+                print(f"{y}-{m:02d} 第 {k + 1} 次失敗：{exc}")
+                time.sleep(2 ** (k + 1))
+        rows = []
+        if raw:
+            data = lzma.decompress(raw)
+            t0 = int(dt.datetime(y, m, 1, tzinfo=dt.timezone.utc).timestamp())
+            recs = [struct.unpack(">5if", data[i * 24:(i + 1) * 24]) for i in range(len(data) // 24)]
+            div = 1000.0
+            for cand in (1000.0, 100000.0, 100.0):
+                if recs and 200 <= recs[0][1] / cand <= 20000:
+                    div = cand
+                    break
+            rows = [[t0 + s, o / div, hi / div, lo / div, c / div] for s, o, c, lo, hi, v in recs if o > 0]
+        print(f"duka_h1 {y}-{m:02d}：{len(rows)} 根" + (f"，{rows[0][4]:.2f} → {rows[-1][4]:.2f}" if rows else ""))
+        tot += len(rows)
+        if bucket and rows:
+            bucket.blob(f"{PREFIX.replace('alt/', '')}duka_h1/{y:04d}-{m:02d}.json").upload_from_string(json.dumps(rows), content_type="application/json")
+        m += 1
+        if m == 13:
+            y, m = y + 1, 1
+        time.sleep(0.3)
+    print(f"完成：duka_h1 共 {tot} 根")
+
+
 def duka(a):
     import os
     import sys
@@ -60,13 +102,15 @@ def duka(a):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", choices=("paxg", "gcf", "duka"), required=True)
+    ap.add_argument("--src", choices=("paxg", "gcf", "duka", "duka_h1"), required=True)
     ap.add_argument("--start", default="2026-07-24")
     ap.add_argument("--end", default=dt.date.today().isoformat())
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     if a.src == "duka":
         return duka(a)
+    if a.src == "duka_h1":
+        return duka_h1(a)
     from google.cloud import storage
     bucket = None if a.dry_run else storage.Client().bucket(BUCKET)
     got = {d: paxg_day(d) for d in days(a.start, a.end)} if a.src == "paxg" else gcf_all()

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       src:
-        description: 數據源（paxg、gcf 或 duka）
+        description: 數據源（paxg、gcf、duka 或 duka_h1）
         required: false
         default: 'paxg'
       start:
