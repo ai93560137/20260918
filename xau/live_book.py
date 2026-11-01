@@ -32,6 +32,8 @@ def make(o, pnl_hkd, closed_ts, contract=None, hkd_per_usd=None):
             r = round(side * (exit_ - entry) / abs(base - stop0), 2)
     rec = {"ticket": o.get("ticket"), "side": side, "lots": lots, "entry": entry, "stop0": stop0, "exit_est": exit_,
            "opened_ts": o.get("opened_ts"), "closed_ts": closed_ts, "pnl_hkd": round(float(pnl_hkd), 2), "r": r}
+    if lots and entry is not None and stop0 is not None:          # [R363] 每張開倉風險（HKD）：|入場−初始止損|×手數×合約×HKD
+        rec["risk_hkd"] = round(abs(entry - stop0) * lots * contract * hkd_per_usd / (config.QUOTE_PER_USD or 1.0), 2)
     for k in ("ch", "id", "decision_price"):
         if o.get(k) is not None:
             rec[k] = o[k]

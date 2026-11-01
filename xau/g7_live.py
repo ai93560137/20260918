@@ -368,14 +368,24 @@ def _decide(m, state, account, price, now):
         rec["skip"] = f"戶口倉數 {n_open}"
         return f"同戶口已有 {n_open} 張倉／排緊開倉（上限 {config.G7_ACCOUNT_MAX}），唔開"
     sl, tp = levels(sig["side"], price, sig["sl_dist"])
+    n = config.G7_LOTS
+    import risk_size
+    r_lots, r_info = risk_size.size(account.get("equity"), price, sl, config.G7_MAX_LOTS)   # [R363] 按風險計手數
+    if r_lots is not None:
+        if r_info.get("mode") == "fallback":
+            m.log_event(f"⚠️ [{config.TEAM_NAME}] H1 回調按風險計手數：{r_info['why']}", severity="WARNING", component="risk")
+        if r_lots == 0.0:
+            rec["skip"] = "按風險計手數唔夠 0.01"
+            return f"{sig['side']} 訊號，但按風險計手數唔開（{r_info.get('why')}）"
+        n = r_lots
     action = "OPEN_LONG" if sig["side"] == "BUY" else "OPEN_SHORT"
     cid = "g" + uuid.uuid4().hex[:7]
-    text = executor.enqueue(state, action, sl, tp, now, cid, lots=config.G7_LOTS, tag="G7", magic=config.G7_MAGIC,
+    text = executor.enqueue(state, action, sl, tp, now, cid, lots=n, tag="G7", magic=config.G7_MAGIC,
                             note="H1回調", px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.EXECUTE else None
-    order = {"id": cid, "kind": "open", "side": sig["side"], "lots": config.G7_LOTS, "sl": sl, "tp": tp, "price": price, "ts": now,
+    order = {"id": cid, "kind": "open", "side": sig["side"], "lots": n, "sl": sl, "tp": tp, "price": price, "ts": now, "risk": r_info if r_lots is not None else None,
              "utc": market.fmt_utc(now), "h1": market.fmt_utc(sig["h1"]), "why": sig["why"], "applied": text or "paper", "acked": False}
     state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]
     rec["order"] = cid
-    m.log_event(f"📈 [{config.TEAM_NAME}] H1 回調真倉 {sig['side']} {config.G7_LOTS:.2f} 手 @ {price}｜SL {sl}｜TP {tp}｜{sig['why']}｜{'已排指令' if text else '紙上'}",
+    m.log_event(f"📈 [{config.TEAM_NAME}] H1 回調真倉 {sig['side']} {n:.2f} 手 @ {price}｜SL {sl}｜TP {tp}｜{sig['why']}｜{'已排指令' if text else '紙上'}",
                 component="g7live", cmd=cid)
     return f"H1 回調 {sig['side']}（{sig['why']}）"

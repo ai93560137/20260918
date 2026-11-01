@@ -138,6 +138,24 @@ def forward_section(fw, book=None):
         return "<div class='section'><h2>🔬 前向測試</h2><p class='muted'>前向數據讀唔到（格式有變），睇 GCS xau/sig/gb_forward/latest.md。</p></div>"
 
 
+def risk_section(s):
+    """[R363] 按風險計手數＋戶口合計開倉風險 %（兩個真戶口）。"""
+    rs = s.get("risk_sizing") or {}
+    orisk = s.get("open_risk") or {}
+    if not rs and not orisk:
+        return ""
+    on = rs.get("on")
+    head = (f"按風險計手數：<b>{'開' if on else '關'}</b>（每張 {esc(rs.get('pct'))}% 權益；權益讀唔到用 {esc(rs.get('fallback_lots'))} 手）" if rs else "")
+    last = rs.get("last") or {}
+    if last.get("mode") in ("risk", "skip", "fallback"):
+        head += f"；最近一張：{esc(last.get('lots', '—'))} 手、風險 {esc(last.get('risk_hkd', '—'))} HKD（{esc(last.get('risk_pct', '—'))}%）{esc(' ' + last['why']) if last.get('why') else ''}"
+    rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc((v or {}).get('positions', '—'))}</td><td>{esc((v or {}).get('risk_hkd', '—'))}</td>"
+                   f"<td><b>{esc('—' if not v or v.get('pct') is None else str(v['pct']) + '%')}</b></td><td>{esc((v or {}).get('none_sl', 0))}</td></tr>"
+                   for k, v in orisk.items())
+    tbl = ("<div style='overflow-x:auto'><table><tr><th>戶口</th><th>開倉張數</th><th>合計風險 HKD</th><th>佔權益</th><th>冇止損張數</th></tr>" + rows + "</table></div>") if rows else ""
+    return f"<div class='section'><h2>🧮 戶口合計開倉風險</h2><p style='font-size:14px'>{head}</p>{tbl}</div>"
+
+
 def _stat_txt(st, f2):
     if not isinstance(st, dict) or not st.get("n"):
         return "0 張"
@@ -351,6 +369,7 @@ def render_signal_book(s):
                     if config.SIG_DECIDE else "")
                  + "</div><div class='lf-grp lf-sim'><div class='lf-banner'>🧪 模擬倉績效</div><div class='section'><p><b>已轉真倉，模擬停。</b>"
                  "頻道準確度同學徒係影子評分（唔落單），唔計入真倉績效。</p></div></div>")
+    body += risk_section(s)                                      # [R363]
     body += forward_section(s.get("forward"))                    # [R352c] 前向測試（0342 V13／5117／學生）
     stu = s.get("student")
     if stu:
@@ -485,6 +504,7 @@ def render(status):
                + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
                + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
     sim += rulesim_section(s.get("rulesim"))                     # [R345] 即日回測（規則版）
+    sim += risk_section(s)                                          # [R363]
     sim += forward_section(s.get("forward"), s.get("live_book"))   # [R352c] 前向測試
     lad_cls = {"A": "pos", "B": "", "D": "neg"}.get(lad.get("level"), "")
     risk_rows = "".join(f"<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>" for k, v in (s.get("risk") or {}).items() if k not in RISK_HIDE)
