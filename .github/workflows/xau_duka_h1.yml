@@ -17,13 +17,35 @@ on:
         description: 品種（XAUUSD／XAGUSD；IDEAS #168 白銀獨立市場核對）
         required: false
         default: 'XAUUSD'
+  schedule:
+    - cron: '7 22 * * 1-5'      # [IDEAS #194] 每個交易日 22:07 UTC 補白銀上月＋當月（當月用每日 M1 檔合成），畀 935＋白銀影子前向用
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
+  daily_xag:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q google-cloud-storage
+      - name: Fetch XAGUSD last month + this month
+        run: python3 research/student_offline/fetch_alt_m1.py --src duka_h1 --start "$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m-01)" --end "$(date -u +%Y-%m-%d)" --sym XAGUSD
+
   years:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       list: ${{ steps.y.outputs.list }}
