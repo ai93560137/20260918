@@ -30,6 +30,8 @@ import filter_921 as F  # noqa: E402
 CH = "3860767713"
 COST = 0.5
 VALID = 30 * 60
+FWD_TS = int(dt.datetime(2026, 11, 3, tzinfo=dt.timezone.utc).timestamp())   # [影子] 使用者 11-02「DAN 先做影子」：呢個時間之後收到嘅訊號＝前向
+FWD_TARGET = 15
 
 
 def load_signals(g):
@@ -129,6 +131,14 @@ def main():
         out.append(f"| {dt.datetime.fromtimestamp(x['ts'], dt.timezone.utc):%m-%d %H:%M} | {x['side']} | {x.get('entry_low')}–{x.get('entry_high')} | {x['sl']} | "
                    f"{'✓' if x.get('filled') else '✗'} | {x['r']:+.2f} |" if x.get("filled") else
                    f"| {dt.datetime.fromtimestamp(x['ts'], dt.timezone.utc):%m-%d %H:%M} | {x['side']} | {x.get('entry_low')}–{x.get('entry_high')} | {x['sl']} | ✗ | — |")
+    fw = [x for x in rows if x["late"] and x["ts"] >= FWD_TS]; ff = [x for x in fw if x.get("filled")]
+    sf = F.summ([x["r"] for x in ff])
+    ok_f = len(ff) >= FWD_TARGET and sf["avg"] >= 0.2 and sf["pf"] >= 1.3
+    out[3:3] = ["## 影子前向（11-03 00:00 UTC 起；使用者 11-02「DAN 先做影子」）", "",
+                f"- 走咗訊號 {len(fw)} 個、限價成交 {len(ff)}／{FWD_TARGET}：{F.fmt(sf)}",
+                f"- 判（同回測標準）：成交 ≥ {FWD_TARGET} 張、平均 ≥ +0.2R、PF ≥ 1.3 → "
+                + ("✅ 夠數達標 → 報總指揮提案改 932（寫程式＋dry-run＋使用者批）" if ok_f else ("❌ 夠數但唔達 → 唔改" if len(ff) >= FWD_TARGET else "未夠數，繼續影子")),
+                "- 「走咗」用收到嗰分鐘 M1 收市價判（實時用即時價，可能有少少出入）", ""]
     open(os.path.join(HERE, "DAN_LATE_LIMIT.md"), "w").write("\n".join(out) + "\n")
     print("\n".join(out[:20]))
 
