@@ -5,7 +5,7 @@
   F1＋F2a 一齊（只作描述，唔計判斷）
 三個樣本：
   A. 921 真倉成交簿（GCS xau/book_seed.json＋xau/state.json book；R＝決策價→初始止損，同 TEST_RESULTS）
-  B. 921 決策日誌所有 OPEN_LONG／OPEN_SHORT（GCS xau/decisions/<日>.jsonl，連冇落到單嗰啲）用經紀 M1 重播：
+  B. 921 決策日誌所有 OPEN_LONG／OPEN_SHORT（GCS xau/decisions/<日>.jsonl，連冇落到單嗰啲）用經紀 M1 重播（經紀 K 線 10-26 先齊，之前同缺口用 Dukascopy M1 補——11-02 第一次跑發現 42/71 冇 K 線後加，只係補數據、標準唔變）：
      下一分鐘開盤入、AI 原始止損／目標固定唔改、同一分鐘都掂當止損、24 小時到鐘市價走、每張扣 0.5 美元；每個決定獨立計（唔理同時持倉）
   C. 通用對照（長歷史）：黃金 H1 2009→2026（Dukascopy＋券商 MT5＋經紀心跳）隨機入場（固定種子，每根 H1 有 10% 機會、方向一半一半），
      SL 1×H1 ATR(14)、TP 1.5R、24 小時、扣 0.5 美元、同時一張——睇兩個過濾本身有冇通用作用、逐年穩唔穩
@@ -113,6 +113,21 @@ def load_decisions(g):
     return sorted(out)
 
 
+def merge_duka(g, m1, d0):
+    """經紀 M1 由 10-26 先齊：之前（同缺口）用 GCS xau/sig/duka/<日>.json 補（只補經紀冇嘅分鐘）。"""
+    rows = {int(t): (o, h, l, c) for t, o, h, l, c in zip(m1["t"], m1["o"], m1["h"], m1["l"], m1["c"])}
+    nd = 0
+    for nm in sorted(g.list("xau/sig/duka/")):
+        if nm.rsplit("/", 1)[-1][:10] < d0:
+            continue
+        for r in g.read_json(nm) or []:
+            if int(r[0]) not in rows:
+                rows[int(r[0])] = tuple(map(float, r[1:5])); nd += 1
+    ks = sorted(rows)
+    a = np.array([rows[k] for k in ks], float)
+    return {"t": np.array(ks, np.int64), "o": a[:, 0], "h": a[:, 1], "l": a[:, 2], "c": a[:, 3]}, nd
+
+
 def replay(m1, decs):
     t, o, h, l, c = m1["t"], m1["o"], m1["h"], m1["l"], m1["c"]
     out = []
@@ -164,12 +179,15 @@ def main():
     A = load_live(g)
     decs = load_decisions(g)
     m1 = EF6.broker_bars(int(decs[0][0]) - 86400) if decs else None
+    nd = 0
+    if decs:
+        m1, nd = merge_duka(g, m1, dt.datetime.fromtimestamp(decs[0][0] - 86400, dt.timezone.utc).date().isoformat())
     B = replay(m1, decs) if decs else []
     C = random_entries(t, o, h, l, c)
     now = dt.datetime.now(dt.timezone.utc)
     out = ["# 921 過濾回測描述：H4 斜率／亞洲時段（IDEAS #210）", "",
            f"- 更新 {now:%Y-%m-%d %H:%M} UTC；H4 EMA50 斜率用已收市 H4（22:00 UTC 對齊）；亞洲＝開倉 22:00–07:00 UTC",
-           f"- A：921 真倉 {len(A)} 張；B：決策日誌 OPEN {len(decs)} 個（落到單 {sum(d[4] for d in decs)} 個），經紀 M1 重播到 {len(B)} 個；"
+           f"- A：921 真倉 {len(A)} 張；B：決策日誌 OPEN {len(decs)} 個（落到單 {sum(d[4] for d in decs)} 個），經紀 M1（缺嘅 {nd} 分鐘用 Dukascopy 補）重播到 {len(B)} 個；"
            f"C：隨機入場 2009→ {len(C)} 張（SL 1×H1 ATR、TP 1.5R、24h、扣 0.5 美元）", ""]
     # 組成
     for lab, S in (("A 真倉", A), ("B 決策重播", B)):
