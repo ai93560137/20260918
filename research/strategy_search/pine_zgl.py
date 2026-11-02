@@ -49,6 +49,8 @@ SPLIT = int(dt.datetime(2024, 9, 17, tzinfo=dt.timezone.utc).timestamp())
 YEARS = (2023, 2024, 2025, 2026)
 TFS = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600}
 ADDS = (0, 5, 200)
+FWD_TS = int(dt.datetime(2026, 11, 3, tzinfo=dt.timezone.utc).timestamp())   # #220 Z1 921 影子前向起點
+FWD_N = 30
 
 
 # ------------------------------------------------------------------ 指標
@@ -291,6 +293,13 @@ def part_b():
                 v = "—"
             out.append(f"| {lab} | {nm} | {F9.fmt(a)} | {F9.fmt(h1)} | {F9.fmt(h2)} | {len(sel) / max(len(S_), 1):.0%} | {v} |")
             print(lab, nm, F9.fmt(a), v, flush=True)
+    fw = [x for x in B921 if x[0] >= FWD_TS]
+    fz = [x for x in fw if z1.at(x[0]) == x[1]]
+    sa, sz = F9.summ([x[2] for x in fw]), F9.summ([x[2] for x in fz])
+    out += ["", f"## 921 Z1 影子前向（{dt.datetime.fromtimestamp(FWD_TS, dt.timezone.utc):%m-%d %H:%M} UTC 起；回測達標後照登記先影子）", "",
+            f"- 921 新決策重播 {len(fw)}／{FWD_N} 張：唔過濾 {F9.fmt(sa)}；Z1 順勢 {F9.fmt(sz)}；Z1 擋咗 {F9.fmt(F9.summ([x[2] for x in fw if z1.at(x[0]) != x[1]]))}",
+            f"- 判：夠 {FWD_N} 張、Z1 平均 R 高過唔過濾 ≥ +0.10 兼 Z1 平均 ≥ +0.05 → 報總指揮提案（寫程式＋dry-run＋使用者批）；"
+            + ("✅ 達標" if len(fw) >= FWD_N and sz["avg"] - sa["avg"] >= 0.10 and sz["avg"] >= 0.05 else "❌ 夠數唔達" if len(fw) >= FWD_N else "未夠數")]
     agree = np.mean([z4.at(ts) == (1 if slope.at(ts) > 0 else -1) for ts in t[-24 * 365 * 3::6]])
     out += ["", f"- 近 3 年 Z4 方向同 H4 EMA50 斜率方向一致嘅時間：{agree:.0%}（越高即係兩者差唔多）",
             "- 只係提案；改 921／933 要使用者經總指揮批，建議先影子。921 樣本細（約 70 張）、933 只得 3 個月。", ""]
