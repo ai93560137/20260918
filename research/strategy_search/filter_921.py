@@ -1,4 +1,4 @@
-"""[IDEAS #210] 921（Opus 自主單）兩個過濾嘅回測描述（總指揮 11-02 交，使用者揀「A＋C」嘅 C）：
+"""[IDEAS #211] 921（Opus 自主單）兩個過濾嘅回測描述（總指揮 11-02 交，使用者揀「A＋C」嘅 C）：
   F1 H4 斜率：H4 EMA50 斜率向下（最後一根已收 H4 對上一根）唔做多；向上唔做空（對稱）
   F2a 亞洲時段（開倉 22:00–07:00 UTC）唔做多
   F2b 亞洲時段做多手數減半（R × 0.5，張數唔變）
@@ -9,7 +9,7 @@
      下一分鐘開盤入、AI 原始止損／目標固定唔改、同一分鐘都掂當止損、24 小時到鐘市價走、每張扣 0.5 美元；每個決定獨立計（唔理同時持倉）
   C. 通用對照（長歷史）：黃金 H1 2009→2026（Dukascopy＋券商 MT5＋經紀心跳）隨機入場（固定種子，每根 H1 有 10% 機會、方向一半一半），
      SL 1×H1 ATR(14)、TP 1.5R、24 小時、扣 0.5 美元、同時一張——睇兩個過濾本身有冇通用作用、逐年穩唔穩
-判斷（預先登記，每個過濾 F1／F2a／F2b 各自）：見 IDEAS #210。只係提案；改 921 程式要使用者經總指揮批。
+判斷（預先登記，每個過濾 F1／F2a／F2b 各自）：見 IDEAS #211。只係提案；改 921 程式要使用者經總指揮批。
 用法：python3 research/strategy_search/filter_921.py → FILTER_921.md"""
 import datetime as dt
 import json
@@ -185,7 +185,7 @@ def main():
     B = replay(m1, decs) if decs else []
     C = random_entries(t, o, h, l, c)
     now = dt.datetime.now(dt.timezone.utc)
-    out = ["# 921 過濾回測描述：H4 斜率／亞洲時段（IDEAS #210）", "",
+    out = ["# 921 過濾回測描述：H4 斜率／亞洲時段（IDEAS #211）", "",
            f"- 更新 {now:%Y-%m-%d %H:%M} UTC；H4 EMA50 斜率用已收市 H4（22:00 UTC 對齊）；亞洲＝開倉 22:00–07:00 UTC",
            f"- A：921 真倉 {len(A)} 張；B：決策日誌 OPEN {len(decs)} 個（落到單 {sum(d[4] for d in decs)} 個），經紀 M1（缺嘅 {nd} 分鐘用 Dukascopy 補）重播到 {len(B)} 個；"
            f"C：隨機入場 2009→ {len(C)} 張（SL 1×H1 ATR、TP 1.5R、24h、扣 0.5 美元）", ""]
@@ -214,7 +214,7 @@ def main():
             res[f][lab] = dict(base=base, f=fs, d=avg_f - base["avg"], kept=kept)
             out.append(f"| {f} | {lab} | {fmt(base)} | {fmt(fs)} | {avg_f - base['avg']:+.3f} | {kept:.0%} | {yrs} |")
             print(f, lab, fmt(base), fmt(fs), flush=True)
-    out += ["", "## 判（預先登記 IDEAS #210；F1＋F2a 只作描述）", ""]
+    out += ["", "## 判（預先登記 IDEAS #211；F1＋F2a 只作描述）", ""]
     for f in ("F1", "F2a", "F2b"):
         r = res[f]
         ok = {"①A 平均R +0.10": r["A"]["d"] >= 0.10, "①B 平均R +0.10": r["B"]["d"] >= 0.10,
