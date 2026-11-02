@@ -2,7 +2,7 @@
 import json, os, sys, types
 
 os.environ.update(WEBHOOK_SECRET_TOKEN="tok", ANTHROPIC_API_KEY="x", XAU_EXECUTE="0", XAU_REUSE_HOLD="on", XAU_ACTIVE_HOURS_UTC="07-17")
-sys.path.insert(0, "/home/user/20260918/xau")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
 try:
     import anthropic                             # noqa: F401
 except ImportError:                              # 冇裝 SDK 都要跑到測試（Claude 用假 brain）
