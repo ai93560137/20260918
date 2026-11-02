@@ -2,7 +2,7 @@
 現行：收到時 signals.is_late（現價過咗 TP1，或者已向有利方向離入場 ≥ 1×止損距離）→ 唔跟（0）。
 改法：走咗嘅訊號喺有效期（收到後 30 分鐘）掛限價：SELL＝價回升到入場區下沿（entry_low）成交、BUY＝回落到上沿（entry_high）成交；
 冇入場區就用 signals.ref_entry 嘅價；30 分鐘內冇返到就取消。成交之後同 932 一樣逐級鎖：到 TP1 止損移保本、到 TP(k+1) 鎖 TP(k)，
-最後一級 TP 全平；24 小時到鐘市價走；同一分鐘止蝕同 TP 都掂當止蝕（成交嗰分鐘都計）。每張扣 0.5 美元；R＝（出場−成交）÷|成交−SL|。
+最後一級 TP 全平；24 小時到鐘市價走；同一分鐘止蝕同 TP 都掂當止蝕；成交嗰分鐘只計止蝕、唔計有利方向（11-02 第一次跑發現會偷睇未來，修正後重跑，標準唔變）。每張扣 0.5 美元；R＝（出場−成交）÷|成交−SL|。
 數據：訊號＝GCS xau/sig/history/3860767713_*.json（90 日回補）＋ xau/sig/signals/3860767713_*.json（10-21 起實時），只取 kind=new_signal 有 SL／TP；
 價格＝Dukascopy M1（xau/sig/duka/）＋經紀 M1（xau/sig/bars/），收到時間＝msg_ts（回補）／received_ts（實時）。
 判（預先登記）：走咗訊號限價成交 ≥ 15 張；成交後平均 R ≥ +0.2、PF ≥ 1.3；前後半（按時間對半）平均 R 都 > 0。
@@ -77,6 +77,8 @@ def simulate(m1, r, late):
     for j in range(fi, min(end, len(t))):
         if (l[j] <= cur) if side > 0 else (h[j] >= cur):
             ex = cur; break
+        if j == fi:
+            continue                     # 成交嗰分鐘唔計有利方向（嗰分鐘嘅高／低可能喺成交之前出現，計咗係偷睇未來）
         fav = h[j] if side > 0 else l[j]
         while k + 1 < len(tps) and (fav - tps[k + 1]) * side >= 0:
             k += 1
