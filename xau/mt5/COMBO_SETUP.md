@@ -35,3 +35,9 @@
 ## 5. 核對
 - `research/strategy_search/combo_live_parity.py`：真倉純 Python 訊號同 research 版 2015→2026 逐根比較，指標成份（R365 起連內包線突破共六個）0 根唔一致；600 日快取同全歷史最後一根 90 次比較 0 次唔一致。
 - `tests/test_xau_combo_live.py`：30 項全過（R365 加 A+ 6 項）。
+
+## 6. 每年重揀參數（2027-01 要做）
+- `python3 research/strategy_search/aplus_picks.py 2027`（數據要包齊 2026-12）：印出七個成份 2027 揀法，同真倉比較。
+- 2026 核對：揀法同真倉一模一樣。2027 預覽（數據到 2026-10）：H4 MACD、H4 拋物線 SAR 由 ex1（TP2／SL2）轉 ex2（TP4／SL2），其餘唔變——12 月尾要再跑確認。
+- 揀法變咗 → 改 `xau/combo_live.py` COMPONENTS 嘅 TP 倍＋`SIG_COMBO_PARAM_YEAR`；冇變都要改 `SIG_COMBO_PARAM_YEAR=2027`（唔改 935 唔開新倉）；全部經總指揮 dry-run＋使用者批。
+
