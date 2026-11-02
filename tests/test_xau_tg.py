@@ -4,7 +4,7 @@ import json, os, sys, types
 
 os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_EXECUTE="0", TG_SIGNAL_ORDER_ENABLED="1", TG_SIGNAL_CHAT_ID="555",
                   TG_SIGNAL_WEBHOOK_SECRET="sec", TG_SIGNAL_BOT_TOKEN="bot", ANTHROPIC_API_KEY="x", GATE_MODEL="")
-sys.path.insert(0, "/home/user/20260918/xau")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
 
 try:
     import anthropic                             # noqa: F401

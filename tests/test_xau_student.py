@@ -5,7 +5,7 @@ import json, os, sys, types
 os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_BOOK="signal", SIG_DECIDE="1", TG_SIGNAL_INGEST_SECRET="ingest-secret",
                   ANTHROPIC_API_KEY="x", XAU_EXECUTE="0", SIG_REFERENCE_CHANNELS="3860767713", XAU_STUDENT="1", XAU_SHADOW="1",
                   XAU_SHADOW_HOURS_UTC="", XAU_SHADOW_INTERVAL_MIN="30", GATE_MODEL="claude-haiku-5-5")
-sys.path.insert(0, "/home/user/20260918/xau")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
 try:
     import anthropic                             # noqa: F401
 except ImportError:

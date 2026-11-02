@@ -3,7 +3,7 @@ import json, os, sys, types
 
 os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_BOOK="signal", TG_SIGNAL_INGEST_SECRET="ingest-secret", SIG_RATE_PER_MIN="1000",
                   ANTHROPIC_API_KEY="x", XAU_EXECUTE="1")
-sys.path.insert(0, "/home/user/20260918/xau")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
 try:
     import anthropic                             # noqa: F401
 except ImportError:                              # 冇裝 SDK 都要跑到測試（Claude 用假 brain）
@@ -204,7 +204,7 @@ codes = [send({"action": "tg_heartbeat"})[0] for _ in range(5)]
 check("每分鐘超過上限 → 429", codes[:3] == [200] * 3 and codes[3:] == [429, 429], codes)
 
 print("=== VM 監聽腳本 ===")
-sys.path.insert(0, "/home/user/20260918/tg_relay")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tg_relay"))
 import tg_listener   # noqa: E402
 check("VM 簽名同服務一致", tg_listener.sign(123, b"{}") == signals.sign("ingest-secret", 123, b"{}"))
 check("分流：GOLD→XAUUSD、EUR/USD→EURUSD、閒聊→None、回覆睇原訊息",

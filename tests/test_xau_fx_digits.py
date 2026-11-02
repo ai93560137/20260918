@@ -2,7 +2,7 @@
 10-22 EURUSD 14 次 modify 全部 sl=1.12000 tp=1.12000 → EA invalid stops，止損停喺開倉位。"""
 import os, sys, types
 os.environ.update(XAU_SYMBOL="EURUSD", XAU_EXECUTE="1", WEBHOOK_SECRET_TOKEN="tok", ANTHROPIC_API_KEY="x")
-sys.path.insert(0, "/home/user/20260918/xau")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
 import config, rules, executor   # noqa: E402
 
 OK = FAIL = 0
