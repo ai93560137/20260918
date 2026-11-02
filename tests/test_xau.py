@@ -671,5 +671,18 @@ check("急跌 10 後反抽 4 沽 → HOLD、原因寫 M1 硬規則、冇開倉",
       and json.loads(FAKE["xau/state.json"][0])["position"] is None, d.get("decision"))
 config.CHASE_BLOCK = False; config.ACCOUNT, config.EXECUTE = _keep_ea
 
+print("=== [R367] #212 止蝕止賺放闊 1.5× ===")
+_keep_ea = (config.ACCOUNT, config.EXECUTE); config.ACCOUNT = ""; config.EXECUTE = False; config.SLTP_WIDEN = 1.5; FB.screen_look = True
+state = json.loads(FAKE["xau/state.json"][0]); state["position"] = None; state["trades"] = []; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FB.decision = {"action": "OPEN_SHORT", "stop_price": 4006.0, "target_price": 3994.0, "confidence": 0.8, "reason": "跌穿"}
+st, d = hb(_k + 20, 4000.0, high=4000.5, low=3999.5)
+_dec = d["decision"]
+check("放闊 1.5×：SL 4006→4009、TP 3994→3991，記 widen 原值", _dec["final"] == "OPEN_SHORT" and _dec["stop"] == 4009.0 and _dec["target"] == 3991.0
+      and json.loads(FAKE["xau/state.json"][0])["decisions"][-1].get("widen") == {"k": 1.5, "stop": 4006.0, "target": 3994.0}, _dec)
+FB.decision = {"action": "UPDATE_STOP", "stop_price": 4004.0, "target_price": None, "confidence": 0.8, "reason": "收緊"}
+st, d = hb(_k + 21, 3998.0, high=3998.5, low=3997.5)
+check("浮盈未到 1R → AI 收緊止蝕被擋", d["decision"]["final"] == "HOLD" and "放闊" in (d["decision"]["rejected"] or ""), d.get("decision"))
+config.SLTP_WIDEN = 1.0; config.ACCOUNT, config.EXECUTE = _keep_ea
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

@@ -123,6 +123,7 @@ CHASE_BACK_USD = _f("XAU_CHASE_BACK_USD", 3.0 * PIP)         # 決策價離該�
 SL_COOLDOWN_MIN = _i("XAU_SL_COOLDOWN_MIN", 15)              # [R355] #145 P2（使用者 10-30「提早判」）：止損平倉後 N 分鐘內唔准同方向再開（0＝關）
 MAX_ENTRY_SLIP = _f("XAU_MAX_ENTRY_SLIP", 1.5 * PIP if PRODUCT["kind"] == "gold" else 0.0)   # [R355] #145 P3：open 指令帶 px=決策價｜dev=；EA v0.41 見不利偏離 > dev 唔開（0＝唔帶）
 STOP_TIGHTEN_ONLY = _b("XAU_STOP_TIGHTEN_ONLY", True)       # [R354] UPDATE_STOP 只准收緊（10-30 L26 AI「止損放闊至6美元」放鬆 0.90 冇被擋）；硬性風控，AI 無權改
+SLTP_WIDEN = max(1.0, _f("XAU_SLTP_WIDEN", 1.0))               # [R367] IDEAS #212（使用者 11-02「而家直接更新用新方法」）：921 開倉時 AI 止蝕／止賺距離（由決策價計）× k；按風險計手數用放闊後止蝕，即手數 ÷k、風險金額唔變；1.0＝唔變；只 921（XAU_BOOK=claude），訊號書 931 唔受影響
 MIN_CONFIDENCE = _f("XAU_MIN_CONFIDENCE", 0.6)              # 開倉要嘅最低信心
 MAX_TRADES_PER_DAY = _i("XAU_MAX_TRADES_PER_DAY", 0)        # 0 = 唔限（紐約交易日計）
 MAX_HOLD_MIN = _i("XAU_MAX_HOLD_MIN", 1440)                 # 最長持倉，到時程式強制平倉（安全網）
