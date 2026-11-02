@@ -684,5 +684,18 @@ st, d = hb(_k + 21, 3998.0, high=3998.5, low=3997.5)
 check("浮盈未到 1R → AI 收緊止蝕被擋", d["decision"]["final"] == "HOLD" and "放闊" in (d["decision"]["rejected"] or ""), d.get("decision"))
 config.SLTP_WIDEN = 1.0; config.ACCOUNT, config.EXECUTE = _keep_ea
 
+print("=== [R368] 逆 H4 唔做多 ===")
+import h4_trend   # noqa: E402
+_keep_ea = (config.ACCOUNT, config.EXECUTE); config.ACCOUNT = ""; config.EXECUTE = False; config.H4_TREND_FILTER = "long"; FB.screen_look = True
+_keep_slope = h4_trend.slope; h4_trend.slope = lambda now: -0.8
+state = json.loads(FAKE["xau/state.json"][0]); state["position"] = None; state["trades"] = []; FAKE["xau/state.json"] = (json.dumps(state), FAKE["xau/state.json"][1] + 1)
+FB.decision = {"action": "OPEN_LONG", "stop_price": 3994.0, "target_price": 4010.0, "confidence": 0.8, "reason": "反彈"}
+st, d = hb(_k + 30, 4000.0, high=4000.5, low=3999.5)
+check("H4 斜率向下 → OPEN_LONG 變 HOLD、寫原因", d["decision"]["final"] == "HOLD" and "逆 H4 唔做多" in (d["decision"]["rejected"] or ""), d.get("decision"))
+FB.decision = {"action": "OPEN_SHORT", "stop_price": 4006.0, "target_price": 3990.0, "confidence": 0.8, "reason": "跌"}
+st, d = hb(_k + 31, 4000.0, high=4000.5, low=3999.5)
+check("long 模式：做空照開", d["decision"]["final"] == "OPEN_SHORT", d.get("decision"))
+h4_trend.slope = _keep_slope; config.H4_TREND_FILTER = "off"; config.ACCOUNT, config.EXECUTE = _keep_ea
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

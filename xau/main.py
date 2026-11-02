@@ -203,6 +203,14 @@ def _open_meta(state, pos):
     return {"decision_price": d.get("price")} if d else {}
 
 
+def _h4_status():
+    try:
+        import h4_trend
+        return h4_trend.status()
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def live_book_seed(prefix):
     """[R352] 部署前嘅真倉單（GCS <prefix>book_seed.json，只喺 GCS）；冇就 []。"""
     try:
@@ -653,6 +661,15 @@ def process_bar(state, bar, m1, m15, account, now):
         cool = rules.sl_cooldown(_last_close(state), 1 if action == "OPEN_LONG" else -1, now)
         if cool:
             action, stop, target, why = "HOLD", None, None, cool
+    if action in ("OPEN_LONG", "OPEN_SHORT"):                       # [R368] 逆 H4 唔做多（XAU_H4_TREND_FILTER）
+        try:
+            import h4_trend
+            h4b = h4_trend.block_reason(action, now)
+        except Exception as exc:  # noqa: BLE001  斜率計唔到唔可以拖垮落單流程：唔擋
+            h4b = None
+            log_event(f"⚠️ [{config.TEAM_NAME}] H4 斜率計唔到（唔擋）：{type(exc).__name__}: {exc}", severity="WARNING", component="rules")
+        if h4b:
+            action, stop, target, why = "HOLD", None, None, h4b
     widen = None
     k = rules.widen_k()
     if action in ("OPEN_LONG", "OPEN_SHORT") and k > 1.0:              # [R367] #212 止蝕止賺放闊（手數由按風險計自動 ÷k）
@@ -1066,7 +1083,8 @@ def build_status():
         "ea_dry_run": account.get("dry_run"), "xau_account": executor.mask_account(config.ACCOUNT), "follow_account": executor.mask_account(config.FOLLOW_ACCOUNT), "test_cmds": config.TEST_CMDS,
         "ack_require_account": config.ACK_REQUIRE_ACCOUNT,
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
-        "sltp_widen": rules.widen_k(),   # [R367] #212 921 止蝕止賺放闊倍數（1.0＝冇放闊）
+        "sltp_widen": rules.widen_k(),
+        "h4_trend": _h4_status(),   # [R368]   # [R367] #212 921 止蝕止賺放闊倍數（1.0＝冇放闊）
         "risk_sizing": {"on": config.RISK_SIZING, "pct": config.RISK_PCT, "fallback_lots": config.RISK_FALLBACK_LOTS, "last": state.get("risk_last")},
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],
