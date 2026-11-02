@@ -1,6 +1,6 @@
 {
  "market": "jp",
- "date": "2026-10-29",
+ "date": "2026-10-30",
  "params": {
   "adr_min": 0.03,
   "chase": 0.02,
@@ -17,7 +17,7 @@
   "trail": "ma10",
   "vol": 0.8
  },
- "n_orders": 0,
+ "n_orders": 1,
  "n_open": 1,
  "n_closed": 0,
  "mkt_ok": false,
@@ -25,8 +25,10 @@
  "fwd_start": "2026-10-13",
  "closed_avg": null,
  "closed_win": null,
- "orders_top": [],
+ "orders_top": [
+  "4475.T 觸發 2581（距收市 +23.4%）"
+ ],
  "positions": [
-  "4588.T 明天收市賣一半（第 3 日），之後停損移到成本 7030；停損 6990；浮動 +7.5%"
+  "4588.T 持有；停損 7030；浮動 +12.5%"
  ]
 }
