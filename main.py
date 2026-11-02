@@ -6868,7 +6868,8 @@ def _analyst_day_tally(calls):
 
 def build_analyst_page(h, open_day=None, err=None):
     nav = page_nav("analyst")
-    head = f"<div class='nav'><div class='brand'><h1 class='page-title'>📝 龍飛陣分析</h1></div>{nav}</div>"
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📝 龍飛陣分析</h1></div>{nav}</div>"
+            "<p style='margin:4px 0 8px'><a href='?view=user_notes'>📄 使用者分析原文（PDF）→</a></p>")
     if err:
         return html_page("龍飛陣分析", head + f"<div class='section'>{esc(err)}</div>")
     docs, sc = h.get("docs") or [], h.get("scorecard") or {}
@@ -6905,6 +6906,46 @@ def build_analyst_page(h, open_day=None, err=None):
             body += (f"<div class='section' id='d-{esc(day)}'><details><summary><b>📝 {esc(day)}・{esc(d.get('title'))}</b></summary>"
                      f"{inner}<p><a href='?view=analyst&day={esc(day)}#d-{esc(day)}'>🖼 睇當日圖</a></p></details></div>")
     return html_page("龍飛陣分析", head + top + body, "<meta http-equiv='refresh' content='900'>")
+
+
+# 使用者 11-02「我每一次嘅文章同埋圖片將佢變成一個PDF放在網上，等我每一次睇返原文都會睇到」：
+# 龍飛陣用 scripts/longfei_note_pdf.py 將原文＋圖印成 PDF，放 ops/longfei/analyst/user_notes/（index.json 列清單）。
+USER_NOTES_PREFIX = ANALYST_PREFIX + "user_notes/"
+_NOTE_FILE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{4}\.pdf$")
+USER_NOTE_MAX_PDF = 20 * 1024 * 1024
+
+
+def handle_user_notes_get(req):
+    """?view=user_notes：清單；&f=<YYYY-MM-DD_HHMM.pdf>：直接開 PDF。"""
+    from flask import Response
+    f = req.args.get("f") or ""
+    if f:
+        if not _NOTE_FILE_RE.match(f):
+            return Response("檔名唔啱", status=400, mimetype="text/plain")
+        blob = _bucket().get_blob(USER_NOTES_PREFIX + f)
+        if blob is None or (blob.size or 0) > USER_NOTE_MAX_PDF:
+            return Response("搵唔到", status=404, mimetype="text/plain")
+        return Response(blob.download_as_bytes(), mimetype="application/pdf",
+                        headers={"Content-Disposition": f"inline; filename={f}"})
+    try:
+        items, err = gcs_read_json(USER_NOTES_PREFIX + "index.json", None) or [], None
+    except Exception as exc:
+        log_event(f"⚠️ [使用者原文清單失敗] {exc}", severity="WARNING", component="analyst")
+        items, err = [], "讀取失敗，請稍後再試。"
+    if req.args.get("format") == "json":
+        return jsonify({"status": "error" if err else "ok", "notes": items})
+    head = (f"<div class='nav'><div class='brand'><h1 class='page-title'>📄 使用者分析原文（PDF）</h1></div>"
+            f"{page_nav('analyst')}</div>")
+    rows = "".join(f"<tr><td>{esc(it.get('posted_hkt'))}</td>"
+                   f"<td><a href='?view=user_note&f={esc(it.get('file'))}' target='_blank'>{esc(it.get('title'))}</a></td>"
+                   f"<td style='text-align:right'>{esc(it.get('images'))}</td></tr>"
+                   for it in items if isinstance(it, dict) and _NOTE_FILE_RE.match(str(it.get('file') or '')))
+    body = (f"<div class='section'><p class='muted'>每篇原文同圖原封不動印成 PDF（新到舊）；龍飛陣分析欄嘅摘要見 "
+            f"<a href='?view=analyst'>龍飛陣分析 →</a></p>"
+            + (f"<p>{esc(err)}</p>" if err else "")
+            + (f"<table><tr><th>貼出時間（HKT）</th><th>文章</th><th>圖</th></tr>{rows}</table>" if rows
+               else "<p class='muted'>暫時未有。</p>") + "</div>")
+    return html_page("使用者分析原文", head + body)
 
 
 def handle_analyst_get(req):
@@ -9150,6 +9191,8 @@ def handle_get(req):
         return build_manual_rules_page()
     if view == "analyst":                                        # [R329] 📝 龍飛陣分析（全部日子）
         return handle_analyst_get(req)
+    if view in ("user_notes", "user_note"):                      # 使用者 11-02：分析原文 PDF（清單／&f= 開檔）
+        return handle_user_notes_get(req)
     if view == "charts":                                         # [R258] 📐 分析圖（各陣分析圖／報告）
         return handle_charts_get(req)
     if view == "huyi":                                           # [R357] 🐯 虎翼（&format=json）
