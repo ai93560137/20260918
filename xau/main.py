@@ -443,6 +443,10 @@ def enqueue_cmd(state, action, stop, target, now, decision_id, px=None, account=
         if lots == 0.0:
             log_event(f"🧮 [{config.TEAM_NAME}] 按風險計手數唔開：{info.get('why')}", component="risk")
             return None
+    k = rules.widen_k()
+    if action in ("OPEN_LONG", "OPEN_SHORT") and lots is None and k > 1.0:     # [R367] 固定手數模式：手數 ÷k（最少 0.01）
+        import math
+        lots = max(0.01, math.floor(rules.lots(state) / k / 0.01 + 1e-9) * 0.01)
     return executor.enqueue(state, action, stop, target, now, decision_id, note="AI決策", lots=lots,
                             px=px, dev=(config.MAX_ENTRY_SLIP or None))   # [R355] #145 P3：開倉帶決策價，EA v0.41 偏離太多唔開   # [R350] MT5 註解「天覆陣 AI決策 <id>」（使用者 10-28）
 
@@ -649,12 +653,25 @@ def process_bar(state, bar, m1, m15, account, now):
         cool = rules.sl_cooldown(_last_close(state), 1 if action == "OPEN_LONG" else -1, now)
         if cool:
             action, stop, target, why = "HOLD", None, None, cool
+    widen = None
+    k = rules.widen_k()
+    if action in ("OPEN_LONG", "OPEN_SHORT") and k > 1.0:              # [R367] #212 止蝕止賺放闊（手數由按風險計自動 ÷k）
+        side = 1 if action == "OPEN_LONG" else -1
+        s2, t2 = rules.widen_levels(bar["close"], side, stop, target, k, config.PRICE_DIGITS)
+        widen = {"k": k, "stop": stop, "target": target}
+        stop, target = s2, t2
+    elif action == "UPDATE_STOP" and k > 1.0:
+        blk = rules.widen_update_block(pos, bar["close"], (state.get("hold_rules") or {}).get("initial_stop"), k, config.PRICE_DIGITS)
+        if blk:
+            action, stop, target, why = "HOLD", None, None, blk
     rec.update(kind="decide", action=str(d.get("action")), final=action, stop=stop, target=target,
                confidence=d.get("confidence"), reason=str(d.get("reason") or "")[:400], rejected=why,
                ai_stop=d.get("stop_price"), ai_target=d.get("target_price"),
                ms=d.get("_ms"), usage=d.get("_usage"), cost_usd=brain.cost_usd(d.get("_usage")),
                model=(d.get("_usage") or {}).get("model") or config.MODEL, lessons=d.get("_lessons"),
                error=bool(d.get("_error")))
+    if widen:
+        rec["widen"] = widen                              # [R367] 放闊前（validate 後）嘅止蝕／止賺
     if ps is not None:                                    # S shadow／on：記規則會唔會問、開倉有冇落喺「唔問」分鐘
         state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), ps["ask"], opened=action in ("OPEN_LONG", "OPEN_SHORT"))
     if hr is not None:                                    # H shadow／on：Opus 實際移止損 vs 規則會移去邊
@@ -1049,6 +1066,7 @@ def build_status():
         "ea_dry_run": account.get("dry_run"), "xau_account": executor.mask_account(config.ACCOUNT), "follow_account": executor.mask_account(config.FOLLOW_ACCOUNT), "test_cmds": config.TEST_CMDS,
         "ack_require_account": config.ACK_REQUIRE_ACCOUNT,
         "trade_allowed": account.get("trade_allowed"), "server_offset": account.get("server_offset"),
+        "sltp_widen": rules.widen_k(),   # [R367] #212 921 止蝕止賺放闊倍數（1.0＝冇放闊）
         "risk_sizing": {"on": config.RISK_SIZING, "pct": config.RISK_PCT, "fallback_lots": config.RISK_FALLBACK_LOTS, "last": state.get("risk_last")},
         "live_positions": account.get("positions") or [],
         "position": state.get("position"), "stats": state.get("stats"), "trades": (state.get("trades") or [])[-40:],

@@ -165,6 +165,36 @@ def validate_decision(d, *, position, last, can_open, trades_today, cfg=config, 
     return "HOLD", None, None, None
 
 
+def widen_k(cfg=config):
+    """[R367] 921 止蝕止賺放闊倍數；訊號書（931 S1）一律 1.0。"""
+    k = float(getattr(cfg, "SLTP_WIDEN", 1.0) or 1.0)
+    return 1.0 if getattr(cfg, "SIGNAL_BOOK", False) or k <= 1.0 else k
+
+
+def widen_levels(px, side, stop, target, k, nd=2):
+    """[R367] 由決策價 px 計，止蝕／止賺距離 × k。target None 照 None。"""
+    if k <= 1.0 or px is None or stop is None:
+        return stop, target
+    s2 = round(px - side * k * abs(px - stop), nd)
+    t2 = None if target is None else round(px + side * k * abs(target - px), nd)
+    return s2, t2
+
+
+def widen_update_block(position, last, initial_stop, k, nd=2):
+    """[R367] 放闊開咗：浮盈未到 1R（R＝入場到放闊後初始止蝕）之前，唔准 AI UPDATE_STOP 收緊（否則 AI 一收返窄就等於冇放闊；
+    #212 回測係固定止蝕止賺）。到 1R 之後照舊只准收緊。規則止損（hold_rules）唔受影響。回傳拒絕原因或 None。"""
+    if k <= 1.0 or not position or initial_stop is None or position.get("entry") is None:
+        return None
+    entry, side = float(position["entry"]), position["side"]
+    r = abs(entry - float(initial_stop))
+    if r <= 0:
+        return None
+    gain = (last - entry) * side
+    if gain < r:
+        return f"止蝕已放闊 {k:g}×：浮盈 {gain:.{nd}f} 未到 1R（{r:.{nd}f}），唔准 AI 收緊止蝕"
+    return None
+
+
 def lots_cap(follow=False):
     """[R349] 升級上限：已達成里程碑數（XAU_LOTS_MILESTONE／SIG_FOLLOW_LOTS_MILESTONE）→ XAU_LOTS_MILESTONE_CAPS；0＝起點；唔超硬上限。"""
     import lots_ladder
