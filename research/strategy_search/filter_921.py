@@ -109,7 +109,9 @@ def load_decisions(g):
                     continue
         for o in arr:
             if o.get("kind") == "decide" and o.get("final") in ("OPEN_LONG", "OPEN_SHORT") and o.get("stop") and o.get("target"):
-                out.append((float(o["ts"]), 1 if o["final"] == "OPEN_LONG" else -1, float(o["stop"]), float(o["target"]), bool(o.get("applied"))))
+                w = o.get("widen") or {}                 # [R367] 已放闊嘅決定：用放闊前 AI 原值（否則 1.5× 會變 2.25×）
+                st, tg = (w.get("stop"), w.get("target")) if w.get("stop") and w.get("target") else (o["stop"], o["target"])
+                out.append((float(o["ts"]), 1 if o["final"] == "OPEN_LONG" else -1, float(st), float(tg), bool(o.get("applied"))))
     return sorted(out)
 
 
