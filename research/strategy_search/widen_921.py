@@ -14,6 +14,7 @@ sys.path.insert(0, HERE)
 import filter_921 as F  # noqa: E402
 
 KS = (1.0, 1.25, 1.5, 2.0)
+FWD_TS = int(dt.datetime(2026, 11, 2, 9, 0, tzinfo=dt.timezone.utc).timestamp())   # 前向影子由呢刻起（#212 判完之後）
 
 
 def replay_k(m1, decs, k):
@@ -51,15 +52,19 @@ def main():
            f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；決策 OPEN {len(decs)} 個（經紀 M1，缺嘅 {nd} 分鐘用 Dukascopy 補）；"
            f"前半／後半以 {dt.datetime.fromtimestamp(mid, dt.timezone.utc):%m-%d %H:%M} UTC 分", "",
            "| k | 全部 | 前半 | 後半 | 止蝕／止賺／到鐘 | 做多 | 做空 |", "|---|---|---|---|---|---|---|"]
-    res = {}
+    res, fw = {}, {}
     for k in KS:
         tr = replay_k(m1, decs, k)
         s = F.summ([x[2] for x in tr]); h1 = F.summ([x[2] for x in tr if x[0] < mid]); h2 = F.summ([x[2] for x in tr if x[0] >= mid])
         res[k] = (s, h1, h2)
+        fw[k] = F.summ([x[2] for x in tr if x[0] >= FWD_TS])
         hw = {w: sum(1 for x in tr if x[3] == w) for w in ("止蝕", "止賺", "時間")}
         out.append(f"| {k:g}× | {F.fmt(s)} | {F.fmt(h1)} | {F.fmt(h2)} | {hw['止蝕']}／{hw['止賺']}／{hw['時間']} | "
                    f"{F.fmt(F.summ([x[2] for x in tr if x[1] > 0]))} | {F.fmt(F.summ([x[2] for x in tr if x[1] < 0]))} |")
         print(k, F.fmt(s), flush=True)
+    out += ["", f"## 前向影子（11-02 09:00 UTC 之後嘅新決定；目標 30 張）", "",
+            *[f"- {k:g}×：{F.fmt(fw[k])}" for k in KS],
+            f"- 進度 {fw[1.0]['n']}／30；夠 30 張時 1.5× 平均 R 要高過 1.0× ≥ 0.10 先提案" + ("（**已夠，照判**）" if fw[1.0]["n"] >= 30 else "")]
     b, w = res[1.0], res[1.5]
     ok = {"①平均R +0.10": w[0]["avg"] - b[0]["avg"] >= 0.10, "②PF≥1.1": w[0]["pf"] >= 1.1,
           "③前後半都改善": w[1]["avg"] > b[1]["avg"] and w[2]["avg"] > b[2]["avg"], "④ΣR 改善": w[0]["sum"] > b[0]["sum"]}
