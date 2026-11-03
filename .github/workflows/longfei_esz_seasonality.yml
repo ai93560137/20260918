@@ -1,0 +1,29 @@
+name: 龍飛陣 ESZ 季節性核實
+
+# 使用者 11-03：「喺 GitHub Actions 跑一次 2010–2025 嘅 ESZ 季節性統計，用數據對你嘅 13/16 同 +3.5%」。
+# 結果寫 GCS ops/longfei/analyst/research/esz_seasonality.json。只係研究。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  esz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: ESZ seasonality
+        run: python3 research/longfei_analyst/seasonality/esz_seasonality.py
