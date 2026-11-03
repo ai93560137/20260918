@@ -174,8 +174,122 @@
     ],
     "created_utc": "2026-11-03T03:01:42+00:00",
     "capture_attempts": [
-     "2026-11-03T03:01+00:00"
-    ]
+     "2026-11-03T03:01+00:00",
+     "2026-11-03T16:44+00:00"
+    ],
+    "options": {
+     "0101.HK": {
+      "status": "沒有股票期權",
+      "final": true
+     },
+     "0241.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 2.955,
+      "strike": 3.16,
+      "premium": 0.06,
+      "hkex_iv": 0.43,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.26125438131277456,
+      "model_premium": 0.015350875665787628,
+      "real_over_model": 3.9085718174189577
+     },
+     "0288.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 6.585,
+      "strike": 7.0,
+      "premium": 0.07,
+      "hkex_iv": 0.3,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.2620884625471528,
+      "model_premium": 0.03967048952510903,
+      "real_over_model": 1.764535825949267
+     },
+     "0322.HK": {
+      "status": "沒有股票期權",
+      "final": true
+     },
+     "1044.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 21.82,
+      "strike": 23.0,
+      "premium": 0.16,
+      "hkex_iv": 0.24,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.2282664555601169,
+      "model_premium": 0.11937296199918353,
+      "real_over_model": 1.3403370187052437
+     },
+     "1378.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 19.93,
+      "strike": 21.0,
+      "premium": 0.41,
+      "hkex_iv": 0.39,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.3682663501974068,
+      "model_premium": 0.32943317308334386,
+      "real_over_model": 1.2445619734120503
+     },
+     "1876.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 6.19,
+      "strike": 6.5,
+      "premium": 0.09,
+      "hkex_iv": 0.31,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.2586931528010389,
+      "model_premium": 0.052367256770843716,
+      "real_over_model": 1.7186311743201506
+     },
+     "1928.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 11.38,
+      "strike": 12.0,
+      "premium": 0.17,
+      "hkex_iv": 0.33,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.2540591736673304,
+      "model_premium": 0.07972204363280885,
+      "real_over_model": 2.132408958091964
+     },
+     "2688.HK": {
+      "status": "沒有股票期權",
+      "final": true
+     },
+     "6862.HK": {
+      "status": "ok",
+      "expiry": "2026-11-27",
+      "expiry_rule": "20–45 日",
+      "spot": 9.935,
+      "strike": 10.5,
+      "premium": 0.13,
+      "hkex_iv": 0.31,
+      "source": "港交所結算價",
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "model_iv": 0.34210556895404276,
+      "model_premium": 0.1349530760589181,
+      "real_over_model": 0.9632977905834791
+     }
+    },
+    "options_done": true
    }
   ],
   "us": [
@@ -230,6 +344,185 @@
       "status": "無 20–45 日到期系列"
      }
     },
+    "options_done": true,
+    "cost": 0.0005,
+    "ret": 0.12799695141952083,
+    "bench": -0.006423674708252669,
+    "exit": "2026-11-02",
+    "notes": [],
+    "cc_ret": 0.12799695141952083
+   },
+   {
+    "month": "2026-11",
+    "signal_date": "2026-10-30",
+    "entry": "2026-11-02",
+    "universe": "S&P 500 名單（universes/sp500/membership.csv）",
+    "n_members": 503,
+    "basket": [
+     "ARE",
+     "DOC",
+     "EIX",
+     "GIS",
+     "HST",
+     "KHC",
+     "O",
+     "UPS",
+     "VICI",
+     "VZ"
+    ],
+    "created_utc": "2026-11-03T16:44:33+00:00",
+    "options": {
+     "ARE": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 41.33000183105469,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 45.0,
+      "bid": 0.4,
+      "ask": 0.7,
+      "premium": 0.55,
+      "source": "yfinance 中間價",
+      "model_iv": 0.41686935701052036,
+      "model_premium": 0.30513958027961163,
+      "real_over_model": 1.8024538130910877
+     },
+     "DOC": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 19.565000534057617,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 22.5,
+      "premium": 0.05,
+      "last_trade": "2026-11-03",
+      "source": "yfinance 最後成交價",
+      "model_iv": 0.22301997906445026,
+      "model_premium": 2.981177891843523e-05,
+      "ratio_excluded": "模型權利金 < 股價 0.05%，不計入比例"
+     },
+     "EIX": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 59.52000045776367,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 62.5,
+      "bid": 0.9,
+      "ask": 1.15,
+      "premium": 1.025,
+      "source": "yfinance 中間價",
+      "model_iv": 0.6061723896697162,
+      "model_premium": 1.8871165983520333,
+      "real_over_model": 0.5431566872418504
+     },
+     "GIS": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 34.06999969482422,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 37.5,
+      "bid": 0.15,
+      "ask": 0.2,
+      "premium": 0.175,
+      "source": "yfinance 中間價",
+      "model_iv": 0.3247225869349776,
+      "model_premium": 0.06697348719322692,
+      "real_over_model": 2.6129742877969457
+     },
+     "HST": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 25.604999542236328,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 27.0,
+      "bid": 0.05,
+      "ask": 0.65,
+      "premium": 0.35000000000000003,
+      "source": "yfinance 中間價",
+      "model_iv": 0.22981161972752218,
+      "model_premium": 0.07550550585078884,
+      "real_over_model": 4.63542355032568
+     },
+     "KHC": {
+      "status": "ok",
+      "expiry": "2026-12-04",
+      "expiry_rule": "20–45 日",
+      "spot": 24.44499969482422,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 26.0,
+      "bid": 0.25,
+      "ask": 0.52,
+      "premium": 0.385,
+      "source": "yfinance 中間價",
+      "model_iv": 0.2781632149419146,
+      "model_premium": 0.224142247307673,
+      "real_over_model": 1.7176592303526013
+     },
+     "O": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 57.36000061035156,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 62.5,
+      "premium": 0.04,
+      "last_trade": "2026-11-03",
+      "source": "yfinance 最後成交價",
+      "model_iv": 0.14846727124810058,
+      "model_premium": 0.00022259873745376316,
+      "ratio_excluded": "模型權利金 < 股價 0.05%，不計入比例"
+     },
+     "UPS": {
+      "status": "ok",
+      "expiry": "2026-12-04",
+      "expiry_rule": "20–45 日",
+      "spot": 109.19010162353516,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 115.0,
+      "bid": 0.72,
+      "ask": 0.88,
+      "premium": 0.8,
+      "source": "yfinance 中間價",
+      "model_iv": 0.24413569502352087,
+      "model_premium": 0.9389516088188534,
+      "real_over_model": 0.8520140894229401
+     },
+     "VICI": {
+      "status": "ok",
+      "expiry": "2026-11-20",
+      "expiry_rule": "後備：最接近 30 日（≥14 日）",
+      "spot": 24.614999771118164,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 27.5,
+      "premium": 0.03,
+      "last_trade": "2026-11-02",
+      "source": "yfinance 最後成交價",
+      "model_iv": 0.19179222294731457,
+      "model_premium": 0.00011551310905434078,
+      "ratio_excluded": "模型權利金 < 股價 0.05%，不計入比例"
+     },
+     "VZ": {
+      "status": "ok",
+      "expiry": "2026-12-04",
+      "expiry_rule": "20–45 日",
+      "spot": 45.150001525878906,
+      "captured_utc": "2026-11-03T16:44+00:00",
+      "strike": 48.0,
+      "bid": 0.32,
+      "ask": 0.39,
+      "premium": 0.355,
+      "source": "yfinance 中間價",
+      "model_iv": 0.27920773775521035,
+      "model_premium": 0.42581053166691657,
+      "real_over_model": 0.8337041327049491
+     }
+    },
+    "capture_attempts": [
+     "2026-11-03T16:44+00:00"
+    ],
     "options_done": true
    }
   ]
