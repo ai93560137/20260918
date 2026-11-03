@@ -219,6 +219,22 @@ class Fallback(unittest.TestCase):
         r = hb(926, m1_ohlc=self.bar(int(NOW[0]) // 60 * 60))
         self.assertIn("open|SELL|", r["cmd_text"]); self.assertIn("magic=926", r["cmd_text"])
 
+    def test_wrong_symbol_no_fallback_no_cmd(self):
+        """11-03：926 圖掛咗 XAGUSD → 唔餵 921、唔出反向指令。"""
+        RV.emit("open", NOW[0], side921=1, stop921=3940.0, target921=3965.0, price=3950.0)
+        silver = {"time": int(NOW[0]) // 60 * 60, "open": 49.4, "high": 49.5, "low": 49.3, "close": 49.48, "is_new_bar": True}
+        r = hb(926, m1_ohlc=silver, symbol="XAGUSD")
+        self.assertFalse(RV.load_state()["last"]["fed_921"])
+        self.assertEqual(storage.read_json(xau.M1_FILE, []), [])
+        self.assertEqual(r["cmd_text"], "")
+        self.assertIn("唔係 XAUUSD", RV.load_state()["last"]["note"])
+
+    def test_price_check_when_no_symbol(self):
+        storage.write_json(xau.M1_FILE, [self.bar(int(NOW[0]) // 60 * 60 - 60)])
+        self.assertFalse(xau.product_ok({"m1_ohlc": {"close": 49.48}}))
+        self.assertTrue(xau.product_ok({"m1_ohlc": {"close": 3952.0}}))
+        self.assertTrue(xau.product_ok({"symbol": "XAUUSD.s"}))
+
 
 if __name__ == "__main__":
     unittest.main()
