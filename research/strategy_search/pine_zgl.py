@@ -33,7 +33,12 @@ D（#222）M1 改良（使用者 11-03「Pine script m1 有冇辦法變到賺錢
   V6 V1＋V3＋V4。
   判（每個改法各自）：① 後半（≥ 2024-09-17，當樣本外）每單位平均 ≥ +0.10、PF ≥ 1.15；② 前半平均 > 0；③ 2023–2026 ≥ 3/4 年正；
   ④ 後半做多同做空平均都 > 0（唔係淨係跟大升市）。另列成本 0.3 美元描述。6 個同時測，有多重比較風險；達標只提案先影子。
-用法：python3 research/strategy_search/pine_zgl.py --part A|B|C|D → PINE_ZGL_A.md／PINE_ZGL_B.md／PINE_ZGL_C.md／PINE_ZGL_D.md
+E（#223）#220 Z1 穩健度（使用者 11-03「繼續研究」）：
+  E1 參數敏感度：帶距 step ∈ {15, 21, 27} × 平滑 ∈ {3, 5, 8}（9 組，原版 21／5），921 B 決策重播 Z1 過濾後平均 R 對唔過濾嘅改善；
+  E2 長歷史獨立樣本：#211 樣本 C（隨機入場 2009→，SL 1×H1 ATR、TP 1.5R、24h、扣 0.5），Z1／Z4／H4S 過濾，2017–2026 每年平均 R 有冇改善。
+  判（預先登記）：穩健＝① E1 ≥ 7/9 組改善 ≥ +0.10R；② E2 Z1 全期改善 > 0、≥ 7/10 年改善；③ E2 Z1 過濾後平均 R ≥ H4S 過濾後。
+  全過 → #220 影子照做、信心加；唔過 → 喺 #220 註明「參數／樣本唔穩」，影子照做但夠 30 張判時要更嚴（Z1 要贏 H4S ≥ +0.10R）。唔改真倉。
+用法：python3 research/strategy_search/pine_zgl.py --part A|B|C|D|E → PINE_ZGL_A.md／PINE_ZGL_B.md／PINE_ZGL_C.md／PINE_ZGL_D.md
 """
 import argparse
 import datetime as dt
@@ -79,10 +84,10 @@ def wma(x, n):
     return out
 
 
-def zgl_up(h, l):
+def zgl_up(h, l, step=STEP, smooth=SMOOTH):
     src = (h + l) / 2
-    d = zlema(src, 6) - zlema(src, 6 + STEP * 8)
-    f = wma(d, SMOOTH)
+    d = zlema(src, 6) - zlema(src, 6 + step * 8)
+    f = wma(d, smooth)
     return np.nan_to_num(f, nan=0.0) >= 0
 
 
@@ -239,11 +244,11 @@ def part_a():
 class ZDir:
     """已收市 K 線嘅 ZGL 方向。sec＝時框秒數，shift＝對齊（H4 用 7200 → 22:00 UTC）。"""
 
-    def __init__(self, t, h, l, c, sec, shift=0):
+    def __init__(self, t, h, l, c, sec, shift=0, step=STEP, smooth=SMOOTH):
         key = (t - shift) // sec * sec + shift
         ks, first = np.unique(key, return_index=True)
         self.k, self.sec = ks, sec
-        self.up = zgl_up(np.maximum.reduceat(h, first), np.minimum.reduceat(l, first))
+        self.up = zgl_up(np.maximum.reduceat(h, first), np.minimum.reduceat(l, first), step, smooth)
 
     def at(self, ts):
         j = np.searchsorted(self.k, ts - self.sec, side="right") - 1
@@ -472,7 +477,57 @@ def part_d():
     print("\n".join(out))
 
 
+# ------------------------------------------------------------------ E
+def part_e():
+    import b_forward as BF
+    import filter_921 as F9
+    g = F9.gb.Gcs()
+    (t, o, h, l, c), _ = BF.load_h1()
+    slope = F9.H4Slope(t, c)
+    decs = F9.load_decisions(g)
+    m1 = F9.EF6.broker_bars(int(decs[0][0]) - 86400)
+    m1, _ = F9.merge_duka(g, m1, dt.datetime.fromtimestamp(decs[0][0] - 86400, dt.timezone.utc).date().isoformat())
+    B = F9.replay(m1, decs)
+    base = F9.summ([x[2] for x in B])
+    out = ["# #220 Z1（H1 ZGL 順勢）穩健度（IDEAS #223）", "",
+           f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；921 B 決策重播 {len(B)} 張（唔過濾 {F9.fmt(base)}）", "",
+           "## E1 參數敏感度（921 B，Z1 過濾）", "", "| 帶距＼平滑 | 3 | 5 | 8 |", "|---|---|---|---|"]
+    good = 0
+    for st in (15, 21, 27):
+        cells = []
+        for sm in (3, 5, 8):
+            z = ZDir(t, h, l, c, 3600, 0, st, sm)
+            sel = [x for x in B if z.at(x[0]) == x[1]]
+            s_ = F9.summ([x[2] for x in sel]); dlt = s_["avg"] - base["avg"]
+            good += dlt >= 0.10
+            cells.append(f"{len(sel)} 張 {s_['avg']:+.3f}（{dlt:+.3f}）")
+        out.append(f"| {st} | " + " | ".join(cells) + " |")
+    out += ["", f"- 改善 ≥ +0.10R：{good}/9 組", ""]
+    C = F9.random_entries(t, o, h, l, c)
+    z1 = ZDir(t, h, l, c, 3600); z4 = ZDir(t, h, l, c, 14400, 7200)
+    FIL = {"H4S 斜率順勢": lambda ts, s: slope.at(ts) * s > 0, "Z1 H1 ZGL 順勢": lambda ts, s: z1.at(ts) == s,
+           "Z4 H4 ZGL 順勢": lambda ts, s: z4.at(ts) == s}
+    bc = F9.summ([x[2] for x in C])
+    out += ["## E2 長歷史隨機入場（#211 樣本 C）", "", f"- 唔過濾：{F9.fmt(bc)}", "",
+            "| 過濾 | 全期 | 改善 | 2017–2026 改善年數 | 每年改善 |", "|---|---|---|---|---|"]
+    res = {}
+    for nm, f in FIL.items():
+        sel = [x for x in C if f(x[0], x[1])]
+        s_ = F9.summ([x[2] for x in sel]); yrs = []
+        for y in F9.Y10:
+            Cy = [x for x in C if R.yr(x[0]) == y]; Sy = [x for x in Cy if f(x[0], x[1])]
+            yrs.append(F9.summ([x[2] for x in Sy])["avg"] - F9.summ([x[2] for x in Cy])["avg"])
+        res[nm] = (s_, sum(v > 0 for v in yrs), s_["avg"] - bc["avg"])
+        out.append(f"| {nm} | {F9.fmt(s_)} | {s_['avg'] - bc['avg']:+.3f} | {sum(v > 0 for v in yrs)}/10 | {' '.join(f'{v:+.2f}' for v in yrs)} |")
+        print(out[-1], flush=True)
+    z = res["Z1 H1 ZGL 順勢"]
+    ok = {"①E1≥7/9": good >= 7, "②E2 Z1 改善>0 且 ≥7/10 年": z[2] > 0 and z[1] >= 7, "③E2 Z1 ≥ H4S": z[0]["avg"] >= res["H4S 斜率順勢"][0]["avg"]}
+    out += ["", "## 判（預先登記）", "", f"- {'✅ 穩健 → #220 影子照做' if all(ok.values()) else '❌ 唔穩：' + '、'.join(k for k, v in ok.items() if not v) + ' → #220 影子照做，但夠 30 張要 Z1 贏 H4S ≥ +0.10R 先提案'}", ""]
+    open(os.path.join(HERE, "PINE_ZGL_E.md"), "w").write("\n".join(out) + "\n")
+    print("\n".join(out))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--part", choices=["A", "B", "C", "D"], required=True)
-    {"A": part_a, "B": part_b, "C": part_c, "D": part_d}[ap.parse_args().part]()
+    ap.add_argument("--part", choices=["A", "B", "C", "D", "E"], required=True)
+    {"A": part_a, "B": part_b, "C": part_c, "D": part_d, "E": part_e}[ap.parse_args().part]()
