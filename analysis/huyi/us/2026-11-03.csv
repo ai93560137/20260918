@@ -1,0 +1,9 @@
+gap_pct,live,live_note,sector,oi,session,ah_px,date,market,ticker,name,drop_pct,close,rv63pre,expiry,dte,atm_iv,rho,leg,strike,moneyness,bid,ask,mid,fill,iv_leg,yield_ann_pct,rho_req,rho_ok,earnings,earnings_in_window,qualifies,paper,note
+9.86,N,,Technology,24,,,2026-11-03,us,IT,"Gartner, Inc.",-13.19,204.2,0.4984,2026-12-18,45,0.4676,0.938,put95,190,0.930,5.9,7.3,6.6,5.9,0.4749,25.2,0.95,N,,?,N,Y,
+9.86,N,,Technology,478,,,2026-11-03,us,IT,"Gartner, Inc.",-13.19,204.2,0.4984,2026-12-18,45,0.4676,0.938,call105,220,1.077,7.1,8.8,7.95,7.1,0.4641,28.2,1.2,N,,?,N,Y,
+5.09,N,唔做實倉：業績日未知,Consumer Defensive,358,,,2026-11-03,us,SYY,Sysco Corporation,-9.33,74.11,0.1971,2026-12-18,45,0.2386,1.211,put95,70,0.945,0.75,0.9,0.825,0.75,0.2526,8.7,0.95,Y,,?,Y,Y,
+5.09,N,,Consumer Defensive,86,,,2026-11-03,us,SYY,Sysco Corporation,-9.33,74.11,0.1971,2026-12-18,45,0.2386,1.211,call105,80,1.079,0.5,0.8,0.65,0.5,0.2206,5.5,1.2,Y,,?,Y,Y,
+14.83,N,唔做實倉：業績日未知、OI 14 < 100,Technology,14,,,2026-11-03,us,ZBRA,Zebra Technologies Corporation,-8.76,329.5,0.2655,2026-12-18,45,0.3954,1.489,put95,310,0.941,7.5,12.4,9.95,7.5,0.4148,19.6,0.95,Y,,?,Y,Y,
+14.83,N,,Technology,26,,,2026-11-03,us,ZBRA,Zebra Technologies Corporation,-8.76,329.5,0.2655,2026-12-18,45,0.3954,1.489,call105,350,1.062,8.3,12.8,10.55,8.3,0.3911,20.4,1.2,Y,,?,Y,Y,
+,N,,Technology,,ah,71,2026-11-03,us,SWKS,"Skyworks Solutions, Inc.",-16.86,85.4,0.5453,2026-12-18,45,0.6120,1.122,put95,65,0.915,,,,,,,0.95,,,?,N,N,🌙盤後跌：行使價按盤後價揀；期權收市價未反映跌幅，唔列價；下一交易日收市再按正式規則判
+,N,,Technology,,ah,71,2026-11-03,us,SWKS,"Skyworks Solutions, Inc.",-16.86,85.4,0.5453,2026-12-18,45,0.6120,1.122,call105,75,1.056,,,,,,,1.2,,,?,N,N,🌙盤後跌：行使價按盤後價揀；期權收市價未反映跌幅，唔列價；下一交易日收市再按正式規則判
