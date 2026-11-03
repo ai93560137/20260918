@@ -77,10 +77,16 @@ def _duka_days_to_h1(sym, y, m):
     d = dt.date(y, m, 1)
     while d.month == m and d <= dt.date.today():
         url = f"https://datafeed.dukascopy.com/datafeed/{sym}/{y:04d}/{m - 1:02d}/{d.day:02d}/BID_candles_min_1.bi5"
-        try:
-            raw = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=60).read()
-        except Exception as exc:  # noqa: BLE001
-            print(f"{d} 日檔拎唔到：{exc}"); raw = None
+        raw = None
+        for k in range(5):                                      # 11-03：Dukascopy 成晚 503，日檔都要重試（404＝未出／假期，唔重試）
+            try:
+                raw = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=60).read()
+                break
+            except Exception as exc:  # noqa: BLE001
+                print(f"{d} 日檔第 {k + 1} 次拎唔到：{exc}")
+                if "404" in str(exc):
+                    break
+                time.sleep(2 ** (k + 1))
         if raw:
             data = lzma.decompress(raw)
             recs = [struct.unpack(">5if", data[i * 24:(i + 1) * 24]) for i in range(len(data) // 24)]
@@ -136,6 +142,16 @@ def duka_h1(a):
             rows = [[t0 + s, o / div, hi / div, lo / div, c / div] for s, o, c, lo, hi, v in recs if o > 0]
         print(f"duka_h1 {y}-{m:02d}：{len(rows)} 根" + (f"，{rows[0][4]:.2f} → {rows[-1][4]:.2f}" if rows else ""))
         tot += len(rows)
+        if bucket and rows and (y, m) == (dt.date.today().year, dt.date.today().month):
+            # 當月：同 GCS 已有嘅合併（新嘅蓋舊），某日拎唔到都唔會洗走之前補咗嘅鐘
+            blob = bucket.blob(f"{PREFIX.replace('alt/', '')}duka_h1{'' if a.sym == 'XAUUSD' else '_' + a.sym.lower()}/{y:04d}-{m:02d}.json")
+            try:
+                old = json.loads(blob.download_as_text()) if blob.exists() else []
+            except Exception:  # noqa: BLE001
+                old = []
+            merged = {int(r[0]): r for r in old}
+            merged.update({int(r[0]): r for r in rows})
+            rows = [merged[k] for k in sorted(merged)]
         if bucket and rows:
             bucket.blob(f"{PREFIX.replace('alt/', '')}duka_h1{'' if a.sym == 'XAUUSD' else '_' + a.sym.lower()}/{y:04d}-{m:02d}.json").upload_from_string(json.dumps(rows), content_type="application/json")
         m += 1
