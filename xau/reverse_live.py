@@ -231,6 +231,13 @@ def handle_heartbeat(payload):
         why = "921 反向未開（XAU_REVERSE_LIVE=0）"
     elif not account["product_ok"]:   # [R370] 926 圖唔係 XAUUSD（11-03 掛咗白銀）：921 價位落錯產品會亂嚟，一張指令都唔出
         why = f"⚠ 926 圖唔係 {config.SYMBOL}（symbol={account['symbol'] or '冇報'}，價 {price}）：唔出指令"
+        if now - float(state.get("wrong_product_tg_ts") or 0) >= 3600:   # Telegram 每小時最多一次
+            state["wrong_product_tg_ts"] = now
+            m.log_event(f"⚠️ [{config.TEAM_NAME}] {why}", severity="WARNING", component="reverse")
+            try:
+                m.notify.tg_send(f"⚠️ {why}；921 影子唔用 926 K 線。請將 926 圖改做 {config.SYMBOL}")
+            except Exception:  # noqa: BLE001
+                pass
     else:
         why = _decide(m, state, account, price, now)
     state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why, "fed_921": fed}
