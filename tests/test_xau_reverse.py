@@ -152,6 +152,22 @@ class Flow(unittest.TestCase):
         xau._reverse_emit("open", NOW[0], side921=1, stop921=1.0, target921=2.0, price=1.5)
         self.assertEqual(len(RV.load_state()["events"]), 1)
 
+    def test_risk_sizing(self):
+        old = (config.RISK_SIZING, config.REVERSE_RISK_PCT, config.REVERSE_MAX_LOTS)
+        try:
+            config.RISK_SIZING, config.REVERSE_RISK_PCT, config.REVERSE_MAX_LOTS = True, 2.0, 0.10
+            n, info = RV.size(30000, 3950.0, 3965.0)            # 600 HKD ÷（15 × 100 × 7.8＝11,700／手）＝0.051 → 0.05
+            self.assertAlmostEqual(n, 0.05); self.assertEqual(info["mode"], "risk")
+            n, _ = RV.size(3_000_000, 3950.0, 3965.0)           # 夾 0.10 上限
+            self.assertAlmostEqual(n, 0.10)
+            n, info = RV.size(3000, 3950.0, 3965.0)             # 60 HKD 唔夠 0.01 手 → 唔開
+            self.assertEqual(n, 0.0)
+            RV.emit("open", NOW[0], side921=1, stop921=3940.0, target921=3965.0, price=3950.0)
+            r = hb(926)
+            self.assertIn("open|SELL|0.05|sl=3965.00|tp=3940.00|magic=926", r["cmd_text"])
+        finally:
+            config.RISK_SIZING, config.REVERSE_RISK_PCT, config.REVERSE_MAX_LOTS = old
+
     def test_status_json(self):
         s = client.get("/?format=json").get_json()
         self.assertIn("reverse_live", s)

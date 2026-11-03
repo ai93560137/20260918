@@ -10,7 +10,7 @@
     保險：926 有倉但 921 影子已經冇倉（漏咗事件）→ 平；control＝STOP → 平。
   921 移止損唔跟：反向 TP 固定喺 921 原 SL；921 平倉時反向跟住市價平（最多遲一個心跳）。
 風控：control 非 RUN、EA 唔准交易／dry_run、926 當日蝕到 XAU_REVERSE_DAY_STOP_HKD、921 冇 TP（反向冇 SL）都唔開。
-固定手數 XAU_REVERSE_LOTS（夾 XAU_REVERSE_MAX_LOTS）。指令 id 前綴 v（921 嘅 id 係 hex，唔會撞）。純計算函數冇 I/O，方便測試。"""
+手數：XAU_RISK_SIZING=1 時同 921 一樣按風險（XAU_REVERSE_RISK_PCT，預設跟 XAU_RISK_PCT＝2%；風險用反向止蝕＝921 TP 距離計），夾 XAU_REVERSE_MAX_LOTS（預設跟 XAU_MAX_LOTS＝0.10）；按風險關就用固定 XAU_REVERSE_LOTS。指令 id 前綴 v（921 嘅 id 係 hex，唔會撞）。純計算函數冇 I/O，方便測試。"""
 import uuid
 
 import config
@@ -68,7 +68,18 @@ def mirror(side, stop, target):
 
 
 def lots():
+    """固定手數（按風險關／權益讀唔到時用），夾硬上限。"""
     return max(0.01, min(float(config.REVERSE_LOTS), float(config.REVERSE_MAX_LOTS)))
+
+
+def size(equity, px, sl):
+    """手數：XAU_RISK_SIZING=1 時同 921 一樣按風險（XAU_REVERSE_RISK_PCT% 權益 ÷ 反向止蝕距離），夾 XAU_REVERSE_MAX_LOTS；
+    回傳 (手數, info)；手數 0.0＝唔開（info["why"]）。"""
+    import risk_size
+    n, info = risk_size.size(equity, px, sl, config.REVERSE_MAX_LOTS, pct=config.REVERSE_RISK_PCT, fallback=lots())
+    if n is None:
+        return lots(), {"mode": "fixed", "lots": lots()}
+    return n, info
 
 
 def open_block(control_mode, account, now=None, principal=None):
@@ -175,7 +186,8 @@ def status():
         acct = storage.read_json(ACCOUNT_FILE, {}) or {}
     except StorageError:
         acct = {}
-    return {"on": enabled(), "magic": config.REVERSE_MAGIC, "lots": lots(), "day_stop_hkd": config.REVERSE_DAY_STOP_HKD,
+    return {"on": enabled(), "magic": config.REVERSE_MAGIC, "sizing": {"risk": config.RISK_SIZING, "pct": config.REVERSE_RISK_PCT, "max_lots": config.REVERSE_MAX_LOTS, "fixed_lots": lots()},
+            "day_stop_hkd": config.REVERSE_DAY_STOP_HKD,
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "events": (st.get("events") or [])[-20:][::-1],
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
@@ -223,16 +235,16 @@ def handle_heartbeat(payload):
                       "mode": "live" if config.REVERSE_LIVE else "off", "cmd_text": cmd_text(state, now), "message": why}), 200
 
 
-def _enqueue(m, state, kind, now, price, reason, side=None, sl=None, tp=None, ev=None):
+def _enqueue(m, state, kind, now, price, reason, side=None, sl=None, tp=None, ev=None, n_lots=None, risk=None):
     cid = "v" + uuid.uuid4().hex[:7]
     if kind == "open":
         action = "OPEN_LONG" if side > 0 else "OPEN_SHORT"
-        text = executor.enqueue(state, action, sl, tp, now, cid, lots=lots(), magic=config.REVERSE_MAGIC, note="921反向",
+        text = executor.enqueue(state, action, sl, tp, now, cid, lots=n_lots, magic=config.REVERSE_MAGIC, note="921反向",
                                 px=price, dev=(config.MAX_ENTRY_SLIP or None))
     else:
         text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.REVERSE_MAGIC)
     state["orders"] = [*state.get("orders", []), {"id": cid, "kind": kind, "ts": now, "utc": market.fmt_utc(now), "price": price,
-                                                  "side": side, "sl": sl, "tp": tp, "lots": lots() if kind == "open" else None,
+                                                  "side": side, "sl": sl, "tp": tp, "lots": n_lots, "risk": risk,
                                                   "reason": reason, "event": (ev or {}).get("id"), "applied": text, "acked": False}][-MAX_ORDERS:]
     m.log_event(f"🔁 [{config.TEAM_NAME}] 921 反向 {kind} {'' if side is None else ('BUY' if side > 0 else 'SELL')} {reason}｜{text}", component="reverse", cmd=cid)
     return text
@@ -257,8 +269,18 @@ def _decide(m, state, account, price, now):
         else:
             side, sl, tp = mirror(arg.get("side921"), arg.get("stop921"), arg.get("target921"))
             px = arg.get("price") or price
-            _enqueue(m, state, "open", now, px, f"反 921 {'多' if arg.get('side921') == 1 else '空'}", side=side, sl=sl, tp=tp, ev=arg)
-            notes_out.append(f"開{'多' if side > 0 else '空'}（SL {sl}／TP {tp}）")
+            n, info = size(account.get("equity"), px, sl)
+            if not n:
+                for ev in state.get("events") or []:
+                    if ev.get("id") == arg.get("id"):
+                        ev["note"] = f"唔開：{info.get('why')}"
+                m.log_event(f"🧮 [{config.TEAM_NAME}] 921 反向按風險計手數唔開：{info.get('why')}", component="reverse")
+                notes_out.append(f"唔開（{info.get('why')}）")
+                continue
+            if info.get("mode") == "fallback":
+                m.log_event(f"⚠️ [{config.TEAM_NAME}] 921 反向按風險計手數：{info.get('why')}（{n:.2f} 手）", severity="WARNING", component="reverse")
+            _enqueue(m, state, "open", now, px, f"反 921 {'多' if arg.get('side921') == 1 else '空'}", side=side, sl=sl, tp=tp, ev=arg, n_lots=n, risk=info)
+            notes_out.append(f"開{'多' if side > 0 else '空'} {n:.2f} 手（SL {sl}／TP {tp}）")
     if pos and not acts and not _pending(state, "close", now):            # 保險：921 影子冇倉但 926 有倉（漏咗 close 事件）
         last_open = next((o for o in reversed(state.get("orders") or []) if o.get("kind") == "open"), None)
         if last_open is None or now - float(last_open.get("ts") or 0) > ORPHAN_GRACE_SEC:

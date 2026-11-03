@@ -306,7 +306,8 @@ HOLD_RULES_TOL = _f("XAU_HOLD_RULES_TOL", 1.0 if PRODUCT["digits"] == 2 else 0.0
 REVERSE_LIVE = _b("XAU_REVERSE_LIVE", False)
 REVERSE_MAGIC = _i("XAU_REVERSE_MAGIC", MAGIC + 5 if not SIGNAL_BOOK else 0)   # 921 → 926（唔撞 921–925、931–935）
 REVERSE_ACCOUNT = _s("XAU_REVERSE_ACCOUNT", "") or ACCOUNT                     # 預設同 921（…63）
-REVERSE_LOTS = _f("XAU_REVERSE_LOTS", 0.01)                                    # 固定手數（使用者喺總指揮定；預設 0.01）
-REVERSE_MAX_LOTS = _f("XAU_REVERSE_MAX_LOTS", 0.05)                            # 硬上限：REVERSE_LOTS 再大都夾住
+REVERSE_LOTS = _f("XAU_REVERSE_LOTS", 0.01)                                    # 按風險關（XAU_RISK_SIZING=0）或權益讀唔到時嘅固定手數
+REVERSE_RISK_PCT = _f("XAU_REVERSE_RISK_PCT", RISK_PCT)                        # 使用者 11-03 喺總指揮：同 921 一樣按風險 2%（zhuge-xau XAU_RISK_PCT=2）；風險用反向止蝕（＝921 TP）距離計
+REVERSE_MAX_LOTS = _f("XAU_REVERSE_MAX_LOTS", MAX_LOTS)                        # 硬上限（使用者：同 921 一樣 0.10 手）
 REVERSE_DAY_STOP_HKD = _f("XAU_REVERSE_DAY_STOP_HKD", 2000.0)                  # 926 當日蝕到呢個數停開新倉；0＝唔設
 REVERSE_SIGNAL_TTL_SEC = _i("XAU_REVERSE_SIGNAL_TTL_SEC", 180)                 # 921 開倉事件幾耐內先跟（遲咗唔追）

@@ -6,8 +6,10 @@
 
 ## 1. 部署（總指揮做，使用者批）
 1. PR 合併後，總指揮跑 `gcp_agent.py --profile xau deploy`，先做 dry-run，使用者批准先加 `--yes`。部署完 `XAU_REVERSE_LIVE` 仍然係 0，即係唔會落單。
-2. 手數：使用者喺總指揮定，預設 0.01 手。用 `XAU_REVERSE_LOTS` 設定，硬上限 `XAU_REVERSE_MAX_LOTS`=0.05。
-3. 開關：總指揮跑 `gcp_agent.py --profile xau env set XAU_REVERSE_LIVE=1`（要改手數就一齊加 `XAU_REVERSE_LOTS=…`），先 dry-run，使用者批准先加 `--yes`。
+2. 手數（使用者 11-03 喺總指揮定）：同 921 一樣按風險 2%（zhuge-xau 已經係 `XAU_RISK_SIZING=1`、`XAU_RISK_PCT=2`；`XAU_REVERSE_RISK_PCT` 預設跟住），上限 0.10 手（`XAU_REVERSE_MAX_LOTS` 預設跟 `XAU_MAX_LOTS`），戶口 …63。
+   風險用反向自己嘅止蝕距離計，即係 921 嘅 TP 距離，通常大過 921 嘅止蝕距離，所以手數會細過 921，但每張蝕嘅 HKD 一樣係權益 2%。
+   2% 唔夠 0.01 手就唔開；權益讀唔到就用 `XAU_REVERSE_LOTS`（0.01）。
+3. 開關：總指揮跑 `gcp_agent.py --profile xau env set XAU_REVERSE_LIVE=1`（手數照預設，唔使另外設），先 dry-run，使用者批准先加 `--yes`。
    **`XAU_EXECUTE` 保持 0**：921 照做影子唔落單，淨係 926 落單。
 
 ## 2. MT5（使用者喺 …63 做）
