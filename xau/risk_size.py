@@ -74,6 +74,6 @@ def accounts_open_risk():
     """兩個真戶口：…63（921＋932）、…69（931＋933＋934）。路徑用 MAIN_PREFIX（xau/）＋ sig/。"""
     base = config.MAIN_PREFIX
     sig = base + "sig/"
-    return {"…63（921＋932）": open_risk(base + "account.json", [base + "account.json", sig + "follow/account.json"]),
+    return {"…63（921＋926＋932）": open_risk(base + "account.json", [base + "account.json", base + "reverse/account.json", sig + "follow/account.json"]),   # [R369] 926 921 反向
             "…69（931＋933＋934＋935）": open_risk(sig + "account.json", [sig + "account.json", sig + "studentlive/account.json", sig + "g7live/account.json",
                                                                        sig + "combolive/account.json"])}

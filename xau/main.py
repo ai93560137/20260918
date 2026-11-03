@@ -30,6 +30,7 @@ import combo_live
 import hold_rules
 import lots_ladder
 import live_book
+import reverse_live
 import data_block
 import prescreen
 import student
@@ -237,6 +238,16 @@ def pending_has(state, op):
                for c in (state.get("pending_cmds") or []))
 
 
+def _reverse_emit(kind, now, **kw):
+    """[R369] 921 影子事件 → 921 反向真倉（只係事後寫事件，唔改 921 決策；出錯只記 WARNING）。"""
+    if config.EXECUTE or not reverse_live.enabled():
+        return
+    try:
+        reverse_live.emit(kind, now, **kw)
+    except Exception as exc:  # noqa: BLE001
+        log_event(f"⚠️ [{config.TEAM_NAME}] 921 反向事件寫入失敗（唔影響 921）：{type(exc).__name__}: {exc}", severity="WARNING", component="reverse")
+
+
 def risk_ladder(state, control, account, bar, now):
     """使用者 10-20：真倉同真倉戶口共用，日蝕只計天覆陣自己嘅單（模擬＝紙上；真倉＝EA 按 magic 回報）；
     「自己嘅權益」= 本金 + 累計已實現 + 浮動；保證金水平係戶口級。"""
@@ -309,6 +320,8 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
             rec["applied"] = (enqueue_cmd(state, "CLOSE", None, None, now, decision_id) if state.get("position") and not pending_has(state, "close") else "HOLD")
         else:
             closed = paper.force_close(state, bar, "日蝕 −" + f"{config.DAILY_LOSS_STOP_PCT:g}% 平倉停機", now)
+            if closed:
+                _reverse_emit("close", now, reason=closed["reason"])
         set_mode(control, "STOP", why, "ladder", now, auto_reset_day=next_day)
         rec.update(kind="ladder", action="CLOSE", final="CLOSE", reason=why,
                    paper_exit=({"reason": closed["reason"], "pnl_usd": closed["pnl_usd"]} if closed else rec.get("paper_exit")))
@@ -516,6 +529,7 @@ def process_bar(state, bar, m1, m15, account, now):
         exit_rec = paper.on_bar(state, bar, now)
         if exit_rec:
             log_event(f"📕 [{config.TEAM_NAME}] 紙上平倉 {exit_rec['reason']} {exit_rec['pnl_usd']:+.2f} USD", component="paper")
+            _reverse_emit("close", now, reason=exit_rec["reason"])
     market_open = market.is_market_open(now)        # 黃金／外匯時段（market.py）；R253 後舊電閘已刪，舊規則只留 reference/legacy_rules.md
     control = load_control()
     ladder = risk_ladder(state, control, account, bar, now)
@@ -706,7 +720,13 @@ def process_bar(state, bar, m1, m15, account, now):
         if action in ("OPEN_LONG", "OPEN_SHORT"):
             paper.count_trade(state, day)
     else:
+        had_pos = state.get("position") is not None
         rec["applied"] = paper.apply(state, action, stop, target, bar, now, day, decision_id)
+        if action in ("OPEN_LONG", "OPEN_SHORT"):                       # [R369] 921 影子開倉 → 反向
+            _reverse_emit("open", now, side921=1 if action == "OPEN_LONG" else -1, stop921=stop, target921=target,
+                          price=bar["close"], decision=decision_id[:8])
+        elif action == "CLOSE" and had_pos and state.get("position") is None:
+            _reverse_emit("close", now, reason="921 AI 平倉")
     _record(state, rec, day)
     log_event(decision_line(rec, bar["close"]), component="brain",
               action=action, rejected=why, ms=rec["ms"], cost_usd=rec["cost_usd"])
@@ -1095,6 +1115,7 @@ def build_status():
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
         "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.EXECUTE else None,   # [R352] 真倉績效（921／931）
+        "reverse_live": _safe_book(reverse_live.status) if not config.SIGNAL_BOOK else None,   # [R369] 921 反向真倉
         "live_book_follow": _safe_book(lambda: follow_book_view(now)),
         "forward": _safe_book(forward_view),                           # [R352c] 前向測試（gb_forward、規則學生）                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
@@ -1179,6 +1200,19 @@ def entry(req):
             return follower.handle_heartbeat(payload)
         if not config.SIG_DECIDE and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return jsonify({"status": "ignored", "message": "signal book S0: ingest only", "cmd_text": ""}), 200
+    if not config.SIGNAL_BOOK and config.REVERSE_MAGIC:              # [R369] 921 反向（magic 926）：心跳按 magic、回報按 id 前綴 v 分流（開關關咗都分流，唔好污染 921 戶口快照）
+        if action == "cmd_ack" and reverse_live.is_cmd(payload.get("id")):
+            ok_acct, why = ack_account_ok(payload, config.REVERSE_ACCOUNT)
+            if not ok_acct:
+                return jsonify({"status": "ignored", "message": why}), 200
+            cid = str(payload.get("id") or "")[:8]
+            found = reverse_live.ack(cid, payload, now_ts())
+            log_event(f"📨 [{config.TEAM_NAME}] 921 反向指令回報 {cid} ok={payload.get('ok')}"
+                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                      severity="INFO" if payload.get("ok") else "WARNING", component="reverse")
+            return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
+        if reverse_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return reverse_live.handle_heartbeat(payload)
     if action == "cmd_ack":
         return handle_cmd_ack(payload)
     if action == "tg_signal" and not config.SIGNAL_BOOK:   # [R290] 舊入口（訊號書只收 HMAC 簽名入口）

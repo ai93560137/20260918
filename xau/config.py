@@ -300,3 +300,13 @@ PRESCREEN_NEAR = _f("XAU_PRESCREEN_NEAR", 2.0 if PRODUCT["digits"] == 2 else 0.0
 PRESCREEN_MOVE15 = _f("XAU_PRESCREEN_MOVE15", 3.0 if PRODUCT["digits"] == 2 else 0.0010)
 HOLD_RULES_ASK_MIN = _i("XAU_HOLD_RULES_ASK_MIN", 5)
 HOLD_RULES_TOL = _f("XAU_HOLD_RULES_TOL", 1.0 if PRODUCT["digits"] == 2 else 0.0010)   # shadow 統計：規則 vs Opus 止損「相差 ≤tol」
+# [R369] 921 反向真倉（IDEAS #225；使用者 11-03 喺總指揮「根據921做一個完全相反嘅策略，用真倉；921照舊影子測試；不要影響921決策」）。預設關。
+#   921 影子（XAU_EXECUTE=0）每次紙上開倉 → 反向用新 magic 落相反方向：SL＝921 TP、TP＝921 SL（伺服器端即掛）；921 紙上平倉（止蝕／止賺／AI 平倉／最長持倉／日蝕）→ 反向同時平。
+#   921 移止損唔跟（反向 TP 固定喺 921 原 SL；921 平倉時反向市價平，最多遲 1 分鐘）。只喺主服務（唔係訊號書）。921 決策流程一啲都唔改（只係事後寫事件）。
+REVERSE_LIVE = _b("XAU_REVERSE_LIVE", False)
+REVERSE_MAGIC = _i("XAU_REVERSE_MAGIC", MAGIC + 5 if not SIGNAL_BOOK else 0)   # 921 → 926（唔撞 921–925、931–935）
+REVERSE_ACCOUNT = _s("XAU_REVERSE_ACCOUNT", "") or ACCOUNT                     # 預設同 921（…63）
+REVERSE_LOTS = _f("XAU_REVERSE_LOTS", 0.01)                                    # 固定手數（使用者喺總指揮定；預設 0.01）
+REVERSE_MAX_LOTS = _f("XAU_REVERSE_MAX_LOTS", 0.05)                            # 硬上限：REVERSE_LOTS 再大都夾住
+REVERSE_DAY_STOP_HKD = _f("XAU_REVERSE_DAY_STOP_HKD", 2000.0)                  # 926 當日蝕到呢個數停開新倉；0＝唔設
+REVERSE_SIGNAL_TTL_SEC = _i("XAU_REVERSE_SIGNAL_TTL_SEC", 180)                 # 921 開倉事件幾耐內先跟（遲咗唔追）
