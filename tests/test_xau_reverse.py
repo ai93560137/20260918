@@ -174,5 +174,51 @@ class Flow(unittest.TestCase):
         self.assertEqual(s["reverse_live"]["magic"], 926)
 
 
+class Fallback(unittest.TestCase):
+    """[R370] 921 圖冇心跳 → 用 926 心跳 K 線餵 921 影子。"""
+    def setUp(self):
+        reset()
+
+    def bar(self, t, new=True):
+        return {"time": t, "open": 3950.0, "high": 3951.0, "low": 3949.0, "close": 3950.5, "is_new_bar": new}
+
+    def test_fallback_feeds_921(self):
+        t = int(NOW[0]) // 60 * 60
+        r = hb(926, m1_ohlc=self.bar(t))
+        self.assertTrue(RV.load_state()["last"]["fed_921"])
+        m1 = storage.read_json(xau.M1_FILE, [])
+        self.assertEqual(m1[-1]["time"], t)                                             # 921 M1 歷史收到 926 嘅 K 線
+        self.assertEqual(storage.read_json(xau.ACCOUNT_FILE, None), None)               # 921 戶口快照冇被寫
+        self.assertEqual(r["status"], "monitoring")
+
+    def test_921_alive_no_fallback(self):
+        storage.write_json(xau.ACCOUNT_FILE, {"received_ts": NOW[0] - 30, "positions": []})
+        t = int(NOW[0]) // 60 * 60
+        hb(926, m1_ohlc=self.bar(t))
+        self.assertFalse(RV.load_state()["last"]["fed_921"])
+        self.assertEqual(storage.read_json(xau.M1_FILE, []), [])
+
+    def test_dedup_same_bar(self):
+        t = int(NOW[0]) // 60 * 60
+        hb(926, m1_ohlc=self.bar(t))
+        n1 = len(storage.read_json(xau.M1_FILE, []))
+        resp = xau._feed_bars({"m1_ohlc": self.bar(t)}, {}, 0, NOW[0])                   # 921 圖重開送同一根
+        self.assertEqual(resp.get("message"), "duplicate M1 bar")
+        self.assertEqual(len(storage.read_json(xau.M1_FILE, [])), n1)
+
+    def test_execute_never_fallback(self):
+        old = config.EXECUTE
+        try:
+            config.EXECUTE = True
+            self.assertFalse(xau.shadow_feed({"m1_ohlc": self.bar(int(NOW[0]) // 60 * 60)}, NOW[0]))
+        finally:
+            config.EXECUTE = old
+
+    def test_cmd_text_unaffected(self):
+        RV.emit("open", NOW[0], side921=1, stop921=3940.0, target921=3965.0, price=3950.0)
+        r = hb(926, m1_ohlc=self.bar(int(NOW[0]) // 60 * 60))
+        self.assertIn("open|SELL|", r["cmd_text"]); self.assertIn("magic=926", r["cmd_text"])
+
+
 if __name__ == "__main__":
     unittest.main()

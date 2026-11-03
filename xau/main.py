@@ -764,6 +764,14 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         log_event(f"⚠️ 戶口快照寫入失敗：{exc}", severity="WARNING")
 
+    return jsonify(_feed_bars(payload, account, offset, now)), 200
+
+
+def _feed_bars(payload, account, offset, now):
+    """心跳嘅 K 線部分：回填歷史、M15／M1 入庫（按 bar 時間去重）、新 M1 收盤就行 process_bar。回傳回應 dict。
+    [R370] 921 心跳同後備來源（926 心跳，shadow_feed）共用；同一根 M1 只會處理一次（market.ingest 去重）。"""
+    m1_raw = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
+    m15_raw = payload.get("m15_ohlc") if isinstance(payload.get("m15_ohlc"), dict) else {}
     # EA v0.33 回填：首個心跳（或服務回 need_history）帶 m1_hist／m15_hist，合併入歷史，唔使等 5 小時累積 M15
     hist1, hist15 = market.parse_hist(payload.get("m1_hist")), market.parse_hist(payload.get("m15_hist"))
     if hist1 or hist15:
@@ -797,7 +805,7 @@ def handle_heartbeat(payload):
             "data_block": ((state.get("data_block") or {}).get("blocked") or {}).get("title")}
     bar = market.parse_bar(m1_raw) if m1_raw.get("is_new_bar") else None
     if bar is None:
-        return jsonify(resp), 200
+        return resp
 
     def mut1(h):
         new, is_new = market.ingest(h, bar, config.M1_MAX, config.M1_GAP_RESET_SEC)
@@ -806,9 +814,9 @@ def handle_heartbeat(payload):
         m1, is_new = storage.update(M1_FILE, mut1, default_factory=list)
     except StorageError as exc:
         log_event(f"⚠️ M1 寫入失敗：{exc}", severity="WARNING")
-        return jsonify({**resp, "message": "M1 storage error"}), 200
+        return {**resp, "message": "M1 storage error"}
     if not is_new:
-        return jsonify({**resp, "message": "duplicate M1 bar"}), 200
+        return {**resp, "message": "duplicate M1 bar"}
     archive_bars([bar], offset)                                       # [R345] 全日 M1 存檔
     if m15 is None:
         try:
@@ -842,7 +850,29 @@ def handle_heartbeat(payload):
         log_event(f"⚠️ 狀態寫入失敗：{exc}", severity="ERROR")
     resp.update(cmd_text=cmd_text(state, now), message=summary, data_block=((state.get("data_block") or {}).get("blocked") or {}).get("title"),   # [R348]
                 decision=({k: rec.get(k) for k in ("final", "action", "reason", "rejected", "stop", "target", "ms")} if rec else None))
-    return jsonify(resp), 200
+    return resp
+
+
+def shadow_feed(payload, now=None, stale_sec=180):
+    """[R370] 921 影子後備 K 線來源（使用者 11-03 揀 B：一張 926 圖就夠）：XAU_EXECUTE=0 而 921 心跳（xau/account.json）超過 stale_sec 冇嚟，
+    就用 926 心跳嘅 M1／M15 行 921 影子決策。921 決策邏輯唔改、唔寫 921 戶口快照（用最後一個 921 快照，冇就空 dict）；
+    921 圖重開之後以 921 心跳為準（快照新鮮就唔用後備），同一根 M1 由 market.ingest 去重。XAU_EXECUTE=1 一律唔用。回傳 True＝用咗後備。"""
+    now = now_ts() if now is None else now
+    if config.EXECUTE or config.SIGNAL_BOOK:
+        return False
+    try:
+        acct = storage.read_json(ACCOUNT_FILE, {}) or {}
+    except StorageError:
+        acct = {}
+    if now - float(acct.get("received_ts") or 0) < stale_sec:
+        return False
+    try:
+        offset = server_offset(payload, now)
+        _feed_bars(payload, acct, offset, now)
+    except Exception as exc:  # noqa: BLE001  後備來源出錯唔可以拖垮 926 心跳
+        log_event(f"⚠️ [{config.TEAM_NAME}] 921 影子後備 K 線（926 心跳）出錯：{type(exc).__name__}: {exc}", severity="WARNING", component="reverse")
+        return False
+    return True
 
 
 def archive_bars(bars, offset):

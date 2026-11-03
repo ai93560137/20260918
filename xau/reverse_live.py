@@ -204,6 +204,7 @@ def handle_heartbeat(payload):
     m = _m(); now = m.now_ts()
     if config.REVERSE_ACCOUNT and str(payload.get("account") or "").strip() != config.REVERSE_ACCOUNT:
         return m.jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
+    fed = m.shadow_feed(payload, now)                    # [R370] 921 圖冇心跳（XAU_EXECUTE=0）→ 用 926 心跳 K 線餵 921 影子，先行 921 再判反向（同一心跳就跟到）
     offset = m.server_offset(payload, now)
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "floating", "daily_pnl", "realized_total", "margin_level",
                                                              "bots_daily_pnl", "bots_floating", "bots_realized_total")}   # bots_*：EA InpBotMagics 合計（§6c）
@@ -226,7 +227,7 @@ def handle_heartbeat(payload):
         m.log_event(f"⚠️ 921 反向成交簿記錄失敗（唔影響交易）：{type(exc).__name__}: {exc}", severity="WARNING", component="reverse")
     state["pos_seen"] = pos
     why = _decide(m, state, account, price, now) if enabled() else "921 反向未開（XAU_REVERSE_LIVE=0）"
-    state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why}
+    state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why, "fed_921": fed}
     try:
         state = storage.update(STATE_FILE, lambda fresh: (lambda v: (v, v))(merge(fresh, state)), default_factory=empty_state)
     except StorageError as exc:
