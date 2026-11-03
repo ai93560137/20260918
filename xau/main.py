@@ -853,22 +853,22 @@ def _feed_bars(payload, account, offset, now):
     return resp
 
 
-def product_ok(payload, tol=0.2):
+def product_ok(payload, tol=0.02, strict=False):
     """[R370] 心跳係咪本產品（11-03 發現 926 圖掛咗 XAGUSD，價 49.48）：有報 symbol 就要包含 config.SYMBOL；
-    冇報就用 M1 收市價同已存 921 M1 最後收市比，差 ≥ tol（20%）當唔啱。冇得比（冇價／冇舊 K 線）當啱。"""
+    冇報就用 M1 收市價同已存 921 M1 最後收市比，差 ≥ tol（2%，總指揮 11-03 要求）當唔啱。冇得比（冇價／冇舊 K 線）：strict（餵 921 用）當唔啱，否則當啱。"""
     sym = str(payload.get("symbol") or "").strip().upper()
     if sym:
         return config.SYMBOL in sym
     m1 = payload.get("m1_ohlc") if isinstance(payload.get("m1_ohlc"), dict) else {}
     px = market.to_float(m1.get("close"))
     if not px:
-        return True
+        return not strict
     try:
         bars = storage.read_json(M1_FILE, []) or []
     except StorageError:
-        return True
+        return not strict
     ref = market.to_float(bars[-1].get("close")) if bars and isinstance(bars[-1], dict) else None
-    return not ref or abs(px / ref - 1) < tol
+    return abs(px / ref - 1) < tol if ref else not strict
 
 
 def shadow_feed(payload, now=None, stale_sec=180):
@@ -884,7 +884,7 @@ def shadow_feed(payload, now=None, stale_sec=180):
         acct = {}
     if now - float(acct.get("received_ts") or 0) < stale_sec:
         return False
-    if not product_ok(payload):   # 926 圖掛錯產品（例如白銀）就唔好污染 921 K 線
+    if not product_ok(payload, strict=True):   # 926 圖掛錯產品（例如白銀）就唔好污染 921 K 線
         log_event(f"⚠️ [{config.TEAM_NAME}] 921 影子後備：926 心跳唔係 {config.SYMBOL}（symbol={payload.get('symbol')!r}），唔用", severity="WARNING", component="reverse")
         return False
     try:

@@ -178,6 +178,8 @@ class Fallback(unittest.TestCase):
     """[R370] 921 圖冇心跳 → 用 926 心跳 K 線餵 921 影子。"""
     def setUp(self):
         reset()
+        self.seed = [self.bar(int(NOW[0]) // 60 * 60 - 120)]          # 921 圖之前留低嘅金價 K 線（價錢核對參考）
+        storage.write_json(xau.M1_FILE, self.seed)
 
     def bar(self, t, new=True):
         return {"time": t, "open": 3950.0, "high": 3951.0, "low": 3949.0, "close": 3950.5, "is_new_bar": new}
@@ -196,7 +198,7 @@ class Fallback(unittest.TestCase):
         t = int(NOW[0]) // 60 * 60
         hb(926, m1_ohlc=self.bar(t))
         self.assertFalse(RV.load_state()["last"]["fed_921"])
-        self.assertEqual(storage.read_json(xau.M1_FILE, []), [])
+        self.assertEqual(storage.read_json(xau.M1_FILE, []), self.seed)
 
     def test_dedup_same_bar(self):
         t = int(NOW[0]) // 60 * 60
@@ -225,15 +227,30 @@ class Fallback(unittest.TestCase):
         silver = {"time": int(NOW[0]) // 60 * 60, "open": 49.4, "high": 49.5, "low": 49.3, "close": 49.48, "is_new_bar": True}
         r = hb(926, m1_ohlc=silver, symbol="XAGUSD")
         self.assertFalse(RV.load_state()["last"]["fed_921"])
-        self.assertEqual(storage.read_json(xau.M1_FILE, []), [])
+        self.assertEqual(storage.read_json(xau.M1_FILE, []), self.seed)
         self.assertEqual(r["cmd_text"], "")
         self.assertIn("唔係 XAUUSD", RV.load_state()["last"]["note"])
 
     def test_price_check_when_no_symbol(self):
-        storage.write_json(xau.M1_FILE, [self.bar(int(NOW[0]) // 60 * 60 - 60)])
         self.assertFalse(xau.product_ok({"m1_ohlc": {"close": 49.48}}))
         self.assertTrue(xau.product_ok({"m1_ohlc": {"close": 3952.0}}))
+        self.assertFalse(xau.product_ok({"m1_ohlc": {"close": 3950.5 * 1.025}}))          # 差 > 2% 當錯產品
+        self.assertFalse(xau.product_ok({"symbol": "XAGUSD", "m1_ohlc": {"close": 3950.0}}))
+
+    def test_wrong_symbol_telegram_throttled(self):
+        sent = []
+        old = xau.notify.tg_send
+        try:
+            xau.notify.tg_send = lambda t: sent.append(t) or True
+            silver = {"time": int(NOW[0]) // 60 * 60, "close": 49.48, "is_new_bar": True}
+            hb(926, m1_ohlc=silver); hb(926, m1_ohlc=silver)            # 冇 symbol：靠價錢同 921 舊 K 線比
+            self.assertEqual(storage.read_json(xau.M1_FILE, []), self.seed)
+            self.assertEqual(len(sent), 1); self.assertIn("926", sent[0])
+        finally:
+            xau.notify.tg_send = old
         self.assertTrue(xau.product_ok({"symbol": "XAUUSD.s"}))
+        FAKE.clear()
+        self.assertFalse(xau.product_ok({"m1_ohlc": {"close": 3950.0}}, strict=True))      # 冇舊 K 線：餵 921 唔冒險
 
 
 if __name__ == "__main__":
