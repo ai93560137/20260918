@@ -204,12 +204,14 @@ def handle_heartbeat(payload):
     m = _m(); now = m.now_ts()
     if config.REVERSE_ACCOUNT and str(payload.get("account") or "").strip() != config.REVERSE_ACCOUNT:
         return m.jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
+    fed = m.shadow_feed(payload, now)                    # [R370] 921 圖冇心跳（XAU_EXECUTE=0）→ 用 926 心跳 K 線餵 921 影子，先行 921 再判反向（同一心跳就跟到）
     offset = m.server_offset(payload, now)
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "floating", "daily_pnl", "realized_total", "margin_level",
                                                              "bots_daily_pnl", "bots_floating", "bots_realized_total")}   # bots_*：EA InpBotMagics 合計（§6c）
     account.update(account_id=str(payload.get("account") or "")[:24], dry_run=bool(payload.get("dry_run")), positions=m.own_positions(payload, offset),
                    trade_allowed=(payload.get("trade_allowed") if isinstance(payload.get("trade_allowed"), dict) else None),
-                   received_utc=market.fmt_utc(now), received_ts=now, magic=config.REVERSE_MAGIC)
+                   received_utc=market.fmt_utc(now), received_ts=now, magic=config.REVERSE_MAGIC,
+                   symbol=str(payload.get("symbol") or "")[:16], product_ok=m.product_ok(payload))
     try:
         storage.write_json(ACCOUNT_FILE, account)
     except StorageError as exc:
@@ -225,8 +227,13 @@ def handle_heartbeat(payload):
     except Exception as exc:  # noqa: BLE001
         m.log_event(f"⚠️ 921 反向成交簿記錄失敗（唔影響交易）：{type(exc).__name__}: {exc}", severity="WARNING", component="reverse")
     state["pos_seen"] = pos
-    why = _decide(m, state, account, price, now) if enabled() else "921 反向未開（XAU_REVERSE_LIVE=0）"
-    state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why}
+    if not enabled():
+        why = "921 反向未開（XAU_REVERSE_LIVE=0）"
+    elif not account["product_ok"]:   # [R370] 926 圖唔係 XAUUSD（11-03 掛咗白銀）：921 價位落錯產品會亂嚟，一張指令都唔出
+        why = f"⚠ 926 圖唔係 {config.SYMBOL}（symbol={account['symbol'] or '冇報'}，價 {price}）：唔出指令"
+    else:
+        why = _decide(m, state, account, price, now)
+    state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why, "fed_921": fed}
     try:
         state = storage.update(STATE_FILE, lambda fresh: (lambda v: (v, v))(merge(fresh, state)), default_factory=empty_state)
     except StorageError as exc:
