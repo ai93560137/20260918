@@ -26,7 +26,14 @@ C（#221）「超主升／超主跌」之後點走：
   另列可交易版：事件下一根開盤進、反轉出、扣 0.5 美元：每單位平均 ≥ +0.10、PF ≥ 1.15、前後半都正先算有用。
 
 任何結果都只係提案，要用落真倉要使用者經總指揮批，建議先影子。
-用法：python3 research/strategy_search/pine_zgl.py --part A|B|C → PINE_ZGL_A.md／PINE_ZGL_B.md／PINE_ZGL_C.md
+D（#222）M1 改良（使用者 11-03「Pine script m1 有冇辦法變到賺錢策略」）：A 顯示 M1 原版每單位 −0.50＝扣 0.5 成本前約 0，即訊號本身冇方向。
+  六個改法（只首單、唔加單；收市判斷下一根開盤；扣 0.5）：
+  V1 只做同 H1 ZGL 方向一致嘅 M1 首單（反轉出）；V2 V1＋H4 ZGL 都一致；V3 M1 ATR14 ≥ 1.5 美元（成本 3 倍）先做；
+  V4 只做 07:00–20:00 UTC（倫敦＋紐約）；V5 用 M1 做 H1 入場時機：H1 ZGL 轉向之後第一個同向 M1 首單入、H1 ZGL 再轉向先出（每個 H1 波段最多一張）；
+  V6 V1＋V3＋V4。
+  判（每個改法各自）：① 後半（≥ 2024-09-17，當樣本外）每單位平均 ≥ +0.10、PF ≥ 1.15；② 前半平均 > 0；③ 2023–2026 ≥ 3/4 年正；
+  ④ 後半做多同做空平均都 > 0（唔係淨係跟大升市）。另列成本 0.3 美元描述。6 個同時測，有多重比較風險；達標只提案先影子。
+用法：python3 research/strategy_search/pine_zgl.py --part A|B|C|D → PINE_ZGL_A.md／PINE_ZGL_B.md／PINE_ZGL_C.md／PINE_ZGL_D.md
 """
 import argparse
 import datetime as dt
@@ -394,7 +401,78 @@ def part_c():
     print("\n".join(out))
 
 
+# ------------------------------------------------------------------ D
+def htf_dir(d, sec, shift=0):
+    """每根 M1（收市時）對應已收市高時框 ZGL 方向（+1／−1，熱身未夠＝0）。"""
+    t = d["t"]
+    key = (t - shift) // sec * sec + shift
+    ks, first = np.unique(key, return_index=True)
+    up = zgl_up(np.maximum.reduceat(d["h"], first), np.minimum.reduceat(d["l"], first))
+    j = np.searchsorted(ks, t + 60 - sec, side="right") - 1
+    out = np.where(up[np.clip(j, 0, None)], 1, -1)
+    out[j < 400] = 0
+    return out
+
+
+def part_d():
+    m1 = load_m1()
+    d = resample(m1, 60)
+    t, o = d["t"], d["o"]; n = len(t)
+    drift = (m1["c"][-1] - m1["c"][0]) / (t[-1] - t[0])
+    atr = atr14(d["h"], d["l"], d["c"])
+    h1 = htf_dir(d, 3600); h4 = htf_dir(d, 14400, 7200)
+    hr = (t // 3600) % 24
+    ents, cur, up, flips = run_zgl(d, 0)
+    fl = np.array(flips)
+    base = []
+    for i, side, k, w in ents:
+        if i < WARM or fl[w + 1] + 1 >= n:
+            continue
+        base.append((i, side, fl[w + 1]))
+    def mk(sel, cost=COST):
+        return [(int(t[i + 1]), s, s * (o[j + 1] - o[i + 1]) - cost, int(t[j + 1]) - int(t[i + 1]), i + 1, j + 1, 0) for i, s, j in sel]
+    V = {"V0 原版首單（對照）": base,
+         "V1 H1 順勢": [x for x in base if h1[x[0]] == x[1]],
+         "V2 H1＋H4 順勢": [x for x in base if h1[x[0]] == x[1] and h4[x[0]] == x[1]],
+         "V3 ATR ≥ 1.5": [x for x in base if atr[x[0]] >= 1.5],
+         "V4 倫敦＋紐約": [x for x in base if 7 <= hr[x[0]] < 20],
+         "V6 V1＋V3＋V4": [x for x in base if h1[x[0]] == x[1] and atr[x[0]] >= 1.5 and 7 <= hr[x[0]] < 20]}
+    # V5：H1 波段入面第一個同向 M1 首單入，H1 轉向出
+    chg = np.flatnonzero(np.diff(h1) != 0) + 1
+    v5 = []; bi = sorted(base)
+    first_idx = np.array([x[0] for x in bi])
+    for a, b in zip(chg[:-1], chg[1:]):
+        if h1[a] == 0:
+            continue
+        p = np.searchsorted(first_idx, a)
+        while p < len(bi) and bi[p][0] < b and bi[p][1] != h1[a]:
+            p += 1
+        if p < len(bi) and bi[p][0] < b and b + 1 < n:
+            v5.append((bi[p][0], int(h1[a]), b))     # b＝H1 方向改變嗰根 M1；喺 b 收市判、b＋1 開盤出（mk 用 j+1）
+    V["V5 M1 入、H1 出"] = v5
+    out = ["# 智能諸葛亮 M1 改良（IDEAS #222）", "",
+           f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；券商 MT5 M1 2022-08→2026-10；只首單、唔加單；收市判斷下一根開盤成交；每張扣 {COST} 美元（另列 0.3）；損益＝美元／0.01 手",
+           "- 後半（≥ 2024-09-17）當樣本外；扣成本前＝平均＋成本", "",
+           "| 改法 | 全期 | 扣成本前平均 | 前半平均 | 後半 | 後半做多／做空平均 | 2023／24／25／26 | 成本 0.3 全期 | 判 |", "|---|---|---|---|---|---|---|---|---|"]
+    for nm, sel in V.items():
+        rows = mk(sel); s = stats(rows, drift)
+        r1 = [r for r in rows if r[0] < SPLIT]; r2 = [r for r in rows if r[0] >= SPLIT]
+        s1, s2 = stats(r1), stats(r2)
+        l2 = stats([r for r in r2 if r[1] > 0]); sh2 = stats([r for r in r2 if r[1] < 0])
+        ys = [s["yrs"].get(y, 0.0) for y in YEARS]
+        s3 = stats(mk(sel, 0.3))
+        ok = {"①後半≥0.10 PF≥1.15": s2["avg"] >= 0.10 and s2["pf"] >= 1.15, "②前半>0": s1["avg"] > 0,
+              "③≥3/4年": sum(v > 0 for v in ys) >= 3, "④後半多空都>0": l2["avg"] > 0 and sh2["avg"] > 0}
+        v = "—" if nm.startswith("V0") else ("✅" if all(ok.values()) else "❌ " + "、".join(k for k, x in ok.items() if not x))
+        out.append(f"| {nm} | {f_usd(s)} | {s['avg'] + COST:+.2f} | {s1['avg']:+.2f} | {f_usd(s2)} | {l2['avg']:+.2f}／{sh2['avg']:+.2f} | "
+                   f"{'／'.join(f'{x:+,.0f}' for x in ys)} | {s3['avg']:+.2f} PF {s3['pf']:.2f} | {v} |")
+        print(out[-1], flush=True)
+    out += ["", "- 6 個改法同時測，有多重比較風險；達標只係提案先影子，落真倉要使用者經總指揮批。", ""]
+    open(os.path.join(HERE, "PINE_ZGL_D.md"), "w").write("\n".join(out) + "\n")
+    print("\n".join(out))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--part", choices=["A", "B", "C"], required=True)
-    {"A": part_a, "B": part_b, "C": part_c}[ap.parse_args().part]()
+    ap.add_argument("--part", choices=["A", "B", "C", "D"], required=True)
+    {"A": part_a, "B": part_b, "C": part_c, "D": part_d}[ap.parse_args().part]()
