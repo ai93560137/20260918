@@ -62,7 +62,11 @@ def build_packet(cfg, state, token):
               # [R212] 戶口淨值同購買力（私人 GCS，網頁唔顯示）：模擬程式報模擬戶口；真實戶口由真倉程式或者戶口檢查
               "sim_account": state.get("sim_account") if cfg.trd_env == "SIMULATE" else None,
               "real_account": state.get("real_account"),
-              "pos": {k: pos.get(k) for k in ("code", "side", "qty", "entry", "stop", "target", "opened_at", "days_held")}
+              "pos": {**{k: pos.get(k) for k in ("code", "side", "qty", "entry", "stop", "target", "opened_at", "days_held",
+                                                  "server_stop")},
+                      # [R371] 總指揮 11-04：雲端要核對富途伺服器端後備止蝕有冇掛（只報有冇，唔報訂單編號）
+                      "server_stop_on": bool(pos.get("server_stop_id")),
+                      "server_stop_failed": bool(pos.get("server_stop_failed"))}
               if pos else None}
     return {"action": "longfei_push", "token": token,
             "sent_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
