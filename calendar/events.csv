@@ -5,6 +5,7 @@ date,time_hkt,market,category,event,impact,affects,event_week,source
 2026-10-30,04:00+1,US,US 期權到期,ES／MES EOM 期權到期（月末交易日）,Medium,雲垂 MES、人手 EW,Y,規則推算
 2026-11-02,23:00,USD,數據,ISM Manufacturing PMI,Medium,雲垂 MES、人手 EW、金絲雀,,ForexFactory
 2026-11-03,全日,JP,JP 假期,JP 休市：文化之日,Holiday,,,claude/gifted-carson-v2tvhw universes/calendars
+2026-11-03,,持倉,持倉到期,✋ 使用者人手：買 NQ2612 納指期貨 1 手,High,見事件,,POSITIONS.md
 2026-11-03,11:30,AUD,數據,Cash Rate,High,,,ForexFactory
 2026-11-03,11:30,AUD,數據,RBA Monetary Policy Statement,High,,,ForexFactory
 2026-11-03,11:30,AUD,數據,RBA Rate Statement,High,,,ForexFactory
