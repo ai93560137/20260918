@@ -221,10 +221,19 @@ def write_tg(summaries: list[dict]) -> None:
     (OUT / "tg_verify.txt").write_text("\n".join(lines)[:3900] + "\n", encoding="utf-8")
 
 
+NORTH_PRIMARY = {"au"}
+
+
 def verify_ibkr(mk: str, d: str) -> dict | None:
     """把雲垂分支交回的 IBKR 收市（data_stock_ibkr/<mk>_<d>.csv）當第三把尺；同時把下一交易日開市存為執行基準。
     狀態：一致／整數倍／不一致（IB 有收市）、無合約（IB 解析不到，例如台灣上櫃、印韓）、無權限（合約有、日線拉不到 = 帳戶沒該交易所歷史數據）、未抓。"""
     p = ROOT / "data_stock_ibkr" / f"{mk}_{d}.csv"
+    src = "IBKR 日線 TRADES"
+    # 澳洲主核對用含收市競價日線（useRTH=False）：2026-09／10 實測 RTH 日線漏收市競價，小型股差 1–4.6%；
+    # 10-30 名單 no-rth 43/43 一致（RTH 38/42）。使用者 2026-11-04 批（經總指揮）。冇 no-rth 檔先退回 RTH。
+    if mk in NORTH_PRIMARY and (ROOT / "data_stock_ibkr" / f"{mk}_{d}_nortrh.csv").exists():
+        p = ROOT / "data_stock_ibkr" / f"{mk}_{d}_nortrh.csv"
+        src = "IBKR 日線 TRADES（含收市競價 useRTH=False）"
     if not p.exists():
         return None
     with open(p, newline="", encoding="utf-8") as f:
@@ -251,7 +260,7 @@ def verify_ibkr(mk: str, d: str) -> dict | None:
         w.writeheader()
         w.writerows(out)
     n_ok = cnt["一致"] + cnt["整數倍"] + cnt["不一致"]
-    summ = {"market": mk, "date": d, "n": len(rows), "n_ib": n_ok, "source": "IBKR 日線 TRADES", **cnt,
+    summ = {"market": mk, "date": d, "n": len(rows), "n_ib": n_ok, "source": src, **cnt,
             "bad": [r["ticker"] for r in out if r["status"] == "不一致"],
             "no_contract": [r["ticker"] for r in out if r["status"] == "無合約"]}
     (OUT / f"{mk}_verify_ibkr.json").write_text(json.dumps(summ, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -308,7 +317,7 @@ def main() -> None:
         if summaries:
             n_exec = sum(s["n_ib"] for s in summaries)
             mk_exec = [NAME[s["market"]] for s in summaries if s["n_ib"]]
-            lines = ["🔎 鳥翔｜IBKR 第三來源覆核（雲垂分支 IB Gateway 交回）", ""] + [ibkr_line(s) for s in summaries] + [
+            lines = ["🔎 鳥翔｜IBKR 第三來源覆核（ib-data VM 月底自動排程交回；澳洲用含收市競價日線）", ""] + [ibkr_line(s) for s in summaries] + [
                 "", f"執行基準：{'、'.join(mk_exec)} 共 {n_exec} 檔已存 IB「下一交易日開市價」，成交後滑價 = 成交價 ÷ 開市價 − 1。",
                 "一致 = 收市差 ≤ 1%。不一致的逐檔查（小型股尾盤競價、拆股）；明細 analysis/tt_all/<市場>_<日期>_verify_ibkr.csv。"]
             (OUT / "tg_verify_ibkr.txt").write_text("\n".join(lines)[:3900] + "\n", encoding="utf-8")

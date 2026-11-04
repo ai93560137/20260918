@@ -2,19 +2,14 @@
  "market": "au",
  "date": "2026-10-30",
  "n": 43,
- "n_ib": 42,
- "source": "IBKR 日線 TRADES",
- "一致": 38,
+ "n_ib": 43,
+ "source": "IBKR 日線 TRADES（含收市競價 useRTH=False）",
+ "一致": 43,
  "整數倍": 0,
- "不一致": 4,
+ "不一致": 0,
  "無合約": 0,
- "無權限": 1,
+ "無權限": 0,
  "未抓": 0,
- "bad": [
-  "BET.AX",
-  "CUP.AX",
-  "GL1.AX",
-  "OMA.AX"
- ],
+ "bad": [],
  "no_contract": []
 }

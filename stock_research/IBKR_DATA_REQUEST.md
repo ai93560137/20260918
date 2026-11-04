@@ -99,3 +99,10 @@ nohup python3 scripts/ib_stock_verify.py --port 4002 --job closes > data_stock_i
 - 台灣上櫃、印、韓維持 Yahoo 單源。
 - 若日後任何 IBKR 戶口有餘額，再回來訂 TSE 即可，腳本與流程不用改；日本不必訂。
 - 雲垂 VM 不需為此改帳號或地區：VM 上的 Gateway 是雲垂每日採集（N225／ESTX50 IV）的命脈，換帳號不可行；地區與數據權限無關。
+
+## 2026-11-04 更新：澳洲主核對改用含收市競價日線
+
+- 使用者 11-04 批（經總指揮）：澳洲以 `au_<日>_nortrh.csv`（`--no-rth`，useRTH=False，含收市競價）做主要核對；RTH 版照抓作對照。
+- 證據：10-30 名單 RTH 38/42 一致（BET、CUP、GL1、OMA 差 1.2–2.8%），no-rth 43/43 一致——9 月起嘅澳洲差異係 IB RTH 日線漏收市競價。
+- `scripts/tt_all_verify.py`：`NORTH_PRIMARY = {"au"}`，有 `_nortrh` 檔就用，冇先退回 RTH。
+- 抓取已由 ib-data 月底自動排程負責（雲垂分支 `gcp_ib/run_monthend_closes.sh`，每月 1–8 號 UTC 22:05，推 `data/stock-ibkr`），本身已經澳洲兩種都抓，VM 唔使改。
