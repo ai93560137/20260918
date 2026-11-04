@@ -222,7 +222,17 @@ GCS_OUT = "ops/longfei/user_method/"          # 私人（方法 B 有使用者�
 def gcs_load():
     from google.cloud import storage
     b = storage.Client().bucket(GCS_BUCKET)
-    raw = {x.name.rsplit("/", 1)[1][:10]: json.loads(x.download_as_bytes()) for x in b.list_blobs(prefix=GCS_BARS)}
+    raw = {}
+    for x in b.list_blobs(prefix=GCS_BARS):
+        # VM 每幾分鐘重寫當日檔：list 出嚟嗰個 generation 可能已經冇咗（404）→ 改攞最新版；再唔得就跳過嗰日
+        try:
+            data = x.download_as_bytes()
+        except Exception:  # noqa: BLE001
+            try:
+                data = b.blob(x.name).download_as_bytes()
+            except Exception:  # noqa: BLE001
+                continue
+        raw[x.name.rsplit("/", 1)[1][:10]] = json.loads(data)
     pnl = json.loads(b.blob("futu/pnl/latest.json").download_as_bytes())
     return raw, pnl
 
