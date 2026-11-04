@@ -453,8 +453,7 @@ def roll_check():
     dd = (expiry - today).days
     LINES.append(f"\n## 滾倉：本月到期日約 {expiry}（{dd:+d} 天）")
     DIGEST.append(f"HSI 月度到期剩 {dd} 天")
-    if 0 <= dd <= 2:
-        ALERTS.append(f"滾倉窗口：{dd} 天後月度結算，準備次日賣下月 ATM 跨式（SOP §10.8）")
+    # 冇恒指倉唔出滾倉警報（使用者 2026-11-04）；倒數照留喺 digest
     return expiry
 
 
