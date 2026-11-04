@@ -59,9 +59,9 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,12,必需消費,KDP,Keurig Dr Pepper,35.84,35.4,20.9,12,1,1,KDP
 2026-10-30,us,美股,12,必需消費,MO,Altria,78.03,77.06,16.1,12,1,1,MO
 2026-10-30,us,美股,12,金融,AJG,Arthur J. Gallagher & Co.,276.07,272.8,19.5,12,1,1,AJG
-2026-10-30,us,美股,12,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,14.4,12,1,1,MRSH
+2026-10-30,us,美股,12,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,13.8,12,1,1,MRSH
 2026-10-30,us,美股,12,公用,AWK,American Water Works,144.37,144.14,9.9,12,1,1,AWK
-2026-10-30,us,美股,12,原材料,APD,Air Products and Chemicals,316.43,314.87,10.3,12,1,1,APD
+2026-10-30,us,美股,12,原材料,APD,Air Products and Chemicals,316.43,314.87,9.6,12,1,1,APD
 2026-10-30,us,美股,12,科技,ROP,Roper Technologies,466.6,455.8,28.4,12,1,1,ROP
 2026-10-30,us,美股,9,能源,APA,APA,52.82,52.39,41.5,12,1,1,APA
 2026-10-30,us,美股,9,能源,COP,ConocoPhillips,154.03,152.77,28.0,12,1,1,COP
@@ -83,9 +83,9 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,9,科技,GDDY,GoDaddy,117.24,114.77,27.5,9,1,1,GDDY
 2026-10-30,us,美股,9,科技,ROP,Roper Technologies,466.6,450.76,28.4,12,1,1,ROP
 2026-10-30,us,美股,9,金融,AJG,Arthur J. Gallagher & Co.,276.07,272.8,19.5,12,1,1,AJG
-2026-10-30,us,美股,9,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,14.4,12,1,1,MRSH
+2026-10-30,us,美股,9,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,13.8,12,1,1,MRSH
 2026-10-30,us,美股,9,公用,AWK,American Water Works,144.37,144.14,9.9,12,1,1,AWK
-2026-10-30,us,美股,9,原材料,APD,Air Products and Chemicals,316.43,314.87,10.3,12,1,1,APD
+2026-10-30,us,美股,9,原材料,APD,Air Products and Chemicals,316.43,314.87,9.6,12,1,1,APD
 2026-10-30,us,美股,6,能源,APA,APA,52.82,52.39,41.5,12,1,1,APA
 2026-10-30,us,美股,6,能源,COP,ConocoPhillips,154.03,152.77,28.0,12,1,1,COP
 2026-10-30,us,美股,6,能源,CVX,Chevron,235.52,234.08,23.1,12,1,1,CVX
@@ -104,8 +104,8 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,6,工業,VLTO,Veralto,111.1,105.61,19.8,12,1,1,VLTO
 2026-10-30,us,美股,6,金融,AJG,Arthur J. Gallagher & Co.,276.07,272.8,19.5,12,1,1,AJG
 2026-10-30,us,美股,6,金融,ICE,Intercontinental Exchange,168.85,166.3,9.9,6,1,1,ICE
-2026-10-30,us,美股,6,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,14.4,12,1,1,MRSH
-2026-10-30,us,美股,6,原材料,APD,Air Products and Chemicals,316.43,314.87,10.3,12,1,1,APD
+2026-10-30,us,美股,6,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,13.8,12,1,1,MRSH
+2026-10-30,us,美股,6,原材料,APD,Air Products and Chemicals,316.43,314.87,9.6,12,1,1,APD
 2026-10-30,us,美股,6,原材料,ECL,Ecolab,302.98,302.59,10.3,6,2,2,ECL
 2026-10-30,us,美股,6,必需消費,KDP,Keurig Dr Pepper,35.84,35.4,20.9,12,1,1,KDP
 2026-10-30,us,美股,6,必需消費,MO,Altria,78.03,77.06,16.1,12,1,1,MO
@@ -132,9 +132,9 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,3,金融,ACGL,Arch Capital,106.36,104.69,9.9,3,2,2,ACGL
 2026-10-30,us,美股,3,金融,AJG,Arthur J. Gallagher & Co.,276.07,272.8,19.5,12,1,1,AJG
 2026-10-30,us,美股,3,金融,ICE,Intercontinental Exchange,168.85,166.3,9.9,6,1,1,ICE
-2026-10-30,us,美股,3,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,14.4,12,1,1,MRSH
+2026-10-30,us,美股,3,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,13.8,12,1,1,MRSH
 2026-10-30,us,美股,3,金融,PGR,The Progressive,231.28,230.34,10.6,3,1,1,PGR
-2026-10-30,us,美股,3,原材料,APD,Air Products and Chemicals,316.43,313.93,10.3,12,1,1,APD
+2026-10-30,us,美股,3,原材料,APD,Air Products and Chemicals,316.43,313.93,9.6,12,1,1,APD
 2026-10-30,us,美股,3,原材料,DOW,Dow,34.7,34.38,8.0,3,1,1,DOW
 2026-10-30,us,美股,3,原材料,ECL,Ecolab,302.98,302.59,10.3,6,2,2,ECL
 2026-10-30,us,美股,3,原材料,LIN,Linde,514.24,513.26,4.8,3,1,1,LIN
