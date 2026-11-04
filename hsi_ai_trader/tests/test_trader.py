@@ -1551,3 +1551,17 @@ def test_open_window_off_by_default(env):
     t["now"] = t["now"].replace(hour=9, minute=30, second=5)
     tr.tick()
     assert ai.calls == 1
+
+
+def test_heartbeat_reports_server_stop(env):
+    """[R371] 總指揮 11-04：心跳要講後備止蝕有冇掛、觸發價、有冇失敗（唔出訂單編號）。"""
+    cfg, t, b, ai, tr = env
+    from push import build_packet
+    tr.state["pos"] = {"code": "HK.MHI2611", "side": 1, "qty": 1, "entry": 23720, "stop": 23794,
+                       "server_stop_id": "ORD123", "server_stop": 23770}
+    p = build_packet(tr.cfg, tr.state, "x")["state"]["pos"]
+    assert p["server_stop_on"] is True and p["server_stop"] == 23770 and p["server_stop_failed"] is False
+    assert "ORD123" not in json.dumps(p)
+    tr.state["pos"] = {"code": "HK.MHI2611", "side": 1, "qty": 1, "stop": 23596, "server_stop_failed": True}
+    p = build_packet(tr.cfg, tr.state, "x")["state"]["pos"]
+    assert p["server_stop_on"] is False and p["server_stop_failed"] is True
