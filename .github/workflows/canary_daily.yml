@@ -15,6 +15,10 @@ on:
         description: '同時重跑 yellow_lab / red_lab 考核報告'
         required: false
         default: 'false'
+      force_send:
+        description: '今日已發過每日總結都照發(預設唔重發)'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -46,7 +50,19 @@ jobs:
             echo "::warning::--refresh 失敗,改用現有快照重產"
             python3 canary/build_canary_table.py 2>&1 | tee /tmp/build.log
           fi
+          # 雲垂定稿標記(INCIDENTS 10-22):有暫定收盤被剔除 → 健康檢查標 partial,報告會見到燈色日落後
+          if [ "$STATUS_REFRESH" = "ok" ] && grep -q "⏳ 未定稿" /tmp/build.log; then STATUS_REFRESH=partial; fi
           echo "refresh=$STATUS_REFRESH" >> "$GITHUB_OUTPUT"
+
+      - name: Already sent today?
+        # 11-03、11-05:手動補跑之後遲到嘅排程再跑,每日總結重發一則。
+        # 喺 daily_report 追加 sent_log 之前,睇今日(香港)係咪已經有一列;有就唔再發每日總結 Telegram。
+        id: dedupe
+        run: |
+          HKD=$(TZ=Asia/Hong_Kong date +%F)
+          N=$(grep -c "^$HKD," canary/sent_log.csv || true)
+          echo "今日 $HKD sent_log 已有 $N 列"
+          if [ "${N:-0}" -ge 1 ]; then echo "already=1" >> "$GITHUB_OUTPUT"; else echo "already=0" >> "$GITHUB_OUTPUT"; fi
 
       - name: Labs (Saturday, overdue, or on request)
         id: labs
@@ -106,6 +122,8 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          ALREADY: ${{ steps.dedupe.outputs.already }}
+          FORCE: ${{ inputs.force_send }}
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
             echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設,未發送"; exit 0
@@ -116,6 +134,10 @@ jobs:
               --data-urlencode "disable_web_page_preview=true" \
               --data-urlencode "text=$(cat canary/alert_close.txt)" > /dev/null
             echo "special alert sent"
+          fi
+          if [ "$ALREADY" = "1" ] && [ "$FORCE" != "true" ]; then
+            echo "::notice::今日每日總結已發過(sent_log 已有今日一列),唔再發;要重發用 workflow_dispatch force_send=true"
+            exit 0
           fi
           curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TG_CHAT_ID}" \

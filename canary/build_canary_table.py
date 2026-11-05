@@ -44,6 +44,7 @@
 # =============================================================================
 import argparse
 import csv
+import json
 import math
 import os
 import subprocess
@@ -107,6 +108,53 @@ def refresh_snapshot():
         with open(os.path.join(DATA_DIR, f"{b}_daily.csv"), "w", encoding="utf-8") as fh:
             fh.write(out)
         print(f"  ↻ {b}_daily.csv  {out.count(chr(10)) - 1} 列", flush=True)
+    drop_unfinalized(ref)
+
+
+# 雲垂陣定稿標記(INCIDENTS 2026-10-22:用咗暫定收盤發錯黃燈;使用者 11-05 揀「將快照搬去雲垂陣」)。
+# 雲垂 fetch_us_daily.py / 亞洲抓數每次寫 {檔名: {last_date, last_row: final|partial, ...}};
+# 判斷用紐約時間:抓取時已過 16:30 ET(Cboe)/ 18:00 ET(MOVE)或該列日期 < 紐約今日 → final。
+# 金絲雀規則:last_row == "partial" 就剔除 last_date 嗰列(唔用暫定收盤出燈);
+# 標記檔不存在或冇該檔 → 照舊(向後相容),並印出提示。
+STATUS_FILES = ["us_daily_status.json", "asia_daily_status.json"]
+ASIA_BIRDS = {"axvi", "vhsi", "hsi"}
+
+
+def drop_unfinalized(ref):
+    status = {}
+    for sf in STATUS_FILES:
+        r = subprocess.run(["git", "show", f"{ref}:{SOURCE_PATH}/{sf}"], cwd=HERE,
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            print(f"  ⚠ 上游冇 {sf},唔做定稿檢查", flush=True)
+            continue
+        try:
+            st = json.loads(r.stdout)
+        except ValueError:
+            print(f"  ⚠ {sf} 讀唔到(JSON 錯),唔做定稿檢查", flush=True)
+            continue
+        with open(os.path.join(DATA_DIR, sf), "w", encoding="utf-8") as fh:
+            fh.write(r.stdout)   # 留底,供核對當次讀到嘅定稿狀態
+        status.update(st)
+    dropped = []
+    for b in BIRDS + LAB_FILES:
+        name = f"{b}_daily.csv"
+        st = status.get(name)
+        if not st or st.get("last_row") != "partial":
+            continue
+        d = str(st.get("last_date", ""))[:10]
+        path = os.path.join(DATA_DIR, name)
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines(keepends=True)
+        keep = [ln for i, ln in enumerate(lines) if i == 0 or not ln.startswith(d)]
+        if d and len(keep) < len(lines):
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.writelines(keep)
+            dropped.append(f"{b}@{d}")
+            # 亞洲鳥(axvi/vhsi/hsi)本身可慢一日,剔除唔當健康問題;美股鳥剔除先標 ⏳(工作流據此報 refresh=partial)
+            mark = "·" if b in ASIA_BIRDS else "⏳"
+            print(f"  {mark} 未定稿:{name} {d} 列係暫定收盤(抓於 {st.get('row_fetched_utc', '?')} UTC),已剔除", flush=True)
+    return dropped
 
 
 # -----------------------------------------------------------------------------
