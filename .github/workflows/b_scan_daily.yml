@@ -1,0 +1,93 @@
+name: 日線 B 規則掃描（鳥翔；收市後自動，非回測）
+
+# 美股／日股／港股日線更新完（fetch_equities.yml、fetch_stock_data.yml 跑完）就自動掃：
+# 5 個指數（標普／納指／道指／日經 225／恒指）現有成分股，邊隻出天覆陣 B 規則訊號
+# （Keltner 上軌突破＋SAR 同向＋SMA200 同向，收市判、下一交易日開市入），列三組 ATR 止蝕／止賺。
+# 每個市場每個收市日只發一次 Telegram（狀態 analysis/b_scan/sent.txt）。純 Python＋curl，唔用 Claude／LLM API。
+# 程式：claude/stock-research-k9nzau 嘅 stock_research/b_rule_scan.py；結果 commit 返嗰條分支 analysis/b_scan/。
+# 只係掃描、唔落單：回測判 ☠️（stock_research/B_STOCKS_ATR_GRID_PREREG.md）。
+on:
+  workflow_run:
+    workflows: ["Fetch equities (US / JP)", "Fetch stock data"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: b-scan-daily
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout 鳥翔分支（程式＋輸出）
+        uses: actions/checkout@v4
+        with:
+          ref: claude/stock-research-k9nzau
+          sparse-checkout: |
+            stock_research
+            analysis/b_scan
+          path: nx
+
+      - name: Checkout 選股陣日線（唯讀）
+        uses: actions/checkout@v4
+        with:
+          ref: claude/gifted-carson-v2tvhw
+          sparse-checkout: |
+            data/equities
+            universes
+            scripts/pointintime
+          # cone 模式會一併帶埋 scripts/ 頂層檔（包括 universe_hsi_live.txt）
+          path: eq
+
+      - name: Checkout 天覆陣 B 規則模組（固定 3e540bb19，唯讀）
+        uses: actions/checkout@v4
+        with:
+          ref: 3e540bb19a81c2f92867c81af7d604ec6c3357c6
+          sparse-checkout: research/strategy_search
+          path: ss
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: pip install -q numpy
+
+      - name: Scan
+        run: python3 nx/stock_research/b_rule_scan.py --src eq --ss ss/research/strategy_search --tg
+
+      - name: Commit 結果
+        working-directory: nx
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/b_scan
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "data(b-scan): 日線 B 規則掃描 $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:claude/stock-research-k9nzau && exit 0
+            sleep $((i * 5))
+            git pull --no-rebase -q origin claude/stock-research-k9nzau || true
+          done
+          exit 1
+
+      - name: Telegram（研究通道；每市場每日一次）
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          shopt -s nullglob
+          files=(nx/analysis/b_scan/tg_*.txt)
+          if [ ${#files[@]} -eq 0 ]; then echo "冇新收市日 - skip"; exit 0; fi
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then echo "::warning::TG_BOT_TOKEN / TG_CHAT_ID 沒設，未發送"; exit 0; fi
+          for f in "${files[@]}"; do
+            curl -sS --fail -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT_ID}" \
+              --data-urlencode "text=$(cat "$f")" > /dev/null
+            echo "telegram sent: $f"
+          done
