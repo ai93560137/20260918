@@ -34,7 +34,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-02,us,美股,12,必需消費,KO,The Coca-Cola,95.83,95.37,17.6,12,1,1,KO
 2026-11-02,us,美股,12,非必需消費,HLT,Hilton Worldwide,364.71,364.5,13.6,12,1,1,HLT
 2026-11-02,us,美股,12,非必需消費,MAR,Marriott International,416.3,410.98,17.1,12,1,1,MAR
-2026-11-02,us,美股,12,科技,ROP,Roper Technologies,479.54,470.01,31.9,12,2,2,ROP
+2026-11-02,us,美股,12,科技,ROP,Roper Technologies,479.54,470.01,31.6,12,2,2,ROP
 2026-11-02,us,美股,12,醫療,REGN,Regeneron Pharmaceuticals,961.26,935.35,30.4,12,2,2,REGN
 2026-11-02,us,美股,9,金融,ACGL,Arch Capital,109.31,107.09,12.8,12,1,1,ACGL
 2026-11-02,us,美股,9,金融,AJG,Arthur J. Gallagher & Co.,278.89,277.45,20.6,12,2,2,AJG
@@ -51,7 +51,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-02,us,美股,9,工業,VLTO,Veralto,115.7,115.17,24.6,12,2,2,VLTO
 2026-11-02,us,美股,9,科技,ACN,Accenture,260.94,260.42,38.8,9,1,1,ACN
 2026-11-02,us,美股,9,科技,IT,Gartner,235.26,234.87,39.0,9,1,1,IT
-2026-11-02,us,美股,9,科技,ROP,Roper Technologies,479.54,470.01,31.9,12,2,2,ROP
+2026-11-02,us,美股,9,科技,ROP,Roper Technologies,479.54,470.01,31.6,12,2,2,ROP
 2026-11-02,us,美股,9,科技,TYL,Tyler Technologies,403.94,397.23,20.2,9,1,1,TYL
 2026-11-02,us,美股,9,公用,AWK,American Water Works,147.43,146.62,12.2,12,2,2,AWK
 2026-11-02,us,美股,9,公用,ED,Consolidated Edison,118.48,117.65,9.7,12,1,1,ED
@@ -80,7 +80,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-02,us,美股,6,工業,VLTO,Veralto,115.7,115.17,24.6,12,2,2,VLTO
 2026-11-02,us,美股,6,科技,ACN,Accenture,260.94,260.42,38.8,9,1,1,ACN
 2026-11-02,us,美股,6,科技,IT,Gartner,235.26,234.87,39.0,9,1,1,IT
-2026-11-02,us,美股,6,科技,ROP,Roper Technologies,479.54,470.01,31.9,12,2,2,ROP
+2026-11-02,us,美股,6,科技,ROP,Roper Technologies,479.54,470.01,31.6,12,2,2,ROP
 2026-11-02,us,美股,6,科技,TYL,Tyler Technologies,403.94,397.23,20.2,9,1,1,TYL
 2026-11-02,us,美股,6,醫療,GEHC,GE HealthCare Technologies,79.55,78.22,14.1,6,1,1,GEHC
 2026-11-02,us,美股,6,醫療,IDXX,IDEXX Laboratories,671.64,624.15,17.3,9,1,1,IDXX
@@ -142,7 +142,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-02,us,美股,3,非必需消費,MAR,Marriott International,416.3,407.34,17.1,12,1,1,MAR
 2026-11-02,us,美股,3,科技,ACN,Accenture,260.94,260.42,38.8,9,1,1,ACN
 2026-11-02,us,美股,3,科技,IT,Gartner,235.26,234.87,39.0,9,1,1,IT
-2026-11-02,us,美股,3,科技,ROP,Roper Technologies,479.54,470.01,31.9,12,2,2,ROP
+2026-11-02,us,美股,3,科技,ROP,Roper Technologies,479.54,470.01,31.6,12,2,2,ROP
 2026-11-02,us,美股,3,科技,TYL,Tyler Technologies,403.94,397.23,20.2,9,1,1,TYL
 2026-11-02,us,美股,3,醫療,GEHC,GE HealthCare Technologies,79.55,78.22,14.1,6,1,1,GEHC
 2026-11-02,us,美股,3,醫療,IDXX,IDEXX Laboratories,671.64,604.14,17.3,9,1,1,IDXX

@@ -54,7 +54,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,12,醫療,PFE,Pfizer,30.52,30.44,15.9,12,1,1,PFE
 2026-10-30,us,美股,12,醫療,REGN,Regeneron Pharmaceuticals,927.89,859.34,26.0,12,1,1,REGN
 2026-10-30,us,美股,12,工業,GPN,Global Payments,96.84,95.88,26.5,12,1,1,GPN
-2026-10-30,us,美股,12,工業,RSG,Republic Services,244.04,243.22,13.2,12,1,1,RSG
+2026-10-30,us,美股,12,工業,RSG,Republic Services,244.04,243.22,12.9,12,1,1,RSG
 2026-10-30,us,美股,12,工業,VLTO,Veralto,111.1,105.61,19.8,12,1,1,VLTO
 2026-10-30,us,美股,12,必需消費,KDP,Keurig Dr Pepper,35.84,35.4,20.9,12,1,1,KDP
 2026-10-30,us,美股,12,必需消費,MO,Altria,78.03,77.06,16.1,12,1,1,MO
@@ -62,7 +62,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,12,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,13.8,12,1,1,MRSH
 2026-10-30,us,美股,12,公用,AWK,American Water Works,144.37,144.14,9.9,12,1,1,AWK
 2026-10-30,us,美股,12,原材料,APD,Air Products and Chemicals,316.43,314.87,9.6,12,1,1,APD
-2026-10-30,us,美股,12,科技,ROP,Roper Technologies,466.6,455.8,28.4,12,1,1,ROP
+2026-10-30,us,美股,12,科技,ROP,Roper Technologies,466.6,455.8,28.2,12,1,1,ROP
 2026-10-30,us,美股,9,能源,APA,APA,52.82,52.39,41.5,12,1,1,APA
 2026-10-30,us,美股,9,能源,COP,ConocoPhillips,154.03,152.77,28.0,12,1,1,COP
 2026-10-30,us,美股,9,能源,CVX,Chevron,235.52,234.08,23.1,12,1,1,CVX
@@ -76,12 +76,12 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,9,醫療,REGN,Regeneron Pharmaceuticals,927.89,859.34,26.0,12,1,1,REGN
 2026-10-30,us,美股,9,工業,GPN,Global Payments,96.84,95.88,26.5,12,1,1,GPN
 2026-10-30,us,美股,9,工業,J,Jacobs Solutions,154.62,153.37,15.9,9,1,1,J
-2026-10-30,us,美股,9,工業,RSG,Republic Services,244.04,243.22,13.2,12,1,1,RSG
+2026-10-30,us,美股,9,工業,RSG,Republic Services,244.04,243.22,12.9,12,1,1,RSG
 2026-10-30,us,美股,9,工業,VLTO,Veralto,111.1,105.61,19.8,12,1,1,VLTO
 2026-10-30,us,美股,9,必需消費,KDP,Keurig Dr Pepper,35.84,35.4,20.9,12,1,1,KDP
 2026-10-30,us,美股,9,必需消費,MO,Altria,78.03,77.06,16.1,12,1,1,MO
 2026-10-30,us,美股,9,科技,GDDY,GoDaddy,117.24,114.77,27.5,9,1,1,GDDY
-2026-10-30,us,美股,9,科技,ROP,Roper Technologies,466.6,450.76,28.4,12,1,1,ROP
+2026-10-30,us,美股,9,科技,ROP,Roper Technologies,466.6,450.76,28.2,12,1,1,ROP
 2026-10-30,us,美股,9,金融,AJG,Arthur J. Gallagher & Co.,276.07,272.8,19.5,12,1,1,AJG
 2026-10-30,us,美股,9,金融,MRSH,Marsh & McLennan Companies,200.62,200.33,13.8,12,1,1,MRSH
 2026-10-30,us,美股,9,公用,AWK,American Water Works,144.37,144.14,9.9,12,1,1,AWK
@@ -100,7 +100,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,6,醫療,REGN,Regeneron Pharmaceuticals,927.89,859.34,26.0,12,1,1,REGN
 2026-10-30,us,美股,6,工業,GPN,Global Payments,96.84,95.88,26.5,12,1,1,GPN
 2026-10-30,us,美股,6,工業,J,Jacobs Solutions,154.62,153.37,15.9,9,1,1,J
-2026-10-30,us,美股,6,工業,RSG,Republic Services,244.04,243.22,13.2,12,1,1,RSG
+2026-10-30,us,美股,6,工業,RSG,Republic Services,244.04,243.22,12.9,12,1,1,RSG
 2026-10-30,us,美股,6,工業,VLTO,Veralto,111.1,105.61,19.8,12,1,1,VLTO
 2026-10-30,us,美股,6,金融,AJG,Arthur J. Gallagher & Co.,276.07,272.8,19.5,12,1,1,AJG
 2026-10-30,us,美股,6,金融,ICE,Intercontinental Exchange,168.85,166.3,9.9,6,1,1,ICE
@@ -110,7 +110,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,6,必需消費,KDP,Keurig Dr Pepper,35.84,35.4,20.9,12,1,1,KDP
 2026-10-30,us,美股,6,必需消費,MO,Altria,78.03,77.06,16.1,12,1,1,MO
 2026-10-30,us,美股,6,科技,GDDY,GoDaddy,117.24,114.77,27.5,9,1,1,GDDY
-2026-10-30,us,美股,6,科技,ROP,Roper Technologies,466.6,450.76,28.4,12,1,1,ROP
+2026-10-30,us,美股,6,科技,ROP,Roper Technologies,466.6,450.76,28.2,12,1,1,ROP
 2026-10-30,us,美股,6,公用,AWK,American Water Works,144.37,144.14,9.9,12,1,1,AWK
 2026-10-30,us,美股,3,能源,APA,APA,52.82,52.39,41.5,12,1,1,APA
 2026-10-30,us,美股,3,能源,COP,ConocoPhillips,154.03,152.77,28.0,12,1,1,COP
@@ -140,11 +140,11 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-10-30,us,美股,3,原材料,LIN,Linde,514.24,513.26,4.8,3,1,1,LIN
 2026-10-30,us,美股,3,工業,GPN,Global Payments,96.84,95.88,26.5,12,1,1,GPN
 2026-10-30,us,美股,3,工業,J,Jacobs Solutions,154.62,153.37,15.9,9,1,1,J
-2026-10-30,us,美股,3,工業,RSG,Republic Services,244.04,243.22,13.2,12,1,1,RSG
+2026-10-30,us,美股,3,工業,RSG,Republic Services,244.04,243.22,12.9,12,1,1,RSG
 2026-10-30,us,美股,3,工業,VLTO,Veralto,111.1,105.61,19.8,12,1,1,VLTO
 2026-10-30,us,美股,3,必需消費,KDP,Keurig Dr Pepper,35.84,35.4,20.9,12,1,1,KDP
 2026-10-30,us,美股,3,必需消費,MO,Altria,78.03,76.81,16.1,12,2,1,MO
 2026-10-30,us,美股,3,必需消費,WMT,Walmart,123.51,122.4,4.5,3,1,1,WMT
 2026-10-30,us,美股,3,科技,GDDY,GoDaddy,117.24,114.77,27.5,9,1,1,GDDY
-2026-10-30,us,美股,3,科技,ROP,Roper Technologies,466.6,450.76,28.4,12,1,1,ROP
+2026-10-30,us,美股,3,科技,ROP,Roper Technologies,466.6,450.76,28.2,12,1,1,ROP
 2026-10-30,us,美股,3,非必需消費,BALL,Ball,66.47,66.12,9.6,3,1,1,BALL
