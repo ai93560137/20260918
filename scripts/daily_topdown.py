@@ -393,7 +393,21 @@ def write_newhigh_lists(end: date, n_days: int) -> list[date]:
 # ---------- VCP（波動收縮形態，vcp.py；回測判決見 stock_research/VCP_BACKTEST.md）----------
 
 VCP_FIELDS = ["date", "market", "market_zh", "status", "ticker", "name", "n_contractions", "depths_pct",
-              "pivot", "close", "pct_vs_pivot", "stop", "stop_pct", "yahoo_ticker"]
+              "pivot", "close", "pct_vs_pivot", "stop", "stop_pct", "yahoo_ticker", "mv_max_open", "mv_stop"]
+MV_CHASE, MV_STOP = 0.05, 0.075     # Minervini 忠實版（vcp_minervini.DEFAULT）：開市高於樞紐 5% 不買、止損 7.5%
+
+
+def market_filter(c: str, as_of: date) -> dict | None:
+    """Minervini 大市過濾：該地指數 ETF 還原收市 > 50 日線且 > 200 日線（stock_research/FORWARD_PAPER.md A1）。"""
+    try:
+        s = md.load_series(COUNTRIES[c]["etf"])
+    except FileNotFoundError:
+        return None
+    px = pd.Series([s[d][1] for d in sorted(s) if d <= as_of])
+    if len(px) < 200:
+        return None
+    last, m50, m200 = float(px.iloc[-1]), float(px.tail(50).mean()), float(px.tail(200).mean())
+    return {"ok": last > m50 and last > m200, "last": last, "ma50": m50, "ma200": m200}
 
 
 def vcp_scan(c: str, tickers: list[str], as_of: date, r12: dict[str, float]) -> list[dict]:
@@ -428,7 +442,9 @@ def vcp_scan(c: str, tickers: list[str], as_of: date, r12: dict[str, float]) -> 
                     "depths_pct": "/".join(f"{d * 100:.0f}" for d in info["depths"]),
                     "pivot": f"{info['pivot']:g}", "close": f"{close[i]:g}",
                     "pct_vs_pivot": f"{(close[i] / info['pivot'] - 1) * 100:+.1f}",
-                    "stop": f"{stop:.4g}", "stop_pct": f"{(stop / close[i] - 1) * 100:.1f}"})
+                    "stop": f"{stop:.4g}", "stop_pct": f"{(stop / close[i] - 1) * 100:.1f}",
+                    "mv_max_open": f"{info['pivot'] * (1 + MV_CHASE):.4g}",
+                    "mv_stop": f"{info['pivot'] * (1 - MV_STOP):.4g}"})
     return out
 
 
@@ -659,17 +675,25 @@ def main() -> None:
     L.append("趨勢模板（含相對強度 ≥ 70）+ 2–6 次逐次收縮（每次 ≤ 上一次 × 0.8、最後一次 ≤ 10%）+ 量縮；"
              "**今日突破** = 收市過樞紐點且成交量 ≥ 50 日均量 × 1.4；**形態中** = 形態已成、還沒突破。"
              "定義與回測判決見 stock_research/VCP_BACKTEST.md（**描述性，非買入建議**）。名單存 `analysis/vcp/<收市日>.csv`。\n")
+    L.append("**Minervini 忠實版欄位**（stock_research/FORWARD_PAPER.md A1）：明日盤中破樞紐點買，開市高於「買入上限」（樞紐 × 1.05）不買；"
+             "止損 = 成交價 × 0.925（表內按樞紐點成交估算）；收市 ≥ 成交價 × 1.15 後止損移到成本；收市跌破 50 日線下一日開市出。"
+             "大市過濾不成立時按規格不買。**限制**：驗證過的規格用全市場成交額前 N，這裏只掃指數現任成分股（每日管線沒有全市場數據），"
+             "所以是觀察清單、不是規格內全部訊號，也不是買入建議；紙上前向記錄另按月用全市場數據補算。\n")
     for c in ranked:
         rs_ = [r for r in vcp_rows if r["market"] == c]
+        mf = market_filter(c, country[c]["last"]) if country[c]["last"] else None
+        mf_s = ("—" if mf is None else
+                f"{'成立' if mf['ok'] else '**不成立**'}（{COUNTRIES[c]['etf']} {mf['last']:.4g}，50 日線 {mf['ma50']:.4g}、200 日線 {mf['ma200']:.4g}）")
         L.append(f"**{COUNTRIES[c]['zh']}**（{fmt_d(country[c]['last'])} 收市）：今日突破 "
-                 f"{sum(r['status'] == 'breakout' for r in rs_)} 檔、形態中 {sum(r['status'] == 'setup' for r in rs_)} 檔\n")
+                 f"{sum(r['status'] == 'breakout' for r in rs_)} 檔、形態中 {sum(r['status'] == 'setup' for r in rs_)} 檔；"
+                 f"Minervini 大市過濾：{mf_s}\n")
         if rs_:
-            L.append("| 狀態 | 代碼 | 名稱 | 收縮（%） | 樞紐點 | 收市 | 距樞紐 | 停損位 | 停損距離 |")
-            L.append("|---|---|---|---|---|---|---|---|---|")
+            L.append("| 狀態 | 代碼 | 名稱 | 收縮（%） | 樞紐點 | 收市 | 距樞紐 | 停損位 | 停損距離 | Minervini 買入上限 | Minervini 止損 |")
+            L.append("|---|---|---|---|---|---|---|---|---|---|---|")
             for r in sorted(rs_, key=lambda r: (r["status"], r["ticker"])):
                 L.append(f"| {'今日突破' if r['status'] == 'breakout' else '形態中'} | {r['ticker']} | {r['name']} | "
                          f"{r['n_contractions']}T：{r['depths_pct']} | {r['pivot']} | {r['close']} | {r['pct_vs_pivot']}% | "
-                         f"{r['stop']} | {r['stop_pct']}% |")
+                         f"{r['stop']} | {r['stop_pct']}% | {r['mv_max_open']} | {r['mv_stop']} |")
             L.append("")
 
     L.append("## 五、與上次報告比較\n")
