@@ -4,6 +4,7 @@
 import json
 import os
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import yfinance as yf
@@ -13,8 +14,34 @@ os.makedirs(OUT, exist_ok=True)
 log = []
 KEEP_DAYS = 5          # 舊檔有、新抓冇嘅日子，喺最近 N 個曆日內就保留（Yahoo 暫缺，唔好刪）
 # 亞洲市場收市時間（UTC，含 5 分鐘緩衝）：喺呢個時間之前抓到嘅「當日」一列係收市前嘅數，標 partial
-ASIA_FINAL_UTC = {'vhsi_daily.csv': (8, 15), 'hsi_daily.csv': (8, 15), 'n225_daily.csv': (6, 15)}
-asia_status = {}
+ASIA_FINAL_UTC = {'vhsi_daily.csv': (8, 15), 'hsi_daily.csv': (8, 15), 'n225_daily.csv': (6, 15),
+                  'axvi_daily.csv': (6, 15)}
+# 美股：用紐約時間判斷（自動跟夏令／冬令）。Cboe 指數 16:15 ET 定收市值，加緩衝到 16:30；MOVE 較遲出，等到 18:00
+# 金絲雀（canary_daily.yml）讀 us_daily_status.json 判斷邊列定稿（2026-11-05 使用者揀「快照搬去雲垂陣」）
+NY = ZoneInfo('America/New_York')
+US_FINAL_ET = {f: (16, 30) for f in ['vix_daily.csv', 'vix9d_daily.csv', 'vix3m_daily.csv', 'vvix_daily.csv',
+                                     'spx_daily.csv', 'vxn_daily.csv', 'ndx_daily.csv', 'skew_daily.csv']}
+US_FINAL_ET['move_daily.csv'] = (18, 0)
+asia_status, us_status = {}, {}
+
+
+def row_status(fname, last, kept, now_utc, now_local, cutoff, status_path):
+    """最後一列屬當地今日而且未到收市＋緩衝 → partial；屬舊日或已過 → final。
+    最後一列係保留落嚟嘅舊列：沿用上次紀錄嘅 final/partial，唔可以因為今次抓得夠遲就當 final。"""
+    fin = not (last == now_local.strftime('%Y-%m-%d') and (now_local.hour, now_local.minute) < cutoff)
+    status, fetched = ('final' if fin else 'partial'), now_utc.strftime('%Y-%m-%d %H:%M')
+    if last in kept:
+        prev = {}
+        try:
+            prev = json.load(open(status_path, encoding='utf-8')).get(fname, {})
+        except Exception:
+            pass
+        if prev.get('last_date') == last:
+            status, fetched = prev.get('last_row', 'partial'), prev.get('row_fetched_utc') or prev.get('fetched_utc', fetched)
+        else:
+            status, fetched = 'partial', 'unknown'
+    return {'last_date': last, 'last_row': status, 'row_fetched_utc': fetched,
+            'run_utc': now_utc.strftime('%Y-%m-%d %H:%M'), 'kept_dates': kept}
 
 
 def merge_keep(old_path, d, now_utc, fname, log):
@@ -62,24 +89,13 @@ for sym, fname in [('^HSIL', 'vhsi_daily.csv'), ('^HSI', 'hsi_daily.csv'),
         d, kept = merge_keep(old, d, now_utc, fname, log)
         d.to_csv(old, index=False)
         log.append(f"SAVED {fname}: {len(d)} rows -> {d.Date.max()}")
+        last = pd.Timestamp(d.Date.max()).strftime('%Y-%m-%d')
         if fname in ASIA_FINAL_UTC:
-            hh, mm = ASIA_FINAL_UTC[fname]
-            last = pd.Timestamp(d.Date.max()).strftime('%Y-%m-%d')
-            # 最後一列屬今日而且抓取時間未到收市＋緩衝 → partial；屬舊日或已過收市時間 → 視為 final（保留舊列時沿用舊標記）
-            fin = not (last == now_utc.strftime('%Y-%m-%d') and (now_utc.hour, now_utc.minute) < (hh, mm))
-            status, fetched = ('final' if fin else 'partial'), now_utc.strftime('%Y-%m-%d %H:%M')
-            if last in kept:                      # 最後一列係保留落嚟嘅舊列：沿用上次紀錄嘅 final/partial，唔可以因為今次抓得夠遲就當 final
-                prev = {}
-                try:
-                    prev = json.load(open(f'{OUT}/asia_daily_status.json', encoding='utf-8')).get(fname, {})
-                except Exception:
-                    pass
-                if prev.get('last_date') == last:
-                    status, fetched = prev.get('last_row', 'partial'), prev.get('row_fetched_utc') or prev.get('fetched_utc', fetched)
-                else:
-                    status, fetched = 'partial', 'unknown'
-            asia_status[fname] = {'last_date': last, 'last_row': status, 'row_fetched_utc': fetched,
-                                  'run_utc': now_utc.strftime('%Y-%m-%d %H:%M'), 'kept_dates': kept}
+            asia_status[fname] = row_status(fname, last, kept, now_utc, now_utc, ASIA_FINAL_UTC[fname],
+                                            f'{OUT}/asia_daily_status.json')
+        elif fname in US_FINAL_ET:
+            us_status[fname] = row_status(fname, last, kept, now_utc, now_utc.astimezone(NY), US_FINAL_ET[fname],
+                                          f'{OUT}/us_daily_status.json')
     except Exception as e:
         log.append(f"{sym} ERR: {e!r}")
 
@@ -147,9 +163,10 @@ if fut:
     with open(f'{OUT}/us_futures_quote.json', 'w') as f:
         json.dump(fut, f, ensure_ascii=False, indent=1)
 
-if asia_status:
-    with open(f'{OUT}/asia_daily_status.json', 'w', encoding='utf-8') as f:
-        json.dump(asia_status, f, ensure_ascii=False, indent=1)
+for st, name in [(asia_status, 'asia_daily_status.json'), (us_status, 'us_daily_status.json')]:
+    if st:
+        with open(f'{OUT}/{name}', 'w', encoding='utf-8') as f:
+            json.dump(st, f, ensure_ascii=False, indent=1)
 
 with open(f'{OUT}/fetch_us_log.txt', 'w') as f:
     f.write('\n'.join(log))
