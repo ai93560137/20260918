@@ -1,5 +1,5 @@
 {
- "asof": "20260930",
+ "asof": "20261031",
  "listed": {
   "1321.T": {
    "market": "ETF・ETN",
@@ -27,7 +27,7 @@
    "name": "ＩＮＰＥＸ",
    "sector17": "エネルギー資源",
    "sector33": "鉱業",
-   "size": "TOPIX Mid400"
+   "size": "TOPIX Large70"
   },
   "1721.T": {
    "market": "プライム（内国株式）",
@@ -195,7 +195,7 @@
    "name": "キオクシアホールディングス",
    "sector17": "電機・精密",
    "sector33": "電気機器",
-   "size": "TOPIX Mid400"
+   "size": "TOPIX Large70"
   },
   "2871.T": {
    "market": "プライム（内国株式）",
@@ -243,7 +243,7 @@
    "market": "スタンダード（内国株式）",
    "name": "ユニチカ",
    "sector17": "素材・化学",
-   "sector33": "繊維製品",
+   "sector33": "化学",
    "size": "TOPIX Small 2"
   },
   "3105.T": {
@@ -258,7 +258,7 @@
    "name": "日東紡績",
    "sector17": "建設・資材",
    "sector33": "ガラス・土石製品",
-   "size": "TOPIX Small 1"
+   "size": "TOPIX Mid400"
   },
   "3289.T": {
    "market": "プライム（内国株式）",
@@ -272,7 +272,7 @@
    "name": "セブン＆アイ・ホールディングス",
    "sector17": "小売",
    "sector33": "小売業",
-   "size": "TOPIX Core30"
+   "size": "TOPIX Large70"
   },
   "3401.T": {
    "market": "プライム（内国株式）",
@@ -356,7 +356,7 @@
    "name": "レゾナック・ホールディングス",
    "sector17": "素材・化学",
    "sector33": "化学",
-   "size": "TOPIX Mid400"
+   "size": "TOPIX Large70"
   },
   "4005.T": {
    "market": "プライム（内国株式）",
@@ -531,7 +531,7 @@
    "name": "第一三共",
    "sector17": "医薬品",
    "sector33": "医薬品",
-   "size": "TOPIX Core30"
+   "size": "TOPIX Large70"
   },
   "4578.T": {
    "market": "プライム（内国株式）",
@@ -559,7 +559,7 @@
    "name": "ＬＩＮＥヤフー",
    "sector17": "情報通信・サービスその他",
    "sector33": "情報・通信業",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Mid400"
   },
   "4704.T": {
    "market": "プライム（内国株式）",
@@ -608,7 +608,7 @@
    "name": "ＪＸ金属",
    "sector17": "鉄鋼・非鉄",
    "sector33": "非鉄金属",
-   "size": "TOPIX Mid400"
+   "size": "TOPIX Large70"
   },
   "5019.T": {
    "market": "プライム（内国株式）",
@@ -797,7 +797,7 @@
    "name": "フジクラ",
    "sector17": "鉄鋼・非鉄",
    "sector33": "非鉄金属",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Core30"
   },
   "5831.T": {
    "market": "プライム（内国株式）",
@@ -895,14 +895,14 @@
    "name": "千代田化工建設",
    "sector17": "建設・資材",
    "sector33": "建設業",
-   "size": "-"
+   "size": "TOPIX Small 1"
   },
   "6367.T": {
    "market": "プライム（内国株式）",
    "name": "ダイキン工業",
    "sector17": "機械",
    "sector33": "機械",
-   "size": "TOPIX Core30"
+   "size": "TOPIX Large70"
   },
   "6465.T": {
    "market": "プライム（内国株式）",
@@ -928,8 +928,8 @@
   "6473.T": {
    "market": "プライム（内国株式）",
    "name": "ジェイテクト",
-   "sector17": "機械",
-   "sector33": "機械",
+   "sector17": "自動車・輸送機",
+   "sector33": "輸送用機器",
    "size": "TOPIX Mid400"
   },
   "6479.T": {
@@ -972,7 +972,7 @@
    "name": "明電舎",
    "sector17": "電機・精密",
    "sector33": "電気機器",
-   "size": "TOPIX Small 1"
+   "size": "TOPIX Mid400"
   },
   "6526.T": {
    "market": "プライム（内国株式）",
@@ -1049,14 +1049,14 @@
    "name": "パナソニック　ホールディングス",
    "sector17": "電機・精密",
    "sector33": "電気機器",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Core30"
   },
   "6753.T": {
    "market": "プライム（内国株式）",
    "name": "シャープ",
    "sector17": "電機・精密",
    "sector33": "電気機器",
-   "size": "TOPIX Mid400"
+   "size": "TOPIX Small 1"
   },
   "6758.T": {
    "market": "プライム（内国株式）",
@@ -1154,7 +1154,7 @@
    "name": "村田製作所",
    "sector17": "電機・精密",
    "sector33": "電気機器",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Core30"
   },
   "6988.T": {
    "market": "プライム（内国株式）",
@@ -1196,7 +1196,7 @@
    "name": "ＩＨＩ",
    "sector17": "機械",
    "sector33": "機械",
-   "size": "TOPIX Mid400"
+   "size": "TOPIX Large70"
   },
   "7186.T": {
    "market": "プライム（内国株式）",
@@ -1252,7 +1252,7 @@
    "name": "本田技研工業",
    "sector17": "自動車・輸送機",
    "sector33": "輸送用機器",
-   "size": "TOPIX Core30"
+   "size": "TOPIX Large70"
   },
   "7269.T": {
    "market": "プライム（内国株式）",
@@ -1266,7 +1266,7 @@
    "name": "ＳＵＢＡＲＵ",
    "sector17": "自動車・輸送機",
    "sector33": "輸送用機器",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Mid400"
   },
   "7272.T": {
    "market": "プライム（内国株式）",
@@ -1336,7 +1336,7 @@
    "name": "シチズン時計",
    "sector17": "電機・精密",
    "sector33": "精密機器",
-   "size": "TOPIX Small 1"
+   "size": "TOPIX Mid400"
   },
   "7832.T": {
    "market": "プライム（内国株式）",
@@ -1413,7 +1413,7 @@
    "name": "住友商事",
    "sector17": "商社・卸売",
    "sector33": "卸売業",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Core30"
   },
   "8058.T": {
    "market": "プライム（内国株式）",
@@ -1567,7 +1567,7 @@
    "name": "ソニーフィナンシャルグループ",
    "sector17": "金融（除く銀行）",
    "sector33": "保険業",
-   "size": "TOPIX Core30"
+   "size": "TOPIX Mid400"
   },
   "8750.T": {
    "market": "プライム（内国株式）",
@@ -1672,7 +1672,7 @@
    "name": "西日本旅客鉄道",
    "sector17": "運輸・物流",
    "sector33": "陸運業",
-   "size": "TOPIX Large70"
+   "size": "TOPIX Mid400"
   },
   "9022.T": {
    "market": "プライム（内国株式）",
