@@ -13,7 +13,11 @@ sys.path.insert(0, str(ROOT))
 from universe import INDICES, Universe  # noqa: E402
 
 FETCH_SINCE = date(2008, 1, 1)   # 輪動檢測/策略 2010 起，多留暖身
-BENCHMARKS = {"us": ["SPY", "QQQ", "DIA", "^GSPC", "^NDX", "^DJI", "RSP", "EWJ"], "jp": ["1321.T", "^N225"]}
+# us 基準後半是 ETF 核心配置回測（stock_research/ETF_CORE_BACKTEST.md）用的債券／黃金／國際 ETF
+BENCHMARKS = {"us": ["SPY", "QQQ", "DIA", "^GSPC", "^NDX", "^DJI", "RSP", "EWJ",
+                     "EFA", "EEM", "VT", "IEF", "TLT", "SHY", "BIL", "AGG", "GLD", "DBC",
+                     "EWH", "EWT", "EWY", "EWA", "EWC", "INDA", "EWS"],
+              "jp": ["1321.T", "^N225"]}
 
 
 def main() -> None:
