@@ -12,13 +12,13 @@
     "2026-11-03",
     "2026-11-04"
   ],
-  "intraday_disaster": 0,
+  "intraday_disaster": 2,
   "intraday_short": 2,
   "last_intraday": {
-    "time_utc": "2026-11-05T15:05Z",
-    "vix": 20.01,
-    "vix3m": 20.77,
-    "vix9d": 20.51
+    "time_utc": "2026-11-05T15:35Z",
+    "vix": 23.31,
+    "vix3m": 22.73,
+    "vix9d": 25.19
   },
   "us_date": "2026-11-05"
 }
