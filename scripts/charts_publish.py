@@ -36,7 +36,80 @@ def hsi_fib(tmp, bucket, tf="4h", ndays=200):
     return png, json.loads(out.stdout.strip().splitlines()[-1])
 
 
+_XAU_H1 = {}
+
+
+def xau_h1_csv(tmp, bucket):
+    """🌌 天覆陣：GCS xau/sig/duka_h1/<月>.json（2005 起，[t,o,h,l,c]）＋經紀 M1 xau/sig/bars/<日>.jsonl 補 Dukascopy 之後嘅鐘
+    → H1 CSV（t_utc,o,h,l,c）。週末平線（h==l 且同上一根收市一樣）剔走。四張圖共用，只砌一次。"""
+    if "csv" in _XAU_H1 and os.path.exists(_XAU_H1["csv"]):
+        return _XAU_H1["csv"]
+    rows = {}
+    for b in sorted(bucket.list_blobs(prefix="xau/sig/duka_h1/"), key=lambda b: b.name):
+        try:
+            for r in json.loads(bucket.blob(b.name).download_as_text()):
+                rows[int(r[0])] = [float(x) for x in r[1:5]]
+        except Exception as exc:
+            print(f"略過 {b.name}：{exc}", file=sys.stderr)
+    last = max(rows) if rows else 0
+    m1 = {}
+    for b in sorted(bucket.list_blobs(prefix="xau/sig/bars/"), key=lambda b: b.name)[-40:]:
+        try:
+            txt = bucket.blob(b.name).download_as_text()
+        except Exception as exc:
+            print(f"略過 {b.name}：{exc}", file=sys.stderr)
+            continue
+        for ln in txt.splitlines():
+            try:
+                arr = json.loads(ln)
+            except ValueError:
+                continue
+            for x in arr if isinstance(arr, list) else [arr]:
+                if isinstance(x, dict) and x.get("utc"):
+                    m1[int(x["utc"])] = (float(x["open"]), float(x["high"]), float(x["low"]), float(x["close"]))
+    for t in sorted(m1):
+        k = t // 3600 * 3600
+        if k <= last:
+            continue
+        o, h, l, c = m1[t]
+        r = rows.get(k)
+        rows[k] = [o, h, l, c] if r is None else [r[0], max(r[1], h), min(r[2], l), c]
+    path = os.path.join(tmp, "xau_h1.csv")
+    prev = None
+    with open(path, "w") as f:
+        for t in sorted(rows):
+            o, h, l, c = rows[t]
+            if h == l and prev == c:
+                continue
+            prev = c
+            f.write(f"{t},{o},{h},{l},{c}\n")
+    _XAU_H1["csv"] = path
+    return path
+
+
+def xau_fib(tf):
+    def make(tmp, bucket):
+        src = xau_h1_csv(_XAU_H1.setdefault("dir", tempfile.mkdtemp()), bucket)
+        png = os.path.join(tmp, f"xau_fib_{tf.lower()}.png")
+        out = subprocess.run([sys.executable, os.path.join(ROOT, "research/tianfu_charts/xau_fib.py"), src, png, tf],
+                             check=True, capture_output=True, text=True)
+        return png, json.loads(out.stdout.strip().splitlines()[-1])
+    return make
+
+
+XAU_DESC = ("程式自己揀波段（回望期內最高點同最低點；高點喺後＝升浪回撤、低點喺後＝跌浪反彈），劃 0.236–0.886 位同 50／100／200 均線；"
+            "Dukascopy H1＋經紀 M1，MT5 伺服器時間（紐約 17:00 換日）。")
+
 CHARTS = [
+    # [天覆陣 11-05] 使用者「參考龍飛陣，用斐波那契回撤分析圖在月、週、日、H4」：XAUUSD 四個時間框（排頭，龍飛陣圖排尾出圖仍然最新）
+    {"id": "xau_fib_m", "title": "XAUUSD 黃金 月線・斐波那契回撤", "team": "🌌 天覆陣",
+     "desc": "回望 120 個月。" + XAU_DESC, "make": xau_fib("M")},
+    {"id": "xau_fib_w", "title": "XAUUSD 黃金 週線・斐波那契回撤", "team": "🌌 天覆陣",
+     "desc": "回望 104 週。" + XAU_DESC, "make": xau_fib("W")},
+    {"id": "xau_fib_d", "title": "XAUUSD 黃金 日線・斐波那契回撤", "team": "🌌 天覆陣",
+     "desc": "回望 180 日。" + XAU_DESC, "make": xau_fib("D")},
+    {"id": "xau_fib_h4", "title": "XAUUSD 黃金 4 小時線・斐波那契回撤", "team": "🌌 天覆陣",
+     "desc": "回望 180 根（約 30 個交易日）。" + XAU_DESC, "make": xau_fib("H4")},
     # [R364] 使用者 10-30「恒指加番日線，同斐波那契回撤」：同 4 小時線同一個波段；下載全部 1 分鐘存檔（約一年）先夠 SMA200
     {"id": "hsi_fib_1d", "title": "恒指即月期貨 日線・斐波那契回撤", "team": "🐉 龍飛陣",
      "desc": "同 4 小時線同一個波段（最近 90 日最高點同佢之前嘅最低點），劃 0.236–0.886 回撤位同 50／100／200 日均線；夜市歸下一個交易日。",
