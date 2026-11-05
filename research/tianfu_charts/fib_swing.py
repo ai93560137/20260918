@@ -11,8 +11,11 @@ K = 2
 
 
 class RevSwing:
-    def __init__(self, k=K):
+    def __init__(self, k=K, prev_ext=False):
+        """prev_ext=True（網頁圖用，使用者 11-05 檢查）：由升轉跌時轉勢點＝上一段升勢嘅最高影線（真頂），由跌轉升＝上一段跌勢最低影線（真底）；
+        False（IDEAS #231 回測用，唔改）：轉勢點＝被突破嗰個擺動點至今嘅極端。"""
         self.k = k
+        self.prev_ext = prev_ext
         self.H, self.L, self.C = [], [], []
         self.ph = None          # (價, index) 最近確認擺動高點
         self.pl = None
@@ -31,11 +34,13 @@ class RevSwing:
             if L[i] < min(L[i - k:i]) and L[i] <= min(L[i + 1:j + 1]):
                 self.pl = (L[i], i)
         if self.trend != 1 and self.ph and c > self.ph[0]:
-            a = min(range(self.ph[1], j + 1), key=lambda x: L[x])
+            a0 = self.ext if (self.prev_ext and self.trend == -1) else self.ph[1]
+            a = min(range(a0, j + 1), key=lambda x: L[x])
             self.trend, self.anchor = 1, a
             self.ext = max(range(a, j + 1), key=lambda x: H[x])
         elif self.trend != -1 and self.pl and c < self.pl[0]:
-            a = max(range(self.pl[1], j + 1), key=lambda x: H[x])
+            a0 = self.ext if (self.prev_ext and self.trend == 1) else self.pl[1]
+            a = max(range(a0, j + 1), key=lambda x: H[x])
             self.trend, self.anchor = -1, a
             self.ext = min(range(a, j + 1), key=lambda x: L[x])
         elif self.trend == 1 and h > H[self.ext]:

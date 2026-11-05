@@ -97,19 +97,19 @@ def xau_fib(tf):
     return make
 
 
-XAU_DESC = ("程式自己揀波段（回望期內最高點同最低點；高點喺後＝升浪回撤、低點喺後＝跌浪反彈），劃 0.236–0.886 位同 50／100／200 均線；"
+XAU_DESC = ("波段＝轉勢點 → 之後最高／最低影線（使用者 11-05「區間是轉勢前，包影線」；收市穿最近擺動高／低點＝轉勢，分形左右 2 根確認；升勢量回撤、跌勢量反彈），劃 0.236–0.886 位同 50／100／200 均線；"
             "Dukascopy H1＋經紀 M1，MT5 伺服器時間（紐約 17:00 換日）。")
 
 CHARTS = [
     # [天覆陣 11-05] 使用者「參考龍飛陣，用斐波那契回撤分析圖在月、週、日、H4」：XAUUSD 四個時間框（排頭，龍飛陣圖排尾出圖仍然最新）
     {"id": "xau_fib_m", "title": "XAUUSD 黃金 月線・斐波那契回撤", "team": "🌌 天覆陣",
-     "desc": "回望 120 個月。" + XAU_DESC, "make": xau_fib("M")},
+     "desc": XAU_DESC, "make": xau_fib("M")},
     {"id": "xau_fib_w", "title": "XAUUSD 黃金 週線・斐波那契回撤", "team": "🌌 天覆陣",
-     "desc": "回望 104 週。" + XAU_DESC, "make": xau_fib("W")},
+     "desc": XAU_DESC, "make": xau_fib("W")},
     {"id": "xau_fib_d", "title": "XAUUSD 黃金 日線・斐波那契回撤", "team": "🌌 天覆陣",
-     "desc": "回望 180 日。" + XAU_DESC, "make": xau_fib("D")},
+     "desc": XAU_DESC, "make": xau_fib("D")},
     {"id": "xau_fib_h4", "title": "XAUUSD 黃金 4 小時線・斐波那契回撤", "team": "🌌 天覆陣",
-     "desc": "回望 180 根（約 30 個交易日）。" + XAU_DESC, "make": xau_fib("H4")},
+     "desc": XAU_DESC, "make": xau_fib("H4")},
     # [R364] 使用者 10-30「恒指加番日線，同斐波那契回撤」：同 4 小時線同一個波段；下載全部 1 分鐘存檔（約一年）先夠 SMA200
     {"id": "hsi_fib_1d", "title": "恒指即月期貨 日線・斐波那契回撤", "team": "🐉 龍飛陣",
      "desc": "同 4 小時線同一個波段（最近 90 日最高點同佢之前嘅最低點），劃 0.236–0.886 回撤位同 50／100／200 日均線；夜市歸下一個交易日。",

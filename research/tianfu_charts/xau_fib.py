@@ -3,7 +3,8 @@
 使用者 11-05（天覆陣新二）：「參考龍飛陣，用斐波那契回撤分析圖在月、週、日、H4」「加在斐波那契回撤分析圖網頁」。
 資料：H1 CSV（t_utc,o,h,l,c；由 scripts/charts_publish.py 用 GCS xau/sig/duka_h1/＋經紀 M1 xau/sig/bars/ 砌）。
 K 線用 MT5 伺服器時間（紐約時間 +7 小時，即紐約 17:00 換日＝伺服器 00:00），同 MT5 圖一致。
-波段：回望期內最高點同最低點；高點喺後＝升浪（由高點向下量回撤），低點喺後＝跌浪（由低點向上量反彈）。
+波段（使用者 11-05「區間是轉勢前，包影線」）：轉勢點 → 之後極端影線（fib_swing.RevSwing，同 IDEAS #231）；升勢由高點向下量回撤、跌勢由低點向上量反彈。
+未有轉勢（數據太短）先退返回望期內最高／最低。
 用法：python3 research/tianfu_charts/xau_fib.py <h1.csv> <輸出.png> <M|W|D|H4>；stdout 印 JSON。
 """
 import csv
@@ -20,7 +21,7 @@ from matplotlib import font_manager  # noqa: E402
 
 NY = ZoneInfo("America/New_York")
 # 每個時間框：回望（根數）、標題、顯示根數上限
-TFS = {"M": (120, "月線", 150), "W": (104, "週線", 160), "D": (180, "日線", 220), "H4": (180, "4 小時線", 260)}
+TFS = {"M": (120, "月線", 60), "W": (104, "週線", 80), "D": (180, "日線", 120), "H4": (180, "4 小時線", 150)}   # 第三項＝最少顯示根數（轉勢點更早就再向左擴）
 LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 0.886, 1]
 PAL = {0: "#9e9e9e", 0.236: "#e53935", 0.382: "#66bb6a", 0.5: "#66bb6a", 0.618: "#26a69a",
        0.786: "#42a5f5", 0.886: "#42a5f5", 1: "#9e9e9e"}
@@ -55,7 +56,18 @@ def load(path, tf):
     return bars, last + timedelta(hours=1)        # H1 收市時間
 
 
-def swing(H, L, look):
+def swing(H, L, look, C=None):
+    if C is not None:                      # 轉勢點區間（包影線）
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from fib_swing import RevSwing
+        rs = RevSwing(prev_ext=True)
+        for h, l, c in zip(H, L, C):
+            rs.add(h, l, c)
+        s = rs.swing()
+        if s:
+            hi_i, lo_i, up = s
+            hi, lo = H[hi_i], L[lo_i]
+            return hi_i, lo_i, up, {r: (hi - (hi - lo) * r) if up else (lo + (hi - lo) * r) for r in LEVELS}
     n = len(H)
     rng = range(max(0, n - look), n)
     hi_i, lo_i = max(rng, key=lambda i: H[i]), min(rng, key=lambda i: L[i])
@@ -77,12 +89,12 @@ def main():
     bars, asof = load(src, tf)
     keys = sorted(bars)
     H, L, C = [bars[k][1] for k in keys], [bars[k][2] for k in keys], [bars[k][3] for k in keys]
-    hi_i, lo_i, up, price = swing(H, L, look)
+    hi_i, lo_i, up, price = swing(H, L, look, C)
 
     def sma(n):
         return [sum(C[i - n + 1:i + 1]) / n if i >= n - 1 else None for i in range(len(C))]
 
-    first = max(0, len(keys) - show, min(hi_i, lo_i) - 15)
+    first = max(0, min(len(keys) - show, min(hi_i, lo_i) - 15))   # 轉勢點可能好舊：一定要睇得到
     fig, ax = plt.subplots(figsize=(15, 8), dpi=110)
     fig.patch.set_facecolor("#131722")
     ax.set_facecolor("#131722")
