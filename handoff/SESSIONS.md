@@ -11,9 +11,9 @@
 | 🛡️ 總指揮 | `session_01Mt8CWjUZpGvDAD6UBLEAti`（新三，11-03 接手：舊工作階段 bash E2BIG；四陣通報定時任務改 `trig_01Rtbm2GTDZGNbec64TsxKoR`） | `session_01ELtWSJc46vAFMT4oh3fCTV`（10-18）、`session_012CwdLPmAQvC91GZs5Jg9XA`（10-14）、`session_01N1jfpEJciBkfAgwtd4QxgU` | `claude/beautiful-hypatia-8qrgjj` | `handoff/總指揮.md` | ✅ |
 | ☁️ 雲垂陣 | `session_013KSbtb9YJejCuaunQBdJDC`（10-18 再換，上下文 66 萬） | `session_01RkzmKXKixbBkCNqEjhubCK`（10-14）、`session_01QLJsy4RoeHjPNdNha73ibt` | `claude/dazzling-curie-f3xzb8` | `handoff/雲垂陣.md` | ✅ |
 | 🌬️ 風揚陣 | `session_01BvMYgEWCVAJRi7v2WgT1qb`（10-15 再換，上下文過長） | `session_01X2Qv7MgCQxbyyEyGVzivWC`（10-14）、`session_01AmKfqsQjNQAkz1xgjRo2Mj` | `claude/epic-ramanujan-kp1l1v` | `handoff/風揚陣.md` | ✅ |
-| 🐍 蛇蟠陣 | `session_01B4y7p7QzrJwCXEmDDZCx9M` | `session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | `handoff/蛇蟠陣.md` | ✅ |
+| 🐍 蛇蟠陣 | `session_01Mt8CWk4VkMymGsyU5kjFsv`（11-05 換，總指揮開；上下文過 60 萬） | `session_01B4y7p7QzrJwCXEmDDZCx9M`、`session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | `handoff/蛇蟠陣.md` | ✅ |
 | 🏔️ 地載陣 | `session_01UxZXWN28xveAEbzggo49AR` | `session_01QDAzw2CmhvhYWip9SRktBn` | `claude/dizai-expectations-r172` | `handoff/地載陣.md` | ✅（冇 Routine） |
-| 🐤 金絲雀 | `session_01AqAysUfBVsCKimicXrwwKZ` | `session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | `handoff/金絲雀.md` | ✅ |
+| 🐤 金絲雀 | `session_01Mt8CWnFXKw3kmcwd24gTGj`（11-05 換，總指揮開；上下文過 60 萬） | `session_01AqAysUfBVsCKimicXrwwKZ`、`session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | `handoff/金絲雀.md` | ✅ |
 | 🐦 鳥翔 HTF | `session_018BXPn6zbpuMedYBTga6wp1` | `session_01NQur232BPDVDQzxd2hrvzU` | `claude/stock-research-k9nzau` | `handoff/鳥翔.md` | ✅ |
 | 📈 股票市場策略研究 | `session_0159FXFtZPPMiENXrdpy2kQd` | `session_01C1wMzBze3QQ3CBXfrDSZ1t` | `claude/gifted-carson-v2tvhw` | `handoff/股票市場策略研究.md` | — |
 | HTF 交易策略指南（動能 ORB） | 🚫 不換（使用者 10-14：已冇用） | `session_01AA5xBGBfBex9d23T23TQFY` | `claude/momentum-orb-research` | — | — |
@@ -27,6 +27,6 @@
 | 🏦 債券每日快報（美債 Telegram，`bond_daily.yml` HKT 週二至六 07:30） | `session_013x5qHyMDisW7VCLNo6w88x`（10-15 總指揮開） | `session_01WrfzzWWLTysdSLJNZ3Mh5u`（美國國債數據與股票市場關係） | `claude/us-intl-data-stock-market-vgt0yi` | `handoff/債券快報.md`（該分支 518b054） | —（冇 Routine，Actions 排程） |
 | 🐉 龍飛陣（AI 決策：HSI＋美股 ETF SPY／QQQ／DIA，10-16 22:20 起喺 futu-data-tw 跑，全部富途模擬戶口；2026-10-16 成立） | `session_0139SPVaaCjhGQM81SipbPgp` | — | `claude/hsi-ai-trader` | `handoff/龍飛陣.md` | —（未有 Routine） |
 | 🐯 虎翼（大跌股賣 put；使用者 10-30 成立，10-31 加入總指揮白名單；實倉規則照虎翼草案） | `session_01Mt8CWjLKUQw2jyTNk48rrS` | — | `claude/huyi-bigdrop-options` | `handoff/虎翼.md` | ✅（美股 06:17、港股 19:41 掃描） |
-| 🌌 天覆陣（XAUUSD CFD／MT5 改造；使用者 10-20 批准抽出獨立 Cloud Run `zhuge-xau`，GCS 只寫 `xau/`，影子階段唔落單；2026-10-20 成立） | `session_01N9ooQRNEnSz5WQRUg81hi5`（10-21 換，上下文 61 萬） | `session_01Xi2KRPAn4M1iG7VvrVxBUx` | `claude/tianfu`（舊名 `claude/keen-davinci-1zx3uo`、`claude/tianfu-xau`） | `handoff/天覆陣.md`（該分支，PR #236） | — |
+| 🌌 天覆陣（XAUUSD CFD／MT5 改造；使用者 10-20 批准抽出獨立 Cloud Run `zhuge-xau`，GCS 只寫 `xau/`，影子階段唔落單；2026-10-20 成立） | `session_01Mt8CWn2aD3BZG35h9521Pk`（11-05 換，總指揮開；上下文過 60 萬） | `session_01N9ooQRNEnSz5WQRUg81hi5`、`session_01Xi2KRPAn4M1iG7VvrVxBUx` | `claude/tianfu`（舊名 `claude/keen-davinci-1zx3uo`、`claude/tianfu-xau`） | `handoff/天覆陣.md`（該分支，PR #236） | — |
 | 🧭 SOP 顧問／預設分支 | `session_012caA3uVCQjRHHryN5HnMrn` | `session_01BzZsgkBzxEaLV6CYPW67i6` | `claude/gcp-trading-v12-rewrite-bz75t2` | `handoff/SOP顧問_預設分支.md` | — |
 | claude-ops（使用者 VM，台灣） | `session_01J4dioYdtebaEyoaDwGJotM`（不換） | — | — | — | — |
