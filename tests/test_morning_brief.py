@@ -58,6 +58,15 @@ class SectionTests(unittest.TestCase):
         stale = dict(RISK, run_hkt="2026-10-13 17:36")
         self.assertIn("⚠ 數據舊", "\n".join(mb.section_risk(stale, None, NOW)))
 
+    def test_risk_delta_null(self):
+        # 10-19 起 auto_risk 冇雲垂倉時 net_with_hedge 係 null，之前令成份簡報崩
+        import copy
+        r = copy.deepcopy(RISK)
+        r.setdefault("metrics", {})["delta_parts"] = {"net_with_hedge": None, "hsi_all": 5.62}
+        out = "\n".join(mb.section_risk(r, None, NOW))
+        self.assertIn("雲垂含對沖淨 —", out)
+        self.assertIn("+5.62", out)
+
     def test_canary(self):
         out = mb.section_canary(CANARY, date(2026, 10, 14))
         self.assertEqual(out[1:], ["🟢 短期軸:綠,19 日", "🔴 災難軸:紅"])

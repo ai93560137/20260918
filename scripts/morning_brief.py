@@ -103,7 +103,8 @@ def section_risk(risk: dict | None, ladder: dict | None, now: datetime, stress: 
         out.append("止損線用量：" + "、".join(f"{k} {v:.0%}{' ⚠' if v >= 0.8 else ''}" for k, v in hi))
     dp = m.get("delta_parts") or {}
     if dp:
-        out.append(f"Δ（MHI 手）：雲垂含對沖淨 {dp.get('net_with_hedge', 0):+.2f}（界線 ±0.5）｜恒指全部 {dp.get('hsi_all', 0):+.2f}")
+        fmt = lambda v: f"{v:+.2f}" if isinstance(v, (int, float)) else "—"     # auto_risk 冇雲垂倉時寫 null（10-19 起晨會簡報因此連續失敗）
+        out.append(f"Δ（MHI 手）：雲垂含對沖淨 {fmt(dp.get('net_with_hedge'))}（界線 ±0.5）｜恒指全部 {fmt(dp.get('hsi_all'))}")
     alerts = risk.get("alerts") or {}
     if alerts:
         out.append("警報：" + "；".join(f"{k} {v}" if not isinstance(v, (dict, list)) else str(k) for k, v in alerts.items()))
