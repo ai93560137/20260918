@@ -282,6 +282,25 @@ def us_quotes(c: dict, rate: float) -> dict | None:
     if not exp:
         c["note"] = f"冇 {DTE_LO}–{DTE_HI} 日到期"
         return None
+    # 週期權只開大跌前價位附近嘅行使價：最近 30 日嗰個冇 95% put 行使價，就順序試下一個 20–45 日內嘅到期（多數係月度）
+    order = sorted((e for e in exps if DTE_LO <= (e - c["date"]).days <= DTE_HI), key=lambda e: abs((e - c["date"]).days - DTE_TGT))
+    first, note0 = None, c.get("note", "")
+    for e in order[:4]:
+        c["note"] = note0
+        q = _us_chain_legs(tk, c, e, rate)
+        if q is not None and first is None:
+            first = q
+        if q is not None and "put95" in q["legs"]:
+            if e != order[0]:
+                c["note"] = (c.get("note", "") + f" 最近到期 {order[0]} 冇 95% put 行使價，改用 {e}").strip()
+            return q
+        time.sleep(0.3)
+    if first is None:
+        c["note"] = (note0 + " 期權鏈冇有效買賣價／成交價").strip()
+    return first
+
+
+def _us_chain_legs(tk, c: dict, exp: date, rate: float) -> dict | None:
     ch = tk.option_chain(str(exp))
     rows = [dict(cp=cp, strike=r["strike"], bid=r.get("bid"), ask=r.get("ask"), last=r.get("lastPrice"),
                  oi=0 if r.get("openInterest") != r.get("openInterest") else r.get("openInterest"))
@@ -290,7 +309,6 @@ def us_quotes(c: dict, rate: float) -> dict | None:
     if q is None:   # 收市後 Yahoo 有時清零買賣價 → 退用最後成交價（標明，唔當真實買價）
         q = us_legs([dict(r, bid=r["last"], ask=r["last"]) for r in rows], c["close"], c["date"], exp, rate, c.get("ah_px"))
         if q is None:
-            c["note"] = "期權鏈冇有效買賣價／成交價"
             return None
         c["note"] = (c.get("note", "") + " 買賣價清零，用最後成交價").strip()
     q["expiry"] = exp
