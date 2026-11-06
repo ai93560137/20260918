@@ -33,6 +33,8 @@ def server_time(ts):
 
 
 def bucket_key(t, tf):
+    if tf == "H1":                                   # [11-06] 市場結構圖用
+        return t.replace(minute=0, second=0, microsecond=0)
     if tf == "H4":
         return t.replace(hour=t.hour // 4 * 4, minute=0, second=0, microsecond=0)
     d = datetime(t.year, t.month, t.day)
