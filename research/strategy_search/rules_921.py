@@ -1,4 +1,4 @@
-"""[IDEAS #224] 921 規則有冇幫到 AI（使用者 11-03「AI唔應該用規則」）。
+"""[IDEAS #236] 921 規則有冇幫到 AI（使用者 11-03「AI唔應該用規則」）。
 決策日誌（xau/decisions/）入面 AI 想開倉（action＝OPEN_LONG／OPEN_SHORT）嘅決定分三組：
   A 規則放行（final＝action）：用 AI 原本 SL／TP（有 widen 用放闊前原值）
   B 規則擋咗（final≠action，有 rejected 原因）：用 ai_stop／ai_target；再按原因分：M1 硬規則／冷靜期／逆 H4／其他
@@ -86,7 +86,7 @@ def main():
     rows = load(g)
     m1 = F9.EF6.broker_bars(int(rows[0]["ts"]) - 86400)
     m1, nd = F9.merge_duka(g, m1, dt.datetime.fromtimestamp(rows[0]["ts"] - 86400, dt.timezone.utc).date().isoformat())
-    out = ["# 921 規則有冇幫到 AI（IDEAS #224）", "",
+    out = ["# 921 規則有冇幫到 AI（IDEAS #236）", "",
            f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；決策日誌 AI 想開倉 {len(rows)} 個（放行 {sum(r['grp'] == 'A 放行' for r in rows)}、被擋 {sum(r['grp'] != 'A 放行' for r in rows)}）；"
            "重播：經紀 M1＋Dukascopy 補、24h、扣 0.5 美元、R＝AI 原止蝕距離", ""]
     verdict = {}

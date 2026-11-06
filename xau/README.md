@@ -117,7 +117,7 @@ python3 scripts/gcp_agent.py --profile eurusd env set XAU_SYMBOL=EURUSD XAU_EXEC
 （`--copy-env` 由 zhuge-risk-manager 抄；ANTHROPIC_API_KEY 如果只喺 zhuge-xau 就要喺控制台填。）之後：控制台開「允許未經驗證的叫用」；
 demo MT5 開一張 **EURUSD** 圖表掛 TianfuExecutor v0.34（`InpUrl` 指去 zhuge-eurusd、`InpMagic=922`、`InpDryRun=true`）；
 `control.json` 放喺 `fx/eurusd/control.json`（`principal_hkd` 同 XAUUSD 一樣係整個戶口）。
-影子標準（IDEAS.md #28）達標、使用者批先轉 demo 落單；轉真倉前要有**戶口總階梯**（多產品共用一個戶口，各服務各自計日蝕唔夠）。
+影子標準（IDEAS.md #234）達標、使用者批先轉 demo 落單；轉真倉前要有**戶口總階梯**（多產品共用一個戶口，各服務各自計日蝕唔夠）。
 
 ## 戶口總階梯（使用者 10-21 批方案 A；`xau/ACCOUNT_LADDER.md`）
 多產品共用一個 MT5 戶口，階梯要計**天覆陣全部產品合計**，唔計手動單同其他 EA：

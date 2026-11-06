@@ -1,4 +1,4 @@
-name: 龍飛陣 MNQ／MES 前向測試（規則版，IDEAS #230）
+name: 龍飛陣 MNQ／MES 前向測試（規則版，IDEAS #239）
 
 # 使用者 11-06「B 先做」：台灣 OpenD 冇 CME 報價，先用 yfinance 延遲數據跑 R295 規則版前向測試。只係紙上，唔落單。
 on:

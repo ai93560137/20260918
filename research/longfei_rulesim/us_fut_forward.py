@@ -1,4 +1,4 @@
-"""[IDEAS #230] 龍飛陣 MNQ／MES 前向測試（規則版，B 方案，使用者 11-06「B 先做」）。
+"""[IDEAS #239] 龍飛陣 MNQ／MES 前向測試（規則版，B 方案，使用者 11-06「B 先做」）。
 
 背景：台灣 OpenD 冇 CME 美期報價權限（10-16），AI 即時模擬做唔到；先用延遲數據做規則版前向測試，
 規則同 R295 即日回測（rulesim.py）一模一樣，方便同 QQQ／SPY 對照。A 方案（開通富途 CME 報價、AI 即時模擬）使用者考慮緊。
@@ -82,7 +82,7 @@ def main():
         doc = store.get(name)
         if doc and doc.get("trade"):
             rows[doc.get("bars", "1m")].append({"date": doc["date"], "product": doc["product"], **doc["trade"]})
-    summ = {"updated_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z", "rules": "R295 v1", "ideas": 230}
+    summ = {"updated_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z", "rules": "R295 v1", "ideas": 239}
     for k, v in rows.items():
         v.sort(key=lambda x: (x["date"], x["product"]))
         summ[f"forward_{k}" if k == "1m" else "backfill_5m"] = {
