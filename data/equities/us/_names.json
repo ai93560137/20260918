@@ -60,7 +60,7 @@
   "sector": "Healthcare"
  },
  "ABI": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -236,6 +236,16 @@
   "industry": "Insurance - Life",
   "name": "Aflac Incorporated",
   "sector": "Financial Services"
+ },
+ "AGG": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares Core U.S. Aggregate Bond ETF"
+   }
+  ],
+  "name": "iShares Core U.S. Aggregate Bond ETF"
  },
  "AIG": {
   "checked": "2026-10-19",
@@ -910,7 +920,7 @@
   "sector": "Healthcare"
  },
  "BBBY": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -1074,6 +1084,16 @@
   "industry": "Drug Manufacturers - General",
   "name": "Biogen Inc.",
   "sector": "Healthcare"
+ },
+ "BIL": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "State Street SPDR Bloomberg 1-3 Month T-Bill ETF"
+   }
+  ],
+  "name": "State Street SPDR Bloomberg 1-3 Month T-Bill ETF"
  },
  "BIO": {
   "checked": "2026-10-19",
@@ -1304,7 +1324,7 @@
   "sector": "Healthcare"
  },
  "CAM": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -1974,7 +1994,7 @@
   "sector": "Real Estate"
  },
  "CSRA": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -2115,6 +2135,16 @@
   "name": "DoorDash, Inc.",
   "sector": "Consumer Cyclical"
  },
+ "DBC": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "Invesco DB Commodity Index Tracking Fund"
+   }
+  ],
+  "name": "Invesco DB Commodity Index Tracking Fund"
+ },
  "DD": {
   "checked": "2026-10-19",
   "history": [
@@ -2236,7 +2266,7 @@
   "sector": "Healthcare"
  },
  "DIA": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -2509,6 +2539,26 @@
   "name": "Consolidated Edison, Inc.",
   "sector": "Utilities"
  },
+ "EEM": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI Emerging Markets ETF"
+   }
+  ],
+  "name": "iShares MSCI Emerging Markets ETF"
+ },
+ "EFA": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI EAFE ETF"
+   }
+  ],
+  "name": "iShares MSCI EAFE ETF"
+ },
  "EFX": {
   "checked": "2026-10-19",
   "history": [
@@ -2570,7 +2620,7 @@
   "sector": "Healthcare"
  },
  "EMC": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -2807,8 +2857,38 @@
   "name": "Edwards Lifesciences Corporation",
   "sector": "Healthcare"
  },
+ "EWA": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI Australia ETF"
+   }
+  ],
+  "name": "iShares MSCI Australia ETF"
+ },
+ "EWC": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI Canada ETF"
+   }
+  ],
+  "name": "iShares MSCI Canada ETF"
+ },
+ "EWH": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI Hong Kong ETF"
+   }
+  ],
+  "name": "iShares MSCI Hong Kong ETF"
+ },
  "EWJ": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-23",
@@ -2816,6 +2896,36 @@
    }
   ],
   "name": "iShares MSCI Japan ETF"
+ },
+ "EWS": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI Singapore ETF"
+   }
+  ],
+  "name": "iShares MSCI Singapore ETF"
+ },
+ "EWT": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI Taiwan ETF"
+   }
+  ],
+  "name": "iShares MSCI Taiwan ETF"
+ },
+ "EWY": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI South Korea ETF"
+   }
+  ],
+  "name": "iShares MSCI South Korea ETF"
  },
  "EXC": {
   "checked": "2026-10-19",
@@ -2914,7 +3024,7 @@
   "sector": "Industrials"
  },
  "FB": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -3080,7 +3190,7 @@
   "sector": "Technology"
  },
  "FISV": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -3354,7 +3464,7 @@
   "sector": "Technology"
  },
  "GENZ": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -3434,6 +3544,16 @@
   "industry": "Insurance - Life",
   "name": "Globe Life Inc.",
   "sector": "Financial Services"
+ },
+ "GLD": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "SPDR Gold Shares"
+   }
+  ],
+  "name": "SPDR Gold Shares"
  },
  "GLW": {
   "checked": "2026-10-19",
@@ -3927,6 +4047,16 @@
   "name": "IDEXX Laboratories, Inc.",
   "sector": "Healthcare"
  },
+ "IEF": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares 7-10 Year Treasury Bond ETF"
+   }
+  ],
+  "name": "iShares 7-10 Year Treasury Bond ETF"
+ },
  "IEX": {
   "checked": "2026-10-19",
   "history": [
@@ -3975,8 +4105,18 @@
   "name": "Incyte Corporation",
   "sector": "Healthcare"
  },
+ "INDA": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares MSCI India ETF"
+   }
+  ],
+  "name": "iShares MSCI India ETF"
+ },
  "INFO": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -4166,7 +4306,7 @@
   "sector": "Industrials"
  },
  "JAVA": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -5556,7 +5696,7 @@
   "sector": "Communication Services"
  },
  "NFX": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -6022,7 +6162,7 @@
   "sector": "Utilities"
  },
  "PCL": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -6452,7 +6592,7 @@
   "sector": "Healthcare"
  },
  "QQQ": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -6690,7 +6830,7 @@
   "sector": "Industrials"
  },
  "RSP": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -6832,7 +6972,7 @@
   "sector": "Healthcare"
  },
  "SHLD": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -6864,6 +7004,16 @@
   "industry": "Specialty Chemicals",
   "name": "The Sherwin-Williams Company",
   "sector": "Basic Materials"
+ },
+ "SHY": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares 1-3 Year Treasury Bond ETF"
+   }
+  ],
+  "name": "iShares 1-3 Year Treasury Bond ETF"
  },
  "SIG": {
   "checked": "2026-10-19",
@@ -7058,7 +7208,7 @@
   "sector": "Financial Services"
  },
  "SPLS": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -7474,6 +7624,16 @@
   "industry": "Entertainment",
   "name": "TKO Group Holdings, Inc.",
   "sector": "Communication Services"
+ },
+ "TLT": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "iShares 20+ Year Treasury Bond ETF"
+   }
+  ],
+  "name": "iShares 20+ Year Treasury Bond ETF"
  },
  "TMO": {
   "checked": "2026-10-19",
@@ -7896,7 +8056,7 @@
   "sector": "Financial Services"
  },
  "UST": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -8136,6 +8296,16 @@
   "industry": "Utilities - Independent Power Producers",
   "name": "Vistra Corp.",
   "sector": "Utilities"
+ },
+ "VT": {
+  "checked": "2026-11-06",
+  "history": [
+   {
+    "date": "2026-11-06",
+    "name": "Vanguard Total World Stock Index Fund ETF Shares"
+   }
+  ],
+  "name": "Vanguard Total World Stock Index Fund ETF Shares"
  },
  "VTR": {
   "checked": "2026-10-19",
@@ -8582,7 +8752,7 @@
   "sector": "Healthcare"
  },
  "^DJI": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -8592,7 +8762,7 @@
   "name": "Dow Jones Industrial Average"
  },
  "^GSPC": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
@@ -8602,7 +8772,7 @@
   "name": "S&P 500"
  },
  "^NDX": {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "history": [
    {
     "date": "2026-09-22",
