@@ -15,7 +15,7 @@ mask() { sed -E 's/[0-9]{6,}/###/g'; }
 tg() {
   [ -n "${TG_BOT_TOKEN:-}" ] && [ -n "${TG_CHAT_ID:-}" ] || return 0
   curl -s -m 15 -o /dev/null "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-    --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=[futu-data] $*" || true
+    --data-urlencode "chat_id=${TG_CHAT_ID}" --data-urlencode "text=[futu-data-tw] $*" || true
 }
 screen() { tmux capture-pane -pt "$S" 2>/dev/null | grep -v '^\s*$' | tail -n 3; }
 # [R227] 登入結果要睇成個畫面：OpenD 10.11 喺「必要数据准备完毕」之後仲會印權限列表，淨睇最後 3 行會誤判失敗
@@ -26,7 +26,7 @@ waitfor() {  # $1 = regex，$2 = 最多等幾秒
 answer() {  # 經 tmux buffer 打字，唔會出現喺 ps／log
   printf '%s' "$1" | tmux load-buffer -b zl - && tmux paste-buffer -d -b zl -t "$S" && tmux send-keys -t "$S" Enter
 }
-alert() { local m; m="$(screen | mask | tr "\n" " ")"; log "⚠ $1：$m"; tg "$1（畫面：$m）。請瀏覽器 SSH 入 futu-data 跑 tmux attach -t opend 人手處理"; }
+alert() { local m; m="$(screen | mask | tr "\n" " ")"; log "⚠ $1：$m"; tg "$1（畫面：$m）。請瀏覽器 SSH 入 futu-data-tw 跑 tmux attach -t opend 人手處理"; }
 
 tmux kill-session -t "$S" 2>/dev/null || true
 cd "$H/opend" || { log "搵唔到 $H/opend"; exit 1; }
