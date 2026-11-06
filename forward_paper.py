@@ -65,17 +65,46 @@ def run_market(mk: str, start: date) -> list[dict]:
     return rows, m.cal[-1]
 
 
+def summarize() -> str:
+    """由磁碟上全部帳本（research/forward/ledger_<m>.csv）重建摘要；單一市場日更也能用。"""
+    L = [f"# 紙上前向記錄（前向起點 {START}；規則見 stock_research/FORWARD_PAPER.md）\n",
+         "描述性：前向 6–12 個月檢定力很低，只作災難偵測與執行檢查；12 個月（2027-11）才套用原登記證偽條件。\n",
+         "| 市場 | 帳本更新 | Minervini 筆數（已平倉／未平倉） | Minervini 已平倉平均淨報酬 | XV 筆數（已平倉／未平倉） | XV 已平倉平均淨報酬 |",
+         "|---|---|---|---|---|---|"]
+    for mk in MARKETS:
+        p = OUT / f"ledger_{mk}.csv"
+        if not p.exists():
+            L.append(f"| {mk} | — | — | — | — | — |")
+            continue
+        rows = list(csv.DictReader(open(p, encoding="utf-8")))
+        upd = (OUT / f"ledger_{mk}.asof").read_text().strip() if (OUT / f"ledger_{mk}.asof").exists() else "—"
+        cells = []
+        for st in ("Minervini", "VCP_XV"):
+            rs = [r for r in rows if r["strategy"] == st]
+            cl = [float(r["ret_net"]) for r in rs if r["status"] == "closed"]
+            cells += [f"{len(cl)}／{len(rs) - len(cl)}", f"{sum(cl) / len(cl):+.1%}" if cl else "—"]
+        L.append(f"| {mk} | 數據到 {upd} | " + " | ".join(cells) + " |")
+    return "\n".join(L) + "\n"
+
+
 def main() -> None:
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--market", choices=MARKETS)
     a.add_argument("--start", type=date.fromisoformat, default=START, help="只供測試程式；正式記錄一律用登記起點")
     a.add_argument("--dry-run", action="store_true", help="不寫檔（測試用）")
+    a.add_argument("--monthly", metavar="YYYY-MM", help="只出月度快照 research/forward/<YYYY-MM>.md（不重算）")
+    a.add_argument("--summary", action="store_true", help="只由現有帳本重建 research/forward/README.md（不重算）")
     args = a.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
-    summary = []
+    if args.summary:
+        (OUT / "README.md").write_text(summarize(), encoding="utf-8")
+        return
+    if args.monthly:
+        (OUT / f"{args.monthly}.md").write_text(f"<!-- {args.monthly} 月度快照（月初由 fullmarket_daily.yml group=monthly 產生） -->\n"
+                                                + summarize(), encoding="utf-8")
+        return
     for mk in ([args.market] if args.market else MARKETS):
         rows, last = run_market(mk, args.start)
-        summary.append((mk, last, rows))
         if args.dry_run:
             continue
         buf = io.StringIO()
@@ -83,20 +112,9 @@ def main() -> None:
         w.writeheader()
         w.writerows(rows)
         (OUT / f"ledger_{mk}.csv").write_text(buf.getvalue(), encoding="utf-8")
-    if args.dry_run or args.market:
-        return
-    L = [f"# 紙上前向記錄（前向起點 {START}；規則見 stock_research/FORWARD_PAPER.md）\n",
-         "描述性：前向 6–12 個月檢定力很低，只作災難偵測與執行檢查；12 個月（2027-11）才套用原登記證偽條件。\n",
-         "| 市場 | 數據到 | Minervini 筆數（已平倉／未平倉） | Minervini 已平倉平均淨報酬 | XV 筆數（已平倉／未平倉） | XV 已平倉平均淨報酬 |",
-         "|---|---|---|---|---|---|"]
-    for mk, last, rows in summary:
-        cells = []
-        for st in ("Minervini", "VCP_XV"):
-            rs = [r for r in rows if r["strategy"] == st]
-            cl = [float(r["ret_net"]) for r in rs if r["status"] == "closed"]
-            cells += [f"{len(cl)}／{len(rs) - len(cl)}", f"{sum(cl) / len(cl):+.1%}" if cl else "—"]
-        L.append(f"| {mk} | {last} | " + " | ".join(cells) + " |")
-    (OUT / "README.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+        (OUT / f"ledger_{mk}.asof").write_text(f"{last}\n", encoding="utf-8")
+    if not args.dry_run and not args.market:      # 單一市場日更時由工作流程最後一步統一重建摘要（避免並行 job 互相覆寫）
+        (OUT / "README.md").write_text(summarize(), encoding="utf-8")
 
 
 if __name__ == "__main__":
