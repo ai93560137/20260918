@@ -5,7 +5,8 @@
 - 標 HH／LH（同上一個擺動高比）、HL／LL（同上一個擺動低比）。
 - 一段升勢：由起步低點開始，一路 HH＋HL；出現 LL（跌穿最近 HL）＝結構破壞，升段完結喺之前最高點，跌段由嗰度開始。跌段反過嚟（出現 HH 升穿最近 LH）。
 - 畫最近 N 段（包括而家未完嗰段）嘅斐波那契：升段由頂向下量回撤、跌段由底向上量反彈。
-用法：python3 research/tianfu_charts/xau_structure.py <h1.csv> <輸出.png> [段數=3] [K=2]
+使用者 11-06：「週線結構圖放上網頁，你理解無錯。日、月、H4、H1 都係咁做」。
+用法：python3 research/tianfu_charts/xau_structure.py <h1.csv> <輸出.png> <M|W|D|H4|H1> [段數=3] [K=2]
 """
 import json
 import os
@@ -20,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import xau_fib as XF  # noqa: E402
 
 RATIOS = (0.236, 0.382, 0.5, 0.618, 0.786)
+NAMES = {"M": "月線", "W": "週線", "D": "日線", "H4": "4 小時線", "H1": "1 小時線"}
 LEG_COLORS = ("#ffb74d", "#4dd0e1", "#ba68c8", "#81c784")
 
 
@@ -60,8 +62,9 @@ def legs(piv, H, L):
             if typ == "H" and H[i] >= H[ext]:
                 ext = i
             if typ == "L":
-                if guard is not None and price < guard and ext != start:
-                    res.append((start, ext, True))
+                if guard is not None and price < guard:      # 同一根 K 可以又係擺動高又係擺動低（外包線），唔可以要求 ext≠start，否則會卡死
+                    if ext != start:
+                        res.append((start, ext, True))
                     start, up = ext, False
                     ext = i; guard = None
                     continue
@@ -70,8 +73,9 @@ def legs(piv, H, L):
             if typ == "L" and L[i] <= L[ext]:
                 ext = i
             if typ == "H":
-                if guard is not None and price > guard and ext != start:
-                    res.append((start, ext, False))
+                if guard is not None and price > guard:
+                    if ext != start:
+                        res.append((start, ext, False))
                     start, up = ext, True
                     ext = i; guard = None
                     continue
@@ -88,20 +92,24 @@ def legs(piv, H, L):
 
 def main():
     src, out = sys.argv[1], sys.argv[2]
-    nlegs = int(sys.argv[3]) if len(sys.argv) > 3 else 3
-    k = int(sys.argv[4]) if len(sys.argv) > 4 else 2
+    tf = sys.argv[3] if len(sys.argv) > 3 else "W"
+    nlegs = int(sys.argv[4]) if len(sys.argv) > 4 else 3
+    k = int(sys.argv[5]) if len(sys.argv) > 5 else 2
     for f in ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"):
         if os.path.exists(f):
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
-    bars, asof = XF.load(src, "W")
+    bars, asof = XF.load(src, tf)
     keys = sorted(bars)
     O = [bars[x][0] for x in keys]; H = [bars[x][1] for x in keys]; L = [bars[x][2] for x in keys]; C = [bars[x][3] for x in keys]
     piv = pivots(H, L, k)
     allg = legs(piv, H, L)
     # 大段：幅度 ≥ 段尾價 12%（濾走一兩週嘅細段），取最近 nlegs-1 段；再加「最近一浪」＝而家呢段入面最後一個反向擺動點 → 而家極端
-    big = [g for g in allg if abs((H[g[1]] - L[g[0]]) if g[2] else (H[g[0]] - L[g[1]])) >= 0.12 * C[g[1]]]
+    # 大段門檻＝3 × ATR(14)（各時間框通用；週線約等於幅度 12%）
+    trs = [max(H[i], C[i - 1]) - min(L[i], C[i - 1]) for i in range(max(1, len(C) - 14), len(C))]
+    atr = sum(trs) / len(trs)
+    big = [g for g in allg if abs((H[g[1]] - L[g[0]]) if g[2] else (H[g[0]] - L[g[1]])) >= 3 * atr]
     lg = big[-(nlegs - 1):] if nlegs > 1 else big[-1:]
     if allg:
         a, b, up = allg[-1]
@@ -139,14 +147,23 @@ def main():
             labels.append((p, f"區間{li + 1} {r:g}  {p:,.0f}", dict(facecolor="#131722", edgecolor=col, linewidth=1.2)))
         kind = "升段回撤" if up else "跌段反彈"
         tag = "（最近一浪）" if li == len(lg) - 1 and len(lg) > 1 and a != lg[-2][0] and b == lg[-2][1] else ("（未完）" if b == n - 1 or b == lg[-1][1] else "")
-        info.append({"leg": li + 1, "kind": kind + tag, "from": [keys[a].strftime("%Y-%m-%d"), L[a] if up else H[a]],
-                     "to": [keys[b].strftime("%Y-%m-%d"), H[b] if up else L[b]], "levels": {f"{r:g}": round(p, 1) for r, p in lvl.items()}})
+        info.append({"leg": li + 1, "kind": kind + tag, "from": [keys[a].strftime("%Y-%m-%d %H:%M"), L[a] if up else H[a]],
+                     "to": [keys[b].strftime("%Y-%m-%d %H:%M"), H[b] if up else L[b]], "levels": {f"{r:g}": round(p, 1) for r, p in lvl.items()}})
         ax.annotate(f"區間{li + 1}：{kind}{tag}", ((a + b) / 2, (H[b] + L[a]) / 2 if up else (H[a] + L[b]) / 2),
                     color=col, fontsize=11, fontweight="bold", ha="center")
     ax.axhline(C[-1], color="#2962ff", ls=":", linewidth=0.8)
     labels.append((C[-1], f"現價  {C[-1]:,.0f}", dict(facecolor="#2962ff", edgecolor="none")))
-    ticks = [i for i in range(first, n) if i == first or (keys[i].month != keys[i - 1].month and keys[i].month % 3 == 1)]
-    ax.set_xticks(ticks); ax.set_xticklabels([keys[i].strftime("%Y/%m") for i in ticks], color="#bbbbbb", fontsize=8)
+    if tf == "M":
+        ticks, tfmt = [i for i in range(first, n) if keys[i].month == 1], "%Y"
+    elif tf == "W":
+        ticks, tfmt = [i for i in range(first, n) if i == first or (keys[i].month != keys[i - 1].month and keys[i].month % 3 == 1)], "%Y/%m"
+    elif tf == "D":
+        ticks, tfmt = [i for i in range(first, n) if i == first or keys[i].month != keys[i - 1].month], "%Y/%m"
+    elif tf == "H4":
+        ticks, tfmt = [i for i in range(first, n) if keys[i].hour == 0 and keys[i].weekday() == 0], "%m/%d"
+    else:
+        ticks, tfmt = [i for i in range(first, n) if keys[i].hour == 0], "%m/%d"
+    ax.set_xticks(ticks); ax.set_xticklabels([keys[i].strftime(tfmt) for i in ticks], color="#bbbbbb", fontsize=8)
     ax.tick_params(axis="y", colors="#dddddd", labelsize=10)
     ax.set_xlim(first - 2, n + XL * 4)
     lo_v, hi_v = min(L[first:]), max(H[first:]); pad = (hi_v - lo_v) * 0.04
@@ -162,11 +179,11 @@ def main():
     ax.grid(color="#2a2e39", linewidth=0.5)
     for s in ax.spines.values():
         s.set_color("#2a2e39")
-    ax.set_title(f"XAUUSD 黃金 週線・市場結構（HH／HL／LH／LL，分形 {k} 根）揀斐波那契區間（{len(lg)} 個區間）　截至 {asof:%Y-%m-%d %H:%M}（MT5 伺服器時間）",
+    ax.set_title(f"XAUUSD 黃金 {NAMES[tf]}・市場結構（HH／HL／LH／LL，分形 {k} 根）揀斐波那契區間（{len(lg)} 個區間）　截至 {asof:%Y-%m-%d %H:%M}（MT5 伺服器時間）",
                  color="#eeeeee", fontsize=12)
     plt.tight_layout()
     plt.savefig(out, facecolor=fig.get_facecolor())
-    print(json.dumps({"legs": info, "last": C[-1], "asof": str(asof)}, ensure_ascii=False))
+    print(json.dumps({"tf": tf, "legs": info, "last": C[-1], "asof": str(asof)}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

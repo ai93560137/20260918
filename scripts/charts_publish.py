@@ -97,10 +97,28 @@ def xau_fib(tf):
     return make
 
 
+def xau_struct(tf):
+    """[11-06] 市場結構（HH／HL／LH／LL）揀斐波那契區間：research/tianfu_charts/xau_structure.py。"""
+    def make(tmp, bucket):
+        src = xau_h1_csv(_XAU_H1.setdefault("dir", tempfile.mkdtemp()), bucket)
+        png = os.path.join(tmp, f"xau_struct_{tf.lower()}.png")
+        out = subprocess.run([sys.executable, os.path.join(ROOT, "research/tianfu_charts/xau_structure.py"), src, png, tf],
+                             check=True, capture_output=True, text=True)
+        return png, json.loads(out.stdout.strip().splitlines()[-1])
+    return make
+
+
+XAU_STRUCT_DESC = ("市場結構揀區間（使用者 11-06）：分形左右 2 根揀擺動高低，標 HH／HL（升勢）、LH／LL（跌勢）；升段一路 HH＋HL、跌穿最近 HL＝升段完結，"
+                   "跌段反過嚟。畫最近兩段大段（幅度 ≥ 3×ATR14）同「最近一浪」（而家呢段入面最後一個反向擺動點 → 而家極端）嘅斐波那契；只畫圖，未回測。")
+
 XAU_DESC = ("波段＝轉勢點 → 之後最高／最低影線（使用者 11-05「區間是轉勢前，包影線」；收市穿最近擺動高／低點＝轉勢，分形左右 2 根確認；升勢量回撤、跌勢量反彈），劃 0.236–0.886 位同 50／100／200 均線；"
             "Dukascopy H1＋經紀 M1，MT5 伺服器時間（紐約 17:00 換日）。")
 
 CHARTS = [
+    # [天覆陣 11-06] 使用者「週線結構圖放上網頁，你理解無錯。日、月、H4、H1 都係咁做」
+    *[{"id": f"xau_struct_{tf.lower()}", "title": f"XAUUSD 黃金 {nm}・市場結構斐波那契", "team": "🌌 天覆陣",
+       "desc": XAU_STRUCT_DESC, "make": xau_struct(tf)}
+      for tf, nm in (("M", "月線"), ("W", "週線"), ("D", "日線"), ("H4", "4 小時線"), ("H1", "1 小時線"))],
     # [天覆陣 11-05] 使用者「參考龍飛陣，用斐波那契回撤分析圖在月、週、日、H4」：XAUUSD 四個時間框（排頭，龍飛陣圖排尾出圖仍然最新）
     {"id": "xau_fib_m", "title": "XAUUSD 黃金 月線・斐波那契回撤", "team": "🌌 天覆陣",
      "desc": XAU_DESC, "make": xau_fib("M")},
