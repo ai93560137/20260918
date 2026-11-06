@@ -38,6 +38,13 @@
    "inputs": {}
   },
   {
+   "name": "zhuge-yunchui-quotes-move",
+   "time_zone": "America/New_York",
+   "schedule": "10 18 * * 1-5",
+   "workflow": "yunchui_quote_kicks.yml",
+   "inputs": {}
+  },
+  {
    "name": "zhuge-ops-notify-1435",
    "time_zone": "Asia/Hong_Kong",
    "schedule": "35 14 * * 1-5",
