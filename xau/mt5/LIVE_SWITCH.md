@@ -11,8 +11,8 @@
 | 權杖 | 三個服務 `WEBHOOK_SECRET_TOKEN` 已設，但值＝EA 預設 `123456`（公開 repo，handoff §6.4b；使用者 10-21 確認 demo 階段接受） | `xau/mt5/TianfuExecutor.mq5` 第 31 行 |
 | control.json | 三個都 mode RUN、`principal_hkd` 已設（demo 用數）、**`live_account` 空** | `gcp_agent.py cat --object xau/control.json`（只睇欄位有冇） |
 | 戶口總階梯 | 程式已上線（EA v0.35+ `InpBotMagics` 合計、服務 scope=account）；**TEST_PLAN §4 0b「兩產品各一張、合計穿 PAUSE 線 → 兩服務同時停開新倉」未有紀錄**，TEST_RESULTS 只有 10-20 單產品測試 8（本金暫改 100 → −27.8% → STOP＋平倉，scope=own） | `xau/mt5/TEST_RESULTS.md` 測試 8；`ACCOUNT_LADDER.md` §「轉真倉前置」 |
-| demo 成績（10-21 起） | 921：32 張 12 賺 2 保本 18 蝕，累計 −154.55 HKD（今日 +53）；932 跟單：3 張全 TP1，+96.74；931 S1：0 張；922 EURUSD：demo 落單、紙上標準（IDEAS #28）未達 | `TEST_RESULTS.md`、狀態 JSON |
-| 預先登記門檻 | 921 期望值仍負；932 3／30；931 冇樣本；922 未達 #28 | `IDEAS.md` #123／#126／#28、`TEST_PLAN.md` |
+| demo 成績（10-21 起） | 921：32 張 12 賺 2 保本 18 蝕，累計 −154.55 HKD（今日 +53）；932 跟單：3 張全 TP1，+96.74；931 S1：0 張；922 EURUSD：demo 落單、紙上標準（IDEAS #234）未達 | `TEST_RESULTS.md`、狀態 JSON |
+| 預先登記門檻 | 921 期望值仍負；932 3／30；931 冇樣本；922 未達 #234 | `IDEAS.md` #123／#126／#234、`TEST_PLAN.md` |
 
 ## 0b. 使用者決定（10-23，經總指揮）
 - **四本全部轉真倉**：921、922 EURUSD、931 S1、932 跟單，全部 0.01 手起；學生照影子。（天覆陣建議 922 留 demo，使用者決定全轉。）

@@ -1,6 +1,6 @@
-"""[IDEAS #229] 921「B1」規則執行影子前向（使用者 11-05「登記 B1 做 #229 開始計」）。
-樣本外：2026-11-05 20:00 UTC 之後嘅 921 決定。計法同 #228（ai_zone_921.replay，B1／B0 一字不改）。
-判（預先登記）：見 IDEAS #229。用法：python3 research/strategy_search/b1_forward.py → B1_FORWARD.md"""
+"""[IDEAS #238] 921「B1」規則執行影子前向（使用者 11-05「登記 B1 做 #238 開始計」）。
+樣本外：2026-11-05 20:00 UTC 之後嘅 921 決定。計法同 #237（ai_zone_921.replay，B1／B0 一字不改）。
+判（預先登記）：見 IDEAS #238。用法：python3 research/strategy_search/b1_forward.py → B1_FORWARD.md"""
 import datetime as dt
 import os
 import sys
@@ -29,7 +29,7 @@ def hk(ts):
 def main():
     g = F.gb.Gcs()
     decs = [d for d in F.load_decisions(g) if d[0] >= START]
-    out = ["# 921 B1 規則執行影子前向（IDEAS #229）", "",
+    out = ["# 921 B1 規則執行影子前向（IDEAS #238）", "",
            f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；樣本外由 2026-11-05 20:00 UTC 起；"
            "決策日誌每日 04:57 UTC 先寫上一日，所以遲一日", "",
            "- B1：下一分鐘市價入、止蝕＝AI 止蝕位再推遠 1 美元、止賺＝規則 2R、AI 唔准干預、24 小時到鐘；B0＝現行（AI 止蝕／止賺）", ""]
@@ -54,7 +54,7 @@ def main():
         ok = {"①≥60張": True, "②平均R≥+0.10": s1["avg"] >= 0.10, "③PF≥1.2": s1["pf"] >= 1.2,
               "④高過B0≥0.10R": s1["avg"] - s0["avg"] >= 0.10, "⑤最大連敗≤8": max_losing(b1) <= 8,
               "⑥前後半都>0": h1["avg"] > 0 and h2["avg"] > 0}
-        out += ["## 判（預先登記 IDEAS #229）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
+        out += ["## 判（預先登記 IDEAS #238）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
                 "- " + ("✅ 達標 → 只出提案（B1 執行模式 env 預設關；轉真倉固定細注、一次一條；PR＋總指揮 dry-run＋使用者批）"
                         if all(ok.values()) else "❌ 唔達：" + "、".join(k for k, v in ok.items() if not v) + "；唔用、寫原因"), ""]
     else:
