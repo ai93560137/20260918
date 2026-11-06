@@ -97,9 +97,18 @@ def is_rebal(cal: pd.DatetimeIndex, i: int, freq: str) -> bool:
     return False
 
 
-def target(w: dict, R: pd.DataFrame, i: int) -> dict:
-    """當天有回報（已上市）的資產才配；未上市的權重按比例攤給其餘（P5 INDA 2012 前）。"""
-    have = {t: x for t, x in w.items() if not np.isnan(R[t].iloc[i]) or (i + 1 < len(R) and not np.isnan(R[t].iloc[i + 1]))}
+def first_idx(R: pd.DataFrame) -> dict:
+    """每檔資產第一個有回報的日曆位置（還沒上市 = 很大）。"""
+    out = {}
+    for t in R.columns:
+        nz = np.flatnonzero(R[t].notna().to_numpy())
+        out[t] = int(nz[0]) if len(nz) else 10 ** 9
+    return out
+
+
+def target(w: dict, avail: set) -> dict:
+    """已上市（已有回報）的資產才配；未上市的權重按比例攤給其餘（P5 INDA 2012 前）。"""
+    have = {t: x for t, x in w.items() if t in avail}
     tot = sum(have.values())
     return {t: x / tot for t, x in have.items()} if tot else {}
 
@@ -113,10 +122,16 @@ def simulate(name: str, w: dict, cal, R: pd.DataFrame, A: pd.DataFrame, freq: st
     out = np.zeros(len(cal))
     turnover = 0.0
     sma = A.rolling(SMA_N, min_periods=SMA_N).mean() if trend else None
+    fi = first_idx(R)
+    avail_prev = None
     for i in range(len(cal)):
-        rb = is_rebal(cal, i, "month" if trend else freq)
+        # 程式修正（2026-11-06，見 ETF_CORE_BACKTEST.md 第八節）：資產當天開始有回報時也重設權重，
+        # 否則第一日未有回報的資產（2800.HK）要等到下一個再平衡日才買入
+        avail = {t for t in w if fi[t] <= i}
+        rb = is_rebal(cal, i, "month" if trend else freq) or avail != avail_prev
         if rb:
-            tgt = target(w, R, i)
+            avail_prev = avail
+            tgt = target(w, avail)
             if trend and i > 0:
                 tgt2 = {}
                 for t, x in tgt.items():
