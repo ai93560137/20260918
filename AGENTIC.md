@@ -258,13 +258,13 @@ ssh ibdata 'sudo -n true 2>&1 | head -1; cat /home/hengkychansinghing/ibc/config
 > **2026-10-16 更新**：VM 已搬去台灣 **`futu-data-tw`（asia-east1-b）**，因為同一部機要跑 🐉 龍飛陣（`hsi_ai_trader`，Claude API 喺香港唔支援）。
 > 香港 `futu-data` 服務已 disable，**2026-11-07 使用者已刪除該 VM**。龍飛陣 `TRD_ENV` 由 repo `settings.env` 定（而家 SIMULATE），風控階梯／watchdog 見 `tradingview/RUNBOOK_FUTU_VM.md`「🐉 龍飛陣」。
 
-方案一：富途 OpenD（Linux 命令列版）、`auto_risk`、`push_to_gcp`、`iv_push` 由使用者部機搬去 Google VM `futu-data`
-（`asia-east2-a`、`e2-small`、Debian 12），用 systemd 開機自動起、死咗自動重開。部機只留 MT5（EA）同 `mt5_push`。
+方案一：富途 OpenD（Linux 命令列版）、`auto_risk`、`push_to_gcp`、`iv_push` 由使用者部機搬去 Google VM（最初香港 `futu-data`，10-16 起台灣 `futu-data-tw`：
+`asia-east1-b`、而家 `e2-standard-2` 8GB＋2GB swap、Debian 12），用 systemd 開機自動起、死咗自動重開。部機只留 MT5（EA）同 `mt5_push`。
 詳細步驟見 `tradingview/RUNBOOK_FUTU_VM.md`。
 
 | 位置 | 跑乜 | 點樣自動 |
 |---|---|---|
-| VM `futu-data` | OpenD（tmux session `opend`）、`zhuge-auto-risk`、`zhuge-futu-push`、`zhuge-iv-push` | systemd；OpenD 由 `gcp_ib/vm_futu/opend_tmux.sh` 自動答登入提示 |
+| VM `futu-data-tw` | OpenD（tmux session `opend`）、`zhuge-auto-risk`、`zhuge-futu-push`、`zhuge-iv-push` | systemd；OpenD 由 `gcp_ib/vm_futu/opend_tmux.sh` 自動答登入提示 |
 | VM 自動更新 | `zhuge-update.timer` 每 10 分鐘跟 `ops/user-machine`，重套 service／timer、重開推送服務（OpenD 唔重開） | 紀錄 `~/zhuge/update.log` |
 | 使用者部機（Windows） | MT5（`ZHUGE_MT5_EXE`）、`mt5_push`（`ZHUGE_DAEMONS=mt5_push`）、Chrome | 啟動資料夾 `ZhugeStartAll.cmd` → `gcp_ib\start_all.ps1`、`Chrome.lnk` |
 
