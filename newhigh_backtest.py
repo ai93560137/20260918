@@ -39,12 +39,7 @@ MARKETS = {
 }
 
 
-def load_series_any(market: str, t: str) -> dict:
-    """指數／ETF 日線：先找 data/（已第二來源檢查），沒有就讀全市場 data_full/<market>/（新市場）。"""
-    try:
-        return md.load_series(t)
-    except Exception:
-        pass
+def _load_full_series(market: str, t: str) -> dict:
     p = ROOT / "data_full" / market / f"{t.replace('^', '_')}.csv.gz"
     df = pd.read_csv(p, compression="gzip").dropna(subset=["Close"])
     df = df[df["Close"] > 0]
@@ -53,6 +48,32 @@ def load_series_any(market: str, t: str) -> dict:
         ac = ac if ac == ac and ac > 0 else c
         out[date.fromisoformat(d)] = (o * ac / c if o == o and o > 0 else ac, ac, c)
     return out
+
+
+def load_series_any(market: str, t: str) -> dict:
+    """指數／ETF 日線：先找 data/（已第二來源檢查），沒有就讀全市場 data_full/<market>/（新市場）。
+    data/ 版較舊而 data_full/ 有更新的日子時（每日全市場管線，stock_research/FULLMARKET_DAILY_PIPELINE.md），
+    只把 data/ 最後一日之後的那幾日接上去（按重疊日的還原比例換算）；data/ 已有的歷史一律不改。"""
+    try:
+        base = md.load_series(t)
+    except Exception:
+        return _load_full_series(market, t)
+    try:
+        full = _load_full_series(market, t)
+    except Exception:
+        return base
+    last = max(base)
+    newer = sorted(d for d in full if d > last)
+    if not newer:
+        return base
+    k = full[last][1] / base[last][1] if last in full and base[last][1] else 1.0
+    out = dict(base)
+    for d in newer:
+        o, c, raw = full[d]
+        out[d] = (o / k, c / k, raw)
+    return out
+
+
 WINDOWS = {3: 63, 6: 126, 9: 189, 12: 252}
 MAX_HOLD = 252
 X1_DAYS = 20

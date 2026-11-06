@@ -45,6 +45,11 @@ def main() -> None:
 
     pool = [l.strip() for l in (ROOT / "universes" / "full" / f"{args.market}_pool.txt").read_text(
         encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")]
+    # 基準 ETF 與指數也抓（每日全市場管線用來排交易日曆；newhigh_backtest.load_series_any 會把較新的日子接上 data/ 版）
+    sys.path.insert(0, str(ROOT))
+    from newhigh_backtest import MARKETS as NB_MARKETS
+    cfg = NB_MARKETS.get(args.market, {})
+    pool += [b for b in (cfg.get("etf"), cfg.get("idx")) if b and b not in pool]
     out = ROOT / "data_full" / args.market
     out.mkdir(parents=True, exist_ok=True)
     failed_p = out / "_failed.txt"
