@@ -187,6 +187,33 @@
    "schedule": "40 7 * * 2-6",
    "workflow": "longfei_analyst_data.yml",
    "inputs": {}
+  },
+  {
+   "name": "stock-fullmarket-asia",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "20 19 * * 1-5",
+   "workflow": "fullmarket_daily.yml",
+   "inputs": {
+    "group": "asia"
+   }
+  },
+  {
+   "name": "stock-fullmarket-americas",
+   "time_zone": "America/New_York",
+   "schedule": "40 18 * * 1-5",
+   "workflow": "fullmarket_daily.yml",
+   "inputs": {
+    "group": "americas"
+   }
+  },
+  {
+   "name": "stock-forward-monthly",
+   "time_zone": "Asia/Hong_Kong",
+   "schedule": "25 11 1 * *",
+   "workflow": "fullmarket_daily.yml",
+   "inputs": {
+    "group": "monthly"
+   }
   }
  ]
 }
