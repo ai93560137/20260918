@@ -1,0 +1,24 @@
+name: IDEAS 編號重複檢查
+
+# 2026-11-06（PR #649 之後，總指揮定）：各陣同日各自加新號撞咗 6 次。
+# PR 檢查合併後結果（pull_request 預設 checkout refs/pull/N/merge，已包預設分支最新內容）；
+# push 到預設分支再檢查一次，攔兩個 PR 前後腳合併。號段見 IDEAS.md 規則 7。
+on:
+  pull_request:
+    paths: ['IDEAS.md', 'scripts/check_ideas_numbers.py']
+  push:
+    branches: ['claude/gcp-trading-v12-rewrite-bz75t2']
+    paths: ['IDEAS.md', 'scripts/check_ideas_numbers.py']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 檢查 IDEAS.md 重複編號
+        run: python3 scripts/check_ideas_numbers.py IDEAS.md
