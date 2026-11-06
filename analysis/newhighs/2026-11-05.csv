@@ -1,0 +1,69 @@
+date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_above_ma200,longest_months,streak_window,streak_longest,yahoo_ticker
+2026-11-05,hk,港股,12,公用,0002.HK,中電控股,80,79.8,7.0,12,1,1,0002.HK
+2026-11-05,hk,港股,9,公用,0002.HK,中電控股,80,79.8,7.0,12,1,1,0002.HK
+2026-11-05,hk,港股,6,公用,0002.HK,中電控股,80,79.8,7.0,12,1,1,0002.HK
+2026-11-05,hk,港股,3,公用,0002.HK,中電控股,80,79.8,7.0,12,1,1,0002.HK
+2026-11-05,hk,港股,3,公用,0006.HK,電能實業,64.5,64.35,9.0,3,2,2,0006.HK
+2026-11-05,hk,港股,3,地產,0823.HK,領展房產基金,41.08,40.14,9.9,3,2,2,0823.HK
+2026-11-05,hk,港股,3,地產,1113.HK,長實集團,49.16,48.56,7.4,3,1,1,1113.HK
+2026-11-05,hk,港股,3,工業,0066.HK,港鐵公司,34.1,33.92,5.4,3,1,1,0066.HK
+2026-11-05,hk,港股,3,必需消費,9633.HK,農夫山泉,45.42,45.18,4.8,3,1,1,9633.HK
+2026-11-05,hk,港股,3,科技,1810.HK,小米集團－Ｗ,31.3,29.14,6.3,3,1,1,1810.HK
+2026-11-05,hk,港股,3,金融,1299.HK,友邦保險,78.85,78.8,0.8,3,1,1,1299.HK
+2026-11-05,us,美股,12,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
+2026-11-05,us,美股,12,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,12,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
+2026-11-05,us,美股,12,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
+2026-11-05,us,美股,12,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
+2026-11-05,us,美股,12,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
+2026-11-05,us,美股,12,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
+2026-11-05,us,美股,12,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,9,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
+2026-11-05,us,美股,9,科技,JKHY,Jack Henry & Associates,180.26,179.36,17.6,9,1,1,JKHY
+2026-11-05,us,美股,9,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
+2026-11-05,us,美股,9,科技,TYL,Tyler Technologies,430.37,425.75,28.2,9,2,2,TYL
+2026-11-05,us,美股,9,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
+2026-11-05,us,美股,9,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,9,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
+2026-11-05,us,美股,9,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
+2026-11-05,us,美股,9,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
+2026-11-05,us,美股,9,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,6,科技,BR,Broadridge Financial Solutions,193.92,193.67,18.3,6,2,2,BR
+2026-11-05,us,美股,6,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
+2026-11-05,us,美股,6,科技,FISV,Fiserv,62.74,62.67,15.0,6,2,2,FISV
+2026-11-05,us,美股,6,科技,JKHY,Jack Henry & Associates,180.26,179.36,17.6,9,2,1,JKHY
+2026-11-05,us,美股,6,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
+2026-11-05,us,美股,6,科技,TYL,Tyler Technologies,430.37,425.75,28.2,9,2,2,TYL
+2026-11-05,us,美股,6,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
+2026-11-05,us,美股,6,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,6,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
+2026-11-05,us,美股,6,醫療,STE,STERIS,254.12,249.28,13.8,6,2,2,STE
+2026-11-05,us,美股,6,醫療,UHS,Universal Health Services,198.59,197.63,12.6,6,2,2,UHS
+2026-11-05,us,美股,6,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
+2026-11-05,us,美股,6,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
+2026-11-05,us,美股,6,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,6,必需消費,BF-B,Brown-Forman,30.96,30.93,15.7,6,2,2,BF-B
+2026-11-05,us,美股,6,金融,ERIE,Erie Indemnity,285.63,280.5,18.2,6,2,2,ERIE
+2026-11-05,us,美股,3,科技,BR,Broadridge Financial Solutions,193.92,193.67,18.3,6,2,2,BR
+2026-11-05,us,美股,3,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
+2026-11-05,us,美股,3,科技,FISV,Fiserv,62.74,62.67,15.0,6,3,2,FISV
+2026-11-05,us,美股,3,科技,JKHY,Jack Henry & Associates,180.26,179.36,17.6,9,2,1,JKHY
+2026-11-05,us,美股,3,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
+2026-11-05,us,美股,3,科技,TYL,Tyler Technologies,430.37,425.75,28.2,9,2,2,TYL
+2026-11-05,us,美股,3,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
+2026-11-05,us,美股,3,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,3,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
+2026-11-05,us,美股,3,醫療,STE,STERIS,254.12,249.28,13.8,6,2,2,STE
+2026-11-05,us,美股,3,醫療,UHS,Universal Health Services,198.59,197.63,12.6,6,2,2,UHS
+2026-11-05,us,美股,3,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
+2026-11-05,us,美股,3,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
+2026-11-05,us,美股,3,公用,EVRG,Evergy,87.41,86.73,7.4,3,1,1,EVRG
+2026-11-05,us,美股,3,公用,WEC,WEC Energy,118.32,118.31,7.0,3,2,2,WEC
+2026-11-05,us,美股,3,金融,AFL,Aflac,126.24,126.18,9.3,3,1,1,AFL
+2026-11-05,us,美股,3,金融,CBOE,Cboe Global Markets,353.07,351.58,20.5,3,1,1,CBOE
+2026-11-05,us,美股,3,金融,ERIE,Erie Indemnity,285.63,280.5,18.2,6,2,2,ERIE
+2026-11-05,us,美股,3,金融,WRB,W. R. Berkley,76.98,76.75,11.6,3,2,2,WRB
+2026-11-05,us,美股,3,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,3,工業,VRSK,Verisk Analytics,211.47,204.19,14.1,3,1,1,VRSK
+2026-11-05,us,美股,3,必需消費,BF-B,Brown-Forman,30.96,30.93,15.7,6,2,2,BF-B
+2026-11-05,us,美股,3,必需消費,COST,Costco Wholesale,1065.59,1053.66,9.9,3,2,2,COST
