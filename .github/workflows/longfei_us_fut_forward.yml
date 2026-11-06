@@ -1,0 +1,41 @@
+name: 龍飛陣 MNQ／MES 前向測試（規則版，IDEAS #230）
+
+# 使用者 11-06「B 先做」：台灣 OpenD 冇 CME 報價，先用 yfinance 延遲數據跑 R295 規則版前向測試。只係紙上，唔落單。
+on:
+  schedule:
+    - cron: '45 0 * * 2-6'    # 08:45 HKT 星期二至六（美股收市後）
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: 用 5 分鐘數據補最近 60 日（yes／留空）
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: longfei-us-fut-forward
+  cancel-in-progress: false
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Forward test
+        env:
+          BACKFILL: ${{ github.event.inputs.backfill }}
+        run: python3 research/longfei_rulesim/us_fut_forward.py ${BACKFILL:+--backfill}

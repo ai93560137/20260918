@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# [R187][R188][R199][R202] futu-data VM（Debian 12，香港區）一次性安裝：富途 OpenD（Linux 命令列版）＋ auto_risk ＋ 富途推送腳本＋自動更新。
+# [R187][R188][R199][R202] futu-data-tw VM（Debian 12，台灣 asia-east1-b；香港舊機 11-07 已刪）一次性安裝：富途 OpenD（Linux 命令列版）＋ auto_risk ＋ 富途推送腳本＋自動更新。
 # 只讀：讀持倉同報價、推上 Cloud Run；唔落單、唔 unlock_trade。由使用者喺瀏覽器 SSH 跑：
 #   bash ~/20260918/gcp_ib/vm_futu/setup.sh
 # 前置：OpenD 已解壓到 ~/opend（入面有 FutuOpenD 同 FutuOpenD.xml）；~/zhuge/env 已填好（見 env.example）。

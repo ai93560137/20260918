@@ -23,7 +23,7 @@
 | 指數套利 | 🚫 不換（使用者 10-14：已冇用） | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | — | — |
 | 🥇 XAUUSD GCP and TV | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
-| 🖥️ 富途數據 VM（10-16 起 futu-data-tw，asia-east1-b；香港 futu-data 已停服務、保留待使用者刪；10-15 起推 GCS `futu/risk/latest.json`，改推送內容經 `gcp_ib/vm_futu/settings.env` PR） | `session_01AQNMTZvQodzptWVui6deqY`（總指揮 10-15 開） | — | `claude/futu-vm-setup` | `AGENTIC.md`「VM：futu-data」、`tradingview/RUNBOOK_FUTU_VM.md` | — |
+| 🖥️ 富途數據 VM（10-16 起 futu-data-tw，asia-east1-b；香港 futu-data 已於 11-07 由使用者刪除（刪前檢查：服務全停、timer／opend disabled、最後更新 10-16）；10-15 起推 GCS `futu/risk/latest.json`，改推送內容經 `gcp_ib/vm_futu/settings.env` PR） | `session_01AQNMTZvQodzptWVui6deqY`（總指揮 10-15 開） | — | `claude/futu-vm-setup` | `AGENTIC.md`「VM：futu-data」、`tradingview/RUNBOOK_FUTU_VM.md` | — |
 | 🏦 債券每日快報（美債 Telegram，`bond_daily.yml` HKT 週二至六 07:30） | `session_013x5qHyMDisW7VCLNo6w88x`（10-15 總指揮開） | `session_01WrfzzWWLTysdSLJNZ3Mh5u`（美國國債數據與股票市場關係） | `claude/us-intl-data-stock-market-vgt0yi` | `handoff/債券快報.md`（該分支 518b054） | —（冇 Routine，Actions 排程） |
 | 🐉 龍飛陣（AI 決策：HSI＋美股 ETF SPY／QQQ／DIA，10-16 22:20 起喺 futu-data-tw 跑，全部富途模擬戶口；2026-10-16 成立） | `session_0139SPVaaCjhGQM81SipbPgp` | — | `claude/hsi-ai-trader` | `handoff/龍飛陣.md` | —（未有 Routine） |
 | 🐯 虎翼（大跌股賣 put；使用者 10-30 成立，10-31 加入總指揮白名單；實倉規則照虎翼草案） | `session_01Mt8CWjLKUQw2jyTNk48rrS` | — | `claude/huyi-bigdrop-options` | `handoff/虎翼.md` | ✅（美股 06:17、港股 19:41 掃描） |
