@@ -1,9 +1,9 @@
-"""[IDEAS #228] 921「AI 揀位、規則執行」（B 方案）重播。
+"""[IDEAS #237] 921「AI 揀位、規則執行」（B 方案）重播。
 樣本同 #212（xau/decisions OPEN，用放闊前 AI 原值；經紀 M1＋Dukascopy 補缺）。
 B0 現行（市價、AI stop／target）；B1 市價、SL＝AI stop 外 1 美元、TP 2R；
 B2（主判）限價回調 0.3×d0、30 分鐘 TTL、SL＝AI stop 外 1 美元、TP 2R；B3 同 B2 回調 0.5×d0。
 保守：限價成交嗰根只查 SL；同一根 SL／TP 都掂當 SL；24 小時到鐘走；每張扣 0.5 美元。
-判（預先登記）：見 IDEAS #228。用法：python3 research/strategy_search/ai_zone_921.py → AI_ZONE_921.md"""
+判（預先登記）：見 IDEAS #237。用法：python3 research/strategy_search/ai_zone_921.py → AI_ZONE_921.md"""
 import datetime as dt
 import os
 import sys
@@ -76,7 +76,7 @@ def main():
     m1 = F.EF6.broker_bars(int(decs[0][0]) - 86400)
     m1, nd = F.merge_duka(g, m1, dt.datetime.fromtimestamp(decs[0][0] - 86400, dt.timezone.utc).date().isoformat())
     mid = decs[len(decs) // 2][0]
-    out = ["# 921「AI 揀位、規則執行」重播（IDEAS #228）", "",
+    out = ["# 921「AI 揀位、規則執行」重播（IDEAS #237）", "",
            f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；決策 OPEN {len(decs)} 個（經紀 M1，缺嘅 {nd} 分鐘用 Dukascopy 補）；"
            f"前半／後半以 {dt.datetime.fromtimestamp(mid, dt.timezone.utc):%m-%d %H:%M} UTC 分", "",
            "| 組 | 成交率 | 全部 | 前半 | 後半 | 做多 | 做空 |", "|---|---|---|---|---|---|---|"]
@@ -96,7 +96,7 @@ def main():
           "④成交率≥50%": w[3] >= 0.5, "⑤ΣR高過B0": w[0]["sum"] > b[0]["sum"]}
     out += ["", "## 前向（11-05 14:00 UTC 之後新決定，只作描述）", "",
             *[f"- {v}：{F.fmt(res[v][4])}" for v in VARIANTS],
-            "", "## 判（預先登記 IDEAS #228；主判 B2 對 B0）", "",
+            "", "## 判（預先登記 IDEAS #237；主判 B2 對 B0）", "",
             *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
             f"- B2 對 B0 平均 R {w[0]['avg'] - b[0]['avg']:+.3f} → "
             + ("✅ 達標 → 提案：zhuge-xau 加影子「區＋失效位」輸出同規則執行書（唔落單），前向 60 張再判" if all(ok.values())
