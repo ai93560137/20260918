@@ -29,3 +29,12 @@
 - [CXO Advisory：Hachemian 等 2013 止蝕同交易頻率](https://www.cxoadvisory.com/technical-trading/higher-measurement-frequency-and-stop-losses-for-trend-followers)、[Turtle 規則](https://tradingwithrayner.com/wp-content/uploads/2014/11/turtle-strategy-revised.pdf)：止蝕後要有新訊號或者創新高先再入場。摘要未見成績，未核實。11-05 真倉被移動止蝕平倉後，再升穿夜市高位先重開，做法一致。
 - 同我哋數據：IDEAS #228 用 1 分鐘數據驗「跌勢日日內企返 20 日均線做好」→ ❌，平均 −49.8 點／筆，差過隨機做好 −22.4。同 #224 一致：跌勢日做好係負期望，加均線企返條件冇幫助，反而更差。
 - 下一步：11-04 嗰類「日內轉勢做好」前向照計滿 10 筆；向使用者提案硬閘門（要批）。止蝕後再入場可以留做前向觀察，暫時唔登記。
+
+## 2026-11-06 網上研究：急升之後追好；VIX 急升期間動量 → IDEAS #229
+- [European Journal of Finance（White Rose）](https://eprints.whiterose.ac.uk/170132/3/European%20Journal%20of%20Finance%20accepted.pdf)：大幅變動之後回吐、細幅變動之後延續，同移動平均規則短期優勢有關（股票及主要指數，唔係期貨）。
+- [SentimenTrader：S&P 連兩日升 ≥1%](https://sentimentrader.com/blog/optimism-flat-as-buying-surrounds-holiday-break)：之後幾日上升機率 44%、平均 −0.3%（細樣本，軼事）。
+- [Grant、Wolf、Yu 美國指數期貨日內反轉 15 年](https://researchwith.montclair.edu/en/publications/intraday-price-reversals-in-the-us-stock-index-futures-market-a-1/)：反轉顯著，但扣買賣差成本後大減。
+- [HKBU：亞洲指數期貨對美股過度反應](https://scholars.hkbu.edu.hk/en/publications/do-the-prices-of-stock-index-futures-in-asia-overreact-to-us-mark/)：美股大變動後亞洲期貨過度反應，平靜期大減（同恒指夜市／開市相關，未用）。
+- [CXO Advisory](https://cxoadvisory.com/?p=22002)、[SentimenTrader 波動率轉變](https://sentimentrader.com/blog/fears-of-a-volatility-regime-change)：VIX 急升期間動量回報轉負、失敗嘅 VIX 急升多過真正崩盤（美股，冇恒指）。
+- 同我哋數據：IDEAS #229 升勢日兩日急升 ≥ 1.5 ATR 後隨機做好 −17.8 點／筆 vs 其他升勢日 +10.0，方向一致但只得 11 日、14/20 種子 → 樣本不足唔成立，前向觀察。
+- 下一步：急升後追好前向記錄；VIX 深紅期間 MHI 做好成績可以喺 journal 分開記（使用者 11-06 決定唔加金絲雀閘門）。
