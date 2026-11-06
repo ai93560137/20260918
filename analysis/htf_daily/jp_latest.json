@@ -18,15 +18,13 @@
   "vol": 0.8
  },
  "n_orders": 0,
- "n_open": 1,
- "n_closed": 0,
+ "n_open": 0,
+ "n_closed": 1,
  "mkt_ok": false,
  "mkt_filter": false,
  "fwd_start": "2026-10-13",
- "closed_avg": null,
- "closed_win": null,
+ "closed_avg": 0.0462,
+ "closed_win": 1.0,
  "orders_top": [],
- "positions": [
-  "4588.T 持有；停損 7030；浮動 +7.4%"
- ]
+ "positions": []
 }
