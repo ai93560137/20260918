@@ -213,5 +213,21 @@ _u = main.fund_unrealized({"run_hkt": "2026-11-07 05:59", "positions": [
 check("fund_unrealized：已到期週權唔入「HSI 恒指期權」", "HSI 恒指期權" not in _u["by_product"] and _u["total"] == 500 and _u["positions"] == 1,
       _u)
 
+print("\n=== [R259] 二次校對 ===")
+_x = main.fund_crosscheck(
+    {"run_hkt": "2026-11-07 05:59", "positions": [
+        {"code": "HK.HSI2611", "qty": -1, "open_price": 24520, "bid": 24635, "ask": 24649, "futu_pl": -6100},
+        {"code": "HK.MHI2611", "qty": 1, "open_price": 24000, "bid": 24100, "ask": 24100, "futu_pl": 0},
+        {"code": "HK.HSI261030C23750000", "qty": -1, "open_price": 35, "last": 1, "futu_pl": None}]},
+    {"daily_realized": {"2026-11-06 10:00": 1000.0, "2026-11-06 20:00": 500.0}, "daily_flows": {}},
+    "date,run_hkt,futu_equity,unrealized_total\n2026-11-05,2026-11-05 17:20,100000,0\n"
+    "2026-11-06,2026-11-06 17:20,101500,500\n2026-11-07,2026-11-07 17:20,102000,500\n")
+check("二次校對：HSI2611 富途同自己計一致唔標", not _x["unreal"]["rows"][0]["flag"], _x["unreal"]["rows"][0])
+check("二次校對：MHI 相差 5,000 標 ⚠", _x["unreal"]["rows"][1]["flag"])
+check("二次校對：已到期期權唔入", len(_x["unreal"]["rows"]) == 2)
+check("權益恆等式：11-06 平衡（Δ權益 1,500 = Δ未實現 500 + 已實現 1,000）", _x["equity"][0]["residual"] == 0 and not _x["equity"][0]["flag"],
+      _x["equity"])
+check("權益恆等式：20:00 成交計入下一段", _x["equity"][1]["realized"] == 500 and _x["equity"][1]["residual"] == 0, _x["equity"])
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

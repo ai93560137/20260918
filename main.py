@@ -1320,14 +1320,16 @@ def futu_pnl_report(doc, start=None, today=None):
         ccy = "USD" if code.startswith("US.") else "HKD"
         if oid not in fee_seen and to_float(fees.get(oid)):
             fee_seen.add(oid)
-            events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy)})
+            events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy),
+                           "hkt": t.strftime("%Y-%m-%d %H:%M")})
         book = lots.setdefault(code, [])
         while q and book and (book[0][0] > 0) != (q > 0):
             lq, lp, lt = book[0]
             take = min(abs(q), abs(lq))
             pnl = (px - lp) * take * mult * (1 if lq > 0 else -1)
             events.append({"date": t.date(), "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0,
-                           "trade": True, "hold_s": (t - lt).total_seconds()})        # [R214] 詳細統計用
+                           "trade": True, "hold_s": (t - lt).total_seconds(),        # [R214] 詳細統計用
+                           "hkt": t.strftime("%Y-%m-%d %H:%M")})
             lq = lq - take if lq > 0 else lq + take
             q = q + take if q < 0 else q - take
             if lq:
@@ -1384,11 +1386,28 @@ def futu_pnl_report(doc, start=None, today=None):
         flows[k] = flows.get(k, 0.0) + amt
     products = sorted({e["product"] for e in rows})
     stats = fund_detailed_stats(rows, start, today)
+    daily = {}                                                          # [R259] 二次校對：每日已實現淨額（只計期貨戶口產品）
+    for e in rows:
+        if e["product"] in FUND_SEC_PRODUCTS:
+            continue
+        k = e.get("hkt") or f"{e['date']} 00:00"                        # 有成交時間用時間（同 17:20 對帳快照對齊）
+        daily[k] = daily.get(k, 0.0) + e["gross"] - e["fee"]
+    flows_daily = {}                                                    # 只計期貨戶口外部出入金（资金调拨）；「其他」係權利金／結算，唔當出入金
+    for f in doc.get("cash_flows") or []:
+        if (not isinstance(f, dict) or not str(f.get("date", ""))[:10] or "期貨" not in str(f.get("account", ""))
+                or str(f.get("type")) not in ("资金调拨", "資金調撥")):
+            continue
+        amt = to_float(f.get("amount")) or 0.0
+        amt = -abs(amt) if "OUT" in str(f.get("dir", "")).upper() else amt
+        amt *= fx(str(f.get("ccy") or "HKD").upper())
+        flows_daily[str(f["date"])[:10]] = flows_daily.get(str(f["date"])[:10], 0.0) + amt
     return {"status": "ok", "start": str(start), "fetched_hkt": doc.get("fetched_hkt"), "since": doc.get("since"),
             "deals": len(deals), "products": products, "fx_usd_hkd": FUTU_USD_HKD, "periods": out, "stats": stats,
             "cash_flows": [{"month": m, "type": t, "amount": round(v, 2)} for (m, t), v in sorted(flows.items())]
             if FUND_REPORT_SHOW_FLOWS else [],
-            "warnings": warnings + [str(n) for n in doc.get("notes") or []]}
+            "warnings": warnings + [str(n) for n in doc.get("notes") or []],
+            "daily_realized": {k: round(v, 2) for k, v in sorted(daily.items())},
+            "daily_flows": {k: round(v, 2) for k, v in sorted(flows_daily.items())}}
 
 
 FUND_REPORT_CAPITAL_HKD = float(os.environ.get("FUND_REPORT_CAPITAL_HKD", "0") or 0)  # [R207] 回報率本金；0＝用富途期貨戶口現時權益
@@ -1439,6 +1458,95 @@ def fund_unrealized(risk_doc):
             "by_account": fund_by_account(by),
             "futu_equity": (to_float((risk_doc.get("metrics") or {}).get("futu_equity")) or 0.0)
                            + (to_float(((risk_doc.get("metrics") or {}).get("sec") or {}).get("equity")) or 0.0) or None}
+
+
+FUND_XCHECK_UNREAL_TOL = 500.0          # [R259] 未實現二次校對：每個持倉相差 > max(500, 2%) 港幣就標 ⚠
+FUND_XCHECK_EQ_TOL = 2000.0             # [R259] 權益恆等式：殘差 > max(2,000, 0.5% 權益) 港幣就標 ⚠
+
+
+def fund_crosscheck(risk_doc, r, daily_csv_text):
+    """[R259] 使用者 11-07：「基金報告未實現盈虧要二次校對富途；已實現如何二次對」。
+    ① 未實現：每個持倉富途自己計（futu_pl）對我哋自己計（(中間價或最後價 − 開倉價) × 張數 × 每點價值）。
+    ② 已實現：權益恆等式（逐日損益帳 ops/books/pnl_daily.csv）：
+       富途權益變化 −（未實現變化 ＋ 已實現淨額 ＋ 出入金）＝ 殘差；殘差大即係有一筆計漏或計錯。權益本身唔顯示（唔公開）。"""
+    out = {"unreal": None, "equity": []}
+    if isinstance(risk_doc, dict) and isinstance(risk_doc.get("positions"), list):
+        try:
+            snap = datetime.strptime(str(risk_doc.get("run_hkt"))[:10], "%Y-%m-%d").date()
+        except ValueError:
+            snap = datetime.now(HK_TZ).date()
+        rows, tf, to, bad = [], 0.0, 0.0, 0
+        for p in risk_doc["positions"]:
+            if not isinstance(p, dict) or not p.get("code") or futu_option_expired(str(p["code"]), snap):
+                continue
+            code = str(p["code"])
+            _, mult = futu_product(code)
+            fx = FUTU_USD_HKD if code.startswith("US.") else 1.0
+            qty, op = to_float(p.get("qty")), to_float(p.get("open_price"))
+            bid, ask, last = (to_float(p.get(k)) for k in ("bid", "ask", "last"))
+            mark = (bid + ask) / 2 if bid and ask else last
+            own = (mark - op) * qty * mult * fx if None not in (qty, op, mark) else None
+            fp = to_float(p.get("futu_pl"))
+            futu = fp * fx if fp is not None else None
+            diff = futu - own if futu is not None and own is not None else None
+            flag = diff is not None and abs(diff) > max(FUND_XCHECK_UNREAL_TOL, 0.02 * abs(futu))
+            bad += 1 if flag or futu is None or own is None else 0
+            tf += futu or 0.0
+            to += own or 0.0
+            rows.append({"code": code, "futu": None if futu is None else round(futu, 2),
+                         "own": None if own is None else round(own, 2), "diff": None if diff is None else round(diff, 2),
+                         "flag": bool(flag)})
+        out["unreal"] = {"asof": risk_doc.get("run_hkt"), "rows": rows, "futu_total": round(tf, 2), "own_total": round(to, 2),
+                         "flags": bad}
+    daily, flows = (r or {}).get("daily_realized") or {}, (r or {}).get("daily_flows") or {}
+    recs = []
+    for line in csv.DictReader(io.StringIO(daily_csv_text or "")):
+        eq, un = to_float(line.get("futu_equity")), to_float(line.get("unrealized_total"))
+        if line.get("date") and eq is not None and un is not None:
+            recs.append((line.get("run_hkt") or f"{line['date']} 17:20", line["date"], eq, un))
+    recs.sort()
+    cum = 0.0
+    for (t0, d0, e0, u0), (t1, d1, e1, u1) in zip(recs, recs[1:]):
+        realized = sum(v for k, v in daily.items() if t0 < k <= t1)          # 兩次快照之間嘅已實現（按成交時間）
+        flow = sum(v for k, v in flows.items() if d0 < k <= d1)
+        res = (e1 - e0) - (u1 - u0) - realized - flow
+        cum += res
+        out["equity"].append({"date": d1, "realized": round(realized, 2), "flow": round(flow, 2), "residual": round(res, 2),
+                              "flag": abs(res) > max(FUND_XCHECK_EQ_TOL, 0.005 * abs(e1))})
+    out["equity"] = out["equity"][-10:]
+    out["equity_cum"] = round(sum(e["residual"] for e in out["equity"]), 2)
+    return out
+
+
+def fund_crosscheck_html(x, n):
+    if not x:
+        return ""
+    h = "<div class='section'><b>🔍 二次校對</b>"
+    u = x.get("unreal")
+    if u and u["rows"]:
+        trs = "".join(f"<tr><td>{esc(q['code'])}</td><td>{n(q['futu']) if q['futu'] is not None else '—'}</td>"
+                      f"<td>{n(q['own']) if q['own'] is not None else '—'}</td>"
+                      f"<td>{'⚠️ ' if q['flag'] else ''}{n(q['diff']) if q['diff'] is not None else '—'}</td></tr>" for q in u["rows"])
+        verdict = "，✅ 一致" if not u["flags"] else f"，⚠️ {u['flags']} 項要核對"
+        h += (f"<p>① 未實現盈虧（富途快照 {esc(str(u['asof'] or '—'))} HKT）：富途計 {n(u['futu_total'])}，我哋自己計 {n(u['own_total'])}"
+              f"{verdict}</p>"
+              "<div class='scroll'><table><tr><th>合約</th><th>富途計</th><th>自己計</th><th>相差</th></tr>"
+              f"{trs}</table></div>"
+              "<p class='muted' style='font-size:12px'>自己計＝（中間價，冇就用最後價 − 開倉價）× 張數 × 每點價值，美元 × 7.8；"
+              "每項相差超過 500 港幣或 2% 就標 ⚠️。期貨開倉價如果係富途攤薄成本，可能同富途計法唔同。</p>")
+    eq = x.get("equity") or []
+    if eq:
+        trs = "".join(f"<tr><td>{esc(e['date'])}</td><td>{n(e['realized'])}</td><td>{n(e['flow'])}</td>"
+                      f"<td>{'⚠️ ' if e['flag'] else '✅ '}{n(e['residual'])}</td></tr>" for e in eq)
+        bad = sum(1 for e in eq if e["flag"])
+        h += (f"<p>② 已實現盈虧（權益恆等式，最近 {len(eq)} 日）：{'✅ 全部平衡' if not bad else f'⚠️ {bad} 日唔平衡'}；"
+              f"累計殘差 {n(x.get('equity_cum') or 0)}</p>"
+              "<div class='scroll'><table><tr><th>日期</th><th>已實現淨額</th><th>出入金</th><th>殘差</th></tr>"
+              f"{trs}</table></div>"
+              "<p class='muted' style='font-size:12px'>殘差＝富途權益變化 −（未實現變化 ＋ 已實現淨額 ＋ 出入金）；"
+              "超過 2,000 港幣或權益 0.5% 標 ⚠️（可能係漏咗成交、手續費、利息、出入金、到期期權結算或者快照時間差）。按兩次 17:20 對帳快照之間嘅成交時間計；權益本身唔公開。"
+              "另外可以每月同富途月結單「已實現盈虧」人手對一次。</p>")
+    return h + "</div>"
 
 
 def fund_performance(r, unreal, today=None):
@@ -1564,6 +1672,7 @@ def build_fund_report_page(r):
                  "<div class='scroll'><table>"
                  f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div>"
                  "<div class='muted' style='font-size:12px'>開倉至今（對富途 App「持倉盈虧」）；富途期貨「未實現盈虧」只計上次結算後，兩者唔同。美元 × 7.8。</div></div>")
+    body += fund_crosscheck_html(r.get("crosscheck"), n)                  # [R259] 二次校對
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}
         if not tab:
@@ -1652,6 +1761,11 @@ def handle_fund_report_get(req):
             if prod != "合計":
                 real[prod] = real.get(prod, 0.0) + c.get("net", 0.0)
     r["by_account"] = {"realized": fund_by_account(real), "unrealized": (un or {}).get("by_account")}
+    try:                                                                  # [R259] 二次校對
+        books = gcs_read_text("ops/books/pnl_daily.csv")
+    except StorageError:
+        books = None
+    r["crosscheck"] = fund_crosscheck(risk_doc, r, books)
     if req.args.get("format") == "json":
         return _json_response(r)
     return build_fund_report_page(r)
