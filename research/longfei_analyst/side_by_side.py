@@ -85,7 +85,10 @@ def main():
             if r.get("result"):
                 print(who, r["date"], r["market"], r["kind"], r.get("level", r.get("dir")), "✅" if r["result"]["ok"] else "❌", r["result"]["detail"])
     if not a.dry_run:
-        pack.gcs_put(OUT, json.dumps(res, ensure_ascii=False))
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+            json.dump(res, f, ensure_ascii=False)
+        pack.gcs_put(OUT, f.name)
 
 
 if __name__ == "__main__":
