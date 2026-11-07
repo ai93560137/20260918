@@ -93,7 +93,9 @@ class Trader:
                "foreign_qty": self.state.get("foreign_qty", 0),
                "side": pos.get("side"), "stop": pos.get("stop"), "errors": self.errors,
                "halted": bool(self.state.get("halted")),
-               "calendar_warn": self.state.get("data_calendar_warn")}   # [R348] guard 每日發一次 Telegram
+               "calendar_warn": self.state.get("data_calendar_warn"),   # [R348] guard 每日發一次 Telegram
+               "ai_errors": self.state.get("ai_errors", 0),             # [R372] Claude API 連續出錯次數
+               "ai_error_msg": self.state.get("ai_error_msg")}
         try:
             tmp = self.cfg.heartbeat_file.with_suffix(".tmp")
             tmp.write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
@@ -339,6 +341,12 @@ class Trader:
                                         "day_pnl": st.get("day_pnl"), "session": session, "reuse_shadow": reuse})
                 return
         d = self.brain.decide(ctx)
+        # [R372] 使用者 11-07「加 AI 出錯通知」：記低 Claude API 連續出錯次數（例如 credit 用完），guard 見到 ≥3 就發 Telegram
+        if d.get("_error"):
+            st["ai_errors"] = st.get("ai_errors", 0) + 1
+            st["ai_error_msg"] = str(d.get("reason") or "")[:200]
+        else:
+            st["ai_errors"], st["ai_error_msg"] = 0, None
         meta = st.get("pos") or {}
         n_open = order_qty(spec_for(cfg.product), last, cfg.max_qty)   # 期貨張數／ETF 股數
         if cfg.size_ladder:                       # [R305] 按成績升級：而家嘅級數（1 至 max_qty 張）

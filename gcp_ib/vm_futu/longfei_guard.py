@@ -31,6 +31,7 @@ ETF_SEC = os.environ.get("LONGFEI_ETF_SEC_LADDER", "").strip() == "1"
 LADDER_MAX_AGE_MIN = float(os.environ.get("LADDER_MAX_AGE_MIN", "30"))   # RISK_LADDER §6b
 HB_STALE_MIN = float(os.environ.get("WATCHDOG_STALE_MIN", "10"))
 ERR_ALERT = int(os.environ.get("WATCHDOG_ERRORS", "3"))
+AI_ERR_ALERT = int(os.environ.get("WATCHDOG_AI_ERRORS", "3"))   # [R372] Claude API 連續出錯幾多次先通知（5 分鐘一次 → 約 15 分鐘）
 REPEAT_MIN = float(os.environ.get("WATCHDOG_REPEAT_MIN", "30"))
 LOOP_SEC = 30
 TAG = "guard:"
@@ -151,6 +152,13 @@ class Watchdog:
             self.alert("errors", f"⚠ {tag}AI 程式連續出錯 {hb.get('errors')} 次", now)
         else:
             self.clear("errors")
+        if (hb.get("ai_errors") or 0) >= AI_ERR_ALERT:          # [R372] 每次出事只發一次，恢復再發一次
+            self.once("ai_err", f"⚠ {tag}AI（Claude API）連續出錯 {hb.get('ai_errors')} 次：{(hb.get('ai_error_msg') or '')[:120]}"
+                      "；程式自動 HOLD，唔會開新倉，有倉照用程式止蝕。credit 用完就去 Anthropic Console 增值", now)
+        elif "ai_err" in self.last and age is not None and age <= HB_STALE_MIN:
+            self.clear("ai_err")
+            log(f"✅ {tag}AI 已恢復")
+            telegram(f"✅ {tag}AI（Claude API）已恢復正常")
         if (hb.get("foreign_qty") or 0) != 0:                  # 有正負（外來淡倉係負數）；只喺出現時發一次
             self.once("foreign", f"⚠ {tag}即月有 {hb.get('foreign_qty')} 張唔屬龍飛陣嘅倉，龍飛陣停開新倉", now)
         else:
