@@ -313,7 +313,7 @@ _le = _fr["ledger_events"]
 check("傳票：毛利 +1,000、手續費逐項（負數）", ("2026-11-09 11:00", "交易毛利：HSI 恒指期貨", 1000.0) in _le
       and round(sum(v for _, k, v in _le if k.startswith("手續費")), 2) == -60.0, _le)
 _fh = main.fund_fee_html(_fr["fee_table"], lambda v: f"{v:,.2f}")
-check("網頁有費用分類、小計", "💸 費用分類" in _fh and "交易費用小計" in _fh and "非交易費用小計" in _fh and "全部費用" in _fh, _fh[:300])
+check("網頁有費用分類、小計", "💸 費用分類" in _fh and "交易費用小計" in _fh and "非交易費用小計" in _fh and "全部費用" in _fh and "+" not in _fh.split("<table>")[1], _fh[:300])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

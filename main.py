@@ -1506,7 +1506,8 @@ def fund_fee_html(ft, n):
             cats[k] = cats.get(k, 0.0) + x
     trade = sorted([k for k in cats if k not in FUND_NONTRADE_FEES], key=lambda k: -cats[k])
     non = [k for k in FUND_NONTRADE_FEES if k in cats]
-    cell = lambda v: f"<td style='text-align:right'>{n(v) if abs(v) >= 0.005 else '—'}</td>"
+    a = lambda v: f"{v:,.0f}" if abs(v) >= 0.5 else f"{v:,.2f}"            # 使用者 11-07：費用表唔好 + 號
+    cell = lambda v: f"<td style='text-align:right'>{a(v) if abs(v) >= 0.005 else '—'}</td>"
 
     def row(label, f, bold=False):
         vals = [f(m) for m in months]
