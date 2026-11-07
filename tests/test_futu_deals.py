@@ -195,5 +195,16 @@ check("期權唔計", auto_risk.add_to_loser([_r("HK.HSI261023P23700000", -2, -9
 auto_risk.add_to_loser([_r("HK.HSI2610", 1, -100)], _sf)
 check("HSI 期貨蝕緊加注 → 警報", "rule1:HK.HSI2610" in auto_risk.add_to_loser([_r("HK.HSI2610", 2, -800)], _sf))
 
+print("\n=== [R366] 已到期期權殘留唔顯示 ===")
+_t = _d(2026, 11, 7)
+_rows = main.futu_team_assign([{"code": "HK.HSI261023P23700000", "qty": -1}, {"code": "HK.HSI261030C23750000", "qty": -1},
+                               {"code": "HK.HSI261107P23000000", "qty": -1}, {"code": "HK.HSI261113C25350000", "qty": -1},
+                               {"code": "HK.MHI261030C24000", "qty": -1}, {"code": "US.RDDT261106P80000", "qty": -1},
+                               {"code": "US.EW2610P7750x0", "qty": -1}, {"code": "HK.HSI2611", "qty": -1}], today=_t)
+check("10/23、10/30 週權、MHI、美股個股期權過期 → 唔顯示；當日、未到期、期貨期權、期貨照顯示",
+      [r["code"] for r in _rows] == ["HK.HSI261107P23000000", "HK.HSI261113C25350000", "US.EW2610P7750x0", "HK.HSI2611"],
+      [r["code"] for r in _rows])
+check("futu_option_expired：壞日期當未過期", main.futu_option_expired("HK.HSI261399C1000", _t) is False)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
