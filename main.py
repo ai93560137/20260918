@@ -2022,7 +2022,7 @@ def build_fund_report_page(r):
                  "<div class='muted' style='font-size:12px'>開倉至今（對富途 App「持倉盈虧」）；富途期貨「未實現盈虧」只計上次結算後，兩者唔同。美元 × 7.8。</div></div>")
     body += fund_ledger_html(r.get("ledger"), n)                          # [R262] 複式記帳
     body += fund_fee_html(r.get("fee_table"), n)                          # [R262] 費用分類
-    body += fund_crosscheck_html(r.get("crosscheck"), n)                  # [R259] 二次校對
+    # [R259] 二次校對：使用者 11-07「二次校對不用」→ 網頁唔顯示（以 📒 複式記帳為準）；JSON 仍有 crosscheck 畀內部查
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}
         if not tab:
