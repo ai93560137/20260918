@@ -143,5 +143,40 @@ r = last_rec()
 check("off：每分鐘照問，rec 冇 prescreen", "prescreen" not in r and FB.calls == ["screen", "decide"], (r.keys(), FB.calls))
 config.PRESCREEN = "shadow"
 
+print("=== [11-07] XAU_GATE_STRICT 收緊篩選 ===")
+class FB2(FB):
+    strict_look = False
+    def screen(self, ctx, strict=False):
+        FB.calls.append("strict" if strict else "screen")
+        return {"look": FB2.strict_look if strict else FB.look, "reason": "嚴格" if strict else "睇下",
+                "_usage": {"in": 100, "out": 10, "model": "claude-haiku-5-5"}, "_ms": 300}
+xau._brain = FB2()
+config.PRESCREEN = "off"; config.GATE_STRICT = "shadow"
+FB.calls.clear(); FB.look = True; FB2.strict_look = False
+st, d = hb(20, 4003.0, m15_time=T0 + 1800)
+r = last_rec()
+check("shadow：原篩選放行 → 再問嚴格版（只記錄），照問 Opus（行為唔變）",
+      FB.calls == ["screen", "strict", "decide"] and r["kind"] == "decide" and r["gate_strict"]["look"] is False and r["gate_strict"]["mode"] == "shadow", (FB.calls, r.get("gate_strict")))
+FB.calls.clear(); FB.look = False
+st, d = hb(21, 4003.1, m15_time=T0 + 1800)
+r = last_rec()
+check("shadow：原篩選擋 → 唔使問嚴格版", FB.calls == ["screen"] and r["kind"] == "screen" and "gate_strict" not in r, (FB.calls, r.keys()))
+config.GATE_STRICT = "on"
+FB.calls.clear(); FB.look = True; FB2.strict_look = False
+st, d = hb(22, 4003.2, m15_time=T0 + 1800)
+r = last_rec()
+check("on：用嚴格版決定；嚴格版擋 → 唔問 Opus", FB.calls == ["strict"] and r["kind"] == "screen" and r["gate_strict"]["mode"] == "on", (FB.calls, r.get("gate_strict")))
+FB.calls.clear(); FB2.strict_look = True
+st, d = hb(23, 4003.3, m15_time=T0 + 1800)
+r = last_rec()
+check("on：嚴格版放行 → 問 Opus", FB.calls == ["strict", "decide"] and r["kind"] == "decide", FB.calls)
+config.GATE_STRICT = "off"
+FB.calls.clear(); FB.look = True
+st, d = hb(24, 4003.4, m15_time=T0 + 1800)
+check("off（預設）：同以前一樣，唔問嚴格版", FB.calls == ["screen", "decide"] and "gate_strict" not in last_rec(), FB.calls)
+import brain as _b
+check("嚴格提示有三個條件、唔確定就 false", "INCLUDING when you are unsure" in _b.GATE_SYSTEM_STRICT and "look=true ONLY" in _b.GATE_SYSTEM_STRICT)
+config.PRESCREEN = "shadow"; xau._brain = FB()
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
