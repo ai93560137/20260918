@@ -152,7 +152,8 @@ config.COMBO_PARAM_YEAR = 2026
 FAKE.pop("xau/sig/combolive/state.json", None)
 config.COMBO_LIVE = False
 st, d8 = hb(NOWT, last)
-check("SIG_COMBO_LIVE=0 → 935 心跳唔分流（交返其他書）", d8.get("book") != "combolive", d8)
+check("SIG_COMBO_LIVE=0 → 935 心跳照分流（11-07：唔再跌落 931 覆寫快照），唔決策、冇指令",
+      d8.get("book") == "combolive" and d8["cmd_text"] == "" and "未開" in d8["message"], d8)
 config.COMBO_LIVE = True
 
 print(f"\n結果：{OK} 過、{FAIL} 失敗")

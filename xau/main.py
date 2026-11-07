@@ -1242,15 +1242,19 @@ def entry(req):
         hit = _sub_book_ack(payload)
         if hit is not None:
             return hit
-    if config.SIGNAL_BOOK and config.COMBO_LIVE:                      # [R364] 組合 A 真倉（magic 935）：心跳按 magic 分流
+    if config.SIGNAL_BOOK:                                            # [R364] 組合 A 真倉（magic 935）：心跳按 magic 分流
         if combo_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return combo_live.handle_heartbeat(payload)
-    if config.SIGNAL_BOOK and config.G7_LIVE:                         # [R361] H1 回調真倉（magic 934）：心跳按 magic 分流
+    if config.SIGNAL_BOOK:                                            # [R361] H1 回調真倉（magic 934）：心跳按 magic 分流
         if g7_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return g7_live.handle_heartbeat(payload)
-    if config.SIGNAL_BOOK and config.STUDENT_LIVE:                    # [R358] 規則學生真倉（magic 933）：心跳按 magic 分流
+    if config.SIGNAL_BOOK:                                            # [R358] 規則學生真倉（magic 933）：心跳按 magic 分流
         if student_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return student_live.handle_heartbeat(payload)
+    # [11-07] 933／934／935 心跳一律按 magic 分流（開關關咗都分流；handle_heartbeat 自己判 enabled()，關咗只寫快照唔決策）。
+    #   之前 SIG_STUDENT_LIVE=0 時 933 圖心跳跌落 931，輪流覆寫 xau/sig/account.json（931 快照）。932 跟單關咗就直接 ignored，唔交 931。
+    if config.SIGNAL_BOOK and not follower.enabled() and follower.is_follow_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+        return jsonify({"status": "ignored", "message": "follow book off (SIG_FOLLOW_CHANNELS empty)", "cmd_text": ""}), 200
     if config.SIGNAL_BOOK and follower.enabled():                      # 跟單（magic 932）：心跳按 magic 分流、回報按指令 id 前綴 f
         if follower.is_follow_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return follower.handle_heartbeat(payload)
