@@ -137,6 +137,11 @@ config.ACCOUNT, config.FOLLOW_ACCOUNT, config.STUDENT_ACCOUNT = "", "", ""
 print("=== 關 ===")
 config.STUDENT_LIVE = False
 check("SIG_STUDENT_LIVE=0 → enabled False、busy False", not student_live.enabled() and not student_live.busy(NOW[0]))
+FAKE["xau/sig/account.json"] = (json.dumps({"marker": "931"}), 99)
+code, d = hb(400, 4000.0)
+check("[11-07] SIG_STUDENT_LIVE=0 → 933 心跳照分流到學生書（唔落單），唔覆寫 931 快照 xau/sig/account.json",
+      d.get("book") == "studentlive" and d["cmd_text"] == "" and json.loads(FAKE["xau/sig/account.json"][0]).get("marker") == "931"
+      and json.loads(FAKE["xau/sig/studentlive/account.json"][0]).get("magic") == 933, d)
 config.STUDENT_LIVE = True
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
