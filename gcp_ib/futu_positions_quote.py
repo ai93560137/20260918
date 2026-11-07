@@ -142,6 +142,28 @@ def diagnose(since):
         print("有帳戶讀到資產／持倉 → 身份正確；直接跑冇參數版本就會用 position_list_query 嘅持倉。")
 
 
+_OPT_RE = __import__("re").compile(r"^(?:HK|US)\.[A-Z]+(\d{2})(\d{2})(\d{2})[CP]\d+$")   # HK.HSI261030C23750000、US.RDDT261127P80000
+_HKFUT_RE = __import__("re").compile(r"^HK\.(?:HSI|MHI|HHI|MCH)(\d{2})(\d{2})$")        # HK.MHI2610
+_CME_RE = __import__("re").compile(r"^US\.(?:EW|EX[1-4]|ES|MES|NQ|MNQ)(\d{2})(\d{2})(?:[CP][\d.]+)?(?:x0)?$")  # US.EW2610P7750x0
+
+
+def expired(code, today=None):
+    """[R372] 已到期合約：期權（代碼有 YYMMDD）到期日 < 今日（香港）；港期／CME 期貨同期貨期權（YYMM）月份 < 本月。
+    11-07 事故：10-23／10-30 週權到期冇平倉成交，history_deal_list_query 淨數 ≠ 0，一直當持倉推上 GCS。"""
+    today = today or datetime.now(HKT).date()
+    m = _OPT_RE.match(code or "")
+    if m:
+        y, mo, d = (int(x) for x in m.groups())
+        try:
+            return datetime(2000 + y, mo, d).date() < today
+        except ValueError:
+            return False
+    m = _HKFUT_RE.match(code or "") or _CME_RE.match(code or "")   # 月份合約：月份 < 本月先當到期（月尾／週權都喺嗰個月內到期）
+    if m:
+        return (2000 + int(m.group(1)), int(m.group(2))) < (today.year, today.month)
+    return False
+
+
 def read_holdings(since):
     """回傳 (持倉行, 帳戶資金摘要)。資金摘要唔包帳號。"""
     rows, accounts = [], []
@@ -192,7 +214,10 @@ def read_holdings(since):
                                      "open_price": round(amt / n, 2) if n else None, "futu_pl": None})
         finally:
             ctx.close()
-    return rows, accounts
+    gone = [r for r in rows if expired(r["code"])]
+    if gone:
+        print("已到期、唔計入持倉：" + "、".join(f"{r['code']}（{r['source']} {r['qty']:+g}）" for r in gone))
+    return [r for r in rows if not expired(r["code"])], accounts
 
 
 def deals(codes, since):
