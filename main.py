@@ -8757,6 +8757,8 @@ BASE_CSS = """
 :root { --primary:#0f62fe; --success:#198754; --danger:#dc3545; --warning:#d97706; --bg:#f4f7fb; --card:#fff; --text:#161616; --muted:#6c757d; color-scheme: light; }
 * { box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); padding:20px 15px; margin:0; }
+/* [R257] 使用者 11-07：投資人 70 歲以上，字同圖要大 → 全頁放大 1.3 倍（列印唔放大） */
+@media screen { body { zoom:1.3; } }
 .container { max-width:1050px; margin:0 auto; }
 .nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:24px; padding:15px 20px; background:var(--card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
 .nav a { color:var(--primary); text-decoration:none; font-weight:bold; font-size:14px; margin-left:15px; }
@@ -8766,7 +8768,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif
 .nav-link:hover { background:#dbe7ff; }
 .nav-grouped { flex-direction:column; align-items:stretch; gap:6px; }
 .nav-row { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; }
-.nav-group { font-size:11px; font-weight:700; color:var(--muted); min-width:58px; letter-spacing:1px; }
+.nav-group { font-size:13px; font-weight:700; color:var(--muted); min-width:58px; letter-spacing:1px; }
 .nav-row a.nav-link { margin-left:0; }
 .hub .nav-grouped { width:fit-content; max-width:100%; margin:0 auto 22px; }
 .nav-current { background:#0f62fe; color:#fff; cursor:default; }
