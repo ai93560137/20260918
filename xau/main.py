@@ -25,6 +25,7 @@ import storage
 import signals
 import follower
 import student_live
+import ai_entry
 import g7_live
 import combo_live
 import hold_rules
@@ -843,7 +844,10 @@ def _feed_bars(payload, account, offset, now):
 
     if config.SIGNAL_BOOK and student.enabled():                 # 學徒階段 1：影子學生先交卷（唔落單），再做 S1
         try:
-            student.rule_tick(m1, offset, now, m15 or [])
+            fired = student.rule_tick(m1, offset, now, m15 or [])
+            if ai_entry.enabled():                                # [IDEAS #1003] 規則學生出區 → AI 揀入場（影子記錄；實倉喺 936 心跳）
+                for p in fired or []:
+                    ai_entry.ask(get_brain(), lambda: build_context(state, m1, m15 or [], account, now, market.ny_date(now)), p, now)
             student.claude_tick(get_brain(), lambda: build_context(state, m1, m15 or [], account, now, market.ny_date(now)), now)
         except Exception as exc:  # noqa: BLE001
             log_event(f"⚠️ 影子學生出錯：{type(exc).__name__}: {str(exc)[:80]}", severity="WARNING", component="student")
@@ -954,6 +958,8 @@ def _sub_book_ack(payload):
         books.append(("H1 回調真倉", "g7live", config.G7_ACCOUNT, g7_live.ack))
     if config.COMBO_LIVE and combo_live.is_cmd(cid):                  # [R364] 935 組合 A（前綴 k）
         books.append(("組合 A 真倉", "combolive", config.COMBO_ACCOUNT, combo_live.ack))
+    if ai_entry.is_cmd(cid):                                          # [IDEAS #1003] 936 AI 入場（前綴 i）
+        books.append(("AI 入場真倉", "aientry", config.AIENTRY_ACCOUNT, ai_entry.ack))
     if follower.enabled() and follower.is_follow_cmd(cid):
         books.append(("跟單", "follow", config.FOLLOW_ACCOUNT, follower.ack))
     for name, comp, want, ack_fn in books:
@@ -1206,6 +1212,8 @@ def entry(req):
                 status["follow"] = follower.status()
             if config.STUDENT_LIVE:
                 status["student_live"] = student_live.status()   # [R358]
+            if config.AIENTRY or config.AIENTRY_EXECUTE:
+                status["ai_entry"] = ai_entry.status()           # [IDEAS #1003]
             if config.G7_LIVE:
                 status["g7_live"] = g7_live.status()             # [R361]
             if config.COMBO_LIVE:
@@ -1242,6 +1250,8 @@ def entry(req):
         hit = _sub_book_ack(payload)
         if hit is not None:
             return hit
+    if config.SIGNAL_BOOK and ai_entry.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):   # [IDEAS #1003] 936
+        return ai_entry.handle_heartbeat(payload)
     if config.SIGNAL_BOOK:                                            # [R364] 組合 A 真倉（magic 935）：心跳按 magic 分流
         if combo_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return combo_live.handle_heartbeat(payload)
