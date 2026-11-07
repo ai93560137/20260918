@@ -146,6 +146,8 @@
 #     完整版（含權益）只發 Telegram、存 ops/reports/<kind>/。讀唔到就唔顯示，唔影響原有已實現盈虧表、唔影響下單。
 #   * 2026-10-13 — [R172] 每日成交紀錄：action=futu_pnl 收到成交後，另計當日逐筆成交、按合約彙總、FIFO 平倉（點數、幣值），
 #     存 futu/deals/<香港日期>.json（今日＋前一日，夜盤跨日）。總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂。本機 auto_risk 加 03:05／16:35 匯出時段。
+#   * 2026-11-07 — [R366] 風揚陣：策略總表「💼 富途實倉」唔再顯示已過到期日嘅期權殘留（HK.HSI／HK.MHI／US 個股期權，代碼有 YYMMDD）；
+#     富途 API 到期後仲列住舊週權。到期日當日照顯示；只改顯示，唔影響 auto_risk 同下單。
 #   * 2026-10-31 — [R365] 🐤 金絲雀頁加「👀 留神清單（W2）」：讀 canary/watch_status.json（PR #520），只顯示、無警報權、唔改燈色。
 #   * 2026-10-31 — [R364] 總指揮：FUTU_TEAM_RULES 加虎翼（美股個股期權 US.XXXXyymmdd[CP]strike → 🐯 虎翼）、NQ 期貨歸人手；
 #     人手卡止損欄刪咗已平嘅 EW P7750。只改配對顯示，唔影響下單。
@@ -992,6 +994,21 @@ def futu_alert_team(key):
     return "總指揮"
 
 
+_FUTU_OPT_EXPIRY_RX = re.compile(r"^(?:HK\.(?:HSI|MHI)|US\.[A-Z]{1,6})(\d{2})(\d{2})(\d{2})[CP]\d+$")
+
+
+def futu_option_expired(code, today):
+    """[R366] 有完整到期日（YYMMDD）嘅期權代碼，到期日已過 → True。富途 API 到期後仲會列住舊週權一排（數量照舊），
+    策略總表唔再顯示佢哋。到期日當日照顯示（未結算）；期貨期權（US.EW2610P7750x0，得年月）唔判斷。"""
+    m = _FUTU_OPT_EXPIRY_RX.match(code or "")
+    if not m:
+        return False
+    try:
+        return date(2000 + int(m.group(1)), int(m.group(2)), int(m.group(3))) < today
+    except ValueError:
+        return False
+
+
 def futu_team_assign(positions, today=None):
     """富途持倉 → [{team, use, code, name, qty, ...}]。有手數上限嘅規則（例如 MHI 對沖 1 手），超出部分歸使用者人手。"""
     today = today or datetime.now(HK_TZ).date()
@@ -1000,7 +1017,7 @@ def futu_team_assign(positions, today=None):
         if not isinstance(p, dict):
             continue
         code, qty = _futu_text(p.get("code"), 40), to_float(p.get("qty"))
-        if not code or not qty:
+        if not code or not qty or futu_option_expired(code, today):        # [R366] 已到期期權殘留唔顯示
             continue
         base = {"code": code, "name": _futu_text(p.get("name"), 60), "open_price": to_float(p.get("open_price")),
                 "bid": to_float(p.get("bid")), "ask": to_float(p.get("ask")), "last": to_float(p.get("last")),
