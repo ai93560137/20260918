@@ -1474,7 +1474,7 @@ def fund_ledger_flows(cash_flows, start):
         elif typ in ("自动换汇", "自動換匯"):
             k = "換匯差"
         elif typ == "其他" and "證券" in acc and ccy == "HKD" and not rmk and amt and abs(amt) % 100 == 0:
-            k = "出入金（外部）"
+            k = "外部入金" if amt > 0 else "外部出金"
         else:
             continue
         out.append((f"{str(f['date'])[:10]} 12:00", k, round(hkd, 2)))
@@ -1731,9 +1731,27 @@ def fund_ledger(marks, r):
     for x in done:
         for k, v in x["lines"].items():
             tot[k] = round(tot.get(k, 0.0) + v, 2)
+    ext = [{"date": str(t)[:10], "kind": k, "amount": v} for t, k, v in fl if k in ("外部入金", "外部出金")]
     return {"since": str(marks[0]["run_hkt"]) if marks else None, "entries": out[-10:], "total_lines": tot,
+            "external": ext,
             "total_equity_change": round(sum(x["equity_change"] for x in done), 2),
             "total_suspense": round(sum(x["suspense"] for x in done), 2), "marks": len(marks)}
+
+
+def fund_external_html(ext, n):
+    """[R262] 使用者 11-07「外部入金同出金都要紀錄」：逐筆列出（富途資金明細清算日），分開入金、出金合計。"""
+    if not ext:
+        return ""
+    tin = sum(e["amount"] for e in ext if e["amount"] > 0)
+    tout = sum(e["amount"] for e in ext if e["amount"] < 0)
+    trs = "".join(f"<tr><td>{esc(e['date'])}</td><td>{'🟢 入金' if e['amount'] > 0 else '🔴 出金'}</td>"
+                  f"<td style='text-align:right'>{n(abs(e['amount']))}</td></tr>" for e in ext)
+    return (f"<p style='margin-top:10px'><b>💰 外部入金／出金紀錄（{esc(ext[0]['date'])} 起，港幣）</b></p>"
+            "<div class='scroll'><table><tr><th>清算日</th><th>類別</th><th>金額</th></tr>" + trs
+            + f"<tr><td><b>入金合計</b></td><td></td><td style='text-align:right'><b>{n(tin)}</b></td></tr>"
+              f"<tr><td><b>出金合計</b></td><td></td><td style='text-align:right'><b>{n(-tout)}</b></td></tr>"
+              f"<tr><td><b>淨入金</b></td><td></td><td style='text-align:right'><b>{n(tin + tout)}</b></td></tr></table></div>"
+            "<p class='muted' style='font-size:12px'>來源：富途資金明細，證券戶口外部轉入／轉出；證券同期貨戶口之間嘅內部調撥唔計。</p>")
 
 
 def fund_ledger_html(L, n):
@@ -1742,7 +1760,8 @@ def fund_ledger_html(L, n):
     h = ("<div class='section'><b>📒 複式記帳（富途：證券＋期貨戶口，港幣）</b>"
          f"<p>期初分界 {esc(str(L.get('since') or '—'))} HKT；之後每日美期收市後、港股開市前記一次分界。</p>")
     if not L.get("entries"):
-        return h + "<p class='muted'>只有期初分界，下一個開市前分界記低之後就有第一張傳票。</p></div>"
+        return (h + "<p class='muted'>只有期初分界，下一個開市前分界記低之後就有第一張傳票。</p>"
+                + fund_external_html(L.get("external"), n) + "</div>")
 
     def voucher(title, d_eq, lines, sus, flag=False, pending=False):
         rows = []
@@ -1778,8 +1797,8 @@ def fund_ledger_html(L, n):
           "已實現按成交時間、已扣手續費；到期期權用富途「现金交割」實數；未實現＝開倉至今，剔走已到期殘留同券商贈股；"
           "出入金、利息、費用來自富途資金明細（清算日）。期貨每日結算、權利金、股票交收屬交易現金，已經喺已實現／未實現入帳，唔重複記。"
           f"暫記超過 300 港幣或權益 0.05% 標 ⚠️（美元按 {FUTU_USD_HKD} 折算，富途按當時匯率，所以可能有幾十蚊匯率差）。"
-          "「待補數據」＝分界之後嘅成交同資金明細未推上嚟，下次抓取之後自動計。</p></div>")
-    return h
+          "「待補數據」＝分界之後嘅成交同資金明細未推上嚟，下次抓取之後自動計。</p>")
+    return h + fund_external_html(L.get("external"), n) + "</div>"
 
 def fund_performance(r, unreal, today=None):
     """[R207] 每月／每季／每年績效：已實現淨額（已扣手續費）、未實現（只計入現時所屬期間）、總盈虧、回報率、平倉筆數、勝率。

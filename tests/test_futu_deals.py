@@ -273,7 +273,7 @@ _cf = [{"account": "證券帳戶-HK", "date": "2026-11-09", "ccy": "HKD", "type"
        {"account": "期貨帳戶", "date": "2026-11-09", "ccy": "USD", "type": "其他", "dir": "OUT", "amount": -10.0, "remark": "Interest In Oct."},
        {"account": "期貨帳戶", "date": "2026-11-09", "ccy": "HKD", "type": "其他", "dir": "OUT", "amount": -2350.0, "remark": ""}]
 _fl = main.fund_ledger_flows(_cf, "2026-11-01")
-check("資金明細分類：外部入金、內部調撥兩腳、利息；期貨結算唔入", sorted(k for _, k, _ in _fl) == ["內部調撥（證券⇄期貨）", "內部調撥（證券⇄期貨）", "出入金（外部）", "利息"], _fl)
+check("資金明細分類：外部入金、內部調撥兩腳、利息；期貨結算唔入", sorted(k for _, k, _ in _fl) == ["內部調撥（證券⇄期貨）", "內部調撥（證券⇄期貨）", "利息", "外部入金"], _fl)
 _m0 = {"run_hkt": "2026-11-09 06:10", "equity": 801000, "unrealized": -6350, "gift": 0}
 _m1 = {"run_hkt": "2026-11-10 06:10", "equity": 801000 + 100000 - 78 + 5000 - 300 + 1350, "unrealized": -5000, "gift": 0}
 _rr = {"ledger_events": [("2026-11-09 10:00", "HSI 恒指期貨", 5000.0), ("2026-11-09 11:00", "MNQ 微型納指期貨", -300.0),
@@ -283,10 +283,15 @@ _L = main.fund_ledger([_m1, _m0], _rr)
 _e = _L["entries"][0]
 check("借貸平衡：暫記 0（入金＋已實現＋未實現變化＋利息）", _e["suspense"] == 0 and not _e["flag"] and not _e["pending"], _e)
 check("分界之後嘅成交唔入呢張傳票", _e["lines"].get("已實現：HSI 恒指期貨") == 5000, _e["lines"])
-check("出入金入帳 100,000、內部調撥兩腳抵銷", _e["lines"].get("出入金（外部）") == 100000 and "內部調撥（證券⇄期貨）" not in _e["lines"], _e["lines"])
+check("外部入金入帳 100,000、內部調撥兩腳抵銷", _e["lines"].get("外部入金") == 100000 and "內部調撥（證券⇄期貨）" not in _e["lines"], _e["lines"])
 _L2 = main.fund_ledger([_m0, _m1], dict(_rr, ledger_fetched_hkt="2026-11-10 05:42"))
 check("成交數據早過分界＝待補數據，唔計暫記", _L2["entries"][0]["pending"] and _L2["total_suspense"] == 0, _L2)
 _h = main.fund_ledger_html(_L, lambda v: f"{v:,.0f}")
+_cf2 = _cf + [{"account": "證券帳戶-HK", "date": "2026-11-10", "ccy": "HKD", "type": "其他", "dir": "OUT", "amount": -30000.0, "remark": ""}]
+_L3 = main.fund_ledger([_m0, _m1], dict(_rr, ledger_flows=main.fund_ledger_flows(_cf2, "2026-11-01")))
+check("外部入金、出金分開逐筆紀錄", [(e["kind"], e["amount"]) for e in _L3["external"]] == [("外部入金", 100000.0), ("外部出金", -30000.0)], _L3["external"])
+_h3 = main.fund_ledger_html(_L3, lambda v: f"{v:,.0f}")
+check("網頁有入金／出金紀錄同合計", "外部入金／出金紀錄" in _h3 and "出金合計" in _h3 and "🔴 出金" in _h3, _h3[-600:])
 check("網頁有傳票、借貸合計", "📒 複式記帳" in _h and "暫記" in _h and "<th>借</th>" in _h, _h[:200])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
