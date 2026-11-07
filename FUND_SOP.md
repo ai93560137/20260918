@@ -26,7 +26,7 @@
 ### 1.2 自動化（執行者 × 時間）
 
 **Cloud Run `zhuge-risk-manager`**：事件驅動，MT5 EA 每分鐘心跳；電閘、送單、戶口快照、R171 已實現帳本、R172 富途成交／盈虧入庫、17 個網頁（各頁數據更新時間見 §1.4）。
-**本機 `gcp_ib/auto_risk.py`**（R172）：每 15 分鐘推富途持倉與風險 `futu/risk/latest.json`；03:05／05:30／16:35 推成交 → Cloud Run 寫 `futu/deals/<日>.json`。
+**本機 `gcp_ib/auto_risk.py`**（R172）：每 15 分鐘推富途持倉與風險 `futu/risk/latest.json`；03:05／05:30／06:40（R374，美期收市後、開市前）／16:35 推成交 → Cloud Run 寫 `futu/deals/<日>.json`。
 **VM ib-data**：IB 報價快照（外匯 L1、6E 期權），只讀、不下單。
 **GitHub Actions（預設分支）**與 **Claude Routines** 按香港時間排成一天（2026-10-13 更新：總指揮 8 次叫醒改為 4 次新開工作階段＋4 次 Actions；新增晨會簡報、每日對帳）：
 
