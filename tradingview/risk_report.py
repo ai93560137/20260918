@@ -438,7 +438,9 @@ def build(book, quotes=None, combined_equity=None):
     L = []
     P = L.append
     P(f"# 持倉風險報告")
-    P(f"持倉：{b['asof']}（{b['source']}）")
+    # [R258] 11-07：有富途快照時持倉嚟自快照，book 嘅 asof（例如 10-10 截圖）只係人手 book 日期，唔好當持倉時間
+    P(f"持倉：富途 OpenD 持倉快照 {b['quotes_fetched']} HKT（人手 book：{b['asof']}）" if b['quotes_fetched']
+      else f"持倉：{b['asof']}（{b['source']}）")
     P(f"報價：{'富途 OpenD 快照 ' + b['quotes_fetched'] + ' HKT' if b['quotes_fetched'] else '冇報價檔 → 用截圖價（未係真實買賣價）'}")
     P(f"硬止損：權益 < HK${hs:,.0f}。"
       + (f"**合計權益（你提供）HK${eq0:,.0f}**" if combined_equity else f"合計權益＝假設 NAV HK${nav:,.0f}＋持倉盈虧 = HK${eq0:,.0f}（用 --combined-equity 填實數）")
