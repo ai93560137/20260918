@@ -13,6 +13,9 @@ for u in ("zhuge-xau","zhuge-xau-sig","zhuge-eurusd"):
     errs=[x for x in (d.get("decisions") or []) if x.get("error")]
     opens=[(f(x.get("ts")),x.get("final"),x.get("stop"),x.get("target"),(x.get("rejected") or "")[:50]) for x in (d.get("decisions") or []) if str(x.get("final") or x.get("action") or "").startswith(("OPEN","UPDATE"))]
     print(" dec errors",len(errs),"opens/updates",opens[-4:])
+    # [11-07] API 餘額不足即報（11-06 08:38–17:24 UTC 試過全日冇決策都冇人發現）
+    cred=[x for x in errs if "credit balance" in str(x.get("error") or x.get("reason") or "")]
+    if cred: print(" ⚠⚠ API 餘額不足：最近",len(cred),"個決策出 credit balance 錯，最新",f(cred[-1].get("ts")),"→ 即報總指揮、叫使用者喺 Anthropic Console 充值")
     for k in ("student_live","g7_live","combo_live","follow"):
         x=d.get(k)
         if isinstance(x,dict):
