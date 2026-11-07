@@ -180,7 +180,8 @@ def read_holdings(since):
                     row = info.iloc[0]
                     accounts.append({"account": label, "currency": str(row.get("currency", "HKD")),
                                      **{k: num(row.get(k)) for k in ("total_assets", "cash", "market_val", "initial_margin",
-                                                                      "maintenance_margin", "unrealized_pl", "risk_status")
+                                                                      "maintenance_margin", "unrealized_pl", "realized_pl",
+                                                                      "risk_status")
                                         if k in info.columns}})
                 ret, df = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=acc_id, refresh_cache=True)
                 end = datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S")
@@ -192,7 +193,11 @@ def read_holdings(since):
                             short = "SHORT" in str(r.get("position_side")).upper()
                             rows.append({"source": "positions", "account": label, "code": r["code"], "name": r.get("stock_name", ""),
                                          "qty": -abs(q) if short else q, "open_price": num(r.get("cost_price")),
-                                         "futu_pl": num(r.get("pl_val"))})
+                                         "futu_pl": num(r.get("pl_val")),
+                                         # [R373] 總指揮二次校對：富途計盈虧用嘅價同成本口徑（冇呢啲欄位嘅舊版 API 就係 None）
+                                         **{k: num(r.get(k)) for k in ("average_cost", "diluted_cost", "nominal_price",
+                                                                       "today_pl_val", "unrealized_pl", "realized_pl")},
+                                         "cost_price_valid": bool(r.get("cost_price_valid")) if "cost_price_valid" in r else None})
                 if ret2 == RET_OK and len(dl):
                     net, cash = {}, {}
                     names = {}

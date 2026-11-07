@@ -170,7 +170,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R372"   # [R372] futu_positions_quote 唔計已到期合約；[R262] R260 買賣差／R261 白話之後 bump，GCS script_version 睇得出部機跑緊邊版
+SCRIPT_VERSION = "R373"   # [R373] 推富途盈虧口徑同戶口 realized／unrealized；[R372] futu_positions_quote 唔計已到期合約；[R262] R260 買賣差／R261 白話之後 bump，GCS script_version 睇得出部機跑緊邊版
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
 PNL_MAX_TRIES = 3
@@ -257,8 +257,14 @@ def push_gcp(t, M, cur, txt):
         return "（冇設 ZHUGE_GCP_URL／WEBHOOK_SECRET_TOKEN，唔推 GCP）"
     try:
         fp = json.loads((ROOT / "tradingview" / "data_external" / "futu_positions.json").read_text(encoding="utf-8"))
-        positions = [{k: r.get(k) for k in ("code", "name", "qty", "open_price", "bid", "ask", "last", "quote_time", "futu_pl")}
+        positions = [{k: r.get(k) for k in ("code", "name", "qty", "open_price", "bid", "ask", "last", "quote_time", "futu_pl",
+                                            # [R373] 富途盈虧口徑，方便總指揮二次校對 futu_pl
+                                            "average_cost", "diluted_cost", "cost_price_valid", "nominal_price", "today_pl_val")}
                      for r in fp.get("positions", [])]
+        # [R373] 戶口層面未實現／已實現盈虧（期貨、證券各一），第三重核對；金額只入私人 GCS，唔入 repo
+        M = {**M, "futu_acc_pl": {str(a.get("account") or a.get("currency") or i): {
+                 "currency": a.get("currency"), "unrealized_pl": a.get("unrealized_pl"), "realized_pl": a.get("realized_pl")}
+             for i, a in enumerate(fp.get("accounts", []))}}
     except Exception:
         positions = []
     body = {"action": "futu_risk", "token": tok, "run_hkt": t.strftime("%Y-%m-%d %H:%M"),
