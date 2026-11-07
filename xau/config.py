@@ -144,6 +144,10 @@ DD_ALERT_PCTS = (_f("XAU_DD_ALERT1_PCT", 10.0), _f("XAU_DD_ALERT2_PCT", 20.0))  
 # 累計虧損 ≥ 25%（使用者 10-20 揀 A）：PAUSE＋Telegram，紐約換日自動 RUN；觸發係「當日事件」——由 <25% 升到 ≥25% 嗰下先觸發，
 # 換日後仍 ≥25% 都照開新倉，要跌返落 25% 以下再升穿先會再停。XAU_CUM_LOSS_RETRIGGER=daily 改為每日只要 ≥25% 就再 PAUSE。
 CUM_LOSS_PAUSE_PCT = _f("XAU_CUM_LOSS_PAUSE_PCT", 25.0)
+# [11-07 HWM-C] 使用者 11-07 揀選項 C（xau/HWM_STOP_OPTIONS.md）戶口層：天覆陣合計（本金＋天覆陣 magic 已實現＋浮動）由高水位回撤 ≥ XAU_DD_STOP_PCT
+#   → 停開新倉（pause_kind "hwm"）。權益唔會自己返高水位，所以唔會自動解；要使用者批改 XAU_HWM_START（高水位由當時權益重新起計）。0＝唔設（預設）。
+DD_STOP_PCT = _f("XAU_DD_STOP_PCT", 0.0)
+HWM_START = _s("XAU_HWM_START", "")          # 任何非空值；同 control.json hwm_start 唔同就將高水位重設為當時權益（轉實倉日、觸發後重開都用呢個）
 CUM_LOSS_RETRIGGER = _s("XAU_CUM_LOSS_RETRIGGER", "edge").lower()                    # edge | daily
 NIGHT_MULT = _f("XAU_NIGHT_MULT", 1.5)                      # 夜盤（紐約 18:00–02:00 ET）PAUSE 線 ×1.5
 DATA_BLOCK_HOURS = _f("DATA_BLOCK_HOURS", 4.0)                # [R348] 美國高影響數據前幾多小時唔開新倉（GCS ops/us_data_calendar.json；0＝關）。使用者 10-28「數據之前4小時不入市」
@@ -242,6 +246,33 @@ STUDENT_MAX_LOTS = _f("SIG_STUDENT_MAX_LOTS", STUDENT_LOTS)          # 預設唔
 STUDENT_DAY_STOP_HKD = _f("SIG_STUDENT_DAY_STOP_HKD", 5000.0)        # 933 自己當日（EA 伺服器日、自己 magic）蝕到呢個數就停開新倉；0＝唔設（使用者 10-31 定 5000）
 STUDENT_TTL_MIN = _i("SIG_STUDENT_TTL_MIN", 30)                      # 學生出區之後幾多分鐘內未入到入場區就放棄
 STUDENT_MAX_CONCURRENT = _i("SIG_STUDENT_MAX_CONCURRENT", 1)         # 同戶口 931＋933 同時最多幾張倉（含排緊嘅開倉）
+
+
+def _struct(raw):
+    """[11-07 E6S4] "rev15:6,2,4,1;rev15x:6,2,4,1" → {"rule:rev15": (E, Z, S, RT)}；格式錯嗰項略過。"""
+    out = {}
+    for item in (raw or "").split(";"):
+        if ":" not in item:
+            continue
+        k, v = item.rsplit(":", 1)
+        try:
+            e, z, sl, rt = (float(x) for x in v.split(","))
+        except ValueError:
+            continue
+        if min(e, z, sl, rt) >= 0 and sl > 0 and rt > 0:
+            out["rule:" + k.strip().removeprefix("rule:")] = (e, z, sl, rt)
+    return out
+
+
+# [11-07 E6S4] 使用者 11-07：rev15 E6S4 下星期上 933 實倉（IDEAS #160 前向 66 張 +0.241R 達標）。只改 933 真倉用嘅入場區／SL／TP：
+#   以學生出區時現價為基準，入場中位＝現價向有利方向退 E、區 ±Z、SL＝中位外 S、TP＝中位 + RT×S（同 research/student_offline/fit_rules.simulate）。
+#   學生影子成績（student.py）唔變。空＝照舊用學生自己結構（預設）。
+STUDENT_STRUCT = _struct(_s("SIG_STUDENT_STRUCT", ""))
+# [11-07 HWM-C] 選項 C 策略層：933 由 SIG_STUDENT_HWM_START（UTC 日期 YYYY-MM-DD）起計成交簿 R：累計 ≤ −SIG_STUDENT_STOP_R
+#   或由策略高位回撤 ≥ SIG_STUDENT_DD_R → 停開新倉（唔自動解；使用者批改 START 先重開）。START 空＝唔設。
+STUDENT_HWM_START = _s("SIG_STUDENT_HWM_START", "")
+STUDENT_STOP_R = _f("SIG_STUDENT_STOP_R", 8.0)
+STUDENT_DD_R = _f("SIG_STUDENT_DD_R", 10.0)
 # [R361] H1 回調策略真倉（IDEAS #162 G7；使用者 11-01「H1 回調星期一用真倉」→ 新 magic 934，覆蓋 #163 影子前向）。預設關。
 G7_LIVE = _b("SIG_G7_LIVE", False)
 G7_MAGIC = _i("SIG_G7_MAGIC", MAGIC + 3)                             # 931 → 934（EA InpBotMagics 931–935 已包）

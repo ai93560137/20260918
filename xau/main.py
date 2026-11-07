@@ -275,6 +275,10 @@ def risk_ladder(state, control, account, bar, now):
         control["principal_seen"] = principal
         control["equity_peak"] = round(own_equity, 2)
         log_event(f"ℹ️ [{config.TEAM_NAME}] 本金已更新，高水位重設", component="ladder")
+    if config.HWM_START and own_equity is not None and control.get("hwm_start") != config.HWM_START:   # [11-07 HWM-C] 轉實倉日／觸發後重開
+        control["hwm_start"] = config.HWM_START
+        control["equity_peak"] = round(own_equity, 2)
+        log_event(f"ℹ️ [{config.TEAM_NAME}] XAU_HWM_START={config.HWM_START}：高水位由當時權益重新起計", component="ladder")
     if own_equity is not None and own_equity > (control.get("equity_peak") or 0.0):
         control["equity_peak"] = round(own_equity, 2)
     lad = rules.ladder(principal_hkd=principal, own_equity=own_equity,
