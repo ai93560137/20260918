@@ -93,6 +93,8 @@ MODEL = _s("CLAUDE_MODEL", "claude-opus-5-5")
 EFFORT = _s("CLAUDE_EFFORT", "low")                         # M1 每分鐘一次，先用 low；影子階段量度延遲再調
 GATE_MODEL = _s("GATE_MODEL", "claude-haiku-5-5")           # 冇倉時先用平價模型篩一次（龍飛陣方案 A）；留空 = 唔篩
 GATE_EFFORT = _s("GATE_EFFORT", "low")
+# [11-07 收緊篩選] 使用者 11-07「921 收緊 Haiku 篩選」：off（預設）｜shadow（照用原篩選決定，另外問一次嚴格版、只記錄「會唔會擋」）｜on（用嚴格版決定）
+GATE_STRICT = _s("XAU_GATE_STRICT", "off").lower()
 API_TIMEOUT_SEC = _f("CLAUDE_TIMEOUT_SEC", 45)              # EA WebRequest 同步等緊；影子階段量 p95 再定
 VERTEX_PROJECT = _s("CLAUDE_VERTEX_PROJECT", "")
 VERTEX_REGION = _s("CLAUDE_VERTEX_REGION", "global")

@@ -651,8 +651,16 @@ def process_bar(state, bar, m1, m15, account, now):
         ctx["signals"] = active
     b = get_brain()
     if pos is None and config.GATE_MODEL and not config.SIGNAL_BOOK:     # 訊號書：有效訊號本身就係「值得睇」，唔使 Haiku 篩
-        sc = b.screen(ctx)
+        strict = config.GATE_STRICT in ("on", "shadow")
+        sc = b.screen(ctx, strict=True) if config.GATE_STRICT == "on" else b.screen(ctx)
         _bump_usage(state, "screen", sc.get("_usage"), sc.get("_ms", 0), day)
+        if config.GATE_STRICT == "on":
+            rec["gate_strict"] = {"look": bool(sc.get("look")), "reason": sc.get("reason"), "mode": "on"}
+        elif strict and sc.get("look"):                              # [11-07] shadow：原篩選放行先問嚴格版（嚴格版只會擋多啲），只記錄
+            ss = b.screen(ctx, strict=True)
+            _bump_usage(state, "screen", ss.get("_usage"), ss.get("_ms", 0), day)
+            rec["gate_strict"] = {"look": bool(ss.get("look")), "reason": ss.get("reason"), "mode": "shadow",
+                                  "cost_usd": brain.cost_usd(ss.get("_usage"))}
         if not sc.get("look"):
             if ps is not None:
                 state["prescreen_stats"] = prescreen.bump(state.get("prescreen_stats"), ps["ask"])

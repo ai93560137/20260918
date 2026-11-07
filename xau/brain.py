@@ -102,6 +102,18 @@ look=true when unsure. Answer look=false only when the market is clearly quiet o
 Write `reason` in Traditional Chinese (Cantonese style is fine), one short sentence.
 The owner's LESSONS (below, if any) describe what the owner wants traded; follow them."""
 
+GATE_SYSTEM_STRICT = """You are the STRICT pre-screen for an automated {symbol} trading bot ({product_desc}). The bot is FLAT.
+A stronger, expensive model makes the real decision. Most minutes have no trade, so you must keep calls to a minimum.
+Answer look=true ONLY if at least one of these is clearly visible RIGHT NOW in the bars:
+1. A 15-minute bar has just closed beyond the high or low of the last 1-2 hours' range (a real breakout, not a wick).
+2. Price is testing a clearly defined level (previous day high/low, Asian/London session high/low, a round 10-dollar number,
+   a recent swing high/low) in the direction of the 15-minute trend, and the latest 1-minute bars show rejection or acceleration.
+3. A sharp move (about 2x the recent 15-minute range or more) has just stalled or started to reverse.
+In every other case answer look=false, INCLUDING when you are unsure, the market is drifting, or the setup was already
+there in earlier minutes and nothing new has happened.
+Write `reason` in Traditional Chinese (Cantonese style is fine), one short sentence naming which condition (1/2/3) applies or why none does.
+The owner's LESSONS (below, if any) describe what the owner wants traded; follow them."""
+
 GATE_FORMAT = {"type": "json_schema", "schema": {
     "type": "object", "properties": {"look": {"type": "boolean"}, "reason": {"type": "string"}},
     "required": ["look", "reason"], "additionalProperties": False}}
@@ -237,10 +249,10 @@ class ClaudeBrain:
                 self._fallbacks = False
         return self.client.messages.create(**kwargs)
 
-    def screen(self, context):
-        """冇倉時用平價模型篩一次。出錯一律當「要睇」。"""
+    def screen(self, context, strict=False):
+        """冇倉時用平價模型篩一次。出錯一律當「要睇」。strict=True：[11-07] 嚴格版提示（XAU_GATE_STRICT）。"""
         lessons, _ = self._lessons()
-        text = GATE_SYSTEM.replace("{product_desc}", config.PRODUCT_DESC).replace("{symbol}", config.SYMBOL) + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
+        text = (GATE_SYSTEM_STRICT if strict else GATE_SYSTEM).replace("{product_desc}", config.PRODUCT_DESC).replace("{symbol}", config.SYMBOL) + ("\n\n=== LESSONS FROM THE OWNER ===\n" + lessons if lessons else "")
         started = time.time()
         try:
             msg = self.client.messages.create(
