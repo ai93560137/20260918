@@ -5,7 +5,7 @@
 用法（PowerShell，喺 repo 資料夾）：
   python gcp_ib\\auto_risk.py --once                 # 跑一次
   python gcp_ib\\auto_risk.py --every 15             # 每 15 分鐘一次，視窗開住就一直跑（Ctrl+C 停）
-  每日香港時間 03:05／05:30／16:35 之後第一次循環會喺背景跑一次 futu_pnl_export.py（推 action=futu_pnl：
+  每日香港時間 03:05／05:30／06:40／16:35 之後第一次循環會喺背景跑一次 futu_pnl_export.py（推 action=futu_pnl：
   05:30 畀基金報告 R152；03:05 夜盤、16:35 日盤成交畀每日成交紀錄 R172，Cloud Run 存 futu/deals/<日期>.json）；
   每個時段成功先記低，失敗最多試 3 次。唔想要就加 --no-pnl。
 
@@ -170,9 +170,10 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R373"   # [R373] 推富途盈虧口徑同戶口 realized／unrealized；[R372] futu_positions_quote 唔計已到期合約；[R262] R260 買賣差／R261 白話之後 bump，GCS script_version 睇得出部機跑緊邊版
-# 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、16:35 日盤成交（16:30 收）
-PNL_SLOTS = ((3, 5), (5, 30), (16, 35))
+SCRIPT_VERSION = "R374"   # [R374] 加 06:40 匯出時段（美期收市後、港股開市前，複式記帳分界用）；[R373] 推富途盈虧口徑同戶口 realized／unrealized；[R372] futu_positions_quote 唔計已到期合約；[R262] R260 買賣差／R261 白話之後 bump，GCS script_version 睇得出部機跑緊邊版
+# 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、
+# 06:40 美期收市後、港股開市前再推一次（CME 冬令 06:00 收；複式記帳開市前分界之後要有齊成交同資金明細）、16:35 日盤成交（16:30 收）
+PNL_SLOTS = ((3, 5), (5, 30), (6, 40), (16, 35))
 PNL_MAX_TRIES = 3
 _pnl_proc = None
 
@@ -184,7 +185,7 @@ def pnl_slot(t):
 
 
 def pnl_daily(t):
-    """每日三個時段（PNL_SLOTS）各喺背景跑一次 futu_pnl_export.py（推 action=futu_pnl）。唔阻住風險循環；結果記喺 pnl_export_state.json。"""
+    """每日四個時段（PNL_SLOTS）各喺背景跑一次 futu_pnl_export.py（推 action=futu_pnl）。唔阻住風險循環；結果記喺 pnl_export_state.json。"""
     global _pnl_proc
     state_f = OUT / "pnl_export_state.json"
     try:

@@ -117,10 +117,12 @@ check("03:04 未到任何時段", auto_risk.pnl_slot(t(3, 4)) is None)
 check("03:05 → 03:05", auto_risk.pnl_slot(t(3, 5)) == "2026-10-13|03:05")
 check("05:29 仍係 03:05", auto_risk.pnl_slot(t(5, 29)) == "2026-10-13|03:05")
 check("05:30 → 05:30", auto_risk.pnl_slot(t(5, 30)) == "2026-10-13|05:30")
-check("16:34 仍係 05:30", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|05:30")
+check("06:39 仍係 05:30", auto_risk.pnl_slot(t(6, 39)) == "2026-10-13|05:30")
+check("[R374] 06:40 → 06:40（美期收市後、開市前）", auto_risk.pnl_slot(t(6, 40)) == "2026-10-13|06:40")
+check("16:34 仍係 06:40", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|06:40")
 check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
 check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
-check("SCRIPT_VERSION R373（R213 碎股規則之後 R260／R261／R266／R372／R373 bump）", auto_risk.SCRIPT_VERSION == "R373" and callable(auto_risk.fetch_cme))
+check("SCRIPT_VERSION R374（R213 碎股規則之後 R260／R261／R266／R372／R373／R374 bump）", auto_risk.SCRIPT_VERSION == "R374" and callable(auto_risk.fetch_cme))
 
 print("\n=== [R175] 保證金警報附補倉建議 ===")
 W, C, F, CL = main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR
@@ -255,6 +257,37 @@ _r = main.futu_pnl_report(_doc, "2026-10-01", today=_date(2026, 11, 7))
 _m = _r["periods"]["month"]["2026-10"]["合計"]
 check("10-23 價內到期用现金交割 −28,950（唔再當歸零 +2,950）", _m["gross"] == -28950, _m)
 check("有說明用咗现金交割", any("现金交割" in w for w in _r["warnings"]), _r["warnings"])
+
+print("\n=== [R262] 複式記帳（開市前分界） ===")
+check("美東 17:xx＝分界：冬令 06:10 HKT", main.futu_ledger_slot("2026-11-09 06:10") == "2026-11-09")
+check("夏令 05:10 HKT 都係分界", main.futu_ledger_slot("2026-07-09 05:10") == "2026-07-09")
+check("05:59 冬令（CME 未收）唔係分界", main.futu_ledger_slot("2026-11-07 05:59") is None)
+_risk = {"run_hkt": "2026-11-09 06:10", "metrics": {"futu_equity": 800000, "sec": {"equity": 1000}}, "positions": [
+    {"code": "HK.HSI2611", "qty": -1, "open_price": 24520, "last": 24647, "futu_pl": -4000},
+    {"code": "HK.HSI261023P23700000", "qty": -1, "open_price": 59, "last": 625}]}
+_mk = main.futu_ledger_mark(_risk)
+check("分界快照：權益＝期貨＋證券、未實現剔走到期殘留", _mk["equity"] == 801000 and _mk["unrealized"] == -6350, _mk)
+_cf = [{"account": "證券帳戶-HK", "date": "2026-11-09", "ccy": "HKD", "type": "其他", "dir": "IN", "amount": 100000.0, "remark": ""},
+       {"account": "證券帳戶-HK", "date": "2026-11-09", "ccy": "HKD", "type": "资金调拨", "dir": "OUT", "amount": -100000.0, "remark": "internal transfer to account(1)"},
+       {"account": "期貨帳戶", "date": "2026-11-09", "ccy": "HKD", "type": "资金调拨", "dir": "IN", "amount": 100000.0, "remark": "internal transfer from account(1)"},
+       {"account": "期貨帳戶", "date": "2026-11-09", "ccy": "USD", "type": "其他", "dir": "OUT", "amount": -10.0, "remark": "Interest In Oct."},
+       {"account": "期貨帳戶", "date": "2026-11-09", "ccy": "HKD", "type": "其他", "dir": "OUT", "amount": -2350.0, "remark": ""}]
+_fl = main.fund_ledger_flows(_cf, "2026-11-01")
+check("資金明細分類：外部入金、內部調撥兩腳、利息；期貨結算唔入", sorted(k for _, k, _ in _fl) == ["內部調撥（證券⇄期貨）", "內部調撥（證券⇄期貨）", "出入金（外部）", "利息"], _fl)
+_m0 = {"run_hkt": "2026-11-09 06:10", "equity": 801000, "unrealized": -6350, "gift": 0}
+_m1 = {"run_hkt": "2026-11-10 06:10", "equity": 801000 + 100000 - 78 + 5000 - 300 + 1350, "unrealized": -5000, "gift": 0}
+_rr = {"ledger_events": [("2026-11-09 10:00", "HSI 恒指期貨", 5000.0), ("2026-11-09 11:00", "MNQ 微型納指期貨", -300.0),
+                         ("2026-11-10 07:00", "HSI 恒指期貨", 999.0)],
+       "ledger_flows": _fl, "ledger_fetched_hkt": "2026-11-10 06:40"}
+_L = main.fund_ledger([_m1, _m0], _rr)
+_e = _L["entries"][0]
+check("借貸平衡：暫記 0（入金＋已實現＋未實現變化＋利息）", _e["suspense"] == 0 and not _e["flag"] and not _e["pending"], _e)
+check("分界之後嘅成交唔入呢張傳票", _e["lines"].get("已實現：HSI 恒指期貨") == 5000, _e["lines"])
+check("出入金入帳 100,000、內部調撥兩腳抵銷", _e["lines"].get("出入金（外部）") == 100000 and "內部調撥（證券⇄期貨）" not in _e["lines"], _e["lines"])
+_L2 = main.fund_ledger([_m0, _m1], dict(_rr, ledger_fetched_hkt="2026-11-10 05:42"))
+check("成交數據早過分界＝待補數據，唔計暫記", _L2["entries"][0]["pending"] and _L2["total_suspense"] == 0, _L2)
+_h = main.fund_ledger_html(_L, lambda v: f"{v:,.0f}")
+check("網頁有傳票、借貸合計", "📒 複式記帳" in _h and "暫記" in _h and "<th>借</th>" in _h, _h[:200])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

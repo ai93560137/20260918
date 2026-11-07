@@ -807,6 +807,11 @@ def handle_futu_risk(payload):
     except StorageError as exc:
         warnings.append("按日紀錄寫入失敗（最新一份已存）")
         log_event(f"⚠️ [富途風險紀錄失敗] {exc}", severity="WARNING", component="futu_risk")
+    try:                                                              # [R262] 複式記帳分界（開市前快照）
+        futu_ledger_store(doc)
+    except StorageError as exc:
+        warnings.append("記帳分界寫入失敗")
+        log_event(f"⚠️ [記帳分界寫入失敗] {exc}", severity="WARNING", component="futu_risk")
     sent = None
     margin_sent = futu_margin_alert(run_hkt, metrics, warnings)
     unmatched = [r for r in futu_team_assign(positions) if r["team"] == FUTU_TEAM_UNMATCHED]    # [R151]
@@ -1357,7 +1362,7 @@ def futu_pnl_report(doc, start=None, today=None):
             ccy = "USD" if code.startswith("US.") else "HKD"
             pnl = sum(-lp * lq * mult for lq, lp, _ in book)          # 當到期歸零（價外）
             events.append({"date": exp, "code": code, "product": prod, "gross": pnl * fx(ccy), "fee": 0.0, "expiry": True,
-                           "trade": True})
+                           "trade": True, "hkt": futu_expiry_hkt(code, exp)})
             warnings.append(f"{code}：冇平倉成交，當 {exp} 到期歸零計（{pnl * fx(ccy):+,.0f} 港幣）；如到期價內請核對結算價")
         else:
             if last_deal.get(code) and last_deal[code] < start:
@@ -1380,7 +1385,7 @@ def futu_pnl_report(doc, start=None, today=None):
         for e in legs:
             events.remove(e)
         events.append({"date": legs[0]["date"], "code": "＋".join(e["code"] for e in legs), "product": legs[0]["product"],
-                       "gross": amt, "fee": 0.0, "expiry": True, "trade": True})
+                       "gross": amt, "fee": 0.0, "expiry": True, "trade": True, "hkt": f"{d_} 16:30"})
         warnings.append(f"{d_} 到期期權用富途「现金交割」{amt:+,.0f} 港幣計（之前當歸零估 {est:+,.0f}）")
         warnings[:] = [w for w in warnings if not (d_ in w and "當" in w and "到期歸零計" in w)]
     rows = [e for e in events if e["date"] >= start]
@@ -1431,7 +1436,49 @@ def futu_pnl_report(doc, start=None, today=None):
             if FUND_REPORT_SHOW_FLOWS else [],
             "warnings": warnings + [str(n) for n in doc.get("notes") or []],
             "daily_realized": {k: round(v, 2) for k, v in sorted(daily.items())},
-            "daily_flows": {k: round(v, 2) for k, v in sorted(flows_daily.items())}}
+            "daily_flows": {k: round(v, 2) for k, v in sorted(flows_daily.items())},
+            "ledger_events": [(e.get("hkt") or f"{e['date']} 00:00", e["product"], round(e["gross"] - e["fee"], 2)) for e in rows],
+            "ledger_flows": fund_ledger_flows(doc.get("cash_flows") or [], start),
+            "ledger_fetched_hkt": doc.get("fetched_hkt")}
+
+
+def futu_expiry_hkt(code, exp):
+    """[R262] 期權到期結算時間（香港時間字串）：港期權＝到期日 16:30；美期權＝美東到期日 16:00 轉香港時間。"""
+    if str(code).startswith("US."):
+        t = datetime.combine(exp, datetime.min.time()).replace(hour=16, tzinfo=NY_TZ).astimezone(ZoneInfo("Asia/Hong_Kong"))
+        return t.strftime("%Y-%m-%d %H:%M")
+    return f"{exp} 16:30"
+
+
+def fund_ledger_flows(cash_flows, start):
+    """[R262] 複式記帳：富途資金明細 → 非交易科目（出入金、內部調撥、利息、費用、卡券、換匯）。
+    交易現金（期貨每日結算、權利金、股票交收、现金交割）唔入呢度，已經喺已實現／未實現入帳。
+    出入金＝證券戶口港幣「其他」、冇備註、整百金額（外部轉入／轉出）；時間當清算日 12:00（開市前分界之間）。"""
+    out = []
+    for f in cash_flows:
+        if not isinstance(f, dict) or not str(f.get("date", ""))[:10] or str(f.get("date"))[:10] < str(start):
+            continue
+        amt = to_float(f.get("amount")) or 0.0
+        amt = -abs(amt) if "OUT" in str(f.get("dir", "")).upper() else amt
+        ccy = str(f.get("ccy") or "HKD").upper()
+        hkd = amt * (FUTU_USD_HKD if ccy == "USD" else 1.0)
+        typ, rmk, acc = str(f.get("type") or ""), str(f.get("remark") or ""), str(f.get("account") or "")
+        if typ in ("资金调拨", "資金調撥"):
+            k = "內部調撥（證券⇄期貨）"
+        elif rmk.startswith("Interest"):
+            k = "利息"
+        elif rmk.startswith("Loan Fee") or typ in ("购买行情卡", "購買行情卡"):
+            k = "費用（借貸費、行情卡）"
+        elif typ in ("卡券",):
+            k = "卡券（現金券）"
+        elif typ in ("自动换汇", "自動換匯"):
+            k = "換匯差"
+        elif typ == "其他" and "證券" in acc and ccy == "HKD" and not rmk and amt and abs(amt) % 100 == 0:
+            k = "出入金（外部）"
+        else:
+            continue
+        out.append((f"{str(f['date'])[:10]} 12:00", k, round(hkd, 2)))
+    return out
 
 
 FUND_REPORT_CAPITAL_HKD = float(os.environ.get("FUND_REPORT_CAPITAL_HKD", "0") or 0)  # [R207] 回報率本金；0＝用富途期貨戶口現時權益
@@ -1593,15 +1640,146 @@ def fund_crosscheck_html(x, n):
         trs = "".join(f"<tr><td>{esc(e['date'])}</td><td>{n(e['realized'])}</td><td>{n(e['flow'])}</td>"
                       f"<td>{'⚠️ ' if e['flag'] else '✅ '}{n(e['residual'])}</td></tr>" for e in eq)
         bad = sum(1 for e in eq if e["flag"])
-        h += (f"<p>② 已實現盈虧（權益恆等式，最近 {len(eq)} 日）：{'✅ 全部平衡' if not bad else f'⚠️ {bad} 日唔平衡'}；"
+        h += (f"<p>② 舊方法（17:20 對帳快照，最近 {len(eq)} 日）：{'✅ 全部平衡' if not bad else f'⚠️ {bad} 日唔平衡'}；"
               f"累計殘差 {n(x.get('equity_cum') or 0)}</p>"
               "<div class='scroll'><table><tr><th>日期</th><th>已實現淨額</th><th>出入金</th><th>殘差</th></tr>"
               f"{trs}</table></div>"
-              "<p class='muted' style='font-size:12px'>殘差＝富途權益變化 −（未實現變化 ＋ 已實現淨額 ＋ 出入金）；"
+              "<p class='muted' style='font-size:12px'>⚠️ 舊方法嘅未實現取自 17:20 快照總數，混咗已到期週權殘留（例如 11-07 快照嘅到期週權殘留，"
+              "盈虧其實已經喺「现金交割」入帳）同期貨「上次結算後」口徑，所以殘差唔會歸零；以上面 📒 複式記帳為準。"
+              "殘差＝富途權益變化 −（未實現變化 ＋ 已實現淨額 ＋ 出入金）；"
               "超過 2,000 港幣或權益 0.5% 標 ⚠️（可能係漏咗成交、手續費、利息、出入金、到期期權結算或者快照時間差）。按兩次 17:20 對帳快照之間嘅成交時間計；權益本身唔公開。"
               "另外可以每月同富途月結單「已實現盈虧」人手對一次。</p>")
     return h + "</div>"
 
+
+
+FUTU_LEDGER_MARKS_FILE = "ops/books/ledger_marks.json"   # [R262] 複式記帳分界快照（每日美期收市後、港股開市前一份）
+FUND_LEDGER_TOL = 300.0                            # 暫記（未解釋）超過 max(300, 權益 0.05%) 港幣就標 ⚠
+
+
+def futu_ledger_slot(run_hkt):
+    """[R262] 使用者 11-07「快照加一個，美期收市後、開市前」：美東 17:00–17:59（CME 每日停市）＝香港冬令 06:00–06:59、
+    夏令 05:00–05:59；港期夜市 03:00 收、日市 09:15 開，所以呢段時間全部市場都停。喺呢段時間就回傳香港日期，否則 None。"""
+    try:
+        t = datetime.strptime(str(run_hkt)[:16], "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
+    except ValueError:
+        return None
+    return t.strftime("%Y-%m-%d") if t.astimezone(NY_TZ).hour == 17 else None
+
+
+def futu_ledger_mark(doc):
+    """[R262] 由富途快照整一份分界：權益（期貨＋證券）、乾淨未實現（開倉至今、剔走到期殘留同贈股）、贈股市值變化。"""
+    un = fund_unrealized(doc)
+    if not un or un.get("futu_equity") is None:
+        return None
+    gift = 0.0
+    for p in doc.get("positions") or []:
+        if isinstance(p, dict) and futu_is_gift(str(p.get("code") or "")):
+            o = futu_open_pl(p)
+            gift += (o or 0.0) * (FUTU_USD_HKD if str(p.get("code")).startswith("US.") else 1.0)
+    return {"run_hkt": doc.get("run_hkt"), "equity": round(un["futu_equity"], 2), "unrealized": un["total"],
+            "by_product": un["by_product"], "gift": round(gift, 2)}
+
+
+def futu_ledger_store(doc):
+    """[R262] 喺分界時段收到嘅第一份快照記入 ops/books/ledger_marks.json（同一日只記一次）。失敗唔影響主流程。"""
+    day = futu_ledger_slot(doc.get("run_hkt"))
+    mark = futu_ledger_mark(doc) if day else None
+    if not mark:
+        return False
+
+    def mutate(existing):
+        rows = [r for r in (existing if isinstance(existing, list) else []) if isinstance(r, dict)]
+        if any(str(r.get("run_hkt", ""))[:10] == day for r in rows):
+            return None, False
+        return sorted(rows + [mark], key=lambda r: str(r.get("run_hkt"))), True
+
+    return gcs_update(FUTU_LEDGER_MARKS_FILE, mutate, default_factory=list)
+
+
+def fund_ledger(marks, r):
+    """[R262] 使用者 11-07「累計殘差要 0，用 double entry，記埋出入金，放網頁」。
+    每兩個分界之間開一張傳票：借＝富途權益（證券＋期貨）變化；貸＝出入金＋內部調撥＋已實現（按產品，已扣手續費）
+    ＋未實現變化＋贈股市值變化＋利息／費用／卡券／換匯；兩邊差額記「暫記（未解釋）」，應該係 0。
+    分界之後嘅成交數據未推上嚟（futu/pnl 抓取時間早過分界）就標「待補數據」，唔計殘差。"""
+    marks = sorted([m for m in marks or [] if isinstance(m, dict) and m.get("equity") is not None],
+                   key=lambda m: str(m.get("run_hkt")))
+    ev, fl = (r or {}).get("ledger_events") or [], (r or {}).get("ledger_flows") or []
+    fetched = str((r or {}).get("ledger_fetched_hkt") or "")
+    out = []
+    for m0, m1 in zip(marks, marks[1:]):
+        t0, t1 = str(m0["run_hkt"])[:16], str(m1["run_hkt"])[:16]
+        lines = {}
+        for t, prod, v in ev:
+            if t0 < str(t)[:16] <= t1:
+                lines[f"已實現：{prod}"] = lines.get(f"已實現：{prod}", 0.0) + v
+        for t, k, v in fl:
+            if t0 < str(t)[:16] <= t1:
+                lines[k] = lines.get(k, 0.0) + v
+        lines["未實現變化（開倉至今）"] = (m1.get("unrealized") or 0.0) - (m0.get("unrealized") or 0.0)
+        g = (m1.get("gift") or 0.0) - (m0.get("gift") or 0.0)
+        if g:
+            lines["券商贈股市值變化"] = g
+        lines = {k: round(v, 2) for k, v in lines.items() if abs(v) >= 0.005}
+        d_eq = round(m1["equity"] - m0["equity"], 2)
+        sus = round(d_eq - sum(lines.values()), 2)
+        pending = fetched[:16] < t1
+        out.append({"from": t0, "to": t1, "equity_change": d_eq, "lines": lines, "suspense": sus, "pending": pending,
+                    "flag": (not pending) and abs(sus) > max(FUND_LEDGER_TOL, 0.0005 * abs(m1["equity"]))})
+    done = [x for x in out if not x["pending"]]
+    tot = {}
+    for x in done:
+        for k, v in x["lines"].items():
+            tot[k] = round(tot.get(k, 0.0) + v, 2)
+    return {"since": str(marks[0]["run_hkt"]) if marks else None, "entries": out[-10:], "total_lines": tot,
+            "total_equity_change": round(sum(x["equity_change"] for x in done), 2),
+            "total_suspense": round(sum(x["suspense"] for x in done), 2), "marks": len(marks)}
+
+
+def fund_ledger_html(L, n):
+    if not L or not L.get("marks"):
+        return ""
+    h = ("<div class='section'><b>📒 複式記帳（富途：證券＋期貨戶口，港幣）</b>"
+         f"<p>期初分界 {esc(str(L.get('since') or '—'))} HKT；之後每日美期收市後、港股開市前記一次分界。</p>")
+    if not L.get("entries"):
+        return h + "<p class='muted'>只有期初分界，下一個開市前分界記低之後就有第一張傳票。</p></div>"
+
+    def voucher(title, d_eq, lines, sus, flag=False, pending=False):
+        rows = []
+        dr = lambda v: (n(v), "") if v > 0 else ("", n(-v))
+        a, b = dr(d_eq) if d_eq else ("", "")
+        rows.append(f"<tr><td>富途權益（資產）</td><td style='text-align:right'>{a}</td><td style='text-align:right'>{b}</td></tr>")
+        for k, v in lines.items():                                   # 收入／資本科目：正數記貸方，負數記借方
+            c, d = ("", n(v)) if v > 0 else (n(-v), "")
+            rows.append(f"<tr><td>{esc(k)}</td><td style='text-align:right'>{c}</td><td style='text-align:right'>{d}</td></tr>")
+        if pending:
+            mark = "⏳ 待補數據"
+        else:
+            mark = ("⚠️ " if flag else "✅ ") + n(sus)
+        if sus and not pending:
+            c, d = ("", n(sus)) if sus > 0 else (n(-sus), "")
+            rows.append(f"<tr><td>暫記（未解釋）</td><td style='text-align:right'>{c}</td><td style='text-align:right'>{d}</td></tr>")
+        s_ = 0.0 if pending else sus
+        t_dr = max(d_eq, 0) + sum(max(-v, 0) for v in lines.values()) + max(-s_, 0)
+        t_cr = max(-d_eq, 0) + sum(max(v, 0) for v in lines.values()) + max(s_, 0)
+        return (f"<p style='margin-top:10px'><b>{esc(title)}</b>　暫記 {mark}</p><div class='scroll'><table>"
+                "<tr><th>科目</th><th>借</th><th>貸</th></tr>" + "".join(rows)
+                + f"<tr><td><b>合計</b></td><td style='text-align:right'><b>{n(t_dr)}</b></td>"
+                  f"<td style='text-align:right'><b>{n(t_cr)}</b></td></tr></table></div>")
+
+    done = [e for e in L["entries"] if not e["pending"]]
+    bad = sum(1 for e in done if e["flag"])
+    h += (f"<p>累計（{len(done)} 張傳票）：暫記合計 {n(L['total_suspense'])}，"
+          f"{'✅ 借貸平衡' if not bad else f'⚠️ {bad} 張要核對'}</p>")
+    h += voucher("累計（期初至今）", L["total_equity_change"], L["total_lines"], L["total_suspense"], bad > 0)
+    for e in reversed(L["entries"]):
+        h += voucher(f"{e['from']} → {e['to']} HKT", e["equity_change"], e["lines"], e["suspense"], e["flag"], e["pending"])
+    h += ("<p class='muted' style='font-size:12px'>借＝富途權益增加（或收入／資本減少）；貸＝收入、出入金增加（或權益減少）。"
+          "已實現按成交時間、已扣手續費；到期期權用富途「现金交割」實數；未實現＝開倉至今，剔走已到期殘留同券商贈股；"
+          "出入金、利息、費用來自富途資金明細（清算日）。期貨每日結算、權利金、股票交收屬交易現金，已經喺已實現／未實現入帳，唔重複記。"
+          f"暫記超過 300 港幣或權益 0.05% 標 ⚠️（美元按 {FUTU_USD_HKD} 折算，富途按當時匯率，所以可能有幾十蚊匯率差）。"
+          "「待補數據」＝分界之後嘅成交同資金明細未推上嚟，下次抓取之後自動計。</p></div>")
+    return h
 
 def fund_performance(r, unreal, today=None):
     """[R207] 每月／每季／每年績效：已實現淨額（已扣手續費）、未實現（只計入現時所屬期間）、總盈虧、回報率、平倉筆數、勝率。
@@ -1726,6 +1904,7 @@ def build_fund_report_page(r):
                  "<div class='scroll'><table>"
                  f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div>"
                  "<div class='muted' style='font-size:12px'>開倉至今（對富途 App「持倉盈虧」）；富途期貨「未實現盈虧」只計上次結算後，兩者唔同。美元 × 7.8。</div></div>")
+    body += fund_ledger_html(r.get("ledger"), n)                          # [R262] 複式記帳
     body += fund_crosscheck_html(r.get("crosscheck"), n)                  # [R259] 二次校對
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}
@@ -1820,6 +1999,13 @@ def handle_fund_report_get(req):
     except StorageError:
         books = None
     r["crosscheck"] = fund_crosscheck(risk_doc, r, books)
+    try:                                                                  # [R262] 複式記帳
+        marks = gcs_read_json(FUTU_LEDGER_MARKS_FILE, [])
+    except StorageError:
+        marks = []
+    r["ledger"] = fund_ledger(marks, r)
+    for k in ("ledger_events", "ledger_flows", "ledger_fetched_hkt"):
+        r.pop(k, None)
     if req.args.get("format") == "json":
         return _json_response(r)
     return build_fund_report_page(r)
