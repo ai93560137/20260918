@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tradingview" / "out" / "futu_pnl_export.json"
 HKT = timezone(timedelta(hours=8))
 CHUNK_DAYS = 30
-SCRIPT_VERSION = "R152"
+SCRIPT_VERSION = "R375"   # [R375] 加每張單收費明細 fee_details（佣金、平台費、交易所費、徵費…）
 FLOW_FROM = date(2026, 9, 1)          # 資金流水只對報告期（富途要逐日查，太早嘅唔使）
 
 
@@ -46,7 +46,7 @@ def chunks(start, end):
 
 def fetch(since):
     today = datetime.now(HKT).date()
-    deals, fees, flows, positions, notes = [], {}, [], [], []
+    deals, fees, fee_details, flows, positions, notes = [], {}, {}, [], [], []
     seen = set()
     for label, ctx in contexts():
         try:
@@ -94,6 +94,10 @@ def fetch(since):
                     if ret == RET_OK:
                         for _, r in fd.iterrows():
                             fees[str(r.get("order_id"))] = num(r.get("fee_amount"))
+                            items = r.get("fee_details")              # [R375] [(收費項目, 金額), ...]
+                            if isinstance(items, (list, tuple)) and items:
+                                fee_details[str(r.get("order_id"))] = [[str(t)[:40], num(v)] for t, v in
+                                                                       (x for x in items if isinstance(x, (list, tuple)) and len(x) == 2)]
                     else:
                         notes.append(f"{label} 手續費查詢失敗：{mask(fd)[:120]}")
                 ret, pf = ctx.position_list_query(trd_env=TrdEnv.REAL, acc_id=acc, refresh_cache=True)
@@ -105,7 +109,7 @@ def fetch(since):
         finally:
             ctx.close()
     return {"action": "futu_pnl", "script_version": SCRIPT_VERSION, "since": str(since),
-            "fetched_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M"), "deals": deals, "fees": fees,
+            "fetched_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M"), "deals": deals, "fees": fees, "fee_details": fee_details,
             "cash_flows": flows, "positions": positions, "notes": notes}
 
 

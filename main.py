@@ -1175,7 +1175,7 @@ def handle_futu_pnl(payload):
     deals = [d for d in (payload.get("deals") or [])[:20000] if isinstance(d, dict) and d.get("code")]
     if not deals:
         return jsonify({"status": "error", "message": "futu_pnl: no deals"}), 422
-    doc = {k: payload.get(k) for k in ("since", "fetched_hkt", "script_version", "fees", "cash_flows", "positions", "notes")}
+    doc = {k: payload.get(k) for k in ("since", "fetched_hkt", "script_version", "fees", "fee_details", "cash_flows", "positions", "notes")}
     doc.update(deals=deals, received_utc=fmt_utc())
     try:
         gcs_write_text(FUTU_PNL_FILE, json.dumps(doc, ensure_ascii=False, default=str))
@@ -1322,6 +1322,7 @@ def futu_pnl_report(doc, start=None, today=None):
         deals.append((t, d["code"], sign * q, px, str(d.get("order_id"))))
     deals.sort()
     fees = doc.get("fees") or {}
+    fee_det = doc.get("fee_details") or {}                              # [R262] 每張單收費明細（部機 R375 起）
     fee_seen = set()
     lots = {}
     last_deal = {}
@@ -1332,7 +1333,8 @@ def futu_pnl_report(doc, start=None, today=None):
         if oid not in fee_seen and to_float(fees.get(oid)):
             fee_seen.add(oid)
             events.append({"date": t.date(), "code": code, "product": prod, "gross": 0.0, "fee": to_float(fees[oid]) * fx(ccy),
-                           "hkt": t.strftime("%Y-%m-%d %H:%M")})
+                           "hkt": t.strftime("%Y-%m-%d %H:%M"),
+                           "fee_items": futu_fee_items(fee_det.get(oid), to_float(fees[oid]), fx(ccy))})
         book = lots.setdefault(code, [])
         while q and book and (book[0][0] > 0) != (q > 0):
             lq, lp, lt = book[0]
@@ -1437,9 +1439,98 @@ def futu_pnl_report(doc, start=None, today=None):
             "warnings": warnings + [str(n) for n in doc.get("notes") or []],
             "daily_realized": {k: round(v, 2) for k, v in sorted(daily.items())},
             "daily_flows": {k: round(v, 2) for k, v in sorted(flows_daily.items())},
-            "ledger_events": [(e.get("hkt") or f"{e['date']} 00:00", e["product"], round(e["gross"] - e["fee"], 2)) for e in rows],
+            "ledger_events": fund_ledger_events(rows),
+            "fee_table": fund_fee_table(rows, fund_ledger_flows(doc.get("cash_flows") or [], start)),
             "ledger_flows": fund_ledger_flows(doc.get("cash_flows") or [], start),
             "ledger_fetched_hkt": doc.get("fetched_hkt")}
+
+
+FUTU_FEE_S2T = str.maketrans("费证监会财税结汇规务计价单买卖换处杂级际货权场记关资银额续台说调拨类别项征",
+                             "費證監會財稅結匯規務計價單買賣換處雜級際貨權場記關資銀額續台說調撥類別項徵")
+
+
+def futu_fee_items(details, total, fx):
+    """[R262] 使用者 11-07「所有費用仔細分類」：富途 order_fee_query 嘅 fee_details [(項目, 金額)] → [(項目（繁體）, 港幣)]。
+    明細加埋同總額唔夾（或者冇明細，即部機未升 R375）就將差額記「手續費（未分類）」，總數一定等於 fee_amount。"""
+    out, s = [], 0.0
+    for it in details or []:
+        if isinstance(it, (list, tuple)) and len(it) == 2 and to_float(it[1]):
+            name = str(it[0]).strip().translate(FUTU_FEE_S2T) or "其他收費"
+            out.append((name, to_float(it[1]) * fx))
+            s += to_float(it[1])
+    rest = (to_float(total) or 0.0) - s
+    if abs(rest) >= 0.005:
+        out.append(("手續費（未分類）", rest * fx))
+    return out
+
+
+def fund_ledger_events(rows):
+    """[R262] 傳票用：每筆平倉／到期記「交易毛利：產品」，每張單收費按項目記「手續費：項目」（負數＝支出）。"""
+    out = []
+    for e in rows:
+        t = e.get("hkt") or f"{e['date']} 00:00"
+        if e["gross"]:
+            out.append((t, f"交易毛利：{e['product']}", round(e["gross"], 2)))
+        for name, v in e.get("fee_items") or ([("手續費（未分類）", e["fee"])] if e.get("fee") else []):
+            out.append((t, f"手續費：{name}", round(-v, 2)))
+    return out
+
+
+FUND_NONTRADE_FEES = ("利息", "借貸費", "行情卡費", "換匯差")
+
+
+def fund_fee_table(rows, flows):
+    """[R262] 費用分類：{"month": {月: {項目: 港幣}}, "product": {產品: {項目: 港幣}}}；支出記正數。
+    交易費用（每張單收費明細）＋非交易費用（資金明細：利息、借貸費、行情卡費、換匯差）。"""
+    by_m, by_p = {}, {}
+    for e in rows:
+        m = str(e["date"])[:7]
+        for name, v in e.get("fee_items") or ([("手續費（未分類）", e["fee"])] if e.get("fee") else []):
+            by_m.setdefault(m, {})[name] = by_m.get(m, {}).get(name, 0.0) + v
+            by_p.setdefault(e["product"], {})[name] = by_p.get(e["product"], {}).get(name, 0.0) + v
+    for t, k, v in flows:
+        if k in FUND_NONTRADE_FEES:
+            m = str(t)[:7]
+            by_m.setdefault(m, {})[k] = by_m.get(m, {}).get(k, 0.0) - v
+    rnd = lambda d: {k: {kk: round(vv, 2) for kk, vv in v.items() if abs(vv) >= 0.005} for k, v in sorted(d.items())}
+    return {"month": rnd(by_m), "product": rnd(by_p)}
+
+
+def fund_fee_html(ft, n):
+    if not ft or not ft.get("month"):
+        return ""
+    months = list(ft["month"])
+    cats = {}
+    for v in ft["month"].values():
+        for k, x in v.items():
+            cats[k] = cats.get(k, 0.0) + x
+    trade = sorted([k for k in cats if k not in FUND_NONTRADE_FEES], key=lambda k: -cats[k])
+    non = [k for k in FUND_NONTRADE_FEES if k in cats]
+    cell = lambda v: f"<td style='text-align:right'>{n(v) if abs(v) >= 0.005 else '—'}</td>"
+
+    def row(label, f, bold=False):
+        vals = [f(m) for m in months]
+        b = (lambda x: f"<b>{x}</b>") if bold else (lambda x: x)
+        return (f"<tr><td>{b(esc(label))}</td>" + "".join(cell(v) for v in vals) + cell(sum(vals)) + "</tr>")
+
+    g = lambda ks: (lambda m: sum(ft["month"][m].get(k, 0.0) for k in ks))
+    trs = "".join(row(k, g([k])) for k in trade) + row("交易費用小計", g(trade), True)
+    trs += "".join(row(k, g([k])) for k in non) + (row("非交易費用小計", g(non), True) if non else "")
+    trs += row("全部費用", g(trade + non), True)
+    h = ("<div class='section'><b>💸 費用分類（港幣，支出記正數）</b><div class='scroll'><table>"
+         "<tr><th>項目</th>" + "".join(f"<th>{esc(m)}</th>" for m in months) + "<th>合計</th></tr>" + trs + "</table></div>")
+    prods = ft.get("product") or {}
+    if prods:
+        pc = sorted({k for v in prods.values() for k in v}, key=lambda k: -cats.get(k, 0.0))
+        trs = "".join(f"<tr><td>{esc(p)}</td>" + "".join(cell(v.get(k, 0.0)) for k in pc) + cell(sum(v.values())) + "</tr>"
+                      for p, v in sorted(prods.items(), key=lambda kv: -sum(kv[1].values())))
+        h += ("<p style='margin-top:10px'><b>按產品（交易費用，報告期合計）</b></p><div class='scroll'><table>"
+              "<tr><th>產品</th>" + "".join(f"<th>{esc(k)}</th>" for k in pc) + "<th>合計</th></tr>" + trs + "</table></div>")
+    h += ("<p class='muted' style='font-size:12px'>交易費用＝富途每張單收費明細（佣金、平台使用費、交易所費、結算費、徵費、印花稅等，"
+          "項目名照富途）；「手續費（未分類）」＝部機未升 R375 之前嘅單冇明細，或者明細加埋同總額有差。"
+          "非交易費用＝富途資金明細：利息（孖展／期貨戶口借款）、借貸費（沽空借貨）、行情卡費、換匯差。美元按 "
+          f"{FUTU_USD_HKD} 折算。</p></div>")
+    return h
 
 
 def futu_expiry_hkt(code, exp):
@@ -1467,8 +1558,10 @@ def fund_ledger_flows(cash_flows, start):
             k = "內部調撥（證券⇄期貨）"
         elif rmk.startswith("Interest"):
             k = "利息"
-        elif rmk.startswith("Loan Fee") or typ in ("购买行情卡", "購買行情卡"):
-            k = "費用（借貸費、行情卡）"
+        elif rmk.startswith("Loan Fee"):
+            k = "借貸費"
+        elif typ in ("购买行情卡", "購買行情卡"):
+            k = "行情卡費"
         elif typ in ("卡券",):
             k = "卡券（現金券）"
         elif typ in ("自动换汇", "自動換匯"):
@@ -1710,9 +1803,9 @@ def fund_ledger(marks, r):
     for m0, m1 in zip(marks, marks[1:]):
         t0, t1 = str(m0["run_hkt"])[:16], str(m1["run_hkt"])[:16]
         lines = {}
-        for t, prod, v in ev:
+        for t, k, v in ev:
             if t0 < str(t)[:16] <= t1:
-                lines[f"已實現：{prod}"] = lines.get(f"已實現：{prod}", 0.0) + v
+                lines[k] = lines.get(k, 0.0) + v
         for t, k, v in fl:
             if t0 < str(t)[:16] <= t1:
                 lines[k] = lines.get(k, 0.0) + v
@@ -1794,7 +1887,7 @@ def fund_ledger_html(L, n):
     for e in reversed(L["entries"]):
         h += voucher(f"{e['from']} → {e['to']} HKT", e["equity_change"], e["lines"], e["suspense"], e["flag"], e["pending"])
     h += ("<p class='muted' style='font-size:12px'>借＝富途權益增加（或收入／資本減少）；貸＝收入、出入金增加（或權益減少）。"
-          "已實現按成交時間、已扣手續費；到期期權用富途「现金交割」實數；未實現＝開倉至今，剔走已到期殘留同券商贈股；"
+          "交易毛利按成交時間；手續費按富途每張單收費明細逐項記；到期期權用富途「现金交割」實數；未實現＝開倉至今，剔走已到期殘留同券商贈股；"
           "出入金、利息、費用來自富途資金明細（清算日）。期貨每日結算、權利金、股票交收屬交易現金，已經喺已實現／未實現入帳，唔重複記。"
           f"暫記超過 300 港幣或權益 0.05% 標 ⚠️（美元按 {FUTU_USD_HKD} 折算，富途按當時匯率，所以可能有幾十蚊匯率差）。"
           "「待補數據」＝分界之後嘅成交同資金明細未推上嚟，下次抓取之後自動計。</p>")
@@ -1924,6 +2017,7 @@ def build_fund_report_page(r):
                  f"<tr><th>產品</th><th>未實現</th></tr>{trs}<tr><td><b>合計</b></td><td>{n(un['total'])}</td></tr></table></div>"
                  "<div class='muted' style='font-size:12px'>開倉至今（對富途 App「持倉盈虧」）；富途期貨「未實現盈虧」只計上次結算後，兩者唔同。美元 × 7.8。</div></div>")
     body += fund_ledger_html(r.get("ledger"), n)                          # [R262] 複式記帳
+    body += fund_fee_html(r.get("fee_table"), n)                          # [R262] 費用分類
     body += fund_crosscheck_html(r.get("crosscheck"), n)                  # [R259] 二次校對
     for name, zh in (("month", "每月"), ("quarter", "每季"), ("year", "每年")):
         tab = r["periods"].get(name) or {}

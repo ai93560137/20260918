@@ -276,13 +276,13 @@ _fl = main.fund_ledger_flows(_cf, "2026-11-01")
 check("資金明細分類：外部入金、內部調撥兩腳、利息；期貨結算唔入", sorted(k for _, k, _ in _fl) == ["內部調撥（證券⇄期貨）", "內部調撥（證券⇄期貨）", "利息", "外部入金"], _fl)
 _m0 = {"run_hkt": "2026-11-09 06:10", "equity": 801000, "unrealized": -6350, "gift": 0}
 _m1 = {"run_hkt": "2026-11-10 06:10", "equity": 801000 + 100000 - 78 + 5000 - 300 + 1350, "unrealized": -5000, "gift": 0}
-_rr = {"ledger_events": [("2026-11-09 10:00", "HSI 恒指期貨", 5000.0), ("2026-11-09 11:00", "MNQ 微型納指期貨", -300.0),
-                         ("2026-11-10 07:00", "HSI 恒指期貨", 999.0)],
+_rr = {"ledger_events": [("2026-11-09 10:00", "交易毛利：HSI 恒指期貨", 5000.0), ("2026-11-09 11:00", "交易毛利：MNQ 微型納指期貨", -300.0),
+                         ("2026-11-10 07:00", "交易毛利：HSI 恒指期貨", 999.0)],
        "ledger_flows": _fl, "ledger_fetched_hkt": "2026-11-10 06:40"}
 _L = main.fund_ledger([_m1, _m0], _rr)
 _e = _L["entries"][0]
 check("借貸平衡：暫記 0（入金＋已實現＋未實現變化＋利息）", _e["suspense"] == 0 and not _e["flag"] and not _e["pending"], _e)
-check("分界之後嘅成交唔入呢張傳票", _e["lines"].get("已實現：HSI 恒指期貨") == 5000, _e["lines"])
+check("分界之後嘅成交唔入呢張傳票", _e["lines"].get("交易毛利：HSI 恒指期貨") == 5000, _e["lines"])
 check("外部入金入帳 100,000、內部調撥兩腳抵銷", _e["lines"].get("外部入金") == 100000 and "內部調撥（證券⇄期貨）" not in _e["lines"], _e["lines"])
 _L2 = main.fund_ledger([_m0, _m1], dict(_rr, ledger_fetched_hkt="2026-11-10 05:42"))
 check("成交數據早過分界＝待補數據，唔計暫記", _L2["entries"][0]["pending"] and _L2["total_suspense"] == 0, _L2)
@@ -293,6 +293,27 @@ check("外部入金、出金分開逐筆紀錄", [(e["kind"], e["amount"]) for e
 _h3 = main.fund_ledger_html(_L3, lambda v: f"{v:,.0f}")
 check("網頁有入金／出金紀錄同合計", "外部入金／出金紀錄" in _h3 and "出金合計" in _h3 and "🔴 出金" in _h3, _h3[-600:])
 check("網頁有傳票、借貸合計", "📒 複式記帳" in _h and "暫記" in _h and "<th>借</th>" in _h, _h[:200])
+
+print("\n=== [R262] 費用仔細分類 ===")
+_fi = main.futu_fee_items([["佣金", 2.0], ["平台使用费", 15.0], ["证监会征费", 0.27]], 20.0, 1.0)
+check("富途收費明細轉繁體、差額記未分類，總數等於 fee_amount",
+      [k for k, _ in _fi] == ["佣金", "平台使用費", "證監會徵費", "手續費（未分類）"] and round(sum(v for _, v in _fi), 2) == 20.0, _fi)
+check("冇明細（部機未升 R375）＝全部未分類", main.futu_fee_items(None, 10.0, 7.8) == [("手續費（未分類）", 78.0)])
+_fdoc = {"deals": [{"code": "HK.HSI2611", "side": "SELL_SHORT", "qty": 1, "price": 24520, "time": "2026-11-09 10:00:00", "order_id": "o1", "account": "期貨帳戶"},
+                   {"code": "HK.HSI2611", "side": "BUY_BACK", "qty": 1, "price": 24500, "time": "2026-11-09 11:00:00", "order_id": "o2", "account": "期貨帳戶"}],
+         "positions": [], "fees": {"o1": 30.0, "o2": 30.0},
+         "fee_details": {"o1": [["佣金", 10.0], ["交易所费", 20.0]], "o2": [["佣金", 10.0], ["交易所费", 20.0]]},
+         "cash_flows": [{"account": "期貨帳戶", "date": "2026-11-02", "ccy": "USD", "type": "其他", "dir": "OUT", "amount": -10.0, "remark": "Interest In Oct."},
+                        {"account": "證券帳戶-HK", "date": "2026-11-02", "ccy": "USD", "type": "其他", "dir": "OUT", "amount": -1.0, "remark": "Loan Fees In Oct."}]}
+_fr = main.futu_pnl_report(_fdoc, "2026-11-01", today=_date(2026, 11, 10))
+_ft = _fr["fee_table"]["month"]["2026-11"]
+check("費用按項目分：佣金 20、交易所費 40、利息 78、借貸費 7.8", _ft == {"佣金": 20.0, "交易所費": 40.0, "利息": 78.0, "借貸費": 7.8}, _ft)
+check("按產品費用", _fr["fee_table"]["product"] == {"HSI 恒指期貨": {"佣金": 20.0, "交易所費": 40.0}}, _fr["fee_table"]["product"])
+_le = _fr["ledger_events"]
+check("傳票：毛利 +1,000、手續費逐項（負數）", ("2026-11-09 11:00", "交易毛利：HSI 恒指期貨", 1000.0) in _le
+      and round(sum(v for _, k, v in _le if k.startswith("手續費")), 2) == -60.0, _le)
+_fh = main.fund_fee_html(_fr["fee_table"], lambda v: f"{v:,.2f}")
+check("網頁有費用分類、小計", "💸 費用分類" in _fh and "交易費用小計" in _fh and "非交易費用小計" in _fh and "全部費用" in _fh, _fh[:300])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
