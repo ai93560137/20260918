@@ -1,4 +1,4 @@
-# 事件日曆：本週與下週（更新 2026-11-06 10:57 HKT）
+# 事件日曆：本週與下週（更新 2026-11-07 10:27 HKT）
 
 > 由 `scripts/event_calendar.py` 每日產生；完整表 `calendar/events.csv`（過去 7 天到未來 35 天）。
 > 影響哪個陣、事件週定義在 `calendar/rules.json`（風揚陣擁有）。時間為香港時間；「04:00+1」= 翌日 04:00。
@@ -20,7 +20,6 @@
 | 11-05（四） | 20:00 | GBP | 數據 | MPC Official Bank Rate Votes | High |  |
 | 11-05（四） | 20:00 | GBP | 數據 | Official Bank Rate | High |  |
 | 11-05（四） | 20:30 | GBP | 數據 | BOE Gov Bailey Speaks | High |  |
-| 11-06（五） |  | 持倉 | 持倉到期 | 🌬️ 風揚陣・方向一：沽 HSI 週期權 11/06 | High | 見事件 |
 | 11-06（五） | 21:30 | CAD | 數據 | Employment Change | High |  |
 | 11-06（五） | 21:30 | CAD | 數據 | Unemployment Rate | High |  |
 | 11-06（五） | 21:30 | USD | 數據 | Average Hourly Earnings m/m | High | 雲垂 MES、人手 EW、金絲雀 |
