@@ -38,3 +38,9 @@
 - [CXO Advisory](https://cxoadvisory.com/?p=22002)、[SentimenTrader 波動率轉變](https://sentimentrader.com/blog/fears-of-a-volatility-regime-change)：VIX 急升期間動量回報轉負、失敗嘅 VIX 急升多過真正崩盤（美股，冇恒指）。
 - 同我哋數據：IDEAS #229 升勢日兩日急升 ≥ 1.5 ATR 後隨機做好 −17.8 點／筆 vs 其他升勢日 +10.0，方向一致但只得 11 日、14/20 種子 → 樣本不足唔成立，前向觀察。
 - 下一步：急升後追好前向記錄；VIX 深紅期間 MHI 做好成績可以喺 journal 分開記（使用者 11-06 決定唔加金絲雀閘門）。
+
+## 2026-11-07 網上研究：恒指期貨對美股大變動過度反應 → IDEAS #2000
+- [Fung、Mok、Lam 2000：美國同香港指數期貨即日反轉](https://scholars.hkbu.edu.hk/en/publications/intraday-price-reversals-for-index-futures-in-the-us-and-hong-kon/)：HSI／S&P 期貨開市大變動之後即日反轉，反轉幅度同開市變動成正比；扣成本後仍可微利（只睇到摘要）。
+- [Fung、Lam、Lam 2010：亞洲指數期貨對美股過度反應](https://ideas.repec.org/a/eee/empfin/v17y2010i3p428-440.html)：美股極端變動後亞洲期貨即日反轉，平靜期減弱（摘要）。
+- 同我哋數據：IDEAS #2000 美股前晚 ES |報酬| ≥ 1.5% 嘅 25 日，恒指日市逆開市跳空每筆 +12.6 點（t 0.31），前半 +44、後半 −17；其他日子 +9.0 → ❌，效果細過成本以外嘅波動，近年冇用。
+- 下一步：唔上真倉；呢條線（開市逆跳空）收工，唔再調門檻。
