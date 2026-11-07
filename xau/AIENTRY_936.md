@@ -34,6 +34,6 @@
    - 喺另一個戶口開 XAUUSD 圖，EA magic 936，`InpBotMagics` 加 `936`（計入戶口總階梯）。
    - 改 env：`SIG_AIENTRY_ACCOUNT=<戶口>`、`SIG_AIENTRY_HWM_START=<開倉日>`、`SIG_AIENTRY_EXECUTE=1`、`XAU_EXECUTE=1`。
 
-## 提議（要使用者確認）
+## 已確認（使用者 11-07）
 - **magic 936**：訊號書 931 加 5。921–926、931–935 都已經用咗。
 - **戶口 …63**：921、922、926、932 喺呢個戶口，而家全部影子，冇倉；933 喺 …69，咁就符合「另一個戶口」。
