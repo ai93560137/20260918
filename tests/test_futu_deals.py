@@ -245,5 +245,16 @@ _u3 = main.fund_unrealized({"run_hkt": "2026-11-07 05:59", "positions": [
 check("[R260] 期貨未實現用開倉至今：HSI2611 −1 @24,520、最後 24,647 → −6,350（唔係富途結算後 −4,000）",
       _u3["total"] == -6350, _u3)
 
+print("\n=== [R261] 到期期權用富途「现金交割」 ===")
+from datetime import date as _date
+_doc = {"deals": [{"code": "HK.HSI261023P23700000", "side": "SELL_SHORT", "qty": 1, "price": 59,
+                   "time": "2026-10-16 14:19:37", "order_id": "a", "account": "期貨帳戶"}],
+        "positions": [], "fees": {},
+        "cash_flows": [{"account": "期貨帳戶", "date": "2026-10-23", "ccy": "HKD", "type": "现金交割", "dir": "OUT", "amount": -28950.0}]}
+_r = main.futu_pnl_report(_doc, "2026-10-01", today=_date(2026, 11, 7))
+_m = _r["periods"]["month"]["2026-10"]["合計"]
+check("10-23 價內到期用现金交割 −28,950（唔再當歸零 +2,950）", _m["gross"] == -28950, _m)
+check("有說明用咗现金交割", any("现金交割" in w for w in _r["warnings"]), _r["warnings"])
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

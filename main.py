@@ -1365,6 +1365,24 @@ def futu_pnl_report(doc, start=None, today=None):
             else:
                 warnings.append(f"{code}：成交推算淨倉 {net:+g}，富途現有持倉 {held if held is not None else 0:+g}，"
                                 "唔夾（可能起始日之前已有倉）；呢個合約嘅盈虧未必準")
+    # [R261] 使用者 11-07「富途你看看資金明細」：港期權到期冇平倉成交，富途會喺到期日記「现金交割」（期貨戶口），
+    #   金額＝嗰日到期嘅期權實際盈虧（價外＝收返權利金；價內＝權利金 − 內在值）。有就用佢取代「當到期歸零」嘅估算。
+    settle = {}
+    for f in doc.get("cash_flows") or []:
+        if (isinstance(f, dict) and str(f.get("type")) in ("现金交割", "現金交割") and "期貨" in str(f.get("account", ""))
+                and str(f.get("ccy") or "HKD").upper() == "HKD"):
+            settle[str(f.get("date"))[:10]] = settle.get(str(f.get("date"))[:10], 0.0) + (to_float(f.get("amount")) or 0.0)
+    for d_, amt in settle.items():
+        legs = [e for e in events if e.get("expiry") and str(e["date"]) == d_ and not e["code"].startswith("US.")]
+        if not legs:
+            continue
+        est = sum(e["gross"] for e in legs)
+        for e in legs:
+            events.remove(e)
+        events.append({"date": legs[0]["date"], "code": "＋".join(e["code"] for e in legs), "product": legs[0]["product"],
+                       "gross": amt, "fee": 0.0, "expiry": True, "trade": True})
+        warnings.append(f"{d_} 到期期權用富途「现金交割」{amt:+,.0f} 港幣計（之前當歸零估 {est:+,.0f}）")
+        warnings[:] = [w for w in warnings if not (d_ in w and "當" in w and "到期歸零計" in w)]
     rows = [e for e in events if e["date"] >= start]
     period = {"month": lambda d: d.strftime("%Y-%m"), "quarter": lambda d: f"{d.year}Q{(d.month - 1) // 3 + 1}",
               "year": lambda d: str(d.year)}
