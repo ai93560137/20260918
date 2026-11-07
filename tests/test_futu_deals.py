@@ -120,7 +120,7 @@ check("05:30 → 05:30", auto_risk.pnl_slot(t(5, 30)) == "2026-10-13|05:30")
 check("16:34 仍係 05:30", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|05:30")
 check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
 check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
-check("SCRIPT_VERSION R266（R213 碎股規則之後 R260／R261／R266 bump）", auto_risk.SCRIPT_VERSION == "R266" and callable(auto_risk.fetch_cme))
+check("SCRIPT_VERSION R372（R213 碎股規則之後 R260／R261／R266／R372 bump）", auto_risk.SCRIPT_VERSION == "R372" and callable(auto_risk.fetch_cme))
 
 print("\n=== [R175] 保證金警報附補倉建議 ===")
 W, C, F, CL = main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR
@@ -205,6 +205,13 @@ check("10/23、10/30 週權、MHI、美股個股期權過期 → 唔顯示；當
       [r["code"] for r in _rows] == ["HK.HSI261107P23000000", "HK.HSI261113C25350000", "US.EW2610P7750x0", "HK.HSI2611"],
       [r["code"] for r in _rows])
 check("futu_option_expired：壞日期當未過期", main.futu_option_expired("HK.HSI261399C1000", _t) is False)
+
+print("\n=== [R258] 基金報告未實現盈虧唔計已到期期權 ===")
+_u = main.fund_unrealized({"run_hkt": "2026-11-07 05:59", "positions": [
+    {"code": "HK.HSI261030C23750000", "qty": -1, "futu_pl": -1000},
+    {"code": "HK.HSI2611", "qty": -1, "futu_pl": 500}]})
+check("fund_unrealized：已到期週權唔入「HSI 恒指期權」", "HSI 恒指期權" not in _u["by_product"] and _u["total"] == 500 and _u["positions"] == 1,
+      _u)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

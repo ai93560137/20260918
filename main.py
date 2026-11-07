@@ -1411,10 +1411,16 @@ def fund_unrealized(risk_doc):
     if not isinstance(risk_doc, dict) or not isinstance(risk_doc.get("positions"), list):
         return None
     by, n, missing = {}, 0, []
+    try:                                                   # 以快照時間判斷到期（舊快照唔會因為今日日期而剔走當時仲有效嘅倉）
+        today = datetime.strptime(str(risk_doc.get("run_hkt"))[:10], "%Y-%m-%d").date()
+    except ValueError:
+        today = datetime.now(HK_TZ).date()
     for p in risk_doc["positions"]:
         if not isinstance(p, dict) or not p.get("code"):
             continue
         code = str(p["code"])
+        if futu_option_expired(code, today):        # [R258] 11-07 使用者：基金報告「HSI 恒指期權」計埋已到期週權殘留 → 剔走（同 R366）
+            continue
         prod, mult = futu_product(code)
         pl = to_float(p.get("futu_pl"))
         if pl is None:
