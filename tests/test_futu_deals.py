@@ -291,7 +291,7 @@ _cf2 = _cf + [{"account": "證券帳戶-HK", "date": "2026-11-10", "ccy": "HKD",
 _L3 = main.fund_ledger([_m0, _m1], dict(_rr, ledger_flows=main.fund_ledger_flows(_cf2, "2026-11-01")))
 check("外部入金、出金分開逐筆紀錄", [(e["kind"], e["amount"]) for e in _L3["external"]] == [("外部入金", 100000.0), ("外部出金", -30000.0)], _L3["external"])
 _h3 = main.fund_ledger_html(_L3, lambda v: f"{v:,.0f}")
-check("網頁有入金／出金紀錄同合計", "外部入金／出金紀錄" in _h3 and "出金合計" in _h3 and "🔴 出金" in _h3, _h3[-600:])
+check("網頁有入金／出金紀錄同合計", "外部入金／出金紀錄" in _h3 and "出金合計" in _h3 and "📤 出金" in _h3 and ">30,000<" in _h3 and "+30,000" not in _h3, _h3[-600:])
 check("網頁有傳票、借貸合計", "📒 複式記帳" in _h and "暫記" in _h and "<th>借</th>" in _h, _h[:200])
 
 print("\n=== [R262] 費用仔細分類 ===")
