@@ -88,6 +88,7 @@ def main():
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
+    plt.rcParams.update({"font.size": 14, "xtick.labelsize": 12, "ytick.labelsize": 12})   # 11-07 使用者「全部放大」（投資人 70 歲以上）
     bars, asof = load(src, tf)
     keys = sorted(bars)
     H, L, C = [bars[k][1] for k in keys], [bars[k][2] for k in keys], [bars[k][3] for k in keys]
@@ -97,7 +98,7 @@ def main():
         return [sum(C[i - n + 1:i + 1]) / n if i >= n - 1 else None for i in range(len(C))]
 
     first = max(0, min(len(keys) - show, min(hi_i, lo_i) - 15))   # 轉勢點可能好舊：一定要睇得到
-    fig, ax = plt.subplots(figsize=(15, 8), dpi=110)
+    fig, ax = plt.subplots(figsize=(16, 10), dpi=110)
     fig.patch.set_facecolor("#131722")
     ax.set_facecolor("#131722")
     wid = 2.6 if len(keys) - first < 180 else 1.8
@@ -136,31 +137,31 @@ def main():
         ticks = [i for i in range(first, len(keys)) if keys[i].hour == 0 and keys[i].weekday() == 0]
     tfmt = "%Y" if tf == "M" else ("%Y/%m" if tf == "W" else "%m/%d")
     ax.set_xticks(ticks)
-    ax.set_xticklabels([keys[i].strftime(tfmt) for i in ticks], color="#bbbbbb", fontsize=8)
-    ax.tick_params(axis="y", colors="#dddddd", labelsize=10)
+    ax.set_xticklabels([keys[i].strftime(tfmt) for i in ticks], color="#bbbbbb", fontsize=11)
+    ax.tick_params(axis="y", colors="#dddddd", labelsize=14)
     ax.set_xlim(first - 2, len(keys) + XL * 3)
     lo_v, hi_v = min(L[first:]), max(H[first:])
     pad = (hi_v - lo_v) * 0.04
     ax.set_ylim(lo_v - pad, hi_v + pad)
     y0, y1 = ax.get_ylim()
-    gap = (y1 - y0) * 0.034
+    gap = (y1 - y0) * 0.042
     placed = []
     for y, txt, box in sorted(labels, key=lambda t: t[0]):
         ty = max(y, placed[-1] + gap) if placed else y
         placed.append(ty)
         if abs(ty - y) > (y1 - y0) * 0.002:
             ax.plot([len(keys) + XL - 1, len(keys) + XL], [y, ty], color="#888888", linewidth=0.6)
-        ax.text(len(keys) + XL, ty, txt, color="#ffffff", va="center", fontsize=12, fontweight="bold",
+        ax.text(len(keys) + XL, ty, txt, color="#ffffff", va="center", fontsize=15, fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.25", **box))
     ax.grid(color="#2a2e39", linewidth=0.5)
     for s in ax.spines.values():
         s.set_color("#2a2e39")
-    ax.legend(loc="best", facecolor="#131722", labelcolor="#dddddd", fontsize=9)
+    ax.legend(loc="best", facecolor="#131722", labelcolor="#dddddd", fontsize=13)
     kind = "升浪回撤" if up else "跌浪反彈"
     a_i, b_i = (lo_i, hi_i) if up else (hi_i, lo_i)
     av, bv = (L[lo_i], H[hi_i]) if up else (H[hi_i], L[lo_i])
     ax.set_title(f"XAUUSD 黃金 {name}（MT5 伺服器時間）　斐波那契{kind}：{keys[a_i].strftime(fmt)} {av:,.1f} → "
-                 f"{keys[b_i].strftime(fmt)} {bv:,.1f}　截至 {asof:%Y-%m-%d %H:%M}", color="#eeeeee", fontsize=12)
+                 f"{keys[b_i].strftime(fmt)} {bv:,.1f}　截至 {asof:%Y-%m-%d %H:%M}", color="#eeeeee", fontsize=17)
     plt.tight_layout()
     plt.savefig(out, facecolor=fig.get_facecolor())
     print(json.dumps({"tf": tf, "kind": kind, "hi": [str(keys[hi_i]), H[hi_i]], "lo": [str(keys[lo_i]), L[lo_i]],

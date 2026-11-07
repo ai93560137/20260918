@@ -100,6 +100,7 @@ def main():
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
+    plt.rcParams.update({"font.size": 14, "xtick.labelsize": 12, "ytick.labelsize": 12})   # 11-07 使用者「全部放大」（投資人 70 歲以上）
     bars, asof = XF.load(src, tf)
     keys = sorted(bars)
     O = [bars[x][0] for x in keys]; H = [bars[x][1] for x in keys]; L = [bars[x][2] for x in keys]; C = [bars[x][3] for x in keys]
@@ -118,7 +119,7 @@ def main():
             lg.append((inner[-1][0], b, up))
     first = max(0, min(lg[0][0], lg[0][1]) - 12) if lg else max(0, len(keys) - 160)
     n = len(keys)
-    fig, ax = plt.subplots(figsize=(16, 9), dpi=110)
+    fig, ax = plt.subplots(figsize=(17, 10.5), dpi=110)
     fig.patch.set_facecolor("#131722"); ax.set_facecolor("#131722")
     for i in range(first, n):
         col = "#26a69a" if C[i] >= O[i] else "#ef5350"
@@ -131,7 +132,7 @@ def main():
         if lab:
             good = lab in ("HH", "HL")
             ax.annotate(lab, (i, price), xytext=(0, 9 if typ == "H" else -15), textcoords="offset points", ha="center",
-                        fontsize=9, fontweight="bold", color="#66bb6a" if good else "#ef5350")
+                        fontsize=13, fontweight="bold", color="#66bb6a" if good else "#ef5350")
     XL = max(6, (n - first) // 14)
     labels, info = [], []
     for li, (a, b, up) in enumerate(lg):
@@ -150,7 +151,7 @@ def main():
         info.append({"leg": li + 1, "kind": kind + tag, "from": [keys[a].strftime("%Y-%m-%d %H:%M"), L[a] if up else H[a]],
                      "to": [keys[b].strftime("%Y-%m-%d %H:%M"), H[b] if up else L[b]], "levels": {f"{r:g}": round(p, 1) for r, p in lvl.items()}})
         ax.annotate(f"區間{li + 1}：{kind}{tag}", ((a + b) / 2, (H[b] + L[a]) / 2 if up else (H[a] + L[b]) / 2),
-                    color=col, fontsize=11, fontweight="bold", ha="center")
+                    color=col, fontsize=15, fontweight="bold", ha="center")
     ax.axhline(C[-1], color="#2962ff", ls=":", linewidth=0.8)
     labels.append((C[-1], f"現價  {C[-1]:,.0f}", dict(facecolor="#2962ff", edgecolor="none")))
     if tf == "M":
@@ -163,24 +164,24 @@ def main():
         ticks, tfmt = [i for i in range(first, n) if keys[i].hour == 0 and keys[i].weekday() == 0], "%m/%d"
     else:
         ticks, tfmt = [i for i in range(first, n) if keys[i].hour == 0], "%m/%d"
-    ax.set_xticks(ticks); ax.set_xticklabels([keys[i].strftime(tfmt) for i in ticks], color="#bbbbbb", fontsize=8)
-    ax.tick_params(axis="y", colors="#dddddd", labelsize=10)
+    ax.set_xticks(ticks); ax.set_xticklabels([keys[i].strftime(tfmt) for i in ticks], color="#bbbbbb", fontsize=11)
+    ax.tick_params(axis="y", colors="#dddddd", labelsize=14)
     ax.set_xlim(first - 2, n + XL * 4)
     lo_v, hi_v = min(L[first:]), max(H[first:]); pad = (hi_v - lo_v) * 0.04
     ax.set_ylim(lo_v - pad, hi_v + pad)
-    y0, y1 = ax.get_ylim(); gap = (y1 - y0) * 0.026
+    y0, y1 = ax.get_ylim(); gap = (y1 - y0) * 0.034
     placed = []
     for y, txt, box in sorted(labels, key=lambda t: t[0]):
         ty = max(y, placed[-1] + gap) if placed else y
         placed.append(ty)
         if abs(ty - y) > (y1 - y0) * 0.002:
             ax.plot([n + XL - 1, n + XL], [y, ty], color="#888888", linewidth=0.5)
-        ax.text(n + XL, ty, txt, color="#ffffff", va="center", fontsize=9, fontweight="bold", bbox=dict(boxstyle="round,pad=0.2", **box))
+        ax.text(n + XL, ty, txt, color="#ffffff", va="center", fontsize=13, fontweight="bold", bbox=dict(boxstyle="round,pad=0.2", **box))
     ax.grid(color="#2a2e39", linewidth=0.5)
     for s in ax.spines.values():
         s.set_color("#2a2e39")
     ax.set_title(f"XAUUSD 黃金 {NAMES[tf]}・市場結構（HH／HL／LH／LL，分形 {k} 根）揀斐波那契區間（{len(lg)} 個區間）　截至 {asof:%Y-%m-%d %H:%M}（MT5 伺服器時間）",
-                 color="#eeeeee", fontsize=12)
+                 color="#eeeeee", fontsize=17)
     plt.tight_layout()
     plt.savefig(out, facecolor=fig.get_facecolor())
     print(json.dumps({"tf": tf, "legs": info, "last": C[-1], "asof": str(asof)}, ensure_ascii=False))
