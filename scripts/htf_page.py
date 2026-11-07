@@ -87,6 +87,8 @@ details.ml[open]>summary::before{content:"▾ "}
 .foot{font-size:12px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 使用者 2026-11-07：投資人 70 歲以上，畫面全部放大 1.3 倍；列印／PDF 唔放大 */
+@media screen{body{zoom:1.3}}
 @media print{
   @page{size:A4;margin:12mm 11mm 14mm}
   body{background:#fff;color:#000;font-size:11pt;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
