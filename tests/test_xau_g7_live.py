@@ -171,7 +171,8 @@ check("M1 唔新鮮 → 唔開", d["cmd_text"] == "" and "唔新鮮" in d["messa
 fresh_state()
 config.G7_LIVE = False
 st, d = hb(END + 65, price)
-check("SIG_G7_LIVE 關 → 心跳唔分流（交返 931 流程）", d.get("book") != "g7live", d)
+check("SIG_G7_LIVE 關 → 心跳照分流（11-07：唔再跌落 931 覆寫快照），唔決策、冇指令",
+      d.get("book") == "g7live" and d["cmd_text"] == "" and "未開" in d["message"], d)
 config.G7_LIVE = True
 FAKE["xau/sig/control.json"] = (json.dumps({"mode": "STOP", "set_by": "user"}), 2)
 fresh_state()
