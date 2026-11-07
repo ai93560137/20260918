@@ -7,7 +7,7 @@ from market import fmt_hkt
 
 CSS = """
 :root{color-scheme:light;--primary:#0f62fe;--success:#198754;--danger:#dc3545;--warning:#d97706;--bg:#f4f7fb;--card:#fff;--text:#161616;--muted:#6c757d}
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:20px 15px;margin:0}
+@media screen{body{zoom:1.3}}*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:20px 15px;margin:0}
 .container{max-width:1050px;margin:0 auto}.page-title{font-size:22px;margin:0 0 6px}.muted{color:var(--muted)!important}
 .grid{display:grid;gap:16px;margin-bottom:24px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 .card{background:var(--card);padding:20px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,.04)}
