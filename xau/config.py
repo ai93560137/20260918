@@ -300,6 +300,24 @@ COMBO_SIGNAL_TTL_MIN = _i("SIG_COMBO_SIGNAL_TTL_MIN", 30)            # 收市後
 COMBO_SEED_DAYS = _i("SIG_COMBO_SEED_DAYS", 600)                     # H1 快取要幾多日（D1 SMA200 要 200 根交易日＋SAR 預熱；420 日唔夠）
 COMBO_PARAM_YEAR = _i("SIG_COMBO_PARAM_YEAR", 2026)                  # 參數年份；同今年唔一樣就唔開（#184 每年重揀）
 
+# [IDEAS #1003] AI 揀入場（使用者 11-07「AI 入場，用另一個戶口，真倉比對」→「A。開新 idea，隨時真倉」）：
+#   規則學生（預設 rev15）每次出區 → 叫 AI 揀入場價、SL、TP（或者唔做）；影子記錄＋前向（research/student_offline/ai_entry_forward.py）同 E6S4 並排。
+#   實倉用新 magic（931 → 936）、獨立開關 SIG_AIENTRY_EXECUTE、固定 0.01 手、策略層停線 C；預設全關。
+AIENTRY = _b("SIG_AIENTRY", False)                                   # 影子（問 AI、記錄計劃）；關＝唔問 AI、唔記錄
+AIENTRY_RULES = tuple("rule:" + x.strip().removeprefix("rule:") for x in _s("SIG_AIENTRY_RULES", "rev15").split(",") if x.strip())
+AIENTRY_MAGIC = _i("SIG_AIENTRY_MAGIC", MAGIC + 5 if SIGNAL_BOOK else 0)   # 931 → 936（EA 圖用 magic 936；InpBotMagics 要加 936 先計入戶口總階梯）
+AIENTRY_ACCOUNT = _s("SIG_AIENTRY_ACCOUNT", "")                      # 實倉戶口（使用者揀；空＝唔核戶口）
+AIENTRY_MODEL = _s("SIG_AIENTRY_MODEL", "") or MODEL
+AIENTRY_LOTS = _f("SIG_AIENTRY_LOTS", 0.01)                          # 固定手數（唔用階梯、唔按風險加注）
+AIENTRY_TTL_MIN = _i("SIG_AIENTRY_TTL_MIN", 30)                      # 計劃有效時間：咁耐未掂入場價就放棄
+AIENTRY_MAX_DIST = _f("SIG_AIENTRY_MAX_DIST", 15.0)                  # 入場價離出區價最多幾遠（美元）
+AIENTRY_SL_MIN = _f("SIG_AIENTRY_SL_MIN", 2.0)                       # 止蝕距離（入場價→SL）下限／上限（美元）
+AIENTRY_SL_MAX = _f("SIG_AIENTRY_SL_MAX", 15.0)
+AIENTRY_HWM_START = _s("SIG_AIENTRY_HWM_START", "")                  # 策略層停線 C 起計日（YYYY-MM-DD）；空＝唔計
+AIENTRY_STOP_R = _f("SIG_AIENTRY_STOP_R", 8.0)
+AIENTRY_DD_R = _f("SIG_AIENTRY_DD_R", 10.0)
+AIENTRY_EXECUTE = _b("SIG_AIENTRY_EXECUTE", False)                   # 936 落實倉開關（同 931–935 一樣要 XAU_EXECUTE=1 先生效）
+
 # [11-07 每書獨立開關] 使用者 11-07「931、932、933、934、935 全部用獨立開關」：訊號書（zhuge-xau-sig）每本書自己一個落實倉開關，
 #   真倉＝XAU_EXECUTE=1 **而且** 該書開關=1（兩個都要）；預設全部 0 → 只開 XAU_EXECUTE 唔會有任何書落單。
 #   非訊號書（921／922…）唔受影響，照舊只睇 XAU_EXECUTE。
@@ -309,7 +327,7 @@ STUDENT_EXECUTE = _b("SIG_STUDENT_EXECUTE", False)    # 933 規則學生
 G7_EXECUTE = _b("SIG_G7_EXECUTE", False)              # 934 G7 H1 回調
 COMBO_EXECUTE = _b("SIG_COMBO_EXECUTE", False)        # 935 組合 A
 BOOK_EXECUTE = {MAGIC: S1_EXECUTE, FOLLOW_MAGIC: FOLLOW_EXECUTE, STUDENT_MAGIC: STUDENT_EXECUTE,
-                G7_MAGIC: G7_EXECUTE, COMBO_MAGIC: COMBO_EXECUTE} if SIGNAL_BOOK else {}
+                G7_MAGIC: G7_EXECUTE, COMBO_MAGIC: COMBO_EXECUTE, AIENTRY_MAGIC: AIENTRY_EXECUTE} if SIGNAL_BOOK else {}
 
 
 def book_live(magic=None):
