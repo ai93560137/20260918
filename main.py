@@ -1430,6 +1430,11 @@ def fund_by_account(by_product):
     return {k: round(v, 2) for k, v in out.items()}
 
 
+def futu_is_gift(code):
+    """[R259] 使用者 11-07「我沒有美股」：券商贈送碎股（例如 US.SPCX）唔計入基金報告未實現同二次校對。"""
+    return any(team == FUTU_TEAM_GIFT and re.match(rx, code or "") for rx, team, _u, _m in FUTU_TEAM_RULES)
+
+
 def fund_unrealized(risk_doc):
     """[R207] 未實現盈虧：讀 futu/risk/latest.json 每個持倉富途自己計嘅 pl_val（futu_pl，原幣），美元折港幣，按產品加總。
     富途冇俾 pl_val 就用（現價 − 開倉價）× 張數 × 每點價值。讀唔到回 None。"""
@@ -1444,7 +1449,7 @@ def fund_unrealized(risk_doc):
         if not isinstance(p, dict) or not p.get("code"):
             continue
         code = str(p["code"])
-        if futu_option_expired(code, today):        # [R258] 11-07 使用者：基金報告「HSI 恒指期權」計埋已到期週權殘留 → 剔走（同 R366）
+        if futu_option_expired(code, today) or futu_is_gift(code):   # [R258] 已到期週權殘留；[R259] 券商贈送碎股 → 剔走
             continue
         prod, mult = futu_product(code)
         pl = to_float(p.get("futu_pl"))
@@ -1484,7 +1489,8 @@ def fund_crosscheck(risk_doc, r, daily_csv_text):
             snap = datetime.now(HK_TZ).date()
         rows, tf, to, bad = [], 0.0, 0.0, 0
         for p in risk_doc["positions"]:
-            if not isinstance(p, dict) or not p.get("code") or futu_option_expired(str(p["code"]), snap):
+            if (not isinstance(p, dict) or not p.get("code") or futu_option_expired(str(p["code"]), snap)
+                    or futu_is_gift(str(p["code"]))):
                 continue
             code = str(p["code"])
             _, mult = futu_product(code)
