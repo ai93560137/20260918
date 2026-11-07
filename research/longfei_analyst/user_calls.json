@@ -1,0 +1,27 @@
+{
+ "_doc": "使用者筆記嘅「可計分」calls（逐篇由 notes/ 抄，base＝起計收市日）。並排計分：side_by_side.py。新筆記加完 calls 要同步加入呢度。",
+ "calls": [
+  {"note": "2026-10-30_ES_30m", "date": "2026-10-30", "base": "2026-10-30", "market": "ES", "kind": "support", "level": 7629, "horizon": 5},
+  {"note": "2026-10-30_ES_30m", "date": "2026-10-30", "base": "2026-10-30", "market": "ES", "kind": "target", "level": 7565, "horizon": 10, "cond": "10-30 收 7,614 < 7,629 成立"},
+  {"note": "2026-10-30_ES_30m", "date": "2026-10-30", "base": "2026-10-30", "market": "ES", "kind": "resistance", "level": 7665, "horizon": 5, "cond": "同上"},
+  {"note": "2026-10-30_NQ_4h_1d_fib618", "date": "2026-10-30", "base": "2026-10-30", "market": "NQ", "kind": "target", "level": 28148, "horizon": 10, "cond": "10-30 收 28,534 < 28,891 成立"},
+  {"note": "2026-10-30_NQ_4h_1d_fib618", "date": "2026-10-30", "base": "2026-10-30", "market": "NQ", "kind": "resistance", "level": 28891, "horizon": 5, "cond": "同上"},
+  {"note": "2026-10-31_ES_30m_close", "date": "2026-10-31", "base": "2026-10-30", "market": "ES", "kind": "resistance", "level": 7629, "horizon": 5},
+  {"note": "2026-10-31_ES_30m_close", "date": "2026-10-31", "base": "2026-10-30", "market": "ES", "kind": "target", "level": 7543, "horizon": 10},
+  {"note": "2026-11-02_ES_1d_two_scenarios", "date": "2026-11-02", "base": "2026-10-30", "market": "ES", "kind": "bias", "dir": 0, "horizon": 5},
+  {"note": "2026-11-02_ES_1d_two_scenarios", "date": "2026-11-02", "base": "2026-10-30", "market": "ES", "kind": "support", "level": 7575, "horizon": 5},
+  {"note": "2026-11-02_NQ_1d_wedge_march_analog", "date": "2026-11-02", "base": "2026-10-30", "market": "NQ", "kind": "resistance", "level": 29960, "horizon": 10},
+  {"note": "2026-11-02_NQ_1d_wedge_march_analog", "date": "2026-11-02", "base": "2026-10-30", "market": "NQ", "kind": "support", "level": 28080, "horizon": 5},
+  {"note": "2026-11-03_ES_4h_ESZ_seasonality", "date": "2026-11-03", "base": "2026-11-02", "market": "ES", "kind": "support", "level": 7500, "horizon": 10},
+  {"note": "2026-11-03_ES_4h_ESZ_seasonality", "date": "2026-11-03", "base": "2026-11-02", "market": "ES", "kind": "bias", "dir": 1, "horizon": 20},
+  {"note": "2026-11-03_ES_4h_channel_retest", "date": "2026-11-03", "base": "2026-11-02", "market": "ES", "kind": "support", "level": 7546, "horizon": 5},
+  {"note": "2026-11-03_ES_4h_channel_retest", "date": "2026-11-03", "base": "2026-11-02", "market": "ES", "kind": "target", "level": 7614, "horizon": 5},
+  {"note": "2026-11-03_NQ_4h_1d_double_support", "date": "2026-11-03", "base": "2026-11-02", "market": "NQ", "kind": "support", "level": 28080, "horizon": 5},
+  {"note": "2026-11-03_NQ_4h_1d_double_support", "date": "2026-11-03", "base": "2026-11-02", "market": "NQ", "kind": "target", "level": 29700, "horizon": 10},
+  {"note": "2026-11-04_ES_4h_gap_filled", "date": "2026-11-04", "base": "2026-11-03", "market": "ES", "kind": "support", "level": 7490, "horizon": 5},
+  {"note": "2026-11-04_ES_4h_gap_filled", "date": "2026-11-04", "base": "2026-11-03", "market": "ES", "kind": "resistance", "level": 7565, "horizon": 5},
+  {"note": "2026-11-07_ES_NQ_1d_review", "date": "2026-11-07", "base": "2026-11-06", "market": "ES", "kind": "resistance", "level": 7657, "horizon": 10},
+  {"note": "2026-11-07_ES_NQ_1d_review", "date": "2026-11-07", "base": "2026-11-06", "market": "NQ", "kind": "resistance", "level": 28120, "horizon": 10},
+  {"note": "2026-11-07_ES_NQ_1d_review", "date": "2026-11-07", "base": "2026-11-06", "market": "NQ", "kind": "support", "level": 26152, "horizon": 10}
+ ]
+}
