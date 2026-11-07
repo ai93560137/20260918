@@ -120,7 +120,7 @@ check("05:30 → 05:30", auto_risk.pnl_slot(t(5, 30)) == "2026-10-13|05:30")
 check("16:34 仍係 05:30", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|05:30")
 check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
 check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
-check("SCRIPT_VERSION R372（R213 碎股規則之後 R260／R261／R266／R372 bump）", auto_risk.SCRIPT_VERSION == "R372" and callable(auto_risk.fetch_cme))
+check("SCRIPT_VERSION R373（R213 碎股規則之後 R260／R261／R266／R372／R373 bump）", auto_risk.SCRIPT_VERSION == "R373" and callable(auto_risk.fetch_cme))
 
 print("\n=== [R175] 保證金警報附補倉建議 ===")
 W, C, F, CL = main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR
@@ -228,6 +228,13 @@ check("二次校對：已到期期權唔入", len(_x["unreal"]["rows"]) == 2)
 check("權益恆等式：11-06 平衡（Δ權益 1,500 = Δ未實現 500 + 已實現 1,000）", _x["equity"][0]["residual"] == 0 and not _x["equity"][0]["flag"],
       _x["equity"])
 check("權益恆等式：20:00 成交計入下一段", _x["equity"][1]["realized"] == 500 and _x["equity"][1]["residual"] == 0, _x["equity"])
+
+_m = main._futu_risk_clean_metrics({"futu_acc_pl": {"期貨": {"currency": "HKD", "unrealized_pl": -4000, "realized_pl": 1200, "x": 1}}})
+check("R373 futu_acc_pl 入白名單", _m.get("futu_acc_pl", {}).get("期貨", {}).get("realized_pl") == 1200, _m.get("futu_acc_pl"))
+_x2 = main.fund_crosscheck({"run_hkt": "2026-11-07 05:59", "positions": [
+    {"code": "HK.HSI2611", "qty": -1, "open_price": 24520, "bid": 24635, "ask": 24649, "nominal_price": 24600, "futu_pl": -4000}]}, {}, "")
+check("R373 有 nominal_price 就用佢對（−4,000 一致）", _x2["unreal"]["rows"][0]["own"] == -4000 and not _x2["unreal"]["rows"][0]["flag"],
+      _x2["unreal"]["rows"])
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

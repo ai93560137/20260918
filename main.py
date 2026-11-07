@@ -692,6 +692,12 @@ def _futu_risk_clean_metrics(raw):
                          "scenarios": [{"name": _futu_text(r.get("name"), 40), "cushion_after": to_float(r.get("cushion_after")),
                                         "ladder": _futu_text(r.get("ladder"), 2)}
                                        for r in (src.get("scenarios") or [])[:12] if isinstance(r, dict)]}
+    src = raw.get("futu_acc_pl") if isinstance(raw.get("futu_acc_pl"), dict) else None   # [R259] R373 富途戶口層面盈虧（二次校對）
+    if src is not None:
+        out["futu_acc_pl"] = {_futu_text(k, 24): {"currency": _futu_text((v or {}).get("currency"), 8),
+                                                   "unrealized_pl": to_float((v or {}).get("unrealized_pl")),
+                                                   "realized_pl": to_float((v or {}).get("realized_pl"))}
+                              for k, v in list(src.items())[:4] if isinstance(v, dict)}
     src = raw.get("sec") if isinstance(raw.get("sec"), dict) else None          # [R214] 證券戶口（R205），只存私人 GCS
     if src is not None:
         out["sec"] = {"equity": to_float(src.get("equity")), "maintenance_margin": to_float(src.get("maintenance_margin")),
@@ -1469,7 +1475,8 @@ def fund_crosscheck(risk_doc, r, daily_csv_text):
     ① 未實現：每個持倉富途自己計（futu_pl）對我哋自己計（(中間價或最後價 − 開倉價) × 張數 × 每點價值）。
     ② 已實現：權益恆等式（逐日損益帳 ops/books/pnl_daily.csv）：
        富途權益變化 −（未實現變化 ＋ 已實現淨額 ＋ 出入金）＝ 殘差；殘差大即係有一筆計漏或計錯。權益本身唔顯示（唔公開）。"""
-    out = {"unreal": None, "equity": []}
+    out = {"unreal": None, "equity": [],
+           "acc": ((risk_doc or {}).get("metrics") or {}).get("futu_acc_pl") if isinstance(risk_doc, dict) else None}
     if isinstance(risk_doc, dict) and isinstance(risk_doc.get("positions"), list):
         try:
             snap = datetime.strptime(str(risk_doc.get("run_hkt"))[:10], "%Y-%m-%d").date()
@@ -1484,7 +1491,8 @@ def fund_crosscheck(risk_doc, r, daily_csv_text):
             fx = FUTU_USD_HKD if code.startswith("US.") else 1.0
             qty, op = to_float(p.get("qty")), to_float(p.get("open_price"))
             bid, ask, last = (to_float(p.get(k)) for k in ("bid", "ask", "last"))
-            mark = (bid + ask) / 2 if bid and ask else last
+            nominal = to_float(p.get("nominal_price"))                     # R373：富途 pl_val 用嘅價（最後成交），有就用佢對
+            mark = nominal if nominal else ((bid + ask) / 2 if bid and ask else last)
             own = (mark - op) * qty * mult * fx if None not in (qty, op, mark) else None
             fp = to_float(p.get("futu_pl"))
             futu = fp * fx if fp is not None else None
@@ -1532,8 +1540,16 @@ def fund_crosscheck_html(x, n):
               f"{verdict}</p>"
               "<div class='scroll'><table><tr><th>合約</th><th>富途計</th><th>自己計</th><th>相差</th></tr>"
               f"{trs}</table></div>"
-              "<p class='muted' style='font-size:12px'>自己計＝（中間價，冇就用最後價 − 開倉價）× 張數 × 每點價值，美元 × 7.8；"
+              "<p class='muted' style='font-size:12px'>自己計＝（富途參考價 nominal_price，冇就用中間價／最後價 − 開倉價）× 張數 × 每點價值，美元 × 7.8；"
               "每項相差超過 500 港幣或 2% 就標 ⚠️。期貨開倉價如果係富途攤薄成本，可能同富途計法唔同。</p>")
+    acc = x.get("acc") or {}
+    if acc:
+        trs = "".join(f"<tr><td>{esc(k)}</td><td>{esc(str(v.get('currency') or ''))}</td>"
+                      f"<td>{n(v['unrealized_pl']) if v.get('unrealized_pl') is not None else '—'}</td>"
+                      f"<td>{n(v['realized_pl']) if v.get('realized_pl') is not None else '—'}</td></tr>" for k, v in acc.items())
+        h += ("<p>③ 富途戶口自己報嘅數（原幣）</p><div class='scroll'><table><tr><th>戶口</th><th>幣</th><th>未實現</th><th>已實現</th></tr>"
+              f"{trs}</table></div><p class='muted' style='font-size:12px'>富途期貨戶口「未實現」只計上次結算之後，同上面開倉至今唔同口徑；"
+              "主要用嚟同富途 App 戶口頁對。</p>")
     eq = x.get("equity") or []
     if eq:
         trs = "".join(f"<tr><td>{esc(e['date'])}</td><td>{n(e['realized'])}</td><td>{n(e['flow'])}</td>"
