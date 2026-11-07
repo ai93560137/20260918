@@ -1,6 +1,8 @@
 """[IDEAS #1001] rev15 E6S4 長歷史回測（Dukascopy M1 2015–2022）。規格、成功標準以 IDEAS #1001 預先登記為準（跑之前 commit）。
 引擎＝fit_rules.py（同 #160 前向一樣）；主判固定美元參數（同 933 實倉一樣），按價格縮放版只作描述。唔落單、唔寫 GCS。
-用法：python3 research/student_offline/rev15_history.py → research/student_offline/REV15_HISTORY.md"""
+[IDEAS #1002] 加 --src mt5 --start --end：券商 MT5 M1（GCS xau/sig/mt5m1/，UltimaMarkets 匯出、已轉 UTC）2023–2025。
+用法：python3 research/student_offline/rev15_history.py → research/student_offline/REV15_HISTORY.md
+      python3 research/student_offline/rev15_history.py --src mt5 --start 2023-01-01 --end 2025-12-31 → REV15_HISTORY_MT5.md"""
 import collections
 import datetime as dt
 import os
@@ -12,8 +14,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import fit_rules as fr   # noqa: E402
 
-A, B = "2015-01-01", "2022-12-31"
-CACHE = "/tmp/rev15_history_duka.npz"
+def _arg(k, default):
+    return sys.argv[sys.argv.index(k) + 1] if k in sys.argv else default
+
+
+SRC = _arg("--src", "duka")
+A, B = _arg("--start", "2015-01-01"), _arg("--end", "2022-12-31")
+CACHE = f"/tmp/rev15_history_{SRC}_{A}_{B}.npz"
+IDEA = "#1001" if SRC == "duka" else "#1002"
+OUT = "REV15_HISTORY.md" if SRC == "duka" else "REV15_HISTORY_MT5.md"
+SRC_NAME = "Dukascopy M1" if SRC == "duka" else "券商 MT5 M1（UltimaMarkets）"
 NEW = {**fr.CUR_COMMON, "E": 6.0, "S": 4.0, "RT": 1.0}     # E6 Z2 S4 1R 冷卻 60
 CUR = dict(fr.CUR_COMMON)                                   # E4 Z2 S6 2R 冷卻 60
 P = fr.CURRENT["rev15"]
@@ -26,11 +36,15 @@ def load():
     from concurrent.futures import ThreadPoolExecutor
     g = fr.g
     days = g.days_between(A, B)
-    pre = fr.config.PREFIX + "duka/"
+    pre = fr.config.PREFIX + ("duka/" if SRC == "duka" else "mt5m1/")
 
     def one(d):
         doc = g.G.read_json(f"{pre}{d}.json")
-        return g._bars(doc.get("bars") if isinstance(doc, dict) else doc) if doc is not None else {}
+        if doc is None:
+            return {}
+        if SRC == "mt5":   # [[utc, o, h, l, c, vol], …]
+            return {int(r[0]): {"time": int(r[0]), "open": float(r[1]), "high": float(r[2]), "low": float(r[3]), "close": float(r[4])} for r in doc}
+        return g._bars(doc.get("bars") if isinstance(doc, dict) else doc)
     bars = {}
     with ThreadPoolExecutor(16) as ex:
         for k, part in enumerate(ex.map(one, days)):
@@ -96,13 +110,24 @@ def main():
     mdd, trips = dd_stats(rn)
     fill = float(np.mean(~np.isnan(rn))) if len(rn) else 0.0
 
-    ok = {"①全期≥+0.10R且PF≥1.15": sn["n"] > 0 and sn["avg"] >= 0.10 and sn["pf"] >= 1.15,
-          "②8年≥6年正數": sum(1 for y in yrs if yr[y]["n"] and yr[y]["avg"] > 0) >= 6,
-          "③2020–2022≥+0.10R": last3["n"] > 0 and last3["avg"] >= 0.10,
-          "④高過現行≥0.10R": sn["n"] > 0 and sc["n"] > 0 and sn["avg"] - sc["avg"] >= 0.10}
+    if SRC == "duka":
+        ok = {"①全期≥+0.10R且PF≥1.15": sn["n"] > 0 and sn["avg"] >= 0.10 and sn["pf"] >= 1.15,
+              "②8年≥6年正數": sum(1 for y in yrs if yr[y]["n"] and yr[y]["avg"] > 0) >= 6,
+              "③2020–2022≥+0.10R": last3["n"] > 0 and last3["avg"] >= 0.10,
+              "④高過現行≥0.10R": sn["n"] > 0 and sc["n"] > 0 and sn["avg"] - sc["avg"] >= 0.10}
+    else:   # IDEAS #1002
+        halves = {}
+        for x, r in zip(ts, rn):
+            u = dt.datetime.fromtimestamp(int(x), dt.timezone.utc)
+            halves.setdefault(f"{u.year}H{1 if u.month <= 6 else 2}", []).append(r)
+        hs = {k: fr.stats(np.array(v)) for k, v in sorted(halves.items())}
+        ok = {"①全期≥+0.10R且PF≥1.15": sn["n"] > 0 and sn["avg"] >= 0.10 and sn["pf"] >= 1.15,
+              "②3年≥2年正數": sum(1 for y in yrs if yr[y]["n"] and yr[y]["avg"] > 0) >= 2,
+              "③6個半年≥4個正數": sum(1 for v in hs.values() if v["n"] and v["avg"] > 0) >= 4,
+              "④高過現行≥0.10R": sn["n"] > 0 and sc["n"] > 0 and sn["avg"] - sc["avg"] >= 0.10}
 
-    out = ["# rev15 E6S4 長歷史回測（IDEAS #1001）", "",
-           f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；Dukascopy M1 {A}→{B}，{len(d['t']):,} 根；出區 {len(ts):,} 條，成交並完單 {sn['n']:,} 張（{fill:.0%}）",
+    out = [f"# rev15 E6S4 長歷史回測（IDEAS {IDEA}）", "",
+           f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；{SRC_NAME} {A}→{B}，{len(d['t']):,} 根；出區 {len(ts):,} 條，成交並完單 {sn['n']:,} 張（{fill:.0%}）",
            "- 規則：前 15 根 M1 走 ≥ 3 美元 → 反向；60 分鐘冷卻。新結構 E6 Z2 S4 1R（同 933 實倉）；現行 E4 Z2 S6 2R 並排；每張扣 0.5 美元", "",
            "## 全期", "", f"- 新 E6S4：{fr.fmt(sn)}", f"- 現行 E4S6 2R：{fr.fmt(sc)}",
            f"- 新結構最大 R 回撤 {mdd:.1f}R；照 933 停線（−8R／由高位回撤 10R）歷史觸發 {trips} 次（每次觸發後重新起計）", "",
@@ -113,6 +138,8 @@ def main():
     for x, r in zip(ts, rn):
         if not np.isnan(r):
             hrs[dt.datetime.fromtimestamp(int(x), dt.timezone.utc).hour].append(r)
+    if SRC != "duka":
+        out += ["", "## 每半年（新結構）", ""] + [f"- {k}：{fr.fmt(v)}" for k, v in hs.items()]
     out += ["", "## 每個 UTC 鐘（新結構，只作描述）", "", "| 鐘 | 張數 | 平均 R |", "|---|---|---|"]
     out += [f"| {h:02d} | {len(v)} | {np.mean(v):+.3f} |" for h, v in sorted(hrs.items())]
 
@@ -125,15 +152,20 @@ def main():
     r3, _, m3 = run(ds, NEW, t0, t1)
     r3c = fr.simulate(m3, CUR["E"], CUR["Z"], CUR["S"], CUR["RT"])
     out += ["", "## 按價格縮放版（全部價 ÷ 前日收市 × 4000；只作描述）", "",
-            "- 2015–2022 金價大約 1,050–2,070，固定 3／6／4 美元相對波幅大好多；縮放版當全部年份都喺 4,000 水平",
+            f"- {A[:4]}–{B[:4]} 金價水平同而家唔同，固定 3／6／4 美元相對波幅唔同；縮放版當全部年份都喺 4,000 水平",
             f"- 新 E6S4：{fr.fmt(fr.stats(r3))}", f"- 現行 E4S6 2R：{fr.fmt(fr.stats(r3c))}"]
 
-    out += ["", "## 判（預先登記 IDEAS #1001；主判固定美元）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
-            "- " + ("✅ 達標 → 11-08 照計劃開 933" if all(ok.values())
-                    else "❌ 唔達：" + "、".join(k for k, v in ok.items() if not v) + " → 即報總指揮同使用者，建議 933 延遲上實倉（使用者決定）；唔准改參數再試同一批數據"),
-            "- 2023–2025 冇數據（容器連唔到 Dukascopy）；2015–2022 金價水平同而家差好遠，見縮放版。", ""]
+    r_all = rn[~np.isnan(rn)]
+    if len(r_all):
+        out += ["", "## 結構細節（只作描述）", "",
+                f"- 勝率 {(r_all > 0).mean():.0%}：贏平均 {r_all[r_all > 0].mean():+.2f}R、輸平均 {r_all[r_all < 0].mean():+.2f}R；打和總成本約 {0.5 + sn['avg'] * 4:.2f} 美元"]
+    out += ["", f"## 判（預先登記 IDEAS {IDEA}；主判固定美元）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
+            "- " + (("✅ 達標 → 933 照計劃" if SRC != "duka" else "✅ 達標 → 11-08 照計劃開 933") if all(ok.values())
+                    else "❌ 唔達：" + "、".join(k for k, v in ok.items() if not v) + " → 即報總指揮同使用者，建議 933 延遲上實倉／暫停（使用者決定）；唔准改參數再試同一批數據"),
+            ("- 2023–2025 冇數據（容器連唔到 Dukascopy）；2015–2022 金價水平同而家差好遠，見縮放版。" if SRC == "duka"
+             else "- 券商 MT5 數據＝實際落單同一家經紀；冷卻相位測試同 #1001 一樣冇效。"), ""]
     md = "\n".join(out) + "\n"
-    open(os.path.join(HERE, "REV15_HISTORY.md"), "w", encoding="utf-8").write(md)
+    open(os.path.join(HERE, OUT), "w", encoding="utf-8").write(md)
     print(md)
 
 
