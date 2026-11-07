@@ -236,5 +236,9 @@ _x2 = main.fund_crosscheck({"run_hkt": "2026-11-07 05:59", "positions": [
 check("R373 有 nominal_price 就用佢對（−4,000 一致）", _x2["unreal"]["rows"][0]["own"] == -4000 and not _x2["unreal"]["rows"][0]["flag"],
       _x2["unreal"]["rows"])
 
+_u2 = main.fund_unrealized({"run_hkt": "2026-11-07 05:59", "positions": [{"code": "US.SPCX", "qty": -0.1649, "futu_pl": 2},
+                                                                         {"code": "HK.HSI2611", "qty": -1, "futu_pl": -4000}]})
+check("[R259] 券商贈送碎股 SPCX 唔入基金報告未實現", "美股" not in _u2["by_product"] and _u2["positions"] == 1, _u2)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
