@@ -188,7 +188,7 @@ def message(rec):
         plan = pre["plan"]
         lines.append(f"📋 若確認：{plan['side']} {lots():.2f} 手 {config.SYMBOL}｜現價 {pre['price']:.2f}"
                      f"｜止損 {plan['stop']}（距離 {plan['sl_distance']:.2f}）｜止賺 {plan['target'] or '不送'}"
-                     + ("" if config.EXECUTE else "｜⚠ 影子模式：指令唔會送到 EA"))
+                     + ("" if config.book_live() else "｜⚠ 影子模式：指令唔會送到 EA"))
         lines.append(f"⏳ {CONFIRM_TTL_SEC // 60} 分鐘內有效；按確認時會用當時最新價重新檢查。")
     else:
         lines.append(f"🚫 唔提供下單：{pre.get('reason') or '—'}")
@@ -270,7 +270,7 @@ def send_order(rec):
 
     live_pos = None
     acct = {}
-    if config.EXECUTE:
+    if config.book_live():
         try:
             acct = storage.read_json(config.PREFIX + "account.json", {}) or {}
             live_pos = acct.get("positions") or []
@@ -299,7 +299,7 @@ def send_order(rec):
         return "rejected", "天覆陣已有倉位（最多 1 張）"
     summary = f"{plan['side']} {lots():.2f} 手 {config.SYMBOL} @≈{price:.2f}｜止損 {plan['stop']}｜止賺 {plan['target'] or '不送'}"
     log_event(f"✅ [頻道訊號已排指令] {rec.get('channel')} #{rec.get('msg_id')}｜{summary}｜{text}", component="tg_signal")
-    if not config.EXECUTE:
+    if not config.book_live():
         return "queued_shadow", f"已排指令但影子模式（XAU_EXECUTE=0），唔會送到 EA｜{summary}"
     return "queued", f"已排指令，EA 下一個心跳執行｜{summary}"
 

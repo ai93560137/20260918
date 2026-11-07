@@ -385,7 +385,7 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         m.log_event(f"⚠️ 組合 A 狀態寫入失敗：{exc}", severity="ERROR")
     return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "combolive", "magic": config.COMBO_MAGIC,
-                      "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now), "message": why}), 200
+                      "mode": "live" if config.book_live(config.COMBO_MAGIC) else "shadow", "cmd_text": executor.cmd_text(state, now, config.COMBO_MAGIC), "message": why}), 200
 
 
 def _decide(m, state, account, price, now):
@@ -398,7 +398,7 @@ def _decide(m, state, account, price, now):
             if m.pending_has(state, "close"):
                 return "時間止蝕：等 EA 回報平倉"
             cid = "k" + uuid.uuid4().hex[:7]
-            text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.COMBO_MAGIC) if config.EXECUTE else None
+            text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.COMBO_MAGIC) if config.book_live(config.COMBO_MAGIC) else None
             state["orders"] = [*state.get("orders", []), {"id": cid, "kind": "close", "ts": now, "utc": market.fmt_utc(now), "price": price,
                                                           "reason": f"時間止蝕 {hold:g} 小時（{(last_open or {}).get('comp')}）", "applied": text or "paper", "acked": False}][-MAX_ORDERS:]
             m.log_event(f"⏱ [{config.TEAM_NAME}] 組合 A 時間止蝕（{hold:g} 小時）平倉｜{'已排指令' if text else '紙上'}", component="combolive", cmd=cid)
@@ -448,7 +448,7 @@ def _decide(m, state, account, price, now):
         rec["skip"] = f"階梯 {lad.get('level')}"
         return f"{c['comp']} 訊號，但階梯 {lad.get('level')}，唔開"
     ta = account.get("trade_allowed")
-    if config.EXECUTE and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
+    if config.book_live(config.COMBO_MAGIC) and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
         rec["skip"] = "EA 未准交易"
         return "EA／終端／戶口未准交易"
     if config.COMBO_DAY_STOP_HKD and (account.get("daily_pnl") or 0.0) <= -config.COMBO_DAY_STOP_HKD:
@@ -477,7 +477,7 @@ def _decide(m, state, account, price, now):
     action = "OPEN_LONG" if c["side"] > 0 else "OPEN_SHORT"
     cid = "k" + uuid.uuid4().hex[:7]
     text = executor.enqueue(state, action, sl, tp, now, cid, lots=n, tag="COMBO", magic=config.COMBO_MAGIC,
-                            note="組合A", px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.EXECUTE else None
+                            note="組合A", px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.book_live(config.COMBO_MAGIC) else None
     order = {"id": cid, "kind": "open", "comp": c["comp"], "side": "BUY" if c["side"] > 0 else "SELL", "lots": n, "sl": sl, "tp": tp,
              "hold_h": c["hold_h"], "price": price, "ts": now, "risk": r_info, "utc": market.fmt_utc(now), "why": c["why"],
              "applied": text or "paper", "acked": False}

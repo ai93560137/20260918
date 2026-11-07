@@ -52,6 +52,10 @@ def ladder(*, principal_hkd, own_equity, peak_equity, daily_pnl_hkd, margin_leve
         for i, line in enumerate(cfg.DD_ALERT_PCTS):
             if dd >= line:
                 out["alerts"][f"dd{i + 1}"] = f"高水位回撤 {dd:.1f}% ≥ {line:g}%"
+        dd_stop = getattr(cfg, "DD_STOP_PCT", 0.0) or 0.0                      # [11-07 HWM-C] 戶口層硬停線
+        if dd_stop and dd >= dd_stop:
+            out.update(pause=True, pause_kind=out["pause_kind"] or "hwm")
+            out["reasons"].append(f"高水位回撤 {dd:.1f}% ≥ {dd_stop:g}% → 停開新倉（唔自動解，要使用者批改 XAU_HWM_START 重新起計）")
     if margin_level is not None and margin_level > 0:
         if margin_level < cfg.MARGIN_PAUSE_PCT * mult and not out["pause"]:
             out.update(pause=True, pause_kind="margin")

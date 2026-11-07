@@ -300,7 +300,7 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         m.log_event(f"⚠️ H1 回調狀態寫入失敗：{exc}", severity="ERROR")
     return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "g7live", "magic": config.G7_MAGIC,
-                      "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now), "message": why}), 200
+                      "mode": "live" if config.book_live(config.G7_MAGIC) else "shadow", "cmd_text": executor.cmd_text(state, now, config.G7_MAGIC), "message": why}), 200
 
 
 def _decide(m, state, account, price, now):
@@ -311,7 +311,7 @@ def _decide(m, state, account, price, now):
             if m.pending_has(state, "close"):
                 return "時間止蝕：等 EA 回報平倉"
             cid = "g" + uuid.uuid4().hex[:7]
-            text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.G7_MAGIC) if config.EXECUTE else None
+            text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.G7_MAGIC) if config.book_live(config.G7_MAGIC) else None
             state["orders"] = [*state.get("orders", []), {"id": cid, "kind": "close", "ts": now, "utc": market.fmt_utc(now), "price": price,
                                                           "reason": f"時間止蝕 {config.G7_HOLD_H:g} 小時", "applied": text or "paper", "acked": False}][-MAX_ORDERS:]
             m.log_event(f"⏱ [{config.TEAM_NAME}] H1 回調時間止蝕（{config.G7_HOLD_H:g} 小時）平倉｜{'已排指令' if text else '紙上'}", component="g7live", cmd=cid)
@@ -350,7 +350,7 @@ def _decide(m, state, account, price, now):
         rec["skip"] = f"階梯 {lad.get('level')}"
         return f"{sig['side']} 訊號，但階梯 {lad.get('level')}，唔開"
     ta = account.get("trade_allowed")
-    if config.EXECUTE and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
+    if config.book_live(config.G7_MAGIC) and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
         rec["skip"] = "EA 未准交易"
         return "EA／終端／戶口未准交易"
     if config.G7_DAY_STOP_HKD and (account.get("daily_pnl") or 0.0) <= -config.G7_DAY_STOP_HKD:
@@ -383,7 +383,7 @@ def _decide(m, state, account, price, now):
     action = "OPEN_LONG" if sig["side"] == "BUY" else "OPEN_SHORT"
     cid = "g" + uuid.uuid4().hex[:7]
     text = executor.enqueue(state, action, sl, tp, now, cid, lots=n, tag="G7", magic=config.G7_MAGIC,
-                            note="H1回調", px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.EXECUTE else None
+                            note="H1回調", px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.book_live(config.G7_MAGIC) else None
     order = {"id": cid, "kind": "open", "side": sig["side"], "lots": n, "sl": sl, "tp": tp, "price": price, "ts": now, "risk": r_info if r_lots is not None else None,
              "utc": market.fmt_utc(now), "h1": market.fmt_utc(sig["h1"]), "why": sig["why"], "applied": text or "paper", "acked": False}
     state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]

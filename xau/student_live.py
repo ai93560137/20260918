@@ -80,7 +80,7 @@ def entry_check(pred, price):
     if side not in ("BUY", "SELL") or None in (lo, hi, sl, price) or not tps:
         return "skip", "欄位唔齊"
     tp = tps[0]
-    if (price - tp) * sgn >= 0:
+    if (price - tp) * sgn >= 0 and not pred.get("struct"):                # [11-07 E6S4] 新結構係等回調入場，出區時現價本身已喺 TP 外，唔可以當「已過 TP」
         return "skip", "現價已過 TP"
     if (price - sl) * sgn <= 0:
         return "skip", "止損已經觸發／錯邊"
@@ -129,7 +129,8 @@ def status():
     return {"on": enabled(), "magic": config.STUDENT_MAGIC, "rules": list(config.STUDENT_LIVE_RULES), "lots": lots(st),
             "lots_ladder": {"on": config.STUDENT_LOTS_LADDER, "start": config.STUDENT_LOTS, "min": config.STUDENT_LOTS_MIN, "max": config.STUDENT_MAX_LOTS,
                             "level": st.get("lots_level"), "log": (st.get("lots_log") or [])[-10:]},
-            "day_stop_hkd": config.STUDENT_DAY_STOP_HKD, "ttl_min": config.STUDENT_TTL_MIN, "max_concurrent": config.STUDENT_MAX_CONCURRENT,
+            "day_stop_hkd": config.STUDENT_DAY_STOP_HKD, "struct": {k: list(v) for k, v in config.STUDENT_STRUCT.items()},
+            "hwm": dict(zip(("why", "stat"), strategy_stop(st))), "ttl_min": config.STUDENT_TTL_MIN, "max_concurrent": config.STUDENT_MAX_CONCURRENT,
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
             "last": st.get("last"), "pending": [executor.mask_cmd(c) for c in (st.get("pending_cmds") or []) if not c.get("acked")]}
@@ -181,13 +182,13 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         m.log_event(f"⚠️ 學生真倉狀態寫入失敗：{exc}", severity="ERROR")
     return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "studentlive", "magic": config.STUDENT_MAGIC,
-                      "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now), "message": why}), 200
+                      "mode": "live" if config.book_live(config.STUDENT_MAGIC) else "shadow", "cmd_text": executor.cmd_text(state, now, config.STUDENT_MAGIC), "message": why}), 200
 
 
 def _consume_test(m, state, now):
     """[R359] GCS xau/sig/studentlive/test_cmd.json：{"op":"open|close","side","sl","tp","lots","ts"}；未用過、ts 喺 TTL 內就排入 933（id 前綴 s），
     寫回 consumed＋result。學生真倉關（SIG_STUDENT_LIVE_RULES 空）都照用——測試唔會觸發規則單。"""
-    if not (config.TEST_CMDS and config.EXECUTE):
+    if not (config.TEST_CMDS and config.book_live(config.STUDENT_MAGIC)):
         return
     try:
         doc = storage.read_json(TEST_FILE, None)
@@ -208,6 +209,41 @@ def _consume_test(m, state, now):
         m.log_event(f"🚨 933 test_cmd.json 寫回 consumed 失敗（可能重複排指令）：{exc}", severity="ERROR", component="studentlive")
 
 
+def restructure(pred):
+    """[11-07 E6S4] SIG_STUDENT_STRUCT 有呢條規則就用 E／Z／S／RT 重砌入場區、SL、TP（以出區時現價為基準）；冇就原樣。純函數。"""
+    cfg = config.STUDENT_STRUCT.get(pred.get("student"))
+    price = pred.get("price")
+    if not cfg or price is None or pred.get("side") not in ("BUY", "SELL"):
+        return pred
+    e, z, sl_d, rt = cfg
+    sgn = 1 if pred["side"] == "BUY" else -1
+    mid = float(price) - sgn * e
+    return {**pred, "entry_low": round(mid - z, 2), "entry_high": round(mid + z, 2), "sl": round(mid - sgn * sl_d, 2),
+            "tp": [round(mid + sgn * rt * sl_d, 2)], "struct": f"E{e:g}Z{z:g}S{sl_d:g}R{rt:g}"}
+
+
+def strategy_stop(state):
+    """[11-07 HWM-C] 933 策略層停線：由 SIG_STUDENT_HWM_START 起計成交簿 R。回傳 (原因 or None, 統計)。純函數。"""
+    if not config.STUDENT_HWM_START:
+        return None, {}
+    try:
+        import datetime as _dt
+        start = _dt.datetime.strptime(config.STUDENT_HWM_START[:10], "%Y-%m-%d").replace(tzinfo=_dt.timezone.utc).timestamp()
+    except ValueError:
+        return "SIG_STUDENT_HWM_START 格式錯（要 YYYY-MM-DD），為安全停開新倉", {}
+    cum = peak = 0.0; n = 0
+    for x in sorted((state or {}).get("book") or [], key=lambda r: r.get("closed_ts") or 0):
+        if (x.get("closed_ts") or 0) < start or x.get("r") is None:
+            continue
+        cum += float(x["r"]); n += 1; peak = max(peak, cum)
+    st = {"start": config.STUDENT_HWM_START, "n": n, "cum_r": round(cum, 2), "dd_r": round(peak - cum, 2)}
+    if cum <= -config.STUDENT_STOP_R:
+        return f"933 由 {config.STUDENT_HWM_START} 起累計 {cum:+.2f}R ≤ −{config.STUDENT_STOP_R:g}R → 停開新倉（使用者批改 SIG_STUDENT_HWM_START 先重開）", st
+    if peak - cum >= config.STUDENT_DD_R:
+        return f"933 由高位回撤 {peak - cum:.2f}R ≥ {config.STUDENT_DD_R:g}R → 停開新倉（使用者批改 SIG_STUDENT_HWM_START 先重開）", st
+    return None, st
+
+
 def _order_meta(state, pos):
     o = next((x for x in reversed(state.get("orders") or []) if x.get("ticket") is not None and str(x.get("ticket")) == str(pos.get("ticket"))), None)
     return {"ch": o.get("student"), "decision_price": o.get("price")} if o else {}
@@ -225,10 +261,13 @@ def _decide(m, state, account, price, now):
     if lad.get("stop") or lad.get("pause"):
         return f"階梯 {lad.get('level')}，唔開新倉"
     ta = account.get("trade_allowed")
-    if config.EXECUTE and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
+    if config.book_live(config.STUDENT_MAGIC) and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
         return "EA／終端／戶口未准交易"
     if config.STUDENT_DAY_STOP_HKD and (account.get("daily_pnl") or 0.0) <= -config.STUDENT_DAY_STOP_HKD:
         return f"933 今日已蝕 {account.get('daily_pnl'):+.2f} HKD ≥ {config.STUDENT_DAY_STOP_HKD:g}，暫停開新倉"
+    hwm_why, _hwm = strategy_stop(state)                                    # [11-07 HWM-C] 策略層硬停線
+    if hwm_why:
+        return hwm_why
     if price is None:
         return "心跳冇 M1 收市價"
     import data_block
@@ -242,6 +281,7 @@ def _decide(m, state, account, price, now):
     for p in candidates(now):
         if p["id"] in used:
             continue
+        p = restructure(p)                                                    # [11-07 E6S4]
         verdict, reason = entry_check(p, price)
         if verdict == "skip":
             state["used"] = [*state.get("used", []), p["id"]][-500:]
@@ -262,7 +302,7 @@ def _decide(m, state, account, price, now):
                 return f"{p['student']} {p['side']}：按風險計手數唔開（{r_info.get('why')}）"
             n = r_lots
         text = executor.enqueue(state, action, p["sl"], p["tp"][0], now, cid, lots=n, tag=p["id"], magic=config.STUDENT_MAGIC,
-                                note="學生" + p["student"].removeprefix("rule:"), px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.EXECUTE else None
+                                note="學生" + p["student"].removeprefix("rule:"), px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.book_live(config.STUDENT_MAGIC) else None
         order = {"id": cid, "pred": p["id"], "student": p["student"], "side": p["side"], "lots": n, "sl": p["sl"], "tp": p["tp"][0], "risk": r_info if r_lots is not None else None,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
         state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]

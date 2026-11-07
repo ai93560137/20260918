@@ -34,8 +34,9 @@ def enqueue(state, action, stop, target, now, cmd_id, lots=None, tag="", magic=N
     return text
 
 
-def cmd_text(state, now):
-    if not config.EXECUTE:
+def cmd_text(state, now, magic=None):
+    """magic＝邊本書（訊號書每書獨立開關；預設本服務）。呢本書唔係真倉就永遠空。"""
+    if not config.book_live(magic):
         return ""
     return "\n".join(c["text"] for c in (state.get("pending_cmds") or [])
                      if (not c.get("acked") or now < (c.get("resend_until") or 0)) and now - c["ts"] < CMD_TTL_SEC)

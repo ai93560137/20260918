@@ -144,7 +144,7 @@ def status():
             "exit": {ch: exit_mode(ch) for ch in config.FOLLOW_CHANNELS}, "ladder_channels": list(config.FOLLOW_LADDER_CHANNELS),
             "skip_unreached_channels": list(config.FOLLOW_SKIP_UNREACHED_CHANNELS), "unreached_tol": config.FOLLOW_UNREACHED_TOL,
             "avoid_hours": {ch: avoid_hours(ch) for ch in config.FOLLOW_CHANNELS if avoid_hours(ch)},
-            "execute": config.EXECUTE, "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "floating", "trade_allowed", "dry_run")},
+            "execute": config.book_live(config.FOLLOW_MAGIC), "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "floating", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id")), "applied": (re.sub(r"id=([0-9a-f]+)", lambda m: "id=" + executor.mask_id(m.group(1)), str(o.get("applied") or "")))} for o in (st.get("orders") or [])[-20:][::-1]],
             "used": len(st.get("used") or []), "last": st.get("last"),
             "pending": [executor.mask_cmd(c) for c in (st.get("pending_cmds") or []) if not c.get("acked")]}   # 10-23：id 遮罩
@@ -189,14 +189,14 @@ def handle_heartbeat(payload):
     if moved:
         m.log_event(f"🪜 [{config.TEAM_NAME}] 跟單手數階梯 {moved[0]:.2f} → {moved[1]:.2f}（平倉 {state['lots_log'][-1]['pnl']:+.2f} HKD）", component="follow")
     resp = {"status": "monitoring", "team": config.TEAM_NAME, "book": "follow", "magic": config.FOLLOW_MAGIC,
-            "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now)}
+            "mode": "live" if config.book_live(config.FOLLOW_MAGIC) else "shadow", "cmd_text": executor.cmd_text(state, now, config.FOLLOW_MAGIC)}
     why = _decide(m, state, account, price, now)
     state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why}
     try:
         storage.write_json(STATE_FILE, state)
     except StorageError as exc:
         m.log_event(f"⚠️ 跟單狀態寫入失敗：{exc}", severity="ERROR")
-    resp.update(cmd_text=executor.cmd_text(state, now), message=why)
+    resp.update(cmd_text=executor.cmd_text(state, now, config.FOLLOW_MAGIC), message=why)
     return m.jsonify(resp), 200
 
 
@@ -253,7 +253,7 @@ def _manage(m, state, account, price, now):
         return f"有倉（逐級鎖 TP{k + 1}：止損 {want} 已排，等 EA）"
     cid = "f" + uuid.uuid4().hex[:7]
     target = pos.get("target") if pos.get("target") is not None else (order.get("tps") or [None])[-1]
-    text = executor.enqueue(state, "UPDATE_STOP", want, target, now, cid, tag=order.get("sid"), magic=config.FOLLOW_MAGIC) if config.EXECUTE else None
+    text = executor.enqueue(state, "UPDATE_STOP", want, target, now, cid, tag=order.get("sid"), magic=config.FOLLOW_MAGIC) if config.book_live(config.FOLLOW_MAGIC) else None
     order["ladder"] = {"k": k, "sl": want, "ts": now, "utc": market.fmt_utc(now), "cmd": cid}
     m.log_event(f"📨 [{config.TEAM_NAME}] 跟單逐級鎖 {order.get('sid')} 到 TP{k + 1} → 止損 {want}（{why}）@ {price}｜{'已排 modify' if text else '紙上'}",
                 component="follow", sid=order.get("sid"), cmd=cid)
@@ -272,7 +272,7 @@ def _decide(m, state, account, price, now):
     if lad.get("stop") or lad.get("pause"):
         return f"階梯 {lad.get('level')}，唔開新倉"
     ta = account.get("trade_allowed")
-    if config.EXECUTE and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
+    if config.book_live(config.FOLLOW_MAGIC) and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
         return "EA／終端／戶口未准交易"
     if price is None:
         return "心跳冇 M1 收市價"
@@ -312,7 +312,7 @@ def _decide(m, state, account, price, now):
                 continue
             f_lots = r_lots
         text = executor.enqueue(state, action, sig["sl"], tp_cmd, now, cid, lots=f_lots, tag=sig["sid"], magic=config.FOLLOW_MAGIC,
-                                note="跟單" + config.CHANNEL_NAMES.get(ch, ch)) if config.EXECUTE else None   # [R350] MT5 註解「天覆陣 跟單CTC <id>」
+                                note="跟單" + config.CHANNEL_NAMES.get(ch, ch)) if config.book_live(config.FOLLOW_MAGIC) else None   # [R350] MT5 註解「天覆陣 跟單CTC <id>」
         order = {"id": cid, "sid": sig["sid"], "ch": ch, "side": side, "lots": f_lots, "sl": sig["sl"], "tp": tp_cmd, "risk": r_info if r_lots is not None else None,
                  "tps": list(sig["tp"]), "exit": mode,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
