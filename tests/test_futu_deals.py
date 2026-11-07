@@ -223,7 +223,7 @@ _x = main.fund_crosscheck(
     "date,run_hkt,futu_equity,unrealized_total\n2026-11-05,2026-11-05 17:20,100000,0\n"
     "2026-11-06,2026-11-06 17:20,101500,500\n2026-11-07,2026-11-07 17:20,102000,500\n")
 check("二次校對：HSI2611 富途同自己計一致唔標", not _x["unreal"]["rows"][0]["flag"], _x["unreal"]["rows"][0])
-check("二次校對：MHI 相差 5,000 標 ⚠", _x["unreal"]["rows"][1]["flag"])
+check("二次校對：期貨（MHI）富途係結算後口徑，唔標 ⚠", not _x["unreal"]["rows"][1]["flag"] and _x["unreal"]["rows"][1]["futures"])
 check("二次校對：已到期期權唔入", len(_x["unreal"]["rows"]) == 2)
 check("權益恆等式：11-06 平衡（Δ權益 1,500 = Δ未實現 500 + 已實現 1,000）", _x["equity"][0]["residual"] == 0 and not _x["equity"][0]["flag"],
       _x["equity"])
@@ -239,6 +239,11 @@ check("R373 有 nominal_price 就用佢對（−4,000 一致）", _x2["unreal"][
 _u2 = main.fund_unrealized({"run_hkt": "2026-11-07 05:59", "positions": [{"code": "US.SPCX", "qty": -0.1649, "futu_pl": 2},
                                                                          {"code": "HK.HSI2611", "qty": -1, "futu_pl": -4000}]})
 check("[R259] 券商贈送碎股 SPCX 唔入基金報告未實現", "美股" not in _u2["by_product"] and _u2["positions"] == 1, _u2)
+
+_u3 = main.fund_unrealized({"run_hkt": "2026-11-07 05:59", "positions": [
+    {"code": "HK.HSI2611", "qty": -1, "open_price": 24520, "bid": 24635, "ask": 24649, "last": 24647, "futu_pl": -4000}]})
+check("[R260] 期貨未實現用開倉至今：HSI2611 −1 @24,520、最後 24,647 → −6,350（唔係富途結算後 −4,000）",
+      _u3["total"] == -6350, _u3)
 
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)

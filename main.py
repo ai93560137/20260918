@@ -1435,6 +1435,22 @@ def futu_is_gift(code):
     return any(team == FUTU_TEAM_GIFT and re.match(rx, code or "") for rx, team, _u, _m in FUTU_TEAM_RULES)
 
 
+FUTU_FUTURES_RE = re.compile(r"^(HK\.[A-Z]{2,4}\d{4}|US\.[A-Z]{1,4}\d{4})$")
+
+
+def futu_open_pl(p):
+    """[R260] 開倉至今未實現（原幣）：（最後成交價，冇就中間價 − 開倉價）× 張數 × 每點價值；計唔到回 None。
+    使用者 11-07：HSI2611 −1 @24,520 沽、現價 24,647 → −6,350；富途期貨 pl_val（−4,000）係上次結算後，唔係開倉至今。"""
+    code = str(p.get("code") or "")
+    _, mult = futu_product(code)
+    qty, op = to_float(p.get("qty")), to_float(p.get("open_price"))
+    bid, ask, last = (to_float(p.get(k)) for k in ("bid", "ask", "last"))
+    mark = to_float(p.get("nominal_price")) or last or ((bid + ask) / 2 if bid and ask else None)
+    if None in (qty, op, mark):
+        return None
+    return (mark - op) * qty * mult
+
+
 def fund_unrealized(risk_doc):
     """[R207] 未實現盈虧：讀 futu/risk/latest.json 每個持倉富途自己計嘅 pl_val（futu_pl，原幣），美元折港幣，按產品加總。
     富途冇俾 pl_val 就用（現價 − 開倉價）× 張數 × 每點價值。讀唔到回 None。"""
@@ -1453,14 +1469,13 @@ def fund_unrealized(risk_doc):
             continue
         prod, mult = futu_product(code)
         pl = to_float(p.get("futu_pl"))
-        if pl is None:
-            qty, op = to_float(p.get("qty")), to_float(p.get("open_price"))
-            bid, ask, last = (to_float(p.get(k)) for k in ("bid", "ask", "last"))
-            mark = (bid + ask) / 2 if bid and ask else last
-            if qty is None or op is None or mark is None:
+        if pl is None or FUTU_FUTURES_RE.match(code):              # [R260] 期貨一律用開倉至今（富途期貨 pl_val 係上次結算後）
+            own = futu_open_pl(p)
+            if own is not None:
+                pl = own
+            elif pl is None:
                 missing.append(code)
                 continue
-            pl = (mark - op) * qty * mult
         pl *= FUTU_USD_HKD if code.startswith("US.") else 1.0
         by[prod] = by.get(prod, 0.0) + pl
         n += 1
@@ -1495,19 +1510,17 @@ def fund_crosscheck(risk_doc, r, daily_csv_text):
             code = str(p["code"])
             _, mult = futu_product(code)
             fx = FUTU_USD_HKD if code.startswith("US.") else 1.0
-            qty, op = to_float(p.get("qty")), to_float(p.get("open_price"))
-            bid, ask, last = (to_float(p.get(k)) for k in ("bid", "ask", "last"))
-            nominal = to_float(p.get("nominal_price"))                     # R373：富途 pl_val 用嘅價（最後成交），有就用佢對
-            mark = nominal if nominal else ((bid + ask) / 2 if bid and ask else last)
-            own = (mark - op) * qty * mult * fx if None not in (qty, op, mark) else None
+            o = futu_open_pl(p)
+            own = o * fx if o is not None else None
             fp = to_float(p.get("futu_pl"))
             futu = fp * fx if fp is not None else None
             diff = futu - own if futu is not None and own is not None else None
-            flag = diff is not None and abs(diff) > max(FUND_XCHECK_UNREAL_TOL, 0.02 * abs(futu))
-            bad += 1 if flag or futu is None or own is None else 0
+            fut = bool(FUTU_FUTURES_RE.match(code))                        # [R260] 期貨：富途 pl_val 係上次結算後，口徑唔同，唔標 ⚠
+            flag = (not fut) and diff is not None and abs(diff) > max(FUND_XCHECK_UNREAL_TOL, 0.02 * abs(futu))
+            bad += 1 if flag or own is None or (futu is None and not fut) else 0
             tf += futu or 0.0
             to += own or 0.0
-            rows.append({"code": code, "futu": None if futu is None else round(futu, 2),
+            rows.append({"code": code, "futures": fut, "futu": None if futu is None else round(futu, 2),
                          "own": None if own is None else round(own, 2), "diff": None if diff is None else round(diff, 2),
                          "flag": bool(flag)})
         out["unreal"] = {"asof": risk_doc.get("run_hkt"), "rows": rows, "futu_total": round(tf, 2), "own_total": round(to, 2),
@@ -1538,7 +1551,8 @@ def fund_crosscheck_html(x, n):
     h = "<div class='section'><b>🔍 二次校對</b>"
     u = x.get("unreal")
     if u and u["rows"]:
-        trs = "".join(f"<tr><td>{esc(q['code'])}</td><td>{n(q['futu']) if q['futu'] is not None else '—'}</td>"
+        trs = "".join(f"<tr><td>{esc(q['code'])}{'（期貨：富途係結算後）' if q.get('futures') else ''}</td>"
+                      f"<td>{n(q['futu']) if q['futu'] is not None else '—'}</td>"
                       f"<td>{n(q['own']) if q['own'] is not None else '—'}</td>"
                       f"<td>{'⚠️ ' if q['flag'] else ''}{n(q['diff']) if q['diff'] is not None else '—'}</td></tr>" for q in u["rows"])
         verdict = "，✅ 一致" if not u["flags"] else f"，⚠️ {u['flags']} 項要核對"
@@ -1546,7 +1560,7 @@ def fund_crosscheck_html(x, n):
               f"{verdict}</p>"
               "<div class='scroll'><table><tr><th>合約</th><th>富途計</th><th>自己計</th><th>相差</th></tr>"
               f"{trs}</table></div>"
-              "<p class='muted' style='font-size:12px'>自己計＝（富途參考價 nominal_price，冇就用中間價／最後價 − 開倉價）× 張數 × 每點價值，美元 × 7.8；"
+              "<p class='muted' style='font-size:12px'>自己計＝開倉至今（最後成交價，冇就中間價 − 開倉價）× 張數 × 每點價值，美元 × 7.8；上面「未實現（按產品）」期貨用自己計；富途期貨 pl_val 只計上次結算後，所以期貨行唔標 ⚠；"
               "每項相差超過 500 港幣或 2% 就標 ⚠️。期貨開倉價如果係富途攤薄成本，可能同富途計法唔同。</p>")
     acc = x.get("acc") or {}
     if acc:
