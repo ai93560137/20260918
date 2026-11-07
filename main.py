@@ -8764,6 +8764,11 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif
 .nav-link { display:inline-block; padding:7px 12px; border-radius:20px; font-size:13px; font-weight:700;
             text-decoration:none; color:var(--primary); background:#eef4ff; white-space:nowrap; }
 .nav-link:hover { background:#dbe7ff; }
+.nav-grouped { flex-direction:column; align-items:stretch; gap:6px; }
+.nav-row { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; }
+.nav-group { font-size:11px; font-weight:700; color:var(--muted); min-width:58px; letter-spacing:1px; }
+.nav-row a.nav-link { margin-left:0; }
+.hub .nav-grouped { width:fit-content; max-width:100%; margin:0 auto 22px; }
 .nav-current { background:#0f62fe; color:#fff; cursor:default; }
 .brand { display:flex; align-items:center; gap:10px; min-width:0; }
 .brand-logo { width:34px; height:34px; flex-shrink:0; }
@@ -8885,6 +8890,16 @@ PAGE_LINKS = [
 ]
 
 
+# [R256] 導覽列分類（使用者 11-07「網頁比較亂」）；PAGE_LINKS 未列入任何一類嘅會放「其他」。
+PAGE_GROUPS = [
+    ("總覽", ["welcome", "strategies", "fund_report", "canary", "rules"]),
+    ("恒指", ["yunchui", "futu_range", "bazhentu", "dizai", "longfei", "analyst"]),
+    ("美股期貨", ["es_range", "nq_range"]),
+    ("股票", ["huyi", "htf"]),
+    ("黃金・圖表", [XAU_URL, "charts"]),
+]
+
+
 def page_nav(current, extra=()):
     def one(view, label):
         # [R91] 完整網址 = 站外的頁，直接連出去並另開分頁；其餘照舊用 ?view=。
@@ -8897,9 +8912,20 @@ def page_nav(current, extra=()):
             return f"<span class='nav-link nav-current'>{label}</span>"
         return f"<a class='nav-link' href='?view={view}'>{label}</a>"
 
-    items = "".join(one(view, label) for view, label in PAGE_LINKS)
-    items += "".join(f"<a class='nav-link' href='{href}'>{esc(label)}</a>" for href, label in extra)
-    return f"<nav class='nav-links' aria-label='頁面導覽'>{items}</nav>"
+    # [R256] 使用者 11-07「網頁比較亂」：導覽列按類別分行（總覽／恒指／美股期貨／股票／黃金），每行前面有細標籤。
+    labels = dict(PAGE_LINKS)
+    used = set()
+    rows = []
+    for title, views in PAGE_GROUPS:
+        cells = "".join(one(v, labels[v]) for v in views if v in labels)
+        used.update(views)
+        if cells:
+            rows.append(f"<div class='nav-row'><span class='nav-group'>{esc(title)}</span>{cells}</div>")
+    rest = "".join(one(v, l) for v, l in PAGE_LINKS if v not in used)
+    rest += "".join(f"<a class='nav-link' href='{href}'>{esc(label)}</a>" for href, label in extra)
+    if rest:
+        rows.append(f"<div class='nav-row'><span class='nav-group'>其他</span>{rest}</div>")
+    return f"<nav class='nav-links nav-grouped' aria-label='頁面導覽'>{''.join(rows)}</nav>"
 
 
 # [R355] 使用者 10-29「分頁加 logo，容易找」→「扇形圖案」：瀏覽器分頁圖示（內嵌 SVG，深藍圓角底＋金色羽扇）
