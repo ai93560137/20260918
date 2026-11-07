@@ -257,6 +257,18 @@ with tempfile.TemporaryDirectory() as td:
     sl.write_text("D sec 2026-10-19 10:00\n", encoding="utf-8")
     act, why, alarm = g.desired(now, sl)
     check("guard 讀證券級別 D → 只警報唔停", act is None and alarm, (act, why, alarm))
+    # [R372] AI（Claude API）連續出錯：≥3 發一次 Telegram，恢復再發一次
+    sent = []
+    g.telegram = lambda t: sent.append(t)
+    wd = Path(td) / "ai_wd"
+    wd.mkdir()
+    w = g.Watchdog("MHI真倉", wd)
+    n0 = datetime.now(_tz.utc)
+    for n in (2, 3, 4, 0, 0):
+        (wd / "heartbeat").write_text(json.dumps({"utc": n0.isoformat(), "qty": 0, "ai_errors": n,
+                                                  "ai_error_msg": "AI 出錯：credit balance is too low"}), encoding="utf-8")
+        w.check(n0)
+    check("AI 出錯通知：3 次發一次、恢復發一次", len(sent) == 2 and "credit" in sent[0] and "恢復" in sent[1], sent)
     del os.environ["LONGFEI_EXTRA_PRODUCTS"], os.environ["AI_DATA_DIR"]
 
 print("\n=== [R356] book 自動跟富途：新標普期權加入、已平腿剔走 ===")

@@ -1565,3 +1565,19 @@ def test_heartbeat_reports_server_stop(env):
     tr.state["pos"] = {"code": "HK.MHI2611", "side": 1, "qty": 1, "stop": 23596, "server_stop_failed": True}
     p = build_packet(tr.cfg, tr.state, "x")["state"]["pos"]
     assert p["server_stop_on"] is False and p["server_stop_failed"] is True
+
+
+def test_ai_errors_counted_in_heartbeat(env):
+    """[R372] Claude API 出錯（brain 回 _error）要累計入 state 同 heartbeat；成功一次就歸零。"""
+    cfg, t, b, ai, tr = env
+    real = ai.decide
+    ai.decide = lambda ctx: {"action": "HOLD", "confidence": 0, "reason": "AI 出錯：credit balance is too low", "_error": True}
+    for _ in range(3):
+        tr.tick()
+        advance(t, minutes=5)
+    assert tr.state["ai_errors"] == 3 and "credit" in tr.state["ai_error_msg"]
+    hb = json.loads(cfg.heartbeat_file.read_text("utf-8"))
+    assert hb["ai_errors"] == 3 and "credit" in hb["ai_error_msg"]
+    ai.decide = real
+    tr.tick()
+    assert tr.state["ai_errors"] == 0 and tr.state["ai_error_msg"] is None
