@@ -1837,13 +1837,16 @@ def fund_external_html(ext, n):
         return ""
     tin = sum(e["amount"] for e in ext if e["amount"] > 0)
     tout = sum(e["amount"] for e in ext if e["amount"] < 0)
-    trs = "".join(f"<tr><td>{esc(e['date'])}</td><td>{'🟢 入金' if e['amount'] > 0 else '🔴 出金'}</td>"
-                  f"<td style='text-align:right'>{n(abs(e['amount']))}</td></tr>" for e in ext)
+    a = lambda v: f"{abs(v):,.0f}"                                    # 使用者 11-07：出金唔好顯示 + 號；金額唔帶正負號，用 emoji 分
+    trs = "".join(f"<tr><td>{esc(e['date'])}</td><td>{'📥 入金' if e['amount'] > 0 else '📤 出金'}</td>"
+                  f"<td style='text-align:right'>{a(e['amount'])}</td></tr>" for e in ext)
+    net = tin + tout
     return (f"<p style='margin-top:10px'><b>💰 外部入金／出金紀錄（{esc(ext[0]['date'])} 起，港幣）</b></p>"
             "<div class='scroll'><table><tr><th>清算日</th><th>類別</th><th>金額</th></tr>" + trs
-            + f"<tr><td><b>入金合計</b></td><td></td><td style='text-align:right'><b>{n(tin)}</b></td></tr>"
-              f"<tr><td><b>出金合計</b></td><td></td><td style='text-align:right'><b>{n(-tout)}</b></td></tr>"
-              f"<tr><td><b>淨入金</b></td><td></td><td style='text-align:right'><b>{n(tin + tout)}</b></td></tr></table></div>"
+            + f"<tr><td><b>入金合計</b></td><td>📥</td><td style='text-align:right'><b>{a(tin)}</b></td></tr>"
+              f"<tr><td><b>出金合計</b></td><td>📤</td><td style='text-align:right'><b>{a(tout)}</b></td></tr>"
+              f"<tr><td><b>{'淨入金' if net >= 0 else '淨出金'}</b></td><td>{'📥' if net >= 0 else '📤'}</td>"
+              f"<td style='text-align:right'><b>{a(net)}</b></td></tr></table></div>"
             "<p class='muted' style='font-size:12px'>來源：富途資金明細，證券戶口外部轉入／轉出；證券同期貨戶口之間嘅內部調撥唔計。</p>")
 
 
