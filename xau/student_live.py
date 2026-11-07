@@ -182,13 +182,13 @@ def handle_heartbeat(payload):
     except StorageError as exc:
         m.log_event(f"⚠️ 學生真倉狀態寫入失敗：{exc}", severity="ERROR")
     return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "studentlive", "magic": config.STUDENT_MAGIC,
-                      "mode": "live" if config.EXECUTE else "shadow", "cmd_text": executor.cmd_text(state, now), "message": why}), 200
+                      "mode": "live" if config.book_live(config.STUDENT_MAGIC) else "shadow", "cmd_text": executor.cmd_text(state, now, config.STUDENT_MAGIC), "message": why}), 200
 
 
 def _consume_test(m, state, now):
     """[R359] GCS xau/sig/studentlive/test_cmd.json：{"op":"open|close","side","sl","tp","lots","ts"}；未用過、ts 喺 TTL 內就排入 933（id 前綴 s），
     寫回 consumed＋result。學生真倉關（SIG_STUDENT_LIVE_RULES 空）都照用——測試唔會觸發規則單。"""
-    if not (config.TEST_CMDS and config.EXECUTE):
+    if not (config.TEST_CMDS and config.book_live(config.STUDENT_MAGIC)):
         return
     try:
         doc = storage.read_json(TEST_FILE, None)
@@ -261,7 +261,7 @@ def _decide(m, state, account, price, now):
     if lad.get("stop") or lad.get("pause"):
         return f"階梯 {lad.get('level')}，唔開新倉"
     ta = account.get("trade_allowed")
-    if config.EXECUTE and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
+    if config.book_live(config.STUDENT_MAGIC) and isinstance(ta, dict) and ta and not all(bool(v) for v in ta.values()):
         return "EA／終端／戶口未准交易"
     if config.STUDENT_DAY_STOP_HKD and (account.get("daily_pnl") or 0.0) <= -config.STUDENT_DAY_STOP_HKD:
         return f"933 今日已蝕 {account.get('daily_pnl'):+.2f} HKD ≥ {config.STUDENT_DAY_STOP_HKD:g}，暫停開新倉"
@@ -302,7 +302,7 @@ def _decide(m, state, account, price, now):
                 return f"{p['student']} {p['side']}：按風險計手數唔開（{r_info.get('why')}）"
             n = r_lots
         text = executor.enqueue(state, action, p["sl"], p["tp"][0], now, cid, lots=n, tag=p["id"], magic=config.STUDENT_MAGIC,
-                                note="學生" + p["student"].removeprefix("rule:"), px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.EXECUTE else None
+                                note="學生" + p["student"].removeprefix("rule:"), px=price, dev=(config.MAX_ENTRY_SLIP or None)) if config.book_live(config.STUDENT_MAGIC) else None
         order = {"id": cid, "pred": p["id"], "student": p["student"], "side": p["side"], "lots": n, "sl": p["sl"], "tp": p["tp"][0], "risk": r_info if r_lots is not None else None,
                  "price": price, "ts": now, "utc": market.fmt_utc(now), "entry": reason, "applied": text or "paper", "acked": False}
         state["orders"] = [*state.get("orders", []), order][-MAX_ORDERS:]

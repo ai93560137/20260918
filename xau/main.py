@@ -190,7 +190,7 @@ def own_positions(payload, offset=0):
 
 def _last_close(state):
     """[R355] 最後一張平倉：真倉用成交簿（pnl_hkd），紙上用 trades（pnl_usd）。"""
-    if config.EXECUTE:
+    if config.book_live():
         t = (state.get("book") or [None])[-1]
         return {"side": t.get("side"), "closed_ts": t.get("closed_ts"), "pnl": t.get("pnl_hkd")} if t else None
     t = (state.get("trades") or [None])[-1]
@@ -240,7 +240,7 @@ def pending_has(state, op):
 
 def _reverse_emit(kind, now, **kw):
     """[R369] 921 影子事件 → 921 反向真倉（只係事後寫事件，唔改 921 決策；出錯只記 WARNING）。"""
-    if config.EXECUTE or not reverse_live.enabled():
+    if config.book_live() or not reverse_live.enabled():
         return
     try:
         reverse_live.emit(kind, now, **kw)
@@ -320,7 +320,7 @@ def apply_ladder(state, control, lad, bar, now, day, decision_id, rec):
     if lad["stop"] and mode != "STOP":
         why = "；".join(lad["reasons"])
         closed = None
-        if config.EXECUTE:
+        if config.book_live():
             rec["applied"] = (enqueue_cmd(state, "CLOSE", None, None, now, decision_id) if state.get("position") and not pending_has(state, "close") else "HOLD")
         else:
             closed = paper.force_close(state, bar, "日蝕 −" + f"{config.DAILY_LOSS_STOP_PCT:g}% 平倉停機", now)
@@ -407,7 +407,7 @@ def build_context(state, m1, m15, account, now, day, ladder=None, control=None):
     return {
         "product": {"symbol": config.SYMBOL, "contract_size": config.CONTRACT_SIZE, "pip": config.PIP, "price_digits": config.PRICE_DIGITS,
                     "quote_currency": config.QUOTE_CCY, "description": config.PRODUCT_DESC,
-                    "long_only": config.LONG_ONLY, "mode": "live" if config.EXECUTE else "shadow",
+                    "long_only": config.LONG_ONLY, "mode": "live" if config.book_live() else "shadow",
                     # ① 風控常數（10-23）：一日唔變，放入 1h 快取段；每分鐘變嘅留喺 risk
                     "risk_limits": {"lots": rules.lots(), "min_sl_price": config.MIN_SL_USD, "max_sl_price": config.MAX_SL_USD,
                                     "min_sl_pips": config.MIN_SL_PIPS, "max_sl_pips": config.MAX_SL_PIPS, "spread_price": config.SPREAD_USD,
@@ -514,7 +514,7 @@ def process_bar(state, bar, m1, m15, account, now):
     """新 M1 收盤。回傳 (決策紀錄或 None, 摘要)。"""
     day = market.ny_date(now)
     exit_rec = None
-    if config.EXECUTE:
+    if config.book_live():
         prev_pos = state.get("position")
         state["position"] = live_position(account)       # 真倉：持倉以 EA 為準；止損止賺由伺服器端 SL／TP 執行
         pos_live = state["position"]
@@ -541,7 +541,7 @@ def process_bar(state, bar, m1, m15, account, now):
     pos = state.get("position")
     decision_id = uuid.uuid4().hex
     rec = {"id": decision_id, "ts": now, "bar_time": bar["time"], "price": bar["close"],
-           "ladder": ladder["level"], "mode": control["mode"], "execute": config.EXECUTE}
+           "ladder": ladder["level"], "mode": control["mode"], "execute": config.book_live()}
     if exit_rec:
         rec["paper_exit"] = {"reason": exit_rec["reason"], "pnl_usd": exit_rec["pnl_usd"]}
     handled = apply_ladder(state, control, ladder, bar, now, day, decision_id, rec)
@@ -554,7 +554,7 @@ def process_bar(state, bar, m1, m15, account, now):
         _record(state, rec, day)
         return rec, rec["reason"]
     if control["mode"] == "STOP":
-        if config.EXECUTE and state.get("position") and not pending_has(state, "close"):   # 使用者／日蝕 STOP：真倉即排 close
+        if config.book_live() and state.get("position") and not pending_has(state, "close"):   # 使用者／日蝕 STOP：真倉即排 close
             enqueue_cmd(state, "CLOSE", None, None, now, uuid.uuid4().hex)
             log_event(f"🛑 [{config.TEAM_NAME}] STOP 而有倉，排 close", severity="WARNING", component="ea")
         return None, f"STOP（{control.get('set_by')}）：{control.get('reason') or ''}"
@@ -627,11 +627,11 @@ def process_bar(state, bar, m1, m15, account, now):
                 action, stop, target, why = rules.validate_decision(
                     {"action": "UPDATE_STOP", "stop_price": hr_rule["sl"], "target_price": None, "confidence": 1.0, "reason": "規則"},
                     position=pos, last=bar["close"], can_open=False, block_reason="規則", trades_today=paper.trades_today(state, day))
-                if action == "UPDATE_STOP" and config.EXECUTE and pending_has(state, "modify"):
+                if action == "UPDATE_STOP" and config.book_live() and pending_has(state, "modify"):
                     action, why = "HOLD", "上一個 modify 未 ack"
             rec.update(kind="hold_rules", action=action, final=action, stop=stop, target=target, rejected=why,
                        reason=f"規則止損（{hr_rule.get('reason')}）", cost_usd=0.0, model="rules")
-            rec["applied"] = (enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD") if config.EXECUTE \
+            rec["applied"] = (enqueue_cmd(state, action, stop, target, now, decision_id) or "HOLD") if config.book_live() \
                 else paper.apply(state, action, stop, target, bar, now, day, decision_id)
             _record(state, rec, day)
             if action == "UPDATE_STOP":
@@ -717,7 +717,7 @@ def process_bar(state, bar, m1, m15, account, now):
         rec["signal_id"] = cited["sid"]
         if cited["sid"] not in rec["reason"]:
             rec["reason"] = (rec["reason"] + signals.note(cited))[:480]
-    if config.EXECUTE:
+    if config.book_live():
         rec["applied"] = enqueue_cmd(state, action, stop, target, now, decision_id, px=bar["close"], account=account) or "HOLD"
         if action in ("OPEN_LONG", "OPEN_SHORT") and state.get("risk_last") and (state["risk_last"].get("id") == str(decision_id)[:8]):
             rec["risk"] = state["risk_last"]
@@ -802,9 +802,9 @@ def _feed_bars(payload, account, offset, now):
 
     consume_test_file(now)                             # 階段 B：GCS xau/test_cmd.json 排測試指令（XAU_TEST_CMDS=1 先生效）
     state = load_state()
-    if config.EXECUTE and state.get("position") is None:                 # [R346] 已存 state 有倉就留畀 process_bar 偵測平倉；冇倉先同步
+    if config.book_live() and state.get("position") is None:                 # [R346] 已存 state 有倉就留畀 process_bar 偵測平倉；冇倉先同步
         state["position"] = live_position(account)
-    resp = {"status": "monitoring", "team": config.TEAM_NAME, "mode": "live" if config.EXECUTE else "shadow",
+    resp = {"status": "monitoring", "team": config.TEAM_NAME, "mode": "live" if config.book_live() else "shadow",
             "cmd_text": cmd_text(state, now), "need_history": need_history(m15), "lots": rules.lots(state),
             "data_block": ((state.get("data_block") or {}).get("blocked") or {}).get("title")}
     bar = market.parse_bar(m1_raw) if m1_raw.get("is_new_bar") else None
@@ -880,7 +880,7 @@ def shadow_feed(payload, now=None, stale_sec=180):
     就用 926 心跳嘅 M1／M15 行 921 影子決策。921 決策邏輯唔改、唔寫 921 戶口快照（用最後一個 921 快照，冇就空 dict）；
     921 圖重開之後以 921 心跳為準（快照新鮮就唔用後備），同一根 M1 由 market.ingest 去重。XAU_EXECUTE=1 一律唔用。回傳 True＝用咗後備。"""
     now = now_ts() if now is None else now
-    if config.EXECUTE or config.SIGNAL_BOOK:
+    if config.book_live() or config.SIGNAL_BOOK:
         return False
     try:
         acct = storage.read_json(ACCOUNT_FILE, {}) or {}
@@ -1001,7 +1001,7 @@ def handle_test_cmd(payload):
 def consume_test_file(now):
     """階段 B 另一個入口（唔使權杖）：GCS `xau/test_cmd.json` 放 {"id":…,"op":"open|close|modify","side":…,"sl":…,"tp":…,"lots":…,"no_sl":…}，
     服務每個心跳讀一次，未用過就排指令，然後寫回 consumed＋result（同一個檔唔會排第二次）。只喺 XAU_TEST_CMDS=1 且 XAU_EXECUTE=1 生效。"""
-    if not (config.TEST_CMDS and config.EXECUTE):
+    if not (config.TEST_CMDS and config.book_live()):
         return
     try:
         doc = storage.read_json(TEST_CMD_FILE, None)
@@ -1063,7 +1063,7 @@ def queue_test_cmd(payload, now):
     except StorageError as exc:
         return {"status": "error", "message": str(exc)[:100]}, 500
     log_event(f"🧪 [{config.TEAM_NAME}] test_cmd 排指令：{text}", severity="WARNING", component="test")
-    return {"status": "queued", "id": cid[:8], "text": text, "will_send": config.EXECUTE}, 200
+    return {"status": "queued", "id": cid[:8], "text": text, "will_send": config.book_live()}, 200
 
 
 def rulesim_summary():
@@ -1144,7 +1144,8 @@ def build_status():
     p95 = ms[int(len(ms) * 0.95) - 1] if len(ms) >= 2 else (ms[0] if ms else None)
     control = load_control()
     return {
-        "team": config.TEAM_NAME, "symbol": config.SYMBOL, "execute": config.EXECUTE, "model": config.MODEL,
+        "team": config.TEAM_NAME, "symbol": config.SYMBOL, "execute": config.book_live(), "xau_execute": config.EXECUTE,
+        "book_execute": ({str(m): config.book_live(m) for m in config.BOOK_EXECUTE} if config.SIGNAL_BOOK else None), "model": config.MODEL,
         "ladder": state.get("ladder") or {"level": "A", "reasons": []},
         "api_key": {"expires_utc": config.KEY_EXPIRES_UTC or None, "days_left": (round(key_days, 1) if key_days is not None else None),
                     "warn": bool(key_days is not None and key_days <= config.KEY_WARN_DAYS)},
@@ -1169,7 +1170,7 @@ def build_status():
         "trades_today": paper.trades_today(state, market.ny_date(now)),
         "decisions": (state.get("decisions") or [])[-60:],
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
-        "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.EXECUTE else None,   # [R352] 真倉績效（921／931）
+        "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.book_live() else None,   # [R352] 真倉績效（921／931）
         "reverse_live": _safe_book(reverse_live.status) if not config.SIGNAL_BOOK else None,   # [R369] 921 反向真倉
         "live_book_follow": _safe_book(lambda: follow_book_view(now)),
         "forward": _safe_book(forward_view),                           # [R352c] 前向測試（gb_forward、規則學生）                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）

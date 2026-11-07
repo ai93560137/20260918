@@ -300,6 +300,26 @@ COMBO_SIGNAL_TTL_MIN = _i("SIG_COMBO_SIGNAL_TTL_MIN", 30)            # 收市後
 COMBO_SEED_DAYS = _i("SIG_COMBO_SEED_DAYS", 600)                     # H1 快取要幾多日（D1 SMA200 要 200 根交易日＋SAR 預熱；420 日唔夠）
 COMBO_PARAM_YEAR = _i("SIG_COMBO_PARAM_YEAR", 2026)                  # 參數年份；同今年唔一樣就唔開（#184 每年重揀）
 
+# [11-07 每書獨立開關] 使用者 11-07「931、932、933、934、935 全部用獨立開關」：訊號書（zhuge-xau-sig）每本書自己一個落實倉開關，
+#   真倉＝XAU_EXECUTE=1 **而且** 該書開關=1（兩個都要）；預設全部 0 → 只開 XAU_EXECUTE 唔會有任何書落單。
+#   非訊號書（921／922…）唔受影響，照舊只睇 XAU_EXECUTE。
+S1_EXECUTE = _b("SIG_S1_EXECUTE", False)              # 931 S1 頻道訊號
+FOLLOW_EXECUTE = _b("SIG_FOLLOW_EXECUTE", False)      # 932 跟單
+STUDENT_EXECUTE = _b("SIG_STUDENT_EXECUTE", False)    # 933 規則學生
+G7_EXECUTE = _b("SIG_G7_EXECUTE", False)              # 934 G7 H1 回調
+COMBO_EXECUTE = _b("SIG_COMBO_EXECUTE", False)        # 935 組合 A
+BOOK_EXECUTE = {MAGIC: S1_EXECUTE, FOLLOW_MAGIC: FOLLOW_EXECUTE, STUDENT_MAGIC: STUDENT_EXECUTE,
+                G7_MAGIC: G7_EXECUTE, COMBO_MAGIC: COMBO_EXECUTE} if SIGNAL_BOOK else {}
+
+
+def book_live(magic=None):
+    """呢本書而家係咪真倉（指令會送去 EA）。magic 預設本服務（訊號書＝931 S1）。"""
+    if not EXECUTE:
+        return False
+    if not SIGNAL_BOOK:
+        return True
+    return bool(BOOK_EXECUTE.get(MAGIC if magic is None else magic, False))
+
 # --- 慳成本（使用者 10-21 揀「穩陣 A+F+D」；xau/COST_PLAN.md）---
 # A：決策嘅「產品＋整點前 M15」快取段用 1h（一個鐘先變一次），整點前 M1 段仍然 5m；system 本身已經 1h
 CACHE_TTL_STABLE = _s("CACHE_TTL_STABLE", "1h")

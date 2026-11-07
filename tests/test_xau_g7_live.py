@@ -3,7 +3,7 @@ SL／TP、時間止蝕、週末缺口、每根 H1 只判一次、TTL、戶口總
 import json, os, sys, types
 
 os.environ.update(WEBHOOK_SECRET_TOKEN="tok", XAU_BOOK="signal", SIG_DECIDE="0", TG_SIGNAL_INGEST_SECRET="s",
-                  ANTHROPIC_API_KEY="x", XAU_EXECUTE="1", SIG_FOLLOW_CHANNELS="3996305231", GATE_MODEL="claude-haiku-5-5",
+                  ANTHROPIC_API_KEY="x", XAU_EXECUTE="1", SIG_S1_EXECUTE="1", SIG_FOLLOW_EXECUTE="1", SIG_STUDENT_EXECUTE="1", SIG_G7_EXECUTE="1", SIG_COMBO_EXECUTE="1", SIG_FOLLOW_CHANNELS="3996305231", GATE_MODEL="claude-haiku-5-5",
                   SIG_G7_LIVE="1", SIG_G7_DAY_STOP_HKD="300")
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
 try:
