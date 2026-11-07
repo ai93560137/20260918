@@ -21,7 +21,7 @@
 | 外匯陣（數據測試） | 🚫 不換（使用者 10-14：已冇用） | `session_01Svsn6w1kkBJS3v6cXoGoXN` | `claude/forex-data-testing-w4q3m2` | — | 10-14 檢查提醒已停用；前向測試照由 Actions 跑 |
 | GCP／VM／IBKR 資料採集（IV 日誌、claude-ops） | `session_01Mv7vE7k7oogpkK9fkBrLcm` | `session_01QECdg96y2dtk2skzrBNpVL` | `claude/gcp-agent-whoami-status-hswp4h` | `handoff/GCP_VM_IV採集.md` | ✅ |
 | 指數套利 | 🚫 不換（使用者 10-14：已冇用） | `session_01KY3V9mVrkW6G6be4ywdGo3` | `claude/eager-mayer-eq2mek` | — | — |
-| 🥇 XAUUSD GCP and TV | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
+| 🥇 XAUUSD GCP and TV（**11-07 使用者停用 TradingView alert，收尾中；XAUUSD 資源集中天覆陣**） | `session_015birEN7ure48Xk98cKz2PE` | `session_01SRQpEZwv5vYP1RoJcoAmmm` | `claude/tradingview-pine-script-cor9fw` | `handoff/XAUUSD_GCP_TV.md` | ✅（冇 Routine） |
 | 股票套利（TSLA／SPCX） | 🚫 不換（使用者 10-14：已冇用） | `session_01FDZu3TKDUtoEHVmctS36JQ` | `claude/eager-fermi-haqt5y` | — | PR #101 重查提醒已停用 |
 | 🖥️ 富途數據 VM（10-16 起 futu-data-tw，asia-east1-b；香港 futu-data 已於 11-07 由使用者刪除（刪前檢查：服務全停、timer／opend disabled、最後更新 10-16）；10-15 起推 GCS `futu/risk/latest.json`，改推送內容經 `gcp_ib/vm_futu/settings.env` PR） | `session_01AQNMTZvQodzptWVui6deqY`（總指揮 10-15 開） | — | `claude/futu-vm-setup` | `AGENTIC.md`「VM：futu-data」、`tradingview/RUNBOOK_FUTU_VM.md` | — |
 | 🏦 債券每日快報（美債 Telegram，`bond_daily.yml` HKT 週二至六 07:30） | `session_013x5qHyMDisW7VCLNo6w88x`（10-15 總指揮開） | `session_01WrfzzWWLTysdSLJNZ3Mh5u`（美國國債數據與股票市場關係） | `claude/us-intl-data-stock-market-vgt0yi` | `handoff/債券快報.md`（該分支 518b054） | —（冇 Routine，Actions 排程） |
