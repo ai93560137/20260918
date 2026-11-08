@@ -296,9 +296,10 @@ def _forward_section(fw, book=None):
     own = ((fw.get("student") or {}).get("own")) or {}
     if own:
         names = {"rule:rev15": ("rev15（M15 反轉）", "11-11 判"), "rule:level": ("level（亞洲區間高低位）", "11-25 判"),
-                 "rule:swing": ("swing", "觀察"), "rule:rev15x": ("rev15x", "已棄")}
+                 "rule:swing": ("swing", "觀察"), "rule:rev15x": ("rev15x", "已棄"),
+                 "rule:m5spike": ("M5 急動（#1121）", "933 組合"), "rule:dopen15": ("離開市 15（#1122）", "933 組合"), "rule:spike2": ("兩根急動（#1123）", "933 組合")}
         srows = ""
-        for k in ("rule:rev15", "rule:level", "rule:swing", "rule:rev15x"):
+        for k in ("rule:rev15", "rule:level", "rule:swing", "rule:rev15x", "rule:m5spike", "rule:dopen15", "rule:spike2"):
             o = own.get(k)
             if not o:
                 continue
