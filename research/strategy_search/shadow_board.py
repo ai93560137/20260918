@@ -36,6 +36,7 @@ import batch_1033 as B33        # noqa: E402
 import batch_1045 as B45        # noqa: E402
 import batch_1059 as B59        # noqa: E402
 import batch_1079 as B79        # noqa: E402
+import batch_1120 as B120       # noqa: E402
 
 START = "2026-11-08T23:00"
 OUT = "xau/sig/shadow_board/latest.json"
@@ -58,7 +59,10 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）", "#1001／#160",
           ("nyopen", "紐約開市價回測 E6S4（放寬＋2010–14 過）", "#1047", B45.r1047, 0),
           ("asiamid", "亞洲區間中位回測（2010–14 過，只影子）", "#1048", B45.r1048, 0),
           ("rev240", "rev240（放寬＋2010–14 過）", "#1061", B59.r1061, 0),
-          ("stair", "M1 樓梯反向（放寬＋2010–14 過）", "#1080", B79.r1080, 0)]
+          ("stair", "M1 樓梯反向（放寬＋2010–14 過）", "#1080", B79.r1080, 0),
+          ("m5spike", "M5 單根急動反向（三段過；同 #1067 重疊）", "#1121", B120.r1121, 0),
+          ("dopen15", "離當日開市價 ≥ 15 美元反向（三段過；每日一次）", "#1122", B120.r1122, 0),
+          ("spike2", "兩根 M1 急動反向（三段過；同 #1067 重疊）", "#1123", B120.r1123, 0)]
 COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend", "spike")   # 6 條回測合格規則嘅 63 個組合（使用者 11-08「63 個組合回測同影子都做」）；#1049 唔入
 OVERLAP = (("rev15", "rev60"), ("rev15", "spike"), ("rev60", "spike"))   # 高度重疊：rev15＋rev60 約 80%、rev15＋急動約 54–65%
 COMBO_1027 = ("rev15", "round", "d1brk")
