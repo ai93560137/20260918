@@ -247,6 +247,11 @@ def plan(state, days, pos, price, now, block, pending):
         return None, "有倉（SL 伺服器端；到期平）" if pos else "等倉位回報"
     if pending:
         return None, "排緊指令"
+    age = last_bar_age(state.get("d1"), now)
+    if age is None or age > STALE_SEC:
+        return None, "休市／K 線唔新鮮，唔開新倉"
+    if recent_reject(state, now):
+        return None, f"啱啱開倉被拒，{RETRY_SEC // 60} 分鐘後再試"
     used = state.get("used") or {}
     for rule in config.TREND_RULES:
         if rule == "qbrk" and "qbrk" in config.TREND_ADOPT and qkey(today) not in (state.get("adopted") or []):
@@ -265,6 +270,42 @@ def plan(state, days, pos, price, now, block, pending):
             return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
         return ("open", sig), f"{NAMES[rule]} 突破"
     return None, (f"冇倉；{block}" if block else "冇倉，等突破")
+
+
+STALE_SEC = 300          # 最新 M1 收市超過 5 分鐘＝休市／冇數據：唔開新倉
+RETRY_SEC = 600          # 開倉被 EA 拒絕之後 10 分鐘內唔再試
+
+
+def revert_failed(state):
+    """EA 拒絕嘅開倉（ok=False，例如休市 market closed）唔算用咗：撤返 used／adopted，等下次再試。改 state，回傳撤咗幾多張。"""
+    n = 0
+    for o in state.get("orders") or []:
+        if o.get("kind") != "open" or not o.get("acked") or o.get("ok") or o.get("reverted"):
+            continue
+        rule = o.get("rule")
+        period = o.get("period")
+        if period is None:                               # 舊單冇記 period：qbrk 用季、lvbrk 用日
+            day = int(float(o.get("ts") or 0)) // 86400
+            period = qkey(day) if rule == "qbrk" else day
+        used = dict(state.get("used") or {})
+        if used.get(rule) == period:
+            used.pop(rule)
+            state["used"] = used
+        if rule == "qbrk":
+            state["adopted"] = [x for x in (state.get("adopted") or []) if x != period]
+        o["reverted"] = True
+        n += 1
+    return n
+
+
+def last_bar_age(d1, now):
+    days = days_of(d1 or {})
+    return (now - (days[-1][1]["t1"] + 60)) if days else None
+
+
+def recent_reject(state, now):
+    return any(o.get("kind") == "open" and o.get("acked") and not o.get("ok") and now - float(o.get("ts") or 0) < RETRY_SEC
+               for o in (state.get("orders") or []))
 
 
 # ------------------------------------------------------------------ 回報／狀態
@@ -287,6 +328,7 @@ def ack(cid, payload, now):
                 o.update(acked=True, ok=bool(payload.get("ok")), ticket=payload.get("ticket"), message=str(payload.get("message") or "")[:120])
                 if o.get("kind") == "open" and not payload.get("ok"):
                     state["pos"] = None                  # 開唔到：唔當有倉
+                    revert_failed(state)                 # 唔當用咗訊號（例如休市被拒），開市再試
         return (state if found else None), found
     return storage.update(STATE_FILE, mutate, default_factory=empty_state)
 
@@ -315,6 +357,7 @@ def _enqueue(m, state, kind, now, price, reason, sig=None, n_lots=None):
         text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.TREND_MAGIC)
     state["orders"] = [*state.get("orders", []), {"id": cid, "kind": kind, "ts": now, "utc": market.fmt_utc(now), "price": price,
                                                   "rule": (sig or {}).get("rule"), "side": (sig or {}).get("side"), "sl": (sig or {}).get("sl"),
+                                                  "period": (sig or {}).get("period"), "adopt": bool((sig or {}).get("adopt")),
                                                   "lots": n_lots, "reason": reason, "applied": text, "acked": False}][-MAX_ORDERS:]
     m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿 {kind} {reason}｜{text}", component="trend", cmd=cid)
     return text
@@ -354,6 +397,8 @@ def handle_heartbeat(payload):
             m.log_event(f"📗 [{config.TEAM_NAME}] 趨勢簿平倉 {t['pnl_hkd']:+.2f} HKD", component="trend")
     except Exception as exc:  # noqa: BLE001
         m.log_event(f"⚠️ 趨勢簿成交簿記錄失敗（唔影響交易）：{type(exc).__name__}: {exc}", severity="WARNING", component="trend")
+    if revert_failed(state):                               # 包括部署前已經被拒嘅舊單（11-08 21:08 休市補入）
+        m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿：之前被 EA 拒絕嘅開倉唔當用咗，開市再試", component="trend")
     sp = state.get("pos") or {}
     if sp and not pos and not _pending(state, now) and (state.get("pos_seen") or now - float(sp.get("ts") or 0) > 600):
         state["pos"] = None                                # 伺服器端止蝕／到期平咗

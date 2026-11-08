@@ -57,7 +57,7 @@ def reset():
 
 
 
-BAR = {"time": 20764 * 86400, "open": 4070.0, "high": 4072.0, "low": 4069.0, "close": 4071.0}
+BAR = {"time": 20764 * 86400 + 3540, "open": 4070.0, "high": 4072.0, "low": 4069.0, "close": 4071.0}
 
 
 class Heartbeat(unittest.TestCase):
@@ -83,6 +83,18 @@ class Heartbeat(unittest.TestCase):
         NOW[0] += 60
         r = hb(927, positions=[], m1_ohlc={**BAR, "time": BAR["time"] + 180}, symbol="XAUUSD")
         self.assertEqual(r["cmd_text"], "")                                                         # 唔會再補入
+
+    def test_market_closed_reject_then_retry(self):
+        r = hb(927, m1_ohlc=BAR, symbol="XAUUSD")
+        cid = r["cmd_text"].split("id=")[1][:8]
+        client.post("/", data=json.dumps({"token": "tok", "action": "cmd_ack", "id": cid, "ok": False, "message": "market closed", "account": "12345"}))
+        self.assertEqual(TL.load_state()["used"], {})
+        NOW[0] += 60
+        r = hb(927, m1_ohlc={**BAR, "time": BAR["time"] + 60}, symbol="XAUUSD")
+        self.assertEqual(r["cmd_text"], "")                               # 10 分鐘內唔再試
+        NOW[0] += 660
+        r = hb(927, m1_ohlc={**BAR, "time": BAR["time"] + 720}, symbol="XAUUSD")
+        self.assertIn("open|SELL|0.01|sl=4328.18", r["cmd_text"])          # 開市再試
 
     def test_off_no_cmd(self):
         config.TREND_LIVE = False
