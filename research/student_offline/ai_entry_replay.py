@@ -132,9 +132,16 @@ HINT = ("Historical statistics for THIS rule (rev15) over many years of data: en
 
 
 def _pick(n_sigs, seed, exclude_seed=None):
+    """exclude_seed：單一種子（#1006）或者逗號串（#1007：1005,1006 按次序重現之前抽過嘅題，全部剔走）。"""
     excl = set()
     if exclude_seed is not None:
-        excl = set(random.Random(exclude_seed).sample(range(n_sigs), min(N_B, n_sigs)))
+        seeds = [int(x) for x in str(exclude_seed).split(",")]
+        for k, sd in enumerate(seeds):
+            pool0 = [j for j in range(n_sigs) if j not in excl]
+            if k == 0:
+                excl |= set(random.Random(sd).sample(range(n_sigs), min(N_B, n_sigs)))
+            else:
+                excl |= set(random.Random(sd).sample(pool0, min(N_B, len(pool0))))
     rng = random.Random(seed)
     pool = [k for k in range(n_sigs) if k not in excl]
     return sorted(rng.sample(pool, min(N_B, len(pool)))), rng
@@ -217,6 +224,6 @@ if __name__ == "__main__":
     elif cmd == "make":
         arg = lambda k, dflt=None: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else dflt
         ex = arg("--exclude-seed")
-        make(sys.argv[2], seed=int(arg("--seed", SEED)), exclude_seed=(int(ex) if ex else None), hint="--hint" in sys.argv)
+        make(sys.argv[2], seed=int(arg("--seed", SEED)), exclude_seed=(ex if ex else None), hint="--hint" in sys.argv)
     elif cmd == "score":
         score(sys.argv[2], sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "AI_REPLAY_B.md")
