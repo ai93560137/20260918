@@ -1034,6 +1034,9 @@ def futu_team_assign(positions, today=None):
                 "bid": to_float(p.get("bid")), "ask": to_float(p.get("ask")), "last": to_float(p.get("last")),
                 "quote_time": _futu_text(p.get("quote_time"), 23), "ccy": "USD" if code.startswith("US.") else "HKD"}
         pl = to_float(p.get("futu_pl"))
+        if FUTU_FUTURES_RE.match(code):                                    # [R263] 使用者 11-08「策略總表都改做開倉至今」：期貨唔用富途結算後 pl_val
+            own = futu_open_pl(p)
+            pl = round(own, 2) if own is not None else pl
         for rx, team, use, cap in FUTU_TEAM_RULES:
             if re.match(rx, code):
                 if team == FUTU_MHI_BY_MONTH:
@@ -8074,7 +8077,7 @@ def build_futu_real_section(fr):
     acc = "".join(f"<div>{esc(a)}</div>" for a in fr.get("account_alerts") or [])
     out = (f"<div class='section print-flow'><b>💼 富途實倉（按陣）</b>"
            f"<p class='muted' style='font-size:12px'>富途期貨戶口實際持倉，每 15 分鐘更新；更新 {esc(fr.get('run_hkt') or '—')} HKT（{fresh}）。"
-           "價格只作監控，冇行情權限嘅美國期權用富途持倉估值。由總指揮按規則配對去各陣。</p>"
+           "價格只作監控，冇行情權限嘅美國期權用富途持倉估值。期貨持倉盈虧＝開倉至今（對富途 App「持倉盈虧」）。由總指揮按規則配對去各陣。</p>"
            + (f"<div style='border-left:5px solid #dc3545; padding-left:8px; margin:6px 0'>{acc}</div>" if acc else ""))
     for t in fr.get("teams") or []:
         stops = "、".join(f"{esc(s['name'])} 用咗 {s['use'] * 100:.0f}%" for s in t.get("stops") or [])

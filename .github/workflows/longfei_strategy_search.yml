@@ -1,0 +1,36 @@
+name: 龍飛陣 策略搜尋（IDEAS #2003 起）
+
+# 使用者 11-08「參考天覆陣，繼續做研究直至找到合格 MHI、NQ 同 ES 策略先停」。
+# 結果寫 GCS longfei/strategy_search/。只係研究，唔落單。
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: research/longfei_search 入面嘅腳本名（唔使 .py）
+        required: false
+        default: daily_search
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Strategy search
+        env:
+          SCRIPT: ${{ github.event.inputs.script }}
+        run: python3 research/longfei_search/${SCRIPT:-daily_search}.py

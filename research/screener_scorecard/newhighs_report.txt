@@ -1,8 +1,8 @@
 Screener: newhighs   horizon: 10 trading days   entry: next open, exit: close
-Score (hit rate, excess>0): 0.472 on 282 scored picks (285 pending, 0 no data); mean excess -1.4%, median -0.4%, t -2.53
-Control 港股 (all constituents, same days): hit 0.563 mean excess +0.5% n=680
-Control 日股 (all constituents, same days): hit 0.525 mean excess +0.7% n=4050
-Control 美股 (all constituents, same days): hit 0.517 mean excess +0.5% n=13529
+Score (hit rate, excess>0): 0.577 on 409 scored picks (423 pending, 0 no data); mean excess +0.2%, median +1.3%, t 0.44
+Control 港股 (all constituents, same days): hit 0.574 mean excess +0.7% n=765
+Control 日股 (all constituents, same days): hit 0.543 mean excess +0.9% n=4725
+Control 美股 (all constituents, same days): hit 0.554 mean excess +1.1% n=15936
 
 --- FAILED 1 ---
 Pick: 2026-09-18 日股 6594.JP ニデック
