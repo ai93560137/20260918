@@ -1127,6 +1127,7 @@ def forward_view():
         g7 = storage.read_json(base + "g7_forward/latest.json", None)      # [R360] IDEAS #162／#163 H1 回調策略（研究腳本 wf_forward.py --write 寫）
         g7l = storage.read_json(base + "g7live/state.json", None)          # [R361] 934 真倉成交簿
         cbl = storage.read_json(base + "combolive/state.json", None)       # [R366] 935 A+ 真倉成交簿
+        sb = storage.read_json(base + "shadow_board/latest.json", None)    # [IDEAS #1028] 5 條合格規則＋組合影子總表（research shadow_board.py --write 寫）
     except StorageError:
         return None
     combo = None
@@ -1137,10 +1138,11 @@ def forward_view():
     if isinstance(g7l, dict) and (g7l.get("book") or g7l.get("orders")):
         g7 = dict(g7) if isinstance(g7, dict) else {}
         g7["live"] = {"book": (g7l.get("book") or [])[-50:], "orders": (g7l.get("orders") or [])[-10:], "last": g7l.get("last")}
-    if not gb and not stu and not g7 and not combo:
+    sb = sb if isinstance(sb, dict) and sb.get("singles") else None
+    if not gb and not stu and not g7 and not combo and not sb:
         return None
     return {"gb": gb if isinstance(gb, dict) else None, "student": stu if isinstance(stu, dict) else None,
-            "g7": g7 if isinstance(g7, dict) else None, "combo": combo}
+            "g7": g7 if isinstance(g7, dict) else None, "combo": combo, "shadow": sb}
 
 
 def build_status():
