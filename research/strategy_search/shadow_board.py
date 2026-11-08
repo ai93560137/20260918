@@ -1,4 +1,4 @@
-"""[IDEAS #1028] 影子總表：5 條合格規則（933 rev15 E6S4、#1011 整數關口、#1017 rev60、#1022 D1 20 日突破、#1026 月尾做多）
+"""[IDEAS #1028／#1049] 影子總表：5 條合格規則＋#1049 價位回測合併（只前向）（933 rev15 E6S4、#1011 整數關口、#1017 rev60、#1022 D1 20 日突破、#1026 月尾做多）
 同所有組合（2 條或以上，共 26 個）嘅影子前向，每張固定 1R、規則同各自回測完全一樣。只係紙上：唔落單。
 數據：MT5 M1 存檔（2026-09-01→10-30，只作預熱）接券商 M1（xau/sig/bars/）；入場時間 ≥ START 先計。
 各條自己嘅前向判決照各自 IDEAS（#1011／#1017／#1022／#1026；933 係實倉）；組合只作描述，唔另設判決（#1027 三條組合會標明）。
@@ -23,6 +23,7 @@ import batch_1015 as B15        # noqa: E402
 import batch_1019 as B19        # noqa: E402
 import batch_1023 as B23        # noqa: E402
 import combo_1027 as C          # noqa: E402
+import level_pool as LP         # noqa: E402
 
 START = "2026-11-08T23:00"
 OUT = "xau/sig/shadow_board/latest.json"
@@ -30,7 +31,9 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）", "#1001／#160",
           ("round", "50 美元整數關口 E6S4", "#1011", RD.run, 0),
           ("rev60", "rev60 E6S4", "#1017", B15.r1017, 0),
           ("d1brk", "D1 20 日突破", "#1022", B19.r1022, 7 * 86400),
-          ("mend", "月尾做多", "#1026", B23.r1026, 5 * 86400)]
+          ("mend", "月尾做多", "#1026", B23.r1026, 5 * 86400),
+          ("lvlpool", "價位回測合併（只前向，冇回測判）", "#1049", LP.r1049, 0)]
+COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend")   # 組合只用 5 條回測合格嘅規則（使用者 11-08）
 COMBO_1027 = ("rev15", "round", "d1brk")
 
 
@@ -72,7 +75,7 @@ def main():
                    "r": round(r, 2), "open": bool(hold and ts + hold > last)} for ts, sg, r in tr[-5:][::-1]]
         singles.append({"key": key, "name": name, "idea": idea, **st, "recent": recent})
     combos = []
-    keys = [s[0] for s in STRATS]
+    keys = list(COMBO_KEYS)
     for k in range(2, len(keys) + 1):
         for sub in itertools.combinations(keys, k):
             st = stats([x for s in sub for x in trades[s]])
