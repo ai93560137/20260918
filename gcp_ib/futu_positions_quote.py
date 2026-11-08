@@ -164,6 +164,13 @@ def expired(code, today=None):
     return False
 
 
+def is_stock(code):
+    """[R376] 正股／ETF（唔係期權、期貨、期貨期權）。"""
+    c = code or ""
+    return bool(c) and not (_OPT_RE.match(c) or _HKFUT_RE.match(c) or _CME_RE.match(c)
+                            or __import__("re").match(r"^(?:HK|US)\.[A-Z]+\d", c))
+
+
 def read_holdings(since):
     """回傳 (持倉行, 帳戶資金摘要)。資金摘要唔包帳號。"""
     rows, accounts = [], []
@@ -212,6 +219,10 @@ def read_holdings(since):
                     known = {r["code"] for r in rows if r["account"] == label}
                     for code, q in net.items():
                         if q == 0 or code in known:
+                            continue
+                        if ret == RET_OK and q < 0 and is_stock(code):
+                            # [R376] 正股／ETF：富途持倉查得到但冇呢隻淡倉，成交淨計出負數多數係贈股／碎股冇買入成交（11-08 SPCX −0.1649），唔當淡倉
+                            print(f"略過：{code} 成交淨計 {q:+g}，但富途持倉冇淡倉（贈股／碎股？）")
                             continue
                         side = -1 if q < 0 else 1
                         n, amt = cash[code][side]
