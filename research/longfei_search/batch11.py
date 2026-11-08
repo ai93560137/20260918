@@ -18,7 +18,10 @@ import batch3 as b3
 
 
 def closes(tk):
-    return {x[0]: x[4] for x in ds.load(tk)}
+    try:
+        return {x[0]: x[4] for x in ds.load(tk)}
+    except Exception:  # noqa: BLE001
+        return {}
 
 
 def prev_ret(ser, day, lag=1):
@@ -79,7 +82,7 @@ def run11(b, ind, fam, ext):
 def main():
     data = {mk: ds.load(tk) for mk, tk in {"MHI": "^HSI", **b3.CROSS}.items()}
     ind = {mk: ds.indicators(b) for mk, b in data.items()}
-    ext = {"X1": closes("FXI"), "X2": closes("000001.SS"), "X3": closes("USDCNH=X"), "X4": closes("DX-Y.NYB")}
+    ext = {"X1": closes("FXI"), "X2": closes("000001.SS"), "X3": closes("USDCNH=X") or closes("CNH=X") or closes("CNY=X"), "X4": closes("DX-Y.NYB")}
     start_s = {"X1": "2005-01-01", "X2": "2000-01-01", "X3": "2011-01-01", "X4": "2000-01-01"}
     rows = []
     for fam in ("X1f", "X1r", "X2f", "X2r", "X3", "X4"):
