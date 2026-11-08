@@ -24,6 +24,7 @@ import batch_1019 as B19        # noqa: E402
 import batch_1023 as B23        # noqa: E402
 import combo_1027 as C          # noqa: E402
 import level_pool as LP         # noqa: E402
+import batch_1067 as B67        # noqa: E402
 
 START = "2026-11-08T23:00"
 OUT = "xau/sig/shadow_board/latest.json"
@@ -32,7 +33,8 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）", "#1001／#160",
           ("rev60", "rev60 E6S4", "#1017", B15.r1017, 0),
           ("d1brk", "D1 20 日突破", "#1022", B19.r1022, 7 * 86400),
           ("mend", "月尾做多", "#1026", B23.r1026, 5 * 86400),
-          ("lvlpool", "價位回測合併（只前向，冇回測判）", "#1049", LP.r1049, 0)]
+          ("lvlpool", "價位回測合併（只前向，冇回測判）", "#1049", LP.r1049, 0),
+          ("spike", "M1 單根急動反向 E6S4", "#1067", B67.r1067, 0)]
 COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend")   # 組合只用 5 條回測合格嘅規則（使用者 11-08）
 COMBO_1027 = ("rev15", "round", "d1brk")
 
