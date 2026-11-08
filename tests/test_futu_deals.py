@@ -315,5 +315,9 @@ check("傳票：毛利 +1,000、手續費逐項（負數）", ("2026-11-09 11:00
 _fh = main.fund_fee_html(_fr["fee_table"], lambda v: f"{v:,.2f}")
 check("網頁有費用分類、小計", "💸 費用分類" in _fh and "交易費用小計" in _fh and "非交易費用小計" in _fh and "全部費用" in _fh and "+" not in _fh.split("<table>")[1], _fh[:300])
 
+print("\n=== [R263] 策略總表期貨用開倉至今 ===")
+_ta = main.futu_team_assign([{"code": "HK.HSI2611", "qty": -1, "open_price": 24520, "last": 24647, "futu_pl": -4000}], today=_date(2026, 11, 8))
+check("策略總表 HSI2611 −1 @24,520、最後 24,647 → −6,350（唔係結算後 −4,000）", _ta and _ta[0]["futu_pl"] == -6350, _ta)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
