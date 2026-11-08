@@ -165,8 +165,8 @@ b2 = main.futu_team_assign([{"code": "US.NVDA", "qty": 3}, {"code": "US.EWZ", "q
 check("[R238] 七雄／ETF 候選歸龍飛陣、名單外 ARKK 仍未配對", [x["team"] for x in b2] == ["龍飛陣", "龍飛陣", main.FUTU_TEAM_UNMATCHED], b2)
 check("龍飛陣喺 FUTU_TEAMS（策略總表有卡）", "龍飛陣" in main.FUTU_TEAMS)
 
-a3 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": -2}])
-check("[R239] MNQ2612 → 使用者人手", [x["team"] for x in a3] == [main.FUTU_TEAM_MANUAL], a3)
+a3 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": 1}, {"code": "US.MES2612", "qty": 1}, {"code": "US.NQ2612", "qty": -1}])
+check("[R264] MNQ／MES → 龍飛陣（12 個月動量）、NQ 仍歸使用者人手", [x["team"] for x in a3] == ["龍飛陣", "龍飛陣", main.FUTU_TEAM_MANUAL], a3)
 
 print("\n=== [R364] 虎翼美股期權／NQ 配對 ===")
 a4 = main.futu_team_assign([{"code": "US.RDDT261127P80000", "qty": -1}, {"code": "US.NVDA261218C210000", "qty": -1},
