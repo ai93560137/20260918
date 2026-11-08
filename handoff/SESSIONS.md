@@ -12,10 +12,10 @@
 | ☁️ 雲垂陣 | `session_013KSbtb9YJejCuaunQBdJDC`（10-18 再換，上下文 66 萬） | `session_01RkzmKXKixbBkCNqEjhubCK`（10-14）、`session_01QLJsy4RoeHjPNdNha73ibt` | `claude/dazzling-curie-f3xzb8` | `handoff/雲垂陣.md` | ✅ |
 | 🌬️ 風揚陣 | `session_01BvMYgEWCVAJRi7v2WgT1qb`（10-15 再換，上下文過長） | `session_01X2Qv7MgCQxbyyEyGVzivWC`（10-14）、`session_01AmKfqsQjNQAkz1xgjRo2Mj` | `claude/epic-ramanujan-kp1l1v` | `handoff/風揚陣.md` | ✅ |
 | 🐍 蛇蟠陣 | `session_01Mt8CWk4VkMymGsyU5kjFsv`（11-05 換，總指揮開；上下文過 60 萬） | `session_01B4y7p7QzrJwCXEmDDZCx9M`、`session_011i86tjK8gxGxbMdTukZp4B` | `claude/gifted-carson-v2tvhw` | `handoff/蛇蟠陣.md` | ✅ |
-| 🏔️ 地載陣 | `session_01UxZXWN28xveAEbzggo49AR` | `session_01QDAzw2CmhvhYWip9SRktBn` | `claude/dizai-expectations-r172` | `handoff/地載陣.md` | ✅（冇 Routine） |
+| 🏔️ 地載陣 | `session_01Mt8CWmFkSg9XQ9XSt2yMst`（11-08 總指揮開，上下文 61 萬換新） | `session_01UxZXWN28xveAEbzggo49AR`（10-14）、`session_01QDAzw2CmhvhYWip9SRktBn` | `claude/dizai-expectations-r172` | `handoff/地載陣.md` | ✅（衡重揀 `trig_01LbTSPhGPxrrEL2Dy64c1cu`） |
 | 🐤 金絲雀 | `session_01Mt8CWnFXKw3kmcwd24gTGj`（11-05 換，總指揮開；上下文過 60 萬） | `session_01AqAysUfBVsCKimicXrwwKZ`、`session_01KucjwzRvueynnK5qm26y9g` | `claude/canary-playbook-final-3um9lp` | `handoff/金絲雀.md` | ✅ |
 | 🐦 鳥翔 HTF | `session_018BXPn6zbpuMedYBTga6wp1` | `session_01NQur232BPDVDQzxd2hrvzU` | `claude/stock-research-k9nzau` | `handoff/鳥翔.md` | ✅ |
-| 📈 股票市場策略研究 | `session_0159FXFtZPPMiENXrdpy2kQd` | `session_01C1wMzBze3QQ3CBXfrDSZ1t` | `claude/gifted-carson-v2tvhw` | `handoff/股票市場策略研究.md` | — |
+| 📈 股票市場策略研究 | `session_01Mt8CWkxGDxTKnEmWkzYB8P`（11-08 總指揮開，上下文 76 萬換新） | `session_0159FXFtZPPMiENXrdpy2kQd`（10-14）、`session_01C1wMzBze3QQ3CBXfrDSZ1t` | `claude/gifted-carson-v2tvhw` | `handoff/股票市場策略研究.md` | ✅（A2 前向 `trig_01Cpuhx6jQ92CsjdQDzzGPYc`） |
 | HTF 交易策略指南（動能 ORB） | 🚫 不換（使用者 10-14：已冇用） | `session_01AA5xBGBfBex9d23T23TQFY` | `claude/momentum-orb-research` | — | — |
 | 外匯（VM 安裝；L1／6E／ZQ 採集繼續，使用者 10-14 決定） | `session_01YcJyu1yjZaFQTtY37WuQYH` | `session_01SHVCr19iNooiT5rp8BxD5t` | `claude/dazzling-curie-f3xzb8` | `handoff/外匯_VM安裝.md` | — |
 | 外匯陣（數據測試） | 🚫 不換（使用者 10-14：已冇用） | `session_01Svsn6w1kkBJS3v6cXoGoXN` | `claude/forex-data-testing-w4q3m2` | — | 10-14 檢查提醒已停用；前向測試照由 Actions 跑 |
