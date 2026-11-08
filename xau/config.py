@@ -382,3 +382,15 @@ REVERSE_RISK_PCT = _f("XAU_REVERSE_RISK_PCT", RISK_PCT)                        #
 REVERSE_MAX_LOTS = _f("XAU_REVERSE_MAX_LOTS", MAX_LOTS)                        # 硬上限（使用者：同 921 一樣 0.10 手）
 REVERSE_DAY_STOP_HKD = _f("XAU_REVERSE_DAY_STOP_HKD", 2000.0)                  # 926 當日蝕到呢個數停開新倉；0＝唔設
 REVERSE_SIGNAL_TTL_SEC = _i("XAU_REVERSE_SIGNAL_TTL_SEC", 180)                 # 921 開倉事件幾耐內先跟（遲咗唔追）
+# [IDEAS #1125] 趨勢突破真倉簿（使用者 11-08「兩個戶口一個做一類」「…63 戶口做趨勢寫一本新嘅簿，跟 10 月尾 signal」→ 揀「補入 10-30 嗰張空單」）。預設關。
+#   規則：#1107 上季高／低突破（SL 上季中位、季尾平）＋#1113 低波幅 20 日突破（SL 20 日中位、10 個交易日平）；EA 用 magic 927 掛一張 …63 圖。
+#   一次一張（EA close 係按 magic 全平）；固定手數；SL 伺服器端即掛、冇 TP。只喺主服務（唔係訊號書）。
+TREND_LIVE = _b("XAU_TREND_LIVE", False)
+TREND_MAGIC = _i("XAU_TREND_MAGIC", MAGIC + 6 if not SIGNAL_BOOK else 0)       # 921 → 927
+TREND_ACCOUNT = _s("XAU_TREND_ACCOUNT", "") or ACCOUNT                         # 預設同 921（…63）
+TREND_LOTS = _f("XAU_TREND_LOTS", 0.01)
+TREND_MAX_LOTS = _f("XAU_TREND_MAX_LOTS", 0.01)
+TREND_RULES = tuple(x.strip() for x in _s("XAU_TREND_RULES", "qbrk,lvbrk").split(",") if x.strip())
+TREND_ADOPT = tuple(x.strip() for x in _s("XAU_TREND_ADOPT", "").split(",") if x.strip())   # 例 qbrk：本季已觸發而未止蝕嘅單，開咗之後用現價補入一次
+TREND_DAY_STOP_HKD = _f("XAU_TREND_DAY_STOP_HKD", 2000.0)
+TREND_EXIT_UTC_MIN = _i("XAU_TREND_EXIT_UTC_MIN", 20 * 60 + 45)               # 到期日 UTC 20:45 之後平（回測用當日最後一根收市）

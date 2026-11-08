@@ -32,6 +32,7 @@ import hold_rules
 import lots_ladder
 import live_book
 import reverse_live
+import trend_live
 import data_block
 import prescreen
 import student
@@ -1188,6 +1189,7 @@ def build_status():
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
         "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.book_live() else None,   # [R352] 真倉績效（921／931）
         "reverse_live": _safe_book(reverse_live.status) if not config.SIGNAL_BOOK else None,   # [R369] 921 反向真倉
+        "trend_live": _safe_book(trend_live.status) if not config.SIGNAL_BOOK else None,      # [IDEAS #1125] 趨勢簿（927）
         "live_book_follow": _safe_book(lambda: follow_book_view(now)),
         "forward": _safe_book(forward_view),                           # [R352c] 前向測試（gb_forward、規則學生）                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
@@ -1280,6 +1282,19 @@ def entry(req):
             return follower.handle_heartbeat(payload)
         if not config.SIG_DECIDE and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return jsonify({"status": "ignored", "message": "signal book S0: ingest only", "cmd_text": ""}), 200
+    if not config.SIGNAL_BOOK and config.TREND_MAGIC:                # [IDEAS #1125] 趨勢簿（magic 927）：心跳按 magic、回報按 id 前綴 w 分流（開關關咗都分流）
+        if action == "cmd_ack" and trend_live.is_cmd(payload.get("id")):
+            ok_acct, why = ack_account_ok(payload, config.TREND_ACCOUNT)
+            if not ok_acct:
+                return jsonify({"status": "ignored", "message": why}), 200
+            cid = str(payload.get("id") or "")[:8]
+            found = trend_live.ack(cid, payload, now_ts())
+            log_event(f"📨 [{config.TEAM_NAME}] 趨勢簿指令回報 {cid} ok={payload.get('ok')}"
+                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                      severity="INFO" if payload.get("ok") else "WARNING", component="trend")
+            return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
+        if trend_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+            return trend_live.handle_heartbeat(payload)
     if not config.SIGNAL_BOOK and config.REVERSE_MAGIC:              # [R369] 921 反向（magic 926）：心跳按 magic、回報按 id 前綴 v 分流（開關關咗都分流，唔好污染 921 戶口快照）
         if action == "cmd_ack" and reverse_live.is_cmd(payload.get("id")):
             ok_acct, why = ack_account_ok(payload, config.REVERSE_ACCOUNT)
