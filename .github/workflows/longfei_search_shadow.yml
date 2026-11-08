@@ -1,0 +1,31 @@
+name: 龍飛陣 NQ／ES 合格策略影子前向（IDEAS #2004）
+
+# #2004 合格：NQ、ES Donchian 20 日只做好；每日用 yfinance 重計訊號，記 2026-11-09 起嘅影子交易（唔落單）。
+# 結果寫 GCS longfei/strategy_search/shadow/latest.json。
+on:
+  schedule:
+    - cron: '50 23 * * 1-5'    # 07:50 HKT 星期二至六（美股收市後）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: Shadow forward
+        run: python3 research/longfei_search/shadow.py
