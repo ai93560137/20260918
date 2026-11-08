@@ -4,6 +4,11 @@ name: 龍飛陣 200 日線跌穿後阻力核實（IDEAS #2001）
 # 結果寫 GCS ops/longfei/analyst/research/ma200_reject.json。只係研究。
 on:
   workflow_dispatch:
+    inputs:
+      script:
+        description: ma200_reject_check（#2001）或 ma200_fit（#2002）
+        required: false
+        default: ma200_reject_check
 
 permissions:
   contents: read
@@ -26,4 +31,6 @@ jobs:
       - name: Install
         run: pip install -q yfinance pandas google-cloud-storage
       - name: MA200 rejection
-        run: python3 research/longfei_analyst/ma200/ma200_reject_check.py
+        env:
+          SCRIPT: ${{ github.event.inputs.script }}
+        run: python3 research/longfei_analyst/ma200/${SCRIPT:-ma200_reject_check}.py
