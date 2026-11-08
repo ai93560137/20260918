@@ -7568,12 +7568,23 @@ def _lf_rulesim_section():
 def build_longfei_page(data):
     nav = page_nav("longfei")
     head = f"<div class='nav'><div class='brand'><h1 class='page-title'>🐉 龍飛陣・期貨 自動交易</h1></div>{nav}</div>"
+    # [IDEAS #2018] 使用者 11-09：網頁開頭用白話講龍飛陣核心策略（12 個月時間序列動量），俾投資人睇
+    core = ("<div class='section'><h2>🎯 核心策略：時間序列動量</h2>"
+            "<p><b>一句講晒：</b>過去一年升緊嘅市，就跟住做好；過去一年跌緊嘅市，就企埋一邊唔入市。</p>"
+            "<p><b>點解得：</b>學術研究（Moskowitz、Ooi、Pedersen 2012）發現股指有慣性——過去一年升緊嘅市，之後一個月繼續升嘅機會較大。"
+            "呢個方法最大嘅作用係幫你避開大熊市：例如 2008 年同 2022 年，指數過去 12 個月報酬轉咗負數，程式就唔入市，避開最傷嘅一段跌市。</p>"
+            "<p><b>點做：</b>每個月最後一個交易日收市，計納指（MNQ）同標普（MES）過去 12 個月升咗定跌咗。"
+            "升 → 下個月揸 1 張好倉；跌 → 下個月空手。每個月只決定一次，唔使日日睇市。</p>"
+            "<p><b>要預期嘅缺點：</b>由升市轉跌市嘅頭一兩個月通常會蝕——因為要等 12 個月報酬真正轉負先會離場，反應比較慢。"
+            "所以每張單另外掛咗 −12% 後備止蝕，防突然大跌。升市入面嘅回調亦會照揸，唔係短炒。</p>"
+            "<p class='muted' style='font-size:13px'>回測（2015 年起）：納指每月平均 +0.46R、t 3.24；標普 +0.40R、t 2.50；用 3、6、12 個月計都合格。"
+            "R＝入場時 2 倍平均每日波幅。過往成績唔代表將來回報。</p></div>")
     intro = ("<div class='section'><p>由 龍飛陣每 5 分鐘自己決定買賣恒指大期即月（最多 1 張）、16 隻美股上市 ETF（SPY、QQQ、DIA、IWM、TLT、HYG、GLD、USO，同日本、中國、台灣、印度、歐元區、英國、巴西、加拿大）同納指科技七雄（蘋果、微軟、輝達、Alphabet、亞馬遜、Meta、特斯拉）"
              "（每次約 US$100,000，台灣、印度 US$50,000，歐元區、英國、加拿大 US$30,000；可沽空；包盤前盤後，但台灣、印度、歐元區、英國、加拿大只喺正常時段開新倉）；程式負責落單同硬性風控（每日虧損上限：HSI HK$10,000、每隻 ETF HK$100,000，"
              "到咗即平倉停機）。"
              "真倉同模擬倉分開計：模擬倉一直做前向測試，唔會因為開咗真倉而停。</p></div>")
     if data.get("status") != "ok":
-        return html_page("龍飛陣", head + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
+        return html_page("龍飛陣", head + core + intro + f"<div class='section'>{esc(data.get('message') or '暫時讀取失敗，請稍後再試。')}</div>")
     real = data.get("real") or {}
     body = (_lf_group(real, data["total_real_hkd"], True) if real else
             "<div class='section'><h2>💰 真倉</h2><p class='muted'>未開始真倉。</p></div>")
@@ -7584,7 +7595,7 @@ def build_longfei_page(data):
     jump = ("<div class='section' style='padding:12px 18px'>跳去："
             + ("<a href='#lf-real-top'>💰 真倉</a>　｜　" if real else "")
             + "<a href='#lf-rulesim'>📊 即日回測</a>　｜　<a href='#lf-sim-top'>🧪 模擬倉（AI，10-26 前）</a></div>")
-    return html_page("龍飛陣", head + intro + jump + body + foot,
+    return html_page("龍飛陣", head + core + intro + jump + body + foot,
                      "<meta http-equiv='refresh' content='300'><style>" + LONGFEI_CSS + "</style>")
 
 
