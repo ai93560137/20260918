@@ -232,13 +232,46 @@ def combo_block(c, f2):
                if body else "<p class='muted'>真倉仲未有平倉。</p>"))
 
 
+def _recent_txt(rec):
+    out = []
+    for x in (rec or [])[:3]:
+        r = x.get("r")
+        out.append(f"{x.get('utc')} {x.get('side')} {'' if r is None else format(r, '+.2f')}{'（未完）' if x.get('open') else ''}")
+    return "、".join(out) or "—"
+
+
+def shadow_block(sb, f2):
+    """[IDEAS #1028] 影子總表：5 條合格規則同所有組合（每張 1R，唔落單）。"""
+    if not isinstance(sb, dict) or not sb.get("singles"):
+        return ""
+    cls = lambda v: "pos" if (v or 0) > 0 else ("neg" if (v or 0) < 0 else "")  # noqa: E731
+    rows = "".join(
+        f"<tr><td>{esc(s.get('name'))}</td><td>{esc(s.get('idea'))}</td><td>{s.get('n', 0)}／30</td>"
+        f"<td class='{cls(s.get('sum'))}'>{f2(s.get('sum'))}</td><td>{f2(s.get('avg'), '{:+.3f}')}</td><td>{f2(s.get('pf'), '{:.2f}')}</td>"
+        f"<td>{f2(s.get('mdd'), '{:.2f}')}</td><td>{s.get('streak', 0)}</td>"
+        f"<td style='font-size:12px'>{esc(_recent_txt(s.get('recent')))}</td></tr>"
+        for s in sb["singles"])
+    combos = sorted(sb.get("combos") or [], key=lambda c: (not c.get("is_1027"), len(c.get("keys") or []), c.get("name") or ""))
+    crow = "".join(
+        f"<tr{' style=font-weight:600' if c.get('is_1027') else ''}><td>{'⭐ ' if c.get('is_1027') else ''}{'⚠ ' if c.get('overlap') else ''}{esc(c.get('name'))}</td>"
+        f"<td>{c.get('n', 0)}</td><td class='{cls(c.get('sum'))}'>{f2(c.get('sum'))}</td><td>{f2(c.get('avg'), '{:+.3f}')}</td>"
+        f"<td>{f2(c.get('pf'), '{:.2f}')}</td><td>{f2(c.get('mdd'), '{:.2f}')}</td></tr>" for c in combos)
+    meta = sb.get("meta") or {}
+    return ("<h3>🧭 影子總表：5 條合格規則同所有組合（IDEAS #1028，每張 1R，唔落單）</h3>"
+            f"<p class='muted' style='font-size:13px'>{esc(sb.get('criteria'))}。由 {esc(meta.get('start'))} UTC 起；更新 {esc(meta.get('run_utc'))} UTC（K 線到 {esc(meta.get('bars_to'))}）。</p>"
+            "<div style='overflow-x:auto'><table><tr><th>規則</th><th>IDEAS</th><th>張／判</th><th>ΣR</th><th>平均</th><th>PF</th><th>最大回撤</th><th>連敗</th><th>最近</th></tr>"
+            + rows + "</table></div>"
+            "<details><summary>組合（⭐＝#1027 預先登記組合；⚠＝rev15＋rev60 重疊約 80%；組合只作描述）</summary><div style='overflow-x:auto'><table>"
+            "<tr><th>組合</th><th>張</th><th>ΣR</th><th>平均</th><th>PF</th><th>最大回撤</th></tr>" + crow + "</table></div></details>")
+
+
 def _forward_section(fw, book=None):
     """[R352c] 🔬 前向測試（影子，唔落單；使用者 10-30「將 V13 及其他前向測試結果放上去」）。
     fw＝{"gb": gb_forward latest.json, "student": student scores.json}；book＝921 live_book view（#145 滑價）。"""
     if not isinstance(fw, dict):
         return ""
     f2 = lambda x, f="{:+.2f}": "—" if x is None else f.format(x)  # noqa: E731
-    out = combo_block(fw.get("combo"), f2) + g7_block(fw.get("g7"), f2)
+    out = shadow_block(fw.get("shadow"), f2) + combo_block(fw.get("combo"), f2) + g7_block(fw.get("g7"), f2)
     gb = fw.get("gb") or {}
     ev = gb.get("eval") or {}
     crit = {"0342": "#149：候選 V13（GB 入場、SL 10、TP 10 全平）；20 張判：ΣR ≥ +2R、PF ≥ 1.2、最大回撤 ≤ 3R、好過同期 V0 → 先提真倉 0.05 手（要批）",

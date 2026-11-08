@@ -1,0 +1,53 @@
+name: 天覆陣 影子總表（IDEAS #1028）
+
+# 使用者 11-08「將剛才找到合格的五個策略同埋所有組合都做影子測試，並且更新網頁」。
+# research/strategy_search/shadow_board.py：5 條合格規則（933 rev15、#1011、#1017、#1022、#1026）同 26 個組合，
+# 用券商 M1（xau/sig/bars）計影子前向，寫 GCS xau/sig/shadow_board/latest.json，zhuge-xau 網頁「🔬 前向測試」讀。
+# 只係紙上：唔落單、$0 API。要 PR #696（研究腳本）先合併；未有腳本就略過。
+on:
+  schedule:
+    - cron: '41 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 只印不寫（true/false）
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: tianfu-shadow-board
+  cancel-in-progress: false
+
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: pip install -q google-cloud-storage numpy
+
+      - name: Board
+        env:
+          DRY: ${{ github.event.inputs.dry_run }}
+        run: |
+          if [ ! -f research/strategy_search/shadow_board.py ]; then echo "未有 shadow_board.py（PR #696 未合併），略過"; exit 0; fi
+          cd research/strategy_search
+          ARGS="--write"
+          [ "$DRY" = "true" ] && ARGS=""
+          python3 shadow_board.py $ARGS
