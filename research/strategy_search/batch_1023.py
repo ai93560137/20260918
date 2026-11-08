@@ -4,7 +4,8 @@
 合成 K 線同出場規則同 batch_1019（同一根掂 SL 同 TP 當 SL）；每張扣 0.5 美元；一次一張。
 成功（每條獨立）：① Duka 張數 ≥ N1、平均 ≥ +0.10R、PF ≥ 1.15；② Duka 有交易年份 ≥ 5／8 正數；③ MT5 張數 ≥ N2、平均 ≥ +0.05R、PF ≥ 1.10。
 N1／N2：#1023 60／30；#1024 150／60；#1025 100／40；#1026 60／30。
-用法：python3 research/strategy_search/batch_1023.py → research/strategy_search/BATCH_1023.md"""
+用法：python3 research/strategy_search/batch_1023.py → research/strategy_search/BATCH_1023.md
+前向（#1026）：python3 research/strategy_search/batch_1023.py --forward [2026-11-09] → MONTHEND_FORWARD.md"""
 import datetime as dt
 import os
 import sys
@@ -13,6 +14,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, "..", "student_offline"))
 import batch_1019 as B          # noqa: E402
 
 A = B.A
@@ -154,5 +156,35 @@ def main():
     open(os.path.join(HERE, "BATCH_1023.md"), "w", encoding="utf-8").write(md)
 
 
+FWD_START = "2026-11-09"
+
+
+def forward_1026(start=FWD_START):
+    """[IDEAS #1026 前向影子] 日線由 MT5 M1 存檔接券商 M1 合成（同 batch_1019.forward_1022）；月尾日 ≥ start 先計。唔落單、唔寫 GCS。"""
+    import e6s4_forward as ef
+    import fit_rules as fr
+    hist = A.load("mt5", "2026-09-01", "2026-10-30")
+    br = ef.broker_bars(fr.ts_of("2026-10-31"))
+    m = br["t"] > hist["t"][-1]
+    d = {k: np.r_[hist[k], br[k][m]] for k in ("t", "o", "h", "l", "c")}
+    t0 = fr.ts_of(start)
+    tr = [x for x in r1026(d) if x[0] >= t0]
+    st = A.stats([x[2] for x in tr])
+    ok = {"①≥30張": st["n"] >= 30, "②平均≥+0.10R且PF≥1.2": st["n"] > 0 and st["avg"] >= 0.10 and st["pf"] >= 1.2,
+          "③連敗≤6": st["n"] == 0 or st["streak"] <= 6}
+    out = ["# IDEAS #1026 月尾做多 影子前向（MT5 存檔＋券商 M1）", "", f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；月尾日由 {start} 起", "",
+           f"- 成績：{A.fmt(st)}", "", "## 判（預先登記 IDEAS #1026 前向）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
+           "- " + ("達標 → 只出報告同提案（上實倉要 PR＋總指揮 dry-run＋使用者批）" if all(ok.values()) else ("未夠張數" if not ok["①≥30張"] else "唔達標")), "",
+           "| 月尾日 | R |", "|---|---|"]
+    out += [f"| {dt.datetime.fromtimestamp(ts, dt.timezone.utc):%Y-%m-%d} | {r:+.2f} |" for ts, sg, r in tr[-20:][::-1]]
+    md = "\n".join(out) + "\n"
+    print(md)
+    open(os.path.join(HERE, "MONTHEND_FORWARD.md"), "w", encoding="utf-8").write(md)
+
+
 if __name__ == "__main__":
-    main()
+    if "--forward" in sys.argv:
+        k = sys.argv.index("--forward")
+        forward_1026(sys.argv[k + 1] if len(sys.argv) > k + 1 else FWD_START)
+    else:
+        main()
