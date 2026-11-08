@@ -2,7 +2,8 @@
 #1015 倫敦突破亞洲區間（順勢）；#1016 25 美元關口（…25／…75，唔包 50 關口）第一次觸及 E6S4 反向；
 #1017 rev60：前 60 根走幅 ≥ 8 美元反向 E6S4（冷卻 120 分鐘）；#1018 亞洲時段做多（00:00 開市入、06:59 收市走、SL 8 美元）。
 共同成功標準（每條獨立判）：① Duka n≥200、平均≥+0.10R、PF≥1.15；② Duka 8 年≥5 年正數；③ MT5 n≥100、平均≥+0.05R、PF≥1.10。
-用法：python3 research/strategy_search/batch_1015.py → research/strategy_search/BATCH_1015.md"""
+用法：python3 research/strategy_search/batch_1015.py → research/strategy_search/BATCH_1015.md
+前向（#1017）：python3 research/strategy_search/batch_1015.py --forward [2026-11-08T23:00] → REV60_FORWARD.md"""
 import datetime as dt
 import os
 import sys
@@ -145,5 +146,31 @@ def main():
     open(os.path.join(HERE, "BATCH_1015.md"), "w", encoding="utf-8").write(md)
 
 
+FWD_START = "2026-11-08T23:00"
+
+
+def forward_1017(start=FWD_START):
+    """[IDEAS #1017 前向影子] 券商 M1（xau/sig/bars/），規則同回測完全一樣；唔落單、唔寫 GCS。"""
+    import e6s4_forward as ef
+    t0 = fr.ts_of(start)
+    d = ef.broker_bars(t0)
+    tr = [x for x in r1017(d) if x[0] >= t0]
+    st = A.stats([x[2] for x in tr])
+    ok = {"①≥30張": st["n"] >= 30, "②平均≥+0.10R且PF≥1.3": st["n"] > 0 and st["avg"] >= 0.10 and st["pf"] >= 1.3,
+          "③連敗≤6": st["n"] == 0 or st["streak"] <= 6}
+    out = ["# IDEAS #1017 rev60 E6S4 影子前向（券商 M1）", "", f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；由 {start} UTC 起", "",
+           f"- 成績：{A.fmt(st)}", "", "## 判（預先登記 IDEAS #1017 前向）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
+           "- " + ("達標 → 只出報告同提案（上實倉要 PR＋總指揮 dry-run＋使用者批）" if all(ok.values()) else ("未夠張數" if not ok["①≥30張"] else "唔達標")), "",
+           "| 時間 UTC | 方向 | R |", "|---|---|---|"]
+    out += [f"| {dt.datetime.fromtimestamp(ts, dt.timezone.utc):%m-%d %H:%M} | {'BUY' if sg > 0 else 'SELL'} | {r:+.2f} |" for ts, sg, r in tr[-20:][::-1]]
+    md = "\n".join(out) + "\n"
+    print(md)
+    open(os.path.join(HERE, "REV60_FORWARD.md"), "w", encoding="utf-8").write(md)
+
+
 if __name__ == "__main__":
-    main()
+    if "--forward" in sys.argv:
+        k = sys.argv.index("--forward")
+        forward_1017(sys.argv[k + 1] if len(sys.argv) > k + 1 else FWD_START)
+    else:
+        main()
