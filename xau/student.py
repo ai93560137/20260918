@@ -13,9 +13,10 @@ from storage import StorageError
 
 PREFIX = config.PREFIX + "student/"
 STATE_FILE = PREFIX + "state.json"
+DOPEN_FILE = PREFIX + "dopen.json"        # [IDEAS #1122] 當日開市價（M1 只留 6.7 小時）
 SCORES_FILE = PREFIX + "scores.json"
 SNAP_PREFIX = config.PREFIX + "snapshots/"
-STUDENTS = ("rule:swing", "rule:level", "rule:rev15", "rule:rev15x", "claude")   # rev15x：IDEAS #128（10-24 使用者批）
+STUDENTS = ("rule:swing", "rule:level", "rule:rev15", "rule:rev15x", "rule:m5spike", "rule:dopen15", "rule:spike2", "claude")   # rev15x：IDEAS #128；m5spike／dopen15／spike2：IDEAS #1121–#1123（#1125 揀做 933 組合）
 MAX_PREDS = 300
 COOLDOWN_SEC = 3600
 now_ts = None   # tests 可以覆蓋；None 用 market.now_ts
@@ -52,6 +53,15 @@ def rule_tick(m1, offset, now=None, m15=None):
     """每根 M1 行一次：規則有冇觸發；觸發就記錄（60 分鐘冷卻）。回傳新觸發 list。m15 畀 rev15x 計 ATR 比率。"""
     now = now if now is not None else _now()
     cands = features.rule_candidates(m1, offset, now, m15)
+    try:                                                          # [IDEAS #1122] 離當日開市價 15：開市價記喺細檔，變咗先寫
+        day0 = storage.read_json(DOPEN_FILE, {})
+        c, day = features.dopen_candidate(m1, offset, now, day0)
+        if day != day0:
+            storage.write_json(DOPEN_FILE, day)
+        if c:
+            cands = [*cands, c]
+    except StorageError as exc:
+        log_event(f"⚠️ 離開市價狀態讀寫失敗：{exc}", severity="WARNING")
     if not cands:
         return []
     fired = []
