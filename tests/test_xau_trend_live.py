@@ -80,13 +80,19 @@ class LowVol(unittest.TestCase):
         self.assertTrue(T.exit_due(pos, days[:11], (D0 + 10) * 86400 + 60))
 
 
+def fresh(days, now, **kw):
+    st = {**T.empty_state(), **kw}
+    st["d1"] = {str(d): {**r, "t1": int(now) - 60} for d, r in days}
+    return st
+
+
 class Plan(unittest.TestCase):
     def test_adopt_opens_then_blocked_waits(self):
         days = mk(90) + mk(5, start=D0 + 90, px=3985.0, rng=3.0)
         now = days[-1][0] * 86400 + 3600
-        act, _ = T.plan(T.empty_state(), days, None, 3990.0, now, None, False)
+        act, _ = T.plan(fresh(days, now), days, None, 3990.0, now, None, False)
         self.assertEqual(act[0], "open"); self.assertTrue(act[1]["adopt"])
-        act, why = T.plan(T.empty_state(), days, None, 3990.0, now, "control＝PAUSE", False)
+        act, why = T.plan(fresh(days, now), days, None, 3990.0, now, "control＝PAUSE", False)
         self.assertIsNone(act); self.assertIn("等緊", why)
 
     def test_has_position_waits(self):
@@ -94,6 +100,28 @@ class Plan(unittest.TestCase):
         st = {**T.empty_state(), "pos": {"rule": "qbrk", "period": T.qkey(days[-1][0])}}
         act, _ = T.plan(st, days, {"ticket": 1}, 4000.0, days[-1][0] * 86400, None, False)
         self.assertIsNone(act)
+
+    def test_stale_bars_no_open(self):
+        days = mk(90) + mk(5, start=D0 + 90, px=3985.0, rng=3.0)
+        now = days[-1][0] * 86400 + 3600
+        act, why = T.plan(fresh(days, now - 3600), days, None, 3990.0, now, None, False)
+        self.assertIsNone(act); self.assertIn("休市", why)
+
+    def test_rejected_open_reverted_and_retry_gate(self):
+        days = mk(90) + mk(5, start=D0 + 90, px=3985.0, rng=3.0)
+        now = days[-1][0] * 86400 + 3600
+        qk = T.qkey(days[-1][0])
+        st = fresh(days, now, used={"qbrk": qk}, adopted=[qk],
+                   orders=[{"kind": "open", "rule": "qbrk", "ts": now - 60, "acked": True, "ok": False, "message": "market closed"}])
+        self.assertEqual(T.revert_failed(st), 1)
+        self.assertEqual(st["used"], {}); self.assertEqual(st["adopted"], [])
+        act, why = T.plan(st, days, None, 3990.0, now, None, False)
+        self.assertIsNone(act); self.assertIn("再試", why)                    # 10 分鐘內唔再試
+        act, _ = T.plan(st, days, None, 3990.0, now + 700, None, False)
+        st["d1"] = {k: {**v, "t1": int(now + 640)} for k, v in st["d1"].items()}
+        act, _ = T.plan(st, days, None, 3990.0, now + 700, None, False)
+        self.assertEqual(act[0], "open")
+        self.assertEqual(T.revert_failed(st), 0)                              # 唔會重覆撤
 
     def test_seed_loads(self):
         self.assertGreater(len(T.load_seed()), 300)
