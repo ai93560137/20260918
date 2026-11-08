@@ -8,7 +8,9 @@ B：盲測——2026-08-01 → 10-30 MT5 M1 嘅 rev15 出區抽 60 個（固定�
 用法：
   python3 research/student_offline/ai_entry_replay.py a                 → AI_REPLAY_A.md
   python3 research/student_offline/ai_entry_replay.py make <題目目錄>  → 題目 q_*.json（俾子代理）＋答案匙 key.json（唔好俾子代理睇）
-  python3 research/student_offline/ai_entry_replay.py score <題目目錄> → AI_REPLAY_B.md（讀 answers_*.json）"""
+  python3 research/student_offline/ai_entry_replay.py score <題目目錄> → AI_REPLAY_B.md（讀 answers_*.json）
+[IDEAS #1006] make <目錄> --seed 1006 --exclude-seed 1005 [--hint]：抽另一批題（剔走 #1005 嗰 60 題）；--hint 喺每題加 rev15 歷史提示。
+  score <目錄> --out AI_REPLAY_1006_hint.md：指定輸出檔名。"""
 import datetime as dt
 import glob
 import json
@@ -123,13 +125,29 @@ def m15(d, i, n=48):
     return out
 
 
-def make(qdir):
+HINT = ("Historical statistics for THIS rule (rev15) over many years of data: entries that waited for a DEEPER pullback "
+        "(roughly 4-8 dollars beyond the signal price), with the stop about 4 dollars beyond the entry and a SMALL target "
+        "equal to the stop distance (1R), had a high win rate (~85-89%) and positive expectancy. Shallow entries close to "
+        "the signal price with larger targets lost money. Use this as background; you may still skip or adjust.")
+
+
+def _pick(n_sigs, seed, exclude_seed=None):
+    excl = set()
+    if exclude_seed is not None:
+        excl = set(random.Random(exclude_seed).sample(range(n_sigs), min(N_B, n_sigs)))
+    rng = random.Random(seed)
+    pool = [k for k in range(n_sigs) if k not in excl]
+    return sorted(rng.sample(pool, min(N_B, len(pool)))), rng
+
+
+def make(qdir, seed=SEED, exclude_seed=None, hint=False):
     os.makedirs(qdir, exist_ok=True)
     a, b = "2026-08-01", "2026-10-30"
     d = load_mt5(a, b)
     sigs = signals(d, fr.ts_of(a), fr.ts_of(b) + 86400 - 2 * 86400)
-    rng = random.Random(SEED)
-    pick = sorted(rng.sample(range(len(sigs)), min(N_B, len(sigs))))
+    pick, rng = _pick(len(sigs), seed, exclude_seed)
+    if exclude_seed is None:
+        rng = random.Random(seed); pick = sorted(rng.sample(range(len(sigs)), min(N_B, len(sigs))))
     key = []
     for qn, si in enumerate(pick):
         i, side = sigs[si]
@@ -142,13 +160,15 @@ def make(qdir):
              "limits": {"entry": "限價，只准等回調（BUY 入場價 ≤ 現價；SELL ≥ 現價），離現價 ≤ 15", "stop_distance": "入場→止蝕 2–15", "valid_minutes": 30},
              "m1": [[sh(d["o"][j]), sh(d["h"][j]), sh(d["l"][j]), sh(d["c"][j])] for j in range(lo, i + 1)],
              "m15": [[round(x - off, 2) for x in r] for r in m15(d, i)]}
+        if hint:
+            q["background"] = HINT
         json.dump(q, open(os.path.join(qdir, f"q_{qn:03d}.json"), "w"), ensure_ascii=False)
         key.append({"id": q["id"], "ts": int(d["t"][i]) + 60, "side": side, "price": float(d["c"][i]), "off": off})
     json.dump(key, open(os.path.join(qdir, "key.json"), "w"))
     print(f"題目 {len(key)} 條 → {qdir}（出區 {len(sigs)} 次抽 {len(key)}）")
 
 
-def score(qdir):
+def score(qdir, outname="AI_REPLAY_B.md"):
     a, b = "2026-08-01", "2026-10-30"
     d = load_mt5(a, b)
     key = {k["id"]: k for k in json.load(open(os.path.join(qdir, "key.json")))}
@@ -187,7 +207,7 @@ def score(qdir):
     out += [f"| {q} | {s} | {'做' if t else '唔做'} | {f(ra)} | {f(r6)} |" for q, s, t, ra, r6 in rows]
     md = "\n".join(out) + "\n"
     print(md)
-    open(os.path.join(HERE, "AI_REPLAY_B.md"), "w", encoding="utf-8").write(md)
+    open(os.path.join(HERE, outname), "w", encoding="utf-8").write(md)
 
 
 if __name__ == "__main__":
@@ -195,6 +215,8 @@ if __name__ == "__main__":
     if cmd == "a":
         part_a()
     elif cmd == "make":
-        make(sys.argv[2])
+        arg = lambda k, dflt=None: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else dflt
+        ex = arg("--exclude-seed")
+        make(sys.argv[2], seed=int(arg("--seed", SEED)), exclude_seed=(int(ex) if ex else None), hint="--hint" in sys.argv)
     elif cmd == "score":
-        score(sys.argv[2])
+        score(sys.argv[2], sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "AI_REPLAY_B.md")
