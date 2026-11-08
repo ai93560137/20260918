@@ -44,3 +44,10 @@
 - [Fung、Lam、Lam 2010：亞洲指數期貨對美股過度反應](https://ideas.repec.org/a/eee/empfin/v17y2010i3p428-440.html)：美股極端變動後亞洲期貨即日反轉，平靜期減弱（摘要）。
 - 同我哋數據：IDEAS #2000 美股前晚 ES |報酬| ≥ 1.5% 嘅 25 日，恒指日市逆開市跳空每筆 +12.6 點（t 0.31），前半 +44、後半 −17；其他日子 +9.0 → ❌，效果細過成本以外嘅波動，近年冇用。
 - 下一步：唔上真倉；呢條線（開市逆跳空）收工，唔再調門檻。
+
+## 2026-11-08 網上研究：200 日線跌穿後係咪阻力 → IDEAS #2001
+- [Sentimentrader：Rejected at the 200-day](https://sentimentrader.com/blog/rejected-at-the-200-day)：S&P 由下面反彈到 200 日線被明顯壓返之後，1–12 星期內多數再跌（樣本數未列）。
+- [iTiger 轉載 MarketWatch／Sundial：重返 200 日線未必係好事](https://itiger.com/news/2522338826)：1946 起 11 次長期企喺上面之後跌穿再收復，之後幾個月回報偏弱。
+- [StockCharts：S&P 500 Nears First Test](https://articles.stockcharts.com/article/articles-dont_ignore_this_chart-2016-02-sp-500-nears-first-test-/)：首次回測 200 日線係關鍵觀察位；短暫跌穿好快收復亦常見（2011、2015、2023）。
+- 同我哋數據：IDEAS #2001 用 ^NDX、^GSPC 1990 起：第一次跌穿後 60 日內反彈觸碰 200 SMA，10 日後仍喺下面只得約 50%（NDX 11/21、SPX 13/26），觸碰後 20 日報酬中位數係正。→ 使用者 2018、2022 例子成立，但唔係普遍規律。
+- 下一步：STYLE 第 45 條改寫，唔再寫「200 SMA 預設強阻力」；分析欄寫 200 SMA 時要講「歷史約一半機會被壓返」，配合其他結構判斷。
