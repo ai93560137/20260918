@@ -5,7 +5,7 @@
   qbrk：今季第一次穿上季高（做多）／低（做空）→ SL 上季中位，季尾（最後一個平日 UTC 20:45 後）平；一季一次（穿咗就用咗，唔理有冇做到）。
   lvbrk：昨日 D1 ATR14 ≤ 過去 250 個 ATR 嘅 20% 分位 → 今日穿前 20 日高／低 → SL 20 日中位，第 10 個交易日 UTC 20:45 後平；只喺當日入。
   入場用市價（回測用突破價），止蝕距離 ≤ 0.5 美元唔做。
-做法：EA 用 magic 927 掛一張 …63 XAUUSD 圖，心跳按 magic 分流到呢度；指令 id 前綴 w；一次一張（EA close 按 magic 全平）；SL 伺服器端即掛、冇 TP。
+做法：EA 用 magic 927 掛一張 …63 XAUUSD 圖（或者 XAU_TREND_MAGIC=926 用返 926 圖：趨勢簿分流排喺 926 反向之前，921 影子照餵 K 線），心跳按 magic 分流到呢度；指令 id 前綴 w；一次一張（EA close 按 magic 全平）；SL 伺服器端即掛、冇 TP。
 日線：狀態 d1 由心跳 M1 合併；冇或者唔夠就用部署模組 trend_d1_seed.py（MT5／券商 M1 砌嘅 UTC 日線）。
 風控：control 非 RUN、EA 唔准交易／dry_run、927 當日蝕到 XAU_TREND_DAY_STOP_HKD、產品唔係 XAUUSD 都唔開；control＝STOP → 平。純計算函數冇 I/O。"""
 import datetime as dt
@@ -324,6 +324,7 @@ def handle_heartbeat(payload):
     m = _m(); now = m.now_ts()
     if config.TREND_ACCOUNT and str(payload.get("account") or "").strip() != config.TREND_ACCOUNT:
         return m.jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
+    m.shadow_feed(payload, now)                          # 用返 926 圖（XAU_TREND_MAGIC=926）時 921 影子照用呢張圖嘅 K 線（同 reverse_live 一樣；921 心跳新鮮就唔用）
     offset = m.server_offset(payload, now)
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "floating", "daily_pnl", "realized_total", "margin_level")}
     account.update(account_id=str(payload.get("account") or "")[:24], dry_run=bool(payload.get("dry_run")), positions=m.own_positions(payload, offset),
