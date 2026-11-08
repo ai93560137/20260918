@@ -63,7 +63,7 @@ def run18(b, ind, sd, on, strict, both):
         if j is None:
             break
         out.append({"d": b[i][0], "r": r})
-        i = j + 1
+        i = j          # 出場日（訊號轉向）本身可以係反向入場訊號
     return out
 
 
