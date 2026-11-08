@@ -96,6 +96,18 @@ class Heartbeat(unittest.TestCase):
         r = hb(927, m1_ohlc=BAR, symbol="XAGUSD")
         self.assertEqual(r["cmd_text"], "")
 
+    def test_reuse_926_chart(self):
+        old, old_feed, calls = config.TREND_MAGIC, xau.shadow_feed, []
+        config.TREND_MAGIC = 926
+        xau.shadow_feed = lambda payload, now=None: calls.append(payload.get("magic")) or True
+        try:
+            r = hb(926, m1_ohlc=BAR, symbol="XAUUSD")
+            self.assertEqual(r["book"], "trend")                       # 926 心跳去咗趨勢簿（唔係 921 反向）
+            self.assertIn("magic=926", r["cmd_text"])
+            self.assertEqual(calls, [926])                             # 921 影子照用 926 圖 K 線
+        finally:
+            config.TREND_MAGIC, xau.shadow_feed = old, old_feed
+
     def test_status_json(self):
         hb(927, m1_ohlc=BAR, symbol="XAUUSD")
         s = client.get("/?format=json").get_json()
