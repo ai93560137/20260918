@@ -75,7 +75,7 @@ def trade(b, i_in, side, px_in, stop, exit_fn, max_days, R):
 
 def run(b, ind, fam, p):
     c, atr, S = ind["c"], ind["atr"], ind["sma"]
-    out, i, n = [], 201, len(b)
+    out, i, n = [], max(201, p.get("N", 0) + 1), len(b)  # N>200（W 家族 N=250）要由第 N+1 根開始
     while i < n - 2:
         sig = 0
         if fam == "F1":
