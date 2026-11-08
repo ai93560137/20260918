@@ -31,6 +31,17 @@ def test_expired():
     assert not bad, bad
 
 
+STOCKS = [("US.SPCX", True), ("US.QQQ", True), ("HK.00700", True), ("HK.800000", True),
+          ("HK.HSI2611", False), ("HK.MHI2611", False), ("US.RDDT261127P80000", False), ("US.EW2611P7700x0", False),
+          ("US.MES2612", False), ("", False)]
+
+
+def test_is_stock():                         # [R376] 正股先略過負數成交淨計
+    bad = [(c, want) for c, want in STOCKS if fpq.is_stock(c) != want]
+    assert not bad, bad
+
+
 if __name__ == "__main__":
     test_expired()
-    print(f"OK {len(CASES)}")
+    test_is_stock()
+    print(f"OK {len(CASES)}＋{len(STOCKS)}")
