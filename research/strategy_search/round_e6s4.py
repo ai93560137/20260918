@@ -1,6 +1,7 @@
 """[IDEAS #1011] 50 美元整數關口（…00、…50）當日第一次由下面（或上面）掂到 → E6S4 結構反向。
 規格、成功標準以 IDEAS #1011 預先登記為準（跑之前 commit）。規則固定、冇網格。計法同 #1009（ai_entry_forward.sim）。
-用法：python3 research/strategy_search/round_e6s4.py → research/strategy_search/ROUND_E6S4.md"""
+用法：python3 research/strategy_search/round_e6s4.py → research/strategy_search/ROUND_E6S4.md
+前向影子：python3 research/strategy_search/round_e6s4.py --forward [2026-11-08T23:00] → ROUND_FORWARD.md（券商 M1 xau/sig/bars/，唔落單）"""
 import datetime as dt
 import os
 import sys
@@ -63,5 +64,30 @@ def main():
     open(os.path.join(HERE, "ROUND_E6S4.md"), "w", encoding="utf-8").write(md)
 
 
+FWD_START = "2026-11-08T23:00"
+
+
+def forward(start=FWD_START):
+    import e6s4_forward as ef
+    import fit_rules as fr
+    t0 = fr.ts_of(start)
+    d = ef.broker_bars(t0)
+    tr = [x for x in run(d) if x[0] >= t0]
+    st = A.stats([x[2] for x in tr])
+    ok = {"①≥30張": st["n"] >= 30, "②平均≥+0.10R且PF≥1.3": st["n"] > 0 and st["avg"] >= 0.10 and st["pf"] >= 1.3, "③連敗≤6": st["n"] == 0 or st["streak"] <= 6}
+    out = ["# IDEAS #1011 整數關口 E6S4 影子前向（券商 M1）", "", f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；由 {start} UTC 起", "",
+           f"- 成績：{A.fmt(st)}", "", "## 判（預先登記 IDEAS #1011 前向）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
+           "- " + ("達標 → 只出報告同提案（上實倉要 PR＋總指揮 dry-run＋使用者批）" if all(ok.values()) else ("未夠張數" if not ok["①≥30張"] else "唔達標")), "",
+           "## 最近 20 張", "", "| 時間 UTC | 方向 | R |", "|---|---|---|"]
+    out += [f"| {dt.datetime.fromtimestamp(ts, dt.timezone.utc):%m-%d %H:%M} | {'BUY' if sg > 0 else 'SELL'} | {r:+.2f} |" for ts, sg, r in tr[-20:][::-1]]
+    md = "\n".join(out) + "\n"
+    print(md)
+    open(os.path.join(HERE, "ROUND_FORWARD.md"), "w", encoding="utf-8").write(md)
+
+
 if __name__ == "__main__":
-    main()
+    if "--forward" in sys.argv:
+        k = sys.argv.index("--forward")
+        forward(sys.argv[k + 1] if len(sys.argv) > k + 1 else FWD_START)
+    else:
+        main()
