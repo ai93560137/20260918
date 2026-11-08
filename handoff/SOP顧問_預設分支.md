@@ -51,7 +51,7 @@
 | 10-20 | 🌌 天覆陣成立 | SESSIONS.md 加一行；心跳要加 `zhuge-xau` 檢查（我負責），等天覆陣報服務／物件／頻度 | `f2225f174`、`60038f9b2` |
 | 10-21 | HSI 伺服器端止蝕 | 真戶口 STOP／STOP_LIMIT GTC 驗證通過，FUND_SOP 前置②完成；轉真倉仍要使用者講「HSI 轉真倉」 | `100b265e5` |
 | 10-22 | ops_notify 排程延誤 | GitHub 排程遲 2–5 小時，按時鐘猜任務令成交通報 10-20～22 全部當 hedge。我修咗（4a90c4c40）後撞總指揮 PR #295，revert 自己版本（`aeddab486`），#295 合併（`4198f556b`，按 `github.event.schedule`）；使用者決定排程遲到維持現狀（唔搬 Routine、唔加 VM timer） | #295 |
-| 10-23 | INCIDENTS | 加 10-20 成交通報漏跑（已結）、10-22 金絲雀暫定收盤黃燈誤發（未結，等使用者揀處理方法） | `0b3282be9`、`abef1b417` |
+| 10-23 | INCIDENTS | 加 10-20 成交通報漏跑（已結）、10-22 金絲雀暫定收盤黃燈誤發（11-05 由 PR #632 結案） | `0b3282be9`、`abef1b417` |
 | 10-30 | 🐯 虎翼 | `ops/notify_config.json` intent_branches 加 `claude/huyi-bigdrop-options`（RISK_LADDER §6e） | `c2a7376a9` |
 | 10-31 | 美股期權代號 | INTENTS_README 加富途格式 `US.RDDT261127P80000`（行使價×1000，唔補零） | `991b27366` |
 | 11-04 | **晨會簡報 10-19～11-04 冇發** | `delta_parts.net_with_hedge` 係 null 令 `morning_brief.py` 崩，13 個平日；心跳日日紅我冇跟。修好＋回歸測試＋INCIDENTS 登記 | `575f28cef` |
@@ -79,7 +79,7 @@
 1. **四陣換新**：等總指揮 send_message 新 id → 更新 `handoff/SESSIONS.md`（舊 id 移「保留」欄）；下週日（11-15）用量快照用新 id。
 2. **心跳每日睇紅項**（11-04 教訓）：自己擁有嘅 workflow 紅咗即日修；`longfei_user_method.yml` 失敗係龍飛陣嘅，未查。
 3. 天覆陣 `zhuge-xau` 心跳檢查：而家只睇 `xau/sig/account.json`；天覆陣仲未正式報物件清單、頻度、休市規則。
-4. INCIDENTS 未結：10-22 金絲雀暫定收盤誤發黃燈，等使用者揀（改核對時間／改排程／雲垂搬快照）。
+4. ~~INCIDENTS 10-22 金絲雀暫定收盤誤發黃燈~~：**已結**——使用者 11-05 經總指揮揀咗「雲垂搬快照」，雲垂逐檔標 final／partial，金絲雀只用 final 列（PR #632 已合併）。11-08 使用者再講「改核對時間」，我答咗已修好、問佢仲要唔要改，等回覆。
 5. 龍飛陣：HSI 轉真倉要使用者講；交易解鎖改 AGENTIC.md 只讀規則仍未正式改（前置④）。
 6. 12-01 第二份月報（11 月）；每週日 08:45 用量快照、09:00 週報。
 7. XAUUSD GCP and TV 陣已交接畢（PR #657），使用者要自己確認 …163 冇倉再移走 EA。
