@@ -40,7 +40,7 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Install
-        run: pip install -q google-cloud-storage numpy
+        run: pip install -q -r xau/requirements.txt numpy   # xau/signals.py 要 flask 等（第一次手動跑缺 flask 失敗）
 
       - name: Board
         env:
