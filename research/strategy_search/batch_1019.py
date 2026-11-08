@@ -3,7 +3,8 @@
 #1019 H1 RSI(2) 回歸（順 H1 SMA200）；#1020 M15 保力加 2.5σ 收市出界反向；#1021 H1 內包線突破（順勢 2R）；#1022 D1 20 日收市新高／新低突破（順勢 2R）。
 成功（每條獨立）：① Duka 張數 ≥ N1、平均 ≥ +0.10R、PF ≥ 1.15；② Duka 有交易年份 ≥ 5／8 正數；③ MT5 張數 ≥ N2、平均 ≥ +0.05R、PF ≥ 1.10。
 N1／N2：#1019–#1021 係 200／100；#1022 係 60／30（日線張數少）。
-用法：python3 research/strategy_search/batch_1019.py → research/strategy_search/BATCH_1019.md"""
+用法：python3 research/strategy_search/batch_1019.py → research/strategy_search/BATCH_1019.md
+前向（#1022）：python3 research/strategy_search/batch_1019.py --forward [2026-11-09] → D1BREAK_FORWARD.md"""
 import datetime as dt
 import os
 import sys
@@ -183,5 +184,35 @@ def main():
     open(os.path.join(HERE, "BATCH_1019.md"), "w", encoding="utf-8").write(md)
 
 
+FWD_START = "2026-11-09"
+
+
+def forward_1022(start=FWD_START):
+    """[IDEAS #1022 前向影子] 日線由 MT5 M1 存檔（2026-09-01→10-30）接券商 M1（xau/sig/bars/）合成；入場日 ≥ start 先計。唔落單、唔寫 GCS。"""
+    import e6s4_forward as ef
+    import fit_rules as fr
+    hist = A.load("mt5", "2026-09-01", "2026-10-30")
+    br = ef.broker_bars(fr.ts_of("2026-10-31"))
+    m = br["t"] > hist["t"][-1]
+    d = {k: np.r_[hist[k], br[k][m]] for k in ("t", "o", "h", "l", "c")}
+    t0 = fr.ts_of(start)
+    tr = [x for x in r1022(d) if x[0] >= t0]
+    st = A.stats([x[2] for x in tr])
+    ok = {"①≥30張": st["n"] >= 30, "②平均≥+0.10R且PF≥1.2": st["n"] > 0 and st["avg"] >= 0.10 and st["pf"] >= 1.2,
+          "③連敗≤8": st["n"] == 0 or st["streak"] <= 8}
+    out = ["# IDEAS #1022 D1 20 日突破 影子前向（MT5 存檔＋券商 M1）", "", f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；入場由 {start} 起", "",
+           f"- 成績：{A.fmt(st)}", "", "## 判（預先登記 IDEAS #1022 前向）", "", *[f"- {k}：{'✅' if v else '❌'}" for k, v in ok.items()],
+           "- " + ("達標 → 只出報告同提案（上實倉要 PR＋總指揮 dry-run＋使用者批）" if all(ok.values()) else ("未夠張數" if not ok["①≥30張"] else "唔達標")), "",
+           "| 入場日 | 方向 | R（未完＝最新收市計） |", "|---|---|---|"]
+    out += [f"| {dt.datetime.fromtimestamp(ts, dt.timezone.utc):%Y-%m-%d} | {'BUY' if sg > 0 else 'SELL'} | {r:+.2f} |" for ts, sg, r in tr[-20:][::-1]]
+    md = "\n".join(out) + "\n"
+    print(md)
+    open(os.path.join(HERE, "D1BREAK_FORWARD.md"), "w", encoding="utf-8").write(md)
+
+
 if __name__ == "__main__":
-    main()
+    if "--forward" in sys.argv:
+        k = sys.argv.index("--forward")
+        forward_1022(sys.argv[k + 1] if len(sys.argv) > k + 1 else FWD_START)
+    else:
+        main()
