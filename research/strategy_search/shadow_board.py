@@ -32,6 +32,10 @@ import h1_lab5 as H5            # noqa: E402
 import h1_lab6 as H6            # noqa: E402
 import h1_lab7 as H7            # noqa: E402
 import h1_lab8 as H8            # noqa: E402
+import batch_1033 as B33        # noqa: E402
+import batch_1045 as B45        # noqa: E402
+import batch_1059 as B59        # noqa: E402
+import batch_1079 as B79        # noqa: E402
 
 START = "2026-11-08T23:00"
 OUT = "xau/sig/shadow_board/latest.json"
@@ -49,7 +53,12 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）", "#1001／#160",
           ("qbrk", "上季高／低突破（張數少）", "#1107", H6.r1107, 0),
           ("lvbrk", "低波幅 20 日突破（張數少）", "#1113", H7.r1113, 0),
           ("mobrk", "月初三日區間突破", "#1114", H8.r1114, 0),
-          ("turtle2", "海龜系統 2（55 日突破、20 日出場；做多為主）", "#1116", H8.r1116, 0)]
+          ("turtle2", "海龜系統 2（55 日突破、20 日出場；做多為主）", "#1116", H8.r1116, 0),
+          ("rev15d1", "rev15 順 D1 趨勢（放寬＋2010–14 過；rev15 子集）", "#1033", lambda d: B33.r1033(d)[0], 0),
+          ("nyopen", "紐約開市價回測 E6S4（放寬＋2010–14 過）", "#1047", B45.r1047, 0),
+          ("asiamid", "亞洲區間中位回測（2010–14 過，只影子）", "#1048", B45.r1048, 0),
+          ("rev240", "rev240（放寬＋2010–14 過）", "#1061", B59.r1061, 0),
+          ("stair", "M1 樓梯反向（放寬＋2010–14 過）", "#1080", B79.r1080, 0)]
 COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend", "spike")   # 6 條回測合格規則嘅 63 個組合（使用者 11-08「63 個組合回測同影子都做」）；#1049 唔入
 OVERLAP = (("rev15", "rev60"), ("rev15", "spike"), ("rev60", "spike"))   # 高度重疊：rev15＋rev60 約 80%、rev15＋急動約 54–65%
 COMBO_1027 = ("rev15", "round", "d1brk")
