@@ -12,6 +12,14 @@ grep -q '^ANTHROPIC_API_KEY=sk-ant-' "$H/zhuge/env" || { REAL=""; EXTRA=""; }
 # [R218] 1 分鐘 K 線收市存檔（唔使 Claude，唔落單）：timer 未開就開
 mkdir -p "$H/zhuge/bars" && chown "$U" "$H/zhuge/bars" && chmod 700 "$H/zhuge/bars"
 systemctl is-enabled -q zhuge-longfei-bars.timer || { systemctl enable --now zhuge-longfei-bars.timer; echo "已開 1 分鐘 K 線存檔"; }
+# [IDEAS #2018] 12 個月動量 MNQ／MES 真倉（唔使 Claude）：settings.env 有 LONGFEI_TSM_PRODUCTS 就開 timer，冇就停 timer
+TSM=$(grep -oE '^LONGFEI_TSM_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | cut -d= -f2)
+mkdir -p "$H/zhuge/tsm" && chown "$U" "$H/zhuge/tsm" && chmod 700 "$H/zhuge/tsm"
+if [ -n "$TSM" ]; then
+  systemctl is-enabled -q zhuge-longfei-tsm.timer || { systemctl enable --now zhuge-longfei-tsm.timer; echo "已開 12 個月動量 $TSM"; }
+else
+  systemctl is-enabled -q zhuge-longfei-tsm.timer 2>/dev/null && { systemctl disable --now zhuge-longfei-tsm.timer; echo "已停 12 個月動量 timer"; }
+fi
 # [R215] 模擬程式：LONGFEI_EXTRA_PRODUCTS 新加嘅產品自動開（唔使再人手跑 setup.sh）；拎走嘅、冇倉先停
 for P in $EXTRA; do
   echo "$KNOWN" | grep -q " $P " || { echo "唔識嘅產品 $P，跳過"; continue; }

@@ -1,0 +1,7 @@
+[Unit]
+Description=Zhuge 龍飛陣 12 個月動量：星期一至五 07:40 香港時間（美東前一晚 18:40／19:40，CME 已重開）
+[Timer]
+OnCalendar=Mon..Fri *-*-* 07:40:00 Asia/Hong_Kong
+Persistent=true
+[Install]
+WantedBy=timers.target
