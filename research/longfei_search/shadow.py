@@ -3,6 +3,7 @@
 NQ：Donchian 20 日只做好、止蝕 2×ATR、20 日低位出（F2 N20 k2 M20）
 ES：Donchian 20 日只做好、止蝕 3×ATR、10 日低位出（F2 N20 k3 M10）
 NQ_T2：Keltner 突破 k1.5 只做好（#2015，收市 > EMA20 + 1.5×ATR 買、收市 < EMA20 出、止蝕 2×ATR）
+NQ_TSM／ES_TSM：12 個月時間序列動量只做好（#2018，每月最後一個交易日收市：過去 12 個月報酬 > 0 就收市買、持有一個月；否則空手）
 目標：每隻 10 張或 2027-05-09（6 個月），之後按 #2004 判（平均 R > 0、PF ≥ 1.2、冇連敗 > 4）先提案真倉（MNQ／MES 1 張，使用者批）。
 輸出：GCS longfei/strategy_search/shadow/latest.json（已平倉張、而家持倉、今日訊號）。
 """
@@ -12,13 +13,14 @@ import daily_search as ds
 import batch7 as b7
 import batch4 as b4
 import batch13 as b13
+import batch6 as b6
 
 START = "2026-11-09"
 CFG = {"NQ": ("NQ=F", {"N": 20, "k": 2, "M": 20, "both": False}), "ES": ("ES=F", {"N": 20, "k": 3, "M": 10, "both": False})}
 
 
 def main():
-    out = {"updated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "start": START, "ideas": [2004, 2009, 2015]}
+    out = {"updated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "start": START, "ideas": [2004, 2009, 2015, 2018]}
     for mk, (tk, p) in CFG.items():
         b = ds.load(tk)
         ind = ds.indicators(b)
@@ -45,6 +47,19 @@ def main():
                     "signal_today": bool(ind["c"][i] > up), "entry_level": round(up, 2), "exit_level_ema20": round(ex["ema"][i], 2),
                     "judge": "10 張或 2027-05-09：平均 R > 0、PF ≥ 1.2、冇連敗 > 4 → 先提案真倉（使用者批）"}
     print("NQ_T2", b[-1][0], "收", round(ind["c"][i], 2), "入場線", round(up, 2), "EMA20", round(ex["ema"][i], 2), "已平", len(done))
+    # [#2018 W1] NQ／ES 12 個月時間序列動量（月度、只做好）
+    for mk, tk in (("NQ", "NQ=F"), ("ES", "ES=F")):
+        b = ds.load(tk)
+        ind = ds.indicators(b)
+        done = [x for x in b6.run6(b, ind, "K1", {"L": 12, "both": False}) if x["d"] >= START]
+        ends = [k for k in range(len(b) - 1) if b[k + 1][0][:7] != b[k][0][:7]]
+        e = ends[-1]
+        ret12 = ind["c"][e] / ind["c"][ends[-13]] - 1
+        out[f"{mk}_TSM"] = {"params": {"K": "K1", "L": 12, "both": False}, "last_bar": b[-1][0], "close": round(ind["c"][-1], 2),
+                            "closed_trades": done, "stats": ds.stats(done) if len(done) >= 2 else {"n": len(done)},
+                            "last_month_end": b[e][0], "ret12_at_month_end": round(ret12, 4), "position_this_month": "好倉" if ret12 > 0 else "空手",
+                            "judge": "6 張（月）或 2027-05-09：平均 R > 0、累計 R > 0 → 先提案真倉（使用者批）"}
+        print(f"{mk}_TSM", b[e][0], "12 個月報酬", round(ret12, 4), "今個月", "好倉" if ret12 > 0 else "空手", "已平", len(done))
     # [#2009 C2] MHI 組合影子（使用者 11-09「C2 開始做影子前向測試」）：K3 月度動量 L6 雙向＋H1 市況切換＋K2 週度動量 L4 雙向
     b = ds.load("^HSI")
     ind = ds.indicators(b)
