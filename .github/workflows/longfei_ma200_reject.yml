@@ -1,0 +1,36 @@
+name: 龍飛陣 200 日線跌穿後阻力核實（IDEAS #2001）
+
+# 使用者 11-07 筆記：「2018、2022 跌穿後反彈都喺 200 SMA 附近被壓回」→ 用 1990 起數據核實。
+# 結果寫 GCS ops/longfei/analyst/research/ma200_reject.json。只係研究。
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: ma200_reject_check（#2001）或 ma200_fit（#2002）
+        required: false
+        default: ma200_reject_check
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  ma200:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install
+        run: pip install -q yfinance pandas google-cloud-storage
+      - name: MA200 rejection
+        env:
+          SCRIPT: ${{ github.event.inputs.script }}
+        run: python3 research/longfei_analyst/ma200/${SCRIPT:-ma200_reject_check}.py

@@ -7,6 +7,9 @@ ZONE_HALF = 2.0         # DAN 結構：入場區 ±2
 STRUCT_SL = 6.0         # SL 6 美元
 STRUCT_TP = 3.0         # 6 級 TP 每 3 美元
 STRUCT_N_TP = 6
+M5SPIKE_USD = 6.0       # [IDEAS #1121] 一根 M5 高低幅 ≥ 6 美元
+SPIKE2_USD = 5.0        # [IDEAS #1123] 兩根 M1 實體合計
+DOPEN_USD = 15.0        # [IDEAS #1122] 離當日開市價
 REV15_USD = 3.0         # 規則 R3：前 15 分鐘反向走 ≥3 美元
 # rev15x（IDEAS #128，使用者 10-24 批）：rev15 ＋ 活躍時段 ＋ M15 ATR 唔收縮（提案 §29／§30：DAN 訊號集中 01–06／12–15 UTC、
 # 波幅擴張中接 15–60 分鐘反向；train +1.01／valid +0.53 美元／張 TP1 全平，逐級鎖 +0.41／+0.66；贏隨機 ≥0.1R）
@@ -168,7 +171,47 @@ def rule_candidates(m1, offset, now, m15=None):
                 ratio = atr_ratio(m15, offset, now)
                 if ratio is not None and ratio >= REV15X_ATR_RATIO:
                     out.append({"rule": "rev15x", **structure(price, "BUY" if mv < 0 else "SELL"), "ref": ratio, "price": price})
+    last = b1[-1]
+    if last["t"] % 300 == 240:                                     # [IDEAS #1121] M5 單根急動：嗰根 M5 最後一分鐘收市時判
+        k = last["t"] // 300
+        g5 = [b for b in b1[-5:] if b["t"] // 300 == k]
+        hi, lo = max(b["high"] for b in g5), min(b["low"] for b in g5)
+        o5, c5 = g5[0]["open"], last["close"]
+        if hi - lo >= M5SPIKE_USD and c5 != o5:
+            out.append({"rule": "m5spike", **structure(price, "BUY" if c5 < o5 else "SELL"), "ref": round(hi - lo, 2), "price": price})
+    a, b = b1[-2]["close"] - b1[-2]["open"], last["close"] - last["open"]   # [IDEAS #1123] 連 2 根 M1 同方向、實體合計 ≥ 5 美元
+    if (a > 0 and b > 0 and a + b >= SPIKE2_USD) or (a < 0 and b < 0 and a + b <= -SPIKE2_USD):
+        out.append({"rule": "spike2", **structure(price, "SELL" if b > 0 else "BUY"), "ref": round(a + b, 2), "price": price})
     return out
+
+
+def dopen_candidate(m1, offset, now, day):
+    """[IDEAS #1122] 離當日（UTC）開市價 ≥ 15 美元 → 反向，每日一次。開市價＝當日第一根（要喺 00:00–00:04 UTC，冇就成日唔做）。
+    M1 只留約 6.7 小時，所以開市價記喺 day（{"day", "open", "done"}）。回傳 (候選或 None, 新 day)。純函數。"""
+    b1 = [b for b in utc(m1, offset) if b["t"] + 60 <= now]
+    if not b1:
+        return None, day
+    last = b1[-1]; dk = last["t"] // 86400
+    day = dict(day) if isinstance(day, dict) and day.get("day") == dk else {"day": dk, "open": None, "t0": None, "done": False}
+    if day["open"] is None and not day["done"]:
+        first = [b for b in b1 if b["t"] // 86400 == dk]
+        if first and first[0]["t"] % 86400 < 300:
+            day["open"], day["t0"] = first[0]["open"], first[0]["t"]
+            rest = first[1:]
+        else:
+            day["done"] = True                                       # 冇見到開市嗰幾分鐘 → 今日唔做（同回測一樣）
+            return None, day
+        for b in rest[:-1]:                                          # 中間已經觸發過（例如服務啱啱起）→ 當做咗
+            if abs(b["close"] - day["open"]) >= DOPEN_USD:
+                day["done"] = True
+                return None, day
+    if day["done"] or day["open"] is None or last["t"] <= (day.get("t0") or 0):
+        return None, day
+    mv = last["close"] - day["open"]
+    if abs(mv) < DOPEN_USD:
+        return None, day
+    day["done"] = True
+    return {"rule": "dopen15", **structure(last["close"], "SELL" if mv > 0 else "BUY"), "ref": round(mv, 2), "price": last["close"]}, day
 
 
 def grade(pred, sig_side, sig_mid, sig_ts, zone_tol=3.0):

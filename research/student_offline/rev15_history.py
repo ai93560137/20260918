@@ -29,13 +29,37 @@ CUR = dict(fr.CUR_COMMON)                                   # E4 Z2 S6 2R 冷卻
 P = fr.CURRENT["rev15"]
 
 
-def load():
-    if os.path.exists(CACHE):
+def load(use_cache=True):
+    if use_cache and os.path.exists(CACHE):
         z = np.load(CACHE)
         return {k: z[k] for k in ("t", "o", "h", "l", "c")}
+    if use_cache:                                          # [11-08] GCS 年度快取（xau/sig/cache/m1_<src>_<年>.npz）；冇嘅年份照逐日讀
+        import data_cache as DC
+        t0 = int(dt.datetime.fromisoformat(A).replace(tzinfo=dt.timezone.utc).timestamp())
+        t1 = int(dt.datetime.fromisoformat(B).replace(tzinfo=dt.timezone.utc).timestamp()) + 86400
+        parts, todo = [], []
+        for y in range(int(A[:4]), int(B[:4]) + 1):
+            c = DC.get(f"m1_{SRC}_{y}.npz")
+            if c is not None:
+                parts.append(c)
+            else:
+                todo.append((max(A, f"{y}-01-01"), min(B, f"{y}-12-31")))
+        if parts:
+            for a, b in todo:
+                parts.append(_load_days(a, b))
+            d = DC.merge(parts, t0, t1)
+            np.savez(CACHE, **d)
+            return d
+    d = _load_days(A, B)
+    if use_cache:
+        np.savez(CACHE, **d)
+    return d
+
+
+def _load_days(a, b):
     from concurrent.futures import ThreadPoolExecutor
     g = fr.g
-    days = g.days_between(A, B)
+    days = g.days_between(a, b)
     pre = fr.config.PREFIX + ("duka/" if SRC == "duka" else "mt5m1/")
 
     def one(d):
@@ -55,7 +79,6 @@ def load():
     d = {"t": np.array([bars[k]["time"] for k in ks], dtype=np.int64)}
     for k, n in (("o", "open"), ("h", "high"), ("l", "low"), ("c", "close")):
         d[k] = np.array([bars[t][n] for t in ks], dtype=np.float64)
-    np.savez(CACHE, **d)
     return d
 
 
