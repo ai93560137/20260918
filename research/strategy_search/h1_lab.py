@@ -34,9 +34,25 @@ def h1(prefix, y0, y1):
     if os.path.exists(cf):
         z = np.load(cf); d = {k: z[k] for k in z.files}
     else:
+        import data_cache as DC                              # [11-08] GCS 年度快取 h1_<gold|silver>_<年>.npz
+        sym = "silver" if "xagusd" in prefix else "gold"
+        parts, todo = [], []
+        for y in range(y0, y1 + 1):
+            c = DC.get(f"h1_{sym}_{y}.npz")
+            (parts.append(c) if c is not None else todo.append(y))
+        if todo:
+            parts.append(_h1_raw(prefix, todo))
+        d = DC.merge(parts)
+        np.savez(cf, **d)
+    _CACHE[key] = d
+    return d
+
+
+def _h1_raw(prefix, years):
+    if True:
         import gb_rulesim as gb
         g = gb.Gcs(); rows = {}
-        for y in range(y0, y1 + 1):
+        for y in years:
             for m in range(1, 13):
                 txt = g.read_text(f"{prefix}{y}-{m:02d}.json")
                 if not txt:
@@ -49,8 +65,6 @@ def h1(prefix, y0, y1):
             d[k] = np.array([float(rows[t][j]) for t in ks])
         m = d["h"] > d["l"]                                  # 剔走平盤（休市）K 線
         d = {k: v[m] for k, v in d.items()}
-        np.savez(cf, **d)
-    _CACHE[key] = d
     return d
 
 
