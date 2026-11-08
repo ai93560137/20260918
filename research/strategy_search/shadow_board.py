@@ -35,7 +35,8 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）", "#1001／#160",
           ("mend", "月尾做多", "#1026", B23.r1026, 5 * 86400),
           ("lvlpool", "價位回測合併（只前向，冇回測判）", "#1049", LP.r1049, 0),
           ("spike", "M1 單根急動反向 E6S4", "#1067", B67.r1067, 0)]
-COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend")   # 組合只用 5 條回測合格嘅規則（使用者 11-08）
+COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend", "spike")   # 6 條回測合格規則嘅 63 個組合（使用者 11-08「63 個組合回測同影子都做」）；#1049 唔入
+OVERLAP = (("rev15", "rev60"), ("rev15", "spike"), ("rev60", "spike"))   # 高度重疊：rev15＋rev60 約 80%、rev15＋急動約 54–65%
 COMBO_1027 = ("rev15", "round", "d1brk")
 
 
@@ -78,20 +79,20 @@ def main():
         singles.append({"key": key, "name": name, "idea": idea, **st, "recent": recent})
     combos = []
     keys = list(COMBO_KEYS)
-    for k in range(2, len(keys) + 1):
+    for k in range(1, len(keys) + 1):
         for sub in itertools.combinations(keys, k):
             st = stats([x for s in sub for x in trades[s]])
             combos.append({"keys": list(sub), "name": "＋".join(sub), "is_1027": sub == COMBO_1027,
-                           "overlap": "rev15" in sub and "rev60" in sub, **st})
+                           "overlap": any(a in sub and b in sub for a, b in OVERLAP), **st})
     meta = {"run_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M"), "start": start,
             "bars_to": dt.datetime.fromtimestamp(last, dt.timezone.utc).strftime("%Y-%m-%d %H:%M")}
     res = {"meta": meta, "singles": singles, "combos": combos,
-           "criteria": "各條 30 張判（#1011／#1017：平均 ≥ +0.10R、PF ≥ 1.3、連敗 ≤ 6；#1022：PF ≥ 1.2、連敗 ≤ 8；#1026：PF ≥ 1.2、連敗 ≤ 6）；組合只作描述；一次只上一條實倉"}
+           "criteria": "⚠＝組合含 rev15／rev60／M1 急動任何兩條（高度重疊，等於同一訊號落多倍注）；各條 30 張判（#1011／#1017：平均 ≥ +0.10R、PF ≥ 1.3、連敗 ≤ 6；#1022：PF ≥ 1.2、連敗 ≤ 8；#1026：PF ≥ 1.2、連敗 ≤ 6；#1067：同 #1011）；組合只作描述；一次只上一條實倉"}
     f = lambda x, p="{:+.2f}": "—" if x is None else p.format(x)  # noqa: E731
     out = ["# 影子總表：5 條規則同所有組合（IDEAS #1028）", "", f"- 更新 {meta['run_utc']} UTC；由 {start} UTC 起；K 線到 {meta['bars_to']} UTC；每張 1R；唔落單", "",
            "## 單條", "", "| 規則 | IDEAS | 張 | ΣR | 平均 | PF | 最大回撤 | 連敗 |", "|---|---|---|---|---|---|---|---|"]
     out += [f"| {s['name']} | {s['idea']} | {s['n']} | {f(s['sum'])} | {f(s['avg'], '{:+.3f}')} | {f(s['pf'], '{:.2f}')} | {s['mdd']:.2f} | {s['streak']} |" for s in singles]
-    out += ["", "## 組合（每張 1R 相加；⭐＝#1027 預先登記組合；⚠＝rev15＋rev60 重疊約 80%）", "", "| 組合 | 張 | ΣR | 平均 | PF | 最大回撤 |", "|---|---|---|---|---|---|"]
+    out += ["", "## 63 個組合（含單條；每張 1R 相加；⭐＝#1027 預先登記組合；⚠＝含高度重疊規則：rev15／rev60／M1 急動任何兩條）", "", "| 組合 | 張 | ΣR | 平均 | PF | 最大回撤 |", "|---|---|---|---|---|---|"]
     out += [f"| {'⭐ ' if c['is_1027'] else ''}{'⚠ ' if c['overlap'] else ''}{c['name']} | {c['n']} | {f(c['sum'])} | {f(c['avg'], '{:+.3f}')} | {f(c['pf'], '{:.2f}')} | {c['mdd']:.2f} |" for c in combos]
     md = "\n".join(out) + "\n"
     print(md)
