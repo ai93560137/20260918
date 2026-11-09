@@ -172,9 +172,11 @@ def is_stock(code):
 
 
 def read_holdings(since):
-    """回傳 (持倉行, 帳戶資金摘要)。資金摘要唔包帳號。"""
+    """回傳 (持倉行, 帳戶資金摘要, position_list_query 成功次數)。資金摘要唔包帳號。
+    [R377] 成功次數 > 0 而持倉行係空 → 戶口真係冇倉（例如 11-09 15:42 平咗 HSI、未開 MNQ），唔係讀唔到。"""
     rows, accounts = [], []
     seen = set()
+    n_ok = 0
     for label, ctx in contexts():
         try:
             for a in real_accounts(ctx):
@@ -194,6 +196,7 @@ def read_holdings(since):
                 end = datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S")
                 ret2, dl = ctx.history_deal_list_query(start=f"{since} 00:00:00", end=end, trd_env=TrdEnv.REAL, acc_id=acc_id)
                 if ret == RET_OK:
+                    n_ok += 1
                     for _, r in df.iterrows():
                         if (num(r.get("qty")) or 0) != 0:
                             q = num(r.get("qty"))
@@ -233,7 +236,7 @@ def read_holdings(since):
     gone = [r for r in rows if expired(r["code"])]
     if gone:
         print("已到期、唔計入持倉：" + "、".join(f"{r['code']}（{r['source']} {r['qty']:+g}）" for r in gone))
-    return [r for r in rows if not expired(r["code"])], accounts
+    return [r for r in rows if not expired(r["code"])], accounts, n_ok
 
 
 def deals(codes, since):
@@ -474,8 +477,11 @@ def main():
 
     if a.diagnose:
         return diagnose(a.since)
-    rows, accounts = ([], []) if a.fixed else read_holdings(a.since)
-    if not rows:
+    rows, accounts, n_ok = ([], [], 0) if a.fixed else read_holdings(a.since)
+    if not rows and n_ok and accounts:
+        # [R377] 持倉查詢成功、只係冇倉：照推空持倉（權益／保證金照計），唔好當讀唔到，亦唔好用 position.json 舊 book 頂
+        print("（富途持倉查詢成功：戶口而家冇倉）")
+    elif not rows:
         print("（富途 API 冇讀到持倉，改用 position.json 嘅固定持倉）")
         rows = fixed_holdings()
     by = quotes([r["code"] for r in rows])
