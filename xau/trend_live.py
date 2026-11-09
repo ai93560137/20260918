@@ -348,6 +348,18 @@ def status():
             "pending": [executor.mask_cmd(c) for c in (st.get("pending_cmds") or []) if not c.get("acked")]}
 
 
+def _unseen_meta(state):
+    """[11-09] 心跳之間開完又平（冇見過倉位）：用最近一張成功、未入簿嘅開倉單補資料。"""
+    last_close = max((b.get("closed_ts") or 0 for b in state.get("book") or []), default=0)
+    o = next((x for x in reversed(state.get("orders") or []) if x.get("kind") == "open" and x.get("acked") and x.get("ok")
+              and not x.get("booked") and (x.get("ts") or 0) > last_close), None)
+    if not o:
+        return None
+    o["booked"] = True
+    return {"ticket": o.get("ticket"), "side": o.get("side"), "lots": o.get("lots"), "entry": o.get("price"), "stop": o.get("sl"),
+            "opened_ts": o.get("ts"), "ch": "趨勢" + str(o.get("rule") or ""), "decision_price": o.get("price"), "id": o.get("id")}
+
+
 def _enqueue(m, state, kind, now, price, reason, sig=None, n_lots=None):
     cid = "w" + uuid.uuid4().hex[:7]
     if kind == "open":
@@ -393,7 +405,8 @@ def handle_heartbeat(payload):
     pos = (account.get("positions") or [None])[0]
     try:
         for t in live_book.track(state, state.get("pos_seen"), pos, account.get("realized_total"), now=now,
-                                 extra=lambda p: {"ch": "趨勢" + str((state.get("pos") or {}).get("rule") or "")}):
+                                 extra=lambda p: {"ch": "趨勢" + str((state.get("pos") or {}).get("rule") or "")},
+                                 unseen=lambda: _unseen_meta(state)):
             m.log_event(f"📗 [{config.TEAM_NAME}] 趨勢簿平倉 {t['pnl_hkd']:+.2f} HKD", component="trend")
     except Exception as exc:  # noqa: BLE001
         m.log_event(f"⚠️ 趨勢簿成交簿記錄失敗（唔影響交易）：{type(exc).__name__}: {exc}", severity="WARNING", component="trend")

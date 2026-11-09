@@ -7,6 +7,7 @@ import time
 import config
 
 MAX = 300
+UNSEEN_MIN_HKD = 1.0      # [11-09] 心跳之間開完又平（冇見過倉位）但 realized_total 變咗 ≥ 呢個數 → 照記一筆
 KEYS = ("ticket", "side", "lots", "entry", "stop", "target", "opened_ts")
 
 
@@ -40,9 +41,11 @@ def make(o, pnl_hkd, closed_ts, contract=None, hkd_per_usd=None):
     return rec
 
 
-def track(state, prev_pos, pos, realized, now=None, extra=None):
+def track(state, prev_pos, pos, realized, now=None, extra=None, unseen=None):
     """每個心跳叫一次（要喺 lots_ladder.live_close 之前，借佢嘅 lots_realized_ref 做後備參考點）。
-    extra(pos) → dict：開倉快照額外欄位（例如跟單頻道）。回傳新記錄 list（通常 0 或 1 筆）。"""
+    extra(pos) → dict：開倉快照額外欄位（例如跟單頻道）。回傳新記錄 list（通常 0 或 1 筆）。
+    unseen() → dict 或 None：[11-09] 開倉同平倉喺兩個心跳之間完成（心跳從來冇見到倉位），用嚟補開倉資料（side／lots／entry／stop／ch…）；
+    冇俾都照記（只有 HKD），標 unseen=True。之前呢種單會漏記，令策略停線少計。"""
     if state is None:
         return []
     now = time.time() if now is None else now
@@ -68,6 +71,12 @@ def track(state, prev_pos, pos, realized, now=None, extra=None):
         elif extra and any(o.get(k) is None for k in ("ch", "decision_price")):      # 跟單 ack／決策可能遲過第一個有倉心跳：補返
             o.update({k: v for k, v in ((extra(pos) or {}).items()) if o.get(k) is None and v is not None})
     elif realized is not None:
+        ref = state.get("book_ref")
+        if ref is not None and not prev_pos and abs(realized - float(ref)) >= UNSEEN_MIN_HKD:
+            o = (unseen() if unseen else None) or {}
+            rec = {**make(o, round(realized - float(ref), 2), now), "unseen": True}
+            out.append(rec)
+            state["book"] = [*(state.get("book") or []), rec][-MAX:]
         state["book_ref"] = realized
     return out
 
