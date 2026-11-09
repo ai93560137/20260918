@@ -8,20 +8,26 @@
 
 ### 1.1 人員（工作階段）
 
-> 2026-10-14 起各陣換新工作階段；以下為新 id，**最新以 `handoff/SESSIONS.md` 為準**（2026-10-14 05:10 全部換完；HTF 策略指南、股票套利、指數套利、外匯數據測試已停用唔換）。
+> 2026-11-09 更新（股票研究、地載、富途數據 VM 11-08、天覆陣 11-09 由總指揮換新）。**最新以 `handoff/SESSIONS.md` 為準**；HTF 策略指南、股票套利、指數套利、外匯數據測試已停用。
 
 | 角色 | 工作階段 | 分支 | 職責 |
 |---|---|---|---|
-| 總指揮（風控／營運） | `session_012CwdLPmAQvC91GZs5Jg9XA` | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、成交通報、對沖狀態通報 |
-| ☁️ 雲垂陣（期權 PM） | `session_01RkzmKXKixbBkCNqEjhubCK` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00／20:30 對沖指令、收市總結 |
-| 🌬️ 風揚陣（波幅／週期權 PM） | `session_01X2Qv7MgCQxbyyEyGVzivWC` | `claude/eager-*`／預設分支頁面 | HAR 波幅預測、高低位訊號、方向一每週勒式 |
-| 🐍 蛇蟠陣（趨勢 PM） | `session_01B4y7p7QzrJwCXEmDDZCx9M` | `claude/gifted-carson-v2tvhw` | 3 日通道、紙上前向、每日新高／VCP 名單、全市場數據 |
-| 地載陣（日內 PM） | `session_01UxZXWN28xveAEbzggo49AR` | — | RSI 逆市四條紙上策略（R138／141／143／145） |
-| 🐤 金絲雀（風險預報） | `session_01AqAysUfBVsCKimicXrwwKZ` | `claude/canary-playbook-final-3um9lp` | 每日燈色表、後驗紀錄 |
-| 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
-| 外匯 VM 採集 | `session_01YcJyu1yjZaFQTtY37WuQYH` | `claude/dazzling-curie-f3xzb8` | VM 上 L1 EURUSD 報價、6E 期權快照、ZQ 每日結算採集（使用者 10-14：繼續）；外匯研究線工作階段已停 |
-| 高息紙上 | `session_01GZ86daPoYtbG3bQk5svCx3` | gifted-carson `paper/` | 月度高息＋備兌模擬盤 |
-| 預設分支（登記簿／流水線） | `session_012caA3uVCQjRHHryN5HnMrn` | `claude/gcp-trading-v12-rewrite-bz75t2` | `IDEAS.md`、評分卡、偏離監控、Cloud Run 部署 |
+| 🛡️ 總指揮（風控／營運） | `session_01Mt8CWjUZpGvDAD6UBLEAti`（11-03 新三） | `claude/beautiful-hypatia-8qrgjj` | 富途實倉監控、按陣配對、四陣風險通報、Cloud Scheduler、各陣換新 |
+| ☁️ 雲垂陣（期權 PM） | `session_013KSbtb9YJejCuaunQBdJDC` | `claude/dazzling-curie-f3xzb8` | HSI／MES 月跨式＋Δ 對沖；每日掃描、16:00 對沖指令、MES 檢查點、收市總結 |
+| 🌬️ 風揚陣（週期權 PM） | `session_01BvMYgEWCVAJRi7v2WgT1qb` | `claude/epic-ramanujan-kp1l1v` | HAR 波幅預測、方向一每週勒式 |
+| 🐍 蛇蟠陣（趨勢 PM） | `session_01Mt8CWk4VkMymGsyU5kjFsv`（11-05） | `claude/gifted-carson-v2tvhw` | 恒指／黃金 3 日通道、紙上前向 |
+| 🏔️ 地載陣（日內 PM） | `session_01Mt8CWmFkSg9XQ9XSt2yMst`（11-08） | `claude/dizai-expectations-r172` | RSI 逆市紙上策略、地載・衡年度重揀參數 |
+| 🐤 金絲雀（風險預報） | `session_01Mt8CWnFXKw3kmcwd24gTGj`（11-05） | `claude/canary-playbook-final-3um9lp` | 每日燈色表、盤中預警、後驗紀錄 |
+| 🐦 鳥翔／HTF（個股 PM） | `session_018BXPn6zbpuMedYBTga6wp1` | `claude/stock-research-k9nzau` | 月底九國名單、HTF 每日訊號網頁 |
+| 📈 股票市場策略研究 | `session_01Mt8CWkxGDxTKnEmWkzYB8P`（11-08） | `claude/gifted-carson-v2tvhw` | 全市場前向（A2）、研究 |
+| 🐉 龍飛陣（AI 期貨） | `session_0139SPVaaCjhGQM81SipbPgp` | `claude/hsi-ai-trader` 等 | MHI AI 真倉、美股模擬、每日覆盤／研究 |
+| 🌌 天覆陣（XAUUSD MT5） | `session_01Mt8CWjK83VsUG8Bqsdei8v`（11-09 新三） | `claude/tianfu` | `zhuge-xau`／`zhuge-xau-sig`、933 真倉、趨勢簿、影子前向 |
+| 🐯 虎翼（大跌股賣 put） | `session_01Mt8CWjLKUQw2jyTNk48rrS` | `claude/huyi-bigdrop-options` | 港美股大跌掃描、紙上前向 |
+| 🖥️ 富途數據 VM | `session_01Mt8CWnQgjv8GZBKnxZFg9c`（11-08） | `claude/futu-vm-setup` | futu-data-tw：OpenD、auto_risk、推送、龍飛陣部機 |
+| 🖥️ IBKR 資料採集 | `session_01Mv7vE7k7oogpkK9fkBrLcm` | `claude/gcp-agent-whoami-status-hswp4h` | ib-data ES／NQ 5 分 K、IV 日誌 |
+| 💱 外匯 VM 採集 | `session_01YcJyu1yjZaFQTtY37WuQYH` | `claude/dazzling-curie-f3xzb8` | L1 EURUSD、6E 期權、ZQ 結算採集 |
+| 🏦 債券每日快報 | `session_013x5qHyMDisW7VCLNo6w88x` | `claude/us-intl-data-stock-market-vgt0yi` | 美債 Telegram 快報（Actions） |
+| 🧭 SOP 顧問／預設分支 | `session_012caA3uVCQjRHHryN5HnMrn` | `claude/gcp-trading-v12-rewrite-bz75t2` | 流水線（心跳、晨會、週月報、blotter）、`IDEAS.md`、本文件 |
 
 ### 1.2 自動化（執行者 × 時間）
 
@@ -34,7 +40,7 @@
 |---|---|---|
 | 05:30–06:30 | Actions `fetch_equities`（美）、`es_daily_push`、`news_8k`、`bond_daily`、`fetch_stock_data`（港） | 美股收市後數據、債市快報 |
 | 06:30 | Actions `canary_daily` → TG | 金絲雀燈色表＋總結 |
-| 07:07 | Routine 金絲雀 | 核對 canary workflow 跑對沒有 |
+| 10:30 | Routine 金絲雀 | 核對 canary workflow 跑對沒有（使用者改 10:30；只用雲垂標 final 嘅收盤，PR #632） |
 | 07:53 | Actions `hsi_range_report` → TG | 恒指開市前波幅／高低位預測 |
 | 08:17 | Actions `external_data_daily` | 外部來源彙整＋抽樣 QC |
 | 08:30 | Actions `morning_brief` → TG | 晨會簡報（風控、金絲雀、昨日損益、對帳、偏離、今日事件、今日要做；全文 GCS `ops/brief/`） |
@@ -49,7 +55,7 @@
 | 14:35、15:55 | Actions `ops_notify` → TG | 對沖狀態一行（給雲垂 14:42 報告、16:00 對沖用）；同時 commit `ops/hedge_status_latest.txt` 畀雲垂 git 讀 |
 | 16:00 | Routine 雲垂 | HSI Δ 對沖指令＋止損線 |
 | 16:37 | Actions `hsi_range_report` → TG | 日市收市檢討 |
-| 16:40 | Routine 雲垂 | 觸發 `fetch-quotes` 存正式收盤 |
+| 16:40 | Actions `yunchui_quote_kicks`（10-15 由 Routine 改） | 觸發 `fetch-quotes` 存正式收盤 |
 | 16:35 | 本機 auto_risk | 推日盤成交 → `futu/deals/<日>.json` |
 | 16:45 | Routine 四陣風險通報 v2；Routine 蛇蟠 | 收市摘要給四陣（成交由 17:10 另發）；通道更新＋前向結算＋TG |
 | 17:10 | Actions `ops_notify` → TG | 富途成交紀錄通報（日盤）；commit `ops/deals_latest.json` 畀雲垂 |
@@ -58,10 +64,18 @@
 | 20:30／21:30（夏／冬令） | Actions `es_range_report` → TG | ES 開市前／收市報告（六組 cron 處理夏冬令） |
 | 21:45 | Routine 四陣風險通報 v2 | 風險通報（第 4 次） |
 | 03:13 | Actions `hsi_range_report` → TG | 全日收市檢討 |
-| 03:30（倫敦 20:30） | Routine 雲垂 | MES 檢查點＋對沖指令 |
+| 04:30／03:30（冬／夏令；紐約 15:30） | Routine 雲垂 | MES 檢查點＋對沖指令 |
 | 03:05 | 本機 auto_risk | 推夜盤成交 |
 | 03:40 | Actions `ops_notify` → TG | 富途成交紀錄通報（夜盤，讀今日＋前一日） |
-| 04:15（倫敦 21:15） | Routine 雲垂 | 每日總結＋自檢清單 |
+| 05:15／04:15（冬／夏令；紐約 16:15） | Routine 雲垂 | 每日總結＋自檢清單 |
+| 每 2 小時（:02 UTC） | Routine 天覆陣 | 巡檢：三個 xau 服務心跳、933 真倉／趨勢簿持倉、env 冇變 |
+| 06:05（紐約 17:05） | Routine 天覆陣 | 紐約收市摘要（933＋趨勢簿） |
+| 06:37 | Routine 天覆陣 | 每日影子前向＋候選總表 |
+| 06:17 週二至六／19:41 平日 | Routine 虎翼 | 美股／港股收市後大跌股掃描（紙上） |
+| 08:20／08:22 週二至六 | Routine 龍飛陣 | 分析欄轉交／每日覆盤（MHI 真倉逐筆） |
+| 12:47 | Routine 龍飛陣 | 每日網上研究 |
+| 週六 09:41 | Routine 龍飛陣 | MHI 里程碑週報 |
+| 週日 08:45／09:00 | Routine SOP 顧問／Actions `ops_reports` | Claude 用量快照／週報（每月 1 日 09:30 月報） |
 | 每 4 小時 | Actions `pelosi_tracker` → TG | 佩洛西申報 |
 | 週六 10:17／10:47 | Actions `hkex_option_iv`、`us_futures_daily` | 港交所期權 IV、美期日線 |
 | 週日 03:37 | Actions `screener_scorecard` | 篩選器評分卡＋偏離監控（WIF 免金鑰讀 GCS） |
