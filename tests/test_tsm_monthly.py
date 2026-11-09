@@ -78,6 +78,15 @@ class T(unittest.TestCase):
         self.assertIsNone(t.fresh_price(27000, 1000, 1000 + 3 * 3600))      # 週末舊價
         self.assertIsNone(t.fresh_price(None, 1000, 1000))
 
+    def test_foreign_positions(self):
+        st0 = {"qty": 0, "code": None}
+        self.assertEqual(t.foreign_positions({"US.MNQ2612": (-2, 26820.0)}, st0), {"US.MNQ2612": -2})
+        st1 = {"qty": 1, "code": "US.MNQ2612"}
+        self.assertEqual(t.foreign_positions({"US.MNQ2612": (1, 27000.0)}, st1), {})
+        self.assertEqual(t.foreign_positions({"US.MNQ2612": (-1, 27000.0)}, st1), {"US.MNQ2612": -2})
+        self.assertEqual(t.foreign_positions({}, st1, stop_filled=True), {})
+        self.assertEqual(t.foreign_positions({}, st0), {})
+
     def test_prices(self):
         self.assertEqual(t.limit_price(26000, 1, 0.25), 26065.0)
         self.assertEqual(t.limit_price(26000, -1, 0.25), 25935.0)

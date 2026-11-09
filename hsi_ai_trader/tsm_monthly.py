@@ -95,6 +95,20 @@ def plan(state, sig, front, held_qty, stop_filled):
     return acts, notes
 
 
+def foreign_positions(pos, st, stop_filled=False):
+    """[11-09] 富途期貨倉係淨額：戶口有唔屬於 tsm 嘅倉（例如使用者人手 MNQ −2），tsm 落單會同人手倉對銷。
+    pos：{code: (qty, cost)}；回傳 {code: 多出嚟嘅數量}（空 = 冇外來倉）。"""
+    exp = {}
+    if int(st.get("qty") or 0) > 0 and st.get("code") and not stop_filled:
+        exp[st["code"]] = int(st["qty"])
+    out = {}
+    for code, (q, _) in pos.items():
+        extra = int(q) - exp.get(code, 0)
+        if extra:
+            out[code] = extra
+    return out
+
+
 def limit_price(ref, side, tick):
     raw = ref * (1 + BUFFER) if side > 0 else ref * (1 - BUFFER)
     return round((math.ceil(raw / tick - 1e-9) if side > 0 else math.floor(raw / tick + 1e-9)) * tick, 4)
@@ -234,12 +248,14 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
             from markets import quarterly_contracts
             contracts = quarterly_contracts(product, spec.market, today)
         front = pick_front_month(contracts, product, today, spec.roll_days)
-        held = 0
-        if st.get("code"):
-            pos = broker.positions(product)
-            held = max(0, pos.get(st["code"], (0, None))[0])
+        pos = broker.positions(product)
+        held = max(0, pos.get(st["code"], (0, None))[0]) if st.get("code") else 0
         stop_filled = order_status_filled(broker, st.get("stop_id")) if st.get("qty") else False
         acts, notes = plan(st, sig, front, held, stop_filled)
+        foreign = foreign_positions(pos, st, stop_filled)
+        if foreign and acts:
+            notes.append(f"戶口有唔屬於 12 個月動量嘅倉 {foreign}（人手？），落單會同佢對銷：今日唔郁，等人處理（計劃 {acts}）")
+            acts = []
         log.info("%s 信號 %s（%s）前月 %s 狀態 %s → %s %s", product, sig, src, front, st, acts, notes)
         for n in notes:
             telegram(f"{product}：{n}")
