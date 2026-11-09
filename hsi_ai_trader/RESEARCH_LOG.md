@@ -57,3 +57,11 @@
 - 單一特徵最明顯：跌穿深度（深 62% vs 淺 39% 被壓返）；其餘接近 50%。
 - 而家 NQ：11/6 低 26,366 對 200 SMA 約 28,110，跌穿深度約 −6%，屬「深」組（歷史 62% 被壓返），同使用者「200 SMA 係阻力」方向一致，但樣本少。
 - 結論：機械特徵分唔開，使用者睇圖嘅判斷（形態、結構）未能用簡單數字取代；繼續用並排計分睇長期成績。
+
+## 2026-11-09 網上研究：富途 API 美期限價單「下單失敗」常見原因（MNQ／MES 首次真倉被拒）
+- 背景：11-09 07:40 HKT（美東週日 18:40，CME 已開）MNQ2612 @27,184.5、MES2612 @7,426.25 限價買 1 張，富途即時「下單失敗」。參考價 Yahoo（NQ 週五收 27,085、ES 7,402），限價高過收市約 0.4%，合 tick（0.25），唔似價格問題。
+- [thinkorswim：Order Rejection Reasons](https://toslc.thinkorswim.com/center/howToTos/thinkManual/Trade/Order-Entry-Tools/Order-Rejection-Reasons.html)：限價離現價太遠會被交易所／券商價格保護拒絕。
+- [Interactive Brokers：Order Placement Considerations](https://www.interactivebrokers.com/docs/tws-api/doc/orders/place-order/order-placement-considerations)：被拒時改用貼近現價嘅限價。
+- [Webull HK Trade API FAQ](https://developer.webull.hk/apis/docs/trade-api/faq)：常見拒單原因——購買力／保證金唔夠、市場休市、參數無效（價格範圍、單類型唔支援）。
+- 搵唔到富途官方對美期 API 拒單嘅公開說明；網上只係一般原因，冇樣本。
+- 下一步：PR #763 令程式記低富途 `last_err_msg`，加 `--diagnose` 唯讀查今日兩張單嘅錯誤訊息；睇到原因先改（例如改用富途報價、改落單時段、或者確認戶口美期權限）。
