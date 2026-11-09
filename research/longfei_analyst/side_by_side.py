@@ -61,7 +61,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     data = {}
-    for name in ("NQ", "ES", "SPX", "HSI", "VIX", "RSP", "VXN", "VVIX"):
+    for name in ("NQ", "ES", "SPX", "HSI", "VIX", "RSP", "VXN", "VVIX", "NVDA"):
         raw = pack.gcs_cat(pack.DATA + f"{name}.json")
         if raw:
             data[name] = json.loads(raw)["d1"]
