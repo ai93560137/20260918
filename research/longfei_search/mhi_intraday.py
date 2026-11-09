@@ -40,8 +40,11 @@ def load_bars():
         if not blob.name.endswith(".json"):
             continue
         d = json.loads(blob.download_as_text())
-        days[d["date"]] = [(r[0], r[1], r[2], r[3], r[4]) for r in d["bars"]]
+        days[d["date"]] = [(r[0], r[1], r[2], r[3], r[4], r[5] if len(r) > 5 else 0.0) for r in d["bars"]]
     return days
+
+
+load_bars_full = load_bars          # [#2034] 包埋成交量（第 6 欄），舊家族唔用
 
 
 def tmin(hhmm):
