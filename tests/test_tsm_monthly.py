@@ -73,6 +73,11 @@ class T(unittest.TestCase):
         self.assertEqual(acts, [])
         self.assertTrue(notes)
 
+    def test_fresh_price(self):
+        self.assertEqual(t.fresh_price(27000, 1000, 1000 + 600), 27000.0)
+        self.assertIsNone(t.fresh_price(27000, 1000, 1000 + 3 * 3600))      # 週末舊價
+        self.assertIsNone(t.fresh_price(None, 1000, 1000))
+
     def test_prices(self):
         self.assertEqual(t.limit_price(26000, 1, 0.25), 26065.0)
         self.assertEqual(t.limit_price(26000, -1, 0.25), 25935.0)

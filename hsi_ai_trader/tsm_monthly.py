@@ -3,9 +3,10 @@
 規則（同回測 batch6 K1 L12 一樣）：每月最後一個美股交易日收市，過去 12 個月（月尾對月尾）報酬 > 0 → 下個月揸 1 張好倉；≤ 0 → 空手。
 信號數據：Yahoo NQ=F／ES=F 日線（同回測一樣來源）；攞唔到就用富途 US.<產品>main 日 K；兩樣都攞唔到就唔郁、發 Telegram。
 
-執行（zhuge-longfei-tsm.timer，星期一至五 07:40 HKT＝美東前一晚 18:40／19:40，CME 已重開）：
+執行（zhuge-longfei-tsm.timer，星期一至五 22:45 HKT＝美東 09:45（冬令）／10:45（夏令），美股正常時段、成交量大；
+  11-09 改：原本 07:40 HKT 用咗 Yahoo 週五收市價做參考，富途「訂單價格超過限制」拒單）：
   1. 新月份決定（上個月已完）：目標 1 而冇倉 → 買 1 張即月；目標 0 而有倉 → 賣出、撤後備止蝕。
-     （同回測差異：回測喺月尾收市成交，真倉喺之後第一個晚上成交，相差約 2–3 個鐘或一個週末）
+     （同回測差異：回測喺月尾收市成交，真倉喺之後第一個交易日美東上午成交，相差約 18 個鐘或一個週末）
   2. 轉倉：揸緊嘅合約距離最後交易日 ≤ 8 日（markets.SPECS roll_days）→ 賣舊買新、搬止蝕。
   3. 對賬：戶口嗰張合約少過程式記錄 → 查後備止蝕單有冇成交；有就當止蝕出咗，今個月唔再入；冇就發 Telegram 等人睇（可能係人手交易）。
   4. 後備止蝕：入場價 ×（1 − LONGFEI_TSM_STOP_PCT，預設 12%）掛富途伺服器端 GTC 止損單（回測冇止蝕，呢個只係防災難；0 = 唔掛）。
@@ -37,6 +38,7 @@ HKT = ZoneInfo("Asia/Hong_Kong")
 YAHOO = {"MNQ": "NQ=F", "MES": "ES=F"}
 LOOKBACK = 12
 BUFFER = 0.0025
+MAX_QUOTE_AGE = 30 * 60          # Yahoo 參考價最多舊 30 分鐘（Yahoo 期貨報價約延遲 10 分鐘）
 REMARK = "zhuge-longfei-tsm"
 STATE_DIR = Path(os.getenv("TSM_DIR", str(Path.home() / "zhuge" / "tsm"))).expanduser()
 
@@ -120,10 +122,18 @@ def yahoo_daily(product):
     with urllib.request.urlopen(req, timeout=30) as r:
         res = json.loads(r.read())["chart"]["result"][0]
     ts, closes = res["timestamp"], res["indicators"]["quote"][0]["close"]
-    last = res.get("meta", {}).get("regularMarketPrice")
+    meta = res.get("meta", {})
     # 時間戳 +6 小時再轉美東日期：無論 Yahoo 用 00:00 定前一晚 18:00 做開始，都落喺正確交易日
     daily = [(datetime.fromtimestamp(t + 6 * 3600, ET).strftime("%Y-%m-%d"), c) for t, c in zip(ts, closes)]
-    return daily, (float(last) if last else None)
+    return daily, fresh_price(meta.get("regularMarketPrice"), meta.get("regularMarketTime"), time.time())
+
+
+def fresh_price(price, ts, now, max_age=MAX_QUOTE_AGE):
+    """[11-09] 首次真倉 07:40 HKT 用咗 Yahoo 週五收市價做參考，富途「訂單價格超過限制」拒單：
+    參考價要喺 max_age 秒內更新過先用，否則當冇價（唔落單）。"""
+    if not price or not ts or now - float(ts) > max_age:
+        return None
+    return float(price)
 
 
 def futu_daily(broker, product):
@@ -249,6 +259,10 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
                 st["ret12"] = sig["ret12"]
             elif kind == "sell":
                 ref, rs = ref_price(broker, arg, ylast)
+                if not ref:
+                    telegram(f"{product}：冇新鮮參考價（富途冇美期報價、Yahoo 超過 30 分鐘未更新），唔賣 {arg}，聽日再試")
+                    save_state(product, st)
+                    return
                 if st.get("stop_id"):
                     broker.cancel_order(st["stop_id"])
                 px, q = place(broker, arg, -1, int(st.get("qty") or 1), ref, spec.tick)
@@ -263,7 +277,8 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
             elif kind == "buy":
                 ref, rs = ref_price(broker, arg, ylast)
                 if not ref:
-                    telegram(f"{product}：冇參考價，唔買 {arg}")
+                    telegram(f"{product}：冇新鮮參考價（富途冇美期報價、Yahoo 超過 30 分鐘未更新），唔買 {arg}，聽日再試")
+                    save_state(product, st)
                     return
                 px, q = place(broker, arg, +1, qty_max, ref, spec.tick)
                 if q <= 0:
