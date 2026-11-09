@@ -7,7 +7,7 @@
 - 每張計：①滑價＝成交對決策價（逆方向為正，美元）②出區距離＝成交喺入場區外幾多（逆方向為正，喺區內＝0）
   ③book R（實盤成交簿：分母＝決策價到 SL）④R_S＝實盤成交、回測單位（(出場−成交)×方向−成本）／S
   ⑤R_bt＝回測假設成交（買：min(決策價, 區頂)；賣：max(決策價, 區底)）、同一出場、回測單位。
-  出場：R>0 當 TP、否則當 SL（同一 SL／TP，所以成交較好嘅回測版出場一樣）。成本＝fit_rules.COST。
+  出場：用成交簿 exit_est（實際出場）；冇先當 R>0＝TP、否則＝SL（11-09 首跑後修正，判準唔變）。成本＝fit_rules.COST。
 - 判（同 #1125 30 張一齊判）：平均滑價 ≥ 0.5 美元，或者 平均(R_S − R_bt) ≤ −0.05R → 提案改執行方式（例如限價單／收窄容許偏差），
   要使用者批；冇過線 → 照舊。#1125 30 張判斷要同時列 book R 同 R_S（回測期望係 S 單位），由使用者睇。
 """
@@ -49,7 +49,7 @@ def rows(st):
         sl, tp, dec, fill = float(o["sl"]), float(o["tp"]), float(o["price"]), float(b["entry"])
         mid = (sl + tp) / 2
         lo, hi = mid - Z, mid + Z
-        exit_ = tp if b["r"] > 0 else sl
+        exit_ = float(b["exit_est"]) if b.get("exit_est") is not None else (tp if b["r"] > 0 else sl)   # [11-09 修正] 用成交簿實際出場價（第 1 張唔係喺 SL 平）
         slip = (fill - dec) * sgn                                        # 買：成交高過決策價＝逆；賣：成交低過＝逆
         out_zone = max(0.0, (fill - hi) if sgn == 1 else (lo - fill))    # 買：高過區頂＝逆；賣：低過區底＝逆
         bt_fill = min(dec, hi) if sgn == 1 else max(dec, lo)
