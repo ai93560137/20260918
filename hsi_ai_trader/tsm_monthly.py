@@ -156,6 +156,7 @@ def order_status_filled(broker, order_id):
 def place(broker, code, side, qty, ref, tick):
     from futu import OrderType, TrdSide
     from broker import DEAD, FILLED
+    place.last_error = ""
     price = limit_price(ref, side, tick)
     df = broker._place(price=price, qty=qty, code=code, trd_side=TrdSide.BUY if side > 0 else TrdSide.SELL,
                        order_type=OrderType.NORMAL, trd_env=broker.env, acc_id=broker.acc_id, remark=REMARK)
@@ -169,8 +170,15 @@ def place(broker, code, side, qty, ref, tick):
         if row["order_status"] in FILLED:
             return broker._fill(row, price, qty)
         if row["order_status"] in DEAD:
+            # [11-09] 首次真倉兩張單「下單失敗」查唔到原因：記低富途嘅狀態同錯誤訊息，寫 log 同 Telegram
+            place.last_error = f"{row['order_status']}：{row.get('last_err_msg') or ''}".strip("：")
+            log.warning("單 %s 失敗：%s", oid, place.last_error)
             return broker._fill(row, price, 0)
+    place.last_error = "60 秒未成交，已撤單"
     return broker.cancel_order(oid)
+
+
+place.last_error = ""
 
 
 def ref_price(broker, code, yahoo_last):
@@ -245,7 +253,7 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
                     broker.cancel_order(st["stop_id"])
                 px, q = place(broker, arg, -1, int(st.get("qty") or 1), ref, spec.tick)
                 if q <= 0:
-                    telegram(f"{product}：賣 {arg} 未成交（參考 {rs} {ref}），聽日再試")
+                    telegram(f"{product}：賣 {arg} 未成交（限價參考 {rs} {ref}；富途：{place.last_error or '冇訊息'}），聽日再試")
                     if st.get("stop_id"):
                         st["stop_id"] = None          # 止蝕已撤，下次重新掛
                     save_state(product, st)
@@ -259,7 +267,7 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
                     return
                 px, q = place(broker, arg, +1, qty_max, ref, spec.tick)
                 if q <= 0:
-                    telegram(f"{product}：買 {arg} 未成交（參考 {rs} {ref}），聽日再試")
+                    telegram(f"{product}：買 {arg} 未成交（限價參考 {rs} {ref}；富途：{place.last_error or '冇訊息'}），聽日再試")
                     save_state(product, st)              # 未記 set_month，聽日會再試
                     return
                 st.update(qty=q, code=arg, entry=px, entry_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -277,12 +285,39 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
         broker.close()
 
 
+def diagnose(products):
+    """唯讀：列出真倉戶口最近 3 日 remark=zhuge-longfei-tsm 嘅單同富途錯誤訊息（唔解鎖、唔落單）。"""
+    from broker import FutuBroker
+    from futu import TrdEnv
+    for product in products:
+        cfg = SimpleNamespace(trd_env="REAL", opend_host=os.getenv("OPEND_HOST", "127.0.0.1"),
+                              opend_port=int(os.getenv("OPEND_PORT", "11111")), product=product, trade_password="",
+                              acc_id=int(os.getenv("FUTU_ACC_ID", "0")), real_acc_id=int(os.getenv("FUTU_REAL_ACC_ID", "0")))
+        broker = FutuBroker(cfg)
+        try:
+            start = (datetime.now(HKT) - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+            ret, df = broker.trade.history_order_list_query(trd_env=TrdEnv.REAL, acc_id=broker.acc_id, start=start)
+            if ret != 0:
+                print(product, "查唔到訂單：", df)
+                continue
+            for _, r in df.iterrows():
+                if product in str(r.get("code")):
+                    print(product, r.get("create_time"), r.get("code"), r.get("trd_side"), r.get("qty"), r.get("price"),
+                          r.get("order_status"), "remark=", r.get("remark"), "錯誤=", r.get("last_err_msg"))
+        finally:
+            broker.close()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--diagnose", action="store_true", help="唯讀：列出最近真倉單同富途錯誤訊息")
     ap.add_argument("--products", default="MNQ,MES")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if a.diagnose:
+        diagnose([x.strip().upper() for x in a.products.split(",") if x.strip()])
+        return
     armed = {x.strip().upper() for x in os.getenv("LONGFEI_TSM_PRODUCTS", "").split(",") if x.strip()}
     qty = max(1, min(int(os.getenv("LONGFEI_TSM_QTY", "1")), 1))         # 使用者批 1 張；改多要再批
     stop_pct = float(os.getenv("LONGFEI_TSM_STOP_PCT", "0.12"))
