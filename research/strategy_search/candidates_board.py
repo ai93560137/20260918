@@ -36,10 +36,14 @@ CANDS = [
 
 PAT_N = re.compile(r"(\d+) 張 平均 ([+-]?\d+\.\d+)R PF (\S+)")
 PAT_EQ = re.compile(r"n=(\d+)(?: 平均 ([+-]?\d+\.\d+)R ΣR \S+ PF (\S+) 連敗 (\d+))?")
+PAT_ACC = re.compile(r"(\d+) 張；ΣR \S+；平均 ([+-]?\d+\.\d+)R PF ([^；\s]+)")   # [11-09] 累計段格式「N 張；ΣR x；平均 yR PF z」
 PAT_ZERO = re.compile(r"(?:^|- )0 張")
 
 
 def parse_line(s):
+    m = PAT_ACC.search(s)
+    if m:
+        return {"n": int(m.group(1)), "avg": float(m.group(2)), "pf": m.group(3)}
     m = PAT_N.search(s)
     if m:
         return {"n": int(m.group(1)), "avg": float(m.group(2)), "pf": m.group(3)}
