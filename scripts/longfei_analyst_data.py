@@ -17,12 +17,13 @@ import yfinance as yf
 SYMBOLS = {"NQ": "NQ=F", "ES": "ES=F", "SPX": "^GSPC",   # [R290] SPX 現貨：使用者 4 小時圖用現貨（只得正常時段）
            "VIX": "^VIX",                                   # [R304] 使用者 10-27 VIX 日線筆記（缺口、200 SMA、下降壓力線）
            "RSP": "RSP",                                    # 使用者 10-29：等權標普 ETF，睇板塊輪動／市場廣度（對比 NQ）
-           "VXN": "^VXN", "VVIX": "^VVIX"}                  # 使用者 10-31：納指波動率、VIX 嘅波動率（缺口、均線、盤中 vs 收市）
+           "VXN": "^VXN", "VVIX": "^VVIX",
+           "NVDA": "NVDA"}                                  # 使用者 11-09：NVDA 週線楔形跌穿，每日跟進 100 週均線／斐波那契位                  # 使用者 10-31：納指波動率、VIX 嘅波動率（缺口、均線、盤中 vs 收市）
 BUCKET = "zhuge-risk-manager-bucket"
 PREFIX = "ops/longfei/analyst/data/"
 ET = ZoneInfo("America/New_York")
 REBUILD_DAYS = 10
-AUX = ("VIX", "RSP", "VXN", "VVIX")
+AUX = ("VIX", "RSP", "VXN", "VVIX", "NVDA")
 
 
 def trade_date(ts: str) -> str:
