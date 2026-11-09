@@ -990,6 +990,7 @@ FUTU_TEAM_RULES = (   # (代碼正則, 陣, 用途, 最多手數；超出嘅當�
     (r"^US\.SPCX$", FUTU_TEAM_GIFT, "SpaceX 碎股（券商送）", None),     # 2026-10-11 使用者確認
     (r"^US\.(SPY|QQQ|DIA|IWM|TLT|HYG|GLD|USO|EWJ|FXI|EWT|INDA|EZU|EWU|EWZ|EWC|AAPL|MSFT|NVDA|GOOGL|AMZN|META|TSLA)$", "龍飛陣", "美股 ETF／個股（AI 自動；真倉產品以 settings.env LONGFEI_REAL_PRODUCTS 為準）", None),   # [R238] 使用者 10-19：龍飛陣全部 23 隻候選一次過歸龍飛陣，之後加減真倉產品只改 settings.env＋更新部機，唔使再改呢度同部署
 )
+FUTU_TSM_LONG_ONLY_RE = re.compile(r"^US\.(MES|MNQ)\d{4}$")   # [R265] 使用者 11-09 人手沽 MNQ2612 −2：龍飛陣 tsm 只做好，淡倉歸人手
 FUTU_ALERT_TEAMS = {"stop:HSI 月跨式": "雲垂陣", "stop:MES 跨式": "雲垂陣", "stop:EW P7750": FUTU_TEAM_MANUAL}
 
 
@@ -1038,6 +1039,9 @@ def futu_team_assign(positions, today=None):
         if FUTU_FUTURES_RE.match(code):                                    # [R263] 使用者 11-08「策略總表都改做開倉至今」：期貨唔用富途結算後 pl_val
             own = futu_open_pl(p)
             pl = round(own, 2) if own is not None else pl
+        if qty < 0 and FUTU_TSM_LONG_ONLY_RE.match(code):                      # [R265] 龍飛陣 12 個月動量只做好：MNQ／MES 淡倉一定係使用者人手
+            out.append({**base, "team": FUTU_TEAM_MANUAL, "use": "美股指數期貨（人手淡倉）", "qty": qty, "futu_pl": pl})
+            continue
         for rx, team, use, cap in FUTU_TEAM_RULES:
             if re.match(rx, code):
                 if team == FUTU_MHI_BY_MONTH:

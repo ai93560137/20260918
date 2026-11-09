@@ -319,5 +319,9 @@ print("\n=== [R263] 策略總表期貨用開倉至今 ===")
 _ta = main.futu_team_assign([{"code": "HK.HSI2611", "qty": -1, "open_price": 24520, "last": 24647, "futu_pl": -4000}], today=_date(2026, 11, 8))
 check("策略總表 HSI2611 −1 @24,520、最後 24,647 → −6,350（唔係結算後 −4,000）", _ta and _ta[0]["futu_pl"] == -6350, _ta)
 
+print("\n=== [R265] MNQ／MES 淡倉歸使用者人手 ===")
+_a5 = main.futu_team_assign([{"code": "US.MNQ2612", "qty": -2}, {"code": "US.MES2612", "qty": 1}])
+check("MNQ −2 → 使用者人手；MES +1 → 龍飛陣", [(x["team"], x["qty"]) for x in _a5] == [(main.FUTU_TEAM_MANUAL, -2.0), ("龍飛陣", 1.0)], _a5)
+
 print(f"\n通過 {OK} / 失敗 {FAIL}")
 sys.exit(1 if FAIL else 0)
