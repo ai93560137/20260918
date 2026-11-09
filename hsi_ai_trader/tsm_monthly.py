@@ -38,6 +38,7 @@ HKT = ZoneInfo("Asia/Hong_Kong")
 YAHOO = {"MNQ": "NQ=F", "MES": "ES=F"}
 LOOKBACK = 12
 BUFFER = 0.0025
+LIMIT_BUFFER = 0.005             # [11-10] 市價單唔得先用嘅後備限價（參考價 ±0.5%）
 MAX_QUOTE_AGE = 30 * 60          # Yahoo 參考價最多舊 30 分鐘（Yahoo 期貨報價約延遲 10 分鐘）
 REMARK = "zhuge-longfei-tsm"
 STATE_DIR = Path(os.getenv("TSM_DIR", str(Path.home() / "zhuge" / "tsm"))).expanduser()
@@ -109,8 +110,8 @@ def foreign_positions(pos, st, stop_filled=False):
     return out
 
 
-def limit_price(ref, side, tick):
-    raw = ref * (1 + BUFFER) if side > 0 else ref * (1 - BUFFER)
+def limit_price(ref, side, tick, buffer=BUFFER):
+    raw = ref * (1 + buffer) if side > 0 else ref * (1 - buffer)
     return round((math.ceil(raw / tick - 1e-9) if side > 0 else math.floor(raw / tick + 1e-9)) * tick, 4)
 
 
@@ -177,16 +178,21 @@ def order_status_filled(broker, order_id):
     return bool(row is not None and row["order_status"] in FILLED)
 
 
-def place(broker, code, side, qty, ref, tick):
-    from futu import OrderType, TrdSide
+def _submit(broker, code, side, qty, price, order_type, wait, label):
+    """落一張單，等 wait 秒；回傳 (成交均價, 成交數量)，失敗原因寫入 place.last_error。"""
+    from futu import TrdSide
     from broker import DEAD, FILLED
     place.last_error = ""
-    price = limit_price(ref, side, tick)
-    df = broker._place(price=price, qty=qty, code=code, trd_side=TrdSide.BUY if side > 0 else TrdSide.SELL,
-                       order_type=OrderType.NORMAL, trd_env=broker.env, acc_id=broker.acc_id, remark=REMARK)
+    try:
+        df = broker._place(price=price, qty=qty, code=code, trd_side=TrdSide.BUY if side > 0 else TrdSide.SELL,
+                           order_type=order_type, trd_env=broker.env, acc_id=broker.acc_id, remark=REMARK)
+    except Exception as e:  # noqa: BLE001  富途直接拒絕（例如唔支援市價單）
+        place.last_error = f"落單被拒：{str(e)[:120]}"
+        log.warning("%s單 %s 落唔到：%s", label, code, e)
+        return None, 0
     oid = str(df.iloc[0]["order_id"])
-    log.info("落單 %s %s x%d @%s id=%s", "買" if side > 0 else "賣", code, qty, price, oid)
-    for _ in range(60):
+    log.info("落%s單 %s %s x%d @%s id=%s", label, "買" if side > 0 else "賣", code, qty, price, oid)
+    for _ in range(wait):
         time.sleep(1)
         row = broker._order_row(oid)
         if row is None:
@@ -194,12 +200,31 @@ def place(broker, code, side, qty, ref, tick):
         if row["order_status"] in FILLED:
             return broker._fill(row, price, qty)
         if row["order_status"] in DEAD:
-            # [11-09] 首次真倉兩張單「下單失敗」查唔到原因：記低富途嘅狀態同錯誤訊息，寫 log 同 Telegram
+            # [11-09] 記低富途嘅狀態同錯誤訊息，寫 log 同 Telegram
             place.last_error = f"{row['order_status']}：{row.get('last_err_msg') or ''}".strip("：")
             log.warning("單 %s 失敗：%s", oid, place.last_error)
             return broker._fill(row, price, 0)
-    place.last_error = "60 秒未成交，已撤單"
+    place.last_error = f"{wait} 秒未成交，已撤單"
     return broker.cancel_order(oid)
+
+
+def place(broker, code, side, qty, ref, tick):
+    """[11-10] 先落市價單（唔靠延遲嘅 Yahoo 價，即時成交）；市價單落唔到／唔成交 → 參考價 ±0.5% 限價單再試一次。
+    11-09 兩次失敗都係參考價唔準：07:40 限價離市價太遠被拒；22:45 市價升咗過限價，60 秒唔成交。"""
+    from futu import OrderType
+    errs = []
+    px, q = _submit(broker, code, side, qty, ref, OrderType.MARKET, 30, "市價")
+    if q > 0:
+        if ref and abs(px / ref - 1) > 0.015:
+            log.warning("市價成交 %s 同參考價 %s 差 %.1f%%", px, ref, abs(px / ref - 1) * 100)
+        return px, q
+    errs.append(f"市價單：{place.last_error or '冇成交'}")
+    px, q = _submit(broker, code, side, qty, limit_price(ref, side, tick, LIMIT_BUFFER), OrderType.NORMAL, 60, "限價")
+    if q > 0:
+        return px, q
+    errs.append(f"限價單：{place.last_error or '冇成交'}")
+    place.last_error = "；".join(errs)
+    return px, q
 
 
 place.last_error = ""
@@ -283,7 +308,7 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
                     broker.cancel_order(st["stop_id"])
                 px, q = place(broker, arg, -1, int(st.get("qty") or 1), ref, spec.tick)
                 if q <= 0:
-                    telegram(f"{product}：賣 {arg} 未成交（限價參考 {rs} {ref}；富途：{place.last_error or '冇訊息'}），聽日再試")
+                    telegram(f"{product}：賣 {arg} 未成交（參考 {rs} {ref}；富途：{place.last_error or '冇訊息'}），聽日再試")
                     if st.get("stop_id"):
                         st["stop_id"] = None          # 止蝕已撤，下次重新掛
                     save_state(product, st)
@@ -298,7 +323,7 @@ def run_product(product, armed, dry_run, qty_max, stop_pct):
                     return
                 px, q = place(broker, arg, +1, qty_max, ref, spec.tick)
                 if q <= 0:
-                    telegram(f"{product}：買 {arg} 未成交（限價參考 {rs} {ref}；富途：{place.last_error or '冇訊息'}），聽日再試")
+                    telegram(f"{product}：買 {arg} 未成交（參考 {rs} {ref}；富途：{place.last_error or '冇訊息'}），聽日再試")
                     save_state(product, st)              # 未記 set_month，聽日會再試
                     return
                 st.update(qty=q, code=arg, entry=px, entry_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"),

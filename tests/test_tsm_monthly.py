@@ -92,6 +92,87 @@ class T(unittest.TestCase):
         self.assertEqual(t.limit_price(26000, -1, 0.25), 25935.0)
         self.assertEqual(t.stop_price(26000, 0.12, 0.25), 22880.0)
 
+    def test_limit_price_wider(self):
+        self.assertEqual(t.limit_price(7400, 1, 0.25, t.LIMIT_BUFFER), 7437.0)
+
+
+class FakeBroker:
+    """[11-10] place()：市價單先、唔得就限價單。script＝每張單嘅結果（'fill'／'dead'／'raise'／'hang'）。"""
+    env, acc_id = "REAL", 1
+
+    def __init__(self, script):
+        self.script, self.orders = list(script), []
+
+    def _place(self, **kw):
+        what = self.script[len(self.orders)]
+        self.orders.append((kw["order_type"], kw["price"], what))
+        if what == "raise":
+            raise RuntimeError("不支持該訂單類型")
+        import pandas as pd
+        return pd.DataFrame([{"order_id": str(len(self.orders))}])
+
+    def _order_row(self, oid):
+        what = self.orders[int(oid) - 1][2]
+        if what == "fill":
+            return {"order_status": "FILLED_ALL", "dealt_qty": 1, "dealt_avg_price": 7401.0}
+        if what == "dead":
+            return {"order_status": "FAILED", "last_err_msg": "訂單價格超過限制"}
+        return {"order_status": "SUBMITTED"}
+
+    @staticmethod
+    def _fill(row, price, default_qty):
+        q = int(row.get("dealt_qty") or 0) or default_qty
+        return (row.get("dealt_avg_price") or price, q) if q > 0 else (None, 0)
+
+    def cancel_order(self, oid):
+        if self.orders[int(oid) - 1][2] == "late":        # 撤單前啱啱成交
+            return 7402.0, 1
+        return None, 0
+
+
+class PlaceT(unittest.TestCase):
+    def setUp(self):
+        import types
+        fu = types.ModuleType("futu")
+        fu.OrderType = types.SimpleNamespace(MARKET="MARKET", NORMAL="NORMAL")
+        fu.TrdSide = types.SimpleNamespace(BUY="BUY", SELL="SELL")
+        br = types.ModuleType("broker")
+        br.FILLED, br.DEAD = {"FILLED_ALL"}, {"FAILED"}
+        self._saved = {k: sys.modules.get(k) for k in ("futu", "broker")}
+        sys.modules.update(futu=fu, broker=br)
+        self._sleep, t.time.sleep = t.time.sleep, lambda s: None
+
+    def tearDown(self):
+        t.time.sleep = self._sleep
+        for k, v in self._saved.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+
+    def test_market_first(self):
+        b = FakeBroker(["fill"])
+        self.assertEqual(t.place(b, "US.MES2612", 1, 1, 7400, 0.25), (7401.0, 1))
+        self.assertEqual([o[0] for o in b.orders], ["MARKET"])
+
+    def test_market_rejected_then_limit(self):
+        for first in ("raise", "dead", "hang"):
+            b = FakeBroker([first, "fill"])
+            self.assertEqual(t.place(b, "US.MES2612", 1, 1, 7400, 0.25), (7401.0, 1))
+            self.assertEqual([(o[0], o[1]) for o in b.orders], [("MARKET", 7400), ("NORMAL", 7437.0)])
+
+    def test_market_filled_during_cancel_no_limit(self):
+        """防重複成交：市價單撤單時其實已成交 → 唔再落限價單。"""
+        b = FakeBroker(["late"])
+        self.assertEqual(t.place(b, "US.MES2612", 1, 1, 7400, 0.25), (7402.0, 1))
+        self.assertEqual(len(b.orders), 1)
+
+    def test_both_fail_reports(self):
+        b = FakeBroker(["raise", "hang"])
+        self.assertEqual(t.place(b, "US.MES2612", 1, 1, 7400, 0.25), (None, 0))
+        self.assertIn("市價單：落單被拒", t.place.last_error)
+        self.assertIn("限價單：60 秒未成交", t.place.last_error)
+
 
 if __name__ == "__main__":
     unittest.main()
