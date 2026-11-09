@@ -181,6 +181,8 @@ def team_of(code: str, today: date | None = None) -> tuple[str, str, float | Non
 
 def split_by_cap(code: str, qty: float, today: date | None = None) -> list[tuple[str, float]]:
     """有手數上限嘅規則（MHI 1 手）：上限內歸該陣，超出歸使用者人手。"""
+    if qty < 0 and re.match(r"^US\.(MES|MNQ)\d{4}$", code or ""):     # [R265] 同 main.py：龍飛陣 tsm 只做好，MNQ／MES 淡倉歸人手
+        return [(TEAM_MANUAL, qty)]
     team, _, cap = team_of(code, today)
     if cap is None or abs(qty) <= cap:
         return [(team, qty)]
