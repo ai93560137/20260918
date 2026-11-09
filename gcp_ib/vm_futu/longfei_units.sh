@@ -17,6 +17,7 @@ TSM=$(grep -oE '^LONGFEI_TSM_PRODUCTS=.*' "$REPO/gcp_ib/vm_futu/settings.env" | 
 mkdir -p "$H/zhuge/tsm" && chown "$U" "$H/zhuge/tsm" && chmod 700 "$H/zhuge/tsm"
 if [ -n "$TSM" ]; then
   systemctl is-enabled -q zhuge-longfei-tsm.timer || { systemctl enable --now zhuge-longfei-tsm.timer; echo "已開 12 個月動量 $TSM"; }
+  systemctl restart zhuge-longfei-tsm.timer          # [11-09] 時間由 07:40 改 22:45：重開 timer 令新時間即刻生效
 else
   systemctl is-enabled -q zhuge-longfei-tsm.timer 2>/dev/null && { systemctl disable --now zhuge-longfei-tsm.timer; echo "已停 12 個月動量 timer"; }
 fi
