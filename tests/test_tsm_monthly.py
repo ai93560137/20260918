@@ -125,6 +125,8 @@ class FakeBroker:
         return (row.get("dealt_avg_price") or price, q) if q > 0 else (None, 0)
 
     def cancel_order(self, oid):
+        if self.orders[int(oid) - 1][2] == "late":        # 撤單前啱啱成交
+            return 7402.0, 1
         return None, 0
 
 
@@ -158,6 +160,12 @@ class PlaceT(unittest.TestCase):
             b = FakeBroker([first, "fill"])
             self.assertEqual(t.place(b, "US.MES2612", 1, 1, 7400, 0.25), (7401.0, 1))
             self.assertEqual([(o[0], o[1]) for o in b.orders], [("MARKET", 7400), ("NORMAL", 7437.0)])
+
+    def test_market_filled_during_cancel_no_limit(self):
+        """防重複成交：市價單撤單時其實已成交 → 唔再落限價單。"""
+        b = FakeBroker(["late"])
+        self.assertEqual(t.place(b, "US.MES2612", 1, 1, 7400, 0.25), (7402.0, 1))
+        self.assertEqual(len(b.orders), 1)
 
     def test_both_fail_reports(self):
         b = FakeBroker(["raise", "hang"])
