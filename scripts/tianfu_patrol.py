@@ -66,3 +66,30 @@ try:
             print(f"  [reverse 926] 單 {_o.get('utc')} {_o.get('kind')} side {_o.get('side')} lots {_o.get('lots')} sl {_o.get('sl')} tp {_o.get('tp')} risk {(_o.get('risk') or {}).get('risk_pct')}% ok {_o.get('ok')} {_o.get('message')}")
 except Exception as _e:
     print(f"  [reverse 926] 讀唔到：{_e}")
+
+# 11-09 新三：趨勢簿（…63，926 圖，zhuge-xau trend_live）——伺服器 open_risk 未包 xau/trend/account.json，呢度補顯示
+try:
+    _tl = json.loads(urllib.request.urlopen("https://zhuge-xau-1056099871997.europe-west1.run.app/?format=json", timeout=30).read()).get("trend_live")
+    if _tl is None:
+        print("  [trend 926] 未部署（status 冇 trend_live）")
+    else:
+        _a = _tl.get("account") or {}
+        _ps = _a.get("positions") or []
+        print(f"  [trend 926] on {_tl.get('on')} magic {_tl.get('magic')} 心跳 {_a.get('received_utc')} 持倉 {len(_ps)} 張 pending {len(_tl.get('pending') or [])} "
+              f"成交簿 {len(_tl.get('book') or [])} 張 last {str((_tl.get('last') or {}).get('note'))[:60]}")
+        for _p in _ps:
+            _sd = _p.get("side")
+            _px = (_tl.get("last") or {}).get("price")
+            _rk = abs((_p.get("stop") or 0) - (_p.get("entry") or 0))
+            _fr = ((_px - _p["entry"]) * _sd / _rk) if (_px and _rk and _p.get("entry")) else None
+            print(f"  [trend 926] 倉 {'SELL' if _sd == -1 else 'BUY'} {_p.get('lots')} @{_p.get('entry')} SL {_p.get('stop')} TP {_p.get('target')} "
+                  f"浮動 {(f'{_fr:+.2f}R' if _fr is not None else '—')}")
+            if _p.get("lots") != 0.01 or not _p.get("stop"):
+                print("  ⚠ [trend 926] 手數唔係 0.01 或者冇 SL → 即報總指揮")
+        if len(_ps) > 1:
+            print("  ⚠ [trend 926] 多過 1 張 → 即報總指揮")
+        _p0 = _tl.get("pos") or {}
+        if _p0.get("rule") == "qbrk" and _ps and abs((_ps[0].get("stop") or 0) - (_p0.get("sl") or 0)) > 0.01:
+            print(f"  ⚠ [trend 926] EA SL {_ps[0].get('stop')} 同服務記錄 {_p0.get('sl')} 唔一致")
+except Exception as _e:
+    print(f"  [trend 926] 讀唔到：{_e}")
