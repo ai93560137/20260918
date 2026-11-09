@@ -65,7 +65,7 @@ def fetch():
     if r.returncode:
         return False, (r.stderr or r.stdout).strip().splitlines()[-1:] or ["未知錯誤"]
     if "富途 API 冇讀到持倉" in r.stdout:
-        return False, ["富途 API 冇讀到持倉（OpenD 登入咗另一個 ID？）"]
+        return False, ["富途 API 冇讀到持倉（持倉查詢失敗或者冇資金資料；OpenD 斷線／登入咗另一個 ID？）"]
     return True, []
 
 
@@ -170,7 +170,7 @@ def telegram(text):
         return False
 
 
-SCRIPT_VERSION = "R374"   # [R374] 加 06:40 匯出時段（美期收市後、港股開市前，複式記帳分界用）；[R373] 推富途盈虧口徑同戶口 realized／unrealized；[R372] futu_positions_quote 唔計已到期合約；[R262] R260 買賣差／R261 白話之後 bump，GCS script_version 睇得出部機跑緊邊版
+SCRIPT_VERSION = "R377"   # [R377] 戶口冇倉（持倉查詢成功但 0 行）照推，唔再報「讀富途失敗」；[R374] 加 06:40 匯出時段（美期收市後、港股開市前，複式記帳分界用）；[R373] 推富途盈虧口徑同戶口 realized／unrealized；[R372] futu_positions_quote 唔計已到期合約；[R262] R260 買賣差／R261 白話之後 bump，GCS script_version 睇得出部機跑緊邊版
 # 香港時間匯出時段：03:05 夜盤成交（恒指夜市 03:00 收）、05:30 基金報告（美期權 04:00–05:00 收之後）、
 # 06:40 美期收市後、港股開市前再推一次（CME 冬令 06:00 收；複式記帳開市前分界之後要有齊成交同資金明細）、16:35 日盤成交（16:30 收）
 PNL_SLOTS = ((3, 5), (5, 30), (6, 40), (16, 35))

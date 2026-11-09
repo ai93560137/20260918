@@ -122,7 +122,7 @@ check("[R374] 06:40 → 06:40（美期收市後、開市前）", auto_risk.pnl_s
 check("16:34 仍係 06:40", auto_risk.pnl_slot(t(16, 34)) == "2026-10-13|06:40")
 check("16:35 → 16:35", auto_risk.pnl_slot(t(16, 35)) == "2026-10-13|16:35")
 check("23:59 仍係 16:35", auto_risk.pnl_slot(t(23, 59)) == "2026-10-13|16:35")
-check("SCRIPT_VERSION R374（R213 碎股規則之後 R260／R261／R266／R372／R373／R374 bump）", auto_risk.SCRIPT_VERSION == "R374" and callable(auto_risk.fetch_cme))
+check("SCRIPT_VERSION R377（R213 碎股規則之後 R260／R261／R266／R372／R373／R374／R377 bump）", auto_risk.SCRIPT_VERSION == "R377" and callable(auto_risk.fetch_cme))
 
 print("\n=== [R175] 保證金警報附補倉建議 ===")
 W, C, F, CL = main.FUTU_MARGIN_WARN, main.FUTU_MARGIN_CRIT, main.FUTU_MARGIN_FLATTEN, main.FUTU_MARGIN_CLEAR
