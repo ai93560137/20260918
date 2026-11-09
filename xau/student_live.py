@@ -166,8 +166,13 @@ def handle_heartbeat(payload):
     import lots_ladder, live_book
     pos = (account.get("positions") or [None])[0]
     try:   # 成交簿只係紀錄：出錯唔可以拖垮心跳
-        for t in live_book.track(state, state.get("pos_seen"), pos, account.get("realized_total"), now=now, extra=lambda p: _order_meta(state, p)):
-            m.log_event(f"📗 [{config.TEAM_NAME}] 學生真倉平倉 {t['pnl_hkd']:+.2f} HKD（{t.get('ch') or '—'}）", component="studentlive")
+        b = backfill_1109(state)
+        if b:
+            m.log_event(f"📗 [{config.TEAM_NAME}] 學生真倉補記 11-09 漏記單 {b['pnl_hkd']:+.2f} HKD（{b.get('ch') or '—'}，R {b.get('r')}）", component="studentlive")
+        for t in live_book.track(state, state.get("pos_seen"), pos, account.get("realized_total"), now=now, extra=lambda p: _order_meta(state, p),
+                                 unseen=lambda: _unseen_meta(state)):
+            m.log_event(f"📗 [{config.TEAM_NAME}] 學生真倉平倉 {t['pnl_hkd']:+.2f} HKD（{t.get('ch') or '—'}）"
+                        + ("｜心跳之間開完又平（冇見過倉位）" if t.get("unseen") else ""), component="studentlive")
     except Exception as exc:  # noqa: BLE001
         m.log_event(f"⚠️ 學生真倉成交簿記錄失敗（唔影響交易）：{type(exc).__name__}: {exc}", severity="WARNING", component="studentlive")
     moved = lots_ladder.live_close(state, state.get("pos_seen"), pos, account.get("realized_total"), now=now, note="ea", **lots_kw())
@@ -242,6 +247,38 @@ def strategy_stop(state):
     if peak - cum >= config.STUDENT_DD_R:
         return f"933 由高位回撤 {peak - cum:.2f}R ≥ {config.STUDENT_DD_R:g}R → 停開新倉（使用者批改 SIG_STUDENT_HWM_START 先重開）", st
     return None, st
+
+
+BACKFILL_1109 = {"id": "sa9cb13a", "pnl_hkd": -18.5, "closed_ts": 1794188519}   # 11-09 01:41 UTC spike2 SELL：同一分鐘內止蝕，心跳冇見到倉位所以漏記（933 magic 當日 −18.5 HKD）
+
+
+def _unseen_meta(state):
+    """[11-09] 心跳冇見過倉位就開完又平：用最近一張 EA 回報成功、未入簿嘅開倉單補資料。"""
+    last_close = max((b.get("closed_ts") or 0 for b in state.get("book") or []), default=0)
+    o = next((x for x in reversed(state.get("orders") or []) if x.get("acked") and x.get("ok") and x.get("ticket") and not x.get("booked")
+              and (x.get("ts") or 0) > last_close), None)          # 只用最後一筆平倉之後嘅單（舊單冇 booked 標記）
+    if not o:
+        return None
+    o["booked"] = True
+    return {"ticket": o.get("ticket"), "side": 1 if o.get("side") == "BUY" else -1, "lots": o.get("lots"), "entry": o.get("price"),
+            "stop": o.get("sl"), "target": o.get("tp"), "opened_ts": o.get("ts"), "ch": o.get("student"), "decision_price": o.get("price"), "id": o.get("id")}
+
+
+def backfill_1109(state):
+    """一次性：補返 11-09 漏記嗰張（策略停線要計到）。已經補過或者搵唔到張單就唔做。"""
+    import live_book
+    if state.get("backfill_1109"):
+        return None
+    o = next((x for x in state.get("orders") or [] if x.get("id") == BACKFILL_1109["id"]), None)
+    state["backfill_1109"] = True
+    if not o or any(b.get("id") == o.get("id") for b in state.get("book") or []):
+        return None
+    o["booked"] = True
+    meta = {"ticket": o.get("ticket"), "side": 1 if o.get("side") == "BUY" else -1, "lots": o.get("lots"), "entry": o.get("price"),
+            "stop": o.get("sl"), "opened_ts": o.get("ts"), "ch": o.get("student"), "decision_price": o.get("price"), "id": o.get("id")}
+    rec = {**live_book.make(meta, BACKFILL_1109["pnl_hkd"], BACKFILL_1109["closed_ts"]), "unseen": True, "backfill": True}
+    state["book"] = sorted([*(state.get("book") or []), rec], key=lambda b: b.get("closed_ts") or 0)
+    return rec
 
 
 def _order_meta(state, pos):
