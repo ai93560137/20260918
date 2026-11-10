@@ -10,5 +10,23 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "mcp__claude-artifacts__edit_version",
+      "mcp__claude-artifacts__get_artifact",
+      "mcp__claude-artifacts__read_artifact",
+      "mcp__claude-artifacts__db_get",
+      "mcp__claude-code-remote__send_message",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git fetch:*)",
+      "Bash(git show:*)",
+      "Bash(git pull:*)",
+      "Bash(python3 .github/scripts/compose_tg.py:*)",
+      "Bash(python3 .github/scripts/artifact_embed.py:*)",
+      "Bash(python3 journal/update_forward.py:*)"
+    ]
   }
 }
