@@ -17,6 +17,7 @@ import h1_lab as L              # noqa: E402
 
 B, A = L.B, L.A
 COST = 0.5
+MIN_RISK = 0.5        # 黃金美元下限；跨品種（panel_1251）按 ATR 比例改
 
 
 def segs(keys):
@@ -37,7 +38,7 @@ def trade_break(g, s, e, hi, lo, sl_fn, tp_mult, allow):
         else:
             sg = 1 if up else -1
         en = max(hi, o[j]) if sg > 0 else min(lo, o[j]); sl = sl_fn(sg); risk = (en - sl) * sg
-        if risk <= 0.5:
+        if risk <= MIN_RISK:
             return None
         if (l[j] <= sl) if sg > 0 else (h[j] >= sl):
             return (int(t[j]), sg, (sg * (sl - en) - COST) / risk)
