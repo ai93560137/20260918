@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "student_offline"))
 sys.path.insert(0, HERE)
 import batch_1019 as B          # noqa: E402
 import data_cache as DC         # noqa: E402
+import h1_lab3 as L3            # noqa: E402
 import h1_lab6 as H6            # noqa: E402
 import h1_lab7 as H7            # noqa: E402
 import h1_lab8 as H8            # noqa: E402
@@ -61,13 +62,14 @@ RULES = [("#1107", "上季高低突破（926）", trend(H6.r1107)), ("#1113", "�
 def inst_mode(d):
     """按品種設成本同最低止蝕；回傳還原函數。"""
     a = B.atr(B.resample(d, 86400)); med = float(np.nanmedian(a))
-    saved = (M.COST, M.Ctx.floor)
+    saved = (M.COST, M.Ctx.floor, L3.MIN_RISK)
+    L3.MIN_RISK = 0.01 * med                    # [更正] trade_break 入面「風險 ≤ 0.5 美元唔做」係黃金單位，外匯價 ~1 會全部被擋
     M.COST = 0.02 * med
     M.Ctx.floor = lambda self, ts: (None if self.atr_d.get(int(ts) // 86400) is None else 0.3 * self.atr_d[int(ts) // 86400])
     SB.set_trend_cost(0.04 * med)
 
     def restore():
-        M.COST, M.Ctx.floor = saved
+        M.COST, M.Ctx.floor, L3.MIN_RISK = saved
         SB.set_trend_cost(0.5)
     return med, restore
 
