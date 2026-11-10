@@ -37,7 +37,11 @@ exc_mod.PreconditionFailed = _PC; exc_mod.NotFound = KeyError
 api_core = types.ModuleType("google.api_core"); api_core.exceptions = exc_mod
 sys.modules["google.api_core"] = api_core; sys.modules["google.api_core.exceptions"] = exc_mod
 
+_XAU = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xau"))
+for _k in [k for k, v in list(sys.modules.items()) if os.path.realpath(getattr(v, "__file__", None) or "/").startswith(_XAU + os.sep)]:
+    del sys.modules[_k]                          # [11-10 事故] 同其他測試一齊跑時，舊 storage 綁咗真 GCS → 寫咗真 bucket；一律重新匯入
 import main as xau, config, reverse_live as RV, storage   # noqa: E402
+assert storage.storage is storage_mod and isinstance(storage._bucket(), _Bucket), "測試必須用假 GCS"   # [11-10 事故] 防寫真 bucket
 
 NOW = [1792600000.0]
 xau.now_ts = lambda: NOW[0]

@@ -297,7 +297,7 @@ def _forward_section(fw, book=None):
     if own:
         names = {"rule:rev15": ("rev15（M15 反轉）", "11-11 判"), "rule:level": ("level（亞洲區間高低位）", "11-25 判"),
                  "rule:swing": ("swing", "觀察"), "rule:rev15x": ("rev15x", "已棄"),
-                 "rule:m5spike": ("M5 急動（#1121）", "933 組合"), "rule:dopen15": ("離開市 15（#1122）", "933 組合"), "rule:spike2": ("兩根急動（#1123）", "933 組合")}
+                 "rule:m5spike": ("M5 急動（#1121）", "933 已停（11-10，回測偏差）"), "rule:dopen15": ("離開市 15（#1122）", "933 已停（11-10，回測偏差）"), "rule:spike2": ("兩根急動（#1123）", "933 已停（11-10，回測偏差）")}
         srows = ""
         for k in ("rule:rev15", "rule:level", "rule:swing", "rule:rev15x", "rule:m5spike", "rule:dopen15", "rule:spike2"):
             o = own.get(k)
@@ -326,6 +326,74 @@ def _forward_section(fw, book=None):
     if not out:
         return ""
     return "<div class='section' id='forward'><h2>🔬 前向測試（影子，唔落單）</h2>" + out + "</div>"
+
+
+TREND_STOP = {"mobrk": (-5.0, 12, 0.8, 6)}      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
+
+
+def trend_stats(book):
+    """趨勢簿已平倉（新→舊）→ 張數、ΣR、PF、而家連蝕。"""
+    rs = [b["r"] for b in reversed(book or []) if b.get("r") is not None]
+    win = sum(r for r in rs if r > 0); loss = -sum(r for r in rs if r < 0)
+    streak = 0
+    for r in reversed(rs):
+        if r >= 0:
+            break
+        streak += 1
+    return {"n": len(rs), "sum_r": round(sum(rs), 2), "pf": (win / loss) if loss else None, "streak": streak,
+            "pnl_hkd": round(sum(b.get("pnl_hkd") or 0 for b in book or []), 2)}
+
+
+def trend_section(tl, title):
+    """[11-10] 趨勢簿（926 主服務／933 #1114）：持倉、今期區間、停條件、成交、指令。"""
+    if not isinstance(tl, dict):
+        return ""
+    d = config.PRICE_DIGITS
+    num = lambda v: "—" if v is None else f"{v:.{d}f}"  # noqa: E731
+    names = tl.get("names") or {}
+    acct = tl.get("account") or {}
+    ap = acct.get("positions") or []
+    sp = tl.get("pos") or {}
+    if ap:
+        p = ap[0]
+        pos_txt = f"{'好' if (p.get('side') or 0) > 0 else '淡'}倉 {p.get('lots')} 手 @ {num(p.get('entry'))}"
+        pos_desc = f"SL {num(p.get('stop'))}・{esc(names.get(sp.get('rule'), sp.get('rule') or ''))}・{esc((sp.get('utc') or '')[:16])} UTC 開"
+    else:
+        pos_txt, pos_desc = "冇", "空手"
+    last = tl.get("last") or {}
+    st = trend_stats(tl.get("book"))
+    lv = (tl.get("levels") or {}).get("mobrk")
+    cards = (card("狀態", "✅ 開" if tl.get("on") else "⏸ 關", f"magic {esc(tl.get('magic'))}・{esc(tl.get('lots'))} 手・" + esc("、".join(names.values()) or "—"))
+             + card("持倉", esc(pos_txt), pos_desc)
+             + card("最近判斷", esc(last.get("note") or "—"), esc((last.get("utc") or "") + " UTC・價 " + num(last.get("price")))))
+    if lv:
+        cards += card(f"#1114 {esc(lv['month'])} 頭 3 日區間",
+                      "形成中" if lv.get("hi") is None else f"{num(lv['lo'])}–{num(lv['hi'])}",
+                      "本月已穿過／已用，等下個月" if lv.get("used") else "第 4 個交易日起 D1 收市穿高做多（SL 區間低）、穿低做空（SL 區間高）；月尾收市平")
+    cards += card("已平倉", f"{st['n']} 張・ΣR {st['sum_r']:+.2f}", f"PF {'—' if st['pf'] is None else format(st['pf'], '.2f')}・連蝕 {st['streak']}・HK${st['pnl_hkd']:+,.2f}")
+    stop = ""
+    for r in tl.get("rules") or []:
+        if r in TREND_STOP:
+            lim_r, min_n, lim_pf, lim_streak = TREND_STOP[r]
+            hit = [x for x, ok in ((f"累計 {st['sum_r']:+.2f}R ≤ {lim_r:g}R", st["sum_r"] <= lim_r),
+                                   (f"{st['n']} 張 PF {st['pf'] or 0:.2f} < {lim_pf}", st["n"] >= min_n and (st["pf"] or 0) < lim_pf),
+                                   (f"連蝕 {st['streak']} ≥ {lim_streak}", st["streak"] >= lim_streak)) if ok]
+            stop = (f"<p>{'<b class=neg>⛔ 觸發停條件：' + esc('；'.join(hit)) + '（返影子，要總指揮／使用者處理）</b>' if hit else '✅ 未觸發停條件'}"
+                    f"<span class='muted' style='font-size:13px'>（預先登記：累計 ≤ {lim_r:g}R，或 ≥ {min_n} 張後 PF &lt; {lim_pf}，或連蝕 {lim_streak} 張 → 返影子）</span></p>")
+    brows = "".join(f"<tr><td>{esc(fmt_hkt(b.get('opened_ts') or 0))}</td><td>{esc(fmt_hkt(b.get('closed_ts') or 0))}</td><td>{esc(b.get('ch') or '')}</td>"
+                    f"<td>{'好' if (b.get('side') or 0) > 0 else '淡'}</td><td>{num(b.get('entry'))}</td><td>{num(b.get('stop0'))}</td><td>{num(b.get('exit_est'))}</td>"
+                    f"<td class=\"{'pos' if (b.get('pnl_hkd') or 0) >= 0 else 'neg'}\">{(b.get('pnl_hkd') or 0):+.2f}</td><td>{'—' if b.get('r') is None else format(b['r'], '+.2f')}</td></tr>"
+                    for b in tl.get("book") or [])
+    orows = "".join(f"<tr><td>{esc((o.get('utc') or '')[:16])}</td><td>{esc(o.get('kind'))}</td><td>{esc(names.get(o.get('rule'), o.get('rule') or ''))}</td>"
+                    f"<td>{num(o.get('price'))}</td><td>{num(o.get('sl'))}</td><td>{esc(o.get('reason') or '')}</td>"
+                    f"<td>{('✅ ' + str(o.get('ticket') or '')) if o.get('ok') else (('❌ ' + str(o.get('message') or '')) if o.get('acked') else '⏳ 等回報')}</td></tr>"
+                    for o in (tl.get("orders") or [])[:10])
+    return (f"<div class='section' id='trend'><h2>📈 {title}</h2><div class='grid'>{cards}</div>{stop}"
+            "<h3>已平倉</h3><div style='overflow-x:auto'><table><tr><th>開 HKT</th><th>平 HKT</th><th>規則</th><th>方向</th><th>入場</th><th>初始 SL</th><th>出場（估）</th><th>HK$</th><th>R</th></tr>"
+            + (brows or "<tr><td colspan='9' class='muted'>未有平倉</td></tr>") + "</table></div>"
+            "<h3>最近指令</h3><div style='overflow-x:auto'><table><tr><th>UTC</th><th>種類</th><th>規則</th><th>價</th><th>SL</th><th>原因</th><th>EA 回報</th></tr>"
+            + (orows or "<tr><td colspan='7' class='muted'>未有指令</td></tr>") + "</table></div>"
+            f"<p class='muted' style='font-size:13px'>規則機械執行（唔問 AI）；SL 放伺服器、冇 TP、到期收市平；戶口心跳 {esc(acct.get('received_utc') or '未收到')} UTC。</p></div>")
 
 
 def _pos_text(pos):
@@ -405,6 +473,8 @@ def render_signal_book(s):
                  + "<div class='grid'>" + card("模式", esc((s.get("control") or {}).get("mode") or "RUN"), esc(run_text(s)))
                  + card("持倉", esc(pos_txt)) + "</div><div style='overflow-x:auto'><table><tr><th>時間 HKT</th><th>決定</th><th>理由</th></tr>"
                  + (drows or "<tr><td colspan='3' class='muted'>未有決策（冇有效訊號就唔問 Claude）</td></tr>") + "</table></div></div>")
+    if s.get("trend_live"):                                      # [11-10] 933 圖改行 #1114 月初突破（真倉）
+        body += trend_section(s.get("trend_live"), f"趨勢簿・{esc((s.get('trend_live') or {}).get('magic'))} 真倉（#1114 月初三日區間突破，取代 933 學生組合）")
     fo = s.get("follow")
     if fo:
         fa = fo.get("account") or {}
@@ -567,6 +637,8 @@ def render(status):
                + f"<div class='section'><h2>{esc(config.SYMBOL)}</h2>" + top + trades_html + dec_html + "</div>"
                + "<div class='section'><h2>📊 模擬倉績效（按 HK$，1 美元 = 7.8 港元）</h2>" + metric_cards(m)
                + "<p class='muted' style='font-size:13px'>紙上成交用該根 M1 收市價，每張扣點差；同一根碰到止損同止賺當止損。樣本少時只供參考。</p></div></div>")
+    if s.get("trend_live"):                                      # [11-10] 926 趨勢簿（上季突破／低波幅突破）
+        real = real[:-len("</div>")] + trend_section(s.get("trend_live"), f"趨勢簿・{esc((s.get('trend_live') or {}).get('magic'))} 真倉") + "</div>"
     sim += rulesim_section(s.get("rulesim"))                     # [R345] 即日回測（規則版）
     sim += risk_section(s)                                          # [R363]
     sim += forward_section(s.get("forward"), s.get("live_book"))   # [R352c] 前向測試
