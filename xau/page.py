@@ -328,7 +328,7 @@ def _forward_section(fw, book=None):
     return "<div class='section' id='forward'><h2>🔬 前向測試（影子，唔落單）</h2>" + out + "</div>"
 
 
-TREND_STOP = {"mobrk": (-5.0, 12, 0.8, 6)}      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
+TREND_STOP = {r: (-5.0, 12, 0.8, 6) for r in ("mobrk", "spike", "wide", "kelt", "ichi", "turtle")}   # [11-10] 穩陣組 937–941 同一套停條件      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
 
 
 def trend_stats(book):
@@ -475,6 +475,8 @@ def render_signal_book(s):
                  + (drows or "<tr><td colspan='3' class='muted'>未有決策（冇有效訊號就唔問 Claude）</td></tr>") + "</table></div></div>")
     if s.get("trend_live"):                                      # [11-10] 933 圖改行 #1114 月初突破（真倉）
         body += trend_section(s.get("trend_live"), f"趨勢簿・{esc((s.get('trend_live') or {}).get('magic'))} 真倉（#1114 月初三日區間突破，取代 933 學生組合）")
+    for tb in s.get("trend_books") or []:                         # [11-10] 穩陣組（937–941）每條一本
+        body += trend_section(tb, f"趨勢簿・{esc(tb.get('magic'))} 真倉（{esc('、'.join((tb.get('names') or {}).values()))}）").replace("id='trend'", f"id='trend{esc(tb.get('magic'))}'", 1)
     fo = s.get("follow")
     if fo:
         fa = fo.get("account") or {}

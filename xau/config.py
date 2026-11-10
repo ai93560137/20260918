@@ -393,4 +393,5 @@ TREND_MAX_LOTS = _f("XAU_TREND_MAX_LOTS", 0.01)
 TREND_RULES = tuple(x.strip() for x in _s("XAU_TREND_RULES", "qbrk,lvbrk").split(",") if x.strip())
 TREND_ADOPT = tuple(x.strip() for x in _s("XAU_TREND_ADOPT", "").split(",") if x.strip())   # 例 qbrk：本季已觸發而未止蝕嘅單，開咗之後用現價補入一次
 TREND_DAY_STOP_HKD = _f("XAU_TREND_DAY_STOP_HKD", 2000.0)
+TREND_BOOKS = tuple(x.strip() for x in _s("XAU_TREND_BOOKS", "").split(",") if x.strip())   # [11-10] 額外趨勢簿「magic:規則[+規則]」，例 937:spike,938:wide；狀態 <PREFIX>trend/<magic>/
 TREND_EXIT_UTC_MIN = _i("XAU_TREND_EXIT_UTC_MIN", 20 * 60 + 45)               # 到期日 UTC 20:45 之後平（回測用當日最後一根收市）

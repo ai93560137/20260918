@@ -69,10 +69,19 @@ except Exception as _e:
 
 # 11-09 新三：趨勢簿（…63，926 圖，zhuge-xau trend_live）；11-10 加 …69 933 圖 #1114 月初突破（zhuge-xau-sig trend_live）
 # 停條件（IDEAS #1114 預先登記）：累計 ≤ −5R，或 ≥ 12 張後 PF < 0.8，或連蝕 6 張 → 即報總指揮（返影子要使用者批）
+# 11-10：…69 穩陣組 937–941（#1165 spike、#1174 wide、#1178 kelt、#1224 ichi、#1116 turtle）喺 zhuge-xau-sig 嘅 trend_books，同一套停條件
+_TL_SRC = []
 for _tag, _url in (("trend 926", "https://zhuge-xau-1056099871997.europe-west1.run.app/?format=json"),
                    ("trend 933 #1114", "https://zhuge-xau-sig-1056099871997.europe-west1.run.app/?format=json")):
     try:
-        _tl = json.loads(urllib.request.urlopen(_url, timeout=30).read()).get("trend_live")
+        _js = json.loads(urllib.request.urlopen(_url, timeout=30).read())
+        _TL_SRC.append((_tag, _js.get("trend_live")))
+        for _tb in _js.get("trend_books") or []:
+            _TL_SRC.append((f"trend {_tb.get('magic')} {','.join(_tb.get('rules') or [])}", _tb))
+    except Exception as _e:
+        print(f"  [{_tag}] 讀唔到：{_e}")
+for _tag, _tl in _TL_SRC:
+    try:
         if _tl is None:
             print(f"  [{_tag}] 未部署（status 冇 trend_live）")
             continue
@@ -99,7 +108,7 @@ for _tag, _url in (("trend 926", "https://zhuge-xau-1056099871997.europe-west1.r
             print(f"  ⚠ [{_tag}] EA 有倉但服務 state 冇 pos（state 可能被清／到期唔會自動平）→ 即報總指揮")
         if _p0 and _ps and abs((_ps[0].get("stop") or 0) - (_p0.get("sl") or 0)) > 0.01:
             print(f"  ⚠ [{_tag}] EA SL {_ps[0].get('stop')} 同服務記錄 {_p0.get('sl')} 唔一致")
-        if "mobrk" in (_tl.get("rules") or []):
+        if set(_tl.get("rules") or []) & {"mobrk", "spike", "wide", "kelt", "ichi", "turtle"}:
             _rs = [x["r"] for x in reversed(_tl.get("book") or []) if x.get("r") is not None]
             _w = sum(r for r in _rs if r > 0); _l = -sum(r for r in _rs if r < 0)
             _pf = (_w / _l) if _l else None
@@ -110,6 +119,6 @@ for _tag, _url in (("trend 926", "https://zhuge-xau-1056099871997.europe-west1.r
                 _st += 1
             print(f"  [{_tag}] 停條件：{len(_rs)} 張 ΣR {sum(_rs):+.2f} PF {('—' if _pf is None else f'{_pf:.2f}')} 連蝕 {_st}")
             if sum(_rs) <= -5 or (len(_rs) >= 12 and (_pf or 0) < 0.8) or _st >= 6:
-                print(f"  ⛔ [{_tag}] 觸發 #1114 停條件（≤−5R／12 張 PF<0.8／連蝕 6）→ 即報總指揮，建議 XAU_TREND_LIVE=0 返影子（要使用者批）")
+                print(f"  ⛔ [{_tag}] 觸發停條件（≤−5R／12 張 PF<0.8／連蝕 6）→ 即報總指揮，建議呢本簿返影子（要使用者批）")
     except Exception as _e:
         print(f"  [{_tag}] 讀唔到：{_e}")

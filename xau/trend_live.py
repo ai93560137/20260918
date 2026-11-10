@@ -10,13 +10,16 @@
 做法：EA 用 magic 927 掛一張 …63 XAUUSD 圖（或者 XAU_TREND_MAGIC=926 用返 926 圖：趨勢簿分流排喺 926 反向之前，921 影子照餵 K 線），心跳按 magic 分流到呢度；指令 id 前綴 w；一次一張（EA close 按 magic 全平）；SL 伺服器端即掛、冇 TP。
 日線：狀態 d1 由心跳 M1 合併；冇或者唔夠就用部署模組 trend_d1_seed.py（MT5／券商 M1 砌嘅 UTC 日線）。
 風控：control 非 RUN、EA 唔准交易／dry_run、927 當日蝕到 XAU_TREND_DAY_STOP_HKD、產品唔係 XAUUSD 都唔開；control＝STOP → 平。純計算函數冇 I/O。"""
+import contextlib
 import datetime as dt
+import threading
 import uuid
 
 import config
 import executor
 import market
 import storage
+import trend_d1rules as D1R
 from storage import StorageError
 
 PREFIX = config.PREFIX + "trend/"
@@ -24,7 +27,52 @@ STATE_FILE = PREFIX + "state.json"
 ACCOUNT_FILE = PREFIX + "account.json"
 MAX_DAYS = 420
 MAX_ORDERS = 200
-NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）"}
+NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）", **D1R.NAMES}
+BACKFILL_DAYS = 10       # [11-10] 每本簿每日一次：用本服務 M1 存檔（<PREFIX>bars/<UTC 日>.jsonl）補返最近 10 日日線
+
+
+class Book:
+    """[11-10 使用者「揾多 5 條行真倉 69 戶口」] 一個 magic 一本簿：主簿（XAU_TREND_MAGIC＋XAU_TREND_RULES，狀態 <PREFIX>trend/）＋
+    額外簿（XAU_TREND_BOOKS＝「937:spike,938:wide,…」，狀態 <PREFIX>trend/<magic>/）。每本一次一張、各自日停。"""
+
+    def __init__(self, magic, rules, adopt, prefix):
+        self.magic, self.rules, self.adopt = int(magic or 0), tuple(rules), tuple(adopt)
+        self.state_file, self.account_file = prefix + "state.json", prefix + "account.json"
+
+
+def _books():
+    out = [Book(config.TREND_MAGIC, config.TREND_RULES, config.TREND_ADOPT, PREFIX)] if config.TREND_MAGIC else []
+    for item in getattr(config, "TREND_BOOKS", ()):
+        mg, _, rules = item.partition(":")
+        if mg.strip().isdigit() and rules.strip():
+            out.append(Book(int(mg), [r.strip() for r in rules.split("+") if r.strip()], (), PREFIX + f"{int(mg)}/"))
+    return out
+
+
+def books():
+    return _books()                                     # 每次按 config 即時計（測試會改 config）
+
+
+_LOCAL = threading.local()                              # Cloud Run 多線程：每個請求自己嘅簿
+
+
+def cur():
+    b = getattr(_LOCAL, "book", None)
+    return b or (books()[0] if books() else Book(config.TREND_MAGIC, config.TREND_RULES, config.TREND_ADOPT, PREFIX))
+
+
+@contextlib.contextmanager
+def use(book):
+    prev = getattr(_LOCAL, "book", None)
+    _LOCAL.book = book
+    try:
+        yield book
+    finally:
+        _LOCAL.book = prev
+
+
+def book_for(magic):
+    return next((b for b in books() if b.magic and str(b.magic) == str(magic or "")), None)
 
 
 def _m():
@@ -33,11 +81,11 @@ def _m():
 
 
 def enabled():
-    return config.TREND_LIVE and bool(config.TREND_MAGIC)          # [11-10] 訊號書服務都可以開（要設 XAU_TREND_MAGIC）
+    return config.TREND_LIVE and bool(cur().magic)                 # [11-10] 訊號書服務都可以開（要設 XAU_TREND_MAGIC）
 
 
 def is_magic(payload):
-    return bool(config.TREND_MAGIC) and str(payload.get("magic") or "") == str(config.TREND_MAGIC)
+    return book_for(payload.get("magic")) is not None
 
 
 def is_cmd(cid):
@@ -45,13 +93,13 @@ def is_cmd(cid):
 
 
 def empty_state():
-    return {"d1": {}, "pos": None, "used": {}, "adopted": [], "pending_cmds": [], "orders": [], "book": [], "last": None, "pos_seen": None}
+    return {"d1": {}, "pos": None, "used": {}, "adopted": [], "pending_cmds": [], "orders": [], "book": [], "last": None, "pos_seen": None, "busy": {}}
 
 
 def load_state():
     base = empty_state()
     try:
-        doc = storage.read_json(STATE_FILE, None)
+        doc = storage.read_json(cur().state_file, None)
     except StorageError:
         doc = None
     if isinstance(doc, dict):
@@ -245,6 +293,8 @@ def exit_due(pos, days, now):
     """到期平倉嘅原因或 None。qbrk：季尾最後一個平日 UTC ≥ 20:45，或者已經入咗下季；lvbrk：第 10 個交易日 UTC ≥ 20:45，或者第 11 日。"""
     if not pos or not days:
         return None
+    if pos.get("rule") in D1R.RULES:                     # [11-10] D1 收市規則：用已完成日線判（新一日第一個心跳平）
+        return D1R.plan_exit(pos, days[:-1])
     today = days[-1][0]
     late = (int(now) % 86400) // 60 >= config.TREND_EXIT_UTC_MIN
     if pos.get("rule") == "qbrk":
@@ -280,7 +330,7 @@ def open_block(control_mode, account):
         return "EA 唔准交易"
     day = account.get("daily_pnl")
     if config.TREND_DAY_STOP_HKD and day is not None and day <= -abs(config.TREND_DAY_STOP_HKD):
-        return f"{config.TREND_MAGIC} 今日 {day:+.0f} HKD ≤ −{config.TREND_DAY_STOP_HKD:g}"
+        return f"{cur().magic} 今日 {day:+.0f} HKD ≤ −{config.TREND_DAY_STOP_HKD:g}"
     return None
 
 
@@ -306,8 +356,18 @@ def plan(state, days, pos, price, now, block, pending):
     if recent_reject(state, now):
         return None, f"啱啱開倉被拒，{RETRY_SEC // 60} 分鐘後再試"
     used = state.get("used") or {}
-    for rule in config.TREND_RULES:
-        if rule == "qbrk" and "qbrk" in config.TREND_ADOPT and qkey(today) not in (state.get("adopted") or []):
+    for rule in cur().rules:
+        if rule in D1R.RULES:                            # [11-10] D1 收市規則：用已完成日線、新一日第一個心跳市價入
+            done = days[:-1]
+            if not done or used.get(rule) == done[-1][0] or done[-1][0] <= int((state.get("busy") or {}).get(rule, -1)):
+                continue
+            sig = D1R.plan_open(rule, done, price)
+            if not sig:
+                continue
+            if block:
+                return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
+            return ("open", sig), f"{NAMES[rule]} 訊號"
+        if rule == "qbrk" and "qbrk" in cur().adopt and qkey(today) not in (state.get("adopted") or []):
             sig = qbrk_adopt(days, today)
             if sig and not exit_due({"rule": "qbrk", "period": sig["period"]}, days, now):
                 return (None, f"補入 {NAMES['qbrk']} 等緊：{block}") if block else (("open", sig), "補入 10 月尾上季突破")
@@ -323,8 +383,8 @@ def plan(state, days, pos, price, now, block, pending):
         if block:
             return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
         return ("open", sig), f"{NAMES[rule]} 突破"
-    cur = {"mobrk": mkey(today), "qbrk": qkey(today)}
-    if config.TREND_RULES and all(r in cur and used.get(r) == cur[r] for r in config.TREND_RULES):
+    curp = {"mobrk": mkey(today), "qbrk": qkey(today)}
+    if cur().rules and all(r in curp and used.get(r) == curp[r] for r in cur().rules):
         return None, "冇倉；今期已用，等下一期"
     return None, (f"冇倉；{block}" if block else "冇倉，等突破")
 
@@ -387,22 +447,37 @@ def ack(cid, payload, now):
                     state["pos"] = None                  # 開唔到：唔當有倉
                     revert_failed(state)                 # 唔當用咗訊號（例如休市被拒），開市再試
         return (state if found else None), found
-    return storage.update(STATE_FILE, mutate, default_factory=empty_state)
+    for b in books() or [cur()]:                          # 指令 id 隨機，逐本簿搵
+        with use(b):
+            if storage.update(b.state_file, mutate, default_factory=empty_state):
+                return True
+    return False
 
 
-def status():
-    st = load_state()
+def status(book=None):
+    with use(book or cur()):
+        return _status()
+
+
+def status_extra():
+    """[11-10] 額外簿（XAU_TREND_BOOKS）狀態；冇就 []。"""
+    bs = books()
+    return [status(b) for b in (bs[1:] if bs and bs[0].magic == config.TREND_MAGIC else bs)]
+
+
+def _status():
+    bk = cur(); st = load_state()
     try:
-        acct = storage.read_json(ACCOUNT_FILE, {}) or {}
+        acct = storage.read_json(bk.account_file, {}) or {}
     except StorageError:
         acct = {}
     days = days_of(st.get("d1") or {})
     levels = {}
-    if days and "mobrk" in config.TREND_RULES:                     # [11-10] 網頁顯示今個月頭 3 日區間
+    if days and "mobrk" in bk.rules:                              # [11-10] 網頁顯示今個月頭 3 日區間
         today = days[-1][0]; mk = mkey(today); lv = mobrk_levels(days, today)
         levels["mobrk"] = {"month": f"{mk // 12}-{mk % 12 + 1:02d}", "used": (st.get("used") or {}).get("mobrk") == mk,
                            "hi": lv[0] if lv else None, "lo": lv[1] if lv else None}
-    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in config.TREND_RULES}, "magic": config.TREND_MAGIC, "rules": list(config.TREND_RULES), "adopt": list(config.TREND_ADOPT), "lots": lots(),
+    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(),
             "d1_days": len(days), "d1_last": days[-1][0] if days else None, "pos": st.get("pos"), "used": st.get("used"),
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
@@ -426,18 +501,46 @@ def _enqueue(m, state, kind, now, price, reason, sig=None, n_lots=None):
     cid = "w" + uuid.uuid4().hex[:7]
     if kind == "open":
         text = executor.enqueue(state, "OPEN_LONG" if sig["side"] > 0 else "OPEN_SHORT", sig["sl"], None, now, cid, lots=n_lots,
-                                magic=config.TREND_MAGIC, note="趨勢" + sig["rule"])
+                                magic=cur().magic, note="趨勢" + sig["rule"])
     else:
-        text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=config.TREND_MAGIC)
+        text = executor.enqueue(state, "CLOSE", None, None, now, cid, magic=cur().magic)
     state["orders"] = [*state.get("orders", []), {"id": cid, "kind": kind, "ts": now, "utc": market.fmt_utc(now), "price": price,
                                                   "rule": (sig or {}).get("rule"), "side": (sig or {}).get("side"), "sl": (sig or {}).get("sl"),
                                                   "period": (sig or {}).get("period"), "adopt": bool((sig or {}).get("adopt")),
                                                   "lots": n_lots, "reason": reason, "applied": text, "acked": False}][-MAX_ORDERS:]
-    m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿 {kind} {reason}｜{text}", component="trend", cmd=cid)
+    m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿 {cur().magic} {kind} {reason}｜{text}", component="trend", cmd=cid)
     return text
 
 
 def handle_heartbeat(payload):
+    with use(book_for(payload.get("magic")) or cur()):
+        return _handle_heartbeat(payload)
+
+
+def backfill_d1(state, now):
+    """[11-10] 每本簿每 UTC 日一次：用本服務 M1 存檔補最近 BACKFILL_DAYS 日日線（新簿冇歷史、服務停過都補到）。"""
+    today = int(now) // 86400
+    if state.get("bf_day") == today:
+        return 0
+    rows = []
+    for k in range(BACKFILL_DAYS, -1, -1):
+        day = dt.datetime.fromtimestamp((today - k) * 86400, dt.timezone.utc).strftime("%Y-%m-%d")
+        try:
+            got = storage.read_json(f"{config.PREFIX}bars/{day}.jsonl", []) or []
+        except StorageError:
+            got = []
+        rows += [{"t": int(x["utc"]), "open": x["open"], "high": x["high"], "low": x["low"], "close": x["close"]}
+                 for x in got if isinstance(x, dict) and x.get("utc") is not None]
+    if rows:
+        d1 = state.get("d1") or {}
+        if len(d1) < 270:
+            d1 = {**load_seed(), **d1}
+        state["d1"] = d1_merge(d1, rows)
+    state["bf_day"] = today
+    return len(rows)
+
+
+def _handle_heartbeat(payload):
     m = _m(); now = m.now_ts()
     if config.TREND_ACCOUNT and str(payload.get("account") or "").strip() != config.TREND_ACCOUNT:
         return m.jsonify({"status": "ignored", "message": "account not allowed", "cmd_text": ""}), 200
@@ -446,10 +549,10 @@ def handle_heartbeat(payload):
     account = {k: market.to_float(payload.get(k)) for k in ("equity", "balance", "floating", "daily_pnl", "realized_total", "margin_level")}
     account.update(account_id=str(payload.get("account") or "")[:24], dry_run=bool(payload.get("dry_run")), positions=m.own_positions(payload, offset),
                    trade_allowed=(payload.get("trade_allowed") if isinstance(payload.get("trade_allowed"), dict) else None),
-                   received_utc=market.fmt_utc(now), received_ts=now, magic=config.TREND_MAGIC,
+                   received_utc=market.fmt_utc(now), received_ts=now, magic=cur().magic,
                    symbol=str(payload.get("symbol") or "")[:16], product_ok=m.product_ok(payload))
     try:
-        storage.write_json(ACCOUNT_FILE, account)
+        storage.write_json(cur().account_file, account)
     except StorageError as exc:
         m.log_event(f"⚠️ 趨勢簿戶口快照寫入失敗：{exc}", severity="WARNING")
     state = load_state()
@@ -463,6 +566,11 @@ def handle_heartbeat(payload):
         if len(d1) < 270:
             d1 = {**load_seed(), **d1}
         state["d1"] = d1_merge(d1, [{"t": x["time"] - offset, **{k: x[k] for k in ("open", "high", "low", "close")}} for x in bars])
+    if account["product_ok"]:
+        try:
+            backfill_d1(state, now)
+        except Exception as exc:  # noqa: BLE001
+            m.log_event(f"⚠️ 趨勢簿 {cur().magic} 日線補數失敗（唔影響交易）：{type(exc).__name__}: {exc}", severity="WARNING", component="trend")
     import live_book
     pos = (account.get("positions") or [None])[0]
     try:
@@ -476,20 +584,23 @@ def handle_heartbeat(payload):
         m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿：之前被 EA 拒絕嘅開倉唔當用咗，開市再試", component="trend")
     sp = state.get("pos") or {}
     if sp and not pos and not _pending(state, now) and (state.get("pos_seen") or now - float(sp.get("ts") or 0) > 600):
+        if sp.get("rule") in D1R.RULES and not any(o.get("kind") == "close" and float(o.get("ts") or 0) >= float(sp.get("ts") or 0)
+                                                   for o in state.get("orders") or []):
+            state["busy"] = {**(state.get("busy") or {}), sp["rule"]: int(now) // 86400}   # 止蝕嗰日嘅訊號唔入（同回測 busy）
         state["pos"] = None                                # 伺服器端止蝕／到期平咗
     state["pos_seen"] = pos
     if not enabled():
         why = "趨勢簿未開（XAU_TREND_LIVE=0）"
     elif not account["product_ok"]:
-        why = f"⚠ {config.TREND_MAGIC} 圖唔係 {config.SYMBOL}（symbol={account['symbol'] or '冇報'}）：唔出指令"
+        why = f"⚠ {cur().magic} 圖唔係 {config.SYMBOL}（symbol={account['symbol'] or '冇報'}）：唔出指令"
     else:
         why = _decide(m, state, account, pos, price, now)
     state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why}
     try:
-        storage.write_json(STATE_FILE, state)
+        storage.write_json(cur().state_file, state)
     except StorageError as exc:
         m.log_event(f"⚠️ 趨勢簿狀態寫入失敗：{exc}", severity="ERROR")
-    return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "trend", "magic": config.TREND_MAGIC,
+    return m.jsonify({"status": "monitoring", "team": config.TEAM_NAME, "book": "trend", "magic": cur().magic,
                       "mode": "live" if config.TREND_LIVE else "off", "cmd_text": cmd_text(state, now), "message": why}), 200
 
 
@@ -505,6 +616,9 @@ def _decide(m, state, account, pos, price, now):
     kind, arg = act
     if kind == "close":
         _enqueue(m, state, "close", now, price, arg)
+        sp = state.get("pos") or {}
+        if sp.get("rule") in D1R.RULES and len(days) >= 2:
+            state["busy"] = {**(state.get("busy") or {}), sp["rule"]: days[-2][0]}       # 出場嗰根（已完成）嘅訊號唔入
         return f"平倉（{arg}）"
     sig = arg
     state["used"] = {**(state.get("used") or {}), sig["rule"]: sig["period"]}
@@ -519,7 +633,7 @@ def _decide(m, state, account, pos, price, now):
                     "price": price, "adopt": bool(sig.get("adopt"))}
     m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手 SL {sig['sl']}（{why}）", component="trend")
     try:
-        m.notify.tg_send(f"📈 趨勢簿（{config.TREND_MAGIC}）開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手｜{why}｜現價 {price}｜SL {sig['sl']}")
+        m.notify.tg_send(f"📈 趨勢簿（{cur().magic}）開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手｜{why}｜現價 {price}｜SL {sig['sl']}")
     except Exception:  # noqa: BLE001
         pass
     return f"開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手（SL {sig['sl']}）"

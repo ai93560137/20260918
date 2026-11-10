@@ -1207,6 +1207,7 @@ def build_status():
         "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.book_live() else None,   # [R352] 真倉績效（921／931）
         "reverse_live": _safe_book(reverse_live.status) if not config.SIGNAL_BOOK else None,   # [R369] 921 反向真倉
         "trend_live": _safe_book(trend_live.status) if (not config.SIGNAL_BOOK or config.TREND_MAGIC) else None,      # [IDEAS #1125] 趨勢簿（927）
+        "trend_books": (_safe_book(trend_live.status_extra) or []) if config.TREND_BOOKS else [],                     # [11-10] 額外趨勢簿（XAU_TREND_BOOKS，937–941）
         "live_book_follow": _safe_book(lambda: follow_book_view(now)),
         "forward": _safe_book(forward_view),                           # [R352c] 前向測試（gb_forward、規則學生）                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
