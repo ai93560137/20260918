@@ -122,3 +122,28 @@ for _tag, _tl in _TL_SRC:
                 print(f"  ⛔ [{_tag}] 觸發停條件（≤−5R／12 張 PF<0.8／連蝕 6）→ 即報總指揮，建議呢本簿返影子（要使用者批）")
     except Exception as _e:
         print(f"  [{_tag}] 讀唔到：{_e}")
+
+# 11-10 使用者「加組合層面監察，回落超過 10R 就通知我」：7 本真倉趨勢簿（926、933、937–941）合計
+# 已平倉 R 按平倉時間累計（由 0 起）＋而家持倉浮動 R；由最高位回落 ≥ 10R → 印 ⛔，巡檢即報使用者同總指揮
+try:
+    _closed, _float, _nopen = [], 0.0, 0
+    for _tag, _tl in _TL_SRC:
+        if not _tl:
+            continue
+        for _b in _tl.get("book") or []:
+            if _b.get("r") is not None:
+                _closed.append((_b.get("closed_ts") or 0, float(_b["r"])))
+        _px = (_tl.get("last") or {}).get("price")
+        for _p in (_tl.get("account") or {}).get("positions") or []:
+            _rk = abs((_p.get("stop") or 0) - (_p.get("entry") or 0))
+            if _px and _rk and _p.get("entry"):
+                _float += (_px - _p["entry"]) * (_p.get("side") or 0) / _rk; _nopen += 1
+    _cum, _peak = 0.0, 0.0
+    for _, _r in sorted(_closed):
+        _cum += _r; _peak = max(_peak, _cum)
+    _now = _cum + _float; _peak = max(_peak, _now); _dd = _peak - _now
+    print(f"  [組合 7 本] 已平倉 {len(_closed)} 張 ΣR {_cum:+.2f}；持倉 {_nopen} 張浮動 {_float:+.2f}R；而家 {_now:+.2f}R；高位 {_peak:+.2f}R；回落 {_dd:.2f}R（通知線 10R）")
+    if _dd >= 10:
+        print(f"  ⛔ [組合 7 本] 由高位回落 {_dd:.2f}R ≥ 10R → 即通知使用者同總指揮（停唔停由使用者決定）")
+except Exception as _e:
+    print(f"  [組合 7 本] 計唔到：{_e}")
