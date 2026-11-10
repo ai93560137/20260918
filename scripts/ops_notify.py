@@ -210,6 +210,16 @@ def compose_deals(files: dict[str, dict | None], state: dict, cfg: dict, now: da
             closed_lines.append(f"{c.get('close_time_hkt', '')[5:16]} {c.get('code')} {c.get('side')} {fmt_lots(c.get('qty')).lstrip('+')}："
                                 f"{c.get('open_price')} → {c.get('close_price')}，{c.get('realized_pts'):+g} 點，"
                                 f"已實現 {c.get('realized_ccy'):+,.0f} {c.get('ccy')}")
+    if newest:
+        # [R378] 每次成交檔新鮮都寫 status（以前只喺有雲垂成交先寫：10-31 之後全部係非雲垂／人手成交，
+        # ops/deals_status.json 停咗喺 10-31，16:45 摘要一直當「今日冇紀錄」）
+        state.setdefault("deals", {})["status"] = {
+            "date": today, "run_hkt": now.strftime("%Y-%m-%d %H:%M"), "run_kind": run_kind,
+            "closed": [c for day in sorted(files) for c in ((files[day] or {}).get("closed") or [])
+                       if is_yunchui(str(c.get("code")), cfg, c.get("close_time_hkt"))],
+            "n_yunchui_deals": len(yun), "n_other_deals": len(other),
+            "summary_text": ("；".join(closed_lines) if closed_lines else "雲垂合約今日無平倉")
+                            + (f"（非雲垂成交 {len(other)} 筆）" if other else "")}
     if not new_ids:
         return None, state, reminder
     state.setdefault("deals", {})["order_ids"] = (list(seen) + new_ids)[-2000:]
@@ -227,11 +237,6 @@ def compose_deals(files: dict[str, dict | None], state: dict, cfg: dict, now: da
     if other:
         parts += [f"其他合約（非雲垂）{len(other)} 筆：", *other[:10]]
     parts.append("（平倉按 FIFO 配對、未計佣金／費用，以富途 App 為準。只係資訊、唔係落單指令；富途報價只作監控，落單以券商即時價為準。）")
-    state["deals"]["status"] = {"date": today, "run_hkt": now.strftime("%Y-%m-%d %H:%M"), "run_kind": run_kind,
-                                "closed": [c for day in sorted(files) for c in ((files[day] or {}).get("closed") or [])
-                                           if is_yunchui(str(c.get("code")), cfg, c.get("close_time_hkt"))],
-                                "n_yunchui_deals": len(yun), "n_other_deals": len(other),
-                                "summary_text": "；".join(closed_lines) if closed_lines else "雲垂合約今日無平倉"}
     return "\n".join(parts), state, reminder
 
 
@@ -310,13 +315,15 @@ def main() -> int:
         print_private(msg)
         if not a.dry_run:
             send_telegram(msg)
-            gcs_put(cfg["state_object"], json.dumps(state, ensure_ascii=False, indent=1))
-            status = (state.get("deals") or {}).get("status")
-            if status:
-                gcs_put(cfg["deals"].get("status_object", "ops/deals_status.json"), json.dumps(status, ensure_ascii=False, indent=1))
-                REPO_DEALS.write_text(json.dumps(repo_deals_doc(status), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     elif not reminder:
         print("沒有新成交，靜默。")
+    status = (state.get("deals") or {}).get("status")
+    fresh = bool(status) and status.get("run_hkt") == now.strftime("%Y-%m-%d %H:%M")   # [R378] 今次跑出嚟嘅先寫，唔再重寫舊 status
+    if not a.dry_run and (msg or fresh):
+        gcs_put(cfg["state_object"], json.dumps(state, ensure_ascii=False, indent=1))
+        if fresh:
+            gcs_put(cfg["deals"].get("status_object", "ops/deals_status.json"), json.dumps(status, ensure_ascii=False, indent=1))
+            REPO_DEALS.write_text(json.dumps(repo_deals_doc(status), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return 0
 
 

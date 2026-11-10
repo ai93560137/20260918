@@ -127,6 +127,25 @@ class DealsTests(unittest.TestCase):
         d = dict(DEALS, deals=[DEALS["deals"][0]], closed=[])
         msg, st, rem = on.compose_deals({"2026-10-13": d}, {}, CFG, hkt("2026-10-13 17:10"), "day")
         self.assertIn("非雲垂合約，只列給使用者", msg)
+        # [R378] 只有非雲垂成交都要更新 status（10-31 之後 deals_status.json 停咗）
+        status = st["deals"]["status"]
+        self.assertEqual(status["date"], "2026-10-13"); self.assertEqual(status["closed"], [])
+        self.assertEqual(status["n_other_deals"], 1)
+        self.assertIn("雲垂合約今日無平倉（非雲垂成交 1 筆）", status["summary_text"])
+
+    def test_no_new_deals_still_refreshes_status(self):   # [R378] 冇新成交都寫今日 status
+        _, st, _ = on.compose_deals({"2026-10-13": DEALS}, {}, CFG, hkt("2026-10-13 17:10"), "day")
+        empty = dict(DEALS, fetched_hkt="2026-10-14 16:40", deals=[], closed=[])
+        msg, st2, rem = on.compose_deals({"2026-10-14": empty}, st, CFG, hkt("2026-10-14 17:10"), "day")
+        self.assertIsNone(msg); self.assertIsNone(rem)
+        self.assertEqual(st2["deals"]["status"]["date"], "2026-10-14")
+        self.assertEqual(st2["deals"]["status"]["summary_text"], "雲垂合約今日無平倉")
+
+    def test_missing_file_keeps_old_status(self):
+        _, st, _ = on.compose_deals({"2026-10-13": DEALS}, {}, CFG, hkt("2026-10-13 17:10"), "day")
+        _, st2, rem = on.compose_deals({"2026-10-14": None}, st, CFG, hkt("2026-10-14 17:10"), "day")
+        self.assertIn("不存在", rem)
+        self.assertEqual(st2["deals"]["status"]["date"], "2026-10-13")
 
 
 class RepoCopyTests(unittest.TestCase):
