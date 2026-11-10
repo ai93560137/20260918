@@ -23,7 +23,7 @@ def _bucket():
 
 def get(name):
     """回傳 dict 或 None；先睇本機 /tmp，再睇 GCS。"""
-    local = f"/tmp/datacache_{name}"
+    local = f"/tmp/datacache_{name.replace(chr(47), chr(95))}"     # 名可以帶子目錄（例如 mt5x/…）
     if not os.path.exists(local):
         try:
             blob = _bucket().blob(PREFIX + name)
