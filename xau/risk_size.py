@@ -70,10 +70,19 @@ def open_risk(equity_file, position_files):
     return {"positions": n, "risk_hkd": round(total, 2), "pct": round(total / eq * 100, 2), "none_sl": none_sl}
 
 
+def trend_extra_magics():
+    """[11-10] …69 穩陣組趨勢簿 magic：按 XAU_TREND_BOOKS（訊號書服務先有）；主服務冇呢個 env 就用預設 937–941。"""
+    got = [int(x.split(":")[0]) for x in config.TREND_BOOKS if x.split(":")[0].strip().isdigit()]
+    return got or [937, 938, 939, 940, 941]
+
+
 def accounts_open_risk():
-    """兩個真戶口：…63（921＋932）、…69（931＋933＋934）。路徑用 MAIN_PREFIX（xau/）＋ sig/。"""
+    """兩個真戶口：…63（921＋926 反向／趨勢＋932）、…69（931＋933–935＋937–941）。路徑用 MAIN_PREFIX（xau/）＋ sig/。
+    [11-10] 加趨勢簿：…63 xau/trend/（926）；…69 xau/sig/trend/（933 #1114）同 xau/sig/trend/<magic>/（937–941）。"""
     base = config.MAIN_PREFIX
     sig = base + "sig/"
-    return {"…63（921＋926＋932）": open_risk(base + "account.json", [base + "account.json", base + "reverse/account.json", sig + "follow/account.json"]),   # [R369] 926 921 反向
-            "…69（931＋933＋934＋935）": open_risk(sig + "account.json", [sig + "account.json", sig + "studentlive/account.json", sig + "g7live/account.json",
-                                                                       sig + "combolive/account.json"])}
+    return {"…63（921＋926＋932）": open_risk(base + "account.json", [base + "account.json", base + "reverse/account.json", base + "trend/account.json",
+                                                                 sig + "follow/account.json"]),   # [R369] 926 921 反向；[11-10] 926 趨勢簿
+            "…69（931＋933–935＋937–941）": open_risk(sig + "account.json", [sig + "account.json", sig + "studentlive/account.json", sig + "g7live/account.json",
+                                                                         sig + "combolive/account.json", sig + "trend/account.json"]
+                                                     + [sig + f"trend/{m}/account.json" for m in trend_extra_magics()])}

@@ -80,6 +80,15 @@ o = R.accounts_open_risk()
 k69 = [k for k in o if "69" in k][0]; k63 = [k for k in o if "63" in k][0]
 check("…69：兩張有止損 561.6 HKD＝1.87%、一張冇止損另計", o[k69]["risk_hkd"] == 561.6 and o[k69]["pct"] == 1.87 and o[k69]["none_sl"] == 1 and o[k69]["positions"] == 3, o)
 check("…63：冇倉＝0%", o[k63]["pct"] == 0.0, o)
+print("=== [11-10] 趨勢簿計入戶口風險 ===")
+FAKE["xau/trend/account.json"] = (json.dumps({"positions": [{"entry": 4061.29, "stop": 4328.18, "lots": 0.01}]}), 1)
+FAKE["xau/sig/trend/account.json"] = (json.dumps({"positions": []}), 1)
+FAKE["xau/sig/trend/939/account.json"] = (json.dumps({"positions": [{"entry": 4000, "stop": 3850, "lots": 0.01}]}), 1)
+o = R.accounts_open_risk()
+k69 = [k for k in o if "69" in k][0]; k63 = [k for k in o if "63" in k][0]
+check("…63：926 趨勢簿 0.01 手 SL 266.89 → 2081.74 HKD", o[k63]["risk_hkd"] == 2081.74 and o[k63]["positions"] == 1, o)
+check("…69：加 939 0.01 手 SL 150 → 561.6＋1170＝1731.6", o[k69]["risk_hkd"] == 1731.6 and o[k69]["positions"] == 4, o)
+check("冇 XAU_TREND_BOOKS 用預設 937–941", R.trend_extra_magics() == [937, 938, 939, 940, 941], R.trend_extra_magics())
 config.RISK_SIZING = False
 
 print(f"\n結果：{OK} 過、{FAIL} 失敗")
