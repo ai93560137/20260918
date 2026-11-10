@@ -4,7 +4,9 @@
 規則（同 research/strategy_search/h1_lab6.r1107、h1_lab7.r1113 一樣，日線按 UTC 日由 M1 砌）：
   qbrk：今季第一次穿上季高（做多）／低（做空）→ SL 上季中位，季尾（最後一個平日 UTC 20:45 後）平；一季一次（穿咗就用咗，唔理有冇做到）。
   lvbrk：昨日 D1 ATR14 ≤ 過去 250 個 ATR 嘅 20% 分位 → 今日穿前 20 日高／低 → SL 20 日中位，第 10 個交易日 UTC 20:45 後平；只喺當日入。
+  mobrk（#1114，11-10 使用者「選一條取代 933，開真倉」）：今個月頭 3 個交易日高／低 → 第 4 個交易日起第一次穿 → SL 另一端（做多 SL＝區間低），月尾（最後一個平日 UTC 20:45 後）平；一個月一次。
   入場用市價（回測用突破價），止蝕距離 ≤ 0.5 美元唔做。
+訊號書服務（zhuge-xau-sig，…69）都可以開：XAU_TREND_LIVE=1＋XAU_TREND_MAGIC（例如 933）＋XAU_TREND_RULES=mobrk；狀態寫 xau/sig/trend/。
 做法：EA 用 magic 927 掛一張 …63 XAUUSD 圖（或者 XAU_TREND_MAGIC=926 用返 926 圖：趨勢簿分流排喺 926 反向之前，921 影子照餵 K 線），心跳按 magic 分流到呢度；指令 id 前綴 w；一次一張（EA close 按 magic 全平）；SL 伺服器端即掛、冇 TP。
 日線：狀態 d1 由心跳 M1 合併；冇或者唔夠就用部署模組 trend_d1_seed.py（MT5／券商 M1 砌嘅 UTC 日線）。
 風控：control 非 RUN、EA 唔准交易／dry_run、927 當日蝕到 XAU_TREND_DAY_STOP_HKD、產品唔係 XAUUSD 都唔開；control＝STOP → 平。純計算函數冇 I/O。"""
@@ -22,7 +24,7 @@ STATE_FILE = PREFIX + "state.json"
 ACCOUNT_FILE = PREFIX + "account.json"
 MAX_DAYS = 420
 MAX_ORDERS = 200
-NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）"}
+NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）"}
 
 
 def _m():
@@ -31,7 +33,7 @@ def _m():
 
 
 def enabled():
-    return (not config.SIGNAL_BOOK) and config.TREND_LIVE and bool(config.TREND_MAGIC)
+    return config.TREND_LIVE and bool(config.TREND_MAGIC)          # [11-10] 訊號書服務都可以開（要設 XAU_TREND_MAGIC）
 
 
 def is_magic(payload):
@@ -102,6 +104,50 @@ def quarter_last_weekday(qk):
     while d.weekday() >= 5:
         d -= dt.timedelta(days=1)
     return (d - dt.date(1970, 1, 1)).days
+
+
+def mkey(day):
+    u = dt.datetime.fromtimestamp(int(day) * 86400, dt.timezone.utc)
+    return u.year * 12 + u.month - 1
+
+
+def month_last_weekday(mk):
+    y, m0 = divmod(mk, 12)
+    nxt = dt.date(y + (m0 == 11), (m0 + 1) % 12 + 1, 1)
+    d = nxt - dt.timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    return (d - dt.date(1970, 1, 1)).days
+
+
+def mobrk_levels(days, today):
+    """今個月頭 3 個交易日嘅高低；未夠 3 日或者今日仲係頭 3 日 → None。"""
+    cur = [(d, r) for d, r in days if mkey(d) == mkey(today)]
+    if len(cur) < 4 or today <= cur[2][0]:
+        return None
+    first = [r for _, r in cur[:3]]
+    return max(r["h"] for r in first), min(r["l"] for r in first), cur[2][0]
+
+
+def mobrk_signal(days, today, used):
+    """[IDEAS #1114] 第 4 個交易日起第一次穿頭 3 日高（做多，SL 區間低）／低（做空，SL 區間高）；一個月一次。同 research h1_lab8.r1114。"""
+    mk = mkey(today)
+    if used.get("mobrk") == mk:
+        return None
+    lv = mobrk_levels(days, today)
+    if lv is None:
+        return None
+    hi, lo, d3 = lv
+    for d, r in days:
+        if mkey(d) == mk and d3 < d < today and _break(r, hi, lo):
+            return {"rule": "mobrk", "period": mk, "used_only": True}        # 今個月早過今日已經穿咗
+    r = dict(days).get(today)
+    if r is None:
+        return None
+    sg = _break(r, hi, lo)
+    if not sg:
+        return None
+    return {"rule": "mobrk", "side": sg, "sl": round(lo if sg > 0 else hi, 2), "period": mk, "level": hi if sg > 0 else lo}
 
 
 def atr_list(days, n=14):
@@ -208,6 +254,13 @@ def exit_due(pos, days, now):
         if today >= quarter_last_weekday(qk) and late:
             return "季尾收市平"
         return None
+    if pos.get("rule") == "mobrk":
+        mk = int(pos.get("period") or 0)
+        if mkey(today) > mk:
+            return "月尾已過，平"
+        if today >= month_last_weekday(mk) and late:
+            return "月尾收市平"
+        return None
     if pos.get("rule") == "lvbrk":
         idx = [d for d, _ in days]
         e0 = int(pos.get("period") or 0)
@@ -227,7 +280,7 @@ def open_block(control_mode, account):
         return "EA 唔准交易"
     day = account.get("daily_pnl")
     if config.TREND_DAY_STOP_HKD and day is not None and day <= -abs(config.TREND_DAY_STOP_HKD):
-        return f"927 今日 {day:+.0f} HKD ≤ −{config.TREND_DAY_STOP_HKD:g}"
+        return f"{config.TREND_MAGIC} 今日 {day:+.0f} HKD ≤ −{config.TREND_DAY_STOP_HKD:g}"
     return None
 
 
@@ -258,11 +311,12 @@ def plan(state, days, pos, price, now, block, pending):
             sig = qbrk_adopt(days, today)
             if sig and not exit_due({"rule": "qbrk", "period": sig["period"]}, days, now):
                 return (None, f"補入 {NAMES['qbrk']} 等緊：{block}") if block else (("open", sig), "補入 10 月尾上季突破")
-        sig = qbrk_signal(days, today, used) if rule == "qbrk" else lvbrk_signal(days, today, used) if rule == "lvbrk" else None
+        sig = (qbrk_signal(days, today, used) if rule == "qbrk" else lvbrk_signal(days, today, used) if rule == "lvbrk"
+               else mobrk_signal(days, today, used) if rule == "mobrk" else None)
         if not sig:
             continue
         if sig.get("used_only"):
-            return ("used", sig), "今季上季突破已經用咗"
+            return ("used", sig), f"{NAMES[rule]} 今期已經用咗"
         risk = (price - sig["sl"]) * sig["side"] if price else 0
         if risk <= 0.5:
             return ("used", sig), f"{NAMES[rule]} 止蝕距離 {risk:.2f} ≤ 0.5，唔做"
@@ -286,7 +340,7 @@ def revert_failed(state):
         period = o.get("period")
         if period is None:                               # 舊單冇記 period：qbrk 用季、lvbrk 用日
             day = int(float(o.get("ts") or 0)) // 86400
-            period = qkey(day) if rule == "qbrk" else day
+            period = qkey(day) if rule == "qbrk" else mkey(day) if rule == "mobrk" else day
         used = dict(state.get("used") or {})
         if used.get(rule) == period:
             used.pop(rule)
@@ -419,7 +473,7 @@ def handle_heartbeat(payload):
     if not enabled():
         why = "趨勢簿未開（XAU_TREND_LIVE=0）"
     elif not account["product_ok"]:
-        why = f"⚠ 927 圖唔係 {config.SYMBOL}（symbol={account['symbol'] or '冇報'}）：唔出指令"
+        why = f"⚠ {config.TREND_MAGIC} 圖唔係 {config.SYMBOL}（symbol={account['symbol'] or '冇報'}）：唔出指令"
     else:
         why = _decide(m, state, account, pos, price, now)
     state["last"] = {"ts": now, "utc": market.fmt_utc(now), "price": price, "note": why}
@@ -457,7 +511,7 @@ def _decide(m, state, account, pos, price, now):
                     "price": price, "adopt": bool(sig.get("adopt"))}
     m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手 SL {sig['sl']}（{why}）", component="trend")
     try:
-        m.notify.tg_send(f"📈 趨勢簿（927）開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手｜{why}｜現價 {price}｜SL {sig['sl']}")
+        m.notify.tg_send(f"📈 趨勢簿（{config.TREND_MAGIC}）開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手｜{why}｜現價 {price}｜SL {sig['sl']}")
     except Exception:  # noqa: BLE001
         pass
     return f"開{'多' if sig['side'] > 0 else '空'} {n:.2f} 手（SL {sig['sl']}）"
