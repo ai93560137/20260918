@@ -530,14 +530,26 @@ def backfill_d1(state, now):
         except StorageError:
             got = []
         rows += [{"t": int(x["utc"]), "open": x["open"], "high": x["high"], "low": x["low"], "close": x["close"]}
-                 for x in got if isinstance(x, dict) and x.get("utc") is not None]
-    if rows:
-        d1 = state.get("d1") or {}
-        if len(d1) < 270:
-            d1 = {**load_seed(), **d1}
+                 for x in got if isinstance(x, dict) and x.get("utc") is not None and not closed_window(int(x["utc"]))]
+    d1 = state.get("d1") or {}
+    if len(d1) < 270:
+        d1 = {**load_seed(), **d1}
+    bad = [k for k, r in d1.items() if int(k) < today and closed_window(int(r.get("t0") or 0))]   # [11-10] 之前混入休市時段假 K 線嘅日（唔掂今日）：重新計
+    for k in bad:
+        d1.pop(k)
+        seed = load_seed().get(k)
+        if seed and not closed_window(int(seed.get("t0") or 0)):
+            d1[k] = dict(seed)
+    if rows or bad:
         state["d1"] = d1_merge(d1, rows)
     state["bf_day"] = today
     return len(rows)
+
+
+def closed_window(ts):
+    """[11-10] 黃金休市：星期六全日、星期日 21:00 UTC 前。EA 喺夏令轉換補歷史會將星期五 K 線標錯時間（11-01 00:00 UTC 有 12 根），呢啲唔入日線。"""
+    wd = (int(ts) // 86400 + 3) % 7                     # 0＝星期一
+    return wd == 5 or (wd == 6 and int(ts) % 86400 < 21 * 3600)
 
 
 def _handle_heartbeat(payload):

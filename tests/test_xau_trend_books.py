@@ -113,6 +113,22 @@ class Books(unittest.TestCase):
         self.assertEqual([b["magic"] for b in s["trend_books"]], [937, 938])
         self.assertEqual(s["trend_live"]["magic"], 933)
 
+    def test_backfill_skips_closed_window_and_repairs(self):
+        bk = TL.book_for(937)
+        sun = 20758                                         # 2026-11-01 星期日
+        bad = {"o": 3872.58, "h": 3902.14, "l": 3871.8, "c": 3898.26, "t0": sun * 86400, "t1": sun * 86400 + 86340}
+        storage.write_json(config.PREFIX + "bars/2026-11-01.jsonl", [
+            {"time": 0, "utc": sun * 86400 + 60, "open": 3872.0, "high": 3873.0, "low": 3871.8, "close": 3872.5},            # 休市時段（假）
+            {"time": 0, "utc": sun * 86400 + 23 * 3600, "open": 3880.74, "high": 3885.0, "low": 3879.82, "close": 3884.0}])  # 真開市
+        st = {**TL.empty_state(), "d1": {str(sun): bad}}
+        TL.load_seed = lambda: {}
+        with TL.use(bk):
+            TL.backfill_d1(st, (sun + 5) * 86400)
+        r = st["d1"][str(sun)]
+        self.assertEqual((r["o"], r["l"], r["t0"]), (3880.74, 3879.82, sun * 86400 + 23 * 3600))
+        self.assertTrue(TL.closed_window(sun * 86400 + 60)); self.assertFalse(TL.closed_window(sun * 86400 + 23 * 3600))
+        self.assertTrue(TL.closed_window((sun - 1) * 86400 + 12 * 3600)); self.assertFalse(TL.closed_window((sun - 2) * 86400 + 20 * 3600))
+
     def test_plan_exit_expiry_and_rule(self):
         days = [(d, {"o": 4000.0, "h": 4005.0, "l": 3995.0, "c": 4000.0}) for d in range(100, 140)]
         self.assertIsNone(D1R.plan_exit({"rule": "wide", "side": 1, "period": 135}, days))       # 136–139：4 根
