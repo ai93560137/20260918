@@ -65,3 +65,14 @@
 - [Webull HK Trade API FAQ](https://developer.webull.hk/apis/docs/trade-api/faq)：常見拒單原因——購買力／保證金唔夠、市場休市、參數無效（價格範圍、單類型唔支援）。
 - 搵唔到富途官方對美期 API 拒單嘅公開說明；網上只係一般原因，冇樣本。
 - 下一步：PR #763 令程式記低富途 `last_err_msg`，加 `--diagnose` 唯讀查今日兩張單嘅錯誤訊息；睇到原因先改（例如改用富途報價、改落單時段、或者確認戶口美期權限）。
+
+## 2026-11-10 網上研究：恒指／國企相對價值；夜市報酬隔夜反轉（MHI 日內搜尋 #2032–#2038 之後）
+
+1. **HSI 對 HSCEI 價差（相對價值）**——CME Group《Trading China Exposure》(2016)：https://www.cmegroup.com/education/files/trading-china-exposure.pdf
+   - 重點：2015–16 年 HSI 同 HSCEI 相關度 ≥ 0.95；兩隻指數共用 9 隻成份股（佔 HSCEI 58%、HSI 24%）；用「期貨對理論價貴／平」組成 rich/cheap 對。HKEX 亦明講 HHI 可以做 HSCEI 對 HSI 嘅價差策略：https://www.hkex.com.hk/Products/Listed-Derivatives/Equity-Index/Hang-Seng-China-Enterprises-Index/Hang-Seng-China-Enterprises-Index-Futures?sc_lang=en
+   - 限制：樣本只得約一年，**冇測均值回歸策略、冇扣成本、冇報回報**；搵唔到近年 HSI／HSCEI 日內價差均值回歸嘅學術或可信回測。
+   - 同我哋數據：未有 HHI／HTI 分鐘數據，未能核對。下一步：要先回補 HHI、HTI（需要改 main.py、部機、部署，等使用者揀）；揀咗先登記 IDEAS（預先定：價差 z 值入場、扣兩腿成本、樣本外 2023 起）。
+2. **隔夜（夜市）報酬反轉**——CSI 300 期貨隔夜反轉工作論文（年化 16.54%、Sharpe 0.9、命中 53.76%）：https://reading-9.eprints-hosting.org/111035/1/Anonymized%20manuscript-R1.pdf ；中國商品期貨日內反轉（Zheng & Luo 2024, PBFJ）：https://ideas.repec.org/a/eee/pacfin/v88y2024ics0927538x24002865.html ；HSI 期貨延長交易時段（Cheng, Jiang & Ng 2001）：https://ptsldigital.ukm.my/handle/123456789/520576
+   - 重點：A 股期貨隔夜報酬傾向喺日間反轉；HSI 延長時段後，有休市嘅時段之間報酬以流動性交易效應為主（即傾向反轉）。
+   - **同我哋數據衝突**：#2032 N2「逆前一晚夜市做日市」（2018-11 起恒指期貨 1 分鐘）樣本外 n=933、每筆 −14.9 點、t −1.82（k=0.3% 都係 −17.6 點、t −1.76），4 年得 1 年正；反而 N1「跟夜市」樣本外 +6.9 點、t 0.84（未合格）。即係恒指夜市→日市係**輕微延續、唔係反轉**，A 股結果唔適用，唔另登記。
+   - 下一步：冇。Fung (2000／2004／2010) 恒指期貨對美股極端變動過度反應已喺 11-07（#2000）處理。

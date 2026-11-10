@@ -1,38 +1,38 @@
-# 外部來源彙整狀態（2026-11-09 06:18:02 UTC 自動產生）
+# 外部來源彙整狀態（2026-11-10 07:12:03 UTC 自動產生）
 
 | 系列 | 最新日期 | 該日列數 |
 |---|---|---:|
-| `futu/HK.800000/K_5M` | 2026-11-09 | 45 |
-| `futu/HK.800000/options` | 2026-11-09 | 620 |
-| `futu/HK.800125/K_5M` | 2026-11-09 | 45 |
+| `futu/HK.800000/K_5M` | 2026-11-10 | 57 |
+| `futu/HK.800000/options` | 2026-11-10 | 730 |
+| `futu/HK.800125/K_5M` | 2026-11-10 | 57 |
 | `futu/HK.800700/K_60M` | 2026-10-09 | 6 |
 | `futu/HK.HSIMAIN/K_1M` | 2026-10-10 | 173 |
 | `futu/HK.HSI_FRONT/K_15M` | 2026-10-03 | 13 |
-| `futu/HK.HSI_FRONT/K_1M` | 2026-11-09 | 242 |
-| `futu/HK.HSI_FRONT/K_5M` | 2026-11-09 | 48 |
+| `futu/HK.HSI_FRONT/K_1M` | 2026-11-10 | 474 |
+| `futu/HK.HSI_FRONT/K_5M` | 2026-11-10 | 97 |
 | `futu/HK.HSI_FRONT/K_60M` | 2026-10-03 | 4 |
-| `futu/HK.HSI_FRONT/K_SESSION` | 2026-11-09 | 1 |
-| `futu/HK.HSI_IV/K_5M` | 2026-11-09 | 30 |
-| `futu/HK.HSI_IV/options` | 2026-11-09 | 5400 |
+| `futu/HK.HSI_FRONT/K_SESSION` | 2026-11-10 | 1 |
+| `futu/HK.HSI_IV/K_5M` | 2026-11-10 | 30 |
+| `futu/HK.HSI_IV/options` | 2026-11-10 | 5400 |
 | `futu/HK.HTI_FRONT/K_15M` | 2026-10-10 | 13 |
 | `futu/US.ES_FRONT/K_1M` | 2026-10-09 | 1021 |
-| `futu/US.ES_FRONT/K_5M` | 2026-11-09 | 13 |
-| `futu/US.ES_FRONT/K_SESSION` | 2026-11-06 | 1 |
-| `futu/US.ES_IV/K_5M` | 2026-11-09 | 3 |
-| `futu/US.ES_IV/options` | 2026-11-09 | 540 |
+| `futu/US.ES_FRONT/K_5M` | 2026-11-10 | 24 |
+| `futu/US.ES_FRONT/K_SESSION` | 2026-11-09 | 1 |
+| `futu/US.ES_IV/K_5M` | 2026-11-10 | 4 |
+| `futu/US.ES_IV/options` | 2026-11-10 | 720 |
 | `futu/US.NQ_FRONT/K_1M` | 2026-10-09 | 1021 |
-| `futu/US.NQ_FRONT/K_5M` | 2026-11-09 | 13 |
-| `futu/US.NQ_FRONT/K_SESSION` | 2026-11-06 | 1 |
-| `futu/US.NQ_IV/K_5M` | 2026-11-09 | 3 |
-| `futu/US.NQ_IV/options` | 2026-11-09 | 540 |
-| `futu/US.QQQ/K_5M` | 2026-11-06 | 78 |
-| `futu/US.QQQ/options` | 2026-11-06 | 7380 |
-| `futu/_K_DAY` | 2026-11-06 | 60 |
+| `futu/US.NQ_FRONT/K_5M` | 2026-11-10 | 24 |
+| `futu/US.NQ_FRONT/K_SESSION` | 2026-11-09 | 1 |
+| `futu/US.NQ_IV/K_5M` | 2026-11-10 | 4 |
+| `futu/US.NQ_IV/options` | 2026-11-10 | 720 |
+| `futu/US.QQQ/K_5M` | 2026-11-09 | 78 |
+| `futu/US.QQQ/options` | 2026-11-09 | 1940 |
+| `futu/_K_DAY` | 2026-11-09 | 8 |
 | `mt5/XAUUSD/M1` | 2026-10-20 | 872 |
 
 ## 本次執行
 
-- **MT5／Futu（GCP）**：✅ 拉 10 天，變更 63 個檔
-- **IBKR（claude/dazzling-curie-f3xzb8）**：✅ 11 個檔，變更 0 個，來源 commit 9f2e9319 2026-11-07；尚未開始：tradingview/data_external/ib_daily_sample.csv
+- **MT5／Futu（GCP）**：⚠️ 拉 10 天，變更 75 個檔；錯誤：2026-11-05: JSONDecodeError
+- **IBKR（claude/dazzling-curie-f3xzb8）**：✅ 11 個檔，變更 1 個，來源 commit 5747cbe7 2026-11-10；尚未開始：tradingview/data_external/ib_daily_sample.csv
 
 週末與假日沒有新 K 線是正常的；平日最新日期落後兩天以上才需要查。
