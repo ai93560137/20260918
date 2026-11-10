@@ -137,23 +137,23 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-05,jp,日股,3,原材料,5233.JP,太平洋セメント,4480,4380,11.5,3,1,1,5233.T
 2026-11-05,jp,日股,3,科技,6758.JP,ソニーグループ,4211,4198,19.1,9,1,1,6758.T
 2026-11-05,us,美股,12,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
-2026-11-05,us,美股,12,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,12,醫療,CAH,Cardinal Health,267.82,262.29,20.5,12,2,2,CAH
 2026-11-05,us,美股,12,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
 2026-11-05,us,美股,12,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
 2026-11-05,us,美股,12,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
 2026-11-05,us,美股,12,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
 2026-11-05,us,美股,12,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
-2026-11-05,us,美股,12,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,12,工業,RSG,Republic Services,249.42,249.37,15.3,12,1,1,RSG
 2026-11-05,us,美股,9,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
 2026-11-05,us,美股,9,科技,JKHY,Jack Henry & Associates,180.26,179.36,17.6,9,1,1,JKHY
 2026-11-05,us,美股,9,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
 2026-11-05,us,美股,9,科技,TYL,Tyler Technologies,430.37,425.75,28.2,9,2,2,TYL
 2026-11-05,us,美股,9,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
-2026-11-05,us,美股,9,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,9,醫療,CAH,Cardinal Health,267.82,262.29,20.5,12,2,2,CAH
 2026-11-05,us,美股,9,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
 2026-11-05,us,美股,9,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
 2026-11-05,us,美股,9,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
-2026-11-05,us,美股,9,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,9,工業,RSG,Republic Services,249.42,249.37,15.3,12,1,1,RSG
 2026-11-05,us,美股,6,科技,BR,Broadridge Financial Solutions,193.92,193.67,18.3,6,2,2,BR
 2026-11-05,us,美股,6,科技,CPAY,Corpay,447,427.46,25.0,12,1,1,CPAY
 2026-11-05,us,美股,6,科技,FISV,Fiserv,62.74,62.67,15.0,6,2,2,FISV
@@ -161,13 +161,13 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-05,us,美股,6,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
 2026-11-05,us,美股,6,科技,TYL,Tyler Technologies,430.37,425.75,28.2,9,2,2,TYL
 2026-11-05,us,美股,6,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
-2026-11-05,us,美股,6,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,6,醫療,CAH,Cardinal Health,267.82,262.29,20.5,12,2,2,CAH
 2026-11-05,us,美股,6,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
 2026-11-05,us,美股,6,醫療,STE,STERIS,254.12,249.28,13.8,6,2,2,STE
 2026-11-05,us,美股,6,醫療,UHS,Universal Health Services,198.59,197.63,12.6,6,2,2,UHS
 2026-11-05,us,美股,6,公用,AWK,American Water Works,152.42,149.68,15.7,12,2,2,AWK
 2026-11-05,us,美股,6,公用,ED,Consolidated Edison,121.44,120.93,12.2,12,2,2,ED
-2026-11-05,us,美股,6,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,6,工業,RSG,Republic Services,249.42,249.37,15.3,12,1,1,RSG
 2026-11-05,us,美股,6,必需消費,BF-B,Brown-Forman,30.96,30.93,15.7,6,2,2,BF-B
 2026-11-05,us,美股,6,金融,ERIE,Erie Indemnity,285.63,280.5,18.2,6,2,2,ERIE
 2026-11-05,us,美股,3,科技,BR,Broadridge Financial Solutions,193.92,193.67,18.3,6,2,2,BR
@@ -177,7 +177,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-05,us,美股,3,科技,MSI,Motorola Solutions,517.01,499,17.5,12,1,1,MSI
 2026-11-05,us,美股,3,科技,TYL,Tyler Technologies,430.37,425.75,28.2,9,2,2,TYL
 2026-11-05,us,美股,3,醫療,BDX,"Becton, Dickinson and",213.55,209.84,29.1,12,2,2,BDX
-2026-11-05,us,美股,3,醫療,CAH,Cardinal Health,267.82,262.29,20.2,12,2,2,CAH
+2026-11-05,us,美股,3,醫療,CAH,Cardinal Health,267.82,262.29,20.5,12,2,2,CAH
 2026-11-05,us,美股,3,醫療,EW,Edwards Lifesciences,100.82,100.25,17.7,12,2,2,EW
 2026-11-05,us,美股,3,醫療,STE,STERIS,254.12,249.28,13.8,6,2,2,STE
 2026-11-05,us,美股,3,醫療,UHS,Universal Health Services,198.59,197.63,12.6,6,2,2,UHS
@@ -189,7 +189,7 @@ date,market,market_zh,window_months,sector,ticker,name,close,prior_high,pct_abov
 2026-11-05,us,美股,3,金融,CBOE,Cboe Global Markets,353.07,351.58,20.5,3,1,1,CBOE
 2026-11-05,us,美股,3,金融,ERIE,Erie Indemnity,285.63,280.5,18.2,6,2,2,ERIE
 2026-11-05,us,美股,3,金融,WRB,W. R. Berkley,76.98,76.75,11.6,3,2,2,WRB
-2026-11-05,us,美股,3,工業,RSG,Republic Services,249.42,249.37,15.0,12,1,1,RSG
+2026-11-05,us,美股,3,工業,RSG,Republic Services,249.42,249.37,15.3,12,1,1,RSG
 2026-11-05,us,美股,3,工業,VRSK,Verisk Analytics,211.47,204.19,14.1,3,1,1,VRSK
 2026-11-05,us,美股,3,必需消費,BF-B,Brown-Forman,30.96,30.93,15.7,6,2,2,BF-B
 2026-11-05,us,美股,3,必需消費,COST,Costco Wholesale,1065.59,1053.66,9.9,3,2,2,COST
