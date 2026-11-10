@@ -323,6 +323,9 @@ def plan(state, days, pos, price, now, block, pending):
         if block:
             return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
         return ("open", sig), f"{NAMES[rule]} 突破"
+    cur = {"mobrk": mkey(today), "qbrk": qkey(today)}
+    if config.TREND_RULES and all(r in cur and used.get(r) == cur[r] for r in config.TREND_RULES):
+        return None, "冇倉；今期已用，等下一期"
     return None, (f"冇倉；{block}" if block else "冇倉，等突破")
 
 
@@ -394,7 +397,12 @@ def status():
     except StorageError:
         acct = {}
     days = days_of(st.get("d1") or {})
-    return {"on": enabled(), "magic": config.TREND_MAGIC, "rules": list(config.TREND_RULES), "adopt": list(config.TREND_ADOPT), "lots": lots(),
+    levels = {}
+    if days and "mobrk" in config.TREND_RULES:                     # [11-10] 網頁顯示今個月頭 3 日區間
+        today = days[-1][0]; mk = mkey(today); lv = mobrk_levels(days, today)
+        levels["mobrk"] = {"month": f"{mk // 12}-{mk % 12 + 1:02d}", "used": (st.get("used") or {}).get("mobrk") == mk,
+                           "hi": lv[0] if lv else None, "lo": lv[1] if lv else None}
+    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in config.TREND_RULES}, "magic": config.TREND_MAGIC, "rules": list(config.TREND_RULES), "adopt": list(config.TREND_ADOPT), "lots": lots(),
             "d1_days": len(days), "d1_last": days[-1][0] if days else None, "pos": st.get("pos"), "used": st.get("used"),
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
