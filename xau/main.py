@@ -956,6 +956,23 @@ def ack_account_ok(payload, want=None):
     return (not config.ACK_REQUIRE_ACCOUNT), ("" if not config.ACK_REQUIRE_ACCOUNT else "cmd_ack 冇 account（XAU_ACK_REQUIRE_ACCOUNT=1）")
 
 
+def _trend_route(payload, action):
+    """[IDEAS #1125／#1114] 趨勢簿：回報按 id 前綴 w、心跳按 magic 分流；唔關事回傳 None。"""
+    if action == "cmd_ack" and trend_live.is_cmd(payload.get("id")):
+        ok_acct, why = ack_account_ok(payload, config.TREND_ACCOUNT)
+        if not ok_acct:
+            return jsonify({"status": "ignored", "message": why}), 200
+        cid = str(payload.get("id") or "")[:8]
+        found = trend_live.ack(cid, payload, now_ts())
+        log_event(f"📨 [{config.TEAM_NAME}] 趨勢簿指令回報 {cid} ok={payload.get('ok')}"
+                  + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
+                  severity="INFO" if payload.get("ok") else "WARNING", component="trend")
+        return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
+    if trend_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
+        return trend_live.handle_heartbeat(payload)
+    return None
+
+
 def _sub_book_ack(payload):
     """[R359] cmd_ack 分流：id 前綴 s→933、f→932；931 嘅指令 id 係隨機 hex，1／16 會撞 f 開頭——所以子書戶口唔啱或者搵唔到呢個 id，
     就回 None 交返 931（handle_cmd_ack）。10-31 R357 後 931（…69）同 932（…63）唔同戶口，冇呢個後備 931 嗰啲回報會被當跟單略過。"""
@@ -1189,7 +1206,7 @@ def build_status():
         "usage_today": {"decide": u.get("decide", 0), "screen": u.get("screen", 0), "cost_usd": u.get("cost_usd", 0.0), "p95_ms": p95},
         "live_book": _safe_book(lambda: live_book.view(state, live_book_seed(config.PREFIX), account, now)) if config.book_live() else None,   # [R352] 真倉績效（921／931）
         "reverse_live": _safe_book(reverse_live.status) if not config.SIGNAL_BOOK else None,   # [R369] 921 反向真倉
-        "trend_live": _safe_book(trend_live.status) if not config.SIGNAL_BOOK else None,      # [IDEAS #1125] 趨勢簿（927）
+        "trend_live": _safe_book(trend_live.status) if (not config.SIGNAL_BOOK or config.TREND_MAGIC) else None,      # [IDEAS #1125] 趨勢簿（927）
         "live_book_follow": _safe_book(lambda: follow_book_view(now)),
         "forward": _safe_book(forward_view),                           # [R352c] 前向測試（gb_forward、規則學生）                       # [R352] 932 跟單真倉績效（zhuge-xau 頁只讀 xau/sig/follow/）
         "rulesim": rulesim_summary(),                                 # [R345] 即日回測（規則版）摘要，冇就 None
@@ -1244,7 +1261,7 @@ def entry(req):
     if config.SIGNAL_BOOK:                             # 訊號書 S0：只收 HMAC 簽名嘅訊號／監聽心跳；EA 心跳等一律 ignored，唔問 Opus、唔落單
         if req.method == "POST" and req.headers.get("X-Sig-Signature"):
             return signals.handle_ingest(req.headers, req.get_data())
-        if not config.SIG_DECIDE and not follower.enabled():
+        if not config.SIG_DECIDE and not follower.enabled() and not (config.TREND_LIVE and config.TREND_MAGIC):   # [11-10] 訊號書趨勢簿開咗就照收心跳
             return jsonify({"status": "ignored", "message": "signal book S0: ingest only"}), 200
     if req.args.get("tg") == "signal" and not config.SIGNAL_BOOK:   # [R290] 訊號確認 bot 嘅按鈕（訊號書唔用）
         return tgsignal.handle_callback(req)
@@ -1258,6 +1275,10 @@ def entry(req):
     if not _token_ok(payload):
         return jsonify({"status": "error", "message": "Unauthorized token"}), 403
     action = payload.get("action")
+    if config.SIGNAL_BOOK and config.TREND_MAGIC and config.TREND_LIVE:   # [11-10 #1114] 訊號書趨勢簿（例如用 933 圖）：排喺其他子書之前
+        hit = _trend_route(payload, action)
+        if hit is not None:
+            return hit
     if action == "cmd_ack" and config.SIGNAL_BOOK:                    # [R359] 子書（933 前綴 s／932 前綴 f）先試；戶口唔啱或者搵唔到就交返 931
         hit = _sub_book_ack(payload)
         if hit is not None:
@@ -1283,18 +1304,9 @@ def entry(req):
         if not config.SIG_DECIDE and ("equity" in payload or action in ("check_gate", "heartbeat")):
             return jsonify({"status": "ignored", "message": "signal book S0: ingest only", "cmd_text": ""}), 200
     if not config.SIGNAL_BOOK and config.TREND_MAGIC:                # [IDEAS #1125] 趨勢簿（magic 927）：心跳按 magic、回報按 id 前綴 w 分流（開關關咗都分流）
-        if action == "cmd_ack" and trend_live.is_cmd(payload.get("id")):
-            ok_acct, why = ack_account_ok(payload, config.TREND_ACCOUNT)
-            if not ok_acct:
-                return jsonify({"status": "ignored", "message": why}), 200
-            cid = str(payload.get("id") or "")[:8]
-            found = trend_live.ack(cid, payload, now_ts())
-            log_event(f"📨 [{config.TEAM_NAME}] 趨勢簿指令回報 {cid} ok={payload.get('ok')}"
-                      + ("" if payload.get("ok") else f"｜EA：{str(payload.get('message') or '')[:160]}"),
-                      severity="INFO" if payload.get("ok") else "WARNING", component="trend")
-            return jsonify({"status": "acked" if found else "unknown", "id": cid}), 200
-        if trend_live.is_magic(payload) and ("equity" in payload or action in ("check_gate", "heartbeat")):
-            return trend_live.handle_heartbeat(payload)
+        hit = _trend_route(payload, action)
+        if hit is not None:
+            return hit
     if not config.SIGNAL_BOOK and config.REVERSE_MAGIC:              # [R369] 921 反向（magic 926）：心跳按 magic、回報按 id 前綴 v 分流（開關關咗都分流，唔好污染 921 戶口快照）
         if action == "cmd_ack" and reverse_live.is_cmd(payload.get("id")):
             ok_acct, why = ack_account_ok(payload, config.REVERSE_ACCOUNT)
