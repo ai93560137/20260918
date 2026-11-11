@@ -41,6 +41,7 @@ import momo_strict_1164 as MS3   # noqa: E402  [11-10] 急動順勢合格 #1165
 import momo_strict_1171 as MS4   # noqa: E402  [11-10] #1174
 import momo_strict_1178 as MS5   # noqa: E402  [11-10] #1178
 import strict_b_1228 as SB2     # noqa: E402  [11-10] #1232／#1234（使用者揀 A：B2 門檻，放影子）
+import oldgold2_1261 as O2      # noqa: E402  [11-11] #1263（舊黃金 1975–2004＋2010–26 方向一致，IDEAS #1267）
 
 START = "2026-11-08T23:00"
 OUT = "xau/sig/shadow_board/latest.json"
@@ -71,7 +72,8 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）（⚠ 同根止�
           ("mom1174", "D1 寬幅日順勢（✅ 嚴格 M1 版合格；11-10 起 …69 938 真倉）", "#1174", MS4.r1174, 5 * 86400),
           ("mom1178", "D1 Keltner 突破順勢（✅ 嚴格 M1 版合格；11-10 起 …69 939 真倉）", "#1178", MS5.r1178, 20 * 86400),
           ("h4sar1232", "H4 拋物線 SAR＋D1 SMA100（B2 合格：剔最好 3 張三段都正；t 1.30）", "#1232", SB2.RULES[4][2], 10 * 86400),
-          ("h1brk1234", "H1 100 根突破＋D1 SMA50（B2 合格：剔最好 3 張三段都正；t 1.05）", "#1234", SB2.RULES[6][2], 5 * 86400)]
+          ("h1brk1234", "H1 100 根突破＋D1 SMA50（B2 合格：剔最好 3 張三段都正；t 1.05）", "#1234", SB2.RULES[6][2], 5 * 86400),
+          ("macross1263", "均線交叉合成 10／50、20／100、50／200（#1267 方向一致合格；每筆＝一個子倉，R 已 ÷3）", "#1263", O2.r1263, 250 * 86400)]
 COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend", "spike")   # 6 條回測合格規則嘅 63 個組合（使用者 11-08「63 個組合回測同影子都做」）；#1049 唔入
 OVERLAP = (("rev15", "rev60"), ("rev15", "spike"), ("rev60", "spike"))   # 高度重疊：rev15＋rev60 約 80%、rev15＋急動約 54–65%
 COMBO_1027 = ("rev15", "round", "d1brk")
@@ -80,7 +82,7 @@ COMBO_1027 = ("rev15", "round", "d1brk")
 def load_data():
     import e6s4_forward as ef
     import fit_rules as fr
-    hist = A.load("mt5", "2026-09-01", "2026-10-30")
+    hist = A.load("mt5", "2025-06-01", "2026-10-30")      # [11-11] 由 2026-09 提早到 2025-06：SMA100／SMA200 要夠日數預熱（之前 #1232 嘅 D1 SMA100 預熱唔夠）
     br = ef.broker_bars(fr.ts_of("2026-10-31"))
     m = br["t"] > hist["t"][-1]
     return {k: np.r_[hist[k], br[k][m]] for k in ("t", "o", "h", "l", "c")}
