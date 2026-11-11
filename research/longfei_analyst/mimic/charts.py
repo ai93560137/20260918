@@ -125,8 +125,13 @@ def draw(name, doc, sp, path):
     for i in range(start, n):
         _, o, h, lo, cl = bars[i]
         col = UP if cl >= o else DN
-        if i > 0 and h <= bars[i - 1][2] and lo >= bars[i - 1][3]:
-            col = "#2962ff"                       # 🟦 inside bar（使用者 11-11：高低位都喺前一根之內，用藍色標）
+        inside = i > 0 and h <= bars[i - 1][2] and lo >= bars[i - 1][3]
+        if inside and cl >= o:
+            col = "#2962ff"                       # 🟦 向上 inside bar：K 身藍色（對過使用者 11-11 圖：收紅嘅 inside bar K 身唔變色）
+        if inside:                                # 使用者「Inside Bar Ind/Alert」：向上 inside bar 喺 K 上面畫 ▲，向下喺 K 下面畫 ▼
+            ax.plot(i, h if cl >= o else lo, marker="^" if cl >= o else "v", color="#2962ff", markersize=5,
+                    markeredgewidth=0, zorder=5, transform=ax.transData + __import__("matplotlib").transforms.ScaledTranslation(
+                        0, (9 if cl >= o else -9) / 72, fig.dpi_scale_trans))
         ax.vlines(i, lo, h, color=col, linewidth=1)
         ax.add_patch(Rectangle((i - 0.36, min(o, cl)), 0.72, max(abs(cl - o), (h - lo) * 0.002 + 1e-9), color=col))
     smas = {}
