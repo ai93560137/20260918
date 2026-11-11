@@ -70,6 +70,7 @@ def draw(name, doc, sp, path):
     show = sp.get("show", 70)
     start = n - show
     right = int(show * 0.75)                      # 右邊留白放標籤
+    xr = n + right
     idx = {}
     for i, b in enumerate(bars):
         idx.setdefault(b[0][:10], i)
@@ -114,7 +115,6 @@ def draw(name, doc, sp, path):
         if ys:
             ax.plot(xs, ys, color=col, linewidth=1.1)
             smas[k] = ys[-1]
-    xr = n + right
     for lv in sp.get("levels", []):
         p, style = lv[0], lv[1]
         label = lv[2] if len(lv) > 2 else (f"{p:,.0f}" if p >= 1000 else f"{p:,.2f}")
