@@ -76,3 +76,13 @@
    - 重點：A 股期貨隔夜報酬傾向喺日間反轉；HSI 延長時段後，有休市嘅時段之間報酬以流動性交易效應為主（即傾向反轉）。
    - **同我哋數據衝突**：#2032 N2「逆前一晚夜市做日市」（2018-11 起恒指期貨 1 分鐘）樣本外 n=933、每筆 −14.9 點、t −1.82（k=0.3% 都係 −17.6 點、t −1.76），4 年得 1 年正；反而 N1「跟夜市」樣本外 +6.9 點、t 0.84（未合格）。即係恒指夜市→日市係**輕微延續、唔係反轉**，A 股結果唔適用，唔另登記。
    - 下一步：冇。Fung (2000／2004／2010) 恒指期貨對美股極端變動過度反應已喺 11-07（#2000）處理。
+
+## 2026-11-11 網上研究：CPI 日前後走勢；成交量分布 POC 當支撐阻力（配合分析欄模仿使用者寫法，STYLE 第 49 條）
+
+1. **宏觀數據公布前後嘅股指走勢**——Hu, Pan, Wang & Zhu《Premium for Heightened Uncertainty》(NBER w25817)：https://nber.org/system/files/working_papers/w25817/w25817.pdf ；附錄版：https://www.mit.edu/~zhuh/HuPanWangZhu_preannouncement.pdf
+   - 重點：非農、GDP、ISM 公布**之前**有顯著正報酬（不確定性消除），公布之後細而唔顯著——即係冇「公布後反轉」；Lucca & Moench 較早嘅結論係 FOMC 以外嘅數據冇公布前漂移，兩者有分歧。搵唔到專測 CPI 日「同前一日方向相反」嘅研究；一篇市場通訊話近期 CPI 日 SPX 平均約 −0.1%，冇樣本同顯著性：https://marketmemo.beehiiv.com/p/when-inflation-stops-moving-markets
+   - 同我哋數據：11-10 核對（notes/2026-11-10_ES_4h_CPI_reversal.md）——2026-06 起 6 次 CPI 日，反轉約 3–4 次，樣本太少；同文獻「公布後冇系統性反轉」一致。使用者呢個觀察照記錄、唔當規律；分析欄模仿寫法可以引用佢原話，但唔加「高機率」。
+   - 下一步：唔登記 IDEAS（冇數據支持，6 個樣本做唔到檢定）；每次 CPI 日累積一行。
+2. **成交量分布／POC 係咪有效支撐阻力**——搵到嘅全部係平台同教學文章（CrossTrade、NinjaTrader、ATAS、Optimus Futures），**冇同行評審或者樣本外回測**；有教學頁反而話高成交量節點「價格照穿」、POC 直接入場冇用：https://marketstalkers.thinkific.com/pages/point-of-control-volume-profile ；定義問題（時段、格仔闊度）會改變 POC 位置：https://nexusfi.com/a/market-structure/naked-vpoc-futures-trading
+   - 同我哋數據：之前數據包冇成交量，測唔到。使用者文章成日用 POC（NQ 30,805、NVDA 180.72／199.27／218.77），模仿寫法畫唔到係最大差距之一。
+   - 下一步（今日做）：`scripts/longfei_analyst_data.py` 加 1 小時成交量（`h1_vol`），`mimic/charts.py` 加成交量分布同 POC（`profile`）；聽日數據包有量之後，先對返使用者嘅 POC 數字（NVDA 2025-07 起 180.72）睇差幾遠，再決定用唔用。POC 當支撐阻力有冇用，等有數據再登記 IDEAS 測（對照隨機水平位）。
