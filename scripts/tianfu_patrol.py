@@ -69,6 +69,7 @@ except Exception as _e:
 
 # 11-09 新三：趨勢簿（…63，926 圖，zhuge-xau trend_live）；11-10 加 …69 933 圖 #1114 月初突破（zhuge-xau-sig trend_live）
 # 停條件（IDEAS #1114 預先登記）：累計 ≤ −5R，或 ≥ 12 張後 PF < 0.8，或連蝕 6 張 → 即報總指揮（返影子要使用者批）
+# 11-11（IDEAS #1271，使用者「改」）：933 #1114、937 spike、939 kelt 改做只用累計 ≤ −8R；926／938／940／941 照舊
 # 11-10：…69 穩陣組 937–941（#1165 spike、#1174 wide、#1178 kelt、#1224 ichi、#1116 turtle）喺 zhuge-xau-sig 嘅 trend_books，同一套停條件
 _TL_SRC = []
 for _tag, _url in (("trend 926", "https://zhuge-xau-1056099871997.europe-west1.run.app/?format=json"),
@@ -118,7 +119,11 @@ for _tag, _tl in _TL_SRC:
                     break
                 _st += 1
             print(f"  [{_tag}] 停條件：{len(_rs)} 張 ΣR {sum(_rs):+.2f} PF {('—' if _pf is None else f'{_pf:.2f}')} 連蝕 {_st}")
-            if sum(_rs) <= -5 or (len(_rs) >= 12 and (_pf or 0) < 0.8) or _st >= 6:
+            # [11-11 使用者「改」；IDEAS #1271] 933 #1114（mobrk）、937（spike）、939（kelt）：只用累計 ≤ −8R；其餘照舊（≤ −5R／12 張 PF<0.8／連蝕 6）
+            if set(_tl.get("rules") or []) & {"mobrk", "spike", "kelt"}:
+                if sum(_rs) <= -8:
+                    print(f"  ⛔ [{_tag}] 觸發停條件（累計 ≤ −8R）→ 即報總指揮，建議呢本簿返影子（要使用者批）")
+            elif sum(_rs) <= -5 or (len(_rs) >= 12 and (_pf or 0) < 0.8) or _st >= 6:
                 print(f"  ⛔ [{_tag}] 觸發停條件（≤−5R／12 張 PF<0.8／連蝕 6）→ 即報總指揮，建議呢本簿返影子（要使用者批）")
     except Exception as _e:
         print(f"  [{_tag}] 讀唔到：{_e}")
