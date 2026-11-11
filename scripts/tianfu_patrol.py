@@ -109,7 +109,7 @@ for _tag, _tl in _TL_SRC:
             print(f"  ⚠ [{_tag}] EA 有倉但服務 state 冇 pos（state 可能被清／到期唔會自動平）→ 即報總指揮")
         if _p0 and _ps and abs((_ps[0].get("stop") or 0) - (_p0.get("sl") or 0)) > 0.01:
             print(f"  ⚠ [{_tag}] EA SL {_ps[0].get('stop')} 同服務記錄 {_p0.get('sl')} 唔一致")
-        if set(_tl.get("rules") or []) & {"mobrk", "spike", "wide", "kelt", "ichi", "turtle"}:
+        if set(_tl.get("rules") or []) & {"mobrk", "spike", "wide", "kelt", "ichi", "turtle", "td"}:
             _rs = [x["r"] for x in reversed(_tl.get("book") or []) if x.get("r") is not None]
             _w = sum(r for r in _rs if r > 0); _l = -sum(r for r in _rs if r < 0)
             _pf = (_w / _l) if _l else None
@@ -120,7 +120,7 @@ for _tag, _tl in _TL_SRC:
                 _st += 1
             print(f"  [{_tag}] 停條件：{len(_rs)} 張 ΣR {sum(_rs):+.2f} PF {('—' if _pf is None else f'{_pf:.2f}')} 連蝕 {_st}")
             # [11-11 使用者「改」；IDEAS #1271] 933 #1114（mobrk）、937（spike）、939（kelt）：只用累計 ≤ −8R；其餘照舊（≤ −5R／12 張 PF<0.8／連蝕 6）
-            if set(_tl.get("rules") or []) & {"mobrk", "spike", "kelt"}:
+            if set(_tl.get("rules") or []) & {"mobrk", "spike", "kelt", "td"}:
                 if sum(_rs) <= -8:
                     print(f"  ⛔ [{_tag}] 觸發停條件（累計 ≤ −8R）→ 即報總指揮，建議呢本簿返影子（要使用者批）")
             elif sum(_rs) <= -5 or (len(_rs) >= 12 and (_pf or 0) < 0.8) or _st >= 6:
@@ -147,8 +147,8 @@ try:
     for _, _r in sorted(_closed):
         _cum += _r; _peak = max(_peak, _cum)
     _now = _cum + _float; _peak = max(_peak, _now); _dd = _peak - _now
-    print(f"  [組合 7 本] 已平倉 {len(_closed)} 張 ΣR {_cum:+.2f}；持倉 {_nopen} 張浮動 {_float:+.2f}R；而家 {_now:+.2f}R；高位 {_peak:+.2f}R；回落 {_dd:.2f}R（通知線 10R）")
+    _nb = sum(1 for _x in _TL_SRC if _x[1]); print(f"  [組合 {_nb} 本] 已平倉 {len(_closed)} 張 ΣR {_cum:+.2f}；持倉 {_nopen} 張浮動 {_float:+.2f}R；而家 {_now:+.2f}R；高位 {_peak:+.2f}R；回落 {_dd:.2f}R（通知線 10R）")
     if _dd >= 10:
-        print(f"  ⛔ [組合 7 本] 由高位回落 {_dd:.2f}R ≥ 10R → 即通知使用者同總指揮（停唔停由使用者決定）")
+        print(f"  ⛔ [組合 {_nb} 本] 由高位回落 {_dd:.2f}R ≥ 10R → 即通知使用者同總指揮（停唔停由使用者決定）")
 except Exception as _e:
-    print(f"  [組合 7 本] 計唔到：{_e}")
+    print(f"  [組合] 計唔到：{_e}")
