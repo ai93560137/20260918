@@ -88,7 +88,7 @@ o = R.accounts_open_risk()
 k69 = [k for k in o if "69" in k][0]; k63 = [k for k in o if "63" in k][0]
 check("…63：926 趨勢簿 0.01 手 SL 266.89 → 2081.74 HKD", o[k63]["risk_hkd"] == 2081.74 and o[k63]["positions"] == 1, o)
 check("…69：加 939 0.01 手 SL 150 → 561.6＋1170＝1731.6", o[k69]["risk_hkd"] == 1731.6 and o[k69]["positions"] == 4, o)
-check("冇 XAU_TREND_BOOKS 用預設 937–941", R.trend_extra_magics() == [937, 938, 939, 940, 941], R.trend_extra_magics())
+check("冇 XAU_TREND_BOOKS 用預設 937–942（11-11 加 942 #1268）", R.trend_extra_magics() == [937, 938, 939, 940, 941, 942], R.trend_extra_magics())
 config.RISK_SIZING = False
 
 print(f"\n結果：{OK} 過、{FAIL} 失敗")

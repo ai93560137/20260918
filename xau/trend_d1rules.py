@@ -6,13 +6,16 @@
   ichi（#1224，strict_b_1220.st_ichimoku）：一目均衡表狀態（收市喺雲上＋轉換線 > 基準線＝+1，雲下＋轉換 < 基準＝−1，入雲＝0）由非 s 轉 s → 入；
         SL 2×ATR14；狀態離開 s 即平；120 根到期。
   turtle（#1116，h1_lab8.r1116）：收市 > 之前 55 日最高收市（< 最低）→ 順勢；SL 2×ATR20；收市穿之前 20 日相反極端即平；120 根到期。
+  td（#1268，research/strategy_search/topdown_1268.r1268；11-11 使用者「#1268 開真倉」）：由上而下——長線方向＝收市對 SMA200；
+        方向向上而且收市由 SMA20 之下升返上去 → 買（向下相反）；SL 3×ATR14；收市穿之前 20 日相反極端收市、或者穿返 SMA200 → 平；250 根到期。
+        狀態機同回測一樣（狀態維持期間唔再出訊號，止蝕之後要等狀態歸零再重新觸發）；用最多 420 日日線由頭計。
 共通（同 momo_strict_1157.trade_m1）：訊號用「已完成」D1（UTC 日）；下一根開市入（真倉＝新一日第一個心跳市價）；
 最低止蝕＝max(3 美元, 0.3×訊號日前一日 ATR14)；一個 magic 一次一張；平倉嗰根（或者止蝕嗰日）之前嘅訊號唔入（busy）。
 days：[(UTC 日, {"o","h","l","c"}), …]，只傳已完成嘅日線。"""
 
 NAMES = {"spike": "D1 急動＋SMA50（#1165）", "wide": "D1 寬幅日（#1174）", "kelt": "D1 Keltner（#1178）",
-         "ichi": "一目均衡表穿雲（#1224）", "turtle": "海龜系統 2（#1116）"}
-MAX_BARS = {"spike": 10, "wide": 5, "kelt": 20, "ichi": 120, "turtle": 120}
+         "ichi": "一目均衡表穿雲（#1224）", "turtle": "海龜系統 2（#1116）", "td": "200 日線方向＋回調重拾 20 日線（#1268）"}
+MAX_BARS = {"spike": 10, "wide": 5, "kelt": 20, "ichi": 120, "turtle": 120, "td": 250}
 RULES = tuple(NAMES)
 
 
@@ -57,6 +60,24 @@ def ichi_state(days):
     return s
 
 
+def td_state(days, nd=200, ne=20):
+    """#1268 狀態機（同 topdown_1268.r1268 build 一樣）：+1／−1／0。"""
+    c = [r["c"] for _, r in days]; n = len(c); md, me = sma(c, nd), sma(c, ne); s = [0] * n; cur = 0
+    for i in range(nd + 1, n):
+        up, dn = c[i] > md[i], c[i] < md[i]
+        if cur > 0 and (not up or c[i] < min(c[i - ne:i])):
+            cur = 0
+        elif cur < 0 and (not dn or c[i] > max(c[i - ne:i])):
+            cur = 0
+        if cur == 0:
+            if up and c[i] > me[i] and c[i - 1] <= me[i - 1]:
+                cur = 1
+            elif dn and c[i] < me[i] and c[i - 1] >= me[i - 1]:
+                cur = -1
+        s[i] = cur
+    return s
+
+
 def floor(days):
     """最低止蝕：max(3, 0.3×訊號日前一日 ATR14)。"""
     a = atr(days)
@@ -93,6 +114,11 @@ def signal(rule, days):
         if a[i] is None or s[i] == 0 or s[i] == s[i - 1]:
             return None
         return {"side": s[i], "risk": 2 * a[i]}
+    if rule == "td":
+        a = atr(days); st = td_state(days)
+        if i < 202 or a[i] is None or st[i] == 0 or st[i] == st[i - 1]:
+            return None
+        return {"side": st[i], "risk": 3 * a[i]}
     if rule == "turtle":
         a = atr(days, 20)
         if i < 56 or a[i] is None or a[i] <= 0:
@@ -117,6 +143,9 @@ def exit_hit(rule, side, days):
     elif rule == "ichi":
         if ichi_state(days)[k] != side:
             return "一目狀態離開"
+    elif rule == "td":
+        if td_state(days)[k] != side:
+            return "收市穿 20 日相反極端／穿返 SMA200"
     elif rule == "turtle":
         if k >= 20 and ((c[k] < min(c[k - 20:k])) if side > 0 else (c[k] > max(c[k - 20:k]))):
             return "收市穿 20 日相反極端"
