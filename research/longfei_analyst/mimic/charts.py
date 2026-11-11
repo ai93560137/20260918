@@ -5,7 +5,7 @@
 冇成交量數據，所以畫唔到成交量分布（POC 只可以引用使用者數字，畫成橙色水平線）。
 
 用法：python3 research/longfei_analyst/mimic/charts.py --spec research/longfei_analyst/mimic/spec_<日期>.json --out <資料夾> [--upload]
-spec：{"<代號>": {"title":…, "show": 根數, "levels": [[價, "solid|dash", 標籤?]], "boxes": [[低, 高, 起始日期, 標籤]],
+spec：{"<代號>": {"title":…, "show": 根數, "levels": [[價, "solid|dash", 標籤?]], "boxes": [[低, 高, 起始日期, 標籤, 結束日期?]],
         "lines": [[價, 顏色, 標籤]], "trend": [[日期1, 日期2, 標籤]], "marks": [[日期, "low|high", 標籤]], "ylim": [低, 高]}}
 """
 import argparse
@@ -97,9 +97,14 @@ def draw(name, doc, sp, path):
     fig, ax = plt.subplots(figsize=(18, 10), dpi=110)
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
-    for lo_, hi_, since, label in sp.get("boxes", []):
+    for bx in sp.get("boxes", []):
+        lo_, hi_, since, label = bx[:4]
         x0 = max(start, idx.get(since, start))
         x1 = n + int(right * 0.25)
+        if len(bx) > 4 and bx[4]:                 # 第 5 欄＝結束日期（缺口被跌穿／補完就畫到嗰日，同使用者一樣）
+            x1 = idx.get(bx[4], x1)
+            if x1 <= start:
+                continue
         ax.add_patch(Rectangle((x0, lo_), x1 - x0, hi_ - lo_, facecolor="#ffffff", alpha=0.12, edgecolor="none"))
         ax.add_patch(Rectangle((x0, lo_), x1 - x0, hi_ - lo_, fill=False, edgecolor="#ffffff", linewidth=1.3))
         if label:
