@@ -106,6 +106,8 @@ def draw(name, doc, sp, path):
     for i in range(start, n):
         _, o, h, lo, cl = bars[i]
         col = UP if cl >= o else DN
+        if i > 0 and h <= bars[i - 1][2] and lo >= bars[i - 1][3]:
+            col = "#2962ff"                       # 🟦 inside bar（使用者 11-11：高低位都喺前一根之內，用藍色標）
         ax.vlines(i, lo, h, color=col, linewidth=1)
         ax.add_patch(Rectangle((i - 0.36, min(o, cl)), 0.72, max(abs(cl - o), (h - lo) * 0.002 + 1e-9), color=col))
     smas = {}
