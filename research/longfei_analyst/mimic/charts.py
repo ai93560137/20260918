@@ -34,6 +34,19 @@ def clean_h1(h1, d1):
     return out
 
 
+def h4_cme(h1):
+    """期貨 4 小時 K 照 TradingView／CME 交易時段：由美東 18:00 開市起計（18、22、02、06、10、14）。
+    使用者 11-11 圖上收市前嗰根（14:00–17:00）係 inside bar；pack.h4 用 00／04／08… 起計對唔上。"""
+    from datetime import timedelta
+    out = {}
+    for k, o, h, lo, c in h1:
+        t = datetime.strptime(k, "%Y-%m-%d %H:%M") - timedelta(hours=2)
+        key = (t.replace(hour=t.hour // 4 * 4, minute=0) + timedelta(hours=2)).strftime("%Y-%m-%d %H:00")
+        x = out.get(key)
+        out[key] = [key, o, h, lo, c] if x is None else [key, x[1], max(x[2], h), min(x[3], lo), c]
+    return [out[k] for k in sorted(out)]
+
+
 def profile(doc, since, until=None, bins=60):
     """成交量分布：由 since（YYYY-MM-DD）起，每支 1 小時 K 嘅成交量平均分落佢高低位之間嘅價格格仔。
     回傳 (格仔下限列表, 格闊, 每格成交量, POC 價)；冇成交量數據回傳 None。"""
@@ -64,7 +77,8 @@ def draw(name, doc, sp, path):
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
-    bars = pack.h4(clean_h1(doc["h1"], doc["d1"]))
+    h1c = clean_h1(doc["h1"], doc["d1"])
+    bars = h4_cme(h1c) if str(doc.get("symbol", "")).endswith("=F") else pack.h4(h1c)
     C = [b[4] for b in bars]
     n = len(bars)
     show = sp.get("show", 70)
