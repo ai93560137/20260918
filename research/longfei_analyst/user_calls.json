@@ -28,6 +28,7 @@
   {"note": "2026-11-09_NVDA_1d_1w_wedge_break", "date": "2026-11-09", "base": "2026-11-06", "market": "NVDA", "kind": "support", "level": 164.28, "horizon": 10, "cond": "1.0 起漲點；跌穿睇 145.61–134.06"},
   {"note": "2026-11-09_NVDA_1d_1w_wedge_break", "date": "2026-11-09", "base": "2026-11-06", "market": "NVDA", "kind": "resistance", "level": 200.13, "horizon": 10, "cond": "🟠50 週均線"},
   {"note": "2026-11-10_ES_4h_CPI_reversal", "date": "2026-11-10", "base": "2026-11-09", "market": "ES", "kind": "bias", "dir": -1, "horizon": 5, "cond": "未突破 10/14–10/28 下降壓力線；CPI 日反轉現象"},
-  {"note": "2026-11-10_ES_4h_CPI_reversal", "date": "2026-11-10", "base": "2026-11-09", "market": "ES", "kind": "resistance", "level": 7729, "horizon": 10, "cond": "下降壓力線＋4 小時 200 SMA"}
+  {"note": "2026-11-10_ES_4h_CPI_reversal", "date": "2026-11-10", "base": "2026-11-09", "market": "ES", "kind": "resistance", "level": 7729, "horizon": 10, "cond": "下降壓力線＋4 小時 200 SMA"},
+  {"note": "2026-11-11_ES_4h_bulls_take_control", "date": "2026-11-11", "base": "2026-11-10", "market": "ES", "kind": "target", "level": 7665, "horizon": 5, "cond": "7565 站穩"}
  ]
 }
