@@ -77,7 +77,7 @@ def draw(name, doc, sp, path):
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
-    h1c = clean_h1(doc["h1"], doc["d1"])
+    h1c = doc["h1"] if str(doc.get("symbol", "")).startswith("HK.") else clean_h1(doc["h1"], doc["d1"])   # 恒指日線按交易日（夜市屬下一日），唔夾
     bars = h4_cme(h1c) if str(doc.get("symbol", "")).endswith("=F") else pack.h4(h1c)
     C = [b[4] for b in bars]
     n = len(bars)
@@ -185,7 +185,7 @@ def draw(name, doc, sp, path):
     ax.text(0.005, 0.99, head, transform=ax.transAxes, color="#dddddd", fontsize=10, va="top", ha="left", linespacing=1.5)
     for (k, col), y in zip(SMA_COL, (0.955, 0.932, 0.909)):
         ax.plot([0.001, 0.004], [y, y], transform=ax.transAxes, color=col, linewidth=3)
-    ax.text(0.005, 0.012, f"龍飛陣模仿使用者畫法　截至 {b[0]}（美東，4 小時 K 開始時間）", transform=ax.transAxes,
+    ax.text(0.005, 0.012, f"龍飛陣模仿使用者畫法　截至 {b[0]}（{'香港時間' if str(doc.get('symbol', '')).startswith('HK.') else '美東'}，4 小時 K 開始時間）", transform=ax.transAxes,
             color="#888888", fontsize=9)
     plt.tight_layout()
     plt.savefig(path, facecolor=fig.get_facecolor())
