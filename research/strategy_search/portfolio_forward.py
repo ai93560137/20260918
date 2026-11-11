@@ -68,7 +68,8 @@ def main():
         done = R.simulate(D, sorted(ent))
         done_ts = {x[0] for x in done}
         rs = [x[3] for x in done]; allr += rs; alltr += done
-        op = [e for e in ent if int(D.t[e[0]]) not in done_ts and int(D.t[e[0]]) > (max(done_ts) if done_ts else 0)][:1]
+        last_exit = max((x[4] for x in done), default=0)        # [11-11 修] 之前用「最後一張已平倉嘅入場時間」做界，會將上一張未平倉期間被跳過嘅訊號錯當持倉
+        op = [e for e in ent if int(D.t[e[0]]) not in done_ts and int(D.t[e[0]]) >= last_exit][:1]
         for e in op:
             px = D.o[e[0]]
             opens.append(f"- {name}：{'多' if e[1] > 0 else '空'} {dt.datetime.fromtimestamp(int(D.t[e[0]]), dt.timezone.utc):%m-%d %H:%M} 入 {px:.2f}，SL {px - e[1] * e[2]:.2f}" +
