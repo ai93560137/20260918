@@ -63,6 +63,18 @@ def rows(df, fmt):
     return out
 
 
+def vols(df, fmt):
+    """[11-11] 1 小時成交量 {時間: 量}（分開放，唔改 h1 格式）：模仿使用者畫成交量分布同 POC 用（STYLE 第 49 條）。"""
+    out = {}
+    for t, r in df.iterrows():
+        v, c = r["Volume"], r["Close"]
+        v = float(v.iloc[0] if hasattr(v, "iloc") else v)
+        c = float(c.iloc[0] if hasattr(c, "iloc") else c)
+        if c == c and v == v and v > 0:
+            out[t.strftime(fmt)] = int(v)
+    return out
+
+
 PREPOST = {"RSP"}   # 使用者嘅 TradingView RSP 4 小時圖包盤前盤後（每日 4 支 4 小時 K），均線先對得上
 
 
@@ -73,7 +85,7 @@ def fetch(ticker):
     if h1.index.tz is not None:
         h1.index = h1.index.tz_convert("America/New_York")
     doc = {"symbol": ticker, "fetched_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-           "d1": rows(d1, "%Y-%m-%d"), "h1": rows(h1, "%Y-%m-%d %H:%M")}
+           "d1": rows(d1, "%Y-%m-%d"), "h1": rows(h1, "%Y-%m-%d %H:%M"), "h1_vol": vols(h1, "%Y-%m-%d %H:%M")}
     if ticker in PREPOST:                   # 對照用：派息調整後日線（TradingView 預設調整股息）
         adj = yf.download(ticker, period="3y", interval="1d", progress=False, auto_adjust=True)
         doc["d1_adj"] = rows(adj, "%Y-%m-%d")

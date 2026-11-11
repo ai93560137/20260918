@@ -34,6 +34,25 @@ def clean_h1(h1, d1):
     return out
 
 
+def profile(doc, since, until=None, bins=60):
+    """成交量分布：由 since（YYYY-MM-DD）起，每支 1 小時 K 嘅成交量平均分落佢高低位之間嘅價格格仔。
+    回傳 (格仔下限列表, 格闊, 每格成交量, POC 價)；冇成交量數據回傳 None。"""
+    vol = doc.get("h1_vol") or {}
+    rows_ = [(o, h, lo, c, vol.get(k, 0)) for k, o, h, lo, c in doc["h1"] if k[:10] >= since and (not until or k[:10] <= until)]
+    rows_ = [r for r in rows_ if r[4] > 0]
+    if len(rows_) < 20:
+        return None
+    lo_v, hi_v = min(r[2] for r in rows_), max(r[1] for r in rows_)
+    w = (hi_v - lo_v) / bins
+    acc = [0.0] * bins
+    for o, h, lo, c, v in rows_:
+        a, b = int((lo - lo_v) / w), min(bins - 1, int((h - lo_v) / w))
+        for i in range(a, b + 1):
+            acc[i] += v / (b - a + 1)
+    j = max(range(bins), key=lambda i: acc[i])
+    return [lo_v + i * w for i in range(bins)], w, acc, lo_v + (j + 0.5) * w
+
+
 def draw(name, doc, sp, path):
     import matplotlib
     matplotlib.use("Agg")
@@ -70,6 +89,19 @@ def draw(name, doc, sp, path):
         ax.add_patch(Rectangle((x0, lo_), x1 - x0, hi_ - lo_, fill=False, edgecolor="#ffffff", linewidth=1.3))
         if label:
             ax.text(x1 - 0.5, hi_, label, color="#ffffff", fontsize=11, va="bottom", ha="right", style="italic")
+    for since, label in sp.get("profile", []):
+        pf = profile(doc, since)
+        if pf:
+            edges, w, acc, poc = pf
+            x0 = max(start, idx.get(since, start))
+            m = max(acc)
+            for e, v in zip(edges, acc):
+                ax.add_patch(Rectangle((x0, e), v / m * show * 0.28, w * 0.9, facecolor="#2962ff" if abs(e + w / 2 - poc) > w else "#ffb300",
+                                       alpha=0.45, edgecolor="none"))
+            ax.hlines(poc, x0, xr, color="#ff9800", linewidth=1.2)
+            ax.text(xr - 1, poc, f"{label} POC {poc:,.2f}" if poc < 1000 else f"{label} POC {poc:,.0f}", color="#ffffff",
+                    fontsize=12, va="bottom", ha="right", style="italic")
+            print(name, "POC", since, round(poc, 2))
     for i in range(start, n):
         _, o, h, lo, cl = bars[i]
         col = UP if cl >= o else DN
