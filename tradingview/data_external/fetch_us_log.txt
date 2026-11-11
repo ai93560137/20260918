@@ -1,23 +1,19 @@
-KEEP vhsi_daily.csv 2026-11-10（Yahoo 暫缺，保留舊檔嗰一列）
-SAVED vhsi_daily.csv: 5766 rows -> 2026-11-10 00:00:00
-KEEP hsi_daily.csv 2026-11-10（Yahoo 暫缺，保留舊檔嗰一列）
-SAVED hsi_daily.csv: 9837 rows -> 2026-11-10 00:00:00
+SAVED vhsi_daily.csv: 5767 rows -> 2026-11-11 00:00:00
+SAVED hsi_daily.csv: 9838 rows -> 2026-11-11 00:00:00
 SAVED vix_daily.csv: 9285 rows -> 2026-11-10 00:00:00
 SAVED spx_daily.csv: 24833 rows -> 2026-11-10 00:00:00
-SAVED vxn_daily.csv: 6488 rows -> 2026-11-09 00:00:00
+SAVED vxn_daily.csv: 6489 rows -> 2026-11-10 00:00:00
 SAVED ndx_daily.csv: 10358 rows -> 2026-11-10 00:00:00
-KEEP n225_daily.csv 2026-11-10（Yahoo 暫缺，保留舊檔嗰一列）
-SAVED n225_daily.csv: 15203 rows -> 2026-11-10 00:00:00
-SAVED vix9d_daily.csv: 3987 rows -> 2026-11-10 00:00:00
+SAVED n225_daily.csv: 15204 rows -> 2026-11-11 00:00:00
+SAVED vix9d_daily.csv: 3988 rows -> 2026-11-10 00:00:00
 SAVED vix3m_daily.csv: 5113 rows -> 2026-11-10 00:00:00
 SAVED vvix_daily.csv: 4987 rows -> 2026-11-10 00:00:00
 SAVED move_daily.csv: 5934 rows -> 2026-11-10 00:00:00
 SAVED skew_daily.csv: 9209 rows -> 2026-11-10 00:00:00
-KEEP axvi_daily.csv 2026-11-10（Yahoo 暫缺，保留舊檔嗰一列）
-SAVED axvi_daily.csv: 4770 rows -> 2026-11-10 00:00:00
+SAVED axvi_daily.csv: 4771 rows -> 2026-11-11 00:00:00
 NKVI download page: HTTP 404, vi-csv links: []
 NKVI url nikkei_stock_average_vi_daily_en.csv: HTTP 403, 2354 bytes
 NKVI url nikkei_stock_average_vi_daily_jp.csv: HTTP 403, 2354 bytes
 NKVI url dataload?list=vi&csv=1: HTTP 200, 2146 bytes
-ES=F: 7553.75 @ 2026-11-10 18:00:00-05:00
-NQ=F: 27879.25 @ 2026-11-10 18:00:00-05:00
+ES=F: 7588.75 @ 2026-11-11 01:00:00-05:00
+NQ=F: 28234.75 @ 2026-11-11 01:00:00-05:00
