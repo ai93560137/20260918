@@ -71,7 +71,7 @@ def open_risk(equity_file, position_files):
 
 
 def trend_extra_magics():
-    """[11-10] …69 穩陣組趨勢簿 magic：按 XAU_TREND_BOOKS（訊號書服務先有）；主服務冇呢個 env 就用預設 937–941。"""
+    """[11-10] …69 穩陣組趨勢簿 magic：按 XAU_TREND_BOOKS（訊號書服務先有）；主服務冇呢個 env 就用預設 937–942。"""
     got = [int(x.split(":")[0]) for x in config.TREND_BOOKS if x.split(":")[0].strip().isdigit()]
     return got or [937, 938, 939, 940, 941, 942]                    # [11-11] 942＝#1268 td（未有狀態檔就當冇倉）
 
