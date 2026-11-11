@@ -5,7 +5,7 @@
 冇成交量數據，所以畫唔到成交量分布（POC 只可以引用使用者數字，畫成橙色水平線）。
 
 用法：python3 research/longfei_analyst/mimic/charts.py --spec research/longfei_analyst/mimic/spec_<日期>.json --out <資料夾> [--upload]
-spec：{"<代號>": {"title":…, "show": 根數, "levels": [[價, "solid|dash", 標籤?]], "boxes": [[低, 高, 起始日期, 標籤]],
+spec：{"<代號>": {"title":…, "show": 根數, "levels": [[價, "solid|dash", 標籤?]], "boxes": [[低, 高, 起始日期, 標籤, 結束日期?]],
         "lines": [[價, 顏色, 標籤]], "trend": [[日期1, 日期2, 標籤]], "marks": [[日期, "low|high", 標籤]], "ylim": [低, 高]}}
 """
 import argparse
@@ -77,7 +77,7 @@ def draw(name, doc, sp, path):
             font_manager.fontManager.addfont(f)
             plt.rcParams["font.family"] = font_manager.FontProperties(fname=f).get_name()
             break
-    h1c = clean_h1(doc["h1"], doc["d1"])
+    h1c = doc["h1"] if str(doc.get("symbol", "")).startswith("HK.") else clean_h1(doc["h1"], doc["d1"])   # 恒指日線按交易日（夜市屬下一日），唔夾
     bars = h4_cme(h1c) if str(doc.get("symbol", "")).endswith("=F") else pack.h4(h1c)
     C = [b[4] for b in bars]
     n = len(bars)
@@ -97,9 +97,14 @@ def draw(name, doc, sp, path):
     fig, ax = plt.subplots(figsize=(18, 10), dpi=110)
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
-    for lo_, hi_, since, label in sp.get("boxes", []):
+    for bx in sp.get("boxes", []):
+        lo_, hi_, since, label = bx[:4]
         x0 = max(start, idx.get(since, start))
         x1 = n + int(right * 0.25)
+        if len(bx) > 4 and bx[4]:                 # 第 5 欄＝結束日期（缺口被跌穿／補完就畫到嗰日，同使用者一樣）
+            x1 = idx.get(bx[4], x1)
+            if x1 <= start:
+                continue
         ax.add_patch(Rectangle((x0, lo_), x1 - x0, hi_ - lo_, facecolor="#ffffff", alpha=0.12, edgecolor="none"))
         ax.add_patch(Rectangle((x0, lo_), x1 - x0, hi_ - lo_, fill=False, edgecolor="#ffffff", linewidth=1.3))
         if label:
@@ -120,8 +125,13 @@ def draw(name, doc, sp, path):
     for i in range(start, n):
         _, o, h, lo, cl = bars[i]
         col = UP if cl >= o else DN
-        if i > 0 and h <= bars[i - 1][2] and lo >= bars[i - 1][3]:
-            col = "#2962ff"                       # 🟦 inside bar（使用者 11-11：高低位都喺前一根之內，用藍色標）
+        inside = i > 0 and h <= bars[i - 1][2] and lo >= bars[i - 1][3]
+        if inside and cl >= o:
+            col = "#2962ff"                       # 🟦 向上 inside bar：K 身藍色（對過使用者 11-11 圖：收紅嘅 inside bar K 身唔變色）
+        if inside:                                # 使用者「Inside Bar Ind/Alert」：向上 inside bar 喺 K 上面畫 ▲，向下喺 K 下面畫 ▼
+            ax.plot(i, h if cl >= o else lo, marker="^" if cl >= o else "v", color="#2962ff", markersize=5,
+                    markeredgewidth=0, zorder=5, transform=ax.transData + __import__("matplotlib").transforms.ScaledTranslation(
+                        0, (9 if cl >= o else -9) / 72, fig.dpi_scale_trans))
         ax.vlines(i, lo, h, color=col, linewidth=1)
         ax.add_patch(Rectangle((i - 0.36, min(o, cl)), 0.72, max(abs(cl - o), (h - lo) * 0.002 + 1e-9), color=col))
     smas = {}
@@ -175,7 +185,7 @@ def draw(name, doc, sp, path):
     ax.text(0.005, 0.99, head, transform=ax.transAxes, color="#dddddd", fontsize=10, va="top", ha="left", linespacing=1.5)
     for (k, col), y in zip(SMA_COL, (0.955, 0.932, 0.909)):
         ax.plot([0.001, 0.004], [y, y], transform=ax.transAxes, color=col, linewidth=3)
-    ax.text(0.005, 0.012, f"龍飛陣模仿使用者畫法　截至 {b[0]}（美東，4 小時 K 開始時間）", transform=ax.transAxes,
+    ax.text(0.005, 0.012, f"龍飛陣模仿使用者畫法　截至 {b[0]}（{'香港時間' if str(doc.get('symbol', '')).startswith('HK.') else '美東'}，4 小時 K 開始時間）", transform=ax.transAxes,
             color="#888888", fontsize=9)
     plt.tight_layout()
     plt.savefig(path, facecolor=fig.get_facecolor())
