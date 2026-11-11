@@ -328,7 +328,7 @@ def _forward_section(fw, book=None):
     return "<div class='section' id='forward'><h2>🔬 前向測試（影子，唔落單）</h2>" + out + "</div>"
 
 
-TREND_STOP = {r: (-5.0, 12, 0.8, 6) for r in ("mobrk", "spike", "wide", "kelt", "ichi", "turtle")}   # [11-10] 穩陣組 937–941 同一套停條件      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
+TREND_STOP = {**{r: (-5.0, 12, 0.8, 6) for r in ("wide", "ichi", "turtle")}, **{r: (-8.0, None, None, None) for r in ("mobrk", "spike", "kelt")}}   # [11-11 IDEAS #1271，使用者「改」] 933／937／939 只用累計 ≤ −8R   # [11-10] 穩陣組 937–941 同一套停條件      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
 
 
 def trend_stats(book):
@@ -376,10 +376,12 @@ def trend_section(tl, title):
         if r in TREND_STOP:
             lim_r, min_n, lim_pf, lim_streak = TREND_STOP[r]
             hit = [x for x, ok in ((f"累計 {st['sum_r']:+.2f}R ≤ {lim_r:g}R", st["sum_r"] <= lim_r),
-                                   (f"{st['n']} 張 PF {st['pf'] or 0:.2f} < {lim_pf}", st["n"] >= min_n and (st["pf"] or 0) < lim_pf),
-                                   (f"連蝕 {st['streak']} ≥ {lim_streak}", st["streak"] >= lim_streak)) if ok]
+                                   (f"{st['n']} 張 PF {st['pf'] or 0:.2f} < {lim_pf}", min_n is not None and st["n"] >= min_n and (st["pf"] or 0) < lim_pf),
+                                   (f"連蝕 {st['streak']} ≥ {lim_streak}", lim_streak is not None and st["streak"] >= lim_streak)) if ok]
+            desc = (f"累計 ≤ {lim_r:g}R → 返影子（11-11 使用者改：只用累計）" if min_n is None
+                    else f"預先登記：累計 ≤ {lim_r:g}R，或 ≥ {min_n} 張後 PF &lt; {lim_pf}，或連蝕 {lim_streak} 張 → 返影子")
             stop = (f"<p>{'<b class=neg>⛔ 觸發停條件：' + esc('；'.join(hit)) + '（返影子，要總指揮／使用者處理）</b>' if hit else '✅ 未觸發停條件'}"
-                    f"<span class='muted' style='font-size:13px'>（預先登記：累計 ≤ {lim_r:g}R，或 ≥ {min_n} 張後 PF &lt; {lim_pf}，或連蝕 {lim_streak} 張 → 返影子）</span></p>")
+                    f"<span class='muted' style='font-size:13px'>（{desc}）</span></p>")
     brows = "".join(f"<tr><td>{esc(fmt_hkt(b.get('opened_ts') or 0))}</td><td>{esc(fmt_hkt(b.get('closed_ts') or 0))}</td><td>{esc(b.get('ch') or '')}</td>"
                     f"<td>{'好' if (b.get('side') or 0) > 0 else '淡'}</td><td>{num(b.get('entry'))}</td><td>{num(b.get('stop0'))}</td><td>{num(b.get('exit_est'))}</td>"
                     f"<td class=\"{'pos' if (b.get('pnl_hkd') or 0) >= 0 else 'neg'}\">{(b.get('pnl_hkd') or 0):+.2f}</td><td>{'—' if b.get('r') is None else format(b['r'], '+.2f')}</td></tr>"

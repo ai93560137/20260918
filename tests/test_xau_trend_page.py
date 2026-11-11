@@ -16,8 +16,12 @@ class TrendPage(unittest.TestCase):
 
     def test_stop_streak(self):
         book = [{"r": -1.0, "pnl_hkd": -50, "opened_ts": 0, "closed_ts": 0} for _ in range(6)]
-        h = page.trend_section({**TL, "book": book}, "x")
+        h = page.trend_section({**TL, "rules": ["turtle"], "book": book}, "x")          # 941 等照舊：連蝕 6 就停
         self.assertIn("觸發停條件", h); self.assertIn("連蝕 6", h)
+        h = page.trend_section({**TL, "book": book}, "x")                                # [11-11] 933 mobrk 只用累計 ≤ −8R：連蝕 6（−6R）唔觸發
+        self.assertIn("未觸發停條件", h); self.assertIn("只用累計", h)
+        h = page.trend_section({**TL, "book": book + book[:2]}, "x")                     # −8R 觸發
+        self.assertIn("⛔ 觸發停條件", h); self.assertIn("≤ -8R", h)
         st = page.trend_stats(book); self.assertEqual((st["n"], st["sum_r"], st["streak"]), (6, -6.0, 6))
 
     def test_none(self):
