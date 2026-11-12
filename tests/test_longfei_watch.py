@@ -24,6 +24,12 @@ class T(unittest.TestCase):
         self.assertEqual([x[0] for x in w.check([["a", 7600, 7620, 7560, 7610], ["b", 7590, 7615, 7580, 7605]], {})], ["inside_up"])   # 收紅（向上）都提
         self.assertEqual(w.check([["a", 7600, 7620, 7560, 7610], ["b", 7605, 7625, 7580, 7590]], {}), [])      # 高過前一根高，唔係 inside
 
+    def test_near_key(self):
+        keys = [7498.5, 7565, 7665]
+        self.assertIn("測試 7,498.50，收返上面", w.near_key(["a", 7551, 7566, 7493, 7523], keys))      # 11/10：低 7493 插穿 7498.5 收返上面
+        self.assertIn("測試 7,665.00，收返下面", w.near_key(["a", 7609, 7671.5, 7597, 7660], keys))    # 高 7671.5 過 7665 收返下面
+        self.assertIn("唔喺關鍵位", w.near_key(["a", 7616.75, 7628.5, 7600.5, 7619.75], keys))
+
     def test_closed_bars(self):
         bars = [["2026-11-11 10:00", 1, 2, 0, 1], ["2026-11-11 14:00", 1, 2, 0, 1], ["2026-11-11 18:00", 1, 2, 0, 1]]
         now = datetime(2026, 11, 11, 17, 5, tzinfo=ET)
