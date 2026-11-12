@@ -88,10 +88,18 @@ jobs:
 
       - name: Daily report
         env:
+          ALREADY: ${{ steps.dedupe.outputs.already }}
+          FORCE: ${{ inputs.force_send }}
           R: ${{ steps.build.outputs.refresh }}
           L: ${{ steps.labs.outputs.labs }}
         run: |
           python3 canary/daily_report.py --health "refresh=$R" "build=ok" "labs=$L"
+          # 今日已發過(遲到排程/重複補跑)而唔強制重發:Telegram 唔會發,所以還原 tg_daily.txt 同 sent_log.csv,
+          # 令倉庫留底保持「真正發出嗰則」(11-10、11-12 遲到排程蓋咗留底,指紋對唔上真正發出內容)。
+          if [ "$ALREADY" = "1" ] && [ "$FORCE" != "true" ]; then
+            git checkout -- canary/tg_daily.txt canary/sent_log.csv
+            echo "::notice::今日已發過:tg_daily.txt、sent_log.csv 保留第一次發出嗰版"
+          fi
 
       - name: Special alert (close)
         # 2026-10-23 使用者要求:短期軸收市升級(綠→走平→紅)、災難軸綠→深紅,或盤中預警收市未成立,另發一則特別警報。
