@@ -1,0 +1,49 @@
+{
+ "generated_utc": "2026-11-12 20:37:53",
+ "cost_leg": 4.0,
+ "wide": 1.3,
+ "sma_n": 200,
+ "script_sha256": "717b56849ecea00b00d67dac9052da243b2c9cbc226fe85052df2cf942fb636d",
+ "weeks": 56,
+ "inputs": {
+  "hsi": "610c2b9a5a38eae7e03dc7dedcbaa3f60cb33200f491ac29b543844ab8d22cb4",
+  "atm_iv.csv": "6d9bf021f3f5f5bd30a4bc8d613cf2804f59f04261931aadf91d89e9c2c0baa7",
+  "series": {
+   "hsiwo_2025.csv.gz": "ff61f1a2dc1f80055e1db51043c28cdf8b6c57212dc4fe675b3051edf5deaaf9",
+   "hsiwo_2026.csv.gz": "4544cd18a2bb38407110d0d6ce4465c5d7b3c56c97fae30ec0972453d4c06688"
+  }
+ },
+ "judge": {
+  "weeks": 56,
+  "above_weeks": 29,
+  "mean_b": 47.02892857142857,
+  "mean_v": 38.43017857142858,
+  "worst_b": -503.63,
+  "worst_v": -503.63,
+  "hit_b": 5,
+  "hit_v": 4,
+  "call_pay_up_b": 138.47,
+  "call_pay_up_v": 0.0,
+  "c1": false,
+  "c2": false,
+  "c3": true,
+  "c4": false,
+  "pass": false,
+  "gate80_b": 2,
+  "gate80_v": 6,
+  "sum_b": 2633.62,
+  "sum_v": 2152.09,
+  "pos_b": 47,
+  "pos_v": 48,
+  "halves": [
+   [
+    69.98821428571429,
+    56.89785714285714
+   ],
+   [
+    24.06964285714286,
+    19.962500000000002
+   ]
+  ]
+ }
+}
