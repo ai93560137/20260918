@@ -1,5 +1,5 @@
 """[IDEAS #1446] 金絲雀燈色（波動率期限結構）用喺天覆陣：過濾新倉／亮燈減注／同黃金方向規則嘅關係（使用者 11-12，經總指揮）。
-規格同門檻以 IDEAS 預先登記為準（跑之前 commit；唔改燈嘅定義同閾值）。燈色表由金絲雀分支讀（git show）。只讀研究。
+規格同門檻以 IDEAS 預先登記為準（跑之前 commit；唔改燈嘅定義同閾值）。燈色表讀預設分支 canary/canary_daily.csv（冇先退去金絲雀分支）。只讀研究。
 用法：python3 research/strategy_search/canary_1446.py → research/strategy_search/CANARY_1446.md"""
 import csv
 import datetime as dt
@@ -25,7 +25,11 @@ NR = 1000
 
 
 def lights():
-    txt = subprocess.run(["git", "show", f"{BRANCH}:canary/canary_daily.csv"], capture_output=True, text=True, check=True, cwd=os.path.join(HERE, "..", "..")).stdout
+    local = os.path.join(HERE, "..", "..", "canary", "canary_daily.csv")      # 預設分支已有（金絲雀每日更新）；冇先退去金絲雀分支
+    if os.path.exists(local):
+        txt = open(local, encoding="utf-8").read()
+    else:
+        txt = subprocess.run(["git", "show", f"{BRANCH}:canary/canary_daily.csv"], capture_output=True, text=True, check=True, cwd=os.path.join(HERE, "..", "..")).stdout
     days, rows = [], []
     for r in csv.DictReader(io.StringIO(txt)):
         f = lambda k: r.get(k) == "1"  # noqa: E731
@@ -92,7 +96,7 @@ def block(L, title, T, rng):
 def main():
     days, rows = lights(); rng = np.random.default_rng(1446); d = I.load(); S = {s[0]: s for s in SB.STRATS}
     L = ["# #1446：金絲雀燈色用喺天覆陣", "",
-         f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；燈色表＝金絲雀分支 `canary/canary_daily.csv`（{len(days):,} 日；紅 {100 * rows[:, 0].mean():.0f}%、深紅 {100 * rows[:, 1].mean():.0f}%、黃×2 {100 * rows[:, 2].mean():.0f}%、任何一隻 {100 * rows.any(axis=1).mean():.0f}% 嘅日子亮）",
+         f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；燈色表＝`canary/canary_daily.csv`（{len(days):,} 日；紅 {100 * rows[:, 0].mean():.0f}%、深紅 {100 * rows[:, 1].mean():.0f}%、黃×2 {100 * rows[:, 2].mean():.0f}%、任何一隻 {100 * rows.any(axis=1).mean():.0f}% 嘅日子亮）",
          "- 「亮燈」＝紅或深紅或黃×2；D 日收市嘅燈只用喺之後入場嘅單；燈嘅定義同閾值冇改；只讀研究", "", "## (A) 真倉 6 本（2010–2026 M1 嚴格版回測）", ""]
     A = {name: tag(S[key][3](d), days, rows) for name, key in LIVE}
     ra = block(L, "6 本合併", [x for v in A.values() for x in v], rng)
