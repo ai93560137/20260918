@@ -111,6 +111,8 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）（⚠ 同根止�
           ("h4bo1408", "日線方向＋H4 破 20 根高位入、日線方向變先平（#1408 合格；利潤靠少數大單）", "#1408", _h4("BO", 2), 0),
           ("h4macd1420", "日線方向＋H4 MACD 柱轉正入、日線方向變先平（#1420 合格；利潤靠少數大單）", "#1420", _h4("MACD", 2), 0),
           ("h4macd1421", "日線方向＋H4 MACD 柱轉正入、穿 20 根低位或方向變就平（#1421 合格；四條入面最穩陣）", "#1421", _h4("MACD", 3), 0)]
+MAIN_KEYS = ("macross1263", "td1268", "td1269", "fr1273", "fr1285", "fr1290", "fr1300", "fr1314",
+             "h4pb1404", "h4bo1408", "h4macd1420", "h4macd1421")   # [11-12 使用者「影子板分開主力同留底兩個表」] 主力＝日線合格 8 條＋H4 合格 4 條；其餘留底照記前向
 COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend", "spike")   # 6 條回測合格規則嘅 63 個組合（使用者 11-08「63 個組合回測同影子都做」）；#1049 唔入
 OVERLAP = (("rev15", "rev60"), ("rev15", "spike"), ("rev60", "spike"))   # 高度重疊：rev15＋rev60 約 80%、rev15＋急動約 54–65%
 COMBO_1027 = ("rev15", "round", "d1brk")
@@ -152,7 +154,7 @@ def main():
         st = stats(tr)
         recent = [{"utc": dt.datetime.fromtimestamp(ts, dt.timezone.utc).strftime("%m-%d %H:%M"), "side": "BUY" if sg > 0 else "SELL",
                    "r": round(r, 2), "open": bool(hold and ts + hold > last)} for ts, sg, r in tr[-5:][::-1]]
-        singles.append({"key": key, "name": name, "idea": idea, **st, "recent": recent})
+        singles.append({"key": key, "name": name, "idea": idea, "group": "main" if key in MAIN_KEYS else "archive", **st, "recent": recent})
     combos = []
     keys = list(COMBO_KEYS)
     for k in range(1, len(keys) + 1):
@@ -166,9 +168,12 @@ def main():
            "criteria": "⚠＝組合含 rev15／rev60／M1 急動任何兩條（高度重疊，等於同一訊號落多倍注）；各條 30 張判（#1011／#1017：平均 ≥ +0.10R、PF ≥ 1.3、連敗 ≤ 6；#1022：PF ≥ 1.2、連敗 ≤ 8；#1026：PF ≥ 1.2、連敗 ≤ 6；#1067：同 #1011）；組合只作描述；一次只上一條實倉"}
     f = lambda x, p="{:+.2f}": "—" if x is None else p.format(x)  # noqa: E731
     out = ["# 影子總表：5 條規則同所有組合（IDEAS #1028）", "", f"- 更新 {meta['run_utc']} UTC；由 {start} UTC 起；K 線到 {meta['bars_to']} UTC；每張 1R；唔落單", "",
-           "## 單條", "", "| 規則 | IDEAS | 張 | ΣR | 平均 | PF | 最大回撤 | 連敗 |", "|---|---|---|---|---|---|---|---|"]
-    out += [f"| {s['name']} | {s['idea']} | {s['n']} | {f(s['sum'])} | {f(s['avg'], '{:+.3f}')} | {f(s['pf'], '{:.2f}')} | {s['mdd']:.2f} | {s['streak']} |" for s in singles]
-    out += ["", "## 63 個組合（含單條；每張 1R 相加；⭐＝#1027 預先登記組合；⚠＝含高度重疊規則：rev15／rev60／M1 急動任何兩條）", "", "| 組合 | 張 | ΣR | 平均 | PF | 最大回撤 |", "|---|---|---|---|---|---|"]
+           ]
+    for g, title in (("main", "## 主力：日線合格 8 條＋H4 合格 4 條"), ("archive", "## 留底：證據弱，只照記前向（唔作決定依據）")):
+        out += [title, "", "| 規則 | IDEAS | 張 | ΣR | 平均 | PF | 最大回撤 | 連敗 |", "|---|---|---|---|---|---|---|---|"]
+        out += [f"| {s['name']} | {s['idea']} | {s['n']} | {f(s['sum'])} | {f(s['avg'], '{:+.3f}')} | {f(s['pf'], '{:.2f}')} | {s['mdd']:.2f} | {s['streak']} |" for s in singles if s["group"] == g]
+        out += [""]
+    out += ["## 63 個組合（含單條；每張 1R 相加；⭐＝#1027 預先登記組合；⚠＝含高度重疊規則：rev15／rev60／M1 急動任何兩條）", "", "| 組合 | 張 | ΣR | 平均 | PF | 最大回撤 |", "|---|---|---|---|---|---|"]
     out += [f"| {'⭐ ' if c['is_1027'] else ''}{'⚠ ' if c['overlap'] else ''}{c['name']} | {c['n']} | {f(c['sum'])} | {f(c['avg'], '{:+.3f}')} | {f(c['pf'], '{:.2f}')} | {c['mdd']:.2f} |" for c in combos]
     md = "\n".join(out) + "\n"
     print(md)

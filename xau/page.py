@@ -245,12 +245,19 @@ def shadow_block(sb, f2):
     if not isinstance(sb, dict) or not sb.get("singles"):
         return ""
     cls = lambda v: "pos" if (v or 0) > 0 else ("neg" if (v or 0) < 0 else "")  # noqa: E731
-    rows = "".join(
+    row = lambda s: (  # noqa: E731
         f"<tr><td>{esc(s.get('name'))}</td><td>{esc(s.get('idea'))}</td><td>{s.get('n', 0)}／30</td>"
         f"<td class='{cls(s.get('sum'))}'>{f2(s.get('sum'))}</td><td>{f2(s.get('avg'), '{:+.3f}')}</td><td>{f2(s.get('pf'), '{:.2f}')}</td>"
         f"<td>{f2(s.get('mdd'), '{:.2f}')}</td><td>{s.get('streak', 0)}</td>"
-        f"<td style='font-size:12px'>{esc(_recent_txt(s.get('recent')))}</td></tr>"
-        for s in sb["singles"])
+        f"<td style='font-size:12px'>{esc(_recent_txt(s.get('recent')))}</td></tr>")
+    head = "<tr><th>規則</th><th>IDEAS</th><th>張／判</th><th>ΣR</th><th>平均</th><th>PF</th><th>最大回撤</th><th>連敗</th><th>最近</th></tr>"
+    main = [s for s in sb["singles"] if s.get("group") == "main"]; rest = [s for s in sb["singles"] if s.get("group") != "main"]
+    if main:                                             # [11-12 使用者「影子板分開主力同留底兩個表」] 舊 JSON 冇 group → 照舊一個表
+        tables = ("<h4>主力：日線合格＋H4 合格</h4><div style='overflow-x:auto'><table>" + head + "".join(map(row, main)) + "</table></div>"
+                  f"<details><summary>留底：證據弱，只照記前向（{len(rest)} 條；唔作決定依據）</summary><div style='overflow-x:auto'><table>"
+                  + head + "".join(map(row, rest)) + "</table></div></details>")
+    else:
+        tables = "<div style='overflow-x:auto'><table>" + head + "".join(map(row, rest)) + "</table></div>"
     combos = sorted(sb.get("combos") or [], key=lambda c: (not c.get("is_1027"), len(c.get("keys") or []), c.get("name") or ""))
     crow = "".join(
         f"<tr{' style=font-weight:600' if c.get('is_1027') else ''}><td>{'⭐ ' if c.get('is_1027') else ''}{'⚠ ' if c.get('overlap') else ''}{esc(c.get('name'))}</td>"
@@ -259,9 +266,8 @@ def shadow_block(sb, f2):
     meta = sb.get("meta") or {}
     return ("<h3>🧭 影子總表：5 條合格規則同所有組合（IDEAS #1028，每張 1R，唔落單）</h3>"
             f"<p class='muted' style='font-size:13px'>{esc(sb.get('criteria'))}。由 {esc(meta.get('start'))} UTC 起；更新 {esc(meta.get('run_utc'))} UTC（K 線到 {esc(meta.get('bars_to'))}）。</p>"
-            "<div style='overflow-x:auto'><table><tr><th>規則</th><th>IDEAS</th><th>張／判</th><th>ΣR</th><th>平均</th><th>PF</th><th>最大回撤</th><th>連敗</th><th>最近</th></tr>"
-            + rows + "</table></div>"
-            "<details><summary>組合（⭐＝#1027 預先登記組合；⚠＝rev15＋rev60 重疊約 80%；組合只作描述）</summary><div style='overflow-x:auto'><table>"
+            + tables
+            + "<details><summary>組合（⭐＝#1027 預先登記組合；⚠＝rev15＋rev60 重疊約 80%；組合只作描述）</summary><div style='overflow-x:auto'><table>"
             "<tr><th>組合</th><th>張</th><th>ΣR</th><th>平均</th><th>PF</th><th>最大回撤</th></tr>" + crow + "</table></div></details>")
 
 
