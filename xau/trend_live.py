@@ -611,11 +611,11 @@ def _handle_heartbeat(payload):
                    trade_allowed=(payload.get("trade_allowed") if isinstance(payload.get("trade_allowed"), dict) else None),
                    received_utc=market.fmt_utc(now), received_ts=now, magic=cur().magic,
                    symbol=str(payload.get("symbol") or "")[:16], product_ok=m.product_ok(payload))
+    account["compound_peak"] = track_compound(account)     # 喺寫戶口快照之前，等網頁 status 都睇到最高水位
     try:
         storage.write_json(cur().account_file, account)
     except StorageError as exc:
         m.log_event(f"⚠️ 趨勢簿戶口快照寫入失敗：{exc}", severity="WARNING")
-    account["compound_peak"] = track_compound(account)
     state = load_state()
     bars = market.parse_hist(payload.get("m1_hist"))
     b = market.parse_bar(payload.get("m1_ohlc"))
