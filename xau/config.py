@@ -43,6 +43,10 @@ PRODUCTS = {
     "XAUUSD": {"contract": 100.0, "pip": 1.0, "digits": 2, "min_sl_pips": 2.0, "max_sl_pips": 30.0, "spread_pips": 0.30, "quote": "USD",
                "prefix": "xau/", "magic": 921, "kind": "gold",
                "desc": "spot gold CFD {symbol} on MetaTrader 5 (1 lot = 100 oz, price in US$ per oz, 1 pip = US$1)"},
+    # [IDEAS #1442，使用者 11-12「#1442 白銀真倉」] 只行趨勢簿（XAU_EXECUTE=0）；合約大小以券商規格為準（未核實前用 XAU_CONTRACT_SIZE 蓋）
+    "XAGUSD": {"contract": 5000.0, "pip": 0.01, "digits": 3, "min_sl_pips": 5.0, "max_sl_pips": 300.0, "spread_pips": 3.0, "quote": "USD",
+               "prefix": "xag/", "magic": 951, "kind": "silver",
+               "desc": "spot silver CFD {symbol} on MetaTrader 5 (1 lot = 5,000 oz, price in US$ per oz, 1 pip = US$0.01)"},
     "EURUSD": {"contract": 100000.0, "pip": 0.0001, "digits": 5, "min_sl_pips": 5.0, "max_sl_pips": 40.0, "spread_pips": 1.0, "quote": "USD",
                "prefix": "fx/eurusd/", "magic": 922, "kind": "fx",
                "desc": "EUR/USD spot forex CFD {symbol} on MetaTrader 5 (1 lot = 100,000 EUR, price in US$ per EUR, 1 pip = 0.0001)"},
@@ -397,6 +401,9 @@ TREND_COMPOUND_UNIT_HKD = _f("XAU_TREND_COMPOUND_UNIT_HKD", 0.0)
 TREND_COMPOUND_MAX_LOTS = _f("XAU_TREND_COMPOUND_MAX_LOTS", 0.05)
 # [11-12 使用者「贏的時候加注、輸的時候不加注、每次注碼一樣」] ratchet（預設）＝手數跟戶口結餘「最高水位」，只升唔跌；sym＝跟而家權益，跌會減。
 TREND_COMPOUND_MODE = _s("XAU_TREND_COMPOUND_MODE", "ratchet").strip().lower()
+TREND_LONG_ONLY = _b("XAU_TREND_LONG_ONLY", False)                              # [IDEAS #1442] D1 收市規則只做多（白銀）；預設雙向（黃金唔變）
+TREND_MIN_SL_ABS = _f("XAU_TREND_MIN_SL_ABS", 3.0 if PRODUCT["kind"] == "gold" else 0.0)   # D1 收市規則最低止蝕（價格單位）：黃金 3 美元；其他產品只用 0.3×ATR
+TREND_DROP_SUNDAY = _b("XAU_TREND_DROP_SUNDAY", PRODUCT["kind"] != "gold")       # [IDEAS #1442] 日線唔收星期日 K 線（黃金預設照舊收 21:00 UTC 後）
 TREND_RULES = tuple(x.strip() for x in _s("XAU_TREND_RULES", "qbrk,lvbrk").split(",") if x.strip())
 TREND_ADOPT = tuple(x.strip() for x in _s("XAU_TREND_ADOPT", "").split(",") if x.strip())   # 例 qbrk：本季已觸發而未止蝕嘅單，開咗之後用現價補入一次
 TREND_DAY_STOP_HKD = _f("XAU_TREND_DAY_STOP_HKD", 2000.0)

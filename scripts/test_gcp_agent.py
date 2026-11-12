@@ -93,6 +93,14 @@ def run(argv, session, env_extra=None):
 
 
 class ConditionalEnvTests(unittest.TestCase):
+    def test_xag_profile_is_long_only_trend_service(self):
+        prof = ga.PROFILES["xag"]
+        self.assertEqual(prof["service"], "zhuge-xag")
+        self.assertEqual(prof["required_env"], {"XAU_SYMBOL": "XAGUSD", "XAU_EXECUTE": "0", "XAU_TREND_LONG_ONLY": "1"})
+        self.assertTrue(ga.env_warnings(prof, {"XAU_TREND_LIVE": "1"}))                              # 開趨勢簿而冇心跳權杖 → 警告
+        self.assertEqual(ga.env_warnings(prof, {"XAU_TREND_LIVE": "1", "WEBHOOK_SECRET_TOKEN": "x"}), [])
+        self.assertIn("trend_d1_seed_xagusd.py", [str(f).split("/")[-1] for f in ga.profile_files(prof)])
+
     def test_xausig_warns_when_s1_or_follow_without_token(self):
         prof = ga.PROFILES["xausig"]
         self.assertEqual(ga.env_warnings(prof, {"XAU_BOOK": "signal"}), [])                       # S0：唔使權杖
