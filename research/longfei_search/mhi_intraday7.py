@@ -22,10 +22,11 @@ COST = mi.COST
 
 
 def h4(days):
-    """{日期: [(HH:MM, o, h, l, c, v)…]} → 4 小時 K [(key, o, h, l, c)]，key＝'YYYY-MM-DD HH'（00／08／12／16／20）。"""
-    out = {}
+    """{日期: [(HH:MM, o, h, l, c, v)…]} → 4 小時 K [(key, o, h, l, c)]，key＝'YYYY-MM-DD HH'（00／08／12／16／20）；
+    另回傳 {key: [(o, h, l, c)…]}（該根 K 入面嘅 1 分鐘 K，按時間排）。"""
+    out, mins = {}, {}
     for d in sorted(days):
-        for t, o, h, lo, c, *_ in days[d]:
+        for t, o, h, lo, c, *_ in sorted(days[d], key=lambda r: mi.tmin(r[0])):
             m = mi.tmin(t) - 1                     # time_key 係結束時間
             if m < 0:
                 continue                           # 00:00 嗰分鐘屬前一日 23:59，量好細，略過
@@ -34,7 +35,38 @@ def h4(days):
             k = f"{d} {blk:02d}"
             x = out.get(k)
             out[k] = [k, o, h, lo, c] if x is None else [k, x[1], max(x[2], h), min(x[3], lo), c]
-    return [out[k] for k in sorted(out)]
+            mins.setdefault(k, []).append((o, h, lo, c))
+    keys = sorted(out)
+    return [out[k] for k in keys], mins
+
+
+def breakout(b, mins, i, n):
+    """[11-12 第二次修正] I1 用 1 分鐘 K 逐分鐘行：inside bar（第 i 根）之後 2 根 K 內，邊一邊先穿就入場
+    （跳空開市用開市價；同一分鐘兩邊都穿就跳過）；之後逐分鐘睇止蝕；入場嗰根之後第 n 根收市平。
+    第一次跑用 4 小時 K 判斷，剔走咗「同一根兩邊都穿」嘅 K（多數係先穿一邊再打止蝕嘅輸單），成績虛高。"""
+    x = b[i]
+    hi, lo = x[2], x[3]
+    for j in (i + 1, i + 2):
+        seq = mins[b[j][0]]
+        for q, (o, h, l_, c) in enumerate(seq):
+            up, dn = h > hi, l_ < lo
+            if up and dn:
+                return None
+            if not (up or dn):
+                continue
+            side = 1 if up else -1
+            entry = max(o, hi) if up else min(o, lo)
+            stop = lo if up else hi
+            rest = seq[q + 1:]
+            for jj in range(j + 1, min(j + 1 + n, len(b))):
+                rest = rest + mins[b[jj][0]]
+            for o2, h2, l2, c2 in rest:
+                if (side > 0 and l2 <= stop) or (side < 0 and h2 >= stop):
+                    px = min(o2, stop) if side > 0 else max(o2, stop)      # 跳空穿止蝕用開市價
+                    return (px - entry) * side - COST
+            last = rest[-1][3] if rest else c
+            return (last - entry) * side - COST
+    return None
 
 
 def hold(b, i, side, entry, stop, n):
@@ -46,7 +78,7 @@ def hold(b, i, side, entry, stop, n):
     return (b[j][4] - entry) * side - COST
 
 
-def run(b, fam, p):
+def run(b, mins, fam, p):
     out = []
     for i in range(11, len(b) - 8):
         x, pv = b[i], b[i - 1]
@@ -54,20 +86,9 @@ def run(b, fam, p):
             continue
         day = x[0][:10]
         if fam == "I1":
-            for j in (i + 1, i + 2):
-                up, dn = b[j][2] > x[2], b[j][3] < x[3]
-                if up and dn:
-                    break
-                if up or dn:
-                    side = 1 if up else -1
-                    entry, stop = (x[2], x[3]) if up else (x[3], x[2])
-                    # [11-12 修正] 第一次跑 I1 每筆 +77 點、t 8，太好：原因係 4 小時 K 之間有休市跳空（03:00→09:15、16:30→17:15），
-                    # 開市已經跳過突破位都當喺突破位成交（偷咗跳空）。改做：跳空開市就用開市價成交。準則冇改。
-                    if (up and b[j][1] > entry) or (dn and b[j][1] < entry):
-                        entry = b[j][1]
-                    # 入場嗰根之後先計止蝕（同一根已經排除兩邊都穿）
-                    out.append({"d": day, "r": hold(b, j, side, entry, stop, p["n"])})
-                    break
+            r = breakout(b, mins, i, p["n"])
+            if r is not None:
+                out.append({"d": day, "r": r})
         elif fam == "I2":
             lo10 = min(y[3] for y in b[i - 11:i - 1])
             hi10 = max(y[2] for y in b[i - 11:i - 1])
@@ -88,12 +109,12 @@ def grid():
 
 
 def main():
-    b = h4(mi.load_bars())
+    b, mins = h4(mi.load_bars())
     ins = sum(1 for i in range(1, len(b)) if b[i][2] <= b[i - 1][2] and b[i][3] >= b[i - 1][3])
     print("4 小時 K", len(b), b[0][0], "→", b[-1][0], "inside bar", ins, f"({ins / len(b):.1%})")
     rows = []
     for fam, p in grid():
-        tr = run(b, fam, p)
+        tr = run(b, mins, fam, p)
         rows.append({"fam": fam, "p": p, "key": f"{fam} {json.dumps(p)}",
                      "is": mi.stats([x for x in tr if x["d"] <= mi.IS_END]),
                      "oos": mi.stats([x for x in tr if x["d"] >= mi.OOS_START])})
@@ -114,7 +135,7 @@ def main():
     print("== 合格家族", list(best))
     from google.cloud import storage
     storage.Client().bucket("zhuge-risk-manager-bucket").blob("longfei/strategy_search/mhi_intraday7.json").upload_from_string(
-        json.dumps({"bars": len(b), "inside": ins, "fix": "11-12 I1 跳空用開市價成交", "rows": rows, "qualified_by_family": best}, ensure_ascii=False), content_type="application/json")
+        json.dumps({"bars": len(b), "inside": ins, "fix": "11-12 第二次：I1 用 1 分鐘 K 逐分鐘判斷先後同止蝕", "rows": rows, "qualified_by_family": best}, ensure_ascii=False), content_type="application/json")
 
 
 if __name__ == "__main__":
