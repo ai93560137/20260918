@@ -26,32 +26,42 @@ SYMS = {  # 代號：(類別, 價格除數)
 Y0, Y1 = 2003, 2026
 
 
+TMP = os.environ.get("DUKA_TMP", "/tmp/dukad_parts")
+
+
 def year_file(sym, y):
+    """每年一個檔；伺服器成日 503／斷線（限流），所以耐心重試，而且每年結果存本機暫存，重跑可以接住做。回傳 bytes；b""＝嗰年冇數據（404）；None＝今次攞唔到。"""
+    os.makedirs(TMP, exist_ok=True); local = os.path.join(TMP, f"{sym}_{y}.bin")
+    if os.path.exists(local):
+        return open(local, "rb").read()
     url = f"https://datafeed.dukascopy.com/datafeed/{sym}/{y:04d}/BID_candles_day_1.bi5"
-    for k in range(8):
+    for k in range(14):
         try:
             raw = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=40).read()
-            return lzma.decompress(raw) if raw else b""
+            data = lzma.decompress(raw) if raw else b""
+            open(local, "wb").write(data); return data
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                return None
+                open(local, "wb").write(b""); return b""
         except Exception:
             pass
-        time.sleep(3 + 4 * k)
-    raise RuntimeError(f"{sym} {y} 下載失敗")
+        time.sleep(min(60, 5 + 5 * k))
+    return None
 
 
 def fetch(sym):
-    div = SYMS[sym][1]; rows = []
+    div = SYMS[sym][1]; rows = []; missing = []
     for y in range(Y0, Y1 + 1):
-        data = year_file(sym, y); time.sleep(1.0)
-        if not data:
-            continue
+        data = year_file(sym, y); time.sleep(1.5)
+        if data is None:
+            missing.append(y); continue
         base = int(dt.datetime(y, 1, 1, tzinfo=dt.timezone.utc).timestamp())
         for i in range(len(data) // 24):
             s, o, c, l, h, v = struct.unpack(">5if", data[i * 24:(i + 1) * 24])
             if v > 0 and h > l:
                 rows.append((base + s, o / div, h / div, l / div, c / div, v))
+    if missing:
+        raise RuntimeError(f"{sym} 仲差 {missing}")
     a = np.array(rows, float)
     return {"t": a[:, 0].astype(np.int64), "o": a[:, 1], "h": a[:, 2], "l": a[:, 3], "c": a[:, 4], "v": a[:, 5]} if len(rows) else None
 

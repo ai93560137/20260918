@@ -91,3 +91,5 @@
   - UNIT＝呢個戶口全部趨勢簿 0.01 手時嘅歷史最大回落 × 1.5（數字由 `research/strategy_search/compound_sim.py` 計，喺 send_message 報，唔寫入 repo）。**加減簿之後要重新計 UNIT。**
   - 每本簿日停（`XAU_TREND_DAY_STOP_HKD`）冇跟手數放大：手數大咗，一張止蝕可能已經過日停，嗰日其餘開倉會被擋——屬保守方向。
   - 模擬：`research/strategy_search/COMPOUND_SIM.md`。測試 `tests/test_xau_trend_compound.py`。
+
+- **11-12 複利已開（sym）**：使用者睇完三個版本模擬後揀「跌會減」。zhuge-xau 00091-g5k、zhuge-xau-sig 00097-5zq：`XAU_TREND_COMPOUND=1`、`XAU_TREND_COMPOUND_MODE=sym`、UNIT 各自設定（數字喺 env，唔寫入 repo）、MAX_LOTS 用預設 0.05。開嗰刻兩戶手數仍係 0.01。核實：`?format=json` 嘅 `trend_live.compound`／`trend_books[].compound` 同 `lots`。退版：zhuge-xau → 00090-js6（關複利）；zhuge-xau-sig → 00096-qhx。
