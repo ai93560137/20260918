@@ -328,7 +328,7 @@ def _forward_section(fw, book=None):
     return "<div class='section' id='forward'><h2>🔬 前向測試（影子，唔落單）</h2>" + out + "</div>"
 
 
-TREND_STOP = {**{r: (-5.0, 12, 0.8, 6) for r in ("wide", "ichi", "turtle")}, **{r: (-8.0, None, None, None) for r in ("mobrk", "spike", "kelt", "td")}}   # [11-11 IDEAS #1271，使用者「改」] 933／937／939 只用累計 ≤ −8R   # [11-10] 穩陣組 937–941 同一套停條件      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
+TREND_STOP = {**{r: (-5.0, 12, 0.8, 6) for r in ("wide", "ichi", "turtle")}, **{r: (-8.0, None, None, None) for r in ("mobrk", "spike", "kelt", "td", "tdrsi", "tdsurge", "tdx50", "tdflip")}}   # [11-11 IDEAS #1271，使用者「改」] 933／937／939 只用累計 ≤ −8R   # [11-10] 穩陣組 937–941 同一套停條件      # [IDEAS #1114] 預先登記停條件：累計 ≤ −5R、≥12 張 PF < 0.8、連蝕 6 張 → 返影子
 
 
 def trend_stats(book):

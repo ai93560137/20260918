@@ -9,13 +9,23 @@
   td（#1268，research/strategy_search/topdown_1268.r1268；11-11 使用者「#1268 開真倉」）：由上而下——長線方向＝收市對 SMA200；
         方向向上而且收市由 SMA20 之下升返上去 → 買（向下相反）；SL 3×ATR14；收市穿之前 20 日相反極端收市、或者穿返 SMA200 → 平；250 根到期。
         狀態機同回測一樣（狀態維持期間唔再出訊號，止蝕之後要等狀態歸零再重新觸發）；用最多 420 日日線由頭計。
+  長線框架四條（research/strategy_search/frame_1272.py；11-12 使用者「將另外五條都加真倉」→ 揀「取代證據弱嘅簿」）：
+        全部先用收市對 SMA200 定方向（上面只做多、下面只做空）；SL 3×ATR14；250 根到期；做空＝將價格反轉後用同一條做多規則。
+        tdrsi（#1273）：RSI(14) 由下升穿 40 → 入；收市穿之前 20 日相反極端收市或者穿返 SMA200 → 平。
+        tdsurge（#1285）：單日收市升 ≥ 1.5×前一日 ATR14 → 入；收市穿之前 10 日相反極端收市或者穿返 SMA200 → 平。
+        tdx50（#1290）：收市升穿 SMA50 → 入；出場同 tdsurge（10 日）。
+        tdflip（#1300）：收市重新企返 SMA20 → 入；只喺收市穿返 SMA200 先平。
+        呢四條係「事件版」：冇倉時每次觸發都可以入（唔似 td 要等狀態歸零）。
 共通（同 momo_strict_1157.trade_m1）：訊號用「已完成」D1（UTC 日）；下一根開市入（真倉＝新一日第一個心跳市價）；
 最低止蝕＝max(3 美元, 0.3×訊號日前一日 ATR14)；一個 magic 一次一張；平倉嗰根（或者止蝕嗰日）之前嘅訊號唔入（busy）。
 days：[(UTC 日, {"o","h","l","c"}), …]，只傳已完成嘅日線。"""
 
 NAMES = {"spike": "D1 急動＋SMA50（#1165）", "wide": "D1 寬幅日（#1174）", "kelt": "D1 Keltner（#1178）",
-         "ichi": "一目均衡表穿雲（#1224）", "turtle": "海龜系統 2（#1116）", "td": "200 日線方向＋回調重拾 20 日線（#1268）"}
-MAX_BARS = {"spike": 10, "wide": 5, "kelt": 20, "ichi": 120, "turtle": 120, "td": 250}
+         "ichi": "一目均衡表穿雲（#1224）", "turtle": "海龜系統 2（#1116）", "td": "200 日線方向＋回調重拾 20 日線（#1268）",
+         "tdrsi": "200 日線方向＋RSI(14) 升穿 40（#1273）", "tdsurge": "200 日線方向＋單日升 ≥ 1.5×ATR（#1285）",
+         "tdx50": "200 日線方向＋升穿 SMA50（#1290）", "tdflip": "200 日線方向＋重拾 20 日線、只用方向反轉出場（#1300）"}
+MAX_BARS = {"spike": 10, "wide": 5, "kelt": 20, "ichi": 120, "turtle": 120, "td": 250, "tdrsi": 250, "tdsurge": 250, "tdx50": 250, "tdflip": 250}
+FRAME = ("tdrsi", "tdsurge", "tdx50", "tdflip")
 RULES = tuple(NAMES)
 
 
@@ -78,6 +88,57 @@ def td_state(days, nd=200, ne=20):
     return s
 
 
+def _neg(days):
+    """價格反轉（做空當做多計）。"""
+    return [(d, {"o": -r["o"], "h": -r["l"], "l": -r["h"], "c": -r["c"]}) for d, r in days]
+
+
+def rsi(c, n=14):
+    """同 panel2_1252.rsi（Wilder）：頭 n 個變動平均做種子。"""
+    out = [None] * len(c)
+    if len(c) <= n:
+        return out
+    up = [max(c[i] - c[i - 1], 0.0) if i else 0.0 for i in range(len(c))]; dn = [max(c[i - 1] - c[i], 0.0) if i else 0.0 for i in range(len(c))]
+    au = sum(up[1:n + 1]) / n; ad = sum(dn[1:n + 1]) / n
+    out[n] = 100 - 100 / (1 + au / (ad if ad else 1e-12))
+    for i in range(n + 1, len(c)):
+        au = (au * (n - 1) + up[i]) / n; ad = (ad * (n - 1) + dn[i]) / n
+        out[i] = 100 - 100 / (1 + au / (ad if ad else 1e-12))
+    return out
+
+
+def _frame_long(rule, days):
+    """做多視角：最後一日有冇入場觸發（已包方向：收市 > SMA200）。"""
+    c = [r["c"] for _, r in days]; i = len(c) - 1
+    if i < 202:
+        return False
+    md = sma(c, 200)
+    if md[i] is None or not c[i] > md[i]:
+        return False
+    if rule == "tdrsi":
+        r = rsi(c)
+        return r[i] is not None and r[i - 1] is not None and r[i] > 40 and r[i - 1] <= 40
+    if rule == "tdsurge":
+        a = atr(days)
+        return a[i - 1] is not None and (c[i] - c[i - 1]) >= 1.5 * a[i - 1]
+    n = 50 if rule == "tdx50" else 20
+    m = sma(c, n)
+    return m[i] is not None and m[i - 1] is not None and c[i] > m[i] and c[i - 1] <= m[i - 1]
+
+
+def _frame_exit_long(rule, days):
+    c = [r["c"] for _, r in days]; k = len(c) - 1
+    md = sma(c, 200)
+    if md[k] is not None and c[k] < md[k]:
+        return "收市穿返 SMA200"
+    if rule == "tdflip":
+        return None
+    n = 20 if rule == "tdrsi" else 10
+    if k >= n and c[k] < min(c[k - n:k]):
+        return f"收市穿 {n} 日相反極端收市"
+    return None
+
+
 def floor(days):
     """最低止蝕：max(3, 0.3×訊號日前一日 ATR14)。"""
     a = atr(days)
@@ -114,6 +175,12 @@ def signal(rule, days):
         if a[i] is None or s[i] == 0 or s[i] == s[i - 1]:
             return None
         return {"side": s[i], "risk": 2 * a[i]}
+    if rule in FRAME:
+        a = atr(days)
+        if a[i] is None:
+            return None
+        sg = 1 if _frame_long(rule, days) else (-1 if _frame_long(rule, _neg(days)) else 0)
+        return {"side": sg, "risk": 3 * a[i]} if sg else None
     if rule == "td":
         a = atr(days); st = td_state(days)
         if i < 202 or a[i] is None or st[i] == 0 or st[i] == st[i - 1]:
@@ -143,6 +210,8 @@ def exit_hit(rule, side, days):
     elif rule == "ichi":
         if ichi_state(days)[k] != side:
             return "一目狀態離開"
+    elif rule in FRAME:
+        return _frame_exit_long(rule, days if side > 0 else _neg(days))
     elif rule == "td":
         if td_state(days)[k] != side:
             return "收市穿 20 日相反極端／穿返 SMA200"
