@@ -1,0 +1,7 @@
+gap_pct,live,live_note,sector,oi,session,ah_px,date,market,ticker,name,drop_pct,close,rv63pre,expiry,dte,atm_iv,rho,leg,strike,moneyness,bid,ask,mid,fill,iv_leg,yield_ann_pct,rho_req,rho_ok,earnings,earnings_in_window,qualifies,paper,note
+13.18,N,,Basic Materials,,,,2026-11-12,us,CTVA,"Corteva, Inc.",-24.30,9.19,0.4335,2026-12-18,36,0.5158,1.190,put95,,,,,,,,,,,2027-02-02,,N,N,買賣價清零，用最後成交價 冇合適行使價
+13.18,N,,Basic Materials,115,,,2026-11-12,us,CTVA,"Corteva, Inc.",-24.30,9.19,0.4335,2026-12-18,36,0.5158,1.190,call105,10,1.088,0.35,0.35,0.35,0.35,0.5158,38.6,1.2,N,2027-02-02,N,N,Y,買賣價清零，用最後成交價
+0.00,N,唔做實倉：已滿 5 筆,Industrials,237,,,2026-11-12,us,GPN,Global Payments Inc.,-12.01,88.19,0.3869,2026-12-18,36,0.4138,1.070,put95,82.5,0.935,1.6,3.8,2.7,1.6,0.4750,19.7,0.95,Y,2027-02-17,N,Y,Y,
+0.00,N,,Industrials,4933,,,2026-11-12,us,GPN,Global Payments Inc.,-12.01,88.19,0.3869,2026-12-18,36,0.4138,1.070,call105,95,1.077,1.5,3.5,2.5,1.5,0.4541,17.2,1.2,N,2027-02-17,N,N,Y,
+7.10,N,唔做實倉：已滿 5 筆,Technology,1028,,,2026-11-12,us,SMCI,"Super Micro Computer, Inc.",-11.30,26.99,0.7341,2026-12-11,29,0.8689,1.184,put95,25,0.926,1.6,1.81,1.705,1.6,0.9031,80.6,0.95,Y,2027-02-02,N,Y,N,30 日內已記
+7.10,N,,Technology,122,,,2026-11-12,us,SMCI,"Super Micro Computer, Inc.",-11.30,26.99,0.7341,2026-12-11,29,0.8689,1.184,call105,29,1.074,1.77,1.99,1.88,1.77,0.8648,82.5,1.2,N,2027-02-02,N,N,N,30 日內已記
