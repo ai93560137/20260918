@@ -38,6 +38,12 @@ def main():
             tot += [x for x in IX.sim(IX.load(name), IX.CFG[0], cost)[0] if x[0] >= t0]
         tot += fw + gf
         L.append(f"| **天覆組合 v1（#1444：黃金＋白銀＋標普＋恒指）** | — | {len(tot)} | {sum(x[2] for x in tot):+.2f} | — | — |")
+        # [IDEAS #1446] 同一個組合，但金絲雀亮燈（紅／深紅／黃×2）時唔開新倉
+        import subprocess
+        subprocess.run(["git", "fetch", "-q", "origin", "claude/canary-playbook-final-3um9lp"], cwd=HERE, capture_output=True)
+        import canary_1446 as CN
+        days, rows = CN.lights(); tg = CN.tag(tot, days, rows); kept = [x for x in tg if not (x[3] or x[4] or x[5])]
+        L.append(f"| **天覆組合 v1＋金絲雀過濾（#1446：亮燈唔開新倉）** | 燈色到 {f(int(days[-1]) * 86400)} | {len(kept)} | {sum(x[2] for x in kept):+.2f} | 亮燈而冇開 {len(tg) - len(kept)} 張 | — |")
     except Exception as exc:  # noqa: BLE001
         L.append(f"| 天覆組合 v1（#1444） | 計唔到（{type(exc).__name__}） | — | — | — | — |")
     L.append("")
