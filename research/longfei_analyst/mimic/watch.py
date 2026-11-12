@@ -3,8 +3,8 @@
 讀 GCS ops/longfei/analyst/data/<代號>.json（要先跑 longfei_analyst_data.yml 更新），用 TradingView／CME 嘅 4 小時切法（charts.h4_cme），
 只睇**已經收咗**嘅 4 小時 K：
   below  ：最新收咗嗰根收市 < 關鍵位，而前一根收市 ≥ 關鍵位（由上面收返落去；之後一直喺下面唔重複提）
-  inside ：最新收咗嗰根係 inside bar（高 ≤ 前一根高、低 ≥ 前一根低）而且收黑（收市 < 開市）＝「向下 inside bar」
-  inside_up：同上但收紅（收市 ≥ 開市）＝「向上 inside bar」（使用者 11-12 加）
+  inside_key：最新收咗嗰根係 inside bar（高 ≤ 前一根高、低 ≥ 前一根低），而且前一根 K 測試過關鍵位（watch.json 嘅 keys）
+              之後收返（守得住／攻唔破）。使用者 11-13 確認只有呢種有用；其他 inside bar 唔提。向上向下都提。
 每根 K 每個條件只提一次（狀態：GCS ops/longfei/analyst/watch_state.json）。只係提示同分析，唔落單。
 
 用法：python3 research/longfei_analyst/mimic/watch.py [--dry-run] [--max-age-min 20]
@@ -38,18 +38,25 @@ def closed_bars(bars, now_et):
     return [b for b in bars if bar_end(b[0]) <= now_et]
 
 
-def near_key(p, keys, tol=0.001):
-    """[11-12] 使用者：「Inside bar 不是每一個都有用」——佢兩次用 inside bar 都係喺關鍵位攻唔破／有支撐之後。
-    所以每個提示都標明：前一根 K 嘅高／低位有冇掂到關鍵位（±0.1%）。冇掂到就寫「唔喺關鍵位」，等使用者自己判斷。"""
-    hit = []
+def key_tests(p, keys, tol=0.001):
+    """前一根 K 對關鍵位做過乜（±0.1%）→ [(種類, 關鍵位, 描述)]。
+    held  ：由上面落嚟測試、收返上面＝守得住（空方攻唔破）
+    failed：由下面上嚟測試、收返下面＝攻唔破（多方攻唔破）
+    broke ：測試之後收穿／收企另一邊＝關鍵位已經破，唔算。"""
+    out = []
     o, h, lo, c = p[1], p[2], p[3], p[4]
     for k in keys:
         t = k * tol
-        if o > k and lo <= k + t:                  # 由上面落嚟測試
-            hit.append(f"前一根低位 {lo:,.2f} 測試 {k:,.2f}，{'收返上面' if c > k else '收穿'}")
-        elif o < k and h >= k - t:                 # 由下面上嚟測試
-            hit.append(f"前一根高位 {h:,.2f} 測試 {k:,.2f}，{'收返下面' if c < k else '收企上面'}")
-    return "喺關鍵位：" + "；".join(hit) if hit else "唔喺關鍵位附近（前一根高低位冇掂到清單入面嘅位）"
+        if o > k and lo <= k + t:
+            out.append(("held" if c > k else "broke", k, f"前一根低位 {lo:,.2f} 測試 {k:,.2f}，{'收返上面（守得住）' if c > k else '收穿'}"))
+        elif o < k and h >= k - t:
+            out.append(("failed" if c < k else "broke", k, f"前一根高位 {h:,.2f} 測試 {k:,.2f}，{'收返下面（攻唔破）' if c < k else '收企上面'}"))
+    return out
+
+
+def near_key(p, keys, tol=0.001):
+    ts = key_tests(p, keys, tol)
+    return "喺關鍵位：" + "；".join(x[2] for x in ts) if ts else "唔喺關鍵位附近（前一根高低位冇掂到清單入面嘅位）"
 
 
 def check(bars, levels):
@@ -61,11 +68,27 @@ def check(bars, levels):
     for lv in levels.get("below", []):
         if b[4] < lv <= p[4]:
             out.append(("below", lv, f"4 小時 K（{b[0]} 美東）收 {b[4]:,.2f}，收返 {lv:,.2f} 之下（前一根收 {p[4]:,.2f}）"))
-    if b[2] <= p[2] and b[3] >= p[3]:             # [11-12] 使用者：「向上 inside bar 都提我」——向上（收 ≥ 開）、向下都提，分開標
-        up = b[4] >= b[1]
-        out.append(("inside_up" if up else "inside", None,
-                    f"4 小時 K（{b[0]} 美東）係{'向上' if up else '向下'} inside bar：開 {b[1]:,.2f} 高 {b[2]:,.2f} 低 {b[3]:,.2f} 收 {b[4]:,.2f}"
-                    f"（前一根高 {p[2]:,.2f} 低 {p[3]:,.2f}）；{near_key(p, levels.get('keys', []))}"))
+    if b[2] <= p[2] and b[3] >= p[3]:
+        # [11-13] 使用者確認：「先有關鍵位攻唔破或者守得住，跟住先出 inside bar，呢種先有用。佢代表攻嗰一方冇力再試。」
+        # 「攻」要係真係攻：前一根 K 創 N 根（預設 6，即一個交易日）新低／新高去測試關鍵位（±0.1% 或者插穿），而 inside bar 收返原本嗰邊。
+        # （只用「前一根掂過關鍵位」唔得：關鍵位好密，最近 60 根 13 個 inside bar 有 12 個都中，篩唔到嘢。）
+        n = int(levels.get("lookback", 6))          # 6 根 4 小時 K＝一個交易日（11/10 7500 嗰次用 10 根會漏：兩日前反彈起點更低）
+        prior = bars[-2 - n:-2]
+        tol = 0.001
+        why = []
+        if prior and p[3] < min(x[3] for x in prior):                    # 空方攻：創新低
+            for k in levels.get("keys", []):
+                if p[3] <= k * (1 + tol) and b[4] > k and max(x[4] for x in prior[-3:]) > k:
+                    why.append(f"前一根創 {n} 根新低 {p[3]:,.2f} 測試 {k:,.2f}，冇收穿，inside bar 收喺上面 → 守得住，空方冇力再試")
+        if prior and p[2] > max(x[2] for x in prior):                    # 多方攻：創新高
+            for k in levels.get("keys", []):
+                if p[2] >= k * (1 - tol) and b[4] < k and min(x[4] for x in prior[-3:]) < k:
+                    why.append(f"前一根創 {n} 根新高 {p[2]:,.2f} 測試 {k:,.2f}，inside bar 收返下面 → 攻唔破，多方冇力再試")
+        if why:
+            up = b[4] >= b[1]
+            out.append(("inside_key", None,
+                        f"4 小時 K（{b[0]} 美東）係關鍵位之後嘅 inside bar（{'向上' if up else '向下'}）：開 {b[1]:,.2f} 高 {b[2]:,.2f} 低 {b[3]:,.2f} 收 {b[4]:,.2f}"
+                        f"（前一根高 {p[2]:,.2f} 低 {p[3]:,.2f}）；" + "；".join(why)))
     return out
 
 
