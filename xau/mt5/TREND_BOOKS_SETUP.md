@@ -62,3 +62,20 @@
 4. 核實：`?format=json` 嘅 `trend_books` 有 magic 942、`d1_days` ≥ 221、心跳 3 分鐘內；巡檢印 `[trend 942 td]`。
 5. 退版：env 改返冇 `942:td` 嗰串，或者 rollback；有倉先 `close|all|magic=942`。
 
+
+## 4. 11-12 四本簿換規則（926／938／940／941；MT5 唔使改）
+
+使用者 11-12：「將另外五條都加真倉，用返而家嘅 magic number」→ 揀「取代證據弱嘅簿」；喺總指揮親口確認後部署。**上面第 0 節表入面 938／940／941 嘅舊規則已經唔再行真倉（留影子）。**
+
+| magic | 戶口 | 舊規則 | 新規則（IDEAS） | 入場（D1 收市後，新一日第一個心跳市價入） | SL | 出場 |
+|---|---|---|---|---|---|---|
+| 926 | …63 | qbrk＋lvbrk（#1107／#1113） | `tdflip`（#1300） | 收市喺 SMA200 上（下），收市重新企返 SMA20 上（下） | 3×ATR14 | 只喺收市穿返 SMA200 先平，或者 250 根 |
+| 938 | …69 | wide（#1174） | `tdrsi`（#1273） | 方向同上；RSI(14) 由下升穿 40（做空鏡像） | 3×ATR14 | 收市穿之前 20 日相反極端收市，或者穿返 SMA200，或者 250 根 |
+| 940 | …69 | ichi（#1224） | `tdsurge`（#1285） | 方向同上；單日收市升（跌）≥ 1.5×前一日 ATR14 | 3×ATR14 | 收市穿之前 10 日相反極端收市，或者穿返 SMA200，或者 250 根 |
+| 941 | …69 | turtle（#1116） | `tdx50`（#1290） | 方向同上；收市升（跌）穿 SMA50 | 3×ATR14 | 同 940 |
+
+- 呢四條係「事件版」：冇倉時每次觸發都可以入（942 `td` 係狀態機版，要等狀態歸零）。
+- 停條件：四本都只用累計 ≤ −8R（同 933／937／939／942）；組合回落 ≥ 10R 通知照舊。
+- 一致性：`research/strategy_search/parity_frame.py`——stooq 日線 1973–2026 逐日比較 13,077 日，四條入場、止蝕距離、出場全部一致（`PARITY_FRAME.md`）。測試 `tests/test_xau_trend_frame.py`。
+- 設定：zhuge-xau `XAU_TREND_RULES=tdflip`（冇 `XAU_TREND_ADOPT`），修訂 00088-m6k；zhuge-xau-sig `XAU_TREND_BOOKS=937:spike,938:tdrsi,939:kelt,940:tdsurge,941:tdx50,942:td`，修訂 00094-g7q。
+- 退版（要使用者批）：`--profile xau rollback --to zhuge-xau-00085-z99`、`--profile xausig rollback --to zhuge-xau-sig-00092-hx8`；有倉先 `close|all|magic=<magic>`。
