@@ -146,6 +146,8 @@ button:hover { background:#156a41; } button:focus-visible { outline:2px solid va
       <select id="inst">
         <option value="hsi">大恒指 HSI（50/點）</option>
         <option value="mhi">小恒指 MHI（10/點）</option>
+        <option value="mgc">黃金 MGC 微型金期貨（期貨口徑，US$10/點）</option>
+        <option value="etf">黃金 ETF（只做多，現貨口徑）</option>
       </select></div>
     <div><label for="qty">每次下單手數（規則：淨值 ÷ 10 萬＝小恒指張數；5 張小＝1 張大）</label><input id="qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
     <div><label for="posSide">目前實倉（方向 ＋ 張數；手機鍵盤沒有負號，所以分開選）</label>
@@ -254,7 +256,8 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       (lo !== null ? " · " + dayTag(ls.indexOf(lo)) : "") + "）";
 
     var ql = $("quoteLine"), pt = $("pxTile");
-    var q = liveQ || cloudQuote;   // 即時價優先,抓不到退回雲端延遲價
+    var isHsi = $("inst").value === "hsi" || $("inst").value === "mhi";
+    var q = (isHsi && liveQ) || cloudQuote;   // 即時價（只限恒指）優先,抓不到退回雲端延遲價
     if(q && q.px != null){
       $("pxLv").textContent = fmt(q.px);
       $("pxK").textContent = "現價 · " + (q.kind || "") +
@@ -262,7 +265,7 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       pt.hidden = false;
       if(hi !== null && lo !== null){
         ql.textContent = "距上軌 " + fmt(hi - q.px) + " 點 · 距下軌 " +
-          fmt(q.px - lo) + " 點（" + (liveQ ? "即時參考" : "報價延遲 ≥15 分鐘") +
+          fmt(q.px - lo) + " 點（" + ((isHsi && liveQ) ? "即時參考" : "報價延遲 ≥15 分鐘") +
           "，成交以券商為準）";
         ql.hidden = false;
       } else { ql.hidden = true; }
@@ -337,8 +340,12 @@ ETF 模式只做多：跌破下軌只平倉不做空。首次使用或懷疑倉�
       if(!levels){ return; }
       var inst = $("inst").value;
       var key = inst === "mhi" ? "hsi" : inst;   // 大小恒指共用同一組通道
-      if(key === "etf") key = "mgc";             // 黃金 ETF 用金期貨通道
+      if(key === "etf") key = "mgc";             // 黃金 ETF 用現貨口徑通道（levels.mgc）
       var d = levels[key];
+      if(inst === "mgc" && d && d.fut && d.fut.h1 != null){   // [R367] MGC 掛單用期貨口徑（levels.mgc.fut），日期沿用現貨口徑
+        d = {h1: d.fut.h1, l1: d.fut.l1, h2: d.fut.h2, l2: d.fut.l2, h3: d.fut.h3, l3: d.fut.l3,
+             dates: d.dates, quote: d.fut.quote, source: "MGC 期貨口徑（基差 " + d.fut.basis + "）"};
+      }
       if(!d || d.h1 == null){ info("☁️ 此商品尚無自動數據（levels.json 沒有 " + key + "）"); cloudQuote = null; render(); return; }
       cloudQuote = d.quote || null;
       info('☁️ 已自動套用 · ' + (d.source || '') + ' · 抓取 ' + (levels.fetched_at || '') +
