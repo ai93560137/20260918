@@ -17,6 +17,7 @@ import scalp_1353 as S     # noqa: E402
 B = I.B
 OUT = os.path.join(HERE, "ENTRY_1362.md")
 TP_K, SL_K, NRAND = 0.20, 2.0, 200
+POOL_SEC = 300          # 隨機對照抽樣格（#1382 起可以改）
 
 
 class Eng:
@@ -133,7 +134,7 @@ def eng():
 def work(k):
     E, bench = eng(); idea, cat, name, sec, fn = RULES[k]; rng = np.random.default_rng(idea)
     cand = E.cands(sec, fn); tr = E.run(cand); n = len(tr); mean = float(np.mean([q[3] for q in tr])) if tr else 0.0
-    pool = np.flatnonzero(E.elig & (E.d["t"] % 300 == 0)); rm = []
+    pool = np.flatnonzero(E.elig & (E.d["t"] % POOL_SEC == 0)); rm = []
     for _ in range(NRAND):
         rt = E.run(np.sort(rng.choice(pool, size=min(max(n, 1), len(pool)), replace=False)))
         rm.append(float(np.mean([q[3] for q in rt])))
