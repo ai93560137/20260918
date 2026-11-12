@@ -4,6 +4,7 @@
 只睇**已經收咗**嘅 4 小時 K：
   below  ：最新收咗嗰根收市 < 關鍵位，而前一根收市 ≥ 關鍵位（由上面收返落去；之後一直喺下面唔重複提）
   inside ：最新收咗嗰根係 inside bar（高 ≤ 前一根高、低 ≥ 前一根低）而且收黑（收市 < 開市）＝「向下 inside bar」
+  inside_up：同上但收紅（收市 ≥ 開市）＝「向上 inside bar」（使用者 11-12 加）
 每根 K 每個條件只提一次（狀態：GCS ops/longfei/analyst/watch_state.json）。只係提示同分析，唔落單。
 
 用法：python3 research/longfei_analyst/mimic/watch.py [--dry-run] [--max-age-min 20]
@@ -46,9 +47,11 @@ def check(bars, levels):
     for lv in levels.get("below", []):
         if b[4] < lv <= p[4]:
             out.append(("below", lv, f"4 小時 K（{b[0]} 美東）收 {b[4]:,.2f}，收返 {lv:,.2f} 之下（前一根收 {p[4]:,.2f}）"))
-    if b[2] <= p[2] and b[3] >= p[3] and b[4] < b[1]:
-        out.append(("inside", None, f"4 小時 K（{b[0]} 美東）係向下 inside bar：開 {b[1]:,.2f} 高 {b[2]:,.2f} 低 {b[3]:,.2f} 收 {b[4]:,.2f}"
-                                    f"（前一根高 {p[2]:,.2f} 低 {p[3]:,.2f}）"))
+    if b[2] <= p[2] and b[3] >= p[3]:             # [11-12] 使用者：「向上 inside bar 都提我」——向上（收 ≥ 開）、向下都提，分開標
+        up = b[4] >= b[1]
+        out.append(("inside_up" if up else "inside", None,
+                    f"4 小時 K（{b[0]} 美東）係{'向上' if up else '向下'} inside bar：開 {b[1]:,.2f} 高 {b[2]:,.2f} 低 {b[3]:,.2f} 收 {b[4]:,.2f}"
+                    f"（前一根高 {p[2]:,.2f} 低 {p[3]:,.2f}）"))
     return out
 
 

@@ -21,7 +21,7 @@ class T(unittest.TestCase):
 
     def test_inside_down(self):
         self.assertEqual([x[0] for x in w.check([["a", 7600, 7620, 7560, 7610], ["b", 7605, 7615, 7580, 7590]], {})], ["inside"])
-        self.assertEqual(w.check([["a", 7600, 7620, 7560, 7610], ["b", 7590, 7615, 7580, 7605]], {}), [])      # 收紅（向上）唔提
+        self.assertEqual([x[0] for x in w.check([["a", 7600, 7620, 7560, 7610], ["b", 7590, 7615, 7580, 7605]], {})], ["inside_up"])   # 收紅（向上）都提
         self.assertEqual(w.check([["a", 7600, 7620, 7560, 7610], ["b", 7605, 7625, 7580, 7590]], {}), [])      # 高過前一根高，唔係 inside
 
     def test_closed_bars(self):
