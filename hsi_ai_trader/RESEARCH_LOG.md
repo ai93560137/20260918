@@ -86,3 +86,14 @@
 2. **成交量分布／POC 係咪有效支撐阻力**——搵到嘅全部係平台同教學文章（CrossTrade、NinjaTrader、ATAS、Optimus Futures），**冇同行評審或者樣本外回測**；有教學頁反而話高成交量節點「價格照穿」、POC 直接入場冇用：https://marketstalkers.thinkific.com/pages/point-of-control-volume-profile ；定義問題（時段、格仔闊度）會改變 POC 位置：https://nexusfi.com/a/market-structure/naked-vpoc-futures-trading
    - 同我哋數據：之前數據包冇成交量，測唔到。使用者文章成日用 POC（NQ 30,805、NVDA 180.72／199.27／218.77），模仿寫法畫唔到係最大差距之一。
    - 下一步（今日做）：`scripts/longfei_analyst_data.py` 加 1 小時成交量（`h1_vol`），`mimic/charts.py` 加成交量分布同 POC（`profile`）；聽日數據包有量之後，先對返使用者嘅 POC 數字（NVDA 2025-07 起 180.72）睇差幾遠，再決定用唔用。POC 當支撐阻力有冇用，等有數據再登記 IDEAS 測（對照隨機水平位）。
+
+## 2026-11-12 網上研究：inside bar 有冇可信回測 → IDEAS #2039（恒指 4 小時，冇合格）
+
+1. **網上證據**：搵唔到 inside bar 突破喺股指期貨嘅嚴謹樣本外研究，全部係平台示範、網誌、論壇。
+   - Unger Academy（迷你標普日內只做淡嘅 inside bar 策略，片段冇結果）：https://ungeracademy.com/?p=8375
+   - StrategyQuant（加 SPY 200 EMA 趨勢過濾之後回撤細咗，冇具體數字）：https://strategyquant.com/blog/inside-bar-breakout-strategy-price-action-trading/
+   - Oxford Strat（42 個期貨市場 34 年測 hikkake——inside day 假突破反手，有成本同敏感度測試，但係反轉形態唔係突破）：https://oxfordstrat.com/?p=17134
+   - 2012 年網誌測「優質 inside bar」日線，第一年負增長，作者自己標為過時：https://forexiation.blogspot.com/2012/05/quality-inside-bar-backtest-extended.html
+2. **自己測（#2039，`research/longfei_search/mhi_intraday7.py`，恒指期貨主連 2018-11→2026-11，成本 4 點）**：三個家族六組參數全部唔合格——I1 突破跟樣本外 +5.9／+9.4 點（t 0.9–1.2）、I2 攻唔破反手 −2.4／+16.1 點（t ≤1.46）、I3 跟收紅收黑 +6.5／+13.6 點（t ≤1.86）；樣本內 t 全部 ≤1.15。
+3. **程式教訓（重要）**：I1 第一次跑 +77 點 t 8、修正跳空後仲有 +60 點——都係假：用 4 小時 K 判斷突破方向時剔走咗「同一根 K 兩邊都穿」嘅情況（即係先穿一邊再打止蝕嘅輸單）。改用 1 分鐘 K 逐分鐘行之後得返 +6 點。以後突破／止蝕類回測一律用細一級數據判斷先後；結果好得離譜（t>5）先當程式錯處理。
+4. 下一步：機械版 inside bar 唔再試。使用者嘅用法係「關鍵位（缺口、套牢區下緣、均線）＋inside bar」，要測就要先有機械化嘅關鍵位定義——等使用者講佢點揀水平位先登記（#2040 候選：inside bar 出現喺前一日高低位／日線 50、100、200 SMA 附近 ±0.2%）。
