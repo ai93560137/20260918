@@ -79,3 +79,15 @@
 - 一致性：`research/strategy_search/parity_frame.py`——stooq 日線 1973–2026 逐日比較 13,077 日，四條入場、止蝕距離、出場全部一致（`PARITY_FRAME.md`）。測試 `tests/test_xau_trend_frame.py`。
 - 設定：zhuge-xau `XAU_TREND_RULES=tdflip`（冇 `XAU_TREND_ADOPT`），修訂 00088-m6k；zhuge-xau-sig `XAU_TREND_BOOKS=937:spike,938:tdrsi,939:kelt,940:tdsurge,941:tdx50,942:td`，修訂 00094-g7q。
 - 退版（要使用者批）：`--profile xau rollback --to zhuge-xau-00085-z99`、`--profile xausig rollback --to zhuge-xau-sig-00092-hx8`；有倉先 `close|all|magic=<magic>`。
+
+## 5. 11-12 停 938／941；複利手數（未部署）
+
+- **停 938（tdrsi #1273）同 941（tdx50 #1290）**：使用者 11-12「停 938 同 941」（風險預算：…69 7 本嘅歷史回落大過戶口本金）。zhuge-xau-sig 00095-9h5，`XAU_TREND_BOOKS=937:spike,939:kelt,940:tdsurge,942:td`；退版 `--to zhuge-xau-sig-00094-g7q`。MT5 938／941 圖可以留住（服務唔出指令）或者關。真倉 6 本：926、933、937、939、940、942。
+- **複利手數（使用者 11-12「利用複式策略」；程式已備、預設關、要使用者確認先開）**：
+  - 新 env：`XAU_TREND_COMPOUND=1`、`XAU_TREND_COMPOUND_UNIT_HKD=<每 0.01 手所需權益>`、`XAU_TREND_COMPOUND_MAX_LOTS=0.05`（預設）。兩個服務分開設定。
+  - **預設模式 `XAU_TREND_COMPOUND_MODE=ratchet`（使用者 11-12「贏的時候加注、輸的時候不加注、每次注碼一樣」）**：手數＝floor(戶口結餘最高水位 ÷ UNIT) × 0.01，最少照舊 0.01、最多 MAX_LOTS；最高水位只升唔跌（存 `<PREFIX>trend/compound.json`，成個服務所有簿共用同一個注碼）；用結餘（已平倉先算贏，浮動盈利唔算），冇結餘先用權益；只喺新開倉時計；攞唔到數就用 0.01。
+  - `XAU_TREND_COMPOUND_MODE=sym`：手數跟而家權益，跌會自動減（反複利保護）。
+  - ⚠ 模擬（`COMPOUND_SIM.md`）：回測原樣下棘輪同對稱差唔多；但「回報打五折」情景，…69 用棘輪會輸晒（加咗注之後唔減，一段長回落就清袋），對稱版同固定版唔會。
+  - UNIT＝呢個戶口全部趨勢簿 0.01 手時嘅歷史最大回落 × 1.5（數字由 `research/strategy_search/compound_sim.py` 計，喺 send_message 報，唔寫入 repo）。**加減簿之後要重新計 UNIT。**
+  - 每本簿日停（`XAU_TREND_DAY_STOP_HKD`）冇跟手數放大：手數大咗，一張止蝕可能已經過日停，嗰日其餘開倉會被擋——屬保守方向。
+  - 模擬：`research/strategy_search/COMPOUND_SIM.md`。測試 `tests/test_xau_trend_compound.py`。

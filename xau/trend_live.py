@@ -334,8 +334,55 @@ def open_block(control_mode, account):
     return None
 
 
-def lots():
-    return max(0.01, min(float(config.TREND_LOTS), float(config.TREND_MAX_LOTS)))
+COMPOUND_FILE = PREFIX + "compound.json"                # [11-12] 複利最高水位（成個服務＝一個戶口共用，所有簿同一個注碼）
+
+
+def _num(x):
+    return float(x) if isinstance(x, (int, float)) and not isinstance(x, bool) and x == x and 0 < x < float("inf") else None
+
+
+def compound_base(account):
+    """複利用嘅「本」：有結餘就用結餘（已平倉先算贏，浮動盈利唔算），冇就用權益。"""
+    a = account or {}
+    return _num(a.get("balance")) or _num(a.get("equity"))
+
+
+def compound_peak(account, stored):
+    """最高水位只升唔跌：max(已存, 而家嘅本)。純函數。"""
+    cur_, old = compound_base(account), _num(stored)
+    return max(x for x in (cur_, old) if x is not None) if (cur_ is not None or old is not None) else None
+
+
+def track_compound(account):
+    """心跳時更新最高水位（只喺創新高先寫）；回傳最高水位。複利冇開就唔讀唔寫。"""
+    if not getattr(config, "TREND_COMPOUND", False):
+        return None
+    try:
+        old = (storage.read_json(COMPOUND_FILE, {}) or {}).get("peak")
+        peak = compound_peak(account, old)
+        if peak is not None and (_num(old) is None or peak > _num(old)):
+            storage.write_json(COMPOUND_FILE, {"peak": peak, "utc": market.fmt_utc(_m().now_ts())})
+        return peak
+    except StorageError:
+        return None
+
+
+def lots(account=None, peak=None):
+    """固定手數；[11-12] 複利開咗（XAU_TREND_COMPOUND=1＋XAU_TREND_COMPOUND_UNIT_HKD > 0）就按「本」分級：
+    floor(本 ÷ 每 0.01 手所需權益) × 0.01，夾喺 [固定手數, XAU_TREND_COMPOUND_MAX_LOTS]。只喺新開倉時用。
+    ratchet（預設；使用者「贏加注、輸唔加、每次注碼一樣」）：本＝結餘最高水位（peak），只升唔跌；sym：本＝而家權益，跌會減。攞唔到數就用固定手數。"""
+    base = max(0.01, min(float(config.TREND_LOTS), float(config.TREND_MAX_LOTS)))
+    unit = float(getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0) or 0.0)
+    if not getattr(config, "TREND_COMPOUND", False) or unit <= 0:
+        return base
+    if getattr(config, "TREND_COMPOUND_MODE", "ratchet") == "sym":
+        eq = _num((account or {}).get("equity"))
+    else:
+        eq = compound_peak(account, peak)
+    if eq is None:
+        return base
+    cap = max(base, float(getattr(config, "TREND_COMPOUND_MAX_LOTS", base) or base))
+    return round(max(base, min(int(eq / unit + 1e-9) * 0.01, cap)), 2)
 
 
 def plan(state, days, pos, price, now, block, pending):
@@ -477,7 +524,8 @@ def _status():
         today = days[-1][0]; mk = mkey(today); lv = mobrk_levels(days, today)
         levels["mobrk"] = {"month": f"{mk // 12}-{mk % 12 + 1:02d}", "used": (st.get("used") or {}).get("mobrk") == mk,
                            "hi": lv[0] if lv else None, "lo": lv[1] if lv else None}
-    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(),
+    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(acct, acct.get("compound_peak")),
+            "compound": {"on": bool(getattr(config, "TREND_COMPOUND", False)), "unit_hkd": getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0), "max_lots": getattr(config, "TREND_COMPOUND_MAX_LOTS", None), "mode": getattr(config, "TREND_COMPOUND_MODE", "ratchet"), "peak_ok": acct.get("compound_peak") is not None},
             "d1_days": len(days), "d1_last": days[-1][0] if days else None, "pos": st.get("pos"), "used": st.get("used"),
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
@@ -567,6 +615,7 @@ def _handle_heartbeat(payload):
         storage.write_json(cur().account_file, account)
     except StorageError as exc:
         m.log_event(f"⚠️ 趨勢簿戶口快照寫入失敗：{exc}", severity="WARNING")
+    account["compound_peak"] = track_compound(account)
     state = load_state()
     bars = market.parse_hist(payload.get("m1_hist"))
     b = market.parse_bar(payload.get("m1_ohlc"))
@@ -639,7 +688,7 @@ def _decide(m, state, account, pos, price, now):
     if kind == "used":
         m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿：{why}", component="trend")
         return why
-    n = lots()
+    n = lots(account, account.get("compound_peak"))
     _enqueue(m, state, "open", now, price, why, sig=sig, n_lots=n)
     state["pos"] = {"rule": sig["rule"], "side": sig["side"], "sl": sig["sl"], "period": sig["period"], "ts": now, "utc": market.fmt_utc(now),
                     "price": price, "adopt": bool(sig.get("adopt"))}
