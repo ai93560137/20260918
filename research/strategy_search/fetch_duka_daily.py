@@ -1,4 +1,4 @@
-"""[IDEAS #1427 起] 下載 Dukascopy 公開日線（BID，UTC 日；每年一個檔 /datafeed/<SYM>/<YYYY>/BID_candles_day_1.bi5）入研究快取。
+"""[未採用：限流太緊，11-12 改用 fetch_yahoo_daily.py] 下載 Dukascopy 公開日線（BID，UTC 日；每年一個檔 /datafeed/<SYM>/<YYYY>/BID_candles_day_1.bi5）入研究快取。
 使用者 11-12（經總指揮）「授權天覆陣下載數據」：長歷史、可買賣嘅日線 OHLC（外匯、白銀／鉑／鈀、債券、原油／天然氣）。公開免費、唔使帳號；請求唔帶任何個人資料。
 輸出：GCS xau/sig/cache/dukad/<SYM>_d.npz（t＝UTC 日 00:00 秒、o／h／l／c、v）；已存在就跳過（--force 重下）。清單 research/strategy_search/DUKA_DAILY.md。
 用法：python3 research/strategy_search/fetch_duka_daily.py [--force]"""
