@@ -28,6 +28,18 @@ def main():
         L.append(f"| 白銀期貨 SI=F（#1442：#1285 只做多） | {f(d['t'][-1])} | {len(fw)} | {sum(x[2] for x in fw):+.2f} | {g(fw[-1] if fw else None)} | {g(old[-1] if old else None)} |")
     except Exception as exc:  # noqa: BLE001
         L.append(f"| 白銀期貨 SI=F（#1442） | 攞唔到數據（{type(exc).__name__}） | — | — | — | — |")
+    # [IDEAS #1444] 天覆組合 v1：黃金 #1268 雙向（Yahoo GC=F 期貨當代理）＋上面嘅恒指、標普、白銀；每張 1R 相加
+    try:
+        import multi_1422 as MU
+        dg = FY.fetch("GC=F"); gt = MU.run(dg, 0.0005)["#1422"]; gf = [x for x in gt if x[0] >= t0]; go = [x for x in gt if x[0] < t0]
+        L.append(f"| 黃金期貨 GC=F（#1268 雙向；組合部件） | {f(dg['t'][-1])} | {len(gf)} | {sum(x[2] for x in gf):+.2f} | {g(gf[-1] if gf else None)} | {g(go[-1] if go else None)} |")
+        tot = []
+        for title, name, cost, _ in (IX.MKTS[0], IX.MKTS[2]):
+            tot += [x for x in IX.sim(IX.load(name), IX.CFG[0], cost)[0] if x[0] >= t0]
+        tot += fw + gf
+        L.append(f"| **天覆組合 v1（#1444：黃金＋白銀＋標普＋恒指）** | — | {len(tot)} | {sum(x[2] for x in tot):+.2f} | — | — |")
+    except Exception as exc:  # noqa: BLE001
+        L.append(f"| 天覆組合 v1（#1444） | 計唔到（{type(exc).__name__}） | — | — | — | — |")
     L.append("")
     open(os.path.join(HERE, "INDEX_SHADOW.md"), "w").write("\n".join(L) + "\n"); print("\n".join(L))
 
