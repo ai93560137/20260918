@@ -79,6 +79,9 @@ def draw(name, doc, sp, path):
             break
     h1c = doc["h1"] if str(doc.get("symbol", "")).startswith("HK.") else clean_h1(doc["h1"], doc["d1"])   # 恒指日線按交易日（夜市屬下一日），唔夾
     bars = h4_cme(h1c) if str(doc.get("symbol", "")).endswith("=F") else pack.h4(h1c)
+    daily = sp.get("tf") == "1d"                 # [11-12] 日線圖（使用者第二張圖：日線＋均線＋示意路線）
+    if daily:
+        bars = [list(x) for x in doc["d1"]]
     C = [b[4] for b in bars]
     n = len(bars)
     show = sp.get("show", 70)
@@ -164,10 +167,33 @@ def draw(name, doc, sp, path):
     ax.axhline(C[-1], color="#888888", ls=":", linewidth=0.8)
     ax.text(xr, C[-1], f" {C[-1]:,.2f}", color="#ffffff", fontsize=10, va="center", ha="left",
             bbox=dict(facecolor=UP if C[-1] >= bars[-1][1] else DN, edgecolor="none", pad=2))
-    ticks = [i for i in range(start, n) if i == start or bars[i][0][:10] != bars[i - 1][0][:10]]
+    # [11-12] 兩點連線（楔形、上升支撐等；點＝[日期, 價]）同示意路線（由最新收市起，[向後幾根, 價]）
+    for d1_, p1, d2_, p2, label, colr in sp.get("tlines", []):
+        i1, i2 = idx.get(d1_), idx.get(d2_)
+        if i1 is None or i2 is None or i1 == i2:
+            continue
+        slope = (p2 - p1) / (i2 - i1)
+        xa, xb = max(start, i1), n + int(right * 0.5)
+        ax.plot([xa, xb], [p1 + slope * (xa - i1), p1 + slope * (xb - i1)], color=colr or "#2962ff", linewidth=1.6)
+        if label:
+            xt = max(start + 2, i1 + 2)
+            ax.text(xt, p1 + slope * (xt - i1), label, color="#ffd54f", fontsize=11, va="bottom", ha="left", clip_on=True)
+    if sp.get("path"):
+        xs, ys = [n - 1], [C[-1]]
+        for ahead, price in sp["path"]:
+            xs.append(n - 1 + ahead)
+            ys.append(price)
+        ax.plot(xs[:-1], ys[:-1], color="#e91e63", linewidth=1.8)
+        ax.annotate("", xy=(xs[-1], ys[-1]), xytext=(xs[-2], ys[-2]), arrowprops=dict(arrowstyle="-|>", color="#e91e63", lw=1.8))
+        if sp.get("path_label"):
+            ax.text(xs[-1], ys[-1], "  " + sp["path_label"], color="#ffd54f", fontsize=12, va="top", ha="left", style="italic", clip_on=True)
+    if daily:
+        ticks = [i for i in range(start, n) if i == start or bars[i][0][:7] != bars[i - 1][0][:7]]
+    else:
+        ticks = [i for i in range(start, n) if i == start or bars[i][0][:10] != bars[i - 1][0][:10]]
     ax.set_xticks(ticks)
-    ax.set_xticklabels([str(int(bars[i][0][8:10])) if bars[i][0][8:10] != "01" else
-                        datetime.strptime(bars[i][0][:10], "%Y-%m-%d").strftime("%b") for i in ticks], color="#bbbbbb", fontsize=9)
+    ax.set_xticklabels([datetime.strptime(bars[i][0][:10], "%Y-%m-%d").strftime("%b") if daily or bars[i][0][8:10] == "01"
+                        else str(int(bars[i][0][8:10])) for i in ticks], color="#bbbbbb", fontsize=9)
     ax.tick_params(axis="y", colors="#dddddd", labelsize=10)
     ax.yaxis.tick_right()
     ax.set_xlim(start - 1, xr)
@@ -180,12 +206,12 @@ def draw(name, doc, sp, path):
     for s in ax.spines.values():
         s.set_color("#2a2e39")
     b = bars[-1]
-    head = (f"{sp['title']} · 4h　O{b[1]:,.2f} H{b[2]:,.2f} L{b[3]:,.2f} C{b[4]:,.2f}\n"
+    head = (f"{sp['title']} · {'1D' if daily else '4h'}　O{b[1]:,.2f} H{b[2]:,.2f} L{b[3]:,.2f} C{b[4]:,.2f}\n"
             + "\n".join(f"SMA ({k}, close)  {smas[k]:,.2f}" for k, _ in SMA_COL if k in smas))
     ax.text(0.005, 0.99, head, transform=ax.transAxes, color="#dddddd", fontsize=10, va="top", ha="left", linespacing=1.5)
     for (k, col), y in zip(SMA_COL, (0.955, 0.932, 0.909)):
         ax.plot([0.001, 0.004], [y, y], transform=ax.transAxes, color=col, linewidth=3)
-    ax.text(0.005, 0.012, f"龍飛陣模仿使用者畫法　截至 {b[0]}（{'香港時間' if str(doc.get('symbol', '')).startswith('HK.') else '美東'}，4 小時 K 開始時間）", transform=ax.transAxes,
+    ax.text(0.005, 0.012, f"龍飛陣模仿使用者畫法　截至 {b[0]}（{'香港時間' if str(doc.get('symbol', '')).startswith('HK.') else '美東'}，{'日線' if daily else '4 小時 K 開始時間'}）", transform=ax.transAxes,
             color="#888888", fontsize=9)
     plt.tight_layout()
     plt.savefig(path, facecolor=fig.get_facecolor())
@@ -204,12 +230,13 @@ def main():
     for name, sp in spec.items():
         if name.startswith("_"):
             continue
-        doc = json.loads(pack.gcs_cat(pack.DATA + f"{name}.json"))
-        path = os.path.join(a.out, f"{name}_4h_user.png")
+        doc = json.loads(pack.gcs_cat(pack.DATA + f"{name.split('@')[0]}.json"))
+        base = name.split("@")[0]                    # spec 可以用「ES@1d」做第二張圖
+        path = os.path.join(a.out, f"{base}_{'1d' if sp.get('tf') == '1d' else '4h'}_user.png")
         info = draw(name, doc, sp, path)
         print(name, path, round(info["last"], 2), {k: round(v, 2) for k, v in info["sma"].items()})
         if a.upload:
-            pack.gcs_put(f"{pack.OUT}charts/{spec['_date']}/{name}_4h_user.png", path)
+            pack.gcs_put(f"{pack.OUT}charts/{spec['_date']}/{os.path.basename(path)}", path)
 
 
 if __name__ == "__main__":
