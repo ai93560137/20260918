@@ -931,7 +931,7 @@
     "description": "Sold 5,000 shares.",
     "option": null,
     "price_at_tx": 425.27,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 22.54
    },
@@ -1199,7 +1199,7 @@
     "description": "Exercised 50 call options purchased 5/24/22 (5,000 shares) at a strike price of $180 with an expiration date of 6/16/23.",
     "option": null,
     "price_at_tx": 348.1,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 49.71
    }
@@ -1877,7 +1877,7 @@
      "expiry": "2023-06-16"
     },
     "price_at_tx": 259.62,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 100.73
    },
@@ -1901,7 +1901,7 @@
      "expiry": "2023-06-16"
     },
     "price_at_tx": 259.62,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 100.73
    }
@@ -2613,7 +2613,7 @@
     "description": "Exercised 150 call options (15,000 shares) expiring 3/19/2021 at a strike price of $130",
     "option": null,
     "price_at_tx": 230.35,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 126.23
    },
@@ -2631,7 +2631,7 @@
     "description": "Exercised 100 call options (10,000 shares) expiring 3/19/2021 at a strike price of $140",
     "option": null,
     "price_at_tx": 230.35,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 126.23
    },
@@ -3317,9 +3317,9 @@
      "expiry": "2021-03-19"
     },
     "price_at_tx": 162.01,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
-    "change_pct": 221.66
+    "change_pct": 221.67
    },
    {
     "owner": "SP",
@@ -3341,7 +3341,7 @@
      "expiry": "2021-03-19"
     },
     "price_at_tx": 184.42,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 182.58
    },
@@ -3365,7 +3365,7 @@
      "expiry": "2021-03-19"
     },
     "price_at_tx": 178.59,
-    "price_now": 521.12,
+    "price_now": 521.13,
     "price_now_date": "2026-11-11",
     "change_pct": 191.8
    },
