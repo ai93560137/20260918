@@ -77,5 +77,5 @@
 - 呢四條係「事件版」：冇倉時每次觸發都可以入（942 `td` 係狀態機版，要等狀態歸零）。
 - 停條件：四本都只用累計 ≤ −8R（同 933／937／939／942）；組合回落 ≥ 10R 通知照舊。
 - 一致性：`research/strategy_search/parity_frame.py`——stooq 日線 1973–2026 逐日比較 13,077 日，四條入場、止蝕距離、出場全部一致（`PARITY_FRAME.md`）。測試 `tests/test_xau_trend_frame.py`。
-- 設定：zhuge-xau `XAU_TREND_RULES=tdflip`（冇 `XAU_TREND_ADOPT`），修訂 00088-mvb；zhuge-xau-sig `XAU_TREND_BOOKS=937:spike,938:tdrsi,939:kelt,940:tdsurge,941:tdx50,942:td`，修訂 00094-scc。
+- 設定：zhuge-xau `XAU_TREND_RULES=tdflip`（冇 `XAU_TREND_ADOPT`），修訂 00088-m6k；zhuge-xau-sig `XAU_TREND_BOOKS=937:spike,938:tdrsi,939:kelt,940:tdsurge,941:tdx50,942:td`，修訂 00094-g7q。
 - 退版（要使用者批）：`--profile xau rollback --to zhuge-xau-00085-z99`、`--profile xausig rollback --to zhuge-xau-sig-00092-hx8`；有倉先 `close|all|magic=<magic>`。
