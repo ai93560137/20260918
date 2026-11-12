@@ -47,6 +47,23 @@ import frame_1272 as FR         # noqa: E402  [11-12] 長線框架 5 類 × 10 �
 import momo_strict_1164 as _M3  # noqa: E402
 
 
+import h4wide_1402 as H4W        # noqa: E402  [11-12] 日線方向＋H4 入場＋冇止賺（#1404／#1408／#1420／#1421 四關全過；同一批數據第二次用 → 只入影子）
+
+_H4E = {}
+
+
+def _h4(kind, xi):
+    """#1402–1421：方向窗口＝#1268 狀態機；H4 入場；出場 EXITS[xi]。未完嘅單用最新收市價計。"""
+    def fn(d):
+        if id(d) not in _H4E:
+            st, fl, _ = H4W.I.daily(d); E = H4W.Eng(d, st, fl)
+            _H4E.clear(); _H4E[id(d)] = (E, {sg: {k: H4W.I.trig(k, q, E.a) for k in H4W.I.KINDS} for sg, q in ((1, E.b), (-1, H4W.I.neg(E.b)))})
+        E, tl = _H4E[id(d)]; _, _, tp_r, mb, trail = H4W.EXITS[xi]
+        cand = np.flatnonzero(E.elig & (((E.st > 0) & tl[1][kind]) | ((E.st < 0) & tl[-1][kind])))
+        return [(t0, sg, r) for t0, _, sg, r in E.go(cand, tp_r, mb, trail)]
+    return fn
+
+
 def _fr(idea):
     rule = next(r for r in FR.RULES if r[0] == idea)
     return lambda d: FR.simulate(_M3.d1ctx(d), rule)
@@ -89,7 +106,11 @@ STRATS = [("rev15", "933 rev15 E6S4（實倉同時有影子）（⚠ 同根止�
           ("fr1285", "框架＋單日升 ≥ 1.5×ATR 入場（#1285 合格）", "#1285", _fr("#1285"), 250 * 86400),
           ("fr1290", "框架＋收市升穿 SMA50 入場（#1290 合格）", "#1290", _fr("#1290"), 250 * 86400),
           ("fr1300", "框架＋#1268 入場、只用方向反轉出場（#1300 合格）", "#1300", _fr("#1300"), 250 * 86400),
-          ("fr1314", "框架＋#1268、持倉中破 20 日新高加一張（#1314 合格；每張 1R）", "#1314", _fr("#1314"), 250 * 86400)]
+          ("fr1314", "框架＋#1268、持倉中破 20 日新高加一張（#1314 合格；每張 1R）", "#1314", _fr("#1314"), 250 * 86400),
+          ("h4pb1404", "日線方向＋H4 重拾 SMA20 入、日線方向變先平（#1404 合格；利潤靠少數大單）", "#1404", _h4("PB", 2), 0),
+          ("h4bo1408", "日線方向＋H4 破 20 根高位入、日線方向變先平（#1408 合格；利潤靠少數大單）", "#1408", _h4("BO", 2), 0),
+          ("h4macd1420", "日線方向＋H4 MACD 柱轉正入、日線方向變先平（#1420 合格；利潤靠少數大單）", "#1420", _h4("MACD", 2), 0),
+          ("h4macd1421", "日線方向＋H4 MACD 柱轉正入、穿 20 根低位或方向變就平（#1421 合格；四條入面最穩陣）", "#1421", _h4("MACD", 3), 0)]
 COMBO_KEYS = ("rev15", "round", "rev60", "d1brk", "mend", "spike")   # 6 條回測合格規則嘅 63 個組合（使用者 11-08「63 個組合回測同影子都做」）；#1049 唔入
 OVERLAP = (("rev15", "rev60"), ("rev15", "spike"), ("rev60", "spike"))   # 高度重疊：rev15＋rev60 約 80%、rev15＋急動約 54–65%
 COMBO_1027 = ("rev15", "round", "d1brk")
