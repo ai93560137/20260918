@@ -38,3 +38,9 @@ jobs:
 
       - name: Fetch NQ / ES
         run: python3 scripts/longfei_analyst_data.py
+
+      # 天覆陣 11-12 要求：長歷史日線（GCS longfei/daily/）跟住每日攞數一齊更新，佢嘅指數影子前向先會自己更新。
+      # 失敗唔好影響上面分析欄數據。
+      - name: Long-history daily archive (longfei/daily/)
+        continue-on-error: true
+        run: python3 research/longfei_search/daily_archive.py
