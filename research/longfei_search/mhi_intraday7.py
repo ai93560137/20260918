@@ -61,6 +61,10 @@ def run(b, fam, p):
                 if up or dn:
                     side = 1 if up else -1
                     entry, stop = (x[2], x[3]) if up else (x[3], x[2])
+                    # [11-12 修正] 第一次跑 I1 每筆 +77 點、t 8，太好：原因係 4 小時 K 之間有休市跳空（03:00→09:15、16:30→17:15），
+                    # 開市已經跳過突破位都當喺突破位成交（偷咗跳空）。改做：跳空開市就用開市價成交。準則冇改。
+                    if (up and b[j][1] > entry) or (dn and b[j][1] < entry):
+                        entry = b[j][1]
                     # 入場嗰根之後先計止蝕（同一根已經排除兩邊都穿）
                     out.append({"d": day, "r": hold(b, j, side, entry, stop, p["n"])})
                     break
@@ -110,7 +114,7 @@ def main():
     print("== 合格家族", list(best))
     from google.cloud import storage
     storage.Client().bucket("zhuge-risk-manager-bucket").blob("longfei/strategy_search/mhi_intraday7.json").upload_from_string(
-        json.dumps({"bars": len(b), "inside": ins, "rows": rows, "qualified_by_family": best}, ensure_ascii=False), content_type="application/json")
+        json.dumps({"bars": len(b), "inside": ins, "fix": "11-12 I1 跳空用開市價成交", "rows": rows, "qualified_by_family": best}, ensure_ascii=False), content_type="application/json")
 
 
 if __name__ == "__main__":
