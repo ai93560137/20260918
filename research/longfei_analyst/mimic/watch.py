@@ -38,6 +38,20 @@ def closed_bars(bars, now_et):
     return [b for b in bars if bar_end(b[0]) <= now_et]
 
 
+def near_key(p, keys, tol=0.001):
+    """[11-12] 使用者：「Inside bar 不是每一個都有用」——佢兩次用 inside bar 都係喺關鍵位攻唔破／有支撐之後。
+    所以每個提示都標明：前一根 K 嘅高／低位有冇掂到關鍵位（±0.1%）。冇掂到就寫「唔喺關鍵位」，等使用者自己判斷。"""
+    hit = []
+    o, h, lo, c = p[1], p[2], p[3], p[4]
+    for k in keys:
+        t = k * tol
+        if o > k and lo <= k + t:                  # 由上面落嚟測試
+            hit.append(f"前一根低位 {lo:,.2f} 測試 {k:,.2f}，{'收返上面' if c > k else '收穿'}")
+        elif o < k and h >= k - t:                 # 由下面上嚟測試
+            hit.append(f"前一根高位 {h:,.2f} 測試 {k:,.2f}，{'收返下面' if c < k else '收企上面'}")
+    return "喺關鍵位：" + "；".join(hit) if hit else "唔喺關鍵位附近（前一根高低位冇掂到清單入面嘅位）"
+
+
 def check(bars, levels):
     """bars：已收市 4 小時 K（舊到新）。回傳 [(種類, 關鍵位或 None, 訊息)]。"""
     out = []
@@ -51,7 +65,7 @@ def check(bars, levels):
         up = b[4] >= b[1]
         out.append(("inside_up" if up else "inside", None,
                     f"4 小時 K（{b[0]} 美東）係{'向上' if up else '向下'} inside bar：開 {b[1]:,.2f} 高 {b[2]:,.2f} 低 {b[3]:,.2f} 收 {b[4]:,.2f}"
-                    f"（前一根高 {p[2]:,.2f} 低 {p[3]:,.2f}）"))
+                    f"（前一根高 {p[2]:,.2f} 低 {p[3]:,.2f}）；{near_key(p, levels.get('keys', []))}"))
     return out
 
 
