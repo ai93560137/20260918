@@ -390,6 +390,11 @@ TREND_MAGIC = _i("XAU_TREND_MAGIC", MAGIC + 6 if not SIGNAL_BOOK else 0)       #
 TREND_ACCOUNT = _s("XAU_TREND_ACCOUNT", "") or ACCOUNT                         # 預設同 921（…63）
 TREND_LOTS = _f("XAU_TREND_LOTS", 0.01)
 TREND_MAX_LOTS = _f("XAU_TREND_MAX_LOTS", 0.01)
+# [11-12 使用者「利用複式策略」] 複利手數（預設關）：新開倉時 手數＝floor(戶口權益 ÷ 每 0.01 手所需權益) × 0.01，最少 TREND_LOTS、最多 TREND_COMPOUND_MAX_LOTS；
+#   「每 0.01 手所需權益」＝呢個戶口全部趨勢簿 0.01 手時嘅歷史最大回落 × 1.5（HKD，要逐個戶口設定）；持倉中唔加減；權益跌就自動細返；冇權益數就用返 TREND_LOTS。
+TREND_COMPOUND = _b("XAU_TREND_COMPOUND", False)
+TREND_COMPOUND_UNIT_HKD = _f("XAU_TREND_COMPOUND_UNIT_HKD", 0.0)
+TREND_COMPOUND_MAX_LOTS = _f("XAU_TREND_COMPOUND_MAX_LOTS", 0.05)
 TREND_RULES = tuple(x.strip() for x in _s("XAU_TREND_RULES", "qbrk,lvbrk").split(",") if x.strip())
 TREND_ADOPT = tuple(x.strip() for x in _s("XAU_TREND_ADOPT", "").split(",") if x.strip())   # 例 qbrk：本季已觸發而未止蝕嘅單，開咗之後用現價補入一次
 TREND_DAY_STOP_HKD = _f("XAU_TREND_DAY_STOP_HKD", 2000.0)

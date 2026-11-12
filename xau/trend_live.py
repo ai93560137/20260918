@@ -334,8 +334,18 @@ def open_block(control_mode, account):
     return None
 
 
-def lots():
-    return max(0.01, min(float(config.TREND_LOTS), float(config.TREND_MAX_LOTS)))
+def lots(account=None):
+    """固定手數；[11-12] 複利開咗（XAU_TREND_COMPOUND=1＋XAU_TREND_COMPOUND_UNIT_HKD > 0）而且有戶口權益，就按權益分級：
+    floor(權益 ÷ 每 0.01 手所需權益) × 0.01，夾喺 [固定手數, XAU_TREND_COMPOUND_MAX_LOTS]。只喺新開倉時用；權益冇報／唔正常就用固定手數。"""
+    base = max(0.01, min(float(config.TREND_LOTS), float(config.TREND_MAX_LOTS)))
+    unit = float(getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0) or 0.0)
+    if not getattr(config, "TREND_COMPOUND", False) or unit <= 0:
+        return base
+    eq = (account or {}).get("equity")
+    if not isinstance(eq, (int, float)) or isinstance(eq, bool) or eq != eq or eq <= 0 or eq == float("inf"):
+        return base
+    cap = max(base, float(getattr(config, "TREND_COMPOUND_MAX_LOTS", base) or base))
+    return round(max(base, min(int(eq / unit + 1e-9) * 0.01, cap)), 2)
 
 
 def plan(state, days, pos, price, now, block, pending):
@@ -477,7 +487,8 @@ def _status():
         today = days[-1][0]; mk = mkey(today); lv = mobrk_levels(days, today)
         levels["mobrk"] = {"month": f"{mk // 12}-{mk % 12 + 1:02d}", "used": (st.get("used") or {}).get("mobrk") == mk,
                            "hi": lv[0] if lv else None, "lo": lv[1] if lv else None}
-    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(),
+    return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(acct),
+            "compound": {"on": bool(getattr(config, "TREND_COMPOUND", False)), "unit_hkd": getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0), "max_lots": getattr(config, "TREND_COMPOUND_MAX_LOTS", None)},
             "d1_days": len(days), "d1_last": days[-1][0] if days else None, "pos": st.get("pos"), "used": st.get("used"),
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
@@ -639,7 +650,7 @@ def _decide(m, state, account, pos, price, now):
     if kind == "used":
         m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿：{why}", component="trend")
         return why
-    n = lots()
+    n = lots(account)
     _enqueue(m, state, "open", now, price, why, sig=sig, n_lots=n)
     state["pos"] = {"rule": sig["rule"], "side": sig["side"], "sl": sig["sl"], "period": sig["period"], "ts": now, "utc": market.fmt_utc(now),
                     "price": price, "adopt": bool(sig.get("adopt"))}
