@@ -108,9 +108,14 @@ def load_state():
 
 
 def load_seed():
+    """冷啟動日線種子：黃金 trend_d1_seed；其他產品 trend_d1_seed_<symbol 細楷>（冇就空，唔會攞錯產品嘅種子）。"""
     try:
-        import trend_d1_seed
-        return dict(trend_d1_seed.SEED)
+        if config.SYMBOL == "XAUUSD":
+            import trend_d1_seed as mod
+        else:
+            import importlib
+            mod = importlib.import_module("trend_d1_seed_" + config.SYMBOL.lower())
+        return dict(mod.SEED)
     except Exception:  # noqa: BLE001
         return {}
 
@@ -408,7 +413,7 @@ def plan(state, days, pos, price, now, block, pending):
             done = days[:-1]
             if not done or used.get(rule) == done[-1][0] or done[-1][0] <= int((state.get("busy") or {}).get(rule, -1)):
                 continue
-            sig = D1R.plan_open(rule, done, price)
+            sig = D1R.plan_open(rule, done, price, long_only=config.TREND_LONG_ONLY, min_abs=config.TREND_MIN_SL_ABS, digits=config.PRICE_DIGITS)
             if not sig:
                 continue
             if block:
@@ -597,6 +602,8 @@ def backfill_d1(state, now):
 def closed_window(ts):
     """[11-10] 黃金休市：星期六全日、星期日 21:00 UTC 前。EA 喺夏令轉換補歷史會將星期五 K 線標錯時間（11-01 00:00 UTC 有 12 根），呢啲唔入日線。"""
     wd = (int(ts) // 86400 + 3) % 7                     # 0＝星期一
+    if wd == 6 and config.TREND_DROP_SUNDAY:            # [IDEAS #1442] 白銀：星期日開市嗰一兩個鐘唔當一日（回測用交易日日線，冇星期日 K 線）；黃金唔變
+        return True
     return wd == 5 or (wd == 6 and int(ts) % 86400 < 21 * 3600)
 
 
@@ -626,7 +633,8 @@ def _handle_heartbeat(payload):
         d1 = state.get("d1") or {}
         if len(d1) < 270:
             d1 = {**load_seed(), **d1}
-        state["d1"] = d1_merge(d1, [{"t": x["time"] - offset, **{k: x[k] for k in ("open", "high", "low", "close")}} for x in bars])
+        state["d1"] = d1_merge(d1, [{"t": x["time"] - offset, **{k: x[k] for k in ("open", "high", "low", "close")}} for x in bars
+                                    if not (config.TREND_DROP_SUNDAY and closed_window(x["time"] - offset))])
     if account["product_ok"]:
         try:
             backfill_d1(state, now)

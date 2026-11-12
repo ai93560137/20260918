@@ -87,6 +87,12 @@ PROFILES = {
                # 有條件必要：S1（SIG_DECIDE）／跟單（SIG_FOLLOW_CHANNELS）要收 EA 心跳，就一定要有 WEBHOOK_SECRET_TOKEN（同 EA InpToken）；
                # S0 只收 HMAC 訊號唔使。10-22 漏咗令 EA 心跳 403。dry-run 會警告，唔擋。
                "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("SIG_DECIDE", "SIG_FOLLOW_CHANNELS")}},
+    # [IDEAS #1442，使用者 11-12「#1442 白銀真倉」] 白銀只行趨勢簿（tdsurge 只做多）：獨立服務 zhuge-xag、GCS xag/。
+    # required_env：建立時自動加入；唔一致就拒絕部署（免得變成雙向、或者開咗 AI 落單）。上線步驟 xau/mt5/SILVER_SETUP.md。
+    "xag": {"service": "zhuge-xag", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
+            "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
+            "required_env": {"XAU_SYMBOL": "XAGUSD", "XAU_EXECUTE": "0", "XAU_TREND_LONG_ONLY": "1"},
+            "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("XAU_TREND_LIVE",)}},
 }
 
 
