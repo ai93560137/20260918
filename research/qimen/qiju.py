@@ -45,8 +45,10 @@ def sun(utc):
     return lam, math.degrees(eot) * 4
 
 
-def qiju(utc, lon):
-    lam, eot = sun(utc)
+def qiju(utc, lon, lam=None):
+    """lam：可以傳入更精確嘅太陽視黃經（例如 ephem 計嘅），取代內置低精度公式（定節氣、年柱、月柱用）。"""
+    lam0, eot = sun(utc)
+    lam = lam0 if lam is None else lam
     tst = utc.replace(tzinfo=None) + timedelta(minutes=lon * 4 + eot)
     day = (tst + timedelta(hours=1)).date()        # 23:00 換日
     jdn = day.toordinal() + 1721425
