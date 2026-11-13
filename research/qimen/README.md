@@ -1,7 +1,7 @@
 # 🔮 奇門遁甲陣：起局記錄格式
 
 > 全部紙上：唔落單、唔改任何服務或環境變數。占卦結果**唔係落單指令**。
-> 規矩見 `handoff/奇門遁甲.md`；起局方法見該文件第五節（時家奇門・拆補法・轉盤）。
+> 規矩見 `handoff/奇門遁甲.md`；起局方法見該文件第五節（時家奇門・拆補法・轉盤・英國真太陽時・23:00 換日）。
 
 ## 一、先記錄、後對答案
 
@@ -16,7 +16,9 @@
 | `id` | 起局 | `QM-YYYYMMDD-市場-序號`，例如 `QM-20261116-HSI-1` |
 | `method_ver` | 起局 | 起局方法版本（第五節；改方法就升版、重新計數），例如 `v1-時家-拆補-轉盤` |
 | `tool` | 起局 | 起局工具與版本（例如 `kinqimen==x.y.z`／人手） |
-| `cast_hkt` | 起局 | 起局用嘅時間（香港時間，`YYYY-MM-DD HH:MM`） |
+| `cast_hkt` | 起局 | 起局時刻（香港時間，`YYYY-MM-DD HH:MM`，對帳用） |
+| `cast_uk` | 起局 | 同一時刻嘅英國時鐘時間（註明 GMT／BST） |
+| `true_solar` | 起局 | 英國真太陽時（地點經度、均時差寫入 `note` 或 `tool`）；**定時辰、換日用呢個** |
 | `jieqi` / `yuan` / `dun_ju` | 起局 | 節氣、上中下元、陰／陽遁幾局（例如 `陽遁3局`） |
 | `ganzhi` | 起局 | 年月日時四柱 |
 | `zhifu` / `zhishi` | 起局 | 值符（星）、值使（門）及落宮 |
@@ -38,7 +40,7 @@
 
 ## 二之二、測人、測事：`readings.csv`
 
-同 `predictions.csv` 一樣先記錄後對答案，欄位：`id`（`QR-YYYYMMDD-序號`）、`method_ver`、`tool`、`cast_hkt`、`dun_ju`、`ganzhi`、`zhifu`、`zhishi`、`kongwang`、`maxing`、`pan`、
+同 `predictions.csv` 一樣先記錄後對答案，欄位：`id`（`QR-YYYYMMDD-序號`）、`method_ver`、`tool`、`cast_hkt`、`cast_uk`、`true_solar`、`dun_ju`、`ganzhi`、`zhifu`、`zhishi`、`kongwang`、`maxing`、`pan`、
 `kind`（`測人`／`測事`）、`subject`（**代號**，例如 `P01`／`E01`；唔寫真名同私人資料）、`question`（概括，唔寫可辨認個人嘅細節）、`yongshen`、`judgement`、`deadline_hkt`（幾時揭曉）、
 `verify_rule`（點先算中；冇得驗證就寫 `不計分`）、`status`、`outcome`、`hit`、`scored_hkt`、`note`。
 
