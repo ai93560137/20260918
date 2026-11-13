@@ -17,3 +17,11 @@ assert f["盤"][1].endswith("/休門戊/天蓬戊") and f["值符"] == "天蓬�
 y = paipan(False, 9, "甲子")
 assert y["盤"][5] == "壬" and y["盤"][9].endswith("天英戊") and y["盤"][1].endswith("天蓬乙"), y
 print("ok")
+
+# qiju.py：知識庫例局（2004-12-22 酉時，中環；18:00 HKT＝10:00 UTC，經度 114.16°E）
+from datetime import datetime, timezone
+from qiju import qiju
+q = qiju(datetime(2004, 12, 22, 10, 0, tzinfo=timezone.utc), 114.16)
+assert q["四柱"] == "甲申年 丙子月 乙亥日 乙酉時" and q["節氣"] == "冬至" and q["元"] == "下元" and q["局"] == "陽遁4局", q
+assert q["盤"]["盤"] == want
+print("qiju ok")
