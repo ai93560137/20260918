@@ -73,7 +73,9 @@ except Exception as _e:
 # 11-10：…69 穩陣組 937–941（#1165 spike、#1174 wide、#1178 kelt、#1224 ichi、#1116 turtle）喺 zhuge-xau-sig 嘅 trend_books，同一套停條件
 _TL_SRC = []
 for _tag, _url in (("trend 926", "https://zhuge-xau-1056099871997.europe-west1.run.app/?format=json"),
-                   ("trend 933 #1114", "https://zhuge-xau-sig-1056099871997.europe-west1.run.app/?format=json")):
+                   ("trend 933 #1114", "https://zhuge-xau-sig-1056099871997.europe-west1.run.app/?format=json"),
+                   # 11-13 使用者「#1442 白銀真倉」「開白銀落單」：…63 白銀簿 943（zhuge-xag，tdsurge 只做多、固定 0.01 手、唔開複利）
+                   ("trend 943 白銀 #1442", "https://zhuge-xag-1056099871997.europe-west1.run.app/?format=json")):
     try:
         _js = json.loads(urllib.request.urlopen(_url, timeout=30).read())
         _TL_SRC.append((_tag, _js.get("trend_live")))
