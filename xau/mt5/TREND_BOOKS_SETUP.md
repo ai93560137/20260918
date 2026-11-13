@@ -93,3 +93,23 @@
   - 模擬：`research/strategy_search/COMPOUND_SIM.md`。測試 `tests/test_xau_trend_compound.py`。
 
 - **11-12 複利已開（sym）**：使用者睇完三個版本模擬後揀「跌會減」。zhuge-xau 00091-g5k、zhuge-xau-sig 00097-5zq：`XAU_TREND_COMPOUND=1`、`XAU_TREND_COMPOUND_MODE=sym`、UNIT 各自設定（數字喺 env，唔寫入 repo）、MAX_LOTS 用預設 0.05。開嗰刻兩戶手數仍係 0.01。核實：`?format=json` 嘅 `trend_live.compound`／`trend_books[].compound` 同 `lots`。退版：zhuge-xau → 00090-js6（關複利）；zhuge-xau-sig → 00096-qhx。
+
+## 6. 新增 944：#1421 日線方向＋H4 MACD（使用者 11-13「#1421 轉真倉」→「63 0.01」：戶口 …63、固定 0.01 手；**11-13 已部署 zhuge-xau 00093-nqm**；退版 00092-cvc＝只關 944、00091-g5k＝返舊程式）
+
+- **規則 `h4macd`**（`xau/trend_h4rules.py`；對拍 `research/strategy_search/PARITY_H4MACD.md`：2010–2026 共 25,455 根 H4，329／329 個訊號同根同方向、風險相差 0%、追蹤出場 0 個唔一致）：
+  - 方向＝日線 #1268 狀態機喺上一個已完成 UTC 日嘅狀態（+1 只做多、−1 只做空、0 唔做）——即係只喺 #1268「出手期間」先做。
+  - 入場＝H4 收市時 MACD(12,26,9) 柱由 ≤ 0 轉 > 0（做空鏡像）；只睇 08:00／12:00／16:00 UTC 開嗰三根；下一根 H4 開市（12:00／16:00／20:00 UTC）第一個心跳市價入，遲過 15 分鐘唔追。
+  - 止蝕＝max(2×ATR14(H4), 3 美元, 0.3×上一日 D1 ATR14)，伺服器端；冇止賺。
+  - 出場＝入場後任何一根 H4 收市穿之前 20 根最低（做空：最高）收市 → 下一根開市平；或者新一日日線狀態唔再係持倉方向 → 新一日第一個心跳平。一次一張、冇時間上限。
+- **回測**（IDEAS #1421，黃金 M1 2010–2026，每張扣 0.5 美元）：273 張（約每年 16 張）、勝率 34%、平均 +0.505R、PF 1.89；2010–14 +0.663／2015–22 +0.292／2023–26 +0.770；多 +0.563／空 +0.411；每月最大回撤 13.3R。
+  **弱點**：H4 數據喺 #1323–1327 已經睇過（第二次用），當時定咗「合格都只入影子等前向」；前向到 11-13 只有 1 張；利潤靠少數大單（勝率 34%）；
+  只喺 #1268 出手期間做，方向同 926（#1300）／942（#1268）一致，會疊加同一方向嘅風險。
+- **現況（11-13）**：日線狀態 −1（只做空）；H4 ATR14 約 33 → 止蝕距離約 66 美元 → 0.01 手每張風險約 66 美元。最近訊號大約每星期一個。
+- **部署（總指揮；先 dry-run，使用者親口批）**：
+  - 使用者揀 …63：先 `--profile xau deploy` 新程式，再 `--profile xau env set XAU_TREND_BOOKS=944:h4macd XAU_TREND_FIXED_MAGICS=944`（zhuge-xau 第一本額外簿；926 設定唔變）。
+  - H4 冷啟動種子 `xau/trend_h4_seed.py`（券商 M1 砌，到 2026-11-13 12:00 UTC；`research/strategy_search/build_seed_h4.py --csv`）；種子尾同上線之間嘅缺口由服務 M1 存檔（最近 10 日）自動補，所以要喺種子日期後 10 日內上線，否則重砌。
+  - **手數**：使用者定固定 0.01 手 → `XAU_TREND_FIXED_MAGICS=944`（呢本簿唔跟複利；926 照跟，UNIT 唔使改）。
+  - MT5：使用者開一張 XAUUSD 圖（任何週期）掛 `TianfuExecutor`，`InpMagic=944`，網址同該戶口其他圖一樣，`InpDryRun=false`。
+  - 核實：`?format=json` 嘅 `trend_books` 有 944、`h4_bars` ≥ 300、`d1_days` ≥ 300、心跳正常；第一張單即報。
+- **停條件**：累計 ≤ −8R（巡檢腳本同網頁已加 `h4macd`）；組合回落 ≥ 10R 通知使用者。
+- 測試：`tests/test_xau_trend_h4.py`（5 個）；其餘 `tests/test_xau_trend_*.py` 逐個檔跑。
