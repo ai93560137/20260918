@@ -7,6 +7,7 @@
 """
 import argparse
 import csv
+import gzip
 import math
 import os
 import random
@@ -100,7 +101,7 @@ def main():
     detail = []
     for name, (path, tz) in MARKETS.items():
         rows = run_market(name, path, tz, kb)
-        with open(os.path.join(a.out, f"calls_{name}.csv"), "w", encoding="utf-8", newline="") as f:
+        with gzip.open(os.path.join(a.out, f"calls_{name}.csv.gz"), "wt", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=list(rows[0]))
             w.writeheader()
             w.writerows(rows)
