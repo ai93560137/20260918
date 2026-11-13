@@ -93,6 +93,56 @@ def run(argv, session, env_extra=None):
 
 
 class ConditionalEnvTests(unittest.TestCase):
+    def test_copy_env_values_is_pure_and_strict(self):
+        src = [{"name": "WEBHOOK_SECRET_TOKEN", "value": "tok-abcdef-123456"}, {"name": "XAU_ACCOUNT", "value": "12345663"},
+               {"name": "EMPTY", "value": ""}, {"name": "REF", "valueSource": {"secretKeyRef": {"secret": "s", "version": "1"}}}]
+        got, problems = ga.copy_env_values(src, ["WEBHOOK_SECRET_TOKEN", "XAU_ACCOUNT"])
+        self.assertEqual(got, {"WEBHOOK_SECRET_TOKEN": "tok-abcdef-123456", "XAU_ACCOUNT": "12345663"}); self.assertEqual(problems, [])
+        got, problems = ga.copy_env_values(src, ["MISSING", "EMPTY", "REF", "A=B", "XAU_ACCOUNT"])
+        self.assertEqual(got, {"XAU_ACCOUNT": "12345663"}); self.assertEqual(len(problems), 4)
+        self.assertFalse(any("tok-abcdef" in p or "12345663" in p for p in problems))          # 問題訊息唔帶值
+        self.assertNotIn("abcdef", ga.mask("WEBHOOK_SECRET_TOKEN", "tok-abcdef-123456"))          # 計畫顯示用 mask：權杖、戶口全號都遮
+        self.assertEqual(ga.mask("XAU_ACCOUNT", "12345663"), "…63")
+        self.assertEqual(ga.mask("TG_CHAT_ID", "-1001234567890"), "…90")                          # 群組 id 都遮
+        self.assertEqual(ga.mask("SIG_CHATID", "12345678"), "…78"); self.assertEqual(ga.mask("TG_CHAT_ID", ""), "")
+
+    def test_env_copy_dry_run_masks_and_does_not_write(self):
+        import contextlib, io, types
+        calls = []
+
+        class Resp:
+            status_code = 200
+
+            def __init__(self, doc):
+                self._doc = doc
+
+            def json(self):
+                return self._doc
+
+        tgt = {"template": {"containers": [{"image": "img:1", "env": [{"name": "XAU_SYMBOL", "value": "XAGUSD"}]}]}, "latestReadyRevision": "x/revisions/zhuge-xag-00001-aaa", "traffic": []}
+        srcdoc = {"template": {"containers": [{"env": [{"name": "WEBHOOK_SECRET_TOKEN", "value": "tok-abcdef-123456"}, {"name": "XAU_ACCOUNT", "value": "12345663"}]}]}}
+
+        class Sess:
+            def get(self, url, timeout=60):
+                calls.append(url); return Resp(srcdoc if url.endswith("/zhuge-xau") else tgt)
+        ctx = types.SimpleNamespace(args=types.SimpleNamespace(env_action="copy", pairs=["WEBHOOK_SECRET_TOKEN", "XAU_ACCOUNT"], from_profile="xau", yes=False),
+                                    profile=ga.PROFILES["xag"], service="zhuge-xag", svc_name="projects/p/locations/europe-west1/services/zhuge-xag", session=Sess(), is_run=True)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), mock.patch.object(ga, "update_service", side_effect=AssertionError("dry-run 唔應該寫")):
+            ga.cmd_env_run(ctx)
+        out = buf.getvalue()
+        self.assertTrue(any(u.endswith("/services/zhuge-xau") for u in calls))
+        self.assertIn("WEBHOOK_SECRET_TOKEN", out); self.assertIn("…63", out); self.assertIn("dry-run", out)
+        self.assertNotIn("tok-abcdef-123456", out); self.assertNotIn("12345663", out)
+
+    def test_xag_profile_is_long_only_trend_service(self):
+        prof = ga.PROFILES["xag"]
+        self.assertEqual(prof["service"], "zhuge-xag")
+        self.assertEqual(prof["required_env"], {"XAU_SYMBOL": "XAGUSD", "XAU_EXECUTE": "0", "XAU_TREND_LONG_ONLY": "1"})
+        self.assertTrue(ga.env_warnings(prof, {"XAU_TREND_LIVE": "1"}))                              # 開趨勢簿而冇心跳權杖 → 警告
+        self.assertEqual(ga.env_warnings(prof, {"XAU_TREND_LIVE": "1", "WEBHOOK_SECRET_TOKEN": "x"}), [])
+        self.assertIn("trend_d1_seed_xagusd.py", [str(f).split("/")[-1] for f in ga.profile_files(prof)])
+
     def test_xausig_warns_when_s1_or_follow_without_token(self):
         prof = ga.PROFILES["xausig"]
         self.assertEqual(ga.env_warnings(prof, {"XAU_BOOK": "signal"}), [])                       # S0：唔使權杖
