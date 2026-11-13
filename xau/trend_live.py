@@ -21,6 +21,8 @@ import market
 import storage
 import trend_d1rules as D1R
 import trend_h4rules as H4R
+import trend_merebal as MR
+import merebal_feed
 from storage import StorageError
 
 PREFIX = config.PREFIX + "trend/"
@@ -28,7 +30,7 @@ STATE_FILE = PREFIX + "state.json"
 ACCOUNT_FILE = PREFIX + "account.json"
 MAX_DAYS = 420
 MAX_ORDERS = 200
-NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）", **D1R.NAMES, **H4R.NAMES}
+NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）", **D1R.NAMES, **H4R.NAMES, **MR.NAMES}
 BACKFILL_DAYS = 10       # [11-10] 每本簿每日一次：用本服務 M1 存檔（<PREFIX>bars/<UTC 日>.jsonl）補返最近 10 日日線
 
 
@@ -324,6 +326,11 @@ def exit_due(pos, days, now, h4=None):
         return None
     if pos.get("rule") in D1R.RULES:                     # [11-10] D1 收市規則：用已完成日線判（新一日第一個心跳平）
         return D1R.plan_exit(pos, days[:-1])
+    if pos.get("rule") in MR.RULES:                      # [IDEAS #1463] 月尾最後一個交易日指定時間之後平；過咗月都未平就即平
+        ph, mk = MR.phase(config.TREND_MEREBAL_CAL, now, config.TREND_MEREBAL_UTC_MIN)
+        if mk > int(pos.get("period") or 0):
+            return "月尾已過，平"
+        return "月尾收市平" if ph == "exit" else None
     if pos.get("rule") in H4R.RULES:                     # [IDEAS #1421] H4 收市規則：已完成 H4 判追蹤出場；新一日判日線狀態
         if not days or h4 is None:
             return None
@@ -439,6 +446,18 @@ def plan(state, days, pos, price, now, block, pending):
         return None, f"啱啱開倉被拒，{RETRY_SEC // 60} 分鐘後再試"
     used = state.get("used") or {}
     for rule in cur().rules:
+        if rule in MR.RULES:                             # [IDEAS #1463] 訊號日指定時間之後、當日內入；一個月只試一次；數據由 _decide 預先攞好放 state["mr"]
+            ph, mk = MR.phase(config.TREND_MEREBAL_CAL, now, config.TREND_MEREBAL_UTC_MIN)
+            if ph != "enter" or used.get(rule) == mk or price is None:
+                continue
+            mr = state.get("mr") or {}
+            if mr.get("mk") != mk or mr.get("idx") is None or mr.get("bond") is None:
+                return None, f"{NAMES[rule]} 訊號日：未有股債數據（{mr.get('err') or '攞緊'}）"
+            sg = MR.side(mr["idx"], mr["bond"])
+            sig = {"rule": rule, "side": sg, "sl": round(price * (1 - sg * config.TREND_MEREBAL_SL_PCT / 100.0), config.PRICE_DIGITS), "period": mk}
+            if block:
+                return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
+            return ("open", sig), f"{NAMES[rule]}：指數當月 {mr['idx']:+.2%}、美債 {mr['bond']:+.2%} → {'做多' if sg > 0 else '做空'}"
         if rule in H4R.RULES:                            # [IDEAS #1421] H4 收市規則：上一根 H4 啱啱完成、新一根開咗 15 分鐘內先入；一根只試一次
             done, st, fa, key = h4
             if not done or done[-1][0] != key - 1 or used.get(rule) == key or int(now) - key * H4R.H4 > H4R.LATE_SEC:
@@ -571,7 +590,10 @@ def _status():
                            "hi": lv[0] if lv else None, "lo": lv[1] if lv else None}
     return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(acct, acct.get("compound_peak")),
             "compound": {"on": bool(getattr(config, "TREND_COMPOUND", False)), "unit_hkd": getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0), "max_lots": getattr(config, "TREND_COMPOUND_MAX_LOTS", None), "mode": getattr(config, "TREND_COMPOUND_MODE", "ratchet"), "peak_ok": acct.get("compound_peak") is not None},
-            "d1_days": len(days), "d1_last": days[-1][0] if days else None, "h4_bars": len(st.get("h4") or {}), "pos": st.get("pos"), "used": st.get("used"),
+            "d1_days": len(days), "d1_last": days[-1][0] if days else None, "h4_bars": len(st.get("h4") or {}),
+            "merebal": ({"cal": config.TREND_MEREBAL_CAL, "idx": config.TREND_MEREBAL_IDX, "utc_min": config.TREND_MEREBAL_UTC_MIN, "sl_pct": config.TREND_MEREBAL_SL_PCT,
+                         "key_days": [d.isoformat() for d in MR.key_days(config.TREND_MEREBAL_CAL, dt.datetime.now(dt.timezone.utc).year, dt.datetime.now(dt.timezone.utc).month)],
+                         "data": st.get("mr"), "probe": st.get("mr_probe")} if "merebal" in bk.rules else None), "pos": st.get("pos"), "used": st.get("used"),
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
             "book": (st.get("book") or [])[-50:][::-1], "last": st.get("last"),
@@ -721,8 +743,42 @@ def _handle_heartbeat(payload):
                       "mode": "live" if config.TREND_LIVE else "off", "cmd_text": cmd_text(state, now), "message": why}), 200
 
 
+MR_RETRY_SEC = 600       # 訊號日攞唔到數據：10 分鐘後再試
+
+
+def merebal_prefetch(m, state, pos, now, fetcher=None):
+    """[IDEAS #1463] 訊號日（入場窗口）而本月未用：攞一次股債當月回報放 state["mr"]；失敗 10 分鐘後再試，記 WARNING。"""
+    if "merebal" not in cur().rules:
+        return
+    day = int(now) // 86400
+    if (state.get("mr_probe") or {}).get("day") != day:  # 每 UTC 日一次連線檢查（等訊號日之前已經知道攞唔攞到數據）
+        pr = merebal_feed.probe(config.TREND_MEREBAL_IDX, **({"fetcher": fetcher} if fetcher else {}))
+        state["mr_probe"] = {"day": day, "utc": market.fmt_utc(now), **pr}
+        if pr.get("err"):
+            m.log_event(f"⚠️ [{config.TEAM_NAME}] 趨勢簿 {cur().magic} 月尾股債再平衡：每日數據連線檢查失敗（{pr['err']}）", severity="WARNING", component="trend")
+    if pos or state.get("pos"):
+        return
+    ph, mk = MR.phase(config.TREND_MEREBAL_CAL, now, config.TREND_MEREBAL_UTC_MIN)
+    if ph != "enter" or (state.get("used") or {}).get("merebal") == mk:
+        return
+    mr = state.get("mr") or {}
+    if mr.get("mk") == mk and (mr.get("idx") is not None or now - float(mr.get("ts") or 0) < MR_RETRY_SEC):
+        return
+    today = dt.datetime.fromtimestamp(int(now), dt.timezone.utc).date()
+    snap = merebal_feed.snapshot(config.TREND_MEREBAL_IDX, today, **({"fetcher": fetcher} if fetcher else {}))
+    state["mr"] = {"mk": mk, "ts": now, "utc": market.fmt_utc(now), **snap}
+    if snap.get("err"):
+        m.log_event(f"⚠️ [{config.TEAM_NAME}] 趨勢簿 {cur().magic} 月尾股債再平衡：訊號日攞唔到數據（{snap['err']}），10 分鐘後再試；今日攞唔到就今個月唔做", severity="WARNING", component="trend")
+    else:
+        m.log_event(f"📈 [{config.TEAM_NAME}] 趨勢簿 {cur().magic} 月尾股債再平衡數據：{config.TREND_MEREBAL_IDX} 當月 {snap['idx']:+.2%}、美債 {snap['bond']:+.2%}", component="trend")
+
+
 def _decide(m, state, account, pos, price, now):
     control = m.load_control()
+    try:
+        merebal_prefetch(m, state, pos, now)
+    except Exception as exc:  # noqa: BLE001
+        m.log_event(f"⚠️ 趨勢簿 {cur().magic} 月尾股債再平衡攞數據出錯（唔影響其他）：{type(exc).__name__}: {exc}", severity="WARNING", component="trend")
     if control.get("mode") == "STOP" and pos and not _pending(state, now):
         _enqueue(m, state, "close", now, price, "control＝STOP")
         return "control＝STOP，排平倉"
