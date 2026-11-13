@@ -111,7 +111,7 @@ for _tag, _tl in _TL_SRC:
             print(f"  ⚠ [{_tag}] EA 有倉但服務 state 冇 pos（state 可能被清／到期唔會自動平）→ 即報總指揮")
         if _p0 and _ps and abs((_ps[0].get("stop") or 0) - (_p0.get("sl") or 0)) > 0.01:
             print(f"  ⚠ [{_tag}] EA SL {_ps[0].get('stop')} 同服務記錄 {_p0.get('sl')} 唔一致")
-        if set(_tl.get("rules") or []) & {"mobrk", "spike", "wide", "kelt", "ichi", "turtle", "td", "tdrsi", "tdsurge", "tdx50", "tdflip"}:
+        if set(_tl.get("rules") or []) & {"mobrk", "spike", "wide", "kelt", "ichi", "turtle", "td", "tdrsi", "tdsurge", "tdx50", "tdflip", "h4macd"}:
             _rs = [x["r"] for x in reversed(_tl.get("book") or []) if x.get("r") is not None]
             _w = sum(r for r in _rs if r > 0); _l = -sum(r for r in _rs if r < 0)
             _pf = (_w / _l) if _l else None
@@ -122,7 +122,7 @@ for _tag, _tl in _TL_SRC:
                 _st += 1
             print(f"  [{_tag}] 停條件：{len(_rs)} 張 ΣR {sum(_rs):+.2f} PF {('—' if _pf is None else f'{_pf:.2f}')} 連蝕 {_st}")
             # [11-11 使用者「改」；IDEAS #1271] 933 #1114（mobrk）、937（spike）、939（kelt）：只用累計 ≤ −8R；其餘照舊（≤ −5R／12 張 PF<0.8／連蝕 6）
-            if set(_tl.get("rules") or []) & {"mobrk", "spike", "kelt", "td", "tdrsi", "tdsurge", "tdx50", "tdflip"}:
+            if set(_tl.get("rules") or []) & {"mobrk", "spike", "kelt", "td", "tdrsi", "tdsurge", "tdx50", "tdflip", "h4macd"}:
                 if sum(_rs) <= -8:
                     print(f"  ⛔ [{_tag}] 觸發停條件（累計 ≤ −8R）→ 即報總指揮，建議呢本簿返影子（要使用者批）")
             elif sum(_rs) <= -5 or (len(_rs) >= 12 and (_pf or 0) < 0.8) or _st >= 6:
@@ -130,6 +130,7 @@ for _tag, _tl in _TL_SRC:
     except Exception as _e:
         print(f"  [{_tag}] 讀唔到：{_e}")
 
+# 11-13：…63 加 944（#1421 h4macd，zhuge-xau 嘅 trend_books，固定 0.01 手）→ 真倉 8 本
 # 11-10 使用者「加組合層面監察，回落超過 10R 就通知我」：7 本真倉趨勢簿（926、933、937–941）合計
 # 已平倉 R 按平倉時間累計（由 0 起）＋而家持倉浮動 R；由最高位回落 ≥ 10R → 印 ⛔，巡檢即報使用者同總指揮
 try:

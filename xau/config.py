@@ -401,6 +401,7 @@ TREND_COMPOUND_UNIT_HKD = _f("XAU_TREND_COMPOUND_UNIT_HKD", 0.0)
 TREND_COMPOUND_MAX_LOTS = _f("XAU_TREND_COMPOUND_MAX_LOTS", 0.05)
 # [11-12 使用者「贏的時候加注、輸的時候不加注、每次注碼一樣」] ratchet（預設）＝手數跟戶口結餘「最高水位」，只升唔跌；sym＝跟而家權益，跌會減。
 TREND_COMPOUND_MODE = _s("XAU_TREND_COMPOUND_MODE", "ratchet").strip().lower()
+TREND_FIXED_MAGICS = tuple(int(x) for x in _s("XAU_TREND_FIXED_MAGICS", "").replace(" ", "").split(",") if x.isdigit())   # [11-13 使用者「63 0.01」] 呢啲 magic 嘅簿唔跟複利，永遠用固定手數（例 944）
 TREND_LONG_ONLY = _b("XAU_TREND_LONG_ONLY", False)                              # [IDEAS #1442] D1 收市規則只做多（白銀）；預設雙向（黃金唔變）
 TREND_MIN_SL_ABS = _f("XAU_TREND_MIN_SL_ABS", 3.0 if PRODUCT["kind"] == "gold" else 0.0)   # D1 收市規則最低止蝕（價格單位）：黃金 3 美元；其他產品只用 0.3×ATR
 TREND_DROP_SUNDAY = _b("XAU_TREND_DROP_SUNDAY", PRODUCT["kind"] != "gold")       # [IDEAS #1442] 日線唔收星期日 K 線（黃金預設照舊收 21:00 UTC 後）
