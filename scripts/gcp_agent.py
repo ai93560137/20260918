@@ -93,6 +93,15 @@ PROFILES = {
             "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
             "required_env": {"XAU_SYMBOL": "XAGUSD", "XAU_EXECUTE": "0", "XAU_TREND_LONG_ONLY": "1"},
             "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("XAU_TREND_LIVE",)}},
+    # [IDEAS #1463，使用者 11-13「照行，SP500 0.2＋UK100 0.1，…69」] 月尾股債再平衡：每個指數一個服務，只行趨勢簿 merebal。步驟 xau/mt5/MEREBAL_SETUP.md。
+    "sp500": {"service": "zhuge-sp500", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
+              "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
+              "required_env": {"XAU_SYMBOL": "SP500", "XAU_EXECUTE": "0", "XAU_TREND_RULES": "merebal", "XAU_TREND_MEREBAL_CAL": "US", "XAU_TREND_MEREBAL_IDX": "^GSPC"},
+              "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("XAU_TREND_LIVE",)}},
+    "uk100": {"service": "zhuge-uk100", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
+              "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
+              "required_env": {"XAU_SYMBOL": "UK100", "XAU_EXECUTE": "0", "XAU_TREND_RULES": "merebal", "XAU_TREND_MEREBAL_CAL": "UK", "XAU_TREND_MEREBAL_IDX": "^FTSE"},
+              "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("XAU_TREND_LIVE",)}},
 }
 
 

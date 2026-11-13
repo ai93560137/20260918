@@ -47,6 +47,13 @@ PRODUCTS = {
     "XAGUSD": {"contract": 5000.0, "pip": 0.01, "digits": 3, "min_sl_pips": 5.0, "max_sl_pips": 300.0, "spread_pips": 3.0, "quote": "USD",
                "prefix": "xag/", "magic": 951, "kind": "silver",
                "desc": "spot silver CFD {symbol} on MetaTrader 5 (1 lot = 5,000 oz, price in US$ per oz, 1 pip = US$0.01)"},
+    # [IDEAS #1463，使用者 11-13「照行，SP500 0.2＋UK100 0.1，…69」] 股指差價合約：只行趨勢簿嘅月尾股債再平衡（merebal），XAU_EXECUTE=0
+    "SP500": {"contract": 1.0, "pip": 1.0, "digits": 2, "min_sl_pips": 20.0, "max_sl_pips": 2000.0, "spread_pips": 0.6, "quote": "USD",
+              "prefix": "idx/sp500/", "magic": 955, "kind": "index",
+              "desc": "S&P 500 cash index CFD {symbol} on MetaTrader 5 (1 lot = 1 index unit, price in index points, USD)"},
+    "UK100": {"contract": 1.0, "pip": 1.0, "digits": 2, "min_sl_pips": 20.0, "max_sl_pips": 3000.0, "spread_pips": 1.5, "quote": "GBP",
+              "prefix": "idx/uk100/", "magic": 956, "kind": "index",
+              "desc": "FTSE 100 cash index CFD {symbol} on MetaTrader 5 (1 lot = 1 index unit, price in index points, GBP)"},
     "EURUSD": {"contract": 100000.0, "pip": 0.0001, "digits": 5, "min_sl_pips": 5.0, "max_sl_pips": 40.0, "spread_pips": 1.0, "quote": "USD",
                "prefix": "fx/eurusd/", "magic": 922, "kind": "fx",
                "desc": "EUR/USD spot forex CFD {symbol} on MetaTrader 5 (1 lot = 100,000 EUR, price in US$ per EUR, 1 pip = 0.0001)"},
@@ -405,6 +412,11 @@ TREND_FIXED_MAGICS = tuple(int(x) for x in _s("XAU_TREND_FIXED_MAGICS", "").repl
 TREND_LONG_ONLY = _b("XAU_TREND_LONG_ONLY", False)                              # [IDEAS #1442] D1 收市規則只做多（白銀）；預設雙向（黃金唔變）
 TREND_MIN_SL_ABS = _f("XAU_TREND_MIN_SL_ABS", 3.0 if PRODUCT["kind"] == "gold" else 0.0)   # D1 收市規則最低止蝕（價格單位）：黃金 3 美元；其他產品只用 0.3×ATR
 TREND_DROP_SUNDAY = _b("XAU_TREND_DROP_SUNDAY", PRODUCT["kind"] != "gold")       # [IDEAS #1442] 日線唔收星期日 K 線（黃金預設照舊收 21:00 UTC 後）
+# [IDEAS #1463] 月尾股債再平衡（merebal）：交易日曆（US／UK）、Yahoo 指數代號、入／出場 UTC 時間、保險止蝕（回測入面持倉期收市計最深 −5.6%，冇掂過 10%）
+TREND_MEREBAL_CAL = _s("XAU_TREND_MEREBAL_CAL", "US").upper()
+TREND_MEREBAL_IDX = _s("XAU_TREND_MEREBAL_IDX", "^GSPC")
+TREND_MEREBAL_UTC_MIN = _i("XAU_TREND_MEREBAL_UTC_MIN", 20 * 60 + 45)
+TREND_MEREBAL_SL_PCT = _f("XAU_TREND_MEREBAL_SL_PCT", 10.0)
 TREND_RULES = tuple(x.strip() for x in _s("XAU_TREND_RULES", "qbrk,lvbrk").split(",") if x.strip())
 TREND_ADOPT = tuple(x.strip() for x in _s("XAU_TREND_ADOPT", "").split(",") if x.strip())   # 例 qbrk：本季已觸發而未止蝕嘅單，開咗之後用現價補入一次
 TREND_DAY_STOP_HKD = _f("XAU_TREND_DAY_STOP_HKD", 2000.0)
