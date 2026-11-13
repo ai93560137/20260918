@@ -1,6 +1,6 @@
 """[IDEAS #1442] 白銀趨勢簿冷啟動日線種子：MT5 XAGUSD M1（研究快取 mt5x/）→ UTC 日線 → xau/trend_d1_seed_xagusd.py。
 上線前要用最新 MT5 匯出重跑（種子尾同上線日之間唔可以有缺日，否則「單日升」會用錯兩日差）。
-用法：python3 research/strategy_search/build_seed_xag.py"""
+用法：python3 research/strategy_search/build_seed_xag.py [--csv <XAGUSD_M1_MAX.csv>]"""
 import datetime as dt
 import json
 import os
@@ -22,8 +22,12 @@ def closed(ts):                                          # 同 xau/trend_live.cl
 
 
 def main():
-    parts = [DC.get(f"mt5x/XAGUSD_m1_{y}.npz") for y in ("2024", "2025", "2026p")]
-    d = {k: np.concatenate([p[k] for p in parts if p is not None]) for k in ("t", "o", "h", "l", "c")}
+    if "--csv" in sys.argv:                              # 上線／補數：直接讀券商 MT5 匯出嘅 XAGUSD_M1_MAX.csv（伺服器時間 → UTC，同 import_mt5_max 一樣）
+        import import_mt5_max as IM
+        d, _ = IM.load(sys.argv[sys.argv.index("--csv") + 1]); d = {k: d[k] for k in ("t", "o", "h", "l", "c")}
+    else:
+        parts = [DC.get(f"mt5x/XAGUSD_m1_{y}.npz") for y in ("2024", "2025", "2026p")]
+        d = {k: np.concatenate([p[k] for p in parts if p is not None]) for k in ("t", "o", "h", "l", "c")}
     ok = np.array([not closed(t) for t in d["t"]]); d = {k: v[ok] for k, v in d.items()}
     day = d["t"] // 86400; st = np.r_[0, np.nonzero(np.diff(day))[0] + 1]; en = np.r_[st[1:], len(day)]
     seed = {str(int(day[a])): {"o": round(float(d["o"][a]), 3), "h": round(float(d["h"][a:b].max()), 3), "l": round(float(d["l"][a:b].min()), 3),
