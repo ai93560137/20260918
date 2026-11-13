@@ -36,6 +36,12 @@
 | `scored_hkt` | 對答案 | 對答案時間 |
 | `note` | 任何時候 | 補充（唔可以用嚟改判斷） |
 
+## 二之二、測人、測事：`readings.csv`
+
+同 `predictions.csv` 一樣先記錄後對答案，欄位：`id`（`QR-YYYYMMDD-序號`）、`method_ver`、`tool`、`cast_hkt`、`dun_ju`、`ganzhi`、`zhifu`、`zhishi`、`kongwang`、`maxing`、`pan`、
+`kind`（`測人`／`測事`）、`subject`（**代號**，例如 `P01`／`E01`；唔寫真名同私人資料）、`question`（概括，唔寫可辨認個人嘅細節）、`yongshen`、`judgement`、`deadline_hkt`（幾時揭曉）、
+`verify_rule`（點先算中；冇得驗證就寫 `不計分`）、`status`、`outcome`、`hit`、`scored_hkt`、`note`。
+
 ## 三、未定之事（使用者會一步一步提供）
 
 - 用神點揀、評分表（加減分規則）→ 收到後寫入 `handoff/奇門遁甲.md` 第五節同本檔。
