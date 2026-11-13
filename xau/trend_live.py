@@ -20,6 +20,7 @@ import executor
 import market
 import storage
 import trend_d1rules as D1R
+import trend_h4rules as H4R
 from storage import StorageError
 
 PREFIX = config.PREFIX + "trend/"
@@ -27,7 +28,7 @@ STATE_FILE = PREFIX + "state.json"
 ACCOUNT_FILE = PREFIX + "account.json"
 MAX_DAYS = 420
 MAX_ORDERS = 200
-NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）", **D1R.NAMES}
+NAMES = {"qbrk": "上季突破（#1107）", "lvbrk": "低波幅 20 日突破（#1113）", "mobrk": "月初三日區間突破（#1114）", **D1R.NAMES, **H4R.NAMES}
 BACKFILL_DAYS = 10       # [11-10] 每本簿每日一次：用本服務 M1 存檔（<PREFIX>bars/<UTC 日>.jsonl）補返最近 10 日日線
 
 
@@ -118,6 +119,29 @@ def load_seed():
         return dict(mod.SEED)
     except Exception:  # noqa: BLE001
         return {}
+
+
+def load_h4_seed():
+    """[IDEAS #1421] H4 冷啟動種子（只有黃金有：trend_h4_seed.py，券商 M1 砌）。冇就空。"""
+    try:
+        if config.SYMBOL != "XAUUSD":
+            return {}
+        import trend_h4_seed
+        return dict(trend_h4_seed.SEED)
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def has_h4():
+    return any(r in H4R.RULES for r in cur().rules)
+
+
+def h4_ctx(state, days, now):
+    """→ (已完成 H4 清單, 今日適用日線狀態, 上日 D1 ATR, 而家嗰根 H4 key)。"""
+    key = int(now) // H4R.H4
+    done = [b for b in H4R.bars_of(state.get("h4")) if b[0] < key]
+    st, fa = H4R.day_ctx(days[:-1])
+    return done, st, fa, key
 
 
 # ------------------------------------------------------------------ 純計算：日線
@@ -294,12 +318,17 @@ def lvbrk_signal(days, today, used):
     return {"rule": "lvbrk", "side": sg, "sl": round((hi + lo) / 2, 2), "period": today, "level": hi if sg > 0 else lo}
 
 
-def exit_due(pos, days, now):
+def exit_due(pos, days, now, h4=None):
     """到期平倉嘅原因或 None。qbrk：季尾最後一個平日 UTC ≥ 20:45，或者已經入咗下季；lvbrk：第 10 個交易日 UTC ≥ 20:45，或者第 11 日。"""
     if not pos or not days:
         return None
     if pos.get("rule") in D1R.RULES:                     # [11-10] D1 收市規則：用已完成日線判（新一日第一個心跳平）
         return D1R.plan_exit(pos, days[:-1])
+    if pos.get("rule") in H4R.RULES:                     # [IDEAS #1421] H4 收市規則：已完成 H4 判追蹤出場；新一日判日線狀態
+        if not days or h4 is None:
+            return None
+        done, st, _, _ = h4
+        return H4R.plan_exit(pos, done, st, days[-1][0])
     today = days[-1][0]
     late = (int(now) % 86400) // 60 >= config.TREND_EXIT_UTC_MIN
     if pos.get("rule") == "qbrk":
@@ -395,8 +424,9 @@ def plan(state, days, pos, price, now, block, pending):
     if not days:
         return None, "冇日線"
     today = days[-1][0]
+    h4 = h4_ctx(state, days, now) if (has_h4() or (state.get("pos") or {}).get("rule") in H4R.RULES) else None
     if pos or state.get("pos"):
-        why = exit_due(state.get("pos") or {"rule": None}, days, now)
+        why = exit_due(state.get("pos") or {"rule": None}, days, now, h4)
         if pos and why and not pending:
             return ("close", why), why
         return None, "有倉（SL 伺服器端；到期平）" if pos else "等倉位回報"
@@ -409,6 +439,16 @@ def plan(state, days, pos, price, now, block, pending):
         return None, f"啱啱開倉被拒，{RETRY_SEC // 60} 分鐘後再試"
     used = state.get("used") or {}
     for rule in cur().rules:
+        if rule in H4R.RULES:                            # [IDEAS #1421] H4 收市規則：上一根 H4 啱啱完成、新一根開咗 15 分鐘內先入；一根只試一次
+            done, st, fa, key = h4
+            if not done or done[-1][0] != key - 1 or used.get(rule) == key or int(now) - key * H4R.H4 > H4R.LATE_SEC:
+                continue
+            sig = H4R.plan_open(rule, done, st, fa, price, digits=config.PRICE_DIGITS)
+            if not sig:
+                continue
+            if block:
+                return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
+            return ("open", sig), f"{NAMES[rule]} 訊號"
         if rule in D1R.RULES:                            # [11-10] D1 收市規則：用已完成日線、新一日第一個心跳市價入
             done = days[:-1]
             if not done or used.get(rule) == done[-1][0] or done[-1][0] <= int((state.get("busy") or {}).get(rule, -1)):
@@ -531,7 +571,7 @@ def _status():
                            "hi": lv[0] if lv else None, "lo": lv[1] if lv else None}
     return {"on": enabled(), "levels": levels, "names": {k: NAMES.get(k, k) for k in bk.rules}, "magic": bk.magic, "rules": list(bk.rules), "adopt": list(bk.adopt), "lots": lots(acct, acct.get("compound_peak")),
             "compound": {"on": bool(getattr(config, "TREND_COMPOUND", False)), "unit_hkd": getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0), "max_lots": getattr(config, "TREND_COMPOUND_MAX_LOTS", None), "mode": getattr(config, "TREND_COMPOUND_MODE", "ratchet"), "peak_ok": acct.get("compound_peak") is not None},
-            "d1_days": len(days), "d1_last": days[-1][0] if days else None, "pos": st.get("pos"), "used": st.get("used"),
+            "d1_days": len(days), "d1_last": days[-1][0] if days else None, "h4_bars": len(st.get("h4") or {}), "pos": st.get("pos"), "used": st.get("used"),
             "account": {k: acct.get(k) for k in ("received_utc", "positions", "daily_pnl", "realized_total", "trade_allowed", "dry_run")},
             "orders": [{**o, "id": executor.mask_id(o.get("id"))} for o in (st.get("orders") or [])[-20:][::-1]],
             "book": (st.get("book") or [])[-50:][::-1], "last": st.get("last"),
@@ -595,6 +635,8 @@ def backfill_d1(state, now):
             d1[k] = dict(seed)
     if rows or bad:
         state["d1"] = d1_merge(d1, rows)
+    if rows and has_h4():                                # [IDEAS #1421] 同一批 M1 存檔順手補 H4
+        state["h4"] = H4R.h4_merge(state.get("h4") or {}, rows)
     state["bf_day"] = today
     return len(rows)
 
@@ -635,6 +677,12 @@ def _handle_heartbeat(payload):
             d1 = {**load_seed(), **d1}
         state["d1"] = d1_merge(d1, [{"t": x["time"] - offset, **{k: x[k] for k in ("open", "high", "low", "close")}} for x in bars
                                     if not (config.TREND_DROP_SUNDAY and closed_window(x["time"] - offset))])
+    if account["product_ok"] and has_h4():               # [IDEAS #1421] H4 K 線：冷啟動用種子，之後由心跳 M1 合併
+        h4 = state.get("h4") or {}
+        if len(h4) < 300:
+            h4 = {**load_h4_seed(), **h4}
+        state["h4"] = H4R.h4_merge(h4, [{"t": x["time"] - offset, **{k: x[k] for k in ("open", "high", "low", "close")}} for x in bars
+                                        if not closed_window(x["time"] - offset)])
     if account["product_ok"]:
         try:
             backfill_d1(state, now)
