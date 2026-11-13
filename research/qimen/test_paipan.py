@@ -39,3 +39,17 @@ assert z["盤"] == {4: "太陰/生門戊/天衝乙", 9: "螣蛇/傷門乙/天輔
                    7: "九天/景門己(丙)/天芮(禽)癸", 8: "白虎/開門庚/天蓬壬", 1: "玄武/驚門丁/天心庚", 6: "九地/死門癸/天柱丁"}, z
 assert z["值使"] == "景門落7宮" and z["馬星"] == "艮8"
 print("app 丙申 ok")
+
+# score.py：第一卦正式計分 QR-20261113-1（陰遁 3 局 庚子時 亥月）人手計係 −5／+2／+3，總分 −5 → 跌
+# 要知識庫 kb.json（私人 GCS）；冇就跳過。
+import os as _os
+_kb = _os.environ.get("QIMEN_KB")
+if _kb and _os.path.exists(_kb):
+    from score import load_kb, score
+    r = score(paipan(False, 3, "庚子"), "庚子", "亥", load_kb(_kb))
+    assert (r["時干宮"][0], r["時干宮"][1]) == (9, -5) and (r["生門宮"][0], r["生門宮"][1]) == (6, 2) and (r["戊宮"][0], r["戊宮"][1]) == (7, 3), r
+    assert r["總分"] == -5 and r["call"] == "跌"
+    assert score(paipan(False, 3, "甲午"), "甲午", "亥", load_kb(_kb))["call"] == "棄權"
+    print("score ok")
+else:
+    print("score 測試跳過（未設 QIMEN_KB）")

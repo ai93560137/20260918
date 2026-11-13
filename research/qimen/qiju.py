@@ -87,7 +87,8 @@ def qiju(utc, lon):
         warn.append(f"同 App（時鐘時間）唔同：App 會用 {gz(c_d)}日 {c_shi}時，本陣用 {gz(d)}日 {shi}時 → 要另外同使用者講")
     return {"App盤": app, "英國時鐘": clock.strftime("%Y-%m-%d %H:%M"), "utc": utc.strftime("%Y-%m-%d %H:%M"), "真太陽時": tst.strftime("%Y-%m-%d %H:%M"), "均時差分鐘": round(eot, 1),
             "四柱": f"{gz(yi)}年 {month}月 {gz(d)}日 {shi}時", "節氣": jq, "符頭": gz(futou), "元": yuan + "元",
-            "局": f"{'陽' if yang else '陰'}遁{ju}局", "警告": warn, "盤": paipan(yang, ju, shi)}
+            "局": f"{'陽' if yang else '陰'}遁{ju}局", "警告": warn, "盤": paipan(yang, ju, shi),
+            "時柱": shi, "月支": ZHI[(mz + 2) % 12]}
 
 
 if __name__ == "__main__":
