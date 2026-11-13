@@ -94,7 +94,7 @@
 
 - **11-12 複利已開（sym）**：使用者睇完三個版本模擬後揀「跌會減」。zhuge-xau 00091-g5k、zhuge-xau-sig 00097-5zq：`XAU_TREND_COMPOUND=1`、`XAU_TREND_COMPOUND_MODE=sym`、UNIT 各自設定（數字喺 env，唔寫入 repo）、MAX_LOTS 用預設 0.05。開嗰刻兩戶手數仍係 0.01。核實：`?format=json` 嘅 `trend_live.compound`／`trend_books[].compound` 同 `lots`。退版：zhuge-xau → 00090-js6（關複利）；zhuge-xau-sig → 00096-qhx。
 
-## 6. 新增 944：#1421 日線方向＋H4 MACD（使用者 11-13「#1421 轉真倉」→「63 0.01」：戶口 …63、固定 0.01 手；**程式已寫好，未部署**）
+## 6. 新增 944：#1421 日線方向＋H4 MACD（使用者 11-13「#1421 轉真倉」→「63 0.01」：戶口 …63、固定 0.01 手；**11-13 已部署 zhuge-xau 00093-nqm**；退版 00092-cvc＝只關 944、00091-g5k＝返舊程式）
 
 - **規則 `h4macd`**（`xau/trend_h4rules.py`；對拍 `research/strategy_search/PARITY_H4MACD.md`：2010–2026 共 25,455 根 H4，329／329 個訊號同根同方向、風險相差 0%、追蹤出場 0 個唔一致）：
   - 方向＝日線 #1268 狀態機喺上一個已完成 UTC 日嘅狀態（+1 只做多、−1 只做空、0 唔做）——即係只喺 #1268「出手期間」先做。
