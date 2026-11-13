@@ -770,6 +770,27 @@ def require_service(ctx: Ctx):
     return svc
 
 
+def copy_env_values(src_env_list, names):
+    """純函數：由來源服務嘅 env 清單揀出 names → ({名: 值}, [問題])。來源冇、空值、Secret Manager 參照、名唔合法都當問題（唔會靜靜哋漏）。"""
+    src = {e.get("name"): e for e in src_env_list or []}
+    out, problems = {}, []
+    for raw in names:
+        name = str(raw).strip()
+        if not name or "=" in name:
+            problems.append(f"{name or '（空）'}：env copy 只收變數名，唔收 KEY=VAL")
+            continue
+        e = src.get(name)
+        if e is None:
+            problems.append(f"來源服務冇 {name}")
+        elif (e.get("valueSource") or {}).get("secretKeyRef"):
+            problems.append(f"{name} 喺來源係 Secret Manager 參照，本工具唔複製")
+        elif not e.get("value"):
+            problems.append(f"來源服務嘅 {name} 係空值")
+        else:
+            out[name] = e["value"]
+    return out, problems
+
+
 def cmd_env_run(ctx: Ctx):
     a = ctx.args
     svc = require_service(ctx)
@@ -782,6 +803,22 @@ def cmd_env_run(ctx: Ctx):
     env_list = container.get("env", [])
     changes = parse_kv(a.pairs) if a.env_action == "set" else {}
     removals = set(a.pairs) if a.env_action == "unset" else set()
+    if a.env_action == "copy":
+        # [11-13 總指揮要求] 由另一個服務喺記憶體複製環境變數（權杖、戶口全號唔經對話／命令列）；計畫照樣遮罩，--yes 先寫
+        src_name = (getattr(a, "from_profile", None) or "").strip().lower()
+        if src_name not in PROFILES or PROFILES[src_name]["service"] == ctx.service:
+            die("env copy 要用 --from-profile 指定另一個 profile（例如 --from-profile xau）")
+        if not a.pairs:
+            die("請列出要複製嘅變數名，例如：env copy --from-profile xau WEBHOOK_SECRET_TOKEN TG_BOT_TOKEN")
+        src_path = ctx.svc_name.rsplit("/", 1)[0] + "/" + PROFILES[src_name]["service"]
+        resp = ctx.session.get(f"{RUN_API}/{src_path}", timeout=60)
+        if resp.status_code != 200:
+            die(f"讀取來源服務 {PROFILES[src_name]['service']} 失敗 HTTP {resp.status_code}")
+        src_env = ((resp.json().get("template") or {}).get("containers") or [{}])[0].get("env", [])
+        changes, problems = copy_env_values(src_env, a.pairs)
+        if problems:
+            die("；".join(problems))
+        plan(f"由 {PROFILES[src_name]['service']} 複製 {len(changes)} 個變數（值喺記憶體讀，唔顯示全值）")
     if not changes and not removals:
         die("請指定要修改的變數，例如：env set TARGET_RRR=2")
     existing = {e["name"] for e in env_list}
@@ -1294,8 +1331,9 @@ def build_parser():
     s.add_argument("--url", help="函式網址（省略則從 status 取）")
 
     s = sub.add_parser("env", help="環境變數")
-    s.add_argument("env_action", choices=["get", "set", "unset"])
-    s.add_argument("pairs", nargs="*", help="set: KEY=VAL…；unset: KEY…")
+    s.add_argument("env_action", choices=["get", "set", "unset", "copy"])
+    s.add_argument("pairs", nargs="*", help="set: KEY=VAL…；unset: KEY…；copy: KEY…（配 --from-profile）")
+    s.add_argument("--from-profile", choices=sorted(PROFILES), help="env copy：由呢個 profile 嘅服務複製變數（只限 run 模式）")
     s.add_argument("--yes", action="store_true")
 
     s = sub.add_parser("deploy", help="部署（預設 dry-run）")

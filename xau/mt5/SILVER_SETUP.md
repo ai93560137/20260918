@@ -61,9 +61,9 @@
 | `XAU_TREND_RULES` | `tdsurge` | #1285 規則 |
 | `XAU_TREND_LOTS`／`XAU_TREND_MAX_LOTS` | `0.01`／`0.01` | 固定手數 |
 | `XAU_ACTIVE_HOURS_UTC` | `00-00` | 唔行 AI |
-| `XAU_ACCOUNT`、`XAU_ACK_REQUIRE_ACCOUNT` | 戶口號、`1` | 只收呢個戶口嘅心跳 |
+| `XAU_ACK_REQUIRE_ACCOUNT` | `1` | 只收指定戶口嘅心跳 |
 | `XAU_TEST_CMDS` | `0` | |
-| `WEBHOOK_SECRET_TOKEN`、`TG_BOT_TOKEN`、`TG_CHAT_ID` | 同其他天覆陣服務 | 心跳驗證、通知 |
+| `WEBHOOK_SECRET_TOKEN`、`TG_BOT_TOKEN`、`TG_CHAT_ID`、`XAU_ACCOUNT` | **唔好打明文**：`gcp_agent.py --profile xag env copy --from-profile xau WEBHOOK_SECRET_TOKEN TG_BOT_TOKEN TG_CHAT_ID XAU_ACCOUNT`（喺記憶體由 zhuge-xau 複製，計畫遮罩，`--yes` 先寫） | 心跳驗證、通知、戶口 …63 |
 
 - 「允許未經驗證的叫用」由使用者喺控制台開（同 zhuge-xau 一樣）。
 - 使用者喺 MT5 開一張 **XAGUSD** 圖，掛 `TianfuExecutor`，magic `943`，網址填 `zhuge-xag` 嘅網址，權杖同其他圖一樣。
