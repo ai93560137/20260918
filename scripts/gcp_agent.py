@@ -87,6 +87,12 @@ PROFILES = {
                # 有條件必要：S1（SIG_DECIDE）／跟單（SIG_FOLLOW_CHANNELS）要收 EA 心跳，就一定要有 WEBHOOK_SECRET_TOKEN（同 EA InpToken）；
                # S0 只收 HMAC 訊號唔使。10-22 漏咗令 EA 心跳 403。dry-run 會警告，唔擋。
                "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("SIG_DECIDE", "SIG_FOLLOW_CHANNELS")}},
+    # [IDEAS #1442，使用者 11-12「#1442 白銀真倉」] 白銀只行趨勢簿（tdsurge 只做多）：獨立服務 zhuge-xag、GCS xag/。
+    # required_env：建立時自動加入；唔一致就拒絕部署（免得變成雙向、或者開咗 AI 落單）。上線步驟 xau/mt5/SILVER_SETUP.md。
+    "xag": {"service": "zhuge-xag", "source": REPO_ROOT / "xau", "entry": "xau_entry", "files": None,
+            "check_views": ("", "?format=json"), "tail_ok": ("methods=[\"GET\", \"POST\", \"OPTIONS\"])",),
+            "required_env": {"XAU_SYMBOL": "XAGUSD", "XAU_EXECUTE": "0", "XAU_TREND_LONG_ONLY": "1"},
+            "conditional_env": {"WEBHOOK_SECRET_TOKEN": ("XAU_TREND_LIVE",)}},
 }
 
 
@@ -295,11 +301,16 @@ URL_QUERY_VALUE = re.compile(r"([?&][^=&#\s]+=)[^&#\s]+")
 ACCOUNT_ENV_PATTERN = re.compile(r"ACCOUNT", re.I)      # 真倉戶口號（XAU_ACCOUNT）唔入對話／日誌：只露尾 2 位（使用者 10-23 規則）
 
 
+CHAT_ID_ENV_PATTERN = re.compile(r"CHAT_?ID", re.I)
+
+
 def mask(key, value):
     if SECRET_ENV_PATTERN.search(key) and value:
         return value[:2] + "…" + value[-2:] if len(value) > 6 else "••••"
     if ACCOUNT_ENV_PATTERN.search(key) and isinstance(value, str) and value.strip().isdigit() and len(value.strip()) >= 5:
         return "…" + value.strip()[-2:]                      # 旗標（例如 XAU_ACK_REQUIRE_ACCOUNT=1）照印
+    if CHAT_ID_ENV_PATTERN.search(key) and isinstance(value, str) and len(value.strip()) >= 5:
+        return "…" + value.strip()[-2:]                      # [11-13 總指揮] Telegram 群組／頻道 id 都唔印全值
     if isinstance(value, str) and "://" in value:
         # 網址的查詢參數常夾帶權杖（例如 BROKER_API_URL 的 ?t=…），一律遮罩
         return URL_QUERY_VALUE.sub(r"\1••••", value)
@@ -764,6 +775,27 @@ def require_service(ctx: Ctx):
     return svc
 
 
+def copy_env_values(src_env_list, names):
+    """純函數：由來源服務嘅 env 清單揀出 names → ({名: 值}, [問題])。來源冇、空值、Secret Manager 參照、名唔合法都當問題（唔會靜靜哋漏）。"""
+    src = {e.get("name"): e for e in src_env_list or []}
+    out, problems = {}, []
+    for raw in names:
+        name = str(raw).strip()
+        if not name or "=" in name:
+            problems.append(f"{name or '（空）'}：env copy 只收變數名，唔收 KEY=VAL")
+            continue
+        e = src.get(name)
+        if e is None:
+            problems.append(f"來源服務冇 {name}")
+        elif (e.get("valueSource") or {}).get("secretKeyRef"):
+            problems.append(f"{name} 喺來源係 Secret Manager 參照，本工具唔複製")
+        elif not e.get("value"):
+            problems.append(f"來源服務嘅 {name} 係空值")
+        else:
+            out[name] = e["value"]
+    return out, problems
+
+
 def cmd_env_run(ctx: Ctx):
     a = ctx.args
     svc = require_service(ctx)
@@ -776,6 +808,22 @@ def cmd_env_run(ctx: Ctx):
     env_list = container.get("env", [])
     changes = parse_kv(a.pairs) if a.env_action == "set" else {}
     removals = set(a.pairs) if a.env_action == "unset" else set()
+    if a.env_action == "copy":
+        # [11-13 總指揮要求] 由另一個服務喺記憶體複製環境變數（權杖、戶口全號唔經對話／命令列）；計畫照樣遮罩，--yes 先寫
+        src_name = (getattr(a, "from_profile", None) or "").strip().lower()
+        if src_name not in PROFILES or PROFILES[src_name]["service"] == ctx.service:
+            die("env copy 要用 --from-profile 指定另一個 profile（例如 --from-profile xau）")
+        if not a.pairs:
+            die("請列出要複製嘅變數名，例如：env copy --from-profile xau WEBHOOK_SECRET_TOKEN TG_BOT_TOKEN")
+        src_path = ctx.svc_name.rsplit("/", 1)[0] + "/" + PROFILES[src_name]["service"]
+        resp = ctx.session.get(f"{RUN_API}/{src_path}", timeout=60)
+        if resp.status_code != 200:
+            die(f"讀取來源服務 {PROFILES[src_name]['service']} 失敗 HTTP {resp.status_code}")
+        src_env = ((resp.json().get("template") or {}).get("containers") or [{}])[0].get("env", [])
+        changes, problems = copy_env_values(src_env, a.pairs)
+        if problems:
+            die("；".join(problems))
+        plan(f"由 {PROFILES[src_name]['service']} 複製 {len(changes)} 個變數（值喺記憶體讀，唔顯示全值）")
     if not changes and not removals:
         die("請指定要修改的變數，例如：env set TARGET_RRR=2")
     existing = {e["name"] for e in env_list}
@@ -1288,8 +1336,9 @@ def build_parser():
     s.add_argument("--url", help="函式網址（省略則從 status 取）")
 
     s = sub.add_parser("env", help="環境變數")
-    s.add_argument("env_action", choices=["get", "set", "unset"])
-    s.add_argument("pairs", nargs="*", help="set: KEY=VAL…；unset: KEY…")
+    s.add_argument("env_action", choices=["get", "set", "unset", "copy"])
+    s.add_argument("pairs", nargs="*", help="set: KEY=VAL…；unset: KEY…；copy: KEY…（配 --from-profile）")
+    s.add_argument("--from-profile", choices=sorted(PROFILES), help="env copy：由呢個 profile 嘅服務複製變數（只限 run 模式）")
     s.add_argument("--yes", action="store_true")
 
     s = sub.add_parser("deploy", help="部署（預設 dry-run）")

@@ -139,11 +139,11 @@ def _frame_exit_long(rule, days):
     return None
 
 
-def floor(days):
-    """最低止蝕：max(3, 0.3×訊號日前一日 ATR14)。"""
+def floor(days, min_abs=3.0):
+    """最低止蝕：max(min_abs, 0.3×訊號日前一日 ATR14)。min_abs 係價格單位（黃金 3 美元；白銀等其他產品由 config 畀，預設 0）。"""
     a = atr(days)
     prev = a[-2] if len(a) >= 2 else None
-    return None if prev is None else max(3.0, 0.3 * prev)
+    return None if prev is None else max(float(min_abs), 0.3 * prev)
 
 
 def signal(rule, days):
@@ -221,16 +221,19 @@ def exit_hit(rule, side, days):
     return None
 
 
-def plan_open(rule, days, price):
-    """已完成日線＋現價 → 開倉 sig（{"rule","side","sl","period"}）或 None。period＝訊號日。止蝕距離用現價（真倉入場價）計。"""
+def plan_open(rule, days, price, long_only=False, min_abs=3.0, digits=2):
+    """已完成日線＋現價 → 開倉 sig（{"rule","side","sl","period"}）或 None。period＝訊號日。止蝕距離用現價（真倉入場價）計。
+    long_only（[IDEAS #1442] 白銀只做多）：做空訊號當冇；min_abs／digits：最低止蝕（價格單位）同報價小數位，預設＝黃金。"""
     sig = signal(rule, days)
-    fl = floor(days)
+    fl = floor(days, min_abs)
     if not sig or fl is None or price is None:
         return None
     sg = sig["side"]
+    if long_only and sg < 0:
+        return None
     risk = (price - sig["mid"]) * sg if rule == "wide" else sig["risk"]
     risk = max(risk or 0.0, fl)
-    return {"rule": rule, "side": sg, "sl": round(price - sg * risk, 2), "period": days[-1][0], "risk": round(risk, 2)}
+    return {"rule": rule, "side": sg, "sl": round(price - sg * risk, digits), "period": days[-1][0], "risk": round(risk, digits)}
 
 
 def plan_exit(pos, days):
