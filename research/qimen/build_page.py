@@ -181,7 +181,7 @@ ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; max-width: 72ch; }
   <p class="sub">占卦、測市、佈陣、測人、測事。使用者起局，本陣記錄同分析。更新：{{NOW}}（香港時間）</p>
 </header>
 
-<p class="banner">全部紙上。占卦結果唔係落單指令；測市未預先登記完（用神同市場待定），所以而家<b>未開始計分</b>。</p>
+<p class="banner">全部紙上。占卦結果唔係落單指令。測人、測事由 2026-11-13 起計分；測市評分表已批，等定咗市場同起局時間先開始計分。</p>
 
 <div class="tiles">
   <div class="tile"><b>{{N_PRED}}</b><span>測市卦｜命中 {{RATE_SHI_MKT}}</span></div>
@@ -200,7 +200,7 @@ ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; max-width: 72ch; }
     <dt>節氣</dt><dd>天文交節時刻，換算英國時間</dd>
     <dt>起局</dt><dd>使用者起局，本陣記錄、分析、對答案</dd>
     <dt>分析依據</dt><dd>使用者提供嘅知識庫（私人存放）；唔上網搵</dd>
-    <dt>用神</dt><dd>按知識庫「用神嘅種類」；測市判升跌規則待使用者提供</dd>
+    <dt>用神</dt><dd>測人測事按知識庫「用神嘅種類」；測市按評分表 v1（時干宮 ×2＋生門宮＋戊宮）</dd>
   </dl>
 </section>
 
