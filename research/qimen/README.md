@@ -1,0 +1,59 @@
+# 🔮 奇門遁甲陣：起局記錄格式
+
+> 全部紙上：唔落單、唔改任何服務或環境變數。占卦結果**唔係落單指令**。
+> 規矩見 `handoff/奇門遁甲.md`；起局方法見該文件第五節（時家奇門・拆補法・轉盤・英國真太陽時・23:00 換日）。
+
+## 〇、分析依據
+
+只用知識庫（私人 GCS `qimen/kb/KB_v1.md`，見 `handoff/奇門遁甲.md`「知識庫」一節）；`reason`／`judgement` 要註明引用知識庫邊一節。知識庫冇嘅規則唔用。
+
+## 一、先記錄、後對答案
+
+1. 每一卦喺**驗證時段開始之前** commit 入 `predictions.csv`（git commit 時間就係公證；commit 時間遲過 `window_start_hkt` 嘅卦作廢，唔計分）。
+2. commit 之後**只可以填結果欄**（`outcome_*`、`scored_hkt`、`hit`），判斷欄一個字都唔准改。打錯字都唔改，喺 `note` 補一句。
+3. 一卦一行；唔可以刪行（作廢就喺 `status` 寫 `void` 加原因）。
+
+## 二、`predictions.csv` 欄位
+
+| 欄 | 何時填 | 說明 |
+|---|---|---|
+| `id` | 起局 | `QM-YYYYMMDD-市場-序號`，例如 `QM-20261116-HSI-1` |
+| `method_ver` | 起局 | 起局方法版本（第五節；改方法就升版、重新計數），例如 `v1-時家-拆補-轉盤` |
+| `tool` | 起局 | 起局工具與版本（例如 `kinqimen==x.y.z`／人手） |
+| `cast_hkt` | 起局 | 起局時刻（香港時間，`YYYY-MM-DD HH:MM`，對帳用） |
+| `cast_uk` | 起局 | 同一時刻嘅英國時鐘時間（註明 GMT／BST） |
+| `true_solar` | 起局 | 英國真太陽時（地點經度、均時差寫入 `note` 或 `tool`）；**定時辰、換日用呢個** |
+| `jieqi` / `yuan` / `dun_ju` | 起局 | 節氣、上中下元、陰／陽遁幾局（例如 `陽遁3局`） |
+| `ganzhi` | 起局 | 年月日時四柱 |
+| `zhifu` / `zhishi` | 起局 | 值符（星）、值使（門）及落宮 |
+| `kongwang` / `maxing` | 起局 | 旬空、馬星 |
+| `pan` | 起局 | 九宮局象，寫法：`宮:八神/門+天盤干/星+地盤干;…`，九宮全寫（例：`巽4:螣蛇/景門丁/天蓬戊`） |
+| `yongshen` | 起局 | 用神及落宮（規則待使用者提供後寫死） |
+| `market` | 起局 | `HSI`／`XAUUSD`／`ES`…（待使用者定） |
+| `window_start_hkt` / `window_end_hkt` | 起局 | 驗證時段（例如當日日盤開→收） |
+| `call` | 起局 | `升`／`跌`／`棄權`（局象唔符合判斷條件時棄權，規則預先寫死） |
+| `strength` | 起局 | `強`／`中`／`弱`（只記錄，第一輪唔計分） |
+| `reason` | 起局 | 按固定評分表逐項列分，唔准寫自由解讀 |
+| `verify_rule` | 起局 | 點樣對答案，例如 `收市價 > 開市價 = 升`（數據來源一併寫明） |
+| `ctrl_coin` / `ctrl_up` / `ctrl_prev` | 起局 | 對照組：擲毫（`secrets` 隨機，起局時一齊記低）、永遠估升（恆為 `升`）、前一日方向 |
+| `status` | 任何時候 | `open`／`scored`／`void` |
+| `outcome_open` / `outcome_close` / `outcome_dir` | 對答案 | 實際開、收、方向 |
+| `hit` / `hit_coin` / `hit_up` / `hit_prev` | 對答案 | 1／0；棄權留空 |
+| `scored_hkt` | 對答案 | 對答案時間 |
+| `note` | 任何時候 | 補充（唔可以用嚟改判斷） |
+
+## 二之二、測人、測事：`readings.csv`
+
+同 `predictions.csv` 一樣先記錄後對答案，欄位：`id`（`QR-YYYYMMDD-序號`）、`method_ver`、`tool`、`cast_hkt`、`cast_uk`、`true_solar`、`dun_ju`、`ganzhi`、`zhifu`、`zhishi`、`kongwang`、`maxing`、`pan`、
+`kind`（`測人`／`測事`）、`subject`（**代號**，例如 `P01`／`E01`；唔寫真名同私人資料）、`question`（概括，唔寫可辨認個人嘅細節）、`yongshen`、`judgement`、`deadline_hkt`（幾時揭曉）、
+`verify_rule`（點先算中；冇得驗證就寫 `不計分`）、`status`、`outcome`、`hit`、`scored_hkt`、`note`。
+
+## 三、未定之事（使用者會一步一步提供）
+
+- 用神點揀、評分表（加減分規則）→ 收到後寫入 `handoff/奇門遁甲.md` 第五節同本檔。
+- 測邊啲市場、每個市場幾時起局、驗證時段 → 同上。
+- 起局工具揀定後，同至少 3 個人手／網站排盤逐宮對照，結果記入本節。
+
+## 四、計分（草稿，登記前寫死）
+
+見 `PREREG_DRAFT.md`。
