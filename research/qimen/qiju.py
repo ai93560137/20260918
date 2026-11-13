@@ -9,6 +9,7 @@ import math
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paipan import GAN, ZHI, paipan, show
@@ -71,7 +72,20 @@ def qiju(utc, lon):
     edge = min((mins - 60) % 120, 120 - (mins - 60) % 120)
     if edge < 5:
         warn.append(f"離時辰交界 {edge} 分鐘，時辰要人手核對")
-    return {"utc": utc.strftime("%Y-%m-%d %H:%M"), "真太陽時": tst.strftime("%Y-%m-%d %H:%M"), "均時差分鐘": round(eot, 1),
+    # 使用者排盤 App 用英國時鐘時間定時辰（冇真太陽時）；時辰或日柱唔同就要另外同使用者講（使用者 2026-11-13）
+    clock = utc.astimezone(ZoneInfo("Europe/London")).replace(tzinfo=None)
+    c_day = (clock + timedelta(hours=1)).date()
+    c_zhi = ((clock.hour + 1) // 2) % 12
+    c_d = (c_day.toordinal() + 1721425 + 49) % 60
+    c_shi = GAN[(c_d % 10 % 5 * 2 + c_zhi) % 10] + ZHI[c_zhi]
+    app = None
+    if (c_d, c_shi) != (d, shi):
+        c_futou = c_d - c_d % 5
+        c_ju = JU[jq]["上中下".index("上中下"[{0: 0, 6: 0, 3: 0, 9: 0, 2: 1, 8: 1, 5: 1, 11: 1}.get(c_futou % 12, 2)])]
+        app = {"英國時鐘": clock.strftime("%Y-%m-%d %H:%M"), "日時": f"{gz(c_d)}日 {c_shi}時",
+               "局": f"{'陽' if yang else '陰'}遁{c_ju}局", "盤": paipan(yang, c_ju, c_shi)}
+        warn.append(f"同 App（時鐘時間）唔同：App 會用 {gz(c_d)}日 {c_shi}時，本陣用 {gz(d)}日 {shi}時 → 要另外同使用者講")
+    return {"App盤": app, "英國時鐘": clock.strftime("%Y-%m-%d %H:%M"), "utc": utc.strftime("%Y-%m-%d %H:%M"), "真太陽時": tst.strftime("%Y-%m-%d %H:%M"), "均時差分鐘": round(eot, 1),
             "四柱": f"{gz(yi)}年 {month}月 {gz(d)}日 {shi}時", "節氣": jq, "符頭": gz(futou), "元": yuan + "元",
             "局": f"{'陽' if yang else '陰'}遁{ju}局", "警告": warn, "盤": paipan(yang, ju, shi)}
 
@@ -80,8 +94,12 @@ if __name__ == "__main__":
     t = (datetime.strptime(sys.argv[1], "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc) if len(sys.argv) > 1
          else datetime.now(timezone.utc))
     r = qiju(t, float(sys.argv[2]) if len(sys.argv) > 2 else 0.25)
-    for k in ("utc", "真太陽時", "均時差分鐘", "四柱", "節氣", "符頭", "元", "局"):
+    for k in ("utc", "英國時鐘", "真太陽時", "均時差分鐘", "四柱", "節氣", "符頭", "元", "局"):
         print(f"{k}：{r[k]}")
     for w in r["警告"]:
         print("⚠", w)
     show(r["盤"])
+    if r["App盤"]:
+        a = r["App盤"]
+        print(f"—— App（時鐘時間 {a['英國時鐘']}）會出：{a['日時']} {a['局']} ——")
+        show(a["盤"])

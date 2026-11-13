@@ -25,3 +25,10 @@ q = qiju(datetime(2004, 12, 22, 10, 0, tzinfo=timezone.utc), 114.16)
 assert q["四柱"] == "甲申年 丙子月 乙亥日 乙酉時" and q["節氣"] == "冬至" and q["元"] == "下元" and q["局"] == "陽遁4局", q
 assert q["盤"]["盤"] == want
 print("qiju ok")
+
+# 2026-11-13 12:47 UTC（英國）：真太陽時 13:04＝乙未時；App 用時鐘 12:47＝甲午時（已同使用者 App 逐宮核對）
+q = qiju(datetime(2026, 11, 13, 12, 47, tzinfo=timezone.utc), 0.25)
+assert q["四柱"].endswith("辛卯日 乙未時") and q["局"] == "陰遁3局" and q["App盤"]["日時"] == "辛卯日 甲午時", q
+assert q["App盤"]["盤"]["盤"][9] == "值符/景門辛/天英辛" and q["App盤"]["盤"]["馬星"] == "坤2"
+assert qiju(datetime(2026, 11, 13, 12, 0, tzinfo=timezone.utc), 0.25)["App盤"] is None
+print("app-diff ok")
