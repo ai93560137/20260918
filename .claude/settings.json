@@ -17,6 +17,8 @@
       "mcp__claude-artifacts__get_artifact",
       "mcp__claude-artifacts__read_artifact",
       "mcp__claude-artifacts__db_get",
+      "mcp__claude-artifacts__publish_files",
+      "mcp__github__create_pull_request",
       "mcp__claude-code-remote__send_message",
       "Bash(git status:*)",
       "Bash(git log:*)",
