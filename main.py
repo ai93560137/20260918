@@ -146,6 +146,8 @@
 #     完整版（含權益）只發 Telegram、存 ops/reports/<kind>/。讀唔到就唔顯示，唔影響原有已實現盈虧表、唔影響下單。
 #   * 2026-10-13 — [R172] 每日成交紀錄：action=futu_pnl 收到成交後，另計當日逐筆成交、按合約彙總、FIFO 平倉（點數、幣值），
 #     存 futu/deals/<香港日期>.json（今日＋前一日，夜盤跨日）。總指揮 16:45／03:15 讀嚟入收市摘要同通報雲垂。本機 auto_risk 加 03:05／16:35 匯出時段。
+#   * 2026-11-13 — [R368] 🔮 奇門遁甲陣頁（?view=qimen 記錄簿、?view=qimen_kb 知識庫）：唯讀，原樣供應 GCS qimen/web/ 底下
+#     兩個固定 HTML（奇門遁甲陣用 gcp_agent.py put 更新，唔使再部署）；全部紙上，唔讀唔寫任何交易狀態。使用者 11-13「放上 tnt-hk.com」。
 #   * 2026-11-12 — [R367] 🐍 蛇蟠陣頁（?view=bazhentu）加黃金：MGC 微型金期貨（用 levels.mgc.fut 期貨口徑）、黃金 ETF（只做多，levels.mgc 現貨口徑）。
 #     使用者 11-12（總指揮轉述）「改用我哋自己嘅網頁」：claude artifact 指令台每次寫入都要人批，改用本服務；通道數據照舊由蛇蟠陣分支 levels.json 自動轉發，
 #     每日 Routine 唔使再寫網頁。騰訊即時價只套用恒指，黃金用 levels.json 延遲價。
@@ -9403,6 +9405,7 @@ PAGE_LINKS = [
     ("huyi", "🐯 虎翼"),                                        # [R357] 大跌股賣期權（使用者 10-30 開陣）
     ("analyst", "📝 龍飛陣分析"),                                # [R329] 每日分析欄，全部日子累積（使用者 10-26）
     ("charts", "📐 斐波那契回撤分析圖"),                                     # [R258] 各陣分析圖（龍飛陣斐波那契等）
+    ("qimen", "🔮 奇門遁甲"),                                   # [R368] 占卦記錄簿（全部紙上；知識庫 ?view=qimen_kb）
     ("rules", "📏 人手交易守則"),                               # [R284] 使用者 10-22：人手落單前睇（龍飛陣由成交分析整理）
     ("strategies", "🧭 策略總表"),
     ("fund_report", "📊 基金報告"),                         # [R152] 富途已實現盈虧（月／季／年）                          # [R144] 全部策略與現時持倉方向
@@ -9710,6 +9713,20 @@ def _serve_static_html(path, label):
                                "message": f"{os.path.basename(path)} 不存在於部署內容中"}, 500)
 
 
+# [R368] 🔮 奇門遁甲陣（占卦、測市、測人、測事；全部紙上）：頁面由奇門遁甲陣產生後放 GCS，呢度只係原樣供應。
+QIMEN_PAGES = {"qimen": "qimen/web/index.html", "qimen_kb": "qimen/web/kb.html"}
+
+
+def render_qimen_page(view):
+    try:
+        text = gcs_read_text(QIMEN_PAGES[view])
+    except StorageError as exc:
+        return html_page("奇門遁甲陣", f"<h1>🔮 奇門遁甲陣</h1><p class='muted'>讀取失敗：{esc(str(exc))}</p>")
+    if not text:
+        return html_page("奇門遁甲陣", "<h1>🔮 奇門遁甲陣</h1><p class='muted'>暫時未有內容。</p>")
+    return text.replace("<head>", "<head>" + FAVICON_LINK, 1), 200, {"Content-Type": "text/html; charset=utf-8"}
+
+
 # =============================================================================
 # 🧭 GET 路由
 # =============================================================================
@@ -9761,6 +9778,8 @@ def handle_get(req):
         return handle_futu_range_get(req, default_symbol=ES_SYMBOL)
     if view == "nq_range":                                       # [R158] NQ 納指 100 期貨，同一套程式
         return handle_futu_range_get(req, default_symbol=NQ_SYMBOL)
+    if view in QIMEN_PAGES:                                      # [R368] 🔮 奇門遁甲陣記錄簿／知識庫（GCS 靜態頁）
+        return render_qimen_page(view)
     if view in XAU_REMOVED_VIEWS:                                # [R253] 舊 XAUUSD 頁面已移除，改由天覆陣 zhuge-xau
         return xau_moved_page()
     return render_welcome_page()
