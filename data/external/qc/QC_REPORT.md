@@ -1,14 +1,14 @@
-# 數據品質比對報告（2026-11-12 UTC）
+# 數據品質比對報告（2026-11-13 UTC）
 
 每類數據各一個閘門。**只取 PASS 的類別**；🟡 僅同源 = 日期與抄錄沒錯、數值未經獨立來源驗證；FAIL 先看下面「未解釋的差異」。規則見 `data/external/README.md` 第六節與 `data/external/SOP.md`。
 
 | 類別 | 閘門 | ✅ 一致 | 其中獨立來源 | ℹ️ 記錄 | ⏭️ 略過 | ⚠️ 已知 | ❌ 未解釋 |
 |---|---|---:|---:|---:|---:|---:|---:|
-| `futu_vs_web` | ❌ FAIL | 11027 | 11027 | 3133 | 134 | 0 | 1651 |
-| `ibkr_vs_web` | ❌ FAIL | 88 | 88 | 0 | 9 | 0 | 17 |
+| `futu_vs_web` | ❌ FAIL | 11308 | 11308 | 3227 | 138 | 0 | 1780 |
+| `ibkr_vs_web` | ❌ FAIL | 92 | 92 | 0 | 9 | 0 | 13 |
 | `web_vs_web` | ❌ FAIL | 0 | 0 | 0 | 0 | 0 | 150 |
-| `canary_inputs` | ❌ FAIL | 360 | 124 | 0 | 2 | 0 | 1 |
-| `internal` | ✅ PASS | 312 | 312 | 153 | 0 | 0 | 0 |
+| `canary_inputs` | ❌ FAIL | 364 | 128 | 0 | 2 | 0 | 1 |
+| `internal` | ✅ PASS | 321 | 321 | 158 | 0 | 0 | 0 |
 
 ## 未解釋的差異（按原因歸類，每類最多列 8 筆，全部見 results_latest.csv）
 
@@ -16,9 +16,9 @@
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
-| _HSI | 2026-11-11 | date | canary  | web_yahoo  |  | 日期缺漏：網站少了這一天 |
+| _HSI | 2026-11-12 | date | canary  | web_yahoo  |  | 日期缺漏：網站少了這一天 |
 
-### futu_vs_web｜5分K合成日線｜數值不同：6 筆
+### futu_vs_web｜5分K合成日線｜數值不同：7 筆
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
@@ -27,9 +27,10 @@
 | US.QQQ | 2026-10-12 | low | futu_5m 744.845 | web_yahoo 744.85 | -0.0007 |  |
 | US.QQQ | 2026-10-15 | low | futu_5m 715.435 | web_yahoo 715.44 | -0.0007 |  |
 | US.QQQ | 2026-10-20 | high | futu_5m 722.7465 | web_yahoo 722.75 | -0.0005 |  |
-| US.QQQ | 2026-11-11 | low | futu_5m 683.6 | web_yahoo 683.56 | 0.0059 |  |
+| US.QQQ | 2026-11-11 | low | futu_5m 683.5617 | web_yahoo 683.56 | 0.0002 |  |
+| US.QQQ | 2026-11-12 | low | futu_5m 679.84 | web_yahoo 679.83 | 0.0015 |  |
 
-### futu_vs_web｜日線抽樣｜數值不同：1323 筆
+### futu_vs_web｜日線抽樣｜數值不同：1412 筆
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
@@ -42,7 +43,7 @@
 | HK.01288 | 2026-10-06 | open | futu_kday 6.36505 | web_yahoo 6.515 | -2.3016 |  |
 | HK.01288 | 2026-10-06 | high | futu_kday 6.40005 | web_yahoo 6.55 | -2.2893 |  |
 
-### futu_vs_web｜日線抽樣｜日期缺漏：315 筆
+### futu_vs_web｜日線抽樣｜日期缺漏：354 筆
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
@@ -67,7 +68,7 @@
 | US.OGN | 2026-11-04 | high | futu_kday 13.85998557 | web_yahoo 13.88 | -0.1442 | 日期錯位：futu_kday 的值等於 web_yahoo 的後一交易日 2026-11-05 |
 | US.OGN | 2026-11-06 | close | futu_kday 13.84999999 | web_yahoo 13.87 | -0.1442 | 日期錯位：futu_kday 的值等於 web_yahoo 的後一交易日 2026-11-09 |
 
-### ibkr_vs_web｜股票收市｜數值不同：17 筆
+### ibkr_vs_web｜股票收市｜數值不同：13 筆
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
@@ -80,31 +81,31 @@
 | 2269.HK | 2026-09-24 | open | ibkr 52.4 | web_yahoo 52.5 | -0.1905 |  |
 | 2359.HK | 2026-09-24 | open | ibkr 207.0 | web_yahoo 206.8 | 0.0967 |  |
 
-### web_vs_web｜Nasdaq↔Yahoo｜數值不同：60 筆
+### web_vs_web｜Nasdaq↔Yahoo｜數值不同：82 筆
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
-| AEE | 2026-11-06 | close | web_nasdaq 113.1 | web_yahoo 112.85 | 0.2215 | 快照 quotes_2026-11-06.json；第三來源：futu 112.85 |
-| ALL | 2026-11-06 | close | web_nasdaq 267.7 | web_yahoo 254.81 | 5.0587 | 快照 quotes_2026-11-06.json |
-| ALLE | 2026-11-06 | close | web_nasdaq 187.445 | web_yahoo 185.39 | 1.1085 | 快照 quotes_2026-11-06.json；第三來源：futu 185.39 |
-| AN | 2026-11-06 | close | web_nasdaq 187.38 | web_yahoo 184.0 | 1.837 | 快照 quotes_2026-11-06.json |
-| BATRK | 2026-11-06 | close | web_nasdaq 50.0 | web_yahoo 50.56 | -1.1076 | 快照 quotes_2026-11-06.json |
-| CNX | 2026-11-06 | close | web_nasdaq 35.48 | web_yahoo 34.92 | 1.6037 | 快照 quotes_2026-11-06.json；第三來源：futu 34.92 |
-| CPAY | 2026-11-06 | close | web_nasdaq 449.32 | web_yahoo 455.16 | -1.2831 | 快照 quotes_2026-11-06.json；第三來源：futu 455.16 |
-| DELL | 2026-11-06 | close | web_nasdaq 315.5 | web_yahoo 328.53 | -3.9662 | 快照 quotes_2026-11-06.json；第三來源：futu 328.53 |
+| ACGL | 2026-11-06 | close | web_nasdaq 110.67 | web_yahoo 107.28 | 3.16 | 快照 quotes_2026-11-06.json |
+| ACN | 2026-11-06 | close | web_nasdaq 266.8 | web_yahoo 260.5 | 2.4184 | 快照 quotes_2026-11-06.json |
+| ADI | 2026-11-06 | close | web_nasdaq 361.7 | web_yahoo 363.56 | -0.5116 | 快照 quotes_2026-11-06.json |
+| ALAB | 2026-11-06 | close | web_nasdaq 178.42 | web_yahoo 190.71 | -6.4443 | 快照 quotes_2026-11-06.json |
+| BAC | 2026-11-06 | close | web_nasdaq 49.905 | web_yahoo 49.42 | 0.9814 | 快照 quotes_2026-11-06.json；第三來源：futu 49.42 |
+| BAX | 2026-11-06 | close | web_nasdaq 25.615 | web_yahoo 25.79 | -0.6786 | 快照 quotes_2026-11-06.json |
+| C | 2026-11-06 | close | web_nasdaq 118.57 | web_yahoo 119.05 | -0.4032 | 快照 quotes_2026-11-06.json |
+| CAH | 2026-11-06 | close | web_nasdaq 269.3 | web_yahoo 271.72 | -0.8906 | 快照 quotes_2026-11-06.json；第三來源：futu 271.72 |
 
-### web_vs_web｜Nasdaq↔Yahoo｜日期錯位：90 筆
+### web_vs_web｜Nasdaq↔Yahoo｜日期錯位：68 筆
 
 | 代號 | 日期 | 欄位 | 甲 | 乙 | 差 % | 說明 |
 |---|---|---|---|---|---:|---|
-| A | 2026-11-04 | close | web_nasdaq 175.46 | web_yahoo 177.17 | -0.9652 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03 |
-| AVGO | 2026-11-04 | close | web_nasdaq 332.13 | web_yahoo 325.48 | 2.0431 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03 |
-| AZN | 2026-11-04 | close | web_nasdaq 183.88 | web_yahoo 189.01 | -2.7141 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03 |
-| BAC | 2026-11-04 | close | web_nasdaq 49.66 | web_yahoo 51.63 | -3.8156 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03；第三來源：futu 51.63 |
-| BATRK | 2026-11-04 | close | web_nasdaq 51.73 | web_yahoo 50.73 | 1.9712 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03 |
-| CCL | 2026-11-04 | close | web_nasdaq 29.2 | web_yahoo 31.32 | -6.7688 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03；第三來源：futu 31.16123012 |
-| ESS | 2026-11-04 | close | web_nasdaq 264.9 | web_yahoo 271.52 | -2.4381 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03 |
-| GILD | 2026-11-04 | close | web_nasdaq 167.47 | web_yahoo 174.48 | -4.0177 | 快照 quotes_2026-11-04.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-03 |
+| ALNY | 2026-11-05 | close | web_nasdaq 161.08 | web_yahoo 156.66 | 2.8214 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| AXON | 2026-11-05 | close | web_nasdaq 424.18 | web_yahoo 382.56 | 10.8793 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| BHF | 2026-11-05 | close | web_nasdaq 42.45 | web_yahoo 41.1 | 3.2847 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| BKR | 2026-11-05 | close | web_nasdaq 49.87 | web_yahoo 46.2 | 7.9437 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| CARR | 2026-11-05 | close | web_nasdaq 55.66 | web_yahoo 53.21 | 4.6044 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| CDW | 2026-11-05 | close | web_nasdaq 168.75 | web_yahoo 158.39 | 6.5408 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| CLX | 2026-11-05 | close | web_nasdaq 99.16 | web_yahoo 99.7 | -0.5416 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
+| DOC | 2026-11-05 | close | web_nasdaq 20.17 | web_yahoo 20.12 | 0.2485 | 快照 quotes_2026-11-05.json；日期錯位：web_nasdaq 的值等於 web_yahoo 的前一交易日 2026-11-04 |
 
 查明原因後，把 `代號,日期,欄位,原因,登記人` 加進 `known_issues.csv`（代號或日期可填 `*`），下次就會列為 ⚠️ 已知。查不出原因的不要登記，數據先不要用。
 
@@ -135,7 +136,6 @@
 
 ## 封存內部檢查
 
-- `US.QQQ` 2026-10-15：期權清洗規則（手冊 §10），bid>0 2740/2750；價差≤20%中價 2740/2750；|delta| 0.10–0.90 2750/2750
 - `US.QQQ` 2026-10-16：期權清洗規則（手冊 §10），bid>0 5436/6000；價差≤20%中價 5287/6000；|delta| 0.10–0.90 5448/6000
 - `US.QQQ` 2026-10-19：期權清洗規則（手冊 §10），bid>0 2760/2780；價差≤20%中價 2718/2780；|delta| 0.10–0.90 2773/2780
 - `US.QQQ` 2026-10-20：期權清洗規則（手冊 §10），bid>0 2740/2760；價差≤20%中價 2715/2760；|delta| 0.10–0.90 2760/2760
@@ -154,11 +154,12 @@
 - `US.QQQ` 2026-11-06：期權清洗規則（手冊 §10），bid>0 8300/8320；價差≤20%中價 8300/8320；|delta| 0.10–0.90 8320/8320
 - `US.QQQ` 2026-11-09：期權清洗規則（手冊 §10），bid>0 2750/2770；價差≤20%中價 2722/2770；|delta| 0.10–0.90 2770/2770
 - `US.QQQ` 2026-11-10：期權清洗規則（手冊 §10），bid>0 2730/2750；價差≤20%中價 2630/2750；|delta| 0.10–0.90 2743/2750
-- `US.QQQ` 2026-11-11：期權清洗規則（手冊 §10），bid>0 1910/1920；價差≤20%中價 1910/1920；|delta| 0.10–0.90 1920/1920
+- `US.QQQ` 2026-11-11：期權清洗規則（手冊 §10），bid>0 2740/2760；價差≤20%中價 2677/2760；|delta| 0.10–0.90 2759/2760
+- `US.QQQ` 2026-11-12：期權清洗規則（手冊 §10），bid>0 1860/1870；價差≤20%中價 1860/1870；|delta| 0.10–0.90 1870/1870
 
 ## 抽樣
 
-- 種子 = 2026-11-12；IBKR 每市場 20 檔、Yahoo↔Nasdaq 30 檔。明細：`results_latest.csv`。
-- 明天給 Futu 抓日線的清單（`futu_sample.txt`）：433 個代號，已排優先順序，本地取前 FUTU_DAILY_MAX 個。
+- 種子 = 2026-11-13；IBKR 每市場 20 檔、Yahoo↔Nasdaq 30 檔。明細：`results_latest.csv`。
+- 明天給 Futu 抓日線的清單（`futu_sample.txt`）：434 個代號，已排優先順序，本地取前 FUTU_DAILY_MAX 個。
 - 明天給 IBKR 的請求清單（`ibkr_sample.txt`）：7 個指數錨點＋美股 30＋港股 15。
 - `canary_inputs` 裡標「同源 Yahoo」的只驗抄錄與日期；數值真偽要看「IBKR 獨立來源」與 Futu 恒指兩項。

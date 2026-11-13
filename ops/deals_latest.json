@@ -1,9 +1,9 @@
 {
  "date": "2026-11-13",
- "run_hkt": "2026-11-13 03:40",
- "run_kind": "night",
+ "run_hkt": "2026-11-13 17:10",
+ "run_kind": "day",
  "closed": [],
  "n_yunchui_deals": 0,
- "n_other_deals": 14,
+ "n_other_deals": 5,
  "note": "雲垂合約當日平倉（FIFO），不含金額；完整版在 GCS ops/deals_status.json"
 }
