@@ -1,5 +1,5 @@
 {
-  "base_date": "2026-11-09",
+  "base_date": "2026-11-12",
   "close_done": [
     "2026-10-22",
     "2026-10-23",
@@ -19,12 +19,12 @@
     "2026-11-12"
   ],
   "intraday_disaster": 0,
-  "intraday_short": 2,
+  "intraday_short": 1,
   "last_intraday": {
-    "time_utc": "2026-11-10T15:05Z",
-    "vix": 20.82,
-    "vix3m": 21.5,
-    "vix9d": 20.85
+    "time_utc": "2026-11-13T15:35Z",
+    "vix": 20.61,
+    "vix3m": 21.33,
+    "vix9d": 20.34
   },
-  "us_date": "2026-11-10"
+  "us_date": "2026-11-13"
 }
