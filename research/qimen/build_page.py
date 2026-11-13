@@ -74,8 +74,12 @@ def build():
 
     n_ren = count(reads, kind="測人")
     n_shi = count(reads, kind="測事")
-    scored_reads = [r for r in reads if r.get("status") == "scored" and r.get("hit") in ("0", "1")]
-    read_rate = f"{sum(r['hit'] == '1' for r in scored_reads)}/{len(scored_reads)}" if scored_reads else "—"
+    def read_rate(kind):
+        v = [r for r in reads if r.get("kind") == kind and r.get("status") == "scored" and r.get("hit") in ("0", "1")]
+        return f"{sum(r['hit'] == '1' for r in v)}/{len(v)}" if v else "—"
+
+    scored_preds = [r for r in preds if r.get("status") == "scored" and r.get("hit") in ("0", "1")]
+    pred_rate = f"{sum(r['hit'] == '1' for r in scored_preds)}/{len(scored_preds)}" if scored_preds else "—"
 
     pred_rows = "".join(
         f"<tr><td class=mono>{e(r['id'])}</td><td class=num>{e(r['true_solar'])}</td><td>{e(r['dun_ju'])}</td>"
@@ -99,7 +103,9 @@ def build():
         "{{N_PRED}}": str(len(preds)),
         "{{N_REN}}": str(n_ren),
         "{{N_SHI}}": str(n_shi),
-        "{{READ_RATE}}": read_rate,
+        "{{RATE_SHI_MKT}}": pred_rate,
+        "{{RATE_REN}}": read_rate("測人"),
+        "{{RATE_SHI}}": read_rate("測事"),
         "{{MKT}}": market_summary(preds),
         "{{PRED_ROWS}}": pred_rows,
         "{{READ_ROWS}}": read_rows,
@@ -178,10 +184,9 @@ ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; max-width: 72ch; }
 <p class="banner">全部紙上。占卦結果唔係落單指令；測市未預先登記完（用神同市場待定），所以而家<b>未開始計分</b>。</p>
 
 <div class="tiles">
-  <div class="tile"><b>{{N_PRED}}</b><span>測市卦</span></div>
-  <div class="tile"><b>{{N_REN}}</b><span>測人卦</span></div>
-  <div class="tile"><b>{{N_SHI}}</b><span>測事卦</span></div>
-  <div class="tile"><b>{{READ_RATE}}</b><span>測人測事命中（已揭曉）</span></div>
+  <div class="tile"><b>{{N_PRED}}</b><span>測市卦｜命中 {{RATE_SHI_MKT}}</span></div>
+  <div class="tile"><b>{{N_REN}}</b><span>測人卦｜命中 {{RATE_REN}}</span></div>
+  <div class="tile"><b>{{N_SHI}}</b><span>測事卦｜命中 {{RATE_SHI}}</span></div>
 </div>
 
 <section>
@@ -218,7 +223,7 @@ ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; max-width: 72ch; }
 
 <section>
   <h2>測人、測事記錄</h2>
-  <p class="sub">測人只用代號，唔顯示真名或私人資料。測人測事命中唔計入測市。</p>
+  <p class="sub">測人只用代號，唔顯示真名或私人資料。測人、測事、測市三類命中率分開計，唔混埋。</p>
   <div class="wrap"><table>
     <thead><tr><th>編號</th><th>類別</th><th>代號</th><th>所問</th><th>真太陽時</th><th>局</th><th>判斷</th><th>揭曉期限</th><th>結果</th><th>中否</th><th>狀態</th></tr></thead>
     <tbody>{{READ_ROWS}}</tbody>
