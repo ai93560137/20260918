@@ -103,6 +103,8 @@ class ConditionalEnvTests(unittest.TestCase):
         self.assertFalse(any("tok-abcdef" in p or "12345663" in p for p in problems))          # 問題訊息唔帶值
         self.assertNotIn("abcdef", ga.mask("WEBHOOK_SECRET_TOKEN", "tok-abcdef-123456"))          # 計畫顯示用 mask：權杖、戶口全號都遮
         self.assertEqual(ga.mask("XAU_ACCOUNT", "12345663"), "…63")
+        self.assertEqual(ga.mask("TG_CHAT_ID", "-1001234567890"), "…90")                          # 群組 id 都遮
+        self.assertEqual(ga.mask("SIG_CHATID", "12345678"), "…78"); self.assertEqual(ga.mask("TG_CHAT_ID", ""), "")
 
     def test_env_copy_dry_run_masks_and_does_not_write(self):
         import contextlib, io, types
