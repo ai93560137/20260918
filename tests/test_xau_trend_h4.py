@@ -102,6 +102,20 @@ class Live(unittest.TestCase):
         act, why = T.plan({**st, "pos": pos}, nxt, live[0], 4010.0, (day + 1) * 86400 + 60, None, [])
         self.assertEqual(act[0], "close"); self.assertIn("狀態", why)
 
+    def test_fixed_lots_magic_ignores_compounding(self):
+        T, c = self.T, self.cfg
+        old = (c.TREND_COMPOUND, c.TREND_COMPOUND_UNIT_HKD, c.TREND_COMPOUND_MODE, c.TREND_FIXED_MAGICS, c.TREND_LOTS, c.TREND_MAX_LOTS)
+        try:
+            c.TREND_COMPOUND, c.TREND_COMPOUND_UNIT_HKD, c.TREND_COMPOUND_MODE, c.TREND_LOTS, c.TREND_MAX_LOTS = True, 10000.0, "sym", 0.01, 0.01
+            c.TREND_FIXED_MAGICS = ()
+            self.assertEqual(T.lots({"equity": 35000.0}), 0.03)          # 冇列入：跟複利
+            c.TREND_FIXED_MAGICS = (944,)
+            self.assertEqual(T.lots({"equity": 35000.0}), 0.01)          # 944 永遠固定 0.01
+            c.TREND_MAGIC = 926
+            self.assertEqual(T.lots({"equity": 35000.0}), 0.03)          # 同一服務其他簿照跟複利
+        finally:
+            c.TREND_COMPOUND, c.TREND_COMPOUND_UNIT_HKD, c.TREND_COMPOUND_MODE, c.TREND_FIXED_MAGICS, c.TREND_LOTS, c.TREND_MAX_LOTS = old
+
     def test_seed_only_for_gold(self):
         T = self.T; seed = T.load_h4_seed()
         self.assertGreaterEqual(len(seed), 300); self.assertTrue(all(r["c"] > 1000 for r in seed.values()))

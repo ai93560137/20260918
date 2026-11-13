@@ -407,7 +407,7 @@ def lots(account=None, peak=None):
     ratchet（預設；使用者「贏加注、輸唔加、每次注碼一樣」）：本＝結餘最高水位（peak），只升唔跌；sym：本＝而家權益，跌會減。攞唔到數就用固定手數。"""
     base = max(0.01, min(float(config.TREND_LOTS), float(config.TREND_MAX_LOTS)))
     unit = float(getattr(config, "TREND_COMPOUND_UNIT_HKD", 0.0) or 0.0)
-    if not getattr(config, "TREND_COMPOUND", False) or unit <= 0:
+    if not getattr(config, "TREND_COMPOUND", False) or unit <= 0 or cur().magic in getattr(config, "TREND_FIXED_MAGICS", ()):
         return base
     if getattr(config, "TREND_COMPOUND_MODE", "ratchet") == "sym":
         eq = _num((account or {}).get("equity"))

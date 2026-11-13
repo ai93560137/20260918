@@ -94,7 +94,7 @@
 
 - **11-12 複利已開（sym）**：使用者睇完三個版本模擬後揀「跌會減」。zhuge-xau 00091-g5k、zhuge-xau-sig 00097-5zq：`XAU_TREND_COMPOUND=1`、`XAU_TREND_COMPOUND_MODE=sym`、UNIT 各自設定（數字喺 env，唔寫入 repo）、MAX_LOTS 用預設 0.05。開嗰刻兩戶手數仍係 0.01。核實：`?format=json` 嘅 `trend_live.compound`／`trend_books[].compound` 同 `lots`。退版：zhuge-xau → 00090-js6（關複利）；zhuge-xau-sig → 00096-qhx。
 
-## 6. 新增 944：#1421 日線方向＋H4 MACD（使用者 11-13「#1421 轉真倉」；**程式已寫好，未部署**，戶口／手數等使用者定）
+## 6. 新增 944：#1421 日線方向＋H4 MACD（使用者 11-13「#1421 轉真倉」→「63 0.01」：戶口 …63、固定 0.01 手；**程式已寫好，未部署**）
 
 - **規則 `h4macd`**（`xau/trend_h4rules.py`；對拍 `research/strategy_search/PARITY_H4MACD.md`：2010–2026 共 25,455 根 H4，329／329 個訊號同根同方向、風險相差 0%、追蹤出場 0 個唔一致）：
   - 方向＝日線 #1268 狀態機喺上一個已完成 UTC 日嘅狀態（+1 只做多、−1 只做空、0 唔做）——即係只喺 #1268「出手期間」先做。
@@ -106,9 +106,9 @@
   只喺 #1268 出手期間做，方向同 926（#1300）／942（#1268）一致，會疊加同一方向嘅風險。
 - **現況（11-13）**：日線狀態 −1（只做空）；H4 ATR14 約 33 → 止蝕距離約 66 美元 → 0.01 手每張風險約 66 美元。最近訊號大約每星期一個。
 - **部署（總指揮；先 dry-run，使用者親口批）**：
-  - …69：`--profile xausig env set XAU_TREND_BOOKS=937:spike,939:kelt,940:tdsurge,942:td,944:h4macd`；…63：`--profile xau env set XAU_TREND_BOOKS=944:h4macd`（zhuge-xau 第一本額外簿）。兩者都要先 `deploy` 新程式。
+  - 使用者揀 …63：先 `--profile xau deploy` 新程式，再 `--profile xau env set XAU_TREND_BOOKS=944:h4macd XAU_TREND_FIXED_MAGICS=944`（zhuge-xau 第一本額外簿；926 設定唔變）。
   - H4 冷啟動種子 `xau/trend_h4_seed.py`（券商 M1 砌，到 2026-11-13 12:00 UTC；`research/strategy_search/build_seed_h4.py --csv`）；種子尾同上線之間嘅缺口由服務 M1 存檔（最近 10 日）自動補，所以要喺種子日期後 10 日內上線，否則重砌。
-  - **複利**：黃金兩個服務嘅 UNIT 係按原有簿數計；加 944 之後要重計 UNIT（或者接受 944 跟戶口手數）。數字喺 send_message 報。
+  - **手數**：使用者定固定 0.01 手 → `XAU_TREND_FIXED_MAGICS=944`（呢本簿唔跟複利；926 照跟，UNIT 唔使改）。
   - MT5：使用者開一張 XAUUSD 圖（任何週期）掛 `TianfuExecutor`，`InpMagic=944`，網址同該戶口其他圖一樣，`InpDryRun=false`。
   - 核實：`?format=json` 嘅 `trend_books` 有 944、`h4_bars` ≥ 300、`d1_days` ≥ 300、心跳正常；第一張單即報。
 - **停條件**：累計 ≤ −8R（巡檢腳本同網頁已加 `h4macd`）；組合回落 ≥ 10R 通知使用者。
