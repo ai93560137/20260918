@@ -1,6 +1,6 @@
 """奇門遁甲知識庫頁：將知識庫 Markdown（私人 GCS qimen/kb/KB.md）轉成網頁。
 
-講義有版權：呢個腳本本身唔含講義內容，輸出亦唔好 commit 入 repo。
+呢個腳本本身唔含知識庫內容，輸出亦唔好 commit 入 repo。
 
 用法：
   python3 scripts/gcp_agent.py cat --object qimen/kb/KB.md > /tmp/KB.md   （或直接用本機檔）
@@ -119,10 +119,10 @@ def main():
     figs = ""
     if pages_dir:
         imgs = sorted(p.name for p in pages_dir.glob("*.jpg"))
-        figs = '<h2 id="pages">講義原相</h2><div class="pages">' + "".join(
+        figs = '<h2 id="pages">資料原相</h2><div class="pages">' + "".join(
             f'<figure><a href="pages/{html.escape(x)}"><img loading="lazy" src="pages/{html.escape(x)}" alt="{html.escape(x)}"></a>'
             f"<figcaption>{html.escape(x)}</figcaption></figure>" for x in imgs) + "</div>"
-        toc.append(("pages", "講義原相"))
+        toc.append(("pages", "資料原相"))
     nav = "".join(f'<a href="#{s}">{html.escape(t)}</a>' for s, t in toc)
     page = f"""<!DOCTYPE html>
 <html lang="zh-Hant-HK"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

@@ -199,7 +199,7 @@ ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; max-width: 72ch; }
     <dt>換日</dt><dd>真太陽時 23:00 起當翌日子時</dd>
     <dt>節氣</dt><dd>天文交節時刻，換算英國時間</dd>
     <dt>起局</dt><dd>使用者起局，本陣記錄、分析、對答案</dd>
-    <dt>分析依據</dt><dd>使用者提供嘅講義知識庫（私人存放）；唔上網搵</dd>
+    <dt>分析依據</dt><dd>使用者提供嘅知識庫（私人存放）；唔上網搵</dd>
     <dt>用神</dt><dd>按知識庫「用神嘅種類」；測市判升跌規則待使用者提供</dd>
   </dl>
 </section>
