@@ -45,9 +45,15 @@ def sun(utc):
     return lam, math.degrees(eot) * 4
 
 
-def qiju(utc, lon):
-    lam, eot = sun(utc)
-    tst = utc.replace(tzinfo=None) + timedelta(minutes=lon * 4 + eot)
+def qiju(utc, lon, lam=None, clock_offset_hours=None):
+    """lam：可以傳入更精確嘅太陽視黃經（例如 ephem 計嘅），取代內置低精度公式（定節氣、年柱、月柱用）。
+    clock_offset_hours：設咗就唔用真太陽時，改用固定時區嘅時鐘時間定日柱時柱（例如北京時間＝8）；「真太陽時」欄會係嗰個時鐘時間。"""
+    lam0, eot = sun(utc)
+    lam = lam0 if lam is None else lam
+    if clock_offset_hours is None:
+        tst = utc.replace(tzinfo=None) + timedelta(minutes=lon * 4 + eot)
+    else:
+        tst = utc.replace(tzinfo=None) + timedelta(hours=clock_offset_hours)
     day = (tst + timedelta(hours=1)).date()        # 23:00 換日
     jdn = day.toordinal() + 1721425
     d = (jdn + 49) % 60
@@ -87,7 +93,8 @@ def qiju(utc, lon):
         warn.append(f"同 App（時鐘時間）唔同：App 會用 {gz(c_d)}日 {c_shi}時，本陣用 {gz(d)}日 {shi}時 → 要另外同使用者講")
     return {"App盤": app, "英國時鐘": clock.strftime("%Y-%m-%d %H:%M"), "utc": utc.strftime("%Y-%m-%d %H:%M"), "真太陽時": tst.strftime("%Y-%m-%d %H:%M"), "均時差分鐘": round(eot, 1),
             "四柱": f"{gz(yi)}年 {month}月 {gz(d)}日 {shi}時", "節氣": jq, "符頭": gz(futou), "元": yuan + "元",
-            "局": f"{'陽' if yang else '陰'}遁{ju}局", "警告": warn, "盤": paipan(yang, ju, shi)}
+            "局": f"{'陽' if yang else '陰'}遁{ju}局", "警告": warn, "盤": paipan(yang, ju, shi),
+            "時柱": shi, "月支": ZHI[(mz + 2) % 12]}
 
 
 if __name__ == "__main__":

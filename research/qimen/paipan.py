@@ -50,10 +50,15 @@ def paipan(yang, ju, shi):
     door = {RING[(i + dshift) % 8]: DOOR[p] for i, p in enumerate(RING)}
     # 八神：值符神跟值符星，陽順時針、陰逆時針
     god = {RING[(RING.index(fu_to) + (i if yang else -i)) % 8]: s for i, s in enumerate(GODS)}
+    main_tian = {RING[(i + shift) % 8]: di[p] for i, p in enumerate(RING)}        # 每宮主天盤干（唔計寄干）
+    ji_gong = RING[(RING.index(2) + shift) % 8]                                   # 中五干跟天芮去咗邊宮
+    gong = {p: {"神": god[p], "門": door[p], "星": star[p][:2], "天": main_tian[p], "地": di[p],
+                "寄天": di[5] if p == ji_gong else None, "禽": p == ji_gong} for p in RING}
     pan = {p: f"{god[p]}/{door[p]}{tian[p]}/{star[p]}{di[p]}" for p in RING}
     pan[5] = di[5]
     return {"旬首": xun_name + yi, "空亡": kong, "馬星": NAME[MA[shi[1]]],
-            "值符": f"{STAR[fu_from]}落{fu_to}宮", "值使": f"{DOOR[home(shi_from)]}落{shi_to}宮", "盤": pan}
+            "值符": f"{STAR[fu_from]}落{fu_to}宮", "值使": f"{DOOR[home(shi_from)]}落{shi_to}宮", "盤": pan,
+            "宮": gong, "旬首儀": yi, "空亡支": kong}
 
 
 def show(r):

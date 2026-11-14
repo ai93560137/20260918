@@ -1,0 +1,3 @@
+id,jieqi,jiaojie_beijing,written_hkt,kb_ver,window_start,window_end,question,call,coin,verify_rule,status,outcome,hit,scored_hkt,note
+JQ-2026小雪-1,小雪,2026-11-22 15:23:07,2026-11-14 08:20,KB v14,2026-11-20,2026-12-04,標普 500 期末收市高過期初收市？,升,跌,12-04 收市 > 11-20 收市＝升,open,,,,伏吟局；筆記 jieqi_notes/2026-11-22_小雪.md
+JQ-2026小雪-2,小雪,2026-11-22 15:23:07,2026-11-14 08:20,KB v14,2026-11-20,2026-12-04,期內有冇大跌（標普／納指／恒指任何一個收市低過期初收市 ≥10%）？,冇,,任何一個指數期內有收市價 ≤ 期初收市 ×0.9＝有,open,,,,

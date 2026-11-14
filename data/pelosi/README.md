@@ -1,6 +1,6 @@
 # 佩洛西（Nancy Pelosi）股票交易追蹤
 
-更新時間：2026-11-13 22:00 UTC　｜　申報 67 份　｜　交易 228 筆
+更新時間：2026-11-14 06:35 UTC　｜　申報 67 份　｜　交易 228 筆
 
 數據源：[House Clerk 財務披露](https://disclosures-clerk.house.gov/FinancialDisclosure)（Periodic Transaction Report）。交易多由配偶 Paul Pelosi 帳戶進行；申報可延遲至交易後 45 天，金額只有區間。漲跌幅為正股自交易日收盤至最新收盤（Yahoo，僅供參考）。
 
@@ -61,7 +61,7 @@
 | HTZ | 10 | 0 | 2015-07-16 | -94.4% |
 | SUNE | 1 | 0 | 2014-10-24 | -100.0% |
 | AA | 0 | 1 | 2014-10-23 | +1.8% |
-| BCOR | 0 | 1 | 2014-10-23 | -9.1% |
+| BCOR | 0 | 1 | 2014-10-23 | -11.0% |
 | BRCM | 0 | 1 | 2014-10-23 | — |
 | DOW | 0 | 1 | 2014-10-23 | -33.6% |
 | ELX | 0 | 1 | 2014-10-23 | — |
@@ -293,7 +293,7 @@
 | 2014-11-05 | [2014-12-17](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20002236.pdf) | HTZ | Hertz global Holdings, Inc | 買入 | $15,001 - $50,000 | 50 張 期權 | -94.4% |
 | 2014-10-24 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | SUNE | sunEdison, Inc. | 買入 | $100,001 - $250,000 |  | -100.0% |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | AA | alcoa Inc. | 賣出 | $15,001 - $50,000 |  | +1.8% |
-| 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | BCOR | Blucora, Inc. | 賣出 | $1,001 - $15,000 |  | -9.1% |
+| 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | BCOR | Blucora, Inc. | 賣出 | $1,001 - $15,000 |  | -11.0% |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | BRCM | Broadcom Corporation - Class a | 賣出 | $1,001 - $15,000 |  | — |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | DOW | Dow Chemical Company | 賣出 | $15,001 - $50,000 |  | -33.6% |
 | 2014-10-23 | [2014-11-05](https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2014/20001991.pdf) | ELX | Emulex Corporation | 賣出 | $1,001 - $15,000 |  | — |
