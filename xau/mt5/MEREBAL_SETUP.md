@@ -7,7 +7,7 @@
 > 部署同改環境變數由總指揮做 dry-run，使用者親口批准先做。
 
 > **11-14 改只做多**（使用者原話：「保留做多嗰邊，唔做淡」）：`XAU_TREND_LONG_ONLY=1` 時，股票跑贏嗰個月唔開倉（當月記已用，日誌寫「只做多唔做淡，本月唔做」），跑輸月份照做多。
-> 依據：14 個市場穩健度（`research/strategy_search/PAPER_ROBUST.md`）回報主要嚟自做多月份，標普做空月份每月淨 −0.05%。程式改好之後要重新部署兩個服務再 `env set XAU_TREND_LONG_ONLY=1`（總指揮 dry-run、使用者批）；預設 0＝照舊雙向。
+> 依據：14 個市場穩健度（`research/strategy_search/PAPER_ROBUST.md`）回報主要嚟自做多月份，標普做空月份每月淨 −0.05%。**11-14 已上線**：zhuge-sp500 00007-qgd、zhuge-uk100 00007-ncr（`XAU_TREND_LONG_ONLY=1`）；退版：只關只做多 → 00006，返舊程式 → 00005。預設 0＝雙向。
 
 ## 規則 `merebal`（`xau/trend_merebal.py`、`xau/merebal_feed.py`）
 
