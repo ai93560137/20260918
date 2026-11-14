@@ -80,13 +80,17 @@ def gong_score(pan, p, gan, wx, kb, month_zhi):
     return total, d
 
 
-def score(pan, shi, month_zhi, kb):
-    """回傳 dict：call（升／跌／棄權）、總分、三宮明細。"""
-    if shi[0] == "甲":
-        return {"call": "棄權", "總分": None, "原因": "伏吟局"}
+def score(pan, shi, month_zhi, kb, fuyin_abstain=True):
+    """回傳 dict：call（升／跌／棄權）、總分、三宮明細。
+    fuyin_abstain=False：時干係甲（伏吟局）唔棄權，照評分表「時干係甲就用旬首儀」計分（大股災測試 #10004 用）。"""
+    gan = shi[0]
+    if gan == "甲":
+        if fuyin_abstain:
+            return {"call": "棄權", "總分": None, "原因": "伏吟局"}
+        gan = pan["旬首儀"]
     out, total = {}, 0.0
-    p = gong_of(pan, shi[0])
-    s, d = gong_score(pan, p, shi[0], WX[shi[0]], kb, month_zhi)
+    p = gong_of(pan, gan)
+    s, d = gong_score(pan, p, gan, WX[gan], kb, month_zhi)
     out["時干宮"] = (p, s, d)
     total += 2 * s
     p = next(q for q, g in pan["宮"].items() if g["門"] == "生門")
