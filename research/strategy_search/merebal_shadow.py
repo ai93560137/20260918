@@ -63,17 +63,17 @@ def main():
     json.dump(led, open(LEDGER, "w"), ensure_ascii=False, indent=1, sort_keys=True)
     L = ["# 影子前向：月尾股債再平衡（#1466 美國／#1469 歐洲／#1481 亞洲）", "",
          f"- 更新 {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M} UTC；由 {START[0]}-{START[1]:02d} 起計；每個月完結後入賬一行；來回成本 {100 * COST:.2f}%，未扣隔夜息；唔落單。",
-         "- 亞洲兩隻（#1481）係影子；標普、富時有真倉（945／946，20:45 UTC 入場，同呢度嘅收市價口徑會有少少出入），呢度係紙上對照。", "",
-         "| 腳 | 身份 | 日線到 | 已入賬月數 | 累計淨回報 | 勝月 |", "|---|---|---|---|---|---|"]
+         "- 使用者 11-14「保留做多嗰邊，唔做淡」：真倉 945／946 改做只做多（跑贏月份唔開）；呢度雙向同只做多兩欄並列。", "- 亞洲兩隻（#1481）係影子；標普、富時有真倉（945／946，20:45 UTC 入場，同呢度嘅收市價口徑會有少少出入），呢度係紙上對照。", "",
+         "| 腳 | 身份 | 日線到 | 已入賬月數 | 累計淨回報（雙向） | 累計淨回報（只做多） | 勝月（雙向） |", "|---|---|---|---|---|---|---|"]
     for name, _, _, role in LEGS:
-        v = list(led.get(name, {}).values()); tot = sum(x["net"] for x in v)
-        L.append(f"| {name} | {role} | {last[name]} | {len(v)} | {100 * tot:+.2f}% | {sum(x['net'] > 0 for x in v)}／{len(v)} |")
-    L += ["", "## 逐月記錄", "", "| 月 | 腳 | 訊號日 | 指數當月 | 美債當月 | 方向 | 入場（訊號日收市） | 出場日 | 出場 | 淨回報 |", "|---|---|---|---|---|---|---|---|---|---|"]
+        v = list(led.get(name, {}).values()); tot = sum(x["net"] for x in v); lo = sum(x["net"] for x in v if x["side"] > 0)
+        L.append(f"| {name} | {role} | {last[name]} | {len(v)} | {100 * tot:+.2f}% | {100 * lo:+.2f}% | {sum(x['net'] > 0 for x in v)}／{len(v)} |")
+    L += ["", "## 逐月記錄", "", "| 月 | 腳 | 訊號日 | 指數當月 | 美債當月 | 方向 | 入場（訊號日收市） | 出場日 | 出場 | 淨回報（雙向） | 淨回報（只做多） |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     rows = sorted((k, name, r) for name in led for k, r in led[name].items())
     for k, name, r in rows:
-        L.append(f"| {k} | {name} | {r['sig']} | {100 * r['idx_mtd']:+.2f}% | {100 * r['bond_mtd']:+.2f}% | {'多' if r['side'] > 0 else '空'} | {r['entry']:.2f} | {r['exit_day']} | {r['exit']:.2f} | {100 * r['net']:+.2f}% |")
+        L.append(f"| {k} | {name} | {r['sig']} | {100 * r['idx_mtd']:+.2f}% | {100 * r['bond_mtd']:+.2f}% | {'多' if r['side'] > 0 else '空'} | {r['entry']:.2f} | {r['exit_day']} | {r['exit']:.2f} | {100 * r['net']:+.2f}% | {(f"{100 * r['net']:+.2f}%" if r['side'] > 0 else '唔做')} |")
     if not rows:
-        L.append("| — | 未有完結嘅月份（2026-11 月尾後入賬） | | | | | | | | |")
+        L.append("| — | 未有完結嘅月份（2026-11 月尾後入賬） | | | | | | | | | |")
     L += ["", "- 券商（使用者 11-14 截圖）：ASX200 有（代碼 SPI200，澳元現貨 CFD）；冇日經／JP225 → 將來轉真倉只可以行 ASX200 腳，或者另登記券商有嘅亞洲指數。", "- 判準（#1481 轉真倉前要睇）：亞洲兩隻前向滿 12 個月，合併每月淨平均 > 0；另外要先做真倉口徑驗證（隔夜息、規則日曆、券商合約規格）。", ""]
     open(OUT, "w").write("\n".join(L) + "\n"); print("\n".join(L))
 
