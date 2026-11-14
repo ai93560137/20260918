@@ -105,6 +105,23 @@ class Live(unittest.TestCase):
         self.assertEqual((act[1]["side"], act[1]["sl"]), (-1, 8360.0)); self.assertIn("做空", why)
         self.assertIn("merebal", T.NAMES)
 
+    def test_long_only(self):
+        """使用者 11-14「保留做多嗰邊，唔做淡」：XAU_TREND_LONG_ONLY=1 → 跑贏月唔開（當月記已用）、跑輸月照開；預設 0 行為唔變（上面兩個測試）。"""
+        T, c = self.T, self.c; now = ts(2026, 11, 20, 20, 46); mk = 2026 * 12 + 10; old = c.TREND_LONG_ONLY; c.TREND_LONG_ONLY = True
+        try:
+            st = self._state(now); days = T.days_of(st["d1"]); bond = [(D(2026, 10, 30), 105.0), (D(2026, 11, 20), 105.0)]
+            up = [(D(2026, 10, 30), 7000.0), (D(2026, 11, 20), 7140.0)]; dn = [(D(2026, 10, 30), 7000.0), (D(2026, 11, 20), 6860.0)]
+            T.merebal_prefetch(self.m, st, None, now, fetcher=lambda tk: bond if tk == "ZN=F" else up)
+            act, why = T.plan(st, days, None, 7600.0, now, None, [])
+            self.assertEqual(act[0], "used"); self.assertEqual((act[1]["rule"], act[1]["period"]), ("merebal", mk)); self.assertIn("只做多唔做淡", why)
+            self.assertEqual(T.plan(st, days, None, 7600.0, now, "EA dry_run", [])[0][0], "used")                  # 唔開倉唔受落單開關影響
+            self.assertIsNone(T.plan({**st, "used": {"merebal": mk}}, days, None, 7600.0, now + 60, None, [])[0])  # 記咗已用，當月唔再判
+            st2 = self._state(now); T.merebal_prefetch(self.m, st2, None, now, fetcher=lambda tk: bond if tk == "ZN=F" else dn)
+            act, why = T.plan(st2, days, None, 7600.0, now, None, [])
+            self.assertEqual((act[0], act[1]["side"], act[1]["sl"]), ("open", 1, 6840.0)); self.assertIn("做多", why)
+        finally:
+            c.TREND_LONG_ONLY = old
+
 
 if __name__ == "__main__":
     unittest.main()

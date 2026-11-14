@@ -455,6 +455,8 @@ def plan(state, days, pos, price, now, block, pending):
                 return None, f"{NAMES[rule]} 訊號日：未有股債數據（{mr.get('err') or '攞緊'}）"
             sg = MR.side(mr["idx"], mr["bond"])
             sig = {"rule": rule, "side": sg, "sl": round(price * (1 - sg * config.TREND_MEREBAL_SL_PCT / 100.0), config.PRICE_DIGITS), "period": mk}
+            if sg < 0 and config.TREND_LONG_ONLY:        # 使用者 11-14「保留做多嗰邊，唔做淡」：跑贏月份唔開，當月記已用
+                return ("used", sig), f"{NAMES[rule]}：指數當月 {mr['idx']:+.2%}、美債 {mr['bond']:+.2%} → 股票跑贏、只做多唔做淡，本月唔做"
             if block:
                 return None, f"{NAMES[rule]} 有訊號但暫時唔開：{block}"
             return ("open", sig), f"{NAMES[rule]}：指數當月 {mr['idx']:+.2%}、美債 {mr['bond']:+.2%} → {'做多' if sg > 0 else '做空'}"
