@@ -50,3 +50,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+    try:                                   # 月尾股債再平衡影子（#1481 亞洲＋美歐對照）：每月完結後入賬，順手一齊更新
+        import merebal_shadow
+        merebal_shadow.main()
+    except Exception as exc:  # noqa: BLE001
+        print(f"merebal_shadow 失敗：{exc}")
